@@ -24,13 +24,11 @@
 //# define VBOXNETFLTNOTIFY_DEBUG_BIND
 
 #ifdef DEBUG
-# define Assert(a) assert(a)
-# define AssertBreakpoint() assert(0)
-
+# define NonStandardAssert(a) assert(a)
+# define NonStandardAssertBreakpoint() assert(0)
 #else
-# define Assert(a) do{}while (0)
-# define AssertBreakpoint() do{}while (0)
-
+# define NonStandardAssert(a) do{}while (0)
+# define NonStandardAssertBreakpoint() do{}while (0)
 #endif
 
 VBoxNetFltNobj::VBoxNetFltNobj() :
@@ -64,8 +62,8 @@ void VBoxNetFltNobj::init(IN INetCfgComponent *pNetCfgComponent, IN INetCfg *pNe
 {
     cleanup();
 
-    Assert(pNetCfg);
-    Assert(pNetCfgComponent);
+    NonStandardAssert(pNetCfg);
+    NonStandardAssert(pNetCfgComponent);
     if (pNetCfg)
     {
         pNetCfg->AddRef();
@@ -121,14 +119,14 @@ static HRESULT vboxNetFltWinQueryInstanceKey(IN INetCfgComponent *pComponent, OU
         if (winEr != ERROR_SUCCESS)
         {
             hr = HRESULT_FROM_WIN32(winEr);
-            AssertBreakpoint();
+            NonStandardAssertBreakpoint();
         }
 
         CoTaskMemFree(pPnpId);
     }
     else
     {
-        AssertBreakpoint();
+        NonStandardAssertBreakpoint();
     }
 
     return hr;
@@ -162,13 +160,13 @@ static HRESULT vboxNetFltWinQueryDriverKey(IN HKEY InstanceKey, OUT PHKEY phKey)
         if (winEr != ERROR_SUCCESS)
         {
             hr = HRESULT_FROM_WIN32(winEr);
-            AssertBreakpoint();
+            NonStandardAssertBreakpoint();
         }
     }
     else
     {
         hr = HRESULT_FROM_WIN32(winEr);
-        AssertBreakpoint();
+        NonStandardAssertBreakpoint();
     }
 
     return hr;
@@ -183,13 +181,13 @@ static HRESULT vboxNetFltWinQueryDriverKey(IN INetCfgComponent *pComponent, OUT 
         hr = vboxNetFltWinQueryDriverKey(InstanceKey, phKey);
         if (hr != S_OK)
         {
-            AssertBreakpoint();
+            NonStandardAssertBreakpoint();
         }
         RegCloseKey(InstanceKey);
     }
     else
     {
-        AssertBreakpoint();
+        NonStandardAssertBreakpoint();
     }
 
     return hr;
@@ -214,7 +212,7 @@ static HRESULT vboxNetFltWinNotifyCheckNetAdp(IN INetCfgComponent *pComponent, O
     }
     else
     {
-        AssertBreakpoint();
+        NonStandardAssertBreakpoint();
     }
 
     return hr;
@@ -266,14 +264,14 @@ static HRESULT vboxNetFltWinNotifyCheckMsLoop(IN INetCfgComponent *pComponent, O
                     }
                     else
                     {
-                        AssertBreakpoint();
+                        NonStandardAssertBreakpoint();
                         *pbShouldBind = true;
                     }
                 }
                 else
                 {
                     /* TODO: we should check the default medium in HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\Class\{4D36E972-E325-11CE-BFC1-08002bE10318}\<driver_id>\Ndi\Params\Medium, REG_SZ "Default" value */
-                    AssertBreakpoint();
+                    NonStandardAssertBreakpoint();
                     *pbShouldBind = true;
                 }
 
@@ -281,7 +279,7 @@ static HRESULT vboxNetFltWinNotifyCheckMsLoop(IN INetCfgComponent *pComponent, O
             }
             else
             {
-                AssertBreakpoint();
+                NonStandardAssertBreakpoint();
             }
         }
         else
@@ -292,7 +290,7 @@ static HRESULT vboxNetFltWinNotifyCheckMsLoop(IN INetCfgComponent *pComponent, O
     }
     else
     {
-        AssertBreakpoint();
+        NonStandardAssertBreakpoint();
     }
 
     return hr;
@@ -336,7 +334,7 @@ static HRESULT vboxNetFltWinNotifyCheckLowerRange(IN INetCfgComponent *pComponen
             {
                 /* do not set err status to it */
                 *pbShouldBind = false;
-                AssertBreakpoint();
+                NonStandardAssertBreakpoint();
             }
 
             RegCloseKey(InterfacesKey);
@@ -344,14 +342,14 @@ static HRESULT vboxNetFltWinNotifyCheckLowerRange(IN INetCfgComponent *pComponen
         else
         {
             hr = HRESULT_FROM_WIN32(winEr);
-            AssertBreakpoint();
+            NonStandardAssertBreakpoint();
         }
 
         RegCloseKey(DriverKey);
     }
     else
     {
-        AssertBreakpoint();
+        NonStandardAssertBreakpoint();
     }
 
     return hr;
@@ -368,7 +366,7 @@ static HRESULT vboxNetFltWinNotifyShouldBind(IN INetCfgComponent *pComponent, OU
         hr = pComponent->GetCharacteristics(&fCharacteristics);
         if (hr != S_OK)
         {
-            AssertBreakpoint();
+            NonStandardAssertBreakpoint();
             break;
         }
 
@@ -442,7 +440,7 @@ static HRESULT vboxNetFltWinNotifyShouldBind(IN INetCfgBindingInterface *pIf, OU
     }
     else
     {
-        AssertBreakpoint();
+        NonStandardAssertBreakpoint();
     }
 
     return hr;
@@ -489,7 +487,7 @@ static HRESULT vboxNetFltWinNotifyShouldBind(IN INetCfgBindingPath *pPath, OUT b
                 }
                 else
                 {
-                    AssertBreakpoint();
+                    NonStandardAssertBreakpoint();
                     /* break on falure */
                     break;
                 }
@@ -497,14 +495,14 @@ static HRESULT vboxNetFltWinNotifyShouldBind(IN INetCfgBindingPath *pPath, OUT b
         }
         else
         {
-            AssertBreakpoint();
+            NonStandardAssertBreakpoint();
         }
 
         pEnumBindingIf->Release();
     }
     else
     {
-        AssertBreakpoint();
+        NonStandardAssertBreakpoint();
     }
 
     return hr;

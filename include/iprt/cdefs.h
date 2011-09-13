@@ -79,6 +79,7 @@
 # define IN_RT_R3
 # define IN_RT_STATIC
 # define RT_STRICT
+# define RT_NO_STRICT
 # define RT_LOCK_STRICT
 # define RT_LOCK_NO_STRICT
 # define RT_LOCK_STRICT_ORDER
@@ -2144,13 +2145,17 @@
 
 /** @def RT_STRICT
  * The \#define RT_STRICT controls whether or not assertions and other runtime
- * checks should be compiled in or not.
+ * checks should be compiled in or not.  This is defined when DEBUG is defined.
+ * If RT_NO_STRICT is defined, it will unconditionally be undefined.
  *
  * If you want assertions which are not subject to compile time options use
  * the AssertRelease*() flavors.
  */
 #if !defined(RT_STRICT) && defined(DEBUG)
 # define RT_STRICT
+#endif
+#ifdef RT_NO_STRICT
+# undef RT_STRICT
 #endif
 
 /** @todo remove this: */

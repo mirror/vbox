@@ -3,6 +3,7 @@
  * VBoxNetFltCmn-win.h - Bridged Networking Driver, Windows Specific Code.
  * Common header with configuration defines and global defs
  */
+
 /*
  * Copyright (C) 2011 Oracle Corporation
  *
@@ -14,6 +15,7 @@
  * VirtualBox OSE distribution. VirtualBox OSE is distributed in the
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
+
 #ifndef ___VBoxNetFltCmn_win_h___
 #define ___VBoxNetFltCmn_win_h___
 
@@ -23,7 +25,7 @@
 #ifdef DEBUG
 //# define DEBUG_NETFLT_PACKETS
 # ifndef DEBUG_misha
-#  define DEBUG_NETFLT_NOASSERT
+#  define RT_NO_STRICT
 # endif
 /* # define DEBUG_NETFLT_LOOPBACK */
 /* receive logic has several branches */
@@ -529,16 +531,8 @@ AssertCompile(sizeof (UINT) == sizeof (uint32_t));
 #include "../../VBoxNetFltInternal.h"
 #include "VBoxNetFltRt-win.h"
 #ifndef VBOXNETADP
-#include "VBoxNetFltP-win.h"
+# include "VBoxNetFltP-win.h"
 #endif
-# include "VBoxNetFltM-win.h"
-
-#ifdef DEBUG_NETFLT_NOASSERT
-# ifdef Assert
-#  undef Assert
-# endif
-
-# define Assert(_expr) do {} while (0)
-#endif /* #ifdef DEBUG_NETFLT_NOASSERT */
+#include "VBoxNetFltM-win.h"
 
 #endif /* #ifndef ___VBoxNetFltCmn_win_h___ */
