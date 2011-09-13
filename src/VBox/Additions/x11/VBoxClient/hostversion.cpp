@@ -163,14 +163,20 @@ public:
             {
                 if (bUpdate)
                 {
-                    char szMsg[256];
+                    char szMsg[1024];
                     char szTitle[64];
 
                     /** @todo add some translation macros here */
                     RTStrPrintf(szTitle, sizeof(szTitle), "VirtualBox Guest Additions update available!");
+#ifndef VBOX_OSE
                     RTStrPrintf(szMsg, sizeof(szMsg), "Your guest is currently running the Guest Additions version %s. "
                                                       "We recommend updating to the latest version (%s) by choosing the "
                                                       "install option from the Devices menu.", pszGuestVersion, pszHostVersion);
+#else
+/* This is the message which appears for non-Oracle builds of the
+ * Guest Additions.  Distributors are encouraged to customise this. */
+                    RTStrPrintf(szMsg, sizeof(szMsg), "Your virtual machine is currently running the Guest Additions version %s. Since you are running a version of the Guest Additions provided by the operating system you installed in the virtual machine we recommend that you update it to at least version %s using that system's update features, or alternatively that you remove this version and then install the " VBOX_VENDOR_SHORT " Guest Additions package using the install option from the Devices menu. Please consult the documentation for the operating system you are running to find out how to update or remove the current Guest Additions package.", pszGuestVersion, pszHostVersion);
+#endif
                     rc = showNotify(szTitle, szMsg);
                     LogRel(("VBoxClient: VirtualBox Guest Additions update available!"));
                     if (RT_FAILURE(rc))
