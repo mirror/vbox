@@ -29,8 +29,7 @@
 #include <linux/input.h>
 #include <linux/miscdevice.h>
 #include <linux/poll.h>
-#include "version-generated.h"
-#include "product-generated.h"
+#include <VBox/version.h>
 
 #include <iprt/assert.h>
 #include <iprt/asm.h>
@@ -443,9 +442,7 @@ static int __init vboxguestLinuxCreateInputDevice(void)
 #endif
     g_pInputDevice->INPUT_DEV_ID(vendor)  = VMMDEV_VENDORID;
     g_pInputDevice->INPUT_DEV_ID(product) = VMMDEV_DEVICEID;
-    g_pInputDevice->INPUT_DEV_ID(version) =   (VBOX_VERSION_MAJOR << 11)
-                                            + (VBOX_VERSION_MINOR << 6)
-                                            + VBOX_VERSION_BUILD;  /** @todo */
+    g_pInputDevice->INPUT_DEV_ID(version) = VBOX_SHORT_VERSION;
     g_pInputDevice->open                  = vboxguestOpenInputDevice;
     g_pInputDevice->close                 = vboxguestCloseInputDevice;
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 2)
@@ -481,10 +478,10 @@ static int __init vboxguestLinuxCreateInputDevice(void)
 #else
     ASMBitSet(g_pInputDevice->absbit, ABS_X);
     ASMBitSet(g_pInputDevice->absbit, ABS_Y);
-    ASMBitSet(g_pInputDevice->keybit, BTN_MOUSE);
     g_pInputDevice->absmin[ABS_X] = g_pInputDevice->absmin[ABS_Y] = RANGE_MIN;
     g_pInputDevice->absmax[ABS_X] = g_pInputDevice->absmax[ABS_Y] = RANGE_MAX;
 #endif
+    ASMBitSet(g_pInputDevice->keybit, BTN_MOUSE);
     /** @todo this string should be in a header file somewhere. */
     g_pInputDevice->name = "VirtualBox mouse integration";
     return 0;
