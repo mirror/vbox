@@ -8614,7 +8614,7 @@ HRESULT Machine::saveSettings(bool *pfNeedsGlobalSaveSettings,
                 // previously stored in the config file; this invokes MachineConfigFile::operator==
                 // which does a deep compare of all the settings, which is expensive but less expensive
                 // than writing out XML in vain
-                bool fAnySettingsChanged = (*pNewConfig == *pOldConfig);
+                bool fAnySettingsChanged = !(*pNewConfig == *pOldConfig);
 
                 // could still be modified if any settings changed
                 mData->mCurrentStateModified = fAnySettingsChanged;
