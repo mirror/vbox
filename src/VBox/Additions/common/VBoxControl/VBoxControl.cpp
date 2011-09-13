@@ -1011,11 +1011,11 @@ static RTEXITCODE getGuestProperty(int argc, char **argv)
         RTPrintf("No value set!\n");
     else if (RT_SUCCESS(rc))
     {
-        RTPrintf("Value: %S\n", pszValue);
+        RTPrintf("Value: %s\n", pszValue);
         if (fVerbose)
         {
             RTPrintf("Timestamp: %lld ns\n", u64Timestamp);
-            RTPrintf("Flags: %S\n", pszFlags);
+            RTPrintf("Flags: %s\n", pszFlags);
         }
     }
 
