@@ -2650,7 +2650,7 @@ STDMETHODIMP Medium::CloneTo(IMedium *aTarget,
         AutoMultiWriteLock4 alock(&m->pVirtualBox->getMediaTreeLockHandle(),
                                   this->lockHandle(),
                                   pTarget->lockHandle(),
-                                  pParent->LockHandle() COMMA_LOCKVAL_SRC_POS);
+                                  pParent->lockHandle() COMMA_LOCKVAL_SRC_POS);
 
         if (    pTarget->m->state != MediumState_NotCreated
             &&  pTarget->m->state != MediumState_Created)
