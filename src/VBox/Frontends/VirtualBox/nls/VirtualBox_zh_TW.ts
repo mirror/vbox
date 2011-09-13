@@ -949,6 +949,13 @@
     </message>
 </context>
 <context>
+    <name>UIDownloaderExtensionPack</name>
+    <message>
+        <source>Select folder to save %1 to</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>UIDownloaderUserManual</name>
     <message>
         <source>Select folder to save User Manual to</source>
@@ -4369,6 +4376,36 @@
         <source>&lt;p&gt;Failed to save the downloaded file as &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;</source>
         <translation>&lt;p&gt;儲存已下載檔案為 &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt; 失敗。&lt;/nobr&gt;&lt;/p&gt;</translation>
     </message>
+    <message>
+        <source>&lt;p&gt;You have an old version (%1) of the &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt; installed.&lt;/p&gt;&lt;p&gt;Do you wish to download latest one from the Internet?&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Download</source>
+        <comment>extension pack</comment>
+        <translation type="unfinished">下載</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Are you sure you want to download the &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; from &lt;nobr&gt;&lt;a href=&quot;%2&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; (size %3 bytes)?&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%2&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; and saved locally as &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to install this extension pack?&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Install</source>
+        <comment>extension pack</comment>
+        <translation type="unfinished">安裝</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%2&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; but can&apos;t be saved locally as &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Please choose another location for that file.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Failed to download the &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; from &lt;nobr&gt;&lt;a href=&quot;%2&quot;&gt;%2&lt;/a&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;%3&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UIMiniProcessWidgetUserManual</name>
@@ -4394,6 +4431,17 @@
     <message>
         <source>Downloading the VirtualBox Guest Additions CD image from &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</source>
         <translation>正在下載 VirtualBox Guest Additions CD 映像從 &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</translation>
+    </message>
+</context>
+<context>
+    <name>UIMiniProgressWidgetExtension</name>
+    <message>
+        <source>Cancel the &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; download</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Downloading the &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; from &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;...&lt;/nobr&gt;</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -4569,6 +4617,18 @@
         <source>Size</source>
         <comment>summary</comment>
         <translation>大小</translation>
+    </message>
+    <message>
+        <source>H&amp;DD (Parallels Hard Disk)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Q&amp;ED (QEMU enhanced disk)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;QCOW (QEMU Copy-On-Write)</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -4934,6 +4994,93 @@
     <message>
         <source>Select a file to open...</source>
         <translation>選取開啟的檔案...</translation>
+    </message>
+</context>
+<context>
+    <name>UIUpdateManager</name>
+    <message>
+        <source>1 day</source>
+        <translation>1 天</translation>
+    </message>
+    <message>
+        <source>2 days</source>
+        <translation>2 天</translation>
+    </message>
+    <message>
+        <source>3 days</source>
+        <translation>3 天</translation>
+    </message>
+    <message>
+        <source>4 days</source>
+        <translation>4 天</translation>
+    </message>
+    <message>
+        <source>5 days</source>
+        <translation>5 天</translation>
+    </message>
+    <message>
+        <source>6 days</source>
+        <translation>6 天</translation>
+    </message>
+    <message>
+        <source>1 week</source>
+        <translation>1 星期</translation>
+    </message>
+    <message>
+        <source>2 weeks</source>
+        <translation>2 星期</translation>
+    </message>
+    <message>
+        <source>3 weeks</source>
+        <translation>3 星期</translation>
+    </message>
+    <message>
+        <source>1 month</source>
+        <translation>1 個月</translation>
+    </message>
+    <message>
+        <source>Never</source>
+        <translation>永不</translation>
+    </message>
+    <message>
+        <source>Chec&amp;k</source>
+        <translation type="obsolete">檢查(&amp;K)</translation>
+    </message>
+    <message>
+        <source>&amp;Close</source>
+        <translation type="obsolete">關閉(&amp;C)</translation>
+    </message>
+    <message>
+        <source>VirtualBox Update Wizard</source>
+        <translation type="obsolete">VirtualBox 更新精靈</translation>
+    </message>
+    <message>
+        <source>Check for Updates</source>
+        <translation type="obsolete">檢查更新</translation>
+    </message>
+    <message>
+        <source>Cancel</source>
+        <translation type="obsolete">取消</translation>
+    </message>
+    <message>
+        <source>Summary</source>
+        <translation type="obsolete">摘要</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;A new version of VirtualBox has been released! Version &lt;b&gt;%1&lt;/b&gt; is available at &lt;a href=&quot;http://www.virtualbox.org/&quot;&gt;virtualbox.org&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;You can download this version using the link:&lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;VirtualBox 的新版本已發佈! 版本 &lt;b&gt;%1&lt;/b&gt; 在 &lt;a href=&quot;http://www.virtualbox.org/&quot;&gt;virtualbox.org&lt;/a&gt;可用。&lt;/p&gt;&lt;p&gt;您可以使用連結:&lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;下載這個版本</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Unable to obtain the new version information due to the following network error:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;無法獲取新版本資訊由於以下網路錯誤:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>You are already running the most recent version of VirtualBox.</source>
+        <translation type="obsolete">您已經使用 VirtualBox 的最新版本。</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;This wizard will connect to the VirtualBox web-site and check if a newer version of VirtualBox is available.&lt;/p&gt;&lt;p&gt;Use the &lt;b&gt;Check&lt;/b&gt; button to check for a new version now or the &lt;b&gt;Cancel&lt;/b&gt; button if you do not want to perform this check.&lt;/p&gt;&lt;p&gt;You can run this wizard at any time by choosing &lt;b&gt;Check for Updates...&lt;/b&gt; from the &lt;b&gt;Help&lt;/b&gt; menu.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;這個精靈將連接到 VirtualBox 網站並檢查是否有可用的 VirtualBox 更新版本。&lt;/p&gt;&lt;p&gt;使用 [&lt;b&gt;檢查&lt;/b&gt;] 按鈕立即檢查新版本或 [&lt;b&gt;取消&lt;/b&gt;] 按鈕如果您不想執行這個檢查。&lt;/p&gt;&lt;p&gt;您可以在任何時候從 [&lt;b&gt;說明&lt;/b&gt;] 功能表選擇 [&lt;b&gt;檢查更新...&lt;/b&gt;] 執行這個精靈。&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
@@ -6995,93 +7142,6 @@
         <source>No supported devices connected to the host PC</source>
         <comment>USB device tooltip</comment>
         <translation>沒有已支援的裝置連接到主機 PC</translation>
-    </message>
-</context>
-<context>
-    <name>UIUpdateManager</name>
-    <message>
-        <source>1 day</source>
-        <translation>1 天</translation>
-    </message>
-    <message>
-        <source>2 days</source>
-        <translation>2 天</translation>
-    </message>
-    <message>
-        <source>3 days</source>
-        <translation>3 天</translation>
-    </message>
-    <message>
-        <source>4 days</source>
-        <translation>4 天</translation>
-    </message>
-    <message>
-        <source>5 days</source>
-        <translation>5 天</translation>
-    </message>
-    <message>
-        <source>6 days</source>
-        <translation>6 天</translation>
-    </message>
-    <message>
-        <source>1 week</source>
-        <translation>1 星期</translation>
-    </message>
-    <message>
-        <source>2 weeks</source>
-        <translation>2 星期</translation>
-    </message>
-    <message>
-        <source>3 weeks</source>
-        <translation>3 星期</translation>
-    </message>
-    <message>
-        <source>1 month</source>
-        <translation>1 個月</translation>
-    </message>
-    <message>
-        <source>Never</source>
-        <translation>永不</translation>
-    </message>
-    <message>
-        <source>Chec&amp;k</source>
-        <translation>檢查(&amp;K)</translation>
-    </message>
-    <message>
-        <source>&amp;Close</source>
-        <translation>關閉(&amp;C)</translation>
-    </message>
-    <message>
-        <source>VirtualBox Update Wizard</source>
-        <translation>VirtualBox 更新精靈</translation>
-    </message>
-    <message>
-        <source>Check for Updates</source>
-        <translation>檢查更新</translation>
-    </message>
-    <message>
-        <source>Cancel</source>
-        <translation>取消</translation>
-    </message>
-    <message>
-        <source>Summary</source>
-        <translation>摘要</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;A new version of VirtualBox has been released! Version &lt;b&gt;%1&lt;/b&gt; is available at &lt;a href=&quot;http://www.virtualbox.org/&quot;&gt;virtualbox.org&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;You can download this version using the link:&lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</source>
-        <translation>&lt;p&gt;VirtualBox 的新版本已發佈! 版本 &lt;b&gt;%1&lt;/b&gt; 在 &lt;a href=&quot;http://www.virtualbox.org/&quot;&gt;virtualbox.org&lt;/a&gt;可用。&lt;/p&gt;&lt;p&gt;您可以使用連結:&lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;下載這個版本</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Unable to obtain the new version information due to the following network error:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</source>
-        <translation>&lt;p&gt;無法獲取新版本資訊由於以下網路錯誤:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>You are already running the most recent version of VirtualBox.</source>
-        <translation>您已經使用 VirtualBox 的最新版本。</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;This wizard will connect to the VirtualBox web-site and check if a newer version of VirtualBox is available.&lt;/p&gt;&lt;p&gt;Use the &lt;b&gt;Check&lt;/b&gt; button to check for a new version now or the &lt;b&gt;Cancel&lt;/b&gt; button if you do not want to perform this check.&lt;/p&gt;&lt;p&gt;You can run this wizard at any time by choosing &lt;b&gt;Check for Updates...&lt;/b&gt; from the &lt;b&gt;Help&lt;/b&gt; menu.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;這個精靈將連接到 VirtualBox 網站並檢查是否有可用的 VirtualBox 更新版本。&lt;/p&gt;&lt;p&gt;使用 [&lt;b&gt;檢查&lt;/b&gt;] 按鈕立即檢查新版本或 [&lt;b&gt;取消&lt;/b&gt;] 按鈕如果您不想執行這個檢查。&lt;/p&gt;&lt;p&gt;您可以在任何時候從 [&lt;b&gt;說明&lt;/b&gt;] 功能表選擇 [&lt;b&gt;檢查更新...&lt;/b&gt;] 執行這個精靈。&lt;/p&gt;</translation>
     </message>
 </context>
 <context>

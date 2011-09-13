@@ -1113,6 +1113,13 @@
     </message>
 </context>
 <context>
+    <name>UIDownloaderExtensionPack</name>
+    <message>
+        <source>Select folder to save %1 to</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>UIDownloaderUserManual</name>
     <message>
         <source>Select folder to save User Manual to</source>
@@ -5672,6 +5679,36 @@ p, li { white-space: pre-wrap; }
         <source>&lt;p&gt;Failed to save the downloaded file as &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;</source>
         <translation type="unfinished">&lt;p&gt;Noudetun tiedoston tallennus epäonnistui nimellä &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;/p&gt;</translation>
     </message>
+    <message>
+        <source>&lt;p&gt;You have an old version (%1) of the &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt; installed.&lt;/p&gt;&lt;p&gt;Do you wish to download latest one from the Internet?&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Download</source>
+        <comment>extension pack</comment>
+        <translation type="unfinished">Nouda</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Are you sure you want to download the &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; from &lt;nobr&gt;&lt;a href=&quot;%2&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; (size %3 bytes)?&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%2&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; and saved locally as &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to install this extension pack?&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Install</source>
+        <comment>extension pack</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%2&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; but can&apos;t be saved locally as &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Please choose another location for that file.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Failed to download the &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; from &lt;nobr&gt;&lt;a href=&quot;%2&quot;&gt;%2&lt;/a&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;%3&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UIMiniProcessWidgetAdditions</name>
@@ -5707,6 +5744,17 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Downloading the VirtualBox Guest Additions CD image from &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIMiniProgressWidgetExtension</name>
+    <message>
+        <source>Cancel the &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; download</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Downloading the &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; from &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;...&lt;/nobr&gt;</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -6030,6 +6078,18 @@ levykuvan sijainnin ja nimen, tai kirjoita tiedostonimi tekstikenttään.&lt;/p&
     <message>
         <source>Details</source>
         <comment>summary</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>H&amp;DD (Parallels Hard Disk)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Q&amp;ED (QEMU enhanced disk)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;QCOW (QEMU Copy-On-Write)</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -6685,6 +6745,93 @@ Kaikki VirtualBoxin komponentit käyttävät sitä koneen tunnistukseen.&lt;/p&g
     <message>
         <source>Select a file to open...</source>
         <translation>Valitse avattava tiedosto...</translation>
+    </message>
+</context>
+<context>
+    <name>UIUpdateManager</name>
+    <message>
+        <source>1 day</source>
+        <translation>1 päivä</translation>
+    </message>
+    <message>
+        <source>2 days</source>
+        <translation>2 päivää</translation>
+    </message>
+    <message>
+        <source>3 days</source>
+        <translation>3 päivää</translation>
+    </message>
+    <message>
+        <source>4 days</source>
+        <translation>4 päivää</translation>
+    </message>
+    <message>
+        <source>5 days</source>
+        <translation>5 päivää</translation>
+    </message>
+    <message>
+        <source>6 days</source>
+        <translation>6 päivää</translation>
+    </message>
+    <message>
+        <source>1 week</source>
+        <translation>1 viikko</translation>
+    </message>
+    <message>
+        <source>2 weeks</source>
+        <translation>2 viikkoa</translation>
+    </message>
+    <message>
+        <source>3 weeks</source>
+        <translation>3 viikkoa</translation>
+    </message>
+    <message>
+        <source>1 month</source>
+        <translation>1 kuukausi</translation>
+    </message>
+    <message>
+        <source>Never</source>
+        <translation>Ei koskaan</translation>
+    </message>
+    <message>
+        <source>Chec&amp;k</source>
+        <translation type="obsolete">Tar&amp;kista</translation>
+    </message>
+    <message>
+        <source>&amp;Close</source>
+        <translation type="obsolete">&amp;Sulje</translation>
+    </message>
+    <message>
+        <source>VirtualBox Update Wizard</source>
+        <translation type="obsolete">VirtualBoxin päivitysapulainen</translation>
+    </message>
+    <message>
+        <source>Check for Updates</source>
+        <translation type="obsolete">Etsi päivityksiä</translation>
+    </message>
+    <message>
+        <source>Cancel</source>
+        <translation type="obsolete">Peru</translation>
+    </message>
+    <message>
+        <source>Summary</source>
+        <translation type="obsolete">Yhteenveto</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;A new version of VirtualBox has been released! Version &lt;b&gt;%1&lt;/b&gt; is available at &lt;a href=&quot;http://www.virtualbox.org/&quot;&gt;virtualbox.org&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;You can download this version using the link:&lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Uusi versio VirtualBoxista on julkaistu! Versio &lt;b&gt;%1&lt;/b&gt; on saatavilla osoitteesta &lt;a href=&quot;http://www.virtualbox.org/&quot;&gt;virtualbox.org&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;Voit noutaa uuden version seuraavasta linkistä:&lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Unable to obtain the new version information due to the following network error:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Tietoja uudesta versiosta ei voitu hakea seuraavan verkkovirheen takia:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>You are already running the most recent version of VirtualBox.</source>
+        <translation type="obsolete">Asentamasi VirtualBoxin versio on viimeisin julkaistu versio. Voit toistaa versiotarkistuksen myöhemmin uudestaan.</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;This wizard will connect to the VirtualBox web-site and check if a newer version of VirtualBox is available.&lt;/p&gt;&lt;p&gt;Use the &lt;b&gt;Check&lt;/b&gt; button to check for a new version now or the &lt;b&gt;Cancel&lt;/b&gt; button if you do not want to perform this check.&lt;/p&gt;&lt;p&gt;You can run this wizard at any time by choosing &lt;b&gt;Check for Updates...&lt;/b&gt; from the &lt;b&gt;Help&lt;/b&gt; menu.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Tämä apulainen ottaa yhteyttä VirtualBoxin sivustolle ja tarkistaa, onko ohjelmasta uudempaa versiota saatavilla.&lt;/p&gt;&lt;p&gt;Käynnistä uuden version tarkistus napista &lt;b&gt;Tarkista&lt;/b&gt; tai peru toiminto napista &lt;b&gt;Peru&lt;/b&gt;, jos et halua suorittaa tarkistusta.&lt;/p&gt;&lt;p&gt;Voit suorittaa tämän apulaisen halutessasi valitsemalla &lt;b&gt;Etsi päivityksiä&lt;/b&gt; &lt;b&gt;Ohje&lt;/b&gt;-valikosta.&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
@@ -11015,93 +11162,6 @@ to access it from a Linux OS. This feature requires Guest Additions.&lt;/qt&gt;<
         <source>No supported devices connected to the host PC</source>
         <comment>USB device tooltip</comment>
         <translation>Tuettuja laitteita ei ole yhdistettynä isäntätietokoneeseen</translation>
-    </message>
-</context>
-<context>
-    <name>UIUpdateManager</name>
-    <message>
-        <source>1 day</source>
-        <translation>1 päivä</translation>
-    </message>
-    <message>
-        <source>2 days</source>
-        <translation>2 päivää</translation>
-    </message>
-    <message>
-        <source>3 days</source>
-        <translation>3 päivää</translation>
-    </message>
-    <message>
-        <source>4 days</source>
-        <translation>4 päivää</translation>
-    </message>
-    <message>
-        <source>5 days</source>
-        <translation>5 päivää</translation>
-    </message>
-    <message>
-        <source>6 days</source>
-        <translation>6 päivää</translation>
-    </message>
-    <message>
-        <source>1 week</source>
-        <translation>1 viikko</translation>
-    </message>
-    <message>
-        <source>2 weeks</source>
-        <translation>2 viikkoa</translation>
-    </message>
-    <message>
-        <source>3 weeks</source>
-        <translation>3 viikkoa</translation>
-    </message>
-    <message>
-        <source>1 month</source>
-        <translation>1 kuukausi</translation>
-    </message>
-    <message>
-        <source>Never</source>
-        <translation>Ei koskaan</translation>
-    </message>
-    <message>
-        <source>Chec&amp;k</source>
-        <translation>Tar&amp;kista</translation>
-    </message>
-    <message>
-        <source>&amp;Close</source>
-        <translation>&amp;Sulje</translation>
-    </message>
-    <message>
-        <source>VirtualBox Update Wizard</source>
-        <translation>VirtualBoxin päivitysapulainen</translation>
-    </message>
-    <message>
-        <source>Check for Updates</source>
-        <translation>Etsi päivityksiä</translation>
-    </message>
-    <message>
-        <source>Cancel</source>
-        <translation>Peru</translation>
-    </message>
-    <message>
-        <source>Summary</source>
-        <translation>Yhteenveto</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;A new version of VirtualBox has been released! Version &lt;b&gt;%1&lt;/b&gt; is available at &lt;a href=&quot;http://www.virtualbox.org/&quot;&gt;virtualbox.org&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;You can download this version using the link:&lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Uusi versio VirtualBoxista on julkaistu! Versio &lt;b&gt;%1&lt;/b&gt; on saatavilla osoitteesta &lt;a href=&quot;http://www.virtualbox.org/&quot;&gt;virtualbox.org&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;Voit noutaa uuden version seuraavasta linkistä:&lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Unable to obtain the new version information due to the following network error:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Tietoja uudesta versiosta ei voitu hakea seuraavan verkkovirheen takia:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>You are already running the most recent version of VirtualBox.</source>
-        <translation>Asentamasi VirtualBoxin versio on viimeisin julkaistu versio. Voit toistaa versiotarkistuksen myöhemmin uudestaan.</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;This wizard will connect to the VirtualBox web-site and check if a newer version of VirtualBox is available.&lt;/p&gt;&lt;p&gt;Use the &lt;b&gt;Check&lt;/b&gt; button to check for a new version now or the &lt;b&gt;Cancel&lt;/b&gt; button if you do not want to perform this check.&lt;/p&gt;&lt;p&gt;You can run this wizard at any time by choosing &lt;b&gt;Check for Updates...&lt;/b&gt; from the &lt;b&gt;Help&lt;/b&gt; menu.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Tämä apulainen ottaa yhteyttä VirtualBoxin sivustolle ja tarkistaa, onko ohjelmasta uudempaa versiota saatavilla.&lt;/p&gt;&lt;p&gt;Käynnistä uuden version tarkistus napista &lt;b&gt;Tarkista&lt;/b&gt; tai peru toiminto napista &lt;b&gt;Peru&lt;/b&gt;, jos et halua suorittaa tarkistusta.&lt;/p&gt;&lt;p&gt;Voit suorittaa tämän apulaisen halutessasi valitsemalla &lt;b&gt;Etsi päivityksiä&lt;/b&gt; &lt;b&gt;Ohje&lt;/b&gt;-valikosta.&lt;/p&gt;</translation>
     </message>
 </context>
 <context>

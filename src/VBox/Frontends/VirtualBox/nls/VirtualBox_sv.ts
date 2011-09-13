@@ -1209,6 +1209,13 @@
     </message>
 </context>
 <context>
+    <name>UIDownloaderExtensionPack</name>
+    <message>
+        <source>Select folder to save %1 to</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>UIDownloaderUserManual</name>
     <message>
         <source>Select folder to save User Manual to</source>
@@ -6162,6 +6169,36 @@ serial ports</comment>
         <source>&lt;p&gt;Failed to save the downloaded file as &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;</source>
         <translation type="unfinished">&lt;p&gt;Misslyckades med att spara den hämtade filen som &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;</translation>
     </message>
+    <message>
+        <source>&lt;p&gt;You have an old version (%1) of the &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt; installed.&lt;/p&gt;&lt;p&gt;Do you wish to download latest one from the Internet?&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Download</source>
+        <comment>extension pack</comment>
+        <translation type="unfinished">Hämta</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Are you sure you want to download the &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; from &lt;nobr&gt;&lt;a href=&quot;%2&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; (size %3 bytes)?&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%2&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; and saved locally as &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to install this extension pack?&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Install</source>
+        <comment>extension pack</comment>
+        <translation type="unfinished">Installera</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%2&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; but can&apos;t be saved locally as &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Please choose another location for that file.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Failed to download the &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; from &lt;nobr&gt;&lt;a href=&quot;%2&quot;&gt;%2&lt;/a&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;%3&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UIMiniProcessWidgetAdditions</name>
@@ -6206,6 +6243,17 @@ serial ports</comment>
     <message>
         <source>Downloading the VirtualBox Guest Additions CD image from &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</source>
         <translation type="unfinished">Hämtar ner cd-avbildning för VirtualBox Gästtillägg från &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</translation>
+    </message>
+</context>
+<context>
+    <name>UIMiniProgressWidgetExtension</name>
+    <message>
+        <source>Cancel the &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; download</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Downloading the &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; from &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;...&lt;/nobr&gt;</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -6522,6 +6570,18 @@ serial ports</comment>
     </message>
     <message>
         <source>Please type the name of the new virtual disk file into the box below or click on the folder icon to select a different folder to create the file in.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>H&amp;DD (Parallels Hard Disk)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Q&amp;ED (QEMU enhanced disk)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;QCOW (QEMU Copy-On-Write)</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -7244,6 +7304,109 @@ serial ports</comment>
     <message>
         <source>Select a file to open...</source>
         <translation>Välj en fil att öppna...</translation>
+    </message>
+</context>
+<context>
+    <name>UIUpdateManager</name>
+    <message>
+        <source>1 day</source>
+        <translation>1 dag</translation>
+    </message>
+    <message>
+        <source>2 days</source>
+        <translation>2 dagar</translation>
+    </message>
+    <message>
+        <source>3 days</source>
+        <translation>3 dagar</translation>
+    </message>
+    <message>
+        <source>4 days</source>
+        <translation>4 dagar</translation>
+    </message>
+    <message>
+        <source>5 days</source>
+        <translation>5 dagar</translation>
+    </message>
+    <message>
+        <source>6 days</source>
+        <translation>6 dagar</translation>
+    </message>
+    <message>
+        <source>1 week</source>
+        <translation>1 vecka</translation>
+    </message>
+    <message>
+        <source>2 weeks</source>
+        <translation>2 veckor</translation>
+    </message>
+    <message>
+        <source>3 weeks</source>
+        <translation>3 veckor</translation>
+    </message>
+    <message>
+        <source>1 month</source>
+        <translation>1 månad</translation>
+    </message>
+    <message>
+        <source>Never</source>
+        <translation>Aldrig</translation>
+    </message>
+    <message>
+        <source>Connection timed out.</source>
+        <translation type="obsolete">Tidsgräns för anslutningen överstegs.</translation>
+    </message>
+    <message>
+        <source>Could not locate the latest version list on the server (response: %1).</source>
+        <translation type="obsolete">Kunde inte hitta den senaste versionslistan på servern (svar: %1).</translation>
+    </message>
+    <message>
+        <source>Chec&amp;k</source>
+        <translation type="obsolete">&amp;Kontrollera</translation>
+    </message>
+    <message>
+        <source>&amp;Close</source>
+        <translation type="obsolete">S&amp;täng</translation>
+    </message>
+    <message>
+        <source>VirtualBox Update Wizard</source>
+        <translation type="obsolete">Uppdateringsguide för VirtualBox</translation>
+    </message>
+    <message>
+        <source>Check for Updates</source>
+        <translation type="obsolete">Leta efter uppdateringar</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;This wizard will connect to the VirtualBox web-site and check if a newer version of VirtualBox is available.&lt;/p&gt;
+&lt;p&gt;Use the &lt;b&gt;Check&lt;/b&gt; button to check for a new version now or the &lt;b&gt;Cancel&lt;/b&gt; button if you do not want to perform this check.&lt;/p&gt;
+&lt;p&gt;You can run this wizard at any time by choosing &lt;b&gt;Check for Updates...&lt;/b&gt; from the &lt;b&gt;Help&lt;/b&gt; menu.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Denna guide kommer att ansluta till VirtualBox webbplats och kontrollera om det finns en nyare version av VirtualBox tillgänglig.&lt;/p&gt;
+&lt;p&gt;Använd knappen &lt;b&gt;Kontrollera&lt;/b&gt; för att kontrollera om det finns en nyare version nu eller &lt;b&gt;Avbryt&lt;/b&gt; om du inte vill genomföra denna kontroll.&lt;/p&gt;
+&lt;p&gt;Du kan köra denna guide när som helst genom att välja &lt;b&gt;Leta efter uppdateringar...&lt;/b&gt; från menyn &lt;b&gt;Hjälp&lt;/b&gt;.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Cancel</source>
+        <translation type="obsolete">Avbryt</translation>
+    </message>
+    <message>
+        <source>Summary</source>
+        <translation type="obsolete">Sammandrag</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;A new version of VirtualBox has been released! Version &lt;b&gt;%1&lt;/b&gt; is available at &lt;a href=&quot;http://www.virtualbox.org/&quot;&gt;virtualbox.org&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;You can download this version using the link:&lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;En ny version av VirtualBox har släppts! Version &lt;b&gt;%1&lt;/b&gt; finns tillgänglig på &lt;a href=&quot;http://www.virtualbox.org/&quot;&gt;virtualbox.org&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;Du kan hämta ner denna version från denna direktlänk:&lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Unable to obtain the new version information due to the following network error:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Kunde inte hämta information om ny version på grund av följande nätverksfel:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>You are already running the most recent version of VirtualBox.</source>
+        <translation type="obsolete">Du har redan installerat den senaste versionen av VirtualBox. Repetera denna versionskontroll vid ett senare tillfälle.</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;This wizard will connect to the VirtualBox web-site and check if a newer version of VirtualBox is available.&lt;/p&gt;&lt;p&gt;Use the &lt;b&gt;Check&lt;/b&gt; button to check for a new version now or the &lt;b&gt;Cancel&lt;/b&gt; button if you do not want to perform this check.&lt;/p&gt;&lt;p&gt;You can run this wizard at any time by choosing &lt;b&gt;Check for Updates...&lt;/b&gt; from the &lt;b&gt;Help&lt;/b&gt; menu.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Denna guide kommer att ansluta till VirtualBox webbplats och kontrollera om en nyare version av VirtualBox finns tillgänglig.&lt;/p&gt;&lt;p&gt;Använd knappen &lt;b&gt;Kontrollera&lt;/b&gt; för att leta efter en ny version nu eller knappen &lt;b&gt;Avbryt&lt;/b&gt; om du inte vill genomföra denna kontroll.&lt;/p&gt;&lt;p&gt;Du kan köra denna guide när som helst genom att välja &lt;b&gt;Leta efter uppdateringar...&lt;/b&gt; från menyn &lt;b&gt;Hjälp&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
@@ -10928,109 +11091,6 @@ Version %1</translation>
         <source>No supported devices connected to the host PC</source>
         <comment>USB device tooltip</comment>
         <translation>Inga enheter som stöds är anslutna till värdmaskinen</translation>
-    </message>
-</context>
-<context>
-    <name>UIUpdateManager</name>
-    <message>
-        <source>1 day</source>
-        <translation>1 dag</translation>
-    </message>
-    <message>
-        <source>2 days</source>
-        <translation>2 dagar</translation>
-    </message>
-    <message>
-        <source>3 days</source>
-        <translation>3 dagar</translation>
-    </message>
-    <message>
-        <source>4 days</source>
-        <translation>4 dagar</translation>
-    </message>
-    <message>
-        <source>5 days</source>
-        <translation>5 dagar</translation>
-    </message>
-    <message>
-        <source>6 days</source>
-        <translation>6 dagar</translation>
-    </message>
-    <message>
-        <source>1 week</source>
-        <translation>1 vecka</translation>
-    </message>
-    <message>
-        <source>2 weeks</source>
-        <translation>2 veckor</translation>
-    </message>
-    <message>
-        <source>3 weeks</source>
-        <translation>3 veckor</translation>
-    </message>
-    <message>
-        <source>1 month</source>
-        <translation>1 månad</translation>
-    </message>
-    <message>
-        <source>Never</source>
-        <translation>Aldrig</translation>
-    </message>
-    <message>
-        <source>Connection timed out.</source>
-        <translation type="obsolete">Tidsgräns för anslutningen överstegs.</translation>
-    </message>
-    <message>
-        <source>Could not locate the latest version list on the server (response: %1).</source>
-        <translation type="obsolete">Kunde inte hitta den senaste versionslistan på servern (svar: %1).</translation>
-    </message>
-    <message>
-        <source>Chec&amp;k</source>
-        <translation>&amp;Kontrollera</translation>
-    </message>
-    <message>
-        <source>&amp;Close</source>
-        <translation>S&amp;täng</translation>
-    </message>
-    <message>
-        <source>VirtualBox Update Wizard</source>
-        <translation>Uppdateringsguide för VirtualBox</translation>
-    </message>
-    <message>
-        <source>Check for Updates</source>
-        <translation>Leta efter uppdateringar</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;This wizard will connect to the VirtualBox web-site and check if a newer version of VirtualBox is available.&lt;/p&gt;
-&lt;p&gt;Use the &lt;b&gt;Check&lt;/b&gt; button to check for a new version now or the &lt;b&gt;Cancel&lt;/b&gt; button if you do not want to perform this check.&lt;/p&gt;
-&lt;p&gt;You can run this wizard at any time by choosing &lt;b&gt;Check for Updates...&lt;/b&gt; from the &lt;b&gt;Help&lt;/b&gt; menu.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Denna guide kommer att ansluta till VirtualBox webbplats och kontrollera om det finns en nyare version av VirtualBox tillgänglig.&lt;/p&gt;
-&lt;p&gt;Använd knappen &lt;b&gt;Kontrollera&lt;/b&gt; för att kontrollera om det finns en nyare version nu eller &lt;b&gt;Avbryt&lt;/b&gt; om du inte vill genomföra denna kontroll.&lt;/p&gt;
-&lt;p&gt;Du kan köra denna guide när som helst genom att välja &lt;b&gt;Leta efter uppdateringar...&lt;/b&gt; från menyn &lt;b&gt;Hjälp&lt;/b&gt;.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Cancel</source>
-        <translation>Avbryt</translation>
-    </message>
-    <message>
-        <source>Summary</source>
-        <translation>Sammandrag</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;A new version of VirtualBox has been released! Version &lt;b&gt;%1&lt;/b&gt; is available at &lt;a href=&quot;http://www.virtualbox.org/&quot;&gt;virtualbox.org&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;You can download this version using the link:&lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</source>
-        <translation>&lt;p&gt;En ny version av VirtualBox har släppts! Version &lt;b&gt;%1&lt;/b&gt; finns tillgänglig på &lt;a href=&quot;http://www.virtualbox.org/&quot;&gt;virtualbox.org&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;Du kan hämta ner denna version från denna direktlänk:&lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Unable to obtain the new version information due to the following network error:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Kunde inte hämta information om ny version på grund av följande nätverksfel:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>You are already running the most recent version of VirtualBox.</source>
-        <translation>Du har redan installerat den senaste versionen av VirtualBox. Repetera denna versionskontroll vid ett senare tillfälle.</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;This wizard will connect to the VirtualBox web-site and check if a newer version of VirtualBox is available.&lt;/p&gt;&lt;p&gt;Use the &lt;b&gt;Check&lt;/b&gt; button to check for a new version now or the &lt;b&gt;Cancel&lt;/b&gt; button if you do not want to perform this check.&lt;/p&gt;&lt;p&gt;You can run this wizard at any time by choosing &lt;b&gt;Check for Updates...&lt;/b&gt; from the &lt;b&gt;Help&lt;/b&gt; menu.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Denna guide kommer att ansluta till VirtualBox webbplats och kontrollera om en nyare version av VirtualBox finns tillgänglig.&lt;/p&gt;&lt;p&gt;Använd knappen &lt;b&gt;Kontrollera&lt;/b&gt; för att leta efter en ny version nu eller knappen &lt;b&gt;Avbryt&lt;/b&gt; om du inte vill genomföra denna kontroll.&lt;/p&gt;&lt;p&gt;Du kan köra denna guide när som helst genom att välja &lt;b&gt;Leta efter uppdateringar...&lt;/b&gt; från menyn &lt;b&gt;Hjälp&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
 </context>
 <context>

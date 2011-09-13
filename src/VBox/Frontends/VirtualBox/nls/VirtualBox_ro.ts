@@ -1171,6 +1171,13 @@
     </message>
 </context>
 <context>
+    <name>UIDownloaderExtensionPack</name>
+    <message>
+        <source>Select folder to save %1 to</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>UIDownloaderUserManual</name>
     <message>
         <source>Select folder to save User Manual to</source>
@@ -5861,6 +5868,36 @@ Acest director este folosit, dacă nu este explicit specificat altfel, atunci c�
         <source>&lt;p&gt;Failed to save the downloaded file as &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>&lt;p&gt;You have an old version (%1) of the &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt; installed.&lt;/p&gt;&lt;p&gt;Do you wish to download latest one from the Internet?&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Download</source>
+        <comment>extension pack</comment>
+        <translation type="unfinished">Descarcă</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Are you sure you want to download the &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; from &lt;nobr&gt;&lt;a href=&quot;%2&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; (size %3 bytes)?&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%2&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; and saved locally as &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to install this extension pack?&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Install</source>
+        <comment>extension pack</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%2&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; but can&apos;t be saved locally as &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Please choose another location for that file.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Failed to download the &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; from &lt;nobr&gt;&lt;a href=&quot;%2&quot;&gt;%2&lt;/a&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;%3&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UIMiniProcessWidgetAdditions</name>
@@ -5904,6 +5941,17 @@ Acest director este folosit, dacă nu este explicit specificat altfel, atunci c�
     </message>
     <message>
         <source>Downloading the VirtualBox Guest Additions CD image from &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIMiniProgressWidgetExtension</name>
+    <message>
+        <source>Cancel the &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; download</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Downloading the &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; from &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;...&lt;/nobr&gt;</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -6289,6 +6337,18 @@ time depending on the image size and the write performance of your harddisk.&lt;
     <message>
         <source>Details</source>
         <comment>summary</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>H&amp;DD (Parallels Hard Disk)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Q&amp;ED (QEMU enhanced disk)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;QCOW (QEMU Copy-On-Write)</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -7022,6 +7082,142 @@ din listă apăsând butonul &lt;b&gt;Existent&lt;/b&gt; (pentru a invoca dialog
     <message>
         <source>Select a file to open...</source>
         <translation>Selectați un fișier pe care să-l deschid...</translation>
+    </message>
+</context>
+<context>
+    <name>UIUpdateManager</name>
+    <message>
+        <source>1 day</source>
+        <translation>1 zi</translation>
+    </message>
+    <message>
+        <source>2 days</source>
+        <translation>2 zile</translation>
+    </message>
+    <message>
+        <source>3 days</source>
+        <translation>3 zile</translation>
+    </message>
+    <message>
+        <source>4 days</source>
+        <translation>4 zile</translation>
+    </message>
+    <message>
+        <source>5 days</source>
+        <translation>5 zile</translation>
+    </message>
+    <message>
+        <source>6 days</source>
+        <translation>6 zile</translation>
+    </message>
+    <message>
+        <source>1 week</source>
+        <translation>1 săptămână</translation>
+    </message>
+    <message>
+        <source>2 weeks</source>
+        <translation>2 săptămâni</translation>
+    </message>
+    <message>
+        <source>3 weeks</source>
+        <translation>3 săptămâni</translation>
+    </message>
+    <message>
+        <source>1 month</source>
+        <translation>1 lună</translation>
+    </message>
+    <message>
+        <source>Never</source>
+        <translation>Niciodată</translation>
+    </message>
+    <message>
+        <source>Connection timed out.</source>
+        <translation type="obsolete">Conexiunea a expirat.</translation>
+    </message>
+    <message>
+        <source>Could not locate the latest version list on the server (response: %1).</source>
+        <translation type="obsolete">Nu am putut localiza ultima versiune pe server (răspuns: %1).</translation>
+    </message>
+    <message>
+        <source>VirtualBox New Version Notifier</source>
+        <translation type="obsolete">Agent versiune nouă VirtualBox</translation>
+    </message>
+    <message>
+        <source>Check for a new version</source>
+        <translation type="obsolete">Caută o versiune mai nouă</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;VirtualBox can check the latest version available for downloading. Will you let VirtualBox to do this now?&lt;/p&gt;&lt;p&gt;You can make VirtualBox look for the newer version now by pressing &lt;b&gt;Check&lt;/b&gt; button or postpone it for then next time by pressing &lt;b&gt;Cancel&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;You can run VirtualBox New Version Notifier anytime from the application Help menu by activating &lt;b&gt;&apos;Check for a new version...&apos;&lt;/b&gt; action.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;VirtualBox poate verifica după ultima versiune disponibilă spre descărcare. Doriți ca VirtualBox să facă asta acum?&lt;/p&gt;&lt;/p&gt;Puteți face asta apăsând butonul &lt;b&gt;Verifică&lt;/b&gt; sau puteți amâna acțiunea pentru data viitoare, apăsând &lt;b&gt;Revocare&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Puteți rula Agentul versiune nouă VirtualBox oricând, din meniul Ajutor al aplicației prin acțiunea &lt;b&gt;&apos;Caută o versiune nouă...&apos;&lt;/b&gt;.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Chec&amp;k</source>
+        <translation type="obsolete">&amp;Verifică</translation>
+    </message>
+    <message>
+        <source>&amp;Cancel</source>
+        <translation type="obsolete">&amp;Revocare</translation>
+    </message>
+    <message>
+        <source>Check Results</source>
+        <translation type="obsolete">Rezultate căutare</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;New VirtualBox %1 version available to download from:&lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Noul VirtualBox versiunea %1 este disponibil pentru descărcare la:&lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Unable to obtain new version information due to network error:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Nu am putut obține informații despre ultima versiune, datorită unei erori din rețea:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>You are already running the most recent version of VirtualBox.version, there is no newer version currently available.</source>
+        <translation type="obsolete">Aveți instalată ultima versiune a VirtualBox, momentan nu există o versiune mai nouă.</translation>
+    </message>
+    <message>
+        <source>&amp;Close</source>
+        <translation type="obsolete">În&amp;chide</translation>
+    </message>
+    <message>
+        <source>VirtualBox Update Wizard</source>
+        <translation type="obsolete">Asistent actualizare VirtualBox</translation>
+    </message>
+    <message>
+        <source>Check for Updates</source>
+        <translation type="obsolete">Verifică după actualizări</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;This wizard will connect to the VirtualBox web-site and check if a newer version of VirtualBox is available.&lt;/p&gt;
+&lt;p&gt;Use the &lt;b&gt;Check&lt;/b&gt; button to check for a new version now or the &lt;b&gt;Cancel&lt;/b&gt; button if you do not want to perform this check.&lt;/p&gt;
+&lt;p&gt;You can run this wizard at any time by choosing &lt;b&gt;Check for Updates...&lt;/b&gt; from the &lt;b&gt;Help&lt;/b&gt; menu.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Acest asistent se va conecta la site-ul VirtualBox și va verifica dacă o versiune mai nouă este disponibilă.&lt;/p&gt;
+&lt;p&gt;Folosiți butonul &lt;b&gt;Verifică&lt;/b&gt; pentru a verifica aacum dacă există o nouă versiune, sau butonul &lt;b&gt;Renunță&lt;/b&gt; dacă nu doriți să faceți această verificare.&lt;/p&gt;
+&lt;p&gt;Puteți rula acest asistent oricând alegănd din meniul &lt;b&gt;Ajutor&lt;/b&gt; comanda &lt;b&gt;Verifică după actualizări...&lt;/b&gt;&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Cancel</source>
+        <translation type="obsolete">Renunță</translation>
+    </message>
+    <message>
+        <source>Summary</source>
+        <translation type="obsolete">Rezumat</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;A new version of VirtualBox has been released! Version &lt;b&gt;%1&lt;/b&gt; is available at &lt;a href=&quot;http://www.virtualbox.org/&quot;&gt;virtualbox.org&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;You can download this version using the link:&lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;O versiune mai nouă a VirtualBox a fost lansată! Versiunea &lt;b&gt;%1&lt;/b&gt; este disponibilă la &lt;a href=&quot;http://www.virtualbox.org/&quot;&gt;virtualbox.org&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;Puteți descărca această versiune direct de la:&lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Unable to obtain the new version information due to the following network error:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Nu am putut obține informații despre ultima versiune datorită unei erori din rețea:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>You are already running the most recent version of VirtualBox.</source>
+        <translation type="obsolete">Aveți instalată ultima versiune a VirtualBox. Vă rog repetați verificarea actualizărilor mai târziu.</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;This wizard will connect to the VirtualBox web-site and check if a newer version of VirtualBox is available.&lt;/p&gt;&lt;p&gt;Use the &lt;b&gt;Check&lt;/b&gt; button to check for a new version now or the &lt;b&gt;Cancel&lt;/b&gt; button if you do not want to perform this check.&lt;/p&gt;&lt;p&gt;You can run this wizard at any time by choosing &lt;b&gt;Check for Updates...&lt;/b&gt; from the &lt;b&gt;Help&lt;/b&gt; menu.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Acest asistent se va conecta la site-ul VirtualBox și va verifica dacă o versiune mai nouă este disponibilă.&lt;/p&gt;&lt;p&gt;Folosiți butonul &lt;b&gt;Verifică&lt;/b&gt; pentru a verifica acum dacă există o nouă versiune, sau butonul &lt;b&gt;Renunță&lt;/b&gt; dacă nu doriți să faceți această verificare.&lt;/p&gt;
+&lt;p&gt;Puteți rula acest asistent oricând alegănd din meniul &lt;b&gt;Ajutor&lt;/b&gt; comanda &lt;b&gt;Verifică după actualizări...&lt;/b&gt;&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
@@ -12311,142 +12507,6 @@ value.&lt;/qt&gt;</source>
         <source>No supported devices connected to the host PC</source>
         <comment>USB device tooltip</comment>
         <translation>Nici un dispozitiv suportat nu este conectat la PC gazdă</translation>
-    </message>
-</context>
-<context>
-    <name>UIUpdateManager</name>
-    <message>
-        <source>1 day</source>
-        <translation>1 zi</translation>
-    </message>
-    <message>
-        <source>2 days</source>
-        <translation>2 zile</translation>
-    </message>
-    <message>
-        <source>3 days</source>
-        <translation>3 zile</translation>
-    </message>
-    <message>
-        <source>4 days</source>
-        <translation>4 zile</translation>
-    </message>
-    <message>
-        <source>5 days</source>
-        <translation>5 zile</translation>
-    </message>
-    <message>
-        <source>6 days</source>
-        <translation>6 zile</translation>
-    </message>
-    <message>
-        <source>1 week</source>
-        <translation>1 săptămână</translation>
-    </message>
-    <message>
-        <source>2 weeks</source>
-        <translation>2 săptămâni</translation>
-    </message>
-    <message>
-        <source>3 weeks</source>
-        <translation>3 săptămâni</translation>
-    </message>
-    <message>
-        <source>1 month</source>
-        <translation>1 lună</translation>
-    </message>
-    <message>
-        <source>Never</source>
-        <translation>Niciodată</translation>
-    </message>
-    <message>
-        <source>Connection timed out.</source>
-        <translation type="obsolete">Conexiunea a expirat.</translation>
-    </message>
-    <message>
-        <source>Could not locate the latest version list on the server (response: %1).</source>
-        <translation type="obsolete">Nu am putut localiza ultima versiune pe server (răspuns: %1).</translation>
-    </message>
-    <message>
-        <source>VirtualBox New Version Notifier</source>
-        <translation type="obsolete">Agent versiune nouă VirtualBox</translation>
-    </message>
-    <message>
-        <source>Check for a new version</source>
-        <translation type="obsolete">Caută o versiune mai nouă</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;VirtualBox can check the latest version available for downloading. Will you let VirtualBox to do this now?&lt;/p&gt;&lt;p&gt;You can make VirtualBox look for the newer version now by pressing &lt;b&gt;Check&lt;/b&gt; button or postpone it for then next time by pressing &lt;b&gt;Cancel&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;You can run VirtualBox New Version Notifier anytime from the application Help menu by activating &lt;b&gt;&apos;Check for a new version...&apos;&lt;/b&gt; action.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;VirtualBox poate verifica după ultima versiune disponibilă spre descărcare. Doriți ca VirtualBox să facă asta acum?&lt;/p&gt;&lt;/p&gt;Puteți face asta apăsând butonul &lt;b&gt;Verifică&lt;/b&gt; sau puteți amâna acțiunea pentru data viitoare, apăsând &lt;b&gt;Revocare&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Puteți rula Agentul versiune nouă VirtualBox oricând, din meniul Ajutor al aplicației prin acțiunea &lt;b&gt;&apos;Caută o versiune nouă...&apos;&lt;/b&gt;.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Chec&amp;k</source>
-        <translation>&amp;Verifică</translation>
-    </message>
-    <message>
-        <source>&amp;Cancel</source>
-        <translation type="obsolete">&amp;Revocare</translation>
-    </message>
-    <message>
-        <source>Check Results</source>
-        <translation type="obsolete">Rezultate căutare</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;New VirtualBox %1 version available to download from:&lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Noul VirtualBox versiunea %1 este disponibil pentru descărcare la:&lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Unable to obtain new version information due to network error:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Nu am putut obține informații despre ultima versiune, datorită unei erori din rețea:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>You are already running the most recent version of VirtualBox.version, there is no newer version currently available.</source>
-        <translation type="obsolete">Aveți instalată ultima versiune a VirtualBox, momentan nu există o versiune mai nouă.</translation>
-    </message>
-    <message>
-        <source>&amp;Close</source>
-        <translation>În&amp;chide</translation>
-    </message>
-    <message>
-        <source>VirtualBox Update Wizard</source>
-        <translation>Asistent actualizare VirtualBox</translation>
-    </message>
-    <message>
-        <source>Check for Updates</source>
-        <translation>Verifică după actualizări</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;This wizard will connect to the VirtualBox web-site and check if a newer version of VirtualBox is available.&lt;/p&gt;
-&lt;p&gt;Use the &lt;b&gt;Check&lt;/b&gt; button to check for a new version now or the &lt;b&gt;Cancel&lt;/b&gt; button if you do not want to perform this check.&lt;/p&gt;
-&lt;p&gt;You can run this wizard at any time by choosing &lt;b&gt;Check for Updates...&lt;/b&gt; from the &lt;b&gt;Help&lt;/b&gt; menu.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Acest asistent se va conecta la site-ul VirtualBox și va verifica dacă o versiune mai nouă este disponibilă.&lt;/p&gt;
-&lt;p&gt;Folosiți butonul &lt;b&gt;Verifică&lt;/b&gt; pentru a verifica aacum dacă există o nouă versiune, sau butonul &lt;b&gt;Renunță&lt;/b&gt; dacă nu doriți să faceți această verificare.&lt;/p&gt;
-&lt;p&gt;Puteți rula acest asistent oricând alegănd din meniul &lt;b&gt;Ajutor&lt;/b&gt; comanda &lt;b&gt;Verifică după actualizări...&lt;/b&gt;&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Cancel</source>
-        <translation>Renunță</translation>
-    </message>
-    <message>
-        <source>Summary</source>
-        <translation>Rezumat</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;A new version of VirtualBox has been released! Version &lt;b&gt;%1&lt;/b&gt; is available at &lt;a href=&quot;http://www.virtualbox.org/&quot;&gt;virtualbox.org&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;You can download this version using the link:&lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</source>
-        <translation>&lt;p&gt;O versiune mai nouă a VirtualBox a fost lansată! Versiunea &lt;b&gt;%1&lt;/b&gt; este disponibilă la &lt;a href=&quot;http://www.virtualbox.org/&quot;&gt;virtualbox.org&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;Puteți descărca această versiune direct de la:&lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Unable to obtain the new version information due to the following network error:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Nu am putut obține informații despre ultima versiune datorită unei erori din rețea:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>You are already running the most recent version of VirtualBox.</source>
-        <translation>Aveți instalată ultima versiune a VirtualBox. Vă rog repetați verificarea actualizărilor mai târziu.</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;This wizard will connect to the VirtualBox web-site and check if a newer version of VirtualBox is available.&lt;/p&gt;&lt;p&gt;Use the &lt;b&gt;Check&lt;/b&gt; button to check for a new version now or the &lt;b&gt;Cancel&lt;/b&gt; button if you do not want to perform this check.&lt;/p&gt;&lt;p&gt;You can run this wizard at any time by choosing &lt;b&gt;Check for Updates...&lt;/b&gt; from the &lt;b&gt;Help&lt;/b&gt; menu.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Acest asistent se va conecta la site-ul VirtualBox și va verifica dacă o versiune mai nouă este disponibilă.&lt;/p&gt;&lt;p&gt;Folosiți butonul &lt;b&gt;Verifică&lt;/b&gt; pentru a verifica acum dacă există o nouă versiune, sau butonul &lt;b&gt;Renunță&lt;/b&gt; dacă nu doriți să faceți această verificare.&lt;/p&gt;
-&lt;p&gt;Puteți rula acest asistent oricând alegănd din meniul &lt;b&gt;Ajutor&lt;/b&gt; comanda &lt;b&gt;Verifică după actualizări...&lt;/b&gt;&lt;/p&gt;</translation>
     </message>
 </context>
 <context>

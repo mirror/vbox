@@ -1210,10 +1210,17 @@
     </message>
 </context>
 <context>
+    <name>UIDownloaderExtensionPack</name>
+    <message>
+        <source>Select folder to save %1 to</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>UIDownloaderUserManual</name>
     <message>
         <source>Select folder to save User Manual to</source>
-        <translation>Seleccioneu la carpeta on s'alçarà el manual de l&apos;usuari</translation>
+        <translation>Seleccioneu la carpeta on s&apos;alçarà el manual de l&apos;usuari</translation>
     </message>
 </context>
 <context>
@@ -2814,7 +2821,7 @@ p, li { white-space: pre-wrap; }
     <name>UIMachineSettingsAudio</name>
     <message>
         <source>When checked, a virtual PCI audio card will be plugged into the virtual machine and will communicate with the host audio system using the specified driver.</source>
-        <translation>Quan estiga marcat, la tarjeta de so PCI virtual es connectarà a dins de la màquina virtual, la qual farà servir un controlador específic per comunicar-s'amb la tarjeta de so de l&apos;amfitrió.</translation>
+        <translation>Quan estiga marcat, la tarjeta de so PCI virtual es connectarà a dins de la màquina virtual, la qual farà servir un controlador específic per comunicar-s&apos;amb la tarjeta de so de l&apos;amfitrió.</translation>
     </message>
     <message>
         <source>Enable &amp;Audio</source>
@@ -2826,7 +2833,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Controls the audio output driver. The &lt;b&gt;Null Audio Driver&lt;/b&gt; makes the guest see an audio card, however every access to it will be ignored.</source>
-        <translation>Gestiona el controlador d'eixida de so. El &lt;b&gt;controlador d&apos;àudio Nul&lt;/b&gt; fa que el client veja una tarjeta de so, però l&apos;accés a ella s&apos;ignorarà.</translation>
+        <translation>Gestiona el controlador d&apos;eixida de so. El &lt;b&gt;controlador d&apos;àudio Nul&lt;/b&gt; fa que el client veja una tarjeta de so, però l&apos;accés a ella s&apos;ignorarà.</translation>
     </message>
     <message>
         <source>Audio &amp;Controller:</source>
@@ -2881,7 +2888,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>When checked, the VM will act as a Remote Desktop Protocol (RDP) server, allowing remote clients to connect and operate the VM (when it is running) using a standard RDP client.</source>
-        <translation>Quan estiga marcat, la màquina virtual actuarà com un servidor RDP (protocol d&apos;escriptori remot), de forma que es permetrà a clients remots connectar-s'i operar amb la màquina virtual (quan estiga en execució) fent servir un client estàndard RDP.</translation>
+        <translation>Quan estiga marcat, la màquina virtual actuarà com un servidor RDP (protocol d&apos;escriptori remot), de forma que es permetrà a clients remots connectar-s&apos;i operar amb la màquina virtual (quan estiga en execució) fent servir un client estàndard RDP.</translation>
     </message>
     <message>
         <source>&amp;Enable Server</source>
@@ -2980,7 +2987,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Displays the path where snapshots of this virtual machine will be stored. Be aware that snapshots can take quite a lot of disk space.</source>
-        <translation>Mostra el camí on les captures d&apos;esta màquina virtual s'alçaran. Tingueu en compte que les captures poden ocupar prou quantitat d&apos;espai al disc dur.</translation>
+        <translation>Mostra el camí on les captures d&apos;esta màquina virtual s&apos;alçaran. Tingueu en compte que les captures poden ocupar prou quantitat d&apos;espai al disc dur.</translation>
     </message>
     <message>
         <source>&amp;Basic</source>
@@ -3144,7 +3151,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>If checked, any change to mounted CD/DVD or Floppy media performed during machine execution will be saved in the settings file in order to preserve the configuration of mounted media between runs.</source>
-        <translation>Si està marcat, qualsevol canvi al CD/DVD o disquet muntat s'alçarà al fitxer de configuració per tal de preservar la configuració dels suports muntats entre cada execució de la màquina virtual.</translation>
+        <translation>Si està marcat, qualsevol canvi al CD/DVD o disquet muntat s&apos;alçarà al fitxer de configuració per tal de preservar la configuració dels suports muntats entre cada execució de la màquina virtual.</translation>
     </message>
     <message>
         <source>&amp;Remember Mounted Media</source>
@@ -3196,7 +3203,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>If checked, show the Mini ToolBar at the top of the screen, rather than in its default position at the bottom of the screen.</source>
-        <translation>Si està marcat, mostra una barra d&apos;eines petita a la part de dalt de la pantalla en lloc d'a la posició per defecte a la part de sota.</translation>
+        <translation>Si està marcat, mostra una barra d&apos;eines petita a la part de dalt de la pantalla en lloc d&apos;a la posició per defecte a la part de sota.</translation>
     </message>
     <message>
         <source>Show At &amp;Top Of Screen</source>
@@ -3947,7 +3954,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>If checked, shows the differencing hard disks that are attached to slots rather than their base hard disks (shown for indirect attachments) and allows explicit attaching of differencing hard disks. Check this only if you need a complex hard disk setup.</source>
-        <translation type="obsolete">Si està marcat, mostrarà de forma diferenciada els discos durs connectats a les ranures en lloc d'als discos durs base (mostrat en cas d&apos;adjuncions indirectes), a més permetrà connectar altres discos durs explícitament. Marqueu això només si necessiteu una configuració complexa del disc dur.</translation>
+        <translation type="obsolete">Si està marcat, mostrarà de forma diferenciada els discos durs connectats a les ranures en lloc d&apos;als discos durs base (mostrat en cas d&apos;adjuncions indirectes), a més permetrà connectar altres discos durs explícitament. Marqueu això només si necessiteu una configuració complexa del disc dur.</translation>
     </message>
     <message>
         <source>&amp;Show Differencing Hard Disks</source>
@@ -5121,7 +5128,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;The Virtual Machine reports that the guest OS supports &lt;b&gt;mouse pointer integration&lt;/b&gt;. This means that you do not need to &lt;i&gt;capture&lt;/i&gt; the mouse pointer to be able to use it in your guest OS -- all mouse actions you perform when the mouse pointer is over the Virtual Machine&apos;s display are directly sent to the guest OS. If the mouse is currently captured, it will be automatically uncaptured.&lt;/p&gt;&lt;p&gt;The mouse icon on the status bar will look like&amp;nbsp;&lt;img src=mouse_seamless_16px.png/&gt;&amp;nbsp;to inform you that mouse pointer integration is supported by the guest OS and is currently turned on.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note&lt;/b&gt;: Some applications may behave incorrectly in mouse pointer integration mode. You can always disable it for the current session (and enable it again) by selecting the corresponding action from the menu bar.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;La Màquina Virtual ha informat que el sistema client suporta &lt;b&gt;integració del punter del ratolí&lt;/b&gt;. Això significa que no necessiteu &lt;i&gt;capturar&lt;/i&gt; el punter del ratolí per poder fer-lo servir al sistema client -- totes les accions que executeu quan el punter del ratolí estiga a sobre de la Màquina virtual s&apos;enviaran directament al sistema client. Si es captura el ratolí, automàticament es tornarà al mode normal.&lt;/p&gt;&lt;p&gt;La icona del ratolí a la barra d&apos;estat es mostrarà com&amp;nbsp;&lt;img src=mouse_seamless_16px.png/&gt;&amp;nbsp;per informar-vos que la integració del punter està suportada pel sistema client que està actiu.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Nota&lt;/b&gt;: Algunes aplicacions poden comportar-s'incorrectament treballant en el mode d&apos;integració del ratolí. Sempre podeu inhabilitar-ho a la sessió actual (o habilitar-ho) seleccionat l&apos;opció corresponent a la barra de menú.&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;La Màquina Virtual ha informat que el sistema client suporta &lt;b&gt;integració del punter del ratolí&lt;/b&gt;. Això significa que no necessiteu &lt;i&gt;capturar&lt;/i&gt; el punter del ratolí per poder fer-lo servir al sistema client -- totes les accions que executeu quan el punter del ratolí estiga a sobre de la Màquina virtual s&apos;enviaran directament al sistema client. Si es captura el ratolí, automàticament es tornarà al mode normal.&lt;/p&gt;&lt;p&gt;La icona del ratolí a la barra d&apos;estat es mostrarà com&amp;nbsp;&lt;img src=mouse_seamless_16px.png/&gt;&amp;nbsp;per informar-vos que la integració del punter està suportada pel sistema client que està actiu.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Nota&lt;/b&gt;: Algunes aplicacions poden comportar-s&apos;incorrectament treballant en el mode d&apos;integració del ratolí. Sempre podeu inhabilitar-ho a la sessió actual (o habilitar-ho) seleccionat l&apos;opció corresponent a la barra de menú.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;The virtual machine window is optimized to work in &lt;b&gt;%1&amp;nbsp;bit&lt;/b&gt; color mode but the virtual display is currently set to &lt;b&gt;%2&amp;nbsp;bit&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Please open the display properties dialog of the guest OS and select a &lt;b&gt;%3&amp;nbsp;bit&lt;/b&gt; color mode, if it is available, for best possible performance of the virtual video subsystem.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note&lt;/b&gt;. Some operating systems, like OS/2, may actually work in 32&amp;nbsp;bit mode but report it as 24&amp;nbsp;bit (16 million colors). You may try to select a different color mode to see if this message disappears or you can simply disable the message now if you are sure the required color mode (%4&amp;nbsp;bit) is not available in the guest OS.&lt;/p&gt;</source>
@@ -5300,7 +5307,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;The following VirtualBox settings files have been automatically converted to the new settings file format version &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;However, the results of the conversion were not saved back to disk yet. Please press:&lt;/p&gt;&lt;ul&gt;&lt;li&gt;&lt;b&gt;Save&lt;/b&gt; to save all auto-converted files now (it will not be possible to use these settings files with an older version of VirtualBox in the future);&lt;/li&gt;&lt;li&gt;&lt;b&gt;Backup&lt;/b&gt; to create backup copies of the settings files in the old format before saving them in the new format;&lt;/li&gt;&lt;li&gt;&lt;b&gt;Cancel&lt;/b&gt; to not save the auto-converted settings files now.&lt;li&gt;&lt;/ul&gt;&lt;p&gt;Note that if you select &lt;b&gt;Cancel&lt;/b&gt;, the auto-converted settings files will be implicitly saved in the new format anyway once you change a setting or start a virtual machine, but &lt;b&gt;no&lt;/b&gt; backup copies will be created in this case.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Els següents fitxers de paràmetres del VirtualBox s&apos;han convertit automàticament al nou format &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Tot i així, els resultats de la conversió encara no s&apos;han alçat al disc. Premeu:&lt;/p&gt;&lt;ul&gt;&lt;li&gt;&lt;b&gt;Alça&lt;/b&gt; per alçar ara els fitxers auto-convertits (ja no serà possible fer servir estos paràmetres amb una versió anterior del VirtualBox);&lt;/li&gt;&lt;li&gt;&lt;b&gt;Còpia de seguretat&lt;/b&gt; per crear una còpia de seguretat dels fitxers de paràmetres en el format antic abans d'alçar-los en el nou format;&lt;/li&gt;&lt;li&gt;&lt;b&gt;Cancel·la&lt;/b&gt; per no alçar ara els fitxers de paràmetres auto-convertits.&lt;/li&gt;&lt;/ul&gt;&lt;p&gt;Tingueu en compte que si seleccioneu &lt;b&gt;Cancel·la&lt;/b&gt;, els fitxers de paràmetres auto-convertits s'alçaran implícitament en el nou format tot i que una vegada que canvieu algun paràmetre o inicieu una màquina virtual, en canvi en este cas  &lt;b&gt;no&lt;/b&gt; es faran còpies de seguretat.&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Els següents fitxers de paràmetres del VirtualBox s&apos;han convertit automàticament al nou format &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Tot i així, els resultats de la conversió encara no s&apos;han alçat al disc. Premeu:&lt;/p&gt;&lt;ul&gt;&lt;li&gt;&lt;b&gt;Alça&lt;/b&gt; per alçar ara els fitxers auto-convertits (ja no serà possible fer servir estos paràmetres amb una versió anterior del VirtualBox);&lt;/li&gt;&lt;li&gt;&lt;b&gt;Còpia de seguretat&lt;/b&gt; per crear una còpia de seguretat dels fitxers de paràmetres en el format antic abans d&apos;alçar-los en el nou format;&lt;/li&gt;&lt;li&gt;&lt;b&gt;Cancel·la&lt;/b&gt; per no alçar ara els fitxers de paràmetres auto-convertits.&lt;/li&gt;&lt;/ul&gt;&lt;p&gt;Tingueu en compte que si seleccioneu &lt;b&gt;Cancel·la&lt;/b&gt;, els fitxers de paràmetres auto-convertits s&apos;alçaran implícitament en el nou format tot i que una vegada que canvieu algun paràmetre o inicieu una màquina virtual, en canvi en este cas  &lt;b&gt;no&lt;/b&gt; es faran còpies de seguretat.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&amp;Save</source>
@@ -5390,7 +5397,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;The Virtual Machine reports that the guest OS supports &lt;b&gt;mouse pointer integration&lt;/b&gt;. This means that you do not need to &lt;i&gt;capture&lt;/i&gt; the mouse pointer to be able to use it in your guest OS -- all mouse actions you perform when the mouse pointer is over the Virtual Machine&apos;s display are directly sent to the guest OS. If the mouse is currently captured, it will be automatically uncaptured.&lt;/p&gt;&lt;p&gt;The mouse icon on the status bar will look like&amp;nbsp;&lt;img src=:/mouse_seamless_16px.png/&gt;&amp;nbsp;to inform you that mouse pointer integration is supported by the guest OS and is currently turned on.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note&lt;/b&gt;: Some applications may behave incorrectly in mouse pointer integration mode. You can always disable it for the current session (and enable it again) by selecting the corresponding action from the menu bar.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;La Màquina Virtual ha informat que el sistema client suporta &lt;b&gt;integració del punter&lt;/b&gt;. Això significa que no necessiteu &lt;i&gt;capturar&lt;/i&gt; el punter per poder fer-lo servir al sistema client -- totes les accions que executeu quan el punter estiga a sobre de la Màquina virtual s&apos;enviaran directament al sistema client. Si es captura el punter, automàticament es tornarà al mode normal.&lt;/p&gt;&lt;p&gt;La icona del punter a la barra d&apos;estat es mostrarà com&amp;nbsp;&lt;img src=:/mouse_seamless_16px.png/&gt;&amp;nbsp;per informar-vos que la integració del punter està suportada pel sistema client que està actiu.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Nota&lt;/b&gt;: Algunes aplicacions poden comportar-s'incorrectament treballant en el mode d&apos;integració del punter. Sempre podeu inhabilitar-ho a la sessió actual (o habilitar-ho) seleccionat l&apos;opció corresponent a la barra de menú.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;La Màquina Virtual ha informat que el sistema client suporta &lt;b&gt;integració del punter&lt;/b&gt;. Això significa que no necessiteu &lt;i&gt;capturar&lt;/i&gt; el punter per poder fer-lo servir al sistema client -- totes les accions que executeu quan el punter estiga a sobre de la Màquina virtual s&apos;enviaran directament al sistema client. Si es captura el punter, automàticament es tornarà al mode normal.&lt;/p&gt;&lt;p&gt;La icona del punter a la barra d&apos;estat es mostrarà com&amp;nbsp;&lt;img src=:/mouse_seamless_16px.png/&gt;&amp;nbsp;per informar-vos que la integració del punter està suportada pel sistema client que està actiu.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Nota&lt;/b&gt;: Algunes aplicacions poden comportar-s&apos;incorrectament treballant en el mode d&apos;integració del punter. Sempre podeu inhabilitar-ho a la sessió actual (o habilitar-ho) seleccionat l&apos;opció corresponent a la barra de menú.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;fullscreen&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;. Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in fullscreen mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
@@ -5646,7 +5653,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;The following VirtualBox settings files have been automatically converted to the new settings file format version &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;However, the results of the conversion were not saved back to disk yet. Please press:&lt;/p&gt;&lt;ul&gt;&lt;li&gt;&lt;b&gt;Backup&lt;/b&gt; to create backup copies of the settings files in the old format before saving them in the new format;&lt;/li&gt;&lt;li&gt;&lt;b&gt;Overwrite&lt;/b&gt; to save all auto-converted files without creating backup copies (it will not be possible to use these settings files with an older version of VirtualBox afterwards);&lt;/li&gt;%2&lt;/ul&gt;&lt;p&gt;It is recommended to always select &lt;b&gt;Backup&lt;/b&gt; because in this case it will be possible to go back to the previous version of VirtualBox (if necessary) without losing your current settings. See the VirtualBox Manual for more information about downgrading.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Els següents fitxers de paràmetres del VirtualBox s&apos;han convertit automàticament al nou format &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Tot i així, els resultats de la conversió encara no s&apos;han alçat al disc. Premeu:&lt;/p&gt;&lt;ul&gt;&lt;li&gt;&lt;b&gt;Alça&lt;/b&gt; per alçar ara els fitxers auto-convertits (ja no serà possible fer servir estos paràmetres amb una versió anterior del VirtualBox);&lt;/li&gt;&lt;li&gt;&lt;b&gt;Còpia de seguretat&lt;/b&gt; per crear una còpia de seguretat dels fitxers de paràmetres en el format antic abans d'alçar-los en el nou format;&lt;/li&gt;&lt;li&gt;&lt;b&gt;Sobreescriu&lt;/b&gt; per alçar tots els fitxers auto-convertitts sense crear còpies de seguretat;&lt;/li&gt;%2&lt;/ul&gt;&lt;p&gt;Es recomana seleccionar en tot moment &lt;b&gt;Còpia de seguretat&lt;/b&gt; perquè sempre serà possible tornar a l&apos;estat anterior sense perdre els paràmetres de configuració actuals. Mireu el manual del VirtualBox per a més informació sobre desactualització.&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Els següents fitxers de paràmetres del VirtualBox s&apos;han convertit automàticament al nou format &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Tot i així, els resultats de la conversió encara no s&apos;han alçat al disc. Premeu:&lt;/p&gt;&lt;ul&gt;&lt;li&gt;&lt;b&gt;Alça&lt;/b&gt; per alçar ara els fitxers auto-convertits (ja no serà possible fer servir estos paràmetres amb una versió anterior del VirtualBox);&lt;/li&gt;&lt;li&gt;&lt;b&gt;Còpia de seguretat&lt;/b&gt; per crear una còpia de seguretat dels fitxers de paràmetres en el format antic abans d&apos;alçar-los en el nou format;&lt;/li&gt;&lt;li&gt;&lt;b&gt;Sobreescriu&lt;/b&gt; per alçar tots els fitxers auto-convertitts sense crear còpies de seguretat;&lt;/li&gt;%2&lt;/ul&gt;&lt;p&gt;Es recomana seleccionar en tot moment &lt;b&gt;Còpia de seguretat&lt;/b&gt; perquè sempre serà possible tornar a l&apos;estat anterior sense perdre els paràmetres de configuració actuals. Mireu el manual del VirtualBox per a més informació sobre desactualització.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;li&gt;&lt;b&gt;Exit&lt;/b&gt; to terminate VirtualBox without saving the results of the conversion to disk.&lt;/li&gt;</source>
@@ -6209,6 +6216,36 @@ p, li { white-space: pre-wrap; }
         <source>&lt;p&gt;Failed to save the downloaded file as &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;</source>
         <translation>&lt;p&gt;No s&apos;ha pogut alçar el fitxer baixat com a &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;</translation>
     </message>
+    <message>
+        <source>&lt;p&gt;You have an old version (%1) of the &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt; installed.&lt;/p&gt;&lt;p&gt;Do you wish to download latest one from the Internet?&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Download</source>
+        <comment>extension pack</comment>
+        <translation type="unfinished">Baixa</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Are you sure you want to download the &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; from &lt;nobr&gt;&lt;a href=&quot;%2&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; (size %3 bytes)?&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%2&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; and saved locally as &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to install this extension pack?&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Install</source>
+        <comment>extension pack</comment>
+        <translation type="unfinished">Instal·la</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%2&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; but can&apos;t be saved locally as &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Please choose another location for that file.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Failed to download the &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; from &lt;nobr&gt;&lt;a href=&quot;%2&quot;&gt;%2&lt;/a&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;%3&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UIMiniProcessWidgetAdditions</name>
@@ -6253,6 +6290,17 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Downloading the VirtualBox Guest Additions CD image from &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</source>
         <translation>S&apos;està baixant la imatge de CD del VirtualBox Guest Additions des de &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</translation>
+    </message>
+</context>
+<context>
+    <name>UIMiniProgressWidgetExtension</name>
+    <message>
+        <source>Cancel the &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; download</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Downloading the &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; from &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;...&lt;/nobr&gt;</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -6570,7 +6618,7 @@ l&apos;eficiència d&apos;escriptura del disc dur físic.&lt;/p&gt;</translation
     </message>
     <message>
         <source>&lt;p&gt;A &lt;b&gt;fixed size&lt;/b&gt; virtual disk file may take longer to create on some systems but is often faster to use.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Un fitxer de disc virtual de &lt;b&gt;mida fixa&lt;/b&gt; trigarà més en crear-s'en alguns sistemes, però és més ràpid de fer servir.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Un fitxer de disc virtual de &lt;b&gt;mida fixa&lt;/b&gt; trigarà més en crear-s&apos;en alguns sistemes, però és més ràpid de fer servir.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;You can also choose to &lt;b&gt;split&lt;/b&gt; the virtual disk into several files of up to two gigabytes each. This is mainly useful if you wish to store the virtual machine on removable USB devices or old systems, some of which cannot handle very large files.</source>
@@ -6633,6 +6681,18 @@ l&apos;eficiència d&apos;escriptura del disc dur físic.&lt;/p&gt;</translation
         <source>Details</source>
         <comment>summary</comment>
         <translation>Detalls</translation>
+    </message>
+    <message>
+        <source>H&amp;DD (Parallels Hard Disk)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Q&amp;ED (QEMU enhanced disk)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;QCOW (QEMU Copy-On-Write)</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -7438,6 +7498,109 @@ pas i connectar discos durs més avant, fent servir el diàleg de configuració 
     </message>
 </context>
 <context>
+    <name>UIUpdateManager</name>
+    <message>
+        <source>1 day</source>
+        <translation>1 dia</translation>
+    </message>
+    <message>
+        <source>2 days</source>
+        <translation>2 dies</translation>
+    </message>
+    <message>
+        <source>3 days</source>
+        <translation>3 dies</translation>
+    </message>
+    <message>
+        <source>4 days</source>
+        <translation>4 dies</translation>
+    </message>
+    <message>
+        <source>5 days</source>
+        <translation>5 dies</translation>
+    </message>
+    <message>
+        <source>6 days</source>
+        <translation>6 dies</translation>
+    </message>
+    <message>
+        <source>1 week</source>
+        <translation>1 setmana</translation>
+    </message>
+    <message>
+        <source>2 weeks</source>
+        <translation>2 setmanes</translation>
+    </message>
+    <message>
+        <source>3 weeks</source>
+        <translation>3 setmanes</translation>
+    </message>
+    <message>
+        <source>1 month</source>
+        <translation>1 mes</translation>
+    </message>
+    <message>
+        <source>Never</source>
+        <translation>Mai</translation>
+    </message>
+    <message>
+        <source>Connection timed out.</source>
+        <translation type="obsolete">S&apos;ha excedit el temps d&apos;espera de la connexió.</translation>
+    </message>
+    <message>
+        <source>Could not locate the latest version list on the server (response: %1).</source>
+        <translation type="obsolete">No es pot localitzar el formulari de registre al servidor (resposta: %1).</translation>
+    </message>
+    <message>
+        <source>Chec&amp;k</source>
+        <translation type="obsolete">Com&amp;prova</translation>
+    </message>
+    <message>
+        <source>&amp;Close</source>
+        <translation type="obsolete">Tan&amp;ca</translation>
+    </message>
+    <message>
+        <source>VirtualBox Update Wizard</source>
+        <translation type="obsolete">Auxiliar d&apos;acutliatzació del VirtualBox</translation>
+    </message>
+    <message>
+        <source>Check for Updates</source>
+        <translation type="obsolete">Comprova si hi ha actualitzacions</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;This wizard will connect to the VirtualBox web-site and check if a newer version of VirtualBox is available.&lt;/p&gt;
+&lt;p&gt;Use the &lt;b&gt;Check&lt;/b&gt; button to check for a new version now or the &lt;b&gt;Cancel&lt;/b&gt; button if you do not want to perform this check.&lt;/p&gt;
+&lt;p&gt;You can run this wizard at any time by choosing &lt;b&gt;Check for Updates...&lt;/b&gt; from the &lt;b&gt;Help&lt;/b&gt; menu.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Este assistent connectarà amb el lloc web del VirtualBox i comprovarà si hi ha una versió més nova de VirtualBox.&lt;/p&gt;
+&lt;p&gt;Feu servir el botó &lt;b&gt;Comprova&lt;/b&gt; per comprovar ara si hi ha noves versions o &lt;b&gt;Cancel·la&lt;/b&gt; si no voleu comprovar ara si hi ha noves versions.&lt;/p&gt;
+&lt;p&gt;Podeu iniciar este assistent en qualsevol moment seleccionant &lt;b&gt;Comprova si hi ha actualitzacions...&lt;/b&gt; al menú d&apos;&lt;b&gt;Ajuda&lt;/b&gt;.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Cancel</source>
+        <translation type="obsolete">Cancel·la</translation>
+    </message>
+    <message>
+        <source>Summary</source>
+        <translation type="obsolete">Resum</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;A new version of VirtualBox has been released! Version &lt;b&gt;%1&lt;/b&gt; is available at &lt;a href=&quot;http://www.virtualbox.org/&quot;&gt;virtualbox.org&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;You can download this version using the link:&lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;b&gt;S&apos;ha publicat una nova versió del VirtualBox! La versió &lt;b&gt;%1&lt;/b&gt; és disponible a &lt;a href=&quot;http://www.virtualbox.org/&quot;&gt;virtualbox.org&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;Podeu baixar-la directament des d&apos;este enllaç: &lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Unable to obtain the new version information due to the following network error:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;No es pot obtindre informació de noves versions degut a un problema amb la xarxa:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>You are already running the most recent version of VirtualBox.</source>
+        <translation type="obsolete">Ja teniu instal·lada la darrera versió del VirtualBox. Proveu novament més tard.</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;This wizard will connect to the VirtualBox web-site and check if a newer version of VirtualBox is available.&lt;/p&gt;&lt;p&gt;Use the &lt;b&gt;Check&lt;/b&gt; button to check for a new version now or the &lt;b&gt;Cancel&lt;/b&gt; button if you do not want to perform this check.&lt;/p&gt;&lt;p&gt;You can run this wizard at any time by choosing &lt;b&gt;Check for Updates...&lt;/b&gt; from the &lt;b&gt;Help&lt;/b&gt; menu.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Este auxiliar connectarà amb el lloc web del VirtualBox i comprovarà si hi ha una versió més nova del VirtualBox.&lt;p&gt;&lt;/p&gt;Feu servir el botó &lt;b&gt;Comprova&lt;/b&gt; per comprovar ara si hi ha noves versions o &lt;b&gt;Cancel·la&lt;/b&gt; si no voleu comprovar ara si hi ha noves versions. Podeu iniciar este auxiliar en qualsevol moment seleccionant &lt;b&gt;Comprova si hi ha actualitzacions...&lt;/b&gt; al menú d&apos;&lt;b&gt;Ajuda&lt;/b&gt;.&lt;/p&gt;</translation>
+    </message>
+</context>
+<context>
     <name>UIVMCloseDialog</name>
     <message>
         <source>Close Virtual Machine</source>
@@ -7449,7 +7612,7 @@ pas i connectar discos durs més avant, fent servir el diàleg de configuració 
     </message>
     <message>
         <source>&lt;p&gt;Saves the current execution state of the virtual machine to the physical hard disk of the host PC.&lt;/p&gt;&lt;p&gt;Next time this machine is started, it will be restored from the saved state and continue execution from the same place you saved it at, which will let you continue your work immediately.&lt;/p&gt;&lt;p&gt;Note that saving the machine state may take a long time, depending on the guest operating system type and the amount of memory you assigned to the virtual machine.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Alça l&apos;estat d&apos;execució actual de la màquina virtual al disc dur físic de l&apos;ordinador amfitrió.&lt;/p&gt;&lt;p&gt;La propera vegada que s&apos;iniciÏ esta màquina, es restaurarà des de l&apos;estat alçat i continuarà l&apos;execució des del mateix lloc en què l&apos;heu alçat, cosa que permetrà continuar immediatament amb el vostre treball.&lt;/p&gt;&lt;p&gt;Tingueu en compte que l&apos;operació d'alçar l&apos;estat de la màquina pot prendre molt de temps, depenent del tipus de sistema operatiu client i la quantitat de memòria assignada a la màquina virtual.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Alça l&apos;estat d&apos;execució actual de la màquina virtual al disc dur físic de l&apos;ordinador amfitrió.&lt;/p&gt;&lt;p&gt;La propera vegada que s&apos;iniciÏ esta màquina, es restaurarà des de l&apos;estat alçat i continuarà l&apos;execució des del mateix lloc en què l&apos;heu alçat, cosa que permetrà continuar immediatament amb el vostre treball.&lt;/p&gt;&lt;p&gt;Tingueu en compte que l&apos;operació d&apos;alçar l&apos;estat de la màquina pot prendre molt de temps, depenent del tipus de sistema operatiu client i la quantitat de memòria assignada a la màquina virtual.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&amp;Save the machine state</source>
@@ -7457,7 +7620,7 @@ pas i connectar discos durs més avant, fent servir el diàleg de configuració 
     </message>
     <message>
         <source>&lt;p&gt;Sends the ACPI Power Button press event to the virtual machine.&lt;/p&gt;&lt;p&gt;Normally, the guest operating system running inside the virtual machine will detect this event and perform a clean shutdown procedure. This is a recommended way to turn off the virtual machine because all applications running inside it will get a chance to save their data and state.&lt;/p&gt;&lt;p&gt;If the machine doesn&apos;t respond to this action then the guest operating system may be misconfigured or doesn&apos;t understand ACPI Power Button events at all. In this case you should select the &lt;b&gt;Power off the machine&lt;/b&gt; action to stop virtual machine execution.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Envia a la màquina virtual l&apos;esdeveniment de prémer el botó ACPI Power.&lt;/p&gt;&lt;p&gt;Normalment, el sistema operatiu client que s&apos;està executant a dins de la màquina virtual detectarà este esdeveniment i realitzarà un procediment de tancament net. Esta és una manera recomanada de tancar la màquina virtual perquè totes les aplicacions que s&apos;estan executant en ella tindran la possibilitat d'alçar les seues dades i estat.&lt;/p&gt;&lt;p&gt;Si la màquina no respon a esta acció potser el sistema operatiu client pot estar mal configurat o no entén els events del botó ACPI Power. En este cas, seleccioneu l&apos;acció &lt;b&gt;Atura la màquina&lt;/b&gt; per aturar l&apos;execució de la màquina virtual.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Envia a la màquina virtual l&apos;esdeveniment de prémer el botó ACPI Power.&lt;/p&gt;&lt;p&gt;Normalment, el sistema operatiu client que s&apos;està executant a dins de la màquina virtual detectarà este esdeveniment i realitzarà un procediment de tancament net. Esta és una manera recomanada de tancar la màquina virtual perquè totes les aplicacions que s&apos;estan executant en ella tindran la possibilitat d&apos;alçar les seues dades i estat.&lt;/p&gt;&lt;p&gt;Si la màquina no respon a esta acció potser el sistema operatiu client pot estar mal configurat o no entén els events del botó ACPI Power. En este cas, seleccioneu l&apos;acció &lt;b&gt;Atura la màquina&lt;/b&gt; per aturar l&apos;execució de la màquina virtual.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>S&amp;end the shutdown signal</source>
@@ -7739,7 +7902,7 @@ Versió %1</translation>
 &lt;p&gt;Note that saving the machine state may take a long time, depending on the guest operating system type and the amount of memory you assigned to the virtual machine.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Alça l&apos;estat d&apos;execució actual de la màquina virtual al disc dur físic de l&apos;ordinador d&apos;amfitrió.&lt;/p&gt;
 &lt;p&gt;La propera vegada que s&apos;engegue esta màquina, es restaurarà des de l&apos;estat alçat i continuarà l&apos;execució des del mateix lloc en què l&apos;heu alçat, cosa que vos permetrà continuar immediatament amb el vostre treball.&lt;/p&gt;
-&lt;p&gt;Tingueu en compte que l&apos;operació d'alçar l&apos;estat de la màquina pot prendre molt de temps, depenent del tipus de sistema operatiu client i la quantitat de memòria assignada a la màquina virtual.&lt;/p&gt;</translation>
+&lt;p&gt;Tingueu en compte que l&apos;operació d&apos;alçar l&apos;estat de la màquina pot prendre molt de temps, depenent del tipus de sistema operatiu client i la quantitat de memòria assignada a la màquina virtual.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>S&amp;end the shutdown signal</source>
@@ -7750,7 +7913,7 @@ Versió %1</translation>
 &lt;p&gt;Normally, the guest operating system running inside the virtual machine will detect this event and perform a clean shutdown procedure. This is a recommended way to turn off the virtual machine because all applications running inside it will get a chance to save their data and state.&lt;/p&gt;
 &lt;p&gt;If the machine doesn&apos;t respond to this action then the guest operating system may be misconfigured or doesn&apos;t understand ACPI Power Button events at all. In this case you should select the &lt;b&gt;Power off the machine&lt;/b&gt; action to stop virtual machine execution.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Envia a la màquina virtual l&apos;esdeveniment de prémer el botó ACPI Power.&lt;/p&gt;
-&lt;p&gt;Normalment, el sistema operatiu client que s&apos;està executant a dins de la màquina virtual detectarà este esdeveniment i realitzarà un procediment de tancament net. Esta és una manera recomanada de tancar la màquina virtual perquè totes les aplicacions que s&apos;estan executant en ella tindran la possibilitat d'alçar les seues dades i estat.&lt;/p&gt;
+&lt;p&gt;Normalment, el sistema operatiu client que s&apos;està executant a dins de la màquina virtual detectarà este esdeveniment i realitzarà un procediment de tancament net. Esta és una manera recomanada de tancar la màquina virtual perquè totes les aplicacions que s&apos;estan executant en ella tindran la possibilitat d&apos;alçar les seues dades i estat.&lt;/p&gt;
 &lt;p&gt;Si la màquina no respon a esta acció potser el sistema operatiu client pot estar mal configurat o no entén els events del botó ACPI Power. En este cas, seleccioneu l&apos;acció &lt;b&gt;Atura la màquina&lt;/b&gt; per aturar l&apos;execució de la màquina virtual.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -7765,11 +7928,11 @@ Versió %1</translation>
     </message>
     <message>
         <source>&lt;p&gt;Saves the current execution state of the virtual machine to the physical hard disk of the host PC.&lt;/p&gt;&lt;p&gt;Next time this machine is started, it will be restored from the saved state and continue execution from the same place you saved it at, which will let you continue your work immediately.&lt;/p&gt;&lt;p&gt;Note that saving the machine state may take a long time, depending on the guest operating system type and the amount of memory you assigned to the virtual machine.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Alça l&apos;estat d&apos;execució actual de la màquina virtual al disc dur físic de l&apos;ordinador amfitrió.&lt;/p&gt;&lt;p&gt;La propera vegada que s&apos;iniciÏ esta màquina, es restaurarà des de l&apos;estat alçat i continuarà l&apos;execució des del mateix lloc en què l&apos;heu alçat, cosa que permetrà continuar immediatament amb el vostre treball.&lt;/p&gt;&lt;p&gt;Tingueu en compte que l&apos;operació d'alçar l&apos;estat de la màquina pot prendre molt de temps, depenent del tipus de sistema operatiu client i la quantitat de memòria assignada a la màquina virtual.&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Alça l&apos;estat d&apos;execució actual de la màquina virtual al disc dur físic de l&apos;ordinador amfitrió.&lt;/p&gt;&lt;p&gt;La propera vegada que s&apos;iniciÏ esta màquina, es restaurarà des de l&apos;estat alçat i continuarà l&apos;execució des del mateix lloc en què l&apos;heu alçat, cosa que permetrà continuar immediatament amb el vostre treball.&lt;/p&gt;&lt;p&gt;Tingueu en compte que l&apos;operació d&apos;alçar l&apos;estat de la màquina pot prendre molt de temps, depenent del tipus de sistema operatiu client i la quantitat de memòria assignada a la màquina virtual.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Sends the ACPI Power Button press event to the virtual machine.&lt;/p&gt;&lt;p&gt;Normally, the guest operating system running inside the virtual machine will detect this event and perform a clean shutdown procedure. This is a recommended way to turn off the virtual machine because all applications running inside it will get a chance to save their data and state.&lt;/p&gt;&lt;p&gt;If the machine doesn&apos;t respond to this action then the guest operating system may be misconfigured or doesn&apos;t understand ACPI Power Button events at all. In this case you should select the &lt;b&gt;Power off the machine&lt;/b&gt; action to stop virtual machine execution.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Envia a la màquina virtual l&apos;esdeveniment de prémer el botó ACPI Power.&lt;/p&gt;&lt;p&gt;Normalment, el sistema operatiu client que s&apos;està executant a dins de la màquina virtual detectarà este esdeveniment i realitzarà un procediment de tancament net. Esta és una manera recomanada de tancar la màquina virtual perquè totes les aplicacions que s&apos;estan executant en ella tindran la possibilitat d'alçar les seues dades i estat.&lt;/p&gt;&lt;p&gt;Si la màquina no respon a esta acció potser el sistema operatiu client pot estar mal configurat o no entén els events del botó ACPI Power. En este cas, seleccioneu l&apos;acció &lt;b&gt;Atura la màquina&lt;/b&gt; per aturar l&apos;execució de la màquina virtual.&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Envia a la màquina virtual l&apos;esdeveniment de prémer el botó ACPI Power.&lt;/p&gt;&lt;p&gt;Normalment, el sistema operatiu client que s&apos;està executant a dins de la màquina virtual detectarà este esdeveniment i realitzarà un procediment de tancament net. Esta és una manera recomanada de tancar la màquina virtual perquè totes les aplicacions que s&apos;estan executant en ella tindran la possibilitat d&apos;alçar les seues dades i estat.&lt;/p&gt;&lt;p&gt;Si la màquina no respon a esta acció potser el sistema operatiu client pot estar mal configurat o no entén els events del botó ACPI Power. En este cas, seleccioneu l&apos;acció &lt;b&gt;Atura la màquina&lt;/b&gt; per aturar l&apos;execució de la màquina virtual.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Turns off the virtual machine.&lt;/p&gt;&lt;p&gt;Note that this action will stop machine execution immediately so that the guest operating system running inside it will not be able to perform a clean shutdown procedure which may result in &lt;i&gt;data loss&lt;/i&gt; inside the virtual machine. Selecting this action is recommended only if the virtual machine does not respond to the &lt;b&gt;Send the shutdown signal&lt;/b&gt; action.&lt;/p&gt;</source>
@@ -11341,7 +11504,7 @@ un disc dur per connectar a la ranura remarcada actualment.&lt;/a&gt;</translati
     </message>
     <message>
         <source>&lt;p&gt;Please fill out this registration form to let vos know that you use VirtualBox and, optionally, to keep you informed about VirtualBox news and updates.&lt;/p&gt;&lt;p&gt;Please use Latin characters only to fill in  the fields below. Sun Microsystems will use this information only to gather product usage statistics and to send you VirtualBox newsletters. In particular, Sun Microsystems will never pass your data to third parties. Detailed information about how we use your personal data can be found in the &lt;b&gt;Privacy Policy&lt;/b&gt; section of the VirtualBox Manual or on the &lt;a href=http://www.virtualbox.org/wiki/PrivacyPolicy&gt;Privacy Policy&lt;/a&gt; page of the VirtualBox web-site.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Ompliu este formulari de registre per permetre&apos;ns conèixer que feu servir el VirtualBox i, opcionalment, mantindre-vos informat sobre novetats i actualitzacions del VirtualBox.&lt;/p&gt;&lt;p&gt;Feu servir caràcters llatins per omplir els camps següents. Tingueu en compte que Sun Microsystems farà servir esta informació només per a usos estadístics i per enviar-vos notícies sobre el VirtualBox. Sun Microsystems mai compartirà les vostres dades amb terceres parts. Més informació detallada sobre l&apos;ús de les vostres dades personals poden trobar-s'a la secció de &lt;b&gt;Política de privacitat&lt;/b&gt; al manual de VirtualBox o al&lt;a href=http://www.virtualbox.org/wiki/PrivacyPolicy&gt;Privacy Policy&lt;/a&gt; lloc web del VirtualBox.&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Ompliu este formulari de registre per permetre&apos;ns conèixer que feu servir el VirtualBox i, opcionalment, mantindre-vos informat sobre novetats i actualitzacions del VirtualBox.&lt;/p&gt;&lt;p&gt;Feu servir caràcters llatins per omplir els camps següents. Tingueu en compte que Sun Microsystems farà servir esta informació només per a usos estadístics i per enviar-vos notícies sobre el VirtualBox. Sun Microsystems mai compartirà les vostres dades amb terceres parts. Més informació detallada sobre l&apos;ús de les vostres dades personals poden trobar-s&apos;a la secció de &lt;b&gt;Política de privacitat&lt;/b&gt; al manual de VirtualBox o al&lt;a href=http://www.virtualbox.org/wiki/PrivacyPolicy&gt;Privacy Policy&lt;/a&gt; lloc web del VirtualBox.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>I &amp;already have a Sun Online account:</source>
@@ -11834,7 +11997,7 @@ un disc dur per connectar a la ranura remarcada actualment.&lt;/a&gt;</translati
     <name>VBoxSettingsDialog</name>
     <message>
         <source>&lt;i&gt;Select a settings category from the list on the left-hand side and move the mouse over a settings item to get more information&lt;/i&gt;.</source>
-        <translation type="obsolete">&lt;i&gt;Seleccioneu una categoria de paràmetres en la llista de l&apos;esquerra i deplaceu el punter sobre un element de la dreta per obtindre'n més informació&lt;/i&gt;.</translation>
+        <translation type="obsolete">&lt;i&gt;Seleccioneu una categoria de paràmetres en la llista de l&apos;esquerra i deplaceu el punter sobre un element de la dreta per obtindre&apos;n més informació&lt;/i&gt;.</translation>
     </message>
     <message>
         <source>On the &lt;b&gt;%1&lt;/b&gt; page, %2</source>
@@ -12479,109 +12642,6 @@ o a ambdòs (&lt;i&gt;Qualsevol&lt;/i&gt;).&lt;/qt&gt;</translation>
         <source>No supported devices connected to the host PC</source>
         <comment>USB device tooltip</comment>
         <translation>No hi ha dispositius suportats connectats a l&apos;ordinador amfitrió</translation>
-    </message>
-</context>
-<context>
-    <name>UIUpdateManager</name>
-    <message>
-        <source>1 day</source>
-        <translation>1 dia</translation>
-    </message>
-    <message>
-        <source>2 days</source>
-        <translation>2 dies</translation>
-    </message>
-    <message>
-        <source>3 days</source>
-        <translation>3 dies</translation>
-    </message>
-    <message>
-        <source>4 days</source>
-        <translation>4 dies</translation>
-    </message>
-    <message>
-        <source>5 days</source>
-        <translation>5 dies</translation>
-    </message>
-    <message>
-        <source>6 days</source>
-        <translation>6 dies</translation>
-    </message>
-    <message>
-        <source>1 week</source>
-        <translation>1 setmana</translation>
-    </message>
-    <message>
-        <source>2 weeks</source>
-        <translation>2 setmanes</translation>
-    </message>
-    <message>
-        <source>3 weeks</source>
-        <translation>3 setmanes</translation>
-    </message>
-    <message>
-        <source>1 month</source>
-        <translation>1 mes</translation>
-    </message>
-    <message>
-        <source>Never</source>
-        <translation>Mai</translation>
-    </message>
-    <message>
-        <source>Connection timed out.</source>
-        <translation type="obsolete">S&apos;ha excedit el temps d&apos;espera de la connexió.</translation>
-    </message>
-    <message>
-        <source>Could not locate the latest version list on the server (response: %1).</source>
-        <translation type="obsolete">No es pot localitzar el formulari de registre al servidor (resposta: %1).</translation>
-    </message>
-    <message>
-        <source>Chec&amp;k</source>
-        <translation>Com&amp;prova</translation>
-    </message>
-    <message>
-        <source>&amp;Close</source>
-        <translation>Tan&amp;ca</translation>
-    </message>
-    <message>
-        <source>VirtualBox Update Wizard</source>
-        <translation>Auxiliar d&apos;acutliatzació del VirtualBox</translation>
-    </message>
-    <message>
-        <source>Check for Updates</source>
-        <translation>Comprova si hi ha actualitzacions</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;This wizard will connect to the VirtualBox web-site and check if a newer version of VirtualBox is available.&lt;/p&gt;
-&lt;p&gt;Use the &lt;b&gt;Check&lt;/b&gt; button to check for a new version now or the &lt;b&gt;Cancel&lt;/b&gt; button if you do not want to perform this check.&lt;/p&gt;
-&lt;p&gt;You can run this wizard at any time by choosing &lt;b&gt;Check for Updates...&lt;/b&gt; from the &lt;b&gt;Help&lt;/b&gt; menu.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Este assistent connectarà amb el lloc web del VirtualBox i comprovarà si hi ha una versió més nova de VirtualBox.&lt;/p&gt;
-&lt;p&gt;Feu servir el botó &lt;b&gt;Comprova&lt;/b&gt; per comprovar ara si hi ha noves versions o &lt;b&gt;Cancel·la&lt;/b&gt; si no voleu comprovar ara si hi ha noves versions.&lt;/p&gt;
-&lt;p&gt;Podeu iniciar este assistent en qualsevol moment seleccionant &lt;b&gt;Comprova si hi ha actualitzacions...&lt;/b&gt; al menú d&apos;&lt;b&gt;Ajuda&lt;/b&gt;.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Cancel</source>
-        <translation>Cancel·la</translation>
-    </message>
-    <message>
-        <source>Summary</source>
-        <translation>Resum</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;A new version of VirtualBox has been released! Version &lt;b&gt;%1&lt;/b&gt; is available at &lt;a href=&quot;http://www.virtualbox.org/&quot;&gt;virtualbox.org&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;You can download this version using the link:&lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</source>
-        <translation>&lt;b&gt;S&apos;ha publicat una nova versió del VirtualBox! La versió &lt;b&gt;%1&lt;/b&gt; és disponible a &lt;a href=&quot;http://www.virtualbox.org/&quot;&gt;virtualbox.org&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;Podeu baixar-la directament des d&apos;este enllaç: &lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Unable to obtain the new version information due to the following network error:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</source>
-        <translation>&lt;p&gt;No es pot obtindre informació de noves versions degut a un problema amb la xarxa:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>You are already running the most recent version of VirtualBox.</source>
-        <translation>Ja teniu instal·lada la darrera versió del VirtualBox. Proveu novament més tard.</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;This wizard will connect to the VirtualBox web-site and check if a newer version of VirtualBox is available.&lt;/p&gt;&lt;p&gt;Use the &lt;b&gt;Check&lt;/b&gt; button to check for a new version now or the &lt;b&gt;Cancel&lt;/b&gt; button if you do not want to perform this check.&lt;/p&gt;&lt;p&gt;You can run this wizard at any time by choosing &lt;b&gt;Check for Updates...&lt;/b&gt; from the &lt;b&gt;Help&lt;/b&gt; menu.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Este auxiliar connectarà amb el lloc web del VirtualBox i comprovarà si hi ha una versió més nova del VirtualBox.&lt;p&gt;&lt;/p&gt;Feu servir el botó &lt;b&gt;Comprova&lt;/b&gt; per comprovar ara si hi ha noves versions o &lt;b&gt;Cancel·la&lt;/b&gt; si no voleu comprovar ara si hi ha noves versions. Podeu iniciar este auxiliar en qualsevol moment seleccionant &lt;b&gt;Comprova si hi ha actualitzacions...&lt;/b&gt; al menú d&apos;&lt;b&gt;Ajuda&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
@@ -13358,7 +13418,7 @@ o a ambdòs (&lt;i&gt;Qualsevol&lt;/i&gt;).&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>Displays the path where snapshots of this virtual machine will be stored. Be aware that snapshots can take quite a lot of disk space.</source>
-        <translation type="obsolete">Mostra la ruta on les captures d&apos;esta màquina virtual s'alçaran. Tingueu en compte que les captures poden ocupar prou quantitat d&apos;espai al disc dur.</translation>
+        <translation type="obsolete">Mostra la ruta on les captures d&apos;esta màquina virtual s&apos;alçaran. Tingueu en compte que les captures poden ocupar prou quantitat d&apos;espai al disc dur.</translation>
     </message>
     <message>
         <source>Displays the virtual hard disk to attach to this IDE slot and allows to quickly select a different hard disk.</source>
@@ -13454,7 +13514,7 @@ o a ambdòs (&lt;i&gt;Qualsevol&lt;/i&gt;).&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>If checked, any change to mounted CD/DVD or Floppy media performed during machine execution will be saved in the settings file in order to preserve the configuration of mounted media between runs.</source>
-        <translation type="obsolete">Si està marcat, qualsevol canvi al CD/DVD o disquet muntat s'alçarà al fitxer de configuració per tal de preservar la configuració dels suports muntats entre cada execució de la màquina virtual.</translation>
+        <translation type="obsolete">Si està marcat, qualsevol canvi al CD/DVD o disquet muntat s&apos;alçarà al fitxer de configuració per tal de preservar la configuració dels suports muntats entre cada execució de la màquina virtual.</translation>
     </message>
     <message>
         <source>&amp;Image File</source>
@@ -13638,7 +13698,7 @@ o a ambdòs (&lt;i&gt;Qualsevol&lt;/i&gt;).&lt;/qt&gt;</translation>
     <message>
         <source>&lt;qt&gt;Controls the audio output driver. The &lt;b&gt;Null Audio Driver&lt;/b&gt;
 makes the guest see an audio card, however every access to it will be ignored.&lt;/qt&gt;</source>
-        <translation type="obsolete">&lt;qt&gt;Gestiona el controlador d'eixida de so. El &lt;b&gt;controlador d&apos;àudio Nul&lt;/b&gt;
+        <translation type="obsolete">&lt;qt&gt;Gestiona el controlador d&apos;eixida de so. El &lt;b&gt;controlador d&apos;àudio Nul&lt;/b&gt;
 fa que el client veja una tarjeta de so, però l&apos;accés a ella s&apos;ignorarà.&lt;/qt&gt;</translation>
     </message>
     <message>
@@ -13797,7 +13857,7 @@ esta característica després d&apos;haver instal·lat un Windows al sistema ope
     </message>
     <message>
         <source>When checked, a virtual PCI audio card will be plugged into the virtual machine and will communicate with the host audio system using the specified driver.</source>
-        <translation type="obsolete">Quan estiga marcat, la tarjeta de so PCI virtual es connectarà a dins de la màquina virtual, la qual farà servir un controlador específic per comunicar-s'amb la tarjeta de so de l&apos;amfitrió.</translation>
+        <translation type="obsolete">Quan estiga marcat, la tarjeta de so PCI virtual es connectarà a dins de la màquina virtual, la qual farà servir un controlador específic per comunicar-s&apos;amb la tarjeta de so de l&apos;amfitrió.</translation>
     </message>
     <message>
         <source>When checked, the VM will act as a Remote Desktop Protocol (RDP) server, allowing remote clients to connect and operate the VM (when it is running) using a standard RDP client.</source>
@@ -14153,7 +14213,7 @@ al sistema amfitrió.&lt;/qt&gt;</translation>
     <name>VBoxVMSettingsVRDP</name>
     <message>
         <source>When checked, the VM will act as a Remote Desktop Protocol (RDP) server, allowing remote clients to connect and operate the VM (when it is running) using a standard RDP client.</source>
-        <translation type="obsolete">Quan estiga marcat, la màquina virtual actuarà com un servidor protocol d&apos;escriptori remot (RDP), permetent als clients remots connectar-s'a la màquina virtual (quan estiga executant-se) fent servir l&apos;estàndard client RDP.</translation>
+        <translation type="obsolete">Quan estiga marcat, la màquina virtual actuarà com un servidor protocol d&apos;escriptori remot (RDP), permetent als clients remots connectar-s&apos;a la màquina virtual (quan estiga executant-se) fent servir l&apos;estàndard client RDP.</translation>
     </message>
     <message>
         <source>&amp;Enable VRDP Server</source>

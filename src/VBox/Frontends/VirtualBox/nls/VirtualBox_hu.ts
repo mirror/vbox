@@ -1244,6 +1244,13 @@
     </message>
 </context>
 <context>
+    <name>UIDownloaderExtensionPack</name>
+    <message>
+        <source>Select folder to save %1 to</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>UIDownloaderUserManual</name>
     <message>
         <source>Select folder to save User Manual to</source>
@@ -5981,6 +5988,36 @@ p, li { white-space: pre-wrap; }
         <source>&lt;p&gt;Failed to save the downloaded file as &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;</source>
         <translation>&lt;p&gt;Nem sikerült elmenteni a letöltött fájlt: &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;</translation>
     </message>
+    <message>
+        <source>&lt;p&gt;You have an old version (%1) of the &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt; installed.&lt;/p&gt;&lt;p&gt;Do you wish to download latest one from the Internet?&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Download</source>
+        <comment>extension pack</comment>
+        <translation type="unfinished">Letöltés</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Are you sure you want to download the &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; from &lt;nobr&gt;&lt;a href=&quot;%2&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; (size %3 bytes)?&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%2&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; and saved locally as &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to install this extension pack?&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Install</source>
+        <comment>extension pack</comment>
+        <translation type="unfinished">Telepítés</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%2&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; but can&apos;t be saved locally as &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Please choose another location for that file.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Failed to download the &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; from &lt;nobr&gt;&lt;a href=&quot;%2&quot;&gt;%2&lt;/a&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;%3&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UIMiniProcessWidgetAdditions</name>
@@ -6025,6 +6062,17 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Downloading the VirtualBox Guest Additions CD image from &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</source>
         <translation>A VirtualBox Integrációs szolgáltatások CD letöltése innen: &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</translation>
+    </message>
+</context>
+<context>
+    <name>UIMiniProgressWidgetExtension</name>
+    <message>
+        <source>Cancel the &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; download</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Downloading the &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; from &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;...&lt;/nobr&gt;</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -6405,6 +6453,18 @@ a rámásolt adatok függvényében növekszik az általa elfoglalt hely - míg 
         <source>Details</source>
         <comment>summary</comment>
         <translation>Részletek</translation>
+    </message>
+    <message>
+        <source>H&amp;DD (Parallels Hard Disk)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Q&amp;ED (QEMU enhanced disk)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;QCOW (QEMU Copy-On-Write)</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -7148,6 +7208,109 @@ esetleg a &lt;b&gt;Létező&lt;/b&gt; gombbal a Virtuális lemezkezelőből.&lt;
     <message>
         <source>Select a file to open...</source>
         <translation>Beillesztendő fájl...</translation>
+    </message>
+</context>
+<context>
+    <name>UIUpdateManager</name>
+    <message>
+        <source>1 day</source>
+        <translation>Naponta</translation>
+    </message>
+    <message>
+        <source>2 days</source>
+        <translation>2 naponta</translation>
+    </message>
+    <message>
+        <source>3 days</source>
+        <translation>3 naponta</translation>
+    </message>
+    <message>
+        <source>4 days</source>
+        <translation>4 naponta</translation>
+    </message>
+    <message>
+        <source>5 days</source>
+        <translation>5 naponta</translation>
+    </message>
+    <message>
+        <source>6 days</source>
+        <translation>6 naponta</translation>
+    </message>
+    <message>
+        <source>1 week</source>
+        <translation>Hetente</translation>
+    </message>
+    <message>
+        <source>2 weeks</source>
+        <translation>2 hetente</translation>
+    </message>
+    <message>
+        <source>3 weeks</source>
+        <translation>3 hetente</translation>
+    </message>
+    <message>
+        <source>1 month</source>
+        <translation>Havonta</translation>
+    </message>
+    <message>
+        <source>Never</source>
+        <translation>Sosem</translation>
+    </message>
+    <message>
+        <source>Connection timed out.</source>
+        <translation type="obsolete">A kapcsolat időtúllépés miatt megszakadt.</translation>
+    </message>
+    <message>
+        <source>Could not locate the latest version list on the server (response: %1).</source>
+        <translation type="obsolete">Nem találom a legújabb verziók adatainak a fájlját a szerveren (a szerver válasza: %1).</translation>
+    </message>
+    <message>
+        <source>Chec&amp;k</source>
+        <translation type="obsolete">&amp;Ellenőrzés</translation>
+    </message>
+    <message>
+        <source>&amp;Close</source>
+        <translation type="obsolete">Be&amp;zárás</translation>
+    </message>
+    <message>
+        <source>VirtualBox Update Wizard</source>
+        <translation type="obsolete">VirtualBox frissítési varázsló</translation>
+    </message>
+    <message>
+        <source>Check for Updates</source>
+        <translation type="obsolete">Frissítések ellenőrzése</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;This wizard will connect to the VirtualBox web-site and check if a newer version of VirtualBox is available.&lt;/p&gt;
+&lt;p&gt;Use the &lt;b&gt;Check&lt;/b&gt; button to check for a new version now or the &lt;b&gt;Cancel&lt;/b&gt; button if you do not want to perform this check.&lt;/p&gt;
+&lt;p&gt;You can run this wizard at any time by choosing &lt;b&gt;Check for Updates...&lt;/b&gt; from the &lt;b&gt;Help&lt;/b&gt; menu.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Ez a varázsló ellenőrzi a VirtualBox weboldalán, hogy elérhető-e újabb verzió a jelenleginél.&lt;/p&gt;
+&lt;p&gt;Nyomd meg az &lt;b&gt;Ellenőrzés&lt;/b&gt; gombot a frissítések kereséséhez. A &lt;b&gt;Mégsem&lt;/b&gt; gombbal kiléphetsz a varázslóból az ellenőrzés lefutása nélkül.&lt;/p&gt;
+&lt;p&gt;Ezt a varázslót bármikor elindíthatod a &lt;b&gt;Súgó&lt;/b menü &lt;b&gt;Frissítések ellenőrzése...&lt;/b&gt; menüpontjával.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Cancel</source>
+        <translation type="obsolete">Mégsem</translation>
+    </message>
+    <message>
+        <source>Summary</source>
+        <translation type="obsolete">Összegzés</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;A new version of VirtualBox has been released! Version &lt;b&gt;%1&lt;/b&gt; is available at &lt;a href=&quot;http://www.virtualbox.org/&quot;&gt;virtualbox.org&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;You can download this version using the link:&lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Elérhető a VirtualBox egy újabb verziója! A(z) &lt;b&gt;%1&lt;/b&gt; -s verzió elérhető a &lt;a href=&quot;http://www.virtualbox.org/&quot;&gt;virtualbox.org&lt;/a&gt; weboldalon.&lt;/p&gt;&lt;p&gt;Közvetlenül pedig erről a linkről töltheted le:&lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Unable to obtain the new version information due to the following network error:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Nem lehet letölteni az új verziók információit a következő hálózati probléma miatt:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>You are already running the most recent version of VirtualBox.</source>
+        <translation type="obsolete">Nincs a jelenleginél újabb VirtualBox verzió. Később azonban érdemes lenne újra megnézni.</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;This wizard will connect to the VirtualBox web-site and check if a newer version of VirtualBox is available.&lt;/p&gt;&lt;p&gt;Use the &lt;b&gt;Check&lt;/b&gt; button to check for a new version now or the &lt;b&gt;Cancel&lt;/b&gt; button if you do not want to perform this check.&lt;/p&gt;&lt;p&gt;You can run this wizard at any time by choosing &lt;b&gt;Check for Updates...&lt;/b&gt; from the &lt;b&gt;Help&lt;/b&gt; menu.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Ez a varázsló ellenőrizni fogja a VirtualBox weboldalán, hogy elérhető-e újabb verzió a VirtualBox-ból.&lt;/p&gt;&lt;p&gt;Az &lt;b&gt;Ellenőrzés&lt;/b&gt; gombbal tudod elindítani a folyamatot és a &lt;b&gt;Mégsem&lt;/b&gt; gombbal jelezheted, ha nem akarsz ellenőrizni.&lt;/p&gt;&lt;p&gt;Bármikor elindíthatod a varázslót a &lt;b&gt;Súgó&lt;/b&gt; menü &lt;b&gt;Frissítések ellenőrzése...&lt;/b&gt; pontjával.&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
@@ -11964,109 +12127,6 @@ value.&lt;/qt&gt;</source>
         <source>No supported devices connected to the host PC</source>
         <comment>USB device tooltip</comment>
         <translation>Nincs támogatott eszköz a gazda PC-hez csatlakoztatva</translation>
-    </message>
-</context>
-<context>
-    <name>UIUpdateManager</name>
-    <message>
-        <source>1 day</source>
-        <translation>Naponta</translation>
-    </message>
-    <message>
-        <source>2 days</source>
-        <translation>2 naponta</translation>
-    </message>
-    <message>
-        <source>3 days</source>
-        <translation>3 naponta</translation>
-    </message>
-    <message>
-        <source>4 days</source>
-        <translation>4 naponta</translation>
-    </message>
-    <message>
-        <source>5 days</source>
-        <translation>5 naponta</translation>
-    </message>
-    <message>
-        <source>6 days</source>
-        <translation>6 naponta</translation>
-    </message>
-    <message>
-        <source>1 week</source>
-        <translation>Hetente</translation>
-    </message>
-    <message>
-        <source>2 weeks</source>
-        <translation>2 hetente</translation>
-    </message>
-    <message>
-        <source>3 weeks</source>
-        <translation>3 hetente</translation>
-    </message>
-    <message>
-        <source>1 month</source>
-        <translation>Havonta</translation>
-    </message>
-    <message>
-        <source>Never</source>
-        <translation>Sosem</translation>
-    </message>
-    <message>
-        <source>Connection timed out.</source>
-        <translation type="obsolete">A kapcsolat időtúllépés miatt megszakadt.</translation>
-    </message>
-    <message>
-        <source>Could not locate the latest version list on the server (response: %1).</source>
-        <translation type="obsolete">Nem találom a legújabb verziók adatainak a fájlját a szerveren (a szerver válasza: %1).</translation>
-    </message>
-    <message>
-        <source>Chec&amp;k</source>
-        <translation>&amp;Ellenőrzés</translation>
-    </message>
-    <message>
-        <source>&amp;Close</source>
-        <translation>Be&amp;zárás</translation>
-    </message>
-    <message>
-        <source>VirtualBox Update Wizard</source>
-        <translation>VirtualBox frissítési varázsló</translation>
-    </message>
-    <message>
-        <source>Check for Updates</source>
-        <translation>Frissítések ellenőrzése</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;This wizard will connect to the VirtualBox web-site and check if a newer version of VirtualBox is available.&lt;/p&gt;
-&lt;p&gt;Use the &lt;b&gt;Check&lt;/b&gt; button to check for a new version now or the &lt;b&gt;Cancel&lt;/b&gt; button if you do not want to perform this check.&lt;/p&gt;
-&lt;p&gt;You can run this wizard at any time by choosing &lt;b&gt;Check for Updates...&lt;/b&gt; from the &lt;b&gt;Help&lt;/b&gt; menu.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Ez a varázsló ellenőrzi a VirtualBox weboldalán, hogy elérhető-e újabb verzió a jelenleginél.&lt;/p&gt;
-&lt;p&gt;Nyomd meg az &lt;b&gt;Ellenőrzés&lt;/b&gt; gombot a frissítések kereséséhez. A &lt;b&gt;Mégsem&lt;/b&gt; gombbal kiléphetsz a varázslóból az ellenőrzés lefutása nélkül.&lt;/p&gt;
-&lt;p&gt;Ezt a varázslót bármikor elindíthatod a &lt;b&gt;Súgó&lt;/b menü &lt;b&gt;Frissítések ellenőrzése...&lt;/b&gt; menüpontjával.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Cancel</source>
-        <translation>Mégsem</translation>
-    </message>
-    <message>
-        <source>Summary</source>
-        <translation>Összegzés</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;A new version of VirtualBox has been released! Version &lt;b&gt;%1&lt;/b&gt; is available at &lt;a href=&quot;http://www.virtualbox.org/&quot;&gt;virtualbox.org&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;You can download this version using the link:&lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Elérhető a VirtualBox egy újabb verziója! A(z) &lt;b&gt;%1&lt;/b&gt; -s verzió elérhető a &lt;a href=&quot;http://www.virtualbox.org/&quot;&gt;virtualbox.org&lt;/a&gt; weboldalon.&lt;/p&gt;&lt;p&gt;Közvetlenül pedig erről a linkről töltheted le:&lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Unable to obtain the new version information due to the following network error:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Nem lehet letölteni az új verziók információit a következő hálózati probléma miatt:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>You are already running the most recent version of VirtualBox.</source>
-        <translation>Nincs a jelenleginél újabb VirtualBox verzió. Később azonban érdemes lenne újra megnézni.</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;This wizard will connect to the VirtualBox web-site and check if a newer version of VirtualBox is available.&lt;/p&gt;&lt;p&gt;Use the &lt;b&gt;Check&lt;/b&gt; button to check for a new version now or the &lt;b&gt;Cancel&lt;/b&gt; button if you do not want to perform this check.&lt;/p&gt;&lt;p&gt;You can run this wizard at any time by choosing &lt;b&gt;Check for Updates...&lt;/b&gt; from the &lt;b&gt;Help&lt;/b&gt; menu.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Ez a varázsló ellenőrizni fogja a VirtualBox weboldalán, hogy elérhető-e újabb verzió a VirtualBox-ból.&lt;/p&gt;&lt;p&gt;Az &lt;b&gt;Ellenőrzés&lt;/b&gt; gombbal tudod elindítani a folyamatot és a &lt;b&gt;Mégsem&lt;/b&gt; gombbal jelezheted, ha nem akarsz ellenőrizni.&lt;/p&gt;&lt;p&gt;Bármikor elindíthatod a varázslót a &lt;b&gt;Súgó&lt;/b&gt; menü &lt;b&gt;Frissítések ellenőrzése...&lt;/b&gt; pontjával.&lt;/p&gt;</translation>
     </message>
 </context>
 <context>

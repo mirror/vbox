@@ -1158,6 +1158,13 @@
     </message>
 </context>
 <context>
+    <name>UIDownloaderExtensionPack</name>
+    <message>
+        <source>Select folder to save %1 to</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>UIDownloaderUserManual</name>
     <message>
         <source>Select folder to save User Manual to</source>
@@ -5740,6 +5747,36 @@ p, li { white-space: pre-wrap; }
         <source>&lt;p&gt;Failed to save the downloaded file as &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;</source>
         <translation>&lt;p&gt;Изтегленият файл не може да се запише като &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;</translation>
     </message>
+    <message>
+        <source>&lt;p&gt;You have an old version (%1) of the &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt; installed.&lt;/p&gt;&lt;p&gt;Do you wish to download latest one from the Internet?&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Download</source>
+        <comment>extension pack</comment>
+        <translation type="unfinished">Изтегляне</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Are you sure you want to download the &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; from &lt;nobr&gt;&lt;a href=&quot;%2&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; (size %3 bytes)?&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%2&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; and saved locally as &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to install this extension pack?&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Install</source>
+        <comment>extension pack</comment>
+        <translation type="unfinished">Инсталация</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%2&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; but can&apos;t be saved locally as &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Please choose another location for that file.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Failed to download the &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; from &lt;nobr&gt;&lt;a href=&quot;%2&quot;&gt;%2&lt;/a&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;%3&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UIMiniProcessWidgetAdditions</name>
@@ -5784,6 +5821,17 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Downloading the VirtualBox Guest Additions CD image from &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</source>
         <translation>Изтегляне на CD изображението VirtualBox Виртуални Добавки от &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</translation>
+    </message>
+</context>
+<context>
+    <name>UIMiniProgressWidgetExtension</name>
+    <message>
+        <source>Cancel the &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; download</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Downloading the &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; from &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;...&lt;/nobr&gt;</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -6049,6 +6097,18 @@ p, li { white-space: pre-wrap; }
         <source>Details</source>
         <comment>summary</comment>
         <translation>Детайли</translation>
+    </message>
+    <message>
+        <source>H&amp;DD (Parallels Hard Disk)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Q&amp;ED (QEMU enhanced disk)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;QCOW (QEMU Copy-On-Write)</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -6737,6 +6797,93 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Select a file to open...</source>
         <translation>Избор на файл за отваряне...</translation>
+    </message>
+</context>
+<context>
+    <name>UIUpdateManager</name>
+    <message>
+        <source>1 day</source>
+        <translation>1 ден</translation>
+    </message>
+    <message>
+        <source>2 days</source>
+        <translation>2 дена</translation>
+    </message>
+    <message>
+        <source>3 days</source>
+        <translation>3 дена</translation>
+    </message>
+    <message>
+        <source>4 days</source>
+        <translation>4 дена</translation>
+    </message>
+    <message>
+        <source>5 days</source>
+        <translation>5 дена</translation>
+    </message>
+    <message>
+        <source>6 days</source>
+        <translation>6 дена</translation>
+    </message>
+    <message>
+        <source>1 week</source>
+        <translation>1 седмица</translation>
+    </message>
+    <message>
+        <source>2 weeks</source>
+        <translation>2 седмици</translation>
+    </message>
+    <message>
+        <source>3 weeks</source>
+        <translation>3 седмици</translation>
+    </message>
+    <message>
+        <source>1 month</source>
+        <translation>1 месец</translation>
+    </message>
+    <message>
+        <source>Never</source>
+        <translation>Никога</translation>
+    </message>
+    <message>
+        <source>Chec&amp;k</source>
+        <translation type="obsolete">&amp;Проверка</translation>
+    </message>
+    <message>
+        <source>&amp;Close</source>
+        <translation type="obsolete">&amp;Затваряне</translation>
+    </message>
+    <message>
+        <source>VirtualBox Update Wizard</source>
+        <translation type="obsolete">VirtualBox помощник за обновления</translation>
+    </message>
+    <message>
+        <source>Check for Updates</source>
+        <translation type="obsolete">Проверка за обновления</translation>
+    </message>
+    <message>
+        <source>Cancel</source>
+        <translation type="obsolete">Отказ</translation>
+    </message>
+    <message>
+        <source>Summary</source>
+        <translation type="obsolete">Обобщение</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;A new version of VirtualBox has been released! Version &lt;b&gt;%1&lt;/b&gt; is available at &lt;a href=&quot;http://www.virtualbox.org/&quot;&gt;virtualbox.org&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;You can download this version using the link:&lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Излязла е нова версия на VirtualBox! Версия &lt;b&gt;%1&lt;/b&gt; е достъпна на &lt;a href=&quot;http://www.virtualbox.org/&quot;&gt;virtualbox.org&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;. Можете да изтеглите тази версия от тази директна връзка:&lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Unable to obtain the new version information due to the following network error:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Не може да се получи информацията за нова версия, поради следния проблем с мрежата:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>You are already running the most recent version of VirtualBox.</source>
+        <translation type="obsolete">Вече сте инсталирали последната версия на VirtualBox. Моля, повторете проверката за версия по-късно.</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;This wizard will connect to the VirtualBox web-site and check if a newer version of VirtualBox is available.&lt;/p&gt;&lt;p&gt;Use the &lt;b&gt;Check&lt;/b&gt; button to check for a new version now or the &lt;b&gt;Cancel&lt;/b&gt; button if you do not want to perform this check.&lt;/p&gt;&lt;p&gt;You can run this wizard at any time by choosing &lt;b&gt;Check for Updates...&lt;/b&gt; from the &lt;b&gt;Help&lt;/b&gt; menu.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Този помощник ще се свърже към уеб сайта на VirtualBox и ще провери дали е достъпна нова версия на VirtualBox.&lt;/p&gt;&lt;p&gt;Използвайте бутона &lt;b&gt;Проверка&lt;/b&gt;, за да проверите за нова версия сега, или бутона &lt;b&gt;Отказ&lt;/b&gt;, ако не искате да извършите тази проверка.&lt;/p&gt;&lt;p&gt;Можете да стартирате този помощник по всяко време като изберете &lt;b&gt;Проверка за обновления...&lt;/b&gt; от менюто &lt;b&gt;Помощ&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
@@ -10054,93 +10201,6 @@ p, li { white-space: pre-wrap; }
         <source>No supported devices connected to the host PC</source>
         <comment>USB device tooltip</comment>
         <translation>Няма поддържани устройства, свързани към реалната машина</translation>
-    </message>
-</context>
-<context>
-    <name>UIUpdateManager</name>
-    <message>
-        <source>1 day</source>
-        <translation>1 ден</translation>
-    </message>
-    <message>
-        <source>2 days</source>
-        <translation>2 дена</translation>
-    </message>
-    <message>
-        <source>3 days</source>
-        <translation>3 дена</translation>
-    </message>
-    <message>
-        <source>4 days</source>
-        <translation>4 дена</translation>
-    </message>
-    <message>
-        <source>5 days</source>
-        <translation>5 дена</translation>
-    </message>
-    <message>
-        <source>6 days</source>
-        <translation>6 дена</translation>
-    </message>
-    <message>
-        <source>1 week</source>
-        <translation>1 седмица</translation>
-    </message>
-    <message>
-        <source>2 weeks</source>
-        <translation>2 седмици</translation>
-    </message>
-    <message>
-        <source>3 weeks</source>
-        <translation>3 седмици</translation>
-    </message>
-    <message>
-        <source>1 month</source>
-        <translation>1 месец</translation>
-    </message>
-    <message>
-        <source>Never</source>
-        <translation>Никога</translation>
-    </message>
-    <message>
-        <source>Chec&amp;k</source>
-        <translation>&amp;Проверка</translation>
-    </message>
-    <message>
-        <source>&amp;Close</source>
-        <translation>&amp;Затваряне</translation>
-    </message>
-    <message>
-        <source>VirtualBox Update Wizard</source>
-        <translation>VirtualBox помощник за обновления</translation>
-    </message>
-    <message>
-        <source>Check for Updates</source>
-        <translation>Проверка за обновления</translation>
-    </message>
-    <message>
-        <source>Cancel</source>
-        <translation>Отказ</translation>
-    </message>
-    <message>
-        <source>Summary</source>
-        <translation>Обобщение</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;A new version of VirtualBox has been released! Version &lt;b&gt;%1&lt;/b&gt; is available at &lt;a href=&quot;http://www.virtualbox.org/&quot;&gt;virtualbox.org&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;You can download this version using the link:&lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Излязла е нова версия на VirtualBox! Версия &lt;b&gt;%1&lt;/b&gt; е достъпна на &lt;a href=&quot;http://www.virtualbox.org/&quot;&gt;virtualbox.org&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;. Можете да изтеглите тази версия от тази директна връзка:&lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;Unable to obtain the new version information due to the following network error:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Не може да се получи информацията за нова версия, поради следния проблем с мрежата:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>You are already running the most recent version of VirtualBox.</source>
-        <translation>Вече сте инсталирали последната версия на VirtualBox. Моля, повторете проверката за версия по-късно.</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;This wizard will connect to the VirtualBox web-site and check if a newer version of VirtualBox is available.&lt;/p&gt;&lt;p&gt;Use the &lt;b&gt;Check&lt;/b&gt; button to check for a new version now or the &lt;b&gt;Cancel&lt;/b&gt; button if you do not want to perform this check.&lt;/p&gt;&lt;p&gt;You can run this wizard at any time by choosing &lt;b&gt;Check for Updates...&lt;/b&gt; from the &lt;b&gt;Help&lt;/b&gt; menu.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Този помощник ще се свърже към уеб сайта на VirtualBox и ще провери дали е достъпна нова версия на VirtualBox.&lt;/p&gt;&lt;p&gt;Използвайте бутона &lt;b&gt;Проверка&lt;/b&gt;, за да проверите за нова версия сега, или бутона &lt;b&gt;Отказ&lt;/b&gt;, ако не искате да извършите тази проверка.&lt;/p&gt;&lt;p&gt;Можете да стартирате този помощник по всяко време като изберете &lt;b&gt;Проверка за обновления...&lt;/b&gt; от менюто &lt;b&gt;Помощ&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
