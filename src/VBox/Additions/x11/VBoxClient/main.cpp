@@ -258,13 +258,6 @@ int main(int argc, char *argv[])
         LogRel(("Failed to connect to the VirtualBox kernel service\n"));
         return 1;
     }
-    if (g_szPidFile[0] && RT_FAILURE(VbglR3PidFile(g_szPidFile, &g_hPidFile)))
-    {
-        RTPrintf("Failed to create a pidfile.  Exiting.\n");
-        LogRel(("Failed to create a pidfile.  Exiting.\n"));
-        VbglR3Term();
-        return 1;
-    }
     if (fDaemonise)
     {
         rc = VbglR3Daemonize(false /* fNoChDir */, false /* fNoClose */);
@@ -277,6 +270,13 @@ int main(int argc, char *argv[])
 # endif
             return 1;
         }
+    }
+    if (g_szPidFile[0] && RT_FAILURE(VbglR3PidFile(g_szPidFile, &g_hPidFile)))
+    {
+        RTPrintf("Failed to create a pidfile.  Exiting.\n");
+        LogRel(("Failed to create a pidfile.  Exiting.\n"));
+        VbglR3Term();
+        return 1;
     }
     /* Set signal handlers to clean up on exit. */
     vboxClientSetSignalHandlers();
