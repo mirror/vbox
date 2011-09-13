@@ -607,6 +607,30 @@ public:
     }
 };
 
+/**
+ * A multi-write-lock containing four other write locks.
+ *
+ */
+class AutoMultiWriteLock4 : public AutoWriteLockBase
+{
+public:
+    AutoMultiWriteLock4(Lockable *pl1,
+                        Lockable *pl2,
+                        Lockable *pl3,
+                        Lockable *pl4
+                        COMMA_LOCKVAL_SRC_POS_DECL);
+    AutoMultiWriteLock4(LockHandle *pl1,
+                        LockHandle *pl2,
+                        LockHandle *pl3,
+                        LockHandle *pl4
+                        COMMA_LOCKVAL_SRC_POS_DECL);
+
+    virtual ~AutoMultiWriteLock4()
+    {
+        cleanup();
+    }
+};
+
 } /* namespace util */
 
 #endif // ____H_AUTOLOCK
