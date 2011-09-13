@@ -1,1 +1,3 @@
-KERNEL=="vboxguest",ENV{ID_INPUT}="1"
+KERNEL=="event*",DRIVER=="vboxguest",SYMLINK+="input/vboxevent"
+KERNEL=="event*",DRIVERS=="vboxguest",SYMLINK+="input/vboxevent"
+
