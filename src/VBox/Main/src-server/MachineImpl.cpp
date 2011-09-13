@@ -6300,7 +6300,7 @@ void Machine::setModified(uint32_t fl)
 void Machine::setModifiedLock(uint32_t fModification)
 {
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-    mData->flModifications |= fModification;
+    setModified(fModification);
 }
 
 /**
