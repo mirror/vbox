@@ -1,10 +1,9 @@
 /** @file
- *
- * Testcase for shared folder case conversion
+ * Testcase for shared folder case conversion code.
  */
 
 /*
- * Copyright (C) 2006-2007 Oracle Corporation
+ * Copyright (C) 2006-2011 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -18,32 +17,39 @@
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
+#define LOG_GROUP LOG_GROUP_MISC
+#define LOG_ENABLED
 #include <VBox/shflsvc.h>
-#include <iprt/stream.h>
+#include <VBox/log.h>
 #include <iprt/alloc.h>
 #include <iprt/assert.h>
+#include <iprt/file.h>
 #include <iprt/fs.h>
 #include <iprt/dir.h>
-#include <iprt/file.h>
+#include <iprt/initterm.h>
 #include <iprt/path.h>
 #include <iprt/string.h>
 #include <iprt/uni.h>
 #include <stdio.h>
 
-/* override for linux host */
+
+/*******************************************************************************
+*   Defined Constants And Macros                                               *
+*******************************************************************************/
+/* Override slash for non-windows hosts. */
 #undef RTPATH_DELIMITER
 #define RTPATH_DELIMITER       '\\'
 
-#undef Log
-#define Log(a)  printf a
-#undef Log2
-#define Log2    Log
-
+/* Use our own RTPath and RTDir methods. */
 #define RTPathQueryInfo     rtPathQueryInfo
 #define RTDirOpenFiltered   rtDirOpenFiltered
 #define RTDirClose          rtDirClose
 #define RTDirReadEx         rtDirReadEx
 
+
+/*******************************************************************************
+*   Global Variables                                                           *
+*******************************************************************************/
 static int iDirList = 0;
 static int iDirFile = 0;
 
@@ -102,11 +108,9 @@ int rtDirOpenFiltered(PRTDIR *ppDir, const char *pszPath, RTDIRFILTER enmFilter)
 {
     if (!strcmp(pszPath, "c:\\*"))
         iDirList = 1;
-    else
-    if (!strcmp(pszPath, "c:\\test dir\\*"))
+    else if (!strcmp(pszPath, "c:\\test dir\\*"))
         iDirList = 2;
-    else
-    if (!strcmp(pszPath, "c:\\test dir\\SUBDIR\\*"))
+    else if (!strcmp(pszPath, "c:\\test dir\\SUBDIR\\*"))
         iDirList = 3;
     else
         AssertFailed();
@@ -400,9 +404,15 @@ int testCase(char *pszFullPath, bool fWildCard = false)
 }
 
 
-int main(int argc, char **argv)
+int main()
 {
     char szTest[128];
+
+    RTR3InitExeNoArguments(0);
+    RTLogFlush(NULL);
+    RTLogDestinations(NULL, "stdout");
+    RTLogGroupSettings(NULL, "misc=~0");
+    RTLogFlags(NULL, "unbuffered");
 
     strcpy(szTest, "c:\\test Dir\\z.bAt");
     testCase(szTest);
@@ -424,3 +434,4 @@ int main(int argc, char **argv)
     testCase(szTest);
     return 0;
 }
+
