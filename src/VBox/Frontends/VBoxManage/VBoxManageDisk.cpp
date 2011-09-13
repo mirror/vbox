@@ -689,6 +689,7 @@ static const RTGETOPTDEF g_aConvertFromRawHardDiskOptions[] =
     { "-static",        'F', RTGETOPT_REQ_NOTHING },
     { "--variant",      'm', RTGETOPT_REQ_STRING },
     { "-variant",       'm', RTGETOPT_REQ_STRING },
+    { "--uuid",         'u', RTGETOPT_REQ_STRING },
 };
 
 RTEXITCODE handleConvertFromRaw(int argc, char *argv[])
@@ -701,6 +702,8 @@ RTEXITCODE handleConvertFromRaw(int argc, char *argv[])
     const char *filesize = NULL;
     unsigned uImageFlags = VD_IMAGE_FLAGS_NONE;
     void *pvBuf = NULL;
+    RTUUID uuid;
+    PCRTUUID pUuid = NULL;
 
     int c;
     RTGETOPTUNION ValueUnion;
@@ -712,6 +715,11 @@ RTEXITCODE handleConvertFromRaw(int argc, char *argv[])
     {
         switch (c)
         {
+            case 'u':   // --uuid
+                if (RT_FAILURE(RTUuidFromStr(&uuid, ValueUnion.psz)))
+                    return errorSyntax(USAGE_CONVERTFROMRAW, "Invalid UUID '%s'", ValueUnion.psz);
+                pUuid = &uuid;
+                break;
             case 'o':   // --format
                 format = ValueUnion.psz;
                 break;
@@ -808,7 +816,7 @@ RTEXITCODE handleConvertFromRaw(int argc, char *argv[])
     LCHS.cHeads = 0;
     LCHS.cSectors = 0;
     rc = VDCreateBase(pDisk, format, dstfilename, cbFile,
-                      uImageFlags, pszComment, &PCHS, &LCHS, NULL,
+                      uImageFlags, pszComment, &PCHS, &LCHS, pUuid,
                       VD_OPEN_FLAGS_NORMAL, NULL, NULL);
     if (RT_FAILURE(rc))
     {
