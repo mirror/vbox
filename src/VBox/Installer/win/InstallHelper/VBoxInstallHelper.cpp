@@ -48,9 +48,9 @@
 #endif
 
 #ifdef DEBUG
-# define Assert(_expr) assert(_expr)
+# define NonStandardAssert(_expr) assert(_expr)
 #else
-# define Assert(_expr) do{ }while(0)
+# define NonStandardAssert(_expr) do{ }while(0)
 #endif
 
 BOOL APIENTRY DllMain(HANDLE hModule,
@@ -504,7 +504,7 @@ static VOID netCfgLoggerDisable()
 
 static VOID netCfgLoggerEnable(MSIHANDLE hModule)
 {
-    Assert(hModule);
+    NonStandardAssert(hModule);
 
     if (g_hCurrentModule)
         netCfgLoggerDisable();
@@ -613,7 +613,7 @@ static UINT doNetCfgInit(MSIHANDLE hModule, INetCfg **ppnc, BOOL bWrite)
             }
 
             UINT rTmp = MsiRecordSetStringW(hMsg, 2, lpszLockedBy);
-            Assert(rTmp == ERROR_SUCCESS);
+            NonStandardAssert(rTmp == ERROR_SUCCESS);
             if (rTmp != ERROR_SUCCESS)
             {
                 LogStringW(hModule, TEXT("doNetCfgInit: MsiRecordSetStringW failed, error = 0x%x"), rTmp);
@@ -622,7 +622,7 @@ static UINT doNetCfgInit(MSIHANDLE hModule, INetCfg **ppnc, BOOL bWrite)
             }
 
             MsgResult = MsiProcessMessage(hModule, (INSTALLMESSAGE)(INSTALLMESSAGE_USER | MB_RETRYCANCEL), hMsg);
-            Assert(MsgResult == IDRETRY || MsgResult == IDCANCEL);
+            NonStandardAssert(MsgResult == IDRETRY || MsgResult == IDCANCEL);
             LogStringW(hModule, TEXT("doNetCfgInit: MsiProcessMessage returned (0x%x)"), MsgResult);
         }
         CoTaskMemFree(lpszLockedBy);
@@ -799,7 +799,7 @@ static BOOL RenameHostOnlyConnectionsCallback(HDEVINFO hDevInfo, PSP_DEVINFO_DAT
                 DIREG_DRV, /* IN DWORD  KeyType, */
                 KEY_READ /*IN REGSAM  samDesired*/
                 );
-        Assert(hKey != INVALID_HANDLE_VALUE);
+        NonStandardAssert(hKey != INVALID_HANDLE_VALUE);
         if (hKey != INVALID_HANDLE_VALUE)
         {
             WCHAR guid[50];
@@ -811,18 +811,18 @@ static BOOL RenameHostOnlyConnectionsCallback(HDEVINFO hDevInfo, PSP_DEVINFO_DAT
               (LPBYTE)guid, /*__out_opt    LPBYTE lpData,*/
               &cbGuid /*guid__inout_opt  LPDWORD lpcbData*/
             );
-            Assert(winEr == ERROR_SUCCESS);
+            NonStandardAssert(winEr == ERROR_SUCCESS);
             if (winEr == ERROR_SUCCESS)
             {
                 WCHAR ConnectoinName[128];
                 ULONG cbName = sizeof(ConnectoinName);
 
                 HRESULT hr = VBoxNetCfgWinGenHostonlyConnectionName (DevName, ConnectoinName, &cbName);
-                Assert(hr == S_OK);
+                NonStandardAssert(hr == S_OK);
                 if (SUCCEEDED(hr))
                 {
                     hr = VBoxNetCfgWinRenameConnection (guid, ConnectoinName);
-                    Assert(hr == S_OK);
+                    NonStandardAssert(hr == S_OK);
                 }
             }
         }
@@ -830,7 +830,7 @@ static BOOL RenameHostOnlyConnectionsCallback(HDEVINFO hDevInfo, PSP_DEVINFO_DAT
     }
     else
     {
-        Assert(0);
+        NonStandardAssert(0);
     }
 
     return TRUE;
