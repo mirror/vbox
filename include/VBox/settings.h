@@ -114,6 +114,11 @@ typedef std::list<Medium> MediaList;
  */
 struct Medium
 {
+    Medium()
+        : fAutoReset(false),
+          hdType(MediumType_Normal)
+    {}
+
     com::Guid       uuid;
     com::Utf8Str    strLocation;
     com::Utf8Str    strDescription;
@@ -237,6 +242,10 @@ typedef std::list<MachineRegistryEntry> MachinesRegistry;
 
 struct DHCPServer
 {
+    DHCPServer()
+        : fEnabled(false)
+    {}
+
     com::Utf8Str    strNetworkName,
                     strIPAddress,
                     strIPNetworkMask,
@@ -349,59 +358,47 @@ struct USBController
 
  struct NATRule
  {
-     NATRule(): proto(NATProtocol_TCP),
-             u16HostPort(0),
-             u16GuestPort(0){}
+     NATRule()
+         : proto(NATProtocol_TCP),
+           u16HostPort(0),
+           u16GuestPort(0)
+     {}
+
+     bool operator==(const NATRule &r) const
+     {
+         return strName == r.strName
+             && proto == r.proto
+             && u16HostPort == r.u16HostPort
+             && strHostIP == r.strHostIP
+             && u16GuestPort == r.u16GuestPort
+             && strGuestIP == r.strGuestIP;
+     }
+
      com::Utf8Str            strName;
      NATProtocol_T           proto;
      uint16_t                u16HostPort;
      com::Utf8Str            strHostIP;
      uint16_t                u16GuestPort;
      com::Utf8Str            strGuestIP;
-    bool operator==(const NATRule &r) const
-    {
-        return    strName == r.strName
-               && proto == r.proto
-               && u16HostPort == r.u16HostPort
-               && strHostIP == r.strHostIP
-               && u16GuestPort == r.u16GuestPort
-               && strGuestIP == r.strGuestIP;
-    }
  };
  typedef std::list<NATRule> NATRuleList;
 
  struct NAT
  {
-     NAT() : u32Mtu(0),
-             u32SockRcv(0),
-             u32SockSnd(0),
-             u32TcpRcv(0),
-             u32TcpSnd(0),
-             fDnsPassDomain(true), /* historically this value is true */
-             fDnsProxy(false),
-             fDnsUseHostResolver(false),
-             fAliasLog(false),
-             fAliasProxyOnly(false),
-             fAliasUseSamePorts(false)
-    {}
+     NAT()
+         : u32Mtu(0),
+           u32SockRcv(0),
+           u32SockSnd(0),
+           u32TcpRcv(0),
+           u32TcpSnd(0),
+           fDnsPassDomain(true), /* historically this value is true */
+           fDnsProxy(false),
+           fDnsUseHostResolver(false),
+           fAliasLog(false),
+           fAliasProxyOnly(false),
+           fAliasUseSamePorts(false)
+     {}
 
-     com::Utf8Str            strNetwork;
-     com::Utf8Str            strBindIP;
-     uint32_t                u32Mtu;
-     uint32_t                u32SockRcv;
-     uint32_t                u32SockSnd;
-     uint32_t                u32TcpRcv;
-     uint32_t                u32TcpSnd;
-     com::Utf8Str            strTftpPrefix;
-     com::Utf8Str            strTftpBootFile;
-     com::Utf8Str            strTftpNextServer;
-     bool                    fDnsPassDomain;
-     bool                    fDnsProxy;
-     bool                    fDnsUseHostResolver;
-     bool                    fAliasLog;
-     bool                    fAliasProxyOnly;
-     bool                    fAliasUseSamePorts;
-     NATRuleList             llRules;
      bool operator==(const NAT &n) const
      {
         return strNetwork           == n.strNetwork
@@ -422,6 +419,24 @@ struct USBController
              && fAliasUseSamePorts  == n.fAliasUseSamePorts
              && llRules             == n.llRules;
      }
+
+     com::Utf8Str            strNetwork;
+     com::Utf8Str            strBindIP;
+     uint32_t                u32Mtu;
+     uint32_t                u32SockRcv;
+     uint32_t                u32SockSnd;
+     uint32_t                u32TcpRcv;
+     uint32_t                u32TcpSnd;
+     com::Utf8Str            strTftpPrefix;
+     com::Utf8Str            strTftpBootFile;
+     com::Utf8Str            strTftpNextServer;
+     bool                    fDnsPassDomain;
+     bool                    fDnsProxy;
+     bool                    fDnsUseHostResolver;
+     bool                    fAliasLog;
+     bool                    fAliasProxyOnly;
+     bool                    fAliasUseSamePorts;
+     NATRuleList             llRules;
  };
 /**
  * NOTE: If you add any fields in here, you must update a) the constructor and b)
