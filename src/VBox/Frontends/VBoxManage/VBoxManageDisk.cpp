@@ -939,14 +939,14 @@ int handleShowHardDiskInfo(HandlerArg *a)
         {
             Bstr err;
             CHECK_ERROR_BREAK(hardDisk, COMGETTER(LastAccessError)(err.asOutParam()));
-            RTPrintf("Access Error:         %lS\n", err.raw());
+            RTPrintf("Access Error:         %ls\n", err.raw());
         }
 
         Bstr description;
         hardDisk->COMGETTER(Description)(description.asOutParam());
         if (!description.isEmpty())
         {
-            RTPrintf("Description:          %lS\n", description.raw());
+            RTPrintf("Description:          %ls\n", description.raw());
         }
 
         LONG64 logicalSize;
@@ -990,7 +990,7 @@ int handleShowHardDiskInfo(HandlerArg *a)
 
         Bstr format;
         hardDisk->COMGETTER(Format)(format.asOutParam());
-        RTPrintf("Storage format:       %lS\n", format.raw());
+        RTPrintf("Storage format:       %ls\n", format.raw());
         ULONG variant;
         hardDisk->COMGETTER(Variant)(&variant);
         const char *variantStr = "unknown";
@@ -1030,7 +1030,7 @@ int handleShowHardDiskInfo(HandlerArg *a)
                 Bstr name;
                 machine->COMGETTER(Name)(name.asOutParam());
                 machine->COMGETTER(Id)(uuid.asOutParam());
-                RTPrintf("%s%lS (UUID: %lS)\n",
+                RTPrintf("%s%ls (UUID: %ls)\n",
                          j == 0 ? "In use by VMs:        " : "                      ",
                          name.raw(), machineIds[j]);
             }
@@ -1040,7 +1040,7 @@ int handleShowHardDiskInfo(HandlerArg *a)
 
         Bstr loc;
         hardDisk->COMGETTER(Location)(loc.asOutParam());
-        RTPrintf("Location:             %lS\n", loc.raw());
+        RTPrintf("Location:             %ls\n", loc.raw());
 
         /* print out information specific for differencing hard disks */
         if (!parent.isNull())

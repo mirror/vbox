@@ -106,11 +106,11 @@ static int handleGetGuestProperty(HandlerArg *a)
         if (value.isEmpty())
             RTPrintf("No value set!\n");
         else
-            RTPrintf("Value: %lS\n", value.raw());
+            RTPrintf("Value: %ls\n", value.raw());
         if (!value.isEmpty() && verbose)
         {
             RTPrintf("Timestamp: %lld\n", i64Timestamp);
-            RTPrintf("Flags: %lS\n", flags.raw());
+            RTPrintf("Flags: %ls\n", flags.raw());
         }
     }
     return SUCCEEDED(rc) ? 0 : 1;
@@ -232,7 +232,7 @@ static int handleEnumGuestProperty(HandlerArg *a)
             if (names.size() == 0)
                 RTPrintf("No properties found.\n");
             for (unsigned i = 0; i < names.size(); ++i)
-                RTPrintf("Name: %lS, value: %lS, timestamp: %lld, flags: %lS\n",
+                RTPrintf("Name: %ls, value: %ls, timestamp: %lld, flags: %ls\n",
                          names[i], values[i], timestamps[i], flags[i]);
         }
     }
@@ -336,7 +336,7 @@ static int handleWaitGuestProperty(HandlerArg *a)
                         Bstr aNextValue, aNextFlags;
                         gpcev->COMGETTER(Value)(aNextValue.asOutParam());
                         gpcev->COMGETTER(Flags)(aNextFlags.asOutParam());
-                        RTPrintf("Name: %lS, value: %lS, flags: %lS\n",
+                        RTPrintf("Name: %ls, value: %ls, flags: %ls\n",
                                  aNextName.raw(), aNextValue.raw(), aNextFlags.raw());
                         fSignalled = true;
                     }

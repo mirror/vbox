@@ -448,7 +448,7 @@ int handleCloneVM(HandlerArg *a)
 
     Bstr bstrNewName;
     CHECK_ERROR_RET(trgMachine, COMGETTER(Name)(bstrNewName.asOutParam()), RTEXITCODE_FAILURE);
-    RTPrintf("Machine has been successfully cloned as \"%lS\"\n", bstrNewName.raw());
+    RTPrintf("Machine has been successfully cloned as \"%ls\"\n", bstrNewName.raw());
 
     return RTEXITCODE_SUCCESS;
 }
@@ -683,7 +683,7 @@ int handleGetExtraData(HandlerArg *a)
                 CHECK_ERROR(a->virtualBox, GetExtraData(bstrKey.raw(),
                                                         bstrValue.asOutParam()));
 
-                RTPrintf("Key: %lS, Value: %lS\n", bstrKey.raw(), bstrValue.raw());
+                RTPrintf("Key: %ls, Value: %ls\n", bstrKey.raw(), bstrValue.raw());
             }
         }
         else
@@ -692,7 +692,7 @@ int handleGetExtraData(HandlerArg *a)
             CHECK_ERROR(a->virtualBox, GetExtraData(Bstr(a->argv[1]).raw(),
                                                     value.asOutParam()));
             if (!value.isEmpty())
-                RTPrintf("Value: %lS\n", value.raw());
+                RTPrintf("Value: %ls\n", value.raw());
             else
                 RTPrintf("No value set!\n");
         }
@@ -719,7 +719,7 @@ int handleGetExtraData(HandlerArg *a)
                     CHECK_ERROR(machine, GetExtraData(bstrKey.raw(),
                                                       bstrValue.asOutParam()));
 
-                    RTPrintf("Key: %lS, Value: %lS\n", bstrKey.raw(), bstrValue.raw());
+                    RTPrintf("Key: %ls, Value: %ls\n", bstrKey.raw(), bstrValue.raw());
                 }
             }
             else
@@ -728,7 +728,7 @@ int handleGetExtraData(HandlerArg *a)
                 CHECK_ERROR(machine, GetExtraData(Bstr(a->argv[1]).raw(),
                                                   value.asOutParam()));
                 if (!value.isEmpty())
-                    RTPrintf("Value: %lS\n", value.raw());
+                    RTPrintf("Value: %ls\n", value.raw());
                 else
                     RTPrintf("No value set!\n");
             }
@@ -1075,7 +1075,7 @@ int handleExtPack(HandlerArg *a)
         hrc = showProgress(ptrProgress);
         CHECK_PROGRESS_ERROR_RET(ptrProgress, ("Failed to install \"%s\"", szPath), RTEXITCODE_FAILURE);
 
-        RTPrintf("Successfully installed \"%lS\".\n", bstrName.raw());
+        RTPrintf("Successfully installed \"%ls\".\n", bstrName.raw());
     }
     else if (!strcmp(a->argv[0], "uninstall"))
     {

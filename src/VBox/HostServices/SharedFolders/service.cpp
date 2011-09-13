@@ -1260,7 +1260,7 @@ static DECLCALLBACK(int) svcHostCall (void *, uint32_t u32Function, uint32_t cPa
     {
         Log(("SharedFolders host service: svcCall: SHFL_FN_ADD_MAPPING\n"));
         LogRel(("SharedFolders host service: adding host mapping\n"));
-        LogRel(("    Host path '%lS', map name '%lS', %s\n",
+        LogRel(("    Host path '%ls', map name '%ls', %s\n",
                 ((SHFLSTRING *)paParms[0].u.pointer.addr)->String.ucs2,
                 ((SHFLSTRING *)paParms[1].u.pointer.addr)->String.ucs2,
                 paParms[2].u.uint32 ? "writable" : "read-only"));
@@ -1319,7 +1319,7 @@ static DECLCALLBACK(int) svcHostCall (void *, uint32_t u32Function, uint32_t cPa
     case SHFL_FN_REMOVE_MAPPING:
     {
         Log(("SharedFolders host service: svcCall: SHFL_FN_REMOVE_MAPPING\n"));
-        LogRel(("SharedFolders host service: removing host mapping '%lS'\n",
+        LogRel(("SharedFolders host service: removing host mapping '%ls'\n",
                 ((SHFLSTRING *)paParms[0].u.pointer.addr)->String.ucs2));
 
         /* Verify parameter count and types. */

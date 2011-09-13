@@ -70,7 +70,7 @@ static int handleCreate(HandlerArg *a, int iStart, int *pcProcessed)
     Bstr name;
     CHECK_ERROR(hif, COMGETTER(Name) (name.asOutParam()));
 
-    RTPrintf("Interface '%lS' was successfully created\n", name.raw());
+    RTPrintf("Interface '%ls' was successfully created\n", name.raw());
 
     return 0;
 }
