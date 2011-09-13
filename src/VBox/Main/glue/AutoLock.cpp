@@ -751,5 +751,39 @@ AutoMultiWriteLock3::AutoMultiWriteLock3(LockHandle *pl1,
     acquire();
 }
 
+AutoMultiWriteLock4::AutoMultiWriteLock4(Lockable *pl1,
+                                         Lockable *pl2,
+                                         Lockable *pl3,
+                                         Lockable *pl4
+                                         COMMA_LOCKVAL_SRC_POS_DECL)
+    : AutoWriteLockBase(4
+                        COMMA_LOCKVAL_SRC_POS_ARGS)
+{
+    if (pl1)
+        m->aHandles[0] = pl1->lockHandle();
+    if (pl2)
+        m->aHandles[1] = pl2->lockHandle();
+    if (pl3)
+        m->aHandles[2] = pl3->lockHandle();
+    if (pl4)
+        m->aHandles[3] = pl4->lockHandle();
+    acquire();
+}
+
+AutoMultiWriteLock4::AutoMultiWriteLock4(LockHandle *pl1,
+                                         LockHandle *pl2,
+                                         LockHandle *pl3,
+                                         LockHandle *pl4
+                                         COMMA_LOCKVAL_SRC_POS_DECL)
+    : AutoWriteLockBase(4
+                        COMMA_LOCKVAL_SRC_POS_ARGS)
+{
+    m->aHandles[0] = pl1;
+    m->aHandles[1] = pl2;
+    m->aHandles[2] = pl3;
+    m->aHandles[3] = pl4;
+    acquire();
+}
+
 } /* namespace util */
 /* vi: set tabstop=4 shiftwidth=4 expandtab: */
