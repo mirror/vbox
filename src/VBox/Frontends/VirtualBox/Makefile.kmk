@@ -953,10 +953,17 @@ include $(KBUILD_PATH)/subfooter.kmk
 # before a new product release. VirtualBox_xx_YY.ts is a template for new
 # languages and should never be actually translated or installed.
 #
+# Use the checknls target for checking again common mistakes done by the
+# translators.
+#
 # For Qt >= 4.6.0 it maybe necessary to add -I $(VBOX_GUI_INC_DIRS) to the
 # lupdate call
 #
 #VirtualBox_QT_TRANSLATIONS = nls/VirtualBox_de.ts
+checknls::
+	# Check for missing :/ in image paths
+	grep -i "src=[^:%]" $(filter-out nls/qt_%.ts,$(VirtualBox_QT_TRANSLATIONS))
+
 updatenls:: makeallnls nls/VirtualBox_en.ts
 
 makeallnls:: \
