@@ -119,6 +119,7 @@ change_res:
     StrCpy $reg_path_monitor "SYSTEM\CurrentControlSet\SERVICES\VBoxVideo\Device0\Mon00000001"
   ${ElseIf} $g_strWinVersion == "XP"
   ${OrIf} $g_strWinVersion == "7"
+  ${OrIf} $g_strWinVersion == "8"
     StrCpy $reg_path_device "SYSTEM\CurrentControlSet\Control\Video\$dev_id\0000"
     StrCpy $reg_path_monitor "SYSTEM\CurrentControlSet\Control\VIDEO\$dev_id\0000\Mon00000001"
   ${Else}

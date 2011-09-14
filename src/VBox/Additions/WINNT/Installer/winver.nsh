@@ -64,7 +64,8 @@ Function ${un}GetWindowsVersion
   StrCmp $R1 '5.1' lbl_winnt_XP
   StrCmp $R1 '5.2' lbl_winnt_2003
   StrCmp $R1 '6.0' lbl_winnt_vista
-  StrCmp $R1 '6.1' lbl_winnt_7 lbl_error
+  StrCmp $R1 '6.1' lbl_winnt_7
+  StrCmp $R1 '6.2' lbl_winnt_8 lbl_error
 
   lbl_winnt_x:
     StrCpy $R0 "NT $R0" 6
@@ -88,6 +89,10 @@ Function ${un}GetWindowsVersion
 
   lbl_winnt_7:
     Strcpy $R0 '7'
+  Goto lbl_done
+
+  lbl_winnt_8:
+    Strcpy $R0 '8'
   Goto lbl_done
 
   lbl_error:

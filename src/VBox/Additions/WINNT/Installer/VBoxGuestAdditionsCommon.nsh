@@ -514,6 +514,7 @@ Function ${un}CheckForWDDMCapability
   ; If we're on a 32-bit Windows Vista / 7 we can use the WDDM driver
   ${If} $g_strWinVersion == "Vista"
   ${OrIf} $g_strWinVersion == "7"
+  ${OrIf} $g_strWinVersion == "8"
     StrCpy $g_bCapWDDM "true"
   ${EndIf}
 !endif
