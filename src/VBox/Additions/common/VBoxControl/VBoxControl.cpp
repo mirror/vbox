@@ -96,8 +96,8 @@ enum VBoxControlUsage
 static void usage(enum VBoxControlUsage eWhich = USAGE_ALL)
 {
     RTPrintf("Usage:\n\n");
-    doUsage("print version number and exit", g_pszProgName, "[-v|-version]");
-    doUsage("suppress the logo", g_pszProgName, "-nologo ...");
+    doUsage("print version number and exit", g_pszProgName, "[-v|--version]");
+    doUsage("suppress the logo", g_pszProgName, "--nologo ...");
     RTPrintf("\n");
 
 /* Exclude the Windows bits from the test version.  Anyone who needs to test
@@ -119,12 +119,12 @@ static void usage(enum VBoxControlUsage eWhich = USAGE_ALL)
 #ifdef VBOX_WITH_GUEST_PROPS
     if (GUEST_PROP == eWhich || eWhich == USAGE_ALL)
     {
-        doUsage("get <property> [-verbose]", g_pszProgName, "guestproperty");
-        doUsage("set <property> [<value> [-flags <flags>]]", g_pszProgName, "guestproperty");
-        doUsage("enumerate [-patterns <patterns>]", g_pszProgName, "guestproperty");
+        doUsage("get <property> [--verbose]", g_pszProgName, "guestproperty");
+        doUsage("set <property> [<value> [--flags <flags>]]", g_pszProgName, "guestproperty");
+        doUsage("enumerate [--patterns <patterns>]", g_pszProgName, "guestproperty");
         doUsage("wait <patterns>", g_pszProgName, "guestproperty");
-        doUsage("[-timestamp <last timestamp>]");
-        doUsage("[-timeout <timeout in ms>");
+        doUsage("[--timestamp <last timestamp>]");
+        doUsage("[--timeout <timeout in ms>");
     }
 #endif
 #ifdef VBOX_WITH_SHARED_FOLDERS
