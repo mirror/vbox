@@ -2738,10 +2738,6 @@ p, li { white-space: pre-wrap; }
         <translation>&lt;b&gt;&lt;nobr&gt;&lt;b&gt;Nessuna cartella condivisa&lt;/b&gt;&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <source>Indicates whether the Remote Display (VRDP Server) is enabled (&lt;img src=:/vrdp_16px.png/&gt;) or not (&lt;img src=:/vrdp_disabled_16px.png/&gt;).</source>
-        <translation type="obsolete">Indica se lo schermo remoto (Server VRDP) è abilitato (&lt;img src=:/vrdp_16px.png/&gt;) o meno (&lt;img src=:/vrdp_disabled_16px.png/&gt;).</translation>
-    </message>
-    <message>
         <source>&lt;hr&gt;The VRDP Server is listening on port %1</source>
         <translation type="obsolete">&lt;hr&gt;Il server VRDP è in ascolto sulla porta %1</translation>
     </message>
@@ -5041,18 +5037,6 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Failed to remove the shared folder &lt;b&gt;%1&lt;/b&gt; (pointing to &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) from the virtual machine &lt;b&gt;%3&lt;/b&gt;.</source>
         <translation>Rimozione di una cartella condivisa &lt;b&gt;%1&lt;/b&gt; (che punta a &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) dalla Macchina Virtuale &lt;b&gt;%3&lt;/b&gt; non riuscita.</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;You have &lt;b&gt;clicked the mouse&lt;/b&gt; inside the Virtual Machine display or pressed the &lt;b&gt;host key&lt;/b&gt;. This will cause the Virtual Machine to &lt;b&gt;capture&lt;/b&gt; the host mouse pointer (only if the mouse pointer integration is not currently supported by the guest OS) and the keyboard, which will make them unavailable to other applications running on your host machine.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;host key&lt;/b&gt; at any time to &lt;b&gt;uncapture&lt;/b&gt; the keyboard and mouse (if it is captured) and return them to normal operation. The currently assigned host key is shown on the status bar at the bottom of the Virtual Machine window, next to the&amp;nbsp;&lt;img src=hostkey_16px.png/&gt;&amp;nbsp;icon. This icon, together with the mouse icon placed nearby, indicate the current keyboard and mouse capture state.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Hai &lt;b&gt;fatto clic con il mouse&lt;/b&gt; nello schermo della Macchina Virtuale o premuto la &lt;b&gt;host key&lt;/b&gt;. Questo causerà l&apos;&lt;b&gt;acquisizione&lt;/b&gt; del puntatore del mouse da parte della Macchina Virtuale (solo se l&apos;Integrazione Mouse non è supportata dal sistema Guest o è disabilitata) e della tastiera, e li renderà non disponibili ad altre applicazioni sul sistema Host.&lt;/p&gt;&lt;p&gt;Puoi premere la &lt;b&gt;host key&lt;/b&gt; in un qualsiasi momento per &lt;b&gt;rilasciare&lt;/b&gt; la tastiera e il mouse (se acquisito) e ritornare alla modalità normale. La host key attuale è mostrata nella barra di stato in fondo alla finestra della Macchina Virtuale, vicino all&apos;icona &amp;nbsp;&lt;img src=hostkey_16px.png/&gt;. Questa icona, assieme all&apos;icona del mouse vicina, indica lo stato di acquisizione attuale di mouse e tastiera.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;You have the &lt;b&gt;Auto capture keyboard&lt;/b&gt; option turned on. This will cause the Virtual Machine to automatically &lt;b&gt;capture&lt;/b&gt; the keyboard every time the VM window is activated and make it unavailable to other applications running on your host machine: when the keyboard is captured, all keystrokes (including system ones like Alt-Tab) will be directed to the VM.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;host key&lt;/b&gt; at any time to &lt;b&gt;uncapture&lt;/b&gt; the keyboard and mouse (if it is captured) and return them to normal operation. The currently assigned host key is shown on the status bar at the bottom of the Virtual Machine window, next to the&amp;nbsp;&lt;img src=hostkey_16px.png/&gt;&amp;nbsp;icon. This icon, together with the mouse icon placed nearby, indicate the current keyboard and mouse capture state.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Hai l&apos;opzione &lt;b&gt;Acquisizione automatica della tastiera&lt;/b&gt; attivata. Questo causerà l&apos;&lt;b&gt;acquisizione&lt;/b&gt; automatica della tastiera da parte della Macchina Virtuale ogni volta che la finestra della MV viene attivata e la renderà non disponibile ad altre applicazioni sul sistema Host: quando la tastiera viene acquisita, tutte le pressioni di tasti (incluse quelle di sistema come Alt-Tab) saranno dirette alla MV.&lt;/p&gt;&lt;p&gt;Puoi premere la &lt;b&gt;host key&lt;/b&gt; in un qualsiasi momento per &lt;b&gt;rilasciare&lt;/b&gt; la tastiera e il mouse (se acquisito) e ritornare alla modalità normale. La host key attuale è mostrata nella barra di stato in fondo alla finestra della Macchina Virtuale, vicino all&apos;icona &amp;nbsp;&lt;img src=hostkey_16px.png/&gt;. Questa icona, assieme all&apos;icona del mouse vicina, indica lo stato di acquisizione attuale di mouse e tastiera.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The Virtual Machine reports that the guest OS supports &lt;b&gt;mouse pointer integration&lt;/b&gt;. This means that you do not need to &lt;i&gt;capture&lt;/i&gt; the mouse pointer to be able to use it in your guest OS -- all mouse actions you perform when the mouse pointer is over the Virtual Machine&apos;s display are directly sent to the guest OS. If the mouse is currently captured, it will be automatically uncaptured.&lt;/p&gt;&lt;p&gt;The mouse icon on the status bar will look like&amp;nbsp;&lt;img src=mouse_seamless_16px.png/&gt;&amp;nbsp;to inform you that mouse pointer integration is supported by the guest OS and is currently turned on.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note&lt;/b&gt;: Some applications may behave incorrectly in mouse pointer integration mode. You can always disable it for the current session (and enable it again) by selecting the corresponding action from the menu bar.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;La Macchina Virtuale ha rilevato che il sistema Guest supporta l&apos;&lt;b&gt;Integrazione Mouse&lt;/b&gt;. Ciò significa che non hai bisogno di &lt;i&gt;acquisire&lt;/i&gt; il puntatore del mouse per utilizzarlo nel sistema Guest -- tutte le azioni del mouse che esegui mentre il puntatore è nella finestra della Macchina Virtuale sono inviate direttamente al sistema Guest. Se il mouse è attualmente acquisito, sarà automaticamente rilasciato.&lt;/p&gt;&lt;p&gt;L&apos;icona del mouse nella barra di stato diverrà simile a&amp;nbsp;&lt;img src=mouse_seamless_16px.png/&gt;&amp;nbsp;per informarti che l&apos;Integrazione Mouse è supportata dal sistema Guest ed è correntemente attiva.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Nota&lt;/b&gt;: Alcune applicazioni possono comportarsi non correttamente nella modalità Integrazione Mouse. Puoi sempre disabilitare la modalità per la sessione corrente (e abilitarla nuovamente) selezionando l&apos;azione corrispondente dalla barra del menu.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;The Virtual Machine reports that the guest OS does not support &lt;b&gt;mouse pointer integration&lt;/b&gt; in the current video mode. You need to capture the mouse (by clicking over the VM display or pressing the host key) in order to use the mouse inside the guest OS.&lt;/p&gt;</source>
@@ -8164,18 +8148,6 @@ Versione %1</translation>
         <translation type="obsolete">&amp;Aiuto</translation>
     </message>
     <message>
-        <source>Indicates whether the guest display auto-resize function is On (&lt;img src=auto_resize_on_16px.png/&gt;) or Off (&lt;img src=auto_resize_off_16px.png/&gt;). Note that this function requires Guest Additions to be installed in the guest OS.</source>
-        <translation type="obsolete">Indica se la funzione di ridimensionamento automatico dello schermo Guest è attiva (&lt;img src=auto_resize_on_16px.png/&gt;) o disattiva (&lt;img src=auto_resize_off_16px.png/&gt;). Nota che questa funzione richiede che le Guest Additions siano installate sul sistema Guest.</translation>
-    </message>
-    <message>
-        <source>Indicates whether the host mouse pointer is captured by the guest OS:&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_disabled_16px.png/&gt;&amp;nbsp;&amp;nbsp;pointer is not captured&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_16px.png/&gt;&amp;nbsp;&amp;nbsp;pointer is captured&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;mouse integration (MI) is On&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_can_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;MI is Off, pointer is captured&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_can_seamless_uncaptured_16px.png/&gt;&amp;nbsp;&amp;nbsp;MI is Off, pointer is not captured&lt;/nobr&gt;&lt;br&gt;Note that the mouse integration feature requires Guest Additions to be installed in the guest OS.</source>
-        <translation type="obsolete">Indica se il puntatore del mouse è acquisito dal sistema Guest:&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_disabled_16px.png/&gt;&amp;nbsp;&amp;nbsp;il puntatore non è acquisito&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_16px.png/&gt;&amp;nbsp;&amp;nbsp;il puntatore è acquisito&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;l&apos;Integrazione Mouse (MI) è abilitata&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_can_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;MI è disabilitata, il puntatore è acquisito&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_can_seamless_uncaptured_16px.png/&gt;&amp;nbsp;&amp;nbsp;MI è disabilitata, il puntatore non è acquisito&lt;/nobr&gt;&lt;br&gt;Nota che la funzionalità di Integrazione Mouse richiede che le Guest Additions siano installate sul sistema Guest.</translation>
-    </message>
-    <message>
-        <source>Indicates whether the keyboard is captured by the guest OS (&lt;img src=hostkey_captured_16px.png/&gt;) or not (&lt;img src=hostkey_16px.png/&gt;)</source>
-        <translation type="obsolete">Indica se la tastiera è acquisita dal sistema Guest (&lt;img src=hostkey_captured_16px.png/&gt;) o meno (&lt;img src=hostkey_16px.png/&gt;)</translation>
-    </message>
-    <message>
         <source>Shows the currently assigned Host key.&lt;br&gt;This key, when pressed alone, toggles the the keyboard and mouse capture state. It can also be used in combination with other keys to quickly perform actions from the main menu.</source>
         <translation type="obsolete">Mostra la combinazione di tasti Host attuale.&lt;br&gt;Tale combinazione, se premuta da sola, commuta lo stato di acquisizione di mouse e tastiera. Può anche essere usata in combinazione con altri tasti come scorciatoia per le azioni del menu principale.</translation>
     </message>
@@ -8219,10 +8191,6 @@ Versione %1</translation>
         <source>&lt;br&gt;[&lt;b&gt;not attached&lt;/b&gt;]</source>
         <comment>HDD tooltip</comment>
         <translation type="obsolete">&lt;br&gt;[&lt;b&gt;non collegato&lt;/b&gt;]</translation>
-    </message>
-    <message>
-        <source>Indicates whether the Remote Display (VRDP Server) is enabled (&lt;img src=vrdp_16px.png/&gt;) or not (&lt;img src=vrdp_disabled_16px.png/&gt;)</source>
-        <translation type="obsolete">Indica se il Desktop Remoto (Server VRDP) è abilitato (&lt;img src=vrdp_16px.png/&gt;) o meno (&lt;img src=vrdp_disabled_16px.png/&gt;)</translation>
     </message>
     <message>
         <source>&lt;hr&gt;The VRDP Server is listening on port %1</source>
@@ -8337,10 +8305,6 @@ Versione %1</translation>
         <translation type="obsolete">Passa alla modalità di integrazione trasparente</translation>
     </message>
     <message>
-        <source>Indicates whether the keyboard is captured by the guest OS (&lt;img src=hostkey_captured_16px.png/&gt;) or not (&lt;img src=hostkey_16px.png/&gt;).</source>
-        <translation type="obsolete">Indica se la tastiera è acquisita dal sistema Guest (&lt;img src=hostkey_captured_16px.png/&gt;) o meno (&lt;img src=hostkey_16px.png/&gt;).</translation>
-    </message>
-    <message>
         <source>&lt;qt&gt;&lt;nobr&gt;Indicates the activity of the floppy media:&lt;/nobr&gt;%1&lt;/qt&gt;</source>
         <comment>Floppy tooltip</comment>
         <translation type="obsolete">&lt;qt&gt;&lt;nobr&gt;indica l&apos;attività del floppy:&lt;/nobr&gt;%1&lt;/qt&gt;</translation>
@@ -8431,8 +8395,8 @@ Versione %1</translation>
         <translation type="obsolete">&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Il controller USB è disabilitato&lt;/b&gt;&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <source>Indicates whether the Remote Display (VRDP Server) is enabled (&lt;img src=vrdp_16px.png/&gt;) or not (&lt;img src=vrdp_disabled_16px.png/&gt;).</source>
-        <translation type="obsolete">Indica se il Display Remoto (Server VRDP) è abilitato (&lt;img src=vrdp_16px.png/&gt;) o meno (&lt;img src=vrdp_disabled_16px.png/&gt;).</translation>
+        <source>Indicates whether the Remote Display (VRDP Server) is enabled (&lt;img src=:/vrdp_16px.png/&gt;) or not (&lt;img src=:/vrdp_disabled_16px.png/&gt;).</source>
+        <translation type="obsolete">Indica se il Display Remoto (Server VRDP) è abilitato (&lt;img src=:/vrdp_16px.png/&gt;) o meno (&lt;img src=:/vrdp_disabled_16px.png/&gt;).</translation>
     </message>
     <message>
         <source>&lt;qt&gt;&lt;nobr&gt;Indicates the activity of the machineof the machine&apos;sapos;s shared folders: shared folders:&lt;/nobr&gt;%1&lt;/qt&gt;</source>
@@ -8486,22 +8450,6 @@ Versione %1</translation>
         <source>&amp;Logging...</source>
         <comment>debug action</comment>
         <translation type="obsolete">&amp;Registrazione...</translation>
-    </message>
-    <message>
-        <source>Indicates whether the guest display auto-resize function is On (&lt;img src=:/auto_resize_on_16px.png/&gt;) or Off (&lt;img src=:/auto_resize_off_16px.png/&gt;). Note that this function requires Guest Additions to be installed in the guest OS.</source>
-        <translation type="obsolete">Indica se il ridimensionamento automatico dello schermo guest è Attivo (&lt;img src=:/auto_resize_on_16px.png/&gt;) o Inattivo (&lt;img src=:/auto_resize_off_16px.png/&gt;). Nota che questa funzione richiede che le Guest Additions siano installate sul sistema guest.</translation>
-    </message>
-    <message>
-        <source>Indicates whether the host mouse pointer is captured by the guest OS:&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_disabled_16px.png/&gt;&amp;nbsp;&amp;nbsp;pointer is not captured&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_16px.png/&gt;&amp;nbsp;&amp;nbsp;pointer is captured&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;mouse integration (MI) is On&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_can_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;MI is Off, pointer is captured&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_can_seamless_uncaptured_16px.png/&gt;&amp;nbsp;&amp;nbsp;MI is Off, pointer is not captured&lt;/nobr&gt;&lt;br&gt;Note that the mouse integration feature requires Guest Additions to be installed in the guest OS.</source>
-        <translation type="obsolete">Indica se il puntatore del mouse dell&apos;host è acquisito dal sistema guest:&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_disabled_16px.png/&gt;&amp;nbsp;&amp;nbsp;il puntatore non è acquisito&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_16px.png/&gt;&amp;nbsp;&amp;nbsp;il puntatore è acquisito&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;l&apos;integrazione del mouse (MI) è Attiva&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_can_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;MI è Inattiva, il puntatore è acquisito&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_can_seamless_uncaptured_16px.png/&gt;&amp;nbsp;&amp;nbsp;MI è Inattiva, il puntatore non è acquisito&lt;/nobr&gt;&lt;br&gt;Nota che la funzionalità di integrazione del mouse richiede che le Guest Additions siano installate sul sistema guest.</translation>
-    </message>
-    <message>
-        <source>Indicates whether the keyboard is captured by the guest OS (&lt;img src=:/hostkey_captured_16px.png/&gt;) or not (&lt;img src=:/hostkey_16px.png/&gt;).</source>
-        <translation type="obsolete">Indica se la tastiera è acquisita dal sistema guest (&lt;img src=:/hostkey_captured_16px.png/&gt;) o meno (&lt;img src=:/hostkey_16px.png/&gt;).</translation>
-    </message>
-    <message>
-        <source>Indicates whether the Remote Display (VRDP Server) is enabled (&lt;img src=:/vrdp_16px.png/&gt;) or not (&lt;img src=:/vrdp_disabled_16px.png/&gt;).</source>
-        <translation type="obsolete">Indica se lo schermo remoto (Server VRDP) è abilitato (&lt;img src=:/vrdp_16px.png/&gt;) o meno (&lt;img src=:/vrdp_disabled_16px.png/&gt;).</translation>
     </message>
     <message>
         <source>Shows the currently assigned Host key.&lt;br&gt;This key, when pressed alone, toggles the keyboard and mouse capture state. It can also be used in combination with other keys to quickly perform actions from the main menu.</source>
@@ -11875,10 +11823,6 @@ la lingua a quella predefinita di sistema.&lt;/qt&gt;
     <message>
         <source>Start the selected virtual machine</source>
         <translation>Avvia la macchina virtuale selezionata</translation>
-    </message>
-    <message>
-        <source>&lt;h3&gt;Welcome to VirtualBox!&lt;/h3&gt;&lt;p&gt;The left part of this window is  a list of all virtual machines on your computer. The list is empty now because you haven&apos;t created any virtual machines yet.&lt;img src=welcome.png align=right/&gt;&lt;/p&gt;&lt;p&gt;In order to create a new virtual machine, press the &lt;b&gt;New&lt;/b&gt; button in the main tool bar located at the top of the window.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;%1&lt;/b&gt; key to get instant help, or visit &lt;a href=http://www.virtualbox.org&gt;www.virtualbox.org&lt;/a&gt; for the latest information and news.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;h3&gt;Benvenuti su VirtualBox!&lt;/h3&gt;&lt;p&gt;La parte sinistra della finestra mostra l&apos;elenco di tutte le Macchine Virtuali presenti sul computer. L&apos;elenco è vuoto perché non hai ancora creato alcuna Macchina Virtuale.&lt;img src=welcome.png align=right/&gt;&lt;/p&gt;&lt;p&gt;Per creare una nuova Macchina Virtuale, premi il pulsante &lt;b&gt;Nuovo&lt;/b&gt; nella barra degli strumenti principale nella parte alta della finestra.&lt;/p&gt;&lt;p&gt;Puoi premere il tasto &lt;b&gt;%1&lt;/b&gt; per avere l&apos;aiuto in linea, o visitare &lt;a href=http://www.virtualbox.org&gt;www.virtualbox.org&lt;/a&gt; per le ultime informazioni e novità.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&amp;Machine</source>
