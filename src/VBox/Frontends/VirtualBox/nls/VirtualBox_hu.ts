@@ -2744,10 +2744,6 @@ p, li { white-space: pre-wrap; }
         <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Nincs megosztott mappa&lt;/b&gt;&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <source>Indicates whether the Remote Display (VRDP Server) is enabled (&lt;img src=:/vrdp_16px.png/&gt;) or not (&lt;img src=:/vrdp_disabled_16px.png/&gt;).</source>
-        <translation type="obsolete">Jelzi, hogy a Távoli képernyő (VRDP szerver) engedélyezett (&lt;img src=:/vrdp_16px.png/&gt;) vagy sem (&lt;img src=:/vrdp_disabled_16px.png/&gt;).</translation>
-    </message>
-    <message>
         <source>&lt;hr&gt;The VRDP Server is listening on port %1</source>
         <translation type="obsolete">&lt;hr&gt;A VRDP szerver az alábbi porton figyel: %1</translation>
     </message>
@@ -7893,18 +7889,6 @@ Verzió %1</translation>
         <translation type="obsolete">Sú&amp;gó</translation>
     </message>
     <message>
-        <source>Indicates whether the guest display auto-resize function is On (&lt;img src=auto_resize_on_16px.png/&gt;) or Off (&lt;img src=auto_resize_off_16px.png/&gt;). Note that this function requires Guest Additions to be installed in the guest OS.</source>
-        <translation type="obsolete">Jelzi, hogy a vendég képernyőjének átméretezése engedélyezett (&lt;img src=auto_resize_on_16px.png/&gt;) vagy sem (&lt;img src=auto_resize_off_16px.png/&gt;). Ez a funkció a Integrációs szolgáltatások telepítését igényli a vendég gépen.</translation>
-    </message>
-    <message>
-        <source>Indicates whether the host mouse pointer is captured by the guest OS:&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_disabled_16px.png/&gt;&amp;nbsp;&amp;nbsp;pointer is not captured&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_16px.png/&gt;&amp;nbsp;&amp;nbsp;pointer is captured&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;mouse integration (MI) is On&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_can_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;MI is Off, pointer is captured&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_can_seamless_uncaptured_16px.png/&gt;&amp;nbsp;&amp;nbsp;MI is Off, pointer is not captured&lt;/nobr&gt;&lt;br&gt;Note that the mouse integration feature requires Guest Additions to be installed in the guest OS.</source>
-        <translation type="obsolete">Jelzi, hogy az egér a vendég gép fogságában van:&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_disabled_16px.png/&gt;&amp;nbsp;&amp;nbsp;egér nincs elfogva&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_16px.png/&gt;&amp;nbsp;&amp;nbsp;egér elfogva&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;egér-integráció be&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_can_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;egér integtáció ki, egér elfogva&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_can_seamless_uncaptured_16px.png/&gt;&amp;nbsp;&amp;nbsp;egér-integráció ki, egér nincs elfogva&lt;/nobr&gt;&lt;br&gt;Az egér-integráció csak akkor működik, ha a vendég rendszerre fel vannak telepítve az Integrációs szolgáltatások.</translation>
-    </message>
-    <message>
-        <source>Indicates whether the keyboard is captured by the guest OS (&lt;img src=hostkey_captured_16px.png/&gt;) or not (&lt;img src=hostkey_16px.png/&gt;)</source>
-        <translation type="obsolete">Jelzi,hogy a billentyűzet a vendég fogságában van (&lt;img src=hostkey_captured_16px.png/&gt;) avagy nem (&lt;img src=hostkey_16px.png/&gt;)</translation>
-    </message>
-    <message>
         <source>Shows the currently assigned Host key.&lt;br&gt;This key, when pressed alone, toggles the the keyboard and mouse capture state. It can also be used in combination with other keys to quickly perform actions from the main menu.</source>
         <translation type="obsolete">Megmutatja az aktuális gazda-billentyűt.&lt;br&gt;Ez az a billentyű, melyet megnyomva az egér és a billentyűzet elfogási állapota megváltoztatható. Más billentyűkkel együtt használva a főmenü egyes műveletei hívhatók elő.</translation>
     </message>
@@ -7952,10 +7936,6 @@ Verzió %1</translation>
     <message>
         <source>&lt;qt&gt;Indicates&amp;nbsp;the&amp;nbsp;activity&amp;nbsp;of&amp;nbsp;the&amp;nbsp;network&amp;nbsp;interfaces&lt;br&gt;[&lt;b&gt;%1 adapter(s)&lt;/b&gt;]&lt;/qt&gt;</source>
         <translation type="obsolete">&lt;qt&gt;Jelzi&amp;nbsp;a&amp;nbsp;hálózat&amp;nbsp;aktivítását&lt;br&gt;[&lt;b&gt;%1&lt;/b&gt;]&lt;/qt&gt;</translation>
-    </message>
-    <message>
-        <source>Indicates whether the Remote Display (VRDP Server) is enabled (&lt;img src=vrdp_16px.png/&gt;) or not (&lt;img src=vrdp_disabled_16px.png/&gt;)</source>
-        <translation type="obsolete">Jelzi, hogy a Távoli képernyő (VRDP) szerver engedélyezett (&lt;img src=vrdp_16px.png/&gt;) vagy sem (&lt;img src=vrdp_disabled_16px.png/&gt;)</translation>
     </message>
     <message>
         <source>&lt;hr&gt;The VRDP Server is listening on port %1</source>
@@ -8043,10 +8023,6 @@ Verzió %1</translation>
     <message>
         <source>Switch to seamless desktop integration mode</source>
         <translation type="obsolete">Átkapcsolás asztal-integrációs módra</translation>
-    </message>
-    <message>
-        <source>Indicates whether the keyboard is captured by the guest OS (&lt;img src=hostkey_captured_16px.png/&gt;) or not (&lt;img src=hostkey_16px.png/&gt;).</source>
-        <translation type="obsolete">Jelzi, hogy a billentyűzetet elkapta-e a vendég OS (&lt;img src=hostkey_captured_16px.png/&gt;) vagy nem (&lt;img src=hostkey_16px.png/&gt;).</translation>
     </message>
     <message>
         <source>&lt;qt&gt;&lt;nobr&gt;Indicates the activity of the floppy media:&lt;/nobr&gt;%1&lt;/qt&gt;</source>
@@ -8139,10 +8115,6 @@ Verzió %1</translation>
         <translation type="obsolete">&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Az USB vezérlő le van tiltva&lt;/b&gt;&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <source>Indicates whether the Remote Display (VRDP Server) is enabled (&lt;img src=vrdp_16px.png/&gt;) or not (&lt;img src=vrdp_disabled_16px.png/&gt;).</source>
-        <translation type="obsolete">Jelzi, hogy a Távoli képernyő (VRDP szerver) engedélyezett (&lt;img src=vrdp_16px.png/&gt;) vagy sem (&lt;img src=vrdp_disabled_16px.png/&gt;).</translation>
-    </message>
-    <message>
         <source>&lt;qt&gt;&lt;nobr&gt;Indicates the activity of the machineof the machine&apos;sapos;s shared folders: shared folders:&lt;/nobr&gt;%1&lt;/qt&gt;</source>
         <comment>Shared folders tooltip</comment>
         <translation type="obsolete">&lt;qt&gt;&lt;nobr&gt;Jelzi az aktivitást a megosztott mappákon:&lt;/nobr&gt;%1&lt;/qt&gt;</translation>
@@ -8191,20 +8163,8 @@ Verzió %1</translation>
         <translation type="obsolete">Paran&amp;cssor...</translation>
     </message>
     <message>
-        <source>Indicates whether the guest display auto-resize function is On (&lt;img src=:/auto_resize_on_16px.png/&gt;) or Off (&lt;img src=:/auto_resize_off_16px.png/&gt;). Note that this function requires Guest Additions to be installed in the guest OS.</source>
-        <translation type="obsolete">Jelzi, hogy a vendég képernyőjének átméretezése engedélyezett (&lt;img src=:/auto_resize_on_16px.png/&gt;) vagy sem (&lt;img src=:/auto_resize_off_16px.png/&gt;). Ez a funkció az Integrációs szolgáltatások telepítését igényli a vendég gépen.</translation>
-    </message>
-    <message>
-        <source>Indicates whether the host mouse pointer is captured by the guest OS:&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_disabled_16px.png/&gt;&amp;nbsp;&amp;nbsp;pointer is not captured&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_16px.png/&gt;&amp;nbsp;&amp;nbsp;pointer is captured&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;mouse integration (MI) is On&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_can_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;MI is Off, pointer is captured&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_can_seamless_uncaptured_16px.png/&gt;&amp;nbsp;&amp;nbsp;MI is Off, pointer is not captured&lt;/nobr&gt;&lt;br&gt;Note that the mouse integration feature requires Guest Additions to be installed in the guest OS.</source>
-        <translation type="obsolete">Jelzi, hogy az egér a vendég gép fogságában van:&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_disabled_16px.png/&gt;&amp;nbsp;&amp;nbsp;egér nincs elfogva&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_16px.png/&gt;&amp;nbsp;&amp;nbsp;egér elfogva&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;egér-integráció be&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_can_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;egér-integráció ki, egér elfogva&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_can_seamless_uncaptured_16px.png/&gt;&amp;nbsp;&amp;nbsp;egér-integráció ki, egér nincs elfogva&lt;/nobr&gt;&lt;br&gt;Az egér-integráció csak akkor működik, ha a vendég rendszerre fel vannak telepítve az Integrációs szolgáltatások.</translation>
-    </message>
-    <message>
         <source>Indicates whether the keyboard is captured by the guest OS (&lt;img src=:/hostkey_captured_16px.png/&gt;) or not (&lt;img src=:/hostkey_16px.png/&gt;).</source>
         <translation type="obsolete">Jelzi, hogy a billentyűzetet elkapta-e a vendég OS (&lt;img src=:/hostkey_captured_16px.png/&gt;) vagy nem (&lt;img src=:/hostkey_16px.png/&gt;).</translation>
-    </message>
-    <message>
-        <source>Indicates whether the Remote Display (VRDP Server) is enabled (&lt;img src=:/vrdp_16px.png/&gt;) or not (&lt;img src=:/vrdp_disabled_16px.png/&gt;).</source>
-        <translation type="obsolete">Jelzi, hogy a Távoli képernyő (VRDP szerver) engedélyezett (&lt;img src=:/vrdp_16px.png/&gt;) vagy sem (&lt;img src=:/vrdp_disabled_16px.png/&gt;).</translation>
     </message>
     <message>
         <source>&amp;Logging...</source>
@@ -11355,10 +11315,6 @@ to the system default language.&lt;/qt&gt;
         <translation>A kiválasztott virtuális gép elindítása</translation>
     </message>
     <message>
-        <source>&lt;h3&gt;Welcome to VirtualBox!&lt;/h3&gt;&lt;p&gt;The left part of this window is  a list of all virtual machines on your computer. The list is empty now because you haven&apos;t created any virtual machines yet.&lt;img src=welcome.png align=right/&gt;&lt;/p&gt;&lt;p&gt;In order to create a new virtual machine, press the &lt;b&gt;New&lt;/b&gt; button in the main tool bar located at the top of the window.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;%1&lt;/b&gt; key to get instant help, or visit &lt;a href=http://www.virtualbox.org&gt;www.virtualbox.org&lt;/a&gt; for the latest information and news.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;h3&gt;A VirtualBox üdvözöl!&lt;/h3&gt;&lt;p&gt;Az ablak bal oldali részében a virtuális gépeid listáját látod. Ez jelenleg üres, hiszen most indítod ezt a programot először.&lt;img src=welcome.png align=right/&gt;&lt;/p&gt;&lt;p&gt;Új virtuális gép létrehozásához kattints az &lt;b&gt;Új&lt;/b&gt; gombra az eszköztáron.&lt;/p&gt;&lt;p&gt;Az &lt;b&gt;%1&lt;/b&gt; billentyű megnyomásával azonnali segítséget kérhetsz, vagy látogass el a &lt;a href=http://www.virtualbox.org&gt;www.virtualbox.org&lt;/a&gt; címre a legfrissebb információkért és hírekért.&lt;/p&gt;</translation>
-    </message>
-    <message>
         <source>&amp;Machine</source>
         <translation>&amp;Gép</translation>
     </message>
@@ -11404,7 +11360,7 @@ to the system default language.&lt;/qt&gt;
     </message>
     <message>
         <source>&lt;h3&gt;Welcome to VirtualBox!&lt;/h3&gt;&lt;p&gt;The left part of this window is  a list of all virtual machines on your computer. The list is empty now because you haven&apos;t created any virtual machines yet.&lt;img src=:/welcome.png align=right/&gt;&lt;/p&gt;&lt;p&gt;In order to create a new virtual machine, press the &lt;b&gt;New&lt;/b&gt; button in the main tool bar located at the top of the window.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;%1&lt;/b&gt; key to get instant help, or visit &lt;a href=http://www.virtualbox.org&gt;www.virtualbox.org&lt;/a&gt; for the latest information and news.&lt;/p&gt;</source>
-        <translation>&lt;h3&gt;Üdvözöl a VirtualBox!&lt;/h3&gt;&lt;p&gt;Az ablak bal oldali részében a virtuális gépeid listáját látod. Ez jelenleg üres, hiszen most indítod ezt a programot először.&lt;img src=welcome.png align=right/&gt;&lt;/p&gt;&lt;p&gt;Új virtuális gép létrehozásához kattints az &lt;b&gt;Új&lt;/b&gt; gombra az eszköztáron.&lt;/p&gt;&lt;p&gt;Az &lt;b&gt;%1&lt;/b&gt; billentyű megnyomásával azonnali segítséget kérhetsz, vagy látogass el a &lt;a href=http://www.virtualbox.org&gt;www.virtualbox.org&lt;/a&gt; címre a legfrissebb információkért és hírekért.&lt;/p&gt;</translation>
+        <translation>&lt;h3&gt;Üdvözöl a VirtualBox!&lt;/h3&gt;&lt;p&gt;Az ablak bal oldali részében a virtuális gépeid listáját látod. Ez jelenleg üres, hiszen most indítod ezt a programot először.&lt;img src=:/welcome.png align=right/&gt;&lt;/p&gt;&lt;p&gt;Új virtuális gép létrehozásához kattints az &lt;b&gt;Új&lt;/b&gt; gombra az eszköztáron.&lt;/p&gt;&lt;p&gt;Az &lt;b&gt;%1&lt;/b&gt; billentyű megnyomásával azonnali segítséget kérhetsz, vagy látogass el a &lt;a href=http://www.virtualbox.org&gt;www.virtualbox.org&lt;/a&gt; címre a legfrissebb információkért és hírekért.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&amp;Virtual Media Manager...</source>

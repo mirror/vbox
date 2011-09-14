@@ -4861,18 +4861,6 @@ p, li { white-space: pre-wrap; }
         <translation>Nepodařilo se odstranit sdílenou složku &lt;b&gt;%1&lt;/b&gt; (vede do &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) z virtuálního počítače &lt;b&gt;%3&lt;/b&gt;.</translation>
     </message>
     <message>
-        <source>&lt;p&gt;You have &lt;b&gt;clicked the mouse&lt;/b&gt; inside the Virtual Machine display or pressed the &lt;b&gt;host key&lt;/b&gt;. This will cause the Virtual Machine to &lt;b&gt;capture&lt;/b&gt; the host mouse pointer (only if the mouse pointer integration is not currently supported by the guest OS) and the keyboard, which will make them unavailable to other applications running on your host machine.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;host key&lt;/b&gt; at any time to &lt;b&gt;uncapture&lt;/b&gt; the keyboard and mouse (if it is captured) and return them to normal operation. The currently assigned host key is shown on the status bar at the bottom of the Virtual Machine window, next to the&amp;nbsp;&lt;img src=hostkey_16px.png/&gt;&amp;nbsp;icon. This icon, together with the mouse icon placed nearby, indicate the current keyboard and mouse capture state.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;&lt;b&gt;Kliknuli jste myší&lt;/b&gt; uvnitř obrazovky virtuálního počítače nebo jste stiskli &lt;b&gt;klávesu hostitele&lt;/b&gt;. Virtuální počítač tak &lt;b&gt;odchytne&lt;/b&gt; kurzor myši hostitele (pouze pokud hostovaným OS není integrace kurzoru myši právě podporována) a klávesnici, což je znepřístupní pro další běžící aplikace na hostitelském počítači.&lt;/p&gt;&lt;p&gt;Můžete kdykoliv stisknout &lt;b&gt;klávesu hostitele&lt;/b&gt; pro &lt;b&gt;propuštění&lt;/b&gt; klávesice a myši (pokud jsou odchytávány) a vrátit je tak do normálního stavu. Právě přiřazená klávesa hostitele je zobrazena ve stavovém řádku na spodní části okna s virtuálním počítačem vedle ikony&amp;nbsp;&lt;img src=hostkey_16px.png/&gt;. Tato ikona společně s vedlejší ikonou myši indikují aktuální stav odchytávání klávesnice a myši.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;You have the &lt;b&gt;Auto capture keyboard&lt;/b&gt; option turned on. This will cause the Virtual Machine to automatically &lt;b&gt;capture&lt;/b&gt; the keyboard every time the VM window is activated and make it unavailable to other applications running on your host machine: when the keyboard is captured, all keystrokes (including system ones like Alt-Tab) will be directed to the VM.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;host key&lt;/b&gt; at any time to &lt;b&gt;uncapture&lt;/b&gt; the keyboard and mouse (if it is captured) and return them to normal operation. The currently assigned host key is shown on the status bar at the bottom of the Virtual Machine window, next to the&amp;nbsp;&lt;img src=hostkey_16px.png/&gt;&amp;nbsp;icon. This icon, together with the mouse icon placed nearby, indicate the current keyboard and mouse capture state.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Máte zapnutou volbu &lt;b&gt;Automaticky odchytávat klávesnici&lt;/b&gt;. Virtuální počítač tak bude automaticky &lt;b&gt;odchytávat&lt;/b&gt; události klávesnice pokaždé, když je okno VM aktivováno, a znepřístupní je pro další aplikace běžící na hostitelském počítači: když je klávesnice odchytávána, jsou všechny stisky kláves (včetně systémových jako Alt-Tab) přesměrovány do VM.&lt;/p&gt;&lt;p&gt;Můžete kdykoliv stisknout &lt;b&gt;klávesu hostitele&lt;/b&gt; pro &lt;b&gt;propuštění&lt;/b&gt; klávesice a myši (pokud jsou odchytávány) a vrátit je tak do normálního stavu. Právě přiřazená klávesa hostitele je zobrazena ve stavovém řádku ve spodní části okna s virtuálním počítačem vedle ikony&amp;nbsp;&lt;img src=hostkey_16px.png/&gt;. Tato ikona společně s vedlejší ikonou myši indikují aktuální stav odchytávání klávesnice a myši.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;The Virtual Machine reports that the guest OS supports &lt;b&gt;mouse pointer integration&lt;/b&gt;. This means that you do not need to &lt;i&gt;capture&lt;/i&gt; the mouse pointer to be able to use it in your guest OS -- all mouse actions you perform when the mouse pointer is over the Virtual Machine&apos;s display are directly sent to the guest OS. If the mouse is currently captured, it will be automatically uncaptured.&lt;/p&gt;&lt;p&gt;The mouse icon on the status bar will look like&amp;nbsp;&lt;img src=mouse_seamless_16px.png/&gt;&amp;nbsp;to inform you that mouse pointer integration is supported by the guest OS and is currently turned on.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note&lt;/b&gt;: Some applications may behave incorrectly in mouse pointer integration mode. You can always disable it for the current session (and enable it again) by selecting the corresponding action from the menu bar.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Virtuální počítač hlásí, že hostovaný OS podporuje &lt;b&gt;integraci kurzoru myši&lt;/b&gt;. To znamená, že nepotřebujete &lt;i&gt;odchytávat&lt;/i&gt; kurzor myši, abyste ho mohli použít v hostovaném OS -- všechny akce provádněné myší nad obrazovkou virtuálního počítače jsou posílány hostovanému OS. Pokud je myš právě odchytávána, bude automaticky uvolněna.&lt;/p&gt;&lt;p&gt;Ikona myši ve stavovém panelu vypadá jako&amp;nbsp;&lt;img src=mouse_seamless_16px.png/&gt;&amp;nbsp;,aby vás informovala, že integrace kurozru myši je podporována hostovaným OS a je právě zapnuta.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Poznámka&lt;/b&gt;: Některé aplikace se v režimu integrace kurzoru myši mohou chovat nesprávně. Režim můžete kdykoliv vypnout pro aktuální sezení (nebo znovu zapnout) vybráním odpovídající akce z panelu s nabídkou.&lt;/p&gt;</translation>
-    </message>
-    <message>
         <source>&lt;p&gt;The Virtual Machine reports that the guest OS does not support &lt;b&gt;mouse pointer integration&lt;/b&gt; in the current video mode. You need to capture the mouse (by clicking over the VM display or pressing the host key) in order to use the mouse inside the guest OS.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Virtuální počítač hlásí, že hostovaný OS nepodporuje &lt;b&gt;integraci kurzoru myši&lt;/b&gt; v aktuálním video režimu. Pro možnost používání myši v hostovaném OS ji (kliknutím do obrazovky VM nebo stiskem klávesy hostitele) musíte odchytávat.&lt;/p&gt;</translation>
     </message>
@@ -7926,16 +7914,8 @@ Verze %1</translation>
         <translation type="obsolete">&amp;Nápověda</translation>
     </message>
     <message>
-        <source>Indicates whether the guest display auto-resize function is On (&lt;img src=auto_resize_on_16px.png/&gt;) or Off (&lt;img src=auto_resize_off_16px.png/&gt;). Note that this function requires Guest Additions to be installed in the guest OS.</source>
-        <translation type="obsolete">Indikuje, zda je funkce přizpůsobení hostované obrazovky zapnuta (&lt;img src=auto_resize_on_16px.png/&gt;) nebo vypnuta (&lt;img src=auto_resize_off_16px.png/&gt;). Tato funkce vyžaduje nainstalované Přídavky pro hosta na hostovaném OS.</translation>
-    </message>
-    <message>
-        <source>Indicates whether the host mouse pointer is captured by the guest OS:&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_disabled_16px.png/&gt;&amp;nbsp;&amp;nbsp;pointer is not captured&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_16px.png/&gt;&amp;nbsp;&amp;nbsp;pointer is captured&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;mouse integration (MI) is On&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_can_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;MI is Off, pointer is captured&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_can_seamless_uncaptured_16px.png/&gt;&amp;nbsp;&amp;nbsp;MI is Off, pointer is not captured&lt;/nobr&gt;&lt;br&gt;Note that the mouse integration feature requires Guest Additions to be installed in the guest OS.</source>
-        <translation type="obsolete">Indikuje, zda je kurzor myši odchycen hostovaným OS: &lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_disabled_16px.png/&gt;&amp;nbsp;&amp;nbsp;kurzor není odchycen&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_16px.png/&gt;&amp;nbsp;&amp;nbsp;kurzor je odchycen&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;integrace myši (IM) je zapnuta&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_can_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;IM je vypnuta, kurzor je odchycen&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_can_seamless_uncaptured_16px.png/&gt;&amp;nbsp;&amp;nbsp;IM je vypnuta, kurzor není odchycen&lt;/nobr&gt;&lt;br&gt;Funkce integrace myši vyžaduje nainstalované Přídavky pro hosta na hostovaném OS.</translation>
-    </message>
-    <message>
-        <source>Indicates whether the keyboard is captured by the guest OS (&lt;img src=hostkey_captured_16px.png/&gt;) or not (&lt;img src=hostkey_16px.png/&gt;)</source>
-        <translation type="obsolete">Indikuje, zda je klávesnice odchycena hostovaným OS (&lt;img src=hostkey_captured_16px.png/&gt;) nebo ne (&lt;img src=hostkey_16px.png/&gt;)</translation>
+        <source>Indicates whether the host mouse pointer is captured by the guest OS:&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_disabled_16px.png/&gt;&amp;nbsp;&amp;nbsp;pointer is not captured&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_16px.png/&gt;&amp;nbsp;&amp;nbsp;pointer is captured&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;mouse integration (MI) is On&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_can_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;MI is Off, pointer is captured&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_can_seamless_uncaptured_16px.png/&gt;&amp;nbsp;&amp;nbsp;MI is Off, pointer is not captured&lt;/nobr&gt;&lt;br&gt;Note that the mouse integration feature requires Guest Additions to be installed in the guest OS.</source>
+        <translation type="obsolete">Indikuje, zda je kurzor myši odchycen hostovaným OS: &lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_disabled_16px.png/&gt;&amp;nbsp;&amp;nbsp;kurzor není odchycen&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_16px.png/&gt;&amp;nbsp;&amp;nbsp;kurzor je odchycen&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;integrace myši (IM) je zapnuta&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_can_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;IM je vypnuta, kurzor je odchycen&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_can_seamless_uncaptured_16px.png/&gt;&amp;nbsp;&amp;nbsp;IM je vypnuta, kurzor není odchycen&lt;/nobr&gt;&lt;br&gt;Funkce integrace myši vyžaduje nainstalované Přídavky pro hosta na hostovaném OS.</translation>
     </message>
     <message>
         <source>Shows the currently assigned Host key.&lt;br&gt;This key, when pressed alone, toggles the the keyboard and mouse capture state. It can also be used in combination with other keys to quickly perform actions from the main menu.</source>
@@ -7981,10 +7961,6 @@ Verze %1</translation>
         <source>&lt;br&gt;[&lt;b&gt;not attached&lt;/b&gt;]</source>
         <comment>HDD tooltip</comment>
         <translation type="obsolete">&lt;br&gt;[&lt;b&gt;nepřipojen&lt;/b&gt;]</translation>
-    </message>
-    <message>
-        <source>Indicates whether the Remote Display (VRDP Server) is enabled (&lt;img src=vrdp_16px.png/&gt;) or not (&lt;img src=vrdp_disabled_16px.png/&gt;)</source>
-        <translation type="obsolete">Indikuje, zda je Vzdálená plocha (VRDP server) povolena (&lt;img src=vrdp_16px.png/&gt;) nebo ne (&lt;img src=vrdp_disabled_16px.png/&gt;)</translation>
     </message>
     <message>
         <source>&lt;hr&gt;The VRDP Server is listening on port %1</source>
@@ -8103,10 +8079,6 @@ Verze %1</translation>
         <translation type="obsolete">Přepne do bezešvého režimu integrace plochy</translation>
     </message>
     <message>
-        <source>Indicates whether the keyboard is captured by the guest OS (&lt;img src=hostkey_captured_16px.png/&gt;) or not (&lt;img src=hostkey_16px.png/&gt;).</source>
-        <translation type="obsolete">Indikuje, zda je klávesnice odchytávána hostovaným OS (&lt;img src=hostkey_captured_16px.png/&gt;) či nikoliv (&lt;img src=hostkey_16px.png/&gt;).</translation>
-    </message>
-    <message>
         <source>&lt;qt&gt;&lt;nobr&gt;Indicates the activity of the floppy media:&lt;/nobr&gt;%1&lt;/qt&gt;</source>
         <comment>Floppy tooltip</comment>
         <translation type="obsolete">&lt;qt&gt;&lt;nobr&gt;Indikuje aktivitu diskety:&lt;/nobr&gt;%1&lt;/qt&gt;</translation>
@@ -8197,10 +8169,6 @@ Verze %1</translation>
         <translation type="obsolete">&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Ovladač USB je zakázán&lt;/b&gt;&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <source>Indicates whether the Remote Display (VRDP Server) is enabled (&lt;img src=vrdp_16px.png/&gt;) or not (&lt;img src=vrdp_disabled_16px.png/&gt;).</source>
-        <translation type="obsolete">Indikuje, zda je Vzdálená plocha (VRDP server) povolena (&lt;img src=vrdp_16px.png/&gt;) či nikoliv (&lt;img src=vrdp_disabled_16px.png/&gt;).</translation>
-    </message>
-    <message>
         <source>&lt;qt&gt;&lt;nobr&gt;Indicates the activity of the machineof the machine&apos;sapos;s shared folders: shared folders:&lt;/nobr&gt;%1&lt;/qt&gt;</source>
         <comment>Shared folders tooltip</comment>
         <translation type="obsolete">&lt;qt&gt;&lt;nobr&gt;Indikuje aktivitu sdílených složek:&lt;/nobr&gt;%1&lt;/qt&gt;</translation>
@@ -8243,22 +8211,6 @@ Verze %1</translation>
         <source>&amp;Command Line...</source>
         <comment>debug action</comment>
         <translation type="obsolete">Příka&amp;zový řádek...</translation>
-    </message>
-    <message>
-        <source>Indicates whether the guest display auto-resize function is On (&lt;img src=:/auto_resize_on_16px.png/&gt;) or Off (&lt;img src=:/auto_resize_off_16px.png/&gt;). Note that this function requires Guest Additions to be installed in the guest OS.</source>
-        <translation type="obsolete">Indikuje, zda je funkce přizpůsobení hostované obrazovky zapnuta (&lt;img src=:/auto_resize_on_16px.png/&gt;) nebo vypnuta (&lt;img src=:/auto_resize_off_16px.png/&gt;). Tato funkce vyžaduje nainstalované Přídavky pro hosta na hostovaném OS.</translation>
-    </message>
-    <message>
-        <source>Indicates whether the host mouse pointer is captured by the guest OS:&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_disabled_16px.png/&gt;&amp;nbsp;&amp;nbsp;pointer is not captured&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_16px.png/&gt;&amp;nbsp;&amp;nbsp;pointer is captured&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;mouse integration (MI) is On&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_can_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;MI is Off, pointer is captured&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_can_seamless_uncaptured_16px.png/&gt;&amp;nbsp;&amp;nbsp;MI is Off, pointer is not captured&lt;/nobr&gt;&lt;br&gt;Note that the mouse integration feature requires Guest Additions to be installed in the guest OS.</source>
-        <translation type="obsolete">Indikuje, zda je kurzor myši odchycen hostovaným OS: &lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_disabled_16px.png/&gt;&amp;nbsp;&amp;nbsp;kurzor není odchycen&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_16px.png/&gt;&amp;nbsp;&amp;nbsp;kurzor je odchycen&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;integrace myši (IM) je zapnuta&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_can_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;IM je vypnuta, kurzor je odchycen&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_can_seamless_uncaptured_16px.png/&gt;&amp;nbsp;&amp;nbsp;IM je vypnuta, kurzor není odchycen&lt;/nobr&gt;&lt;br&gt;Funkce integrace myši vyžaduje nainstalované Přídavky pro hosta na hostovaném OS.</translation>
-    </message>
-    <message>
-        <source>Indicates whether the keyboard is captured by the guest OS (&lt;img src=:/hostkey_captured_16px.png/&gt;) or not (&lt;img src=:/hostkey_16px.png/&gt;).</source>
-        <translation type="obsolete">Indikuje, zda je klávesnice odchytávána hostovaným OS (&lt;img src=:/hostkey_captured_16px.png/&gt;) či nikoliv (&lt;img src=:/hostkey_16px.png/&gt;).</translation>
-    </message>
-    <message>
-        <source>Indicates whether the Remote Display (VRDP Server) is enabled (&lt;img src=:/vrdp_16px.png/&gt;) or not (&lt;img src=:/vrdp_disabled_16px.png/&gt;).</source>
-        <translation type="obsolete">Indikuje, zda je Vzdálená plocha (VRDP server) povolena (&lt;img src=:/vrdp_16px.png/&gt;) či nikoliv (&lt;img src=:/vrdp_disabled_16px.png/&gt;).</translation>
     </message>
     <message>
         <source>&amp;Logging...</source>
@@ -11224,10 +11176,6 @@ na výchozí jazyk systému.&lt;/qt&gt;
     <message>
         <source>Start the selected virtual machine</source>
         <translation>Spustí vybraný virtuální počítač</translation>
-    </message>
-    <message>
-        <source>&lt;h3&gt;Welcome to VirtualBox!&lt;/h3&gt;&lt;p&gt;The left part of this window is  a list of all virtual machines on your computer. The list is empty now because you haven&apos;t created any virtual machines yet.&lt;img src=welcome.png align=right/&gt;&lt;/p&gt;&lt;p&gt;In order to create a new virtual machine, press the &lt;b&gt;New&lt;/b&gt; button in the main tool bar located at the top of the window.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;%1&lt;/b&gt; key to get instant help, or visit &lt;a href=http://www.virtualbox.org&gt;www.virtualbox.org&lt;/a&gt; for the latest information and news.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;h3&gt;Vítejte ve VirtualBoxu!&lt;/h3&gt;&lt;p&gt;Levá část tohoto okna je určena pro zobrazení seznamu všech virtuálních počítačů na vašem počítači. Seznam je teď prázdný, protože jste ještě žádný nevytvořili.&lt;img src=welcome.png align=right/&gt;&lt;/p&gt;&lt;p&gt;Pro vytvoření nového virtuálního počítače stiskněte tlačítko &lt;b&gt;Nový&lt;/b&gt; v horní části hlavního okna.&lt;/p&gt;&lt;p&gt;Můžete stisknout klávesu &lt;b&gt;%1&lt;/b&gt; a dostat okamžitou nápovědu, nebo navštivte &lt;a href=http://www.virtualbox.org&gt;www.virtualbox.org&lt;/a&gt; pro aktuální informace a novinky.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&amp;Machine</source>

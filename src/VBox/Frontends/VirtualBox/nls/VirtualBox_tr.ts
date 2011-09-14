@@ -2367,7 +2367,7 @@
     </message>
     <message>
         <source>Indicates whether the Remote Display (VRDP Server) is enabled (&lt;img src=:/vrdp_16px.png/&gt;) or not (&lt;img src=:/vrdp_disabled_16px.png/&gt;).</source>
-        <translation type="obsolete">Uzak Masaüstünün (VRDP Sunucu) etkin olup olmadığını gösterir (&lt;img src=vrdp_16px.png/&gt;) ya da (&lt;img src=vrdp_disabled_16px.png/&gt;).</translation>
+        <translation type="obsolete">Uzak Masaüstünün (VRDP Sunucu) etkin olup olmadığını gösterir (&lt;img src=:/vrdp_16px.png/&gt;) ya da (&lt;img src=:/vrdp_disabled_16px.png/&gt;).</translation>
     </message>
     <message>
         <source>&lt;hr&gt;The VRDP Server is listening on port %1</source>
@@ -2380,11 +2380,11 @@
     </message>
     <message>
         <source>Indicates whether the host mouse pointer is captured by the guest OS:&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_disabled_16px.png/&gt;&amp;nbsp;&amp;nbsp;pointer is not captured&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_16px.png/&gt;&amp;nbsp;&amp;nbsp;pointer is captured&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;mouse integration (MI) is On&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_can_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;MI is Off, pointer is captured&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_can_seamless_uncaptured_16px.png/&gt;&amp;nbsp;&amp;nbsp;MI is Off, pointer is not captured&lt;/nobr&gt;&lt;br&gt;Note that the mouse integration feature requires Guest Additions to be installed in the guest OS.</source>
-        <translation>Misafir işletim sistemi tarafından sunucunun fare işaretçisinin yakalanıp yakalanmadığını gösterir: &lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_disabled_16px.png/&gt;&amp;nbsp;&amp;nbsp;işaretçi yakalandı&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_16px.png/&gt;&amp;nbsp;&amp;nbsp;işaretçi yakalandı&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;fare uyumu (MI) açık&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_can_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;fare uyumu (MI) kapalı, işaretçi yakalndı&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_can_seamless_uncaptured_16px.png/&gt;&amp;nbsp;&amp;nbsp;fare uyumu (MI) kapalı, işaretçi yakalanmadı&lt;/nobr&gt;&lt;br&gt; Bu fonksiyonu kullanabilmeniz için Guest Additions yüklü olmalıdır.</translation>
+        <translation>Misafir işletim sistemi tarafından sunucunun fare işaretçisinin yakalanıp yakalanmadığını gösterir: &lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_disabled_16px.png/&gt;&amp;nbsp;&amp;nbsp;işaretçi yakalandı&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_16px.png/&gt;&amp;nbsp;&amp;nbsp;işaretçi yakalandı&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;fare uyumu (MI) açık&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_can_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;fare uyumu (MI) kapalı, işaretçi yakalndı&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_can_seamless_uncaptured_16px.png/&gt;&amp;nbsp;&amp;nbsp;fare uyumu (MI) kapalı, işaretçi yakalanmadı&lt;/nobr&gt;&lt;br&gt; Bu fonksiyonu kullanabilmeniz için Guest Additions yüklü olmalıdır.</translation>
     </message>
     <message>
         <source>Indicates whether the keyboard is captured by the guest OS (&lt;img src=:/hostkey_captured_16px.png/&gt;) or not (&lt;img src=:/hostkey_16px.png/&gt;).</source>
-        <translation>Misafir işletim sistemi tarafından klavyenin yakalanıp yakalanmadığını gösterir (&lt;img src=hostkey_captured_16px.png/&gt;) ya da (&lt;img src=hostkey_16px.png/&gt;).</translation>
+        <translation>Misafir işletim sistemi tarafından klavyenin yakalanıp yakalanmadığını gösterir (&lt;img src=:/hostkey_captured_16px.png/&gt;) ya da (&lt;img src=:/hostkey_16px.png/&gt;).</translation>
     </message>
     <message>
         <source>Indicates whether the Remote Desktop Server is enabled (&lt;img src=:/vrdp_16px.png/&gt;) or not (&lt;img src=:/vrdp_disabled_16px.png/&gt;).</source>
@@ -4348,15 +4348,6 @@
         <translation>&lt;b&gt;%3&lt;/b&gt;sanal makinesi için &lt;b&gt;%1&lt;/b&gt; paylaşılan dizini kaldırılamadı (&lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; dizinine işaret eden).</translation>
     </message>
     <message>
-        <source>&lt;p&gt;You have &lt;b&gt;clicked the mouse&lt;/b&gt; inside the Virtual Machine display or pressed the &lt;b&gt;host key&lt;/b&gt;. This will cause the Virtual Machine to &lt;b&gt;capture&lt;/b&gt; the host mouse pointer (only if the mouse pointer integration is not currently supported by the guest OS) and the keyboard, which will make them unavailable to other applications running on your host machine.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;host key&lt;/b&gt; at any time to &lt;b&gt;uncapture&lt;/b&gt; the keyboard and mouse (if it is captured) and return them to normal operation. The currently assigned host key is shown on the status bar at the bottom of the Virtual Machine window, next to the&amp;nbsp;&lt;img src=hostkey_16px.png/&gt;&amp;nbsp;icon. This icon, together with the mouse icon placed nearby, indicate the current keyboard and mouse capture state.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Sanal Makine ekranına &lt;b&gt;fare ile&lt;/b&gt; tıkladınız ya da &lt;b&gt;Sunucu anahtarına&lt;/b&gt; bastınız.
-Bu Sanal Makinenin fare işaretçinizi ve klavyenizi &lt;b&gt;yakalamasına&lt;/b&gt; ve sunucu makinenizdeki diğer uygulamalarınızın fare ve klavyenizi kullanamamasına neden olur (sadece fare işaretçisi uyumu misafir işletim sistemi tarafından desteklenmiyorsa)&lt;/p&gt;&lt;p&gt;İstediğiniz zaman &lt;b&gt;Sunucu anahtarına&lt;/b&gt; basarak klavye ve fare işaretçinizi (eğer yakalandıysa) &lt;i&gt;serbest&lt;/i&gt; bırakabilir ve normal işlevine döndürebilirsiniz. Şu anda kullanılan Sunucu anahtarı Sanal Makine ekranının altındaki durum çubuğunda _&amp;nbsp;&lt;img src=hostkey_16px.png/&gt;&amp;nbsp; simgesinden hemen sonraki_ gösteriliyor. Bu simge ve fare simgesinin yanındaki simge, fare ve klavyenin şimdiki yakalanma durumunu gösterir.</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;You have the &lt;b&gt;Auto capture keyboard&lt;/b&gt; option turned on. This will cause the Virtual Machine to automatically &lt;b&gt;capture&lt;/b&gt; the keyboard every time the VM window is activated and make it unavailable to other applications running on your host machine: when the keyboard is captured, all keystrokes (including system ones like Alt-Tab) will be directed to the VM.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;host key&lt;/b&gt; at any time to &lt;b&gt;uncapture&lt;/b&gt; the keyboard and mouse (if it is captured) and return them to normal operation. The currently assigned host key is shown on the status bar at the bottom of the Virtual Machine window, next to the&amp;nbsp;&lt;img src=hostkey_16px.png/&gt;&amp;nbsp;icon. This icon, together with the mouse icon placed nearby, indicate the current keyboard and mouse capture state.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;&lt;b&gt;Klavyeyi otomatik yakala&lt;/b&gt; seçeneğiniz etkinleştirilmiş. Bu sanal makinenin Sanal Makine ekranı etkinleştirildiğinde klavyenizi otomatik olarak &lt;b&gt;yakalamasına&lt;/b&gt; neden olur; klavyeniz yakalandığında tüm klavye kısayollarınız (sistem kısayollarınız da dahil, Alt-Tab gibi) sanal makineye yönlendirilir.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Sunucu anahtarına&lt;/b&gt; basarak klavyenizi ve fare işaretçinizi (eğer yakalandıysa) &lt;i&gt;serbest&lt;/i&gt; bırakabilir ve normal işlevine döndürebilirsiniz. Şu anda kullanılan Sunucu anahtarı Sanal Makine ekranının altındaki durum çubuğunda _&amp;nbsp;&lt;img src=hostkey_16px.png/&gt;&amp;nbsp; simgesinden hemen sonraki_ gösteriliyor. Bu simge ve fare simgesinin yanındaki simge, fare ve klavyenin şimdiki yakalanma durumunu gösterir.</translation>
-    </message>
-    <message>
         <source>&lt;p&gt;The Virtual Machine reports that the guest OS does not support &lt;b&gt;mouse pointer integration&lt;/b&gt; in the current video mode. You need to capture the mouse (by clicking over the VM display or pressing the host key) in order to use the mouse inside the guest OS.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Sanal makine misafir işletim sisteminin bu video kipinde &lt;b&gt;fare işaretçisi uyumunu&lt;/b&gt; desteklemediğini belirtiyor. Misafir işletim sistemi içerisinde farenizi kullanabilmeniz için farenizin misafir işletim sistemi tarafından yakalanması (Sanal Makine ekranına tıklayın ya da sunucu anahtarına basın) gerekir.&lt;/p&gt;</translation>
     </message>
@@ -4664,11 +4655,12 @@ Bu Sanal Makinenin fare işaretçinizi ve klavyenizi &lt;b&gt;yakalamasına&lt;/
     </message>
     <message>
         <source>&lt;p&gt;You have &lt;b&gt;clicked the mouse&lt;/b&gt; inside the Virtual Machine display or pressed the &lt;b&gt;host key&lt;/b&gt;. This will cause the Virtual Machine to &lt;b&gt;capture&lt;/b&gt; the host mouse pointer (only if the mouse pointer integration is not currently supported by the guest OS) and the keyboard, which will make them unavailable to other applications running on your host machine.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;host key&lt;/b&gt; at any time to &lt;b&gt;uncapture&lt;/b&gt; the keyboard and mouse (if it is captured) and return them to normal operation. The currently assigned host key is shown on the status bar at the bottom of the Virtual Machine window, next to the&amp;nbsp;&lt;img src=:/hostkey_16px.png/&gt;&amp;nbsp;icon. This icon, together with the mouse icon placed nearby, indicate the current keyboard and mouse capture state.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">&lt;p&gt;Sanal Makine ekranına &lt;b&gt;fare ile&lt;/b&gt; tıkladınız ya da &lt;b&gt;Sunucu anahtarına&lt;/b&gt; bastınız.
+Bu Sanal Makinenin fare işaretçinizi ve klavyenizi &lt;b&gt;yakalamasına&lt;/b&gt; ve sunucu makinenizdeki diğer uygulamalarınızın fare ve klavyenizi kullanamamasına neden olur (sadece fare işaretçisi uyumu misafir işletim sistemi tarafından desteklenmiyorsa)&lt;/p&gt;&lt;p&gt;İstediğiniz zaman &lt;b&gt;Sunucu anahtarına&lt;/b&gt; basarak klavye ve fare işaretçinizi (eğer yakalandıysa) &lt;i&gt;serbest&lt;/i&gt; bırakabilir ve normal işlevine döndürebilirsiniz. Şu anda kullanılan Sunucu anahtarı Sanal Makine ekranının altındaki durum çubuğunda _&amp;nbsp;&lt;img src=:/hostkey_16px.png/&gt;&amp;nbsp; simgesinden hemen sonraki_ gösteriliyor. Bu simge ve fare simgesinin yanındaki simge, fare ve klavyenin şimdiki yakalanma durumunu gösterir.</translation>
     </message>
     <message>
         <source>&lt;p&gt;You have the &lt;b&gt;Auto capture keyboard&lt;/b&gt; option turned on. This will cause the Virtual Machine to automatically &lt;b&gt;capture&lt;/b&gt; the keyboard every time the VM window is activated and make it unavailable to other applications running on your host machine: when the keyboard is captured, all keystrokes (including system ones like Alt-Tab) will be directed to the VM.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;host key&lt;/b&gt; at any time to &lt;b&gt;uncapture&lt;/b&gt; the keyboard and mouse (if it is captured) and return them to normal operation. The currently assigned host key is shown on the status bar at the bottom of the Virtual Machine window, next to the&amp;nbsp;&lt;img src=:/hostkey_16px.png/&gt;&amp;nbsp;icon. This icon, together with the mouse icon placed nearby, indicate the current keyboard and mouse capture state.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">&lt;p&gt;&lt;b&gt;Klavyeyi otomatik yakala&lt;/b&gt; seçeneğiniz etkinleştirilmiş. Bu sanal makinenin Sanal Makine ekranı etkinleştirildiğinde klavyenizi otomatik olarak &lt;b&gt;yakalamasına&lt;/b&gt; neden olur; klavyeniz yakalandığında tüm klavye kısayollarınız (sistem kısayollarınız da dahil, Alt-Tab gibi) sanal makineye yönlendirilir.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Sunucu anahtarına&lt;/b&gt; basarak klavyenizi ve fare işaretçinizi (eğer yakalandıysa) &lt;i&gt;serbest&lt;/i&gt; bırakabilir ve normal işlevine döndürebilirsiniz. Şu anda kullanılan Sunucu anahtarı Sanal Makine ekranının altındaki durum çubuğunda _&amp;nbsp;&lt;img src=:/hostkey_16px.png/&gt;&amp;nbsp; simgesinden hemen sonraki_ gösteriliyor. Bu simge ve fare simgesinin yanındaki simge, fare ve klavyenin şimdiki yakalanma durumunu gösterir.</translation>
     </message>
     <message>
         <source>&lt;p&gt;The Virtual Machine reports that the guest OS supports &lt;b&gt;mouse pointer integration&lt;/b&gt;. This means that you do not need to &lt;i&gt;capture&lt;/i&gt; the mouse pointer to be able to use it in your guest OS -- all mouse actions you perform when the mouse pointer is over the Virtual Machine&apos;s display are directly sent to the guest OS. If the mouse is currently captured, it will be automatically uncaptured.&lt;/p&gt;&lt;p&gt;The mouse icon on the status bar will look like&amp;nbsp;&lt;img src=:/mouse_seamless_16px.png/&gt;&amp;nbsp;to inform you that mouse pointer integration is supported by the guest OS and is currently turned on.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note&lt;/b&gt;: Some applications may behave incorrectly in mouse pointer integration mode. You can always disable it for the current session (and enable it again) by selecting the corresponding action from the menu bar.&lt;/p&gt;</source>
@@ -7103,14 +7095,6 @@ Version %1</source>
         <translation type="obsolete">&amp;Yardım</translation>
     </message>
     <message>
-        <source>Indicates whether the guest display auto-resize function is On (&lt;img src=auto_resize_on_16px.png/&gt;) or Off (&lt;img src=auto_resize_off_16px.png/&gt;). Note that this function requires Guest Additions to be installed in the guest OS.</source>
-        <translation type="obsolete">Misafir ekranını otomatik olarak boyutlandırma fonksiyonunun Açık (&lt;img src=auto_resize_on_16px.png/&gt;) yada Kapalı (&lt;img src=auto_resize_off_16px.png/&gt;) olduğunu gösterir. Bu fonksiyonu kullanabilmeniz için Guest Additions yüklü olmalıdır.</translation>
-    </message>
-    <message>
-        <source>Indicates whether the host mouse pointer is captured by the guest OS:&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_disabled_16px.png/&gt;&amp;nbsp;&amp;nbsp;pointer is not captured&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_16px.png/&gt;&amp;nbsp;&amp;nbsp;pointer is captured&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;mouse integration (MI) is On&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_can_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;MI is Off, pointer is captured&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_can_seamless_uncaptured_16px.png/&gt;&amp;nbsp;&amp;nbsp;MI is Off, pointer is not captured&lt;/nobr&gt;&lt;br&gt;Note that the mouse integration feature requires Guest Additions to be installed in the guest OS.</source>
-        <translation type="obsolete">Misafir işletim sistemi tarafından sunucunun fare işaretçisinin yakalanıp yakalanmadığını gösterir: &lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_disabled_16px.png/&gt;&amp;nbsp;&amp;nbsp;işaretçi yakalandı&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_16px.png/&gt;&amp;nbsp;&amp;nbsp;işaretçi yakalandı&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;fare uyumu (MI) açık&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_can_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;fare uyumu (MI) kapalı, işaretçi yakalndı&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_can_seamless_uncaptured_16px.png/&gt;&amp;nbsp;&amp;nbsp;fare uyumu (MI) kapalı, işaretçi yakalanmadı&lt;/nobr&gt;&lt;br&gt; Bu fonksiyonu kullanabilmeniz için Guest Additions yüklü olmalıdır.</translation>
-    </message>
-    <message>
         <source>Shows the currently assigned Host key.&lt;br&gt;This key, when pressed alone, toggles the the keyboard and mouse capture state. It can also be used in combination with other keys to quickly perform actions from the main menu.</source>
         <translation type="obsolete">Atanmış sunucu anahtarını gösterir.&lt;br&gt; Sunucu anahtarına yanlız basıldığında klavye ve farenin yakalanma durumunu değiştirir. İşlemlerinizi daha hızlı yapmak için ana menüden diğer kullanılabilir tuş kombinasyonlarını görebilirsiniz.</translation>
     </message>
@@ -7196,10 +7180,6 @@ Version %1</source>
     <message>
         <source>Switch to seamless desktop integration mode</source>
         <translation type="obsolete">Tam masaüstü uyumu kipine geç</translation>
-    </message>
-    <message>
-        <source>Indicates whether the keyboard is captured by the guest OS (&lt;img src=hostkey_captured_16px.png/&gt;) or not (&lt;img src=hostkey_16px.png/&gt;).</source>
-        <translation type="obsolete">Misafir işletim sistemi tarafından klavyenin yakalanıp yakalanmadığını gösterir (&lt;img src=hostkey_captured_16px.png/&gt;) ya da (&lt;img src=hostkey_16px.png/&gt;).</translation>
     </message>
     <message>
         <source>&lt;qt&gt;&lt;nobr&gt;Indicates the activity of the floppy media:&lt;/nobr&gt;%1&lt;/qt&gt;</source>
@@ -7292,10 +7272,6 @@ Version %1</source>
         <translation type="obsolete">&lt;br&gt;&lt;nobr&gt;&lt;b&gt;USB Denetleyici pasifleştirilmiş&lt;/b&gt;&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <source>Indicates whether the Remote Display (VRDP Server) is enabled (&lt;img src=vrdp_16px.png/&gt;) or not (&lt;img src=vrdp_disabled_16px.png/&gt;).</source>
-        <translation type="obsolete">Uzak Masaüstünün (VRDP Sunucu) etkin olup olmadığını gösterir (&lt;img src=vrdp_16px.png/&gt;) ya da (&lt;img src=vrdp_disabled_16px.png/&gt;).</translation>
-    </message>
-    <message>
         <source>&lt;qt&gt;&lt;nobr&gt;Indicates the activity of the machineof the machine&apos;sapos;s shared folders: shared folders:&lt;/nobr&gt;%1&lt;/qt&gt;</source>
         <comment>Shared folders tooltip</comment>
         <translation type="obsolete">&lt;qt&gt;&lt;nobr&gt;Paylaşılan dizinler için etkinlikleri gösterir:&lt;/nobr&gt;%1&lt;/qt&gt;</translation>
@@ -7347,22 +7323,6 @@ Version %1</source>
         <source>&amp;Logging...</source>
         <comment>debug action</comment>
         <translation type="obsolete">Gün&amp;lük Kayıtları...</translation>
-    </message>
-    <message>
-        <source>Indicates whether the guest display auto-resize function is On (&lt;img src=:/auto_resize_on_16px.png/&gt;) or Off (&lt;img src=:/auto_resize_off_16px.png/&gt;). Note that this function requires Guest Additions to be installed in the guest OS.</source>
-        <translation type="obsolete">Misafir ekranını otomatik olarak boyutlandırma fonksiyonunun Açık (&lt;img src=auto_resize_on_16px.png/&gt;) yada Kapalı (&lt;img src=auto_resize_off_16px.png/&gt;) olduğunu gösterir. Bu fonksiyonu kullanabilmeniz için Guest Additions yüklü olmalıdır.</translation>
-    </message>
-    <message>
-        <source>Indicates whether the host mouse pointer is captured by the guest OS:&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_disabled_16px.png/&gt;&amp;nbsp;&amp;nbsp;pointer is not captured&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_16px.png/&gt;&amp;nbsp;&amp;nbsp;pointer is captured&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;mouse integration (MI) is On&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_can_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;MI is Off, pointer is captured&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_can_seamless_uncaptured_16px.png/&gt;&amp;nbsp;&amp;nbsp;MI is Off, pointer is not captured&lt;/nobr&gt;&lt;br&gt;Note that the mouse integration feature requires Guest Additions to be installed in the guest OS.</source>
-        <translation type="obsolete">Misafir işletim sistemi tarafından sunucunun fare işaretçisinin yakalanıp yakalanmadığını gösterir: &lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_disabled_16px.png/&gt;&amp;nbsp;&amp;nbsp;işaretçi yakalandı&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_16px.png/&gt;&amp;nbsp;&amp;nbsp;işaretçi yakalandı&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;fare uyumu (MI) açık&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_can_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;fare uyumu (MI) kapalı, işaretçi yakalndı&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=mouse_can_seamless_uncaptured_16px.png/&gt;&amp;nbsp;&amp;nbsp;fare uyumu (MI) kapalı, işaretçi yakalanmadı&lt;/nobr&gt;&lt;br&gt; Bu fonksiyonu kullanabilmeniz için Guest Additions yüklü olmalıdır.</translation>
-    </message>
-    <message>
-        <source>Indicates whether the keyboard is captured by the guest OS (&lt;img src=:/hostkey_captured_16px.png/&gt;) or not (&lt;img src=:/hostkey_16px.png/&gt;).</source>
-        <translation type="obsolete">Misafir işletim sistemi tarafından klavyenin yakalanıp yakalanmadığını gösterir (&lt;img src=hostkey_captured_16px.png/&gt;) ya da (&lt;img src=hostkey_16px.png/&gt;).</translation>
-    </message>
-    <message>
-        <source>Indicates whether the Remote Display (VRDP Server) is enabled (&lt;img src=:/vrdp_16px.png/&gt;) or not (&lt;img src=:/vrdp_disabled_16px.png/&gt;).</source>
-        <translation type="obsolete">Uzak Masaüstünün (VRDP Sunucu) etkin olup olmadığını gösterir (&lt;img src=vrdp_16px.png/&gt;) ya da (&lt;img src=vrdp_disabled_16px.png/&gt;).</translation>
     </message>
     <message>
         <source>Shows the currently assigned Host key.&lt;br&gt;This key, when pressed alone, toggles the keyboard and mouse capture state. It can also be used in combination with other keys to quickly perform actions from the main menu.</source>
@@ -10388,10 +10348,6 @@ to the system default language.&lt;/qt&gt;
         <translation>Seçili sanal makineyi başlat</translation>
     </message>
     <message>
-        <source>&lt;h3&gt;Welcome to VirtualBox!&lt;/h3&gt;&lt;p&gt;The left part of this window is  a list of all virtual machines on your computer. The list is empty now because you haven&apos;t created any virtual machines yet.&lt;img src=welcome.png align=right/&gt;&lt;/p&gt;&lt;p&gt;In order to create a new virtual machine, press the &lt;b&gt;New&lt;/b&gt; button in the main tool bar located at the top of the window.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;%1&lt;/b&gt; key to get instant help, or visit &lt;a href=http://www.virtualbox.org&gt;www.virtualbox.org&lt;/a&gt; for the latest information and news.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;h3&gt;VirtualBox Uygulamasına Hoşgeldiniz!&lt;/h3&gt;&lt;p&gt;Bu pencerenin sol tarafı bilgisayarınızdaki sanal işletim sistemlerinin tümünün listesini gösterir. Liste şimdi boş çünkü henüz bir sanal makine oluşturmadınız.&lt;img src=welcome.png align=right/&gt;&lt;/p&gt;&lt;p&gt;Yeni bir sanal makine oluşturmak için pencerenin yukarısındaki ana araç çubuğunda bulunan &lt;b&gt;Yeni&lt;/b&gt; düğmesine tıklayın.&lt;/p&gt;&lt;p&gt;Ayrıca &lt;b&gt;%1&lt;/b&gt; tuşuna basarak yardım alabilirsiniz ya da en yeni bilgileri ve haberleri almak için &lt;a href=http://www.virtualbox.org&gt;www.virtualbox.org&lt;/a&gt; adresini ziyaret edebilirsiniz.&lt;/p&gt;</translation>
-    </message>
-    <message>
         <source>&amp;Machine</source>
         <translation>&amp;Makine</translation>
     </message>
@@ -10449,7 +10405,7 @@ to the system default language.&lt;/qt&gt;
     </message>
     <message>
         <source>&lt;h3&gt;Welcome to VirtualBox!&lt;/h3&gt;&lt;p&gt;The left part of this window is  a list of all virtual machines on your computer. The list is empty now because you haven&apos;t created any virtual machines yet.&lt;img src=:/welcome.png align=right/&gt;&lt;/p&gt;&lt;p&gt;In order to create a new virtual machine, press the &lt;b&gt;New&lt;/b&gt; button in the main tool bar located at the top of the window.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;%1&lt;/b&gt; key to get instant help, or visit &lt;a href=http://www.virtualbox.org&gt;www.virtualbox.org&lt;/a&gt; for the latest information and news.&lt;/p&gt;</source>
-        <translation></translation>
+        <translation type="unfinished">&lt;h3&gt;VirtualBox Uygulamasına Hoşgeldiniz!&lt;/h3&gt;&lt;p&gt;Bu pencerenin sol tarafı bilgisayarınızdaki sanal işletim sistemlerinin tümünün listesini gösterir. Liste şimdi boş çünkü henüz bir sanal makine oluşturmadınız.&lt;img src=:/welcome.png align=right/&gt;&lt;/p&gt;&lt;p&gt;Yeni bir sanal makine oluşturmak için pencerenin yukarısındaki ana araç çubuğunda bulunan &lt;b&gt;Yeni&lt;/b&gt; düğmesine tıklayın.&lt;/p&gt;&lt;p&gt;Ayrıca &lt;b&gt;%1&lt;/b&gt; tuşuna basarak yardım alabilirsiniz ya da en yeni bilgileri ve haberleri almak için &lt;a href=http://www.virtualbox.org&gt;www.virtualbox.org&lt;/a&gt; adresini ziyaret edebilirsiniz.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&amp;Virtual Media Manager...</source>
