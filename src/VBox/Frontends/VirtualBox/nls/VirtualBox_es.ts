@@ -759,7 +759,7 @@
     </message>
     <message>
         <source>Linked Base for %1 and %2</source>
-        <translation type="unfinished">Base enlazada for %1 and %2</translation>
+        <translation>Base enlazada para %1 y %2</translation>
     </message>
 </context>
 <context>
@@ -1256,7 +1256,7 @@
     <name>UIDownloaderExtensionPack</name>
     <message>
         <source>Select folder to save %1 to</source>
-        <translation type="unfinished"></translation>
+        <translation>Seleccionar carpeta en la que guardar %1</translation>
     </message>
 </context>
 <context>
@@ -5816,8 +5816,8 @@ p, li { white-space: pre-wrap; }
     <message numerus="yes">
         <source>&lt;p&gt;The virtual machine(s) &lt;b&gt;%1&lt;/b&gt; are currently in a saved state.&lt;/p&gt;&lt;p&gt;If you continue the runtime state of the exported machine(s) will be discarded. Note that the existing machine(s) are not changed.&lt;/p&gt;</source>
         <translation>
-            <numerusform>&lt;p&gt;La máquina virtual &lt;b&gt;%1&lt;/b&gt; está actualmente en un estado guardado.&lt;/p&gt;&lt;p&gt;Si continua, el estado de ejecución de la máquina exportada será descartado. Esto no afectará las máquina existentes.&lt;/p&gt;</numerusform>
-            <numerusform>&lt;p&gt;Las máquinas virtuales &lt;b&gt;%1&lt;/b&gt; están actualmente en un estado guardado.&lt;/p&gt;&lt;p&gt;Si continua, los estados de ejecución de las máquinas exportadas serán descartados. Esto no afectará las máquinas existentes.&lt;/p&gt;</numerusform>
+            <numerusform>&lt;p&gt;La máquina virtual &lt;b&gt;%1&lt;/b&gt; está actualmente en un estado guardado.&lt;/p&gt;&lt;p&gt;Si continua, el estado de ejecución de la máquina exportada será descartado. Esto no afectará a las máquina existentes.&lt;/p&gt;</numerusform>
+            <numerusform>&lt;p&gt;Las máquinas virtuales &lt;b&gt;%1&lt;/b&gt; están actualmente en un estado guardado.&lt;/p&gt;&lt;p&gt;Si continua, los estados de ejecución de las máquinas exportadas serán descartados. Esto no afectará a las máquinas existentes.&lt;/p&gt;</numerusform>
         </translation>
     </message>
     <message>
@@ -6023,33 +6023,33 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;You have an old version (%1) of the &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt; installed.&lt;/p&gt;&lt;p&gt;Do you wish to download latest one from the Internet?&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Tiene una versión antigua (%1) del &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt; instalada.&lt;/p&gt;&lt;p&gt;¿Desea descargar la última versión desde Internet?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Download</source>
         <comment>extension pack</comment>
-        <translation type="unfinished">Descargar</translation>
+        <translation>Descargar</translation>
     </message>
     <message>
         <source>&lt;p&gt;Are you sure you want to download the &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; from &lt;nobr&gt;&lt;a href=&quot;%2&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; (size %3 bytes)?&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;¿Está seguro de que desea descargar el &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; desde &lt;nobr&gt;&lt;a href=&quot;%2&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; (tamaño %3 bytes)?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;The &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%2&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; and saved locally as &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to install this extension pack?&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;El &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; ha sido descargardo correctamente desde &lt;nobr&gt;&lt;a href=&quot;%2&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; y guardado localmente como &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;¿Desea instalar este paquete de extensión?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Install</source>
         <comment>extension pack</comment>
-        <translation type="unfinished">Instalar</translation>
+        <translation>Instalar</translation>
     </message>
     <message>
         <source>&lt;p&gt;The &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%2&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; but can&apos;t be saved locally as &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Please choose another location for that file.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;El &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; ha sido descargardo correctamente desde &lt;nobr&gt;&lt;a href=&quot;%2&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; pero no puede ser guardado localmente como &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Seleccione otra localización para el archivo.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Failed to download the &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; from &lt;nobr&gt;&lt;a href=&quot;%2&quot;&gt;%2&lt;/a&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;%3&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Fallo al descargar el &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; desde &lt;nobr&gt;&lt;a href=&quot;%2&quot;&gt;%2&lt;/a&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;%3&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
@@ -6101,11 +6101,11 @@ p, li { white-space: pre-wrap; }
     <name>UIMiniProgressWidgetExtension</name>
     <message>
         <source>Cancel the &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; download</source>
-        <translation type="unfinished"></translation>
+        <translation>Cancelar la descarga &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>Downloading the &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; from &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;...&lt;/nobr&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>Descargando el &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; desde &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;...&lt;/nobr&gt;</translation>
     </message>
 </context>
 <context>
@@ -6421,7 +6421,7 @@ dependiendo del tamaño de la imagen y el rendimiento de su disco duro.&lt;/p&gt
     </message>
     <message>
         <source>Please choose whether the new virtual disk file should be allocated as it is used or if it should be created fully allocated.</source>
-        <translation>Seleccione si el archivo del disco virtual debería ser reservado según sea usado o si debería reservase completamente en la creación.</translation>
+        <translation>Seleccione si el archivo del disco virtual debería ser reservado según sea usado o si debería reservarse completamente en la creación.</translation>
     </message>
     <message>
         <source>&lt;p&gt;A &lt;b&gt;dynamically allocated&lt;/b&gt; virtual disk file will only use space on your physical hard disk as it fills up, although it will not shrink again automatically when space on it is freed.&lt;/p&gt;</source>
@@ -6495,15 +6495,15 @@ dependiendo del tamaño de la imagen y el rendimiento de su disco duro.&lt;/p&gt
     </message>
     <message>
         <source>H&amp;DD (Parallels Hard Disk)</source>
-        <translation type="unfinished"></translation>
+        <translation>H&amp;DD (Disco duro Parallels)</translation>
     </message>
     <message>
         <source>Q&amp;ED (QEMU enhanced disk)</source>
-        <translation type="unfinished"></translation>
+        <translation>Q&amp;ED (Disco mejorado QEMU)</translation>
     </message>
     <message>
         <source>&amp;QCOW (QEMU Copy-On-Write)</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;QCOW (QEMU Copiar-al-Escribir)</translation>
     </message>
 </context>
 <context>

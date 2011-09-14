@@ -1247,7 +1247,7 @@
     <name>UIDownloaderExtensionPack</name>
     <message>
         <source>Select folder to save %1 to</source>
-        <translation type="unfinished"></translation>
+        <translation>Seleziona la cartella dove salvare %1</translation>
     </message>
 </context>
 <context>
@@ -6231,33 +6231,33 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;You have an old version (%1) of the &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt; installed.&lt;/p&gt;&lt;p&gt;Do you wish to download latest one from the Internet?&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;La versione installata (%1) del &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt; è obsoleta.&lt;/p&gt;&lt;p&gt;Vuoi scaricare l&apos;ultima da Internet?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Download</source>
         <comment>extension pack</comment>
-        <translation type="unfinished">Scarica</translation>
+        <translation>Scarica</translation>
     </message>
     <message>
         <source>&lt;p&gt;Are you sure you want to download the &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; from &lt;nobr&gt;&lt;a href=&quot;%2&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; (size %3 bytes)?&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Sei sicuro di voler scaricare il &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; da &lt;nobr&gt;&lt;a href=&quot;%2&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; (dimensione %3 byte)?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;The &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%2&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; and saved locally as &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to install this extension pack?&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Il &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; è stato scaricato correttamente da &lt;nobr&gt;&lt;a href=&quot;%2&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; e salvato localmente come &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Vuoi installare il pacchetto di estensione?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Install</source>
         <comment>extension pack</comment>
-        <translation type="unfinished">Installa</translation>
+        <translation>Installa</translation>
     </message>
     <message>
         <source>&lt;p&gt;The &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%2&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; but can&apos;t be saved locally as &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Please choose another location for that file.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Il &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; è stato scaricato correttamente da &lt;nobr&gt;&lt;a href=&quot;%2&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt;, ma non può essere salvato localmente come &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Scegli un&apos;altra posizione per il file.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Failed to download the &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; from &lt;nobr&gt;&lt;a href=&quot;%2&quot;&gt;%2&lt;/a&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;%3&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Scaricamento del &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; non riuscita da &lt;nobr&gt;&lt;a href=&quot;%2&quot;&gt;%2&lt;/a&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;%3&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
@@ -6309,11 +6309,11 @@ p, li { white-space: pre-wrap; }
     <name>UIMiniProgressWidgetExtension</name>
     <message>
         <source>Cancel the &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; download</source>
-        <translation type="unfinished"></translation>
+        <translation>Annulla lo scaricamento di &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>Downloading the &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; from &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;...&lt;/nobr&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>Scaricamento di &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; da &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt; in corso...&lt;/nobr&gt;</translation>
     </message>
 </context>
 <context>
@@ -6686,15 +6686,15 @@ alla velocità di scrittura del tuo disco rigido.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>H&amp;DD (Parallels Hard Disk)</source>
-        <translation type="unfinished"></translation>
+        <translation>H&amp;DD (Disco fisso di Parallels)</translation>
     </message>
     <message>
         <source>Q&amp;ED (QEMU enhanced disk)</source>
-        <translation type="unfinished"></translation>
+        <translation>Q&amp;ED (disco migliorato di QEMU)</translation>
     </message>
     <message>
         <source>&amp;QCOW (QEMU Copy-On-Write)</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;QCOW (Copy-On-Write di QEMU)</translation>
     </message>
 </context>
 <context>

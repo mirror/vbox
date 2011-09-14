@@ -1247,7 +1247,7 @@
     <name>UIDownloaderExtensionPack</name>
     <message>
         <source>Select folder to save %1 to</source>
-        <translation type="unfinished"></translation>
+        <translation>Válaszd ki a(z) %1 mentési mappáját</translation>
     </message>
 </context>
 <context>
@@ -5990,33 +5990,33 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;You have an old version (%1) of the &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt; installed.&lt;/p&gt;&lt;p&gt;Do you wish to download latest one from the Internet?&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Régi verziós (%1) &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt; van telepítve.&lt;/p&gt;&lt;p&gt;Le szeretnéd tölteni az internetről a legfrissebbet?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Download</source>
         <comment>extension pack</comment>
-        <translation type="unfinished">Letöltés</translation>
+        <translation>Letöltés</translation>
     </message>
     <message>
         <source>&lt;p&gt;Are you sure you want to download the &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; from &lt;nobr&gt;&lt;a href=&quot;%2&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; (size %3 bytes)?&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Biztos le akarod tölteni: &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; ? Letöltési hely: &lt;nobr&gt;&lt;a href=&quot;%2&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; (%3 bájt).&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;The &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%2&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; and saved locally as &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to install this extension pack?&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;&lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; sikeresen letöltve &lt;nobr&gt;(&lt;a href=&quot;%2&quot;&gt;%2&lt;/a&gt;)&lt;/nobr&gt; és elmentve: &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Szeretnéd telepíteni a kiterjesztő csomagot?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Install</source>
         <comment>extension pack</comment>
-        <translation type="unfinished">Telepítés</translation>
+        <translation>Telepítés</translation>
     </message>
     <message>
         <source>&lt;p&gt;The &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%2&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; but can&apos;t be saved locally as &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Please choose another location for that file.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;&lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; sikeresen letöltve &lt;nobr&gt;(&lt;a href=&quot;%2&quot;&gt;%2&lt;/a&gt;)&lt;/nobr&gt;, de nem lehetett elmenteni: &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Kérlek válassz másik helyet a fájl számára.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Failed to download the &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; from &lt;nobr&gt;&lt;a href=&quot;%2&quot;&gt;%2&lt;/a&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;%3&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;&lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; letöltése sikertelen a következő helyről: &lt;nobr&gt;&lt;a href=&quot;%2&quot;&gt;%2&lt;/a&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;%3&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
@@ -6068,11 +6068,11 @@ p, li { white-space: pre-wrap; }
     <name>UIMiniProgressWidgetExtension</name>
     <message>
         <source>Cancel the &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; download</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; letöltésének megszakítása</translation>
     </message>
     <message>
         <source>Downloading the &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; from &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;...&lt;/nobr&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; letöltése  &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt; helyről...&lt;/nobr&gt;</translation>
     </message>
 </context>
 <context>
@@ -6456,15 +6456,15 @@ a rámásolt adatok függvényében növekszik az általa elfoglalt hely - míg 
     </message>
     <message>
         <source>H&amp;DD (Parallels Hard Disk)</source>
-        <translation type="unfinished"></translation>
+        <translation>H&amp;DD (Parallels merevlemez)</translation>
     </message>
     <message>
         <source>Q&amp;ED (QEMU enhanced disk)</source>
-        <translation type="unfinished"></translation>
+        <translation>Q&amp;ED (QEMU enhanced disk)</translation>
     </message>
     <message>
         <source>&amp;QCOW (QEMU Copy-On-Write)</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;QCOW (QEMU Copy-On-Write)</translation>
     </message>
 </context>
 <context>
