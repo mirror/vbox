@@ -60,11 +60,19 @@
 # define IRQ_RETVAL(n)
 #endif
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
+# define USE_WORKQUEUE
+#endif
+
+#ifdef USE_WORKQUEUE
 /* The definition of work queue functions changed in Linux 2.6.20. */
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 20)
+# if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 20)
 typedef struct work_struct *WQ_PARAM;
-#else
+# else
 typedef void *WQ_PARAM;
+# endif
+#else
+typedef unsigned long WQ_PARAM;
 #endif
 
 /*******************************************************************************
@@ -105,8 +113,12 @@ static uint32_t                 g_cbMMIO;
 static void                    *g_pvMMIOBase;
 /** Wait queue used by polling. */
 static wait_queue_head_t        g_PollEventQueue;
+#ifdef USE_WORKQUEUE
 /** The IRQ bottom half work queue for reporting the mouse position */
 static struct work_struct       g_MouseEventWQ;
+#else
+DECLARE_TASKLET_DISABLED(g_MouseTasklet, vboxguestReportMousePosition, 0);
+#endif
 /** Asynchronous notification stuff.  */
 static struct fasync_struct    *g_pFAsyncQueue;
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
@@ -362,11 +374,16 @@ static int __init vboxguestLinuxInitISR(void)
     int rc;
 
     init_waitqueue_head(&g_PollEventQueue);
+#ifdef USE_WORKQUEUE
     INIT_WORK(&g_MouseEventWQ, vboxguestReportMousePosition
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 20)
+# if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 20)
               , NULL
-#endif
+# endif
               );
+#else
+    tasklet_enable(&g_MouseTasklet);
+    tasklet_schedule(&g_MouseTasklet);
+#endif
     rc = request_irq(g_pPciDev->irq,
                      vboxguestLinuxISR,
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 20)
@@ -984,7 +1001,11 @@ void VBoxGuestNativeISRMousePollEvent(PVBOXGUESTDEVEXT pDevExt)
     Log(("VBoxGuestNativeISRMousePollEvent: kill_fasync\n"));
     kill_fasync(&g_pFAsyncQueue, SIGIO, POLL_IN);
     Log(("VBoxGuestNativeISRMousePollEvent: done\n"));
+#ifdef USE_WORKQUEUE
     schedule_work(&g_MouseEventWQ);
+#else
+    tasklet_schedule(&g_MouseTasklet);
+#endif
 }
 
 
@@ -1100,4 +1121,3 @@ MODULE_LICENSE("GPL");
 #ifdef MODULE_VERSION
 MODULE_VERSION(VBOX_VERSION_STRING);
 #endif
-
