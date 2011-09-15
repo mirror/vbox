@@ -60,6 +60,12 @@
 # define IRQ_RETVAL(n)
 #endif
 
+/* The definition of work queue functions changed in Linux 2.6.20. */
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 20)
+typedef struct work_struct *WQ_PARAM;
+#else
+typedef void *WQ_PARAM;
+#endif
 
 /*******************************************************************************
 *   Internal Functions                                                         *
@@ -77,6 +83,7 @@ static int  vboxguestLinuxIOCtl(struct inode *pInode, struct file *pFilp, unsign
 static int  vboxguestFAsync(int fd, struct file *pFile, int fOn);
 static unsigned int vboxguestPoll(struct file *pFile, poll_table *pPt);
 static ssize_t vboxguestRead(struct file *pFile, char *pbBuf, size_t cbRead, loff_t *poff);
+static void vboxguestReportMousePosition(WQ_PARAM unused);
 
 
 /*******************************************************************************
@@ -98,6 +105,8 @@ static uint32_t                 g_cbMMIO;
 static void                    *g_pvMMIOBase;
 /** Wait queue used by polling. */
 static wait_queue_head_t        g_PollEventQueue;
+/** The IRQ bottom half work queue for reporting the mouse position */
+static struct work_struct       g_MouseEventWQ;
 /** Asynchronous notification stuff.  */
 static struct fasync_struct    *g_pFAsyncQueue;
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
@@ -345,13 +354,19 @@ static irqreturn_t vboxguestLinuxISR(int iIrrq, void *pvDevId, struct pt_regs *p
 
 
 /**
- * Registers the ISR and initializes the poll wait queue.
+ * Registers the ISR and initializes the poll wait queue and the
+ * bottom half work-queue for mouse reporting.
  */
 static int __init vboxguestLinuxInitISR(void)
 {
     int rc;
 
     init_waitqueue_head(&g_PollEventQueue);
+    INIT_WORK(&g_MouseEventWQ, vboxguestReportMousePosition
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 20)
+              , NULL
+#endif
+              );
     rc = request_irq(g_pPciDev->irq,
                      vboxguestLinuxISR,
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 20)
@@ -932,20 +947,12 @@ static ssize_t vboxguestRead(struct file *pFile, char *pbBuf, size_t cbRead, lof
 }
 
 
-void VBoxGuestNativeISRMousePollEvent(PVBOXGUESTDEVEXT pDevExt)
+void vboxguestReportMousePosition(WQ_PARAM unused)
 {
     VMMDevReqMouseStatus *pReq;
     int rc;
-    NOREF(pDevExt);
 
-    /*
-     * Wake up everyone that's in a poll() and post anyone that has
-     * subscribed to async notifications.
-     */
-    Log(("VBoxGuestNativeISRMousePollEvent: wake_up_all\n"));
-    wake_up_all(&g_PollEventQueue);
-    Log(("VBoxGuestNativeISRMousePollEvent: kill_fasync\n"));
-    kill_fasync(&g_pFAsyncQueue, SIGIO, POLL_IN);
+    NOREF(unused);
     /* Report events to the kernel input device */
     rc = VbglGRAlloc((VMMDevRequestHeader **)&pReq, sizeof(*pReq), VMMDevReq_GetMouseStatus);
     if (RT_SUCCESS(rc))
@@ -961,7 +968,23 @@ void VBoxGuestNativeISRMousePollEvent(PVBOXGUESTDEVEXT pDevExt)
 #endif
         VbglGRFree(&pReq->header);
     }
+}
+
+
+void VBoxGuestNativeISRMousePollEvent(PVBOXGUESTDEVEXT pDevExt)
+{
+    NOREF(pDevExt);
+
+    /*
+     * Wake up everyone that's in a poll() and post anyone that has
+     * subscribed to async notifications.
+     */
+    Log(("VBoxGuestNativeISRMousePollEvent: wake_up_all\n"));
+    wake_up_all(&g_PollEventQueue);
+    Log(("VBoxGuestNativeISRMousePollEvent: kill_fasync\n"));
+    kill_fasync(&g_pFAsyncQueue, SIGIO, POLL_IN);
     Log(("VBoxGuestNativeISRMousePollEvent: done\n"));
+    schedule_work(&g_MouseEventWQ);
 }
 
 
