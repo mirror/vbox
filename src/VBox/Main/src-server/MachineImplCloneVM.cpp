@@ -659,6 +659,10 @@ HRESULT MachineCloneVMPrivate::createDifferencingMedium(const ComObjPtr<Medium> 
                         Guid::Empty, /* empty media registry */
                         NULL);       /* pllRegistriesThatNeedSaving */
         if (FAILED(rc)) throw rc;
+
+        // need tree lock for createMediumLockList
+        AutoWriteLock treeLock(p->getVirtualBox()->getMediaTreeLockHandle() COMMA_LOCKVAL_SRC_POS);
+
         MediumLockList *pMediumLockList(new MediumLockList());
         rc = diff->createMediumLockList(true /* fFailIfInaccessible */,
                                         true /* fMediumLockWrite */,
@@ -667,6 +671,9 @@ HRESULT MachineCloneVMPrivate::createDifferencingMedium(const ComObjPtr<Medium> 
         if (FAILED(rc)) throw rc;
         rc = pMediumLockList->Lock();
         if (FAILED(rc)) throw rc;
+
+        treeLock.release();
+
         /* this already registers the new diff image */
         rc = pParent->createDiffStorage(diff, MediumVariant_Standard,
                                         pMediumLockList,
