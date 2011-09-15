@@ -4476,7 +4476,10 @@ quint64 VBoxGlobal::required3DWddmOffscreenVideoMemory(const QString &strGuestOS
 /* static */
 bool VBoxGlobal::isWddmCompatibleOsType(const QString &strGuestOSTypeId)
 {
-    return strGuestOSTypeId.startsWith("WindowsVista") || strGuestOSTypeId.startsWith("Windows7") || strGuestOSTypeId.startsWith("Windows2008");
+    return    strGuestOSTypeId.startsWith("WindowsVista")
+           || strGuestOSTypeId.startsWith("Windows7")
+           || strGuestOSTypeId.startsWith("Windows8")
+           || strGuestOSTypeId.startsWith("Windows2008");
 }
 #endif /* VBOX_WITH_CRHGSMI */
 
@@ -4879,6 +4882,8 @@ void VBoxGlobal::init()
         {"Windows2008_64",  ":/os_win2k8_64.png"},
         {"Windows7",        ":/os_win7.png"},
         {"Windows7_64",     ":/os_win7_64.png"},
+        {"Windows8",        ":/os_win7.png"},
+        {"Windows8_64",     ":/os_win7_64.png"},
         {"WindowsNT",       ":/os_win_other.png"},
         {"OS2Warp3",        ":/os_os2warp3.png"},
         {"OS2Warp4",        ":/os_os2warp4.png"},
