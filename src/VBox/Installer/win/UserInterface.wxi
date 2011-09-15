@@ -546,26 +546,26 @@
         <Dialog Id="VBoxFatalErrorDlg" ErrorDialog="yes" Width="270" Height="150" Title="[ProductName] !(loc.Setup)" NoMinimize="yes">
             <!-- Do *not* change the control IDs in the dialog! -->
             <Control Id="ErrorText" Type="Text" X="75" Y="20" Width="155" Height="80" TabSkip="no" NoPrefix="yes" Text="Error information text" />
-            <Control Id="Y" Type="PushButton" X="20" Y="110" Width="80" Height="18" TabSkip="yes" Text="[ButtonText_Yes]">
+            <Control Id="Y" Type="PushButton" X="20" Y="110" Width="80" Height="18" TabSkip="yes" Text="!(loc.ButtonText_Yes)">
                 <Publish Event="EndDialog" Value="ErrorYes">1</Publish>
             </Control>
-            <Control Id="A" Type="PushButton" X="20" Y="110" Width="80" Height="18" TabSkip="yes" Text="[ButtonText_Cancel]">
+            <Control Id="A" Type="PushButton" X="20" Y="110" Width="80" Height="18" TabSkip="yes" Text="!(loc.ButtonText_Cancel)">
                 <Publish Event="EndDialog" Value="ErrorAbort">1</Publish>
             </Control>
-            <Control Id="C" Type="PushButton" X="20" Y="110" Width="80" Height="18" TabSkip="yes" Text="[ButtonText_Cancel]">
+            <Control Id="C" Type="PushButton" X="20" Y="110" Width="80" Height="18" TabSkip="yes" Text="!(loc.ButtonText_Cancel)">
                 <Publish Event="EndDialog" Value="ErrorCancel">1</Publish>
             </Control>
             <Control Id="ErrorIcon" Type="Icon" X="15" Y="15" Width="24" Height="24" ToolTip="Information icon" FixedSize="yes" IconSize="32" Text="[InfoIcon]" />
-            <Control Id="I" Type="PushButton" X="20" Y="110" Width="80" Height="18" TabSkip="yes" Text="[ButtonText_Ignore]">
+            <Control Id="I" Type="PushButton" X="20" Y="110" Width="80" Height="18" TabSkip="yes" Text="!(loc.ButtonText_Ignore)">
                 <Publish Event="EndDialog" Value="ErrorIgnore">1</Publish>
             </Control>
-            <Control Id="N" Type="PushButton" X="20" Y="110" Width="80" Height="18" TabSkip="yes" Text="[ButtonText_No]">
+            <Control Id="N" Type="PushButton" X="20" Y="110" Width="80" Height="18" TabSkip="yes" Text="!(loc.ButtonText_No)">
                 <Publish Event="EndDialog" Value="ErrorNo">1</Publish>
             </Control>
-            <Control Id="O" Type="PushButton" X="20" Y="110" Width="80" Height="18" TabSkip="yes" Text="[ButtonText_OK]">
+            <Control Id="O" Type="PushButton" X="20" Y="110" Width="80" Height="18" TabSkip="yes" Text="!(loc.ButtonText_OK)">
                 <Publish Event="EndDialog" Value="ErrorOk">1</Publish>
             </Control>
-            <Control Id="R" Type="PushButton" X="20" Y="110" Width="80" Height="18" TabSkip="yes" Text="[ButtonText_Retry]">
+            <Control Id="R" Type="PushButton" X="20" Y="110" Width="80" Height="18" TabSkip="yes" Text="!(loc.ButtonText_Retry)">
                 <Publish Event="EndDialog" Value="ErrorRetry">1</Publish>
             </Control>
         </Dialog>
@@ -1086,6 +1086,7 @@
              action is executed and the internal user interface level is set to full UI or reduced UI. The installer
              skips the actions in this table if the user interface level is set to basic UI or no UI. -->
          <AdminUISequence>
+            <!-- bird: VBoxFatalErrorDlg is an error dialog, apparently that's not what we're supposed to use for OnExit="error". See ./src/ext/UIExtension/wixlib/FatalError.wxs -->
             <Show Dialog="VBoxFatalErrorDlg" OnExit="error" />
             <Show Dialog="VBoxUserExitDlg" OnExit="cancel" />
             <Show Dialog="VBoxExitDlg" OnExit="success" />
