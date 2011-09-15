@@ -156,6 +156,8 @@
     <xsd:enumeration value="Windows2008_64"/>
     <xsd:enumeration value="Windows7"/>
     <xsd:enumeration value="Windows7_64"/>
+    <xsd:enumeration value="Windows8"/>
+    <xsd:enumeration value="Windows8_64"/>
     <xsd:enumeration value="WindowsNT"/>
     <xsd:enumeration value="OS2Warp3"/>
     <xsd:enumeration value="OS2Warp4"/>
