@@ -100,6 +100,9 @@ static void                    *g_pvMMIOBase;
 static wait_queue_head_t        g_PollEventQueue;
 /** Asynchronous notification stuff.  */
 static struct fasync_struct    *g_pFAsyncQueue;
+/** Pre-allocated mouse status VMMDev request for use in the IRQ
+ * handler. */
+static VMMDevReqMouseStatus    *g_pMouseStatusReq;
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
 /** Whether we've create the logger or not. */
 static volatile bool            g_fLoggerCreated;
@@ -430,11 +433,20 @@ static int __init vboxguestLinuxCreateInputDevice(void)
 #else
 # define INPUT_DEV_ID(val) id##val
 #endif
+    int rc;
 
+    rc = VbglGRAlloc((VMMDevRequestHeader **)&g_pMouseStatusReq,
+                     sizeof(*g_pMouseStatusReq),
+                     VMMDevReq_GetMouseStatus);
+    if (RT_FAILURE(rc))
+        return -ENOMEM;
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 15)
     g_pInputDevice = input_allocate_device();
     if (!g_pInputDevice)
+    {
+        VbglGRFree(&g_pMouseStatusReq->header);
         return -ENOMEM;
+    }
     g_pInputDevice->INPUT_DEV_ID(bustype) = BUS_PCI;
 #else
     g_pInputDevice = &g_InputDevice;
@@ -459,6 +471,7 @@ static int __init vboxguestLinuxCreateInputDevice(void)
         int rc = input_register_device(g_pInputDevice);
         if (rc)
         {
+            VbglGRFree(&g_pMouseStatusReq->header);
             input_free_device(g_pInputDevice);
             return rc;
         }
@@ -494,14 +507,11 @@ static int __init vboxguestLinuxCreateInputDevice(void)
  */
 static void vboxguestLinuxTermInputDevice(void)
 {
-    if (g_pInputDevice)
-    {
-        input_unregister_device(g_pInputDevice);
+    VbglGRFree(&g_pMouseStatusReq->header);
+    input_unregister_device(g_pInputDevice);
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 15)
-        input_free_device(g_pInputDevice);
+    input_free_device(g_pInputDevice);
 #endif
-        g_pInputDevice = NULL;
-    }
 }
 
 
@@ -934,7 +944,6 @@ static ssize_t vboxguestRead(struct file *pFile, char *pbBuf, size_t cbRead, lof
 
 void VBoxGuestNativeISRMousePollEvent(PVBOXGUESTDEVEXT pDevExt)
 {
-    VMMDevReqMouseStatus *pReq;
     int rc;
     NOREF(pDevExt);
 
@@ -947,19 +956,19 @@ void VBoxGuestNativeISRMousePollEvent(PVBOXGUESTDEVEXT pDevExt)
     Log(("VBoxGuestNativeISRMousePollEvent: kill_fasync\n"));
     kill_fasync(&g_pFAsyncQueue, SIGIO, POLL_IN);
     /* Report events to the kernel input device */
-    rc = VbglGRAlloc((VMMDevRequestHeader **)&pReq, sizeof(*pReq), VMMDevReq_GetMouseStatus);
+    g_pMouseStatusReq->mouseFeatures = 0;
+    g_pMouseStatusReq->pointerXPos = 0;
+    g_pMouseStatusReq->pointerYPos = 0;
+    rc = VbglGRPerform(&g_pMouseStatusReq->header);
     if (RT_SUCCESS(rc))
     {
-        pReq->mouseFeatures = 0;
-        pReq->pointerXPos = 0;
-        pReq->pointerYPos = 0;
-        rc = VbglGRPerform(&pReq->header);
-        input_report_abs(g_pInputDevice, ABS_X, pReq->pointerXPos);
-        input_report_abs(g_pInputDevice, ABS_Y, pReq->pointerYPos);
+        input_report_abs(g_pInputDevice, ABS_X,
+                         g_pMouseStatusReq->pointerXPos);
+        input_report_abs(g_pInputDevice, ABS_Y,
+                         g_pMouseStatusReq->pointerYPos);
 #ifdef EV_SYN
         input_sync(g_pInputDevice);
 #endif
-        VbglGRFree(&pReq->header);
     }
     Log(("VBoxGuestNativeISRMousePollEvent: done\n"));
 }
