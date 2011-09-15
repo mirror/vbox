@@ -60,20 +60,6 @@
 # define IRQ_RETVAL(n)
 #endif
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
-# define USE_WORKQUEUE
-#endif
-
-#ifdef USE_WORKQUEUE
-/* The definition of work queue functions changed in Linux 2.6.20. */
-# if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 20)
-typedef struct work_struct *WQ_PARAM;
-# else
-typedef void *WQ_PARAM;
-# endif
-#else
-typedef unsigned long WQ_PARAM;
-#endif
 
 /*******************************************************************************
 *   Internal Functions                                                         *
@@ -91,7 +77,6 @@ static int  vboxguestLinuxIOCtl(struct inode *pInode, struct file *pFilp, unsign
 static int  vboxguestFAsync(int fd, struct file *pFile, int fOn);
 static unsigned int vboxguestPoll(struct file *pFile, poll_table *pPt);
 static ssize_t vboxguestRead(struct file *pFile, char *pbBuf, size_t cbRead, loff_t *poff);
-static void vboxguestReportMousePosition(WQ_PARAM unused);
 
 
 /*******************************************************************************
@@ -113,12 +98,6 @@ static uint32_t                 g_cbMMIO;
 static void                    *g_pvMMIOBase;
 /** Wait queue used by polling. */
 static wait_queue_head_t        g_PollEventQueue;
-#ifdef USE_WORKQUEUE
-/** The IRQ bottom half work queue for reporting the mouse position */
-static struct work_struct       g_MouseEventWQ;
-#else
-DECLARE_TASKLET_DISABLED(g_MouseTasklet, vboxguestReportMousePosition, 0);
-#endif
 /** Asynchronous notification stuff.  */
 static struct fasync_struct    *g_pFAsyncQueue;
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
@@ -366,24 +345,13 @@ static irqreturn_t vboxguestLinuxISR(int iIrrq, void *pvDevId, struct pt_regs *p
 
 
 /**
- * Registers the ISR and initializes the poll wait queue and the
- * bottom half work-queue for mouse reporting.
+ * Registers the ISR and initializes the poll wait queue.
  */
 static int __init vboxguestLinuxInitISR(void)
 {
     int rc;
 
     init_waitqueue_head(&g_PollEventQueue);
-#ifdef USE_WORKQUEUE
-    INIT_WORK(&g_MouseEventWQ, vboxguestReportMousePosition
-# if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 20)
-              , NULL
-# endif
-              );
-#else
-    tasklet_enable(&g_MouseTasklet);
-    tasklet_schedule(&g_MouseTasklet);
-#endif
     rc = request_irq(g_pPciDev->irq,
                      vboxguestLinuxISR,
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 20)
@@ -964,12 +932,20 @@ static ssize_t vboxguestRead(struct file *pFile, char *pbBuf, size_t cbRead, lof
 }
 
 
-void vboxguestReportMousePosition(WQ_PARAM unused)
+void VBoxGuestNativeISRMousePollEvent(PVBOXGUESTDEVEXT pDevExt)
 {
     VMMDevReqMouseStatus *pReq;
     int rc;
+    NOREF(pDevExt);
 
-    NOREF(unused);
+    /*
+     * Wake up everyone that's in a poll() and post anyone that has
+     * subscribed to async notifications.
+     */
+    Log(("VBoxGuestNativeISRMousePollEvent: wake_up_all\n"));
+    wake_up_all(&g_PollEventQueue);
+    Log(("VBoxGuestNativeISRMousePollEvent: kill_fasync\n"));
+    kill_fasync(&g_pFAsyncQueue, SIGIO, POLL_IN);
     /* Report events to the kernel input device */
     rc = VbglGRAlloc((VMMDevRequestHeader **)&pReq, sizeof(*pReq), VMMDevReq_GetMouseStatus);
     if (RT_SUCCESS(rc))
@@ -985,27 +961,7 @@ void vboxguestReportMousePosition(WQ_PARAM unused)
 #endif
         VbglGRFree(&pReq->header);
     }
-}
-
-
-void VBoxGuestNativeISRMousePollEvent(PVBOXGUESTDEVEXT pDevExt)
-{
-    NOREF(pDevExt);
-
-    /*
-     * Wake up everyone that's in a poll() and post anyone that has
-     * subscribed to async notifications.
-     */
-    Log(("VBoxGuestNativeISRMousePollEvent: wake_up_all\n"));
-    wake_up_all(&g_PollEventQueue);
-    Log(("VBoxGuestNativeISRMousePollEvent: kill_fasync\n"));
-    kill_fasync(&g_pFAsyncQueue, SIGIO, POLL_IN);
     Log(("VBoxGuestNativeISRMousePollEvent: done\n"));
-#ifdef USE_WORKQUEUE
-    schedule_work(&g_MouseEventWQ);
-#else
-    tasklet_schedule(&g_MouseTasklet);
-#endif
 }
 
 
@@ -1121,3 +1077,4 @@ MODULE_LICENSE("GPL");
 #ifdef MODULE_VERSION
 MODULE_VERSION(VBOX_VERSION_STRING);
 #endif
+
