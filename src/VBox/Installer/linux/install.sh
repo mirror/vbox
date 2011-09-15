@@ -373,6 +373,10 @@ if [ "$ACTION" = "install" ]; then
     test -e $INSTALLATION_DIR/VBoxNetAdpCtl && chmod 4511 $INSTALLATION_DIR/VBoxNetAdpCtl
 
     # Install runlevel scripts
+    # Note: vboxdrv is also handled by setup_init_script. This function will
+    #       use chkconfig to adjust the sequence numbers, therefore vboxdrv
+    #       numbers here should match the numbers in the vboxdrv.sh check
+    #       header!
     install_init_script vboxdrv.sh vboxdrv
     install_init_script vboxballoonctrl-service.sh vboxballoonctrl-service
     install_init_script vboxweb-service.sh vboxweb-service
