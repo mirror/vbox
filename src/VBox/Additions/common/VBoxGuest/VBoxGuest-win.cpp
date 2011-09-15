@@ -109,6 +109,9 @@ ULONG DriverEntry(PDRIVER_OBJECT pDrvObj, PUNICODE_STRING pRegPath)
                 case 1: /* Note: Also could be Windows 2008 Server R2! */
                     g_winVersion = WIN7;
                     break;
+                case 2:
+                    g_winVersion = WIN8;
+                    break;
                 default:
                     Log(("VBoxGuest::DriverEntry: Unknown version of Windows (%u.%u), refusing!\n",
                          majorVersion, minorVersion));
@@ -1252,6 +1255,14 @@ VBOXOSTYPE vboxguestwinVersionToOSType(winVersion_t winVer)
             enmOsType = VBOXOSTYPE_Win7_x64;
 #else
             enmOsType = VBOXOSTYPE_Win7;
+#endif
+            break;
+
+        case WIN8:
+#if ARCH_BITS == 64
+            enmOsType = VBOXOSTYPE_Win8_x64;
+#else
+            enmOsType = VBOXOSTYPE_Win8;
 #endif
             break;
 
