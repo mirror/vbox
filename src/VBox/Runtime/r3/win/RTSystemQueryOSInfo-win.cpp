@@ -64,6 +64,7 @@ typedef enum RTWINOSTYPE
     kRTWinOSType_VISTA,
     kRTWinOSType_2008,
     kRTWinOSType_7,
+    kRTWinOSType_8,
     kRTWinOSType_NT_UNKNOWN = 199,
     kRTWinOSType_NT_LAST    = kRTWinOSType_UNKNOWN
 } RTWINOSTYPE;
@@ -204,6 +205,9 @@ static RTWINOSTYPE rtSystemWinOSType(OSVERSIONINFOEX const *pOSInfoEx)
         else if (   dwMajorVersion == 6
                  && dwMinorVersion == 1)
             enmVer = kRTWinOSType_7;
+        else if (   dwMajorVersion == 6
+                 && dwMinorVersion == 2)
+            enmVer = kRTWinOSType_8;
         else
             enmVer = kRTWinOSType_NT_UNKNOWN;
     }
@@ -371,6 +375,7 @@ static int rtSystemWinQueryOSVersion(RTSYSOSINFO enmInfo, char *pszInfo, size_t 
                 }
                 case kRTWinOSType_2008:         strcpy(szTmp, "Windows 2008"); break;
                 case kRTWinOSType_7:            strcpy(szTmp, "Windows 7"); break;
+                case kRTWinOSType_8:            strcpy(szTmp, "Windows 8"); break;
 
                 case kRTWinOSType_NT_UNKNOWN:
                     RTStrPrintf(szTmp, sizeof(szTmp), "Unknown NT v%u.%u", OSInfoEx.dwMajorVersion, OSInfoEx.dwMinorVersion);
