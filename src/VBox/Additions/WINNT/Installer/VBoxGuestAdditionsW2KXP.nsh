@@ -427,7 +427,8 @@ cropengl:
 !if $%BUILD_TARGET_ARCH% == "amd64"
     SetRegView 32
     ; Write additional keys required for Windows XP, Vista and 7 64-bit (but for 32-bit stuff)
-    ${If} $g_strWinVersion   == '7'
+    ${If} $g_strWinVersion   == '8'
+    ${OrIf} $g_strWinVersion == '7'
     ${OrIf} $g_strWinVersion == 'Vista'
     ${OrIf} $g_strWinVersion == '2003' ; Windows XP 64-bit is a renamed Windows 2003 really
       WriteRegDWORD HKLM "SOFTWARE\Microsoft\Windows NT\CurrentVersion\OpenGLDrivers\VBoxOGL" "Version" 2

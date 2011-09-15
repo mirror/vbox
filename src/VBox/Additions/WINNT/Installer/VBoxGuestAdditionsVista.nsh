@@ -31,14 +31,14 @@ FunctionEnd
 
 Function Vista_InstallFiles
 
-  DetailPrint "Installing drivers for Vista / Windows 7 ..."
+  DetailPrint "Installing drivers for Vista / Windows 7 / Windows 8 ..."
 
   SetOutPath "$INSTDIR"
   ; Nothing here yet
   Goto done
 
 error:
-  Abort "ERROR: Could not install files for Vista / Windows 7! Installation aborted."
+  Abort "ERROR: Could not install files for Vista / Windows 7 / Windows 8! Installation aborted."
 
 done:
 
