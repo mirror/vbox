@@ -288,6 +288,7 @@ $(VBOX_WIN_INST_OUT_DIR)/$(PACKAGE_NAME_LANG)_$(lang).msi: \
 		$(VBOX_WIN_INST_OUT_DIR)/Languages/Language_$(lang).wxl \
 		$(VBOX_WIN_INST_OUT_DIR)/Languages/License_$(lang).wxl \
 		$(PATH_STAGE_BIN)/VBoxInstallHelper.dll \
+		$(VBOX_SVN_REV_KMK) \
 		$(MAKEFILE_CURRENT) \
 		| $$$$(dir $$$$@)
 	$$(call MSG_L1,Linking installer $$@)
@@ -304,7 +305,7 @@ $(VBOX_WIN_INST_OUT_DIR)/$(PACKAGE_NAME_LANG)_$(lang).msi: \
 			$(VBOX_PATH_WIX)/difxapp_x86.wixlib, \
 			$(VBOX_PATH_WIX)/difxapp_x64.wixlib)
 	$(RM) -f $(VBOX_WIN_INST_OUT_DIR)/Languages/$(lang).mst
-	$(call VBOX_SIGN_FILE_FN,$$@)
+	$(call VBOX_SIGN_FILE_FN,$$@,$(VBOX_PRODUCT) v$(VBOX_VERSION_STRING)r$(VBOX_SVN_REV) ($(KBUILD_TARGET_ARCH)))
 endef
 
 $(foreach lang,$(VBOX_INSTALLER_LANGUAGES), $(eval $(def_vbox_link_msi)))
@@ -549,12 +550,13 @@ $(PACKAGE_NAME_FINAL): \
 		$(VBOX_WIN_INST_OUT_DIR)/Shortcuts_StartMenu.wxi \
 		$(foreach lang,$(VBOX_INSTALLER_LANGUAGES), $(VBOX_WIN_INST_OUT_DIR)/$(PACKAGE_NAME_LANG)_$(lang).msi) \
 		$(foreach lang,$(VBOX_INSTALLER_ADD_LANGUAGES),	$(VBOX_WIN_INST_OUT_DIR)/Languages/$(lang).mst) \
+		$(VBOX_SVN_REV_KMK) \
 		| $$(dir $$@)
 	$(QUIET)$(RM) -f $(wildcard $(PATH_STAGE_BIN)/$(PACKAGE_BASE)-r*.msi)
 	$(REDIRECT) -C $(@D) -- \
 		wscript.exe $(VBOX_PATH_WISUMINFO) $(VBOX_WIN_INST_OUT_DIR)/$(PACKAGE_NAME_LANG)_en_US.msi $(VBOX_INS_PROD_LANG)
 	$(CP) -f $(VBOX_WIN_INST_OUT_DIR)/$(PACKAGE_NAME_LANG)_en_US.msi $@
-	$(call VBOX_SIGN_FILE_FN,$@)
+	$(call VBOX_SIGN_FILE_FN,$$@,$(VBOX_PRODUCT) v$(VBOX_VERSION_STRING)r$(VBOX_SVN_REV))
 
 
 if defined(VBOX_WITH_COMBINED_PACKAGE) && "$(KBUILD_TARGET_ARCH)" == "x86"
@@ -566,8 +568,8 @@ if defined(VBOX_WITH_COMBINED_PACKAGE) && "$(KBUILD_TARGET_ARCH)" == "x86"
 $(PATH_STAGE_BIN)/$(PACKAGE_NAME_MULTIARCH_FINAL): \
 		$(PATH_MULTIARCH_TEMP)/$(PACKAGE_NAME_MULTIARCH.x86) \
 		$(PATH_MULTIARCH_TEMP)/$(PACKAGE_NAME_MULTIARCH.amd64)
-		$(call MSG_L1,Building Windows combined package)
-		$(call VBOX_SIGN_FILE_FN,$(VBOX_WIN_INST_OUT_DIR)/$(PACKAGE_NAME_MULTIARCH_COMMONCAB))
+	$(call MSG_L1,Building Windows combined package)
+	$(call VBOX_SIGN_FILE_FN,$(VBOX_WIN_INST_OUT_DIR)/$(PACKAGE_NAME_MULTIARCH_COMMONCAB))
 	$(REDIRECT) -C $(@D) -- \
 		VBoxStubBld -out $@ \
 			-target-x86 $(PATH_MULTIARCH_TEMP)/$(PACKAGE_NAME_MULTIARCH.x86) \
