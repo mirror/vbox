@@ -522,6 +522,14 @@ public:
     }
 
     /**
+     * Constructs a new instance that will start managing the given read/write
+     * semaphore by requesting a write lock.
+     */
+    AutoWriteLock(uint32_t cHandles,
+                  LockHandle** pHandles
+                  COMMA_LOCKVAL_SRC_POS_DECL);
+
+    /**
      * Release all write locks acquired by this instance through the #lock()
      * call and destroys the instance.
      *

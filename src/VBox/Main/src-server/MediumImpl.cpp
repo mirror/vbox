@@ -5152,10 +5152,16 @@ HRESULT Medium::cloneToEx(const ComObjPtr<Medium> &aTarget, ULONG aVariant,
     {
         // locking: we need the tree lock first because we access parent pointers
         // and we need to write-lock the media involved
-        AutoMultiWriteLock4 alock(&m->pVirtualBox->getMediaTreeLockHandle(),
-                                  this->lockHandle(),
-                                  aTarget->lockHandle(),
-                                  aParent->lockHandle() COMMA_LOCKVAL_SRC_POS);
+        uint32_t    cHandles    = 3;
+        LockHandle* pHandles[4] = { &m->pVirtualBox->getMediaTreeLockHandle(),
+                                    this->lockHandle(),
+                                    aTarget->lockHandle() };
+        /* Only add parent to the lock if it is not null */
+        if (!aParent.isNull())
+            pHandles[cHandles++] = aParent->lockHandle();
+        AutoWriteLock alock(cHandles,
+                            pHandles
+                            COMMA_LOCKVAL_SRC_POS);
 
         if (    aTarget->m->state != MediumState_NotCreated
             &&  aTarget->m->state != MediumState_Created)
