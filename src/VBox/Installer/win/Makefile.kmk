@@ -381,16 +381,20 @@ else
 	$(PATH_OUT)/bin/VBoxREM64.dll \
 	, $(VBOX_MSI_DEPENDENCIES))
 endif
+ifdef VBOX_WITH_EXTPACK_PUEL
+ VBOX_MSI_DEPENDENCIES := $(filter-out $(PATH_OUT)/bin/VBoxVRDP$(VBOX_SUFF_DLL), $(VBOX_MSI_DEPENDENCIES))
+endif
 
 # Add dependencies that makes sure necessary bits gets built since
 # VBOX_MSI_DEPENDENCIES will be zero the first time around.
 # For combined packages we always use the .ISO from the amd64 build.
+VBOX_MSI_DEPENDENCIES := $(filter-out %/VBoxGuestAdditions.iso, $(VBOX_MSI_DEPENDENCIES))
 ifdef VBOX_WITH_COMBINED_PACKAGE
  VBOX_MSI_DEPENDENCIES += \
 	$(if $(VBOX_WITH_ADDITIONS_PACKING),$(PATH_MULTIARCH_GUEST_ADDITIONS_ISO)/VBoxGuestAdditions.iso)
 else
  VBOX_MSI_DEPENDENCIES += \
-	$(if $(VBOX_WITH_ADDITIONS_PACKING),$(VBOX_PATH_ADDITIONS)/VBoxGuestAdditions.iso)
+	$(if $(VBOX_WITH_ADDITIONS_PACKING),$(VBOX_PATH_ADDITIONS_ISO)/VBoxGuestAdditions.iso)
 endif
 
 #
