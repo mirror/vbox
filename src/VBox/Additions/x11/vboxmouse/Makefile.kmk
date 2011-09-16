@@ -154,6 +154,8 @@ vboxmouse_drv_16_SOURCES = \
 	vboxmouse_15.c
 
 
+ifneq ($(KBUILD_TARGET), linux)
+
 #
 # vboxmouse_drv_17
 #
@@ -233,6 +235,7 @@ vboxmouse_drv_110_INCS := \
 vboxmouse_drv_110_SOURCES = \
 	vboxmouse_15.c
 
+endif # neq ($(KBUILD_TARGET),linux)
 
 # Check the undefined symbols in the X.Org modules against lists of allowed
 # symbols.  Not very elegant, but it will catch problems early.
@@ -301,6 +304,8 @@ $$(vboxmouse_drv_16_0_OUTDIR)/tstvboxmouse16.run: $$(vboxmouse_drv_16_1_STAGE_TA
 	    $(vboxmouse_drv_16_1_STAGE_TARGET) $(VBOXMOUSE_SRC_PATH)/undefined_15
 	$(QUIET)$(APPEND) -t "$@" "done"
 
+ifneq ($(KBUILD_TARGET), linux)
+
      TESTING += $(vboxmouse_drv_17_0_OUTDIR)/tstvboxmouse17.run
      OTHERS += $(vboxmouse_drv_17_0_OUTDIR)/tstvboxmouse17.run
 $$(vboxmouse_drv_17_0_OUTDIR)/tstvboxmouse17.run: $$(vboxmouse_drv_17_1_STAGE_TARGET)
@@ -333,9 +338,11 @@ $$(vboxmouse_drv_110_0_OUTDIR)/tstvboxmouse110.run: $$(vboxmouse_drv_110_1_STAGE
 	    $(vboxmouse_drv_110_1_STAGE_TARGET) $(VBOXMOUSE_SRC_PATH)/undefined_15
 	$(QUIET)$(APPEND) -t "$@" "done"
 
+endif # neq ($(KBUILD_TARGET),linux)
+
     endif # ! VBOX_ONLY_SDK
    endif # eq ($(KBUILD_HOST_ARCH),$(KBUILD_TARGET_ARCH))
-  endif # eq ($(KBUILD_TARGET),linux)
+  endif # 1of ($(KBUILD_TARGET),linux solaris)
 # endif # ! VBOX_ONLY_ADDITIONS
 endif # VBOX_WITH_TESTCASES
 

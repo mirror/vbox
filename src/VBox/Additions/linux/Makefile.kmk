@@ -132,10 +132,6 @@ VBOX_ADD_STRIP_MOD.linux = \
 	vboxmouse_drv_14.so \
 	vboxmouse_drv_15.so \
 	vboxmouse_drv_16.so \
-	vboxmouse_drv_17.so \
-	vboxmouse_drv_18.so \
-	vboxmouse_drv_19.so \
-	vboxmouse_drv_110.so \
 	vboxvideo_drv_70.so \
 	vboxvideo_drv_71.so \
 	vboxvideo_drv_13.so \
@@ -321,9 +317,6 @@ lnx_add_inst-noexec_INSTTYPE = stage
 lnx_add_inst-noexec_SOURCES  = \
 	$(VBOX_REL_X11_ADD_INST)vboxclient.desktop \
 	$(VBOX_REL_X11_ADD_INST)vboxvideo.ids \
-	$(VBOX_REL_X11_ADD_INST)50-vboxmouse.conf \
-	$(VBOX_REL_LNX_ADD_INST)70-xorg-vboxmouse.rules \
-	$(VBOX_REL_LNX_ADD_INST)90-vboxguest.fdi \
 	selinux-fedora/vbox_x11.pp \
 	selinux-fedora/vbox_accel.pp
 
