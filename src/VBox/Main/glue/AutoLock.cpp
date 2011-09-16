@@ -634,6 +634,23 @@ void AutoWriteLockBase::enter()
 //
 ////////////////////////////////////////////////////////////////////////////////
 
+AutoWriteLock::AutoWriteLock(uint32_t cHandles,
+                             LockHandle** pHandles
+                             COMMA_LOCKVAL_SRC_POS_DECL)
+  : AutoWriteLockBase(cHandles
+                      COMMA_LOCKVAL_SRC_POS_ARGS)
+{
+    Assert(cHandles);
+    Assert(pHandles);
+
+    for (uint32_t i = 0; i < cHandles; ++i)
+        m->aHandles[i] = pHandles[i];
+
+    acquire();
+}
+
+
+
 /**
  * Attaches another handle to this auto lock instance.
  *
