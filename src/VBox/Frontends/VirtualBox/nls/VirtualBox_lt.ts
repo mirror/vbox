@@ -160,11 +160,11 @@
     </message>
     <message>
         <source>Copy all errors to the clipboard</source>
-        <translation type="unfinished"></translation>
+        <translation>Visas klaidas kopijuoti į iškarpinę</translation>
     </message>
     <message>
         <source>Copy</source>
-        <translation type="unfinished">Kopijuoti</translation>
+        <translation>Kopijuoti</translation>
     </message>
 </context>
 <context>
@@ -693,7 +693,7 @@
     </message>
     <message>
         <source>When checked a new unique MAC address will be assigned to all configured network cards.</source>
-        <translation type="unfinished"></translation>
+        <translation>Pažymėjus, nauji MAC adresai bus priskirti visoms tinklo plokštėms.</translation>
     </message>
 </context>
 <context>
@@ -720,11 +720,11 @@
     </message>
     <message>
         <source>Full Clone</source>
-        <translation type="unfinished"></translation>
+        <translation>Visiškas klonas</translation>
     </message>
     <message>
         <source>Linked Clone</source>
-        <translation type="unfinished"></translation>
+        <translation>Susietas klonas</translation>
     </message>
     <message>
         <source>&lt;p&gt;Please select the type of the clone.&lt;/p&gt;&lt;p&gt;If you choose &lt;b&gt;Full Clone&lt;/b&gt; an exact copy (including all virtual disk images) of the original VM will be created. If you select &lt;b&gt;Linked Clone&lt;/b&gt;, a new VM will be created, but the virtual disk images will point to the virtual disk images of original VM.&lt;/p&gt;</source>
@@ -739,23 +739,23 @@
     <name>UICloneVMWizardPage3</name>
     <message>
         <source>Current machine state</source>
-        <translation type="unfinished">Dabartinė mašinos būsena</translation>
+        <translation>Dabartinė mašinos būsena</translation>
     </message>
     <message>
         <source>Current machine and all child states</source>
-        <translation type="unfinished">Dabartinė būsena ir paveldėtos būsenos</translation>
+        <translation>Dabartinė būsena ir paveldėtos būsenos</translation>
     </message>
     <message>
         <source>All states</source>
-        <translation type="unfinished">Visos būsenos</translation>
+        <translation>Visos būsenos</translation>
     </message>
     <message>
         <source>Cloning Configuration</source>
-        <translation type="unfinished">Klonavimo konfigūracija</translation>
+        <translation>Klonavimo konfigūracija</translation>
     </message>
     <message>
         <source>Please choose which parts of the virtual machine should be cloned.</source>
-        <translation type="unfinished">Pasirinkite virtualios mašinos klonuotinas dalis.</translation>
+        <translation>Pasirinkite virtualios mašinos klonuotinas dalis.</translation>
     </message>
     <message>
         <source>If you select &lt;b&gt;Current machine state&lt;/b&gt;, only the current state of the virtual machine is cloned.</source>
@@ -1103,7 +1103,7 @@
     <name>UIDownloaderExtensionPack</name>
     <message>
         <source>Select folder to save %1 to</source>
-        <translation type="unfinished"></translation>
+        <translation>Pasirinkite aplanką, į kurį įrašyti %1</translation>
     </message>
 </context>
 <context>
@@ -1937,23 +1937,23 @@
     </message>
     <message>
         <source>Left Shift</source>
-        <translation type="unfinished">Kairysis Lyg2</translation>
+        <translation>Kairysis Lyg2</translation>
     </message>
     <message>
         <source>Right Shift</source>
-        <translation type="unfinished">Dešinysis Lyg2</translation>
+        <translation>Dešinysis Lyg2</translation>
     </message>
     <message>
         <source>Left Ctrl</source>
-        <translation type="unfinished">Kairysis Vald</translation>
+        <translation>Kairysis Vald</translation>
     </message>
     <message>
         <source>Right Ctrl</source>
-        <translation type="unfinished">Dešinysis Vald</translation>
+        <translation>Dešinysis Vald</translation>
     </message>
     <message>
         <source>Left Alt</source>
-        <translation type="unfinished">Kairysis Alt</translation>
+        <translation>Kairysis Alt</translation>
     </message>
     <message>
         <source>Right Alt</source>
@@ -3606,7 +3606,7 @@
     </message>
     <message>
         <source>you have assigned ICH9 chipset type to this VM. It will not work properly unless the IO-APIC feature is also enabled. This will be done automatically when you accept the VM Settings by pressing the OK button.</source>
-        <translation type="unfinished"></translation>
+        <translation>šiai VM priskyrėte ICH9 lustų rinkinį. Ši savybė neveiktų, jei neįgalinsite IO-ACPI. Todėl šią savybė bus automatiškai įgalinta nuspausdus mygtuką „Gerai“.</translation>
     </message>
 </context>
 <context>
@@ -4941,8 +4941,6 @@
         <source>&lt;p&gt;The virtual machine(s) &lt;b&gt;%1&lt;/b&gt; are currently in a saved state.&lt;/p&gt;&lt;p&gt;If you continue the runtime state of the exported machine(s) will be discarded. Note that the existing machine(s) are not changed.&lt;/p&gt;</source>
         <translation type="unfinished">
             <numerusform></numerusform>
-            <numerusform></numerusform>
-            <numerusform></numerusform>
         </translation>
     </message>
     <message>
@@ -5205,11 +5203,11 @@
     </message>
     <message>
         <source>Can&apos;t find snapshot named &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Nepavyksta rasti momentinio būvio &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>&lt;p&gt;Failed to save the downloaded file as &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;</source>
-        <translation type="unfinished">&lt;p&gt;Nepavyko įrašyti parsiųstos rinkmenos kaip &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Nepavyko įrašyti parsiųstos rinkmenos kaip &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;You have an old version (%1) of the &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt; installed.&lt;/p&gt;&lt;p&gt;Do you wish to download latest one from the Internet?&lt;/p&gt;</source>
@@ -5231,7 +5229,7 @@
     <message>
         <source>Install</source>
         <comment>extension pack</comment>
-        <translation type="unfinished">Diegti</translation>
+        <translation>Įdiegti</translation>
     </message>
     <message>
         <source>&lt;p&gt;The &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%2&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; but can&apos;t be saved locally as &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Please choose another location for that file.&lt;/p&gt;</source>
@@ -5239,7 +5237,7 @@
     </message>
     <message>
         <source>&lt;p&gt;Failed to download the &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; from &lt;nobr&gt;&lt;a href=&quot;%2&quot;&gt;%2&lt;/a&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;%3&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Nepavyko parsiųsti &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; iš &lt;nobr&gt;&lt;a href=&quot;%2&quot;&gt;%2&lt;/a&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;%3&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
@@ -5280,22 +5278,22 @@
     <name>UIMiniProgressWidgetAdditions</name>
     <message>
         <source>Cancel the VirtualBox Guest Additions CD image download</source>
-        <translation type="unfinished">Atšaukti „VirtualBox svečio papildinių“ CD atvaizdžio parsiuntimą</translation>
+        <translation>Atšaukti „VirtualBox svečio papildinių“ CD atvaizdžio parsiuntimą</translation>
     </message>
     <message>
         <source>Downloading the VirtualBox Guest Additions CD image from &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</source>
-        <translation type="unfinished">Parsiunčiamas „VirtualBox svečio papildinių“ CD atvaizdis iš &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</translation>
+        <translation>Parsiunčiamas „VirtualBox svečio papildinių“ CD atvaizdis iš &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</translation>
     </message>
 </context>
 <context>
     <name>UIMiniProgressWidgetExtension</name>
     <message>
         <source>Cancel the &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; download</source>
-        <translation type="unfinished"></translation>
+        <translation>Atšaukti &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; parsiuntimą</translation>
     </message>
     <message>
         <source>Downloading the &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; from &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;...&lt;/nobr&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; parsiunčiamas iš &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;...&lt;/nobr&gt;</translation>
     </message>
 </context>
 <context>
@@ -5733,11 +5731,11 @@
     </message>
     <message>
         <source>Start-up &amp;Disk</source>
-        <translation type="unfinished">Įkraunamas standusis &amp;diskas</translation>
+        <translation>Paleidimo &amp;diskas</translation>
     </message>
     <message>
         <source>&lt;p&gt;If you wish you can now add a start-up disk to the new machine. You can either create a new virtual disk or select one from the list or from another location using the folder icon.&lt;/p&gt;&lt;p&gt;If you need a more complex virtual disk setup you can skip this step and make the changes to the machine settings once the machine is created.&lt;/p&gt;</source>
-        <translation type="unfinished">&lt;p&gt;Pasirinkite virtualų standųjį diską, iš kurio bus paleidžiama virtuali mašina. Galite arba sukurti naują diską, arba pasirinkite jau sukurtąjį iš išskleidžiamojo meniu nuspaudę atitinkamą mygtuką.&lt;/p&gt;&lt;p&gt;Jei norite sudėtingesnės disko konfigūracijos, galite praleisti šį etapą – standųjį diską pridėsite vėliau per šios virtualios mašinos nuostatas.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Pasirinkite virtualų paleidimo diską, iš kurio bus paleidžiama virtuali mašina. Galite arba sukurti naują diską, arba pasirinkite jau sukurtąjį iš išskleidžiamojo meniu nuspaudę atitinkamą mygtuką.&lt;/p&gt;&lt;p&gt;Jei norite sudėtingesnės disko konfigūracijos, galite praleisti šį etapą – konfigūruosite vėliau per šios virtualios mašinos nuostatas.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Choose a virtual hard disk file...</source>
@@ -5745,7 +5743,7 @@
     </message>
     <message>
         <source>The recommended size of the start-up disk is &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished">Rekomenduojamas standžiojo disko dydis yra &lt;b&gt;%1&lt;/b&gt;.</translation>
+        <translation>Rekomenduojamas paleidimo disko dydis yra &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
 </context>
 <context>
@@ -5810,7 +5808,7 @@
     <message>
         <source>Start-up Disk</source>
         <comment>summary</comment>
-        <translation type="unfinished">Standusis diskas, iš kurio paleidžiama</translation>
+        <translation>Paleidimo diskas</translation>
     </message>
 </context>
 <context>
@@ -9078,12 +9076,12 @@ IPv6.</translation>
     <message>
         <source>Allow VMs</source>
         <comment>NetworkAdapterPromiscModePolicyType</comment>
-        <translation type="unfinished"></translation>
+        <translation>Leisti VM</translation>
     </message>
     <message>
         <source>Allow All</source>
         <comment>NetworkAdapterPromiscModePolicyType</comment>
-        <translation type="unfinished"></translation>
+        <translation>Leisti visus</translation>
     </message>
     <message>
         <source>Adapter %1</source>
@@ -9374,7 +9372,7 @@ IPv6.</translation>
     </message>
     <message>
         <source>Format:</source>
-        <translation type="unfinished"></translation>
+        <translation>Formatas:</translation>
     </message>
     <message>
         <source>Storage details:</source>
@@ -9726,11 +9724,11 @@ IPv6.</translation>
     </message>
     <message>
         <source>Create Alias on Desktop</source>
-        <translation type="unfinished"></translation>
+        <translation>Sukurti nuorodą darbalaukyje</translation>
     </message>
     <message>
         <source>Creates an Alias file to the VirtualBox Machine Definition file on your Desktop.</source>
-        <translation type="unfinished"></translation>
+        <translation>Darbalaukyje sukuriama nuorodos rinkmena į VirtualBox mašinos apibrėžties rinkmeną.</translation>
     </message>
     <message>
         <source>Show in Explorer</source>
