@@ -542,8 +542,8 @@
             </Control>
         </Dialog>
 
-        <!-- This dialog is called after an error during installation -->
-        <Dialog Id="VBoxFatalErrorDlg" ErrorDialog="yes" Width="270" Height="150" Title="[ProductName] !(loc.Setup)" NoMinimize="yes">
+        <!-- This dialog is called via the ErrorDialog property on an installation error. -->
+        <Dialog Id="VBoxErrorDlg" ErrorDialog="yes" Width="270" Height="150" Title="[ProductName] !(loc.Setup)" NoMinimize="yes">
             <!-- Do *not* change the control IDs in the dialog! -->
             <Control Id="ErrorText" Type="Text" X="75" Y="20" Width="155" Height="80" TabSkip="no" NoPrefix="yes" Text="Error information text" />
             <Control Id="Y" Type="PushButton" X="20" Y="110" Width="80" Height="18" TabSkip="yes" Text="!(loc.ButtonText_Yes)">
@@ -567,6 +567,21 @@
             </Control>
             <Control Id="R" Type="PushButton" X="20" Y="110" Width="80" Height="18" TabSkip="yes" Text="!(loc.ButtonText_Retry)">
                 <Publish Event="EndDialog" Value="ErrorRetry">1</Publish>
+            </Control>
+        </Dialog>
+
+        <!-- Used to signal a fatal error in the 'OnExit="error"' fashion. -->
+        <Dialog Id="VBoxFatalErrorDlg" Width="370" Height="270" Title="[ProductName] !(loc.Setup)" NoMinimize="yes">
+            <Control Id="Finish" Type="PushButton" X="236" Y="243" Width="56" Height="17" Default="yes" Cancel="yes" Text="!(loc.ButtonText_Finish)">
+                <Publish Event="EndDialog" Value="Exit">1</Publish>
+            </Control>
+            <Control Id="Cancel" Type="PushButton" X="304" Y="243" Width="56" Height="17" Disabled="yes" Text="!(loc.ButtonText_Cancel)" />
+            <Control Id="Bitmap" Type="Bitmap" X="0" Y="0" Width="370" Height="234" TabSkip="no" Text="[ExclamationMark]" />
+            <Control Id="Back" Type="PushButton" X="180" Y="243" Width="56" Height="17" Disabled="yes" Text="!(loc.ButtonText_Back)" />
+            <Control Id="BottomLine" Type="Line" X="0" Y="234" Width="370" Height="0" />
+            <Control Id="Description" Type="Text" X="135" Y="70" Width="220" Height="80" Transparent="yes" Text="!(loc.FatalErrorDescription1) !(loc.FatalErrorDescription2)" />
+            <Control Id="Build" Type="Text" X="20" Y="247" Width="220" Height="10" Transparent="yes" NoPrefix="yes">
+                <Text>[Version_text] $(var.Property_Version)</Text>
             </Control>
         </Dialog>
 
@@ -895,7 +910,7 @@
         </Dialog>
 
         <!-- Dialog property table. -->
-        <Property Id="ErrorDialog" Value="VBoxFatalErrorDlg"/>
+        <Property Id="ErrorDialog" Value="VBoxErrorDlg"/>
 
         <!-- Define some textstyles used for formatting dialog items. -->
         <Property Id="DefaultUIFont">DlgFont8</Property>
@@ -1086,7 +1101,6 @@
              action is executed and the internal user interface level is set to full UI or reduced UI. The installer
              skips the actions in this table if the user interface level is set to basic UI or no UI. -->
          <AdminUISequence>
-            <!-- bird: VBoxFatalErrorDlg is an error dialog, apparently that's not what we're supposed to use for OnExit="error". See ./src/ext/UIExtension/wixlib/FatalError.wxs -->
             <Show Dialog="VBoxFatalErrorDlg" OnExit="error" />
             <Show Dialog="VBoxUserExitDlg" OnExit="cancel" />
             <Show Dialog="VBoxExitDlg" OnExit="success" />
