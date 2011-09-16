@@ -1,1 +1,0 @@
-KERNEL=="vboxguest",ENV{ID_INPUT}="1"

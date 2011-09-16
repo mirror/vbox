@@ -283,11 +283,11 @@ setup()
     dox11config="true"
     # By default, we want to run our xorg.conf setup script
     setupxorgconf="true"
-    # But not to install the configuration file into xorg.conf.d
-    doxorgconfd=""
-    # But without the workaround for SUSE 11.1 not doing input auto-detection
-    newmouse=""
-    # By default we want to use hal/udev/whatever for auto-loading the mouse driver
+    # On all but the oldest X servers we want to use our new mouse
+    # driver.
+    newmouse="--newMouse"
+    # On more recent servers our kernel mouse driver will be used
+    # automatically
     automouse="--autoMouse"
     # We need to tell our xorg.conf hacking script whether /dev/psaux exists
     nopsaux="--nopsaux"
@@ -328,7 +328,6 @@ setup()
             begin "Installing X.Org Server 1.10 modules"
             vboxvideo_src=vboxvideo_drv_110.so
             vboxmouse_src=vboxmouse_drv_110.so
-            doxorgconfd="true"
             # Does Fedora still ship without vboxvideo detection?
             # test "$system" = "redhat" || setupxorgconf=""
             ;;
@@ -336,7 +335,6 @@ setup()
             begin "Installing X.Org Server 1.9 modules"
             vboxvideo_src=vboxvideo_drv_19.so
             vboxmouse_src=vboxmouse_drv_19.so
-            doxorgconfd="true"
             # Fedora 14 looks likely to ship without vboxvideo detection
             # test "$system" = "redhat" || setupxorgconf=""
             ;;
@@ -344,7 +342,6 @@ setup()
             begin "Installing X.Org Server 1.8 modules"
             vboxvideo_src=vboxvideo_drv_18.so
             vboxmouse_src=vboxmouse_drv_18.so
-            doxorgconfd="true"
             # Fedora 13 shipped without vboxvideo detection
             test "$system" = "redhat" || setupxorgconf=""
             ;;
@@ -353,7 +350,6 @@ setup()
             vboxvideo_src=vboxvideo_drv_17.so
             vboxmouse_src=vboxmouse_drv_17.so
             setupxorgconf=""
-            test "$system" = "debian" && doxorgconfd="true"
             ;;
         1.6.* )
             begin "Installing X.Org Server 1.6 modules"
@@ -363,7 +359,6 @@ setup()
             # openSUSE does.
             if grep -q -E '^SLE[^ ]' /etc/SuSE-brand 2>/dev/null; then
                 automouse=""
-                newmouse="--newMouse"
             else
                 test "$system" = "suse" && setupxorgconf=""
             fi
@@ -374,15 +369,13 @@ setup()
             vboxmouse_src=vboxmouse_drv_15.so
             # SUSE with X.Org 1.5 is another special case, and is also
             # handled specially
-            test "$system" = "suse" &&
-            { automouse=""; newmouse="--newMouse"; }
+            test "$system" = "suse" && automouse=""
             ;;
         1.4.* )
             begin "Installing X.Org Server 1.4 modules"
             vboxvideo_src=vboxvideo_drv_14.so
             vboxmouse_src=vboxmouse_drv_14.so
             automouse=""
-            newmouse="--newMouse"
             ;;
         1.3.* )
             # This was the first release which gave the server version number
@@ -391,19 +384,20 @@ setup()
             vboxvideo_src=vboxvideo_drv_13.so
             vboxmouse_src=vboxmouse_drv_13.so
             automouse=""
-            newmouse="--newMouse"
             ;;
         7.1.* | 7.2.* )
             begin "Installing X.Org 7.1 modules"
             vboxvideo_src=vboxvideo_drv_71.so
             vboxmouse_src=vboxmouse_drv_71.so
             automouse=""
+            newmouse=""
             ;;
         6.9.* | 7.0.* )
             begin "Installing X.Org 6.9/7.0 modules"
             vboxvideo_src=vboxvideo_drv_70.so
             vboxmouse_src=vboxmouse_drv_70.so
             automouse=""
+            newmouse=""
             ;;
         6.7* | 6.8.* | 4.2.* | 4.3.* )
             # Assume X.Org post-fork or XFree86
@@ -413,6 +407,7 @@ setup()
             ln -s "$lib_dir/vboxvideo_drv.o" "$modules_dir/drivers/vboxvideo_drv.o"
             ln -s "$lib_dir/vboxmouse_drv.o" "$modules_dir/input/vboxmouse_drv.o"
             automouse=""
+            newmouse=""
             succ_msg
             ;;
         * )
@@ -468,34 +463,6 @@ setup()
                 "$lib_dir/x11config.sh" $newmouse $automouse $nopsaux --noBak "$main_cfg"
                 touch "$nobak"
             fi
-        fi
-        # X.Org Server versions starting with 1.5 can do mouse auto-detection,
-        # to make our lives easier and spare us the nasty hacks.
-        test -n "$automouse" &&
-            if [ -d /etc/hal/fdi/policy ]
-            then
-                # Install hal information about the mouse driver so that X.Org
-                # knows to load it.
-                install -o 0 -g 0 -m 0644 "$share_dir/90-vboxguest.fdi" /etc/hal/fdi/policy
-                # Delete the hal cache so that it notices our fdi file
-                rm -r /var/cache/hald/fdi-cache 2> /dev/null
-            fi
-        if test -n "$doxorgconfd"
-        then
-            if test -d /etc/udev/rules.d
-            then
-                install -o 0 -g 0 -m 0644 "$share_dir/70-xorg-vboxmouse.rules" /etc/udev/rules.d
-                # This is normally silent.  I have purposely not redirected
-                # error output as I want to know if something goes wrong,
-                # particularly if the command syntax ever changes.
-                udevadm trigger --action=change --subsystem-match=misc
-            fi
-            test -d /usr/share/X11/xorg.conf.d &&
-                install -o 0 -g 0 -m 0644 "$share_dir/50-vboxmouse.conf" /usr/share/X11/xorg.conf.d
-            test -d /usr/lib/X11/xorg.conf.d &&
-                install -o 0 -g 0 -m 0644 "$share_dir/50-vboxmouse.conf" /usr/lib/X11/xorg.conf.d
-            test -d /etc/X11/xorg.conf.d &&
-                install -o 0 -g 0 -m 0644 "$share_dir/50-vboxmouse.conf" /etc/X11/xorg.conf.d
         fi
         succ_msg
         test -n "$generated" &&
@@ -638,11 +605,6 @@ EOF
     rm /usr/share/autostart/vboxclient.desktop 2>/dev/null
 
     # Remove other files
-    rm /etc/hal/fdi/policy/90-vboxguest.fdi 2>/dev/null
-    rm /etc/udev/rules.d/70-xorg-vboxmouse.rules 2>/dev/null
-    udevadm trigger --action=change --subsystem-match=misc 2>/dev/null
-    rm /usr/lib/X11/xorg.conf.d/50-vboxmouse.conf 2>/dev/null
-    rm /usr/share/X11/xorg.conf.d/50-vboxmouse.conf 2>/dev/null
     rm /usr/share/xserver-xorg/pci/vboxvideo.ids 2>/dev/null
 }
 
