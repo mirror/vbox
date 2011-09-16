@@ -484,15 +484,15 @@
     </message>
     <message>
         <source>Dock Icon</source>
-        <translation></translation>
+        <translation>Dock ikon</translation>
     </message>
     <message>
         <source>Show Monitor Preview</source>
-        <translation></translation>
+        <translation>Monitor-előnézet megjelenítése</translation>
     </message>
     <message>
         <source>Show Application Icon</source>
-        <translation></translation>
+        <translation>Ikon megjelenítése</translation>
     </message>
     <message>
         <source>Enter &amp;Fullscreen Mode</source>
@@ -2701,7 +2701,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Adapter %1 (%2)&lt;/b&gt;: %3 cable %4&lt;/nobr&gt;</source>
         <comment>Network adapters tooltip</comment>
-        <translation></translation>
+        <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Adapter %1 (%2)&lt;/b&gt;: %3 kábel %4&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>connected</source>
@@ -2798,11 +2798,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Preview Monitor %1</source>
-        <translation></translation>
+        <translation>Monitor-előnézet: %1</translation>
     </message>
     <message>
         <source>Snapshot %1</source>
-        <translation>Pillanatkép %1</translation>
+        <translation>Pillanatkép: %1</translation>
     </message>
     <message>
         <source>More CD/DVD Images...</source>
@@ -2826,7 +2826,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>No CD/DVD devices attached to that VM</source>
-        <translation></translation>
+        <translation>A Virtuális géphez nincs CD/DVD csatlakoztatva</translation>
     </message>
     <message>
         <source>No Floppy Devices Attached</source>
@@ -2834,11 +2834,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>No floppy devices attached to that VM</source>
-        <translation></translation>
+        <translation>A Virtuális géphez nincs floppy csatlakoztatva</translation>
     </message>
     <message>
         <source>No USB Devices Connected</source>
-        <translation></translation>
+        <translation>Nincs USB eszköz csatlakoztatva</translation>
     </message>
     <message>
         <source>No supported devices connected to the host PC</source>
@@ -4169,7 +4169,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>When checked the virtual disk will not be removed when the guest system ejects it.</source>
-        <translation>Ha engedélyezed,a virtuális lemez nem lesz eltávolítva, mikor a vendég rendszer kiadja azt.</translation>
+        <translation>Ha engedélyezed, a virtuális lemez nem lesz eltávolítva, mikor a vendég rendszer kiadja azt.</translation>
     </message>
     <message>
         <source>&amp;Live CD/DVD</source>
@@ -4523,7 +4523,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>[filter]</source>
-        <translation></translation>
+        <translation>[szűrő]</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;Vendor ID: %1&lt;/nobr&gt;</source>
@@ -7889,6 +7889,10 @@ Verzió %1</translation>
         <translation type="obsolete">Sú&amp;gó</translation>
     </message>
     <message>
+        <source>Indicates whether the host mouse pointer is captured by the guest OS:&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_disabled_16px.png/&gt;&amp;nbsp;&amp;nbsp;pointer is not captured&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_16px.png/&gt;&amp;nbsp;&amp;nbsp;pointer is captured&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;mouse integration (MI) is On&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_can_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;MI is Off, pointer is captured&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_can_seamless_uncaptured_16px.png/&gt;&amp;nbsp;&amp;nbsp;MI is Off, pointer is not captured&lt;/nobr&gt;&lt;br&gt;Note that the mouse integration feature requires Guest Additions to be installed in the guest OS.</source>
+        <translation type="obsolete">Jelzi, hogy az egér a vendég gép fogságában van:&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_disabled_16px.png/&gt;&amp;nbsp;&amp;nbsp;egér nincs elfogva&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_16px.png/&gt;&amp;nbsp;&amp;nbsp;egér elfogva&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;egér-integráció be&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_can_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;egér integtáció ki, egér elfogva&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_can_seamless_uncaptured_16px.png/&gt;&amp;nbsp;&amp;nbsp;egér-integráció ki, egér nincs elfogva&lt;/nobr&gt;&lt;br&gt;Az egér-integráció csak akkor működik, ha a vendég rendszerre fel vannak telepítve az Integrációs szolgáltatások.</translation>
+    </message>
+    <message>
         <source>Shows the currently assigned Host key.&lt;br&gt;This key, when pressed alone, toggles the the keyboard and mouse capture state. It can also be used in combination with other keys to quickly perform actions from the main menu.</source>
         <translation type="obsolete">Megmutatja az aktuális gazda-billentyűt.&lt;br&gt;Ez az a billentyű, melyet megnyomva az egér és a billentyűzet elfogási állapota megváltoztatható. Más billentyűkkel együtt használva a főmenü egyes műveletei hívhatók elő.</translation>
     </message>
@@ -7936,6 +7940,10 @@ Verzió %1</translation>
     <message>
         <source>&lt;qt&gt;Indicates&amp;nbsp;the&amp;nbsp;activity&amp;nbsp;of&amp;nbsp;the&amp;nbsp;network&amp;nbsp;interfaces&lt;br&gt;[&lt;b&gt;%1 adapter(s)&lt;/b&gt;]&lt;/qt&gt;</source>
         <translation type="obsolete">&lt;qt&gt;Jelzi&amp;nbsp;a&amp;nbsp;hálózat&amp;nbsp;aktivítását&lt;br&gt;[&lt;b&gt;%1&lt;/b&gt;]&lt;/qt&gt;</translation>
+    </message>
+    <message>
+        <source>Indicates whether the Remote Display (VRDP Server) is enabled (&lt;img src=:/vrdp_16px.png/&gt;) or not (&lt;img src=:/vrdp_disabled_16px.png/&gt;)</source>
+        <translation type="obsolete">Jelzi, hogy a Távoli képernyő (VRDP) szerver engedélyezett (&lt;img src=:/vrdp_16px.png/&gt;) vagy sem (&lt;img src=:/vrdp_disabled_16px.png/&gt;)</translation>
     </message>
     <message>
         <source>&lt;hr&gt;The VRDP Server is listening on port %1</source>
@@ -8113,6 +8121,10 @@ Verzió %1</translation>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;USB Controller is disabled&lt;/b&gt;&lt;/nobr&gt;</source>
         <comment>USB device tooltip</comment>
         <translation type="obsolete">&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Az USB vezérlő le van tiltva&lt;/b&gt;&lt;/nobr&gt;</translation>
+    </message>
+    <message>
+        <source>Indicates whether the Remote Display (VRDP Server) is enabled (&lt;img src=:/vrdp_16px.png/&gt;) or not (&lt;img src=:/vrdp_disabled_16px.png/&gt;).</source>
+        <translation type="obsolete">Jelzi, hogy a Távoli képernyő (VRDP szerver) engedélyezett (&lt;img src=:/vrdp_16px.png/&gt;) vagy sem (&lt;img src=:/vrdp_disabled_16px.png/&gt;).</translation>
     </message>
     <message>
         <source>&lt;qt&gt;&lt;nobr&gt;Indicates the activity of the machineof the machine&apos;sapos;s shared folders: shared folders:&lt;/nobr&gt;%1&lt;/qt&gt;</source>
@@ -8608,7 +8620,7 @@ Verzió %1</translation>
     <name>VBoxFilePathSelectorWidget</name>
     <message>
         <source>&lt;reset to default&gt;</source>
-        <translation></translation>
+        <translation>&lt;alapértelmezettre állítás&gt;</translation>
     </message>
     <message>
         <source>The actual default path value will be displayed after accepting the changes and opening this dialog again.</source>
@@ -10586,7 +10598,7 @@ to the system default language.&lt;/qt&gt;
     </message>
     <message>
         <source>VirtualBox License</source>
-        <translation></translation>
+        <translation>VirtualBox licence</translation>
     </message>
 </context>
 <context>
@@ -11292,7 +11304,7 @@ to the system default language.&lt;/qt&gt;
     </message>
     <message>
         <source>S&amp;how</source>
-        <translation>M&amp;utat</translation>
+        <translation type="unfinished">Á&amp;tváltás</translation>
     </message>
     <message>
         <source>Show</source>
