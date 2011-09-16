@@ -50,7 +50,7 @@
 /*******************************************************************************
 *   Structures and Typedefs                                                    *
 *******************************************************************************/
-typedef struct _USB_INTERFACE_DESCRIPTOR2 
+typedef struct _USB_INTERFACE_DESCRIPTOR2
 {
     UCHAR  bLength;
     UCHAR  bDescriptorType;
@@ -85,7 +85,7 @@ typedef struct VBOXUSB_STRING_DR_ENTRY
     USB_STRING_DESCRIPTOR StrDr;
 } VBOXUSB_STRING_DR_ENTRY, *PVBOXUSB_STRING_DR_ENTRY;
 
-/** 
+/**
  * This represents VBoxUsb device instance
  */
 typedef struct VBOXUSB_DEV
@@ -343,6 +343,13 @@ static int usbLibDevPopulate(PUSBDEVICE pDev, PUSB_NODE_CONNECTION_INFORMATION_E
         if (lppszString)
         {
             char *pStringUTF8 = NULL;
+/** @todo r=bird: This code is making bad asumptions that strings are sane and
+ *  that stuff succeeds:
+ *  http://vbox.innotek.de/pipermail/vbox-dev/2011-August/004516.html
+ *
+ *  Also, why is this code converting stuff to the ANSI code page?!?  If
+ *  That's somehow required, the reason must be documented since all strings in
+ *  VBox are UTF-8 unless explicitly stated otherwise! */
             RTUtf16ToUtf8((PCRTUTF16)pDrList->StrDr.bString, &pStringUTF8);
             RTStrUtf8ToCurrentCP(lppszString, pStringUTF8);
             RTStrFree(pStringUTF8);
@@ -1248,7 +1255,7 @@ static DWORD WINAPI usbLibMsgThreadProc(__in LPVOID lpParameter)
     Assert(g_VBoxUsbGlobal.hWnd == NULL);
     g_VBoxUsbGlobal.hWnd = NULL;
 
-    /* 
+    /*
      * Register the Window Class and the hitten window create.
      */
     WNDCLASS wc;
@@ -1283,7 +1290,7 @@ static DWORD WINAPI usbLibMsgThreadProc(__in LPVOID lpParameter)
         SetWindowPos(g_VBoxUsbGlobal.hWnd, HWND_TOPMOST, -200, -200, 0, 0,
                      SWP_NOACTIVATE | SWP_HIDEWINDOW | SWP_NOCOPYBITS | SWP_NOREDRAW | SWP_NOSIZE);
 
-        /* 
+        /*
          * The message pump.
          */
         MSG msg;
@@ -1343,12 +1350,12 @@ USBLIB_DECL(int) USBLibInit(void)
             /*
              * Open the USB monitor device, starting if needed.
              */
-            g_VBoxUsbGlobal.hMonitor = CreateFile(USBMON_DEVICE_NAME, 
-                                                  GENERIC_READ | GENERIC_WRITE, 
-                                                  FILE_SHARE_READ | FILE_SHARE_WRITE, 
+            g_VBoxUsbGlobal.hMonitor = CreateFile(USBMON_DEVICE_NAME,
+                                                  GENERIC_READ | GENERIC_WRITE,
+                                                  FILE_SHARE_READ | FILE_SHARE_WRITE,
                                                   NULL,
-                                                  OPEN_EXISTING, 
-                                                  FILE_ATTRIBUTE_SYSTEM, 
+                                                  OPEN_EXISTING,
+                                                  FILE_ATTRIBUTE_SYSTEM,
                                                   NULL);
 
             if (g_VBoxUsbGlobal.hMonitor == INVALID_HANDLE_VALUE)
@@ -1356,12 +1363,12 @@ USBLIB_DECL(int) USBLibInit(void)
                 HRESULT hr = VBoxDrvCfgSvcStart(USBMON_SERVICE_NAME_W);
                 if (hr == S_OK)
                 {
-                    g_VBoxUsbGlobal.hMonitor = CreateFile(USBMON_DEVICE_NAME, 
-                                                          GENERIC_READ | GENERIC_WRITE, 
+                    g_VBoxUsbGlobal.hMonitor = CreateFile(USBMON_DEVICE_NAME,
+                                                          GENERIC_READ | GENERIC_WRITE,
                                                           FILE_SHARE_READ | FILE_SHARE_WRITE,
-                                                          NULL, 
-                                                          OPEN_EXISTING, 
-                                                          FILE_ATTRIBUTE_SYSTEM, 
+                                                          NULL,
+                                                          OPEN_EXISTING,
+                                                          FILE_ATTRIBUTE_SYSTEM,
                                                           NULL);
                     if (g_VBoxUsbGlobal.hMonitor == INVALID_HANDLE_VALUE)
                     {
@@ -1375,27 +1382,27 @@ USBLIB_DECL(int) USBLibInit(void)
             if (g_VBoxUsbGlobal.hMonitor != INVALID_HANDLE_VALUE)
             {
                 /*
-                 * Check the USB monitor version. 
-                 *  
-                 * Drivers are backwards compatible within the same major 
-                 * number.  We consider the minor version number this library 
+                 * Check the USB monitor version.
+                 *
+                 * Drivers are backwards compatible within the same major
+                 * number.  We consider the minor version number this library
                  * is compiled with to be the minimum required by the driver.
-                 * This is by reasoning that the library uses the full feature 
-                 * set of the driver it's written for. 
+                 * This is by reasoning that the library uses the full feature
+                 * set of the driver it's written for.
                  */
                 USBSUP_VERSION  Version = {0};
                 DWORD           cbReturned = 0;
-                if (DeviceIoControl(g_VBoxUsbGlobal.hMonitor, SUPUSBFLT_IOCTL_GET_VERSION, 
-                                    NULL, 0, 
-                                    &Version, sizeof (Version), 
+                if (DeviceIoControl(g_VBoxUsbGlobal.hMonitor, SUPUSBFLT_IOCTL_GET_VERSION,
+                                    NULL, 0,
+                                    &Version, sizeof (Version),
                                     &cbReturned, NULL))
                 {
-                    if (   Version.u32Major == USBMON_MAJOR_VERSION 
+                    if (   Version.u32Major == USBMON_MAJOR_VERSION
                         && Version.u32Minor >= USBMON_MINOR_VERSION)
                     {
 #ifndef VBOX_USB_USE_DEVICE_NOTIFICATION
                         /*
-                         * Tell the monitor driver which event object to use 
+                         * Tell the monitor driver which event object to use
                          * for notifications.
                          */
                         USBSUP_SET_NOTIFY_EVENT SetEvent = {0};
@@ -1409,9 +1416,9 @@ USBLIB_DECL(int) USBLibInit(void)
                             rc = SetEvent.u.rc;
                             if (RT_SUCCESS(rc))
                             {
-                                /* 
+                                /*
                                  * We're DONE!
-                                 */ 
+                                 */
                                 return VINF_SUCCESS;
                             }
 
@@ -1444,10 +1451,10 @@ USBLIB_DECL(int) USBLibInit(void)
                                 Assert(dwResult == WAIT_OBJECT_0);
                                 if (g_VBoxUsbGlobal.hWnd)
                                 {
-                                    /* 
+                                    /*
                                      * We're DONE!
-                                     *  
-                                     * Juse ensure that the event is set so the 
+                                     *
+                                     * Juse ensure that the event is set so the
                                      * first "wait change" request is processed.
                                      */
                                     SetEvent(g_VBoxUsbGlobal.hNotifyEvent);
@@ -1479,7 +1486,7 @@ USBLIB_DECL(int) USBLibInit(void)
                     }
                     else
                     {
-                        LogRel((__FUNCTION__": USB Monitor driver version mismatch! driver=%u.%u library=%u.%u\n", 
+                        LogRel((__FUNCTION__": USB Monitor driver version mismatch! driver=%u.%u library=%u.%u\n",
                                 Version.u32Major, Version.u32Minor, USBMON_MAJOR_VERSION, USBMON_MINOR_VERSION));
 #ifdef VBOX_WITH_ANNOYING_USB_ASSERTIONS
                         AssertFailed();
@@ -1579,7 +1586,7 @@ USBLIB_DECL(int) USBLibTerm(void)
     bRc = CloseHandle(g_VBoxUsbGlobal.hMonitor);
     AssertMsg(bRc, ("CloseHandle for hMonitor failed winEr(%d)\n", GetLastError()));
     g_VBoxUsbGlobal.hMonitor = INVALID_HANDLE_VALUE;
-          
+
     bRc = CloseHandle(g_VBoxUsbGlobal.hInterruptEvent);
     AssertMsg(bRc, ("CloseHandle for hInterruptEvent failed lasterr=%u\n", GetLastError()));
     g_VBoxUsbGlobal.hInterruptEvent = NULL;
