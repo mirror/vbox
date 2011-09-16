@@ -625,3 +625,106 @@ void PACKSPU_APIENTRY packspu_GetCompressedTexImageARB( GLenum target, GLint lev
             crNetRecv();
     }
 }
+
+void PACKSPU_APIENTRY
+packspu_CompressedTexImage1DARB(GLenum target, GLint level, GLenum internalformat, GLsizei width,
+                                GLint border, GLsizei imagesize, const GLvoid *data)
+{
+    if (crStateIsBufferBound(GL_PIXEL_UNPACK_BUFFER_ARB))
+    {
+        packspu_ApplyUnpackState();
+    }
+
+    crPackCompressedTexImage1DARB(target, level, internalformat, width, border, imagesize, data);
+
+    if (crStateIsBufferBound(GL_PIXEL_UNPACK_BUFFER_ARB))
+    {
+        packspu_RestoreUnpackState();
+    }
+}
+
+void PACKSPU_APIENTRY
+packspu_CompressedTexImage2DARB(GLenum target, GLint level, GLenum internalformat, GLsizei width,
+                                GLsizei height, GLint border, GLsizei imagesize, const GLvoid *data)
+{
+    if (crStateIsBufferBound(GL_PIXEL_UNPACK_BUFFER_ARB))
+    {
+        packspu_ApplyUnpackState();
+    }
+
+    crPackCompressedTexImage2DARB(target, level, internalformat, width, height, border, imagesize, data);
+
+    if (crStateIsBufferBound(GL_PIXEL_UNPACK_BUFFER_ARB))
+    {
+        packspu_RestoreUnpackState();
+    }
+}
+
+void PACKSPU_APIENTRY
+packspu_CompressedTexImage3DARB(GLenum target, GLint level, GLenum internalformat, GLsizei width,
+                                GLsizei height, GLsizei depth, GLint border, GLsizei imagesize, const GLvoid *data)
+{
+    if (crStateIsBufferBound(GL_PIXEL_UNPACK_BUFFER_ARB))
+    {
+        packspu_ApplyUnpackState();
+    }
+
+    crPackCompressedTexImage3DARB(target, level, internalformat, width, height, depth, border, imagesize, data);
+
+    if (crStateIsBufferBound(GL_PIXEL_UNPACK_BUFFER_ARB))
+    {
+        packspu_RestoreUnpackState();
+    }
+}
+
+void PACKSPU_APIENTRY
+packspu_CompressedTexSubImage1DARB(GLenum target, GLint level, GLint xoffset, GLsizei width,
+                                   GLenum format, GLsizei imagesize, const GLvoid *data)
+{
+    if (crStateIsBufferBound(GL_PIXEL_UNPACK_BUFFER_ARB))
+    {
+        packspu_ApplyUnpackState();
+    }
+
+    crPackCompressedTexSubImage1DARB(target, level, xoffset, width, format, imagesize, data);
+
+    if (crStateIsBufferBound(GL_PIXEL_UNPACK_BUFFER_ARB))
+    {
+        packspu_RestoreUnpackState();
+    }
+}
+
+void PACKSPU_APIENTRY
+packspu_CompressedTexSubImage2DARB(GLenum target, GLint level, GLint xoffset, GLint yoffset,
+                                   GLsizei width, GLsizei height, GLenum format, GLsizei imagesize, const GLvoid *data)
+{
+    if (crStateIsBufferBound(GL_PIXEL_UNPACK_BUFFER_ARB))
+    {
+        packspu_ApplyUnpackState();
+    }
+
+    crPackCompressedTexSubImage2DARB(target, level, xoffset, yoffset, width, height, format, imagesize, data);
+
+    if (crStateIsBufferBound(GL_PIXEL_UNPACK_BUFFER_ARB))
+    {
+        packspu_RestoreUnpackState();
+    }
+}
+
+void PACKSPU_APIENTRY
+packspu_CompressedTexSubImage3DARB(GLenum target, GLint level, GLint xoffset, GLint yoffset,
+                                   GLint zoffset, GLsizei width, GLsizei height, GLsizei depth, GLenum format,
+                                   GLsizei imagesize, const GLvoid *data)
+{
+    if (crStateIsBufferBound(GL_PIXEL_UNPACK_BUFFER_ARB))
+    {
+        packspu_ApplyUnpackState();
+    }
+
+    crPackCompressedTexSubImage3DARB(target, level, xoffset, yoffset, zoffset, width, height, depth, format, imagesize, data);
+
+    if (crStateIsBufferBound(GL_PIXEL_UNPACK_BUFFER_ARB))
+    {
+        packspu_RestoreUnpackState();
+    }
+}
