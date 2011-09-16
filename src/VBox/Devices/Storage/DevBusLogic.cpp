@@ -400,7 +400,7 @@ typedef struct BUSLOGIC
     /** Indicates that PDMDevHlpAsyncNotificationCompleted should be called when
      * a port is entering the idle state. */
     bool volatile                   fSignalIdle;
-    /** Flag whether we have tasks which need to be processed again- */
+    /** Flag whether we have tasks which need to be processed again. */
     bool volatile                   fRedo;
     /** List of tasks which can be redone. */
     R3PTRTYPE(volatile PBUSLOGICTASKSTATE) pTasksRedoHead;
@@ -962,6 +962,7 @@ static void buslogicSendIncomingMailbox(PBUSLOGIC pBusLogic, PBUSLOGICTASKSTATE 
     /* Update CCB. */
     pTaskState->CommandControlBlockGuest.uHostAdapterStatus = uHostAdapterStatus;
     pTaskState->CommandControlBlockGuest.uDeviceStatus = uDeviceStatus;
+    /* @todo: this is wrong - writing too much! */
     PDMDevHlpPhysWrite(pBusLogic->CTX_SUFF(pDevIns), GCPhysAddrCCB, &pTaskState->CommandControlBlockGuest, sizeof(CommandControlBlock));
 
 #ifdef RT_STRICT
@@ -993,7 +994,7 @@ static void buslogicSendIncomingMailbox(PBUSLOGIC pBusLogic, PBUSLOGICTASKSTATE 
  * Dumps the content of a mailbox for debugging purposes.
  *
  * @return nothing
- * @param  pMailbox   The mialbox to dump.
+ * @param  pMailbox   The mailbox to dump.
  * @param  fOutgoing  true if dumping the outgoing state.
  *                    false if dumping the incoming state.
  */
@@ -1438,7 +1439,7 @@ static int buslogicProcessCommand(PBUSLOGIC pBusLogic)
             pBusLogic->GCPhysAddrMailboxIncomingBase = (RTGCPHYS)pRequest->uMailboxBaseAddress + (pBusLogic->cMailbox * sizeof(Mailbox));
 
             Log(("GCPhysAddrMailboxOutgoingBase=%RGp\n", pBusLogic->GCPhysAddrMailboxOutgoingBase));
-            Log(("GCPhysAddrMailboxOutgoingBase=%RGp\n", pBusLogic->GCPhysAddrMailboxIncomingBase));
+            Log(("GCPhysAddrMailboxIncomingBase=%RGp\n", pBusLogic->GCPhysAddrMailboxIncomingBase));
             Log(("cMailboxes=%u\n", pBusLogic->cMailbox));
 
             pBusLogic->regStatus &= ~BUSLOGIC_REGISTER_STATUS_INITIALIZATION_REQUIRED;
