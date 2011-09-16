@@ -111,10 +111,10 @@ Section "InputDevice"
 EndSection
 
 Section "InputDevice"
-  Driver       "evdev"
+  Driver       "vboxmouse"
   Identifier   "Mouse[2]"
-  Option       "Device" "/dev/input/vboxevent"
-  Option       "Name" "VirtualBox mouse integration"
+  Option       "Device" "/dev/vboxguest"
+  Option       "Name" "VirtualBox Mouse"
   Option       "Vendor" "Oracle Corporation"
   Option       "SendCoreEvents"
 EndSection
