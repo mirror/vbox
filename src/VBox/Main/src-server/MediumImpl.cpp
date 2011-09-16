@@ -2653,10 +2653,16 @@ STDMETHODIMP Medium::CloneTo(IMedium *aTarget,
     {
         // locking: we need the tree lock first because we access parent pointers
         // and we need to write-lock the media involved
-        AutoMultiWriteLock4 alock(&m->pVirtualBox->getMediaTreeLockHandle(),
-                                  this->lockHandle(),
-                                  pTarget->lockHandle(),
-                                  pParent->lockHandle() COMMA_LOCKVAL_SRC_POS);
+        uint32_t    cHandles    = 3;
+        LockHandle* pHandles[4] = { &m->pVirtualBox->getMediaTreeLockHandle(),
+                                    this->lockHandle(),
+                                    pTarget->lockHandle() };
+        /* Only add parent to the lock if it is not null */
+        if (!pParent.isNull())
+            pHandles[cHandles++] = pParent->lockHandle();
+        AutoWriteLock alock(cHandles,
+                            pHandles
+                            COMMA_LOCKVAL_SRC_POS);
 
         if (    pTarget->m->state != MediumState_NotCreated
             &&  pTarget->m->state != MediumState_Created)
@@ -5064,9 +5070,15 @@ HRESULT Medium::importFile(const char *aFilename,
     {
         // locking: we need the tree lock first because we access parent pointers
         // and we need to write-lock the media involved
-        AutoMultiWriteLock3 alock(&m->pVirtualBox->getMediaTreeLockHandle(),
-                                 this->lockHandle(),
-                                 aParent->lockHandle() COMMA_LOCKVAL_SRC_POS);
+        uint32_t    cHandles    = 2;
+        LockHandle* pHandles[3] = { &m->pVirtualBox->getMediaTreeLockHandle(),
+                                    this->lockHandle() };
+        /* Only add parent to the lock if it is not null */
+        if (!aParent.isNull())
+            pHandles[cHandles++] = aParent->lockHandle();
+        AutoWriteLock alock(cHandles,
+                            pHandles
+                            COMMA_LOCKVAL_SRC_POS);
 
         if (   m->state != MediumState_NotCreated
             && m->state != MediumState_Created)
