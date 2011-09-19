@@ -1296,13 +1296,31 @@ _diskette_param_table:
 		db	2		; HLT=1, DMA mode
 		db	025h
 		db	2
-		db	18		; SPT
+		db	18		; SPT (good for 1.44MB media)
 		db	01Bh
 		db	0FFh
 		db	06Ch
 		db	0F6h		; format filler
 		db	15
 		db	8
+
+
+
+;; --------------------------------------------------------
+;; INT 17h handler - Printer service
+;; --------------------------------------------------------
+;;		BIOSORG	0EFD2h - fixed WRT preceding code
+int17_handler:
+		push	ds
+		push	es
+		pusha
+		C_SETUP
+		call	_int17_function
+		popa
+		pop	es
+		pop	ds
+		iret
+		
 
 
 ;; Protected mode IDT descriptor
@@ -1330,23 +1348,6 @@ _rmode_IDT:
 		dw	0		; base  15:00
 		dw	0		; base  23:16
 
-
-
-;; --------------------------------------------------------
-;; INT 17h handler - Printer service
-;; --------------------------------------------------------
-;;		BIOSORG	0EFD2h - fixed WRT preceding code
-int17_handler:
-		push	ds
-		push	es
-		pusha
-		C_SETUP
-		call	_int17_function
-		popa
-		pop	es
-		pop	ds
-		iret
-		
 
 ;;
 ;; INT 1Ch
