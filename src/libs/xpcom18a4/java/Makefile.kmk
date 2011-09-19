@@ -175,6 +175,7 @@ $(VBOX_JXPCOM_GEN)/jxpcomglue.list:  \
 	$(QUIET)$(VBOX_XSLTPROC)   \
               --stringparam G_vboxApiSuffix $(VBOX_API_SUFFIX) \
               --stringparam G_vboxGlueStyle xpcom              \
+              --stringparam G_vboxDirPrefix ""                 \
               -o $(VBOX_JXPCOM_GEN)/java/glue/merged.file $(VBOX_GLUE_XSLT_DIR)/glue-java.xsl $<
 	$(QUIET)$(VBOX_FILESPLIT) $(VBOX_JXPCOM_GEN)/java/glue/merged.file $(VBOX_JXPCOM_GEN)/java/glue/
 	$(QUIET)echo $(VBOX_JXPCOM_GEN)/java/glue/*.java > $@
