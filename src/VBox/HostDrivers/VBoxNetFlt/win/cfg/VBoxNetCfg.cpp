@@ -273,8 +273,10 @@ VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinInstallComponent(IN INetCfg *pNetCfg, I
     return hr;
 }
 
+/** @todo r=bird: This function is not in the header file, why is it
+ *        exported? */
 VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinInstallInfAndComponent(IN INetCfg *pNetCfg, IN LPCWSTR pszwComponentId, IN const GUID *pguidClass,
-                                                                IN LPCWSTR * apInfPaths, IN UINT cInfPaths,
+                                                                IN LPCWSTR const *apInfPaths, IN UINT cInfPaths,
                                                                 OUT INetCfgComponent **ppComponent)
 {
     HRESULT hr = S_OK;
@@ -1857,7 +1859,7 @@ VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinNetFltUninstall(IN INetCfg *pNc)
 }
 
 VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinNetFltInstall(IN INetCfg *pNc,
-                                                       IN LPCWSTR * apInfFullPaths, IN UINT cInfFullPaths)
+                                                       IN LPCWSTR const *apInfFullPaths, IN UINT cInfFullPaths)
 {
     HRESULT hr = vboxNetCfgWinNetFltUninstall(pNc, SUOI_FORCEDELETE);
     if (SUCCEEDED(hr))
@@ -2055,15 +2057,15 @@ static HRESULT rename_shellfolder (PCWSTR wGuid, PCWSTR wNewName)
     HRESULT hr;
 
     /* Build the display name in the form "::{GUID}". */
-    if (wcslen (wGuid) >= MAX_PATH)
+    if (wcslen(wGuid) >= MAX_PATH)
         return E_INVALIDARG;
     WCHAR szAdapterGuid[MAX_PATH + 2] = {0};
-    swprintf (szAdapterGuid, L"::%ls", wGuid);
+    swprintf(szAdapterGuid, L"::%ls", wGuid);
 
     /* Create an instance of the network connections folder. */
-    hr = CoCreateInstance (CLSID_NetworkConnections, NULL,
-                           CLSCTX_INPROC_SERVER, IID_IShellFolder,
-                           reinterpret_cast <LPVOID *> (&pShellFolder));
+    hr = CoCreateInstance(CLSID_NetworkConnections, NULL,
+                          CLSCTX_INPROC_SERVER, IID_IShellFolder,
+                          reinterpret_cast<LPVOID *>(&pShellFolder));
     /* Parse the display name. */
     if (SUCCEEDED (hr))
     {
@@ -2708,7 +2710,7 @@ VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinCreateHostOnlyNetworkInterface(IN LPCWS
 
         if (lppszName)
         {
-            *lppszName = ::SysAllocString((const OLECHAR *) DevName);
+            *lppszName = SysAllocString((const OLECHAR *) DevName);
             if (!*lppszName)
             {
                 NonStandardLogFlow(("SysAllocString failed\n"));

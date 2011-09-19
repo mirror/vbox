@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2008-2010 Oracle Corporation
+ * Copyright (C) 2008-2011 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -19,11 +19,11 @@
 #define ___VBoxInstallHelper_Common_h
 
 #if (_MSC_VER < 1400) /* Provide _stprintf_s to VC < 8.0. */
-int _stprintf_s(TCHAR *buffer, size_t cbBuffer, const TCHAR *format, ...);
+int swprintf_s(WCHAR *buffer, size_t cbBuffer, const WCHAR *format, ...);
 #endif
 
-UINT VBoxGetProperty(MSIHANDLE a_hModule, TCHAR *a_pszName, TCHAR *a_pValue, DWORD a_dwSize);
-UINT VBoxSetProperty(MSIHANDLE a_hModule, TCHAR *a_pszName, TCHAR *a_pValue);
+UINT VBoxGetProperty(MSIHANDLE a_hModule, WCHAR *a_pwszName, WCHAR *a_pwszValue, DWORD a_dwSize);
+UINT VBoxSetProperty(MSIHANDLE a_hModule, WCHAR *a_pwszName, WCHAR *a_pwszValue);
 
 #endif /* !___VBoxInstallHelper_Common_h */
 

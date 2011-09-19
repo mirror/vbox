@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2008-2010 Oracle Corporation
+ * Copyright (C) 2008-2011 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -15,6 +15,10 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+
+/*******************************************************************************
+*   Header Files                                                               *
+*******************************************************************************/
 #include <windows.h>
 #include <tchar.h>
 #include <stdio.h>
@@ -23,39 +27,37 @@
 #include <msiquery.h>
 
 
-#if (_MSC_VER < 1400) /* Provide _stprintf_s to VC < 8.0. */
-int _stprintf_s(TCHAR *buffer, size_t cbBuffer, const TCHAR *format, ...)
+#if (_MSC_VER < 1400) /* Provide swprintf_s to VC < 8.0. */
+int swprintf_s(WCHAR *buffer, size_t cbBuffer, const WCHAR *format, ...)
 {
     int ret;
-    va_list args;
-    va_start(args, format);
-    ret = _vsntprintf(buffer, cbBuffer, format, args);
-    va_end(args);
+    va_list va;
+    va_start(va, format);
+    ret = _vsnwprintf(buffer, cbBuffer, format, va);
+    va_end(va);
     return ret;
 }
 #endif
 
-UINT VBoxGetProperty(MSIHANDLE a_hModule, TCHAR* a_pszName, TCHAR* a_pValue, DWORD a_dwSize)
+UINT VBoxGetProperty(MSIHANDLE a_hModule, WCHAR *a_pwszName, WCHAR *a_pwszValue, DWORD a_dwSize)
 {
-    UINT uiRet = ERROR_SUCCESS;
     DWORD dwBuffer = 0;
-
-    uiRet = MsiGetProperty(a_hModule, a_pszName, TEXT(""), &dwBuffer);
-    if (ERROR_MORE_DATA == uiRet)
+    UINT uiRet = MsiGetPropertyW(a_hModule, a_pwszName, L"", &dwBuffer);
+    if (uiRet == ERROR_MORE_DATA)
     {
         ++dwBuffer;     /* On output does not include terminating null, so add 1. */
 
         if (dwBuffer > a_dwSize)
             return ERROR_MORE_DATA;
 
-        ZeroMemory(a_pValue, a_dwSize);
-        uiRet = MsiGetProperty(a_hModule, a_pszName, a_pValue, &dwBuffer);
+        ZeroMemory(a_pwszValue, a_dwSize);
+        uiRet = MsiGetPropertyW(a_hModule, a_pwszName, a_pwszValue, &dwBuffer);
     }
     return uiRet;
 }
 
-UINT VBoxSetProperty(MSIHANDLE a_hModule, TCHAR* a_pszName, TCHAR* a_pValue)
+UINT VBoxSetProperty(MSIHANDLE a_hModule, WCHAR *a_pwszName, WCHAR *a_pwszValue)
 {
-    return MsiSetProperty(a_hModule, a_pszName, a_pValue);
+    return MsiSetPropertyW(a_hModule, a_pwszName, a_pwszValue);
 }
 
