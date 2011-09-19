@@ -244,6 +244,7 @@ static const RTGETOPTDEF g_aCreateHardDiskOptions[] =
 {
     { "--filename",     'f', RTGETOPT_REQ_STRING },
     { "-filename",      'f', RTGETOPT_REQ_STRING },     // deprecated
+    { "--diffparent",   'd', RTGETOPT_REQ_STRING },
     { "--size",         's', RTGETOPT_REQ_UINT64 },
     { "-size",          's', RTGETOPT_REQ_UINT64 },     // deprecated
     { "--sizebyte",     'S', RTGETOPT_REQ_UINT64 },
@@ -260,8 +261,10 @@ int handleCreateHardDisk(HandlerArg *a)
     HRESULT rc;
     int vrc;
     const char *filename = NULL;
+    const char *diffparent = NULL;
     uint64_t size = 0;
-    const char *format = "VDI";
+    const char *format = NULL;
+    bool fBase = true;
     MediumVariant_T DiskVariant = MediumVariant_Standard;
 
     int c;
@@ -276,6 +279,11 @@ int handleCreateHardDisk(HandlerArg *a)
         {
             case 'f':   // --filename
                 filename = ValueUnion.psz;
+                break;
+
+            case 'd':   // --diffparent
+                diffparent = ValueUnion.psz;
+                fBase = false;
                 break;
 
             case 's':   // --size
@@ -325,11 +333,56 @@ int handleCreateHardDisk(HandlerArg *a)
     }
 
     /* check the outcome */
-    if (   !filename
-        || !*filename
-        || size == 0)
-        return errorSyntax(USAGE_CREATEHD, "Parameters --filename and --size are required");
-
+    bool fUnknownParent = false;
+    ComPtr<IMedium> parentHardDisk;
+    if (fBase)
+    {
+        if (   !filename
+            || !*filename
+            || size == 0)
+            return errorSyntax(USAGE_CREATEHD, "Parameters --filename and --size are required");
+        if (!format || !*format)
+            format = "VDI";
+    }
+    else
+    {
+        if (   !filename
+            || !*filename)
+            return errorSyntax(USAGE_CREATEHD, "Parameters --filename is required");
+        size = 0;
+        DiskVariant = MediumVariant_Diff;
+        if (!format || !*format)
+        {
+            const char *pszExt = RTPathExt(filename);
+            /* Skip over . if there is an extension. */
+            if (pszExt)
+                pszExt++;
+            if (!pszExt || !*pszExt)
+                format = "VDI";
+            else
+                format = pszExt;
+        }
+        rc = findOrOpenMedium(a, diffparent, DeviceType_HardDisk,
+                              parentHardDisk, false /* fForceNewUuidOnOpen */,
+                              &fUnknownParent);
+        if (FAILED(rc))
+            return 1;
+        if (parentHardDisk.isNull())
+        {
+            RTMsgError("Invalid parent hard disk reference, avoiding crash");
+            return 1;
+        }
+        MediumState_T state;
+        CHECK_ERROR(parentHardDisk, COMGETTER(State)(&state));
+        if (FAILED(rc))
+            return 1;
+        if (state == MediumState_Inaccessible)
+        {
+            CHECK_ERROR(parentHardDisk, RefreshState(&state));
+            if (FAILED(rc))
+                return 1;
+        }
+    }
     /* check for filename extension */
     /** @todo use IMediumFormat to cover all extensions generically */
     Utf8Str strName(filename);
@@ -350,7 +403,10 @@ int handleCreateHardDisk(HandlerArg *a)
     if (SUCCEEDED(rc) && hardDisk)
     {
         ComPtr<IProgress> progress;
-        CHECK_ERROR(hardDisk, CreateBaseStorage(size, DiskVariant, progress.asOutParam()));
+        if (fBase)
+            CHECK_ERROR(hardDisk, CreateBaseStorage(size, DiskVariant, progress.asOutParam()));
+        else
+            CHECK_ERROR(parentHardDisk, CreateDiffStorage(hardDisk, DiskVariant, progress.asOutParam()));
         if (SUCCEEDED(rc) && progress)
         {
             rc = showProgress(progress);
@@ -362,7 +418,10 @@ int handleCreateHardDisk(HandlerArg *a)
                 RTPrintf("Disk image created. UUID: %s\n", Utf8Str(uuid).c_str());
             }
         }
+
         CHECK_ERROR(hardDisk, Close());
+        if (!fBase && fUnknownParent)
+            CHECK_ERROR(parentHardDisk, Close());
     }
     return SUCCEEDED(rc) ? 0 : 1;
 }
