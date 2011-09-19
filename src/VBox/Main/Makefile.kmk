@@ -906,10 +906,10 @@ VBoxJMscom-inst-jar_CLEAN = \
 	)
 VBoxJMscom-inst-jar_BLDDIRS += $(VBOX_JMSCOM_GEN)/java
 
-$(VBOX_JMSCOM_GEN)/jmscomglue.list:  \
-		$(VBOX_XIDL_FILE)    \
-                $(VBOX_GLUE_XSLT_DIR)/glue-java.xsl \
-                $(VBOX_FILESPLIT)    \
+$(VBOX_JMSCOM_GEN)/jmscomglue.list: \
+		$(VBOX_XIDL_FILE) \
+		$(VBOX_GLUE_XSLT_DIR)/glue-java.xsl \
+		$(VBOX_FILESPLIT) \
 		| $(VBOX_JMSCOM_GEN)/java/
 	$(call MSG_L1,Generating Java MSCOM glue files from XIDL)
 	$(QUIET)$(RM) -f $(wildcard $(VBOX_JMSCOM_GEN)/java/*.java)
