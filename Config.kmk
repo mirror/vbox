@@ -4904,6 +4904,7 @@ ifeq ($(KBUILD_TARGET), darwin)
  VBOX_JAVAC     = $(VBOX_JAVA_COMMANDS)/javac
  VBOX_JAVAH     = $(VBOX_JAVA_COMMANDS)/javah
  VBOX_JAR       = $(VBOX_JAVA_COMMANDS)/jar
+ VBOX_JAVADOC   = $(VBOX_JAVA_COMMANDS)/javadoc
  VBOX_WSIMPORT  = $(VBOX_JAVA_COMMANDS)/wsimport
  if $(VBOX_XCODE_VERSION_MAJOR) >= 4 # Lion (4.1-preview 5) has a broken CurrentJDK link.  Blindly applying it to 4.0.
   VBOX_JAVA_INC  = $(VBOX_PATH_MACOSX_SDK)/System/Library/Frameworks/JavaVM.framework/Versions/A/Headers
@@ -4917,7 +4918,7 @@ else
   ifeq ($(origin VBOX_JAVA_HOME),undefined)
    # Add correct detection for you distro after the /usr/../java-6-sun line.
    VBOX_JAVA_HOME := $(firstword $(wildcard \
-	$(PATH_DEVTOOLS)/linux.x86/jdk1.6.0_21 \
+	$(PATH_DEVTOOLS)/linux.x86/jdk1.6.0_27 \
 	/usr/lib/jvm/java-6-sun  \
 	/usr/lib/jvm/java-6-openjdk \
 	\
@@ -4938,6 +4939,7 @@ else
  VBOX_JAVAC     = $(VBOX_JAVA_HOME)/bin/javac
  VBOX_JAVAH     = $(VBOX_JAVA_HOME)/bin/javah
  VBOX_JAR       = $(VBOX_JAVA_HOME)/bin/jar
+ VBOX_JAVADOC   = $(VBOX_JAVA_HOME)/bin/javadoc
  VBOX_WSIMPORT  = $(VBOX_JAVA_HOME)/bin/wsimport
  # correct for targets we care about
  VBOX_MD_OS = $(KBUILD_TARGET)
