@@ -8,7 +8,7 @@
         is identical to the original except that all <if...>
         sections are resolved (for easier processing).
 
-     Copyright (C) 2006-2010 Oracle Corporation
+     Copyright (C) 2006-2011 Oracle Corporation
 
      This file is part of VirtualBox Open Source Edition (OSE), as
      available from http://www.virtualbox.org. This file is free software;
@@ -61,14 +61,25 @@
 <!--
     ignore everything we don't need
     -->
-<xsl:template match="cpp|class|enumerator|desc|note">
+<xsl:template match="cpp|class|enumerator">
 </xsl:template>
 
 <!--
     and keep the rest intact (including all attributes)
+
+    NOTE: this drops class and everything in it, which I left unchanged
+    since the other xslt scripts blow up badly.
     -->
-<xsl:template match="library|module|enum|const|interface|attribute|collection|method|param">
+<xsl:template match="library|module|enum|const|interface|attribute|collection|method|param|result">
   <xsl:copy><xsl:copy-of select="@*"/><xsl:apply-templates/></xsl:copy>
+</xsl:template>
+
+<!--
+    keep those completely unchanged, including child nodes (including all
+    attributes)
+    -->
+<xsl:template match="descGroup|desc|note">
+  <xsl:copy-of select="."/>
 </xsl:template>
 
 

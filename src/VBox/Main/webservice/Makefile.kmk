@@ -6,7 +6,7 @@
 #
 
 #
-# Copyright (C) 2006-2010 Oracle Corporation
+# Copyright (C) 2006-2011 Oracle Corporation
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;
@@ -154,9 +154,9 @@ PATH_TARGET_SOAPDEMOHEADERS   := $(VBOXWEB_OUT_DIR)/demo_headers
 PATH_TARGET_SOAPDEMONSMAPS    := $(VBOXWEB_OUT_DIR)/demo_namespacemaps
 PATH_TARGET_WEBTEST           := $(VBOXWEB_OUT_DIR)/webtest
 
+# the original XIDL file (has to include documentation as we need it):
+VBOXWEB_IDL_SRC_ORIG          := $(VBOX_XIDL_FILE_SRC)
 # platform-specific XIDL file generated from $(VBOXWEB_IDL_SRC):
-VBOXWEB_IDL_SRC_ORIG          := $(VBOX_XIDL_FILE)
-# the original XIDL file:
 VBOXWEB_IDL_SRC               := $(VBOXWEB_OUT_DIR)/VirtualBox.xidl
 
 VBOXWEB_WSDL                   = $(VBOX_PATH_SDK)/bindings/webservice/vboxweb.wsdl
@@ -304,49 +304,64 @@ INSTALLS += VBoxJWs-inst-jar
 # Java glue JAR files
 #
 VBOX_JWS_JAR     = $(VBoxJWs-inst-jar_0_OUTDIR)/vboxjws.jar
+VBOX_JWSDOC_JAR  = $(VBoxJWs-inst-jar_0_OUTDIR)/vboxjws-doc.jar
+VBOX_JWSSRC_JAR  = $(VBoxJWs-inst-jar_0_OUTDIR)/vboxjws-src.jar
 VBOX_JWS_TARGET := $(PATH_TARGET)/vboxjws-gen
 VBOX_JWS_GEN     = $(VBOX_JWS_TARGET)/jwsgen
 VBOX_JWS_JDEST  := $(VBOX_JWS_TARGET)/jdest
+VBOX_JWSDOC_JDEST  := $(VBOX_JWS_TARGET)/jdest-doc
 VBOX_GLUE_XSLT_DIR := $(PATH_ROOT)/src/VBox/Main/glue
 VBOX_JAXLIB_DIR    := $(PATH_ROOT)/src/VBox/Main/webservice/jaxlibs
 
 VBoxJWs-inst-jar_INST = $(INST_SDK)bindings/webservice/java/jax-ws/
 VBoxJWs-inst-jar_MODE = a+r,u+w
 VBoxJWs-inst-jar_SOURCES = \
-	$(VBOX_JWS_JAR)
+	$(VBOX_JWS_JAR) \
+	$(VBOX_JWSDOC_JAR) \
+	$(VBOX_JWSSRC_JAR)
 VBoxJWs-inst-jar_CLEAN = \
 	$(VBOX_JWS_JAR) \
+	$(VBOX_JWSDOC_JAR) \
+	$(VBOX_JWSSRC_JAR) \
 	$(VBOX_JWS_GEN)/jwsglue.list \
+	$(VBOX_JWSDOC_JDEST)/package-list \
 	$(wildcard \
-		$(VBOX_JWS_GEN)/java/*.java \
-	        $(VBOX_JWS_GEN)/java/jws/*/*/*/*.java \
+		$(VBOX_JWS_GEN)/java/*/*/*.java \
+	    $(VBOX_JWS_GEN)/java/*/*/*/*.java \
 		$(VBOX_JWS_JDEST)/*.class \
 		$(VBOX_JWS_JDEST)/*/*.class \
 		$(VBOX_JWS_JDEST)/*/*/*.class \
 		$(VBOX_JWS_JDEST)/*/*/*/*.class \
+		$(VBOX_JWSDOC_JDEST)/*.html \
+		$(VBOX_JWSDOC_JDEST)/*.css \
+		$(VBOX_JWSDOC_JDEST)/*/*.gif \
+		$(VBOX_JWSDOC_JDEST)/*/*/*.html \
+		$(VBOX_JWSDOC_JDEST)/*/*/*/*.html \
 	)
-VBoxJWs-inst-jar_BLDDIRS += $(VBOX_JWS_GEN)/java $(VBOX_JWS_GEN)/java/jws
+VBoxJWs-inst-jar_BLDDIRS += $(VBOX_JWS_GEN)/java
 
-$(VBOX_JWS_GEN)/jwsglue.list:  \
-		$(VBOX_XIDL_FILE)    \
-                $(VBOX_GLUE_XSLT_DIR)/glue-java.xsl \
-                $(VBOX_FILESPLIT)    \
+$(VBOX_JWS_GEN)/jwsglue.list: \
+		$(VBOXWEB_IDL_SRC_ORIG) \
+		$(VBOX_GLUE_XSLT_DIR)/glue-java.xsl \
+		$(VBOX_FILESPLIT) \
 		$(VBOXWEBSERVICE_WSDL) \
 		$(VBOXWEB_WSDL) \
-	        | $(VBOX_JWS_GEN)/java/jws/
+		| $(VBOX_JWS_GEN)/java/
 	$(call MSG_L1,Generating JAX-WS Java glue files from XIDL)
-	$(RM) -f $(wildcard $(VBOX_JWS_GEN)/java/*.java) $(wildcard $(VBOX_JWS_GEN)/java/jws/*/*/*/*.java)
+	$(RM) -f $(wildcard $(VBOX_JWS_GEN)/java/*/*/*.java) $(wildcard $(VBOX_JWS_GEN)/java/*/*/*/*.java)
 	$(QUIET)$(VBOX_XSLTPROC) \
               --stringparam G_vboxApiSuffix $(VBOX_API_SUFFIX) \
               --stringparam G_vboxGlueStyle jaxws              \
-              -o $(VBOX_JWS_GEN)/java/merged.file $(VBOX_GLUE_XSLT_DIR)/glue-java.xsl $<
-	$(QUIET)$(VBOX_FILESPLIT) $(VBOX_JWS_GEN)/java/merged.file $(VBOX_JWS_GEN)/java
+              --stringparam G_vboxDirPrefix org/virtualbox$(VBOX_API_SUFFIX)/ \
+              -o $(VBOX_JWS_GEN)/merged.file $(VBOX_GLUE_XSLT_DIR)/glue-java.xsl $<
+	$(QUIET)$(MKDIR) -p $(VBOX_JWS_GEN)/java/org/virtualbox$(VBOX_API_SUFFIX)
+	$(QUIET)$(VBOX_FILESPLIT) $(VBOX_JWS_GEN)/merged.file $(VBOX_JWS_GEN)/java
 	$(call MSG_GENERATE,,$@,JAX-WS for Java 1.6 bindings using $(VBOXWEBSERVICE_WSDL))
-	$(VBOX_WSIMPORT) -Xnocompile -p $(VBOX_JAVA_PACKAGE).jaxws -d $(VBOX_JWS_GEN)/java/jws $(VBOXWEBSERVICE_WSDL)
-	$(QUIET)echo $(VBOX_JWS_GEN)/java/*.java > $@
-	$(QUIET)echo $(VBOX_JWS_GEN)/java/jws/*/*/*/*.java >> $@
+	$(VBOX_WSIMPORT) -Xnocompile -p $(VBOX_JAVA_PACKAGE).jaxws -d $(VBOX_JWS_GEN)/java $(VBOXWEBSERVICE_WSDL)
+	$(QUIET)echo $(VBOX_JWS_GEN)/java/*/*/*.java > $@
+	$(QUIET)echo $(VBOX_JWS_GEN)/java/*/*/*/*.java >> $@
 
-$$(VBOX_JWS_JAR): $(VBOX_JWS_GEN)/jwsglue.list $(VBOXWEB_WSDL) $(VBOXWEBSERVICE_WSDL) | $$(dir $$@)
+$$(VBOX_JWS_JAR): $(VBOX_JWS_GEN)/jwsglue.list $(VBOXWEB_WSDL) $(VBOXWEBSERVICE_WSDL) $(VBOX_JWS_GEN)/MANIFEST.MF | $$(dir $$@)
 	$(call MSG_TOOL,javac,$(notdir $@),jwsgen.list,)
 	$(QUIET)$(RM) -Rf $(VBOX_JWS_JDEST)
 	$(QUIET)$(MKDIR) -p $(VBOX_JWS_JDEST)
@@ -357,7 +372,32 @@ $$(VBOX_JWS_JAR): $(VBOX_JWS_GEN)/jwsglue.list $(VBOXWEB_WSDL) $(VBOXWEBSERVICE_
 	$(QUIET)$(SED) -e "s/vboxweb.wsdl/vboxweb$(VBOX_API_SUFFIX).wsdl/" <  $(VBOXWEBSERVICE_WSDL) > $(VBOX_JWS_JDEST)/vboxwebService$(VBOX_API_SUFFIX).wsdl
 	$(QUIET)$(CP) -f $(VBOXWEB_WSDL) $(VBOX_JWS_JDEST)/vboxweb$(VBOX_API_SUFFIX).wsdl
 	$(call MSG_LINK,$(notdir $@),$@)
-	$(VBOX_JAR) cf $@ -C $(VBOX_JWS_JDEST) .
+	$(VBOX_JAR) cf $@ $(VBOX_JWS_GEN)/MANIFEST.MF -C $(VBOX_JWS_JDEST) .
+
+$(VBOX_JWS_GEN)/MANIFEST.MF: $(VBOX_PATH_WEBSERVICE)/MANIFEST.MF.in
+	$(QUIET)$(RM) -f -- $@
+	$(QUIET)$(MKDIR) -p $(VBOX_JWS_GEN)
+	$(QUIET)$(SED) \
+		-e 's/@VBOX_VERSION_STRING@/$(VBOX_VERSION_STRING)/' \
+		-e 's/@VBOX_VERSION_MAJOR@/$(VBOX_VERSION_MAJOR)/' \
+		-e 's/@VBOX_VERSION_MINOR@/$(VBOX_VERSION_MINOR)/' \
+		-e 's/@VBOX_API_SUFFIX@/$(VBOX_API_SUFFIX)/' \
+		<  $< >  $@
+
+$$(VBOX_JWSDOC_JAR): $(VBOX_JWS_GEN)/jwsglue.list $(VBOXWEB_WSDL) $(VBOXWEBSERVICE_WSDL) $$(VBOX_JWS_JAR) | $$(dir $$@)
+	$(call MSG_TOOL,javadoc,$(notdir $@),jwsgen.list,)
+	$(QUIET)$(RM) -Rf $(VBOX_JWSDOC_JDEST)
+	$(QUIET)$(MKDIR) -p $(VBOX_JWSDOC_JDEST)
+	$(call MSG_L1,Generating javadoc html documentation)
+	$(VBOX_JAVADOC) $(VBOX_JAVADOC_OPTS) -quiet \
+		@$(VBOX_JWS_GEN)/jwsglue.list \
+		-d $(VBOX_JWSDOC_JDEST)
+	$(call MSG_LINK,$(notdir $@),$@)
+	$(VBOX_JAR) cf $@ -C $(VBOX_JWSDOC_JDEST) .
+
+$$(VBOX_JWSSRC_JAR): $$(VBOX_JWS_JAR) | $$(dir $$@)
+	$(call MSG_LINK,$(notdir $@),$@)
+	$(VBOX_JAR) cf $@ -C $(VBOX_JWS_GEN)/java .
 
  endif # VBOX_WITH_JWS
 
