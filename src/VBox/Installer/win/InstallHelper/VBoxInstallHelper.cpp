@@ -126,7 +126,7 @@ DWORD Exec(MSIHANDLE hModule,
            const WCHAR *pwszAppName, WCHAR *pwszCmdLine, const WCHAR *pwszWorkDir,
            DWORD *pdwExitCode)
 {
-    STARTUPINFO si;
+    STARTUPINFOW si;
     PROCESS_INFORMATION pi;
     DWORD rc = ERROR_SUCCESS;
 
@@ -143,16 +143,16 @@ DWORD Exec(MSIHANDLE hModule,
                pwszAppName, pwszCmdLine, pwszWorkDir == NULL ? L"Current" : pwszWorkDir);
 
     SetLastError(0);
-    if (!CreateProcess(pwszAppName,  /* Module name. */
-                       pwszCmdLine,  /* Command line. */
-                       NULL,         /* Process handle not inheritable. */
-                       NULL,         /* Thread handle not inheritable. */
-                       FALSE,        /* Set handle inheritance to FALSE .*/
-                       0,            /* No creation flags. */
-                       NULL,         /* Use parent's environment block. */
-                       pwszWorkDir,  /* Use parent's starting directory. */
-                       &si,          /* Pointer to STARTUPINFO structure. */
-                       &pi))         /* Pointer to PROCESS_INFORMATION structure. */
+    if (!CreateProcessW(pwszAppName,  /* Module name. */
+                        pwszCmdLine,  /* Command line. */
+                        NULL,         /* Process handle not inheritable. */
+                        NULL,         /* Thread handle not inheritable. */
+                        FALSE,        /* Set handle inheritance to FALSE .*/
+                        0,            /* No creation flags. */
+                        NULL,         /* Use parent's environment block. */
+                        pwszWorkDir,  /* Use parent's starting directory. */
+                        &si,          /* Pointer to STARTUPINFO structure. */
+                        &pi))         /* Pointer to PROCESS_INFORMATION structure. */
     {
         rc = GetLastError();
         logStringW(hModule, L"Executing command line: CreateProcess() failed! Error: %ld", rc);
@@ -188,7 +188,7 @@ UINT __stdcall InstallPythonAPI(MSIHANDLE hModule)
 
     HKEY hkPythonCore = NULL;
     BOOL bFound = FALSE;
-    LONG rc = RegOpenKeyEx(HKEY_LOCAL_MACHINE, L"SOFTWARE\\Python\\PythonCore", 0, KEY_READ, &hkPythonCore);
+    LONG rc = RegOpenKeyExW(HKEY_LOCAL_MACHINE, L"SOFTWARE\\Python\\PythonCore", 0, KEY_READ, &hkPythonCore);
     if (rc != ERROR_SUCCESS)
     {
         logStringW(hModule, L"InstallPythonAPI: Python seems not to be installed.");
@@ -204,7 +204,7 @@ UINT __stdcall InstallPythonAPI(MSIHANDLE hModule)
         DWORD dwLen = sizeof(wszPath);
         DWORD dwKeyType = REG_SZ;
 
-        rc = RegEnumKeyEx(hkPythonCore, i, wszRoot, &dwLen, NULL, NULL, NULL, NULL);
+        rc = RegEnumKeyExW(hkPythonCore, i, wszRoot, &dwLen, NULL, NULL, NULL, NULL);
         if (rc != ERROR_SUCCESS || dwLen <= 0)
             break;
 
@@ -212,11 +212,11 @@ UINT __stdcall InstallPythonAPI(MSIHANDLE hModule)
         dwLen = sizeof(wszVal);
 
         HKEY hkPythonInstPath = NULL;
-        rc = RegOpenKeyEx(hkPythonCore, wszPath, 0, KEY_READ,  &hkPythonInstPath);
+        rc = RegOpenKeyExW(hkPythonCore, wszPath, 0, KEY_READ,  &hkPythonInstPath);
         if (rc != ERROR_SUCCESS)
             continue;
 
-        rc = RegQueryValueEx(hkPythonInstPath, L"", NULL, &dwKeyType, (LPBYTE)wszVal, &dwLen);
+        rc = RegQueryValueExW(hkPythonInstPath, L"", NULL, &dwKeyType, (LPBYTE)wszVal, &dwLen);
         if (rc == ERROR_SUCCESS)
             logStringW(hModule, L"InstallPythonAPI: Path \"%s\" detected.", wszVal);
 
@@ -302,8 +302,8 @@ static LONG installBrandingValue(MSIHANDLE hModule,
 {
     LONG rc;
     WCHAR wszValue[_MAX_PATH];
-    if (GetPrivateProfileString(pwszSection, pwszValue, NULL,
-                                wszValue, sizeof(wszValue), pwszFileName) > 0)
+    if (GetPrivateProfileStringW(pwszSection, pwszValue, NULL,
+                                 wszValue, sizeof(wszValue), pwszFileName) > 0)
     {
         HKEY hkBranding;
         WCHAR wszKey[_MAX_PATH];
@@ -313,7 +313,7 @@ static LONG installBrandingValue(MSIHANDLE hModule,
         else
             swprintf_s(wszKey, RT_ELEMENTS(wszKey), L"SOFTWARE\\%s\\VirtualBox\\Branding", VBOX_VENDOR_SHORT);
 
-        rc = RegOpenKeyEx(HKEY_LOCAL_MACHINE, wszKey, 0, KEY_WRITE, &hkBranding);
+        rc = RegOpenKeyExW(HKEY_LOCAL_MACHINE, wszKey, 0, KEY_WRITE, &hkBranding);
         if (rc == ERROR_SUCCESS)
         {
             rc = RegSetValueExW(hkBranding,
@@ -341,7 +341,7 @@ UINT CopyDir(MSIHANDLE hModule, const WCHAR *pwszDestDir, const WCHAR *pwszSourc
     swprintf_s(wszDest, RT_ELEMENTS(wszDest), L"%s%c", pwszDestDir, '\0');
     swprintf_s(wszSource, RT_ELEMENTS(wszSource), L"%s%c", pwszSourceDir, '\0');
 
-    SHFILEOPSTRUCT s = {0};
+    SHFILEOPSTRUCTW s = {0};
     s.hwnd = NULL;
     s.wFunc = FO_COPY;
     s.pTo = wszDest;
@@ -352,7 +352,7 @@ UINT CopyDir(MSIHANDLE hModule, const WCHAR *pwszDestDir, const WCHAR *pwszSourc
                FOF_NOERRORUI;
 
     logStringW(hModule, L"CopyDir: DestDir=%s, SourceDir=%s", wszDest, wszSource);
-    int r = SHFileOperation(&s);
+    int r = SHFileOperationW(&s);
     if (r != 0)
     {
         logStringW(hModule, L"CopyDir: Copy operation returned status 0x%x", r);
@@ -538,7 +538,7 @@ static UINT errorConvertFromHResult(MSIHANDLE hModule, HRESULT hr)
         case NETCFG_S_REBOOT:
         {
             logStringW(hModule, L"Reboot required, setting REBOOT property to Force");
-            HRESULT hr2 = MsiSetProperty(hModule, L"REBOOT", L"Force");
+            HRESULT hr2 = MsiSetPropertyW(hModule, L"REBOOT", L"Force");
             if (hr2 != ERROR_SUCCESS)
                 logStringW(hModule, L"Failed to set REBOOT property, error = 0x%x", hr2);
             uRet = ERROR_SUCCESS; /* Never fail here. */
@@ -978,11 +978,11 @@ static bool isTAPDevice(const WCHAR *pwszGUID)
         HKEY  hNetCardGUID;
 
         DWORD dwLen = sizeof(wszEnumName);
-        lStatus = RegEnumKeyEx(hNetcard, i, wszEnumName, &dwLen, NULL, NULL, NULL, NULL);
+        lStatus = RegEnumKeyExW(hNetcard, i, wszEnumName, &dwLen, NULL, NULL, NULL, NULL);
         if (lStatus != ERROR_SUCCESS)
             break;
 
-        lStatus = RegOpenKeyEx(hNetcard, wszEnumName, 0, KEY_READ, &hNetCardGUID);
+        lStatus = RegOpenKeyExW(hNetcard, wszEnumName, 0, KEY_READ, &hNetCardGUID);
         if (lStatus == ERROR_SUCCESS)
         {
             dwLen = sizeof(wszNetCfgInstanceId);
@@ -1169,8 +1169,8 @@ int removeNetworkInterface(MSIHANDLE hModule, const WCHAR *pwszGUID)
                     {
                           /* get the device instance ID */
                           WCHAR wszDevID[MAX_DEVICE_ID_LEN];
-                          if (CM_Get_Device_ID(DeviceInfoData.DevInst,
-                                               wszDevID, MAX_DEVICE_ID_LEN, 0) == CR_SUCCESS)
+                          if (CM_Get_Device_IDW(DeviceInfoData.DevInst,
+                                                wszDevID, MAX_DEVICE_ID_LEN, 0) == CR_SUCCESS)
                           {
                               /* compare to what we determined before */
                               if (!wcscmp(wszDevID, wszPnPInstanceId))
