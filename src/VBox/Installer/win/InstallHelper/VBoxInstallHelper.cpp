@@ -853,29 +853,27 @@ UINT __stdcall CreateHostOnlyInterface(MSIHANDLE hModule)
     }
 
     GUID guid;
-    WCHAR MpInf[MAX_PATH];
-    DWORD cSize = sizeof(MpInf)/sizeof(MpInf[0]);
-    LPCWSTR pInfPath = NULL;
+    WCHAR wszMpInf[MAX_PATH];
+    DWORD cchMpInf = RT_ELEMENTS(wszMpInf) - sizeof("drivers\\network\\netadp\\VBoxNetAdp.inf") - 1;
+    LPCWSTR pwszInfPath = NULL;
     bool bIsFile = false;
-    UINT uErr = MsiGetPropertyW(hModule, L"CustomActionData", MpInf, &cSize);
+    UINT uErr = MsiGetPropertyW(hModule, L"CustomActionData", wszMpInf, &cchMpInf);
     if (uErr == ERROR_SUCCESS)
     {
-        if (cSize)
+        if (cchMpInf)
         {
-            logStringW(hModule, L"CreateHostOnlyInterface: NetAdpDir property = %s", MpInf);
-            if (MpInf[cSize-1] != L'\\')
+            logStringW(hModule, L"CreateHostOnlyInterface: NetAdpDir property = %s", wszMpInf);
+            if (wszMpInf[cchMpInf - 1] != L'\\')
             {
-                MpInf[cSize] = L'\\';
-                ++cSize;
-                MpInf[cSize] = L'\0';
+                wszMpInf[cchMpInf++] = L'\\';
+                wszMpInf[cchMpInf]   = L'\0';
             }
 
-            /** @todo r=andy Avoid wcscat, can cause buffer overruns! */
-            wcscat(MpInf, L"drivers\\network\\netadp\\VBoxNetAdp.inf");
-            pInfPath = MpInf;
+            wcscat(wszMpInf, L"drivers\\network\\netadp\\VBoxNetAdp.inf");
+            pwszInfPath = wszMpInf;
             bIsFile = true;
 
-            logStringW(hModule, L"CreateHostOnlyInterface: Resulting INF path = %s", pInfPath);
+            logStringW(hModule, L"CreateHostOnlyInterface: Resulting INF path = %s", pwszInfPath);
         }
         else
             logStringW(hModule, L"CreateHostOnlyInterface: NetAdpDir property value is empty");
@@ -884,21 +882,27 @@ UINT __stdcall CreateHostOnlyInterface(MSIHANDLE hModule)
         logStringW(hModule, L"CreateHostOnlyInterface: Failed to get NetAdpDir property, error = 0x%x", uErr);
 
     /* Make sure the inf file is installed. */
-    if (!!pInfPath && bIsFile)
+    if (pwszInfPath != NULL && bIsFile)
     {
-        hr = VBoxDrvCfgInfInstall(pInfPath);
+logStringW(hModule, L"CreateHostOnlyInterface: Calling VBoxDrvCfgInfInstall(%s)", pwszInfPath);
+        hr = VBoxDrvCfgInfInstall(pwszInfPath);
+logStringW(hModule, L"CreateHostOnlyInterface: VBoxDrvCfgInfInstall returns 0x%x", hr);
         if (FAILED(hr))
             logStringW(hModule, L"CreateHostOnlyInterface: Failed to install INF file, error = 0x%x", hr);
     }
 
     if (SUCCEEDED(hr))
     {
-        hr = VBoxNetCfgWinCreateHostOnlyNetworkInterface(pInfPath, bIsFile, &guid, NULL, NULL);
+logStringW(hModule, L"CreateHostOnlyInterface: calling VBoxNetCfgWinCreateHostOnlyNetworkInterface");
+        hr = VBoxNetCfgWinCreateHostOnlyNetworkInterface(pwszInfPath, bIsFile, &guid, NULL, NULL);
+logStringW(hModule, L"CreateHostOnlyInterface: VBoxNetCfgWinCreateHostOnlyNetworkInterface returns 0x%x", hr);
         if (SUCCEEDED(hr))
         {
             ULONG ip = inet_addr("192.168.56.1");
             ULONG mask = inet_addr("255.255.255.0");
+logStringW(hModule, L"CreateHostOnlyInterface: calling VBoxNetCfgWinEnableStaticIpConfig");
             hr = VBoxNetCfgWinEnableStaticIpConfig(&guid, ip, mask);
+logStringW(hModule, L"CreateHostOnlyInterface: VBoxNetCfgWinEnableStaticIpConfig returns 0x%x", hr);
             if (FAILED(hr))
                 logStringW(hModule, L"CreateHostOnlyInterface: VBoxNetCfgWinEnableStaticIpConfig failed, error = 0x%x", hr);
         }
@@ -910,6 +914,7 @@ UINT __stdcall CreateHostOnlyInterface(MSIHANDLE hModule)
         logStringW(hModule, L"Creating host-only interface done");
 
     /* Restore original setup mode. */
+logStringW(hModule, L"CreateHostOnlyInterface: almost done...");
     if (bSetupModeInteractive)
         SetupSetNonInteractiveMode(bSetupModeInteractive);
 
@@ -917,6 +922,7 @@ UINT __stdcall CreateHostOnlyInterface(MSIHANDLE hModule)
 
 #endif /* VBOX_WITH_NETFLT */
 
+logStringW(hModule, L"CreateHostOnlyInterface: returns success (ignoring all failures)");
     /* Never fail the install even if we did not succeed. */
     return ERROR_SUCCESS;
 }
