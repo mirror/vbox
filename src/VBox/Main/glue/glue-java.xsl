@@ -3477,7 +3477,7 @@ public class VirtualBoxManager
 
   <xsl:call-template name="startFile">
     <xsl:with-param name="file" select="'IUnknown.java'" />
-    <xsl:with-param name="package" select="$G_virtualBoxPackageCom" />
+    <xsl:with-param name="package" select="$G_virtualBoxPackage" />
   </xsl:call-template>
 
  <xsl:text><![CDATA[
@@ -3525,7 +3525,7 @@ public class IUnknown
 
  <xsl:call-template name="startFile">
    <xsl:with-param name="file" select="'Helper.java'" />
-   <xsl:with-param name="package" select="$G_virtualBoxPackageCom" />
+   <xsl:with-param name="package" select="$G_virtualBoxPackage" />
  </xsl:call-template>
 
 <xsl:text><![CDATA[

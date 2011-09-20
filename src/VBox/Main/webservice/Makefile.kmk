@@ -390,7 +390,7 @@ $$(VBOX_JWSDOC_JAR): $(VBOX_JWS_GEN)/jwsglue.list $(VBOXWEB_WSDL) $(VBOXWEBSERVI
 	$(QUIET)$(MKDIR) -p $(VBOX_JWSDOC_JDEST)
 	$(call MSG_L1,Generating javadoc html documentation)
 	$(VBOX_JAVADOC) $(VBOX_JAVADOC_OPTS) -quiet \
-		@$(VBOX_JWS_GEN)/jwsglue.list \
+		-sourcepath $(VBOX_JWS_GEN)/java org.virtualbox$(VBOX_API_SUFFIX) \
 		-d $(VBOX_JWSDOC_JDEST)
 	$(call MSG_LINK,$(notdir $@),$@)
 	$(VBOX_JAR) cf $@ -C $(VBOX_JWSDOC_JDEST) .
