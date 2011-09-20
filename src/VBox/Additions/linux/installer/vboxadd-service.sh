@@ -33,7 +33,7 @@ if [ -f /etc/redhat-release ]; then
     PIDFILE="/var/lock/subsys/vboxadd-service"
 elif [ -f /etc/SuSE-release ]; then
     system=suse
-    PIDFILE="/var/lock/subsys/vboxadd-service"
+    PIDFILE="/var/run/vboxadd-service"
 elif [ -f /etc/debian_version ]; then
     system=debian
     PIDFILE="/var/run/vboxadd-service"
