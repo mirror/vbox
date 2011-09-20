@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2007 Oracle Corporation
+ * Copyright (C) 2006-2011 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -44,7 +44,7 @@
 *   Defined Constants And Macros                                               *
 *******************************************************************************/
 
-/* WARNING!!! All defines that affetc VGAState should be placed to DevVGA.h !!!
+/* WARNING!!! All defines that affect VGAState should be placed to DevVGA.h !!!
  *            NEVER place them here as this would lead to VGAState inconsistency
  *            across different .cpp files !!!
  */
@@ -108,8 +108,8 @@
 #include <VBox/vmm/pdmdev.h>
 #include <VBox/vmm/pgm.h>
 #ifdef IN_RING3
-#include <iprt/alloc.h>
-#include <iprt/ctype.h>
+# include <iprt/alloc.h>
+# include <iprt/ctype.h>
 #endif /* IN_RING3 */
 #include <iprt/assert.h>
 #include <iprt/asm.h>
@@ -1504,12 +1504,12 @@ static unsigned int rgb_to_pixel32_dup(unsigned int r, unsigned int g, unsigned 
 }
 
 /* return true if the palette was modified */
-static int update_palette16(VGAState *s)
+static bool update_palette16(VGAState *s)
 {
-    int full_update, i;
+    bool full_update = false;
+    int i;
     uint32_t v, col, *palette;
 
-    full_update = 0;
     palette = s->last_palette;
     for(i = 0; i < 16; i++) {
         v = s->ar[i];
@@ -1522,7 +1522,7 @@ static int update_palette16(VGAState *s)
                               c6_to_8(s->palette[v + 1]),
                               c6_to_8(s->palette[v + 2]));
         if (col != palette[i]) {
-            full_update = 1;
+            full_update = true;
             palette[i] = col;
         }
     }
@@ -1530,13 +1530,13 @@ static int update_palette16(VGAState *s)
 }
 
 /* return true if the palette was modified */
-static int update_palette256(VGAState *s)
+static bool update_palette256(VGAState *s)
 {
-    int full_update, i;
+    bool full_update = false;
+    int i;
     uint32_t v, col, *palette;
     int wide_dac;
 
-    full_update = 0;
     palette = s->last_palette;
     v = 0;
     wide_dac = (s->vbe_regs[VBE_DISPI_INDEX_ENABLE] & (VBE_DISPI_ENABLED | VBE_DISPI_8BIT_DAC))
@@ -1551,7 +1551,7 @@ static int update_palette256(VGAState *s)
                                   c6_to_8(s->palette[v + 1]),
                                   c6_to_8(s->palette[v + 2]));
         if (col != palette[i]) {
-            full_update = 1;
+            full_update = true;
             palette[i] = col;
         }
         v += 3;
@@ -1596,12 +1596,10 @@ static void vga_get_offsets(VGAState *s,
 }
 
 /* update start_addr and line_offset. Return TRUE if modified */
-static int update_basic_params(VGAState *s)
+static bool update_basic_params(VGAState *s)
 {
-    int full_update;
+    bool full_update = false;
     uint32_t start_addr, line_offset, line_compare;
-
-    full_update = 0;
 
     s->get_offsets(s, &line_offset, &start_addr, &line_compare);
 
@@ -1611,7 +1609,7 @@ static int update_basic_params(VGAState *s)
         s->line_offset = line_offset;
         s->start_addr = start_addr;
         s->line_compare = line_compare;
-        full_update = 1;
+        full_update = true;
     }
     return full_update;
 }
@@ -1677,7 +1675,7 @@ static const uint8_t cursor_glyph[32 * 4] = {
  * - underline
  * - flashing
  */
-static int vga_draw_text(VGAState *s, int full_update, bool fFailOnResize, bool reset_dirty)
+static int vga_draw_text(VGAState *s, bool full_update, bool fFailOnResize, bool reset_dirty)
 {
     int cx, cy, cheight, cw, ch, cattr, height, width, ch_attr;
     int cx_min, cx_max, linesize, x_incr;
@@ -1699,7 +1697,7 @@ static int vga_draw_text(VGAState *s, int full_update, bool fFailOnResize, bool 
     offset = (((v >> 4) & 1) | ((v << 1) & 6)) * 8192 * 4 + 2;
     if (offset != s->font_offsets[0]) {
         s->font_offsets[0] = offset;
-        full_update = 1;
+        full_update = true;
     }
     font_base[0] = s->CTX_SUFF(vram_ptr) + offset;
 
@@ -1707,13 +1705,13 @@ static int vga_draw_text(VGAState *s, int full_update, bool fFailOnResize, bool 
     font_base[1] = s->CTX_SUFF(vram_ptr) + offset;
     if (offset != s->font_offsets[1]) {
         s->font_offsets[1] = offset;
-        full_update = 1;
+        full_update = true;
     }
     if (s->plane_updated & (1 << 2)) {
         /* if the plane 2 was modified since the last display, it
            indicates the font may have been modified */
         s->plane_updated = 0;
-        full_update = 1;
+        full_update = true;
     }
     full_update |= update_basic_params(s);
 
@@ -1761,7 +1759,7 @@ static int vga_draw_text(VGAState *s, int full_update, bool fFailOnResize, bool 
         s->last_height = height;
         s->last_ch = cheight;
         s->last_cw = cw;
-        full_update = 1;
+        full_update = true;
         if (rc == VINF_VGA_RESIZE_IN_PROGRESS)
             return rc;
         AssertRC(rc);
@@ -2059,17 +2057,16 @@ static int vga_resize_graphic(VGAState *s, int cx, int cy, int v)
 /*
  * graphic modes
  */
-static int vga_draw_graphic(VGAState *s, int full_update, bool fFailOnResize, bool reset_dirty)
+static int vga_draw_graphic(VGAState *s, bool full_update, bool fFailOnResize, bool reset_dirty)
 {
-    int y1, y2, y, update, page_min, page_max, linesize, y_start, double_scan;
+    int y1, y2, y, page_min, page_max, linesize, y_start, double_scan;
     int width, height, shift_control, line_offset, page0, page1, bwidth, bits;
     int disp_width, multi_run;
     uint8_t *d;
     uint32_t v, addr1, addr;
     vga_draw_line_func *vga_draw_line;
-    int offsets_changed;
 
-    offsets_changed = update_basic_params(s);
+    bool offsets_changed = update_basic_params(s);
 
     full_update |= offsets_changed;
 
@@ -2081,7 +2078,7 @@ static int vga_draw_graphic(VGAState *s, int full_update, bool fFailOnResize, bo
     multi_run = double_scan;
     if (shift_control != s->shift_control ||
         double_scan != s->double_scan) {
-        full_update = 1;
+        full_update = true;
         s->shift_control = shift_control;
         s->double_scan = double_scan;
     }
@@ -2148,7 +2145,7 @@ static int vga_draw_graphic(VGAState *s, int full_update, bool fFailOnResize, bo
         int rc = vga_resize_graphic(s, disp_width, height, v);
         if (rc != VINF_SUCCESS)  /* Return any rc, particularly VINF_VGA_RESIZE_IN_PROGRESS, to the caller. */
             return rc;
-        full_update = 1;
+        full_update = true;
     }
     vga_draw_line = vga_draw_line_table[v * 4 + get_depth_index(s->pDrv->cBits)];
 
@@ -2183,7 +2180,7 @@ static int vga_draw_graphic(VGAState *s, int full_update, bool fFailOnResize, bo
         }
         page0 = addr & TARGET_PAGE_MASK;
         page1 = (addr + bwidth - 1) & TARGET_PAGE_MASK;
-        update = full_update | vga_is_dirty(s, page0) | vga_is_dirty(s, page1);
+        bool update = full_update | vga_is_dirty(s, page0) | vga_is_dirty(s, page1);
         if (page1 - page0 > TARGET_PAGE_SIZE) {
             /* if wide line, can use another page */
             update |= vga_is_dirty(s, page0 + TARGET_PAGE_SIZE);
@@ -2275,7 +2272,7 @@ static DECLCALLBACK(void) voidUpdateRect(PPDMIDISPLAYCONNECTOR pInterface, uint3
 static int vga_update_display(PVGASTATE s, bool fUpdateAll, bool fFailOnResize, bool reset_dirty)
 {
     int rc = VINF_SUCCESS;
-    int full_update, graphic_mode;
+    int graphic_mode;
 
     if (s->pDrv->cBits == 0) {
         /* nothing to do */
@@ -2342,15 +2339,14 @@ static int vga_update_display(PVGASTATE s, bool fUpdateAll, bool fFailOnResize, 
             return rc;
         }
 
-        full_update = 0;
         if (!(s->ar_index & 0x20) || (s->sr[0x01] & 0x20)) {
             graphic_mode = GMODE_BLANK;
         } else {
             graphic_mode = s->gr[6] & 1;
         }
-        if (graphic_mode != s->graphic_mode) {
+        bool full_update = graphic_mode != s->graphic_mode;
+        if (full_update) {
             s->graphic_mode = graphic_mode;
-            full_update = 1;
         }
         switch(graphic_mode) {
         case GMODE_TEXT:
@@ -4896,7 +4892,7 @@ static DECLCALLBACK(void) vgaPortUpdateDisplayRect (PPDMIDISPLAYPORT pInterface,
     pu8Dst     = s->pDrv->pu8Data + y * cbLineDst + x * cbPixelDst;
 
     cbPixelSrc = (s->get_bpp(s) + 7) / 8;
-    s->get_offsets (s, &cbLineSrc, &u32OffsetSrc, &u32Dummy);
+    s->get_offsets(s, &cbLineSrc, &u32OffsetSrc, &u32Dummy);
 
     /* Assume that rendering is performed only on visible part of VRAM.
      * This is true because coordinates were verified.
