@@ -108,6 +108,7 @@ sfprov_connect(int version)
 	}
 	else
 		cmn_err(CE_WARN, "sfprov_connect: vboxInit() failed rc=%d\n", rc);
+	return (NULL);
 }
 
 void
