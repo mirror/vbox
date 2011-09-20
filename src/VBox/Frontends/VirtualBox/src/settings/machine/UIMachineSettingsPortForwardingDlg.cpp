@@ -436,7 +436,7 @@ UIMachineSettingsPortForwardingDlg::UIMachineSettingsPortForwardingDlg(QWidget *
     m_pTableView = new QITableView(this);
     m_pTableView->setTabKeyNavigation(false);
     m_pTableView->verticalHeader()->hide();
-    m_pTableView->verticalHeader()->setDefaultSectionSize((int)m_pTableView->verticalHeader()->minimumSectionSize() * 1.33);
+    m_pTableView->verticalHeader()->setDefaultSectionSize((int)(m_pTableView->verticalHeader()->minimumSectionSize() * 1.33));
     m_pTableView->setSelectionMode(QAbstractItemView::SingleSelection);
     m_pTableView->setContextMenuPolicy(Qt::CustomContextMenu);
     m_pTableView->installEventFilter(this);
