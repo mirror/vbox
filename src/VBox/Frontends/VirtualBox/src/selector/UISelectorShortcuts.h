@@ -47,6 +47,7 @@ public:
         ShowVMLogShortcut,
         ShowVMInFileManagerShortcut,
         CreateVMAliasShortcut,
+        ResortVMList,
         HelpShortcut,
         WebShortcut,
         ResetWarningsShortcut,
