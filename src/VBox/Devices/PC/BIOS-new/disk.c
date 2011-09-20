@@ -573,7 +573,7 @@ void BIOSCALL int13_harddisk_ext(disk_regs_t r)
                 dpt->host_bus[0] = 'I';
                 dpt->host_bus[1] = 'S';
                 dpt->host_bus[2] = 'A';
-                dpt->host_bus[3] = 0;
+                dpt->host_bus[3] = ' ';
             }
             else {
                 // FIXME PCI
@@ -581,7 +581,11 @@ void BIOSCALL int13_harddisk_ext(disk_regs_t r)
             dpt->iface_type[0] = 'A';
             dpt->iface_type[1] = 'T';
             dpt->iface_type[2] = 'A';
-            dpt->iface_type[3] = 0;
+            dpt->iface_type[3] = ' ';
+            dpt->iface_type[4] = ' ';
+            dpt->iface_type[5] = ' ';
+            dpt->iface_type[6] = ' ';
+            dpt->iface_type[7] = ' ';
             
             if (iface == ATA_IFACE_ISA) {
                 ((uint16_t __far *)dpt->iface_path)[0] = iobase1;

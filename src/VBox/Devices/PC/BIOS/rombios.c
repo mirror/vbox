@@ -5974,7 +5974,7 @@ int13_harddisk(EHBX, EHAX, DS, ES, DI, SI, BP, ELDX, BX, DX, CX, AX, IP, CS, FLA
           write_byte(DS, SI+(Bit16u)&Int13DPT->host_bus[0], 'I');
           write_byte(DS, SI+(Bit16u)&Int13DPT->host_bus[1], 'S');
           write_byte(DS, SI+(Bit16u)&Int13DPT->host_bus[2], 'A');
-          write_byte(DS, SI+(Bit16u)&Int13DPT->host_bus[3], 0);
+          write_byte(DS, SI+(Bit16u)&Int13DPT->host_bus[3], ' ');
           }
         else {
           // FIXME PCI
@@ -5982,7 +5982,11 @@ int13_harddisk(EHBX, EHAX, DS, ES, DI, SI, BP, ELDX, BX, DX, CX, AX, IP, CS, FLA
         write_byte(DS, SI+(Bit16u)&Int13DPT->iface_type[0], 'A');
         write_byte(DS, SI+(Bit16u)&Int13DPT->iface_type[1], 'T');
         write_byte(DS, SI+(Bit16u)&Int13DPT->iface_type[2], 'A');
-        write_byte(DS, SI+(Bit16u)&Int13DPT->iface_type[3], 0);
+        write_byte(DS, SI+(Bit16u)&Int13DPT->iface_type[3], ' ');
+        write_byte(DS, SI+(Bit16u)&Int13DPT->iface_type[4], ' ');
+        write_byte(DS, SI+(Bit16u)&Int13DPT->iface_type[5], ' ');
+        write_byte(DS, SI+(Bit16u)&Int13DPT->iface_type[6], ' ');
+        write_byte(DS, SI+(Bit16u)&Int13DPT->iface_type[7], ' ');
 
         if (iface==ATA_IFACE_ISA) {
           write_word(DS, SI+(Bit16u)&Int13DPT->iface_path[0], iobase1);
