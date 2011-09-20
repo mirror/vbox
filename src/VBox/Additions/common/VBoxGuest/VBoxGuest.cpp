@@ -985,6 +985,7 @@ void VBoxGuestCloseSession(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTSESSION pSession)
     pSession->Process = NIL_RTPROCESS;
     pSession->R0Process = NIL_RTR0PROCESS;
     vboxGuestCloseMemBalloon(pDevExt, pSession);
+    /* Reset any mouse status flags which the session may have set. */
     VBoxGuestCommonIOCtl_SetMouseStatus(pDevExt, pSession, 0);
     RTMemFree(pSession);
 }
