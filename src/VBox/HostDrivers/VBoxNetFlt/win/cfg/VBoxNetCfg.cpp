@@ -559,16 +559,16 @@ VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinRemoveAllNetDevicesOfId(IN LPCWSTR lpsz
  */
 static VOID DoLogging(LPCSTR szString, ...)
 {
-    LOG_ROUTINE pRoutine = (LOG_ROUTINE)(*((void * volatile *)&g_Logger));
-    if (pRoutine)
+    LOG_ROUTINE pfnRoutine = (LOG_ROUTINE)(*((void * volatile *)&g_Logger));
+    if (pfnRoutine)
     {
         char szBuffer[4096] = {0};
-        va_list pArgList;
-        va_start(pArgList, szString);
-        _vsnprintf(szBuffer, RT_ELEMENTS(szBuffer), szString, pArgList);
-        va_end(pArgList);
+        va_list va;
+        va_start(va, szString);
+        _vsnprintf(szBuffer, RT_ELEMENTS(szBuffer), szString, va);
+        va_end(va);
 
-        pRoutine(szBuffer);
+        pfnRoutine(szBuffer);
     }
 }
 
@@ -788,40 +788,44 @@ public:
 static HRESULT netIfWinFindAdapterClassById(IWbemServices * pSvc, const GUID * pGuid, IWbemClassObject **pAdapterConfig)
 {
     HRESULT hr;
-    WCHAR aQueryString[256];
-    WCHAR GuidString[50];
+    WCHAR wszQuery[256];
+    WCHAR wszGuid[50];
 
-    int length = StringFromGUID2(*pGuid, GuidString, sizeof(GuidString)/sizeof(GuidString[0]));
+    int length = StringFromGUID2(*pGuid, wszGuid, RT_ELEMENTS(wszGuid));
     if (length)
     {
-        swprintf(aQueryString, L"SELECT * FROM Win32_NetworkAdapterConfiguration WHERE SettingID = \"%s\"", GuidString);
+        swprintf(wszQuery, L"SELECT * FROM Win32_NetworkAdapterConfiguration WHERE SettingID = \"%s\"", wszGuid);
         IEnumWbemClassObject* pEnumerator = NULL;
-        hr = pSvc->ExecQuery(bstr_t("WQL"), bstr_t(aQueryString), WBEM_FLAG_FORWARD_ONLY | WBEM_FLAG_RETURN_IMMEDIATELY, NULL, &pEnumerator);
+        hr = pSvc->ExecQuery(bstr_t("WQL"), bstr_t(wszQuery), WBEM_FLAG_FORWARD_ONLY | WBEM_FLAG_RETURN_IMMEDIATELY, 
+                             NULL, &pEnumerator);
         if (SUCCEEDED(hr))
         {
-            IWbemClassObject *pclsObj;
-            ULONG uReturn = 0;
-
             if (pEnumerator)
             {
-                HRESULT hr = pEnumerator->Next(WBEM_INFINITE, 1, &pclsObj, &uReturn);
-
+                IWbemClassObject *pclsObj;
+                ULONG uReturn = 0;
+                hr = pEnumerator->Next(WBEM_INFINITE, 1, &pclsObj, &uReturn);
+                NonStandardLogFlow(("netIfWinFindAdapterClassById: IEnumWbemClassObject::Next -> hr=0x%x pclsObj=%p uReturn=%u 42=%u\n", 
+                                    hr, (void *)pclsObj, uReturn, 42));
                 if (SUCCEEDED(hr))
                 {
-                    if (uReturn)
+                    if (uReturn && pclsObj != NULL)
                     {
-                        pEnumerator->Release();
                         *pAdapterConfig = pclsObj;
-                        hr = S_OK;
-                        return hr;
+                        pEnumerator->Release();
+                        NonStandardLogFlow(("netIfWinFindAdapterClassById: S_OK and %p\n", *pAdapterConfig));
+                        return S_OK;
                     }
-                    else
-                    {
-                        hr = S_FALSE;
-                    }
+
+                    hr = E_FAIL;
                 }
 
                 pEnumerator->Release();
+            }
+            else
+            {
+                NonStandardLogFlow(("ExecQuery returned no enumerator\n"));
+                hr = E_FAIL;
             }
         }
         else
@@ -830,10 +834,13 @@ static HRESULT netIfWinFindAdapterClassById(IWbemServices * pSvc, const GUID * p
     else
     {
         DWORD winEr = GetLastError();
-        NonStandardLogFlow(("StringFromGUID2 failed winEr (%d)\n", winEr));
         hr = HRESULT_FROM_WIN32( winEr );
+        if (SUCCEEDED(hr))
+            hr = E_FAIL;
+        NonStandardLogFlow(("StringFromGUID2 failed winEr=%u, hr=0x%x\n", winEr, hr));
     }
 
+    NonStandardLogFlow(("netIfWinFindAdapterClassById: 0x%x and %p\n", hr, *pAdapterConfig));
     return hr;
 }
 
@@ -843,10 +850,10 @@ static HRESULT netIfWinIsHostOnly(IWbemClassObject * pAdapterConfig, BOOL * pbIs
     BOOL bIsHostOnly = FALSE;
     VariantInit(&vtServiceName);
 
-    HRESULT hr = pAdapterConfig->Get(L"ServiceName", 0, &vtServiceName, 0, 0);
+    HRESULT hr = pAdapterConfig->Get(L"ServiceName", 0 /*lFlags*/, &vtServiceName, NULL /*pvtType*/, NULL /*plFlavor*/);
     if (SUCCEEDED(hr))
     {
-        *pbIsHostOnly = (bstr_t(vtServiceName.bstrVal) == bstr_t("VBoxNetAdp"));
+        *pbIsHostOnly = bstr_t(vtServiceName.bstrVal) == bstr_t("VBoxNetAdp");
 
         VariantClear(&vtServiceName);
     }
@@ -984,10 +991,10 @@ static HRESULT netIfWinWaitIpSettings(IWbemServices *pSvc, const GUID * pGuid, S
     ComPtr <IWbemClassObject> pAdapterConfig;
     for (i = 0;
             (hr = netIfWinFindAdapterClassById(pSvc, pGuid, pAdapterConfig.asOutParam())) == S_OK
-            && (hr = netIfWinHasIpSettings(pAdapterConfig, pCheckIp, pCheckMask, pFound)) == S_OK
-            && !(*pFound)
-            && i < sec2Wait/6;
-            i++)
+         && (hr = netIfWinHasIpSettings(pAdapterConfig, pCheckIp, pCheckMask, pFound)) == S_OK
+         && !(*pFound)
+         && i < sec2Wait/6;
+         i++)
     {
         Sleep(6000);
     }
@@ -1456,7 +1463,7 @@ VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinGetAdapterSettings(IN const GUID * pGui
     hr = netIfWinCreateIWbemServices(pSvc.asOutParam());
     if (SUCCEEDED(hr))
     {
-        ComPtr <IWbemClassObject> pAdapterConfig;
+        ComPtr<IWbemClassObject> pAdapterConfig;
         hr = netIfWinFindAdapterClassById(pSvc, pGuid, pAdapterConfig.asOutParam());
         if (SUCCEEDED(hr))
         {
@@ -1472,73 +1479,74 @@ VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinGetAdapterSettings(IN const GUID * pGui
 VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinIsDhcpEnabled(const GUID * pGuid, BOOL *pEnabled)
 {
     HRESULT hr;
-        ComPtr <IWbemServices> pSvc;
-        hr = netIfWinCreateIWbemServices(pSvc.asOutParam());
+    ComPtr <IWbemServices> pSvc;
+    hr = netIfWinCreateIWbemServices(pSvc.asOutParam());
+    if (SUCCEEDED(hr))
+    {
+        ComPtr<IWbemClassObject> pAdapterConfig;
+        hr = netIfWinFindAdapterClassById(pSvc, pGuid, pAdapterConfig.asOutParam());
         if (SUCCEEDED(hr))
         {
-            ComPtr <IWbemClassObject> pAdapterConfig;
-            hr = netIfWinFindAdapterClassById(pSvc, pGuid, pAdapterConfig.asOutParam());
+            VARIANT vtEnabled;
+            hr = pAdapterConfig->Get(L"DHCPEnabled", 0, &vtEnabled, 0, 0);
             if (SUCCEEDED(hr))
-            {
-                VARIANT vtEnabled;
-                hr = pAdapterConfig->Get(L"DHCPEnabled", 0, &vtEnabled, 0, 0);
-                if (SUCCEEDED(hr))
-                    *pEnabled = vtEnabled.boolVal;
-            }
+                *pEnabled = vtEnabled.boolVal;
         }
+    }
 
     return hr;
 }
 
 VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinEnableStaticIpConfig(IN const GUID *pGuid, IN ULONG ip, IN ULONG mask)
 {
-    HRESULT hr;
-        ComPtr <IWbemServices> pSvc;
-        hr = netIfWinCreateIWbemServices(pSvc.asOutParam());
+    NonStandardLogFlow(("VBoxNetCfgWinEnableStaticIpConfig: ip=0x%x mask=0x%x", ip, mask));
+    ComPtr<IWbemServices> pSvc;
+    HRESULT hr = netIfWinCreateIWbemServices(pSvc.asOutParam());
+    if (SUCCEEDED(hr))
+    {
+        ComPtr<IWbemClassObject> pAdapterConfig;
+        hr = netIfWinFindAdapterClassById(pSvc, pGuid, pAdapterConfig.asOutParam());
         if (SUCCEEDED(hr))
         {
-            ComPtr <IWbemClassObject> pAdapterConfig;
-            hr = netIfWinFindAdapterClassById(pSvc, pGuid, pAdapterConfig.asOutParam());
+            BOOL bIsHostOnly;
+            hr = netIfWinIsHostOnly(pAdapterConfig, &bIsHostOnly);
             if (SUCCEEDED(hr))
             {
-                BOOL bIsHostOnly;
-                hr = netIfWinIsHostOnly(pAdapterConfig, &bIsHostOnly);
-                if (SUCCEEDED(hr))
+                if (bIsHostOnly)
                 {
-                    if (bIsHostOnly)
-                    {
-                        in_addr aIp[1];
-                        in_addr aMask[1];
-                        aIp[0].S_un.S_addr = ip;
-                        aMask[0].S_un.S_addr = mask;
+                    in_addr aIp[1];
+                    in_addr aMask[1];
+                    aIp[0].S_un.S_addr = ip;
+                    aMask[0].S_un.S_addr = mask;
 
-                        BSTR ObjPath;
-                        hr = netIfWinAdapterConfigPath(pAdapterConfig, &ObjPath);
+                    BSTR ObjPath;
+                    hr = netIfWinAdapterConfigPath(pAdapterConfig, &ObjPath);
+                    if (SUCCEEDED(hr))
+                    {
+                        hr = netIfWinEnableStaticV4(pSvc, pGuid, ObjPath, aIp, aMask, ip != 0 ? 1 : 0);
                         if (SUCCEEDED(hr))
                         {
-                            hr = netIfWinEnableStaticV4(pSvc, pGuid, ObjPath, aIp, aMask, ip != 0 ? 1 : 0);
-                            if (SUCCEEDED(hr))
-                            {
 #if 0
-                                in_addr aGw[1];
-                                aGw[0].S_un.S_addr = gw;
-                                hr = netIfWinSetGatewaysV4(pSvc, ObjPath, aGw, 1);
-                                if (SUCCEEDED(hr))
+                            in_addr aGw[1];
+                            aGw[0].S_un.S_addr = gw;
+                            hr = netIfWinSetGatewaysV4(pSvc, ObjPath, aGw, 1);
+                            if (SUCCEEDED(hr))
 #endif
-                                {
-                                }
+                            {
                             }
-                            SysFreeString(ObjPath);
                         }
+                        SysFreeString(ObjPath);
                     }
-                    else
-                    {
-                        hr = E_FAIL;
-                    }
+                }
+                else
+                {
+                    hr = E_FAIL;
                 }
             }
         }
+    }
 
+    NonStandardLogFlow(("VBoxNetCfgWinEnableStaticIpConfig: returns 0x%x", hr));
     return hr;
 }
 
@@ -1550,7 +1558,7 @@ static HRESULT netIfEnableStaticIpConfigV6(const GUID *pGuid, IN_BSTR aIPV6Addre
         hr = netIfWinCreateIWbemServices(pSvc.asOutParam());
         if (SUCCEEDED(hr))
         {
-            ComPtr <IWbemClassObject> pAdapterConfig;
+            ComPtr<IWbemClassObject> pAdapterConfig;
             hr = netIfWinFindAdapterClassById(pSvc, pGuid, pAdapterConfig.asOutParam());
             if (SUCCEEDED(hr))
             {
@@ -1598,7 +1606,7 @@ VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinEnableDynamicIpConfig(IN const GUID *pG
         hr = netIfWinCreateIWbemServices(pSvc.asOutParam());
         if (SUCCEEDED(hr))
         {
-            ComPtr <IWbemClassObject> pAdapterConfig;
+            ComPtr<IWbemClassObject> pAdapterConfig;
             hr = netIfWinFindAdapterClassById(pSvc, pGuid, pAdapterConfig.asOutParam());
             if (SUCCEEDED(hr))
             {
@@ -1635,39 +1643,39 @@ VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinEnableDynamicIpConfig(IN const GUID *pG
 VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinDhcpRediscover(IN const GUID *pGuid)
 {
     HRESULT hr;
-        ComPtr <IWbemServices> pSvc;
-        hr = netIfWinCreateIWbemServices(pSvc.asOutParam());
+    ComPtr <IWbemServices> pSvc;
+    hr = netIfWinCreateIWbemServices(pSvc.asOutParam());
+    if (SUCCEEDED(hr))
+    {
+        ComPtr<IWbemClassObject> pAdapterConfig;
+        hr = netIfWinFindAdapterClassById(pSvc, pGuid, pAdapterConfig.asOutParam());
         if (SUCCEEDED(hr))
         {
-            ComPtr <IWbemClassObject> pAdapterConfig;
-            hr = netIfWinFindAdapterClassById(pSvc, pGuid, pAdapterConfig.asOutParam());
+            BOOL bIsHostOnly;
+            hr = netIfWinIsHostOnly(pAdapterConfig, &bIsHostOnly);
             if (SUCCEEDED(hr))
             {
-                BOOL bIsHostOnly;
-                hr = netIfWinIsHostOnly(pAdapterConfig, &bIsHostOnly);
-                if (SUCCEEDED(hr))
+                if (bIsHostOnly)
                 {
-                    if (bIsHostOnly)
+                    BSTR ObjPath;
+                    hr = netIfWinAdapterConfigPath(pAdapterConfig, &ObjPath);
+                    if (SUCCEEDED(hr))
                     {
-                        BSTR ObjPath;
-                        hr = netIfWinAdapterConfigPath(pAdapterConfig, &ObjPath);
+                        hr = netIfWinDhcpRediscover(pSvc, ObjPath);
                         if (SUCCEEDED(hr))
                         {
-                            hr = netIfWinDhcpRediscover(pSvc, ObjPath);
-                            if (SUCCEEDED(hr))
-                            {
-//                        hr = netIfWinUpdateConfig(pIf);
-                            }
-                            SysFreeString(ObjPath);
+                            //hr = netIfWinUpdateConfig(pIf);
                         }
+                        SysFreeString(ObjPath);
                     }
-                    else
-                    {
-                        hr = E_FAIL;
-                    }
+                }
+                else
+                {
+                    hr = E_FAIL;
                 }
             }
         }
+    }
 
 
     return hr;
@@ -2151,16 +2159,16 @@ VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinRemoveHostOnlyNetworkInterface(IN const
         do
         {
             WCHAR strRegLocation [256];
-            WCHAR GuidString[50];
+            WCHAR wszGuid[50];
 
-            int length = StringFromGUID2(*pGUID, GuidString, sizeof(GuidString)/sizeof(GuidString[0]));
+            int length = StringFromGUID2(*pGUID, wszGuid, RT_ELEMENTS(wszGuid));
             if (!length)
                 SetErrBreak(("Failed to create a Guid string"));
 
             swprintf (strRegLocation,
                      L"SYSTEM\\CurrentControlSet\\Control\\Network\\"
                      L"{4D36E972-E325-11CE-BFC1-08002BE10318}\\%s",
-                     GuidString);
+                     wszGuid);
 
             LONG status;
             status = RegOpenKeyExW (HKEY_LOCAL_MACHINE, strRegLocation, 0,
@@ -2636,10 +2644,9 @@ VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinCreateHostOnlyNetworkInterface(IN LPCWS
                                     DIREG_DRV,
                                     KEY_READ);
         if (hkey == INVALID_HANDLE_VALUE)
-            SetErrBreak (("SetupDiOpenDevRegKey failed (0x%08X)",
-                          GetLastError()));
+            SetErrBreak(("SetupDiOpenDevRegKey failed (0x%08X)", GetLastError()));
 
-        cbSize = sizeof (pWCfgGuidString);
+        cbSize = sizeof(pWCfgGuidString);
         DWORD ret;
         ret = RegQueryValueExW (hkey, L"NetCfgInstanceId", NULL,
                                &dwValueType, (LPBYTE) pWCfgGuidString, &cbSize);
