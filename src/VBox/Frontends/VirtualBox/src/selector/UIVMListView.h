@@ -62,7 +62,7 @@ public:
     int rowById(const QString &aId) const;;
 
     QStringList idList() const;
-    void sortByIdList(const QStringList &list);
+    void sortByIdList(const QStringList &list, Qt::SortOrder order = Qt::AscendingOrder);
 
     int rowCount(const QModelIndex &aParent = QModelIndex()) const;
 
@@ -81,6 +81,7 @@ public:
 
 private:
     static bool UIVMItemNameCompareLessThan(UIVMItem* aItem1, UIVMItem* aItem2);
+    static bool UIVMItemNameCompareMoreThan(UIVMItem* aItem1, UIVMItem* aItem2);
 
     /* Private member vars */
     QList<UIVMItem *> m_VMItemList;

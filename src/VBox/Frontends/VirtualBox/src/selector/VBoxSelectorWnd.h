@@ -81,6 +81,7 @@ public slots:
     void vmShowLogs(const QString & = QString::null);
     void vmOpenInFileManager(const QString &aUuid = QString::null);
     void vmCreateShortcut(const QString &aUuid = QString::null);
+    void vmResort(const QString &aUuid = QString::null);
     void sltCloseMenuAboutToShow();
 
     void refreshVMList();
@@ -185,7 +186,8 @@ private:
     QAction *mVmRefreshAction;
     QAction *mVmShowLogsAction;
     QAction *mVmOpenInFileManagerAction;
-    QAction *mVmCreateShortcut;
+    QAction *mVmCreateShortcutAction;
+    QAction *mVmResortAction;
 
 #ifdef VBOX_GUI_WITH_SYSTRAY
     /* The systray icon */

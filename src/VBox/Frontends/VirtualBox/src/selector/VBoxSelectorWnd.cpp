@@ -190,9 +190,10 @@ VBoxSelectorWnd(VBoxSelectorWnd **aSelf, QWidget* aParent,
     mVmOpenInFileManagerAction = new QAction(this);
     mVmOpenInFileManagerAction->setIcon(UIIconPool::iconSet(
         ":/vm_open_filemanager_16px.png", ":/vm_open_filemanager_disabled_16px.png"));
-    mVmCreateShortcut = new QAction(this);
-    mVmCreateShortcut->setIcon(UIIconPool::iconSet(
+    mVmCreateShortcutAction = new QAction(this);
+    mVmCreateShortcutAction->setIcon(UIIconPool::iconSet(
         ":/vm_create_shortcut_16px.png", ":/vm_create_shortcut_disabled_16px.png"));
+    mVmResortAction = new QAction(this);
 
     /* VM list toolbar */
     mVMToolBar = new UIToolBar(this);
@@ -319,7 +320,9 @@ VBoxSelectorWnd(VBoxSelectorWnd **aSelf, QWidget* aParent,
     mVMMenu->addAction(mVmShowLogsAction);
     mVMMenu->addSeparator();
     mVMMenu->addAction(mVmOpenInFileManagerAction);
-    mVMMenu->addAction(mVmCreateShortcut);
+    mVMMenu->addAction(mVmCreateShortcutAction);
+    mVMMenu->addSeparator();
+    mVMMenu->addAction(mVmResortAction);
 
 #ifdef Q_WS_MAC
     menuBar()->addMenu(UIWindowMenuManager::instance(this)->createMenu(this));
@@ -340,7 +343,9 @@ VBoxSelectorWnd(VBoxSelectorWnd **aSelf, QWidget* aParent,
     mVMCtxtMenu->addAction(mVmShowLogsAction);
     mVMCtxtMenu->addSeparator();
     mVMCtxtMenu->addAction(mVmOpenInFileManagerAction);
-    mVMCtxtMenu->addAction(mVmCreateShortcut);
+    mVMCtxtMenu->addAction(mVmCreateShortcutAction);
+    mVMCtxtMenu->addSeparator();
+    mVMCtxtMenu->addAction(mVmResortAction);
 
     /* Make sure every status bar hint from the context menu is cleared when
      * the menu is closed. */
@@ -472,7 +477,8 @@ VBoxSelectorWnd(VBoxSelectorWnd **aSelf, QWidget* aParent,
     connect(mVmRefreshAction, SIGNAL(triggered()), this, SLOT(vmRefresh()));
     connect(mVmShowLogsAction, SIGNAL(triggered()), this, SLOT(vmShowLogs()));
     connect(mVmOpenInFileManagerAction, SIGNAL(triggered()), this, SLOT(vmOpenInFileManager()));
-    connect(mVmCreateShortcut, SIGNAL(triggered()), this, SLOT(vmCreateShortcut()));
+    connect(mVmCreateShortcutAction, SIGNAL(triggered()), this, SLOT(vmCreateShortcut()));
+    connect(mVmResortAction, SIGNAL(triggered()), this, SLOT(vmResort()));
 
     connect(mVMCloseMenu, SIGNAL(aboutToShow()), this, SLOT(sltCloseMenuAboutToShow()));
 
@@ -1038,6 +1044,20 @@ void VBoxSelectorWnd::vmCreateShortcut(const QString &aUuid /* = QString::null *
     UIDesktopServices::createMachineShortcut(machine.GetSettingsFilePath(), QDesktopServices::storageLocation(QDesktopServices::DesktopLocation), machine.GetName(), machine.GetId());
 }
 
+void VBoxSelectorWnd::vmResort(const QString &aUuid /* = QString::null */)
+{
+    UIVMItem *item = aUuid.isNull() ? mVMListView->selectedItem() :
+                       mVMModel->itemById(aUuid);
+    const QString oldId = item->id();
+
+    AssertMsgReturnVoid(item, ("Item must be always selected here"));
+
+    mVMModel->sortByIdList(QStringList(),
+                           qApp->keyboardModifiers() == Qt::ShiftModifier ? Qt::DescendingOrder : Qt::AscendingOrder);
+    /* Select the VM which was selected before */
+    mVMListView->selectItemById(oldId);
+}
+
 void VBoxSelectorWnd::sltCloseMenuAboutToShow()
 {
     UIVMItem *pItem = mVMListView->selectedItem();
@@ -1409,21 +1429,24 @@ void VBoxSelectorWnd::retranslateUi()
 #if defined(Q_WS_MAC)
     mVmOpenInFileManagerAction->setText(tr("Show in Finder"));
     mVmOpenInFileManagerAction->setStatusTip(tr("Show the VirtualBox Machine Definition file in Finder."));
-    mVmCreateShortcut->setText(tr("Create Alias on Desktop"));
-    mVmCreateShortcut->setStatusTip(tr("Creates an Alias file to the VirtualBox Machine Definition file on your Desktop."));
+    mVmCreateShortcutAction->setText(tr("Create Alias on Desktop"));
+    mVmCreateShortcutAction->setStatusTip(tr("Creates an Alias file to the VirtualBox Machine Definition file on your Desktop."));
 #elif defined(Q_WS_WIN)
     mVmOpenInFileManagerAction->setText(tr("Show in Explorer"));
     mVmOpenInFileManagerAction->setStatusTip(tr("Show the VirtualBox Machine Definition file in Explorer."));
-    mVmCreateShortcut->setText(tr("Create Shortcut on Desktop"));
-    mVmCreateShortcut->setStatusTip(tr("Creates an Shortcut file to the VirtualBox Machine Definition file on your Desktop."));
+    mVmCreateShortcutAction->setText(tr("Create Shortcut on Desktop"));
+    mVmCreateShortcutAction->setStatusTip(tr("Creates an Shortcut file to the VirtualBox Machine Definition file on your Desktop."));
 #else
     mVmOpenInFileManagerAction->setText(tr("Show in File Manager"));
     mVmOpenInFileManagerAction->setStatusTip(tr("Show the VirtualBox Machine Definition file in the File Manager"));
-    mVmCreateShortcut->setText(tr("Create Shortcut on Desktop"));
-    mVmCreateShortcut->setStatusTip(tr("Creates an Shortcut file to the VirtualBox Machine Definition file on your Desktop."));
+    mVmCreateShortcutAction->setText(tr("Create Shortcut on Desktop"));
+    mVmCreateShortcutAction->setStatusTip(tr("Creates an Shortcut file to the VirtualBox Machine Definition file on your Desktop."));
 #endif
     mVmOpenInFileManagerAction->setShortcut(gSS->keySequence(UISelectorShortcuts::ShowVMInFileManagerShortcut));
-    mVmCreateShortcut->setShortcut(gSS->keySequence(UISelectorShortcuts::CreateVMAliasShortcut));
+    mVmCreateShortcutAction->setShortcut(gSS->keySequence(UISelectorShortcuts::CreateVMAliasShortcut));
+    mVmResortAction->setShortcut(gSS->keySequence(UISelectorShortcuts::ResortVMList));
+    mVmResortAction->setText(tr("Sort List"));
+    mVmResortAction->setStatusTip(tr("Sort the VM list alphabetically (Shift for descending order)"));
 
 #ifdef Q_WS_MAC
     mFileMenu->setTitle(tr("&File", "Mac OS X version"));
@@ -1572,10 +1595,11 @@ void VBoxSelectorWnd::vmListViewCurrentChanged(bool aRefreshDetails,
         /* On Mac OS X this are real alias files, which don't work with the old
          * legacy xml files. On the other OS's some kind of start up script is
          * used. */
-        mVmCreateShortcut->setEnabled(item->settingsFile().endsWith(".vbox", Qt::CaseInsensitive));
+        mVmCreateShortcutAction->setEnabled(item->settingsFile().endsWith(".vbox", Qt::CaseInsensitive));
 #else /* Q_WS_MAC */
-        mVmCreateShortcut->setEnabled(true);
+        mVmCreateShortcutAction->setEnabled(true);
 #endif /* Q_WS_MAC */
+        mVmResortAction->setEnabled(true);
     }
     else
     {
@@ -1636,7 +1660,9 @@ void VBoxSelectorWnd::vmListViewCurrentChanged(bool aRefreshDetails,
         mVmShowLogsAction->setEnabled(false);
         /* Disable the shell interaction features. */
         mVmOpenInFileManagerAction->setEnabled(false);
-        mVmCreateShortcut->setEnabled(false);
+        mVmCreateShortcutAction->setEnabled(false);
+        /* Disable sorting if there is nothing to sort. */
+        mVmResortAction->setEnabled(false);
     }
 }
 
