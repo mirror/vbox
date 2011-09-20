@@ -812,8 +812,8 @@ bool UIMouseHandler::mouseEvent(int iEventType, ulong uScreenId,
             double xRatio = scaledSize.isValid() ? (double)pFrameBuffer->width() / (double)scaledSize.width() : 1;
             double yRatio = scaledSize.isValid() ? (double)pFrameBuffer->height() / (double)scaledSize.height() : 1;
             /* Set scaling if scale-factor is present: */
-            cpnt.setX(cpnt.x() * xRatio);
-            cpnt.setY(cpnt.y() * yRatio);
+            cpnt.setX((int)(cpnt.x() * xRatio));
+            cpnt.setY((int)(cpnt.y() * yRatio));
 
             /* Bound coordinates: */
             if (cpnt.x() < 0) cpnt.setX(0);
