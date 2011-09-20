@@ -67,6 +67,14 @@
 // include generated namespaces table
 #include "vboxwebsrv.nsmap"
 
+RT_C_DECLS_BEGIN
+
+// declarations for the generated WSDL text
+extern DECLIMPORT(const unsigned char) g_abVBoxWebWSDL[];
+extern DECLIMPORT(const unsigned) g_cbVBoxWebWSDL;
+
+RT_C_DECLS_END
+
 /****************************************************************************
  *
  * private typedefs
@@ -288,6 +296,7 @@ public:
     {
         // make a copy of the soap struct for the new thread
         m_soap = soap_copy(soap);
+        m_soap->fget = fnHttpGet;
 
         /* The soap.max_keep_alive value can be set to the maximum keep-alive calls allowed,
          * which is important to avoid a client from holding a thread indefinitely.
@@ -315,6 +324,17 @@ public:
     }
 
     void process();
+
+    static int fnHttpGet(struct soap *soap)
+    {
+        char *s = strchr(soap->path, '?');
+        if (!s || strcmp(s, "?wsdl"))
+            return SOAP_GET_METHOD;
+        soap_response(soap, SOAP_HTML);
+        soap_send_raw(soap, (const char *)g_abVBoxWebWSDL, g_cbVBoxWebWSDL);
+        soap_end_send(soap);
+        return SOAP_OK;
+    }
 
     /**
      * Static function that can be passed to RTThreadCreate and that calls

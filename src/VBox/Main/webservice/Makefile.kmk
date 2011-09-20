@@ -285,10 +285,12 @@ endif
  vboxwebsrv_SOURCES = \
 	vboxweb.cpp \
 	$(VBOXWEB_OUT_DIR)/methodmaps.cpp \
-	$(VBOXWEB_OUT_DIR)/soapServer.cpp
+	$(VBOXWEB_OUT_DIR)/soapServer.cpp \
+    $(VBOXWEB_OUT_DIR)/vboxweb-wsdl.c
  vboxwebsrv_CLEAN = \
 	$(VBOXWEB_OUT_DIR)/methodmaps.cpp \
-	$(VBOXWEB_OUT_DIR)/soapServer.cpp
+	$(VBOXWEB_OUT_DIR)/soapServer.cpp \
+    $(VBOXWEB_OUT_DIR)/vboxweb-wsdl.c
 
  vboxweb.cpp_DEFS = \
 	VBOX_BUILD_TARGET=\"$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)\" \
@@ -684,6 +686,11 @@ endif # VBOX_GSOAP_INSTALLED
 $(VBOXWEB_OUT_DIR)/methodmaps.cpp: $(VBOXWEB_IDL_SRC) $(VBOX_PATH_WEBSERVICE)/websrv-cpp.xsl $(VBOX_PATH_WEBSERVICE)/websrv-shared.inc.xsl $(RECOMPILE_ON_MAKEFILE_CURRENT) | $$(dir $$@)
 	$(call MSG_GENERATE,,$@,$(VBOXWEB_IDL_SRC) using websrv-cpp.xsl)
 	$(QUIET)$(VBOX_XSLTPROC) -o $@ $(VBOX_PATH_WEBSERVICE)/websrv-cpp.xsl $<
+
+# generate C file which contains vboxweb.wsdl
+$$(VBOXWEB_OUT_DIR)/vboxweb-wsdl.c: $(VBOXWEB_WSDL) $(VBOX_BIN2C)
+	$(call MSG_TOOL,bin2c,vboxweb-wsdl,$<,$@)
+	$(QUIET)$(VBOX_BIN2C) -export -ascii VBoxWebWSDL $< $@
 
 
 ifdef VBOX_ONLY_SDK
