@@ -325,34 +325,30 @@ setup()
             dox11config=""
             ;;
         1.10.* )
-            begin "Installing X.Org Server 1.10 modules"
+            echo "Installing X.Org Server 1.10 modules"
             vboxvideo_src=vboxvideo_drv_110.so
-            vboxmouse_src=vboxmouse_drv_110.so
             # Does Fedora still ship without vboxvideo detection?
             # test "$system" = "redhat" || setupxorgconf=""
             ;;
         1.9.* )
-            begin "Installing X.Org Server 1.9 modules"
+            echo "Installing X.Org Server 1.9 modules"
             vboxvideo_src=vboxvideo_drv_19.so
-            vboxmouse_src=vboxmouse_drv_19.so
             # Fedora 14 looks likely to ship without vboxvideo detection
             # test "$system" = "redhat" || setupxorgconf=""
             ;;
         1.8.* )
-            begin "Installing X.Org Server 1.8 modules"
+            echo "Installing X.Org Server 1.8 modules"
             vboxvideo_src=vboxvideo_drv_18.so
-            vboxmouse_src=vboxmouse_drv_18.so
             # Fedora 13 shipped without vboxvideo detection
             test "$system" = "redhat" || setupxorgconf=""
             ;;
         1.7.* )
-            begin "Installing X.Org Server 1.7 modules"
+            echo "Installing X.Org Server 1.7 modules"
             vboxvideo_src=vboxvideo_drv_17.so
-            vboxmouse_src=vboxmouse_drv_17.so
             setupxorgconf=""
             ;;
         1.6.* )
-            begin "Installing X.Org Server 1.6 modules"
+            echo "Installing X.Org Server 1.6 modules"
             vboxvideo_src=vboxvideo_drv_16.so
             vboxmouse_src=vboxmouse_drv_16.so
             # SUSE SLE* with X.Org 1.6 does not do input autodetection;
@@ -364,7 +360,7 @@ setup()
             fi
             ;;
         1.5.* )
-            begin "Installing X.Org Server 1.5 modules"
+            echo "Installing X.Org Server 1.5 modules"
             vboxvideo_src=vboxvideo_drv_15.so
             vboxmouse_src=vboxmouse_drv_15.so
             # SUSE with X.Org 1.5 is another special case, and is also
@@ -372,7 +368,7 @@ setup()
             test "$system" = "suse" && automouse=""
             ;;
         1.4.* )
-            begin "Installing X.Org Server 1.4 modules"
+            echo "Installing X.Org Server 1.4 modules"
             vboxvideo_src=vboxvideo_drv_14.so
             vboxmouse_src=vboxmouse_drv_14.so
             automouse=""
@@ -380,20 +376,20 @@ setup()
         1.3.* )
             # This was the first release which gave the server version number
             # rather than the X11 release version when you did 'X -version'.
-            begin "Installing X.Org Server 1.3 modules"
+            echo "Installing X.Org Server 1.3 modules"
             vboxvideo_src=vboxvideo_drv_13.so
             vboxmouse_src=vboxmouse_drv_13.so
             automouse=""
             ;;
         7.1.* | 7.2.* )
-            begin "Installing X.Org 7.1 modules"
+            echo "Installing X.Org 7.1 modules"
             vboxvideo_src=vboxvideo_drv_71.so
             vboxmouse_src=vboxmouse_drv_71.so
             automouse=""
             newmouse=""
             ;;
         6.9.* | 7.0.* )
-            begin "Installing X.Org 6.9/7.0 modules"
+            echo "Installing X.Org 6.9/7.0 modules"
             vboxvideo_src=vboxvideo_drv_70.so
             vboxmouse_src=vboxmouse_drv_70.so
             automouse=""
@@ -420,8 +416,9 @@ setup()
         rm "$modules_dir/drivers/vboxvideo_drv.so" 2>/dev/null
         rm "$modules_dir/input/vboxmouse_drv.so" 2>/dev/null
         ln -s "$lib_dir/$vboxvideo_src" "$modules_dir/drivers/vboxvideo_drv.so"
-        ln -s "$lib_dir/$vboxmouse_src" "$modules_dir/input/vboxmouse_drv.so" &&
-        succ_msg
+        case "$vboxmouse_src" in ?*)
+            ln -s "$lib_dir/$vboxmouse_src" "$modules_dir/input/vboxmouse_drv.so";;
+        esac
     fi
 
     if test -n "$dox11config"; then
