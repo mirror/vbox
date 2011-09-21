@@ -18,6 +18,7 @@
  */
 
 #include "vfsmod.h"
+#include <iprt/asm.h>
 #include <linux/nfs_fs.h>
 #include <linux/vfs.h>
 
@@ -827,9 +828,13 @@ struct dentry_operations sf_dentry_ops =
     .d_revalidate = sf_dentry_revalidate
 };
 
-int sf_init_backing_dev(struct sf_glob_info *sf_g, const char *name)
+int sf_init_backing_dev(struct sf_glob_info *sf_g)
 {
     int rc = 0;
+    /* Each new shared folder map gets a new uint64_t identifier,
+     * allocated in sequence.  We ASSUME the sequence will not wrap. */
+    static uint64_t s_u64Sequence = 0;
+    uint64_t u64CurrentSequence = ASMAtomicIncU64(&s_u64Sequence);
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
     sf_g->bdi.ra_pages = 0; /* No readahead */
@@ -844,7 +849,8 @@ int sf_init_backing_dev(struct sf_glob_info *sf_g, const char *name)
     rc = bdi_init(&sf_g->bdi);
 #  if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 26)
     if (!rc)
-        rc = bdi_register(&sf_g->bdi, NULL, "vboxsf-%s", name);
+        rc = bdi_register(&sf_g->bdi, NULL, "vboxsf-%llu",
+                          (unsigned long long)u64CurrentSequence);
 #  endif /* >= 2.6.26 */
 # endif /* >= 2.6.24 */
 #endif /* >= 2.6.0 */

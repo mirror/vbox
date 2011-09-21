@@ -117,7 +117,7 @@ extern void sf_dir_info_empty(struct sf_dir_info *p);
 extern struct sf_dir_info *sf_dir_info_alloc(void);
 extern int  sf_dir_read_all(struct sf_glob_info *sf_g, struct sf_inode_info *sf_i,
                             struct sf_dir_info *sf_d, SHFLHANDLE handle);
-extern int  sf_init_backing_dev(struct sf_glob_info *sf_g, const char *name);
+extern int  sf_init_backing_dev(struct sf_glob_info *sf_g);
 extern void sf_done_backing_dev(struct sf_glob_info *sf_g);
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 0)
