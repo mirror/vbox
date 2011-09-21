@@ -76,6 +76,11 @@ public:
     bool isKeyboardGrabbed() const { return m_fKeyboardGrabbed; }
 #endif /* Q_WS_MAC */
 
+#ifdef VBOX_WITH_DEBUGGER_GUI
+    /* For the debugger. */
+    void setDebuggerActive(bool aActive = true);
+#endif
+
     /* External event-filters: */
 #if defined(Q_WS_WIN)
     bool winEventFilter(MSG *pMsg, ulong uScreenId);
@@ -167,6 +172,9 @@ protected:
     bool m_bIsHostComboAlone : 1;
     bool m_bIsHostComboProcessed : 1;
     bool m_fPassCAD : 1;
+    /** Whether the debugger is active.
+     * Currently only affects auto capturing. */ 
+    bool m_fDebuggerActive : 1;
 
 #if defined(Q_WS_WIN)
     /* Currently this is used in winLowKeyboardEvent() only: */

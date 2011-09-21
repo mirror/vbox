@@ -1522,6 +1522,7 @@ void UIMachineLogic::sltInstallGuestAdditions()
 }
 
 #ifdef VBOX_WITH_DEBUGGER_GUI
+
 void UIMachineLogic::sltPrepareDebugMenu()
 {
     /* The "Logging" item. */
@@ -1546,13 +1547,19 @@ void UIMachineLogic::sltPrepareDebugMenu()
 void UIMachineLogic::sltShowDebugStatistics()
 {
     if (dbgCreated())
+    {
+        m_pKeyboardHandler->setDebuggerActive();
         m_pDbgGuiVT->pfnShowStatistics(m_pDbgGui);
+    }
 }
 
 void UIMachineLogic::sltShowDebugCommandLine()
 {
     if (dbgCreated())
+    {
+        m_pKeyboardHandler->setDebuggerActive();
         m_pDbgGuiVT->pfnShowCommandLine(m_pDbgGui);
+    }
 }
 
 void UIMachineLogic::sltLoggingToggled(bool fState)
@@ -1566,7 +1573,8 @@ void UIMachineLogic::sltLoggingToggled(bool fState)
             cdebugger.SetLogEnabled(fState);
     }
 }
-#endif
+
+#endif /* VBOX_WITH_DEBUGGER_GUI */
 
 #ifdef Q_WS_MAC
 void UIMachineLogic::sltDockPreviewModeChanged(QAction *pAction)
@@ -1697,8 +1705,8 @@ bool UIMachineLogic::dbgCreated()
         rc = pfnGuiCreate(pISession, &m_pDbgGui, &m_pDbgGuiVT);
         if (RT_SUCCESS(rc))
         {
-            if (DBGGUIVT_ARE_VERSIONS_COMPATIBLE(m_pDbgGuiVT->u32Version, DBGGUIVT_VERSION) ||
-                m_pDbgGuiVT->u32EndVersion == m_pDbgGuiVT->u32Version)
+            if (   DBGGUIVT_ARE_VERSIONS_COMPATIBLE(m_pDbgGuiVT->u32Version, DBGGUIVT_VERSION) 
+                || m_pDbgGuiVT->u32EndVersion == m_pDbgGuiVT->u32Version)
             {
                 m_pDbgGuiVT->pfnSetParent(m_pDbgGui, defaultMachineWindow()->machineWindow());
                 m_pDbgGuiVT->pfnSetMenu(m_pDbgGui, gActionPool->action(UIActionIndexRuntime_Menu_Debug));
