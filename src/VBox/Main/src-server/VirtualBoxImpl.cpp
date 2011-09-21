@@ -3931,30 +3931,38 @@ HRESULT VirtualBox::saveRegistries(const GuidList &llRegistriesThatNeedSaving)
 }
 
 /**
- * Creates the path to the specified file according to the path information
- * present in the file name.
+ * Checks if the path to the specified file exists, according to the path
+ * information present in the file name. Optionally the path is created.
  *
  * Note that the given file name must contain the full path otherwise the
  * extracted relative path will be created based on the current working
  * directory which is normally unknown.
  *
- * @param aFileName     Full file name which path needs to be created.
+ * @param aFileName     Full file name which path is checked/created.
+ * @param aCreate       Flag if the path should be created if it doesn't exist.
  *
- * @return Extended error information on failure to create the path.
+ * @return Extended error information on failure to check/create the path.
  */
 /* static */
-HRESULT VirtualBox::ensureFilePathExists(const Utf8Str &strFileName)
+HRESULT VirtualBox::ensureFilePathExists(const Utf8Str &strFileName, bool fCreate)
 {
     Utf8Str strDir(strFileName);
     strDir.stripFilename();
     if (!RTDirExists(strDir.c_str()))
     {
-        int vrc = RTDirCreateFullPath(strDir.c_str(), 0777);
-        if (RT_FAILURE(vrc))
-            return setErrorStatic(E_FAIL,
-                                  Utf8StrFmt(tr("Could not create the directory '%s' (%Rrc)"),
-                                             strDir.c_str(),
-                                             vrc));
+        if (fCreate)
+        {
+            int vrc = RTDirCreateFullPath(strDir.c_str(), 0777);
+            if (RT_FAILURE(vrc))
+                return setErrorStatic(VBOX_E_IPRT_ERROR,
+                                      Utf8StrFmt(tr("Could not create the directory '%s' (%Rrc)"),
+                                                 strDir.c_str(),
+                                                 vrc));
+        }
+        else
+            return setErrorStatic(VBOX_E_IPRT_ERROR,
+                                  Utf8StrFmt(tr("Directory '%s' does not exist"),
+                                             strDir.c_str()));
     }
 
     return S_OK;

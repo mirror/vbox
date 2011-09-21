@@ -6,7 +6,7 @@
  */
 
 /*
- * Copyright (C) 2006-2010 Oracle Corporation
+ * Copyright (C) 2006-2011 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -1430,7 +1430,7 @@ STDMETHODIMP SessionMachine::BeginTakingSnapshot(IConsole *aInitiator,
     if (strStateFilePath.isNotEmpty())
     {
         // ensure the directory for the saved state file exists
-        HRESULT rc = VirtualBox::ensureFilePathExists(strStateFilePath);
+        HRESULT rc = VirtualBox::ensureFilePathExists(strStateFilePath, true /* fCreate */);
         if (FAILED(rc)) return rc;
     }
 

@@ -9782,6 +9782,12 @@
         Differencing image. Only allowed for child images.
       </desc>
     </const>
+    <const name="NoCreateDir" value="0x40000000">
+      <desc>
+        Special flag which suppresses automatic creation of the subdirectory.
+        Only used when passing the medium variant as an input parameter.
+      </desc>
+    </const>
   </enum>
 
   <interface
