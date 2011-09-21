@@ -6447,7 +6447,7 @@ HRESULT Medium::taskCreateBaseHandler(Medium::CreateBaseTask &task)
             /* ensure the directory exists */
             if (capabilities & MediumFormatCapabilities_File)
             {
-                rc = VirtualBox::ensureFilePathExists(location);
+                rc = VirtualBox::ensureFilePathExists(location, !(task.mVariant & MediumVariant_NoCreateDir) /* fCreate */);
                 if (FAILED(rc))
                     throw rc;
             }
@@ -6458,7 +6458,7 @@ HRESULT Medium::taskCreateBaseHandler(Medium::CreateBaseTask &task)
                                format.c_str(),
                                location.c_str(),
                                task.mSize,
-                               task.mVariant,
+                               task.mVariant & ~MediumVariant_NoCreateDir,
                                NULL,
                                &geo,
                                &geo,
@@ -6614,7 +6614,7 @@ HRESULT Medium::taskCreateDiffHandler(Medium::CreateDiffTask &task)
             /* ensure the target directory exists */
             if (capabilities & MediumFormatCapabilities_File)
             {
-                HRESULT rc = VirtualBox::ensureFilePathExists(targetLocation);
+                HRESULT rc = VirtualBox::ensureFilePathExists(targetLocation, !(task.mVariant & MediumVariant_NoCreateDir) /* fCreate */);
                 if (FAILED(rc))
                     throw rc;
             }
@@ -6622,7 +6622,7 @@ HRESULT Medium::taskCreateDiffHandler(Medium::CreateDiffTask &task)
             vrc = VDCreateDiff(hdd,
                                targetFormat.c_str(),
                                targetLocation.c_str(),
-                               task.mVariant | VD_IMAGE_FLAGS_DIFF,
+                               (task.mVariant & ~MediumVariant_NoCreateDir) | VD_IMAGE_FLAGS_DIFF,
                                NULL,
                                targetId.raw(),
                                id.raw(),
@@ -7117,7 +7117,7 @@ HRESULT Medium::taskCloneHandler(Medium::CloneTask &task)
             /* ensure the target directory exists */
             if (capabilities & MediumFormatCapabilities_File)
             {
-                HRESULT rc = VirtualBox::ensureFilePathExists(targetLocation);
+                HRESULT rc = VirtualBox::ensureFilePathExists(targetLocation, !(task.mVariant & MediumVariant_NoCreateDir) /* fCreate */);
                 if (FAILED(rc))
                     throw rc;
             }
@@ -7180,7 +7180,7 @@ HRESULT Medium::taskCloneHandler(Medium::CloneTask &task)
                                  (fCreatingTarget) ? targetLocation.c_str() : (char *)NULL,
                                  false /* fMoveByRename */,
                                  0 /* cbSize */,
-                                 task.mVariant,
+                                 task.mVariant & ~MediumVariant_NoCreateDir,
                                  targetId.raw(),
                                  VD_OPEN_FLAGS_NORMAL,
                                  NULL /* pVDIfsOperation */,
@@ -7198,7 +7198,7 @@ HRESULT Medium::taskCloneHandler(Medium::CloneTask &task)
                                    0 /* cbSize */,
                                    task.midxSrcImageSame,
                                    task.midxDstImageSame,
-                                   task.mVariant,
+                                   task.mVariant & ~MediumVariant_NoCreateDir,
                                    targetId.raw(),
                                    VD_OPEN_FLAGS_NORMAL,
                                    NULL /* pVDIfsOperation */,
@@ -7788,7 +7788,7 @@ HRESULT Medium::taskExportHandler(Medium::ExportTask &task)
             /* ensure the target directory exists */
             if (capabilities & MediumFormatCapabilities_File)
             {
-                rc = VirtualBox::ensureFilePathExists(targetLocation);
+                rc = VirtualBox::ensureFilePathExists(targetLocation, !(task.mVariant & MediumVariant_NoCreateDir) /* fCreate */);
                 if (FAILED(rc))
                     throw rc;
             }
@@ -7806,7 +7806,7 @@ HRESULT Medium::taskExportHandler(Medium::ExportTask &task)
                              targetLocation.c_str(),
                              false /* fMoveByRename */,
                              0 /* cbSize */,
-                             task.mVariant,
+                             task.mVariant & ~MediumVariant_NoCreateDir,
                              NULL /* pDstUuid */,
                              VD_OPEN_FLAGS_NORMAL | VD_OPEN_FLAGS_SEQUENTIAL,
                              NULL /* pVDIfsOperation */,
@@ -7913,7 +7913,7 @@ HRESULT Medium::taskImportHandler(Medium::ImportTask &task)
             /* ensure the target directory exists */
             if (capabilities & MediumFormatCapabilities_File)
             {
-                HRESULT rc = VirtualBox::ensureFilePathExists(targetLocation);
+                HRESULT rc = VirtualBox::ensureFilePathExists(targetLocation, !(task.mVariant & MediumVariant_NoCreateDir) /* fCreate */);
                 if (FAILED(rc))
                     throw rc;
             }
@@ -7974,7 +7974,7 @@ HRESULT Medium::taskImportHandler(Medium::ImportTask &task)
                              (fCreatingTarget) ? targetLocation.c_str() : (char *)NULL,
                              false /* fMoveByRename */,
                              0 /* cbSize */,
-                             task.mVariant,
+                             task.mVariant & ~MediumVariant_NoCreateDir,
                              targetId.raw(),
                              VD_OPEN_FLAGS_NORMAL,
                              NULL /* pVDIfsOperation */,

@@ -281,7 +281,7 @@ public:
     static void addGuidToListUniquely(GuidList &llRegistriesThatNeedSaving, const Guid &uuid);
     HRESULT saveRegistries(const GuidList &llRegistriesThatNeedSaving);
 
-    static HRESULT ensureFilePathExists(const Utf8Str &strFileName);
+    static HRESULT ensureFilePathExists(const Utf8Str &strFileName, bool fCreate);
 
     static HRESULT handleUnexpectedExceptions (RT_SRC_POS_DECL);
 
