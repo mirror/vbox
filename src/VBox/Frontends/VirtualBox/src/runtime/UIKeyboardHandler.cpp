@@ -333,6 +333,20 @@ int UIKeyboardHandler::keyboardState() const
            (m_bIsHostComboPressed ? UIViewStateType_HostKeyPressed : 0);
 }
 
+#ifdef VBOX_WITH_DEBUGGER_GUI
+void UIKeyboardHandler::setDebuggerActive(bool aActive /*= true*/)
+{
+    if (aActive)
+    {
+        m_fDebuggerActive = true;
+        releaseKeyboard();
+    }
+    else
+        m_fDebuggerActive = false;
+}
+
+#endif /* VBOX_WITH_DEBUGGER_GUI */
+
 #if defined(Q_WS_WIN)
 
 bool UIKeyboardHandler::winEventFilter(MSG *pMsg, ulong uScreenId)
@@ -641,6 +655,7 @@ UIKeyboardHandler::UIKeyboardHandler(UIMachineLogic *pMachineLogic)
     , m_bIsHostComboAlone(false)
     , m_bIsHostComboProcessed(false)
     , m_fPassCAD(false)
+    , m_fDebuggerActive(false)
 #if defined(Q_WS_WIN)
     , m_bIsHostkeyInCapture(false)
     , m_iKeyboardHookViewIndex(-1)
@@ -1624,7 +1639,7 @@ void UIKeyboardHandler::setAutoCaptureDisabled(bool fIsAutoCaptureDisabled)
 
 bool UIKeyboardHandler::autoCaptureSetGlobally()
 {
-    return m_globalSettings.autoCapture();
+    return m_globalSettings.autoCapture() && !m_fDebuggerActive;
 }
 
 bool UIKeyboardHandler::viewHasFocus(ulong uScreenId)
