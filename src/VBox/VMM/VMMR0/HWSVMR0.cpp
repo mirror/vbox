@@ -862,7 +862,7 @@ VMMR0DECL(int) SVMR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
     pVMCB->guest.u64RFlags = pCtx->eflags.u32;
 
     /* Set CPL */
-    pVMCB->guest.u8CPL     = pCtx->csHid.Attr.n.u2Dpl;
+    pVMCB->guest.u8CPL     = pCtx->ssHid.Attr.n.u2Dpl;
 
     /* RAX/EAX too, as VMRUN uses RAX as an implicit parameter. */
     pVMCB->guest.u64RAX    = pCtx->rax;
@@ -1091,7 +1091,7 @@ ResumeExecution:
      *
      * Note! Interrupts must be disabled done *before* we check for TLB flushes; TLB
      *       shootdowns rely on this.
-     */
+     */                                               
     uOldEFlags = ASMIntDisableFlags();
     if (RTThreadPreemptIsPending(NIL_RTTHREAD))
     {
