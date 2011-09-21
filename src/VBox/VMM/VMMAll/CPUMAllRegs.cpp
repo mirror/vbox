@@ -2340,6 +2340,10 @@ VMMDECL(uint32_t) CPUMGetGuestCPL(PVMCPU pVCpu, PCPUMCTXCORE pCtxCore)
          *
          * This only seems to apply to AMD-V; in the VT-x case we *do* need to look
          * at SS. (ACP2 regression during install after a far call to ring 2)
+         * 
+         * Seems it isn't necessiarly true for newer AMD-V CPUs even, we have
+         * to move the VMCB.guest.u8CPL into Attr.n.u2Dpl to make this (and
+         * other) code work right.  So, forget CS.DPL, always use SS.DPL.
          */
         if (RT_LIKELY(pVCpu->cpum.s.Guest.cr0 & X86_CR0_PE))
         {
