@@ -93,7 +93,7 @@ VBoxDbgConsoleOutput::~VBoxDbgConsoleOutput()
 
 
 void
-VBoxDbgConsoleOutput::appendText(const QString &rStr)
+VBoxDbgConsoleOutput::appendText(const QString &rStr, bool fClearSelection)
 {
     Assert(m_hGUIThread == RTThreadNativeSelf());
 
@@ -101,13 +101,34 @@ VBoxDbgConsoleOutput::appendText(const QString &rStr)
         return;
 
     /*
-     * Insert all in one go and make sure it's visible.
+     * Insert all in one go and make sure it's visible. 
+     *  
+     * We need to move the cursor and unselect any selected text before 
+     * inserting anything, otherwise, text will disappear.
      */
     QTextCursor Cursor = textCursor();
-    if (!Cursor.atEnd())
-        moveCursor(QTextCursor::End); /* make sure we append the text */
-    Cursor.insertText(rStr);
-    ensureCursorVisible();
+    if (!fClearSelection && Cursor.hasSelection())
+    {
+        QTextCursor SavedCursor = Cursor;
+        Cursor.clearSelection();
+        Cursor.movePosition(QTextCursor::End);
+
+        Cursor.insertText(rStr);
+
+        setTextCursor(SavedCursor);
+    }
+    else
+    {
+        if (Cursor.hasSelection())
+            Cursor.clearSelection();
+        if (!Cursor.atEnd())
+            Cursor.movePosition(QTextCursor::End);
+
+        Cursor.insertText(rStr);
+
+        setTextCursor(Cursor);
+        ensureCursorVisible();
+    }
 }
 
 
@@ -380,7 +401,7 @@ VBoxDbgConsole::commandSubmitted(const QString &rCommand)
     m_cbInputBuf += cb;
     m_pszInputBuf[m_cbInputBuf++] = '\n';
 
-    m_pOutput->appendText(rCommand + "\n");
+    m_pOutput->appendText(rCommand + "\n", true /*fClearSelection*/);
     m_pOutput->ensureCursorVisible();
 
     m_fInputRestoreFocus = m_pInput->hasFocus();    /* dirty focus hack */
@@ -400,7 +421,7 @@ VBoxDbgConsole::updateOutput()
     m_fUpdatePending = false;
     if (m_cbOutputBuf)
     {
-        m_pOutput->appendText(QString::fromUtf8((const char *)m_pszOutputBuf, (int)m_cbOutputBuf));
+        m_pOutput->appendText(QString::fromUtf8((const char *)m_pszOutputBuf, (int)m_cbOutputBuf), false /*fClearSelection*/);
         m_cbOutputBuf = 0;
     }
     unlock();
