@@ -59,18 +59,6 @@
 #define ATA_MODE_PCIDMA  0x03
 #define ATA_MODE_USEIRQ  0x10
 
-//@todo: this should be elsewhere, since it's not in fact ATA specific!
-#define ATA_TYPE_NONE     0x00
-#define ATA_TYPE_UNKNOWN  0x01
-#define ATA_TYPE_ATA      0x02
-#define ATA_TYPE_ATAPI    0x03
-#define ATA_TYPE_SCSI     0x04 // SCSI disk
-
-#define ATA_DEVICE_NONE  0x00
-#define ATA_DEVICE_HD    0xFF
-#define ATA_DEVICE_CDROM 0x05
-
-
 // Global defines -- ATA register and register bits.
 // command block & control block regs
 #define ATA_CB_DATA  0   // data reg         in/out pio_base_addr1+0
