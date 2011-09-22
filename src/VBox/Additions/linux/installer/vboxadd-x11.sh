@@ -296,6 +296,8 @@ setup()
     vboxvideo_src=
     # The mouse driver to install for X.Org 6.9+
     vboxmouse_src=
+    # The driver extension
+    driver_ext=".so"
 
     modules_dir=`X -showDefaultModulePath 2>&1` || modules_dir=
     if [ -z "$modules_dir" ]; then
@@ -325,34 +327,30 @@ setup()
             dox11config=""
             ;;
         1.10.* )
-            begin "Installing X.Org Server 1.10 modules"
+            xserver_version="X.Org Server 1.10"
             vboxvideo_src=vboxvideo_drv_110.so
-            vboxmouse_src=vboxmouse_drv_110.so
             # Does Fedora still ship without vboxvideo detection?
             # test "$system" = "redhat" || setupxorgconf=""
             ;;
         1.9.* )
-            begin "Installing X.Org Server 1.9 modules"
+            xserver_version="X.Org Server 1.9"
             vboxvideo_src=vboxvideo_drv_19.so
-            vboxmouse_src=vboxmouse_drv_19.so
             # Fedora 14 looks likely to ship without vboxvideo detection
             # test "$system" = "redhat" || setupxorgconf=""
             ;;
         1.8.* )
-            begin "Installing X.Org Server 1.8 modules"
+            xserver_version="X.Org Server 1.8"
             vboxvideo_src=vboxvideo_drv_18.so
-            vboxmouse_src=vboxmouse_drv_18.so
             # Fedora 13 shipped without vboxvideo detection
             test "$system" = "redhat" || setupxorgconf=""
             ;;
         1.7.* )
-            begin "Installing X.Org Server 1.7 modules"
+            xserver_version="X.Org Server 1.7"
             vboxvideo_src=vboxvideo_drv_17.so
-            vboxmouse_src=vboxmouse_drv_17.so
             setupxorgconf=""
             ;;
         1.6.* )
-            begin "Installing X.Org Server 1.6 modules"
+            xserver_version="X.Org Server 1.6"
             vboxvideo_src=vboxvideo_drv_16.so
             vboxmouse_src=vboxmouse_drv_16.so
             # SUSE SLE* with X.Org 1.6 does not do input autodetection;
@@ -364,7 +362,7 @@ setup()
             fi
             ;;
         1.5.* )
-            begin "Installing X.Org Server 1.5 modules"
+            xserver_version="X.Org Server 1.5"
             vboxvideo_src=vboxvideo_drv_15.so
             vboxmouse_src=vboxmouse_drv_15.so
             # SUSE with X.Org 1.5 is another special case, and is also
@@ -372,7 +370,7 @@ setup()
             test "$system" = "suse" && automouse=""
             ;;
         1.4.* )
-            begin "Installing X.Org Server 1.4 modules"
+            xserver_version="X.Org Server 1.4"
             vboxvideo_src=vboxvideo_drv_14.so
             vboxmouse_src=vboxmouse_drv_14.so
             automouse=""
@@ -380,20 +378,20 @@ setup()
         1.3.* )
             # This was the first release which gave the server version number
             # rather than the X11 release version when you did 'X -version'.
-            begin "Installing X.Org Server 1.3 modules"
+            xserver_version="X.Org Server 1.3"
             vboxvideo_src=vboxvideo_drv_13.so
             vboxmouse_src=vboxmouse_drv_13.so
             automouse=""
             ;;
         7.1.* | 7.2.* )
-            begin "Installing X.Org 7.1 modules"
+            xserver_version="X.Org 7.1"
             vboxvideo_src=vboxvideo_drv_71.so
             vboxmouse_src=vboxmouse_drv_71.so
             automouse=""
             newmouse=""
             ;;
         6.9.* | 7.0.* )
-            begin "Installing X.Org 6.9/7.0 modules"
+            xserver_version="X.Org 6.9/7.0"
             vboxvideo_src=vboxvideo_drv_70.so
             vboxmouse_src=vboxmouse_drv_70.so
             automouse=""
@@ -401,14 +399,12 @@ setup()
             ;;
         6.7* | 6.8.* | 4.2.* | 4.3.* )
             # Assume X.Org post-fork or XFree86
-            begin "Installing XFree86 4.2/4.3 and X.Org 6.7/6.8 modules"
-            rm "$modules_dir/drivers/vboxvideo_drv.o" 2>/dev/null
-            rm "$modules_dir/input/vboxmouse_drv.o" 2>/dev/null
-            ln -s "$lib_dir/vboxvideo_drv.o" "$modules_dir/drivers/vboxvideo_drv.o"
-            ln -s "$lib_dir/vboxmouse_drv.o" "$modules_dir/input/vboxmouse_drv.o"
+            xserver_version="XFree86 4.2/4.3 and X.Org 6.7/6.8"
+            driver_ext=.o
+            vboxvideo_src=vboxvideo_drv.o
+            vboxmouse_src=vboxmouse_drv.o
             automouse=""
             newmouse=""
-            succ_msg
             ;;
         * )
             echo "Warning: unknown version of the X Window System installed.  Not installing"
@@ -416,13 +412,16 @@ setup()
             dox11config=""
             ;;
     esac
-    if [ -n "$vboxvideo_src" -a -n "$vboxmouse_src" ]; then
-        rm "$modules_dir/drivers/vboxvideo_drv.so" 2>/dev/null
-        rm "$modules_dir/input/vboxmouse_drv.so" 2>/dev/null
-        ln -s "$lib_dir/$vboxvideo_src" "$modules_dir/drivers/vboxvideo_drv.so"
-        ln -s "$lib_dir/$vboxmouse_src" "$modules_dir/input/vboxmouse_drv.so" &&
-        succ_msg
-    fi
+    begin "Installing $xserver_version modules"
+    rm "$modules_dir/drivers/vboxvideo_drv$driver_ext" 2>/dev/null
+    rm "$modules_dir/input/vboxmouse_drv$driver_ext" 2>/dev/null
+    case "$vboxvideo_src" in ?*)
+        ln -s "$lib_dir/$vboxvideo_src" "$modules_dir/drivers/vboxvideo_drv$driver_ext";;
+    esac
+    case "$vboxmouse_src" in ?*)
+        ln -s "$lib_dir/$vboxmouse_src" "$modules_dir/input/vboxmouse_drv$driver_ext";;
+    esac
+    succ_msg
 
     if test -n "$dox11config"; then
         begin "Setting up the Window System to use the Guest Additions"
