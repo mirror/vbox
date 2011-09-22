@@ -28,6 +28,8 @@
 #include <sys/ddi_intr.h>
 #include <sys/sunddi.h>
 #include <sys/open.h>
+#include <sys/sunldi.h>
+#include <sys/file.h>
 #undef u /* /usr/include/sys/user.h:249:1 is where this is defined to (curproc->p_user). very cool. */
 
 #include "VBoxGuestInternal.h"
@@ -172,6 +174,12 @@ static size_t               g_cIntrAllocated;
 static pollhead_t           g_PollHead;
 /** The IRQ Mutex */
 static kmutex_t             g_IrqMtx;
+/** Layered device handle for kernel keep-attached opens */
+static ldi_handle_t         g_LdiHandle = NULL;
+/** Ref counting for IDCOpen calls */
+static uint64_t             g_cLdiOpens = 0;
+/** The Mutex protecting the LDI handle in IDC opens */
+static kmutex_t             g_LdiMtx;
 
 /**
  * Kernel entry points
@@ -193,6 +201,8 @@ int _init(void)
             RTLogRelSetDefaultInstance(pRelLogger);
         else
             cmn_err(CE_NOTE, "failed to initialize driver logging rc=%d!\n", rc);
+
+        mutex_init(&g_LdiMtx, NULL, MUTEX_DRIVER, NULL);
 
         /*
          * Prevent module autounloading.
@@ -230,6 +240,8 @@ int _fini(void)
 
     RTLogDestroy(RTLogRelSetDefaultInstance(NULL));
     RTLogDestroy(RTLogSetDefaultInstance(NULL));
+
+    mutex_destroy(&g_LdiMtx);
 
     RTR0Term();
     return rc;
