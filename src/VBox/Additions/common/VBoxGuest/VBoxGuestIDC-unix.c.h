@@ -39,12 +39,45 @@ DECLVBGL(void *) VBoxGuestIDCOpen(uint32_t *pu32Version)
     LogFlow(("VBoxGuestIDCOpen: Version=%#x\n", pu32Version ? *pu32Version : 0));
 
     AssertPtrReturn(pu32Version, NULL);
+
+#ifdef RT_OS_SOLARIS
+    mutex_enter(&g_LdiMtx);
+    if (!g_LdiHandle)
+    {
+        ldi_ident_t DevIdent = ldi_ident_from_anon();
+        rc = ldi_open_by_name(VBOXGUEST_DEVICE_NAME, FREAD, kcred, &g_LdiHandle, DevIdent);
+        ldi_ident_release(DevIdent);
+        if (rc)
+        {
+            LogRel(("VBoxGuestIDCOpen: ldi_open_by_name failed. rc=%d\n", rc));
+            mutex_exit(&g_LdiMtx);
+            return NULL;
+        }
+    }
+    ++g_cLdiOpens;
+    mutex_exit(&g_LdiMtx);
+#endif
+
     rc = VBoxGuestCreateKernelSession(&g_DevExt, &pSession);
     if (RT_SUCCESS(rc))
     {
         *pu32Version = VMMDEV_VERSION;
         return pSession;
     }
+
+#ifdef RT_OS_SOLARIS
+    mutex_enter(&g_LdiMtx);
+    if (g_cLdiOpens > 0)
+        --g_cLdiOpens;
+    if (   g_cLdiOpens == 0
+        && g_LdiHandle)
+    {
+        ldi_close(g_LdiHandle, FREAD, kcred);
+        g_LdiHandle = NULL;
+    }
+    mutex_exit(&g_LdiMtx);
+#endif
+
     LogRel(("VBoxGuestIDCOpen: VBoxGuestCreateKernelSession failed. rc=%d\n", rc));
     return NULL;
 }
@@ -63,6 +96,20 @@ DECLVBGL(int) VBoxGuestIDCClose(void *pvSession)
 
     AssertPtrReturn(pSession, VERR_INVALID_POINTER);
     VBoxGuestCloseSession(&g_DevExt, pSession);
+
+#ifdef RT_OS_SOLARIS
+    mutex_enter(&g_LdiMtx);
+    if (g_cLdiOpens > 0)
+        --g_cLdiOpens;
+    if (   g_cLdiOpens == 0
+        && g_LdiHandle)
+    {
+        ldi_close(g_LdiHandle, FREAD, kcred);
+        g_LdiHandle = NULL;
+    }
+    mutex_exit(&g_LdiMtx);
+#endif
+
     return VINF_SUCCESS;
 }
 
