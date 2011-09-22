@@ -326,6 +326,12 @@ setup()
             echo "installing the X.Org drivers."
             dox11config=""
             ;;
+        1.11.* )
+            xserver_version="X.Org Server 1.11"
+            vboxvideo_src=vboxvideo_drv_111.so
+            # Does Fedora still ship without vboxvideo detection?
+            # test "$system" = "redhat" || setupxorgconf=""
+            ;;
         1.10.* )
             xserver_version="X.Org Server 1.10"
             vboxvideo_src=vboxvideo_drv_110.so
