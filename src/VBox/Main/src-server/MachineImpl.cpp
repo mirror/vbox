@@ -1903,7 +1903,7 @@ STDMETHODIMP Machine::SetCPUIDLeaf(ULONG aId, ULONG aValEax, ULONG aValEbx, ULON
         case 0x8:
         case 0x9:
         case 0xA:
-            AssertCompile(RT_ELEMENTS(mHWData->mCpuIdStdLeafs) == 0xA);
+            AssertCompile(RT_ELEMENTS(mHWData->mCpuIdStdLeafs) == 0xB);
             AssertRelease(aId < RT_ELEMENTS(mHWData->mCpuIdStdLeafs));
             setModified(IsModified_MachineData);
             mHWData.backup();
@@ -1925,7 +1925,7 @@ STDMETHODIMP Machine::SetCPUIDLeaf(ULONG aId, ULONG aValEax, ULONG aValEbx, ULON
         case 0x80000008:
         case 0x80000009:
         case 0x8000000A:
-            AssertCompile(RT_ELEMENTS(mHWData->mCpuIdExtLeafs) == 0xA);
+            AssertCompile(RT_ELEMENTS(mHWData->mCpuIdExtLeafs) == 0xB);
             AssertRelease(aId - 0x80000000 < RT_ELEMENTS(mHWData->mCpuIdExtLeafs));
             setModified(IsModified_MachineData);
             mHWData.backup();
@@ -1965,7 +1965,7 @@ STDMETHODIMP Machine::RemoveCPUIDLeaf(ULONG aId)
         case 0x8:
         case 0x9:
         case 0xA:
-            AssertCompile(RT_ELEMENTS(mHWData->mCpuIdStdLeafs) == 0xA);
+            AssertCompile(RT_ELEMENTS(mHWData->mCpuIdStdLeafs) == 0xB);
             AssertRelease(aId < RT_ELEMENTS(mHWData->mCpuIdStdLeafs));
             setModified(IsModified_MachineData);
             mHWData.backup();
@@ -1984,7 +1984,7 @@ STDMETHODIMP Machine::RemoveCPUIDLeaf(ULONG aId)
         case 0x80000008:
         case 0x80000009:
         case 0x8000000A:
-            AssertCompile(RT_ELEMENTS(mHWData->mCpuIdExtLeafs) == 0xA);
+            AssertCompile(RT_ELEMENTS(mHWData->mCpuIdExtLeafs) == 0xB);
             AssertRelease(aId - 0x80000000 < RT_ELEMENTS(mHWData->mCpuIdExtLeafs));
             setModified(IsModified_MachineData);
             mHWData.backup();
