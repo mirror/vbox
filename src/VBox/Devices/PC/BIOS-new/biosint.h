@@ -204,6 +204,7 @@ extern  void        outb_cmos(uint8_t cmos_reg, uint8_t val);
 extern  uint16_t    cdrom_boot(void);
 extern  void        show_logo(void);
 extern  void        delay_boot(uint16_t secs);
+extern  bx_bool     set_enable_a20(bx_bool val);
 
 int scsi_read_sectors(uint8_t device_id, uint16_t count, uint32_t lba, void __far *buffer);
 int scsi_write_sectors(uint8_t device_id, uint16_t count, uint32_t lba, void __far *buffer);

@@ -301,6 +301,11 @@ void BIOSCALL keyboard_init(void)
 
     /* Enable aux interface */
     outb(0x64,0xa8);
+
+    /* While we're here, disable the A20 gate. Required for
+     * compatibility with the IBM PC and DOS.
+     */
+    set_enable_a20(0);
 }
 
 
