@@ -58,10 +58,11 @@ SOLARIS_OUT_BIN_64         := $(PATH_OUT_BASE)/solaris.amd64/$(KBUILD_TYPE)/bin
 SOLARIS_OUT_BIN_32         := $(PATH_OUT_BASE)/solaris.x86/$(KBUILD_TYPE)/bin
 SOLARIS_OUT_BIN            := $(PATH_STAGE_BIN)
 
-SOLARIS_DBG_DIR            := $(PATH_TARGET)/Installer/DebugPkg
+SOLARIS_DBG_DIR_NAME       := DebugPkg
+SOLARIS_DBG_DIR            := $(SOLARIS_INST_OUT_DIR)/$(SOLARIS_DBG_DIR_NAME)
 SOLARIS_DBG_DIR_32         := $(SOLARIS_DBG_DIR)/$(SOLARIS_DIR_NAME_32)
 SOLARIS_DBG_DIR_64         := $(SOLARIS_DBG_DIR)/$(SOLARIS_DIR_NAME_64)
-SOLARIS_VBI_DIR            := $(PATH_TARGET)/Installer/KernelPkg
+SOLARIS_VBI_DIR            := $(SOLARIS_INST_OUT_DIR)/KernelPkg
 
 ifeq ($(KBUILD_TARGET_ARCH),amd64)
  SOLARIS_VBOXINST_DIR_ISA    := $(SOLARIS_VBOXINST_DIR_64)
@@ -838,9 +839,9 @@ $(PATH_STAGE_BIN)/$(DBG_ARCHIVE): \
 		$(VBOX_PATH_SOL_INST_SRC)/Makefile.kmk \
 		$(SOLARIS_DBG_DEPFILES)
 	$(call MSG_L1,Installing debug binaries $(SOLARIS_DBG_DIR))
-	$(call MSG_L1,Packing $@)
-	$(QUIET)/usr/sfw/bin/gtar --dereference --owner 0 --group 0 \
-		-cjRhf $(PATH_STAGE_BIN)/$(DBG_ARCHIVE) -C $(SOLARIS_DBG_DIR) $(SOLARIS_DBG_DEPFILES)
+	$(call MSG_L1,Packing $@) 
+	/usr/sfw/bin/gtar --dereference --owner 0 --group 0 \
+		-cjRhf "$(PATH_STAGE_BIN)/$(DBG_ARCHIVE)" -C "$(SOLARIS_INST_OUT_DIR)" "$(SOLARIS_DBG_DIR_NAME)"
 	$(QUIET)$(CHMOD) 0644 $@
 
 #
