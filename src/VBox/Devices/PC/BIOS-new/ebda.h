@@ -61,6 +61,17 @@
 #    define BX_MAX_STORAGE_DEVICES  BX_MAX_ATA_DEVICES
 #endif
 
+/* Generic storage device types. Bit of a misnomer! */
+#define ATA_TYPE_NONE     0x00
+#define ATA_TYPE_UNKNOWN  0x01
+#define ATA_TYPE_ATA      0x02
+#define ATA_TYPE_ATAPI    0x03
+#define ATA_TYPE_SCSI     0x04 // SCSI disk
+
+#define ATA_DEVICE_NONE  0x00
+#define ATA_DEVICE_HD    0xFF
+#define ATA_DEVICE_CDROM 0x05
+
 
 #if 1 //BX_USE_ATADRV
 
@@ -169,9 +180,9 @@ typedef struct {
 #endif
 
 #ifdef VBOX_WITH_BIOS_AHCI
-typedef struct {
-    uint16_t    iobase;
-} ahci_t;
+//typedef struct {
+//    uint16_t    iobase;
+//} ahci_t;
 #endif
 
 typedef struct {
@@ -196,26 +207,27 @@ typedef struct {
     unsigned char filler1[0x3D];
 
     // FDPT - Can be split into data members if needed
-    fdpt_t  fdpt0;
-    fdpt_t  fdpt1;
+    fdpt_t      fdpt0;
+    fdpt_t      fdpt1;
 
     unsigned char filler2[0xC4];
 
     // ATA Driver data
-    ata_t   ata;
+    ata_t       ata;
 
 #if BX_ELTORITO_BOOT
     // El Torito Emulation data
-    cdemu_t cdemu;
+    cdemu_t     cdemu;
 #endif // BX_ELTORITO_BOOT
 
 #ifdef VBOX_WITH_SCSI
     // SCSI Driver data
-    scsi_t scsi;
+    scsi_t      scsi;
 # endif
 
 #ifdef VBOX_WITH_BIOS_AHCI
-    ahci_t ahci;
+//    ahci_t      ahci;
+    uint16_t    SegAhci;    //@todo: rename...
 #endif
 
     unsigned char   uForceBootDrive;
