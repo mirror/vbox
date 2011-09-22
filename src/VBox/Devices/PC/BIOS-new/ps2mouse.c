@@ -62,8 +62,9 @@ static  const char  panic_msg_keyb_buffer_full[] = "%s: keyboard input buffer fu
 
 uint8_t send_to_mouse_ctrl(uint8_t sendbyte)
 {
+    BX_DEBUG_INT15_MS("send %02x to mouse:\n", sendbyte);
     // wait for chance to write to ctrl
-    if ( inb(0x64) & 0x02 )
+    if (inb(0x64) & 0x02)
         BX_PANIC(panic_msg_keyb_buffer_full,"sendmouse");
     outb(0x64, 0xD4);
     outb(0x60, sendbyte);
@@ -73,12 +74,15 @@ uint8_t send_to_mouse_ctrl(uint8_t sendbyte)
 
 uint8_t get_mouse_data(uint8_t __far *data)
 {
+    int         retries = 10000;
     uint8_t     response;
 
-    //@todo: timeout?
-    while ((inb(0x64) & 0x21) != 0x21)
-        ;
+    while ((inb(0x64) & 0x21) != 0x21 && retries)
+        --retries;
     
+    if (!retries)
+        return(1);
+
     response = inb(0x60);
     *data = response;
     return(0);
