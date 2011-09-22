@@ -270,8 +270,8 @@ public:
 
         BOOL                 mCPUAttached[SchemaDefs::MaxCPUCount];
 
-        settings::CpuIdLeaf  mCpuIdStdLeafs[10];
-        settings::CpuIdLeaf  mCpuIdExtLeafs[10];
+        settings::CpuIdLeaf  mCpuIdStdLeafs[11];
+        settings::CpuIdLeaf  mCpuIdExtLeafs[11];
 
         DeviceType_T         mBootOrder[SchemaDefs::MaxBootPosition];
 
