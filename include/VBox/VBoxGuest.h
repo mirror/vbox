@@ -350,10 +350,6 @@ AssertCompileSize(VBoxGuestWriteCoreDump, 4);
 /** Get the pointer to the first HGCM parameter in a 32-bit request.  */
 # define VBOXGUEST_HGCM_CALL_PARMS32(a)           ( (HGCMFunctionParameter32 *)((uint8_t *)(a) + sizeof(VBoxGuestHGCMCallInfo)) )
 
-/** IOCTL to VBoxGuest to make a connect to the clipboard service.
- * @todo Seems this is no longer is use. Try remove it. */
-# define VBOXGUEST_IOCTL_CLIPBOARD_CONNECT        VBOXGUEST_IOCTL_CODE_(19, sizeof(uint32_t))
-
 #endif /* VBOX_WITH_HGCM */
 
 #ifdef RT_OS_WINDOWS

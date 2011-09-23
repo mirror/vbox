@@ -712,7 +712,6 @@ int VBoxGuestInitDevExt(PVBOXGUESTDEVEXT pDevExt, uint16_t IOPortBase,
     pDevExt->f32PendingEvents = 0;
     pDevExt->u32MousePosChangedSeq = 0;
     pDevExt->SessionSpinlock = NIL_RTSPINLOCK;
-    pDevExt->u32ClipboardClientId = 0;
     pDevExt->MemBalloon.hMtx = NIL_RTSEMFASTMUTEX;
     pDevExt->MemBalloon.cChunks = 0;
     pDevExt->MemBalloon.cMaxChunks = 0;
@@ -1827,74 +1826,6 @@ static int VBoxGuestCommonIOCtl_HGCMCall(PVBOXGUESTDEVEXT pDevExt,
 }
 
 
-/**
- * @returns VBox status code. Unlike the other HGCM IOCtls this will combine
- *          the VbglHGCMConnect/Disconnect return code with the Info.result.
- *
- * @param   pDevExt             The device extension.
- * @param   pu32ClientId        The client id.
- * @param   pcbDataReturned     Where to store the amount of returned data. Can
- *                              be NULL.
- */
-static int VBoxGuestCommonIOCtl_HGCMClipboardReConnect(PVBOXGUESTDEVEXT pDevExt, uint32_t *pu32ClientId, size_t *pcbDataReturned)
-{
-    int                         rc;
-    VBoxGuestHGCMConnectInfo    CnInfo;
-
-    Log(("VBoxGuestCommonIOCtl: CLIPBOARD_CONNECT: Current u32ClientId=%RX32\n", pDevExt->u32ClipboardClientId));
-
-    /*
-     * If there is an old client, try disconnect it first.
-     */
-    if (pDevExt->u32ClipboardClientId != 0)
-    {
-        VBoxGuestHGCMDisconnectInfo DiInfo;
-        DiInfo.result = VERR_WRONG_ORDER;
-        DiInfo.u32ClientID = pDevExt->u32ClipboardClientId;
-        rc = VbglR0HGCMInternalDisconnect(&DiInfo, VBoxGuestHGCMAsyncWaitCallback, pDevExt, RT_INDEFINITE_WAIT);
-        if (RT_SUCCESS(rc))
-        {
-            LogRel(("VBoxGuestCommonIOCtl: CLIPBOARD_CONNECT: failed to disconnect old client. VbglHGCMDisconnect -> rc=%Rrc\n", rc));
-            return rc;
-        }
-        if (RT_FAILURE((int32_t)DiInfo.result))
-        {
-            Log(("VBoxGuestCommonIOCtl: CLIPBOARD_CONNECT: failed to disconnect old client. DiInfo.result=%Rrc\n", DiInfo.result));
-            return DiInfo.result;
-        }
-        pDevExt->u32ClipboardClientId = 0;
-    }
-
-    /*
-     * Try connect.
-     */
-    CnInfo.Loc.type = VMMDevHGCMLoc_LocalHost_Existing;
-    strcpy(CnInfo.Loc.u.host.achName, "VBoxSharedClipboard");
-    CnInfo.u32ClientID = 0;
-    CnInfo.result = VERR_WRONG_ORDER;
-
-    rc = VbglR0HGCMInternalConnect(&CnInfo, VBoxGuestHGCMAsyncWaitCallback, pDevExt, RT_INDEFINITE_WAIT);
-    if (RT_FAILURE(rc))
-    {
-        LogRel(("VBoxGuestCommonIOCtl: CLIPBOARD_CONNECT: VbglHGCMConnected -> rc=%Rrc\n", rc));
-        return rc;
-    }
-    if (RT_FAILURE(CnInfo.result))
-    {
-        LogRel(("VBoxGuestCommonIOCtl: CLIPBOARD_CONNECT: VbglHGCMConnected -> rc=%Rrc\n", rc));
-        return rc;
-    }
-
-    Log(("VBoxGuestCommonIOCtl: CLIPBOARD_CONNECT: connected successfully u32ClientId=%RX32\n", CnInfo.u32ClientID));
-
-    pDevExt->u32ClipboardClientId = CnInfo.u32ClientID;
-    *pu32ClientId = CnInfo.u32ClientID;
-    if (pcbDataReturned)
-        *pcbDataReturned = sizeof(uint32_t);
-
-    return VINF_SUCCESS;
-}
-
 #endif /* VBOX_WITH_HGCM */
 
 /**
@@ -2417,11 +2348,6 @@ int VBoxGuestCommonIOCtl(unsigned iFunction, PVBOXGUESTDEVEXT pDevExt, PVBOXGUES
 # endif
                 CHECKRET_MIN_SIZE("HGCM_DISCONNECT", sizeof(VBoxGuestHGCMDisconnectInfo));
                 rc = VBoxGuestCommonIOCtl_HGCMDisconnect(pDevExt, pSession, (VBoxGuestHGCMDisconnectInfo *)pvData, pcbDataReturned);
-                break;
-
-            case VBOXGUEST_IOCTL_CLIPBOARD_CONNECT:
-                CHECKRET_MIN_SIZE("CLIPBOARD_CONNECT", sizeof(uint32_t));
-                rc = VBoxGuestCommonIOCtl_HGCMClipboardReConnect(pDevExt, (uint32_t *)pvData, pcbDataReturned);
                 break;
 #endif /* VBOX_WITH_HGCM */
 
