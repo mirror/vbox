@@ -138,6 +138,10 @@ RD_BOOL g_rdpsnd = False;
 RD_BOOL g_rdpusb = False;
 #endif
 
+#ifdef WITH_BIRD_VD_HACKS
+RD_BOOL g_keep_virtual_desktop_shortcuts = False;
+#endif
+
 #ifdef HAVE_ICONV
 char g_codepage[16] = "";
 #endif
@@ -250,6 +254,10 @@ usage(char *program)
 	fprintf(stderr, "   -0: attach to console\n");
 	fprintf(stderr, "   -4: use RDP version 4\n");
 	fprintf(stderr, "   -5: use RDP version 5 (default)\n");
+#ifdef WITH_BIRD_VD_HACKS
+	fprintf(stderr, "   -H keep-virtual-desktop-shortcuts: Keep keyboard shortcuts typical\n"
+	                "      for switching virtual desktops (C-A-Left/Right). \n");
+#endif
 }
 
 static int
@@ -537,9 +545,14 @@ main(int argc, char *argv[])
 #else
 #define VNCOPT
 #endif
+#ifdef WITH_BIRD_VD_HACKS
+#define VDHOPT "H:"
+#else
+#define VDHOPT
+#endif
 
 	while ((c = getopt(argc, argv,
-			   VNCOPT "Au:L:d:s:c:p:n:k:g:fbBeEmzCDKS:T:NX:a:x:Pr:045h?")) != -1)
+			   VNCOPT VDHOPT "Au:L:d:s:c:p:n:k:g:fbBeEmzCDKS:T:NX:a:x:Pr:045h?")) != -1)
 	{
 		switch (c)
 		{
@@ -882,6 +895,15 @@ main(int argc, char *argv[])
 			case '5':
 				g_use_rdp5 = True;
 				break;
+
+#ifdef WITH_BIRD_VD_HACKS
+			case 'H': /* hacks */
+				if (!strcmp(optarg, "keep-virtual-desktop-shortcuts"))
+					g_keep_virtual_desktop_shortcuts = True;
+				else
+					error("Unknown -H argument\n\n\tPossible argument is: keep-virtual-desktop-shortcuts\n");
+				break;
+#endif
 
 			case 'h':
 			case '?':
