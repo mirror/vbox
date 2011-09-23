@@ -75,7 +75,10 @@ typedef FNPDMDEVCONSTRUCT *PFNPDMDEVCONSTRUCT;
  * resources can be freed correctly.
  *
  * @returns VBox status.
- * @param   pDevIns     The device instance data.
+ * @param   pDevIns     The device instance data. 
+ *  
+ * @remarks The device critical section is not entered.  The routine may delete 
+ *          the critical section, so the caller cannot exit it.
  */
 typedef DECLCALLBACK(int)   FNPDMDEVDESTRUCT(PPDMDEVINS pDevIns);
 /** Pointer to a FNPDMDEVDESTRUCT() function. */
@@ -95,7 +98,10 @@ typedef FNPDMDEVDESTRUCT *PFNPDMDEVDESTRUCT;
  * @param   pDevIns     Pointer to the device instance.
  * @param   offDelta    The relocation delta relative to the old location.
  *
- * @remark  A relocation CANNOT fail.
+ * @remarks A relocation CANNOT fail.
+ *  
+ * @remarks The device critical section is not entered.  The relocations should 
+ *          not normally require any locking.
  */
 typedef DECLCALLBACK(void) FNPDMDEVRELOCATE(PPDMDEVINS pDevIns, RTGCINTPTR offDelta);
 /** Pointer to a FNPDMDEVRELOCATE() function. */
@@ -116,6 +122,8 @@ typedef FNPDMDEVRELOCATE *PFNPDMDEVRELOCATE;
  * @param   pvOut       Pointer to output data.
  * @param   cbOut       Size of output data.
  * @param   pcbOut      Where to store the actual size of the output data.
+ *  
+ * @remarks Not used.
  */
 typedef DECLCALLBACK(int) FNPDMDEVIOCTL(PPDMDEVINS pDevIns, RTUINT uFunction,
                                         void *pvIn, RTUINT cbIn,
@@ -128,6 +136,8 @@ typedef FNPDMDEVIOCTL *PFNPDMDEVIOCTL;
  *
  * @returns VBox status.
  * @param   pDevIns     The device instance data.
+ *  
+ * @remarks Caller enters the device critical section.
  */
 typedef DECLCALLBACK(void)   FNPDMDEVPOWERON(PPDMDEVINS pDevIns);
 /** Pointer to a FNPDMDEVPOWERON() function. */
@@ -138,6 +148,8 @@ typedef FNPDMDEVPOWERON *PFNPDMDEVPOWERON;
  *
  * @returns VBox status.
  * @param   pDevIns     The device instance data.
+ *  
+ * @remarks Caller enters the device critical section.
  */
 typedef DECLCALLBACK(void)  FNPDMDEVRESET(PPDMDEVINS pDevIns);
 /** Pointer to a FNPDMDEVRESET() function. */
@@ -149,6 +161,8 @@ typedef FNPDMDEVRESET *PFNPDMDEVRESET;
  * @returns VBox status.
  * @param   pDevIns     The device instance data.
  * @thread  EMT(0)
+ *  
+ * @remarks Caller enters the device critical section.
  */
 typedef DECLCALLBACK(void)  FNPDMDEVSUSPEND(PPDMDEVINS pDevIns);
 /** Pointer to a FNPDMDEVSUSPEND() function. */
@@ -159,6 +173,8 @@ typedef FNPDMDEVSUSPEND *PFNPDMDEVSUSPEND;
  *
  * @returns VBox status.
  * @param   pDevIns     The device instance data.
+ *  
+ * @remarks Caller enters the device critical section.
  */
 typedef DECLCALLBACK(void)  FNPDMDEVRESUME(PPDMDEVINS pDevIns);
 /** Pointer to a FNPDMDEVRESUME() function. */
@@ -173,6 +189,8 @@ typedef FNPDMDEVRESUME *PFNPDMDEVRESUME;
  *
  * @param   pDevIns     The device instance data.
  * @thread  EMT(0)
+ *  
+ * @remarks Caller enters the device critical section.
  */
 typedef DECLCALLBACK(void)   FNPDMDEVPOWEROFF(PPDMDEVINS pDevIns);
 /** Pointer to a FNPDMDEVPOWEROFF() function. */
@@ -191,6 +209,8 @@ typedef FNPDMDEVPOWEROFF *PFNPDMDEVPOWEROFF;
  * @param   pDevIns     The device instance.
  * @param   iLUN        The logical unit which is being detached.
  * @param   fFlags      Flags, combination of the PDM_TACH_FLAGS_* \#defines.
+ *  
+ * @remarks Caller enters the device critical section.
  */
 typedef DECLCALLBACK(int)  FNPDMDEVATTACH(PPDMDEVINS pDevIns, unsigned iLUN, uint32_t fFlags);
 /** Pointer to a FNPDMDEVATTACH() function. */
@@ -208,6 +228,8 @@ typedef FNPDMDEVATTACH *PFNPDMDEVATTACH;
  * @param   pDevIns     The device instance.
  * @param   iLUN        The logical unit which is being detached.
  * @param   fFlags      Flags, combination of the PDMDEVATT_FLAGS_* \#defines.
+ *  
+ * @remarks Caller enters the device critical section.
  */
 typedef DECLCALLBACK(void)  FNPDMDEVDETACH(PPDMDEVINS pDevIns, unsigned iLUN, uint32_t fFlags);
 /** Pointer to a FNPDMDEVDETACH() function. */
@@ -220,6 +242,8 @@ typedef FNPDMDEVDETACH *PFNPDMDEVDETACH;
  * @param   pDevIns     The device instance.
  * @param   iLUN        The logicial unit to query.
  * @param   ppBase      Where to store the pointer to the base interface of the LUN.
+ *  
+ * @remarks The device critical section is not entered.
  */
 typedef DECLCALLBACK(int) FNPDMDEVQUERYINTERFACE(PPDMDEVINS pDevIns, unsigned iLUN, PPDMIBASE *ppBase);
 /** Pointer to a FNPDMDEVQUERYINTERFACE() function. */
@@ -232,6 +256,8 @@ typedef FNPDMDEVQUERYINTERFACE *PFNPDMDEVQUERYINTERFACE;
  *
  * @returns VBOX status code.
  * @param   pDevIns     The device instance.
+ *  
+ * @remarks Caller enters the device critical section.
  */
 typedef DECLCALLBACK(int) FNPDMDEVINITCOMPLETE(PPDMDEVINS pDevIns);
 /** Pointer to a FNPDMDEVINITCOMPLETE() function. */
@@ -272,29 +298,41 @@ typedef struct PDMDEVREG
 
     /** Construct instance - required. */
     PFNPDMDEVCONSTRUCT  pfnConstruct;
-    /** Destruct instance - optional. */
+    /** Destruct instance - optional.
+     * Critical section NOT entered (will be destroyed).  */
     PFNPDMDEVDESTRUCT   pfnDestruct;
-    /** Relocation command - optional. */
+    /** Relocation command - optional.
+     * Critical section NOT entered. */ 
     PFNPDMDEVRELOCATE   pfnRelocate;
-    /** I/O Control interface - optional. */
+    /** I/O Control interface - optional.
+     * Not used.  */
     PFNPDMDEVIOCTL      pfnIOCtl;
-    /** Power on notification - optional. */
+    /** Power on notification - optional.
+     * Critical section is entered. */ 
     PFNPDMDEVPOWERON    pfnPowerOn;
-    /** Reset notification - optional. */
+    /** Reset notification - optional. 
+     * Critical section is entered. */ 
     PFNPDMDEVRESET      pfnReset;
-    /** Suspend notification  - optional. */
+    /** Suspend notification  - optional. 
+     * Critical section is entered. */ 
     PFNPDMDEVSUSPEND    pfnSuspend;
-    /** Resume notification - optional. */
+    /** Resume notification - optional. 
+     * Critical section is entered. */ 
     PFNPDMDEVRESUME     pfnResume;
-    /** Attach command - optional. */
+    /** Attach command - optional. 
+     * Critical section is entered. */ 
     PFNPDMDEVATTACH     pfnAttach;
-    /** Detach notification - optional. */
+    /** Detach notification - optional. 
+     * Critical section is entered. */ 
     PFNPDMDEVDETACH     pfnDetach;
-    /** Query a LUN base interface - optional. */
+    /** Query a LUN base interface - optional.
+     * Critical section is NOT entered. */ 
     PFNPDMDEVQUERYINTERFACE pfnQueryInterface;
-    /** Init complete notification - optional. */
+    /** Init complete notification - optional. 
+     * Critical section is entered. */ 
     PFNPDMDEVINITCOMPLETE   pfnInitComplete;
-    /** Power off notification - optional. */
+    /** Power off notification - optional. 
+     * Critical section is entered. */ 
     PFNPDMDEVPOWEROFF   pfnPowerOff;
     /** @todo */
     PFNRT               pfnSoftReset;
@@ -3862,8 +3900,9 @@ typedef struct PDMDEVINS
     RTR3PTR                     pvInstanceDataR3;
     /** The critical section for the device.
      *
-     * TM and IOM will enter this critical section before calling into the
-     * device code.  SSM will currently not, but this will be changed later on.
+     * TM and IOM will enter this critical section before calling into the device 
+     * code.  PDM will when doing power on, power off, reset, suspend and resume 
+     * notifications.  SSM will currently not, but this will be changed later on. 
      *
      * The device gets a critical section automatically assigned to it before
      * the constructor is called.  If the constructor wishes to use a different

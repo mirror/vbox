@@ -640,7 +640,11 @@ void pdmR3DrvDestroyChain(PPDMDRVINS pDrvIns, uint32_t fFlags)
             Assert(pLun->pTop == pCur);
             pLun->pTop = NULL;
             if (!(fFlags & PDM_TACH_FLAGS_NO_CALLBACKS) && pLun->pDevIns->pReg->pfnDetach)
+            {
+                PDMCritSectEnter(pLun->pDevIns->pCritSectRoR3, VERR_IGNORED);
                 pLun->pDevIns->pReg->pfnDetach(pLun->pDevIns, pLun->iLun, fFlags);
+                PDMCritSectLeave(pLun->pDevIns->pCritSectRoR3);
+            }
         }
 
         /*
