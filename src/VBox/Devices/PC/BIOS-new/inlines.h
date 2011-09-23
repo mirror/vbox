@@ -60,6 +60,14 @@ void halt_forever(void);
     "jmp forever"           \
     modify exact [] nomemory aborts;
 
+void rep_movsw(void __far *d, void __far *s, int nwords);
+#pragma aux rep_movsw =     \
+    "push   ds"             \
+    "mov    ds, dx"         \
+    "rep    movsw"          \
+    "pop    ds"             \
+    parm [es di] [dx si] [cx];
+
 char __far *rep_insb(char __far *buffer, unsigned nbytes, unsigned port);
 #pragma aux rep_insb = ".286" "rep insb" parm [es di] [cx] [dx] value [es di] modify exact [cx di];
 
