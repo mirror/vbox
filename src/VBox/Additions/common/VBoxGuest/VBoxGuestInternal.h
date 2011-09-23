@@ -158,15 +158,6 @@ typedef struct VBOXGUESTDEVEXT
     /** The mouse feature status matching the counts above.  These are updated
      * together inside the session spinlock. */
     uint32_t volatile           fMouseStatus;
-    /** Align the next bit on a 64-byte boundary and make sure it starts at the same
-     *  offset in both 64-bit and 32-bit builds.
-     *
-     * @remarks The alignments of the members that are larger than 48 bytes should be
-     *          64-byte for cache line reasons. structs containing small amounts of
-     *          data could be lumped together at the end with a < 64 byte padding
-     *          following it (to grow into and align the struct size).
-     */
-    uint8_t abAlignment1[HC_ARCH_BITS == 32 ? 20 : 0];
 
     /** Windows part. */
     union
@@ -174,7 +165,6 @@ typedef struct VBOXGUESTDEVEXT
 #ifdef ___VBoxGuest_win_h
         VBOXGUESTDEVEXTWIN          s;
 #endif
-        uint8_t                     padding[256];      /* Multiple of 64; fix me! */
     } win;
 
 } VBOXGUESTDEVEXT;
