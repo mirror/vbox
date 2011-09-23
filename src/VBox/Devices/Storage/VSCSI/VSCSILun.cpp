@@ -27,14 +27,15 @@
 /** SBC descriptor */
 extern VSCSILUNDESC g_VScsiLunTypeSbc;
 /** MMC descriptor */
-//extern PVSCSILUNDESC g_pVScsiLunTypeMmc;
+extern VSCSILUNDESC g_VScsiLunTypeMmc;
 
 /**
  * Array of supported SCSI LUN types.
  */
 static PVSCSILUNDESC g_aVScsiLunTypesSupported[] =
 {
-    &g_VScsiLunTypeSbc
+    &g_VScsiLunTypeSbc,
+    &g_VScsiLunTypeMmc,
 };
 
 VBOXDDU_DECL(int) VSCSILunCreate(PVSCSILUN phVScsiLun, VSCSILUNTYPE enmLunType,
