@@ -70,6 +70,7 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
  	Storage/VSCSI/VSCSIDevice.cpp \
  	Storage/VSCSI/VSCSILun.cpp \
  	Storage/VSCSI/VSCSILunSbc.cpp \
+ 	Storage/VSCSI/VSCSILunMmc.cpp \
  	Storage/VSCSI/VSCSISense.cpp \
  	Storage/VSCSI/VSCSIIoReq.cpp \
  	Storage/VSCSI/VSCSIVpdPagePool.cpp \
