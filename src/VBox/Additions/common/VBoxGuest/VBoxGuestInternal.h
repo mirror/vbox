@@ -144,6 +144,10 @@ typedef struct VBOXGUESTDEVEXT
 
     /** Spinlock various items in the VBOXGUESTSESSION. */
     RTSPINLOCK                  SessionSpinlock;
+
+    /** The current clipboard client ID, 0 if no client.
+     * For implementing the VBOXGUEST_IOCTL_CLIPBOARD_CONNECT interface. */
+    uint32_t                    u32ClipboardClientId;
 #ifdef VBOX_WITH_VRDP_SESSION_HANDLING
     BOOL                        fVRDPEnabled;
 #endif
@@ -166,11 +170,7 @@ typedef struct VBOXGUESTDEVEXT
      *          data could be lumped together at the end with a < 64 byte padding
      *          following it (to grow into and align the struct size).
      */
-#ifdef VBOXGUEST_USE_DEFERRED_WAKE_UP
-    uint8_t abAlignment1[HC_ARCH_BITS == 32 ? 144 : 60];
-#else
-    uint8_t abAlignment1[HC_ARCH_BITS == 32 ? 88 : 12];
-#endif
+    uint8_t abAlignment1[HC_ARCH_BITS == 32 ? 20 : 0];
 
     /** Windows part. */
     union
@@ -185,12 +185,7 @@ typedef struct VBOXGUESTDEVEXT
 /** Pointer to the VBoxGuest driver data. */
 typedef VBOXGUESTDEVEXT *PVBOXGUESTDEVEXT;
 
-#ifdef VBOXGUEST_USE_DEFERRED_WAKE_UP
-AssertCompileMemberOffset(VBOXGUESTDEVEXT, win, 384);
-#else
-AssertCompileMemberOffset(VBOXGUESTDEVEXT, win, 320);
-#endif
-AssertCompileMemberAlignment(VBOXGUESTDEVEXT, win, 64);
+AssertCompileMemberSizeAlignment(VBOXGUESTDEVEXT, win, 64);
 
 /**
  * The VBoxGuest per session data.
