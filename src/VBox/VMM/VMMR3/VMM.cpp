@@ -1458,7 +1458,6 @@ static int vmmR3EmtRendezvousCommon(PVM pVM, PVMCPU pVCpu, bool fIsCaller,
                                     uint32_t fFlags, PFNVMMEMTRENDEZVOUS pfnRendezvous, void *pvUser)
 {
     int rc;
-    pVCpu->vmm.s.fInRendezvous = true;
 
     /*
      * Enter, the last EMT triggers the next callback phase.
@@ -1607,7 +1606,6 @@ static int vmmR3EmtRendezvousCommon(PVM pVM, PVMCPU pVCpu, bool fIsCaller,
         AssertLogRelRC(rc);
     }
 
-    pVCpu->vmm.s.fInRendezvous = false;
     if (!fIsCaller)
         return vmmR3EmtRendezvousNonCallerReturn(pVM);
     return VINF_SUCCESS;
@@ -1627,8 +1625,12 @@ static int vmmR3EmtRendezvousCommon(PVM pVM, PVMCPU pVCpu, bool fIsCaller,
  */
 VMMR3_INT_DECL(int) VMMR3EmtRendezvousFF(PVM pVM, PVMCPU pVCpu)
 {
-    return vmmR3EmtRendezvousCommon(pVM, pVCpu, false /* fIsCaller */, pVM->vmm.s.fRendezvousFlags,
-                                    pVM->vmm.s.pfnRendezvous, pVM->vmm.s.pvRendezvousUser);
+    Assert(!pVCpu->vmm.s.fInRendezvous);
+    pVCpu->vmm.s.fInRendezvous = true;
+    int rc = vmmR3EmtRendezvousCommon(pVM, pVCpu, false /* fIsCaller */, pVM->vmm.s.fRendezvousFlags,
+                                      pVM->vmm.s.pfnRendezvous, pVM->vmm.s.pvRendezvousUser);
+    pVCpu->vmm.s.fInRendezvous = false;
+    return rc;
 }
 
 
@@ -1707,6 +1709,8 @@ VMMR3DECL(int) VMMR3EmtRendezvous(PVM pVM, uint32_t fFlags, PFNVMMEMTRENDEZVOUS 
             }
         }
         Assert(!VM_FF_ISPENDING(pVM, VM_FF_EMT_RENDEZVOUS));
+        Assert(!pVCpu->vmm.s.fInRendezvous);
+        pVCpu->vmm.s.fInRendezvous = true;
 
         /*
          * Clear the slate. This is a semaphore ping-pong orgy. :-)
@@ -1754,6 +1758,7 @@ VMMR3DECL(int) VMMR3EmtRendezvous(PVM pVM, uint32_t fFlags, PFNVMMEMTRENDEZVOUS 
         ASMAtomicWriteNullPtr((void * volatile *)&pVM->vmm.s.pfnRendezvous);
 
         ASMAtomicWriteU32(&pVM->vmm.s.u32RendezvousLock, 0);
+        pVCpu->vmm.s.fInRendezvous = false;
 
         /*
          * Merge rcStrict and rcMy.
