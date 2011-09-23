@@ -1056,7 +1056,9 @@ DECLINLINE(int) pdmR3PowerOnDev(PPDMDEVINS pDevIns)
     if (pDevIns->pReg->pfnPowerOn)
     {
         LogFlow(("PDMR3PowerOn: Notifying - device '%s'/%d\n", pDevIns->pReg->szName, pDevIns->iInstance));
+        PDMCritSectEnter(pDevIns->pCritSectRoR3, VERR_IGNORED);
         int rc = VINF_SUCCESS; pDevIns->pReg->pfnPowerOn(pDevIns);
+        PDMCritSectLeave(pDevIns->pCritSectRoR3);
         if (RT_FAILURE(rc))
         {
             LogRel(("PDMR3PowerOn: device '%s'/%d -> %Rrc\n", pDevIns->pReg->szName, pDevIns->iInstance, rc));
@@ -1342,6 +1344,9 @@ DECLINLINE(void) pdmR3ResetDev(PPDMDEVINS pDevIns, PPDMNOTIFYASYNCSTATS pAsync)
         pDevIns->Internal.s.fIntFlags |= PDMDEVINSINT_FLAGS_RESET;
         if (pDevIns->pReg->pfnReset)
         {
+            uint64_t cNsElapsed = RTTimeNanoTS();
+            PDMCritSectEnter(pDevIns->pCritSectRoR3, VERR_IGNORED);
+
             if (!pDevIns->Internal.s.pfnAsyncNotify)
             {
                 LogFlow(("PDMR3Reset: Notifying - device '%s'/%d\n", pDevIns->pReg->szName, pDevIns->iInstance));
@@ -1359,6 +1364,12 @@ DECLINLINE(void) pdmR3ResetDev(PPDMDEVINS pDevIns, PPDMNOTIFYASYNCSTATS pAsync)
                 pDevIns->Internal.s.fIntFlags &= ~PDMDEVINSINT_FLAGS_RESET;
                 pdmR3NotifyAsyncAdd(pAsync, pDevIns->Internal.s.pDevR3->pReg->szName, pDevIns->iInstance);
             }
+
+            PDMCritSectLeave(pDevIns->pCritSectRoR3);
+            cNsElapsed = RTTimeNanoTS() - cNsElapsed;
+            if (cNsElapsed >= PDMSUSPEND_WARN_AT_NS)
+                LogRel(("PDMR3Reset: device '%s'/%d took %'llu ns to reset\n",
+                        pDevIns->pReg->szName, pDevIns->iInstance, cNsElapsed));
         }
     }
 }
@@ -1579,6 +1590,7 @@ DECLINLINE(void) pdmR3SuspendDev(PPDMDEVINS pDevIns, PPDMNOTIFYASYNCSTATS pAsync
         if (pDevIns->pReg->pfnSuspend)
         {
             uint64_t cNsElapsed = RTTimeNanoTS();
+            PDMCritSectEnter(pDevIns->pCritSectRoR3, VERR_IGNORED);
 
             if (!pDevIns->Internal.s.pfnAsyncNotify)
             {
@@ -1598,6 +1610,7 @@ DECLINLINE(void) pdmR3SuspendDev(PPDMDEVINS pDevIns, PPDMNOTIFYASYNCSTATS pAsync
                 pdmR3NotifyAsyncAdd(pAsync, pDevIns->Internal.s.pDevR3->pReg->szName, pDevIns->iInstance);
             }
 
+            PDMCritSectLeave(pDevIns->pCritSectRoR3);
             cNsElapsed = RTTimeNanoTS() - cNsElapsed;
             if (cNsElapsed >= PDMSUSPEND_WARN_AT_NS)
                 LogRel(("PDMR3Suspend: device '%s'/%d took %'llu ns to suspend\n",
@@ -1755,7 +1768,9 @@ DECLINLINE(int) pdmR3ResumeDev(PPDMDEVINS pDevIns)
     if (pDevIns->pReg->pfnResume)
     {
         LogFlow(("PDMR3Resume: Notifying - device '%s'/%d\n", pDevIns->pReg->szName, pDevIns->iInstance));
+        PDMCritSectEnter(pDevIns->pCritSectRoR3, VERR_IGNORED);
         int rc = VINF_SUCCESS; pDevIns->pReg->pfnResume(pDevIns);
+        PDMCritSectLeave(pDevIns->pCritSectRoR3);
         if (RT_FAILURE(rc))
         {
             LogRel(("PDMR3Resume: device '%s'/%d -> %Rrc\n", pDevIns->pReg->szName, pDevIns->iInstance, rc));
@@ -1938,6 +1953,7 @@ DECLINLINE(void) pdmR3PowerOffDev(PPDMDEVINS pDevIns, PPDMNOTIFYASYNCSTATS pAsyn
         if (pDevIns->pReg->pfnPowerOff)
         {
             uint64_t cNsElapsed = RTTimeNanoTS();
+            PDMCritSectEnter(pDevIns->pCritSectRoR3, VERR_IGNORED);
 
             if (!pDevIns->Internal.s.pfnAsyncNotify)
             {
@@ -1957,6 +1973,7 @@ DECLINLINE(void) pdmR3PowerOffDev(PPDMDEVINS pDevIns, PPDMNOTIFYASYNCSTATS pAsyn
                 pdmR3NotifyAsyncAdd(pAsync, pDevIns->Internal.s.pDevR3->pReg->szName, pDevIns->iInstance);
             }
 
+            PDMCritSectLeave(pDevIns->pCritSectRoR3);
             cNsElapsed = RTTimeNanoTS() - cNsElapsed;
             if (cNsElapsed >= PDMPOWEROFF_WARN_AT_NS)
                 LogFlow(("PDMR3PowerOff: Device '%s'/%d took %'llu ns to power off\n",
