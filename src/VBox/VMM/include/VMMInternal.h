@@ -396,7 +396,7 @@ typedef struct VMMCPU
 {
     /** Offset to the VMCPU structure.
      * See VMM2VMCPU(). */
-    RTINT                       offVMCPU;
+    int32_t                     offVMCPU;
 
     /** The last RC/R0 return code. */
     int32_t                     iLastGZRc;
@@ -424,7 +424,7 @@ typedef struct VMMCPU
     /** Whether the EMT is executing a rendezvous right now. For detecting
      *  attempts at recursive rendezvous. */
     bool volatile               fInRendezvous;
-    bool                        afPadding[7];
+    bool                        afPadding[HC_ARCH_BITS == 32 ? 7 : 3];
     /** @} */
 
     /** @name Call Ring-3
@@ -436,9 +436,6 @@ typedef struct VMMCPU
     VMMCALLRING3                enmCallRing3Operation;
     /** The result of the last operation. */
     int32_t                     rcCallRing3;
-#if HC_ARCH_BITS == 64
-    uint32_t                    padding;
-#endif
     /** The argument to the operation. */
     uint64_t                    u64CallRing3Arg;
     /** The Ring-0 jmp buffer. */
