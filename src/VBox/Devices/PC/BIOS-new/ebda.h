@@ -210,7 +210,12 @@ typedef struct {
     fdpt_t      fdpt0;
     fdpt_t      fdpt1;
 
+#if 0
     unsigned char filler2[0xC4];
+#else
+    unsigned char filler2[0xC2];
+    uint16_t    ahci_seg;
+#endif
 
     // ATA Driver data
     ata_t       ata;
@@ -227,7 +232,7 @@ typedef struct {
 
 #ifdef VBOX_WITH_BIOS_AHCI
 //    ahci_t      ahci;
-    uint16_t    SegAhci;    //@todo: rename...
+//    uint16_t    ahci_seg;    //@todo: Someone is trashing the data here!?!
 #endif
 
     unsigned char   uForceBootDrive;

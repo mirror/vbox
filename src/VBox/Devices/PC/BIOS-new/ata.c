@@ -379,6 +379,7 @@ void BIOSCALL ata_detect(void)
     AtaData->channels[1].iobase2 = 0x370;
     AtaData->channels[1].irq     = 15;
 #endif
+#if 0   //@todo - temporarily removed to avoid conflict with AHCI
 #if BX_MAX_ATA_INTERFACES > 2
     AtaData->channels[2].iface   = ATA_IFACE_ISA;
     AtaData->channels[2].iobase1 = 0x1e8;
@@ -390,6 +391,7 @@ void BIOSCALL ata_detect(void)
     AtaData->channels[3].iobase1 = 0x168;
     AtaData->channels[3].iobase2 = 0x360;
     AtaData->channels[3].irq     = 11;
+#endif
 #endif
 #if BX_MAX_ATA_INTERFACES > 4
 #error Please fill the ATA interface informations
