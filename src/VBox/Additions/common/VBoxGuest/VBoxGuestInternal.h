@@ -181,7 +181,6 @@ typedef struct VBOXGUESTDEVEXT
 /** Pointer to the VBoxGuest driver data. */
 typedef VBOXGUESTDEVEXT *PVBOXGUESTDEVEXT;
 
-AssertCompileMemberSizeAlignment(VBOXGUESTDEVEXT, win, 64);
 
 /**
  * The VBoxGuest per session data.
