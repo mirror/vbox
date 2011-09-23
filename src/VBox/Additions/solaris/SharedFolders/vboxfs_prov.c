@@ -139,7 +139,7 @@ sfprov_mount(sfp_connection_t *conn, char *path, sfp_mount_t **mnt)
 	m = kmem_zalloc(sizeof (*m), KM_SLEEP);
 	str = sfprov_string(path, &size);
 	rc = vboxCallMapFolder(&vbox_client, str, &m->map);
-	if (!RT_SUCCESS(rc)) {
+	if (RT_FAILURE(rc)) {
 		cmn_err(CE_WARN, "sfprov_mount: vboxCallMapFolder() failed rc=%d\n", rc);
 		kmem_free(m, sizeof (*m));
 		*mnt = NULL;
@@ -158,7 +158,7 @@ sfprov_unmount(sfp_mount_t *mnt)
 	int rc;
 
 	rc = vboxCallUnmapFolder(&vbox_client, &mnt->map);
-	if (!RT_SUCCESS(rc)) {
+	if (RT_FAILURE(rc)) {
 		cmn_err(CE_WARN, "sfprov_mount: vboxCallUnmapFolder() failed rc=%d\n", rc);
 		rc = EINVAL;
 	} else {
