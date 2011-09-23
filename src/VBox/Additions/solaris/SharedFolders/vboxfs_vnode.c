@@ -1456,7 +1456,7 @@ done:
 }
 
 
-#if 1
+#if 0
 static caddr_t
 sffs_page_map(
 	page_t *ppage,
