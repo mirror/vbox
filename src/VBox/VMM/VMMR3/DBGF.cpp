@@ -649,9 +649,9 @@ static int dbgfR3VMMWait(PVM pVM)
                      || VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_REQUEST))
             {
                 LogFlow(("dbgfR3VMMWait: Processes requests...\n"));
-                rc = VMR3ReqProcessU(pVM->pUVM, VMCPUID_ANY);
+                rc = VMR3ReqProcessU(pVM->pUVM, VMCPUID_ANY, false /*fPriorityOnly*/);
                 if (rc == VINF_SUCCESS)
-                    rc = VMR3ReqProcessU(pVM->pUVM, pVCpu->idCpu);
+                    rc = VMR3ReqProcessU(pVM->pUVM, pVCpu->idCpu, false /*fPriorityOnly*/);
                 LogFlow(("dbgfR3VMMWait: VMR3ReqProcess -> %Rrc rcRet=%Rrc\n", rc, rcRet));
                 cPollHack = 1;
             }
@@ -853,21 +853,7 @@ static int dbgfR3VMMCmd(PVM pVM, DBGFCMD enmCmd, PDBGFCMDDATA pCmdData, bool *pf
  */
 VMMR3DECL(int) DBGFR3Attach(PVM pVM)
 {
-    /*
-     * Some validations first.
-     */
-    if (!VALID_PTR(pVM))
-    {
-        Log(("DBGFR3Attach: bad VM handle: %p\n", pVM));
-        return VERR_INVALID_HANDLE;
-    }
-    VMSTATE enmVMState = pVM->enmVMState;
-    if (    enmVMState >= VMSTATE_DESTROYING
-        ||  enmVMState <  VMSTATE_CREATING)
-    {
-        Log(("DBGFR3Attach: Invalid VM state: %s\n", VMGetStateName(enmVMState)));
-        return VERR_INVALID_HANDLE;
-    }
+    VM_ASSERT_VALID_EXT_RETURN(pVM, VERR_INVALID_VM_HANDLE);
 
     /*
      * Call the VM, use EMT for serialization.

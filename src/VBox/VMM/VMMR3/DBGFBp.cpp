@@ -280,10 +280,10 @@ static void dbgfR3BpFree(PVM pVM, PDBGFBP pBp)
 VMMR3DECL(int) DBGFR3BpSet(PVM pVM, PCDBGFADDRESS pAddress, uint64_t iHitTrigger, uint64_t iHitDisable, uint32_t *piBp)
 {
     /*
-     * This must be done in EMT.
+     * This must be done on EMT.
      */
     /** @todo SMP? */
-    int rc = VMR3ReqCallWait(pVM, VMCPUID_ANY, (PFNRT)dbgfR3BpSetInt3, 5, pVM, pAddress, &iHitTrigger, &iHitDisable, piBp);
+    int rc = VMR3ReqPriorityCallWait(pVM, VMCPUID_ANY, (PFNRT)dbgfR3BpSetInt3, 5, pVM, pAddress, &iHitTrigger, &iHitDisable, piBp);
     LogFlow(("DBGFR3BpSet: returns %Rrc\n", rc));
     return rc;
 }
@@ -438,9 +438,9 @@ VMMR3DECL(int) DBGFR3BpSetReg(PVM pVM, PCDBGFADDRESS pAddress, uint64_t iHitTrig
 {
     /** @todo SMP - broadcast, VT-x/AMD-V. */
     /*
-     * This must be done in EMT.
+     * This must be done on EMT.
      */
-    int rc = VMR3ReqCallWait(pVM, VMCPUID_ANY, (PFNRT)dbgfR3BpSetReg, 7, pVM, pAddress, &iHitTrigger, &iHitDisable, fType, cb, piBp);
+    int rc = VMR3ReqPriorityCallWait(pVM, VMCPUID_ANY, (PFNRT)dbgfR3BpSetReg, 7, pVM, pAddress, &iHitTrigger, &iHitDisable, fType, cb, piBp);
     LogFlow(("DBGFR3BpSetReg: returns %Rrc\n", rc));
     return rc;
 
@@ -605,9 +605,9 @@ static int dbgfR3BpRegDisarm(PVM pVM, PDBGFBP pBp)
 VMMR3DECL(int) DBGFR3BpSetREM(PVM pVM, PCDBGFADDRESS pAddress, uint64_t iHitTrigger, uint64_t iHitDisable, uint32_t *piBp)
 {
     /*
-     * This must be done in EMT.
+     * This must be done on EMT.
      */
-    int rc = VMR3ReqCallWait(pVM, VMCPUID_ANY, (PFNRT)dbgfR3BpSetREM, 5, pVM, pAddress, &iHitTrigger, &iHitDisable, piBp);
+    int rc = VMR3ReqPriorityCallWait(pVM, VMCPUID_ANY, (PFNRT)dbgfR3BpSetREM, 5, pVM, pAddress, &iHitTrigger, &iHitDisable, piBp);
     LogFlow(("DBGFR3BpSetREM: returns %Rrc\n", rc));
     return rc;
 }
@@ -697,9 +697,9 @@ static DECLCALLBACK(int) dbgfR3BpSetREM(PVM pVM, PCDBGFADDRESS pAddress, uint64_
 VMMR3DECL(int) DBGFR3BpClear(PVM pVM, uint32_t iBp)
 {
     /*
-     * This must be done in EMT.
+     * This must be done on EMT.
      */
-    int rc = VMR3ReqCallWait(pVM, VMCPUID_ANY, (PFNRT)dbgfR3BpClear, 2, pVM, iBp);
+    int rc = VMR3ReqPriorityCallWait(pVM, VMCPUID_ANY, (PFNRT)dbgfR3BpClear, 2, pVM, iBp);
     LogFlow(("DBGFR3BpClear: returns %Rrc\n", rc));
     return rc;
 }
@@ -770,9 +770,9 @@ static DECLCALLBACK(int) dbgfR3BpClear(PVM pVM, uint32_t iBp)
 VMMR3DECL(int) DBGFR3BpEnable(PVM pVM, uint32_t iBp)
 {
     /*
-     * This must be done in EMT.
+     * This must be done on EMT.
      */
-    int rc = VMR3ReqCallWait(pVM, VMCPUID_ANY, (PFNRT)dbgfR3BpEnable, 2, pVM, iBp);
+    int rc = VMR3ReqPriorityCallWait(pVM, VMCPUID_ANY, (PFNRT)dbgfR3BpEnable, 2, pVM, iBp);
     LogFlow(("DBGFR3BpEnable: returns %Rrc\n", rc));
     return rc;
 }
@@ -843,9 +843,9 @@ static DECLCALLBACK(int) dbgfR3BpEnable(PVM pVM, uint32_t iBp)
 VMMR3DECL(int) DBGFR3BpDisable(PVM pVM, uint32_t iBp)
 {
     /*
-     * This must be done in EMT.
+     * This must be done on EMT.
      */
-    int rc = VMR3ReqCallWait(pVM, VMCPUID_ANY, (PFNRT)dbgfR3BpDisable, 2, pVM, iBp);
+    int rc = VMR3ReqPriorityCallWait(pVM, VMCPUID_ANY, (PFNRT)dbgfR3BpDisable, 2, pVM, iBp);
     LogFlow(("DBGFR3BpDisable: returns %Rrc\n", rc));
     return rc;
 }
@@ -915,9 +915,9 @@ static DECLCALLBACK(int) dbgfR3BpDisable(PVM pVM, uint32_t iBp)
 VMMR3DECL(int) DBGFR3BpEnum(PVM pVM, PFNDBGFBPENUM pfnCallback, void *pvUser)
 {
     /*
-     * This must be done in EMT.
+     * This must be done on EMT.
      */
-    int rc = VMR3ReqCallWait(pVM, VMCPUID_ANY, (PFNRT)dbgfR3BpEnum, 3, pVM, pfnCallback, pvUser);
+    int rc = VMR3ReqPriorityCallWait(pVM, VMCPUID_ANY, (PFNRT)dbgfR3BpEnum, 3, pVM, pfnCallback, pvUser);
     LogFlow(("DBGFR3BpClear: returns %Rrc\n", rc));
     return rc;
 }

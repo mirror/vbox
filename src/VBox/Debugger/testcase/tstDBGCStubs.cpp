@@ -106,6 +106,10 @@ VMMR3DECL(int) DBGFR3Info(PVM pVM, const char *pszName, const char *pszArgs, PCD
 {
     return VERR_INTERNAL_ERROR;
 }
+VMMR3DECL(int) DBGFR3InfoEx(PVM pVM, VMCPUID idCpu, const char *pszName, const char *pszArgs, PCDBGFINFOHLP pHlp)
+{
+    return VERR_INTERNAL_ERROR;
+}
 VMMR3DECL(bool) DBGFR3IsHalted(PVM pVM)
 {
     return true;
@@ -404,7 +408,3 @@ VMMDECL(PVMCPU) VMMGetCpuById(PVM pVM, RTCPUID idCpu)
     return NULL;
 }
 
-VMMR3DECL(int) VMR3ReqCallWait(PVM pVm, VMCPUID idDstCpu, PFNRT pfnFunction, unsigned cArgs, ...)
-{
-    return VERR_INTERNAL_ERROR;
-}

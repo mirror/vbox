@@ -3124,9 +3124,9 @@ static void atapiParseCmdVirtualATAPI(ATADevState *s)
                         PCIATAState *pThis = PDMINS_2_DATA(pDevIns, PCIATAState *);
 
                         PDMCritSectLeave(&pCtl->lock);
-                        rc = VMR3ReqCallWait(PDMDevHlpGetVM(pDevIns), VMCPUID_ANY,
-                                             (PFNRT)s->pDrvMount->pfnUnmount, 3,
-                                             s->pDrvMount, false /*=fForce*/, true /*=fEject*/);
+                        rc = VMR3ReqPriorityCallWait(PDMDevHlpGetVM(pDevIns), VMCPUID_ANY,
+                                                     (PFNRT)s->pDrvMount->pfnUnmount, 3,
+                                                     s->pDrvMount, false /*=fForce*/, true /*=fEject*/);
                         Assert(RT_SUCCESS(rc) || (rc == VERR_PDM_MEDIA_LOCKED) || (rc = VERR_PDM_MEDIA_NOT_MOUNTED));
                         if (RT_SUCCESS(rc) && pThis->pMediaNotify)
                         {

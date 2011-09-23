@@ -1235,15 +1235,13 @@ static void pdmR3NotifyAsyncLog(PPDMNOTIFYASYNCSTATS pThis)
  */
 static void pdmR3NotifyAsyncWaitAndProcessRequests(PPDMNOTIFYASYNCSTATS pThis, PVM pVM)
 {
-    /** @todo This is utterly nuts and completely unsafe... will get back to it in a
-     *        bit I hope... */
     VM_ASSERT_EMT0(pVM);
     int rc = VMR3AsyncPdmNotificationWaitU(&pVM->pUVM->aCpus[0]);
     AssertReleaseMsg(rc == VINF_SUCCESS, ("%Rrc - %s - %s\n", rc, pThis->pszOp, pThis->szList));
 
-    rc = VMR3ReqProcessU(pVM->pUVM, VMCPUID_ANY);
+    rc = VMR3ReqProcessU(pVM->pUVM, VMCPUID_ANY, true /*fPriorityOnly*/);
     AssertReleaseMsg(rc == VINF_SUCCESS, ("%Rrc - %s - %s\n", rc, pThis->pszOp, pThis->szList));
-    rc = VMR3ReqProcessU(pVM->pUVM, 0/*idDstCpu*/);
+    rc = VMR3ReqProcessU(pVM->pUVM, 0/*idDstCpu*/, true /*fPriorityOnly*/);
     AssertReleaseMsg(rc == VINF_SUCCESS, ("%Rrc - %s - %s\n", rc, pThis->pszOp, pThis->szList));
 }
 

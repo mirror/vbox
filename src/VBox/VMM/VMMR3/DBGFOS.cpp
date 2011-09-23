@@ -155,7 +155,7 @@ VMMR3DECL(int) DBGFR3OSRegister(PVM pVM, PCDBGFOSREG pReg)
     /*
      * Pass it on to EMT(0).
      */
-    return VMR3ReqCallWaitU(pVM->pUVM, 0 /*idDstCpu*/, (PFNRT)dbgfR3OSRegister, 2, pVM, pReg);
+    return VMR3ReqPriorityCallWait(pVM, 0 /*idDstCpu*/, (PFNRT)dbgfR3OSRegister, 2, pVM, pReg);
 }
 
 
@@ -246,7 +246,7 @@ VMMR3DECL(int)  DBGFR3OSDeregister(PVM pVM, PCDBGFOSREG pReg)
     /*
      * Pass it on to EMT(0).
      */
-    return VMR3ReqCallWaitU(pVM->pUVM, 0 /*idDstCpu*/, (PFNRT)dbgfR3OSDeregister, 2, pVM, pReg);
+    return VMR3ReqPriorityCallWait(pVM, 0 /*idDstCpu*/, (PFNRT)dbgfR3OSDeregister, 2, pVM, pReg);
 }
 
 
@@ -318,7 +318,7 @@ VMMR3DECL(int) DBGFR3OSDetect(PVM pVM, char *pszName, size_t cchName)
     /*
      * Pass it on to EMT(0).
      */
-    return VMR3ReqCallWaitU(pVM->pUVM, 0 /*idDstCpu*/, (PFNRT)dbgfR3OSDetect, 3, pVM, pszName, cchName);
+    return VMR3ReqPriorityCallWait(pVM, 0 /*idDstCpu*/, (PFNRT)dbgfR3OSDetect, 3, pVM, pszName, cchName);
 }
 
 
@@ -396,8 +396,8 @@ VMMR3DECL(int) DBGFR3OSQueryNameAndVersion(PVM pVM, char *pszName, size_t cchNam
     /*
      * Pass it on to EMT(0).
      */
-    return VMR3ReqCallWaitU(pVM->pUVM, 0 /*idDstCpu*/,
-                            (PFNRT)dbgfR3OSQueryNameAndVersion, 5, pVM, pszName, cchName, pszVersion, cchVersion);
+    return VMR3ReqPriorityCallWait(pVM, 0 /*idDstCpu*/,
+                                   (PFNRT)dbgfR3OSQueryNameAndVersion, 5, pVM, pszName, cchName, pszVersion, cchVersion);
 }
 
 
@@ -441,7 +441,7 @@ VMMR3DECL(void *) DBGFR3OSQueryInterface(PVM pVM, DBGFOSINTERFACE enmIf)
      * Pass it on to an EMT.
      */
     void *pvIf = NULL;
-    VMR3ReqCallVoidWait(pVM, VMCPUID_ANY, (PFNRT)dbgfR3OSQueryInterface, 3, pVM, enmIf, &pvIf);
+    VMR3ReqPriorityCallVoidWait(pVM, VMCPUID_ANY, (PFNRT)dbgfR3OSQueryInterface, 3, pVM, enmIf, &pvIf);
     return pvIf;
 }
 

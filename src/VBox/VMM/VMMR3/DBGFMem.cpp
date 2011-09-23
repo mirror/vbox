@@ -126,8 +126,8 @@ VMMR3DECL(int) DBGFR3MemScan(PVM pVM, VMCPUID idCpu, PCDBGFADDRESS pAddress, RTG
 {
     VM_ASSERT_VALID_EXT_RETURN(pVM, VERR_INVALID_VM_HANDLE);
     AssertReturn(idCpu < pVM->cCpus, VERR_INVALID_CPU_ID);
-    return VMR3ReqCallWait(pVM, idCpu, (PFNRT)dbgfR3MemScan, 8,
-                           pVM, idCpu, pAddress, &cbRange, &uAlign, pvNeedle, cbNeedle, pHitAddress);
+    return VMR3ReqPriorityCallWait(pVM, idCpu, (PFNRT)dbgfR3MemScan, 8,
+                                   pVM, idCpu, pAddress, &cbRange, &uAlign, pvNeedle, cbNeedle, pHitAddress);
 
 }
 
@@ -211,7 +211,7 @@ VMMR3DECL(int) DBGFR3MemRead(PVM pVM, VMCPUID idCpu, PCDBGFADDRESS pAddress, voi
         AssertCompile(sizeof(RTHCUINTPTR) <= sizeof(pAddress->FlatPtr));
         return VMMR3ReadR0Stack(pVM, idCpu, (RTHCUINTPTR)pAddress->FlatPtr, pvBuf, cbRead);
     }
-    return VMR3ReqCallWaitU(pVM->pUVM, idCpu, (PFNRT)dbgfR3MemRead, 5, pVM, idCpu, pAddress, pvBuf, cbRead);
+    return VMR3ReqPriorityCallWait(pVM, idCpu, (PFNRT)dbgfR3MemRead, 5, pVM, idCpu, pAddress, pvBuf, cbRead);
 }
 
 
@@ -290,7 +290,7 @@ VMMR3DECL(int) DBGFR3MemReadString(PVM pVM, VMCPUID idCpu, PCDBGFADDRESS pAddres
     /*
      * Pass it on to the EMT.
      */
-    return VMR3ReqCallWaitU(pVM->pUVM, idCpu, (PFNRT)dbgfR3MemReadString, 5, pVM, idCpu, pAddress, pszBuf, cchBuf);
+    return VMR3ReqPriorityCallWait(pVM, idCpu, (PFNRT)dbgfR3MemReadString, 5, pVM, idCpu, pAddress, pszBuf, cchBuf);
 }
 
 
@@ -366,7 +366,7 @@ VMMR3DECL(int) DBGFR3MemWrite(PVM pVM, VMCPUID idCpu, PCDBGFADDRESS pAddress, vo
 {
     VM_ASSERT_VALID_EXT_RETURN(pVM, VERR_INVALID_VM_HANDLE);
     AssertReturn(idCpu < pVM->cCpus, VERR_INVALID_CPU_ID);
-    return VMR3ReqCallWaitU(pVM->pUVM, idCpu, (PFNRT)dbgfR3MemWrite, 5, pVM, idCpu, pAddress, pvBuf, cbWrite);
+    return VMR3ReqPriorityCallWait(pVM, idCpu, (PFNRT)dbgfR3MemWrite, 5, pVM, idCpu, pAddress, pvBuf, cbWrite);
 }
 
 
@@ -469,7 +469,7 @@ VMMR3DECL(int) DBGFR3SelQueryInfo(PVM pVM, VMCPUID idCpu, RTSEL Sel, uint32_t fF
     /*
      * Dispatch the request to a worker running on the target CPU.
      */
-    return VMR3ReqCallWaitU(pVM->pUVM, idCpu, (PFNRT)dbgfR3SelQueryInfo, 5, pVM, idCpu, Sel, fFlags, pSelInfo);
+    return VMR3ReqPriorityCallWait(pVM, idCpu, (PFNRT)dbgfR3SelQueryInfo, 5, pVM, idCpu, Sel, fFlags, pSelInfo);
 }
 
 
@@ -656,7 +656,7 @@ VMMDECL(int) DBGFR3PagingDumpEx(PVM pVM, VMCPUID idCpu, uint32_t fFlags, uint64_
     /*
      * Forward the request to the target CPU.
      */
-    return VMR3ReqCallWaitU(pVM->pUVM, idCpu, (PFNRT)dbgfR3PagingDumpEx, 8,
-                            pVM, idCpu, fFlags, &cr3, &u64FirstAddr, &u64LastAddr, cMaxDepth, pHlp);
+    return VMR3ReqPriorityCallWait(pVM, idCpu, (PFNRT)dbgfR3PagingDumpEx, 8,
+                                   pVM, idCpu, fFlags, &cr3, &u64FirstAddr, &u64LastAddr, cMaxDepth, pHlp);
 }
 

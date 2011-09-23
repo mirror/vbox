@@ -112,21 +112,21 @@ int vmR3EmulationThreadWithId(RTTHREAD ThreadSelf, PUVMCPU pUVCpu, VMCPUID idCpu
              * and must therefore service all VMCPUID_ANY requests.
              * See also VMR3Create
              */
-            if (    pUVM->vm.s.pReqs
+            if (    (pUVM->vm.s.pNormalReqs || pUVM->vm.s.pPriorityReqs)
                 &&  pUVCpu->idCpu == 0)
             {
                 /*
                  * Service execute in any EMT request.
                  */
-                rc = VMR3ReqProcessU(pUVM, VMCPUID_ANY);
+                rc = VMR3ReqProcessU(pUVM, VMCPUID_ANY, false /*fPriorityOnly*/);
                 Log(("vmR3EmulationThread: Req rc=%Rrc, VM state %s -> %s\n", rc, VMR3GetStateName(enmBefore), pUVM->pVM ? VMR3GetStateName(pUVM->pVM->enmVMState) : "CREATING"));
             }
-            else if (pUVCpu->vm.s.pReqs)
+            else if (pUVCpu->vm.s.pNormalReqs || pUVCpu->vm.s.pPriorityReqs)
             {
                 /*
                  * Service execute in specific EMT request.
                  */
-                rc = VMR3ReqProcessU(pUVM, pUVCpu->idCpu);
+                rc = VMR3ReqProcessU(pUVM, pUVCpu->idCpu, false /*fPriorityOnly*/);
                 Log(("vmR3EmulationThread: Req (cpu=%u) rc=%Rrc, VM state %s -> %s\n", pUVCpu->idCpu, rc, VMR3GetStateName(enmBefore), pUVM->pVM ? VMR3GetStateName(pUVM->pVM->enmVMState) : "CREATING"));
             }
             else
@@ -163,20 +163,20 @@ int vmR3EmulationThreadWithId(RTTHREAD ThreadSelf, PUVMCPU pUVCpu, VMCPUID idCpu
                 rc = VMMR3EmtRendezvousFF(pVM, &pVM->aCpus[idCpu]);
                 Log(("vmR3EmulationThread: Rendezvous rc=%Rrc, VM state %s -> %s\n", rc, VMR3GetStateName(enmBefore), VMR3GetStateName(pVM->enmVMState)));
             }
-            else if (pUVM->vm.s.pReqs)
+            else if (pUVM->vm.s.pNormalReqs || pUVM->vm.s.pPriorityReqs)
             {
                 /*
                  * Service execute in any EMT request.
                  */
-                rc = VMR3ReqProcessU(pUVM, VMCPUID_ANY);
+                rc = VMR3ReqProcessU(pUVM, VMCPUID_ANY, false /*fPriorityOnly*/);
                 Log(("vmR3EmulationThread: Req rc=%Rrc, VM state %s -> %s\n", rc, VMR3GetStateName(enmBefore), VMR3GetStateName(pVM->enmVMState)));
             }
-            else if (pUVCpu->vm.s.pReqs)
+            else if (pUVCpu->vm.s.pNormalReqs || pUVCpu->vm.s.pPriorityReqs)
             {
                 /*
                  * Service execute in specific EMT request.
                  */
-                rc = VMR3ReqProcessU(pUVM, pUVCpu->idCpu);
+                rc = VMR3ReqProcessU(pUVM, pUVCpu->idCpu, false /*fPriorityOnly*/);
                 Log(("vmR3EmulationThread: Req (cpu=%u) rc=%Rrc, VM state %s -> %s\n", pUVCpu->idCpu, rc, VMR3GetStateName(enmBefore), VMR3GetStateName(pVM->enmVMState)));
             }
             else if (VM_FF_ISSET(pVM, VM_FF_DBGF))
@@ -846,9 +846,9 @@ static DECLCALLBACK(int) vmR3BootstrapWait(PUVMCPU pUVCpu)
         /*
          * Check Relevant FFs.
          */
-        if (pUVM->vm.s.pReqs)   /* global requests pending? */
+        if (pUVM->vm.s.pNormalReqs   || pUVM->vm.s.pPriorityReqs)   /* global requests pending? */
             break;
-        if (pUVCpu->vm.s.pReqs) /* local requests pending? */
+        if (pUVCpu->vm.s.pNormalReqs || pUVCpu->vm.s.pPriorityReqs) /* local requests pending? */
             break;
 
         if (    pUVCpu->pVM

@@ -905,12 +905,12 @@ static DECLCALLBACK(int) dbgcCmdInfo(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pV
     /*
      * Dump it.
      */
-    /** @todo DBGFR3Info should do this, not we. */
-    int rc = VMR3ReqCallWait(pVM, pDbgc->idCpu, (PFNRT)DBGFR3Info, 4,
-                             pVM, paArgs[0].u.pszString, cArgs == 2 ? paArgs[1].u.pszString : NULL,
-                             DBGCCmdHlpGetDbgfOutputHlp(pCmdHlp));
+    int rc = DBGFR3InfoEx(pVM, pDbgc->idCpu, 
+                          paArgs[0].u.pszString, 
+                          cArgs == 2 ? paArgs[1].u.pszString : NULL, 
+                          DBGCCmdHlpGetDbgfOutputHlp(pCmdHlp));
     if (RT_FAILURE(rc))
-        return pCmdHlp->pfnVBoxError(pCmdHlp, rc, "DBGFR3Info()\n");
+        return pCmdHlp->pfnVBoxError(pCmdHlp, rc, "DBGFR3InfoEx()\n");
 
     NOREF(pCmd);
     return 0;

@@ -141,8 +141,8 @@ VMMR3DECL(int) PGMR3PhysReadExternal(PVM pVM, RTGCPHYS GCPhys, void *pvBuf, size
                 {
                     pgmUnlock(pVM);
 
-                    return VMR3ReqCallWait(pVM, VMCPUID_ANY, (PFNRT)pgmR3PhysReadExternalEMT, 4,
-                                           pVM, &GCPhys, pvBuf, cbRead);
+                    return VMR3ReqPriorityCallWait(pVM, VMCPUID_ANY, (PFNRT)pgmR3PhysReadExternalEMT, 4,
+                                                   pVM, &GCPhys, pvBuf, cbRead);
                 }
                 Assert(!PGM_PAGE_IS_MMIO(pPage));
 
@@ -280,8 +280,8 @@ VMMDECL(int) PGMR3PhysWriteExternal(PVM pVM, RTGCPHYS GCPhys, const void *pvBuf,
                     {
                         pgmUnlock(pVM);
 
-                        return VMR3ReqCallWait(pVM, VMCPUID_ANY, (PFNRT)pgmR3PhysWriteExternalEMT, 4,
-                                               pVM, &GCPhys, pvBuf, cbWrite);
+                        return VMR3ReqPriorityCallWait(pVM, VMCPUID_ANY, (PFNRT)pgmR3PhysWriteExternalEMT, 4,
+                                                       pVM, &GCPhys, pvBuf, cbWrite);
                     }
                 }
                 Assert(!PGM_PAGE_IS_MMIO(pPage));
@@ -462,8 +462,8 @@ VMMR3DECL(int) PGMR3PhysGCPhys2CCPtrExternal(PVM pVM, RTGCPHYS GCPhys, void **pp
                 {
                     pgmUnlock(pVM);
 
-                    return VMR3ReqCallWait(pVM, VMCPUID_ANY, (PFNRT)pgmR3PhysGCPhys2CCPtrDelegated, 4,
-                                           pVM, &GCPhys, ppv, pLock);
+                    return VMR3ReqPriorityCallWait(pVM, VMCPUID_ANY, (PFNRT)pgmR3PhysGCPhys2CCPtrDelegated, 4,
+                                                   pVM, &GCPhys, ppv, pLock);
                 }
             }
 
@@ -3999,7 +3999,7 @@ int pgmR3PhysChunkMap(PVM pVM, uint32_t idChunk, PPPGMCHUNKR3MAP ppChunk)
         if (pVM->pgm.s.ChunkR3Map.c >= pVM->pgm.s.ChunkR3Map.cMax)
         {
             /* Postpone the unmap operation (which requires a rendezvous operation) as we own the PGM lock here. */
-            rc = VMR3ReqCallNoWaitU(pVM->pUVM, VMCPUID_ANY_QUEUE, (PFNRT)pgmR3PhysUnmapChunk, 1, pVM);
+            rc = VMR3ReqCallNoWait(pVM, VMCPUID_ANY_QUEUE, (PFNRT)pgmR3PhysUnmapChunk, 1, pVM);
             AssertRC(rc);
         }
     }

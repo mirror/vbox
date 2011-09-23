@@ -1328,7 +1328,7 @@ VMMR3DECL(int) FTMR3SetCheckpoint(PVM pVM, FTMCHECKPOINTTYPE enmCheckpoint)
 
             if (VM_FF_ISPENDING(pVM, VM_FF_REQUEST))
             {
-                rc = VMR3ReqProcessU(pVM->pUVM, VMCPUID_ANY);
+                rc = VMR3ReqProcessU(pVM->pUVM, VMCPUID_ANY, true /*fPriorityOnly*/);
                 AssertRC(rc);
             }
         }
