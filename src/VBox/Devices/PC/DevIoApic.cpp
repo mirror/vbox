@@ -595,12 +595,15 @@ static DECLCALLBACK(int) ioapicConstruct(PPDMDEVINS pDevIns, int iInstance, PCFG
     /*
      * Initialize the state data.
      */
-
     s->pDevInsR3 = pDevIns;
     s->pDevInsR0 = PDMDEVINS_2_R0PTR(pDevIns);
     s->pDevInsRC = PDMDEVINS_2_RCPTR(pDevIns);
     ioapic_reset(s);
     s->id = cCpus;
+
+    /* PDM provides locking via the IOAPIC helpers. */
+    rc = PDMDevHlpSetDeviceCritSect(pDevIns, PDMDevHlpCritSectGetNop(pDevIns));
+    AssertRCReturn(rc, rc);
 
     /*
      * Register the IOAPIC and get helpers.
