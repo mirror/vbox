@@ -242,13 +242,11 @@ HBITMAP APIENTRY VBoxDispDrvDeriveSurface(DD_DIRECTDRAW_GLOBAL *pDirectDraw, DD_
          * so the driver will be called on any operations on the surface
          * (required for VBVA and VRDP).
          */
-        DWORD dwrc;
         SURFOBJ *pso;
 
-        dwrc = EngAssociateSurface((HSURF)hBitmap, pDev->hDevGDI, pDev->flDrawingHooks);
-        if (dwrc!=NO_ERROR)
+        if (!EngAssociateSurface((HSURF)hBitmap, pDev->hDevGDI, pDev->flDrawingHooks))
         {
-            VBOX_WARN_WINERR(dwrc);
+            WARN(("EngAssociateSurface failed"));
             EngDeleteSurface((HSURF)hBitmap);
             return NULL;
         }
