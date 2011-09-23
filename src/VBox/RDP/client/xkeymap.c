@@ -664,7 +664,31 @@ handle_special_keys(uint32 keysym, unsigned int state, uint32 ev_time, RD_BOOL p
 			if (pressed)
 				ui_seamless_toggle();
 			break;
-
+#ifdef WITH_BIRD_VD_HACKS
+		case XK_Left:
+		case XK_Right:
+		{
+			/* Check for typical virtual desktop switching hotkeys:
+			       Ctrl-Alt-Left and Ctrl-Alt-Right.
+			   Needs to be pressed twice to have any effect... */
+			extern RD_BOOL g_keep_virtual_desktop_shortcuts;
+			extern RD_BOOL g_fullscreen;
+			if (   g_keep_virtual_desktop_shortcuts
+			    && (   (   get_key_state(state, XK_Alt_L)
+			            || get_key_state(state, XK_Alt_R))
+			        && (   get_key_state(state, XK_Control_L)
+			            || get_key_state(state, XK_Control_R))
+			       )
+			   )
+			{
+				if (g_fullscreen)
+					xwin_toggle_fullscreen();
+				XUngrabKeyboard(g_display, CurrentTime);
+				return True;
+			}
+			break;
+		}
+#endif
 	}
 	return False;
 }
