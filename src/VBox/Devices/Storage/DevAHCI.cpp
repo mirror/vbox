@@ -4414,9 +4414,9 @@ static AHCITXDIR atapiParseCmdVirtualATAPI(PAHCIPort pAhciPort, PAHCIPORTTASKSTA
                         PAHCI pAhci = pAhciPort->CTX_SUFF(pAhci);
                         PPDMDEVINS pDevIns = pAhci->CTX_SUFF(pDevIns);
 
-                        rc2 = VMR3ReqCallWait(PDMDevHlpGetVM(pDevIns), VMCPUID_ANY,
-                                              (PFNRT)pAhciPort->pDrvMount->pfnUnmount, 3,
-                                              pAhciPort->pDrvMount, false/*=fForce*/, true/*=fEject*/);
+                        rc2 = VMR3ReqPriorityCallWait(PDMDevHlpGetVM(pDevIns), VMCPUID_ANY,
+                                                      (PFNRT)pAhciPort->pDrvMount->pfnUnmount, 3,
+                                                      pAhciPort->pDrvMount, false/*=fForce*/, true/*=fEject*/);
                         Assert(RT_SUCCESS(rc2) || (rc2 == VERR_PDM_MEDIA_LOCKED) || (rc2 = VERR_PDM_MEDIA_NOT_MOUNTED));
                         if (RT_SUCCESS(rc) && pAhci->pMediaNotify)
                         {

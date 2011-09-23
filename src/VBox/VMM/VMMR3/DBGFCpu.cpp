@@ -60,7 +60,7 @@ VMMR3DECL(CPUMMODE) DBGFR3CpuGetMode(PVM pVM, VMCPUID idCpu)
     AssertReturn(idCpu < pVM->cCpus, CPUMMODE_INVALID);
 
     CPUMMODE enmMode;
-    int rc = VMR3ReqCallWait(pVM, idCpu, (PFNRT)dbgfR3CpuGetMode, 3, pVM, idCpu, &enmMode);
+    int rc = VMR3ReqPriorityCallWait(pVM, idCpu, (PFNRT)dbgfR3CpuGetMode, 3, pVM, idCpu, &enmMode);
     if (RT_FAILURE(rc))
         return CPUMMODE_INVALID;
     return enmMode;

@@ -847,7 +847,7 @@ static int vmR3InitRing3(PVM pVM, PUVM pUVM)
      */
     for (VMCPUID idCpu = 1; idCpu < pVM->cCpus; idCpu++)
     {
-        rc = VMR3ReqCallWaitU(pUVM, idCpu, (PFNRT)vmR3RegisterEMT, 2, pVM, idCpu);
+        rc = VMR3ReqCallWait(pVM, idCpu, (PFNRT)vmR3RegisterEMT, 2, pVM, idCpu);
         if (RT_FAILURE(rc))
             return rc;
     }
@@ -1732,9 +1732,9 @@ static int vmR3SaveTeleport(PVM pVM, uint32_t cMsMaxDowntime,
      * Request the operation in EMT(0).
      */
     PSSMHANDLE pSSM;
-    int rc = VMR3ReqCallWaitU(pVM->pUVM, 0 /*idDstCpu*/,
-                              (PFNRT)vmR3Save, 10, pVM, cMsMaxDowntime, pszFilename, pStreamOps, pvStreamOpsUser,
-                              enmAfter, pfnProgress, pvProgressUser, &pSSM, fSkipStateChanges);
+    int rc = VMR3ReqCallWait(pVM, 0 /*idDstCpu*/,
+                             (PFNRT)vmR3Save, 10, pVM, cMsMaxDowntime, pszFilename, pStreamOps, pvStreamOpsUser,
+                             enmAfter, pfnProgress, pvProgressUser, &pSSM, fSkipStateChanges);
     if (    RT_SUCCESS(rc)
         &&  pSSM)
     {
@@ -1762,16 +1762,16 @@ static int vmR3SaveTeleport(PVM pVM, uint32_t cMsMaxDowntime,
                     RTThreadSleep(250); /** @todo Live Migration: fix this polling wait by some smart use of multiple release event  semaphores.. */
                 }
             if (RT_SUCCESS(rc))
-                rc = VMR3ReqCallWaitU(pVM->pUVM, 0 /*idDstCpu*/, (PFNRT)vmR3LiveDoStep2, 2, pVM, pSSM);
+                rc = VMR3ReqCallWait(pVM, 0 /*idDstCpu*/, (PFNRT)vmR3LiveDoStep2, 2, pVM, pSSM);
             else
             {
-                int rc2 = VMR3ReqCallWaitU(pVM->pUVM, 0 /*idDstCpu*/, (PFNRT)SSMR3LiveDone, 1, pSSM);
+                int rc2 = VMR3ReqCallWait(pVM, 0 /*idDstCpu*/, (PFNRT)SSMR3LiveDone, 1, pSSM);
                 AssertMsg(rc2 == rc, ("%Rrc != %Rrc\n", rc2, rc));
             }
         }
         else
         {
-            int rc2 = VMR3ReqCallWaitU(pVM->pUVM, 0 /*idDstCpu*/, (PFNRT)SSMR3LiveDone, 1, pSSM);
+            int rc2 = VMR3ReqCallWait(pVM, 0 /*idDstCpu*/, (PFNRT)SSMR3LiveDone, 1, pSSM);
             AssertMsg(rc2 == rc, ("%Rrc != %Rrc\n", rc2, rc));
 
             rc2 = VMMR3EmtRendezvous(pVM, VMMEMTRENDEZVOUS_FLAGS_TYPE_ONCE, vmR3LiveDoStep1Cleanup, pfSuspended);
@@ -2044,9 +2044,9 @@ VMMR3DECL(int) VMR3LoadFromFile(PVM pVM, const char *pszFilename, PFNVMPROGRESS 
      * Forward the request to EMT(0).  No need to setup a rendezvous here
      * since there is no execution taking place when this call is allowed.
      */
-    int rc = VMR3ReqCallWaitU(pVM->pUVM, 0 /*idDstCpu*/, (PFNRT)vmR3Load, 8,
-                              pVM, pszFilename, (uintptr_t)NULL /*pStreamOps*/, (uintptr_t)NULL /*pvStreamOpsUser*/, pfnProgress, pvUser,
-                              false /*fTeleporting*/, false /* fSkipStateChanges */);
+    int rc = VMR3ReqCallWait(pVM, 0 /*idDstCpu*/, (PFNRT)vmR3Load, 8,
+                             pVM, pszFilename, (uintptr_t)NULL /*pStreamOps*/, (uintptr_t)NULL /*pvStreamOpsUser*/, pfnProgress, pvUser,
+                             false /*fTeleporting*/, false /* fSkipStateChanges */);
     LogFlow(("VMR3LoadFromFile: returns %Rrc\n", rc));
     return rc;
 }
@@ -2083,9 +2083,9 @@ VMMR3DECL(int) VMR3LoadFromStream(PVM pVM, PCSSMSTRMOPS pStreamOps, void *pvStre
      * Forward the request to EMT(0).  No need to setup a rendezvous here
      * since there is no execution taking place when this call is allowed.
      */
-    int rc = VMR3ReqCallWaitU(pVM->pUVM, 0 /*idDstCpu*/, (PFNRT)vmR3Load, 8,
-                              pVM, (uintptr_t)NULL /*pszFilename*/, pStreamOps, pvStreamOpsUser, pfnProgress, pvProgressUser,
-                              true /*fTeleporting*/, false /* fSkipStateChanges */);
+    int rc = VMR3ReqCallWait(pVM, 0 /*idDstCpu*/, (PFNRT)vmR3Load, 8,
+                             pVM, (uintptr_t)NULL /*pszFilename*/, pStreamOps, pvStreamOpsUser, pfnProgress, pvProgressUser,
+                             true /*fTeleporting*/, false /* fSkipStateChanges */);
     LogFlow(("VMR3LoadFromStream: returns %Rrc\n", rc));
     return rc;
 }
@@ -2121,9 +2121,9 @@ VMMR3DECL(int) VMR3LoadFromStreamFT(PVM pVM, PCSSMSTRMOPS pStreamOps, void *pvSt
      * Forward the request to EMT(0).  No need to setup a rendezvous here
      * since there is no execution taking place when this call is allowed.
      */
-    int rc = VMR3ReqCallWaitU(pVM->pUVM, 0 /*idDstCpu*/, (PFNRT)vmR3Load, 8,
-                              pVM, (uintptr_t)NULL /*pszFilename*/, pStreamOps, pvStreamOpsUser, NULL, NULL,
-                              true /*fTeleporting*/, true /* fSkipStateChanges */);
+    int rc = VMR3ReqCallWait(pVM, 0 /*idDstCpu*/, (PFNRT)vmR3Load, 8,
+                             pVM, (uintptr_t)NULL /*pszFilename*/, pStreamOps, pvStreamOpsUser, NULL, NULL,
+                             true /*fTeleporting*/, true /* fSkipStateChanges */);
     LogFlow(("VMR3LoadFromStream: returns %Rrc\n", rc));
     return rc;
 }
@@ -2348,7 +2348,7 @@ VMMR3DECL(int) VMR3Destroy(PVM pVM)
      * of the cleanup.
      */
     /* vmR3Destroy on all EMTs, ending with EMT(0). */
-    rc = VMR3ReqCallWaitU(pUVM, VMCPUID_ALL_REVERSE, (PFNRT)vmR3Destroy, 1, pVM);
+    rc = VMR3ReqCallWait(pVM, VMCPUID_ALL_REVERSE, (PFNRT)vmR3Destroy, 1, pVM);
     AssertLogRelRC(rc);
 
     /* Wait for EMTs and destroy the UVM. */
@@ -2534,10 +2534,15 @@ static void vmR3DestroyUVM(PUVM pUVM, uint32_t cMilliesEMTWait)
      */
     for (unsigned i = 0; i < 10; i++)
     {
-        PVMREQ pReqHead = ASMAtomicXchgPtrT(&pUVM->vm.s.pReqs, NULL, PVMREQ);
-        AssertMsg(!pReqHead, ("This isn't supposed to happen! VMR3Destroy caller has to serialize this.\n"));
+        PVMREQ pReqHead = ASMAtomicXchgPtrT(&pUVM->vm.s.pPriorityReqs, NULL, PVMREQ);
         if (!pReqHead)
-            break;
+        {
+            pReqHead = ASMAtomicXchgPtrT(&pUVM->vm.s.pNormalReqs, NULL, PVMREQ);
+            if (!pReqHead)
+                break;
+        }
+        AssertLogRelMsgFailed(("Requests pending! VMR3Destroy caller has to serialize this.\n"));
+
         for (PVMREQ pReq = pReqHead; pReq; pReq = pReq->pNext)
         {
             ASMAtomicUoWriteS32(&pReq->iStatus, VERR_INTERNAL_ERROR);
@@ -2559,10 +2564,15 @@ static void vmR3DestroyUVM(PUVM pUVM, uint32_t cMilliesEMTWait)
 
         for (unsigned i = 0; i < 10; i++)
         {
-            PVMREQ pReqHead = ASMAtomicXchgPtrT(&pUVCpu->vm.s.pReqs, NULL, PVMREQ);
-            AssertMsg(!pReqHead, ("This isn't supposed to happen! VMR3Destroy caller has to serialize this.\n"));
+            PVMREQ pReqHead = ASMAtomicXchgPtrT(&pUVCpu->vm.s.pPriorityReqs, NULL, PVMREQ);
             if (!pReqHead)
-                break;
+            {
+                pReqHead = ASMAtomicXchgPtrT(&pUVCpu->vm.s.pNormalReqs, NULL, PVMREQ);
+                if (!pReqHead)
+                    break;
+            }
+            AssertLogRelMsgFailed(("Requests pending! VMR3Destroy caller has to serialize this.\n"));
+
             for (PVMREQ pReq = pReqHead; pReq; pReq = pReq->pNext)
             {
                 ASMAtomicUoWriteS32(&pReq->iStatus, VERR_INTERNAL_ERROR);
@@ -4430,7 +4440,7 @@ VMMR3DECL(int) VMR3HotUnplugCpu(PVM pVM, VMCPUID idCpu)
      *        broadcast requests.  Just note down somewhere that the CPU is
      *        offline and send it to SPIP wait.  Maybe modify VMCPUSTATE and push
      *        it out of the EM loops when offline. */
-    return VMR3ReqCallNoWaitU(pVM->pUVM, idCpu, (PFNRT)vmR3HotUnplugCpu, 2, pVM, idCpu);
+    return VMR3ReqCallNoWait(pVM, idCpu, (PFNRT)vmR3HotUnplugCpu, 2, pVM, idCpu);
 }
 
 

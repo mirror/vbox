@@ -226,7 +226,10 @@ typedef enum VMREQFLAGS
     /** Caller does not wait on the packet, EMT will free it. */
     VMREQFLAGS_NO_WAIT      = 2,
     /** Poke the destination EMT(s) if executing guest code. Use with care. */
-    VMREQFLAGS_POKE         = 4
+    VMREQFLAGS_POKE         = 4,
+    /** Priority request that can safely be processed while doing async
+     *  suspend and power off. */
+    VMREQFLAGS_PRIORITY     = 8
 } VMREQFLAGS;
 
 
@@ -384,19 +387,17 @@ VMMR3DECL(int)      VMR3ReqCall(PVM pVM, VMCPUID idDstCpu, PVMREQ *ppReq, RTMSIN
 VMMR3DECL(int)      VMR3ReqCallU(PUVM pUVM, VMCPUID idDstCpu, PVMREQ *ppReq, RTMSINTERVAL cMillies, uint32_t fFlags, PFNRT pfnFunction, unsigned cArgs, ...);
 VMMR3DECL(int)      VMR3ReqCallVU(PUVM pUVM, VMCPUID idDstCpu, PVMREQ *ppReq, RTMSINTERVAL cMillies, uint32_t fFlags, PFNRT pfnFunction, unsigned cArgs, va_list Args);
 VMMR3DECL(int)      VMR3ReqCallWait(PVM pVM, VMCPUID idDstCpu, PFNRT pfnFunction, unsigned cArgs, ...);
-VMMR3DECL(int)      VMR3ReqCallWaitU(PUVM pUVM, VMCPUID idDstCpu, PFNRT pfnFunction, unsigned cArgs, ...);
 VMMR3DECL(int)      VMR3ReqCallNoWait(PVM pVM, VMCPUID idDstCpu, PFNRT pfnFunction, unsigned cArgs, ...);
-VMMR3DECL(int)      VMR3ReqCallNoWaitU(PUVM pUVM, VMCPUID idDstCpu, PFNRT pfnFunction, unsigned cArgs, ...);
 VMMR3DECL(int)      VMR3ReqCallVoidWait(PVM pVM, VMCPUID idDstCpu, PFNRT pfnFunction, unsigned cArgs, ...);
-VMMR3DECL(int)      VMR3ReqCallVoidWaitU(PUVM pUVM, VMCPUID idDstCpu, PFNRT pfnFunction, unsigned cArgs, ...);
 VMMR3DECL(int)      VMR3ReqCallVoidNoWait(PVM pVM, VMCPUID idDstCpu, PFNRT pfnFunction, unsigned cArgs, ...);
-VMMR3DECL(int)      VMR3ReqCallVoidNoWaitU(PUVM pUVM, VMCPUID idDstCpu, PFNRT pfnFunction, unsigned cArgs, ...);
+VMMR3DECL(int)      VMR3ReqPriorityCallWait(PVM pVM, VMCPUID idDstCpu, PFNRT pfnFunction, unsigned cArgs, ...);
+VMMR3DECL(int)      VMR3ReqPriorityCallVoidWait(PVM pVM, VMCPUID idDstCpu, PFNRT pfnFunction, unsigned cArgs, ...);
 VMMR3DECL(int)      VMR3ReqAlloc(PVM pVM, PVMREQ *ppReq, VMREQTYPE enmType, VMCPUID idDstCpu);
 VMMR3DECL(int)      VMR3ReqAllocU(PUVM pUVM, PVMREQ *ppReq, VMREQTYPE enmType, VMCPUID idDstCpu);
 VMMR3DECL(int)      VMR3ReqFree(PVMREQ pReq);
 VMMR3DECL(int)      VMR3ReqQueue(PVMREQ pReq, RTMSINTERVAL cMillies);
 VMMR3DECL(int)      VMR3ReqWait(PVMREQ pReq, RTMSINTERVAL cMillies);
-VMMR3DECL(int)      VMR3ReqProcessU(PUVM pUVM, VMCPUID idDstCpu);
+VMMR3DECL(int)      VMR3ReqProcessU(PUVM pUVM, VMCPUID idDstCpu, bool fPriorityOnly);
 VMMR3DECL(void)     VMR3NotifyGlobalFFU(PUVM pUVM, uint32_t fFlags);
 VMMR3DECL(void)     VMR3NotifyCpuFFU(PUVMCPU pUVMCpu, uint32_t fFlags);
 /** @name Flags for VMR3NotifyCpuFFU and VMR3NotifyGlobalFFU.

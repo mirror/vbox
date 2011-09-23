@@ -121,42 +121,6 @@ VMMR3DECL(int) VMR3ReqCallWait(PVM pVM, VMCPUID idDstCpu, PFNRT pfnFunction, uns
 /**
  * Convenience wrapper for VMR3ReqCallU.
  *
- * This assumes (1) you're calling a function that returns an VBox status code,
- * (2) that you want it's return code on success, and (3) that you wish to wait
- * for ever for it to return.
- *
- * @returns VBox status code.  In the unlikely event that VMR3ReqCallVU fails,
- *          its status code is return.  Otherwise, the status of pfnFunction is
- *          returned.
- *
- * @param   pUVM            Pointer to the user mode VM structure.
- * @param   idDstCpu        The destination CPU(s). Either a specific CPU ID or
- *                          one of the following special values:
- *                              VMCPUID_ANY, VMCPUID_ANY_QUEUE, VMCPUID_ALL or VMCPUID_ALL_REVERSE.
- * @param   pfnFunction     Pointer to the function to call.
- * @param   cArgs           Number of arguments following in the ellipsis.
- * @param   ...             Function arguments.
- *
- * @remarks See remarks on VMR3ReqCallVU.
- */
-VMMR3DECL(int) VMR3ReqCallWaitU(PUVM pUVM, VMCPUID idDstCpu, PFNRT pfnFunction, unsigned cArgs, ...)
-{
-    PVMREQ pReq;
-    va_list va;
-    va_start(va, cArgs);
-    int rc = VMR3ReqCallVU(pUVM, idDstCpu, &pReq, RT_INDEFINITE_WAIT, VMREQFLAGS_VBOX_STATUS,
-                           pfnFunction, cArgs, va);
-    va_end(va);
-    if (RT_SUCCESS(rc))
-        rc = pReq->iStatus;
-    VMR3ReqFree(pReq);
-    return rc;
-}
-
-
-/**
- * Convenience wrapper for VMR3ReqCallU.
- *
  * This assumes (1) you're calling a function that returns an VBox status code
  * and that you do not wish to wait for it to complete.
  *
@@ -177,35 +141,6 @@ VMMR3DECL(int) VMR3ReqCallNoWait(PVM pVM, VMCPUID idDstCpu, PFNRT pfnFunction, u
     va_list va;
     va_start(va, cArgs);
     int rc = VMR3ReqCallVU(pVM->pUVM, idDstCpu, NULL, 0, VMREQFLAGS_VBOX_STATUS | VMREQFLAGS_NO_WAIT,
-                           pfnFunction, cArgs, va);
-    va_end(va);
-    return rc;
-}
-
-
-/**
- * Convenience wrapper for VMR3ReqCallU.
- *
- * This assumes (1) you're calling a function that returns an VBox status code
- * and that you do not wish to wait for it to complete.
- *
- * @returns VBox status code returned by VMR3ReqCallVU.
- *
- * @param   pUVM            Pointer to the user mode VM structure.
- * @param   idDstCpu        The destination CPU(s). Either a specific CPU ID or
- *                          one of the following special values:
- *                              VMCPUID_ANY, VMCPUID_ANY_QUEUE, VMCPUID_ALL or VMCPUID_ALL_REVERSE.
- * @param   pfnFunction     Pointer to the function to call.
- * @param   cArgs           Number of arguments following in the ellipsis.
- * @param   ...             Function arguments.
- *
- * @remarks See remarks on VMR3ReqCallVU.
- */
-VMMR3DECL(int) VMR3ReqCallNoWaitU(PUVM pUVM, VMCPUID idDstCpu, PFNRT pfnFunction, unsigned cArgs, ...)
-{
-    va_list va;
-    va_start(va, cArgs);
-    int rc = VMR3ReqCallVU(pUVM, idDstCpu, NULL, 0, VMREQFLAGS_VBOX_STATUS | VMREQFLAGS_NO_WAIT,
                            pfnFunction, cArgs, va);
     va_end(va);
     return rc;
@@ -247,37 +182,6 @@ VMMR3DECL(int) VMR3ReqCallVoidWait(PVM pVM, VMCPUID idDstCpu, PFNRT pfnFunction,
  * Convenience wrapper for VMR3ReqCallU.
  *
  * This assumes (1) you're calling a function that returns void, and (2) that
- * you wish to wait for ever for it to return.
- *
- * @returns VBox status code of VMR3ReqCallVU.
- *
- * @param   pUVM            Pointer to the user mode VM structure.
- * @param   idDstCpu        The destination CPU(s). Either a specific CPU ID or
- *                          one of the following special values:
- *                              VMCPUID_ANY, VMCPUID_ANY_QUEUE, VMCPUID_ALL or VMCPUID_ALL_REVERSE.
- * @param   pfnFunction     Pointer to the function to call.
- * @param   cArgs           Number of arguments following in the ellipsis.
- * @param   ...             Function arguments.
- *
- * @remarks See remarks on VMR3ReqCallVU.
- */
-VMMR3DECL(int) VMR3ReqCallVoidWaitU(PUVM pUVM, VMCPUID idDstCpu, PFNRT pfnFunction, unsigned cArgs, ...)
-{
-    PVMREQ pReq;
-    va_list va;
-    va_start(va, cArgs);
-    int rc = VMR3ReqCallVU(pUVM, idDstCpu, &pReq, RT_INDEFINITE_WAIT, VMREQFLAGS_VOID,
-                           pfnFunction, cArgs, va);
-    va_end(va);
-    VMR3ReqFree(pReq);
-    return rc;
-}
-
-
-/**
- * Convenience wrapper for VMR3ReqCallU.
- *
- * This assumes (1) you're calling a function that returns void, and (2) that
  * you do not wish to wait for it to complete.
  *
  * @returns VBox status code of VMR3ReqCallVU.
@@ -308,12 +212,16 @@ VMMR3DECL(int) VMR3ReqCallVoidNoWait(PVM pVM, VMCPUID idDstCpu, PFNRT pfnFunctio
 /**
  * Convenience wrapper for VMR3ReqCallU.
  *
- * This assumes (1) you're calling a function that returns void, and (2) that
- * you do not wish to wait for it to complete.
+ * This assumes (1) you're calling a function that returns an VBox status code,
+ * (2) that you want it's return code on success, (3) that you wish to wait for
+ * ever for it to return, and (4) that it's priority request that can be safely
+ * be handled during async suspend and power off. 
  *
- * @returns VBox status code of VMR3ReqCallVU.
+ * @returns VBox status code.  In the unlikely event that VMR3ReqCallVU fails,
+ *          its status code is return.  Otherwise, the status of pfnFunction is
+ *          returned.
  *
- * @param   pUVM            Pointer to the user mode VM structure.
+ * @param   pVM             Pointer to the shared VM structure.
  * @param   idDstCpu        The destination CPU(s). Either a specific CPU ID or
  *                          one of the following special values:
  *                              VMCPUID_ANY, VMCPUID_ANY_QUEUE, VMCPUID_ALL or VMCPUID_ALL_REVERSE.
@@ -323,12 +231,46 @@ VMMR3DECL(int) VMR3ReqCallVoidNoWait(PVM pVM, VMCPUID idDstCpu, PFNRT pfnFunctio
  *
  * @remarks See remarks on VMR3ReqCallVU.
  */
-VMMR3DECL(int) VMR3ReqCallVoidNoWaitU(PUVM pUVM, VMCPUID idDstCpu, PFNRT pfnFunction, unsigned cArgs, ...)
+VMMR3DECL(int) VMR3ReqPriorityCallWait(PVM pVM, VMCPUID idDstCpu, PFNRT pfnFunction, unsigned cArgs, ...)
 {
     PVMREQ pReq;
     va_list va;
     va_start(va, cArgs);
-    int rc = VMR3ReqCallVU(pUVM, idDstCpu, &pReq, RT_INDEFINITE_WAIT, VMREQFLAGS_VOID | VMREQFLAGS_NO_WAIT,
+    int rc = VMR3ReqCallVU(pVM->pUVM, idDstCpu, &pReq, RT_INDEFINITE_WAIT, VMREQFLAGS_VBOX_STATUS | VMREQFLAGS_PRIORITY,
+                           pfnFunction, cArgs, va);
+    va_end(va);
+    if (RT_SUCCESS(rc))
+        rc = pReq->iStatus;
+    VMR3ReqFree(pReq);
+    return rc;
+}
+
+
+/**
+ * Convenience wrapper for VMR3ReqCallU.
+ *
+ * This assumes (1) you're calling a function that returns void, (2) that you 
+ * wish to wait for ever for it to return, and (3) that it's priority request 
+ * that can be safely be handled during async suspend and power off. 
+ *
+ * @returns VBox status code of VMR3ReqCallVU.
+ *
+ * @param   pVM             Pointer to the shared VM structure.
+ * @param   idDstCpu        The destination CPU(s). Either a specific CPU ID or
+ *                          one of the following special values:
+ *                              VMCPUID_ANY, VMCPUID_ANY_QUEUE, VMCPUID_ALL or VMCPUID_ALL_REVERSE.
+ * @param   pfnFunction     Pointer to the function to call.
+ * @param   cArgs           Number of arguments following in the ellipsis.
+ * @param   ...             Function arguments.
+ *
+ * @remarks See remarks on VMR3ReqCallVU.
+ */
+VMMR3DECL(int) VMR3ReqPriorityCallVoidWait(PVM pVM, VMCPUID idDstCpu, PFNRT pfnFunction, unsigned cArgs, ...)
+{
+    PVMREQ pReq;
+    va_list va;
+    va_start(va, cArgs);
+    int rc = VMR3ReqCallVU(pVM->pUVM, idDstCpu, &pReq, RT_INDEFINITE_WAIT, VMREQFLAGS_VOID | VMREQFLAGS_PRIORITY,
                            pfnFunction, cArgs, va);
     va_end(va);
     VMR3ReqFree(pReq);
@@ -423,7 +365,7 @@ VMMR3DECL(int) VMR3ReqCallVU(PUVM pUVM, VMCPUID idDstCpu, PVMREQ *ppReq, RTMSINT
      */
     AssertPtrReturn(pfnFunction, VERR_INVALID_POINTER);
     AssertPtrReturn(pUVM, VERR_INVALID_POINTER);
-    AssertReturn(!(fFlags & ~(VMREQFLAGS_RETURN_MASK | VMREQFLAGS_NO_WAIT | VMREQFLAGS_POKE)), VERR_INVALID_PARAMETER);
+    AssertReturn(!(fFlags & ~(VMREQFLAGS_RETURN_MASK | VMREQFLAGS_NO_WAIT | VMREQFLAGS_POKE | VMREQFLAGS_PRIORITY)), VERR_INVALID_PARAMETER);
     if (!(fFlags & VMREQFLAGS_NO_WAIT) || ppReq)
     {
         AssertPtrReturn(ppReq, VERR_INVALID_POINTER);
@@ -799,7 +741,7 @@ VMMR3DECL(int) VMR3ReqQueue(PVMREQ pReq, RTMSINTERVAL cMillies)
                     ("Invalid package type %d valid range %d-%d inclusively. This was verified on alloc too...\n",
                      pReq->enmType, VMREQTYPE_INVALID + 1, VMREQTYPE_MAX - 1),
                     VERR_VM_REQUEST_INVALID_TYPE);
-    Assert(!(pReq->fFlags & ~(VMREQFLAGS_RETURN_MASK | VMREQFLAGS_NO_WAIT | VMREQFLAGS_POKE)));
+    Assert(!(pReq->fFlags & ~(VMREQFLAGS_RETURN_MASK | VMREQFLAGS_NO_WAIT | VMREQFLAGS_POKE | VMREQFLAGS_PRIORITY)));
 
     /*
      * Are we the EMT or not?
@@ -852,14 +794,15 @@ VMMR3DECL(int) VMR3ReqQueue(PVMREQ pReq, RTMSINTERVAL cMillies)
         /*
          * Insert it.
          */
+        volatile PVMREQ *ppQueueHead = pReq->fFlags & VMREQFLAGS_PRIORITY ? &pUVCpu->vm.s.pPriorityReqs : &pUVCpu->vm.s.pNormalReqs;
         pReq->enmState = VMREQSTATE_QUEUED;
         PVMREQ pNext;
         do
         {
-            pNext = ASMAtomicUoReadPtrT(&pUVCpu->vm.s.pReqs, PVMREQ);
+            pNext = ASMAtomicUoReadPtrT(ppQueueHead, PVMREQ);
             ASMAtomicWritePtr(&pReq->pNext, pNext);
             ASMCompilerBarrier();
-        } while (!ASMAtomicCmpXchgPtr(&pUVCpu->vm.s.pReqs, pReq, pNext));
+        } while (!ASMAtomicCmpXchgPtr(ppQueueHead, pReq, pNext));
 
         /*
          * Notify EMT.
@@ -886,14 +829,15 @@ VMMR3DECL(int) VMR3ReqQueue(PVMREQ pReq, RTMSINTERVAL cMillies)
         /*
          * Insert it.
          */
+        volatile PVMREQ *ppQueueHead = pReq->fFlags & VMREQFLAGS_PRIORITY ? &pUVM->vm.s.pPriorityReqs : &pUVM->vm.s.pNormalReqs;
         pReq->enmState = VMREQSTATE_QUEUED;
         PVMREQ pNext;
         do
         {
-            pNext = ASMAtomicUoReadPtrT(&pUVM->vm.s.pReqs, PVMREQ);
+            pNext = ASMAtomicUoReadPtrT(ppQueueHead, PVMREQ);
             ASMAtomicWritePtr(&pReq->pNext, pNext);
             ASMCompilerBarrier();
-        } while (!ASMAtomicCmpXchgPtr(&pUVM->vm.s.pReqs, pReq, pNext));
+        } while (!ASMAtomicCmpXchgPtr(ppQueueHead, pReq, pNext));
 
         /*
          * Notify EMT.
@@ -988,6 +932,24 @@ VMMR3DECL(int) VMR3ReqWait(PVMREQ pReq, RTMSINTERVAL cMillies)
 
 
 /**
+ * Sets the relevant FF. 
+ *  
+ * @param   pUVM            Pointer to the user mode VM structure.
+ * @param   idDstCpu        VMCPUID_ANY or the ID of the current CPU.
+ */
+DECLINLINE(void) vmR3ReqSetFF(PUVM pUVM, VMCPUID idDstCpu)
+{
+    if (RT_LIKELY(pUVM->pVM))
+    {
+        if (idDstCpu == VMCPUID_ANY)
+            VM_FF_SET(pUVM->pVM, VM_FF_REQUEST);
+        else
+            VMCPU_FF_SET(&pUVM->pVM->aCpus[idDstCpu], VMCPU_FF_REQUEST);
+    }
+}
+
+
+/**
  * VMR3ReqProcessU helper that handles cases where there are more than one
  * pending request.
  *
@@ -1000,7 +962,10 @@ VMMR3DECL(int) VMR3ReqWait(PVMREQ pReq, RTMSINTERVAL cMillies)
 static PVMREQ vmR3ReqProcessUTooManyHelper(PUVM pUVM, VMCPUID idDstCpu, PVMREQ pReqList, PVMREQ volatile *ppReqs)
 {
     STAM_COUNTER_INC(&pUVM->vm.s.StatReqMoreThan1);
-    /* Chop off the last one (pReq). */
+
+    /* 
+     * Chop off the last one (pReq).
+     */
     PVMREQ pPrev;
     PVMREQ pReqRet = pReqList;
     do
@@ -1010,7 +975,9 @@ static PVMREQ vmR3ReqProcessUTooManyHelper(PUVM pUVM, VMCPUID idDstCpu, PVMREQ p
     } while (pReqRet->pNext);
     ASMAtomicWriteNullPtr(&pPrev->pNext);
 
-    /* Push the others back onto the list (end of it). */
+    /* 
+     * Push the others back onto the list (end of it).
+     */
     Log2(("VMR3ReqProcess: Pushing back %p %p...\n", pReqList, pReqList->pNext));
     if (RT_UNLIKELY(!ASMAtomicCmpXchgPtr(ppReqs, pReqList, NULL)))
     {
@@ -1030,14 +997,7 @@ static PVMREQ vmR3ReqProcessUTooManyHelper(PUVM pUVM, VMCPUID idDstCpu, PVMREQ p
         } while (!ASMAtomicCmpXchgPtr(ppReqs, pReqList, NULL));
     }
 
-    if (RT_LIKELY(pUVM->pVM))
-    {
-        if (idDstCpu == VMCPUID_ANY)
-            VM_FF_SET(pUVM->pVM, VM_FF_REQUEST);
-        else
-            VMCPU_FF_SET(&pUVM->pVM->aCpus[idDstCpu], VMCPU_FF_REQUEST);
-    }
-
+    vmR3ReqSetFF(pUVM, idDstCpu);
     return pReqRet;
 }
 
@@ -1054,14 +1014,34 @@ static PVMREQ vmR3ReqProcessUTooManyHelper(PUVM pUVM, VMCPUID idDstCpu, PVMREQ p
  * @param   idDstCpu        Pass VMCPUID_ANY to process the common request queue
  *                          and the CPU ID for a CPU specific one. In the latter
  *                          case the calling thread must be the EMT of that CPU.
+ * @param   fPriorityOnly   When set, only process the priority request queue. 
  *
  * @note    SMP safe (multiple EMTs trying to satisfy VM_FF_REQUESTs).
  *
- * @remarks This was made reentrant for
+ * @remarks This was made reentrant for async PDM handling, the debugger and 
+ *          others.
  */
-VMMR3DECL(int) VMR3ReqProcessU(PUVM pUVM, VMCPUID idDstCpu)
+VMMR3DECL(int) VMR3ReqProcessU(PUVM pUVM, VMCPUID idDstCpu, bool fPriorityOnly)
 {
     LogFlow(("VMR3ReqProcessU: (enmVMState=%d) idDstCpu=%d\n", pUVM->pVM ? pUVM->pVM->enmVMState : VMSTATE_CREATING, idDstCpu));
+
+    /*
+     * Determine which queues to process.
+     */
+    PVMREQ volatile *ppNormalReqs;
+    PVMREQ volatile *ppPriorityReqs;
+    if (idDstCpu == VMCPUID_ANY)
+    {
+        ppPriorityReqs = &pUVM->vm.s.pPriorityReqs;
+        ppNormalReqs   = !fPriorityOnly ? &pUVM->vm.s.pNormalReqs                 : ppPriorityReqs;
+    }
+    else
+    {
+        Assert(idDstCpu < pUVM->cCpus);
+        Assert(pUVM->aCpus[idDstCpu].vm.s.NativeThreadEMT == RTThreadNativeSelf());
+        ppPriorityReqs = &pUVM->aCpus[idDstCpu].vm.s.pPriorityReqs;
+        ppNormalReqs   = !fPriorityOnly ? &pUVM->aCpus[idDstCpu].vm.s.pNormalReqs : ppPriorityReqs;
+    }
 
     /*
      * Process loop.
@@ -1073,31 +1053,35 @@ VMMR3DECL(int) VMR3ReqProcessU(PUVM pUVM, VMCPUID idDstCpu)
     for (;;)
     {
         /*
-         * Get the pending requests.
+         * Get the pending requests. 
+         *  
          * If there are more than one request, unlink the oldest and put the
          * rest back so that we're reentrant.
          */
-        PVMREQ volatile *ppReqs;
-        if (idDstCpu == VMCPUID_ANY)
+        if (RT_LIKELY(pUVM->pVM))
         {
-            ppReqs = &pUVM->vm.s.pReqs;
-            if (RT_LIKELY(pUVM->pVM))
+            if (idDstCpu == VMCPUID_ANY)
                 VM_FF_CLEAR(pUVM->pVM, VM_FF_REQUEST);
-        }
-        else
-        {
-            Assert(idDstCpu < pUVM->cCpus);
-            Assert(pUVM->aCpus[idDstCpu].vm.s.NativeThreadEMT == RTThreadNativeSelf());
-            ppReqs = &pUVM->aCpus[idDstCpu].vm.s.pReqs;
-            if (RT_LIKELY(pUVM->pVM))
+            else
                 VMCPU_FF_CLEAR(&pUVM->pVM->aCpus[idDstCpu], VMCPU_FF_REQUEST);
         }
 
-        PVMREQ pReq = ASMAtomicXchgPtrT(ppReqs, NULL, PVMREQ);
-        if (!pReq)
-            break;
-        if (RT_UNLIKELY(pReq->pNext))
-            pReq = vmR3ReqProcessUTooManyHelper(pUVM, idDstCpu, pReq, ppReqs);
+        PVMREQ pReq = ASMAtomicXchgPtrT(ppPriorityReqs, NULL, PVMREQ);
+        if (pReq)
+        {
+            if (RT_UNLIKELY(pReq->pNext))
+                pReq = vmR3ReqProcessUTooManyHelper(pUVM, idDstCpu, pReq, ppPriorityReqs);
+            else if (ASMAtomicReadPtrT(ppNormalReqs, PVMREQ))
+                vmR3ReqSetFF(pUVM, idDstCpu);
+        }
+        else
+        {
+            pReq = ASMAtomicXchgPtrT(ppNormalReqs, NULL, PVMREQ);
+            if (!pReq)
+                break;
+            if (RT_UNLIKELY(pReq->pNext))
+                pReq = vmR3ReqProcessUTooManyHelper(pUVM, idDstCpu, pReq, ppNormalReqs);
+        }
 
         /*
          * Process the request
@@ -1128,6 +1112,21 @@ VMMR3DECL(int) VMR3ReqProcessU(PUVM pUVM, VMCPUID idDstCpu)
 static int  vmR3ReqProcessOneU(PUVM pUVM, PVMREQ pReq)
 {
     LogFlow(("vmR3ReqProcessOneU: pReq=%p type=%d fFlags=%#x\n", pReq, pReq->enmType, pReq->fFlags));
+
+#if 1 /*def VBOX_STRICT */
+    /*
+     * Disable rendezvous if servicing a priority request.  Priority requests 
+     * can not make use of the EMT rendezvous API. 
+     */
+    PVMCPU      pVCpu               = NULL;
+    bool        fSavedInRendezvous  = true;
+    bool const  fPriorityReq        = RT_BOOL(pReq->fFlags & VMREQFLAGS_PRIORITY);
+    if (fPriorityReq && pUVM->pVM)
+    {
+        pVCpu = VMMGetCpu(pUVM->pVM);
+        fSavedInRendezvous = VMMR3EmtRendezvousSetDisabled(pVCpu, true /*fDisabled*/);
+    }
+#endif
 
     /*
      * Process the request.
@@ -1264,6 +1263,14 @@ static int  vmR3ReqProcessOneU(PUVM pUVM, PVMREQ pReq)
             rcRet = rc2;
         }
     }
+
+#if 1 /*def VBOX_STRICT */
+    /*
+     * Restore the rendezvous disabled state.
+     */
+    if (!fSavedInRendezvous)
+        VMMR3EmtRendezvousSetDisabled(pVCpu, false /*fDisabled*/);
+#endif
     return rcRet;
 }
 

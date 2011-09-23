@@ -684,24 +684,22 @@ VMMR3DECL(int) DBGFR3InfoDeregisterExternal(PVM pVM, const char *pszName)
 
 
 /**
- * Display a piece of info writing to the supplied handler.
- *
+ * Worker for DBGFR3Info and DBGFR3InfoEx. 
+ *  
  * @returns VBox status code.
- * @param   pVM         VM handle.
- * @param   pszName     The identifier of the info to display.
- * @param   pszArgs     Arguments to the info handler.
- * @param   pHlp        The output helper functions. If NULL the logger will be used.
+ * @param   pVM                 The VM handle. 
+ * @param   idCpu               Which CPU to run EMT bound handlers on. 
+ *                              VMCPUID_ANY or a valid CPU ID.
+ * @param   pszName             What to dump.
+ * @param   pszArgs             Arguments, optional.
+ * @param   pHlp                Output helper, optional.
  */
-VMMR3DECL(int) DBGFR3Info(PVM pVM, const char *pszName, const char *pszArgs, PCDBGFINFOHLP pHlp)
+static DECLCALLBACK(int) dbgfR3Info(PVM pVM, VMCPUID idCpu, const char *pszName, const char *pszArgs, PCDBGFINFOHLP pHlp)
 {
     /*
      * Validate input.
      */
-    if (!pszName)
-    {
-        AssertMsgFailed(("!pszName\n"));
-        return VERR_INVALID_PARAMETER;
-    }
+    AssertPtrReturn(pszName, VERR_INVALID_POINTER);
     if (pHlp)
     {
         if (    !pHlp->pfnPrintf
@@ -740,28 +738,28 @@ VMMR3DECL(int) DBGFR3Info(PVM pVM, const char *pszName, const char *pszArgs, PCD
         {
             case DBGFINFOTYPE_DEV:
                 if (Info.fFlags & DBGFINFO_FLAGS_RUN_ON_EMT)
-                    rc = VMR3ReqCallVoidWait(pVM, VMCPUID_ANY, (PFNRT)Info.u.Dev.pfnHandler, 3, Info.u.Dev.pDevIns, pHlp, pszArgs);
+                    rc = VMR3ReqCallVoidWait(pVM, idCpu, (PFNRT)Info.u.Dev.pfnHandler, 3, Info.u.Dev.pDevIns, pHlp, pszArgs);
                 else
                     Info.u.Dev.pfnHandler(Info.u.Dev.pDevIns, pHlp, pszArgs);
                 break;
 
             case DBGFINFOTYPE_DRV:
                 if (Info.fFlags & DBGFINFO_FLAGS_RUN_ON_EMT)
-                    rc = VMR3ReqCallVoidWait(pVM, VMCPUID_ANY, (PFNRT)Info.u.Drv.pfnHandler, 3, Info.u.Drv.pDrvIns, pHlp, pszArgs);
+                    rc = VMR3ReqCallVoidWait(pVM, idCpu, (PFNRT)Info.u.Drv.pfnHandler, 3, Info.u.Drv.pDrvIns, pHlp, pszArgs);
                 else
                     Info.u.Drv.pfnHandler(Info.u.Drv.pDrvIns, pHlp, pszArgs);
                 break;
 
             case DBGFINFOTYPE_INT:
                 if (Info.fFlags & DBGFINFO_FLAGS_RUN_ON_EMT)
-                    rc = VMR3ReqCallVoidWait(pVM, VMCPUID_ANY, (PFNRT)Info.u.Int.pfnHandler, 3, pVM, pHlp, pszArgs);
+                    rc = VMR3ReqCallVoidWait(pVM, idCpu, (PFNRT)Info.u.Int.pfnHandler, 3, pVM, pHlp, pszArgs);
                 else
                     Info.u.Int.pfnHandler(pVM, pHlp, pszArgs);
                 break;
 
             case DBGFINFOTYPE_EXT:
                 if (Info.fFlags & DBGFINFO_FLAGS_RUN_ON_EMT)
-                    rc = VMR3ReqCallVoidWait(pVM, VMCPUID_ANY, (PFNRT)Info.u.Ext.pfnHandler, 3, Info.u.Ext.pvUser, pHlp, pszArgs);
+                    rc = VMR3ReqCallVoidWait(pVM, idCpu, (PFNRT)Info.u.Ext.pfnHandler, 3, Info.u.Ext.pvUser, pHlp, pszArgs);
                 else
                     Info.u.Ext.pfnHandler(Info.u.Ext.pvUser, pHlp, pszArgs);
                 break;
@@ -779,6 +777,40 @@ VMMR3DECL(int) DBGFR3Info(PVM pVM, const char *pszName, const char *pszArgs, PCD
         rc = VERR_FILE_NOT_FOUND;
     }
     return rc;
+}
+
+/**
+ * Display a piece of info writing to the supplied handler.
+ *
+ * @returns VBox status code.
+ * @param   pVM         VM handle.
+ * @param   pszName     The identifier of the info to display.
+ * @param   pszArgs     Arguments to the info handler.
+ * @param   pHlp        The output helper functions. If NULL the logger will be used.
+ */
+VMMR3DECL(int) DBGFR3Info(PVM pVM, const char *pszName, const char *pszArgs, PCDBGFINFOHLP pHlp)
+{
+    return dbgfR3Info(pVM, VMCPUID_ANY, pszName, pszArgs, pHlp);
+}
+
+
+/**
+ * Display a piece of info writing to the supplied handler.
+ *
+ * @returns VBox status code.
+ * @param   pVM         VM handle. 
+ * @param   idCpu       The CPU to exectue the request on.  Pass NIL_VMCPUID 
+ *                      to not involve any EMT.
+ * @param   pszName     The identifier of the info to display.
+ * @param   pszArgs     Arguments to the info handler.
+ * @param   pHlp        The output helper functions. If NULL the logger will be used.
+ */
+VMMR3DECL(int) DBGFR3InfoEx(PVM pVM, VMCPUID idCpu, const char *pszName, const char *pszArgs, PCDBGFINFOHLP pHlp)
+{
+    if (idCpu == NIL_VMCPUID)
+        return dbgfR3Info(pVM, VMCPUID_ANY, pszName, pszArgs, pHlp);
+    return VMR3ReqPriorityCallWait(pVM, idCpu, 
+                                   (PFNRT)dbgfR3Info, 5, pVM, idCpu, pszName, pszArgs, pHlp);
 }
 
 

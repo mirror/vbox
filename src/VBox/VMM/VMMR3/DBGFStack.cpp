@@ -453,9 +453,9 @@ static int dbgfR3StackWalkBeginCommon(PVM pVM,
         default:
             AssertFailedReturn(VERR_INVALID_PARAMETER);
     }
-    return VMR3ReqCallWait(pVM, idCpu, (PFNRT)dbgfR3StackWalkCtxFull, 10,
-                           pVM, idCpu, pCtxCore, hAs, enmCodeType,
-                           pAddrFrame, pAddrStack, pAddrPC, enmReturnType, ppFirstFrame);
+    return VMR3ReqPriorityCallWait(pVM, idCpu, (PFNRT)dbgfR3StackWalkCtxFull, 10,
+                                   pVM, idCpu, pCtxCore, hAs, enmCodeType,
+                                   pAddrFrame, pAddrStack, pAddrPC, enmReturnType, ppFirstFrame);
 }
 
 

@@ -2695,7 +2695,7 @@ VMMR3DECL(int) TMR3NotifyResume(PVM pVM, PVMCPU pVCpu)
  */
 VMMDECL(int) TMR3SetWarpDrive(PVM pVM, uint32_t u32Percent)
 {
-    return VMR3ReqCallWait(pVM, VMCPUID_ANY, (PFNRT)tmR3SetWarpDrive, 2, pVM, u32Percent);
+    return VMR3ReqPriorityCallWait(pVM, VMCPUID_ANY, (PFNRT)tmR3SetWarpDrive, 2, pVM, u32Percent);
 }
 
 

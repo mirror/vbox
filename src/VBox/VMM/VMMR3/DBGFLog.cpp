@@ -47,7 +47,7 @@ VMMR3DECL(int) DBGFR3LogModifyGroups(PVM pVM, const char *pszGroupSettings)
     AssertPtrReturn(pVM, VERR_INVALID_POINTER);
     AssertPtrReturn(pszGroupSettings, VERR_INVALID_POINTER);
 
-    return VMR3ReqCallWait(pVM, VMCPUID_ANY, (PFNRT)dbgfR3LogModifyGroups, 2, pVM, pszGroupSettings);
+    return VMR3ReqPriorityCallWait(pVM, VMCPUID_ANY, (PFNRT)dbgfR3LogModifyGroups, 2, pVM, pszGroupSettings);
 }
 
 
@@ -79,7 +79,7 @@ VMMR3DECL(int) DBGFR3LogModifyFlags(PVM pVM, const char *pszFlagSettings)
     AssertPtrReturn(pVM, VERR_INVALID_POINTER);
     AssertPtrReturn(pszFlagSettings, VERR_INVALID_POINTER);
 
-    return VMR3ReqCallWait(pVM, VMCPUID_ANY, (PFNRT)dbgfR3LogModifyFlags, 2, pVM, pszFlagSettings);
+    return VMR3ReqPriorityCallWait(pVM, VMCPUID_ANY, (PFNRT)dbgfR3LogModifyFlags, 2, pVM, pszFlagSettings);
 }
 
 
@@ -111,7 +111,7 @@ VMMR3DECL(int) DBGFR3LogModifyDestinations(PVM pVM, const char *pszDestSettings)
     AssertReturn(VALID_PTR(pVM), VERR_INVALID_POINTER);
     AssertReturn(VALID_PTR(pszDestSettings), VERR_INVALID_POINTER);
 
-    return VMR3ReqCallWait(pVM, VMCPUID_ANY, (PFNRT)dbgfR3LogModifyDestinations, 2, pVM, pszDestSettings);
+    return VMR3ReqPriorityCallWait(pVM, VMCPUID_ANY, (PFNRT)dbgfR3LogModifyDestinations, 2, pVM, pszDestSettings);
 }
 
 
