@@ -982,6 +982,12 @@ static DECLCALLBACK(int)  picConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
     if (fR0Enabled)
         pThis->pPicHlpR0 = pThis->pPicHlpR3->pfnGetR0Helpers(pDevIns);
 
+    /*
+     * Since the PIC helper interface provides access to the PDM lock, 
+     * we need no device level critical section. 
+     */
+    rc = PDMDevHlpSetDeviceCritSect(pDevIns, PDMDevHlpCritSectGetNop(pDevIns));
+    AssertRCReturn(rc, rc);
 
     /*
      * Register I/O ports and save state.
