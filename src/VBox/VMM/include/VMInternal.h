@@ -330,7 +330,7 @@ typedef struct VMINTUSERPERVMCPU
     /** Wait/Idle indicator. */
     bool volatile                   fWait;
     /** Align the next bit. */
-    bool                            afAlignment[7];
+    bool                            afAlignment[HC_ARCH_BITS == 32 ? 3 : 7];
 
     /** @name Generic Halt data
      * @{
