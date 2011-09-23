@@ -279,11 +279,6 @@ typedef struct VMM
     /** The timestamp of the previous yield. (nano) */
     uint64_t                    u64LastYield;
 
-    /** Critical section.
-     * Use for synchronizing all VCPUs
-     */
-    RTCRITSECT                  CritSectSync;
-
     /** @name EMT Rendezvous
      * @{ */
     /** Semaphore to wait on upon entering ordered execution. */
@@ -423,6 +418,14 @@ typedef struct VMMCPU
      * This is NULL if logging is disabled. */
     R0PTRTYPE(PVMMR0LOGGER)     pR0LoggerR0;
 #endif
+
+    /** @name Rendezvous
+     * @{ */
+    /** Whether the EMT is executing a rendezvous right now. For detecting
+     *  attempts at recursive rendezvous. */
+    bool volatile               fInRendezvous;
+    bool                        afPadding[7];
+    /** @} */
 
     /** @name Call Ring-3
      * Formerly known as host calls.

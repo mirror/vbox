@@ -186,10 +186,8 @@ VMMR3_INT_DECL(int) VMMR3Init(PVM pVM)
     AssertMsgRCReturn(rc, ("Configuration error. Failed to query \"VMM/UsePeriodicPreemptionTimers\", rc=%Rrc\n", rc), rc);
 
     /*
-     * Initialize the VMM sync critical section and semaphores.
+     * Initialize the VMM rendezvous semaphores.
      */
-    rc = RTCritSectInit(&pVM->vmm.s.CritSectSync);
-    AssertRCReturn(rc, rc);
     pVM->vmm.s.pahEvtRendezvousEnterOrdered = (PRTSEMEVENT)MMR3HeapAlloc(pVM, MM_TAG_VMM, sizeof(RTSEMEVENT) * pVM->cCpus);
     if (!pVM->vmm.s.pahEvtRendezvousEnterOrdered)
         return VERR_NO_MEMORY;
@@ -739,7 +737,6 @@ VMMR3_INT_DECL(int) VMMR3Term(PVM pVM)
             rc = VERR_INTERNAL_ERROR;
     }
 
-    RTCritSectDelete(&pVM->vmm.s.CritSectSync);
     for (VMCPUID i = 0; i < pVM->cCpus; i++)
     {
         RTSemEventDestroy(pVM->vmm.s.pahEvtRendezvousEnterOrdered[i]);
@@ -1364,7 +1361,7 @@ VMMR3_INT_DECL(void) VMMR3SendSipi(PVM pVM, VMCPUID idCpu,  uint32_t uVector)
 {
     AssertReturnVoid(idCpu < pVM->cCpus);
 
-    int rc = VMR3ReqCallNoWaitU(pVM->pUVM, idCpu, (PFNRT)vmmR3SendSipi, 3, pVM, idCpu, uVector);
+    int rc = VMR3ReqCallNoWait(pVM, idCpu, (PFNRT)vmmR3SendSipi, 3, pVM, idCpu, uVector);
     AssertRC(rc);
 }
 
@@ -1378,7 +1375,7 @@ VMMR3_INT_DECL(void) VMMR3SendInitIpi(PVM pVM, VMCPUID idCpu)
 {
     AssertReturnVoid(idCpu < pVM->cCpus);
 
-    int rc = VMR3ReqCallNoWaitU(pVM->pUVM, idCpu, (PFNRT)vmmR3SendInitIpi, 2, pVM, idCpu);
+    int rc = VMR3ReqCallNoWait(pVM, idCpu, (PFNRT)vmmR3SendInitIpi, 2, pVM, idCpu);
     AssertRC(rc);
 }
 
@@ -1392,6 +1389,7 @@ VMMR3_INT_DECL(void) VMMR3SendInitIpi(PVM pVM, VMCPUID idCpu)
  */
 VMMR3DECL(int) VMMR3RegisterPatchMemory(PVM pVM, RTGCPTR pPatchMem, unsigned cbPatchMem)
 {
+    VM_ASSERT_EMT(pVM);
     if (HWACCMIsEnabled(pVM))
         return HWACMMR3EnablePatching(pVM, pPatchMem, cbPatchMem);
 
@@ -1412,62 +1410,6 @@ VMMR3DECL(int) VMMR3DeregisterPatchMemory(PVM pVM, RTGCPTR pPatchMem, unsigned c
         return HWACMMR3DisablePatching(pVM, pPatchMem, cbPatchMem);
 
     return VINF_SUCCESS;
-}
-
-
-/**
- * VCPU worker for VMMR3SynchronizeAllVCpus.
- *
- * @param   pVM         The VM to operate on.
- * @param   idCpu       Virtual CPU to perform SIPI on
- * @param   uVector     SIPI vector
- */
-DECLCALLBACK(int) vmmR3SyncVCpu(PVM pVM)
-{
-    /* Block until the job in the caller has finished. */
-    RTCritSectEnter(&pVM->vmm.s.CritSectSync);
-    RTCritSectLeave(&pVM->vmm.s.CritSectSync);
-    return VINF_SUCCESS;
-}
-
-
-/**
- * Atomically execute a callback handler
- * Note: This is very expensive; avoid using it frequently!
- *
- * @param   pVM         The VM to operate on.
- * @param   pfnHandler  Callback handler
- * @param   pvUser      User specified parameter
- *
- * @thread  EMT
- * @todo    Remove this if not used again soon.
- */
-VMMR3DECL(int) VMMR3AtomicExecuteHandler(PVM pVM, PFNATOMICHANDLER pfnHandler, void *pvUser)
-{
-    int    rc;
-    PVMCPU pVCpu = VMMGetCpu(pVM);
-    AssertReturn(pVCpu, VERR_VM_THREAD_NOT_EMT);
-
-    /* Shortcut for the uniprocessor case. */
-    if (pVM->cCpus == 1)
-        return pfnHandler(pVM, pvUser);
-
-    RTCritSectEnter(&pVM->vmm.s.CritSectSync);
-    for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
-    {
-        if (idCpu != pVCpu->idCpu)
-        {
-            rc = VMR3ReqCallNoWaitU(pVM->pUVM, idCpu, (PFNRT)vmmR3SyncVCpu, 1, pVM);
-            AssertRC(rc);
-        }
-    }
-    /* Wait until all other VCPUs are waiting for us. */
-    while (RTCritSectGetWaiters(&pVM->vmm.s.CritSectSync) != (int32_t)(pVM->cCpus - 1))
-        RTThreadSleep(1);
-
-    rc = pfnHandler(pVM, pvUser);
-    RTCritSectLeave(&pVM->vmm.s.CritSectSync);
-    return rc;
 }
 
 
@@ -1516,6 +1458,7 @@ static int vmmR3EmtRendezvousCommon(PVM pVM, PVMCPU pVCpu, bool fIsCaller,
                                     uint32_t fFlags, PFNVMMEMTRENDEZVOUS pfnRendezvous, void *pvUser)
 {
     int rc;
+    pVCpu->vmm.s.fInRendezvous = true;
 
     /*
      * Enter, the last EMT triggers the next callback phase.
@@ -1664,6 +1607,7 @@ static int vmmR3EmtRendezvousCommon(PVM pVM, PVMCPU pVCpu, bool fIsCaller,
         AssertLogRelRC(rc);
     }
 
+    pVCpu->vmm.s.fInRendezvous = false;
     if (!fIsCaller)
         return vmmR3EmtRendezvousNonCallerReturn(pVM);
     return VINF_SUCCESS;
@@ -1727,10 +1671,15 @@ VMMR3DECL(int) VMMR3EmtRendezvous(PVM pVM, uint32_t fFlags, PFNVMMEMTRENDEZVOUS 
         rcStrict = VMR3ReqCallWait(pVM, VMCPUID_ANY,
                                    (PFNRT)VMMR3EmtRendezvous, 4, pVM, fFlags, pfnRendezvous, pvUser);
     else if (pVM->cCpus == 1)
+    {
         /*
          * Shortcut for the single EMT case.
          */
+        AssertLogRelReturn(!pVCpu->vmm.s.fInRendezvous, VERR_DEADLOCK);
+        pVCpu->vmm.s.fInRendezvous = true;
         rcStrict = pfnRendezvous(pVM, pVCpu, pvUser);
+        pVCpu->vmm.s.fInRendezvous = false;
+    }
     else
     {
         /*
@@ -1741,6 +1690,8 @@ VMMR3DECL(int) VMMR3EmtRendezvous(PVM pVM, uint32_t fFlags, PFNVMMEMTRENDEZVOUS 
         rcStrict = VINF_SUCCESS;
         if (RT_UNLIKELY(!ASMAtomicCmpXchgU32(&pVM->vmm.s.u32RendezvousLock, 0x77778888, 0)))
         {
+            AssertLogRelReturn(!pVCpu->vmm.s.fInRendezvous, VERR_DEADLOCK);
+
             while (!ASMAtomicCmpXchgU32(&pVM->vmm.s.u32RendezvousLock, 0x77778888, 0))
             {
                 if (VM_FF_ISPENDING(pVM, VM_FF_EMT_RENDEZVOUS))
@@ -1819,6 +1770,25 @@ VMMR3DECL(int) VMMR3EmtRendezvous(PVM pVM, uint32_t fFlags, PFNVMMEMTRENDEZVOUS 
                           ("%Rrc\n", VBOXSTRICTRC_VAL(rcStrict)),
                           VERR_IPE_UNEXPECTED_INFO_STATUS);
     return VBOXSTRICTRC_VAL(rcStrict);
+}
+
+
+/**
+ * Disables/enables EMT rendezvous. 
+ *  
+ * This is used to make sure EMT rendezvous does not take place while 
+ * processing a priority request.
+ *  
+ * @returns Old rendezvous-disabled state.
+ * @param   pVCpu           The handle of the calling EMT.
+ * @param   fDisabled       True if disabled, false if enabled.
+ */
+VMMR3_INT_DECL(bool) VMMR3EmtRendezvousSetDisabled(PVMCPU pVCpu, bool fDisabled)
+{
+    VMCPU_ASSERT_EMT(pVCpu);
+    bool fOld = pVCpu->vmm.s.fInRendezvous;
+    pVCpu->vmm.s.fInRendezvous = fDisabled;
+    return fOld;
 }
 
 
