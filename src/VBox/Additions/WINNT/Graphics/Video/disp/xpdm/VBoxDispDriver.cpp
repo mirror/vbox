@@ -788,7 +788,6 @@ ULONG APIENTRY VBoxDispDrvDitherColor(DHPDEV dhpdev, ULONG iMode, ULONG rgb, ULO
 BOOL APIENTRY VBoxDispDrvAssertMode(DHPDEV dhpdev, BOOL bEnable)
 {
     PVBOXDISPDEV pDev = (PVBOXDISPDEV) dhpdev;
-    DWORD dwrc;
     int rc;
     LOGF_ENTER();
 
@@ -845,18 +844,16 @@ BOOL APIENTRY VBoxDispDrvAssertMode(DHPDEV dhpdev, BOOL bEnable)
 #endif
 
         /* Associate back GDI bitmap residing in our framebuffer memory with GDI's handle to our device */
-        dwrc = EngAssociateSurface((HSURF)pDev->surface.hBitmap, pDev->hDevGDI, 0);
-        if (dwrc != NO_ERROR)
+        if (!EngAssociateSurface((HSURF)pDev->surface.hBitmap, pDev->hDevGDI, 0))
         {
-            WARN(("EngAssociateSurface on bitmap failed with %#x", dwrc));
+            WARN(("EngAssociateSurface on bitmap failed"));
             return FALSE;
         }
 
         /* Associate device managed surface with GDI's handle to our device */
-        dwrc = EngAssociateSurface(pDev->surface.hSurface, pDev->hDevGDI, pDev->flDrawingHooks);
-        if (dwrc != NO_ERROR)
+        if (!EngAssociateSurface(pDev->surface.hSurface, pDev->hDevGDI, pDev->flDrawingHooks))
         {
-            WARN(("EngAssociateSurface on surface failed with %#x", dwrc));
+            WARN(("EngAssociateSurface on surface failed"));
             return FALSE;
         }
     }

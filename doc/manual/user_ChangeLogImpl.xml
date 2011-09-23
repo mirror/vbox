@@ -19,7 +19,7 @@
     <itemizedlist>
 
       <listitem>
-        <para>dummy</para>
+        <para>Windows guests: fixed guest hangs when switching back from fullscreen text mode apps (bug #9636)</para>
       </listitem>
 
     </itemizedlist>
