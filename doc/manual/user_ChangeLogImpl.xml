@@ -22,6 +22,10 @@
         <para>Windows Additions: fixed guest hangs when switching back from fullscreen text mode apps (bug #9636)</para>
       </listitem>
 
+      <listitem>
+        <para>3D Support: fixed compiz under ubuntu 9.10</para>
+      </listitem>
+
     </itemizedlist>
   </sect1>
 
