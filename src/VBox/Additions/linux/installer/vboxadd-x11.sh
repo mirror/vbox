@@ -329,20 +329,18 @@ setup()
         1.11.* )
             xserver_version="X.Org Server 1.11"
             vboxvideo_src=vboxvideo_drv_111.so
-            # Does Fedora still ship without vboxvideo detection?
-            # test "$system" = "redhat" || setupxorgconf=""
+            test "$system" = "redhat" || setupxorgconf=""
             ;;
         1.10.* )
             xserver_version="X.Org Server 1.10"
             vboxvideo_src=vboxvideo_drv_110.so
-            # Does Fedora still ship without vboxvideo detection?
-            # test "$system" = "redhat" || setupxorgconf=""
+            test "$system" = "redhat" || setupxorgconf=""
             ;;
         1.9.* )
             xserver_version="X.Org Server 1.9"
             vboxvideo_src=vboxvideo_drv_19.so
-            # Fedora 14 looks likely to ship without vboxvideo detection
-            # test "$system" = "redhat" || setupxorgconf=""
+            # Fedora 14 and later patched out vboxvideo detection
+            test "$system" = "redhat" || setupxorgconf=""
             ;;
         1.8.* )
             xserver_version="X.Org Server 1.8"
