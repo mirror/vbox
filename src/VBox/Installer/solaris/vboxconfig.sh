@@ -749,9 +749,9 @@ stop_service()
     fi
     servicefound=`$BIN_SVCS -a | grep "$2" 2>/dev/null`
     if test ! -z "$servicefound"; then
-        $BIN_SVCADM disable -s $3
+        $BIN_SVCADM disable -s "$3"
         # Don't delete the manifest, this is handled by the manifest class action
-        # $BIN_SVCCFG delete $3
+        # $BIN_SVCCFG delete "$3"
         if test "$?" -eq 0; then
             subprint "Unloaded: $1"
         else
