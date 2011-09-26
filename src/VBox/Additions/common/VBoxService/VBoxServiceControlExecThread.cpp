@@ -338,10 +338,10 @@ int VBoxServiceControlExecThreadGetOutput(uint32_t uPID, uint32_t uHandleId, uin
     int rc = RTCritSectEnter(&g_GuestControlThreadsCritSect);
     if (RT_SUCCESS(rc))
     {
-        const PVBOXSERVICECTRLTHREAD pNode = vboxServiceControlExecThreadGetByPID(uPID);
-        if (pNode)
+        const PVBOXSERVICECTRLTHREAD pThread = vboxServiceControlExecThreadGetByPID(uPID);
+        if (pThread)
         {
-            const PVBOXSERVICECTRLTHREADDATAEXEC pData = (PVBOXSERVICECTRLTHREADDATAEXEC)pNode->pvData;
+            const PVBOXSERVICECTRLTHREADDATAEXEC pData = (PVBOXSERVICECTRLTHREADDATAEXEC)pThread->pvData;
             AssertPtr(pData);
 
             PVBOXSERVICECTRLEXECPIPEBUF pPipeBuf = NULL;
@@ -352,11 +352,9 @@ int VBoxServiceControlExecThreadGetOutput(uint32_t uPID, uint32_t uHandleId, uin
                     break;
 
                 case OUTPUT_HANDLE_ID_STDOUT: /* StdOut */
+                default: /* On VBox host < 4.1 this is 0, so default to stdout
+                          * to not break things. */
                     pPipeBuf = &pData->stdOut;
-                    break;
-
-                default:
-                    AssertReleaseMsgFailed(("Unknown output handle ID (%u)\n", uHandleId));
                     break;
             }
             AssertPtr(pPipeBuf);
