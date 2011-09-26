@@ -1129,8 +1129,10 @@ stubInit(void)
     crDebug("Stub launched for %s", response);
 
 #if defined(CR_NEWWINTRACK) && !defined(WINDOWS)
-    /*@todo when vm boots with compiz turned on, new code causes hang in xcb_wait_for_reply in the sync thread*/
-    if (!crStrcmp(response, "compiz") || !crStrcmp(response, "compiz_real")
+    /*@todo when vm boots with compiz turned on, new code causes hang in xcb_wait_for_reply in the sync thread
+     * as at the start compiz runs our code under XGrabServer.
+     */
+    if (!crStrcmp(response, "compiz") || !crStrcmp(response, "compiz_real") || !crStrcmp(response, "compiz.real")
 	|| !crStrcmp(response, "compiz-bin"))
     {
         disable_sync = 1;
