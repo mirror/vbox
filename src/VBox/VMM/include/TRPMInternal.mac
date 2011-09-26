@@ -59,9 +59,12 @@ struc TRPM
     .StatTrap0dRdTsc          resb STAMCOUNTER_size
 
 %ifdef VBOX_WITH_STATISTICS
-    .paStatForwardedIRQR3  RTR3PTR_RES 1
-    .paStatForwardedIRQR0  RTR0PTR_RES 1
-    .paStatForwardedIRQRC  RTRCPTR_RES 1
+    .paStatForwardedIRQR3    RTR3PTR_RES 1
+    .paStatForwardedIRQR0    RTR0PTR_RES 1
+    .paStatForwardedIRQRC    RTRCPTR_RES 1
+    .paStatHostIrqRC         RTRCPTR_RES 1
+    .paStatHostIrqR3         RTR3PTR_RES 1
+    .paStatHostIrqR0         RTR0PTR_RES 1
 %endif
 endstruc
 

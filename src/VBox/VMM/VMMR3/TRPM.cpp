@@ -541,13 +541,21 @@ VMMR3DECL(int) TRPMR3Init(PVM pVM)
     STAM_REG(pVM, &pVM->trpm.s.aStatGCTraps[0x13],      STAMTYPE_PROFILE_ADV, "/TRPM/GC/Traps/13",          STAMUNIT_TICKS_PER_CALL, "#XF - SIMD Floating-Point Exception.");
 
 #ifdef VBOX_WITH_STATISTICS
-    rc = MMHyperAlloc(pVM, sizeof(STAMCOUNTER) * 255, 8, MM_TAG_STAM, (void **)&pVM->trpm.s.paStatForwardedIRQR3);
+    rc = MMHyperAlloc(pVM, sizeof(STAMCOUNTER) * 256, sizeof(STAMCOUNTER), MM_TAG_TRPM, (void **)&pVM->trpm.s.paStatForwardedIRQR3);
     AssertRCReturn(rc, rc);
     pVM->trpm.s.paStatForwardedIRQRC = MMHyperR3ToRC(pVM, pVM->trpm.s.paStatForwardedIRQR3);
     pVM->trpm.s.paStatForwardedIRQR0 = MMHyperR3ToR0(pVM, pVM->trpm.s.paStatForwardedIRQR3);
-    for (unsigned i = 0; i < 255; i++)
+    for (unsigned i = 0; i < 256; i++)
         STAMR3RegisterF(pVM, &pVM->trpm.s.paStatForwardedIRQR3[i], STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_OCCURENCES, "Forwarded interrupts.",
                         i < 0x20 ? "/TRPM/ForwardRaw/TRAP/%02X" : "/TRPM/ForwardRaw/IRQ/%02X", i);
+
+    rc = MMHyperAlloc(pVM, sizeof(STAMCOUNTER) * 256, sizeof(STAMCOUNTER), MM_TAG_TRPM, (void **)&pVM->trpm.s.paStatHostIrqR3);
+    AssertRCReturn(rc, rc);
+    pVM->trpm.s.paStatHostIrqRC = MMHyperR3ToRC(pVM, pVM->trpm.s.paStatHostIrqR3);
+    pVM->trpm.s.paStatHostIrqR0 = MMHyperR3ToR0(pVM, pVM->trpm.s.paStatHostIrqR3);
+    for (unsigned i = 0; i < 256; i++)
+        STAMR3RegisterF(pVM, &pVM->trpm.s.paStatHostIrqR3[i], STAMTYPE_COUNTER, STAMVISIBILITY_USED, STAMUNIT_OCCURENCES,
+                        "Host interrupts.", "/TRPM/HostIRQs/%02x", i);
 #endif
 
     STAM_REG(pVM, &pVM->trpm.s.StatForwardProfR3,       STAMTYPE_PROFILE_ADV, "/TRPM/ForwardRaw/ProfR3",   STAMUNIT_TICKS_PER_CALL, "Profiling TRPMForwardTrap.");
@@ -694,7 +702,9 @@ VMMR3DECL(void) TRPMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
 
 #ifdef VBOX_WITH_STATISTICS
     pVM->trpm.s.paStatForwardedIRQRC += offDelta;
-    pVM->trpm.s.paStatForwardedIRQR0 = MMHyperR3ToR0(pVM, pVM->trpm.s.paStatForwardedIRQR3);
+    pVM->trpm.s.paStatForwardedIRQR0  = MMHyperR3ToR0(pVM, pVM->trpm.s.paStatForwardedIRQR3);
+    pVM->trpm.s.paStatHostIrqRC += offDelta;
+    pVM->trpm.s.paStatHostIrqR0  = MMHyperR3ToR0(pVM, pVM->trpm.s.paStatHostIrqR3);
 #endif
 }
 
