@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2007 Oracle Corporation
+ * Copyright (C) 2006-2011 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -36,19 +36,46 @@
 #include <iprt/x86.h>
 
 
+/*******************************************************************************
+*   Structures and Typedefs                                                    *
+*******************************************************************************/
 #ifdef VBOX_WITH_VMMR0_DISABLE_LAPIC_NMI
-/** Local APIC mappings */
-typedef struct
+/**
+ * Local APIC mappings.
+ */
+typedef struct CPUMHOSTLAPIC
 {
+    /** Indicates that the entry is in use and have valid data. */
     bool        fEnabled;
-    uint64_t    PhysBase;
-    RTR0MEMOBJ  hMemObj;
-    RTR0MEMOBJ  hMapObj;
-    void       *pv;
+    /** Has APIC_REG_LVT_THMR. Not used. */
     uint32_t    fHasThermal;
+    /** The physical address of the APIC registers. */
+    RTHCPHYS    PhysBase;
+    /** The memory object entering the physical address. */
+    RTR0MEMOBJ  hMemObj;
+    /** The mapping object for hMemObj. */
+    RTR0MEMOBJ  hMapObj;
+    /** The mapping address APIC registers.
+     * @remarks Different CPUs may use the same physical address to map their
+     *          APICs, so this pointer is only valid when on the CPU owning the
+     *          APIC. */
+    void       *pv;
 } CPUMHOSTLAPIC;
+#endif
 
+
+/*******************************************************************************
+*   Global Variables                                                           *
+*******************************************************************************/
+#ifdef VBOX_WITH_VMMR0_DISABLE_LAPIC_NMI
 static CPUMHOSTLAPIC g_aLApics[RTCPUSET_MAX_CPUS];
+#endif
+
+
+/*******************************************************************************
+*   Internal Functions                                                         *
+*******************************************************************************/
+#ifdef VBOX_WITH_VMMR0_DISABLE_LAPIC_NMI
 static int  cpumR0MapLocalApics(void);
 static void cpumR0UnmapLocalApics(void);
 #endif
@@ -637,8 +664,8 @@ VMMR0DECL(int) CPUMR0LoadHyperDebugState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, b
     return VINF_SUCCESS;
 }
 
-
 #ifdef VBOX_WITH_VMMR0_DISABLE_LAPIC_NMI
+
 /**
  * Worker for cpumR0MapLocalApics. Check each CPU for a present Local APIC.
  * Play safe and treat each CPU separate.
@@ -668,8 +695,8 @@ static void cpumR0MapLocalApicWorker(RTCPUID idCpu, void *pvUser1, void *pvUser2
             /* see Intel Manual: Local APIC Status and Location: MAXPHYADDR default is bit 36 */
             uint32_t u32MaxExtIdx;
             ASMCpuId(0x80000000, &u32MaxExtIdx, &u32EBX, &u32ECX, &u32EDX);
-            if (   u32MaxExtIdx >= 0x80000008
-                && u32MaxExtIdx <  0x8000ffff)
+            if (   u32MaxExtIdx >= UINT32_C(0x80000008)
+                && u32MaxExtIdx <  UINT32_C(0x8000ffff))
             {
                 uint32_t u32PhysBits;
                 ASMCpuId(0x80000008, &u32PhysBits, &u32EBX, &u32ECX, &u32EDX);
@@ -677,8 +704,9 @@ static void cpumR0MapLocalApicWorker(RTCPUID idCpu, void *pvUser1, void *pvUser2
                 u64Mask = ((UINT64_C(1) << u32PhysBits) - 1) & UINT64_C(0xfffffffffffff000);
             }
 
-            g_aLApics[iCpu].fEnabled = true;
-            g_aLApics[iCpu].PhysBase = u64ApicBase & u64Mask;
+            uint64_t const u64PhysBase = u64ApicBase & u64Mask;
+            g_aLApics[iCpu].PhysBase   = (RTHCPHYS)u64PhysBase;
+            g_aLApics[iCpu].fEnabled   = g_aLApics[iCpu].PhysBase == u64PhysBase;
         }
     }
 }
@@ -724,11 +752,20 @@ static int cpumR0MapLocalApics(void)
                      * 0x1X       Local APIC
                      * 0x2X..0xFF reserved
                      */
+                    /** @todo r=bird: The local APIC is usually at the same address for all CPUs,
+                     *        and therefore inaccessible by the other CPUs. */
                     uint32_t ApicVersion = ApicRegRead(pvApicBase, APIC_REG_VERSION);
                     if ((APIC_REG_VERSION_GET_VER(ApicVersion) & 0xF0) == 0x10)
                     {
                         g_aLApics[iCpu].fHasThermal = APIC_REG_VERSION_GET_MAX_LVT(ApicVersion) >= 5;
                         g_aLApics[iCpu].pv          = pvApicBase;
+                        Log(("CPUM: APIC %02u at %RGp (mapped at %p) - ver %#x, lint0=%#x lint1=%#x pc=%#x thmr=%#x\n",
+                             iCpu, g_aLApics[iCpu].PhysBase, g_aLApics[iCpu].pv, ApicVersion,
+                             ApicRegRead(pvApicBase, APIC_REG_LVT_LINT0),
+                             ApicRegRead(pvApicBase, APIC_REG_LVT_LINT1),
+                             ApicRegRead(pvApicBase, APIC_REG_LVT_PC),
+                             ApicRegRead(pvApicBase, APIC_REG_LVT_THMR)
+                             ));
                         continue;
                     }
 
@@ -784,3 +821,4 @@ VMMR0DECL(void) CPUMR0SetLApic(PVM pVM, RTCPUID idHostCpu)
 }
 
 #endif /* VBOX_WITH_VMMR0_DISABLE_LAPIC_NMI */
+
