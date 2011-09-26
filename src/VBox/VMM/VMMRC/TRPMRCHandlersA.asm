@@ -850,6 +850,17 @@ ti_SkipV86Entry:
     mov     dword [eax + TRPMCPU.uActiveCR2 + 4], 0
 %endif
 
+%ifdef VBOX_WITH_STATISTICS
+    ;
+    ; Update statistics.
+    ;
+    mov     eax, IMP(g_TRPM)
+    movzx   edx, byte [esp + 0h + ESPOFF]   ; vector number
+    imul    edx, edx, byte STAMCOUNTER_size
+    add     edx, [eax + TRPM.paStatHostIrqRC]
+    STAM_COUNTER_INC edx
+%endif
+
     ;
     ; Check if we're in Hypervisor when this happened.
     ;
