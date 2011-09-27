@@ -2876,6 +2876,8 @@ int Console::configMediumAttachment(PCFGMNODE pCtlInst,
         hrc = pMediumAtt->COMGETTER(Type)(&lType);                                          H();
         BOOL fNonRotational;
         hrc = pMediumAtt->COMGETTER(NonRotational)(&fNonRotational);                        H();
+        BOOL fDiscard;
+        hrc = pMediumAtt->COMGETTER(Discard)(&fDiscard);                                    H();
 
         unsigned uLUN;
         PCFGMNODE pLunL0 = NULL;
@@ -3173,6 +3175,7 @@ int Console::configMediumAttachment(PCFGMNODE pCtlInst,
                           uMergeSource,
                           uMergeTarget,
                           strBwGroup.isEmpty() ? NULL : Utf8Str(strBwGroup).c_str(),
+                          fDiscard,
                           pMedium,
                           aMachineState,
                           phrc);
@@ -3214,6 +3217,7 @@ int Console::configMedium(PCFGMNODE pLunL0,
                           unsigned uMergeSource,
                           unsigned uMergeTarget,
                           const char *pcszBwGroup,
+                          bool fDiscard,
                           IMedium *pMedium,
                           MachineState_T aMachineState,
                           HRESULT *phrc)
@@ -3402,6 +3406,9 @@ int Console::configMedium(PCFGMNODE pLunL0,
 
                 if (pcszBwGroup)
                     InsertConfigString(pCfg, "BwGroup", pcszBwGroup);
+
+                if (fDiscard)
+                    InsertConfigInteger(pCfg, "Discard", 1);
 
                 /* Pass all custom parameters. */
                 bool fHostIP = true;

@@ -1692,6 +1692,7 @@ bool AttachedDevice::operator==(const AttachedDevice &a) const
                   && (fPassThrough              == a.fPassThrough)
                   && (fTempEject                == a.fTempEject)
                   && (fNonRotational            == a.fNonRotational)
+                  && (fDiscard                  == a.fDiscard)
                   && (lPort                     == a.lPort)
                   && (lDevice                   == a.lDevice)
                   && (uuid                      == a.uuid)
@@ -2988,6 +2989,7 @@ void MachineConfigFile::readStorageControllers(const xml::ElementNode &elmStorag
             {
                 att.deviceType = DeviceType_HardDisk;
                 pelmAttached->getAttributeValue("nonrotational", att.fNonRotational);
+                pelmAttached->getAttributeValue("discard", att.fDiscard);
             }
             else if (m->sv >= SettingsVersion_v1_9)
             {
@@ -4236,6 +4238,8 @@ void MachineConfigFile::buildStorageControllersXML(xml::ElementNode &elmParent,
                     pcszType = "HardDisk";
                     if (att.fNonRotational)
                         pelmDevice->setAttribute("nonrotational", att.fNonRotational);
+                    if (att.fDiscard)
+                        pelmDevice->setAttribute("discard", att.fDiscard);
                     break;
 
                 case DeviceType_DVD:
@@ -4602,7 +4606,7 @@ void MachineConfigFile::bumpSettingsVersionIfNeeded()
     if (m->sv < SettingsVersion_v1_11)
     {
         // VirtualBox 4.0 adds HD audio, CPU priorities, fault tolerance,
-        // per-machine media registries, VRDE, JRockitVE, bandwidth gorups,
+        // per-machine media registries, VRDE, JRockitVE, bandwidth groups,
         // ICH9 chipset
         if (    hardwareMachine.audioAdapter.controllerType == AudioControllerType_HDA
              || hardwareMachine.ulCpuExecutionCap != 100

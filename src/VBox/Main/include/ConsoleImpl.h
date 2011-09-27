@@ -527,6 +527,7 @@ private:
                      unsigned uMergeSource,
                      unsigned uMergeTarget,
                      const char *pcszBwGroup,
+                     bool fDiscard,
                      IMedium *pMedium,
                      MachineState_T aMachineState,
                      HRESULT *phrc);
