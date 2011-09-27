@@ -8402,7 +8402,7 @@
       <desc>Don't show the started process according to the guest OS guidelines.</desc>
     </const>
     <const name="NoProfile"               value="8">
-      <desc>Do not use the user's profile data when exeuting a process.</desc>
+      <desc>Do not use the user's profile data when exeuting a process. Only available for Windows guests.</desc>
     </const>
   </enum>
 
