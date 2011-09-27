@@ -133,7 +133,8 @@ typedef enum VDIOREQTXDIR
 {
     VDIOREQTXDIR_READ = 0,
     VDIOREQTXDIR_WRITE,
-    VDIOREQTXDIR_FLUSH
+    VDIOREQTXDIR_FLUSH,
+    VDIOREQTXDIR_DISCARD
 } VDIOREQTXDIR;
 
 /**
@@ -142,17 +143,17 @@ typedef enum VDIOREQTXDIR
 typedef struct VDIOREQ
 {
     /** Transfer type. */
-    VDIOREQTXDIR enmTxDir;
+    VDIOREQTXDIR  enmTxDir;
     /** slot index. */
-    unsigned  idx;
+    unsigned      idx;
     /** Start offset. */
-    uint64_t  off;
+    uint64_t      off;
     /** Size to transfer. */
-    size_t    cbReq;
+    size_t        cbReq;
     /** S/G Buffer */
-    RTSGBUF   SgBuf;
+    RTSGBUF       SgBuf;
     /** Data segment */
-    RTSGSEG   DataSeg;
+    RTSGSEG       DataSeg;
     /** Flag whether the request is outstanding or not. */
     volatile bool fOutstanding;
     /** Buffer to use for reads. */
@@ -384,8 +385,8 @@ const VDSCRIPTARGDESC g_aArgDiscard[] =
 {
     /* pcszName    chId enmType                          fFlags */
     {"disk",       'd', VDSCRIPTARGTYPE_STRING,          VDSCRIPTARGDESC_FLAG_MANDATORY},
-    {"off",        'o', VDSCRIPTARGTYPE_UNSIGNED_NUMBER, VDSCRIPTARGDESC_FLAG_MANDATORY},
-    {"size",       's', VDSCRIPTARGTYPE_UNSIGNED_NUMBER, VDSCRIPTARGDESC_FLAG_MANDATORY},
+    {"async",      'a', VDSCRIPTARGTYPE_BOOL,            0},
+    {"ranges",     'r', VDSCRIPTARGTYPE_STRING, VDSCRIPTARGDESC_FLAG_MANDATORY}
 };
 
 /* Compact a disk */
@@ -954,6 +955,8 @@ static DECLCALLBACK(int) vdScriptHandlerIo(PVDTESTGLOB pGlob, PVDSCRIPTARG paScr
                                             rc = VDFlush(pDisk->pVD);
                                             break;
                                         }
+                                        case VDIOREQTXDIR_DISCARD:
+                                            AssertMsgFailed(("Invalid\n"));
                                     }
 
                                     ASMAtomicXchgBool(&paIoReq[idx].fOutstanding, false);
@@ -982,6 +985,8 @@ static DECLCALLBACK(int) vdScriptHandlerIo(PVDTESTGLOB pGlob, PVDSCRIPTARG paScr
                                             rc = VDAsyncFlush(pDisk->pVD, tstVDIoTestReqComplete, &paIoReq[idx], EventSem);
                                             break;
                                         }
+                                        case VDIOREQTXDIR_DISCARD:
+                                            AssertMsgFailed(("Invalid\n"));
                                     }
 
                                     if (rc == VERR_VD_ASYNC_IO_IN_PROGRESS)
@@ -1027,6 +1032,8 @@ static DECLCALLBACK(int) vdScriptHandlerIo(PVDTESTGLOB pGlob, PVDSCRIPTARG paScr
                                             }
                                             case VDIOREQTXDIR_FLUSH:
                                                 break;
+                                            case VDIOREQTXDIR_DISCARD:
+                                                AssertMsgFailed(("Invalid\n"));
                                         }
 
                                         ASMAtomicXchgBool(&paIoReq[idx].fOutstanding, false);
@@ -1263,8 +1270,8 @@ static DECLCALLBACK(int) vdScriptHandlerDiscard(PVDTESTGLOB pGlob, PVDSCRIPTARG 
     int rc = VINF_SUCCESS;
     const char *pcszDisk = NULL;
     PVDDISK pDisk = NULL;
-    uint64_t off;
-    size_t cbDiscard;
+    bool fAsync = false;
+    const char *pcszRanges = NULL;
 
     for (unsigned i = 0; i < cScriptArgs; i++)
     {
@@ -1275,57 +1282,220 @@ static DECLCALLBACK(int) vdScriptHandlerDiscard(PVDTESTGLOB pGlob, PVDSCRIPTARG 
                 pcszDisk = paScriptArgs[i].u.pcszString;
                 break;
             }
-            case 'o':
+            case 'a':
             {
-                off = paScriptArgs[i].u.u64;
+                fAsync = paScriptArgs[i].u.fFlag;
                 break;
             }
-            case 's':
+            case 'r':
             {
-                cbDiscard = paScriptArgs[i].u.u64;
+                pcszRanges = paScriptArgs[i].u.pcszString;
                 break;
             }
-
             default:
                 AssertMsgFailed(("Invalid argument given!\n"));
         }
-
-        if (RT_FAILURE(rc))
-            break;
     }
 
-    if (RT_SUCCESS(rc))
+    pDisk = tstVDIoGetDiskByName(pGlob, pcszDisk);
+    if (!pDisk)
+        rc = VERR_NOT_FOUND;
+    else
     {
-        pDisk = tstVDIoGetDiskByName(pGlob, pcszDisk);
-        if (!pDisk)
-            rc = VERR_NOT_FOUND;
-        else
+        unsigned cRanges = 0;
+        PRTRANGE paRanges = NULL;
+
+        /*
+         * Parse the range string which should look like this:
+         * n,off1,cb1,off2,cb2,...
+         *
+         * <n> gives the number of ranges in the string and every off<i>,cb<i>
+         * pair afterwards is a start offset + number of bytes to discard entry.
+         */
+        do
         {
-            VDRANGE Range;
+            rc = RTStrToUInt32Ex(pcszRanges, (char **)&pcszRanges, 10, &cRanges);
+            if (RT_FAILURE(rc) && (rc != VWRN_TRAILING_CHARS))
+                break;
 
-            Range.offStart = off;
-            Range.cbRange = cbDiscard;
+            if (!cRanges)
+            {
+                rc = VERR_INVALID_PARAMETER;
+                break;
+            }
 
-            rc = VDDiscardRanges(pDisk->pVD, &Range, 1);
+            paRanges = (PRTRANGE)RTMemAllocZ(cRanges * sizeof(RTRANGE));
+            if (!paRanges)
+            {
+                rc = VERR_NO_MEMORY;
+                break;
+            }
+
+            if (*pcszRanges != ',')
+            {
+                rc = VERR_INVALID_PARAMETER;
+                break;
+            }
+
+            pcszRanges++;
+
+            /* Retrieve each pair from the string. */
+            for (unsigned i = 0; i < cRanges; i++)
+            {
+                uint64_t off;
+                uint32_t cb;
+
+                rc = RTStrToUInt64Ex(pcszRanges, (char **)&pcszRanges, 10, &off);
+                if (RT_FAILURE(rc) && (rc != VWRN_TRAILING_CHARS))
+                    break;
+
+                if (*pcszRanges != ',')
+                {
+                    switch (*pcszRanges)
+                    {
+                        case 'k':
+                        case 'K':
+                        {
+                            off *= _1K;
+                            break;
+                        }
+                        case 'm':
+                        case 'M':
+                        {
+                            off *= _1M;
+                            break;
+                        }
+                        case 'g':
+                        case 'G':
+                        {
+                            off *= _1G;
+                            break;
+                        }
+                        default:
+                        {
+                            RTPrintf("Invalid size suffix '%s'\n", pcszRanges);
+                            rc = VERR_INVALID_PARAMETER;
+                        }
+                    }
+                    if (RT_SUCCESS(rc))
+                        pcszRanges++;
+                }
+
+                if (*pcszRanges != ',')
+                {
+                    rc = VERR_INVALID_PARAMETER;
+                    break;
+                }
+
+                pcszRanges++;
+
+                rc = RTStrToUInt32Ex(pcszRanges, (char **)&pcszRanges, 10, &cb);
+                if (RT_FAILURE(rc) && (rc != VWRN_TRAILING_CHARS))
+                    break;
+
+                if (*pcszRanges != ',')
+                {
+                    switch (*pcszRanges)
+                    {
+                        case 'k':
+                        case 'K':
+                        {
+                            cb *= _1K;
+                            break;
+                        }
+                        case 'm':
+                        case 'M':
+                        {
+                            cb *= _1M;
+                            break;
+                        }
+                        case 'g':
+                        case 'G':
+                        {
+                            cb *= _1G;
+                            break;
+                        }
+                        default:
+                        {
+                            RTPrintf("Invalid size suffix '%s'\n", pcszRanges);
+                            rc = VERR_INVALID_PARAMETER;
+                        }
+                    }
+                    if (RT_SUCCESS(rc))
+                        pcszRanges++;
+                }
+
+                if (   *pcszRanges != ','
+                    && !(i == cRanges - 1 && *pcszRanges == '\0'))
+                {
+                    rc = VERR_INVALID_PARAMETER;
+                    break;
+                }
+
+                pcszRanges++;
+
+                paRanges[i].offStart = off;
+                paRanges[i].cbRange  = cb;
+            }
+        } while (0);
+
+        if (RT_SUCCESS(rc))
+        {
+            if (!fAsync)
+                rc = VDDiscardRanges(pDisk->pVD, paRanges, cRanges);
+            else
+            {
+                VDIOREQ IoReq;
+                RTSEMEVENT EventSem;
+
+                rc = RTSemEventCreate(&EventSem);
+                if (RT_SUCCESS(rc))
+                {
+                    memset(&IoReq, 0, sizeof(VDIOREQ));
+                    IoReq.enmTxDir = VDIOREQTXDIR_FLUSH;
+                    IoReq.pvUser   = pDisk;
+                    IoReq.idx      = 0;
+                    rc = VDAsyncDiscardRanges(pDisk->pVD, paRanges, cRanges, tstVDIoTestReqComplete, &IoReq, EventSem);
+                    if (rc == VERR_VD_ASYNC_IO_IN_PROGRESS)
+                    {
+                        rc = RTSemEventWait(EventSem, RT_INDEFINITE_WAIT);
+                        AssertRC(rc);
+                    }
+                    else if (rc == VINF_VD_ASYNC_IO_FINISHED)
+                        rc = VINF_SUCCESS;
+
+                    RTSemEventDestroy(EventSem);
+                }
+            }
+
             if (   RT_SUCCESS(rc)
                 && pDisk->pMemDiskVerify)
             {
-                void *pv = RTMemAllocZ(cbDiscard);
-                if (pv)
+                for (unsigned i = 0; i < cRanges; i++)
                 {
-                    RTSGSEG SgSeg;
-                    RTSGBUF SgBuf;
+                    void *pv = RTMemAllocZ(paRanges[i].cbRange);
+                    if (pv)
+                    {
+                        RTSGSEG SgSeg;
+                        RTSGBUF SgBuf;
 
-                    SgSeg.pvSeg = pv;
-                    SgSeg.cbSeg = cbDiscard;
-                    RTSgBufInit(&SgBuf, &SgSeg, 1);
-                    rc = VDMemDiskWrite(pDisk->pMemDiskVerify, off, cbDiscard, &SgBuf);
-                    RTMemFree(pv);
+                        SgSeg.pvSeg = pv;
+                        SgSeg.cbSeg = paRanges[i].cbRange;
+                        RTSgBufInit(&SgBuf, &SgSeg, 1);
+                        rc = VDMemDiskWrite(pDisk->pMemDiskVerify, paRanges[i].offStart, paRanges[i].cbRange, &SgBuf);
+                        RTMemFree(pv);
+                    }
+                    else
+                    {
+                        rc = VERR_NO_MEMORY;
+                        break;
+                    }
                 }
-                else
-                    rc = VERR_NO_MEMORY;
             }
         }
+
+        if (paRanges)
+            RTMemFree(paRanges);
     }
 
     return rc;
@@ -1646,7 +1816,7 @@ static DECLCALLBACK(int) vdScriptHandlerIoLogReplay(PVDTESTGLOB pGlob, PVDSCRIPT
                     }
                     case VDDBGIOLOGREQ_DISCARD:
                     {
-                        PVDRANGE paRanges = NULL;
+                        PRTRANGE paRanges = NULL;
                         unsigned cRanges = 0;
 
                         rc = VDDbgIoLogEventGetStartDiscard(hIoLogger, &idEvent, &fAsync,
@@ -2725,6 +2895,7 @@ static void tstVDIoTestReqComplete(void *pvUser1, void *pvUser2, int rcReq)
                 break;
             }
             case VDIOREQTXDIR_FLUSH:
+            case VDIOREQTXDIR_DISCARD:
                 break;
         }
     }

@@ -174,7 +174,7 @@ VBOXDDU_DECL(int) VDDbgIoLogStart(VDIOLOGGER hIoLogger, bool fAsync, VDDBGIOLOGR
  * @param   cRanges      Number of rnages in the array.
  * @param   phIoLogEntry Where to store the I/O log entry handle on success.
  */
-VBOXDDU_DECL(int) VDDbgIoLogStartDiscard(VDIOLOGGER hIoLogger, bool fAsync, PVDRANGE paRanges, unsigned cRanges,
+VBOXDDU_DECL(int) VDDbgIoLogStartDiscard(VDIOLOGGER hIoLogger, bool fAsync, PCRTRANGE paRanges, unsigned cRanges,
                                          PVDIOLOGENT phIoLogEntry);
 
 /**
@@ -238,7 +238,7 @@ VBOXDDU_DECL(int) VDDbgIoLogEventGetStart(VDIOLOGGER hIoLogger, uint64_t *pidEve
  * @param   pcRanges     Where to store the number of entries in the array on success.
  */
 VBOXDDU_DECL(int) VDDbgIoLogEventGetStartDiscard(VDIOLOGGER hIoLogger, uint64_t *pidEvent, bool *pfAsync,
-                                                 PVDRANGE *ppaRanges, unsigned *pcRanges);
+                                                 PRTRANGE *ppaRanges, unsigned *pcRanges);
 
 /**
  * Returns the complete from the I/O log.

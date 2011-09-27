@@ -2920,5 +2920,7 @@ VBOXHDDBACKEND g_QedBackend =
     /* pfnResize */
     qedResize,
     /* pfnDiscard */
+    NULL,
+    /* pfnAsyncDiscard */
     NULL
 };

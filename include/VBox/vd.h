@@ -397,22 +397,6 @@ typedef VDGEOMETRY *PVDGEOMETRY;
 typedef const VDGEOMETRY *PCVDGEOMETRY;
 
 /**
- * VD range descriptor.
- */
-typedef struct VDRANGE
-{
-    /** Start offset in bytes, multiple of 512. */
-    uint64_t    offStart;
-    /** Amount of bytes described by this range, multiple of 512. */
-    size_t      cbRange;
-} VDRANGE;
-
-/** Pointer to a range descriptor. */
-typedef VDRANGE *PVDRANGE;
-/** Pointer to a constant range descriptor. */
-typedef const VDRANGE *PCVDRANGE;
-
-/**
  * VBox HDD Container main structure.
  */
 /* Forward declaration, VBOXHDD structure is visible only inside VBox HDD module. */
@@ -1121,7 +1105,7 @@ VBOXDDU_DECL(void) VDDumpImages(PVBOXHDD pDisk);
  * @note In contrast to VDCompact() the ranges are always discarded even if they
  *       appear to contain data. This method is mainly used to implement TRIM support.
  */
-VBOXDDU_DECL(int) VDDiscardRanges(PVBOXHDD pDisk, PCVDRANGE paRanges, unsigned cRanges);
+VBOXDDU_DECL(int) VDDiscardRanges(PVBOXHDD pDisk, PCRTRANGE paRanges, unsigned cRanges);
 
 
 /**
@@ -1169,6 +1153,22 @@ VBOXDDU_DECL(int) VDAsyncWrite(PVBOXHDD pDisk, uint64_t uOffset, size_t cbWrite,
 VBOXDDU_DECL(int) VDAsyncFlush(PVBOXHDD pDisk,
                                PFNVDASYNCTRANSFERCOMPLETE pfnComplete,
                                void *pvUser1, void *pvUser2);
+
+/**
+ * Start an asynchronous discard request.
+ *
+ * @return  VBox status code.
+ * @param   pDisk           Pointer to HDD container.
+ * @param   paRanges        The array of ranges to discard.
+ * @param   cRanges         Number of entries in the array.
+ * @param   pfnComplete     Completion callback.
+ * @param   pvUser1         User data which is passed on completion.
+ * @param   pvUser2         User data which is passed on completion.
+ */
+VBOXDDU_DECL(int) VDAsyncDiscardRanges(PVBOXHDD pDisk, PCRTRANGE paRanges, unsigned cRanges,
+                                       PFNVDASYNCTRANSFERCOMPLETE pfnComplete,
+                                       void *pvUser1, void *pvUser);
+
 RT_C_DECLS_END
 
 /** @} */
