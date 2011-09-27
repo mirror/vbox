@@ -1230,10 +1230,15 @@ static int pdmacFileEpRead(PPDMASYNCCOMPLETIONTASK pTask,
 
     STAM_PROFILE_ADV_START(&pEpFile->StatRead, Read);
 
-    pdmacFileEpTaskInit(pTask, cbRead);
+    if (RT_LIKELY(off + cbRead <= pEpFile->cbFile))
+    {
+        pdmacFileEpTaskInit(pTask, cbRead);
 
-    rc = pdmacFileEpTaskInitiate(pTask, pEndpoint, off, paSegments, cSegments, cbRead,
-                                 PDMACTASKFILETRANSFER_READ);
+        rc = pdmacFileEpTaskInitiate(pTask, pEndpoint, off, paSegments, cSegments, cbRead,
+                                     PDMACTASKFILETRANSFER_READ);
+    }
+    else
+        rc = VERR_EOF;
 
     STAM_PROFILE_ADV_STOP(&pEpFile->StatRead, Read);
 
