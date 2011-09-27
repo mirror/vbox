@@ -973,8 +973,8 @@ int VBOXCALL supdrvIOCtlFast(uintptr_t uIOCtl, VMCPUID idCpu, PSUPDRVDEVEXT pDev
     /*
      * We check the two prereqs after doing this only to allow the compiler to optimize things better.
      */
-    if (RT_LIKELY(   RT_VALID_PTR(pSession) 
-                  && pSession->pVM 
+    if (RT_LIKELY(   RT_VALID_PTR(pSession)
+                  && pSession->pVM
                   && pDevExt->pfnVMMR0EntryFast))
     {
         switch (uIOCtl)
