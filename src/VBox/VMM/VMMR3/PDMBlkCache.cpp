@@ -2444,7 +2444,7 @@ VMMR3DECL(int) PDMR3BlkCacheDiscard(PPDMBLKCACHE pBlkCache, PCRTRANGE paRanges,
 
         while (cbLeft)
         {
-            size_t cbThisDiscard;
+            size_t cbThisDiscard = 0;
 
             pEntry = pdmBlkCacheGetCacheEntryByOffset(pBlkCache, offCur);
 
