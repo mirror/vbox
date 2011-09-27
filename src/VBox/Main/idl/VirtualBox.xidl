@@ -4762,7 +4762,7 @@
       </param>
     </method>
 
-    <method name="discardDevice">
+    <method name="setAutoDiscardForDevice">
       <desc>
         Sets a flag in the device information which indicates that the medium
         supports discarding unsused blocks (called trimming for SATA or unmap
