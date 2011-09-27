@@ -2013,7 +2013,7 @@ static BOOL vboxWddmSwapchainAdjust(PVBOXWDDMDISP_SWAPCHAIN pSwapchain, PVBOXWDD
     return bChanged;
 }
 #endif
-static PVBOXWDDMDISP_SWAPCHAIN vboxWddmSwapchainFindCreate(PVBOXWDDMDISP_DEVICE pDevice, PVBOXWDDMDISP_ALLOCATION pBbAlloc)
+static PVBOXWDDMDISP_SWAPCHAIN vboxWddmSwapchainFindCreate(PVBOXWDDMDISP_DEVICE pDevice, PVBOXWDDMDISP_ALLOCATION pBbAlloc, BOOL *pbNeedPresent)
 {
     PVBOXWDDMDISP_SWAPCHAIN pSwapchain = pBbAlloc->pSwapchain;
     if (pSwapchain)
@@ -2022,11 +2022,20 @@ static PVBOXWDDMDISP_SWAPCHAIN vboxWddmSwapchainFindCreate(PVBOXWDDMDISP_DEVICE 
         PVBOXWDDMDISP_RENDERTGT pRt = vboxWddmSwapchainGetBb(pSwapchain);
         if (pRt->pAlloc != pBbAlloc)
         {
+            if (pBbAlloc == vboxWddmSwapchainGetFb(pSwapchain)->pAlloc)
+            {
+                /* the current front-buffer present is requested, don't do anything */
+                *pbNeedPresent = FALSE;
+                return pSwapchain;
+            }
             /* bad, @todo: correct the swapchain by either removing the Rt and adding it to another swapchain
              * or by removing the pBbAlloc out of it */
             Assert(0);
         }
     }
+
+    *pbNeedPresent = TRUE;
+
     if (!pSwapchain)
     {
         /* first search for the swapchain the alloc might be added to */
@@ -2120,12 +2129,25 @@ static HRESULT vboxWddmSwapchainRtSynch(PVBOXWDDMDISP_DEVICE pDevice, PVBOXWDDMD
 
     PVBOXWDDMDISP_ALLOCATION pAlloc = pRt->pAlloc;
     Assert(pD3D9Surf);
-    Assert(pAlloc->enmD3DIfType == VBOXDISP_D3DIFTYPE_SURFACE);
+    Assert(pAlloc->enmD3DIfType == VBOXDISP_D3DIFTYPE_SURFACE
+            || pAlloc->enmD3DIfType == VBOXDISP_D3DIFTYPE_TEXTURE);
     if (pAlloc->pD3DIf)
     {
         if (pSwapchain->fFlags.bChanged)
         {
-            IDirect3DSurface9 *pD3D9OldSurf = (IDirect3DSurface9*)pAlloc->pD3DIf;
+            IDirect3DSurface9 *pD3D9OldSurf = NULL;
+            if (pAlloc->pD3DIf)
+            {
+                /* since this can be texture, need to do the vboxWddmSurfGet magic */
+                hr = vboxWddmSurfGet(pAlloc->pRc, pAlloc->iAlloc, &pD3D9OldSurf);
+                if (FAILED(hr))
+                {
+                    WARN(("vboxWddmSurfGet failed, hr (0x%x)",hr));
+                    pD3D9Surf->Release();
+                    return hr;
+                }
+            }
+
             if (pD3D9OldSurf && pD3D9OldSurf != pD3D9Surf)
             {
                 VOID *pvSwapchain = NULL;
@@ -2152,10 +2174,20 @@ static HRESULT vboxWddmSwapchainRtSynch(PVBOXWDDMDISP_DEVICE pDevice, PVBOXWDDMD
                     Assert(hr == S_OK);
                 }
             }
+
+            if (pD3D9OldSurf)
+            {
+                pD3D9OldSurf->Release();
+            }
+        }
+        else
+        {
+            Assert(pAlloc->enmD3DIfType == VBOXDISP_D3DIFTYPE_SURFACE);
         }
         pAlloc->pD3DIf->Release();
     }
 
+    pAlloc->enmD3DIfType = VBOXDISP_D3DIFTYPE_SURFACE;
     pAlloc->pD3DIf = pD3D9Surf;
     pRt->fFlags.Value = 0;
 
@@ -2350,8 +2382,11 @@ static HRESULT vboxWddmSwapchainChkCreateIf(PVBOXWDDMDISP_DEVICE pDevice, PVBOXW
                         PVBOXWDDMDISP_RENDERTGT pRT = &pSwapchain->aRTs[i];
                         if (!pRT->pAlloc->pD3DIf)
                             continue;
-                        IDirect3DSurface9* pD3D9OldSurf = (IDirect3DSurface9*)pRT->pAlloc->pD3DIf;
+                        IDirect3DSurface9* pD3D9OldSurf = NULL;
                         VOID *pvSwapchain = NULL;
+                        /* since this can be texture, need to do the vboxWddmSurfGet magic */
+                        hr = vboxWddmSurfGet(pRT->pAlloc->pRc, pRT->pAlloc->iAlloc, &pD3D9OldSurf);
+                        Assert(hr == S_OK);
                         tmpHr = pD3D9OldSurf->GetContainer(IID_IDirect3DSwapChain9, &pvSwapchain);
                         if (tmpHr == S_OK)
                         {
@@ -2393,6 +2428,7 @@ static HRESULT vboxWddmSwapchainChkCreateIf(PVBOXWDDMDISP_DEVICE pDevice, PVBOXW
                         if (tmpHr != S_OK)
                             continue;
 
+                        pRT->pAlloc->pD3DIf->Release();
                         pRT->pAlloc->pD3DIf = pD3D9NewSurf;
                         pD3D9OldSurf->Release();
                     }
@@ -2465,12 +2501,14 @@ static HRESULT vboxWddmSwapchainChkCreateIf(PVBOXWDDMDISP_DEVICE pDevice, PVBOXW
 
         if (hr == S_OK)
         {
+#ifdef DEBUG
             for (UINT i = 0; i < cSurfs; ++i)
             {
                 PVBOXWDDMDISP_RENDERTGT pRt = &pSwapchain->aRTs[i];
-                pRt->pAlloc->enmD3DIfType = VBOXDISP_D3DIFTYPE_SURFACE;
+                Assert(pRt->pAlloc->enmD3DIfType == VBOXDISP_D3DIFTYPE_SURFACE
+                        || pRt->pAlloc->enmD3DIfType == VBOXDISP_D3DIFTYPE_TEXTURE);
             }
-
+#endif
             hr = vboxWddmSwapchainSynch(pDevice, pSwapchain);
             Assert(hr == S_OK);
             if (hr == S_OK)
@@ -2654,9 +2692,11 @@ static HRESULT vboxWddmSwapchainRtSurfGet(PVBOXWDDMDISP_DEVICE pDevice, PVBOXWDD
 
 static HRESULT vboxWddmSwapchainPresent(PVBOXWDDMDISP_DEVICE pDevice, PVBOXWDDMDISP_ALLOCATION pBbAlloc)
 {
-    BOOL bChanged = FALSE;
-    PVBOXWDDMDISP_SWAPCHAIN pSwapchain = vboxWddmSwapchainFindCreate(pDevice, pBbAlloc);
+    BOOL bNeedPresent;
+    PVBOXWDDMDISP_SWAPCHAIN pSwapchain = vboxWddmSwapchainFindCreate(pDevice, pBbAlloc, &bNeedPresent);
     Assert(pSwapchain);
+    if (!bNeedPresent)
+        return S_OK;
     if (pSwapchain)
     {
         HRESULT hr = vboxWddmSwapchainChkCreateIf(pDevice, pSwapchain);
@@ -2743,6 +2783,7 @@ static HRESULT vboxWddmD3DDeviceCreateDummy(PVBOXWDDMDISP_DEVICE pDevice)
         for (UINT i = 0 ; i < pRc->cAllocations; ++i)
         {
             PVBOXWDDMDISP_ALLOCATION pAlloc = &pRc->aAllocations[i];
+            pAlloc->enmD3DIfType = VBOXDISP_D3DIFTYPE_SURFACE;
             pAlloc->SurfDesc.width = 0x4;
             pAlloc->SurfDesc.height = 0x4;
             pAlloc->SurfDesc.format = D3DDDIFMT_A8R8G8B8;
@@ -3730,6 +3771,8 @@ static HRESULT APIENTRY vboxWddmDDevTexBlt(HANDLE hDevice, CONST D3DDDIARG_TEXBL
     PVBOXWDDMDISP_RESOURCE pDstRc = (PVBOXWDDMDISP_RESOURCE)pData->hDstResource;
     PVBOXWDDMDISP_RESOURCE pSrcRc = (PVBOXWDDMDISP_RESOURCE)pData->hSrcResource;
     /* requirements for D3DDevice9::UpdateTexture */
+    Assert(pDstRc->aAllocations[0].enmD3DIfType == VBOXDISP_D3DIFTYPE_TEXTURE);
+    Assert(pSrcRc->aAllocations[0].enmD3DIfType == VBOXDISP_D3DIFTYPE_TEXTURE);
     Assert(pSrcRc->RcDesc.enmPool == D3DDDIPOOL_SYSTEMMEM);
     Assert(pDstRc->RcDesc.enmPool != D3DDDIPOOL_SYSTEMMEM);
     HRESULT hr = S_OK;
@@ -5089,6 +5132,11 @@ static HRESULT APIENTRY vboxWddmDDevCreateResource(HANDLE hDevice, D3DDDIARG_CRE
                 {
                     bCreateSwapchain = true;
                     Assert(bIssueCreateResource);
+                    for (UINT i = 0; i < pRc->cAllocations; ++i)
+                    {
+                        PVBOXWDDMDISP_ALLOCATION pAllocation = &pRc->aAllocations[i];
+                        pAllocation->enmD3DIfType = VBOXDISP_D3DIFTYPE_SURFACE;
+                    }
                 }
                 else
                 {
