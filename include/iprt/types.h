@@ -2201,6 +2201,20 @@ typedef enum RTEXITCODE
     RTEXITCODE_32BIT_HACK = 0x7fffffff
 } RTEXITCODE;
 
+/**
+ * Range descriptor.
+ */
+typedef struct RTRANGE
+{
+    /** Start offset. */
+    uint64_t    offStart;
+    /** Range size. */
+    size_t      cbRange;
+} RTRANGE;
+/** Pointer to a range descriptor. */
+typedef RTRANGE *PRTRANGE;
+/** Pointer to a readonly range descriptor. */
+typedef const RTRANGE *PCRTRANGE;
 
 #ifdef __cplusplus
 /**
