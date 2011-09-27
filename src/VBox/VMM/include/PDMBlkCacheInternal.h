@@ -203,48 +203,56 @@ typedef struct PDMBLKCACHE
         struct
         {
             /** Pointer to the device instance owning the block cache. */
-            R3PTRTYPE(PPDMDEVINS)                     pDevIns;
+            R3PTRTYPE(PPDMDEVINS)                            pDevIns;
             /** Complete callback to the user. */
-            R3PTRTYPE(PFNPDMBLKCACHEXFERCOMPLETEDEV)  pfnXferComplete;
+            R3PTRTYPE(PFNPDMBLKCACHEXFERCOMPLETEDEV)         pfnXferComplete;
             /** I/O enqueue callback. */
-            R3PTRTYPE(PFNPDMBLKCACHEXFERENQUEUEDEV)   pfnXferEnqueue;
+            R3PTRTYPE(PFNPDMBLKCACHEXFERENQUEUEDEV)          pfnXferEnqueue;
+            /** Discard enqueue callback. */
+            R3PTRTYPE(PFNPDMBLKCACHEXFERENQUEUEDISCARDDEV)   pfnXferEnqueueDiscard;
         } Dev;
         /** PDMASYNCCOMPLETIONTEMPLATETYPE_DRV */
         struct
         {
             /** Pointer to the driver instance owning the block cache. */
-            R3PTRTYPE(PPDMDRVINS)                     pDrvIns;
+            R3PTRTYPE(PPDMDRVINS)                            pDrvIns;
             /** Complete callback to the user. */
-            R3PTRTYPE(PFNPDMBLKCACHEXFERCOMPLETEDRV)  pfnXferComplete;
+            R3PTRTYPE(PFNPDMBLKCACHEXFERCOMPLETEDRV)         pfnXferComplete;
             /** I/O enqueue callback. */
-            R3PTRTYPE(PFNPDMBLKCACHEXFERENQUEUEDRV)   pfnXferEnqueue;
+            R3PTRTYPE(PFNPDMBLKCACHEXFERENQUEUEDRV)          pfnXferEnqueue;
+            /** Discard enqueue callback. */
+            R3PTRTYPE(PFNPDMBLKCACHEXFERENQUEUEDISCARDDRV)   pfnXferEnqueueDiscard;
         } Drv;
         /** PDMASYNCCOMPLETIONTEMPLATETYPE_INTERNAL */
         struct
         {
             /** Pointer to user data. */
-            R3PTRTYPE(void *)                         pvUser;
+            R3PTRTYPE(void *)                                pvUser;
             /** Complete callback to the user. */
-            R3PTRTYPE(PFNPDMBLKCACHEXFERCOMPLETEINT)  pfnXferComplete;
+            R3PTRTYPE(PFNPDMBLKCACHEXFERCOMPLETEINT)         pfnXferComplete;
             /** I/O enqueue callback. */
-            R3PTRTYPE(PFNPDMBLKCACHEXFERENQUEUEINT)   pfnXferEnqueue;
+            R3PTRTYPE(PFNPDMBLKCACHEXFERENQUEUEINT)          pfnXferEnqueue;
+            /** Discard enqueue callback. */
+            R3PTRTYPE(PFNPDMBLKCACHEXFERENQUEUEDISCARDINT)   pfnXferEnqueueDiscard;
         } Int;
         /** PDMASYNCCOMPLETIONTEMPLATETYPE_USB */
         struct
         {
             /** Pointer to the usb instance owning the template. */
-            R3PTRTYPE(PPDMUSBINS)                     pUsbIns;
+            R3PTRTYPE(PPDMUSBINS)                            pUsbIns;
             /** Complete callback to the user. */
-            R3PTRTYPE(PFNPDMBLKCACHEXFERCOMPLETEUSB)  pfnXferComplete;
+            R3PTRTYPE(PFNPDMBLKCACHEXFERCOMPLETEUSB)         pfnXferComplete;
             /** I/O enqueue callback. */
-            R3PTRTYPE(PFNPDMBLKCACHEXFERENQUEUEUSB)   pfnXferEnqueue;
+            R3PTRTYPE(PFNPDMBLKCACHEXFERENQUEUEUSB)          pfnXferEnqueue;
+            /** Discard enqueue callback. */
+            R3PTRTYPE(PFNPDMBLKCACHEXFERENQUEUEDISCARDUSB)   pfnXferEnqueueDiscard;
         } Usb;
     } u;
 
 #ifdef VBOX_WITH_STATISTICS
-    uint32_t    u32Alignment;
+    uint32_t                      u32Alignment;
     /** Number of times a write was deferred because the cache entry was still in progress */
-    STAMCOUNTER StatWriteDeferred;
+    STAMCOUNTER                   StatWriteDeferred;
 #endif
 
     /** Flag whether the cache was suspended. */
@@ -273,22 +281,22 @@ typedef struct PDMBLKCACHEREQ
  */
 typedef struct PDMBLKCACHEIOXFER
 {
-    /** Flag whether the I/O xfer updates a cache entry or updates the request directl. */
-    bool fIoCache;
+    /** Flag whether the I/O xfer updates a cache entry or updates the request directly. */
+    bool                  fIoCache;
     /** Type dependent data. */
     union
     {
         /** Pointer to the entry the transfer updates. */
         PPDMBLKCACHEENTRY pEntry;
-        /** Pointer to the request the ztransfer updates. */
+        /** Pointer to the request the transfer updates. */
         PPDMBLKCACHEREQ   pReq;
     };
-    /** Segment used if a cache entry is updated. */
-    RTSGSEG SgSeg;
-    /** S/G buffer. */
-    RTSGBUF SgBuf;
     /** Transfer direction. */
-    PDMBLKCACHEXFERDIR enmXferDir;
+    PDMBLKCACHEXFERDIR    enmXferDir;
+    /** Segment used if a cache entry is updated. */
+    RTSGSEG               SgSeg;
+    /** S/G buffer. */
+    RTSGBUF               SgBuf;
 } PDMBLKCACHEIOXFER;
 
 /**
