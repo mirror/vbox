@@ -3626,7 +3626,7 @@
 
   <interface
     name="IMachine" extends="$unknown"
-    uuid="5eaa9319-62fc-4b0a-843c-0cb1940f8a91"
+    uuid="5a8e9425-aa0d-4703-9f28-2353fc4ee623"
     wsmap="managed"
     >
     <desc>
@@ -4759,6 +4759,45 @@
       </param>
       <param name="nonRotational" type="boolean" dir="in">
         <desc>New value for the non-rotational device flag.</desc>
+      </param>
+    </method>
+
+    <method name="discardDevice">
+      <desc>
+        Sets a flag in the device information which indicates that the medium
+        supports discarding unsused blocks (called trimming for SATA or unmap
+        for SCSI devices) .This may or may not be supported by a particular drive,
+        and is silently ignored in the latter case. At the moment only hard disks
+        (which is a misnomer in this context) accept this setting. Changing the
+        setting while the VM is running is forbidden. The device must already
+        exist; see <link to="IMachine::attachDevice"/> for how to attach a new
+        device.
+
+        The @a controllerPort and @a device parameters specify the device slot and
+        have have the same meaning as with <link to="IMachine::attachDevice" />.
+
+        <result name="E_INVALIDARG">
+          SATA device, SATA port, SCSI port out of range.
+        </result>
+        <result name="VBOX_E_INVALID_OBJECT_STATE">
+          Attempt to modify an unregistered virtual machine.
+        </result>
+        <result name="VBOX_E_INVALID_VM_STATE">
+          Invalid machine state.
+        </result>
+
+      </desc>
+      <param name="name" type="wstring" dir="in">
+        <desc>Name of the storage controller.</desc>
+      </param>
+      <param name="controllerPort" type="long" dir="in">
+        <desc>Storage controller port.</desc>
+      </param>
+      <param name="device" type="long" dir="in">
+        <desc>Device slot in the given port.</desc>
+      </param>
+      <param name="discard" type="boolean" dir="in">
+        <desc>New value for the discard device flag.</desc>
       </param>
     </method>
 
@@ -9792,7 +9831,7 @@
 
   <interface
     name="IMediumAttachment" extends="$unknown"
-    uuid="b5dfbb8c-7498-48c3-bf10-78fc60f064e1"
+    uuid="5ee464d6-0613-4331-b154-7ce12170ef9f"
     wsmap="struct"
     >
     <desc>
@@ -10016,6 +10055,10 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
     <attribute name="nonRotational" type="boolean" readonly="yes">
       <desc>Whether the associated medium is non-rotational.</desc>
+    </attribute>
+
+    <attribute name="discard" type="boolean" readonly="yes">
+      <desc>Whether the associated medium supports discarding unused blocks.</desc>
     </attribute>
 
     <attribute name="bandwidthGroup" type="IBandwidthGroup" readonly="yes">

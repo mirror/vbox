@@ -840,6 +840,9 @@ struct AttachedDevice
     // Whether the medium is non-rotational:
     bool                fNonRotational;
 
+    // Whether the medium supports discarding unused blocks:
+    bool                fDiscard;
+
     int32_t             lPort;
     int32_t             lDevice;
 

@@ -41,6 +41,7 @@ struct BackupableMediumAttachmentData
           fPassthrough(false),
           fTempEject(false),
           fNonRotational(false),
+          fDiscard(false),
           fImplicit(false)
     { }
 
@@ -59,6 +60,7 @@ struct BackupableMediumAttachmentData
     bool                fPassthrough;
     bool                fTempEject;
     bool                fNonRotational;
+    bool                fDiscard;
     bool                fImplicit;
 };
 
@@ -119,6 +121,7 @@ HRESULT MediumAttachment::init(Machine *aParent,
                                bool aPassthrough,
                                bool aTempEject,
                                bool aNonRotational,
+                               bool aDiscard,
                                const Utf8Str &strBandwidthGroup)
 {
     LogFlowThisFuncEnter();
@@ -146,6 +149,7 @@ HRESULT MediumAttachment::init(Machine *aParent,
     m->bd->fPassthrough = aPassthrough;
     m->bd->fTempEject = aTempEject;
     m->bd->fNonRotational = aNonRotational;
+    m->bd->fDiscard = aDiscard;
     m->bd->fImplicit = aImplicit;
 
     /* Confirm a successful initialization when it's the case */
@@ -369,6 +373,23 @@ STDMETHODIMP MediumAttachment::COMGETTER(NonRotational)(BOOL *aNonRotational)
     return S_OK;
 }
 
+STDMETHODIMP MediumAttachment::COMGETTER(Discard)(BOOL *aDiscard)
+{
+    LogFlowThisFuncEnter();
+
+    CheckComArgOutPointerValid(aDiscard);
+
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    AutoReadLock lock(this COMMA_LOCKVAL_SRC_POS);
+
+    *aDiscard = m->bd->fDiscard;
+
+    LogFlowThisFuncLeave();
+    return S_OK;
+}
+
 STDMETHODIMP MediumAttachment::COMGETTER(BandwidthGroup) (IBandwidthGroup **aBwGroup)
 {
     LogFlowThisFuncEnter();
@@ -485,6 +506,12 @@ bool MediumAttachment::getNonRotational() const
     return m->bd->fNonRotational;
 }
 
+bool MediumAttachment::getDiscard() const
+{
+    AutoReadLock lock(this COMMA_LOCKVAL_SRC_POS);
+    return m->bd->fDiscard;
+}
+
 const Utf8Str& MediumAttachment::getBandwidthGroup() const
 {
     return m->bd->strBandwidthGroup;
@@ -544,6 +571,15 @@ void MediumAttachment::updateNonRotational(bool aNonRotational)
 
     m->bd.backup();
     m->bd->fNonRotational = aNonRotational;
+}
+
+/** Must be called from under this object's write lock. */
+void MediumAttachment::updateDiscard(bool aDiscard)
+{
+    Assert(isWriteLockOnCurrentThread());
+
+    m->bd.backup();
+    m->bd->fDiscard = aDiscard;
 }
 
 void MediumAttachment::updateBandwidthGroup(const Utf8Str &aBandwidthGroup)

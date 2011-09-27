@@ -3806,6 +3806,7 @@ STDMETHODIMP Machine::AttachDevice(IN_BSTR aControllerName,
                           false /* fPassthrough */,
                           false /* fTempEject */,
                           false /* fNonRotational */,
+                          false /* fDiscard */,
                           Utf8Str::Empty);
     if (FAILED(rc)) return rc;
 
@@ -4044,6 +4045,53 @@ STDMETHODIMP Machine::NonRotationalDevice(IN_BSTR aControllerName, LONG aControl
                         tr("Setting the non-rotational medium flag rejected as the device attached to device slot %d on port %d of controller '%ls' is not a hard disk"),
                         aDevice, aControllerPort, aControllerName);
     pAttach->updateNonRotational(!!aNonRotational);
+
+    return S_OK;
+}
+
+STDMETHODIMP Machine::DiscardDevice(IN_BSTR aControllerName, LONG aControllerPort,
+                                    LONG aDevice, BOOL aDiscard)
+{
+    CheckComArgStrNotEmptyOrNull(aControllerName);
+
+    LogFlowThisFunc(("aControllerName=\"%ls\" aControllerPort=%d aDevice=%d aDiscard=%d\n",
+                     aControllerName, aControllerPort, aDevice, aDiscard));
+
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    HRESULT rc = checkStateDependency(MutableStateDep);
+    if (FAILED(rc)) return rc;
+
+    AssertReturn(mData->mMachineState != MachineState_Saved, E_FAIL);
+
+    if (Global::IsOnlineOrTransient(mData->mMachineState))
+        return setError(VBOX_E_INVALID_VM_STATE,
+                        tr("Invalid machine state: %s"),
+                        Global::stringifyMachineState(mData->mMachineState));
+
+    MediumAttachment *pAttach = findAttachment(mMediaData->mAttachments,
+                                               aControllerName,
+                                               aControllerPort,
+                                               aDevice);
+    if (!pAttach)
+        return setError(VBOX_E_OBJECT_NOT_FOUND,
+                        tr("No storage device attached to device slot %d on port %d of controller '%ls'"),
+                        aDevice, aControllerPort, aControllerName);
+
+
+    setModified(IsModified_Storage);
+    mMediaData.backup();
+
+    AutoWriteLock attLock(pAttach COMMA_LOCKVAL_SRC_POS);
+
+    if (pAttach->getType() != DeviceType_HardDisk)
+        return setError(E_INVALIDARG,
+                        tr("Setting the discard medium flag rejected as the device attached to device slot %d on port %d of controller '%ls' is not a hard disk"),
+                        aDevice, aControllerPort, aControllerName);
+    pAttach->updateDiscard(!!aDiscard);
 
     return S_OK;
 }
@@ -8183,6 +8231,7 @@ HRESULT Machine::loadStorageDevices(StorageController *aStorageController,
                                dev.fPassThrough,
                                dev.fTempEject,
                                dev.fNonRotational,
+                               dev.fDiscard,
                                pBwGroup.isNull() ? Utf8Str::Empty : pBwGroup->getName());
         if (FAILED(rc)) break;
 
@@ -9130,7 +9179,7 @@ HRESULT Machine::saveStorageDevices(ComObjPtr<StorageController> aStorageControl
                 dev.uuid = pMedium->getId();
             dev.fPassThrough = pAttach->getPassthrough();
             dev.fTempEject = pAttach->getTempEject();
-            dev.fNonRotational = pAttach->getNonRotational();
+            dev.fDiscard = pAttach->getDiscard();
         }
 
         dev.strBwGroup = pAttach->getBandwidthGroup();
@@ -9474,6 +9523,7 @@ HRESULT Machine::createImplicitDiffs(IProgress *aProgress,
                                   false /* aPassthrough */,
                                   false /* aTempEject */,
                                   pAtt->getNonRotational(),
+                                  pAtt->getDiscard(),
                                   pAtt->getBandwidthGroup());
             if (FAILED(rc)) throw rc;
 
