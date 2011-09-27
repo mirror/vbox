@@ -1230,7 +1230,7 @@ static int pdmacFileEpRead(PPDMASYNCCOMPLETIONTASK pTask,
 
     STAM_PROFILE_ADV_START(&pEpFile->StatRead, Read);
 
-    if (RT_LIKELY(off + cbRead <= pEpFile->cbFile))
+    if (RT_LIKELY(off + cbRead <= (RTFOFF)pEpFile->cbFile))
     {
         pdmacFileEpTaskInit(pTask, cbRead);
 
