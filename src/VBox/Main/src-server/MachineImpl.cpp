@@ -4049,8 +4049,8 @@ STDMETHODIMP Machine::NonRotationalDevice(IN_BSTR aControllerName, LONG aControl
     return S_OK;
 }
 
-STDMETHODIMP Machine::DiscardDevice(IN_BSTR aControllerName, LONG aControllerPort,
-                                    LONG aDevice, BOOL aDiscard)
+STDMETHODIMP Machine::SetAutoDiscardForDevice(IN_BSTR aControllerName, LONG aControllerPort,
+                                              LONG aDevice, BOOL aDiscard)
 {
     CheckComArgStrNotEmptyOrNull(aControllerName);
 
