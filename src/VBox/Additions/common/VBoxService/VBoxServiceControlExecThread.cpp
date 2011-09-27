@@ -347,53 +347,60 @@ int VBoxServiceControlExecThreadGetOutput(uint32_t uPID, uint32_t uHandleId, uin
             PVBOXSERVICECTRLEXECPIPEBUF pPipeBuf = NULL;
             switch (uHandleId)
             {
-                case OUTPUT_HANDLE_ID_STDERR: /* StdErr */
+                case OUTPUT_HANDLE_ID_STDERR:
                     pPipeBuf = &pData->stdErr;
                     break;
 
-                case OUTPUT_HANDLE_ID_STDOUT: /* StdOut */
-                default: /* On VBox host < 4.1 this is 0, so default to stdout
-                          * to not break things. */
+                case OUTPUT_HANDLE_ID_STDOUT:
+                case OUTPUT_HANDLE_ID_STDOUT_DEPRECATED:
                     pPipeBuf = &pData->stdOut;
                     break;
-            }
-            AssertPtr(pPipeBuf);
 
-#ifdef DEBUG_andy
-            VBoxServiceVerbose(4, "ControlExec: [PID %u]: Getting output from pipe buffer %u ...\n",
-                               uPID, pPipeBuf->uPipeId);
-#endif
-            /* If the stdout pipe buffer is enabled (that is, still could be filled by a running
-             * process) wait for the signal to arrive so that we don't return without any actual
-             * data read. */
-            bool fEnabled = VBoxServicePipeBufIsEnabled(pPipeBuf);
-            if (fEnabled)
-            {
-#ifdef DEBUG_andy
-                VBoxServiceVerbose(4, "ControlExec: [PID %u]: Waiting for pipe buffer %u (%ums)\n",
-                                   uPID, pPipeBuf->uPipeId, uTimeout);
-#endif
-                rc = VBoxServicePipeBufWaitForEvent(pPipeBuf, uTimeout);
+                default:
+                    rc = VERR_NOT_FOUND; /* Handle ID not found! */
+                    break;
             }
+
             if (RT_SUCCESS(rc))
             {
-                uint32_t cbRead = cbSize; /* Read as much as possible. */
-                rc = VBoxServicePipeBufRead(pPipeBuf, pBuf, cbSize, &cbRead);
+                AssertPtr(pPipeBuf);
+
+    #ifdef DEBUG_andy
+                VBoxServiceVerbose(4, "ControlExec: [PID %u]: Getting output from pipe buffer %u ...\n",
+                                   uPID, pPipeBuf->uPipeId);
+    #endif
+                /* If the stdout pipe buffer is enabled (that is, still could be filled by a running
+                 * process) wait for the signal to arrive so that we don't return without any actual
+                 * data read. */
+                bool fEnabled = VBoxServicePipeBufIsEnabled(pPipeBuf);
+                if (fEnabled)
+                {
+    #ifdef DEBUG_andy
+                    VBoxServiceVerbose(4, "ControlExec: [PID %u]: Waiting for pipe buffer %u (%ums)\n",
+                                       uPID, pPipeBuf->uPipeId, uTimeout);
+    #endif
+                    rc = VBoxServicePipeBufWaitForEvent(pPipeBuf, uTimeout);
+                }
                 if (RT_SUCCESS(rc))
                 {
-                    if (   !cbRead
-                        && fEnabled)
+                    uint32_t cbRead = cbSize; /* Read as much as possible. */
+                    rc = VBoxServicePipeBufRead(pPipeBuf, pBuf, cbSize, &cbRead);
+                    if (RT_SUCCESS(rc))
                     {
-                        AssertReleaseMsg(!VBoxServicePipeBufIsEnabled(pPipeBuf),
-                                         ("[PID %u]: Waited (%ums) for active pipe buffer %u (%u size, %u bytes left), but nothing read!\n",
-                                         uPID, uTimeout, pPipeBuf->uPipeId, pPipeBuf->cbSize, pPipeBuf->cbSize - pPipeBuf->cbOffset));
+                        if (   !cbRead
+                            && fEnabled)
+                        {
+                            AssertReleaseMsg(!VBoxServicePipeBufIsEnabled(pPipeBuf),
+                                             ("[PID %u]: Waited (%ums) for active pipe buffer %u (%u size, %u bytes left), but nothing read!\n",
+                                             uPID, uTimeout, pPipeBuf->uPipeId, pPipeBuf->cbSize, pPipeBuf->cbSize - pPipeBuf->cbOffset));
+                        }
+                        if (pcbRead)
+                            *pcbRead = cbRead;
                     }
-                    if (pcbRead)
-                        *pcbRead = cbRead;
+                    else
+                        VBoxServiceError("ControlExec: [PID %u]: Unable to read from pipe buffer %u, rc=%Rrc\n",
+                                         uPID, pPipeBuf->uPipeId, rc);
                 }
-                else
-                    VBoxServiceError("ControlExec: [PID %u]: Unable to read from pipe buffer %u, rc=%Rrc\n",
-                                     uPID, pPipeBuf->uPipeId, rc);
             }
         }
         else

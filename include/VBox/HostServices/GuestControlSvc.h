@@ -79,8 +79,9 @@ enum eProcessStatus
  * Pipe handle IDs used internally for referencing to
  * a certain pipe buffer.
  */
-#define OUTPUT_HANDLE_ID_STDOUT     1
-#define OUTPUT_HANDLE_ID_STDERR     2
+#define OUTPUT_HANDLE_ID_STDOUT_DEPRECATED  0 /* Needed for VBox hosts < 4.1.0. */
+#define OUTPUT_HANDLE_ID_STDOUT             1
+#define OUTPUT_HANDLE_ID_STDERR             2
 
 /** @name Internal tools built into VBoxService which are used in order to
  *        accomplish tasks host<->guest.
