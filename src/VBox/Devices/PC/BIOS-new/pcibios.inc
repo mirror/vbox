@@ -44,6 +44,41 @@ if BX_PCIBIOS
 
 extrn		pcibios_protected:near	; in a 32-bit segment
 
+ifdef DEBUG
+
+; Publics for easier debugging and disassembly
+
+public		pcibios_real
+public		pci_present
+public		pci_real_f02
+public		pci_real_devloop
+public		pci_real_nextdev
+public		pci_real_f03
+public		pci_real_devloop2
+public		pci_real_nextdev2
+public		pci_real_ok
+public		pci_real_fail
+public		pci_real_select_reg
+public		pcibios_init_iomem_bases
+public		pci_init_io_loop1
+public		pci_init_io_loop2
+public		init_io_base
+public		next_pci_base
+public		enable_iomem_space
+public		next_pci_dev
+public		pcibios_init_set_elcr
+public		is_master_pic
+public		pcibios_init_irqs
+public		pci_init_irq_loop1
+public		pci_init_irq_loop2
+public		pci_test_int_pin
+public		pirq_found
+public		next_pci_func
+public		next_pir_entry
+public		pci_init_end
+
+endif
+
 .386
 pcibios_real:
 		push	eax
@@ -318,7 +353,7 @@ pcibios_init_iomem_bases:
 		mov	bp, sp
 		mov	eax, 0E0000000h	; base for memory init
 		push	eax
-		mov	ax, 0C000h	; base for i/o init
+		mov	ax, 0D000h	; base for i/o init
 		push	ax
 		mov	ax, 010h	; start at base address #0
 		push	ax
@@ -365,15 +400,15 @@ pci_init_io_loop2:
 init_io_base:
 		mov	cx, ax
 		mov	ax, 0FFFFh
-		out	dx, ax
-		in	ax, dx
+		out	dx, eax
+		in	eax, dx
 		cmp	ax, cx
 		je	next_pci_base
 
 		xor	ax, 0FFFEh
 		mov	cx, ax
 		mov	ax, [bp-6]
-		out	dx, ax
+		out	dx, eax
 		add	ax, cx	; calculate next free i/o base
 		add	ax, 00100h
 		and	ax, 0FF00h
