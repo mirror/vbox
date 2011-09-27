@@ -600,6 +600,39 @@ typedef struct VBOXHDDBACKEND
                                            void   **ppbmAllocationBitmap,
                                            unsigned fDiscard));
 
+    /**
+     * Discards the given amount of bytes decreasing the size of the image if possible
+     * callback version for asynchronous I/O.
+     *
+     * @returns VBox status code.
+     * @retval  VERR_VD_DISCARD_ALIGNMENT_NOT_MET if the range doesn't meet the required alignment
+     *          for the discard.
+     * @param   pBackendData         Opaque state data for this image.
+     * @param   pIoCtx               I/O context associated with this request.
+     * @param   uOffset              The offset of the first byte to discard.
+     * @param   cbDiscard            How many bytes to discard.
+     * @param   pcbPreAllocated      Pointer to the returned amount of bytes that must
+     *                               be discarded before the range to perform a full
+     *                               block discard.
+     * @param   pcbPostAllocated     Pointer to the returned amount of bytes that must
+     *                               be discarded after the range to perform a full
+     *                               block discard.
+     * @param   pcbActuallyDiscarded Pointer to the returned amount of bytes which
+     *                               could be actually discarded.
+     * @param   ppbmAllocationBitmap Where to store the pointer to the allocation bitmap
+     *                               if VERR_VD_DISCARD_ALIGNMENT_NOT_MET is returned or NULL
+     *                               if the allocation bitmap should be returned.
+     * @param   fDiscard             Flags which affect discard behavior. Combination
+     *                               of the VD_DISCARD_* flags.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnAsyncDiscard, (void *pBackendData, PVDIOCTX pIoCtx,
+                                                uint64_t uOffset, size_t cbDiscard,
+                                                size_t *pcbPreAllocated,
+                                                size_t *pcbPostAllocated,
+                                                size_t *pcbActuallyDiscarded,
+                                                void   **ppbmAllocationBitmap,
+                                                unsigned fDiscard));
+
 } VBOXHDDBACKEND;
 
 /** Pointer to VD backend. */

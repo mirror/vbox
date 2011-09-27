@@ -448,7 +448,7 @@ VBOXDDU_DECL(int) VDDbgIoLogStart(VDIOLOGGER hIoLogger, bool fAsync, VDDBGIOLOGR
     return rc;
 }
 
-VBOXDDU_DECL(int) VDDbgIoLogStartDiscard(VDIOLOGGER hIoLogger, bool fAsync, PVDRANGE paRanges, unsigned cRanges,
+VBOXDDU_DECL(int) VDDbgIoLogStartDiscard(VDIOLOGGER hIoLogger, bool fAsync, PCRTRANGE paRanges, unsigned cRanges,
                                          PVDIOLOGENT phIoLogEntry)
 {
     int rc = VINF_SUCCESS;
@@ -696,7 +696,7 @@ VBOXDDU_DECL(int) VDDbgIoLogEventGetStart(VDIOLOGGER hIoLogger, uint64_t *pidEve
 }
 
 VBOXDDU_DECL(int) VDDbgIoLogEventGetStartDiscard(VDIOLOGGER hIoLogger, uint64_t *pidEvent, bool *pfAsync,
-                                                 PVDRANGE *ppaRanges, unsigned *pcRanges)
+                                                 PRTRANGE *ppaRanges, unsigned *pcRanges)
 {
     int rc = VINF_SUCCESS;
     PVDIOLOGGERINT pIoLogger = hIoLogger;
@@ -715,7 +715,7 @@ VBOXDDU_DECL(int) VDDbgIoLogEventGetStartDiscard(VDIOLOGGER hIoLogger, uint64_t 
         rc = RTFileReadAt(pIoLogger->hFile, pIoLogger->offReadNext, &Entry, sizeof(Entry), NULL);
         if (RT_SUCCESS(rc))
         {
-            PVDRANGE paRanges = NULL;
+            PRTRANGE paRanges = NULL;
             IoLogEntryDiscard DiscardRange;
 
             pIoLogger->offReadNext += sizeof(Entry);
@@ -723,7 +723,7 @@ VBOXDDU_DECL(int) VDDbgIoLogEventGetStartDiscard(VDIOLOGGER hIoLogger, uint64_t 
             *pidEvent  = RT_LE2H_U64(Entry.u64Id);
             *pcRanges  = RT_LE2H_U32(Entry.Discard.cRanges);
 
-            paRanges = (PVDRANGE)RTMemAllocZ(*pcRanges * sizeof(VDRANGE));
+            paRanges = (PRTRANGE)RTMemAllocZ(*pcRanges * sizeof(RTRANGE));
             if (paRanges)
             {
                 for (unsigned i = 0; i < *pcRanges; i++)

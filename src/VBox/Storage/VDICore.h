@@ -555,5 +555,41 @@ typedef struct VDIIMAGEDESC
     PVDINTERFACEIOINT       pIfIo;
 } VDIIMAGEDESC, *PVDIIMAGEDESC;
 
+/**
+ * Async block discard states.
+ */
+typedef enum VDIBLOCKDISCARDSTATE
+{
+    /** Invalid. */
+    VDIBLOCKDISCARDSTATE_INVALID = 0,
+    /** Read the last block. */
+    VDIBLOCKDISCARDSTATE_READ_BLOCK,
+    /** Write block into the hole. */
+    VDIBLOCKDISCARDSTATE_WRITE_BLOCK,
+    /** Update metadata. */
+    VDIBLOCKDISCARDSTATE_UPDATE_METADATA,
+    /** 32bit hack. */
+    VDIBLOCKDISCARDSTATE_32BIT_HACK = 0x7fffffff
+} VDIBLOCKDISCARDSTATE;
+
+/**
+ * Async block discard structure.
+ */
+typedef struct VDIBLOCKDISCARDASYNC
+{
+    /** State of the block discard. */
+    VDIBLOCKDISCARDSTATE    enmState;
+    /** Pointer to the block data. */
+    void                   *pvBlock;
+    /** Block index in the block table. */
+    unsigned                uBlock;
+    /** Block pointer to the block to discard. */
+    VDIIMAGEBLOCKPOINTER    ptrBlockDiscard;
+    /** Index of the last block in the reverse block table. */
+    unsigned                idxLastBlock;
+    /** Index of the last block in the block table (gathered from the reverse block table). */
+    unsigned                uBlockLast;
+} VDIBLOCKDISCARDASYNC, *PVDIBLOCKDISCARDASYNC;
+
 #endif
 

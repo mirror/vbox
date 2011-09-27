@@ -272,6 +272,8 @@ typedef enum VDIOCTXTXDIR
     VDIOCTXTXDIR_WRITE,
     /** Flush */
     VDIOCTXTXDIR_FLUSH,
+    /** Discard */
+    VDIOCTXTXDIR_DISCARD,
     /** 32bit hack */
     VDIOCTXTXDIR_32BIT_HACK = 0x7fffffff
 } VDIOCTXTXDIR, *PVDIOCTXTXDIR;
@@ -290,21 +292,6 @@ typedef struct VDIOCTX
     PVBOXHDD                     pDisk;
     /** Return code. */
     int                          rcReq;
-    /** Transfer direction */
-    VDIOCTXTXDIR                 enmTxDir;
-    /** Number of bytes left until this context completes. */
-    volatile uint32_t            cbTransferLeft;
-    /** Current offset */
-    volatile uint64_t            uOffset;
-    /** Number of bytes to transfer */
-    volatile size_t              cbTransfer;
-    /** Current image in the chain. */
-    PVDIMAGE                     pImageCur;
-    /** Start image to read from. pImageCur is reset to this
-     *  value after it reached the first image in the chain. */
-    PVDIMAGE                     pImageStart;
-    /** S/G buffer */
-    RTSGBUF                      SgBuf;
     /** Flag whether the I/O context is blocked because it is in the growing list. */
     bool                         fBlocked;
     /** Number of data transfers currently pending. */
@@ -320,6 +307,47 @@ typedef struct VDIOCTX
     PFNVDIOCTXTRANSFER           pfnIoCtxTransfer;
     /** Next transfer part after the current one completed. */
     PFNVDIOCTXTRANSFER           pfnIoCtxTransferNext;
+    /** Transfer direction */
+    VDIOCTXTXDIR                 enmTxDir;
+    /** Request type dependent data. */
+    union
+    {
+        /** I/O request (read/write). */
+        struct
+        {
+            /** Number of bytes left until this context completes. */
+            volatile uint32_t    cbTransferLeft;
+            /** Current offset */
+            volatile uint64_t    uOffset;
+            /** Number of bytes to transfer */
+            volatile size_t      cbTransfer;
+            /** Current image in the chain. */
+            PVDIMAGE             pImageCur;
+            /** Start image to read from. pImageCur is reset to this
+             *  value after it reached the first image in the chain. */
+            PVDIMAGE             pImageStart;
+            /** S/G buffer */
+            RTSGBUF              SgBuf;
+        } Io;
+        /** Discard requests. */
+        struct
+        {
+            /** Pointer to the range descriptor array. */
+            PCRTRANGE            paRanges;
+            /** Number of ranges in the array. */
+            unsigned             cRanges;
+            /** Range descriptor index which is processed. */
+            unsigned             idxRange;
+            /** Start offset to discard currently. */
+            uint64_t             offCur;
+            /** How many bytes left to discard in the current range. */
+            size_t               cbDiscardLeft;
+            /** How many bytes to discard in the current block (<= cbDiscardLeft). */
+            size_t               cbThisDiscard;
+            /** Discard block handled currently. */
+            PVDDISCARDBLOCK      pBlock;
+        } Discard;
+    } Req;
     /** Parent I/O context if any. Sets the type of the context (root/child) */
     PVDIOCTX                     pIoCtxParent;
     /** Type dependent data (root/child) */
@@ -332,7 +360,7 @@ typedef struct VDIOCTX
             PFNVDASYNCTRANSFERCOMPLETE   pfnComplete;
             /** User argument 1 passed on completion. */
             void                        *pvUser1;
-            /** User argument 1 passed on completion. */
+            /** User argument 2 passed on completion. */
             void                        *pvUser2;
         } Root;
         /** Child data */
@@ -368,6 +396,9 @@ typedef struct VDIOCTX
     } Type;
 } VDIOCTX;
 
+/**
+ * List node for deferred I/O contexts.
+ */
 typedef struct VDIOCTXDEFERRED
 {
     /** Node in the list of deferred requests.
@@ -500,6 +531,9 @@ static PVDCACHEBACKEND aStaticCacheBackends[] =
 {
     &g_VciCacheBackend
 };
+
+/** Forward declaration of the async discard helper. */
+static int vdDiscardHelperAsync(PVDIOCTX pIoCtx);
 
 /**
  * internal: add several backends.
@@ -1162,21 +1196,18 @@ static int vdDiscardRange(PVBOXHDD pDisk, PVDDISCARDSTATE pDiscard, uint64_t off
                         rc = VINF_SUCCESS;
                 }
                 else
+                {
+                    RTMemFree(pbmAllocated);
                     rc = VERR_NO_MEMORY;
+                }
             }
         }
         else
         {
             /* Range lies partly in the block, update allocation bitmap. */
-            cbThisDiscard = RT_MIN(cbDiscard, pBlock->Core.KeyLast - offStart + 1);
-            rc = VERR_VD_DISCARD_ALIGNMENT_NOT_MET;
-        }
-
-        Assert(cbDiscard >= cbThisDiscard);
-
-        if (rc == VERR_VD_DISCARD_ALIGNMENT_NOT_MET)
-        {
             int32_t idxStart, idxEnd;
+
+            cbThisDiscard = RT_MIN(cbDiscard, pBlock->Core.KeyLast - offStart + 1);
 
             AssertPtr(pBlock);
 
@@ -1240,7 +1271,7 @@ static int vdDiscardRange(PVBOXHDD pDisk, PVDDISCARDSTATE pDiscard, uint64_t off
  * @param   paRanges The array of ranges to discard.
  * @param   cRanges  The number of ranges in the array.
  */
-static int vdDiscardHelper(PVBOXHDD pDisk, PCVDRANGE paRanges, unsigned cRanges)
+static int vdDiscardHelper(PVBOXHDD pDisk, PCRTRANGE paRanges, unsigned cRanges)
 {
     int rc = VINF_SUCCESS;
     PVDDISCARDSTATE pDiscard = pDisk->pDiscard;
@@ -1330,11 +1361,11 @@ DECLINLINE(PVDIOCTX) vdIoCtxAlloc(PVBOXHDD pDisk, VDIOCTXTXDIR enmTxDir,
     {
         pIoCtx->pDisk                 = pDisk;
         pIoCtx->enmTxDir              = enmTxDir;
-        pIoCtx->cbTransferLeft        = cbTransfer;
-        pIoCtx->uOffset               = uOffset;
-        pIoCtx->cbTransfer            = cbTransfer;
-        pIoCtx->pImageStart           = pImageStart;
-        pIoCtx->pImageCur             = pImageStart;
+        pIoCtx->Req.Io.cbTransferLeft = cbTransfer;
+        pIoCtx->Req.Io.uOffset        = uOffset;
+        pIoCtx->Req.Io.cbTransfer     = cbTransfer;
+        pIoCtx->Req.Io.pImageStart    = pImageStart;
+        pIoCtx->Req.Io.pImageCur      = pImageStart;
         pIoCtx->cDataTransfersPending = 0;
         pIoCtx->cMetaTransfersPending = 0;
         pIoCtx->fComplete             = false;
@@ -1346,9 +1377,9 @@ DECLINLINE(PVDIOCTX) vdIoCtxAlloc(PVBOXHDD pDisk, VDIOCTXTXDIR enmTxDir,
 
         /* There is no S/G list for a flush request. */
         if (enmTxDir != VDIOCTXTXDIR_FLUSH)
-            RTSgBufClone(&pIoCtx->SgBuf, pcSgBuf);
+            RTSgBufClone(&pIoCtx->Req.Io.SgBuf, pcSgBuf);
         else
-            memset(&pIoCtx->SgBuf, 0, sizeof(RTSGBUF));
+            memset(&pIoCtx->Req.Io.SgBuf, 0, sizeof(RTSGBUF));
     }
 
     return pIoCtx;
@@ -1374,6 +1405,45 @@ DECLINLINE(PVDIOCTX) vdIoCtxRootAlloc(PVBOXHDD pDisk, VDIOCTXTXDIR enmTxDir,
     }
 
     LogFlow(("Allocated root I/O context %#p\n", pIoCtx));
+    return pIoCtx;
+}
+
+DECLINLINE(PVDIOCTX) vdIoCtxDiscardAlloc(PVBOXHDD pDisk, PCRTRANGE paRanges,
+                                         unsigned cRanges,
+                                         PFNVDASYNCTRANSFERCOMPLETE pfnComplete,
+                                         void *pvUser1, void *pvUser2,
+                                         void *pvAllocation,
+                                         PFNVDIOCTXTRANSFER pfnIoCtxTransfer)
+{
+    PVDIOCTX pIoCtx = NULL;
+
+    pIoCtx = (PVDIOCTX)RTMemCacheAlloc(pDisk->hMemCacheIoCtx);
+    if (RT_LIKELY(pIoCtx))
+    {
+        pIoCtx->pDisk                     = pDisk;
+        pIoCtx->enmTxDir                  = VDIOCTXTXDIR_DISCARD;
+        pIoCtx->cDataTransfersPending     = 0;
+        pIoCtx->cMetaTransfersPending     = 0;
+        pIoCtx->fComplete                 = false;
+        pIoCtx->fBlocked                  = false;
+        pIoCtx->pvAllocation              = pvAllocation;
+        pIoCtx->pfnIoCtxTransfer          = pfnIoCtxTransfer;
+        pIoCtx->pfnIoCtxTransferNext      = NULL;
+        pIoCtx->rcReq                     = VINF_SUCCESS;
+        pIoCtx->Req.Discard.paRanges      = paRanges;
+        pIoCtx->Req.Discard.cRanges       = cRanges;
+        pIoCtx->Req.Discard.idxRange      = 0;
+        pIoCtx->Req.Discard.cbDiscardLeft = 0;
+        pIoCtx->Req.Discard.offCur        = 0;
+        pIoCtx->Req.Discard.cbThisDiscard = 0;
+
+        pIoCtx->pIoCtxParent          = NULL;
+        pIoCtx->Type.Root.pfnComplete = pfnComplete;
+        pIoCtx->Type.Root.pvUser1     = pvUser1;
+        pIoCtx->Type.Root.pvUser2     = pvUser2;
+    }
+
+    LogFlow(("Allocated discard I/O context %#p\n", pIoCtx));
     return pIoCtx;
 }
 
@@ -1458,9 +1528,9 @@ DECLINLINE(void) vdIoCtxChildReset(PVDIOCTX pIoCtx)
 {
     AssertPtr(pIoCtx->pIoCtxParent);
 
-    RTSgBufReset(&pIoCtx->SgBuf);
-    pIoCtx->uOffset        = pIoCtx->Type.Child.uOffsetSaved;
-    pIoCtx->cbTransferLeft = pIoCtx->Type.Child.cbTransferLeftSaved;
+    RTSgBufReset(&pIoCtx->Req.Io.SgBuf);
+    pIoCtx->Req.Io.uOffset        = pIoCtx->Type.Child.uOffsetSaved;
+    pIoCtx->Req.Io.cbTransferLeft = pIoCtx->Type.Child.cbTransferLeftSaved;
 }
 
 DECLINLINE(PVDMETAXFER) vdMetaXferAlloc(PVDIOSTORAGE pIoStorage, uint64_t uOffset, size_t cb)
@@ -1500,28 +1570,28 @@ DECLINLINE(int) vdIoCtxDefer(PVBOXHDD pDisk, PVDIOCTX pIoCtx)
 
 static size_t vdIoCtxCopy(PVDIOCTX pIoCtxDst, PVDIOCTX pIoCtxSrc, size_t cbData)
 {
-    return RTSgBufCopy(&pIoCtxDst->SgBuf, &pIoCtxSrc->SgBuf, cbData);
+    return RTSgBufCopy(&pIoCtxDst->Req.Io.SgBuf, &pIoCtxSrc->Req.Io.SgBuf, cbData);
 }
 
 static int vdIoCtxCmp(PVDIOCTX pIoCtx1, PVDIOCTX pIoCtx2, size_t cbData)
 {
-    return RTSgBufCmp(&pIoCtx1->SgBuf, &pIoCtx2->SgBuf, cbData);
+    return RTSgBufCmp(&pIoCtx1->Req.Io.SgBuf, &pIoCtx2->Req.Io.SgBuf, cbData);
 }
 
 static size_t vdIoCtxCopyTo(PVDIOCTX pIoCtx, uint8_t *pbData, size_t cbData)
 {
-    return RTSgBufCopyToBuf(&pIoCtx->SgBuf, pbData, cbData);
+    return RTSgBufCopyToBuf(&pIoCtx->Req.Io.SgBuf, pbData, cbData);
 }
 
 
 static size_t vdIoCtxCopyFrom(PVDIOCTX pIoCtx, uint8_t *pbData, size_t cbData)
 {
-    return RTSgBufCopyFromBuf(&pIoCtx->SgBuf, pbData, cbData);
+    return RTSgBufCopyFromBuf(&pIoCtx->Req.Io.SgBuf, pbData, cbData);
 }
 
 static size_t vdIoCtxSet(PVDIOCTX pIoCtx, uint8_t ch, size_t cbData)
 {
-    return RTSgBufSet(&pIoCtx->SgBuf, ch, cbData);
+    return RTSgBufSet(&pIoCtx->Req.Io.SgBuf, ch, cbData);
 }
 
 static int vdIoCtxProcess(PVDIOCTX pIoCtx)
@@ -1533,8 +1603,7 @@ static int vdIoCtxProcess(PVDIOCTX pIoCtx)
 
     RTCritSectEnter(&pDisk->CritSect);
 
-    if (   !pIoCtx->cbTransferLeft
-        && !pIoCtx->cMetaTransfersPending
+    if (   !pIoCtx->cMetaTransfersPending
         && !pIoCtx->cDataTransfersPending
         && !pIoCtx->pfnIoCtxTransfer)
     {
@@ -1566,6 +1635,7 @@ static int vdIoCtxProcess(PVDIOCTX pIoCtx)
     {
         /* Call the transfer function advancing to the next while there is no error. */
         while (   pIoCtx->pfnIoCtxTransfer
+               && !pIoCtx->cMetaTransfersPending
                && RT_SUCCESS(rc))
         {
             LogFlowFunc(("calling transfer function %#p\n", pIoCtx->pfnIoCtxTransfer));
@@ -1581,7 +1651,6 @@ static int vdIoCtxProcess(PVDIOCTX pIoCtx)
     }
 
     if (   RT_SUCCESS(rc)
-        && !pIoCtx->cbTransferLeft
         && !pIoCtx->cMetaTransfersPending
         && !pIoCtx->cDataTransfersPending)
         rc = VINF_VD_ASYNC_IO_FINISHED;
@@ -1606,8 +1675,8 @@ static int vdIoCtxProcess(PVDIOCTX pIoCtx)
 out:
     RTCritSectLeave(&pDisk->CritSect);
 
-    LogFlowFunc(("pIoCtx=%#p rc=%Rrc cbTransferLeft=%u cMetaTransfersPending=%u fComplete=%RTbool\n",
-                 pIoCtx, rc, pIoCtx->cbTransferLeft, pIoCtx->cMetaTransfersPending,
+    LogFlowFunc(("pIoCtx=%#p rc=%Rrc cDataTransfersPending=%u cMetaTransfersPending=%u fComplete=%RTbool\n",
+                 pIoCtx, rc, pIoCtx->cDataTransfersPending, pIoCtx->cMetaTransfersPending,
                  pIoCtx->fComplete));
 
     return rc;
@@ -1710,15 +1779,15 @@ static void vdIoCtxUnlockDisk(PVBOXHDD pDisk, PVDIOCTX pIoCtx, bool fProcessDefe
 static int vdReadHelperAsync(PVDIOCTX pIoCtx)
 {
     int rc;
-    size_t cbToRead     = pIoCtx->cbTransfer;
-    uint64_t uOffset    = pIoCtx->uOffset;
+    size_t cbToRead     = pIoCtx->Req.Io.cbTransfer;
+    uint64_t uOffset    = pIoCtx->Req.Io.uOffset;
     PVDIMAGE pCurrImage = NULL;
     size_t cbThisRead;
 
     /* Loop until all reads started or we have a backend which needs to read metadata. */
     do
     {
-        pCurrImage = pIoCtx->pImageCur;
+        pCurrImage = pIoCtx->Req.Io.pImageCur;
 
         /* Search for image with allocated block. Do not attempt to read more
          * than the previous reads marked as valid. Otherwise this would return
@@ -1750,7 +1819,7 @@ static int vdReadHelperAsync(PVDIOCTX pIoCtx)
         {
             /* No image in the chain contains the data for the block. */
             vdIoCtxSet(pIoCtx, '\0', cbThisRead);
-            ASMAtomicSubU32(&pIoCtx->cbTransferLeft, cbThisRead);
+            ASMAtomicSubU32(&pIoCtx->Req.Io.cbTransferLeft, cbThisRead);
             rc = VINF_SUCCESS;
         }
         else if (rc == VERR_VD_ASYNC_IO_IN_PROGRESS)
@@ -1773,9 +1842,9 @@ static int vdReadHelperAsync(PVDIOCTX pIoCtx)
         || rc == VERR_VD_IOCTX_HALT)
     {
         /* Save the current state. */
-        pIoCtx->uOffset    = uOffset;
-        pIoCtx->cbTransfer = cbToRead;
-        pIoCtx->pImageCur  = pCurrImage ? pCurrImage : pIoCtx->pImageStart;
+        pIoCtx->Req.Io.uOffset    = uOffset;
+        pIoCtx->Req.Io.cbTransfer = cbToRead;
+        pIoCtx->Req.Io.pImageCur  = pCurrImage ? pCurrImage : pIoCtx->Req.Io.pImageStart;
     }
 
     return rc;
@@ -2239,7 +2308,7 @@ static int vdSetModifiedHelperAsync(PVDIOCTX pIoCtx)
 {
     int rc = VINF_SUCCESS;
     PVBOXHDD pDisk = pIoCtx->pDisk;
-    PVDIMAGE pImage = pIoCtx->pImageCur;
+    PVDIMAGE pImage = pIoCtx->Req.Io.pImageCur;
 
     rc = pImage->Backend->pfnAsyncFlush(pImage->pBackendData, pIoCtx);
     if (rc == VERR_VD_ASYNC_IO_IN_PROGRESS)
@@ -2283,6 +2352,7 @@ static int vdSetModifiedFlagAsync(PVBOXHDD pDisk, PVDIOCTX pIoCtx)
                     }
                     else if (rc == VERR_VD_ASYNC_IO_IN_PROGRESS)
                     {
+                        ASMAtomicIncU32(&pIoCtx->cDataTransfersPending);
                         pIoCtx->fBlocked = true;
                     }
                     else /* Another error */
@@ -2393,15 +2463,15 @@ static int vdWriteHelperStandardAsync(PVDIOCTX pIoCtx)
 
 static int vdWriteHelperOptimizedCommitAsync(PVDIOCTX pIoCtx)
 {
-    int rc = VINF_SUCCESS;
-    PVDIMAGE pImage = pIoCtx->pImageStart;
-    size_t cbPreRead      = pIoCtx->Type.Child.cbPreRead;
-    size_t cbPostRead     = pIoCtx->Type.Child.cbPostRead;
-    size_t cbThisWrite    = pIoCtx->Type.Child.cbTransferParent;
+    int rc             = VINF_SUCCESS;
+    PVDIMAGE pImage    = pIoCtx->Req.Io.pImageStart;
+    size_t cbPreRead   = pIoCtx->Type.Child.cbPreRead;
+    size_t cbPostRead  = pIoCtx->Type.Child.cbPostRead;
+    size_t cbThisWrite = pIoCtx->Type.Child.cbTransferParent;
 
     LogFlowFunc(("pIoCtx=%#p\n", pIoCtx));
     rc = pImage->Backend->pfnAsyncWrite(pImage->pBackendData,
-                                        pIoCtx->uOffset - cbPreRead,
+                                        pIoCtx->Req.Io.uOffset - cbPreRead,
                                         cbPreRead + cbThisWrite + cbPostRead,
                                         pIoCtx, NULL, &cbPreRead, &cbPostRead, 0);
     Assert(rc != VERR_VD_BLOCK_FREE);
@@ -2422,7 +2492,7 @@ static int vdWriteHelperOptimizedCommitAsync(PVDIOCTX pIoCtx)
 static int vdWriteHelperOptimizedCmpAndWriteAsync(PVDIOCTX pIoCtx)
 {
     int rc = VINF_SUCCESS;
-    PVDIMAGE pImage = pIoCtx->pImageCur;
+    PVDIMAGE pImage       = pIoCtx->Req.Io.pImageCur;
     size_t cbThisWrite    = 0;
     size_t cbPreRead      = pIoCtx->Type.Child.cbPreRead;
     size_t cbPostRead     = pIoCtx->Type.Child.cbPostRead;
@@ -2435,34 +2505,34 @@ static int vdWriteHelperOptimizedCmpAndWriteAsync(PVDIOCTX pIoCtx)
 
     AssertPtr(pIoCtxParent);
     Assert(!pIoCtxParent->pIoCtxParent);
-    Assert(!pIoCtx->cbTransferLeft && !pIoCtx->cMetaTransfersPending);
+    Assert(!pIoCtx->Req.Io.cbTransferLeft && !pIoCtx->cMetaTransfersPending);
 
     vdIoCtxChildReset(pIoCtx);
     cbThisWrite = pIoCtx->Type.Child.cbTransferParent;
-    RTSgBufAdvance(&pIoCtx->SgBuf, cbPreRead);
+    RTSgBufAdvance(&pIoCtx->Req.Io.SgBuf, cbPreRead);
 
     /* Check if the write would modify anything in this block. */
-    if (!RTSgBufCmp(&pIoCtx->SgBuf, &pIoCtxParent->SgBuf, cbThisWrite))
+    if (!RTSgBufCmp(&pIoCtx->Req.Io.SgBuf, &pIoCtxParent->Req.Io.SgBuf, cbThisWrite))
     {
         RTSGBUF SgBufSrcTmp;
 
-        RTSgBufClone(&SgBufSrcTmp, &pIoCtxParent->SgBuf);
+        RTSgBufClone(&SgBufSrcTmp, &pIoCtxParent->Req.Io.SgBuf);
         RTSgBufAdvance(&SgBufSrcTmp, cbThisWrite);
-        RTSgBufAdvance(&pIoCtx->SgBuf, cbThisWrite);
+        RTSgBufAdvance(&pIoCtx->Req.Io.SgBuf, cbThisWrite);
 
-        if (!cbWriteCopy || !RTSgBufCmp(&pIoCtx->SgBuf, &SgBufSrcTmp, cbWriteCopy))
+        if (!cbWriteCopy || !RTSgBufCmp(&pIoCtx->Req.Io.SgBuf, &SgBufSrcTmp, cbWriteCopy))
         {
             /* Block is completely unchanged, so no need to write anything. */
             LogFlowFunc(("Block didn't changed\n"));
-            ASMAtomicWriteU32(&pIoCtx->cbTransferLeft, 0);
-            RTSgBufAdvance(&pIoCtxParent->SgBuf, cbThisWrite);
+            ASMAtomicWriteU32(&pIoCtx->Req.Io.cbTransferLeft, 0);
+            RTSgBufAdvance(&pIoCtxParent->Req.Io.SgBuf, cbThisWrite);
             return VINF_VD_ASYNC_IO_FINISHED;
         }
     }
 
     /* Copy the data to the right place in the buffer. */
-    RTSgBufReset(&pIoCtx->SgBuf);
-    RTSgBufAdvance(&pIoCtx->SgBuf, cbPreRead);
+    RTSgBufReset(&pIoCtx->Req.Io.SgBuf);
+    RTSgBufAdvance(&pIoCtx->Req.Io.SgBuf, cbPreRead);
     vdIoCtxCopy(pIoCtx, pIoCtxParent, cbThisWrite);
 
     /* Handle the data that goes after the write to fill the block. */
@@ -2477,21 +2547,21 @@ static int vdWriteHelperOptimizedCmpAndWriteAsync(PVDIOCTX pIoCtx)
              */
             RTSGBUF SgBufParentTmp;
 
-            RTSgBufClone(&SgBufParentTmp, &pIoCtxParent->SgBuf);
-            RTSgBufCopy(&pIoCtx->SgBuf, &SgBufParentTmp, cbWriteCopy);
+            RTSgBufClone(&SgBufParentTmp, &pIoCtxParent->Req.Io.SgBuf);
+            RTSgBufCopy(&pIoCtx->Req.Io.SgBuf, &SgBufParentTmp, cbWriteCopy);
         }
 
         /* Zero out the remainder of this block. Will never be visible, as this
          * is beyond the limit of the image. */
         if (cbFill)
         {
-            RTSgBufAdvance(&pIoCtx->SgBuf, cbReadImage);
+            RTSgBufAdvance(&pIoCtx->Req.Io.SgBuf, cbReadImage);
             vdIoCtxSet(pIoCtx, '\0', cbFill);
         }
     }
 
     /* Write the full block to the virtual disk. */
-    RTSgBufReset(&pIoCtx->SgBuf);
+    RTSgBufReset(&pIoCtx->Req.Io.SgBuf);
     pIoCtx->pfnIoCtxTransferNext = vdWriteHelperOptimizedCommitAsync;
 
     return rc;
@@ -2503,11 +2573,11 @@ static int vdWriteHelperOptimizedPreReadAsync(PVDIOCTX pIoCtx)
 
     LogFlowFunc(("pIoCtx=%#p\n", pIoCtx));
 
-    if (pIoCtx->cbTransferLeft)
+    if (pIoCtx->Req.Io.cbTransferLeft)
         rc = vdReadHelperAsync(pIoCtx);
 
     if (   RT_SUCCESS(rc)
-        && (   pIoCtx->cbTransferLeft
+        && (   pIoCtx->Req.Io.cbTransferLeft
             || pIoCtx->cMetaTransfersPending))
         rc = VERR_VD_ASYNC_IO_IN_PROGRESS;
      else
@@ -2562,9 +2632,9 @@ static int vdWriteHelperOptimizedAsync(PVDIOCTX pIoCtx)
 
     /* Read the entire data of the block so that we can compare whether it will
      * be modified by the write or not. */
-    pIoCtx->cbTransferLeft = cbPreRead + cbThisWrite + cbPostRead - cbFill;
-    pIoCtx->cbTransfer     = pIoCtx->cbTransferLeft;
-    pIoCtx->uOffset       -= cbPreRead;
+    pIoCtx->Req.Io.cbTransferLeft = cbPreRead + cbThisWrite + cbPostRead - cbFill;
+    pIoCtx->Req.Io.cbTransfer     = pIoCtx->Req.Io.cbTransferLeft;
+    pIoCtx->Req.Io.uOffset       -= cbPreRead;
 
     /* Next step */
     pIoCtx->pfnIoCtxTransferNext = vdWriteHelperOptimizedPreReadAsync;
@@ -2578,9 +2648,9 @@ static int vdWriteHelperOptimizedAsync(PVDIOCTX pIoCtx)
 static int vdWriteHelperAsync(PVDIOCTX pIoCtx)
 {
     int rc;
-    size_t cbWrite   = pIoCtx->cbTransfer;
-    uint64_t uOffset = pIoCtx->uOffset;
-    PVDIMAGE pImage  = pIoCtx->pImageCur;
+    size_t cbWrite   = pIoCtx->Req.Io.cbTransfer;
+    uint64_t uOffset = pIoCtx->Req.Io.uOffset;
+    PVDIMAGE pImage  = pIoCtx->Req.Io.pImageCur;
     PVBOXHDD pDisk   = pIoCtx->pDisk;
     unsigned fWrite;
     size_t cbThisWrite;
@@ -2588,6 +2658,10 @@ static int vdWriteHelperAsync(PVDIOCTX pIoCtx)
 
     rc = vdSetModifiedFlagAsync(pDisk, pIoCtx);
     if (RT_FAILURE(rc)) /* Includes I/O in progress. */
+        return rc;
+
+    rc = vdDiscardSetRangeAllocated(pDisk, uOffset, cbWrite);
+    if (RT_FAILURE(rc))
         return rc;
 
     /* Loop until all written. */
@@ -2658,8 +2732,8 @@ static int vdWriteHelperAsync(PVDIOCTX pIoCtx)
                          && ASMAtomicCmpXchgBool(&pIoCtxWrite->fComplete, true, false))
                 {
                     LogFlow(("Child write request completed\n"));
-                    Assert(pIoCtx->cbTransferLeft >= cbThisWrite);
-                    ASMAtomicSubU32(&pIoCtx->cbTransferLeft, cbThisWrite);
+                    Assert(pIoCtx->Req.Io.cbTransferLeft >= cbThisWrite);
+                    ASMAtomicSubU32(&pIoCtx->Req.Io.cbTransferLeft, cbThisWrite);
                     vdIoCtxUnlockDisk(pDisk, pIoCtx, false /* fProcessDeferredReqs*/ );
                     vdIoCtxFree(pDisk, pIoCtxWrite);
 
@@ -2668,6 +2742,7 @@ static int vdWriteHelperAsync(PVDIOCTX pIoCtx)
                 else
                 {
                     LogFlow(("Child write pending\n"));
+                    ASMAtomicIncU32(&pIoCtx->cDataTransfersPending);
                     pIoCtx->fBlocked = true;
                     rc = VERR_VD_ASYNC_IO_IN_PROGRESS;
                     cbWrite -= cbThisWrite;
@@ -2707,8 +2782,8 @@ static int vdWriteHelperAsync(PVDIOCTX pIoCtx)
         if (!cbWrite)
             rc = VINF_SUCCESS;
 
-        pIoCtx->uOffset    = uOffset;
-        pIoCtx->cbTransfer = cbWrite;
+        pIoCtx->Req.Io.uOffset    = uOffset;
+        pIoCtx->Req.Io.cbTransfer = cbWrite;
     }
 
     return rc;
@@ -2721,7 +2796,7 @@ static int vdFlushHelperAsync(PVDIOCTX pIoCtx)
 {
     int rc = VINF_SUCCESS;
     PVBOXHDD pDisk = pIoCtx->pDisk;
-    PVDIMAGE pImage = pIoCtx->pImageCur;
+    PVDIMAGE pImage = pIoCtx->Req.Io.pImageCur;
 
     rc = vdIoCtxLockDisk(pDisk, pIoCtx);
     if (RT_SUCCESS(rc))
@@ -2734,6 +2809,334 @@ static int vdFlushHelperAsync(PVDIOCTX pIoCtx)
             vdIoCtxUnlockDisk(pDisk, pIoCtx, true /* fProcessDeferredReqs */);
     }
 
+    return rc;
+}
+
+/**
+ * Async discard helper - discards a whole block which is recorded in the block
+ * tree.
+ *
+ * @returns VBox status code.
+ * @param   pIoCtx    The I/O context to operate on.
+ */
+static int vdDiscardWholeBlockAsync(PVDIOCTX pIoCtx)
+{
+    int rc = VINF_SUCCESS;
+    PVBOXHDD pDisk = pIoCtx->pDisk;
+    PVDDISCARDSTATE pDiscard = pDisk->pDiscard;
+    PVDDISCARDBLOCK pBlock = pIoCtx->Req.Discard.pBlock;
+    size_t cbPreAllocated, cbPostAllocated, cbActuallyDiscarded;
+
+    LogFlowFunc(("pIoCtx=%#p\n", pIoCtx));
+
+    AssertPtr(pBlock);
+
+    rc = pDisk->pLast->Backend->pfnAsyncDiscard(pDisk->pLast->pBackendData, pIoCtx,
+                                                pBlock->Core.Key, pBlock->cbDiscard,
+                                                &cbPreAllocated, &cbPostAllocated,
+                                                &cbActuallyDiscarded, NULL, 0);
+    Assert(rc != VERR_VD_DISCARD_ALIGNMENT_NOT_MET);
+    Assert(!cbPreAllocated);
+    Assert(!cbPostAllocated);
+    Assert(cbActuallyDiscarded == pBlock->cbDiscard || RT_FAILURE(rc));
+
+    /* Remove the block on success. */
+    if (   RT_SUCCESS(rc)
+        || rc == VERR_VD_ASYNC_IO_IN_PROGRESS)
+    {
+        PVDDISCARDBLOCK pBlockRemove = (PVDDISCARDBLOCK)RTAvlrU64RangeRemove(pDiscard->pTreeBlocks, pBlock->Core.Key);
+        Assert(pBlockRemove == pBlock);
+
+        pDiscard->cbDiscarding -= pBlock->cbDiscard;
+        RTListNodeRemove(&pBlock->NodeLru);
+        RTMemFree(pBlock->pbmAllocated);
+        RTMemFree(pBlock);
+        pIoCtx->Req.Discard.pBlock = NULL;/* Safety precaution. */
+        pIoCtx->pfnIoCtxTransferNext = vdDiscardHelperAsync; /* Next part. */
+        rc = VINF_SUCCESS;
+    }
+
+    LogFlowFunc(("returns rc=%Rrc\n", rc));
+    return rc;
+}
+
+/**
+ * Removes the least recently used blocks from the waiting list until
+ * the new value is reached - version for async I/O.
+ *
+ * @returns VBox status code.
+ * @param   pDisk              VD disk container.
+ * @param   pDiscard           The discard state.
+ * @param   cbDiscardingNew    How many bytes should be waiting on success.
+ *                             The number of bytes waiting can be less.
+ */
+static int vdDiscardRemoveBlocksAsync(PVBOXHDD pDisk, PVDIOCTX pIoCtx, size_t cbDiscardingNew)
+{
+    int rc = VINF_SUCCESS;
+    PVDDISCARDSTATE pDiscard = pDisk->pDiscard;
+
+    LogFlowFunc(("pDisk=%#p pDiscard=%#p cbDiscardingNew=%zu\n",
+                 pDisk, pDiscard, cbDiscardingNew));
+
+    while (pDiscard->cbDiscarding > cbDiscardingNew)
+    {
+        PVDDISCARDBLOCK pBlock = RTListGetLast(&pDiscard->ListLru, VDDISCARDBLOCK, NodeLru);
+
+        Assert(!RTListIsEmpty(&pDiscard->ListLru));
+
+        /* Go over the allocation bitmap and mark all discarded sectors as unused. */
+        uint64_t offStart = pBlock->Core.Key;
+        uint32_t idxStart = 0;
+        size_t cbLeft = pBlock->cbDiscard;
+        bool fAllocated = ASMBitTest(pBlock->pbmAllocated, idxStart);
+        uint32_t cSectors = pBlock->cbDiscard / 512;
+
+        while (cbLeft > 0)
+        {
+            int32_t idxEnd;
+            size_t cbThis = cbLeft;
+
+            if (fAllocated)
+            {
+                /* Check for the first unallocated bit. */
+                idxEnd = ASMBitNextClear(pBlock->pbmAllocated, cSectors, idxStart);
+                if (idxEnd != -1)
+                {
+                    cbThis = (idxEnd - idxStart) * 512;
+                    fAllocated = false;
+                }
+            }
+            else
+            {
+                /* Mark as unused and check for the first set bit. */
+                idxEnd = ASMBitNextSet(pBlock->pbmAllocated, cSectors, idxStart);
+                if (idxEnd != -1)
+                    cbThis = (idxEnd - idxStart) * 512;
+
+                rc = pDisk->pLast->Backend->pfnAsyncDiscard(pDisk->pLast->pBackendData, pIoCtx,
+                                                            offStart, cbThis, NULL, NULL, &cbThis,
+                                                            NULL, VD_DISCARD_MARK_UNUSED);
+                if (      RT_FAILURE(rc)
+                    && rc != VERR_VD_ASYNC_IO_IN_PROGRESS)
+                    break;
+
+                fAllocated = true;
+            }
+
+            idxStart  = idxEnd;
+            offStart += cbThis;
+            cbLeft   -= cbThis;
+        }
+
+        if (   RT_FAILURE(rc)
+            && rc != VERR_VD_ASYNC_IO_IN_PROGRESS)
+            break;
+
+        PVDDISCARDBLOCK pBlockRemove = (PVDDISCARDBLOCK)RTAvlrU64RangeRemove(pDiscard->pTreeBlocks, pBlock->Core.Key);
+        Assert(pBlockRemove == pBlock);
+        RTListNodeRemove(&pBlock->NodeLru);
+
+        pDiscard->cbDiscarding -= pBlock->cbDiscard;
+        RTMemFree(pBlock->pbmAllocated);
+        RTMemFree(pBlock);
+    }
+
+    if (rc == VERR_VD_ASYNC_IO_IN_PROGRESS)
+        rc = VINF_SUCCESS;
+
+    Assert(RT_FAILURE(rc) || pDiscard->cbDiscarding <= cbDiscardingNew);
+
+    LogFlowFunc(("returns rc=%Rrc\n", rc));
+    return rc;
+}
+
+/**
+ * Async discard helper - discards the current range if there is no matching
+ * block in the tree.
+ *
+ * @returns VBox status code.
+ * @param   pIoCtx    The I/O context to operate on.
+ */
+static int vdDiscardCurrentRangeAsync(PVDIOCTX pIoCtx)
+{
+    PVBOXHDD        pDisk         = pIoCtx->pDisk;
+    PVDDISCARDSTATE pDiscard      = pDisk->pDiscard;
+    uint64_t        offStart      = pIoCtx->Req.Discard.offCur;
+    size_t          cbThisDiscard = pIoCtx->Req.Discard.cbThisDiscard;
+    void *pbmAllocated = NULL;
+    size_t cbPreAllocated, cbPostAllocated;
+    int rc = VINF_SUCCESS;
+
+    LogFlowFunc(("pIoCtx=%#p\n", pIoCtx));
+
+    /* No block found, try to discard using the backend first. */
+    rc = pDisk->pLast->Backend->pfnAsyncDiscard(pDisk->pLast->pBackendData, pIoCtx,
+                                                offStart, cbThisDiscard, &cbPreAllocated,
+                                                &cbPostAllocated, &cbThisDiscard,
+                                                &pbmAllocated, 0);
+    if (rc == VERR_VD_DISCARD_ALIGNMENT_NOT_MET)
+    {
+        /* Create new discard block. */
+        PVDDISCARDBLOCK pBlock = (PVDDISCARDBLOCK)RTMemAllocZ(sizeof(VDDISCARDBLOCK));
+        if (pBlock)
+        {
+            pBlock->Core.Key     = offStart - cbPreAllocated;
+            pBlock->Core.KeyLast = offStart + cbThisDiscard + cbPostAllocated - 1;
+            pBlock->cbDiscard    = cbPreAllocated + cbThisDiscard + cbPostAllocated;
+            pBlock->pbmAllocated = pbmAllocated;
+            bool fInserted = RTAvlrU64Insert(pDiscard->pTreeBlocks, &pBlock->Core);
+            Assert(fInserted);
+
+            RTListPrepend(&pDiscard->ListLru, &pBlock->NodeLru);
+            pDiscard->cbDiscarding += pBlock->cbDiscard;
+
+            Assert(pIoCtx->Req.Discard.cbDiscardLeft >= cbThisDiscard);
+            pIoCtx->Req.Discard.cbDiscardLeft -= cbThisDiscard;
+            pIoCtx->Req.Discard.offCur        += cbThisDiscard;
+            pIoCtx->Req.Discard.cbThisDiscard = cbThisDiscard;
+
+            if (pDiscard->cbDiscarding > VD_DISCARD_REMOVE_THRESHOLD)
+                rc = vdDiscardRemoveBlocksAsync(pDisk, pIoCtx, VD_DISCARD_REMOVE_THRESHOLD);
+            else
+                rc = VINF_SUCCESS;
+
+            if (RT_SUCCESS(rc))
+                pIoCtx->pfnIoCtxTransferNext = vdDiscardHelperAsync; /* Next part. */
+        }
+        else
+        {
+            RTMemFree(pbmAllocated);
+            rc = VERR_NO_MEMORY;
+        }
+    }
+    else if (   RT_SUCCESS(rc)
+             || rc == VERR_VD_ASYNC_IO_IN_PROGRESS) /* Save state and andvance to next range. */
+    {
+        Assert(pIoCtx->Req.Discard.cbDiscardLeft >= cbThisDiscard);
+        pIoCtx->Req.Discard.cbDiscardLeft -= cbThisDiscard;
+        pIoCtx->Req.Discard.offCur        += cbThisDiscard;
+        pIoCtx->Req.Discard.cbThisDiscard  = cbThisDiscard;
+        pIoCtx->pfnIoCtxTransferNext       = vdDiscardHelperAsync;
+        rc = VINF_SUCCESS;
+    }
+
+    LogFlowFunc(("returns rc=%Rrc\n", rc));
+    return rc;
+}
+
+/**
+ * Async discard helper - entry point.
+ *
+ * @returns VBox status code.
+ * @param   pIoCtx    The I/O context to operate on.
+ */
+static int vdDiscardHelperAsync(PVDIOCTX pIoCtx)
+{
+    int rc             = VINF_SUCCESS;
+    PVBOXHDD  pDisk    = pIoCtx->pDisk;
+    PCRTRANGE paRanges = pIoCtx->Req.Discard.paRanges;
+    unsigned  cRanges  = pIoCtx->Req.Discard.cRanges;
+    PVDDISCARDSTATE pDiscard = pDisk->pDiscard;
+
+    LogFlowFunc(("pIoCtx=%#p\n", pIoCtx));
+
+    /* Check if the I/O context processed all ranges. */
+    if (   pIoCtx->Req.Discard.idxRange == cRanges
+        && !pIoCtx->Req.Discard.cbDiscardLeft)
+    {
+        LogFlowFunc(("All ranges discarded, completing\n"));
+        vdIoCtxUnlockDisk(pDisk, pIoCtx, true /* fProcessDeferredReqs*/);
+        return VINF_SUCCESS;
+    }
+
+    if (pDisk->pIoCtxLockOwner != pIoCtx)
+        rc = vdIoCtxLockDisk(pDisk, pIoCtx);
+
+    if (RT_SUCCESS(rc))
+    {
+        uint64_t offStart      = pIoCtx->Req.Discard.offCur;
+        size_t   cbDiscardLeft = pIoCtx->Req.Discard.cbDiscardLeft;
+        size_t   cbThisDiscard;
+
+        if (RT_UNLIKELY(!pDiscard))
+        {
+            pDiscard = vdDiscardStateCreate();
+            if (!pDiscard)
+                return VERR_NO_MEMORY;
+
+            pDisk->pDiscard = pDiscard;
+        }
+
+        if (!pIoCtx->Req.Discard.cbDiscardLeft)
+        {
+            offStart      = paRanges[pIoCtx->Req.Discard.idxRange].offStart;
+            cbDiscardLeft = paRanges[pIoCtx->Req.Discard.idxRange].cbRange;
+            LogFlowFunc(("New range descriptor loaded (%u) offStart=%llu cbDiscard=%zu\n",
+                         pIoCtx->Req.Discard.idxRange, offStart, cbDiscardLeft));
+            pIoCtx->Req.Discard.idxRange++;
+        }
+
+        /* Look for a matching block in the AVL tree first. */
+        PVDDISCARDBLOCK pBlock = (PVDDISCARDBLOCK)RTAvlrU64GetBestFit(pDiscard->pTreeBlocks, offStart, false);
+        if (!pBlock || pBlock->Core.KeyLast < offStart)
+        {
+            PVDDISCARDBLOCK pBlockAbove = (PVDDISCARDBLOCK)RTAvlrU64GetBestFit(pDiscard->pTreeBlocks, offStart, true);
+
+            /* Clip range to remain in the current block. */
+            if (pBlockAbove)
+                cbThisDiscard = RT_MIN(cbDiscardLeft, pBlockAbove->Core.KeyLast - offStart + 1);
+            else
+                cbThisDiscard = cbDiscardLeft;
+
+            Assert(!(cbThisDiscard % 512));
+            pIoCtx->Req.Discard.pBlock   = NULL;
+            pIoCtx->pfnIoCtxTransferNext = vdDiscardCurrentRangeAsync;
+        }
+        else
+        {
+            /* Range lies partly in the block, update allocation bitmap. */
+            int32_t idxStart, idxEnd;
+
+            cbThisDiscard = RT_MIN(cbDiscardLeft, pBlock->Core.KeyLast - offStart + 1);
+
+            AssertPtr(pBlock);
+
+            Assert(!(cbThisDiscard % 512));
+            Assert(!((offStart - pBlock->Core.Key) % 512));
+
+            idxStart = (offStart - pBlock->Core.Key) / 512;
+            idxEnd = idxStart + (cbThisDiscard / 512);
+
+            ASMBitClearRange(pBlock->pbmAllocated, idxStart, idxEnd);
+
+            cbDiscardLeft -= cbThisDiscard;
+            offStart      += cbThisDiscard;
+
+            /* Call the backend to discard the block if it is completely unallocated now. */
+            if (ASMBitFirstSet((volatile void *)pBlock->pbmAllocated, pBlock->cbDiscard / 512) == -1)
+            {
+                pIoCtx->Req.Discard.pBlock   = pBlock;
+                pIoCtx->pfnIoCtxTransferNext = vdDiscardWholeBlockAsync;
+                rc = VINF_SUCCESS;
+            }
+            else
+            {
+                RTListNodeRemove(&pBlock->NodeLru);
+                RTListPrepend(&pDiscard->ListLru, &pBlock->NodeLru);
+
+                /* Start with next range. */
+                pIoCtx->pfnIoCtxTransferNext = vdDiscardHelperAsync;
+                rc = VINF_SUCCESS;
+            }
+        }
+
+        /* Save state in the context. */
+        pIoCtx->Req.Discard.offCur        = offStart;
+        pIoCtx->Req.Discard.cbDiscardLeft = cbDiscardLeft;
+        pIoCtx->Req.Discard.cbThisDiscard = cbThisDiscard;
+    }
+
+    LogFlowFunc(("returns rc=%Rrc\n", rc));
     return rc;
 }
 
@@ -3159,14 +3562,16 @@ static int vdIoCtxContinue(PVDIOCTX pIoCtx, int rcReq)
                 if (RT_FAILURE(pIoCtx->rcReq))
                     ASMAtomicCmpXchgS32(&pIoCtxParent->rcReq, pIoCtx->rcReq, VINF_SUCCESS);
 
+                ASMAtomicDecU32(&pIoCtxParent->cDataTransfersPending);
+
                 if (pIoCtx->enmTxDir == VDIOCTXTXDIR_WRITE)
                 {
                     LogFlowFunc(("I/O context transferred %u bytes for the parent pIoCtxParent=%p\n",
                                  pIoCtx->Type.Child.cbTransferParent, pIoCtxParent));
 
                     /* Update the parent state. */
-                    Assert(pIoCtxParent->cbTransferLeft >= pIoCtx->Type.Child.cbTransferParent);
-                    ASMAtomicSubU32(&pIoCtxParent->cbTransferLeft, pIoCtx->Type.Child.cbTransferParent);
+                    Assert(pIoCtxParent->Req.Io.cbTransferLeft >= pIoCtx->Type.Child.cbTransferParent);
+                    ASMAtomicSubU32(&pIoCtxParent->Req.Io.cbTransferLeft, pIoCtx->Type.Child.cbTransferParent);
                 }
                 else
                     Assert(pIoCtx->enmTxDir == VDIOCTXTXDIR_FLUSH);
@@ -3250,7 +3655,8 @@ static int vdIoCtxContinue(PVDIOCTX pIoCtx, int rcReq)
                     vdIoCtxUnlockDisk(pDisk, pIoCtx, true /* fProcessDerredReqs */);
                     vdThreadFinishWrite(pDisk);
                 }
-                else if (pIoCtx->enmTxDir == VDIOCTXTXDIR_WRITE)
+                else if (   pIoCtx->enmTxDir == VDIOCTXTXDIR_WRITE
+                         || pIoCtx->enmTxDir == VDIOCTXTXDIR_DISCARD)
                     vdThreadFinishWrite(pDisk);
                 else
                 {
@@ -3288,8 +3694,8 @@ static int vdUserXferCompleted(PVDIOSTORAGE pIoStorage, PVDIOCTX pIoCtx,
                  pIoStorage, pIoCtx, pfnComplete, pvUser, cbTransfer, rcReq));
 
     RTCritSectEnter(&pDisk->CritSect);
-    Assert(pIoCtx->cbTransferLeft >= cbTransfer);
-    ASMAtomicSubU32(&pIoCtx->cbTransferLeft, cbTransfer);
+    Assert(pIoCtx->Req.Io.cbTransferLeft >= cbTransfer);
+    ASMAtomicSubU32(&pIoCtx->Req.Io.cbTransferLeft, cbTransfer);
     ASMAtomicDecU32(&pIoCtx->cDataTransfersPending);
 
     if (pfnComplete)
@@ -3564,7 +3970,7 @@ static int vdIOIntReadUserAsync(void *pvUser, PVDIOSTORAGE pIoStorage,
         unsigned cSegments  = VD_IO_TASK_SEGMENTS_MAX;
         size_t   cbTaskRead = 0;
 
-        cbTaskRead = RTSgBufSegArrayCreate(&pIoCtx->SgBuf, aSeg, &cSegments, cbRead);
+        cbTaskRead = RTSgBufSegArrayCreate(&pIoCtx->Req.Io.SgBuf, aSeg, &cSegments, cbRead);
 
         Assert(cSegments > 0);
         Assert(cbTaskRead > 0);
@@ -3592,8 +3998,8 @@ static int vdIOIntReadUserAsync(void *pvUser, PVDIOSTORAGE pIoStorage,
                                                &pvTask);
         if (RT_SUCCESS(rc))
         {
-            AssertMsg(cbTaskRead <= pIoCtx->cbTransferLeft, ("Impossible!\n"));
-            ASMAtomicSubU32(&pIoCtx->cbTransferLeft, cbTaskRead);
+            AssertMsg(cbTaskRead <= pIoCtx->Req.Io.cbTransferLeft, ("Impossible!\n"));
+            ASMAtomicSubU32(&pIoCtx->Req.Io.cbTransferLeft, cbTaskRead);
             ASMAtomicDecU32(&pIoCtx->cDataTransfersPending);
             vdIoTaskFree(pDisk, pIoTask);
         }
@@ -3636,7 +4042,7 @@ static int vdIOIntWriteUserAsync(void *pvUser, PVDIOSTORAGE pIoStorage,
         unsigned cSegments   = VD_IO_TASK_SEGMENTS_MAX;
         size_t   cbTaskWrite = 0;
 
-        cbTaskWrite = RTSgBufSegArrayCreate(&pIoCtx->SgBuf, aSeg, &cSegments, cbWrite);
+        cbTaskWrite = RTSgBufSegArrayCreate(&pIoCtx->Req.Io.SgBuf, aSeg, &cSegments, cbWrite);
 
         Assert(cSegments > 0);
         Assert(cbTaskWrite > 0);
@@ -3664,8 +4070,8 @@ static int vdIOIntWriteUserAsync(void *pvUser, PVDIOSTORAGE pIoStorage,
                                                 cbTaskWrite, pIoTask, &pvTask);
         if (RT_SUCCESS(rc))
         {
-            AssertMsg(cbTaskWrite <= pIoCtx->cbTransferLeft, ("Impossible!\n"));
-            ASMAtomicSubU32(&pIoCtx->cbTransferLeft, cbTaskWrite);
+            AssertMsg(cbTaskWrite <= pIoCtx->Req.Io.cbTransferLeft, ("Impossible!\n"));
+            ASMAtomicSubU32(&pIoCtx->Req.Io.cbTransferLeft, cbTaskWrite);
             ASMAtomicDecU32(&pIoCtx->cDataTransfersPending);
             vdIoTaskFree(pDisk, pIoTask);
         }
@@ -3968,7 +4374,7 @@ static size_t vdIOIntIoCtxCopyTo(void *pvUser, PVDIOCTX pIoCtx,
     cbCopied = vdIoCtxCopyTo(pIoCtx, (uint8_t *)pvBuf, cbBuf);
     Assert(cbCopied == cbBuf);
 
-    ASMAtomicSubU32(&pIoCtx->cbTransferLeft, cbCopied);
+    ASMAtomicSubU32(&pIoCtx->Req.Io.cbTransferLeft, cbCopied);
 
     return cbCopied;
 }
@@ -3985,7 +4391,7 @@ static size_t vdIOIntIoCtxCopyFrom(void *pvUser, PVDIOCTX pIoCtx,
     cbCopied = vdIoCtxCopyFrom(pIoCtx, (uint8_t *)pvBuf, cbBuf);
     Assert(cbCopied == cbBuf);
 
-    ASMAtomicSubU32(&pIoCtx->cbTransferLeft, cbCopied);
+    ASMAtomicSubU32(&pIoCtx->Req.Io.cbTransferLeft, cbCopied);
 
     return cbCopied;
 }
@@ -4001,7 +4407,7 @@ static size_t vdIOIntIoCtxSet(void *pvUser, PVDIOCTX pIoCtx, int ch, size_t cb)
     cbSet = vdIoCtxSet(pIoCtx, ch, cb);
     Assert(cbSet == cb);
 
-    ASMAtomicSubU32(&pIoCtx->cbTransferLeft, cbSet);
+    ASMAtomicSubU32(&pIoCtx->Req.Io.cbTransferLeft, cbSet);
 
     return cbSet;
 }
@@ -4016,7 +4422,7 @@ static size_t vdIOIntIoCtxSegArrayCreate(void *pvUser, PVDIOCTX pIoCtx,
 
     VD_THREAD_IS_CRITSECT_OWNER(pDisk);
 
-    cbCreated = RTSgBufSegArrayCreate(&pIoCtx->SgBuf, paSeg, pcSeg, cbData);
+    cbCreated = RTSgBufSegArrayCreate(&pIoCtx->Req.Io.SgBuf, paSeg, pcSeg, cbData);
     Assert(!paSeg || cbData == cbCreated);
 
     return cbCreated;
@@ -4042,11 +4448,11 @@ static void vdIOIntIoCtxCompleted(void *pvUser, PVDIOCTX pIoCtx, int rcReq,
 
     /* Continue */
     pIoCtx->fBlocked = false;
-    ASMAtomicSubU32(&pIoCtx->cbTransferLeft, cbCompleted);
+    ASMAtomicSubU32(&pIoCtx->Req.Io.cbTransferLeft, cbCompleted);
 
     /* Clear the pointer to next transfer function in case we have nothing to transfer anymore.
      * @todo: Find a better way to prevent vdIoCtxContinue from calling the read/write helper again. */
-    if (!pIoCtx->cbTransferLeft)
+    if (!pIoCtx->Req.Io.cbTransferLeft)
         pIoCtx->pfnIoCtxTransfer = NULL;
 
     vdIoCtxContinue(pIoCtx, rcReq);
@@ -8616,7 +9022,7 @@ VBOXDDU_DECL(void) VDDumpImages(PVBOXHDD pDisk)
 }
 
 
-VBOXDDU_DECL(int) VDDiscardRanges(PVBOXHDD pDisk, PCVDRANGE paRanges, unsigned cRanges)
+VBOXDDU_DECL(int) VDDiscardRanges(PVBOXHDD pDisk, PCRTRANGE paRanges, unsigned cRanges)
 {
     int rc;
     int rc2;
@@ -8831,6 +9237,61 @@ VBOXDDU_DECL(int) VDAsyncFlush(PVBOXHDD pDisk, PFNVDASYNCTRANSFERCOMPLETE pfnCom
                                   0, pDisk->pLast, NULL,
                                   pfnComplete, pvUser1, pvUser2,
                                   NULL, vdFlushHelperAsync);
+        if (!pIoCtx)
+        {
+            rc = VERR_NO_MEMORY;
+            break;
+        }
+
+        rc = vdIoCtxProcess(pIoCtx);
+        if (rc == VINF_VD_ASYNC_IO_FINISHED)
+        {
+            if (ASMAtomicCmpXchgBool(&pIoCtx->fComplete, true, false))
+                vdIoCtxFree(pDisk, pIoCtx);
+            else
+                rc = VERR_VD_ASYNC_IO_IN_PROGRESS; /* Let the other handler complete the request. */
+        }
+        else if (rc != VERR_VD_ASYNC_IO_IN_PROGRESS) /* Another error */
+            vdIoCtxFree(pDisk, pIoCtx);
+    } while (0);
+
+    if (RT_UNLIKELY(fLockWrite) && (   rc == VINF_VD_ASYNC_IO_FINISHED
+                                    || rc != VERR_VD_ASYNC_IO_IN_PROGRESS))
+    {
+        rc2 = vdThreadFinishWrite(pDisk);
+        AssertRC(rc2);
+    }
+
+    LogFlowFunc(("returns %Rrc\n", rc));
+    return rc;
+}
+
+VBOXDDU_DECL(int) VDAsyncDiscardRanges(PVBOXHDD pDisk, PCRTRANGE paRanges, unsigned cRanges,
+                                       PFNVDASYNCTRANSFERCOMPLETE pfnComplete,
+                                       void *pvUser1, void *pvUser2)
+{
+    int rc;
+    int rc2;
+    bool fLockWrite = false;
+    PVDIOCTX pIoCtx = NULL;
+
+    LogFlowFunc(("pDisk=%#p\n", pDisk));
+
+    do
+    {
+        /* sanity check */
+        AssertPtrBreakStmt(pDisk, rc = VERR_INVALID_PARAMETER);
+        AssertMsg(pDisk->u32Signature == VBOXHDDDISK_SIGNATURE, ("u32Signature=%08x\n", pDisk->u32Signature));
+
+        rc2 = vdThreadStartWrite(pDisk);
+        AssertRC(rc2);
+        fLockWrite = true;
+
+        AssertPtrBreakStmt(pDisk->pLast, rc = VERR_VD_NOT_OPENED);
+
+        pIoCtx = vdIoCtxDiscardAlloc(pDisk, paRanges, cRanges,
+                                     pfnComplete, pvUser1, pvUser2, NULL,
+                                     vdDiscardHelperAsync);
         if (!pIoCtx)
         {
             rc = VERR_NO_MEMORY;
