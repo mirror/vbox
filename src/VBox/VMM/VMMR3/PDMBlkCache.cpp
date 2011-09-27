@@ -1270,6 +1270,7 @@ static int pdmR3BlkCacheRetain(PVM pVM, PPPDMBLKCACHE ppBlkCache, const char *pc
 VMMR3DECL(int) PDMR3BlkCacheRetainDriver(PVM pVM, PPDMDRVINS pDrvIns, PPPDMBLKCACHE ppBlkCache,
                                          PFNPDMBLKCACHEXFERCOMPLETEDRV pfnXferComplete,
                                          PFNPDMBLKCACHEXFERENQUEUEDRV pfnXferEnqueue,
+                                         PFNPDMBLKCACHEXFERENQUEUEDISCARDDRV pfnXferEnqueueDiscard,
                                          const char *pcszId)
 {
     int rc = VINF_SUCCESS;
@@ -1278,10 +1279,11 @@ VMMR3DECL(int) PDMR3BlkCacheRetainDriver(PVM pVM, PPDMDRVINS pDrvIns, PPPDMBLKCA
     rc = pdmR3BlkCacheRetain(pVM, &pBlkCache, pcszId);
     if (RT_SUCCESS(rc))
     {
-        pBlkCache->enmType = PDMBLKCACHETYPE_DRV;
-        pBlkCache->u.Drv.pfnXferComplete = pfnXferComplete;
-        pBlkCache->u.Drv.pfnXferEnqueue  = pfnXferEnqueue;
-        pBlkCache->u.Drv.pDrvIns         = pDrvIns;
+        pBlkCache->enmType                      = PDMBLKCACHETYPE_DRV;
+        pBlkCache->u.Drv.pfnXferComplete        = pfnXferComplete;
+        pBlkCache->u.Drv.pfnXferEnqueue         = pfnXferEnqueue;
+        pBlkCache->u.Drv.pfnXferEnqueueDiscard  = pfnXferEnqueueDiscard;
+        pBlkCache->u.Drv.pDrvIns                = pDrvIns;
         *ppBlkCache = pBlkCache;
     }
 
@@ -1292,6 +1294,7 @@ VMMR3DECL(int) PDMR3BlkCacheRetainDriver(PVM pVM, PPDMDRVINS pDrvIns, PPPDMBLKCA
 VMMR3DECL(int) PDMR3BlkCacheRetainDevice(PVM pVM, PPDMDEVINS pDevIns, PPPDMBLKCACHE ppBlkCache,
                                          PFNPDMBLKCACHEXFERCOMPLETEDEV pfnXferComplete,
                                          PFNPDMBLKCACHEXFERENQUEUEDEV pfnXferEnqueue,
+                                         PFNPDMBLKCACHEXFERENQUEUEDISCARDDEV pfnXferEnqueueDiscard,
                                          const char *pcszId)
 {
     int rc = VINF_SUCCESS;
@@ -1300,10 +1303,11 @@ VMMR3DECL(int) PDMR3BlkCacheRetainDevice(PVM pVM, PPDMDEVINS pDevIns, PPPDMBLKCA
     rc = pdmR3BlkCacheRetain(pVM, &pBlkCache, pcszId);
     if (RT_SUCCESS(rc))
     {
-        pBlkCache->enmType = PDMBLKCACHETYPE_DEV;
-        pBlkCache->u.Dev.pfnXferComplete = pfnXferComplete;
-        pBlkCache->u.Dev.pfnXferEnqueue  = pfnXferEnqueue;
-        pBlkCache->u.Dev.pDevIns         = pDevIns;
+        pBlkCache->enmType                      = PDMBLKCACHETYPE_DEV;
+        pBlkCache->u.Dev.pfnXferComplete        = pfnXferComplete;
+        pBlkCache->u.Dev.pfnXferEnqueue         = pfnXferEnqueue;
+        pBlkCache->u.Dev.pfnXferEnqueueDiscard  = pfnXferEnqueueDiscard;
+        pBlkCache->u.Dev.pDevIns                = pDevIns;
         *ppBlkCache = pBlkCache;
     }
 
@@ -1315,6 +1319,7 @@ VMMR3DECL(int) PDMR3BlkCacheRetainDevice(PVM pVM, PPDMDEVINS pDevIns, PPPDMBLKCA
 VMMR3DECL(int) PDMR3BlkCacheRetainUsb(PVM pVM, PPDMUSBINS pUsbIns, PPPDMBLKCACHE ppBlkCache,
                                       PFNPDMBLKCACHEXFERCOMPLETEUSB pfnXferComplete,
                                       PFNPDMBLKCACHEXFERENQUEUEUSB pfnXferEnqueue,
+                                      PFNPDMBLKCACHEXFERENQUEUEDISCARDUSB pfnXferEnqueueDiscard,
                                       const char *pcszId)
 {
     int rc = VINF_SUCCESS;
@@ -1323,10 +1328,11 @@ VMMR3DECL(int) PDMR3BlkCacheRetainUsb(PVM pVM, PPDMUSBINS pUsbIns, PPPDMBLKCACHE
     rc = pdmR3BlkCacheRetain(pVM, &pBlkCache, pcszId);
     if (RT_SUCCESS(rc))
     {
-        pBlkCache->enmType = PDMBLKCACHETYPE_USB;
-        pBlkCache->u.Usb.pfnXferComplete = pfnXferComplete;
-        pBlkCache->u.Usb.pfnXferEnqueue  = pfnXferEnqueue;
-        pBlkCache->u.Usb.pUsbIns         = pUsbIns;
+        pBlkCache->enmType                      = PDMBLKCACHETYPE_USB;
+        pBlkCache->u.Usb.pfnXferComplete        = pfnXferComplete;
+        pBlkCache->u.Usb.pfnXferEnqueue         = pfnXferEnqueue;
+        pBlkCache->u.Usb.pfnXferEnqueueDiscard  = pfnXferEnqueueDiscard;
+        pBlkCache->u.Usb.pUsbIns                = pUsbIns;
         *ppBlkCache = pBlkCache;
     }
 
@@ -1338,6 +1344,7 @@ VMMR3DECL(int) PDMR3BlkCacheRetainUsb(PVM pVM, PPDMUSBINS pUsbIns, PPPDMBLKCACHE
 VMMR3DECL(int) PDMR3BlkCacheRetainInt(PVM pVM, void *pvUser, PPPDMBLKCACHE ppBlkCache,
                                       PFNPDMBLKCACHEXFERCOMPLETEINT pfnXferComplete,
                                       PFNPDMBLKCACHEXFERENQUEUEINT pfnXferEnqueue,
+                                      PFNPDMBLKCACHEXFERENQUEUEDISCARDINT pfnXferEnqueueDiscard,
                                       const char *pcszId)
 {
     int rc = VINF_SUCCESS;
@@ -1346,10 +1353,11 @@ VMMR3DECL(int) PDMR3BlkCacheRetainInt(PVM pVM, void *pvUser, PPPDMBLKCACHE ppBlk
     rc = pdmR3BlkCacheRetain(pVM, &pBlkCache, pcszId);
     if (RT_SUCCESS(rc))
     {
-        pBlkCache->enmType = PDMBLKCACHETYPE_INTERNAL;
-        pBlkCache->u.Int.pfnXferComplete = pfnXferComplete;
-        pBlkCache->u.Int.pfnXferEnqueue  = pfnXferEnqueue;
-        pBlkCache->u.Int.pvUser          = pvUser;
+        pBlkCache->enmType                      = PDMBLKCACHETYPE_INTERNAL;
+        pBlkCache->u.Int.pfnXferComplete        = pfnXferComplete;
+        pBlkCache->u.Int.pfnXferEnqueue         = pfnXferEnqueue;
+        pBlkCache->u.Int.pfnXferEnqueueDiscard  = pfnXferEnqueueDiscard;
+        pBlkCache->u.Int.pvUser                 = pvUser;
         *ppBlkCache = pBlkCache;
     }
 
@@ -2405,6 +2413,156 @@ VMMR3DECL(int) PDMR3BlkCacheFlush(PPDMBLKCACHE pBlkCache, void *pvUser)
 
     LogFlowFunc((": Leave rc=%Rrc\n", rc));
     return VINF_AIO_TASK_PENDING;
+}
+
+VMMR3DECL(int) PDMR3BlkCacheDiscard(PPDMBLKCACHE pBlkCache, PCRTRANGE paRanges,
+                                    unsigned cRanges, void *pvUser)
+{
+    int rc = VINF_SUCCESS;
+    PPDMBLKCACHEGLOBAL pCache = pBlkCache->pCache;
+    PPDMBLKCACHEENTRY pEntry;
+    PPDMBLKCACHEREQ pReq;
+
+    LogFlowFunc((": pBlkCache=%#p{%s} paRanges=%#p cRanges=%u pvUser=%#p\n",
+                 pBlkCache, pBlkCache->pszId, paRanges, cRanges, pvUser));
+
+    AssertPtrReturn(pBlkCache, VERR_INVALID_POINTER);
+    AssertReturn(!pBlkCache->fSuspended, VERR_INVALID_STATE);
+
+    /* Allocate new request structure. */
+    pReq = pdmBlkCacheReqAlloc(pvUser);
+    if (RT_UNLIKELY(!pReq))
+        return VERR_NO_MEMORY;
+
+    /* Increment data transfer counter to keep the request valid while we access it. */
+    ASMAtomicIncU32(&pReq->cXfersPending);
+
+    for (unsigned i = 0; i < cRanges; i++)
+    {
+        uint64_t offCur = paRanges[i].offStart;
+        size_t cbLeft = paRanges[i].cbRange;
+
+        while (cbLeft)
+        {
+            size_t cbThisDiscard;
+
+            pEntry = pdmBlkCacheGetCacheEntryByOffset(pBlkCache, offCur);
+
+            if (pEntry)
+            {
+                /* Write the data into the entry and mark it as dirty */
+                AssertPtr(pEntry->pList);
+
+                uint64_t offDiff = offCur - pEntry->Core.Key;
+
+                AssertMsg(offCur >= pEntry->Core.Key,
+                          ("Overflow in calculation offCur=%llu OffsetAligned=%llu\n",
+                          offCur, pEntry->Core.Key));
+
+                cbThisDiscard = RT_MIN(pEntry->cbData - offDiff, cbLeft);
+
+                /* Ghost lists contain no data. */
+                if (   (pEntry->pList == &pCache->LruRecentlyUsedIn)
+                    || (pEntry->pList == &pCache->LruFrequentlyUsed))
+                {
+                    /* Check if the entry is dirty. */
+                    if (pdmBlkCacheEntryFlagIsSetClearAcquireLock(pBlkCache, pEntry,
+                                                                  PDMBLKCACHE_ENTRY_IS_DIRTY,
+                                                                  0))
+                    {
+                        /* If it is dirty but not yet in progress remove it. */
+                        if (!(pEntry->fFlags & PDMBLKCACHE_ENTRY_IO_IN_PROGRESS))
+                        {
+                            pdmBlkCacheLockEnter(pCache);
+                            pdmBlkCacheEntryRemoveFromList(pEntry); 
+
+                            STAM_PROFILE_ADV_START(&pCache->StatTreeRemove, Cache);
+                            RTAvlrU64Remove(pBlkCache->pTree, pEntry->Core.Key);
+                            STAM_PROFILE_ADV_STOP(&pCache->StatTreeRemove, Cache);
+
+                            pdmBlkCacheLockLeave(pCache);
+
+                            RTMemFree(pEntry);
+                        }
+                        else
+                        {
+#if 0
+                            /* The data isn't written to the file yet */
+                            pdmBlkCacheEntryWaitersAdd(pEntry, pReq,
+                                                       &SgBuf, offDiff, cbToWrite,
+                                                       true /* fWrite */);
+                            STAM_COUNTER_INC(&pBlkCache->StatWriteDeferred);
+#endif
+                        }
+
+                        RTSemRWReleaseWrite(pBlkCache->SemRWEntries);
+                        pdmBlkCacheEntryRelease(pEntry);
+                    }
+                    else /* Dirty bit not set */
+                    {
+                        /*
+                         * Check if a read is in progress for this entry.
+                         * We have to defer processing in that case.
+                         */
+                        if(pdmBlkCacheEntryFlagIsSetClearAcquireLock(pBlkCache, pEntry,
+                                                                     PDMBLKCACHE_ENTRY_IO_IN_PROGRESS,
+                                                                     0))
+                        {
+#if 0
+                            pdmBlkCacheEntryWaitersAdd(pEntry, pReq,
+                                                       &SgBuf, offDiff, cbToWrite,
+                                                       true /* fWrite */);
+#endif
+                            STAM_COUNTER_INC(&pBlkCache->StatWriteDeferred);
+                            RTSemRWReleaseWrite(pBlkCache->SemRWEntries);
+                            pdmBlkCacheEntryRelease(pEntry);
+                        }
+                        else /* I/O in progress flag not set */
+                        {
+                            pdmBlkCacheLockEnter(pCache);
+                            pdmBlkCacheEntryRemoveFromList(pEntry); 
+
+                            RTSemRWRequestWrite(pBlkCache->SemRWEntries, RT_INDEFINITE_WAIT);
+                            STAM_PROFILE_ADV_START(&pCache->StatTreeRemove, Cache);
+                            RTAvlrU64Remove(pBlkCache->pTree, pEntry->Core.Key);
+                            STAM_PROFILE_ADV_STOP(&pCache->StatTreeRemove, Cache);
+                            RTSemRWReleaseWrite(pBlkCache->SemRWEntries);
+
+                            pdmBlkCacheLockLeave(pCache);
+
+                            RTMemFree(pEntry);
+                        }
+                    } /* Dirty bit not set */
+                }
+                else /* Entry is on the ghost list just remove cache entry. */
+                {
+                    pdmBlkCacheLockEnter(pCache);
+                    pdmBlkCacheEntryRemoveFromList(pEntry); 
+
+                    RTSemRWRequestWrite(pBlkCache->SemRWEntries, RT_INDEFINITE_WAIT);
+                    STAM_PROFILE_ADV_START(&pCache->StatTreeRemove, Cache);
+                    RTAvlrU64Remove(pBlkCache->pTree, pEntry->Core.Key);
+                    STAM_PROFILE_ADV_STOP(&pCache->StatTreeRemove, Cache);
+                    RTSemRWReleaseWrite(pBlkCache->SemRWEntries);
+
+                    pdmBlkCacheLockLeave(pCache);
+
+                    RTMemFree(pEntry);
+                }
+            }
+            /* else: no entry found. */
+
+            offCur += cbThisDiscard;
+            cbLeft -= cbThisDiscard;
+        }
+    }
+
+    if (!pdmBlkCacheReqUpdate(pBlkCache, pReq, rc, false))
+        rc = VINF_AIO_TASK_PENDING;
+
+    LogFlowFunc((": Leave rc=%Rrc\n", rc));
+
+    return rc;
 }
 
 /**
