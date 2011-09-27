@@ -1262,6 +1262,7 @@ typedef struct PDMDRVHLPR3
     DECLR3CALLBACKMEMBER(int, pfnBlkCacheRetain, (PPDMDRVINS pDrvIns, PPPDMBLKCACHE ppBlkCache,
                                                   PFNPDMBLKCACHEXFERCOMPLETEDRV pfnXferComplete,
                                                   PFNPDMBLKCACHEXFERENQUEUEDRV pfnXferEnqueue,
+                                                  PFNPDMBLKCACHEXFERENQUEUEDISCARDDRV pfnXferEnqueueDiscard,
                                                   const char *pcszId));
 
     /** Just a safety precaution. */
@@ -1719,9 +1720,10 @@ DECLINLINE(int) PDMDrvHlpCallR0(PPDMDRVINS pDrvIns, uint32_t uOperation, uint64_
 DECLINLINE(int) PDMDrvHlpBlkCacheRetain(PPDMDRVINS pDrvIns, PPPDMBLKCACHE ppBlkCache,
                                         PFNPDMBLKCACHEXFERCOMPLETEDRV pfnXferComplete,
                                         PFNPDMBLKCACHEXFERENQUEUEDRV pfnXferEnqueue,
+                                        PFNPDMBLKCACHEXFERENQUEUEDISCARDDRV pfnXferEnqueueDiscard,
                                         const char *pcszId)
 {
-    return pDrvIns->pHlpR3->pfnBlkCacheRetain(pDrvIns, ppBlkCache, pfnXferComplete, pfnXferEnqueue, pcszId);
+    return pDrvIns->pHlpR3->pfnBlkCacheRetain(pDrvIns, ppBlkCache, pfnXferComplete, pfnXferEnqueue, pfnXferEnqueueDiscard, pcszId);
 }
 
 /** Pointer to callbacks provided to the VBoxDriverRegister() call. */

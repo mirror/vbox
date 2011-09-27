@@ -191,14 +191,14 @@ static int drvscsiProcessRequestOne(PDRVSCSI pThis, VSCSIIOREQ hVScsiIoReq)
         }
         case VSCSIIOREQTXDIR_UNMAP:
         {
-            PVSCSIRANGE paRanges;
+            PCRTRANGE paRanges;
             unsigned cRanges;
 
             rc = VSCSIIoReqUnmapParamsGet(hVScsiIoReq, &paRanges, &cRanges);
             AssertRC(rc);
 
             pThis->pLed->Asserted.s.fWriting = pThis->pLed->Actual.s.fWriting = 1;
-            rc = pThis->pDrvBlock->pfnDiscard(pThis->pDrvBlock, (PPDMRANGE)paRanges, cRanges);
+            rc = pThis->pDrvBlock->pfnDiscard(pThis->pDrvBlock, paRanges, cRanges);
             pThis->pLed->Actual.s.fWriting = 0;
             break;
         }
@@ -233,7 +233,8 @@ static int drvscsiTransferCompleteNotify(PPDMIBLOCKASYNCPORT pInterface, void *p
 
     if (enmTxDir == VSCSIIOREQTXDIR_READ)
         pThis->pLed->Actual.s.fReading = 0;
-    else if (enmTxDir == VSCSIIOREQTXDIR_WRITE)
+    else if (   enmTxDir == VSCSIIOREQTXDIR_WRITE
+             || enmTxDir == VSCSIIOREQTXDIR_UNMAP)
         pThis->pLed->Actual.s.fWriting = 0;
     else
         AssertMsg(enmTxDir == VSCSIIOREQTXDIR_FLUSH, ("Invalid transfer direction %u\n", enmTxDir));
@@ -298,6 +299,23 @@ static DECLCALLBACK(int) drvscsiReqTransferEnqueue(VSCSILUN hVScsiLun,
                     && rc != VERR_VD_ASYNC_IO_IN_PROGRESS
                     && pThis->cErrors++ < MAX_LOG_REL_ERRORS)
                     LogRel(("SCSI#%u: Flush returned rc=%Rrc\n",
+                            pThis->pDrvIns->iInstance, rc));
+                break;
+            }
+            case VSCSIIOREQTXDIR_UNMAP:
+            {
+                PCRTRANGE paRanges;
+                unsigned cRanges;
+
+                rc = VSCSIIoReqUnmapParamsGet(hVScsiIoReq, &paRanges, &cRanges);
+                AssertRC(rc);
+
+                pThis->pLed->Asserted.s.fWriting = pThis->pLed->Actual.s.fWriting = 1;
+                rc = pThis->pDrvBlockAsync->pfnStartDiscard(pThis->pDrvBlockAsync, paRanges, cRanges, hVScsiIoReq);
+                if (   RT_FAILURE(rc)
+                    && rc != VERR_VD_ASYNC_IO_IN_PROGRESS
+                    && pThis->cErrors++ < MAX_LOG_REL_ERRORS)
+                    LogRel(("SCSI#%u: Discard returned rc=%Rrc\n",
                             pThis->pDrvIns->iInstance, rc));
                 break;
             }
@@ -395,7 +413,9 @@ static DECLCALLBACK(int) drvscsiGetFeatureFlags(VSCSILUN hVScsiLun,
 
     *pfFeatures = 0;
 
-    if (pThis->pDrvBlock->pfnDiscard)
+    if (   pThis->pDrvBlock->pfnDiscard
+        || (   pThis->pDrvBlockAsync
+            && pThis->pDrvBlockAsync->pfnStartDiscard))
         *pfFeatures |= VSCSI_LUN_FEATURE_UNMAP;
 
     if (pThis->fNonRotational)
@@ -885,6 +905,11 @@ static DECLCALLBACK(int) drvscsiConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, ui
     }
     else
         LogRel(("SCSI#%d: using async I/O\n", pDrvIns->iInstance));
+
+    if (   pThis->pDrvBlock->pfnDiscard
+        || (   pThis->pDrvBlockAsync
+            && pThis->pDrvBlockAsync->pfnStartDiscard))
+        LogRel(("SCSI#%d: Enabled UNMAP support\n"));
 
     return VINF_SUCCESS;
 }

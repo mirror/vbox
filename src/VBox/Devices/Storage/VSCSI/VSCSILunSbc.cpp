@@ -446,9 +446,9 @@ static int vscsiLunSbcReqProcess(PVSCSILUNINT pVScsiLun, PVSCSIREQINT pVScsiReq)
 
                     if (cBlkDesc)
                     {
-                        PVSCSIRANGE paRanges;
+                        PRTRANGE paRanges;
 
-                        paRanges = (PVSCSIRANGE)RTMemAllocZ(cBlkDesc * sizeof(PVSCSIRANGE));
+                        paRanges = (PRTRANGE)RTMemAllocZ(cBlkDesc * sizeof(RTRANGE));
                         if (paRanges)
                         {
                             for (unsigned i = 0; i < cBlkDesc; i++)

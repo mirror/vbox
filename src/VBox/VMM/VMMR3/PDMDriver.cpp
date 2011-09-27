@@ -1428,11 +1428,12 @@ static DECLCALLBACK(int) pdmR3DrvHlp_FTSetCheckpoint(PPDMDRVINS pDrvIns, FTMCHEC
 static DECLCALLBACK(int) pdmR3DrvHlp_BlkCacheRetain(PPDMDRVINS pDrvIns, PPPDMBLKCACHE ppBlkCache,
                                                     PFNPDMBLKCACHEXFERCOMPLETEDRV pfnXferComplete,
                                                     PFNPDMBLKCACHEXFERENQUEUEDRV pfnXferEnqueue,
+                                                    PFNPDMBLKCACHEXFERENQUEUEDISCARDDRV pfnXferEnqueueDiscard,
                                                     const char *pcszId)
 {
     PDMDRV_ASSERT_DRVINS(pDrvIns);
     return PDMR3BlkCacheRetainDriver(pDrvIns->Internal.s.pVMR3, pDrvIns, ppBlkCache,
-                                     pfnXferComplete, pfnXferEnqueue, pcszId);
+                                     pfnXferComplete, pfnXferEnqueue, pfnXferEnqueueDiscard, pcszId);
 }
 
 
