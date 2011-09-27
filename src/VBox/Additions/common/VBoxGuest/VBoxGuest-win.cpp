@@ -520,21 +520,19 @@ NTSTATUS vboxguestwinCleanup(PDEVICE_OBJECT pDevObj)
 
 #if 0 /* @todo: test & enable cleaning global session data */
 #ifdef VBOX_WITH_HGCM
-    if (pDevExt->win.s.pKernelSession)
-    {
-        VBoxGuestCloseSession(pDevExt, pDevExt->win.s.pKernelSession);
-        pDevExt->win.s.pKernelSession = NULL;
-    }
+        if (pDevExt->win.s.pKernelSession)
+        {
+            VBoxGuestCloseSession(pDevExt, pDevExt->win.s.pKernelSession);
+            pDevExt->win.s.pKernelSession = NULL;
+        }
 #endif
 #endif
 
-#ifndef TARGET_NT4
         if (pDevExt->win.s.pInterruptObject)
         {
             IoDisconnectInterrupt(pDevExt->win.s.pInterruptObject);
             pDevExt->win.s.pInterruptObject = NULL;
         }
-#endif
 
         /* @todo: cleanup the rest stuff */
 
