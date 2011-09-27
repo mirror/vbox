@@ -471,6 +471,7 @@ void printUsage(USAGECATEGORY u64Cmd, PRTSTREAM pStrm)
                      "                            [--passthrough on|off]\n"
                      "                            [--tempeject on|off]\n"
                      "                            [--nonrotational on|off]\n"
+                     "                            [--discard on|off]\n"
                      "                            [--bandwidthgroup <name>]\n"
                      "                            [--forceunmount]\n"
                      "                            [--server <name>|<ip>]\n"

@@ -53,6 +53,7 @@ static const RTGETOPTDEF g_aStorageAttachOptions[] =
     { "--passthrough",      'h', RTGETOPT_REQ_STRING },
     { "--tempeject",        'e', RTGETOPT_REQ_STRING },
     { "--nonrotational",    'n', RTGETOPT_REQ_STRING },
+    { "--discard",          'u', RTGETOPT_REQ_STRING },
     { "--bandwidthgroup",   'b', RTGETOPT_REQ_STRING },
     { "--forceunmount",     'f', RTGETOPT_REQ_NOTHING },
     { "--comment",          'C', RTGETOPT_REQ_STRING },
@@ -87,6 +88,7 @@ int handleStorageAttach(HandlerArg *a)
     const char *pszPassThrough = NULL;
     const char *pszTempEject = NULL;
     const char *pszNonRotational = NULL;
+    const char *pszDiscard = NULL;
     const char *pszBandwidthGroup = NULL;
     Bstr bstrNewUuid;
     Bstr bstrNewParentUuid;
@@ -183,6 +185,15 @@ int handleStorageAttach(HandlerArg *a)
             {
                 if (ValueUnion.psz)
                     pszNonRotational = ValueUnion.psz;
+                else
+                    rc = E_FAIL;
+                break;
+            }
+
+            case 'u':   // nonrotational <on|off>
+            {
+                if (ValueUnion.psz)
+                    pszDiscard = ValueUnion.psz;
                 else
                     rc = E_FAIL;
                 break;
@@ -794,6 +805,33 @@ int handleStorageAttach(HandlerArg *a)
             else
                 throw Utf8StrFmt("Couldn't find the controller attachment for the controller '%s'\n", pszCtl);
         }
+
+        if (   pszNonRotational
+            && (SUCCEEDED(rc)))
+        {
+            ComPtr<IMediumAttachment> mattach;
+            CHECK_ERROR(machine, GetMediumAttachment(Bstr(pszCtl).raw(), port,
+                                                     device, mattach.asOutParam()));
+
+            if (SUCCEEDED(rc))
+            {
+                if (!RTStrICmp(pszDiscard, "on"))
+                {
+                    CHECK_ERROR(machine, DiscardDevice(Bstr(pszCtl).raw(),
+                                                       port, device, TRUE));
+                }
+                else if (!RTStrICmp(pszDiscard, "off"))
+                {
+                    CHECK_ERROR(machine, DiscardDevice(Bstr(pszCtl).raw(),
+                                                       port, device, FALSE));
+                }
+                else
+                    throw Utf8StrFmt("Invalid --nonrotational argument '%s'", pszNonRotational);
+            }
+            else
+                throw Utf8StrFmt("Couldn't find the controller attachment for the controller '%s'\n", pszCtl);
+        }
+
 
         if (   pszBandwidthGroup
             && !fRunTime
