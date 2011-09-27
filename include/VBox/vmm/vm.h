@@ -941,7 +941,7 @@ typedef struct VM
 #ifdef ___TRPMInternal_h
         struct TRPM s;
 #endif
-        uint8_t     padding[5184];      /* multiple of 64 */
+        uint8_t     padding[5248];      /* multiple of 64 */
     } trpm;
 
     /** SELM part. */
@@ -1074,7 +1074,7 @@ typedef struct VM
 
 
     /** Padding for aligning the cpu array on a page boundary. */
-    uint8_t         abAlignment2[862];
+    uint8_t         abAlignment2[798];
 
     /* ---- end small stuff ---- */
 
