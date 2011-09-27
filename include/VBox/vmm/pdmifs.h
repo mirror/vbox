@@ -912,20 +912,6 @@ typedef enum PDMBLOCKTXDIR
 } PDMBLOCKTXDIR;
 
 
-/**
- * PDM range.
- */
-typedef struct PDMRANGE
-{
-    /** Start offset. */
-    uint64_t    offStart;
-    /** Size. */
-    size_t      cbRange;
-} PDMRANGE;
-/** Pointer to a PDM range. */
-typedef PDMRANGE *PPDMRANGE;
-
-
 /** Pointer to a block interface. */
 typedef struct PDMIBLOCK *PPDMIBLOCK;
 /**
@@ -1042,7 +1028,7 @@ typedef struct PDMIBLOCK
      * @param   cRanges         Number of entries in the array.
      * @thread  Any thread.
      */
-    DECLR3CALLBACKMEMBER(int, pfnDiscard,(PPDMIBLOCK pInterface, PPDMRANGE paRanges, unsigned cRanges));
+    DECLR3CALLBACKMEMBER(int, pfnDiscard,(PPDMIBLOCK pInterface, PCRTRANGE paRanges, unsigned cRanges));
 } PDMIBLOCK;
 /** PDMIBLOCK interface ID. */
 #define PDMIBLOCK_IID                           "5e7123dd-8cdf-4a6e-97a5-ab0c68d7e850"
@@ -1340,7 +1326,7 @@ typedef struct PDMIMEDIA
      * @param   cRanges         Number of entries in the array.
      * @thread  Any thread.
      */
-    DECLR3CALLBACKMEMBER(int, pfnDiscard,(PPDMIMEDIA pInterface, PPDMRANGE paRanges, unsigned cRanges));
+    DECLR3CALLBACKMEMBER(int, pfnDiscard,(PPDMIMEDIA pInterface, PCRTRANGE paRanges, unsigned cRanges));
 
 } PDMIMEDIA;
 /** PDMIMEDIA interface ID. */
@@ -1524,9 +1510,21 @@ typedef struct PDMIBLOCKASYNC
      */
     DECLR3CALLBACKMEMBER(int, pfnStartFlush,(PPDMIBLOCKASYNC pInterface, void *pvUser));
 
+    /**
+     * Discards the given range.
+     *
+     * @returns VBox status code.
+     * @param   pInterface      Pointer to the interface structure containing the called function pointer.
+     * @param   paRanges        Array of ranges to discard.
+     * @param   cRanges         Number of entries in the array.
+     * @param   pvUser          User argument which is returned in completion callback.
+     * @thread  Any thread.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnStartDiscard,(PPDMIBLOCKASYNC pInterface, PCRTRANGE paRanges, unsigned cRanges, void *pvUser));
+
 } PDMIBLOCKASYNC;
 /** PDMIBLOCKASYNC interface ID. */
-#define PDMIBLOCKASYNC_IID                      "78302d0d-4978-498c-be3c-8989cb5ff5c8"
+#define PDMIBLOCKASYNC_IID                      "a921dd96-1748-4ecd-941e-d5f3cd4c8fe4"
 
 
 /** Pointer to an asynchronous notification interface. */
@@ -1598,9 +1596,21 @@ typedef struct PDMIMEDIAASYNC
      */
     DECLR3CALLBACKMEMBER(int, pfnStartFlush,(PPDMIMEDIAASYNC pInterface, void *pvUser));
 
+    /**
+     * Discards the given range.
+     *
+     * @returns VBox status code.
+     * @param   pInterface      Pointer to the interface structure containing the called function pointer.
+     * @param   paRanges        Array of ranges to discard.
+     * @param   cRanges         Number of entries in the array.
+     * @param   pvUser          User argument which is returned in completion callback.
+     * @thread  Any thread.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnStartDiscard,(PPDMIMEDIAASYNC pInterface, PCRTRANGE paRanges, unsigned cRanges, void *pvUser));
+
 } PDMIMEDIAASYNC;
 /** PDMIMEDIAASYNC interface ID. */
-#define PDMIMEDIAASYNC_IID                      "3553227d-714d-4d28-b993-59f4e671588e"
+#define PDMIMEDIAASYNC_IID                      "4be209d3-ccb5-4297-82fe-7d8018bc6ab4"
 
 
 /** Pointer to a char port interface. */

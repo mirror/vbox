@@ -285,7 +285,7 @@ static DECLCALLBACK(int) drvblockGetUuid(PPDMIBLOCK pInterface, PRTUUID pUuid)
     return VINF_SUCCESS;
 }
 
-static DECLCALLBACK(int) drvblockDiscard(PPDMIBLOCK pInterface, PPDMRANGE paRanges, unsigned cRanges)
+static DECLCALLBACK(int) drvblockDiscard(PPDMIBLOCK pInterface, PCRTRANGE paRanges, unsigned cRanges)
 {
     PDRVBLOCK pThis = PDMIBLOCK_2_DRVBLOCK(pInterface);
 
@@ -336,7 +336,7 @@ static DECLCALLBACK(int) drvblockAsyncWriteStart(PPDMIBLOCKASYNC pInterface, uin
 }
 
 
-/** @copydoc PDMIBLOCKASYNC::pfnStartFLush */
+/** @copydoc PDMIBLOCKASYNC::pfnStartFlush */
 static DECLCALLBACK(int) drvblockAsyncFlushStart(PPDMIBLOCKASYNC pInterface, void *pvUser)
 {
     PDRVBLOCK pThis = PDMIBLOCKASYNC_2_DRVBLOCK(pInterface);
@@ -358,6 +358,24 @@ static DECLCALLBACK(int) drvblockAsyncFlushStart(PPDMIBLOCKASYNC pInterface, voi
     int rc = pThis->pDrvMediaAsync->pfnStartFlush(pThis->pDrvMediaAsync, pvUser);
 
     return rc;
+}
+
+
+/** @copydoc PDMIBLOCKASYNC::pfnStartDiscard */
+static DECLCALLBACK(int) drvblockStartDiscard(PPDMIBLOCKASYNC pInterface, PCRTRANGE paRanges, unsigned cRanges, void *pvUser)
+{
+    PDRVBLOCK pThis = PDMIBLOCKASYNC_2_DRVBLOCK(pInterface);
+
+    /*
+     * Check the state.
+     */
+    if (!pThis->pDrvMediaAsync)
+    {
+        AssertMsgFailed(("Invalid state! Not mounted!\n"));
+        return VERR_PDM_MEDIA_NOT_MOUNTED;
+    }
+
+    return pThis->pDrvMediaAsync->pfnStartDiscard(pThis->pDrvMediaAsync, paRanges, cRanges, pvUser);
 }
 
 /* -=-=-=-=- IMediaAsyncPort -=-=-=-=- */
@@ -975,11 +993,15 @@ static DECLCALLBACK(int) drvblockConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, u
         return PDMDRV_SET_ERROR(pDrvIns, VERR_PDM_MISSING_INTERFACE_BELOW,
                                 N_("No media or async media interface below"));
 
+    /* Try to get the optional async interface. */
+    pThis->pDrvMediaAsync = PDMIBASE_QUERY_INTERFACE(pBase, PDMIMEDIAASYNC);
+
     if (pThis->pDrvMedia->pfnDiscard)
         pThis->IBlock.pfnDiscard = drvblockDiscard;
 
-    /* Try to get the optional async interface. */
-    pThis->pDrvMediaAsync = PDMIBASE_QUERY_INTERFACE(pBase, PDMIMEDIAASYNC);
+    if (   pThis->pDrvMediaAsync
+        && pThis->pDrvMediaAsync->pfnStartDiscard)
+        pThis->IBlockAsync.pfnStartDiscard = drvblockStartDiscard;
 
     if (RTUuidIsNull(&pThis->Uuid))
     {

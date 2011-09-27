@@ -87,7 +87,7 @@ int vscsiIoReqTransferEnqueue(PVSCSILUNINT pVScsiLun, PVSCSIREQINT pVScsiReq,
 
 
 int vscsiIoReqUnmapEnqueue(PVSCSILUNINT pVScsiLun, PVSCSIREQINT pVScsiReq,
-                           PVSCSIRANGE paRanges, unsigned cRanges)
+                           PRTRANGE paRanges, unsigned cRanges)
 {
     int rc = VINF_SUCCESS;
     PVSCSIIOREQINT pVScsiIoReq = NULL;
@@ -201,7 +201,7 @@ VBOXDDU_DECL(int) VSCSIIoReqParamsGet(VSCSIIOREQ hVScsiIoReq, uint64_t *puOffset
     return VINF_SUCCESS;
 }
 
-VBOXDDU_DECL(int) VSCSIIoReqUnmapParamsGet(VSCSIIOREQ hVScsiIoReq, PVSCSIRANGE *ppaRanges,
+VBOXDDU_DECL(int) VSCSIIoReqUnmapParamsGet(VSCSIIOREQ hVScsiIoReq, PCRTRANGE *ppaRanges,
                                            unsigned *pcRanges)
 {
     PVSCSIIOREQINT pVScsiIoReq = hVScsiIoReq;

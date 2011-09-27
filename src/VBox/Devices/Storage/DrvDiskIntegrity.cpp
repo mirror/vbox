@@ -50,7 +50,9 @@ typedef enum DRVDISKAIOTXDIR
     /** Write */
     DRVDISKAIOTXDIR_WRITE,
     /** Flush */
-    DRVDISKAIOTXDIR_FLUSH
+    DRVDISKAIOTXDIR_FLUSH,
+    /** Discard */
+    DRVDISKAIOTXDIR_DISCARD
 } DRVDISKAIOTXDIR;
 
 /**
@@ -78,6 +80,10 @@ typedef struct DRVDISKAIOREQ
     uint64_t        tsComplete;
     /** I/O log entry if configured. */
     VDIOLOGENT      hIoLogEntry;
+    /** Ranges to discard. */
+    PCRTRANGE       paRanges;
+    /** Number of ranges. */
+    unsigned        cRanges;
 } DRVDISKAIOREQ, *PDRVDISKAIOREQ;
 
 /**
@@ -940,6 +946,42 @@ static DECLCALLBACK(int) drvdiskintStartFlush(PPDMIMEDIAASYNC pInterface, void *
     return rc;
 }
 
+/** @copydoc PDMIMEDIAASYNC::pfnStartDiscard */
+static DECLCALLBACK(int) drvdiskintStartDiscard(PPDMIMEDIA pInterface, PPDMRANGE paRanges, unsigned cRanges, void *pvUser)
+{
+    int rc = VINF_SUCCESS;
+    VDIOLOGENT hIoLogEntry;
+    PDRVDISKINTEGRITY pThis = PDMIMEDIA_2_DRVDISKINTEGRITY(pInterface);
+    PDRVDISKAIOREQ pIoReq = drvdiskintIoReqAlloc(DRVDISKAIOTXDIR_DISCARD, 0, NULL, 0, 0, pvUser);
+    AssertPtr(pIoReq);
+
+    pIoReq->paRanges = paRanges;
+    pIoReq->cRanges  = cRanges;
+
+    if (pThis->hIoLogger)
+    {
+        rc = VDDbgIoLogStartDiscard(pThis->hIoLogger, true, (PVDRANGE)paRanges, cRanges, &hIoLogEntry);
+        AssertRC(rc);
+    }
+
+    rc = pThis->pDrvMedia->pfnStartDiscard(pThis->pDrvMedia, paRanges, cRanges, pIoReq);
+
+    if (rc == VINF_VD_ASYNC_IO_FINISHED)
+    {
+        if (pThis->hIoLogger)
+        {
+            int rc2 = VDDbgIoLogComplete(pThis->hIoLogger, pIoReq->hIoLogEntry, VINF_SUCCESS, NULL);
+            AssertRC(rc2);
+        }
+
+        RTMemFree(pIoReq);
+    }
+    else if (RT_FAILURE(rc) && rc != VERR_VD_ASYNC_IO_IN_PROGRESS)
+        RTMemFree(pIoReq);
+
+    return rc;
+}
+
 /** @copydoc PDMIMEDIA::pfnFlush */
 static DECLCALLBACK(int) drvdiskintFlush(PPDMIMEDIA pInterface)
 {
@@ -1068,6 +1110,8 @@ static DECLCALLBACK(int) drvdiskintAsyncTransferCompleteNotify(PPDMIMEDIAASYNCPO
             rc = drvdiskintReadVerify(pThis, pIoReq->paSeg, pIoReq->cSeg, pIoReq->off, pIoReq->cbTransfer);
         else if (pIoReq->enmTxDir == DRVDISKAIOTXDIR_WRITE)
             rc = drvdiskintWriteRecord(pThis, pIoReq->paSeg, pIoReq->cSeg, pIoReq->off, pIoReq->cbTransfer);
+        else if (pIoReq->enmTxDir == DRVDISKAIOTXDIR_DISCARD)
+            rc = drvdiskintDiscardRecords(pThis, paRanges, cRanges);
         else
             AssertMsg(pIoReq->enmTxDir == DRVDISKAIOTXDIR_FLUSH, ("Huh?\n"));
 
@@ -1275,6 +1319,9 @@ static DECLCALLBACK(int) drvdiskintConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg,
 
     if (pThis->pDrvMedia->pfnDiscard)
         pThis->IMedia.pfnDiscard = drvdiskintDiscard;
+    if (   pThis->pDrvMediaAsync
+        && pThis->pDrvMediaAsync->pfnStartDiscard)
+        pThis->IMediaAsync.pfnStartDiscard = drvdiskintStartDiscard;
 
     if (pThis->fCheckConsistency)
     {

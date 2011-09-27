@@ -559,11 +559,7 @@ static DECLCALLBACK(int) drvvdAsyncIOSetSize(void *pvUser, void *pStorage, uint6
     PVBOXDISK pDrvVD = (PVBOXDISK)pvUser;
     PDRVVDSTORAGEBACKEND pStorageBackend = (PDRVVDSTORAGEBACKEND)pStorage;
 
-    int rc = drvvdAsyncIOFlushSync(pvUser, pStorage);
-    if (RT_SUCCESS(rc))
-        rc = PDMR3AsyncCompletionEpSetSize(pStorageBackend->pEndpoint, cbSize);
-
-    return rc;
+    return PDMR3AsyncCompletionEpSetSize(pStorageBackend->pEndpoint, cbSize);
 }
 
 #endif /* VBOX_WITH_PDM_ASYNC_COMPLETION */
@@ -1673,13 +1669,12 @@ static DECLCALLBACK(int) drvvdGetUuid(PPDMIMEDIA pInterface, PRTUUID pUuid)
     return rc;
 }
 
-static DECLCALLBACK(int) drvvdDiscard(PPDMIMEDIA pInterface, PPDMRANGE paRanges, unsigned cRanges)
+static DECLCALLBACK(int) drvvdDiscard(PPDMIMEDIA pInterface, PCRTRANGE paRanges, unsigned cRanges)
 {
     LogFlowFunc(("\n"));
     PVBOXDISK pThis = PDMIMEDIA_2_VBOXDISK(pInterface);
 
-    /** @todo: Fix the cast properly without allocating temporary memory (maybe move the type to IPRT). */
-    int rc = VDDiscardRanges(pThis->pDisk, (PVDRANGE)paRanges, cRanges);
+    int rc = VDDiscardRanges(pThis->pDisk, paRanges, cRanges);
     LogFlowFunc(("returns %Rrc\n", rc));
     return rc;
 }
@@ -1781,6 +1776,30 @@ static DECLCALLBACK(int) drvvdStartFlush(PPDMIMEDIAASYNC pInterface, void *pvUse
     return rc;
 }
 
+static DECLCALLBACK(int) drvvdStartDiscard(PPDMIMEDIAASYNC pInterface, PCRTRANGE paRanges,
+                                           unsigned cRanges, void *pvUser)
+{
+    int rc = VINF_SUCCESS;
+    PVBOXDISK pThis = PDMIMEDIAASYNC_2_VBOXDISK(pInterface);
+
+    LogFlowFunc(("paRanges=%#p cRanges=%u pvUser=%#p\n",
+                 paRanges, cRanges, pvUser));
+
+    if (!pThis->pBlkCache)
+        rc = VDAsyncDiscardRanges(pThis->pDisk, paRanges, cRanges, drvvdAsyncReqComplete,
+                                  pThis, pvUser);
+    else
+    {
+        rc = PDMR3BlkCacheDiscard(pThis->pBlkCache, paRanges, cRanges, pvUser);
+        if (rc == VINF_AIO_TASK_PENDING)
+            rc = VERR_VD_ASYNC_IO_IN_PROGRESS;
+        else if (rc == VINF_SUCCESS)
+            rc = VINF_VD_ASYNC_IO_FINISHED;
+    }
+    LogFlowFunc(("returns %Rrc\n", rc));
+    return rc;
+}
+
 /** @copydoc FNPDMBLKCACHEXFERCOMPLETEDRV */
 static void drvvdBlkCacheXferComplete(PPDMDRVINS pDrvIns, void *pvUser, int rcReq)
 {
@@ -1817,6 +1836,24 @@ static int drvvdBlkCacheXferEnqueue(PPDMDRVINS pDrvIns,
             AssertMsgFailed(("Invalid transfer type %d\n", enmXferDir));
             rc = VERR_INVALID_PARAMETER;
     }
+
+    if (rc == VINF_VD_ASYNC_IO_FINISHED)
+        PDMR3BlkCacheIoXferComplete(pThis->pBlkCache, hIoXfer, VINF_SUCCESS);
+    else if (RT_FAILURE(rc) && rc != VERR_VD_ASYNC_IO_IN_PROGRESS)
+        PDMR3BlkCacheIoXferComplete(pThis->pBlkCache, hIoXfer, rc);
+
+    return VINF_SUCCESS;
+}
+
+/** @copydoc FNPDMBLKCACHEXFERENQUEUEDISCARDDRV */
+static int drvvdBlkCacheXferEnqueueDiscard(PPDMDRVINS pDrvIns, PCRTRANGE paRanges,
+                                           unsigned cRanges, PPDMBLKCACHEIOXFER hIoXfer)
+{
+    int rc = VINF_SUCCESS;
+    PVBOXDISK pThis = PDMINS_2_DATA(pDrvIns, PVBOXDISK);
+
+    rc = VDAsyncDiscardRanges(pThis->pDisk, paRanges, cRanges,
+                              drvvdAsyncReqComplete, pThis, hIoXfer);
 
     if (rc == VINF_VD_ASYNC_IO_FINISHED)
         PDMR3BlkCacheIoXferComplete(pThis->pBlkCache, hIoXfer, VINF_SUCCESS);
@@ -2075,6 +2112,7 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns,
     pThis->IMediaAsync.pfnStartRead       = drvvdStartRead;
     pThis->IMediaAsync.pfnStartWrite      = drvvdStartWrite;
     pThis->IMediaAsync.pfnStartFlush      = drvvdStartFlush;
+    pThis->IMediaAsync.pfnStartDiscard    = drvvdStartDiscard;
 
     /* Initialize supported VD interfaces. */
     pThis->pVDIfsDisk = NULL;
@@ -2574,7 +2612,10 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns,
         }
 
         if (!fDiscard)
+        {
             pThis->IMedia.pfnDiscard = NULL;
+            pThis->IMediaAsync.pfnStartDiscard = NULL;
+        }
 
         if (RT_SUCCESS(rc))
         {
@@ -2665,6 +2706,7 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns,
     /* Create the block cache if enabled. */
     if (   fUseBlockCache
         && !pThis->fShareable
+        && !fDiscard
         && RT_SUCCESS(rc))
     {
         /*
@@ -2694,6 +2736,7 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns,
                 rc = PDMDrvHlpBlkCacheRetain(pDrvIns, &pThis->pBlkCache,
                                              drvvdBlkCacheXferComplete,
                                              drvvdBlkCacheXferEnqueue,
+                                             drvvdBlkCacheXferEnqueueDiscard,
                                              pszId);
                 if (rc == VERR_NOT_SUPPORTED)
                 {
