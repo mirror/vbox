@@ -375,7 +375,6 @@ int _info(struct modinfo *pModInfo)
 LOCAL int VBoxNetFltSolarisAttach(dev_info_t *pDip, ddi_attach_cmd_t enmCmd)
 {
     Log((DEVICE_NAME ":VBoxNetFltSolarisAttach pDip=%p enmCmd=%d\n", pDip, enmCmd));
-    LogRel((DEVICE_NAME ":blah\n"));
 
     switch (enmCmd)
     {
