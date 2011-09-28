@@ -25,6 +25,7 @@
 #include "biosint.h"
 #include "ebda.h"
 #include "inlines.h"
+#include "pciutil.h"
 
 #define VBOX_AHCI_DEBUG         0
 #define VBOX_AHCI_INT13_DEBUG   0 
@@ -75,7 +76,7 @@ typedef struct
      *  Because the BIOS doesn't support NCQ only the first command header is defined
      *  to save memory. - Must be aligned on a 1K boundary.
      */
-    uint32_t        abCmdHdr[0x8];
+    uint32_t        aCmdHdr[0x8];
     /** Align the next structure on a 128 byte boundary. */
     uint8_t         abAlignment1[0x60];
     /** The command table of one request as defined by chapter 4.2.3 of the Intel AHCI spec.
@@ -111,30 +112,6 @@ typedef struct
 } ahci_t;
 
 #define AhciData ((ahci_t *) 0)
-
-/** Supported methods of the PCI BIOS. */
-#define PCIBIOS_ID                      0xb1
-#define PCIBIOS_PCI_BIOS_PRESENT        0x01
-#define PCIBIOS_FIND_PCI_DEVICE         0x02
-#define PCIBIOS_FIND_CLASS_CODE         0x03
-#define PCIBIOS_GENERATE_SPECIAL_CYCLE  0x06
-#define PCIBIOS_READ_CONFIG_BYTE        0x08
-#define PCIBIOS_READ_CONFIG_WORD        0x09
-#define PCIBIOS_READ_CONFIG_DWORD       0x0a
-#define PCIBIOS_WRITE_CONFIG_BYTE       0x0b
-#define PCIBIOS_WRITE_CONFIG_WORD       0x0c
-#define PCIBIOS_WRITE_CONFIG_DWORD      0x0d
-#define PCIBIOS_GET_IRQ_ROUTING_OPTIONS 0x0e
-#define PCIBIOS_SET_PCI_IRQ             0x0f
-
-/** Status codes. */
-#define SUCCESSFUL                      0x00
-#define FUNC_NOT_SUPPORTED              0x81
-#define BAD_VENDOR_ID                   0x83
-#define DEVICE_NOT_FOUND                0x86
-#define BAD_REGISTER_NUMBER             0x87
-#define SET_FAILED                      0x88
-#define BUFFER_TOO_SMALL                0x89
 
 /** PCI configuration fields. */
 #define PCI_CONFIG_CAP                  0x34
@@ -209,38 +186,6 @@ typedef struct
 #define AHCI_CMD_WRITE_DMA_EXT      0x35
 
 
-/* Warning: Destroys high bits of ECX. */
-uint16_t pci_find_class(uint16_t op, uint32_t dev_class, uint16_t start_bdf);
-#pragma aux pci_find_class =    \
-    ".386"                  \
-    "shl    ecx, 16"        \
-    "mov    cx, dx"         \
-    "int    0x1a"           \
-    "cmp    ah, 0"          \
-    "je     found"          \
-    "mov    bx, 0xffff"     \
-    "found:"                \
-    parm [ax] [cx dx] [si] value [bx];
-
-uint16_t pci_read_cfgw(uint16_t op, uint16_t bus_dev_fn, uint16_t reg);
-#pragma aux pci_read_cfgw = \
-    "int    0x1a"           \
-    parm [ax] [bx] [di] value [cx];
-
-uint8_t pci_read_cfgb(uint16_t op, uint16_t bus_dev_fn, uint16_t reg);
-#pragma aux pci_read_cfgb = \
-    "int    0x1a"           \
-    parm [ax] [bx] [di] value [cx];
-
-/* Warning: Destroys high bits of ECX. */
-uint32_t pci_read_cfgd(uint16_t op, uint16_t bus_dev_fn, uint16_t reg);
-#pragma aux pci_read_cfgd = \
-    ".386"                  \
-    "int    0x1a"           \
-    "mov    ax, cx"         \
-    "shr    ecx, 16"        \
-    parm [ax] [bx] [di] value [cx ax];
-
 /* Warning: Destroys high bits of EAX. */
 uint32_t inpd(uint16_t port);
 #pragma aux inpd =      \
@@ -260,139 +205,6 @@ void outpd(uint16_t port, uint32_t val);
     "out    dx, eax"    \
     parm [dx] [cx ax] modify nomemory;
 
-
-/**
- * Returns the bus/device/function of a PCI device with
- * the given class code.
- *
- * @returns bus/device/fn in a 16-bit integer where
- *          where the upper byte contains the bus number
- *          and lower one the device and function number.
- *          VBOX_AHCI_NO_DEVICE if no device was found.
- * @param   dev_class   The PCI class code to search for.
- */
-uint16_t pci_find_classcode(uint32_t dev_class)
-{
-    return pci_find_class((PCIBIOS_ID << 8) | PCIBIOS_FIND_CLASS_CODE, dev_class, 0);
-}
-
-uint32_t pci_read_config_byte(uint8_t bus, uint8_t dev_fn, uint8_t reg)
-{
-    return pci_read_cfgw((PCIBIOS_ID << 8) | PCIBIOS_READ_CONFIG_BYTE, (bus << 8) | dev_fn, reg);
-}
-
-uint32_t pci_read_config_word(uint8_t bus, uint8_t dev_fn, uint8_t reg)
-{
-    return pci_read_cfgw((PCIBIOS_ID << 8) | PCIBIOS_READ_CONFIG_WORD, (bus << 8) | dev_fn, reg);
-}
-
-uint32_t pci_read_config_dword(uint8_t bus, uint8_t dev_fn, uint8_t reg)
-{
-    return pci_read_cfgd((PCIBIOS_ID << 8) | PCIBIOS_READ_CONFIG_DWORD, (bus << 8) | dev_fn, reg);
-}
-
-#if 0 /* Disabled to save space because they are not needed. Might become useful in the future. */
-/**
- * Returns the bus/device/function of a PCI device with
- * the given vendor and device id.
- *
- * @returns bus/device/fn in one 16bit integer where
- *          where the upper byte contains the bus number
- *          and lower one the device and function number.
- *          VBOX_AHCI_NO_DEVICE if no device was found.
- * @param   u16Vendor    The vendor ID.
- * @param   u16Device    The device ID.
- */
-uint16_t pci_find_device(uint16_t u16Vendor, uint16_t u16Device)
-{
-    uint16_t    u16BusDevFn;
-
-ASM_START
-    push bp
-    mov  bp, sp
-
-    mov ah, #PCIBIOS_ID
-    mov al, #PCIBIOS_FIND_PCI_DEVICE
-    mov cx, _pci_find_device.u16Device + 2[bp]
-    mov dx, _pci_find_device.u16Vendor + 2[bp]
-    mov si, #0                                    ; First controller
-    int 0x1a
-
-    ; Return from PCIBIOS
-    cmp ah, #SUCCESSFUL
-    jne pci_find_device_not_found
-
-    mov _pci_find_device.u16BusDevFn + 2[bp], bx
-    jmp pci_find_device_done
-
-pci_find_device_not_found:
-    mov _pci_find_device.u16BusDevFn + 2[bp], #VBOX_AHCI_NO_DEVICE
-
-pci_find_device_done:
-    pop bp
-ASM_END
-
-    return u16BusDevFn;
-}
-
-void pci_write_config_byte(u8Bus, u8DevFn, u8Reg, u8Val)
-    uint8_t u8Bus, u8DevFn, u8Reg, u8Val;
-{
-ASM_START
-    push bp
-    mov  bp, sp
-
-    mov ah, #PCIBIOS_ID
-    mov al, #PCIBIOS_WRITE_CONFIG_BYTE
-    mov bh, _pci_write_config_byte.u8Bus + 2[bp]
-    mov bl, _pci_write_config_byte.u8DevFn + 2[bp]
-    mov di, _pci_write_config_byte.u8Reg + 2[bp]
-    mov cl, _pci_write_config_byte.u8Val + 2[bp]
-    int 0x1a
-
-    ; Return from PCIBIOS
-    pop bp
-ASM_END
-}
-
-void pci_write_config_word(uint8_t u8Bus, uint8_t u8DevFn, uint8_t u8Reg, uint16_t u16Val)
-{
-ASM_START
-    push bp
-    mov  bp, sp
-
-    mov ah, #PCIBIOS_ID
-    mov al, #PCIBIOS_WRITE_CONFIG_WORD
-    mov bh, _pci_write_config_word.u8Bus + 2[bp]
-    mov bl, _pci_write_config_word.u8DevFn + 2[bp]
-    mov di, _pci_write_config_word.u8Reg + 2[bp]
-    mov cx, _pci_write_config_word.u16Val + 2[bp]
-    int 0x1a
-
-    ; Return from PCIBIOS
-    pop bp
-ASM_END
-}
-
-void pci_write_config_dword(uint8_t u8Bus, uint8_t u8DevFn, uint8_t u8Reg, uint32_t u32Val)
-{
-ASM_START
-    push bp
-    mov  bp, sp
-
-    mov ah, #PCIBIOS_ID
-    mov al, #PCIBIOS_WRITE_CONFIG_WORD
-    mov bh, _pci_write_config_dword.u8Bus + 2[bp]
-    mov bl, _pci_write_config_dword.u8DevFn + 2[bp]
-    mov di, _pci_write_config_dword.u8Reg + 2[bp]
-    mov cx, _pci_write_config_dword.u32Val + 2[bp]
-    int 0x1a
-
-    ; Return from PCIBIOS
-    pop bp
-ASM_END
-}
-#endif /* 0 */
 
 /**
  * Sets a given set of bits in a register.
@@ -464,9 +276,9 @@ static void ahci_port_cmd_sync(uint16_t ahci_seg, uint16_t u16IoBase, bx_bool fW
 
         u32Val |= cFisDWords;
 
-        ahci->abCmdHdr[0] = u32Val;
-        ahci->abCmdHdr[1] = cbData;
-        ahci->abCmdHdr[2] = ahci_addr_to_phys(&ahci->abCmd[0]);
+        ahci->aCmdHdr[0] = u32Val;
+        ahci->aCmdHdr[1] = cbData;
+        ahci->aCmdHdr[2] = ahci_addr_to_phys(&ahci->abCmd[0]);
 
         /* Enable Command and FIS receive engine. */
         ahci_ctrl_set_bits(u16IoBase, AHCI_PORT_REG(u8Port, AHCI_REG_PORT_CMD),
@@ -561,7 +373,7 @@ static void ahci_port_deinit_current(uint16_t ahci_seg, uint16_t u16IoBase)
          * address registers.
          */
         //@todo: merge memsets?
-        _fmemset(&ahci->abCmdHdr[0], 0, 0x20);
+        _fmemset(&ahci->aCmdHdr[0], 0, 0x20);
         _fmemset(&ahci->abCmd[0], 0, 0x84);
         _fmemset(&ahci->abFisRecv[0], 0, 0x60);
 
@@ -605,7 +417,7 @@ static void ahci_port_init(uint16_t ahci_seg, uint16_t u16IoBase, uint8_t u8Port
      * address registers.
      */
     //@todo: just one memset?
-    _fmemset(&ahci->abCmdHdr[0], 0, sizeof(ahci->abCmdHdr));
+    _fmemset(&ahci->aCmdHdr[0], 0, sizeof(ahci->aCmdHdr));
     _fmemset(&ahci->abCmd[0], 0, sizeof(ahci->abCmd));
     _fmemset(&ahci->abFisRecv[0], 0, sizeof(ahci->abFisRecv));
 
@@ -614,7 +426,7 @@ static void ahci_port_init(uint16_t ahci_seg, uint16_t u16IoBase, uint8_t u8Port
     VBOXAHCI_PORT_WRITE_REG(u16IoBase, u8Port, AHCI_REG_PORT_FB, u32PhysAddr);
     VBOXAHCI_PORT_WRITE_REG(u16IoBase, u8Port, AHCI_REG_PORT_FBU, 0);
 
-    u32PhysAddr = ahci_addr_to_phys(&ahci->abCmdHdr);
+    u32PhysAddr = ahci_addr_to_phys(&ahci->aCmdHdr);
     VBOXAHCI_DEBUG("AHCI: CMD list area %lx\n", u32PhysAddr);
     VBOXAHCI_PORT_WRITE_REG(u16IoBase, u8Port, AHCI_REG_PORT_CLB, u32PhysAddr);
     VBOXAHCI_PORT_WRITE_REG(u16IoBase, u8Port, AHCI_REG_PORT_CLBU, 0);
