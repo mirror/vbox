@@ -530,7 +530,7 @@ main (int argc, char **argv)
                 break;
 
             case 3:
-                panic_err("%s: Could not add an entry to the mount table.", argv[0]);
+                /* panic_err("%s: Could not add an entry to the mount table.", argv[0]); */
                 break;
 
             default:
