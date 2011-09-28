@@ -30,7 +30,7 @@ INCLS  = -I$(QUOTE)../../../../../include$(QUOTE)
 OBJS = 	bios.obj print.obj ata.obj floppy.obj eltorito.obj boot.obj &
 	keyboard.obj disk.obj serial.obj system.obj timepci.obj &
 	ps2mouse.obj parallel.obj logo.obj scsi.obj ahci.obj &
-	pcibio32.obj orgs.obj
+	pciutil.obj pcibio32.obj orgs.obj
 
 vbxbios.rom : vbxbios.bin
 	biossums $< $@
