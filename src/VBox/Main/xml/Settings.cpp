@@ -2985,6 +2985,9 @@ void MachineConfigFile::readStorageControllers(const xml::ElementNode &elmStorag
             Utf8Str strTemp;
             pelmAttached->getAttributeValue("type", strTemp);
 
+            att.fDiscard = false;
+            att.fNonRotational = false;
+
             if (strTemp == "HardDisk")
             {
                 att.deviceType = DeviceType_HardDisk;
