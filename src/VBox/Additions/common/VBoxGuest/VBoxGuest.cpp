@@ -2048,7 +2048,9 @@ static int vboxguestcommonSetMouseStatus(uint32_t fFeatures)
 
 
 /**
- * Sets the mouse status features for this session and updates them globally.
+ * Sets the mouse status features for this session and updates them
+ * globally.  We aim to ensure that if several threads call this in
+ * parallel the most recent status will always end up being set.
  *
  * @returns VBox status code.
  *
@@ -2062,6 +2064,9 @@ static int VBoxGuestCommonIOCtl_SetMouseStatus(PVBOXGUESTDEVEXT pDevExt, PVBOXGU
     RTSPINLOCKTMP Tmp = RTSPINLOCKTMP_INITIALIZER;
     uint32_t fNewDevExtStatus = 0;
     int rc;
+    /* Exit early if nothing has changed - hack to work around the
+     * Windows Additions not using the common code. */
+    bool fNoAction;
 
     RTSpinlockAcquireNoInts(pDevExt->SessionSpinlock, &Tmp);
     for (i = 0; i < sizeof(fFeatures) * 8; ++i)
@@ -2079,8 +2084,11 @@ static int VBoxGuestCommonIOCtl_SetMouseStatus(PVBOXGUESTDEVEXT pDevExt, PVBOXGU
             fNewDevExtStatus |= RT_BIT_32(i);
     }
     pSession->fMouseStatus = fFeatures & VMMDEV_MOUSE_GUEST_MASK;
+    fNoAction = (pDevExt->fMouseStatus == fNewDevExtStatus);
     pDevExt->fMouseStatus = fNewDevExtStatus;
     RTSpinlockReleaseNoInts(pDevExt->SessionSpinlock, &Tmp);
+    if (fNoAction)
+        return VINF_SUCCESS;
     do
     {
         fNewDevExtStatus = pDevExt->fMouseStatus;
