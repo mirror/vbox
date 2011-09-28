@@ -571,6 +571,7 @@ static bool ataFlushSS(ATADevState *);
 static bool ataReadSectorsSS(ATADevState *);
 static bool ataWriteSectorsSS(ATADevState *);
 static bool ataExecuteDeviceDiagnosticSS(ATADevState *);
+static bool ataTrimSS(ATADevState *);
 static bool ataPacketSS(ATADevState *);
 static bool atapiGetConfigurationSS(ATADevState *);
 static bool atapiGetEventStatusNotificationSS(ATADevState *);
@@ -627,6 +628,7 @@ typedef enum ATAFNSS
     ATAFN_SS_READ_SECTORS,
     ATAFN_SS_WRITE_SECTORS,
     ATAFN_SS_EXECUTE_DEVICE_DIAGNOSTIC,
+    ATAFN_SS_TRIM,
     ATAFN_SS_PACKET,
     ATAFN_SS_ATAPI_GET_CONFIGURATION,
     ATAFN_SS_ATAPI_GET_EVENT_STATUS_NOTIFICATION,
@@ -660,6 +662,7 @@ static const PSourceSinkFunc g_apfnSourceSinkFuncs[ATAFN_SS_MAX] =
     ataReadSectorsSS,
     ataWriteSectorsSS,
     ataExecuteDeviceDiagnosticSS,
+    ataTrimSS,
     ataPacketSS,
     atapiGetConfigurationSS,
     atapiGetEventStatusNotificationSS,
@@ -1216,8 +1219,16 @@ static bool ataIdentifySS(ATADevState *s)
     p[66] = RT_H2LE_U16(120); /* recommended DMA multiword tx cycle time */
     p[67] = RT_H2LE_U16(120); /* minimum PIO cycle time without flow control */
     p[68] = RT_H2LE_U16(120); /* minimum PIO cycle time with IORDY flow control */
-    p[80] = RT_H2LE_U16(0x7e); /* support everything up to ATA/ATAPI-6 */
-    p[81] = RT_H2LE_U16(0x22); /* conforms to ATA/ATAPI-6 */
+    if (s->pDrvBlock->pfnDiscard)
+    {
+        p[80] = RT_H2LE_U16(0x1f0); /* support everything up to ATA/ATAPI-8 ACS */
+        p[81] = RT_H2LE_U16(0x28); /* conforms to ATA/ATAPI-8 ACS */
+    }
+    else
+    {
+        p[80] = RT_H2LE_U16(0x7e); /* support everything up to ATA/ATAPI-6 */
+        p[81] = RT_H2LE_U16(0x22); /* conforms to ATA/ATAPI-6 */
+    }
     p[82] = RT_H2LE_U16(1 << 3 | 1 << 5 | 1 << 6); /* supports power management,  write cache and look-ahead */
     if (s->cTotalSectors <= (1 << 28) - 1)
         p[83] = RT_H2LE_U16(1 << 14 | 1 << 12); /* supports FLUSH CACHE */
@@ -1239,6 +1250,8 @@ static bool ataIdentifySS(ATADevState *s)
         p[102] = RT_H2LE_U16(s->cTotalSectors >> 32);
         p[103] = RT_H2LE_U16(s->cTotalSectors >> 48);
     }
+    if (s->pDrvBlock->pfnDiscard) /** @todo: Set bit 14 in word 69 too? (Deterministic read after TRIM). */
+        p[169] = RT_H2LE_U16(1); /* DATA SET MANAGEMENT command supported. */
     if (s->fNonRotational)
         p[217] = RT_H2LE_U16(1); /* Non-rotational medium */
     uint32_t uCsum = ataChecksum(p, 510);
@@ -3738,6 +3751,82 @@ static bool ataExecuteDeviceDiagnosticSS(ATADevState *s)
 }
 
 
+static int ataTrimSectors(ATADevState *s, uint64_t u64Sector, uint32_t cSectors,
+                          bool *pfRedo)
+{
+    RTRANGE TrimRange;
+    PATACONTROLLER pCtl = ATADEVSTATE_2_CONTROLLER(s);
+    int rc;
+
+    PDMCritSectLeave(&pCtl->lock);
+
+    TrimRange.offStart = u64Sector * 512;
+    TrimRange.cbRange  = cSectors * 512;
+
+    s->Led.Asserted.s.fWriting = s->Led.Actual.s.fWriting = 1;
+    rc = s->pDrvBlock->pfnDiscard(s->pDrvBlock, &TrimRange, 1);
+    s->Led.Actual.s.fWriting = 0;
+
+    if (RT_SUCCESS(rc))
+        *pfRedo = false;
+    else
+        *pfRedo = ataIsRedoSetWarning(s, rc);
+
+    STAM_PROFILE_START(&pCtl->StatLockWait, a);
+    PDMCritSectEnter(&pCtl->lock, VINF_SUCCESS);
+    STAM_PROFILE_STOP(&pCtl->StatLockWait, a);
+    return rc;
+}
+
+
+static bool ataTrimSS(ATADevState *s)
+{
+    int rc;
+    uint32_t cRangesMax;
+    uint64_t *pu64Range = (uint64_t *)s->CTX_SUFF(pbIOBuffer);
+    bool fRedo;
+
+    cRangesMax = s->cbElementaryTransfer / sizeof(uint64_t);
+    Assert(cRangesMax);
+
+    while (cRangesMax-- > 0)
+    {
+        if (ATA_RANGE_LENGTH_GET(*pu64Range) == 0)
+            break;
+
+        rc = ataTrimSectors(s, *pu64Range & ATA_RANGE_LBA_MASK,
+                            ATA_RANGE_LENGTH_GET(*pu64Range), &fRedo);
+        if (RT_FAILURE(rc))
+            break;
+
+        pu64Range++;
+    }
+
+    if (RT_SUCCESS(rc))
+    {
+        s->iSourceSink = ATAFN_SS_NULL;
+        ataCmdOK(s, ATA_STAT_SEEK);
+    }
+    else
+    {
+        if (fRedo)
+            return fRedo;
+        if (s->cErrors++ < MAX_LOG_REL_ERRORS)
+            LogRel(("PIIX3 ATA: LUN#%d: disk trim error (rc=%Rrc iSector=%#RX64 cSectors=%#RX32)\n",
+                    s->iLUN, rc, *pu64Range & ATA_RANGE_LBA_MASK, ATA_RANGE_LENGTH_GET(*pu64Range)));
+
+        /*
+         * Check if we got interrupted. We don't need to set status variables
+         * because the request was aborted.
+         */
+        if (rc != VERR_INTERRUPTED)
+            ataCmdError(s, ID_ERR);
+    }
+
+    return false;
+}
+
+
 static void ataParseCmd(ATADevState *s, uint8_t cmd)
 {
 #ifdef DEBUG
@@ -3990,6 +4079,15 @@ static void ataParseCmd(ATADevState *s, uint8_t cmd)
             if (s->uATARegFeature & 0x02)
                 goto abort_cmd;
             ataStartTransfer(s, ATAPI_PACKET_SIZE, PDMBLOCKTXDIR_TO_DEVICE, ATAFN_BT_PACKET, ATAFN_SS_PACKET, false);
+            break;
+        case ATA_DATA_SET_MANAGEMENT:
+            if (!s->pDrvBlock || !s->pDrvBlock->pfnDiscard)
+                goto abort_cmd;
+            if (   !(s->uATARegFeature & UINT8_C(0x01))
+                || (s->uATARegFeature & ~UINT8_C(0x01)))
+                goto abort_cmd;
+            s->fDMA = true;
+            ataStartTransfer(s, (s->uATARegNSectorHOB << 8 | s->uATARegNSector) * 512, PDMBLOCKTXDIR_TO_DEVICE, ATAFN_BT_NULL, ATAFN_SS_TRIM, false);
             break;
         default:
         abort_cmd:
@@ -6134,6 +6232,9 @@ static int ataConfigLun(PPDMDEVINS pDevIns, ATADevState *pIf)
             rc = VINF_SUCCESS;
         }
         LogRel(("PIIX3 ATA: LUN#%d: disk, PCHS=%u/%u/%u, total number of sectors %Ld\n", pIf->iLUN, pIf->PCHSGeometry.cCylinders, pIf->PCHSGeometry.cHeads, pIf->PCHSGeometry.cSectors, pIf->cTotalSectors));
+
+        if (pIf->pDrvBlock->pfnDiscard)
+            LogRel(("PIIX3 ATA: LUN#%d: TRIM enabled\n", pIf->iLUN));
     }
     return rc;
 }
