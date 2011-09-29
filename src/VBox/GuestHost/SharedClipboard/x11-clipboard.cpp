@@ -1159,6 +1159,8 @@ static Boolean clipXtConvertSelectionProc(Widget widget, Atom *atomSelection,
     int rc = VINF_SUCCESS;
 
     LogRelFlowFunc(("\n"));
+    if (!pCtx)
+        return false;
     if (!clipIsSupportedSelectionType(pCtx->widget, *atomSelection))
         return false;
     if (*atomTarget == clipGetAtom(pCtx->widget, "TARGETS"))
