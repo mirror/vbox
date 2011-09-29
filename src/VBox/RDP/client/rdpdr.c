@@ -422,6 +422,7 @@ rdpdr_process_irp(STREAM s)
 		default:
 
 			error("IRP for bad device %ld\n", device);
+			xfree(buffer);
 			return;
 	}
 

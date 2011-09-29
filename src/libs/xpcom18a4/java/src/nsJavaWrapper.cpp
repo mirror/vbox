@@ -703,6 +703,7 @@ SetupParams(JNIEnv *env, const jobject aParam, PRUint8 aType, PRBool aIsOut,
         // extract IID string from Java string
         const char* str = env->GetStringUTFChars(data, nsnull);
         if (!str) {
+          delete iid;
           rv = NS_ERROR_OUT_OF_MEMORY;
           break;
         }
