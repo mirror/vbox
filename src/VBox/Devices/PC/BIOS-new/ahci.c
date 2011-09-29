@@ -26,9 +26,10 @@
 #include "ebda.h"
 #include "inlines.h"
 #include "pciutil.h"
+#include "vds.h"
 
 #define VBOX_AHCI_DEBUG         0
-#define VBOX_AHCI_INT13_DEBUG   0 
+#define VBOX_AHCI_INT13_DEBUG   0
 
 #if VBOX_AHCI_DEBUG
 # define VBOXAHCI_DEBUG(...)        BX_INFO(__VA_ARGS__)
@@ -51,6 +52,10 @@
  */
 #define DMA_WORKAROUND      1
 
+/* Number of S/G table entries in EDDS. */
+#define NUM_EDDS_SG         16
+
+
 /**
  * AHCI device data.
  */
@@ -68,6 +73,17 @@ typedef struct
 } ahci_device_t;
 
 /**
+ * AHCI PRDT structure.
+ */
+typedef struct
+{
+    uint32_t    phys_addr;
+    uint32_t    something;
+    uint32_t    reserved;
+    uint32_t    len;
+} ahci_prdt;
+
+/**
  * AHCI controller data.
  */
 typedef struct
@@ -82,9 +98,11 @@ typedef struct
     /** The command table of one request as defined by chapter 4.2.3 of the Intel AHCI spec.
      *  Must be aligned on 128 byte boundary.
      */
-    uint8_t         abCmd[0x90];
-    /** Alignment */
-    uint8_t         abAlignment2[0xF0];
+    uint8_t         abCmd[0x80];
+    /** Physical Region Descriptor Table (PRDT) array. In other
+     *  words, a scatter/gather descriptor list.
+     */
+    ahci_prdt       aPrdt[16];
     /** Memory for the received command FIS area as specified by chapter 4.2.1
      *  of the Intel AHCI spec. This area is normally 256 bytes big but to save memory
      *  only the first 96 bytes are used because it is assumed that the controller
@@ -105,10 +123,13 @@ typedef struct
     /** Map between (bios cd id - 0xE0) and ahci_devices. */
     uint8_t         cCdDrives;
     uint8_t         aCdIdMap[AHCI_MAX_STORAGE_DEVICES];
-    /** int13 handler to call if given device is not from AHCI. */
-    uint16_t        pfnInt13Old;
     /** Number of harddisks detected before the AHCI driver started detection. */
     uint8_t         cHardDisksOld;
+    /** int13 handler to call if given device is not from AHCI. */
+    uint16_t        pfnInt13Old;
+    /** VDS EDDS DMA buffer descriptor structure. */
+    vds_edds        edds;
+    vds_sg          edds_more_sg[NUM_EDDS_SG - 1];
 } ahci_t;
 
 #define AhciData ((ahci_t *) 0)
@@ -339,11 +360,18 @@ static void ahci_cmd_data(uint16_t ahci_seg, uint16_t u16IoBase, uint8_t u8Cmd, 
     ahci->abCmd[12] = u8SectCount;
     ahci->abCmd[13] = u8SectCountExp;
 
-    /* Prepare PRDT. */
-    write_dword(ahci_seg, &AhciData->abCmd[0x80], ahci_addr_to_phys(buf));
-    write_dword(ahci_seg, &AhciData->abCmd[0x8c], (uint32_t)(cbData - 1));
+    /* Lock memory needed for DMA. */
+    ahci->edds.num_avail = NUM_EDDS_SG;
+    vds_build_sg_list( &ahci->edds, buf, cbData );
+
+    /* Set up the PRDT. */
+    ahci->aPrdt[0].phys_addr = ahci->edds.u.sg[0].phys_addr;
+    ahci->aPrdt[0].len       = ahci->edds.u.sg[0].size - 1;
 
     ahci_port_cmd_sync(ahci_seg, u16IoBase, fWrite, 0, 5, cbData);
+
+    /* Unlock the buffer again. */
+    vds_free_sg_list( &ahci->edds );
 }
 
 /**
@@ -373,9 +401,9 @@ static void ahci_port_deinit_current(uint16_t ahci_seg, uint16_t u16IoBase)
          * address registers.
          */
         //@todo: merge memsets?
-        _fmemset(&ahci->aCmdHdr[0], 0, 0x20);
-        _fmemset(&ahci->abCmd[0], 0, 0x84);
-        _fmemset(&ahci->abFisRecv[0], 0, 0x60);
+        _fmemset(&ahci->aCmdHdr[0], 0, sizeof(ahci->aCmdHdr));
+        _fmemset(&ahci->abCmd[0], 0, sizeof(ahci->abCmd));
+        _fmemset(&ahci->abFisRecv[0], 0, sizeof(ahci->abFisRecv));
 
         VBOXAHCI_PORT_WRITE_REG(u16IoBase, u8Port, AHCI_REG_PORT_FB, 0);
         VBOXAHCI_PORT_WRITE_REG(u16IoBase, u8Port, AHCI_REG_PORT_FBU, 0);

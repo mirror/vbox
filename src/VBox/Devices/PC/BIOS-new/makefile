@@ -30,7 +30,7 @@ INCLS  = -I$(QUOTE)../../../../../include$(QUOTE)
 OBJS = 	bios.obj print.obj ata.obj floppy.obj eltorito.obj boot.obj &
 	keyboard.obj disk.obj serial.obj system.obj timepci.obj &
 	ps2mouse.obj parallel.obj logo.obj scsi.obj ahci.obj &
-	pciutil.obj pcibio32.obj orgs.obj
+	pciutil.obj vds.obj pcibio32.obj orgs.obj
 
 vbxbios.rom : vbxbios.bin
 	biossums $< $@
@@ -53,4 +53,4 @@ logo.obj : logo.c
 
 clean : .symbolic
 	@rm -f *.obj *.err
-	@rm -f vbxbios.bin vbxbios.rom vbxbios.map
+	@rm -f vbxbios.bin vbxbios.rom vbxbios.map vbxbios.sym
