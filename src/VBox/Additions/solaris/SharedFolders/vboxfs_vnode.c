@@ -96,6 +96,8 @@
 #include "vboxfs_vnode.h"
 #include "vboxfs_vfs.h"
 
+#define VBOXVFS_WITH_MMAP
+
 static struct vnodeops *sffs_ops = NULL;
 
 kmutex_t sffs_lock;
@@ -211,7 +213,10 @@ sfnode_get_vnode(sfnode_t *node)
 		vp->v_type = node->sf_type;
 		vp->v_vfsp = node->sf_sffs->sf_vfsp;
 		vn_setops(vp, sffs_ops);
-		vp->v_flag = VNOSWAP | VNOMAP;	/* @todo -XXX- remove VNOMAP when ro-mmap is working*/
+		vp->v_flag = VNOSWAP;
+#ifndef VBOXVFS_WITH_MMAP
+		vp->v_flag |= VNOMAP;
+#endif
 		vn_exists(vp);
 		vp->v_data = node;
 		node->sf_vnode = vp;
@@ -1404,7 +1409,7 @@ sffs_rmdir(
 		return (ENOTDIR);
 	}
 
-#if 0
+#ifdef VBOXVFS_WITH_MMAP
 	if (vn_vfswlock(vp)) {
 		VN_RELE(vp);
 		return (EBUSY);
@@ -1456,7 +1461,7 @@ done:
 }
 
 
-#if 0
+#ifdef VBOXVFS_WITH_MMAP
 static caddr_t
 sffs_page_map(
 	page_t *ppage,
@@ -1486,7 +1491,7 @@ sffs_page_unmap(
  * Called when there's no page in the cache. This will create new page(s) and read
  * the file data into it.
  */
-int
+static int
 sffs_readpages(
 	vnode_t		*dvp,
 	offset_t	off,
@@ -1508,14 +1513,10 @@ sffs_readpages(
 	ASSERT(node);
 	ASSERT(node->sf_file);
 
-	cmn_err(CE_NOTE, "sffs_readpages\n");
 	if (pagelistsize == PAGESIZE)
 	{
 		io_off = off;
 		io_len = PAGESIZE;
-
-		cmn_err(CE_NOTE, "sffs_readpages io_off=%lld io_len=%lld\n", (u_longlong_t)io_off, (u_longlong_t)io_len);
-
 		ppages = page_create_va(dvp, io_off, io_len, PG_WAIT | PG_EXCL, segp, addr);
 	}
 	else
@@ -1524,7 +1525,6 @@ sffs_readpages(
 	/* If page already exists return success */
 	if (!ppages)
 	{
-		cmn_err(CE_NOTE, "sffs_readpages nothing done\n");
 		*pagelist = NULL;
 		return (0);
 	}
@@ -1538,13 +1538,13 @@ sffs_readpages(
 	{
 		ASSERT3U(io_off, ==, pcur->p_offset);
 
-		cmn_err(CE_NOTE, "sffs_readpages page-by-page reading io_off=%lld\n", (u_longlong_t)io_off);
 		caddr_t virtaddr = sffs_page_map(pcur, segaccess);
 		uint32_t bytes = PAGESIZE;
 		error = sfprov_read(node->sf_file, virtaddr, io_off, &bytes);
 		sffs_page_unmap(pcur, virtaddr);
-		if (error != 0 || bytes < PAGESIZE)
+		if (error != 0)
 		{
+			cmn_err(CE_WARN, "sffs_readpages: sfprov_read() failed. error=%d bytes=%ld\n", error, bytes);
 			/* Get rid of all kluster pages read & bail.  */
 			pvn_read_done(ppages,  B_ERROR);
 			return (error);
@@ -1558,8 +1558,6 @@ sffs_readpages(
 	 */
 	pvn_plist_init(ppages, pagelist, pagelistsize, off, io_len, segaccess);
 	ASSERT(pagelist == NULL || (*pagelist)->p_offset == off);
-	cmn_err(CE_NOTE, "sffs_readpages done\n");
-
 	return (0);
 }
 
@@ -1630,7 +1628,6 @@ sffs_getpage(
 			return (error);
 		}
 
-		cmn_err(CE_NOTE, "sffs_getpage addr=%p len=%lld off=%lld\n", addr, (u_longlong_t)len, (u_longlong_t)off);
 		while (*pagelist)
 		{
 			ASSERT3U((*pagelist)->p_offset, ==, off);
@@ -1660,7 +1657,6 @@ sffs_getpage(
 
 	*pagelist = NULL;
 	mutex_exit(&sffs_lock);
-	cmn_err(CE_NOTE,  "sffs_getpage done\n");
 	return (error);
 }
 
@@ -1683,6 +1679,25 @@ sffs_putpage(
 	 * vop_putpage() either, therefore, afaik this shouldn't ever be called.
 	 */
 	return (ENOSYS);
+}
+
+
+/*ARGSUSED*/
+static int
+sffs_discardpage(
+	vnode_t		*dvp,
+	page_t		*ppage,
+	u_offset_t	*poff,
+	size_t		*plen,
+	int			flags,
+	cred_t		*pcred)
+{
+	/*
+	 * We don't support PROT_WRITE mmaps. Just pretend we're done writing back
+	 * to the disk while unmounting/closing the node and discarding the mapped pages.
+	 */
+	pvn_write_done(ppage, B_INVAL | B_ERROR | B_FORCE);
+	return (0);
 }
 
 
@@ -1794,7 +1809,6 @@ sffs_addmap(
 		return (ENOSYS);
 
 	ASSERT(node);
-	ASMAtomicAddU64(&node->sf_mapcnt, npages);
 	return (0);
 }
 
@@ -1822,11 +1836,9 @@ sffs_delmap(
 	if (dvp->v_flag & VNOMAP)
 		return (ENOSYS);
 
-	ASSERT(node->sf_mapcnt >= npages);
-	ASMAtomicSubU64(&node->sf_mapcnt, npages);
 	return (0);
 }
-#endif
+#endif /* VBOXVFS_WITH_MMAP */
 
 
 /*ARGSUSED*/
@@ -2003,11 +2015,16 @@ sffs_inactive(vnode_t *vp, cred_t *cr, caller_context_t *ct)
 		return;
 	}
 
-	/*
-	 * There should never be cached data, since we don't support mmap().
-	 */
-	if (vn_has_cached_data(vp))
+	if (vn_has_cached_data(vp)) {
+#ifdef VBOXVFS_WITH_MMAP
+		/* We're fine with releasing the vnode lock here as we should be covered by the sffs_lock */
+		mutex_exit(&vp->v_lock);
+		pvn_vplist_dirty(vp, 0 /* offset */, sffs_discardpage, B_INVAL, cr);
+		mutex_enter(&vp->v_lock);
+#else
 		panic("sffs_inactive() found cached data");
+#endif
+	}
 
 	/*
 	 * destroy the vnode
@@ -2136,7 +2153,7 @@ const fs_operation_def_t sffs_ops_template[] = {
 	VOPNAME_SPACE,		sffs_space,
 	VOPNAME_WRITE,		sffs_write,
 
-# if 0
+# ifdef VBOXVFS_WITH_MMAP
 	VOPNAME_MAP,		sffs_map,
 	VOPNAME_ADDMAP,		sffs_addmap,
 	VOPNAME_DELMAP,		sffs_delmap,
@@ -2167,7 +2184,7 @@ const fs_operation_def_t sffs_ops_template[] = {
 	VOPNAME_SPACE,		{ .vop_space = sffs_space },
 	VOPNAME_WRITE,		{ .vop_write = sffs_write },
 
-# if 0
+# ifdef VBOXVFS_WITH_MMAP
 	VOPNAME_MAP,		{ .vop_map = sffs_map },
 	VOPNAME_ADDMAP,		{ .vop_addmap = sffs_addmap },
 	VOPNAME_DELMAP,		{ .vop_delmap = sffs_delmap },
