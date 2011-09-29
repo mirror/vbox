@@ -105,32 +105,39 @@ DECLARE_API(ms)
     ULONG64 u64DefaultPitch;
     PCSTR pExpr = args;
 
+    /* address */
     if (!pExpr) { dprintf("address not specified\n"); return; }
     if (!GetExpressionEx(pExpr, &u64Mem, &pExpr)) { dprintf("error evaluating address\n"); return; }
     if (!u64Mem) { dprintf("address value can not be NULL\n"); return; }
 
+    /* width */
     if (!pExpr) { dprintf("width not specified\n"); return; }
     if (!GetExpressionEx(pExpr, &u64Width, &pExpr)) { dprintf("error evaluating width\n"); return; }
     if (!u64Width) { dprintf("width value can not be NULL\n"); return; }
 
+    /* height */
     if (!pExpr) { dprintf("height not specified\n"); return; }
     if (!GetExpressionEx(pExpr, &u64Height, &pExpr)) { dprintf("error evaluating height\n"); return; }
     if (!u64Height) { dprintf("height value can not be NULL\n"); return; }
 
+#if 0
     if (pExpr && GetExpressionEx(pExpr, &u64NumColors, &pExpr))
     {
         if (!u64NumColors) { dprintf("Num Colors value can not be NULL\n"); return; }
     }
+#endif
 
+    /* bpp */
     if (pExpr && GetExpressionEx(pExpr, &u64Bpp, &pExpr))
     {
         if (!u64Bpp) { dprintf("bpp value can not be NULL\n"); return; }
     }
 
+    /* pitch */
     u64DefaultPitch = (((((u64Width * u64Bpp) + 7) >> 3) + 3) & ~3ULL);
     if (pExpr && GetExpressionEx(pExpr, &u64Pitch, &pExpr))
     {
-        if (u64Pitch < u64DefaultPitch) { dprintf("pitch value can not be less than (%I)\n", u64DefaultPitch); return; }
+        if (u64Pitch < u64DefaultPitch) { dprintf("pitch value can not be less than (%d)\n", (UINT)u64DefaultPitch); return; }
     }
     else
     {
@@ -142,153 +149,176 @@ DECLARE_API(ms)
 
     ULONG64 cbSize = u64DefaultPitch * u64Height;
     PVOID pvBuf = malloc(cbSize);
-    if (pvBuf)
+    if (!pvBuf)
     {
-        ULONG uRc = 0;
-        if(u64DefaultPitch == u64Pitch)
+        dprintf("failed to allocate memory buffer of size(%d)\n", (UINT)cbSize);
+        return;
+    }
+    ULONG uRc = 0;
+#if 0
+    if(u64DefaultPitch == u64Pitch)
+#else
+    if(0)
+#endif
+    {
+        ULONG cbRead = 0;
+        dprintf("reading the entire memory buffer...\n");
+        uRc = ReadMemory(u64Mem, pvBuf, cbSize, &cbRead);
+        if (!uRc)
+        {
+            dprintf("Failed to read the memory buffer of size(%d)\n", (UINT)cbSize);
+        }
+        else if (cbRead != cbSize)
+        {
+            dprintf("the actual number of bytes read(%d) no equal the requested size(%d)\n", (UINT)cbRead, (UINT)cbSize);
+            uRc = 0;
+        }
+
+    }
+    else
+    {
+        ULONG64 u64Offset = u64Mem;
+        char* pvcBuf = (char*)pvBuf;
+        ULONG64 i;
+        dprintf("reading memory by chunks since custom pitch is specified...\n");
+        for (i = 0; i < u64Height; ++i, u64Offset+=u64Pitch, pvcBuf+=u64DefaultPitch)
         {
             ULONG cbRead = 0;
-            dprintf("reading the entire memory buffer...\n");
-            uRc = ReadMemory(u64Mem, pvBuf, cbSize, &cbRead);
+            uRc = ReadMemory(u64Offset, pvcBuf, u64DefaultPitch, &cbRead);
             if (!uRc)
             {
-                dprintf("Failed to read the memory buffer of size(%I)\n", cbSize);
+                dprintf("WARNING!!! Failed to read the memory buffer of size(%d), chunk(%d)\n", (UINT)u64DefaultPitch, (UINT)i);
+                dprintf("ignoring this one and the all the rest, using height(%d)\n", (UINT)i);
+                u64Height = i;
+                uRc = 1;
+                break;
             }
-            else if (cbRead != cbSize)
+            else if (cbRead != u64DefaultPitch)
             {
-                dprintf("the actual number of bytes read(%I) no equal the requested size(%I)\n", cbRead, cbSize);
-                uRc = 0;
-            }
-
-        }
-        else
-        {
-            ULONG64 u64Offset = u64Mem;
-            char* pvcBuf = (char*)pvBuf;
-            ULONG64 i;
-            dprintf("reading memory by chunks since custom pitch is specified...\n");
-            for (i = 0; i < u64Height; ++i, u64Offset+=u64Pitch, pvcBuf+=u64DefaultPitch)
-            {
-                ULONG cbRead = 0;
-                uRc = ReadMemory(u64Offset, pvcBuf, u64DefaultPitch, &cbRead);
-                if (!uRc)
-                {
-                    dprintf("Failed to read the memory buffer of size(%I), chunk(%I)\n", u64DefaultPitch, i);
-                    break;
-                }
-                else if (cbRead != u64DefaultPitch)
-                {
-                    dprintf("the actual number of bytes read(%I) no equal the requested size(%I), chunk(%I)\n", cbRead, u64DefaultPitch, i);
-                    uRc = 0;
-                    break;
-                }
+                dprintf("WARNING!!! the actual number of bytes read(%d) not equal the requested size(%d), chunk(%d)\n", (UINT)cbRead, (UINT)u64DefaultPitch, (UINT)i);
+                dprintf("ignoring this one and the all the rest, using height(%d)\n", (UINT)i);
+                u64Height = i;
+                break;
             }
         }
+    }
 
-        if (uRc)
-        {
-            switch (u64Bpp)
+    if (!uRc)
+    {
+        dprintf("read memory failed\n");
+        free(pvBuf);
+        return;
+    }
+
+    if (!u64Height)
+    {
+        dprintf("no data to be processed since height it 0\n");
+        free(pvBuf);
+        return;
+    }
+
+    switch (u64Bpp)
+    {
+        case 32:
+        case 24:
+        case 16:
+#if 0
+            if (u64NumColors != 3)
             {
-                case 32:
-                case 24:
-                case 16:
-                    if (u64NumColors != 3)
-                    {
-                        dprintf("WARNING: unsupported number colors: (%d)\n", u64NumColors);
-                    }
-                    break;
-                case 8:
-                    {
-                        if (u64NumColors == 1)
-                        {
-                            ULONG64 cbSize32 = u64DefaultPitch * 4 * u64Height;
-                            PVOID pvBuf32 = malloc(cbSize32);
-                            if (pvBuf32)
-                            {
-                                byte* pByteBuf32 = (byte*)pvBuf32;
-                                byte* pByteBuf = (byte*)pvBuf;
-                                memset(pvBuf32, 0, cbSize32);
-                                for (UINT i = 0; i < u64Height; ++i)
-                                {
-                                    for (UINT j = 0; j < u64Width; ++j)
-                                    {
-                                        pByteBuf32[0] = pByteBuf[0];
-                                        pByteBuf32[1] = pByteBuf[0];
-                                        pByteBuf32[2] = pByteBuf[0];
-                                        pByteBuf32 += 4;
-                                        pByteBuf += 1;
-                                    }
-                                }
-                                free(pvBuf);
-                                pvBuf = pvBuf32;
-                                u64DefaultPitch *= 4;
-                                u64Bpp *= 4;
-                            }
-                        }
-                        else
-                        {
-                            dprintf("WARNING: unsupported number colors: (%d)\n", u64NumColors);
-                        }
-                    }
-                    break;
+                dprintf("WARNING: unsupported number colors: (%d)\n", (UINT)u64NumColors);
             }
-            BITMAP Bmp = {0};
-            HBITMAP hBmp;
-            dprintf("read memory succeeded..\n");
-            Bmp.bmType = 0;
-            Bmp.bmWidth = (LONG)u64Width;
-            Bmp.bmHeight = (LONG)u64Height;
-            Bmp.bmWidthBytes = (LONG)u64DefaultPitch;
-            Bmp.bmPlanes = 1;
-            Bmp.bmBitsPixel = (WORD)u64Bpp;
-            Bmp.bmBits = (LPVOID)pvBuf;
-            hBmp = CreateBitmapIndirect(&Bmp);
-            if (hBmp)
+#else
+            u64NumColors = 3;
+#endif
+            break;
+        case 8:
             {
-                if (OpenClipboard(GetDesktopWindow()))
-                {
-                    if (EmptyClipboard())
-                    {
-                        if (SetClipboardData(CF_BITMAP, hBmp))
-                        {
-                            dprintf("succeeded!! You can now do <ctrl>+v in your favourite image editor\n");
-                        }
-                        else
-                        {
-                            DWORD winEr = GetLastError();
-                            dprintf("SetClipboardData failed, err(%I)\n", winEr);
-                        }
-                    }
-                    else
-                    {
-                        DWORD winEr = GetLastError();
-                        dprintf("EmptyClipboard failed, err(%I)\n", winEr);
-                    }
+#if 1
+                u64NumColors = 1;
+#endif
 
-                    CloseClipboard();
+                if (u64NumColors == 1)
+                {
+                    ULONG64 cbSize32 = u64DefaultPitch * 4 * u64Height;
+                    PVOID pvBuf32 = malloc(cbSize32);
+                    if (!pvBuf32)
+                    {
+                        dprintf("ERROR: failed to allocate memory buffer of size(%d)", cbSize32);
+                        free(pvBuf);
+                        return;
+                    }
+                    byte* pByteBuf32 = (byte*)pvBuf32;
+                    byte* pByteBuf = (byte*)pvBuf;
+                    memset(pvBuf32, 0, cbSize32);
+                    for (UINT i = 0; i < u64Height; ++i)
+                    {
+                        for (UINT j = 0; j < u64Width; ++j)
+                        {
+                            pByteBuf32[0] = pByteBuf[0];
+                            pByteBuf32[1] = pByteBuf[0];
+                            pByteBuf32[2] = pByteBuf[0];
+                            pByteBuf32 += 4;
+                            pByteBuf += 1;
+                        }
+                    }
+                    free(pvBuf);
+                    pvBuf = pvBuf32;
+                    u64DefaultPitch *= 4;
+                    u64Bpp *= 4;
+                }
+                else
+                {
+                    dprintf("WARNING: unsupported number colors: (%d)\n", (UINT)u64NumColors);
+                }
+            }
+            break;
+    }
+    BITMAP Bmp = {0};
+    HBITMAP hBmp;
+    dprintf("read memory succeeded..\n");
+    Bmp.bmType = 0;
+    Bmp.bmWidth = (LONG)u64Width;
+    Bmp.bmHeight = (LONG)u64Height;
+    Bmp.bmWidthBytes = (LONG)u64DefaultPitch;
+    Bmp.bmPlanes = 1;
+    Bmp.bmBitsPixel = (WORD)u64Bpp;
+    Bmp.bmBits = (LPVOID)pvBuf;
+    hBmp = CreateBitmapIndirect(&Bmp);
+    if (hBmp)
+    {
+        if (OpenClipboard(GetDesktopWindow()))
+        {
+            if (EmptyClipboard())
+            {
+                if (SetClipboardData(CF_BITMAP, hBmp))
+                {
+                    dprintf("succeeded!! You can now do <ctrl>+v in your favourite image editor\n");
                 }
                 else
                 {
                     DWORD winEr = GetLastError();
-                    dprintf("OpenClipboard failed, err(%I)\n", winEr);
+                    dprintf("SetClipboardData failed, err(%d)\n", winEr);
                 }
-
-                DeleteObject(hBmp);
             }
             else
             {
                 DWORD winEr = GetLastError();
-                dprintf("CreateBitmapIndirect failed, err(%I)\n", winEr);
+                dprintf("EmptyClipboard failed, err(%d)\n", winEr);
             }
+
+            CloseClipboard();
         }
         else
         {
-            dprintf("read memory failed\n");
+            DWORD winEr = GetLastError();
+            dprintf("OpenClipboard failed, err(%d)\n", winEr);
         }
-        free(pvBuf);
+
+        DeleteObject(hBmp);
     }
     else
     {
-        dprintf("failed to allocate memory buffer of size(%I)\n", cbSize);
+        DWORD winEr = GetLastError();
+        dprintf("CreateBitmapIndirect failed, err(%d)\n", winEr);
     }
 }
