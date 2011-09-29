@@ -534,6 +534,173 @@
         <source>Session I&amp;nformation...</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>&amp;File</source>
+        <comment>Mac OS X version</comment>
+        <translation type="unfinished">&amp;Dosya</translation>
+    </message>
+    <message>
+        <source>&amp;File</source>
+        <comment>Non Mac OS X version</comment>
+        <translation type="unfinished">&amp;Dosya</translation>
+    </message>
+    <message>
+        <source>&amp;Virtual Media Manager...</source>
+        <translation>Sanal &amp;Ortam Yöneticisi...</translation>
+    </message>
+    <message>
+        <source>Display the Virtual Media Manager dialog</source>
+        <translation>Sanal Ortam Yöneticisi Penceresini Göster</translation>
+    </message>
+    <message>
+        <source>&amp;Import Appliance...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Import an appliance into VirtualBox</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Export Appliance...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Export one or more VirtualBox virtual machines as an appliance</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Preferences...</source>
+        <comment>global settings</comment>
+        <translation>&amp;Tercihler...</translation>
+    </message>
+    <message>
+        <source>Display the global settings dialog</source>
+        <translation>Genel ayarlar diyaloğunu göster</translation>
+    </message>
+    <message>
+        <source>E&amp;xit</source>
+        <translation>&amp;Çık</translation>
+    </message>
+    <message>
+        <source>Close application</source>
+        <translation>Uygulamayı kapat</translation>
+    </message>
+    <message>
+        <source>&amp;New...</source>
+        <translation>&amp;Yeni...</translation>
+    </message>
+    <message>
+        <source>Create a new virtual machine</source>
+        <translation>Yeni bir sanal makine oluştur</translation>
+    </message>
+    <message>
+        <source>&amp;Add...</source>
+        <translation type="unfinished">&amp;Ekle...</translation>
+    </message>
+    <message>
+        <source>Add an existing virtual machine</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Cl&amp;one...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Clone the selected virtual machine</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Remove</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Remove the selected virtual machine</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>S&amp;tart</source>
+        <translation>Başla&amp;t</translation>
+    </message>
+    <message>
+        <source>Start the selected virtual machine</source>
+        <translation>Seçili sanal makineyi başlat</translation>
+    </message>
+    <message>
+        <source>S&amp;how</source>
+        <translation>&amp;Göster</translation>
+    </message>
+    <message>
+        <source>Switch to the window of the selected virtual machine</source>
+        <translation>Seçili sanal makine penceresine geçiş yap</translation>
+    </message>
+    <message>
+        <source>Discard</source>
+        <translation type="unfinished">Vazgeç</translation>
+    </message>
+    <message>
+        <source>D&amp;iscard Saved State</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Discard the saved state of the selected virtual machine</source>
+        <translation>Seçili sanal makine için kaydedilmiş durumu kaldır</translation>
+    </message>
+    <message>
+        <source>Re&amp;fresh</source>
+        <translation type="unfinished">&amp;Yenile</translation>
+    </message>
+    <message>
+        <source>Refresh the accessibility state of the selected virtual machine</source>
+        <translation>Seçili sanal makine için erişilebilirlik durumunu yenile</translation>
+    </message>
+    <message>
+        <source>Show &amp;Log...</source>
+        <translation>Gün&amp;lük Kayıtlarını Göster...</translation>
+    </message>
+    <message>
+        <source>Show the log files of the selected virtual machine</source>
+        <translation>Seçilen sanal makinenin günlük kayıt dosyalarını göster</translation>
+    </message>
+    <message>
+        <source>Show in Finder</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show the VirtualBox Machine Definition file in Finder.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show in Explorer</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show the VirtualBox Machine Definition file in Explorer.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show in File Manager</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show the VirtualBox Machine Definition file in the File Manager</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Create Alias on Desktop</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Creates an Alias file to the VirtualBox Machine Definition file on your Desktop.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Create Shortcut on Desktop</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Creates an Shortcut file to the VirtualBox Machine Definition file on your Desktop.</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UIApplianceEditorWidget</name>
@@ -10171,33 +10338,12 @@ to the system default language.&lt;/qt&gt;
         <translation type="obsolete">Sanal Disk Yöneticisi Penceresini Göster</translation>
     </message>
     <message>
-        <source>&amp;Preferences...</source>
-        <comment>global settings</comment>
-        <translation>&amp;Tercihler...</translation>
-    </message>
-    <message>
         <source>Ctrl+G</source>
         <translation type="obsolete">Ctrl+G</translation>
     </message>
     <message>
-        <source>Display the global settings dialog</source>
-        <translation>Genel ayarlar diyaloğunu göster</translation>
-    </message>
-    <message>
-        <source>E&amp;xit</source>
-        <translation>&amp;Çık</translation>
-    </message>
-    <message>
         <source>Ctrl+Q</source>
         <translation type="obsolete">Ctrl+Q</translation>
-    </message>
-    <message>
-        <source>Close application</source>
-        <translation>Uygulamayı kapat</translation>
-    </message>
-    <message>
-        <source>&amp;New...</source>
-        <translation>&amp;Yeni...</translation>
     </message>
     <message>
         <source>New</source>
@@ -10206,10 +10352,6 @@ to the system default language.&lt;/qt&gt;
     <message>
         <source>Ctrl+N</source>
         <translation type="obsolete">Ctrl+N</translation>
-    </message>
-    <message>
-        <source>Create a new virtual machine</source>
-        <translation>Yeni bir sanal makine oluştur</translation>
     </message>
     <message>
         <source>&amp;Settings...</source>
@@ -10244,14 +10386,6 @@ to the system default language.&lt;/qt&gt;
         <translation type="obsolete">Va&amp;zgeç</translation>
     </message>
     <message>
-        <source>Discard</source>
-        <translation type="unfinished">Vazgeç</translation>
-    </message>
-    <message>
-        <source>Discard the saved state of the selected virtual machine</source>
-        <translation>Seçili sanal makine için kaydedilmiş durumu kaldır</translation>
-    </message>
-    <message>
         <source>&amp;Refresh</source>
         <translation type="obsolete">&amp;Yenile</translation>
     </message>
@@ -10262,10 +10396,6 @@ to the system default language.&lt;/qt&gt;
     <message>
         <source>Ctrl+R</source>
         <translation type="obsolete">Ctrl+Y</translation>
-    </message>
-    <message>
-        <source>Refresh the accessibility state of the selected virtual machine</source>
-        <translation>Seçili sanal makine için erişilebilirlik durumunu yenile</translation>
     </message>
     <message>
         <source>&amp;Contents...</source>
@@ -10324,36 +10454,16 @@ to the system default language.&lt;/qt&gt;
         <translation type="obsolete">&amp;Açıklama *</translation>
     </message>
     <message>
-        <source>S&amp;how</source>
-        <translation>&amp;Göster</translation>
-    </message>
-    <message>
         <source>Show</source>
         <translation type="obsolete">Göster</translation>
-    </message>
-    <message>
-        <source>Switch to the window of the selected virtual machine</source>
-        <translation>Seçili sanal makine penceresine geçiş yap</translation>
-    </message>
-    <message>
-        <source>S&amp;tart</source>
-        <translation>Başla&amp;t</translation>
     </message>
     <message>
         <source>Start</source>
         <translation type="obsolete">Başlat</translation>
     </message>
     <message>
-        <source>Start the selected virtual machine</source>
-        <translation>Seçili sanal makineyi başlat</translation>
-    </message>
-    <message>
         <source>&amp;Machine</source>
         <translation>&amp;Makine</translation>
-    </message>
-    <message>
-        <source>Show &amp;Log...</source>
-        <translation>Gün&amp;lük Kayıtlarını Göster...</translation>
     </message>
     <message>
         <source>Show Log...</source>
@@ -10362,10 +10472,6 @@ to the system default language.&lt;/qt&gt;
     <message>
         <source>Ctrl+L</source>
         <translation type="obsolete">Ctrl+L</translation>
-    </message>
-    <message>
-        <source>Show the log files of the selected virtual machine</source>
-        <translation>Seçilen sanal makinenin günlük kayıt dosyalarını göster</translation>
     </message>
     <message>
         <source>R&amp;egister VirtualBox...</source>
@@ -10408,47 +10514,9 @@ to the system default language.&lt;/qt&gt;
         <translation type="unfinished">&lt;h3&gt;VirtualBox Uygulamasına Hoşgeldiniz!&lt;/h3&gt;&lt;p&gt;Bu pencerenin sol tarafı bilgisayarınızdaki sanal işletim sistemlerinin tümünün listesini gösterir. Liste şimdi boş çünkü henüz bir sanal makine oluşturmadınız.&lt;img src=:/welcome.png align=right/&gt;&lt;/p&gt;&lt;p&gt;Yeni bir sanal makine oluşturmak için pencerenin yukarısındaki ana araç çubuğunda bulunan &lt;b&gt;Yeni&lt;/b&gt; düğmesine tıklayın.&lt;/p&gt;&lt;p&gt;Ayrıca &lt;b&gt;%1&lt;/b&gt; tuşuna basarak yardım alabilirsiniz ya da en yeni bilgileri ve haberleri almak için &lt;a href=http://www.virtualbox.org&gt;www.virtualbox.org&lt;/a&gt; adresini ziyaret edebilirsiniz.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&amp;Virtual Media Manager...</source>
-        <translation>Sanal &amp;Ortam Yöneticisi...</translation>
-    </message>
-    <message>
-        <source>Display the Virtual Media Manager dialog</source>
-        <translation>Sanal Ortam Yöneticisi Penceresini Göster</translation>
-    </message>
-    <message>
         <source>Log</source>
         <comment>icon text</comment>
         <translation>Günlük Kaydı</translation>
-    </message>
-    <message>
-        <source>&amp;Import Appliance...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Import an appliance into VirtualBox</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;Export Appliance...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Export one or more VirtualBox virtual machines as an appliance</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Re&amp;fresh</source>
-        <translation type="unfinished">&amp;Yenile</translation>
-    </message>
-    <message>
-        <source>&amp;File</source>
-        <comment>Mac OS X version</comment>
-        <translation type="unfinished">&amp;Dosya</translation>
-    </message>
-    <message>
-        <source>&amp;File</source>
-        <comment>Non Mac OS X version</comment>
-        <translation type="unfinished">&amp;Dosya</translation>
     </message>
     <message>
         <source>Select a virtual machine file</source>
@@ -10464,79 +10532,11 @@ to the system default language.&lt;/qt&gt;
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&amp;Add...</source>
-        <translation type="unfinished">&amp;Ekle...</translation>
-    </message>
-    <message>
-        <source>Add an existing virtual machine</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;Remove</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Remove the selected virtual machine</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Show in Finder</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Show the VirtualBox Machine Definition file in Finder.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Create Alias on Desktop</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Creates an Alias file to the VirtualBox Machine Definition file on your Desktop.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Show in Explorer</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Show the VirtualBox Machine Definition file in Explorer.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Create Shortcut on Desktop</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Creates an Shortcut file to the VirtualBox Machine Definition file on your Desktop.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Show in File Manager</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Show the VirtualBox Machine Definition file in the File Manager</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Show Toolbar</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Show Statusbar</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Cl&amp;one...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Clone the selected virtual machine</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>D&amp;iscard Saved State</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

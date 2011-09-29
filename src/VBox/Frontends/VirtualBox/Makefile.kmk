@@ -367,6 +367,7 @@ VirtualBox_QT_MOCSRCS = \
 	src/runtime/UIIndicatorsPool.cpp \
 	src/runtime/UIMachine.cpp \
 	src/runtime/UIMachineMenuBar.cpp \
+	src/selector/UIActionPoolSelector.cpp \
 	src/selector/UIVMDesktop.cpp \
 	src/settings/UISettingsDialogSpecific.cpp \
 	src/settings/machine/UIMachineSettingsPortForwardingDlg.cpp \

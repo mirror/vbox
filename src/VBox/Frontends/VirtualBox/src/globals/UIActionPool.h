@@ -30,6 +30,7 @@
 enum UIActionType
 {
     UIActionType_Simple,
+    UIActionType_State,
     UIActionType_Toggle,
     UIActionType_Menu
 };
@@ -60,6 +61,8 @@ class UIActionInterface : public QIWithRetranslateUI3<QAction>
 public:
 
     UIActionType type() const { return m_type; }
+    virtual void setState(int /* iState */) {}
+    virtual void updateAppearance() {}
 
 protected:
 
@@ -96,8 +99,32 @@ class UISimpleAction : public UIActionInterface
 
 protected:
 
-    UISimpleAction(QObject *pParent, const QString &strIcon = QString(), const QString &strIconDis = QString());
+    UISimpleAction(QObject *pParent,
+                   const QString &strIcon = QString(), const QString &strIconDis = QString());
+    UISimpleAction(QObject *pParent,
+                   const QSize &normalSize, const QSize &smallSize,
+                   const QString &strNormalIcon, const QString &strSmallIcon,
+                   const QString &strNormalIconDis = QString(), const QString &strSmallIconDis = QString());
     UISimpleAction(QObject *pParent, const QIcon& icon);
+};
+
+/* Abstract extention for UIActionInterface, describing 'state' action type: */
+class UIStateAction : public UIActionInterface
+{
+    Q_OBJECT;
+
+protected:
+
+    UIStateAction(QObject *pParent,
+                  const QString &strIcon = QString(), const QString &strIconDis = QString());
+    UIStateAction(QObject *pParent,
+                  const QSize &normalSize, const QSize &smallSize,
+                  const QString &strNormalIcon, const QString &strSmallIcon,
+                  const QString &strNormalIconDis = QString(), const QString &strSmallIconDis = QString());
+    UIStateAction(QObject *pParent, const QIcon& icon);
+    void setState(int iState) { m_iState = iState; retranslateUi(); }
+
+    int m_iState;
 };
 
 /* Abstract extention for UIActionInterface, describing 'toggle' action type: */
@@ -108,8 +135,13 @@ class UIToggleAction : public UIActionInterface
 protected:
 
     UIToggleAction(QObject *pParent, const QString &strIcon = QString(), const QString &strIconDis = QString());
+    UIToggleAction(QObject *pParent,
+                   const QSize &normalSize, const QSize &smallSize,
+                   const QString &strNormalIcon, const QString &strSmallIcon,
+                   const QString &strNormalIconDis = QString(), const QString &strSmallIconDis = QString());
     UIToggleAction(QObject *pParent, const QString &strIconOn, const QString &strIconOff, const QString &strIconOnDis, const QString &strIconOffDis);
     UIToggleAction(QObject *pParent, const QIcon &icon);
+    void updateAppearance() { sltUpdateAppearance(); }
 
 private slots:
 
@@ -134,7 +166,7 @@ protected:
 /* Action pool types: */
 enum UIActionPoolType
 {
-    UIActionPoolType_Offline,
+    UIActionPoolType_Selector,
     UIActionPoolType_Runtime
 };
 

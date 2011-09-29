@@ -549,6 +549,173 @@
         <source>Session I&amp;nformation...</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>&amp;File</source>
+        <comment>Mac OS X version</comment>
+        <translation type="unfinished">管理(&amp;F)</translation>
+    </message>
+    <message>
+        <source>&amp;File</source>
+        <comment>Non Mac OS X version</comment>
+        <translation type="unfinished">管理(&amp;F)</translation>
+    </message>
+    <message>
+        <source>&amp;Virtual Media Manager...</source>
+        <translation>虚拟介质管理(&amp;V)...</translation>
+    </message>
+    <message>
+        <source>Display the Virtual Media Manager dialog</source>
+        <translation>打开虚拟介质管理器</translation>
+    </message>
+    <message>
+        <source>&amp;Import Appliance...</source>
+        <translation>导入虚拟电脑(&amp;I)...</translation>
+    </message>
+    <message>
+        <source>Import an appliance into VirtualBox</source>
+        <translation>导入一个虚拟电脑</translation>
+    </message>
+    <message>
+        <source>&amp;Export Appliance...</source>
+        <translation>导出虚拟电脑(&amp;E)...</translation>
+    </message>
+    <message>
+        <source>Export one or more VirtualBox virtual machines as an appliance</source>
+        <translation>导出一个虚拟电脑</translation>
+    </message>
+    <message>
+        <source>&amp;Preferences...</source>
+        <comment>global settings</comment>
+        <translation>全局设定(&amp;P)...</translation>
+    </message>
+    <message>
+        <source>Display the global settings dialog</source>
+        <translation>打开全局设定界面</translation>
+    </message>
+    <message>
+        <source>E&amp;xit</source>
+        <translation>退出(&amp;x)</translation>
+    </message>
+    <message>
+        <source>Close application</source>
+        <translation>退出应用程序</translation>
+    </message>
+    <message>
+        <source>&amp;New...</source>
+        <translation>新建(&amp;N)...</translation>
+    </message>
+    <message>
+        <source>Create a new virtual machine</source>
+        <translation>新建虚拟电脑</translation>
+    </message>
+    <message>
+        <source>&amp;Add...</source>
+        <translation type="unfinished">注册(&amp;A)...</translation>
+    </message>
+    <message>
+        <source>Add an existing virtual machine</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Cl&amp;one...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Clone the selected virtual machine</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Remove</source>
+        <translation type="unfinished">删除(&amp;R)</translation>
+    </message>
+    <message>
+        <source>Remove the selected virtual machine</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>S&amp;tart</source>
+        <translation>开始(&amp;t)</translation>
+    </message>
+    <message>
+        <source>Start the selected virtual machine</source>
+        <translation>启动所选的虚拟电脑</translation>
+    </message>
+    <message>
+        <source>S&amp;how</source>
+        <translation>显示(&amp;h)</translation>
+    </message>
+    <message>
+        <source>Switch to the window of the selected virtual machine</source>
+        <translation>切换到所选的虚拟电脑窗口</translation>
+    </message>
+    <message>
+        <source>Discard</source>
+        <translation type="unfinished">清除</translation>
+    </message>
+    <message>
+        <source>D&amp;iscard Saved State</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Discard the saved state of the selected virtual machine</source>
+        <translation>清除所选的虚拟电脑的休眠状态</translation>
+    </message>
+    <message>
+        <source>Re&amp;fresh</source>
+        <translation>刷新(&amp;f)</translation>
+    </message>
+    <message>
+        <source>Refresh the accessibility state of the selected virtual machine</source>
+        <translation>刷新所选虚拟电脑的当前状态</translation>
+    </message>
+    <message>
+        <source>Show &amp;Log...</source>
+        <translation>日志(&amp;L)...</translation>
+    </message>
+    <message>
+        <source>Show the log files of the selected virtual machine</source>
+        <translation>显示所选的虚拟电脑的日志文件</translation>
+    </message>
+    <message>
+        <source>Show in Finder</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show the VirtualBox Machine Definition file in Finder.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show in Explorer</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show the VirtualBox Machine Definition file in Explorer.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show in File Manager</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show the VirtualBox Machine Definition file in the File Manager</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Create Alias on Desktop</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Creates an Alias file to the VirtualBox Machine Definition file on your Desktop.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Create Shortcut on Desktop</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Creates an Shortcut file to the VirtualBox Machine Definition file on your Desktop.</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UIApplianceEditorWidget</name>
@@ -11449,33 +11616,12 @@ to the system default language.&lt;/qt&gt;
         <translation type="obsolete">打开虚拟介质管理器</translation>
     </message>
     <message>
-        <source>&amp;Preferences...</source>
-        <comment>global settings</comment>
-        <translation>全局设定(&amp;P)...</translation>
-    </message>
-    <message>
         <source>Ctrl+G</source>
         <translation type="obsolete">Ctrl+G</translation>
     </message>
     <message>
-        <source>Display the global settings dialog</source>
-        <translation>打开全局设定界面</translation>
-    </message>
-    <message>
-        <source>E&amp;xit</source>
-        <translation>退出(&amp;x)</translation>
-    </message>
-    <message>
         <source>Ctrl+Q</source>
         <translation type="obsolete">Ctrl+Q</translation>
-    </message>
-    <message>
-        <source>Close application</source>
-        <translation>退出应用程序</translation>
-    </message>
-    <message>
-        <source>&amp;New...</source>
-        <translation>新建(&amp;N)...</translation>
     </message>
     <message>
         <source>New</source>
@@ -11484,10 +11630,6 @@ to the system default language.&lt;/qt&gt;
     <message>
         <source>Ctrl+N</source>
         <translation type="obsolete">Ctrl+N</translation>
-    </message>
-    <message>
-        <source>Create a new virtual machine</source>
-        <translation>新建虚拟电脑</translation>
     </message>
     <message>
         <source>&amp;Settings...</source>
@@ -11522,14 +11664,6 @@ to the system default language.&lt;/qt&gt;
         <translation type="obsolete">清除(&amp;i)</translation>
     </message>
     <message>
-        <source>Discard</source>
-        <translation type="unfinished">清除</translation>
-    </message>
-    <message>
-        <source>Discard the saved state of the selected virtual machine</source>
-        <translation>清除所选的虚拟电脑的休眠状态</translation>
-    </message>
-    <message>
         <source>&amp;Refresh</source>
         <translation type="obsolete">刷新(&amp;R)</translation>
     </message>
@@ -11540,10 +11674,6 @@ to the system default language.&lt;/qt&gt;
     <message>
         <source>Ctrl+R</source>
         <translation type="obsolete">Ctrl+R</translation>
-    </message>
-    <message>
-        <source>Refresh the accessibility state of the selected virtual machine</source>
-        <translation>刷新所选虚拟电脑的当前状态</translation>
     </message>
     <message>
         <source>&amp;Contents...</source>
@@ -11606,36 +11736,16 @@ to the system default language.&lt;/qt&gt;
         <translation type="obsolete">辅助说明(&amp;e) *</translation>
     </message>
     <message>
-        <source>S&amp;how</source>
-        <translation>显示(&amp;h)</translation>
-    </message>
-    <message>
         <source>Show</source>
         <translation type="obsolete">显示</translation>
-    </message>
-    <message>
-        <source>Switch to the window of the selected virtual machine</source>
-        <translation>切换到所选的虚拟电脑窗口</translation>
-    </message>
-    <message>
-        <source>S&amp;tart</source>
-        <translation>开始(&amp;t)</translation>
     </message>
     <message>
         <source>Start</source>
         <translation type="obsolete">启动</translation>
     </message>
     <message>
-        <source>Start the selected virtual machine</source>
-        <translation>启动所选的虚拟电脑</translation>
-    </message>
-    <message>
         <source>&amp;Machine</source>
         <translation>控制(&amp;M)</translation>
-    </message>
-    <message>
-        <source>Show &amp;Log...</source>
-        <translation>日志(&amp;L)...</translation>
     </message>
     <message>
         <source>Show Log...</source>
@@ -11644,10 +11754,6 @@ to the system default language.&lt;/qt&gt;
     <message>
         <source>Ctrl+L</source>
         <translation type="obsolete">Ctrl+L</translation>
-    </message>
-    <message>
-        <source>Show the log files of the selected virtual machine</source>
-        <translation>显示所选的虚拟电脑的日志文件</translation>
     </message>
     <message>
         <source>R&amp;egister VirtualBox...</source>
@@ -11694,14 +11800,6 @@ to the system default language.&lt;/qt&gt;
         <translation type="obsolete">&lt;h3&gt;欢迎使用虚拟电脑控制台!&lt;/h3&gt;&lt;p&gt;窗口的左边用来显示已生成的虚拟电脑列表. 现在列表是空的，因为你还没有新建任何虚拟电脑.&lt;img src=:/welcome.png align=right/&gt;&lt;/p&gt;&lt;p&gt;要新建一个虚拟电脑, 请按位于窗口顶部工具栏上的 &lt;b&gt;新建&lt;/b&gt; 按钮。.&lt;/p&gt;&lt;p&gt;你可以按 &lt;b&gt;F1&lt;/b&gt; 键来查看帮助，或访问 &lt;a href=http://www.virtualbox.org&gt;www.virtualbox.org&lt;/a&gt; 查看最新信息和新闻.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&amp;Virtual Media Manager...</source>
-        <translation>虚拟介质管理(&amp;V)...</translation>
-    </message>
-    <message>
-        <source>Display the Virtual Media Manager dialog</source>
-        <translation>打开虚拟介质管理器</translation>
-    </message>
-    <message>
         <source>Log</source>
         <comment>icon text</comment>
         <translation>日志</translation>
@@ -11711,38 +11809,8 @@ to the system default language.&lt;/qt&gt;
         <translation type="obsolete">Sun VirtualBox</translation>
     </message>
     <message>
-        <source>&amp;Import Appliance...</source>
-        <translation>导入虚拟电脑(&amp;I)...</translation>
-    </message>
-    <message>
-        <source>Import an appliance into VirtualBox</source>
-        <translation>导入一个虚拟电脑</translation>
-    </message>
-    <message>
-        <source>&amp;Export Appliance...</source>
-        <translation>导出虚拟电脑(&amp;E)...</translation>
-    </message>
-    <message>
-        <source>Export one or more VirtualBox virtual machines as an appliance</source>
-        <translation>导出一个虚拟电脑</translation>
-    </message>
-    <message>
-        <source>Re&amp;fresh</source>
-        <translation>刷新(&amp;f)</translation>
-    </message>
-    <message>
         <source>&lt;h3&gt;Welcome to VirtualBox!&lt;/h3&gt;&lt;p&gt;The left part of this window is  a list of all virtual machines on your computer. The list is empty now because you haven&apos;t created any virtual machines yet.&lt;img src=:/welcome.png align=right/&gt;&lt;/p&gt;&lt;p&gt;In order to create a new virtual machine, press the &lt;b&gt;New&lt;/b&gt; button in the main tool bar located at the top of the window.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;%1&lt;/b&gt; key to get instant help, or visit &lt;a href=http://www.virtualbox.org&gt;www.virtualbox.org&lt;/a&gt; for the latest information and news.&lt;/p&gt;</source>
         <translation>&lt;h3&gt;欢迎使用虚拟电脑控制台!&lt;/h3&gt;&lt;p&gt;窗口的左边用来显示已生成的虚拟电脑. 现在是空的，因为你还没有新建任何虚拟电脑.&lt;img src=:/welcome.png align=right/&gt;&lt;/p&gt;&lt;p&gt;要新建一个虚拟电脑, 请按位于窗口顶部工具栏上的 &lt;b&gt;新建&lt;/b&gt; 按钮。&lt;/p&gt;&lt;p&gt;你可以按  &lt;b&gt;%1&lt;/b&gt; 键来查看帮助，或访问 &lt;a href=http://www.virtualbox.org&gt;www.virtualbox.org&lt;/a&gt; 查看最新信息和新闻.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&amp;File</source>
-        <comment>Mac OS X version</comment>
-        <translation type="unfinished">管理(&amp;F)</translation>
-    </message>
-    <message>
-        <source>&amp;File</source>
-        <comment>Non Mac OS X version</comment>
-        <translation type="unfinished">管理(&amp;F)</translation>
     </message>
     <message>
         <source>Select a virtual machine file</source>
@@ -11758,79 +11826,11 @@ to the system default language.&lt;/qt&gt;
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&amp;Add...</source>
-        <translation type="unfinished">注册(&amp;A)...</translation>
-    </message>
-    <message>
-        <source>Add an existing virtual machine</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;Remove</source>
-        <translation type="unfinished">删除(&amp;R)</translation>
-    </message>
-    <message>
-        <source>Remove the selected virtual machine</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Show in Finder</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Show the VirtualBox Machine Definition file in Finder.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Create Alias on Desktop</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Creates an Alias file to the VirtualBox Machine Definition file on your Desktop.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Show in Explorer</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Show the VirtualBox Machine Definition file in Explorer.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Create Shortcut on Desktop</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Creates an Shortcut file to the VirtualBox Machine Definition file on your Desktop.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Show in File Manager</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Show the VirtualBox Machine Definition file in the File Manager</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Show Toolbar</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Show Statusbar</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Cl&amp;one...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Clone the selected virtual machine</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>D&amp;iscard Saved State</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

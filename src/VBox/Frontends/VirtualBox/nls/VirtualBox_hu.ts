@@ -596,6 +596,173 @@
         <source>Session I&amp;nformation...</source>
         <translation>Mu&amp;nkamenet információk...</translation>
     </message>
+    <message>
+        <source>&amp;File</source>
+        <comment>Mac OS X version</comment>
+        <translation>&amp;Fájl</translation>
+    </message>
+    <message>
+        <source>&amp;File</source>
+        <comment>Non Mac OS X version</comment>
+        <translation>&amp;Fájl</translation>
+    </message>
+    <message>
+        <source>&amp;Virtual Media Manager...</source>
+        <translation>&amp;Virtuális média-kezelő...</translation>
+    </message>
+    <message>
+        <source>Display the Virtual Media Manager dialog</source>
+        <translation>A Virtuális médiakezelő indítása</translation>
+    </message>
+    <message>
+        <source>&amp;Import Appliance...</source>
+        <translation>Virtuális gép &amp;importálás...</translation>
+    </message>
+    <message>
+        <source>Import an appliance into VirtualBox</source>
+        <translation>Virtuális gép importálása a VirtualBox-ba</translation>
+    </message>
+    <message>
+        <source>&amp;Export Appliance...</source>
+        <translation>Virtuális gép &amp;exportálás...</translation>
+    </message>
+    <message>
+        <source>Export one or more VirtualBox virtual machines as an appliance</source>
+        <translation>Virtuális gép exportálása a VirtualBox-ból</translation>
+    </message>
+    <message>
+        <source>&amp;Preferences...</source>
+        <comment>global settings</comment>
+        <translation>&amp;Beállítások...</translation>
+    </message>
+    <message>
+        <source>Display the global settings dialog</source>
+        <translation>Itt lehet megtenni a globális beállításokat</translation>
+    </message>
+    <message>
+        <source>E&amp;xit</source>
+        <translation>Ki&amp;lépés</translation>
+    </message>
+    <message>
+        <source>Close application</source>
+        <translation>Kilépés</translation>
+    </message>
+    <message>
+        <source>&amp;New...</source>
+        <translation>Ú&amp;j...</translation>
+    </message>
+    <message>
+        <source>Create a new virtual machine</source>
+        <translation>Új virtuális gép készítése</translation>
+    </message>
+    <message>
+        <source>&amp;Add...</source>
+        <translation>Hozzá&amp;ad...</translation>
+    </message>
+    <message>
+        <source>Add an existing virtual machine</source>
+        <translation>Létező virtuális gép hozzáadása</translation>
+    </message>
+    <message>
+        <source>Cl&amp;one...</source>
+        <translation>K&amp;lónozás...</translation>
+    </message>
+    <message>
+        <source>Clone the selected virtual machine</source>
+        <translation>A kiválasztott virtuális gép klónozása</translation>
+    </message>
+    <message>
+        <source>&amp;Remove</source>
+        <translation>Eltávolítá&amp;s</translation>
+    </message>
+    <message>
+        <source>Remove the selected virtual machine</source>
+        <translation>A kiválasztott virtuális gép eltávolítása</translation>
+    </message>
+    <message>
+        <source>S&amp;tart</source>
+        <translation>S&amp;tart</translation>
+    </message>
+    <message>
+        <source>Start the selected virtual machine</source>
+        <translation>A kiválasztott virtuális gép elindítása</translation>
+    </message>
+    <message>
+        <source>S&amp;how</source>
+        <translation type="unfinished">Á&amp;tváltás</translation>
+    </message>
+    <message>
+        <source>Switch to the window of the selected virtual machine</source>
+        <translation>A kiválasztott virtuális gép ablakára ugrás</translation>
+    </message>
+    <message>
+        <source>Discard</source>
+        <translation>Eldobás</translation>
+    </message>
+    <message>
+        <source>D&amp;iscard Saved State</source>
+        <translation>Mentett állapot eldobá&amp;sa</translation>
+    </message>
+    <message>
+        <source>Discard the saved state of the selected virtual machine</source>
+        <translation> A kiválasztott virtuális gép mentett állapotának eldobása</translation>
+    </message>
+    <message>
+        <source>Re&amp;fresh</source>
+        <translation>&amp;Frissítés</translation>
+    </message>
+    <message>
+        <source>Refresh the accessibility state of the selected virtual machine</source>
+        <translation>Frissíti az állapotinformációkat a kiválasztott virtuális gépen</translation>
+    </message>
+    <message>
+        <source>Show &amp;Log...</source>
+        <translation>Nap&amp;ló mutatása...</translation>
+    </message>
+    <message>
+        <source>Show the log files of the selected virtual machine</source>
+        <translation>A kiválasztott gép naplófájljainak mutatása</translation>
+    </message>
+    <message>
+        <source>Show in Finder</source>
+        <translation>Megjelenítés a keresőben</translation>
+    </message>
+    <message>
+        <source>Show the VirtualBox Machine Definition file in Finder.</source>
+        <translation>A VirtualBox gép definíciós fájljának megjelenítése a keresőben.</translation>
+    </message>
+    <message>
+        <source>Show in Explorer</source>
+        <translation>Megjelenítés az Intézőben</translation>
+    </message>
+    <message>
+        <source>Show the VirtualBox Machine Definition file in Explorer.</source>
+        <translation>A VirtualBox gép definíciós fájljának megjelenítése az Intézőben.</translation>
+    </message>
+    <message>
+        <source>Show in File Manager</source>
+        <translation>Megjelenítés a fájlkezelőben</translation>
+    </message>
+    <message>
+        <source>Show the VirtualBox Machine Definition file in the File Manager</source>
+        <translation>A VirtualBox gép definíciós fájljának megjelenítése a fájlkezelőben</translation>
+    </message>
+    <message>
+        <source>Create Alias on Desktop</source>
+        <translation>Alias létrehozása az asztalon</translation>
+    </message>
+    <message>
+        <source>Creates an Alias file to the VirtualBox Machine Definition file on your Desktop.</source>
+        <translation>Létrehoz egy Alias-t az asztalon a VirtualBox gép definíciós fájljához.</translation>
+    </message>
+    <message>
+        <source>Create Shortcut on Desktop</source>
+        <translation>Parancsikon létrehozása az asztalon</translation>
+    </message>
+    <message>
+        <source>Creates an Shortcut file to the VirtualBox Machine Definition file on your Desktop.</source>
+        <translation>Létrehoz egy parancsikont az asztalon a VirtualBox gép definíciós fájljához.</translation>
+    </message>
 </context>
 <context>
     <name>UIApplianceEditorWidget</name>
@@ -11150,33 +11317,12 @@ to the system default language.&lt;/qt&gt;
         <translation type="obsolete">A Virtuális lemezkezelő indítása</translation>
     </message>
     <message>
-        <source>&amp;Preferences...</source>
-        <comment>global settings</comment>
-        <translation>&amp;Beállítások...</translation>
-    </message>
-    <message>
         <source>Ctrl+G</source>
         <translation type="obsolete">Ctrl+G</translation>
     </message>
     <message>
-        <source>Display the global settings dialog</source>
-        <translation>Itt lehet megtenni a globális beállításokat</translation>
-    </message>
-    <message>
-        <source>E&amp;xit</source>
-        <translation>Ki&amp;lépés</translation>
-    </message>
-    <message>
         <source>Ctrl+Q</source>
         <translation type="obsolete">Ctrl+Q</translation>
-    </message>
-    <message>
-        <source>Close application</source>
-        <translation>Kilépés</translation>
-    </message>
-    <message>
-        <source>&amp;New...</source>
-        <translation>Ú&amp;j...</translation>
     </message>
     <message>
         <source>New</source>
@@ -11185,10 +11331,6 @@ to the system default language.&lt;/qt&gt;
     <message>
         <source>Ctrl+N</source>
         <translation type="obsolete">Ctrl+N</translation>
-    </message>
-    <message>
-        <source>Create a new virtual machine</source>
-        <translation>Új virtuális gép készítése</translation>
     </message>
     <message>
         <source>&amp;Settings...</source>
@@ -11223,14 +11365,6 @@ to the system default language.&lt;/qt&gt;
         <translation type="obsolete">Eldo&amp;bás</translation>
     </message>
     <message>
-        <source>Discard</source>
-        <translation>Eldobás</translation>
-    </message>
-    <message>
-        <source>Discard the saved state of the selected virtual machine</source>
-        <translation> A kiválasztott virtuális gép mentett állapotának eldobása</translation>
-    </message>
-    <message>
         <source>&amp;Refresh</source>
         <translation type="obsolete">&amp;Frissítés</translation>
     </message>
@@ -11241,10 +11375,6 @@ to the system default language.&lt;/qt&gt;
     <message>
         <source>Ctrl+R</source>
         <translation type="obsolete">Ctrl+R</translation>
-    </message>
-    <message>
-        <source>Refresh the accessibility state of the selected virtual machine</source>
-        <translation>Frissíti az állapotinformációkat a kiválasztott virtuális gépen</translation>
     </message>
     <message>
         <source>&amp;Contents...</source>
@@ -11303,36 +11433,16 @@ to the system default language.&lt;/qt&gt;
         <translation type="obsolete">L&amp;eírás *</translation>
     </message>
     <message>
-        <source>S&amp;how</source>
-        <translation type="unfinished">Á&amp;tváltás</translation>
-    </message>
-    <message>
         <source>Show</source>
         <translation type="obsolete">Mutat</translation>
-    </message>
-    <message>
-        <source>Switch to the window of the selected virtual machine</source>
-        <translation>A kiválasztott virtuális gép ablakára ugrás</translation>
-    </message>
-    <message>
-        <source>S&amp;tart</source>
-        <translation>S&amp;tart</translation>
     </message>
     <message>
         <source>Start</source>
         <translation type="obsolete">Start</translation>
     </message>
     <message>
-        <source>Start the selected virtual machine</source>
-        <translation>A kiválasztott virtuális gép elindítása</translation>
-    </message>
-    <message>
         <source>&amp;Machine</source>
         <translation>&amp;Gép</translation>
-    </message>
-    <message>
-        <source>Show &amp;Log...</source>
-        <translation>Nap&amp;ló mutatása...</translation>
     </message>
     <message>
         <source>Show Log...</source>
@@ -11341,10 +11451,6 @@ to the system default language.&lt;/qt&gt;
     <message>
         <source>Ctrl+L</source>
         <translation type="obsolete">Ctrl+L</translation>
-    </message>
-    <message>
-        <source>Show the log files of the selected virtual machine</source>
-        <translation>A kiválasztott gép naplófájljainak mutatása</translation>
     </message>
     <message>
         <source>R&amp;egister VirtualBox...</source>
@@ -11375,47 +11481,9 @@ to the system default language.&lt;/qt&gt;
         <translation>&lt;h3&gt;Üdvözöl a VirtualBox!&lt;/h3&gt;&lt;p&gt;Az ablak bal oldali részében a virtuális gépeid listáját látod. Ez jelenleg üres, hiszen most indítod ezt a programot először.&lt;img src=:/welcome.png align=right/&gt;&lt;/p&gt;&lt;p&gt;Új virtuális gép létrehozásához kattints az &lt;b&gt;Új&lt;/b&gt; gombra az eszköztáron.&lt;/p&gt;&lt;p&gt;Az &lt;b&gt;%1&lt;/b&gt; billentyű megnyomásával azonnali segítséget kérhetsz, vagy látogass el a &lt;a href=http://www.virtualbox.org&gt;www.virtualbox.org&lt;/a&gt; címre a legfrissebb információkért és hírekért.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&amp;Virtual Media Manager...</source>
-        <translation>&amp;Virtuális média-kezelő...</translation>
-    </message>
-    <message>
-        <source>Display the Virtual Media Manager dialog</source>
-        <translation>A Virtuális médiakezelő indítása</translation>
-    </message>
-    <message>
         <source>Log</source>
         <comment>icon text</comment>
         <translation>Napló</translation>
-    </message>
-    <message>
-        <source>&amp;Import Appliance...</source>
-        <translation>Virtuális gép &amp;importálás...</translation>
-    </message>
-    <message>
-        <source>Import an appliance into VirtualBox</source>
-        <translation>Virtuális gép importálása a VirtualBox-ba</translation>
-    </message>
-    <message>
-        <source>&amp;Export Appliance...</source>
-        <translation>Virtuális gép &amp;exportálás...</translation>
-    </message>
-    <message>
-        <source>Export one or more VirtualBox virtual machines as an appliance</source>
-        <translation>Virtuális gép exportálása a VirtualBox-ból</translation>
-    </message>
-    <message>
-        <source>Re&amp;fresh</source>
-        <translation>&amp;Frissítés</translation>
-    </message>
-    <message>
-        <source>&amp;File</source>
-        <comment>Mac OS X version</comment>
-        <translation>&amp;Fájl</translation>
-    </message>
-    <message>
-        <source>&amp;File</source>
-        <comment>Non Mac OS X version</comment>
-        <translation>&amp;Fájl</translation>
     </message>
     <message>
         <source>Select a virtual machine file</source>
@@ -11431,80 +11499,12 @@ to the system default language.&lt;/qt&gt;
         <translation>Kezelő</translation>
     </message>
     <message>
-        <source>&amp;Add...</source>
-        <translation>Hozzá&amp;ad...</translation>
-    </message>
-    <message>
-        <source>Add an existing virtual machine</source>
-        <translation>Létező virtuális gép hozzáadása</translation>
-    </message>
-    <message>
-        <source>&amp;Remove</source>
-        <translation>Eltávolítá&amp;s</translation>
-    </message>
-    <message>
-        <source>Remove the selected virtual machine</source>
-        <translation>A kiválasztott virtuális gép eltávolítása</translation>
-    </message>
-    <message>
-        <source>Show in Finder</source>
-        <translation>Megjelenítés a keresőben</translation>
-    </message>
-    <message>
-        <source>Show the VirtualBox Machine Definition file in Finder.</source>
-        <translation>A VirtualBox gép definíciós fájljának megjelenítése a keresőben.</translation>
-    </message>
-    <message>
-        <source>Create Alias on Desktop</source>
-        <translation>Alias létrehozása az asztalon</translation>
-    </message>
-    <message>
-        <source>Creates an Alias file to the VirtualBox Machine Definition file on your Desktop.</source>
-        <translation>Létrehoz egy Alias-t az asztalon a VirtualBox gép definíciós fájljához.</translation>
-    </message>
-    <message>
-        <source>Show in Explorer</source>
-        <translation>Megjelenítés az Intézőben</translation>
-    </message>
-    <message>
-        <source>Show the VirtualBox Machine Definition file in Explorer.</source>
-        <translation>A VirtualBox gép definíciós fájljának megjelenítése az Intézőben.</translation>
-    </message>
-    <message>
-        <source>Create Shortcut on Desktop</source>
-        <translation>Parancsikon létrehozása az asztalon</translation>
-    </message>
-    <message>
-        <source>Creates an Shortcut file to the VirtualBox Machine Definition file on your Desktop.</source>
-        <translation>Létrehoz egy parancsikont az asztalon a VirtualBox gép definíciós fájljához.</translation>
-    </message>
-    <message>
-        <source>Show in File Manager</source>
-        <translation>Megjelenítés a fájlkezelőben</translation>
-    </message>
-    <message>
-        <source>Show the VirtualBox Machine Definition file in the File Manager</source>
-        <translation>A VirtualBox gép definíciós fájljának megjelenítése a fájlkezelőben</translation>
-    </message>
-    <message>
         <source>Show Toolbar</source>
         <translation>Eszköztár mutatása</translation>
     </message>
     <message>
         <source>Show Statusbar</source>
         <translation>Állapotsor mutatása</translation>
-    </message>
-    <message>
-        <source>Cl&amp;one...</source>
-        <translation>K&amp;lónozás...</translation>
-    </message>
-    <message>
-        <source>Clone the selected virtual machine</source>
-        <translation>A kiválasztott virtuális gép klónozása</translation>
-    </message>
-    <message>
-        <source>D&amp;iscard Saved State</source>
-        <translation>Mentett állapot eldobá&amp;sa</translation>
     </message>
 </context>
 <context>

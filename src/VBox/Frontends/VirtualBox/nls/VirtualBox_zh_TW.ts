@@ -408,6 +408,173 @@
         <source>Session I&amp;nformation...</source>
         <translation>工作階段資訊(&amp;N)...</translation>
     </message>
+    <message>
+        <source>&amp;File</source>
+        <comment>Mac OS X version</comment>
+        <translation>檔案(&amp;F)</translation>
+    </message>
+    <message>
+        <source>&amp;File</source>
+        <comment>Non Mac OS X version</comment>
+        <translation>檔案(&amp;F)</translation>
+    </message>
+    <message>
+        <source>&amp;Virtual Media Manager...</source>
+        <translation>虛擬媒體管理員(&amp;V)...</translation>
+    </message>
+    <message>
+        <source>Display the Virtual Media Manager dialog</source>
+        <translation>顯示虛擬媒體管理員對話方塊</translation>
+    </message>
+    <message>
+        <source>&amp;Import Appliance...</source>
+        <translation>匯入應用裝置(&amp;I)...</translation>
+    </message>
+    <message>
+        <source>Import an appliance into VirtualBox</source>
+        <translation>匯入應用裝置到 VirtualBox</translation>
+    </message>
+    <message>
+        <source>&amp;Export Appliance...</source>
+        <translation>匯出應用裝置(&amp;E)...</translation>
+    </message>
+    <message>
+        <source>Export one or more VirtualBox virtual machines as an appliance</source>
+        <translation>匯出一個或數個 VirtualBox 虛擬機器為應用裝置</translation>
+    </message>
+    <message>
+        <source>&amp;Preferences...</source>
+        <comment>global settings</comment>
+        <translation>喜好設定(&amp;P)...</translation>
+    </message>
+    <message>
+        <source>Display the global settings dialog</source>
+        <translation>顯示全域設定值對話方塊</translation>
+    </message>
+    <message>
+        <source>E&amp;xit</source>
+        <translation>結束(&amp;X)</translation>
+    </message>
+    <message>
+        <source>Close application</source>
+        <translation>關閉應用程式</translation>
+    </message>
+    <message>
+        <source>&amp;New...</source>
+        <translation>新增(&amp;N)...</translation>
+    </message>
+    <message>
+        <source>Create a new virtual machine</source>
+        <translation>建立新的虛擬機器</translation>
+    </message>
+    <message>
+        <source>&amp;Add...</source>
+        <translation>加入(&amp;A)...</translation>
+    </message>
+    <message>
+        <source>Add an existing virtual machine</source>
+        <translation>加入現有的虛擬機器</translation>
+    </message>
+    <message>
+        <source>Cl&amp;one...</source>
+        <translation>再製(&amp;O)...</translation>
+    </message>
+    <message>
+        <source>Clone the selected virtual machine</source>
+        <translation>再製選取的虛擬機器</translation>
+    </message>
+    <message>
+        <source>&amp;Remove</source>
+        <translation>移除(&amp;R)</translation>
+    </message>
+    <message>
+        <source>Remove the selected virtual machine</source>
+        <translation>移除選取的虛擬機器</translation>
+    </message>
+    <message>
+        <source>S&amp;tart</source>
+        <translation>啟動(&amp;T)</translation>
+    </message>
+    <message>
+        <source>Start the selected virtual machine</source>
+        <translation>啟動選取的虛擬機器</translation>
+    </message>
+    <message>
+        <source>S&amp;how</source>
+        <translation>顯示(&amp;H)</translation>
+    </message>
+    <message>
+        <source>Switch to the window of the selected virtual machine</source>
+        <translation>切換到選取虛擬機器的視窗</translation>
+    </message>
+    <message>
+        <source>Discard</source>
+        <translation>捨棄</translation>
+    </message>
+    <message>
+        <source>D&amp;iscard Saved State</source>
+        <translation>捨棄已儲存的狀態(&amp;I)</translation>
+    </message>
+    <message>
+        <source>Discard the saved state of the selected virtual machine</source>
+        <translation>捨棄選取虛擬機器的已儲存狀態</translation>
+    </message>
+    <message>
+        <source>Re&amp;fresh</source>
+        <translation>重新整理(&amp;F)</translation>
+    </message>
+    <message>
+        <source>Refresh the accessibility state of the selected virtual machine</source>
+        <translation>重新整理選取虛擬機器的可存取能力狀態</translation>
+    </message>
+    <message>
+        <source>Show &amp;Log...</source>
+        <translation>顯示記錄(&amp;L)...</translation>
+    </message>
+    <message>
+        <source>Show the log files of the selected virtual machine</source>
+        <translation>顯示選取虛擬機器的記錄檔案</translation>
+    </message>
+    <message>
+        <source>Show in Finder</source>
+        <translation>在尋找中顯示</translation>
+    </message>
+    <message>
+        <source>Show the VirtualBox Machine Definition file in Finder.</source>
+        <translation>在尋找中顯示 VirtualBox Machine Definition 檔案。</translation>
+    </message>
+    <message>
+        <source>Show in Explorer</source>
+        <translation>在檔案總管中顯示</translation>
+    </message>
+    <message>
+        <source>Show the VirtualBox Machine Definition file in Explorer.</source>
+        <translation>在檔案總管中顯示 VirtualBox Machine Definition 檔案。</translation>
+    </message>
+    <message>
+        <source>Show in File Manager</source>
+        <translation>在檔案管理員中顯示</translation>
+    </message>
+    <message>
+        <source>Show the VirtualBox Machine Definition file in the File Manager</source>
+        <translation>在檔案管理員中顯示 VirtualBox Machine Definition 檔案</translation>
+    </message>
+    <message>
+        <source>Create Alias on Desktop</source>
+        <translation>在桌面建立別名</translation>
+    </message>
+    <message>
+        <source>Creates an Alias file to the VirtualBox Machine Definition file on your Desktop.</source>
+        <translation>在您的桌面建立別名檔案到 VirtualBox Machine Definition 檔案。</translation>
+    </message>
+    <message>
+        <source>Create Shortcut on Desktop</source>
+        <translation>在桌面建立捷徑</translation>
+    </message>
+    <message>
+        <source>Creates an Shortcut file to the VirtualBox Machine Definition file on your Desktop.</source>
+        <translation>在您的桌面建立捷徑檔案到 VirtualBox Machine Definition 檔案。</translation>
+    </message>
 </context>
 <context>
     <name>UIApplianceEditorWidget</name>
@@ -6744,31 +6911,6 @@
 <context>
     <name>VBoxSelectorWnd</name>
     <message>
-        <source>&amp;Preferences...</source>
-        <comment>global settings</comment>
-        <translation>喜好設定(&amp;P)...</translation>
-    </message>
-    <message>
-        <source>Display the global settings dialog</source>
-        <translation>顯示全域設定值對話方塊</translation>
-    </message>
-    <message>
-        <source>E&amp;xit</source>
-        <translation>結束(&amp;X)</translation>
-    </message>
-    <message>
-        <source>Close application</source>
-        <translation>關閉應用程式</translation>
-    </message>
-    <message>
-        <source>&amp;New...</source>
-        <translation>新增(&amp;N)...</translation>
-    </message>
-    <message>
-        <source>Create a new virtual machine</source>
-        <translation>建立新的虛擬機器</translation>
-    </message>
-    <message>
         <source>&amp;Settings...</source>
         <translation>設定值(&amp;S)...</translation>
     </message>
@@ -6777,40 +6919,8 @@
         <translation>組態選取的虛擬機器</translation>
     </message>
     <message>
-        <source>Discard the saved state of the selected virtual machine</source>
-        <translation>捨棄選取虛擬機器的已儲存狀態</translation>
-    </message>
-    <message>
-        <source>Refresh the accessibility state of the selected virtual machine</source>
-        <translation>重新整理選取虛擬機器的可存取能力狀態</translation>
-    </message>
-    <message>
-        <source>S&amp;how</source>
-        <translation>顯示(&amp;H)</translation>
-    </message>
-    <message>
-        <source>Switch to the window of the selected virtual machine</source>
-        <translation>切換到選取虛擬機器的視窗</translation>
-    </message>
-    <message>
-        <source>S&amp;tart</source>
-        <translation>啟動(&amp;T)</translation>
-    </message>
-    <message>
-        <source>Start the selected virtual machine</source>
-        <translation>啟動選取的虛擬機器</translation>
-    </message>
-    <message>
         <source>&amp;Machine</source>
         <translation>機器(&amp;M)</translation>
-    </message>
-    <message>
-        <source>Show &amp;Log...</source>
-        <translation>顯示記錄(&amp;L)...</translation>
-    </message>
-    <message>
-        <source>Show the log files of the selected virtual machine</source>
-        <translation>顯示選取虛擬機器的記錄檔案</translation>
     </message>
     <message>
         <source>Resume the execution of the virtual machine</source>
@@ -6829,47 +6939,9 @@
         <translation>&lt;h3&gt;歡迎使用 VirtualBox !&lt;/h3&gt;&lt;p&gt;這個視窗的左側部分是在您電腦中的所有虛擬機器清單。 清單現在是空的因為您尚未建立任何虛擬機器。&lt;img src=:/welcome.png align=right/&gt;&lt;/p&gt;&lt;p&gt;為了新建虛擬機器，在視窗上方位置的主工具列按下 [&lt;b&gt;新增&lt;/b&gt;] 按鈕。&lt;/p&gt;&lt;p&gt;您可以按下 [&lt;b&gt;%1&lt;/b&gt;] 按鍵取得即時說明，或訪問 &lt;a href=http://www.virtualbox.org&gt;www.virtualbox.org&lt;/a&gt; 取得最新資訊與新聞。&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&amp;Virtual Media Manager...</source>
-        <translation>虛擬媒體管理員(&amp;V)...</translation>
-    </message>
-    <message>
-        <source>Display the Virtual Media Manager dialog</source>
-        <translation>顯示虛擬媒體管理員對話方塊</translation>
-    </message>
-    <message>
         <source>Log</source>
         <comment>icon text</comment>
         <translation>紀錄</translation>
-    </message>
-    <message>
-        <source>&amp;Import Appliance...</source>
-        <translation>匯入應用裝置(&amp;I)...</translation>
-    </message>
-    <message>
-        <source>Import an appliance into VirtualBox</source>
-        <translation>匯入應用裝置到 VirtualBox</translation>
-    </message>
-    <message>
-        <source>&amp;Export Appliance...</source>
-        <translation>匯出應用裝置(&amp;E)...</translation>
-    </message>
-    <message>
-        <source>Export one or more VirtualBox virtual machines as an appliance</source>
-        <translation>匯出一個或數個 VirtualBox 虛擬機器為應用裝置</translation>
-    </message>
-    <message>
-        <source>Re&amp;fresh</source>
-        <translation>重新整理(&amp;F)</translation>
-    </message>
-    <message>
-        <source>&amp;File</source>
-        <comment>Mac OS X version</comment>
-        <translation>檔案(&amp;F)</translation>
-    </message>
-    <message>
-        <source>&amp;File</source>
-        <comment>Non Mac OS X version</comment>
-        <translation>檔案(&amp;F)</translation>
     </message>
     <message>
         <source>Select a virtual machine file</source>
@@ -6885,84 +6957,12 @@
         <translation>管理員</translation>
     </message>
     <message>
-        <source>&amp;Add...</source>
-        <translation>加入(&amp;A)...</translation>
-    </message>
-    <message>
-        <source>Add an existing virtual machine</source>
-        <translation>加入現有的虛擬機器</translation>
-    </message>
-    <message>
-        <source>&amp;Remove</source>
-        <translation>移除(&amp;R)</translation>
-    </message>
-    <message>
-        <source>Remove the selected virtual machine</source>
-        <translation>移除選取的虛擬機器</translation>
-    </message>
-    <message>
-        <source>Show in Finder</source>
-        <translation>在尋找中顯示</translation>
-    </message>
-    <message>
-        <source>Show the VirtualBox Machine Definition file in Finder.</source>
-        <translation>在尋找中顯示 VirtualBox Machine Definition 檔案。</translation>
-    </message>
-    <message>
-        <source>Create Alias on Desktop</source>
-        <translation>在桌面建立別名</translation>
-    </message>
-    <message>
-        <source>Creates an Alias file to the VirtualBox Machine Definition file on your Desktop.</source>
-        <translation>在您的桌面建立別名檔案到 VirtualBox Machine Definition 檔案。</translation>
-    </message>
-    <message>
-        <source>Show in Explorer</source>
-        <translation>在檔案總管中顯示</translation>
-    </message>
-    <message>
-        <source>Show the VirtualBox Machine Definition file in Explorer.</source>
-        <translation>在檔案總管中顯示 VirtualBox Machine Definition 檔案。</translation>
-    </message>
-    <message>
-        <source>Create Shortcut on Desktop</source>
-        <translation>在桌面建立捷徑</translation>
-    </message>
-    <message>
-        <source>Creates an Shortcut file to the VirtualBox Machine Definition file on your Desktop.</source>
-        <translation>在您的桌面建立捷徑檔案到 VirtualBox Machine Definition 檔案。</translation>
-    </message>
-    <message>
-        <source>Show in File Manager</source>
-        <translation>在檔案管理員中顯示</translation>
-    </message>
-    <message>
-        <source>Show the VirtualBox Machine Definition file in the File Manager</source>
-        <translation>在檔案管理員中顯示 VirtualBox Machine Definition 檔案</translation>
-    </message>
-    <message>
         <source>Show Toolbar</source>
         <translation>顯示工具列</translation>
     </message>
     <message>
         <source>Show Statusbar</source>
         <translation>顯示狀態列</translation>
-    </message>
-    <message>
-        <source>Cl&amp;one...</source>
-        <translation>再製(&amp;O)...</translation>
-    </message>
-    <message>
-        <source>Clone the selected virtual machine</source>
-        <translation>再製選取的虛擬機器</translation>
-    </message>
-    <message>
-        <source>Discard</source>
-        <translation>捨棄</translation>
-    </message>
-    <message>
-        <source>D&amp;iscard Saved State</source>
-        <translation>捨棄已儲存的狀態(&amp;I)</translation>
     </message>
 </context>
 <context>

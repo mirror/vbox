@@ -543,6 +543,173 @@
         <source>Session I&amp;nformation...</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>&amp;File</source>
+        <comment>Mac OS X version</comment>
+        <translation>&amp;Bestand</translation>
+    </message>
+    <message>
+        <source>&amp;File</source>
+        <comment>Non Mac OS X version</comment>
+        <translation>&amp;Bestand</translation>
+    </message>
+    <message>
+        <source>&amp;Virtual Media Manager...</source>
+        <translation>Manager voor &amp;virtuele media...</translation>
+    </message>
+    <message>
+        <source>Display the Virtual Media Manager dialog</source>
+        <translation>Geef de dialoog weer voor de virtuale media manager</translation>
+    </message>
+    <message>
+        <source>&amp;Import Appliance...</source>
+        <translation>Appliance &amp;importeren ...</translation>
+    </message>
+    <message>
+        <source>Import an appliance into VirtualBox</source>
+        <translation>Importeert een appliance in VirtualBox</translation>
+    </message>
+    <message>
+        <source>&amp;Export Appliance...</source>
+        <translation>Appliance &amp;exporteren ...</translation>
+    </message>
+    <message>
+        <source>Export one or more VirtualBox virtual machines as an appliance</source>
+        <translation>Exporteert een appliance uit VirtualBox</translation>
+    </message>
+    <message>
+        <source>&amp;Preferences...</source>
+        <comment>global settings</comment>
+        <translation>&amp;Voorkeuren...</translation>
+    </message>
+    <message>
+        <source>Display the global settings dialog</source>
+        <translation>Geef de algemene instellingen weer</translation>
+    </message>
+    <message>
+        <source>E&amp;xit</source>
+        <translation>&amp;Afsluiten</translation>
+    </message>
+    <message>
+        <source>Close application</source>
+        <translation>Programma afsluiten</translation>
+    </message>
+    <message>
+        <source>&amp;New...</source>
+        <translation>&amp;Nieuw...</translation>
+    </message>
+    <message>
+        <source>Create a new virtual machine</source>
+        <translation>Maak een nieuwe virtuele machine aan</translation>
+    </message>
+    <message>
+        <source>&amp;Add...</source>
+        <translation>&amp;Toevoegen...</translation>
+    </message>
+    <message>
+        <source>Add an existing virtual machine</source>
+        <translation>Voet een bestaande virtuele machine toe</translation>
+    </message>
+    <message>
+        <source>Cl&amp;one...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Clone the selected virtual machine</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Remove</source>
+        <translation>Ve&amp;rwijderen</translation>
+    </message>
+    <message>
+        <source>Remove the selected virtual machine</source>
+        <translation>Verwijder de geselecteerde virtuele machine</translation>
+    </message>
+    <message>
+        <source>S&amp;tart</source>
+        <translation>&amp;Start</translation>
+    </message>
+    <message>
+        <source>Start the selected virtual machine</source>
+        <translation>Start de geselecteerde virtuele machine</translation>
+    </message>
+    <message>
+        <source>S&amp;how</source>
+        <translation>&amp;Weergeven</translation>
+    </message>
+    <message>
+        <source>Switch to the window of the selected virtual machine</source>
+        <translation>Schakel over naar het venster van de geselecteerde virtuele machine</translation>
+    </message>
+    <message>
+        <source>Discard</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>D&amp;iscard Saved State</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Discard the saved state of the selected virtual machine</source>
+        <translation>Werp de opgeslagen status van de geselecteerde virtuele machine weg</translation>
+    </message>
+    <message>
+        <source>Re&amp;fresh</source>
+        <translation>&amp;Verversen</translation>
+    </message>
+    <message>
+        <source>Refresh the accessibility state of the selected virtual machine</source>
+        <translation>Actualiseer de status over de toegankelijkheid van de geselecteerde virtuele machine</translation>
+    </message>
+    <message>
+        <source>Show &amp;Log...</source>
+        <translation>Geef &amp;Log weer...</translation>
+    </message>
+    <message>
+        <source>Show the log files of the selected virtual machine</source>
+        <translation>Geef de logbestanden weer van de geselecteerde virtuele machine</translation>
+    </message>
+    <message>
+        <source>Show in Finder</source>
+        <translation>Geef weer in het zoekscherm</translation>
+    </message>
+    <message>
+        <source>Show the VirtualBox Machine Definition file in Finder.</source>
+        <translation>Toon het VirtualBox machine definitiebestand in het zoekscherm.</translation>
+    </message>
+    <message>
+        <source>Show in Explorer</source>
+        <translation>Toon in de verkenner</translation>
+    </message>
+    <message>
+        <source>Show the VirtualBox Machine Definition file in Explorer.</source>
+        <translation>Toon het VirtualBox machine definitiebestand in de verkenner.</translation>
+    </message>
+    <message>
+        <source>Show in File Manager</source>
+        <translation>Toon in de bestandsmanager</translation>
+    </message>
+    <message>
+        <source>Show the VirtualBox Machine Definition file in the File Manager</source>
+        <translation>Toon het VirtualBox machine definitiebestand in de bestandsmanager</translation>
+    </message>
+    <message>
+        <source>Create Alias on Desktop</source>
+        <translation>Maak een alias op het bureaublad</translation>
+    </message>
+    <message>
+        <source>Creates an Alias file to the VirtualBox Machine Definition file on your Desktop.</source>
+        <translation>Maakt een aliasbestand, van het VirtualBox machine definitiebestand, op het bureaublad.</translation>
+    </message>
+    <message>
+        <source>Create Shortcut on Desktop</source>
+        <translation>Maak een snelkoppeling op het bureaublad</translation>
+    </message>
+    <message>
+        <source>Creates an Shortcut file to the VirtualBox Machine Definition file on your Desktop.</source>
+        <translation>Maakt een snelkoppeling, van het VirtualBox machine definitiebestand, op het bureaublad.</translation>
+    </message>
 </context>
 <context>
     <name>UIApplianceEditorWidget</name>
@@ -9399,31 +9566,6 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">&amp;Details</translation>
     </message>
     <message>
-        <source>&amp;Preferences...</source>
-        <comment>global settings</comment>
-        <translation>&amp;Voorkeuren...</translation>
-    </message>
-    <message>
-        <source>Display the global settings dialog</source>
-        <translation>Geef de algemene instellingen weer</translation>
-    </message>
-    <message>
-        <source>E&amp;xit</source>
-        <translation>&amp;Afsluiten</translation>
-    </message>
-    <message>
-        <source>Close application</source>
-        <translation>Programma afsluiten</translation>
-    </message>
-    <message>
-        <source>&amp;New...</source>
-        <translation>&amp;Nieuw...</translation>
-    </message>
-    <message>
-        <source>Create a new virtual machine</source>
-        <translation>Maak een nieuwe virtuele machine aan</translation>
-    </message>
-    <message>
         <source>&amp;Settings...</source>
         <translation>In&amp;stellingen...</translation>
     </message>
@@ -9442,14 +9584,6 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>D&amp;iscard</source>
         <translation type="obsolete">&amp;Verwerpen</translation>
-    </message>
-    <message>
-        <source>Discard the saved state of the selected virtual machine</source>
-        <translation>Werp de opgeslagen status van de geselecteerde virtuele machine weg</translation>
-    </message>
-    <message>
-        <source>Refresh the accessibility state of the selected virtual machine</source>
-        <translation>Actualiseer de status over de toegankelijkheid van de geselecteerde virtuele machine</translation>
     </message>
     <message>
         <source>&amp;File</source>
@@ -9472,32 +9606,8 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">&amp;Omschrijving *</translation>
     </message>
     <message>
-        <source>S&amp;how</source>
-        <translation>&amp;Weergeven</translation>
-    </message>
-    <message>
-        <source>Switch to the window of the selected virtual machine</source>
-        <translation>Schakel over naar het venster van de geselecteerde virtuele machine</translation>
-    </message>
-    <message>
-        <source>S&amp;tart</source>
-        <translation>&amp;Start</translation>
-    </message>
-    <message>
-        <source>Start the selected virtual machine</source>
-        <translation>Start de geselecteerde virtuele machine</translation>
-    </message>
-    <message>
         <source>&amp;Machine</source>
         <translation>&amp;Machine</translation>
-    </message>
-    <message>
-        <source>Show &amp;Log...</source>
-        <translation>Geef &amp;Log weer...</translation>
-    </message>
-    <message>
-        <source>Show the log files of the selected virtual machine</source>
-        <translation>Geef de logbestanden weer van de geselecteerde virtuele machine</translation>
     </message>
     <message>
         <source>R&amp;esume</source>
@@ -9520,51 +9630,13 @@ p, li { white-space: pre-wrap; }
         <translation>&lt;h3&gt;Welkom bij VirtualBox!&lt;/h3&gt;&lt;p&gt;Het linker deel van dit venster is bedoeld om alle virtuele machines, op uw compter, weer te geven. De lijst is nu leeg omdat u nog geen virtuele machines heeft aangemaakt.&lt;img src=:/welcome.png align=right/&gt;&lt;/p&gt;&lt;p&gt;Om een nieuwe virtuele machine aan te maken drukt u op de knop &lt;b&gt;Nieuw&lt;/b&gt; in de werkbalk boven in het venster.&lt;/p&gt;&lt;p&gt;De toets &lt;b&gt;%1&lt;/b&gt; opent een helpscherm, bezoek &lt;a href=http://www.virtualbox.org&gt;www.virtualbox.org&lt;/a&gt; voor de laatste informatie en nieuws.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&amp;Virtual Media Manager...</source>
-        <translation>Manager voor &amp;virtuele media...</translation>
-    </message>
-    <message>
-        <source>Display the Virtual Media Manager dialog</source>
-        <translation>Geef de dialoog weer voor de virtuale media manager</translation>
-    </message>
-    <message>
         <source>Log</source>
         <comment>icon text</comment>
         <translation>Loggen</translation>
     </message>
     <message>
-        <source>&amp;Import Appliance...</source>
-        <translation>Appliance &amp;importeren ...</translation>
-    </message>
-    <message>
-        <source>Import an appliance into VirtualBox</source>
-        <translation>Importeert een appliance in VirtualBox</translation>
-    </message>
-    <message>
-        <source>&amp;Export Appliance...</source>
-        <translation>Appliance &amp;exporteren ...</translation>
-    </message>
-    <message>
-        <source>Export one or more VirtualBox virtual machines as an appliance</source>
-        <translation>Exporteert een appliance uit VirtualBox</translation>
-    </message>
-    <message>
         <source>Sun VirtualBox</source>
         <translation type="obsolete">Sun VirtualBox</translation>
-    </message>
-    <message>
-        <source>Re&amp;fresh</source>
-        <translation>&amp;Verversen</translation>
-    </message>
-    <message>
-        <source>&amp;File</source>
-        <comment>Mac OS X version</comment>
-        <translation>&amp;Bestand</translation>
-    </message>
-    <message>
-        <source>&amp;File</source>
-        <comment>Non Mac OS X version</comment>
-        <translation>&amp;Bestand</translation>
     </message>
     <message>
         <source>Select a virtual machine file</source>
@@ -9580,84 +9652,12 @@ p, li { white-space: pre-wrap; }
         <translation>Manager</translation>
     </message>
     <message>
-        <source>&amp;Add...</source>
-        <translation>&amp;Toevoegen...</translation>
-    </message>
-    <message>
-        <source>Add an existing virtual machine</source>
-        <translation>Voet een bestaande virtuele machine toe</translation>
-    </message>
-    <message>
-        <source>&amp;Remove</source>
-        <translation>Ve&amp;rwijderen</translation>
-    </message>
-    <message>
-        <source>Remove the selected virtual machine</source>
-        <translation>Verwijder de geselecteerde virtuele machine</translation>
-    </message>
-    <message>
-        <source>Show in Finder</source>
-        <translation>Geef weer in het zoekscherm</translation>
-    </message>
-    <message>
-        <source>Show the VirtualBox Machine Definition file in Finder.</source>
-        <translation>Toon het VirtualBox machine definitiebestand in het zoekscherm.</translation>
-    </message>
-    <message>
-        <source>Create Alias on Desktop</source>
-        <translation>Maak een alias op het bureaublad</translation>
-    </message>
-    <message>
-        <source>Creates an Alias file to the VirtualBox Machine Definition file on your Desktop.</source>
-        <translation>Maakt een aliasbestand, van het VirtualBox machine definitiebestand, op het bureaublad.</translation>
-    </message>
-    <message>
-        <source>Show in Explorer</source>
-        <translation>Toon in de verkenner</translation>
-    </message>
-    <message>
-        <source>Show the VirtualBox Machine Definition file in Explorer.</source>
-        <translation>Toon het VirtualBox machine definitiebestand in de verkenner.</translation>
-    </message>
-    <message>
-        <source>Create Shortcut on Desktop</source>
-        <translation>Maak een snelkoppeling op het bureaublad</translation>
-    </message>
-    <message>
-        <source>Creates an Shortcut file to the VirtualBox Machine Definition file on your Desktop.</source>
-        <translation>Maakt een snelkoppeling, van het VirtualBox machine definitiebestand, op het bureaublad.</translation>
-    </message>
-    <message>
-        <source>Show in File Manager</source>
-        <translation>Toon in de bestandsmanager</translation>
-    </message>
-    <message>
-        <source>Show the VirtualBox Machine Definition file in the File Manager</source>
-        <translation>Toon het VirtualBox machine definitiebestand in de bestandsmanager</translation>
-    </message>
-    <message>
         <source>Show Toolbar</source>
         <translation>Geef de werkbalk weer</translation>
     </message>
     <message>
         <source>Show Statusbar</source>
         <translation>Geeft de statusbalk weer</translation>
-    </message>
-    <message>
-        <source>Cl&amp;one...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Clone the selected virtual machine</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Discard</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>D&amp;iscard Saved State</source>
-        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

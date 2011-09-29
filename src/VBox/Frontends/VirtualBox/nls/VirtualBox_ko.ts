@@ -498,6 +498,173 @@
         <source>Session I&amp;nformation...</source>
         <translation>세션 정보(&amp;N)...</translation>
     </message>
+    <message>
+        <source>&amp;File</source>
+        <comment>Mac OS X version</comment>
+        <translation>파일(&amp;F)</translation>
+    </message>
+    <message>
+        <source>&amp;File</source>
+        <comment>Non Mac OS X version</comment>
+        <translation>파일(&amp;F)</translation>
+    </message>
+    <message>
+        <source>&amp;Virtual Media Manager...</source>
+        <translation>가상 미디어 관리자(&amp;V)...</translation>
+    </message>
+    <message>
+        <source>Display the Virtual Media Manager dialog</source>
+        <translation>가상 미디어 관리자 대화상자를 표시합니다</translation>
+    </message>
+    <message>
+        <source>&amp;Import Appliance...</source>
+        <translation>가상 시스템 가져오기(&amp;I)...</translation>
+    </message>
+    <message>
+        <source>Import an appliance into VirtualBox</source>
+        <translation>VirtualBox로 가상 시스템 가져오기</translation>
+    </message>
+    <message>
+        <source>&amp;Export Appliance...</source>
+        <translation>가상 시스템 내보내기(&amp;E)...</translation>
+    </message>
+    <message>
+        <source>Export one or more VirtualBox virtual machines as an appliance</source>
+        <translation>VirtualBox의 가상 시스템 내보내기</translation>
+    </message>
+    <message>
+        <source>&amp;Preferences...</source>
+        <comment>global settings</comment>
+        <translation>환경 설정(&amp;P)...</translation>
+    </message>
+    <message>
+        <source>Display the global settings dialog</source>
+        <translation>전역 환경 설정 대화 상자를 표시합니다</translation>
+    </message>
+    <message>
+        <source>E&amp;xit</source>
+        <translation>종료(&amp;X)</translation>
+    </message>
+    <message>
+        <source>Close application</source>
+        <translation>프로그램을 종료합니다</translation>
+    </message>
+    <message>
+        <source>&amp;New...</source>
+        <translation>새로 만들기(&amp;N)...</translation>
+    </message>
+    <message>
+        <source>Create a new virtual machine</source>
+        <translation>새 가상 머신을 만듭니다</translation>
+    </message>
+    <message>
+        <source>&amp;Add...</source>
+        <translation>추가(&amp;A)...</translation>
+    </message>
+    <message>
+        <source>Add an existing virtual machine</source>
+        <translation>존재하는 가상 머신 추가</translation>
+    </message>
+    <message>
+        <source>Cl&amp;one...</source>
+        <translation>복제(&amp;O)...</translation>
+    </message>
+    <message>
+        <source>Clone the selected virtual machine</source>
+        <translation>선택한 가상 머신을 복제합니다</translation>
+    </message>
+    <message>
+        <source>&amp;Remove</source>
+        <translation>삭제(&amp;R)</translation>
+    </message>
+    <message>
+        <source>Remove the selected virtual machine</source>
+        <translation>선택한 가상 머신 삭제</translation>
+    </message>
+    <message>
+        <source>S&amp;tart</source>
+        <translation>시작(&amp;T)</translation>
+    </message>
+    <message>
+        <source>Start the selected virtual machine</source>
+        <translation>선택한 가상 머신을 시작합니다</translation>
+    </message>
+    <message>
+        <source>S&amp;how</source>
+        <translation>보이기(&amp;H)</translation>
+    </message>
+    <message>
+        <source>Switch to the window of the selected virtual machine</source>
+        <translation>선택한 가상 머신의 창으로 전환합니다</translation>
+    </message>
+    <message>
+        <source>Discard</source>
+        <translation>삭제</translation>
+    </message>
+    <message>
+        <source>D&amp;iscard Saved State</source>
+        <translation>저장된 상태 삭제(&amp;I)</translation>
+    </message>
+    <message>
+        <source>Discard the saved state of the selected virtual machine</source>
+        <translation>가상 머신의 저장된 상태를 삭제합니다</translation>
+    </message>
+    <message>
+        <source>Re&amp;fresh</source>
+        <translation>새로 고침(&amp;F)</translation>
+    </message>
+    <message>
+        <source>Refresh the accessibility state of the selected virtual machine</source>
+        <translation>선택한 가상 머신의 접근성 상태를 새로 고칩니다</translation>
+    </message>
+    <message>
+        <source>Show &amp;Log...</source>
+        <translation>로그 보기(&amp;L)...</translation>
+    </message>
+    <message>
+        <source>Show the log files of the selected virtual machine</source>
+        <translation>선택한 가상 머신의 로그 파일을 표시합니다</translation>
+    </message>
+    <message>
+        <source>Show in Finder</source>
+        <translation>파인더에 보이기</translation>
+    </message>
+    <message>
+        <source>Show the VirtualBox Machine Definition file in Finder.</source>
+        <translation>VirtualBox 가상 머신 정의 파일을 파인더에 표시합니다.</translation>
+    </message>
+    <message>
+        <source>Show in Explorer</source>
+        <translation>탐색기에 보이기</translation>
+    </message>
+    <message>
+        <source>Show the VirtualBox Machine Definition file in Explorer.</source>
+        <translation>VirtualBox 가상 머신 정의 파일을 탐색기에 표시합니다.</translation>
+    </message>
+    <message>
+        <source>Show in File Manager</source>
+        <translation>파일 관리자에 보이기</translation>
+    </message>
+    <message>
+        <source>Show the VirtualBox Machine Definition file in the File Manager</source>
+        <translation>VirtualBox 가상 머신 정의 파일을 파일 관리자에 표시합니다</translation>
+    </message>
+    <message>
+        <source>Create Alias on Desktop</source>
+        <translation>데스크톱에 바로 가기 만들기</translation>
+    </message>
+    <message>
+        <source>Creates an Alias file to the VirtualBox Machine Definition file on your Desktop.</source>
+        <translation>데스크톱에 VirtualBox 가상 머신 정의 파일의 바로 가기를 만듭니다.</translation>
+    </message>
+    <message>
+        <source>Create Shortcut on Desktop</source>
+        <translation>데스크톱에 바로 가기 만들기</translation>
+    </message>
+    <message>
+        <source>Creates an Shortcut file to the VirtualBox Machine Definition file on your Desktop.</source>
+        <translation>데스크톱에 VirtualBox 가상 머신 정의 파일의 바로 가기를 만듭니다.</translation>
+    </message>
 </context>
 <context>
     <name>UIApplianceEditorWidget</name>
@@ -9705,31 +9872,6 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">자세한 정보(&amp;D)</translation>
     </message>
     <message>
-        <source>&amp;Preferences...</source>
-        <comment>global settings</comment>
-        <translation>환경 설정(&amp;P)...</translation>
-    </message>
-    <message>
-        <source>Display the global settings dialog</source>
-        <translation>전역 환경 설정 대화 상자를 표시합니다</translation>
-    </message>
-    <message>
-        <source>E&amp;xit</source>
-        <translation>종료(&amp;X)</translation>
-    </message>
-    <message>
-        <source>Close application</source>
-        <translation>프로그램을 종료합니다</translation>
-    </message>
-    <message>
-        <source>&amp;New...</source>
-        <translation>새로 만들기(&amp;N)...</translation>
-    </message>
-    <message>
-        <source>Create a new virtual machine</source>
-        <translation>새 가상 머신을 만듭니다</translation>
-    </message>
-    <message>
         <source>&amp;Settings...</source>
         <translation>설정(&amp;S)...</translation>
     </message>
@@ -9748,14 +9890,6 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>D&amp;iscard</source>
         <translation type="obsolete">삭제(&amp;I)</translation>
-    </message>
-    <message>
-        <source>Discard the saved state of the selected virtual machine</source>
-        <translation>가상 머신의 저장된 상태를 삭제합니다</translation>
-    </message>
-    <message>
-        <source>Refresh the accessibility state of the selected virtual machine</source>
-        <translation>선택한 가상 머신의 접근성 상태를 새로 고칩니다</translation>
     </message>
     <message>
         <source>&amp;File</source>
@@ -9778,32 +9912,8 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">설명(&amp;E) *</translation>
     </message>
     <message>
-        <source>S&amp;how</source>
-        <translation>보이기(&amp;H)</translation>
-    </message>
-    <message>
-        <source>Switch to the window of the selected virtual machine</source>
-        <translation>선택한 가상 머신의 창으로 전환합니다</translation>
-    </message>
-    <message>
-        <source>S&amp;tart</source>
-        <translation>시작(&amp;T)</translation>
-    </message>
-    <message>
-        <source>Start the selected virtual machine</source>
-        <translation>선택한 가상 머신을 시작합니다</translation>
-    </message>
-    <message>
         <source>&amp;Machine</source>
         <translation>머신(&amp;M)</translation>
-    </message>
-    <message>
-        <source>Show &amp;Log...</source>
-        <translation>로그 보기(&amp;L)...</translation>
-    </message>
-    <message>
-        <source>Show the log files of the selected virtual machine</source>
-        <translation>선택한 가상 머신의 로그 파일을 표시합니다</translation>
     </message>
     <message>
         <source>R&amp;esume</source>
@@ -9826,14 +9936,6 @@ p, li { white-space: pre-wrap; }
         <translation>&lt;h3&gt;VirtualBox에 오신 것을 환영합니다!&lt;/h3&gt;&lt;p&gt;이 창의 왼쪽 부분은 컴퓨터에 있는 모든 가상 머신 목록을 표시합니다. 아직 가상 머신을 만들지 않았기 때문에 이 목록은 현재 비어 있습니다.&lt;img src=:/welcome.png align=right/&gt;&lt;/p&gt;&lt;p&gt;새 가상 머신을 만들시려면, 창 위쪽 도구 모음의 &lt;b&gt;새로 만들기&lt;/b&gt; 단추를 누르십시오.&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt; 키를 누르면 상황에 맞는 도움말을 볼 수 있으며, 최근 정보와 뉴스를 보려면 &lt;a href=http://www.virtualbox.org&gt;www.virtualbox.org&lt;/a&gt;를 방문하십시오.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&amp;Virtual Media Manager...</source>
-        <translation>가상 미디어 관리자(&amp;V)...</translation>
-    </message>
-    <message>
-        <source>Display the Virtual Media Manager dialog</source>
-        <translation>가상 미디어 관리자 대화상자를 표시합니다</translation>
-    </message>
-    <message>
         <source>Log</source>
         <comment>icon text</comment>
         <translation>로그</translation>
@@ -9841,36 +9943,6 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Sun VirtualBox</source>
         <translation type="obsolete">Sun VirtualBox</translation>
-    </message>
-    <message>
-        <source>&amp;Import Appliance...</source>
-        <translation>가상 시스템 가져오기(&amp;I)...</translation>
-    </message>
-    <message>
-        <source>Import an appliance into VirtualBox</source>
-        <translation>VirtualBox로 가상 시스템 가져오기</translation>
-    </message>
-    <message>
-        <source>&amp;Export Appliance...</source>
-        <translation>가상 시스템 내보내기(&amp;E)...</translation>
-    </message>
-    <message>
-        <source>Export one or more VirtualBox virtual machines as an appliance</source>
-        <translation>VirtualBox의 가상 시스템 내보내기</translation>
-    </message>
-    <message>
-        <source>Re&amp;fresh</source>
-        <translation>새로 고침(&amp;F)</translation>
-    </message>
-    <message>
-        <source>&amp;File</source>
-        <comment>Mac OS X version</comment>
-        <translation>파일(&amp;F)</translation>
-    </message>
-    <message>
-        <source>&amp;File</source>
-        <comment>Non Mac OS X version</comment>
-        <translation>파일(&amp;F)</translation>
     </message>
     <message>
         <source>Select a virtual machine file</source>
@@ -9886,84 +9958,12 @@ p, li { white-space: pre-wrap; }
         <translation>관리자</translation>
     </message>
     <message>
-        <source>&amp;Add...</source>
-        <translation>추가(&amp;A)...</translation>
-    </message>
-    <message>
-        <source>Add an existing virtual machine</source>
-        <translation>존재하는 가상 머신 추가</translation>
-    </message>
-    <message>
-        <source>&amp;Remove</source>
-        <translation>삭제(&amp;R)</translation>
-    </message>
-    <message>
-        <source>Remove the selected virtual machine</source>
-        <translation>선택한 가상 머신 삭제</translation>
-    </message>
-    <message>
-        <source>Show in Finder</source>
-        <translation>파인더에 보이기</translation>
-    </message>
-    <message>
-        <source>Show the VirtualBox Machine Definition file in Finder.</source>
-        <translation>VirtualBox 가상 머신 정의 파일을 파인더에 표시합니다.</translation>
-    </message>
-    <message>
-        <source>Create Alias on Desktop</source>
-        <translation>데스크톱에 바로 가기 만들기</translation>
-    </message>
-    <message>
-        <source>Creates an Alias file to the VirtualBox Machine Definition file on your Desktop.</source>
-        <translation>데스크톱에 VirtualBox 가상 머신 정의 파일의 바로 가기를 만듭니다.</translation>
-    </message>
-    <message>
-        <source>Show in Explorer</source>
-        <translation>탐색기에 보이기</translation>
-    </message>
-    <message>
-        <source>Show the VirtualBox Machine Definition file in Explorer.</source>
-        <translation>VirtualBox 가상 머신 정의 파일을 탐색기에 표시합니다.</translation>
-    </message>
-    <message>
-        <source>Create Shortcut on Desktop</source>
-        <translation>데스크톱에 바로 가기 만들기</translation>
-    </message>
-    <message>
-        <source>Creates an Shortcut file to the VirtualBox Machine Definition file on your Desktop.</source>
-        <translation>데스크톱에 VirtualBox 가상 머신 정의 파일의 바로 가기를 만듭니다.</translation>
-    </message>
-    <message>
-        <source>Show in File Manager</source>
-        <translation>파일 관리자에 보이기</translation>
-    </message>
-    <message>
-        <source>Show the VirtualBox Machine Definition file in the File Manager</source>
-        <translation>VirtualBox 가상 머신 정의 파일을 파일 관리자에 표시합니다</translation>
-    </message>
-    <message>
         <source>Show Toolbar</source>
         <translation>도구 모음 보이기</translation>
     </message>
     <message>
         <source>Show Statusbar</source>
         <translation>상태 표시줄 보이기</translation>
-    </message>
-    <message>
-        <source>Cl&amp;one...</source>
-        <translation>복제(&amp;O)...</translation>
-    </message>
-    <message>
-        <source>Clone the selected virtual machine</source>
-        <translation>선택한 가상 머신을 복제합니다</translation>
-    </message>
-    <message>
-        <source>Discard</source>
-        <translation>삭제</translation>
-    </message>
-    <message>
-        <source>D&amp;iscard Saved State</source>
-        <translation>저장된 상태 삭제(&amp;I)</translation>
     </message>
 </context>
 <context>

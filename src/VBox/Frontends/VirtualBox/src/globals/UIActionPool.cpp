@@ -91,8 +91,41 @@ UISimpleAction::UISimpleAction(QObject *pParent, const QString &strIcon, const Q
         setIcon(UIIconPool::iconSet(strIcon, strIconDis));
 }
 
+UISimpleAction::UISimpleAction(QObject *pParent,
+                               const QSize &normalSize, const QSize &smallSize,
+                               const QString &strNormalIcon, const QString &strSmallIcon,
+                               const QString &strNormalIconDis, const QString &strSmallIconDis)
+    : UIActionInterface(pParent, UIActionType_Simple)
+{
+    setIcon(UIIconPool::iconSetFull(normalSize, smallSize, strNormalIcon, strSmallIcon, strNormalIconDis, strSmallIconDis));
+}
+
 UISimpleAction::UISimpleAction(QObject *pParent, const QIcon& icon)
     : UIActionInterface(pParent, UIActionType_Simple)
+{
+    if (!icon.isNull())
+        setIcon(icon);
+}
+
+/* UIStateAction stuff: */
+UIStateAction::UIStateAction(QObject *pParent, const QString &strIcon, const QString &strIconDis)
+    : UIActionInterface(pParent, UIActionType_State)
+{
+    if (!strIcon.isNull())
+        setIcon(UIIconPool::iconSet(strIcon, strIconDis));
+}
+
+UIStateAction::UIStateAction(QObject *pParent,
+                             const QSize &normalSize, const QSize &smallSize,
+                             const QString &strNormalIcon, const QString &strSmallIcon,
+                             const QString &strNormalIconDis, const QString &strSmallIconDis)
+    : UIActionInterface(pParent, UIActionType_State)
+{
+    setIcon(UIIconPool::iconSetFull(normalSize, smallSize, strNormalIcon, strSmallIcon, strNormalIconDis, strSmallIconDis));
+}
+
+UIStateAction::UIStateAction(QObject *pParent, const QIcon& icon)
+    : UIActionInterface(pParent, UIActionType_State)
 {
     if (!icon.isNull())
         setIcon(icon);
@@ -104,6 +137,16 @@ UIToggleAction::UIToggleAction(QObject *pParent, const QString &strIcon, const Q
 {
     if (!strIcon.isNull())
         setIcon(UIIconPool::iconSet(strIcon, strIconDis));
+    init();
+}
+
+UIToggleAction::UIToggleAction(QObject *pParent,
+                               const QSize &normalSize, const QSize &smallSize,
+                               const QString &strNormalIcon, const QString &strSmallIcon,
+                               const QString &strNormalIconDis, const QString &strSmallIconDis)
+    : UIActionInterface(pParent, UIActionType_Toggle)
+{
+    setIcon(UIIconPool::iconSetFull(normalSize, smallSize, strNormalIcon, strSmallIcon, strNormalIconDis, strSmallIconDis));
     init();
 }
 
@@ -183,7 +226,7 @@ public:
     {
         switch (gActionPool->type())
         {
-            case UIActionPoolType_Offline:
+            case UIActionPoolType_Selector:
                 setShortcut(gSS->keySequence(UISelectorShortcuts::HelpShortcut));
                 break;
             case UIActionPoolType_Runtime:
@@ -213,7 +256,7 @@ public:
     {
         switch (gActionPool->type())
         {
-            case UIActionPoolType_Offline:
+            case UIActionPoolType_Selector:
                 setShortcut(gSS->keySequence(UISelectorShortcuts::WebShortcut));
                 break;
             case UIActionPoolType_Runtime:
@@ -243,7 +286,7 @@ public:
     {
         switch (gActionPool->type())
         {
-            case UIActionPoolType_Offline:
+            case UIActionPoolType_Selector:
                 setShortcut(gSS->keySequence(UISelectorShortcuts::ResetWarningsShortcut));
                 break;
             case UIActionPoolType_Runtime:
@@ -276,7 +319,7 @@ public:
                    GetExtraData(VBoxDefs::GUI_RegistrationDlgWinID).isEmpty());
         switch (gActionPool->type())
         {
-            case UIActionPoolType_Offline:
+            case UIActionPoolType_Selector:
                 setShortcut(gSS->keySequence(UISelectorShortcuts::RegisterShortcut));
                 break;
             case UIActionPoolType_Runtime:
@@ -308,7 +351,7 @@ public:
         setMenuRole(QAction::ApplicationSpecificRole);
         switch (gActionPool->type())
         {
-            case UIActionPoolType_Offline:
+            case UIActionPoolType_Selector:
                 setShortcut(gSS->keySequence(UISelectorShortcuts::UpdateShortcut));
                 break;
             case UIActionPoolType_Runtime:
@@ -339,7 +382,7 @@ public:
         setMenuRole(QAction::AboutRole);
         switch (gActionPool->type())
         {
-            case UIActionPoolType_Offline:
+            case UIActionPoolType_Selector:
                 setShortcut(gSS->keySequence(UISelectorShortcuts::AboutShortcut));
                 break;
             case UIActionPoolType_Runtime:

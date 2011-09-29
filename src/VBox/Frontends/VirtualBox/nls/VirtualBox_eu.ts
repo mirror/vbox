@@ -502,6 +502,173 @@
         <source>Session I&amp;nformation...</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>&amp;File</source>
+        <comment>Mac OS X version</comment>
+        <translation type="unfinished">&amp;Fitxategia</translation>
+    </message>
+    <message>
+        <source>&amp;File</source>
+        <comment>Non Mac OS X version</comment>
+        <translation type="unfinished">&amp;Fitxategia</translation>
+    </message>
+    <message>
+        <source>&amp;Virtual Media Manager...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Display the Virtual Media Manager dialog</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Import Appliance...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Import an appliance into VirtualBox</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Export Appliance...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Export one or more VirtualBox virtual machines as an appliance</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Preferences...</source>
+        <comment>global settings</comment>
+        <translation>Hobes&amp;penak...</translation>
+    </message>
+    <message>
+        <source>Display the global settings dialog</source>
+        <translation>Ezarpen orokor leihoa bistarazi</translation>
+    </message>
+    <message>
+        <source>E&amp;xit</source>
+        <translation>I&amp;rten</translation>
+    </message>
+    <message>
+        <source>Close application</source>
+        <translation>Aplikazioa Itxi</translation>
+    </message>
+    <message>
+        <source>&amp;New...</source>
+        <translation>&amp;Berria...</translation>
+    </message>
+    <message>
+        <source>Create a new virtual machine</source>
+        <translation>Makina Birtual Berria Sortu</translation>
+    </message>
+    <message>
+        <source>&amp;Add...</source>
+        <translation type="unfinished">&amp;Gehitu...</translation>
+    </message>
+    <message>
+        <source>Add an existing virtual machine</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Cl&amp;one...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Clone the selected virtual machine</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Remove</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Remove the selected virtual machine</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>S&amp;tart</source>
+        <translation>Abiara&amp;zi</translation>
+    </message>
+    <message>
+        <source>Start the selected virtual machine</source>
+        <translation>Hautatutako makina birtuala abiarazi</translation>
+    </message>
+    <message>
+        <source>S&amp;how</source>
+        <translation>I&amp;kusi</translation>
+    </message>
+    <message>
+        <source>Switch to the window of the selected virtual machine</source>
+        <translation>Hautatutako makina birtualaren leihora aldatu</translation>
+    </message>
+    <message>
+        <source>Discard</source>
+        <translation type="unfinished">Baztertu</translation>
+    </message>
+    <message>
+        <source>D&amp;iscard Saved State</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Discard the saved state of the selected virtual machine</source>
+        <translation>Baztertu hautatutako makina birtualaren gordetako egoera</translation>
+    </message>
+    <message>
+        <source>Re&amp;fresh</source>
+        <translation type="unfinished">&amp;Freskatu</translation>
+    </message>
+    <message>
+        <source>Refresh the accessibility state of the selected virtual machine</source>
+        <translation>Hautatutako makina birtualaren eskuragarritasun egoera freskatu</translation>
+    </message>
+    <message>
+        <source>Show &amp;Log...</source>
+        <translation>E&amp;rregistroa Ikusi...</translation>
+    </message>
+    <message>
+        <source>Show the log files of the selected virtual machine</source>
+        <translation>Hautatutako makina birtualaren erregistro fitxategiak ikusi</translation>
+    </message>
+    <message>
+        <source>Show in Finder</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show the VirtualBox Machine Definition file in Finder.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show in Explorer</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show the VirtualBox Machine Definition file in Explorer.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show in File Manager</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show the VirtualBox Machine Definition file in the File Manager</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Create Alias on Desktop</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Creates an Alias file to the VirtualBox Machine Definition file on your Desktop.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Create Shortcut on Desktop</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Creates an Shortcut file to the VirtualBox Machine Definition file on your Desktop.</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UIApplianceEditorWidget</name>
@@ -9431,33 +9598,12 @@ sistemako lehenetsiriko hizkuntza berrezartzeko.&lt;/qt&gt;
         <translation type="obsolete">Makina Birtual Kudeaketa leihoa bistazten du</translation>
     </message>
     <message>
-        <source>&amp;Preferences...</source>
-        <comment>global settings</comment>
-        <translation>Hobes&amp;penak...</translation>
-    </message>
-    <message>
         <source>Ctrl+G</source>
         <translation type="obsolete">Ktrl+G</translation>
     </message>
     <message>
-        <source>Display the global settings dialog</source>
-        <translation>Ezarpen orokor leihoa bistarazi</translation>
-    </message>
-    <message>
-        <source>E&amp;xit</source>
-        <translation>I&amp;rten</translation>
-    </message>
-    <message>
         <source>Ctrl+Q</source>
         <translation type="obsolete">Ktrl+Q</translation>
-    </message>
-    <message>
-        <source>Close application</source>
-        <translation>Aplikazioa Itxi</translation>
-    </message>
-    <message>
-        <source>&amp;New...</source>
-        <translation>&amp;Berria...</translation>
     </message>
     <message>
         <source>New</source>
@@ -9466,10 +9612,6 @@ sistemako lehenetsiriko hizkuntza berrezartzeko.&lt;/qt&gt;
     <message>
         <source>Ctrl+N</source>
         <translation type="obsolete">Ktrl+N</translation>
-    </message>
-    <message>
-        <source>Create a new virtual machine</source>
-        <translation>Makina Birtual Berria Sortu</translation>
     </message>
     <message>
         <source>&amp;Settings...</source>
@@ -9504,14 +9646,6 @@ sistemako lehenetsiriko hizkuntza berrezartzeko.&lt;/qt&gt;
         <translation type="obsolete">Ba&amp;ztertu</translation>
     </message>
     <message>
-        <source>Discard</source>
-        <translation type="unfinished">Baztertu</translation>
-    </message>
-    <message>
-        <source>Discard the saved state of the selected virtual machine</source>
-        <translation>Baztertu hautatutako makina birtualaren gordetako egoera</translation>
-    </message>
-    <message>
         <source>&amp;Refresh</source>
         <translation type="obsolete">F&amp;reskatu</translation>
     </message>
@@ -9522,10 +9656,6 @@ sistemako lehenetsiriko hizkuntza berrezartzeko.&lt;/qt&gt;
     <message>
         <source>Ctrl+R</source>
         <translation type="obsolete">Ktrl+R</translation>
-    </message>
-    <message>
-        <source>Refresh the accessibility state of the selected virtual machine</source>
-        <translation>Hautatutako makina birtualaren eskuragarritasun egoera freskatu</translation>
     </message>
     <message>
         <source>&amp;Contents...</source>
@@ -9584,36 +9714,16 @@ sistemako lehenetsiriko hizkuntza berrezartzeko.&lt;/qt&gt;
         <translation type="obsolete">A&amp;zalpena *</translation>
     </message>
     <message>
-        <source>S&amp;how</source>
-        <translation>I&amp;kusi</translation>
-    </message>
-    <message>
         <source>Show</source>
         <translation type="obsolete">Ikusi</translation>
-    </message>
-    <message>
-        <source>Switch to the window of the selected virtual machine</source>
-        <translation>Hautatutako makina birtualaren leihora aldatu</translation>
-    </message>
-    <message>
-        <source>S&amp;tart</source>
-        <translation>Abiara&amp;zi</translation>
     </message>
     <message>
         <source>Start</source>
         <translation type="obsolete">Abiarazi</translation>
     </message>
     <message>
-        <source>Start the selected virtual machine</source>
-        <translation>Hautatutako makina birtuala abiarazi</translation>
-    </message>
-    <message>
         <source>&amp;Machine</source>
         <translation>&amp;Makina</translation>
-    </message>
-    <message>
-        <source>Show &amp;Log...</source>
-        <translation>E&amp;rregistroa Ikusi...</translation>
     </message>
     <message>
         <source>Show Log...</source>
@@ -9622,10 +9732,6 @@ sistemako lehenetsiriko hizkuntza berrezartzeko.&lt;/qt&gt;
     <message>
         <source>Ctrl+L</source>
         <translation type="obsolete">Ktrl+L</translation>
-    </message>
-    <message>
-        <source>Show the log files of the selected virtual machine</source>
-        <translation>Hautatutako makina birtualaren erregistro fitxategiak ikusi</translation>
     </message>
     <message>
         <source>R&amp;esume</source>
@@ -9640,55 +9746,17 @@ sistemako lehenetsiriko hizkuntza berrezartzeko.&lt;/qt&gt;
         <translation type="unfinished">&amp;Gelditu</translation>
     </message>
     <message>
-        <source>&amp;Import Appliance...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Import an appliance into VirtualBox</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;Export Appliance...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Export one or more VirtualBox virtual machines as an appliance</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Suspend the execution of the virtual machine</source>
         <translation type="unfinished">Makina Birtualaren exekuzioa gelditu</translation>
-    </message>
-    <message>
-        <source>Re&amp;fresh</source>
-        <translation type="unfinished">&amp;Freskatu</translation>
     </message>
     <message>
         <source>&lt;h3&gt;Welcome to VirtualBox!&lt;/h3&gt;&lt;p&gt;The left part of this window is  a list of all virtual machines on your computer. The list is empty now because you haven&apos;t created any virtual machines yet.&lt;img src=:/welcome.png align=right/&gt;&lt;/p&gt;&lt;p&gt;In order to create a new virtual machine, press the &lt;b&gt;New&lt;/b&gt; button in the main tool bar located at the top of the window.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;%1&lt;/b&gt; key to get instant help, or visit &lt;a href=http://www.virtualbox.org&gt;www.virtualbox.org&lt;/a&gt; for the latest information and news.&lt;/p&gt;</source>
         <translation type="unfinished">&lt;h3&gt;Ongietorri VirtualBox-era!&lt;/h3&gt;&lt;p&gt;Leiho honen ezkerreko zatian ordenagailu honetako makina birtual guztiak daude. Zerrenda orain hutsik dago oraindik ez duzu makina birtualik sortu eta.&lt;img src=:/welcome.png align=right/&gt;&lt;/p&gt;&lt;p&gt;Makina berri bat sortzeko sakatu &lt;b&gt;Berria&lt;/b&gt; botoia leihoaren goialdeko tresna-barran nagusian.&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt; tekla sakatu dezakezu laguntza eskuratzeko edo  &lt;a href=http://www.virtualbox.org&gt;www.virtualbox.org&lt;/a&gt; webgunera joan argibide eta azken berrien bila.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&amp;Virtual Media Manager...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Display the Virtual Media Manager dialog</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Log</source>
         <comment>icon text</comment>
         <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;File</source>
-        <comment>Mac OS X version</comment>
-        <translation type="unfinished">&amp;Fitxategia</translation>
-    </message>
-    <message>
-        <source>&amp;File</source>
-        <comment>Non Mac OS X version</comment>
-        <translation type="unfinished">&amp;Fitxategia</translation>
     </message>
     <message>
         <source>Select a virtual machine file</source>
@@ -9704,79 +9772,11 @@ sistemako lehenetsiriko hizkuntza berrezartzeko.&lt;/qt&gt;
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&amp;Add...</source>
-        <translation type="unfinished">&amp;Gehitu...</translation>
-    </message>
-    <message>
-        <source>Add an existing virtual machine</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;Remove</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Remove the selected virtual machine</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Show in Finder</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Show the VirtualBox Machine Definition file in Finder.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Create Alias on Desktop</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Creates an Alias file to the VirtualBox Machine Definition file on your Desktop.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Show in Explorer</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Show the VirtualBox Machine Definition file in Explorer.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Create Shortcut on Desktop</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Creates an Shortcut file to the VirtualBox Machine Definition file on your Desktop.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Show in File Manager</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Show the VirtualBox Machine Definition file in the File Manager</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Show Toolbar</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Show Statusbar</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Cl&amp;one...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Clone the selected virtual machine</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>D&amp;iscard Saved State</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

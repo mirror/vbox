@@ -595,6 +595,173 @@
         <source>Session I&amp;nformation...</source>
         <translation>I&amp;nformació de la sessió...</translation>
     </message>
+    <message>
+        <source>&amp;File</source>
+        <comment>Mac OS X version</comment>
+        <translation>&amp;Fitxer</translation>
+    </message>
+    <message>
+        <source>&amp;File</source>
+        <comment>Non Mac OS X version</comment>
+        <translation>&amp;Fitxer</translation>
+    </message>
+    <message>
+        <source>&amp;Virtual Media Manager...</source>
+        <translation>Gestor de suports &amp;virtuals...</translation>
+    </message>
+    <message>
+        <source>Display the Virtual Media Manager dialog</source>
+        <translation>Mostra el diàleg del gestor de suports virtuals</translation>
+    </message>
+    <message>
+        <source>&amp;Import Appliance...</source>
+        <translation>&amp;Importa una aplicació virtual...</translation>
+    </message>
+    <message>
+        <source>Import an appliance into VirtualBox</source>
+        <translation>Importa una aplicació virtual al VirtualBox</translation>
+    </message>
+    <message>
+        <source>&amp;Export Appliance...</source>
+        <translation>&amp;Exporta una aplicació virtual...</translation>
+    </message>
+    <message>
+        <source>Export one or more VirtualBox virtual machines as an appliance</source>
+        <translation>Exporta una aplicació virtual d&apos;una màquina virtual del VirtualBox</translation>
+    </message>
+    <message>
+        <source>&amp;Preferences...</source>
+        <comment>global settings</comment>
+        <translation>&amp;Preferències...</translation>
+    </message>
+    <message>
+        <source>Display the global settings dialog</source>
+        <translation>Mostra el diàleg de paràmetres globals</translation>
+    </message>
+    <message>
+        <source>E&amp;xit</source>
+        <translation>&amp;Ix</translation>
+    </message>
+    <message>
+        <source>Close application</source>
+        <translation>Tanca l&apos;aplicació</translation>
+    </message>
+    <message>
+        <source>&amp;New...</source>
+        <translation>&amp;Nova...</translation>
+    </message>
+    <message>
+        <source>Create a new virtual machine</source>
+        <translation>Crea una màquina virtual nova</translation>
+    </message>
+    <message>
+        <source>&amp;Add...</source>
+        <translation>&amp;Afig...</translation>
+    </message>
+    <message>
+        <source>Add an existing virtual machine</source>
+        <translation>Afig una màquina virtual existent</translation>
+    </message>
+    <message>
+        <source>Cl&amp;one...</source>
+        <translation>Cl&amp;ona...</translation>
+    </message>
+    <message>
+        <source>Clone the selected virtual machine</source>
+        <translation>Clona la màquina virtual seleccionada</translation>
+    </message>
+    <message>
+        <source>&amp;Remove</source>
+        <translation>&amp;Elimina</translation>
+    </message>
+    <message>
+        <source>Remove the selected virtual machine</source>
+        <translation>Elimina la màquina virtual seleccionada</translation>
+    </message>
+    <message>
+        <source>S&amp;tart</source>
+        <translation>Ini&amp;cia</translation>
+    </message>
+    <message>
+        <source>Start the selected virtual machine</source>
+        <translation>Inicia la màquina virtual seleccionada</translation>
+    </message>
+    <message>
+        <source>S&amp;how</source>
+        <translation>Mo&amp;stra</translation>
+    </message>
+    <message>
+        <source>Switch to the window of the selected virtual machine</source>
+        <translation>Canvia a la finestra de la màquina virtual seleccionada</translation>
+    </message>
+    <message>
+        <source>Discard</source>
+        <translation>Descarta</translation>
+    </message>
+    <message>
+        <source>D&amp;iscard Saved State</source>
+        <translation>D&amp;escarta l&apos;estat alçat</translation>
+    </message>
+    <message>
+        <source>Discard the saved state of the selected virtual machine</source>
+        <translation>Descarta l&apos;estat alçat de la màquina virtual seleccionada</translation>
+    </message>
+    <message>
+        <source>Re&amp;fresh</source>
+        <translation>Ac&amp;tualitza</translation>
+    </message>
+    <message>
+        <source>Refresh the accessibility state of the selected virtual machine</source>
+        <translation>Actualitza l&apos;estat d&apos;accessibilitat de la màquina virtual seleccionada</translation>
+    </message>
+    <message>
+        <source>Show &amp;Log...</source>
+        <translation>Mostra el &amp;registre...</translation>
+    </message>
+    <message>
+        <source>Show the log files of the selected virtual machine</source>
+        <translation>Mostra els fitxers de registre de la màquina virtual seleccionada</translation>
+    </message>
+    <message>
+        <source>Show in Finder</source>
+        <translation>Mostra al Finder</translation>
+    </message>
+    <message>
+        <source>Show the VirtualBox Machine Definition file in Finder.</source>
+        <translation>Mostra el fitxer de definició de la màquina VirtualBox al Finder.</translation>
+    </message>
+    <message>
+        <source>Show in Explorer</source>
+        <translation>Mostra a l&apos;Explorer</translation>
+    </message>
+    <message>
+        <source>Show the VirtualBox Machine Definition file in Explorer.</source>
+        <translation>Mostra el fitxer de definició de la màquina VirtualBox a l&apos;Explorer.</translation>
+    </message>
+    <message>
+        <source>Show in File Manager</source>
+        <translation>Mostra al gestor de fitxers</translation>
+    </message>
+    <message>
+        <source>Show the VirtualBox Machine Definition file in the File Manager</source>
+        <translation>Mostra el fitxer de definició de la màquina VirtualBox al gestor de fitxers</translation>
+    </message>
+    <message>
+        <source>Create Alias on Desktop</source>
+        <translation>Crea un àlies a l&apos;escriptori</translation>
+    </message>
+    <message>
+        <source>Creates an Alias file to the VirtualBox Machine Definition file on your Desktop.</source>
+        <translation>Crea un àlies a un fitxer de definició de màquina del VirtualBox al vostre escriptori.</translation>
+    </message>
+    <message>
+        <source>Create Shortcut on Desktop</source>
+        <translation>Crea una drecera a l&apos;escriptori</translation>
+    </message>
+    <message>
+        <source>Creates an Shortcut file to the VirtualBox Machine Definition file on your Desktop.</source>
+        <translation>Crea una drecera a un fitxer de definició de màquina del VirtualBox al vostre escriptori.</translation>
+    </message>
 </context>
 <context>
     <name>UIApplianceEditorWidget</name>
@@ -11564,20 +11731,12 @@ un disc dur per connectar a la ranura remarcada actualment.&lt;/a&gt;</translati
         <translation type="obsolete">Fa que tots els avisos i missatges eliminats es tornen a mostrar</translation>
     </message>
     <message>
-        <source>Close application</source>
-        <translation>Tanca l&apos;aplicació</translation>
-    </message>
-    <message>
         <source>Configure the selected virtual machine</source>
         <translation>Configura la màquina virtual seleccionada</translation>
     </message>
     <message>
         <source>&amp;Contents...</source>
         <translation type="obsolete">&amp;Continguts...</translation>
-    </message>
-    <message>
-        <source>Create a new virtual machine</source>
-        <translation>Crea una màquina virtual nova</translation>
     </message>
     <message>
         <source>Ctrl+D</source>
@@ -11632,28 +11791,12 @@ un disc dur per connectar a la ranura remarcada actualment.&lt;/a&gt;</translati
         <translation type="obsolete">&amp;Detalls</translation>
     </message>
     <message>
-        <source>Discard</source>
-        <translation>Descarta</translation>
-    </message>
-    <message>
         <source>D&amp;iscard</source>
         <translation type="obsolete">Descar&amp;ta</translation>
     </message>
     <message>
-        <source>Discard the saved state of the selected virtual machine</source>
-        <translation>Descarta l&apos;estat alçat de la màquina virtual seleccionada</translation>
-    </message>
-    <message>
-        <source>Display the global settings dialog</source>
-        <translation>Mostra el diàleg de paràmetres globals</translation>
-    </message>
-    <message>
         <source>Display the Virtual Disk Manager dialog</source>
         <translation type="obsolete">Mostra el diàleg del gestor de discos virtuals</translation>
-    </message>
-    <message>
-        <source>E&amp;xit</source>
-        <translation>&amp;Ix</translation>
     </message>
     <message>
         <source>F1</source>
@@ -11680,10 +11823,6 @@ un disc dur per connectar a la ranura remarcada actualment.&lt;/a&gt;</translati
         <translation type="obsolete">Nova</translation>
     </message>
     <message>
-        <source>&amp;New...</source>
-        <translation>&amp;Nova...</translation>
-    </message>
-    <message>
         <source>Open the browser and go to the VirtualBox product web site</source>
         <translation type="obsolete">Obri el navegador i vés a la pàgina web del producte VirtualBox</translation>
     </message>
@@ -11692,21 +11831,12 @@ un disc dur per connectar a la ranura remarcada actualment.&lt;/a&gt;</translati
         <translation type="obsolete">Obri el formulari de registre de VirtualBox</translation>
     </message>
     <message>
-        <source>&amp;Preferences...</source>
-        <comment>global settings</comment>
-        <translation>&amp;Preferències...</translation>
-    </message>
-    <message>
         <source>Refresh</source>
         <translation type="obsolete">Refresca</translation>
     </message>
     <message>
         <source>&amp;Refresh</source>
         <translation type="obsolete">&amp;Refresca</translation>
-    </message>
-    <message>
-        <source>Refresh the accessibility state of the selected virtual machine</source>
-        <translation>Actualitza l&apos;estat d&apos;accessibilitat de la màquina virtual seleccionada</translation>
     </message>
     <message>
         <source>R&amp;egister VirtualBox...</source>
@@ -11725,10 +11855,6 @@ un disc dur per connectar a la ranura remarcada actualment.&lt;/a&gt;</translati
         <translation>Paràmetre&amp;s...</translation>
     </message>
     <message>
-        <source>S&amp;how</source>
-        <translation>Mo&amp;stra</translation>
-    </message>
-    <message>
         <source>Show</source>
         <translation type="obsolete">Mostra</translation>
     </message>
@@ -11741,14 +11867,6 @@ un disc dur per connectar a la ranura remarcada actualment.&lt;/a&gt;</translati
         <translation type="obsolete">Mostra Registre...</translation>
     </message>
     <message>
-        <source>Show &amp;Log...</source>
-        <translation>Mostra el &amp;registre...</translation>
-    </message>
-    <message>
-        <source>Show the log files of the selected virtual machine</source>
-        <translation>Mostra els fitxers de registre de la màquina virtual seleccionada</translation>
-    </message>
-    <message>
         <source>Show the online help contents</source>
         <translation type="obsolete">Mostra els continguts d&apos;ajuda en línia</translation>
     </message>
@@ -11757,20 +11875,8 @@ un disc dur per connectar a la ranura remarcada actualment.&lt;/a&gt;</translati
         <translation type="obsolete">&amp;Captures</translation>
     </message>
     <message>
-        <source>S&amp;tart</source>
-        <translation>Ini&amp;cia</translation>
-    </message>
-    <message>
         <source>Start</source>
         <translation type="obsolete">Inicia</translation>
-    </message>
-    <message>
-        <source>Start the selected virtual machine</source>
-        <translation>Inicia la màquina virtual seleccionada</translation>
-    </message>
-    <message>
-        <source>Switch to the window of the selected virtual machine</source>
-        <translation>Canvia a la finestra de la màquina virtual seleccionada</translation>
     </message>
     <message>
         <source>VirtualBox OSE</source>
@@ -11817,51 +11923,13 @@ un disc dur per connectar a la ranura remarcada actualment.&lt;/a&gt;</translati
         <translation>&lt;h3&gt;Benvingut a VirtualBox!&lt;/h3&gt;&lt;p&gt;A la part esquerra d&apos;esta finestra es mostra un llistat de totes les màquines virtuals a l&apos;ordinador. Este llistat és buit actualment perquè encara no heu creat cap màquina virtual.&lt;img src=:/welcome.png align=right/&gt;&lt;/p&gt;&lt;p&gt;Per crear una nova màquina virtual, premeu sobre el botó &lt;b&gt;Nova&lt;/b&gt; a la barra principal que es troba a la part de dalt d&apos;esta finestra.&lt;/p&gt;&lt;p&gt;Podeu prémer la tecla &lt;b&gt;%1&lt;/b&gt; per obtindre ajuda o bé visitar &lt;a href=http://www.virtualbox.org&gt;www.virtualbox.org&lt;/a&gt; per veure altra informació i novetats.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&amp;Virtual Media Manager...</source>
-        <translation>Gestor de suports &amp;virtuals...</translation>
-    </message>
-    <message>
         <source>Sun VirtualBox</source>
         <translation type="obsolete">Sun VirtualBox</translation>
-    </message>
-    <message>
-        <source>Display the Virtual Media Manager dialog</source>
-        <translation>Mostra el diàleg del gestor de suports virtuals</translation>
-    </message>
-    <message>
-        <source>&amp;Import Appliance...</source>
-        <translation>&amp;Importa una aplicació virtual...</translation>
-    </message>
-    <message>
-        <source>Import an appliance into VirtualBox</source>
-        <translation>Importa una aplicació virtual al VirtualBox</translation>
-    </message>
-    <message>
-        <source>&amp;Export Appliance...</source>
-        <translation>&amp;Exporta una aplicació virtual...</translation>
-    </message>
-    <message>
-        <source>Export one or more VirtualBox virtual machines as an appliance</source>
-        <translation>Exporta una aplicació virtual d&apos;una màquina virtual del VirtualBox</translation>
-    </message>
-    <message>
-        <source>Re&amp;fresh</source>
-        <translation>Ac&amp;tualitza</translation>
     </message>
     <message>
         <source>Log</source>
         <comment>icon text</comment>
         <translation>Registre</translation>
-    </message>
-    <message>
-        <source>&amp;File</source>
-        <comment>Mac OS X version</comment>
-        <translation>&amp;Fitxer</translation>
-    </message>
-    <message>
-        <source>&amp;File</source>
-        <comment>Non Mac OS X version</comment>
-        <translation>&amp;Fitxer</translation>
     </message>
     <message>
         <source>Select a virtual machine file</source>
@@ -11877,80 +11945,12 @@ un disc dur per connectar a la ranura remarcada actualment.&lt;/a&gt;</translati
         <translation>Gestor</translation>
     </message>
     <message>
-        <source>&amp;Add...</source>
-        <translation>&amp;Afig...</translation>
-    </message>
-    <message>
-        <source>Add an existing virtual machine</source>
-        <translation>Afig una màquina virtual existent</translation>
-    </message>
-    <message>
-        <source>&amp;Remove</source>
-        <translation>&amp;Elimina</translation>
-    </message>
-    <message>
-        <source>Remove the selected virtual machine</source>
-        <translation>Elimina la màquina virtual seleccionada</translation>
-    </message>
-    <message>
-        <source>Show in Finder</source>
-        <translation>Mostra al Finder</translation>
-    </message>
-    <message>
-        <source>Show the VirtualBox Machine Definition file in Finder.</source>
-        <translation>Mostra el fitxer de definició de la màquina VirtualBox al Finder.</translation>
-    </message>
-    <message>
-        <source>Create Alias on Desktop</source>
-        <translation>Crea un àlies a l&apos;escriptori</translation>
-    </message>
-    <message>
-        <source>Creates an Alias file to the VirtualBox Machine Definition file on your Desktop.</source>
-        <translation>Crea un àlies a un fitxer de definició de màquina del VirtualBox al vostre escriptori.</translation>
-    </message>
-    <message>
-        <source>Show in Explorer</source>
-        <translation>Mostra a l&apos;Explorer</translation>
-    </message>
-    <message>
-        <source>Show the VirtualBox Machine Definition file in Explorer.</source>
-        <translation>Mostra el fitxer de definició de la màquina VirtualBox a l&apos;Explorer.</translation>
-    </message>
-    <message>
-        <source>Create Shortcut on Desktop</source>
-        <translation>Crea una drecera a l&apos;escriptori</translation>
-    </message>
-    <message>
-        <source>Creates an Shortcut file to the VirtualBox Machine Definition file on your Desktop.</source>
-        <translation>Crea una drecera a un fitxer de definició de màquina del VirtualBox al vostre escriptori.</translation>
-    </message>
-    <message>
-        <source>Show in File Manager</source>
-        <translation>Mostra al gestor de fitxers</translation>
-    </message>
-    <message>
-        <source>Show the VirtualBox Machine Definition file in the File Manager</source>
-        <translation>Mostra el fitxer de definició de la màquina VirtualBox al gestor de fitxers</translation>
-    </message>
-    <message>
         <source>Show Toolbar</source>
         <translation>Mostra la barra d&apos;eines</translation>
     </message>
     <message>
         <source>Show Statusbar</source>
         <translation>Mostra la barra d&apos;estat</translation>
-    </message>
-    <message>
-        <source>Cl&amp;one...</source>
-        <translation>Cl&amp;ona...</translation>
-    </message>
-    <message>
-        <source>Clone the selected virtual machine</source>
-        <translation>Clona la màquina virtual seleccionada</translation>
-    </message>
-    <message>
-        <source>D&amp;iscard Saved State</source>
-        <translation>D&amp;escarta l&apos;estat alçat</translation>
     </message>
 </context>
 <context>

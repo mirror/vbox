@@ -527,6 +527,173 @@
         <source>Session I&amp;nformation...</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>&amp;File</source>
+        <comment>Mac OS X version</comment>
+        <translation type="unfinished">&amp;File</translation>
+    </message>
+    <message>
+        <source>&amp;File</source>
+        <comment>Non Mac OS X version</comment>
+        <translation type="unfinished">&amp;File</translation>
+    </message>
+    <message>
+        <source>&amp;Virtual Media Manager...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Display the Virtual Media Manager dialog</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Import Appliance...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Import an appliance into VirtualBox</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Export Appliance...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Export one or more VirtualBox virtual machines as an appliance</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Preferences...</source>
+        <comment>global settings</comment>
+        <translation>&amp;Preferensi...</translation>
+    </message>
+    <message>
+        <source>Display the global settings dialog</source>
+        <translation>Buka dialog setting global</translation>
+    </message>
+    <message>
+        <source>E&amp;xit</source>
+        <translation>&amp;Keluar</translation>
+    </message>
+    <message>
+        <source>Close application</source>
+        <translation>Tutup aplikasi</translation>
+    </message>
+    <message>
+        <source>&amp;New...</source>
+        <translation>&amp;Baru...</translation>
+    </message>
+    <message>
+        <source>Create a new virtual machine</source>
+        <translation>Ciptakan Mesin Virtual Baru</translation>
+    </message>
+    <message>
+        <source>&amp;Add...</source>
+        <translation type="unfinished">T&amp;ambah...</translation>
+    </message>
+    <message>
+        <source>Add an existing virtual machine</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Cl&amp;one...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Clone the selected virtual machine</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Remove</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Remove the selected virtual machine</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>S&amp;tart</source>
+        <translation>M&amp;ulai</translation>
+    </message>
+    <message>
+        <source>Start the selected virtual machine</source>
+        <translation>Mulai (nyalakan) mesin virtual terpilih</translation>
+    </message>
+    <message>
+        <source>S&amp;how</source>
+        <translation>T&amp;ampilkan</translation>
+    </message>
+    <message>
+        <source>Switch to the window of the selected virtual machine</source>
+        <translation>Beralih pada jendela mesin virtual terpilih</translation>
+    </message>
+    <message>
+        <source>Discard</source>
+        <translation type="unfinished">Abaikan</translation>
+    </message>
+    <message>
+        <source>D&amp;iscard Saved State</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Discard the saved state of the selected virtual machine</source>
+        <translation>Abaikan keadaan tersimpan pada mesin virtual terpilih</translation>
+    </message>
+    <message>
+        <source>Re&amp;fresh</source>
+        <translation type="unfinished">Re&amp;fresh</translation>
+    </message>
+    <message>
+        <source>Refresh the accessibility state of the selected virtual machine</source>
+        <translation>Me-refresh keadaan akesibilitas pada mesin virtual terpilih</translation>
+    </message>
+    <message>
+        <source>Show &amp;Log...</source>
+        <translation>Tampilkan &amp;Log...</translation>
+    </message>
+    <message>
+        <source>Show the log files of the selected virtual machine</source>
+        <translation>Tampilkan file log pada mesin virtual terpilih</translation>
+    </message>
+    <message>
+        <source>Show in Finder</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show the VirtualBox Machine Definition file in Finder.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show in Explorer</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show the VirtualBox Machine Definition file in Explorer.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show in File Manager</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show the VirtualBox Machine Definition file in the File Manager</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Create Alias on Desktop</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Creates an Alias file to the VirtualBox Machine Definition file on your Desktop.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Create Shortcut on Desktop</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Creates an Shortcut file to the VirtualBox Machine Definition file on your Desktop.</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UIApplianceEditorWidget</name>
@@ -9931,33 +10098,12 @@ ke nilai awal bahasa sistem.&lt;/qt&gt;
         <translation type="obsolete">Tampilkan dialog Virtual Disk Manager</translation>
     </message>
     <message>
-        <source>&amp;Preferences...</source>
-        <comment>global settings</comment>
-        <translation>&amp;Preferensi...</translation>
-    </message>
-    <message>
         <source>Ctrl+G</source>
         <translation type="obsolete">Ctrl+G</translation>
     </message>
     <message>
-        <source>Display the global settings dialog</source>
-        <translation>Buka dialog setting global</translation>
-    </message>
-    <message>
-        <source>E&amp;xit</source>
-        <translation>&amp;Keluar</translation>
-    </message>
-    <message>
         <source>Ctrl+Q</source>
         <translation type="obsolete">Ctrl+Q</translation>
-    </message>
-    <message>
-        <source>Close application</source>
-        <translation>Tutup aplikasi</translation>
-    </message>
-    <message>
-        <source>&amp;New...</source>
-        <translation>&amp;Baru...</translation>
     </message>
     <message>
         <source>New</source>
@@ -9966,10 +10112,6 @@ ke nilai awal bahasa sistem.&lt;/qt&gt;
     <message>
         <source>Ctrl+N</source>
         <translation type="obsolete">Ctrl+N</translation>
-    </message>
-    <message>
-        <source>Create a new virtual machine</source>
-        <translation>Ciptakan Mesin Virtual Baru</translation>
     </message>
     <message>
         <source>&amp;Settings...</source>
@@ -10004,14 +10146,6 @@ ke nilai awal bahasa sistem.&lt;/qt&gt;
         <translation type="obsolete">Aba&amp;ikan</translation>
     </message>
     <message>
-        <source>Discard</source>
-        <translation type="unfinished">Abaikan</translation>
-    </message>
-    <message>
-        <source>Discard the saved state of the selected virtual machine</source>
-        <translation>Abaikan keadaan tersimpan pada mesin virtual terpilih</translation>
-    </message>
-    <message>
         <source>&amp;Refresh</source>
         <translation type="obsolete">&amp;Refresh</translation>
     </message>
@@ -10022,10 +10156,6 @@ ke nilai awal bahasa sistem.&lt;/qt&gt;
     <message>
         <source>Ctrl+R</source>
         <translation type="obsolete">Ctrl+R</translation>
-    </message>
-    <message>
-        <source>Refresh the accessibility state of the selected virtual machine</source>
-        <translation>Me-refresh keadaan akesibilitas pada mesin virtual terpilih</translation>
     </message>
     <message>
         <source>&amp;Contents...</source>
@@ -10084,36 +10214,16 @@ ke nilai awal bahasa sistem.&lt;/qt&gt;
         <translation type="obsolete">D&amp;eskripsi *</translation>
     </message>
     <message>
-        <source>S&amp;how</source>
-        <translation>T&amp;ampilkan</translation>
-    </message>
-    <message>
         <source>Show</source>
         <translation type="obsolete">Tampilkan</translation>
-    </message>
-    <message>
-        <source>Switch to the window of the selected virtual machine</source>
-        <translation>Beralih pada jendela mesin virtual terpilih</translation>
-    </message>
-    <message>
-        <source>S&amp;tart</source>
-        <translation>M&amp;ulai</translation>
     </message>
     <message>
         <source>Start</source>
         <translation type="obsolete">Mulai</translation>
     </message>
     <message>
-        <source>Start the selected virtual machine</source>
-        <translation>Mulai (nyalakan) mesin virtual terpilih</translation>
-    </message>
-    <message>
         <source>&amp;Machine</source>
         <translation>&amp;Mesin</translation>
-    </message>
-    <message>
-        <source>Show &amp;Log...</source>
-        <translation>Tampilkan &amp;Log...</translation>
     </message>
     <message>
         <source>Show Log...</source>
@@ -10122,10 +10232,6 @@ ke nilai awal bahasa sistem.&lt;/qt&gt;
     <message>
         <source>Ctrl+L</source>
         <translation type="obsolete">Ctrl+L</translation>
-    </message>
-    <message>
-        <source>Show the log files of the selected virtual machine</source>
-        <translation>Tampilkan file log pada mesin virtual terpilih</translation>
     </message>
     <message>
         <source>R&amp;egister VirtualBox...</source>
@@ -10168,47 +10274,9 @@ ke nilai awal bahasa sistem.&lt;/qt&gt;
         <translation type="unfinished">&lt;h3&gt;Selamat datang di VirtualBox!&lt;/h3&gt;&lt;p&gt;Bagian kiri dari jendela ini ditujukan untuk menampilkan daftar dari semua mesin virtual dalam komputer anda. Daftar ini saat ini kosong karena anda belum menciptakan mesin virtual apapun.&lt;img src=:/welcome.png align=right/&gt;&lt;/p&gt;&lt;p&gt;Untuk menciptakan mesin virtual baru, tekan tombol &lt;b&gt;Baru&lt;/b&gt; pada toolbar utama yang terletak di bagian atas jendela.&lt;/p&gt;&lt;p&gt;Anda dapat menekan tombol &lt;b&gt;%1&lt;/b&gt; untuk memperoleh bantuan langsung, atau kunjungi &lt;a href=http://www.virtualbox.org&gt;www.virtualbox.org&lt;/a&gt; untuk informasi dan berita terbaru.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&amp;Virtual Media Manager...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Display the Virtual Media Manager dialog</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Log</source>
         <comment>icon text</comment>
         <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;Import Appliance...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Import an appliance into VirtualBox</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;Export Appliance...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Export one or more VirtualBox virtual machines as an appliance</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Re&amp;fresh</source>
-        <translation type="unfinished">Re&amp;fresh</translation>
-    </message>
-    <message>
-        <source>&amp;File</source>
-        <comment>Mac OS X version</comment>
-        <translation type="unfinished">&amp;File</translation>
-    </message>
-    <message>
-        <source>&amp;File</source>
-        <comment>Non Mac OS X version</comment>
-        <translation type="unfinished">&amp;File</translation>
     </message>
     <message>
         <source>Select a virtual machine file</source>
@@ -10224,79 +10292,11 @@ ke nilai awal bahasa sistem.&lt;/qt&gt;
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&amp;Add...</source>
-        <translation type="unfinished">T&amp;ambah...</translation>
-    </message>
-    <message>
-        <source>Add an existing virtual machine</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;Remove</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Remove the selected virtual machine</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Show in Finder</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Show the VirtualBox Machine Definition file in Finder.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Create Alias on Desktop</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Creates an Alias file to the VirtualBox Machine Definition file on your Desktop.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Show in Explorer</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Show the VirtualBox Machine Definition file in Explorer.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Create Shortcut on Desktop</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Creates an Shortcut file to the VirtualBox Machine Definition file on your Desktop.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Show in File Manager</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Show the VirtualBox Machine Definition file in the File Manager</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Show Toolbar</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Show Statusbar</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Cl&amp;one...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Clone the selected virtual machine</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>D&amp;iscard Saved State</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
