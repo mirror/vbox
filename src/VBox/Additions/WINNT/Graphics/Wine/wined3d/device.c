@@ -6923,6 +6923,14 @@ static HRESULT WINAPI IWineD3DDeviceImpl_Flush(IWineD3DDevice *iface)
     IWineD3DDeviceImpl *This = (IWineD3DDeviceImpl *) iface;
     struct wined3d_context *context;
     int i;
+
+    /* first call swapchain flush to ensure all swapchain-pending data gets flushed */
+    for (i = 0; i < This->NumberOfSwapChains; ++i)
+    {
+        IWineD3DSwapChain *pSwapchain = This->swapchains[i];
+        IWineD3DSwapChain_Flush(pSwapchain);
+    }
+
     for (i = 0; i < This->numContexts; ++i)
     {
         context = This->contexts[i];

@@ -113,6 +113,14 @@ static void WINAPI IWineD3DSwapChainImpl_Destroy(IWineD3DSwapChain *iface)
         context_destroy(This->device, This->context[i]);
     }
 #else
+
+    if (This->presentRt)
+    {
+        IWineD3DSurfaceImpl *old = (IWineD3DSurfaceImpl*)This->presentRt;
+        old->presentSwapchain = NULL;
+        IWineD3DSurface_Release(This->presentRt);
+        This->presentRt = NULL;
+    }
     IWineD3DDevice_RemoveSwapChain((IWineD3DDevice*)This->device, (IWineD3DSwapChain*)This);
     if (!This->device->NumberOfSwapChains)
 #endif
@@ -627,6 +635,67 @@ static HRESULT WINAPI IWineD3DSwapChainImpl_SetDestWindowOverride(IWineD3DSwapCh
     return WINED3D_OK;
 }
 
+#ifdef VBOX_WITH_WDDM
+static HRESULT IWineD3DBaseSwapChainImpl_PresentRtPerform(IWineD3DSwapChainImpl* This)
+{
+    IWineD3DSurface *pBb = This->backBuffer[0];
+    HRESULT hr = IWineD3DSurface_Blt(pBb, NULL, This->presentRt, NULL, 0, NULL, 0);
+    if (FAILED(hr))
+    {
+        ERR("IWineD3DSurface_Blt failed with hr(%d)", hr);
+        return hr;
+    }
+
+    hr = IWineD3DSwapChainImpl_Present((IWineD3DSwapChain*)This, NULL, NULL, NULL, NULL, 0);
+    if (FAILED(hr))
+    {
+        ERR("IWineD3DSurface_Blt failed with hr(%d)", hr);
+        return hr;
+    }
+
+    return S_OK;
+}
+
+HRESULT WINAPI IWineD3DBaseSwapChainImpl_Flush(IWineD3DSwapChain* This)
+{
+    /* @todo: if we're in PresentRt mode, check whether the current present rt is updated
+     * and do present to frontbuffer if needed */
+    return S_OK;
+}
+
+HRESULT WINAPI IWineD3DBaseSwapChainImpl_PresentRt(IWineD3DSwapChain* iface, IWineD3DSurface* surf)
+{
+    IWineD3DSwapChainImpl *This = (IWineD3DSwapChainImpl*)iface;
+    IWineD3DSurfaceImpl *surface = (IWineD3DSurfaceImpl *)surf;
+    if (This->presentRt != surf)
+    {
+        if (surf)
+        {
+            IWineD3DSurface_AddRef(surf);
+            if (surface->presentSwapchain)
+            {
+                ERR("not expected");
+                Assert(surface->presentSwapchain != iface);
+                IWineD3DBaseSwapChainImpl_PresentRt(surface->presentSwapchain, NULL);
+            }
+            surface->presentSwapchain = iface;
+        }
+        if (This->presentRt)
+        {
+            IWineD3DSurfaceImpl *old = (IWineD3DSurfaceImpl*)This->presentRt;
+            Assert(old->presentSwapchain == iface);
+            old->presentSwapchain = NULL;
+            IWineD3DSurface_Release(This->presentRt);
+        }
+        This->presentRt = surf;
+    }
+
+    if (surf)
+        return IWineD3DBaseSwapChainImpl_PresentRtPerform(This);
+    return S_OK;
+}
+#endif
+
 static const IWineD3DSwapChainVtbl IWineD3DSwapChain_Vtbl =
 {
     /* IUnknown */
@@ -646,6 +715,10 @@ static const IWineD3DSwapChainVtbl IWineD3DSwapChain_Vtbl =
     IWineD3DBaseSwapChainImpl_GetPresentParameters,
     IWineD3DBaseSwapChainImpl_SetGammaRamp,
     IWineD3DBaseSwapChainImpl_GetGammaRamp,
+#ifdef VBOX_WITH_WDDM
+    IWineD3DBaseSwapChainImpl_Flush,
+    IWineD3DBaseSwapChainImpl_PresentRt,
+#endif
 };
 
 static LONG fullscreen_style(LONG style)
@@ -762,7 +835,7 @@ HRESULT swapchain_init(IWineD3DSwapChainImpl *swapchain, WINED3DSURFTYPE surface
 
     if (present_parameters->BackBufferCount > WINED3DPRESENT_BACK_BUFFER_MAX)
     {
-        FIXME("The application requested %u back buffers, this is not supported.\n",
+        ERR("The application requested %u back buffers, this is not supported.\n",
                 present_parameters->BackBufferCount);
         return WINED3DERR_INVALIDCALL;
     }
@@ -826,6 +899,7 @@ HRESULT swapchain_init(IWineD3DSwapChainImpl *swapchain, WINED3DSURFTYPE surface
 #else
     Assert(window);
     swapchain->hDC = hDC;
+    swapchain->presentRt = NULL;
 #endif
 
     if (!present_parameters->Windowed && window)
@@ -1114,7 +1188,9 @@ err:
 struct wined3d_context *swapchain_create_context_for_thread(IWineD3DSwapChain *iface)
 {
     IWineD3DSwapChainImpl *This = (IWineD3DSwapChainImpl *) iface;
+#ifndef VBOX_WITH_WDDM
     struct wined3d_context **newArray;
+#endif
     struct wined3d_context *ctx;
 
     TRACE("Creating a new context for swapchain %p, thread %d\n", This, GetCurrentThreadId());

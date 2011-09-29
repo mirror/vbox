@@ -311,3 +311,17 @@ UINT     WINAPI  IDirect3DDevice9Impl_GetNumberOfSwapChains(LPDIRECT3DDEVICE9EX 
 
     return ret;
 }
+
+#ifdef VBOX_WITH_WDDM
+VBOXWINEEX_DECL(HRESULT) VBoxWineExD3DSwapchain9Present(IDirect3DSwapChain9 *iface,
+                                IDirect3DSurface9 *surf) /* use the given surface as a frontbuffer content source */
+{
+    IDirect3DSwapChain9Impl *This = (IDirect3DSwapChain9Impl *)iface;
+    IDirect3DSurface9Impl *rt = (IDirect3DSurface9Impl *) surf;
+    HRESULT hr;
+    wined3d_mutex_lock();
+    hr = IWineD3DSwapChain_PresentRt(This->wineD3DSwapChain, rt->wineD3DSurface);
+    wined3d_mutex_unlock();
+    return hr;
+}
+#endif

@@ -544,6 +544,8 @@ HRESULT surface_init(IWineD3DSurfaceImpl *surface, WINED3DSURFTYPE surface_type,
     {
         Assert(!shared_handle);
     }
+
+    surface->presentSwapchain = NULL;
 #endif
 
     return hr;

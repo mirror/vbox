@@ -6169,6 +6169,10 @@ typedef struct IWineD3DSwapChainVtbl {
 #ifdef VBOX_WITH_WDDM
     HRESULT (STDMETHODCALLTYPE *Flush)(
         IWineD3DSwapChain* This);
+
+    HRESULT (STDMETHODCALLTYPE *PresentRt)(
+        IWineD3DSwapChain* This,
+        IWineD3DSurface* surf);
 #endif
     END_INTERFACE
 } IWineD3DSwapChainVtbl;
@@ -6197,6 +6201,7 @@ interface IWineD3DSwapChain {
 #define IWineD3DSwapChain_GetGammaRamp(This,ramp) (This)->lpVtbl->GetGammaRamp(This,ramp)
 #ifdef VBOX_WITH_WDDM
 #define IWineD3DSwapChain_Flush(This) (This)->lpVtbl->Flush(This)
+#define IWineD3DSwapChain_PresentRt(This,surf) (This)->lpVtbl->PresentRt(This,surf)
 #endif
 #endif
 

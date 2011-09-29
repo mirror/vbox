@@ -44,6 +44,7 @@ typedef struct VBOXDISPD3D
 
     PFNVBOXWINEEXD3DDEV9_UPDATE pfnVBoxWineExD3DDev9Update;
 
+    PFNVBOXWINEEXD3DSWAPCHAIN9_PRESENT pfnVBoxWineExD3DSwapchain9Present;
 
     /* module handle */
     HMODULE hD3DLib;

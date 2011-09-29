@@ -33,6 +33,8 @@
 #  define VBOXWDDMDISP_DEBUG_PRINT
 /* adds vectored exception handler to be able to catch non-debug UM exceptions in kernel debugger */
 #  define VBOXWDDMDISP_DEBUG_VEHANDLER
+/* disable shared resource creation with wine */
+//#  define VBOXWDDMDISP_DEBUG_NOSHARED
 # endif
 #endif
 

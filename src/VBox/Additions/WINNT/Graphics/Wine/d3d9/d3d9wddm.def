@@ -15,3 +15,4 @@ EXPORTS
   VBoxWineExD3DDev9CreateTexture
   VBoxWineExD3DDev9CreateCubeTexture
   VBoxWineExD3DDev9Update
+  VBoxWineExD3DSwapchain9Present
