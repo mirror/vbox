@@ -23,6 +23,12 @@
 - OS/2 is the only known guest which can run the 16-bit PCI BIOS in protected
   mode (but only if the 32-bit PCI BIOS is unavailable).
 
+- Any disk reads which use bus-master DMA (AHCI, IDE BM) must use VDS
+  (Virtual DMA Services) when present. Otherwise any reads/writes when the
+  real mode addresses don't map directly to physical addresses will fail
+  horribly. DOS 6.x with EMM386 is a good testcase (esp. loading drivers
+  into UMBs).
+
 
  Notes on BIOS implementation
  ----------------------------
