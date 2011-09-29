@@ -60,9 +60,6 @@ typedef struct sfnode {
 	uint64_t	sf_stat_time;	/* last-modified time of sf_stat */
 	sffs_dirents_t	*sf_dir_list;	/* list of entries for this directory */
 	sffs_stats_t	*sf_dir_stats;	/* file attrs for the above entries */
-#if 0
-    volatile uint64_t	sf_mapcnt;  /* number of mapped pages */
-#endif
 } sfnode_t;
 
 #define VN2SFN(vp) ((sfnode_t *)(vp)->v_data)
