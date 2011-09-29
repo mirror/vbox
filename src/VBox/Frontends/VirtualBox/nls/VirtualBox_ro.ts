@@ -549,6 +549,173 @@
         <source>Session I&amp;nformation...</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>&amp;File</source>
+        <comment>Mac OS X version</comment>
+        <translation type="unfinished">&amp;Fișier</translation>
+    </message>
+    <message>
+        <source>&amp;File</source>
+        <comment>Non Mac OS X version</comment>
+        <translation type="unfinished">&amp;Fișier</translation>
+    </message>
+    <message>
+        <source>&amp;Virtual Media Manager...</source>
+        <translation>Gestionar medii &amp;virtuale...</translation>
+    </message>
+    <message>
+        <source>Display the Virtual Media Manager dialog</source>
+        <translation>Afișează dialogul Gestionar medii virtuale</translation>
+    </message>
+    <message>
+        <source>&amp;Import Appliance...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Import an appliance into VirtualBox</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Export Appliance...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Export one or more VirtualBox virtual machines as an appliance</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Preferences...</source>
+        <comment>global settings</comment>
+        <translation>&amp;Preferințe...</translation>
+    </message>
+    <message>
+        <source>Display the global settings dialog</source>
+        <translation>Afișează dialogul preferințe globale</translation>
+    </message>
+    <message>
+        <source>E&amp;xit</source>
+        <translation>Ieși&amp;re</translation>
+    </message>
+    <message>
+        <source>Close application</source>
+        <translation>Închide aplicația</translation>
+    </message>
+    <message>
+        <source>&amp;New...</source>
+        <translation>&amp;Nouă...</translation>
+    </message>
+    <message>
+        <source>Create a new virtual machine</source>
+        <translation>Creează o mașină virtuală nouă</translation>
+    </message>
+    <message>
+        <source>&amp;Add...</source>
+        <translation type="unfinished">&amp;Adaugă...</translation>
+    </message>
+    <message>
+        <source>Add an existing virtual machine</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Cl&amp;one...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Clone the selected virtual machine</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Remove</source>
+        <translation type="unfinished">Ș&amp;terge</translation>
+    </message>
+    <message>
+        <source>Remove the selected virtual machine</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>S&amp;tart</source>
+        <translation>Porneș&amp;te</translation>
+    </message>
+    <message>
+        <source>Start the selected virtual machine</source>
+        <translation>Pornește mașina virtuală selectată</translation>
+    </message>
+    <message>
+        <source>S&amp;how</source>
+        <translation>A&amp;rată</translation>
+    </message>
+    <message>
+        <source>Switch to the window of the selected virtual machine</source>
+        <translation>Treci la fereastra mașinii virtuale selectate</translation>
+    </message>
+    <message>
+        <source>Discard</source>
+        <translation type="unfinished">Renunță</translation>
+    </message>
+    <message>
+        <source>D&amp;iscard Saved State</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Discard the saved state of the selected virtual machine</source>
+        <translation>Înlătură starea salvată a mașinii virtuale selectate</translation>
+    </message>
+    <message>
+        <source>Re&amp;fresh</source>
+        <translation>Reî&amp;mprospătează</translation>
+    </message>
+    <message>
+        <source>Refresh the accessibility state of the selected virtual machine</source>
+        <translation>Reîmprospătează starea de accesibilitate a mașinii virtuale selectate</translation>
+    </message>
+    <message>
+        <source>Show &amp;Log...</source>
+        <translation>Afișează &amp;log...</translation>
+    </message>
+    <message>
+        <source>Show the log files of the selected virtual machine</source>
+        <translation>Afișează fișiere log ale mașinii virtuale selectate</translation>
+    </message>
+    <message>
+        <source>Show in Finder</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show the VirtualBox Machine Definition file in Finder.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show in Explorer</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show the VirtualBox Machine Definition file in Explorer.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show in File Manager</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show the VirtualBox Machine Definition file in the File Manager</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Create Alias on Desktop</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Creates an Alias file to the VirtualBox Machine Definition file on your Desktop.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Create Shortcut on Desktop</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Creates an Shortcut file to the VirtualBox Machine Definition file on your Desktop.</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UIApplianceEditorWidget</name>
@@ -11341,33 +11508,12 @@ Folosiți meniul contextual sau butaonele din dreapta pentru a adâuga sau șter
         <translation type="obsolete">Afișeză dialogul Manager discuri virtuale</translation>
     </message>
     <message>
-        <source>&amp;Preferences...</source>
-        <comment>global settings</comment>
-        <translation>&amp;Preferințe...</translation>
-    </message>
-    <message>
         <source>Ctrl+G</source>
         <translation type="obsolete">Ctrl+G</translation>
     </message>
     <message>
-        <source>Display the global settings dialog</source>
-        <translation>Afișează dialogul preferințe globale</translation>
-    </message>
-    <message>
-        <source>E&amp;xit</source>
-        <translation>Ieși&amp;re</translation>
-    </message>
-    <message>
         <source>Ctrl+Q</source>
         <translation type="obsolete">Ctrl+Q</translation>
-    </message>
-    <message>
-        <source>Close application</source>
-        <translation>Închide aplicația</translation>
-    </message>
-    <message>
-        <source>&amp;New...</source>
-        <translation>&amp;Nouă...</translation>
     </message>
     <message>
         <source>New</source>
@@ -11376,10 +11522,6 @@ Folosiți meniul contextual sau butaonele din dreapta pentru a adâuga sau șter
     <message>
         <source>Ctrl+N</source>
         <translation type="obsolete">Ctrl+N</translation>
-    </message>
-    <message>
-        <source>Create a new virtual machine</source>
-        <translation>Creează o mașină virtuală nouă</translation>
     </message>
     <message>
         <source>&amp;Settings...</source>
@@ -11414,14 +11556,6 @@ Folosiți meniul contextual sau butaonele din dreapta pentru a adâuga sau șter
         <translation type="obsolete">Anu&amp;lează starea salvată</translation>
     </message>
     <message>
-        <source>Discard</source>
-        <translation type="unfinished">Renunță</translation>
-    </message>
-    <message>
-        <source>Discard the saved state of the selected virtual machine</source>
-        <translation>Înlătură starea salvată a mașinii virtuale selectate</translation>
-    </message>
-    <message>
         <source>&amp;Refresh</source>
         <translation type="obsolete">&amp;Reîmprospăteză</translation>
     </message>
@@ -11432,10 +11566,6 @@ Folosiți meniul contextual sau butaonele din dreapta pentru a adâuga sau șter
     <message>
         <source>Ctrl+R</source>
         <translation type="obsolete">Ctrl+R</translation>
-    </message>
-    <message>
-        <source>Refresh the accessibility state of the selected virtual machine</source>
-        <translation>Reîmprospătează starea de accesibilitate a mașinii virtuale selectate</translation>
     </message>
     <message>
         <source>&amp;Contents...</source>
@@ -11498,36 +11628,16 @@ Folosiți meniul contextual sau butaonele din dreapta pentru a adâuga sau șter
         <translation type="obsolete">&amp;Descriere *</translation>
     </message>
     <message>
-        <source>S&amp;how</source>
-        <translation>A&amp;rată</translation>
-    </message>
-    <message>
         <source>Show</source>
         <translation type="obsolete">Arată</translation>
-    </message>
-    <message>
-        <source>Switch to the window of the selected virtual machine</source>
-        <translation>Treci la fereastra mașinii virtuale selectate</translation>
-    </message>
-    <message>
-        <source>S&amp;tart</source>
-        <translation>Porneș&amp;te</translation>
     </message>
     <message>
         <source>Start</source>
         <translation type="obsolete">Start</translation>
     </message>
     <message>
-        <source>Start the selected virtual machine</source>
-        <translation>Pornește mașina virtuală selectată</translation>
-    </message>
-    <message>
         <source>&amp;Machine</source>
         <translation>&amp;Mașină</translation>
-    </message>
-    <message>
-        <source>Show &amp;Log...</source>
-        <translation>Afișează &amp;log...</translation>
     </message>
     <message>
         <source>Show Log...</source>
@@ -11536,10 +11646,6 @@ Folosiți meniul contextual sau butaonele din dreapta pentru a adâuga sau șter
     <message>
         <source>Ctrl+L</source>
         <translation type="obsolete">Ctrl+L</translation>
-    </message>
-    <message>
-        <source>Show the log files of the selected virtual machine</source>
-        <translation>Afișează fișiere log ale mașinii virtuale selectate</translation>
     </message>
     <message>
         <source>R&amp;egister VirtualBox...</source>
@@ -11590,14 +11696,6 @@ Folosiți meniul contextual sau butaonele din dreapta pentru a adâuga sau șter
         <translation>&lt;h3&gt;Bun venit în VirtualBox!&lt;/h3&gt;&lt;p&gt;Partea din stânga a ferestrei arată lista tuturor mașinilor virtuale din computerul dvs. Lista este goală acum deoarece nu a fost creată nici o mașină virtuală până acum.&lt;img src=:/welcome.png align=right/&gt;&lt;/p&gt;&lt;p&gt;Pentru a crea o mașină virtuală nouă apăsați butonul &lt;b&gt;Nouă&lt;/b&gt; în bara de unelte principală localizată în partea de sus a ferestrei.&lt;/p&gt;&lt;p&gt;Puteți apăsa tasta &lt;b&gt;%1&lt;/b&gt; pentru a obține ajutor instantaneu, sau puteți vizita &lt;a href=http://www.virtualbox.org&gt;www.virtualbox.org&lt;/a&gt; pentru ultimele știri și informații.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&amp;Virtual Media Manager...</source>
-        <translation>Gestionar medii &amp;virtuale...</translation>
-    </message>
-    <message>
-        <source>Display the Virtual Media Manager dialog</source>
-        <translation>Afișează dialogul Gestionar medii virtuale</translation>
-    </message>
-    <message>
         <source>Log</source>
         <comment>icon text</comment>
         <translation>Jurnal</translation>
@@ -11605,36 +11703,6 @@ Folosiți meniul contextual sau butaonele din dreapta pentru a adâuga sau șter
     <message>
         <source>Sun VirtualBox</source>
         <translation type="obsolete">Sun VirtualBox</translation>
-    </message>
-    <message>
-        <source>&amp;Import Appliance...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Import an appliance into VirtualBox</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;Export Appliance...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Export one or more VirtualBox virtual machines as an appliance</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Re&amp;fresh</source>
-        <translation>Reî&amp;mprospătează</translation>
-    </message>
-    <message>
-        <source>&amp;File</source>
-        <comment>Mac OS X version</comment>
-        <translation type="unfinished">&amp;Fișier</translation>
-    </message>
-    <message>
-        <source>&amp;File</source>
-        <comment>Non Mac OS X version</comment>
-        <translation type="unfinished">&amp;Fișier</translation>
     </message>
     <message>
         <source>Select a virtual machine file</source>
@@ -11650,79 +11718,11 @@ Folosiți meniul contextual sau butaonele din dreapta pentru a adâuga sau șter
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&amp;Add...</source>
-        <translation type="unfinished">&amp;Adaugă...</translation>
-    </message>
-    <message>
-        <source>Add an existing virtual machine</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;Remove</source>
-        <translation type="unfinished">Ș&amp;terge</translation>
-    </message>
-    <message>
-        <source>Remove the selected virtual machine</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Show in Finder</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Show the VirtualBox Machine Definition file in Finder.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Create Alias on Desktop</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Creates an Alias file to the VirtualBox Machine Definition file on your Desktop.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Show in Explorer</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Show the VirtualBox Machine Definition file in Explorer.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Create Shortcut on Desktop</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Creates an Shortcut file to the VirtualBox Machine Definition file on your Desktop.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Show in File Manager</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Show the VirtualBox Machine Definition file in the File Manager</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Show Toolbar</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Show Statusbar</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Cl&amp;one...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Clone the selected virtual machine</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>D&amp;iscard Saved State</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

@@ -534,6 +534,173 @@
         <source>Session I&amp;nformation...</source>
         <translation>I&amp;nformácie o sedení...</translation>
     </message>
+    <message>
+        <source>&amp;File</source>
+        <comment>Mac OS X version</comment>
+        <translation type="unfinished">&amp;Súbor</translation>
+    </message>
+    <message>
+        <source>&amp;File</source>
+        <comment>Non Mac OS X version</comment>
+        <translation type="unfinished">&amp;Súbor</translation>
+    </message>
+    <message>
+        <source>&amp;Virtual Media Manager...</source>
+        <translation>&amp;Manažér virtuálnych médii...</translation>
+    </message>
+    <message>
+        <source>Display the Virtual Media Manager dialog</source>
+        <translation>Zobraziť dialógové okno Manažéra virtuálnych médii</translation>
+    </message>
+    <message>
+        <source>&amp;Import Appliance...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Import an appliance into VirtualBox</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Export Appliance...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Export one or more VirtualBox virtual machines as an appliance</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Preferences...</source>
+        <comment>global settings</comment>
+        <translation>&amp;Nastavenia...</translation>
+    </message>
+    <message>
+        <source>Display the global settings dialog</source>
+        <translation>Zobraziť okno globálnych nastavení</translation>
+    </message>
+    <message>
+        <source>E&amp;xit</source>
+        <translation>&amp;Ukončiť</translation>
+    </message>
+    <message>
+        <source>Close application</source>
+        <translation>Ukončiť aplikáciu</translation>
+    </message>
+    <message>
+        <source>&amp;New...</source>
+        <translation>&amp;Nový...</translation>
+    </message>
+    <message>
+        <source>Create a new virtual machine</source>
+        <translation>Vytvoriť nový virtuálny stroj</translation>
+    </message>
+    <message>
+        <source>&amp;Add...</source>
+        <translation type="unfinished">&amp;Pridať...</translation>
+    </message>
+    <message>
+        <source>Add an existing virtual machine</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Cl&amp;one...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Clone the selected virtual machine</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Remove</source>
+        <translation type="unfinished">&amp;Odstrániť</translation>
+    </message>
+    <message>
+        <source>Remove the selected virtual machine</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>S&amp;tart</source>
+        <translation>S&amp;pustiť</translation>
+    </message>
+    <message>
+        <source>Start the selected virtual machine</source>
+        <translation>Spustiť vybraný virtuálny stroj</translation>
+    </message>
+    <message>
+        <source>S&amp;how</source>
+        <translation>&amp;Zobraziť</translation>
+    </message>
+    <message>
+        <source>Switch to the window of the selected virtual machine</source>
+        <translation>Prepnúť do okna vybraného virtuálneho stroja</translation>
+    </message>
+    <message>
+        <source>Discard</source>
+        <translation>Zahodiť</translation>
+    </message>
+    <message>
+        <source>D&amp;iscard Saved State</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Discard the saved state of the selected virtual machine</source>
+        <translation>Zahodiť uložený stav vybraného virtuálneho stroja</translation>
+    </message>
+    <message>
+        <source>Re&amp;fresh</source>
+        <translation>O&amp;bnoviť</translation>
+    </message>
+    <message>
+        <source>Refresh the accessibility state of the selected virtual machine</source>
+        <translation>Obnoviť stav dostupnosti vybraného virtuálneho stroja</translation>
+    </message>
+    <message>
+        <source>Show &amp;Log...</source>
+        <translation>Zobraziť &amp;záznam...</translation>
+    </message>
+    <message>
+        <source>Show the log files of the selected virtual machine</source>
+        <translation>Zobraziť súbory so záznamami vybraného virtuálneho stroja</translation>
+    </message>
+    <message>
+        <source>Show in Finder</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show the VirtualBox Machine Definition file in Finder.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show in Explorer</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show the VirtualBox Machine Definition file in Explorer.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show in File Manager</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show the VirtualBox Machine Definition file in the File Manager</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Create Alias on Desktop</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Creates an Alias file to the VirtualBox Machine Definition file on your Desktop.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Create Shortcut on Desktop</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Creates an Shortcut file to the VirtualBox Machine Definition file on your Desktop.</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UIApplianceEditorWidget</name>
@@ -10377,33 +10544,12 @@ je zobrazený &lt;b&gt;tučným&lt;/b&gt; písmom. Voľbou &lt;i&gt;Štandardný
         <translation type="obsolete">Zobrazí dialógové okno Virtuálneho Diskového Manažéra</translation>
     </message>
     <message>
-        <source>&amp;Preferences...</source>
-        <comment>global settings</comment>
-        <translation>&amp;Nastavenia...</translation>
-    </message>
-    <message>
         <source>Ctrl+G</source>
         <translation type="obsolete">Ctrl+G</translation>
     </message>
     <message>
-        <source>Display the global settings dialog</source>
-        <translation>Zobraziť okno globálnych nastavení</translation>
-    </message>
-    <message>
-        <source>E&amp;xit</source>
-        <translation>&amp;Ukončiť</translation>
-    </message>
-    <message>
         <source>Ctrl+Q</source>
         <translation type="obsolete">Ctrl+Q</translation>
-    </message>
-    <message>
-        <source>Close application</source>
-        <translation>Ukončiť aplikáciu</translation>
-    </message>
-    <message>
-        <source>&amp;New...</source>
-        <translation>&amp;Nový...</translation>
     </message>
     <message>
         <source>New</source>
@@ -10412,10 +10558,6 @@ je zobrazený &lt;b&gt;tučným&lt;/b&gt; písmom. Voľbou &lt;i&gt;Štandardný
     <message>
         <source>Ctrl+N</source>
         <translation type="obsolete">Ctrl+N</translation>
-    </message>
-    <message>
-        <source>Create a new virtual machine</source>
-        <translation>Vytvoriť nový virtuálny stroj</translation>
     </message>
     <message>
         <source>&amp;Settings...</source>
@@ -10450,14 +10592,6 @@ je zobrazený &lt;b&gt;tučným&lt;/b&gt; písmom. Voľbou &lt;i&gt;Štandardný
         <translation type="obsolete">&amp;Zahodiť</translation>
     </message>
     <message>
-        <source>Discard</source>
-        <translation>Zahodiť</translation>
-    </message>
-    <message>
-        <source>Discard the saved state of the selected virtual machine</source>
-        <translation>Zahodiť uložený stav vybraného virtuálneho stroja</translation>
-    </message>
-    <message>
         <source>&amp;Refresh</source>
         <translation type="obsolete">&amp;Obnoviť</translation>
     </message>
@@ -10468,10 +10602,6 @@ je zobrazený &lt;b&gt;tučným&lt;/b&gt; písmom. Voľbou &lt;i&gt;Štandardný
     <message>
         <source>Ctrl+R</source>
         <translation type="obsolete">Ctrl+R</translation>
-    </message>
-    <message>
-        <source>Refresh the accessibility state of the selected virtual machine</source>
-        <translation>Obnoviť stav dostupnosti vybraného virtuálneho stroja</translation>
     </message>
     <message>
         <source>&amp;Contents...</source>
@@ -10530,36 +10660,16 @@ je zobrazený &lt;b&gt;tučným&lt;/b&gt; písmom. Voľbou &lt;i&gt;Štandardný
         <translation type="obsolete">P&amp;opis *</translation>
     </message>
     <message>
-        <source>S&amp;how</source>
-        <translation>&amp;Zobraziť</translation>
-    </message>
-    <message>
         <source>Show</source>
         <translation type="obsolete">Zobraziť</translation>
-    </message>
-    <message>
-        <source>Switch to the window of the selected virtual machine</source>
-        <translation>Prepnúť do okna vybraného virtuálneho stroja</translation>
-    </message>
-    <message>
-        <source>S&amp;tart</source>
-        <translation>S&amp;pustiť</translation>
     </message>
     <message>
         <source>Start</source>
         <translation type="obsolete">Spustiť</translation>
     </message>
     <message>
-        <source>Start the selected virtual machine</source>
-        <translation>Spustiť vybraný virtuálny stroj</translation>
-    </message>
-    <message>
         <source>&amp;Machine</source>
         <translation>&amp;Stroj</translation>
-    </message>
-    <message>
-        <source>Show &amp;Log...</source>
-        <translation>Zobraziť &amp;záznam...</translation>
     </message>
     <message>
         <source>Show Log...</source>
@@ -10568,10 +10678,6 @@ je zobrazený &lt;b&gt;tučným&lt;/b&gt; písmom. Voľbou &lt;i&gt;Štandardný
     <message>
         <source>Ctrl+L</source>
         <translation type="obsolete">Ctrl+L</translation>
-    </message>
-    <message>
-        <source>Show the log files of the selected virtual machine</source>
-        <translation>Zobraziť súbory so záznamami vybraného virtuálneho stroja</translation>
     </message>
     <message>
         <source>R&amp;egister VirtualBox...</source>
@@ -10614,14 +10720,6 @@ je zobrazený &lt;b&gt;tučným&lt;/b&gt; písmom. Voľbou &lt;i&gt;Štandardný
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&amp;Virtual Media Manager...</source>
-        <translation>&amp;Manažér virtuálnych médii...</translation>
-    </message>
-    <message>
-        <source>Display the Virtual Media Manager dialog</source>
-        <translation>Zobraziť dialógové okno Manažéra virtuálnych médii</translation>
-    </message>
-    <message>
         <source>Log</source>
         <comment>icon text</comment>
         <translation>Záznam</translation>
@@ -10629,36 +10727,6 @@ je zobrazený &lt;b&gt;tučným&lt;/b&gt; písmom. Voľbou &lt;i&gt;Štandardný
     <message>
         <source>Sun VirtualBox</source>
         <translation type="obsolete">Sun VirtualBox</translation>
-    </message>
-    <message>
-        <source>&amp;Import Appliance...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Import an appliance into VirtualBox</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;Export Appliance...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Export one or more VirtualBox virtual machines as an appliance</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Re&amp;fresh</source>
-        <translation>O&amp;bnoviť</translation>
-    </message>
-    <message>
-        <source>&amp;File</source>
-        <comment>Mac OS X version</comment>
-        <translation type="unfinished">&amp;Súbor</translation>
-    </message>
-    <message>
-        <source>&amp;File</source>
-        <comment>Non Mac OS X version</comment>
-        <translation type="unfinished">&amp;Súbor</translation>
     </message>
     <message>
         <source>Select a virtual machine file</source>
@@ -10674,79 +10742,11 @@ je zobrazený &lt;b&gt;tučným&lt;/b&gt; písmom. Voľbou &lt;i&gt;Štandardný
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&amp;Add...</source>
-        <translation type="unfinished">&amp;Pridať...</translation>
-    </message>
-    <message>
-        <source>Add an existing virtual machine</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;Remove</source>
-        <translation type="unfinished">&amp;Odstrániť</translation>
-    </message>
-    <message>
-        <source>Remove the selected virtual machine</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Show in Finder</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Show the VirtualBox Machine Definition file in Finder.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Create Alias on Desktop</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Creates an Alias file to the VirtualBox Machine Definition file on your Desktop.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Show in Explorer</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Show the VirtualBox Machine Definition file in Explorer.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Create Shortcut on Desktop</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Creates an Shortcut file to the VirtualBox Machine Definition file on your Desktop.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Show in File Manager</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Show the VirtualBox Machine Definition file in the File Manager</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Show Toolbar</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Show Statusbar</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Cl&amp;one...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Clone the selected virtual machine</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>D&amp;iscard Saved State</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

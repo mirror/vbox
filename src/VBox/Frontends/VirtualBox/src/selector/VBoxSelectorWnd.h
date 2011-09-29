@@ -60,29 +60,31 @@ signals:
 
 public slots:
 
-    void fileMediaMgr();
-    void fileImportAppliance(const QString &strFile = "");
-    void fileExportAppliance();
-    void fileSettings();
-    void fileExit();
+    void sltShowMediumManager();
+    void sltShowImportApplianceWizard(const QString &strFile = "");
+    void sltShowExportApplianceWizard();
+    void sltShowPreferencesDialog();
+    void sltPerformExit();
 
-    void vmNew();
-    void vmAdd(const QString &strFile = "");
-    void vmSettings(const QString &aCategory = QString::null, const QString &aControl = QString::null, const QString & = QString::null);
-    void vmClone(const QString & = QString::null);
-    void vmDelete(const QString & = QString::null);
-    void vmStart(const QString & = QString::null);
-    void vmDiscard(const QString & = QString::null);
-    void vmPause(bool, const QString & = QString::null);
-    void vmReset(const QString & = QString::null);
-    void vmACPIShutdown(const QString &aUuid = QString::null);
-    void vmPowerOff(const QString &aUuid = QString::null);
-    void vmRefresh(const QString & = QString::null);
-    void vmShowLogs(const QString & = QString::null);
-    void vmOpenInFileManager(const QString &aUuid = QString::null);
-    void vmCreateShortcut(const QString &aUuid = QString::null);
-    void vmResort(const QString &aUuid = QString::null);
-    void sltCloseMenuAboutToShow();
+    void sltShowNewMachineWizard();
+    void sltShowAddMachineDialog(const QString &strFile = "");
+    void sltShowMachineSettingsDialog(const QString &aCategory = QString::null, const QString &aControl = QString::null, const QString & = QString::null);
+    void sltShowCloneMachineDialog(const QString & = QString::null);
+    void sltShowRemoveMachineDialog(const QString & = QString::null);
+    void sltPerformStartOrShowAction(const QString & = QString::null);
+    void sltPerformDiscardAction(const QString & = QString::null);
+    void sltPerformPauseResumeAction(bool, const QString & = QString::null);
+    void sltPerformResetAction(const QString & = QString::null);
+    void sltPerformACPIShutdownAction(const QString &aUuid = QString::null);
+    void sltPerformPowerOffAction(const QString &aUuid = QString::null);
+    void sltPerformRefreshAction(const QString & = QString::null);
+    void sltShowLogDialog(const QString & = QString::null);
+    void sltShowMachineInFileManager(const QString &aUuid = QString::null);
+    void sltPerformCreateShortcutAction(const QString &aUuid = QString::null);
+    void sltPerformSortAction(const QString &aUuid = QString::null);
+    void sltMachineMenuAboutToShow();
+    void sltMachineCloseMenuAboutToShow();
+    void sltMachineContextMenuHovered(QAction *pAction);
 
     void refreshVMList();
     void refreshVMItem(const QString &aID, bool aDetails, bool aSnapshots, bool aDescription);
@@ -95,18 +97,6 @@ public slots:
     void trayIconActivated(QSystemTrayIcon::ActivationReason aReason);
     void showWindow();
 #endif
-
-    const QAction *vmNewAction() const { return mVmNewAction; }
-    const QAction *vmAddAction() const { return mVmAddAction; }
-    const QAction *vmConfigAction() const { return mVmConfigAction; }
-    const QAction *vmCloneAction() const { return mVmCloneAction; }
-    const QAction *vmDeleteAction() const { return mVmDeleteAction; }
-    const QAction *vmStartAction() const { return mVmStartAction; }
-    const QAction *vmDiscardAction() const { return mVmDiscardAction; }
-    const QAction *vmPauseAction() const { return mVmPauseAction; }
-    const QAction *vmResetAction() const { return mVmResetAction; }
-    const QAction *vmRefreshAction() const { return mVmRefreshAction; }
-    const QAction *vmShowLogsAction() const { return mVmShowLogsAction; }
 
 protected:
 
@@ -147,11 +137,15 @@ private slots:
 private:
 
     /* Helping stuff: */
+    void prepareMenuBar();
+    void prepareMenuFile(QMenu *pMenu);
+    void prepareMenuMachine(QMenu *pMenu);
+    void prepareMenuMachineClose(QMenu *pMenu);
     void prepareMenuHelp(QMenu *pMenu);
-
-    /* Main menus */
-    QMenu *mFileMenu;
-    QMenu *mVMMenu;
+    void prepareContextMenu();
+    void prepareStatusBar();
+    void prepareWidgets();
+    void prepareConnections();
 
     /* Central splitter window */
     QISplitter *m_pSplitter;
@@ -163,31 +157,7 @@ private:
     UIToolBar *mVMToolBar;
 
     /* VM list context menu */
-    QMenu *mVMCtxtMenu;
-    QMenu *mVMCloseMenu;
-
-    /* Actions */
-    QAction *mFileMediaMgrAction;
-    QAction *mFileApplianceImportAction;
-    QAction *mFileApplianceExportAction;
-    QAction *mFileSettingsAction;
-    QAction *mFileExitAction;
-    QAction *mVmNewAction;
-    QAction *mVmAddAction;
-    QAction *mVmConfigAction;
-    QAction *mVmCloneAction;
-    QAction *mVmDeleteAction;
-    QAction *mVmStartAction;
-    QAction *mVmDiscardAction;
-    QAction *mVmPauseAction;
-    QAction *mVmResetAction;
-    QAction *mVmACPIShutdownAction;
-    QAction *mVmPowerOffAction;
-    QAction *mVmRefreshAction;
-    QAction *mVmShowLogsAction;
-    QAction *mVmOpenInFileManagerAction;
-    QAction *mVmCreateShortcutAction;
-    QAction *mVmResortAction;
+    QMenu *m_pMachineContextMenu;
 
 #ifdef VBOX_GUI_WITH_SYSTRAY
     /* The systray icon */

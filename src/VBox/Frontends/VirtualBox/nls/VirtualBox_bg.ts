@@ -539,6 +539,173 @@
         <source>Session I&amp;nformation...</source>
         <translation>И&amp;нформация за сесията...</translation>
     </message>
+    <message>
+        <source>&amp;File</source>
+        <comment>Mac OS X version</comment>
+        <translation>&amp;Файл</translation>
+    </message>
+    <message>
+        <source>&amp;File</source>
+        <comment>Non Mac OS X version</comment>
+        <translation>&amp;Файл</translation>
+    </message>
+    <message>
+        <source>&amp;Virtual Media Manager...</source>
+        <translation>&amp;Управление на виртуални дискове...</translation>
+    </message>
+    <message>
+        <source>Display the Virtual Media Manager dialog</source>
+        <translation>Показва диалога за управление на виртуалните дискове</translation>
+    </message>
+    <message>
+        <source>&amp;Import Appliance...</source>
+        <translation>&amp;Внасяне на приспособление...</translation>
+    </message>
+    <message>
+        <source>Import an appliance into VirtualBox</source>
+        <translation>Внасяне на приспособление във VirtualBox</translation>
+    </message>
+    <message>
+        <source>&amp;Export Appliance...</source>
+        <translation>&amp;Изнасяне на приспособление...</translation>
+    </message>
+    <message>
+        <source>Export one or more VirtualBox virtual machines as an appliance</source>
+        <translation>Изнасяне на приспособление за виртуални машини от VirtualBox</translation>
+    </message>
+    <message>
+        <source>&amp;Preferences...</source>
+        <comment>global settings</comment>
+        <translation>&amp;Предпочитания...</translation>
+    </message>
+    <message>
+        <source>Display the global settings dialog</source>
+        <translation>Показва диалога за общите настройки</translation>
+    </message>
+    <message>
+        <source>E&amp;xit</source>
+        <translation>&amp;Изход</translation>
+    </message>
+    <message>
+        <source>Close application</source>
+        <translation>Затваряне на програмата</translation>
+    </message>
+    <message>
+        <source>&amp;New...</source>
+        <translation>&amp;Нова...</translation>
+    </message>
+    <message>
+        <source>Create a new virtual machine</source>
+        <translation>Създаване на нова виртуална машина</translation>
+    </message>
+    <message>
+        <source>&amp;Add...</source>
+        <translation>&amp;Добавяне...</translation>
+    </message>
+    <message>
+        <source>Add an existing virtual machine</source>
+        <translation>Добавяне на съществуваща виртуална машина</translation>
+    </message>
+    <message>
+        <source>Cl&amp;one...</source>
+        <translation>&amp;Клониране...</translation>
+    </message>
+    <message>
+        <source>Clone the selected virtual machine</source>
+        <translation>Клонира избраната виртуална машина</translation>
+    </message>
+    <message>
+        <source>&amp;Remove</source>
+        <translation>&amp;Премахване</translation>
+    </message>
+    <message>
+        <source>Remove the selected virtual machine</source>
+        <translation>Премахване на избраната виртуална машина</translation>
+    </message>
+    <message>
+        <source>S&amp;tart</source>
+        <translation>С&amp;тарт</translation>
+    </message>
+    <message>
+        <source>Start the selected virtual machine</source>
+        <translation>Стартиране на избраната виртуална машина</translation>
+    </message>
+    <message>
+        <source>S&amp;how</source>
+        <translation>&amp;Показване</translation>
+    </message>
+    <message>
+        <source>Switch to the window of the selected virtual machine</source>
+        <translation>Превключване към прозореца с избраната виртуална машина</translation>
+    </message>
+    <message>
+        <source>Discard</source>
+        <translation>Изчистване</translation>
+    </message>
+    <message>
+        <source>D&amp;iscard Saved State</source>
+        <translation>Из&amp;чистване на запазено състояние</translation>
+    </message>
+    <message>
+        <source>Discard the saved state of the selected virtual machine</source>
+        <translation>Изчистване на запазеното състояние на избраната виртуална машина</translation>
+    </message>
+    <message>
+        <source>Re&amp;fresh</source>
+        <translation>&amp;Обновяване</translation>
+    </message>
+    <message>
+        <source>Refresh the accessibility state of the selected virtual machine</source>
+        <translation>Обновяване състоянието на достъпност на избраната виртуална машина</translation>
+    </message>
+    <message>
+        <source>Show &amp;Log...</source>
+        <translation>Показване на &amp;записки...</translation>
+    </message>
+    <message>
+        <source>Show the log files of the selected virtual machine</source>
+        <translation>Показване на файловете със записки за избраната виртуална машина</translation>
+    </message>
+    <message>
+        <source>Show in Finder</source>
+        <translation>Показване в Търсачката</translation>
+    </message>
+    <message>
+        <source>Show the VirtualBox Machine Definition file in Finder.</source>
+        <translation>Показване на описателния файл на VirtualBox за машината в Търсачката.</translation>
+    </message>
+    <message>
+        <source>Show in Explorer</source>
+        <translation>Показване в Explorer</translation>
+    </message>
+    <message>
+        <source>Show the VirtualBox Machine Definition file in Explorer.</source>
+        <translation>Показване на описателния файл на VirtualBox за машината в Explorer.</translation>
+    </message>
+    <message>
+        <source>Show in File Manager</source>
+        <translation>Показване във файловия мениджър</translation>
+    </message>
+    <message>
+        <source>Show the VirtualBox Machine Definition file in the File Manager</source>
+        <translation>Показване на описателния файл на VirtualBox за машината във файловия мениджър</translation>
+    </message>
+    <message>
+        <source>Create Alias on Desktop</source>
+        <translation>Създаване на дубликат на работния плот</translation>
+    </message>
+    <message>
+        <source>Creates an Alias file to the VirtualBox Machine Definition file on your Desktop.</source>
+        <translation>Създава файл за дубликат до описателния файл на VirtualBox за машината на работния плот.</translation>
+    </message>
+    <message>
+        <source>Create Shortcut on Desktop</source>
+        <translation>Създаване на пряк път на работния плот</translation>
+    </message>
+    <message>
+        <source>Creates an Shortcut file to the VirtualBox Machine Definition file on your Desktop.</source>
+        <translation>Създава файл за пряк път до описателния файл на VirtualBox за машината на работния плот.</translation>
+    </message>
 </context>
 <context>
     <name>UIApplianceEditorWidget</name>
@@ -9639,31 +9806,6 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">&amp;Детайли</translation>
     </message>
     <message>
-        <source>&amp;Preferences...</source>
-        <comment>global settings</comment>
-        <translation>&amp;Предпочитания...</translation>
-    </message>
-    <message>
-        <source>Display the global settings dialog</source>
-        <translation>Показва диалога за общите настройки</translation>
-    </message>
-    <message>
-        <source>E&amp;xit</source>
-        <translation>&amp;Изход</translation>
-    </message>
-    <message>
-        <source>Close application</source>
-        <translation>Затваряне на програмата</translation>
-    </message>
-    <message>
-        <source>&amp;New...</source>
-        <translation>&amp;Нова...</translation>
-    </message>
-    <message>
-        <source>Create a new virtual machine</source>
-        <translation>Създаване на нова виртуална машина</translation>
-    </message>
-    <message>
         <source>&amp;Settings...</source>
         <translation>&amp;Настройки...</translation>
     </message>
@@ -9682,14 +9824,6 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>D&amp;iscard</source>
         <translation type="obsolete">&amp;Изчистване</translation>
-    </message>
-    <message>
-        <source>Discard the saved state of the selected virtual machine</source>
-        <translation>Изчистване на запазеното състояние на избраната виртуална машина</translation>
-    </message>
-    <message>
-        <source>Refresh the accessibility state of the selected virtual machine</source>
-        <translation>Обновяване състоянието на достъпност на избраната виртуална машина</translation>
     </message>
     <message>
         <source>&amp;File</source>
@@ -9712,32 +9846,8 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">О&amp;писание *</translation>
     </message>
     <message>
-        <source>S&amp;how</source>
-        <translation>&amp;Показване</translation>
-    </message>
-    <message>
-        <source>Switch to the window of the selected virtual machine</source>
-        <translation>Превключване към прозореца с избраната виртуална машина</translation>
-    </message>
-    <message>
-        <source>S&amp;tart</source>
-        <translation>С&amp;тарт</translation>
-    </message>
-    <message>
-        <source>Start the selected virtual machine</source>
-        <translation>Стартиране на избраната виртуална машина</translation>
-    </message>
-    <message>
         <source>&amp;Machine</source>
         <translation>&amp;Машина</translation>
-    </message>
-    <message>
-        <source>Show &amp;Log...</source>
-        <translation>Показване на &amp;записки...</translation>
-    </message>
-    <message>
-        <source>Show the log files of the selected virtual machine</source>
-        <translation>Показване на файловете със записки за избраната виртуална машина</translation>
     </message>
     <message>
         <source>R&amp;esume</source>
@@ -9760,14 +9870,6 @@ p, li { white-space: pre-wrap; }
         <translation>&lt;h3&gt;Добре дошли във VirtualBox!&lt;/h3&gt;&lt;p&gt;Лявата част на този прозорец е предназначена за показване на списък с всички виртуални машини на вашия компютър. Списъкът в момента е празен, защото все още не сте създали виртуални машини.&lt;img src=:/welcome.png align=right/&gt;&lt;/p&gt;&lt;p&gt;Като начало, за да създадете нова виртуална машина, натиснете бутона &lt;b&gt;Нова&lt;/b&gt; в основната лента с инструменти, разположена в горната част на прозореца.&lt;/p&gt;&lt;p&gt;Можете да натиснете клавиша &lt;b&gt;%1&lt;/b&gt;, за да отворите незабавна помощ, или посетете &lt;a href=http://www.virtualbox.org&gt;www.virtualbox.org&lt;/a&gt; за последна информация и новини.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&amp;Virtual Media Manager...</source>
-        <translation>&amp;Управление на виртуални дискове...</translation>
-    </message>
-    <message>
-        <source>Display the Virtual Media Manager dialog</source>
-        <translation>Показва диалога за управление на виртуалните дискове</translation>
-    </message>
-    <message>
         <source>Log</source>
         <comment>icon text</comment>
         <translation>Записки</translation>
@@ -9775,36 +9877,6 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Sun VirtualBox</source>
         <translation type="obsolete">Sun VirtualBox</translation>
-    </message>
-    <message>
-        <source>&amp;Import Appliance...</source>
-        <translation>&amp;Внасяне на приспособление...</translation>
-    </message>
-    <message>
-        <source>Import an appliance into VirtualBox</source>
-        <translation>Внасяне на приспособление във VirtualBox</translation>
-    </message>
-    <message>
-        <source>&amp;Export Appliance...</source>
-        <translation>&amp;Изнасяне на приспособление...</translation>
-    </message>
-    <message>
-        <source>Export one or more VirtualBox virtual machines as an appliance</source>
-        <translation>Изнасяне на приспособление за виртуални машини от VirtualBox</translation>
-    </message>
-    <message>
-        <source>Re&amp;fresh</source>
-        <translation>&amp;Обновяване</translation>
-    </message>
-    <message>
-        <source>&amp;File</source>
-        <comment>Mac OS X version</comment>
-        <translation>&amp;Файл</translation>
-    </message>
-    <message>
-        <source>&amp;File</source>
-        <comment>Non Mac OS X version</comment>
-        <translation>&amp;Файл</translation>
     </message>
     <message>
         <source>Select a virtual machine file</source>
@@ -9820,84 +9892,12 @@ p, li { white-space: pre-wrap; }
         <translation>Управление</translation>
     </message>
     <message>
-        <source>&amp;Add...</source>
-        <translation>&amp;Добавяне...</translation>
-    </message>
-    <message>
-        <source>Add an existing virtual machine</source>
-        <translation>Добавяне на съществуваща виртуална машина</translation>
-    </message>
-    <message>
-        <source>&amp;Remove</source>
-        <translation>&amp;Премахване</translation>
-    </message>
-    <message>
-        <source>Remove the selected virtual machine</source>
-        <translation>Премахване на избраната виртуална машина</translation>
-    </message>
-    <message>
-        <source>Show in Finder</source>
-        <translation>Показване в Търсачката</translation>
-    </message>
-    <message>
-        <source>Show the VirtualBox Machine Definition file in Finder.</source>
-        <translation>Показване на описателния файл на VirtualBox за машината в Търсачката.</translation>
-    </message>
-    <message>
-        <source>Create Alias on Desktop</source>
-        <translation>Създаване на дубликат на работния плот</translation>
-    </message>
-    <message>
-        <source>Creates an Alias file to the VirtualBox Machine Definition file on your Desktop.</source>
-        <translation>Създава файл за дубликат до описателния файл на VirtualBox за машината на работния плот.</translation>
-    </message>
-    <message>
-        <source>Show in Explorer</source>
-        <translation>Показване в Explorer</translation>
-    </message>
-    <message>
-        <source>Show the VirtualBox Machine Definition file in Explorer.</source>
-        <translation>Показване на описателния файл на VirtualBox за машината в Explorer.</translation>
-    </message>
-    <message>
-        <source>Create Shortcut on Desktop</source>
-        <translation>Създаване на пряк път на работния плот</translation>
-    </message>
-    <message>
-        <source>Creates an Shortcut file to the VirtualBox Machine Definition file on your Desktop.</source>
-        <translation>Създава файл за пряк път до описателния файл на VirtualBox за машината на работния плот.</translation>
-    </message>
-    <message>
-        <source>Show in File Manager</source>
-        <translation>Показване във файловия мениджър</translation>
-    </message>
-    <message>
-        <source>Show the VirtualBox Machine Definition file in the File Manager</source>
-        <translation>Показване на описателния файл на VirtualBox за машината във файловия мениджър</translation>
-    </message>
-    <message>
         <source>Show Toolbar</source>
         <translation>Показване на лента с инструменти</translation>
     </message>
     <message>
         <source>Show Statusbar</source>
         <translation>Показване на статус лента</translation>
-    </message>
-    <message>
-        <source>Cl&amp;one...</source>
-        <translation>&amp;Клониране...</translation>
-    </message>
-    <message>
-        <source>Clone the selected virtual machine</source>
-        <translation>Клонира избраната виртуална машина</translation>
-    </message>
-    <message>
-        <source>Discard</source>
-        <translation>Изчистване</translation>
-    </message>
-    <message>
-        <source>D&amp;iscard Saved State</source>
-        <translation>Из&amp;чистване на запазено състояние</translation>
     </message>
 </context>
 <context>

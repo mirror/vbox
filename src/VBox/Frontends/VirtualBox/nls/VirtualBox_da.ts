@@ -550,6 +550,173 @@
         <source>Session I&amp;nformation...</source>
         <translation>I&amp;nformation om session...</translation>
     </message>
+    <message>
+        <source>&amp;File</source>
+        <comment>Mac OS X version</comment>
+        <translation>&amp;Fil</translation>
+    </message>
+    <message>
+        <source>&amp;File</source>
+        <comment>Non Mac OS X version</comment>
+        <translation>&amp;Fil</translation>
+    </message>
+    <message>
+        <source>&amp;Virtual Media Manager...</source>
+        <translation>&amp;Virtuel diskhåndtering...</translation>
+    </message>
+    <message>
+        <source>Display the Virtual Media Manager dialog</source>
+        <translation>Åbner Virtual diskhåndtering</translation>
+    </message>
+    <message>
+        <source>&amp;Import Appliance...</source>
+        <translation>&amp;Importér Prækonfigureret system...</translation>
+    </message>
+    <message>
+        <source>Import an appliance into VirtualBox</source>
+        <translation>Importerer et Prækonfigureret system til VirtualBox</translation>
+    </message>
+    <message>
+        <source>&amp;Export Appliance...</source>
+        <translation>&amp;Eksportér Prækonfigureret system...</translation>
+    </message>
+    <message>
+        <source>Export one or more VirtualBox virtual machines as an appliance</source>
+        <translation>Eksporterer et Prækonfigureret system fra VirtualBox</translation>
+    </message>
+    <message>
+        <source>&amp;Preferences...</source>
+        <comment>global settings</comment>
+        <translation>Indstillinger...</translation>
+    </message>
+    <message>
+        <source>Display the global settings dialog</source>
+        <translation>Vis globale indstillinger</translation>
+    </message>
+    <message>
+        <source>E&amp;xit</source>
+        <translation>Afslut</translation>
+    </message>
+    <message>
+        <source>Close application</source>
+        <translation>Luk applikationen</translation>
+    </message>
+    <message>
+        <source>&amp;New...</source>
+        <translation>&amp;Ny...</translation>
+    </message>
+    <message>
+        <source>Create a new virtual machine</source>
+        <translation>Opret en ny virtuel maskine</translation>
+    </message>
+    <message>
+        <source>&amp;Add...</source>
+        <translation>Tilføj...</translation>
+    </message>
+    <message>
+        <source>Add an existing virtual machine</source>
+        <translation>Tilføj en eksisterende virtuel maskine</translation>
+    </message>
+    <message>
+        <source>Cl&amp;one...</source>
+        <translation>Kl&amp;on...</translation>
+    </message>
+    <message>
+        <source>Clone the selected virtual machine</source>
+        <translation>Klon den valgte virtuelle maskine</translation>
+    </message>
+    <message>
+        <source>&amp;Remove</source>
+        <translation>Fje&amp;rn</translation>
+    </message>
+    <message>
+        <source>Remove the selected virtual machine</source>
+        <translation>Fjern den valgte virtuelle maskine</translation>
+    </message>
+    <message>
+        <source>S&amp;tart</source>
+        <translation>S&amp;tart</translation>
+    </message>
+    <message>
+        <source>Start the selected virtual machine</source>
+        <translation>Start den valgte virtuelle maskine</translation>
+    </message>
+    <message>
+        <source>S&amp;how</source>
+        <translation>Vis</translation>
+    </message>
+    <message>
+        <source>Switch to the window of the selected virtual machine</source>
+        <translation>Skift til den valgte virtuelle maskines vindue</translation>
+    </message>
+    <message>
+        <source>Discard</source>
+        <translation>Kassér</translation>
+    </message>
+    <message>
+        <source>D&amp;iscard Saved State</source>
+        <translation>Kassér gemt t&amp;ilstand</translation>
+    </message>
+    <message>
+        <source>Discard the saved state of the selected virtual machine</source>
+        <translation>Dropper den gemte tilstand af den valgte virtuelle maskine</translation>
+    </message>
+    <message>
+        <source>Re&amp;fresh</source>
+        <translation>Genop&amp;frisk</translation>
+    </message>
+    <message>
+        <source>Refresh the accessibility state of the selected virtual machine</source>
+        <translation>Opdatér tilgængeligheden af den valgte virtuelle maskine</translation>
+    </message>
+    <message>
+        <source>Show &amp;Log...</source>
+        <translation>Vis &amp;log...</translation>
+    </message>
+    <message>
+        <source>Show the log files of the selected virtual machine</source>
+        <translation>Vis logfilerne fra den valgte virtuelle maskine</translation>
+    </message>
+    <message>
+        <source>Show in Finder</source>
+        <translation>Vis i Finder</translation>
+    </message>
+    <message>
+        <source>Show the VirtualBox Machine Definition file in Finder.</source>
+        <translation>Vis VirtualBox maskindefinitionsfil i Finder.</translation>
+    </message>
+    <message>
+        <source>Show in Explorer</source>
+        <translation>Vis i Filhåndtering</translation>
+    </message>
+    <message>
+        <source>Show the VirtualBox Machine Definition file in Explorer.</source>
+        <translation>Vis VirtualBox maskindefinitionsfil i Filhåndtering.</translation>
+    </message>
+    <message>
+        <source>Show in File Manager</source>
+        <translation>Vis i Filhåndtering</translation>
+    </message>
+    <message>
+        <source>Show the VirtualBox Machine Definition file in the File Manager</source>
+        <translation>Vis VirtualBox maskindefinitionsfil i Filhåndtering</translation>
+    </message>
+    <message>
+        <source>Create Alias on Desktop</source>
+        <translation>Opret alias på skrivebordet</translation>
+    </message>
+    <message>
+        <source>Creates an Alias file to the VirtualBox Machine Definition file on your Desktop.</source>
+        <translation>Opretter et alias til VirtualBox maskindefinitionsfilen på dit skrivebord.</translation>
+    </message>
+    <message>
+        <source>Create Shortcut on Desktop</source>
+        <translation>Opret genvej på skrivebordet</translation>
+    </message>
+    <message>
+        <source>Creates an Shortcut file to the VirtualBox Machine Definition file on your Desktop.</source>
+        <translation>Opretter en genvej til VirtualBox maskindefinitionsfilen på dit skrivebord.</translation>
+    </message>
 </context>
 <context>
     <name>UIApplianceEditorWidget</name>
@@ -9417,31 +9584,6 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">&amp;Detaljer</translation>
     </message>
     <message>
-        <source>&amp;Preferences...</source>
-        <comment>global settings</comment>
-        <translation>Indstillinger...</translation>
-    </message>
-    <message>
-        <source>Display the global settings dialog</source>
-        <translation>Vis globale indstillinger</translation>
-    </message>
-    <message>
-        <source>E&amp;xit</source>
-        <translation>Afslut</translation>
-    </message>
-    <message>
-        <source>Close application</source>
-        <translation>Luk applikationen</translation>
-    </message>
-    <message>
-        <source>&amp;New...</source>
-        <translation>&amp;Ny...</translation>
-    </message>
-    <message>
-        <source>Create a new virtual machine</source>
-        <translation>Opret en ny virtuel maskine</translation>
-    </message>
-    <message>
         <source>&amp;Settings...</source>
         <translation>Op&amp;sætning...</translation>
     </message>
@@ -9460,14 +9602,6 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>D&amp;iscard</source>
         <translation type="obsolete">Drop</translation>
-    </message>
-    <message>
-        <source>Discard the saved state of the selected virtual machine</source>
-        <translation>Dropper den gemte tilstand af den valgte virtuelle maskine</translation>
-    </message>
-    <message>
-        <source>Refresh the accessibility state of the selected virtual machine</source>
-        <translation>Opdatér tilgængeligheden af den valgte virtuelle maskine</translation>
     </message>
     <message>
         <source>&amp;File</source>
@@ -9490,32 +9624,8 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">B&amp;eskrivelse *</translation>
     </message>
     <message>
-        <source>S&amp;how</source>
-        <translation>Vis</translation>
-    </message>
-    <message>
-        <source>Switch to the window of the selected virtual machine</source>
-        <translation>Skift til den valgte virtuelle maskines vindue</translation>
-    </message>
-    <message>
-        <source>S&amp;tart</source>
-        <translation>S&amp;tart</translation>
-    </message>
-    <message>
-        <source>Start the selected virtual machine</source>
-        <translation>Start den valgte virtuelle maskine</translation>
-    </message>
-    <message>
         <source>&amp;Machine</source>
         <translation>&amp;Maskine</translation>
-    </message>
-    <message>
-        <source>Show &amp;Log...</source>
-        <translation>Vis &amp;log...</translation>
-    </message>
-    <message>
-        <source>Show the log files of the selected virtual machine</source>
-        <translation>Vis logfilerne fra den valgte virtuelle maskine</translation>
     </message>
     <message>
         <source>R&amp;esume</source>
@@ -9538,14 +9648,6 @@ p, li { white-space: pre-wrap; }
         <translation>&lt;h3&gt;Velkommen til VirtualBox!&lt;/h3&gt;&lt;p&gt;Den venstre side af dette vindue viser alle virtuelle maskiner på din computer. Lige nu er listen tom, fordi du ikke har oprettet nogle virtuelle maskiner endnu.&lt;img src=:/welcome.png align=right/&gt;&lt;/p&gt;&lt;p&gt;For at oprette en virtuel maskine, klik på knappen &lt;b&gt;Ny&lt;/b&gt; i værktøjslinjen.&lt;/p&gt;&lt;p&gt;Du kan også trykke &lt;b&gt;%1&lt;/b&gt; for at få hjælp eller besøge &lt;a href=http://www.virtualbox.org&gt;www.virtualbox.org&lt;/a&gt; for information og nyheder.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&amp;Virtual Media Manager...</source>
-        <translation>&amp;Virtuel diskhåndtering...</translation>
-    </message>
-    <message>
-        <source>Display the Virtual Media Manager dialog</source>
-        <translation>Åbner Virtual diskhåndtering</translation>
-    </message>
-    <message>
         <source>Log</source>
         <comment>icon text</comment>
         <translation>Log</translation>
@@ -9553,36 +9655,6 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Sun VirtualBox</source>
         <translation type="obsolete">Sun VirtualBox</translation>
-    </message>
-    <message>
-        <source>&amp;Import Appliance...</source>
-        <translation>&amp;Importér Prækonfigureret system...</translation>
-    </message>
-    <message>
-        <source>Import an appliance into VirtualBox</source>
-        <translation>Importerer et Prækonfigureret system til VirtualBox</translation>
-    </message>
-    <message>
-        <source>&amp;Export Appliance...</source>
-        <translation>&amp;Eksportér Prækonfigureret system...</translation>
-    </message>
-    <message>
-        <source>Export one or more VirtualBox virtual machines as an appliance</source>
-        <translation>Eksporterer et Prækonfigureret system fra VirtualBox</translation>
-    </message>
-    <message>
-        <source>Re&amp;fresh</source>
-        <translation>Genop&amp;frisk</translation>
-    </message>
-    <message>
-        <source>&amp;File</source>
-        <comment>Mac OS X version</comment>
-        <translation>&amp;Fil</translation>
-    </message>
-    <message>
-        <source>&amp;File</source>
-        <comment>Non Mac OS X version</comment>
-        <translation>&amp;Fil</translation>
     </message>
     <message>
         <source>Select a virtual machine file</source>
@@ -9598,84 +9670,12 @@ p, li { white-space: pre-wrap; }
         <translation>Håndtering</translation>
     </message>
     <message>
-        <source>&amp;Add...</source>
-        <translation>Tilføj...</translation>
-    </message>
-    <message>
-        <source>Add an existing virtual machine</source>
-        <translation>Tilføj en eksisterende virtuel maskine</translation>
-    </message>
-    <message>
-        <source>&amp;Remove</source>
-        <translation>Fje&amp;rn</translation>
-    </message>
-    <message>
-        <source>Remove the selected virtual machine</source>
-        <translation>Fjern den valgte virtuelle maskine</translation>
-    </message>
-    <message>
-        <source>Show in Finder</source>
-        <translation>Vis i Finder</translation>
-    </message>
-    <message>
-        <source>Show the VirtualBox Machine Definition file in Finder.</source>
-        <translation>Vis VirtualBox maskindefinitionsfil i Finder.</translation>
-    </message>
-    <message>
-        <source>Create Alias on Desktop</source>
-        <translation>Opret alias på skrivebordet</translation>
-    </message>
-    <message>
-        <source>Creates an Alias file to the VirtualBox Machine Definition file on your Desktop.</source>
-        <translation>Opretter et alias til VirtualBox maskindefinitionsfilen på dit skrivebord.</translation>
-    </message>
-    <message>
-        <source>Show in Explorer</source>
-        <translation>Vis i Filhåndtering</translation>
-    </message>
-    <message>
-        <source>Show the VirtualBox Machine Definition file in Explorer.</source>
-        <translation>Vis VirtualBox maskindefinitionsfil i Filhåndtering.</translation>
-    </message>
-    <message>
-        <source>Create Shortcut on Desktop</source>
-        <translation>Opret genvej på skrivebordet</translation>
-    </message>
-    <message>
-        <source>Creates an Shortcut file to the VirtualBox Machine Definition file on your Desktop.</source>
-        <translation>Opretter en genvej til VirtualBox maskindefinitionsfilen på dit skrivebord.</translation>
-    </message>
-    <message>
-        <source>Show in File Manager</source>
-        <translation>Vis i Filhåndtering</translation>
-    </message>
-    <message>
-        <source>Show the VirtualBox Machine Definition file in the File Manager</source>
-        <translation>Vis VirtualBox maskindefinitionsfil i Filhåndtering</translation>
-    </message>
-    <message>
         <source>Show Toolbar</source>
         <translation>Vis værktøjslinje</translation>
     </message>
     <message>
         <source>Show Statusbar</source>
         <translation>Vis statusbar</translation>
-    </message>
-    <message>
-        <source>Cl&amp;one...</source>
-        <translation>Kl&amp;on...</translation>
-    </message>
-    <message>
-        <source>Clone the selected virtual machine</source>
-        <translation>Klon den valgte virtuelle maskine</translation>
-    </message>
-    <message>
-        <source>Discard</source>
-        <translation>Kassér</translation>
-    </message>
-    <message>
-        <source>D&amp;iscard Saved State</source>
-        <translation>Kassér gemt t&amp;ilstand</translation>
     </message>
 </context>
 <context>

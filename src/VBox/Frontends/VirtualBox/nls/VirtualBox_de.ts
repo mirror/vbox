@@ -424,6 +424,173 @@
         <source>Ins&amp;ert Ctrl-Alt-Backspace</source>
         <translation>&amp;Sende Strg-Alt-Rücktaste</translation>
     </message>
+    <message>
+        <source>&amp;File</source>
+        <comment>Mac OS X version</comment>
+        <translation>&amp;Ablage</translation>
+    </message>
+    <message>
+        <source>&amp;File</source>
+        <comment>Non Mac OS X version</comment>
+        <translation>&amp;Datei</translation>
+    </message>
+    <message>
+        <source>&amp;Virtual Media Manager...</source>
+        <translation>Manager für virtuelle &amp;Medien...</translation>
+    </message>
+    <message>
+        <source>Display the Virtual Media Manager dialog</source>
+        <translation>Zeigt den Manager für virtuelle Medien</translation>
+    </message>
+    <message>
+        <source>&amp;Import Appliance...</source>
+        <translation>Appliance &amp;importieren ...</translation>
+    </message>
+    <message>
+        <source>Import an appliance into VirtualBox</source>
+        <translation>Importiert eine Appliance in VirtualBox</translation>
+    </message>
+    <message>
+        <source>&amp;Export Appliance...</source>
+        <translation>Appliance &amp;exportieren ...</translation>
+    </message>
+    <message>
+        <source>Export one or more VirtualBox virtual machines as an appliance</source>
+        <translation>Exportiert eine Appliance aus VirtualBox</translation>
+    </message>
+    <message>
+        <source>&amp;Preferences...</source>
+        <comment>global settings</comment>
+        <translation>&amp;Globale Einstellungen...</translation>
+    </message>
+    <message>
+        <source>Display the global settings dialog</source>
+        <translation>Zeigt den Dialog für globale Einstellungen</translation>
+    </message>
+    <message>
+        <source>E&amp;xit</source>
+        <translation>B&amp;eenden</translation>
+    </message>
+    <message>
+        <source>Close application</source>
+        <translation>Anwendung schließen</translation>
+    </message>
+    <message>
+        <source>&amp;New...</source>
+        <translation>&amp;Neu...</translation>
+    </message>
+    <message>
+        <source>Create a new virtual machine</source>
+        <translation>Neue virtuelle Maschine erzeugen</translation>
+    </message>
+    <message>
+        <source>&amp;Add...</source>
+        <translation>&amp;Hinzufügen...</translation>
+    </message>
+    <message>
+        <source>Add an existing virtual machine</source>
+        <translation>Fügt eine existierende virtuelle Maschine hinzu</translation>
+    </message>
+    <message>
+        <source>Cl&amp;one...</source>
+        <translation>&amp;Klonen...</translation>
+    </message>
+    <message>
+        <source>Clone the selected virtual machine</source>
+        <translation>Die ausgewählte virtuelle Maschine klonen</translation>
+    </message>
+    <message>
+        <source>&amp;Remove</source>
+        <translation>&amp;Entfernen</translation>
+    </message>
+    <message>
+        <source>Remove the selected virtual machine</source>
+        <translation>Entfernt die ausgewählte virtuelle Maschine</translation>
+    </message>
+    <message>
+        <source>S&amp;tart</source>
+        <translation>&amp;Starten</translation>
+    </message>
+    <message>
+        <source>Start the selected virtual machine</source>
+        <translation>Starten der virtuellen Maschine</translation>
+    </message>
+    <message>
+        <source>S&amp;how</source>
+        <translation>&amp;Zeigen</translation>
+    </message>
+    <message>
+        <source>Switch to the window of the selected virtual machine</source>
+        <translation>Wechselt zum Fenster der ausgewählten virtuellen Maschine</translation>
+    </message>
+    <message>
+        <source>Discard</source>
+        <translation>Verwerfen</translation>
+    </message>
+    <message>
+        <source>D&amp;iscard Saved State</source>
+        <translation>&amp;Verwerfen</translation>
+    </message>
+    <message>
+        <source>Discard the saved state of the selected virtual machine</source>
+        <translation>Verwirft den gesicherten Zustand der ausgewählten virtuellen Maschine</translation>
+    </message>
+    <message>
+        <source>Re&amp;fresh</source>
+        <translation>&amp;Aktualisieren</translation>
+    </message>
+    <message>
+        <source>Refresh the accessibility state of the selected virtual machine</source>
+        <translation>Aktualisiert den Zustand der ausgewählten virtuellen Maschine</translation>
+    </message>
+    <message>
+        <source>Show &amp;Log...</source>
+        <translation>Zeige &amp;Log...</translation>
+    </message>
+    <message>
+        <source>Show the log files of the selected virtual machine</source>
+        <translation>Zeigt die Log-Dateien der ausgewählten virtuellen Maschine</translation>
+    </message>
+    <message>
+        <source>Show in Finder</source>
+        <translation>Im Finder zeigen</translation>
+    </message>
+    <message>
+        <source>Show the VirtualBox Machine Definition file in Finder.</source>
+        <translation>Zeigt die VirtualBox-VM-Definition im Finder.</translation>
+    </message>
+    <message>
+        <source>Show in Explorer</source>
+        <translation>Im Explorer zeigen</translation>
+    </message>
+    <message>
+        <source>Show the VirtualBox Machine Definition file in Explorer.</source>
+        <translation>Zeigt die VirtualBox-VM-Definition im Explorer.</translation>
+    </message>
+    <message>
+        <source>Show in File Manager</source>
+        <translation>Im Dateimanager zeigen</translation>
+    </message>
+    <message>
+        <source>Show the VirtualBox Machine Definition file in the File Manager</source>
+        <translation>Zeigt die VirtualBox-VM-Definition im Dateimanager</translation>
+    </message>
+    <message>
+        <source>Create Alias on Desktop</source>
+        <translation>Alias auf dem Desktop erzeugen</translation>
+    </message>
+    <message>
+        <source>Creates an Alias file to the VirtualBox Machine Definition file on your Desktop.</source>
+        <translation>Erzeugt einen Alias für die VirtualBox-VM-Definition auf Ihrem Desktop.</translation>
+    </message>
+    <message>
+        <source>Create Shortcut on Desktop</source>
+        <translation>Desktop-Verknüpfung</translation>
+    </message>
+    <message>
+        <source>Creates an Shortcut file to the VirtualBox Machine Definition file on your Desktop.</source>
+        <translation>Erzeugt eine Verknüfung auf die VirtualBox-VM auf Ihrem Destkop.</translation>
+    </message>
 </context>
 <context>
     <name>UIApplianceEditorWidget</name>
@@ -6776,31 +6943,6 @@
 <context>
     <name>VBoxSelectorWnd</name>
     <message>
-        <source>&amp;Preferences...</source>
-        <comment>global settings</comment>
-        <translation>&amp;Globale Einstellungen...</translation>
-    </message>
-    <message>
-        <source>Display the global settings dialog</source>
-        <translation>Zeigt den Dialog für globale Einstellungen</translation>
-    </message>
-    <message>
-        <source>E&amp;xit</source>
-        <translation>B&amp;eenden</translation>
-    </message>
-    <message>
-        <source>Close application</source>
-        <translation>Anwendung schließen</translation>
-    </message>
-    <message>
-        <source>&amp;New...</source>
-        <translation>&amp;Neu...</translation>
-    </message>
-    <message>
-        <source>Create a new virtual machine</source>
-        <translation>Neue virtuelle Maschine erzeugen</translation>
-    </message>
-    <message>
         <source>&amp;Settings...</source>
         <translation>Änd&amp;ern...</translation>
     </message>
@@ -6809,40 +6951,8 @@
         <translation>Einstellungen der ausgewählten virtuellen Maschine ändern</translation>
     </message>
     <message>
-        <source>Discard the saved state of the selected virtual machine</source>
-        <translation>Verwirft den gesicherten Zustand der ausgewählten virtuellen Maschine</translation>
-    </message>
-    <message>
-        <source>Refresh the accessibility state of the selected virtual machine</source>
-        <translation>Aktualisiert den Zustand der ausgewählten virtuellen Maschine</translation>
-    </message>
-    <message>
-        <source>S&amp;how</source>
-        <translation>&amp;Zeigen</translation>
-    </message>
-    <message>
-        <source>Switch to the window of the selected virtual machine</source>
-        <translation>Wechselt zum Fenster der ausgewählten virtuellen Maschine</translation>
-    </message>
-    <message>
-        <source>S&amp;tart</source>
-        <translation>&amp;Starten</translation>
-    </message>
-    <message>
-        <source>Start the selected virtual machine</source>
-        <translation>Starten der virtuellen Maschine</translation>
-    </message>
-    <message>
         <source>&amp;Machine</source>
         <translation>&amp;Maschine</translation>
-    </message>
-    <message>
-        <source>Show &amp;Log...</source>
-        <translation>Zeige &amp;Log...</translation>
-    </message>
-    <message>
-        <source>Show the log files of the selected virtual machine</source>
-        <translation>Zeigt die Log-Dateien der ausgewählten virtuellen Maschine</translation>
     </message>
     <message>
         <source>Resume the execution of the virtual machine</source>
@@ -6861,47 +6971,9 @@
         <translation>&lt;h3&gt;Willkommen zu VirtualBox!&lt;/h3&gt;&lt;p&gt;Der linke Teil dieses Fensters zeigt eine Liste aller virtuellen Maschinen auf Ihrem Computer. Diese Liste ist momentan leer, da Sie noch keine virtuelle Maschine erstellt haben.&lt;img src=:/welcome.png align=right/&gt;&lt;/p&gt;&lt;p&gt;Um eine virtuelle Maschine anzulegen, wählen Sie &lt;b&gt;Neu&lt;/b&gt; in der Symbolleiste am oberen Rand des Fensters.&lt;/p&gt;&lt;p&gt;Die Taste &lt;b&gt;%1&lt;/b&gt; öffnet das Hilfefenster. Für aktuelle Produktinformationen aus dem Internet öffnen Sie &lt;a href=http://www.virtualbox.org&gt;www.virtualbox.org&lt;/a&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&amp;Virtual Media Manager...</source>
-        <translation>Manager für virtuelle &amp;Medien...</translation>
-    </message>
-    <message>
-        <source>Display the Virtual Media Manager dialog</source>
-        <translation>Zeigt den Manager für virtuelle Medien</translation>
-    </message>
-    <message>
         <source>Log</source>
         <comment>icon text</comment>
         <translation>Loggen</translation>
-    </message>
-    <message>
-        <source>&amp;Import Appliance...</source>
-        <translation>Appliance &amp;importieren ...</translation>
-    </message>
-    <message>
-        <source>Import an appliance into VirtualBox</source>
-        <translation>Importiert eine Appliance in VirtualBox</translation>
-    </message>
-    <message>
-        <source>&amp;Export Appliance...</source>
-        <translation>Appliance &amp;exportieren ...</translation>
-    </message>
-    <message>
-        <source>Export one or more VirtualBox virtual machines as an appliance</source>
-        <translation>Exportiert eine Appliance aus VirtualBox</translation>
-    </message>
-    <message>
-        <source>Re&amp;fresh</source>
-        <translation>&amp;Aktualisieren</translation>
-    </message>
-    <message>
-        <source>&amp;File</source>
-        <comment>Mac OS X version</comment>
-        <translation>&amp;Ablage</translation>
-    </message>
-    <message>
-        <source>&amp;File</source>
-        <comment>Non Mac OS X version</comment>
-        <translation>&amp;Datei</translation>
     </message>
     <message>
         <source>Show Toolbar</source>
@@ -6920,81 +6992,9 @@
         <translation>Virtuelle-Maschinen-Dateien (%1)</translation>
     </message>
     <message>
-        <source>&amp;Add...</source>
-        <translation>&amp;Hinzufügen...</translation>
-    </message>
-    <message>
-        <source>Add an existing virtual machine</source>
-        <translation>Fügt eine existierende virtuelle Maschine hinzu</translation>
-    </message>
-    <message>
-        <source>&amp;Remove</source>
-        <translation>&amp;Entfernen</translation>
-    </message>
-    <message>
-        <source>Remove the selected virtual machine</source>
-        <translation>Entfernt die ausgewählte virtuelle Maschine</translation>
-    </message>
-    <message>
-        <source>Show in Finder</source>
-        <translation>Im Finder zeigen</translation>
-    </message>
-    <message>
-        <source>Show the VirtualBox Machine Definition file in Finder.</source>
-        <translation>Zeigt die VirtualBox-VM-Definition im Finder.</translation>
-    </message>
-    <message>
-        <source>Create Alias on Desktop</source>
-        <translation>Alias auf dem Desktop erzeugen</translation>
-    </message>
-    <message>
-        <source>Creates an Alias file to the VirtualBox Machine Definition file on your Desktop.</source>
-        <translation>Erzeugt einen Alias für die VirtualBox-VM-Definition auf Ihrem Desktop.</translation>
-    </message>
-    <message>
-        <source>Show in Explorer</source>
-        <translation>Im Explorer zeigen</translation>
-    </message>
-    <message>
-        <source>Show the VirtualBox Machine Definition file in Explorer.</source>
-        <translation>Zeigt die VirtualBox-VM-Definition im Explorer.</translation>
-    </message>
-    <message>
-        <source>Create Shortcut on Desktop</source>
-        <translation>Desktop-Verknüpfung</translation>
-    </message>
-    <message>
-        <source>Creates an Shortcut file to the VirtualBox Machine Definition file on your Desktop.</source>
-        <translation>Erzeugt eine Verknüfung auf die VirtualBox-VM auf Ihrem Destkop.</translation>
-    </message>
-    <message>
-        <source>Show in File Manager</source>
-        <translation>Im Dateimanager zeigen</translation>
-    </message>
-    <message>
-        <source>Show the VirtualBox Machine Definition file in the File Manager</source>
-        <translation>Zeigt die VirtualBox-VM-Definition im Dateimanager</translation>
-    </message>
-    <message>
         <source>Manager</source>
         <comment>Note: main window title which is pretended by the product name.</comment>
         <translation>Manager</translation>
-    </message>
-    <message>
-        <source>Discard</source>
-        <translation>Verwerfen</translation>
-    </message>
-    <message>
-        <source>D&amp;iscard Saved State</source>
-        <translation>&amp;Verwerfen</translation>
-    </message>
-    <message>
-        <source>Clone the selected virtual machine</source>
-        <translation>Die ausgewählte virtuelle Maschine klonen</translation>
-    </message>
-    <message>
-        <source>Cl&amp;one...</source>
-        <translation>&amp;Klonen...</translation>
     </message>
     <message>
         <source>&amp;Close</source>

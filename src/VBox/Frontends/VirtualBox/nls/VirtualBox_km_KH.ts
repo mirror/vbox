@@ -453,6 +453,173 @@
         <source>Session I&amp;nformation...</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>&amp;File</source>
+        <comment>Mac OS X version</comment>
+        <translation type="unfinished">ឯកសារ</translation>
+    </message>
+    <message>
+        <source>&amp;File</source>
+        <comment>Non Mac OS X version</comment>
+        <translation type="unfinished">ឯកសារ</translation>
+    </message>
+    <message>
+        <source>&amp;Virtual Media Manager...</source>
+        <translation>កម្មវិធី​គ្រប់គ្រង​ម៉ាស៊ីន​និម្មិត...</translation>
+    </message>
+    <message>
+        <source>Display the Virtual Media Manager dialog</source>
+        <translation>បង្ហាញ​ប្រអប់​កម្មវិធី​គ្រប់គ្រង​​​មេឌៀ​និម្មិត</translation>
+    </message>
+    <message>
+        <source>&amp;Import Appliance...</source>
+        <translation>នាំ​ចូល​ឧបករណ៍​...</translation>
+    </message>
+    <message>
+        <source>Import an appliance into VirtualBox</source>
+        <translation>នាំ​ចូលឧបករណ៍​ទៅ​ក្នុង​ VirtualBox</translation>
+    </message>
+    <message>
+        <source>&amp;Export Appliance...</source>
+        <translation>នាំចេញឧបករណ៍...</translation>
+    </message>
+    <message>
+        <source>Export one or more VirtualBox virtual machines as an appliance</source>
+        <translation>នាំ​ចេញ​​ម៉ាស៊ីន​និម្មិត​មួយ​ ឬ​ច្រើន​របស់​ VirtualBox ជាឧបករណ៍​</translation>
+    </message>
+    <message>
+        <source>&amp;Preferences...</source>
+        <comment>global settings</comment>
+        <translation>ចំណូល​ចិត្ត...</translation>
+    </message>
+    <message>
+        <source>Display the global settings dialog</source>
+        <translation>បង្ហាញ​ប្រអប់​កំណត់​សកល</translation>
+    </message>
+    <message>
+        <source>E&amp;xit</source>
+        <translation>ចេញ</translation>
+    </message>
+    <message>
+        <source>Close application</source>
+        <translation>បិទ​កម្មវិធី</translation>
+    </message>
+    <message>
+        <source>&amp;New...</source>
+        <translation>ថ្មី...</translation>
+    </message>
+    <message>
+        <source>Create a new virtual machine</source>
+        <translation>បង្កើត​ម៉ាស៊ីន​និម្មិត​ថ្មី</translation>
+    </message>
+    <message>
+        <source>&amp;Add...</source>
+        <translation type="unfinished">បន្ថែម...</translation>
+    </message>
+    <message>
+        <source>Add an existing virtual machine</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Cl&amp;one...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Clone the selected virtual machine</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Remove</source>
+        <translation type="unfinished">យកចេញ​</translation>
+    </message>
+    <message>
+        <source>Remove the selected virtual machine</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>S&amp;tart</source>
+        <translation>ចាប់ផ្ដើម</translation>
+    </message>
+    <message>
+        <source>Start the selected virtual machine</source>
+        <translation>ចាប់ផ្ដើម​ម៉ាស៊ីន​និម្មិត​ដែល​បានជ្រើស</translation>
+    </message>
+    <message>
+        <source>S&amp;how</source>
+        <translation>បង្ហាញ</translation>
+    </message>
+    <message>
+        <source>Switch to the window of the selected virtual machine</source>
+        <translation>ប្ដូរ​ទៅបង្អួច​របស់​ម៉ាស៊ីននិម្មិត​ដែលបានជ្រើស</translation>
+    </message>
+    <message>
+        <source>Discard</source>
+        <translation type="unfinished">បោះបង់</translation>
+    </message>
+    <message>
+        <source>D&amp;iscard Saved State</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Discard the saved state of the selected virtual machine</source>
+        <translation>បោះបង់​ស្ថានភាព​របស់​ម៉ាស៊ីន​និម្មិត​ដែល​ជ្រើស​ដែលបាន​រក្សាទុក</translation>
+    </message>
+    <message>
+        <source>Re&amp;fresh</source>
+        <translation>ធ្វើ​ឲ្យ​ស្រស់</translation>
+    </message>
+    <message>
+        <source>Refresh the accessibility state of the selected virtual machine</source>
+        <translation>ធ្វើ​ឲ្យ​ស្ថានភាព​ចូលដំណើរការ​ស្រស់​របស់​ម៉ាស៊ីន​និម្មិត​ដែលបានជ្រើស</translation>
+    </message>
+    <message>
+        <source>Show &amp;Log...</source>
+        <translation>បង្ហាញ​កំណត់​ហេតុ...</translation>
+    </message>
+    <message>
+        <source>Show the log files of the selected virtual machine</source>
+        <translation>បង្ហាញ​​ឯកសារ​កំណត់ហេតុ​របស់​ម៉ាស៊ីន​និម្មិត​ដែល​បានជ្រើស</translation>
+    </message>
+    <message>
+        <source>Show in Finder</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show the VirtualBox Machine Definition file in Finder.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show in Explorer</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show the VirtualBox Machine Definition file in Explorer.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show in File Manager</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show the VirtualBox Machine Definition file in the File Manager</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Create Alias on Desktop</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Creates an Alias file to the VirtualBox Machine Definition file on your Desktop.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Create Shortcut on Desktop</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Creates an Shortcut file to the VirtualBox Machine Definition file on your Desktop.</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UIApplianceEditorWidget</name>
@@ -9449,31 +9616,6 @@ VMM: Floppy Image</comment>
         <translation type="obsolete">សេចក្ដី​លម្អិត</translation>
     </message>
     <message>
-        <source>&amp;Preferences...</source>
-        <comment>global settings</comment>
-        <translation>ចំណូល​ចិត្ត...</translation>
-    </message>
-    <message>
-        <source>Display the global settings dialog</source>
-        <translation>បង្ហាញ​ប្រអប់​កំណត់​សកល</translation>
-    </message>
-    <message>
-        <source>E&amp;xit</source>
-        <translation>ចេញ</translation>
-    </message>
-    <message>
-        <source>Close application</source>
-        <translation>បិទ​កម្មវិធី</translation>
-    </message>
-    <message>
-        <source>&amp;New...</source>
-        <translation>ថ្មី...</translation>
-    </message>
-    <message>
-        <source>Create a new virtual machine</source>
-        <translation>បង្កើត​ម៉ាស៊ីន​និម្មិត​ថ្មី</translation>
-    </message>
-    <message>
         <source>&amp;Settings...</source>
         <translation>ការ​កំណត់...</translation>
     </message>
@@ -9492,14 +9634,6 @@ VMM: Floppy Image</comment>
     <message>
         <source>D&amp;iscard</source>
         <translation type="obsolete">បោះបង់</translation>
-    </message>
-    <message>
-        <source>Discard the saved state of the selected virtual machine</source>
-        <translation>បោះបង់​ស្ថានភាព​របស់​ម៉ាស៊ីន​និម្មិត​ដែល​ជ្រើស​ដែលបាន​រក្សាទុក</translation>
-    </message>
-    <message>
-        <source>Refresh the accessibility state of the selected virtual machine</source>
-        <translation>ធ្វើ​ឲ្យ​ស្ថានភាព​ចូលដំណើរការ​ស្រស់​របស់​ម៉ាស៊ីន​និម្មិត​ដែលបានជ្រើស</translation>
     </message>
     <message>
         <source>&amp;File</source>
@@ -9522,32 +9656,8 @@ VMM: Floppy Image</comment>
         <translation type="obsolete">សេចក្ដី​ពិពណ៌នា *</translation>
     </message>
     <message>
-        <source>S&amp;how</source>
-        <translation>បង្ហាញ</translation>
-    </message>
-    <message>
-        <source>Switch to the window of the selected virtual machine</source>
-        <translation>ប្ដូរ​ទៅបង្អួច​របស់​ម៉ាស៊ីននិម្មិត​ដែលបានជ្រើស</translation>
-    </message>
-    <message>
-        <source>S&amp;tart</source>
-        <translation>ចាប់ផ្ដើម</translation>
-    </message>
-    <message>
-        <source>Start the selected virtual machine</source>
-        <translation>ចាប់ផ្ដើម​ម៉ាស៊ីន​និម្មិត​ដែល​បានជ្រើស</translation>
-    </message>
-    <message>
         <source>&amp;Machine</source>
         <translation>ម៉ាស៊ីន</translation>
-    </message>
-    <message>
-        <source>Show &amp;Log...</source>
-        <translation>បង្ហាញ​កំណត់​ហេតុ...</translation>
-    </message>
-    <message>
-        <source>Show the log files of the selected virtual machine</source>
-        <translation>បង្ហាញ​​ឯកសារ​កំណត់ហេតុ​របស់​ម៉ាស៊ីន​និម្មិត​ដែល​បានជ្រើស</translation>
     </message>
     <message>
         <source>R&amp;esume</source>
@@ -9566,14 +9676,6 @@ VMM: Floppy Image</comment>
         <translation>ផ្អាក​ប្រតិបត្តិការ​របស់​ម៉ាស៊ីននិម្មិត</translation>
     </message>
     <message>
-        <source>&amp;Virtual Media Manager...</source>
-        <translation>កម្មវិធី​គ្រប់គ្រង​ម៉ាស៊ីន​និម្មិត...</translation>
-    </message>
-    <message>
-        <source>Display the Virtual Media Manager dialog</source>
-        <translation>បង្ហាញ​ប្រអប់​កម្មវិធី​គ្រប់គ្រង​​​មេឌៀ​និម្មិត</translation>
-    </message>
-    <message>
         <source>Log</source>
         <comment>icon text</comment>
         <translation>កំណត់​ហេតុ</translation>
@@ -9583,38 +9685,8 @@ VMM: Floppy Image</comment>
         <translation type="obsolete">Sun VirtualBox</translation>
     </message>
     <message>
-        <source>&amp;Import Appliance...</source>
-        <translation>នាំ​ចូល​ឧបករណ៍​...</translation>
-    </message>
-    <message>
-        <source>Import an appliance into VirtualBox</source>
-        <translation>នាំ​ចូលឧបករណ៍​ទៅ​ក្នុង​ VirtualBox</translation>
-    </message>
-    <message>
-        <source>&amp;Export Appliance...</source>
-        <translation>នាំចេញឧបករណ៍...</translation>
-    </message>
-    <message>
-        <source>Export one or more VirtualBox virtual machines as an appliance</source>
-        <translation>នាំ​ចេញ​​ម៉ាស៊ីន​និម្មិត​មួយ​ ឬ​ច្រើន​របស់​ VirtualBox ជាឧបករណ៍​</translation>
-    </message>
-    <message>
-        <source>Re&amp;fresh</source>
-        <translation>ធ្វើ​ឲ្យ​ស្រស់</translation>
-    </message>
-    <message>
         <source>&lt;h3&gt;Welcome to VirtualBox!&lt;/h3&gt;&lt;p&gt;The left part of this window is  a list of all virtual machines on your computer. The list is empty now because you haven&apos;t created any virtual machines yet.&lt;img src=:/welcome.png align=right/&gt;&lt;/p&gt;&lt;p&gt;In order to create a new virtual machine, press the &lt;b&gt;New&lt;/b&gt; button in the main tool bar located at the top of the window.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;%1&lt;/b&gt; key to get instant help, or visit &lt;a href=http://www.virtualbox.org&gt;www.virtualbox.org&lt;/a&gt; for the latest information and news.&lt;/p&gt;</source>
         <translation>&lt;h3&gt;សូមស្វាគមន៍​​មក​កាន់ VirtualBox !&lt;/h3&gt;&lt;p&gt;ផ្នែកដែល​នៅ​សល់​របស់​បង្អួច​នេះ គឺជា​បញ្ជី​ម៉ាស៊ីន​និម្មិត​នៅ​ក្នុង​កុំព្យូទ័រ​របស់​អ្នក ។ បញ្ជី​ទទេ​ឥឡូវ​នេះ ពីព្រោះ​អ្នកមិនបានបង្កើត​ម៉ាស៊ីននិម្មិត​នៅ​ឡើយ​ទេ ។&lt;img src=:/welcome.png align=right/&gt;&lt;/p&gt;&lt;p&gt;ដើម្បី​បង្កើត​ម៉ាស៊ីន​និម្មិត ចុច​ប៊ូតុង &lt;b&gt;ថ្មី&lt;/b&gt; ក្នុង​របារ​ឧបករណ៍​ដែល​មាននៅ​​ផ្នែក​ខាង​លើ​នៃ​បង្អួច ។&lt;/p&gt;&lt;p&gt;អ្នក​អាច​ចុច​គ្រាប់ចុច &lt;b&gt;%1&lt;/b&gt; ដើម្បីទទួល​បាន​ជំនួយ​ភ្លាមៗ ឬ​ចំពោះ​ព័ត៌មាន​បន្ថែម ​សូម​មើល &lt;a href=http://www.virtualbox.org&gt;www.virtualbox.org&lt;/a&gt; ។&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>&amp;File</source>
-        <comment>Mac OS X version</comment>
-        <translation type="unfinished">ឯកសារ</translation>
-    </message>
-    <message>
-        <source>&amp;File</source>
-        <comment>Non Mac OS X version</comment>
-        <translation type="unfinished">ឯកសារ</translation>
     </message>
     <message>
         <source>Select a virtual machine file</source>
@@ -9630,83 +9702,11 @@ VMM: Floppy Image</comment>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&amp;Add...</source>
-        <translation type="unfinished">បន្ថែម...</translation>
-    </message>
-    <message>
-        <source>Add an existing virtual machine</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;Remove</source>
-        <translation type="unfinished">យកចេញ​</translation>
-    </message>
-    <message>
-        <source>Remove the selected virtual machine</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Show in Finder</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Show the VirtualBox Machine Definition file in Finder.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Create Alias on Desktop</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Creates an Alias file to the VirtualBox Machine Definition file on your Desktop.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Show in Explorer</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Show the VirtualBox Machine Definition file in Explorer.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Create Shortcut on Desktop</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Creates an Shortcut file to the VirtualBox Machine Definition file on your Desktop.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Show in File Manager</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Show the VirtualBox Machine Definition file in the File Manager</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Show Toolbar</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Show Statusbar</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Cl&amp;one...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Clone the selected virtual machine</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Discard</source>
-        <translation type="unfinished">បោះបង់</translation>
-    </message>
-    <message>
-        <source>D&amp;iscard Saved State</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

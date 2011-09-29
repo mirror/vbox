@@ -517,6 +517,173 @@
         <source>Session I&amp;nformation...</source>
         <translation>Sesijos i&amp;nformacija...</translation>
     </message>
+    <message>
+        <source>&amp;File</source>
+        <comment>Mac OS X version</comment>
+        <translation>&amp;Rinkmena</translation>
+    </message>
+    <message>
+        <source>&amp;File</source>
+        <comment>Non Mac OS X version</comment>
+        <translation>&amp;Rinkmena</translation>
+    </message>
+    <message>
+        <source>&amp;Virtual Media Manager...</source>
+        <translation>&amp;Virtualių laikmenų tvarkytuvė...</translation>
+    </message>
+    <message>
+        <source>Display the Virtual Media Manager dialog</source>
+        <translation>Atveria virtualių laikmenų tvarkytuvę</translation>
+    </message>
+    <message>
+        <source>&amp;Import Appliance...</source>
+        <translation>&amp;Importuoti virtualią mašiną...</translation>
+    </message>
+    <message>
+        <source>Import an appliance into VirtualBox</source>
+        <translation>Importuoja mašiną į VirtualBox</translation>
+    </message>
+    <message>
+        <source>&amp;Export Appliance...</source>
+        <translation>&amp;Eksportuoti virtualią mašiną...</translation>
+    </message>
+    <message>
+        <source>Export one or more VirtualBox virtual machines as an appliance</source>
+        <translation>Eksportuoja vieną ar kelias VirtualBox virtualias mašinas</translation>
+    </message>
+    <message>
+        <source>&amp;Preferences...</source>
+        <comment>global settings</comment>
+        <translation>&amp;Nuostatos...</translation>
+    </message>
+    <message>
+        <source>Display the global settings dialog</source>
+        <translation>Keisti bendras nuostatas</translation>
+    </message>
+    <message>
+        <source>E&amp;xit</source>
+        <translation>&amp;Baigti</translation>
+    </message>
+    <message>
+        <source>Close application</source>
+        <translation>Užverti VirtualBox</translation>
+    </message>
+    <message>
+        <source>&amp;New...</source>
+        <translation>&amp;Nauja...</translation>
+    </message>
+    <message>
+        <source>Create a new virtual machine</source>
+        <translation>Sukurti naują virtualią mašiną</translation>
+    </message>
+    <message>
+        <source>&amp;Add...</source>
+        <translation>&amp;Pridėti...</translation>
+    </message>
+    <message>
+        <source>Add an existing virtual machine</source>
+        <translation>Pridėti esamą virtualią mašiną</translation>
+    </message>
+    <message>
+        <source>Cl&amp;one...</source>
+        <translation>&amp;Klonuoti...</translation>
+    </message>
+    <message>
+        <source>Clone the selected virtual machine</source>
+        <translation>Klonuoti pasirinktą virtualią mašiną</translation>
+    </message>
+    <message>
+        <source>&amp;Remove</source>
+        <translation>Pašalin&amp;ti</translation>
+    </message>
+    <message>
+        <source>Remove the selected virtual machine</source>
+        <translation>Pašalinti pasirinktą virtualią mašiną</translation>
+    </message>
+    <message>
+        <source>S&amp;tart</source>
+        <translation>&amp;Paleisti</translation>
+    </message>
+    <message>
+        <source>Start the selected virtual machine</source>
+        <translation>Paleisti pasirinktą virtualią mašiną</translation>
+    </message>
+    <message>
+        <source>S&amp;how</source>
+        <translation>&amp;Rodyti</translation>
+    </message>
+    <message>
+        <source>Switch to the window of the selected virtual machine</source>
+        <translation>Pereiti į pasirinktos virtualios mašinos langą</translation>
+    </message>
+    <message>
+        <source>Discard</source>
+        <translation>Atmesti</translation>
+    </message>
+    <message>
+        <source>D&amp;iscard Saved State</source>
+        <translation>&amp;Nebesaugoti būsenos</translation>
+    </message>
+    <message>
+        <source>Discard the saved state of the selected virtual machine</source>
+        <translation>Panaikinti išsaugotą pasirinktos virtualios mašinos būvį</translation>
+    </message>
+    <message>
+        <source>Re&amp;fresh</source>
+        <translation>&amp;Atnaujinti</translation>
+    </message>
+    <message>
+        <source>Refresh the accessibility state of the selected virtual machine</source>
+        <translation>Atnaujinti pasirinktos virtualios mašinos pasiekiamumo būseną</translation>
+    </message>
+    <message>
+        <source>Show &amp;Log...</source>
+        <translation>Peržiūrėti ž&amp;urnalus...</translation>
+    </message>
+    <message>
+        <source>Show the log files of the selected virtual machine</source>
+        <translation>Rodyti pasirinktos virtualios mašinos žurnalus</translation>
+    </message>
+    <message>
+        <source>Show in Finder</source>
+        <translation>Atverti su Finder</translation>
+    </message>
+    <message>
+        <source>Show the VirtualBox Machine Definition file in Finder.</source>
+        <translation>VirtualBox mašinos apibrėžties rinkmeną atverti su Finder.</translation>
+    </message>
+    <message>
+        <source>Show in Explorer</source>
+        <translation>Atverti su Explorer</translation>
+    </message>
+    <message>
+        <source>Show the VirtualBox Machine Definition file in Explorer.</source>
+        <translation>VirtualBox mašinos apibrėžties rinkmeną atverti su Explorer.</translation>
+    </message>
+    <message>
+        <source>Show in File Manager</source>
+        <translation>Atverti su rinkmenų tvarkytuve</translation>
+    </message>
+    <message>
+        <source>Show the VirtualBox Machine Definition file in the File Manager</source>
+        <translation>VirtualBox mašinos apibrėžties rinkmeną atverti su rinkmenų tvarkytuve</translation>
+    </message>
+    <message>
+        <source>Create Alias on Desktop</source>
+        <translation>Sukurti nuorodą darbalaukyje</translation>
+    </message>
+    <message>
+        <source>Creates an Alias file to the VirtualBox Machine Definition file on your Desktop.</source>
+        <translation>Darbalaukyje sukuriama nuorodos rinkmena į VirtualBox mašinos apibrėžties rinkmeną.</translation>
+    </message>
+    <message>
+        <source>Create Shortcut on Desktop</source>
+        <translation>Sukurti šaukinį darbalaukyje</translation>
+    </message>
+    <message>
+        <source>Creates an Shortcut file to the VirtualBox Machine Definition file on your Desktop.</source>
+        <translation>Darbalaukyje sukuriama šaukinio rinkmena į VirtualBox mašinos apibrėžties rinkmeną.</translation>
+    </message>
 </context>
 <context>
     <name>UIApplianceEditorWidget</name>
@@ -9518,26 +9685,6 @@ IPv6.</translation>
         <translation type="obsolete">Nuos&amp;tatos...</translation>
     </message>
     <message>
-        <source>Display the global settings dialog</source>
-        <translation>Keisti bendras nuostatas</translation>
-    </message>
-    <message>
-        <source>E&amp;xit</source>
-        <translation>&amp;Baigti</translation>
-    </message>
-    <message>
-        <source>Close application</source>
-        <translation>Užverti VirtualBox</translation>
-    </message>
-    <message>
-        <source>&amp;New...</source>
-        <translation>&amp;Nauja...</translation>
-    </message>
-    <message>
-        <source>Create a new virtual machine</source>
-        <translation>Sukurti naują virtualią mašiną</translation>
-    </message>
-    <message>
         <source>&amp;Settings...</source>
         <translation>Nuo&amp;statos...</translation>
     </message>
@@ -9558,14 +9705,6 @@ IPv6.</translation>
         <translation type="obsolete">At&amp;mesti</translation>
     </message>
     <message>
-        <source>Discard the saved state of the selected virtual machine</source>
-        <translation>Panaikinti išsaugotą pasirinktos virtualios mašinos būvį</translation>
-    </message>
-    <message>
-        <source>Refresh the accessibility state of the selected virtual machine</source>
-        <translation>Atnaujinti pasirinktos virtualios mašinos pasiekiamumo būseną</translation>
-    </message>
-    <message>
         <source>&amp;Help</source>
         <translation type="obsolete">&amp;Pagalba</translation>
     </message>
@@ -9582,32 +9721,8 @@ IPv6.</translation>
         <translation type="obsolete">&amp;Aprašymas *</translation>
     </message>
     <message>
-        <source>S&amp;how</source>
-        <translation>&amp;Rodyti</translation>
-    </message>
-    <message>
-        <source>Switch to the window of the selected virtual machine</source>
-        <translation>Pereiti į pasirinktos virtualios mašinos langą</translation>
-    </message>
-    <message>
-        <source>S&amp;tart</source>
-        <translation>&amp;Paleisti</translation>
-    </message>
-    <message>
-        <source>Start the selected virtual machine</source>
-        <translation>Paleisti pasirinktą virtualią mašiną</translation>
-    </message>
-    <message>
         <source>&amp;Machine</source>
         <translation>&amp;Mašina</translation>
-    </message>
-    <message>
-        <source>Show &amp;Log...</source>
-        <translation>Peržiūrėti ž&amp;urnalus...</translation>
-    </message>
-    <message>
-        <source>Show the log files of the selected virtual machine</source>
-        <translation>Rodyti pasirinktos virtualios mašinos žurnalus</translation>
     </message>
     <message>
         <source>R&amp;esume</source>
@@ -9630,38 +9745,10 @@ IPv6.</translation>
         <translation>&lt;h3&gt;Jus sveikina VirtualBox!&lt;/h3&gt;&lt;p&gt;Kairėje lango pusėje pateikiamas visų Jūsų virtualių mašinų sąrašas. Kol kas šis sąrašas tuščias, kadangi dar nesukūrėte nei vienos virtualios mašinos.&lt;img src=:/welcome.png align=right/&gt;&lt;/p&gt;&lt;p&gt;Norėdami sukurti naują VM, spauskite mygtuką &lt;b&gt;Nauja&lt;/b&gt;, kuris yra pagrindinėje įrankių juostoje lango viršuje.&lt;/p&gt;&lt;p&gt;Trumpą pagalbą gausite nuspaudę &lt;b&gt;%1&lt;/b&gt;. Naujausią informaciją rasite apsilankę svetainėje&lt;a href=http://www.virtualbox.org&gt;www.virtualbox.org&lt;/a&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&amp;Virtual Media Manager...</source>
-        <translation>&amp;Virtualių laikmenų tvarkytuvė...</translation>
-    </message>
-    <message>
-        <source>Display the Virtual Media Manager dialog</source>
-        <translation>Atveria virtualių laikmenų tvarkytuvę</translation>
-    </message>
-    <message>
         <source>Log</source>
         <comment>icon text
 </comment>
         <translation type="obsolete">Žurnalas</translation>
-    </message>
-    <message>
-        <source>&amp;Import Appliance...</source>
-        <translation>&amp;Importuoti virtualią mašiną...</translation>
-    </message>
-    <message>
-        <source>Import an appliance into VirtualBox</source>
-        <translation>Importuoja mašiną į VirtualBox</translation>
-    </message>
-    <message>
-        <source>&amp;Export Appliance...</source>
-        <translation>&amp;Eksportuoti virtualią mašiną...</translation>
-    </message>
-    <message>
-        <source>Export one or more VirtualBox virtual machines as an appliance</source>
-        <translation>Eksportuoja vieną ar kelias VirtualBox virtualias mašinas</translation>
-    </message>
-    <message>
-        <source>Re&amp;fresh</source>
-        <translation>&amp;Atnaujinti</translation>
     </message>
     <message>
         <source>&amp;File</source>
@@ -9689,80 +9776,9 @@ IPv6.</translation>
         <translation>Tvarkytuvė</translation>
     </message>
     <message>
-        <source>&amp;Preferences...</source>
-        <comment>global settings</comment>
-        <translation>&amp;Nuostatos...</translation>
-    </message>
-    <message>
-        <source>&amp;Add...</source>
-        <translation>&amp;Pridėti...</translation>
-    </message>
-    <message>
-        <source>Add an existing virtual machine</source>
-        <translation>Pridėti esamą virtualią mašiną</translation>
-    </message>
-    <message>
-        <source>&amp;Remove</source>
-        <translation>Pašalin&amp;ti</translation>
-    </message>
-    <message>
-        <source>Remove the selected virtual machine</source>
-        <translation>Pašalinti pasirinktą virtualią mašiną</translation>
-    </message>
-    <message>
         <source>Log</source>
         <comment>icon text</comment>
         <translation>Žurnalas</translation>
-    </message>
-    <message>
-        <source>Show in Finder</source>
-        <translation>Atverti su Finder</translation>
-    </message>
-    <message>
-        <source>Show the VirtualBox Machine Definition file in Finder.</source>
-        <translation>VirtualBox mašinos apibrėžties rinkmeną atverti su Finder.</translation>
-    </message>
-    <message>
-        <source>Create Alias on Desktop</source>
-        <translation>Sukurti nuorodą darbalaukyje</translation>
-    </message>
-    <message>
-        <source>Creates an Alias file to the VirtualBox Machine Definition file on your Desktop.</source>
-        <translation>Darbalaukyje sukuriama nuorodos rinkmena į VirtualBox mašinos apibrėžties rinkmeną.</translation>
-    </message>
-    <message>
-        <source>Show in Explorer</source>
-        <translation>Atverti su Explorer</translation>
-    </message>
-    <message>
-        <source>Show the VirtualBox Machine Definition file in Explorer.</source>
-        <translation>VirtualBox mašinos apibrėžties rinkmeną atverti su Explorer.</translation>
-    </message>
-    <message>
-        <source>Create Shortcut on Desktop</source>
-        <translation>Sukurti šaukinį darbalaukyje</translation>
-    </message>
-    <message>
-        <source>Creates an Shortcut file to the VirtualBox Machine Definition file on your Desktop.</source>
-        <translation>Darbalaukyje sukuriama šaukinio rinkmena į VirtualBox mašinos apibrėžties rinkmeną.</translation>
-    </message>
-    <message>
-        <source>Show in File Manager</source>
-        <translation>Atverti su rinkmenų tvarkytuve</translation>
-    </message>
-    <message>
-        <source>Show the VirtualBox Machine Definition file in the File Manager</source>
-        <translation>VirtualBox mašinos apibrėžties rinkmeną atverti su rinkmenų tvarkytuve</translation>
-    </message>
-    <message>
-        <source>&amp;File</source>
-        <comment>Mac OS X version</comment>
-        <translation>&amp;Rinkmena</translation>
-    </message>
-    <message>
-        <source>&amp;File</source>
-        <comment>Non Mac OS X version</comment>
-        <translation>&amp;Rinkmena</translation>
     </message>
     <message>
         <source>Show Toolbar</source>
@@ -9771,22 +9787,6 @@ IPv6.</translation>
     <message>
         <source>Show Statusbar</source>
         <translation>Rodyti būsenos juostą</translation>
-    </message>
-    <message>
-        <source>Cl&amp;one...</source>
-        <translation>&amp;Klonuoti...</translation>
-    </message>
-    <message>
-        <source>Clone the selected virtual machine</source>
-        <translation>Klonuoti pasirinktą virtualią mašiną</translation>
-    </message>
-    <message>
-        <source>Discard</source>
-        <translation>Atmesti</translation>
-    </message>
-    <message>
-        <source>D&amp;iscard Saved State</source>
-        <translation>&amp;Nebesaugoti būsenos</translation>
     </message>
 </context>
 <context>

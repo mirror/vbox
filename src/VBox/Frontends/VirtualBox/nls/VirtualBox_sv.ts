@@ -562,6 +562,173 @@
         <source>Session I&amp;nformation...</source>
         <translation>Sessionsi&amp;nformation...</translation>
     </message>
+    <message>
+        <source>&amp;File</source>
+        <comment>Mac OS X version</comment>
+        <translation>&amp;Arkiv</translation>
+    </message>
+    <message>
+        <source>&amp;File</source>
+        <comment>Non Mac OS X version</comment>
+        <translation>&amp;Arkiv</translation>
+    </message>
+    <message>
+        <source>&amp;Virtual Media Manager...</source>
+        <translation>Hanterare för virtuella &amp;media...</translation>
+    </message>
+    <message>
+        <source>Display the Virtual Media Manager dialog</source>
+        <translation>Visa Hanterare för virtuella media</translation>
+    </message>
+    <message>
+        <source>&amp;Import Appliance...</source>
+        <translation>&amp;Importera appliance...</translation>
+    </message>
+    <message>
+        <source>Import an appliance into VirtualBox</source>
+        <translation>Importera en appliance till VirtualBox</translation>
+    </message>
+    <message>
+        <source>&amp;Export Appliance...</source>
+        <translation>&amp;Exportera appliance...</translation>
+    </message>
+    <message>
+        <source>Export one or more VirtualBox virtual machines as an appliance</source>
+        <translation>Exportera en appliance från virtuella maskiner från VirtualBox</translation>
+    </message>
+    <message>
+        <source>&amp;Preferences...</source>
+        <comment>global settings</comment>
+        <translation>&amp;Inställningar...</translation>
+    </message>
+    <message>
+        <source>Display the global settings dialog</source>
+        <translation>Visa allmänna inställningar</translation>
+    </message>
+    <message>
+        <source>E&amp;xit</source>
+        <translation>A&amp;vsluta</translation>
+    </message>
+    <message>
+        <source>Close application</source>
+        <translation>Stäng programmet</translation>
+    </message>
+    <message>
+        <source>&amp;New...</source>
+        <translation>&amp;Ny...</translation>
+    </message>
+    <message>
+        <source>Create a new virtual machine</source>
+        <translation>Skapa en ny virtuell maskin</translation>
+    </message>
+    <message>
+        <source>&amp;Add...</source>
+        <translation>&amp;Lägg till...</translation>
+    </message>
+    <message>
+        <source>Add an existing virtual machine</source>
+        <translation>Lägg till en befintlig virtuell maskin</translation>
+    </message>
+    <message>
+        <source>Cl&amp;one...</source>
+        <translation>Kl&amp;ona...</translation>
+    </message>
+    <message>
+        <source>Clone the selected virtual machine</source>
+        <translation>Klona den markerade virtuella maskinen</translation>
+    </message>
+    <message>
+        <source>&amp;Remove</source>
+        <translation>&amp;Ta bort</translation>
+    </message>
+    <message>
+        <source>Remove the selected virtual machine</source>
+        <translation>Ta bort markerad virtuell maskin</translation>
+    </message>
+    <message>
+        <source>S&amp;tart</source>
+        <translation>St&amp;arta</translation>
+    </message>
+    <message>
+        <source>Start the selected virtual machine</source>
+        <translation>Starta den markerade virtuella maskinen</translation>
+    </message>
+    <message>
+        <source>S&amp;how</source>
+        <translation>V&amp;isa</translation>
+    </message>
+    <message>
+        <source>Switch to the window of the selected virtual machine</source>
+        <translation>Växla till fönstret för den markerade virtuella maskinen</translation>
+    </message>
+    <message>
+        <source>Discard</source>
+        <translation>Förkasta</translation>
+    </message>
+    <message>
+        <source>D&amp;iscard Saved State</source>
+        <translation>För&amp;kasta sparat tillstånd</translation>
+    </message>
+    <message>
+        <source>Discard the saved state of the selected virtual machine</source>
+        <translation>Förkasta det sparade tillståndet för den markerade virtuella maskinen</translation>
+    </message>
+    <message>
+        <source>Re&amp;fresh</source>
+        <translation>&amp;Uppdatera</translation>
+    </message>
+    <message>
+        <source>Refresh the accessibility state of the selected virtual machine</source>
+        <translation>Uppdatera tillgänglighetstillståndet för den markerade virtuella maskinen</translation>
+    </message>
+    <message>
+        <source>Show &amp;Log...</source>
+        <translation>Visa lo&amp;gg...</translation>
+    </message>
+    <message>
+        <source>Show the log files of the selected virtual machine</source>
+        <translation>Visa loggfilerna för den markerade virtuella maskinen</translation>
+    </message>
+    <message>
+        <source>Show in Finder</source>
+        <translation>Visa i Finder</translation>
+    </message>
+    <message>
+        <source>Show the VirtualBox Machine Definition file in Finder.</source>
+        <translation>Visa VirtualBox Machine Definition-fil i Finder.</translation>
+    </message>
+    <message>
+        <source>Show in Explorer</source>
+        <translation>Visa i Utforskaren</translation>
+    </message>
+    <message>
+        <source>Show the VirtualBox Machine Definition file in Explorer.</source>
+        <translation>Visa VirtualBox Machine Definition-filen i Utforskaren.</translation>
+    </message>
+    <message>
+        <source>Show in File Manager</source>
+        <translation>Visa i filhanterare</translation>
+    </message>
+    <message>
+        <source>Show the VirtualBox Machine Definition file in the File Manager</source>
+        <translation>Visa VirtualBox Machine Definition-filen i filhanteraren</translation>
+    </message>
+    <message>
+        <source>Create Alias on Desktop</source>
+        <translation>Skapa alias på skrivbordet</translation>
+    </message>
+    <message>
+        <source>Creates an Alias file to the VirtualBox Machine Definition file on your Desktop.</source>
+        <translation>Skapar en aliasfil till VirtualBox Machine Definition-filen på ditt skrivbord.</translation>
+    </message>
+    <message>
+        <source>Create Shortcut on Desktop</source>
+        <translation>Skapa genväg på skrivbordet</translation>
+    </message>
+    <message>
+        <source>Creates an Shortcut file to the VirtualBox Machine Definition file on your Desktop.</source>
+        <translation>Skapar en genvägsfil till VirtualBox Machine Definition-filen på ditt skrivbord.</translation>
+    </message>
 </context>
 <context>
     <name>UIApplianceEditorWidget</name>
@@ -10517,31 +10684,6 @@ Version %1</translation>
         <translation type="obsolete">Visa den virtuella diskhanteraren</translation>
     </message>
     <message>
-        <source>&amp;Preferences...</source>
-        <comment>global settings</comment>
-        <translation>&amp;Inställningar...</translation>
-    </message>
-    <message>
-        <source>Display the global settings dialog</source>
-        <translation>Visa allmänna inställningar</translation>
-    </message>
-    <message>
-        <source>E&amp;xit</source>
-        <translation>A&amp;vsluta</translation>
-    </message>
-    <message>
-        <source>Close application</source>
-        <translation>Stäng programmet</translation>
-    </message>
-    <message>
-        <source>&amp;New...</source>
-        <translation>&amp;Ny...</translation>
-    </message>
-    <message>
-        <source>Create a new virtual machine</source>
-        <translation>Skapa en ny virtuell maskin</translation>
-    </message>
-    <message>
         <source>&amp;Settings...</source>
         <translation>&amp;Inställningar...</translation>
     </message>
@@ -10562,16 +10704,8 @@ Version %1</translation>
         <translation type="obsolete">Fö&amp;rkasta</translation>
     </message>
     <message>
-        <source>Discard the saved state of the selected virtual machine</source>
-        <translation>Förkasta det sparade tillståndet för den markerade virtuella maskinen</translation>
-    </message>
-    <message>
         <source>&amp;Refresh</source>
         <translation type="obsolete">&amp;Uppdatera</translation>
-    </message>
-    <message>
-        <source>Refresh the accessibility state of the selected virtual machine</source>
-        <translation>Uppdatera tillgänglighetstillståndet för den markerade virtuella maskinen</translation>
     </message>
     <message>
         <source>&amp;File</source>
@@ -10594,32 +10728,8 @@ Version %1</translation>
         <translation type="obsolete">B&amp;eskrivning *</translation>
     </message>
     <message>
-        <source>S&amp;how</source>
-        <translation>V&amp;isa</translation>
-    </message>
-    <message>
-        <source>Switch to the window of the selected virtual machine</source>
-        <translation>Växla till fönstret för den markerade virtuella maskinen</translation>
-    </message>
-    <message>
-        <source>S&amp;tart</source>
-        <translation>St&amp;arta</translation>
-    </message>
-    <message>
-        <source>Start the selected virtual machine</source>
-        <translation>Starta den markerade virtuella maskinen</translation>
-    </message>
-    <message>
         <source>&amp;Machine</source>
         <translation>&amp;Maskin</translation>
-    </message>
-    <message>
-        <source>Show &amp;Log...</source>
-        <translation>Visa lo&amp;gg...</translation>
-    </message>
-    <message>
-        <source>Show the log files of the selected virtual machine</source>
-        <translation>Visa loggfilerna för den markerade virtuella maskinen</translation>
     </message>
     <message>
         <source>R&amp;esume</source>
@@ -10642,14 +10752,6 @@ Version %1</translation>
         <translation>&lt;h3&gt;Välkommen till VirtualBox!&lt;/h3&gt;&lt;p&gt;Den vänstra sidan av detta fönster är tänkt att visa en lista över alla virtuella maskiner på din dator. Listan är tom just nu därför att du inte har skapat några virtuella maskiner än.&lt;img src=:/welcome.png align=right/&gt;&lt;/p&gt;&lt;p&gt;Tryck på knappen &lt;b&gt;Ny&lt;/b&gt; i huvudverktygsraden i överkanten av fönstret för att skapa en ny virtuell maskin.&lt;/p&gt;&lt;p&gt;Du kan trycka på tangenten &lt;b&gt;%1&lt;/b&gt; för att få hjälp eller besöka &lt;a href=http://www.virtualbox.org&gt;www.virtualbox.org&lt;/a&gt; för senaste information och nyheter.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&amp;Virtual Media Manager...</source>
-        <translation>Hanterare för virtuella &amp;media...</translation>
-    </message>
-    <message>
-        <source>Display the Virtual Media Manager dialog</source>
-        <translation>Visa Hanterare för virtuella media</translation>
-    </message>
-    <message>
         <source>Log</source>
         <comment>icon text</comment>
         <translation>Logg</translation>
@@ -10657,36 +10759,6 @@ Version %1</translation>
     <message>
         <source>Sun VirtualBox</source>
         <translation type="obsolete">Sun VirtualBox</translation>
-    </message>
-    <message>
-        <source>&amp;Import Appliance...</source>
-        <translation>&amp;Importera appliance...</translation>
-    </message>
-    <message>
-        <source>Import an appliance into VirtualBox</source>
-        <translation>Importera en appliance till VirtualBox</translation>
-    </message>
-    <message>
-        <source>&amp;Export Appliance...</source>
-        <translation>&amp;Exportera appliance...</translation>
-    </message>
-    <message>
-        <source>Export one or more VirtualBox virtual machines as an appliance</source>
-        <translation>Exportera en appliance från virtuella maskiner från VirtualBox</translation>
-    </message>
-    <message>
-        <source>Re&amp;fresh</source>
-        <translation>&amp;Uppdatera</translation>
-    </message>
-    <message>
-        <source>&amp;File</source>
-        <comment>Mac OS X version</comment>
-        <translation>&amp;Arkiv</translation>
-    </message>
-    <message>
-        <source>&amp;File</source>
-        <comment>Non Mac OS X version</comment>
-        <translation>&amp;Arkiv</translation>
     </message>
     <message>
         <source>Select a virtual machine file</source>
@@ -10702,84 +10774,12 @@ Version %1</translation>
         <translation>Hanterare</translation>
     </message>
     <message>
-        <source>&amp;Add...</source>
-        <translation>&amp;Lägg till...</translation>
-    </message>
-    <message>
-        <source>Add an existing virtual machine</source>
-        <translation>Lägg till en befintlig virtuell maskin</translation>
-    </message>
-    <message>
-        <source>&amp;Remove</source>
-        <translation>&amp;Ta bort</translation>
-    </message>
-    <message>
-        <source>Remove the selected virtual machine</source>
-        <translation>Ta bort markerad virtuell maskin</translation>
-    </message>
-    <message>
-        <source>Show in Finder</source>
-        <translation>Visa i Finder</translation>
-    </message>
-    <message>
-        <source>Show the VirtualBox Machine Definition file in Finder.</source>
-        <translation>Visa VirtualBox Machine Definition-fil i Finder.</translation>
-    </message>
-    <message>
-        <source>Create Alias on Desktop</source>
-        <translation>Skapa alias på skrivbordet</translation>
-    </message>
-    <message>
-        <source>Creates an Alias file to the VirtualBox Machine Definition file on your Desktop.</source>
-        <translation>Skapar en aliasfil till VirtualBox Machine Definition-filen på ditt skrivbord.</translation>
-    </message>
-    <message>
-        <source>Show in Explorer</source>
-        <translation>Visa i Utforskaren</translation>
-    </message>
-    <message>
-        <source>Show the VirtualBox Machine Definition file in Explorer.</source>
-        <translation>Visa VirtualBox Machine Definition-filen i Utforskaren.</translation>
-    </message>
-    <message>
-        <source>Create Shortcut on Desktop</source>
-        <translation>Skapa genväg på skrivbordet</translation>
-    </message>
-    <message>
-        <source>Creates an Shortcut file to the VirtualBox Machine Definition file on your Desktop.</source>
-        <translation>Skapar en genvägsfil till VirtualBox Machine Definition-filen på ditt skrivbord.</translation>
-    </message>
-    <message>
-        <source>Show in File Manager</source>
-        <translation>Visa i filhanterare</translation>
-    </message>
-    <message>
-        <source>Show the VirtualBox Machine Definition file in the File Manager</source>
-        <translation>Visa VirtualBox Machine Definition-filen i filhanteraren</translation>
-    </message>
-    <message>
         <source>Show Toolbar</source>
         <translation>Visa verktygsrad</translation>
     </message>
     <message>
         <source>Show Statusbar</source>
         <translation>Visa statusrad</translation>
-    </message>
-    <message>
-        <source>Cl&amp;one...</source>
-        <translation>Kl&amp;ona...</translation>
-    </message>
-    <message>
-        <source>Clone the selected virtual machine</source>
-        <translation>Klona den markerade virtuella maskinen</translation>
-    </message>
-    <message>
-        <source>Discard</source>
-        <translation>Förkasta</translation>
-    </message>
-    <message>
-        <source>D&amp;iscard Saved State</source>
-        <translation>För&amp;kasta sparat tillstånd</translation>
     </message>
 </context>
 <context>

@@ -23,10 +23,40 @@
 #include "UIActionPool.h"
 
 /* Action keys: */
-enum UIActionIndexOffline
+enum UIActionIndexSelector
 {
+    /* 'File' menu actions: */
+    UIActionIndexSelector_Menu_File = UIActionIndex_Max + 1,
+    UIActionIndexSelector_Simple_File_MediumManagerDialog,
+    UIActionIndexSelector_Simple_File_ImportApplianceWizard,
+    UIActionIndexSelector_Simple_File_ExportApplianceWizard,
+    UIActionIndexSelector_Simple_File_PreferencesDialog,
+    UIActionIndexSelector_Simple_File_Exit,
+
+    /* 'Machine' menu actions: */
+    UIActionIndexSelector_Menu_Machine,
+    UIActionIndexSelector_Simple_Machine_NewWizard,
+    UIActionIndexSelector_Simple_Machine_AddDialog,
+    UIActionIndexSelector_Simple_Machine_SettingsDialog,
+    UIActionIndexSelector_Simple_Machine_CloneWizard,
+    UIActionIndexSelector_Simple_Machine_RemoveDialog,
+    UIActionIndexSelector_State_Machine_StartOrShow,
+    UIActionIndexSelector_Simple_Machine_Discard,
+    UIActionIndexSelector_Toggle_Machine_PauseAndResume,
+    UIActionIndexSelector_Simple_Machine_Reset,
+    UIActionIndexSelector_Simple_Machine_Refresh,
+    UIActionIndexSelector_Simple_Machine_LogDialog,
+    UIActionIndexSelector_Simple_Machine_ShowInFileManager,
+    UIActionIndexSelector_Simple_Machine_CreateShortcut,
+    UIActionIndexSelector_Simple_Machine_Sort,
+
+    /* 'Machine/Close' menu actions: */
+    UIActionIndexSelector_Menu_Machine_Close,
+    UIActionIndexSelector_Simple_Machine_Close_ACPIShutdown,
+    UIActionIndexSelector_Simple_Machine_Close_PowerOff,
+
     /* Maximum index: */
-    UIActionIndexOffline_Max = UIActionIndex_Max + 1
+    UIActionIndexSelector_Max
 };
 
 /* Singleton runtime action pool: */
@@ -43,7 +73,7 @@ public:
 private:
 
     /* Constructor: */
-    UIActionPoolSelector() : UIActionPool(UIActionPoolType_Offline) {}
+    UIActionPoolSelector() : UIActionPool(UIActionPoolType_Selector) {}
 
     /* Virtual helping stuff: */
     void createActions();

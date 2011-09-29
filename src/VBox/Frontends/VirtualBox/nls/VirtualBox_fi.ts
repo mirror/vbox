@@ -523,6 +523,173 @@
         <source>Session I&amp;nformation...</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>&amp;File</source>
+        <comment>Mac OS X version</comment>
+        <translation type="unfinished">&amp;Tiedosto</translation>
+    </message>
+    <message>
+        <source>&amp;File</source>
+        <comment>Non Mac OS X version</comment>
+        <translation type="unfinished">&amp;Tiedosto</translation>
+    </message>
+    <message>
+        <source>&amp;Virtual Media Manager...</source>
+        <translation>&amp;Virtuaalimedioiden hallinta...</translation>
+    </message>
+    <message>
+        <source>Display the Virtual Media Manager dialog</source>
+        <translation>Näytä virtuaalimedioiden hallintaikkuna</translation>
+    </message>
+    <message>
+        <source>&amp;Import Appliance...</source>
+        <translation>&amp;Tuo laitteistokuva...</translation>
+    </message>
+    <message>
+        <source>Import an appliance into VirtualBox</source>
+        <translation>Tuo virtuaalinen laitteistokuva VirtualBoxiin</translation>
+    </message>
+    <message>
+        <source>&amp;Export Appliance...</source>
+        <translation>&amp;Vie laitteistokuva...</translation>
+    </message>
+    <message>
+        <source>Export one or more VirtualBox virtual machines as an appliance</source>
+        <translation>Vie virtuaalikoneista koostuva laitteisto VirtualBoxista</translation>
+    </message>
+    <message>
+        <source>&amp;Preferences...</source>
+        <comment>global settings</comment>
+        <translation>&amp;Asetukset...</translation>
+    </message>
+    <message>
+        <source>Display the global settings dialog</source>
+        <translation>Näyttää yleisasetusten asetusikkuna</translation>
+    </message>
+    <message>
+        <source>E&amp;xit</source>
+        <translation>&amp;Sulje</translation>
+    </message>
+    <message>
+        <source>Close application</source>
+        <translation>Sulje ohjelma</translation>
+    </message>
+    <message>
+        <source>&amp;New...</source>
+        <translation>&amp;Uusi...</translation>
+    </message>
+    <message>
+        <source>Create a new virtual machine</source>
+        <translation>Luo uusi virtuaalikone</translation>
+    </message>
+    <message>
+        <source>&amp;Add...</source>
+        <translation type="unfinished">&amp;Lisää...</translation>
+    </message>
+    <message>
+        <source>Add an existing virtual machine</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Cl&amp;one...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Clone the selected virtual machine</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Remove</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Remove the selected virtual machine</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>S&amp;tart</source>
+        <translation>&amp;Käynnistä</translation>
+    </message>
+    <message>
+        <source>Start the selected virtual machine</source>
+        <translation>Käynnistä valittu virtuaalikone</translation>
+    </message>
+    <message>
+        <source>S&amp;how</source>
+        <translation>&amp;Näytä</translation>
+    </message>
+    <message>
+        <source>Switch to the window of the selected virtual machine</source>
+        <translation>Siirry valitun virtuaalikoneen ikkunaan</translation>
+    </message>
+    <message>
+        <source>Discard</source>
+        <translation type="unfinished">Hylkää</translation>
+    </message>
+    <message>
+        <source>D&amp;iscard Saved State</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Discard the saved state of the selected virtual machine</source>
+        <translation>Hylkää valitun virtuaalikoneen tallennettu tila</translation>
+    </message>
+    <message>
+        <source>Re&amp;fresh</source>
+        <translation>Pä&amp;ivitä</translation>
+    </message>
+    <message>
+        <source>Refresh the accessibility state of the selected virtual machine</source>
+        <translation>Päivitä tämän virtuaalikoneen saatavuuden tila</translation>
+    </message>
+    <message>
+        <source>Show &amp;Log...</source>
+        <translation>Näytä &amp;loki...</translation>
+    </message>
+    <message>
+        <source>Show the log files of the selected virtual machine</source>
+        <translation>Näytä valitun virtuaalikoneen lokitiedostot</translation>
+    </message>
+    <message>
+        <source>Show in Finder</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show the VirtualBox Machine Definition file in Finder.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show in Explorer</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show the VirtualBox Machine Definition file in Explorer.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show in File Manager</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show the VirtualBox Machine Definition file in the File Manager</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Create Alias on Desktop</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Creates an Alias file to the VirtualBox Machine Definition file on your Desktop.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Create Shortcut on Desktop</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Creates an Shortcut file to the VirtualBox Machine Definition file on your Desktop.</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UIApplianceEditorWidget</name>
@@ -10277,33 +10444,12 @@ Version %1</source>
         <translation type="obsolete">Näyttää virtuaalilevyjen hallinnan valintaikkunan</translation>
     </message>
     <message>
-        <source>&amp;Preferences...</source>
-        <comment>global settings</comment>
-        <translation>&amp;Asetukset...</translation>
-    </message>
-    <message>
         <source>Ctrl+G</source>
         <translation type="obsolete">Ctrl+G</translation>
     </message>
     <message>
-        <source>Display the global settings dialog</source>
-        <translation>Näyttää yleisasetusten asetusikkuna</translation>
-    </message>
-    <message>
-        <source>E&amp;xit</source>
-        <translation>&amp;Sulje</translation>
-    </message>
-    <message>
         <source>Ctrl+Q</source>
         <translation type="obsolete">Ctrl+E</translation>
-    </message>
-    <message>
-        <source>Close application</source>
-        <translation>Sulje ohjelma</translation>
-    </message>
-    <message>
-        <source>&amp;New...</source>
-        <translation>&amp;Uusi...</translation>
     </message>
     <message>
         <source>New</source>
@@ -10312,10 +10458,6 @@ Version %1</source>
     <message>
         <source>Ctrl+N</source>
         <translation type="obsolete">Ctrl+U</translation>
-    </message>
-    <message>
-        <source>Create a new virtual machine</source>
-        <translation>Luo uusi virtuaalikone</translation>
     </message>
     <message>
         <source>&amp;Settings...</source>
@@ -10350,14 +10492,6 @@ Version %1</source>
         <translation type="obsolete">H&amp;ylkää</translation>
     </message>
     <message>
-        <source>Discard</source>
-        <translation type="unfinished">Hylkää</translation>
-    </message>
-    <message>
-        <source>Discard the saved state of the selected virtual machine</source>
-        <translation>Hylkää valitun virtuaalikoneen tallennettu tila</translation>
-    </message>
-    <message>
         <source>&amp;Refresh</source>
         <translation type="obsolete">Pä&amp;ivitä</translation>
     </message>
@@ -10368,10 +10502,6 @@ Version %1</source>
     <message>
         <source>Ctrl+R</source>
         <translation type="obsolete">Ctrl+I</translation>
-    </message>
-    <message>
-        <source>Refresh the accessibility state of the selected virtual machine</source>
-        <translation>Päivitä tämän virtuaalikoneen saatavuuden tila</translation>
     </message>
     <message>
         <source>&amp;Contents...</source>
@@ -10418,36 +10548,16 @@ Version %1</source>
         <translation type="obsolete">Ku&amp;vaus *</translation>
     </message>
     <message>
-        <source>S&amp;how</source>
-        <translation>&amp;Näytä</translation>
-    </message>
-    <message>
         <source>Show</source>
         <translation type="obsolete">Näytä</translation>
-    </message>
-    <message>
-        <source>Switch to the window of the selected virtual machine</source>
-        <translation>Siirry valitun virtuaalikoneen ikkunaan</translation>
-    </message>
-    <message>
-        <source>S&amp;tart</source>
-        <translation>&amp;Käynnistä</translation>
     </message>
     <message>
         <source>Start</source>
         <translation type="obsolete">Käynnistä</translation>
     </message>
     <message>
-        <source>Start the selected virtual machine</source>
-        <translation>Käynnistä valittu virtuaalikone</translation>
-    </message>
-    <message>
         <source>&amp;Machine</source>
         <translation>&amp;Kone</translation>
-    </message>
-    <message>
-        <source>Show &amp;Log...</source>
-        <translation>Näytä &amp;loki...</translation>
     </message>
     <message>
         <source>Show Log...</source>
@@ -10456,10 +10566,6 @@ Version %1</source>
     <message>
         <source>Ctrl+L</source>
         <translation type="obsolete">Ctrl+L</translation>
-    </message>
-    <message>
-        <source>Show the log files of the selected virtual machine</source>
-        <translation>Näytä valitun virtuaalikoneen lokitiedostot</translation>
     </message>
     <message>
         <source>R&amp;egister VirtualBox...</source>
@@ -10498,51 +10604,13 @@ Version %1</source>
         <translation>&lt;h3&gt;Tervetuloa VirtualBoxiin!&lt;/h3&gt;&lt;p&gt;Oikealla olevasta tilasta näet kaikki tällä tietokoneella olevat virtuaalikoneet. Luettelo on nyt tyhjä, koska et ole vielä luonut yhtäkään virtuaalikonetta.&lt;img src=:/welcome.png align=right/&gt;&lt;/p&gt;&lt;p&gt;Jos haluat luoda uuden virtuaalikoneen, napsauta nappia &lt;b&gt;Uusi&lt;/b&gt; ikkunan yläosassa olevasta työkalupalkista.&lt;/p&gt;&lt;p&gt;Voit lukea ohjeita painamalla &lt;b&gt;%1&lt;/b&gt; tai lukea viimeisimmät tiedot ja uutiset sivulta &lt;a href=http://www.virtualbox.org&gt;www.virtualbox.org&lt;/a&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&amp;Virtual Media Manager...</source>
-        <translation>&amp;Virtuaalimedioiden hallinta...</translation>
-    </message>
-    <message>
         <source>Sun VirtualBox</source>
         <translation type="obsolete">Sun VirtualBox</translation>
-    </message>
-    <message>
-        <source>Display the Virtual Media Manager dialog</source>
-        <translation>Näytä virtuaalimedioiden hallintaikkuna</translation>
-    </message>
-    <message>
-        <source>&amp;Import Appliance...</source>
-        <translation>&amp;Tuo laitteistokuva...</translation>
-    </message>
-    <message>
-        <source>Import an appliance into VirtualBox</source>
-        <translation>Tuo virtuaalinen laitteistokuva VirtualBoxiin</translation>
-    </message>
-    <message>
-        <source>&amp;Export Appliance...</source>
-        <translation>&amp;Vie laitteistokuva...</translation>
-    </message>
-    <message>
-        <source>Export one or more VirtualBox virtual machines as an appliance</source>
-        <translation>Vie virtuaalikoneista koostuva laitteisto VirtualBoxista</translation>
-    </message>
-    <message>
-        <source>Re&amp;fresh</source>
-        <translation>Pä&amp;ivitä</translation>
     </message>
     <message>
         <source>Log</source>
         <comment>icon text</comment>
         <translation>Loki</translation>
-    </message>
-    <message>
-        <source>&amp;File</source>
-        <comment>Mac OS X version</comment>
-        <translation type="unfinished">&amp;Tiedosto</translation>
-    </message>
-    <message>
-        <source>&amp;File</source>
-        <comment>Non Mac OS X version</comment>
-        <translation type="unfinished">&amp;Tiedosto</translation>
     </message>
     <message>
         <source>Select a virtual machine file</source>
@@ -10558,79 +10626,11 @@ Version %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&amp;Add...</source>
-        <translation type="unfinished">&amp;Lisää...</translation>
-    </message>
-    <message>
-        <source>Add an existing virtual machine</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;Remove</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Remove the selected virtual machine</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Show in Finder</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Show the VirtualBox Machine Definition file in Finder.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Create Alias on Desktop</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Creates an Alias file to the VirtualBox Machine Definition file on your Desktop.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Show in Explorer</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Show the VirtualBox Machine Definition file in Explorer.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Create Shortcut on Desktop</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Creates an Shortcut file to the VirtualBox Machine Definition file on your Desktop.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Show in File Manager</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Show the VirtualBox Machine Definition file in the File Manager</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Show Toolbar</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Show Statusbar</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Cl&amp;one...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Clone the selected virtual machine</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>D&amp;iscard Saved State</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
