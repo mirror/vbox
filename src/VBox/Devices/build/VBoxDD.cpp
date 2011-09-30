@@ -315,7 +315,7 @@ extern "C" DECLEXPORT(int) VBoxDriversRegister(PCPDMDRVREGCB pCallbacks, uint32_
 
 #ifdef VBOX_WITH_PCI_PASSTHROUGH_IMPL
     rc = pCallbacks->pfnRegister(pCallbacks, &g_DrvPciRaw);
-    if (RT_FAILURED(rc))
+    if (RT_FAILURE(rc))
         return rc;
 #endif
 

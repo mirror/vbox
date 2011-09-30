@@ -6427,7 +6427,9 @@ HRESULT Console::powerUp(IProgress **aProgress, bool aPaused)
         rc = consoleInitReleaseLog(mMachine);
         if (FAILED(rc))
             throw rc;
+#ifdef VBOX_WITH_EXTPACK
         mptrExtPackManager->dumpAllToReleaseLog();
+#endif
 
 #ifdef RT_OS_SOLARIS
         /* setup host core dumper for the VM */

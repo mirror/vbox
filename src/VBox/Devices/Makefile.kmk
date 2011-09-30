@@ -721,7 +721,7 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
  endif
 
  if defined(VBOX_WITH_PCI_PASSTHROUGH_IMPL) && !defined(VBOX_WITH_EXTPACK_PUEL)
-  VBoxDDR0_SOURCES      +=
+  VBoxDDR0_SOURCES      += \
 	Bus/DevPciRaw.cpp
  endif
 
@@ -937,15 +937,20 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
  endif
 
  ifdef VBOX_WITH_UDPTUNNEL
- Drivers_SOURCES += \
+  Drivers_SOURCES += \
 	Network/DrvUDPTunnel.cpp
- Drivers_DEFS += VBOX_WITH_UDPTUNNEL
+  Drivers_DEFS += VBOX_WITH_UDPTUNNEL
  endif
  ifdef VBOX_WITH_VDE
- Drivers_SOURCES += \
+  Drivers_SOURCES += \
  	Network/DrvVDE.cpp \
  	Network/VDEPlug.cpp
- Drivers_DEFS += VBOX_WITH_VDE
+  Drivers_DEFS += VBOX_WITH_VDE
+ endif
+ if defined(VBOX_WITH_PCI_PASSTHROUGH_IMPL) && !defined(VBOX_WITH_EXTPACK_PUEL)
+  Drivers_SOURCES += \
+	Bus/DrvPciRaw.cpp
+  Drivers_DEFS += VBOX_WITH_PCI_PASSTHROUGH_IMPL
  endif
 
  # -- OS specific --
