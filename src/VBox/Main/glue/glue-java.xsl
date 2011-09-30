@@ -49,13 +49,15 @@
   <xsl:text>/*
  *  Copyright (C) 2010-2011 Oracle Corporation
  *
- *  This file is part of VirtualBox Open Source Edition (OSE), as
- *  available from http://www.virtualbox.org. This file is free software;
- *  you can redistribute it and/or modify it under the terms of the GNU
- *  General Public License (GPL) as published by the Free Software
- *  Foundation, in version 2 as it comes in the "COPYING" file of the
- *  VirtualBox OSE distribution. VirtualBox OSE is distributed in the
- *  hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
+ *  This file is part of the VirtualBox SDK, as available from
+ *  http://www.virtualbox.org.  This library is free software; you can
+ *  redistribute it and/or modify it under the terms of the GNU Lesser General
+ *  Public License as published by the Free Software Foundation, in version 2.1
+ *  as it comes in the "COPYING.LIB" file of the VirtualBox SDK distribution.
+ *  This library is distributed in the hope that it will be useful, but WITHOUT
+ *  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ *  FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
+ *  License for more details.
  *
 </xsl:text>
   <xsl:value-of select="concat(' * ',$name)"/>
@@ -677,9 +679,9 @@
 <xsl:template name="typeIdl2Back">
   <xsl:param name="type" />
   <xsl:param name="safearray" />
-  <xsl:param name="forceelem" />  
+  <xsl:param name="forceelem" />
 
-  <xsl:choose>     
+  <xsl:choose>
     <xsl:when test="($G_vboxGlueStyle='xpcom')">
       <xsl:variable name="needarray" select="($safearray='yes') and not($forceelem='yes')" />
 
@@ -758,7 +760,7 @@
 
     <xsl:when test="($G_vboxGlueStyle='jaxws')">
       <xsl:variable name="needarray" select="($safearray='yes' and not($type='octet')) and not($forceelem='yes')" />
-      
+
       <xsl:if test="$needarray">
         <xsl:value-of select="'List&lt;'" />
       </xsl:if>
@@ -3613,13 +3615,13 @@ public class Helper {
             throw new AssertionError(e);
         }
     }
-    
+
     /* Pretty naive Base64 encoder/decoder. */
     private static final char[] valToChar = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/".toCharArray();
     private static final int[] charToVal = new int[256];
 
-    /* Initialize recoding alphabet. */ 
-    static 
+    /* Initialize recoding alphabet. */
+    static
     {
         for (int i = 0; i < charToVal.length; i++)
             charToVal[i] = -1;
@@ -3653,7 +3655,7 @@ public class Helper {
             result[stringIndex++] = valToChar[((ch2 << 2) & 0x3f) | (ch3 >> 6)];
             result[stringIndex++] = valToChar[ch3 & 0x3f];
         }
-        
+
         switch (data.length - dataIndex)
         {
             case 0:
@@ -3697,7 +3699,7 @@ public class Helper {
     {
         if (str == null)
             return null;
-        
+
         int stringLength = str.length();
         if (stringLength == 0)
             return new byte[0];
@@ -3713,7 +3715,7 @@ public class Helper {
             if (ch == '=')
                 padChars++;
         }
-        
+
         if ((validChars * 3 % 4) != 0)
             throw new RuntimeException("invalid encoded string "+str);
 
@@ -3735,13 +3737,13 @@ public class Helper {
             int ch4 = str.charAt(stringIndex++);
 
             result[dataIndex++] = (byte)(((charToVal[ch1] << 2) | charToVal[ch2] >> 4) & 0xff);
-            /* we check this to ensure that we don't override data with '=' padding. */ 
+            /* we check this to ensure that we don't override data with '=' padding. */
             if (dataIndex < result.length)
                 result[dataIndex++] = (byte)(((charToVal[ch2] << 4) | charToVal[ch3] >> 2) & 0xff);
             if (dataIndex < result.length)
                 result[dataIndex++] = (byte)(((charToVal[ch3] << 6) | charToVal[ch4]) & 0xff);
         }
-        
+
         return result;
     }
 }
