@@ -227,7 +227,7 @@ public:
     void VRDPInterceptUSB(uint32_t u32ClientId, void **ppvIntercept);
     void VRDPInterceptClipboard(uint32_t u32ClientId);
 
-    void processRemoteUSBDevices(uint32_t u32ClientId, VRDEUSBDEVICEDESC *pDevList, uint32_t cbDevList);
+    void processRemoteUSBDevices(uint32_t u32ClientId, VRDEUSBDEVICEDESC *pDevList, uint32_t cbDevList, bool fDescExt);
 
     // callback callers (partly; for some events console callbacks are notified
     // directly from IInternalSessionControl event handlers declared above)
