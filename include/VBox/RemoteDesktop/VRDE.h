@@ -438,6 +438,13 @@ typedef struct _VRDEUSBDEVICEDESC
 
 } VRDEUSBDEVICEDESC;
 
+#define VRDE_USBDEVICESPEED_UNKNOWN    0 /* Unknown. */
+#define VRDE_USBDEVICESPEED_LOW        1 /* Low speed (1.5 Mbit/s). */
+#define VRDE_USBDEVICESPEED_FULL       2 /* Full speed (12 Mbit/s). */
+#define VRDE_USBDEVICESPEED_HIGH       3 /* High speed (480 Mbit/s). */
+#define VRDE_USBDEVICESPEED_VARIABLE   4 /* Variable speed - USB 2.5 / wireless. */
+#define VRDE_USBDEVICESPEED_SUPERSPEED 5 /* Super Speed - USB 3.0 */
+
 typedef struct _VRDEUSBDEVICEDESCEXT
 {
     VRDEUSBDEVICEDESC desc;
@@ -445,9 +452,8 @@ typedef struct _VRDEUSBDEVICEDESCEXT
     /* Extended info.
      */
 
-    /** Version of the physical USB port the device is connected to. */
-    uint16_t        bcdPortVersion;
-
+    /** The USB device speed: VRDE_USBDEVICESPEED_*. */
+    uint16_t        u16DeviceSpeed;
 } VRDEUSBDEVICEDESCEXT;
 
 typedef struct _VRDE_USB_REQ_DEVICE_LIST_RET
