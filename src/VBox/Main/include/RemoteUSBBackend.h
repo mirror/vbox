@@ -130,6 +130,9 @@ class RemoteUSBBackend: public RemoteUSBBackendListable
 
         /* VRDP_USB_VERSION_2: the client version. */
         uint32_t mClientVersion;
+
+        /* VRDP_USB_VERSION_3: the client sends VRDE_USB_REQ_DEVICE_LIST_EXT_RET. */
+        bool mfDescExt;
 };
 
 #endif /* ____H_REMOTEUSBBACKEND */

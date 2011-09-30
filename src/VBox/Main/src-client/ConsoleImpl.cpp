@@ -8260,10 +8260,10 @@ void Console::detachAllUSBDevices(bool aDone)
 /**
  * @note Locks this object for writing.
  */
-void Console::processRemoteUSBDevices(uint32_t u32ClientId, VRDEUSBDEVICEDESC *pDevList, uint32_t cbDevList)
+void Console::processRemoteUSBDevices(uint32_t u32ClientId, VRDEUSBDEVICEDESC *pDevList, uint32_t cbDevList, bool fDescExt)
 {
     LogFlowThisFuncEnter();
-    LogFlowThisFunc(("u32ClientId = %d, pDevList=%p, cbDevList = %d\n", u32ClientId, pDevList, cbDevList));
+    LogFlowThisFunc(("u32ClientId = %d, pDevList=%p, cbDevList = %d, fDescExt = %d\n", u32ClientId, pDevList, cbDevList, fDescExt));
 
     AutoCaller autoCaller(this);
     if (!autoCaller.isOk())
@@ -8334,7 +8334,7 @@ void Console::processRemoteUSBDevices(uint32_t u32ClientId, VRDEUSBDEVICEDESC *p
             /* Create the device object and add the new device to list. */
             ComObjPtr<RemoteUSBDevice> pUSBDevice;
             pUSBDevice.createObject();
-            pUSBDevice->init(u32ClientId, e);
+            pUSBDevice->init(u32ClientId, e, fDescExt);
 
             mRemoteUSBDevices.push_back(pUSBDevice);
 
