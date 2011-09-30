@@ -1492,16 +1492,16 @@ void VBoxSelectorWnd::prepareMenuBar()
     prepareMenuMachine(pMachineMenu);
     menuBar()->addMenu(pMachineMenu);
 
+#ifdef Q_WS_MAC
+    menuBar()->addMenu(UIWindowMenuManager::instance(this)->createMenu(this));
+#endif /* Q_WS_MAC */
+
     /* Prepare help menu: */
     QMenu *pHelpMenu = gActionPool->action(UIActionIndex_Menu_Help)->menu();
     prepareMenuHelp(pHelpMenu);
     menuBar()->addMenu(pHelpMenu);
 
     menuBar()->setContextMenuPolicy(Qt::CustomContextMenu);
-
-#ifdef Q_WS_MAC
-    menuBar()->addMenu(UIWindowMenuManager::instance(this)->createMenu(this));
-#endif /* Q_WS_MAC */
 }
 
 void VBoxSelectorWnd::prepareMenuFile(QMenu *pMenu)
