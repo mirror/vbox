@@ -425,8 +425,8 @@ PDMBOTHCBDECL(int) picGetInterrupt(PPDMDEVINS pDevIns)
             }
             else
             {
-                /* spurious IRQ on slave controller (impossible) */
-                AssertMsgFailed(("picGetInterrupt: spurious IRQ on slave controller\n"));
+                /* Interrupt went away or is now masked. */
+                Log(("picGetInterrupt: spurious IRQ on slave controller, converted to IRQ15\n"));
                 irq2 = 7;
             }
             intno = pThis->aPics[1].irq_base + irq2;
@@ -440,8 +440,8 @@ PDMBOTHCBDECL(int) picGetInterrupt(PPDMDEVINS pDevIns)
     }
     else
     {
-        /* spurious IRQ on host controller (impossible) */
-        AssertMsgFailed(("picGetInterrupt: spurious IRQ on master controller\n"));
+        /* Interrupt went away or is now masked. */
+        Log(("picGetInterrupt: spurious IRQ on master controller, converted to IRQ7\n"));
         irq = 7;
         intno = pThis->aPics[0].irq_base + irq;
     }
