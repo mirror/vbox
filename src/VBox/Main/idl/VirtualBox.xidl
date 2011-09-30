@@ -3759,7 +3759,7 @@
         will return an appropriate error message explaining the exact
         reason and the changes you made to this machine will not be saved.
 
-        Starting with VirtualBox 4.0, a “.vbox” extension of the settings
+        Starting with VirtualBox 4.0, a ".vbox" extension of the settings
         file is recommended, but not enforced. (Previous versions always
         used a generic ".xml" extension.)
       </desc>
