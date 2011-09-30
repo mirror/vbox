@@ -1541,6 +1541,12 @@ sffs_readpages(
 		caddr_t virtaddr = sffs_page_map(pcur, segaccess);
 		uint32_t bytes = PAGESIZE;
 		error = sfprov_read(node->sf_file, virtaddr, io_off, &bytes);
+		/*
+		 * If we reuse pages without zero'ing them, one process can mmap() and read-past the length
+		 * to read previously mmap'd contents (from possibly other processes).
+		 */
+		if (error == 0 && bytes < PAGESIZE)
+			memset(virtaddr + bytes, 0, PAGESIZE - bytes);
 		sffs_page_unmap(pcur, virtaddr);
 		if (error != 0)
 		{
