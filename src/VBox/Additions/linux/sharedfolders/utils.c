@@ -557,11 +557,13 @@ int sf_nlscpy(struct sf_glob_info *sf_g,
         while (in_bound_len)
         {
             int nb;
-            wchar_t uni; /** @todo this should be unicode_t in more recent kernel versions. */
-
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 31)
+            unicode_t uni;
+
             nb = utf8_to_utf32(in, in_bound_len, &uni);
 #else
+            linux_wchar_t uni;
+
             nb = utf8_mbtowc(&uni, in, in_bound_len);
 #endif
             if (nb < 0)
