@@ -469,7 +469,7 @@ delrunlevel() {
     if [ "$ro_SYS_TYPE" = "redhat" ]
     then
         test -x "/sbin/chkconfig" || \
-            { log "addrunlevel: /sbin/chkconfig not found" && return 1; }
+            { log "delrunlevel: /sbin/chkconfig not found" && return 1; }
         if /sbin/chkconfig --list $1 > /dev/null 2>&1; then
             /sbin/chkconfig --del $1 > /dev/null 2>&1 || {
                 log "Cannot delete $1 from runlevels" && return 1
@@ -479,18 +479,18 @@ delrunlevel() {
     elif [ "$ro_SYS_TYPE" = "suse" ]
     then
         test -x /sbin/insserv || {
-            log "addrunlevel: insserv not found" && return 1;
+            log "delrunlevel: insserv not found" && return 1;
         }
         /sbin/insserv -r $1 > /dev/null 2>&1
     # Debian/Ubuntu-based systems
     elif [ "$ro_SYS_TYPE" = "debian" ]; then
         test -x `which update-rc.d` || \
-            { log "addrunlevel: update-rc.d not found" && return 1; }
+            { log "delrunlevel: update-rc.d not found" && return 1; }
         update-rc.d -f $1 remove > /dev/null 2>&1
     # Gentoo Linux
     elif [ "$ro_SYS_TYPE" = "gentoo" ]; then
         test -x `which rc-update` || \
-            { log "addrunlevel: update-rc.d not found" && return 1; }
+            { log "delrunlevel: update-rc.d not found" && return 1; }
         rc-update del "$1" > /dev/null 2>&1
     # Linux from scratch, by the book
     elif [ "$ro_SYS_TYPE" = "lfs" ]; then
