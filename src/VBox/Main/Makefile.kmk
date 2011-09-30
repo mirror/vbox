@@ -932,6 +932,8 @@ $$(VBOX_JMSCOM_JAR): $(VBOX_JMSCOM_GEN)/jmscomglue.list | $$(dir $$@)
 	$(call MSG_LINK,$(notdir $@),$@)
 	$(VBOX_JAR) cf $@ -C $(VBOX_JMSCOM_JDEST) .
 
+## @todo compile TestVBox.java (see below) to have sanity checking
+
 endif # VBOX_WITH_JMSCOM
 
 #
@@ -942,7 +944,7 @@ javagluesample_INST = $(INST_SDK)bindings/glue/java/
 javagluesample_MODE = a+r,u+w
 javagluesample_SOURCES = \
 	$(VBOX_PATH_MAIN_SRC)/glue/tests/TestVBox.java=>TestVBox.java \
-	$(VBOX_PATH_MAIN_SRC)/glue/tests/Makefile.kmk=>Makefile.kmk
+	$(VBOX_PATH_MAIN_SRC)/glue/tests/Makefile=>Makefile
 
 updatenls::
 	$(VBOX_LUPDATE) $(VBoxSVC_SOURCES) $(VBoxSVC_VBOX_HEADERS) -ts $(VBoxSVC_VBOX_TRANSLATIONS)

@@ -401,6 +401,8 @@ $$(VBOX_JWSSRC_JAR): $$(VBOX_JWS_JAR) | $$(dir $$@)
 	$(call MSG_LINK,$(notdir $@),$@)
 	$(VBOX_JAR) cf $@ -C $(VBOX_JWS_GEN)/java .
 
+## @todo compile ../glue/tests/TestVBox.java to have sanity checking
+
  endif # VBOX_WITH_JWS
 
  ifndef VBOX_ONLY_SDK

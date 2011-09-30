@@ -1,6 +1,10 @@
 /* $Id$ */
+
+/* Small sample/testcase which demonstrates that the same source code can
+ * be used to connect to the webservice and (XP)COM APIs. */
+
 /*
- * Copyright (C) 2010 Oracle Corporation
+ * Copyright (C) 2010-2011 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -10,7 +14,7 @@
  * VirtualBox OSE distribution. VirtualBox OSE is distributed in the
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
-import org.virtualbox_4_1.*;
+import org.virtualbox_4_2.*;
 import java.util.List;
 import java.util.Arrays;
 import java.math.BigInteger;
@@ -59,10 +63,10 @@ public class TestVBox
         es.registerListener(listener, Arrays.asList(VBoxEventType.Any), false);
 
         try {
-            for (int i=0; i<100; i++)
+            for (int i=0; i<50; i++)
             {
                 System.out.print(".");
-                IEvent ev = es.getEvent(listener, 1000);
+                IEvent ev = es.getEvent(listener, 500);
                 if (ev != null)
                 {
                     processEvent(ev);
@@ -81,10 +85,32 @@ public class TestVBox
         List<IMachine> machs = vbox.getMachines();
         for (IMachine m : machs)
         {
-            System.out.println("VM name: " + m.getName());// + ", RAM size: " + m.getMemorySize() + "MB");
-            System.out.println(" HWVirt: " + m.getHWVirtExProperty(HWVirtExPropertyType.Enabled)
-                               + ", Nested Paging: " + m.getHWVirtExProperty(HWVirtExPropertyType.NestedPaging)
-                               + ", PAE: " + m.getCPUProperty(CPUPropertyType.PAE) );
+            String name;
+            Long ram = 0L;
+            boolean hwvirtEnabled = false, hwvirtNestedPaging = false;
+            boolean paeEnabled = false;
+            boolean inaccessible = false;
+            try
+            {
+                name = m.getName();
+                ram = m.getMemorySize();
+                hwvirtEnabled = m.getHWVirtExProperty(HWVirtExPropertyType.Enabled);
+                hwvirtNestedPaging = m.getHWVirtExProperty(HWVirtExPropertyType.NestedPaging);
+                paeEnabled = m.getCPUProperty(CPUPropertyType.PAE);
+            }
+            catch (VBoxException e)
+            {
+                name = "<inaccessible>";
+                inaccessible = true;
+            }
+            System.out.println("VM name: " + name);
+            if (!inaccessible)
+            {
+                System.out.println(" RAM size: " + ram + "MB"
+                                   + ", HWVirt: " + hwvirtEnabled
+                                   + ", Nested Paging: " + hwvirtNestedPaging
+                                   + ", PAE: " + paeEnabled);
+            }
         }
     }
 
@@ -170,7 +196,7 @@ public class TestVBox
             {
                 System.out.println("VirtualBox version: " + vbox.getVersion() + "\n");
                 testEnumeration(mgr, vbox);
-                //testReadLog(mgr, vbox);
+                testReadLog(mgr, vbox);
                 testStart(mgr, vbox);
                 testEvents(mgr, vbox.getEventSource());
 
