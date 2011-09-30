@@ -2158,6 +2158,13 @@ static void testSetMouseStatus(void)
         AssertMsg(DevExt.cMouseFeatureUsage[ASMBitFirstSetU32(VMMDEV_MOUSE_GUEST_NEEDS_HOST_CURSOR) - 1] == 1,
                   ("Actual value: %d\n", DevExt.cMouseFeatureUsage[ASMBitFirstSetU32(VMMDEV_MOUSE_GUEST_NEEDS_HOST_CURSOR)]));
         g_test_SetMouseStatusGRRC = VERR_UNRESOLVED_ERROR;
+        /* This should succeed as the host request should not be made
+         * since nothing has changed. */
+        rc = VBoxGuestCommonIOCtl(VBOXGUEST_IOCTL_SET_MOUSE_STATUS, &DevExt,
+                                  &Session, &u32Data, sizeof(u32Data), NULL);
+        AssertRCSuccess(rc);
+        /* This should fail with VERR_UNRESOLVED_ERROR as set above. */
+        u32Data = VMMDEV_MOUSE_GUEST_CAN_ABSOLUTE;
         rc = VBoxGuestCommonIOCtl(VBOXGUEST_IOCTL_SET_MOUSE_STATUS, &DevExt,
                                   &Session, &u32Data, sizeof(u32Data), NULL);
         AssertMsg(rc == VERR_UNRESOLVED_ERROR, ("rc == %Rrc\n", rc));
