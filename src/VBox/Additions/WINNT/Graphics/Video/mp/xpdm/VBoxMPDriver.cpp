@@ -656,7 +656,6 @@ ULONG DriverEntry(IN PVOID Context1, IN PVOID Context2)
     PAGED_CODE();
 
     int irc = RTR0Init(0);
-    LOGREL(("RTR0Init rc = %d\n", irc));
     if (RT_FAILURE(irc))
     {
         LogRel(("VBoxMP::failed to init IPRT (rc=%#x)", irc));
@@ -718,11 +717,8 @@ ULONG DriverEntry(IN PVOID Context1, IN PVOID Context2)
     /*Allocate system resources*/
     ULONG rc = VideoPortInitialize(Context1, Context2, &vhwData, NULL);
     if (rc != NO_ERROR)
-    {
-        LOGREL(("VideoPortInitialize failed with %#x", rc));
-    }
+        LOG(("VideoPortInitialize failed with %#x", rc));
 
-    LOGREL(("Driver Entry leave rc = %d\n", rc));
     LOGF_LEAVE();
     return rc;
 }
