@@ -1352,7 +1352,6 @@ sorecvfrom_icmp_win(PNATState pData, struct socket *so)
     uint32_t src;
     ICMP_ECHO_REPLY *icr;
     int hlen = 0;
-    int data_len = 0;
     int nbytes = 0;
     u_char code = ~0;
     int out_len;
@@ -1370,6 +1369,8 @@ sorecvfrom_icmp_win(PNATState pData, struct socket *so)
     icr = (ICMP_ECHO_REPLY *)pData->pvIcmpBuffer;
     for (i = 0; i < len; ++i)
     {
+        LogFunc(("icr[%d] Data:%p, DataSize:%d\n",
+                 i, icr[i].Data, icr[i].DataSize));
         switch(icr[i].Status)
         {
             case IP_DEST_HOST_UNREACHABLE:
@@ -1400,16 +1401,18 @@ sorecvfrom_icmp_win(PNATState pData, struct socket *so)
                     AssertMsgFailed(("Unsupported size"));
 
                 m = m_getjcl(pData, M_NOWAIT, MT_HEADER, M_PKTHDR, size);
+                LogFunc(("m_getjcl returns m: %p\n", m));
                 if (m == NULL)
                     return;
                 m->m_len = 0;
                 m->m_data += if_maxlinkhdr;
+                m->m_pkthdr.header = mtod(m, void *);
+
                 ip = mtod(m, struct ip *);
                 ip->ip_src.s_addr = icr[i].Address;
                 ip->ip_p = IPPROTO_ICMP;
                 ip->ip_dst.s_addr = so->so_laddr.s_addr; /*XXX: still the hack*/
-                data_len = sizeof(struct ip);
-                ip->ip_hl =  data_len >> 2; /* requiered for icmp_reflect, no IP options */
+                ip->ip_hl =  sizeof(struct ip) >> 2; /* requiered for icmp_reflect, no IP options */
                 ip->ip_ttl = icr[i].Options.Ttl;
 
                 icp = (struct icmp *)&ip[1]; /* no options */
@@ -1427,18 +1430,23 @@ sorecvfrom_icmp_win(PNATState pData, struct socket *so)
                     RTMemFree(icm);
                 }
 
-                data_len += ICMP_MINLEN;
 
                 hlen = (ip->ip_hl << 2);
-                m->m_pkthdr.header = mtod(m, void *);
-                m->m_len = data_len;
+                Assert((hlen >= sizeof(struct ip)));
 
-                m_copyback(pData, m, hlen + 8, icr[i].DataSize, icr[i].Data);
+                m->m_data += hlen + ICMP_MINLEN;
+                if (!RT_VALID_PTR(icr[i].Data))
+                {
+                    m_freem(pData, m);
+                    break;
+                }
+                m_copyback(pData, m, 0, icr[i].DataSize, icr[i].Data);
+                m->m_data -= hlen + ICMP_MINLEN;
+                m->m_len += hlen + ICMP_MINLEN;
 
-                data_len += icr[i].DataSize;
 
-                ip->ip_len = data_len;
-                m->m_len = ip->ip_len;
+                ip->ip_len = m_length(m, NULL);
+                Assert((ip->ip_len == hlen + ICMP_MINLEN + icr[i].DataSize));
 
                 icmp_reflect(pData, m);
                 break;
@@ -1452,6 +1460,7 @@ sorecvfrom_icmp_win(PNATState pData, struct socket *so)
                 }
                 m = icm->im_m;
                 ip = mtod(m, struct ip *);
+                Assert(((ip_broken->ip_hl >> 2) >= sizeof(struct ip)));
                 ip->ip_ttl = icr[i].Options.Ttl;
                 src = ip->ip_src.s_addr;
                 ip->ip_dst.s_addr = src;
@@ -1460,9 +1469,8 @@ sorecvfrom_icmp_win(PNATState pData, struct socket *so)
                 hlen = (ip->ip_hl << 2);
                 icp = (struct icmp *)((char *)ip + hlen);
                 ip_broken->ip_src.s_addr = src; /*it packet sent from host not from guest*/
-                data_len = (ip_broken->ip_hl << 2) + 64;
 
-                m->m_len = data_len;
+                m->m_len = (ip_broken->ip_hl << 2) + 64;
                 m->m_pkthdr.header = mtod(m, void *);
                 m_copyback(pData, m, ip->ip_hl >> 2, icr[i].DataSize, icr[i].Data);
                 icmp_reflect(pData, m);
