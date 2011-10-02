@@ -177,7 +177,7 @@ RTDECL(bool) VBoxVideoGetModeRegisters(uint16_t *pcWidth, uint16_t *pcHeight,
     uint16_t fFlags;
 
     VBoxVideoCmnPortWriteUshort(VBE_DISPI_IOPORT_INDEX,
-                                VBE_DISPI_ENABLED);
+                                VBE_DISPI_INDEX_ENABLE);
     fFlags = VBoxVideoCmnPortReadUshort(VBE_DISPI_IOPORT_DATA);
     if (pcWidth)
     {
