@@ -479,7 +479,8 @@ NTSTATUS vboxWddmSwapchainCtxEscape(PVBOXMP_DEVEXT pDevExt, PVBOXWDDM_CONTEXT pC
             break;
         }
 
-        memset(&pSwapchain->ViewRect, 0, sizeof (pSwapchain->ViewRect));
+        /* do not zero up the view rect since it may still be valid */
+//        memset(&pSwapchain->ViewRect, 0, sizeof (pSwapchain->ViewRect));
         if (pSwapchain->pLastReportedRects)
         {
             vboxVideoCmCmdRelease(pSwapchain->pLastReportedRects);
