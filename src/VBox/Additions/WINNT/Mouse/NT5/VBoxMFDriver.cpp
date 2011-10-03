@@ -49,6 +49,7 @@ NTSTATUS DriverEntry(IN PDRIVER_OBJECT DriverObject, IN PUNICODE_STRING Registry
 
     DriverObject->MajorFunction[IRP_MJ_INTERNAL_DEVICE_CONTROL] = VBoxIrpInternalIOCTL;
     DriverObject->MajorFunction[IRP_MJ_PNP] = VBoxIrpPnP;
+	DriverObject->MajorFunction[IRP_MJ_POWER] = VBoxIrpPower;
 
     NTSTATUS tmpStatus = VBoxNewProtInit();
     if (!NT_SUCCESS(tmpStatus))
@@ -120,6 +121,7 @@ NTSTATUS VBoxDrvAddDevice(IN PDRIVER_OBJECT Driver, IN PDEVICE_OBJECT PDO)
     pDevExt->pdoMain   = PDO;
     pDevExt->pdoSelf   = pDO;
     pDevExt->pdoParent = pDOParent;
+	pDevExt->DeviceState = PowerDeviceD0;
 
     VBoxDeviceAdded(pDevExt);
 
@@ -237,11 +239,44 @@ NTSTATUS VBoxIrpPnP(IN PDEVICE_OBJECT DeviceObject, IN PIRP Irp)
         }
     }
 
-    if (!NT_SUCCESS(rc))
+    if (!NT_SUCCESS(rc) && rc != STATUS_NOT_SUPPORTED)
     {
         WARN(("rc=%#x", rc));
     }
 
     LOGF_LEAVE();
     return rc;
+}
+
+NTSTATUS VBoxIrpPower(IN PDEVICE_OBJECT DeviceObject, IN PIRP Irp)
+{
+    PIO_STACK_LOCATION  irpSp;    
+	PVBOXMOUSE_DEVEXT   devExt;
+    POWER_STATE         powerState;
+    POWER_STATE_TYPE    powerType;
+
+    PAGED_CODE();
+
+    devExt = (PVBOXMOUSE_DEVEXT) DeviceObject->DeviceExtension;
+    irpSp = IoGetCurrentIrpStackLocation(Irp);
+
+    powerType = irpSp->Parameters.Power.Type;
+    powerState = irpSp->Parameters.Power.State;
+
+    switch (irpSp->MinorFunction) {
+    case IRP_MN_SET_POWER:
+        if (powerType  == DevicePowerState) {
+            devExt->DeviceState = powerState.DeviceState;
+        }
+
+    case IRP_MN_QUERY_POWER:
+    case IRP_MN_WAIT_WAKE:
+    case IRP_MN_POWER_SEQUENCE:
+    default:
+        break;
+    }
+
+    PoStartNextPowerIrp(Irp);
+    IoSkipCurrentIrpStackLocation(Irp);
+    return PoCallDriver(devExt->pdoParent, Irp);
 }

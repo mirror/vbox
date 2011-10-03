@@ -57,6 +57,8 @@ typedef struct _VBOXMOUSE_DEVEXT
     VMMDevReqMouseStatus       *pSCReq;              /* Preallocated request to use in pfnServiceCB */
 
     IO_REMOVE_LOCK RemoveLock;
+    
+    DEVICE_POWER_STATE DeviceState;   /* current power state of the device */
 } VBOXMOUSE_DEVEXT, *PVBOXMOUSE_DEVEXT;
 
 /* Interface functions */
@@ -71,6 +73,7 @@ VOID VBoxDrvUnload(IN PDRIVER_OBJECT Driver);
 NTSTATUS VBoxIrpPassthrough(IN PDEVICE_OBJECT DeviceObject, IN PIRP Irp);
 NTSTATUS VBoxIrpInternalIOCTL(IN PDEVICE_OBJECT DeviceObject, IN PIRP Irp);
 NTSTATUS VBoxIrpPnP(IN PDEVICE_OBJECT DeviceObject, IN PIRP Irp);
+NTSTATUS VBoxIrpPower(IN PDEVICE_OBJECT DeviceObject, IN PIRP Irp);
 
 /* Internal functions */
 VOID VBoxDeviceAdded(PVBOXMOUSE_DEVEXT pDevExt);
