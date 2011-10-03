@@ -28,7 +28,7 @@
 /* for some reason when debugging with VirtualKD, user-mode DbgPrint's are discarded
  * the workaround so far is to pass the log info to the kernel driver and DbgPrint'ed from there,
  * which is enabled by this define */
-#  define VBOXWDDMDISP_DEBUG_PRINTDRV
+//#  define VBOXWDDMDISP_DEBUG_PRINTDRV
 /* use OutputDebugString */
 #  define VBOXWDDMDISP_DEBUG_PRINT
 /* adds vectored exception handler to be able to catch non-debug UM exceptions in kernel debugger */
@@ -36,6 +36,28 @@
 /* disable shared resource creation with wine */
 //#  define VBOXWDDMDISP_DEBUG_NOSHARED
 # endif
+
+/* debug config vars */
+extern DWORD g_VBoxVDbgFDumpSetTexture;
+extern DWORD g_VBoxVDbgFDumpDrawPrim;
+extern DWORD g_VBoxVDbgFDumpTexBlt;
+extern DWORD g_VBoxVDbgFDumpBlt;
+extern DWORD g_VBoxVDbgFDumpRtSynch;
+extern DWORD g_VBoxVDbgFDumpFlush;
+extern DWORD g_VBoxVDbgFDumpShared;
+extern DWORD g_VBoxVDbgFDumpLock;
+extern DWORD g_VBoxVDbgFDumpUnlock;
+
+extern DWORD g_VBoxVDbgFBreakShared;
+extern DWORD g_VBoxVDbgFBreakDdi;
+
+
+/* log enable flags */
+extern DWORD g_VBoxVDbgFLogRel;
+extern DWORD g_VBoxVDbgFLog;
+extern DWORD g_VBoxVDbgFLogFlow;
+
+
 #endif
 
 #if 0
@@ -71,7 +93,7 @@ void vboxVDbgVEHandlerUnregister();
 #ifdef VBOXWDDMDISP_DEBUG_PRINT
 # define DbgPrintUsr(_m) do { vboxDispLogDbgPrintF _m; } while (0)
 # define DbgPrintUsrRel(_m) do { vboxDispLogDbgPrintF _m; } while (0)
-# define DbgPrintUsrFlow(_m) do { } while (0)
+# define DbgPrintUsrFlow(_m) do { vboxDispLogDbgPrintF _m; } while (0)
 #else
 # define DbgPrintUsr(_m) do { } while (0)
 # define DbgPrintUsrRel(_m) do { } while (0)
@@ -82,40 +104,48 @@ void vboxVDbgVEHandlerUnregister();
 #else
 # define WARN_BREAK() do { } while (0)
 #endif
+
+#ifdef VBOXWDDMDISP_DEBUG
+#define vboxVDbgInternalLog(_p) if (g_VBoxVDbgFLog) { _p }
+#define vboxVDbgInternalLogFlow(_p) if (g_VBoxVDbgFLogFlow) { _p }
+#define vboxVDbgInternalLogRel(_p) if (g_VBoxVDbgFLogRel) { _p }
+#else
+#define vboxVDbgInternalLog(_p) do {} while (0)
+#define vboxVDbgInternalLogFlow(_p) do {} while (0)
+#define vboxVDbgInternalLogRel(_p) do { _p } while (0)
+#endif
+
 #define WARN(_m) do { \
-        Log(_m); \
-        DbgPrintUsr(_m); \
-        DbgPrintDrv(_m); \
+        vboxVDbgInternalLog( \
+            Log(_m); \
+            DbgPrintUsr(_m); \
+            DbgPrintDrv(_m); \
+        ); \
         WARN_BREAK(); \
     } while (0)
 #define vboxVDbgPrint(_m) do { \
-        Log(_m); \
-        DbgPrintUsr(_m); \
-        DbgPrintDrv(_m); \
+        vboxVDbgInternalLog( \
+            Log(_m); \
+            DbgPrintUsr(_m); \
+            DbgPrintDrv(_m); \
+        ); \
     } while (0)
 #define vboxVDbgPrintF(_m)  do { \
-        LogFlow(_m); \
-        DbgPrintUsrFlow(_m); \
-        DbgPrintDrvFlow(_m); \
+        vboxVDbgInternalLogFlow( \
+            LogFlow(_m); \
+            DbgPrintUsrFlow(_m); \
+            DbgPrintDrvFlow(_m); \
+        ); \
     } while (0)
 #define vboxVDbgPrintR(_m)  do { \
-        LogRel(_m); \
-        DbgPrintUsrRel(_m); \
-        DbgPrintDrvRel(_m); \
+        vboxVDbgInternalLogRel( \
+            LogRel(_m); \
+            DbgPrintUsrRel(_m); \
+            DbgPrintDrvRel(_m); \
+        ); \
     } while (0)
 
 #ifdef VBOXWDDMDISP_DEBUG
-extern DWORD g_VBoxVDbgFDumpSetTexture;
-extern DWORD g_VBoxVDbgFDumpDrawPrim;
-extern DWORD g_VBoxVDbgFDumpTexBlt;
-extern DWORD g_VBoxVDbgFDumpBlt;
-extern DWORD g_VBoxVDbgFDumpRtSynch;
-extern DWORD g_VBoxVDbgFDumpFlush;
-extern DWORD g_VBoxVDbgFDumpShared;
-extern DWORD g_VBoxVDbgFDumpLock;
-extern DWORD g_VBoxVDbgFDumpUnlock;
-
-extern DWORD g_VBoxVDbgFBreakShared;
 
 void vboxDispLogDrvF(char * szString, ...);
 void vboxDispLogDrv(char * szString);
@@ -173,6 +203,12 @@ extern DWORD g_VBoxVDbgPid;
 #define VBOXVDBG_BREAK_SHARED(_pRc) do { \
         if (VBOXVDBG_IS_BREAK_SHARED_ALLOWED(_pRc)) { \
             vboxVDbgPrint(("Break on shared access: Rc(0x%p), SharedHandle(0x%p)\n", (_pRc), (_pRc)->aAllocations[0].hSharedHandle)); \
+            AssertFailed(); \
+        } \
+    } while (0)
+
+#define VBOXVDBG_BREAK_DDI() do { \
+        if (VBOXVDBG_IS_BREAK_ALLOWED(Ddi)) { \
             AssertFailed(); \
         } \
     } while (0)
@@ -292,6 +328,7 @@ extern DWORD g_VBoxVDbgPid;
 #define VBOXVDBG_DUMP_LOCK_ST(_pData) do { } while (0)
 #define VBOXVDBG_DUMP_UNLOCK_ST(_pData) do { } while (0)
 #define VBOXVDBG_BREAK_SHARED(_pRc) do { } while (0)
+#define VBOXVDBG_BREAK_DDI() do { } while (0)
 #endif
 
 
