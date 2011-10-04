@@ -511,11 +511,16 @@ FunctionEnd
 Function ${un}CheckForWDDMCapability
 
 !if $%VBOX_WITH_WDDM% == "1"
-  ; If we're on a 32-bit Windows Vista / 7 we can use the WDDM driver
+  ; If we're on a 32-bit Windows Vista / 7 / 8 we can use the WDDM driver
   ${If} $g_strWinVersion == "Vista"
   ${OrIf} $g_strWinVersion == "7"
   ${OrIf} $g_strWinVersion == "8"
     StrCpy $g_bCapWDDM "true"
+  ${EndIf}
+  ; If we're on Windows 8 we *have* to use the WDDM driver, so select it
+  ; by default
+  ${If} $g_strWinVersion == "8"
+    StrCpy $g_bWithWDDM "true"
   ${EndIf}
 !endif
 
