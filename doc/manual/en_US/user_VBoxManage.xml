@@ -2967,7 +2967,7 @@ Value: 2006.01.01</screen>
           for updating an already installed Guest Additions version on the
           guest (only already installed Guest Additions 4.0 and later).</para>
 
-          <screen>VBoxManage guestcontrol updateadditions &lt;vmname&gt;|&lt;uuid&gt;
+          <screen>VBoxManage guestcontrol &lt;vmname&gt;|&lt;uuid&gt; updateadditions
             [--source "&lt;guest additions .ISO file to use&gt;"] [--verbose]</screen>
 
           <para>where the parameters mean: <glosslist>
