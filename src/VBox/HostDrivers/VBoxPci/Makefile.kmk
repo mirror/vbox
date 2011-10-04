@@ -19,28 +19,29 @@ SUB_DEPTH = ../../../..
 include $(KBUILD_PATH)/subheader.kmk
 if1of ($(KBUILD_TARGET), linux)
 
- #
- # The driver.
- # Note! For Linux, this is just a compile test. Don't use the binary!
- #
- SYSMODS += VBoxPci
- VBoxPci_TEMPLATE       = VBOXR0DRV
- VBoxPci_INST           = $(INST_VBOXPCI)$(if $(eq $(KBUILD_TARGET),darwin),Contents/MacOS/)
- VBoxPci_NAME.linux     = vboxpci
- VBoxPci_NOINST.linux   = true
- VBoxPci_DEFS           = IN_RT_R0 VBOX_SVN_REV=$(VBOX_SVN_REV) IN_SUP_STATIC
- VBoxPci_DEFS.linux     = KBUILD_MODNAME=KBUILD_STR\(vboxpci\) KBUILD_BASENAME=KBUILD_STR\(vboxpci\) MODULE
- VBoxPci_INCS.linux    := \
+ ifdef VBOX_WITH_VBOXDRV
+  #
+  # The driver.
+  # Note! For Linux, this is just a compile test. Don't use the binary!
+  #
+  SYSMODS += VBoxPci
+  VBoxPci_TEMPLATE       = VBOXR0DRV
+  VBoxPci_INST           = $(INST_VBOXPCI)$(if $(eq $(KBUILD_TARGET),darwin),Contents/MacOS/)
+  VBoxPci_NAME.linux     = vboxpci
+  VBoxPci_NOINST.linux   = true
+  VBoxPci_DEFS           = IN_RT_R0 VBOX_SVN_REV=$(VBOX_SVN_REV) IN_SUP_STATIC
+  VBoxPci_DEFS.linux     = KBUILD_MODNAME=KBUILD_STR\(vboxpci\) KBUILD_BASENAME=KBUILD_STR\(vboxpci\) MODULE
+  VBoxPci_INCS.linux    := \
  	$(PATH_ROOT)/src/VBox/Runtime/r0drv/linux
- VBoxPci_INCS           = \
+  VBoxPci_INCS           = \
  	.
- VBoxPci_SOURCES.linux  = \
+  VBoxPci_SOURCES.linux  = \
  	linux/VBoxPci-linux.c
- VBoxPci_SOURCES        = \
+  VBoxPci_SOURCES        = \
  	VBoxPci.c
- VBoxPci_LIBS          += \
+  VBoxPci_LIBS          += \
  	$(PATH_STAGE_LIB)/SUPR0IdcClient$(VBOX_SUFF_LIB)
-
+ endif
 
  #
  # Install the sources.
