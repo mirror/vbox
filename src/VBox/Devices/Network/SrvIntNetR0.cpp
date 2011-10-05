@@ -1471,15 +1471,10 @@ static INTNETSWDECISION intnetR0NetworkSwitchLevel3(PINTNETNETWORK pNetwork, PCR
                 uint32_t iIfDst = pDstTab->cIfs++;
                 pDstTab->aIfs[iIfDst].pIf            = pIf;
                 pDstTab->aIfs[iIfDst].fReplaceDstMac = fExact;
-                /*
-                 * We need to compare an updated destination address against host's address.
-                 * If we compare the address extracted from the packet it will match host's MAC
-                 * and will be passed up the stack which will cause duplicates if IP forwarding
-                 * is enabled on the host (see #5905).
-                 */
-                if (fExact)
-                    pDstMacAddr = &pIf->MacAddr;
                 intnetR0BusyIncIf(pIf);
+
+                if (fExact)
+                    pDstMacAddr = &pIf->MacAddr; /* Avoids duplicates being sent to the host. */
             }
         }
     }
