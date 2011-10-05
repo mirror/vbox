@@ -19,6 +19,7 @@
 
 /* Global includes */
 #include <QDesktopWidget>
+#include <QMainWindow>
 #include <QTimer>
 #include <QPainter>
 #include <QScrollBar>
@@ -144,6 +145,39 @@ double UIMachineView::aspectRatio() const
     return frameBuffer() ? (double)(frameBuffer()->width()) / frameBuffer()->height() : 0;
 }
 
+void UIMachineView::sltPerformGuestResize(const QSize &toSize)
+{
+    /* Get machine window: */
+    QMainWindow *pMachineWindow = machineWindowWrapper() && machineWindowWrapper()->machineWindow() ?
+                                  qobject_cast<QMainWindow*>(machineWindowWrapper()->machineWindow()) : 0;
+
+    /* If this slot is invoked directly then use the passed size otherwise get
+     * the available size for the guest display. We assume here that centralWidget()
+     * contains this view only and gives it all available space: */
+    QSize newSize(toSize.isValid() ? toSize : pMachineWindow ? pMachineWindow->centralWidget()->size() : QSize());
+    AssertMsg(newSize.isValid(), ("Size should be valid!\n"));
+
+    /* Do not send the same hints as we already have: */
+    if ((newSize.width() == storedConsoleSize().width()) && (newSize.height() == storedConsoleSize().height()))
+        return;
+
+    /* We only actually send the hint if either an explicit new size was given
+     * (e.g. if the request was triggered directly by a console resize event) or
+     * if no explicit size was specified but a resize is flagged as being needed
+     * (e.g. the autoresize was just enabled and the console was resized while it was disabled). */
+    if (toSize.isValid() || m_fShouldWeDoResize)
+    {
+        /* Remember the new size: */
+        storeConsoleSize(newSize.width(), newSize.height());
+
+        /* Send new size-hint to the guest: */
+        session().GetConsole().GetDisplay().SetVideoModeHint(newSize.width(), newSize.height(), 0, screenId());
+    }
+
+    /* We had requested resize now, rejecting other accident requests: */
+    m_fShouldWeDoResize = false;
+}
+
 void UIMachineView::sltMachineStateChanged()
 {
     /* Get machine state: */
@@ -214,6 +248,7 @@ UIMachineView::UIMachineView(  UIMachineWindow *pMachineWindow
     , m_previousState(KMachineState_Null)
     , m_desktopGeometryType(DesktopGeo_Invalid)
     , m_bIsMachineWindowResizeIgnored(false)
+    , m_fShouldWeDoResize(false)
 #ifdef VBOX_WITH_VIDEOHWACCEL
     , m_fAccelerate2DVideo(bAccelerate2DVideo)
 #endif /* VBOX_WITH_VIDEOHWACCEL */

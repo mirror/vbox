@@ -51,7 +51,6 @@ UIMachineViewFullscreen::UIMachineViewFullscreen(  UIMachineWindow *pMachineWind
 #endif
                     )
     , m_bIsGuestAutoresizeEnabled(gActionPool->action(UIActionIndexRuntime_Toggle_GuestAutoresize)->isChecked())
-    , m_fShouldWeDoResize(false)
     , m_pSyncBlocker(0)
 {
     /* Load machine view settings: */
@@ -88,52 +87,16 @@ UIMachineViewFullscreen::~UIMachineViewFullscreen()
     cleanupFrameBuffer();
 }
 
-void UIMachineViewFullscreen::sltPerformGuestResize(const QSize &toSize)
-{
-    if (m_bIsGuestAutoresizeEnabled && uisession()->isGuestSupportsGraphics())
-    {
-        /* Get machine window: */
-        QMainWindow *pMachineWindow = machineWindowWrapper() && machineWindowWrapper()->machineWindow() ?
-                                      qobject_cast<QMainWindow*>(machineWindowWrapper()->machineWindow()) : 0;
-
-        /* If this slot is invoked directly then use the passed size otherwise get
-         * the available size for the guest display. We assume here that centralWidget()
-         * contains this view only and gives it all available space: */
-        QSize newSize(toSize.isValid() ? toSize : pMachineWindow ? pMachineWindow->centralWidget()->size() : QSize());
-        AssertMsg(newSize.isValid(), ("Size should be valid!\n"));
-
-        /* Do not send the same hints as we already have: */
-        if ((newSize.width() == storedConsoleSize().width()) && (newSize.height() == storedConsoleSize().height()))
-            return;
-
-        /* We only actually send the hint if either an explicit new size was given
-         * (e.g. if the request was triggered directly by a console resize event) or
-         * if no explicit size was specified but a resize is flagged as being needed
-         * (e.g. the autoresize was just enabled and the console was resized while it was disabled). */
-        if (toSize.isValid() || m_fShouldWeDoResize)
-        {
-            /* Remember the new size: */
-            storeConsoleSize(newSize.width(), newSize.height());
-
-            /* Send new size-hint to the guest: */
-            session().GetConsole().GetDisplay().SetVideoModeHint(newSize.width(), newSize.height(), 0, screenId());
-        }
-
-        /* We had requested resize now, rejecting other accident requests: */
-        m_fShouldWeDoResize = false;
-    }
-}
-
 void UIMachineViewFullscreen::sltAdditionsStateChanged()
 {
     /* Check if we should restrict minimum size: */
     maybeRestrictMinimumSize();
 
-    /* Check if we should resize guest to fullscreen, all the
-     * required features will be tested in sltPerformGuestResize(...): */
+    /* Check if we should resize guest to fullscreen */
     if ((int)frameBuffer()->width() != workingArea().size().width() ||
         (int)frameBuffer()->height() != workingArea().size().height())
-        sltPerformGuestResize(workingArea().size());
+        if (m_bIsGuestAutoresizeEnabled && uisession()->isGuestSupportsGraphics())
+            sltPerformGuestResize(workingArea().size());
 }
 
 void UIMachineViewFullscreen::sltDesktopResized()
@@ -320,7 +283,8 @@ void UIMachineViewFullscreen::setGuestAutoresizeEnabled(bool fEnabled)
 
         maybeRestrictMinimumSize();
 
-        sltPerformGuestResize();
+        if (uisession()->isGuestSupportsGraphics())
+            sltPerformGuestResize();
     }
 }
 

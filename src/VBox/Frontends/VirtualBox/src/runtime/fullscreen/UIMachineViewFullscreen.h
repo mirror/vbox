@@ -40,9 +40,6 @@ protected:
 
 private slots:
 
-    /* Slot to perform guest resize: */
-    void sltPerformGuestResize(const QSize &aSize = QSize());
-
     /* Console callback handlers: */
     void sltAdditionsStateChanged();
 
@@ -80,7 +77,6 @@ private:
 
     /* Private variables: */
     bool m_bIsGuestAutoresizeEnabled : 1;
-    bool m_fShouldWeDoResize : 1;
     UIMachineViewBlocker *m_pSyncBlocker;
 
     /* Friend classes: */
