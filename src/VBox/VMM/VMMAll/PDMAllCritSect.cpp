@@ -490,25 +490,31 @@ VMMR3DECL(int) PDMR3CritSectEnterEx(PPDMCRITSECT pCritSect, bool fCallRing3)
 /**
  * Leaves a critical section entered with PDMCritSectEnter().
  *
+ * @returns Indication whether we really exited the critical section.
+ * @retval  VINF_SUCCESS if we really exited.
+ * @retval  VINF_SEM_NESTED if we only reduced the nesting count.
+ * @retval  VERR_NOT_OWNER if you somehow ignore release assertions.
+ *
  * @param   pCritSect           The PDM critical section to leave.
  */
-VMMDECL(void) PDMCritSectLeave(PPDMCRITSECT pCritSect)
+VMMDECL(int) PDMCritSectLeave(PPDMCRITSECT pCritSect)
 {
     AssertMsg(pCritSect->s.Core.u32Magic == RTCRITSECT_MAGIC, ("%p %RX32\n", pCritSect, pCritSect->s.Core.u32Magic));
     Assert(pCritSect->s.Core.u32Magic == RTCRITSECT_MAGIC);
 
     /* Check for NOP sections before asserting ownership. */
     if (pCritSect->s.Core.fFlags & RTCRITSECT_FLAGS_NOP)
-        return;
+        return VINF_SUCCESS;
 
     /*
      * Always check that the caller is the owner (screw performance).
      */
     RTNATIVETHREAD const hNativeSelf = pdmCritSectGetNativeSelf(pCritSect);
-    AssertReleaseMsgReturnVoid(pCritSect->s.Core.NativeThreadOwner == hNativeSelf,
-                               ("%p %s: %p != %p; cLockers=%d cNestings=%d\n", pCritSect, R3STRING(pCritSect->s.pszName),
-                                pCritSect->s.Core.NativeThreadOwner, hNativeSelf,
-                                pCritSect->s.Core.cLockers, pCritSect->s.Core.cNestings));
+    AssertReleaseMsgReturn(pCritSect->s.Core.NativeThreadOwner == hNativeSelf,
+                           ("%p %s: %p != %p; cLockers=%d cNestings=%d\n", pCritSect, R3STRING(pCritSect->s.pszName),
+                            pCritSect->s.Core.NativeThreadOwner, hNativeSelf,
+                            pCritSect->s.Core.cLockers, pCritSect->s.Core.cNestings),
+                           VERR_NOT_OWNER);
     Assert(pCritSect->s.Core.cNestings >= 1);
 
     /*
@@ -520,7 +526,7 @@ VMMDECL(void) PDMCritSectLeave(PPDMCRITSECT pCritSect)
         Assert(pCritSect->s.Core.cNestings >= 1);
         ASMAtomicDecS32(&pCritSect->s.Core.cLockers);
         Assert(pCritSect->s.Core.cLockers >= 0);
-        return;
+        return VINF_SEM_NESTED;
     }
 
 #ifdef IN_RING0
@@ -594,7 +600,7 @@ VMMDECL(void) PDMCritSectLeave(PPDMCRITSECT pCritSect)
 
             ASMAtomicWriteHandle(&pCritSect->s.Core.NativeThreadOwner, NIL_RTNATIVETHREAD);
             if (ASMAtomicCmpXchgS32(&pCritSect->s.Core.cLockers, -1, 0))
-                return;
+                return VINF_SUCCESS;
 
             /* darn, someone raced in on us. */
             ASMAtomicWriteHandle(&pCritSect->s.Core.NativeThreadOwner, hNativeThread);
@@ -619,6 +625,8 @@ VMMDECL(void) PDMCritSectLeave(PPDMCRITSECT pCritSect)
         STAM_REL_COUNTER_INC(&pCritSect->s.StatContentionRZUnlock);
     }
 #endif /* IN_RING0 || IN_RC */
+
+    return VINF_SUCCESS;
 }
 
 
