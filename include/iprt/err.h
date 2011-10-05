@@ -1105,6 +1105,9 @@ RT_C_DECLS_END
 #define VERR_SEM_DESTROYED                  (-363)
 /** Nested ownership requests are not permitted for this semaphore type. */
 #define VERR_SEM_NESTED                     (-364)
+/** The release call only release a semaphore nesting, i.e. the caller is still
+ * holding the semaphore. */
+#define VINF_SEM_NESTED                     (364)
 /** Deadlock detected. */
 #define VERR_DEADLOCK                       (-365)
 /** Ping-Pong listen or speak out of turn error. */

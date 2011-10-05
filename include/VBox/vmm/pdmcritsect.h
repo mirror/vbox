@@ -57,7 +57,7 @@ VMMDECL(int)        PDMCritSectEnterDebug(PPDMCRITSECT pCritSect, int rcBusy, RT
 VMMDECL(int)        PDMCritSectTryEnter(PPDMCRITSECT pCritSect);
 VMMDECL(int)        PDMCritSectTryEnterDebug(PPDMCRITSECT pCritSect, RTHCUINTPTR uId, RT_SRC_POS_DECL);
 VMMR3DECL(int)      PDMR3CritSectEnterEx(PPDMCRITSECT pCritSect, bool fCallRing3);
-VMMDECL(void)       PDMCritSectLeave(PPDMCRITSECT pCritSect);
+VMMDECL(int)        PDMCritSectLeave(PPDMCRITSECT pCritSect);
 VMMDECL(bool)       PDMCritSectIsOwner(PCPDMCRITSECT pCritSect);
 VMMDECL(bool)       PDMCritSectIsOwnerEx(PCPDMCRITSECT pCritSect, PVMCPU pVCpu);
 VMMDECL(bool)       PDMCritSectIsInitialized(PCPDMCRITSECT pCritSect);
