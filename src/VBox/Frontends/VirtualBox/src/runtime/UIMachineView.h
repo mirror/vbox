@@ -121,7 +121,6 @@ protected:
     int visibleHeight() const;
     ulong screenId() const { return m_uScreenId; }
     UIFrameBuffer* frameBuffer() const { return m_pFrameBuffer; }
-    bool isMachineWindowResizeIgnored() const { return m_bIsMachineWindowResizeIgnored; }
     const QPixmap& pauseShot() const { return m_pauseShot; }
     QSize storedConsoleSize() const { return m_storedConsoleSize; }
     DesktopGeo desktopGeometryType() const { return m_desktopGeometryType; }
@@ -131,7 +130,6 @@ protected:
     /* Protected setters: */
     void setDesktopGeometry(DesktopGeo geometry, int iWidth, int iHeight);
     void storeConsoleSize(int iWidth, int iHeight);
-    void setMachineWindowResizeIgnored(bool fIgnore = true) { m_bIsMachineWindowResizeIgnored = fIgnore; }
     void storeGuestSizeHint(const QSize &sizeHint);
 
     /* Protected helpers: */
@@ -178,7 +176,6 @@ protected:
     QSize m_desktopGeometry;
     QSize m_storedConsoleSize;
 
-    bool m_bIsMachineWindowResizeIgnored : 1;
     bool m_fShouldWeDoResize : 1;
 #ifdef VBOX_WITH_VIDEOHWACCEL
     bool m_fAccelerate2DVideo : 1;
