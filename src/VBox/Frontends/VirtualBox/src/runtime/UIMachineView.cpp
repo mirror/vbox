@@ -247,7 +247,6 @@ UIMachineView::UIMachineView(  UIMachineWindow *pMachineWindow
     , m_pFrameBuffer(0)
     , m_previousState(KMachineState_Null)
     , m_desktopGeometryType(DesktopGeo_Invalid)
-    , m_bIsMachineWindowResizeIgnored(false)
     , m_fShouldWeDoResize(false)
 #ifdef VBOX_WITH_VIDEOHWACCEL
     , m_fAccelerate2DVideo(bAccelerate2DVideo)

@@ -127,11 +127,6 @@ bool UIMachineViewSeamless::event(QEvent *pEvent)
             if (uisession()->isGuestResizeIgnored())
                 return true;
 
-            /* We are starting to perform machine-view resize,
-             * we should temporary ignore other if they are trying to be: */
-            bool fWasMachineWindowResizeIgnored = isMachineWindowResizeIgnored();
-            setMachineWindowResizeIgnored(true);
-
             /* Get guest resize-event: */
             UIResizeEvent *pResizeEvent = static_cast<UIResizeEvent*>(pEvent);
 
@@ -159,9 +154,6 @@ bool UIMachineViewSeamless::event(QEvent *pEvent)
 
             /* Report to the VM thread that we finished resizing: */
             session().GetConsole().GetDisplay().ResizeCompleted(screenId());
-
-            /* We are finishing to perform machine-view resize: */
-            setMachineWindowResizeIgnored(fWasMachineWindowResizeIgnored);
 
             /* We also recalculate the desktop geometry if this is determined
              * automatically.  In fact, we only need this on the first resize,

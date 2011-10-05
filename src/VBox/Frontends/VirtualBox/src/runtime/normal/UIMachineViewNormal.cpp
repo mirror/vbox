@@ -106,11 +106,6 @@ bool UIMachineViewNormal::event(QEvent *pEvent)
             if (uisession()->isGuestResizeIgnored())
                 return true;
 
-            /* We are starting to perform machine-view resize,
-             * we should temporary ignore other if they are trying to be: */
-            bool fWasMachineWindowResizeIgnored = isMachineWindowResizeIgnored();
-            setMachineWindowResizeIgnored(true);
-
             /* Get guest resize-event: */
             UIResizeEvent *pResizeEvent = static_cast<UIResizeEvent*>(pEvent);
 
@@ -144,9 +139,6 @@ bool UIMachineViewNormal::event(QEvent *pEvent)
 
             /* Report to the VM thread that we finished resizing: */
             session().GetConsole().GetDisplay().ResizeCompleted(screenId());
-
-            /* We are finishing to perform machine-view resize: */
-            setMachineWindowResizeIgnored(fWasMachineWindowResizeIgnored);
 
             /* We also recalculate the desktop geometry if this is determined
              * automatically. In fact, we only need this on the first resize,
@@ -184,7 +176,7 @@ bool UIMachineViewNormal::eventFilter(QObject *pWatched, QEvent *pEvent)
                 /* Set the "guest needs to resize" hint.
                  * This hint is acted upon when (and only when) the autoresize property is "true": */
                 m_fShouldWeDoResize = uisession()->isGuestSupportsGraphics();
-                if (!isMachineWindowResizeIgnored() && m_bIsGuestAutoresizeEnabled && uisession()->isGuestSupportsGraphics())
+                if (pEvent->spontaneous() && m_bIsGuestAutoresizeEnabled && uisession()->isGuestSupportsGraphics())
                     QTimer::singleShot(300, this, SLOT(sltPerformGuestResize()));
                 break;
             }
