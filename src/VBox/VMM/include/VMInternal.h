@@ -304,7 +304,9 @@ typedef struct VMINTUSERPERVM
     /** The VM UUID. (Set after the config constructure has been called.) */
     RTUUID                          Uuid;
 } VMINTUSERPERVM;
+#ifdef VBOX_WITH_STATISTICS
 AssertCompileMemberAlignment(VMINTUSERPERVM, StatReqAllocNew, 8);
+#endif
 
 /** Pointer to the VM internal data kept in the UVM. */
 typedef VMINTUSERPERVM *PVMINTUSERPERVM;
