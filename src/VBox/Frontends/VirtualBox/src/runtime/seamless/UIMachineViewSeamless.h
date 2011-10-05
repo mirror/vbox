@@ -45,9 +45,6 @@ protected:
 
 private slots:
 
-    /* Slot to perform guest resize: */
-    void sltPerformGuestResize(const QSize &aSize = QSize());
-
     /* Console callback handlers: */
     void sltAdditionsStateChanged();
 
@@ -81,7 +78,6 @@ private:
     void maybeRestrictMinimumSize() {}
 
     /* Private variables: */
-    bool m_fShouldWeDoResize : 1;
     QRegion m_lastVisibleRegion;
     UIMachineViewBlocker *m_pSyncBlocker;
 

@@ -73,6 +73,9 @@ signals:
 
 protected slots:
 
+    /* Slot to perform guest resize: */
+    void sltPerformGuestResize(const QSize &aSize = QSize());
+
     /* Console callback handlers: */
     virtual void sltMachineStateChanged();
 
@@ -165,7 +168,7 @@ protected:
     bool x11Event(XEvent *event);
 #endif
 
-    /* Private members: */
+    /* Protected members: */
     UIMachineWindow *m_pMachineWindow;
     ulong m_uScreenId;
     UIFrameBuffer *m_pFrameBuffer;
@@ -176,6 +179,7 @@ protected:
     QSize m_storedConsoleSize;
 
     bool m_bIsMachineWindowResizeIgnored : 1;
+    bool m_fShouldWeDoResize : 1;
 #ifdef VBOX_WITH_VIDEOHWACCEL
     bool m_fAccelerate2DVideo : 1;
 #endif /* VBOX_WITH_VIDEOHWACCEL */
