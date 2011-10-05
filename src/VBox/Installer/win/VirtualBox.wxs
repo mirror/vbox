@@ -761,7 +761,7 @@
 <?if $(env.VBOX_WITH_NETFLT) = "yes" ?>
             <Custom Action="ca_CreateHostOnlyInterfaceArgs" Before="ca_CreateHostOnlyInterface" ><![CDATA[&VBoxNetworkAdp=3]]></Custom>
             <Custom Action="ca_CreateHostOnlyInterface" Before="InstallFinalize" ><![CDATA[&VBoxNetworkAdp=3]]></Custom>
-            <Custom Action="ca_RemoveHostOnlyInterfaces" After="ca_UninstallNetFlt" ><![CDATA[REMOVE]]</Custom>
+            <Custom Action="ca_RemoveHostOnlyInterfaces" After="ca_UninstallNetFlt" ><![CDATA[REMOVE]]></Custom>
 
             <Custom Action="ca_RollbackInstallNetFltArgs" Before="ca_RollbackInstallNetFlt" ><![CDATA[&VBoxNetworkFlt=3]]></Custom>
             <Custom Action="ca_RollbackInstallNetFlt" Before="ca_InstallNetFlt" ><![CDATA[&VBoxNetworkFlt=3]]></Custom>
