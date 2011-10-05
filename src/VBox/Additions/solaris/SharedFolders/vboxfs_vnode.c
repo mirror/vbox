@@ -1550,9 +1550,9 @@ sffs_readpages(
 		sffs_page_unmap(pcur, virtaddr);
 		if (error != 0)
 		{
-			cmn_err(CE_WARN, "sffs_readpages: sfprov_read() failed. error=%d bytes=%ld\n", error, bytes);
+			cmn_err(CE_WARN, "sffs_readpages: sfprov_read() failed. error=%d bytes=%u\n", error, bytes);
 			/* Get rid of all kluster pages read & bail.  */
-			pvn_read_done(ppages,  B_ERROR);
+			pvn_read_done(ppages, B_ERROR);
 			return (error);
 		}
 		pcur = pcur->p_next;
@@ -1699,8 +1699,8 @@ sffs_discardpage(
 	cred_t		*pcred)
 {
 	/*
-	 * We don't support PROT_WRITE mmaps. Just pretend we're done writing back
-	 * to the disk while unmounting/closing the node and discarding the mapped pages.
+	 * This would not get invoked i.e. via pvn_vplist_dirty() since we don't support
+	 * PROT_WRITE mmaps and therefore will not have dirty pages.
 	 */
 	pvn_write_done(ppage, B_INVAL | B_ERROR | B_FORCE);
 	return (0);
@@ -1808,13 +1808,8 @@ sffs_addmap(
 #endif
 	)
 {
-	sfnode_t *node = VN2SFN(dvp);
-	uint64_t npages = btopr(len);
-
 	if (dvp->v_flag & VNOMAP)
 		return (ENOSYS);
-
-	ASSERT(node);
 	return (0);
 }
 
@@ -1836,12 +1831,8 @@ sffs_delmap(
 #endif
 	)
 {
-	sfnode_t *node = VN2SFN(dvp);
-	uint64_t npages = btopr(len);
-
 	if (dvp->v_flag & VNOMAP)
 		return (ENOSYS);
-
 	return (0);
 }
 #endif /* VBOXVFS_WITH_MMAP */
@@ -2025,6 +2016,7 @@ sffs_inactive(vnode_t *vp, cred_t *cr, caller_context_t *ct)
 #ifdef VBOXVFS_WITH_MMAP
 		/* We're fine with releasing the vnode lock here as we should be covered by the sffs_lock */
 		mutex_exit(&vp->v_lock);
+		/* We won't have any dirty pages, this will just invalidate (destroy) the pages and move it to the cachelist. */
 		pvn_vplist_dirty(vp, 0 /* offset */, sffs_discardpage, B_INVAL, cr);
 		mutex_enter(&vp->v_lock);
 #else
