@@ -157,9 +157,6 @@ void UIMachineView::sltPerformGuestResize(const QSize &toSize)
     QSize newSize(toSize.isValid() ? toSize : pMachineWindow ? pMachineWindow->centralWidget()->size() : QSize());
     AssertMsg(newSize.isValid(), ("Size should be valid!\n"));
 
-    /* Remember the new size: */
-    storeConsoleSize(newSize.width(), newSize.height());
-
     /* Send new size-hint to the guest: */
     session().GetConsole().GetDisplay().SetVideoModeHint(newSize.width(), newSize.height(), 0, screenId());
 }
@@ -673,7 +670,8 @@ void UIMachineView::setDesktopGeometry(DesktopGeo geometry, int aWidth, int aHei
 
 void UIMachineView::storeConsoleSize(int iWidth, int iHeight)
 {
-    m_storedConsoleSize = QSize(iWidth, iHeight);
+    if (m_desktopGeometryType == DesktopGeo_Automatic)
+        m_storedConsoleSize = QSize(iWidth, iHeight);
 }
 
 void UIMachineView::storeGuestSizeHint(const QSize &sizeHint)
