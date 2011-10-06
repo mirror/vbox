@@ -175,9 +175,6 @@ bool UIMachineViewScale::event(QEvent *pEvent)
             frameBuffer()->setScaledSize(size());
             frameBuffer()->resizeEvent(pResizeEvent);
 
-            /* Store the new size to prevent unwanted resize hints being sent back: */
-            storeConsoleSize(pResizeEvent->width(), pResizeEvent->height());
-
             /* Let our toplevel widget calculate its sizeHint properly: */
             QCoreApplication::sendPostedEvents(0, QEvent::LayoutRequest);
 
@@ -354,7 +351,7 @@ void UIMachineViewScale::prepareConnections()
 
 void UIMachineViewScale::saveMachineViewSettings()
 {
-    /* Store guest size hint: */
+    /* Store guest size in case we are switching to fullscreen: */
     storeGuestSizeHint(QSize(frameBuffer()->width(), frameBuffer()->height()));
 }
 
