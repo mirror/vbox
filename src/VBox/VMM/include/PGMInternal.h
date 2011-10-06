@@ -1619,8 +1619,9 @@ typedef struct PGMCHUNKR3MAP
 {
     /** The key is the chunk id. */
     AVLU32NODECORE                      Core;
-    /** The current age thingy. */
-    uint32_t                            iAge;
+    /** The time (ChunkR3Map.iNow) this chunk was last used.  Used for unmap
+     *  selection. */
+    uint32_t                            iLastUsed;
     /** The current reference count. */
     uint32_t volatile                   cRefs;
     /** The current permanent reference count. */
@@ -3173,7 +3174,7 @@ typedef struct PGM
         R3R0PTRTYPE(PAVLU32NODECORE) pTree;
 #endif
 #if HC_ARCH_BITS == 32
-        uint32_t                    u32Alignment;
+        uint32_t                    u32Alignment0;
 #endif
         /** The chunk mapping TLB. */
         PGMCHUNKR3MAPTLB            Tlb;
@@ -3182,10 +3183,10 @@ typedef struct PGM
         /** The maximum number of mapped chunks.
          * @cfgm    PGM/MaxRing3Chunks */
         uint32_t                    cMax;
-        /** The current time. */
+        /** The current time.  This is incremented whenever a chunk is inserted. */
         uint32_t                    iNow;
-        /** Number of pgmR3PhysChunkFindUnmapCandidate calls left to the next ageing. */
-        uint32_t                    AgeingCountdown;
+        /** Alignment padding. */
+        uint32_t                    u32Alignment1;
     } ChunkR3Map;
 
     /**

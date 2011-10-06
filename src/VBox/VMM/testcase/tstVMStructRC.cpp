@@ -609,7 +609,6 @@ int main()
     GEN_CHECK_OFF(PGM, ChunkR3Map.c);
     GEN_CHECK_OFF(PGM, ChunkR3Map.cMax);
     GEN_CHECK_OFF(PGM, ChunkR3Map.iNow);
-    GEN_CHECK_OFF(PGM, ChunkR3Map.AgeingCountdown);
     GEN_CHECK_OFF(PGM, PhysTlbHC);
     GEN_CHECK_OFF(PGM, PhysTlbHC.aEntries[0]);
     GEN_CHECK_OFF(PGM, PhysTlbHC.aEntries[1]);
