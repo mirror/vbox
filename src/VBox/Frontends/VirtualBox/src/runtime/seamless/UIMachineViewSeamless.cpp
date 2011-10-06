@@ -136,6 +136,9 @@ bool UIMachineViewSeamless::event(QEvent *pEvent)
             /* Reapply maximum size restriction for machine-view: */
             setMaximumSize(sizeHint());
 
+            /* Store the new size to prevent unwanted resize hints being sent back: */
+            storeConsoleSize(pResizeEvent->width(), pResizeEvent->height());
+
             /* Perform machine-view resize: */
             resize(pResizeEvent->width(), pResizeEvent->height());
 
@@ -190,8 +193,6 @@ bool UIMachineViewSeamless::eventFilter(QObject *pWatched, QEvent *pEvent)
                 QResizeEvent *pResizeEvent = static_cast<QResizeEvent*>(pEvent);
                 if (pResizeEvent->size() != workingArea().size())
                     break;
-                /* Store the new size to prevent unwanted resize hints being sent back: */
-                storeConsoleSize(pResizeEvent->size().width(), pResizeEvent->size().height());
 
                 if (uisession()->isGuestSupportsGraphics())
                     QTimer::singleShot(0, this, SLOT(sltPerformGuestResize()));

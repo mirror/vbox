@@ -76,6 +76,9 @@ UIMachineViewNormal::UIMachineViewNormal(  UIMachineWindow *pMachineWindow
 
 UIMachineViewNormal::~UIMachineViewNormal()
 {
+    /* Save machine view settings: */
+    saveMachineViewSettings();
+
     /* Cleanup frame buffer: */
     cleanupFrameBuffer();
 }
@@ -111,6 +114,9 @@ bool UIMachineViewNormal::event(QEvent *pEvent)
 
             /* Reapply maximum size restriction for machine-view: */
             setMaximumSize(sizeHint());
+
+            /* Store the new size to prevent unwanted resize hints being sent back: */
+            storeConsoleSize(pResizeEvent->width(), pResizeEvent->height());
 
             /* Perform machine-view resize: */
             resize(pResizeEvent->width(), pResizeEvent->height());
@@ -167,10 +173,6 @@ bool UIMachineViewNormal::eventFilter(QObject *pWatched, QEvent *pEvent)
         {
             case QEvent::Resize:
             {
-                const QSize *pSize = &static_cast<QResizeEvent *>(pEvent)
-                                    ->size();
-                /* Store the new size */
-                storeConsoleSize(pSize->width(), pSize->height());
                 if (pEvent->spontaneous() && m_bIsGuestAutoresizeEnabled && uisession()->isGuestSupportsGraphics())
                     QTimer::singleShot(300, this, SLOT(sltPerformGuestResize()));
                 break;
@@ -247,6 +249,12 @@ void UIMachineViewNormal::prepareConsoleConnections()
 
     /* Guest additions state-change updater: */
     connect(uisession(), SIGNAL(sigAdditionsStateChange()), this, SLOT(sltAdditionsStateChanged()));
+}
+
+void UIMachineViewNormal::saveMachineViewSettings()
+{
+    /* Store guest size hint: */
+    storeGuestSizeHint(QSize(frameBuffer()->width(), frameBuffer()->height()));
 }
 
 void UIMachineViewNormal::setGuestAutoresizeEnabled(bool fEnabled)

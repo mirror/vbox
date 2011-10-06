@@ -63,7 +63,7 @@ private:
     //void loadMachineViewSettings();
 
     /* Cleanup helpers: */
-    // void saveMachineViewSettings();
+    void saveMachineViewSettings();
     //void cleanupConnections() {}
     //void cleanupFrameBuffer() {}
 

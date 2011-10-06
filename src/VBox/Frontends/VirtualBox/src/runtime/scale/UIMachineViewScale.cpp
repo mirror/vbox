@@ -75,6 +75,9 @@ UIMachineViewScale::UIMachineViewScale(  UIMachineWindow *pMachineWindow
 
 UIMachineViewScale::~UIMachineViewScale()
 {
+    /* Save machine view settings: */
+    saveMachineViewSettings();
+
     /* Cleanup frame buffer: */
     cleanupFrameBuffer();
 }
@@ -171,6 +174,9 @@ bool UIMachineViewScale::event(QEvent *pEvent)
             /* Perform framebuffer resize: */
             frameBuffer()->setScaledSize(size());
             frameBuffer()->resizeEvent(pResizeEvent);
+
+            /* Store the new size to prevent unwanted resize hints being sent back: */
+            storeConsoleSize(pResizeEvent->width(), pResizeEvent->height());
 
             /* Let our toplevel widget calculate its sizeHint properly: */
             QCoreApplication::sendPostedEvents(0, QEvent::LayoutRequest);
@@ -344,6 +350,12 @@ void UIMachineViewScale::prepareFrameBuffer()
 void UIMachineViewScale::prepareConnections()
 {
     connect(QApplication::desktop(), SIGNAL(resized(int)), this, SLOT(sltDesktopResized()));
+}
+
+void UIMachineViewScale::saveMachineViewSettings()
+{
+    /* Store guest size hint: */
+    storeGuestSizeHint(QSize(frameBuffer()->width(), frameBuffer()->height()));
 }
 
 QSize UIMachineViewScale::sizeHint() const
