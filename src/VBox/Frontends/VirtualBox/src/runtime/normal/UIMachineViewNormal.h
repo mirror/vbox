@@ -66,7 +66,7 @@ private:
     //void loadMachineViewSettings();
 
     /* Cleanup helpers: */
-    void saveMachineViewSettings();
+    // void saveMachineViewSettings();
     //void cleanupConsoleConnections() {}
     //void prepareConnections() {}
     //void cleanupFilters() {}
