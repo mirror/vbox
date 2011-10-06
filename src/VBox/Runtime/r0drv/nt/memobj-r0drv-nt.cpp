@@ -496,7 +496,7 @@ DECLHIDDEN(int) rtR0MemObjNativeAllocPhysNC(PPRTR0MEMOBJINTERNAL ppMem, size_t c
 
 DECLHIDDEN(int) rtR0MemObjNativeEnterPhys(PPRTR0MEMOBJINTERNAL ppMem, RTHCPHYS Phys, size_t cb, uint32_t uCachePolicy)
 {
-    AssertReturn(uCachePolicy == RTMEM_CACHE_POLICY_DONT_CARE, VERR_NOT_SUPPORTED);
+    AssertReturn(uCachePolicy == RTMEM_CACHE_POLICY_DONT_CARE || uCachePolicy == RTMEM_CACHE_POLICY_MMIO, VERR_NOT_SUPPORTED);
 
     /*
      * Validate the address range and create a descriptor for it.
@@ -779,7 +779,8 @@ static int rtR0MemObjNtMap(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJ pMemToMap, voi
         /** @todo How to set the protection on the pages? */
         PHYSICAL_ADDRESS Phys;
         Phys.QuadPart = pMemNtToMap->Core.u.Phys.PhysBase;
-        void *pv = MmMapIoSpace(Phys, pMemNtToMap->Core.cb, MmCached); /** @todo add cache type to fProt. */
+        void *pv = MmMapIoSpace(Phys, pMemNtToMap->Core.cb,
+                                pMemNtToMap->Core.u.Phys.uCachePolicy == RTMEM_CACHE_POLICY_MMIO ? MmNonCached : MmCached);
         if (pv)
         {
             PRTR0MEMOBJNT pMemNt = (PRTR0MEMOBJNT)rtR0MemObjNew(sizeof(*pMemNt), RTR0MEMOBJTYPE_MAPPING, pv,
