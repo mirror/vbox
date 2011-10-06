@@ -186,10 +186,7 @@ bool UIMachineViewFullscreen::eventFilter(QObject *pWatched, QEvent *pEvent)
                 if (pResizeEvent->size() != workingArea().size())
                     break;
 
-                /* Set the "guest needs to resize" hint.
-                 * This hint is acted upon when (and only when) the autoresize property is "true": */
-                m_fShouldWeDoResize = uisession()->isGuestSupportsGraphics();
-                if (m_bIsGuestAutoresizeEnabled && m_fShouldWeDoResize)
+                if (m_bIsGuestAutoresizeEnabled && uisession()->isGuestSupportsGraphics())
                     QTimer::singleShot(0, this, SLOT(sltPerformGuestResize()));
                 break;
             }

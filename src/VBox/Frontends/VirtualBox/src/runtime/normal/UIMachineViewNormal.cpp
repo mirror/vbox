@@ -173,9 +173,6 @@ bool UIMachineViewNormal::eventFilter(QObject *pWatched, QEvent *pEvent)
         {
             case QEvent::Resize:
             {
-                /* Set the "guest needs to resize" hint.
-                 * This hint is acted upon when (and only when) the autoresize property is "true": */
-                m_fShouldWeDoResize = uisession()->isGuestSupportsGraphics();
                 if (pEvent->spontaneous() && m_bIsGuestAutoresizeEnabled && uisession()->isGuestSupportsGraphics())
                     QTimer::singleShot(300, this, SLOT(sltPerformGuestResize()));
                 break;
