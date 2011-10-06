@@ -3768,36 +3768,43 @@ typedef struct PGMR3PHYSCHUNKUNMAPCB
  */
 static DECLCALLBACK(int) pgmR3PhysChunkUnmapCandidateCallback(PAVLU32NODECORE pNode, void *pvUser)
 {
-    PPGMCHUNKR3MAP pChunk = (PPGMCHUNKR3MAP)pNode;
-    PPGMR3PHYSCHUNKUNMAPCB pArg = (PPGMR3PHYSCHUNKUNMAPCB)pvUser;
+    PPGMCHUNKR3MAP          pChunk = (PPGMCHUNKR3MAP)pNode;
+    PPGMR3PHYSCHUNKUNMAPCB  pArg   = (PPGMR3PHYSCHUNKUNMAPCB)pvUser;
 
-    if (    pChunk->iAge
-        &&  !pChunk->cRefs
-        &&  pArg->iLastAge < pChunk->iAge)
+    /*
+     * Check for locks and age.
+     */
+    if (pChunk->cRefs)
+        return 0;
+    if (!pChunk->iAge)
+        return 0;
+    if (pArg->iLastAge >= pChunk->iAge)
+        return 0;
+
+    /*
+     * Check that it's not in any of the TLBs.
+     */
+    PVM pVM = pArg->pVM;
+    if (   pVM->pgm.s.ChunkR3Map.Tlb.aEntries[PGM_CHUNKR3MAPTLB_IDX(pChunk->Core.Key)].idChunk
+        == pChunk->Core.Key)
     {
-        /*
-         * Check that it's not in any of the TLBs.
-         */
-        PVM pVM = pArg->pVM;
-        for (unsigned i = 0; i < RT_ELEMENTS(pVM->pgm.s.ChunkR3Map.Tlb.aEntries); i++)
-            if (pVM->pgm.s.ChunkR3Map.Tlb.aEntries[i].pChunk == pChunk)
-            {
-                pChunk = NULL;
-                break;
-            }
-        if (pChunk)
-            for (unsigned i = 0; i < RT_ELEMENTS(pVM->pgm.s.PhysTlbHC.aEntries); i++)
-                if (pVM->pgm.s.PhysTlbHC.aEntries[i].pMap == pChunk)
-                {
-                    pChunk = NULL;
-                    break;
-                }
-        if (pChunk)
-        {
-            pArg->pChunk = pChunk;
-            pArg->iLastAge = pChunk->iAge;
-        }
+        pChunk = NULL;
+        return 0;
     }
+#ifdef VBOX_STRICT
+    for (unsigned i = 0; i < RT_ELEMENTS(pVM->pgm.s.ChunkR3Map.Tlb.aEntries); i++)
+    {
+        Assert(pVM->pgm.s.ChunkR3Map.Tlb.aEntries[i].pChunk != pChunk);
+        Assert(pVM->pgm.s.ChunkR3Map.Tlb.aEntries[i].idChunk != pChunk->Core.Key);
+    }
+#endif
+
+    for (unsigned i = 0; i < RT_ELEMENTS(pVM->pgm.s.PhysTlbHC.aEntries); i++)
+        if (pVM->pgm.s.PhysTlbHC.aEntries[i].pMap == pChunk)
+            return 0;
+
+    pArg->pChunk   = pChunk;
+    pArg->iLastAge = pChunk->iAge;
     return 0;
 }
 
@@ -3837,6 +3844,8 @@ static int32_t pgmR3PhysChunkFindUnmapCandidate(PVM pVM)
     Assert(Args.pChunk);
     if (Args.pChunk)
     {
+        Assert(Args.pChunk->cRefs == 0);
+        Assert(Args.pChunk->cPermRefs == 0);
         STAM_PROFILE_STOP(&pVM->pgm.s.CTX_SUFF(pStats)->StatChunkFindCandidate, a);
         return Args.pChunk->Core.Key;
     }
@@ -3844,6 +3853,7 @@ static int32_t pgmR3PhysChunkFindUnmapCandidate(PVM pVM)
     STAM_PROFILE_STOP(&pVM->pgm.s.CTX_SUFF(pStats)->StatChunkFindCandidate, a);
     return INT32_MAX;
 }
+
 
 /**
  * Rendezvous callback used by pgmR3PhysUnmapChunk that unmaps a chunk
@@ -3865,7 +3875,8 @@ DECLCALLBACK(VBOXSTRICTRC) pgmR3PhysUnmapChunkRendezvous(PVM pVM, PVMCPU pVCpu, 
     if (pVM->pgm.s.ChunkR3Map.c >= pVM->pgm.s.ChunkR3Map.cMax)
     {
         /* Flush the pgm pool cache; call the internal rendezvous handler as we're already in a rendezvous handler here. */
-        /* todo: also not really efficient to unmap a chunk that contains PD or PT pages. */
+        /** @todo also not really efficient to unmap a chunk that contains PD
+         *  or PT pages. */
         pgmR3PoolClearAllRendezvous(pVM, &pVM->aCpus[0], NULL /* no need to flush the REM TLB as we already did that above */);
 
         /*
@@ -3873,11 +3884,10 @@ DECLCALLBACK(VBOXSTRICTRC) pgmR3PhysUnmapChunkRendezvous(PVM pVM, PVMCPU pVCpu, 
          */
         GMMMAPUNMAPCHUNKREQ Req;
         Req.Hdr.u32Magic = SUPVMMR0REQHDR_MAGIC;
-        Req.Hdr.cbReq = sizeof(Req);
-        Req.pvR3 = NULL;
-        Req.idChunkMap = NIL_GMM_CHUNKID;
+        Req.Hdr.cbReq    = sizeof(Req);
+        Req.pvR3         = NULL;
+        Req.idChunkMap   = NIL_GMM_CHUNKID;
         Req.idChunkUnmap = pgmR3PhysChunkFindUnmapCandidate(pVM);
-
         if (Req.idChunkUnmap != INT32_MAX)
         {
             STAM_PROFILE_START(&pVM->pgm.s.CTX_SUFF(pStats)->StatChunkUnmap, a);
@@ -3885,10 +3895,14 @@ DECLCALLBACK(VBOXSTRICTRC) pgmR3PhysUnmapChunkRendezvous(PVM pVM, PVMCPU pVCpu, 
             STAM_PROFILE_STOP(&pVM->pgm.s.CTX_SUFF(pStats)->StatChunkUnmap, a);
             if (RT_SUCCESS(rc))
             {
-                /* remove the unmapped one. */
+                /*
+                 * Remove the unmapped one.
+                 */
                 PPGMCHUNKR3MAP pUnmappedChunk = (PPGMCHUNKR3MAP)RTAvlU32Remove(&pVM->pgm.s.ChunkR3Map.pTree, Req.idChunkUnmap);
                 AssertRelease(pUnmappedChunk);
-                pUnmappedChunk->pv = NULL;
+                AssertRelease(!pUnmappedChunk->cRefs);
+                AssertRelease(!pUnmappedChunk->cPermRefs);
+                pUnmappedChunk->pv       = NULL;
                 pUnmappedChunk->Core.Key = UINT32_MAX;
 #ifdef VBOX_WITH_2X_4GB_ADDR_SPACE
                 MMR3HeapFree(pUnmappedChunk);
@@ -3898,8 +3912,10 @@ DECLCALLBACK(VBOXSTRICTRC) pgmR3PhysUnmapChunkRendezvous(PVM pVM, PVMCPU pVCpu, 
                 pVM->pgm.s.ChunkR3Map.c--;
                 pVM->pgm.s.cUnmappedChunks++;
 
-                /* Flush dangling PGM pointers (R3 & R0 ptrs to GC physical addresses) */
-                /* todo: we should not flush chunks which include cr3 mappings. */
+                /*
+                 * Flush dangling PGM pointers (R3 & R0 ptrs to GC physical addresses).
+                 */
+                /** todo: we should not flush chunks which include cr3 mappings. */
                 for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
                 {
                     PPGMCPU pPGM = &pVM->aCpus[idCpu].pgm.s;
@@ -3993,17 +4009,6 @@ int pgmR3PhysChunkMap(PVM pVM, uint32_t idChunk, PPPGMCHUNKR3MAP ppChunk)
     if (RT_SUCCESS(rc))
     {
         /*
-         * Update the tree.
-         */
-        /* insert the new one. */
-        AssertPtr(Req.pvR3);
-        pChunk->pv = Req.pvR3;
-        bool fRc = RTAvlU32Insert(&pVM->pgm.s.ChunkR3Map.pTree, &pChunk->Core);
-        AssertRelease(fRc);
-        pVM->pgm.s.ChunkR3Map.c++;
-        pVM->pgm.s.cMappedChunks++;
-
-        /*
          * If we're running out of virtual address space, then we should
          * unmap another chunk.
          *
@@ -4020,7 +4025,7 @@ int pgmR3PhysChunkMap(PVM pVM, uint32_t idChunk, PPPGMCHUNKR3MAP ppChunk)
         /** @todo Eventually we should lock all memory when used and do
          *        map+unmap as one kernel call without any rendezvous or
          *        other precautions. */
-        if (pVM->pgm.s.ChunkR3Map.c >= pVM->pgm.s.ChunkR3Map.cMax)
+        if (pVM->pgm.s.ChunkR3Map.c + 1 >= pVM->pgm.s.ChunkR3Map.cMax)
         {
             switch (VMR3GetState(pVM))
             {
@@ -4042,6 +4047,18 @@ int pgmR3PhysChunkMap(PVM pVM, uint32_t idChunk, PPPGMCHUNKR3MAP ppChunk)
                     break;
             }
         }
+
+        /*
+         * Update the tree.  We must do this after any unmapping to make sure
+         * the chunk we're going to return isn't unmapped by accident.
+         */
+        /* insert the new one. */
+        AssertPtr(Req.pvR3);
+        pChunk->pv = Req.pvR3;
+        bool fRc = RTAvlU32Insert(&pVM->pgm.s.ChunkR3Map.pTree, &pChunk->Core);
+        AssertRelease(fRc);
+        pVM->pgm.s.ChunkR3Map.c++;
+        pVM->pgm.s.cMappedChunks++;
     }
     else
     {
