@@ -3702,52 +3702,15 @@ static DECLCALLBACK(int) pgmR3PhysChunkAgeingRolloverCallback(PAVLU32NODECORE pN
 {
     /* Age compression - ASSUMES iNow == 4. */
     PPGMCHUNKR3MAP pChunk = (PPGMCHUNKR3MAP)pNode;
-    if (pChunk->iAge >= UINT32_C(0xffffff00))
-        pChunk->iAge = 3;
-    else if (pChunk->iAge >= UINT32_C(0xfffff000))
-        pChunk->iAge = 2;
-    else if (pChunk->iAge)
-        pChunk->iAge = 1;
-    else /* iAge = 0 */
-        pChunk->iAge = 4;
+    if (pChunk->iLastUsed >= UINT32_C(0xffffff00))
+        pChunk->iLastUsed = 3;
+    else if (pChunk->iLastUsed >= UINT32_C(0xfffff000))
+        pChunk->iLastUsed = 2;
+    else if (pChunk->iLastUsed)
+        pChunk->iLastUsed = 1;
+    else /* iLastUsed = 0 */
+        pChunk->iLastUsed = 4;
     return 0;
-}
-
-
-/**
- * Tree enumeration callback that updates the chunks that have
- * been used since the last
- */
-static DECLCALLBACK(int) pgmR3PhysChunkAgeingCallback(PAVLU32NODECORE pNode, void *pvUser)
-{
-    PPGMCHUNKR3MAP pChunk = (PPGMCHUNKR3MAP)pNode;
-    if (!pChunk->iAge)
-    {
-        PVM pVM = (PVM)pvUser;
-        pChunk->iAge = pVM->pgm.s.ChunkR3Map.iNow;
-    }
-    return 0;
-}
-
-
-/**
- * Performs ageing of the ring-3 chunk mappings.
- *
- * @param   pVM         The VM handle.
- */
-VMMR3DECL(void) PGMR3PhysChunkAgeing(PVM pVM)
-{
-    pgmLock(pVM);
-    pVM->pgm.s.ChunkR3Map.AgeingCountdown = RT_MIN(pVM->pgm.s.ChunkR3Map.cMax / 4, 1024);
-    pVM->pgm.s.ChunkR3Map.iNow++;
-    if (pVM->pgm.s.ChunkR3Map.iNow == 0)
-    {
-        pVM->pgm.s.ChunkR3Map.iNow = 4;
-        RTAvlU32DoWithAll(&pVM->pgm.s.ChunkR3Map.pTree, true /*fFromLeft*/, pgmR3PhysChunkAgeingRolloverCallback, pVM);
-    }
-    else
-        RTAvlU32DoWithAll(&pVM->pgm.s.ChunkR3Map.pTree, true /*fFromLeft*/, pgmR3PhysChunkAgeingCallback, pVM);
-    pgmUnlock(pVM);
 }
 
 
@@ -3758,7 +3721,6 @@ typedef struct PGMR3PHYSCHUNKUNMAPCB
 {
     PVM                 pVM;            /**< The VM handle. */
     PPGMCHUNKR3MAP      pChunk;         /**< The chunk to unmap. */
-    uint32_t            iLastAge;       /**< Highest age found so far. */
 } PGMR3PHYSCHUNKUNMAPCB, *PPGMR3PHYSCHUNKUNMAPCB;
 
 
@@ -3772,13 +3734,14 @@ static DECLCALLBACK(int) pgmR3PhysChunkUnmapCandidateCallback(PAVLU32NODECORE pN
     PPGMR3PHYSCHUNKUNMAPCB  pArg   = (PPGMR3PHYSCHUNKUNMAPCB)pvUser;
 
     /*
-     * Check for locks and age.
+     * Check for locks and compare when last used.
      */
     if (pChunk->cRefs)
         return 0;
-    if (!pChunk->iAge)
+    if (pChunk->cPermRefs)
         return 0;
-    if (pArg->iLastAge >= pChunk->iAge)
+    if (   pArg->pChunk
+        && pChunk->iLastUsed >= pArg->pChunk->iLastUsed)
         return 0;
 
     /*
@@ -3803,8 +3766,7 @@ static DECLCALLBACK(int) pgmR3PhysChunkUnmapCandidateCallback(PAVLU32NODECORE pN
         if (pVM->pgm.s.PhysTlbHC.aEntries[i].pMap == pChunk)
             return 0;
 
-    pArg->pChunk   = pChunk;
-    pArg->iLastAge = pChunk->iAge;
+    pArg->pChunk = pChunk;
     return 0;
 }
 
@@ -3823,23 +3785,12 @@ static int32_t pgmR3PhysChunkFindUnmapCandidate(PVM pVM)
     PGM_LOCK_ASSERT_OWNER(pVM);
 
     /*
-     * Do tree ageing first?
-     */
-    if (pVM->pgm.s.ChunkR3Map.AgeingCountdown-- == 0)
-    {
-        STAM_PROFILE_START(&pVM->pgm.s.CTX_SUFF(pStats)->StatChunkAging, a);
-        PGMR3PhysChunkAgeing(pVM);
-        STAM_PROFILE_STOP(&pVM->pgm.s.CTX_SUFF(pStats)->StatChunkAging, a);
-    }
-
-    /*
      * Enumerate the age tree starting with the left most node.
      */
     STAM_PROFILE_START(&pVM->pgm.s.CTX_SUFF(pStats)->StatChunkFindCandidate, a);
     PGMR3PHYSCHUNKUNMAPCB Args;
-    Args.pVM      = pVM;
-    Args.pChunk   = NULL;
-    Args.iLastAge = 0;
+    Args.pVM    = pVM;
+    Args.pChunk = NULL;
     RTAvlU32DoWithAll(&pVM->pgm.s.ChunkR3Map.pTree, true /*fFromLeft*/, pgmR3PhysChunkUnmapCandidateCallback, &Args);
     Assert(Args.pChunk);
     if (Args.pChunk)
@@ -3982,6 +3933,16 @@ int pgmR3PhysChunkMap(PVM pVM, uint32_t idChunk, PPPGMCHUNKR3MAP ppChunk)
     PGM_LOCK_ASSERT_OWNER(pVM);
 
     /*
+     * Move the chunk time forward.
+     */
+    pVM->pgm.s.ChunkR3Map.iNow++;
+    if (pVM->pgm.s.ChunkR3Map.iNow == 0)
+    {
+        pVM->pgm.s.ChunkR3Map.iNow = 4;
+        RTAvlU32DoWithAll(&pVM->pgm.s.ChunkR3Map.pTree, true /*fFromLeft*/, pgmR3PhysChunkAgeingRolloverCallback, NULL);
+    }
+
+    /*
      * Allocate a new tracking structure first.
      */
 #ifdef VBOX_WITH_2X_4GB_ADDR_SPACE
@@ -3990,16 +3951,17 @@ int pgmR3PhysChunkMap(PVM pVM, uint32_t idChunk, PPPGMCHUNKR3MAP ppChunk)
     PPGMCHUNKR3MAP pChunk = (PPGMCHUNKR3MAP)MMR3UkHeapAllocZ(pVM, MM_TAG_PGM_CHUNK_MAPPING, sizeof(*pChunk), NULL);
 #endif
     AssertReturn(pChunk, VERR_NO_MEMORY);
-    pChunk->Core.Key = idChunk;
+    pChunk->Core.Key  = idChunk;
+    pChunk->iLastUsed = pVM->pgm.s.ChunkR3Map.iNow;
 
     /*
      * Request the ring-0 part to map the chunk in question.
      */
     GMMMAPUNMAPCHUNKREQ Req;
     Req.Hdr.u32Magic = SUPVMMR0REQHDR_MAGIC;
-    Req.Hdr.cbReq = sizeof(Req);
-    Req.pvR3 = NULL;
-    Req.idChunkMap = idChunk;
+    Req.Hdr.cbReq    = sizeof(Req);
+    Req.pvR3         = NULL;
+    Req.idChunkMap   = idChunk;
     Req.idChunkUnmap = NIL_GMM_CHUNKID;
 
     /* Must be callable from any thread, so can't use VMMR3CallR0. */
@@ -4008,6 +3970,8 @@ int pgmR3PhysChunkMap(PVM pVM, uint32_t idChunk, PPPGMCHUNKR3MAP ppChunk)
     STAM_PROFILE_STOP(&pVM->pgm.s.CTX_SUFF(pStats)->StatChunkMap, a);
     if (RT_SUCCESS(rc))
     {
+        pChunk->pv = Req.pvR3;
+
         /*
          * If we're running out of virtual address space, then we should
          * unmap another chunk.
@@ -4052,9 +4016,7 @@ int pgmR3PhysChunkMap(PVM pVM, uint32_t idChunk, PPPGMCHUNKR3MAP ppChunk)
          * Update the tree.  We must do this after any unmapping to make sure
          * the chunk we're going to return isn't unmapped by accident.
          */
-        /* insert the new one. */
         AssertPtr(Req.pvR3);
-        pChunk->pv = Req.pvR3;
         bool fRc = RTAvlU32Insert(&pVM->pgm.s.ChunkR3Map.pTree, &pChunk->Core);
         AssertRelease(fRc);
         pVM->pgm.s.ChunkR3Map.c++;

@@ -957,7 +957,9 @@ int pgmPhysPageMapByPageID(PVM pVM, uint32_t idPage, RTHCPHYS HCPhys, void **ppv
          * Find the chunk, map it if necessary.
          */
         pMap = (PPGMCHUNKR3MAP)RTAvlU32Get(&pVM->pgm.s.ChunkR3Map.pTree, idChunk);
-        if (!pMap)
+        if (pMap)
+            pMap->iLastUsed = pVM->pgm.s.ChunkR3Map.iNow;
+        else
         {
 # ifdef IN_RING0
             int rc = VMMRZCallRing3NoCpu(pVM, VMMCALLRING3_PGM_MAP_CHUNK, idChunk);
@@ -976,7 +978,6 @@ int pgmPhysPageMapByPageID(PVM pVM, uint32_t idPage, RTHCPHYS HCPhys, void **ppv
          */
         pTlbe->idChunk = idChunk;
         pTlbe->pChunk = pMap;
-        pMap->iAge = 0;
     }
 
     *ppv = (uint8_t *)pMap->pv + ((idPage &GMM_PAGEID_IDX_MASK) << PAGE_SHIFT);
@@ -1073,7 +1074,10 @@ static int pgmPhysPageMapCommon(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys, PPPGMP
          */
         pMap = (PPGMCHUNKR3MAP)RTAvlU32Get(&pVM->pgm.s.ChunkR3Map.pTree, idChunk);
         if (pMap)
+        {
             AssertPtr(pMap->pv);
+            pMap->iLastUsed = pVM->pgm.s.ChunkR3Map.iNow;
+        }
         else
         {
 #ifdef IN_RING0
@@ -1094,7 +1098,6 @@ static int pgmPhysPageMapCommon(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys, PPPGMP
          */
         pTlbe->idChunk = idChunk;
         pTlbe->pChunk = pMap;
-        pMap->iAge = 0;
     }
 
     *ppv = (uint8_t *)pMap->pv + (PGM_PAGE_GET_PAGE_IN_CHUNK(pPage) << PAGE_SHIFT);
@@ -1864,7 +1867,6 @@ VMMDECL(void) PGMPhysReleasePageMappingLock(PVM pVM, PPGMPAGEMAPLOCK pLock)
     {
         Assert(pMap->cRefs >= 1);
         pMap->cRefs--;
-        pMap->iAge = 0;
     }
     pgmUnlock(pVM);
 #endif /* IN_RING3 */
