@@ -143,13 +143,22 @@ VMMR0DECL(int) ModuleInit(void)
                                 rc = CPUMR0ModuleInit();
                                 if (RT_SUCCESS(rc))
                                 {
-                                    LogFlow(("ModuleInit: returns success.\n"));
-                                    return VINF_SUCCESS;
-                                }
+#ifdef VBOX_WITH_TRIPLE_FAULT_HACK
+                                    rc = vmmR0TripleFaultHackInit();
+                                    if (RT_SUCCESS(rc))
+#endif
+                                    {
+                                        LogFlow(("ModuleInit: returns success.\n"));
+                                        return VINF_SUCCESS;
+                                    }
 
-                                /*
-                                 * Bail out.
-                                 */
+                                    /*
+                                     * Bail out.
+                                     */
+#ifdef VBOX_WITH_TRIPLE_FAULT_HACK
+                                    vmmR0TripleFaultHackTerm();
+#endif
+                                }
 #ifdef VBOX_WITH_PCI_PASSTHROUGH
                                 PciRawR0Term();
 #endif
@@ -203,6 +212,9 @@ VMMR0DECL(void) ModuleTerm(void)
 #endif
     PGMDeregisterStringFormatTypes();
     HWACCMR0Term();
+#ifdef VBOX_WITH_TRIPLE_FAULT_HACK
+    vmmR0TripleFaultHackTerm();
+#endif
 
     /*
      * Destroy the GMM and GVMM instances.
