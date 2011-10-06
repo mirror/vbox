@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2010 Oracle Corporation
+ * Copyright (C) 2010-2011 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -49,9 +49,9 @@
 #define   APIC_REG_LVT_LEVEL_TRIGGER            RT_BIT(15)
 #define   APIC_REG_LVT_MASKED                   RT_BIT(16)
 
-DECLINLINE(uint32_t) ApicRegRead(void *pBase, uint32_t reg)
+DECLINLINE(uint32_t) ApicRegRead(void *pvBase, uint32_t offReg)
 {
-    return *(const volatile uint32_t*)((uintptr_t)pBase + reg);
+    return *(const volatile uint32_t *)((uintptr_t)pvBase + offReg);
 }
 
 #endif
