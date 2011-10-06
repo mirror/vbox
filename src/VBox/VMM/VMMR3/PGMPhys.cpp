@@ -149,13 +149,17 @@ VMMR3DECL(int) PGMR3PhysReadExternal(PVM pVM, RTGCPHYS GCPhys, void *pvBuf, size
                 /*
                  * Simple stuff, go ahead.
                  */
-                size_t   cb    = PAGE_SIZE - (off & PAGE_OFFSET_MASK);
+                size_t cb = PAGE_SIZE - (off & PAGE_OFFSET_MASK);
                 if (cb > cbRead)
                     cb = cbRead;
-                const void *pvSrc;
-                int rc = pgmPhysGCPhys2CCPtrInternalReadOnly(pVM, pPage, pRam->GCPhys + off, &pvSrc);
+                PGMPAGEMAPLOCK PgMpLck;
+                const void    *pvSrc;
+                int rc = pgmPhysGCPhys2CCPtrInternalReadOnly(pVM, pPage, pRam->GCPhys + off, &pvSrc, &PgMpLck);
                 if (RT_SUCCESS(rc))
+                {
                     memcpy(pvBuf, pvSrc, cb);
+                    pgmPhysReleaseInternalPageMappingLock(pVM, &PgMpLck);
+                }
                 else
                 {
                     AssertLogRelMsgFailed(("pgmPhysGCPhys2CCPtrInternalReadOnly failed on %RGp / %R[pgmpage] -> %Rrc\n",
@@ -289,13 +293,17 @@ VMMDECL(int) PGMR3PhysWriteExternal(PVM pVM, RTGCPHYS GCPhys, const void *pvBuf,
                 /*
                  * Simple stuff, go ahead.
                  */
-                size_t      cb    = PAGE_SIZE - (off & PAGE_OFFSET_MASK);
+                size_t cb = PAGE_SIZE - (off & PAGE_OFFSET_MASK);
                 if (cb > cbWrite)
                     cb = cbWrite;
-                void *pvDst;
-                int rc = pgmPhysGCPhys2CCPtrInternal(pVM, pPage, pRam->GCPhys + off, &pvDst);
+                PGMPAGEMAPLOCK PgMpLck;
+                void          *pvDst;
+                int rc = pgmPhysGCPhys2CCPtrInternal(pVM, pPage, pRam->GCPhys + off, &pvDst, &PgMpLck);
                 if (RT_SUCCESS(rc))
+                {
                     memcpy(pvDst, pvBuf, cb);
+                    pgmPhysReleaseInternalPageMappingLock(pVM, &PgMpLck);
+                }
                 else
                     AssertLogRelMsgFailed(("pgmPhysGCPhys2CCPtrInternal failed on %RGp / %R[pgmpage] -> %Rrc\n",
                                            pRam->GCPhys + off, pPage, rc));
@@ -3995,12 +4003,44 @@ int pgmR3PhysChunkMap(PVM pVM, uint32_t idChunk, PPPGMCHUNKR3MAP ppChunk)
         pVM->pgm.s.ChunkR3Map.c++;
         pVM->pgm.s.cMappedChunks++;
 
-        /* If we're running out of virtual address space, then we should unmap another chunk. */
+        /*
+         * If we're running out of virtual address space, then we should
+         * unmap another chunk.
+         *
+         * Currently, an unmap operation requires that all other virtual CPUs
+         * are idling and not by chance making use of the memory we're
+         * unmapping.  So, we create an async unmap operation here.
+         *
+         * Now, when creating or restoring a saved state this wont work very
+         * well since we may want to restore all guest RAM + a little something.
+         * So, we have to do the unmap synchronously.  Fortunately for us
+         * though, during these operations the other virtual CPUs are inactive
+         * and it should be safe to do this.
+         */
+        /** @todo Eventually we should lock all memory when used and do
+         *        map+unmap as one kernel call without any rendezvous or
+         *        other precautions. */
         if (pVM->pgm.s.ChunkR3Map.c >= pVM->pgm.s.ChunkR3Map.cMax)
         {
-            /* Postpone the unmap operation (which requires a rendezvous operation) as we own the PGM lock here. */
-            rc = VMR3ReqCallNoWait(pVM, VMCPUID_ANY_QUEUE, (PFNRT)pgmR3PhysUnmapChunk, 1, pVM);
-            AssertRC(rc);
+            switch (VMR3GetState(pVM))
+            {
+                case VMSTATE_LOADING:
+                case VMSTATE_SAVING:
+                {
+                    PVMCPU pVCpu = VMMGetCpu(pVM);
+                    if (   pVCpu
+                        && pVM->pgm.s.cDeprecatedPageLocks == 0)
+                    {
+                        pgmR3PhysUnmapChunkRendezvous(pVM, pVCpu, NULL);
+                        break;
+                    }
+                    /* fall thru */
+                }
+                default:
+                    rc = VMR3ReqCallNoWait(pVM, VMCPUID_ANY_QUEUE, (PFNRT)pgmR3PhysUnmapChunk, 1, pVM);
+                    AssertRC(rc);
+                    break;
+            }
         }
     }
     else

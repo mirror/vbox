@@ -67,7 +67,7 @@
  */
 VMMR0DECL(int) PGMR0PhysAllocateHandyPages(PVM pVM, PVMCPU pVCpu)
 {
-    Assert(PDMCritSectIsOwnerEx(&pVM->pgm.s.CritSect, pVCpu));
+    PGM_LOCK_ASSERT_OWNER_EX(pVM, pVCpu);
 
     /*
      * Check for error injection.
@@ -182,10 +182,12 @@ VMMR0DECL(int) PGMR0PhysAllocateHandyPages(PVM pVM, PVMCPU pVCpu)
  */
 VMMR0DECL(int) PGMR0PhysAllocateLargeHandyPage(PVM pVM, PVMCPU pVCpu)
 {
-    Assert(PDMCritSectIsOwnerEx(&pVM->pgm.s.CritSect, pVCpu));
-
+    PGM_LOCK_ASSERT_OWNER_EX(pVM, pVCpu);
     Assert(!pVM->pgm.s.cLargeHandyPages);
-    int rc = GMMR0AllocateLargePage(pVM, pVCpu->idCpu, _2M, &pVM->pgm.s.aLargeHandyPage[0].idPage, &pVM->pgm.s.aLargeHandyPage[0].HCPhysGCPhys);
+
+    int rc = GMMR0AllocateLargePage(pVM, pVCpu->idCpu, _2M,
+                                    &pVM->pgm.s.aLargeHandyPage[0].idPage,
+                                    &pVM->pgm.s.aLargeHandyPage[0].HCPhysGCPhys);
     if (RT_SUCCESS(rc))
         pVM->pgm.s.cLargeHandyPages = 1;
 

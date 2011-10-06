@@ -1451,7 +1451,7 @@ int pgmGstLazyMap32BitPD(PVMCPU pVCpu, PX86PD *ppPd)
     if (RT_SUCCESS(rc))
     {
         RTHCPTR HCPtrGuestCR3;
-        rc = pgmPhysGCPhys2CCPtrInternal(pVM, pPage, GCPhysCR3, (void **)&HCPtrGuestCR3);
+        rc = pgmPhysGCPhys2CCPtrInternalDepr(pVM, pPage, GCPhysCR3, (void **)&HCPtrGuestCR3);
         if (RT_SUCCESS(rc))
         {
             pVCpu->pgm.s.pGst32BitPdR3 = (R3PTRTYPE(PX86PD))HCPtrGuestCR3;
@@ -1493,7 +1493,7 @@ int pgmGstLazyMapPaePDPT(PVMCPU pVCpu, PX86PDPT *ppPdpt)
     if (RT_SUCCESS(rc))
     {
         RTHCPTR HCPtrGuestCR3;
-        rc = pgmPhysGCPhys2CCPtrInternal(pVM, pPage, GCPhysCR3, (void **)&HCPtrGuestCR3);
+        rc = pgmPhysGCPhys2CCPtrInternalDepr(pVM, pPage, GCPhysCR3, (void **)&HCPtrGuestCR3);
         if (RT_SUCCESS(rc))
         {
             pVCpu->pgm.s.pGstPaePdptR3 = (R3PTRTYPE(PX86PDPT))HCPtrGuestCR3;
@@ -1543,7 +1543,7 @@ int pgmGstLazyMapPaePD(PVMCPU pVCpu, uint32_t iPdpt, PX86PDPAE *ppPd)
         RTRCPTR     RCPtr       = NIL_RTRCPTR;
         RTHCPTR     HCPtr       = NIL_RTHCPTR;
 #if !defined(IN_RC) && !defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0)
-        rc = pgmPhysGCPhys2CCPtrInternal(pVM, pPage, GCPhys, &HCPtr);
+        rc = pgmPhysGCPhys2CCPtrInternalDepr(pVM, pPage, GCPhys, &HCPtr);
         AssertRC(rc);
 #endif
         if (RT_SUCCESS(rc) && fChanged)
@@ -1603,7 +1603,7 @@ int pgmGstLazyMapPml4(PVMCPU pVCpu, PX86PML4 *ppPml4)
     if (RT_SUCCESS(rc))
     {
         RTHCPTR HCPtrGuestCR3;
-        rc = pgmPhysGCPhys2CCPtrInternal(pVM, pPage, GCPhysCR3, (void **)&HCPtrGuestCR3);
+        rc = pgmPhysGCPhys2CCPtrInternalDepr(pVM, pPage, GCPhysCR3, (void **)&HCPtrGuestCR3);
         if (RT_SUCCESS(rc))
         {
             pVCpu->pgm.s.pGstAmd64Pml4R3 = (R3PTRTYPE(PX86PML4))HCPtrGuestCR3;
@@ -2336,7 +2336,7 @@ VMMDECL(bool) PGMHasDirtyPages(PVM pVM)
  */
 VMMDECL(bool) PGMIsLockOwner(PVM pVM)
 {
-    return PDMCritSectIsOwner(&pVM->pgm.s.CritSect);
+    return PDMCritSectIsOwner(&pVM->pgm.s.CritSectX);
 }
 
 
@@ -2364,7 +2364,7 @@ VMMDECL(int) PGMSetLargePageUsage(PVM pVM, bool fUseLargePages)
  */
 int pgmLock(PVM pVM)
 {
-    int rc = PDMCritSectEnter(&pVM->pgm.s.CritSect, VERR_SEM_BUSY);
+    int rc = PDMCritSectEnter(&pVM->pgm.s.CritSectX, VERR_SEM_BUSY);
 #if defined(IN_RC) || defined(IN_RING0)
     if (rc == VERR_SEM_BUSY)
         rc = VMMRZCallRing3NoCpu(pVM, VMMCALLRING3_PGM_LOCK, 0);
@@ -2382,7 +2382,11 @@ int pgmLock(PVM pVM)
  */
 void pgmUnlock(PVM pVM)
 {
-    PDMCritSectLeave(&pVM->pgm.s.CritSect);
+    uint32_t cDeprecatedPageLocks = pVM->pgm.s.cDeprecatedPageLocks;
+    pVM->pgm.s.cDeprecatedPageLocks = 0;
+    int rc = PDMCritSectLeave(&pVM->pgm.s.CritSectX);
+    if (rc == VINF_SEM_NESTED)
+        pVM->pgm.s.cDeprecatedPageLocks = cDeprecatedPageLocks;
 }
 
 #if defined(IN_RC) || defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0)

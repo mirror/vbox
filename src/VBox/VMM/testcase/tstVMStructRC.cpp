@@ -598,7 +598,7 @@ int main()
     GEN_CHECK_OFF(PGMCPU, GCPhysA20Mask);
     GEN_CHECK_OFF(PGMCPU, fA20Enabled);
     GEN_CHECK_OFF(PGMCPU, fSyncFlags);
-    GEN_CHECK_OFF(PGM, CritSect);
+    GEN_CHECK_OFF(PGM, CritSectX);
     GEN_CHECK_OFF(PGM, pPoolR3);
     GEN_CHECK_OFF(PGM, pPoolR0);
     GEN_CHECK_OFF(PGM, pPoolRC);
