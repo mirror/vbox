@@ -602,6 +602,11 @@ VMMR0DECL(void) vmmR0LoggerFlush(PRTLOGGER pLogger);
  */
 VMMR0DECL(size_t) vmmR0LoggerPrefix(PRTLOGGER pLogger, char *pchBuf, size_t cchBuf, void *pvUser);
 
+# ifdef VBOX_WITH_TRIPLE_FAULT_HACK
+int  vmmR0TripleFaultHackInit(void);
+void vmmR0TripleFaultHackTerm(void);
+# endif
+
 #endif /* IN_RING0 */
 #ifdef IN_RC
 
