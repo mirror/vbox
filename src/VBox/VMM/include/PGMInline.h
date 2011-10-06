@@ -490,6 +490,8 @@ DECLINLINE(int) pgmPhysPageQueryTlbeWithPage(PVM pVM, PPGMPAGE pPage, RTGCPHYS G
     {
         STAM_COUNTER_INC(&pVM->pgm.s.CTX_SUFF(pStats)->CTX_MID_Z(Stat,PageMapTlbHits));
         rc = VINF_SUCCESS;
+        AssertPtr(pTlbe->pv);
+        Assert(!pTlbe->pMap || RT_VALID_PTR(pTlbe->pMap->pv));
     }
     else
         rc = pgmPhysPageLoadIntoTlbWithPage(pVM, pPage, GCPhys);

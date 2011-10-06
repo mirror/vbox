@@ -1062,6 +1062,7 @@ static int pgmPhysPageMapCommon(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys, PPPGMP
     {
         STAM_COUNTER_INC(&pVM->pgm.s.CTX_SUFF(pStats)->CTX_MID_Z(Stat,ChunkR3MapTlbHits));
         pMap = pTlbe->pChunk;
+        AssertPtr(pMap->pv);
     }
     else
     {
@@ -1071,7 +1072,9 @@ static int pgmPhysPageMapCommon(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys, PPPGMP
          * Find the chunk, map it if necessary.
          */
         pMap = (PPGMCHUNKR3MAP)RTAvlU32Get(&pVM->pgm.s.ChunkR3Map.pTree, idChunk);
-        if (!pMap)
+        if (pMap)
+            AssertPtr(pMap->pv);
+        else
         {
 #ifdef IN_RING0
             int rc = VMMRZCallRing3NoCpu(pVM, VMMCALLRING3_PGM_MAP_CHUNK, idChunk);
@@ -1083,6 +1086,7 @@ static int pgmPhysPageMapCommon(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys, PPPGMP
             if (RT_FAILURE(rc))
                 return rc;
 #endif
+            AssertPtr(pMap->pv);
         }
 
         /*
