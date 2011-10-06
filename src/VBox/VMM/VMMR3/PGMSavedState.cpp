@@ -1242,11 +1242,15 @@ static int pgmR3LoadRamConfig(PVM pVM, PSSMHANDLE pSSM)
  */
 static void pgmR3StateCalcCrc32ForRamPage(PVM pVM, PPGMRAMRANGE pCur, PPGMLIVESAVERAMPAGE paLSPages, uint32_t iPage)
 {
-    RTGCPHYS    GCPhys = pCur->GCPhys + ((RTGCPHYS)iPage << PAGE_SHIFT);
-    void const *pvPage;
-    int rc = pgmPhysGCPhys2CCPtrInternalReadOnly(pVM, &pCur->aPages[iPage], GCPhys, &pvPage);
+    RTGCPHYS        GCPhys = pCur->GCPhys + ((RTGCPHYS)iPage << PAGE_SHIFT);
+    PGMPAGEMAPLOCK  PgMpLck;
+    void const     *pvPage;
+    int rc = pgmPhysGCPhys2CCPtrInternalReadOnly(pVM, &pCur->aPages[iPage], GCPhys, &pvPage, &PgMpLck);
     if (RT_SUCCESS(rc))
+    {
         paLSPages[iPage].u32Crc = RTCrc32(pvPage, PAGE_SIZE);
+        pgmPhysReleaseInternalPageMappingLock(pVM, &PgMpLck);
+    }
     else
         paLSPages[iPage].u32Crc = UINT32_MAX; /* Invalid */
 }
@@ -1289,11 +1293,15 @@ static void pgmR3StateVerifyCrc32ForRamPage(PVM pVM, PPGMRAMRANGE pCur, PPGMLIVE
 {
     if (paLSPages[iPage].u32Crc != UINT32_MAX)
     {
-        RTGCPHYS    GCPhys = pCur->GCPhys + ((RTGCPHYS)iPage << PAGE_SHIFT);
-        void const *pvPage;
-        int rc = pgmPhysGCPhys2CCPtrInternalReadOnly(pVM, &pCur->aPages[iPage], GCPhys, &pvPage);
+        RTGCPHYS        GCPhys = pCur->GCPhys + ((RTGCPHYS)iPage << PAGE_SHIFT);
+        PGMPAGEMAPLOCK  PgMpLck;
+        void const     *pvPage;
+        int rc = pgmPhysGCPhys2CCPtrInternalReadOnly(pVM, &pCur->aPages[iPage], GCPhys, &pvPage, &PgMpLck);
         if (RT_SUCCESS(rc))
+        {
             pgmR3StateVerifyCrc32ForPage(pvPage, pCur, paLSPages, iPage, pszWhere);
+            pgmPhysReleaseInternalPageMappingLock(pVM, &PgMpLck);
+        }
     }
 }
 
@@ -1332,7 +1340,7 @@ static void pgmR3ScanRamPages(PVM pVM, bool fFinalPass)
 #ifndef PGMLIVESAVERAMPAGE_WITH_CRC32
                         && (iPage & 0x7ff) == 0x100
 #endif
-                        && PDMR3CritSectYield(&pVM->pgm.s.CritSect)
+                        && PDMR3CritSectYield(&pVM->pgm.s.CritSectX)
                         && pVM->pgm.s.idRamRangesGen != idRamRangesGen)
                     {
                         GCPhysCur = pCur->GCPhys + ((RTGCPHYS)iPage << PAGE_SHIFT);
@@ -1557,7 +1565,7 @@ static int pgmR3SaveRamPages(PVM pVM, PSSMHANDLE pSSM, bool fLiveSave, uint32_t 
                     /* Do yield first. */
                     if (   uPass != SSM_PASS_FINAL
                         && (iPage & 0x7ff) == 0x100
-                        && PDMR3CritSectYield(&pVM->pgm.s.CritSect)
+                        && PDMR3CritSectYield(&pVM->pgm.s.CritSectX)
                         && pVM->pgm.s.idRamRangesGen != idRamRangesGen)
                     {
                         GCPhysCur = pCur->GCPhys + ((RTGCPHYS)iPage << PAGE_SHIFT);
@@ -1621,9 +1629,10 @@ static int pgmR3SaveRamPages(PVM pVM, PSSMHANDLE pSSM, bool fLiveSave, uint32_t 
                          * Copy the page and then save it outside the lock (since any
                          * SSM call may block).
                          */
-                        uint8_t     abPage[PAGE_SIZE];
-                        void const *pvPage;
-                        rc = pgmPhysGCPhys2CCPtrInternalReadOnly(pVM, pCurPage, GCPhys, &pvPage);
+                        uint8_t         abPage[PAGE_SIZE];
+                        PGMPAGEMAPLOCK  PgMpLck;
+                        void const     *pvPage;
+                        rc = pgmPhysGCPhys2CCPtrInternalReadOnly(pVM, pCurPage, GCPhys, &pvPage, &PgMpLck);
                         if (RT_SUCCESS(rc))
                         {
                             memcpy(abPage, pvPage, PAGE_SIZE);
@@ -1631,6 +1640,7 @@ static int pgmR3SaveRamPages(PVM pVM, PSSMHANDLE pSSM, bool fLiveSave, uint32_t 
                             if (paLSPages)
                                 pgmR3StateVerifyCrc32ForPage(abPage, pCur, paLSPages, iPage, "save#3");
 #endif
+                            pgmPhysReleaseInternalPageMappingLock(pVM, &PgMpLck);
                         }
                         pgmUnlock(pVM);
                         AssertLogRelMsgRCReturn(rc, ("rc=%Rrc GCPhys=%RGp\n", rc, GCPhys), rc);
@@ -2230,10 +2240,14 @@ static int pgmR3LoadPageBitsOld(PVM pVM, PSSMHANDLE pSSM, uint8_t uType, PPGMPAG
     /*
      * Load the page.
      */
-    void *pvPage;
-    int rc = pgmPhysGCPhys2CCPtrInternal(pVM, pPage, GCPhys, &pvPage);
+    PGMPAGEMAPLOCK PgMpLck;
+    void          *pvPage;
+    int rc = pgmPhysGCPhys2CCPtrInternal(pVM, pPage, GCPhys, &pvPage, &PgMpLck);
     if (RT_SUCCESS(rc))
+    {
         rc = SSMR3GetMem(pSSM, pvPage, PAGE_SIZE);
+        pgmPhysReleaseInternalPageMappingLock(pVM, &PgMpLck);
+    }
 
     return rc;
 }
@@ -2676,10 +2690,13 @@ static int pgmR3LoadMemory(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t
                         if (   PGM_PAGE_GET_TYPE(pPage) == PGMPAGETYPE_ROM
                             || PGM_PAGE_GET_TYPE(pPage) == PGMPAGETYPE_ROM_SHADOW)
                         {
-                            void *pvDstPage;
-                            rc = pgmPhysGCPhys2CCPtrInternal(pVM, pPage, GCPhys, &pvDstPage);
+                            PGMPAGEMAPLOCK PgMpLck;
+                            void          *pvDstPage;
+                            rc = pgmPhysGCPhys2CCPtrInternal(pVM, pPage, GCPhys, &pvDstPage, &PgMpLck);
                             AssertLogRelMsgRCReturn(rc, ("GCPhys=%RGp %R[pgmpage] rc=%Rrc\n", GCPhys, pPage, rc), rc);
+
                             ASMMemZeroPage(pvDstPage);
+                            pgmPhysReleaseInternalPageMappingLock(pVM, &PgMpLck);
                         }
                         /* Free it only if it's not part of a previously
                            allocated large page (no need to clear the page). */
@@ -2718,10 +2735,12 @@ static int pgmR3LoadMemory(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t
 
                     case PGM_STATE_REC_RAM_RAW:
                     {
-                        void *pvDstPage;
-                        rc = pgmPhysGCPhys2CCPtrInternal(pVM, pPage, GCPhys, &pvDstPage);
+                        PGMPAGEMAPLOCK PgMpLck;
+                        void          *pvDstPage;
+                        rc = pgmPhysGCPhys2CCPtrInternal(pVM, pPage, GCPhys, &pvDstPage, &PgMpLck);
                         AssertLogRelMsgRCReturn(rc, ("GCPhys=%RGp %R[pgmpage] rc=%Rrc\n", GCPhys, pPage, rc), rc);
                         rc = SSMR3GetMem(pSSM, pvDstPage, PAGE_SIZE);
+                        pgmPhysReleaseInternalPageMappingLock(pVM, &PgMpLck);
                         if (RT_FAILURE(rc))
                             return rc;
                         break;

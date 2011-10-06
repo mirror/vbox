@@ -256,7 +256,7 @@
      pgmRZDynMapGCPageV2Inlined(pVM, pVCpu, GCPhys, (void **)(ppv) RTLOG_COMMA_SRC_POS)
 #else
 # define PGM_GCPHYS_2_PTR_V2(pVM, pVCpu, GCPhys, ppv) \
-     PGMPhysGCPhys2R3Ptr(pVM, GCPhys, 1 /* one page only */, (PRTR3PTR)(ppv)) /** @todo this isn't asserting, use PGMRamGCPhys2HCPtr! */
+     pgmPhysGCPhys2R3Ptr(pVM, GCPhys, (PRTR3PTR)(ppv)) /** @todo this isn't asserting! */
 #endif
 
 /** @def PGM_GCPHYS_2_PTR
@@ -304,7 +304,7 @@
      pgmRZDynMapGCPageOffInlined(VMMGetCpu(pVM), GCPhys, (void **)(ppv) RTLOG_COMMA_SRC_POS)
 #else
 # define PGM_GCPHYS_2_PTR_EX(pVM, GCPhys, ppv) \
-     PGMPhysGCPhys2R3Ptr(pVM, GCPhys, 1 /* one page only */, (PRTR3PTR)(ppv)) /** @todo this isn't asserting, use PGMRamGCPhys2HCPtr! */
+     pgmPhysGCPhys2R3Ptr(pVM, GCPhys, (PRTR3PTR)(ppv)) /** @todo this isn't asserting! */
 #endif
 
 /** @def PGM_DYNMAP_UNUSED_HINT
@@ -3145,16 +3145,21 @@ typedef struct PGM
     RCPTRTYPE(PPGMRCDYNMAP)         pRCDynMap;
     /** The address of the ring-0 mapping cache if we're making use of it.  */
     RTR0PTR                         pvR0DynMapUsed;
-#if HC_ARCH_BITS == 32
-    /** Alignment padding that makes the next member start on a 8 byte boundary. */
+
+    /** Hack: Number of deprecated page mapping locks taken by the current lock
+     *  owner via pgmPhysGCPhys2CCPtrInternalDepr. */
+    uint32_t                        cDeprecatedPageLocks;
+#if HC_ARCH_BITS == 64
+    /** Alignment padding.  */
     uint32_t                        u32Alignment2;
 #endif
+
 
     /** PGM critical section.
      * This protects the physical & virtual access handlers, ram ranges,
      * and the page flag updating (some of it anyway).
      */
-    PDMCRITSECT                     CritSect;
+    PDMCRITSECT                     CritSectX;
 
     /**
      * Data associated with managing the ring-3 mappings of the allocation chunks.
@@ -3340,7 +3345,7 @@ typedef struct PGM
 AssertCompileMemberAlignment(PGM, paDynPageMap32BitPTEsGC, 8);
 AssertCompileMemberAlignment(PGM, GCPtrMappingFixed, sizeof(RTGCPTR));
 AssertCompileMemberAlignment(PGM, HCPhysInterPD, 8);
-AssertCompileMemberAlignment(PGM, CritSect, 8);
+AssertCompileMemberAlignment(PGM, CritSectX, 8);
 AssertCompileMemberAlignment(PGM, ChunkR3Map, 8);
 AssertCompileMemberAlignment(PGM, PhysTlbHC, 8);
 AssertCompileMemberAlignment(PGM, HCPhysZeroPg, 8);
@@ -3853,7 +3858,14 @@ void            pgmUnlock(PVM pVM);
  * This is the internal variant of PGMIsLockOwner.
  * @param   a_pVM           The VM handle.
  */
-#define PGM_LOCK_ASSERT_OWNER(a_pVM)    Assert(PDMCritSectIsOwner(&(a_pVM)->pgm.s.CritSect))
+#define PGM_LOCK_ASSERT_OWNER(a_pVM)    Assert(PDMCritSectIsOwner(&(a_pVM)->pgm.s.CritSectX))
+/**
+ * Asserts that the caller owns the PDM lock.
+ * This is the internal variant of PGMIsLockOwner.
+ * @param   a_pVM           The VM handle.
+ * @param   a_pVCpu         The current CPU handle.
+ */
+#define PGM_LOCK_ASSERT_OWNER_EX(a_pVM, a_pVCpu)  Assert(PDMCritSectIsOwnerEx(&(a_pVM)->pgm.s.CritSectX, pVCpu))
 
 int             pgmR3MappingsFixInternal(PVM pVM, RTGCPTR GCPtrBase, uint32_t cb);
 int             pgmR3SyncPTResolveConflict(PVM pVM, PPGMMAPPING pMapping, PX86PD pPDSrc, RTGCPTR GCPtrOldMapping);
@@ -3886,8 +3898,11 @@ int             pgmPhysPageMakeWritableAndMap(PVM pVM, PPGMPAGE pPage, RTGCPHYS 
 int             pgmPhysPageMap(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys, void **ppv);
 int             pgmPhysPageMapReadOnly(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys, void const **ppv);
 int             pgmPhysPageMapByPageID(PVM pVM, uint32_t idPage, RTHCPHYS HCPhys, void **ppv);
-int             pgmPhysGCPhys2CCPtrInternal(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys, void **ppv);
-int             pgmPhysGCPhys2CCPtrInternalReadOnly(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys, const void **ppv);
+int             pgmPhysGCPhys2R3Ptr(PVM pVM, RTGCPHYS GCPhys, PRTR3PTR pR3Ptr);
+int             pgmPhysGCPhys2CCPtrInternalDepr(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys, void **ppv);
+int             pgmPhysGCPhys2CCPtrInternal(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys, void **ppv, PPGMPAGEMAPLOCK pLock);
+int             pgmPhysGCPhys2CCPtrInternalReadOnly(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys, const void **ppv, PPGMPAGEMAPLOCK pLock);
+void            pgmPhysReleaseInternalPageMappingLock(PVM pVM, PPGMPAGEMAPLOCK pLock);
 VMMDECL(int)    pgmPhysHandlerRedirectToHC(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, RTGCPHYS GCPhysFault, void *pvUser);
 VMMDECL(int)    pgmPhysRomWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, RTGCPHYS GCPhysFault, void *pvUser);
 int             pgmPhysFreePage(PVM pVM, PGMMFREEPAGESREQ pReq, uint32_t *pcPendingPages, PPGMPAGE pPage, RTGCPHYS GCPhys);

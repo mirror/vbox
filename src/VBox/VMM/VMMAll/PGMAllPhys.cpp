@@ -631,8 +631,7 @@ int pgmPhysAllocPage(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys)
     const RTHCPHYS HCPhys = pVM->pgm.s.aHandyPages[iHandyPage].HCPhysGCPhys;
     pVM->pgm.s.aHandyPages[iHandyPage].HCPhysGCPhys = GCPhys & ~(RTGCPHYS)PAGE_OFFSET_MASK;
 
-    const void *pvSharedPage = NULL;
-
+    void *pvSharedPage = NULL;
     if (PGM_PAGE_IS_SHARED(pPage))
     {
         /* Mark this shared page for freeing/dereferencing. */
@@ -644,8 +643,8 @@ int pgmPhysAllocPage(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys)
         STAM_COUNTER_INC(&pVM->pgm.s.CTX_SUFF(pStats)->CTX_MID_Z(Stat,PageReplaceShared));
         pVM->pgm.s.cSharedPages--;
 
-        /* Grab the address of the page so we can make a copy later on. */
-        rc = pgmPhysGCPhys2CCPtrInternalReadOnly(pVM, pPage, GCPhys, &pvSharedPage);
+        /* Grab the address of the page so we can make a copy later on. (safe) */
+        rc = pgmPhysPageMap(pVM, pPage, GCPhys, &pvSharedPage);
         AssertRC(rc);
     }
     else
@@ -669,13 +668,13 @@ int pgmPhysAllocPage(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys)
     if (pvSharedPage)
     {
         /* Get the virtual address of the new page. */
-        void *pvNewPage;
-        rc = pgmPhysGCPhys2CCPtrInternal(pVM, pPage, GCPhys, &pvNewPage);
-        AssertRC(rc);
-        if (rc == VINF_SUCCESS)
+        PGMPAGEMAPLOCK  PgMpLck;
+        void           *pvNewPage;
+        rc = pgmPhysGCPhys2CCPtrInternal(pVM, pPage, GCPhys, &pvNewPage, &PgMpLck); AssertRC(rc);
+        if (RT_SUCCESS(rc))
         {
-            /** @todo todo write ASMMemCopyPage */
-            memcpy(pvNewPage, pvSharedPage, PAGE_SIZE);
+            memcpy(pvNewPage, pvSharedPage, PAGE_SIZE); /** @todo todo write ASMMemCopyPage */
+            pgmPhysReleaseInternalPageMappingLock(pVM, &PgMpLck);
         }
     }
 
@@ -921,7 +920,7 @@ int pgmPhysPageMakeWritable(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys)
  * @param   ppv         Where to store the mapping address.
  *
  * @remarks Called from within the PGM critical section.  The mapping is only
- *          valid while your inside this section.
+ *          valid while you are inside this section.
  */
 int pgmPhysPageMapByPageID(PVM pVM, uint32_t idPage, RTHCPHYS HCPhys, void **ppv)
 {
@@ -1119,7 +1118,7 @@ static int pgmPhysPageMapCommon(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys, PPPGMP
  *                      offset is masked off!
  *
  * @remarks Called from within the PGM critical section.  The mapping is only
- *          valid while your inside this section.
+ *          valid while you are inside section.
  */
 int pgmPhysPageMakeWritableAndMap(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys, void **ppv)
 {
@@ -1155,7 +1154,7 @@ int pgmPhysPageMakeWritableAndMap(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys, void
  *                      offset is masked off!
  *
  * @remarks Called from within the PGM critical section.  The mapping is only
- *          valid while your inside this section.
+ *          valid while you are inside section.
  */
 int pgmPhysPageMap(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys, void **ppv)
 {
@@ -1183,7 +1182,7 @@ int pgmPhysPageMap(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys, void **ppv)
  *                      offset is masked off!
  *
  * @remarks Called from within the PGM critical section.  The mapping is only
- *          valid while your inside this section.
+ *          valid while you are inside this section.
  */
 int pgmPhysPageMapReadOnly(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys, void const **ppv)
 {
@@ -1291,12 +1290,14 @@ int pgmPhysPageLoadIntoTlbWithPage(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys)
  * @param   ppv         Where to store the address corresponding to GCPhys.
  *
  * @internal
+ * @deprecated Use pgmPhysGCPhys2CCPtrInternalEx.
  */
-int pgmPhysGCPhys2CCPtrInternal(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys, void **ppv)
+int pgmPhysGCPhys2CCPtrInternalDepr(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys, void **ppv)
 {
     int rc;
     AssertReturn(pPage, VERR_INTERNAL_ERROR);
     PGM_LOCK_ASSERT_OWNER(pVM);
+    pVM->pgm.s.cDeprecatedPageLocks++;
 
     /*
      * Make sure the page is writable.
@@ -1332,10 +1333,80 @@ int pgmPhysGCPhys2CCPtrInternal(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys, void *
     return VINF_SUCCESS;
 }
 
+#if !defined(IN_RC) && !defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0)
 
 /**
- * Internal version of PGMPhysGCPhys2CCPtrReadOnly that expects the caller to
- * own the PGM lock and therefore not need to lock the mapped page.
+ * Locks a page mapping for writing.
+ *
+ * @param   pVM                 The VM handle.
+ * @param   pPage               The page.
+ * @param   pTlbe               The mapping TLB entry for the page.
+ * @param   pLock               The lock structure (output).
+ */
+DECLINLINE(void) pgmPhysPageMapLockForWriting(PVM pVM, PPGMPAGE pPage, PPGMPAGEMAPTLBE pTlbe, PPGMPAGEMAPLOCK pLock)
+{
+    PPGMPAGEMAP pMap = pTlbe->pMap;
+    if (pMap)
+        pMap->cRefs++;
+
+    unsigned cLocks = PGM_PAGE_GET_WRITE_LOCKS(pPage);
+    if (RT_LIKELY(cLocks < PGM_PAGE_MAX_LOCKS - 1))
+    {
+        if (cLocks == 0)
+            pVM->pgm.s.cWriteLockedPages++;
+        PGM_PAGE_INC_WRITE_LOCKS(pPage);
+    }
+    else if (cLocks != PGM_PAGE_MAX_LOCKS)
+    {
+        PGM_PAGE_INC_WRITE_LOCKS(pPage);
+        AssertMsgFailed(("%R[pgmpage] is entering permanent write locked state!\n", pPage));
+        if (pMap)
+            pMap->cRefs++; /* Extra ref to prevent it from going away. */
+    }
+
+    pLock->uPageAndType = (uintptr_t)pPage | PGMPAGEMAPLOCK_TYPE_WRITE;
+    pLock->pvMap = pMap;
+}
+
+/**
+ * Locks a page mapping for reading.
+ *
+ * @param   pVM                 The VM handle.
+ * @param   pPage               The page.
+ * @param   pTlbe               The mapping TLB entry for the page.
+ * @param   pLock               The lock structure (output).
+ */
+DECLINLINE(void) pgmPhysPageMapLockForReading(PVM pVM, PPGMPAGE pPage, PPGMPAGEMAPTLBE pTlbe, PPGMPAGEMAPLOCK pLock)
+{
+    PPGMPAGEMAP pMap = pTlbe->pMap;
+    if (pMap)
+        pMap->cRefs++;
+
+    unsigned cLocks = PGM_PAGE_GET_READ_LOCKS(pPage);
+    if (RT_LIKELY(cLocks < PGM_PAGE_MAX_LOCKS - 1))
+    {
+        if (cLocks == 0)
+            pVM->pgm.s.cReadLockedPages++;
+        PGM_PAGE_INC_READ_LOCKS(pPage);
+    }
+    else if (cLocks != PGM_PAGE_MAX_LOCKS)
+    {
+        PGM_PAGE_INC_READ_LOCKS(pPage);
+        AssertMsgFailed(("%R[pgmpage] is entering permanent read locked state!\n", pPage));
+        if (pMap)
+            pMap->cRefs++; /* Extra ref to prevent it from going away. */
+    }
+
+    pLock->uPageAndType = (uintptr_t)pPage | PGMPAGEMAPLOCK_TYPE_READ;
+    pLock->pvMap = pMap;
+}
+
+#endif /* !IN_RC && !VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0 */
+
+
+/**
+ * Internal version of PGMPhysGCPhys2CCPtr that expects the caller to
+ * own the PGM lock and have access to the page structure.
  *
  * @returns VBox status code.
  * @retval  VINF_SUCCESS on success.
@@ -1346,32 +1417,103 @@ int pgmPhysGCPhys2CCPtrInternal(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys, void *
  * @param   GCPhys      The guest physical address of the page that should be mapped.
  * @param   pPage       Pointer to the PGMPAGE structure for the page.
  * @param   ppv         Where to store the address corresponding to GCPhys.
+ * @param   pLock       Where to store the lock information that
+ *                      pgmPhysReleaseInternalPageMappingLock needs.
  *
  * @internal
  */
-int pgmPhysGCPhys2CCPtrInternalReadOnly(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys, const void **ppv)
+int pgmPhysGCPhys2CCPtrInternal(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys, void **ppv, PPGMPAGEMAPLOCK pLock)
+{
+    int rc;
+    AssertReturn(pPage, VERR_INTERNAL_ERROR);
+    PGM_LOCK_ASSERT_OWNER(pVM);
+
+    /*
+     * Make sure the page is writable.
+     */
+    if (RT_UNLIKELY(PGM_PAGE_GET_STATE(pPage) != PGM_PAGE_STATE_ALLOCATED))
+    {
+        rc = pgmPhysPageMakeWritable(pVM, pPage, GCPhys);
+        if (RT_FAILURE(rc))
+            return rc;
+        AssertMsg(rc == VINF_SUCCESS || rc == VINF_PGM_SYNC_CR3 /* not returned */, ("%Rrc\n", rc));
+    }
+    Assert(PGM_PAGE_GET_HCPHYS(pPage) != 0);
+
+    /*
+     * Do the job.
+     */
+#if defined(IN_RC) || defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0)
+    void *pv;
+    PVMCPU pVCpu = VMMGetCpu(pVM);
+    rc = pgmRZDynMapHCPageInlined(pVCpu,
+                                  PGM_PAGE_GET_HCPHYS(pPage),
+                                  &pv
+                                  RTLOG_COMMA_SRC_POS);
+    if (RT_FAILURE(rc))
+        return rc;
+    *ppv = (void *)((uintptr_t)pv | (uintptr_t)(GCPhys & PAGE_OFFSET_MASK));
+    pLock->pvPage = pv;
+    pLock->pVCpu  = pVCpu;
+
+#else
+    PPGMPAGEMAPTLBE pTlbe;
+    rc = pgmPhysPageQueryTlbeWithPage(pVM, pPage, GCPhys, &pTlbe);
+    if (RT_FAILURE(rc))
+        return rc;
+    pgmPhysPageMapLockForWriting(pVM, pPage, pTlbe, pLock);
+    *ppv = (void *)((uintptr_t)pTlbe->pv | (uintptr_t)(GCPhys & PAGE_OFFSET_MASK));
+#endif
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Internal version of PGMPhysGCPhys2CCPtrReadOnly that expects the caller to
+ * own the PGM lock and have access to the page structure.
+ *
+ * @returns VBox status code.
+ * @retval  VINF_SUCCESS on success.
+ * @retval  VERR_PGM_PHYS_PAGE_RESERVED it it's a valid page but has no physical backing.
+ * @retval  VERR_PGM_INVALID_GC_PHYSICAL_ADDRESS if it's not a valid physical address.
+ *
+ * @param   pVM         The VM handle.
+ * @param   GCPhys      The guest physical address of the page that should be mapped.
+ * @param   pPage       Pointer to the PGMPAGE structure for the page.
+ * @param   ppv         Where to store the address corresponding to GCPhys.
+ * @param   pLock       Where to store the lock information that
+ *                      pgmPhysReleaseInternalPageMappingLock needs.
+ *
+ * @internal
+ */
+int pgmPhysGCPhys2CCPtrInternalReadOnly(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys, const void **ppv, PPGMPAGEMAPLOCK pLock)
 {
     AssertReturn(pPage, VERR_INTERNAL_ERROR);
     PGM_LOCK_ASSERT_OWNER(pVM);
     Assert(PGM_PAGE_GET_HCPHYS(pPage) != 0);
 
     /*
-     * Get the mapping address.
+     * Do the job.
      */
 #if defined(IN_RC) || defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0)
     void *pv;
-    int rc = pgmRZDynMapHCPageInlined(VMMGetCpu(pVM),
+    PVMCPU pVCpu = VMMGetCpu(pVM);
+    int rc = pgmRZDynMapHCPageInlined(pVCpu,
                                       PGM_PAGE_GET_HCPHYS(pPage),
                                       &pv
                                       RTLOG_COMMA_SRC_POS); /** @todo add a read only flag? */
     if (RT_FAILURE(rc))
         return rc;
     *ppv = (void *)((uintptr_t)pv | (uintptr_t)(GCPhys & PAGE_OFFSET_MASK));
+    pLock->pvPage = pv;
+    pLock->pVCpu  = pVCpu;
+
 #else
     PPGMPAGEMAPTLBE pTlbe;
     int rc = pgmPhysPageQueryTlbeWithPage(pVM, pPage, GCPhys, &pTlbe);
     if (RT_FAILURE(rc))
         return rc;
+    pgmPhysPageMapLockForReading(pVM, pPage, pTlbe, pLock);
     *ppv = (void *)((uintptr_t)pTlbe->pv | (uintptr_t)(GCPhys & PAGE_OFFSET_MASK));
 #endif
     return VINF_SUCCESS;
@@ -1381,9 +1523,9 @@ int pgmPhysGCPhys2CCPtrInternalReadOnly(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys
 /**
  * Requests the mapping of a guest page into the current context.
  *
- * This API should only be used for very short term, as it will consume
- * scarse resources (R0 and GC) in the mapping cache. When you're done
- * with the page, call PGMPhysReleasePageMappingLock() ASAP to release it.
+ * This API should only be used for very short term, as it will consume scarse
+ * resources (R0 and GC) in the mapping cache. When you're done with the page,
+ * call PGMPhysReleasePageMappingLock() ASAP to release it.
  *
  * This API will assume your intention is to write to the page, and will
  * therefore replace shared and zero pages. If you do not intend to modify
@@ -1395,16 +1537,20 @@ int pgmPhysGCPhys2CCPtrInternalReadOnly(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys
  * @retval  VERR_PGM_INVALID_GC_PHYSICAL_ADDRESS if it's not a valid physical address.
  *
  * @param   pVM         The VM handle.
- * @param   GCPhys      The guest physical address of the page that should be mapped.
+ * @param   GCPhys      The guest physical address of the page that should be
+ *                      mapped.
  * @param   ppv         Where to store the address corresponding to GCPhys.
- * @param   pLock       Where to store the lock information that PGMPhysReleasePageMappingLock needs.
+ * @param   pLock       Where to store the lock information that
+ *                      PGMPhysReleasePageMappingLock needs.
  *
  * @remarks The caller is responsible for dealing with access handlers.
  * @todo    Add an informational return code for pages with access handlers?
  *
- * @remark  Avoid calling this API from within critical sections (other than the
- *          PGM one) because of the deadlock risk. External threads may need to
- *          delegate jobs to the EMTs.
+ * @remark  Avoid calling this API from within critical sections (other than
+ *          the PGM one) because of the deadlock risk. External threads may
+ *          need to delegate jobs to the EMTs.
+ * @remarks Only one page is mapped!  Make no assumption about what's after or
+ *          before the returned page!
  * @thread  Any thread.
  */
 VMMDECL(int) PGMPhysGCPhys2CCPtr(PVM pVM, RTGCPHYS GCPhys, void **ppv, PPGMPAGEMAPLOCK pLock)
@@ -1445,10 +1591,6 @@ VMMDECL(int) PGMPhysGCPhys2CCPtr(PVM pVM, RTGCPHYS GCPhys, void **ppv, PPGMPAGEM
     }
 
 #else  /* IN_RING3 || IN_RING0 */
-    /* !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! */
-    /** @todo : This can be dangerous if abused for more than one page; the ring-3 mapping is only valid for ranges that do NOT cross a chunk boundary.   */
-    /* !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! */
-
     /*
      * Query the Physical TLB entry for the page (may fail).
      */
@@ -1475,28 +1617,8 @@ VMMDECL(int) PGMPhysGCPhys2CCPtr(PVM pVM, RTGCPHYS GCPhys, void **ppv, PPGMPAGEM
             /*
              * Now, just perform the locking and calculate the return address.
              */
-            PPGMPAGEMAP pMap = pTlbe->pMap;
-            if (pMap)
-                pMap->cRefs++;
-
-            unsigned cLocks = PGM_PAGE_GET_WRITE_LOCKS(pPage);
-            if (RT_LIKELY(cLocks < PGM_PAGE_MAX_LOCKS - 1))
-            {
-                if (cLocks == 0)
-                    pVM->pgm.s.cWriteLockedPages++;
-                PGM_PAGE_INC_WRITE_LOCKS(pPage);
-            }
-            else if (cLocks != PGM_PAGE_GET_WRITE_LOCKS(pPage))
-            {
-                PGM_PAGE_INC_WRITE_LOCKS(pPage);
-                AssertMsgFailed(("%RGp / %R[pgmpage] is entering permanent write locked state!\n", GCPhys, pPage));
-                if (pMap)
-                    pMap->cRefs++; /* Extra ref to prevent it from going away. */
-            }
-
+            pgmPhysPageMapLockForWriting(pVM, pPage, pTlbe, pLock);
             *ppv = (void *)((uintptr_t)pTlbe->pv | (uintptr_t)(GCPhys & PAGE_OFFSET_MASK));
-            pLock->uPageAndType = (uintptr_t)pPage | PGMPAGEMAPLOCK_TYPE_WRITE;
-            pLock->pvMap = pMap;
         }
     }
 
@@ -1509,9 +1631,9 @@ VMMDECL(int) PGMPhysGCPhys2CCPtr(PVM pVM, RTGCPHYS GCPhys, void **ppv, PPGMPAGEM
 /**
  * Requests the mapping of a guest page into the current context.
  *
- * This API should only be used for very short term, as it will consume
- * scarse resources (R0 and GC) in the mapping cache. When you're done
- * with the page, call PGMPhysReleasePageMappingLock() ASAP to release it.
+ * This API should only be used for very short term, as it will consume scarse
+ * resources (R0 and GC) in the mapping cache.  When you're done with the page,
+ * call PGMPhysReleasePageMappingLock() ASAP to release it.
  *
  * @returns VBox status code.
  * @retval  VINF_SUCCESS on success.
@@ -1519,15 +1641,19 @@ VMMDECL(int) PGMPhysGCPhys2CCPtr(PVM pVM, RTGCPHYS GCPhys, void **ppv, PPGMPAGEM
  * @retval  VERR_PGM_INVALID_GC_PHYSICAL_ADDRESS if it's not a valid physical address.
  *
  * @param   pVM         The VM handle.
- * @param   GCPhys      The guest physical address of the page that should be mapped.
+ * @param   GCPhys      The guest physical address of the page that should be
+ *                      mapped.
  * @param   ppv         Where to store the address corresponding to GCPhys.
- * @param   pLock       Where to store the lock information that PGMPhysReleasePageMappingLock needs.
+ * @param   pLock       Where to store the lock information that
+ *                      PGMPhysReleasePageMappingLock needs.
  *
  * @remarks The caller is responsible for dealing with access handlers.
  * @todo    Add an informational return code for pages with access handlers?
  *
- * @remark  Avoid calling this API from within critical sections (other than
+ * @remarks Avoid calling this API from within critical sections (other than
  *          the PGM one) because of the deadlock risk.
+ * @remarks Only one page is mapped!  Make no assumption about what's after or
+ *          before the returned page!
  * @thread  Any thread.
  */
 VMMDECL(int) PGMPhysGCPhys2CCPtrReadOnly(PVM pVM, RTGCPHYS GCPhys, void const **ppv, PPGMPAGEMAPLOCK pLock)
@@ -1566,11 +1692,6 @@ VMMDECL(int) PGMPhysGCPhys2CCPtrReadOnly(PVM pVM, RTGCPHYS GCPhys, void const **
     }
 
 #else  /* IN_RING3 || IN_RING0 */
-
-    /* !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! */
-    /** @todo : This can be dangerous if abused for more than one page; the ring-3 mapping is only valid for ranges that do NOT cross a chunk boundary.   */
-    /* !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! */
-
     /*
      * Query the Physical TLB entry for the page (may fail).
      */
@@ -1587,28 +1708,8 @@ VMMDECL(int) PGMPhysGCPhys2CCPtrReadOnly(PVM pVM, RTGCPHYS GCPhys, void const **
             /*
              * Now, just perform the locking and calculate the return address.
              */
-            PPGMPAGEMAP pMap = pTlbe->pMap;
-            if (pMap)
-                pMap->cRefs++;
-
-            unsigned cLocks = PGM_PAGE_GET_READ_LOCKS(pPage);
-            if (RT_LIKELY(cLocks < PGM_PAGE_MAX_LOCKS - 1))
-            {
-                if (cLocks == 0)
-                    pVM->pgm.s.cReadLockedPages++;
-                PGM_PAGE_INC_READ_LOCKS(pPage);
-            }
-            else if (cLocks != PGM_PAGE_GET_READ_LOCKS(pPage))
-            {
-                PGM_PAGE_INC_READ_LOCKS(pPage);
-                AssertMsgFailed(("%RGp / %R[pgmpage] is entering permanent readonly locked state!\n", GCPhys, pPage));
-                if (pMap)
-                    pMap->cRefs++; /* Extra ref to prevent it from going away. */
-            }
-
+            pgmPhysPageMapLockForReading(pVM, pPage, pTlbe, pLock);
             *ppv = (void *)((uintptr_t)pTlbe->pv | (uintptr_t)(GCPhys & PAGE_OFFSET_MASK));
-            pLock->uPageAndType = (uintptr_t)pPage | PGMPAGEMAPLOCK_TYPE_READ;
-            pLock->pvMap = pMap;
         }
     }
 
@@ -1767,6 +1868,24 @@ VMMDECL(void) PGMPhysReleasePageMappingLock(PVM pVM, PPGMPAGEMAPLOCK pLock)
 
 
 /**
+ * Release the internal mapping of a guest page.
+ *
+ * This is the counter part of pgmPhysGCPhys2CCPtrInternalEx and
+ * pgmPhysGCPhys2CCPtrInternalReadOnly.
+ *
+ * @param   pVM         The VM handle.
+ * @param   pLock       The lock structure initialized by the mapping function.
+ *
+ * @remarks Caller must hold the PGM lock.
+ */
+void pgmPhysReleaseInternalPageMappingLock(PVM pVM, PPGMPAGEMAPLOCK pLock)
+{
+    PGM_LOCK_ASSERT_OWNER(pVM);
+    PGMPhysReleasePageMappingLock(pVM, pLock); /* lazy for now */
+}
+
+
+/**
  * Converts a GC physical address to a HC ring-3 pointer.
  *
  * @returns VINF_SUCCESS on success.
@@ -1779,19 +1898,18 @@ VMMDECL(void) PGMPhysReleasePageMappingLock(PVM pVM, PPGMPAGEMAPLOCK pLock)
  *
  * @param   pVM         The VM handle.
  * @param   GCPhys      The GC physical address to convert.
- * @param   cbRange     Physical range
  * @param   pR3Ptr      Where to store the R3 pointer on success.
  *
  * @deprecated  Avoid when possible!
  */
-VMMDECL(int) PGMPhysGCPhys2R3Ptr(PVM pVM, RTGCPHYS GCPhys, RTUINT cbRange, PRTR3PTR pR3Ptr)
+int pgmPhysGCPhys2R3Ptr(PVM pVM, RTGCPHYS GCPhys, PRTR3PTR pR3Ptr)
 {
 /** @todo this is kind of hacky and needs some more work. */
 #ifndef DEBUG_sandervl
     VM_ASSERT_EMT(pVM); /* no longer safe for use outside the EMT thread! */
 #endif
 
-    Log(("PGMPhysGCPhys2R3Ptr(,%RGp,%#x,): dont use this API!\n", GCPhys, cbRange)); /** @todo eliminate this API! */
+    Log(("pgmPhysGCPhys2R3Ptr(,%RGp,): dont use this API!\n", GCPhys)); /** @todo eliminate this API! */
 #if defined(IN_RC) || defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0)
     AssertFailedReturn(VERR_NOT_IMPLEMENTED);
 #else
@@ -1801,35 +1919,13 @@ VMMDECL(int) PGMPhysGCPhys2R3Ptr(PVM pVM, RTGCPHYS GCPhys, RTUINT cbRange, PRTR3
     PPGMPAGE pPage;
     int rc = pgmPhysGetPageAndRangeEx(pVM, GCPhys, &pPage, &pRam);
     if (RT_SUCCESS(rc))
-        rc = pgmPhysGCPhys2CCPtrInternal(pVM, pPage, GCPhys, (void **)pR3Ptr);
+        rc = pgmPhysGCPhys2CCPtrInternalDepr(pVM, pPage, GCPhys, (void **)pR3Ptr);
 
     pgmUnlock(pVM);
     Assert(rc <= VINF_SUCCESS);
     return rc;
 #endif
 }
-
-
-#ifdef VBOX_STRICT
-/**
- * PGMPhysGCPhys2R3Ptr convenience for use with assertions.
- *
- * @returns The R3Ptr, NIL_RTR3PTR on failure.
- * @param   pVM         The VM handle.
- * @param   GCPhys      The GC Physical address.
- * @param   cbRange     Physical range.
- *
- * @deprecated  Avoid when possible.
- */
-VMMDECL(RTR3PTR) PGMPhysGCPhys2R3PtrAssert(PVM pVM, RTGCPHYS GCPhys, RTUINT cbRange)
-{
-    RTR3PTR R3Ptr;
-    int rc = PGMPhysGCPhys2R3Ptr(pVM, GCPhys, cbRange, &R3Ptr);
-    if (RT_SUCCESS(rc))
-        return R3Ptr;
-    return NIL_RTR3PTR;
-}
-#endif /* VBOX_STRICT */
 
 
 /**
@@ -1930,8 +2026,9 @@ static int pgmPhysReadHandler(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys, void *pv
     /*
      * Whatever we do we need the source page, map it first.
      */
-    const void *pvSrc = NULL;
-    int         rc    = pgmPhysGCPhys2CCPtrInternalReadOnly(pVM, pPage, GCPhys, &pvSrc);
+    PGMPAGEMAPLOCK PgMpLck;
+    const void    *pvSrc = NULL;
+    int rc = pgmPhysGCPhys2CCPtrInternalReadOnly(pVM, pPage, GCPhys, &pvSrc, &PgMpLck);
     if (RT_FAILURE(rc))
     {
         AssertLogRelMsgFailed(("pgmPhysGCPhys2CCPtrInternalReadOnly failed on %RGp / %R[pgmpage] -> %Rrc\n",
@@ -1976,6 +2073,7 @@ static int pgmPhysReadHandler(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys, void *pv
 #else
         /* In R0 and RC the callbacks cannot handle this context, so we'll fail. */
         //AssertReleaseMsgFailed(("Wrong API! GCPhys=%RGp cb=%#x\n", GCPhys, cb));
+        pgmPhysReleaseInternalPageMappingLock(pVM, &PgMpLck);
         return VERR_PGM_PHYS_WR_HIT_HANDLER;
 #endif
     }
@@ -2017,6 +2115,7 @@ static int pgmPhysReadHandler(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys, void *pv
 #else
         /* In R0 and RC the callbacks cannot handle this context, so we'll fail. */
         //AssertReleaseMsgFailed(("Wrong API! GCPhys=%RGp cb=%#x\n", GCPhys, cb));
+        pgmPhysReleaseInternalPageMappingLock(pVM, &PgMpLck);
         return VERR_PGM_PHYS_WR_HIT_HANDLER;
 #endif
     }
@@ -2026,6 +2125,7 @@ static int pgmPhysReadHandler(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys, void *pv
      */
     if (rc == VINF_PGM_HANDLER_DO_DEFAULT)
         memcpy(pvBuf, pvSrc, cb);
+    pgmPhysReleaseInternalPageMappingLock(pVM, &PgMpLck);
     return rc;
 }
 
@@ -2093,10 +2193,14 @@ VMMDECL(int) PGMPhysRead(PVM pVM, RTGCPHYS GCPhys, void *pvBuf, size_t cbRead)
                     /*
                      * Get the pointer to the page.
                      */
-                    const void *pvSrc;
-                    int rc = pgmPhysGCPhys2CCPtrInternalReadOnly(pVM, pPage, pRam->GCPhys + off, &pvSrc);
+                    PGMPAGEMAPLOCK PgMpLck;
+                    const void    *pvSrc;
+                    int rc = pgmPhysGCPhys2CCPtrInternalReadOnly(pVM, pPage, pRam->GCPhys + off, &pvSrc, &PgMpLck);
                     if (RT_SUCCESS(rc))
+                    {
                         memcpy(pvBuf, pvSrc, cb);
+                        pgmPhysReleaseInternalPageMappingLock(pVM, &PgMpLck);
+                    }
                     else
                     {
                         AssertLogRelMsgFailed(("pgmPhysGCPhys2CCPtrInternalReadOnly failed on %RGp / %R[pgmpage] -> %Rrc\n",
@@ -2163,8 +2267,9 @@ VMMDECL(int) PGMPhysRead(PVM pVM, RTGCPHYS GCPhys, void *pvBuf, size_t cbRead)
  */
 static int pgmPhysWriteHandler(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys, void const *pvBuf, size_t cbWrite)
 {
-    void *pvDst = NULL;
-    int rc;
+    PGMPAGEMAPLOCK  PgMpLck;
+    void           *pvDst = NULL;
+    int             rc;
 
     /*
      * Give priority to physical handlers (like #PF does).
@@ -2195,7 +2300,7 @@ static int pgmPhysWriteHandler(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys, void co
 #else  /* IN_RING3 */
             Log5(("pgmPhysWriteHandler: GCPhys=%RGp cbRange=%#x pPage=%R[pgmpage] phys %s\n", GCPhys, cbRange, pPage, R3STRING(pCur->pszDesc) ));
             if (!PGM_PAGE_IS_MMIO(pPage))
-                rc = pgmPhysGCPhys2CCPtrInternal(pVM, pPage, GCPhys, &pvDst);
+                rc = pgmPhysGCPhys2CCPtrInternal(pVM, pPage, GCPhys, &pvDst, &PgMpLck);
             else
                 rc = VINF_SUCCESS;
             if (RT_SUCCESS(rc))
@@ -2216,8 +2321,11 @@ static int pgmPhysWriteHandler(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys, void co
 # else
                 pCur = NULL; /* might not be valid anymore. */
 # endif
-                if (rc == VINF_PGM_HANDLER_DO_DEFAULT)
-                    memcpy(pvDst, pvBuf, cbRange);
+                if (rc == VINF_PGM_HANDLER_DO_DEFAULT && pvDst)
+                {
+                    if (pvDst)
+                        memcpy(pvDst, pvBuf, cbRange);
+                }
                 else
                     AssertLogRelMsg(rc == VINF_SUCCESS || rc == VINF_PGM_HANDLER_DO_DEFAULT, ("rc=%Rrc GCPhys=%RGp pPage=%R[pgmpage] %s\n", rc, GCPhys, pPage, (pCur) ? pCur->pszDesc : ""));
             }
@@ -2225,7 +2333,11 @@ static int pgmPhysWriteHandler(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys, void co
                 AssertLogRelMsgFailedReturn(("pgmPhysGCPhys2CCPtrInternal failed on %RGp / %R[pgmpage] -> %Rrc\n",
                                              GCPhys, pPage, rc), rc);
             if (RT_LIKELY(cbRange == cbWrite))
+            {
+                if (pvBuf)
+                    pgmPhysReleaseInternalPageMappingLock(pVM, &PgMpLck);
                 return VINF_SUCCESS;
+            }
 
             /* more fun to be had below */
             cbWrite -= cbRange;
@@ -2261,7 +2373,7 @@ static int pgmPhysWriteHandler(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys, void co
 #else  /* IN_RING3 */
 
             Log5(("pgmPhysWriteHandler: GCPhys=%RGp cbRange=%#x pPage=%R[pgmpage] virt %s\n", GCPhys, cbRange, pPage, R3STRING(pCur->pszDesc) ));
-            rc = pgmPhysGCPhys2CCPtrInternal(pVM, pPage, GCPhys, &pvDst);
+            rc = pgmPhysGCPhys2CCPtrInternal(pVM, pPage, GCPhys, &pvDst, &PgMpLck);
             if (RT_SUCCESS(rc))
             {
                 rc = VINF_PGM_HANDLER_DO_DEFAULT;
@@ -2284,7 +2396,11 @@ static int pgmPhysWriteHandler(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys, void co
                 AssertLogRelMsgFailedReturn(("pgmPhysGCPhys2CCPtrInternal failed on %RGp / %R[pgmpage] -> %Rrc\n",
                                              GCPhys, pPage, rc), rc);
             if (RT_LIKELY(cbRange == cbWrite))
+            {
+                if (pvBuf)
+                    pgmPhysReleaseInternalPageMappingLock(pVM, &PgMpLck);
                 return VINF_SUCCESS;
+            }
 
             /* more fun to be had below */
             cbWrite -= cbRange;
@@ -2303,7 +2419,7 @@ static int pgmPhysWriteHandler(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys, void co
     /* We need a writable destination page. */
     if (!pvDst)
     {
-        rc = pgmPhysGCPhys2CCPtrInternal(pVM, pPage, GCPhys, &pvDst);
+        rc = pgmPhysGCPhys2CCPtrInternal(pVM, pPage, GCPhys, &pvDst, &PgMpLck);
         AssertLogRelMsgReturn(RT_SUCCESS(rc),
                               ("pgmPhysGCPhys2CCPtrInternal failed on %RGp / %R[pgmpage] -> %Rrc\n",
                                GCPhys, pPage, rc), rc);
@@ -2433,6 +2549,7 @@ static int pgmPhysWriteHandler(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys, void co
             /* In R0 and RC the callbacks cannot handle this context, so we'll fail. */
             NOREF(cbRange);
             //AssertReleaseMsgFailed(("Wrong API! GCPhys=%RGp cbRange=%#x\n", GCPhys, cbRange));
+            pgmPhysReleaseInternalPageMappingLock(pVM, &PgMpLck);
             return VERR_PGM_PHYS_WR_HIT_HANDLER;
 #endif
         }
@@ -2462,6 +2579,7 @@ static int pgmPhysWriteHandler(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys, void co
             /* In R0 and RC the callbacks cannot handle this context, so we'll fail. */
             NOREF(cbRange);
             //AssertReleaseMsgFailed(("Wrong API! GCPhys=%RGp cbRange=%#x\n", GCPhys, cbRange));
+            pgmPhysReleaseInternalPageMappingLock(pVM, &PgMpLck);
             return VERR_PGM_PHYS_WR_HIT_HANDLER;
 #endif
         }
@@ -2518,6 +2636,7 @@ static int pgmPhysWriteHandler(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys, void co
             /* In R0 and RC the callbacks cannot handle this context, so we'll fail. */
             NOREF(cbRange);
             //AssertReleaseMsgFailed(("Wrong API! GCPhys=%RGp cbRange=%#x\n", GCPhys, cbRange));
+            pgmPhysReleaseInternalPageMappingLock(pVM, &PgMpLck);
             return VERR_PGM_PHYS_WR_HIT_HANDLER;
 #endif
         }
@@ -2528,7 +2647,10 @@ static int pgmPhysWriteHandler(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys, void co
          * Advance if we've got more stuff to do.
          */
         if (cbRange >= cbWrite)
+        {
+            pgmPhysReleaseInternalPageMappingLock(pVM, &PgMpLck);
             return VINF_SUCCESS;
+        }
 
         cbWrite         -= cbRange;
         GCPhys          += cbRange;
@@ -2607,16 +2729,17 @@ VMMDECL(int) PGMPhysWrite(PVM pVM, RTGCPHYS GCPhys, const void *pvBuf, size_t cb
                     /*
                      * Get the pointer to the page.
                      */
-                    void *pvDst;
-                    int rc = pgmPhysGCPhys2CCPtrInternal(pVM, pPage, pRam->GCPhys + off, &pvDst);
+                    PGMPAGEMAPLOCK PgMpLck;
+                    void          *pvDst;
+                    int rc = pgmPhysGCPhys2CCPtrInternal(pVM, pPage, pRam->GCPhys + off, &pvDst, &PgMpLck);
                     if (RT_SUCCESS(rc))
                     {
                         Assert(!PGM_PAGE_IS_BALLOONED(pPage));
                         memcpy(pvDst, pvBuf, cb);
+                        pgmPhysReleaseInternalPageMappingLock(pVM, &PgMpLck);
                     }
-                    else
                     /* Ignore writes to ballooned pages. */
-                    if (!PGM_PAGE_IS_BALLOONED(pPage))
+                    else if (!PGM_PAGE_IS_BALLOONED(pPage))
                         AssertLogRelMsgFailed(("pgmPhysGCPhys2CCPtrInternal failed on %RGp / %R[pgmpage] -> %Rrc\n",
                                                 pRam->GCPhys + off, pPage, rc));
                 }
@@ -3278,19 +3401,22 @@ VMMDECL(int) PGMPhysInterpretedRead(PVMCPU pVCpu, PCPUMCTXCORE pCtxCore, void *p
         if (RT_SUCCESS(rc))
         {
             /** @todo we should check reserved bits ... */
-            void *pvSrc;
-            rc = PGM_GCPHYS_2_PTR_V2(pVM, pVCpu, GCPhys, &pvSrc);
+            PGMPAGEMAPLOCK PgMpLck;
+            void const    *pvSrc;
+            rc = PGMPhysGCPhys2CCPtrReadOnly(pVM, GCPhys, &pvSrc, &PgMpLck);
             switch (rc)
             {
                 case VINF_SUCCESS:
                     Log(("PGMPhysInterpretedRead: pvDst=%p pvSrc=%p cb=%d\n", pvDst, (uint8_t *)pvSrc + (GCPtrSrc & PAGE_OFFSET_MASK), cb));
                     memcpy(pvDst, (uint8_t *)pvSrc + (GCPtrSrc & PAGE_OFFSET_MASK), cb);
+                    PGMPhysReleasePageMappingLock(pVM, &PgMpLck);
                     break;
                 case VERR_PGM_PHYS_PAGE_RESERVED:
                 case VERR_PGM_INVALID_GC_PHYSICAL_ADDRESS:
-                    memset(pvDst, 0, cb); /** @todo this is wrong, it should be 0xff */
+                    memset(pvDst, 0xff, cb);
                     break;
                 default:
+                    Assert(RT_FAILURE_NP(rc));
                     return rc;
             }
 
@@ -3320,31 +3446,36 @@ VMMDECL(int) PGMPhysInterpretedRead(PVMCPU pVCpu, PCPUMCTXCORE pCtxCore, void *p
         {
             /** @todo we should check reserved bits ... */
             AssertMsgFailed(("cb=%d cb1=%d cb2=%d GCPtrSrc=%RGv\n", cb, cb1, cb2, GCPtrSrc));
-            void *pvSrc1;
-            rc = PGM_GCPHYS_2_PTR_V2(pVM, pVCpu, GCPhys1, &pvSrc1);
+            PGMPAGEMAPLOCK PgMpLck;
+            void const *pvSrc1;
+            rc = PGMPhysGCPhys2CCPtrReadOnly(pVM, GCPhys1, &pvSrc1, &PgMpLck);
             switch (rc)
             {
                 case VINF_SUCCESS:
                     memcpy(pvDst, (uint8_t *)pvSrc1 + (GCPtrSrc & PAGE_OFFSET_MASK), cb1);
+                    PGMPhysReleasePageMappingLock(pVM, &PgMpLck);
                     break;
                 case VERR_PGM_INVALID_GC_PHYSICAL_ADDRESS:
-                    memset(pvDst, 0, cb1); /** @todo this is wrong, it should be 0xff */
+                    memset(pvDst, 0xff, cb1);
                     break;
                 default:
+                    Assert(RT_FAILURE_NP(rc));
                     return rc;
             }
 
-            void *pvSrc2;
-            rc = PGM_GCPHYS_2_PTR_V2(pVM, pVCpu, GCPhys2, &pvSrc2);
+            void const *pvSrc2;
+            rc = PGMPhysGCPhys2CCPtrReadOnly(pVM, GCPhys2, &pvSrc2, &PgMpLck);
             switch (rc)
             {
                 case VINF_SUCCESS:
                     memcpy((uint8_t *)pvDst + cb1, pvSrc2, cb2);
+                    PGMPhysReleasePageMappingLock(pVM, &PgMpLck);
                     break;
                 case VERR_PGM_INVALID_GC_PHYSICAL_ADDRESS:
-                    memset((uint8_t *)pvDst + cb1, 0, cb2);  /** @todo this is wrong, it should be 0xff */
+                    memset((uint8_t *)pvDst + cb1, 0xff, cb2);
                     break;
                 default:
+                    Assert(RT_FAILURE_NP(rc));
                     return rc;
             }
 
