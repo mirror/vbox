@@ -80,6 +80,7 @@ EXPORTS
     RTR0MemObjAllocPhysExTag
     RTR0MemObjAllocPhysNCTag
     RTR0MemObjAllocContTag
+    RTR0MemObjEnterPhysTag
     RTR0MemObjLockUserTag
     RTR0MemObjMapKernelTag
     RTR0MemObjMapUserTag
