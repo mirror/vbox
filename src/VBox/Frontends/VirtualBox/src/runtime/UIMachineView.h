@@ -176,7 +176,6 @@ protected:
     QSize m_desktopGeometry;
     QSize m_storedConsoleSize;
 
-    bool m_fShouldWeDoResize : 1;
 #ifdef VBOX_WITH_VIDEOHWACCEL
     bool m_fAccelerate2DVideo : 1;
 #endif /* VBOX_WITH_VIDEOHWACCEL */

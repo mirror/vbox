@@ -194,9 +194,7 @@ bool UIMachineViewSeamless::eventFilter(QObject *pWatched, QEvent *pEvent)
                 if (pResizeEvent->size() != workingArea().size())
                     break;
 
-                /* Set the "guest needs to resize" hint. */
-                m_fShouldWeDoResize = uisession()->isGuestSupportsGraphics();
-                if (m_fShouldWeDoResize)
+                if (uisession()->isGuestSupportsGraphics())
                     QTimer::singleShot(0, this, SLOT(sltPerformGuestResize()));
                 break;
             }
