@@ -167,7 +167,7 @@ static int displayMakeThumbnail(uint8_t *pu8Data, uint32_t cx, uint32_t cy,
         cxThumbnail = (kMaxSizeThumbnail * cx) / cy;
     }
 
-    LogFlowFunc(("%dx%d -> %dx%d\n", cx, cy, cxThumbnail, cyThumbnail));
+    LogRelFlowFunc(("%dx%d -> %dx%d\n", cx, cy, cxThumbnail, cyThumbnail));
 
     cbThumbnail = cxThumbnail * 4 * cyThumbnail;
     pu8Thumbnail = (uint8_t *)RTMemAlloc(cbThumbnail);
@@ -318,7 +318,7 @@ Display::displaySSMLoadScreenshot(PSSMHANDLE pSSM, void *pvUser, uint32_t uVersi
         rc = SSMR3GetU32(pSSM, &typeOfBlock);
         AssertRCBreak(rc);
 
-        LogFlowFunc(("[%d] type %d, size %d bytes\n", i, typeOfBlock, cbBlock));
+        LogRelFlowFunc(("[%d] type %d, size %d bytes\n", i, typeOfBlock, cbBlock));
 
         /* Note: displaySSMSaveScreenshot writes size of a block = 8 and
          * do not write any data if the image size was 0.
@@ -413,7 +413,7 @@ Display::displaySSMLoad(PSSMHANDLE pSSM, void *pvUser, uint32_t uVersion, uint32
  */
 HRESULT Display::init (Console *aParent)
 {
-    LogFlowThisFunc(("aParent=%p\n", aParent));
+    LogRelFlowFunc(("this=%p: aParent=%p\n", this, aParent));
 
     ComAssertRet(aParent, E_INVALIDARG);
 
@@ -489,7 +489,7 @@ HRESULT Display::init (Console *aParent)
  */
 void Display::uninit()
 {
-    LogFlowThisFunc(("\n"));
+    LogRelFlowFunc(("this=%p\n", this));
 
     /* Enclose the state transition Ready->InUninit->NotReady */
     AutoUninitSpan autoUninitSpan(this);
@@ -579,7 +579,7 @@ STDMETHODIMP Display::HandleEvent(IEvent * aEvent)
                    || machineState == MachineState_LiveSnapshotting
                    )
             {
-                LogFlowFunc(("Machine is running.\n"));
+                LogRelFlowFunc(("Machine is running.\n"));
 
                 mfMachineRunning = true;
             }
@@ -615,7 +615,7 @@ static int callFramebufferResize (IFramebuffer *pFramebuffer, unsigned uScreenId
 
     if (!finished)
     {
-        LogFlowFunc (("External framebuffer wants us to wait!\n"));
+        LogRelFlowFunc (("External framebuffer wants us to wait!\n"));
         return VINF_VGA_RESIZE_IN_PROGRESS;
     }
 
@@ -732,7 +732,7 @@ int Display::handleDisplayResize (unsigned uScreenId, uint32_t bpp, void *pvVRAM
  */
 void Display::handleResizeCompletedEMT (void)
 {
-    LogFlowFunc(("\n"));
+    LogRelFlowFunc(("\n"));
 
     unsigned uScreenId;
     for (uScreenId = 0; uScreenId < mcMonitors; uScreenId++)
@@ -805,7 +805,7 @@ void Display::handleResizeCompletedEMT (void)
             if (pFBInfo->fDisabled)
                 pFBInfo->pFramebuffer->NotifyUpdate(0, 0, pFBInfo->w, pFBInfo->h);
         }
-        LogFlow(("[%d]: default format %d\n", uScreenId, pFBInfo->fDefaultFormat));
+        LogRelFlow(("[%d]: default format %d\n", uScreenId, pFBInfo->fDefaultFormat));
 
 #ifdef DEBUG_sunlover
         if (!stam)
@@ -820,7 +820,7 @@ void Display::handleResizeCompletedEMT (void)
 #endif /* DEBUG_sunlover */
 
         /* Inform VRDP server about the change of display parameters. */
-        LogFlowFunc (("Calling VRDP\n"));
+        LogRelFlowFunc (("Calling VRDP\n"));
         mParent->consoleVRDPServer()->SendResize();
 
 #if defined(VBOX_WITH_HGCM) && defined(VBOX_WITH_CROGL)
@@ -988,7 +988,7 @@ void Display::getFramebufferDimensions(int32_t *px1, int32_t *py1,
     AssertPtrReturnVoid(py1);
     AssertPtrReturnVoid(px2);
     AssertPtrReturnVoid(py2);
-    LogFlowFunc(("\n"));
+    LogRelFlowFunc(("\n"));
 
     if (!mpDrv)
         return;
@@ -1297,7 +1297,7 @@ static void vbvaSetMemoryFlagsHGSMI (unsigned uScreenId,
                                      bool fVideoAccelVRDP,
                                      DISPLAYFBINFO *pFBInfo)
 {
-    LogFlowFunc(("HGSMI[%d]: %p\n", uScreenId, pFBInfo->pVBVAHostFlags));
+    LogRelFlowFunc(("HGSMI[%d]: %p\n", uScreenId, pFBInfo->pVBVAHostFlags));
 
     if (pFBInfo->pVBVAHostFlags)
     {
@@ -1316,7 +1316,7 @@ static void vbvaSetMemoryFlagsHGSMI (unsigned uScreenId,
         ASMAtomicWriteU32(&pFBInfo->pVBVAHostFlags->u32HostEvents, fu32HostEvents);
         ASMAtomicWriteU32(&pFBInfo->pVBVAHostFlags->u32SupportedOrders, fu32SupportedOrders);
 
-        LogFlowFunc(("    fu32HostEvents = 0x%08X, fu32SupportedOrders = 0x%08X\n", fu32HostEvents, fu32SupportedOrders));
+        LogRelFlowFunc(("    fu32HostEvents = 0x%08X, fu32SupportedOrders = 0x%08X\n", fu32HostEvents, fu32SupportedOrders));
     }
 }
 
@@ -1375,7 +1375,7 @@ int Display::videoAccelEnable (bool fEnable, VBVAMEMORY *pVbvaMemory)
      * Guest enabled acceleration at will. And it has to enable
      * acceleration after a mode change.
      */
-    LogFlowFunc (("mfVideoAccelEnabled = %d, fEnable = %d, pVbvaMemory = %p\n",
+    LogRelFlowFunc (("mfVideoAccelEnabled = %d, fEnable = %d, pVbvaMemory = %p\n",
                   mfVideoAccelEnabled, fEnable, pVbvaMemory));
 
     /* Strictly check parameters. Callers must not pass anything in the case. */
@@ -1392,7 +1392,7 @@ int Display::videoAccelEnable (bool fEnable, VBVAMEMORY *pVbvaMemory)
     {
         Assert (!mfVideoAccelEnabled);
 
-        LogFlowFunc (("Machine is not yet running.\n"));
+        LogRelFlowFunc (("Machine is not yet running.\n"));
 
         if (fEnable)
         {
@@ -1460,7 +1460,7 @@ int Display::videoAccelEnable (bool fEnable, VBVAMEMORY *pVbvaMemory)
         LogRel(("VBVA: Disabled.\n"));
     }
 
-    LogFlowFunc (("VideoAccelEnable: rc = %Rrc.\n", rc));
+    LogRelFlowFunc (("VideoAccelEnable: rc = %Rrc.\n", rc));
 
     return rc;
 }
@@ -1469,7 +1469,7 @@ int Display::videoAccelEnable (bool fEnable, VBVAMEMORY *pVbvaMemory)
  */
 void Display::VideoAccelVRDP (bool fEnable)
 {
-    LogFlowFunc(("fEnable = %d\n", fEnable));
+    LogRelFlowFunc(("fEnable = %d\n", fEnable));
 
     vbvaLock();
 
@@ -1724,7 +1724,7 @@ bool Display::vbvaFetchCmd (VBVACMDHDR **ppHdr, uint32_t *pcbCmd)
 
             if (!dst)
             {
-                LogFlowFunc (("could not allocate %d bytes from heap!!!\n", cbRecord));
+                LogRelFlowFunc (("could not allocate %d bytes from heap!!!\n", cbRecord));
                 mpVbvaMemory->off32Data = (mpVbvaMemory->off32Data + cbRecord) % VBVA_RING_BUFFER_SIZE;
                 return false;
             }
@@ -1979,7 +1979,7 @@ int Display::videoAccelRefreshProcess(void)
 STDMETHODIMP Display::GetScreenResolution (ULONG aScreenId,
     ULONG *aWidth, ULONG *aHeight, ULONG *aBitsPerPixel)
 {
-    LogFlowFunc (("aScreenId = %d\n", aScreenId));
+    LogRelFlowFunc (("aScreenId = %d\n", aScreenId));
 
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
@@ -2024,7 +2024,7 @@ STDMETHODIMP Display::GetScreenResolution (ULONG aScreenId,
 STDMETHODIMP Display::SetFramebuffer (ULONG aScreenId,
     IFramebuffer *aFramebuffer)
 {
-    LogFlowFunc (("\n"));
+    LogRelFlowFunc (("\n"));
 
     if (aFramebuffer != NULL)
         CheckComArgOutPointerValid(aFramebuffer);
@@ -2087,7 +2087,7 @@ STDMETHODIMP Display::SetFramebuffer (ULONG aScreenId,
 STDMETHODIMP Display::GetFramebuffer (ULONG aScreenId,
     IFramebuffer **aFramebuffer, LONG *aXOrigin, LONG *aYOrigin)
 {
-    LogFlowFunc (("aScreenId = %d\n", aScreenId));
+    LogRelFlowFunc (("aScreenId = %d\n", aScreenId));
 
     CheckComArgOutPointerValid(aFramebuffer);
 
@@ -2310,7 +2310,7 @@ static int displayTakeScreenshot(PVM pVM, Display *pDisplay, struct DRVMAINDISPL
         else
         {
             /* Scale. */
-            LogFlowFunc(("SCALE: %dx%d -> %dx%d\n", cx, cy, width, height));
+            LogRelFlowFunc(("SCALE: %dx%d -> %dx%d\n", cx, cy, width, height));
 
             uint8_t *dst = address;
             uint8_t *src = pu8Data;
@@ -2349,8 +2349,7 @@ STDMETHODIMP Display::TakeScreenShot (ULONG aScreenId, BYTE *address, ULONG widt
     //  check the machine state here (by enclosing the check and VMRequCall
     //  within the Console lock to make it atomic).
 
-    LogFlowFuncEnter();
-    LogFlowFunc (("address=%p, width=%d, height=%d\n",
+    LogRelFlowFunc (("address=%p, width=%d, height=%d\n",
                   address, width, height));
 
     CheckComArgNotNull(address);
@@ -2375,7 +2374,7 @@ STDMETHODIMP Display::TakeScreenShot (ULONG aScreenId, BYTE *address, ULONG widt
 
     HRESULT rc = S_OK;
 
-    LogFlowFunc (("Sending SCREENSHOT request\n"));
+    LogRelFlowFunc (("Sending SCREENSHOT request\n"));
 
     /* Leave lock because other thread (EMT) is called and it may initiate a resize
      * which also needs lock.
@@ -2396,16 +2395,14 @@ STDMETHODIMP Display::TakeScreenShot (ULONG aScreenId, BYTE *address, ULONG widt
         rc = setError(VBOX_E_IPRT_ERROR,
                       tr("Could not take a screenshot (%Rrc)"), vrc);
 
-    LogFlowFunc (("rc=%08X\n", rc));
-    LogFlowFuncLeave();
+    LogRelFlowFunc (("rc=%08X\n", rc));
     return rc;
 }
 
 STDMETHODIMP Display::TakeScreenShotToArray (ULONG aScreenId, ULONG width, ULONG height,
                                              ComSafeArrayOut(BYTE, aScreenData))
 {
-    LogFlowFuncEnter();
-    LogFlowFunc (("width=%d, height=%d\n",
+    LogRelFlowFunc (("width=%d, height=%d\n",
                   width, height));
 
     CheckComArgOutSafeArrayPointerValid(aScreenData);
@@ -2430,7 +2427,7 @@ STDMETHODIMP Display::TakeScreenShotToArray (ULONG aScreenId, ULONG width, ULONG
 
     HRESULT rc = S_OK;
 
-    LogFlowFunc (("Sending SCREENSHOT request\n"));
+    LogRelFlowFunc (("Sending SCREENSHOT request\n"));
 
     /* Leave lock because other thread (EMT) is called and it may initiate a resize
      * which also needs lock.
@@ -2475,16 +2472,14 @@ STDMETHODIMP Display::TakeScreenShotToArray (ULONG aScreenId, ULONG width, ULONG
 
     RTMemFree(pu8Data);
 
-    LogFlowFunc (("rc=%08X\n", rc));
-    LogFlowFuncLeave();
+    LogRelFlowFunc (("rc=%08X\n", rc));
     return rc;
 }
 
 STDMETHODIMP Display::TakeScreenShotPNGToArray (ULONG aScreenId, ULONG width, ULONG height,
                                              ComSafeArrayOut(BYTE, aScreenData))
 {
-    LogFlowFuncEnter();
-    LogFlowFunc (("width=%d, height=%d\n",
+    LogRelFlowFunc (("width=%d, height=%d\n",
                   width, height));
 
     CheckComArgOutSafeArrayPointerValid(aScreenData);
@@ -2509,7 +2504,7 @@ STDMETHODIMP Display::TakeScreenShotPNGToArray (ULONG aScreenId, ULONG width, UL
 
     HRESULT rc = S_OK;
 
-    LogFlowFunc (("Sending SCREENSHOT request\n"));
+    LogRelFlowFunc (("Sending SCREENSHOT request\n"));
 
     /* Leave lock because other thread (EMT) is called and it may initiate a resize
      * which also needs lock.
@@ -2550,8 +2545,7 @@ STDMETHODIMP Display::TakeScreenShotPNGToArray (ULONG aScreenId, ULONG width, UL
 
     RTMemFree(pu8Data);
 
-    LogFlowFunc (("rc=%08X\n", rc));
-    LogFlowFuncLeave();
+    LogRelFlowFunc (("rc=%08X\n", rc));
     return rc;
 }
 
@@ -2664,8 +2658,7 @@ STDMETHODIMP Display::DrawToScreen (ULONG aScreenId, BYTE *address, ULONG x, ULO
     //  check the machine state here (by enclosing the check and VMRequCall
     //  within the Console lock to make it atomic).
 
-    LogFlowFuncEnter();
-    LogFlowFunc (("address=%p, x=%d, y=%d, width=%d, height=%d\n",
+    LogRelFlowFunc (("address=%p, x=%d, y=%d, width=%d, height=%d\n",
                   (void *)address, x, y, width, height));
 
     CheckComArgNotNull(address);
@@ -2712,8 +2705,7 @@ STDMETHODIMP Display::DrawToScreen (ULONG aScreenId, BYTE *address, ULONG x, ULO
 //        handleDisplayUpdate (x, y, width, height);
 //    }
 
-    LogFlowFunc (("rc=%08X\n", rc));
-    LogFlowFuncLeave();
+    LogRelFlowFunc (("rc=%08X\n", rc));
     return rc;
 }
 
@@ -2791,7 +2783,7 @@ void Display::InvalidateAndUpdateEMT(Display *pDisplay)
  */
 STDMETHODIMP Display::InvalidateAndUpdate()
 {
-    LogFlowFuncEnter();
+    LogRelFlowFunc(("\n"));
 
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
@@ -2805,7 +2797,7 @@ STDMETHODIMP Display::InvalidateAndUpdate()
 
     HRESULT rc = S_OK;
 
-    LogFlowFunc (("Sending DPYUPDATE request\n"));
+    LogRelFlowFunc (("Sending DPYUPDATE request\n"));
 
     /* Have to leave the lock when calling EMT.  */
     alock.leave ();
@@ -2819,8 +2811,7 @@ STDMETHODIMP Display::InvalidateAndUpdate()
         rc = setError(VBOX_E_IPRT_ERROR,
                       tr("Could not invalidate and update the screen (%Rrc)"), rcVBox);
 
-    LogFlowFunc (("rc=%08X\n", rc));
-    LogFlowFuncLeave();
+    LogRelFlowFunc (("rc=%08X\n", rc));
     return rc;
 }
 
@@ -2832,7 +2823,7 @@ STDMETHODIMP Display::InvalidateAndUpdate()
  */
 STDMETHODIMP Display::ResizeCompleted(ULONG aScreenId)
 {
-    LogFlowFunc (("\n"));
+    LogRelFlowFunc (("\n"));
 
     /// @todo (dmik) can we AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS); here?
     //  This will require general code review and may add some details.
@@ -2878,7 +2869,7 @@ STDMETHODIMP Display::CompleteVHWACommand(BYTE *pCommand)
  */
 void Display::updateDisplayData(void)
 {
-    LogFlowFunc (("\n"));
+    LogRelFlowFunc (("\n"));
 
     /* the driver might not have been constructed yet */
     if (!mpDrv)
@@ -2935,7 +2926,7 @@ void Display::updateDisplayData(void)
         mpDrv->IConnector.cx = 0;
         mpDrv->IConnector.cy = 0;
     }
-    LogFlowFunc (("leave\n"));
+    LogRelFlowFunc (("leave\n"));
 }
 
 #ifdef VBOX_WITH_CRHGSMI
@@ -2974,7 +2965,7 @@ void Display::destructCrHgsmiData(void)
 DECLCALLBACK(int) Display::changeFramebuffer (Display *that, IFramebuffer *aFB,
                                               unsigned uScreenId)
 {
-    LogFlowFunc (("uScreenId = %d\n", uScreenId));
+    LogRelFlowFunc (("uScreenId = %d\n", uScreenId));
 
     AssertReturn(that, VERR_INVALID_PARAMETER);
     AssertReturn(uScreenId < that->mcMonitors, VERR_INVALID_PARAMETER);
@@ -3032,7 +3023,7 @@ DECLCALLBACK(int) Display::changeFramebuffer (Display *that, IFramebuffer *aFB,
         }
     }
 
-    LogFlowFunc (("leave\n"));
+    LogRelFlowFunc (("leave\n"));
     return VINF_SUCCESS;
 }
 
@@ -3046,7 +3037,7 @@ DECLCALLBACK(int) Display::displayResizeCallback(PPDMIDISPLAYCONNECTOR pInterfac
 {
     PDRVMAINDISPLAY pDrv = PDMIDISPLAYCONNECTOR_2_MAINDISPLAY(pInterface);
 
-    LogFlowFunc (("bpp %d, pvVRAM %p, cbLine %d, cx %d, cy %d\n",
+    LogRelFlowFunc (("bpp %d, pvVRAM %p, cbLine %d, cx %d, cy %d\n",
                   bpp, pvVRAM, cbLine, cx, cy));
 
     return pDrv->pDisplay->handleDisplayResize(VBOX_VIDEO_PRIMARY_SCREEN, bpp, pvVRAM, cbLine, cx, cy, VBVA_SCREEN_F_ACTIVE);
@@ -3108,7 +3099,7 @@ DECLCALLBACK(void) Display::displayRefreshCallback(PPDMIDISPLAYCONNECTOR pInterf
 
         if (u32ResizeStatus == ResizeStatus_UpdateDisplayData)
         {
-            LogFlowFunc (("ResizeStatus_UpdateDisplayData %d\n", uScreenId));
+            LogRelFlowFunc (("ResizeStatus_UpdateDisplayData %d\n", uScreenId));
             fNoUpdate = true; /* Always set it here, because pfnUpdateDisplayAll can cause a new resize. */
             /* The framebuffer was resized and display data need to be updated. */
             pDisplay->handleResizeCompletedEMT ();
@@ -3125,7 +3116,7 @@ DECLCALLBACK(void) Display::displayRefreshCallback(PPDMIDISPLAYCONNECTOR pInterf
         else if (u32ResizeStatus == ResizeStatus_InProgress)
         {
             /* The framebuffer is being resized. Do not call the VGA device back. Immediately return. */
-            LogFlowFunc (("ResizeStatus_InProcess\n"));
+            LogRelFlowFunc (("ResizeStatus_InProcess\n"));
             fNoUpdate = true;
             continue;
         }
@@ -3186,7 +3177,7 @@ DECLCALLBACK(void) Display::displayResetCallback(PPDMIDISPLAYCONNECTOR pInterfac
 {
     PDRVMAINDISPLAY pDrv = PDMIDISPLAYCONNECTOR_2_MAINDISPLAY(pInterface);
 
-    LogFlowFunc (("\n"));
+    LogRelFlowFunc (("\n"));
 
     /* Disable VBVA mode. */
     pDrv->pDisplay->VideoAccelEnable (false, NULL);
@@ -3201,7 +3192,7 @@ DECLCALLBACK(void) Display::displayLFBModeChangeCallback(PPDMIDISPLAYCONNECTOR p
 {
     PDRVMAINDISPLAY pDrv = PDMIDISPLAYCONNECTOR_2_MAINDISPLAY(pInterface);
 
-    LogFlowFunc (("fEnabled=%d\n", fEnabled));
+    LogRelFlowFunc (("fEnabled=%d\n", fEnabled));
 
     NOREF(fEnabled);
 
@@ -3275,7 +3266,7 @@ DECLCALLBACK(void) Display::displayProcessAdapterDataCallback(PPDMIDISPLAYCONNEC
                  pFBInfo->u32MaxFramebufferSize = pDisplay->u32FramebufferSize;
                  pFBInfo->u32InformationSize = pDisplay->u32InformationSize;
 
-                 LogFlow(("VBOX_VIDEO_INFO_TYPE_DISPLAY: %d: at 0x%08X, size 0x%08X, info 0x%08X\n", pDisplay->u32Index, pDisplay->u32Offset, pDisplay->u32FramebufferSize, pDisplay->u32InformationSize));
+                 LogRelFlow(("VBOX_VIDEO_INFO_TYPE_DISPLAY: %d: at 0x%08X, size 0x%08X, info 0x%08X\n", pDisplay->u32Index, pDisplay->u32Offset, pDisplay->u32FramebufferSize, pDisplay->u32InformationSize));
              }
              else if (pHdr->u8Type == VBOX_VIDEO_INFO_TYPE_QUERY_CONF32)
              {
@@ -3378,7 +3369,7 @@ DECLCALLBACK(void) Display::displayProcessDisplayDataCallback(PPDMIDISPLAYCONNEC
             pFBInfo->w = pScreen->u16Width;
             pFBInfo->h = pScreen->u16Height;
 
-            LogFlow(("VBOX_VIDEO_INFO_TYPE_SCREEN: (%p) %d: at %d,%d, linesize 0x%X, size %dx%d, bpp %d, flags 0x%02X\n",
+            LogRelFlow(("VBOX_VIDEO_INFO_TYPE_SCREEN: (%p) %d: at %d,%d, linesize 0x%X, size %dx%d, bpp %d, flags 0x%02X\n",
                      pHdr, uScreenId, pScreen->xOrigin, pScreen->yOrigin, pScreen->u32LineSize, pScreen->u16Width, pScreen->u16Height, pScreen->bitsPerPixel, pScreen->u8Flags));
 
             if (uScreenId != VBOX_VIDEO_PRIMARY_SCREEN)
@@ -3573,7 +3564,7 @@ DECLCALLBACK(void) Display::displayCrHgsmiControlCompletion(int32_t result, uint
 #ifdef VBOX_WITH_HGSMI
 DECLCALLBACK(int) Display::displayVBVAEnable(PPDMIDISPLAYCONNECTOR pInterface, unsigned uScreenId, PVBVAHOSTFLAGS pHostFlags)
 {
-    LogFlowFunc(("uScreenId %d\n", uScreenId));
+    LogRelFlowFunc(("uScreenId %d\n", uScreenId));
 
     PDRVMAINDISPLAY pDrv = PDMIDISPLAYCONNECTOR_2_MAINDISPLAY(pInterface);
     Display *pThis = pDrv->pDisplay;
@@ -3588,7 +3579,7 @@ DECLCALLBACK(int) Display::displayVBVAEnable(PPDMIDISPLAYCONNECTOR pInterface, u
 
 DECLCALLBACK(void) Display::displayVBVADisable(PPDMIDISPLAYCONNECTOR pInterface, unsigned uScreenId)
 {
-    LogFlowFunc(("uScreenId %d\n", uScreenId));
+    LogRelFlowFunc(("uScreenId %d\n", uScreenId));
 
     PDRVMAINDISPLAY pDrv = PDMIDISPLAYCONNECTOR_2_MAINDISPLAY(pInterface);
     Display *pThis = pDrv->pDisplay;
@@ -3779,7 +3770,7 @@ DECLCALLBACK(void) Display::displayVBVAUpdateEnd(PPDMIDISPLAYCONNECTOR pInterfac
 
 DECLCALLBACK(int) Display::displayVBVAResize(PPDMIDISPLAYCONNECTOR pInterface, const PVBVAINFOVIEW pView, const PVBVAINFOSCREEN pScreen, void *pvVRAM)
 {
-    LogFlowFunc(("pScreen %p, pvVRAM %p\n", pScreen, pvVRAM));
+    LogRelFlowFunc(("pScreen %p, pvVRAM %p\n", pScreen, pvVRAM));
 
     PDRVMAINDISPLAY pDrv = PDMIDISPLAYCONNECTOR_2_MAINDISPLAY(pInterface);
     Display *pThis = pDrv->pDisplay;
@@ -3887,7 +3878,7 @@ DECLCALLBACK(int) Display::displayVBVAResize(PPDMIDISPLAYCONNECTOR pInterface, c
         if (fNewOrigin)
         {
             /* VRDP server still need this notification. */
-            LogFlowFunc (("Calling VRDP\n"));
+            LogRelFlowFunc (("Calling VRDP\n"));
             pThis->mParent->consoleVRDPServer()->SendResize();
         }
         return VINF_SUCCESS;
@@ -3950,7 +3941,7 @@ DECLCALLBACK(void *)  Display::drvQueryInterface(PPDMIBASE pInterface, const cha
 DECLCALLBACK(void) Display::drvDestruct(PPDMDRVINS pDrvIns)
 {
     PDRVMAINDISPLAY pData = PDMINS_2_DATA(pDrvIns, PDRVMAINDISPLAY);
-    LogFlowFunc (("iInstance=%d\n", pDrvIns->iInstance));
+    LogRelFlowFunc (("iInstance=%d\n", pDrvIns->iInstance));
     PDMDRV_CHECK_VERSIONS_RETURN_VOID(pDrvIns);
 
     if (pData->pDisplay)
@@ -3978,7 +3969,7 @@ DECLCALLBACK(void) Display::drvDestruct(PPDMDRVINS pDrvIns)
 DECLCALLBACK(int) Display::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uint32_t fFlags)
 {
     PDRVMAINDISPLAY pData = PDMINS_2_DATA(pDrvIns, PDRVMAINDISPLAY);
-    LogFlowFunc (("iInstance=%d\n", pDrvIns->iInstance));
+    LogRelFlowFunc (("iInstance=%d\n", pDrvIns->iInstance));
     PDMDRV_CHECK_VERSIONS_RETURN(pDrvIns);
 
     /*
