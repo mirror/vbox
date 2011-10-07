@@ -1044,15 +1044,52 @@ VBoxManage setextradata "VM name" VBoxInternal/Devices/IntNetIP/0/LUN#0/Config/I
 
     <para>Solaris hosts have a fixed number of IPC semaphores IDs per process
     preventing users from starting more than 120 VMs. While trying to launch
-    more VMs you would be shown a "Cannot create IPC semaphore" error.</para>
+    more VMs you would be shown a "Cannot create IPC semaphore" error. In
+    order to run more VMs, you will need to increase the semaphore ID limit of
+    the VBoxSVC process.</para>
 
-    <para>In order to run more VMs, you will need to bump the semaphore ID
-    limit of the VBoxSVC process. Execute as root the
-    <computeroutput>prctl</computeroutput> command as shown below. The process
-    ID of VBoxSVC can be obtained using the
-    <computeroutput>ps</computeroutput> list command.</para>
+    <sect2>
+      <title>Temporary solution while VirtualBox is running</title>
 
-    <para><screen>prctl -r -n project.max-sem-ids -v 2048 &lt;pid-of-VBoxSVC&gt;</screen></para>
+      <para>Execute as root the <computeroutput>prctl</computeroutput> command
+      as shown below for the currently running VBoxSVC process. The process ID
+      of VBoxSVC can be obtained using the <computeroutput>ps</computeroutput>
+      command.</para>
+
+      <screen>prctl -r -n project.max-sem-ids -v 2048 &lt;pid-of-VBoxSVC&gt;</screen>
+
+      <para>This will immediately increase the semaphore limit of the
+      currently running VBoxSVC process and allow you to launch more VMs.
+      However, this change is not persistent and will be lost when VBoxSVC
+      terminates.</para>
+    </sect2>
+
+    <sect2>
+      <title>Persistent solution, requires user to re-login</title>
+
+      <para>If the user is running VirtualBox is root, execute the following
+      command:</para>
+
+      <screen>prctl -n project.max-sem-ids -v 2048 -r -i project user.root</screen>
+
+      <para>From this point, starting new processes will have the increased
+      limit of 2048. You may then re-login or close all VMs and restart
+      VBoxSVC. You can check the current VBoxSVC semaphore ID limit using the
+      following command:</para>
+
+      <screen>prctl -n project.max-sem-ids -i process &lt;pid-of-VBoxSVC&gt;</screen>
+
+      <para>If the user running VirtualBox is not root, you must add the
+      property to the user's default project. Create the default project and
+      set the limit by executing as root:</para>
+
+      <screen>projadd -U &lt;username&gt; user.&lt;username&gt;
+projmod -s -K "project.max-sem-ids=(priv,2048,deny)" user.&lt;username&gt;</screen>
+
+      <para>Substitute "&lt;username&gt;" with the name of the user running
+      VirtualBox. Then re-login as this user to be able to run more than 120
+      VMs.</para>
+    </sect2>
   </sect1>
 
   <sect1>
