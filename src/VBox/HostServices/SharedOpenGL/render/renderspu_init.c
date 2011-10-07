@@ -359,6 +359,18 @@ static void renderSPUSelfDispatch(SPUDispatchTable *self)
     crSPUCopyDispatchTable( &(render_spu.self), self );
 
     render_spu.server = (CRServer *)(self->server);
+
+    {
+        GLfloat version;
+        version = crStrToFloat((char *) render_spu.ws.glGetString(GL_VERSION));
+
+        if (version>=2.f || crStrstr(render_spu.ws.glGetString(GL_EXTENSIONS), "GL_ARB_vertex_shader"))
+        {
+            GLint mu=0;
+            render_spu.self.GetIntegerv(GL_MAX_VERTEX_UNIFORM_COMPONENTS_ARB, &mu);
+            crInfo("Render SPU: GL_MAX_VERTEX_UNIFORM_COMPONENTS_ARB=%i", mu);
+        }
+    }
 }
 
 
