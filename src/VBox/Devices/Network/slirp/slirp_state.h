@@ -197,6 +197,8 @@ typedef struct NATState
 #  define NSOCK_INC_EX(ex) do {} while (0)
 #  define NSOCK_DEC_EX(ex) do {} while (0)
 # endif
+    int cIcmpCacheSize;
+    int iIcmpCacheLimit;
 # ifdef RT_OS_WINDOWS
     void *pvIcmpBuffer;
     size_t szIcmpBuffer;

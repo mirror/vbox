@@ -96,6 +96,7 @@ icmp_init(PNATState pData)
 {
     pData->icmp_socket.so_type = IPPROTO_ICMP;
     pData->icmp_socket.so_state = SS_ISFCONNECTED;
+    pData->iIcmpCacheLimit = 100;
 #ifndef RT_OS_WINDOWS
 # ifndef RT_OS_DARWIN
     pData->icmp_socket.s = socket(PF_INET, SOCK_RAW, IPPROTO_ICMP);
@@ -297,6 +298,9 @@ icmp_find_original_mbuf(PNATState pData, struct ip *ip)
          * better add flag if it should removed from lis
          */
         LIST_INSERT_HEAD(&pData->icmp_msg_head, icm, im_list);
+        pData->cIcmpCacheSize++;
+        if (pData->cIcmpCacheSize > pData->iIcmpCacheLimit)
+            icmp_cache_clean(pData, pData->iIcmpCacheLimit/2);
         LogFlowFunc(("LEAVE: icm:%p\n", icm));
         return (icm);
     }
@@ -310,16 +314,6 @@ icmp_find_original_mbuf(PNATState pData, struct ip *ip)
     return NULL;
 }
 
-static int icmp_cache_count(PNATState pData)
-{
-    int iIcmpCount = 0;
-    struct icmp_msg *icm = NULL;
-    LogFlowFuncEnter();
-    LIST_FOREACH(icm, &pData->icmp_msg_head, im_list)
-        iIcmpCount++;
-    LogFlowFunc(("LEAVE: %d\n", iIcmpCount));
-    return iIcmpCount;
-}
 /**
  * iEntries how many entries to leave, if iEntries < 0, clean all
  */
@@ -328,7 +322,7 @@ static void icmp_cache_clean(PNATState pData, int iEntries)
     int iIcmpCount = 0;
     struct icmp_msg *icm = NULL;
     LogFlowFunc(("iEntries:%d\n", iEntries));
-    if (iEntries > icmp_cache_count(pData))
+    if (iEntries > pData->cIcmpCacheSize)
     {
         LogFlowFuncLeave();
         return;
@@ -345,7 +339,10 @@ static void icmp_cache_clean(PNATState pData, int iEntries)
 
         LIST_REMOVE(icm, im_list);
         if (icm->im_m)
+        {
+            pData->cIcmpCacheSize--;
             m_freem(pData, icm->im_m);
+        }
         RTMemFree(icm);
     }
     LogFlowFuncLeave();
@@ -362,8 +359,9 @@ icmp_attach(PNATState pData, struct mbuf *m)
     icm->im_m = m;
     icm->im_so = m->m_so;
     LIST_INSERT_HEAD(&pData->icmp_msg_head, icm, im_list);
-    if (icmp_cache_count(pData) > 100)
-        icmp_cache_clean(pData, 50);
+    pData->cIcmpCacheSize++;
+    if (pData->cIcmpCacheSize > pData->iIcmpCacheLimit)
+        icmp_cache_clean(pData, pData->iIcmpCacheLimit/2);
     return 0;
 }
 
