@@ -2104,7 +2104,6 @@ static int VBoxGuestCommonIOCtl_SetMouseStatus(PVBOXGUESTDEVEXT pDevExt, PVBOXGU
  * code. */
 static void testSetMouseStatus(void)
 {
-    int cFailures = 0;
     uint32_t u32Data;
     int rc;
     RTSPINLOCK Spinlock;
