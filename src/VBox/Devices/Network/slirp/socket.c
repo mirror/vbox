@@ -1315,6 +1315,7 @@ send_icmp_to_guest(PNATState pData, char *buff, size_t len, struct socket *so, c
     ip->ip_dst.s_addr = dst;
     icmp_reflect(pData, m);
     LIST_REMOVE(icm, im_list);
+    pData->cIcmpCacheSize--;
     /* Don't call m_free here*/
 
     if (   type == ICMP_TIMXCEED
@@ -1427,6 +1428,7 @@ sorecvfrom_icmp_win(PNATState pData, struct socket *so)
                     /* on this branch we don't need stored variant */
                     m_freem(pData, icm->im_m);
                     LIST_REMOVE(icm, im_list);
+                    pData->cIcmpCacheSize--;
                     RTMemFree(icm);
                 }
 
@@ -1476,6 +1478,7 @@ sorecvfrom_icmp_win(PNATState pData, struct socket *so)
                 icmp_reflect(pData, m);
                 /* Here is different situation from Unix world, where we can receive icmp in response on TCP/UDP */
                 LIST_REMOVE(icm, im_list);
+                pData->cIcmpCacheSize--;
                 RTMemFree(icm);
                 break;
             default:
