@@ -583,7 +583,8 @@ int get_dns_addr(PNATState pData, struct in_addr *pdns_addr)
 }
 
 int slirp_init(PNATState *ppData, uint32_t u32NetAddr, uint32_t u32Netmask,
-               bool fPassDomain, bool fUseHostResolver, int i32AliasMode, void *pvUser)
+               bool fPassDomain, bool fUseHostResolver, int i32AliasMode,
+               int iIcmpCacheLimit, void *pvUser)
 {
     int fNATfailed = 0;
     int rc;
@@ -634,7 +635,7 @@ int slirp_init(PNATState *ppData, uint32_t u32NetAddr, uint32_t u32Netmask,
     debug_init();
     if_init(pData);
     ip_init(pData);
-    icmp_init(pData);
+    icmp_init(pData, iIcmpCacheLimit);
 
     /* Initialise mbufs *after* setting the MTU */
     mbuf_init(pData);
@@ -771,13 +772,7 @@ void slirp_term(PNATState pData)
 {
     if (pData == NULL)
         return;
-#ifdef RT_OS_WINDOWS
-    pData->pfIcmpCloseHandle(pData->icmp_socket.sh);
-    FreeLibrary(pData->hmIcmpLibrary);
-    RTMemFree(pData->pvIcmpBuffer);
-#else
-    closesocket(pData->icmp_socket.s);
-#endif
+    icmp_finit(pData);
 
     slirp_link_down(pData);
     slirp_release_dns_list(pData);
