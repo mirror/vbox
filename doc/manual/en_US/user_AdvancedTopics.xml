@@ -1067,7 +1067,7 @@ VBoxManage setextradata "VM name" VBoxInternal/Devices/IntNetIP/0/LUN#0/Config/I
     <sect2>
       <title>Persistent solution, requires user to re-login</title>
 
-      <para>If the user is running VirtualBox is root, execute the following
+      <para>If the user running VirtualBox is root, execute the following
       command:</para>
 
       <screen>prctl -n project.max-sem-ids -v 2048 -r -i project user.root</screen>
