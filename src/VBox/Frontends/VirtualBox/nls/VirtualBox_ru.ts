@@ -9641,49 +9641,6 @@ p, li { white-space: pre-wrap; }
     </message>
 </context>
 <context>
-    <name>VBoxLogSearchPanel</name>
-    <message>
-        <source>Close the search panel</source>
-        <translation>Закрыть панель поиска</translation>
-    </message>
-    <message>
-        <source>Find </source>
-        <translation>Найти</translation>
-    </message>
-    <message>
-        <source>Enter a search string here</source>
-        <translation>Введите здесь строку для поиска</translation>
-    </message>
-    <message>
-        <source>&amp;Previous</source>
-        <translation>&amp;Предыдущая</translation>
-    </message>
-    <message>
-        <source>Search for the previous occurrence of the string</source>
-        <translation>Искать предыдущий экземпляр строки</translation>
-    </message>
-    <message>
-        <source>&amp;Next</source>
-        <translation>С&amp;ледующая</translation>
-    </message>
-    <message>
-        <source>Search for the next occurrence of the string</source>
-        <translation>Искать следующий экземпляр строки</translation>
-    </message>
-    <message>
-        <source>C&amp;ase Sensitive</source>
-        <translation>С &amp;учетом регистра</translation>
-    </message>
-    <message>
-        <source>Perform case sensitive search (when checked)</source>
-        <translation>Учитывать регистр символов при поиске (когда стоит галочка)</translation>
-    </message>
-    <message>
-        <source>String not found</source>
-        <translation>Строка не найдена</translation>
-    </message>
-</context>
-<context>
     <name>VBoxMediaComboBox</name>
     <message>
         <source>No media available. Use the Virtual Media Manager to add media of the corresponding type.</source>
@@ -10676,7 +10633,7 @@ p, li { white-space: pre-wrap; }
     </message>
 </context>
 <context>
-    <name>VBoxVMLogViewer</name>
+    <name>UIVMLogViewer</name>
     <message>
         <source>Log Viewer</source>
         <translation>Просмотр журналов</translation>
@@ -10708,6 +10665,42 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Close</source>
         <translation>Закрыть</translation>
+    </message>
+    <message>
+        <source>Close the search panel</source>
+        <translation>Закрыть панель поиска</translation>
+    </message>
+    <message>
+        <source>Enter a search string here</source>
+        <translation>Введите здесь строку для поиска</translation>
+    </message>
+    <message>
+        <source>&amp;Previous</source>
+        <translation>&amp;Предыдущая</translation>
+    </message>
+    <message>
+        <source>Search for the previous occurrence of the string</source>
+        <translation>Искать предыдущий экземпляр строки</translation>
+    </message>
+    <message>
+        <source>&amp;Next</source>
+        <translation>С&amp;ледующая</translation>
+    </message>
+    <message>
+        <source>Search for the next occurrence of the string</source>
+        <translation>Искать следующий экземпляр строки</translation>
+    </message>
+    <message>
+        <source>C&amp;ase Sensitive</source>
+        <translation>С &amp;учетом регистра</translation>
+    </message>
+    <message>
+        <source>Perform case sensitive search (when checked)</source>
+        <translation>Учитывать регистр символов при поиске (когда стоит галочка)</translation>
+    </message>
+    <message>
+        <source>String not found</source>
+        <translation>Строка не найдена</translation>
     </message>
 </context>
 <context>

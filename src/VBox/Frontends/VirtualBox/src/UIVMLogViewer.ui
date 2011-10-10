@@ -1,8 +1,8 @@
-<ui version="4.0" >
+<ui version="4.0">
  <comment>
  VBox frontends: Qt4 GUI ("VirtualBox"):
 
-     Copyright (C) 2008 Oracle Corporation
+     Copyright (C) 2008-2011 Oracle Corporation
 
      This file is part of VirtualBox Open Source Edition (OSE), as
      available from http://www.virtualbox.org. This file is free software;
@@ -12,9 +12,9 @@
      VirtualBox OSE distribution. VirtualBox OSE is distributed in the
      hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  </comment>
- <class>VBoxVMLogViewer</class>
- <widget class="QMainWindow" name="VBoxVMLogViewer" >
-  <property name="geometry" >
+ <class>UIVMLogViewer</class>
+ <widget class="QMainWindow" name="UIVMLogViewer">
+  <property name="geometry">
    <rect>
     <x>0</x>
     <y>0</y>
@@ -22,24 +22,21 @@
     <height>409</height>
    </rect>
   </property>
-  <property name="windowTitle" >
-   <string>Log Viewer</string>
-  </property>
-  <widget class="QWidget" name="centralwidget" >
-   <layout class="QVBoxLayout" >
+  <widget class="QWidget" name="m_pCentralWidget">
+   <layout class="QVBoxLayout">
     <item>
-     <widget class="QWidget" native="1" name="mLogsFrame" >
-      <property name="sizePolicy" >
-       <sizepolicy vsizetype="Expanding" hsizetype="Preferred" >
-        <horstretch>0</horstretch>
-        <verstretch>0</verstretch>
-       </sizepolicy>
+     <layout class="QVBoxLayout" name="m_pMainLayout">
+      <property name="margin">
+       <number>0</number>
       </property>
-     </widget>
+      <property name="spacing">
+       <number>0</number>
+      </property>
+     </layout>
     </item>
     <item>
-     <widget class="QIDialogButtonBox" name="mButtonBox" >
-      <property name="standardButtons" >
+     <widget class="QIDialogButtonBox" name="m_pButtonBox">
+      <property name="standardButtons">
        <set>QDialogButtonBox::Close|QDialogButtonBox::Help|QDialogButtonBox::NoButton|QDialogButtonBox::Save</set>
       </property>
      </widget>
@@ -55,22 +52,4 @@
   </customwidget>
  </customwidgets>
  <resources/>
- <connections>
-  <connection>
-   <sender>mButtonBox</sender>
-   <signal>rejected()</signal>
-   <receiver>VBoxVMLogViewer</receiver>
-   <slot>close()</slot>
-   <hints>
-    <hint type="sourcelabel" >
-     <x>293</x>
-     <y>328</y>
-    </hint>
-    <hint type="destinationlabel" >
-     <x>293</x>
-     <y>204</y>
-    </hint>
-   </hints>
-  </connection>
- </connections>
 </ui>

@@ -38,7 +38,7 @@
 #include "VBoxSelectorWnd.h"
 #include "UISettingsDialogSpecific.h"
 #include "UIToolBar.h"
-#include "VBoxVMLogViewer.h"
+#include "UIVMLogViewer.h"
 #include "QIFileDialog.h"
 #include "UISelectorShortcuts.h"
 #include "UIDesktopServices.h"
@@ -722,7 +722,7 @@ void VBoxSelectorWnd::sltShowLogDialog(const QString &aUuid /* = QString::null *
     AssertMsgReturnVoid(item, ("Item must be always selected here"));
 
     CMachine machine = item->machine();
-    VBoxVMLogViewer::createLogViewer(this, machine);
+    UIVMLogViewer::showLogViewerFor(this, machine);
 }
 
 void VBoxSelectorWnd::sltShowMachineInFileManager(const QString &aUuid /* = QString::null */)

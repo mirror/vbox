@@ -12575,59 +12575,6 @@ USBフィルタを追加または除去するにはコンテキストメニュ�
     </message>
 </context>
 <context>
-    <name>VBoxLogSearchPanel</name>
-    <message>
-        <location filename="../src/VBoxVMLogViewer.cpp" line="415"/>
-        <source>Close the search panel</source>
-        <translation>検索パネルを閉じる</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxVMLogViewer.cpp" line="417"/>
-        <source>Find </source>
-        <translation>検索</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxVMLogViewer.cpp" line="418"/>
-        <source>Enter a search string here</source>
-        <translation>検索する文字列をここに入力</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxVMLogViewer.cpp" line="420"/>
-        <source>&amp;Previous</source>
-        <translation>前へ(&amp;P)</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxVMLogViewer.cpp" line="421"/>
-        <source>Search for the previous occurrence of the string</source>
-        <translation>前の文字列を検索</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxVMLogViewer.cpp" line="424"/>
-        <source>&amp;Next</source>
-        <translation>次へ(&amp;N)</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxVMLogViewer.cpp" line="425"/>
-        <source>Search for the next occurrence of the string</source>
-        <translation>次の文字列を検索</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxVMLogViewer.cpp" line="428"/>
-        <source>C&amp;ase Sensitive</source>
-        <translation>大文字と小文字を区別(&amp;A)</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxVMLogViewer.cpp" line="429"/>
-        <source>Perform case sensitive search (when checked)</source>
-        <translation>大文字小文字を区別して検索</translation>
-    </message>
-    <message>
-        <location filename="../src/VBoxVMLogViewer.cpp" line="432"/>
-        <source>String not found</source>
-        <translation>文字列が見つかりません</translation>
-    </message>
-</context>
-<context>
     <name>VBoxMediaComboBox</name>
     <message>
         <source>&lt;no hard disk&gt;</source>
@@ -14271,7 +14218,7 @@ value.&lt;/qt&gt;</source>
     </message>
 </context>
 <context>
-    <name>VBoxVMLogViewer</name>
+    <name>UIVMLogViewer</name>
     <message>
         <location filename="../src/VBoxVMLogViewer.ui" line="26"/>
         <source>Log Viewer</source>
@@ -14319,6 +14266,51 @@ value.&lt;/qt&gt;</source>
         <location filename="../src/VBoxVMLogViewer.cpp" line="278"/>
         <source>Close</source>
         <translation>閉じる</translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxVMLogViewer.cpp" line="415"/>
+        <source>Close the search panel</source>
+        <translation>検索パネルを閉じる</translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxVMLogViewer.cpp" line="418"/>
+        <source>Enter a search string here</source>
+        <translation>検索する文字列をここに入力</translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxVMLogViewer.cpp" line="420"/>
+        <source>&amp;Previous</source>
+        <translation>前へ(&amp;P)</translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxVMLogViewer.cpp" line="421"/>
+        <source>Search for the previous occurrence of the string</source>
+        <translation>前の文字列を検索</translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxVMLogViewer.cpp" line="424"/>
+        <source>&amp;Next</source>
+        <translation>次へ(&amp;N)</translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxVMLogViewer.cpp" line="425"/>
+        <source>Search for the next occurrence of the string</source>
+        <translation>次の文字列を検索</translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxVMLogViewer.cpp" line="428"/>
+        <source>C&amp;ase Sensitive</source>
+        <translation>大文字と小文字を区別(&amp;A)</translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxVMLogViewer.cpp" line="429"/>
+        <source>Perform case sensitive search (when checked)</source>
+        <translation>大文字小文字を区別して検索</translation>
+    </message>
+    <message>
+        <location filename="../src/VBoxVMLogViewer.cpp" line="432"/>
+        <source>String not found</source>
+        <translation>文字列が見つかりません</translation>
     </message>
 </context>
 <context>

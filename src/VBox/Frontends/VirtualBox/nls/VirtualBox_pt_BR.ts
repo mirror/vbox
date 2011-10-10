@@ -11424,52 +11424,12 @@ to the system default language.&lt;/qt&gt;
 <context>
     <name>VBoxLogSearchPanel</name>
     <message>
-        <source>Close the search panel</source>
-        <translation>Fecha o painel de busca</translation>
-    </message>
-    <message>
-        <source>Find </source>
-        <translation>Procurar </translation>
-    </message>
-    <message>
-        <source>Enter a search string here</source>
-        <translation>Entre o termo de busca aqui</translation>
-    </message>
-    <message>
-        <source>&amp;Previous</source>
-        <translation>Anterior(&amp;P)</translation>
-    </message>
-    <message>
         <source>Alt+P</source>
         <translation type="obsolete">Alt+P</translation>
     </message>
     <message>
-        <source>Search for the previous occurrence of the string</source>
-        <translation>Procura pela ocorrência anterior da frase</translation>
-    </message>
-    <message>
-        <source>&amp;Next</source>
-        <translation>Próximo(&amp;N)</translation>
-    </message>
-    <message>
         <source>Alt+N</source>
         <translation type="obsolete">Alt+N</translation>
-    </message>
-    <message>
-        <source>Search for the next occurrence of the string</source>
-        <translation>Procura pela próxima ocorrência da frase</translation>
-    </message>
-    <message>
-        <source>C&amp;ase Sensitive</source>
-        <translation>Sensível à C&amp;aixa</translation>
-    </message>
-    <message>
-        <source>Perform case sensitive search (when checked)</source>
-        <translation>Realiza uma busca sensível à caixa (quando marcado)</translation>
-    </message>
-    <message>
-        <source>String not found</source>
-        <translation>Frase não encontrada</translation>
     </message>
 </context>
 <context>
@@ -13116,7 +13076,7 @@ qualquer valor.&lt;/qt&gt;</translation>
     </message>
 </context>
 <context>
-    <name>VBoxVMLogViewer</name>
+    <name>UIVMLogViewer</name>
     <message>
         <source>Log Viewer</source>
         <translation>Visualizador de Log</translation>
@@ -13176,6 +13136,42 @@ qualquer valor.&lt;/qt&gt;</translation>
     <message>
         <source>Close</source>
         <translation>Fechar</translation>
+    </message>
+    <message>
+        <source>Close the search panel</source>
+        <translation>Fecha o painel de busca</translation>
+    </message>
+    <message>
+        <source>Enter a search string here</source>
+        <translation>Entre o termo de busca aqui</translation>
+    </message>
+    <message>
+        <source>&amp;Previous</source>
+        <translation>Anterior(&amp;P)</translation>
+    </message>
+    <message>
+        <source>Search for the previous occurrence of the string</source>
+        <translation>Procura pela ocorrência anterior da frase</translation>
+    </message>
+    <message>
+        <source>&amp;Next</source>
+        <translation>Próximo(&amp;N)</translation>
+    </message>
+    <message>
+        <source>Search for the next occurrence of the string</source>
+        <translation>Procura pela próxima ocorrência da frase</translation>
+    </message>
+    <message>
+        <source>C&amp;ase Sensitive</source>
+        <translation>Sensível à C&amp;aixa</translation>
+    </message>
+    <message>
+        <source>Perform case sensitive search (when checked)</source>
+        <translation>Realiza uma busca sensível à caixa (quando marcado)</translation>
+    </message>
+    <message>
+        <source>String not found</source>
+        <translation>Frase não encontrada</translation>
     </message>
 </context>
 <context>

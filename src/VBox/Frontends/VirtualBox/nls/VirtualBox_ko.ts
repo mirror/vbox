@@ -9423,49 +9423,6 @@ p, li { white-space: pre-wrap; }
     </message>
 </context>
 <context>
-    <name>VBoxLogSearchPanel</name>
-    <message>
-        <source>Close the search panel</source>
-        <translation>검색 패널 닫기</translation>
-    </message>
-    <message>
-        <source>Find </source>
-        <translation>찾기 </translation>
-    </message>
-    <message>
-        <source>Enter a search string here</source>
-        <translation>찾을 문자열을 입력하십시오</translation>
-    </message>
-    <message>
-        <source>&amp;Previous</source>
-        <translation>이전(&amp;P)</translation>
-    </message>
-    <message>
-        <source>Search for the previous occurrence of the string</source>
-        <translation>문자열의 이전 일치를 찾습니다</translation>
-    </message>
-    <message>
-        <source>&amp;Next</source>
-        <translation>다음(&amp;N)</translation>
-    </message>
-    <message>
-        <source>Search for the next occurrence of the string</source>
-        <translation>문자열의 다음 일치를 찾습니다</translation>
-    </message>
-    <message>
-        <source>C&amp;ase Sensitive</source>
-        <translation>대소문자 구분(&amp;A)</translation>
-    </message>
-    <message>
-        <source>Perform case sensitive search (when checked)</source>
-        <translation>선택하면 대소문자를 구분해서 검색합니다</translation>
-    </message>
-    <message>
-        <source>String not found</source>
-        <translation>문자열 찾을 수 없음</translation>
-    </message>
-</context>
-<context>
     <name>VBoxMediaComboBox</name>
     <message>
         <source>No media available. Use the Virtual Media Manager to add media of the corresponding type.</source>
@@ -10398,7 +10355,7 @@ p, li { white-space: pre-wrap; }
     </message>
 </context>
 <context>
-    <name>VBoxVMLogViewer</name>
+    <name>UIVMLogViewer</name>
     <message>
         <source>Log Viewer</source>
         <translation>로그 뷰어</translation>
@@ -10430,6 +10387,42 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Close</source>
         <translation>닫기</translation>
+    </message>
+    <message>
+        <source>Close the search panel</source>
+        <translation>검색 패널 닫기</translation>
+    </message>
+    <message>
+        <source>Enter a search string here</source>
+        <translation>찾을 문자열을 입력하십시오</translation>
+    </message>
+    <message>
+        <source>&amp;Previous</source>
+        <translation>이전(&amp;P)</translation>
+    </message>
+    <message>
+        <source>Search for the previous occurrence of the string</source>
+        <translation>문자열의 이전 일치를 찾습니다</translation>
+    </message>
+    <message>
+        <source>&amp;Next</source>
+        <translation>다음(&amp;N)</translation>
+    </message>
+    <message>
+        <source>Search for the next occurrence of the string</source>
+        <translation>문자열의 다음 일치를 찾습니다</translation>
+    </message>
+    <message>
+        <source>C&amp;ase Sensitive</source>
+        <translation>대소문자 구분(&amp;A)</translation>
+    </message>
+    <message>
+        <source>Perform case sensitive search (when checked)</source>
+        <translation>선택하면 대소문자를 구분해서 검색합니다</translation>
+    </message>
+    <message>
+        <source>String not found</source>
+        <translation>문자열 찾을 수 없음</translation>
     </message>
 </context>
 <context>

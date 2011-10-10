@@ -10966,52 +10966,12 @@ Folosiți meniul contextual sau butaonele din dreapta pentru a adâuga sau șter
 <context>
     <name>VBoxLogSearchPanel</name>
     <message>
-        <source>Close the search panel</source>
-        <translation>Închide panoul de căutare</translation>
-    </message>
-    <message>
-        <source>Find </source>
-        <translation>Găsește </translation>
-    </message>
-    <message>
-        <source>Enter a search string here</source>
-        <translation>Introduceți șirul de căutat aici</translation>
-    </message>
-    <message>
-        <source>&amp;Previous</source>
-        <translation>&amp;Precedent</translation>
-    </message>
-    <message>
         <source>Alt+P</source>
         <translation type="obsolete">Alt+P</translation>
     </message>
     <message>
-        <source>Search for the previous occurrence of the string</source>
-        <translation>Caută după apariții precedente ale șirului</translation>
-    </message>
-    <message>
-        <source>&amp;Next</source>
-        <translation>&amp;Următor</translation>
-    </message>
-    <message>
         <source>Alt+N</source>
         <translation type="obsolete">Alt+N</translation>
-    </message>
-    <message>
-        <source>Search for the next occurrence of the string</source>
-        <translation>Caută următoarea apariție a șirului</translation>
-    </message>
-    <message>
-        <source>C&amp;ase Sensitive</source>
-        <translation>Sensibil la m&amp;ajuscule</translation>
-    </message>
-    <message>
-        <source>Perform case sensitive search (when checked)</source>
-        <translation>Efectueză căutare sensibilă la majuscule (când este bifat)</translation>
-    </message>
-    <message>
-        <source>String not found</source>
-        <translation>Șir negăsit</translation>
     </message>
 </context>
 <context>
@@ -12703,7 +12663,7 @@ value.&lt;/qt&gt;</source>
     </message>
 </context>
 <context>
-    <name>VBoxVMLogViewer</name>
+    <name>UIVMLogViewer</name>
     <message>
         <source>Log Viewer</source>
         <translation>Vizualizare log</translation>
@@ -12763,6 +12723,42 @@ value.&lt;/qt&gt;</source>
     <message>
         <source>Close</source>
         <translation>Închide</translation>
+    </message>
+    <message>
+        <source>Close the search panel</source>
+        <translation>Închide panoul de căutare</translation>
+    </message>
+    <message>
+        <source>Enter a search string here</source>
+        <translation>Introduceți șirul de căutat aici</translation>
+    </message>
+    <message>
+        <source>&amp;Previous</source>
+        <translation>&amp;Precedent</translation>
+    </message>
+    <message>
+        <source>Search for the previous occurrence of the string</source>
+        <translation>Caută după apariții precedente ale șirului</translation>
+    </message>
+    <message>
+        <source>&amp;Next</source>
+        <translation>&amp;Următor</translation>
+    </message>
+    <message>
+        <source>Search for the next occurrence of the string</source>
+        <translation>Caută următoarea apariție a șirului</translation>
+    </message>
+    <message>
+        <source>C&amp;ase Sensitive</source>
+        <translation>Sensibil la m&amp;ajuscule</translation>
+    </message>
+    <message>
+        <source>Perform case sensitive search (when checked)</source>
+        <translation>Efectueză căutare sensibilă la majuscule (când este bifat)</translation>
+    </message>
+    <message>
+        <source>String not found</source>
+        <translation>Șir negăsit</translation>
     </message>
 </context>
 <context>

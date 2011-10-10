@@ -9142,49 +9142,6 @@ p, li { white-space: pre-wrap; }
     </message>
 </context>
 <context>
-    <name>VBoxLogSearchPanel</name>
-    <message>
-        <source>Close the search panel</source>
-        <translation>Sluit het zoek paneel</translation>
-    </message>
-    <message>
-        <source>Find </source>
-        <translation>zoeken </translation>
-    </message>
-    <message>
-        <source>Enter a search string here</source>
-        <translation>Geef de zoeken tekst op</translation>
-    </message>
-    <message>
-        <source>&amp;Previous</source>
-        <translation>&amp;Vorige</translation>
-    </message>
-    <message>
-        <source>Search for the previous occurrence of the string</source>
-        <translation>Zoek achteruit naar de zoektekst</translation>
-    </message>
-    <message>
-        <source>&amp;Next</source>
-        <translation>&amp;Volgende</translation>
-    </message>
-    <message>
-        <source>Search for the next occurrence of the string</source>
-        <translation>Zoek vooruit naar de zoektekst</translation>
-    </message>
-    <message>
-        <source>C&amp;ase Sensitive</source>
-        <translation>Onderscheidt &amp;Hoofd- en kleineletters</translation>
-    </message>
-    <message>
-        <source>Perform case sensitive search (when checked)</source>
-        <translation>Houdt rekening met hoofd- en kleineletters (mits aangevinkt) bij het zoeken</translation>
-    </message>
-    <message>
-        <source>String not found</source>
-        <translation>Gezochte tekst niet gevonden</translation>
-    </message>
-</context>
-<context>
     <name>VBoxMediaComboBox</name>
     <message>
         <source>No media available. Use the Virtual Media Manager to add media of the corresponding type.</source>
@@ -10121,7 +10078,7 @@ p, li { white-space: pre-wrap; }
     </message>
 </context>
 <context>
-    <name>VBoxVMLogViewer</name>
+    <name>UIVMLogViewer</name>
     <message>
         <source>Log Viewer</source>
         <translatorcomment>mooi woord voor viewer</translatorcomment>
@@ -10154,6 +10111,42 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Close</source>
         <translation>Sluiten</translation>
+    </message>
+    <message>
+        <source>Close the search panel</source>
+        <translation>Sluit het zoek paneel</translation>
+    </message>
+    <message>
+        <source>Enter a search string here</source>
+        <translation>Geef de zoeken tekst op</translation>
+    </message>
+    <message>
+        <source>&amp;Previous</source>
+        <translation>&amp;Vorige</translation>
+    </message>
+    <message>
+        <source>Search for the previous occurrence of the string</source>
+        <translation>Zoek achteruit naar de zoektekst</translation>
+    </message>
+    <message>
+        <source>&amp;Next</source>
+        <translation>&amp;Volgende</translation>
+    </message>
+    <message>
+        <source>Search for the next occurrence of the string</source>
+        <translation>Zoek vooruit naar de zoektekst</translation>
+    </message>
+    <message>
+        <source>C&amp;ase Sensitive</source>
+        <translation>Onderscheidt &amp;Hoofd- en kleineletters</translation>
+    </message>
+    <message>
+        <source>Perform case sensitive search (when checked)</source>
+        <translation>Houdt rekening met hoofd- en kleineletters (mits aangevinkt) bij het zoeken</translation>
+    </message>
+    <message>
+        <source>String not found</source>
+        <translation>Gezochte tekst niet gevonden</translation>
     </message>
 </context>
 <context>

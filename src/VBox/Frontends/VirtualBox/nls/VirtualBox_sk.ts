@@ -10042,52 +10042,12 @@ je zobrazený &lt;b&gt;tučným&lt;/b&gt; písmom. Voľbou &lt;i&gt;Štandardný
 <context>
     <name>VBoxLogSearchPanel</name>
     <message>
-        <source>Close the search panel</source>
-        <translation>Zatvoriť panel vyhľadávania</translation>
-    </message>
-    <message>
-        <source>Find </source>
-        <translation>Nájsť </translation>
-    </message>
-    <message>
-        <source>Enter a search string here</source>
-        <translation>Sem zadajte vyhľadávací reťazec</translation>
-    </message>
-    <message>
-        <source>&amp;Previous</source>
-        <translation>&amp;Predošlý</translation>
-    </message>
-    <message>
         <source>Alt+P</source>
         <translation type="obsolete">Alt+P</translation>
     </message>
     <message>
-        <source>Search for the previous occurrence of the string</source>
-        <translation>Vyhľadá predošlý výskyt reťazca</translation>
-    </message>
-    <message>
-        <source>&amp;Next</source>
-        <translation>&amp;Ďalší</translation>
-    </message>
-    <message>
         <source>Alt+N</source>
         <translation type="obsolete">Alt+N</translation>
-    </message>
-    <message>
-        <source>Search for the next occurrence of the string</source>
-        <translation>Vyhľadá ďalší výskyt reťazca</translation>
-    </message>
-    <message>
-        <source>C&amp;ase Sensitive</source>
-        <translation>&amp;Rozlišovať veľkosť písmen</translation>
-    </message>
-    <message>
-        <source>Perform case sensitive search (when checked)</source>
-        <translation>Pri vyhľadávaní rozlišuje malé a veľké písmená (ak je voľba začiarknutá)</translation>
-    </message>
-    <message>
-        <source>String not found</source>
-        <translation>Reťazec nebol nájdený</translation>
     </message>
 </context>
 <context>
@@ -11476,7 +11436,7 @@ je zobrazený &lt;b&gt;tučným&lt;/b&gt; písmom. Voľbou &lt;i&gt;Štandardný
     </message>
 </context>
 <context>
-    <name>VBoxVMLogViewer</name>
+    <name>UIVMLogViewer</name>
     <message>
         <source>Log Viewer</source>
         <translation>Zobrazovač záznamov</translation>
@@ -11516,6 +11476,42 @@ je zobrazený &lt;b&gt;tučným&lt;/b&gt; písmom. Voľbou &lt;i&gt;Štandardný
     <message>
         <source>Close</source>
         <translation>Zatvoriť</translation>
+    </message>
+    <message>
+        <source>Close the search panel</source>
+        <translation>Zatvoriť panel vyhľadávania</translation>
+    </message>
+    <message>
+        <source>Enter a search string here</source>
+        <translation>Sem zadajte vyhľadávací reťazec</translation>
+    </message>
+    <message>
+        <source>&amp;Previous</source>
+        <translation>&amp;Predošlý</translation>
+    </message>
+    <message>
+        <source>Search for the previous occurrence of the string</source>
+        <translation>Vyhľadá predošlý výskyt reťazca</translation>
+    </message>
+    <message>
+        <source>&amp;Next</source>
+        <translation>&amp;Ďalší</translation>
+    </message>
+    <message>
+        <source>Search for the next occurrence of the string</source>
+        <translation>Vyhľadá ďalší výskyt reťazca</translation>
+    </message>
+    <message>
+        <source>C&amp;ase Sensitive</source>
+        <translation>&amp;Rozlišovať veľkosť písmen</translation>
+    </message>
+    <message>
+        <source>Perform case sensitive search (when checked)</source>
+        <translation>Pri vyhľadávaní rozlišuje malé a veľké písmená (ak je voľba začiarknutá)</translation>
+    </message>
+    <message>
+        <source>String not found</source>
+        <translation>Reťazec nebol nájdený</translation>
     </message>
 </context>
 <context>

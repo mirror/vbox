@@ -9297,49 +9297,6 @@ IPv6.</translation>
     </message>
 </context>
 <context>
-    <name>VBoxLogSearchPanel</name>
-    <message>
-        <source>Close the search panel</source>
-        <translation>Užverti paieškos skydelį</translation>
-    </message>
-    <message>
-        <source>Find </source>
-        <translation>Ieškoti </translation>
-    </message>
-    <message>
-        <source>Enter a search string here</source>
-        <translation>Įveskite paieškos reiškinį</translation>
-    </message>
-    <message>
-        <source>&amp;Previous</source>
-        <translation>&amp;Ankstesnis</translation>
-    </message>
-    <message>
-        <source>Search for the previous occurrence of the string</source>
-        <translation>Ieškoti ankstesnių paieškos reiškinių</translation>
-    </message>
-    <message>
-        <source>&amp;Next</source>
-        <translation>&amp;Toliau</translation>
-    </message>
-    <message>
-        <source>Search for the next occurrence of the string</source>
-        <translation>Ieškoti tolesnių paieškos reiškinių</translation>
-    </message>
-    <message>
-        <source>C&amp;ase Sensitive</source>
-        <translation>&amp;Skirti raidžių dydį</translation>
-    </message>
-    <message>
-        <source>Perform case sensitive search (when checked)</source>
-        <translation>Skirti raidžių dydį (jei pasirinkta)</translation>
-    </message>
-    <message>
-        <source>String not found</source>
-        <translation>Nerasta</translation>
-    </message>
-</context>
-<context>
     <name>VBoxMediaManagerDlg</name>
     <message>
         <source>&amp;Actions</source>
@@ -10210,7 +10167,7 @@ konkrečių nuostatų, matysite paaiškinimus&lt;i&gt;.</translation>
     </message>
 </context>
 <context>
-    <name>VBoxVMLogViewer</name>
+    <name>UIVMLogViewer</name>
     <message>
         <source>Log Viewer</source>
         <translation>Žurnalų peržiūra</translation>
@@ -10242,6 +10199,42 @@ konkrečių nuostatų, matysite paaiškinimus&lt;i&gt;.</translation>
     <message>
         <source>Close</source>
         <translation>Užverti</translation>
+    </message>
+    <message>
+        <source>Close the search panel</source>
+        <translation>Užverti paieškos skydelį</translation>
+    </message>
+    <message>
+        <source>Enter a search string here</source>
+        <translation>Įveskite paieškos reiškinį</translation>
+    </message>
+    <message>
+        <source>&amp;Previous</source>
+        <translation>&amp;Ankstesnis</translation>
+    </message>
+    <message>
+        <source>Search for the previous occurrence of the string</source>
+        <translation>Ieškoti ankstesnių paieškos reiškinių</translation>
+    </message>
+    <message>
+        <source>&amp;Next</source>
+        <translation>&amp;Toliau</translation>
+    </message>
+    <message>
+        <source>Search for the next occurrence of the string</source>
+        <translation>Ieškoti tolesnių paieškos reiškinių</translation>
+    </message>
+    <message>
+        <source>C&amp;ase Sensitive</source>
+        <translation>&amp;Skirti raidžių dydį</translation>
+    </message>
+    <message>
+        <source>Perform case sensitive search (when checked)</source>
+        <translation>Skirti raidžių dydį (jei pasirinkta)</translation>
+    </message>
+    <message>
+        <source>String not found</source>
+        <translation>Nerasta</translation>
     </message>
 </context>
 <context>

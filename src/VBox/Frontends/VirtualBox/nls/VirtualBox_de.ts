@@ -6677,49 +6677,6 @@
     </message>
 </context>
 <context>
-    <name>VBoxLogSearchPanel</name>
-    <message>
-        <source>Close the search panel</source>
-        <translation>Schließt das Suchfeld</translation>
-    </message>
-    <message>
-        <source>Find </source>
-        <translation>Suche</translation>
-    </message>
-    <message>
-        <source>Enter a search string here</source>
-        <translation>Geben Sie den Suchtext hier ein</translation>
-    </message>
-    <message>
-        <source>&amp;Previous</source>
-        <translation>&amp;Rückwärts</translation>
-    </message>
-    <message>
-        <source>Search for the previous occurrence of the string</source>
-        <translation>Durchsucht den Text rückwärts</translation>
-    </message>
-    <message>
-        <source>&amp;Next</source>
-        <translation>&amp;Vorwärts</translation>
-    </message>
-    <message>
-        <source>Search for the next occurrence of the string</source>
-        <translation>Durchsucht den Text vorwärts</translation>
-    </message>
-    <message>
-        <source>C&amp;ase Sensitive</source>
-        <translation>Unterscheidet &amp;Groß- und Kleinschreibung</translation>
-    </message>
-    <message>
-        <source>Perform case sensitive search (when checked)</source>
-        <translation>Groß- und Kleinschreibung berücksichtigen (wenn ausgewählt) oder ignorieren</translation>
-    </message>
-    <message>
-        <source>String not found</source>
-        <translation>Suchtext nicht gefunden</translation>
-    </message>
-</context>
-<context>
     <name>VBoxMediaManagerDlg</name>
     <message>
         <source>&amp;Actions</source>
@@ -7300,7 +7257,7 @@
     </message>
 </context>
 <context>
-    <name>VBoxVMLogViewer</name>
+    <name>UIVMLogViewer</name>
     <message>
         <source>Log Viewer</source>
         <translation>Log-Anzeige</translation>
@@ -7332,6 +7289,42 @@
     <message>
         <source>Close</source>
         <translation>Schließen</translation>
+    </message>
+    <message>
+        <source>Close the search panel</source>
+        <translation>Schließt das Suchfeld</translation>
+    </message>
+    <message>
+        <source>Enter a search string here</source>
+        <translation>Geben Sie den Suchtext hier ein</translation>
+    </message>
+    <message>
+        <source>&amp;Previous</source>
+        <translation>&amp;Rückwärts</translation>
+    </message>
+    <message>
+        <source>Search for the previous occurrence of the string</source>
+        <translation>Durchsucht den Text rückwärts</translation>
+    </message>
+    <message>
+        <source>&amp;Next</source>
+        <translation>&amp;Vorwärts</translation>
+    </message>
+    <message>
+        <source>Search for the next occurrence of the string</source>
+        <translation>Durchsucht den Text vorwärts</translation>
+    </message>
+    <message>
+        <source>C&amp;ase Sensitive</source>
+        <translation>Unterscheidet &amp;Groß- und Kleinschreibung</translation>
+    </message>
+    <message>
+        <source>Perform case sensitive search (when checked)</source>
+        <translation>Groß- und Kleinschreibung berücksichtigen (wenn ausgewählt) oder ignorieren</translation>
+    </message>
+    <message>
+        <source>String not found</source>
+        <translation>Suchtext nicht gefunden</translation>
     </message>
 </context>
 </TS>

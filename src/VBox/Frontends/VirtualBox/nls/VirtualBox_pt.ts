@@ -10227,49 +10227,6 @@ para ligar ao encaixe actualmente destacado.&lt;/qt&gt;
     </message>
 </context>
 <context>
-    <name>VBoxLogSearchPanel</name>
-    <message>
-        <source>Close the search panel</source>
-        <translation>Fecha o painel de procura</translation>
-    </message>
-    <message>
-        <source>Find </source>
-        <translation>Procurar </translation>
-    </message>
-    <message>
-        <source>Enter a search string here</source>
-        <translation>Indique o termo para procurar aqui</translation>
-    </message>
-    <message>
-        <source>&amp;Previous</source>
-        <translation>&amp;Anterior</translation>
-    </message>
-    <message>
-        <source>Search for the previous occurrence of the string</source>
-        <translation>Procura pela ocorrência anterior</translation>
-    </message>
-    <message>
-        <source>&amp;Next</source>
-        <translation>&amp;Próximo</translation>
-    </message>
-    <message>
-        <source>Search for the next occurrence of the string</source>
-        <translation>Procura pela próxima ocorrência</translation>
-    </message>
-    <message>
-        <source>C&amp;ase Sensitive</source>
-        <translation>Distinguir &amp;Maiúsculas</translation>
-    </message>
-    <message>
-        <source>Perform case sensitive search (when checked)</source>
-        <translation>Executar procura sensível a maiúsculas (quando seleccionado)</translation>
-    </message>
-    <message>
-        <source>String not found</source>
-        <translation>Texto não encontrado</translation>
-    </message>
-</context>
-<context>
     <name>VBoxMediaComboBox</name>
     <message>
         <source>&lt;no hard disk&gt;</source>
@@ -11811,7 +11768,7 @@ corresponder a qualquer valor.&lt;/qt&gt;</translation>
     </message>
 </context>
 <context>
-    <name>VBoxVMLogViewer</name>
+    <name>UIVMLogViewer</name>
     <message>
         <source>Log Viewer</source>
         <translation>Visualizador de Registos</translation>
@@ -11855,6 +11812,42 @@ corresponder a qualquer valor.&lt;/qt&gt;</translation>
     <message>
         <source>Close</source>
         <translation>Fechar</translation>
+    </message>
+    <message>
+        <source>Close the search panel</source>
+        <translation>Fecha o painel de procura</translation>
+    </message>
+    <message>
+        <source>Enter a search string here</source>
+        <translation>Indique o termo para procurar aqui</translation>
+    </message>
+    <message>
+        <source>&amp;Previous</source>
+        <translation>&amp;Anterior</translation>
+    </message>
+    <message>
+        <source>Search for the previous occurrence of the string</source>
+        <translation>Procura pela ocorrência anterior</translation>
+    </message>
+    <message>
+        <source>&amp;Next</source>
+        <translation>&amp;Próximo</translation>
+    </message>
+    <message>
+        <source>Search for the next occurrence of the string</source>
+        <translation>Procura pela próxima ocorrência</translation>
+    </message>
+    <message>
+        <source>C&amp;ase Sensitive</source>
+        <translation>Distinguir &amp;Maiúsculas</translation>
+    </message>
+    <message>
+        <source>Perform case sensitive search (when checked)</source>
+        <translation>Executar procura sensível a maiúsculas (quando seleccionado)</translation>
+    </message>
+    <message>
+        <source>String not found</source>
+        <translation>Texto não encontrado</translation>
     </message>
 </context>
 <context>

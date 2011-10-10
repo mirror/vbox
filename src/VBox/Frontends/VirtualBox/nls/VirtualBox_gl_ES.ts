@@ -8695,49 +8695,6 @@ p, li { white-space: pre-wrap; }
     </message>
 </context>
 <context>
-    <name>VBoxLogSearchPanel</name>
-    <message>
-        <source>Close the search panel</source>
-        <translation>Pechar o panel de buscar</translation>
-    </message>
-    <message>
-        <source>Find </source>
-        <translation>Buscar </translation>
-    </message>
-    <message>
-        <source>Enter a search string here</source>
-        <translation>Introduza aquí unha cadea para buscar</translation>
-    </message>
-    <message>
-        <source>&amp;Previous</source>
-        <translation>An&amp;terior</translation>
-    </message>
-    <message>
-        <source>Search for the previous occurrence of the string</source>
-        <translation>Busca a anterior ocorrencia da cadea</translation>
-    </message>
-    <message>
-        <source>&amp;Next</source>
-        <translation>Segui&amp;nte</translation>
-    </message>
-    <message>
-        <source>Search for the next occurrence of the string</source>
-        <translation>Busca a seguinte ocorrencia da cadea</translation>
-    </message>
-    <message>
-        <source>C&amp;ase Sensitive</source>
-        <translation>Diferenci&amp;ar maiúsculas de minúsculas</translation>
-    </message>
-    <message>
-        <source>Perform case sensitive search (when checked)</source>
-        <translation>Realiza a busca diferenciando maiúsculas e minúsculas (cando está marcada)</translation>
-    </message>
-    <message>
-        <source>String not found</source>
-        <translation>Non se encontrou a cadea</translation>
-    </message>
-</context>
-<context>
     <name>VBoxMediaComboBox</name>
     <message>
         <source>No media available. Use the Virtual Media Manager to add media of the corresponding type.</source>
@@ -9631,7 +9588,7 @@ p, li { white-space: pre-wrap; }
     </message>
 </context>
 <context>
-    <name>VBoxVMLogViewer</name>
+    <name>UIVMLogViewer</name>
     <message>
         <source>Log Viewer</source>
         <translation>Visualizador de rexistro</translation>
@@ -9663,6 +9620,42 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Close</source>
         <translation>Pechar</translation>
+    </message>
+    <message>
+        <source>Close the search panel</source>
+        <translation>Pechar o panel de buscar</translation>
+    </message>
+    <message>
+        <source>Enter a search string here</source>
+        <translation>Introduza aquí unha cadea para buscar</translation>
+    </message>
+    <message>
+        <source>&amp;Previous</source>
+        <translation>An&amp;terior</translation>
+    </message>
+    <message>
+        <source>Search for the previous occurrence of the string</source>
+        <translation>Busca a anterior ocorrencia da cadea</translation>
+    </message>
+    <message>
+        <source>&amp;Next</source>
+        <translation>Segui&amp;nte</translation>
+    </message>
+    <message>
+        <source>Search for the next occurrence of the string</source>
+        <translation>Busca a seguinte ocorrencia da cadea</translation>
+    </message>
+    <message>
+        <source>C&amp;ase Sensitive</source>
+        <translation>Diferenci&amp;ar maiúsculas de minúsculas</translation>
+    </message>
+    <message>
+        <source>Perform case sensitive search (when checked)</source>
+        <translation>Realiza a busca diferenciando maiúsculas e minúsculas (cando está marcada)</translation>
+    </message>
+    <message>
+        <source>String not found</source>
+        <translation>Non se encontrou a cadea</translation>
     </message>
 </context>
 <context>

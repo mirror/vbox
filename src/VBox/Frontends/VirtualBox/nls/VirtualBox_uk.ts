@@ -9484,49 +9484,6 @@ p, li { white-space: pre-wrap; }
     </message>
 </context>
 <context>
-    <name>VBoxLogSearchPanel</name>
-    <message>
-        <source>Close the search panel</source>
-        <translation>Закрити пошукову панель</translation>
-    </message>
-    <message>
-        <source>Find </source>
-        <translation>Знайти</translation>
-    </message>
-    <message>
-        <source>Enter a search string here</source>
-        <translation>Введіть пошуковий рядок сюди</translation>
-    </message>
-    <message>
-        <source>&amp;Previous</source>
-        <translation>&amp;Попередній</translation>
-    </message>
-    <message>
-        <source>Search for the previous occurrence of the string</source>
-        <translation>Шукати за попереднім екземпляром рядка</translation>
-    </message>
-    <message>
-        <source>&amp;Next</source>
-        <translation>&amp;Наступний</translation>
-    </message>
-    <message>
-        <source>Search for the next occurrence of the string</source>
-        <translation>Шукати за наступним екземпляром рядка</translation>
-    </message>
-    <message>
-        <source>C&amp;ase Sensitive</source>
-        <translation>&amp;Чутливий до змін</translation>
-    </message>
-    <message>
-        <source>Perform case sensitive search (when checked)</source>
-        <translation>Виконувати з чутливим до змін пошуком (коли стоїть мітка)</translation>
-    </message>
-    <message>
-        <source>String not found</source>
-        <translation>Рядок не знайдено</translation>
-    </message>
-</context>
-<context>
     <name>VBoxMediaComboBox</name>
     <message>
         <source>No media available. Use the Virtual Media Manager to add media of the corresponding type.</source>
@@ -10540,7 +10497,7 @@ p, li { white-space: pre-wrap; }
     </message>
 </context>
 <context>
-    <name>VBoxVMLogViewer</name>
+    <name>UIVMLogViewer</name>
     <message>
         <source>Log Viewer</source>
         <translation>Переглядач журналу</translation>
@@ -10572,6 +10529,42 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Close</source>
         <translation>Закрити</translation>
+    </message>
+    <message>
+        <source>Close the search panel</source>
+        <translation>Закрити пошукову панель</translation>
+    </message>
+    <message>
+        <source>Enter a search string here</source>
+        <translation>Введіть пошуковий рядок сюди</translation>
+    </message>
+    <message>
+        <source>&amp;Previous</source>
+        <translation>&amp;Попередній</translation>
+    </message>
+    <message>
+        <source>Search for the previous occurrence of the string</source>
+        <translation>Шукати за попереднім екземпляром рядка</translation>
+    </message>
+    <message>
+        <source>&amp;Next</source>
+        <translation>&amp;Наступний</translation>
+    </message>
+    <message>
+        <source>Search for the next occurrence of the string</source>
+        <translation>Шукати за наступним екземпляром рядка</translation>
+    </message>
+    <message>
+        <source>C&amp;ase Sensitive</source>
+        <translation>&amp;Чутливий до змін</translation>
+    </message>
+    <message>
+        <source>Perform case sensitive search (when checked)</source>
+        <translation>Виконувати з чутливим до змін пошуком (коли стоїть мітка)</translation>
+    </message>
+    <message>
+        <source>String not found</source>
+        <translation>Рядок не знайдено</translation>
     </message>
 </context>
 <context>

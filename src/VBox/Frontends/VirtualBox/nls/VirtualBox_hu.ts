@@ -10771,48 +10771,8 @@ to the system default language.&lt;/qt&gt;
 <context>
     <name>VBoxLogSearchPanel</name>
     <message>
-        <source>Close the search panel</source>
-        <translation>A keresés panel bezárása</translation>
-    </message>
-    <message>
-        <source>Find </source>
-        <translation>Keresés </translation>
-    </message>
-    <message>
-        <source>Enter a search string here</source>
-        <translation>Írja be a keresendő szöveget</translation>
-    </message>
-    <message>
-        <source>&amp;Previous</source>
-        <translation>&amp;Előző</translation>
-    </message>
-    <message>
         <source>Alt+P</source>
         <translation type="obsolete">Alt+P</translation>
-    </message>
-    <message>
-        <source>Search for the previous occurrence of the string</source>
-        <translation>Megkeresi az előző előfordulását a szövegnek</translation>
-    </message>
-    <message>
-        <source>&amp;Next</source>
-        <translation>&amp;Következő</translation>
-    </message>
-    <message>
-        <source>Search for the next occurrence of the string</source>
-        <translation>Megkeresi az következő előfordulását a szövegnek</translation>
-    </message>
-    <message>
-        <source>C&amp;ase Sensitive</source>
-        <translation>N&amp;agybetű-érzékeny</translation>
-    </message>
-    <message>
-        <source>Perform case sensitive search (when checked)</source>
-        <translation>Kis/nagybetű érzékeny keresés (ha engedélyezett)</translation>
-    </message>
-    <message>
-        <source>String not found</source>
-        <translation>A szöveg nem található</translation>
     </message>
 </context>
 <context>
@@ -12288,7 +12248,7 @@ value.&lt;/qt&gt;</source>
     </message>
 </context>
 <context>
-    <name>VBoxVMLogViewer</name>
+    <name>UIVMLogViewer</name>
     <message>
         <source>Log Viewer</source>
         <translation>Napló nézegető</translation>
@@ -12344,6 +12304,42 @@ value.&lt;/qt&gt;</source>
     <message>
         <source>Close</source>
         <translation>Bezárás</translation>
+    </message>
+    <message>
+        <source>Close the search panel</source>
+        <translation>A keresés panel bezárása</translation>
+    </message>
+    <message>
+        <source>Enter a search string here</source>
+        <translation>Írja be a keresendő szöveget</translation>
+    </message>
+    <message>
+        <source>&amp;Previous</source>
+        <translation>&amp;Előző</translation>
+    </message>
+    <message>
+        <source>Search for the previous occurrence of the string</source>
+        <translation>Megkeresi az előző előfordulását a szövegnek</translation>
+    </message>
+    <message>
+        <source>&amp;Next</source>
+        <translation>&amp;Következő</translation>
+    </message>
+    <message>
+        <source>Search for the next occurrence of the string</source>
+        <translation>Megkeresi az következő előfordulását a szövegnek</translation>
+    </message>
+    <message>
+        <source>C&amp;ase Sensitive</source>
+        <translation>N&amp;agybetű-érzékeny</translation>
+    </message>
+    <message>
+        <source>Perform case sensitive search (when checked)</source>
+        <translation>Kis/nagybetű érzékeny keresés (ha engedélyezett)</translation>
+    </message>
+    <message>
+        <source>String not found</source>
+        <translation>A szöveg nem található</translation>
     </message>
 </context>
 <context>

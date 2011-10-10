@@ -9861,49 +9861,6 @@ to the system default language.&lt;/qt&gt;
     </message>
 </context>
 <context>
-    <name>VBoxLogSearchPanel</name>
-    <message>
-        <source>Close the search panel</source>
-        <translation>Arama çubuğunu kapat</translation>
-    </message>
-    <message>
-        <source>Find </source>
-        <translation>Ara </translation>
-    </message>
-    <message>
-        <source>Enter a search string here</source>
-        <translation>Buraya aranacak bir ifade girin</translation>
-    </message>
-    <message>
-        <source>&amp;Previous</source>
-        <translation>&amp;Önceki</translation>
-    </message>
-    <message>
-        <source>Search for the previous occurrence of the string</source>
-        <translation>İfade için bulunan önceki sonuç</translation>
-    </message>
-    <message>
-        <source>&amp;Next</source>
-        <translation>&amp;Sonraki</translation>
-    </message>
-    <message>
-        <source>Search for the next occurrence of the string</source>
-        <translation>İfade için bulunan sonraki sonuç</translation>
-    </message>
-    <message>
-        <source>C&amp;ase Sensitive</source>
-        <translation>&amp;Büyük/küçük Harf Duyarlı</translation>
-    </message>
-    <message>
-        <source>Perform case sensitive search (when checked)</source>
-        <translation>Büyük/küçük harf duyarlı arama yap (seçilirse)</translation>
-    </message>
-    <message>
-        <source>String not found</source>
-        <translation>İfade bulunamadı</translation>
-    </message>
-</context>
-<context>
     <name>VBoxMediaComboBox</name>
     <message>
         <source>&lt;no hard disk&gt;</source>
@@ -11300,7 +11257,7 @@ eşleşebilir.&lt;/qt&gt;</translation>
     </message>
 </context>
 <context>
-    <name>VBoxVMLogViewer</name>
+    <name>UIVMLogViewer</name>
     <message>
         <source>Log Viewer</source>
         <translation>Günlük Kaydı Göstericisi</translation>
@@ -11340,6 +11297,42 @@ eşleşebilir.&lt;/qt&gt;</translation>
     <message>
         <source>Close</source>
         <translation>Kapat</translation>
+    </message>
+    <message>
+        <source>Close the search panel</source>
+        <translation>Arama çubuğunu kapat</translation>
+    </message>
+    <message>
+        <source>Enter a search string here</source>
+        <translation>Buraya aranacak bir ifade girin</translation>
+    </message>
+    <message>
+        <source>&amp;Previous</source>
+        <translation>&amp;Önceki</translation>
+    </message>
+    <message>
+        <source>Search for the previous occurrence of the string</source>
+        <translation>İfade için bulunan önceki sonuç</translation>
+    </message>
+    <message>
+        <source>&amp;Next</source>
+        <translation>&amp;Sonraki</translation>
+    </message>
+    <message>
+        <source>Search for the next occurrence of the string</source>
+        <translation>İfade için bulunan sonraki sonuç</translation>
+    </message>
+    <message>
+        <source>C&amp;ase Sensitive</source>
+        <translation>&amp;Büyük/küçük Harf Duyarlı</translation>
+    </message>
+    <message>
+        <source>Perform case sensitive search (when checked)</source>
+        <translation>Büyük/küçük harf duyarlı arama yap (seçilirse)</translation>
+    </message>
+    <message>
+        <source>String not found</source>
+        <translation>İfade bulunamadı</translation>
     </message>
 </context>
 <context>

@@ -9653,49 +9653,6 @@ ke nilai awal bahasa sistem.&lt;/qt&gt;
     </message>
 </context>
 <context>
-    <name>VBoxLogSearchPanel</name>
-    <message>
-        <source>Close the search panel</source>
-        <translation>Tutup panel pencarian</translation>
-    </message>
-    <message>
-        <source>Find </source>
-        <translation>Cari </translation>
-    </message>
-    <message>
-        <source>Enter a search string here</source>
-        <translation>Masukkan string pencarian disini</translation>
-    </message>
-    <message>
-        <source>&amp;Previous</source>
-        <translation>&amp;Sebelumnya</translation>
-    </message>
-    <message>
-        <source>Search for the previous occurrence of the string</source>
-        <translation>Cari dari string kejadian sebelumnya</translation>
-    </message>
-    <message>
-        <source>&amp;Next</source>
-        <translation>La&amp;njut</translation>
-    </message>
-    <message>
-        <source>Search for the next occurrence of the string</source>
-        <translation>Caru dari string kejadian berikutnya</translation>
-    </message>
-    <message>
-        <source>C&amp;ase Sensitive</source>
-        <translation>C&amp;ase Sensitive</translation>
-    </message>
-    <message>
-        <source>Perform case sensitive search (when checked)</source>
-        <translation>Lakukan pencarian secara case sensitive (bila dipilih)</translation>
-    </message>
-    <message>
-        <source>String not found</source>
-        <translation>String tidak ditemukan</translation>
-    </message>
-</context>
-<context>
     <name>VBoxMediaComboBox</name>
     <message>
         <source>&lt;no hard disk&gt;</source>
@@ -11064,7 +11021,7 @@ dengan nilai apapun.&lt;/qt&gt;</translation>
     </message>
 </context>
 <context>
-    <name>VBoxVMLogViewer</name>
+    <name>UIVMLogViewer</name>
     <message>
         <source>Log Viewer</source>
         <translation>Viewer Log</translation>
@@ -11104,6 +11061,42 @@ dengan nilai apapun.&lt;/qt&gt;</translation>
     <message>
         <source>Close</source>
         <translation>Tutup</translation>
+    </message>
+    <message>
+        <source>Close the search panel</source>
+        <translation>Tutup panel pencarian</translation>
+    </message>
+    <message>
+        <source>Enter a search string here</source>
+        <translation>Masukkan string pencarian disini</translation>
+    </message>
+    <message>
+        <source>&amp;Previous</source>
+        <translation>&amp;Sebelumnya</translation>
+    </message>
+    <message>
+        <source>Search for the previous occurrence of the string</source>
+        <translation>Cari dari string kejadian sebelumnya</translation>
+    </message>
+    <message>
+        <source>&amp;Next</source>
+        <translation>La&amp;njut</translation>
+    </message>
+    <message>
+        <source>Search for the next occurrence of the string</source>
+        <translation>Caru dari string kejadian berikutnya</translation>
+    </message>
+    <message>
+        <source>C&amp;ase Sensitive</source>
+        <translation>C&amp;ase Sensitive</translation>
+    </message>
+    <message>
+        <source>Perform case sensitive search (when checked)</source>
+        <translation>Lakukan pencarian secara case sensitive (bila dipilih)</translation>
+    </message>
+    <message>
+        <source>String not found</source>
+        <translation>String tidak ditemukan</translation>
     </message>
 </context>
 <context>

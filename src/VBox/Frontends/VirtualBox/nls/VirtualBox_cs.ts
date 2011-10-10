@@ -10676,49 +10676,6 @@ na výchozí jazyk systému.&lt;/qt&gt;
     </message>
 </context>
 <context>
-    <name>VBoxLogSearchPanel</name>
-    <message>
-        <source>Close the search panel</source>
-        <translation>Zavřít panel hledání</translation>
-    </message>
-    <message>
-        <source>Find </source>
-        <translation>Hledat </translation>
-    </message>
-    <message>
-        <source>Enter a search string here</source>
-        <translation>Sem napište hledaný řetězec</translation>
-    </message>
-    <message>
-        <source>&amp;Previous</source>
-        <translation>&amp;Předchozí</translation>
-    </message>
-    <message>
-        <source>Search for the previous occurrence of the string</source>
-        <translation>Hledat předchozí výskyt řetězce</translation>
-    </message>
-    <message>
-        <source>&amp;Next</source>
-        <translation>&amp;Další</translation>
-    </message>
-    <message>
-        <source>Search for the next occurrence of the string</source>
-        <translation>Hledat další výskyt řetězce</translation>
-    </message>
-    <message>
-        <source>C&amp;ase Sensitive</source>
-        <translation>Rozlišov&amp;at velikost písmen</translation>
-    </message>
-    <message>
-        <source>Perform case sensitive search (when checked)</source>
-        <translation>Provede vyhledávání s ohledem na velikost písmen (je-li zatrženo)</translation>
-    </message>
-    <message>
-        <source>String not found</source>
-        <translation>Řetězec nenalezen</translation>
-    </message>
-</context>
-<context>
     <name>VBoxMediaComboBox</name>
     <message>
         <source>&lt;no hard disk&gt;</source>
@@ -12132,7 +12089,7 @@ hodnotu.&lt;/qt&gt;</translation>
     </message>
 </context>
 <context>
-    <name>VBoxVMLogViewer</name>
+    <name>UIVMLogViewer</name>
     <message>
         <source>Log Viewer</source>
         <translation>Prohlížeč záznamu</translation>
@@ -12172,6 +12129,42 @@ hodnotu.&lt;/qt&gt;</translation>
     <message>
         <source>Close</source>
         <translation>Zavřít</translation>
+    </message>
+    <message>
+        <source>Close the search panel</source>
+        <translation>Zavřít panel hledání</translation>
+    </message>
+    <message>
+        <source>Enter a search string here</source>
+        <translation>Sem napište hledaný řetězec</translation>
+    </message>
+    <message>
+        <source>&amp;Previous</source>
+        <translation>&amp;Předchozí</translation>
+    </message>
+    <message>
+        <source>Search for the previous occurrence of the string</source>
+        <translation>Hledat předchozí výskyt řetězce</translation>
+    </message>
+    <message>
+        <source>&amp;Next</source>
+        <translation>&amp;Další</translation>
+    </message>
+    <message>
+        <source>Search for the next occurrence of the string</source>
+        <translation>Hledat další výskyt řetězce</translation>
+    </message>
+    <message>
+        <source>C&amp;ase Sensitive</source>
+        <translation>Rozlišov&amp;at velikost písmen</translation>
+    </message>
+    <message>
+        <source>Perform case sensitive search (when checked)</source>
+        <translation>Provede vyhledávání s ohledem na velikost písmen (je-li zatrženo)</translation>
+    </message>
+    <message>
+        <source>String not found</source>
+        <translation>Řetězec nenalezen</translation>
     </message>
 </context>
 <context>

@@ -41,7 +41,6 @@ class UIVMItemModel;
 class UIVMListView;
 class UIToolBar;
 class VBoxTrayIcon;
-class VBoxVMLogViewer;
 
 class VBoxSelectorWnd : public QIWithRetranslateUI2<QMainWindow>
 {
