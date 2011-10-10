@@ -6015,6 +6015,8 @@ static bool ahciCancelActiveTasks(PAHCIPort pAhciPort)
                  * a new task structure for this tag.
                  */
                 ASMAtomicWriteNullPtr(&pAhciPort->aCachedTasks[i]);
+                LogRel(("AHCI#%dP%d: Cancelled task %u\n", pAhciPort->CTX_SUFF(pDevIns)->iInstance,
+                        pAhciPort->iLUN, pAhciPortTaskState->uTag));
             }
             else
                 AssertMsg(pAhciPortTaskState->enmTxState == AHCITXSTATE_FREE,
