@@ -11267,52 +11267,12 @@ la lingua a quella predefinita di sistema.&lt;/qt&gt;
 <context>
     <name>VBoxLogSearchPanel</name>
     <message>
-        <source>Close the search panel</source>
-        <translation>Chiudi il pannello di ricerca</translation>
-    </message>
-    <message>
-        <source>Find </source>
-        <translation>Cerca </translation>
-    </message>
-    <message>
-        <source>Enter a search string here</source>
-        <translation>Inserisci una parola da cercare</translation>
-    </message>
-    <message>
-        <source>&amp;Previous</source>
-        <translation>&amp;Precedente</translation>
-    </message>
-    <message>
         <source>Alt+P</source>
         <translation type="obsolete">Alt+P</translation>
     </message>
     <message>
-        <source>Search for the previous occurrence of the string</source>
-        <translation>Cerca l&apos;occorrenza precedente</translation>
-    </message>
-    <message>
-        <source>&amp;Next</source>
-        <translation>Segue&amp;nte</translation>
-    </message>
-    <message>
         <source>Alt+N</source>
         <translation type="obsolete">Alt+N</translation>
-    </message>
-    <message>
-        <source>Search for the next occurrence of the string</source>
-        <translation>Cerca l&apos;occorrenza successiva</translation>
-    </message>
-    <message>
-        <source>C&amp;ase Sensitive</source>
-        <translation>M&amp;aiuscole/minuscole</translation>
-    </message>
-    <message>
-        <source>Perform case sensitive search (when checked)</source>
-        <translation>Abilita la ricerca confrontando maiuscole e minuscole (se marcata)</translation>
-    </message>
-    <message>
-        <source>String not found</source>
-        <translation>Nessuna occorrenza</translation>
     </message>
 </context>
 <context>
@@ -12970,7 +12930,7 @@ qualsiasi valore.&lt;/qt&gt;</translation>
     </message>
 </context>
 <context>
-    <name>VBoxVMLogViewer</name>
+    <name>UIVMLogViewer</name>
     <message>
         <source>Log Viewer</source>
         <translation>Visualizzatore di log</translation>
@@ -13030,6 +12990,42 @@ qualsiasi valore.&lt;/qt&gt;</translation>
     <message>
         <source>Close</source>
         <translation>Chiudi</translation>
+    </message>
+    <message>
+        <source>Close the search panel</source>
+        <translation>Chiudi il pannello di ricerca</translation>
+    </message>
+    <message>
+        <source>Enter a search string here</source>
+        <translation>Inserisci una parola da cercare</translation>
+    </message>
+    <message>
+        <source>&amp;Previous</source>
+        <translation>&amp;Precedente</translation>
+    </message>
+    <message>
+        <source>Search for the previous occurrence of the string</source>
+        <translation>Cerca l&apos;occorrenza precedente</translation>
+    </message>
+    <message>
+        <source>&amp;Next</source>
+        <translation>Segue&amp;nte</translation>
+    </message>
+    <message>
+        <source>Search for the next occurrence of the string</source>
+        <translation>Cerca l&apos;occorrenza successiva</translation>
+    </message>
+    <message>
+        <source>C&amp;ase Sensitive</source>
+        <translation>M&amp;aiuscole/minuscole</translation>
+    </message>
+    <message>
+        <source>Perform case sensitive search (when checked)</source>
+        <translation>Abilita la ricerca confrontando maiuscole e minuscole (se marcata)</translation>
+    </message>
+    <message>
+        <source>String not found</source>
+        <translation>Nessuna occorrenza</translation>
     </message>
 </context>
 <context>

@@ -9163,49 +9163,6 @@ p, li { white-space: pre-wrap; }
     </message>
 </context>
 <context>
-    <name>VBoxLogSearchPanel</name>
-    <message>
-        <source>Close the search panel</source>
-        <translation>Luk søgevinduet</translation>
-    </message>
-    <message>
-        <source>Find </source>
-        <translation>Find </translation>
-    </message>
-    <message>
-        <source>Enter a search string here</source>
-        <translation>Indtast dit søgekriterie her</translation>
-    </message>
-    <message>
-        <source>&amp;Previous</source>
-        <translation>Forrige</translation>
-    </message>
-    <message>
-        <source>Search for the previous occurrence of the string</source>
-        <translation>Søg baglæns efter forekomster af strengen</translation>
-    </message>
-    <message>
-        <source>&amp;Next</source>
-        <translation>&amp;Næste</translation>
-    </message>
-    <message>
-        <source>Search for the next occurrence of the string</source>
-        <translation>Søg forlæns efter forekomster af strengen</translation>
-    </message>
-    <message>
-        <source>C&amp;ase Sensitive</source>
-        <translation>Forskel på store/små bogst&amp;aver</translation>
-    </message>
-    <message>
-        <source>Perform case sensitive search (when checked)</source>
-        <translation>Søgning skelner mellem store og små bogstaver</translation>
-    </message>
-    <message>
-        <source>String not found</source>
-        <translation>Strengen blev ikke fundet</translation>
-    </message>
-</context>
-<context>
     <name>VBoxMediaComboBox</name>
     <message>
         <source>No media available. Use the Virtual Media Manager to add media of the corresponding type.</source>
@@ -10142,7 +10099,7 @@ p, li { white-space: pre-wrap; }
     </message>
 </context>
 <context>
-    <name>VBoxVMLogViewer</name>
+    <name>UIVMLogViewer</name>
     <message>
         <source>Log Viewer</source>
         <translation>Logfremviser</translation>
@@ -10174,6 +10131,42 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Close</source>
         <translation>Luk</translation>
+    </message>
+    <message>
+        <source>Close the search panel</source>
+        <translation>Luk søgevinduet</translation>
+    </message>
+    <message>
+        <source>Enter a search string here</source>
+        <translation>Indtast dit søgekriterie her</translation>
+    </message>
+    <message>
+        <source>&amp;Previous</source>
+        <translation>Forrige</translation>
+    </message>
+    <message>
+        <source>Search for the previous occurrence of the string</source>
+        <translation>Søg baglæns efter forekomster af strengen</translation>
+    </message>
+    <message>
+        <source>&amp;Next</source>
+        <translation>&amp;Næste</translation>
+    </message>
+    <message>
+        <source>Search for the next occurrence of the string</source>
+        <translation>Søg forlæns efter forekomster af strengen</translation>
+    </message>
+    <message>
+        <source>C&amp;ase Sensitive</source>
+        <translation>Forskel på store/små bogst&amp;aver</translation>
+    </message>
+    <message>
+        <source>Perform case sensitive search (when checked)</source>
+        <translation>Søgning skelner mellem store og små bogstaver</translation>
+    </message>
+    <message>
+        <source>String not found</source>
+        <translation>Strengen blev ikke fundet</translation>
     </message>
 </context>
 <context>

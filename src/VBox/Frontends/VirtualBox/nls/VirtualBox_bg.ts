@@ -9357,49 +9357,6 @@ p, li { white-space: pre-wrap; }
     </message>
 </context>
 <context>
-    <name>VBoxLogSearchPanel</name>
-    <message>
-        <source>Close the search panel</source>
-        <translation>Затваряне на панела за търсене</translation>
-    </message>
-    <message>
-        <source>Find </source>
-        <translation>Търсене</translation>
-    </message>
-    <message>
-        <source>Enter a search string here</source>
-        <translation>Въведете текст за търсене тук</translation>
-    </message>
-    <message>
-        <source>&amp;Previous</source>
-        <translation>&amp;Предишно</translation>
-    </message>
-    <message>
-        <source>Search for the previous occurrence of the string</source>
-        <translation>Търсене на предходно съвпадение на текста</translation>
-    </message>
-    <message>
-        <source>&amp;Next</source>
-        <translation>&amp;Следващо</translation>
-    </message>
-    <message>
-        <source>Search for the next occurrence of the string</source>
-        <translation>Търсене на следващо съвпадение на текста</translation>
-    </message>
-    <message>
-        <source>C&amp;ase Sensitive</source>
-        <translation>&amp;Чувствително към регистъра</translation>
-    </message>
-    <message>
-        <source>Perform case sensitive search (when checked)</source>
-        <translation>Извършва чувствително към регистъра търсене (когато е избрано)</translation>
-    </message>
-    <message>
-        <source>String not found</source>
-        <translation>Текстът не е намерен</translation>
-    </message>
-</context>
-<context>
     <name>VBoxMediaComboBox</name>
     <message>
         <source>No media available. Use the Virtual Media Manager to add media of the corresponding type.</source>
@@ -10361,7 +10318,7 @@ p, li { white-space: pre-wrap; }
     </message>
 </context>
 <context>
-    <name>VBoxVMLogViewer</name>
+    <name>UIVMLogViewer</name>
     <message>
         <source>Log Viewer</source>
         <translation>Преглед на записките</translation>
@@ -10393,6 +10350,42 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Close</source>
         <translation>Затваряне</translation>
+    </message>
+    <message>
+        <source>Close the search panel</source>
+        <translation>Затваряне на панела за търсене</translation>
+    </message>
+    <message>
+        <source>Enter a search string here</source>
+        <translation>Въведете текст за търсене тук</translation>
+    </message>
+    <message>
+        <source>&amp;Previous</source>
+        <translation>&amp;Предишно</translation>
+    </message>
+    <message>
+        <source>Search for the previous occurrence of the string</source>
+        <translation>Търсене на предходно съвпадение на текста</translation>
+    </message>
+    <message>
+        <source>&amp;Next</source>
+        <translation>&amp;Следващо</translation>
+    </message>
+    <message>
+        <source>Search for the next occurrence of the string</source>
+        <translation>Търсене на следващо съвпадение на текста</translation>
+    </message>
+    <message>
+        <source>C&amp;ase Sensitive</source>
+        <translation>&amp;Чувствително към регистъра</translation>
+    </message>
+    <message>
+        <source>Perform case sensitive search (when checked)</source>
+        <translation>Извършва чувствително към регистъра търсене (когато е избрано)</translation>
+    </message>
+    <message>
+        <source>String not found</source>
+        <translation>Текстът не е намерен</translation>
     </message>
 </context>
 <context>

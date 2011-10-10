@@ -9203,52 +9203,12 @@ sistemako lehenetsiriko hizkuntza berrezartzeko.&lt;/qt&gt;
 <context>
     <name>VBoxLogSearchPanel</name>
     <message>
-        <source>Close the search panel</source>
-        <translation>Bilaketa panela itxi</translation>
-    </message>
-    <message>
-        <source>Find </source>
-        <translation>Bilatu </translation>
-    </message>
-    <message>
-        <source>Enter a search string here</source>
-        <translation>Bilaketa katea idatzi hemen</translation>
-    </message>
-    <message>
-        <source>&amp;Previous</source>
-        <translation>&amp;Aurrekoa</translation>
-    </message>
-    <message>
         <source>Alt+P</source>
         <translation type="obsolete">Alt+A</translation>
     </message>
     <message>
-        <source>Search for the previous occurrence of the string</source>
-        <translation>Katearen aurreko errepikatzea bilatu</translation>
-    </message>
-    <message>
-        <source>&amp;Next</source>
-        <translation>&amp;Hurrengoa</translation>
-    </message>
-    <message>
         <source>Alt+N</source>
         <translation type="obsolete">Alt+H</translation>
-    </message>
-    <message>
-        <source>Search for the next occurrence of the string</source>
-        <translation>Katearen hurrengo errepikatzea bilatu</translation>
-    </message>
-    <message>
-        <source>C&amp;ase Sensitive</source>
-        <translation>Min/M&amp;aius Ezberdindu</translation>
-    </message>
-    <message>
-        <source>Perform case sensitive search (when checked)</source>
-        <translation>Maiuskula/minuskulak ezberdintzen egin bilaketa (hautaturik dagoenean)</translation>
-    </message>
-    <message>
-        <source>String not found</source>
-        <translation>Katea ez da aurkitu</translation>
     </message>
 </context>
 <context>
@@ -10482,7 +10442,7 @@ Kate hutsak edozein balio bilatuko du.&lt;/qt&gt;</translation>
     </message>
 </context>
 <context>
-    <name>VBoxVMLogViewer</name>
+    <name>UIVMLogViewer</name>
     <message>
         <source>Log Viewer</source>
         <translation>Erregistro ikustatzailea</translation>
@@ -10534,6 +10494,42 @@ Kate hutsak edozein balio bilatuko du.&lt;/qt&gt;</translation>
     <message>
         <source>Close</source>
         <translation>Itxi</translation>
+    </message>
+    <message>
+        <source>Close the search panel</source>
+        <translation>Bilaketa panela itxi</translation>
+    </message>
+    <message>
+        <source>Enter a search string here</source>
+        <translation>Bilaketa katea idatzi hemen</translation>
+    </message>
+    <message>
+        <source>&amp;Previous</source>
+        <translation>&amp;Aurrekoa</translation>
+    </message>
+    <message>
+        <source>Search for the previous occurrence of the string</source>
+        <translation>Katearen aurreko errepikatzea bilatu</translation>
+    </message>
+    <message>
+        <source>&amp;Next</source>
+        <translation>&amp;Hurrengoa</translation>
+    </message>
+    <message>
+        <source>Search for the next occurrence of the string</source>
+        <translation>Katearen hurrengo errepikatzea bilatu</translation>
+    </message>
+    <message>
+        <source>C&amp;ase Sensitive</source>
+        <translation>Min/M&amp;aius Ezberdindu</translation>
+    </message>
+    <message>
+        <source>Perform case sensitive search (when checked)</source>
+        <translation>Maiuskula/minuskulak ezberdintzen egin bilaketa (hautaturik dagoenean)</translation>
+    </message>
+    <message>
+        <source>String not found</source>
+        <translation>Katea ez da aurkitu</translation>
     </message>
 </context>
 <context>

@@ -11207,49 +11207,6 @@ un disc dur per connectar a la ranura remarcada actualment.&lt;/a&gt;</translati
     </message>
 </context>
 <context>
-    <name>VBoxLogSearchPanel</name>
-    <message>
-        <source>Close the search panel</source>
-        <translation>Tanca el tauler de cerca</translation>
-    </message>
-    <message>
-        <source>Find </source>
-        <translation>Cerca </translation>
-    </message>
-    <message>
-        <source>Enter a search string here</source>
-        <translation>Introduïu ací la cadena a cercar</translation>
-    </message>
-    <message>
-        <source>&amp;Previous</source>
-        <translation>&amp;Anterior</translation>
-    </message>
-    <message>
-        <source>Search for the previous occurrence of the string</source>
-        <translation>Cerca la coincidència anterior de la cadena</translation>
-    </message>
-    <message>
-        <source>&amp;Next</source>
-        <translation>&amp;Següent</translation>
-    </message>
-    <message>
-        <source>Search for the next occurrence of the string</source>
-        <translation>Cerca la coincidència següent de la cadena</translation>
-    </message>
-    <message>
-        <source>C&amp;ase Sensitive</source>
-        <translation>Distingeix entre &amp;majúscules i minúscules</translation>
-    </message>
-    <message>
-        <source>Perform case sensitive search (when checked)</source>
-        <translation>Si activeu esta casella, la cerca distingirà entre majúscules i minúscules</translation>
-    </message>
-    <message>
-        <source>String not found</source>
-        <translation>No s&apos;ha trobat la cadena</translation>
-    </message>
-</context>
-<context>
     <name>VBoxMediaComboBox</name>
     <message>
         <source>&lt;no hard disk&gt;</source>
@@ -12843,7 +12800,7 @@ o a ambdòs (&lt;i&gt;Qualsevol&lt;/i&gt;).&lt;/qt&gt;</translation>
     </message>
 </context>
 <context>
-    <name>VBoxVMLogViewer</name>
+    <name>UIVMLogViewer</name>
     <message>
         <source>%1 - VirtualBox Log Viewer</source>
         <translation>%1 - Visualitzador de registre del VirtualBox</translation>
@@ -12883,6 +12840,42 @@ o a ambdòs (&lt;i&gt;Qualsevol&lt;/i&gt;).&lt;/qt&gt;</translation>
     <message>
         <source>Save VirtualBox Log As</source>
         <translation>Alça el registre del VirtualBox com a</translation>
+    </message>
+    <message>
+        <source>Close the search panel</source>
+        <translation>Tanca el tauler de cerca</translation>
+    </message>
+    <message>
+        <source>Enter a search string here</source>
+        <translation>Introduïu ací la cadena a cercar</translation>
+    </message>
+    <message>
+        <source>&amp;Previous</source>
+        <translation>&amp;Anterior</translation>
+    </message>
+    <message>
+        <source>Search for the previous occurrence of the string</source>
+        <translation>Cerca la coincidència anterior de la cadena</translation>
+    </message>
+    <message>
+        <source>&amp;Next</source>
+        <translation>&amp;Següent</translation>
+    </message>
+    <message>
+        <source>Search for the next occurrence of the string</source>
+        <translation>Cerca la coincidència següent de la cadena</translation>
+    </message>
+    <message>
+        <source>C&amp;ase Sensitive</source>
+        <translation>Distingeix entre &amp;majúscules i minúscules</translation>
+    </message>
+    <message>
+        <source>Perform case sensitive search (when checked)</source>
+        <translation>Si activeu esta casella, la cerca distingirà entre majúscules i minúscules</translation>
+    </message>
+    <message>
+        <source>String not found</source>
+        <translation>No s&apos;ha trobat la cadena</translation>
     </message>
 </context>
 <context>

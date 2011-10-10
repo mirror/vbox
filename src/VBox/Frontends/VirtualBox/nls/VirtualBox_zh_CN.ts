@@ -11074,52 +11074,12 @@ to the system default language.&lt;/qt&gt;
 <context>
     <name>VBoxLogSearchPanel</name>
     <message>
-        <source>Close the search panel</source>
-        <translation>关闭搜索面板</translation>
-    </message>
-    <message>
-        <source>Find </source>
-        <translation>查找(sp)</translation>
-    </message>
-    <message>
-        <source>Enter a search string here</source>
-        <translation>输入搜索字符串</translation>
-    </message>
-    <message>
-        <source>&amp;Previous</source>
-        <translation>向前(&amp;P)</translation>
-    </message>
-    <message>
         <source>Alt+P</source>
         <translation type="obsolete">Alt+P</translation>
     </message>
     <message>
-        <source>Search for the previous occurrence of the string</source>
-        <translation>向前搜索该字符串</translation>
-    </message>
-    <message>
-        <source>&amp;Next</source>
-        <translation>向后(&amp;N)</translation>
-    </message>
-    <message>
         <source>Alt+N</source>
         <translation type="obsolete">Alt+N</translation>
-    </message>
-    <message>
-        <source>Search for the next occurrence of the string</source>
-        <translation>向后搜索该字符串</translation>
-    </message>
-    <message>
-        <source>C&amp;ase Sensitive</source>
-        <translation>匹配大小写(&amp;a)</translation>
-    </message>
-    <message>
-        <source>Perform case sensitive search (when checked)</source>
-        <translation>匹配大小写进行搜索(选中时)</translation>
-    </message>
-    <message>
-        <source>String not found</source>
-        <translation>无发现字符串</translation>
     </message>
 </context>
 <context>
@@ -12725,7 +12685,7 @@ value.&lt;/qt&gt;</source>
     </message>
 </context>
 <context>
-    <name>VBoxVMLogViewer</name>
+    <name>UIVMLogViewer</name>
     <message>
         <source>Log Viewer</source>
         <translation>日志查看器</translation>
@@ -12781,6 +12741,42 @@ value.&lt;/qt&gt;</source>
     <message>
         <source>Close</source>
         <translation>关闭</translation>
+    </message>
+    <message>
+        <source>Close the search panel</source>
+        <translation>关闭搜索面板</translation>
+    </message>
+    <message>
+        <source>Enter a search string here</source>
+        <translation>输入搜索字符串</translation>
+    </message>
+    <message>
+        <source>&amp;Previous</source>
+        <translation>向前(&amp;P)</translation>
+    </message>
+    <message>
+        <source>Search for the previous occurrence of the string</source>
+        <translation>向前搜索该字符串</translation>
+    </message>
+    <message>
+        <source>&amp;Next</source>
+        <translation>向后(&amp;N)</translation>
+    </message>
+    <message>
+        <source>Search for the next occurrence of the string</source>
+        <translation>向后搜索该字符串</translation>
+    </message>
+    <message>
+        <source>C&amp;ase Sensitive</source>
+        <translation>匹配大小写(&amp;a)</translation>
+    </message>
+    <message>
+        <source>Perform case sensitive search (when checked)</source>
+        <translation>匹配大小写进行搜索(选中时)</translation>
+    </message>
+    <message>
+        <source>String not found</source>
+        <translation>无发现字符串</translation>
     </message>
 </context>
 <context>

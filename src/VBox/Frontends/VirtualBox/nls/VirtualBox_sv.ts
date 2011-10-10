@@ -10176,49 +10176,6 @@ Version %1</translation>
     </message>
 </context>
 <context>
-    <name>VBoxLogSearchPanel</name>
-    <message>
-        <source>Close the search panel</source>
-        <translation>Stäng sökpanelen</translation>
-    </message>
-    <message>
-        <source>Find </source>
-        <translation>Sök </translation>
-    </message>
-    <message>
-        <source>Enter a search string here</source>
-        <translation>Ange en söksträng här</translation>
-    </message>
-    <message>
-        <source>&amp;Previous</source>
-        <translation>&amp;Föregående</translation>
-    </message>
-    <message>
-        <source>Search for the previous occurrence of the string</source>
-        <translation>Sök efter föregående förekomst av strängen</translation>
-    </message>
-    <message>
-        <source>&amp;Next</source>
-        <translation>&amp;Nästa</translation>
-    </message>
-    <message>
-        <source>Search for the next occurrence of the string</source>
-        <translation>Sök efter nästa förekomst av strängen</translation>
-    </message>
-    <message>
-        <source>C&amp;ase Sensitive</source>
-        <translation>Skiftläges&amp;känslig</translation>
-    </message>
-    <message>
-        <source>Perform case sensitive search (when checked)</source>
-        <translation>Genomför skiftlägeskänslig sökning (om kryssad)</translation>
-    </message>
-    <message>
-        <source>String not found</source>
-        <translation>Strängen hittades inte</translation>
-    </message>
-</context>
-<context>
     <name>VBoxMediaComboBox</name>
     <message>
         <source>&lt;no hard disk&gt;</source>
@@ -11251,7 +11208,7 @@ Version %1</translation>
     </message>
 </context>
 <context>
-    <name>VBoxVMLogViewer</name>
+    <name>UIVMLogViewer</name>
     <message>
         <source>Log Viewer</source>
         <translation>Loggvisare</translation>
@@ -11283,6 +11240,42 @@ Version %1</translation>
     <message>
         <source>Close</source>
         <translation>Stäng</translation>
+    </message>
+    <message>
+        <source>Close the search panel</source>
+        <translation>Stäng sökpanelen</translation>
+    </message>
+    <message>
+        <source>Enter a search string here</source>
+        <translation>Ange en söksträng här</translation>
+    </message>
+    <message>
+        <source>&amp;Previous</source>
+        <translation>&amp;Föregående</translation>
+    </message>
+    <message>
+        <source>Search for the previous occurrence of the string</source>
+        <translation>Sök efter föregående förekomst av strängen</translation>
+    </message>
+    <message>
+        <source>&amp;Next</source>
+        <translation>&amp;Nästa</translation>
+    </message>
+    <message>
+        <source>Search for the next occurrence of the string</source>
+        <translation>Sök efter nästa förekomst av strängen</translation>
+    </message>
+    <message>
+        <source>C&amp;ase Sensitive</source>
+        <translation>Skiftläges&amp;känslig</translation>
+    </message>
+    <message>
+        <source>Perform case sensitive search (when checked)</source>
+        <translation>Genomför skiftlägeskänslig sökning (om kryssad)</translation>
+    </message>
+    <message>
+        <source>String not found</source>
+        <translation>Strängen hittades inte</translation>
     </message>
 </context>
 <context>

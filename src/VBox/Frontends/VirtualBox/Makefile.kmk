@@ -236,7 +236,7 @@ VirtualBox_QT_MOCHDRS = \
 	src/VBoxSnapshotDetailsDlg.h \
 	src/VBoxTakeSnapshotDlg.h \
 	src/VBoxVMInformationDlg.h \
-	src/VBoxVMLogViewer.h \
+	src/UIVMLogViewer.h \
 	src/extensions/QIAdvancedSlider.h \
 	src/extensions/QIArrowButtonPress.h \
 	src/extensions/QIArrowButtonSwitch.h \
@@ -361,6 +361,7 @@ VirtualBox_QT_MOCHDRS.darwin += \
 # Sources containing local definitions of classes that use the Q_OBJECT macro.
 VirtualBox_QT_MOCSRCS = \
 	src/VBoxMediaManagerDlg.cpp \
+	src/UIVMLogViewer.cpp \
 	src/extensions/QISplitter.cpp \
 	src/globals/UIActionPool.cpp \
 	src/globals/UIExtraDataEventHandler.cpp \
@@ -395,7 +396,7 @@ VirtualBox_SOURCES = \
 	src/VBoxSnapshotDetailsDlg.cpp \
 	src/VBoxTakeSnapshotDlg.cpp \
 	src/VBoxVMInformationDlg.cpp \
-	src/VBoxVMLogViewer.cpp \
+	src/UIVMLogViewer.cpp \
 	src/extensions/QIAdvancedSlider.cpp \
 	src/extensions/QIArrowButtonPress.cpp \
 	src/extensions/QIArrowButtonSwitch.cpp \
@@ -564,7 +565,7 @@ VirtualBox_QT_MOCHDRS.darwin += \
 
 ifdef VBOX_WITH_ICHAT_THEATER
  VirtualBox_SOURCES.darwin += \
- 	src/platform/darwin/VBoxIChatTheaterWrapper.m
+	src/platform/darwin/VBoxIChatTheaterWrapper.m
 endif
 
 ifdef VBOX_GUI_WITH_SYSTRAY
@@ -577,9 +578,9 @@ endif
 
 if defined(VBOX_WITH_VIDEOHWACCEL) || defined(VBOX_GUI_USE_QGL)
  VirtualBox_SOURCES += \
- 	src/VBoxFBOverlay.cpp \
- 	src/VBoxFBQGL.cpp \
- 	src/VBoxGLSupportInfo.cpp
+	src/VBoxFBOverlay.cpp \
+	src/VBoxFBQGL.cpp \
+	src/VBoxGLSupportInfo.cpp
 endif
 
 # The Qt modules we're using.
@@ -910,7 +911,7 @@ if defined(VBOX_WITH_VIDEOHWACCEL)
   VBoxOGL2D_DEFS = IN_RING3 QT_NO_DEBUG QT_THREAD_SUPPORT QT_SHARED HAVE_CONFIG_H $(ARCH_BITS_DEFS) VBOX_WITH_VIDEOHWACCEL VBOX_GUI_USE_QGL
   VBoxOGL2D_QT_MODULES += OpenGL
   VBoxOGL2D_SOURCES = \
-  	src/VBoxGLSupportInfo.cpp
+	src/VBoxGLSupportInfo.cpp
   VBoxOGL2D_INCS = include
  endif
 endif
@@ -928,7 +929,7 @@ tstDarwinKeyboard_SOURCES = \
 	src/platform/darwin/tstDarwinKeyboard.cpp \
 	src/platform/darwin/DarwinKeyboard.cpp
 tstDarwinKeyboard_SOURCES.amd64 = \
- 	src/platform/darwin/CocoaEventHelper.mm
+	src/platform/darwin/CocoaEventHelper.mm
 tstDarwinKeyboard_LDFLAGS = -framework IOKit -framework Carbon -framework AppKit
 tstDarwinKeyboard_LIBS = \
 	$(LIB_RUNTIME)

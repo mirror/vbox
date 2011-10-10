@@ -9256,49 +9256,6 @@ p, li { white-space: pre-wrap; }
     </message>
 </context>
 <context>
-    <name>VBoxLogSearchPanel</name>
-    <message>
-        <source>Close the search panel</source>
-        <translation>затвори претрагу</translation>
-    </message>
-    <message>
-        <source>Find </source>
-        <translation>Наћи</translation>
-    </message>
-    <message>
-        <source>Enter a search string here</source>
-        <translation>Унети претрагу</translation>
-    </message>
-    <message>
-        <source>&amp;Previous</source>
-        <translation>Назад</translation>
-    </message>
-    <message>
-        <source>Search for the previous occurrence of the string</source>
-        <translation>Наћи предходно</translation>
-    </message>
-    <message>
-        <source>&amp;Next</source>
-        <translation>Даље</translation>
-    </message>
-    <message>
-        <source>Search for the next occurrence of the string</source>
-        <translation>Наћи следеће</translation>
-    </message>
-    <message>
-        <source>C&amp;ase Sensitive</source>
-        <translation>пази слова</translation>
-    </message>
-    <message>
-        <source>Perform case sensitive search (when checked)</source>
-        <translation>Пази на слова при претрагу (када одабрано)</translation>
-    </message>
-    <message>
-        <source>String not found</source>
-        <translation>Ништа нажено</translation>
-    </message>
-</context>
-<context>
     <name>VBoxMediaComboBox</name>
     <message>
         <source>No media available. Use the Virtual Media Manager to add media of the corresponding type.</source>
@@ -10272,7 +10229,7 @@ p, li { white-space: pre-wrap; }
     </message>
 </context>
 <context>
-    <name>VBoxVMLogViewer</name>
+    <name>UIVMLogViewer</name>
     <message>
         <source>Log Viewer</source>
         <translation>Журнал</translation>
@@ -10304,6 +10261,42 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Close</source>
         <translation>Затвори</translation>
+    </message>
+    <message>
+        <source>Close the search panel</source>
+        <translation>затвори претрагу</translation>
+    </message>
+    <message>
+        <source>Enter a search string here</source>
+        <translation>Унети претрагу</translation>
+    </message>
+    <message>
+        <source>&amp;Previous</source>
+        <translation>Назад</translation>
+    </message>
+    <message>
+        <source>Search for the previous occurrence of the string</source>
+        <translation>Наћи предходно</translation>
+    </message>
+    <message>
+        <source>&amp;Next</source>
+        <translation>Даље</translation>
+    </message>
+    <message>
+        <source>Search for the next occurrence of the string</source>
+        <translation>Наћи следеће</translation>
+    </message>
+    <message>
+        <source>C&amp;ase Sensitive</source>
+        <translation>пази слова</translation>
+    </message>
+    <message>
+        <source>Perform case sensitive search (when checked)</source>
+        <translation>Пази на слова при претрагу (када одабрано)</translation>
+    </message>
+    <message>
+        <source>String not found</source>
+        <translation>Ништа нажено</translation>
     </message>
 </context>
 <context>

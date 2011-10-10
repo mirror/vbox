@@ -247,7 +247,7 @@
 #include "VBoxVMFirstRunWzd.h"
 #include "VBoxVMInformationDlg.h"
 #include "UIVMListView.h"
-#include "VBoxVMLogViewer.h"
+#include "UIVMLogViewer.h"
 #include "UIMachineSettingsAudio.h"
 #include "UIMachineSettingsDisplay.h"
 #include "UIMachineSettingsGeneral.h"

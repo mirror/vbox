@@ -9983,49 +9983,6 @@ Version %1</source>
     </message>
 </context>
 <context>
-    <name>VBoxLogSearchPanel</name>
-    <message>
-        <source>Close the search panel</source>
-        <translation>Sulje hakupaneeli</translation>
-    </message>
-    <message>
-        <source>Find </source>
-        <translation>Etsi</translation>
-    </message>
-    <message>
-        <source>Enter a search string here</source>
-        <translation>Syötä tähän haettava teksti</translation>
-    </message>
-    <message>
-        <source>&amp;Previous</source>
-        <translation>&amp;Edellinen</translation>
-    </message>
-    <message>
-        <source>Search for the previous occurrence of the string</source>
-        <translation>Etsi merkkijonon edellistä esiintymää</translation>
-    </message>
-    <message>
-        <source>&amp;Next</source>
-        <translation>&amp;Seuraava</translation>
-    </message>
-    <message>
-        <source>Search for the next occurrence of the string</source>
-        <translation>Etsi merkkijonon seuraavaa esiintymää</translation>
-    </message>
-    <message>
-        <source>C&amp;ase Sensitive</source>
-        <translation>H&amp;uomioi kirjainkoko</translation>
-    </message>
-    <message>
-        <source>Perform case sensitive search (when checked)</source>
-        <translation>Huomioi kirjainkoko haettaessa, jos valittu</translation>
-    </message>
-    <message>
-        <source>String not found</source>
-        <translation>Tekstiä ei löytynyt</translation>
-    </message>
-</context>
-<context>
     <name>VBoxMediaComboBox</name>
     <message>
         <source>&lt;no hard disk&gt;</source>
@@ -11349,7 +11306,7 @@ to access it from a Linux OS. This feature requires Guest Additions.&lt;/qt&gt;<
     </message>
 </context>
 <context>
-    <name>VBoxVMLogViewer</name>
+    <name>UIVMLogViewer</name>
     <message>
         <source>Log Viewer</source>
         <translation>Lokikatselin</translation>
@@ -11405,6 +11362,42 @@ to access it from a Linux OS. This feature requires Guest Additions.&lt;/qt&gt;<
     <message>
         <source>Close</source>
         <translation>Sulje</translation>
+    </message>
+    <message>
+        <source>Close the search panel</source>
+        <translation>Sulje hakupaneeli</translation>
+    </message>
+    <message>
+        <source>Enter a search string here</source>
+        <translation>Syötä tähän haettava teksti</translation>
+    </message>
+    <message>
+        <source>&amp;Previous</source>
+        <translation>&amp;Edellinen</translation>
+    </message>
+    <message>
+        <source>Search for the previous occurrence of the string</source>
+        <translation>Etsi merkkijonon edellistä esiintymää</translation>
+    </message>
+    <message>
+        <source>&amp;Next</source>
+        <translation>&amp;Seuraava</translation>
+    </message>
+    <message>
+        <source>Search for the next occurrence of the string</source>
+        <translation>Etsi merkkijonon seuraavaa esiintymää</translation>
+    </message>
+    <message>
+        <source>C&amp;ase Sensitive</source>
+        <translation>H&amp;uomioi kirjainkoko</translation>
+    </message>
+    <message>
+        <source>Perform case sensitive search (when checked)</source>
+        <translation>Huomioi kirjainkoko haettaessa, jos valittu</translation>
+    </message>
+    <message>
+        <source>String not found</source>
+        <translation>Tekstiä ei löytynyt</translation>
     </message>
 </context>
 <context>

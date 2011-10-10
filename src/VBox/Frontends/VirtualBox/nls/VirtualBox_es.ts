@@ -11149,48 +11149,8 @@ volver al idioma por omisión del sistema.&lt;/qt&gt;
 <context>
     <name>VBoxLogSearchPanel</name>
     <message>
-        <source>Close the search panel</source>
-        <translation>Cerrar el panel de búsqueda</translation>
-    </message>
-    <message>
-        <source>Find </source>
-        <translation>Buscar </translation>
-    </message>
-    <message>
-        <source>Enter a search string here</source>
-        <translation>Ingrese la cadena de búsqueda</translation>
-    </message>
-    <message>
-        <source>&amp;Previous</source>
-        <translation>&amp;Anterior</translation>
-    </message>
-    <message>
         <source>Alt+P</source>
         <translation type="obsolete">Alt+P</translation>
-    </message>
-    <message>
-        <source>Search for the previous occurrence of the string</source>
-        <translation>Buscar la coincidencia anterior de la cadena</translation>
-    </message>
-    <message>
-        <source>&amp;Next</source>
-        <translation>&amp;Siguiente</translation>
-    </message>
-    <message>
-        <source>Search for the next occurrence of the string</source>
-        <translation>Buscar la coincidencia siguiente de la cadena</translation>
-    </message>
-    <message>
-        <source>C&amp;ase Sensitive</source>
-        <translation>&amp;Coincidir m&amp;ayúsculas/minúsculas</translation>
-    </message>
-    <message>
-        <source>Perform case sensitive search (when checked)</source>
-        <translation>Realiza la búsqueda coincidiendo mayúsculas/minúsculas (cuando está seleccionado)</translation>
-    </message>
-    <message>
-        <source>String not found</source>
-        <translation>Cadena no encontrada</translation>
     </message>
 </context>
 <context>
@@ -12799,7 +12759,7 @@ cualquier valor.&lt;/qt&gt;</translation>
     </message>
 </context>
 <context>
-    <name>VBoxVMLogViewer</name>
+    <name>UIVMLogViewer</name>
     <message>
         <source>Log Viewer</source>
         <translation>Visor de historial de eventos</translation>
@@ -12859,6 +12819,42 @@ cualquier valor.&lt;/qt&gt;</translation>
     <message>
         <source>Close</source>
         <translation>Cerrar</translation>
+    </message>
+    <message>
+        <source>Close the search panel</source>
+        <translation>Cerrar el panel de búsqueda</translation>
+    </message>
+    <message>
+        <source>Enter a search string here</source>
+        <translation>Ingrese la cadena de búsqueda</translation>
+    </message>
+    <message>
+        <source>&amp;Previous</source>
+        <translation>&amp;Anterior</translation>
+    </message>
+    <message>
+        <source>Search for the previous occurrence of the string</source>
+        <translation>Buscar la coincidencia anterior de la cadena</translation>
+    </message>
+    <message>
+        <source>&amp;Next</source>
+        <translation>&amp;Siguiente</translation>
+    </message>
+    <message>
+        <source>Search for the next occurrence of the string</source>
+        <translation>Buscar la coincidencia siguiente de la cadena</translation>
+    </message>
+    <message>
+        <source>C&amp;ase Sensitive</source>
+        <translation>&amp;Coincidir m&amp;ayúsculas/minúsculas</translation>
+    </message>
+    <message>
+        <source>Perform case sensitive search (when checked)</source>
+        <translation>Realiza la búsqueda coincidiendo mayúsculas/minúsculas (cuando está seleccionado)</translation>
+    </message>
+    <message>
+        <source>String not found</source>
+        <translation>Cadena no encontrada</translation>
     </message>
 </context>
 <context>

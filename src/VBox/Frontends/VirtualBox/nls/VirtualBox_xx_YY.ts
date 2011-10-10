@@ -6605,49 +6605,6 @@
     </message>
 </context>
 <context>
-    <name>VBoxLogSearchPanel</name>
-    <message>
-        <source>Close the search panel</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Find </source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Enter a search string here</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;Previous</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Search for the previous occurrence of the string</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&amp;Next</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Search for the next occurrence of the string</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>C&amp;ase Sensitive</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Perform case sensitive search (when checked)</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>String not found</source>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
     <name>VBoxMediaManagerDlg</name>
     <message>
         <source>&amp;Actions</source>
@@ -7195,7 +7152,7 @@
     </message>
 </context>
 <context>
-    <name>VBoxVMLogViewer</name>
+    <name>UIVMLogViewer</name>
     <message>
         <source>Log Viewer</source>
         <translation type="unfinished"></translation>
@@ -7226,6 +7183,42 @@
     </message>
     <message>
         <source>Close</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Close the search panel</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enter a search string here</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Previous</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Search for the previous occurrence of the string</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Next</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Search for the next occurrence of the string</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>C&amp;ase Sensitive</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Perform case sensitive search (when checked)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>String not found</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

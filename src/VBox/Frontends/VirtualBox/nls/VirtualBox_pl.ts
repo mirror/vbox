@@ -11077,52 +11077,12 @@ języka ustawiony jako domyślny dla systemu.&lt;/qt&gt;
 <context>
     <name>VBoxLogSearchPanel</name>
     <message>
-        <source>Close the search panel</source>
-        <translation>Zamyka panel wyszukiwania</translation>
-    </message>
-    <message>
-        <source>Find </source>
-        <translation>Znajdź </translation>
-    </message>
-    <message>
-        <source>Enter a search string here</source>
-        <translation>Tekst do znalezienia</translation>
-    </message>
-    <message>
-        <source>&amp;Previous</source>
-        <translation>&amp;Poprzednie</translation>
-    </message>
-    <message>
         <source>Alt+P</source>
         <translation type="obsolete">Alt+P</translation>
     </message>
     <message>
-        <source>Search for the previous occurrence of the string</source>
-        <translation>Szuka poprzedniego wystąpienia danego tekstu</translation>
-    </message>
-    <message>
-        <source>&amp;Next</source>
-        <translation>&amp;Następne</translation>
-    </message>
-    <message>
         <source>Alt+N</source>
         <translation type="obsolete">Alt+N</translation>
-    </message>
-    <message>
-        <source>Search for the next occurrence of the string</source>
-        <translation>Szuka następnego wystąpienia danego tekstu</translation>
-    </message>
-    <message>
-        <source>C&amp;ase Sensitive</source>
-        <translation>&amp;Rozróżniaj wielkość liter</translation>
-    </message>
-    <message>
-        <source>Perform case sensitive search (when checked)</source>
-        <translation>Szuka z uwzględnieniem wielkości liter (jeśli zaznaczone)</translation>
-    </message>
-    <message>
-        <source>String not found</source>
-        <translation>Nie znaleziono</translation>
     </message>
 </context>
 <context>
@@ -12621,7 +12581,7 @@ Puste pole sprawi, że filtr zadziała dla jakiejkolwiek wartości.&lt;/qt&gt;</
     </message>
 </context>
 <context>
-    <name>VBoxVMLogViewer</name>
+    <name>UIVMLogViewer</name>
     <message>
         <source>Log Viewer</source>
         <translation>Przeglądarka logów</translation>
@@ -12677,6 +12637,42 @@ Puste pole sprawi, że filtr zadziała dla jakiejkolwiek wartości.&lt;/qt&gt;</
     <message>
         <source>Close</source>
         <translation>Zamknij</translation>
+    </message>
+    <message>
+        <source>Close the search panel</source>
+        <translation>Zamyka panel wyszukiwania</translation>
+    </message>
+    <message>
+        <source>Enter a search string here</source>
+        <translation>Tekst do znalezienia</translation>
+    </message>
+    <message>
+        <source>&amp;Previous</source>
+        <translation>&amp;Poprzednie</translation>
+    </message>
+    <message>
+        <source>Search for the previous occurrence of the string</source>
+        <translation>Szuka poprzedniego wystąpienia danego tekstu</translation>
+    </message>
+    <message>
+        <source>&amp;Next</source>
+        <translation>&amp;Następne</translation>
+    </message>
+    <message>
+        <source>Search for the next occurrence of the string</source>
+        <translation>Szuka następnego wystąpienia danego tekstu</translation>
+    </message>
+    <message>
+        <source>C&amp;ase Sensitive</source>
+        <translation>&amp;Rozróżniaj wielkość liter</translation>
+    </message>
+    <message>
+        <source>Perform case sensitive search (when checked)</source>
+        <translation>Szuka z uwzględnieniem wielkości liter (jeśli zaznaczone)</translation>
+    </message>
+    <message>
+        <source>String not found</source>
+        <translation>Nie znaleziono</translation>
     </message>
 </context>
 <context>
