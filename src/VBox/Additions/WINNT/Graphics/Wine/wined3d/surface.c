@@ -99,7 +99,7 @@ static void surface_cleanup(IWineD3DSurfaceImpl *This)
 
     if (This->texture_name
 #ifdef VBOX_WITH_WDDM
-            && !VBOXSHRC_IS_SHARED_OPENED(This)
+            && VBOXSHRC_CAN_DELETE(device, This)
 #endif
             )
     {
@@ -579,16 +579,26 @@ void surface_set_texture_name(IWineD3DSurface *iface, GLuint new_name, BOOL srgb
 
     if (!*name && new_name)
     {
+        BOOL fPersistent = FALSE;
         /* FIXME: We shouldn't need to remove SFLAG_INTEXTURE if the
          * surface has no texture name yet. See if we can get rid of this. */
         if (This->Flags & flag)
             ERR("Surface has SFLAG_INTEXTURE set, but no texture name\n");
-        IWineD3DSurface_ModifyLocation(iface, flag, FALSE);
+#ifdef VBOX_WITH_WDDM
+        if (VBOXSHRC_IS_SHARED_OPENED(This))
+        {
+            fPersistent = TRUE;
+        }
+#endif
+        IWineD3DSurface_ModifyLocation(iface, flag, fPersistent);
     }
 
 #ifdef VBOX_WITH_WDDM
     if (VBOXSHRC_IS_SHARED(This))
     {
+        Assert(VBOXSHRC_GET_SHAREHANDLE(This) == NULL
+                || (GLuint)VBOXSHRC_GET_SHAREHANDLE(This) == new_name
+                || new_name == 0 /* on cleanup */);
         VBOXSHRC_SET_SHAREHANDLE(This, new_name);
     }
 #endif
@@ -1290,9 +1300,14 @@ void surface_internal_preload(IWineD3DSurface *iface, enum WINED3DSRGB srgb)
             /* Tell opengl to try and keep this texture in video ram (well mostly) */
             GLclampf tmp;
             tmp = 0.9f;
+#ifndef VBOX_WITH_WDDM
             ENTER_GL();
             glPrioritizeTextures(1, &This->texture_name, &tmp);
             LEAVE_GL();
+#else
+            /* chromium code on host fails to resolve texture name to texture obj for some reason
+             * @todo: investigate */
+#endif
         }
 
         if (context) context_release(context);
@@ -1406,14 +1421,13 @@ static void WINAPI IWineD3DSurfaceImpl_UnLoad(IWineD3DSurface *iface) {
     if(!texture) {
         ENTER_GL();
 #ifdef VBOX_WITH_WDDM
-        if (!VBOXSHRC_IS_SHARED_OPENED(This))
+        if (VBOXSHRC_CAN_DELETE(device, This))
 #endif
+        {
             glDeleteTextures(1, &This->texture_name);
-        This->texture_name = 0;
-#ifdef VBOX_WITH_WDDM
-        if (!VBOXSHRC_IS_SHARED_OPENED(This))
-#endif
             glDeleteTextures(1, &This->texture_name_srgb);
+        }
+        This->texture_name = 0;
         This->texture_name_srgb = 0;
         LEAVE_GL();
     } else {
@@ -1765,6 +1779,23 @@ void surface_prepare_texture(IWineD3DSurfaceImpl *surface, const struct wined3d_
     surface_allocate_surface(surface, gl_info, &desc, srgb);
     surface->Flags |= alloc_flag;
 }
+
+#ifdef VBOX_WITH_WDDM
+void surface_setup_location_onopen(IWineD3DSurfaceImpl *This)
+{
+    IWineD3DDeviceImpl *device = This->resource.device;
+    const struct wined3d_gl_info *gl_info = &device->adapter->gl_info;
+    struct wined3d_context * context = NULL;
+    if (!device->isInDraw) context = context_acquire(device, NULL, CTXUSAGE_RESOURCELOAD);
+
+    surface_prepare_texture(This, gl_info, FALSE);
+    surface_bind_and_dirtify(This, FALSE);
+
+    if (context) context_release(context);
+
+    IWineD3DSurface_ModifyLocation((IWineD3DSurface*)This, SFLAG_INTEXTURE, TRUE);
+}
+#endif
 
 static void surface_prepare_system_memory(IWineD3DSurfaceImpl *This)
 {
@@ -2806,7 +2837,7 @@ static void WINAPI IWineD3DSurfaceImpl_BindTexture(IWineD3DSurface *iface, BOOL 
 #ifdef VBOX_WITH_WDDM
                 if (VBOXSHRC_IS_SHARED_OPENED(This))
                 {
-                    *name = VBOXSHRC_GET_SHAREHANDLE(This);
+                    *name = (GLuint)VBOXSHRC_GET_SHAREHANDLE(This);
                 }
                 else
 #endif
@@ -4790,6 +4821,16 @@ static void WINAPI IWineD3DSurfaceImpl_ModifyLocation(IWineD3DSurface *iface, DW
             This->Flags |= SFLAG_INTEXTURE;
         }
     }
+    else if (This->Flags & SFLAG_CLIENTMEM)
+    {
+        if(!(This->Flags & SFLAG_INSYSMEM)) {
+            IWineD3DSurfaceImpl_LoadLocation(iface, SFLAG_INSYSMEM, NULL);
+        } else {
+            This->Flags &= ~SFLAG_LOCATIONS;
+            This->Flags |= SFLAG_INSYSMEM;
+        }
+
+    }
 #endif
 
     if(!(This->Flags & SFLAG_LOCATIONS)) {
@@ -5119,6 +5160,12 @@ post_process:
 //            This->Flags |= SFLAG_INDRAWABLE;
 //        }
     }
+    else if (This->Flags & SFLAG_CLIENTMEM)
+    {
+        Assert(!!(This->Flags & SFLAG_INSYSMEM));
+        This->Flags &= ~SFLAG_LOCATIONS;
+        This->Flags |= SFLAG_INSYSMEM;
+    }
     else
 #endif
     {
@@ -5215,6 +5262,9 @@ const IWineD3DSurfaceVtbl IWineD3DSurface_Vtbl =
     IWineD3DSurfaceImpl_PreLoad,
     IWineD3DSurfaceImpl_UnLoad,
     IWineD3DBaseSurfaceImpl_GetType,
+#ifdef VBOX_WITH_WDDM
+    IWineD3DResourceImpl_SetDontDeleteGl,
+#endif
     /* IWineD3DSurface */
     IWineD3DBaseSurfaceImpl_GetContainer,
     IWineD3DBaseSurfaceImpl_GetDesc,

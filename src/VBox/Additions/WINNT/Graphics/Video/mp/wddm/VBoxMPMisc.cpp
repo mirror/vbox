@@ -1472,3 +1472,63 @@ VOID vboxWddmCounterU32Wait(uint32_t volatile * pu32, uint32_t u32Val)
         KeDelayExecutionThread(KernelMode, FALSE, &Interval);
     }
 }
+
+#if 0
+VOID vboxShRcTreeInit(PVBOXMP_DEVEXT pDevExt)
+{
+    ExInitializeFastMutex(&pDevExt->ShRcTreeMutex);
+    pDevExt->ShRcTree = NULL;
+}
+
+VOID vboxShRcTreeTerm(PVBOXMP_DEVEXT pDevExt)
+{
+    Assert(!pDevExt->ShRcTree);
+    pDevExt->ShRcTree = NULL;
+}
+
+BOOLEAN vboxShRcTreePut(PVBOXMP_DEVEXT pDevExt, PVBOXWDDM_ALLOCATION pAlloc)
+{
+    HANDLE hSharedRc = pAlloc->hSharedHandle;
+    if (!hSharedRc)
+    {
+        WARN(("invalid call with zero shared handle!"));
+        return FALSE;
+    }
+    pAlloc->ShRcTreeEntry.Key = (AVLPVKEY)hSharedRc;
+    ExAcquireFastMutex(&pDevExt->ShRcTreeMutex);
+    bool bRc = RTAvlPVInsert(&pDevExt->ShRcTree, &pAlloc->ShRcTreeEntry);
+    ExReleaseFastMutex(&pDevExt->ShRcTreeMutex);
+    Assert(bRc);
+    return (BOOLEAN)bRc;
+}
+
+#define PVBOXWDDM_ALLOCATION_FROM_SHRCTREENODE(_p) ((PVBOXWDDM_ALLOCATION)(((uint8_t*)(_p)) - RT_OFFSETOF(VBOXWDDM_ALLOCATION, ShRcTreeEntry)))
+PVBOXWDDM_ALLOCATION vboxShRcTreeGet(PVBOXMP_DEVEXT pDevExt, HANDLE hSharedRc)
+{
+    ExAcquireFastMutex(&pDevExt->ShRcTreeMutex);
+    PAVLPVNODECORE pNode = RTAvlPVGet(&pDevExt->ShRcTree, (AVLPVKEY)hSharedRc);
+    ExReleaseFastMutex(&pDevExt->ShRcTreeMutex);
+    if (!pNode)
+        return NULL;
+    PVBOXWDDM_ALLOCATION pAlloc = PVBOXWDDM_ALLOCATION_FROM_SHRCTREENODE(pNode);
+    return pAlloc;
+}
+
+BOOLEAN vboxShRcTreeRemove(PVBOXMP_DEVEXT pDevExt, PVBOXWDDM_ALLOCATION pAlloc)
+{
+    HANDLE hSharedRc = pAlloc->hSharedHandle;
+    if (!hSharedRc)
+    {
+        WARN(("invalid call with zero shared handle!"));
+        return FALSE;
+    }
+    ExAcquireFastMutex(&pDevExt->ShRcTreeMutex);
+    PAVLPVNODECORE pNode = RTAvlPVRemove(&pDevExt->ShRcTree, (AVLPVKEY)hSharedRc);
+    ExReleaseFastMutex(&pDevExt->ShRcTreeMutex);
+    if (!pNode)
+        return NULL;
+    PVBOXWDDM_ALLOCATION pRetAlloc = PVBOXWDDM_ALLOCATION_FROM_SHRCTREENODE(pNode);
+    Assert(pRetAlloc == pAlloc);
+    return !!pRetAlloc;
+}
+#endif

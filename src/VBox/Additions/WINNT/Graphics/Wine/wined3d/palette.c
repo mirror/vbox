@@ -29,12 +29,12 @@
  */
 
 #include "config.h"
+#include "wined3d_private.h"
+
 #include "winerror.h"
 #include "wine/debug.h"
-
 #include <string.h>
 
-#include "wined3d_private.h"
 
 WINE_DEFAULT_DEBUG_CHANNEL(d3d);
 

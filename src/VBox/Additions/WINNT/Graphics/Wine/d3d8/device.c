@@ -29,6 +29,7 @@
  */
 
 #include "config.h"
+#include "d3d8_private.h"
 
 #include <math.h>
 #include <stdarg.h>
@@ -40,8 +41,6 @@
 #include "winuser.h"
 #include "wingdi.h"
 #include "wine/debug.h"
-
-#include "d3d8_private.h"
 
 WINE_DEFAULT_DEBUG_CHANNEL(d3d8);
 

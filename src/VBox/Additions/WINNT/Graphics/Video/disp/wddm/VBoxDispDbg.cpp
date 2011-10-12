@@ -63,8 +63,10 @@ DWORD g_VBoxVDbgFDumpUnlock = VBOXWDDMDISP_DEBUG_DUMP_DEFAULT;
 DWORD g_VBoxVDbgFBreakShared = VBOXWDDMDISP_DEBUG_DUMP_DEFAULT;
 DWORD g_VBoxVDbgFBreakDdi = 0;
 
-DWORD g_VBoxVDbgFLogRel = 0;
-DWORD g_VBoxVDbgFLog = 0;
+DWORD g_VBoxVDbgFCheckSysMemSync = 0;
+
+DWORD g_VBoxVDbgFLogRel = 1;
+DWORD g_VBoxVDbgFLog = 1;
 DWORD g_VBoxVDbgFLogFlow = 0;
 
 DWORD g_VBoxVDbgPid = 0;
@@ -560,8 +562,14 @@ LONG WINAPI vboxVDbgVectoredHandler(struct _EXCEPTION_POINTERS *pExceptionInfo)
     PCONTEXT pContextRecord = pExceptionInfo->ContextRecord;
     switch (pExceptionRecord->ExceptionCode)
     {
-        case 0xc0000005: /* only access violation and debug exceptions actually matter */
-        case 0xc0000003:
+        case EXCEPTION_BREAKPOINT:
+        case EXCEPTION_ACCESS_VIOLATION:
+        case EXCEPTION_STACK_OVERFLOW:
+        case EXCEPTION_ARRAY_BOUNDS_EXCEEDED:
+        case EXCEPTION_FLT_DIVIDE_BY_ZERO:
+        case EXCEPTION_FLT_INVALID_OPERATION:
+        case EXCEPTION_INT_DIVIDE_BY_ZERO:
+        case EXCEPTION_ILLEGAL_INSTRUCTION:
             AssertRelease(0);
             break;
         default:

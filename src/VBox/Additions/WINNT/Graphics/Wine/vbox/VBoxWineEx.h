@@ -15,10 +15,12 @@
 #ifndef ___VBoxWineEx_h__
 #define ___VBoxWineEx_h__
 
+#define VBOXWINEEX_VERSION 1
+
 #ifndef IN_VBOXWINEEX
-#  define VBOXWINEEX_DECL(_type) __declspec(dllimport) _type WINAPI
+# define VBOXWINEEX_DECL(_type)   __declspec(dllimport) _type WINAPI
 # else
-#  define VBOXWINEEX_DECL(_type) __declspec(dllexport) _type WINAPI
+# define VBOXWINEEX_DECL(_type)  __declspec(dllexport) _type WINAPI
 #endif
 
 typedef VBOXWINEEX_DECL(HRESULT) FNVBOXWINEEXD3DDEV9_CREATETEXTURE(IDirect3DDevice9Ex *iface,
@@ -38,6 +40,9 @@ typedef FNVBOXWINEEXD3DDEV9_FLUSH *PFNVBOXWINEEXD3DDEV9_FLUSH;
 
 typedef VBOXWINEEX_DECL(HRESULT) FNVBOXWINEEXD3DDEV9_UPDATE(IDirect3DDevice9Ex *iface, D3DPRESENT_PARAMETERS * pParams, IDirect3DDevice9Ex **outIface);
 typedef FNVBOXWINEEXD3DDEV9_UPDATE *PFNVBOXWINEEXD3DDEV9_UPDATE;
+
+typedef VBOXWINEEX_DECL(HRESULT) FNVBOXWINEEXD3DRC9_SETDONTDELETEGL(IDirect3DResource9 *iface);
+typedef FNVBOXWINEEXD3DRC9_SETDONTDELETEGL *PFNVBOXWINEEXD3DRC9_SETDONTDELETEGL;
 
 typedef VBOXWINEEX_DECL(HRESULT) FNVBOXWINEEXD3DSWAPCHAIN9_PRESENT(IDirect3DSwapChain9 *iface, IDirect3DSurface9 *surf);
 typedef FNVBOXWINEEXD3DSWAPCHAIN9_PRESENT *PFNVBOXWINEEXD3DSWAPCHAIN9_PRESENT;
@@ -62,6 +67,8 @@ VBOXWINEEX_DECL(HRESULT) VBoxWineExD3DDev9Flush(IDirect3DDevice9Ex *iface); /* p
 
 VBOXWINEEX_DECL(HRESULT) VBoxWineExD3DDev9Update(IDirect3DDevice9Ex *iface, D3DPRESENT_PARAMETERS * pParams,
                                                     IDirect3DDevice9Ex **outIface); /* update device parameters */
+
+VBOXWINEEX_DECL(HRESULT) VBoxWineExD3DRc9SetDontDeleteGl(IDirect3DResource9 *iface);
 
 VBOXWINEEX_DECL(HRESULT) VBoxWineExD3DSwapchain9Present(IDirect3DSwapChain9 *iface,
                                 IDirect3DSurface9 *surf); /* use the given surface as a frontbuffer content source */

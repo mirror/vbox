@@ -1448,6 +1448,9 @@ static const struct IWineD3DBufferVtbl wined3d_buffer_vtbl =
     buffer_PreLoad,
     buffer_UnLoad,
     buffer_GetType,
+#ifdef VBOX_WITH_WDDM
+    IWineD3DResourceImpl_SetDontDeleteGl,
+#endif
     /* IWineD3DBuffer methods */
     buffer_Map,
     buffer_Unmap,

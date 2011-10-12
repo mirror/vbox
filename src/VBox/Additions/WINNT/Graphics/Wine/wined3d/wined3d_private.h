@@ -1886,6 +1886,10 @@ DWORD resource_set_priority(IWineD3DResource *iface, DWORD new_priority) DECLSPE
 HRESULT resource_set_private_data(IWineD3DResource *iface, REFGUID guid,
         const void *data, DWORD data_size, DWORD flags) DECLSPEC_HIDDEN;
 
+#ifdef VBOX_WITH_WDDM
+HRESULT WINAPI IWineD3DResourceImpl_SetDontDeleteGl(IWineD3DResource *iface) ;
+#endif
+
 /* Tests show that the start address of resources is 32 byte aligned */
 #define RESOURCE_ALIGNMENT 16
 
@@ -1950,6 +1954,9 @@ BOOL surface_init_sysmem(IWineD3DSurface *iface) DECLSPEC_HIDDEN;
 BOOL surface_is_offscreen(IWineD3DSurface *iface) DECLSPEC_HIDDEN;
 void surface_prepare_texture(IWineD3DSurfaceImpl *surface,
         const struct wined3d_gl_info *gl_info, BOOL srgb) DECLSPEC_HIDDEN;
+#ifdef VBOX_WITH_WDDM
+void surface_setup_location_onopen(IWineD3DSurfaceImpl *This) DECLSPEC_HIDDEN;
+#endif
 
 typedef struct IWineD3DBaseTextureImpl
 {

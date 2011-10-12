@@ -32,7 +32,7 @@
 #include <VBox/VBoxUhgsmi.h>
 
 /* One would increase this whenever definitions in this file are changed */
-#define VBOXVIDEOIF_VERSION 10
+#define VBOXVIDEOIF_VERSION 11
 
 #define VBOXWDDM_NODE_ID_SYSTEM           0
 #define VBOXWDDM_NODE_ID_3D               (VBOXWDDM_NODE_ID_SYSTEM)
@@ -115,11 +115,6 @@ typedef struct VBOXWDDM_ALLOCINFO
     };
 } VBOXWDDM_ALLOCINFO, *PVBOXWDDM_ALLOCINFO;
 
-/* this resource is OpenResource'd rather than CreateResource'd */
-#define VBOXWDDM_RESOURCE_F_OPENNED      0x00000001
-/* identifies this is a resource created with CreateResource, the VBOXWDDMDISP_RESOURCE::fRcFlags is valid */
-#define VBOXWDDM_RESOURCE_F_TYPE_GENERIC 0x00000002
-
 typedef struct VBOXWDDM_RC_DESC
 {
     D3DDDI_RESOURCEFLAGS fFlags;
@@ -134,9 +129,24 @@ typedef struct VBOXWDDM_RC_DESC
     D3DDDI_ROTATION enmRotation;
 } VBOXWDDM_RC_DESC, *PVBOXWDDM_RC_DESC;
 
+typedef struct VBOXWDDMDISP_RESOURCE_FLAGS
+{
+    union
+    {
+        struct
+        {
+            UINT Opened     : 1; /* this resource is OpenResource'd rather than CreateResource'd */
+            UINT Generic    : 1; /* identifies this is a resource created with CreateResource, the VBOXWDDMDISP_RESOURCE::fRcFlags is valid */
+            UINT KmResource : 1; /* this resource has underlying km resource */
+            UINT Reserved   : 29; /* reserved */
+        };
+        UINT        Value;
+    };
+} VBOXWDDMDISP_RESOURCE_FLAGS, *PVBOXWDDMDISP_RESOURCE_FLAGS;
+
 typedef struct VBOXWDDM_RCINFO
 {
-    uint32_t fFlags;
+    VBOXWDDMDISP_RESOURCE_FLAGS fFlags;
     VBOXWDDM_RC_DESC RcDesc;
     uint32_t cAllocInfos;
 //    VBOXWDDM_ALLOCINFO aAllocInfos[1];
@@ -426,6 +436,12 @@ typedef struct VBOXDISPIFESCAPE_UHGSMI_SUBMIT
     VBOXWDDM_UHGSMI_BUFFER_UI_INFO_ESCAPE aBuffers[1];
 } VBOXDISPIFESCAPE_UHGSMI_SUBMIT, *PVBOXDISPIFESCAPE_UHGSMI_SUBMIT;
 
+typedef struct VBOXDISPIFESCAPE_SHRC_REF
+{
+    VBOXDISPIFESCAPE EscapeHdr;
+    uint64_t hAlloc;
+} VBOXDISPIFESCAPE_SHRC_REF, *PVBOXDISPIFESCAPE_SHRC_REF;
+
 /* query info func */
 typedef struct VBOXWDDM_QI
 {
@@ -503,6 +519,13 @@ DECLINLINE(UINT) vboxWddmCalcBitsPerPixel(D3DDDIFORMAT format)
         case D3DDDIFMT_DXT3:
         case D3DDDIFMT_DXT4:
         case D3DDDIFMT_DXT5:
+        case D3DDDIFMT_VERTEXDATA:
+        case D3DDDIFMT_INDEX16: /* <- yes, dx runtime treats it as such */
+            return 8;
+        case D3DDDIFMT_INDEX32:
+#ifdef DEBUG_misha
+            Assert(0); /* <- test correctness */
+#endif
             return 8;
         default:
             AssertBreakpoint();

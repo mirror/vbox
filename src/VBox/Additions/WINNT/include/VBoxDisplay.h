@@ -29,6 +29,8 @@
 # define VBOXESC_UHGSMI_ALLOCATE            0xABCD9008
 # define VBOXESC_UHGSMI_DEALLOCATE          0xABCD9009
 # define VBOXESC_UHGSMI_SUBMIT              0xABCD900A
+# define VBOXESC_SHRC_ADDREF                0xABCD900B
+# define VBOXESC_SHRC_RELEASE               0xABCD900C
 
 typedef struct
 {

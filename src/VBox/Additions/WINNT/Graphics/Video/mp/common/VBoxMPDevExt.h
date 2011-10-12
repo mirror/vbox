@@ -105,6 +105,11 @@ typedef struct _VBOXMP_DEVEXT
 #endif
    BOOL bNotifyDxDpc;
 
+#if 0
+   FAST_MUTEX ShRcTreeMutex;
+   AVLPVTREE ShRcTree;
+#endif
+
    VBOXWDDM_SOURCE aSources[VBOX_VIDEO_MAX_SCREENS];
    VBOXWDDM_TARGET aTargets[VBOX_VIDEO_MAX_SCREENS];
 #endif /*VBOX_WDDM_MINIPORT*/

@@ -380,6 +380,9 @@ static const IWineD3DVolumeVtbl IWineD3DVolume_Vtbl =
     IWineD3DVolumeImpl_PreLoad,
     IWineD3DVolumeImpl_UnLoad,
     IWineD3DVolumeImpl_GetType,
+#ifdef VBOX_WITH_WDDM
+    IWineD3DResourceImpl_SetDontDeleteGl,
+#endif
     /* IWineD3DVolume */
     IWineD3DVolumeImpl_GetContainer,
     IWineD3DVolumeImpl_GetDesc,

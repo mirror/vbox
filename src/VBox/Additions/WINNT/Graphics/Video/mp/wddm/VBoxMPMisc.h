@@ -150,4 +150,13 @@ NTSTATUS vboxVideoAMgrCtxAllocSubmit(PVBOXMP_DEVEXT pDevExt, PVBOXVIDEOCM_ALLOC_
 VOID vboxWddmSleep(uint32_t u32Val);
 VOID vboxWddmCounterU32Wait(uint32_t volatile * pu32, uint32_t u32Val);
 
+#if 0
+/* wine shrc handle -> allocation map */
+VOID vboxShRcTreeInit(PVBOXMP_DEVEXT pDevExt);
+VOID vboxShRcTreeTerm(PVBOXMP_DEVEXT pDevExt);
+BOOLEAN vboxShRcTreePut(PVBOXMP_DEVEXT pDevExt, PVBOXWDDM_ALLOCATION pAlloc);
+PVBOXWDDM_ALLOCATION vboxShRcTreeGet(PVBOXMP_DEVEXT pDevExt, HANDLE hSharedRc);
+BOOLEAN vboxShRcTreeRemove(PVBOXMP_DEVEXT pDevExt, PVBOXWDDM_ALLOCATION pAlloc);
+#endif
+
 #endif /* #ifndef ___VBoxMPMisc_h__ */
