@@ -49,7 +49,6 @@ UIMachineViewSeamless::UIMachineViewSeamless(  UIMachineWindow *pMachineWindow
                     , bAccelerate2DVideo
 #endif
                     )
-    , m_pSyncBlocker(0)
 {
     /* Load machine view settings: */
     loadMachineViewSettings();
@@ -160,10 +159,6 @@ bool UIMachineViewSeamless::event(QEvent *pEvent)
             /* Emit a signal about guest was resized: */
             emit resizeHintDone();
 
-            /* Unlock after processing guest resize event: */
-            if (m_pSyncBlocker && m_pSyncBlocker->isRunning())
-                m_pSyncBlocker->quit();
-
             pEvent->accept();
             return true;
         }
@@ -250,26 +245,14 @@ void UIMachineViewSeamless::prepareSeamless()
 {
     /* Set seamless feature flag to the guest: */
     session().GetConsole().GetDisplay().SetSeamlessMode(true);
-    /* Create sync-blocker: */
-    m_pSyncBlocker = new UIMachineViewBlocker;
 }
 
 void UIMachineViewSeamless::cleanupSeamless()
 {
     /* If machine still running: */
     if (uisession()->isRunning())
-    {
         /* Reset seamless feature flag of the guest: */
         session().GetConsole().GetDisplay().SetSeamlessMode(false);
-
-        /* Rollback seamless frame-buffer size to normal: */
-        machineWindowWrapper()->machineWindow()->hide();
-        sltPerformGuestResize(guestSizeHint());
-        m_pSyncBlocker->exec();
-
-        /* Delete sync-blocker: */
-        m_pSyncBlocker->deleteLater();
-    }
 }
 
 QRect UIMachineViewSeamless::workingArea()

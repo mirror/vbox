@@ -112,6 +112,7 @@ UIMachineView* UIMachineView::create(  UIMachineWindow *pMachineWindow
                                                        , bAccelerate2DVideo
 #endif /* VBOX_WITH_VIDEOHWACCEL */
                                                        );
+            pMachineView->m_fIsFullscreen = true;
             break;
         case UIVisualStateType_Seamless:
             pMachineView = new UIMachineViewSeamless(  pMachineWindow
@@ -120,6 +121,7 @@ UIMachineView* UIMachineView::create(  UIMachineWindow *pMachineWindow
                                                      , bAccelerate2DVideo
 #endif /* VBOX_WITH_VIDEOHWACCEL */
                                                      );
+            pMachineView->m_fIsFullscreen = true;
             break;
         case UIVisualStateType_Scale:
             pMachineView = new UIMachineViewScale(  pMachineWindow
@@ -159,6 +161,10 @@ void UIMachineView::sltPerformGuestResize(const QSize &toSize)
 
     /* Send new size-hint to the guest: */
     session().GetConsole().GetDisplay().SetVideoModeHint(newSize.width(), newSize.height(), 0, screenId());
+    /* And track whether we have had a "normal" resize since the last
+     * fullscreen resize hint was sent: */
+    machine.SetExtraData(VBoxDefs::GUI_LastGuestSizeHintWasFullscreen,
+                         m_fIsFullscreen ? "true" : "");
 }
 
 void UIMachineView::sltMachineStateChanged()
@@ -225,6 +231,7 @@ UIMachineView::UIMachineView(  UIMachineWindow *pMachineWindow
 #endif /* VBOX_WITH_VIDEOHWACCEL */
                              )
     : QAbstractScrollArea(pMachineWindow->machineWindow())
+    , m_fIsFullscreen(false)
     , m_pMachineWindow(pMachineWindow)
     , m_uScreenId(uScreenId)
     , m_pFrameBuffer(0)

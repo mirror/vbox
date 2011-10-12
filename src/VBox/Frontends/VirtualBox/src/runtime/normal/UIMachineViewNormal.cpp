@@ -87,6 +87,12 @@ void UIMachineViewNormal::sltAdditionsStateChanged()
 {
     /* Check if we should restrict minimum size: */
     maybeRestrictMinimumSize();
+
+    /* Resend the last resize hint if there was a fullscreen or
+     * seamless transition previously.  If we were not in graphical
+     * mode initially after the transition this happens when we
+     * switch. */
+    maybeResendResizeHint();
 }
 
 void UIMachineViewNormal::sltDesktopResized()
@@ -250,6 +256,21 @@ void UIMachineViewNormal::prepareConsoleConnections()
 
     /* Guest additions state-change updater: */
     connect(uisession(), SIGNAL(sigAdditionsStateChange()), this, SLOT(sltAdditionsStateChanged()));
+}
+
+void UIMachineViewNormal::maybeResendResizeHint()
+{
+    if (m_bIsGuestAutoresizeEnabled && uisession()->isGuestSupportsGraphics())
+    {
+        /* Get the current machine: */
+        CMachine machine = session().GetMachine();
+
+        /* We send a guest size hint if needed to reverse a transition
+         * to fullscreen or seamless. */
+        QString strHintSent = machine.GetExtraData(VBoxDefs::GUI_LastGuestSizeHintWasFullscreen);
+        if (!strHintSent.isEmpty())
+            sltPerformGuestResize(guestSizeHint());
+    }
 }
 
 void UIMachineViewNormal::saveMachineViewSettings()

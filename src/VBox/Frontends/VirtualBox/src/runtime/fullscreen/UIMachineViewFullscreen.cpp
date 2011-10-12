@@ -51,7 +51,6 @@ UIMachineViewFullscreen::UIMachineViewFullscreen(  UIMachineWindow *pMachineWind
 #endif
                     )
     , m_bIsGuestAutoresizeEnabled(gActionPool->action(UIActionIndexRuntime_Toggle_GuestAutoresize)->isChecked())
-    , m_pSyncBlocker(0)
 {
     /* Load machine view settings: */
     loadMachineViewSettings();
@@ -71,18 +70,12 @@ UIMachineViewFullscreen::UIMachineViewFullscreen(  UIMachineWindow *pMachineWind
     /* Prepare console connections: */
     prepareConsoleConnections();
 
-    /* Prepare fullscreen: */
-    prepareFullscreen();
-
     /* Initialization: */
     sltMachineStateChanged();
 }
 
 UIMachineViewFullscreen::~UIMachineViewFullscreen()
 {
-    /* Cleanup fullscreen: */
-    cleanupFullscreen();
-
     /* Cleanup frame buffer: */
     cleanupFrameBuffer();
 }
@@ -152,10 +145,6 @@ bool UIMachineViewFullscreen::event(QEvent *pEvent)
             /* Emit a signal about guest was resized: */
             emit resizeHintDone();
 
-            /* Unlock after processing guest resize event: */
-            if (m_pSyncBlocker && m_pSyncBlocker->isRunning())
-                m_pSyncBlocker->quit();
-
             pEvent->accept();
             return true;
         }
@@ -180,6 +169,8 @@ bool UIMachineViewFullscreen::eventFilter(QObject *pWatched, QEvent *pEvent)
             {
                 /* Send guest-resize hint only if top window resizing to required dimension: */
                 QResizeEvent *pResizeEvent = static_cast<QResizeEvent*>(pEvent);
+                /** @todo why is this here?  If it is a workaround
+                 * for some situation that should be documented. */
                 if (pResizeEvent->size() != workingArea().size())
                     break;
                 /* Store the new size */
@@ -236,31 +227,6 @@ void UIMachineViewFullscreen::prepareConsoleConnections()
 
     /* Guest additions state-change updater: */
     connect(uisession(), SIGNAL(sigAdditionsStateChange()), this, SLOT(sltAdditionsStateChanged()));
-}
-
-void UIMachineViewFullscreen::prepareFullscreen()
-{
-    /* Create sync-blocker: */
-    m_pSyncBlocker = new UIMachineViewBlocker;
-}
-
-void UIMachineViewFullscreen::cleanupFullscreen()
-{
-    /* If machine still running: */
-    if (uisession()->isRunning())
-    {
-        /* And guest supports advanced graphics management which is enabled: */
-        if (m_bIsGuestAutoresizeEnabled && uisession()->isGuestSupportsGraphics())
-        {
-            /* Rollback seamless frame-buffer size to normal: */
-            machineWindowWrapper()->machineWindow()->hide();
-            sltPerformGuestResize(guestSizeHint());
-            m_pSyncBlocker->exec();
-
-            /* Request to delete sync-blocker: */
-            m_pSyncBlocker->deleteLater();
-        }
-    }
 }
 
 void UIMachineViewFullscreen::setGuestAutoresizeEnabled(bool fEnabled)

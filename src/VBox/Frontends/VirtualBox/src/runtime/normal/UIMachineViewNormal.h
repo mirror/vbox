@@ -64,6 +64,7 @@ private:
     void prepareConnections();
     void prepareConsoleConnections();
     //void loadMachineViewSettings();
+    void maybeResendResizeHint();
 
     /* Cleanup helpers: */
     void saveMachineViewSettings();
