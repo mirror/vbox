@@ -105,7 +105,7 @@ Q_DECLARE_METATYPE (StorageSlot);
 // VBoxGlobal class
 ////////////////////////////////////////////////////////////////////////////////
 
-class VBoxSelectorWnd;
+class UISelectorWindow;
 class UIRegistrationWzd;
 class VBoxUpdateDlg;
 
@@ -138,7 +138,7 @@ public:
     VBoxGlobalSettings &settings() { return gset; }
     bool setSettings (VBoxGlobalSettings &gs);
 
-    VBoxSelectorWnd &selectorWnd();
+    UISelectorWindow &selectorWnd();
 
     QWidget *vmWindow();
 
@@ -799,7 +799,7 @@ private:
 
     VBoxGlobalSettings gset;
 
-    VBoxSelectorWnd *mSelectorWnd;
+    UISelectorWindow *mSelectorWnd;
     UIMachine *m_pVirtualMachine;
     QWidget* mMainWindow;
 

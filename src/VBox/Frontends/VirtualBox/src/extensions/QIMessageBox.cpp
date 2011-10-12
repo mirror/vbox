@@ -25,9 +25,6 @@
 #include "QILabel.h"
 #include "QIDialogButtonBox.h"
 #include "UIIconPool.h"
-#ifdef Q_WS_MAC
-# include "VBoxSelectorWnd.h"
-#endif /* Q_WS_MAC */
 
 /* Qt includes */
 #include <QHBoxLayout>

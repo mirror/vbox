@@ -231,7 +231,7 @@
 #include "VBoxOSTypeSelectorWidget.h"
 #include "UIMessageCenter.h"
 #include "VBoxProgressDialog.h"
-#include "VBoxSelectorWnd.h"
+#include "UISelectorWindow.h"
 #include "UISettingsDialog.h"
 #include "UISettingsDialogSpecific.h"
 #include "UISettingsPage.h"

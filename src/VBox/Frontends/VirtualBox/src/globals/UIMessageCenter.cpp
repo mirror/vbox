@@ -34,7 +34,7 @@
 /* Local includes */
 #include "UIMessageCenter.h"
 #include "VBoxGlobal.h"
-#include "VBoxSelectorWnd.h"
+#include "UISelectorWindow.h"
 #include "UIProgressDialog.h"
 #include "UIDownloaderUserManual.h"
 #include "UIMachine.h"
@@ -2223,6 +2223,14 @@ bool UIMessageCenter::confirmVMReset(QWidget *pParent /* = 0 */)
            "it to be lost.</p>"),
         "confirmVMReset" /* pcszAutoConfirmId */,
         tr("Reset", "machine"));
+}
+
+bool UIMessageCenter::confirmVMACPIShutdown(QWidget *pParent /* = 0 */)
+{
+    return messageOkCancel(pParent ? pParent : mainMachineWindowShown(), Question,
+        tr("<p>Do you really want to send an ACPI shutdown signal to the virtual machine?</p>"),
+        "confirmVMACPIShutdown" /* pcszAutoConfirmId */,
+        tr("ACPI Shutdown", "machine"));
 }
 
 bool UIMessageCenter::confirmVMPowerOff(QWidget *pParent /* = 0 */)

@@ -44,6 +44,7 @@ public:
 
     UIVMItemModel(QObject *aParent = 0)
         :QAbstractListModel(aParent) {}
+    ~UIVMItemModel() { clear(); }
 
     void addItem(const CMachine &machine);
     void addItem(UIVMItem *aItem);

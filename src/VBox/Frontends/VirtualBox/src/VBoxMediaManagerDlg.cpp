@@ -549,8 +549,8 @@ void VBoxMediaManagerDlg::showModeless (QWidget *aCenterWidget /* = 0 */, bool a
         mModelessDialog->setAttribute (Qt::WA_DeleteOnClose);
         mModelessDialog->setup (VBoxDefs::MediumType_All, false /* aDoSelect */, aRefresh);
 
-        /* Setup 'closing' connection if main window is VBoxSelectorWnd: */
-        if (vboxGlobal().mainWindow() && vboxGlobal().mainWindow()->inherits("VBoxSelectorWnd"))
+        /* Setup 'closing' connection if main window is UISelectorWindow: */
+        if (vboxGlobal().mainWindow() && vboxGlobal().mainWindow()->inherits("UISelectorWindow"))
             connect(vboxGlobal().mainWindow(), SIGNAL(closing()), mModelessDialog, SLOT(close()));
 
         /* listen to events that may change the media status and refresh

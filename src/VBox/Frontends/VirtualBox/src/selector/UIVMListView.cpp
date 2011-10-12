@@ -24,7 +24,6 @@
 /* Local includes */
 #include "UIVMListView.h"
 #include "UIMessageCenter.h"
-#include "VBoxSelectorWnd.h"
 
 /* Global includes */
 #include <QScrollBar>
