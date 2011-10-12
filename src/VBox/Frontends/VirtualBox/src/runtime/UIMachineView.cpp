@@ -149,6 +149,8 @@ double UIMachineView::aspectRatio() const
 
 void UIMachineView::sltPerformGuestResize(const QSize &toSize)
 {
+    /* Get the current machine: */
+    CMachine machine = session().GetMachine();
     /* Get machine window: */
     QMainWindow *pMachineWindow = machineWindowWrapper() && machineWindowWrapper()->machineWindow() ?
                                   qobject_cast<QMainWindow*>(machineWindowWrapper()->machineWindow()) : 0;
