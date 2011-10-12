@@ -156,6 +156,7 @@ protected:
     CGImageRef vmContentImage();
     CGImageRef frameBuffertoCGImageRef(UIFrameBuffer *pFrameBuffer);
 #endif /* Q_WS_MAC */
+    bool guestResizeEvent(QEvent *pEvent, bool fFullscreen);
 
     /* Cross-platforms event processors: */
     bool event(QEvent *pEvent);
