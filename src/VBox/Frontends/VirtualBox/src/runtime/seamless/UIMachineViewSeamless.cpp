@@ -121,46 +121,7 @@ bool UIMachineViewSeamless::event(QEvent *pEvent)
 
         case VBoxDefs::ResizeEventType:
         {
-            /* Some situations require framebuffer resize events to be ignored at all,
-             * leaving machine-window, machine-view and framebuffer sizes preserved: */
-            if (uisession()->isGuestResizeIgnored())
-                return true;
-
-            /* Get guest resize-event: */
-            UIResizeEvent *pResizeEvent = static_cast<UIResizeEvent*>(pEvent);
-
-            /* Perform framebuffer resize: */
-            frameBuffer()->resizeEvent(pResizeEvent);
-
-            /* Reapply maximum size restriction for machine-view: */
-            setMaximumSize(sizeHint());
-
-            /* Perform machine-view resize: */
-            resize(pResizeEvent->width(), pResizeEvent->height());
-
-            /* Let our toplevel widget calculate its sizeHint properly: */
-            QCoreApplication::sendPostedEvents(0, QEvent::LayoutRequest);
-
-#ifdef Q_WS_MAC
-            machineLogic()->updateDockIconSize(screenId(), pResizeEvent->width(), pResizeEvent->height());
-#endif /* Q_WS_MAC */
-
-            /* Update machine-view sliders: */
-            updateSliders();
-
-            /* Report to the VM thread that we finished resizing: */
-            session().GetConsole().GetDisplay().ResizeCompleted(screenId());
-
-            /* We also recalculate the desktop geometry if this is determined
-             * automatically.  In fact, we only need this on the first resize,
-             * but it is done every time to keep the code simpler. */
-            calculateDesktopGeometry();
-
-            /* Emit a signal about guest was resized: */
-            emit resizeHintDone();
-
-            pEvent->accept();
-            return true;
+            return guestResizeEvent(pEvent, true);
         }
 
         default:
