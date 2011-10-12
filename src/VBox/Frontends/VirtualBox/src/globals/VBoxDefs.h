@@ -115,6 +115,7 @@ struct VBoxDefs
     static const char* GUI_Toolbar;
     static const char* GUI_Statusbar;
     static const char* GUI_LastGuestSizeHint;
+    static const char* GUI_LastGuestSizeHintWasFullscreen;
     static const char* GUI_Fullscreen;
     static const char* GUI_Seamless;
     static const char* GUI_Scale;

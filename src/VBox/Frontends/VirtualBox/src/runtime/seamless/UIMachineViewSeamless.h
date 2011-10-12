@@ -79,7 +79,6 @@ private:
 
     /* Private variables: */
     QRegion m_lastVisibleRegion;
-    UIMachineViewBlocker *m_pSyncBlocker;
 
     /* Friend classes: */
     friend class UIMachineView;

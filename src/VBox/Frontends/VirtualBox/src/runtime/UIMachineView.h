@@ -71,6 +71,11 @@ signals:
     /* Utility signals: */
     void resizeHintDone();
 
+private:
+
+    /** Is this a fullscreen-type view? */
+    bool m_fIsFullscreen;
+
 protected slots:
 
     /* Slot to perform guest resize: */
