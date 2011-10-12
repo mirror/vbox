@@ -25,7 +25,7 @@
 #else /* !VBOX_WITH_PRECOMPILED_HEADERS */
 #include "VBoxGlobal.h"
 #include "UIMessageCenter.h"
-#include "VBoxSelectorWnd.h"
+#include "UISelectorWindow.h"
 #include "VBoxUtils.h"
 #ifdef Q_WS_MAC
 # include "UICocoaApplication.h"

@@ -345,6 +345,7 @@ public:
                                    const QString &strLogFolder);
 
     bool confirmVMReset(QWidget *pParent = 0);
+    bool confirmVMACPIShutdown(QWidget *pParent = 0);
     bool confirmVMPowerOff(QWidget *pParent = 0);
 
     void warnAboutCannotCreateMachineFolder(QWidget *pParent, const QString &strFolderName);

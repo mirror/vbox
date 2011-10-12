@@ -18,7 +18,7 @@
 
 /* Local includes */
 #include "VBoxTrayIcon.h"
-#include "VBoxSelectorWnd.h"
+#include "UISelectorWindow.h"
 #include "UIIconPool.h"
 #include "UIVMItem.h"
 #include "UIVMListView.h"
@@ -27,7 +27,7 @@
 #include <QMenu>
 #include <QAction>
 
-VBoxTrayIcon::VBoxTrayIcon (VBoxSelectorWnd* aParent, UIVMItemModel* aVMModel)
+VBoxTrayIcon::VBoxTrayIcon (UISelectorWindow* aParent, UIVMItemModel* aVMModel)
 {
     mParent = aParent;
     mVMModel = aVMModel;

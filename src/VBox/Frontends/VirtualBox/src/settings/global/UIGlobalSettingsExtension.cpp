@@ -107,8 +107,7 @@ UIGlobalSettingsExtension::UIGlobalSettingsExtension()
 /**
  * Attempt the actual installation.
  *
- * This code is shared by UIGlobalSettingsExtension::sltInstallPackage and
- * VBoxSelectorWnd::sltOpenUrls.
+ * This code is shared by UIGlobalSettingsExtension::sltInstallPackage and UISelectorWindow::sltOpenUrls.
  *
  * @param   strFilePath     The path to the tarball.
  * @param   pParent         The parent widget.

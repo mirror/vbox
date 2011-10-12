@@ -25,7 +25,7 @@
 #include <QSystemTrayIcon>
 
 /* Local forward declarations */
-class VBoxSelectorWnd;
+class UISelectorWindow;
 class UIVMItem;
 class UIVMItemModel;
 
@@ -39,7 +39,7 @@ class VBoxTrayIcon : public QSystemTrayIcon
 
 public:
 
-    VBoxTrayIcon (VBoxSelectorWnd* aParent, UIVMItemModel* aVMModel);
+    VBoxTrayIcon (UISelectorWindow* aParent, UIVMItemModel* aVMModel);
     virtual ~VBoxTrayIcon ();
 
     void refresh ();
@@ -73,7 +73,7 @@ private:
     /* The vm list model */
     UIVMItemModel *mVMModel;
 
-    VBoxSelectorWnd* mParent;
+    UISelectorWindow* mParent;
     QMenu *mTrayIconMenu;
 
     QAction *mShowSelectorAction;

@@ -130,7 +130,7 @@ else ifdef VBOX_GUI_USE_QGL
  VirtualBox_DEFS        += VBOX_GUI_USE_QGL
 endif
 ifdef VBOX_BLEEDING_EDGE
-VirtualBox_src/selector/VBoxSelectorWnd.cpp_DEFS += \
+VirtualBox_src/selector/UISelectorWindow.cpp_DEFS += \
     VBOX_BLEEDING_EDGE=\"$(VBOX_BLEEDING_EDGE)\"
 VirtualBox_src/runtime/UIMachineWindow.cpp_DEFS += \
     VBOX_BLEEDING_EDGE=\"$(VBOX_BLEEDING_EDGE)\"
@@ -304,7 +304,7 @@ VirtualBox_QT_MOCHDRS = \
 	src/selector/UIVMListView.h \
 	src/selector/UIVMPreviewWindow.h \
 	src/selector/UIVirtualBoxEventHandler.h \
-	src/selector/VBoxSelectorWnd.h \
+	src/selector/UISelectorWindow.h \
 	src/selector/VBoxSnapshotsWgt.h \
 	src/settings/UISettingsDialog.h \
 	src/settings/UISettingsDialogSpecific.h \
@@ -477,7 +477,7 @@ VirtualBox_SOURCES = \
 	src/selector/UIVMListView.cpp \
 	src/selector/UIVMPreviewWindow.cpp \
 	src/selector/UIVirtualBoxEventHandler.cpp \
-	src/selector/VBoxSelectorWnd.cpp \
+	src/selector/UISelectorWindow.cpp \
 	src/selector/VBoxSnapshotsWgt.cpp \
 	src/settings/UISettingsDefs.cpp \
 	src/settings/UISettingsDialog.cpp \
