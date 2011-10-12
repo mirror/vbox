@@ -113,7 +113,7 @@ void basetexture_unload(IWineD3DBaseTexture *iface)
     IWineD3DDeviceImpl *device = This->resource.device;
 
 #ifdef VBOX_WITH_WDDM
-    if (VBOXSHRC_IS_SHARED_OPENED(This))
+    if (!VBOXSHRC_CAN_DELETE(device, This))
     {
         This->baseTexture.texture_rgb.name = 0;
         This->baseTexture.texture_srgb.name = 0;
@@ -290,11 +290,12 @@ HRESULT basetexture_bind(IWineD3DBaseTexture *iface, BOOL srgb, BOOL *set_surfac
 #ifdef VBOX_WITH_WDDM
         if (VBOXSHRC_IS_SHARED_OPENED(This))
         {
-            gl_tex->name = VBOXSHRC_GET_SHAREHANDLE(This);
+            gl_tex->name = (GLuint)VBOXSHRC_GET_SHAREHANDLE(This);
         }
         else
 #endif
         {
+            isNewTexture = TRUE;
             glGenTextures(1, &gl_tex->name);
 #ifdef VBOX_WITH_WDDM
             if (VBOXSHRC_IS_SHARED(This))
@@ -305,6 +306,7 @@ HRESULT basetexture_bind(IWineD3DBaseTexture *iface, BOOL srgb, BOOL *set_surfac
         }
         checkGLcall("glGenTextures");
         TRACE("Generated texture %d\n", gl_tex->name);
+#ifndef VBOX_WITH_WDDM
         if (This->resource.pool == WINED3DPOOL_DEFAULT) {
             /* Tell opengl to try and keep this texture in video ram (well mostly) */
             GLclampf tmp;
@@ -312,6 +314,10 @@ HRESULT basetexture_bind(IWineD3DBaseTexture *iface, BOOL srgb, BOOL *set_surfac
             glPrioritizeTextures(1, &gl_tex->name, &tmp);
 
         }
+#else
+        /* chromium code on host fails to resolve texture name to texture obj for some reason
+         * @todo: investigate */
+#endif
         /* Initialise the state of the texture object
         to the openGL defaults, not the directx defaults */
         gl_tex->states[WINED3DTEXSTA_ADDRESSU]      = WINED3DTADDRESS_WRAP;
@@ -328,9 +334,9 @@ HRESULT basetexture_bind(IWineD3DBaseTexture *iface, BOOL srgb, BOOL *set_surfac
         gl_tex->states[WINED3DTEXSTA_DMAPOFFSET]    = 0;
         gl_tex->states[WINED3DTEXSTA_TSSADDRESSW]   = WINED3DTADDRESS_WRAP;
         IWineD3DBaseTexture_SetDirty(iface, TRUE);
-        isNewTexture = TRUE;
 
-        if(This->resource.usage & WINED3DUSAGE_AUTOGENMIPMAP) {
+        if(isNewTexture
+                && This->resource.usage & WINED3DUSAGE_AUTOGENMIPMAP) {
             /* This means double binding the texture at creation, but keeps the code simpler all
              * in all, and the run-time path free from additional checks
              */

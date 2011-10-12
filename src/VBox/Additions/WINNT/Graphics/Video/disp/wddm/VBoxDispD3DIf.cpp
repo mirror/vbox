@@ -36,52 +36,69 @@ HRESULT VBoxDispD3DOpen(VBOXDISPD3D *pD3D)
     pD3D->hD3DLib = LoadLibraryW(L"VBoxD3D9wddm.dll");
 #endif
     Assert(pD3D->hD3DLib);
-    if (pD3D->hD3DLib)
-    {
-        pD3D->pfnDirect3DCreate9Ex = (PFNVBOXDISPD3DCREATE9EX)GetProcAddress(pD3D->hD3DLib, "Direct3DCreate9Ex");
-        Assert(pD3D->pfnDirect3DCreate9Ex);
-        if (pD3D->pfnDirect3DCreate9Ex)
-        {
-            pD3D->pfnVBoxWineExD3DDev9CreateTexture = (PFNVBOXWINEEXD3DDEV9_CREATETEXTURE)GetProcAddress(pD3D->hD3DLib, "VBoxWineExD3DDev9CreateTexture");
-            Assert(pD3D->pfnVBoxWineExD3DDev9CreateTexture);
-            if (pD3D->pfnVBoxWineExD3DDev9CreateTexture)
-            {
-                pD3D->pfnVBoxWineExD3DDev9CreateCubeTexture = (PFNVBOXWINEEXD3DDEV9_CREATECUBETEXTURE)GetProcAddress(pD3D->hD3DLib, "VBoxWineExD3DDev9CreateCubeTexture");
-                Assert(pD3D->pfnVBoxWineExD3DDev9CreateCubeTexture);
-                if (pD3D->pfnVBoxWineExD3DDev9CreateCubeTexture)
-                {
-                    pD3D->pfnVBoxWineExD3DDev9Flush = (PFNVBOXWINEEXD3DDEV9_FLUSH)GetProcAddress(pD3D->hD3DLib, "VBoxWineExD3DDev9Flush");
-                    Assert(pD3D->pfnVBoxWineExD3DDev9Flush);
-                    if (pD3D->pfnVBoxWineExD3DDev9Flush)
-                    {
-                        pD3D->pfnVBoxWineExD3DDev9Update = (PFNVBOXWINEEXD3DDEV9_UPDATE)GetProcAddress(pD3D->hD3DLib, "VBoxWineExD3DDev9Update");
-                        Assert(pD3D->pfnVBoxWineExD3DDev9Update);
-                        if (pD3D->pfnVBoxWineExD3DDev9Update)
-                        {
-                            pD3D->pfnVBoxWineExD3DSwapchain9Present = (PFNVBOXWINEEXD3DSWAPCHAIN9_PRESENT)GetProcAddress(pD3D->hD3DLib, "VBoxWineExD3DSwapchain9Present");
-                            Assert(pD3D->pfnVBoxWineExD3DSwapchain9Present);
-                            if (pD3D->pfnVBoxWineExD3DSwapchain9Present)
-                            {
-                                return S_OK;
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        else
-        {
-            DWORD winErr = GetLastError();
-            vboxVDbgPrintR((__FUNCTION__": GetProcAddressW (for Direct3DCreate9Ex) failed, winErr = (%d)", winErr));
-        }
-
-        VBoxDispD3DClose(pD3D);
-    }
-    else
+    if (!pD3D->hD3DLib)
     {
         DWORD winErr = GetLastError();
-        vboxVDbgPrintR((__FUNCTION__": LoadLibraryW failed, winErr = (%d)", winErr));
+        WARN((__FUNCTION__": LoadLibraryW failed, winErr = (%d)", winErr));
+        return E_FAIL;
     }
+
+    do
+    {
+        pD3D->pfnDirect3DCreate9Ex = (PFNVBOXDISPD3DCREATE9EX)GetProcAddress(pD3D->hD3DLib, "Direct3DCreate9Ex");
+        if (!pD3D->pfnDirect3DCreate9Ex)
+        {
+            WARN(("no Direct3DCreate9Ex"));
+            break;
+        }
+
+        pD3D->pfnVBoxWineExD3DDev9CreateTexture = (PFNVBOXWINEEXD3DDEV9_CREATETEXTURE)GetProcAddress(pD3D->hD3DLib, "VBoxWineExD3DDev9CreateTexture");
+        if (!pD3D->pfnVBoxWineExD3DDev9CreateTexture)
+        {
+            WARN(("no VBoxWineExD3DDev9CreateTexture"));
+            break;
+        }
+
+        pD3D->pfnVBoxWineExD3DDev9CreateCubeTexture = (PFNVBOXWINEEXD3DDEV9_CREATECUBETEXTURE)GetProcAddress(pD3D->hD3DLib, "VBoxWineExD3DDev9CreateCubeTexture");
+        if (!pD3D->pfnVBoxWineExD3DDev9CreateCubeTexture)
+        {
+            WARN(("no VBoxWineExD3DDev9CreateCubeTexture"));
+            break;
+        }
+
+        pD3D->pfnVBoxWineExD3DDev9Flush = (PFNVBOXWINEEXD3DDEV9_FLUSH)GetProcAddress(pD3D->hD3DLib, "VBoxWineExD3DDev9Flush");
+        if (!pD3D->pfnVBoxWineExD3DDev9Flush)
+        {
+            WARN(("no VBoxWineExD3DDev9Flush"));
+            break;
+        }
+
+        pD3D->pfnVBoxWineExD3DDev9Update = (PFNVBOXWINEEXD3DDEV9_UPDATE)GetProcAddress(pD3D->hD3DLib, "VBoxWineExD3DDev9Update");
+        if (!pD3D->pfnVBoxWineExD3DDev9Update)
+        {
+            WARN(("no VBoxWineExD3DDev9Update"));
+            break;
+        }
+
+        pD3D->pfnVBoxWineExD3DRc9SetDontDeleteGl = (PFNVBOXWINEEXD3DRC9_SETDONTDELETEGL)GetProcAddress(pD3D->hD3DLib, "VBoxWineExD3DRc9SetDontDeleteGl");
+        if (!pD3D->pfnVBoxWineExD3DRc9SetDontDeleteGl)
+        {
+            WARN(("no VBoxWineExD3DRc9SetDontDeleteGl"));
+            break;
+        }
+
+        pD3D->pfnVBoxWineExD3DSwapchain9Present = (PFNVBOXWINEEXD3DSWAPCHAIN9_PRESENT)GetProcAddress(pD3D->hD3DLib, "VBoxWineExD3DSwapchain9Present");
+        if (!pD3D->pfnVBoxWineExD3DSwapchain9Present)
+        {
+            WARN(("no VBoxWineExD3DSwapchain9Present"));
+            break;
+        }
+
+        return S_OK;
+
+    } while (0);
+
+    VBoxDispD3DClose(pD3D);
 
     return E_FAIL;
 }

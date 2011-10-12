@@ -31,6 +31,10 @@ typedef struct VBOXWDDM_ALLOCATION *PVBOXWDDM_ALLOCATION;
 #include "VBoxMPShgsmi.h"
 #include "VBoxMPVbva.h"
 
+#if 0
+#include <iprt/avl.h>
+#endif
+
 /* one page size */
 #define VBOXWDDM_C_DMA_BUFFER_SIZE         0x1000
 #define VBOXWDDM_C_DMA_PRIVATEDATA_SIZE    0x4000
@@ -117,7 +121,6 @@ typedef struct VBOXWDDM_ALLOCATION
     struct VBOXWDDM_SWAPCHAIN *pSwapchain;
     VBOXWDDM_ALLOC_TYPE enmType;
     volatile uint32_t cRefs;
-//    VBOXWDDM_ALLOCUSAGE_TYPE enmCurrentUsage;
     D3DDDI_RESOURCEFLAGS fRcFlags;
     UINT SegmentId;
     VBOXVIDEOOFFSET offVram;
@@ -127,11 +130,23 @@ typedef struct VBOXWDDM_ALLOCATION
     BOOLEAN fDeleted;
     BOOLEAN bVisible;
     BOOLEAN bAssigned;
+#ifdef DEBUG
+    /* current for shared rc handling assumes that once resource has no opens, it can not be openned agaion */
+    BOOLEAN fAssumedDeletion;
+#endif
     VBOXWDDM_SURFACE_DESC SurfDesc;
     struct VBOXWDDM_RESOURCE *pResource;
     /* to return to the Runtime on DxgkDdiCreateAllocation */
     DXGK_ALLOCATIONUSAGEHINT UsageHint;
     uint32_t iIndex;
+    uint32_t cOpens;
+    LIST_ENTRY OpenList;
+    /* helps tracking when to release wine shared resource */
+    uint32_t cShRcRefs;
+    HANDLE hSharedHandle;
+#if 0
+    AVLPVNODECORE ShRcTreeEntry;
+#endif
     VBOXUHGSMI_SYNCHOBJECT_TYPE enmSynchType;
     union
     {
@@ -142,7 +157,7 @@ typedef struct VBOXWDDM_ALLOCATION
 
 typedef struct VBOXWDDM_RESOURCE
 {
-    uint32_t fFlags;
+    VBOXWDDMDISP_RESOURCE_FLAGS fFlags;
     volatile uint32_t cRefs;
     VBOXWDDM_RC_DESC RcDesc;
     BOOLEAN fDeleted;
@@ -250,9 +265,19 @@ typedef struct VBOXWDDM_DMA_PRIVATEDATA_CHROMIUM_CMD
     VBOXWDDM_UHGSMI_BUFFER_SUBMIT_INFO aBufInfos[1];
 } VBOXWDDM_DMA_PRIVATEDATA_CHROMIUM_CMD, *PVBOXWDDM_DMA_PRIVATEDATA_CHROMIUM_CMD;
 
+typedef struct VBOXWDDM_DMA_PRIVATEDATA_ALLOCINFO_ON_SUBMIT
+{
+    VBOXWDDM_DMA_PRIVATEDATA_BASEHDR Base;
+    VBOXWDDM_DMA_ALLOCINFO aInfos[1];
+} VBOXWDDM_DMA_PRIVATEDATA_ALLOCINFO_ON_SUBMIT, *PVBOXWDDM_DMA_PRIVATEDATA_ALLOCINFO_ON_SUBMIT;
+
 typedef struct VBOXWDDM_OPENALLOCATION
 {
+    LIST_ENTRY ListEntry;
     D3DKMT_HANDLE  hAllocation;
+    PVBOXWDDM_ALLOCATION pAllocation;
+    PVBOXWDDM_DEVICE pDevice;
+    uint32_t cShRcRefs;
 } VBOXWDDM_OPENALLOCATION, *PVBOXWDDM_OPENALLOCATION;
 
 #define VBOXWDDM_MAX_VIDEOMODES 128

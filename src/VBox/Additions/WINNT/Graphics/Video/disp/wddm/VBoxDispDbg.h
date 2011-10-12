@@ -51,6 +51,7 @@ extern DWORD g_VBoxVDbgFDumpUnlock;
 extern DWORD g_VBoxVDbgFBreakShared;
 extern DWORD g_VBoxVDbgFBreakDdi;
 
+extern DWORD g_VBoxVDbgFCheckSysMemSync;
 
 /* log enable flags */
 extern DWORD g_VBoxVDbgFLogRel;
@@ -145,6 +146,10 @@ void vboxVDbgVEHandlerUnregister();
         ); \
     } while (0)
 
+#define LOG vboxVDbgPrint
+#define LOGREL vboxVDbgPrintR
+#define LOGFLOW vboxVDbgPrintF
+
 #ifdef VBOXWDDMDISP_DEBUG
 
 void vboxDispLogDrvF(char * szString, ...);
@@ -190,6 +195,13 @@ extern DWORD g_VBoxVDbgPid;
            ) \
         )
 
+#define VBOXVDBG_IS_CHECK_ALLOWED(_type) ( \
+        g_VBoxVDbgFCheck##_type \
+        && (g_VBoxVDbgFCheck##_type == 1 \
+                || VBOXVDBG_IS_DUMP_ALLOWED_PID(g_VBoxVDbgFCheck##_type) \
+           ) \
+        )
+
 #define VBOXVDBG_IS_DUMP_SHARED_ALLOWED(_pRc) (\
         (_pRc)->RcDesc.fFlags.SharedResource \
         && VBOXVDBG_IS_DUMP_ALLOWED(Shared) \
@@ -213,15 +225,43 @@ extern DWORD g_VBoxVDbgPid;
         } \
     } while (0)
 
+#define VBOXVDBG_CHECK_SMSYNC(_pRc) do { \
+        if (VBOXVDBG_IS_CHECK_ALLOWED(SysMemSync)) { \
+            vboxWddmDbgRcSynchMemCheck((_pRc)); \
+        } \
+    } while (0)
+
+#define VBOXVDBG_DEV_CHECK_SHARED(_pDevice, _pIsShared) do { \
+        *(_pIsShared) = FALSE; \
+        for (UINT i = 0; i < (_pDevice)->cRTs; ++i) { \
+            PVBOXWDDMDISP_ALLOCATION pRtVar = (_pDevice)->apRTs[i]; \
+            if (pRtVar->pRc->RcDesc.fFlags.SharedResource) { *(_pIsShared) = TRUE; break; } \
+        } \
+    } while (0)
+
+#define VBOXVDBG_IS_DUMP_SHARED_ALLOWED_DEV(_pDevice, _pIsAllowed) do { \
+        VBOXVDBG_DEV_CHECK_SHARED(_pDevice, _pIsAllowed); \
+        if (*(_pIsAllowed)) \
+        { \
+            *(_pIsAllowed) = VBOXVDBG_IS_DUMP_ALLOWED(Shared); \
+        } \
+    } while (0)
+
 #define VBOXVDBG_DUMP_DRAWPRIM_ENTER(_pDevice) do { \
-        if (VBOXVDBG_IS_DUMP_ALLOWED(DrawPrim)) \
+        BOOL fDumpShaded = FALSE; \
+        VBOXVDBG_IS_DUMP_SHARED_ALLOWED_DEV(_pDevice, &fDumpShaded); \
+        if (fDumpShaded \
+                || VBOXVDBG_IS_DUMP_ALLOWED(DrawPrim)) \
         { \
             vboxVDbgDoDumpRt("==>"__FUNCTION__": RenderTarget Dump\n", (_pDevice), "\n"); \
         }\
     } while (0)
 
 #define VBOXVDBG_DUMP_DRAWPRIM_LEAVE(_pDevice) do { \
-        if (VBOXVDBG_IS_DUMP_ALLOWED(DrawPrim)) \
+        BOOL fDumpShaded = FALSE; \
+        VBOXVDBG_IS_DUMP_SHARED_ALLOWED_DEV(_pDevice, &fDumpShaded); \
+        if (fDumpShaded \
+                || VBOXVDBG_IS_DUMP_ALLOWED(DrawPrim)) \
         { \
             vboxVDbgDoDumpRt("<=="__FUNCTION__": RenderTarget Dump\n", (_pDevice), "\n"); \
         }\
@@ -329,6 +369,7 @@ extern DWORD g_VBoxVDbgPid;
 #define VBOXVDBG_DUMP_UNLOCK_ST(_pData) do { } while (0)
 #define VBOXVDBG_BREAK_SHARED(_pRc) do { } while (0)
 #define VBOXVDBG_BREAK_DDI() do { } while (0)
+#define VBOXVDBG_CHECK_SMSYNC(_pRc) do { } while (0)
 #endif
 
 

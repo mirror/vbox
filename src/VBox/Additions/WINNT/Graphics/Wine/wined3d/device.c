@@ -4079,7 +4079,11 @@ static HRESULT WINAPI IWineD3DDeviceImpl_SetTexture(IWineD3DDevice *iface,
     /* Windows accepts overflowing this array... we do not. */
     if (stage >= sizeof(This->stateBlock->textures) / sizeof(*This->stateBlock->textures))
     {
+#ifdef DEBUG_misha
+        ERR("Ignoring invalid stage %u.\n", stage);
+#else
         WARN("Ignoring invalid stage %u.\n", stage);
+#endif
         return WINED3D_OK;
     }
 
@@ -6279,7 +6283,7 @@ static HRESULT updateSurfaceDesc(IWineD3DSurfaceImpl *surface, const WINED3DPRES
         /* shared case needs testing! */
         Assert(!VBOXSHRC_IS_SHARED(surface));
 # endif
-        if (!VBOXSHRC_IS_SHARED_OPENED(surface))
+        if (VBOXSHRC_CAN_DELETE(device, surface))
 #endif
         {
             struct wined3d_context *context = context_acquire(device, NULL, CTXUSAGE_RESOURCELOAD);
@@ -6995,7 +6999,7 @@ static HRESULT WINAPI IWineD3DDeviceImpl_RemoveSwapChain(IWineD3DDevice *iface, 
             memcpy (pvNewBuf + i, This->swapchains +i+1, (This->NumberOfSwapChains - i)*sizeof(IWineD3DSwapChain *));
         }
 
-        This->swapchains = (IWineD3DSwapChain *)pvNewBuf;
+        This->swapchains = pvNewBuf;
     }
     else
     {

@@ -230,6 +230,31 @@ static HRESULT WINAPI IWineD3DTextureImpl_GetParent(IWineD3DTexture *iface, IUnk
     return resource_get_parent((IWineD3DResource *)iface, pParent);
 }
 
+#ifdef VBOX_WITH_WDDM
+static HRESULT WINAPI IWineD3DTextureImpl_SetDontDeleteGl(IWineD3DTexture *iface) {
+    IWineD3DTextureImpl *This = (IWineD3DTextureImpl*)iface;
+    HRESULT hr = IWineD3DResourceImpl_SetDontDeleteGl((IWineD3DResource*)iface);
+    unsigned int i;
+
+    if (FAILED(hr))
+    {
+        ERR("IWineD3DResource_SetDontDeleteGl failed");
+        return hr;
+    }
+
+    for (i = 0; i < This->baseTexture.levels; ++i)
+    {
+        if (This->surfaces[i])
+        {
+            HRESULT tmpHr = IWineD3DResource_SetDontDeleteGl((IWineD3DResource*)This->surfaces[i]);
+            Assert(tmpHr == S_OK);
+        }
+    }
+
+    return WINED3D_OK;
+}
+#endif
+
 /* ******************************************************
    IWineD3DTexture IWineD3DBaseTexture parts follow
    ****************************************************** */
@@ -288,22 +313,28 @@ static HRESULT WINAPI IWineD3DTextureImpl_BindTexture(IWineD3DTexture *iface, BO
         for (i = 0; i < This->baseTexture.levels; ++i) {
             surface_set_texture_name(This->surfaces[i], gl_tex->name, This->baseTexture.is_srgb);
         }
+
         /* Conditinal non power of two textures use a different clamping default. If we're using the GL_WINE_normalized_texrect
          * partial driver emulation, we're dealing with a GL_TEXTURE_2D texture which has the address mode set to repeat - something
          * that prevents us from hitting the accelerated codepath. Thus manually set the GL state. The same applies to filtering.
          * Even if the texture has only one mip level, the default LINEAR_MIPMAP_LINEAR filter causes a SW fallback on macos.
          */
         if(IWineD3DBaseTexture_IsCondNP2(iface)) {
-            ENTER_GL();
-            glTexParameteri(IWineD3DTexture_GetTextureDimensions(iface), GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-            checkGLcall("glTexParameteri(dimension, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE)");
-            glTexParameteri(IWineD3DTexture_GetTextureDimensions(iface), GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-            checkGLcall("glTexParameteri(dimension, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE)");
-            glTexParameteri(IWineD3DTexture_GetTextureDimensions(iface), GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-            checkGLcall("glTexParameteri(dimension, GL_TEXTURE_MIN_FILTER, GL_NEAREST)");
-            glTexParameteri(IWineD3DTexture_GetTextureDimensions(iface), GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-            checkGLcall("glTexParameteri(dimension, GL_TEXTURE_MAG_FILTER, GL_NEAREST)");
-            LEAVE_GL();
+#ifdef VBOX_WITH_WDDM
+            if (!VBOXSHRC_IS_SHARED_OPENED(This))
+#endif
+            {
+                ENTER_GL();
+                glTexParameteri(IWineD3DTexture_GetTextureDimensions(iface), GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+                checkGLcall("glTexParameteri(dimension, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE)");
+                glTexParameteri(IWineD3DTexture_GetTextureDimensions(iface), GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+                checkGLcall("glTexParameteri(dimension, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE)");
+                glTexParameteri(IWineD3DTexture_GetTextureDimensions(iface), GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+                checkGLcall("glTexParameteri(dimension, GL_TEXTURE_MIN_FILTER, GL_NEAREST)");
+                glTexParameteri(IWineD3DTexture_GetTextureDimensions(iface), GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+                checkGLcall("glTexParameteri(dimension, GL_TEXTURE_MAG_FILTER, GL_NEAREST)");
+                LEAVE_GL();
+            }
             gl_tex->states[WINED3DTEXSTA_ADDRESSU]      = WINED3DTADDRESS_CLAMP;
             gl_tex->states[WINED3DTEXSTA_ADDRESSV]      = WINED3DTADDRESS_CLAMP;
             gl_tex->states[WINED3DTEXSTA_MAGFILTER]     = WINED3DTEXF_POINT;
@@ -418,6 +449,9 @@ static const IWineD3DTextureVtbl IWineD3DTexture_Vtbl =
     IWineD3DTextureImpl_PreLoad,
     IWineD3DTextureImpl_UnLoad,
     IWineD3DTextureImpl_GetType,
+#ifdef VBOX_WITH_WDDM
+    IWineD3DTextureImpl_SetDontDeleteGl,
+#endif
     /* IWineD3DBaseTexture */
     IWineD3DTextureImpl_SetLOD,
     IWineD3DTextureImpl_GetLOD,
@@ -631,21 +665,25 @@ HRESULT texture_init(IWineD3DTextureImpl *texture, UINT width, UINT height, UINT
             Assert(!((IWineD3DSurfaceImpl*)texture->surfaces[i])->texture_name);
         }
 #endif
-        IWineD3DSurface_LoadLocation(texture->surfaces[0], SFLAG_INTEXTURE, NULL);
-        if (!VBOXSHRC_IS_SHARED_OPENED(texture))
+        for (i = 0; i < texture->baseTexture.levels; ++i)
         {
-            Assert(!(*shared_handle));
-            *shared_handle = VBOXSHRC_GET_SHAREHANDLE(texture);
-        }
-        else
-        {
-            Assert(*shared_handle);
-            Assert(*shared_handle == VBOXSHRC_GET_SHAREHANDLE(texture));
+            if (!VBOXSHRC_IS_SHARED_OPENED(texture))
+            {
+                IWineD3DSurface_LoadLocation(texture->surfaces[i], SFLAG_INTEXTURE, NULL);
+                Assert(!(*shared_handle));
+                *shared_handle = VBOXSHRC_GET_SHAREHANDLE(texture);
+            }
+            else
+            {
+                surface_setup_location_onopen((IWineD3DSurfaceImpl*)texture->surfaces[i]);
+                Assert(*shared_handle);
+                Assert(*shared_handle == VBOXSHRC_GET_SHAREHANDLE(texture));
+            }
         }
 #ifdef DEBUG
         for (i = 0; i < texture->baseTexture.levels; ++i)
         {
-            Assert((*shared_handle) == ((IWineD3DSurfaceImpl*)texture->surfaces[i])->texture_name);
+            Assert((GLuint)(*shared_handle) == ((IWineD3DSurfaceImpl*)texture->surfaces[i])->texture_name);
         }
 #endif
     }

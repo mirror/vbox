@@ -32,7 +32,7 @@
 #define VBOXWDDMDISP_MAX_SWAPCHAIN_SIZE 16
 /* maximum number of direct render targets to be used before
  * switching to offscreen rendering */
-#define VBOXWDDMDISP_MAX_DIRECT_RTS      3
+#define VBOXWDDMDISP_MAX_DIRECT_RTS      0
 
 #define VBOXWDDMDISP_IS_TEXTURE(_f) ((_f).Texture || (_f).Value == 0)
 
@@ -239,7 +239,6 @@ typedef struct VBOXWDDMDISP_ALLOCATION
     UINT D3DWidth;
     /* object type is defined by enmD3DIfType enum */
     IUnknown *pD3DIf;
-    IUnknown *pSecondaryOpenedD3DIf;
     VBOXDISP_D3DIFTYPE enmD3DIfType;
     /* list entry used to add allocation to the dirty alloc list */
     RTLISTNODE DirtyAllocListEntry;
@@ -256,7 +255,7 @@ typedef struct VBOXWDDMDISP_RESOURCE
     HANDLE hResource;
     D3DKMT_HANDLE hKMResource;
     PVBOXWDDMDISP_DEVICE pDevice;
-    uint32_t fFlags;
+    VBOXWDDMDISP_RESOURCE_FLAGS fFlags;
     VBOXWDDM_RC_DESC RcDesc;
     UINT cAllocations;
     VBOXWDDMDISP_ALLOCATION aAllocations[1];

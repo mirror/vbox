@@ -505,7 +505,7 @@ static HRESULT WINAPI DECLSPEC_HOTPATCH IDirect3DDevice9Impl_CreateAdditionalSwa
 {
     IDirect3DDevice9Impl *This = (IDirect3DDevice9Impl *)iface;
     IDirect3DSwapChain9Impl *newSwapchain;
-    HRESULT hr = IDirect3DDevice9Impl_DoCreateAdditionalSwapChain(iface, present_parameters, &newSwapchain);
+    HRESULT hr = IDirect3DDevice9Impl_DoCreateAdditionalSwapChain(iface, present_parameters, (IDirect3DSwapChain9**)&newSwapchain);
     if (FAILED(hr))
     {
         ERR("Failed to create additional swapchain, hr %#x.\n", hr);
@@ -519,7 +519,7 @@ static HRESULT WINAPI DECLSPEC_HOTPATCH IDirect3DDevice9Impl_CreateAdditionalSwa
     if (FAILED(hr))
     {
         ERR("Failed to add additional swapchain, hr %#x.\n", hr);
-        IUnknown_Release(newSwapchain);
+        IUnknown_Release((IDirect3DSwapChain9*)newSwapchain);
         return hr;
     }
 
@@ -3151,3 +3151,75 @@ HRESULT device_init(IDirect3DDevice9Impl *device, IWineD3D *wined3d, UINT adapte
 
     return D3D_OK;
 }
+
+#ifdef VBOX_WITH_WDDM
+VBOXWINEEX_DECL(HRESULT) VBoxWineExD3DRc9SetDontDeleteGl(IDirect3DResource9 *iface)
+{
+    D3DRESOURCETYPE enmType = IDirect3DResource9_GetType(iface);
+    HRESULT hr;
+    switch (enmType)
+    {
+        case D3DRTYPE_SURFACE:
+        {
+            IDirect3DSurface9Impl *This = (IDirect3DSurface9Impl*)iface ;
+            wined3d_mutex_lock();
+            hr = IWineD3DResource_SetDontDeleteGl((IWineD3DResource*)This->wineD3DSurface);
+            wined3d_mutex_unlock();
+            break;
+        }
+        case D3DRTYPE_VOLUME:
+        {
+            IDirect3DVolume9Impl *This = (IDirect3DVolume9Impl*)iface ;
+            wined3d_mutex_lock();
+            hr = IWineD3DResource_SetDontDeleteGl((IWineD3DResource*)This->wineD3DVolume);
+            wined3d_mutex_unlock();
+            break;
+        }
+        case D3DRTYPE_TEXTURE:
+        {
+            IDirect3DTexture9Impl *This = (IDirect3DTexture9Impl*)iface ;
+            wined3d_mutex_lock();
+            hr = IWineD3DResource_SetDontDeleteGl((IWineD3DResource*)This->wineD3DTexture);
+            wined3d_mutex_unlock();
+            break;
+        }
+        case D3DRTYPE_VOLUMETEXTURE:
+        {
+            IDirect3DVolumeTexture9Impl *This = (IDirect3DVolumeTexture9Impl*)iface ;
+            wined3d_mutex_lock();
+            hr = IWineD3DResource_SetDontDeleteGl((IWineD3DResource*)This->wineD3DVolumeTexture);
+            wined3d_mutex_unlock();
+            break;
+        }
+        case D3DRTYPE_CUBETEXTURE:
+        {
+            IDirect3DCubeTexture9Impl *This = (IDirect3DCubeTexture9Impl*)iface ;
+            wined3d_mutex_lock();
+            hr = IWineD3DResource_SetDontDeleteGl((IWineD3DResource*)This->wineD3DCubeTexture);
+            wined3d_mutex_unlock();
+            break;
+        }
+        case D3DRTYPE_VERTEXBUFFER:
+        {
+            IDirect3DVertexBuffer9Impl *This = (IDirect3DVertexBuffer9Impl*)iface ;
+            wined3d_mutex_lock();
+            hr = IWineD3DResource_SetDontDeleteGl((IWineD3DResource*)This->wineD3DVertexBuffer);
+            wined3d_mutex_unlock();
+            break;
+        }
+        case D3DRTYPE_INDEXBUFFER:
+        {
+            IDirect3DIndexBuffer9Impl *This = (IDirect3DIndexBuffer9Impl*)iface ;
+            wined3d_mutex_lock();
+            hr = IWineD3DResource_SetDontDeleteGl((IWineD3DResource*)This->wineD3DIndexBuffer);
+            wined3d_mutex_unlock();
+            break;
+        }
+        default:
+            ERR("invalid arg");
+            hr = E_INVALIDARG;
+            break;
+    }
+    return hr;
+}
+#endif

@@ -244,6 +244,31 @@ static HRESULT WINAPI IWineD3DCubeTextureImpl_GetParent(IWineD3DCubeTexture *ifa
     return resource_get_parent((IWineD3DResource *)iface, pParent);
 }
 
+#ifdef VBOX_WITH_WDDM
+static HRESULT WINAPI IWineD3DCubeTextureImpl_SetDontDeleteGl(IWineD3DCubeTexture *iface) {
+    IWineD3DCubeTextureImpl *This = (IWineD3DCubeTextureImpl*)iface;
+    HRESULT hr = IWineD3DResourceImpl_SetDontDeleteGl((IWineD3DResource*)iface);
+    unsigned int i, j;
+
+    if (FAILED(hr))
+    {
+        ERR("IWineD3DResource_SetDontDeleteGl failed");
+        return hr;
+    }
+
+    for (i = 0; i < This->baseTexture.levels; ++i) {
+        for (j = WINED3DCUBEMAP_FACE_POSITIVE_X; j <= WINED3DCUBEMAP_FACE_NEGATIVE_Z; ++j) {
+            if (This->surfaces[j][i]) {
+                HRESULT tmpHr = IWineD3DResource_SetDontDeleteGl((IWineD3DResource*)This->surfaces[j][i]);
+                Assert(tmpHr == S_OK);
+            }
+        }
+    }
+
+    return WINED3D_OK;
+}
+#endif
+
 /* ******************************************************
    IWineD3DCubeTexture IWineD3DBaseTexture parts follow
    ****************************************************** */
@@ -417,6 +442,9 @@ static const IWineD3DCubeTextureVtbl IWineD3DCubeTexture_Vtbl =
     IWineD3DCubeTextureImpl_PreLoad,
     IWineD3DCubeTextureImpl_UnLoad,
     IWineD3DCubeTextureImpl_GetType,
+#ifdef VBOX_WITH_WDDM
+    IWineD3DCubeTextureImpl_SetDontDeleteGl,
+#endif
     /* IWineD3DBaseTexture */
     IWineD3DCubeTextureImpl_SetLOD,
     IWineD3DCubeTextureImpl_GetLOD,
@@ -605,7 +633,7 @@ HRESULT cubetexture_init(IWineD3DCubeTextureImpl *texture, UINT edge_length, UIN
         {
             for (j = 0; j < 6; ++j)
             {
-                Assert((*shared_handle) == ((IWineD3DSurfaceImpl*)texture->surfaces[j][i])->texture_name);
+                Assert((*shared_handle) == (HANDLE)((IWineD3DSurfaceImpl*)texture->surfaces[j][i])->texture_name);
             }
         }
 #endif

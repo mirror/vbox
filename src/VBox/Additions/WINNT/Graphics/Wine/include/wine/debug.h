@@ -30,6 +30,10 @@
 #ifndef __WINE_WINE_DEBUG_H
 #define __WINE_WINE_DEBUG_H
 
+#if defined(VBOX_WITH_WDDM) || defined(VBOX_WINE_WITHOUT_LIBWINE)
+# error "unexpected include!!"
+#endif
+
 #include <stdarg.h>
 #include <windef.h>
 #ifndef GUID_DEFINED
@@ -314,6 +318,23 @@ static inline const char *debugstr_w( const WCHAR *s ) { return wine_dbgstr_wn( 
 
 #ifdef __cplusplus
 }
+#endif
+
+
+#ifdef DEBUG_misha
+//# define VBOXWINEDBG_SHADERS
+#endif
+
+#ifdef VBOXWINEDBG_SHADERS
+
+void vboxWDbgPrintF(char * szString, ...);
+
+# define WDLOG(_m) do {\
+        vboxWDbgPrintF _m ; \
+    } while (0)
+#else
+
+# define WDLOG(_m) do { } while (0)
 #endif
 
 #endif  /* __WINE_WINE_DEBUG_H */

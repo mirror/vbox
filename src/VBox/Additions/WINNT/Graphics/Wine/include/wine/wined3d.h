@@ -6,6 +6,10 @@
 #ifndef __WIDL_WINED3D_H
 #define __WIDL_WINED3D_H
 
+#if defined(VBOX_WITH_WDDM) || defined(VBOX_WINE_WITHOUT_LIBWINE)
+# error "unexpected include!!"
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -3428,6 +3432,11 @@ typedef struct IWineD3DResourceVtbl {
     WINED3DRESOURCETYPE (STDMETHODCALLTYPE *GetType)(
         IWineD3DResource* This);
 
+#ifdef VBOX_WITH_WDDM
+    HRESULT (STDMETHODCALLTYPE *SetDontDeleteGl)(
+        IWineD3DResource* This);
+#endif
+
     END_INTERFACE
 } IWineD3DResourceVtbl;
 interface IWineD3DResource {
@@ -3450,6 +3459,9 @@ interface IWineD3DResource {
 #define IWineD3DResource_PreLoad(This) (This)->lpVtbl->PreLoad(This)
 #define IWineD3DResource_UnLoad(This) (This)->lpVtbl->UnLoad(This)
 #define IWineD3DResource_GetType(This) (This)->lpVtbl->GetType(This)
+# ifdef VBOX_WITH_WDDM
+#  define IWineD3DResource_SetDontDeleteGl(This) (This)->lpVtbl->SetDontDeleteGl(This)
+# endif
 #endif
 
 #endif
@@ -4054,6 +4066,11 @@ typedef struct IWineD3DSurfaceVtbl {
 
     WINED3DRESOURCETYPE (STDMETHODCALLTYPE *GetType)(
         IWineD3DSurface* This);
+
+#ifdef VBOX_WITH_WDDM
+    HRESULT (STDMETHODCALLTYPE *SetDontDeleteGl)(
+        IWineD3DResource* This);
+#endif
 
     /*** IWineD3DSurface methods ***/
     HRESULT (STDMETHODCALLTYPE *GetContainer)(
@@ -4670,6 +4687,11 @@ typedef struct IWineD3DVolumeVtbl {
     WINED3DRESOURCETYPE (STDMETHODCALLTYPE *GetType)(
         IWineD3DVolume* This);
 
+#ifdef VBOX_WITH_WDDM
+    HRESULT (STDMETHODCALLTYPE *SetDontDeleteGl)(
+        IWineD3DResource* This);
+#endif
+
     /*** IWineD3DVolume methods ***/
     HRESULT (STDMETHODCALLTYPE *GetContainer)(
         IWineD3DVolume* This,
@@ -4883,6 +4905,11 @@ typedef struct IWineD3DBaseTextureVtbl {
 
     WINED3DRESOURCETYPE (STDMETHODCALLTYPE *GetType)(
         IWineD3DBaseTexture* This);
+
+#ifdef VBOX_WITH_WDDM
+    HRESULT (STDMETHODCALLTYPE *SetDontDeleteGl)(
+        IWineD3DResource* This);
+#endif
 
     /*** IWineD3DBaseTexture methods ***/
     DWORD (STDMETHODCALLTYPE *SetLOD)(
@@ -5130,6 +5157,11 @@ typedef struct IWineD3DTextureVtbl {
     WINED3DRESOURCETYPE (STDMETHODCALLTYPE *GetType)(
         IWineD3DTexture* This);
 
+#ifdef VBOX_WITH_WDDM
+    HRESULT (STDMETHODCALLTYPE *SetDontDeleteGl)(
+        IWineD3DTexture* This);
+#endif
+
     /*** IWineD3DBaseTexture methods ***/
     DWORD (STDMETHODCALLTYPE *SetLOD)(
         IWineD3DTexture* This,
@@ -5375,6 +5407,11 @@ typedef struct IWineD3DCubeTextureVtbl {
 
     WINED3DRESOURCETYPE (STDMETHODCALLTYPE *GetType)(
         IWineD3DCubeTexture* This);
+
+#ifdef VBOX_WITH_WDDM
+    HRESULT (STDMETHODCALLTYPE *SetDontDeleteGl)(
+        IWineD3DCubeTexture* This);
+#endif
 
     /*** IWineD3DBaseTexture methods ***/
     DWORD (STDMETHODCALLTYPE *SetLOD)(
@@ -5625,6 +5662,11 @@ typedef struct IWineD3DVolumeTextureVtbl {
 
     WINED3DRESOURCETYPE (STDMETHODCALLTYPE *GetType)(
         IWineD3DVolumeTexture* This);
+
+#ifdef VBOX_WITH_WDDM
+    HRESULT (STDMETHODCALLTYPE *SetDontDeleteGl)(
+        IWineD3DResource* This);
+#endif
 
     /*** IWineD3DBaseTexture methods ***/
     DWORD (STDMETHODCALLTYPE *SetLOD)(
@@ -6381,6 +6423,11 @@ typedef struct IWineD3DBufferVtbl {
 
     WINED3DRESOURCETYPE (STDMETHODCALLTYPE *GetType)(
         IWineD3DBuffer* This);
+
+#ifdef VBOX_WITH_WDDM
+    HRESULT (STDMETHODCALLTYPE *SetDontDeleteGl)(
+        IWineD3DResource* This);
+#endif
 
     /*** IWineD3DBuffer methods ***/
     HRESULT (STDMETHODCALLTYPE *Map)(
