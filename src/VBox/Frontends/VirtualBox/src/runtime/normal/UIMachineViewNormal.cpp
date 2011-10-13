@@ -133,8 +133,6 @@ bool UIMachineViewNormal::eventFilter(QObject *pWatched, QEvent *pEvent)
             {
                 const QSize *pSize = &static_cast<QResizeEvent *>(pEvent)
                                     ->size();
-                /* Store the new size */
-                storeConsoleSize(pSize->width(), pSize->height());
                 if (pEvent->spontaneous() && m_bIsGuestAutoresizeEnabled && uisession()->isGuestSupportsGraphics())
                     QTimer::singleShot(300, this, SLOT(sltPerformGuestResize()));
                 break;

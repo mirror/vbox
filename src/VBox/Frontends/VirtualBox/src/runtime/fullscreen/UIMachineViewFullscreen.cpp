@@ -129,8 +129,6 @@ bool UIMachineViewFullscreen::eventFilter(QObject *pWatched, QEvent *pEvent)
                 QResizeEvent *pResizeEvent = static_cast<QResizeEvent*>(pEvent);
                 if (pResizeEvent->size() != workingArea().size())
                     break;
-                /* Store the new size */
-                storeConsoleSize(pResizeEvent->size().width(), pResizeEvent->size().height());
 
                 if (m_bIsGuestAutoresizeEnabled && uisession()->isGuestSupportsGraphics())
                     QTimer::singleShot(0, this, SLOT(sltPerformGuestResize()));
