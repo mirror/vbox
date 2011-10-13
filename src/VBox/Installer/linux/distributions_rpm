@@ -11,6 +11,7 @@ mdv2010.0       = MANDRIVA_2010_0
 mdv2009.1       = MANDRIVA_2009_1
 mdv2008.0       = MANDRIVA_2008_0
 mdv2007.1       = MANDRIVA_2007_1
+fedora16        = FEDORA_16
 fedora15        = FEDORA_15
 fedora14        = FEDORA_14
 fedora13        = FEDORA_13
