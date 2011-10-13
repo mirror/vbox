@@ -208,8 +208,7 @@ void UIMachineViewFullscreen::calculateDesktopGeometry()
 {
     /* This method should not get called until we have initially set up the desktop geometry type: */
     Assert((desktopGeometryType() != DesktopGeo_Invalid));
-    /* If we are not doing automatic geometry calculation then there is nothing to do: */
-    if (desktopGeometryType() == DesktopGeo_Automatic)
+    if (desktopGeometryType() != DesktopGeo_Fixed)
         m_desktopGeometry = workingArea().size();
 }
 
