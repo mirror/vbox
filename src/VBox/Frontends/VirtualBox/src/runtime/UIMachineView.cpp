@@ -112,7 +112,6 @@ UIMachineView* UIMachineView::create(  UIMachineWindow *pMachineWindow
                                                        , bAccelerate2DVideo
 #endif /* VBOX_WITH_VIDEOHWACCEL */
                                                        );
-            pMachineView->m_fIsFullscreen = true;
             break;
         case UIVisualStateType_Seamless:
             pMachineView = new UIMachineViewSeamless(  pMachineWindow
@@ -121,7 +120,6 @@ UIMachineView* UIMachineView::create(  UIMachineWindow *pMachineWindow
                                                      , bAccelerate2DVideo
 #endif /* VBOX_WITH_VIDEOHWACCEL */
                                                      );
-            pMachineView->m_fIsFullscreen = true;
             break;
         case UIVisualStateType_Scale:
             pMachineView = new UIMachineViewScale(  pMachineWindow
@@ -166,7 +164,7 @@ void UIMachineView::sltPerformGuestResize(const QSize &toSize)
     /* And track whether we have had a "normal" resize since the last
      * fullscreen resize hint was sent: */
     machine.SetExtraData(VBoxDefs::GUI_LastGuestSizeHintWasFullscreen,
-                         m_fIsFullscreen ? "true" : "");
+                         isFullscreenOrSeamless() ? "true" : "");
 }
 
 void UIMachineView::sltMachineStateChanged()
@@ -233,7 +231,6 @@ UIMachineView::UIMachineView(  UIMachineWindow *pMachineWindow
 #endif /* VBOX_WITH_VIDEOHWACCEL */
                              )
     : QAbstractScrollArea(pMachineWindow->machineWindow())
-    , m_fIsFullscreen(false)
     , m_pMachineWindow(pMachineWindow)
     , m_uScreenId(uScreenId)
     , m_pFrameBuffer(0)
@@ -849,7 +846,8 @@ CGImageRef UIMachineView::frameBuffertoCGImageRef(UIFrameBuffer *pFrameBuffer)
 }
 #endif /* Q_WS_MAC */
 
-bool UIMachineView::guestResizeEvent(QEvent *pEvent, bool fFullscreen)
+bool UIMachineView::guestResizeEvent(QEvent *pEvent,
+                                     bool fFullscreenOrSeamless)
 {
     /* Some situations require framebuffer resize events to be ignored at all,
      * leaving machine-window, machine-view and framebuffer sizes preserved: */
@@ -882,7 +880,7 @@ bool UIMachineView::guestResizeEvent(QEvent *pEvent, bool fFullscreen)
     updateSliders();
 
     /* Normalize machine-window geometry: */
-    if (!fFullscreen)
+    if (!fFullscreenOrSeamless)
         normalizeGeometry(true /* Adjust Position? */);
 
     /* Report to the VM thread that we finished resizing: */
@@ -898,6 +896,13 @@ bool UIMachineView::guestResizeEvent(QEvent *pEvent, bool fFullscreen)
 
     pEvent->accept();
     return true;
+}
+
+bool UIMachineView::isFullscreenOrSeamless()
+{
+    UIVisualStateType type = machineLogic()->visualStateType();
+    return    type == UIVisualStateType_Fullscreen
+           || type == UIVisualStateType_Fullscreen;
 }
 
 bool UIMachineView::event(QEvent *pEvent)

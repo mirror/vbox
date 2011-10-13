@@ -71,11 +71,6 @@ signals:
     /* Utility signals: */
     void resizeHintDone();
 
-private:
-
-    /** Is this a fullscreen-type view? */
-    bool m_fIsFullscreen;
-
 protected slots:
 
     /* Slot to perform guest resize: */
@@ -157,6 +152,8 @@ protected:
     CGImageRef frameBuffertoCGImageRef(UIFrameBuffer *pFrameBuffer);
 #endif /* Q_WS_MAC */
     bool guestResizeEvent(QEvent *pEvent, bool fFullscreen);
+    /** Is this a fullscreen-type view? */
+    bool isFullscreenOrSeamless();
 
     /* Cross-platforms event processors: */
     bool event(QEvent *pEvent);
