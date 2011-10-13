@@ -1521,20 +1521,15 @@ void UIKeyboardHandler::fixModifierState(LONG *piCodes, uint *puCount)
     Window   wDummy1, wDummy2;
     int      iDummy3, iDummy4, iDummy5, iDummy6;
     unsigned uMask;
-    unsigned uKeyMaskNum = 0, uKeyMaskCaps = 0, uKeyMaskScroll = 0;
+    unsigned uKeyMaskNum = 0, uKeyMaskCaps = 0;
 
     uKeyMaskCaps          = LockMask;
     XModifierKeymap* map  = XGetModifierMapping(QX11Info::display());
     KeyCode keyCodeNum    = XKeysymToKeycode(QX11Info::display(), XK_Num_Lock);
-    KeyCode keyCodeScroll = XKeysymToKeycode(QX11Info::display(), XK_Scroll_Lock);
 
     for (int i = 0; i < 8; ++ i)
-    {
         if (keyCodeNum != NoSymbol && map->modifiermap[map->max_keypermod * i] == keyCodeNum)
             uKeyMaskNum = 1 << i;
-        else if (keyCodeScroll != NoSymbol && map->modifiermap[map->max_keypermod * i] == keyCodeScroll)
-            uKeyMaskScroll = 1 << i;
-    }
     XQueryPointer(QX11Info::display(), DefaultRootWindow(QX11Info::display()), &wDummy1, &wDummy2,
                   &iDummy3, &iDummy4, &iDummy5, &iDummy6, &uMask);
     XFreeModifiermap(map);
