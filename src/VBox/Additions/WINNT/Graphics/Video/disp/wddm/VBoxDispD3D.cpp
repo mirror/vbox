@@ -2172,94 +2172,6 @@ DECLINLINE(VOID) vboxWddmSwapchainSetBb(PVBOXWDDMDISP_SWAPCHAIN pSwapchain, PVBO
     pSwapchain->fFlags.bChanged = TRUE;
 }
 
-
-#if 0
-
-
-DECLINLINE(VOID) vboxWddmSwapchainSetBb(PVBOXWDDMDISP_SWAPCHAIN pSwapchain, PVBOXWDDMDISP_RENDERTGT pRT)
-{
-    UINT iRt = vboxWddmSwapchainRtIndex(pSwapchain, pRT);
-    Assert(iRt < pSwapchain->cRTs);
-    pSwapchain->iBB = iRt;
-}
-
-/* the paRemoved buffer should at least contain VBOXWDDMDISP_MAX_SWAPCHAIN_SIZE elements,
- * the function does not validate its size in any way */
-static BOOL vboxWddmSwapchainAdjust(PVBOXWDDMDISP_SWAPCHAIN pSwapchain, PVBOXWDDMDISP_ALLOCATION pBbAlloc, PUINT pcRemoved, PVBOXWDDMDISP_ALLOCATION paRemoved)
-{
-    UINT cRemoved = 0;
-    BOOL bChanged = FALSE;
-    PVBOXWDDMDISP_RENDERTGT pCurBbRt = vboxWddmSwapchainGetBb(pSwapchain);
-    if (pCurBb)
-    {
-        if (pCurBbRt->pAlloc != pBbAlloc)
-        {
-            bChanged = TRUE;
-
-            /* determine whether we need to add the current BB
-             * or remove part or all of the current RTs in the swapchain */
-            PVBOXWDDMDISP_RENDERTGT pCorrectRt = vboxWddmSwapchainSearchRt(pSwapchain, pBbAlloc);
-            if (pCorrectRt)
-            {
-                paRemoved[cRemoved] = pCurBbRt->pAlloc;
-                ++cRemoved;
-                vboxWddmSwapchainRemoveRt(pSwapchain, pCurBbRt);
-                vboxWddmSwapchainSetBb(pSwapchain, pBbAlloc);
-            }
-            else
-            {
-                /* check if the pCurBbRt stored in the swapchain match those of the pBbAlloc */
-                if (pBbAlloc->SurfDesc.width == pCurBbRt->pAlloc->SurfDesc.width
-                        && pBbAlloc->SurfDesc.height == pCurBbRt->pAlloc->SurfDesc.height
-                        && pBbAlloc->SurfDesc.format == pCurBbRt->pAlloc->SurfDesc.format)
-                {
-                    for (UINT i = 0; i < pSwapchain->cRTs;)
-                    {
-                        if (pSwapchain->aRTs[i].cNumFlips > 1)
-                        {
-                            paRemoved[cRemoved] = pSwapchain->aRTs[i].pAlloc;
-                            ++cRemoved;
-                            vboxWddmSwapchainRemoveRt(pSwapchain, &pSwapchain->aRTs[i]);
-                        }
-                        else
-                        {
-                            ++i;
-                        }
-                    }
-                }
-                else
-                {
-                    /* remove all */
-                    for (UINT i = 0; i < pSwapchain->cRTs; ++i)
-                    {
-                        paRemoved[cRemoved] = pSwapchain->aRTs[i].pAlloc;
-                        ++cRemoved;
-                    }
-
-                    vboxWddmSwapchainClear(pSwapchain);
-                }
-
-                vboxWddmSwapchainAllocAddTail(pSwapchain, pBbAlloc);
-                vboxWddmSwapchainSetBb(pSwapchain, pBbAlloc);
-            }
-        }
-    }
-    else
-    {
-        vboxWddmSwapchainAllocAddTail(pSwapchain, pBbAlloc);
-        bChanged = TRUE;
-    }
-
-    if (!bChanged)
-    {
-        Assert(cRemoved == 0);
-    }
-
-    *pcRemoved = cRemoved;
-
-    return bChanged;
-}
-#endif
 static PVBOXWDDMDISP_SWAPCHAIN vboxWddmSwapchainFindCreate(PVBOXWDDMDISP_DEVICE pDevice, PVBOXWDDMDISP_ALLOCATION pBbAlloc, BOOL *pbNeedPresent)
 {
     PVBOXWDDMDISP_SWAPCHAIN pSwapchain = pBbAlloc->pSwapchain;
@@ -2388,8 +2300,7 @@ static HRESULT vboxWddmSwapchainRtSynch(PVBOXWDDMDISP_DEVICE pDevice, PVBOXWDDMD
 
     PVBOXWDDMDISP_ALLOCATION pAlloc = pRt->pAlloc;
     Assert(pD3D9Surf);
-    Assert(pAlloc->enmD3DIfType == VBOXDISP_D3DIFTYPE_SURFACE
-            || pAlloc->enmD3DIfType == VBOXDISP_D3DIFTYPE_TEXTURE);
+    Assert(pAlloc->enmD3DIfType == VBOXDISP_D3DIFTYPE_SURFACE);
     if (pAlloc->pD3DIf)
     {
         if (pSwapchain->fFlags.bChanged)
@@ -2780,6 +2691,17 @@ static HRESULT vboxWddmSwapchainChkCreateIf(PVBOXWDDMDISP_DEVICE pDevice, PVBOXW
         /* indicae switch to Render Target Reporting Present mode is needed */
         fNeedRtPresentSwitch = TRUE;
 //        vboxWddmSwapchainSwtichRtPresent(pDevice, pSwapchain);
+    }
+    else
+    {
+        for (UINT i = 0; i < pSwapchain->cRTs; ++i)
+        {
+            if (pSwapchain->aRTs[i].pAlloc->enmD3DIfType != VBOXDISP_D3DIFTYPE_SURFACE)
+            {
+                fNeedRtPresentSwitch = TRUE;
+                break;
+            }
+        }
     }
 
     /* check if we need to re-create the swapchain */
