@@ -105,6 +105,21 @@ GLint crServerDispatchCreateContextEx(const char *dpyName, GLint visualBits, GLi
         }
     }
 
+    {
+        /* As we're using only one host context to serve all client contexts, newly created context will still
+         * hold last error value from any previous failed opengl call. Proper solution would be to redirect any
+         * client glGetError calls to our state tracker, but right now it's missing quite a lot of checks and doesn't
+         * reflect host driver/gpu specific issues. Thus we just reset last opengl error at context creation.
+         */
+        GLint err;
+
+        err = cr_server.head_spu->dispatch_table.GetError();
+        if (err!=GL_NO_ERROR)
+        {
+            crWarning("Cleared gl error %#x on context creation", err);
+        }
+    }
+
     crServerReturnValue( &retVal, sizeof(retVal) );
 
     return retVal;
