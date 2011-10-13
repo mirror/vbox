@@ -127,8 +127,6 @@ bool UIMachineViewFullscreen::eventFilter(QObject *pWatched, QEvent *pEvent)
             {
                 /* Send guest-resize hint only if top window resizing to required dimension: */
                 QResizeEvent *pResizeEvent = static_cast<QResizeEvent*>(pEvent);
-                /** @todo why is this here?  If it is a workaround
-                 * for some situation that should be documented. */
                 if (pResizeEvent->size() != workingArea().size())
                     break;
                 /* Store the new size */
