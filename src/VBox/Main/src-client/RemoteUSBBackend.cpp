@@ -1300,10 +1300,12 @@ int RemoteUSBBackend::reapURB (const void *pvBody, uint32_t cbBody)
 
             if (fURBCompleted)
             {
-                /* Move the URB to head of URB list, so the iface_ReapURB could find it faster. */
+                /* Move the URB near the head of URB list, so that iface_ReapURB can
+                 * find it faster. Note that the order of completion must be preserved!
+                 */
                 if (qurb->prev)
                 {
-                    /* The URB is not in the head. */
+                    /* The URB is not in the head. Unlink it from its current position. */
                     qurb->prev->next = qurb->next;
 
                     if (qurb->next)
@@ -1315,11 +1317,34 @@ int RemoteUSBBackend::reapURB (const void *pvBody, uint32_t cbBody)
                         pDevice->pTailQURBs = qurb->prev;
                     }
 
-                    qurb->next = pDevice->pHeadQURBs;
-                    qurb->prev = NULL;
+                    /* And insert it to its new place. */
+                    if (pDevice->pHeadQURBs->fCompleted)
+                    {
+                        /* At least one other completed URB; insert after the 
+                         * last completed URB.
+                         */
+                        REMOTEUSBQURB *prev_qurb = pDevice->pHeadQURBs;
+                        while (prev_qurb->next && prev_qurb->next->fCompleted)
+                            prev_qurb = prev_qurb->next;
 
-                    pDevice->pHeadQURBs->prev = qurb;
-                    pDevice->pHeadQURBs = qurb;
+                        qurb->next = prev_qurb->next;
+                        qurb->prev = prev_qurb;
+
+                        if (prev_qurb->next)
+                            prev_qurb->next->prev = qurb;
+                        else
+                            pDevice->pTailQURBs = qurb;
+                        prev_qurb->next = qurb;
+                    }
+                    else
+                    {
+                        /* No other completed URBs; insert at head. */
+                        qurb->next = pDevice->pHeadQURBs;
+                        qurb->prev = NULL;
+    
+                        pDevice->pHeadQURBs->prev = qurb;
+                        pDevice->pHeadQURBs = qurb;
+                    }
                 }
 
                 qurb->u32Len = qurb->u32TransferredLen; /* Update the final length. */
