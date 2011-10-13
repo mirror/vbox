@@ -63,7 +63,7 @@ endif
 debrel  := $(if $(shell which lsb_release),_$(shell lsb_release -si)_$(shell lsb_release -sc),unknown)
 
 # shipping Linux kernel modules with bleeding-edge releases doesn't make sense
-instmod := $(if $(filter _Ubuntu_lucid _Ubuntu_maverick _Ubuntu_natty _Debian_sid,$(debrel)),,1)
+instmod := $(if $(filter _Ubuntu_lucid _Ubuntu_maverick _Ubuntu_natty _Ubuntu_oneiric _Debian_sid,$(debrel)),,1)
 
 # Location of custom built Qt libraries (see below)
 qtstdc6  := /home/vbox/Qt-4.4.3-stdc++6-$(arch)
