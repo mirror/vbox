@@ -32,7 +32,7 @@
 #define VBOXWDDMDISP_MAX_SWAPCHAIN_SIZE 16
 /* maximum number of direct render targets to be used before
  * switching to offscreen rendering */
-#define VBOXWDDMDISP_MAX_DIRECT_RTS      0
+#define VBOXWDDMDISP_MAX_DIRECT_RTS      3
 
 #define VBOXWDDMDISP_IS_TEXTURE(_f) ((_f).Texture || (_f).Value == 0)
 
