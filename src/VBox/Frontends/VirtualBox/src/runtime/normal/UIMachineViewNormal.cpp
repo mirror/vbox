@@ -131,6 +131,8 @@ bool UIMachineViewNormal::eventFilter(QObject *pWatched, QEvent *pEvent)
         {
             case QEvent::Resize:
             {
+                const QSize *pSize = &static_cast<QResizeEvent *>(pEvent)
+                                    ->size();
                 if (pEvent->spontaneous() && m_bIsGuestAutoresizeEnabled && uisession()->isGuestSupportsGraphics())
                     QTimer::singleShot(300, this, SLOT(sltPerformGuestResize()));
                 break;
@@ -305,7 +307,8 @@ void UIMachineViewNormal::calculateDesktopGeometry()
 {
     /* This method should not get called until we have initially set up the desktop geometry type: */
     Assert((desktopGeometryType() != DesktopGeo_Invalid));
-    if (desktopGeometryType() != DesktopGeo_Fixed)
+    /* If we are not doing automatic geometry calculation then there is nothing to do: */
+    if (desktopGeometryType() == DesktopGeo_Automatic)
     {
         /* The area taken up by the machine window on the desktop,
          * including window frame, title, menu bar and status bar: */
