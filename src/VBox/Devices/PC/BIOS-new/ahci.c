@@ -45,13 +45,6 @@
 
 #define AHCI_MAX_STORAGE_DEVICES 4
 
-/* Because we don't tell the recompiler when guest's physical memory 
- * is written, it can incorrectly cache guest code overwritten by
- * bus master DMA. We just re-write the memory block to flush any of
- * its caches. This is not exactly efficient, but works!
- */
-#define DMA_WORKAROUND      1
-
 /* Number of S/G table entries in EDDS. */
 #define NUM_EDDS_SG         16
 

@@ -227,6 +227,13 @@ int scsi_write_sectors(uint8_t device_id, uint16_t count, uint32_t lba, void __f
 #endif /* !VBOX */
 #define BX_PANIC(...)   bios_printf(BIOS_PRINTF_DEBHALT, __VA_ARGS__)
 
+/* Because we don't tell the recompiler when guest physical memory 
+ * is written, it can incorrectly cache guest code overwritten by
+ * DMA (bus master or not). We just re-write the memory block to flush
+ * any of its caches. This is not exactly efficient, but works!
+ */
+#define DMA_WORKAROUND      1
+
 /* Random hardware-related definitions. */
 
 #define PIC_MASTER          0x20
