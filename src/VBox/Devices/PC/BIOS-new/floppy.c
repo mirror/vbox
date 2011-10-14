@@ -606,7 +606,10 @@ void BIOSCALL int13_diskette_function(disk_regs_t r)
                 SET_CF(); // error occurred
                 return;
             }
-            
+
+#ifdef DMA_WORKAROUND
+            rep_movsw(ES :> BX, ES :> BX, num_sectors * 512 / 2);
+#endif
             // ??? should track be new val from return_status[3] ?
             set_diskette_current_cyl(drive, track);
             // AL = number of sectors read (same value as passed)
