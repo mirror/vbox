@@ -107,9 +107,6 @@ echo 'i space=./vbox.space' >> prototype
 if test -f "./vbox.copyright"; then
     echo 'i copyright=./vbox.copyright' >> prototype
 fi
-if test -f "./vbox.depend"; then
-    echo 'i depend=./vbox.depend' >> prototype
-fi
 
 # Create relative hardlinks
 cd "$VBOX_INSTALLED_DIR"
