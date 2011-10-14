@@ -1224,8 +1224,10 @@ HRESULT SnapshotMachine::onSnapshotChange(Snapshot *aSnapshot)
          uuidSnapshot(aSnapshot->getId());
     bool fNeedsGlobalSaveSettings = false;
 
-    // flag the machine as dirty or change won't get saved
-    mPeer->setModified(Machine::IsModified_Snapshots);
+    /* Flag the machine as dirty or change won't get saved. We disable the
+     * modification of the current state flag, cause this snapshot data isn't
+     * related to the current state. */
+    mPeer->setModified(Machine::IsModified_Snapshots, false /* fAllowStateModification */);
     HRESULT rc = mPeer->saveSettings(&fNeedsGlobalSaveSettings,
                                      SaveS_Force);        // we know we need saving, no need to check
     mlock.leave();
