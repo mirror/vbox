@@ -3768,6 +3768,99 @@ DECLCALLBACK(void) Display::displayVBVAUpdateEnd(PPDMIDISPLAYCONNECTOR pInterfac
     }
 }
 
+#ifdef DEBUG_sunlover
+static void logVBVAResize(const PVBVAINFOVIEW pView, const PVBVAINFOSCREEN pScreen, const DISPLAYFBINFO *pFBInfo)
+{
+    LogRel(("displayVBVAResize: [%d] %s\n"
+            "    pView->u32ViewIndex     %d\n"
+            "    pView->u32ViewOffset    0x%08X\n"
+            "    pView->u32ViewSize      0x%08X\n"
+            "    pView->u32MaxScreenSize 0x%08X\n"
+            "    pScreen->i32OriginX      %d\n"
+            "    pScreen->i32OriginY      %d\n"
+            "    pScreen->u32StartOffset  0x%08X\n"
+            "    pScreen->u32LineSize     0x%08X\n"
+            "    pScreen->u32Width        %d\n"
+            "    pScreen->u32Height       %d\n"
+            "    pScreen->u16BitsPerPixel %d\n"
+            "    pScreen->u16Flags        0x%04X\n"
+            "    pFBInfo->u32Offset             0x%08X\n"
+            "    pFBInfo->u32MaxFramebufferSize 0x%08X\n"
+            "    pFBInfo->u32InformationSize    0x%08X\n"
+            "    pFBInfo->fDisabled             %d\n"
+            "    xOrigin, yOrigin, w, h:        %d,%d %dx%d\n"
+            "    pFBInfo->u16BitsPerPixel       %d\n"
+            "    pFBInfo->pu8FramebufferVRAM    %p\n"
+            "    pFBInfo->u32LineSize           0x%08X\n"
+            "    pFBInfo->flags                 0x%04X\n"
+            "    pFBInfo->pHostEvents           %p\n"
+            "    pFBInfo->u32ResizeStatus       %d\n"
+            "    pFBInfo->fDefaultFormat        %d\n"
+            "    dirtyRect                      %d-%d %d-%d\n"
+            "    pFBInfo->pendingResize.fPending    %d\n"
+            "    pFBInfo->pendingResize.pixelFormat %d\n"
+            "    pFBInfo->pendingResize.pvVRAM      %p\n"
+            "    pFBInfo->pendingResize.bpp         %d\n"
+            "    pFBInfo->pendingResize.cbLine      0x%08X\n"
+            "    pFBInfo->pendingResize.w,h         %dx%d\n"
+            "    pFBInfo->pendingResize.flags       0x%04X\n"
+            "    pFBInfo->fVBVAEnabled    %d\n"
+            "    pFBInfo->cVBVASkipUpdate %d\n"
+            "    pFBInfo->vbvaSkippedRect %d-%d %d-%d\n"
+            "    pFBInfo->pVBVAHostFlags  %p\n"
+            "",
+            pScreen->u32ViewIndex,
+            (pScreen->u16Flags & VBVA_SCREEN_F_DISABLED)? "DISABLED": "ENABLED",
+            pView->u32ViewIndex,
+            pView->u32ViewOffset,
+            pView->u32ViewSize,
+            pView->u32MaxScreenSize,
+            pScreen->i32OriginX,
+            pScreen->i32OriginY,
+            pScreen->u32StartOffset,
+            pScreen->u32LineSize,
+            pScreen->u32Width,
+            pScreen->u32Height,
+            pScreen->u16BitsPerPixel,
+            pScreen->u16Flags,
+            pFBInfo->u32Offset,
+            pFBInfo->u32MaxFramebufferSize,
+            pFBInfo->u32InformationSize,
+            pFBInfo->fDisabled,
+            pFBInfo->xOrigin,
+            pFBInfo->yOrigin,
+            pFBInfo->w,
+            pFBInfo->h,
+            pFBInfo->u16BitsPerPixel,
+            pFBInfo->pu8FramebufferVRAM,
+            pFBInfo->u32LineSize,
+            pFBInfo->flags,
+            pFBInfo->pHostEvents,
+            pFBInfo->u32ResizeStatus,
+            pFBInfo->fDefaultFormat,
+            pFBInfo->dirtyRect.xLeft,
+            pFBInfo->dirtyRect.xRight,
+            pFBInfo->dirtyRect.yTop,
+            pFBInfo->dirtyRect.yBottom,
+            pFBInfo->pendingResize.fPending,
+            pFBInfo->pendingResize.pixelFormat,
+            pFBInfo->pendingResize.pvVRAM,
+            pFBInfo->pendingResize.bpp,
+            pFBInfo->pendingResize.cbLine,
+            pFBInfo->pendingResize.w,
+            pFBInfo->pendingResize.h,
+            pFBInfo->pendingResize.flags,
+            pFBInfo->fVBVAEnabled,
+            pFBInfo->cVBVASkipUpdate,
+            pFBInfo->vbvaSkippedRect.xLeft,
+            pFBInfo->vbvaSkippedRect.yTop,
+            pFBInfo->vbvaSkippedRect.xRight,
+            pFBInfo->vbvaSkippedRect.yBottom,
+            pFBInfo->pVBVAHostFlags
+          ));
+}
+#endif /* DEBUG_sunlover */
+
 DECLCALLBACK(int) Display::displayVBVAResize(PPDMIDISPLAYCONNECTOR pInterface, const PVBVAINFOVIEW pView, const PVBVAINFOSCREEN pScreen, void *pvVRAM)
 {
     LogRelFlowFunc(("pScreen %p, pvVRAM %p\n", pScreen, pvVRAM));
@@ -3795,7 +3888,10 @@ DECLCALLBACK(int) Display::displayVBVAResize(PPDMIDISPLAYCONNECTOR pInterface, c
         return VINF_SUCCESS;
     }
 
-    bool fResize = pFBInfo->fDisabled; /* If display was disabled, do a resize, because the framebuffer was changed. */
+    /* If display was disabled or there is no framebuffer, a resize will be required,
+     * because the framebuffer was/will be changed.
+     */
+    bool fResize = pFBInfo->fDisabled || pFBInfo->pFramebuffer.isNull();
 
     if (pFBInfo->fDisabled)
     {
@@ -3805,12 +3901,7 @@ DECLCALLBACK(int) Display::displayVBVAResize(PPDMIDISPLAYCONNECTOR pInterface, c
                                      pScreen->u32ViewIndex,
                                      pScreen->i32OriginX, pScreen->i32OriginY,
                                      pScreen->u32Width, pScreen->u32Height);
-        if (pFBInfo->pFramebuffer.isNull())
-        {
-            /* @todo If no framebuffer, remember the resize parameters to issue a requestResize later. */
-            return VINF_SUCCESS;
-        }
-        /* If the framebuffer already set for the screen, do a regular resize. */
+        /* Continue to update pFBInfo. */
     }
 
     /* Check if this is a real resize or a notification about the screen origin.
@@ -3884,6 +3975,13 @@ DECLCALLBACK(int) Display::displayVBVAResize(PPDMIDISPLAYCONNECTOR pInterface, c
         return VINF_SUCCESS;
     }
 
+    if (pFBInfo->pFramebuffer.isNull())
+    {
+        /* If no framebuffer, the resize will be done later when a new framebuffer will be set in changeFramebuffer. */
+        return VINF_SUCCESS;
+    }
+
+    /* If the framebuffer already set for the screen, do a regular resize. */
     return pThis->handleDisplayResize(pScreen->u32ViewIndex, pScreen->u16BitsPerPixel,
                                       (uint8_t *)pvVRAM + pScreen->u32StartOffset,
                                       pScreen->u32LineSize, pScreen->u32Width, pScreen->u32Height, pScreen->u16Flags);
