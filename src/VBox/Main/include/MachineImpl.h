@@ -161,6 +161,7 @@ public:
         // machine settings XML file
         settings::MachineConfigFile *pMachineConfigFile;
         uint32_t            flModifications;
+        bool                m_fAllowStateModification;
 
         BOOL                mAccessible;
         com::ErrorInfo      mAccessError;
@@ -647,8 +648,12 @@ public:
      */
     ChipsetType_T getChipsetType() const { return mHWData->mChipsetType; }
 
-    void setModified(uint32_t fl);
-    void setModifiedLock(uint32_t fl);
+    void setModified(uint32_t fl, bool fAllowStateModification = true);
+    void setModifiedLock(uint32_t fl, bool fAllowStateModification = true);
+
+    bool isStateModificationAllowed() const { return mData->m_fAllowStateModification; }
+    void allowStateModification()           { mData->m_fAllowStateModification = true; }
+    void disallowStateModification()        { mData->m_fAllowStateModification = false; }
 
     // callback handlers
     virtual HRESULT onNetworkAdapterChange(INetworkAdapter * /* networkAdapter */, BOOL /* changeAdapter */) { return S_OK; }

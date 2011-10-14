@@ -105,24 +105,32 @@
 
 Machine::Data::Data()
 {
-    mRegistered = FALSE;
-    pMachineConfigFile = NULL;
-    flModifications = 0;
-    mAccessible = FALSE;
+    mRegistered                = FALSE;
+    pMachineConfigFile         = NULL;
+    /* Contains hints on what has changed when the user is using the VM (config
+     * changes, running the VM, ...). This is used to decide if a config needs
+     * to be written to disk. */
+    flModifications            = 0;
+    /* VM modification usually also trigger setting the current state to
+     * "Modified". Although this is not always the case. An e.g. is the VM
+     * initialization phase or when snapshot related data is changed. The
+     * actually behavior is controlled by the following flag. */
+    m_fAllowStateModification  = false;
+    mAccessible                = FALSE;
     /* mUuid is initialized in Machine::init() */
 
-    mMachineState = MachineState_PoweredOff;
+    mMachineState              = MachineState_PoweredOff;
     RTTimeNow(&mLastStateChange);
 
-    mMachineStateDeps = 0;
-    mMachineStateDepsSem = NIL_RTSEMEVENTMULTI;
+    mMachineStateDeps          = 0;
+    mMachineStateDepsSem       = NIL_RTSEMEVENTMULTI;
     mMachineStateChangePending = 0;
 
-    mCurrentStateModified = TRUE;
-    mGuestPropertiesModified = FALSE;
+    mCurrentStateModified      = TRUE;
+    mGuestPropertiesModified   = FALSE;
 
-    mSession.mPid = NIL_RTPROCESS;
-    mSession.mState = SessionState_Unlocked;
+    mSession.mPid              = NIL_RTPROCESS;
+    mSession.mState            = SessionState_Unlocked;
 }
 
 Machine::Data::~Data()
@@ -326,6 +334,10 @@ HRESULT Machine::init(VirtualBox *aParent,
                 mSerialPorts[slot]->applyDefaults(aOsType);
         }
 
+        /* At this point the changing of the current state modification
+         * flag is allowed. */
+        allowStateModification();
+
         /* commit all changes made during the initialization */
         commit();
     }
@@ -424,6 +436,10 @@ HRESULT Machine::init(VirtualBox *aParent,
                                                  NULL /* puuidRegistry */);
                 if (FAILED(rc)) throw rc;
 
+                /* At this point the changing of the current state modification
+                 * flag is allowed. */
+                allowStateModification();
+
                 commit();
             }
             catch (HRESULT err)
@@ -463,6 +479,7 @@ HRESULT Machine::init(VirtualBox *aParent,
     return rc;
 }
 
+#include <iprt/cpp/autores.h>
 /**
  *  Initializes a new instance from a machine config that is already in memory
  *  (import OVF case). Since we are importing, the UUID in the machine
@@ -517,9 +534,15 @@ HRESULT Machine::init(VirtualBox *aParent,
         // override VM name as well, it may be different
         mUserData->s.strName = strName;
 
-        /* commit all changes made during the initialization */
         if (SUCCEEDED(rc))
+        {
+            /* At this point the changing of the current state modification
+             * flag is allowed. */
+            allowStateModification();
+
+            /* commit all changes made during the initialization */
             commit();
+        }
     }
 
     /* Confirm a successful initialization when it's the case */
@@ -6333,10 +6356,11 @@ STDMETHODIMP Machine::CloneTo(IMachine *pTarget, CloneMode_T mode, ComSafeArrayI
  * This must be called either during loadSettings or under the machine write lock.
  * @param fl
  */
-void Machine::setModified(uint32_t fl)
+void Machine::setModified(uint32_t fl, bool fAllowStateModification /* = true */)
 {
     mData->flModifications |= fl;
-    mData->mCurrentStateModified = true;
+    if (fAllowStateModification && isStateModificationAllowed())
+        mData->mCurrentStateModified = true;
 }
 
 /**
@@ -6345,10 +6369,10 @@ void Machine::setModified(uint32_t fl)
  *
  * @param   fModifications      The flag to add.
  */
-void Machine::setModifiedLock(uint32_t fModification)
+void Machine::setModifiedLock(uint32_t fModification, bool fAllowStateModification /* = true */)
 {
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-    setModified(fModification);
+    setModified(fModification, fAllowStateModification);
 }
 
 /**
