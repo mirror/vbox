@@ -758,7 +758,6 @@ Function PrepareWRPFile
 FunctionEnd
 
 ; Direct3D support
-!if $%VBOX_WITH_CROGL% == "1"
 Section /o $(VBOX_COMPONENT_D3D) SEC03
 
 !if $%VBOX_WITH_WDDM% == "1"
@@ -896,7 +895,6 @@ done:
 exit:
 
 SectionEnd
-!endif ; VBOX_WITH_CROGL
 
 !ifdef USE_MUI
   ;Assign language strings to sections
@@ -962,13 +960,6 @@ Function .onSelChange
   ${If} $0 == ${SF_SELECTED}
 
 !if $%VBOX_WITH_WDDM% == "1"
-    ; If we're running Windows 8 we always need the WDDM driver
-    ; -- so just print a hint about the required VRAM size and bail out
-    ${If} $g_strWinVersion == "8"
-      MessageBox MB_ICONINFORMATION|MB_OK $(VBOX_COMPONENT_D3D_HINT_VRAM) /SD IDOK
-      goto exit
-    ${EndIf}
-
     ; If we're able to use the WDDM driver just use it instead of the replaced
     ; D3D components below
     ${If} $g_bCapWDDM == "true"
@@ -1053,6 +1044,8 @@ FunctionEnd
 
 ; This function is called at the very beginning of installer execution
 Function .onInit
+
+  Push $0
 
   ; Init values
   StrCpy $g_iSystemMode "0"
@@ -1169,6 +1162,12 @@ Function .onInit
     SectionSetFlags ${SEC03} ${SF_SELECTED}
   ${EndIf}
 !endif
+  ; On Windows 8 we always select the 3D section and
+  ; disable it so that it cannot be deselected again
+  ${If} $g_strWinVersion == "8"
+    IntOp $0 ${SF_SELECTED} | ${SF_RO}
+    SectionSetFlags ${SEC03} $0
+  ${EndIf}
 
 !ifdef USE_MUI
   ; Display language selection dialog (will be hidden in silent mode!)
@@ -1189,6 +1188,8 @@ Function .onInit
   Call SetAppMode32
 
 !endif ; UNINSTALLER_ONLY
+
+  Pop $0
 
 FunctionEnd
 
