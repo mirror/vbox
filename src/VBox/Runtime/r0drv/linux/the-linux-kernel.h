@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2007 Oracle Corporation
+ * Copyright (C) 2006-2011 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -117,6 +117,13 @@
 #include <asm/io.h>
 #include <asm/uaccess.h>
 #include <asm/div64.h>
+
+/* for workqueue / task queues. */
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 5, 41)
+# include <linux/workqueue.h>
+#else
+# include <linux/tqueue.h>
+#endif
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
 # include <linux/kthread.h>
@@ -366,5 +373,17 @@ DECLINLINE(unsigned long) msecs_to_jiffies(unsigned int cMillies)
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 28)
 # define IPRT_LINUX_HAS_HRTIMER
 #endif
+
+/*
+ * Workqueue stuff, see initterm-r0drv-linux.c.
+ */
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 5, 41)
+typedef struct work_struct  RTR0LNXWORKQUEUEITEM;
+#else
+typedef struct tq_struct    RTR0LNXWORKQUEUEITEM;
+#endif
+DECLHIDDEN(void) rtR0LnxWorkqueuePush(RTR0LNXWORKQUEUEITEM *pWork, void (*pfnWorker)(RTR0LNXWORKQUEUEITEM *));
+DECLHIDDEN(void) rtR0LnxWorkqueueFlush(void);
+
 
 #endif
