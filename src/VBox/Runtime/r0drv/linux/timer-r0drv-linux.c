@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2010 Oracle Corporation
+ * Copyright (C) 2006-2011 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -174,6 +174,8 @@ typedef struct RTTIMER
     unsigned long volatile  cJiffies;
     /** The change interval spinlock for standard timers only. */
     spinlock_t              ChgIntLock;
+    /** Workqueue item for delayed destruction. */
+    RTR0LNXWORKQUEUEITEM    DtorWorkqueueItem;
     /** Sub-timers.
      * Normally there is just one, but for RTTIMER_FLAGS_CPU_ALL this will contain
      * an entry for all possible cpus. In that case the index will be the same as
@@ -385,13 +387,21 @@ static void rtTimerLnxStopSubTimer(PRTTIMERLNXSUBTIMER pSubTimer, bool fHighRes)
     RTTIMERLNX_LOG(("stopsubtimer %p %d\n", pSubTimer->pParent, fHighRes));
 #ifdef RTTIMER_LINUX_WITH_HRTIMER
     if (fHighRes)
-        hrtimer_cancel(&pSubTimer->u.Hr.LnxTimer);
+    {
+        /* There is no equivalent to del_timer in the hrtimer API,
+           hrtimer_cancel() == del_timer_sync().  Just like the WARN_ON in
+           del_timer_sync() asserts, waiting for a timer callback to complete
+           is deadlock prone, so don't do it.  */
+        int rc = hrtimer_try_to_cancel(&pSubTimer->u.Hr.LnxTimer);
+        if (rc < 0)
+        {
+            hrtimer_start(&pSubTimer->u.Hr.LnxTimer, ktime_set(KTIME_SEC_MAX, 0), HRTIMER_MODE_ABS);
+            hrtimer_try_to_cancel(&pSubTimer->u.Hr.LnxTimer);
+        }
+    }
     else
 #endif
-    {
-        if (timer_pending(&pSubTimer->u.Std.LnxTimer))
-            del_timer_sync(&pSubTimer->u.Std.LnxTimer);
-    }
+        del_timer(&pSubTimer->u.Std.LnxTimer);
 
     rtTimerLnxSetState(&pSubTimer->enmState, RTTIMERLNXSTATE_STOPPED);
 }
@@ -404,7 +414,8 @@ static void rtTimerLnxStopSubTimer(PRTTIMERLNXSUBTIMER pSubTimer, bool fHighRes)
  */
 static void rtTimerLnxDestroyIt(PRTTIMER pTimer)
 {
-    RTSPINLOCK hSpinlock = pTimer->hSpinlock;
+    RTSPINLOCK  hSpinlock = pTimer->hSpinlock;
+    RTCPUID     iCpu;
     Assert(pTimer->fSuspended);
     RTTIMERLNX_LOG(("destroyit %p\n", pTimer));
 
@@ -422,13 +433,44 @@ static void rtTimerLnxDestroyIt(PRTTIMER pTimer)
 #endif /* CONFIG_SMP */
 
     /*
-     * Uninitialize the structure and free the associated resources.
-     * The spinlock goes last.
+     * Invalidate the handle.
      */
     ASMAtomicWriteU32(&pTimer->u32Magic, ~RTTIMER_MAGIC);
+
+    /*
+     * Make sure all timers have stopped executing since we're stopping them in
+     * an asynchronous manner up in rtTimerLnxStopSubTimer.
+     */
+    iCpu = pTimer->cCpus;
+    while (iCpu-- > 0)
+    {
+#ifdef RTTIMER_LINUX_WITH_HRTIMER
+        if (pTimer->fHighRes)
+            hrtimer_cancel(&pTimer->aSubTimers[iCpu].u.Hr.LnxTimer);
+        else
+#endif
+            del_timer_sync(&pTimer->aSubTimers[iCpu].u.Std.LnxTimer);
+    }
+
+    /*
+     * Finally, free the resources.
+     */
     RTMemFreeEx(pTimer, RT_OFFSETOF(RTTIMER, aSubTimers[pTimer->cCpus]));
     if (hSpinlock != NIL_RTSPINLOCK)
         RTSpinlockDestroy(hSpinlock);
+}
+
+
+/**
+ * Workqueue callback (no DECLCALLBACK!) for deferred destruction.
+ *
+ * @param   pWork        Pointer to the DtorWorkqueueItem member of our timer
+ *                       structure.
+ */
+static void rtTimerLnxDestroyDeferred(RTR0LNXWORKQUEUEITEM *pWork)
+{
+    PRTTIMER pTimer = RT_FROM_MEMBER(pWork, RTTIMER, DtorWorkqueueItem);
+    rtTimerLnxDestroyIt(pTimer);
 }
 
 
@@ -463,7 +505,12 @@ static void rtTimerLnxCallbackDestroy(PRTTIMER pTimer, PRTTIMERLNXSUBTIMER pSubT
         RTSpinlockRelease(pTimer->hSpinlock, &Tmp);
     }
 
-    rtTimerLnxDestroyIt(pTimer);
+    /*
+     * Destroying a timer from the callback is unsafe since the callout code
+     * might be touching the timer structure upon return (hrtimer does!).  So,
+     * we have to defer the actual destruction to the IRPT workqueue.
+     */
+    rtR0LnxWorkqueuePush(&pTimer->DtorWorkqueueItem, rtTimerLnxDestroyDeferred);
 }
 
 
@@ -932,6 +979,7 @@ static bool rtTimerLnxOmniStop(PRTTIMER pTimer, bool fForDestroy)
     bool            fActiveCallbacks = false;
     RTSPINLOCKTMP   Tmp = RTSPINLOCKTMP_INITIALIZER;
     RTCPUID         iCpu;
+    RTTIMERLNXSTATE enmState;
 
 
     /*
@@ -943,7 +991,6 @@ static bool rtTimerLnxOmniStop(PRTTIMER pTimer, bool fForDestroy)
     ASMAtomicWriteBool(&pTimer->fSuspended, true);
     for (iCpu = 0; iCpu < pTimer->cCpus; iCpu++)
     {
-        RTTIMERLNXSTATE enmState;
         for (;;)
         {
             enmState = rtTimerLnxGetState(&pTimer->aSubTimers[iCpu].enmState);
@@ -977,8 +1024,7 @@ static bool rtTimerLnxOmniStop(PRTTIMER pTimer, bool fForDestroy)
 
     /*
      * Do the actual stopping. Fortunately, this doesn't require any IPIs.
-     * Unfortunately it cannot be done synchronously from within the spinlock,
-     * because we might end up in an active waiting for a handler to complete.
+     * Unfortunately it cannot be done synchronously.
      */
     for (iCpu = 0; iCpu < pTimer->cCpus; iCpu++)
         if (rtTimerLnxGetState(&pTimer->aSubTimers[iCpu].enmState) == RTTIMERLNXSTATE_STOPPING)
@@ -1418,6 +1464,7 @@ RTDECL(int) RTTimerCreateEx(PRTTIMER *ppTimer, uint64_t u64NanoInterval, uint32_
     unsigned    cCpus;
     int         rc;
 
+    rtR0LnxWorkqueueFlush();                /* for 2.4 */
     *ppTimer = NULL;
 
     /*
