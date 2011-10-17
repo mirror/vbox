@@ -3582,10 +3582,23 @@ static void atapiParseCmdPassthrough(ATADevState *s)
         sendcmd:
             /* Send a command to the drive, passing data in/out as required. */
             Log2(("ATAPI PT: max size %d\n", cbTransfer));
-            Assert(cbTransfer <= s->cbIOBuffer);
-            if (cbTransfer == 0)
-                uTxDir = PDMBLOCKTXDIR_NONE;
-            ataStartTransfer(s, cbTransfer, uTxDir, ATAFN_BT_ATAPI_PASSTHROUGH_CMD, ATAFN_SS_ATAPI_PASSTHROUGH, true);
+            if (cbTransfer > s->cbIOBuffer)
+            {
+                /* Rate limited logging, one log line every 5 seconds. */
+                static uint64_t uLastLogTS = 0;
+                if (RTTimeMilliTS() >= uLastLogTS + 5000)
+                {
+                    LogRel(("PIIX3 ATA: LUN#%d: CD-ROM passthrough command attempted to exceed buffer size, blocked\n", s->iLUN));
+                    uLastLogTS = RTTimeMilliTS();
+                }
+                atapiCmdErrorSimple(s, SCSI_SENSE_ILLEGAL_REQUEST, SCSI_ASC_INV_FIELD_IN_CMD_PACKET);
+            }
+            else
+            {
+                if (cbTransfer == 0)
+                    uTxDir = PDMBLOCKTXDIR_NONE;
+                ataStartTransfer(s, cbTransfer, uTxDir, ATAFN_BT_ATAPI_PASSTHROUGH_CMD, ATAFN_SS_ATAPI_PASSTHROUGH, true);
+            }
     }
 }
 
