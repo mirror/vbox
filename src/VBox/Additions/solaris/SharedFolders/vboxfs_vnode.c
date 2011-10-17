@@ -52,14 +52,13 @@
  * is removed from the regular cache and stored in a "stale" bucket until
  * the vnode becomes completely inactive.
  *
- * No file data is cached in the guest. This means we don't support mmap() yet.
- * A future version could relatively easily add support for read-only
- * mmap(MAP_SHARED) and any mmap(MAP_PRIVATE). But a la ZFS, this data caching
- * would not be coherent with normal simultaneous read()/write() operations,
- * nor will it be coherent with data access on the host. Writable
- * mmap(MAP_SHARED) access is possible, but guaranteeing any kind of coherency
- * with concurrent activity on the host would be near impossible with the
- * existing interfaces.
+ * We suppport only read-only mmap (VBOXVFS_WITH_MMAP) i.e. MAP_SHARED,
+ * MAP_PRIVATE in PROT_READ, this data caching would not be coherent with
+ * normal simultaneous read()/write() operations, nor will it be coherent
+ * with data access on the host. Writable mmap(MAP_SHARED) access is not
+ * implemented, as guaranteeing any kind of coherency with concurrent
+ * activity on the host would be near impossible with the existing
+ * interfaces.
  *
  * A note about locking. sffs is not a high performance file system.
  * No fine grained locking is done. The one sffs_lock protects just about
