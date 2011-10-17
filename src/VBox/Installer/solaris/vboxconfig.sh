@@ -847,6 +847,17 @@ postinstall()
 
             # plumb and configure vboxnet0 for non-remote installs
             if test "$REMOTEINST" -eq 0; then
+                # S11 175a renames vboxnet0 as 'netX', undo this and rename it back
+                if test "$HOST_OS_MAJORVERSION" = "5.11" && test "$HOST_OS_MINORVERSION" -gt 174; then
+                    vanityname=`dladm show-phys -po link,device | grep vboxnet0 | cut -f1 -d':'`
+                    if test $? -eq 0 && test ! -z "vanityname"; then
+                        dladm rename-link "$vanityname" vboxnet0
+                        if test $? -ne 0; then
+                            errorprint "Failed to rename vanity interface ($vanityname) to vboxnet0"
+                        fi
+                    fi
+                fi
+
                 $BIN_IFCONFIG vboxnet0 plumb
                 $BIN_IFCONFIG vboxnet0 up
                 if test "$?" -eq 0; then
