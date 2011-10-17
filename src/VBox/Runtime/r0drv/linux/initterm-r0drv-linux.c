@@ -65,7 +65,11 @@ DECLHIDDEN(void) rtR0MemExecCleanup(void);
 DECLHIDDEN(void) rtR0LnxWorkqueuePush(RTR0LNXWORKQUEUEITEM *pWork, void (*pfnWorker)(RTR0LNXWORKQUEUEITEM *))
 {
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 5, 41)
+# if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 5, 20)
     INIT_WORK(pWork, pfnWorker);
+# else
+    INIT_WORK(pWork, pfnWorker, pWork);
+# endif
     queue_work(g_prtR0LnxWorkQueue, pWork);
 #else
     INIT_TQUEUE(pWork, pfnWorker, pWork);
