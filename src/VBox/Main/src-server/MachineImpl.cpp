@@ -479,7 +479,6 @@ HRESULT Machine::init(VirtualBox *aParent,
     return rc;
 }
 
-#include <iprt/cpp/autores.h>
 /**
  *  Initializes a new instance from a machine config that is already in memory
  *  (import OVF case). Since we are importing, the UUID in the machine
