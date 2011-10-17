@@ -26,5 +26,7 @@ EXPORTS
     UninstallNetFlt
     UninstallTAPInstances
     CreateHostOnlyInterface
+    StopHostOnlyInterfaces
+    UpdateHostOnlyInterfaces
     RemoveHostOnlyInterfaces
 
