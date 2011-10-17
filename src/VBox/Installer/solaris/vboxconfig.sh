@@ -21,10 +21,10 @@
 LANG=C
 export LANG
 
-# S10 or OpenSoalris
+# S10 or S11
 HOST_OS_MAJORVERSION=`uname -r`
-# Which OpenSolaris version (snv_xxx or oi_xxx)?
-HOST_OS_MINORVERSION=`uname -v | egrep 'snv|oi' | sed -e "s/snv_//" -e "s/oi_//" -e "s/[^0-9]//"`
+# Which Solaris version (snv_xxx or oi_xxx or 11.x)?
+HOST_OS_MINORVERSION=`uname -v | egrep 'snv|oi|11.' | sed -e "s/snv_//" -e "s/oi_//" -e "s/[^0-9.]//"`
 
 DIR_VBOXBASE="$PKG_INSTALL_ROOT/opt/VirtualBox"
 DIR_CONF="$PKG_INSTALL_ROOT/platform/i86pc/kernel/drv"
@@ -225,25 +225,31 @@ check_root()
 # cannot fail
 get_sysinfo()
 {
-    if test "$REMOTEINST" -eq 1 || test -z "$HOST_OS_MINORVERSION" || test -z "$HOST_OS_MAJORVERSION"; then
-        if test -f "$PKG_INSTALL_ROOT/etc/release"; then
-            HOST_OS_MAJORVERSION=`cat "$PKG_INSTALL_ROOT/etc/release" | grep "Solaris 10"`
-            if test -n "$HOST_OS_MAJORVERSION"; then
-                HOST_OS_MAJORVERSION="5.10"
-            else
-                HOST_OS_MAJORVERSION=`cat "$PKG_INSTALL_ROOT/etc/release" | egrep "snv_|oi_"`
+    if test "$HOST_OS_MAJORVERSION" = "5.11" && test "$HOST_OS_MINORVERSION" = "11.0"; then
+        HOST_OS_MINORVERSION="175"
+    else
+        # try find version for remote installs or if previous version parsing failed (empty strings), will minor will be empty
+        # for S10 hosts
+        if test "$REMOTEINST" -eq 1 || test -z "$HOST_OS_MINORVERSION" || test -z "$HOST_OS_MAJORVERSION"; then
+            if test -f "$PKG_INSTALL_ROOT/etc/release"; then
+                HOST_OS_MAJORVERSION=`cat "$PKG_INSTALL_ROOT/etc/release" | grep "Solaris 10"`
                 if test -n "$HOST_OS_MAJORVERSION"; then
-                    HOST_OS_MAJORVERSION="5.11"
+                    HOST_OS_MAJORVERSION="5.10"
+                else
+                    HOST_OS_MAJORVERSION=`cat "$PKG_INSTALL_ROOT/etc/release" | egrep "snv_|oi_"`
+                    if test -n "$HOST_OS_MAJORVERSION"; then
+                        HOST_OS_MAJORVERSION="5.11"
+                    fi
                 fi
-            fi
-            if test "$HOST_OS_MAJORVERSION" != "5.10"; then
-                HOST_OS_MINORVERSION=`cat "$PKG_INSTALL_ROOT/etc/release" | tr ' ' '\n' | egrep 'snv_|oi_' | sed -e "s/snv_//" -e "s/oi_//" -e "s/[^0-9]//"`
+                if test "$HOST_OS_MAJORVERSION" != "5.10"; then
+                    HOST_OS_MINORVERSION=`cat "$PKG_INSTALL_ROOT/etc/release" | tr ' ' '\n' | egrep 'snv_|oi_' | sed -e "s/snv_//" -e "s/oi_//" -e "s/[^0-9]//"`
+                else
+                    HOST_OS_MINORVERSION=""
+                fi
             else
+                HOST_OS_MAJORVERSION=""
                 HOST_OS_MINORVERSION=""
             fi
-        else
-            HOST_OS_MAJORVERSION=""
-            HOST_OS_MINORVERSION=""
         fi
     fi
 }
