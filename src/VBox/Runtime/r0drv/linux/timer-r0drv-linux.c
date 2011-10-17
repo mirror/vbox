@@ -1454,7 +1454,11 @@ RTDECL(int) RTTimerDestroy(PRTTIMER pTimer)
     {
         /* For paranoid reasons, defer actually destroying the semaphore when
            in atomic or interrupt context. */
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 5, 32)
         if (in_atomic() || in_interrupt())
+#else
+        if (in_interrupt())
+#endif
             rtR0LnxWorkqueuePush(&pTimer->DtorWorkqueueItem, rtTimerLnxDestroyDeferred);
         else
             rtTimerLnxDestroyIt(pTimer);
