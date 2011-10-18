@@ -1683,7 +1683,8 @@ int1a_handler:
 		call	pcibios_real
 		jc	pcibios_error
 
-		retf	2
+		jmp	iret_modify_cf	; don't trash caller's flags!
+
 pcibios_error:
 ;		mov	bl, ah
 ;		mov	ah, 0B1h
