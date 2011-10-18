@@ -1040,6 +1040,29 @@ VBoxManage setextradata "VM name" VBoxInternal/Devices/IntNetIP/0/LUN#0/Config/I
   </sect1>
 
   <sect1>
+    <title>Launching more than 128 VMs on Linux hosts</title>
+
+    <para>Linux hosts have a fixed number of IPC semaphores IDs per process
+    preventing users from starting substantially many VMs. The exact number
+    may vary with each Linux distribution. While trying to launch more VMs you
+    would be shown a "Cannot create IPC semaphore" error. In order to run more
+    VMs, you will need to increase the semaphore ID limit of the VBoxSVC
+    process. Find the current semaphore limits imposed by the kernel by
+    executing as root:<screen>#/sbin/sysctl kernel.sem
+kernel.sem = 250  32000  32  128</screen></para>
+
+    <para>The "kernel.sem" parameter bundles together 4 values, the one we are
+    interested in is called "SEMMNI", the maximum number of semaphore IDs
+    which is 128 in the above example. Increase this semaphore ID limit by
+    executing as root:<screen>echo "kernel.sem = 250 32000 32 2048" &gt;&gt; /etc/sysctl.conf
+/sbin/sysctl -p</screen></para>
+
+    <para>The above commands will add the new limits to the config file, thus
+    making the effect persistent across reboots, and will activate the new
+    limits into the currently running kernel.</para>
+  </sect1>
+
+  <sect1>
     <title>Launching more than 120 VMs on Solaris hosts</title>
 
     <para>Solaris hosts have a fixed number of IPC semaphores IDs per process
