@@ -183,7 +183,7 @@ STDMETHODIMP UIFrameBuffer::VideoModeSupported(ULONG uWidth, ULONG uHeight, ULON
     if (!pbSupported)
         return E_POINTER;
     *pbSupported = TRUE;
-    QSize screen = m_pMachineView->desktopGeometry();
+    QSize screen = m_pMachineView->maxGuestSize();
     if ((screen.width() != 0) && (uWidth > (ULONG)screen.width()))
         *pbSupported = FALSE;
     if ((screen.height() != 0) && (uHeight > (ULONG)screen.height()))

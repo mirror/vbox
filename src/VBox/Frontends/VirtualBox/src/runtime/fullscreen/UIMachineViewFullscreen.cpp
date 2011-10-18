@@ -94,8 +94,8 @@ void UIMachineViewFullscreen::sltAdditionsStateChanged()
 
 void UIMachineViewFullscreen::sltDesktopResized()
 {
-    /* If the desktop geometry is set automatically, this will update it: */
-    calculateDesktopGeometry();
+    /* Recalculate the maximum guest size if necessary. */
+    calculateMaxGuestSize();
 }
 
 bool UIMachineViewFullscreen::event(QEvent *pEvent)
@@ -196,7 +196,7 @@ void UIMachineViewFullscreen::setGuestAutoresizeEnabled(bool fEnabled)
     }
 }
 
-QRect UIMachineViewFullscreen::workingArea()
+QRect UIMachineViewFullscreen::workingArea() const
 {
     /* Get corresponding screen: */
     int iScreen = static_cast<UIMachineLogicFullscreen*>(machineLogic())->hostScreenForGuestScreen(screenId());
@@ -204,13 +204,13 @@ QRect UIMachineViewFullscreen::workingArea()
     return QApplication::desktop()->screenGeometry(iScreen);
 }
 
-void UIMachineViewFullscreen::calculateDesktopGeometry()
+void UIMachineViewFullscreen::calculateMaxGuestSize()
 {
     /* This method should not get called until we have initially set up the desktop geometry type: */
-    Assert((desktopGeometryType() != DesktopGeo_Invalid));
-    /* If we are not doing automatic geometry calculation then there is nothing to do: */
-    if (desktopGeometryType() == DesktopGeo_Automatic)
-        m_desktopGeometry = workingArea().size();
+    Assert((maxGuestSizePolicy() != MaxGuestSizePolicy_Invalid));
+    /* If we are not doing automatic adjustment then there is nothing to do. */
+    if (maxGuestSizePolicy() == MaxGuestSizePolicy_Automatic)
+        m_fixedMaxGuestSize = workingArea().size();
 }
 
 void UIMachineViewFullscreen::maybeRestrictMinimumSize()

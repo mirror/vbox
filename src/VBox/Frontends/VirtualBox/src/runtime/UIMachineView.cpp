@@ -159,8 +159,8 @@ void UIMachineView::sltPerformGuestResize(const QSize &toSize)
     QSize newSize(toSize.isValid() ? toSize : pMachineWindow ? pMachineWindow->centralWidget()->size() : QSize());
     AssertMsg(newSize.isValid(), ("Size should be valid!\n"));
 
-    /* Store the new size */
-    storeConsoleSize(newSize.width(), newSize.height());
+    /* Store the new hint */
+    storeHintForGuestSizePolicy(newSize.width(), newSize.height());
     /* Send new size-hint to the guest: */
     session().GetConsole().GetDisplay().SetVideoModeHint(newSize.width(), newSize.height(), 0, screenId());
     /* And track whether we have had a "normal" resize since the last
@@ -237,7 +237,7 @@ UIMachineView::UIMachineView(  UIMachineWindow *pMachineWindow
     , m_uScreenId(uScreenId)
     , m_pFrameBuffer(0)
     , m_previousState(KMachineState_Null)
-    , m_desktopGeometryType(DesktopGeo_Invalid)
+    , m_maxGuestSizePolicy(MaxGuestSizePolicy_Invalid)
 #ifdef VBOX_WITH_VIDEOHWACCEL
     , m_fAccelerate2DVideo(bAccelerate2DVideo)
 #endif /* VBOX_WITH_VIDEOHWACCEL */
@@ -479,18 +479,18 @@ void UIMachineView::loadMachineViewSettings()
 {
     /* Global settings: */
     {
-        /* Remember the desktop geometry and register for geometry
-         * change events for telling the guest about video modes we like: */
-        QString desktopGeometry = vboxGlobal().settings().publicProperty("GUI/MaxGuestResolution");
-        if ((desktopGeometry == QString::null) || (desktopGeometry == "auto"))
-            setDesktopGeometry(DesktopGeo_Automatic, 0, 0);
-        else if (desktopGeometry == "any")
-            setDesktopGeometry(DesktopGeo_Any, 0, 0);
-        else
+        /* Remember the maximum guest size policy for telling the guest about
+         * video modes we like: */
+        QString maxGuestSize = vboxGlobal().settings().publicProperty("GUI/MaxGuestResolution");
+        if ((maxGuestSize == QString::null) || (maxGuestSize == "auto"))
+            setMaxGuestSizePolicy(MaxGuestSizePolicy_Automatic, 0, 0);
+        else if (maxGuestSize == "any")
+            setMaxGuestSizePolicy(MaxGuestSizePolicy_Any, 0, 0);
+        else  /** @todo Mea culpa, but what about error checking? */
         {
-            int width = desktopGeometry.section(',', 0, 0).toInt();
-            int height = desktopGeometry.section(',', 1, 1).toInt();
-            setDesktopGeometry(DesktopGeo_Fixed, width, height);
+            int width  = maxGuestSize.section(',', 0, 0).toInt();
+            int height = maxGuestSize.section(',', 1, 1).toInt();
+            setMaxGuestSizePolicy(MaxGuestSizePolicy_Fixed, width, height);
         }
     }
 }
@@ -595,23 +595,24 @@ int UIMachineView::visibleHeight() const
     return verticalScrollBar()->pageStep();
 }
 
-QSize UIMachineView::desktopGeometry() const
+QSize UIMachineView::maxGuestSize() const
 {
-    QSize geometry;
-    switch (m_desktopGeometryType)
+    QSize maxSize;
+    switch (m_maxGuestSizePolicy)
     {
-        case DesktopGeo_Fixed:
-        case DesktopGeo_Automatic:
-            geometry = QSize(qMax(m_desktopGeometry.width(), m_storedConsoleSize.width()),
-                             qMax(m_desktopGeometry.height(), m_storedConsoleSize.height()));
+        case MaxGuestSizePolicy_Fixed:
+        case MaxGuestSizePolicy_Automatic:
+            maxSize = QSize(qMax(m_fixedMaxGuestSize.width(), m_storedGuestHintSize.width()),
+                             qMax(m_fixedMaxGuestSize.height(), m_storedGuestHintSize.height()));
             break;
-        case DesktopGeo_Any:
-            geometry = QSize(0, 0);
+        case MaxGuestSizePolicy_Any:
+            maxSize = QSize(0, 0);
             break;
         default:
-            AssertMsgFailed(("Bad geometry type %d!\n", m_desktopGeometryType));
+            AssertMsgFailed(("Invalid maximum guest size policy %d!\n",
+                             m_maxGuestSizePolicy));
     }
-    return geometry;
+    return maxSize;
 }
 
 QSize UIMachineView::guestSizeHint()
@@ -649,37 +650,39 @@ QSize UIMachineView::guestSizeHint()
     return sizeHint;
 }
 
-void UIMachineView::setDesktopGeometry(DesktopGeo geometry, int aWidth, int aHeight)
+void UIMachineView::setMaxGuestSizePolicy(MaxGuestSizePolicy policy, int cwMax,
+                                          int chMax)
 {
-    switch (geometry)
+    switch (policy)
     {
-        case DesktopGeo_Fixed:
-            m_desktopGeometryType = DesktopGeo_Fixed;
-            if (aWidth != 0 && aHeight != 0)
-                m_desktopGeometry = QSize(aWidth, aHeight);
+        case MaxGuestSizePolicy_Fixed:
+            m_maxGuestSizePolicy = MaxGuestSizePolicy_Fixed;
+            if (cwMax != 0 && chMax != 0)
+                m_fixedMaxGuestSize = QSize(cwMax, chMax);
             else
-                m_desktopGeometry = QSize(0, 0);
-            storeConsoleSize(0, 0);
+                m_fixedMaxGuestSize = QSize(0, 0);
+            storeHintForGuestSizePolicy(0, 0);
             break;
-        case DesktopGeo_Automatic:
-            m_desktopGeometryType = DesktopGeo_Automatic;
-            m_desktopGeometry = QSize(0, 0);
-            storeConsoleSize(0, 0);
+        case MaxGuestSizePolicy_Automatic:
+            m_maxGuestSizePolicy = MaxGuestSizePolicy_Automatic;
+            m_fixedMaxGuestSize = QSize(0, 0);
+            storeHintForGuestSizePolicy(0, 0);
             break;
-        case DesktopGeo_Any:
-            m_desktopGeometryType = DesktopGeo_Any;
-            m_desktopGeometry = QSize(0, 0);
+        case MaxGuestSizePolicy_Any:
+            m_maxGuestSizePolicy = MaxGuestSizePolicy_Any;
+            m_fixedMaxGuestSize = QSize(0, 0);
             break;
         default:
-            AssertMsgFailed(("Invalid desktop geometry type %d\n", geometry));
-            m_desktopGeometryType = DesktopGeo_Invalid;
+            AssertMsgFailed(("Invalid maximum guest size policy %d\n",
+                             policy));
+            m_maxGuestSizePolicy = MaxGuestSizePolicy_Invalid;
     }
 }
 
-void UIMachineView::storeConsoleSize(int iWidth, int iHeight)
+void UIMachineView::storeHintForGuestSizePolicy(int cWidth, int cHeight)
 {
-    if (m_desktopGeometryType == DesktopGeo_Automatic)
-        m_storedConsoleSize = QSize(iWidth, iHeight);
+    if (m_maxGuestSizePolicy == MaxGuestSizePolicy_Automatic)
+        m_storedGuestHintSize = QSize(cWidth, cHeight);
 }
 
 void UIMachineView::storeGuestSizeHint(const QSize &sizeHint)
@@ -888,10 +891,10 @@ bool UIMachineView::guestResizeEvent(QEvent *pEvent,
     /* Report to the VM thread that we finished resizing: */
     session().GetConsole().GetDisplay().ResizeCompleted(screenId());
 
-    /* We also recalculate the desktop geometry if this is determined
-     * automatically. In fact, we only need this on the first resize,
-     * but it is done every time to keep the code simpler. */
-    calculateDesktopGeometry();
+    /* We also recalculate the maximum guest size if necessary.  In fact we
+     * only need this on the first resize, but it is done every time to keep
+     * the code simpler. */
+    calculateMaxGuestSize();
 
     /* Emit a signal about guest was resized: */
     emit resizeHintDone();

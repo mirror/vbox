@@ -70,8 +70,8 @@ private:
     /* Private helpers: */
     QSize sizeHint() const;
     void normalizeGeometry(bool /* fAdjustPosition */) {}
-    QRect workingArea();
-    void calculateDesktopGeometry();
+    QRect workingArea() const;
+    void calculateMaxGuestSize();
     void maybeRestrictMinimumSize() {}
     void updateSliders();
 

@@ -153,8 +153,8 @@ void UIMachineViewScale::sltPerformGuestScale()
 
 void UIMachineViewScale::sltDesktopResized()
 {
-    /* If the desktop geometry is set automatically, this will update it: */
-    calculateDesktopGeometry();
+    /* Recalculate the maximum guest size if necessary. */
+    calculateMaxGuestSize();
 }
 
 bool UIMachineViewScale::event(QEvent *pEvent)
@@ -185,10 +185,10 @@ bool UIMachineViewScale::event(QEvent *pEvent)
             /* Report to the VM thread that we finished resizing: */
             session().GetConsole().GetDisplay().ResizeCompleted(screenId());
 
-            /* We also recalculate the desktop geometry if this is determined
-             * automatically.  In fact, we only need this on the first resize,
-             * but it is done every time to keep the code simpler. */
-            calculateDesktopGeometry();
+            /* We also recalculate the maximum guest size if necessary.  In
+             * fact we only need this on the first resize, but it is done
+             * every time to keep the code simpler. */
+            calculateMaxGuestSize();
 
             /* Emit a signal about guest was resized: */
             emit resizeHintDone();
@@ -362,17 +362,18 @@ QSize UIMachineViewScale::sizeHint() const
     return QSize();
 }
 
-QRect UIMachineViewScale::workingArea()
+QRect UIMachineViewScale::workingArea() const
 {
     return QApplication::desktop()->availableGeometry(this);
 }
 
-void UIMachineViewScale::calculateDesktopGeometry()
+void UIMachineViewScale::calculateMaxGuestSize()
 {
-    /* This method should not get called until we have initially set up the desktop geometry type: */
-    Assert((desktopGeometryType() != DesktopGeo_Invalid));
-    /* If we are not doing automatic geometry calculation then there is nothing to do: */
-    if (desktopGeometryType() == DesktopGeo_Automatic)
+    /* This method should not get called until we have initially set up the
+     * maximum guest size policy. */
+    Assert((maxGuestSizePolicy() != MaxGuestSizePolicy_Invalid));
+    /* If we are not doing automatic adjustment then there is nothing to do. */
+    if (maxGuestSizePolicy() == MaxGuestSizePolicy_Automatic)
     {
         /* The area taken up by the machine window on the desktop,
          * including window frame, title, menu bar and status bar: */
@@ -383,8 +384,12 @@ void UIMachineViewScale::calculateDesktopGeometry()
          * we calculate workingArea() - (windowGeo - centralWidgetGeo).
          * This works because the difference between machine window and machine central widget
          * (or at least its width and height) is a constant. */
-        m_desktopGeometry = QSize(workingArea().width() - (windowGeo.width() - centralWidgetGeo.width()),
-                                  workingArea().height() - (windowGeo.height() - centralWidgetGeo.height()));
+        m_fixedMaxGuestSize = QSize(  workingArea().width()
+                                    - (windowGeo.width()
+                                    - centralWidgetGeo.width()),
+                                      workingArea().height()
+                                    - (windowGeo.height()
+                                    - centralWidgetGeo.height()));
     }
 }
 
