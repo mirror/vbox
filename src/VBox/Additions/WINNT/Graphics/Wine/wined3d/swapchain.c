@@ -48,7 +48,7 @@ WINE_DECLARE_DEBUG_CHANNEL(fps);
 
 IWineD3DSwapChainImpl * swapchain_find(IWineD3DDeviceImpl *pDevice, HWND hWnd)
 {
-    int i;
+    UINT i;
     for (i = 0; i < pDevice->NumberOfSwapChains; ++i)
     {
         IWineD3DSwapChainImpl *pSwapchain = (IWineD3DSwapChainImpl*)pDevice->swapchains[i];
@@ -63,6 +63,37 @@ IWineD3DSwapChainImpl * swapchain_find(IWineD3DDeviceImpl *pDevice, HWND hWnd)
 
 VOID swapchain_invalidate(IWineD3DSwapChainImpl *pSwapchain)
 {
+    /* first make sure the swapchain is not used by anyone */
+    IWineD3DDeviceImpl *device = pSwapchain->device;
+    struct wined3d_context *context;
+    UINT i;
+    for (i = 0; i < device->numContexts; ++i)
+    {
+        context = device->contexts[i];
+        /* pretty hacky, @todo: check if the context is acquired and re-acquire it with the new swapchain */
+        if (context->currentSwapchain == pSwapchain)
+        {
+            context->currentSwapchain = NULL;
+        }
+
+        if (pSwapchain->frontBuffer == context->current_rt)
+        {
+            context->current_rt = NULL;
+        }
+        else if (pSwapchain->backBuffer)
+        {
+            UINT j;
+            for (j = 0; j < pSwapchain->presentParms.BackBufferCount; ++j)
+            {
+                if (pSwapchain->backBuffer[j] == context->current_rt)
+                {
+                    context->current_rt = NULL;
+                    break;
+                }
+            }
+        }
+    }
+
     pSwapchain->win_handle = NULL;
     pSwapchain->hDC = NULL;
 }
@@ -95,7 +126,7 @@ static void WINAPI IWineD3DSwapChainImpl_Destroy(IWineD3DSwapChain *iface)
 
     if (This->backBuffer)
     {
-        UINT i = This->presentParms.BackBufferCount;
+        i = This->presentParms.BackBufferCount;
 
         while (i--)
         {

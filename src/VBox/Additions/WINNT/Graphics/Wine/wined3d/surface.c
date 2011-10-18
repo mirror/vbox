@@ -1248,8 +1248,25 @@ static ULONG WINAPI IWineD3DSurfaceImpl_Release(IWineD3DSurface *iface)
 
     if (!ref)
     {
+#ifdef VBOX_WITH_WDDM
+        IWineD3DDeviceImpl *device = This->resource.device;
+        struct wined3d_context *context;
+        UINT i;
+#endif
         surface_cleanup(This);
         This->resource.parent_ops->wined3d_object_destroyed(This->resource.parent);
+
+#ifdef VBOX_WITH_WDDM
+        for (i = 0; i < device->numContexts; ++i)
+        {
+            context = device->contexts[i];
+            /* pretty hacky, @todo: check if the context is acquired and re-acquire it with the new swapchain */
+            if (context->current_rt  == This)
+            {
+                context->current_rt = NULL;
+            }
+        }
+#endif
 
         TRACE("(%p) Released.\n", This);
         HeapFree(GetProcessHeap(), 0, This);
