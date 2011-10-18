@@ -94,8 +94,7 @@ void UIMachineViewFullscreen::sltAdditionsStateChanged()
 
 void UIMachineViewFullscreen::sltDesktopResized()
 {
-    /* Recalculate the maximum guest size if necessary. */
-    calculateMaxGuestSize();
+
 }
 
 bool UIMachineViewFullscreen::event(QEvent *pEvent)
@@ -204,13 +203,9 @@ QRect UIMachineViewFullscreen::workingArea() const
     return QApplication::desktop()->screenGeometry(iScreen);
 }
 
-void UIMachineViewFullscreen::calculateMaxGuestSize()
+QSize UIMachineViewFullscreen::calculateMaxGuestSize() const
 {
-    /* This method should not get called until we have initially set up the desktop geometry type: */
-    Assert((maxGuestSizePolicy() != MaxGuestSizePolicy_Invalid));
-    /* If we are not doing automatic adjustment then there is nothing to do. */
-    if (maxGuestSizePolicy() == MaxGuestSizePolicy_Automatic)
-        m_fixedMaxGuestSize = workingArea().size();
+    return workingArea().size();
 }
 
 void UIMachineViewFullscreen::maybeRestrictMinimumSize()

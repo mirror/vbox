@@ -100,9 +100,6 @@ void UIMachineViewSeamless::sltDesktopResized()
     /** @todo Check whether this isn't already fixed elsewhere.
      *        I don't think that it is the GUI's job to check that
      *        the resize succeeded though. */
-
-    /* Recalculate the maximum guest size if necessary. */
-    calculateMaxGuestSize();
 }
 
 bool UIMachineViewSeamless::event(QEvent *pEvent)
@@ -226,12 +223,8 @@ QRect UIMachineViewSeamless::workingArea() const
     return vboxGlobal().availableGeometry(iScreen);
 }
 
-void UIMachineViewSeamless::calculateMaxGuestSize()
+QSize UIMachineViewSeamless::calculateMaxGuestSize() const
 {
-    /* This method should not get called until we have initially set up the desktop geometry type: */
-    Assert((maxGuestSizePolicy() != MaxGuestSizePolicy_Invalid));
-    /* If we are not doing automatic adjustment then there is nothing to do. */
-    if (maxGuestSizePolicy() == MaxGuestSizePolicy_Automatic)
-        m_fixedMaxGuestSize = workingArea().size();
+    return workingArea().size();
 }
 

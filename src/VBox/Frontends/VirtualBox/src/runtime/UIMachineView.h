@@ -134,26 +134,20 @@ protected:
     ulong screenId() const { return m_uScreenId; }
     UIFrameBuffer* frameBuffer() const { return m_pFrameBuffer; }
     const QPixmap& pauseShot() const { return m_pauseShot; }
-    /** Helper to retrieve the last non-fullscreen guest size hint
-     * sent.  @note Currently unused. */
-    QSize storedGuestHintSize() const { return m_storedGuestHintSize; }
-    /** What policy are we currently applying for limiting guest
-     * resolutions? */
-    MaxGuestSizePolicy maxGuestSizePolicy() const
-    { return m_maxGuestSizePolicy; }
-    /** The maximum guest resolution which we currently wish to handle.
-     * @note This must be safely called from another thread.
-     * @todo So make it atomic.
-     */
-    QSize maxGuestSize() const;
+    /** Atomically store the maximum guest resolution which we currently wish
+     * to handle for @a maxGuestSize() to read. */
+    void setMaxGuestSize();
+    /** Atomically read the maximum guest resolution which we currently wish to
+     * handle.  This may safely be called from another thread (called by
+     * UIFramebuffer on EMT). */
+    QSize maxGuestSize();
     /** Retrieve the last non-fullscreen guest size hint (from extra data).
      */
     QSize guestSizeHint();
 
     /* Protected setters: */
-    void setMaxGuestSizePolicy(MaxGuestSizePolicy policy, int cwMax,
-                               int chMax);
-    void storeHintForGuestSizePolicy(int cWidth, int cHeight);
+    /** Store a guest size hint value to extra data, called on switching to
+     * fullscreen. */
     void storeGuestSizeHint(const QSize &sizeHint);
 
     /* Protected helpers: */
@@ -164,7 +158,7 @@ protected:
     virtual QRect workingArea() const = 0;
     /** Calculate how big the guest desktop can be while still fitting on one
      * host screen. */
-    virtual void calculateMaxGuestSize() = 0;
+    virtual QSize calculateMaxGuestSize() const = 0;
     virtual void maybeRestrictMinimumSize() = 0;
     virtual void updateSliders();
     QPoint viewportToContents(const QPoint &vp) const;
@@ -203,14 +197,15 @@ protected:
     UIFrameBuffer *m_pFrameBuffer;
     KMachineState m_previousState;
 
-    /** The policy for calculating the maximum guest resolution we wish to
-     * support. */
+    /** The policy for calculating the maximum guest resolution which we wish
+     * to handle. */
     MaxGuestSizePolicy m_maxGuestSizePolicy;
     /** The maximum guest size for fixed size policy. */
     QSize m_fixedMaxGuestSize;
-    /** The last guest size hint sent out, used for calculating the maximum
-     * supported guest resolution. */
-    QSize m_storedGuestHintSize;
+    /** Maximum guest resolution which we wish to handle.  Must be accessed
+     * atomically. */
+    /** @todo This should be private. */
+    volatile uint64_t m_u64MaxGuestSize;
 
 #ifdef VBOX_WITH_VIDEOHWACCEL
     bool m_fAccelerate2DVideo : 1;
