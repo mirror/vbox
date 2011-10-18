@@ -79,7 +79,7 @@ private:
     /* Private helpers: */
     void normalizeGeometry(bool fAdjustPosition);
     QRect workingArea() const;
-    void calculateMaxGuestSize();
+    QSize calculateMaxGuestSize() const;
     void maybeRestrictMinimumSize();
 
     /* Private members: */

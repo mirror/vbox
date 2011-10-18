@@ -24,6 +24,7 @@
 #include <QPainter>
 #include <QScrollBar>
 #include <VBox/VBoxVideo.h>
+#include <iprt/asm.h>
 
 /* Local includes */
 #include "VBoxGlobal.h"
@@ -159,8 +160,6 @@ void UIMachineView::sltPerformGuestResize(const QSize &toSize)
     QSize newSize(toSize.isValid() ? toSize : pMachineWindow ? pMachineWindow->centralWidget()->size() : QSize());
     AssertMsg(newSize.isValid(), ("Size should be valid!\n"));
 
-    /* Store the new hint */
-    storeHintForGuestSizePolicy(newSize.width(), newSize.height());
     /* Send new size-hint to the guest: */
     session().GetConsole().GetDisplay().SetVideoModeHint(newSize.width(), newSize.height(), 0, screenId());
     /* And track whether we have had a "normal" resize since the last
@@ -239,6 +238,7 @@ UIMachineView::UIMachineView(  UIMachineWindow *pMachineWindow
     , m_pFrameBuffer(0)
     , m_previousState(KMachineState_Null)
     , m_maxGuestSizePolicy(MaxGuestSizePolicy_Invalid)
+    , m_u64MaxGuestSize(0)
 #ifdef VBOX_WITH_VIDEOHWACCEL
     , m_fAccelerate2DVideo(bAccelerate2DVideo)
 #endif /* VBOX_WITH_VIDEOHWACCEL */
@@ -484,14 +484,15 @@ void UIMachineView::loadMachineViewSettings()
          * video modes we like: */
         QString maxGuestSize = vboxGlobal().settings().publicProperty("GUI/MaxGuestResolution");
         if ((maxGuestSize == QString::null) || (maxGuestSize == "auto"))
-            setMaxGuestSizePolicy(MaxGuestSizePolicy_Automatic, 0, 0);
+            m_maxGuestSizePolicy = MaxGuestSizePolicy_Automatic;
         else if (maxGuestSize == "any")
-            setMaxGuestSizePolicy(MaxGuestSizePolicy_Any, 0, 0);
+            m_maxGuestSizePolicy = MaxGuestSizePolicy_Any;
         else  /** @todo Mea culpa, but what about error checking? */
         {
             int width  = maxGuestSize.section(',', 0, 0).toInt();
             int height = maxGuestSize.section(',', 1, 1).toInt();
-            setMaxGuestSizePolicy(MaxGuestSizePolicy_Fixed, width, height);
+            m_maxGuestSizePolicy = MaxGuestSizePolicy_Fixed;
+            m_fixedMaxGuestSize = QSize(width, height);
         }
     }
 }
@@ -596,24 +597,33 @@ int UIMachineView::visibleHeight() const
     return verticalScrollBar()->pageStep();
 }
 
-QSize UIMachineView::maxGuestSize() const
+void UIMachineView::setMaxGuestSize()
 {
     QSize maxSize;
     switch (m_maxGuestSizePolicy)
     {
         case MaxGuestSizePolicy_Fixed:
+            maxSize = m_fixedMaxGuestSize;
+            break;
         case MaxGuestSizePolicy_Automatic:
-            maxSize = QSize(qMax(m_fixedMaxGuestSize.width(), m_storedGuestHintSize.width()),
-                             qMax(m_fixedMaxGuestSize.height(), m_storedGuestHintSize.height()));
+            maxSize = calculateMaxGuestSize();
             break;
         case MaxGuestSizePolicy_Any:
-            maxSize = QSize(0, 0);
-            break;
         default:
-            AssertMsgFailed(("Invalid maximum guest size policy %d!\n",
-                             m_maxGuestSizePolicy));
+            AssertMsg(m_maxGuestSizePolicy == MaxGuestSizePolicy_Any,
+                      ("Invalid maximum guest size policy %d!\n",
+                       m_maxGuestSizePolicy));
+            /* (0, 0) means any of course. */
+            maxSize = QSize(0, 0);
     }
-    return maxSize;
+    ASMAtomicWriteU64(&m_u64MaxGuestSize,
+                      RT_MAKE_U64(maxSize.width(), maxSize.height()));
+}
+
+QSize UIMachineView::maxGuestSize()
+{
+    uint64_t u64Size = ASMAtomicReadU64(&m_u64MaxGuestSize);
+    return QSize(int(RT_HI_U32(u64Size)), int(RT_LO_U32(u64Size)));
 }
 
 QSize UIMachineView::guestSizeHint()
@@ -649,41 +659,6 @@ QSize UIMachineView::guestSizeHint()
 
     /* Return result: */
     return sizeHint;
-}
-
-void UIMachineView::setMaxGuestSizePolicy(MaxGuestSizePolicy policy, int cwMax,
-                                          int chMax)
-{
-    switch (policy)
-    {
-        case MaxGuestSizePolicy_Fixed:
-            m_maxGuestSizePolicy = MaxGuestSizePolicy_Fixed;
-            if (cwMax != 0 && chMax != 0)
-                m_fixedMaxGuestSize = QSize(cwMax, chMax);
-            else
-                m_fixedMaxGuestSize = QSize(0, 0);
-            storeHintForGuestSizePolicy(0, 0);
-            break;
-        case MaxGuestSizePolicy_Automatic:
-            m_maxGuestSizePolicy = MaxGuestSizePolicy_Automatic;
-            m_fixedMaxGuestSize = QSize(0, 0);
-            storeHintForGuestSizePolicy(0, 0);
-            break;
-        case MaxGuestSizePolicy_Any:
-            m_maxGuestSizePolicy = MaxGuestSizePolicy_Any;
-            m_fixedMaxGuestSize = QSize(0, 0);
-            break;
-        default:
-            AssertMsgFailed(("Invalid maximum guest size policy %d\n",
-                             policy));
-            m_maxGuestSizePolicy = MaxGuestSizePolicy_Invalid;
-    }
-}
-
-void UIMachineView::storeHintForGuestSizePolicy(int cWidth, int cHeight)
-{
-    if (m_maxGuestSizePolicy == MaxGuestSizePolicy_Automatic)
-        m_storedGuestHintSize = QSize(cWidth, cHeight);
 }
 
 void UIMachineView::storeGuestSizeHint(const QSize &sizeHint)
@@ -892,11 +867,6 @@ bool UIMachineView::guestResizeEvent(QEvent *pEvent,
     /* Report to the VM thread that we finished resizing: */
     session().GetConsole().GetDisplay().ResizeCompleted(screenId());
 
-    /* We also recalculate the maximum guest size if necessary.  In fact we
-     * only need this on the first resize, but it is done every time to keep
-     * the code simpler. */
-    calculateMaxGuestSize();
-
     /* Emit a signal about guest was resized: */
     emit resizeHintDone();
 
@@ -1008,6 +978,10 @@ bool UIMachineView::eventFilter(QObject *pWatched, QEvent *pEvent)
 void UIMachineView::resizeEvent(QResizeEvent *pEvent)
 {
     updateSliders();
+    /* We call this on every resize as on X11 it sets information which becomes
+     * available asynchronously at an unknown time after window creation.  As
+     * long as the information is not available we make a best guess. */
+    setMaxGuestSize();
     return QAbstractScrollArea::resizeEvent(pEvent);
 }
 

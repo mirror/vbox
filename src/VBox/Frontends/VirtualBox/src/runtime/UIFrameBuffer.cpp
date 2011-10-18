@@ -168,6 +168,8 @@ STDMETHODIMP UIFrameBuffer::RequestResize(ULONG uScreenId, ULONG uPixelFormat,
 
 /**
  * Returns whether we like the given video mode.
+ * @note We always like a mode smaller than the current framebuffer
+ *       size.
  *
  * @returns COM status code
  * @param   width     video mode width in pixels
@@ -184,9 +186,13 @@ STDMETHODIMP UIFrameBuffer::VideoModeSupported(ULONG uWidth, ULONG uHeight, ULON
         return E_POINTER;
     *pbSupported = TRUE;
     QSize screen = m_pMachineView->maxGuestSize();
-    if ((screen.width() != 0) && (uWidth > (ULONG)screen.width()))
+    if (   (screen.width() != 0)
+        && (uWidth > (ULONG)screen.width())
+        && (uWidth > (ULONG)width()))
         *pbSupported = FALSE;
-    if ((screen.height() != 0) && (uHeight > (ULONG)screen.height()))
+    if (   (screen.height() != 0)
+        && (uHeight > (ULONG)screen.height())
+        && (uHeight > (ULONG)height()))
         *pbSupported = FALSE;
     LogFlowThisFunc(("screenW=%lu, screenH=%lu -> aSupported=%s\n",
                     screen.width(), screen.height(), *pbSupported ? "TRUE" : "FALSE"));
