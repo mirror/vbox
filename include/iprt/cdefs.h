@@ -1894,6 +1894,16 @@
 #define RT_NS_1HOUR             UINT64_C(3600000000000)
 /** 1 minute expressed in nanoseconds (64-bit). */
 #define RT_NS_1MIN              UINT64_C(60000000000)
+/** 45 second expressed in nanoseconds. */
+#define RT_NS_45SEC             UINT64_C(45000000000)
+/** 30 second expressed in nanoseconds. */
+#define RT_NS_30SEC             UINT64_C(30000000000)
+/** 20 second expressed in nanoseconds. */
+#define RT_NS_20SEC             UINT64_C(20000000000)
+/** 15 second expressed in nanoseconds. */
+#define RT_NS_15SEC             UINT64_C(15000000000)
+/** 10 second expressed in nanoseconds. */
+#define RT_NS_10SEC             UINT64_C(10000000000)
 /** 1 second expressed in nanoseconds. */
 #define RT_NS_1SEC              UINT32_C(1000000000)
 /** 100 millsecond expressed in nanoseconds. */
