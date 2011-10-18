@@ -97,8 +97,8 @@ void UIMachineViewNormal::sltAdditionsStateChanged()
 
 void UIMachineViewNormal::sltDesktopResized()
 {
-    /* If the desktop geometry is set automatically, this will update it: */
-    calculateDesktopGeometry();
+    /* Recalculate the maximum guest size if necessary. */
+    calculateMaxGuestSize();
 }
 
 bool UIMachineViewNormal::event(QEvent *pEvent)
@@ -296,17 +296,18 @@ void UIMachineViewNormal::normalizeGeometry(bool bAdjustPosition)
 #endif /* VBOX_GUI_WITH_CUSTOMIZATIONS1 */
 }
 
-QRect UIMachineViewNormal::workingArea()
+QRect UIMachineViewNormal::workingArea() const
 {
     return QApplication::desktop()->availableGeometry(this);
 }
 
-void UIMachineViewNormal::calculateDesktopGeometry()
+void UIMachineViewNormal::calculateMaxGuestSize()
 {
-    /* This method should not get called until we have initially set up the desktop geometry type: */
-    Assert((desktopGeometryType() != DesktopGeo_Invalid));
-    /* If we are not doing automatic geometry calculation then there is nothing to do: */
-    if (desktopGeometryType() == DesktopGeo_Automatic)
+    /* This method should not get called until we have initially set up the
+     * maximum guest size policy. */
+    Assert((maxGuestSizePolicy() != MaxGuestSizePolicy_Invalid));
+    /* If we are not doing automatic adjustment then there is nothing to do. */
+    if (maxGuestSizePolicy() == MaxGuestSizePolicy_Automatic)
     {
         /* The area taken up by the machine window on the desktop,
          * including window frame, title, menu bar and status bar: */
@@ -317,8 +318,12 @@ void UIMachineViewNormal::calculateDesktopGeometry()
          * we calculate workingArea() - (windowGeo - centralWidgetGeo).
          * This works because the difference between machine window and machine central widget
          * (or at least its width and height) is a constant. */
-        m_desktopGeometry = QSize(workingArea().width() - (windowGeo.width() - centralWidgetGeo.width()),
-                                  workingArea().height() - (windowGeo.height() - centralWidgetGeo.height()));
+        m_fixedMaxGuestSize = QSize(  workingArea().width()
+                                    - (windowGeo.width()
+                                    - centralWidgetGeo.width()),
+                                      workingArea().height()
+                                    - (windowGeo.height()
+                                    - centralWidgetGeo.height()));
     }
 }
 

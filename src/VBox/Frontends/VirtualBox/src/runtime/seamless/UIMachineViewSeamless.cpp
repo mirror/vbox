@@ -95,10 +95,14 @@ void UIMachineViewSeamless::sltAdditionsStateChanged()
 
 void UIMachineViewSeamless::sltDesktopResized()
 {
-    // TODO: Try to resize framebuffer according new desktop size, exit seamless if resize is failed!
+    /** @todo Try to resize framebuffer according new desktop size,
+     *        exit seamless if resize is failed! */
+    /** @todo Check whether this isn't already fixed elsewhere.
+     *        I don't think that it is the GUI's job to check that
+     *        the resize succeeded though. */
 
-    /* If the desktop geometry is set automatically, this will update it: */
-    calculateDesktopGeometry();
+    /* Recalculate the maximum guest size if necessary. */
+    calculateMaxGuestSize();
 }
 
 bool UIMachineViewSeamless::event(QEvent *pEvent)
@@ -214,7 +218,7 @@ void UIMachineViewSeamless::cleanupSeamless()
         session().GetConsole().GetDisplay().SetSeamlessMode(false);
 }
 
-QRect UIMachineViewSeamless::workingArea()
+QRect UIMachineViewSeamless::workingArea() const
 {
     /* Get corresponding screen: */
     int iScreen = static_cast<UIMachineLogicSeamless*>(machineLogic())->hostScreenForGuestScreen(screenId());
@@ -222,12 +226,12 @@ QRect UIMachineViewSeamless::workingArea()
     return vboxGlobal().availableGeometry(iScreen);
 }
 
-void UIMachineViewSeamless::calculateDesktopGeometry()
+void UIMachineViewSeamless::calculateMaxGuestSize()
 {
     /* This method should not get called until we have initially set up the desktop geometry type: */
-    Assert((desktopGeometryType() != DesktopGeo_Invalid));
-    /* If we are not doing automatic geometry calculation then there is nothing to do: */
-    if (desktopGeometryType() == DesktopGeo_Automatic)
-        m_desktopGeometry = workingArea().size();
+    Assert((maxGuestSizePolicy() != MaxGuestSizePolicy_Invalid));
+    /* If we are not doing automatic adjustment then there is nothing to do. */
+    if (maxGuestSizePolicy() == MaxGuestSizePolicy_Automatic)
+        m_fixedMaxGuestSize = workingArea().size();
 }
 

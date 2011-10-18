@@ -78,8 +78,8 @@ private:
 
     /* Private helpers: */
     void normalizeGeometry(bool fAdjustPosition);
-    QRect workingArea();
-    void calculateDesktopGeometry();
+    QRect workingArea() const;
+    void calculateMaxGuestSize();
     void maybeRestrictMinimumSize();
 
     /* Private members: */

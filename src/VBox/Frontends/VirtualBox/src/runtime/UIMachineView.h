@@ -43,8 +43,20 @@ class UIMachineView : public QAbstractScrollArea
 
 public:
 
-    /* Desktop geometry types: */
-    enum DesktopGeo { DesktopGeo_Invalid = 0, DesktopGeo_Fixed, DesktopGeo_Automatic, DesktopGeo_Any };
+    /** Policy for determining which guest resolutions we wish to
+     * handle.  We also accept anything smaller than the current
+     * resolution. */
+    enum MaxGuestSizePolicy
+    {
+        /** Policy not set correctly. */
+        MaxGuestSizePolicy_Invalid = 0,
+        /** Anything up to a fixed size. */
+        MaxGuestSizePolicy_Fixed,
+        /** Anything up to available space on the host desktop. */
+        MaxGuestSizePolicy_Automatic,
+        /** We accept anything. */
+        MaxGuestSizePolicy_Any
+    };
 
     /* Factory function to create machine-view: */
     static UIMachineView* create(  UIMachineWindow *pMachineWindow
@@ -122,22 +134,37 @@ protected:
     ulong screenId() const { return m_uScreenId; }
     UIFrameBuffer* frameBuffer() const { return m_pFrameBuffer; }
     const QPixmap& pauseShot() const { return m_pauseShot; }
-    QSize storedConsoleSize() const { return m_storedConsoleSize; }
-    DesktopGeo desktopGeometryType() const { return m_desktopGeometryType; }
-    QSize desktopGeometry() const;
+    /** Helper to retrieve the last non-fullscreen guest size hint
+     * sent.  @note Currently unused. */
+    QSize storedGuestHintSize() const { return m_storedGuestHintSize; }
+    /** What policy are we currently applying for limiting guest
+     * resolutions? */
+    MaxGuestSizePolicy maxGuestSizePolicy() const
+    { return m_maxGuestSizePolicy; }
+    /** The maximum guest resolution which we currently wish to handle.
+     * @note This must be safely called from another thread.
+     * @todo So make it atomic.
+     */
+    QSize maxGuestSize() const;
+    /** Retrieve the last non-fullscreen guest size hint (from extra data).
+     */
     QSize guestSizeHint();
 
     /* Protected setters: */
-    void setDesktopGeometry(DesktopGeo geometry, int iWidth, int iHeight);
-    void storeConsoleSize(int iWidth, int iHeight);
+    void setMaxGuestSizePolicy(MaxGuestSizePolicy policy, int cwMax,
+                               int chMax);
+    void storeHintForGuestSizePolicy(int cWidth, int cHeight);
     void storeGuestSizeHint(const QSize &sizeHint);
 
     /* Protected helpers: */
     virtual void takePauseShotLive();
     virtual void takePauseShotSnapshot();
     virtual void resetPauseShot() { m_pauseShot = QPixmap(); }
-    virtual QRect workingArea() = 0;
-    virtual void calculateDesktopGeometry() = 0;
+    /** The available area on the current screen for application windows. */
+    virtual QRect workingArea() const = 0;
+    /** Calculate how big the guest desktop can be while still fitting on one
+     * host screen. */
+    virtual void calculateMaxGuestSize() = 0;
     virtual void maybeRestrictMinimumSize() = 0;
     virtual void updateSliders();
     QPoint viewportToContents(const QPoint &vp) const;
@@ -175,9 +202,14 @@ protected:
     UIFrameBuffer *m_pFrameBuffer;
     KMachineState m_previousState;
 
-    DesktopGeo m_desktopGeometryType;
-    QSize m_desktopGeometry;
-    QSize m_storedConsoleSize;
+    /** The policy for calculating the maximum guest resolution we wish to
+     * support. */
+    MaxGuestSizePolicy m_maxGuestSizePolicy;
+    /** The maximum guest size for fixed size policy. */
+    QSize m_fixedMaxGuestSize;
+    /** The last guest size hint sent out, used for calculating the maximum
+     * supported guest resolution. */
+    QSize m_storedGuestHintSize;
 
 #ifdef VBOX_WITH_VIDEOHWACCEL
     bool m_fAccelerate2DVideo : 1;
