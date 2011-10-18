@@ -50,8 +50,6 @@
 #define VBOXNETFLT_OS_SPECFIC 1
 #include "../VBoxNetFltInternal.h"
 
-#define VBOXNETFLT_WITH_FILTER_HOST2GUEST_SKBS_EXPERIMENT
-
 
 /*******************************************************************************
 *   Defined Constants And Macros                                               *
@@ -244,17 +242,17 @@ static void __exit VBoxNetFltLinuxUnload(void)
 
 
 /**
- * Experiment where we filter traffic from the host to the internal network
+ * We filter traffic from the host to the internal network
  * before it reaches the NIC driver.
  *
- * The current code uses a very ugly hack and only works on kernels using the
- * net_device_ops (>= 2.6.29).  It has been shown to give us a
- * performance boost of 60-100% though.  So, we have to find some less hacky way
- * of getting this job done eventually.
- *
- * #define VBOXNETFLT_WITH_FILTER_HOST2GUEST_SKBS_EXPERIMENT
+ * The current code uses a very ugly hack overriding hard_start_xmit
+ * callback in the device structure, but it has been shown to give us a
+ * performance boost of 60-100% though. Eventually we have to find some
+ * less hacky way of getting this job done.
  */
-#ifdef VBOXNETFLT_WITH_FILTER_HOST2GUEST_SKBS_EXPERIMENT
+#define VBOXNETFLT_WITH_HOST2WIRE_FILTER
+
+#ifdef VBOXNETFLT_WITH_HOST2WIRE_FILTER
 
 # if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 29)
 
@@ -453,7 +451,7 @@ static void vboxNetFltLinuxUnhookDev(PVBOXNETFLTINS pThis, struct net_device *pD
     }
 }
 
-#endif /* VBOXNETFLT_WITH_FILTER_HOST2GUEST_SKBS_EXPERIMENT */
+#endif /* VBOXNETFLT_WITH_HOST2WIRE_FILTER */
 
 
 /**
@@ -1511,7 +1509,7 @@ static int vboxNetFltLinuxAttachToInterface(PVBOXNETFLTINS pThis, struct net_dev
     pThis->u.s.PacketType.func = vboxNetFltLinuxPacketHandler;
     dev_add_pack(&pThis->u.s.PacketType);
 
-#ifdef VBOXNETFLT_WITH_FILTER_HOST2GUEST_SKBS_EXPERIMENT
+#ifdef VBOXNETFLT_WITH_HOST2WIRE_FILTER
     vboxNetFltLinuxHookDev(pThis, pDev);
 #endif
 
@@ -1554,7 +1552,7 @@ static int vboxNetFltLinuxAttachToInterface(PVBOXNETFLTINS pThis, struct net_dev
     }
     else
     {
-#ifdef VBOXNETFLT_WITH_FILTER_HOST2GUEST_SKBS_EXPERIMENT
+#ifdef VBOXNETFLT_WITH_HOST2WIRE_FILTER
         vboxNetFltLinuxUnhookDev(pThis, pDev);
 #endif
         RTSpinlockAcquireNoInts(pThis->hSpinlock, &Tmp);
@@ -1582,7 +1580,7 @@ static int vboxNetFltLinuxUnregisterDevice(PVBOXNETFLTINS pThis, struct net_devi
 
     Assert(!pThis->fDisconnectedFromHost);
 
-#ifdef VBOXNETFLT_WITH_FILTER_HOST2GUEST_SKBS_EXPERIMENT
+#ifdef VBOXNETFLT_WITH_HOST2WIRE_FILTER
     vboxNetFltLinuxUnhookDev(pThis, pDev);
 #endif
 
@@ -1883,7 +1881,7 @@ void vboxNetFltOsDeleteInstance(PVBOXNETFLTINS pThis)
     bool                fRegistered;
     RTSPINLOCKTMP       Tmp = RTSPINLOCKTMP_INITIALIZER;
 
-#ifdef VBOXNETFLT_WITH_FILTER_HOST2GUEST_SKBS_EXPERIMENT
+#ifdef VBOXNETFLT_WITH_HOST2WIRE_FILTER
     vboxNetFltLinuxUnhookDev(pThis, NULL);
 #endif
 
