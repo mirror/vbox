@@ -210,7 +210,7 @@ typedef struct PDMASYNCCOMPLETIONENDPOINT
 #ifdef VBOX_WITH_STATISTICS
     uint32_t                                    u32Alignment;
     STAMCOUNTER                                 StatTaskRunTimesNs[10];
-    STAMCOUNTER                                 StatTaskRunTimesMicroSec[10];
+    STAMCOUNTER                                 StatTaskRunTimesUs[10];
     STAMCOUNTER                                 StatTaskRunTimesMs[10];
     STAMCOUNTER                                 StatTaskRunTimesSec[10];
     STAMCOUNTER                                 StatTaskRunOver100Sec;
