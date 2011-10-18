@@ -5554,6 +5554,92 @@ static DECLCALLBACK(int) e1kDestruct(PPDMDEVINS pDevIns)
 }
 
 /**
+ * Status info callback.
+ *
+ * @param   pDevIns     The device instance.
+ * @param   pHlp        The output helpers.
+ * @param   pszArgs     The arguments.
+ */
+static DECLCALLBACK(void) e1kInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const char *pszArgs)
+{
+    E1KSTATE* pState = PDMINS_2_DATA(pDevIns, E1KSTATE*);
+    int       i;
+    bool        fRcvRing = false;
+    bool        fXmtRing = false;
+
+    /*
+     * Parse args.
+     */
+    if (pszArgs)
+    {
+        fRcvRing = strstr(pszArgs, "verbose") || strstr(pszArgs, "rcv");
+        fXmtRing = strstr(pszArgs, "verbose") || strstr(pszArgs, "xmt");
+    }
+
+    /*
+     * Show info.
+     */
+    pHlp->pfnPrintf(pHlp, "E1000 #%d: port=%RTiop mmio=%RX32 mac-cfg=%RTmac %s%s%s\n",
+                    pDevIns->iInstance, pState->addrIOPort, pState->addrMMReg,
+                    &pState->macConfigured, g_Chips[pState->eChip].pcszName,
+                    pState->fGCEnabled ? " GC" : "", pState->fR0Enabled ? " R0" : "");
+
+    e1kCsEnter(pState, VERR_INTERNAL_ERROR); /* Not sure why but PCNet does it */
+
+    for (i = 0; i < E1K_NUM_OF_32BIT_REGS; ++i)
+        pHlp->pfnPrintf(pHlp, "%8.8s = %08x\n", s_e1kRegMap[i].abbrev, pState->auRegs[i]);
+
+    for (i = 0; i < RT_ELEMENTS(pState->aRecAddr.array); i++)
+    {
+        E1KRAELEM* ra = pState->aRecAddr.array + i;
+        if (ra->ctl & RA_CTL_AV)
+        {
+            const char *pcszTmp;
+            switch (ra->ctl & RA_CTL_AS)
+            {
+                case 0:  pcszTmp = "DST"; break;
+                case 1:  pcszTmp = "SRC"; break;
+                default: pcszTmp = "reserved";
+            }
+            pHlp->pfnPrintf(pHlp, "RA%02d: %s %RTmac\n", i, pcszTmp, ra->addr);
+        }
+    }
+
+
+#ifdef E1K_INT_STATS
+    pHlp->pfnPrintf(pHlp, "Interrupt attempts: %d\n", pState->uStatIntTry);
+    pHlp->pfnPrintf(pHlp, "Interrupts raised : %d\n", pState->uStatInt);
+    pHlp->pfnPrintf(pHlp, "Interrupts lowered: %d\n", pState->uStatIntLower);
+    pHlp->pfnPrintf(pHlp, "Interrupts delayed: %d\n", pState->uStatIntDly);
+    pHlp->pfnPrintf(pHlp, "Disabled delayed:   %d\n", pState->uStatDisDly);
+    pHlp->pfnPrintf(pHlp, "Interrupts skipped: %d\n", pState->uStatIntSkip);
+    pHlp->pfnPrintf(pHlp, "Masked interrupts : %d\n", pState->uStatIntMasked);
+    pHlp->pfnPrintf(pHlp, "Early interrupts  : %d\n", pState->uStatIntEarly);
+    pHlp->pfnPrintf(pHlp, "Late interrupts   : %d\n", pState->uStatIntLate);
+    pHlp->pfnPrintf(pHlp, "Lost interrupts   : %d\n", pState->iStatIntLost);
+    pHlp->pfnPrintf(pHlp, "Interrupts by RX  : %d\n", pState->uStatIntRx);
+    pHlp->pfnPrintf(pHlp, "Interrupts by TX  : %d\n", pState->uStatIntTx);
+    pHlp->pfnPrintf(pHlp, "Interrupts by ICS : %d\n", pState->uStatIntICS);
+    pHlp->pfnPrintf(pHlp, "Interrupts by RDTR: %d\n", pState->uStatIntRDTR);
+    pHlp->pfnPrintf(pHlp, "Interrupts by RDMT: %d\n", pState->uStatIntRXDMT0);
+    pHlp->pfnPrintf(pHlp, "Interrupts by TXQE: %d\n", pState->uStatIntTXQE);
+    pHlp->pfnPrintf(pHlp, "TX int delay asked: %d\n", pState->uStatTxIDE);
+    pHlp->pfnPrintf(pHlp, "TX no report asked: %d\n", pState->uStatTxNoRS);
+    pHlp->pfnPrintf(pHlp, "TX abs timer expd : %d\n", pState->uStatTAD);
+    pHlp->pfnPrintf(pHlp, "TX int timer expd : %d\n", pState->uStatTID);
+    pHlp->pfnPrintf(pHlp, "RX abs timer expd : %d\n", pState->uStatRAD);
+    pHlp->pfnPrintf(pHlp, "RX int timer expd : %d\n", pState->uStatRID);
+    pHlp->pfnPrintf(pHlp, "TX CTX descriptors: %d\n", pState->uStatDescCtx);
+    pHlp->pfnPrintf(pHlp, "TX DAT descriptors: %d\n", pState->uStatDescDat);
+    pHlp->pfnPrintf(pHlp, "TX LEG descriptors: %d\n", pState->uStatDescLeg);
+    pHlp->pfnPrintf(pHlp, "Received frames   : %d\n", pState->uStatRxFrm);
+    pHlp->pfnPrintf(pHlp, "Transmitted frames: %d\n", pState->uStatTxFrm);
+#endif /* E1K_INT_STATS */
+
+    e1kCsLeave(pState);
+}
+
+/**
  * Sets 8-bit register in PCI configuration space.
  * @param   refPciDev   The PCI device.
  * @param   uOffset     The register offset.
@@ -5682,11 +5768,14 @@ static DECLCALLBACK(int) e1kConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNO
     /*
      * Validate configuration.
      */
-    if (!CFGMR3AreValuesValid(pCfg, "MAC\0" "CableConnected\0" "AdapterType\0" "LineSpeed\0"))
+    if (!CFGMR3AreValuesValid(pCfg, "MAC\0" "CableConnected\0" "AdapterType\0" "LineSpeed\0" "GCEnabled\0" "R0Enabled\0"))
         return PDMDEV_SET_ERROR(pDevIns, VERR_PDM_DEVINS_UNKNOWN_CFG_VALUES,
                                 N_("Invalid configuration for E1000 device"));
 
     /** @todo: LineSpeed unused! */
+
+    pState->fR0Enabled   = true;
+    pState->fGCEnabled   = true;
 
     /* Get config params */
     rc = CFGMR3QueryBytes(pCfg, "MAC", pState->macConfigured.au8,
@@ -5703,12 +5792,19 @@ static DECLCALLBACK(int) e1kConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNO
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Failed to get the value of 'AdapterType'"));
     Assert(pState->eChip <= E1K_CHIP_82545EM);
+    rc = CFGMR3QueryBoolDef(pCfg, "GCEnabled", &pState->fGCEnabled, true);
+    if (RT_FAILURE(rc))
+        return PDMDEV_SET_ERROR(pDevIns, rc,
+                                N_("Configuration error: Failed to get the value of 'GCEnabled'"));
+
+    rc = CFGMR3QueryBoolDef(pCfg, "R0Enabled", &pState->fR0Enabled, true);
+    if (RT_FAILURE(rc))
+        return PDMDEV_SET_ERROR(pDevIns, rc,
+                                N_("Configuration error: Failed to get the value of 'R0Enabled'"));
 
     E1kLog(("%s Chip=%s\n", INSTANCE(pState), g_Chips[pState->eChip].pcszName));
 
     /* Initialize state structure */
-    pState->fR0Enabled   = true;
-    pState->fGCEnabled   = true;
     pState->pDevInsR3    = pDevIns;
     pState->pDevInsR0    = PDMDEVINS_2_R0PTR(pDevIns);
     pState->pDevInsRC    = PDMDEVINS_2_RCPTR(pDevIns);
@@ -5897,6 +5993,11 @@ static DECLCALLBACK(int) e1kConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNO
         return rc;
     pState->pLUTimerR0 = TMTimerR0Ptr(pState->pLUTimerR3);
     pState->pLUTimerRC = TMTimerRCPtr(pState->pLUTimerR3);
+
+    /* Register the info item */
+    char szTmp[20];
+    RTStrPrintf(szTmp, sizeof(szTmp), "e1k%d", iInstance);
+    PDMDevHlpDBGFInfoRegister(pDevIns, szTmp, "E1000 info.", e1kInfo);
 
     /* Status driver */
     PPDMIBASE pBase;
