@@ -165,8 +165,9 @@ void UIMachineView::sltPerformGuestResize(const QSize &toSize)
     session().GetConsole().GetDisplay().SetVideoModeHint(newSize.width(), newSize.height(), 0, screenId());
     /* And track whether we have had a "normal" resize since the last
      * fullscreen resize hint was sent: */
-    machine.SetExtraData(VBoxDefs::GUI_LastGuestSizeHintWasFullscreen,
-                         isFullscreenOrSeamless() ? "true" : "");
+    QString strKey = makeExtraDataKeyPerMonitor
+                         (VBoxDefs::GUI_LastGuestSizeHintWasFullscreen);
+    machine.SetExtraData(strKey, isFullscreenOrSeamless() ? "true" : "");
 }
 
 void UIMachineView::sltMachineStateChanged()
@@ -624,8 +625,8 @@ QSize UIMachineView::guestSizeHint()
     CMachine machine = session().GetMachine();
 
     /* Load machine view hint: */
-    QString strKey = m_uScreenId == 0 ? QString("%1").arg(VBoxDefs::GUI_LastGuestSizeHint) :
-                     QString("%1%2").arg(VBoxDefs::GUI_LastGuestSizeHint).arg(m_uScreenId);
+    QString strKey = makeExtraDataKeyPerMonitor
+                         (VBoxDefs::GUI_LastGuestSizeHint);
     QString strValue = machine.GetExtraData(strKey);
 
     bool ok = true;
@@ -691,8 +692,8 @@ void UIMachineView::storeGuestSizeHint(const QSize &sizeHint)
     CMachine machine = session().GetMachine();
 
     /* Save machine view hint: */
-    QString strKey = m_uScreenId == 0 ? QString("%1").arg(VBoxDefs::GUI_LastGuestSizeHint) :
-                     QString("%1%2").arg(VBoxDefs::GUI_LastGuestSizeHint).arg(m_uScreenId);
+    QString strKey = makeExtraDataKeyPerMonitor
+                         (VBoxDefs::GUI_LastGuestSizeHint);
     QString strValue = QString("%1,%2").arg(sizeHint.width()).arg(sizeHint.height());
     machine.SetExtraData(strKey, strValue);
 }
@@ -908,6 +909,12 @@ bool UIMachineView::isFullscreenOrSeamless()
     UIVisualStateType type = machineLogic()->visualStateType();
     return    type == UIVisualStateType_Fullscreen
            || type == UIVisualStateType_Fullscreen;
+}
+
+QString UIMachineView::makeExtraDataKeyPerMonitor(QString base) const
+{
+    return m_uScreenId == 0 ? QString("%1").arg(base)
+                            : QString("%1%2").arg(base).arg(m_uScreenId);
 }
 
 bool UIMachineView::event(QEvent *pEvent)

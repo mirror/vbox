@@ -218,7 +218,9 @@ void UIMachineViewNormal::maybeResendResizeHint()
 
         /* We send a guest size hint if needed to reverse a transition
          * to fullscreen or seamless. */
-        QString strHintSent = machine.GetExtraData(VBoxDefs::GUI_LastGuestSizeHintWasFullscreen);
+        QString strKey = makeExtraDataKeyPerMonitor
+                             (VBoxDefs::GUI_LastGuestSizeHintWasFullscreen);
+        QString strHintSent = machine.GetExtraData(strKey);
         if (!strHintSent.isEmpty())
             sltPerformGuestResize(guestSizeHint());
     }

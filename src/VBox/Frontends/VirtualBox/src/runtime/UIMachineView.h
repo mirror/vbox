@@ -181,6 +181,7 @@ protected:
     bool guestResizeEvent(QEvent *pEvent, bool fFullscreen);
     /** Is this a fullscreen-type view? */
     bool isFullscreenOrSeamless();
+    QString makeExtraDataKeyPerMonitor(QString base) const;
 
     /* Cross-platforms event processors: */
     bool event(QEvent *pEvent);
