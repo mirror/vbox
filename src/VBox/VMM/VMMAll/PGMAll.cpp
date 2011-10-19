@@ -1056,7 +1056,6 @@ DECLINLINE(int) pgmShwGetPaePoolPagePD(PVMCPU pVCpu, RTGCPTR GCPtr, PPGMPOOLPAGE
  */
 static int pgmShwSyncLongModePDPtr(PVMCPU pVCpu, RTGCPTR64 GCPtr, X86PGPAEUINT uGstPml4e, X86PGPAEUINT uGstPdpe, PX86PDPAE *ppPD)
 {
-    PPGMCPU        pPGM          = &pVCpu->pgm.s;
     PVM            pVM           = pVCpu->CTX_SUFF(pVM);
     PPGMPOOL       pPool         = pVM->pgm.s.CTX_SUFF(pPool);
     const unsigned iPml4         = (GCPtr >> X86_PML4_SHIFT) & X86_PML4_MASK;
@@ -1155,11 +1154,10 @@ static int pgmShwSyncLongModePDPtr(PVMCPU pVCpu, RTGCPTR64 GCPtr, X86PGPAEUINT u
  */
 DECLINLINE(int) pgmShwGetLongModePDPtr(PVMCPU pVCpu, RTGCPTR64 GCPtr, PX86PML4E *ppPml4e, PX86PDPT *ppPdpt, PX86PDPAE *ppPD)
 {
-    PPGMCPU         pPGM = &pVCpu->pgm.s;
     const unsigned  iPml4 = (GCPtr >> X86_PML4_SHIFT) & X86_PML4_MASK;
     PCX86PML4E      pPml4e = pgmShwGetLongModePML4EPtr(pVCpu, iPml4);
 
-    PGM_LOCK_ASSERT_OWNER(PGMCPU2VM(pPGM));
+    PGM_LOCK_ASSERT_OWNER(pVCpu->CTX_SUFF(pVM));
 
     AssertReturn(pPml4e, VERR_INTERNAL_ERROR);
     if (ppPml4e)
@@ -1921,14 +1919,12 @@ VMMDECL(int) PGMFlushTLB(PVMCPU pVCpu, uint64_t cr3, bool fGlobal)
  */
 VMMDECL(int) PGMUpdateCR3(PVMCPU pVCpu, uint64_t cr3)
 {
-    PVM pVM = pVCpu->CTX_SUFF(pVM);
-
     VMCPU_ASSERT_EMT(pVCpu);
     LogFlow(("PGMUpdateCR3: cr3=%RX64 OldCr3=%RX64\n", cr3, pVCpu->pgm.s.GCPhysCR3));
 
     /* We assume we're only called in nested paging mode. */
-    Assert(pVM->pgm.s.fNestedPaging || pVCpu->pgm.s.enmShadowMode == PGMMODE_EPT);
-    Assert(pVM->pgm.s.fMappingsDisabled);
+    Assert(pVCpu->CTX_SUFF(pVM)->pgm.s.fNestedPaging || pVCpu->pgm.s.enmShadowMode == PGMMODE_EPT);
+    Assert(pVCpu->CTX_SUFF(pVM)->pgm.s.fMappingsDisabled);
     Assert(!(pVCpu->pgm.s.fSyncFlags & PGM_SYNC_MONITOR_CR3));
 
     /*
@@ -1976,7 +1972,6 @@ VMMDECL(int) PGMUpdateCR3(PVMCPU pVCpu, uint64_t cr3)
  */
 VMMDECL(int) PGMSyncCR3(PVMCPU pVCpu, uint64_t cr0, uint64_t cr3, uint64_t cr4, bool fGlobal)
 {
-    PVM pVM = pVCpu->CTX_SUFF(pVM);
     int rc;
 
     VMCPU_ASSERT_EMT(pVCpu);
@@ -2020,7 +2015,7 @@ VMMDECL(int) PGMSyncCR3(PVMCPU pVCpu, uint64_t cr0, uint64_t cr3, uint64_t cr4, 
     {
         pVCpu->pgm.s.fSyncFlags &= ~PGM_SYNC_MAP_CR3;
 
-        RTGCPHYS GCPhysCR3Old = pVCpu->pgm.s.GCPhysCR3;
+        RTGCPHYS GCPhysCR3Old = pVCpu->pgm.s.GCPhysCR3; NOREF(GCPhysCR3Old);
         RTGCPHYS GCPhysCR3;
         switch (pVCpu->pgm.s.enmGuestMode)
         {
@@ -2088,7 +2083,8 @@ VMMDECL(int) PGMSyncCR3(PVMCPU pVCpu, uint64_t cr0, uint64_t cr3, uint64_t cr4, 
         if (pVCpu->pgm.s.fSyncFlags & PGM_SYNC_MONITOR_CR3)
         {
             pVCpu->pgm.s.fSyncFlags &= ~PGM_SYNC_MONITOR_CR3;
-            Assert(!pVM->pgm.s.fMappingsFixed); Assert(!pVM->pgm.s.fMappingsDisabled);
+            Assert(!pVCpu->CTX_SUFF(pVM)->pgm.s.fMappingsFixed);
+            Assert(!pVCpu->CTX_SUFF(pVM)->pgm.s.fMappingsDisabled);
         }
     }
 
@@ -2118,7 +2114,6 @@ VMMDECL(int) PGMSyncCR3(PVMCPU pVCpu, uint64_t cr0, uint64_t cr3, uint64_t cr4, 
  */
 VMMDECL(int) PGMChangeMode(PVMCPU pVCpu, uint64_t cr0, uint64_t cr4, uint64_t efer)
 {
-    PVM pVM = pVCpu->CTX_SUFF(pVM);
     PGMMODE enmGuestMode;
 
     VMCPU_ASSERT_EMT(pVCpu);
@@ -2163,7 +2158,7 @@ VMMDECL(int) PGMChangeMode(PVMCPU pVCpu, uint64_t cr0, uint64_t cr4, uint64_t ef
     PGM_INVL_VCPU_TLBS(pVCpu);
 
 #ifdef IN_RING3
-    return PGMR3ChangeMode(pVM, pVCpu, enmGuestMode);
+    return PGMR3ChangeMode(pVCpu->CTX_SUFF(pVM), pVCpu, enmGuestMode);
 #else
     LogFlow(("PGMChangeMode: returns VINF_PGM_CHANGE_MODE.\n"));
     return VINF_PGM_CHANGE_MODE;

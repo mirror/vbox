@@ -1566,8 +1566,6 @@ static int pgmRZDynMapAssertIntegrity(PPGMRZDYNMAP pThis)
     if (!pThis->cUsers)
         return VERR_INVALID_PARAMETER;
 
-
-    int                 rc          = VINF_SUCCESS;
     PGMRZDYNMAP_SPINLOCK_ACQUIRE(pThis);
 
 #define CHECK_RET(expr, a) \

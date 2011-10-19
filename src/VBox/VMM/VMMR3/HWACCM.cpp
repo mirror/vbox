@@ -1559,7 +1559,7 @@ static int hwaccmR3TermCPU(PVM pVM)
 {
     for (VMCPUID i = 0; i < pVM->cCpus; i++)
     {
-        PVMCPU pVCpu = &pVM->aCpus[i];
+        PVMCPU pVCpu = &pVM->aCpus[i]; NOREF(pVCpu);
 
 #ifdef VBOX_WITH_STATISTICS
         if (pVCpu->hwaccm.s.paStatExitReason)

@@ -1084,7 +1084,9 @@ static int pdmacFileEpRead(PPDMASYNCCOMPLETIONTASK pTask,
                            PCRTSGSEG paSegments, size_t cSegments,
                            size_t cbRead)
 {
+#ifdef VBOX_WITH_STATISTICS
     PPDMASYNCCOMPLETIONENDPOINTFILE pEpFile = (PPDMASYNCCOMPLETIONENDPOINTFILE)pEndpoint;
+#endif
 
     LogFlowFunc(("pTask=%#p pEndpoint=%#p off=%RTfoff paSegments=%#p cSegments=%zu cbRead=%zu\n",
                  pTask, pEndpoint, off, paSegments, cSegments, cbRead));

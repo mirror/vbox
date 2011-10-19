@@ -1509,7 +1509,7 @@ IEM_CIMPL_DEF_1(iemCImpl_iret, IEMMODE, enmEffOpSize)
  */
 IEM_CIMPL_DEF_2(iemCImpl_LoadSReg, uint8_t, iSegReg, uint16_t, uSel)
 {
-    PCPUMCTX        pCtx = pIemCpu->CTX_SUFF(pCtx);
+    /*PCPUMCTX        pCtx = pIemCpu->CTX_SUFF(pCtx);*/
     uint16_t       *pSel = iemSRegRef(pIemCpu, iSegReg);
     PCPUMSELREGHID  pHid = iemSRegGetHid(pIemCpu, iSegReg);
 
@@ -1798,7 +1798,7 @@ IEM_CIMPL_DEF_5(iemCImpl_load_SReg_Greg,
                 uint8_t,  iGReg,
                 IEMMODE,  enmEffOpSize)
 {
-    PCPUMCTX        pCtx = pIemCpu->CTX_SUFF(pCtx);
+    /*PCPUMCTX        pCtx = pIemCpu->CTX_SUFF(pCtx);*/
     VBOXSTRICTRC    rcStrict;
 
     /*

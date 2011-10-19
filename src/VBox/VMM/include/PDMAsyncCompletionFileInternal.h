@@ -327,10 +327,7 @@ typedef struct PDMASYNCCOMPLETIONENDPOINTFILE
     unsigned                               fFlags;
     /** File handle. */
     RTFILE                                 hFile;
-    /**
-     * Real size of the file. Only updated if
-     * data is appended.
-     */
+    /** Real size of the file. Only updated if data is appended. */
     volatile uint64_t                      cbFile;
     /** List of new tasks. */
     R3PTRTYPE(volatile PPDMACTASKFILE)     pTasksNewHead;

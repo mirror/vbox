@@ -203,7 +203,6 @@ VMMR3DECL(int) PGMR3DbgReadGCPhys(PVM pVM, void *pvDst, RTGCPHYS GCPhysSrc, size
 
     /* partial read that failed, chop it up in pages. */
     *pcbRead = 0;
-    size_t const cbReq = cb;
     rc = VINF_SUCCESS;
     while (cb > 0)
     {
@@ -1465,7 +1464,7 @@ static int pgmR3DumpHierarchyShw32BitPD(PPGMR3DUMPHIERARCHYSTATE pState, RTHCPHY
     cMaxDepth--;
 
     uint32_t iFirst, iLast;
-    uint64_t u64BaseAddress = pgmR3DumpHierarchyCalcRange(pState, X86_PD_SHIFT, X86_PG_ENTRIES, &iFirst, &iLast);
+    pgmR3DumpHierarchyCalcRange(pState, X86_PD_SHIFT, X86_PG_ENTRIES, &iFirst, &iLast);
     for (uint32_t i = iFirst; i <= iLast; i++)
     {
         X86PDE Pde = pPD->a[i];
@@ -2142,7 +2141,7 @@ static int pgmR3DumpHierarchyGst32BitPD(PPGMR3DUMPHIERARCHYSTATE pState, RTHCPHY
     cMaxDepth--;
 
     uint32_t iFirst, iLast;
-    uint64_t u64BaseAddress = pgmR3DumpHierarchyCalcRange(pState, X86_PD_SHIFT, X86_PG_ENTRIES, &iFirst, &iLast);
+    pgmR3DumpHierarchyCalcRange(pState, X86_PD_SHIFT, X86_PG_ENTRIES, &iFirst, &iLast);
     for (uint32_t i = iFirst; i <= iLast; i++)
     {
         X86PDE Pde = pPD->a[i];

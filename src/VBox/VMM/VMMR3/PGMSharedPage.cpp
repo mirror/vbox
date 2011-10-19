@@ -218,7 +218,7 @@ static DECLCALLBACK(void) pgmR3CheckSharedModulesHelper(PVM pVM, VMCPUID idCpu)
 {
     /* We must stall other VCPUs as we'd otherwise have to send IPI flush commands for every single change we make. */
     int rc = VMMR3EmtRendezvous(pVM, VMMEMTRENDEZVOUS_FLAGS_TYPE_ONE_BY_ONE, pgmR3SharedModuleRegRendezvous, &idCpu);
-    Assert(rc == VINF_SUCCESS);
+    AssertRCSuccess(rc);
 }
 #endif
 

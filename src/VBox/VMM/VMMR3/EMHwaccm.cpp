@@ -181,7 +181,9 @@ static int emR3ExecuteInstructionWorker(PVM pVM, PVMCPU pVCpu, int rcGC, const c
 static int emR3ExecuteInstructionWorker(PVM pVM, PVMCPU pVCpu, int rcGC)
 #endif
 {
+#ifdef LOG_ENABLED
     PCPUMCTX pCtx = pVCpu->em.s.pCtx;
+#endif
     int      rc;
 
     /*

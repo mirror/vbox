@@ -77,7 +77,8 @@ typedef INTNETRINGBUF *PINTNETRINGBUF;
 /**
  * Asserts the sanity of the specified INTNETRINGBUF structure.
  */
-#define INTNETRINGBUF_ASSERT_SANITY(pRingBuf) \
+#ifdef VBOX_STRICT
+# define INTNETRINGBUF_ASSERT_SANITY(pRingBuf) \
     do \
     { \
         AssertPtr(pRingBuf); \
@@ -103,6 +104,9 @@ typedef INTNETRINGBUF *PINTNETRINGBUF;
                       ("W=%#x W'=%#x R=%#x\n", offWriteCom, offWriteInt, offRead)); \
         } \
     } while (0)
+#else
+# define INTNETRINGBUF_ASSERT_SANITY(pRingBuf) do { } while (0)
+#endif
 
 
 
@@ -247,6 +251,7 @@ AssertCompileSize(PDMNETWORKGSO, 8);
 /**
  * Asserts the sanity of the specified INTNETHDR.
  */
+#ifdef VBOX_STRICT
 #define INTNETHDR_ASSERT_SANITY(pHdr, pRingBuf) \
     do \
     { \
@@ -267,6 +272,9 @@ AssertCompileSize(PDMNETWORKGSO, 8);
             Assert(offFrame <  (pRingBuf)->offEnd); \
         } \
     } while (0)
+#else
+# define INTNETHDR_ASSERT_SANITY(pHdr, pRingBuf) do { } while (0)
+#endif
 
 
 /**
