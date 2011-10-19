@@ -255,7 +255,7 @@ typedef struct GVMM
 typedef GVMM *PGVMM;
 
 /** The GVMM::u32Magic value (Charlie Haden). */
-#define GVMM_MAGIC      0x19370806
+#define GVMM_MAGIC      UINT32_C(0x19370806)
 
 
 
@@ -1297,7 +1297,7 @@ static DECLCALLBACK(void) gvmmR0HandleObjDestructor(void *pvObj, void *pvGVMM, v
     ASMAtomicWriteNullPtr(&pHandle->pvObj);
     ASMAtomicWriteNullPtr(&pHandle->pSession);
     ASMAtomicWriteHandle(&pHandle->hEMT0,        NIL_RTNATIVETHREAD);
-    ASMAtomicWriteSize(&pHandle->ProcId,         NIL_RTPROCESS);
+    ASMAtomicWriteU32(&pHandle->ProcId,          NIL_RTPROCESS);
 
     gvmmR0UsedUnlock(pGVMM);
     gvmmR0CreateDestroyUnlock(pGVMM);

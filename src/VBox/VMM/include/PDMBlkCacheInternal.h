@@ -64,7 +64,7 @@ typedef struct PDMBLKCACHEENTRY
     /** Reference counter. Prevents eviction of the entry if > 0. */
     volatile uint32_t               cRefs;
     /** Size of the entry. */
-    size_t                          cbData;
+    uint32_t                        cbData;
     /** Pointer to the memory containing the data. */
     uint8_t                        *pbData;
     /** Head of list of tasks waiting for this one to finish. */

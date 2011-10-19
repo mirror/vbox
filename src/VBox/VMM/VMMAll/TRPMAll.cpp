@@ -186,7 +186,7 @@ VMMDECL(int)  TRPMAssertTrap(PVMCPU pVCpu, uint8_t u8TrapNo, TRPMEVENT enmType)
 
     pVCpu->trpm.s.uActiveVector               = u8TrapNo;
     pVCpu->trpm.s.enmActiveType               = enmType;
-    pVCpu->trpm.s.uActiveErrorCode            = ~0;
+    pVCpu->trpm.s.uActiveErrorCode            = ~(RTGCUINT)0;
     pVCpu->trpm.s.uActiveCR2                  = 0xdeadface;
     return VINF_SUCCESS;
 }

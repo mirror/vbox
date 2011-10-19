@@ -3489,55 +3489,57 @@ VMMDECL(int) PGMPhysInterpretedRead(PVMCPU pVCpu, PCPUMCTXCORE pCtxCore, void *p
         RTGCPHYS GCPhys2;
         rc = PGM_GST_PFN(GetPage,pVCpu)(pVCpu, GCPtrSrc, &fFlags1, &GCPhys1);
         if (RT_SUCCESS(rc))
-            rc = PGM_GST_PFN(GetPage,pVCpu)(pVCpu, GCPtrSrc + cb1, &fFlags2, &GCPhys2);
-        if (RT_SUCCESS(rc))
         {
-            /** @todo we should check reserved bits ... */
-            AssertMsgFailed(("cb=%d cb1=%d cb2=%d GCPtrSrc=%RGv\n", cb, cb1, cb2, GCPtrSrc));
-            PGMPAGEMAPLOCK PgMpLck;
-            void const *pvSrc1;
-            rc = PGMPhysGCPhys2CCPtrReadOnly(pVM, GCPhys1, &pvSrc1, &PgMpLck);
-            switch (rc)
+            rc = PGM_GST_PFN(GetPage,pVCpu)(pVCpu, GCPtrSrc + cb1, &fFlags2, &GCPhys2);
+            if (RT_SUCCESS(rc))
             {
-                case VINF_SUCCESS:
-                    memcpy(pvDst, (uint8_t *)pvSrc1 + (GCPtrSrc & PAGE_OFFSET_MASK), cb1);
-                    PGMPhysReleasePageMappingLock(pVM, &PgMpLck);
-                    break;
-                case VERR_PGM_INVALID_GC_PHYSICAL_ADDRESS:
-                    memset(pvDst, 0xff, cb1);
-                    break;
-                default:
-                    Assert(RT_FAILURE_NP(rc));
-                    return rc;
-            }
+                /** @todo we should check reserved bits ... */
+                AssertMsgFailed(("cb=%d cb1=%d cb2=%d GCPtrSrc=%RGv\n", cb, cb1, cb2, GCPtrSrc));
+                PGMPAGEMAPLOCK PgMpLck;
+                void const *pvSrc1;
+                rc = PGMPhysGCPhys2CCPtrReadOnly(pVM, GCPhys1, &pvSrc1, &PgMpLck);
+                switch (rc)
+                {
+                    case VINF_SUCCESS:
+                        memcpy(pvDst, (uint8_t *)pvSrc1 + (GCPtrSrc & PAGE_OFFSET_MASK), cb1);
+                        PGMPhysReleasePageMappingLock(pVM, &PgMpLck);
+                        break;
+                    case VERR_PGM_INVALID_GC_PHYSICAL_ADDRESS:
+                        memset(pvDst, 0xff, cb1);
+                        break;
+                    default:
+                        Assert(RT_FAILURE_NP(rc));
+                        return rc;
+                }
 
-            void const *pvSrc2;
-            rc = PGMPhysGCPhys2CCPtrReadOnly(pVM, GCPhys2, &pvSrc2, &PgMpLck);
-            switch (rc)
-            {
-                case VINF_SUCCESS:
-                    memcpy((uint8_t *)pvDst + cb1, pvSrc2, cb2);
-                    PGMPhysReleasePageMappingLock(pVM, &PgMpLck);
-                    break;
-                case VERR_PGM_INVALID_GC_PHYSICAL_ADDRESS:
-                    memset((uint8_t *)pvDst + cb1, 0xff, cb2);
-                    break;
-                default:
-                    Assert(RT_FAILURE_NP(rc));
-                    return rc;
-            }
+                void const *pvSrc2;
+                rc = PGMPhysGCPhys2CCPtrReadOnly(pVM, GCPhys2, &pvSrc2, &PgMpLck);
+                switch (rc)
+                {
+                    case VINF_SUCCESS:
+                        memcpy((uint8_t *)pvDst + cb1, pvSrc2, cb2);
+                        PGMPhysReleasePageMappingLock(pVM, &PgMpLck);
+                        break;
+                    case VERR_PGM_INVALID_GC_PHYSICAL_ADDRESS:
+                        memset((uint8_t *)pvDst + cb1, 0xff, cb2);
+                        break;
+                    default:
+                        Assert(RT_FAILURE_NP(rc));
+                        return rc;
+                }
 
-            if (!(fFlags1 & X86_PTE_A))
-            {
-                rc = PGMGstModifyPage(pVCpu, GCPtrSrc, 1, X86_PTE_A, ~(uint64_t)X86_PTE_A);
-                AssertRC(rc);
+                if (!(fFlags1 & X86_PTE_A))
+                {
+                    rc = PGMGstModifyPage(pVCpu, GCPtrSrc, 1, X86_PTE_A, ~(uint64_t)X86_PTE_A);
+                    AssertRC(rc);
+                }
+                if (!(fFlags2 & X86_PTE_A))
+                {
+                    rc = PGMGstModifyPage(pVCpu, GCPtrSrc + cb1, 1, X86_PTE_A, ~(uint64_t)X86_PTE_A);
+                    AssertRC(rc);
+                }
+                return VINF_SUCCESS;
             }
-            if (!(fFlags2 & X86_PTE_A))
-            {
-                rc = PGMGstModifyPage(pVCpu, GCPtrSrc + cb1, 1, X86_PTE_A, ~(uint64_t)X86_PTE_A);
-                AssertRC(rc);
-            }
-            return VINF_SUCCESS;
         }
     }
 

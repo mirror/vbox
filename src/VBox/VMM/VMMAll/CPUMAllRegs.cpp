@@ -854,8 +854,8 @@ VMMDECL(int) CPUMQueryGuestMsr(PVMCPU pVCpu, uint32_t idMsr, uint64_t *puValue)
 
         case MSR_IA32_THERM_STATUS:
             /* CPU temperature relative to TCC, to actually activate, CPUID leaf 6 EAX[0] must be set */
-            *puValue = ( 1 << 31) /* validity bit */
-                     | (20 << 16) /* degrees till TCC */;
+            *puValue = RT_BIT(31)           /* validity bit */
+                     | (UINT64_C(20) << 16) /* degrees till TCC */;
             break;
 
         case MSR_IA32_MISC_ENABLE:
@@ -2340,7 +2340,7 @@ VMMDECL(uint32_t) CPUMGetGuestCPL(PVMCPU pVCpu, PCPUMCTXCORE pCtxCore)
          *
          * This only seems to apply to AMD-V; in the VT-x case we *do* need to look
          * at SS. (ACP2 regression during install after a far call to ring 2)
-         * 
+         *
          * Seems it isn't necessiarly true for newer AMD-V CPUs even, we have
          * to move the VMCB.guest.u8CPL into Attr.n.u2Dpl to make this (and
          * other) code work right.  So, forget CS.DPL, always use SS.DPL.

@@ -141,7 +141,7 @@ static int trpmGCExitTrap(PVM pVM, PVMCPU pVCpu, int rc, PCPUMCTXCORE pRegFrame)
     /* Reset trap? */
     if (    rc != VINF_EM_RAW_GUEST_TRAP
         &&  rc != VINF_EM_RAW_RING_SWITCH_INT)
-        pVCpu->trpm.s.uActiveVector = ~0;
+        pVCpu->trpm.s.uActiveVector = UINT32_MAX;
 
 #ifdef VBOX_HIGH_RES_TIMERS_HACK
     /*
@@ -693,7 +693,7 @@ DECLASM(int) TRPMGCTrap0bHandler(PTRPMCPU pTrpmCpu, PCPUMCTXCORE pRegFrame)
              * We simply return execution to the recompiler to do emulation
              * starting from the instruction which caused the trap.
              */
-            pTrpmCpu->uActiveVector = ~0;
+            pTrpmCpu->uActiveVector = UINT32_MAX;
             Log6(("TRPMGC0b: %Rrc (%04x:%08x) (CG)\n", VINF_EM_RAW_RING_SWITCH, pRegFrame->cs, pRegFrame->eip));
             PGMRZDynMapReleaseAutoSet(pVCpu);
             return VINF_EM_RAW_RING_SWITCH;
@@ -868,7 +868,7 @@ static int trpmGCTrap0dHandlerRing3(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFram
 #endif
         case OP_BOUND:
         case OP_INTO:
-            pVCpu->trpm.s.uActiveVector = ~0;
+            pVCpu->trpm.s.uActiveVector = UINT32_MAX;
             return trpmGCExitTrap(pVM, pVCpu, VINF_EM_RAW_RING_SWITCH, pRegFrame);
 
         /*

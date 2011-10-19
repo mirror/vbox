@@ -3178,7 +3178,7 @@ static bool pgmPoolTrackFlushGCPhysPTInt(PVM pVM, PCPGMPAGE pPhysPage, bool fFlu
                 }
 #endif
             AssertFatalMsgFailed(("iFirstPresent=%d cPresent=%d u32=%RX32 poolkind=%x\n", pPage->iFirstPresent, pPage->cPresent, u32, pPage->enmKind));
-            PGM_DYNMAP_UNUSED_HINT_VM(pVM, pPT);
+            /*PGM_DYNMAP_UNUSED_HINT_VM(pVM, pPT);*/
             break;
         }
 
@@ -3252,7 +3252,7 @@ static bool pgmPoolTrackFlushGCPhysPTInt(PVM pVM, PCPGMPAGE pPhysPage, bool fFlu
                     Log(("i=%d cFound=%d\n", i, ++cFound));
 #endif
             AssertFatalMsgFailed(("iFirstPresent=%d cPresent=%d u64=%RX64 poolkind=%x iPte=%d PT=%RX64\n", pPage->iFirstPresent, pPage->cPresent, u64, pPage->enmKind, iPte, PGMSHWPTEPAE_GET_LOG(pPT->a[iPte])));
-            PGM_DYNMAP_UNUSED_HINT_VM(pVM, pPT);
+            /*PGM_DYNMAP_UNUSED_HINT_VM(pVM, pPT);*/
             break;
         }
 
@@ -3287,7 +3287,7 @@ static bool pgmPoolTrackFlushGCPhysPTInt(PVM pVM, PCPGMPAGE pPhysPage, bool fFlu
                     Log(("i=%d cFound=%d\n", i, ++cFound));
 # endif
             AssertFatalMsgFailed(("iFirstPresent=%d cPresent=%d\n", pPage->iFirstPresent, pPage->cPresent));
-            PGM_DYNMAP_UNUSED_HINT_VM(pVM, pPD);
+            /*PGM_DYNMAP_UNUSED_HINT_VM(pVM, pPD);*/
             break;
         }
 
@@ -3320,7 +3320,7 @@ static bool pgmPoolTrackFlushGCPhysPTInt(PVM pVM, PCPGMPAGE pPhysPage, bool fFlu
                     Log(("i=%d cFound=%d\n", i, ++cFound));
 # endif
             AssertFatalMsgFailed(("iFirstPresent=%d cPresent=%d\n", pPage->iFirstPresent, pPage->cPresent));
-            PGM_DYNMAP_UNUSED_HINT_VM(pVM, pPD);
+            /*PGM_DYNMAP_UNUSED_HINT_VM(pVM, pPD);*/
             break;
         }
 #endif /* PGM_WITH_LARGE_PAGES */
@@ -3328,7 +3328,11 @@ static bool pgmPoolTrackFlushGCPhysPTInt(PVM pVM, PCPGMPAGE pPhysPage, bool fFlu
         default:
             AssertFatalMsgFailed(("enmKind=%d iShw=%d\n", pPage->enmKind, iShw));
     }
+
+    /* not reached. */
+#ifndef _MSC_VER
     return fRet;
+#endif
 }
 
 

@@ -1727,7 +1727,7 @@ VMMDECL(RTHCPHYS) PGMGetInterHCCR3(PVM pVM)
 
         default:
             AssertMsgFailed(("enmHostMode=%d\n", pVM->pgm.s.enmHostMode));
-            return ~0;
+            return NIL_RTHCPHYS;
     }
 }
 
@@ -1759,7 +1759,7 @@ VMMDECL(RTHCPHYS) PGMGetInterRCCR3(PVM pVM, PVMCPU pVCpu)
 
         default:
             AssertMsgFailed(("enmShadowMode=%d\n", pVCpu->pgm.s.enmShadowMode));
-            return ~0;
+            return NIL_RTHCPHYS;
     }
 }
 
