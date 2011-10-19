@@ -1823,12 +1823,11 @@ static PPDMBLKCACHEENTRY pdmBlkCacheEntryCreate(PPDMBLKCACHE pBlkCache,
                                                 unsigned uAlignment,
                                                 size_t *pcbData)
 {
-    AssertReturn(cb <= UINT32_MAX, NULL);
-
     uint64_t offStart = 0;
     uint32_t cbEntry  = 0;
     *pcbData = pdmBlkCacheEntryBoundariesCalc(pBlkCache, off, (uint32_t)cb, uAlignment,
                                               &offStart, &cbEntry);
+    AssertReturn(cb <= UINT32_MAX, NULL);
 
     PPDMBLKCACHEGLOBAL pCache = pBlkCache->pCache;
     pdmBlkCacheLockEnter(pCache);
@@ -2181,7 +2180,6 @@ VMMR3DECL(int) PDMR3BlkCacheWrite(PPDMBLKCACHE pBlkCache, uint64_t off,
         size_t cbToWrite;
 
         pEntry = pdmBlkCacheGetCacheEntryByOffset(pBlkCache, off);
-
         if (pEntry)
         {
             /* Write the data into the entry and mark it as dirty */
@@ -2214,10 +2212,7 @@ VMMR3DECL(int) PDMR3BlkCacheWrite(PPDMBLKCACHE pBlkCache, uint64_t off,
                 {
                     /* If it is already dirty but not in progress just update the data. */
                     if (!(pEntry->fFlags & PDMBLKCACHE_ENTRY_IO_IN_PROGRESS))
-                    {
-                        RTSgBufCopyToBuf(&SgBuf, pEntry->pbData + offDiff,
-                                         cbToWrite);
-                    }
+                        RTSgBufCopyToBuf(&SgBuf, pEntry->pbData + offDiff, cbToWrite);
                     else
                     {
                         /* The data isn't written to the file yet */
@@ -2235,9 +2230,9 @@ VMMR3DECL(int) PDMR3BlkCacheWrite(PPDMBLKCACHE pBlkCache, uint64_t off,
                      * Check if a read is in progress for this entry.
                      * We have to defer processing in that case.
                      */
-                    if(pdmBlkCacheEntryFlagIsSetClearAcquireLock(pBlkCache, pEntry,
-                                                                 PDMBLKCACHE_ENTRY_IO_IN_PROGRESS,
-                                                                 0))
+                    if (pdmBlkCacheEntryFlagIsSetClearAcquireLock(pBlkCache, pEntry,
+                                                                  PDMBLKCACHE_ENTRY_IO_IN_PROGRESS,
+                                                                  0))
                     {
                         pdmBlkCacheEntryWaitersAdd(pEntry, pReq,
                                                    &SgBuf, offDiff, cbToWrite,
