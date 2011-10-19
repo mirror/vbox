@@ -628,27 +628,70 @@ RTR3DECL(int)  RTFileSetSize(RTFILE hFile, uint64_t cbSize)
 
 RTR3DECL(int)  RTFileGetSize(RTFILE hFile, uint64_t *pcbSize)
 {
+    /*
+     * GetFileSize works for most handles.
+     */
+    int             rc;
     ULARGE_INTEGER  Size;
     Size.LowPart = GetFileSize((HANDLE)RTFileToNative(hFile), &Size.HighPart);
     if (Size.LowPart != INVALID_FILE_SIZE)
     {
         *pcbSize = Size.QuadPart;
-        return VINF_SUCCESS;
+        if (Size.QuadPart)
+            return VINF_SUCCESS;
+        rc = VINF_SUCCESS;
+        /** @todo Check what GetFileSize returns on disks and volume
+         *        handles! */
     }
+    else
+        rc = RTErrConvertFromWin32(GetLastError());
+#if 0
+    /*
+     * Could it be a volume?
+     */
+    DISK_GEOMETRY   DriveGeo;
+    DWORD           cbDriveGeo;
+    if (DeviceIoControl((HANDLE)RTFileToNative(hFile),
+                        IOCTL_DISK_GET_DRIVE_GEOMETRY, NULL, 0,
+                        &DriveGeo, sizeof(DriveGeo), &cbDriveGeo, NULL))
+    {
+        if (   DriveGeo.MediaType == FixedMedia
+            || DriveGeo.MediaType == RemovableMedia)
+        {
+            *pcbSize = DriveGeo.Cylinders.QuadPart
+                     * DriveGeo.TracksPerCylinder
+                     * DriveGeo.SectorsPerTrack
+                     * DriveGeo.BytesPerSector;
 
-    /* error exit */
-    return RTErrConvertFromWin32(GetLastError());
+            GET_LENGTH_INFORMATION  DiskLenInfo;
+            DWORD                   Ignored;
+            if (DeviceIoControl((HANDLE)RTFileToNative(hFile),
+                                IOCTL_DISK_GET_LENGTH_INFO, NULL, 0,
+                                &DiskLenInfo, sizeof(DiskLenInfo), &Ignored, (LPOVERLAPPED)NULL))
+            {
+                /* IOCTL_DISK_GET_LENGTH_INFO is supported -- override cbSize. */
+                *pcbSize = DiskLenInfo.Length.QuadPart;
+            }
+            return VINF_SUCCESS;
+        }
+    }
+#endif
+
+    /*
+     * Return the GetFileSize result if not a volume/disk.
+     */
+    return rc;
 }
 
 
 RTR3DECL(int) RTFileGetMaxSizeEx(RTFILE hFile, PRTFOFF pcbMax)
 {
     /** @todo r=bird:
-     * We might have to make this code OS specific...
-     * In the worse case, we'll have to try GetVolumeInformationByHandle on vista and fall
-     * back on NtQueryVolumeInformationFile(,,,, FileFsAttributeInformation) else where, and
-     * check for known file system names. (For LAN shares we'll have to figure out the remote
-     * file system.) */
+     * We might have to make this code OS version specific... In the worse
+     * case, we'll have to try GetVolumeInformationByHandle on vista and fall
+     * back on NtQueryVolumeInformationFile(,,,, FileFsAttributeInformation)
+     * else where, and check for known file system names. (For LAN shares we'll
+     * have to figure out the remote file system.) */
     return VERR_NOT_IMPLEMENTED;
 }
 
