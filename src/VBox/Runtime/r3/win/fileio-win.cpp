@@ -29,6 +29,9 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #define LOG_GROUP RTLOGGROUP_DIR
+#ifndef _WIN32_WINNT
+# define _WIN32_WINNT 0x0500
+#endif
 #include <Windows.h>
 
 #include <iprt/file.h>
@@ -631,23 +634,17 @@ RTR3DECL(int)  RTFileGetSize(RTFILE hFile, uint64_t *pcbSize)
     /*
      * GetFileSize works for most handles.
      */
-    int             rc;
     ULARGE_INTEGER  Size;
     Size.LowPart = GetFileSize((HANDLE)RTFileToNative(hFile), &Size.HighPart);
     if (Size.LowPart != INVALID_FILE_SIZE)
     {
         *pcbSize = Size.QuadPart;
-        if (Size.QuadPart)
-            return VINF_SUCCESS;
-        rc = VINF_SUCCESS;
-        /** @todo Check what GetFileSize returns on disks and volume
-         *        handles! */
+        return VINF_SUCCESS;
     }
-    else
-        rc = RTErrConvertFromWin32(GetLastError());
-#if 0
+    int rc = RTErrConvertFromWin32(GetLastError());
+
     /*
-     * Could it be a volume?
+     * Could it be a volume or a disk?
      */
     DISK_GEOMETRY   DriveGeo;
     DWORD           cbDriveGeo;
@@ -675,7 +672,6 @@ RTR3DECL(int)  RTFileGetSize(RTFILE hFile, uint64_t *pcbSize)
             return VINF_SUCCESS;
         }
     }
-#endif
 
     /*
      * Return the GetFileSize result if not a volume/disk.
