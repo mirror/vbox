@@ -1681,6 +1681,7 @@
 /*
  * Stable variables (alphabetical order):
  */
+# define g_apfnRTZlibDeps                               RT_MANGLGER(g_apfnRTZlibDeps) /* os2 win solaris */
 # define g_aRTUniFlagsRanges                            RT_MANGLER(g_aRTUniFlagsRanges)
 # define g_aRTUniLowerRanges                            RT_MANGLER(g_aRTUniLowerRanges)
 # define g_aRTUniUpperRanges                            RT_MANGLER(g_aRTUniUpperRanges)
@@ -1707,7 +1708,6 @@
  * Unstable variables (alphabetical order):
  */
 /* none */
-
 
 #endif /* !DOXYGEN_RUNNING */
 

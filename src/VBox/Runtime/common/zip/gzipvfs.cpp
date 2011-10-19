@@ -40,6 +40,21 @@
 
 #include <zlib.h>
 
+#if defined(RT_OS_OS2) || defined(RT_OS_SOLARIS) || defined(RT_OS_WINDOWS)
+/**
+ * Drag in the missing zlib symbols.
+ */
+PFNRT g_apfnRTZlibDeps[] =
+{
+    (PFNRT)gzrewind,
+    (PFNRT)gzread,
+    (PFNRT)gzopen,
+    (PFNRT)gzwrite,
+    (PFNRT)gzclose,
+    (PFNRT)gzdopen,
+    NULL
+};
+#endif /* RT_OS_OS2 || RT_OS_SOLARIS || RT_OS_WINDOWS */
 
 /*******************************************************************************
 *   Structures and Typedefs                                                    *
