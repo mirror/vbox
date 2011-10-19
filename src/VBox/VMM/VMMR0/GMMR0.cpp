@@ -3924,6 +3924,7 @@ static int gmmR0MapChunk(PGMM pGMM, PGVM pGVM, PGMMCHUNK pChunk, bool fRelaxedSe
 
 
 
+#if defined(VBOX_WITH_PAGE_SHARING) || (defined(VBOX_STRICT) && HC_ARCH_BITS == 64)
 /**
  * Check if a chunk is mapped into the specified VM
  *
@@ -3951,6 +3952,7 @@ static int gmmR0IsChunkMapped(PGMM pGMM, PGVM pGVM, PGMMCHUNK pChunk, PRTR3PTR p
     gmmR0ChunkMutexRelease(&MtxState, pChunk);
     return false;
 }
+#endif /* VBOX_WITH_PAGE_SHARING || (VBOX_STRICT && 64-BIT) */
 
 
 /**
