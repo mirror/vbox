@@ -3462,7 +3462,7 @@ RTDECL(void) RTLockValidatorRecSharedDelete(PRTLOCKVALRECSHRD pRec)
         ASMAtomicUoWriteNullPtr(&pRec->papOwners);
         ASMAtomicUoWriteU32(&pRec->cAllocated, 0);
 
-        RTMemFree((void *)pRec->papOwners);
+        RTMemFree((void *)papOwners);
     }
     if (pRec->pSibling)
         rtLockValidatorUnlinkAllSiblings(&pRec->Core);
