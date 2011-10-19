@@ -170,7 +170,7 @@ icmp_init(PNATState pData, int iIcmpCacheLimit)
 /**
  * Cleans ICMP cache.
  */
-int
+void
 icmp_finit(PNATState pData)
 {
     icmp_cache_clean(pData, -1);
