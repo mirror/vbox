@@ -628,7 +628,7 @@ static PGMM g_pGMM = NULL;
  * @returns true if sane, false if not.
  * @param   pGMM    The name of the pGMM variable.
  */
-#if defined(VBOX_STRICT) && 0
+#if defined(VBOX_STRICT) && defined(GMMR0_WITH_SANITY_CHECK) && 0
 # define GMM_CHECK_SANITY_UPON_ENTERING(pGMM)   (gmmR0SanityCheck((pGMM), __PRETTY_FUNCTION__, __LINE__) == 0)
 #else
 # define GMM_CHECK_SANITY_UPON_ENTERING(pGMM)   (true)
@@ -642,7 +642,7 @@ static PGMM g_pGMM = NULL;
  * @returns true if sane, false if not.
  * @param   pGMM    The name of the pGMM variable.
  */
-#if defined(VBOX_STRICT) && 0
+#if defined(VBOX_STRICT) && defined(GMMR0_WITH_SANITY_CHECK) && 0
 # define GMM_CHECK_SANITY_UPON_LEAVING(pGMM)    (gmmR0SanityCheck((pGMM), __PRETTY_FUNCTION__, __LINE__) == 0)
 #else
 # define GMM_CHECK_SANITY_UPON_LEAVING(pGMM)    (true)
@@ -656,7 +656,7 @@ static PGMM g_pGMM = NULL;
  * @returns true if sane, false if not.
  * @param   pGMM    The name of the pGMM variable.
  */
-#if defined(VBOX_STRICT) && 0
+#if defined(VBOX_STRICT) && defined(GMMR0_WITH_SANITY_CHECK) && 0
 # define GMM_CHECK_SANITY_IN_LOOPS(pGMM)        (gmmR0SanityCheck((pGMM), __PRETTY_FUNCTION__, __LINE__) == 0)
 #else
 # define GMM_CHECK_SANITY_IN_LOOPS(pGMM)        (true)
@@ -671,7 +671,9 @@ static bool                 gmmR0CleanupVMScanChunk(PGMM pGMM, PGVM pGVM, PGMMCH
 DECLINLINE(void)            gmmR0UnlinkChunk(PGMMCHUNK pChunk);
 DECLINLINE(void)            gmmR0LinkChunk(PGMMCHUNK pChunk, PGMMCHUNKFREESET pSet);
 DECLINLINE(void)            gmmR0SelectSetAndLinkChunk(PGMM pGMM, PGVM pGVM, PGMMCHUNK pChunk);
+#ifdef GMMR0_WITH_SANITY_CHECK
 static uint32_t             gmmR0SanityCheck(PGMM pGMM, const char *pszFunction, unsigned uLineNo);
+#endif
 static bool                 gmmR0FreeChunk(PGMM pGMM, PGVM pGVM, PGMMCHUNK pChunk, bool fRelaxedSem);
 DECLINLINE(void)            gmmR0FreePrivatePage(PGMM pGMM, PGVM pGVM, uint32_t idPage, PGMMPAGE pPage);
 DECLINLINE(void)            gmmR0FreeSharedPage(PGMM pGMM, PGVM pGVM, uint32_t idPage, PGMMPAGE pPage);
@@ -1618,6 +1620,7 @@ GMMR0DECL(int) GMMR0UpdateReservationReq(PVM pVM, VMCPUID idCpu, PGMMUPDATERESER
     return GMMR0UpdateReservation(pVM, idCpu, pReq->cBasePages, pReq->cShadowPages, pReq->cFixedPages);
 }
 
+#ifdef GMMR0_WITH_SANITY_CHECK
 
 /**
  * Performs sanity checks on a free set.
@@ -1678,6 +1681,7 @@ static uint32_t gmmR0SanityCheck(PGMM pGMM, const char *pszFunction, unsigned uL
     return cErrors;
 }
 
+#endif /* GMMR0_WITH_SANITY_CHECK */
 
 /**
  * Looks up a chunk in the tree and fill in the TLB entry for it.

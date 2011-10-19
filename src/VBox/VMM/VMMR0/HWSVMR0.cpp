@@ -963,9 +963,7 @@ VMMR0DECL(int) SVMR0RunGuestCode(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
     int         rc2;
     uint64_t    exitCode = (uint64_t)SVM_EXIT_INVALID;
     SVM_VMCB   *pVMCB;
-    bool        fSyncTPR = false;
     unsigned    cResume = 0;
-    uint8_t     u8LastTPR;
     PHMGLOBLCPUINFO pCpu = 0;
     RTCCUINTREG uOldEFlags = ~(RTCCUINTREG)0;
 #ifdef VBOX_STRICT
@@ -1091,7 +1089,7 @@ ResumeExecution:
      *
      * Note! Interrupts must be disabled done *before* we check for TLB flushes; TLB
      *       shootdowns rely on this.
-     */                                               
+     */
     uOldEFlags = ASMIntDisableFlags();
     if (RTThreadPreemptIsPending(NIL_RTTHREAD))
     {
@@ -1110,13 +1108,15 @@ ResumeExecution:
 
     /* TPR caching using CR8 is only available in 64 bits mode or with 32 bits guests when X86_CPUID_AMD_FEATURE_ECX_CR8L is supported. */
     /* Note: we can't do this in LoadGuestState as PDMApicGetTPR can jump back to ring 3 (lock)!!!!!!!! (no longer true)
-     * @todo query and update the TPR only when it could have been changed (mmio access)
      */
+    /** @todo query and update the TPR only when it could have been changed (mmio access)
+     */
+    bool    fSyncTPR  = false;
+    uint8_t u8LastTPR = 0; /* Initialized for potentially stupid compilers. */
     if (pVM->hwaccm.s.fHasIoApic)
     {
-        bool fPending;
-
         /* TPR caching in CR8 */
+        bool fPending;
         rc2 = PDMApicGetTPR(pVCpu, &u8LastTPR, &fPending);
         AssertRC(rc2);
 
@@ -1586,7 +1586,7 @@ ResumeExecution:
         }
         else
         {
-            if ((u8LastTPR >> 4) != pVMCB->ctrl.IntCtrl.n.u8VTPR)
+            if ((uint8_t)(u8LastTPR >> 4) != pVMCB->ctrl.IntCtrl.n.u8VTPR)
             {
                 rc2 = PDMApicSetTPR(pVCpu, pVMCB->ctrl.IntCtrl.n.u8VTPR << 4);   /* cr8 bits 3-0 correspond to bits 7-4 of the task priority mmio register. */
                 AssertRC(rc2);

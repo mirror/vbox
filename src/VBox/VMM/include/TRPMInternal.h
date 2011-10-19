@@ -204,11 +204,11 @@ typedef struct TRPMCPU
     uint32_t                offVMCpu;
 
     /** Active Interrupt or trap vector number.
-     * If not ~0U this indicates that we're currently processing
-     * a interrupt, trap, fault, abort, whatever which have arrived
-     * at that vector number.
+     * If not UINT32_MAX this indicates that we're currently processing a
+     * interrupt, trap, fault, abort, whatever which have arrived at that
+     * vector number.
      */
-    RTUINT                  uActiveVector;
+    uint32_t                uActiveVector;
 
     /** Active trap type. */
     TRPMEVENT               enmActiveType;

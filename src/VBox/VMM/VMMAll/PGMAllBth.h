@@ -26,6 +26,11 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+#ifdef _MSC_VER
+/** @todo we're generating unnecessary code in nested/ept shadow mode and for
+ *        real/prot-guest+RC mode. */
+# pragma warning(disable: 4505)
+#endif
 
 /*******************************************************************************
 *   Internal Functions                                                         *
@@ -36,9 +41,9 @@ PGM_BTH_DECL(int, InvalidatePage)(PVMCPU pVCpu, RTGCPTR GCPtrPage);
 static int PGM_BTH_NAME(SyncPage)(PVMCPU pVCpu, GSTPDE PdeSrc, RTGCPTR GCPtrPage, unsigned cPages, unsigned uErr);
 static int PGM_BTH_NAME(CheckDirtyPageFault)(PVMCPU pVCpu, uint32_t uErr, PSHWPDE pPdeDst, GSTPDE const *pPdeSrc, RTGCPTR GCPtrPage);
 static int PGM_BTH_NAME(SyncPT)(PVMCPU pVCpu, unsigned iPD, PGSTPD pPDSrc, RTGCPTR GCPtrPage);
-#if PGM_WITH_PAGING(PGM_GST_TYPE, PGM_SHW_TYPE)
+# if PGM_WITH_PAGING(PGM_GST_TYPE, PGM_SHW_TYPE)
 static void PGM_BTH_NAME(SyncPageWorker)(PVMCPU pVCpu, PSHWPTE pPteDst, GSTPDE PdeSrc, GSTPTE PteSrc, PPGMPOOLPAGE pShwPage, unsigned iPTDst);
-#else
+# else
 static void PGM_BTH_NAME(SyncPageWorker)(PVMCPU pVCpu, PSHWPTE pPteDst, RTGCPHYS GCPhysPage, PPGMPOOLPAGE pShwPage, unsigned iPTDst);
 #endif
 PGM_BTH_DECL(int, VerifyAccessSyncPage)(PVMCPU pVCpu, RTGCPTR Addr, unsigned fPage, unsigned uErr);
@@ -2440,13 +2445,13 @@ static int PGM_BTH_NAME(CheckDirtyPageFault)(PVMCPU pVCpu, uint32_t uErr, PSHWPD
             {
                 if (SHW_PTE_IS_TRACK_DIRTY(*pPteDst))
                 {
-                    PPGMPAGE pPage  = pgmPhysGetPage(pVM, GST_GET_PTE_GCPHYS(*pPteSrc));
+                    PPGMPAGE pPage  = pgmPhysGetPage(pVM, GST_GET_PTE_GCPHYS(PteSrc));
                     SHWPTE   PteDst = *pPteDst;
 
                     LogFlow(("DIRTY page trap addr=%RGv\n", GCPtrPage));
                     STAM_COUNTER_INC(&pVCpu->pgm.s.CTX_SUFF(pStats)->CTX_MID_Z(Stat,DirtyPageTrap));
 
-                    Assert(pPteSrc->n.u1Write);
+                    Assert(PteSrc.n.u1Write);
 
                     /* Note: No need to invalidate this entry on other VCPUs as a stale TLB
                      *       entry will not harm; write access will simply fault again and
@@ -2466,7 +2471,7 @@ static int PGM_BTH_NAME(CheckDirtyPageFault)(PVMCPU pVCpu, uint32_t uErr, PSHWPD
                             if (   PGM_PAGE_GET_STATE(pPage) == PGM_PAGE_STATE_WRITE_MONITORED
                                 && PGM_PAGE_GET_TYPE(pPage)  == PGMPAGETYPE_RAM)
                             {
-                                rc = pgmPhysPageMakeWritable(pVM, pPage, GST_GET_PTE_GCPHYS(*pPteSrc));
+                                rc = pgmPhysPageMakeWritable(pVM, pPage, GST_GET_PTE_GCPHYS(PteSrc));
                                 AssertRC(rc);
                             }
                             if (PGM_PAGE_GET_STATE(pPage) == PGM_PAGE_STATE_ALLOCATED)

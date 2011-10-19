@@ -72,7 +72,9 @@ DECLEXPORT(uint64_t) tmVirtualNanoTSRediscover(PRTTIMENANOTSDATA pData)
     //PVM pVM = (PVM)((uint8_t *)pData - RT_OFFSETOF(VM, CTXALLSUFF(s.tm.VirtualGetRawData)));
     PSUPGLOBALINFOPAGE pGip = g_pSUPGlobalInfoPage;
     AssertFatalMsgFailed(("pGip=%p u32Magic=%#x\n", pGip, VALID_PTR(pGip) ? pGip->u32Magic : 0));
+#ifndef _MSC_VER
     return 0; /* gcc false positive warning */
+#endif
 }
 
 

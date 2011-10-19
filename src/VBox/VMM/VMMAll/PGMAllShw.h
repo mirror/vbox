@@ -299,6 +299,7 @@ PGM_SHW_DECL(int, GetPage)(PVMCPU pVCpu, RTGCUINTPTR GCPtr, uint64_t *pfFlags, P
 # if    PGM_SHW_TYPE == PGM_TYPE_AMD64 \
      || PGM_SHW_TYPE == PGM_TYPE_EPT
         AssertFailed(); /* can't happen */
+        pPT = NULL;     /* shut up MSC */
 # else
         Assert(pgmMapAreMappingsEnabled(pVM));
 
