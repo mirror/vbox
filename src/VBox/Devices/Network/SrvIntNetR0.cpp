@@ -449,12 +449,6 @@ g_afIntNetOpenNetworkIfFlags[] =
 };
 
 
-/*******************************************************************************
-*   Internal Functions                                                         *
-*******************************************************************************/
-static PINTNETTRUNKIF intnetR0TrunkIfRetain(PINTNETTRUNKIF pThis);
-static void intnetR0TrunkIfRelease(PINTNETTRUNKIF pThis);
-
 
 /**
  * Worker for intnetR0SgWritePart that deals with the case where the
@@ -4923,38 +4917,6 @@ static DECLCALLBACK(void) intnetR0TrunkIfPortSGRelease(PINTNETTRUNKSWPORT pSwitc
     {
         /** @todo later */
     }
-}
-
-
-/**
- * Retain the trunk interface.
- *
- * @returns pThis if retained.
- *
- * @param   pThis       The trunk.
- *
- * @remarks Any locks.
- */
-static PINTNETTRUNKIF intnetR0TrunkIfRetain(PINTNETTRUNKIF pThis)
-{
-    if (pThis && pThis->pIfPort)
-    {
-        pThis->pIfPort->pfnRetain(pThis->pIfPort);
-        return pThis;
-    }
-    return NULL;
-}
-
-
-/**
- * Release the trunk interface.
- *
- * @param   pThis       The trunk.
- */
-static void intnetR0TrunkIfRelease(PINTNETTRUNKIF pThis)
-{
-    if (pThis && pThis->pIfPort)
-        pThis->pIfPort->pfnRelease(pThis->pIfPort);
 }
 
 
