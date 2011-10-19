@@ -1630,38 +1630,71 @@ static HRESULT vboxWddmUnlockRect(PVBOXWDDMDISP_RESOURCE pRc, UINT iAlloc)
     return hr;
 }
 
-static HRESULT vboxWddmMemsetRc(PVBOXWDDMDISP_RESOURCE pRc, char c)
+static HRESULT vboxWddmMemsetAlloc(PVBOXWDDMDISP_RESOURCE pRc, UINT iAlloc, char c)
 {
-    for (UINT i = 0; i < pRc->cAllocations; ++i)
+    PVBOXWDDMDISP_ALLOCATION pAlloc = &pRc->aAllocations[iAlloc];
+    IDirect3DSurface9 *pD3D9Surf = NULL;
+    HRESULT hr = vboxWddmSurfGet(pRc, iAlloc, &pD3D9Surf);
+    if (SUCCEEDED(hr))
     {
-        D3DLOCKED_RECT Rect;
-        HRESULT hr = vboxWddmLockRect(pRc, i, &Rect, NULL, D3DLOCK_DISCARD);
-        if (FAILED(hr))
+        PVBOXWDDMDISP_DEVICE pDevice = pRc->pDevice;
+        hr = pRc->pDevice->pDevice9If->ColorFill(pD3D9Surf, NULL, D3DCOLOR_ARGB(c,c,c,c));
+        pD3D9Surf->Release();
+        if (SUCCEEDED(hr))
         {
-            WARN(("vboxWddmLockRect failed, hr(0x%x)", hr));
             return hr;
         }
 
-        PVBOXWDDMDISP_ALLOCATION pAlloc = &pRc->aAllocations[i];
-        UINT cbAllocPitch = pAlloc->SurfDesc.pitch;
-        if(Rect.Pitch == cbAllocPitch)
-        {
-            memset(Rect.pBits, 0, Rect.Pitch * pAlloc->SurfDesc.height);
-        }
-        else
-        {
-            Assert(0);
-            Assert(cbAllocPitch < (UINT)Rect.Pitch);
-            uint8_t *pData = (uint8_t*)Rect.pBits;
-            for (UINT j = 0; j < pAlloc->SurfDesc.height; ++j)
-            {
-                memset(Rect.pBits, c, cbAllocPitch);
-                pData += Rect.Pitch;
-            }
-        }
+        WARN(("ColorFill failed, hr 0x%x", hr));
+        /* fallback to lock-memset-unlock */
+    }
 
-        hr = vboxWddmUnlockRect(pRc, i);
-        Assert(SUCCEEDED(hr));
+    /* unless this is a fallback */
+    Assert(pAlloc->enmD3DIfType == VBOXDISP_D3DIFTYPE_VERTEXBUFFER
+            || pAlloc->enmD3DIfType == VBOXDISP_D3DIFTYPE_INDEXBUFFER);
+
+    D3DLOCKED_RECT Rect;
+    hr = vboxWddmLockRect(pRc, iAlloc, &Rect, NULL, D3DLOCK_DISCARD);
+    if (FAILED(hr))
+    {
+        WARN(("vboxWddmLockRect failed, hr(0x%x)", hr));
+        return hr;
+    }
+
+    UINT cbAllocPitch = pAlloc->SurfDesc.pitch;
+    if(Rect.Pitch == cbAllocPitch)
+    {
+        memset(Rect.pBits, 0, Rect.Pitch * pAlloc->SurfDesc.height);
+    }
+    else
+    {
+        Assert(0);
+        Assert(cbAllocPitch < (UINT)Rect.Pitch);
+        uint8_t *pData = (uint8_t*)Rect.pBits;
+        for (UINT j = 0; j < pAlloc->SurfDesc.height; ++j)
+        {
+            memset(Rect.pBits, c, cbAllocPitch);
+            pData += Rect.Pitch;
+        }
+    }
+
+    hr = vboxWddmUnlockRect(pRc, iAlloc);
+    Assert(SUCCEEDED(hr));
+
+    return S_OK;
+}
+
+static HRESULT vboxWddmMemsetRc(PVBOXWDDMDISP_RESOURCE pRc, char c)
+{
+    HRESULT hr = S_OK;
+    for (UINT i = 0; i < pRc->cAllocations; ++i)
+    {
+        hr = vboxWddmMemsetAlloc(pRc, i, c);
+        if (FAILED(hr))
+        {
+            WARN(("vboxWddmMemsetAlloc failed, hr(0x%x)", hr));
+            return hr;
+        }
     }
     return S_OK;
 }
