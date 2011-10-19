@@ -102,6 +102,7 @@
 #define ATA_MEDIA_TYPE_UNKNOWN                  0    /**< unknown CD type */
 #define ATA_MEDIA_TYPE_DATA                     1    /**< Data CD */
 #define ATA_MEDIA_TYPE_CDDA                     2    /**< CD-DA  (audio) CD type */
+#define ATA_MEDIA_NO_DISC                    0x70    /**< Door closed, no medium */
 
 /*******************************************************************************
 *   Structures and Typedefs                                                    *
@@ -2628,7 +2629,7 @@ static bool atapiModeSenseErrorRecoverySS(ATADevState *s)
     Assert(s->uTxDir == PDMBLOCKTXDIR_FROM_DEVICE);
     Assert(s->cbElementaryTransfer <= 16);
     ataH2BE_U16(&pbBuf[0], 16 + 6);
-    pbBuf[2] = 0x70;
+    pbBuf[2] = (uint8_t)s->MediaTrackType;
     pbBuf[3] = 0;
     pbBuf[4] = 0;
     pbBuf[5] = 0;
@@ -2637,8 +2638,8 @@ static bool atapiModeSenseErrorRecoverySS(ATADevState *s)
 
     pbBuf[8] = 0x01;
     pbBuf[9] = 0x06;
-    pbBuf[10] = 0x00;
-    pbBuf[11] = 0x05;
+    pbBuf[10] = 0x00;   /* Maximum error recovery */
+    pbBuf[11] = 0x05;   /* 5 retries */
     pbBuf[12] = 0x00;
     pbBuf[13] = 0x00;
     pbBuf[14] = 0x00;
@@ -2656,7 +2657,7 @@ static bool atapiModeSenseCDStatusSS(ATADevState *s)
     Assert(s->uTxDir == PDMBLOCKTXDIR_FROM_DEVICE);
     Assert(s->cbElementaryTransfer <= 40);
     ataH2BE_U16(&pbBuf[0], 38);
-    pbBuf[2] = 0x70;
+    pbBuf[2] = (uint8_t)s->MediaTrackType;
     pbBuf[3] = 0;
     pbBuf[4] = 0;
     pbBuf[5] = 0;
@@ -3715,7 +3716,7 @@ static DECLCALLBACK(void) ataUnmountNotify(PPDMIMOUNTNOTIFY pInterface)
      */
     pIf->cNotifiedMediaChange = 4;
     ataMediumRemoved(pIf);
-    ataMediumTypeSet(pIf, ATA_MEDIA_TYPE_UNKNOWN);
+    ataMediumTypeSet(pIf, ATA_MEDIA_NO_DISC);
 }
 
 static void ataPacketBT(ATADevState *s)
@@ -6304,6 +6305,7 @@ static DECLCALLBACK(int)  ataR3Attach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_
          * In case there is a medium inserted.
          */
         ataMediumInserted(pIf);
+        ataMediumTypeSet(pIf, ATA_MEDIA_TYPE_UNKNOWN);
     }
     else
         AssertMsgFailed(("Failed to attach LUN#%d. rc=%Rrc\n", pIf->iLUN, rc));
