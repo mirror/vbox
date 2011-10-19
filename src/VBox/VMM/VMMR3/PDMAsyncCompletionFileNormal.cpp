@@ -339,7 +339,7 @@ static int pdmacFileAioMgrNormalGrow(PPDMACEPFILEMGR pAioMgr)
     while (pCurr)
     {
         RTFileClose(pCurr->hFile);
-        int rc2 = RTFileOpen(&pCurr->hFile, pCurr->Core.pszUri, pCurr->fFlags); AssertRC(rc);
+        int rc2 = RTFileOpen(&pCurr->hFile, pCurr->Core.pszUri, pCurr->fFlags); AssertRC(rc2);
 
         pCurr = pCurr->AioMgr.pEndpointNext;
     }
