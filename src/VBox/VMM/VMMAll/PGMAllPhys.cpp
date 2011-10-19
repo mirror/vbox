@@ -1933,6 +1933,46 @@ int pgmPhysGCPhys2R3Ptr(PVM pVM, RTGCPHYS GCPhys, PRTR3PTR pR3Ptr)
 #endif
 }
 
+#if 0 /*defined(IN_RC) || defined(VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0)*/
+
+/**
+ * Maps and locks a guest CR3 or PD (PAE) page.
+ *
+ * @returns VINF_SUCCESS on success.
+ * @returns VERR_PGM_PHYS_PAGE_RESERVED it it's a valid GC physical
+ *          page but has no physical backing.
+ * @returns VERR_PGM_INVALID_GC_PHYSICAL_ADDRESS if it's not a valid
+ *          GC physical address.
+ * @returns VERR_PGM_GCPHYS_RANGE_CROSSES_BOUNDARY if the range crosses
+ *          a dynamic ram chunk boundary
+ *
+ * @param   pVM         The VM handle.
+ * @param   GCPhys      The GC physical address to convert.
+ * @param   pR3Ptr      Where to store the R3 pointer on success.  This may or
+ *                      may not be valid in ring-0 depending on the
+ *                      VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0 build option.
+ *
+ * @remarks The caller must own the PGM lock.
+ */
+int pgmPhysCr3ToHCPtr(PVM pVM, RTGCPHYS GCPhys, PRTR3PTR pR3Ptr)
+{
+
+    PPGMRAMRANGE pRam;
+    PPGMPAGE pPage;
+    int rc = pgmPhysGetPageAndRangeEx(pVM, GCPhys, &pPage, &pRam);
+    if (RT_SUCCESS(rc))
+        rc = pgmPhysGCPhys2CCPtrInternalDepr(pVM, pPage, GCPhys, (void **)pR3Ptr);
+    Assert(rc <= VINF_SUCCESS);
+    return rc;
+}
+
+
+int pgmPhysCr3ToHCPtr(PVM pVM, RTGCPHYS GCPhys, PRTR3PTR pR3Ptr)
+{
+
+}
+
+#endif
 
 /**
  * Converts a guest pointer to a GC physical address.
@@ -2047,7 +2087,9 @@ static int pgmPhysReadHandler(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys, void *pv
     /*
      * Deal with any physical handlers.
      */
+#ifdef IN_RING3
     PPGMPHYSHANDLER pPhys = NULL;
+#endif
     if (PGM_PAGE_GET_HNDL_PHYS_STATE(pPage) == PGM_PAGE_HNDL_PHYS_STATE_ALL)
     {
 #ifdef IN_RING3

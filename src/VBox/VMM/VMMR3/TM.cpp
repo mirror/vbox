@@ -1536,8 +1536,7 @@ VMMR3DECL(int) TMR3TimerDestroy(PTMTIMER pTimer)
         /*
          * Change to the DESTROY state.
          */
-        TMTIMERSTATE enmState    = pTimer->enmState;
-        TMTIMERSTATE enmNewState = enmState;
+        TMTIMERSTATE const enmState = pTimer->enmState;
         Log2(("TMTimerDestroy: %p:{.enmState=%s, .pszDesc='%s'} cRetries=%d\n",
               pTimer, tmTimerState(enmState), R3STRING(pTimer->pszDesc), cRetries));
         switch (enmState)
@@ -2127,11 +2126,11 @@ static void tmR3TimerQueueRunVirtualSync(PVM pVM)
         }
 
         /* Check if stopped by expired timer. */
-        uint64_t u64Expire = pNext->u64Expire;
-        if (u64Now >= pNext->u64Expire)
+        uint64_t const u64Expire = pNext->u64Expire;
+        if (u64Now >= u64Expire)
         {
             STAM_COUNTER_INC(&pVM->tm.s.StatVirtualSyncRunStop);
-            u64Now = pNext->u64Expire;
+            u64Now = u64Expire;
             ASMAtomicWriteU64(&pVM->tm.s.u64VirtualSync, u64Now);
             ASMAtomicWriteBool(&pVM->tm.s.fVirtualSyncTicking, false);
             Log4(("TM: %'RU64/-%'8RU64: exp tmr [tmR3TimerQueueRunVirtualSync]\n", u64Now, u64VirtualNow - u64Now - offSyncGivenUp));

@@ -117,7 +117,9 @@ DECLCALLBACK(int) EMReadBytes(RTUINTPTR pSrc, uint8_t *pDest, unsigned cb, void 
 {
     PDISCPUSTATE  pDis   = (PDISCPUSTATE)pvUserdata;
     PEMDISSTATE   pState = (PEMDISSTATE)pDis->apvUserData[0];
+# ifndef IN_RING0
     PVM           pVM    = pState->pVM;
+# endif
     PVMCPU        pVCpu  = pState->pVCpu;
 
 # ifdef IN_RING0
@@ -3112,7 +3114,7 @@ VMMDECL(void) EMRemLock(PVM pVM)
     Assert(!PGMIsLockOwner(pVM));
     Assert(!IOMIsLockOwner(pVM));
     int rc = PDMCritSectEnter(&pVM->em.s.CritSectREM, VERR_SEM_BUSY);
-    AssertMsg(rc == VINF_SUCCESS, ("%Rrc\n", rc));
+    AssertRCSuccess(rc);
 }
 
 /**

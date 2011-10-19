@@ -2162,9 +2162,6 @@ static bool pgmPoolCacheReusedByKind(PGMPOOLKIND enmKind1, PGMPOOLKIND enmKind2)
  */
 static int pgmPoolCacheAlloc(PPGMPOOL pPool, RTGCPHYS GCPhys, PGMPOOLKIND enmKind, PGMPOOLACCESS enmAccess, uint16_t iUser, uint32_t iUserTable, PPPGMPOOLPAGE ppPage)
 {
-#ifndef IN_RC
-    const PVM pVM = pPool->CTX_SUFF(pVM);
-#endif
     /*
      * Look up the GCPhys in the hash.
      */
@@ -5094,8 +5091,7 @@ void pgmPoolFree(PVM pVM, RTHCPHYS HCPhys, uint16_t iUser, uint32_t iUserTable)
  */
 PPGMPOOLPAGE pgmPoolGetPage(PPGMPOOL pPool, RTHCPHYS HCPhys)
 {
-    PVM pVM = pPool->CTX_SUFF(pVM);
-    PGM_LOCK_ASSERT_OWNER(pVM);
+    PGM_LOCK_ASSERT_OWNER(pPool->CTX_SUFF(pVM));
 
     /*
      * Look up the page.
@@ -5116,8 +5112,7 @@ PPGMPOOLPAGE pgmPoolGetPage(PPGMPOOL pPool, RTHCPHYS HCPhys)
  */
 PPGMPOOLPAGE pgmPoolQueryPageForDbg(PPGMPOOL pPool, RTHCPHYS HCPhys)
 {
-    PVM pVM = pPool->CTX_SUFF(pVM);
-    PGM_LOCK_ASSERT_OWNER(pVM);
+    PGM_LOCK_ASSERT_OWNER(pPool->CTX_SUFF(pVM));
     return (PPGMPOOLPAGE)RTAvloHCPhysGet(&pPool->HCPhysTree, HCPhys & X86_PTE_PAE_PG_MASK);
 }
 

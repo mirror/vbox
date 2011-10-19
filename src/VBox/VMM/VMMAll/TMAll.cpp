@@ -2102,9 +2102,6 @@ VMMDECL(bool) TMTimerIsActive(PTMTIMER pTimer)
  */
 VMMDECL(int) TMTimerSetMillies(PTMTIMER pTimer, uint32_t cMilliesToNext)
 {
-    PVM    pVM   = pTimer->CTX_SUFF(pVM);
-    PVMCPU pVCpu = &pVM->aCpus[0];  /* just take the first VCPU */
-
     switch (pTimer->enmClock)
     {
         case TMCLOCK_VIRTUAL:
@@ -2135,9 +2132,6 @@ VMMDECL(int) TMTimerSetMillies(PTMTIMER pTimer, uint32_t cMilliesToNext)
  */
 VMMDECL(int) TMTimerSetMicro(PTMTIMER pTimer, uint64_t cMicrosToNext)
 {
-    PVM    pVM   = pTimer->CTX_SUFF(pVM);
-    PVMCPU pVCpu = &pVM->aCpus[0];  /* just take the first VCPU */
-
     switch (pTimer->enmClock)
     {
         case TMCLOCK_VIRTUAL:
@@ -2168,9 +2162,6 @@ VMMDECL(int) TMTimerSetMicro(PTMTIMER pTimer, uint64_t cMicrosToNext)
  */
 VMMDECL(int) TMTimerSetNano(PTMTIMER pTimer, uint64_t cNanosToNext)
 {
-    PVM    pVM   = pTimer->CTX_SUFF(pVM);
-    PVMCPU pVCpu = &pVM->aCpus[0];  /* just take the first VCPU */
-
     switch (pTimer->enmClock)
     {
         case TMCLOCK_VIRTUAL:

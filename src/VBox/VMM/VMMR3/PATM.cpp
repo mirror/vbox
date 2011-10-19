@@ -5625,7 +5625,7 @@ int patmR3RefreshPatch(PVM pVM, PPATMPATCHREC pPatchRec)
 
         /* Put the new patch back into the tree, because removing the old one kicked this one out. (hack alert) */
         bool fInserted = RTAvloU32Insert(&pVM->patm.s.PatchLookupTreeHC->PatchTree, &pNewPatchRec->Core);
-        Assert(fInserted);
+        Assert(fInserted); NOREF(fInserted);
 
         LogRel(("PATM: patmR3RefreshPatch: succeeded to refresh patch at %RRv \n", pInstrGC));
         STAM_COUNTER_INC(&pVM->patm.s.StatPatchRefreshSuccess);
@@ -5677,7 +5677,7 @@ failure:
 
         /* Put the old patch back into the tree (or else it won't be saved) (hack alert) */
         bool fInserted = RTAvloU32Insert(&pVM->patm.s.PatchLookupTreeHC->PatchTree, &pPatchRec->Core);
-        Assert(fInserted);
+        Assert(fInserted); NOREF(fInserted);
 
         /* Enable again in case the dirty instruction is near the end and there are safe code paths. */
         int rc2 = PATMR3EnablePatch(pVM, pInstrGC);

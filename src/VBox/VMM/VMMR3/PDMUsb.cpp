@@ -1209,7 +1209,7 @@ static DECLCALLBACK(int) pdmR3UsbHlp_DBGFInfoRegister(PPDMUSBINS pUsbIns, const 
 
     PVM pVM = pUsbIns->Internal.s.pVM;
     VM_ASSERT_EMT(pVM);
-    /** @todo int rc = DBGFR3InfoRegisterUsb(pVM, pszName, pszDesc, pfnHandler, pUsbIns); */
+    NOREF(pVM); /** @todo int rc = DBGFR3InfoRegisterUsb(pVM, pszName, pszDesc, pfnHandler, pUsbIns); */
     int rc = VERR_NOT_IMPLEMENTED; AssertFailed();
 
     LogFlow(("pdmR3UsbHlp_DBGFInfoRegister: caller='%s'/%d: returns %Rrc\n", pUsbIns->pReg->szName, pUsbIns->iInstance, rc));

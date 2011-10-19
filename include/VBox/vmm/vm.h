@@ -239,13 +239,17 @@ typedef struct VMCPU
 #define VMCPU_CMPXCHG_STATE(pVCpu, enmNewState, enmOldState) \
     ASMAtomicCmpXchgU32((uint32_t volatile *)&(pVCpu)->enmState, (enmNewState), (enmOldState))
 /** Checks the VMCPU state. */
-#define VMCPU_ASSERT_STATE(pVCpu, enmExpectedState) \
+#ifdef VBOX_STRICT
+# define VMCPU_ASSERT_STATE(pVCpu, enmExpectedState) \
     do { \
         VMCPUSTATE enmState = VMCPU_GET_STATE(pVCpu); \
         AssertMsg(enmState == (enmExpectedState), \
                   ("enmState=%d  enmExpectedState=%d idCpu=%u\n", \
                   enmState, enmExpectedState, (pVCpu)->idCpu)); \
     } while (0)
+#else
+# define VMCPU_ASSERT_STATE(pVCpu, enmExpectedState) do { } while (0)
+#endif
 /** Tests if the state means that the CPU is started. */
 #define VMCPUSTATE_IS_STARTED(enmState)     ( (enmState) > VMCPUSTATE_STOPPED )
 /** Tests if the state means that the CPU is stopped. */

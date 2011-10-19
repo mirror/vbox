@@ -470,7 +470,7 @@ static int dbgfR3RegRegisterCommon(PVM pVM, PCDBGFREGDESC paRegisters, DBGFREGSE
             while (iLookupRec-- > 0)
             {
                 bool fInserted2 = RTStrSpaceInsert(&pVM->dbgf.s.RegSpace, &paLookupRecs[iLookupRec].Core);
-                AssertMsg(fInserted2, ("'%s'", paLookupRecs[iLookupRec].Core.pszString));
+                AssertMsg(fInserted2, ("'%s'", paLookupRecs[iLookupRec].Core.pszString)); NOREF(fInserted2);
             }
 
             DBGF_REG_DB_UNLOCK_WRITE(pVM);
@@ -1724,8 +1724,6 @@ static void dbgfR3RegNmQueryAllPadEntries(PDBGFREGENTRYNM paRegs, size_t cRegs, 
  */
 static void dbgfR3RegNmQueryAllInSet(PCDBGFREGSET pSet, size_t cRegsToQuery, PDBGFREGENTRYNM paRegs, size_t cRegs)
 {
-    int rc = VINF_SUCCESS;
-
     if (cRegsToQuery > pSet->cDescs)
         cRegsToQuery = pSet->cDescs;
     if (cRegsToQuery > cRegs)

@@ -263,9 +263,7 @@ static DECLCALLBACK(int) cpumR3RegSet_ftw(void *pvUser, PCDBGFREGDESC pDesc, PCD
  */
 static DECLCALLBACK(int) cpumR3RegGstGet_crX(void *pvUser, PCDBGFREGDESC pDesc, PDBGFREGVAL pValue)
 {
-    PVMCPU      pVCpu   = (PVMCPU)pvUser;
-    void const *pv      = (uint8_t const *)&pVCpu->cpum + pDesc->offRegister;
-
+    PVMCPU pVCpu = (PVMCPU)pvUser;
     VMCPU_ASSERT_EMT(pVCpu);
 
     uint64_t u64Value;
@@ -288,8 +286,7 @@ static DECLCALLBACK(int) cpumR3RegGstGet_crX(void *pvUser, PCDBGFREGDESC pDesc, 
 static DECLCALLBACK(int) cpumR3RegGstSet_crX(void *pvUser, PCDBGFREGDESC pDesc, PCDBGFREGVAL pValue, PCDBGFREGVAL pfMask)
 {
     int         rc;
-    PVMCPU      pVCpu   = (PVMCPU)pvUser;
-    void const *pv      = (uint8_t const *)&pVCpu->cpum + pDesc->offRegister;
+    PVMCPU      pVCpu = (PVMCPU)pvUser;
 
     VMCPU_ASSERT_EMT(pVCpu);
 
@@ -345,9 +342,7 @@ static DECLCALLBACK(int) cpumR3RegGstSet_crX(void *pvUser, PCDBGFREGDESC pDesc, 
  */
 static DECLCALLBACK(int) cpumR3RegGstGet_drX(void *pvUser, PCDBGFREGDESC pDesc, PDBGFREGVAL pValue)
 {
-    PVMCPU      pVCpu   = (PVMCPU)pvUser;
-    void const *pv      = (uint8_t const *)&pVCpu->cpum + pDesc->offRegister;
-
+    PVMCPU pVCpu = (PVMCPU)pvUser;
     VMCPU_ASSERT_EMT(pVCpu);
 
     uint64_t u64Value;
@@ -370,8 +365,7 @@ static DECLCALLBACK(int) cpumR3RegGstGet_drX(void *pvUser, PCDBGFREGDESC pDesc, 
 static DECLCALLBACK(int) cpumR3RegGstSet_drX(void *pvUser, PCDBGFREGDESC pDesc, PCDBGFREGVAL pValue, PCDBGFREGVAL pfMask)
 {
     int         rc;
-    PVMCPU      pVCpu   = (PVMCPU)pvUser;
-    void const *pv      = (uint8_t const *)&pVCpu->cpum + pDesc->offRegister;
+    PVMCPU      pVCpu = (PVMCPU)pvUser;
 
     VMCPU_ASSERT_EMT(pVCpu);
 
@@ -417,10 +411,9 @@ static DECLCALLBACK(int) cpumR3RegGstSet_drX(void *pvUser, PCDBGFREGDESC pDesc, 
  */
 static DECLCALLBACK(int) cpumR3RegGstGet_msr(void *pvUser, PCDBGFREGDESC pDesc, PDBGFREGVAL pValue)
 {
-    PVMCPU      pVCpu   = (PVMCPU)pvUser;
-    void const *pv      = (uint8_t const *)&pVCpu->cpum + pDesc->offRegister;
-
+    PVMCPU pVCpu = (PVMCPU)pvUser;
     VMCPU_ASSERT_EMT(pVCpu);
+
     uint64_t u64Value;
     int rc = CPUMQueryGuestMsr(pVCpu, pDesc->offRegister, &u64Value);
     if (RT_SUCCESS(rc))
@@ -446,7 +439,6 @@ static DECLCALLBACK(int) cpumR3RegGstSet_msr(void *pvUser, PCDBGFREGDESC pDesc, 
 {
     int         rc;
     PVMCPU      pVCpu   = (PVMCPU)pvUser;
-    void const *pv      = (uint8_t const *)&pVCpu->cpum + pDesc->offRegister;
 
     VMCPU_ASSERT_EMT(pVCpu);
 
@@ -497,9 +489,7 @@ static DECLCALLBACK(int) cpumR3RegGstSet_msr(void *pvUser, PCDBGFREGDESC pDesc, 
  */
 static DECLCALLBACK(int) cpumR3RegGstGet_stN(void *pvUser, PCDBGFREGDESC pDesc, PDBGFREGVAL pValue)
 {
-    PVMCPU      pVCpu   = (PVMCPU)pvUser;
-    void const *pv      = (uint8_t const *)&pVCpu->cpum.s.Guest + pDesc->offRegister;
-
+    PVMCPU pVCpu = (PVMCPU)pvUser;
     VMCPU_ASSERT_EMT(pVCpu);
     Assert(pDesc->enmType == DBGFREGVALTYPE_R80);
 
@@ -586,9 +576,7 @@ static DECLCALLBACK(int) cpumR3RegHyperSet_crX(void *pvUser, PCDBGFREGDESC pDesc
  */
 static DECLCALLBACK(int) cpumR3RegHyperGet_drX(void *pvUser, PCDBGFREGDESC pDesc, PDBGFREGVAL pValue)
 {
-    PVMCPU      pVCpu   = (PVMCPU)pvUser;
-    void const *pv      = (uint8_t const *)&pVCpu->cpum + pDesc->offRegister;
-
+    PVMCPU pVCpu = (PVMCPU)pvUser;
     VMCPU_ASSERT_EMT(pVCpu);
 
     uint64_t    u64Value;

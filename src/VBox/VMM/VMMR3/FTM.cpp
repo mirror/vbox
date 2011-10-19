@@ -881,7 +881,7 @@ static int ftmR3SyncMem(PVM pVM)
                 pNode->Core.Key = GCPhys;
                 pNode->pPage = (void *)(pNode + 1);
                 bool fRet = RTAvlGCPhysInsert(&pVM->ftm.s.standby.pPhysPageTree, &pNode->Core);
-                Assert(fRet);
+                Assert(fRet); NOREF(fRet);
             }
 
             /* Fetch the page. */
@@ -1017,7 +1017,7 @@ static DECLCALLBACK(int) ftmR3StandbyServeConnection(RTSOCKET Sock, void *pvUser
     if (RT_FAILURE(rc))
         return VINF_SUCCESS;
 
-    /** todo: verify VM config. */
+    /** @todo verify VM config. */
 
     /*
      * Stop the server.
@@ -1030,7 +1030,7 @@ static DECLCALLBACK(int) ftmR3StandbyServeConnection(RTSOCKET Sock, void *pvUser
     /*
      * Command processing loop.
      */
-    bool fDone = false;
+    //bool fDone = false;
     for (;;)
     {
         bool fFullSync = false;

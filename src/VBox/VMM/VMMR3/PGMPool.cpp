@@ -852,7 +852,7 @@ DECLCALLBACK(VBOXSTRICTRC) pgmR3PoolClearAllRendezvous(PVM pVM, PVMCPU pVCpu, vo
 
         /* First write protect the page again to catch all write accesses. (before checking for changes -> SMP) */
         int rc = PGMHandlerPhysicalReset(pVM, pPage->GCPhys & PAGE_BASE_GC_MASK);
-        Assert(rc == VINF_SUCCESS);
+        AssertRCSuccess(rc);
         pPage->fDirty = false;
 
         pPool->aDirtyPages[i].uIdx = NIL_PGMPOOL_IDX;

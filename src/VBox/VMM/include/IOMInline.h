@@ -85,6 +85,7 @@ DECLINLINE(void) iomMmioRetainRange(PIOMMMIORANGE pRange)
     uint32_t cRefs = ASMAtomicIncU32(&pRange->cRefs);
     Assert(cRefs > 1);
     Assert(cRefs < _1M);
+    NOREF(cRefs);
 }
 
 

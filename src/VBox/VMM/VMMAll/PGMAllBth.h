@@ -441,7 +441,7 @@ static VBOXSTRICTRC PGM_BTH_NAME(Trap0eHandlerDoAccessHandlers)(PVMCPU pVCpu, RT
  */
 PGM_BTH_DECL(int, Trap0eHandler)(PVMCPU pVCpu, RTGCUINT uErr, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, bool *pfLockTaken)
 {
-    PVM pVM = pVCpu->CTX_SUFF(pVM);
+    PVM pVM = pVCpu->CTX_SUFF(pVM); NOREF(pVM);
 
     *pfLockTaken = false;
 
@@ -1161,7 +1161,7 @@ PGM_BTH_DECL(int, InvalidatePage)(PVMCPU pVCpu, RTGCPTR GCPtrPage)
 
 # else /* PGM_SHW_TYPE == PGM_TYPE_AMD64 */
     /* PML4 */
-    const unsigned  iPml4     = (GCPtrPage >> X86_PML4_SHIFT) & X86_PML4_MASK;
+    /*const unsigned  iPml4     = (GCPtrPage >> X86_PML4_SHIFT) & X86_PML4_MASK;*/
     const unsigned  iPdpt     = (GCPtrPage >> X86_PDPT_SHIFT) & X86_PDPT_MASK_AMD64;
     const unsigned  iPDDst    = (GCPtrPage >> SHW_PD_SHIFT) & SHW_PD_MASK;
     PX86PDPAE       pPDDst;
@@ -1801,8 +1801,8 @@ static void PGM_BTH_NAME(SyncPageWorker)(PVMCPU pVCpu, PSHWPTE pPteDst, RTGCPHYS
  */
 static int PGM_BTH_NAME(SyncPage)(PVMCPU pVCpu, GSTPDE PdeSrc, RTGCPTR GCPtrPage, unsigned cPages, unsigned uErr)
 {
-    PVM      pVM = pVCpu->CTX_SUFF(pVM);
-    PPGMPOOL pPool = pVM->pgm.s.CTX_SUFF(pPool);
+    PVM      pVM   = pVCpu->CTX_SUFF(pVM);
+    PPGMPOOL pPool = pVM->pgm.s.CTX_SUFF(pPool); NOREF(pPool);
     LogFlow(("SyncPage: GCPtrPage=%RGv cPages=%u uErr=%#x\n", GCPtrPage, cPages, uErr));
 
     PGM_LOCK_ASSERT_OWNER(pVM);
@@ -1950,7 +1950,6 @@ static int PGM_BTH_NAME(SyncPage)(PVMCPU pVCpu, GSTPDE PdeSrc, RTGCPTR GCPtrPage
                          * deal with locality.
                          */
                         unsigned        iPTDst      = (GCPtrPage >> SHW_PT_SHIFT) & SHW_PT_MASK;
-                        const unsigned  iPTDstPage  = iPTDst;
 #  if PGM_SHW_TYPE == PGM_TYPE_PAE && PGM_GST_TYPE == PGM_TYPE_32BIT
                         /* Select the right PDE as we're emulating a 4kb page table with 2 shadow page tables. */
                         const unsigned  offPTSrc    = ((GCPtrPage >> SHW_PD_SHIFT) & 1) * 512;
@@ -2537,7 +2536,7 @@ static int PGM_BTH_NAME(CheckDirtyPageFault)(PVMCPU pVCpu, uint32_t uErr, PSHWPD
 static int PGM_BTH_NAME(SyncPT)(PVMCPU pVCpu, unsigned iPDSrc, PGSTPD pPDSrc, RTGCPTR GCPtrPage)
 {
     PVM             pVM      = pVCpu->CTX_SUFF(pVM);
-    PPGMPOOL        pPool    = pVM->pgm.s.CTX_SUFF(pPool);
+    PPGMPOOL        pPool    = pVM->pgm.s.CTX_SUFF(pPool); NOREF(pPool);
 
 #if 0 /* rarely useful; leave for debugging. */
     STAM_COUNTER_INC(&pVCpu->pgm.s.StatSyncPtPD[iPDSrc]);
@@ -2626,7 +2625,7 @@ static int PGM_BTH_NAME(SyncPT)(PVMCPU pVCpu, unsigned iPDSrc, PGSTPD pPDSrc, RT
 #   elif PGM_GST_TYPE == PGM_TYPE_PAE
         rc = pgmR3SyncPTResolveConflictPAE(pVM, pMapping, GCPtrPage & (GST_PD_MASK << GST_PD_SHIFT));
 #   else
-        AssertFailed();     /* can't happen for amd64 */
+        AssertFailed(); NOREF(pMapping); /* can't happen for amd64 */
 #   endif
         if (RT_FAILURE(rc))
         {
@@ -3363,7 +3362,7 @@ PGM_BTH_DECL(int, PrefetchPage)(PVMCPU pVCpu, RTGCPTR GCPtrPage)
  */
 PGM_BTH_DECL(int, VerifyAccessSyncPage)(PVMCPU pVCpu, RTGCPTR GCPtrPage, unsigned fPage, unsigned uErr)
 {
-    PVM pVM = pVCpu->CTX_SUFF(pVM);
+    PVM pVM = pVCpu->CTX_SUFF(pVM); NOREF(pVM);
 
     LogFlow(("VerifyAccessSyncPage: GCPtrPage=%RGv fPage=%#x uErr=%#x\n", GCPtrPage, fPage, uErr));
 
@@ -3552,7 +3551,7 @@ PGM_BTH_DECL(int, VerifyAccessSyncPage)(PVMCPU pVCpu, RTGCPTR GCPtrPage, unsigne
  */
 PGM_BTH_DECL(int, SyncCR3)(PVMCPU pVCpu, uint64_t cr0, uint64_t cr3, uint64_t cr4, bool fGlobal)
 {
-    PVM pVM = pVCpu->CTX_SUFF(pVM);
+    PVM pVM = pVCpu->CTX_SUFF(pVM); NOREF(pVM);
 
     LogFlow(("SyncCR3 fGlobal=%d\n", !!VMCPU_FF_ISSET(pVCpu, VMCPU_FF_PGM_SYNC_CR3)));
 
@@ -3647,7 +3646,7 @@ PGM_BTH_DECL(unsigned, AssertCR3)(PVMCPU pVCpu, uint64_t cr3, uint64_t cr4, RTGC
 #else
     unsigned cErrors = 0;
     PVM      pVM     = pVCpu->CTX_SUFF(pVM);
-    PPGMPOOL pPool = pVM->pgm.s.CTX_SUFF(pPool);
+    PPGMPOOL pPool = pVM->pgm.s.CTX_SUFF(pPool); NOREF(pPool);
 
 #if PGM_GST_TYPE == PGM_TYPE_PAE
     /** @todo currently broken; crashes below somewhere */
@@ -4401,7 +4400,7 @@ PGM_BTH_DECL(unsigned, AssertCR3)(PVMCPU pVCpu, uint64_t cr3, uint64_t cr4, RTGC
  */
 PGM_BTH_DECL(int, MapCR3)(PVMCPU pVCpu, RTGCPHYS GCPhysCR3)
 {
-    PVM pVM = pVCpu->CTX_SUFF(pVM);
+    PVM pVM = pVCpu->CTX_SUFF(pVM); NOREF(pVM);
 
     /* Update guest paging info. */
 #if PGM_GST_TYPE == PGM_TYPE_32BIT \
@@ -4630,7 +4629,7 @@ PGM_BTH_DECL(int, UnmapCR3)(PVMCPU pVCpu)
     LogFlow(("UnmapCR3\n"));
 
     int rc  = VINF_SUCCESS;
-    PVM pVM = pVCpu->CTX_SUFF(pVM);
+    PVM pVM = pVCpu->CTX_SUFF(pVM); NOREF(pVM);
 
     /*
      * Update guest paging info.

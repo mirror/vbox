@@ -1016,7 +1016,9 @@ static void pgmR3MapClearPDEs(PVM pVM, PPGMMAPPING pMap, unsigned iOldPDE)
 static void pgmR3MapSetPDEs(PVM pVM, PPGMMAPPING pMap, unsigned iNewPDE)
 {
     PPGM   pPGM  = &pVM->pgm.s;
+#ifdef VBOX_STRICT
     PVMCPU pVCpu = VMMGetCpu(pVM);
+#endif
     pgmLock(pVM);                           /* to avoid assertions */
 
     Assert(!pgmMapAreMappingsEnabled(pVM) || PGMGetGuestMode(pVCpu) <= PGMMODE_PAE_NX);

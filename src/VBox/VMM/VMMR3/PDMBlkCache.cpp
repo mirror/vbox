@@ -952,7 +952,7 @@ static DECLCALLBACK(int) pdmR3BlkCacheLoadExec(PVM pVM, PSSMHANDLE pSSM, uint32_
 
                 /* Insert into the tree. */
                 bool fInserted = RTAvlrU64Insert(pBlkCache->pTree, &pEntry->Core);
-                Assert(fInserted);
+                Assert(fInserted); NOREF(fInserted);
 
                 /* Add to the dirty list. */
                 pdmBlkCacheAddDirtyEntry(pBlkCache, pEntry);
@@ -1544,18 +1544,15 @@ VMMR3DECL(void) PDMR3BlkCacheReleaseUsb(PVM pVM, PPDMUSBINS pUsbIns)
 
 static PPDMBLKCACHEENTRY pdmBlkCacheGetCacheEntryByOffset(PPDMBLKCACHE pBlkCache, uint64_t off)
 {
-    PPDMBLKCACHEGLOBAL pCache = pBlkCache->pCache;
-    PPDMBLKCACHEENTRY pEntry = NULL;
-
-    STAM_PROFILE_ADV_START(&pCache->StatTreeGet, Cache);
+    STAM_PROFILE_ADV_START(&pBlkCache->pCache->StatTreeGet, Cache);
 
     RTSemRWRequestRead(pBlkCache->SemRWEntries, RT_INDEFINITE_WAIT);
-    pEntry = (PPDMBLKCACHEENTRY)RTAvlrU64RangeGet(pBlkCache->pTree, off);
+    PPDMBLKCACHEENTRY pEntry = (PPDMBLKCACHEENTRY)RTAvlrU64RangeGet(pBlkCache->pTree, off);
     if (pEntry)
         pdmBlkCacheEntryRef(pEntry);
     RTSemRWReleaseRead(pBlkCache->SemRWEntries);
 
-    STAM_PROFILE_ADV_STOP(&pCache->StatTreeGet, Cache);
+    STAM_PROFILE_ADV_STOP(&pBlkCache->pCache->StatTreeGet, Cache);
 
     return pEntry;
 }
@@ -1572,9 +1569,7 @@ static PPDMBLKCACHEENTRY pdmBlkCacheGetCacheEntryByOffset(PPDMBLKCACHE pBlkCache
 static void pdmBlkCacheGetCacheBestFitEntryByOffset(PPDMBLKCACHE pBlkCache, uint64_t off,
                                                     PPDMBLKCACHEENTRY *ppEntryAbove)
 {
-    PPDMBLKCACHEGLOBAL pCache = pBlkCache->pCache;
-
-    STAM_PROFILE_ADV_START(&pCache->StatTreeGet, Cache);
+    STAM_PROFILE_ADV_START(&pBlkCache->pCache->StatTreeGet, Cache);
 
     RTSemRWRequestRead(pBlkCache->SemRWEntries, RT_INDEFINITE_WAIT);
     if (ppEntryAbove)
@@ -1586,18 +1581,16 @@ static void pdmBlkCacheGetCacheBestFitEntryByOffset(PPDMBLKCACHE pBlkCache, uint
 
     RTSemRWReleaseRead(pBlkCache->SemRWEntries);
 
-    STAM_PROFILE_ADV_STOP(&pCache->StatTreeGet, Cache);
+    STAM_PROFILE_ADV_STOP(&pBlkCache->pCache->StatTreeGet, Cache);
 }
 
 static void pdmBlkCacheInsertEntry(PPDMBLKCACHE pBlkCache, PPDMBLKCACHEENTRY pEntry)
 {
-    PPDMBLKCACHEGLOBAL pCache = pBlkCache->pCache;
-
-    STAM_PROFILE_ADV_START(&pCache->StatTreeInsert, Cache);
+    STAM_PROFILE_ADV_START(&pBlkCache->pCache->StatTreeInsert, Cache);
     RTSemRWRequestWrite(pBlkCache->SemRWEntries, RT_INDEFINITE_WAIT);
     bool fInserted = RTAvlrU64Insert(pBlkCache->pTree, &pEntry->Core);
-    AssertMsg(fInserted, ("Node was not inserted into tree\n"));
-    STAM_PROFILE_ADV_STOP(&pCache->StatTreeInsert, Cache);
+    AssertMsg(fInserted, ("Node was not inserted into tree\n")); NOREF(fInserted);
+    STAM_PROFILE_ADV_STOP(&pBlkCache->pCache->StatTreeInsert, Cache);
     RTSemRWReleaseWrite(pBlkCache->SemRWEntries);
 }
 
@@ -2474,7 +2467,7 @@ VMMR3DECL(int) PDMR3BlkCacheDiscard(PPDMBLKCACHE pBlkCache, PCRTRANGE paRanges,
                         if (!(pEntry->fFlags & PDMBLKCACHE_ENTRY_IO_IN_PROGRESS))
                         {
                             pdmBlkCacheLockEnter(pCache);
-                            pdmBlkCacheEntryRemoveFromList(pEntry); 
+                            pdmBlkCacheEntryRemoveFromList(pEntry);
 
                             STAM_PROFILE_ADV_START(&pCache->StatTreeRemove, Cache);
                             RTAvlrU64Remove(pBlkCache->pTree, pEntry->Core.Key);
@@ -2520,7 +2513,7 @@ VMMR3DECL(int) PDMR3BlkCacheDiscard(PPDMBLKCACHE pBlkCache, PCRTRANGE paRanges,
                         else /* I/O in progress flag not set */
                         {
                             pdmBlkCacheLockEnter(pCache);
-                            pdmBlkCacheEntryRemoveFromList(pEntry); 
+                            pdmBlkCacheEntryRemoveFromList(pEntry);
 
                             RTSemRWRequestWrite(pBlkCache->SemRWEntries, RT_INDEFINITE_WAIT);
                             STAM_PROFILE_ADV_START(&pCache->StatTreeRemove, Cache);
@@ -2537,7 +2530,7 @@ VMMR3DECL(int) PDMR3BlkCacheDiscard(PPDMBLKCACHE pBlkCache, PCRTRANGE paRanges,
                 else /* Entry is on the ghost list just remove cache entry. */
                 {
                     pdmBlkCacheLockEnter(pCache);
-                    pdmBlkCacheEntryRemoveFromList(pEntry); 
+                    pdmBlkCacheEntryRemoveFromList(pEntry);
 
                     RTSemRWRequestWrite(pBlkCache->SemRWEntries, RT_INDEFINITE_WAIT);
                     STAM_PROFILE_ADV_START(&pCache->StatTreeRemove, Cache);
@@ -2580,7 +2573,7 @@ static PPDMBLKCACHEWAITER pdmBlkCacheWaiterComplete(PPDMBLKCACHE pBlkCache,
     PPDMBLKCACHEWAITER pNext = pWaiter->pNext;
     PPDMBLKCACHEREQ pReq = pWaiter->pReq;
 
-    pdmBlkCacheReqUpdate(pBlkCache, pWaiter->pReq, rc, true);
+    pdmBlkCacheReqUpdate(pBlkCache, pReq, rc, true);
 
     RTMemFree(pWaiter);
 

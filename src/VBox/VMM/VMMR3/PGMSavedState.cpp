@@ -3096,8 +3096,7 @@ static int pgmR3LoadFinalLocked(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion)
  */
 static DECLCALLBACK(int) pgmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass)
 {
-    int     rc;
-    PPGM    pPGM = &pVM->pgm.s;
+    int rc;
 
     /*
      * Validate version.

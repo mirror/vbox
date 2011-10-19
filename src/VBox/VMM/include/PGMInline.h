@@ -678,7 +678,7 @@ DECLINLINE(PX86PDPT) pgmGstGetPaePDPTPtr(PVMCPU pVCpu)
 {
     PX86PDPT pGuestPdpt;
     int rc = pgmGstGetPaePDPTPtrEx(pVCpu, &pGuestPdpt);
-    AssertMsg(RT_SUCCESS(rc) || rc == VERR_PGM_INVALID_GC_PHYSICAL_ADDRESS, ("%Rrc\n", rc));
+    AssertMsg(RT_SUCCESS(rc) || rc == VERR_PGM_INVALID_GC_PHYSICAL_ADDRESS, ("%Rrc\n", rc)); NOREF(rc);
     return pGuestPdpt;
 }
 
