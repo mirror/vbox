@@ -547,9 +547,7 @@ static DECLCALLBACK(int) rtVfsMemFile_Flush(void *pvThis)
 static DECLCALLBACK(int) rtVfsMemFile_PollOne(void *pvThis, uint32_t fEvents, RTMSINTERVAL cMillies, bool fIntr,
                                               uint32_t *pfRetEvents)
 {
-    PRTVFSMEMFILE pThis = (PRTVFSMEMFILE)pvThis;
-    int           rc;
-
+    int rc;
     if (fEvents != RTPOLL_EVT_ERROR)
     {
         *pfRetEvents = fEvents & ~RTPOLL_EVT_ERROR;

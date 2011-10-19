@@ -205,7 +205,6 @@ RTDECL(void) RTCircBufReleaseWriteBlock(PRTCIRCBUF pBuf, size_t cbSize)
     /* Split at the end of the buffer. */
     pBuf->offWrite = (pBuf->offWrite + cbSize) % pBuf->cbBuf;
 
-    size_t cbOldIgnored = 0;
     ASMAtomicAddZ(&pBuf->cbUsed, cbSize);
 }
 

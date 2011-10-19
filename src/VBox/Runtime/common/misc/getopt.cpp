@@ -687,7 +687,6 @@ RTDECL(int) RTGetOpt(PRTGETOPTSTATE pState, PRTGETOPTUNION pValueUnion)
                 return VERR_GETOPT_INDEX_MISSING;
 
             uint32_t uIndex;
-            char *pszRet = NULL;
             if (RTStrToUInt32Full(&pszArgThis[cchLong], 10, &uIndex) == VINF_SUCCESS)
                 pState->uIndex = uIndex;
             else

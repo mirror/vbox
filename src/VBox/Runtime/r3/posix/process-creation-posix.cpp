@@ -696,7 +696,8 @@ RTR3DECL(int)   RTProcDaemonizeUsingFork(bool fNoChDir, bool fNoClose, const cha
 
     if (!fNoChDir)
     {
-        int rcChdir = chdir("/");
+        int rcIgnored = chdir("/");
+        NOREF(rcIgnored);
     }
 
     /* Second fork to lose session leader status. */
@@ -711,7 +712,7 @@ RTR3DECL(int)   RTProcDaemonizeUsingFork(bool fNoChDir, bool fNoClose, const cha
         {
             char szBuf[256];
             size_t cbPid = RTStrPrintf(szBuf, sizeof(szBuf), "%d\n", pid);
-            int rcWrite = write(fdPidfile, szBuf, cbPid);
+            ssize_t cbIgnored = write(fdPidfile, szBuf, cbPid); NOREF(cbIgnored);
             close(fdPidfile);
         }
         exit(0);
