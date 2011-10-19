@@ -963,7 +963,9 @@ VMMR0DECL(int) SVMR0RunGuestCode(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
     int         rc2;
     uint64_t    exitCode = (uint64_t)SVM_EXIT_INVALID;
     SVM_VMCB   *pVMCB;
+    bool        fSyncTPR  = false;
     unsigned    cResume = 0;
+    uint8_t     u8LastTPR = 0; /* Initialized for potentially stupid compilers. */
     PHMGLOBLCPUINFO pCpu = 0;
     RTCCUINTREG uOldEFlags = ~(RTCCUINTREG)0;
 #ifdef VBOX_STRICT
@@ -1111,8 +1113,6 @@ ResumeExecution:
      */
     /** @todo query and update the TPR only when it could have been changed (mmio access)
      */
-    bool    fSyncTPR  = false;
-    uint8_t u8LastTPR = 0; /* Initialized for potentially stupid compilers. */
     if (pVM->hwaccm.s.fHasIoApic)
     {
         /* TPR caching in CR8 */
