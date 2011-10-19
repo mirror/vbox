@@ -129,7 +129,6 @@ RTDECL(int) RTPathAppendEx(char *pszPath, size_t cbPathDst, const char *pszAppen
     /*
      * Balance slashes and check for buffer overflow.
      */
-    bool fAddSlash = false;
     if (!RTPATH_IS_SLASH(pszPathEnd[-1]))
     {
         if (!RTPATH_IS_SLASH(pszAppend[0]))

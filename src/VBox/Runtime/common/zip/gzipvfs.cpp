@@ -510,7 +510,6 @@ RTDECL(int) RTZipGzipDecompressIoStream(RTVFSIOSTREAM hVfsIosIn, uint32_t fFlags
              *        prebuffer what we read in the input buffer so it can
              *        be handed on to zlib later on.
              */
-            size_t cbRead = 0;
             rc = RTVfsIoStrmRead(pThis->hVfsIos, pThis->abBuffer, sizeof(RTZIPGZIPHDR), true /*fBlocking*/, NULL /*pcbRead*/);
             if (RT_SUCCESS(rc))
             {

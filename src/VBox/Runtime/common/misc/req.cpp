@@ -452,7 +452,6 @@ static void vmr3ReqJoinFree(PRTREQQUEUE pQueue, PRTREQ pList)
  */
 RTDECL(int) RTReqAlloc(PRTREQQUEUE pQueue, PRTREQ *ppReq, RTREQTYPE enmType)
 {
-    RT_EXPORT_SYMBOL(RTReqAlloc);
     /*
      * Validate input.
      */
@@ -572,6 +571,7 @@ RTDECL(int) RTReqAlloc(PRTREQQUEUE pQueue, PRTREQ *ppReq, RTREQTYPE enmType)
     LogFlow(("RTReqAlloc: returns VINF_SUCCESS *ppReq=%p new\n", pReq));
     return VINF_SUCCESS;
 }
+RT_EXPORT_SYMBOL(RTReqAlloc);
 
 
 /**

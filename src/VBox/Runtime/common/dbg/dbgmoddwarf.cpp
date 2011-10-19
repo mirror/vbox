@@ -1965,6 +1965,7 @@ static int rtDwarfLine_RunProgram(PRTDWARFLINESTATE pLnState, PRTDWARFCURSOR pCu
                             {
                                 uint64_t uSeg = rtDwarfCursor_GetVarSizedU(pCursor, cbInstr - 1, UINT64_MAX);
                                 Log2(("%08x: DW_LNE_set_segment: %ll#x - Watcom Extension\n", offOpCode, uSeg));
+                                NOREF(uSeg);
                                 /** @todo make use of this? */
                             }
                             break;

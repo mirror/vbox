@@ -598,7 +598,6 @@ static int rtTarAppendFileFromFile(RTTAR hTar, const char *pszSrcName, const uin
          * size aligned. */
         uint64_t cbAllWritten = 0; /* Already copied */
         uint64_t cbRead       = 0; /* Actually read in the last step */
-        uint64_t cbWrite      = 0; /* Actually write in the last step */
         for (;;)
         {
             if (pfnProgressCallback)

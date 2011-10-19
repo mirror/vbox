@@ -757,7 +757,7 @@ static void rtDbgAsModuleUnlinkMod(PRTDBGASINT pDbgAs, PRTDBGASMOD pMod)
      * Remove it from the module handle tree.
      */
     PAVLPVNODECORE pNode = RTAvlPVRemove(&pDbgAs->ModTree, pMod->Core.Key);
-    Assert(pNode == &pMod->Core);
+    Assert(pNode == &pMod->Core); NOREF(pNode);
 
     /*
      * Remove it from the module table by replacing it by the last entry.
@@ -792,7 +792,7 @@ static void rtDbgAsModuleUnlinkMap(PRTDBGASINT pDbgAs, PRTDBGASMAP pMap)
 {
     /* remove from the tree */
     PAVLRUINTPTRNODECORE pNode = RTAvlrUIntPtrRemove(&pDbgAs->MapTree, pMap->Core.Key);
-    Assert(pNode == &pMap->Core);
+    Assert(pNode == &pMap->Core); NOREF(pNode);
 
     /* unlink */
     PRTDBGASMOD pMod = pMap->pMod;

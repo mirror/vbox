@@ -331,7 +331,6 @@ DECLINLINE(void) rtSocketUnlock(RTSOCKETINT *pThis)
  */
 static int rtSocketSwitchBlockingModeSlow(RTSOCKETINT *pThis, bool fBlocking)
 {
-    int     rc        = VINF_SUCCESS;
 #ifdef RT_OS_WINDOWS
     u_long  uBlocking = fBlocking ? 0 : 1;
     if (ioctlsocket(pThis->hNative, FIONBIO, &uBlocking))

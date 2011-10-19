@@ -310,7 +310,9 @@ RTDECL(int)  RTSemEventSignal(RTSEMEVENT hEventSem)
 
 DECL_FORCE_INLINE(int) rtSemEventWait(RTSEMEVENT hEventSem, RTMSINTERVAL cMillies, bool fAutoResume)
 {
+#ifdef RTSEMEVENT_STRICT
     PCRTLOCKVALSRCPOS  pSrcPos = NULL;
+#endif
 
     /*
      * Validate input.
