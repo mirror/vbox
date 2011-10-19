@@ -46,7 +46,8 @@ static void test1(const char *pszSubTest, const char *pszFilename)
     if (RT_FAILURE(rc))
     {
         if (   rc == VERR_ACCESS_DENIED
-            || rc == VERR_PERMISSION_DENIED)
+            || rc == VERR_PERMISSION_DENIED
+            || rc == VERR_FILE_NOT_FOUND)
         {
             RTTestIPrintf(RTTESTLVL_ALWAYS, "Cannot access '%s', skipping.", pszFilename);
             return;
@@ -88,6 +89,12 @@ int main(int argc, char **argv)
     test1("HarddiskVolume1", "//./HarddiskVolume1");
     test1("null", "//./nul");
 #else
+    test1("null", "/dev/null");
+# ifdef RT_OS_LINUX
+    test1("sda", "/dev/sda");
+    test1("sda1", "/dev/sda1");
+    test1("sda5", "/dev/sda5");
+# endif
 #endif
 
     /*
