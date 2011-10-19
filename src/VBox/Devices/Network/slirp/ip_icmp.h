@@ -199,7 +199,7 @@ struct icmp_msg
 LIST_HEAD(icmp_storage, icmp_msg);
 
 int icmp_init (PNATState , int);
-int icmp_finit (PNATState );
+void icmp_finit (PNATState );
 struct icmp_msg * icmp_find_original_mbuf (PNATState , struct ip *);
 
 #endif
