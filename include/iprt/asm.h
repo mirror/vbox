@@ -760,7 +760,7 @@ DECLINLINE(bool) ASMAtomicCmpXchgU32(volatile uint32_t *pu32, const uint32_t u32
     return (bool)u8Ret;
 
 # elif RT_INLINE_ASM_USES_INTRIN
-    return _InterlockedCompareExchange((long *)pu32, u32New, u32Old) == u32Old;
+    return (uint32_t)_InterlockedCompareExchange((long *)pu32, u32New, u32Old) == u32Old;
 
 # else
     uint32_t u32Ret;
@@ -821,7 +821,7 @@ DECLASM(bool) ASMAtomicCmpXchgU64(volatile uint64_t *pu64, const uint64_t u64New
 DECLINLINE(bool) ASMAtomicCmpXchgU64(volatile uint64_t *pu64, uint64_t u64New, uint64_t u64Old)
 {
 # if RT_INLINE_ASM_USES_INTRIN
-   return _InterlockedCompareExchange64((__int64 *)pu64, u64New, u64Old) == u64Old;
+   return (uint64_t)_InterlockedCompareExchange64((__int64 *)pu64, u64New, u64Old) == u64Old;
 
 # elif defined(RT_ARCH_AMD64)
 #  if RT_INLINE_ASM_GNU_STYLE
@@ -4127,7 +4127,7 @@ DECLINLINE(void) ASMBitSetRange(volatile void *pvBitmap, int32_t iBitStart, int3
 
             /* whole dword. */
             if (iBitStart != iEnd)
-                ASMMemFill32(pu32, (iEnd - iBitStart) >> 3, ~0);
+                ASMMemFill32(pu32, (iEnd - iBitStart) >> 3, ~UINT32_C(0));
 
             /* bits in last dword. */
             if (iBitEnd & 31)
