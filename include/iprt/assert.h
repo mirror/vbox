@@ -2155,7 +2155,7 @@ RT_C_DECLS_END
  * @param   rc  iprt status code.
  * @remark  rc is referenced multiple times. In release mode is NOREF()'ed.
  */
-#define AssertRCSuccess(rc)                 AssertMsg((rc) == VINF_SUCCESS, ("%Rra\n", (rc)))
+#define AssertRCSuccess(rc)                 do { AssertMsg((rc) == VINF_SUCCESS, ("%Rra\n", (rc))); NOREF(rc); } while (0)
 
 /** @def AssertRCSuccessReturn
  * Asserts that an iprt status code equals VINF_SUCCESS, bitch (RT_STRICT mode only) and return if it isn't.
