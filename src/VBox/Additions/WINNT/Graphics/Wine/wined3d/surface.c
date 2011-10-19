@@ -1261,7 +1261,7 @@ static ULONG WINAPI IWineD3DSurfaceImpl_Release(IWineD3DSurface *iface)
         {
             context = device->contexts[i];
             /* pretty hacky, @todo: check if the context is acquired and re-acquire it with the new swapchain */
-            if (context->current_rt  == This)
+            if (context->current_rt  == (IWineD3DSurface*)This)
             {
                 context->current_rt = NULL;
             }
@@ -1806,7 +1806,8 @@ void surface_setup_location_onopen(IWineD3DSurfaceImpl *This)
     if (!device->isInDraw) context = context_acquire(device, NULL, CTXUSAGE_RESOURCELOAD);
 
     surface_prepare_texture(This, gl_info, FALSE);
-    surface_bind_and_dirtify(This, FALSE);
+    /* no need to bind it here */
+//    surface_bind_and_dirtify(This, FALSE);
 
     if (context) context_release(context);
 
@@ -4803,6 +4804,50 @@ static void WINAPI IWineD3DSurfaceImpl_ModifyLocation(IWineD3DSurface *iface, DW
                 IWineD3DBaseTexture_Release(texture);
             }
         }
+
+#ifdef VBOX_WITH_WDDM
+        {
+            /* sometimes wine can call ModifyLocation(SFLAG_INTEXTURE, TRUE) for surfaces that do not yet have
+             * ogl texture backend assigned, e.g. when doing ColorFill right after surface creation
+             * to prevent wine state breakage that could occur later on in that case, we check
+             * whether tex gen is needed here and generate it accordingly */
+            if (!This->texture_name)
+            {
+                Assert(!(This->Flags & SFLAG_INTEXTURE));
+                if (flag & SFLAG_INTEXTURE)
+                {
+                    struct wined3d_context *context = NULL;
+                    IWineD3DDeviceImpl *device = This->resource.device;
+                    const struct wined3d_gl_info *gl_info;
+
+                    if (!device->isInDraw) context = context_acquire(device, NULL, CTXUSAGE_RESOURCELOAD);
+                    gl_info = context->gl_info;
+
+                    surface_prepare_texture(This, gl_info, FALSE);
+
+                    if (context) context_release(context);
+                }
+            }
+
+            if (!This->texture_name_srgb)
+            {
+                Assert(!(This->Flags & SFLAG_INSRGBTEX));
+                if (flag & SFLAG_INSRGBTEX)
+                {
+                    struct wined3d_context *context = NULL;
+                    IWineD3DDeviceImpl *device = This->resource.device;
+                    const struct wined3d_gl_info *gl_info;
+
+                    if (!device->isInDraw) context = context_acquire(device, NULL, CTXUSAGE_RESOURCELOAD);
+                    gl_info = context->gl_info;
+
+                    surface_prepare_texture(This, gl_info, TRUE);
+
+                    if (context) context_release(context);
+                }
+            }
+        }
+#endif
 
         This->Flags &= ~SFLAG_LOCATIONS;
         This->Flags |= flag;
