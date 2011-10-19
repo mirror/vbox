@@ -1560,8 +1560,7 @@ static INTNETSWDECISION intnetR0NetworkPreSwitchUnicast(PINTNETNETWORK pNetwork,
 
     /* Iterate the internal network interfaces and look for matching source and
        destination addresses. */
-    uint32_t cExactHits = 0;
-    uint32_t iIfMac     = pTab->cEntries;
+    uint32_t iIfMac = pTab->cEntries;
     while (iIfMac-- > 0)
     {
         if (pTab->paEntries[iIfMac].fActive)
