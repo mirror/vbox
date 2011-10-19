@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2009 Oracle Corporation
+ * Copyright (C) 2006-2011 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -40,32 +40,6 @@
 #include <iprt/string.h>
 #include <iprt/thread.h>
 #include <iprt/path.h>
-
-#if defined(RT_OS_DARWIN) || defined(RT_OS_SOLARIS) || defined(RT_OS_FREEBSD)
-# include <errno.h>
-# include <sys/ioctl.h>
-# include <sys/types.h>
-# include <sys/stat.h>
-# include <fcntl.h>
-# include <unistd.h>
-#endif
-
-#ifdef RT_OS_WINDOWS
-# define _WIN32_WINNT 0x0500
-# include <windows.h>
-# include <winioctl.h>
-#endif
-#ifdef RT_OS_DARWIN
-# include <sys/disk.h>
-#endif /* RT_OS_DARWIN */
-#ifdef RT_OS_SOLARIS
-# include <stropts.h>
-# include <sys/dkio.h>
-# include <sys/vtoc.h>
-#endif /* RT_OS_SOLARIS */
-#ifdef RT_OS_FREEBSD
-# include <sys/disk.h>
-#endif /* RT_OS_FREEBSD */
 
 #include "PDMAsyncCompletionFileInternal.h"
 
@@ -111,6 +85,7 @@ static const DBGCCMD g_aCmds[] =
 };
 #endif
 
+
 /**
  * Frees a task.
  *
@@ -118,8 +93,7 @@ static const DBGCCMD g_aCmds[] =
  * @param   pEndpoint    Pointer to the endpoint the segment was for.
  * @param   pTask        The task to free.
  */
-void pdmacFileTaskFree(PPDMASYNCCOMPLETIONENDPOINTFILE pEndpoint,
-                       PPDMACTASKFILE pTask)
+void pdmacFileTaskFree(PPDMASYNCCOMPLETIONENDPOINTFILE pEndpoint, PPDMACTASKFILE pTask)
 {
     PPDMASYNCCOMPLETIONEPCLASSFILE pEpClass = (PPDMASYNCCOMPLETIONEPCLASSFILE)pEndpoint->Core.pEpClass;
 
@@ -185,12 +159,10 @@ PPDMACTASKFILE pdmacFileTaskAlloc(PPDMASYNCCOMPLETIONENDPOINTFILE pEndpoint)
 
 PPDMACTASKFILE pdmacFileEpGetNewTasks(PPDMASYNCCOMPLETIONENDPOINTFILE pEndpoint)
 {
-    PPDMACTASKFILE pTasks = NULL;
-
     /*
      * Get pending tasks.
      */
-    pTasks = ASMAtomicXchgPtrT(&pEndpoint->pTasksNewHead, NULL, PPDMACTASKFILE);
+    PPDMACTASKFILE pTasks = ASMAtomicXchgPtrT(&pEndpoint->pTasksNewHead, NULL, PPDMACTASKFILE);
 
     /* Reverse the list to process in FIFO order. */
     if (pTasks)
@@ -214,23 +186,19 @@ PPDMACTASKFILE pdmacFileEpGetNewTasks(PPDMASYNCCOMPLETIONENDPOINTFILE pEndpoint)
 static void pdmacFileAioMgrWakeup(PPDMACEPFILEMGR pAioMgr)
 {
     bool fWokenUp = ASMAtomicXchgBool(&pAioMgr->fWokenUp, true);
-
     if (!fWokenUp)
     {
-        int rc = VINF_SUCCESS;
         bool fWaitingEventSem = ASMAtomicReadBool(&pAioMgr->fWaitingEventSem);
-
         if (fWaitingEventSem)
-            rc = RTSemEventSignal(pAioMgr->EventSem);
-
-        AssertRC(rc);
+        {
+            int rc = RTSemEventSignal(pAioMgr->EventSem);
+            AssertRC(rc);
+        }
     }
 }
 
 static int pdmacFileAioMgrWaitForBlockingEvent(PPDMACEPFILEMGR pAioMgr, PDMACEPFILEAIOMGRBLOCKINGEVENT enmEvent)
 {
-    int rc = VINF_SUCCESS;
-
     ASMAtomicWriteU32((volatile uint32_t *)&pAioMgr->enmBlockingEvent, enmEvent);
     Assert(!pAioMgr->fBlockingEventPending);
     ASMAtomicXchgBool(&pAioMgr->fBlockingEventPending, true);
@@ -239,7 +207,7 @@ static int pdmacFileAioMgrWaitForBlockingEvent(PPDMACEPFILEMGR pAioMgr, PDMACEPF
     pdmacFileAioMgrWakeup(pAioMgr);
 
     /* Wait for completion. */
-    rc = RTSemEventWait(pAioMgr->EventSemBlock, RT_INDEFINITE_WAIT);
+    int rc = RTSemEventWait(pAioMgr->EventSemBlock, RT_INDEFINITE_WAIT);
     AssertRC(rc);
 
     ASMAtomicXchgBool(&pAioMgr->fBlockingEventPending, false);
@@ -250,14 +218,12 @@ static int pdmacFileAioMgrWaitForBlockingEvent(PPDMACEPFILEMGR pAioMgr, PDMACEPF
 
 int pdmacFileAioMgrAddEndpoint(PPDMACEPFILEMGR pAioMgr, PPDMASYNCCOMPLETIONENDPOINTFILE pEndpoint)
 {
-    int rc;
-
     LogFlowFunc(("pAioMgr=%#p pEndpoint=%#p{%s}\n", pAioMgr, pEndpoint, pEndpoint->Core.pszUri));
 
     /* Update the assigned I/O manager. */
     ASMAtomicWritePtr(&pEndpoint->pAioMgr, pAioMgr);
 
-    rc = RTCritSectEnter(&pAioMgr->CritSectBlockingEvent);
+    int rc = RTCritSectEnter(&pAioMgr->CritSectBlockingEvent);
     AssertRCReturn(rc, rc);
 
     ASMAtomicWritePtr(&pAioMgr->BlockingEventData.AddEndpoint.pEndpoint, pEndpoint);
@@ -271,9 +237,7 @@ int pdmacFileAioMgrAddEndpoint(PPDMACEPFILEMGR pAioMgr, PPDMASYNCCOMPLETIONENDPO
 
 static int pdmacFileAioMgrRemoveEndpoint(PPDMACEPFILEMGR pAioMgr, PPDMASYNCCOMPLETIONENDPOINTFILE pEndpoint)
 {
-    int rc;
-
-    rc = RTCritSectEnter(&pAioMgr->CritSectBlockingEvent);
+    int rc = RTCritSectEnter(&pAioMgr->CritSectBlockingEvent);
     AssertRCReturn(rc, rc);
 
     ASMAtomicWritePtr(&pAioMgr->BlockingEventData.RemoveEndpoint.pEndpoint, pEndpoint);
@@ -287,9 +251,7 @@ static int pdmacFileAioMgrRemoveEndpoint(PPDMACEPFILEMGR pAioMgr, PPDMASYNCCOMPL
 
 static int pdmacFileAioMgrCloseEndpoint(PPDMACEPFILEMGR pAioMgr, PPDMASYNCCOMPLETIONENDPOINTFILE pEndpoint)
 {
-    int rc;
-
-    rc = RTCritSectEnter(&pAioMgr->CritSectBlockingEvent);
+    int rc = RTCritSectEnter(&pAioMgr->CritSectBlockingEvent);
     AssertRCReturn(rc, rc);
 
     ASMAtomicWritePtr(&pAioMgr->BlockingEventData.CloseEndpoint.pEndpoint, pEndpoint);
@@ -303,9 +265,7 @@ static int pdmacFileAioMgrCloseEndpoint(PPDMACEPFILEMGR pAioMgr, PPDMASYNCCOMPLE
 
 static int pdmacFileAioMgrShutdown(PPDMACEPFILEMGR pAioMgr)
 {
-    int rc;
-
-    rc = RTCritSectEnter(&pAioMgr->CritSectBlockingEvent);
+    int rc = RTCritSectEnter(&pAioMgr->CritSectBlockingEvent);
     AssertRCReturn(rc, rc);
 
     rc = pdmacFileAioMgrWaitForBlockingEvent(pAioMgr, PDMACEPFILEAIOMGRBLOCKINGEVENT_SHUTDOWN);
@@ -336,9 +296,7 @@ void pdmacFileEpTaskCompleted(PPDMACTASKFILE pTask, void *pvUser, int rc)
     LogFlowFunc(("pTask=%#p pvUser=%#p rc=%Rrc\n", pTask, pvUser, rc));
 
     if (pTask->enmTransferType == PDMACTASKFILETRANSFER_FLUSH)
-    {
         pdmR3AsyncCompletionCompleteTask(&pTaskFile->Core, rc, true);
-    }
     else
     {
         Assert((uint32_t)pTask->DataSeg.cbSeg == pTask->DataSeg.cbSeg && (int32_t)pTask->DataSeg.cbSeg >= 0);
@@ -413,12 +371,11 @@ int pdmacFileEpTaskInitiate(PPDMASYNCCOMPLETIONTASK pTask,
 {
     PPDMASYNCCOMPLETIONENDPOINTFILE pEpFile = (PPDMASYNCCOMPLETIONENDPOINTFILE)pEndpoint;
     PPDMASYNCCOMPLETIONTASKFILE pTaskFile = (PPDMASYNCCOMPLETIONTASKFILE)pTask;
-    PPDMACEPFILEMGR pAioMgr = pEpFile->pAioMgr;
 
     Assert(   (enmTransfer == PDMACTASKFILETRANSFER_READ)
            || (enmTransfer == PDMACTASKFILETRANSFER_WRITE));
 
-    for (unsigned i = 0; i < cSegments; i++)
+    for (size_t i = 0; i < cSegments; i++)
     {
         PPDMACTASKFILE pIoTask = pdmacFileTaskAlloc(pEpFile);
         AssertPtr(pIoTask);
@@ -453,12 +410,10 @@ int pdmacFileEpTaskInitiate(PPDMASYNCCOMPLETIONTASK pTask,
 int pdmacFileAioMgrCreate(PPDMASYNCCOMPLETIONEPCLASSFILE pEpClass, PPPDMACEPFILEMGR ppAioMgr,
                           PDMACEPFILEMGRTYPE enmMgrType)
 {
-    int rc = VINF_SUCCESS;
-    PPDMACEPFILEMGR pAioMgrNew;
-
     LogFlowFunc((": Entered\n"));
 
-    rc = MMR3HeapAllocZEx(pEpClass->Core.pVM, MM_TAG_PDM_ASYNC_COMPLETION, sizeof(PDMACEPFILEMGR), (void **)&pAioMgrNew);
+    PPDMACEPFILEMGR pAioMgrNew;
+    int rc = MMR3HeapAllocZEx(pEpClass->Core.pVM, MM_TAG_PDM_ASYNC_COMPLETION, sizeof(PDMACEPFILEMGR), (void **)&pAioMgrNew);
     if (RT_SUCCESS(rc))
     {
         if (enmMgrType < pEpClass->enmMgrTypeOverride)
@@ -626,112 +581,21 @@ static const char *pdmacFileBackendTypeToName(PDMACFILEEPBACKEND enmBackendType)
  */
 static int pdmacFileEpNativeGetSize(RTFILE hFile, uint64_t *pcbSize)
 {
-    int rc = VINF_SUCCESS;
-    uint64_t cbSize = 0;
-
-    rc = RTFileGetSize(hFile, &cbSize);
-    if (RT_SUCCESS(rc) && (cbSize != 0))
-        *pcbSize = cbSize;
-    else
+    uint64_t cbFile;
+    int rc = RTFileGetSize(hFile, &cbFile);
+    if (RT_SUCCESS(rc))
     {
-#ifdef RT_OS_WINDOWS
-        DISK_GEOMETRY DriveGeo;
-        DWORD cbDriveGeo;
-        if (DeviceIoControl((HANDLE)RTFileToNative(hFile),
-                            IOCTL_DISK_GET_DRIVE_GEOMETRY, NULL, 0,
-                            &DriveGeo, sizeof(DriveGeo), &cbDriveGeo, NULL))
-        {
-            if (   DriveGeo.MediaType == FixedMedia
-                || DriveGeo.MediaType == RemovableMedia)
-            {
-                cbSize =     DriveGeo.Cylinders.QuadPart
-                         *   DriveGeo.TracksPerCylinder
-                         *   DriveGeo.SectorsPerTrack
-                         *   DriveGeo.BytesPerSector;
-
-                GET_LENGTH_INFORMATION DiskLenInfo;
-                DWORD junk;
-                if (DeviceIoControl((HANDLE)RTFileToNative(hFile),
-                                    IOCTL_DISK_GET_LENGTH_INFO, NULL, 0,
-                                    &DiskLenInfo, sizeof(DiskLenInfo), &junk, (LPOVERLAPPED)NULL))
-                {
-                    /* IOCTL_DISK_GET_LENGTH_INFO is supported -- override cbSize. */
-                    cbSize = DiskLenInfo.Length.QuadPart;
-                }
-
-                rc = VINF_SUCCESS;
-            }
-            else
-            {
-                rc = VERR_INVALID_PARAMETER;
-            }
-        }
-        else
-            rc = RTErrConvertFromWin32(GetLastError());
-
-#elif defined(RT_OS_DARWIN)
-        struct stat DevStat;
-        if (!fstat(RTFileToNative(hFile), &DevStat) && S_ISBLK(DevStat.st_mode))
-        {
-            uint64_t cBlocks;
-            uint32_t cbBlock;
-            if (!ioctl(RTFileToNative(hFile), DKIOCGETBLOCKCOUNT, &cBlocks))
-            {
-                if (!ioctl(RTFileToNative(hFile), DKIOCGETBLOCKSIZE, &cbBlock))
-                    cbSize = cBlocks * cbBlock;
-                else
-                    rc = RTErrConvertFromErrno(errno);
-            }
-            else
-                rc = RTErrConvertFromErrno(errno);
-        }
+        if (cbFile != 0)
+            *pcbSize = cbFile;
         else
             rc = VERR_INVALID_PARAMETER;
-
-#elif defined(RT_OS_SOLARIS)
-        struct stat DevStat;
-        if (   !fstat(RTFileToNative(hFile), &DevStat)
-            && (   S_ISBLK(DevStat.st_mode)
-                || S_ISCHR(DevStat.st_mode)))
-        {
-            struct dk_minfo mediainfo;
-            if (!ioctl(RTFileToNative(hFile), DKIOCGMEDIAINFO, &mediainfo))
-                cbSize = mediainfo.dki_capacity * mediainfo.dki_lbsize;
-            else
-                rc = RTErrConvertFromErrno(errno);
-        }
-        else
-            rc = VERR_INVALID_PARAMETER;
-
-#elif defined(RT_OS_FREEBSD)
-        struct stat DevStat;
-        if (!fstat(RTFileToNative(hFile), &DevStat) && S_ISCHR(DevStat.st_mode))
-        {
-            off_t cbMedia = 0;
-            if (!ioctl(RTFileToNative(hFile), DIOCGMEDIASIZE, &cbMedia))
-            {
-                cbSize = cbMedia;
-            }
-            else
-                rc = RTErrConvertFromErrno(errno);
-        }
-        else
-            rc = VERR_INVALID_PARAMETER;
-#else
-        /* Could be a block device */
-        rc = RTFileSeek(hFile, 0, RTFILE_SEEK_END, &cbSize);
-#endif
-
-        if (RT_SUCCESS(rc) && (cbSize != 0))
-            *pcbSize = cbSize;
-        else if (RT_SUCCESS(rc))
-            rc = VERR_NOT_SUPPORTED;
     }
 
     return rc;
 }
 
 #ifdef VBOX_WITH_DEBUGGER
+
 /**
  * Error inject callback.
  */
@@ -866,12 +730,10 @@ static DECLCALLBACK(int) pdmacEpFileDelayInject(PCDBGCCMD pCmd, PDBGCCMDHLP pCmd
 
 static int pdmacFileInitialize(PPDMASYNCCOMPLETIONEPCLASS pClassGlobals, PCFGMNODE pCfgNode)
 {
-    int rc = VINF_SUCCESS;
-    RTFILEAIOLIMITS AioLimits; /** < Async I/O limitations. */
-
     PPDMASYNCCOMPLETIONEPCLASSFILE pEpClassFile = (PPDMASYNCCOMPLETIONEPCLASSFILE)pClassGlobals;
+    RTFILEAIOLIMITS                AioLimits; /** < Async I/O limitations. */
 
-    rc = RTFileAioGetLimits(&AioLimits);
+    int rc = RTFileAioGetLimits(&AioLimits);
 #ifdef DEBUG
     if (RT_SUCCESS(rc) && RTEnvExist("VBOX_ASYNC_IO_FAILBACK"))
         rc = VERR_ENV_VAR_NOT_FOUND;
@@ -962,7 +824,6 @@ static void pdmacFileTerminate(PPDMASYNCCOMPLETIONEPCLASS pClassGlobals)
 static int pdmacFileEpInitialize(PPDMASYNCCOMPLETIONENDPOINT pEndpoint,
                                  const char *pszUri, uint32_t fFlags)
 {
-    int rc = VINF_SUCCESS;
     PPDMASYNCCOMPLETIONENDPOINTFILE pEpFile = (PPDMASYNCCOMPLETIONENDPOINTFILE)pEndpoint;
     PPDMASYNCCOMPLETIONEPCLASSFILE pEpClassFile = (PPDMASYNCCOMPLETIONEPCLASSFILE)pEndpoint->pEpClass;
     PDMACEPFILEMGRTYPE enmMgrType = pEpClassFile->enmMgrTypeOverride;
@@ -1003,6 +864,7 @@ static int pdmacFileEpInitialize(PPDMASYNCCOMPLETIONENDPOINT pEndpoint,
     if (enmMgrType == PDMACEPFILEMGRTYPE_ASYNC)
         fFileFlags |= RTFILE_O_ASYNC_IO;
 
+    int rc;
     if (enmEpBackend == PDMACFILEEPBACKEND_NON_BUFFERED)
     {
         /*
@@ -1040,7 +902,8 @@ static int pdmacFileEpInitialize(PPDMASYNCCOMPLETIONENDPOINT pEndpoint,
 
     /* Open with final flags. */
     rc = RTFileOpen(&pEpFile->hFile, pszUri, fFileFlags);
-    if ((rc == VERR_INVALID_FUNCTION) || (rc == VERR_INVALID_PARAMETER))
+    if (   rc == VERR_INVALID_FUNCTION
+        || rc == VERR_INVALID_PARAMETER)
     {
         LogRel(("pdmacFileEpInitialize: RTFileOpen %s / %08x failed with %Rrc\n",
                pszUri, fFileFlags, rc));
@@ -1179,12 +1042,11 @@ static int pdmacFileEpRangesLockedDestroy(PAVLRFOFFNODECORE pNode, void *pvUser)
 
 static int pdmacFileEpClose(PPDMASYNCCOMPLETIONENDPOINT pEndpoint)
 {
-    int rc = VINF_SUCCESS;
-    PPDMASYNCCOMPLETIONENDPOINTFILE pEpFile = (PPDMASYNCCOMPLETIONENDPOINTFILE)pEndpoint;
-    PPDMASYNCCOMPLETIONEPCLASSFILE pEpClassFile = (PPDMASYNCCOMPLETIONEPCLASSFILE)pEndpoint->pEpClass;
+    PPDMASYNCCOMPLETIONENDPOINTFILE pEpFile      = (PPDMASYNCCOMPLETIONENDPOINTFILE)pEndpoint;
+    PPDMASYNCCOMPLETIONEPCLASSFILE  pEpClassFile = (PPDMASYNCCOMPLETIONEPCLASSFILE)pEndpoint->pEpClass;
 
     /* Make sure that all tasks finished for this endpoint. */
-    rc = pdmacFileAioMgrCloseEndpoint(pEpFile->pAioMgr, pEpFile);
+    int rc = pdmacFileAioMgrCloseEndpoint(pEpFile->pAioMgr, pEpFile);
     AssertRC(rc);
 
     /*
@@ -1222,7 +1084,6 @@ static int pdmacFileEpRead(PPDMASYNCCOMPLETIONTASK pTask,
                            PCRTSGSEG paSegments, size_t cSegments,
                            size_t cbRead)
 {
-    int rc = VINF_SUCCESS;
     PPDMASYNCCOMPLETIONENDPOINTFILE pEpFile = (PPDMASYNCCOMPLETIONENDPOINTFILE)pEndpoint;
 
     LogFlowFunc(("pTask=%#p pEndpoint=%#p off=%RTfoff paSegments=%#p cSegments=%zu cbRead=%zu\n",
@@ -1230,8 +1091,8 @@ static int pdmacFileEpRead(PPDMASYNCCOMPLETIONTASK pTask,
 
     STAM_PROFILE_ADV_START(&pEpFile->StatRead, Read);
     pdmacFileEpTaskInit(pTask, cbRead);
-    rc = pdmacFileEpTaskInitiate(pTask, pEndpoint, off, paSegments, cSegments, cbRead,
-                                 PDMACTASKFILETRANSFER_READ);
+    int rc = pdmacFileEpTaskInitiate(pTask, pEndpoint, off, paSegments, cSegments, cbRead,
+                                     PDMACTASKFILETRANSFER_READ);
     STAM_PROFILE_ADV_STOP(&pEpFile->StatRead, Read);
 
     return rc;
@@ -1242,7 +1103,6 @@ static int pdmacFileEpWrite(PPDMASYNCCOMPLETIONTASK pTask,
                             PCRTSGSEG paSegments, size_t cSegments,
                             size_t cbWrite)
 {
-    int rc = VINF_SUCCESS;
     PPDMASYNCCOMPLETIONENDPOINTFILE pEpFile = (PPDMASYNCCOMPLETIONENDPOINTFILE)pEndpoint;
 
     if (RT_UNLIKELY(pEpFile->fReadonly))
@@ -1252,8 +1112,8 @@ static int pdmacFileEpWrite(PPDMASYNCCOMPLETIONTASK pTask,
 
     pdmacFileEpTaskInit(pTask, cbWrite);
 
-    rc = pdmacFileEpTaskInitiate(pTask, pEndpoint, off, paSegments, cSegments, cbWrite,
-                                 PDMACTASKFILETRANSFER_WRITE);
+    int rc = pdmacFileEpTaskInitiate(pTask, pEndpoint, off, paSegments, cSegments, cbWrite,
+                                     PDMACTASKFILETRANSFER_WRITE);
 
     STAM_PROFILE_ADV_STOP(&pEpFile->StatWrite, Write);
 
@@ -1263,8 +1123,8 @@ static int pdmacFileEpWrite(PPDMASYNCCOMPLETIONTASK pTask,
 static int pdmacFileEpFlush(PPDMASYNCCOMPLETIONTASK pTask,
                             PPDMASYNCCOMPLETIONENDPOINT pEndpoint)
 {
-    PPDMASYNCCOMPLETIONENDPOINTFILE pEpFile = (PPDMASYNCCOMPLETIONENDPOINTFILE)pEndpoint;
-    PPDMASYNCCOMPLETIONTASKFILE pTaskFile = (PPDMASYNCCOMPLETIONTASKFILE)pTask;
+    PPDMASYNCCOMPLETIONENDPOINTFILE pEpFile   = (PPDMASYNCCOMPLETIONENDPOINTFILE)pEndpoint;
+    PPDMASYNCCOMPLETIONTASKFILE     pTaskFile = (PPDMASYNCCOMPLETIONTASKFILE)pTask;
 
     if (RT_UNLIKELY(pEpFile->fReadonly))
         return VERR_NOT_SUPPORTED;
