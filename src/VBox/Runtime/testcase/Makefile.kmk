@@ -60,6 +60,7 @@ PROGRAMS += \
 	tstFile \
 	tstRTFileAio \
 	tstRTFileAppend-1 \
+	tstRTFileGetSize-1 \
 	tstFileLock \
 	tstFork \
 	tstRTGetOpt \
@@ -231,6 +232,9 @@ tstRTFileAio_SOURCES = tstRTFileAio.cpp
 
 tstRTFileAppend-1_TEMPLATE = VBOXR3TSTEXE
 tstRTFileAppend-1_SOURCES = tstRTFileAppend-1.cpp
+
+tstRTFileGetSize-1_TEMPLATE = VBOXR3TSTEXE
+tstRTFileGetSize-1_SOURCES = tstRTFileGetSize-1.cpp
 
 tstFileAppendWin-1_SOURCES = tstFileAppendWin-1.cpp
 
