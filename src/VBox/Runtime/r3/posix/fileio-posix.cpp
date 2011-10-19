@@ -49,6 +49,14 @@
 #if defined(RT_OS_OS2) && (!defined(__INNOTEK_LIBC__) || __INNOTEK_LIBC__ < 0x006)
 # include <io.h>
 #endif
+#if defined(RT_OS_DARWIN) || defined(RT_OS_FREEBSD)
+# include <sys/disk.h>
+#endif
+#ifdef RT_OS_SOLARIS
+# include <stropts.h>
+# include <sys/dkio.h>
+# include <sys/vtoc.h>
+#endif /* RT_OS_SOLARIS */
 
 #include <iprt/file.h>
 #include <iprt/path.h>
@@ -541,13 +549,77 @@ RTR3DECL(int)  RTFileSetSize(RTFILE hFile, uint64_t cbSize)
 }
 
 
-RTR3DECL(int)   RTFileGetSize(RTFILE hFile, uint64_t *pcbSize)
+RTR3DECL(int) RTFileGetSize(RTFILE hFile, uint64_t *pcbSize)
 {
+    /*
+     * Ask fstat() first.
+     */
     struct stat st;
     if (!fstat(RTFileToNative(hFile), &st))
     {
         *pcbSize = st.st_size;
-        return VINF_SUCCESS;
+        if (   st.st_size != 0
+#if defined(RT_OS_SOLARIS)
+            || (!S_ISBLK(st.st_mode) && !S_ISCHR(st.st_mode))
+#elif defined(RT_OS_FREEBSD)
+            || !S_ISCHR(st.st_mode)
+#else
+            || !S_ISBLK(st.st_mode)
+#endif
+            )
+            return VINF_SUCCESS;
+
+        /*
+         * It could be a block device.  Try determin the size by I/O control
+         * query or seek.
+         */
+#ifdef RT_OS_DARWIN
+        uint64_t cBlocks;
+        if (!ioctl(RTFileToNative(hFile), DKIOCGETBLOCKCOUNT, &cBlocks))
+        {
+            uint32_t cbBlock;
+            if (!ioctl(RTFileToNative(hFile), DKIOCGETBLOCKSIZE, &cbBlock))
+            {
+                *pcbSize = cBlocks * cbBlock;
+                return VINF_SUCCESS;
+            }
+        }
+        /* must be a block device, fail on failure. */
+
+#elif defined(RT_OS_SOLARIS)
+        struct dk_minfo MediaInfo;
+        if (!ioctl(RTFileToNative(hFile), DKIOCGMEDIAINFO, &MediaInfo))
+        {
+            *pcbSize = MediaInfo.dki_capacity * MediaInfo.dki_lbsize;
+            return VINF_SUCCESS;
+        }
+        /* might not be a block device. */
+        if (errno == EINVAL || errno == ENOTTY)
+            return VINF_SUCCESS;
+
+#elif defined(RT_OS_FREEBSD)
+        off_t cbMedia = 0;
+        if (!ioctl(RTFileToNative(hFile), DIOCGMEDIASIZE, &cbMedia))
+        {
+            *pcbSize = cbMedia;
+            return VINF_SUCCESS;
+        }
+        /* might not be a block device. */
+        if (errno == EINVAL || errno == ENOTTY)
+            return VINF_SUCCESS;
+
+#else
+        /* PORTME! Avoid this path when possible. */
+        uint64_t offSaved;
+        int rc = RTFileSeek(hFile, 0, RTFILE_SEEK_CURRENT, &offSaved);
+        if (RT_SUCCESS(rc))
+        {
+            rc = RTFileSeek(hFile, 0, RTFILE_SEEK_END, pcbSize);
+            int rc2 = RTFileSeek(hFile, offSaved, RTFILE_SEEK_BEGIN, NULL);
+            if (RT_SUCCESS(rc))
+                return rc2;
+        }
+#endif
     }
     return RTErrConvertFromErrno(errno);
 }
