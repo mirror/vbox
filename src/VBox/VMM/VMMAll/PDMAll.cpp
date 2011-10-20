@@ -335,9 +335,7 @@ VMMDECL(int) PDMApicReadMSR(PVM pVM, VMCPUID iCpu, uint32_t u32Reg, uint64_t *pu
     if (pVM->pdm.s.Apic.CTX_SUFF(pDevIns))
     {
         AssertPtr(pVM->pdm.s.Apic.CTX_SUFF(pfnReadMSR));
-        pdmLock(pVM);
         int rc = pVM->pdm.s.Apic.CTX_SUFF(pfnReadMSR)(pVM->pdm.s.Apic.CTX_SUFF(pDevIns), iCpu, u32Reg, pu64Value);
-        pdmUnlock(pVM);
         return rc;
     }
     return VERR_PDM_NO_APIC_INSTANCE;
