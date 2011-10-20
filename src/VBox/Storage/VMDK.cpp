@@ -744,7 +744,11 @@ DECLINLINE(int) vmdkFileInflateSync(PVMDKIMAGE pImage, PVMDKEXTENT pExtent,
         rc = RTZipDecompress(pZip, pvBuf, cbToRead, &cbActuallyRead);
         RTZipDecompDestroy(pZip);
         if (RT_FAILURE(rc))
+        {
+            if (rc == VERR_ZIP_CORRUPTED)
+                rc = vdIfError(pImage->pIfError, rc, RT_SRC_POS, N_("VMDK: Compressed image is corrupted '%s'"), pExtent->pszFullname);
             return rc;
+        }
         if (cbActuallyRead != cbToRead)
             rc = VERR_VD_VMDK_INVALID_FORMAT;
         return rc;
