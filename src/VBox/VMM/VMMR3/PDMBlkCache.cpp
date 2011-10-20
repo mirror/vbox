@@ -1744,20 +1744,18 @@ static int pdmBlkCacheEntryWaitersAdd(PPDMBLKCACHEENTRY pEntry,
  * intersect with an already existing entry and the file end.
  *
  * @returns The number of bytes the entry can hold of the requested amount
- *          of byte.
+ *          of bytes.
  * @param   pEndpoint       The endpoint.
  * @param   pBlkCache       The endpoint cache.
  * @param   off             The start offset.
  * @param   cb              The number of bytes the entry needs to hold at
  *                          least.
- * @param   uAlignment      Alignment of the boundary sizes.
- * @param   poffAligned     Where to store the aligned offset.
- * @param   pcbAligned      Where to store the aligned size of the entry.
+ * @param   pcbEntry        Where to store the number of bytes the entry can hold.
+ *                          Can be less than given because of other entries.
  */
 static uint32_t pdmBlkCacheEntryBoundariesCalc(PPDMBLKCACHE pBlkCache,
                                                uint64_t off, uint32_t cb,
-                                               unsigned uAlignment,
-                                               uint64_t *poffAligned, uint32_t *pcbAligned)
+                                               uint32_t *pcbEntry)
 {
     /* Get the best fit entries around the offset */
     PPDMBLKCACHEENTRY pEntryAbove = NULL;
@@ -1771,35 +1769,31 @@ static uint32_t pdmBlkCacheEntryBoundariesCalc(PPDMBLKCACHE pBlkCache,
              pEntryAbove ? pEntryAbove->Core.KeyLast : 0,
              pEntryAbove ? pEntryAbove->cbData : 0));
 
-    /** @todo r=bird: Why is uAlignment disregarded here? */
-    uint64_t offAligned = off;
-
-    uint32_t cbAligned;
+    uint32_t cbNext;
     uint32_t cbInEntry;
     if (    pEntryAbove
         &&  off + cb > pEntryAbove->Core.Key)
     {
         cbInEntry = (uint32_t)(pEntryAbove->Core.Key - off);
-        cbAligned = (uint32_t)(pEntryAbove->Core.Key - offAligned);
+        cbNext = (uint32_t)(pEntryAbove->Core.Key - off);
     }
     else
     {
         cbInEntry = cb;
-        cbAligned = cb;
+        cbNext    = cb;
     }
 
     /* A few sanity checks */
-    AssertMsg(!pEntryAbove || offAligned + cbAligned <= pEntryAbove->Core.Key,
+    AssertMsg(!pEntryAbove || off + cbNext <= pEntryAbove->Core.Key,
               ("Aligned size intersects with another cache entry\n"));
-    Assert(cbInEntry <= cbAligned);
+    Assert(cbInEntry <= cbNext);
 
     if (pEntryAbove)
         pdmBlkCacheEntryRelease(pEntryAbove);
 
-    LogFlow(("offAligned=%llu cbAligned=%u\n", offAligned, cbAligned));
+    LogFlow(("off=%llu cbNext=%u\n", off, cbNext));
 
-    *poffAligned = offAligned;
-    *pcbAligned  = cbAligned;
+    *pcbEntry  = cbNext;
 
     return cbInEntry;
 }
@@ -1813,20 +1807,17 @@ static uint32_t pdmBlkCacheEntryBoundariesCalc(PPDMBLKCACHE pBlkCache,
  * @param   pBlkCache    The endpoint cache.
  * @param   off               The offset.
  * @param   cb                Number of bytes the cache entry should have.
- * @param   uAlignment        Alignment the size of the entry should have.
  * @param   pcbData           Where to store the number of bytes the new
  *                            entry can hold. May be lower than actually requested
  *                            due to another entry intersecting the access range.
  */
 static PPDMBLKCACHEENTRY pdmBlkCacheEntryCreate(PPDMBLKCACHE pBlkCache,
                                                 uint64_t off, size_t cb,
-                                                unsigned uAlignment,
                                                 size_t *pcbData)
 {
-    uint64_t offStart = 0;
     uint32_t cbEntry  = 0;
-    *pcbData = pdmBlkCacheEntryBoundariesCalc(pBlkCache, off, (uint32_t)cb, uAlignment,
-                                              &offStart, &cbEntry);
+
+    *pcbData = pdmBlkCacheEntryBoundariesCalc(pBlkCache, off, (uint32_t)cb, &cbEntry);
     AssertReturn(cb <= UINT32_MAX, NULL);
 
     PPDMBLKCACHEGLOBAL pCache = pBlkCache->pCache;
@@ -1839,7 +1830,7 @@ static PPDMBLKCACHEENTRY pdmBlkCacheEntryCreate(PPDMBLKCACHE pBlkCache,
     {
         LogFlow(("Evicted enough bytes (%u requested). Creating new cache entry\n", cbEntry));
 
-        pEntryNew = pdmBlkCacheEntryAlloc(pBlkCache, offStart, cbEntry, pbBuffer);
+        pEntryNew = pdmBlkCacheEntryAlloc(pBlkCache, off, cbEntry, pbBuffer);
         if (RT_LIKELY(pEntryNew))
         {
             pdmBlkCacheEntryAddToList(&pCache->LruRecentlyUsedIn, pEntryNew);
@@ -1850,8 +1841,7 @@ static PPDMBLKCACHEENTRY pdmBlkCacheEntryCreate(PPDMBLKCACHE pBlkCache,
 
             AssertMsg(   (off >= pEntryNew->Core.Key)
                       && (off + *pcbData <= pEntryNew->Core.KeyLast + 1),
-                      ("Overflow in calculation off=%llu OffsetAligned=%llu\n",
-                       off, pEntryNew->Core.Key));
+                      ("Overflow in calculation off=%llu\n", off));
         }
         else
             pdmBlkCacheLockLeave(pCache);
@@ -2084,7 +2074,6 @@ VMMR3DECL(int) PDMR3BlkCacheRead(PPDMBLKCACHE pBlkCache, uint64_t off,
             /* No entry found for this offset. Create a new entry and fetch the data to the cache. */
             PPDMBLKCACHEENTRY pEntryNew = pdmBlkCacheEntryCreate(pBlkCache,
                                                                  off, cbRead,
-                                                                 PAGE_SIZE,
                                                                  &cbToRead);
 
             cbRead -= cbToRead;
@@ -2316,7 +2305,7 @@ VMMR3DECL(int) PDMR3BlkCacheWrite(PPDMBLKCACHE pBlkCache, uint64_t off,
              */
             PPDMBLKCACHEENTRY pEntryNew = pdmBlkCacheEntryCreate(pBlkCache,
                                                                  off, cbWrite,
-                                                                 512, &cbToWrite);
+                                                                 &cbToWrite);
 
             cbWrite -= cbToWrite;
 
