@@ -3895,7 +3895,7 @@ static HRESULT IWineD3DSurfaceImpl_BltOverride(IWineD3DSurfaceImpl *This, const 
            )
         {
             /* blit framebuffer might be buggy for some GPUs, try if fb_copy_to_texture_direct can do it quickly */
-            if (!fb_copy_to_texture_direct(This, SrcSurface, &src_rect, &dst_rect, Filter, TRUE /* fals only */))
+            if (!fb_copy_to_texture_direct(This, SrcSurface, &src_rect, &dst_rect, Filter, TRUE /* fast only */))
             {
                 TRACE("fb_copy_to_texture_direct can not do it fast, use stretch_rect_fbo\n");
                 stretch_rect_fbo((IWineD3DDevice *)myDevice, SrcSurface, &src_rect,
@@ -3904,7 +3904,7 @@ static HRESULT IWineD3DSurfaceImpl_BltOverride(IWineD3DSurfaceImpl *This, const 
         } else if((!stretchx) || dst_rect.right - dst_rect.left > Src->currentDesc.Width ||
                                     dst_rect.bottom - dst_rect.top > Src->currentDesc.Height) {
             TRACE("No stretching in x direction, using direct framebuffer -> texture copy\n");
-            fb_copy_to_texture_direct(This, SrcSurface, &src_rect, &dst_rect, Filter, FALSE /* do it alwais */);
+            fb_copy_to_texture_direct(This, SrcSurface, &src_rect, &dst_rect, Filter, FALSE /* do it always */);
         } else {
             TRACE("Using hardware stretching to flip / stretch the texture\n");
             fb_copy_to_texture_hwstretch(This, SrcSurface, &src_rect, &dst_rect, Filter);
@@ -4442,15 +4442,13 @@ static HRESULT WINAPI IWineD3DSurfaceImpl_BltFast(IWineD3DSurface *iface, DWORD 
         }
     }
 
-#ifdef VBOX_WITH_WDDM
-    if (IWineD3DSurfaceImpl_BltSys2Vram(This, &DestRect, Source, &SrcRect, Flags, NULL, WINED3DTEXF_POINT) == WINED3D_OK)
+#if 0 /*@todo: def VBOX_WITH_WDDM*/
+    if (IWineD3DSurfaceImpl_BltSys2Vram(This, &DstRect, Source, &SrcRect, Flags, NULL, WINED3DTEXF_POINT) == WINED3D_OK)
     {
         hr = WINED3D_OK;
         goto end;
     }
 #endif
-
-
 
     hr = IWineD3DBaseSurfaceImpl_BltFast(iface, dstx, dsty, Source, rsrc, trans);
 end:
