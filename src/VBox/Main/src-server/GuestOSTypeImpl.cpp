@@ -263,6 +263,32 @@ STDMETHODIMP GuestOSType::COMGETTER(RecommendedVRAM)(ULONG *aVRAMSize)
     return S_OK;
 }
 
+STDMETHODIMP GuestOSType::COMGETTER(Recommended2DVideoAcceleration)(BOOL *aRecommended2DVideoAcceleration)
+{
+    CheckComArgOutPointerValid(aRecommended2DVideoAcceleration);
+
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    /* Constant during life time, no need to lock */
+    *aRecommended2DVideoAcceleration = !!(mOSHint & VBOXOSHINT_ACCEL2D);
+
+    return S_OK;
+}
+
+STDMETHODIMP GuestOSType::COMGETTER(Recommended3DAcceleration)(BOOL *aRecommended3DAcceleration)
+{
+    CheckComArgOutPointerValid(aRecommended3DAcceleration);
+
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    /* Constant during life time, no need to lock */
+    *aRecommended3DAcceleration = !!(mOSHint & VBOXOSHINT_ACCEL3D);
+
+    return S_OK;
+}
+
 STDMETHODIMP GuestOSType::COMGETTER(RecommendedHDD)(LONG64 *aHDDSize)
 {
     CheckComArgOutPointerValid(aHDDSize);

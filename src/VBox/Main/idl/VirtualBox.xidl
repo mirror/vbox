@@ -8145,7 +8145,7 @@
 
   <interface
     name="IGuestOSType" extends="$unknown"
-    uuid="432c1546-1354-4abf-bf08-878a32a373f5"
+    uuid="63a03874-e495-41f7-a6dd-48b92fba8355"
     wsmap="struct"
     >
     <desc>
@@ -8185,6 +8185,14 @@
 
     <attribute name="recommendedVRAM" type="unsigned long" readonly="yes">
       <desc>Recommended video RAM size in Megabytes.</desc>
+    </attribute>
+
+    <attribute name="recommended2DVideoAcceleration" type="boolean" readonly="yes">
+      <desc>Returns @c true if 2D video acceleration is recommended for this OS type.</desc>
+    </attribute>
+
+    <attribute name="recommended3DAcceleration" type="boolean" readonly="yes">
+      <desc>Returns @c true if 3D acceleration is recommended for this OS type.</desc>
     </attribute>
 
     <attribute name="recommendedHDD" type="long long" readonly="yes">
