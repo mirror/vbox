@@ -840,31 +840,41 @@ bool UIMachineView::guestResizeEvent(QEvent *pEvent,
     /* Get guest resize-event: */
     UIResizeEvent *pResizeEvent = static_cast<UIResizeEvent*>(pEvent);
 
+    /** If only the pitch has changed (or nothing at all!) we only update the
+     * framebuffer and don't touch the window.  This prevents unwanted resizes
+     * when entering or exiting fullscreen on X.Org guests and when
+     * re-attaching the framebuffer on a view switch. */
+    bool fResize =    pResizeEvent->width() != frameBuffer()->width()
+                   || pResizeEvent->height() != frameBuffer()->height();
+
     /* Perform framebuffer resize: */
     frameBuffer()->resizeEvent(pResizeEvent);
 
-    /* Reapply maximum size restriction for machine-view: */
-    setMaximumSize(sizeHint());
+    if (fResize)
+    {
+        /* Reapply maximum size restriction for machine-view: */
+        setMaximumSize(sizeHint());
 
-    /* Perform machine-view resize: */
-    resize(pResizeEvent->width(), pResizeEvent->height());
+        /* Perform machine-view resize: */
+        resize(pResizeEvent->width(), pResizeEvent->height());
 
-    /* May be we have to restrict minimum size? */
-    maybeRestrictMinimumSize();
+        /* May be we have to restrict minimum size? */
+        maybeRestrictMinimumSize();
 
-    /* Let our toplevel widget calculate its sizeHint properly: */
-    QCoreApplication::sendPostedEvents(0, QEvent::LayoutRequest);
+        /* Let our toplevel widget calculate its sizeHint properly: */
+        QCoreApplication::sendPostedEvents(0, QEvent::LayoutRequest);
 
 #ifdef Q_WS_MAC
-    machineLogic()->updateDockIconSize(screenId(), pResizeEvent->width(), pResizeEvent->height());
+        machineLogic()->updateDockIconSize(screenId(), pResizeEvent->width(), pResizeEvent->height());
 #endif /* Q_WS_MAC */
 
-    /* Update machine-view sliders: */
-    updateSliders();
+        /* Update machine-view sliders: */
+        updateSliders();
 
-    /* Normalize machine-window geometry: */
-    if (!fFullscreenOrSeamless)
-        normalizeGeometry(true /* Adjust Position? */);
+        /* Normalize machine-window geometry: */
+        if (!fFullscreenOrSeamless)
+            normalizeGeometry(true /* Adjust Position? */);
+    }
 
     /* Report to the VM thread that we finished resizing: */
     session().GetConsole().GetDisplay().ResizeCompleted(screenId());
