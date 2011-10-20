@@ -442,7 +442,7 @@ STDMETHODIMP GuestOSType::COMGETTER(RecommendedRtcUseUtc)(BOOL *aRecommendedRtcU
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    /* HID type is constant during life time, no need to lock */
+    /* Value is constant during life time, no need to lock */
     *aRecommendedRtcUseUtc = !!(mOSHint & VBOXOSHINT_RTCUTC);
 
     return S_OK;
@@ -469,6 +469,32 @@ STDMETHODIMP GuestOSType::COMGETTER(RecommendedAudioController) (AudioController
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     *aAudioController = mAudioControllerType;
+
+    return S_OK;
+}
+
+STDMETHODIMP GuestOSType::COMGETTER(RecommendedFloppy)(BOOL *aRecommendedFloppy)
+{
+    CheckComArgOutPointerValid(aRecommendedFloppy);
+
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    /* Value is constant during life time, no need to lock */
+    *aRecommendedFloppy = !!(mOSHint & VBOXOSHINT_FLOPPY);
+
+    return S_OK;
+}
+
+STDMETHODIMP GuestOSType::COMGETTER(RecommendedUsb)(BOOL *aRecommendedUsb)
+{
+    CheckComArgOutPointerValid(aRecommendedUsb);
+
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    /* Value is constant during life time, no need to lock */
+    *aRecommendedUsb = !(mOSHint & VBOXOSHINT_NOUSB);
 
     return S_OK;
 }
