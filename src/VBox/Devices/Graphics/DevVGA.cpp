@@ -1169,7 +1169,9 @@ static uint32_t vga_mem_readb(void *opaque, target_phys_addr_t addr, int *prc)
     Log3(("vga: read [0x%x] -> ", addr));
     /* convert to VGA memory offset */
     memory_map_mode = (s->gr[6] >> 2) & 3;
+#ifndef IN_RC
     RTGCPHYS GCPhys = addr; /* save original address */
+#endif
 
     addr &= 0x1ffff;
     switch(memory_map_mode) {
@@ -1248,7 +1250,9 @@ static int vga_mem_writeb(void *opaque, target_phys_addr_t addr, uint32_t val)
     Log3(("vga: [0x%x] = 0x%02x\n", addr, val));
     /* convert to VGA memory offset */
     memory_map_mode = (s->gr[6] >> 2) & 3;
+#ifndef IN_RC
     RTGCPHYS GCPhys = addr; /* save original address */
+#endif
 
     addr &= 0x1ffff;
     switch(memory_map_mode) {
@@ -4113,18 +4117,18 @@ static DECLCALLBACK(void) vgaInfoState(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, c
 
 
 /**
- * Prints a separator line. 
- *  
+ * Prints a separator line.
+ *
  * @param   pHlp                Callback functions for doing output.
  * @param   cCols               The number of columns.
  * @param   pszTitle            The title text, NULL if none.
  */
 static void vgaInfoTextPrintSeparatorLine(PCDBGFINFOHLP pHlp, uint32_t cCols, const char *pszTitle)
 {
-    if (pszTitle) 
+    if (pszTitle)
     {
         size_t cchTitle = strlen(pszTitle);
-        if (cchTitle + 6 >= cCols) 
+        if (cchTitle + 6 >= cCols)
         {
             pHlp->pfnPrintf(pHlp, "-- %s --", pszTitle);
             cCols = 0;
@@ -4133,13 +4137,13 @@ static void vgaInfoTextPrintSeparatorLine(PCDBGFINFOHLP pHlp, uint32_t cCols, co
         {
             uint32_t cchLeft = (cCols - cchTitle - 2) / 2;
             cCols -= cchLeft + cchTitle + 2;
-            while (cchLeft-- > 0) 
+            while (cchLeft-- > 0)
                 pHlp->pfnPrintf(pHlp, "-");
             pHlp->pfnPrintf(pHlp, " %s ", pszTitle);
         }
     }
 
-    while (cCols-- > 0) 
+    while (cCols-- > 0)
         pHlp->pfnPrintf(pHlp, "-");
     pHlp->pfnPrintf(pHlp, "\n");
 }
@@ -4149,24 +4153,24 @@ static void vgaInfoTextPrintSeparatorLine(PCDBGFINFOHLP pHlp, uint32_t cCols, co
  * Worker for vgaInfoText.
  *
  * @param   pThis       The vga state.
- * @param   pHlp        Callback functions for doing output. 
- * @param   offStart    Where to start dumping (relative to the VRAM). 
- * @param   cbLine      The source line length (aka line_offset). 
- * @param   cCols       The number of columns on the screen. 
+ * @param   pHlp        Callback functions for doing output.
+ * @param   offStart    Where to start dumping (relative to the VRAM).
+ * @param   cbLine      The source line length (aka line_offset).
+ * @param   cCols       The number of columns on the screen.
  * @param   cRows       The number of rows to dump.
- * @param   iScrBegin   The row at which the current screen output starts. 
- * @param   iScrEnd     The row at which the current screen output end 
+ * @param   iScrBegin   The row at which the current screen output starts.
+ * @param   iScrEnd     The row at which the current screen output end
  *                      (exclusive).
  */
-static void vgaInfoTextWorker(PVGASTATE pThis, PCDBGFINFOHLP pHlp, 
+static void vgaInfoTextWorker(PVGASTATE pThis, PCDBGFINFOHLP pHlp,
                               uint32_t offStart, uint32_t cbLine,
-                              uint32_t cCols, uint32_t cRows, 
+                              uint32_t cCols, uint32_t cRows,
                               uint32_t iScrBegin, uint32_t iScrEnd)
 {
     /* Title, */
     char szTitle[32];
-    if (iScrBegin || iScrEnd < cRows) 
-        RTStrPrintf(szTitle, sizeof(szTitle), "%ux%u (+%u before, +%u after)", 
+    if (iScrBegin || iScrEnd < cRows)
+        RTStrPrintf(szTitle, sizeof(szTitle), "%ux%u (+%u before, +%u after)",
                     cCols, iScrEnd - iScrBegin, iScrBegin, cRows - iScrEnd);
     else
         RTStrPrintf(szTitle, sizeof(szTitle), "%ux%u", cCols, iScrEnd - iScrBegin);
@@ -4217,15 +4221,15 @@ static DECLCALLBACK(void) vgaInfoText(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, co
 {
     PVGASTATE pThis = PDMINS_2_DATA(pDevIns, PVGASTATE);
 
-    /* 
+    /*
      * Parse args.
      */
     bool fAll = true;
     if (pszArgs && *pszArgs)
     {
-        if (!strcmp(pszArgs, "all")) 
+        if (!strcmp(pszArgs, "all"))
             fAll = true;
-        else if (!strcmp(pszArgs, "scr") || !strcmp(pszArgs, "screen")) 
+        else if (!strcmp(pszArgs, "scr") || !strcmp(pszArgs, "screen"))
             fAll = false;
         else
         {
@@ -4269,7 +4273,7 @@ static DECLCALLBACK(void) vgaInfoText(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, co
             uint32_t cCols       = cbLine / 8;
 
             if (fAll) {
-                vgaInfoTextWorker(pThis, pHlp, offStart - iScrBegin * cbLine, cbLine, 
+                vgaInfoTextWorker(pThis, pHlp, offStart - iScrBegin * cbLine, cbLine,
                                   cCols, cRows, iScrBegin, iScrBegin + cScrRows);
             } else {
                 vgaInfoTextWorker(pThis, pHlp, offStart, cbLine, cCols, cScrRows, 0, cScrRows);
@@ -4559,9 +4563,9 @@ static DECLCALLBACK(int) vgaPortUpdateDisplay(PPDMIDISPLAYPORT pInterface)
 }
 
 
-/** 
- * Internal vgaPortUpdateDisplayAll worker called under pThis->lock. 
- */ 
+/**
+ * Internal vgaPortUpdateDisplayAll worker called under pThis->lock.
+ */
 static int updateDisplayAll(PVGASTATE pThis)
 {
     PPDMDEVINS pDevIns = pThis->CTX_SUFF(pDevIns);
@@ -4591,7 +4595,6 @@ static DECLCALLBACK(int) vgaPortUpdateDisplayAll(PPDMIDISPLAYPORT pInterface)
 {
     PVGASTATE pThis = IDISPLAYPORT_2_VGASTATE(pInterface);
     PDMDEV_ASSERT_EMT(VGASTATE2DEVINS(pThis));
-    PPDMDEVINS pDevIns = pThis->CTX_SUFF(pDevIns);
 
     /* This is called both in VBVA mode and normal modes. */
 
@@ -4672,8 +4675,8 @@ static DECLCALLBACK(int) vgaPortTakeScreenshot(PPDMIDISPLAYPORT pInterface, uint
      */
 
     /*
-     * Allocate the buffer for 32 bits per pixel bitmap                       
-     *                                                                        
+     * Allocate the buffer for 32 bits per pixel bitmap
+     *
      * Note! The size can't be zero or greater than the size of the VRAM.
      *       Inconsistent VGA device state can cause the incorrect size values.
      */
@@ -4708,7 +4711,7 @@ static DECLCALLBACK(int) vgaPortTakeScreenshot(PPDMIDISPLAYPORT pInterface, uint
             pThis->graphic_mode = -1;           /* force a full refresh. */
             pThis->fRenderVRAM = 1;             /* force the guest VRAM rendering to the given buffer. */
 
-            /* 
+            /*
              * Make the screenshot.
              *
              * The second parameter is 'false' because the current display state is being rendered to an
