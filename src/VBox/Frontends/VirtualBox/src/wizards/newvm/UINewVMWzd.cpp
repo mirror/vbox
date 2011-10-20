@@ -836,6 +836,13 @@ bool UINewVMWzdPage5::constructMachine()
     /* Set UTC flags */
     m_Machine.SetRTCUseUTC(type.GetRecommendedRtcUseUtc());
 
+    /* Set graphic bits. */
+    if (type.GetRecommended2DVideoAcceleration())
+        m_Machine.SetAccelerate2DVideoEnabled(type.GetRecommended2DVideoAcceleration());
+
+    if (type.GetRecommended3DAcceleration())
+        m_Machine.SetAccelerate3DEnabled(type.GetRecommended3DAcceleration());
+
     /* Register the VM prior to attaching hard disks */
     vbox.RegisterMachine(m_Machine);
     if (!vbox.isOk())

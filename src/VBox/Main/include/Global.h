@@ -38,6 +38,8 @@
 #define VBOXOSHINT_HPET                 RT_BIT(6)
 #define VBOXOSHINT_USBTABLET            RT_BIT(7)
 #define VBOXOSHINT_RTCUTC               RT_BIT(8)
+#define VBOXOSHINT_ACCEL2D              RT_BIT(9)
+#define VBOXOSHINT_ACCEL3D              RT_BIT(10)
 
 /** The VBoxVRDP kludge extension pack name.
  *

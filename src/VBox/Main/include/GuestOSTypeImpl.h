@@ -57,6 +57,8 @@ public:
     STDMETHOD(COMGETTER(RecommendedVirtEx))(BOOL *aRecommendedVirtEx);
     STDMETHOD(COMGETTER(RecommendedRAM))(ULONG *aRAMSize);
     STDMETHOD(COMGETTER(RecommendedVRAM))(ULONG *aVRAMSize);
+    STDMETHOD(COMGETTER(Recommended2DVideoAcceleration))(BOOL *aRecommended2DVideoAcceleration);
+    STDMETHOD(COMGETTER(Recommended3DAcceleration))(BOOL *aRecommended3DAcceleration);
     STDMETHOD(COMGETTER(RecommendedHDD))(LONG64 *aHDDSize);
     STDMETHOD(COMGETTER(AdapterType))(NetworkAdapterType_T *aNetworkAdapterType);
     STDMETHOD(COMGETTER(RecommendedFirmware))(FirmwareType_T *aFirmwareType);
