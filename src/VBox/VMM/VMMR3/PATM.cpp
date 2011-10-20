@@ -4619,7 +4619,7 @@ int patmAddPatchToPage(PVM pVM, RTRCUINTPTR pPage, PPATCHINFO pPatch)
     Assert(pGuestToPatchRec);
     if (pGuestToPatchRec)
     {
-        LogFlow(("patmAddPatchToPage: highest patch page address %RRv current lowest %RRv\n", pGuestToPatchRec->Core.Key, pPatchPage->pHighestAddrGC));
+        LogFlow(("patmAddPatchToPage: highest patch page address %RRv current highest %RRv\n", pGuestToPatchRec->Core.Key, pPatchPage->pHighestAddrGC));
         if (    pPatchPage->pHighestAddrGC == 0
             ||  pPatchPage->pHighestAddrGC <= (RTRCPTR)pGuestToPatchRec->Core.Key)
         {
