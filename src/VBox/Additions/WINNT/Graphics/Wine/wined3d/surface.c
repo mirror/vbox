@@ -4442,6 +4442,15 @@ static HRESULT WINAPI IWineD3DSurfaceImpl_BltFast(IWineD3DSurface *iface, DWORD 
         }
     }
 
+#ifdef VBOX_WITH_WDDM
+    if (IWineD3DSurfaceImpl_BltSys2Vram(This, &DestRect, Source, &SrcRect, Flags, NULL, WINED3DTEXF_POINT) == WINED3D_OK)
+    {
+        hr = WINED3D_OK;
+        goto end;
+    }
+#endif
+
+
 
     hr = IWineD3DBaseSurfaceImpl_BltFast(iface, dstx, dsty, Source, rsrc, trans);
 end:
