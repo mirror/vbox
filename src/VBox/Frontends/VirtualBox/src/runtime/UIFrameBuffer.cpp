@@ -158,9 +158,22 @@ STDMETHODIMP UIFrameBuffer::RequestResize(ULONG uScreenId, ULONG uPixelFormat,
         return E_FAIL;
 
     NOREF(uScreenId);
-    QApplication::postEvent (m_pMachineView,
-                             new UIResizeEvent(uPixelFormat, pVRAM, uBitsPerPixel,
-                                               uBytesPerLine, uWidth, uHeight));
+    /* A resize event can happen while we are switching machine view classes,
+     * but we synchronise afterwards so that shouldn't be a problem.  We must
+     * temporarily remove the framebuffer in Display though while switching
+     * to respect the thread synchronisation logic (see UIFrameBuffer.h). */
+    if (m_pMachineView)
+        QApplication::postEvent(m_pMachineView,
+                                new UIResizeEvent(uPixelFormat, pVRAM,
+                                                  uBitsPerPixel, uBytesPerLine,
+                                                  uWidth, uHeight));
+    else
+    {
+        /* Report to the VM thread that we finished resizing and rely on the
+         * synchronisation when the new view is attached. */
+        *pbFinished = TRUE;
+        return S_OK;
+    }
 
     *pbFinished = FALSE;
     return S_OK;
@@ -249,10 +262,10 @@ void UIFrameBuffer::doProcessVHWACommand(QEvent *pEvent)
     /* should never be here */
     AssertBreakpoint();
 }
+#endif
 
 void UIFrameBuffer::setView(UIMachineView * pView)
 {
     m_pMachineView = pView;
     m_WinId = (m_pMachineView && m_pMachineView->viewport()) ? (LONG64)m_pMachineView->viewport()->winId() : 0;
 }
-#endif
