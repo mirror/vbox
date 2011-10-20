@@ -73,6 +73,8 @@ public:
     STDMETHOD(COMGETTER(RecommendedRtcUseUtc))(BOOL *aRecommendedRtcUseUtc);
     STDMETHOD(COMGETTER(RecommendedChipset)) (ChipsetType_T *aChipsetType);
     STDMETHOD(COMGETTER(RecommendedAudioController)) (AudioControllerType_T *aAudioController);
+    STDMETHOD(COMGETTER(RecommendedFloppy)) (BOOL *aRecommendedFloppy);
+    STDMETHOD(COMGETTER(RecommendedUsb)) (BOOL *aRecommendedUsb);
 
     // public methods only for internal purposes
     const Bstr &id() const { return mID; }

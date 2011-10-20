@@ -8251,6 +8251,14 @@
       <desc>Recommended audio type.</desc>
     </attribute>
 
+    <attribute name="recommendedFloppy" type="boolean" readonly="yes">
+      <desc>Returns @c true a floppy drive is recommended for this OS type.</desc>
+    </attribute>
+
+    <attribute name="recommendedUsb" type="boolean" readonly="yes">
+      <desc>Returns @c true a USB controller is recommended for this OS type.</desc>
+    </attribute>
+
   </interface>
 
   <enum
