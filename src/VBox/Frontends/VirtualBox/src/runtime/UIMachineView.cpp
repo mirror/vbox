@@ -310,6 +310,7 @@ void UIMachineView::prepareFrameBuffer()
 #endif /* VBOX_GUI_USE_QGLFB */
 #ifdef VBOX_GUI_USE_SDL
         case VBoxDefs::SDLMode:
+        {
             /* Indicate that we are doing all drawing stuff ourself: */
             // TODO_NEW_CORE
             viewport()->setAttribute(Qt::WA_PaintOnScreen);
@@ -317,30 +318,32 @@ void UIMachineView::prepareFrameBuffer()
             /* This is somehow necessary to prevent strange X11 warnings on i386 and segfaults on x86_64: */
             XFlush(QX11Info::display());
 # endif /* Q_WS_X11 */
-# if defined(VBOX_WITH_VIDEOHWACCEL) && defined(DEBUG_misha) /* not tested yet */
-            if (m_fAccelerate2DVideo)
-            {
-                class UIFrameBuffer* pFramebuffer = uisession()->frameBuffer(screenId());
-                if (pFramebuffer)
-                    pFramebuffer->setView(this);
-                else
-                {
-                    /* these two additional template args is a workaround to this [VBox|UI] duplication
-                     * @todo: they are to be removed once VBox stuff is gone */
-                    pFramebuffer = new VBoxOverlayFrameBuffer<UIFrameBufferSDL, UIMachineView, UIResizeEvent>(this, &machineWindowWrapper()->session(), (uint32_t)screenId());
-                    uisession()->setFrameBuffer(screenId(), pFramebuffer);
-                }
-                m_pFrameBuffer = pFramebuffer;
-            }
+            UIFrameBuffer* pFrameBuffer = uisession()->frameBuffer(screenId());
+            if (pFrameBuffer)
+                pFrameBuffer->setView(this);
             else
-                m_pFrameBuffer = new UIFrameBufferSDL(this);
-# else
-            m_pFrameBuffer = new UIFrameBufferSDL(this);
-# endif
+            {
+# if defined(VBOX_WITH_VIDEOHWACCEL) && defined(DEBUG_misha) /* not tested yet */
+                if (m_fAccelerate2DVideo)
+                {
+                    /** these two additional template args is a workaround to
+                     * this [VBox|UI] duplication
+                     * @todo: they are to be removed once VBox stuff is gone */
+                    pFrameBuffer = new VBoxOverlayFrameBuffer<UIFrameBufferSDL, UIMachineView, UIResizeEvent>(this, &machineWindowWrapper()->session(), (uint32_t)screenId());
+                }
+                else
+                    pFrameBuffer = new UIFrameBufferSDL(this);
+# else /* VBOX_WITH_VIDEOHWACCEL */
+                pFrameBuffer = new UIFrameBufferSDL(this);
+# endif /* !VBOX_WITH_VIDEOHWACCEL */
+                uisession()->setFrameBuffer(screenId(), pFrameBuffer);
+            }
+            m_pFrameBuffer = pFrameBuffer;
             /* Disable scrollbars because we cannot correctly draw in a scrolled window using SDL: */
             horizontalScrollBar()->setEnabled(false);
             verticalScrollBar()->setEnabled(false);
             break;
+        }
 #endif /* VBOX_GUI_USE_SDL */
 #if 0 // TODO: Enable DDraw frame buffer!
 #ifdef VBOX_GUI_USE_DDRAW
@@ -502,7 +505,8 @@ void UIMachineView::cleanupFrameBuffer()
         /* Process pending frame-buffer resize events: */
         QApplication::sendPostedEvents(this, VBoxDefs::ResizeEventType);
         if (   m_fAccelerate2DVideo
-            || vboxGlobal().vmRenderMode() == VBoxDefs::QImageMode)
+            || vboxGlobal().vmRenderMode() == VBoxDefs::QImageMode
+            || vboxGlobal().vmRenderMode() == VBoxDefs::SDLMode)
         {
             Assert(m_pFrameBuffer == uisession()->frameBuffer(screenId()));
             CDisplay display = session().GetConsole().GetDisplay();
