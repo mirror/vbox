@@ -56,9 +56,7 @@ packSPUInit( int id, SPU *child, SPU *self,
     pack_spu.idxThreadInUse = 0;
 
     packspuCreateFunctions();
-#ifdef CR_DUP_CTXSTATE
     crStateInit();
-#endif
 
     return &pack_functions;
 }

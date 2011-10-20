@@ -172,12 +172,7 @@ packspu_CreateContext( const char *dpyName, GLint visual, GLint shareCtx )
 
     /* Fill in the new context info */
     /* XXX fix-up sharedCtx param here */
-#ifdef CR_DUP_CTXSTATE
     pack_spu.context[slot].clientState = crStateCreateContext(NULL, visual, NULL);
-#else
-    pack_spu.context[slot].clientState = crStateGetCurrent();
-#endif
-    CRASSERT(pack_spu.context[slot].clientState);
     pack_spu.context[slot].clientState->bufferobject.retainBufferData = GL_TRUE;
     pack_spu.context[slot].serverCtx = serverCtx;
 
@@ -206,9 +201,7 @@ void PACKSPU_APIENTRY packspu_DestroyContext( GLint ctx )
     else
         crPackDestroyContext( context->serverCtx );
 
-#ifdef CR_DUP_CTXSTATE
     crStateDestroyContext( context->clientState );
-#endif
 
     context->clientState = NULL;
     context->serverCtx = 0;
@@ -262,19 +255,13 @@ void PACKSPU_APIENTRY packspu_MakeCurrent( GLint window, GLint nativeWindow, GLi
         thread->currentContext = newCtx;
 
         crPackSetContext( thread->packer );
-#ifdef CR_DUP_CTXSTATE
         crStateMakeCurrent( newCtx->clientState );
-#else
-        CRASSERT(newCtx->clientState==crStateGetCurrent());
-#endif
         //crStateSetCurrentPointers(newCtx->clientState, &thread->packer->current);
         serverCtx = pack_spu.context[slot].serverCtx;
     }
     else {
         thread->currentContext = NULL;
-#ifdef CR_DUP_CTXSTATE
         crStateMakeCurrent( NULL );
-#endif
         newCtx = NULL;
         serverCtx = 0;
     }
