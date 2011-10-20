@@ -275,27 +275,30 @@ void UIMachineView::prepareFrameBuffer()
     {
 #ifdef VBOX_GUI_USE_QIMAGE
         case VBoxDefs::QImageMode:
-# ifdef VBOX_WITH_VIDEOHWACCEL
-            if (m_fAccelerate2DVideo)
-            {
-                UIFrameBuffer* pFramebuffer = uisession()->frameBuffer(screenId());
-                if (pFramebuffer)
-                    pFramebuffer->setView(this);
-                else
-                {
-                    /* these two additional template args is a workaround to this [VBox|UI] duplication
-                     * @todo: they are to be removed once VBox stuff is gone */
-                    pFramebuffer = new VBoxOverlayFrameBuffer<UIFrameBufferQImage, UIMachineView, UIResizeEvent>(this, &machineWindowWrapper()->session(), (uint32_t)screenId());
-                    uisession()->setFrameBuffer(screenId(), pFramebuffer);
-                }
-                m_pFrameBuffer = pFramebuffer;
-            }
+        {
+            UIFrameBuffer* pFrameBuffer = uisession()->frameBuffer(screenId());
+            if (pFrameBuffer)
+                pFrameBuffer->setView(this);
             else
-                m_pFrameBuffer = new UIFrameBufferQImage(this);
+            {
+# ifdef VBOX_WITH_VIDEOHWACCEL
+                if (m_fAccelerate2DVideo)
+                {
+                    /** these two additional template args is a workaround to
+                     * this [VBox|UI] duplication
+                     * @todo: they are to be removed once VBox stuff is gone */
+                    pFrameBuffer = new VBoxOverlayFrameBuffer<UIFrameBufferQImage, UIMachineView, UIResizeEvent>(this, &machineWindowWrapper()->session(), (uint32_t)screenId());
+                }
+                else
+                    pFrameBuffer = new UIFrameBufferQImage(this);
 # else /* VBOX_WITH_VIDEOHWACCEL */
-            m_pFrameBuffer = new UIFrameBufferQImage(this);
+                pFrameBuffer = new UIFrameBufferQImage(this);
 # endif /* !VBOX_WITH_VIDEOHWACCEL */
+                uisession()->setFrameBuffer(screenId(), pFrameBuffer);
+            }
+            m_pFrameBuffer = pFrameBuffer;
             break;
+        }
 #endif /* VBOX_GUI_USE_QIMAGE */
 #ifdef VBOX_GUI_USE_QGLFB
         case VBoxDefs::QGLMode:
@@ -392,17 +395,12 @@ void UIMachineView::prepareFrameBuffer()
         /* Prepare display: */
         CDisplay display = session().GetConsole().GetDisplay();
         Assert(!display.isNull());
-#ifdef VBOX_WITH_VIDEOHWACCEL
         CFramebuffer fb(NULL);
-        if (m_fAccelerate2DVideo)
-        {
-            LONG XOrigin, YOrigin;
-            /* Check if the framebuffer is already assigned;
-             * in this case we do not need to re-assign it neither do we need to AddRef. */
-            display.GetFramebuffer(m_uScreenId, fb, XOrigin, YOrigin);
-        }
-        if (fb.raw() != m_pFrameBuffer) /* <-this will evaluate to true iff m_fAccelerate2DVideo is disabled or iff no framebuffer is yet assigned */
-#endif /* VBOX_WITH_VIDEOHWACCEL */
+        LONG XOrigin, YOrigin;
+        /* Check if the framebuffer is already assigned;
+         * in this case we do not need to re-assign it neither do we need to AddRef. */
+        display.GetFramebuffer(m_uScreenId, fb, XOrigin, YOrigin);
+        if (fb.raw() != m_pFrameBuffer) /* <-this will evaluate to true iff no framebuffer is yet assigned */
         {
             m_pFrameBuffer->AddRef();
         }
@@ -503,22 +501,22 @@ void UIMachineView::cleanupFrameBuffer()
     {
         /* Process pending frame-buffer resize events: */
         QApplication::sendPostedEvents(this, VBoxDefs::ResizeEventType);
-#ifdef VBOX_WITH_VIDEOHWACCEL
-        if (m_fAccelerate2DVideo)
+        if (   m_fAccelerate2DVideo
+            || vboxGlobal().vmRenderMode() == VBoxDefs::QImageMode)
         {
-            /* When 2D is enabled we do not re-create Framebuffers. This is done to
-             * 1. avoid 2D command loss during the time slot when no framebuffer is assigned to the display
-             * 2. make it easier to preserve the current 2D state */
             Assert(m_pFrameBuffer == uisession()->frameBuffer(screenId()));
-            m_pFrameBuffer->setView(NULL);
-#ifdef VBOX_WITH_CROGL
-            /* Call SetFramebuffer to ensure 3D gets notified of view being destroyed */
             CDisplay display = session().GetConsole().GetDisplay();
+            /* Temporarily remove the framebuffer in Display while unsetting
+             * the view in order to respect the thread synchonisation logic
+             * (see UIFrameBuffer.h). */
+            /** @note VBOX_WITH_CROGL additionally requires us to call
+             * SetFramebuffer to ensure 3D gets notified of view being
+             * destroyed */
+            display.SetFramebuffer(m_uScreenId, CFramebuffer(NULL));
+            m_pFrameBuffer->setView(NULL);
             display.SetFramebuffer(m_uScreenId, CFramebuffer(m_pFrameBuffer));
-#endif
         }
         else
-#endif /* VBOX_WITH_VIDEOHWACCEL */
         {
             /* Warn framebuffer about its no more necessary: */
             m_pFrameBuffer->setDeleted(true);
