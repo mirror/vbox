@@ -221,7 +221,11 @@ void UIMachineViewNormal::maybeResendResizeHint()
                              (VBoxDefs::GUI_LastGuestSizeHintWasFullscreen);
         QString strHintSent = machine.GetExtraData(strKey);
         if (!strHintSent.isEmpty())
-            sltPerformGuestResize(guestSizeHint());
+        {
+            QSize hint = guestSizeHint();
+            resize(hint);
+            sltPerformGuestResize(hint);
+        }
     }
 }
 
