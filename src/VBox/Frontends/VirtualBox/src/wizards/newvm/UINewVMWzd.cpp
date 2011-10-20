@@ -757,6 +757,7 @@ bool UINewVMWzdPage5::constructMachine()
     /* Enable the OHCI and EHCI controller by default for new VMs. (new in 2.2) */
     CUSBController usbController = m_Machine.GetUSBController();
     if (   !usbController.isNull()
+        && type.GetRecommendedUsb()
         && usbController.GetProxyAvailable())
     {
         usbController.SetEnabled(true);
@@ -772,6 +773,14 @@ bool UINewVMWzdPage5::constructMachine()
         CExtPackManager manager = vboxGlobal().virtualBox().GetExtensionPackManager();
         if (manager.IsExtPackUsable(UI_ExtPackName))
             usbController.SetEnabledEhci(true);
+    }
+
+    /* Create a floppy controller if recommended */
+    QString ctrFloppyName = getNextControllerName(KStorageBus_Floppy);
+    if (type.GetRecommendedFloppy()) {
+        m_Machine.AddStorageController(ctrFloppyName, KStorageBus_Floppy);
+        CStorageController flpCtr = m_Machine.GetStorageControllerByName(ctrFloppyName);
+        flpCtr.SetControllerType(KStorageControllerType_I82078);
     }
 
     /* Create recommended DVD storage controller */
@@ -876,6 +885,15 @@ bool UINewVMWzdPage5::constructMachine()
             m.AttachDevice(ctrDvdName, 1, 0, KDeviceType_DVD, CMedium());
             if (!m.isOk())
                 msgCenter().cannotAttachDevice(m, VBoxDefs::MediumType_DVD, QString(), StorageSlot(ctrDvdBus, 1, 0), this);
+
+
+            /* Attach an empty floppy drive if recommended */
+            if (type.GetRecommendedFloppy()) {
+                m.AttachDevice(ctrFloppyName, 0, 0, KDeviceType_Floppy, CMedium());
+                if (!m.isOk())
+                    msgCenter().cannotAttachDevice(m, VBoxDefs::MediumType_Floppy, QString(), 
+                                                   StorageSlot(KStorageBus_Floppy, 0, 0), this);
+            }
 
             if (m.isOk())
             {
