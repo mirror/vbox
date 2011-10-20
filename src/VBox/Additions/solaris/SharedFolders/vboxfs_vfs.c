@@ -238,6 +238,10 @@ sffs_mount(vfs_t *vfsp, vnode_t *mvp, struct mounta *uap, cred_t *cr)
 	dev_t dev;
 	uid_t uid = 0;
 	gid_t gid = 0;
+	mode_t dmode = ~0;
+	mode_t fmode = ~0;
+	mode_t dmask = 0;
+	mode_t fmask = 0;
 	int stat_ttl = DEF_STAT_TTL_MS;
 	int fsync = 0;
 	char *optval;
@@ -300,6 +304,38 @@ sffs_mount(vfs_t *vfsp, vnode_t *mvp, struct mounta *uap, cred_t *cr)
 	    ddi_strtol(optval, NULL, 10, &val) == 0 &&
 	    (gid_t)val == val)
 		gid = val;
+
+	/*
+	 * dmode to use for all directories
+	 */
+	if (vfs_optionisset(vfsp, "dmode", &optval) &&
+		ddi_strtol(optval, NULL, 10, &val) == 0 &&
+		(mode_t)val == val)
+		dmode = val;
+
+	/*
+	 * fmode to use for all files
+	 */
+	if (vfs_optionisset(vfsp, "fmode", &optval) &&
+		ddi_strtol(optval, NULL, 10, &val) == 0 &&
+		(mode_t)val == val)
+		fmode = val;
+
+	/*
+	 * dmask to use for all directories
+	 */
+	if (vfs_optionisset(vfsp, "dmask", &optval) &&
+		ddi_strtol(optval, NULL, 10, &val) == 0 &&
+		(mode_t)val == val)
+		dmask = val;
+
+	/*
+	 * fmask to use for all files
+	 */
+	if (vfs_optionisset(vfsp, "fmask", &optval) &&
+		ddi_strtol(optval, NULL, 10, &val) == 0 &&
+		(mode_t)val == val)
+		fmask = val;
 
 	/*
 	 * ttl to use for stat caches
@@ -366,6 +402,10 @@ sffs_mount(vfs_t *vfsp, vnode_t *mvp, struct mounta *uap, cred_t *cr)
 	sffs->sf_vfsp = vfsp;
 	sffs->sf_uid = uid;
 	sffs->sf_gid = gid;
+	sffs->sf_dmode = dmode;
+	sffs->sf_fmode = fmode;
+	sffs->sf_dmask = dmask;
+	sffs->sf_fmask = fmask;
 	sffs->sf_stat_ttl = stat_ttl;
 	sffs->sf_fsync = fsync;
 	sffs->sf_share_name = share_name;
@@ -514,6 +554,10 @@ static void sffs_print(sffs_data_t *sffs)
 	Log(("    vnode_t *sf_rootnode = 0x%p\n", sffs->sf_rootnode));
 	Log(("    uid_t sf_uid = 0x%l\n", (ulong_t)sffs->sf_uid));
 	Log(("    gid_t sf_gid = 0x%l\n", (ulong_t)sffs->sf_gid));
+	Log(("    mode_t sf_dmode = 0x%l\n", (ulong_t)sffs->sf_dmode));
+	Log(("    mode_t sf_fmode = 0x%l\n", (ulong_t)sffs->sf_fmode));
+	Log(("    mode_t sf_dmask = 0x%l\n", (ulong_t)sffs->sf_dmask));
+	Log(("    mode_t sf_fmask = 0x%l\n", (ulong_t)sffs->sf_fmask));
 	Log(("    char *sf_share_name = %s\n", sffs->sf_share_name));
 	Log(("    char *sf_mntpath = %s\n", sffs->sf_mntpath));
 	Log(("    sfp_mount_t *sf_handle = 0x%p\n", sffs->sf_handle));
