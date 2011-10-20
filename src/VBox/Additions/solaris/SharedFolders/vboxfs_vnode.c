@@ -857,9 +857,19 @@ sffs_getattr(
 	mode = node->sf_stat.sf_mode;
 	vap->va_mode = mode & MODEMASK;
 	if (S_ISDIR(mode))
+	{
 		vap->va_type = VDIR;
+		vap->va_mode = sffs->sf_dmode != ~0 ? (sffs->sf_dmode & 0777) : vap->va_mode;
+		vap->va_mode &= ~sffs->sf_dmask;
+		vap->va_mode |= S_IFDIR;
+	}
 	else if (S_ISREG(mode))
+	{
 		vap->va_type = VREG;
+		vap->va_mode = sffs->sf_fmask != ~0 ? (sffs->sf_fmode & 0777) : vap->va_mode;
+		vap->va_mode &= ~sffs->sf_fmask;
+		vap->va_mode |= S_IFREG;
+	}
 	else if (S_ISFIFO(mode))
 		vap->va_type = VFIFO;
 	else if (S_ISCHR(mode))
@@ -867,7 +877,12 @@ sffs_getattr(
 	else if (S_ISBLK(mode))
 		vap->va_type = VBLK;
 	else if (S_ISLNK(mode))
+	{
 		vap->va_type = VLNK;
+		vap->va_mode = sffs->sf_fmask != ~0 ? (sffs->sf_fmode & 0777) : vap->va_mode;
+		vap->va_mode &= ~sffs->sf_fmask;
+		vap->va_mode |= S_IFLNK;
+	}
 	else if (S_ISSOCK(mode))
 		vap->va_type = VSOCK;
 
