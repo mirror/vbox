@@ -223,6 +223,10 @@ void UIMachineViewNormal::maybeResendResizeHint()
         if (!strHintSent.isEmpty())
         {
             QSize hint = guestSizeHint();
+            /* Temporarily restrict the size to prevent a brief resize to the
+             * framebuffer dimensions (see @a UIMachineView::sizeHint()) before
+             * the following resize() is acted upon. */
+            setMaximumSize(hint);
             resize(hint);
             sltPerformGuestResize(hint);
         }
