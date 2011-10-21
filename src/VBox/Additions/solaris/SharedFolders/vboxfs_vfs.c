@@ -309,7 +309,7 @@ sffs_mount(vfs_t *vfsp, vnode_t *mvp, struct mounta *uap, cred_t *cr)
 	 * dmode to use for all directories
 	 */
 	if (vfs_optionisset(vfsp, "dmode", &optval) &&
-		ddi_strtol(optval, NULL, 10, &val) == 0 &&
+		ddi_strtol(optval, NULL, 8, &val) == 0 &&
 		(mode_t)val == val)
 		dmode = val;
 
@@ -317,7 +317,7 @@ sffs_mount(vfs_t *vfsp, vnode_t *mvp, struct mounta *uap, cred_t *cr)
 	 * fmode to use for all files
 	 */
 	if (vfs_optionisset(vfsp, "fmode", &optval) &&
-		ddi_strtol(optval, NULL, 10, &val) == 0 &&
+		ddi_strtol(optval, NULL, 8, &val) == 0 &&
 		(mode_t)val == val)
 		fmode = val;
 
@@ -325,7 +325,7 @@ sffs_mount(vfs_t *vfsp, vnode_t *mvp, struct mounta *uap, cred_t *cr)
 	 * dmask to use for all directories
 	 */
 	if (vfs_optionisset(vfsp, "dmask", &optval) &&
-		ddi_strtol(optval, NULL, 10, &val) == 0 &&
+		ddi_strtol(optval, NULL, 8, &val) == 0 &&
 		(mode_t)val == val)
 		dmask = val;
 
@@ -333,9 +333,17 @@ sffs_mount(vfs_t *vfsp, vnode_t *mvp, struct mounta *uap, cred_t *cr)
 	 * fmask to use for all files
 	 */
 	if (vfs_optionisset(vfsp, "fmask", &optval) &&
-		ddi_strtol(optval, NULL, 10, &val) == 0 &&
+		ddi_strtol(optval, NULL, 8, &val) == 0 &&
 		(mode_t)val == val)
 		fmask = val;
+
+	/*
+	 * umask to use for all directories & files
+	 */
+	if (vfs_optionisset(vfsp, "umask", &optval) &&
+		ddi_strtol(optval, NULL, 8, &val) == 0 &&
+		(mode_t)val == val)
+		dmask = fmask = val;
 
 	/*
 	 * ttl to use for stat caches
