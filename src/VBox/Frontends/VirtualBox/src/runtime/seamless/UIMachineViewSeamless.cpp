@@ -65,9 +65,6 @@ UIMachineViewSeamless::UIMachineViewSeamless(  UIMachineWindow *pMachineWindow
     /* Prepare event-filters: */
     prepareFilters();
 
-    /* Prepare connections: */
-    prepareConnections();
-
     /* Prepare console connections: */
     prepareConsoleConnections();
 
@@ -91,15 +88,6 @@ UIMachineViewSeamless::~UIMachineViewSeamless()
 void UIMachineViewSeamless::sltAdditionsStateChanged()
 {
     // TODO: Exit seamless if additions doesn't support it!
-}
-
-void UIMachineViewSeamless::sltDesktopResized()
-{
-    /** @todo Try to resize framebuffer according new desktop size,
-     *        exit seamless if resize is failed! */
-    /** @todo Check whether this isn't already fixed elsewhere.
-     *        I don't think that it is the GUI's job to check that
-     *        the resize succeeded though. */
 }
 
 bool UIMachineViewSeamless::event(QEvent *pEvent)
@@ -185,11 +173,6 @@ void UIMachineViewSeamless::prepareFilters()
     /* Menu bar filter: */
     qobject_cast<QMainWindow*>(machineWindowWrapper()->machineWindow())->menuBar()->installEventFilter(this);
 #endif
-}
-
-void UIMachineViewSeamless::prepareConnections()
-{
-    connect(QApplication::desktop(), SIGNAL(resized(int)), this, SLOT(sltDesktopResized()));
 }
 
 void UIMachineViewSeamless::prepareConsoleConnections()

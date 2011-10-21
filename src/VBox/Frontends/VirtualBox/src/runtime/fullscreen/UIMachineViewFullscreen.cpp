@@ -92,11 +92,6 @@ void UIMachineViewFullscreen::sltAdditionsStateChanged()
             sltPerformGuestResize(workingArea().size());
 }
 
-void UIMachineViewFullscreen::sltDesktopResized()
-{
-
-}
-
 bool UIMachineViewFullscreen::event(QEvent *pEvent)
 {
     switch (pEvent->type())
@@ -166,11 +161,6 @@ void UIMachineViewFullscreen::prepareFilters()
     /* Menu bar filter: */
     qobject_cast<QMainWindow*>(machineWindowWrapper()->machineWindow())->menuBar()->installEventFilter(this);
 #endif
-}
-
-void UIMachineViewFullscreen::prepareConnections()
-{
-    connect(QApplication::desktop(), SIGNAL(resized(int)), this, SLOT(sltDesktopResized()));
 }
 
 void UIMachineViewFullscreen::prepareConsoleConnections()
