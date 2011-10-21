@@ -1046,7 +1046,6 @@ void UISession::preparePowerUp()
     }
 }
 
-#ifdef VBOX_WITH_VIDEOHWACCEL
 UIFrameBuffer* UISession::frameBuffer(ulong screenId) const
 {
     Assert(screenId < (ulong)m_FrameBufferVector.size());
@@ -1063,7 +1062,6 @@ int UISession::setFrameBuffer(ulong screenId, UIFrameBuffer* pFrameBuffer)
     }
     return VERR_INVALID_PARAMETER;
 }
-#endif
 
 #ifdef VBOX_GUI_WITH_KEYS_RESET_HANDLER
 /**
