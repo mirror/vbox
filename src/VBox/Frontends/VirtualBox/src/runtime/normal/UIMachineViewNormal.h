@@ -43,9 +43,6 @@ private slots:
     /* Console callback handlers: */
     void sltAdditionsStateChanged();
 
-    /* Watch dog for desktop resizes: */
-    void sltDesktopResized();
-
 #ifdef Q_WS_X11
     /* Slot to perform synchronized geometry normalization.
      * Currently its only required under X11 as of its async nature: */
@@ -61,7 +58,6 @@ private:
     /* Prepare helpers: */
     void prepareCommon();
     void prepareFilters();
-    void prepareConnections();
     void prepareConsoleConnections();
     //void loadMachineViewSettings();
     /** If the last guest size hint was sent to switch to fullscreen or
@@ -73,7 +69,6 @@ private:
     /* Cleanup helpers: */
     void saveMachineViewSettings();
     //void cleanupConsoleConnections() {}
-    //void prepareConnections() {}
     //void cleanupFilters() {}
     //void cleanupCommon() {}
 

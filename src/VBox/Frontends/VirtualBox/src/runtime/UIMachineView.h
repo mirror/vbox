@@ -228,6 +228,7 @@ protected:
  * It allows to block main GUI thread until specific event received.
  * Later it will become more abstract but now its just used to help
  * fullscreen & seamless modes to restore normal guest size hint. */
+/** @todo This class is now unused - can it be removed altogether? */
 class UIMachineViewBlocker : public QEventLoop
 {
     Q_OBJECT;

@@ -63,9 +63,6 @@ UIMachineViewNormal::UIMachineViewNormal(  UIMachineWindow *pMachineWindow
     /* Prepare event-filters: */
     prepareFilters();
 
-    /* Prepare connections: */
-    prepareConnections();
-
     /* Prepare console connections: */
     prepareConsoleConnections();
 
@@ -93,11 +90,6 @@ void UIMachineViewNormal::sltAdditionsStateChanged()
      * mode initially after the transition this happens when we
      * switch. */
     maybeResendResizeHint();
-}
-
-void UIMachineViewNormal::sltDesktopResized()
-{
-
 }
 
 bool UIMachineViewNormal::event(QEvent *pEvent)
@@ -192,11 +184,6 @@ void UIMachineViewNormal::prepareFilters()
 
     /* Menu bar filters: */
     qobject_cast<QMainWindow*>(machineWindowWrapper()->machineWindow())->menuBar()->installEventFilter(this);
-}
-
-void UIMachineViewNormal::prepareConnections()
-{
-    connect(QApplication::desktop(), SIGNAL(resized(int)), this, SLOT(sltDesktopResized()));
 }
 
 void UIMachineViewNormal::prepareConsoleConnections()

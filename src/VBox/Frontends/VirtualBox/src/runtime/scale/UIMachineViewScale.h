@@ -48,9 +48,6 @@ private slots:
     /* Slot to perform guest resize: */
     void sltPerformGuestScale();
 
-    /* Watch dog for desktop resizes: */
-    void sltDesktopResized();
-
 private:
 
     /* Event handlers: */
@@ -59,7 +56,6 @@ private:
 
     /* Prepare helpers: */
     void prepareFrameBuffer();
-    void prepareConnections();
     //void loadMachineViewSettings();
 
     /* Cleanup helpers: */

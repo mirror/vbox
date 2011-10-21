@@ -48,9 +48,6 @@ private slots:
     /* Console callback handlers: */
     void sltAdditionsStateChanged();
 
-    /* Watch dog for desktop resizes: */
-    void sltDesktopResized();
-
 private:
 
     /* Event handlers: */
@@ -60,14 +57,12 @@ private:
     /* Prepare helpers: */
     void prepareCommon();
     void prepareFilters();
-    void prepareConnections();
     void prepareConsoleConnections();
     void prepareSeamless();
 
     /* Cleanup helpers: */
     void cleanupSeamless();
     //void cleanupConsoleConnections() {}
-    //void prepareConnections() {}
     //void cleanupFilters() {}
     //void cleanupCommon() {}
 
