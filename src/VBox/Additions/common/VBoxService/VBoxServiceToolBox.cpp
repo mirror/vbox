@@ -254,7 +254,11 @@ static int VBoxServiceToolboxCatOutput(RTFILE hInput, RTFILE hOutput)
             if (RT_SUCCESS(rc) && cbRead > 0)
             {
                 rc = RTFileWrite(hOutput, abBuf, cbRead, NULL /* Try to write all at once! */);
-                cbRead = 0;
+                if (RT_FAILURE(rc))
+                {
+                    RTMsgError("Error while writing output, rc=%Rrc\n", rc);
+                    break;
+                }
             }
             else
             {
