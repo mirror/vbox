@@ -227,9 +227,9 @@ public:
     virtual void viewportResized(QResizeEvent * /* pEvent */) {}
 
     virtual void viewportScrolled(int /* iX */, int /* iY */) {}
+#endif
 
     virtual void setView(UIMachineView * pView);
-#endif
 
 protected:
 
