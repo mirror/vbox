@@ -39,10 +39,10 @@ typedef struct sffs_data {
 	vnode_t		*sf_rootnode;	/* of vnode of the root directory */
 	uid_t		sf_uid;		/* owner of all shared folders */
 	gid_t		sf_gid;		/* group of all shared folders */
-	mode_t      sf_dmode;   /* mode of all directories */
-	mode_t      sf_fmode;   /* mode of all files */
-	mode_t      sf_dmask;   /* mask of all directories */
-	mode_t      sf_fmask;   /* mask of all files */
+    mode_t		sf_dmode;   /* mode of all directories */
+    mode_t		sf_fmode;   /* mode of all files */
+    mode_t		sf_dmask;   /* mask of all directories */
+    mode_t		sf_fmask;   /* mask of all files */
 	int  		sf_stat_ttl;	/* ttl for stat caches (in ms) */
 	int  		sf_fsync;	/* whether to honor fsync or not */
 	char		*sf_share_name;
