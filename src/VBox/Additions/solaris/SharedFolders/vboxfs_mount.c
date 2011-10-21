@@ -59,7 +59,13 @@ static void Usage(char *pszName)
            "     rw                 mount writable (the default)\n"
            "     ro                 mount read only\n"
            "     uid=UID            set the default file owner user id to UID\n"
-           "     gid=GID            set the default file owner group id to GID\n"
+           "     gid=GID            set the default file owner group id to GID\n");
+    fprintf(stderr,
+           "     dmode=MODE         override the mode for all directories (octal) to MODE\n"
+           "     fmode=MODE         override the mode for all regular files (octal) to MODE\n"
+           "     umask=UMASK        set the umask (bitmask of permissions not present) in (octal) UMASK\n"
+           "     dmask=UMASK        set the umask applied to directories only in (octal) UMASK\n"
+           "     fmask=UMASK        set the umask applied to regular files only in (octal) UMASK\n"
            "     stat_ttl=TTL       set the \"time to live\" (in ms) for the stat caches (default %d)\n", DEF_STAT_TTL_MS);
     fprintf(stderr,
            "     fsync              honor fsync calls instead of ignoring them\n"
