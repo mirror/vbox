@@ -478,6 +478,7 @@ VMMR3DECL(void) PATMR3Relocate(PVM pVM)
 VMMR3DECL(int) PATMR3Term(PVM pVM)
 {
     /* Memory was all allocated from the two MM heaps and requires no freeing. */
+    NOREF(pVM);
     return VINF_SUCCESS;
 }
 
@@ -826,9 +827,12 @@ static DECLCALLBACK(int) RelocatePatches(PAVLOU32NODECORE pNode, void *pParam)
  * @param   enmAccessType   The access type.
  * @param   pvUser          User argument.
  */
-DECLCALLBACK(int) patmVirtPageHandler(PVM pVM, RTGCPTR GCPtr, void *pvPtr, void *pvBuf, size_t cbBuf, PGMACCESSTYPE enmAccessType, void *pvUser)
+DECLCALLBACK(int) patmVirtPageHandler(PVM pVM, RTGCPTR GCPtr, void *pvPtr, void *pvBuf, size_t cbBuf,
+                                      PGMACCESSTYPE enmAccessType, void *pvUser)
 {
-    Assert(enmAccessType == PGMACCESSTYPE_WRITE);
+    Assert(enmAccessType == PGMACCESSTYPE_WRITE); NOREF(enmAccessType);
+    NOREF(pvPtr); NOREF(pvBuf); NOREF(cbBuf); NOREF(pvUser);
+
     /** @todo could be the wrong virtual address (alias) */
     pVM->patm.s.pvFaultMonitor = GCPtr;
     PATMR3HandleMonitoredPage(pVM);
@@ -1265,6 +1269,7 @@ static DECLCALLBACK(int) patmEmptyTreePVCallback(PAVLPVNODECORE pNode, void *)
  */
 void patmEmptyTree(PVM pVM, PAVLPVNODECORE *ppTree)
 {
+    NOREF(pVM);
     RTAvlPVDestroy(ppTree, patmEmptyTreePVCallback, NULL);
 }
 
@@ -1286,6 +1291,7 @@ static DECLCALLBACK(int) patmEmptyTreeU32Callback(PAVLU32NODECORE pNode, void *)
  */
 void patmEmptyTreeU32(PVM pVM, PPAVLU32NODECORE ppTree)
 {
+    NOREF(pVM);
     RTAvlU32Destroy(ppTree, patmEmptyTreeU32Callback, NULL);
 }
 
@@ -1468,6 +1474,7 @@ static int patmAnalyseFunctionCallback(PVM pVM, DISCPUSTATE *pCpu, RCPTRTYPE(uin
 {
     PPATCHINFO pPatch = (PPATCHINFO)pCacheRec->pPatch;
     bool       fIllegalInstr = false;
+    NOREF(pInstrGC);
 
     //Preliminary heuristics:
     //- no call instructions
@@ -2050,6 +2057,7 @@ static bool patmIsKnownDisasmJump(PPATCHINFO pPatch, RTRCPTR pInstrGC)
 int patmr3DisasmCallback(PVM pVM, DISCPUSTATE *pCpu, RCPTRTYPE(uint8_t *) pInstrGC, RCPTRTYPE(uint8_t *) pCurInstrGC, PPATMP2GLOOKUPREC pCacheRec)
 {
     PPATCHINFO pPatch = (PPATCHINFO)pCacheRec->pPatch;
+    NOREF(pInstrGC);
 
     if (pCpu->pCurInstr->opcode == OP_INT3)
     {
@@ -2676,6 +2684,7 @@ VMMR3DECL(int) PATMR3PatchBlock(PVM pVM, RTRCPTR pInstrGC, R3PTRTYPE(uint8_t *) 
     char szOutput[256];
     bool disret;
 #endif
+    NOREF(pInstrHC); NOREF(uOpSize);
 
     /* Save original offset (in case of failures later on) */
     /** @todo use the hypervisor heap (that has quite a few consequences for save/restore though) */
@@ -5192,6 +5201,7 @@ VMMR3DECL(int) PATMR3DisablePatch(PVM pVM, RTRCPTR pInstrGC)
  */
 static int patmDisableUnusablePatch(PVM pVM, RTRCPTR pInstrGC, RTRCPTR pConflictAddr, PPATCHINFO pConflictPatch)
 {
+    NOREF(pConflictAddr);
 #ifdef PATM_RESOLVE_CONFLICTS_WITH_JUMP_PATCHES
     PATCHINFO            patch;
     DISCPUSTATE          cpu;
@@ -6594,6 +6604,7 @@ static const char *PATMPatchType(PVM pVM, PPATCHINFO pPatch)
 
 static const char *PATMPatchState(PVM pVM, PPATCHINFO pPatch)
 {
+    NOREF(pVM);
     switch(pPatch->uState)
     {
     case PATCH_ENABLED:
@@ -6680,6 +6691,7 @@ static DECLCALLBACK(int) patmr3CmdOff(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM p
     /*
      * Validate input.
      */
+    NOREF(pCmd); NOREF(cArgs); NOREF(paArgs);
     if (!pVM)
         return pCmdHlp->pfnPrintf(pCmdHlp, NULL, "error: The command requires VM to be selected.\n");
 
@@ -6703,6 +6715,7 @@ static DECLCALLBACK(int) patmr3CmdOn(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pV
     /*
      * Validate input.
      */
+    NOREF(pCmd); NOREF(cArgs); NOREF(paArgs);
     if (!pVM)
         return pCmdHlp->pfnPrintf(pCmdHlp, NULL, "error: The command requires VM to be selected.\n");
 

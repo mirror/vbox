@@ -1278,6 +1278,8 @@ static DECLCALLBACK(int) dbgfR3RegNmQueryWorkerOnCpu(PVM pVM, PCDBGFREGLOOKUP pL
     DBGFREGVALTYPE      enmValueType = pDesc->enmType;
     int                 rc;
 
+    NOREF(pVM);
+
     /*
      * Get the register or sub-field value.
      */
@@ -1839,6 +1841,7 @@ VMMR3DECL(int) DBGFR3RegNmQueryAll(PVM pVM, PDBGFREGENTRYNM paRegs, size_t cRegs
 
 VMMR3DECL(int) DBGFR3RegNmSet(PVM pVM, VMCPUID idDefCpu, const char *pszReg, PCDBGFREGVAL pValue, DBGFREGVALTYPE enmType)
 {
+    NOREF(pVM); NOREF(idDefCpu); NOREF(pszReg); NOREF(pValue); NOREF(enmType);
     return VERR_NOT_IMPLEMENTED;
 }
 
@@ -1979,6 +1982,8 @@ dbgfR3RegPrintfCbFormatField(PDBGFR3REGPRINTFARGS pThis, PFNRTSTROUTPUT pfnOutpu
 {
     char szTmp[160];
 
+    NOREF(cchWidth); NOREF(cchPrecision); NOREF(fFlags);
+
     /*
      * Retrieve the register value.
      */
@@ -2107,6 +2112,8 @@ dbgfR3RegPrintfCbFormat(void *pvArg, PFNRTSTROUTPUT pfnOutput, void *pvArgOutput
                         const char **ppszFormat, va_list *pArgs, int cchWidth,
                         int cchPrecision, unsigned fFlags, char chArgSize)
 {
+    NOREF(pArgs); NOREF(chArgSize);
+
     /*
      * Parse the format type and hand the job to the appropriate worker.
      */

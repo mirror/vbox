@@ -1272,6 +1272,8 @@ DECLINLINE(VBOXSTRICTRC) iemOpcodeGetNextU64(PIEMCPU pIemCpu, uint64_t *pu64)
  */
 static VBOXSTRICTRC iemMiscValidateNewSS(PIEMCPU pIemCpu, PCCPUMCTX pCtx, RTSEL NewSS, uint8_t uCpl, PIEMSELDESC pDesc)
 {
+    NOREF(pCtx);
+
     /* Null selectors are not allowed (we're not called for dispatching
        interrupts with SS=0 in long mode). */
     if (!(NewSS & (X86_SEL_MASK | X86_SEL_LDT)))
@@ -1463,14 +1465,15 @@ DECLINLINE(void) iemRaiseXcptAdjustState(PCPUMCTX pCtx, uint8_t u8Vector)
  */
 static VBOXSTRICTRC
 iemRaiseXcptOrIntInRealMode(PIEMCPU     pIemCpu,
-                             PCPUMCTX    pCtx,
-                             uint8_t     cbInstr,
-                             uint8_t     u8Vector,
-                             uint32_t    fFlags,
-                             uint16_t    uErr,
-                             uint64_t    uCr2)
+                            PCPUMCTX    pCtx,
+                            uint8_t     cbInstr,
+                            uint8_t     u8Vector,
+                            uint32_t    fFlags,
+                            uint16_t    uErr,
+                            uint64_t    uCr2)
 {
     AssertReturn(pIemCpu->enmCpuMode == IEMMODE_16BIT, VERR_INTERNAL_ERROR_3);
+    NOREF(uErr); NOREF(uCr2);
 
     /*
      * Read the IDT entry.
@@ -1542,6 +1545,8 @@ iemRaiseXcptOrIntInProtMode(PIEMCPU     pIemCpu,
                             uint16_t    uErr,
                             uint64_t    uCr2)
 {
+    NOREF(cbInstr); NOREF(uCr2);
+
     /*
      * Read the IDT entry.
      */
@@ -1842,6 +1847,7 @@ iemRaiseXcptOrIntInV8086Mode(PIEMCPU     pIemCpu,
                              uint16_t    uErr,
                              uint64_t    uCr2)
 {
+    NOREF(pIemCpu); NOREF(pCtx); NOREF(cbInstr); NOREF(u8Vector); NOREF(fFlags); NOREF(uErr); NOREF(uCr2);
     AssertMsgFailed(("V8086 exception / interrupt dispatching\n"));
     return VERR_NOT_IMPLEMENTED;
 }
@@ -1869,6 +1875,7 @@ iemRaiseXcptOrIntInLongMode(PIEMCPU     pIemCpu,
                             uint16_t    uErr,
                             uint64_t    uCr2)
 {
+    NOREF(pIemCpu); NOREF(pCtx); NOREF(cbInstr); NOREF(u8Vector); NOREF(fFlags); NOREF(uErr); NOREF(uCr2);
     AssertMsgFailed(("long mode exception / interrupt dispatching\n"));
     return VERR_NOT_IMPLEMENTED;
 }
@@ -2171,6 +2178,7 @@ DECL_NO_INLINE(static, VBOXSTRICTRC) iemRaiseMathFault(PIEMCPU pIemCpu)
 #define IEMOP_RAISE_INVALID_LOCK_PREFIX()   IEM_MC_DEFER_TO_CIMPL_0(iemCImplRaiseInvalidLockPrefix)
 IEM_CIMPL_DEF_0(iemCImplRaiseInvalidLockPrefix)
 {
+    NOREF(cbInstr);
     return iemRaiseXcptOrInt(pIemCpu, 0, X86_XCPT_UD, IEM_XCPT_FLAGS_T_CPU_XCPT, 0, 0);
 }
 
@@ -2186,6 +2194,7 @@ IEM_CIMPL_DEF_0(iemCImplRaiseInvalidLockPrefix)
 #define IEMOP_RAISE_INVALID_OPCODE()        IEM_MC_DEFER_TO_CIMPL_0(iemCImplRaiseInvalidOpcode)
 IEM_CIMPL_DEF_0(iemCImplRaiseInvalidOpcode)
 {
+    NOREF(cbInstr);
     return iemRaiseXcptOrInt(pIemCpu, 0, X86_XCPT_UD, IEM_XCPT_FLAGS_T_CPU_XCPT, 0, 0);
 }
 
@@ -2326,6 +2335,7 @@ static void iemOpStubMsg2(PIEMCPU pIemCpu)
         RTAssertMsg1(NULL, __LINE__, __FILE__, __FUNCTION__); \
         iemOpStubMsg2(pIemCpu); \
         RTAssertPanic(); \
+        NOREF(a_Name0); \
         return VERR_NOT_IMPLEMENTED; \
     } \
     typedef int ignore_semicolon
@@ -2522,9 +2532,10 @@ static uint64_t iemGRegFetchU64(PIEMCPU pIemCpu, uint8_t iReg)
 DECLINLINE(bool) iemFRegIsFxSaveFormat(PIEMCPU pIemCpu)
 {
 #ifdef RT_ARCH_AMD64
+    NOREF(pIemCpu);
     return true;
 #else
-/// @todo    return pVCpu->pVMR3->cpum.s.CPUFeatures.edx.u1FXSR;
+    NOREF(pIemCpu); /// @todo return pVCpu->pVMR3->cpum.s.CPUFeatures.edx.u1FXSR;
     return true;
 #endif
 }
@@ -6144,11 +6155,13 @@ static void iemExecVerificationModeCheck(PIEMCPU pIemCpu)
 /* stubs */
 static VBOXSTRICTRC     iemVerifyFakeIOPortRead(PIEMCPU pIemCpu, RTIOPORT Port, uint32_t *pu32Value, size_t cbValue)
 {
+    NOREF(pIemCpu); NOREF(Port); NOREF(pu32Value); NOREF(cbValue);
     return VERR_INTERNAL_ERROR;
 }
 
 static VBOXSTRICTRC     iemVerifyFakeIOPortWrite(PIEMCPU pIemCpu, RTIOPORT Port, uint32_t u32Value, size_t cbValue)
 {
+    NOREF(pIemCpu); NOREF(Port); NOREF(u32Value); NOREF(cbValue);
     return VERR_INTERNAL_ERROR;
 }
 

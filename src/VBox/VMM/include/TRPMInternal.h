@@ -25,7 +25,7 @@
 
 
 
-/* Enable to allow trap forwarding in GC. */
+/** Enable to allow trap forwarding in GC. */
 #define TRPM_FORWARD_TRAPS_IN_GC
 
 /** First interrupt handler. Used for validating input. */

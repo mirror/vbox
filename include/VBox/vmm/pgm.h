@@ -147,6 +147,8 @@ typedef enum PGMACCESSTYPE
  * @param   cbBuf           How much it's reading/writing.
  * @param   enmAccessType   The access type.
  * @param   pvUser          User argument.
+ *
+ * @todo    Add pVCpu, possibly replacing pVM.
  */
 typedef DECLCALLBACK(int) FNPGMR3PHYSHANDLER(PVM pVM, RTGCPHYS GCPhys, void *pvPhys, void *pvBuf, size_t cbBuf, PGMACCESSTYPE enmAccessType, void *pvUser);
 /** Pointer to PGM access callback. */
@@ -182,6 +184,7 @@ typedef enum PGMVIRTHANDLERTYPE
  * @param   pvRange     The base address of the handled virtual range.
  * @param   offRange    The offset of the access into this range.
  *                      (If it's a EIP range this is the EIP, if not it's pvFault.)
+ * @todo    Add pVCpu, possibly replacing pVM.
  */
 typedef DECLCALLBACK(int) FNPGMRCVIRTHANDLER(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, RTGCPTR pvRange, uintptr_t offRange);
 /** Pointer to PGM access callback. */
@@ -202,6 +205,7 @@ typedef FNPGMRCVIRTHANDLER *PFNPGMRCVIRTHANDLER;
  * @param   cbBuf           How much it's reading/writing.
  * @param   enmAccessType   The access type.
  * @param   pvUser          User argument.
+ * @todo    Add pVCpu, possibly replacing pVM.
  */
 typedef DECLCALLBACK(int) FNPGMR3VIRTHANDLER(PVM pVM, RTGCPTR GCPtr, void *pvPtr, void *pvBuf, size_t cbBuf, PGMACCESSTYPE enmAccessType, void *pvUser);
 /** Pointer to PGM access callback. */

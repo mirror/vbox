@@ -123,6 +123,7 @@ VMMDECL(void) PDMQueueInsert(PPDMQUEUE pQueue, PPDMQUEUEITEMCORE pItem)
  */
 VMMDECL(void) PDMQueueInsertEx(PPDMQUEUE pQueue, PPDMQUEUEITEMCORE pItem, uint64_t NanoMaxDelay)
 {
+    NOREF(NanoMaxDelay);
     PDMQueueInsert(pQueue, pItem);
 #ifdef IN_RC
     PVM pVM = pQueue->CTX_SUFF(pVM);

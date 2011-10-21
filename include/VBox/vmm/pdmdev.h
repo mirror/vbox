@@ -2259,12 +2259,9 @@ typedef struct PDMDEVHLPR3
      * @param   pszWrite            Name of the RC function which is gonna handle Write operations.
      * @param   pszRead             Name of the RC function which is gonna handle Read operations.
      * @param   pszFill             Name of the RC function which is gonna handle Fill/memset operations. (optional)
-     * @param   pszDesc             Obsolete. NULL is fine.
-     * @todo    Remove pszDesc in the next major revision of PDMDEVHLPR3.
      */
     DECLR3CALLBACKMEMBER(int, pfnMMIORegisterRC,(PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, RTUINT cbRange, RTGCPTR pvUser,
-                                                 const char *pszWrite, const char *pszRead, const char *pszFill,
-                                                 const char *pszDesc));
+                                                 const char *pszWrite, const char *pszRead, const char *pszFill));
 
     /**
      * Register a Memory Mapped I/O (MMIO) region for R0.
@@ -2282,11 +2279,9 @@ typedef struct PDMDEVHLPR3
      * @param   pszRead             Name of the RC function which is gonna handle Read operations.
      * @param   pszFill             Name of the RC function which is gonna handle Fill/memset operations. (optional)
      * @param   pszDesc             Obsolete. NULL is fine.
-     * @todo    Remove pszDesc in the next major revision of PDMDEVHLPR3.
      */
     DECLR3CALLBACKMEMBER(int, pfnMMIORegisterR0,(PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, RTUINT cbRange, RTR0PTR pvUser,
-                                                 const char *pszWrite, const char *pszRead, const char *pszFill,
-                                                 const char *pszDesc));
+                                                 const char *pszWrite, const char *pszRead, const char *pszFill));
 
     /**
      * Deregister a Memory Mapped I/O (MMIO) region.
@@ -3477,7 +3472,7 @@ typedef R3PTRTYPE(struct PDMDEVHLPR3 *) PPDMDEVHLPR3;
 typedef R3PTRTYPE(const struct PDMDEVHLPR3 *) PCPDMDEVHLPR3;
 
 /** Current PDMDEVHLPR3 version number. */
-#define PDM_DEVHLPR3_VERSION                    PDM_VERSION_MAKE(0xffe7, 7, 0)
+#define PDM_DEVHLPR3_VERSION                    PDM_VERSION_MAKE(0xffe7, 8, 0)
 
 
 /**
@@ -4121,7 +4116,7 @@ DECLINLINE(int) PDMDevHlpMMIORegister(PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, 
 DECLINLINE(int) PDMDevHlpMMIORegisterRC(PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, RTUINT cbRange, RTGCPTR pvUser,
                                         const char *pszWrite, const char *pszRead, const char *pszFill)
 {
-    return pDevIns->pHlpR3->pfnMMIORegisterRC(pDevIns, GCPhysStart, cbRange, pvUser, pszWrite, pszRead, pszFill, NULL);
+    return pDevIns->pHlpR3->pfnMMIORegisterRC(pDevIns, GCPhysStart, cbRange, pvUser, pszWrite, pszRead, pszFill);
 }
 
 /**
@@ -4130,7 +4125,7 @@ DECLINLINE(int) PDMDevHlpMMIORegisterRC(PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart
 DECLINLINE(int) PDMDevHlpMMIORegisterR0(PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, RTUINT cbRange, RTR0PTR pvUser,
                                         const char *pszWrite, const char *pszRead, const char *pszFill)
 {
-    return pDevIns->pHlpR3->pfnMMIORegisterR0(pDevIns, GCPhysStart, cbRange, pvUser, pszWrite, pszRead, pszFill, NULL);
+    return pDevIns->pHlpR3->pfnMMIORegisterR0(pDevIns, GCPhysStart, cbRange, pvUser, pszWrite, pszRead, pszFill);
 }
 
 /**
@@ -4437,6 +4432,11 @@ DECLINLINE(int) PDMDevHlpDBGFStop(PPDMDEVINS pDevIns, RT_SRC_POS_DECL, const cha
     va_end(args);
     return rc;
 # else
+    NOREF(pDevIns);
+    NOREF(pszFile);
+    NOREF(iLine);
+    NOREF(pszFunction);
+    NOREF(pszFormat);
     return VINF_EM_DBG_STOP;
 # endif
 #else

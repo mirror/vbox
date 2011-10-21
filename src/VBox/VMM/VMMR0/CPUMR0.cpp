@@ -399,6 +399,7 @@ VMMR0DECL(int) CPUMR0SaveGuestFPU(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
     Assert(pVM->cpum.s.CPUFeatures.edx.u1FXSR);
     Assert(ASMGetCR4() & X86_CR4_OSFSXR);
     AssertReturn((pVCpu->cpum.s.fUseFlags & CPUM_USED_FPU), VINF_SUCCESS);
+    NOREF(pCtx);
 
 #if HC_ARCH_BITS == 32 && defined(VBOX_WITH_64_BITS_GUESTS) && !defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
     if (CPUMIsGuestInLongModeEx(pCtx))
@@ -571,6 +572,8 @@ VMMR0DECL(int) CPUMR0LoadGuestDebugState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, b
  */
 VMMR0DECL(int) CPUMR0SaveHostDebugState(PVM pVM, PVMCPU pVCpu)
 {
+    NOREF(pVM);
+
     /* Save the host state. */
 #ifdef VBOX_WITH_HYBRID_32BIT_KERNEL
     AssertCompile((uintptr_t)&pVCpu->cpum.s.Host.dr3 - (uintptr_t)&pVCpu->cpum.s.Host.dr0 == sizeof(uint64_t) * 3);
@@ -600,6 +603,7 @@ VMMR0DECL(int) CPUMR0SaveHostDebugState(PVM pVM, PVMCPU pVCpu)
 VMMR0DECL(int) CPUMR0LoadHostDebugState(PVM pVM, PVMCPU pVCpu)
 {
     Assert(pVCpu->cpum.s.fUseFlags & (CPUM_USE_DEBUG_REGS | CPUM_USE_DEBUG_REGS_HYPER));
+    NOREF(pVM);
 
     /*
      * Restore the host's debug state. DR0-3, DR6 and only then DR7!
@@ -633,6 +637,8 @@ VMMR0DECL(int) CPUMR0LoadHostDebugState(PVM pVM, PVMCPU pVCpu)
  */
 VMMR0DECL(int) CPUMR0LoadHyperDebugState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, bool fDR6)
 {
+    NOREF(pCtx);
+
     /* Save the host state. */
     CPUMR0SaveHostDebugState(pVM, pVCpu);
     Assert(ASMGetDR7() == X86_DR7_INIT_VAL);
@@ -672,6 +678,7 @@ VMMR0DECL(int) CPUMR0LoadHyperDebugState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, b
  */
 static void cpumR0MapLocalApicWorker(RTCPUID idCpu, void *pvUser1, void *pvUser2)
 {
+    NOREF(pvUser1); NOREF(pvUser2);
     int iCpu = RTMpCpuIdToSetIndex(idCpu);
     AssertReturnVoid(iCpu >= 0 && (unsigned)iCpu < RT_ELEMENTS(g_aLApics));
 

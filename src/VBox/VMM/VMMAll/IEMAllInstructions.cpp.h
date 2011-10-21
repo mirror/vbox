@@ -623,6 +623,7 @@ FNIEMOP_DEF(iemOp_Grp6)
 /** Opcode 0x0f 0x01 /0. */
 FNIEMOP_DEF_1(iemOp_Grp7_sgdt, uint8_t, bRm)
 {
+    NOREF(pIemCpu); NOREF(bRm);
     AssertFailedReturn(VERR_NOT_IMPLEMENTED);
 }
 
@@ -662,6 +663,7 @@ FNIEMOP_DEF(iemOp_Grp7_vmxoff)
 /** Opcode 0x0f 0x01 /1. */
 FNIEMOP_DEF_1(iemOp_Grp7_sidt, uint8_t, bRm)
 {
+    NOREF(pIemCpu); NOREF(bRm);
     AssertFailedReturn(VERR_NOT_IMPLEMENTED);
 }
 
@@ -669,6 +671,7 @@ FNIEMOP_DEF_1(iemOp_Grp7_sidt, uint8_t, bRm)
 /** Opcode 0x0f 0x01 /1. */
 FNIEMOP_DEF(iemOp_Grp7_monitor)
 {
+    NOREF(pIemCpu);
     AssertFailedReturn(VERR_NOT_IMPLEMENTED);
 }
 
@@ -676,6 +679,7 @@ FNIEMOP_DEF(iemOp_Grp7_monitor)
 /** Opcode 0x0f 0x01 /1. */
 FNIEMOP_DEF(iemOp_Grp7_mwait)
 {
+    NOREF(pIemCpu);
     AssertFailedReturn(VERR_NOT_IMPLEMENTED);
 }
 
@@ -819,6 +823,7 @@ FNIEMOP_DEF_1(iemOp_Grp7_lmsw, uint8_t, bRm)
 /** Opcode 0x0f 0x01 /7. */
 FNIEMOP_DEF_1(iemOp_Grp7_invlpg, uint8_t, bRm)
 {
+    NOREF(pIemCpu); NOREF(bRm);
     AssertFailedReturn(VERR_NOT_IMPLEMENTED);
 }
 
@@ -826,6 +831,7 @@ FNIEMOP_DEF_1(iemOp_Grp7_invlpg, uint8_t, bRm)
 /** Opcode 0x0f 0x01 /7. */
 FNIEMOP_DEF(iemOp_Grp7_swapgs)
 {
+    NOREF(pIemCpu);
     AssertFailedReturn(VERR_NOT_IMPLEMENTED);
 }
 
@@ -833,6 +839,7 @@ FNIEMOP_DEF(iemOp_Grp7_swapgs)
 /** Opcode 0x0f 0x01 /7. */
 FNIEMOP_DEF(iemOp_Grp7_rdtscp)
 {
+    NOREF(pIemCpu);
     AssertFailedReturn(VERR_NOT_IMPLEMENTED);
 }
 

@@ -966,6 +966,7 @@ VMM_INT_DECL(void) TMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
 {
     int rc;
     LogFlow(("TMR3Relocate\n"));
+    NOREF(offDelta);
 
     pVM->tm.s.pvGIPRC = MMHyperR3ToRC(pVM, pVM->tm.s.pvGIPR3);
     pVM->tm.s.paTimerQueuesRC = MMHyperR3ToRC(pVM, pVM->tm.s.paTimerQueuesR3);
@@ -1848,6 +1849,7 @@ static DECLCALLBACK(void) tmR3TimerCallback(PRTTIMER pTimer, void *pvUser, uint6
 {
     PVM     pVM      = (PVM)pvUser;
     PVMCPU  pVCpuDst = &pVM->aCpus[pVM->tm.s.idTimerCpu];
+    NOREF(pTimer);
 
     AssertCompile(TMCLOCK_MAX == 4);
 #ifdef DEBUG_Sander /* very annoying, keep it private. */
@@ -2623,7 +2625,7 @@ VMMR3DECL(int) TMR3NotifySuspend(PVM pVM, PVMCPU pVCpu)
      * Pause the TSC last since it is normally linked to the virtual
      * sync clock, so the above code may actually stop both clock.
      */
-    rc = tmCpuTickPause(pVM, pVCpu);
+    rc = tmCpuTickPause(pVCpu);
     if (RT_FAILURE(rc))
         return rc;
 

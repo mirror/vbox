@@ -330,10 +330,12 @@ int pdmR3LoadR3U(PUVM pUVM, const char *pszFilename, const char *pszName)
  * @param   pValue          Where to store the symbol value (address).
  * @param   pvUser          User argument.
  */
-static DECLCALLBACK(int) pdmR3GetImportRC(RTLDRMOD hLdrMod, const char *pszModule, const char *pszSymbol, unsigned uSymbol, RTUINTPTR *pValue, void *pvUser)
+static DECLCALLBACK(int) pdmR3GetImportRC(RTLDRMOD hLdrMod, const char *pszModule, const char *pszSymbol, unsigned uSymbol,
+                                          RTUINTPTR *pValue, void *pvUser)
 {
     PVM         pVM     = ((PPDMGETIMPORTARGS)pvUser)->pVM;
     PPDMMOD     pModule = ((PPDMGETIMPORTARGS)pvUser)->pModule;
+    NOREF(hLdrMod); NOREF(uSymbol);
 
     /*
      * Adjust input.
@@ -1168,9 +1170,11 @@ typedef struct QMFEIPARG
  * @param   Value           Symbol value.
  * @param   pvUser          The user argument specified to RTLdrEnumSymbols().
  */
-static DECLCALLBACK(int) pdmR3QueryModFromEIPEnumSymbols(RTLDRMOD hLdrMod, const char *pszSymbol, unsigned uSymbol, RTUINTPTR Value, void *pvUser)
+static DECLCALLBACK(int) pdmR3QueryModFromEIPEnumSymbols(RTLDRMOD hLdrMod, const char *pszSymbol, unsigned uSymbol,
+                                                         RTUINTPTR Value, void *pvUser)
 {
     PQMFEIPARG pArgs = (PQMFEIPARG)pvUser;
+    NOREF(hLdrMod);
 
     RTINTPTR off = Value - pArgs->uPC;
     if (off <= 0)   /* near1 is before or at same location. */

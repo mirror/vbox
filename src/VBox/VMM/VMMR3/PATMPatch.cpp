@@ -1514,6 +1514,7 @@ int patmPatchGenCpuid(PVM pVM, PPATCHINFO pPatch, RTRCPTR pCurInstrGC)
     size = patmPatchGenCode(pVM, pPatch, pPB, &PATMCpuidRecord, 0, false);
 
     PATCHGEN_EPILOG(pPatch, size);
+    NOREF(pCurInstrGC);
     return VINF_SUCCESS;
 }
 

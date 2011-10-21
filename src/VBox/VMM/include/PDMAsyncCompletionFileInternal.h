@@ -499,8 +499,8 @@ typedef struct PDMASYNCCOMPLETIONTASKFILE
     volatile int          rc;
 } PDMASYNCCOMPLETIONTASKFILE;
 
-int pdmacFileAioMgrFailsafe(RTTHREAD ThreadSelf, void *pvUser);
-int pdmacFileAioMgrNormal(RTTHREAD ThreadSelf, void *pvUser);
+DECLCALLBACK(int) pdmacFileAioMgrFailsafe(RTTHREAD hThreadSelf, void *pvUser);
+DECLCALLBACK(int) pdmacFileAioMgrNormal(RTTHREAD hThreadSelf, void *pvUser);
 
 int pdmacFileAioMgrNormalInit(PPDMACEPFILEMGR pAioMgr);
 void pdmacFileAioMgrNormalDestroy(PPDMACEPFILEMGR pAioMgr);

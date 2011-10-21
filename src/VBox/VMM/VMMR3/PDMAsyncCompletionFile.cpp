@@ -1040,6 +1040,7 @@ static int pdmacFileEpInitialize(PPDMASYNCCOMPLETIONENDPOINT pEndpoint,
 
 static int pdmacFileEpRangesLockedDestroy(PAVLRFOFFNODECORE pNode, void *pvUser)
 {
+    NOREF(pNode); NOREF(pvUser);
     AssertMsgFailed(("The locked ranges tree should be empty at that point\n"));
     return VINF_SUCCESS;
 }

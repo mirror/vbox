@@ -1033,8 +1033,10 @@ VMMR3DECL(int) CPUMR3Term(PVM pVM)
         pVCpu->cpum.s.uMagic     = 0;
         pCtx->dr[5]              = 0;
     }
+#else
+    NOREF(pVM);
 #endif
-    return 0;
+    return VINF_SUCCESS;
 }
 
 
@@ -2047,6 +2049,7 @@ static void cpumR3LoadCPUM1_6(PVM pVM, CPUMCTX_VER1_6 *pCpumctx16)
  */
 static DECLCALLBACK(int) cpumR3LoadPrep(PVM pVM, PSSMHANDLE pSSM)
 {
+    NOREF(pSSM);
     pVM->cpum.s.fPendingRestore = true;
     return VINF_SUCCESS;
 }
@@ -2353,8 +2356,11 @@ static void cpumR3InfoFormatFlags(char *pszEFlags, uint32_t efl)
  * @param   enmType     The dump type.
  * @param   pszPrefix   Register name prefix.
  */
-static void cpumR3InfoOne(PVM pVM, PCPUMCTX pCtx, PCCPUMCTXCORE pCtxCore, PCDBGFINFOHLP pHlp, CPUMDUMPTYPE enmType, const char *pszPrefix)
+static void cpumR3InfoOne(PVM pVM, PCPUMCTX pCtx, PCCPUMCTXCORE pCtxCore, PCDBGFINFOHLP pHlp, CPUMDUMPTYPE enmType,
+                          const char *pszPrefix)
 {
+    NOREF(pVM);
+
     /*
      * Format the EFLAGS.
      */
@@ -2650,12 +2656,14 @@ static DECLCALLBACK(void) cpumR3InfoGuest(PVM pVM, PCDBGFINFOHLP pHlp, const cha
  */
 static DECLCALLBACK(void) cpumR3InfoGuestInstr(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszArgs)
 {
-    char szInstruction[256];
-    /* @todo SMP support! */
+    NOREF(pszArgs);
+
+    /** @todo SMP support! */
     PVMCPU pVCpu = VMMGetCpu(pVM);
     if (!pVCpu)
         pVCpu = &pVM->aCpus[0];
 
+    char szInstruction[256];
     int rc = DBGFR3DisasInstrCurrent(pVCpu, szInstruction, sizeof(szInstruction));
     if (RT_SUCCESS(rc))
         pHlp->pfnPrintf(pHlp, "\nCPUM: %s\n\n", szInstruction);

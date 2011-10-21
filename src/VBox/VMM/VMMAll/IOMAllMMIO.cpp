@@ -278,6 +278,7 @@ DECLINLINE(int) iomRamRead(PVMCPU pVCpu, void *pDest, RTGCPTR GCSrc, uint32_t cb
     /* Note: This will fail in R0 or RC if it hits an access handler. That
              isn't a problem though since the operation can be restarted in REM. */
 #ifdef IN_RC
+    NOREF(pVCpu);
     return MMGCRamReadNoTrapHandler(pDest, (void *)(uintptr_t)GCSrc, cb);
 #else
     return PGMPhysReadGCPtr(pVCpu, pDest, GCSrc, cb);
@@ -1385,6 +1386,7 @@ DECLCALLBACK(int) IOMR3MMIOHandler(PVM pVM, RTGCPHYS GCPhysFault, void *pvPhys, 
 
     AssertMsg(cbBuf == 1 || cbBuf == 2 || cbBuf == 4 || cbBuf == 8, ("%zu\n", cbBuf));
     AssertPtr(pRange);
+    NOREF(pvPhys);
 
     /*
      * Validate the range.

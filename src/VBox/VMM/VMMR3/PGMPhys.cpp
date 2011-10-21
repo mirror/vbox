@@ -1128,7 +1128,7 @@ VMMR3DECL(int) PGMR3PhysChangeMemBalloon(PVM pVM, bool fInflate, unsigned cPages
 static DECLCALLBACK(VBOXSTRICTRC) pgmR3PhysWriteProtectRAMRendezvous(PVM pVM, PVMCPU pVCpu, void *pvUser)
 {
     int rc = VINF_SUCCESS;
-    NOREF(pvUser);
+    NOREF(pvUser); NOREF(pVCpu);
 
     pgmLock(pVM);
 #ifdef PGMPOOL_WITH_OPTIMIZED_DIRTY_PT
@@ -1331,9 +1331,11 @@ VMMR3DECL(int) PGMR3PhysGetRange(PVM pVM, uint32_t iRange, PRTGCPHYS pGCPhysStar
             if (pGCPhysStart)
                 *pGCPhysStart = pCur->GCPhys;
             if (pGCPhysLast)
-                *pGCPhysLast = pCur->GCPhysLast;
+                *pGCPhysLast  = pCur->GCPhysLast;
+            if (ppszDesc)
+                *ppszDesc     = pCur->pszDesc;
             if (pfIsMmio)
-                *pfIsMmio = !!(pCur->fFlags & PGM_RAM_RANGE_FLAGS_AD_HOC_MMIO);
+                *pfIsMmio     = !!(pCur->fFlags & PGM_RAM_RANGE_FLAGS_AD_HOC_MMIO);
 
             pgmUnlock(pVM);
             return VINF_SUCCESS;
@@ -2939,6 +2941,7 @@ VMMR3DECL(int) PGMR3PhysMMIO2MapKernel(PVM pVM, PPDMDEVINS pDevIns, uint32_t iRe
     AssertReturn(off < pCur->RamRange.cb, VERR_INVALID_PARAMETER);
     AssertReturn(cb <= pCur->RamRange.cb, VERR_INVALID_PARAMETER);
     AssertReturn(off + cb <= pCur->RamRange.cb, VERR_INVALID_PARAMETER);
+    NOREF(pszDesc);
 
     /*
      * Pass the request on to the support library/driver.
@@ -3366,6 +3369,7 @@ static DECLCALLBACK(int) pgmR3PhysRomWriteHandler(PVM pVM, RTGCPHYS GCPhys, void
     Assert(iPage < (pRom->cb >> PAGE_SHIFT));
     PPGMROMPAGE     pRomPage = &pRom->aPages[iPage];
     Log5(("pgmR3PhysRomWriteHandler: %d %c %#08RGp %#04zx\n", pRomPage->enmProt, enmAccessType == PGMACCESSTYPE_READ ? 'R' : 'W', GCPhys, cbBuf));
+    NOREF(pvPhys);
 
     if (enmAccessType == PGMACCESSTYPE_READ)
     {
@@ -3710,6 +3714,8 @@ static DECLCALLBACK(int) pgmR3PhysChunkAgeingRolloverCallback(PAVLU32NODECORE pN
         pChunk->iLastUsed = 1;
     else /* iLastUsed = 0 */
         pChunk->iLastUsed = 4;
+
+    NOREF(pvUser);
     return 0;
 }
 
@@ -3818,10 +3824,11 @@ static int32_t pgmR3PhysChunkFindUnmapCandidate(PVM pVM)
  * @param   pvUser      User pointer. Unused
  *
  */
-DECLCALLBACK(VBOXSTRICTRC) pgmR3PhysUnmapChunkRendezvous(PVM pVM, PVMCPU pVCpu, void *pvUser)
+static DECLCALLBACK(VBOXSTRICTRC) pgmR3PhysUnmapChunkRendezvous(PVM pVM, PVMCPU pVCpu, void *pvUser)
 {
     int rc = VINF_SUCCESS;
     pgmLock(pVM);
+    NOREF(pVCpu); NOREF(pvUser);
 
     if (pVM->pgm.s.ChunkR3Map.c >= pVM->pgm.s.ChunkR3Map.cMax)
     {

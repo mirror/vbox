@@ -502,17 +502,6 @@ VMMR3DECL(void) MMR3TermUVM(PUVM pUVM)
 
 
 /**
- * Reset notification.
- *
- * @param   pVM             The VM handle.
- */
-VMMR3DECL(void) MMR3Reset(PVM pVM)
-{
-    /* nothing to do anylonger. */
-}
-
-
-/**
  * Execute state save operation.
  *
  * @returns VBox status code.

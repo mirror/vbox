@@ -1440,6 +1440,7 @@ VMMR3DECL(int) PGMR3MapRead(PVM pVM, void *pvDst, RTGCPTR GCPtrSrc, size_t cb)
  */
 DECLCALLBACK(void) pgmR3MapInfo(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszArgs)
 {
+    NOREF(pszArgs);
     if (pVM->pgm.s.fMappingsDisabled)
         pHlp->pfnPrintf(pHlp, "\nThe mappings are DISABLED.\n");
     else if (pVM->pgm.s.fMappingsFixed)

@@ -38,7 +38,7 @@ DECLINLINE(VBOXSTRICTRC) iemHlpCheckPortIOPermission(PIEMCPU pIemCpu, PCCPUMCTX 
         && (    pIemCpu->uCpl > pCtx->eflags.Bits.u2IOPL
             ||  pCtx->eflags.Bits.u1VM) )
     {
-        /** @todo I/O port permission bitmap check */
+        NOREF(u16Port); NOREF(cbOperand); /** @todo I/O port permission bitmap check */
         AssertFailedReturn(VERR_NOT_IMPLEMENTED);
     }
     return VINF_SUCCESS;
@@ -734,6 +734,7 @@ IEM_CIMPL_DEF_1(iemCImpl_call_rel_64, int64_t, offDisp)
 IEM_CIMPL_DEF_3(iemCImpl_FarJmp, uint16_t, uSel, uint32_t, offSeg, IEMMODE, enmEffOpSize)
 {
     PCPUMCTX pCtx = pIemCpu->CTX_SUFF(pCtx);
+    NOREF(cbInstr);
 
     /*
      * Real mode and V8086 mode are easy.  The only snag seems to be that
@@ -994,6 +995,7 @@ IEM_CIMPL_DEF_2(iemCImpl_retf, IEMMODE, enmEffOpSize, uint16_t, cbPop)
     PCPUMCTX        pCtx = pIemCpu->CTX_SUFF(pCtx);
     VBOXSTRICTRC    rcStrict;
     uint64_t        uNewRsp;
+    NOREF(cbInstr);
 
     /*
      * Real mode and V8086 mode are easy.
@@ -1058,6 +1060,7 @@ IEM_CIMPL_DEF_2(iemCImpl_retf, IEMMODE, enmEffOpSize, uint16_t, cbPop)
 IEM_CIMPL_DEF_2(iemCImpl_retn, IEMMODE, enmEffOpSize, uint16_t, cbPop)
 {
     PCPUMCTX        pCtx = pIemCpu->CTX_SUFF(pCtx);
+    NOREF(cbInstr);
 
     /* Fetch the RSP from the stack. */
     VBOXSTRICTRC    rcStrict;
@@ -1194,6 +1197,7 @@ IEM_CIMPL_DEF_2(iemCImpl_int, uint8_t, u8Int, bool, fIsBpInstr)
 IEM_CIMPL_DEF_1(iemCImpl_iret_real_v8086, IEMMODE, enmEffOpSize)
 {
     PCPUMCTX pCtx = pIemCpu->CTX_SUFF(pCtx);
+    NOREF(cbInstr);
 
     /*
      * iret throws an exception if VME isn't enabled.
@@ -1302,6 +1306,7 @@ IEM_CIMPL_DEF_1(iemCImpl_iret_real_v8086, IEMMODE, enmEffOpSize)
 IEM_CIMPL_DEF_1(iemCImpl_iret_prot, IEMMODE, enmEffOpSize)
 {
     PCPUMCTX pCtx = pIemCpu->CTX_SUFF(pCtx);
+    NOREF(cbInstr);
 
     /*
      * Nested task return.
@@ -1477,6 +1482,7 @@ IEM_CIMPL_DEF_1(iemCImpl_iret_long, IEMMODE, enmEffOpSize)
     //VBOXSTRICTRC    rcStrict;
     //uint64_t        uNewRsp;
 
+    NOREF(pIemCpu); NOREF(cbInstr); NOREF(enmEffOpSize);
     return VERR_NOT_IMPLEMENTED;
 }
 
@@ -3028,7 +3034,8 @@ IEM_CIMPL_DEF_1(iemCImpl_finit, bool, fCheckXcpts)
 
     if (pCtx->cr0 & (X86_CR0_EM | X86_CR0_TS))
         return iemRaiseDeviceNotAvailable(pIemCpu);
-    /** @todo trigger pending exceptions:
+
+    NOREF(fCheckXcpts); /** @todo trigger pending exceptions:
         if (fCheckXcpts && TODO )
         return iemRaiseMathFault(pIemCpu);
      */

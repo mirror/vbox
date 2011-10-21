@@ -664,6 +664,7 @@ static DECLCALLBACK(int) vmR3HaltGlobal1Halt(PUVMCPU pUVCpu, const uint32_t fMas
     PVMCPU  pVCpu = pUVCpu->pVCpu;
     PVM     pVM   = pUVCpu->pVM;
     Assert(VMMGetCpu(pVM) == pVCpu);
+    NOREF(u64Now);
 
     /*
      * Halt loop.

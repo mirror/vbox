@@ -104,6 +104,7 @@ VMMR0DECL(int) VMXR0EnableCpu(PHMGLOBLCPUINFO pCpu, PVM pVM, void *pvCpuPage, RT
 {
     AssertReturn(HCPhysCpuPage != 0 && HCPhysCpuPage != NIL_RTHCPHYS, VERR_INVALID_PARAMETER);
     AssertReturn(pvCpuPage, VERR_INVALID_PARAMETER);
+    NOREF(pCpu);
 
     if (pVM)
     {
@@ -143,6 +144,7 @@ VMMR0DECL(int) VMXR0DisableCpu(PHMGLOBLCPUINFO pCpu, void *pvCpuPage, RTHCPHYS H
 {
     AssertReturn(HCPhysCpuPage != 0 && HCPhysCpuPage != NIL_RTHCPHYS, VERR_INVALID_PARAMETER);
     AssertReturn(pvCpuPage, VERR_INVALID_PARAMETER);
+    NOREF(pCpu);
 
     /* If we're somehow not in VMX root mode, then we shouldn't dare leaving it. */
     if (!(ASMGetCR4() & X86_CR4_VMXE))
@@ -998,6 +1000,7 @@ static int hmR0VmxCheckPendingInterrupt(PVM pVM, PVMCPU pVCpu, CPUMCTX *pCtx)
 VMMR0DECL(int) VMXR0SaveHostState(PVM pVM, PVMCPU pVCpu)
 {
     int rc = VINF_SUCCESS;
+    NOREF(pVM);
 
     /*
      * Host CPU Context
@@ -4292,6 +4295,7 @@ end:
 VMMR0DECL(int) VMXR0Enter(PVM pVM, PVMCPU pVCpu, PHMGLOBLCPUINFO pCpu)
 {
     Assert(pVM->hwaccm.s.vmx.fSupported);
+    NOREF(pCpu);
 
     unsigned cr4 = ASMGetCR4();
     if (!(cr4 & X86_CR4_VMXE))
@@ -4470,6 +4474,8 @@ VMMR0DECL(int) VMXR0InvalidatePhysPage(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCPhys)
  */
 static void hmR0VmxReportWorldSwitchError(PVM pVM, PVMCPU pVCpu, VBOXSTRICTRC rc, PCPUMCTX pCtx)
 {
+    NOREF(pVM);
+
     switch (VBOXSTRICTRC_VAL(rc))
     {
     case VERR_VMX_INVALID_VMXON_PTR:

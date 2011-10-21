@@ -238,6 +238,7 @@ void dbgfR3AsTerm(PVM pVM)
 void dbgfR3AsRelocate(PVM pVM, RTGCUINTPTR offDelta)
 {
     /** @todo */
+    NOREF(pVM); NOREF(offDelta);
 }
 
 
@@ -270,8 +271,8 @@ VMMR3DECL(int) DBGFR3AsAdd(PVM pVM, RTDBGAS hDbgAs, RTPROCESS ProcId)
     PDBGFASDBNODE pDbNode = (PDBGFASDBNODE)MMR3HeapAlloc(pVM, MM_TAG_DBGF_AS, sizeof(*pDbNode));
     if (pDbNode)
     {
-        pDbNode->HandleCore.Key = hDbgAs;
-        pDbNode->PidCore.Key = NIL_RTPROCESS;
+        pDbNode->HandleCore.Key     = hDbgAs;
+        pDbNode->PidCore.Key        = ProcId;
         pDbNode->NameCore.pszString = pszName;
         pDbNode->NameCore.cchString = strlen(pszName);
         DBGF_AS_DB_LOCK_WRITE(pVM);
@@ -378,7 +379,7 @@ VMMR3DECL(int) DBGFR3AsSetAlias(PVM pVM, RTDBGAS hAlias, RTDBGAS hAliasFor)
     VM_ASSERT_VALID_EXT_RETURN(pVM, VERR_INVALID_VM_HANDLE);
     AssertMsgReturn(DBGF_AS_IS_ALIAS(hAlias), ("%p\n", hAlias), VERR_INVALID_PARAMETER);
     AssertMsgReturn(!DBGF_AS_IS_FIXED_ALIAS(hAlias), ("%p\n", hAlias), VERR_INVALID_PARAMETER);
-    RTDBGAS hRealAliasFor = DBGFR3AsResolveAndRetain(pVM, hAlias);
+    RTDBGAS hRealAliasFor = DBGFR3AsResolveAndRetain(pVM, hAliasFor);
     if (hRealAliasFor == NIL_RTDBGAS)
         return VERR_INVALID_HANDLE;
 
@@ -410,6 +411,8 @@ VMMR3DECL(int) DBGFR3AsSetAlias(PVM pVM, RTDBGAS hAlias, RTDBGAS hAliasFor)
 static DECLCALLBACK(int) dbgfR3AsLazyPopulateR0Callback(PVM pVM, const char *pszFilename, const char *pszName,
                                                         RTUINTPTR ImageBase, size_t cbImage, bool fRC, void *pvArg)
 {
+    NOREF(pVM); NOREF(cbImage);
+
     /* Only ring-0 modules. */
     if (!fRC)
     {

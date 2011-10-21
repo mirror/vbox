@@ -107,6 +107,7 @@ VMMR0DECL(int) SVMR0DisableCpu(PHMGLOBLCPUINFO pCpu, void *pvCpuPage, RTHCPHYS H
 {
     AssertReturn(HCPhysCpuPage != 0 && HCPhysCpuPage != NIL_RTHCPHYS, VERR_INVALID_PARAMETER);
     AssertReturn(pvCpuPage, VERR_INVALID_PARAMETER);
+    NOREF(pCpu);
 
     /* Turn off AMD-V in the EFER MSR. */
     uint64_t fEfer = ASMRdMsr(MSR_K6_EFER);
@@ -480,6 +481,7 @@ DECLINLINE(void) hmR0SvmInjectEvent(PVMCPU pVCpu, SVM_VMCB *pVMCB, CPUMCTX *pCtx
 static int hmR0SvmCheckPendingInterrupt(PVM pVM, PVMCPU pVCpu, SVM_VMCB *pVMCB, CPUMCTX *pCtx)
 {
     int rc;
+    NOREF(pVM);
 
     /* Dispatch any pending interrupts. (injected before, but a VM exit occurred prematurely) */
     if (pVCpu->hwaccm.s.Event.fPending)
@@ -2690,6 +2692,7 @@ static int hmR0svmInterpretInvlPg(PVMCPU pVCpu, PDISCPUSTATE pCpu, PCPUMCTXCORE 
 {
     OP_PARAMVAL param1;
     RTGCPTR     addr;
+    NOREF(uASID);
 
     int rc = DISQueryParamVal(pRegFrame, pCpu, &pCpu->param1, &param1, PARAM_SOURCE);
     if(RT_FAILURE(rc))

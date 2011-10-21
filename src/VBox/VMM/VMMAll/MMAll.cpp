@@ -258,7 +258,7 @@ DECLINLINE(RTR0PTR) mmHyperLookupCalcR0(PVM pVM, PMMLOOKUPHYPER pLookup, uint32_
 #ifdef VBOX_WITH_2X_4GB_ADDR_SPACE
             AssertMsg(!VMMIsHwVirtExtForced(pVM), ("%s\n", R3STRING(pLookup->pszDesc)));
 #else
-            AssertMsgFailed(("%s\n", R3STRING(pLookup->pszDesc)));
+            AssertMsgFailed(("%s\n", R3STRING(pLookup->pszDesc))); NOREF(pVM);
 #endif
             return NIL_RTR0PTR;
 
@@ -304,6 +304,7 @@ DECLINLINE(void *) mmHyperLookupCalcCC(PVM pVM, PMMLOOKUPHYPER pLookup, uint32_t
 #elif defined(IN_RING0)
     return mmHyperLookupCalcR0(pVM, pLookup, off);
 #else
+    NOREF(pVM);
     return mmHyperLookupCalcR3(pLookup, off);
 #endif
 }

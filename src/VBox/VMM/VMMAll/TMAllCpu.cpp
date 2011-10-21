@@ -83,11 +83,10 @@ int tmCpuTickResume(PVM pVM, PVMCPU pVCpu)
  * Pauses the CPU timestamp counter ticking.
  *
  * @returns VBox status code.
- * @param   pVM         The VM to operate on.
  * @param   pVCpu       The VMCPU to operate on.
  * @internal
  */
-int tmCpuTickPause(PVM pVM, PVMCPU pVCpu)
+int tmCpuTickPause(PVMCPU pVCpu)
 {
     if (pVCpu->tm.s.fTSCTicking)
     {

@@ -1539,6 +1539,8 @@ static void pgmR3ScanRamPages(PVM pVM, bool fFinalPass)
  */
 static int pgmR3SaveRamPages(PVM pVM, PSSMHANDLE pSSM, bool fLiveSave, uint32_t uPass)
 {
+    NOREF(fLiveSave);
+
     /*
      * The RAM.
      */
@@ -2040,6 +2042,8 @@ static DECLCALLBACK(int) pgmR3LivePrep(PVM pVM, PSSMHANDLE pSSM)
         rc = pgmR3PrepMmio2Pages(pVM);
     if (RT_SUCCESS(rc))
         rc = pgmR3PrepRamPages(pVM);
+
+    NOREF(pSSM);
     return rc;
 }
 
@@ -2143,6 +2147,7 @@ static DECLCALLBACK(int) pgmR3SaveDone(PVM pVM, PSSMHANDLE pSSM)
     pVM->pgm.s.fPhysWriteMonitoringEngaged = false;
     pgmUnlock(pVM);
 
+    NOREF(pSSM);
     return VINF_SUCCESS;
 }
 
@@ -2592,6 +2597,8 @@ static int pgmR3LoadMemoryOld(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion)
  */
 static int pgmR3LoadMemory(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass)
 {
+    NOREF(uPass);
+
     /*
      * Process page records until we hit the terminator.
      */

@@ -171,20 +171,21 @@ static int emR3SingleStepExecHwAcc(PVM pVM, PVMCPU pVCpu, uint32_t cIterations)
  *
  * @param   pVM         VM handle.
  * @param   pVCpu       VMCPU handle
- * @param   rcGC        GC return code
+ * @param   rcRC        Return code from RC.
  * @param   pszPrefix   Disassembly prefix. If not NULL we'll disassemble the
  *                      instruction and prefix the log output with this text.
  */
 #ifdef LOG_ENABLED
-static int emR3ExecuteInstructionWorker(PVM pVM, PVMCPU pVCpu, int rcGC, const char *pszPrefix)
+static int emR3ExecuteInstructionWorker(PVM pVM, PVMCPU pVCpu, int rcRC, const char *pszPrefix)
 #else
-static int emR3ExecuteInstructionWorker(PVM pVM, PVMCPU pVCpu, int rcGC)
+static int emR3ExecuteInstructionWorker(PVM pVM, PVMCPU pVCpu, int rcRC)
 #endif
 {
 #ifdef LOG_ENABLED
     PCPUMCTX pCtx = pVCpu->em.s.pCtx;
 #endif
     int      rc;
+    NOREF(rcRC);
 
     /*
      *

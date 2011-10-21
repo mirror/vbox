@@ -98,6 +98,8 @@ DECL_FORCE_INLINE(int) pdmCritSectEnterFirst(PPDMCRITSECT pCritSect, RTNATIVETHR
 
 # ifdef PDMCRITSECT_STRICT
     RTLockValidatorRecExclSetOwner(pCritSect->s.Core.pValidatorRec, NIL_RTTHREAD, pSrcPos, true);
+# else
+    NOREF(pSrcPos);
 # endif
 
     STAM_PROFILE_ADV_START(&pCritSect->s.StatLocked, l);
@@ -234,6 +236,7 @@ DECL_FORCE_INLINE(int) pdmCritSectEnter(PPDMCRITSECT pCritSect, int rcBusy, PCRT
     /*
      * Take the slow path.
      */
+    NOREF(rcBusy);
     return pdmR3R0CritSectEnterContended(pCritSect, hNativeSelf, pSrcPos);
 
 #else
@@ -354,6 +357,7 @@ VMMDECL(int) PDMCritSectEnterDebug(PPDMCRITSECT pCritSect, int rcBusy, RTHCUINTP
     RTLOCKVALSRCPOS SrcPos = RTLOCKVALSRCPOS_INIT_DEBUG_API();
     return pdmCritSectEnter(pCritSect, rcBusy, &SrcPos);
 #else
+    NOREF(uId); RT_SRC_POS_NOREF();
     return pdmCritSectEnter(pCritSect, rcBusy, NULL);
 #endif
 }
@@ -458,6 +462,7 @@ VMMDECL(int) PDMCritSectTryEnterDebug(PPDMCRITSECT pCritSect, RTHCUINTPTR uId, R
     RTLOCKVALSRCPOS SrcPos = RTLOCKVALSRCPOS_INIT_DEBUG_API();
     return pdmCritSectTryEnter(pCritSect, &SrcPos);
 #else
+    NOREF(uId); RT_SRC_POS_NOREF();
     return pdmCritSectTryEnter(pCritSect, NULL);
 #endif
 }

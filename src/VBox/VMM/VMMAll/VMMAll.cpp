@@ -89,6 +89,7 @@ VMMDECL(VMCPUID) VMMGetCpuId(PVM pVM)
     return NIL_VMCPUID;
 
 #else /* RC: Always EMT(0) */
+    NOREF(pVM);
     return 0;
 #endif
 }

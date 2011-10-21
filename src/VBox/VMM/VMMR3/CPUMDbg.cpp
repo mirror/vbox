@@ -107,6 +107,7 @@ static DECLCALLBACK(int) cpumR3RegSet_Generic(void *pvUser, PCDBGFREGDESC pDesc,
 static DECLCALLBACK(int) cpumR3RegSet_seg(void *pvUser, PCDBGFREGDESC pDesc, PCDBGFREGVAL pValue, PCDBGFREGVAL pfMask)
 {
     /** @todo perform a selector load, updating hidden selectors and stuff. */
+    NOREF(pvUser); NOREF(pDesc); NOREF(pValue); NOREF(pfMask);
     return VERR_NOT_IMPLEMENTED;
 }
 
@@ -133,6 +134,7 @@ static DECLCALLBACK(int) cpumR3RegGet_gdtr(void *pvUser, PCDBGFREGDESC pDesc, PD
  */
 static DECLCALLBACK(int) cpumR3RegSet_gdtr(void *pvUser, PCDBGFREGDESC pDesc, PCDBGFREGVAL pValue, PCDBGFREGVAL pfMask)
 {
+    NOREF(pvUser); NOREF(pDesc); NOREF(pValue); NOREF(pfMask);
     return VERR_NOT_IMPLEMENTED;
 }
 
@@ -159,6 +161,7 @@ static DECLCALLBACK(int) cpumR3RegGet_idtr(void *pvUser, PCDBGFREGDESC pDesc, PD
  */
 static DECLCALLBACK(int) cpumR3RegSet_idtr(void *pvUser, PCDBGFREGDESC pDesc, PCDBGFREGVAL pValue, PCDBGFREGVAL pfMask)
 {
+    NOREF(pvUser); NOREF(pDesc); NOREF(pValue); NOREF(pfMask);
     return VERR_NOT_IMPLEMENTED;
 }
 
@@ -172,6 +175,7 @@ static DECLCALLBACK(int) cpumR3RegSet_idtr(void *pvUser, PCDBGFREGDESC pDesc, PC
 DECLINLINE(bool) cpumR3RegIsFxSaveFormat(PVMCPU pVCpu)
 {
 #ifdef RT_ARCH_AMD64
+    NOREF(pVCpu);
     return true;
 #else
     return pVCpu->pVMR3->cpum.s.CPUFeatures.edx.u1FXSR;
@@ -247,6 +251,7 @@ static DECLCALLBACK(int) cpumR3RegGet_ftw(void *pvUser, PCDBGFREGDESC pDesc, PDB
  */
 static DECLCALLBACK(int) cpumR3RegSet_ftw(void *pvUser, PCDBGFREGDESC pDesc, PCDBGFREGVAL pValue, PCDBGFREGVAL pfMask)
 {
+    NOREF(pvUser); NOREF(pDesc); NOREF(pValue); NOREF(pfMask);
     return VERR_DBGF_READ_ONLY_REGISTER;
 }
 
@@ -520,6 +525,7 @@ static DECLCALLBACK(int) cpumR3RegGstGet_stN(void *pvUser, PCDBGFREGDESC pDesc, 
  */
 static DECLCALLBACK(int) cpumR3RegGstSet_stN(void *pvUser, PCDBGFREGDESC pDesc, PCDBGFREGVAL pValue, PCDBGFREGVAL pfMask)
 {
+    NOREF(pvUser); NOREF(pDesc); NOREF(pValue); NOREF(pfMask);
     return VERR_NOT_IMPLEMENTED;
 }
 
@@ -567,6 +573,7 @@ static DECLCALLBACK(int) cpumR3RegHyperGet_crX(void *pvUser, PCDBGFREGDESC pDesc
 static DECLCALLBACK(int) cpumR3RegHyperSet_crX(void *pvUser, PCDBGFREGDESC pDesc, PCDBGFREGVAL pValue, PCDBGFREGVAL pfMask)
 {
     /* Not settable, prevents killing your host. */
+    NOREF(pvUser); NOREF(pDesc); NOREF(pValue); NOREF(pfMask);
     return VERR_ACCESS_DENIED;
 }
 
@@ -608,6 +615,7 @@ static DECLCALLBACK(int) cpumR3RegHyperGet_drX(void *pvUser, PCDBGFREGDESC pDesc
 static DECLCALLBACK(int) cpumR3RegHyperSet_drX(void *pvUser, PCDBGFREGDESC pDesc, PCDBGFREGVAL pValue, PCDBGFREGVAL pfMask)
 {
     /* Not settable, prevents killing your host. */
+    NOREF(pvUser); NOREF(pDesc); NOREF(pValue); NOREF(pfMask);
     return VERR_ACCESS_DENIED;
 }
 
@@ -617,6 +625,8 @@ static DECLCALLBACK(int) cpumR3RegHyperSet_drX(void *pvUser, PCDBGFREGDESC pDesc
  */
 static DECLCALLBACK(int) cpumR3RegHyperGet_msr(void *pvUser, PCDBGFREGDESC pDesc, PDBGFREGVAL pValue)
 {
+    NOREF(pvUser);
+
     /* Not availble at present, return all FFs to keep things quiet */
     uint64_t u64Value = UINT64_MAX;
     switch (pDesc->enmType)
@@ -680,6 +690,7 @@ static DECLCALLBACK(int) cpumR3RegHyperGet_stN(void *pvUser, PCDBGFREGDESC pDesc
 static DECLCALLBACK(int) cpumR3RegHyperSet_stN(void *pvUser, PCDBGFREGDESC pDesc, PCDBGFREGVAL pValue, PCDBGFREGVAL pfMask)
 {
     /* There isn't a FPU context for the hypervisor yet, so no point in trying to set stuff. */
+    NOREF(pvUser); NOREF(pDesc); NOREF(pValue); NOREF(pfMask);
     return VERR_ACCESS_DENIED;
 }
 

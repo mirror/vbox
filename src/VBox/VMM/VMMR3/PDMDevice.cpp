@@ -1050,6 +1050,8 @@ VMMR3DECL(int)  PDMR3DriverReattach(PVM pVM, const char *pszDevice, unsigned iDe
                                     const char *pszDriver, unsigned iOccurance, uint32_t fFlags,
                                     PCFGMNODE pCfg, PPPDMIBASE ppBase)
 {
+    NOREF(pVM); NOREF(pszDevice); NOREF(iDevIns); NOREF(iLun); NOREF(pszDriver); NOREF(iOccurance);
+    NOREF(fFlags); NOREF(pCfg); NOREF(ppBase);
     return VERR_NOT_IMPLEMENTED;
 }
 

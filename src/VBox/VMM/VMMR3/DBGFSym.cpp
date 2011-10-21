@@ -559,6 +559,8 @@ static int dbgfR3LoadLinuxSystemMap(PVM pVM, FILE *pFile, RTGCUINTPTR ModuleAddr
  */
 int dbgfR3ModuleLocateAndOpen(PVM pVM, const char *pszFilename, char *pszFound, size_t cchFound, FILE **ppFile)
 {
+    NOREF(pVM);
+
     /* Check the filename length. */
     size_t const    cchFilename = strlen(pszFilename);
     if (cchFilename >= cchFound)
@@ -639,8 +641,11 @@ int dbgfR3ModuleLocateAndOpen(PVM pVM, const char *pszFilename, char *pszFound, 
  * @param   cbImage         Size of the image.
  *                          Ignored when pszName is NULL.
  */
-VMMR3DECL(int) DBGFR3ModuleLoad(PVM pVM, const char *pszFilename, RTGCUINTPTR AddressDelta, const char *pszName, RTGCUINTPTR ModuleAddress, unsigned cbImage)
+VMMR3DECL(int) DBGFR3ModuleLoad(PVM pVM, const char *pszFilename, RTGCUINTPTR AddressDelta, const char *pszName,
+                                RTGCUINTPTR ModuleAddress, unsigned cbImage)
 {
+    NOREF(cbImage);
+
     /*
      * Lazy init.
      */
@@ -760,7 +765,7 @@ VMMR3DECL(void) DBGFR3ModuleRelocate(PVM pVM, RTGCUINTPTR OldImageBase, RTGCUINT
             Log(("Reloaded debuginfo for %s - %s %llx\n", pszName, pszFilename, LoadedImageBase));
     }
 #else
-
+    NOREF(pVM); NOREF(OldImageBase); NOREF(NewImageBase); NOREF(cbImage); NOREF(pszFilename); NOREF(pszName);
 #endif
 }
 
@@ -775,7 +780,8 @@ VMMR3DECL(void) DBGFR3ModuleRelocate(PVM pVM, RTGCUINTPTR OldImageBase, RTGCUINT
  * @param   cbSymbol        Size of the symbol. Use 0 if info not available.
  * @param   pszSymbol       Symbol name.
  */
-VMMR3DECL(int) DBGFR3SymbolAdd(PVM pVM, RTGCUINTPTR ModuleAddress, RTGCUINTPTR SymbolAddress, RTUINT cbSymbol, const char *pszSymbol)
+VMMR3DECL(int) DBGFR3SymbolAdd(PVM pVM, RTGCUINTPTR ModuleAddress, RTGCUINTPTR SymbolAddress, RTUINT cbSymbol,
+                               const char *pszSymbol)
 {
     /*
      * Validate.
@@ -801,7 +807,7 @@ VMMR3DECL(int) DBGFR3SymbolAdd(PVM pVM, RTGCUINTPTR ModuleAddress, RTGCUINTPTR S
         return VINF_SUCCESS;
     return win32Error(pVM);
 #else
-    /** @todo module lookup. */
+    NOREF(ModuleAddress); /** @todo module lookup. */
     return dbgfR3SymbolInsert(pVM, pszSymbol, SymbolAddress, cbSymbol, NULL);
 #endif
 }
@@ -992,6 +998,7 @@ VMMR3DECL(int) DBGFR3LineByAddr(PVM pVM, RTGCUINTPTR Address, PRTGCINTPTR poffDi
     }
     return win32Error(pVM);
 #else
+    NOREF(pVM); NOREF(Address); NOREF(poffDisplacement); NOREF(pLine);
     return VERR_NOT_IMPLEMENTED;
 #endif
 }

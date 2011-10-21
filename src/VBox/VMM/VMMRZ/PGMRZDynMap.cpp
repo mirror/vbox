@@ -1527,6 +1527,8 @@ DECLINLINE(uint32_t) pgmR0DynMapPage(PPGMRZDYNMAP pThis, RTHCPHYS HCPhys, int32_
     bool fInvalidateIt = RTCpuSetIsMemberByIndex(&paPages[iPage].PendingSet, iRealCpu);
     if (RT_UNLIKELY(fInvalidateIt))
         RTCpuSetDelByIndex(&paPages[iPage].PendingSet, iRealCpu);
+#else
+    NOREF(iRealCpu);
 #endif
 
     PGMRZDYNMAP_SPINLOCK_RELEASE(pThis);

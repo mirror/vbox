@@ -894,7 +894,7 @@ DECLINLINE(void) pdmR3QueueFree(PPDMQUEUE pQueue, PPDMQUEUEITEMCORE pItem)
 static DECLCALLBACK(void) pdmR3QueueTimer(PVM pVM, PTMTIMER pTimer, void *pvUser)
 {
     PPDMQUEUE pQueue = (PPDMQUEUE)pvUser;
-    Assert(pTimer == pQueue->pTimer); NOREF(pTimer);
+    Assert(pTimer == pQueue->pTimer); NOREF(pTimer); NOREF(pVM);
 
     if (   pQueue->pPendingR3
         || pQueue->pPendingR0

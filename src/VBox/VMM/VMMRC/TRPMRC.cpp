@@ -114,6 +114,7 @@ VMMRCDECL(int) trpmRCGuestIDTWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTX
 
     AssertMsg(offRange < (uint32_t)cbIDT+1, ("pvFault=%RGv GCPtrIDT=%RGv-%RGv pvRange=%RGv\n", pvFault, GCPtrIDT, GCPtrIDTEnd, pvRange));
     Assert((RTGCPTR)(RTRCUINTPTR)pvRange == GCPtrIDT);
+    NOREF(uErrorCode);
 
 #if 0
     /* Note! this causes problems in Windows XP as instructions following the update can be dangerous (str eax has been seen) */
@@ -168,6 +169,7 @@ VMMRCDECL(int) trpmRCShadowIDTWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCT
 {
     PVMCPU pVCpu = VMMGetCpu0(pVM);
     LogRel(("FATAL ERROR: trpmRCShadowIDTWriteHandler: eip=%08X pvFault=%RGv pvRange=%08X\r\n", pRegFrame->eip, pvFault, pvRange));
+    NOREF(uErrorCode); NOREF(offRange);
 
     /* If we ever get here, then the guest has executed an sidt instruction that we failed to patch. In theory this could be very bad, but
      * there are nasty applications out there that install device drivers that mess with the guest's IDT. In those cases, it's quite ok

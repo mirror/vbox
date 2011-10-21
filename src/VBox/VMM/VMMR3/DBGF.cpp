@@ -740,6 +740,8 @@ static int dbgfR3VMMCmd(PVM pVM, DBGFCMD enmCmd, PDBGFCMDDATA pCmdData, bool *pf
     bool    fResume;
     int     rc = VINF_SUCCESS;
 
+    NOREF(pCmdData); /* for later */
+
     switch (enmCmd)
     {
         /*

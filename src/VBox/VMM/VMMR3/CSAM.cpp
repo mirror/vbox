@@ -454,6 +454,7 @@ VMMR3DECL(int) CSAMR3Reset(PVM pVM)
  */
 static DECLCALLBACK(int) CountRecord(PAVLPVNODECORE pNode, void *pcPatches)
 {
+    NOREF(pNode);
     *(uint32_t *)pcPatches = *(uint32_t *)pcPatches + 1;
     return VINF_SUCCESS;
 }
@@ -804,8 +805,9 @@ static int CSAMR3AnalyseCallback(PVM pVM, DISCPUSTATE *pCpu, RCPTRTYPE(uint8_t *
 {
     PCSAMPAGE pPage = (PCSAMPAGE)pUserData;
     int rc;
+    NOREF(pInstrGC);
 
-    switch(pCpu->pCurInstr->opcode)
+    switch (pCpu->pCurInstr->opcode)
     {
     case OP_INT:
         Assert(pCpu->param1.flags & USE_IMMEDIATE8);
@@ -2086,8 +2088,9 @@ static DECLCALLBACK(int) CSAMCodePageWriteHandler(PVM pVM, RTGCPTR GCPtr, void *
 {
     int rc;
 
-    Assert(enmAccessType == PGMACCESSTYPE_WRITE);
+    Assert(enmAccessType == PGMACCESSTYPE_WRITE); NOREF(enmAccessType);
     Log(("CSAMCodePageWriteHandler: write to %RGv size=%zu\n", GCPtr, cbBuf));
+    NOREF(pvUser);
 
     if (    PAGE_ADDRESS(pvPtr) == PAGE_ADDRESS((uintptr_t)pvPtr + cbBuf - 1)
          && !memcmp(pvPtr, pvBuf, cbBuf))
@@ -2097,9 +2100,7 @@ static DECLCALLBACK(int) CSAMCodePageWriteHandler(PVM pVM, RTGCPTR GCPtr, void *
     }
 
     if (VM_IS_EMT(pVM))
-    {
         rc = PATMR3PatchWrite(pVM, GCPtr, (uint32_t)cbBuf);
-    }
     else
     {
         /* Queue the write instead otherwise we'll get concurrency issues. */
@@ -2676,6 +2677,7 @@ VMMR3DECL(int) CSAMR3IsEnabled(PVM pVM)
 static DECLCALLBACK(int) csamr3CmdOff(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs)
 {
     DBGC_CMDHLP_REQ_VM_RET(pCmdHlp, pCmd, pVM);
+    NOREF(cArgs); NOREF(paArgs);
 
     int rc = CSAMDisableScanning(pVM);
     if (RT_FAILURE(rc))
@@ -2696,6 +2698,7 @@ static DECLCALLBACK(int) csamr3CmdOff(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM p
 static DECLCALLBACK(int) csamr3CmdOn(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs)
 {
     DBGC_CMDHLP_REQ_VM_RET(pCmdHlp, pCmd, pVM);
+    NOREF(cArgs); NOREF(paArgs);
 
     int rc = CSAMEnableScanning(pVM);
     if (RT_FAILURE(rc))

@@ -541,15 +541,17 @@ static DECLCALLBACK(void) pgmR3PoolFlushReusedPage(PPGMPOOL pPool, PPGMPOOLPAGE 
  * @param   enmAccessType   The access type.
  * @param   pvUser          User argument.
  */
-static DECLCALLBACK(int) pgmR3PoolAccessHandler(PVM pVM, RTGCPHYS GCPhys, void *pvPhys, void *pvBuf, size_t cbBuf, PGMACCESSTYPE enmAccessType, void *pvUser)
+static DECLCALLBACK(int) pgmR3PoolAccessHandler(PVM pVM, RTGCPHYS GCPhys, void *pvPhys, void *pvBuf, size_t cbBuf,
+                                                PGMACCESSTYPE enmAccessType, void *pvUser)
 {
     STAM_PROFILE_START(&pVM->pgm.s.pPoolR3->StatMonitorR3, a);
-    PPGMPOOL pPool = pVM->pgm.s.pPoolR3;
-    PPGMPOOLPAGE pPage = (PPGMPOOLPAGE)pvUser;
+    PPGMPOOL        pPool = pVM->pgm.s.pPoolR3;
+    PPGMPOOLPAGE    pPage = (PPGMPOOLPAGE)pvUser;
+    PVMCPU          pVCpu = VMMGetCpu(pVM);
     LogFlow(("pgmR3PoolAccessHandler: GCPhys=%RGp %p:{.Core=%RHp, .idx=%d, .GCPhys=%RGp, .enmType=%d}\n",
              GCPhys, pPage, pPage->Core.Key, pPage->idx, pPage->GCPhys, pPage->enmKind));
 
-    PVMCPU pVCpu = VMMGetCpu(pVM);
+    NOREF(pvBuf); NOREF(enmAccessType);
 
     /*
      * We don't have to be very sophisticated about this since there are relativly few calls here.
@@ -636,6 +638,7 @@ DECLCALLBACK(VBOXSTRICTRC) pgmR3PoolClearAllRendezvous(PVM pVM, PVMCPU pVCpu, vo
 {
     PPGMPOOL pPool = pVM->pgm.s.CTX_SUFF(pPool);
     STAM_PROFILE_START(&pPool->StatClearAll, c);
+    NOREF(pVCpu);
 
     pgmLock(pVM);
     Log(("pgmR3PoolClearAllRendezvous: cUsedPages=%d fpvFlushRemTbl=%RTbool\n", pPool->cUsedPages, !!fpvFlushRemTbl));
@@ -984,6 +987,7 @@ static DECLCALLBACK(int) pgmR3PoolCmdCheck(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, 
     DBGC_CMDHLP_REQ_VM_RET(pCmdHlp, pCmd, pVM);
     DBGC_CMDHLP_ASSERT_PARSER_RET(pCmdHlp, pCmd, -1, cArgs == 0);
     uint32_t cErrors = 0;
+    NOREF(paArgs);
 
     PPGMPOOL pPool = pVM->pgm.s.CTX_SUFF(pPool);
     for (unsigned i = 0; i < pPool->cCurPages; i++)

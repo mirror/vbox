@@ -69,6 +69,7 @@ DECLEXPORT(void) tmVirtualNanoTSBad(PRTTIMENANOTSDATA pData, uint64_t u64NanoTS,
  */
 DECLEXPORT(uint64_t) tmVirtualNanoTSRediscover(PRTTIMENANOTSDATA pData)
 {
+    NOREF(pData);
     //PVM pVM = (PVM)((uint8_t *)pData - RT_OFFSETOF(VM, CTXALLSUFF(s.tm.VirtualGetRawData)));
     PSUPGLOBALINFOPAGE pGip = g_pSUPGlobalInfoPage;
     AssertFatalMsgFailed(("pGip=%p u32Magic=%#x\n", pGip, VALID_PTR(pGip) ? pGip->u32Magic : 0));
@@ -954,6 +955,7 @@ VMM_INT_DECL(uint32_t) TMVirtualSyncGetCatchUpPct(PVM pVM)
  */
 VMM_INT_DECL(uint64_t) TMVirtualGetFreq(PVM pVM)
 {
+    NOREF(pVM);
     return TMCLOCK_FREQ_VIRTUAL;
 }
 
@@ -1011,6 +1013,7 @@ int tmVirtualResumeLocked(PVM pVM)
  */
 VMM_INT_DECL(uint64_t) TMVirtualToNano(PVM pVM, uint64_t u64VirtualTicks)
 {
+    NOREF(pVM);
     AssertCompile(TMCLOCK_FREQ_VIRTUAL == 1000000000);
     return u64VirtualTicks;
 }
@@ -1027,6 +1030,7 @@ VMM_INT_DECL(uint64_t) TMVirtualToNano(PVM pVM, uint64_t u64VirtualTicks)
  */
 VMM_INT_DECL(uint64_t) TMVirtualToMicro(PVM pVM, uint64_t u64VirtualTicks)
 {
+    NOREF(pVM);
     AssertCompile(TMCLOCK_FREQ_VIRTUAL == 1000000000);
     return u64VirtualTicks / 1000;
 }
@@ -1043,6 +1047,7 @@ VMM_INT_DECL(uint64_t) TMVirtualToMicro(PVM pVM, uint64_t u64VirtualTicks)
  */
 VMM_INT_DECL(uint64_t) TMVirtualToMilli(PVM pVM, uint64_t u64VirtualTicks)
 {
+    NOREF(pVM);
     AssertCompile(TMCLOCK_FREQ_VIRTUAL == 1000000000);
     return u64VirtualTicks / 1000000;
 }
@@ -1058,6 +1063,7 @@ VMM_INT_DECL(uint64_t) TMVirtualToMilli(PVM pVM, uint64_t u64VirtualTicks)
  */
 VMM_INT_DECL(uint64_t) TMVirtualFromNano(PVM pVM, uint64_t u64NanoTS)
 {
+    NOREF(pVM);
     AssertCompile(TMCLOCK_FREQ_VIRTUAL == 1000000000);
     return u64NanoTS;
 }
@@ -1073,6 +1079,7 @@ VMM_INT_DECL(uint64_t) TMVirtualFromNano(PVM pVM, uint64_t u64NanoTS)
  */
 VMM_INT_DECL(uint64_t) TMVirtualFromMicro(PVM pVM, uint64_t u64MicroTS)
 {
+    NOREF(pVM);
     AssertCompile(TMCLOCK_FREQ_VIRTUAL == 1000000000);
     return u64MicroTS * 1000;
 }
@@ -1088,6 +1095,7 @@ VMM_INT_DECL(uint64_t) TMVirtualFromMicro(PVM pVM, uint64_t u64MicroTS)
  */
 VMM_INT_DECL(uint64_t) TMVirtualFromMilli(PVM pVM, uint64_t u64MilliTS)
 {
+    NOREF(pVM);
     AssertCompile(TMCLOCK_FREQ_VIRTUAL == 1000000000);
     return u64MilliTS * 1000000;
 }
