@@ -75,7 +75,6 @@ static int emR3RawForcedActions(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx);
 DECLINLINE(int) emR3ExecuteInstruction(PVM pVM, PVMCPU pVCpu, const char *pszPrefix, int rcGC = VINF_SUCCESS);
 static int emR3RawGuestTrap(PVM pVM, PVMCPU pVCpu);
 static int emR3PatchTrap(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, int gcret);
-static int emR3SingleStepExecRem(PVM pVM, uint32_t cIterations);
 static int emR3RawPrivileged(PVM pVM, PVMCPU pVCpu);
 static int emR3ExecuteIOInstruction(PVM pVM, PVMCPU pVCpu);
 static int emR3RawRingSwitch(PVM pVM, PVMCPU pVCpu);

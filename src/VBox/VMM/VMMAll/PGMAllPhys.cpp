@@ -2019,7 +2019,7 @@ VMMDECL(int) PGMPhysGCPtr2HCPhys(PVMCPU pVCpu, RTGCPTR GCPtr, PRTHCPHYS pHCPhys)
 #define LOG_GROUP LOG_GROUP_PGM_PHYS_ACCESS
 
 
-#ifdef IN_RING3
+#if defined(IN_RING3) && defined(SOME_UNUSED_FUNCTION)
 /**
  * Cache PGMPhys memory access
  *

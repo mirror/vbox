@@ -38,9 +38,9 @@ uint8_t volatile    g_bRandom;
 #define TST_IEM_CHECK_MC
 
 #define CHK_TYPE(a_ExpectedType, a_Param) \
-    do { a_ExpectedType const * pCheckType = &(a_Param); } while (0)
+    do { a_ExpectedType const * pCheckType = &(a_Param); NOREF(pCheckType); } while (0)
 #define CHK_PTYPE(a_ExpectedType, a_Param) \
-    do { a_ExpectedType pCheckType = (a_Param); } while (0)
+    do { a_ExpectedType pCheckType = (a_Param); NOREF(pCheckType); } while (0)
 
 #define CHK_CONST(a_ExpectedType, a_Const) \
     do { \
@@ -172,7 +172,7 @@ IEMOPSHIFTDBLSIZES g_iemAImpl_shrd;
 /** @name Microcode test stubs
  * @{  */
 
-#define IEM_ARG_CHECK_CALLBACK(a_idx, a_User) int RT_CONCAT(iArgCheck_,a_idx)
+#define IEM_ARG_CHECK_CALLBACK(a_idx, a_User) int RT_CONCAT(iArgCheck_,a_idx); NOREF(RT_CONCAT(iArgCheck_,a_idx))
 #define IEM_MC_BEGIN(a_cArgs, a_cLocals) \
     { \
         const uint8_t cArgs   = (a_cArgs); NOREF(cArgs); \
@@ -363,7 +363,7 @@ IEMOPSHIFTDBLSIZES g_iemAImpl_shrd;
 #define IEM_MC_POP_U16(a_pu16Value)                                     do {} while (0)
 #define IEM_MC_POP_U32(a_pu32Value)                                     do {} while (0)
 #define IEM_MC_POP_U64(a_pu64Value)                                     do {} while (0)
-#define IEM_MC_MEM_MAP(a_pMem, a_fAccess, a_iSeg, a_GCPtrMem, a_iArg)   do {} while (0)
+#define IEM_MC_MEM_MAP(a_pMem, a_fAccess, a_iSeg, a_GCPtrMem, a_iArg)   do { NOREF(a_fAccess); } while (0)
 #define IEM_MC_MEM_MAP_EX(a_pvMem, a_fAccess, a_cbMem, a_iSeg, a_GCPtrMem, a_iArg)  do {} while (0)
 #define IEM_MC_MEM_COMMIT_AND_UNMAP(a_pvMem, a_fAccess)                 do {} while (0)
 #define IEM_MC_CALC_RM_EFF_ADDR(a_GCPtrEff, bRm)                        do { (a_GCPtrEff) = 0; CHK_GCPTR(a_GCPtrEff); } while (0)

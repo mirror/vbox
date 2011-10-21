@@ -126,7 +126,9 @@ static int                  vmR3InitRing3(PVM pVM, PUVM pUVM);
 static int                  vmR3InitRing0(PVM pVM);
 static int                  vmR3InitGC(PVM pVM);
 static int                  vmR3InitDoCompleted(PVM pVM, VMINITCOMPLETED enmWhat);
+#ifdef LOG_ENABLED
 static DECLCALLBACK(size_t) vmR3LogPrefixCallback(PRTLOGGER pLogger, char *pchBuf, size_t cchBuf, void *pvUser);
+#endif
 static void                 vmR3DestroyUVM(PUVM pUVM, uint32_t cMilliesEMTWait);
 static void                 vmR3AtDtor(PVM pVM);
 static bool                 vmR3ValidateStateTransition(VMSTATE enmStateOld, VMSTATE enmStateNew);
@@ -1114,6 +1116,7 @@ static int vmR3InitDoCompleted(PVM pVM, VMINITCOMPLETED enmWhat)
 }
 
 
+#ifdef LOG_ENABLED
 /**
  * Logger callback for inserting a custom prefix.
  *
@@ -1143,6 +1146,7 @@ static DECLCALLBACK(size_t) vmR3LogPrefixCallback(PRTLOGGER pLogger, char *pchBu
 
     return 2;
 }
+#endif /* LOG_ENABLED */
 
 
 /**

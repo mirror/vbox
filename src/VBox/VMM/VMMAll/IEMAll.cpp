@@ -586,7 +586,7 @@ static const IEMOPSHIFTDBLSIZES g_iemAImpl_shrd =
 *   Internal Functions                                                         *
 *******************************************************************************/
 static VBOXSTRICTRC     iemRaiseTaskSwitchFaultCurrentTSS(PIEMCPU pIemCpu);
-static VBOXSTRICTRC     iemRaiseSelectorNotPresent(PIEMCPU pIemCpu, uint32_t iSegReg, uint32_t fAccess);
+/*static VBOXSTRICTRC     iemRaiseSelectorNotPresent(PIEMCPU pIemCpu, uint32_t iSegReg, uint32_t fAccess);*/
 static VBOXSTRICTRC     iemRaiseSelectorNotPresentBySelector(PIEMCPU pIemCpu, uint16_t uSel);
 static VBOXSTRICTRC     iemRaiseSelectorNotPresentWithErr(PIEMCPU pIemCpu, uint16_t uErr);
 static VBOXSTRICTRC     iemRaiseGeneralProtectionFault(PIEMCPU pIemCpu, uint16_t uErr);
@@ -2022,11 +2022,13 @@ DECL_NO_INLINE(static, VBOXSTRICTRC) iemRaiseDeviceNotAvailable(PIEMCPU pIemCpu)
 }
 
 
+#ifdef SOME_UNUSED_FUNCTION
 /** \#TS(err) - 0a.  */
 DECL_NO_INLINE(static, VBOXSTRICTRC) iemRaiseTaskSwitchFaultWithErr(PIEMCPU pIemCpu, uint16_t uErr)
 {
     return iemRaiseXcptOrInt(pIemCpu, 0, X86_XCPT_TS, IEM_XCPT_FLAGS_T_CPU_XCPT | IEM_XCPT_FLAGS_ERR, uErr, 0);
 }
+#endif
 
 
 /** \#TS(tr) - 0a.  */
@@ -3746,6 +3748,7 @@ static VBOXSTRICTRC iemMemFetchDataU32(PIEMCPU pIemCpu, uint32_t *pu32Dst, uint8
 }
 
 
+#ifdef SOME_UNUSED_FUNCTION
 /**
  * Fetches a data dword and sign extends it to a qword.
  *
@@ -3772,6 +3775,7 @@ static VBOXSTRICTRC iemMemFetchDataS32SxU64(PIEMCPU pIemCpu, uint64_t *pu64Dst, 
 #endif
     return rc;
 }
+#endif
 
 
 /**
@@ -4195,6 +4199,7 @@ static VBOXSTRICTRC iemMemStackPushU32Ex(PIEMCPU pIemCpu, uint32_t u32Value, PRT
 }
 
 
+#ifdef SOME_UNUSED_FUNCTION
 /**
  * Pushes a dword onto the stack, using a temporary stack pointer.
  *
@@ -4225,6 +4230,7 @@ static VBOXSTRICTRC iemMemStackPushU64Ex(PIEMCPU pIemCpu, uint64_t u64Value, PRT
 
     return rc;
 }
+#endif
 
 
 /**

@@ -594,6 +594,7 @@ static void pdmacBwMgrLink(PPDMACBWMGR pBwMgr)
     rc = RTCritSectLeave(&pEpClass->CritSect); AssertRC(rc);
 }
 
+#ifdef SOME_UNUSED_FUNCTION
 static void pdmacBwMgrUnlink(PPDMACBWMGR pBwMgr)
 {
     PPDMASYNCCOMPLETIONEPCLASS pEpClass = pBwMgr->pEpClass;
@@ -614,6 +615,7 @@ static void pdmacBwMgrUnlink(PPDMACBWMGR pBwMgr)
 
     rc = RTCritSectLeave(&pEpClass->CritSect); AssertRC(rc);
 }
+#endif /* SOME_UNUSED_FUNCTION */
 
 static int pdmacAsyncCompletionBwMgrCreate(PPDMASYNCCOMPLETIONEPCLASS pEpClass, const char *pcszBwMgr, uint32_t cbTransferPerSecMax,
                                            uint32_t cbTransferPerSecStart, uint32_t cbTransferPerSecStep)

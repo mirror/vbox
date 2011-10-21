@@ -205,7 +205,6 @@ int main(int argc, char **argv)
     } enmTestOpt = kTstVMMTest_VMM;
 
     int ch;
-    int i = 1;
     RTGETOPTUNION ValueUnion;
     RTGETOPTSTATE GetState;
     RTGetOptInit(&GetState, argc, argv, s_aOptions, RT_ELEMENTS(s_aOptions), 1, 0);

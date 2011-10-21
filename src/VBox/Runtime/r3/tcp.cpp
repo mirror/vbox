@@ -147,7 +147,6 @@ typedef struct RTTCPSERVER
 static DECLCALLBACK(int)  rtTcpServerThread(RTTHREAD ThreadSelf, void *pvServer);
 static int  rtTcpServerListen(PRTTCPSERVER pServer);
 static int  rtTcpServerListenCleanup(PRTTCPSERVER pServer);
-static int  rtTcpServerDestroySocket(RTSOCKET volatile *pSockClient, const char *pszMsg);
 static int  rtTcpClose(RTSOCKET Sock, const char *pszMsg, bool fTryGracefulShutdown);
 
 
