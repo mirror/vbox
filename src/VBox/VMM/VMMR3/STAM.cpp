@@ -502,6 +502,7 @@ VMMR3DECL(int)  STAMR3RegisterCallbackV(PVM pVM, void *pvSample, STAMVISIBILITY 
 }
 
 
+#ifdef VBOX_STRICT
 /**
  * Divide the strings into sub-strings using '/' as delimiter
  * and then compare them in strcmp fashion.
@@ -535,6 +536,7 @@ static int stamR3SlashCompare(const char *psz1, const char *psz2)
             return 0;
     }
 }
+#endif /* VBOX_STRICT */
 
 
 /**

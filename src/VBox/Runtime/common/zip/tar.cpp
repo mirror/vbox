@@ -689,6 +689,7 @@ static int rtTarFindFile(RTFILE hFile, const char *pszFile, uint64_t *poff, uint
     return rc;
 }
 
+#ifdef SOME_UNUSED_FUNCTION
 static int rtTarGetFilesOverallSize(RTFILE hFile, const char * const *papszFiles, size_t cFiles, uint64_t *pcbOverallSize)
 {
     int rc = VINF_SUCCESS;
@@ -732,6 +733,7 @@ static int rtTarGetFilesOverallSize(RTFILE hFile, const char * const *papszFiles
         rc = RTFileSeek(hFile, 0, RTFILE_SEEK_BEGIN, 0);
     return rc;
 }
+#endif /* SOME_UNUSED_FUNCTION */
 
 /******************************************************************************
  *   Public Functions                                                         *

@@ -83,7 +83,9 @@
 *******************************************************************************/
 static DECLCALLBACK(int) emR3Save(PVM pVM, PSSMHANDLE pSSM);
 static DECLCALLBACK(int) emR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass);
+#if defined(LOG_ENABLED) || defined(VBOX_STRICT)
 static const char *emR3GetStateName(EMSTATE enmState);
+#endif
 static int emR3Debug(PVM pVM, PVMCPU pVCpu, int rc);
 static int emR3RemStep(PVM pVM, PVMCPU pVCpu);
 static int emR3RemExecute(PVM pVM, PVMCPU pVCpu, bool *pfFFDone);
@@ -671,6 +673,7 @@ VMMR3DECL(void) EMR3FatalError(PVMCPU pVCpu, int rc)
 }
 
 
+#if defined(LOG_ENABLED) || defined(VBOX_STRICT)
 /**
  * Gets the EM state name.
  *
@@ -696,6 +699,7 @@ static const char *emR3GetStateName(EMSTATE enmState)
         default:                        return "Unknown!";
     }
 }
+#endif /* LOG_ENABLED || VBOX_STRICT */
 
 
 /**

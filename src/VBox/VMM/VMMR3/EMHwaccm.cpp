@@ -81,7 +81,7 @@ static int emR3HwaccmForcedActions(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx);
 #include "EMHandleRCTmpl.h"
 
 
-#ifdef DEBUG
+#if defined(DEBUG) && defined(SOME_UNUSED_FUNCTIONS)
 
 /**
  * Steps hardware accelerated mode.

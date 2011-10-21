@@ -1845,6 +1845,7 @@ static uint32_t rtLockValidatorStackDepth(PRTTHREADINT pThread)
 }
 
 
+#ifdef VBOX_STRICT
 /**
  * Checks if the stack contains @a pRec.
  *
@@ -1883,6 +1884,7 @@ static bool rtLockValidatorStackContainsRec(PRTTHREADINT pThreadSelf, PRTLOCKVAL
     }
     return false;
 }
+#endif /* VBOX_STRICT */
 
 
 /**

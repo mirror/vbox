@@ -891,6 +891,7 @@ static int rtDbgModDwarfLoadSection(PRTDBGMODDWARF pThis, krtDbgModDwarfSect enm
 }
 
 
+#ifdef SOME_UNUSED_FUNCTION
 /**
  * Unloads a DWARF section previously mapped by rtDbgModDwarfLoadSection.
  *
@@ -907,6 +908,7 @@ static int rtDbgModDwarfUnloadSection(PRTDBGMODDWARF pThis, krtDbgModDwarfSect e
     AssertRC(rc);
     return rc;
 }
+#endif
 
 
 /**
@@ -2976,6 +2978,7 @@ static int rtDwarfInfo_SkipForm(PRTDWARFCURSOR pCursor, uint32_t uForm)
 
 
 
+#ifdef SOME_UNUSED_FUNCTION
 /**
  * Skips a DIE.
  *
@@ -2998,6 +3001,7 @@ static int rtDwarfInfo_SkipDie(PRTDWARFCURSOR pCursor, PRTDWARFCURSOR pAbbrevCur
     }
     return RT_FAILURE(pCursor->rc) ? pCursor->rc : pAbbrevCursor->rc;
 }
+#endif
 
 
 /**

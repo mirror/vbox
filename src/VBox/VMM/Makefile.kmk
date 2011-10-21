@@ -195,10 +195,6 @@ ifdef VBOX_WITH_PDM_ASYNC_COMPLETION
  	VMMR3/PDMAsyncCompletionFileFailsafe.cpp \
  	VMMR3/PDMAsyncCompletionFileNormal.cpp
 endif
-if defined(VBOX_WITH_WARNINGS_AS_ERRORS) && "$(KBUILD_TARGET)" == "win"
-## @todo Alexander, please fix these warnings.
-VMMR3/PDMBlkCache.cpp_CXXFLAGS = -WX-
-endif
 
 ifdef VBOX_WITH_RAW_MODE
  VMMR3_SOURCES.x86 += \
@@ -566,8 +562,12 @@ VMMAll/VMMAll.cpp_DEFS = VBOX_SVN_REV=$(VBOX_SVN_REV)
 #
 # Disable annoying warnings about array subscript above array bounds in aPages[]
 #
-VMMR3/PGMPool.cpp_CXXFLAGS = $(if-expr $(KBUILD_TARGET) == "win",,$(VBOX_GCC_Wno-array_bounds))
-VMMAll/PGMAllPool.cpp_CXXFLAGS = $(if-expr $(KBUILD_TARGET) == "win",,$(VBOX_GCC_Wno-array_bounds))
+ifneq ($(KBUILD_TARGET),win)
+ VMMR3/PGMPool.cpp_CXXFLAGS     = $(VBOX_GCC_Wno-array_bounds)
+ VMMAll/PGMAllPool.cpp_CXXFLAGS = $(VBOX_GCC_Wno-array_bounds)
+ VMMAll/PGMAll.cpp_CXXFLAGS     = -Wno-unused-function
+ VMMAll/IEMAll.cpp_CXXFLAGS     = -Wno-unused-parameter
+endif
 
 #
 # Always optimize the interpreter.

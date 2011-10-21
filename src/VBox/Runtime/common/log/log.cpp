@@ -173,7 +173,9 @@ static void rtlogFlush(PRTLOGGER pLogger);
 static DECLCALLBACK(size_t) rtLogOutput(void *pv, const char *pachChars, size_t cbChars);
 static DECLCALLBACK(size_t) rtLogOutputPrefixed(void *pv, const char *pachChars, size_t cbChars);
 static void rtlogLoggerExVLocked(PRTLOGGER pLogger, unsigned fFlags, unsigned iGroup, const char *pszFormat, va_list args);
+#ifndef IN_RC
 static void rtlogLoggerExFLocked(PRTLOGGER pLogger, unsigned fFlags, unsigned iGroup, const char *pszFormat, ...);
+#endif
 
 
 /*******************************************************************************
@@ -326,6 +328,7 @@ DECLINLINE(void) rtlogUnlock(PRTLOGGER pLogger)
 #ifndef IN_RC
 # ifdef IN_RING3
 
+#  ifdef SOME_UNUSED_FUNCTION
 /**
  * Logging to file, output callback.
  *
@@ -367,6 +370,8 @@ static DECLCALLBACK(size_t) rtlogPhaseFormatStr(void *pvArg, PFNRTSTROUTPUT pfnO
 
     return 0;
 }
+
+#  endif /* SOME_UNUSED_FUNCTION */
 
 
 /**
@@ -3310,6 +3315,7 @@ static void rtlogLoggerExVLocked(PRTLOGGER pLogger, unsigned fFlags, unsigned iG
 }
 
 
+#ifndef IN_RC
 /**
  * For calling rtlogLoggerExVLocked.
  *
@@ -3328,4 +3334,5 @@ static void rtlogLoggerExFLocked(PRTLOGGER pLogger, unsigned fFlags, unsigned iG
     rtlogLoggerExVLocked(pLogger, fFlags, iGroup, pszFormat, va);
     va_end(va);
 }
+#endif /* !IN_RC */
 

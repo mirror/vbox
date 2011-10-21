@@ -101,6 +101,7 @@ void pdmacFileAioMgrNormalDestroy(PPDMACEPFILEMGR pAioMgr)
     RTMemCacheDestroy(pAioMgr->hMemCacheRangeLocks);
 }
 
+#if 0 /* currently unused */
 /**
  * Sorts the endpoint list with insertion sort.
  */
@@ -177,6 +178,7 @@ static void pdmacFileAioMgrNormalEndpointsSortByLoad(PPDMACEPFILEMGR pAioMgr)
 
 #endif
 }
+#endif /* currently unused */
 
 /**
  * Removes an endpoint from the currently assigned manager.
@@ -215,6 +217,8 @@ static bool pdmacFileAioMgrNormalRemoveEndpoint(PPDMASYNCCOMPLETIONENDPOINTFILE 
 
     return true;
 }
+
+#if 0 /* currently unused */
 
 static bool pdmacFileAioMgrNormalIsBalancePossible(PPDMACEPFILEMGR pAioMgr)
 {
@@ -314,6 +318,8 @@ static void pdmacFileAioMgrNormalBalanceLoad(PPDMACEPFILEMGR pAioMgr)
     else
         Log(("AIOMgr: Load balancing would not improve anything\n"));
 }
+
+#endif /* unused */
 
 /**
  * Increase the maximum number of active requests for the given I/O manager.
