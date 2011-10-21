@@ -240,51 +240,61 @@ static RTCPUID hmR0FirstRcGetCpuId(PHMR0FIRSTRC pFirstRc)
 
 static DECLCALLBACK(int) hmR0DummyEnter(PVM pVM, PVMCPU pVCpu, PHMGLOBLCPUINFO pCpu)
 {
+    NOREF(pVM); NOREF(pVCpu); NOREF(pCpu);
     return VINF_SUCCESS;
 }
 
 static DECLCALLBACK(int) hmR0DummyLeave(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 {
+    NOREF(pVM); NOREF(pVCpu); NOREF(pCtx);
     return VINF_SUCCESS;
 }
 
 static DECLCALLBACK(int) hmR0DummyEnableCpu(PHMGLOBLCPUINFO pCpu, PVM pVM, void *pvCpuPage, RTHCPHYS HCPhysCpuPage)
 {
+    NOREF(pCpu); NOREF(pVM); NOREF(pvCpuPage); NOREF(HCPhysCpuPage);
     return VINF_SUCCESS;
 }
 
 static DECLCALLBACK(int) hmR0DummyDisableCpu(PHMGLOBLCPUINFO pCpu, void *pvCpuPage, RTHCPHYS HCPhysCpuPage)
 {
+    NOREF(pCpu);  NOREF(pvCpuPage); NOREF(HCPhysCpuPage);
     return VINF_SUCCESS;
 }
 
 static DECLCALLBACK(int) hmR0DummyInitVM(PVM pVM)
 {
+    NOREF(pVM);
     return VINF_SUCCESS;
 }
 
 static DECLCALLBACK(int) hmR0DummyTermVM(PVM pVM)
 {
+    NOREF(pVM);
     return VINF_SUCCESS;
 }
 
 static DECLCALLBACK(int) hmR0DummySetupVM(PVM pVM)
 {
+    NOREF(pVM);
     return VINF_SUCCESS;
 }
 
 static DECLCALLBACK(int) hmR0DummyRunGuestCode(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 {
+    NOREF(pVM); NOREF(pVCpu); NOREF(pCtx);
     return VINF_SUCCESS;
 }
 
 static DECLCALLBACK(int) hmR0DummySaveHostState(PVM pVM, PVMCPU pVCpu)
 {
+    NOREF(pVM); NOREF(pVCpu);
     return VINF_SUCCESS;
 }
 
 static DECLCALLBACK(int) hmR0DummyLoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 {
+    NOREF(pVM); NOREF(pVCpu); NOREF(pCtx);
     return VINF_SUCCESS;
 }
 
@@ -1047,7 +1057,7 @@ static int hmR0DisableCpu(RTCPUID idCpu)
  */
 static DECLCALLBACK(void) hmR0DisableCpuCallback(RTCPUID idCpu, void *pvUser1, void *pvUser2)
 {
-    PHMR0FIRSTRC pFirstRc = (PHMR0FIRSTRC)pvUser2;
+    PHMR0FIRSTRC pFirstRc = (PHMR0FIRSTRC)pvUser2; NOREF(pvUser1);
     AssertReturnVoid(g_HvmR0.fGlobalInit);
     hmR0FirstRcSetStatus(pFirstRc, hmR0DisableCpu(idCpu));
 }
@@ -1062,6 +1072,8 @@ static DECLCALLBACK(void) hmR0DisableCpuCallback(RTCPUID idCpu, void *pvUser1, v
  */
 static DECLCALLBACK(void) hmR0MpEventCallback(RTMPEVENT enmEvent, RTCPUID idCpu, void *pvData)
 {
+    NOREF(pvData);
+
     /*
      * We only care about uninitializing a CPU that is going offline. When a
      * CPU comes online, the initialization is done lazily in HWACCMR0Enter().
@@ -1875,13 +1887,15 @@ VMMR0DECL(void) HWACCMR0DumpDescriptor(PCX86DESCHC pDesc, RTSEL Sel, const char 
  */
 VMMR0DECL(void) HWACCMDumpRegs(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 {
+    NOREF(pVM);
+
     /*
      * Format the flags.
      */
     static struct
     {
         const char *pszSet; const char *pszClear; uint32_t fFlag;
-    }   aFlags[] =
+    } const s_aFlags[] =
     {
         { "vip",NULL, X86_EFL_VIP },
         { "vif",NULL, X86_EFL_VIF },
@@ -1902,9 +1916,9 @@ VMMR0DECL(void) HWACCMDumpRegs(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
     char szEFlags[80];
     char *psz = szEFlags;
     uint32_t efl = pCtx->eflags.u32;
-    for (unsigned i = 0; i < RT_ELEMENTS(aFlags); i++)
+    for (unsigned i = 0; i < RT_ELEMENTS(s_aFlags); i++)
     {
-        const char *pszAdd = aFlags[i].fFlag & efl ? aFlags[i].pszSet : aFlags[i].pszClear;
+        const char *pszAdd = s_aFlags[i].fFlag & efl ? s_aFlags[i].pszSet : s_aFlags[i].pszClear;
         if (pszAdd)
         {
             strcpy(psz, pszAdd);

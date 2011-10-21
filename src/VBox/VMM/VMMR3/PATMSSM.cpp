@@ -363,8 +363,8 @@ static SSMFIELD const g_aPatmRecPatchToGuest[] =
     SSMFIELD_ENTRY_TERM()
 };
 
-
 #ifdef VBOX_STRICT
+
 /**
  * Callback function for RTAvlPVDoWithAll
  *
@@ -376,6 +376,7 @@ static SSMFIELD const g_aPatmRecPatchToGuest[] =
  */
 static DECLCALLBACK(int) patmCountLeafPV(PAVLPVNODECORE pNode, void *pcPatches)
 {
+    NOREF(pNode);
     *(uint32_t *)pcPatches = *(uint32_t *)pcPatches + 1;
     return VINF_SUCCESS;
 }
@@ -391,9 +392,11 @@ static DECLCALLBACK(int) patmCountLeafPV(PAVLPVNODECORE pNode, void *pcPatches)
  */
 static DECLCALLBACK(int) patmCountLeaf(PAVLU32NODECORE pNode, void *pcPatches)
 {
+    NOREF(pNode);
     *(uint32_t *)pcPatches = *(uint32_t *)pcPatches + 1;
     return VINF_SUCCESS;
 }
+
 #endif /* VBOX_STRICT */
 
 /**
@@ -407,6 +410,7 @@ static DECLCALLBACK(int) patmCountLeaf(PAVLU32NODECORE pNode, void *pcPatches)
  */
 static DECLCALLBACK(int) patmCountPatch(PAVLOU32NODECORE pNode, void *pcPatches)
 {
+    NOREF(pNode);
     *(uint32_t *)pcPatches = *(uint32_t *)pcPatches + 1;
     return VINF_SUCCESS;
 }

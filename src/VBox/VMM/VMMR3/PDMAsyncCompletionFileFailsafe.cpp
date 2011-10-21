@@ -151,10 +151,11 @@ static int pdmacFileAioMgrFailsafeProcessEndpoint(PPDMACEPFILEMGR pAioMgr,
  * A fallback method in case something goes wrong with the normal
  * I/O manager.
  */
-int pdmacFileAioMgrFailsafe(RTTHREAD ThreadSelf, void *pvUser)
+DECLCALLBACK(int) pdmacFileAioMgrFailsafe(RTTHREAD hThreadSelf, void *pvUser)
 {
-    int rc = VINF_SUCCESS;
+    int             rc      = VINF_SUCCESS;
     PPDMACEPFILEMGR pAioMgr = (PPDMACEPFILEMGR)pvUser;
+    NOREF(hThreadSelf);
 
     while (   (pAioMgr->enmState == PDMACEPFILEMGRSTATE_RUNNING)
            || (pAioMgr->enmState == PDMACEPFILEMGRSTATE_SUSPENDING))

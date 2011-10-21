@@ -124,6 +124,7 @@ int dbgfR3InfoTerm(PVM pVM)
  * @copydoc DBGFINFOHLP::pfnPrintf */
 static DECLCALLBACK(void) dbgfR3InfoLog_Printf(PCDBGFINFOHLP pHlp, const char *pszFormat, ...)
 {
+    NOREF(pHlp);
     va_list args;
     va_start(args, pszFormat);
     RTLogPrintfV(pszFormat, args);
@@ -134,6 +135,7 @@ static DECLCALLBACK(void) dbgfR3InfoLog_Printf(PCDBGFINFOHLP pHlp, const char *p
  * @copydoc DBGFINFOHLP::pfnPrintfV */
 static DECLCALLBACK(void) dbgfR3InfoLog_PrintfV(PCDBGFINFOHLP pHlp, const char *pszFormat, va_list args)
 {
+    NOREF(pHlp);
     RTLogPrintfV(pszFormat, args);
 }
 
@@ -154,6 +156,7 @@ VMMR3DECL(PCDBGFINFOHLP) DBGFR3InfoLogHlp(void)
  * @copydoc DBGFINFOHLP::pfnPrintf */
 static DECLCALLBACK(void) dbgfR3InfoLogRel_Printf(PCDBGFINFOHLP pHlp, const char *pszFormat, ...)
 {
+    NOREF(pHlp);
     va_list args;
     va_start(args, pszFormat);
     RTLogRelPrintfV(pszFormat, args);
@@ -164,6 +167,7 @@ static DECLCALLBACK(void) dbgfR3InfoLogRel_Printf(PCDBGFINFOHLP pHlp, const char
  * @copydoc DBGFINFOHLP::pfnPrintfV */
 static DECLCALLBACK(void) dbgfR3InfoLogRel_PrintfV(PCDBGFINFOHLP pHlp, const char *pszFormat, va_list args)
 {
+    NOREF(pHlp);
     RTLogRelPrintfV(pszFormat, args);
 }
 
@@ -172,6 +176,7 @@ static DECLCALLBACK(void) dbgfR3InfoLogRel_PrintfV(PCDBGFINFOHLP pHlp, const cha
  * @copydoc DBGFINFOHLP::pfnPrintf */
 static DECLCALLBACK(void) dbgfR3InfoStdErr_Printf(PCDBGFINFOHLP pHlp, const char *pszFormat, ...)
 {
+    NOREF(pHlp);
     va_list args;
     va_start(args, pszFormat);
     RTStrmPrintfV(g_pStdErr, pszFormat, args);
@@ -182,6 +187,7 @@ static DECLCALLBACK(void) dbgfR3InfoStdErr_Printf(PCDBGFINFOHLP pHlp, const char
  * @copydoc DBGFINFOHLP::pfnPrintfV */
 static DECLCALLBACK(void) dbgfR3InfoStdErr_PrintfV(PCDBGFINFOHLP pHlp, const char *pszFormat, va_list args)
 {
+    NOREF(pHlp);
     RTStrmPrintfV(g_pStdErr, pszFormat, args);
 }
 
@@ -684,11 +690,11 @@ VMMR3DECL(int) DBGFR3InfoDeregisterExternal(PVM pVM, const char *pszName)
 
 
 /**
- * Worker for DBGFR3Info and DBGFR3InfoEx. 
- *  
+ * Worker for DBGFR3Info and DBGFR3InfoEx.
+ *
  * @returns VBox status code.
- * @param   pVM                 The VM handle. 
- * @param   idCpu               Which CPU to run EMT bound handlers on. 
+ * @param   pVM                 The VM handle.
+ * @param   idCpu               Which CPU to run EMT bound handlers on.
  *                              VMCPUID_ANY or a valid CPU ID.
  * @param   pszName             What to dump.
  * @param   pszArgs             Arguments, optional.
@@ -798,8 +804,8 @@ VMMR3DECL(int) DBGFR3Info(PVM pVM, const char *pszName, const char *pszArgs, PCD
  * Display a piece of info writing to the supplied handler.
  *
  * @returns VBox status code.
- * @param   pVM         VM handle. 
- * @param   idCpu       The CPU to exectue the request on.  Pass NIL_VMCPUID 
+ * @param   pVM         VM handle.
+ * @param   idCpu       The CPU to exectue the request on.  Pass NIL_VMCPUID
  *                      to not involve any EMT.
  * @param   pszName     The identifier of the info to display.
  * @param   pszArgs     Arguments to the info handler.
@@ -809,7 +815,7 @@ VMMR3DECL(int) DBGFR3InfoEx(PVM pVM, VMCPUID idCpu, const char *pszName, const c
 {
     if (idCpu == NIL_VMCPUID)
         return dbgfR3Info(pVM, VMCPUID_ANY, pszName, pszArgs, pHlp);
-    return VMR3ReqPriorityCallWait(pVM, idCpu, 
+    return VMR3ReqPriorityCallWait(pVM, idCpu,
                                    (PFNRT)dbgfR3Info, 5, pVM, idCpu, pszName, pszArgs, pHlp);
 }
 

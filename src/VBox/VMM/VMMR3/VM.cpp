@@ -1144,6 +1144,7 @@ static DECLCALLBACK(size_t) vmR3LogPrefixCallback(PRTLOGGER pLogger, char *pchBu
         pchBuf[1] = 'y';
     }
 
+    NOREF(pLogger);
     return 2;
 }
 #endif /* LOG_ENABLED */
@@ -2830,7 +2831,6 @@ static DECLCALLBACK(VBOXSTRICTRC) vmR3Reset(PVM pVM, PVMCPU pVCpu, void *pvUser)
  *
  * @bugref{4467}
  */
-        MMR3Reset(pVM);
         PDMR3Reset(pVM);
         SELMR3Reset(pVM);
         TRPMR3Reset(pVM);

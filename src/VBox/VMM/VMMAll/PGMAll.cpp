@@ -1695,6 +1695,7 @@ VMMDECL(RTHCPHYS) PGMGetHyperCR3(PVMCPU pVCpu)
  */
 VMMDECL(RTHCPHYS) PGMGetNestedCR3(PVMCPU pVCpu, PGMMODE enmShadowMode)
 {
+    NOREF(enmShadowMode);
     Assert(pVCpu->pgm.s.CTX_SUFF(pShwPageCR3));
     return pVCpu->pgm.s.CTX_SUFF(pShwPageCR3)->Core.Key;
 }
@@ -2440,7 +2441,7 @@ static DECLCALLBACK(size_t) pgmFormatTypeHandlerPage(PFNRTSTROUTPUT pfnOutput, v
 {
     size_t    cch;
     PCPGMPAGE pPage = (PCPGMPAGE)pvValue;
-    if (VALID_PTR(pPage))
+    if (RT_VALID_PTR(pPage))
     {
         char szTmp[64+80];
 
@@ -2494,6 +2495,7 @@ static DECLCALLBACK(size_t) pgmFormatTypeHandlerPage(PFNRTSTROUTPUT pfnOutput, v
     }
     else
         cch = pfnOutput(pvArgOutput, "<bad-pgmpage-ptr>", sizeof("<bad-pgmpage-ptr>") - 1);
+    NOREF(pszType); NOREF(cchWidth); NOREF(pvUser);
     return cch;
 }
 
@@ -2515,6 +2517,7 @@ static DECLCALLBACK(size_t) pgmFormatTypeHandlerRamRange(PFNRTSTROUTPUT pfnOutpu
     }
     else
         cch = pfnOutput(pvArgOutput, "<bad-pgmramrange-ptr>", sizeof("<bad-pgmramrange-ptr>") - 1);
+    NOREF(pszType); NOREF(cchWidth); NOREF(cchPrecision); NOREF(pvUser); NOREF(fFlags);
     return cch;
 }
 

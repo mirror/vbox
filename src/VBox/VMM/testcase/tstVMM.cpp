@@ -141,7 +141,7 @@ DECLCALLBACK(int) tstTMWorker(PVM pVM, RTTEST hTest)
 static DECLCALLBACK(int)
 tstVMMLdrEnum(PVM pVM, const char *pszFilename, const char *pszName, RTUINTPTR ImageBase, size_t cbImage, bool fGC, void *pvUser)
 {
-    NOREF(pVM); NOREF(pszFilename); NOREF(fGC); NOREF(pvUser);
+    NOREF(pVM); NOREF(pszFilename); NOREF(fGC); NOREF(pvUser); NOREF(cbImage);
     RTPrintf("tstVMM: %RTptr %s\n", ImageBase, pszName);
     return VINF_SUCCESS;
 }
@@ -149,6 +149,7 @@ tstVMMLdrEnum(PVM pVM, const char *pszFilename, const char *pszName, RTUINTPTR I
 static DECLCALLBACK(int)
 tstVMMConfigConstructor(PVM pVM, void *pvUser)
 {
+    NOREF(pvUser);
     int rc = CFGMR3ConstructDefaultTree(pVM);
     if (    RT_SUCCESS(rc)
         &&  g_cCpus > 1)

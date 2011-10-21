@@ -44,6 +44,7 @@ VMMR3DECL(int)      IEMR3Init(PVM pVM)
 
 VMMR3DECL(int)      IEMR3Term(PVM pVM)
 {
+    NOREF(pVM);
     return VINF_SUCCESS;
 }
 

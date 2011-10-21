@@ -345,6 +345,7 @@ static int ftmR3TcpSubmitCommand(PVM pVM, const char *pszCommand, bool fWaitForA
 static DECLCALLBACK(int) ftmR3TcpOpWrite(void *pvUser, uint64_t offStream, const void *pvBuf, size_t cbToWrite)
 {
     PVM pVM = (PVM)pvUser;
+    NOREF(offStream);
 
     AssertReturn(cbToWrite > 0, VINF_SUCCESS);
     AssertReturn(cbToWrite < UINT32_MAX, VERR_OUT_OF_RANGE);
@@ -414,6 +415,7 @@ static DECLCALLBACK(int) ftmR3TcpOpRead(void *pvUser, uint64_t offStream, void *
 {
     PVM pVM = (PVM)pvUser;
     AssertReturn(!pVM->fFaultTolerantMaster, VERR_INVALID_HANDLE);
+    NOREF(offStream);
 
     for (;;)
     {
@@ -512,6 +514,7 @@ static DECLCALLBACK(int) ftmR3TcpOpRead(void *pvUser, uint64_t offStream, void *
  */
 static DECLCALLBACK(int) ftmR3TcpOpSeek(void *pvUser, int64_t offSeek, unsigned uMethod, uint64_t *poffActual)
 {
+    NOREF(pvUser); NOREF(offSeek); NOREF(uMethod); NOREF(poffActual);
     return VERR_NOT_SUPPORTED;
 }
 
@@ -531,6 +534,7 @@ static DECLCALLBACK(uint64_t) ftmR3TcpOpTell(void *pvUser)
  */
 static DECLCALLBACK(int) ftmR3TcpOpSize(void *pvUser, uint64_t *pcb)
 {
+    NOREF(pvUser); NOREF(pcb);
     return VERR_NOT_SUPPORTED;
 }
 
@@ -679,6 +683,7 @@ static int ftmR3PerformFullSync(PVM pVM)
  */
 static DECLCALLBACK(int) ftmR3SyncDirtyPage(PVM pVM, RTGCPHYS GCPhys, uint8_t *pRange, unsigned cbRange, void *pvUser)
 {
+    NOREF(pvUser);
     FTMTCPHDRMEM Hdr;
     Hdr.u32Magic    = FTMTCPHDR_MAGIC;
     Hdr.GCPhys      = GCPhys;
@@ -724,15 +729,16 @@ static DECLCALLBACK(int) ftmR3SyncDirtyPage(PVM pVM, RTGCPHYS GCPhys, uint8_t *p
 /**
  * Thread function which starts syncing process for this master VM
  *
- * @param   Thread      The thread id.
- * @param   pvUser      Not used
+ * @param   hThread     The thread handle.
+ * @param   pvUser      The VM handle.
  * @return  VINF_SUCCESS (ignored).
  *
  */
-static DECLCALLBACK(int) ftmR3MasterThread(RTTHREAD Thread, void *pvUser)
+static DECLCALLBACK(int) ftmR3MasterThread(RTTHREAD hThread, void *pvUser)
 {
     int rc  = VINF_SUCCESS;
     PVM pVM = (PVM)pvUser;
+    NOREF(hThread);
 
     for (;;)
     {
@@ -905,7 +911,7 @@ static int ftmR3SyncMem(PVM pVM)
  *
  * @returns 0 to continue, otherwise stop
  * @param   pBaseNode       Node to destroy
- * @param   pvUser          User parameter
+ * @param   pvUser          The VM handle.
  */
 static DECLCALLBACK(int) ftmR3PageTreeDestroyCallback(PAVLGCPHYSNODECORE pBaseNode, void *pvUser)
 {
@@ -925,14 +931,15 @@ static DECLCALLBACK(int) ftmR3PageTreeDestroyCallback(PAVLGCPHYSNODECORE pBaseNo
 /**
  * Thread function which monitors the health of the master VM
  *
- * @param   Thread      The thread id.
- * @param   pvUser      Not used
+ * @param   hThread     The thread handle.
+ * @param   pvUser      The VM handle.
  * @return  VINF_SUCCESS (ignored).
  *
  */
-static DECLCALLBACK(int) ftmR3StandbyThread(RTTHREAD Thread, void *pvUser)
+static DECLCALLBACK(int) ftmR3StandbyThread(RTTHREAD hThread, void *pvUser)
 {
     PVM pVM = (PVM)pvUser;
+    NOREF(hThread);
 
     for (;;)
     {
@@ -1225,12 +1232,14 @@ VMMR3DECL(int) FTMR3CancelStandby(PVM pVM)
  * @returns VINF_SUCCESS (VBox strict status code).
  * @param   pVM         The VM handle.
  * @param   pVCpu       The VMCPU for the EMT we're being called on. Unused.
- * @param   pvUser      User parameter
+ * @param   pvUser      Not used.
  */
 static DECLCALLBACK(VBOXSTRICTRC) ftmR3SetCheckpointRendezvous(PVM pVM, PVMCPU pVCpu, void *pvUser)
 {
-    int rc = VINF_SUCCESS;
-    bool fSuspended = false;
+    int     rc         = VINF_SUCCESS;
+    bool    fSuspended = false;
+    NOREF(pVCpu);
+    NOREF(pvUser);
 
     /* We don't call VMR3Suspend here to avoid the overhead of state changes and notifications. This
      * is only a short suspend.

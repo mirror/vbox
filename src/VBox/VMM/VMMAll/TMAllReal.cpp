@@ -34,6 +34,7 @@
  */
 VMM_INT_DECL(uint64_t) TMRealGet(PVM pVM)
 {
+    NOREF(pVM);
     return RTTimeMilliTS();
 }
 
@@ -46,6 +47,7 @@ VMM_INT_DECL(uint64_t) TMRealGet(PVM pVM)
  */
 VMM_INT_DECL(uint64_t) TMRealGetFreq(PVM pVM)
 {
+    NOREF(pVM);
     return TMCLOCK_FREQ_REAL;
 }
 

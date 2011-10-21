@@ -221,6 +221,7 @@ VMMR0DECL(int) PGMR0PhysAllocateLargeHandyPage(PVM pVM, PVMCPU pVCpu)
  */
 VMMR0_INT_DECL(int) GPciRawR0GuestPageBeginAssignments(PGVM pGVM)
 {
+    NOREF(pGVM);
     return VINF_SUCCESS;
 }
 
@@ -286,6 +287,7 @@ VMMR0_INT_DECL(int) GPciRawR0GuestPageUnassign(PGVM pGVM, RTGCPHYS GCPhys)
  */
 VMMR0_INT_DECL(int) GPciRawR0GuestPageEndAssignments(PGVM pGVM)
 {
+    NOREF(pGVM);
     return VINF_SUCCESS;
 }
 
@@ -304,6 +306,7 @@ VMMR0_INT_DECL(int) GPciRawR0GuestPageUpdate(PGVM pGVM, RTGCPHYS GCPhys, RTHCPHY
 {
     AssertReturn(!(GCPhys & PAGE_OFFSET_MASK), VERR_INTERNAL_ERROR_4);
     AssertReturn(!(HCPhys & PAGE_OFFSET_MASK) || HCPhys == NIL_RTHCPHYS, VERR_INTERNAL_ERROR_4);
+    NOREF(pGVM);
     return VINF_SUCCESS;
 }
 

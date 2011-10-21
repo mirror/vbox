@@ -120,7 +120,7 @@ VMMDECL(void) TMNotifyEndOfExecution(PVMCPU pVCpu)
     PVM pVM = pVCpu->CTX_SUFF(pVM);
 
     if (pVM->tm.s.fTSCTiedToExecution)
-        tmCpuTickPause(pVM, pVCpu);
+        tmCpuTickPause(pVCpu);
 
 #ifndef VBOX_WITHOUT_NS_ACCOUNTING
     uint64_t const u64NsTs           = RTTimeNanoTS();
@@ -193,7 +193,7 @@ VMM_INT_DECL(void) TMNotifyEndOfHalt(PVMCPU pVCpu)
 
     if (    pVM->tm.s.fTSCTiedToExecution
         &&  !pVM->tm.s.fTSCNotTiedToHalt)
-        tmCpuTickPause(pVM, pVCpu);
+        tmCpuTickPause(pVCpu);
 
 #ifndef VBOX_WITHOUT_NS_ACCOUNTING
     uint64_t const u64NsTs        = RTTimeNanoTS();

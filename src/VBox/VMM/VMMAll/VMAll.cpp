@@ -111,6 +111,7 @@ VMMDECL(int) VMSetErrorV(PVM pVM, int rc, RT_SRC_POS_DECL, const char *pszFormat
  */
 void vmSetErrorCopy(PVM pVM, int rc, RT_SRC_POS_DECL, const char *pszFormat, va_list args)
 {
+    NOREF(pVM); NOREF(rc); RT_SRC_POS_NOREF(); NOREF(pszFormat); NOREF(args);
 #if 0 /// @todo implement Ring-0 and GC VMSetError
     /*
      * Create the untranslated message copy.
@@ -306,6 +307,7 @@ VMMDECL(int) VMSetRuntimeErrorV(PVM pVM, uint32_t fFlags, const char *pszErrorId
  */
 void vmSetRuntimeErrorCopy(PVM pVM, uint32_t fFlags, const char *pszErrorId, const char *pszFormat, va_list va)
 {
+    NOREF(pVM); NOREF(fFlags); NOREF(pszErrorId); NOREF(pszFormat); NOREF(va);
 #if 0 /// @todo implement Ring-0 and GC VMSetError
     /*
      * Create the untranslated message copy.

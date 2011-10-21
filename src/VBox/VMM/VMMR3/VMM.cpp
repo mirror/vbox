@@ -1154,6 +1154,8 @@ VMMR3_INT_DECL(void) VMMR3YieldResume(PVM pVM)
  */
 static DECLCALLBACK(void) vmmR3YieldEMT(PVM pVM, PTMTIMER pTimer, void *pvUser)
 {
+    NOREF(pvUser);
+
     /*
      * This really needs some careful tuning. While we shouldn't be too greedy since
      * that'll cause the rest of the system to stop up, we shouldn't be too nice either
@@ -1779,11 +1781,11 @@ VMMR3DECL(int) VMMR3EmtRendezvous(PVM pVM, uint32_t fFlags, PFNVMMEMTRENDEZVOUS 
 
 
 /**
- * Disables/enables EMT rendezvous. 
- *  
- * This is used to make sure EMT rendezvous does not take place while 
+ * Disables/enables EMT rendezvous.
+ *
+ * This is used to make sure EMT rendezvous does not take place while
  * processing a priority request.
- *  
+ *
  * @returns Old rendezvous-disabled state.
  * @param   pVCpu           The handle of the calling EMT.
  * @param   fDisabled       True if disabled, false if enabled.
@@ -2207,6 +2209,8 @@ static DECLCALLBACK(void) vmmR3InfoFF(PVM pVM, PCDBGFINFOHLP pHlp, const char *p
 {
     int         c;
     uint32_t    f;
+    NOREF(pszArgs);
+
 #define PRINT_FLAG(prf,flag) do { \
         if (f & (prf##flag)) \
         { \

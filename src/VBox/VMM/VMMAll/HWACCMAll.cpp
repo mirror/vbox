@@ -48,6 +48,7 @@ void hwaccmQueueInvlPage(PVMCPU pVCpu, RTGCPTR GCVirt)
         return;
 #if 1
     VMCPU_FF_SET(pVCpu, VMCPU_FF_TLB_FLUSH);
+    NOREF(GCVirt);
 #else
     Be very careful when activating this code!
     if (iPage == RT_ELEMENTS(pVCpu->hwaccm.s.TlbShootdown.aPages))
@@ -104,6 +105,7 @@ VMMDECL(int) HWACCMFlushTLB(PVMCPU pVCpu)
  */
 static DECLCALLBACK(void) hwaccmFlushHandler(RTCPUID idCpu, void *pvUser1, void *pvUser2)
 {
+    NOREF(idCpu); NOREF(pvUser1); NOREF(pvUser2);
     return;
 }
 
@@ -314,6 +316,8 @@ VMMDECL(int) HWACCMInvalidatePhysPage(PVM pVM, RTGCPHYS GCPhys)
     /* AMD-V doesn't support invalidation with guest physical addresses; see
        comment in SVMR0InvalidatePhysPage. */
     Assert(pVM->hwaccm.s.svm.fSupported);
+#else
+    NOREF(GCPhys);
 #endif
 
     HWACCMFlushTLBOnAllVCpus(pVM);

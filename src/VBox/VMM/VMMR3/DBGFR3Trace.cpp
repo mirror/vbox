@@ -196,5 +196,6 @@ static DECLCALLBACK(void) dbgfR3TraceInfo(PVM pVM, PCDBGFINFOHLP pHlp, const cha
                         hTraceBuf, RTTraceBufGetEntryCount(hTraceBuf), RTTraceBufGetEntrySize(hTraceBuf));
         RTTraceBufEnumEntries(hTraceBuf, dbgfR3TraceInfoDumpEntry, (void *)pHlp);
     }
+    NOREF(pszArgs);
 }
 

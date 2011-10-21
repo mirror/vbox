@@ -598,6 +598,7 @@ VMMR0DECL(int) VMMR0EntryInt(PVM pVM, VMMR0OPERATION enmOperation, void *pvArg)
      * than -1 which the interrupt gate glue code might return.
      */
     Log(("operation %#x is not supported\n", enmOperation));
+    NOREF(enmOperation); NOREF(pvArg); NOREF(pVM);
     return VERR_NOT_SUPPORTED;
 }
 
@@ -1538,6 +1539,7 @@ static DECLCALLBACK(size_t) rtLogOutput(void *pv, const char *pachChars, size_t 
     for (size_t i = 0; i < cbChars; i++)
         LogAlways(("%c", pachChars[i]));
 
+    NOREF(pv);
     return cbChars;
 }
 

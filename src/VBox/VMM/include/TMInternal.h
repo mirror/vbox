@@ -727,7 +727,7 @@ void                    tmTimerQueueSchedule(PVM pVM, PTMTIMERQUEUE pQueue);
 void                    tmTimerQueuesSanityChecks(PVM pVM, const char *pszWhere);
 #endif
 
-int                     tmCpuTickPause(PVM pVM, PVMCPU pVCpu);
+int                     tmCpuTickPause(PVMCPU pVCpu);
 int                     tmCpuTickResume(PVM pVM, PVMCPU pVCpu);
 
 int                     tmVirtualPauseLocked(PVM pVM);

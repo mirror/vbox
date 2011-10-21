@@ -264,7 +264,10 @@ void vmmR3SwitcherRelocate(PVM pVM, RTGCINTPTR offDelta)
     pVM->pfnVMMGCGuestToHostAsmGuestCtx = RCPtr + pSwitcher->offGCGuestToHostAsmGuestCtx;
 
 //    AssertFailed();
+#else
+    NOREF(pVM);
 #endif
+    NOREF(offDelta);
 }
 
 

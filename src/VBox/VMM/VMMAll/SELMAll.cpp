@@ -701,6 +701,7 @@ DECLINLINE(int) selmValidateAndConvertCSAddrRealMode(PVMCPU pVCpu, RTSEL SelCS, 
 DECLINLINE(int) selmValidateAndConvertCSAddrStd(PVM pVM, PVMCPU pVCpu, RTSEL SelCPL, RTSEL SelCS, RTGCPTR Addr,
                                                 PRTGCPTR ppvFlat, uint32_t *pcBits)
 {
+    NOREF(pVCpu);
     /** @todo validate limit! */
     X86DESC    Desc;
     if (!(SelCS & X86_SEL_LDT))
@@ -933,6 +934,7 @@ VMMDECL(DISCPUMODE) SELMGetCpuModeFromSelector(PVM pVM, X86EFLAGS eflags, RTSEL 
     PVMCPU pVCpu = VMMGetCpu(pVM);
 #ifdef IN_RING0
     Assert(CPUMAreHiddenSelRegsValid(pVCpu));
+    NOREF(eflags); NOREF(Sel);
 #else  /* !IN_RING0 */
     if (!CPUMAreHiddenSelRegsValid(pVCpu))
     {
@@ -1181,6 +1183,8 @@ VMMDECL(RTRCPTR) SELMGetHyperGDT(PVM pVM)
  */
 VMMDECL(int) SELMGetTSSInfo(PVM pVM, PVMCPU pVCpu, PRTGCUINTPTR pGCPtrTss, PRTGCUINTPTR pcbTss, bool *pfCanHaveIOBitmap)
 {
+    NOREF(pVM);
+
     /*
      * The TR hidden register is always valid.
      */

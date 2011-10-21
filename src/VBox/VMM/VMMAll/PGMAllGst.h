@@ -39,7 +39,7 @@ RT_C_DECLS_END
 
 DECLINLINE(int) PGM_GST_NAME(WalkReturnNotPresent)(PVMCPU pVCpu, PGSTPTWALK pWalk, int iLevel)
 {
-    NOREF(iLevel);
+    NOREF(iLevel); NOREF(pVCpu);
     pWalk->Core.fNotPresent     = true;
     pWalk->Core.uLevel          = (uint8_t)iLevel;
     return VERR_PAGE_TABLE_NOT_PRESENT;
@@ -47,7 +47,7 @@ DECLINLINE(int) PGM_GST_NAME(WalkReturnNotPresent)(PVMCPU pVCpu, PGSTPTWALK pWal
 
 DECLINLINE(int) PGM_GST_NAME(WalkReturnBadPhysAddr)(PVMCPU pVCpu, PGSTPTWALK pWalk, int rc, int iLevel)
 {
-    AssertMsg(rc == VERR_PGM_INVALID_GC_PHYSICAL_ADDRESS, ("%Rrc\n", rc));
+    AssertMsg(rc == VERR_PGM_INVALID_GC_PHYSICAL_ADDRESS, ("%Rrc\n", rc)); NOREF(rc); NOREF(pVCpu);
     pWalk->Core.fBadPhysAddr    = true;
     pWalk->Core.uLevel          = (uint8_t)iLevel;
     return VERR_PAGE_TABLE_NOT_PRESENT;
@@ -55,6 +55,7 @@ DECLINLINE(int) PGM_GST_NAME(WalkReturnBadPhysAddr)(PVMCPU pVCpu, PGSTPTWALK pWa
 
 DECLINLINE(int) PGM_GST_NAME(WalkReturnRsvdError)(PVMCPU pVCpu, PGSTPTWALK pWalk, int iLevel)
 {
+    NOREF(pVCpu);
     pWalk->Core.fRsvdError      = true;
     pWalk->Core.uLevel          = (uint8_t)iLevel;
     return VERR_PAGE_TABLE_NOT_PRESENT;
@@ -268,6 +269,7 @@ PGM_GST_DECL(int, GetPage)(PVMCPU pVCpu, RTGCPTR GCPtr, uint64_t *pfFlags, PRTGC
         *pfFlags = X86_PTE_P | X86_PTE_RW | X86_PTE_US;
     if (pGCPhys)
         *pGCPhys = GCPtr & PAGE_BASE_GC_MASK;
+    NOREF(pVCpu);
     return VINF_SUCCESS;
 
 #elif PGM_GST_TYPE == PGM_TYPE_32BIT \
@@ -390,6 +392,7 @@ PGM_GST_DECL(int, ModifyPage)(PVMCPU pVCpu, RTGCPTR GCPtr, size_t cb, uint64_t f
 
 #else
     /* real / protected mode: ignore. */
+    NOREF(pVCpu); NOREF(GCPtr); NOREF(fFlags); NOREF(fMask);
     return VINF_SUCCESS;
 #endif
 }
@@ -438,6 +441,7 @@ PGM_GST_DECL(int, GetPDE)(PVMCPU pVCpu, RTGCPTR GCPtr, PX86PDEPAE pPDE)
     return VINF_SUCCESS;
 
 #else
+    NOREF(pVCpu); NOREF(GCPtr); NOREF(pPDE);
     AssertFailed();
     return VERR_NOT_IMPLEMENTED;
 #endif
@@ -669,6 +673,7 @@ PGM_GST_DECL(bool, HandlerVirtualUpdate)(PVM pVM, uint32_t cr4)
     return !!(fTodo & PGM_SYNC_UPDATE_PAGE_BIT_VIRTUAL);
 
 #else /* real / protected */
+    NOREF(pVM); NOREF(cr4);
     return false;
 #endif
 }

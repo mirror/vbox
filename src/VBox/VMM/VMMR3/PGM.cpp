@@ -2551,6 +2551,7 @@ static DECLCALLBACK(void) pgmR3ResetNoMorePhysWritesFlag(PVM pVM, VMSTATE enmSta
     if (   enmState == VMSTATE_RUNNING
         || enmState == VMSTATE_RESUMING)
         pVM->pgm.s.fNoMorePhysWrites = false;
+    NOREF(enmOldState); NOREF(pvUser);
 }
 #endif
 
@@ -3583,10 +3584,9 @@ VMMR3DECL(int) PGMR3ChangeMode(PVM pVM, PVMCPU pVCpu, PGMMODE enmGuestMode)
  * Called by pgmPoolFlushAllInt prior to flushing the pool.
  *
  * @returns VBox status code, fully asserted.
- * @param   pVM     The VM handle.
  * @param   pVCpu   The VMCPU to operate on.
  */
-int pgmR3ExitShadowModeBeforePoolFlush(PVM pVM, PVMCPU pVCpu)
+int pgmR3ExitShadowModeBeforePoolFlush(PVMCPU pVCpu)
 {
     /* Unmap the old CR3 value before flushing everything. */
     int rc = PGM_BTH_PFN(UnmapCR3, pVCpu)(pVCpu);
@@ -3639,6 +3639,7 @@ static DECLCALLBACK(int) pgmR3CmdRam(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pV
     /*
      * Validate input.
      */
+    NOREF(pCmd); NOREF(paArgs); NOREF(cArgs);
     if (!pVM)
         return pCmdHlp->pfnPrintf(pCmdHlp, NULL, "error: The command requires a VM to be selected.\n");
     if (!pVM->pgm.s.pRamRangesXR3)
@@ -3725,6 +3726,7 @@ static DECLCALLBACK(int) pgmR3CmdSync(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM p
     /*
      * Validate input.
      */
+    NOREF(pCmd); NOREF(paArgs); NOREF(cArgs);
     if (!pVM)
         return pCmdHlp->pfnPrintf(pCmdHlp, NULL, "error: The command requires a VM to be selected.\n");
 
@@ -3761,6 +3763,7 @@ static DECLCALLBACK(int) pgmR3CmdAssertCR3(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, 
     /*
      * Validate input.
      */
+    NOREF(pCmd); NOREF(paArgs); NOREF(cArgs);
     if (!pVM)
         return pCmdHlp->pfnPrintf(pCmdHlp, NULL, "error: The command requires a VM to be selected.\n");
 
@@ -3795,6 +3798,7 @@ static DECLCALLBACK(int) pgmR3CmdSyncAlways(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp,
     /*
      * Validate input.
      */
+    NOREF(pCmd); NOREF(paArgs); NOREF(cArgs);
     if (!pVM)
         return pCmdHlp->pfnPrintf(pCmdHlp, NULL, "error: The command requires a VM to be selected.\n");
 
@@ -3830,6 +3834,7 @@ static DECLCALLBACK(int) pgmR3CmdPhysToFile(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp,
     /*
      * Validate input.
      */
+    NOREF(pCmd);
     if (!pVM)
         return pCmdHlp->pfnPrintf(pCmdHlp, NULL, "error: The command requires a VM to be selected.\n");
     if (    cArgs < 1

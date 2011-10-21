@@ -2164,6 +2164,7 @@ VMMDECL(void) CPUMRawSetEFlags(PVMCPU pVCpu, PCPUMCTXCORE pCtxCore, uint32_t efl
 VMMDECL(uint32_t) CPUMRawGetEFlags(PVMCPU pVCpu, PCPUMCTXCORE pCtxCore)
 {
 #ifdef IN_RING0
+    NOREF(pVCpu);
     return pCtxCore->eflags.u32;
 #else
     PVM pVM = pVCpu->CTX_SUFF(pVM);

@@ -181,7 +181,7 @@ PGM_SHW_DECL(int, Enter)(PVMCPU pVCpu, bool fIs64BitsPagingMode)
     /* Must distinguish between 32 and 64 bits guest paging modes as we'll use a different shadow paging root/mode in both cases. */
     RTGCPHYS     GCPhysCR3 = (fIs64BitsPagingMode) ? RT_BIT_64(63) : RT_BIT_64(62);
 # else
-    RTGCPHYS     GCPhysCR3 = RT_BIT_64(63);
+    RTGCPHYS     GCPhysCR3 = RT_BIT_64(63); NOREF(fIs64BitsPagingMode);
 # endif
     PPGMPOOLPAGE pNewShwPageCR3;
     PVM          pVM       = pVCpu->pVMR3;
@@ -206,6 +206,8 @@ PGM_SHW_DECL(int, Enter)(PVMCPU pVCpu, bool fIs64BitsPagingMode)
     pgmUnlock(pVM);
 
     Log(("Enter nested shadow paging mode: root %RHv phys %RHp\n", pVCpu->pgm.s.pShwPageCR3R3, pVCpu->pgm.s.CTX_SUFF(pShwPageCR3)->Core.Key));
+#else
+    NOREF(pVCpu); NOREF(fIs64BitsPagingMode);
 #endif
     return VINF_SUCCESS;
 }

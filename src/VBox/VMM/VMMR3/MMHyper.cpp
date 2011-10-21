@@ -315,8 +315,8 @@ VMMR3DECL(int) MMR3HyperInitFinalize(PVM pVM)
 
 
 /**
- * Callback function which will be called when PGM is trying to find
- * a new location for the mapping.
+ * Callback function which will be called when PGM is trying to find a new
+ * location for the mapping.
  *
  * The callback is called in two modes, 1) the check mode and 2) the relocate mode.
  * In 1) the callback should say if it objects to a suggested new location. If it
@@ -333,8 +333,10 @@ VMMR3DECL(int) MMR3HyperInitFinalize(PVM pVM)
  * @remark  The return value is no a failure indicator, it's an acceptance
  *          indicator. Relocation can not fail!
  */
-static DECLCALLBACK(bool) mmR3HyperRelocateCallback(PVM pVM, RTGCPTR GCPtrOld, RTGCPTR GCPtrNew, PGMRELOCATECALL enmMode, void *pvUser)
+static DECLCALLBACK(bool) mmR3HyperRelocateCallback(PVM pVM, RTGCPTR GCPtrOld, RTGCPTR GCPtrNew,
+                                                    PGMRELOCATECALL enmMode, void *pvUser)
 {
+    NOREF(pvUser);
     switch (enmMode)
     {
         /*
@@ -1212,7 +1214,7 @@ VMMR3DECL(RTHCPHYS) MMR3HyperHCVirt2HCPhys(PVM pVM, void *pvR3)
 
 
 /**
- * Implements the return case of MMR3HyperQueryInfoFromHCPhys.
+ * Implements the hcphys-not-found return case of MMR3HyperQueryInfoFromHCPhys.
  *
  * @returns VINF_SUCCESS, VINF_BUFFER_OVERFLOW.
  * @param   pVM                 The VM handle.
@@ -1225,6 +1227,7 @@ VMMR3DECL(RTHCPHYS) MMR3HyperHCVirt2HCPhys(PVM pVM, void *pvR3)
 static int mmR3HyperQueryInfoFromHCPhysFound(PVM pVM, RTHCPHYS HCPhys, PMMLOOKUPHYPER pLookup,
                                              char *pszWhat, size_t cbWhat, uint32_t *pcbAlloc)
 {
+    NOREF(pVM); NOREF(HCPhys);
     *pcbAlloc = pLookup->cb;
     int rc = RTStrCopy(pszWhat, cbWhat, pLookup->pszDesc);
     return rc == VERR_BUFFER_OVERFLOW ? VINF_BUFFER_OVERFLOW : rc;
@@ -1361,6 +1364,8 @@ VMMR3DECL(int) MMR3HyperReadGCVirt(PVM pVM, void *pvDst, RTGCPTR GCPtr, size_t c
  */
 static DECLCALLBACK(void) mmR3HyperInfoHma(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszArgs)
 {
+    NOREF(pszArgs);
+
     pHlp->pfnPrintf(pHlp, "Hypervisor Memory Area (HMA) Layout: Base %RGv, 0x%08x bytes\n",
                     pVM->mm.s.pvHyperAreaGC, pVM->mm.s.cbHyperArea);
 

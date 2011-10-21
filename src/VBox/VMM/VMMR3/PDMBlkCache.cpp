@@ -793,9 +793,10 @@ static PPDMBLKCACHE pdmR3BlkCacheFindById(PPDMBLKCACHEGLOBAL pBlkCacheGlobal, co
 /**
  * Commit timer callback.
  */
-static void pdmBlkCacheCommitTimerCallback(PVM pVM, PTMTIMER pTimer, void *pvUser)
+static DECLCALLBACK(void) pdmBlkCacheCommitTimerCallback(PVM pVM, PTMTIMER pTimer, void *pvUser)
 {
     PPDMBLKCACHEGLOBAL pCache = (PPDMBLKCACHEGLOBAL)pvUser;
+    NOREF(pVM); NOREF(pTimer);
 
     LogFlowFunc(("Commit interval expired, commiting dirty entries\n"));
 
@@ -866,10 +867,10 @@ static DECLCALLBACK(int) pdmR3BlkCacheSaveExec(PVM pVM, PSSMHANDLE pSSM)
 
 static DECLCALLBACK(int) pdmR3BlkCacheLoadExec(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass)
 {
-    int rc = VINF_SUCCESS;
-    uint32_t cRefs;
     PPDMBLKCACHEGLOBAL pBlkCacheGlobal = pVM->pUVM->pdm.s.pBlkCacheGlobal;
+    uint32_t           cRefs;
 
+    NOREF(uPass);
     AssertPtr(pBlkCacheGlobal);
 
     pdmBlkCacheLockEnter(pBlkCacheGlobal);
@@ -886,6 +887,7 @@ static DECLCALLBACK(int) pdmR3BlkCacheLoadExec(PVM pVM, PSSMHANDLE pSSM, uint32_
      * More saved entries that current ones are not allowed because this could result in
      * lost data.
      */
+    int rc = VINF_SUCCESS;
     if (cRefs <= pBlkCacheGlobal->cRefs)
     {
         char *pszId = NULL;
@@ -2682,8 +2684,9 @@ VMMR3DECL(void) PDMR3BlkCacheIoXferComplete(PPDMBLKCACHE pBlkCache, PPDMBLKCACHE
  */
 static int pdmBlkCacheEntryQuiesce(PAVLRU64NODECORE pNode, void *pvUser)
 {
-    PPDMBLKCACHEENTRY  pEntry = (PPDMBLKCACHEENTRY)pNode;
-    PPDMBLKCACHE pBlkCache = pEntry->pBlkCache;
+    PPDMBLKCACHEENTRY   pEntry    = (PPDMBLKCACHEENTRY)pNode;
+    PPDMBLKCACHE        pBlkCache = pEntry->pBlkCache;
+    NOREF(pvUser);
 
     while (ASMAtomicReadU32(&pEntry->fFlags) & PDMBLKCACHE_ENTRY_IO_IN_PROGRESS)
     {

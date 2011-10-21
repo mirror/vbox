@@ -516,6 +516,7 @@ VMMR3DECL(void) SELMR3Relocate(PVM pVM)
  */
 VMMR3DECL(int) SELMR3Term(PVM pVM)
 {
+    NOREF(pVM);
     return 0;
 }
 
@@ -1366,10 +1367,12 @@ VMMR3DECL(int) SELMR3UpdateFromCPUM(PVM pVM, PVMCPU pVCpu)
  * @param   enmAccessType   The access type.
  * @param   pvUser          User argument.
  */
-static DECLCALLBACK(int) selmR3GuestGDTWriteHandler(PVM pVM, RTGCPTR GCPtr, void *pvPtr, void *pvBuf, size_t cbBuf, PGMACCESSTYPE enmAccessType, void *pvUser)
+static DECLCALLBACK(int) selmR3GuestGDTWriteHandler(PVM pVM, RTGCPTR GCPtr, void *pvPtr, void *pvBuf, size_t cbBuf,
+                                                    PGMACCESSTYPE enmAccessType, void *pvUser)
 {
-    Assert(enmAccessType == PGMACCESSTYPE_WRITE);
-    Log(("selmR3GuestGDTWriteHandler: write to %RGv size %d\n", GCPtr, cbBuf));
+    Assert(enmAccessType == PGMACCESSTYPE_WRITE); NOREF(enmAccessType);
+    Log(("selmR3GuestGDTWriteHandler: write to %RGv size %d\n", GCPtr, cbBuf)); NOREF(GCPtr); NOREF(cbBuf);
+    NOREF(pvPtr); NOREF(pvBuf); NOREF(pvUser);
 
     VMCPU_FF_SET(VMMGetCpu(pVM), VMCPU_FF_SELM_SYNC_GDT);
     return VINF_PGM_HANDLER_DO_DEFAULT;
@@ -1392,10 +1395,13 @@ static DECLCALLBACK(int) selmR3GuestGDTWriteHandler(PVM pVM, RTGCPTR GCPtr, void
  * @param   enmAccessType   The access type.
  * @param   pvUser          User argument.
  */
-static DECLCALLBACK(int) selmR3GuestLDTWriteHandler(PVM pVM, RTGCPTR GCPtr, void *pvPtr, void *pvBuf, size_t cbBuf, PGMACCESSTYPE enmAccessType, void *pvUser)
+static DECLCALLBACK(int) selmR3GuestLDTWriteHandler(PVM pVM, RTGCPTR GCPtr, void *pvPtr, void *pvBuf, size_t cbBuf,
+                                                    PGMACCESSTYPE enmAccessType, void *pvUser)
 {
-    Assert(enmAccessType == PGMACCESSTYPE_WRITE);
-    Log(("selmR3GuestLDTWriteHandler: write to %RGv size %d\n", GCPtr, cbBuf));
+    Assert(enmAccessType == PGMACCESSTYPE_WRITE); NOREF(enmAccessType);
+    Log(("selmR3GuestLDTWriteHandler: write to %RGv size %d\n", GCPtr, cbBuf)); NOREF(GCPtr); NOREF(cbBuf);
+    NOREF(pvPtr); NOREF(pvBuf); NOREF(pvUser);
+
     VMCPU_FF_SET(VMMGetCpu(pVM), VMCPU_FF_SELM_SYNC_LDT);
     return VINF_PGM_HANDLER_DO_DEFAULT;
 }
@@ -1417,10 +1423,12 @@ static DECLCALLBACK(int) selmR3GuestLDTWriteHandler(PVM pVM, RTGCPTR GCPtr, void
  * @param   enmAccessType   The access type.
  * @param   pvUser          User argument.
  */
-static DECLCALLBACK(int) selmR3GuestTSSWriteHandler(PVM pVM, RTGCPTR GCPtr, void *pvPtr, void *pvBuf, size_t cbBuf, PGMACCESSTYPE enmAccessType, void *pvUser)
+static DECLCALLBACK(int) selmR3GuestTSSWriteHandler(PVM pVM, RTGCPTR GCPtr, void *pvPtr, void *pvBuf, size_t cbBuf,
+                                                    PGMACCESSTYPE enmAccessType, void *pvUser)
 {
-    Assert(enmAccessType == PGMACCESSTYPE_WRITE);
+    Assert(enmAccessType == PGMACCESSTYPE_WRITE); NOREF(enmAccessType);
     Log(("selmR3GuestTSSWriteHandler: write %.*Rhxs to %RGv size %d\n", RT_MIN(8, cbBuf), pvBuf, GCPtr, cbBuf));
+    NOREF(pvBuf); NOREF(GCPtr); NOREF(cbBuf); NOREF(pvUser);NOREF(pvPtr);
 
     /** @todo This can be optimized by checking for the ESP0 offset and tracking TR
      *        reloads in REM (setting VM_FF_SELM_SYNC_TSS if TR is reloaded). We
@@ -1428,7 +1436,6 @@ static DECLCALLBACK(int) selmR3GuestTSSWriteHandler(PVM pVM, RTGCPTR GCPtr, void
      *        changes while we're in REM. */
 
     VMCPU_FF_SET(VMMGetCpu(pVM), VMCPU_FF_SELM_SYNC_TSS);
-
     return VINF_PGM_HANDLER_DO_DEFAULT;
 }
 
@@ -1981,12 +1988,11 @@ VMMDECL(int) SELMGetLDTFromSel(PVM pVM, RTSEL SelLdt, PRTGCPTR ppvLdt, unsigned 
  *
  * @returns VBox status code, see SELMR3GetSelectorInfo for details.
  *
- * @param   pVM         VM handle.
  * @param   pVCpu       VMCPU handle.
  * @param   Sel         The selector to get info about.
  * @param   pSelInfo    Where to store the information.
  */
-static int selmR3GetSelectorInfo64(PVM pVM, PVMCPU pVCpu, RTSEL Sel, PDBGFSELINFO pSelInfo)
+static int selmR3GetSelectorInfo64(PVMCPU pVCpu, RTSEL Sel, PDBGFSELINFO pSelInfo)
 {
     /*
      * Read it from the guest descriptor table.
@@ -2301,7 +2307,7 @@ VMMR3DECL(int) SELMR3GetSelectorInfo(PVM pVM, PVMCPU pVCpu, RTSEL Sel, PDBGFSELI
 {
     AssertPtr(pSelInfo);
     if (CPUMIsGuestInLongMode(pVCpu))
-        return selmR3GetSelectorInfo64(pVM, pVCpu, Sel, pSelInfo);
+        return selmR3GetSelectorInfo64(pVCpu, Sel, pSelInfo);
     return selmR3GetSelectorInfo32(pVM, pVCpu, Sel, pSelInfo);
 }
 
@@ -2491,6 +2497,7 @@ VMMR3DECL(void) SELMR3DumpDescriptor(X86DESC  Desc, RTSEL Sel, const char *pszMs
  */
 static DECLCALLBACK(void) selmR3InfoGdt(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszArgs)
 {
+    NOREF(pszArgs);
     pHlp->pfnPrintf(pHlp, "Shadow GDT (GCAddr=%RRv):\n", MMHyperR3ToRC(pVM, pVM->selm.s.paGdtR3));
     for (unsigned iGDT = 0; iGDT < SELM_GDT_ELEMENTS; iGDT++)
     {
@@ -2554,6 +2561,7 @@ static DECLCALLBACK(void) selmR3InfoGdtGuest(PVM pVM, PCDBGFINFOHLP pHlp, const 
         else
             pHlp->pfnPrintf(pHlp, "%04x - read error rc=%Rrc GCAddr=%RGv\n", iGDT << X86_SEL_SHIFT, rc, GCPtrGDT);
     }
+    NOREF(pszArgs);
 }
 
 
@@ -2578,6 +2586,7 @@ static DECLCALLBACK(void) selmR3InfoLdt(PVM pVM, PCDBGFINFOHLP pHlp, const char 
             pHlp->pfnPrintf(pHlp, "%s\n", szOutput);
         }
     }
+    NOREF(pszArgs);
 }
 
 
@@ -2632,6 +2641,7 @@ static DECLCALLBACK(void) selmR3InfoLdtGuest(PVM pVM, PCDBGFINFOHLP pHlp, const 
         else
             pHlp->pfnPrintf(pHlp, "%04x - read error rc=%Rrc GCAddr=%RGv\n", (iLdt << X86_SEL_SHIFT) | X86_SEL_LDT, rc, GCPtrLdt);
     }
+    NOREF(pszArgs);
 }
 
 

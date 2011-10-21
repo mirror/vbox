@@ -108,6 +108,7 @@ typedef PGMR3DUMPHIERARCHYSTATE *PPGMR3DUMPHIERARCHYSTATE;
  */
 VMMR3DECL(int) PGMR3DbgR3Ptr2GCPhys(PVM pVM, RTR3PTR R3Ptr, PRTGCPHYS pGCPhys)
 {
+    NOREF(pVM); NOREF(R3Ptr);
     *pGCPhys = NIL_RTGCPHYS;
     return VERR_NOT_IMPLEMENTED;
 }
@@ -129,6 +130,7 @@ VMMR3DECL(int) PGMR3DbgR3Ptr2GCPhys(PVM pVM, RTR3PTR R3Ptr, PRTGCPHYS pGCPhys)
  */
 VMMR3DECL(int) PGMR3DbgR3Ptr2HCPhys(PVM pVM, RTR3PTR R3Ptr, PRTHCPHYS pHCPhys)
 {
+    NOREF(pVM); NOREF(R3Ptr);
     *pHCPhys = NIL_RTHCPHYS;
     return VERR_NOT_IMPLEMENTED;
 }
@@ -1057,6 +1059,7 @@ static void pgmR3DumpHierarchyShwGuestPageInfo(PPGMR3DUMPHIERARCHYSTATE pState, 
         else
             pState->pHlp->pfnPrintf(pState->pHlp, " not found");
     }
+    NOREF(cbPage);
 }
 
 
@@ -1724,6 +1727,7 @@ static void pgmR3DumpHierarchyGstPageInfo(PPGMR3DUMPHIERARCHYSTATE pState, RTGCP
         strcpy(szPage, " not found");
     pgmUnlock(pState->pVM);
     pState->pHlp->pfnPrintf(pState->pHlp, "%s", szPage);
+    NOREF(cbPage);
 }
 
 

@@ -341,6 +341,7 @@ static DECLCALLBACK(int) vmmGCTestTmpPFHandler(PVM pVM, PCPUMCTXCORE pRegFrame)
         pRegFrame->eip = (uintptr_t)vmmGCTestTrap0e_ResumeEIP;
         return VINF_SUCCESS;
     }
+    NOREF(pVM);
     return VERR_INTERNAL_ERROR;
 }
 

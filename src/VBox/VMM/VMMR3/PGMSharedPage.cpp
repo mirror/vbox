@@ -291,8 +291,8 @@ VMMR3DECL(int) PGMR3SharedModuleGetPageState(PVM pVM, RTGCPTR GCPtrPage, bool *p
 #endif
 }
 
-
 #if defined(VBOX_STRICT) && HC_ARCH_BITS == 64
+
 /**
  * The '.pgmcheckduppages' command.
  *
@@ -303,15 +303,16 @@ VMMR3DECL(int) PGMR3SharedModuleGetPageState(PVM pVM, RTGCPTR GCPtrPage, bool *p
  * @param   paArgs      Pointer to (readonly) array of arguments.
  * @param   cArgs       Number of arguments in the array.
  */
-DECLCALLBACK(int)  pgmR3CmdCheckDuplicatePages(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs)
+DECLCALLBACK(int) pgmR3CmdCheckDuplicatePages(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs)
 {
     unsigned cBallooned = 0;
-    unsigned cShared = 0;
-    unsigned cZero = 0;
-    unsigned cUnique = 0;
+    unsigned cShared    = 0;
+    unsigned cZero      = 0;
+    unsigned cUnique    = 0;
     unsigned cDuplicate = 0;
     unsigned cAllocZero = 0;
-    unsigned cPages = 0;
+    unsigned cPages     = 0;
+    NOREF(pCmd); NOREF(paArgs); NOREF(cArgs);
 
     pgmLock(pVM);
 
@@ -383,6 +384,7 @@ DECLCALLBACK(int)  pgmR3CmdCheckDuplicatePages(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdH
     return VINF_SUCCESS;
 }
 
+
 /**
  * The '.pgmsharedmodules' command.
  *
@@ -393,12 +395,12 @@ DECLCALLBACK(int)  pgmR3CmdCheckDuplicatePages(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdH
  * @param   paArgs      Pointer to (readonly) array of arguments.
  * @param   cArgs       Number of arguments in the array.
  */
-DECLCALLBACK(int)  pgmR3CmdShowSharedModules(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs)
+DECLCALLBACK(int) pgmR3CmdShowSharedModules(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs)
 {
-    unsigned i = 0;
+    NOREF(pCmd); NOREF(paArgs); NOREF(cArgs);
 
     pgmLock(pVM);
-    do
+    for (unsigned i = 0; i < RT_ELEMENTS(g_apSharedModules); i++)
     {
         if (g_apSharedModules[i])
         {
@@ -406,8 +408,7 @@ DECLCALLBACK(int)  pgmR3CmdShowSharedModules(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp
             for (unsigned j = 0; j < g_apSharedModules[i]->cRegions; j++)
                 pCmdHlp->pfnPrintf(pCmdHlp, NULL, "--- Region %d: base %RGv size %x\n", j, g_apSharedModules[i]->aRegions[j].GCRegionAddr, g_apSharedModules[i]->aRegions[j].cbRegion);
         }
-        i++;
-    } while (i < RT_ELEMENTS(g_apSharedModules));
+    }
     pgmUnlock(pVM);
 
     return VINF_SUCCESS;

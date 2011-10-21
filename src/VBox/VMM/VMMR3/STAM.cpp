@@ -1233,6 +1233,7 @@ VMMR3DECL(int)  STAMR3SnapshotFreeU(PUVM pUVM, char *pszSnapshot)
 {
     if (!pszSnapshot)
         RTMemFree(pszSnapshot);
+    NOREF(pUVM);
     return VINF_SUCCESS;
 }
 

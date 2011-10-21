@@ -884,7 +884,9 @@ static int                  ssmR3LiveControlEmit(PSSMHANDLE pSSM, long double lr
 static int                  ssmR3StrmWriteBuffers(PSSMSTRM pStrm);
 static int                  ssmR3StrmReadMore(PSSMSTRM pStrm);
 
+#ifndef SSM_STANDALONE
 static int                  ssmR3DataFlushBuffer(PSSMHANDLE pSSM);
+#endif
 static int                  ssmR3DataReadRecHdrV2(PSSMHANDLE pSSM);
 
 
@@ -975,6 +977,8 @@ static DECLCALLBACK(int) ssmR3SelfLiveExec(PVM pVM, PSSMHANDLE pSSM, uint32_t uP
  */
 static DECLCALLBACK(int) ssmR3SelfSaveExec(PVM pVM, PSSMHANDLE pSSM)
 {
+    NOREF(pVM);
+
     /*
      * String table containing pairs of variable and value string.
      * Terminated by two empty strings.
@@ -1006,6 +1010,7 @@ static DECLCALLBACK(int) ssmR3SelfSaveExec(PVM pVM, PSSMHANDLE pSSM)
 static DECLCALLBACK(int) ssmR3SelfLoadExec(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass)
 {
     AssertLogRelMsgReturn(uVersion == 1, ("%d", uVersion), VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION);
+    NOREF(pVM); NOREF(uPass);
 
     /*
      * The first and last passes contains a {name, value} string table that is
@@ -1069,6 +1074,7 @@ static DECLCALLBACK(int) ssmR3SelfLoadExec(PVM pVM, PSSMHANDLE pSSM, uint32_t uV
 static DECLCALLBACK(int) ssmR3LiveControlLoadExec(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass)
 {
     AssertLogRelMsgReturn(uVersion == 1, ("%d", uVersion), VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION);
+    NOREF(uPass);
 
     uint16_t uPartsPerTenThousand;
     int rc = SSMR3GetU16(pSSM, &uPartsPerTenThousand);
@@ -1275,15 +1281,18 @@ VMMR3DECL(int) SSMR3RegisterDevice(PVM pVM, PPDMDEVINS pDevIns, const char *pszN
  * @param   pfnLoadDone     Done load callback, optional.
  */
 VMMR3DECL(int) SSMR3RegisterDriver(PVM pVM, PPDMDRVINS pDrvIns, const char *pszName, uint32_t uInstance, uint32_t uVersion, size_t cbGuess,
-    PFNSSMDRVLIVEPREP pfnLivePrep, PFNSSMDRVLIVEEXEC pfnLiveExec, PFNSSMDRVLIVEVOTE pfnLiveVote,
-    PFNSSMDRVSAVEPREP pfnSavePrep, PFNSSMDRVSAVEEXEC pfnSaveExec, PFNSSMDRVSAVEDONE pfnSaveDone,
-    PFNSSMDRVLOADPREP pfnLoadPrep, PFNSSMDRVLOADEXEC pfnLoadExec, PFNSSMDRVLOADDONE pfnLoadDone)
+                                   PFNSSMDRVLIVEPREP pfnLivePrep, PFNSSMDRVLIVEEXEC pfnLiveExec, PFNSSMDRVLIVEVOTE pfnLiveVote,
+                                   PFNSSMDRVSAVEPREP pfnSavePrep, PFNSSMDRVSAVEEXEC pfnSaveExec, PFNSSMDRVSAVEDONE pfnSaveDone,
+                                   PFNSSMDRVLOADPREP pfnLoadPrep, PFNSSMDRVLOADEXEC pfnLoadExec, PFNSSMDRVLOADDONE pfnLoadDone)
 {
     PSSMUNIT pUnit;
     int rc = ssmR3Register(pVM, pszName, uInstance, uVersion, cbGuess, NULL, &pUnit);
     if (RT_SUCCESS(rc))
     {
         pUnit->enmType = SSMUNITTYPE_DRV;
+        pUnit->u.Drv.pfnLivePrep = pfnLivePrep;
+        pUnit->u.Drv.pfnLiveExec = pfnLiveExec;
+        pUnit->u.Drv.pfnLiveVote = pfnLiveVote;
         pUnit->u.Drv.pfnSavePrep = pfnSavePrep;
         pUnit->u.Drv.pfnSaveExec = pfnSaveExec;
         pUnit->u.Drv.pfnSaveDone = pfnSaveDone;
@@ -2261,6 +2270,7 @@ static int ssmR3StrmClose(PSSMSTRM pStrm, bool fCancelled)
     return rc;
 }
 
+#ifndef SSM_STANDALONE
 
 /**
  * Stream output routine.
@@ -2420,6 +2430,7 @@ static int ssmR3StrmSetEnd(PSSMSTRM pStrm)
     return VINF_SUCCESS;
 }
 
+#endif /* !SSM_STANDALONE */
 
 /**
  * Read more from the stream.
@@ -2619,6 +2630,7 @@ static uint8_t const *ssmR3StrmReadDirect(PSSMSTRM pStrm, size_t cbToRead)
 }
 
 
+#ifndef SSM_STANDALONE
 /**
  * Check that the stream is OK and flush data that is getting old
  *
@@ -2643,7 +2655,7 @@ static int ssmR3StrmCheckAndFlush(PSSMSTRM pStrm)
         ssmR3StrmFlushCurBuf(pStrm);
     return VINF_SUCCESS;
 }
-
+#endif /* !SSM_STANDALONE */
 
 /**
  * Tell current stream position.
@@ -2739,6 +2751,7 @@ static int ssmR3StrmSeek(PSSMSTRM pStrm, int64_t off, uint32_t uMethod, uint32_t
 }
 
 
+#ifndef SSM_STANDALONE
 /**
  * Skip some bytes in the stream.
  *
@@ -2766,6 +2779,7 @@ static int ssmR3StrmSkipTo(PSSMSTRM pStrm, uint64_t offDst)
             return rc;
     }
 }
+#endif /* !SSM_STANDALONE */
 
 
 /**
@@ -2834,6 +2848,7 @@ static int ssmR3StrmPeekAt(PSSMSTRM pStrm, RTFOFF off, void *pvBuf, size_t cbToR
     return rc;
 }
 
+#ifndef SSM_STANDALONE
 
 /**
  * The I/O thread.
@@ -2937,6 +2952,7 @@ static void ssmR3StrmStartIoThread(PSSMSTRM pStrm)
     ASMAtomicWriteHandle(&pStrm->hIoThread, hThread); /* paranoia */
 }
 
+#endif /* !SSM_STANDALONE */
 
 /**
  * Works the progress calculation for non-live saves and restores.
@@ -2969,6 +2985,7 @@ static void ssmR3ProgressByByte(PSSMHANDLE pSSM, uint64_t cbAdvance)
 }
 
 
+#ifndef SSM_STANDALONE
 /**
  * Makes the SSM operation cancellable or not (via SSMR3Cancel).
  *
@@ -2997,6 +3014,7 @@ static void ssmR3SetCancellable(PVM pVM, PSSMHANDLE pSSM, bool fCancellable)
 
     RTCritSectLeave(&pVM->ssm.s.CancelCritSect);
 }
+#endif /* !SSM_STANDALONE */
 
 
 /**
@@ -5492,6 +5510,7 @@ VMMR3_INT_DECL(int) SSMR3LiveSave(PVM pVM, uint32_t cMsMaxDowntime,
 /* ... Loading and reading starts here ... */
 
 
+#ifndef SSM_STANDALONE
 /**
  * Closes the decompressor of a data unit.
  *
@@ -5508,6 +5527,7 @@ static int ssmR3DataReadFinishV1(PSSMHANDLE pSSM)
     }
     return pSSM->rc;
 }
+#endif /* !SSM_STANDALONE */
 
 
 /**
@@ -5604,6 +5624,7 @@ static void ssmR3DataReadBeginV2(PSSMHANDLE pSSM)
 }
 
 
+#ifndef SSM_STANDALONE
 /**
  * Checks for the termination record and closes the decompressor.
  *
@@ -5632,6 +5653,7 @@ static int ssmR3DataReadFinishV2(PSSMHANDLE pSSM)
     }
     return rc;
 }
+#endif /* !SSM_STANDALONE */
 
 
 /**
