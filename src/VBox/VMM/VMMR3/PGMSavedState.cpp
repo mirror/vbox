@@ -1363,14 +1363,16 @@ static void pgmR3ScanRamPages(PVM pVM, bool fFinalPass)
                                  * monitoring if the page is known to be very busy. */
                                 if (PGM_PAGE_IS_WRITTEN_TO(&pCur->aPages[iPage]))
                                 {
-                                    Assert(paLSPages[iPage].fWriteMonitored);
+                                    AssertMsg(paLSPages[iPage].fWriteMonitored,
+                                              ("%RGp %R[pgmpage]\n", pCur->GCPhys + ((RTGCPHYS)iPage << PAGE_SHIFT), &pCur->aPages[iPage]));
                                     PGM_PAGE_CLEAR_WRITTEN_TO(pVM, &pCur->aPages[iPage]);
                                     Assert(pVM->pgm.s.cWrittenToPages > 0);
                                     pVM->pgm.s.cWrittenToPages--;
                                 }
                                 else
                                 {
-                                    Assert(!paLSPages[iPage].fWriteMonitored);
+                                    AssertMsg(!paLSPages[iPage].fWriteMonitored,
+                                              ("%RGp %R[pgmpage]\n", pCur->GCPhys + ((RTGCPHYS)iPage << PAGE_SHIFT), &pCur->aPages[iPage]));
                                     pVM->pgm.s.LiveSave.Ram.cMonitoredPages++;
                                 }
 
@@ -1425,22 +1427,6 @@ static void pgmR3ScanRamPages(PVM pVM, bool fFinalPass)
                                 break;
 
                             case PGM_PAGE_STATE_ZERO:
-                                if (!paLSPages[iPage].fZero)
-                                {
-                                    if (!paLSPages[iPage].fDirty)
-                                    {
-                                        paLSPages[iPage].fDirty = 1;
-                                        pVM->pgm.s.LiveSave.Ram.cReadyPages--;
-                                        pVM->pgm.s.LiveSave.Ram.cDirtyPages++;
-                                    }
-                                    paLSPages[iPage].fZero = 1;
-                                    paLSPages[iPage].fShared = 0;
-#ifdef PGMLIVESAVERAMPAGE_WITH_CRC32
-                                    paLSPages[iPage].u32Crc = PGM_STATE_CRC32_ZERO_PAGE;
-#endif
-                                }
-                                break;
-
                             case PGM_PAGE_STATE_BALLOONED:
                                 if (!paLSPages[iPage].fZero)
                                 {
