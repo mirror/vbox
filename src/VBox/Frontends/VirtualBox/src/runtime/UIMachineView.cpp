@@ -504,9 +504,12 @@ void UIMachineView::cleanupFrameBuffer()
     {
         /* Process pending frame-buffer resize events: */
         QApplication::sendPostedEvents(this, VBoxDefs::ResizeEventType);
-        if (   m_fAccelerate2DVideo
-            || vboxGlobal().vmRenderMode() == VBoxDefs::QImageMode
-            || vboxGlobal().vmRenderMode() == VBoxDefs::SDLMode)
+        if (   vboxGlobal().vmRenderMode() == VBoxDefs::QImageMode
+            || vboxGlobal().vmRenderMode() == VBoxDefs::SDLMode
+#ifdef VBOX_WITH_VIDEOHWACCEL
+            || m_fAccelerate2DVideo
+#endif
+           )
         {
             Assert(m_pFrameBuffer == uisession()->frameBuffer(screenId()));
             CDisplay display = session().GetConsole().GetDisplay();
