@@ -50,6 +50,7 @@ static int g_cErrors = 0;
  */
 static DECLCALLBACK(void) MyAtRuntimeError(PVM pVM, void *pvUser, uint32_t fFlags, const char *pszErrorId, const char *pszFormat, va_list va)
 {
+    NOREF(pVM);
     if (strcmp((const char *)pvUser, "user argument"))
     {
         RTPrintf(TESTCASE ": pvUser=%p:{%s}!\n", pvUser, (const char *)pvUser);
@@ -86,6 +87,7 @@ static DECLCALLBACK(void) MyAtRuntimeError(PVM pVM, void *pvUser, uint32_t fFlag
  */
 static DECLCALLBACK(int) PassVACallback(PVM pVM, unsigned u4K, unsigned u1G, const char *pszFormat, va_list *pva)
 {
+    NOREF(pVM);
     if (u4K != _4K)
     {
         RTPrintf(TESTCASE ": u4K=%#x!\n", u4K);
@@ -162,10 +164,12 @@ static void PassVA(PVM pVM, const char *pszFormat, ...)
 /**
  * Thread function which allocates and frees requests like wildfire.
  */
-static DECLCALLBACK(int) Thread(RTTHREAD Thread, void *pvUser)
+static DECLCALLBACK(int) Thread(RTTHREAD hThreadSelf, void *pvUser)
 {
     int rc = VINF_SUCCESS;
     PVM pVM = (PVM)pvUser;
+    NOREF(hThreadSelf);
+
     for (unsigned i = 0; i < 100000; i++)
     {
         PVMREQ          apReq[17];

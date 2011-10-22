@@ -61,6 +61,7 @@ RTSEMEVENT              g_FinishedEventSem;
 void pfnAsyncTaskCompleted(PVM pVM, void *pvUser, void *pvUser2, int rc)
 {
     LogFlow((TESTCASE ": %s: pVM=%p pvUser=%p pvUser2=%p\n", __FUNCTION__, pVM, pvUser, pvUser2));
+    NOREF(rc);
 
     uint32_t cTasksStillLeft = ASMAtomicDecU32(&g_cTasksLeft);
 

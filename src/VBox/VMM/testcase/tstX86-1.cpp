@@ -88,6 +88,7 @@ static PCTRAPINFO findTrapInfo(uintptr_t uTrapPC, uintptr_t uTrapSP)
 static void sigHandler(int iSig, siginfo_t *pSigInfo, void *pvSigCtx)
 {
     ucontext_t *pCtx = (ucontext_t *)pvSigCtx;
+    NOREF(pSigInfo);
 
 # if defined(RT_ARCH_AMD64) && defined(RT_OS_DARWIN)
     uintptr_t  *puPC    = (uintptr_t *)&pCtx->uc_mcontext->__ss.__rip;

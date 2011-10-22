@@ -678,7 +678,9 @@ static bool                 gmmR0FreeChunk(PGMM pGMM, PGVM pGVM, PGMMCHUNK pChun
 DECLINLINE(void)            gmmR0FreePrivatePage(PGMM pGMM, PGVM pGVM, uint32_t idPage, PGMMPAGE pPage);
 DECLINLINE(void)            gmmR0FreeSharedPage(PGMM pGMM, PGVM pGVM, uint32_t idPage, PGMMPAGE pPage);
 static int                  gmmR0UnmapChunkLocked(PGMM pGMM, PGVM pGVM, PGMMCHUNK pChunk);
+#ifdef VBOX_WITH_PAGE_SHARING
 static void                 gmmR0SharedModuleCleanup(PGMM pGMM, PGVM pGVM);
+#endif
 
 
 
@@ -4162,7 +4164,8 @@ DECLCALLBACK(int) gmmR0CheckForIdenticalModule(PAVLGCPTRNODECORE pNode, void *pv
  * @param   cRegions            Number of shared region descriptors
  * @param   pRegions            Shared region(s)
  */
-GMMR0DECL(int) GMMR0RegisterSharedModule(PVM pVM, VMCPUID idCpu, VBOXOSFAMILY enmGuestOS, char *pszModuleName, char *pszVersion, RTGCPTR GCBaseAddr, uint32_t cbModule,
+GMMR0DECL(int) GMMR0RegisterSharedModule(PVM pVM, VMCPUID idCpu, VBOXOSFAMILY enmGuestOS, char *pszModuleName,
+                                         char *pszVersion, RTGCPTR GCBaseAddr, uint32_t cbModule,
                                          unsigned cRegions, VMMDEVSHAREDREGIONDESC *pRegions)
 {
 #ifdef VBOX_WITH_PAGE_SHARING
@@ -4324,6 +4327,9 @@ end:
     gmmR0MutexRelease(pGMM);
     return rc;
 #else
+
+    NOREF(pVM); NOREF(idCpu); NOREF(enmGuestOS); NOREF(pszModuleName); NOREF(pszVersion);
+    NOREF(GCBaseAddr); NOREF(cbModule); NOREF(cRegions); NOREF(pRegions);
     return VERR_NOT_IMPLEMENTED;
 #endif
 }
@@ -4363,7 +4369,8 @@ GMMR0DECL(int)  GMMR0RegisterSharedModuleReq(PVM pVM, VMCPUID idCpu, PGMMREGISTE
  * @param   GCBaseAddr          Module base address
  * @param   cbModule            Module size
  */
-GMMR0DECL(int) GMMR0UnregisterSharedModule(PVM pVM, VMCPUID idCpu, char *pszModuleName, char *pszVersion, RTGCPTR GCBaseAddr, uint32_t cbModule)
+GMMR0DECL(int) GMMR0UnregisterSharedModule(PVM pVM, VMCPUID idCpu, char *pszModuleName, char *pszVersion,
+                                           RTGCPTR GCBaseAddr, uint32_t cbModule)
 {
 #ifdef VBOX_WITH_PAGE_SHARING
     /*
@@ -4440,6 +4447,8 @@ GMMR0DECL(int) GMMR0UnregisterSharedModule(PVM pVM, VMCPUID idCpu, char *pszModu
     gmmR0MutexRelease(pGMM);
     return rc;
 #else
+
+    NOREF(pVM); NOREF(idCpu); NOREF(pszModuleName); NOREF(pszVersion); NOREF(GCBaseAddr); NOREF(cbModule);
     return VERR_NOT_IMPLEMENTED;
 #endif
 }
@@ -4786,6 +4795,7 @@ GMMR0DECL(int) GMMR0ResetSharedModules(PVM pVM, VMCPUID idCpu)
     gmmR0MutexRelease(pGMM);
     return rc;
 #else
+    NOREF(pVM); NOREF(idCpu);
     return VERR_NOT_IMPLEMENTED;
 #endif
 }
@@ -4919,6 +4929,7 @@ GMMR0DECL(int) GMMR0CheckSharedModules(PVM pVM, PVMCPU pVCpu)
 # endif
     return rc;
 #else
+    NOREF(pVM); NOREF(pVCpu);
     return VERR_NOT_IMPLEMENTED;
 #endif
 }

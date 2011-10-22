@@ -391,6 +391,7 @@ static void tstPDMACStressTestFileTaskCompleted(PVM pVM, void *pvUser, void *pvU
 {
     PPDMACTESTFILE pTestFile = (PPDMACTESTFILE)pvUser2;
     PPDMACTESTFILETASK pTestTask = (PPDMACTESTFILETASK)pvUser;
+    NOREF(pVM); NOREF(rcReq);
 
     if (pTestTask->fWrite)
     {
