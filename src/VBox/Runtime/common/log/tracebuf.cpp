@@ -255,6 +255,7 @@ typedef RTTRACEBUFINT const *PCRTTRACEBUFINT;
         size_t cchPos = RTStrPrintf(pszBuf, cchBuf, "%s(%d): ", RTPathFilename(pszFile), iLine); \
         pszBuf += cchPos; \
         cchBuf -= cchPos; \
+        NOREF(pszFunction); \
     } while (0)
 
 

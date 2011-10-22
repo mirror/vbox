@@ -93,6 +93,8 @@ static DECLCALLBACK(size_t) rtlogFormatStr(void *pvArg, PFNRTSTROUTPUT pfnOutput
 
     AssertMsgFailed(("Invalid logger format type '%%%c%.10s'!\n", ch, *ppszFormat)); NOREF(ch);
 
+    NOREF(pvArg); NOREF(pfnOutput); NOREF(pvArgOutput); NOREF(pArgs); NOREF(cchWidth);
+    NOREF(cchPrecision); NOREF(fFlags); NOREF(chArgSize);
     return 0;
 }
 

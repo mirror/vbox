@@ -56,6 +56,7 @@ RTDECL(void) RTLogLogger(PRTLOGGER pLogger, void *pvCallerRet, const char *pszFo
     RTLogLoggerExV(pLogger, 0, ~0U, pszFormat, args);
 #endif
     va_end(args);
+    NOREF(pvCallerRet);
 }
 RT_EXPORT_SYMBOL(RTLogLogger);
 

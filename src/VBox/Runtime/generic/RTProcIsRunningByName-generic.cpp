@@ -37,6 +37,7 @@ RTR3DECL(bool) RTProcIsRunningByName(const char *pszName)
     /*
      * No other info here, so return false;
      */
+    NOREF(pszName);
     return false;
 }
 

@@ -424,6 +424,7 @@ DECLHIDDEN(size_t) rtstrFormatType(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, 
     char const *pszType;
     char        ch;
     void       *pvValue = va_arg(*pArgs, void *);
+    NOREF(chArgSize);
 
     /*
      * Parse out the type.

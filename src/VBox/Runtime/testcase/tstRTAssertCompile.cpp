@@ -34,6 +34,7 @@
 int main(int argc, char **argv)
 {
     /* Only positive tests here. */
+    NOREF(argc); NOREF(argv);
 
     AssertCompile(true);
     AssertCompile(1);

@@ -685,6 +685,7 @@ RTR3DECL(int)  RTFileFlush(RTFILE hFile)
 
 RTR3DECL(int) RTFileIoCtl(RTFILE hFile, unsigned long ulRequest, void *pvData, unsigned cbData, int *piRet)
 {
+    NOREF(cbData);
     int rc = ioctl(RTFileToNative(hFile), ulRequest, pvData);
     if (piRet)
         *piRet = rc;

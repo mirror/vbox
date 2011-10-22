@@ -307,6 +307,8 @@ DECLINLINE(int) rtlogLock(PRTLOGGER pLogger)
         if (RT_FAILURE(rc))
             return rc;
     }
+#else
+    NOREF(pLogger);
 #endif
     return VINF_SUCCESS;
 }
@@ -321,6 +323,8 @@ DECLINLINE(void) rtlogUnlock(PRTLOGGER pLogger)
 #ifndef IN_RC
     if (pLogger->pInt->hSpinMtx != NIL_RTSEMSPINMUTEX)
         RTSemSpinMutexRelease(pLogger->pInt->hSpinMtx);
+#else
+    NOREF(pLogger);
 #endif
     return;
 }

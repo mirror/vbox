@@ -671,6 +671,7 @@ static DECLCALLBACK(int) rtldrPEEnumSymbols(PRTLDRMODINTERNAL pMod, unsigned fFl
                                             PFNRTLDRENUMSYMS pfnCallback, void *pvUser)
 {
     PRTLDRMODPE pModPe = (PRTLDRMODPE)pMod;
+    NOREF(fFlags); /* ignored ... */
 
     /*
      * Check if there is actually anything to work on.
@@ -771,6 +772,7 @@ static DECLCALLBACK(int) rtldrPEEnumSymbols(PRTLDRMODINTERNAL pMod, unsigned fFl
 static DECLCALLBACK(int) rtldrPE_EnumDbgInfo(PRTLDRMODINTERNAL pMod, const void *pvBits,
                                              PFNRTLDRENUMDBG pfnCallback, void *pvUser)
 {
+    NOREF(pMod); NOREF(pvBits); NOREF(pfnCallback); NOREF(pvUser);
     return VINF_NOT_SUPPORTED;
 }
 
@@ -778,6 +780,7 @@ static DECLCALLBACK(int) rtldrPE_EnumDbgInfo(PRTLDRMODINTERNAL pMod, const void 
 /** @copydoc RTLDROPS::pfnEnumSegments. */
 static DECLCALLBACK(int) rtldrPE_EnumSegments(PRTLDRMODINTERNAL pMod, PFNRTLDRENUMSEGS pfnCallback, void *pvUser)
 {
+    NOREF(pMod); NOREF(pfnCallback); NOREF(pvUser);
     return VINF_NOT_SUPPORTED;
 }
 
@@ -786,6 +789,7 @@ static DECLCALLBACK(int) rtldrPE_EnumSegments(PRTLDRMODINTERNAL pMod, PFNRTLDREN
 static DECLCALLBACK(int) rtldrPE_LinkAddressToSegOffset(PRTLDRMODINTERNAL pMod, RTLDRADDR LinkAddress,
                                                         uint32_t *piSeg, PRTLDRADDR poffSeg)
 {
+    NOREF(pMod); NOREF(LinkAddress); NOREF(piSeg); NOREF(poffSeg);
     return VERR_NOT_IMPLEMENTED;
 }
 
@@ -793,6 +797,7 @@ static DECLCALLBACK(int) rtldrPE_LinkAddressToSegOffset(PRTLDRMODINTERNAL pMod, 
 /** @copydoc RTLDROPS::pfnLinkAddressToRva. */
 static DECLCALLBACK(int) rtldrPE_LinkAddressToRva(PRTLDRMODINTERNAL pMod, RTLDRADDR LinkAddress, PRTLDRADDR pRva)
 {
+    NOREF(pMod); NOREF(LinkAddress); NOREF(pRva);
     return VERR_NOT_IMPLEMENTED;
 }
 
@@ -801,6 +806,7 @@ static DECLCALLBACK(int) rtldrPE_LinkAddressToRva(PRTLDRMODINTERNAL pMod, RTLDRA
 static DECLCALLBACK(int) rtldrPE_SegOffsetToRva(PRTLDRMODINTERNAL pMod, uint32_t iSeg, RTLDRADDR offSeg,
                                                 PRTLDRADDR pRva)
 {
+    NOREF(pMod); NOREF(iSeg); NOREF(offSeg); NOREF(pRva);
     return VERR_NOT_IMPLEMENTED;
 }
 
@@ -809,6 +815,7 @@ static DECLCALLBACK(int) rtldrPE_SegOffsetToRva(PRTLDRMODINTERNAL pMod, uint32_t
 static DECLCALLBACK(int) rtldrPE_RvaToSegOffset(PRTLDRMODINTERNAL pMod, RTLDRADDR Rva,
                                                 uint32_t *piSeg, PRTLDRADDR poffSeg)
 {
+    NOREF(pMod); NOREF(Rva); NOREF(piSeg); NOREF(poffSeg);
     return VERR_NOT_IMPLEMENTED;
 }
 
@@ -1556,6 +1563,8 @@ int rtldrPEValidateDirectories(PRTLDRMODPE pModPe, const IMAGE_OPTIONAL_HEADER64
  */
 int rtldrPEOpen(PRTLDRREADER pReader, uint32_t fFlags, RTLDRARCH enmArch, RTFOFF offNtHdrs, PRTLDRMOD phLdrMod)
 {
+    AssertReturn(!fFlags, VERR_INVALID_PARAMETER);
+
     /*
      * Read and validate the file header.
      */

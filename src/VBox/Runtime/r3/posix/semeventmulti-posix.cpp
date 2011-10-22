@@ -428,6 +428,7 @@ static int rtSemEventMultiPosixWaitIndefinite(struct RTSEMEVENTMULTIINTERNAL *pT
         RTTHREAD hThreadSelf = RTThreadSelf();
 #endif
         RTThreadBlocking(hThreadSelf, RTTHREADSTATE_EVENT_MULTI, true);
+        /** @todo interruptible wait is not implementable... */ NOREF(fFlags);
         rc = pthread_cond_wait(&pThis->Cond, &pThis->Mutex);
         RTThreadUnblocked(hThreadSelf, RTTHREADSTATE_EVENT_MULTI);
         if (RT_UNLIKELY(rc))

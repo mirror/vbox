@@ -263,6 +263,10 @@ static int RTLDRELF_NAME(RelocateSection)(PRTLDRMODELF pModElf, Elf_Addr BaseAdd
                                           const Elf_Addr SecAddr, Elf_Size cbSec, const uint8_t *pu8SecBaseR, uint8_t *pu8SecBaseW,
                                           const void *pvRelocs, Elf_Size cbRelocs)
 {
+#if ELF_MODE != 32
+    NOREF(pu8SecBaseR);
+#endif
+
     /*
      * Iterate the relocations.
      * The relocations are stored in an array of Elf32_Rel records and covers the entire relocation section.
@@ -422,7 +426,7 @@ static DECLCALLBACK(int) RTLDRELF_NAME(Close)(PRTLDRMODINTERNAL pMod)
 /** @copydoc RTLDROPS::Done */
 static DECLCALLBACK(int) RTLDRELF_NAME(Done)(PRTLDRMODINTERNAL pMod)
 {
-    //PRTLDRMODELF pModElf = (PRTLDRMODELF)pMod;
+    NOREF(pMod); /*PRTLDRMODELF pModElf = (PRTLDRMODELF)pMod;*/
     /** @todo  Have to think more about this .... */
     return -1;
 }
@@ -433,6 +437,7 @@ static DECLCALLBACK(int) RTLDRELF_NAME(EnumSymbols)(PRTLDRMODINTERNAL pMod, unsi
                                                     PFNRTLDRENUMSYMS pfnCallback, void *pvUser)
 {
     PRTLDRMODELF pModElf = (PRTLDRMODELF)pMod;
+    NOREF(pvBits);
 
     /*
      * Validate the input.
@@ -549,9 +554,11 @@ static DECLCALLBACK(int) RTLDRELF_NAME(GetBits)(PRTLDRMODINTERNAL pMod, void *pv
 
 
 /** @copydoc RTLDROPS::Relocate */
-static DECLCALLBACK(int) RTLDRELF_NAME(Relocate)(PRTLDRMODINTERNAL pMod, void *pvBits, RTUINTPTR NewBaseAddress, RTUINTPTR OldBaseAddress, PFNRTLDRIMPORT pfnGetImport, void *pvUser)
+static DECLCALLBACK(int) RTLDRELF_NAME(Relocate)(PRTLDRMODINTERNAL pMod, void *pvBits, RTUINTPTR NewBaseAddress,
+                                                 RTUINTPTR OldBaseAddress, PFNRTLDRIMPORT pfnGetImport, void *pvUser)
 {
     PRTLDRMODELF pModElf = (PRTLDRMODELF)pMod;
+    NOREF(OldBaseAddress);
 
     /*
      * Validate the input.
@@ -691,7 +698,7 @@ static DECLCALLBACK(int) RTLDRELF_NAME(EnumDbgInfo)(PRTLDRMODINTERNAL pMod, cons
     PRTLDRMODELF pModElf = (PRTLDRMODELF)pMod;
     NOREF(pvBits);
 
-    return VERR_NOT_IMPLEMENTED; NOREF(pModElf);
+    return VERR_NOT_IMPLEMENTED; NOREF(pModElf); NOREF(pfnCallback); NOREF(pvUser);
 }
 
 
@@ -700,7 +707,7 @@ static DECLCALLBACK(int) RTLDRELF_NAME(EnumSegments)(PRTLDRMODINTERNAL pMod, PFN
 {
     PRTLDRMODELF pModElf = (PRTLDRMODELF)pMod;
 
-    return VERR_NOT_IMPLEMENTED; NOREF(pModElf);
+    return VERR_NOT_IMPLEMENTED; NOREF(pModElf); NOREF(pfnCallback); NOREF(pvUser);
 }
 
 
@@ -710,7 +717,7 @@ static DECLCALLBACK(int) RTLDRELF_NAME(LinkAddressToSegOffset)(PRTLDRMODINTERNAL
 {
     PRTLDRMODELF pModElf = (PRTLDRMODELF)pMod;
 
-    return VERR_NOT_IMPLEMENTED; NOREF(pModElf);
+    return VERR_NOT_IMPLEMENTED; NOREF(pModElf); NOREF(LinkAddress); NOREF(piSeg); NOREF(poffSeg);
 }
 
 
@@ -719,7 +726,7 @@ static DECLCALLBACK(int) RTLDRELF_NAME(LinkAddressToRva)(PRTLDRMODINTERNAL pMod,
 {
     PRTLDRMODELF pModElf = (PRTLDRMODELF)pMod;
 
-    return VERR_NOT_IMPLEMENTED; NOREF(pModElf);
+    return VERR_NOT_IMPLEMENTED; NOREF(pModElf); NOREF(LinkAddress); NOREF(pRva);
 }
 
 
@@ -729,7 +736,7 @@ static DECLCALLBACK(int) RTLDRELF_NAME(SegOffsetToRva)(PRTLDRMODINTERNAL pMod, u
 {
     PRTLDRMODELF pModElf = (PRTLDRMODELF)pMod;
 
-    return VERR_NOT_IMPLEMENTED; NOREF(pModElf);
+    return VERR_NOT_IMPLEMENTED; NOREF(pModElf); NOREF(iSeg); NOREF(offSeg); NOREF(pRva);
 }
 
 
@@ -739,7 +746,7 @@ static DECLCALLBACK(int) RTLDRELF_NAME(RvaToSegOffset)(PRTLDRMODINTERNAL pMod, R
 {
     PRTLDRMODELF pModElf = (PRTLDRMODELF)pMod;
 
-    return VERR_NOT_IMPLEMENTED; NOREF(pModElf);
+    return VERR_NOT_IMPLEMENTED; NOREF(pModElf); NOREF(Rva); NOREF(piSeg); NOREF(poffSeg);
 }
 
 
@@ -782,7 +789,8 @@ static RTLDROPS RTLDRELF_MID(s_rtldrElf,Ops) =
  * @param   pszLogName  The log name.
  * @param   cbRawImage  The size of the raw image.
  */
-static int RTLDRELF_NAME(ValidateElfHeader)(const Elf_Ehdr *pEhdr, const char *pszLogName, uint64_t cbRawImage, PRTLDRARCH penmArch)
+static int RTLDRELF_NAME(ValidateElfHeader)(const Elf_Ehdr *pEhdr, const char *pszLogName, uint64_t cbRawImage,
+                                            PRTLDRARCH penmArch)
 {
     Log3(("RTLdrELF:     e_ident: %.*Rhxs\n"
           "RTLdrELF:      e_type: " FMT_ELF_HALF "\n"
@@ -807,7 +815,7 @@ static int RTLDRELF_NAME(ValidateElfHeader)(const Elf_Ehdr *pEhdr, const char *p
         ||  pEhdr->e_ident[EI_MAG3] != ELFMAG3
        )
     {
-        Log(("RTLdrELF: %s: Invalid ELF magic (%.*Rhxs)\n", pszLogName, sizeof(pEhdr->e_ident), pEhdr->e_ident));
+        Log(("RTLdrELF: %s: Invalid ELF magic (%.*Rhxs)\n", pszLogName, sizeof(pEhdr->e_ident), pEhdr->e_ident)); NOREF(pszLogName);
         return VERR_BAD_EXE_FORMAT;
     }
     if (pEhdr->e_ident[EI_CLASS] != RTLDRELF_SUFF(ELFCLASS))
@@ -981,7 +989,7 @@ static int RTLDRELF_NAME(ValidateSectionHeader)(PRTLDRMODELF pModElf, unsigned i
     if (pShdr->sh_link >= pModElf->Ehdr.e_shnum)
     {
         Log(("RTLdrELF: %s: Shdr #%d: sh_link (%d) is beyond the end of the section table (%d)!\n",
-             pszLogName, iShdr, pShdr->sh_link, pModElf->Ehdr.e_shnum));
+             pszLogName, iShdr, pShdr->sh_link, pModElf->Ehdr.e_shnum)); NOREF(pszLogName);
         return VERR_BAD_EXE_FORMAT;
     }
 
@@ -1058,6 +1066,7 @@ static int RTLDRELF_NAME(Open)(PRTLDRREADER pReader, uint32_t fFlags, RTLDRARCH 
 {
     const char *pszLogName = pReader->pfnLogName(pReader);
     RTFOFF      cbRawImage = pReader->pfnSize(pReader);
+    AssertReturn(!fFlags, VERR_INVALID_PARAMETER);
 
     /*
      * Create the loader module instance.

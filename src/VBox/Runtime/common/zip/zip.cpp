@@ -315,6 +315,7 @@ static DECLCALLBACK(int) rtZipStoreCompFinish(PRTZIPCOMP pZip)
  */
 static DECLCALLBACK(int) rtZipStoreCompDestroy(PRTZIPCOMP pZip)
 {
+    NOREF(pZip);
     return VINF_SUCCESS;
 }
 
@@ -327,6 +328,7 @@ static DECLCALLBACK(int) rtZipStoreCompDestroy(PRTZIPCOMP pZip)
  */
 static DECLCALLBACK(int) rtZipStoreCompInit(PRTZIPCOMP pZip, RTZIPLEVEL enmLevel)
 {
+    NOREF(enmLevel);
     pZip->pfnCompress = rtZipStoreCompress;
     pZip->pfnFinish   = rtZipStoreCompFinish;
     pZip->pfnDestroy  = rtZipStoreCompDestroy;
@@ -393,6 +395,7 @@ static DECLCALLBACK(int) rtZipStoreDecompress(PRTZIPDECOMP pZip, void *pvBuf, si
  */
 static DECLCALLBACK(int) rtZipStoreDecompDestroy(PRTZIPDECOMP pZip)
 {
+    NOREF(pZip);
     return VINF_SUCCESS;
 }
 
@@ -1041,6 +1044,7 @@ static DECLCALLBACK(int) rtZipLZFCompFinish(PRTZIPCOMP pZip)
  */
 static DECLCALLBACK(int) rtZipLZFCompDestroy(PRTZIPCOMP pZip)
 {
+    NOREF(pZip);
     return VINF_SUCCESS;
 }
 
@@ -1053,6 +1057,7 @@ static DECLCALLBACK(int) rtZipLZFCompDestroy(PRTZIPCOMP pZip)
  */
 static DECLCALLBACK(int) rtZipLZFCompInit(PRTZIPCOMP pZip, RTZIPLEVEL enmLevel)
 {
+    NOREF(enmLevel);
     pZip->pfnCompress = rtZipLZFCompress;
     pZip->pfnFinish   = rtZipLZFCompFinish;
     pZip->pfnDestroy  = rtZipLZFCompDestroy;
@@ -1303,6 +1308,7 @@ static DECLCALLBACK(int) rtZipLZFDecompress(PRTZIPDECOMP pZip, void *pvBuf, size
  */
 static DECLCALLBACK(int) rtZipLZFDecompDestroy(PRTZIPDECOMP pZip)
 {
+    NOREF(pZip);
     return VINF_SUCCESS;
 }
 
@@ -1492,6 +1498,7 @@ RT_EXPORT_SYMBOL(RTZipCompDestroy);
  */
 static DECLCALLBACK(int) rtZipStubDecompress(PRTZIPDECOMP pZip, void *pvBuf, size_t cbBuf, size_t *pcbWritten)
 {
+    NOREF(pZip); NOREF(pvBuf); NOREF(cbBuf); NOREF(pcbWritten);
     return VERR_NOT_SUPPORTED;
 }
 
@@ -1501,6 +1508,7 @@ static DECLCALLBACK(int) rtZipStubDecompress(PRTZIPDECOMP pZip, void *pvBuf, siz
  */
 static DECLCALLBACK(int) rtZipStubDecompDestroy(PRTZIPDECOMP pZip)
 {
+    NOREF(pZip);
     return VINF_SUCCESS;
 }
 

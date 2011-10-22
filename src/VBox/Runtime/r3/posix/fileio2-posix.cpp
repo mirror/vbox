@@ -134,6 +134,8 @@ RTR3DECL(int) RTFileQueryInfo(RTFILE hFile, PRTFSOBJINFO pObjInfo, RTFSOBJATTRAD
 RTR3DECL(int) RTFileSetTimes(RTFILE hFile, PCRTTIMESPEC pAccessTime, PCRTTIMESPEC pModificationTime,
                              PCRTTIMESPEC pChangeTime, PCRTTIMESPEC pBirthTime)
 {
+    NOREF(pChangeTime); NOREF(pBirthTime);
+
     /*
      * We can only set AccessTime and ModificationTime, so if neither
      * are specified we can return immediately.

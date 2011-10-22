@@ -63,6 +63,7 @@ typedef RTDBGMODLDR *PRTDBGMODLDR;
 /** @interface_method_impl{RTDBGMODVTIMG,pfnUnmapPart} */
 static DECLCALLBACK(int) rtDbgModLdr_UnmapPart(PRTDBGMODINT pMod, size_t cb, void const **ppvMap)
 {
+    NOREF(pMod); NOREF(cb);
     RTMemFree((void *)*ppvMap);
     *ppvMap = NULL;
     return VINF_SUCCESS;

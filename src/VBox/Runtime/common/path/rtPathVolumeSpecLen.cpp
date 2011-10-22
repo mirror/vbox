@@ -62,6 +62,7 @@ DECLHIDDEN(size_t) rtPathVolumeSpecLen(const char *pszPath)
     /* This isn't quite right when looking at the above stuff, but it works assuming that '//' does not mean UNC. */
     /// @todo (dmik) well, it's better to consider there's no volume name
     //  at all on *nix systems
+    NOREF(pszPath);
     return 0;
 //    return pszPath && pszPath[0] == '/';
 #endif

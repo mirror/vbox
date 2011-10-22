@@ -1659,6 +1659,7 @@ int XmlFileParser::ReadCallback(void *aCtxt, char *aBuf, int aLen)
 int XmlFileParser::CloseCallback(void *aCtxt)
 {
     /// @todo to be written
+    NOREF(aCtxt);
 
     return -1;
 }
@@ -1784,6 +1785,7 @@ int XmlFileWriter::WriteCallback(void *aCtxt, const char *aBuf, int aLen)
 int XmlFileWriter::CloseCallback(void *aCtxt)
 {
     /// @todo to be written
+    NOREF(aCtxt);
 
     return -1;
 }

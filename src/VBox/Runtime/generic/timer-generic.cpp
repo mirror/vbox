@@ -230,14 +230,16 @@ RTDECL(int) RTTimerChangeInterval(PRTTIMER pTimer, uint64_t u64NanoInterval)
 {
     if (!rtTimerIsValid(pTimer))
         return VERR_INVALID_HANDLE;
+    NOREF(u64NanoInterval);
     return VERR_NOT_SUPPORTED;
 }
 RT_EXPORT_SYMBOL(RTTimerChangeInterval);
 
 
-static DECLCALLBACK(int) rtTimerThread(RTTHREAD Thread, void *pvUser)
+static DECLCALLBACK(int) rtTimerThread(RTTHREAD hThreadSelf, void *pvUser)
 {
     PRTTIMER pTimer = (PRTTIMER)pvUser;
+    NOREF(hThreadSelf);
 
     /*
      * The loop.
@@ -322,6 +324,7 @@ RT_EXPORT_SYMBOL(RTTimerGetSystemGranularity);
 
 RTDECL(int) RTTimerRequestSystemGranularity(uint32_t u32Request, uint32_t *pu32Granted)
 {
+    NOREF(u32Request); NOREF(pu32Granted);
     return VERR_NOT_SUPPORTED;
 }
 RT_EXPORT_SYMBOL(RTTimerRequestSystemGranularity);
@@ -329,6 +332,7 @@ RT_EXPORT_SYMBOL(RTTimerRequestSystemGranularity);
 
 RTDECL(int) RTTimerReleaseSystemGranularity(uint32_t u32Granted)
 {
+    NOREF(u32Granted);
     return VERR_NOT_SUPPORTED;
 }
 RT_EXPORT_SYMBOL(RTTimerReleaseSystemGranularity);

@@ -578,12 +578,12 @@ RTDECL(uint32_t) RTFileAioCtxGetMaxReqCount(RTFILEAIOCTX hAioCtx)
 
     if (hAioCtx == NIL_RTFILEAIOCTX)
         return RTFILEAIO_UNLIMITED_REQS;
-    else
-        return pCtxInt->cMaxRequests;
+    return pCtxInt->cMaxRequests;
 }
 
 RTDECL(int) RTFileAioCtxAssociateWithFile(RTFILEAIOCTX hAioCtx, RTFILE hFile)
 {
+    NOREF(hAioCtx); NOREF(hFile);
     return VINF_SUCCESS;
 }
 

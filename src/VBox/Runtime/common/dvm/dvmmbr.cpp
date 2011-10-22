@@ -322,7 +322,7 @@ static DECLCALLBACK(uint64_t) rtDvmFmtMbrVolumeGetSize(RTDVMVOLUMEFMT hVolFmt)
 
 static DECLCALLBACK(int) rtDvmFmtMbrVolumeQueryName(RTDVMVOLUMEFMT hVolFmt, char **ppszVolName)
 {
-    NOREF(hVolFmt);
+    NOREF(hVolFmt); NOREF(ppszVolName);
     return VERR_NOT_SUPPORTED;
 }
 

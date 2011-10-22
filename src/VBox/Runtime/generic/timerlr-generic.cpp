@@ -236,9 +236,10 @@ RTDECL(int) RTTimerLRStop(RTTIMERLR hTimerLR)
 RT_EXPORT_SYMBOL(RTTimerLRStop);
 
 
-static DECLCALLBACK(int) rtTimerLRThread(RTTHREAD hThread, void *pvUser)
+static DECLCALLBACK(int) rtTimerLRThread(RTTHREAD hThreadSelf, void *pvUser)
 {
     PRTTIMERLRINT pThis = (PRTTIMERLRINT)pvUser;
+    NOREF(hThreadSelf);
 
     /*
      * The loop.

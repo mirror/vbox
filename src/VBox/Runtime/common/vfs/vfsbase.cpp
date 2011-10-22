@@ -1501,6 +1501,7 @@ static int rtVfsTraverseToParent(RTVFSINTERNAL *pThis, PRTVFSPARSEDPATH pPath, b
 
 RTDECL(int) RTVfsUtilDummyPollOne(uint32_t fEvents, RTMSINTERVAL cMillies, bool fIntr, uint32_t *pfRetEvents)
 {
+    NOREF(fEvents);
     int rc;
     if (fIntr)
         rc = RTThreadSleep(cMillies);

@@ -101,6 +101,7 @@ RT_EXPORT_SYMBOL(RTLogComPrintfV);
  */
 static DECLCALLBACK(size_t) rtLogComOutput(void *pv, const char *pachChars, size_t cbChars)
 {
+    NOREF(pv);
     if (cbChars)
         RTLogWriteCom(pachChars, cbChars);
     return cbChars;

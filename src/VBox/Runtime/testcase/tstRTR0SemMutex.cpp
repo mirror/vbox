@@ -56,6 +56,7 @@ static RTSEMMUTEX g_hMtxTest2 = NIL_RTSEMMUTEX;
 DECLEXPORT(int) TSTRTR0SemMutexSrvReqHandler(PSUPDRVSESSION pSession, uint32_t uOperation,
                                              uint64_t u64Arg, PSUPR0SERVICEREQHDR pReqHdr)
 {
+    NOREF(pSession);
     if (!VALID_PTR(pReqHdr))
         return VERR_INVALID_PARAMETER;
     char   *pszErr = (char *)(pReqHdr + 1);

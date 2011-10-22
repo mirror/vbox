@@ -236,7 +236,6 @@ DECLHIDDEN(int) rtSchedNativeCalcDefaultPriority(RTTHREADTYPE enmType)
     int offBest = RT_ABS(g_pProcessPriority->aTypes[enmType].iBasePriority - iBasePriority);
     if (offBest)
     {
-        const PROCPRIORITY *pProcessPriority = &g_aDefaultPriority;
         for (unsigned i = 0; i < RT_ELEMENTS(g_aPriorities); i++)
         {
             int off = RT_ABS(g_aPriorities[i].aTypes[enmType].iBasePriority - iBasePriority);

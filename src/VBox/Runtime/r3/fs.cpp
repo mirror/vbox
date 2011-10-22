@@ -102,6 +102,8 @@ RTFMODE rtFsModeFromDos(RTFMODE fMode, const char *pszName, size_t cbName)
  */
 RTFMODE rtFsModeFromUnix(RTFMODE fMode, const char *pszName, size_t cbName)
 {
+    NOREF(cbName);
+
     fMode &= RTFS_UNIX_MASK;
 
     if (!(fMode & (RTFS_UNIX_IWUSR | RTFS_UNIX_IWGRP | RTFS_UNIX_IWOTH)))

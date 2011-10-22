@@ -81,6 +81,7 @@ static const uint8_t g_ab32BitCode[] =
 
 DECLCALLBACK(int) DisasmTest1ReadCode(RTUINTPTR SrcAddr, uint8_t *pbDst, uint32_t cb, void *pvUser)
 {
+    NOREF(pvUser);
     while (cb > 0)
     {
         *pbDst = g_ab32BitCode[SrcAddr];

@@ -95,6 +95,8 @@ DECLINLINE(void) rtmemLog(const char *pszOp, const char *pszFormat, ...)
     va_start(args, pszFormat);
     vfprintf(stderr, pszFormat, args);
     va_end(args);
+#else
+    NOREF(pszOp); NOREF(pszFormat);
 #endif
 }
 
@@ -199,6 +201,7 @@ static DECLCALLBACK(int) RTMemDumpOne(PAVLPVNODECORE pNode, void *pvUser)
             (unsigned long)pBlock->cbUnaligned,
             (unsigned long)(pBlock->cbAligned - pBlock->cbUnaligned),
             pBlock->pvCaller);
+    NOREF(pvUser);
     return 0;
 }
 
@@ -376,6 +379,8 @@ RTDECL(void *) rtR3MemAlloc(const char *pszOp, RTMEMTYPE enmType, size_t cbUnali
  */
 RTDECL(void) rtR3MemFree(const char *pszOp, RTMEMTYPE enmType, void *pv, void *pvCaller, RT_SRC_POS_DECL)
 {
+    NOREF(enmType); RT_SRC_POS_NOREF();
+
     /*
      * Simple case.
      */
