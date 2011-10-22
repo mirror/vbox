@@ -994,8 +994,11 @@ RTR3DECL(int) RTTarFileSeek(RTTARFILE hFile, uint64_t offSeek, unsigned uMethod,
             pFileInt->offCurrent = pFileInt->cbSize - offSeek;
             break;
         }
-        default: AssertFailedReturn(VERR_INVALID_PARAMETER); break;
+        default: AssertFailedReturn(VERR_INVALID_PARAMETER);
     }
+
+    if (poffActual)
+        *poffActual = pFileInt->offCurrent;
 
     return VINF_SUCCESS;
 }

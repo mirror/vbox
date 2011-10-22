@@ -902,6 +902,7 @@ RTDECL(bool)  RTSemRWIsReadOwner(RTSEMRW hRWSem, bool fWannaHear)
     /*
      * Ask the lock validator.
      */
+    NOREF(fWannaHear);
     return RTLockValidatorRecSharedIsOwner(&pThis->ValidatorRead, NIL_RTTHREAD);
 #else
     /*

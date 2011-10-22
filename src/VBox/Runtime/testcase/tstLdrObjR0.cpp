@@ -70,18 +70,21 @@ extern "C" DECLEXPORT(int) Entrypoint(void)
 
 extern "C" DECLEXPORT(uint32_t) SomeExportFunction1(void *pvBuf)
 {
+    NOREF(pvBuf);
     return achBss[0] + achBss[16384];
 }
 
 
 extern "C" DECLEXPORT(char *) SomeExportFunction2(void *pvBuf)
 {
+    NOREF(pvBuf);
     return (char *)memcpy(achBss, szStr1, sizeof(szStr1));
 }
 
 
 extern "C" DECLEXPORT(char *) SomeExportFunction3(void *pvBuf)
 {
+    NOREF(pvBuf);
     return (char *)memcpy(achBss, szStr2, strlen(szStr2));
 }
 

@@ -174,13 +174,14 @@ int RTHeapPageInit(PRTHEAPPAGE pHeap, bool fExec)
 
 
 /**
- * Deletes the heap an all the memory it tracks.
+ * Deletes the heap and all the memory it tracks.
  *
  * @returns IPRT status code.
  * @param   pHeap           The page heap to delete.
  */
 int RTHeapPageDelete(PRTHEAPPAGE pHeap)
 {
+    NOREF(pHeap);
     return VERR_NOT_IMPLEMENTED;
 }
 
@@ -311,6 +312,7 @@ static DECLCALLBACK(int) rtHeapPageAllocCallback(PAVLRPVNODECORE pNode, void *pv
 static int rtHeapPageAllocLocked(PRTHEAPPAGE pHeap, size_t cPages, const char *pszTag, bool fZero, void **ppv)
 {
     int rc;
+    NOREF(pszTag);
 
     /*
      * Use the hints first.
@@ -563,6 +565,7 @@ int RTHeapPageFree(PRTHEAPPAGE pHeap, void *pv, size_t cPages)
  */
 static DECLCALLBACK(int) rtMemPagePosixInitOnce(void *pvUser1, void *pvUser2)
 {
+    NOREF(pvUser1); NOREF(pvUser2);
     int rc = RTHeapPageInit(&g_MemPagePosixHeap, false /*fExec*/);
     if (RT_SUCCESS(rc))
     {

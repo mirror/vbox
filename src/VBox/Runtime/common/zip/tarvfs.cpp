@@ -1058,6 +1058,7 @@ static DECLCALLBACK(int) rtZipTarFssIos_Read(void *pvThis, RTFOFF off, PCRTSGBUF
 {
     PRTZIPTARIOSTREAM pThis = (PRTZIPTARIOSTREAM)pvThis;
     int               rc;
+    AssertReturn(off == -1, VERR_INVALID_PARAMETER);
 
     if (pSgBuf->cSegs == 1)
         rc = rtZipTarFssIos_ReadOneSeg(pThis, pSgBuf->paSegs[0].pvSeg, pSgBuf->paSegs[0].cbSeg, fBlocking, pcbRead);

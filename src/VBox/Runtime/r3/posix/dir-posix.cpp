@@ -195,6 +195,8 @@ RTDECL(int) RTDirFlush(const char *pszPath)
 
 int rtDirNativeOpen(PRTDIR pDir, char *pszPathBuf)
 {
+    NOREF(pszPathBuf); /* only used on windows */
+
     /*
      * Convert to a native path and try opendir.
      */

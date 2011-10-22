@@ -41,6 +41,6 @@ RTDECL(int) RTStrConvertHexBytes(char const *pszHex, void *pv, size_t cb, uint32
     AssertReturn(!fFlags, VERR_INVALID_PARAMETER);
 
     AssertFailed();
-    return VERR_NOT_IMPLEMENTED;
+    return VERR_NOT_IMPLEMENTED; NOREF(pv); NOREF(cb); NOREF(fFlags);
 }
 

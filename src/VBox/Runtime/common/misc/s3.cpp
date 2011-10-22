@@ -280,9 +280,10 @@ static int rtS3Perform(PRTS3INTERNAL pS3Int)
     return rc;
 }
 
-static size_t rtS3WriteNothingCallback(void *pvBuf, size_t cSize, size_t cBSize, void *pvUser)
+static size_t rtS3WriteNothingCallback(void *pvBuf, size_t cbItem, size_t cItems, void *pvUser)
 {
-    return cSize*cBSize;
+    NOREF(pvBuf); NOREF(pvUser);
+    return cbItem * cItems;
 }
 
 static size_t rtS3WriteMemoryCallback(void *pvBuf, size_t cSize, size_t cBSize, void *pvUser)

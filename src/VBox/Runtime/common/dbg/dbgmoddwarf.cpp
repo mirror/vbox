@@ -826,6 +826,7 @@ static DECLCALLBACK(int) rtDbgModHlpAddSegmentCallback(RTLDRMOD hLdrMod, PCRTLDR
     PRTDBGMODINT pMod = (PRTDBGMODINT)pvUser;
     Log(("Segment %.*s: LinkAddress=%#llx RVA=%#llx cb=%#llx\n",
          pSeg->cchName, pSeg->pchName, (uint64_t)pSeg->LinkAddress, (uint64_t)pSeg->RVA, pSeg->cb));
+    NOREF(hLdrMod);
     RTLDRADDR cb = RT_MAX(pSeg->cb, pSeg->cbMapped);
 #if 1
     return pMod->pDbgVt->pfnSegmentAdd(pMod, pSeg->RVA, cb, pSeg->pchName, pSeg->cchName, 0 /*fFlags*/, NULL);
@@ -921,6 +922,8 @@ static int rtDbgModDwarfUnloadSection(PRTDBGMODDWARF pThis, krtDbgModDwarfSect e
  */
 static int rtDbgModDwarfStringToUtf8(PRTDBGMODDWARF pThis, char **ppsz)
 {
+    /** @todo DWARF & UTF-8. */
+    NOREF(pThis);
     RTStrPurgeEncoding(*ppsz);
     return VINF_SUCCESS;
 }
@@ -1730,6 +1733,8 @@ static int rtDwarfLine_AddLine(PRTDWARFLINESTATE pLnState, uint32_t offOpCode)
     const char *pszFile = pLnState->Regs.iFile < pLnState->cFileNames
                         ? pLnState->papszFileNames[pLnState->Regs.iFile]
                         : "<bad file name index>";
+    NOREF(offOpCode);
+
     RTDBGSEGIDX iSeg;
     RTUINTPTR   offSeg;
     int rc = rtDbgModDwarfLinkAddressToSegOffset(pLnState->pDwarfMod, pLnState->Regs.uAddress, &iSeg, &offSeg);
@@ -2436,6 +2441,7 @@ static DECLCALLBACK(int) rtDwarfDecode_Address(PRTDWARFDIE pDie, uint8_t *pbMemb
                                                uint32_t uForm, PRTDWARFCURSOR pCursor)
 {
     AssertReturn(ATTR_GET_SIZE(pDesc) == sizeof(RTDWARFADDR), VERR_INTERNAL_ERROR_3);
+    NOREF(pDie);
 
     uint64_t uAddr;
     switch (uForm)
@@ -2464,6 +2470,7 @@ static DECLCALLBACK(int) rtDwarfDecode_Bool(PRTDWARFDIE pDie, uint8_t *pbMember,
                                             uint32_t uForm, PRTDWARFCURSOR pCursor)
 {
     AssertReturn(ATTR_GET_SIZE(pDesc) == sizeof(bool), VERR_INTERNAL_ERROR_3);
+    NOREF(pDie);
 
     bool *pfMember = (bool *)pbMember;
     switch (uForm)
@@ -2495,6 +2502,7 @@ static DECLCALLBACK(int) rtDwarfDecode_LowHighPc(PRTDWARFDIE pDie, uint8_t *pbMe
 {
     AssertReturn(ATTR_GET_SIZE(pDesc) == sizeof(RTDWARFADDRRANGE), VERR_INTERNAL_ERROR_3);
     AssertReturn(pDesc->uAttr == DW_AT_low_pc || pDesc->uAttr == DW_AT_high_pc, VERR_INTERNAL_ERROR_3);
+    NOREF(pDie);
 
     uint64_t uAddr;
     switch (uForm)
@@ -2544,6 +2552,7 @@ static DECLCALLBACK(int) rtDwarfDecode_Ranges(PRTDWARFDIE pDie, uint8_t *pbMembe
 {
     AssertReturn(ATTR_GET_SIZE(pDesc) == sizeof(RTDWARFADDRRANGE), VERR_INTERNAL_ERROR_3);
     AssertReturn(pDesc->uAttr == DW_AT_low_pc || pDesc->uAttr == DW_AT_high_pc, VERR_INTERNAL_ERROR_3);
+    NOREF(pDie);
 
     /* Decode it. */
     uint64_t off;
@@ -2657,6 +2666,7 @@ static DECLCALLBACK(int) rtDwarfDecode_SectOff(PRTDWARFDIE pDie, uint8_t *pbMemb
                                                uint32_t uForm, PRTDWARFCURSOR pCursor)
 {
     AssertReturn(ATTR_GET_SIZE(pDesc) == sizeof(RTDWARFREF), VERR_INTERNAL_ERROR_3);
+    NOREF(pDie);
 
     uint64_t off;
     switch (uForm)
@@ -2698,6 +2708,7 @@ static DECLCALLBACK(int) rtDwarfDecode_String(PRTDWARFDIE pDie, uint8_t *pbMembe
                                               uint32_t uForm, PRTDWARFCURSOR pCursor)
 {
     AssertReturn(ATTR_GET_SIZE(pDesc) == sizeof(const char *), VERR_INTERNAL_ERROR_3);
+    NOREF(pDie);
 
     switch (uForm)
     {
@@ -2721,6 +2732,7 @@ static DECLCALLBACK(int) rtDwarfDecode_String(PRTDWARFDIE pDie, uint8_t *pbMembe
 static DECLCALLBACK(int) rtDwarfDecode_UnsignedInt(PRTDWARFDIE pDie, uint8_t *pbMember, PCRTDWARFATTRDESC pDesc,
                                                    uint32_t uForm, PRTDWARFCURSOR pCursor)
 {
+    NOREF(pDie);
     uint64_t u64Val;
     switch (uForm)
     {
@@ -2887,6 +2899,7 @@ static void rtDwarfInfo_InitDie(PRTDWARFDIE pDie, PCRTDWARFDIEDESC pDieDesc)
 static PRTDWARFDIE rtDwarfInfo_NewDie(PRTDBGMODDWARF pThis, PCRTDWARFDIEDESC pDieDesc,
                                       PCRTDWARFABBREV pAbbrev, PRTDWARFDIE pParent)
 {
+    NOREF(pThis);
     Assert(pDieDesc->cbDie >= sizeof(RTDWARFDIE));
     PRTDWARFDIE pDie = (PRTDWARFDIE)RTMemAllocZ(pDieDesc->cbDie);
     if (pDie)
@@ -3281,6 +3294,7 @@ static DECLCALLBACK(int) rtDbgModDwarf_LineAdd(PRTDBGMODINT pMod, const char *ps
                                                uint32_t iSeg, RTUINTPTR off, uint32_t *piOrdinal)
 {
     PRTDBGMODDWARF pThis = (PRTDBGMODDWARF)pMod->pvDbgPriv;
+    Assert(!pszFile[cchFile]); NOREF(cchFile);
     return RTDbgModLineAdd(pThis->hCnt, pszFile, uLineNo, iSeg, off, piOrdinal);
 }
 
@@ -3326,6 +3340,7 @@ static DECLCALLBACK(int) rtDbgModDwarf_SymbolAdd(PRTDBGMODINT pMod, const char *
                                                  uint32_t *piOrdinal)
 {
     PRTDBGMODDWARF pThis = (PRTDBGMODDWARF)pMod->pvDbgPriv;
+    Assert(!pszSymbol[cchSymbol]); NOREF(cchSymbol);
     return RTDbgModSymbolAdd(pThis->hCnt, pszSymbol, iSeg, off, cb, fFlags, piOrdinal);
 }
 
@@ -3351,6 +3366,7 @@ static DECLCALLBACK(int) rtDbgModDwarf_SegmentAdd(PRTDBGMODINT pMod, RTUINTPTR u
                                                   uint32_t fFlags, PRTDBGSEGIDX piSeg)
 {
     PRTDBGMODDWARF pThis = (PRTDBGMODDWARF)pMod->pvDbgPriv;
+    Assert(!pszName[cchName]); NOREF(cchName);
     return RTDbgModSegmentAdd(pThis->hCnt, uRva, cb, pszName, fFlags, piSeg);
 }
 
@@ -3396,6 +3412,8 @@ static DECLCALLBACK(int) rtDbgModDwarfEnumCallback(RTLDRMOD hLdrMod, uint32_t iD
                                                    RTFOFF offFile, RTLDRADDR LinkAddress, RTLDRADDR cb,
                                                    const char *pszExtFile, void *pvUser)
 {
+    NOREF(hLdrMod); NOREF(iDbgInfo); NOREF(iMajorVer); NOREF(iMinorVer); NOREF(LinkAddress);
+
     /*
      * Skip stuff we can't handle.
      */

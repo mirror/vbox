@@ -119,6 +119,7 @@ static DECLCALLBACK(void) tstRTR0TimerCallbackOmni(PRTTIMER pTimer, void *pvUser
     PTSTRTR0TIMEROMNI1  paStates = (PTSTRTR0TIMEROMNI1)pvUser;
     RTCPUID             idCpu    = RTMpCpuId();
     uint32_t            iCpu     = RTMpCpuIdToSetIndex(idCpu);
+    NOREF(pTimer);
 
     RTR0TESTR0_CHECK_MSG(iCpu < RTCPUSET_MAX_CPUS, ("iCpu=%d idCpu=%u\n", iCpu, idCpu));
     if (iCpu < RTCPUSET_MAX_CPUS)
@@ -147,6 +148,7 @@ static DECLCALLBACK(void) tstRTR0TimerCallbackSpecific(PRTTIMER pTimer, void *pv
 {
     PTSTRTR0TIMERS1 pState = (PTSTRTR0TIMERS1)pvUser;
     uint32_t        iShot  = ASMAtomicIncU32(&pState->cShots);
+    NOREF(pTimer);
 
     if (iShot <= RT_ELEMENTS(pState->aShotNsTSes))
         pState->aShotNsTSes[iShot - 1] = RTTimeSystemNanoTS();
@@ -277,6 +279,7 @@ static DECLCALLBACK(void) tstRTR0TimerCallbackU32Counter(PRTTIMER pTimer, void *
 {
     PTSTRTR0TIMERS1 pState = (PTSTRTR0TIMERS1)pvUser;
     uint32_t        iShot  = ASMAtomicIncU32(&pState->cShots);
+    NOREF(pTimer);
 
     if (iShot <= RT_ELEMENTS(pState->aShotNsTSes))
         pState->aShotNsTSes[iShot - 1] = RTTimeSystemNanoTS();
@@ -287,6 +290,7 @@ static DECLCALLBACK(void) tstRTR0TimerCallbackU32Counter(PRTTIMER pTimer, void *
 }
 
 
+#ifdef SOME_UNUSED_FUNCTION
 /**
  * Checks that the interval between two timer shots are within the specified
  * range.
@@ -305,6 +309,7 @@ static int tstRTR0TimerCheckShotInterval(uint32_t iShot, uint64_t uPrevTS, uint6
     RTR0TESTR0_CHECK_MSG_RET(uDelta <= uMax, ("iShot=%u uDelta=%lld uMax=%u\n", iShot, uDelta, uMax), 1);
     return 0;
 }
+#endif
 
 
 /**
@@ -356,6 +361,7 @@ DECLEXPORT(int) TSTRTR0TimerSrvReqHandler(PSUPDRVSESSION pSession, uint32_t uOpe
                                           uint64_t u64Arg, PSUPR0SERVICEREQHDR pReqHdr)
 {
     RTR0TESTR0_SRV_REQ_PROLOG_RET(pReqHdr);
+    NOREF(pSession);
 
     /*
      * Common parameter and state variables.

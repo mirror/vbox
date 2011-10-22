@@ -231,6 +231,7 @@ static int rtkldrConvertErrorFromIPRT(int rc)
  * @remark This is a dummy which isn't used. */
 static int      rtkldrRdr_Create(  PPKRDR ppRdr, const char *pszFilename)
 {
+    NOREF(ppRdr); NOREF(pszFilename);
     AssertReleaseFailed();
     return -1;
 }
@@ -299,6 +300,7 @@ static const char * rtkldrRdr_Name(PKRDR pRdr)
 /** @copydoc KLDRRDROPS::pfnNativeFH */
 static KIPTR rtkldrRdr_NativeFH(PKRDR pRdr)
 {
+    NOREF(pRdr);
     AssertFailed();
     return -1;
 }
@@ -307,6 +309,7 @@ static KIPTR rtkldrRdr_NativeFH(PKRDR pRdr)
 /** @copydoc KLDRRDROPS::pfnPageSize */
 static KSIZE rtkldrRdr_PageSize(PKRDR pRdr)
 {
+    NOREF(pRdr);
     return PAGE_SIZE;
 }
 
@@ -315,6 +318,7 @@ static KSIZE rtkldrRdr_PageSize(PKRDR pRdr)
 static int      rtkldrRdr_Map(     PKRDR pRdr, void **ppvBase, KU32 cSegments, PCKLDRSEG paSegments, KBOOL fFixed)
 {
     //PRTLDRREADER pReader = ((PRTKLDRRDR)pRdr)->pReader;
+    NOREF(pRdr); NOREF(ppvBase); NOREF(cSegments); NOREF(paSegments); NOREF(fFixed);
     AssertFailed();
     return -1;
 }
@@ -324,6 +328,7 @@ static int      rtkldrRdr_Map(     PKRDR pRdr, void **ppvBase, KU32 cSegments, P
 static int      rtkldrRdr_Refresh( PKRDR pRdr, void *pvBase, KU32 cSegments, PCKLDRSEG paSegments)
 {
     //PRTLDRREADER pReader = ((PRTKLDRRDR)pRdr)->pReader;
+    NOREF(pRdr); NOREF(pvBase); NOREF(cSegments); NOREF(paSegments);
     AssertFailed();
     return -1;
 }
@@ -333,6 +338,7 @@ static int      rtkldrRdr_Refresh( PKRDR pRdr, void *pvBase, KU32 cSegments, PCK
 static int      rtkldrRdr_Protect( PKRDR pRdr, void *pvBase, KU32 cSegments, PCKLDRSEG paSegments, KBOOL fUnprotectOrProtect)
 {
     //PRTLDRREADER pReader = ((PRTKLDRRDR)pRdr)->pReader;
+    NOREF(pRdr); NOREF(pvBase); NOREF(cSegments); NOREF(paSegments); NOREF(fUnprotectOrProtect);
     AssertFailed();
     return -1;
 }
@@ -342,6 +348,7 @@ static int      rtkldrRdr_Protect( PKRDR pRdr, void *pvBase, KU32 cSegments, PCK
 static int      rtkldrRdr_Unmap(   PKRDR pRdr, void *pvBase, KU32 cSegments, PCKLDRSEG paSegments)
 {
     //PRTLDRREADER pReader = ((PRTKLDRRDR)pRdr)->pReader;
+    NOREF(pRdr); NOREF(pvBase); NOREF(cSegments); NOREF(paSegments);
     AssertFailed();
     return -1;
 }
@@ -349,6 +356,7 @@ static int      rtkldrRdr_Unmap(   PKRDR pRdr, void *pvBase, KU32 cSegments, PCK
 /** @copydoc KLDRRDROPS::pfnDone */
 static void     rtkldrRdr_Done(    PKRDR pRdr)
 {
+    NOREF(pRdr);
     //PRTLDRREADER pReader = ((PRTKLDRRDR)pRdr)->pReader;
 }
 
@@ -408,6 +416,7 @@ static int rtkldrEnumSymbolsWrapper(PKLDRMOD pMod, uint32_t iSymbol,
                                     KLDRADDR uValue, uint32_t fKind, void *pvUser)
 {
     PRTLDRMODKLDRARGS pArgs = (PRTLDRMODKLDRARGS)pvUser;
+    NOREF(pMod); NOREF(pszVersion); NOREF(fKind);
 
     /* If not zero terminated we'll have to use a temporary buffer. */
     const char *pszSymbol = pchSymbol;
@@ -467,6 +476,7 @@ static int rtkldrGetImportWrapper(PKLDRMOD pMod, uint32_t iImport, uint32_t iSym
                                   const char *pszVersion, PKLDRADDR puValue, uint32_t *pfKind, void *pvUser)
 {
     PRTLDRMODKLDRARGS pArgs = (PRTLDRMODKLDRARGS)pvUser;
+    NOREF(pMod); NOREF(pszVersion); NOREF(pfKind);
 
     /* If not zero terminated we'll have to use a temporary buffer. */
     const char *pszSymbol = pchSymbol;
@@ -586,6 +596,7 @@ static int rtkldrEnumDbgInfoWrapper(PKLDRMOD pMod, KU32 iDbgInfo, KLDRDBGINFOTYP
                                     const char *pszExtFile, void *pvUser)
 {
     PRTLDRMODKLDRARGS pArgs = (PRTLDRMODKLDRARGS)pvUser;
+    NOREF(pMod);
 
     RTLDRDBGINFOTYPE enmMyType;
     switch (enmType)

@@ -175,6 +175,7 @@ static DECLCALLBACK(int) rtldrFileUnmap(PRTLDRREADER pReader, const void *pvBits
         pFileReader->pvMapping = NULL;
     }
 
+    NOREF(pvBits);
     return VINF_SUCCESS;
 }
 

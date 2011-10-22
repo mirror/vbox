@@ -110,7 +110,7 @@ RTDECL(void *) RTMemAllocTag(size_t cb, const char *pszTag) RT_NO_THROW
 # ifdef RTMEMALLOC_USE_TRACKER
     void *pv = RTMemTrackerHdrAlloc(malloc(cb + sizeof(RTMEMTRACKERHDR)), cb, pszTag, RTMEMTRACKERMETHOD_ALLOC);
 # else
-    void *pv = malloc(cb);
+    void *pv = malloc(cb); NOREF(pszTag);
 # endif
     AssertMsg(pv, ("malloc(%#zx) failed!!!\n", cb));
     AssertMsg(   cb < RTMEM_ALIGNMENT
@@ -134,7 +134,7 @@ RTDECL(void *) RTMemAllocZTag(size_t cb, const char *pszTag) RT_NO_THROW
 # ifdef RTMEMALLOC_USE_TRACKER
     void *pv = RTMemTrackerHdrAlloc(calloc(1, cb + sizeof(RTMEMTRACKERHDR)), cb, pszTag, RTMEMTRACKERMETHOD_ALLOCZ);
 #else
-    void *pv = calloc(1, cb);
+    void *pv = calloc(1, cb); NOREF(pszTag);
 #endif
     AssertMsg(pv, ("calloc(1,%#zx) failed!!!\n", cb));
     AssertMsg(   cb < RTMEM_ALIGNMENT
@@ -191,7 +191,7 @@ RTDECL(void *)  RTMemReallocTag(void *pvOld, size_t cbNew, const char *pszTag) R
     void *pvNew      = realloc(pvRealOld, cbRealNew);
     void *pv         = RTMemTrackerHdrReallocDone(pvNew, cbNew, pvOld, pszTag);
 # else
-    void *pv = realloc(pvOld, cbNew);
+    void *pv = realloc(pvOld, cbNew); NOREF(pszTag);
 # endif
     AssertMsg(pv || !cbNew, ("realloc(%p, %#zx) failed!!!\n", pvOld, cbNew));
     AssertMsg(   cbNew < RTMEM_ALIGNMENT

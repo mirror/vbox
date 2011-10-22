@@ -324,6 +324,7 @@ static DECLCALLBACK(int) rtDvmFmtGptOpen(PCRTDVMDISK pDisk, PRTDVMFMT phVolMgrFm
 
 static DECLCALLBACK(int) rtDvmFmtGptInitialize(PCRTDVMDISK pDisk, PRTDVMFMT phVolMgrFmt)
 {
+    NOREF(pDisk); NOREF(phVolMgrFmt);
     return VERR_NOT_IMPLEMENTED;
 }
 

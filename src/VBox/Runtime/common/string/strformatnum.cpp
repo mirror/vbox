@@ -155,6 +155,7 @@ RTDECL(ssize_t) RTStrFormatU64(char *pszBuf, size_t cbBuf, uint64_t u64Value, un
 RTDECL(ssize_t) RTStrFormatU128(char *pszBuf, size_t cbBuf, PCRTUINT128U pu128, unsigned int uiBase,
                                 signed int cchWidth, signed int cchPrecision, uint32_t fFlags)
 {
+    NOREF(cchWidth); NOREF(cchPrecision);
     if (uiBase != 16)
         fFlags |= RTSTR_F_SPECIAL;
     fFlags &= ~RTSTR_F_BIT_MASK;
@@ -173,6 +174,7 @@ RTDECL(ssize_t) RTStrFormatU128(char *pszBuf, size_t cbBuf, PCRTUINT128U pu128, 
 RTDECL(ssize_t) RTStrFormatR80u2(char *pszBuf, size_t cbBuf, PCRTFLOAT80U2 pr80Value, signed int cchWidth,
                                  signed int cchPrecision, uint32_t fFlags)
 {
+    NOREF(cchWidth); NOREF(cchPrecision); NOREF(fFlags);
     char szTmp[160];
 
     char *pszTmp = szTmp;

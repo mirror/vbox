@@ -1391,6 +1391,7 @@ DECL_FORCE_INLINE(bool) rtLockValidatorClassIsPriorClass(RTLOCKVALCLASSINT *pCla
 static int rtLockValidatorClassAddPriorClass(RTLOCKVALCLASSINT *pClass, RTLOCKVALCLASSINT *pPriorClass,
                                              bool fAutodidacticism, PCRTLOCKVALSRCPOS pSrcPos)
 {
+    NOREF(pSrcPos);
     if (!RTCritSectIsInitialized(&g_LockValClassTeachCS))
         rtLockValidatorLazyInit();
     int rcLock = RTCritSectEnter(&g_LockValClassTeachCS);

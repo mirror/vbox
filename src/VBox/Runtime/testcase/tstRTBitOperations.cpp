@@ -130,7 +130,6 @@ int main()
         return rc;
     RTTestBanner(hTest);
 
-    int rcRet = 0;
     int i;
     int j;
     int k;

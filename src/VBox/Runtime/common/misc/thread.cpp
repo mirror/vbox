@@ -1325,6 +1325,7 @@ static DECLCALLBACK(int) rtThreadSetPriorityOne(PAVLPVNODECORE pNode, void *pvUs
     int rc = rtThreadNativeSetPriority(pThread, pThread->enmType);
     if (RT_SUCCESS(rc)) /* hide any warnings */
         return VINF_SUCCESS;
+    NOREF(pvUser);
     return rc;
 }
 

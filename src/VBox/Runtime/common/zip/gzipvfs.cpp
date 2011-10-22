@@ -357,6 +357,7 @@ static DECLCALLBACK(int) rtZipGzip_Read(void *pvThis, RTFOFF off, PCRTSGBUF pSgB
     PRTZIPGZIPSTREAM pThis = (PRTZIPGZIPSTREAM)pvThis;
     int              rc;
 
+    AssertReturn(off == -1, VERR_INVALID_PARAMETER);
     if (!pThis->fDecompress)
         return VERR_ACCESS_DENIED;
 
@@ -397,11 +398,13 @@ static DECLCALLBACK(int) rtZipGzip_Write(void *pvThis, RTFOFF off, PCRTSGBUF pSg
     PRTZIPGZIPSTREAM pThis = (PRTZIPGZIPSTREAM)pvThis;
     //int              rc;
 
+    AssertReturn(off == -1, VERR_INVALID_PARAMETER);
     NOREF(fBlocking);
     if (pThis->fDecompress)
         return VERR_ACCESS_DENIED;
 
     /** @todo implement compression. */
+    NOREF(pSgBuf); NOREF(pcbWritten);
     return VERR_NOT_IMPLEMENTED;
 }
 

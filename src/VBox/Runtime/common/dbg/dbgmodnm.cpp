@@ -85,6 +85,7 @@ static DECLCALLBACK(int) rtDbgModNm_LineAdd(PRTDBGMODINT pMod, const char *pszFi
                                             uint32_t iSeg, RTUINTPTR off, uint32_t *piOrdinal)
 {
     PRTDBGMODNM pThis = (PRTDBGMODNM)pMod->pvDbgPriv;
+    Assert(!pszFile[cchFile]); NOREF(cchFile);
     return RTDbgModLineAdd(pThis->hCnt, pszFile, uLineNo, iSeg, off, piOrdinal);
 }
 
@@ -99,9 +100,11 @@ static DECLCALLBACK(int) rtDbgModNm_SymbolByAddr(PRTDBGMODINT pMod, RTDBGSEGIDX 
 
 
 /** @interface_method_impl{RTDBGMODVTDBG,pfnSymbolByName} */
-static DECLCALLBACK(int) rtDbgModNm_SymbolByName(PRTDBGMODINT pMod, const char *pszSymbol, size_t cchSymbol, PRTDBGSYMBOL pSymInfo)
+static DECLCALLBACK(int) rtDbgModNm_SymbolByName(PRTDBGMODINT pMod, const char *pszSymbol, size_t cchSymbol,
+                                                 PRTDBGSYMBOL pSymInfo)
 {
     PRTDBGMODNM pThis = (PRTDBGMODNM)pMod->pvDbgPriv;
+    Assert(!pszSymbol[cchSymbol]); NOREF(cchSymbol);
     return RTDbgModSymbolByName(pThis->hCnt, pszSymbol, pSymInfo);
 }
 
@@ -128,6 +131,7 @@ static DECLCALLBACK(int) rtDbgModNm_SymbolAdd(PRTDBGMODINT pMod, const char *psz
                                               uint32_t *piOrdinal)
 {
     PRTDBGMODNM pThis = (PRTDBGMODNM)pMod->pvDbgPriv;
+    Assert(!pszSymbol[cchSymbol]); NOREF(cchSymbol);
     return RTDbgModSymbolAdd(pThis->hCnt, pszSymbol, iSeg, off, cb, fFlags, piOrdinal);
 }
 
@@ -149,10 +153,11 @@ static DECLCALLBACK(RTDBGSEGIDX) rtDbgModNm_SegmentCount(PRTDBGMODINT pMod)
 
 
 /** @interface_method_impl{RTDBGMODVTDBG,pfnSegmentAdd} */
-static DECLCALLBACK(int) rtDbgModNm_SegmentAdd(PRTDBGMODINT pMod, RTUINTPTR uRva, RTUINTPTR cb, const char *pszName, size_t cchName,
-                                               uint32_t fFlags, PRTDBGSEGIDX piSeg)
+static DECLCALLBACK(int) rtDbgModNm_SegmentAdd(PRTDBGMODINT pMod, RTUINTPTR uRva, RTUINTPTR cb, const char *pszName,
+                                               size_t cchName, uint32_t fFlags, PRTDBGSEGIDX piSeg)
 {
     PRTDBGMODNM pThis = (PRTDBGMODNM)pMod->pvDbgPriv;
+    Assert(!pszName[cchName]); NOREF(cchName);
     return RTDbgModSegmentAdd(pThis->hCnt, uRva, cb, pszName, fFlags, piSeg);
 }
 
