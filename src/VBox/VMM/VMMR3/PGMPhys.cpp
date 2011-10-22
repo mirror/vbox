@@ -922,6 +922,7 @@ static int pgmR3PhysFreePageRange(PVM pVM, PPGMRAMRANGE pRam, RTGCPHYS GCPhys, R
 }
 
 #if HC_ARCH_BITS == 64 && (defined(RT_OS_WINDOWS) || defined(RT_OS_SOLARIS) || defined(RT_OS_LINUX) || defined(RT_OS_FREEBSD))
+
 /**
  * Rendezvous callback used by PGMR3ChangeMemBalloon that changes the memory balloon size
  *
@@ -1041,6 +1042,7 @@ static DECLCALLBACK(VBOXSTRICTRC) pgmR3PhysChangeMemBalloonRendezvous(PVM pVM, P
     return rc;
 }
 
+
 /**
  * Frees a range of ram pages, replacing them with ZERO pages; helper for PGMR3PhysFreeRamPages
  *
@@ -1063,7 +1065,8 @@ static DECLCALLBACK(void) pgmR3PhysChangeMemBalloonHelper(PVM pVM, bool fInflate
     /* Made a copy in PGMR3PhysFreeRamPages; free it here. */
     RTMemFree(paPhysPage);
 }
-#endif
+
+#endif /* 64-bit host && (Windows || Solaris || Linux || FreeBSD) */
 
 /**
  * Inflate or deflate a memory balloon
@@ -1108,10 +1111,13 @@ VMMR3DECL(int) PGMR3PhysChangeMemBalloon(PVM pVM, bool fInflate, unsigned cPages
         AssertRC(rc);
     }
     return rc;
+
 #else
+    NOREF(pVM); NOREF(fInflate); NOREF(cPages); NOREF(paPhysPage);
     return VERR_NOT_IMPLEMENTED;
 #endif
 }
+
 
 /**
  * Rendezvous callback used by PGMR3WriteProtectRAM that write protects all

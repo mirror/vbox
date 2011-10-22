@@ -671,7 +671,7 @@ static const DBGCCMD    g_aCmds[] =
     { "pgmerroroff",   0, 1,        &g_aPgmErrorArgs[0],      1,         0,      pgmR3CmdError,      "",                     "Disables inject runtime errors into parts of PGM." },
 # ifdef VBOX_STRICT
     { "pgmassertcr3",  0, 0,        NULL,                     0,         0,      pgmR3CmdAssertCR3,  "",                     "Check the shadow CR3 mapping." },
-#  if HC_ARCH_BITS == 64
+#  ifdef VBOX_WITH_PAGE_SHARING
     { "pgmcheckduppages", 0, 0,     NULL,                     0,         0,      pgmR3CmdCheckDuplicatePages,  "",           "Check for duplicate pages in all running VMs." },
     { "pgmsharedmodules", 0, 0,     NULL,                     0,         0,      pgmR3CmdShowSharedModules,  "",             "Print shared modules info." },
 #  endif

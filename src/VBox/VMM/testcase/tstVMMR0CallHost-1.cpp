@@ -55,6 +55,8 @@ static intptr_t volatile    g_cbFooUsed;
 
 int foo(int i, int iZero, int iMinusOne)
 {
+    NOREF(iZero);
+
     /* allocate a buffer which we fill up to the end. */
     size_t cb = (i % 1555) + 32;
     g_cbFoo = cb;
