@@ -1893,7 +1893,7 @@ static bool atapiPassthroughSS(ATADevState *s)
     uint32_t cbTransfer;
     PSTAMPROFILEADV pProf = NULL;
 
-    cbTransfer = s->cbElementaryTransfer;
+    cbTransfer = RT_MIN(s->cbElementaryTransfer, s->cbIOBuffer);
 
     if (s->uTxDir == PDMBLOCKTXDIR_TO_DEVICE)
         Log3(("ATAPI PT data write (%d): %.*Rhxs\n", cbTransfer, cbTransfer, s->CTX_SUFF(pbIOBuffer)));
@@ -1917,7 +1917,8 @@ static bool atapiPassthroughSS(ATADevState *s)
     PDMCritSectLeave(&pCtl->lock);
 
     if (pProf) { STAM_PROFILE_ADV_START(pProf, b); }
-    if (cbTransfer > SCSI_MAX_BUFFER_SIZE)
+    if (   cbTransfer > SCSI_MAX_BUFFER_SIZE
+        || s->cbElementaryTransfer > s->cbIOBuffer)
     {
         /* Linux accepts commands with up to 100KB of data, but expects
          * us to handle commands with up to 128KB of data. The usual
@@ -1925,6 +1926,11 @@ static bool atapiPassthroughSS(ATADevState *s)
         uint8_t aATAPICmd[ATAPI_PACKET_SIZE];
         uint32_t iATAPILBA, cSectors, cReqSectors, cbCurrTX;
         uint8_t *pbBuf = s->CTX_SUFF(pbIOBuffer);
+        uint32_t cSectorsMax; /**< Maximum amount of sectors to read without exceeding the I/O buffer. */
+
+        Assert(s->cbATAPISector);
+        cSectorsMax = cbTransfer / s->cbATAPISector;
+        Assert(cSectorsMax * s->cbATAPISector <= s->cbIOBuffer);
 
         switch (s->aATAPICmd[0])
         {
@@ -1959,9 +1965,10 @@ static bool atapiPassthroughSS(ATADevState *s)
                 }
                 return false;
         }
+        cSectorsMax = RT_MIN(cSectorsMax, cSectors);
         memcpy(aATAPICmd, s->aATAPICmd, ATAPI_PACKET_SIZE);
         cReqSectors = 0;
-        for (uint32_t i = cSectors; i > 0; i -= cReqSectors)
+        for (uint32_t i = cSectorsMax; i > 0; i -= cReqSectors)
         {
             if (i * s->cbATAPISector > SCSI_MAX_BUFFER_SIZE)
                 cReqSectors = SCSI_MAX_BUFFER_SIZE / s->cbATAPISector;
@@ -1996,6 +2003,39 @@ static bool atapiPassthroughSS(ATADevState *s)
             iATAPILBA += cReqSectors;
             pbBuf += s->cbATAPISector * cReqSectors;
         }
+
+        if (RT_SUCCESS(rc))
+        {
+            /* Adjust ATAPI command for the next call. */
+            switch (s->aATAPICmd[0])
+            {
+                case SCSI_READ_10:
+                case SCSI_WRITE_10:
+                case SCSI_WRITE_AND_VERIFY_10:
+                    ataH2BE_U32(s->aATAPICmd + 2, iATAPILBA);
+                    ataH2BE_U16(s->aATAPICmd + 7, cSectors - cSectorsMax);
+                    break;
+                case SCSI_READ_12:
+                case SCSI_WRITE_12:
+                    ataH2BE_U32(s->aATAPICmd + 2, iATAPILBA);
+                    ataH2BE_U32(s->aATAPICmd + 6, cSectors - cSectorsMax);
+                    break;
+                case SCSI_READ_CD:
+                    ataH2BE_U32(s->aATAPICmd + 2, iATAPILBA);
+                    ataH2BE_U24(s->aATAPICmd + 6, cSectors - cSectorsMax);
+                    break;
+                case SCSI_READ_CD_MSF:
+                    ataLBA2MSF(s->aATAPICmd + 3, iATAPILBA);
+                    ataLBA2MSF(s->aATAPICmd + 6, iATAPILBA + cSectors - cSectorsMax);
+                    break;
+                default:
+                    AssertMsgFailed(("Don't know how to split command %#04x\n", s->aATAPICmd[0]));
+                    if (s->cErrors++ < MAX_LOG_REL_ERRORS)
+                        LogRel(("PIIX3 ATA: LUN#%d: CD-ROM passthrough split error\n", s->iLUN));
+                    atapiCmdErrorSimple(s, SCSI_SENSE_ILLEGAL_REQUEST, SCSI_ASC_ILLEGAL_OPCODE);
+                    return false;
+            }
+        }
     }
     else
         rc = s->pDrvBlock->pfnSendCmd(s->pDrvBlock, s->aATAPICmd, (PDMBLOCKTXDIR)s->uTxDir, s->CTX_SUFF(pbIOBuffer), &cbTransfer, abATAPISense, sizeof(abATAPISense), 30000 /**< @todo timeout */);
@@ -2025,12 +2065,13 @@ static bool atapiPassthroughSS(ATADevState *s)
         if (s->uTxDir == PDMBLOCKTXDIR_FROM_DEVICE)
         {
             Assert(cbTransfer <= s->cbTotalTransfer);
-            /* Reply with the same amount of data as the real drive. */
-            s->cbTotalTransfer = cbTransfer;
-            /* The initial buffer end value has been set up based on the total
-             * transfer size. But the I/O buffer size limits what can actually be
-             * done in one transfer, so set the actual value of the buffer end. */
-            s->cbElementaryTransfer = cbTransfer;
+            /*
+             * Reply with the same amount of data as the real drive
+             * but only if the command wasn't splitted.
+             */
+            if (s->cbElementaryTransfer < s->cbIOBuffer)
+                s->cbTotalTransfer = cbTransfer;
+
             if (s->aATAPICmd[0] == SCSI_INQUIRY)
             {
                 /* Make sure that the real drive cannot be identified.
@@ -2073,8 +2114,16 @@ static bool atapiPassthroughSS(ATADevState *s)
             if (cbTransfer)
                 Log3(("ATAPI PT data read (%d): %.*Rhxs\n", cbTransfer, cbTransfer, s->CTX_SUFF(pbIOBuffer)));
         }
-        s->iSourceSink = ATAFN_SS_NULL;
-        atapiCmdOK(s);
+
+        /* The initial buffer end value has been set up based on the total
+         * transfer size. But the I/O buffer size limits what can actually be
+         * done in one transfer, so set the actual value of the buffer end. */
+        s->cbElementaryTransfer = cbTransfer;
+        if (cbTransfer >= s->cbTotalTransfer)
+        {
+            s->iSourceSink = ATAFN_SS_NULL;
+            atapiCmdOK(s);
+        }
     }
     else
     {
@@ -3581,25 +3630,15 @@ static void atapiParseCmdPassthrough(ATADevState *s)
             atapiCmdErrorSimple(s, SCSI_SENSE_ILLEGAL_REQUEST, SCSI_ASC_ILLEGAL_OPCODE);
             break;
         sendcmd:
-            /* Send a command to the drive, passing data in/out as required. */
+            /*
+             * Send a command to the drive, passing data in/out as required.
+             * Commands which exceed the I/O buffer size are splitted below
+             * or aborted if splitting is not implemented.
+             */
             Log2(("ATAPI PT: max size %d\n", cbTransfer));
-            if (cbTransfer > s->cbIOBuffer)
-            {
-                /* Rate limited logging, one log line every 5 seconds. */
-                static uint64_t uLastLogTS = 0;
-                if (RTTimeMilliTS() >= uLastLogTS + 5000)
-                {
-                    LogRel(("PIIX3 ATA: LUN#%d: CD-ROM passthrough command attempted to exceed buffer size, blocked\n", s->iLUN));
-                    uLastLogTS = RTTimeMilliTS();
-                }
-                atapiCmdErrorSimple(s, SCSI_SENSE_ILLEGAL_REQUEST, SCSI_ASC_INV_FIELD_IN_CMD_PACKET);
-            }
-            else
-            {
-                if (cbTransfer == 0)
-                    uTxDir = PDMBLOCKTXDIR_NONE;
-                ataStartTransfer(s, cbTransfer, uTxDir, ATAFN_BT_ATAPI_PASSTHROUGH_CMD, ATAFN_SS_ATAPI_PASSTHROUGH, true);
-            }
+            if (cbTransfer == 0)
+                uTxDir = PDMBLOCKTXDIR_NONE;
+            ataStartTransfer(s, cbTransfer, uTxDir, ATAFN_BT_ATAPI_PASSTHROUGH_CMD, ATAFN_SS_ATAPI_PASSTHROUGH, true);
     }
 }
 
