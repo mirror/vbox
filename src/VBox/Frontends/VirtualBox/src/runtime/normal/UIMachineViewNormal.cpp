@@ -214,7 +214,7 @@ void UIMachineViewNormal::maybeResendResizeHint()
              * framebuffer dimensions (see @a UIMachineView::sizeHint()) before
              * the following resize() is acted upon. */
             setMaximumSize(hint);
-            resize(hint);
+            m_sizeHintOverride = hint;
             sltPerformGuestResize(hint);
         }
     }
