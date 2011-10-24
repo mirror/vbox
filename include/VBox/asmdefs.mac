@@ -69,42 +69,49 @@
 ; Initializes the com port to 9600 baud 8n1.
 ; al and dx are wasted.
 ; @todo comport init doesn't quite work - therefore we no longer use this! :-/
+; @todo test again, it might work now...
 %macro COM_INIT 0
-    push    eax
-    push    edx
+        push    eax
+        push    edx
 
-    mov     dx, VBOX_UART_BASE + 3
-    mov     al, 80h
-    out     dx, al                      ; make DL register accessible
+        mov     dx, VBOX_UART_BASE + 2
+        mov     al, 0
+        out     dx, al                  ; Disable the fifos (old software relies on it)
 
-    mov     dx, VBOX_UART_BASE
-    mov     ax, VBOX_UART_RATE
-    out     dx, ax                      ; write bps rate divisor
+        mov     dx, VBOX_UART_BASE + 3
+        mov     al, 80h
+        out     dx, al                  ; make DL register accessible
 
-    mov     dx, VBOX_UART_BASE + 3
-    mov     al, VBOX_UART_PARAMS
-    out     dx, al                      ; write parameters
+        mov     dx, VBOX_UART_BASE
+        mov     ax, VBOX_UART_RATE
+        out     dx, al                  ; write low bps rate divisor
 
+        mov     dx, VBOX_UART_BASE+1
+        xchg    al, ah
+        out     dx, al                  ; write high bps rate divisor
 
-    xor     ax, ax
-    mov     dx, VBOX_UART_BASE + 4      ; disconnect the UART from the int line
-    out     dx, al
+        mov     dx, VBOX_UART_BASE + 3
+        mov     al, VBOX_UART_PARAMS
+        out     dx, al                  ; write parameters & lock divisor
 
-    mov     dx, VBOX_UART_BASE + 1      ; disable UART ints
-    out     dx, al
+        mov     dx, VBOX_UART_BASE + 4  ; disconnect the UART from the int line
+        mov     al, 0
+        out     dx, al
 
-    mov     dx, VBOX_UART_BASE + 2      ; disable the fifos (old software relies on it)
-    out     dx, al
+        mov     dx, VBOX_UART_BASE + 1  ; disable UART ints
+        out     dx, al
 
-    mov     dx, VBOX_UART_BASE
-    in      al, dx                      ; clear receiver
-    mov     dx, VBOX_UART_BASE + 5
-    in      al, dx                      ; clear line status
-    inc     dx
-    in      al, dx                      ; clear modem status
+        mov     dx, VBOX_UART_BASE
+        in      al, dx                  ; clear receiver
+        mov     dx, VBOX_UART_BASE + 5
+        in      al, dx                  ; clear line status
+        inc     dx
+        in      al, dx                  ; clear modem status
+        mov     dx, VBOX_UART_BASE + 2
+        in      al, dx                  ; clear interrupts (IIR)
 
-    pop     edx
-    pop     eax
+        pop     edx
+        pop     eax
 %endmacro
 
 
