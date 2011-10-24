@@ -190,8 +190,6 @@ protohandler(struct libalias *la, struct ip *pip, struct alias_data *ah)
     int i;
     /* Parse dns request */
     char *qw_qname = NULL;
-    uint16_t *qw_qtype = NULL;
-    uint16_t *qw_qclass = NULL;
     struct hostent *h = NULL;
     char cname[255];
     int cname_len = 0;

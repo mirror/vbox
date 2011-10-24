@@ -87,8 +87,6 @@ ip_init(PNATState pData)
 static struct libalias *select_alias(PNATState pData, struct mbuf* m)
 {
     struct libalias *la = pData->proxy_alias;
-    struct udphdr *udp = NULL;
-    struct ip *pip = NULL;
 
     struct m_tag *t;
     if ((t = m_tag_find(m, PACKET_TAG_ALIAS, NULL)) != 0)

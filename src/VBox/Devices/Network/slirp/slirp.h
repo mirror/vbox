@@ -476,6 +476,7 @@ static inline size_t slirp_size(PNATState pData)
 static inline bool slirpMbufTagService(PNATState pData, struct mbuf *m, uint8_t u8ServiceId)
 {
     struct m_tag * t = NULL;
+    NOREF(pData);
     /* if_encap assumes that all packets goes through aliased address(gw) */
     if (u8ServiceId == CTL_ALIAS)
         return true;

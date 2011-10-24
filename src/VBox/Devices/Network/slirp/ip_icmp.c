@@ -780,7 +780,6 @@ icmp_reflect(PNATState pData, struct mbuf *m)
 {
     register struct ip *ip = mtod(m, struct ip *);
     int hlen = ip->ip_hl << 2;
-    int optlen = hlen - sizeof(struct ip);
     register struct icmp *icp;
     LogFlowFunc(("ENTER: m:%p\n", m));
 

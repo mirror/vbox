@@ -207,7 +207,6 @@ static void slirp_uma_free(void *item, int size, uint8_t flags)
 {
     struct item *it;
     uma_zone_t zone;
-    uma_zone_t master_zone;
 
     Assert(item);
     it = &((struct item *)item)[-1];

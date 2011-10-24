@@ -344,8 +344,8 @@ skip_dns_servers:
 static int dhcp_send_nack(PNATState pData, struct bootp_t *bp, BOOTPClient *bc, struct mbuf *m)
 {
     struct bootp_t *rbp;
-    uint8_t *q = NULL;
     rbp = mtod(m, struct bootp_t *);
+    NOREF(bc);
 
     dhcp_create_msg(pData, bp, m, DHCPNAK);
     return 7;
