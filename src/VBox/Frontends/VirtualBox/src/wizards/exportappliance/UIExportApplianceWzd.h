@@ -46,7 +46,7 @@ class UIExportApplianceWzd : public QIWizard
 
 public:
 
-    UIExportApplianceWzd(QWidget *pParent, const QString &strSelectedVMName = QString());
+    UIExportApplianceWzd(QWidget *pParent, const QStringList &selectedVMNames = QStringList());
 
 protected:
 
@@ -60,7 +60,7 @@ private slots:
 class UIExportApplianceWzdPage1 : public QIWizardPage, public Ui::UIExportApplianceWzdPage1
 {
     Q_OBJECT;
-    Q_PROPERTY(QString selectedVMName READ selectedVMName WRITE setSelectedVMName);
+    Q_PROPERTY(QStringList selectedVMNames READ selectedVMNames WRITE setSelectedVMNames);
     Q_PROPERTY(QStringList machineNames READ machineNames WRITE setMachineNames);
     Q_PROPERTY(QStringList machineIDs READ machineIDs WRITE setMachineIDs);
 
@@ -88,9 +88,9 @@ private:
 
     void populateVMSelectorItems();
 
-    QString selectedVMName() const { return m_strSelectedVMName; }
-    void setSelectedVMName(const QString &strSelectedVMName) { m_strSelectedVMName = strSelectedVMName; }
-    QString m_strSelectedVMName;
+    QStringList selectedVMNames() const { return m_selectedVMNames; }
+    void setSelectedVMNames(const QStringList &selectedVMNames) { m_selectedVMNames = selectedVMNames; }
+    QStringList m_selectedVMNames;
 
     QStringList machineNames() const { return m_MachineNames; }
     void setMachineNames(const QStringList &machineNames) { m_MachineNames = machineNames; }

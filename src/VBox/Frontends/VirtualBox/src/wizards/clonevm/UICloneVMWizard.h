@@ -43,7 +43,7 @@ public:
     };
 
     /* Constructor: */
-    UICloneVMWizard(QWidget *pParent, CMachine machine, CSnapshot snapshot = CSnapshot());
+    UICloneVMWizard(QWidget *pParent, const CMachine &machine, CSnapshot snapshot = CSnapshot());
 
     bool createClone(const QString &strName, KCloneMode mode, bool fReinitMACs, bool fLinked = false);
 

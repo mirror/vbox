@@ -33,9 +33,12 @@
 
 /* Forward declarations: */
 class QISplitter;
+class QMenu;
+class UIActionInterface;
 class UIMainBar;
 class UIToolBar;
 class UIVMDesktop;
+class UIVMItem;
 class UIVMItemModel;
 class UIVMListView;
 #ifdef VBOX_GUI_WITH_SYSTRAY
@@ -78,19 +81,19 @@ private slots:
     void sltShowMachineSettingsDialog(const QString &strCategory = QString(),
                                       const QString &strControl = QString(),
                                       const QString &strMachineId = QString());
-    void sltShowCloneMachineWizard(const QString &strMachineId = QString());
-    void sltShowRemoveMachineDialog(const QString &strMachineId = QString());
-    void sltPerformStartOrShowAction(const QString &strMachineId = QString());
-    void sltPerformDiscardAction(const QString &strMachineId = QString());
-    void sltPerformPauseResumeAction(bool fPause, const QString &strMachineId = QString());
-    void sltPerformResetAction(const QString &strMachineId = QString());
-    void sltPerformACPIShutdownAction(const QString &strMachineId = QString());
-    void sltPerformPowerOffAction(const QString &strMachineId = QString());
-    void sltPerformRefreshAction(const QString &strMachineId = QString());
-    void sltShowLogDialog(const QString &strMachineId = QString());
-    void sltShowMachineInFileManager(const QString &strMachineId = QString());
-    void sltPerformCreateShortcutAction(const QString &strMachineId = QString());
-    void sltPerformSortAction(const QString &strMachineId = QString());
+    void sltShowCloneMachineWizard();
+    void sltShowRemoveMachineDialog();
+    void sltPerformStartOrShowAction();
+    void sltPerformDiscardAction();
+    void sltPerformPauseResumeAction(bool fPause);
+    void sltPerformResetAction();
+    void sltPerformACPIShutdownAction();
+    void sltPerformPowerOffAction();
+    void sltPerformRefreshAction();
+    void sltShowLogDialog();
+    void sltShowMachineInFileManager();
+    void sltPerformCreateShortcutAction();
+    void sltPerformSortAction();
     void sltMachineMenuAboutToShow();
     void sltMachineCloseMenuAboutToShow();
     void sltMachineContextMenuHovered(QAction *pAction);
@@ -153,6 +156,9 @@ private:
     void loadSettings();
     void saveSettings();
 
+    /* Static helping stuff: */
+    static bool isActionEnabled(int iActionIndex, UIVMItem *pItem);
+
     /* Central splitter window: */
     QISplitter *m_pSplitter;
 
@@ -171,6 +177,48 @@ private:
 
     /* VM details widget: */
     UIVMDesktop *m_pVMDesktop;
+
+    /* 'File' menu action pointers: */
+    QMenu *m_pFileMenu;
+    UIActionInterface *m_pMediumManagerDialogAction;
+    UIActionInterface *m_pImportApplianceWizardAction;
+    UIActionInterface *m_pExportApplianceWizardAction;
+    UIActionInterface *m_pPreferencesDialogAction;
+    UIActionInterface *m_pExitAction;
+
+    /* 'Machine' menu action pointers: */
+    QMenu *m_pMachineMenu;
+    UIActionInterface *m_pNewWizardAction;
+    UIActionInterface *m_pAddDialogAction;
+    UIActionInterface *m_pSettingsDialogAction;
+    UIActionInterface *m_pCloneWizardAction;
+    UIActionInterface *m_pRemoveDialogAction;
+    UIActionInterface *m_pStartOrShowAction;
+    UIActionInterface *m_pDiscardAction;
+    UIActionInterface *m_pPauseAndResumeAction;
+    UIActionInterface *m_pResetAction;
+    UIActionInterface *m_pRefreshAction;
+    UIActionInterface *m_pLogDialogAction;
+    UIActionInterface *m_pShowInFileManagerAction;
+    UIActionInterface *m_pCreateShortcutAction;
+    UIActionInterface *m_pSortAction;
+
+    /* 'Machine / Close' menu action pointers: */
+    UIActionInterface *m_pMachineCloseMenuAction;
+    QMenu *m_pMachineCloseMenu;
+    UIActionInterface *m_pACPIShutdownAction;
+    UIActionInterface *m_pPowerOffAction;
+
+    /* 'Help' menu action pointers: */
+    QMenu *m_pHelpMenu;
+    UIActionInterface *m_pHelpAction;
+    UIActionInterface *m_pWebAction;
+    UIActionInterface *m_pResetWarningsAction;
+#ifdef VBOX_WITH_REGISTRATION
+    UIActionInterface *m_pRegisterAction;
+#endif /* VBOX_WITH_REGISTRATION */
+    UIActionInterface *m_pUpdateAction;
+    UIActionInterface *m_pAboutAction;
 
     /* Other variables: */
     QRect m_normalGeo;

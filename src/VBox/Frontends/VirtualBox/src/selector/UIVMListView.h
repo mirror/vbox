@@ -98,7 +98,8 @@ public:
     void selectItemByRow(int row);
     void selectItemById(const QString &aID);
     void ensureSomeRowSelected(int aRowHint);
-    UIVMItem *selectedItem() const;
+    UIVMItem* currentItem() const;
+    QList<UIVMItem*> currentItems() const;
 
     void ensureCurrentVisible();
 
@@ -109,8 +110,6 @@ signals:
 
 protected slots:
     void selectionChanged(const QItemSelection &aSelected, const QItemSelection &aDeselected);
-    void currentChanged(const QModelIndex &aCurrent, const QModelIndex &aPrevious);
-    void dataChanged(const QModelIndex &aTopLeft, const QModelIndex &aBottomRight);
     void sltRowsAboutToBeInserted(const QModelIndex &parent, int start, int end);
 
 protected:
@@ -127,6 +126,7 @@ protected:
 
 private:
     bool m_fItemInMove;
+    QModelIndex m_previousCurrentIndex;
 };
 
 Q_DECLARE_METATYPE(QList<QUrl>);
