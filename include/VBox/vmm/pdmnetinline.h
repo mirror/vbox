@@ -224,7 +224,7 @@ DECLINLINE(void) pdmNetGsoUpdateUdpHdr(uint32_t u32PseudoSum, uint8_t *pbSegHdrs
                                        PDMNETCSUMTYPE enmCsumType)
 {
     PRTNETUDP pUdpHdr = (PRTNETUDP)&pbSegHdrs[offUdpHdr];
-    pUdpHdr->uh_ulen =  RT_H2N_U16(cbPayload + cbHdrs - offUdpHdr);
+    pUdpHdr->uh_ulen  = RT_H2N_U16(cbPayload + cbHdrs - offUdpHdr);
     switch (enmCsumType)
     {
         case PDMNETCSUMTYPE_NONE:
@@ -237,6 +237,7 @@ DECLINLINE(void) pdmNetGsoUpdateUdpHdr(uint32_t u32PseudoSum, uint8_t *pbSegHdrs
             pUdpHdr->uh_sum = ~RTNetIPv4FinalizeChecksum(u32PseudoSum);
             break;
         default:
+            NOREF(pbPayload);
             AssertFailed();
             break;
     }
@@ -298,6 +299,7 @@ DECLINLINE(void) pdmNetGsoUpdateTcpHdr(uint32_t u32PseudoSum, uint8_t *pbSegHdrs
             pTcpHdr->th_sum = ~RTNetIPv4FinalizeChecksum(u32PseudoSum);
             break;
         default:
+            NOREF(cbHdrs);
             AssertFailed();
             break;
     }
@@ -497,7 +499,7 @@ DECLINLINE(void *) PDMNetGsoCarveSegmentQD(PCPDMNETWORKGSO pGso, uint8_t *pbFram
  *                              segment payload.
  */
 DECLINLINE(uint32_t) PDMNetGsoCarveSegment(PCPDMNETWORKGSO pGso, const uint8_t *pbFrame, size_t cbFrame,
-                                           uint32_t iSeg, uint32_t cSegs, uint8_t *pbSegHdrs, 
+                                           uint32_t iSeg, uint32_t cSegs, uint8_t *pbSegHdrs,
                                            uint32_t *pcbSegHdrs, uint32_t *pcbSegPayload)
 {
     /*

@@ -405,6 +405,7 @@ static void *rtSchedNativeSubProberThread(void *pvUser)
  */
 static void *rtSchedNativeProberThread(void *pvUser)
 {
+    NOREF(pvUser);
     SAVEDPRIORITY SavedPriority;
     rtSchedNativeSave(&SavedPriority);
 

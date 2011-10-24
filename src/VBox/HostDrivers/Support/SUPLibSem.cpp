@@ -51,6 +51,7 @@
  */
 DECLINLINE(int) supSemOp2(PSUPDRVSESSION pSession, uint32_t uType, uintptr_t hSem, uint32_t uOp, uint64_t u64Arg)
 {
+    NOREF(pSession);
     SUPSEMOP2 Req;
     Req.Hdr.u32Cookie           = g_u32Cookie;
     Req.Hdr.u32SessionCookie    = g_u32SessionCookie;
@@ -85,6 +86,7 @@ DECLINLINE(int) supSemOp2(PSUPDRVSESSION pSession, uint32_t uType, uintptr_t hSe
  */
 DECLINLINE(int) supSemOp3(PSUPDRVSESSION pSession, uint32_t uType, uintptr_t hSem, uint32_t uOp, PSUPSEMOP3 pReq)
 {
+    NOREF(pSession);
     pReq->Hdr.u32Cookie           = g_u32Cookie;
     pReq->Hdr.u32SessionCookie    = g_u32SessionCookie;
     pReq->Hdr.cbIn                = SUP_IOCTL_SEM_OP3_SIZE_IN;

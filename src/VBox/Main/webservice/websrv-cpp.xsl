@@ -537,7 +537,7 @@ const char *g_pcszIUnknown = "IUnknown";
   <xsl:value-of select="concat('        // convert input arg ', $name)" />
   <xsl:call-template name="emitNewlineIndent8" />
 
-  <xsl:choose>    
+  <xsl:choose>
      <xsl:when test="$safearray='yes' and $type='octet'">
        <xsl:value-of select="concat('com::SafeArray&lt;BYTE&gt; comcall_',$name, ';')" />
        <xsl:call-template name="emitNewlineIndent8" />
@@ -598,7 +598,7 @@ const char *g_pcszIUnknown = "IUnknown";
         <xsl:when test="//enum[@name=$type]">
           <xsl:call-template name="emitNewlineIndent8" />
           <xsl:value-of select="concat('    comcall_', $name, '[i] = ', $G_funcPrefixInputEnumConverter, $type, '(', $structprefix, $name, '[i]);')" />
-        </xsl:when>        
+        </xsl:when>
         <xsl:otherwise>
           <xsl:call-template name="fatalError">
             <xsl:with-param name="msg" select="concat('emitInputArgConverter Type &quot;', $type, '&quot; in arg &quot;', $name, '&quot; of method &quot;', $method, '&quot; is not yet supported in safearrays.')" />
@@ -992,7 +992,7 @@ const char *g_pcszIUnknown = "IUnknown";
 
   <xsl:choose>
     <xsl:when test="$safearray='yes' and $type='octet'">
-      <xsl:value-of select="concat($receiverVariable, ' = Base64EncodeByteArray(ComSafeArrayAsInParam(', $varname,'));')" /> 
+      <xsl:value-of select="concat($receiverVariable, ' = Base64EncodeByteArray(ComSafeArrayAsInParam(', $varname,'));')" />
       <xsl:call-template name="emitNewlineIndent8" />
     </xsl:when>
 
@@ -1223,6 +1223,7 @@ const char *g_pcszIUnknown = "IUnknown";
   <xsl:text>{</xsl:text>
   <xsl:call-template name="emitNewline" />
   <xsl:value-of select="'    HRESULT rc = S_OK;'" />
+  <xsl:value-of select="concat(concat(' NOREF(', $G_responseElementVarName),');')" />
   <xsl:call-template name="emitNewline" />
   <xsl:call-template name="emitPrologue" />
 
@@ -1369,6 +1370,7 @@ const char *g_pcszIUnknown = "IUnknown";
           <xsl:text>{</xsl:text>
           <xsl:call-template name="emitNewline" />
           <xsl:value-of select="'    HRESULT rc = S_OK;'" />
+          <xsl:value-of select="concat(concat(' NOREF(', $G_responseElementVarName),');')" />
           <xsl:call-template name="emitNewline" />
           <xsl:call-template name="emitPrologue" />
 

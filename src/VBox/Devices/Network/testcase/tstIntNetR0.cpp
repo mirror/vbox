@@ -103,7 +103,8 @@ static uint32_t         g_cbTransfer = _1M * 384;
 const PSUPDRVSESSION    g_pSession   = (PSUPDRVSESSION)0xdeadface;
 
 
-INTNETR3DECL(void *) SUPR0ObjRegister(PSUPDRVSESSION pSession, SUPDRVOBJTYPE enmType, PFNSUPDRVDESTRUCTOR pfnDestructor, void *pvUser1, void *pvUser2)
+INTNETR3DECL(void *) SUPR0ObjRegister(PSUPDRVSESSION pSession, SUPDRVOBJTYPE enmType,
+                                      PFNSUPDRVDESTRUCTOR pfnDestructor, void *pvUser1, void *pvUser2)
 {
     RTTEST_CHECK_RET(g_hTest, pSession == g_pSession, NULL);
     POBJREF pRef = (POBJREF)RTTestGuardedAllocTail(g_hTest, sizeof(OBJREF));
@@ -113,6 +114,7 @@ INTNETR3DECL(void *) SUPR0ObjRegister(PSUPDRVSESSION pSession, SUPDRVOBJTYPE enm
     pRef->pfnDestructor = pfnDestructor;
     pRef->pvUser1 = pvUser1;
     pRef->pvUser2 = pvUser2;
+    NOREF(enmType);
     return pRef;
 }
 
@@ -121,6 +123,7 @@ INTNETR3DECL(int) SUPR0ObjAddRefEx(void *pvObj, PSUPDRVSESSION pSession, bool fN
     RTTEST_CHECK_RET(g_hTest, pSession == g_pSession, VERR_INVALID_PARAMETER);
     POBJREF pRef = (POBJREF)pvObj;
     ASMAtomicIncU32(&pRef->cRefs);
+    NOREF(fNoBlocking);
     return VINF_SUCCESS;
 }
 
@@ -145,6 +148,7 @@ INTNETR3DECL(int) SUPR0ObjRelease(void *pvObj, PSUPDRVSESSION pSession)
 INTNETR3DECL(int) SUPR0ObjVerifyAccess(void *pvObj, PSUPDRVSESSION pSession, const char *pszObjName)
 {
     RTTEST_CHECK_RET(g_hTest, pSession == g_pSession, VERR_INVALID_PARAMETER);
+    NOREF(pvObj); NOREF(pszObjName);
     return VINF_SUCCESS;
 }
 
@@ -225,10 +229,11 @@ typedef struct MYFRAMEHDR
  * Send thread.
  * This is constantly sending frames to the other interface.
  */
-DECLCALLBACK(int) SendThread(RTTHREAD Thread, void *pvArg)
+DECLCALLBACK(int) SendThread(RTTHREAD hThreadSelf, void *pvArg)
 {
     PMYARGS pArgs = (PMYARGS)pvArg;
     int rc;
+    NOREF(hThreadSelf);
 
     /*
      * Send g_cbTransfer of data.
@@ -237,7 +242,6 @@ DECLCALLBACK(int) SendThread(RTTHREAD Thread, void *pvArg)
     MYFRAMEHDR     *pHdr    = (MYFRAMEHDR *)&abBuf[0];
     uint32_t        iFrame  = 0;
     uint32_t        cbSent  = 0;
-    uint32_t        cSend   = 0;
 
     pHdr->SrcMac            = pArgs->Mac;
     pHdr->DstMac            = pArgs->Mac;
@@ -288,12 +292,14 @@ DECLCALLBACK(int) SendThread(RTTHREAD Thread, void *pvArg)
  * Receive thread.
  * This is reading stuff from the network.
  */
-DECLCALLBACK(int) ReceiveThread(RTTHREAD Thread, void *pvArg)
+DECLCALLBACK(int) ReceiveThread(RTTHREAD hThreadSelf, void *pvArg)
 {
     uint32_t    cbReceived  = 0;
     uint32_t    cLostFrames = 0;
     uint32_t    iFrame      = UINT32_MAX;
     PMYARGS     pArgs       = (PMYARGS)pvArg;
+    NOREF(hThreadSelf);
+
     for (;;)
     {
         /*

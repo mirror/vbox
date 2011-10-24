@@ -53,15 +53,15 @@
 static volatile uint32_t    g_BlocksLock;
 /** Tree tracking the allocations. */
 static AVLPVTREE            g_BlocksTree;
-#ifdef RTALLOC_EFENCE_FREE_DELAYED
+# ifdef RTALLOC_EFENCE_FREE_DELAYED
 /** Tail of the delayed blocks. */
 static volatile PRTMEMBLOCK g_pBlocksDelayHead;
 /** Tail of the delayed blocks. */
 static volatile PRTMEMBLOCK g_pBlocksDelayTail;
 /** Number of bytes in the delay list (includes fences). */
 static volatile size_t      g_cbBlocksDelay;
-#endif
-#endif
+# endif /* RTALLOC_EFENCE_FREE_DELAYED */
+#endif /* RTALLOC_EFENCE_TRACE */
 /** Array of pointers free watches for. */
 void   *gapvRTMemFreeWatch[4] = {NULL, NULL, NULL, NULL};
 /** Enable logging of all freed memory. */
@@ -216,8 +216,8 @@ void RTMemDump(void)
     RTAvlPVDoWithAll(&g_BlocksTree, true, RTMemDumpOne, NULL);
 }
 
+# ifdef RTALLOC_EFENCE_FREE_DELAYED
 
-#ifdef RTALLOC_EFENCE_FREE_DELAYED
 /**
  * Insert a delayed block.
  */
@@ -266,8 +266,7 @@ DECLINLINE(PRTMEMBLOCK) rtmemBlockDelayRemove(void)
     return pBlock;
 }
 
-
-#endif  /* DELAY */
+# endif  /* RTALLOC_EFENCE_FREE_DELAYED */
 
 #endif /* RTALLOC_EFENCE_TRACE */
 

@@ -219,6 +219,7 @@ static void tstTry(PDBGC pDbgc, const char *pszCmds, int rcCmd)
 }
 
 
+#ifdef SOME_UNUSED_FUNCTION
 /**
  * Tries to execute one command string.
  * @param   pDbgc           Pointer to the debugger instance.
@@ -232,6 +233,7 @@ static void tstTryExec(PDBGC pDbgc, const char *pszCmds, int rcCmd, const char *
 {
     return tstTryEx(pDbgc, pszCmds, rcCmd, false /*fNoExecute*/, pszExpected);
 }
+#endif
 
 
 /**

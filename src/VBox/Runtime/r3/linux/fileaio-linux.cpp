@@ -543,6 +543,7 @@ RTDECL(uint32_t) RTFileAioCtxGetMaxReqCount(RTFILEAIOCTX hAioCtx)
 RTDECL(int) RTFileAioCtxAssociateWithFile(RTFILEAIOCTX hAioCtx, RTFILE hFile)
 {
     /* Nothing to do. */
+    NOREF(hAioCtx); NOREF(hFile);
     return VINF_SUCCESS;
 }
 

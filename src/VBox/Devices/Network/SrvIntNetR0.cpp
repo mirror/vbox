@@ -2893,6 +2893,8 @@ static void intnetR0NetworkEditArpFromWire(PINTNETNETWORK pNetwork, PINTNETSG pS
  */
 static void intnetR0NetworkEditDhcpFromIntNet(PINTNETNETWORK pNetwork, PINTNETSG pSG, PRTNETETHERHDR pEthHdr)
 {
+    NOREF(pEthHdr);
+
     /*
      * Check the minimum size and get a linear copy of the thing to work on,
      * using the temporary buffer if necessary.
@@ -3015,6 +3017,8 @@ static void intnetR0NetworkEditDhcpFromIntNet(PINTNETNETWORK pNetwork, PINTNETSG
  */
 DECLINLINE(bool) intnetR0NetworkIsContextOk(PINTNETNETWORK pNetwork, PINTNETIF pIfSender, PCINTNETDSTTAB pDstTab)
 {
+    NOREF(pNetwork);
+
     /* Sending to the trunk is the problematic path.  If the trunk is the
        sender we won't be sending to it, so no problem..
        Note! fTrunkDst may be set event if if the trunk is the sender. */
@@ -5144,6 +5148,7 @@ static int intnetR0NetworkCreateTrunkIf(PINTNETNETWORK pNetwork, PSUPDRVSESSION 
                 }
             }
 #else  /* IN_RING3 */
+            NOREF(pSession);
             rc = VERR_NOT_SUPPORTED;
 #endif /* IN_RING3 */
 

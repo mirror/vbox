@@ -1442,6 +1442,11 @@ if1of ($(USERNAME), bird)
 endif
 VBOX_GCC_PEDANTIC_CXX ?= -pedantic -Wshadow $(VBOX_GCC_WARN_PEDANTIC) -Wno-long-long
 VBOX_GCC_PEDANTIC_C   ?= -pedantic -Wshadow $(VBOX_GCC_WARN_PEDANTIC) -Wno-long-long -Wmissing-prototypes -Wstrict-prototypes -Wmissing-declarations -Werror-implicit-function-declaration
+ifeq ($(KBUILD_TARGET),win)
+ VBOX_C_CXX_FLAGS_NO_UNUSED_PARAMETERS = #-Wdxxxx
+else
+ VBOX_C_CXX_FLAGS_NO_UNUSED_PARAMETERS = -Wno-unused-parameter
+endif
 ifeq ($(KBUILD_TYPE),debug)
  VBOX_GCC_FP     ?= -fno-omit-frame-pointer
  VBOX_GCC_OPT    ?= -O0

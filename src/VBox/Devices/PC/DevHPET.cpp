@@ -864,6 +864,7 @@ PDMBOTHCBDECL(int)  hpetMMIORead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPh
 {
     HpetState      *pThis  = PDMINS_2_DATA(pDevIns, HpetState*);
     uint32_t const  idxReg = (uint32_t)(GCPhysAddr - HPET_BASE);
+    NOREF(pvUser);
 
     LogFlow(("hpetMMIORead (%d): %llx (%x)\n", cb, (uint64_t)GCPhysAddr, idxReg));
 
@@ -954,6 +955,7 @@ PDMBOTHCBDECL(int) hpetMMIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPh
     uint32_t    idxReg = (uint32_t)(GCPhysAddr - HPET_BASE);
     LogFlow(("hpetMMIOWrite: cb=%u reg=%03x (%RGp) val=%llx\n",
              cb, idxReg, GCPhysAddr, cb == 4 ? *(uint32_t *)pv : cb == 8 ? *(uint64_t *)pv : 0xdeadbeef));
+    NOREF(pvUser);
 
     int rc;
     switch (cb)
@@ -1121,6 +1123,7 @@ static DECLCALLBACK(void) hpetTimerCb(PPDMDEVINS pDevIns, PTMTIMER pTimer, void 
 static DECLCALLBACK(void) hpetInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const char *pszArgs)
 {
     HpetState *pThis = PDMINS_2_DATA(pDevIns, HpetState *);
+    NOREF(pszArgs);
 
     pHlp->pfnPrintf(pHlp,
                     "HPET status:\n"
@@ -1153,6 +1156,7 @@ static DECLCALLBACK(void) hpetInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const
 static DECLCALLBACK(int) hpetLiveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uPass)
 {
     HpetState *pThis = PDMINS_2_DATA(pDevIns, HpetState *);
+    NOREF(uPass);
 
     SSMR3PutU8(pSSM, HPET_CAP_GET_TIMERS(pThis->u32Capabilities));
 
@@ -1277,6 +1281,7 @@ static DECLCALLBACK(void) hpetRelocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta)
 {
     HpetState *pThis = PDMINS_2_DATA(pDevIns, HpetState *);
     LogFlow(("hpetRelocate:\n"));
+    NOREF(offDelta);
 
     pThis->pDevInsRC    = PDMDEVINS_2_RCPTR(pDevIns);
     pThis->pHpetHlpRC   = pThis->pHpetHlpR3->pfnGetRCHelpers(pDevIns);

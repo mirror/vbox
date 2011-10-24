@@ -729,6 +729,7 @@ PDMBOTHCBDECL(int) picIOPortElcrRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT 
         PIC_UNLOCK(PDMINS_2_DATA(pDevIns, PDEVPIC));
         return VINF_SUCCESS;
     }
+    NOREF(Port);
     return VERR_IOM_IOPORT_UNUSED;
 }
 
@@ -752,6 +753,7 @@ PDMBOTHCBDECL(int) picIOPortElcrWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT
         s->elcr = u32 & s->elcr_mask;
         PIC_UNLOCK(PDMINS_2_DATA(pDevIns, PDEVPIC));
     }
+    NOREF(Port);
     return VINF_SUCCESS;
 }
 
@@ -768,15 +770,15 @@ PDMBOTHCBDECL(int) picIOPortElcrWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT
 static DECLCALLBACK(void) picInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const char *pszArgs)
 {
     PDEVPIC pThis = PDMINS_2_DATA(pDevIns, PDEVPIC);
+    NOREF(pszArgs);
 
     /*
      * Show info.
      */
-    for (int i=0;i<2;i++)
+    for (int i = 0; i < 2; i++)
     {
-        PicState    *pPic;
+        PicState   *pPic = &pThis->aPics[i];
 
-        pPic = &pThis->aPics[i];
         pHlp->pfnPrintf(pHlp, "PIC%d:\n", i);
         pHlp->pfnPrintf(pHlp, " IMR :%02x ISR   :%02x IRR   :%02x LIRR:%02x\n",
                         pPic->imr, pPic->isr, pPic->irr, pPic->last_irr);
@@ -983,8 +985,8 @@ static DECLCALLBACK(int)  picConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
         pThis->pPicHlpR0 = pThis->pPicHlpR3->pfnGetR0Helpers(pDevIns);
 
     /*
-     * Since the PIC helper interface provides access to the PDM lock, 
-     * we need no device level critical section. 
+     * Since the PIC helper interface provides access to the PDM lock,
+     * we need no device level critical section.
      */
     rc = PDMDevHlpSetDeviceCritSect(pDevIns, PDMDevHlpCritSectGetNop(pDevIns));
     AssertRCReturn(rc, rc);

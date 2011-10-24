@@ -436,8 +436,9 @@ static void kbc_dbb_out(void *opaque, uint8_t val)
 static uint32_t kbd_read_status(void *opaque, uint32_t addr)
 {
     KBDState *s = (KBDState*)opaque;
-    int val;
-    val = s->status;
+    int val = s->status;
+    NOREF(addr);
+
 #if defined(DEBUG_KBD)
     Log(("kbd: read status=0x%02x\n", val));
 #endif
@@ -448,6 +449,7 @@ static int kbd_write_command(void *opaque, uint32_t addr, uint32_t val)
 {
     int rc = VINF_SUCCESS;
     KBDState *s = (KBDState*)opaque;
+    NOREF(addr);
 
 #ifdef DEBUG_KBD
     Log(("kbd: write cmd=0x%02x\n", val));
@@ -572,6 +574,7 @@ static uint32_t kbd_read_data(void *opaque, uint32_t addr)
 {
     KBDState *s = (KBDState*)opaque;
     uint32_t val;
+    NOREF(addr);
 
     /* Return the current DBB contents. */
     val = s->dbbout;
@@ -798,16 +801,17 @@ static void kbd_mouse_send_packet(KBDState *s, bool fToCmdQueue)
         kbd_mouse_send_imex_byte4(s, fToCmdQueue);
 }
 
+#ifdef IN_RING3
+
 static bool kbd_mouse_unreported(KBDState *s)
 {
-   return    s->mouse_dx
-          || s->mouse_dy
-          || s->mouse_dz
-          || s->mouse_dw
-          || s->mouse_buttons != s->mouse_buttons_reported;
+    return s->mouse_dx
+        || s->mouse_dy
+        || s->mouse_dz
+        || s->mouse_dw
+        || s->mouse_buttons != s->mouse_buttons_reported;
 }
 
-#ifdef IN_RING3
 static size_t kbd_mouse_event_queue_free(KBDState *s)
 {
     AssertReturn(s->mouse_event_queue.count <= MOUSE_EVENT_QUEUE_SIZE, 0);
@@ -849,6 +853,7 @@ static void kbd_mouse_update_downstream_status(KBDState *pThis)
     bool fEnabled = !!(pThis->mouse_status & MOUSE_STATUS_ENABLED);
     pDrv->pfnReportModes(pDrv, fEnabled, false);
 }
+
 #endif /* IN_RING3 */
 
 static int kbd_write_mouse(KBDState *s, int val)
@@ -1057,6 +1062,7 @@ static int kbd_write_data(void *opaque, uint32_t addr, uint32_t val)
 {
     int rc = VINF_SUCCESS;
     KBDState *s = (KBDState*)opaque;
+    NOREF(addr);
 
 #ifdef DEBUG_KBD
     Log(("kbd: write data=0x%02x\n", val));
@@ -1592,6 +1598,7 @@ static DECLCALLBACK(int) kbdMousePutEvent(PPDMIMOUSEPORT pInterface, int32_t iDe
 static DECLCALLBACK(int) kbdMousePutEventAbs(PPDMIMOUSEPORT pInterface, uint32_t uX, uint32_t uY, int32_t iDeltaZ, int32_t iDeltaW, uint32_t fButtons)
 {
     AssertFailedReturn(VERR_NOT_SUPPORTED);
+    NOREF(pInterface); NOREF(uX); NOREF(uY); NOREF(iDeltaZ); NOREF(iDeltaW); NOREF(fButtons);
 }
 
 
@@ -1716,6 +1723,8 @@ static DECLCALLBACK(void)  kbdDetach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_t
             AssertMsgFailed(("Invalid LUN #%d\n", iLUN));
             break;
     }
+#else
+    NOREF(pDevIns); NOREF(iLUN); NOREF(fFlags);
 #endif
 }
 
@@ -1727,6 +1736,7 @@ static DECLCALLBACK(void) kbdRelocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta)
 {
     KBDState   *pThis = PDMINS_2_DATA(pDevIns, KBDState *);
     pThis->pDevInsRC = PDMDEVINS_2_RCPTR(pDevIns);
+    NOREF(offDelta);
 }
 
 
