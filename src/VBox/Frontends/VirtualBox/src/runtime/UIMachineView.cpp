@@ -375,12 +375,12 @@ void UIMachineView::prepareFrameBuffer()
                     /** these two additional template args is a workaround to
                      * this [VBox|UI] duplication
                      * @todo: they are to be removed once VBox stuff is gone */
-                    pFrameBuffer = new VBoxOverlayFrameBuffer<UIFrameBufferSDL, UIMachineView, UIResizeEvent>(this, &machineWindowWrapper()->session(), (uint32_t)screenId());
+                    pFrameBuffer = new VBoxOverlayFrameBuffer<UIFrameBufferQuartz2D, UIMachineView, UIResizeEvent>(this, &machineWindowWrapper()->session(), (uint32_t)screenId());
                 }
                 else
-                    pFrameBuffer = new UIFrameBufferSDL(this);
+                    pFrameBuffer = new UIFrameBufferQuartz2D(this);
 # else /* VBOX_WITH_VIDEOHWACCEL */
-                pFrameBuffer = new UIFrameBufferSDL(this);
+                pFrameBuffer = new UIFrameBufferQuartz2D(this);
 # endif /* !VBOX_WITH_VIDEOHWACCEL */
                 uisession()->setFrameBuffer(screenId(), pFrameBuffer);
             }
