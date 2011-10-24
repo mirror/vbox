@@ -41,6 +41,10 @@
 #include <iprt/time.h>
 #include <iprt/asm-amd64-x86.h>
 
+
+/*******************************************************************************
+*   Structures and Typedefs                                                    *
+*******************************************************************************/
 typedef struct PCIRAWSRVSTATE
 {
     /** Structure lock. */
@@ -85,7 +89,8 @@ typedef PCIRAWDEV *PPCIRAWDEV;
 
 static PCIRAWSRVSTATE g_State;
 
-/* Interrupt handler. Could be called in the interrupt context,
+
+/** Interrupt handler. Could be called in the interrupt context,
  * depending on host OS implmenetation. */
 static DECLCALLBACK(bool) pcirawr0Isr(void* pContext, int32_t iHostIrq)
 {
@@ -113,7 +118,7 @@ static DECLCALLBACK(bool) pcirawr0Isr(void* pContext, int32_t iHostIrq)
     RTSpinlockReleaseNoInts(pThis->hSpinlock, &aTmp);
 
     /**
-     * @todo: RTSemEventSignal() docs claims that it's platform-dependent
+     * @todo RTSemEventSignal() docs claims that it's platform-dependent
      * if RTSemEventSignal() could be called from the ISR, but it seems IPRT
      * doesn't provide primitives that guaranteed to work this way.
      */
@@ -501,6 +506,7 @@ static PRAWPCIDEVPORT pcirawr0CreateDummyDevice(uint32_t HostDevice, uint32_t fF
 static DECLCALLBACK(void) pcirawr0DevObjDestructor(void *pvObj, void *pvIns, void *pvUnused)
 {
     PPCIRAWDEV  pThis = (PPCIRAWDEV)pvIns;
+    NOREF(pvObj); NOREF(pvUnused);
 
     /* Forcefully deinit. */
     pcirawr0DevTerm(pThis, 0);
@@ -676,6 +682,7 @@ static int pcirawr0UnmapRegion(PSUPDRVSESSION   pSession,
 {
     LogFlow(("pcirawr0UnmapRegion\n"));
     int rc;
+    NOREF(pSession); NOREF(pvAddressR3);
 
     GET_PORT(TargetDevice);
 
@@ -692,7 +699,8 @@ static int pcirawr0PioWrite(PSUPDRVSESSION  pSession,
                             uint32_t        u32,
                             unsigned        cb)
 {
-    /// @todo: add check that port fits into device range
+    NOREF(pSession); NOREF(TargetDevice);
+    /// @todo add check that port fits into device range
     switch (cb)
     {
         case 1:
@@ -718,7 +726,8 @@ static int pcirawr0PioRead(PSUPDRVSESSION    pSession,
                            uint32_t          *pu32,
                            unsigned          cb)
 {
-    /// @todo: add check that port fits into device range
+    NOREF(pSession); NOREF(TargetDevice);
+    /// @todo add check that port fits into device range
     switch (cb)
     {
         case 1:
@@ -743,7 +752,8 @@ static int pcirawr0MmioRead(PSUPDRVSESSION    pSession,
                             RTR0PTR           Address,
                             PCIRAWMEMLOC      *pValue)
 {
-    /// @todo: add check that address fits into device range
+    NOREF(pSession); NOREF(TargetDevice);
+    /// @todo add check that address fits into device range
 #if 1
     switch (pValue->cb)
     {
@@ -771,7 +781,8 @@ static int pcirawr0MmioWrite(PSUPDRVSESSION    pSession,
                              RTR0PTR           Address,
                              PCIRAWMEMLOC      *pValue)
 {
-    /// @todo: add check that address fits into device range
+    NOREF(pSession); NOREF(TargetDevice);
+    /// @todo add check that address fits into device range
 #if 1
     switch (pValue->cb)
     {
