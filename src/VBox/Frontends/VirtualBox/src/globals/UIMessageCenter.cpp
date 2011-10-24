@@ -1194,60 +1194,92 @@ int UIMessageCenter::cannotEnterSeamlessMode()
              QIMessageBox::Ok | QIMessageBox::Default);
 }
 
-int UIMessageCenter::confirmMachineDeletion(const CMachine &machine)
+int UIMessageCenter::confirmMachineDeletion(const QList<CMachine> &machines)
 {
-    if (machine.GetAccessible())
+    /* Enumerate VMs: */
+    int cInacessibleVMCount = 0;
+    bool fVMWithHDPresent = false;
+    QString strVMNames;
+    for (int i = 0; i < machines.size(); ++i)
     {
-        int cDisks = 0;
-        const CMediumAttachmentVector &attachments = machine.GetMediumAttachments();
-        for (int i = 0; i < attachments.size(); ++i)
+        /* Get iterated VM: */
+        const CMachine &machine = machines[i];
+        /* Prepare VM name: */
+        QString strMachineName;
+        if (machine.GetAccessible())
         {
-            const CMediumAttachment &attachment = attachments.at(i);
-            /* Check if the medium is a harddisk: */
-            if (attachment.GetType() == KDeviceType_HardDisk)
+            /* Get VM name: */
+            strMachineName = machine.GetName();
+            /* Enumerate attachments: */
+            const CMediumAttachmentVector &attachments = machine.GetMediumAttachments();
+            for (int i = 0; !fVMWithHDPresent && i < attachments.size(); ++i)
             {
-                /* Check if the disk isn't shared.
-                 * If the disk is shared, it will be *never* deleted. */
-                QVector<QString> ids = attachment.GetMedium().GetMachineIds();
-                if (ids.size() == 1)
-                    ++cDisks;
+                /* Get current attachment: */
+                const CMediumAttachment &attachment = attachments.at(i);
+                /* Check if the medium is a hard disk: */
+                if (attachment.GetType() == KDeviceType_HardDisk)
+                {
+                    /* Check if that hard disk isn't shared.
+                     * If hard disk is shared, it will *never* be deleted: */
+                    QVector<QString> ids = attachment.GetMedium().GetMachineIds();
+                    if (ids.size() == 1)
+                    {
+                        fVMWithHDPresent = true;
+                        break;
+                    }
+                }
             }
         }
-        const QString strBase = tr("<p>You are about to remove the virtual machine <b>%1</b> from the machine list.</p>"
-                                   "<p>Would you like to delete the files containing the virtual machine from your hard disk as well?</p>")
-                                   .arg(machine.GetName());
-        const QString strExtd = tr("<p>You are about to remove the virtual machine <b>%1</b> from the machine list.</p>"
-                                   "<p>Would you like to delete the files containing the virtual machine from your hard disk as well? "
-                                   "Doing this will also remove the files containing the machine's virtual hard disks "
-                                   "if they are not in use by another machine.</p>")
-                                   .arg(machine.GetName());
-        return message(&vboxGlobal().selectorWnd(),
-                       Question,
-                       cDisks == 0 ? strBase : strExtd,
-                       0, /* auto-confirm id */
-                       QIMessageBox::Yes,
-                       QIMessageBox::No,
-                       QIMessageBox::Cancel | QIMessageBox::Escape | QIMessageBox::Default,
-                       tr("Delete all files"),
-                       tr("Remove only"));
+        else
+        {
+            /* Get VM name: */
+            QFileInfo fi(machine.GetSettingsFilePath());
+            strMachineName = VBoxGlobal::hasAllowedExtension(fi.completeSuffix(), VBoxDefs::VBoxFileExts) ? fi.completeBaseName() : fi.fileName();
+            /* Increment inacessible VM count: */
+            ++cInacessibleVMCount;
+        }
+
+        /* Compose VM name list: */
+        strVMNames += QString(strVMNames.isEmpty() ? "<b>%1</b>" : "<br><b>%1</b>").arg(strMachineName);
     }
-    else
-    {
-        /* This should be in sync with UIVMListBoxItem::recache(): */
-        QFileInfo fi(machine.GetSettingsFilePath());
-        const QString strName = VBoxGlobal::hasAllowedExtension(fi.completeSuffix(), VBoxDefs::VBoxFileExts) ? fi.completeBaseName() : fi.fileName();
-        const QString strBase = tr("You are about to remove the inaccessible virtual machine "
-                                   "<b>%1</b> from the machine list. Do you wish to proceed?")
-                                   .arg(strName);
-        return message(&vboxGlobal().selectorWnd(),
-                       Question,
-                       strBase,
-                       0, /* auto-confirm id */
-                       QIMessageBox::Ok,
-                       QIMessageBox::Cancel | QIMessageBox::Escape | QIMessageBox::Default,
-                       0,
-                       tr("Remove"));
-    }
+
+    /* Prepare message text: */
+    QString strText = cInacessibleVMCount == machines.size() ?
+                      tr("<p>You are about to remove following inaccessible virtual machines from the machine list:</p>"
+                         "<p>%1</p>"
+                         "<p>Do you wish to proceed?</p>")
+                         .arg(strVMNames) :
+                      fVMWithHDPresent ?
+                      tr("<p>You are about to remove following virtual machines from the machine list:</p>"
+                         "<p>%1</p>"
+                         "<p>Would you like to delete the files containing the virtual machine from your hard disk as well? "
+                         "Doing this will also remove the files containing the machine's virtual hard disks "
+                         "if they are not in use by another machine.</p>")
+                         .arg(strVMNames) :
+                      tr("<p>You are about to remove following virtual machines from the machine list:</p>"
+                         "<p>%1</p>"
+                         "<p>Would you like to delete the files containing the virtual machine from your hard disk as well?</p>")
+                         .arg(strVMNames);
+
+    /* Prepare message itself: */
+    return cInacessibleVMCount == machines.size() ?
+           message(&vboxGlobal().selectorWnd(),
+                   Question,
+                   strText,
+                   0, /* auto-confirm id */
+                   QIMessageBox::Ok,
+                   QIMessageBox::Cancel | QIMessageBox::Escape | QIMessageBox::Default,
+                   0,
+                   tr("Remove")) :
+           message(&vboxGlobal().selectorWnd(),
+                   Question,
+                   strText,
+                   0, /* auto-confirm id */
+                   QIMessageBox::Yes,
+                   QIMessageBox::No,
+                   QIMessageBox::Cancel | QIMessageBox::Escape | QIMessageBox::Default,
+                   tr("Delete all files"),
+                   tr("Remove only"));
 }
 
 bool UIMessageCenter::confirmDiscardSavedState(const CMachine &machine)

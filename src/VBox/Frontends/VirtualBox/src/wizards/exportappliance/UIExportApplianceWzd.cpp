@@ -50,7 +50,7 @@ private:
     bool m_fInSaveState;
 };
 
-UIExportApplianceWzd::UIExportApplianceWzd(QWidget *pParent, const QString &strSelectName) : QIWizard(pParent)
+UIExportApplianceWzd::UIExportApplianceWzd(QWidget *pParent, const QStringList &selectedVMNames) : QIWizard(pParent)
 {
     /* Create & add pages */
     addPage(new UIExportApplianceWzdPage1);
@@ -58,8 +58,8 @@ UIExportApplianceWzd::UIExportApplianceWzd(QWidget *pParent, const QString &strS
     addPage(new UIExportApplianceWzdPage3);
     addPage(new UIExportApplianceWzdPage4);
 
-    /* Set 'selectedVMName' field for wizard page 1 */
-    setField("selectedVMName", strSelectName);
+    /* Set 'selectedVMNames' field for wizard page 1: */
+    setField("selectedVMNames", selectedVMNames);
 
     /* Initial translate */
     retranslateUi();
@@ -106,8 +106,8 @@ UIExportApplianceWzdPage1::UIExportApplianceWzdPage1()
     /* Decorate page */
     Ui::UIExportApplianceWzdPage1::setupUi(this);
 
-    /* Register 'selectedVMName', 'machineNames', 'machineIDs' fields! */
-    registerField("selectedVMName", this, "selectedVMName");
+    /* Register 'selectedVMNames', 'machineNames', 'machineIDs' fields! */
+    registerField("selectedVMNames", this, "selectedVMNames");
     registerField("machineNames", this, "machineNames");
     registerField("machineIDs", this, "machineIDs");
 
@@ -144,15 +144,23 @@ void UIExportApplianceWzdPage1::initializePage()
     /* Fill and translate */
     retranslateUi();
 
-    /* Choose initially selected item (if passed) */
-    QList<QListWidgetItem*> list = m_pVMSelector->findItems(m_strSelectedVMName, Qt::MatchExactly);
-    if (list.size() > 0)
-        m_pVMSelector->setCurrentItem(list.first());
+    /* Choose initially selected items (if passed) */
+    for (int i = 0; i < m_selectedVMNames.size(); ++i)
+    {
+        QList<QListWidgetItem*> list = m_pVMSelector->findItems(m_selectedVMNames[i], Qt::MatchExactly);
+        if (list.size() > 0)
+        {
+            if (m_pVMSelector->selectedItems().isEmpty())
+                m_pVMSelector->setCurrentItem(list.first());
+            else
+                list.first()->setSelected(true);
+        }
+    }
 }
 
 void UIExportApplianceWzdPage1::cleanupPage()
 {
-    /* Do NOT call superclass method, it will clean default (initially set) field - 'selectedVMName'! */
+    /* Do NOT call superclass method, it will clean default (initially set) field - 'selectedVMNames'! */
 }
 
 bool UIExportApplianceWzdPage1::isComplete() const

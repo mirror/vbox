@@ -244,7 +244,7 @@ public:
     int cannotEnterFullscreenMode();
     int cannotEnterSeamlessMode();
 
-    int confirmMachineDeletion(const CMachine &machine);
+    int confirmMachineDeletion(const QList<CMachine> &machines);
     bool confirmDiscardSavedState(const CMachine &machine);
 
     void cannotChangeMediumType(QWidget *pParent, const CMedium &medium, KMediumType oldMediumType, KMediumType newMediumType);

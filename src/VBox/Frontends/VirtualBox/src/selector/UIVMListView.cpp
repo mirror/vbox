@@ -371,7 +371,7 @@ UIVMListView::UIVMListView(QAbstractListModel *pModel, QWidget *aParent /* = 0 *
 {
     /* For queued events Q_DECLARE_METATYPE isn't sufficient. */
     qRegisterMetaType< QList<QUrl> >("QList<QUrl>");
-    setSelectionMode(QAbstractItemView::SingleSelection);
+    setSelectionMode(QAbstractItemView::ExtendedSelection);
     setDragEnabled(true);
     setAcceptDrops(true);
     setDropIndicatorShown(true);
@@ -407,23 +407,28 @@ void UIVMListView::selectItemById(const QString &aID)
 
 void UIVMListView::ensureSomeRowSelected(int aRowHint)
 {
-    UIVMItem *item = selectedItem();
+    UIVMItem *item = currentItem();
     if (!item)
     {
         aRowHint = qBound(0, aRowHint, model()->rowCount() - 1);
         selectItemByRow(aRowHint);
-        item = selectedItem();
+        item = currentItem();
         if (!item)
             selectItemByRow(0);
     }
 }
 
-UIVMItem *UIVMListView::selectedItem() const
+UIVMItem *UIVMListView::currentItem() const
 {
-    QModelIndexList indexes = selectedIndexes();
-    if (indexes.isEmpty())
-        return NULL;
-    return model()->data(indexes.first(), UIVMItemModel::UIVMItemPtrRole).value<UIVMItem*>();
+    return model()->data(currentIndex(), UIVMItemModel::UIVMItemPtrRole).value<UIVMItem*>();
+}
+
+QList<UIVMItem*> UIVMListView::currentItems() const
+{
+    QList<UIVMItem*> currentItems;
+    for (int i = 0; i < selectionModel()->selectedIndexes().size(); ++i)
+        currentItems << model()->data(selectionModel()->selectedIndexes()[i], UIVMItemModel::UIVMItemPtrRole).value<UIVMItem*>();
+    return currentItems;
 }
 
 void UIVMListView::ensureCurrentVisible()
@@ -433,25 +438,29 @@ void UIVMListView::ensureCurrentVisible()
 
 void UIVMListView::selectionChanged(const QItemSelection &aSelected, const QItemSelection &aDeselected)
 {
+    /* Call for the base-class paint event: */
     QListView::selectionChanged(aSelected, aDeselected);
-    selectCurrent();
-    ensureCurrentVisible();
-    emit currentChanged();
-}
 
-void UIVMListView::currentChanged(const QModelIndex &aCurrent, const QModelIndex &aPrevious)
-{
-    QListView::currentChanged(aCurrent, aPrevious);
-    selectCurrent();
-    ensureCurrentVisible();
-    emit currentChanged();
-}
+    /* If selection still contains previous 'current index' =>
+     * make it the new 'current index': */
+    if (selectionModel()->selection().contains(m_previousCurrentIndex))
+        selectionModel()->setCurrentIndex(m_previousCurrentIndex, QItemSelectionModel::NoUpdate);
+    /* If selection do NOT contains previous 'current item' but contains at least something =>
+     * set first of the selected items as the new 'current item': */
+    else if (!selectionModel()->selectedIndexes().isEmpty())
+        selectionModel()->setCurrentIndex(selectionModel()->selectedIndexes()[0], QItemSelectionModel::NoUpdate);
+    /* If selection do NOT contains anything at all (is empty) =>
+     * select current index: */
+    else
+        selectionModel()->select(currentIndex(), QItemSelectionModel::SelectCurrent);
 
-void UIVMListView::dataChanged(const QModelIndex &aTopLeft, const QModelIndex &aBottomRight)
-{
-    QListView::dataChanged(aTopLeft, aBottomRight);
-    selectCurrent();
-//    ensureCurrentVisible();
+    /* Remember the current item: */
+    m_previousCurrentIndex = currentIndex();
+
+    /* Ensure current index is visible: */
+    ensureCurrentVisible();
+
+    /* Notify listeners about current index was changed: */
     emit currentChanged();
 }
 

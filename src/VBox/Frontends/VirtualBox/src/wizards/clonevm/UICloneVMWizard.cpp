@@ -30,18 +30,18 @@
 #include "UICloneVMWizard.h"
 #include "iprt/path.h"
 
-UICloneVMWizard::UICloneVMWizard(QWidget *pParent, CMachine machine, CSnapshot snapshot /* = CSnapshot() */)
+UICloneVMWizard::UICloneVMWizard(QWidget *pParent, const CMachine &machine, CSnapshot snapshot /* = CSnapshot() */)
     : QIWizard(pParent)
     , m_machine(machine)
     , m_snapshot(snapshot)
 {
     /* Create & add pages: */
-    setPage(PageIntro, new UICloneVMWizardPage1(machine.GetName()));
+    setPage(PageIntro, new UICloneVMWizardPage1(m_machine.GetName()));
     /* If we are having a snapshot we can show the "Linked" option. */
     setPage(PageType, new UICloneVMWizardPage2(snapshot.isNull()));
     /* If the machine has no snapshots, we don't bother the user about options
      * for it. */
-    if (machine.GetSnapshotCount() > 0)
+    if (m_machine.GetSnapshotCount() > 0)
         setPage(PageMode, new UICloneVMWizardPage3(snapshot.isNull() ? false : snapshot.GetChildrenCount() > 0));
 
     /* Translate wizard: */
