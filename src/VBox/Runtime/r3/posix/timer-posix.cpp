@@ -294,11 +294,11 @@ static DECLCALLBACK(int) rttimerThread(RTTHREAD hThreadSelf, void *pvArg)
         {
             ASMAtomicXchgU8(&pTimer->fSuspended, true);
             pTimer->iError = RTErrConvertFromErrno(errno);
-            RTThreadUserSignal(Thread);
+            RTThreadUserSignal(hThreadSelf);
             continue; /* back to suspended mode. */
         }
         pTimer->iError = 0;
-        RTThreadUserSignal(Thread);
+        RTThreadUserSignal(hThreadSelf);
 
         /*
          * Timer Service Loop.
@@ -352,7 +352,7 @@ static DECLCALLBACK(int) rttimerThread(RTTHREAD hThreadSelf, void *pvArg)
         if (!pTimer->fDestroyed)
         {
             pTimer->iError = 0;
-            RTThreadUserSignal(Thread);
+            RTThreadUserSignal(hThreadSelf);
         }
     }
 
@@ -360,7 +360,7 @@ static DECLCALLBACK(int) rttimerThread(RTTHREAD hThreadSelf, void *pvArg)
      * Exit.
      */
     pTimer->iError = 0;
-    RTThreadUserSignal(Thread);
+    RTThreadUserSignal(hThreadSelf);
 
 #else /* IPRT_WITH_POSIX_TIMERS */
 
