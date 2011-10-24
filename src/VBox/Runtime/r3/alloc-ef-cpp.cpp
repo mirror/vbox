@@ -38,22 +38,33 @@
 *******************************************************************************/
 /** @todo test this on MSC */
 
-/* MSC declares the operators as cdecl it seems. */
+/** MSC declares the operators as cdecl it seems. */
 #ifdef _MSC_VER
 # define RT_EF_CDECL    __cdecl
 #else
 # define RT_EF_CDECL
 #endif
 
-/* MSC doesn't use the standard namespace. */
+/** MSC doesn't use the standard namespace. */
 #ifdef _MSC_VER
 # define RT_EF_SIZE_T   size_t
 #else
 # define RT_EF_SIZE_T   std::size_t
 #endif
 
+/** The hint that we're throwing std::bad_alloc is not apprecitated by MSC. */
+#ifdef _MSC_VER
+# if _MSC_VER >= 1400
+#  define RT_EF_THROWS_BAD_ALLOC
+# else
+#  define RT_EF_THROWS_BAD_ALLOC    throw(std::bad_alloc)
+# endif
+#else
+# define RT_EF_THROWS_BAD_ALLOC     throw(std::bad_alloc)
+#endif
 
-void *RT_EF_CDECL operator new(RT_EF_SIZE_T cb) throw(std::bad_alloc)
+
+void *RT_EF_CDECL operator new(RT_EF_SIZE_T cb) RT_EF_THROWS_BAD_ALLOC
 {
     void *pv = rtR3MemAlloc("new", RTMEMTYPE_NEW, cb, cb, NULL, ASMReturnAddress(), NULL, 0, NULL);
     if (!pv)
@@ -89,7 +100,7 @@ void RT_EF_CDECL operator delete(void * pv, const std::nothrow_t &) throw()
  *
  */
 
-void *RT_EF_CDECL operator new[](RT_EF_SIZE_T cb) throw(std::bad_alloc)
+void *RT_EF_CDECL operator new[](RT_EF_SIZE_T cb) RT_EF_THROWS_BAD_ALLOC
 {
     void *pv = rtR3MemAlloc("new[]", RTMEMTYPE_NEW_ARRAY, cb, cb, NULL, ASMReturnAddress(), NULL, 0, NULL);
     if (!pv)
