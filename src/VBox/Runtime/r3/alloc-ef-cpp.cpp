@@ -53,15 +53,19 @@
 #endif
 
 /** The hint that we're throwing std::bad_alloc is not apprecitated by MSC. */
-#ifdef _MSC_VER
-# if _MSC_VER >= 1400
-#  define RT_EF_THROWS_BAD_ALLOC
+#ifdef RT_EXCEPTIONS_ENABLED
+# ifdef _MSC_VER
+#  if _MSC_VER >= 1400
+#   define RT_EF_THROWS_BAD_ALLOC
+#  else
+#   define RT_EF_THROWS_BAD_ALLOC    throw(std::bad_alloc)
+#  endif
 # else
-#  define RT_EF_THROWS_BAD_ALLOC    throw(std::bad_alloc)
+#  define RT_EF_THROWS_BAD_ALLOC     throw(std::bad_alloc)
 # endif
-#else
-# define RT_EF_THROWS_BAD_ALLOC     throw(std::bad_alloc)
-#endif
+#else  /* !RT_EXCEPTIONS_ENABLED */
+# define RT_EF_THROWS_BAD_ALLOC
+#endif /* !RT_EXCEPTIONS_ENABLED */
 
 
 void *RT_EF_CDECL operator new(RT_EF_SIZE_T cb) RT_EF_THROWS_BAD_ALLOC
@@ -73,20 +77,20 @@ void *RT_EF_CDECL operator new(RT_EF_SIZE_T cb) RT_EF_THROWS_BAD_ALLOC
 }
 
 
-void *RT_EF_CDECL operator new(RT_EF_SIZE_T cb, const std::nothrow_t &) throw()
+void *RT_EF_CDECL operator new(RT_EF_SIZE_T cb, const std::nothrow_t &) RT_NO_THROW
 {
     void *pv = rtR3MemAlloc("new nothrow", RTMEMTYPE_NEW, cb, cb, NULL, ASMReturnAddress(), NULL, 0, NULL);
     return pv;
 }
 
 
-void RT_EF_CDECL operator delete(void *pv) throw()
+void RT_EF_CDECL operator delete(void *pv) RT_NO_THROW
 {
     rtR3MemFree("delete", RTMEMTYPE_DELETE, pv, ASMReturnAddress(), NULL, 0, NULL);
 }
 
 
-void RT_EF_CDECL operator delete(void * pv, const std::nothrow_t &) throw()
+void RT_EF_CDECL operator delete(void * pv, const std::nothrow_t &) RT_NO_THROW
 {
     rtR3MemFree("delete nothrow", RTMEMTYPE_DELETE, pv, ASMReturnAddress(), NULL, 0, NULL);
 }
@@ -109,20 +113,20 @@ void *RT_EF_CDECL operator new[](RT_EF_SIZE_T cb) RT_EF_THROWS_BAD_ALLOC
 }
 
 
-void * RT_EF_CDECL operator new[](RT_EF_SIZE_T cb, const std::nothrow_t &) throw()
+void * RT_EF_CDECL operator new[](RT_EF_SIZE_T cb, const std::nothrow_t &) RT_NO_THROW
 {
     void *pv = rtR3MemAlloc("new[] nothrow", RTMEMTYPE_NEW_ARRAY, cb, cb, NULL, ASMReturnAddress(), NULL, 0, NULL);
     return pv;
 }
 
 
-void RT_EF_CDECL operator delete[](void * pv) throw()
+void RT_EF_CDECL operator delete[](void * pv) RT_NO_THROW
 {
     rtR3MemFree("delete[]", RTMEMTYPE_DELETE_ARRAY, pv, ASMReturnAddress(), NULL, 0, NULL);
 }
 
 
-void RT_EF_CDECL operator delete[](void *pv, const std::nothrow_t &) throw()
+void RT_EF_CDECL operator delete[](void *pv, const std::nothrow_t &) RT_NO_THROW
 {
     rtR3MemFree("delete[] nothrow", RTMEMTYPE_DELETE_ARRAY, pv, ASMReturnAddress(), NULL, 0, NULL);
 }
