@@ -515,7 +515,7 @@ void UIMachineView::cleanupFrameBuffer()
             || vboxGlobal().vmRenderMode() == VBoxDefs::SDLMode
 #endif
 #ifdef VBOX_GUI_USE_QUARTZ2D
-            || vboxGlobal().vmRenderMode() == VBoxDefs::Quartz2DMode)
+            || vboxGlobal().vmRenderMode() == VBoxDefs::Quartz2DMode
 #endif
 #ifdef VBOX_WITH_VIDEOHWACCEL
             || m_fAccelerate2DVideo
