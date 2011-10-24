@@ -775,6 +775,7 @@ DISDECL(int) DISQueryParamVal(PCPUMCTXCORE pCtx, PDISCPUSTATE pCpu, POP_PARAMETE
  */
 DISDECL(int) DISQueryParamRegPtr(PCPUMCTXCORE pCtx, PDISCPUSTATE pCpu, POP_PARAMETER pParam, void **ppReg, size_t *pcbSize)
 {
+    NOREF(pCpu);
     if (pParam->flags & (USE_REG_GEN8|USE_REG_GEN16|USE_REG_GEN32|USE_REG_FP|USE_REG_MMX|USE_REG_XMM|USE_REG_CR|USE_REG_DBG|USE_REG_SEG|USE_REG_TEST))
     {
         if (pParam->flags & USE_REG_GEN8)

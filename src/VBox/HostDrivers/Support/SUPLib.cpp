@@ -579,13 +579,14 @@ SUPR3DECL(SUPPAGINGMODE) SUPR3GetPagingMode(void)
  */
 static int supCallVMMR0ExFake(PVMR0 pVMR0, unsigned uOperation, uint64_t u64Arg, PSUPVMMR0REQHDR pReqHdr)
 {
-    AssertMsgFailed(("%d\n", uOperation));
+    AssertMsgFailed(("%d\n", uOperation)); NOREF(pVMR0); NOREF(uOperation); NOREF(u64Arg); NOREF(pReqHdr);
     return VERR_NOT_SUPPORTED;
 }
 
 
 SUPR3DECL(int) SUPR3CallVMMR0Fast(PVMR0 pVMR0, unsigned uOperation, VMCPUID idCpu)
 {
+    NOREF(pVMR0);
     if (RT_LIKELY(uOperation == SUP_VMMR0_DO_RAW_RUN))
         return suplibOsIOCtlFast(&g_supLibData, SUP_IOCTL_FAST_DO_RAW_RUN, idCpu);
     if (RT_LIKELY(uOperation == SUP_VMMR0_DO_HWACC_RUN))
@@ -1039,6 +1040,7 @@ SUPR3DECL(int) SUPR3PageAllocEx(size_t cPages, uint32_t fFlags, void **ppvPages,
         *pR0Ptr = NIL_RTR0PTR;
     AssertPtrNullReturn(paPages, VERR_INVALID_POINTER);
     AssertMsgReturn(cPages > 0 && cPages <= VBOX_MAX_ALLOC_PAGE_COUNT, ("cPages=%zu\n", cPages), VERR_PAGE_COUNT_OUT_OF_RANGE);
+    AssertReturn(!fFlags, VERR_INVALID_PARAMETER);
 
     /* fake */
     if (RT_UNLIKELY(g_u32FakeMode))
@@ -1537,6 +1539,7 @@ SUPR3DECL(int) SUPR3HardenedVerifyDir(const char *pszDirPath, bool fRecursive, b
         LogRel(("supR3HardenedVerifyDir: Verification of \"%s\" failed, rc=%Rrc\n", pszDirPath, rc));
     return rc;
 #else
+    NOREF(pszDirPath); NOREF(fRecursive); NOREF(fCheckFiles);
     return VINF_SUCCESS;
 #endif
 }
@@ -1614,6 +1617,7 @@ SUPR3DECL(int) SUPR3LoadServiceModule(const char *pszFilename, const char *pszMo
 static DECLCALLBACK(int) supLoadModuleResolveImport(RTLDRMOD hLdrMod, const char *pszModule,
                                                     const char *pszSymbol, unsigned uSymbol, RTUINTPTR *pValue, void *pvUser)
 {
+    NOREF(hLdrMod); NOREF(pvUser); NOREF(uSymbol);
     AssertPtr(pValue);
     AssertPtr(pvUser);
 
@@ -1753,6 +1757,7 @@ static DECLCALLBACK(int) supLoadModuleCalcSizeCB(RTLDRMOD hLdrMod, const char *p
         pArgs->cSymbols++;
         pArgs->cbStrings += strlen(pszSymbol) + 1;
     }
+    NOREF(hLdrMod); NOREF(uSymbol);
     return VINF_SUCCESS;
 }
 
@@ -1785,6 +1790,7 @@ static DECLCALLBACK(int) supLoadModuleCreateTabsCB(RTLDRMOD hLdrMod, const char 
         memcpy(pArgs->psz, pszSymbol, cbCopy);
         pArgs->psz += cbCopy;
     }
+    NOREF(hLdrMod); NOREF(uSymbol);
     return VINF_SUCCESS;
 }
 
@@ -2231,8 +2237,6 @@ SUPR3DECL(int) SUPR3HardenedLdrLoadAppPriv(const char *pszFilename, PRTLDRMOD ph
 
 SUPR3DECL(int) SUPR3HardenedLdrLoadPlugIn(const char *pszFilename, PRTLDRMOD phLdrMod, PRTERRINFO pErrInfo)
 {
-    int rc;
-
     /*
      * Validate input.
      */
@@ -2246,7 +2250,7 @@ SUPR3DECL(int) SUPR3HardenedLdrLoadPlugIn(const char *pszFilename, PRTLDRMOD phL
     /*
      * Verify the image file.
      */
-    rc = supR3HardenedVerifyFile(pszFilename, RTHCUINTPTR_MAX, pErrInfo);
+    int rc = supR3HardenedVerifyFile(pszFilename, RTHCUINTPTR_MAX, pErrInfo);
     if (RT_FAILURE(rc))
     {
         if (!RTErrInfoIsSet(pErrInfo))

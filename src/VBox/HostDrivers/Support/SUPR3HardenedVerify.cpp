@@ -277,7 +277,7 @@ static int supR3HardenedMakeFilePath(PCSUPINSTFILE pFile, char *pszDst, size_t c
      * Combine supR3HardenedMakePath and the filename.
      */
     int rc = supR3HardenedMakePath(pFile->enmDir, pszDst, cchDst, fFatal);
-    if (RT_SUCCESS(rc))
+    if (RT_SUCCESS(rc) && fWithFilename)
     {
         size_t cchFile = strlen(pFile->pszFile);
         size_t off = strlen(pszDst);
@@ -455,7 +455,7 @@ static int supR3HardenedVerifyFileInternal(int iFile, bool fFatal, bool fLeaveFi
     if (RT_SUCCESS(rc))
     {
         char szPath[RTPATH_MAX];
-        rc = supR3HardenedMakeFilePath(pFile, szPath, sizeof(szPath), true, fFatal);
+        rc = supR3HardenedMakeFilePath(pFile, szPath, sizeof(szPath), true /*fWithFilename*/, fFatal);
         if (RT_SUCCESS(rc))
         {
 #if defined(RT_OS_WINDOWS)
@@ -1134,10 +1134,12 @@ static int supR3HardenedVerifyFsObject(PCSUPR3HARDENEDFSOBJSTATE pFsObjState, bo
 {
 #if defined(RT_OS_WINDOWS)
     /** @todo Windows hardening. */
+    NOREF(pFsObjState); NOREF(fDir); NOREF(fRelaxed); NOREF(pszPath); NOREF(pErrInfo);
     return VINF_SUCCESS;
 
 #elif defined(RT_OS_OS2)
     /* No hardening here - it's a single user system. */
+    NOREF(pFsObjState); NOREF(fDir); NOREF(fRelaxed); NOREF(pszPath); NOREF(pErrInfo);
     return VINF_SUCCESS;
 
 #else
@@ -1185,11 +1187,16 @@ static int supR3HardenedVerifyFsObject(PCSUPR3HARDENEDFSOBJSTATE pFsObjState, bo
         /* HACK ALERT: On Darwin /Applications is root:admin with admin having
            full access. So, to work around we relax the hardening a bit and
            permit grand parents and beyond to be group writable by admin. */
-        if (pFsObjState->Stat.st_gid != 80 /*admin*/) /** @todo dynamically resolve the admin group? */
+        if (!fRelaxed || pFsObjState->Stat.st_gid != 80 /*admin*/) /** @todo dynamically resolve the admin group? */
 #elif defined(RT_OS_FREEBSD)
         /* HACK ALERT: PC-BSD 9 has group-writable application directory,
-           similar to OS X and their /Applications directory (see above). */
-        if (pFsObjState->Stat.st_gid != 5 /*operators*/)
+           similar to OS X and their /Applications directory (see above).
+           On FreeBSD root is normally the only member of this group. */
+        /** @todo Can we test for fRelaxed here like on the mac or is the 'operator'
+         *        group the owner of the immediate installation directory? More
+         *        details would be greatly appreciated as this HACK affects real FreeBSD
+         *        as well as the PC-BSD fork! */
+        if (pFsObjState->Stat.st_gid != 5 /*operator*/)
 #endif
             return supR3HardenedSetError3(VERR_SUPLIB_WRITE_NON_SYS_GROUP, pErrInfo,
                                           "The group is not a system group and it has write access to '", pszPath, "'");
