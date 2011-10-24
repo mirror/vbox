@@ -898,7 +898,7 @@ bool UIMachineView::isFullscreenOrSeamless()
 {
     UIVisualStateType type = machineLogic()->visualStateType();
     return    type == UIVisualStateType_Fullscreen
-           || type == UIVisualStateType_Fullscreen;
+           || type == UIVisualStateType_Seamless;
 }
 
 QString UIMachineView::makeExtraDataKeyPerMonitor(QString base) const
