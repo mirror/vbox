@@ -55,11 +55,7 @@
 /** The hint that we're throwing std::bad_alloc is not apprecitated by MSC. */
 #ifdef RT_EXCEPTIONS_ENABLED
 # ifdef _MSC_VER
-#  if _MSC_VER >= 1400
-#   define RT_EF_THROWS_BAD_ALLOC
-#  else
-#   define RT_EF_THROWS_BAD_ALLOC    throw(std::bad_alloc)
-#  endif
+#  define RT_EF_THROWS_BAD_ALLOC
 # else
 #  define RT_EF_THROWS_BAD_ALLOC     throw(std::bad_alloc)
 # endif
