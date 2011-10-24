@@ -361,29 +361,32 @@ void UIMachineView::prepareFrameBuffer()
 #endif
 #ifdef VBOX_GUI_USE_QUARTZ2D
         case VBoxDefs::Quartz2DMode:
+        {
             /* Indicate that we are doing all drawing stuff ourself: */
             viewport()->setAttribute(Qt::WA_PaintOnScreen);
-# ifdef VBOX_WITH_VIDEOHWACCEL
-            if (m_fAccelerate2DVideo)
-            {
-                UIFrameBuffer* pFramebuffer = uisession()->frameBuffer(screenId());
-                if (pFramebuffer)
-                    pFramebuffer->setView(this);
-                else
-                {
-                    /* these two additional template args is a workaround to this [VBox|UI] duplication
-                     * @todo: they are to be removed once VBox stuff is gone */
-                    pFramebuffer = new VBoxOverlayFrameBuffer<UIFrameBufferQuartz2D, UIMachineView, UIResizeEvent>(this, &machineWindowWrapper()->session(), (uint32_t)screenId());
-                    uisession()->setFrameBuffer(screenId(), pFramebuffer);
-                }
-                m_pFrameBuffer = pFramebuffer;
-            }
+            UIFrameBuffer* pFrameBuffer = uisession()->frameBuffer(screenId());
+            if (pFrameBuffer)
+                pFrameBuffer->setView(this);
             else
-                m_pFrameBuffer = new UIFrameBufferQuartz2D(this);
+            {
+# ifdef VBOX_WITH_VIDEOHWACCEL
+                if (m_fAccelerate2DVideo)
+                {
+                    /** these two additional template args is a workaround to
+                     * this [VBox|UI] duplication
+                     * @todo: they are to be removed once VBox stuff is gone */
+                    pFrameBuffer = new VBoxOverlayFrameBuffer<UIFrameBufferSDL, UIMachineView, UIResizeEvent>(this, &machineWindowWrapper()->session(), (uint32_t)screenId());
+                }
+                else
+                    pFrameBuffer = new UIFrameBufferSDL(this);
 # else /* VBOX_WITH_VIDEOHWACCEL */
-            m_pFrameBuffer = new UIFrameBufferQuartz2D(this);
+                pFrameBuffer = new UIFrameBufferSDL(this);
 # endif /* !VBOX_WITH_VIDEOHWACCEL */
+                uisession()->setFrameBuffer(screenId(), pFrameBuffer);
+            }
+            m_pFrameBuffer = pFrameBuffer;
             break;
+        }
 #endif /* VBOX_GUI_USE_QUARTZ2D */
         default:
             AssertReleaseMsgFailed(("Render mode must be valid: %d\n", vboxGlobal().vmRenderMode()));
@@ -504,8 +507,16 @@ void UIMachineView::cleanupFrameBuffer()
     {
         /* Process pending frame-buffer resize events: */
         QApplication::sendPostedEvents(this, VBoxDefs::ResizeEventType);
-        if (   vboxGlobal().vmRenderMode() == VBoxDefs::QImageMode
+        if (   0
+#ifdef VBOX_GUI_USE_QIMAGE
+            || vboxGlobal().vmRenderMode() == VBoxDefs::QImageMode
+#endif
+#ifdef VBOX_GUI_USE_SDL
             || vboxGlobal().vmRenderMode() == VBoxDefs::SDLMode
+#endif
+#ifdef VBOX_GUI_USE_QUARTZ2D
+            || vboxGlobal().vmRenderMode() == VBoxDefs::Quartz2DMode)
+#endif
 #ifdef VBOX_WITH_VIDEOHWACCEL
             || m_fAccelerate2DVideo
 #endif
