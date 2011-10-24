@@ -196,6 +196,10 @@ protected:
     ulong m_uScreenId;
     UIFrameBuffer *m_pFrameBuffer;
     KMachineState m_previousState;
+    /** HACK: when switching out of fullscreen or seamless we wish to override
+     * the default size hint to avoid short resizes back to fullscreen size.
+     * Not explicitly initialised (i.e. invalid by default). */
+    QSize m_sizeHintOverride;
 
     /** The policy for calculating the maximum guest resolution which we wish
      * to handle. */
