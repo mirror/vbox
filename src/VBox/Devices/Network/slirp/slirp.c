@@ -1107,8 +1107,6 @@ void slirp_select_poll(PNATState pData, struct pollfd *polls, int ndfs)
     WSANETWORKEVENTS NetworkEvents;
     int rc;
     int error;
-#else
-    int poll_index = 0;
 #endif
 
     STAM_PROFILE_START(&pData->StatPoll, a);
@@ -1606,7 +1604,6 @@ void slirp_input(PNATState pData, struct mbuf *m, size_t cbBuf)
 void if_encap(PNATState pData, uint16_t eth_proto, struct mbuf *m, int flags)
 {
     struct ethhdr *eh;
-    uint8_t *buf = NULL;
     uint8_t *mbuf = NULL;
     size_t mlen = 0;
     STAM_PROFILE_START(&pData->StatIF_encap, a);
@@ -1918,8 +1915,6 @@ int slirp_get_nsock(PNATState pData)
  */
 void slirp_post_sent(PNATState pData, void *pvArg)
 {
-    struct socket *so = 0;
-    struct tcpcb *tp = 0;
     struct mbuf *m = (struct mbuf *)pvArg;
     m_freem(pData, m);
 }

@@ -1110,7 +1110,7 @@ m_tag_first(struct mbuf *m)
 static __inline struct m_tag *
 m_tag_next(struct mbuf *m, struct m_tag *t)
 {
-
+        NOREF(m);
 	return (SLIST_NEXT(t, m_tag_link));
 }
 

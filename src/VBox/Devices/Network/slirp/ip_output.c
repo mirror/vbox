@@ -121,7 +121,6 @@ ip_output0(PNATState pData, struct socket *so, struct mbuf *m0, int urg)
     register struct mbuf *m = m0;
     register int hlen = sizeof(struct ip);
     int len, off, error = 0;
-    extern uint8_t zerro_ethaddr[ETH_ALEN];
     struct ethhdr *eh = NULL;
     uint8_t eth_dst[ETH_ALEN];
     int rc = 1;
