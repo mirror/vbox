@@ -29,9 +29,6 @@
 *******************************************************************************/
 #include "alloc-ef.h"
 
-#if defined(RTALLOC_EFENCE_CPP) \
- || (defined(RTMEM_WRAP_TO_EF_APIS) && !defined(RTMEM_NO_WRAP_TO_EF_APIS)) /* rest of the file */
-
 #include <iprt/asm.h>
 #include <new>
 
@@ -119,4 +116,4 @@ void RT_EF_CDECL operator delete[](void *pv, const std::nothrow_t &) throw()
     rtR3MemFree("delete[] nothrow", RTMEMTYPE_DELETE_ARRAY, pv, ASMReturnAddress(), NULL, 0, NULL);
 }
 
-#endif /* RTALLOC_EFENCE_CPP || RTMEM_WRAP_TO_EF_APIS */
+
