@@ -554,6 +554,7 @@ static int pci_data_read(PPCIGLOBALS pGlobals, uint32_t addr, int len, uint32_t 
                 *pu32 = pBridgeDevice->Int.s.pfnBridgeConfigRead(pBridgeDevice->pDevIns, iBus, iDevice, config_addr, len);
             }
 #else
+            NOREF(len);
             return VINF_IOM_HC_IOPORT_READ;
 #endif
         }
@@ -567,6 +568,7 @@ static int pci_data_read(PPCIGLOBALS pGlobals, uint32_t addr, int len, uint32_t 
             *pu32 = pci_dev->Int.s.pfnConfigRead(pci_dev, config_addr, len);
             Log(("pci_config_read: %s: addr=%02x val=%08x len=%d\n", pci_dev->name, config_addr, *pu32, len));
 #else
+            NOREF(len);
             return VINF_IOM_HC_IOPORT_READ;
 #endif
         }
@@ -1246,6 +1248,7 @@ PDMBOTHCBDECL(int) pciIOPortDataRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT 
  */
 static DECLCALLBACK(int) pciGenericSaveExec(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, PSSMHANDLE pSSM)
 {
+    NOREF(pDevIns);
     return SSMR3PutMem(pSSM, &pPciDev->config[0], sizeof(pPciDev->config));
 }
 
@@ -1260,6 +1263,7 @@ static DECLCALLBACK(int) pciGenericSaveExec(PPDMDEVINS pDevIns, PPCIDEVICE pPciD
  */
 static DECLCALLBACK(int) pciGenericLoadExec(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, PSSMHANDLE pSSM)
 {
+    NOREF(pDevIns);
     return SSMR3GetMem(pSSM, &pPciDev->config[0], sizeof(pPciDev->config));
 }
 
@@ -1849,6 +1853,8 @@ static DECLCALLBACK(int) pciRegister(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, con
 
 static DECLCALLBACK(int) pciIORegionRegister(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, int iRegion, uint32_t cbRegion, PCIADDRESSSPACE enmType, PFNPCIIOREGIONMAP pfnCallback)
 {
+    NOREF(pDevIns);
+
     /*
      * Validate.
      */
@@ -1891,6 +1897,8 @@ static DECLCALLBACK(int) pciIORegionRegister(PPDMDEVINS pDevIns, PPCIDEVICE pPci
 static DECLCALLBACK(void) pciSetConfigCallbacks(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, PFNPCICONFIGREAD pfnRead, PPFNPCICONFIGREAD ppfnReadOld,
                                                 PFNPCICONFIGWRITE pfnWrite, PPFNPCICONFIGWRITE ppfnWriteOld)
 {
+    NOREF(pDevIns);
+
     if (ppfnReadOld)
         *ppfnReadOld = pPciDev->Int.s.pfnConfigRead;
     pPciDev->Int.s.pfnConfigRead  = pfnRead;
@@ -1970,10 +1978,10 @@ static DECLCALLBACK(int) pciFakePCIBIOS(PPDMDEVINS pDevIns)
 static DECLCALLBACK(void) pciIrqInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const char *pszArgs)
 {
     PPCIGLOBALS pGlobals = PDMINS_2_DATA(pDevIns, PPCIGLOBALS);
-    PPCIBUS     pBus = DEVINS_2_PCIBUS(pDevIns);
     uint16_t    router;
     uint8_t     irq_map;
     int         i;
+    NOREF(pszArgs);
 
     router = pGlobals->PIIX3State.dev.devfn;
     pHlp->pfnPrintf(pHlp, "PCI interrupt router at: %02X:%02X:%X\n",

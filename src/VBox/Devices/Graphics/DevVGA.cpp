@@ -97,7 +97,10 @@
     } while (0)
 #else
 # define VERIFY_VRAM_READ_OFF_RETURN(pThis, off, rcVar) \
-        AssertMsgReturn((off) < (pThis)->vram_size, ("%RX32 !< %RX32\n", (uint32_t)(off), (pThis)->vram_size), 0xff)
+    do { \
+        AssertMsgReturn((off) < (pThis)->vram_size, ("%RX32 !< %RX32\n", (uint32_t)(off), (pThis)->vram_size), 0xff); \
+        NOREF(rcVar); \
+    } while (0)
 #endif
 
 
@@ -820,8 +823,8 @@ static void vga_ioport_write(void *opaque, uint32_t addr, uint32_t val)
 static uint32_t vbe_ioport_read_index(void *opaque, uint32_t addr)
 {
     VGAState *s = (VGAState*)opaque;
-    uint32_t val;
-    val = s->vbe_index;
+    uint32_t val = s->vbe_index;
+    NOREF(addr);
     return val;
 }
 
@@ -829,6 +832,7 @@ static uint32_t vbe_ioport_read_data(void *opaque, uint32_t addr)
 {
     VGAState *s = (VGAState*)opaque;
     uint32_t val;
+    NOREF(addr);
 
     if (s->vbe_index < VBE_DISPI_INDEX_NB) {
       if (s->vbe_regs[VBE_DISPI_INDEX_ENABLE] & VBE_DISPI_GETCAPS) {
@@ -887,6 +891,7 @@ static uint32_t calc_line_pitch(uint16_t bpp, uint16_t width)
     return aligned_pitch;
 }
 
+#ifdef SOME_UNUSED_FUNCTION
 /* Calculate line width in pixels based on bit depth and pitch. */
 static uint32_t calc_line_width(uint16_t bpp, uint32_t pitch)
 {
@@ -899,6 +904,7 @@ static uint32_t calc_line_width(uint16_t bpp, uint32_t pitch)
 
     return width;
 }
+#endif
 
 static void recaltulate_data(VGAState *s, bool fVirtHeightOnly)
 {
@@ -942,12 +948,14 @@ static void vbe_ioport_write_index(void *opaque, uint32_t addr, uint32_t val)
 {
     VGAState *s = (VGAState*)opaque;
     s->vbe_index = val;
+    NOREF(addr);
 }
 
 static int vbe_ioport_write_data(void *opaque, uint32_t addr, uint32_t val)
 {
     VGAState *s = (VGAState*)opaque;
     uint32_t max_bank;
+    NOREF(addr);
 
     if (s->vbe_index <= VBE_DISPI_INDEX_NB) {
         bool fRecalculate = false;
@@ -1997,7 +2005,7 @@ static void vga_get_resolution(VGAState *s, int *pwidth, int *pheight)
  * @param   cx      The width.
  * @param   cy      The height.
  */
-static int vga_resize_graphic(VGAState *s, int cx, int cy, int v)
+static int vga_resize_graphic(VGAState *s, int cx, int cy)
 {
     const unsigned cBits = s->get_bpp(s);
 
@@ -2006,6 +2014,7 @@ static int vga_resize_graphic(VGAState *s, int cx, int cy, int v)
     AssertReturn(cy, VERR_INVALID_PARAMETER);
     AssertPtrReturn(s, VERR_INVALID_POINTER);
     AssertReturn(s->line_offset, VERR_INTERNAL_ERROR);
+
 #if 0 //def VBOX_WITH_VDMA
     /* @todo: we get a second resize here when VBVA is on, while we actually should not */
     /* do not do pfnResize in case VBVA is on since all mode changes are performed over VBVA
@@ -2146,7 +2155,7 @@ static int vga_draw_graphic(VGAState *s, bool full_update, bool fFailOnResize, b
             /* The caller does not want to call the pfnResize. */
             return VERR_TRY_AGAIN;
         }
-        int rc = vga_resize_graphic(s, disp_width, height, v);
+        int rc = vga_resize_graphic(s, disp_width, height);
         if (rc != VINF_SUCCESS)  /* Return any rc, particularly VINF_VGA_RESIZE_IN_PROGRESS, to the caller. */
             return rc;
         full_update = true;
@@ -2266,6 +2275,7 @@ static void vga_draw_blank(VGAState *s, int full_update)
 
 static DECLCALLBACK(void) voidUpdateRect(PPDMIDISPLAYCONNECTOR pInterface, uint32_t x, uint32_t y, uint32_t cx, uint32_t cy)
 {
+    NOREF(pInterface); NOREF(x); NOREF(y); NOREF(cx); NOREF(cy);
 }
 
 
@@ -3259,6 +3269,7 @@ PDMBOTHCBDECL(int) vgaMMIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhy
 {
     PVGASTATE pThis = PDMINS_2_DATA(pDevIns, PVGASTATE);
     uint8_t  *pu8 = (uint8_t *)pv;
+    NOREF(pvUser);
     STAM_PROFILE_START(&pThis->CTX_MID_Z(Stat,MemoryWrite), a);
 
     int rc = PDMCritSectEnter(&pThis->lock, VINF_IOM_HC_MMIO_WRITE);
@@ -3391,9 +3402,10 @@ static int vgaLFBAccess(PVM pVM, PVGASTATE pThis, RTGCPHYS GCPhys, RTGCPTR GCPtr
 PDMBOTHCBDECL(int) vgaGCLFBAccessHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, RTGCPHYS GCPhysFault, void *pvUser)
 {
     PVGASTATE   pThis = (PVGASTATE)pvUser;
-    Assert(pThis);
+    AssertPtr(pThis);
     Assert(GCPhysFault >= pThis->GCPhysVRAM);
     AssertMsg(uErrorCode & X86_TRAP_PF_RW, ("uErrorCode=%#x\n", uErrorCode));
+    NOREF(pRegFrame);
 
     return vgaLFBAccess(pVM, pThis, GCPhysFault, pvFault);
 }
@@ -3417,6 +3429,7 @@ PDMBOTHCBDECL(int) vgaR0LFBAccessHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXC
     Assert(pThis);
     Assert(GCPhysFault >= pThis->GCPhysVRAM);
     AssertMsg(uErrorCode & X86_TRAP_PF_RW, ("uErrorCode=%#x\n", uErrorCode));
+    NOREF(pRegFrame);
 
     return vgaLFBAccess(pVM, pThis, GCPhysFault, pvFault);
 }
@@ -3442,6 +3455,8 @@ static DECLCALLBACK(int) vgaR3LFBAccessHandler(PVM pVM, RTGCPHYS GCPhys, void *p
     int         rc;
     Assert(pThis);
     Assert(GCPhys >= pThis->GCPhysVRAM);
+    NOREF(pvPhys); NOREF(pvBuf); NOREF(cbBuf); NOREF(enmAccessType);
+
     rc = vgaLFBAccess(pVM, pThis, GCPhys, 0);
     if (RT_SUCCESS(rc))
         return VINF_PGM_HANDLER_DO_DEFAULT;
@@ -3488,6 +3503,7 @@ PDMBOTHCBDECL(int) vgaIOPortWriteBIOS(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT
 {
     static int lastWasNotNewline = 0;  /* We are only called in a single-threaded way */
     PVGASTATE pThis = PDMINS_2_DATA(pDevIns, PVGASTATE);
+    NOREF(pvUser);
 
     int rc = PDMCritSectEnter(&pThis->lock, VINF_IOM_HC_IOPORT_WRITE);
     if (rc != VINF_SUCCESS)
@@ -4072,6 +4088,7 @@ static DECLCALLBACK(void) vgaInfoState(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, c
     int             val, vfreq_hz, hfreq_hz;
     vga_retrace_s   *r = &s->retrace_state;
     const char      *clocks[] = { "25.175 MHz", "28.322 MHz", "External", "Reserved?!" };
+    NOREF(pszArgs);
 
     is_graph  = s->gr[6] & 1;
     char_dots = (s->sr[0x01] & 1) ? 8 : 9;
@@ -4298,6 +4315,7 @@ static DECLCALLBACK(void) vgaInfoSR(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, cons
 {
     PVGASTATE   s = PDMINS_2_DATA(pDevIns, PVGASTATE);
     unsigned    i;
+    NOREF(pszArgs);
 
     pHlp->pfnPrintf(pHlp, "VGA Sequencer (3C5): SR index 3C4:%02X\n", s->sr_index);
     Assert(sizeof(s->sr) >= 8);
@@ -4318,6 +4336,7 @@ static DECLCALLBACK(void) vgaInfoCR(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, cons
 {
     PVGASTATE   s = PDMINS_2_DATA(pDevIns, PVGASTATE);
     unsigned    i;
+    NOREF(pszArgs);
 
     pHlp->pfnPrintf(pHlp, "VGA CRTC (3D5): CRTC index 3D4:%02X\n", s->cr_index);
     Assert(sizeof(s->cr) >= 24);
@@ -4350,6 +4369,7 @@ static DECLCALLBACK(void) vgaInfoGR(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, cons
 {
     PVGASTATE   s = PDMINS_2_DATA(pDevIns, PVGASTATE);
     unsigned    i;
+    NOREF(pszArgs);
 
     pHlp->pfnPrintf(pHlp, "VGA Graphics Controller (3CF): GR index 3CE:%02X\n", s->gr_index);
     Assert(sizeof(s->gr) >= 9);
@@ -4372,6 +4392,7 @@ static DECLCALLBACK(void) vgaInfoAR(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, cons
 {
     PVGASTATE   s = PDMINS_2_DATA(pDevIns, PVGASTATE);
     unsigned    i;
+    NOREF(pszArgs);
 
     pHlp->pfnPrintf(pHlp, "VGA Attribute Controller (3C0): index reg %02X, flip-flop: %d (%s)\n",
                     s->ar_index, s->ar_flip_flop, s->ar_flip_flop ? "data" : "index" );
@@ -4400,6 +4421,7 @@ static DECLCALLBACK(void) vgaInfoDAC(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, con
 {
     PVGASTATE   s = PDMINS_2_DATA(pDevIns, PVGASTATE);
     unsigned    i;
+    NOREF(pszArgs);
 
     pHlp->pfnPrintf(pHlp, "VGA DAC contents:\n");
     for (i = 0; i < 0x100; ++i)
@@ -4420,6 +4442,7 @@ static DECLCALLBACK(void) vgaInfoDAC(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, con
 static DECLCALLBACK(void) vgaInfoVBE(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const char *pszArgs)
 {
     PVGASTATE   s = PDMINS_2_DATA(pDevIns, PVGASTATE);
+    NOREF(pszArgs);
 
     if (!(s->vbe_regs[VBE_DISPI_INDEX_ENABLE] & VBE_DISPI_ENABLED))
     {
@@ -4470,8 +4493,10 @@ static DECLCALLBACK(void *) vgaPortQueryInterface(PPDMIBASE pInterface, const ch
  * @param   cy                  New display height
  * @thread  The emulation thread.
  */
-static DECLCALLBACK(int) vgaDummyResize(PPDMIDISPLAYCONNECTOR pInterface, uint32_t bpp, void *pvVRAM, uint32_t cbLine, uint32_t cx, uint32_t cy)
+static DECLCALLBACK(int) vgaDummyResize(PPDMIDISPLAYCONNECTOR pInterface, uint32_t bpp, void *pvVRAM,
+                                        uint32_t cbLine, uint32_t cx, uint32_t cy)
 {
+    NOREF(pInterface); NOREF(bpp); NOREF(pvVRAM); NOREF(cbLine); NOREF(cx); NOREF(cy);
     return VINF_SUCCESS;
 }
 
@@ -4489,6 +4514,7 @@ static DECLCALLBACK(int) vgaDummyResize(PPDMIDISPLAYCONNECTOR pInterface, uint32
  */
 static DECLCALLBACK(void) vgaDummyUpdateRect(PPDMIDISPLAYCONNECTOR pInterface, uint32_t x, uint32_t y, uint32_t cx, uint32_t cy)
 {
+    NOREF(pInterface); NOREF(x); NOREF(y); NOREF(cx); NOREF(cy);
 }
 
 
@@ -4506,6 +4532,7 @@ static DECLCALLBACK(void) vgaDummyUpdateRect(PPDMIDISPLAYCONNECTOR pInterface, u
  */
 static DECLCALLBACK(void) vgaDummyRefresh(PPDMIDISPLAYCONNECTOR pInterface)
 {
+    NOREF(pInterface);
 }
 
 
@@ -5179,6 +5206,7 @@ static DECLCALLBACK(void) vgaPortSetRenderVRAM(PPDMIDISPLAYPORT pInterface, bool
 static DECLCALLBACK(void) vgaTimerRefresh(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser)
 {
     PVGASTATE pThis = (PVGASTATE)pvUser;
+    NOREF(pDevIns);
 
     if (pThis->pDrv)
         pThis->pDrv->pfnRefresh(pThis->pDrv);

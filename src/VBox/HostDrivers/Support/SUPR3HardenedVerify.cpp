@@ -813,6 +813,7 @@ static int supR3HardenedSetError3(int rc, PRTERRINFO pErrInfo, const char *pszMs
     return supR3HardenedSetErrorN(rc, pErrInfo, 3, pszMsg1, pszMsg2, pszMsg3);
 }
 
+#ifdef SOME_UNUSED_FUNCTION
 
 /**
  * Copies the two messages into the error buffer and returns @a rc.
@@ -843,6 +844,7 @@ static int supR3HardenedSetError(int rc, PRTERRINFO pErrInfo, const char *pszMsg
     return supR3HardenedSetErrorN(rc, pErrInfo, 1, pszMsg);
 }
 
+#endif /* SOME_UNUSED_FUNCTION */
 
 /**
  * Output from a successfull supR3HardenedVerifyPathSanity call.
@@ -1187,7 +1189,8 @@ static int supR3HardenedVerifyFsObject(PCSUPR3HARDENEDFSOBJSTATE pFsObjState, bo
         /* HACK ALERT: On Darwin /Applications is root:admin with admin having
            full access. So, to work around we relax the hardening a bit and
            permit grand parents and beyond to be group writable by admin. */
-        if (!fRelaxed || pFsObjState->Stat.st_gid != 80 /*admin*/) /** @todo dynamically resolve the admin group? */
+        bool fBad = !fRelaxed || pFsObjState->Stat.st_gid != 80 /*admin*/; /** @todo dynamically resolve the admin group? */
+
 #elif defined(RT_OS_FREEBSD)
         /* HACK ALERT: PC-BSD 9 has group-writable application directory,
            similar to OS X and their /Applications directory (see above).
@@ -1196,8 +1199,13 @@ static int supR3HardenedVerifyFsObject(PCSUPR3HARDENEDFSOBJSTATE pFsObjState, bo
          *        group the owner of the immediate installation directory? More
          *        details would be greatly appreciated as this HACK affects real FreeBSD
          *        as well as the PC-BSD fork! */
-        if (pFsObjState->Stat.st_gid != 5 /*operator*/)
+        bool fBad = pFsObjState->Stat.st_gid != 5 /*operator*/;
+        NOREF(fRelaxed);
+#else
+        NOREF(fRelaxed);
+        bool fBad = true;
 #endif
+        if (fBad)
             return supR3HardenedSetError3(VERR_SUPLIB_WRITE_NON_SYS_GROUP, pErrInfo,
                                           "The group is not a system group and it has write access to '", pszPath, "'");
     }
@@ -1216,7 +1224,6 @@ static int supR3HardenedVerifyFsObject(PCSUPR3HARDENEDFSOBJSTATE pFsObjState, bo
 
     return VINF_SUCCESS;
 #endif
-
 }
 
 

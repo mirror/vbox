@@ -311,6 +311,7 @@ void vqueueSync(PVPCISTATE pState, PVQUEUE pQueue);
 
 DECLINLINE(bool) vqueueIsReady(PVPCISTATE pState, PVQUEUE pQueue)
 {
+    NOREF(pState);
     return !!pQueue->VRing.addrAvail;
 }
 

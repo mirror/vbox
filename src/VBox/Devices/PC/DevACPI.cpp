@@ -947,7 +947,8 @@ static void acpiPmTimerReset(ACPIState *pThis, uint64_t uNow)
 static DECLCALLBACK(void) acpiPmTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser)
 {
     ACPIState *pThis = (ACPIState *)pvUser;
-    Assert(TMTimerIsLockOwner(pThis->pPmTimerR3));
+    Assert(TMTimerIsLockOwner(pTimer));
+    NOREF(pDevIns);
 
     DEVACPI_LOCK_R3(pThis);
     Log(("acpi: pm timer sts %#x (%d), en %#x (%d)\n",
@@ -956,7 +957,7 @@ static DECLCALLBACK(void) acpiPmTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void 
     update_pm1a(pThis, pThis->pm1a_sts | TMR_STS, pThis->pm1a_en);
     DEVACPI_UNLOCK(pThis);
 
-    acpiPmTimerReset(pThis, TMTimerGet(pThis->pPmTimerR3));
+    acpiPmTimerReset(pThis, TMTimerGet(pTimer));
 }
 
 /**
@@ -1408,6 +1409,7 @@ PDMBOTHCBDECL(int) acpiSysInfoDataWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPO
  */
 PDMBOTHCBDECL(int) acpiPm1aEnRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *pu32, unsigned cb)
 {
+    NOREF(pDevIns); NOREF(Port);
     if (cb != 2)
         return VERR_IOM_IOPORT_UNUSED;
 
@@ -1600,6 +1602,7 @@ PDMBOTHCBDECL(int) acpiPMTmrRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port
         Log(("acpi: acpiPMTmrRead -> %#x\n", *pu32));
     }
 
+    NOREF(pvUser); NOREF(Port);
     return rc;
 }
 
@@ -1713,6 +1716,7 @@ PDMBOTHCBDECL(int) acpiSmiWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port,
 PDMBOTHCBDECL(int) acpiResetWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb)
 {
     Log(("acpiResetWrite: %#x\n", u32));
+    NOREF(pvUser);
     if (cb != 1)
         return PDMDevHlpDBGFStop(pDevIns, RT_SRC_POS, "cb=%d Port=%u u32=%#x\n", cb, Port, u32);
 
@@ -1733,6 +1737,7 @@ PDMBOTHCBDECL(int) acpiResetWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Por
  */
 PDMBOTHCBDECL(int) acpiDhexWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb)
 {
+    NOREF(pvUser);
     switch (cb)
     {
         case 1:
@@ -1754,6 +1759,7 @@ PDMBOTHCBDECL(int) acpiDhexWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port
  */
 PDMBOTHCBDECL(int) acpiDchrWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb)
 {
+    NOREF(pvUser);
     switch (cb)
     {
         case 1:
@@ -2769,6 +2775,7 @@ static DECLCALLBACK(void) acpiRelocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta)
 {
     ACPIState *pThis = PDMINS_2_DATA(pDevIns, ACPIState *);
     pThis->pPmTimerRC = TMTimerRCPtr(pThis->pPmTimerR3);
+    NOREF(offDelta);
 }
 
 /**

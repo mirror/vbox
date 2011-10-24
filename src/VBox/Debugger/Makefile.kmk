@@ -75,6 +75,7 @@ DBGCPlugInDiggers_LIBS = \
 #
 tstDBGCParser_TEMPLATE = VBOXR3TSTEXE
 tstDBGCParser_DEFS = IN_VMM_R3
+tstDBGCParser_CXXFLAGS = $(VBOX_C_CXX_FLAGS_NO_UNUSED_PARAMETERS)
 tstDBGCParser_SOURCES = \
 	testcase/tstDBGCParser.cpp \
 	testcase/tstDBGCStubs.cpp

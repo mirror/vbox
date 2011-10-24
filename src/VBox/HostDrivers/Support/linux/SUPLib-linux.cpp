@@ -172,6 +172,7 @@ int suplibOsUninstall(void)
 int suplibOsIOCtl(PSUPLIBDATA pThis, uintptr_t uFunction, void *pvReq, size_t cbReq)
 {
     AssertMsg(pThis->hDevice != (intptr_t)NIL_RTFILE, ("SUPLIB not initiated successfully!\n"));
+    NOREF(cbReq);
 
     /*
      * Issue device iocontrol.
@@ -244,6 +245,7 @@ int suplibOsPageAlloc(PSUPLIBDATA pThis, size_t cPages, void **ppvPages)
 
 int suplibOsPageFree(PSUPLIBDATA pThis, void *pvPages, size_t cPages)
 {
+    NOREF(pThis);
     munmap(pvPages, cPages << PAGE_SHIFT);
     return VINF_SUCCESS;
 }

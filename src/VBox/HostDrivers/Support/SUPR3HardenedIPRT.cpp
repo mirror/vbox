@@ -100,6 +100,7 @@ DECLHIDDEN(void)   supR3HardenedFatalMsgV(const char *pszWhere, SUPINITOP enmWha
     va_copy(vaCopy, va);
     AssertFatalMsgFailed(("%s (rc=%Rrc): %N", pszWhere, rc, pszMsgFmt, &vaCopy));
     va_end(vaCopy);
+    NOREF(enmWhat);
 }
 
 

@@ -173,16 +173,18 @@ static DECLCALLBACK(int) rtTimerOnce(void *pvUser1, void *pvUser2)
 static void rttimerSignalIgnore(int iSignal)
 {
     //AssertBreakpoint();
+    NOREF(iSignal);
 }
 
 
 /**
  * RT_TIMER_SIGNAL wait thread.
  */
-static DECLCALLBACK(int) rttimerThread(RTTHREAD Thread, void *pvArg)
+static DECLCALLBACK(int) rttimerThread(RTTHREAD hThreadSelf, void *pvArg)
 {
+    NOREF(hThreadSelf); NOREF(pvArg);
 #ifndef IPRT_WITH_POSIX_TIMERS
-    PRTTIMER pTimer = (PRTTIMER)(void *)pvArg;
+    PRTTIMER pTimer = (PRTTIMER)pvArg;
     RTTIMER Timer = *pTimer;
     Assert(pTimer->u32Magic == RTTIMER_MAGIC);
 #endif /* !IPRT_WITH_POSIX_TIMERS */
@@ -230,7 +232,7 @@ static DECLCALLBACK(int) rttimerThread(RTTHREAD Thread, void *pvArg)
     /*
      * The work loop.
      */
-    RTThreadUserSignal(Thread);
+    RTThreadUserSignal(hThreadSelf);
 
 #ifndef IPRT_WITH_POSIX_TIMERS
     while (     !pTimer->fDestroyed
@@ -815,6 +817,7 @@ RTDECL(int) RTTimerChangeInterval(PRTTIMER pTimer, uint64_t u64NanoInterval)
 {
     AssertPtrReturn(pTimer, VERR_INVALID_POINTER);
     AssertReturn(pTimer->u32Magic == RTTIMER_MAGIC, VERR_INVALID_MAGIC);
+    NOREF(u64NanoInterval);
     return VERR_NOT_SUPPORTED;
 }
 

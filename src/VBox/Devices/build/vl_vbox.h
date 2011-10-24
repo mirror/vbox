@@ -323,11 +323,13 @@ DECLINLINE(type) cpu_to_ ## endian ## size(type v)\
 \
 DECLINLINE(void) endian ## size ## _to_cpus(type *p)\
 {\
+    NOREF(p); \
     endian ## _bswaps(p, size)\
 }\
 \
 DECLINLINE(void) cpu_to_ ## endian ## size ## s(type *p)\
 {\
+    NOREF(p); \
     endian ## _bswaps(p, size)\
 }\
 \
