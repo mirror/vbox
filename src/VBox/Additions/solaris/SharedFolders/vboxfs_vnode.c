@@ -879,7 +879,7 @@ sffs_getattr(
 	else if (S_ISLNK(mode))
 	{
 		vap->va_type = VLNK;
-		vap->va_mode = sffs->sf_fmask != ~0 ? (sffs->sf_fmode & 0777) : vap->va_mode;
+		vap->va_mode = sffs->sf_fmode != ~0 ? (sffs->sf_fmode & 0777) : vap->va_mode;
 		vap->va_mode &= ~sffs->sf_fmask;
 		vap->va_mode |= S_IFLNK;
 	}
