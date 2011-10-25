@@ -438,14 +438,17 @@ print_networkevents(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput,
                     void *pvUser)
 {
     size_t cb = 0;
+#ifdef RT_OS_WINDOWS
+    WSANETWORKEVENTS *pNetworkEvents = (WSANETWORKEVENTS*)pvValue;
+    bool fDelim = false;
+#endif
+
     NOREF(cchWidth);
     NOREF(cchPrecision);
     NOREF(fFlags);
     NOREF(pvUser);
-#ifdef RT_OS_WINDOWS
-    WSANETWORKEVENTS *pNetworkEvents = (WSANETWORKEVENTS*)pvValue;
-    bool fDelim = false;
 
+#ifdef RT_OS_WINDOWS
     AssertReturn(strcmp(pszType, "natwinnetevents") == 0, 0);
 
     cb += RTStrFormat(pfnOutput, pvArgOutput, NULL, 0, "events=%02x (",
