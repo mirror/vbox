@@ -74,6 +74,10 @@ static mntopt_t sffs_options[] = {
 	/* Option	Cancels Opt	Arg	Flags		Data */
 	{"uid",		NULL,		NULL,	MO_HASVALUE,	NULL},
 	{"gid",		NULL,		NULL,	MO_HASVALUE,	NULL},
+	{"dmode",	NULL,		NULL,	MO_HASVALUE,	NULL},
+	{"fmode",	NULL,		NULL,	MO_HASVALUE,	NULL},
+	{"dmask",	NULL,		NULL,	MO_HASVALUE,	NULL},
+	{"fmask",	NULL,		NULL,	MO_HASVALUE,	NULL},
 	{"stat_ttl",	NULL,		NULL,	MO_HASVALUE,	NULL},
 	{"fsync",	NULL,		NULL,	0,	        NULL}
 };
