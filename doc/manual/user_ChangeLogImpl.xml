@@ -19,6 +19,11 @@
     <itemizedlist>
 
       <listitem>
+        <para>E1000: fixed rare Windows 7 guest hangs, either at boot time
+          or when reconfiguring the network card in unusual setups (bug #6223)</para>
+      </listitem>
+
+      <listitem>
         <para>Windows Additions: fixed guest hangs when switching back from fullscreen text mode apps (bug #9636)</para>
       </listitem>
 
