@@ -174,9 +174,9 @@ protected:
 #endif /* Q_WS_MAC */
     bool guestResizeEvent(QEvent *pEvent, bool fFullscreen);
     /** What view mode (normal, fullscreen etc.) are we in? */
-    UIVisualStateType visualStateType();
+    UIVisualStateType visualStateType() const;
     /** Is this a fullscreen-type view? */
-    bool isFullscreenOrSeamless();
+    bool isFullscreenOrSeamless() const;
     /** Return a string consisting of @a base with a suffix for the active
      * virtual monitor.  Used for storing monitor-specific extra data. */
     QString makeExtraDataKeyPerMonitor(QString base) const;
