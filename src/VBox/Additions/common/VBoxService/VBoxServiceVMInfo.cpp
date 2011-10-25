@@ -82,6 +82,34 @@ static VBOXSERVICEVEPROPCACHE   g_VMInfoPropCache;
 static uint64_t                 g_idVMInfoSession;
 
 
+#ifdef RT_OS_WINDOWS
+static BOOL WINAPI VBoxServiceVMInfoConsoleControlHandler(DWORD dwCtrlType)
+{
+    int rc = VINF_SUCCESS;
+    bool fEventHandled = FALSE;
+    switch (dwCtrlType)
+    {
+        case CTRL_LOGOFF_EVENT:
+            VBoxServiceVerbose(2, "VMInfo: Received logged-off event\n");
+            /* Trigger a re-enumeration of all logged-in users by unblocking
+             * the multi event semaphore of the VMInfo thread. */
+            if (g_hVMInfoEvent)
+                rc = RTSemEventMultiSignal(g_hVMInfoEvent);
+            fEventHandled = TRUE;
+            break;
+        default:
+            break;
+        /** @todo Add other events here. */
+    }
+
+    if (RT_FAILURE(rc))
+        VBoxServiceError("VMInfo: Event %ld handled with error rc=%Rrc\n",
+                         dwCtrlType, rc);
+    return fEventHandled;
+}
+#endif /* RT_OS_WINDOWS */
+
+
 /** @copydoc VBOXSERVICE::pfnPreInit */
 static DECLCALLBACK(int) VBoxServiceVMInfoPreInit(void)
 {
@@ -153,6 +181,17 @@ static DECLCALLBACK(int) VBoxServiceVMInfoInit(void)
                                         VBOXSERVICEPROPCACHEFLAG_TEMPORARY | VBOXSERVICEPROPCACHEFLAG_TRANSIENT, "true");
         VBoxServicePropCacheUpdateEntry(&g_VMInfoPropCache, "/VirtualBox/GuestInfo/Net/Count",
                                         VBOXSERVICEPROPCACHEFLAG_TEMPORARY | VBOXSERVICEPROPCACHEFLAG_ALWAYS_UPDATE, NULL /* Delete on exit */);
+
+#ifdef RT_OS_WINDOWS
+# ifndef RT_OS_NT4
+    /* Install console control handler. */
+    if (!SetConsoleCtrlHandler((PHANDLER_ROUTINE)VBoxServiceVMInfoConsoleControlHandler, TRUE /* Add handler */))
+    {
+        VBoxServiceError("VMInfo: Unable to add console control handler, error=%ld\n", GetLastError());
+        /* Just skip this error, not critical. */
+    }
+# endif /* !RT_OS_NT4 */
+#endif /* RT_OS_WINDOWS */
     }
     return rc;
 }
@@ -811,6 +850,13 @@ DECLCALLBACK(int) VBoxServiceVMInfoWorker(bool volatile *pfShutdown)
             rc = rc2;
             break;
         }
+        else if (RT_LIKELY(RT_SUCCESS(rc2)))
+        {
+            /* Reset event semaphore if it got triggered. */
+            rc2 = RTSemEventMultiReset(g_hVMInfoEvent);
+            if (RT_FAILURE(rc2))
+                rc2 = VBoxServiceError("VMInfo: RTSemEventMultiReset failed; rc2=%Rrc\n", rc2);
+        }
     }
 
 #ifdef RT_OS_WINDOWS
@@ -832,6 +878,17 @@ static DECLCALLBACK(void) VBoxServiceVMInfoStop(void)
 static DECLCALLBACK(void) VBoxServiceVMInfoTerm(void)
 {
     int rc;
+
+#ifdef RT_OS_WINDOWS
+# ifndef RT_OS_NT4
+    /* Install console control handler. */
+    if (!SetConsoleCtrlHandler((PHANDLER_ROUTINE)NULL, FALSE /* Remove handler */))
+    {
+        VBoxServiceError("VMInfo: Unable to remove console control handler, error=%ld\n", GetLastError());
+        /* Just skip this error, not critical. */
+    }
+# endif /* !RT_OS_NT4 */
+#endif
 
     if (g_hVMInfoEvent != NIL_RTSEMEVENTMULTI)
     {

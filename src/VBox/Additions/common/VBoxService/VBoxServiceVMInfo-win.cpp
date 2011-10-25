@@ -71,7 +71,7 @@ typedef struct
 /*******************************************************************************
 *   Prototypes
 *******************************************************************************/
-bool VBoxServiceVMInfoWinSessionHasProcesses(PLUID pSession, VBOXSERVICEVMINFOPROC const *paProcs, DWORD cProcs);
+uint32_t VBoxServiceVMInfoWinSessionHasProcesses(PLUID pSession, VBOXSERVICEVMINFOPROC const *paProcs, DWORD cProcs);
 bool VBoxServiceVMInfoWinIsLoggedIn(PVBOXSERVICEVMINFOUSER a_pUserInfo, PLUID a_pSession);
 int  VBoxServiceVMInfoWinProcessesEnumerate(PVBOXSERVICEVMINFOPROC *ppProc, DWORD *pdwCount);
 void VBoxServiceVMInfoWinProcessesFree(PVBOXSERVICEVMINFOPROC paProcs);
@@ -250,17 +250,17 @@ void VBoxServiceVMInfoWinProcessesFree(PVBOXSERVICEVMINFOPROC paProcs)
 /**
  * Determines whether the specified session has processes on the system.
  *
- * @returns true if it has, false if it doesn't.
+ * @returns Number of processes found for a specified session.
  * @param   pSession        The session.
  * @param   paProcs         The process snapshot.
  * @param   cProcs          The number of processes in the snaphot.
  */
-bool VBoxServiceVMInfoWinSessionHasProcesses(PLUID pSession, VBOXSERVICEVMINFOPROC const *paProcs, DWORD cProcs)
+uint32_t VBoxServiceVMInfoWinSessionHasProcesses(PLUID pSession, VBOXSERVICEVMINFOPROC const *paProcs, DWORD cProcs)
 {
     if (!pSession)
     {
         VBoxServiceVerbose(1, "VMInfo/Users: Session became invalid while enumerating!\n");
-        return false;
+        return 0;
     }
 
     PSECURITY_LOGON_SESSION_DATA pSessionData = NULL;
@@ -268,7 +268,7 @@ bool VBoxServiceVMInfoWinSessionHasProcesses(PLUID pSession, VBOXSERVICEVMINFOPR
     if (rcNt != STATUS_SUCCESS)
     {
         VBoxServiceError("VMInfo/Users: Could not get logon session data! rcNt=%#x", rcNt);
-        return false;
+        return 0;
     }
 
     /*
@@ -291,11 +291,15 @@ bool VBoxServiceVMInfoWinSessionHasProcesses(PLUID pSession, VBOXSERVICEVMINFOPR
         }
     }
 
-    VBoxServiceVerbose(3, "VMInfo/Users: Session %u has %u processes\n",
-                       pSessionData->Session, cNumProcs);
+    if (g_cVerbosity >= 4)
+        VBoxServiceVerbose(3, "VMInfo/Users: Session %u has %u processes\n",
+                           pSessionData->Session, cNumProcs);
+    else
+        VBoxServiceVerbose(3, "VMInfo/Users: Session %u has at least one process\n",
+                           pSessionData->Session);
 
     LsaFreeReturnBuffer(pSessionData);
-    return cNumProcs ? true : false;
+    return cNumProcs;
 }
 
 
@@ -559,7 +563,9 @@ int VBoxServiceVMInfoWinWriteUsers(char **ppszUserList, uint32_t *pcUsersInList)
                 VBOXSERVICEVMINFOUSER UserInfo;
                 if (VBoxServiceVMInfoWinIsLoggedIn(&UserInfo, &paSessions[i]))
                 {
-                    VBoxServiceVMInfoWinSessionHasProcesses(&paSessions[i], paProcs, cProcs);
+                    uint32_t cSessionProcs = VBoxServiceVMInfoWinSessionHasProcesses(&paSessions[i], paProcs, cProcs);
+                    if (!cSessionProcs)
+                        continue;
 
                     bool fFoundUser = false;
                     for (ULONG i = 0; i < cUniqueUsers; i++)
@@ -572,16 +578,16 @@ int VBoxServiceVMInfoWinWriteUsers(char **ppszUserList, uint32_t *pcUsersInList)
                              * was detected which also belongs to this user but has no assigned processes anymore,
                              * we detected a stale session. */
                             if (   pUserInfo[i].ulNumProcs > 0
-                                && !cProcs)
+                                && !cSessionProcs)
                             {
                                 VBoxServiceVerbose(3, "VMInfo/Users: Stale session for user=%ls detected! Old processes: %u, new: %u\n",
-                                                   pUserInfo[i].wszUser, pUserInfo[i].ulNumProcs, cProcs);
+                                                   pUserInfo[i].wszUser, pUserInfo[i].ulNumProcs, cSessionProcs);
                             }
 
                             VBoxServiceVerbose(4, "VMInfo/Users: Updating user=%ls to %u processes\n",
-                                               UserInfo.wszUser, cProcs);
+                                               UserInfo.wszUser, cSessionProcs);
 
-                            pUserInfo[i].ulNumProcs = cProcs;
+                            pUserInfo[i].ulNumProcs = cSessionProcs;
                             fFoundUser = true;
                             break;
                         }
@@ -590,9 +596,10 @@ int VBoxServiceVMInfoWinWriteUsers(char **ppszUserList, uint32_t *pcUsersInList)
                     if (!fFoundUser)
                     {
                         VBoxServiceVerbose(4, "VMInfo/Users: Adding new user=%ls with %u processes\n",
-                                           UserInfo.wszUser, cProcs);
+                                           UserInfo.wszUser, cSessionProcs);
 
-                        memcpy(&pUserInfo[cUniqueUsers++], &UserInfo, sizeof(VBOXSERVICEVMINFOUSER));
+                        memcpy(&pUserInfo[cUniqueUsers], &UserInfo, sizeof(VBOXSERVICEVMINFOUSER));
+                        pUserInfo[cUniqueUsers++].ulNumProcs = cSessionProcs;
                         Assert(cUniqueUsers <= cSessions);
                     }
                 }
