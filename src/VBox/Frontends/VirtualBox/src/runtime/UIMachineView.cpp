@@ -271,7 +271,7 @@ void UIMachineView::prepareViewport()
 void UIMachineView::prepareFrameBuffer()
 {
     /* Prepare frame-buffer depending on render-mode: */
-    switch (vboxGlobal().vmRenderMode())
+    switch (getRenderMode())
     {
 #ifdef VBOX_GUI_USE_QIMAGE
         case VBoxDefs::QImageMode:
@@ -920,6 +920,33 @@ QString UIMachineView::makeExtraDataKeyPerMonitor(QString base) const
 {
     return m_uScreenId == 0 ? QString("%1").arg(base)
                             : QString("%1%2").arg(base).arg(m_uScreenId);
+}
+
+VBoxDefs::RenderMode UIMachineView::getRenderMode() const
+{
+    if (visualStateType() != UIVisualStateType_Scale)
+        return vboxGlobal().vmRenderMode();
+    /* This part of the method is temporary since not all of our framebuffer
+     * modes currently support scale view mode.  Once they do it will be
+     * removed. */
+    /** @note this could have been a mini-class which would be easier to
+     * unit test. */
+    /* Prepare frame-buffer depending on render-mode: */
+    switch (vboxGlobal().vmRenderMode())
+    {
+#ifdef VBOX_GUI_USE_QUARTZ2D
+        case VBoxDefs::Quartz2DMode:
+            return VBoxDefs::Quartz2DMode;
+#endif /* VBOX_GUI_USE_QUARTZ2D */
+        default:
+#ifdef VBOX_GUI_USE_QIMAGE
+        case VBoxDefs::QImageMode:
+            return VBoxDefs::QImageMode;
+#endif /* VBOX_GUI_USE_QIMAGE */
+        break;
+    }
+    AssertReleaseMsgFailed(("Scale-mode currently does NOT supporting render-mode %d\n", vboxGlobal().vmRenderMode()));
+    qApp->exit(1);
 }
 
 bool UIMachineView::event(QEvent *pEvent)

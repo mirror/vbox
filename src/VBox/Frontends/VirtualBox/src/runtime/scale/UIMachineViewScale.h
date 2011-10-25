@@ -55,7 +55,7 @@ private:
     bool eventFilter(QObject *pWatched, QEvent *pEvent);
 
     /* Prepare helpers: */
-    void prepareFrameBuffer();
+    // void prepareFrameBuffer();
     //void loadMachineViewSettings();
 
     /* Cleanup helpers: */
