@@ -905,12 +905,12 @@ bool UIMachineView::guestResizeEvent(QEvent *pEvent,
     return true;
 }
 
-UIVisualStateType UIMachineView::visualStateType()
+UIVisualStateType UIMachineView::visualStateType() const
 {
     return machineLogic()->visualStateType();
 }
 
-bool UIMachineView::isFullscreenOrSeamless()
+bool UIMachineView::isFullscreenOrSeamless() const
 {
     return    visualStateType() == UIVisualStateType_Fullscreen
            || visualStateType() == UIVisualStateType_Seamless;
