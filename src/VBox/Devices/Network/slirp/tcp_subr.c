@@ -243,7 +243,7 @@ struct tcpcb *tcp_drop(PNATState pData, struct tcpcb *tp, int err)
         int errno;
 {
 */
-    LogFlowFunc(("ENTER: tp = %R[tcpcb793], errno = %d\n", tp, errno));
+    LogFlowFunc(("ENTER: tp = %R[tcpcb793], errno = %d\n", tp, err));
 
     if (TCPS_HAVERCVDSYN(tp->t_state))
     {

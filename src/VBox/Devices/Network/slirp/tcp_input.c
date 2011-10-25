@@ -856,8 +856,7 @@ cont_conn:
                 LogFlowFunc(("%d -> dropwithreset\n", __LINE__));
                 goto dropwithreset;
             }
-cont_input:
-            LogFlowFunc(("cont_input:\n"));
+
             tcp_template(tp);
 
             if (optp)

@@ -391,7 +391,7 @@ enum DHCP_REQUEST_STATES
     NONE
 };
 
-static int dhcp_decode_request(PNATState pData, struct bootp_t *bp, const uint8_t *buf, int size, struct mbuf *m)
+static int dhcp_decode_request(PNATState pData, struct bootp_t *bp, struct mbuf *m)
 {
     BOOTPClient *bc = NULL;
     struct in_addr daddr;
@@ -507,7 +507,7 @@ static int dhcp_decode_request(PNATState pData, struct bootp_t *bp, const uint8_
     return offReply;
 }
 
-static int dhcp_decode_discover(PNATState pData, struct bootp_t *bp, const uint8_t *buf, int size, int fDhcpDiscover, struct mbuf *m)
+static int dhcp_decode_discover(PNATState pData, struct bootp_t *bp, int fDhcpDiscover, struct mbuf *m)
 {
     BOOTPClient *bc;
     struct in_addr daddr;
@@ -550,7 +550,7 @@ static int dhcp_decode_discover(PNATState pData, struct bootp_t *bp, const uint8
     return -1;
 }
 
-static int dhcp_decode_release(PNATState pData, struct bootp_t *bp, const uint8_t *buf, int size)
+static int dhcp_decode_release(PNATState pData, struct bootp_t *bp)
 {
     int rc = release_addr(pData, &bp->bp_ciaddr);
     LogRel(("NAT: %s %RTnaipv4\n",
@@ -681,19 +681,19 @@ static void dhcp_decode(PNATState pData, struct bootp_t *bp, const uint8_t *buf,
             fDhcpDiscover = 1;
             /* fall through */
         case DHCPINFORM:
-            rc = dhcp_decode_discover(pData, bp, buf, size, fDhcpDiscover, m);
+            rc = dhcp_decode_discover(pData, bp, fDhcpDiscover, m);
             if (rc > 0)
                 goto reply;
             break;
 
         case DHCPREQUEST:
-            rc = dhcp_decode_request(pData, bp, buf, size, m);
+            rc = dhcp_decode_request(pData, bp, m);
             if (rc > 0)
                 goto reply;
             break;
 
         case DHCPRELEASE:
-            rc = dhcp_decode_release(pData, bp, buf, size);
+            rc = dhcp_decode_release(pData, bp);
             /* no reply required */
             break;
 

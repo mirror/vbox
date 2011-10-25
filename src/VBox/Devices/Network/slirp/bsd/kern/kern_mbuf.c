@@ -130,6 +130,7 @@ tunable_mbinit(void *dummy)
 }
 SYSINIT(tunable_mbinit, SI_SUB_TUNABLES, SI_ORDER_MIDDLE, tunable_mbinit, NULL);
 
+#ifndef VBOX
 /* XXX: These should be tuneables. Can't change UMA limits on the fly. */
 static int
 sysctl_nmbclusters(SYSCTL_HANDLER_ARGS)
@@ -221,7 +222,6 @@ SYSCTL_STRUCT(_kern_ipc, OID_AUTO, mbstat, CTLFLAG_RD, &mbstat, mbstat,
 /*
  * Zones from which we allocate.
  */
-#ifndef VBOX
 uma_zone_t	zone_mbuf;
 uma_zone_t	zone_clust;
 uma_zone_t	zone_pack;
@@ -469,9 +469,15 @@ mb_ctor_mbuf(PNATState pData, void *mem, int size, void *arg, int how)
 #endif
 	int flags;
 	short type;
+#ifdef VBOX
+    NOREF(pData);
+#endif
 
 #ifdef INVARIANTS
 	trash_ctor(mem, size, arg, how);
+#elif defined(VBOX)
+    NOREF(size);
+    NOREF(how);
 #endif
 	m = (struct mbuf *)mem;
 	args = (struct mb_args *)arg;
@@ -523,6 +529,9 @@ mb_dtor_mbuf(PNATState pData, void *mem, int size, void *arg)
 {
 	struct mbuf *m;
 	unsigned long flags;
+#ifdef VBOX
+    NOREF(pData);
+#endif
 
 	m = (struct mbuf *)mem;
 	flags = (unsigned long)arg;
@@ -533,6 +542,9 @@ mb_dtor_mbuf(PNATState pData, void *mem, int size, void *arg)
 	KASSERT((m->m_flags & M_NOFREE) == 0, ("%s: M_NOFREE set", __func__));
 #ifdef INVARIANTS
 	trash_dtor(mem, size, arg);
+#elif defined(VBOX)
+    NOREF(size);
+    NOREF(arg);
 #endif
 }
 
@@ -562,6 +574,9 @@ mb_dtor_pack(PNATState pData, void *mem, int size, void *arg)
 	KASSERT(*m->m_ext.ref_cnt == 1, ("%s: ref_cnt != 1", __func__));
 #ifdef INVARIANTS
 	trash_dtor(m->m_ext.ext_buf, MCLBYTES, arg);
+#elif defined(VBOX)
+    NOREF(size);
+    NOREF(arg);
 #endif
 	/*
 	 * If there are processes blocked on zone_clust, waiting for pages to be freed up,
@@ -592,9 +607,14 @@ mb_ctor_clust(PNATState pData, void *mem, int size, void *arg, int how)
 	u_int *refcnt;
 	int type;
 	uma_zone_t zone;
+#ifdef VBOX
+    NOREF(how);
+#endif
 
 #ifdef INVARIANTS
 	trash_ctor(mem, size, arg, how);
+#elif defined(VBOX)
+    NOREF(how);
 #endif
 	switch (size) {
 	case MCLBYTES:
@@ -656,6 +676,11 @@ mb_dtor_clust(PNATState pData, void *mem, int size, void *arg)
 		 *(uma_find_refcnt(zone, mem))) );
 
 	trash_dtor(mem, size, arg);
+#elif defined(VBOX)
+    NOREF(pData);
+    NOREF(mem);
+    NOREF(size);
+    NOREF(arg);
 #endif
 }
 
@@ -679,6 +704,8 @@ mb_zinit_pack(PNATState pData, void *mem, int size, int how)
 	m->m_ext.ext_type = EXT_PACKET;	/* Override. */
 #ifdef INVARIANTS
 	trash_init(m->m_ext.ext_buf, MCLBYTES, how);
+#elif defined(VBOX)
+    NOREF(size);
 #endif
 	return (0);
 }
@@ -703,6 +730,8 @@ mb_zfini_pack(PNATState pData, void *mem, int size)
 	uma_zfree_arg(zone_clust, m->m_ext.ext_buf, NULL);
 #ifdef INVARIANTS
 	trash_dtor(mem, size, NULL);
+#elif defined(VBOX)
+    NOREF(size);
 #endif
 }
 
@@ -723,6 +752,10 @@ mb_ctor_pack(PNATState pData, void *mem, int size, void *arg, int how)
 #endif
 	int flags;
 	short type;
+#ifdef VBOX
+    NOREF(pData);
+    NOREF(size);
+#endif
 
 	m = (struct mbuf *)mem;
 	args = (struct mb_args *)arg;
@@ -731,6 +764,8 @@ mb_ctor_pack(PNATState pData, void *mem, int size, void *arg, int how)
 
 #ifdef INVARIANTS
 	trash_ctor(m->m_ext.ext_buf, MCLBYTES, arg, how);
+#elif defined(VBOX)
+    NOREF(how);
 #endif
 	m->m_next = NULL;
 	m->m_nextpkt = NULL;
@@ -781,5 +816,7 @@ mb_reclaim(void *junk)
 		for (pr = dp->dom_protosw; pr < dp->dom_protoswNPROTOSW; pr++)
 			if (pr->pr_drain != NULL)
 				(*pr->pr_drain)();
+#else
+    NOREF(junk);
 #endif
 }

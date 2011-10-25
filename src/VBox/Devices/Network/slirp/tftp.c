@@ -389,7 +389,7 @@ static void tftp_handle_rrq(PNATState pData, struct tftp_t *tp, int pktlen)
     tftp_send_data(pData, spt, 1, tp);
 }
 
-static void tftp_handle_ack(PNATState pData, struct tftp_t *tp, int pktlen)
+static void tftp_handle_ack(PNATState pData, struct tftp_t *tp)
 {
     int s;
 
@@ -415,7 +415,7 @@ void tftp_input(PNATState pData, struct mbuf *m)
             break;
 
         case TFTP_ACK:
-            tftp_handle_ack(pData, tp, m->m_len);
+            tftp_handle_ack(pData, tp);
             break;
     }
 }

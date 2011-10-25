@@ -405,6 +405,7 @@ m_tag_alloc(u_int32_t cookie, int type, int len, int fWait)
 #ifndef VBOX
 	t = malloc(len + sizeof(struct m_tag), M_PACKET_TAGS, fWait);
 #else
+        NOREF(fWait);
 	t = RTMemAllocZ(len + sizeof(struct m_tag));
 #endif
 	if (t == NULL)
