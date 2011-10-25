@@ -50,17 +50,6 @@ typedef struct IOMMMIORANGE
     /** The reference counter. */
     uint32_t volatile           cRefs;
 
-    /** Pointer to user argument - R3. */
-    RTR3PTR                     pvUserR3;
-    /** Pointer to device instance - R3. */
-    PPDMDEVINSR3                pDevInsR3;
-    /** Pointer to write callback function - R3. */
-    R3PTRTYPE(PFNIOMMMIOWRITE)  pfnWriteCallbackR3;
-    /** Pointer to read callback function - R3. */
-    R3PTRTYPE(PFNIOMMMIOREAD)   pfnReadCallbackR3;
-    /** Pointer to fill (memset) callback function - R3. */
-    R3PTRTYPE(PFNIOMMMIOFILL)   pfnFillCallbackR3;
-
     /** Pointer to user argument - R0. */
     RTR0PTR                     pvUserR0;
     /** Pointer to device instance - R0. */
@@ -72,6 +61,9 @@ typedef struct IOMMMIORANGE
     /** Pointer to fill (memset) callback function - R0. */
     R0PTRTYPE(PFNIOMMMIOFILL)   pfnFillCallbackR0;
 
+    /** Flags, see IOMMMIO_FLAGS_XXX. */ /* (Placed here for alignment reasons.) */
+    uint32_t                    fFlags;
+
     /** Pointer to user argument - RC. */
     RTRCPTR                     pvUserRC;
     /** Pointer to device instance - RC. */
@@ -82,8 +74,17 @@ typedef struct IOMMMIORANGE
     RCPTRTYPE(PFNIOMMMIOREAD)   pfnReadCallbackRC;
     /** Pointer to fill (memset) callback function - RC. */
     RCPTRTYPE(PFNIOMMMIOFILL)   pfnFillCallbackRC;
-    /** Alignment padding. */
-    RTRCPTR                     RCPtrAlignment;
+
+    /** Pointer to user argument - R3. */
+    RTR3PTR                     pvUserR3;
+    /** Pointer to device instance - R3. */
+    PPDMDEVINSR3                pDevInsR3;
+    /** Pointer to write callback function - R3. */
+    R3PTRTYPE(PFNIOMMMIOWRITE)  pfnWriteCallbackR3;
+    /** Pointer to read callback function - R3. */
+    R3PTRTYPE(PFNIOMMMIOREAD)   pfnReadCallbackR3;
+    /** Pointer to fill (memset) callback function - R3. */
+    R3PTRTYPE(PFNIOMMMIOFILL)   pfnFillCallbackR3;
 
     /** Description / Name. For easing debugging. */
     R3PTRTYPE(const char *)     pszDesc;

@@ -79,6 +79,50 @@ RT_C_DECLS_BEGIN
                                 ) \
                             )
 
+/** @name IOMMMIO_FLAGS_XXX
+ * @{ */
+/** Pass all reads thru unmodified. */
+#define IOMMMIO_FLAGS_READ_PASSTHRU                     UINT32_C(0x00000000)
+/** All read accesses are DWORD sized (32-bit). */
+#define IOMMMIO_FLAGS_READ_DWORD                        UINT32_C(0x00000001)
+/** All read accesses are DWORD (32-bit) or QWORD (64-bit) sized.
+ * Only accesses that are both QWORD sized and aligned are performed as QWORD.
+ * All other access will be done DWORD fashion (because it is way simpler). */
+#define IOMMMIO_FLAGS_READ_DWORD_QWORD                  UINT32_C(0x00000002)
+/** The read access mode mask. */
+#define IOMMMIO_FLAGS_READ_MODE                         UINT32_C(0x00000003)
+
+/** Pass all writes thru unmodified. */
+#define IOMMMIO_FLAGS_WRITE_PASSTHRU                    UINT32_C(0x00000000)
+/** All write accesses are DWORD (32-bit) sized and unspecified bytes are
+ * written as zero. */
+#define IOMMMIO_FLAGS_WRITE_DWORD_ZEROED                UINT32_C(0x00000010)
+/** All write accesses are either DWORD (32-bit) or QWORD (64-bit) sized,
+ * missing bytes will be written as zero.  Only accesses that are both QWORD
+ * sized and aligned are performed as QWORD, all other accesses will be done
+ * DWORD fashion (because it's way simpler). */
+#define IOMMMIO_FLAGS_WRITE_DWORD_QWORD_ZEROED          UINT32_C(0x00000020)
+/** All write accesses are DWORD (32-bit) sized and unspecified bytes are
+ * read from the device first as DWORDs.
+ * @remarks This isn't how it happens on real hardware, but it allows
+ *          simplifications of devices where reads doesn't change the device
+ *          state in any way. */
+#define IOMMMIO_FLAGS_WRITE_DWORD_READ_MISSING          UINT32_C(0x00000030)
+/** All write accesses are DWORD (32-bit) or QWORD (64-bit) sized and
+ * unspecified bytes are read from the device first as DWORDs.  Only accesses
+ * that are both QWORD sized and aligned are performed as QWORD, all other
+ * accesses will be done DWORD fashion (because it's way simpler).
+ * @remarks This isn't how it happens on real hardware, but it allows
+ *          simplifications of devices where reads doesn't change the device
+ *          state in any way. */
+#define IOMMMIO_FLAGS_WRITE_DWORD_QWORD_READ_MISSING    UINT32_C(0x00000040)
+/** The read access mode mask. */
+#define IOMMMIO_FLAGS_WRITE_MODE                        UINT32_C(0x00000070)
+
+/** Mask of valid flags. */
+#define IOMMMIO_FLAGS_VALID_MASK                        UINT32_C(0x00000073)
+/** @} */
+
 
 /**
  * Port I/O Handler for IN operations.
@@ -227,37 +271,38 @@ VMMRCDECL(VBOXSTRICTRC) IOMGCIOPortHandler(PVM pVM, PCPUMCTXCORE pRegFrame, PDIS
  * @ingroup grp_iom
  * @{
  */
-VMMR3DECL(int)  IOMR3Init(PVM pVM);
-VMMR3DECL(void) IOMR3Reset(PVM pVM);
-VMMR3DECL(void) IOMR3Relocate(PVM pVM, RTGCINTPTR offDelta);
-VMMR3DECL(int)  IOMR3Term(PVM pVM);
-VMMR3DECL(int)  IOMR3IOPortRegisterR3(PVM pVM, PPDMDEVINS pDevIns, RTIOPORT PortStart, RTUINT cPorts, RTHCPTR pvUser,
-                                      R3PTRTYPE(PFNIOMIOPORTOUT) pfnOutCallback, R3PTRTYPE(PFNIOMIOPORTIN) pfnInCallback,
-                                      R3PTRTYPE(PFNIOMIOPORTOUTSTRING) pfnOutStringCallback, R3PTRTYPE(PFNIOMIOPORTINSTRING) pfnInStringCallback,
-                                      const char *pszDesc);
-VMMR3DECL(int)  IOMR3IOPortRegisterRC(PVM pVM, PPDMDEVINS pDevIns, RTIOPORT PortStart, RTUINT cPorts, RTRCPTR pvUser,
-                                      RCPTRTYPE(PFNIOMIOPORTOUT) pfnOutCallback, RCPTRTYPE(PFNIOMIOPORTIN) pfnInCallback,
-                                      RCPTRTYPE(PFNIOMIOPORTOUTSTRING) pfnOutStrCallback, RCPTRTYPE(PFNIOMIOPORTINSTRING) pfnInStrCallback,
-                                      const char *pszDesc);
-VMMR3DECL(int)  IOMR3IOPortRegisterR0(PVM pVM, PPDMDEVINS pDevIns, RTIOPORT PortStart, RTUINT cPorts, RTR0PTR pvUser,
-                                      R0PTRTYPE(PFNIOMIOPORTOUT) pfnOutCallback, R0PTRTYPE(PFNIOMIOPORTIN) pfnInCallback,
-                                      R0PTRTYPE(PFNIOMIOPORTOUTSTRING) pfnOutStrCallback, R0PTRTYPE(PFNIOMIOPORTINSTRING) pfnInStrCallback,
-                                      const char *pszDesc);
-VMMR3DECL(int)  IOMR3IOPortDeregister(PVM pVM, PPDMDEVINS pDevIns, RTIOPORT PortStart, RTUINT cPorts);
+VMMR3_INT_DECL(int)  IOMR3Init(PVM pVM);
+VMMR3_INT_DECL(void) IOMR3Reset(PVM pVM);
+VMMR3_INT_DECL(void) IOMR3Relocate(PVM pVM, RTGCINTPTR offDelta);
+VMMR3_INT_DECL(int)  IOMR3Term(PVM pVM);
+VMMR3_INT_DECL(int)  IOMR3IOPortRegisterR3(PVM pVM, PPDMDEVINS pDevIns, RTIOPORT PortStart, RTUINT cPorts, RTHCPTR pvUser,
+                                           R3PTRTYPE(PFNIOMIOPORTOUT) pfnOutCallback, R3PTRTYPE(PFNIOMIOPORTIN) pfnInCallback,
+                                           R3PTRTYPE(PFNIOMIOPORTOUTSTRING) pfnOutStringCallback, R3PTRTYPE(PFNIOMIOPORTINSTRING) pfnInStringCallback,
+                                           const char *pszDesc);
+VMMR3_INT_DECL(int)  IOMR3IOPortRegisterRC(PVM pVM, PPDMDEVINS pDevIns, RTIOPORT PortStart, RTUINT cPorts, RTRCPTR pvUser,
+                                           RCPTRTYPE(PFNIOMIOPORTOUT) pfnOutCallback, RCPTRTYPE(PFNIOMIOPORTIN) pfnInCallback,
+                                           RCPTRTYPE(PFNIOMIOPORTOUTSTRING) pfnOutStrCallback, RCPTRTYPE(PFNIOMIOPORTINSTRING) pfnInStrCallback,
+                                           const char *pszDesc);
+VMMR3_INT_DECL(int)  IOMR3IOPortRegisterR0(PVM pVM, PPDMDEVINS pDevIns, RTIOPORT PortStart, RTUINT cPorts, RTR0PTR pvUser,
+                                           R0PTRTYPE(PFNIOMIOPORTOUT) pfnOutCallback, R0PTRTYPE(PFNIOMIOPORTIN) pfnInCallback,
+                                           R0PTRTYPE(PFNIOMIOPORTOUTSTRING) pfnOutStrCallback, R0PTRTYPE(PFNIOMIOPORTINSTRING) pfnInStrCallback,
+                                           const char *pszDesc);
+VMMR3_INT_DECL(int)  IOMR3IOPortDeregister(PVM pVM, PPDMDEVINS pDevIns, RTIOPORT PortStart, RTUINT cPorts);
 
-VMMR3_INT_DECL(int)  IOMR3MmioRegisterR3(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, RTUINT cbRange, RTHCPTR pvUser,
+VMMR3_INT_DECL(int)  IOMR3MmioRegisterR3(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, uint32_t cbRange, RTHCPTR pvUser,
                                          R3PTRTYPE(PFNIOMMMIOWRITE) pfnWriteCallback,
                                          R3PTRTYPE(PFNIOMMMIOREAD)  pfnReadCallback,
-                                         R3PTRTYPE(PFNIOMMMIOFILL)  pfnFillCallback, const char *pszDesc);
-VMMR3_INT_DECL(int)  IOMR3MmioRegisterR0(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, RTUINT cbRange, RTR0PTR pvUser,
+                                         R3PTRTYPE(PFNIOMMMIOFILL)  pfnFillCallback,
+                                         uint32_t fFlags, const char *pszDesc);
+VMMR3_INT_DECL(int)  IOMR3MmioRegisterR0(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, uint32_t cbRange, RTR0PTR pvUser,
                                          R0PTRTYPE(PFNIOMMMIOWRITE) pfnWriteCallback,
                                          R0PTRTYPE(PFNIOMMMIOREAD)  pfnReadCallback,
                                          R0PTRTYPE(PFNIOMMMIOFILL)  pfnFillCallback);
-VMMR3_INT_DECL(int)  IOMR3MmioRegisterRC(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, RTUINT cbRange, RTGCPTR pvUser,
+VMMR3_INT_DECL(int)  IOMR3MmioRegisterRC(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, uint32_t cbRange, RTGCPTR pvUser,
                                          RCPTRTYPE(PFNIOMMMIOWRITE) pfnWriteCallback,
                                          RCPTRTYPE(PFNIOMMMIOREAD)  pfnReadCallback,
                                          RCPTRTYPE(PFNIOMMMIOFILL)  pfnFillCallback);
-VMMR3_INT_DECL(int)  IOMR3MmioDeregister(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, RTUINT cbRange);
+VMMR3_INT_DECL(int)  IOMR3MmioDeregister(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, uint32_t cbRange);
 
 /** @} */
 #endif /* IN_RING3 */

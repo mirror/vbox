@@ -2238,11 +2238,12 @@ typedef struct PDMDEVHLPR3
      * @param   pfnWrite            Pointer to function which is gonna handle Write operations.
      * @param   pfnRead             Pointer to function which is gonna handle Read operations.
      * @param   pfnFill             Pointer to function which is gonna handle Fill/memset operations. (optional)
+     * @param   fFlags              Flags, IOMMMIO_FLAGS_XXX.
      * @param   pszDesc             Pointer to description string. This must not be freed.
      */
     DECLR3CALLBACKMEMBER(int, pfnMMIORegister,(PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, RTUINT cbRange, RTHCPTR pvUser,
                                                PFNIOMMMIOWRITE pfnWrite, PFNIOMMMIOREAD pfnRead, PFNIOMMMIOFILL pfnFill,
-                                               const char *pszDesc));
+                                               uint32_t fFlags, const char *pszDesc));
 
     /**
      * Register a Memory Mapped I/O (MMIO) region for GC.
@@ -4107,7 +4108,8 @@ DECLINLINE(int) PDMDevHlpMMIORegister(PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, 
                                       PFNIOMMMIOWRITE pfnWrite, PFNIOMMMIOREAD pfnRead, PFNIOMMMIOFILL pfnFill,
                                       const char *pszDesc)
 {
-    return pDevIns->pHlpR3->pfnMMIORegister(pDevIns, GCPhysStart, cbRange, pvUser, pfnWrite, pfnRead, pfnFill, pszDesc);
+    return pDevIns->pHlpR3->pfnMMIORegister(pDevIns, GCPhysStart, cbRange, pvUser, pfnWrite, pfnRead, pfnFill,
+                                            IOMMMIO_FLAGS_WRITE_PASSTHRU | IOMMMIO_FLAGS_READ_PASSTHRU, pszDesc);
 }
 
 /**
