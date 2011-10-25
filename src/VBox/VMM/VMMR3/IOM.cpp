@@ -139,7 +139,7 @@ static const char *iomR3IOPortGetStandardName(RTIOPORT Port);
  * @returns VBox status code.
  * @param   pVM         The VM to operate on.
  */
-VMMR3DECL(int) IOMR3Init(PVM pVM)
+VMMR3_INT_DECL(int) IOMR3Init(PVM pVM)
 {
     LogFlow(("IOMR3Init:\n"));
 
@@ -261,7 +261,7 @@ static void iomR3FlushCache(PVM pVM)
  *
  * @param   pVM     VM handle.
  */
-VMMR3DECL(void) IOMR3Reset(PVM pVM)
+VMMR3_INT_DECL(void) IOMR3Reset(PVM pVM)
 {
     iomR3FlushCache(pVM);
 }
@@ -277,7 +277,7 @@ VMMR3DECL(void) IOMR3Reset(PVM pVM)
  * @param   pVM     The VM.
  * @param   offDelta    Relocation delta relative to old location.
  */
-VMMR3DECL(void) IOMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
+VMMR3_INT_DECL(void) IOMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
 {
     LogFlow(("IOMR3Relocate: offDelta=%d\n", offDelta));
 
@@ -375,7 +375,7 @@ static DECLCALLBACK(int) iomR3RelocateMMIOCallback(PAVLROGCPHYSNODECORE pNode, v
  * @returns VBox status code.
  * @param   pVM         The VM to operate on.
  */
-VMMR3DECL(int) IOMR3Term(PVM pVM)
+VMMR3_INT_DECL(int) IOMR3Term(PVM pVM)
 {
     /*
      * IOM is not owning anything but automatically freed resources,
@@ -508,9 +508,9 @@ PIOMMMIOSTATS iomR3MMIOStatsCreate(PVM pVM, RTGCPHYS GCPhys, const char *pszDesc
  * @param   pfnInStrCallback    Pointer to function which is gonna handle string IN operations in R3.
  * @param   pszDesc             Pointer to description string. This must not be freed.
  */
-VMMR3DECL(int) IOMR3IOPortRegisterR3(PVM pVM, PPDMDEVINS pDevIns, RTIOPORT PortStart, RTUINT cPorts, RTHCPTR pvUser,
-                                     R3PTRTYPE(PFNIOMIOPORTOUT) pfnOutCallback, R3PTRTYPE(PFNIOMIOPORTIN) pfnInCallback,
-                                     R3PTRTYPE(PFNIOMIOPORTOUTSTRING) pfnOutStrCallback, R3PTRTYPE(PFNIOMIOPORTINSTRING) pfnInStrCallback, const char *pszDesc)
+VMMR3_INT_DECL(int) IOMR3IOPortRegisterR3(PVM pVM, PPDMDEVINS pDevIns, RTIOPORT PortStart, RTUINT cPorts, RTHCPTR pvUser,
+                                          R3PTRTYPE(PFNIOMIOPORTOUT) pfnOutCallback, R3PTRTYPE(PFNIOMIOPORTIN) pfnInCallback,
+                                          R3PTRTYPE(PFNIOMIOPORTOUTSTRING) pfnOutStrCallback, R3PTRTYPE(PFNIOMIOPORTINSTRING) pfnInStrCallback, const char *pszDesc)
 {
     LogFlow(("IOMR3IOPortRegisterR3: pDevIns=%p PortStart=%#x cPorts=%#x pvUser=%RHv pfnOutCallback=%#x pfnInCallback=%#x pfnOutStrCallback=%#x pfnInStrCallback=%#x pszDesc=%s\n",
              pDevIns, PortStart, cPorts, pvUser, pfnOutCallback, pfnInCallback, pfnOutStrCallback, pfnInStrCallback, pszDesc));
@@ -606,9 +606,9 @@ VMMR3DECL(int) IOMR3IOPortRegisterR3(PVM pVM, PPDMDEVINS pDevIns, RTIOPORT PortS
  * @param   pfnInStrCallback    Pointer to function which is gonna handle string IN operations in GC.
  * @param   pszDesc             Pointer to description string. This must not be freed.
  */
-VMMR3DECL(int)  IOMR3IOPortRegisterRC(PVM pVM, PPDMDEVINS pDevIns, RTIOPORT PortStart, RTUINT cPorts, RTRCPTR pvUser,
-                                      RCPTRTYPE(PFNIOMIOPORTOUT) pfnOutCallback, RCPTRTYPE(PFNIOMIOPORTIN) pfnInCallback,
-                                      RCPTRTYPE(PFNIOMIOPORTOUTSTRING) pfnOutStrCallback, RCPTRTYPE(PFNIOMIOPORTINSTRING) pfnInStrCallback, const char *pszDesc)
+VMMR3_INT_DECL(int) IOMR3IOPortRegisterRC(PVM pVM, PPDMDEVINS pDevIns, RTIOPORT PortStart, RTUINT cPorts, RTRCPTR pvUser,
+                                          RCPTRTYPE(PFNIOMIOPORTOUT) pfnOutCallback, RCPTRTYPE(PFNIOMIOPORTIN) pfnInCallback,
+                                          RCPTRTYPE(PFNIOMIOPORTOUTSTRING) pfnOutStrCallback, RCPTRTYPE(PFNIOMIOPORTINSTRING) pfnInStrCallback, const char *pszDesc)
 {
     LogFlow(("IOMR3IOPortRegisterRC: pDevIns=%p PortStart=%#x cPorts=%#x pvUser=%RRv pfnOutCallback=%RRv pfnInCallback=%RRv pfnOutStrCallback=%RRv pfnInStrCallback=%RRv pszDesc=%s\n",
              pDevIns, PortStart, cPorts, pvUser, pfnOutCallback, pfnInCallback, pfnOutStrCallback, pfnInStrCallback, pszDesc));
@@ -720,10 +720,10 @@ VMMR3DECL(int)  IOMR3IOPortRegisterRC(PVM pVM, PPDMDEVINS pDevIns, RTIOPORT Port
  * @param   pfnInStrCallback    Pointer to function which is gonna handle IN operations in GC.
  * @param   pszDesc             Pointer to description string. This must not be freed.
  */
-VMMR3DECL(int)  IOMR3IOPortRegisterR0(PVM pVM, PPDMDEVINS pDevIns, RTIOPORT PortStart, RTUINT cPorts, RTR0PTR pvUser,
-                                      R0PTRTYPE(PFNIOMIOPORTOUT) pfnOutCallback, R0PTRTYPE(PFNIOMIOPORTIN) pfnInCallback,
-                                      R0PTRTYPE(PFNIOMIOPORTOUTSTRING) pfnOutStrCallback, R0PTRTYPE(PFNIOMIOPORTINSTRING) pfnInStrCallback,
-                                      const char *pszDesc)
+VMMR3_INT_DECL(int) IOMR3IOPortRegisterR0(PVM pVM, PPDMDEVINS pDevIns, RTIOPORT PortStart, RTUINT cPorts, RTR0PTR pvUser,
+                                          R0PTRTYPE(PFNIOMIOPORTOUT) pfnOutCallback, R0PTRTYPE(PFNIOMIOPORTIN) pfnInCallback,
+                                          R0PTRTYPE(PFNIOMIOPORTOUTSTRING) pfnOutStrCallback, R0PTRTYPE(PFNIOMIOPORTINSTRING) pfnInStrCallback,
+                                          const char *pszDesc)
 {
     LogFlow(("IOMR3IOPortRegisterR0: pDevIns=%p PortStart=%#x cPorts=%#x pvUser=%RHv pfnOutCallback=%RHv pfnInCallback=%RHv pfnOutStrCallback=%RHv  pfnInStrCallback=%RHv pszDesc=%s\n",
              pDevIns, PortStart, cPorts, pvUser, pfnOutCallback, pfnInCallback, pfnOutStrCallback, pfnInStrCallback, pszDesc));
@@ -833,7 +833,7 @@ VMMR3DECL(int)  IOMR3IOPortRegisterR0(PVM pVM, PPDMDEVINS pDevIns, RTIOPORT Port
  * @remark  This function mainly for PCI PnP Config and will not do
  *          all the checks you might expect it to do.
  */
-VMMR3DECL(int)  IOMR3IOPortDeregister(PVM pVM, PPDMDEVINS pDevIns, RTIOPORT PortStart, RTUINT cPorts)
+VMMR3_INT_DECL(int) IOMR3IOPortDeregister(PVM pVM, PPDMDEVINS pDevIns, RTIOPORT PortStart, RTUINT cPorts)
 {
     LogFlow(("IOMR3IOPortDeregister: pDevIns=%p PortStart=%#x cPorts=%#x\n", pDevIns, PortStart, cPorts));
 
@@ -1403,22 +1403,24 @@ static DECLCALLBACK(void) iomR3IOPortInfo(PVM pVM, PCDBGFINFOHLP pHlp, const cha
  * @param   pszDesc             Pointer to description string. This must not be freed.
  */
 VMMR3_INT_DECL(int)
-IOMR3MmioRegisterR3(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, RTUINT cbRange, RTHCPTR pvUser,
+IOMR3MmioRegisterR3(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, uint32_t cbRange, RTHCPTR pvUser,
                     R3PTRTYPE(PFNIOMMMIOWRITE) pfnWriteCallback, R3PTRTYPE(PFNIOMMMIOREAD) pfnReadCallback,
-                    R3PTRTYPE(PFNIOMMMIOFILL) pfnFillCallback, const char *pszDesc)
+                    R3PTRTYPE(PFNIOMMMIOFILL) pfnFillCallback, uint32_t fFlags, const char *pszDesc)
 {
-    LogFlow(("IOMR3MmioRegisterR3: pDevIns=%p GCPhysStart=%RGp cbRange=%#x pvUser=%RHv pfnWriteCallback=%#x pfnReadCallback=%#x pfnFillCallback=%#x pszDesc=%s\n",
-             pDevIns, GCPhysStart, cbRange, pvUser, pfnWriteCallback, pfnReadCallback, pfnFillCallback, pszDesc));
+    LogFlow(("IOMR3MmioRegisterR3: pDevIns=%p GCPhysStart=%RGp cbRange=%#x pvUser=%RHv pfnWriteCallback=%#x pfnReadCallback=%#x pfnFillCallback=%#x fFlags=%#x pszDesc=%s\n",
+             pDevIns, GCPhysStart, cbRange, pvUser, pfnWriteCallback, pfnReadCallback, pfnFillCallback, fFlags, pszDesc));
     int rc;
 
     /*
      * Validate input.
      */
-    if (GCPhysStart + (cbRange - 1) < GCPhysStart)
-    {
-        AssertMsgFailed(("Wrapped! %RGp %#x bytes\n", GCPhysStart, cbRange));
-        return VERR_IOM_INVALID_MMIO_RANGE;
-    }
+    AssertMsgReturn(GCPhysStart + (cbRange - 1) >= GCPhysStart,("Wrapped! %RGp %#x bytes\n", GCPhysStart, cbRange),
+                    VERR_IOM_INVALID_MMIO_RANGE);
+    AssertMsgReturn(   !(fFlags & ~IOMMMIO_FLAGS_VALID_MASK)
+                    || (fFlags & IOMMMIO_FLAGS_READ_MODE) == IOMMMIO_FLAGS_READ_MODE
+                    || (fFlags & IOMMMIO_FLAGS_WRITE_MODE) > IOMMMIO_FLAGS_WRITE_DWORD_QWORD_READ_MISSING,
+                    ("%#x\n", fFlags),
+                    VERR_INVALID_PARAMETER);
 
     /*
      * Resolve the GC/R0 handler addresses lazily because of init order.
@@ -1430,18 +1432,6 @@ IOMR3MmioRegisterR3(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, RTUINT cb
         rc = PDMR3LdrGetSymbolR0(pVM, NULL, "IOMMMIOHandler", &pVM->iom.s.pfnMMIOHandlerR0);
         AssertLogRelRCReturn(rc, rc);
     }
-
-    /*
-     * For the 2nd+ instance, mangle the description string so it's unique.
-     * (PGM requires this.)
-     */
-    if (pDevIns->iInstance > 0) /** @todo Move to PDMDevHlp.cpp and use a string cache. */
-    {
-        pszDesc = MMR3HeapAPrintf(pVM, MM_TAG_IOM, "%s [%u]", pszDesc, pDevIns->iInstance);
-        if (!pszDesc)
-            return VERR_NO_MEMORY;
-    }
-
 
     /*
      * Allocate new range record and initialize it.
@@ -1457,12 +1447,6 @@ IOMR3MmioRegisterR3(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, RTUINT cb
         pRange->cRefs               = 1; /* The tree reference. */
         pRange->pszDesc             = pszDesc;
 
-        pRange->pvUserR3            = pvUser;
-        pRange->pDevInsR3           = pDevIns;
-        pRange->pfnReadCallbackR3   = pfnReadCallback;
-        pRange->pfnWriteCallbackR3  = pfnWriteCallback;
-        pRange->pfnFillCallbackR3   = pfnFillCallback;
-
         //pRange->pvUserR0            = NIL_RTR0PTR;
         //pRange->pDevInsR0           = NIL_RTR0PTR;
         //pRange->pfnReadCallbackR0   = NIL_RTR0PTR;
@@ -1474,6 +1458,14 @@ IOMR3MmioRegisterR3(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, RTUINT cb
         //pRange->pfnReadCallbackRC   = NIL_RTRCPTR;
         //pRange->pfnWriteCallbackRC  = NIL_RTRCPTR;
         //pRange->pfnFillCallbackRC   = NIL_RTRCPTR;
+
+        pRange->fFlags              = fFlags;
+
+        pRange->pvUserR3            = pvUser;
+        pRange->pDevInsR3           = pDevIns;
+        pRange->pfnReadCallbackR3   = pfnReadCallback;
+        pRange->pfnWriteCallbackR3  = pfnWriteCallback;
+        pRange->pfnFillCallbackR3   = pfnFillCallback;
 
         /*
          * Try register it with PGM and then insert it into the tree.
@@ -1528,7 +1520,7 @@ IOMR3MmioRegisterR3(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, RTUINT cb
  * @param   pfnFillCallback     Pointer to function which is gonna handle Fill/memset operations.
  */
 VMMR3_INT_DECL(int)
-IOMR3MmioRegisterRC(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, RTUINT cbRange, RTGCPTR pvUser,
+IOMR3MmioRegisterRC(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, uint32_t cbRange, RTGCPTR pvUser,
                     RCPTRTYPE(PFNIOMMMIOWRITE) pfnWriteCallback, RCPTRTYPE(PFNIOMMMIOREAD) pfnReadCallback,
                     RCPTRTYPE(PFNIOMMMIOFILL) pfnFillCallback)
 {
@@ -1584,7 +1576,7 @@ IOMR3MmioRegisterRC(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, RTUINT cb
  * @param   pfnFillCallback     Pointer to function which is gonna handle Fill/memset operations.
  */
 VMMR3_INT_DECL(int)
-IOMR3MmioRegisterR0(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, RTUINT cbRange, RTR0PTR pvUser,
+IOMR3MmioRegisterR0(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, uint32_t cbRange, RTR0PTR pvUser,
                     R0PTRTYPE(PFNIOMMMIOWRITE) pfnWriteCallback,
                     R0PTRTYPE(PFNIOMMMIOREAD) pfnReadCallback,
                     R0PTRTYPE(PFNIOMMMIOFILL) pfnFillCallback)
@@ -1637,7 +1629,7 @@ IOMR3MmioRegisterR0(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, RTUINT cb
  * @remark  This function mainly for PCI PnP Config and will not do
  *          all the checks you might expect it to do.
  */
-VMMR3_INT_DECL(int) IOMR3MmioDeregister(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, RTUINT cbRange)
+VMMR3_INT_DECL(int) IOMR3MmioDeregister(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, uint32_t cbRange)
 {
     LogFlow(("IOMR3MmioDeregister: pDevIns=%p GCPhysStart=%RGp cbRange=%#x\n", pDevIns, GCPhysStart, cbRange));
 

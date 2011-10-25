@@ -75,6 +75,161 @@ static const unsigned g_aSize2Shift[] =
 
 
 /**
+ * Deals with complicated MMIO writes.
+ *
+ * Complicatd means unaligned or non-dword/qword align accesses depending on
+ * the MMIO region's access mode flags.
+ *
+ * @returns Strict VBox status code. Any EM scheduling status code,
+ *          VINF_IOM_HC_MMIO_WRITE, VINF_IOM_HC_MMIO_READ_WRITE or
+ *          VINF_IOM_HC_MMIO_READ may be returned.
+ *
+ * @param   pRange              The range to write to.
+ * @param   GCPhys              The physical address to start writing.
+ * @param   pvValue             Where to store the value.
+ * @param   cbValue             The size of the value to write.
+ */
+static VBOXSTRICTRC iomMMIODoComplicatedWrite(PIOMMMIORANGE pRange, RTGCPHYS GCPhys, void const *pvValue, unsigned cbValue)
+{
+    AssertReturn(   (pRange->fFlags & IOMMMIO_FLAGS_WRITE_MODE) != IOMMMIO_FLAGS_WRITE_PASSTHRU
+                 || (pRange->fFlags & IOMMMIO_FLAGS_WRITE_MODE) <= IOMMMIO_FLAGS_WRITE_DWORD_QWORD_READ_MISSING,
+                 VERR_INTERNAL_ERROR_5);
+    AssertReturn(cbValue != 0 && cbValue <= 16, VERR_INTERNAL_ERROR_4);
+    RTGCPHYS const GCPhysStart  = GCPhys; NOREF(GCPhysStart);
+    bool const     fReadMissing = (pRange->fFlags & IOMMMIO_FLAGS_WRITE_MODE) >= IOMMMIO_FLAGS_WRITE_DWORD_READ_MISSING;
+
+    /*
+     * Split and conquer.
+     */
+    int rc = VINF_SUCCESS;
+    for (;;)
+    {
+        unsigned const  offAccess  = GCPhys & 3;
+        unsigned        cbThisPart = 4 - offAccess;
+        if (cbThisPart > cbValue)
+            cbThisPart = cbValue;
+
+        /*
+         * Get the missing bits (if any).
+         */
+        uint32_t u32MissingValue = 0;
+        if (fReadMissing && cbThisPart != 4)
+        {
+            int rc2 = pRange->CTX_SUFF(pfnReadCallback)(pRange->CTX_SUFF(pDevIns), pRange->CTX_SUFF(pvUser),
+                                                        GCPhys & ~(RTGCPHYS)3, &u32MissingValue, sizeof(u32MissingValue));
+            switch (rc2)
+            {
+                case VINF_SUCCESS:
+                    break;
+                case VINF_IOM_MMIO_UNUSED_FF:
+                    u32MissingValue = UINT32_C(0xffffffff);
+                    break;
+                case VINF_IOM_MMIO_UNUSED_00:
+                    u32MissingValue = 0;
+                    break;
+                case VINF_IOM_HC_MMIO_READ:
+                case VINF_IOM_HC_MMIO_READ_WRITE:
+                case VINF_IOM_HC_MMIO_WRITE:
+                    /** @todo What if we've split a transfer and already read
+                     * something?  Since reads can have sideeffects we could be
+                     * kind of screwed here... */
+                    LogFlow(("iomMMIODoComplicatedWrite: GCPhys=%RGp GCPhysStart=%RGp cbValue=%u rc=%Rrc [read]\n", GCPhys, GCPhysStart, cbValue, rc2));
+                    return rc2;
+                default:
+                    if (RT_FAILURE(rc2))
+                    {
+                        Log(("iomMMIODoComplicatedWrite: GCPhys=%RGp GCPhysStart=%RGp cbValue=%u rc=%Rrc [read]\n", GCPhys, GCPhysStart, cbValue, rc2));
+                        return rc2;
+                    }
+                    AssertMsgReturn(rc2 >= VINF_EM_FIRST && rc2 <= VINF_EM_LAST, ("%Rrc\n", rc2), VERR_IPE_UNEXPECTED_INFO_STATUS);
+                    if (rc == VINF_SUCCESS || rc2 < rc)
+                        rc = rc2;
+                    break;
+            }
+        }
+
+        /*
+         * Merge missing and given bits.
+         */
+        uint32_t u32GivenMask;
+        uint32_t u32GivenValue;
+        switch (cbThisPart)
+        {
+            case 1:
+                u32GivenValue = *(uint8_t  const *)pvValue;
+                u32GivenMask  = UINT32_C(0x000000ff);
+                break;
+            case 2:
+                u32GivenValue = *(uint16_t const *)pvValue;
+                u32GivenMask  = UINT32_C(0x0000ffff);
+                break;
+            case 3:
+                u32GivenValue = RT_MAKE_U32_FROM_U8(((uint8_t const *)pvValue)[0], ((uint8_t const *)pvValue)[1],
+                                                    ((uint8_t const *)pvValue)[2], 0);
+                u32GivenMask  = UINT32_C(0x00ffffff);
+                break;
+            case 4:
+                u32GivenValue = *(uint32_t const *)pvValue;
+                u32GivenMask  = UINT32_C(0xffffffff);
+                break;
+            default:
+                AssertFailedReturn(VERR_INTERNAL_ERROR_3);
+        }
+        if (offAccess)
+        {
+            u32GivenValue <<= offAccess * 8;
+            u32GivenMask <<= offAccess * 8;
+        }
+
+        uint32_t u32Value = (u32MissingValue & ~u32GivenMask)
+                          | (u32GivenValue & u32GivenMask);
+
+        /*
+         * Do DWORD write to the device.
+         */
+        int rc2 = pRange->CTX_SUFF(pfnWriteCallback)(pRange->CTX_SUFF(pDevIns), pRange->CTX_SUFF(pvUser),
+                                                     GCPhys & ~(RTGCPHYS)3, &u32Value, sizeof(u32Value));
+        switch (rc2)
+        {
+            case VINF_SUCCESS:
+                break;
+            case VINF_IOM_HC_MMIO_READ:
+            case VINF_IOM_HC_MMIO_READ_WRITE:
+            case VINF_IOM_HC_MMIO_WRITE:
+                /** @todo What if we've split a transfer and already read
+                 * something?  Since reads can have sideeffects we could be
+                 * kind of screwed here... */
+                LogFlow(("iomMMIODoComplicatedWrite: GCPhys=%RGp GCPhysStart=%RGp cbValue=%u rc=%Rrc [write]\n", GCPhys, GCPhysStart, cbValue, rc2));
+                return rc2;
+            default:
+                if (RT_FAILURE(rc2))
+                {
+                    Log(("iomMMIODoComplicatedWrite: GCPhys=%RGp GCPhysStart=%RGp cbValue=%u rc=%Rrc [write]\n", GCPhys, GCPhysStart, cbValue, rc2));
+                    return rc2;
+                }
+                AssertMsgReturn(rc2 >= VINF_EM_FIRST && rc2 <= VINF_EM_LAST, ("%Rrc\n", rc2), VERR_IPE_UNEXPECTED_INFO_STATUS);
+                if (rc == VINF_SUCCESS || rc2 < rc)
+                    rc = rc2;
+                break;
+        }
+
+        /*
+         * Advance.
+         */
+        cbValue -= cbThisPart;
+        if (!cbValue)
+            break;
+        GCPhys += cbThisPart;
+        pvValue = (uint8_t const *)pvValue + cbThisPart;
+    }
+
+    return rc;
+}
+
+
+
+
+/**
  * Wrapper which does the write and updates range statistics when such are enabled.
  * @warning RT_SUCCESS(rc=VINF_IOM_HC_MMIO_WRITE) is TRUE!
  */
@@ -86,15 +241,181 @@ static int iomMMIODoWrite(PVM pVM, PIOMMMIORANGE pRange, RTGCPHYS GCPhysFault, c
 #endif
 
     STAM_PROFILE_START(&pStats->CTX_SUFF_Z(ProfWrite), a);
-    int rc;
+    VBOXSTRICTRC rc;
     if (RT_LIKELY(pRange->CTX_SUFF(pfnWriteCallback)))
-        rc = pRange->CTX_SUFF(pfnWriteCallback)(pRange->CTX_SUFF(pDevIns), pRange->CTX_SUFF(pvUser),
-                                                GCPhysFault, (void *)pvData, cb); /** @todo fix const!! */
+    {
+        if (   (cb == 4 && !(GCPhysFault & 3))
+            || (pRange->fFlags & IOMMMIO_FLAGS_WRITE_MODE) == IOMMMIO_FLAGS_WRITE_PASSTHRU
+            || (cb == 8 && !(GCPhysFault & 7)) )
+            rc = pRange->CTX_SUFF(pfnWriteCallback)(pRange->CTX_SUFF(pDevIns), pRange->CTX_SUFF(pvUser),
+                                                    GCPhysFault, (void *)pvData, cb); /** @todo fix const!! */
+        else
+            rc = iomMMIODoComplicatedWrite(pRange, GCPhysFault, pvData, cb);
+    }
     else
         rc = VINF_SUCCESS;
     STAM_PROFILE_STOP(&pStats->CTX_SUFF_Z(ProfWrite), a);
     STAM_COUNTER_INC(&pStats->Accesses);
+    return VBOXSTRICTRC_TODO(rc);
+}
+
+
+/**
+ * Deals with complicated MMIO reads.
+ *
+ * Complicatd means unaligned or non-dword/qword align accesses depending on
+ * the MMIO region's access mode flags.
+ *
+ * @returns Strict VBox status code. Any EM scheduling status code,
+ *          VINF_IOM_HC_MMIO_READ, VINF_IOM_HC_MMIO_READ_WRITE or
+ *          VINF_IOM_HC_MMIO_WRITE may be returned.
+ *
+ * @param   pRange              The range to read from.
+ * @param   GCPhys              The physical address to start reading.
+ * @param   pvValue             Where to store the value.
+ * @param   cbValue             The size of the value to read.
+ */
+static VBOXSTRICTRC iomMMIODoComplicatedRead(PIOMMMIORANGE pRange, RTGCPHYS GCPhys, void *pvValue, unsigned cbValue)
+{
+    AssertReturn(   (pRange->fFlags & IOMMMIO_FLAGS_READ_MODE) == IOMMMIO_FLAGS_READ_DWORD
+                 || (pRange->fFlags & IOMMMIO_FLAGS_READ_MODE) == IOMMMIO_FLAGS_READ_DWORD_QWORD,
+                 VERR_INTERNAL_ERROR_5);
+    AssertReturn(cbValue != 0 && cbValue <= 16, VERR_INTERNAL_ERROR_4);
+    RTGCPHYS const GCPhysStart = GCPhys; NOREF(GCPhysStart);
+
+    /*
+     * Split and conquer.
+     */
+    int rc = VINF_SUCCESS;
+    for (;;)
+    {
+        /*
+         * Do DWORD read from the device.
+         */
+        uint32_t u32Value;
+        int rc2 = pRange->CTX_SUFF(pfnReadCallback)(pRange->CTX_SUFF(pDevIns), pRange->CTX_SUFF(pvUser),
+                                                    GCPhys & ~(RTGCPHYS)3, &u32Value, sizeof(u32Value));
+        switch (rc2)
+        {
+            case VINF_SUCCESS:
+                break;
+            case VINF_IOM_MMIO_UNUSED_FF:
+                u32Value = UINT32_C(0xffffffff);
+                break;
+            case VINF_IOM_MMIO_UNUSED_00:
+                u32Value = 0;
+                break;
+            case VINF_IOM_HC_MMIO_READ:
+            case VINF_IOM_HC_MMIO_READ_WRITE:
+            case VINF_IOM_HC_MMIO_WRITE:
+                /** @todo What if we've split a transfer and already read
+                 * something?  Since reads can have sideeffects we could be
+                 * kind of screwed here... */
+                LogFlow(("iomMMIODoComplicatedRead: GCPhys=%RGp GCPhysStart=%RGp cbValue=%u rc=%Rrc\n", GCPhys, GCPhysStart, cbValue, rc2));
+                return rc2;
+            default:
+                if (RT_FAILURE(rc2))
+                {
+                    Log(("iomMMIODoComplicatedRead: GCPhys=%RGp GCPhysStart=%RGp cbValue=%u rc=%Rrc\n", GCPhys, GCPhysStart, cbValue, rc2));
+                    return rc2;
+                }
+                AssertMsgReturn(rc2 >= VINF_EM_FIRST && rc2 <= VINF_EM_LAST, ("%Rrc\n", rc2), VERR_IPE_UNEXPECTED_INFO_STATUS);
+                if (rc == VINF_SUCCESS || rc2 < rc)
+                    rc = rc2;
+                break;
+        }
+        u32Value >>= (GCPhys & 3) * 8;
+
+        /*
+         * Write what we've read.
+         */
+        unsigned cbThisPart = 4 - (GCPhys & 3);
+        if (cbThisPart > cbValue)
+            cbThisPart = cbValue;
+
+        switch (cbThisPart)
+        {
+            case 1:
+                *(uint8_t *)pvValue = (uint8_t)u32Value;
+                break;
+            case 2:
+                *(uint16_t *)pvValue = (uint16_t)u32Value;
+                break;
+            case 3:
+                ((uint8_t *)pvValue)[0] = RT_BYTE1(u32Value);
+                ((uint8_t *)pvValue)[1] = RT_BYTE2(u32Value);
+                ((uint8_t *)pvValue)[2] = RT_BYTE3(u32Value);
+                break;
+            case 4:
+                *(uint32_t *)pvValue = u32Value;
+                break;
+        }
+
+        /*
+         * Advance.
+         */
+        cbValue -= cbThisPart;
+        if (!cbValue)
+            break;
+        GCPhys += cbThisPart;
+        pvValue = (uint8_t *)pvValue + cbThisPart;
+    }
+
     return rc;
+}
+
+
+/**
+ * Implements VINF_IOM_MMIO_UNUSED_FF.
+ *
+ * @returns VINF_SUCCESS.
+ * @param   pvValue             Where to store the zeros.
+ * @param   cbValue             How many bytes to read.
+ */
+static int iomMMIODoReadFFs(void *pvValue, unsigned cbValue)
+{
+    switch (cbValue)
+    {
+        case 1: *(uint8_t  *)pvValue = UINT8_C(0xff); break;
+        case 2: *(uint16_t *)pvValue = UINT16_C(0xffff); break;
+        case 4: *(uint32_t *)pvValue = UINT32_C(0xffffffff); break;
+        case 8: *(uint64_t *)pvValue = UINT64_C(0xffffffffffffffff); break;
+        default:
+        {
+            uint8_t *pb = (uint8_t *)pvValue;
+            while (cbValue--)
+                *pb++ = UINT8_C(0xff);
+            break;
+        }
+    }
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Implements VINF_IOM_MMIO_UNUSED_00.
+ *
+ * @returns VINF_SUCCESS.
+ * @param   pvValue             Where to store the zeros.
+ * @param   cbValue             How many bytes to read.
+ */
+static int iomMMIODoRead00s(void *pvValue, unsigned cbValue)
+{
+    switch (cbValue)
+    {
+        case 1: *(uint8_t  *)pvValue = UINT8_C(0x00); break;
+        case 2: *(uint16_t *)pvValue = UINT16_C(0x0000); break;
+        case 4: *(uint32_t *)pvValue = UINT32_C(0x00000000); break;
+        case 8: *(uint64_t *)pvValue = UINT64_C(0x0000000000000000); break;
+        default:
+        {
+            uint8_t *pb = (uint8_t *)pvValue;
+            while (cbValue--)
+                *pb++ = UINT8_C(0x00);
+            break;
+        }
+    }
+    return VINF_SUCCESS;
 }
 
 
@@ -106,46 +427,32 @@ DECLINLINE(int) iomMMIODoRead(PVM pVM, PIOMMMIORANGE pRange, RTGCPHYS GCPhys, vo
 #ifdef VBOX_WITH_STATISTICS
     PIOMMMIOSTATS pStats = iomMmioGetStats(pVM, GCPhys, pRange);
     Assert(pStats);
+    STAM_PROFILE_START(&pStats->CTX_SUFF_Z(ProfRead), a);
 #endif
 
-    STAM_PROFILE_START(&pStats->CTX_SUFF_Z(ProfRead), a);
-    int rc;
+    VBOXSTRICTRC rc;
     if (RT_LIKELY(pRange->CTX_SUFF(pfnReadCallback)))
-        rc = pRange->CTX_SUFF(pfnReadCallback)(pRange->CTX_SUFF(pDevIns), pRange->CTX_SUFF(pvUser), GCPhys, pvValue, cbValue);
+    {
+        if (   (cbValue == 4 && !(GCPhys & 3))
+            || (pRange->fFlags & IOMMMIO_FLAGS_READ_MODE) == IOMMMIO_FLAGS_READ_PASSTHRU
+            || (cbValue == 8 && !(GCPhys & 7)) )
+            rc = pRange->CTX_SUFF(pfnReadCallback)(pRange->CTX_SUFF(pDevIns), pRange->CTX_SUFF(pvUser), GCPhys, pvValue, cbValue);
+        else
+            rc = iomMMIODoComplicatedRead(pRange, GCPhys, pvValue, cbValue);
+    }
     else
         rc = VINF_IOM_MMIO_UNUSED_FF;
     if (rc != VINF_SUCCESS)
     {
-        switch (rc)
+        switch (VBOXSTRICTRC_VAL(rc))
         {
-            case VINF_IOM_MMIO_UNUSED_FF:
-                switch (cbValue)
-                {
-                    case 1: *(uint8_t  *)pvValue = UINT8_C(0xff); break;
-                    case 2: *(uint16_t *)pvValue = UINT16_C(0xffff); break;
-                    case 4: *(uint32_t *)pvValue = UINT32_C(0xffffffff); break;
-                    case 8: *(uint64_t *)pvValue = UINT64_C(0xffffffffffffffff); break;
-                    default: AssertReleaseMsgFailed(("cbValue=%d GCPhys=%RGp\n", cbValue, GCPhys)); break;
-                }
-                rc = VINF_SUCCESS;
-                break;
-
-            case VINF_IOM_MMIO_UNUSED_00:
-                switch (cbValue)
-                {
-                    case 1: *(uint8_t  *)pvValue = UINT8_C(0x00); break;
-                    case 2: *(uint16_t *)pvValue = UINT16_C(0x0000); break;
-                    case 4: *(uint32_t *)pvValue = UINT32_C(0x00000000); break;
-                    case 8: *(uint64_t *)pvValue = UINT64_C(0x0000000000000000); break;
-                    default: AssertReleaseMsgFailed(("cbValue=%d GCPhys=%RGp\n", cbValue, GCPhys)); break;
-                }
-                rc = VINF_SUCCESS;
-                break;
+            case VINF_IOM_MMIO_UNUSED_FF: rc = iomMMIODoReadFFs(pvValue, cbValue); break;
+            case VINF_IOM_MMIO_UNUSED_00: rc = iomMMIODoRead00s(pvValue, cbValue); break;
         }
     }
     STAM_PROFILE_STOP(&pStats->CTX_SUFF_Z(ProfRead), a);
     STAM_COUNTER_INC(&pStats->Accesses);
-    return rc;
+    return VBOXSTRICTRC_VAL(rc);
 }
 
 
@@ -1437,12 +1744,12 @@ DECLCALLBACK(int) IOMR3MMIOHandler(PVM pVM, RTGCPHYS GCPhysFault, void *pvPhys, 
 VMMDECL(VBOXSTRICTRC) IOMMMIORead(PVM pVM, RTGCPHYS GCPhys, uint32_t *pu32Value, size_t cbValue)
 {
     /* Take the IOM lock before performing any MMIO. */
-    int rc = IOM_LOCK(pVM);
+    VBOXSTRICTRC rc = IOM_LOCK(pVM);
 #ifndef IN_RING3
     if (rc == VERR_SEM_BUSY)
         return VINF_IOM_HC_MMIO_WRITE;
 #endif
-    AssertRC(rc);
+    AssertRC(VBOXSTRICTRC_VAL(rc));
 #if defined(IEM_VERIFICATION_MODE) && defined(IN_RING3)
     IEMNotifyMMIORead(pVM, GCPhys, cbValue);
 #endif
@@ -1490,9 +1797,15 @@ VMMDECL(VBOXSTRICTRC) IOMMMIORead(PVM pVM, RTGCPHYS GCPhys, uint32_t *pu32Value,
          * Perform the read and deal with the result.
          */
         STAM_PROFILE_START(&pStats->CTX_SUFF_Z(ProfRead), a);
-        rc = pRange->CTX_SUFF(pfnReadCallback)(pRange->CTX_SUFF(pDevIns), pRange->CTX_SUFF(pvUser), GCPhys, pu32Value, (unsigned)cbValue);
+        if (   (cbValue == 4 && !(GCPhys & 3))
+            || (pRange->fFlags & IOMMMIO_FLAGS_READ_MODE) == IOMMMIO_FLAGS_READ_PASSTHRU
+            || (cbValue == 8 && !(GCPhys & 7)) )
+            rc = pRange->CTX_SUFF(pfnReadCallback)(pRange->CTX_SUFF(pDevIns), pRange->CTX_SUFF(pvUser), GCPhys,
+                                                   pu32Value, (unsigned)cbValue);
+        else
+            rc = iomMMIODoComplicatedRead(pRange, GCPhys, pu32Value, (unsigned)cbValue);
         STAM_PROFILE_STOP(&pStats->CTX_SUFF_Z(ProfRead), a);
-        switch (rc)
+        switch (VBOXSTRICTRC_VAL(rc))
         {
             case VINF_SUCCESS:
                 Log4(("IOMMMIORead: GCPhys=%RGp *pu32=%08RX32 cb=%d rc=VINF_SUCCESS\n", GCPhys, *pu32Value, cbValue));
@@ -1505,35 +1818,21 @@ VMMDECL(VBOXSTRICTRC) IOMMMIORead(PVM pVM, RTGCPHYS GCPhys, uint32_t *pu32Value,
                 STAM_COUNTER_INC(&pStats->CTX_MID_Z(Read,ToR3));
 #endif
             default:
-                Log4(("IOMMMIORead: GCPhys=%RGp *pu32=%08RX32 cb=%d rc=%Rrc\n", GCPhys, *pu32Value, cbValue, rc));
+                Log4(("IOMMMIORead: GCPhys=%RGp *pu32=%08RX32 cb=%d rc=%Rrc\n", GCPhys, *pu32Value, cbValue, VBOXSTRICTRC_VAL(rc)));
                 iomMmioReleaseRange(pVM, pRange);
                 PDMCritSectLeave(pDevIns->CTX_SUFF(pCritSectRo));
                 return rc;
 
             case VINF_IOM_MMIO_UNUSED_00:
-                switch (cbValue)
-                {
-                    case 1: *(uint8_t  *)pu32Value = UINT8_C(0x00); break;
-                    case 2: *(uint16_t *)pu32Value = UINT16_C(0x0000); break;
-                    case 4: *(uint32_t *)pu32Value = UINT32_C(0x00000000); break;
-                    case 8: *(uint64_t *)pu32Value = UINT64_C(0x0000000000000000); break;
-                    default: AssertReleaseMsgFailed(("cbValue=%d GCPhys=%RGp\n", cbValue, GCPhys)); break;
-                }
-                Log4(("IOMMMIORead: GCPhys=%RGp *pu32=%08RX32 cb=%d rc=%Rrc\n", GCPhys, *pu32Value, cbValue, rc));
+                iomMMIODoRead00s(pu32Value, cbValue);
+                Log4(("IOMMMIORead: GCPhys=%RGp *pu32=%08RX32 cb=%d rc=%Rrc\n", GCPhys, *pu32Value, cbValue, VBOXSTRICTRC_VAL(rc)));
                 iomMmioReleaseRange(pVM, pRange);
                 PDMCritSectLeave(pDevIns->CTX_SUFF(pCritSectRo));
                 return VINF_SUCCESS;
 
             case VINF_IOM_MMIO_UNUSED_FF:
-                switch (cbValue)
-                {
-                    case 1: *(uint8_t  *)pu32Value = UINT8_C(0xff); break;
-                    case 2: *(uint16_t *)pu32Value = UINT16_C(0xffff); break;
-                    case 4: *(uint32_t *)pu32Value = UINT32_C(0xffffffff); break;
-                    case 8: *(uint64_t *)pu32Value = UINT64_C(0xffffffffffffffff); break;
-                    default: AssertReleaseMsgFailed(("cbValue=%d GCPhys=%RGp\n", cbValue, GCPhys)); break;
-                }
-                Log4(("IOMMMIORead: GCPhys=%RGp *pu32=%08RX32 cb=%d rc=%Rrc\n", GCPhys, *pu32Value, cbValue, rc));
+                iomMMIODoReadFFs(pu32Value, cbValue);
+                Log4(("IOMMMIORead: GCPhys=%RGp *pu32=%08RX32 cb=%d rc=%Rrc\n", GCPhys, *pu32Value, cbValue, VBOXSTRICTRC_VAL(rc)));
                 iomMmioReleaseRange(pVM, pRange);
                 PDMCritSectLeave(pDevIns->CTX_SUFF(pCritSectRo));
                 return VINF_SUCCESS;
@@ -1554,14 +1853,7 @@ VMMDECL(VBOXSTRICTRC) IOMMMIORead(PVM pVM, RTGCPHYS GCPhys, uint32_t *pu32Value,
      */
     STAM_PROFILE_START(&pStats->CTX_SUFF_Z(ProfRead), a); /** @todo STAM_PROFILE_ADD_ZERO_PERIOD */
     STAM_PROFILE_STOP(&pStats->CTX_SUFF_Z(ProfRead), a);
-    switch (cbValue)
-    {
-        case 1: *(uint8_t  *)pu32Value = UINT8_C(0xff); break;
-        case 2: *(uint16_t *)pu32Value = UINT16_C(0xffff); break;
-        case 4: *(uint32_t *)pu32Value = UINT32_C(0xffffffff); break;
-        case 8: *(uint64_t *)pu32Value = UINT64_C(0xffffffffffffffff); break;
-        default: AssertReleaseMsgFailed(("cbValue=%d GCPhys=%RGp\n", cbValue, GCPhys)); break;
-    }
+    iomMMIODoReadFFs(pu32Value, cbValue);
     Log4(("IOMMMIORead: GCPhys=%RGp *pu32=%08RX32 cb=%d rc=VINF_SUCCESS\n", GCPhys, *pu32Value, cbValue));
     IOM_UNLOCK(pVM);
     return VINF_SUCCESS;
@@ -1581,12 +1873,12 @@ VMMDECL(VBOXSTRICTRC) IOMMMIORead(PVM pVM, RTGCPHYS GCPhys, uint32_t *pu32Value,
 VMMDECL(VBOXSTRICTRC) IOMMMIOWrite(PVM pVM, RTGCPHYS GCPhys, uint32_t u32Value, size_t cbValue)
 {
     /* Take the IOM lock before performing any MMIO. */
-    int rc = IOM_LOCK(pVM);
+    VBOXSTRICTRC rc = IOM_LOCK(pVM);
 #ifndef IN_RING3
     if (rc == VERR_SEM_BUSY)
         return VINF_IOM_HC_MMIO_WRITE;
 #endif
-    AssertRC(rc);
+    AssertRC(VBOXSTRICTRC_VAL(rc));
 #if defined(IEM_VERIFICATION_MODE) && defined(IN_RING3)
     IEMNotifyMMIOWrite(pVM, GCPhys, u32Value, cbValue);
 #endif
@@ -1634,15 +1926,20 @@ VMMDECL(VBOXSTRICTRC) IOMMMIOWrite(PVM pVM, RTGCPHYS GCPhys, uint32_t u32Value, 
          * Perform the write.
          */
         STAM_PROFILE_START(&pStats->CTX_SUFF_Z(ProfWrite), a);
-        rc = pRange->CTX_SUFF(pfnWriteCallback)(pRange->CTX_SUFF(pDevIns), pRange->CTX_SUFF(pvUser),
-                                                GCPhys, &u32Value, (unsigned)cbValue);
+        if (   (cbValue == 4 && !(GCPhys & 3))
+            || (pRange->fFlags & IOMMMIO_FLAGS_WRITE_MODE) == IOMMMIO_FLAGS_WRITE_PASSTHRU
+            || (cbValue == 8 && !(GCPhys & 7)) )
+            rc = pRange->CTX_SUFF(pfnWriteCallback)(pRange->CTX_SUFF(pDevIns), pRange->CTX_SUFF(pvUser),
+                                                    GCPhys, &u32Value, (unsigned)cbValue);
+        else
+            rc = iomMMIODoComplicatedWrite(pRange, GCPhys, &u32Value, (unsigned)cbValue);
         STAM_PROFILE_STOP(&pStats->CTX_SUFF_Z(ProfWrite), a);
 #ifndef IN_RING3
         if (    rc == VINF_IOM_HC_MMIO_WRITE
             ||  rc == VINF_IOM_HC_MMIO_READ_WRITE)
             STAM_COUNTER_INC(&pStats->CTX_MID_Z(Write,ToR3));
 #endif
-        Log4(("IOMMMIOWrite: GCPhys=%RGp u32=%08RX32 cb=%d rc=%Rrc\n", GCPhys, u32Value, cbValue, rc));
+        Log4(("IOMMMIOWrite: GCPhys=%RGp u32=%08RX32 cb=%d rc=%Rrc\n", GCPhys, u32Value, cbValue, VBOXSTRICTRC_VAL(rc)));
         iomMmioReleaseRange(pVM, pRange);
         PDMCritSectLeave(pDevIns->CTX_SUFF(pCritSectRo));
         return rc;
