@@ -293,8 +293,6 @@ static void caReinitOutput(HWVoiceOut *hw);
 
 static int fltInitOutput(filterVoiceOut *pVoice)
 {
-    uint32_t uSize = 0; /* temporary size of properties */
-    uint32_t uFlag = 0; /* for setting flags */
     uint32_t cFrames; /* default frame count */
     uint32_t cSamples; /* samples count */
 
