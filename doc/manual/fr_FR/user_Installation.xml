@@ -34,7 +34,6 @@
           </listitem>
 
           <listitem>
-sur la ligne de commande. Ceci va extraire les deux installateurs dans un répertoire temporaire dans lequel vous trouverez ensuite les fichiers .MSI habituels. Puis, vous pouvez faire un 
             <para>ou en entrant <screen>VirtualBox.exe -extract</screen></para>
 
             <para>sur la ligne de commande. Ceci va extraire les deux 
@@ -261,7 +260,6 @@ sur la ligne de commande. Ceci va extraire les deux installateurs dans un réper
         </listitem>
       </itemizedlist>
 
-Pour être précis, ces paquets ne sont nécessaires que si vous voulez lancer les interfaces graphiques de VirtualBox. En particulier, VirtualBox, notre interface graphique principale, exige à la fois Qt et SDL ; VboxSDL, notre interface graphique simplifiée, n'exige que SDL. À l'inverse, si vous ne voulez qu'exécuter le serveur VRDP headless fourni avec VirtualBox, ni Qt ni SDL ne sont nécessaires.
       <note>
         <para>Pour être précis, ces paquets ne sont nécessaires que si vous 
         voulez lancer les interfaces graphiques de VirtualBox. En particulier, 
@@ -281,8 +279,6 @@ Pour être précis, ces paquets ne sont nécessaires que si vous voulez lancer l
       processeur pour l'exécution du système invité. Sans ce module noyau, vous
       pourrez travailler avec des machines virtuelles dans l'interface de 
       configuration mais vous ne pourrez lancer aucune machine virtuelle.</para>
-
-Le module noyau de VirtualBox est automatiquement installé sur votre système quand vous installez VirtualBox. Pour le maintenir avec les futures mises à jour du noyau, pour les distributions Linux récentes, - par exemple,  Fedora Core 5 et supérieur, Ubuntu 7.10 (Gutsy) et supérieur et Mandriva 2007.1 et supérieur -, nous recommandons en général d'installer le Dynamic Kernel Module Support (DKMS) (support de module noyau dynamique 1).  Cet environnement aide à construire des modules de noyau et à gérer  les mises à jour du noyau.
 
       <para>Le module noyau de VirtualBox est automatiquement installé sur votre
       système quand vous installez VirtualBox. Pour le maintenir avec les futures
