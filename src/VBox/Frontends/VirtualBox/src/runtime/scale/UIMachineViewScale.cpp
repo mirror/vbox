@@ -75,6 +75,9 @@ UIMachineViewScale::~UIMachineViewScale()
     /* Save machine view settings: */
     saveMachineViewSettings();
 
+    /* Disable scaling: */
+    frameBuffer()->setScaledSize(QSize());
+
     /* Cleanup frame buffer: */
     cleanupFrameBuffer();
 }
@@ -256,78 +259,6 @@ bool UIMachineViewScale::eventFilter(QObject *pWatched, QEvent *pEvent)
     }
 
     return UIMachineView::eventFilter(pWatched, pEvent);
-}
-
-void UIMachineViewScale::prepareFrameBuffer()
-{
-    /* That method is partial copy-paste of UIMachineView::prepareFrameBuffer()
-     * and its temporary here just because not all of our frame-buffers are currently supports scale-mode;
-     * When all of our frame-buffers will be supporting scale-mode, method will be removed!
-     * Here we are processing only these frame-buffer types, which knows scale-mode! */
-
-    /* Prepare frame-buffer depending on render-mode: */
-    switch (vboxGlobal().vmRenderMode())
-    {
-#ifdef VBOX_GUI_USE_QUARTZ2D
-        case VBoxDefs::Quartz2DMode:
-            /* Indicate that we are doing all drawing stuff ourself: */
-            viewport()->setAttribute(Qt::WA_PaintOnScreen);
-            m_pFrameBuffer = new UIFrameBufferQuartz2D(this);
-            break;
-#endif /* VBOX_GUI_USE_QUARTZ2D */
-        default:
-#ifdef VBOX_GUI_USE_QIMAGE
-        case VBoxDefs::QImageMode:
-            m_pFrameBuffer = new UIFrameBufferQImage(this);
-            break;
-#endif /* VBOX_GUI_USE_QIMAGE */
-            AssertReleaseMsgFailed(("Scale-mode is currently NOT supporting that render-mode: %d\n", vboxGlobal().vmRenderMode()));
-            LogRel(("Scale-mode is currently NOT supporting that render-mode: %d\n", vboxGlobal().vmRenderMode()));
-            qApp->exit(1);
-            break;
-    }
-
-    /* If frame-buffer was prepared: */
-    if (m_pFrameBuffer)
-    {
-        /* Prepare display: */
-        CDisplay display = session().GetConsole().GetDisplay();
-        Assert(!display.isNull());
-        m_pFrameBuffer->AddRef();
-        display.SetFramebuffer(m_uScreenId, CFramebuffer(m_pFrameBuffer));
-    }
-
-    QSize size;
-#ifdef Q_WS_X11
-    /* Processing pseudo resize-event to synchronize frame-buffer with stored
-     * framebuffer size. On X11 this will be additional done when the machine
-     * state was 'saved'. */
-    if (session().GetMachine().GetState() == KMachineState_Saved)
-        size = guestSizeHint();
-#endif /* Q_WS_X11 */
-    /* If there is a preview image saved, we will resize the framebuffer to the
-     * size of that image. */
-    ULONG buffer = 0, width = 0, height = 0;
-    CMachine machine = session().GetMachine();
-    machine.QuerySavedScreenshotPNGSize(0, buffer, width, height);
-    if (buffer > 0)
-    {
-        /* Init with the screenshot size */
-        size = QSize(width, height);
-        /* Try to get the real guest dimensions from the save state */
-        ULONG guestWidth = 0, guestHeight = 0;
-        machine.QuerySavedGuestSize(0, guestWidth, guestHeight);
-        if (   guestWidth  > 0
-            && guestHeight > 0)
-            size = QSize(guestWidth, guestHeight);
-    }
-    /* If we have a valid size, resize the framebuffer. */
-    if (   size.width() > 0
-        && size.height() > 0)
-    {
-        UIResizeEvent event(FramebufferPixelFormat_Opaque, NULL, 0, 0, size.width(), size.height());
-        frameBuffer()->resizeEvent(&event);
-    }
 }
 
 void UIMachineViewScale::saveMachineViewSettings()

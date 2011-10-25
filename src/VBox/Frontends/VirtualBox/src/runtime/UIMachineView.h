@@ -180,6 +180,9 @@ protected:
     /** Return a string consisting of @a base with a suffix for the active
      * virtual monitor.  Used for storing monitor-specific extra data. */
     QString makeExtraDataKeyPerMonitor(QString base) const;
+    /** Returns the current rendering mode.
+     * @note contains special case logic for scale mode. */
+    VBoxDefs::RenderMode getRenderMode() const;
 
     /* Cross-platforms event processors: */
     bool event(QEvent *pEvent);
