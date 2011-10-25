@@ -507,6 +507,7 @@ AliasLog(FILE *stream, const char *format, ...)
 
     va_list args;
     char buffer[1024];
+    NOREF(stream);
     memset(buffer, 0, 1024);
     va_start(args, format);
     RTStrPrintfV(buffer, 1024, format, args);
@@ -725,6 +726,7 @@ GetSocket(struct libalias *la, u_short port_net, int *sockfd, int link_type)
     struct socket *so = NULL;
     struct sockaddr sa_addr;
     socklen_t socklen = sizeof(struct sockaddr);
+    NOREF(sockfd);
 #endif
 
     LIBALIAS_LOCK_ASSERT(la);
@@ -3023,6 +3025,11 @@ void
 LibAliasSetFWBase(struct libalias *la, unsigned int base, unsigned int num)
 {
 
+#ifdef VBOX
+    NOREF(la);
+    NOREF(base);
+    NOREF(num);
+#endif
     LIBALIAS_LOCK(la);
 #ifndef NO_FW_PUNCH
     la->fireWallBaseNum = base;

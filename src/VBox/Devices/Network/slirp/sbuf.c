@@ -73,6 +73,7 @@ sbdrop(struct sbuf *sb, int num)
 void
 sbreserve(PNATState pData, struct sbuf *sb, int size)
 {
+    NOREF(pData);
     if (sb->sb_data)
     {
         /* Already alloced, realloc if necessary */

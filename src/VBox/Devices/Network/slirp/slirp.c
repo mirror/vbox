@@ -272,8 +272,7 @@ const uint8_t zerro_ethaddr[6] =
 };
 
 #ifdef RT_OS_WINDOWS
-static int get_dns_addr_domain(PNATState pData, bool fVerbose,
-                               struct in_addr *pdns_addr,
+static int get_dns_addr_domain(PNATState pData,
                                const char **ppszDomain)
 {
     ULONG flags = GAA_FLAG_INCLUDE_PREFIX; /*GAA_FLAG_INCLUDE_ALL_INTERFACES;*/ /* all interfaces registered in NDIS */
@@ -420,9 +419,7 @@ static int RTFileGets(RTFILE File, void *pvBuf, size_t cbBufSize, size_t *pcbRea
     return rc;
 }
 
-static int get_dns_addr_domain(PNATState pData, bool fVerbose,
-                               struct in_addr *pdns_addr,
-                               const char **ppszDomain)
+static int get_dns_addr_domain(PNATState pData, const char **ppszDomain)
 {
     char buff[512];
     char buff2[256];
@@ -552,7 +549,7 @@ int slirp_init_dns_list(PNATState pData)
 {
     TAILQ_INIT(&pData->pDnsList);
     LIST_INIT(&pData->pDomainList);
-    return get_dns_addr_domain(pData, true, NULL, NULL);
+    return get_dns_addr_domain(pData, NULL);
 }
 
 void slirp_release_dns_list(PNATState pData)
@@ -577,9 +574,9 @@ void slirp_release_dns_list(PNATState pData)
     }
 }
 
-int get_dns_addr(PNATState pData, struct in_addr *pdns_addr)
+int get_dns_addr(PNATState pData)
 {
-    return get_dns_addr_domain(pData, false, pdns_addr, NULL);
+    return get_dns_addr_domain(pData, NULL);
 }
 
 int slirp_init(PNATState *ppData, uint32_t u32NetAddr, uint32_t u32Netmask,
@@ -2191,6 +2188,7 @@ void slirp_info(PNATState pData, PCDBGFINFOHLP pHlp, const char *pszArgs)
     struct socket *so, *so_next;
     struct arp_cache_entry *ac;
     struct port_forward_rule *rule;
+    NOREF(pszArgs);
 
     pHlp->pfnPrintf(pHlp, "NAT parameters: MTU=%d\n", if_mtu);
     pHlp->pfnPrintf(pHlp, "NAT TCP ports:\n");

@@ -87,6 +87,10 @@ static int
 fingerprint1(struct libalias *la, struct ip *pip, struct alias_data *ah)
 {
 
+#ifdef VBOX
+    NOREF(la);
+    NOREF(pip);
+#endif
     if (ah->dport == NULL || ah->sport == NULL || ah->lnk == NULL ||
         ah->aaddr == NULL || ah->aport == NULL)
         return (-1);
@@ -108,6 +112,10 @@ static int
 fingerprint2(struct libalias *la, struct ip *pip, struct alias_data *ah)
 {
 
+#ifdef VBOX
+    NOREF(la);
+    NOREF(pip);
+#endif
     if (ah->dport == NULL || ah->sport == NULL || ah->lnk == NULL ||
         ah->aaddr == NULL || ah->aport == NULL)
         return (-1);

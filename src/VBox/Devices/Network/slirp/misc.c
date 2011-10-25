@@ -60,6 +60,7 @@ insque(PNATState pData, void *a, void *b)
 {
     register struct quehead *element = (struct quehead *) a;
     register struct quehead *head = (struct quehead *) b;
+    NOREF(pData);
     element->qh_link = head->qh_link;
     head->qh_link = (struct quehead *)element;
     element->qh_rlink = (struct quehead *)head;
@@ -70,6 +71,7 @@ void
 remque(PNATState pData, void *a)
 {
     register struct quehead *element = (struct quehead *) a;
+    NOREF(pData);
     ((struct quehead *)(element->qh_link))->qh_rlink = element->qh_rlink;
     ((struct quehead *)(element->qh_rlink))->qh_link = element->qh_link;
     element->qh_rlink = NULL;

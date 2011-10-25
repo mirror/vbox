@@ -292,7 +292,7 @@ void if_start (PNATState);
 
 #define DEFAULT_BAUD 115200
 
-int get_dns_addr(PNATState pData, struct in_addr *pdns_addr);
+int get_dns_addr(PNATState pData);
 
 /* cksum.c */
 typedef uint16_t u_short;

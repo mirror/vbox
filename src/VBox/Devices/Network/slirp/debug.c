@@ -303,6 +303,10 @@ printTcpcbRfc793(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput,
 {
     size_t cb = 0;
     const struct tcpcb *tp = (const struct tcpcb *)pvValue;
+    NOREF(cchWidth);
+    NOREF(cchPrecision);
+    NOREF(fFlags);
+    NOREF(pvUser);
     AssertReturn(RTStrCmp(pszType, "tcpcb793") == 0, 0);
     if (tp)
     {
@@ -327,6 +331,10 @@ printTcpSegmentRfc793(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput,
 {
     size_t cb = 0;
     const struct tcpiphdr *ti = (const struct tcpiphdr *)pvValue;
+    NOREF(cchWidth);
+    NOREF(cchPrecision);
+    NOREF(fFlags);
+    NOREF(pvUser);
     AssertReturn(RTStrCmp(pszType, "tcpseg793") == 0 && ti, 0);
     cb += RTStrFormat(pfnOutput, pvArgOutput, NULL, 0, "SEG[ACK: %x, SEQ: %x, LEN: %x, WND: %x, UP: %x]",
                       ti->ti_ack, ti->ti_seq, ti->ti_len, ti->ti_win, ti->ti_urp);
@@ -345,6 +353,10 @@ printTcpState(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput,
     size_t cb = 0;
     const int idxTcpState = (int)(uintptr_t)pvValue;
     char *pszTcpStateName = (idxTcpState >= 0 && idxTcpState < TCP_NSTATES) ? g_apszTcpStates[idxTcpState] : "TCPS_INVALIDE_STATE";
+    NOREF(cchWidth);
+    NOREF(cchPrecision);
+    NOREF(fFlags);
+    NOREF(pvUser);
     AssertReturn(RTStrCmp(pszType, "tcpstate") == 0, 0);
     cb += RTStrFormat(pfnOutput, pvArgOutput, NULL, 0, "%s", pszTcpStateName);
     return cb;
@@ -361,6 +373,10 @@ printSbuf(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput,
 {
     size_t cb = 0;
     const struct sbuf *sb = (struct sbuf *)pvValue;
+    NOREF(cchWidth);
+    NOREF(cchPrecision);
+    NOREF(fFlags);
+    NOREF(pvUser);
     AssertReturn(RTStrCmp(pszType, "sbuf") == 0, 0);
     cb += RTStrFormat(pfnOutput, pvArgOutput, NULL, 0, "[sbuf:%p cc:%d, datalen:%d, wprt:%p, rptr:%p data:%p]",
                       sb, sb->sb_cc, sb->sb_datalen, sb->sb_wptr, sb->sb_rptr, sb->sb_data);
@@ -378,6 +394,10 @@ printMbufZone(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput,
 {
     size_t cb = 0;
     const uma_zone_t zone = (const uma_zone_t)pvValue;
+    NOREF(cchWidth);
+    NOREF(cchPrecision);
+    NOREF(fFlags);
+    NOREF(pvUser);
     AssertReturn(RTStrCmp(pszType, "mzone") == 0, 0);
     if (!zone)
         cb += RTStrFormat(pfnOutput, pvArgOutput, NULL, 0, "[zone:NULL]");
@@ -398,6 +418,10 @@ printMbufZoneItem(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput,
 {
     size_t cb = 0;
     const struct item *it = (const struct item *)pvValue;
+    NOREF(cchWidth);
+    NOREF(cchPrecision);
+    NOREF(fFlags);
+    NOREF(pvUser);
     AssertReturn(RTStrCmp(pszType, "mzoneitem") == 0, 0);
     if (!it)
         cb += RTStrFormat(pfnOutput, pvArgOutput, NULL, 0, "[item:NULL]");
@@ -414,6 +438,10 @@ print_networkevents(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput,
                     void *pvUser)
 {
     size_t cb = 0;
+    NOREF(cchWidth);
+    NOREF(cchPrecision);
+    NOREF(fFlags);
+    NOREF(pvUser);
 #ifdef RT_OS_WINDOWS
     WSANETWORKEVENTS *pNetworkEvents = (WSANETWORKEVENTS*)pvValue;
     bool fDelim = false;
@@ -439,6 +467,11 @@ print_networkevents(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput,
     DO_BIT(QOS);
 # undef DO_BIT
     cb += RTStrFormat(pfnOutput, pvArgOutput, NULL, 0, ")");
+#else
+    NOREF(pfnOutput);
+    NOREF(pvArgOutput);
+    NOREF(pszType);
+    NOREF(pvValue);
 #endif
     return cb;
 }

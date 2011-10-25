@@ -1640,7 +1640,9 @@ LibAliasLoadModule(char *path)
     }
 
     LibAliasAttachHandlers(m);
-#endif /* !VBOX */
+#else /* !VBOX */
+    NOREF(path);
+#endif /* VBOX */
     return (0);
 }
 

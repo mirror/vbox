@@ -38,7 +38,7 @@
 #endif
 
 
-static void send_icmp_to_guest(PNATState, char *, size_t, struct socket *, const struct sockaddr_in *);
+static void send_icmp_to_guest(PNATState, char *, size_t, const struct sockaddr_in *);
 #ifdef RT_OS_WINDOWS
 static void sorecvfrom_icmp_win(PNATState, struct socket *);
 #else /* RT_OS_WINDOWS */
@@ -1078,10 +1078,12 @@ no_sockopt:
  * Data is available in so_rcv
  * Just write() the data to the socket
  * XXX not yet...
+ * @todo do we really need this function, what it's intended to do?
  */
 void
 sorwakeup(struct socket *so)
 {
+    NOREF(so);
 #if 0
     sowrite(so);
     FD_CLR(so->s,&writefds);
@@ -1096,6 +1098,7 @@ sorwakeup(struct socket *so)
 void
 sowwakeup(struct socket *so)
 {
+    NOREF(so);
 }
 
 /*
@@ -1150,6 +1153,7 @@ sofcantsendmore(struct socket *so)
 void
 soisfdisconnected(struct socket *so)
 {
+    NOREF(so);
 #if 0
     so->so_state &= ~(SS_ISFCONNECTING|SS_ISFCONNECTED);
     close(so->s);
@@ -1174,7 +1178,7 @@ sofwdrain(struct socket *so)
 }
 
 static void
-send_icmp_to_guest(PNATState pData, char *buff, size_t len, struct socket *so, const struct sockaddr_in *addr)
+send_icmp_to_guest(PNATState pData, char *buff, size_t len, const struct sockaddr_in *addr)
 {
     struct ip *ip;
     uint32_t dst, src;
@@ -1576,7 +1580,7 @@ static void sorecvfrom_icmp_unix(PNATState pData, struct socket *so)
         return;
     }
     /* len is modified in 2nd read, when the rest of the datagramm was read */
-    send_icmp_to_guest(pData, buff, len, so, &addr);
+    send_icmp_to_guest(pData, buff, len, &addr);
     RTMemFree(buff);
 }
 #endif /* !RT_OS_WINDOWS */
