@@ -11535,7 +11535,7 @@ memory_cleared:
 
   ;; set all interrupts to default handler
   xor  bx, bx         ;; offset index
-  mov  cx, #0x0100    ;; counter (256 interrupts)
+  mov  cx, #0x0078    ;; leave the rest as zeros
   mov  ax, #dummy_iret_handler
   mov  dx, #0xF000
 

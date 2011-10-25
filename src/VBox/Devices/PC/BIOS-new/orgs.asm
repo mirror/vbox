@@ -308,7 +308,7 @@ memory_cleared:
 		;; set all interrupts to default handler
 		xor	bx, bx
 		mov	ds, bx
-		mov	cx, 100h	; 256 interrupts
+		mov	cx, 78h		; leave the rest as zeros
 		mov	ax, dummy_iret
 		mov	dx, BIOSSEG
 
