@@ -372,7 +372,7 @@ static VBOXSTRICTRC iomMMIODoComplicatedRead(PIOMMMIORANGE pRange, RTGCPHYS GCPh
  * @param   pvValue             Where to store the zeros.
  * @param   cbValue             How many bytes to read.
  */
-static int iomMMIODoReadFFs(void *pvValue, unsigned cbValue)
+static int iomMMIODoReadFFs(void *pvValue, size_t cbValue)
 {
     switch (cbValue)
     {
@@ -399,7 +399,7 @@ static int iomMMIODoReadFFs(void *pvValue, unsigned cbValue)
  * @param   pvValue             Where to store the zeros.
  * @param   cbValue             How many bytes to read.
  */
-static int iomMMIODoRead00s(void *pvValue, unsigned cbValue)
+static int iomMMIODoRead00s(void *pvValue, size_t cbValue)
 {
     switch (cbValue)
     {
