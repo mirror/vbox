@@ -173,8 +173,12 @@ protected:
     CGImageRef frameBuffertoCGImageRef(UIFrameBuffer *pFrameBuffer);
 #endif /* Q_WS_MAC */
     bool guestResizeEvent(QEvent *pEvent, bool fFullscreen);
+    /** What view mode (normal, fullscreen etc.) are we in? */
+    UIVisualStateType visualStateType();
     /** Is this a fullscreen-type view? */
     bool isFullscreenOrSeamless();
+    /** Return a string consisting of @a base with a suffix for the active
+     * virtual monitor.  Used for storing monitor-specific extra data. */
     QString makeExtraDataKeyPerMonitor(QString base) const;
 
     /* Cross-platforms event processors: */
