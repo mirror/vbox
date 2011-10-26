@@ -176,7 +176,6 @@ static RTEXITCODE handleSnapshotList(HandlerArg *pArgs, ComPtr<IMachine> &rptrMa
     int c;
     RTGETOPTUNION ValueUnion;
     RTGETOPTSTATE GetState;
-    // start at 0 because main() has hacked both the argc and argv given to us
     RTGetOptInit(&GetState, pArgs->argc, pArgs->argv, g_aOptions, RT_ELEMENTS(g_aOptions), 2 /*iArg*/, 0 /*fFlags*/);
     while ((c = RTGetOpt(&GetState, &ValueUnion)))
     {
