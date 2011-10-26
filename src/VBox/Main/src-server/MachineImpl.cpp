@@ -6757,7 +6757,7 @@ HRESULT Machine::launchVMProcess(IInternalSessionControl *aControl,
 
     /* attach launch data to the machine */
     Assert(mData->mSession.mPid == NIL_RTPROCESS);
-    mData->mSession.mRemoteControls.push_back (aControl);
+    mData->mSession.mRemoteControls.push_back(aControl);
     mData->mSession.mProgress = aProgress;
     mData->mSession.mPid = pid;
     mData->mSession.mState = SessionState_Spawning;
@@ -9811,10 +9811,6 @@ HRESULT Machine::detachDevice(MediumAttachment *pAttach,
 
     setModified(IsModified_Storage);
     mMediaData.backup();
-
-    // we cannot use erase (it) below because backup() above will create
-    // a copy of the list and make this copy active, but the iterator
-    // still refers to the original and is not valid for the copy
     mMediaData->mAttachments.remove(pAttach);
 
     if (!oldmedium.isNull())
@@ -11611,7 +11607,9 @@ STDMETHODIMP SessionMachine::OnSessionEnd(ISession *aSession,
         BOOL found = it != mData->mSession.mRemoteControls.end();
         ComAssertMsgRet(found, ("The session is not found in the session list!"),
                          E_INVALIDARG);
-        mData->mSession.mRemoteControls.remove(*it);
+        // This MUST be erase(it), not remove(*it) as the latter triggers a
+        // very nasty use after free due to the place where the value "lives".
+        mData->mSession.mRemoteControls.erase(it);
     }
 
     LogFlowThisFuncLeave();
