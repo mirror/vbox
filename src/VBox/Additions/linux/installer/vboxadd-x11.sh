@@ -509,25 +509,17 @@ EOF
     # completely irrelevant on the target system.
     chcon -t unconfined_execmem_exec_t '/usr/bin/VBoxClient' > /dev/null 2>&1
     semanage fcontext -a -t unconfined_execmem_exec_t '/usr/bin/VBoxClient' > /dev/null 2>&1
-    # Install the guest OpenGL drivers
-    if [ -d /usr/lib64/dri ]
-    then
-        rm -f /usr/lib64/dri/vboxvideo_dri.so
-        ln -s $LIB/VBoxOGL.so /usr/lib64/dri/vboxvideo_dri.so
-    elif [ -d /usr/lib/dri ]
-    then
-        rm -f /usr/lib/dri/vboxvideo_dri.so
-        ln -s $LIB/VBoxOGL.so /usr/lib/dri/vboxvideo_dri.so
-    fi
-    if [ -d /usr/lib64/xorg/modules/dri ]
-    then
-        rm -f /usr/lib64/xorg/modules/dri/vboxvideo_dri.so
-        ln -s $LIB/VBoxOGL.so /usr/lib64/xorg/modules/dri/vboxvideo_dri.so
-    elif [ -d /usr/lib/xorg/modules/dri ]
-    then
-        rm -f /usr/lib/xorg/modules/dri/vboxvideo_dri.so
-        ln -s $LIB/VBoxOGL.so /usr/lib/xorg/modules/dri/vboxvideo_dri.so
-    fi
+    # Install the guest OpenGL drivers.  For now we don't support
+    # multi-architecture installations
+    for dir in /usr/lib/dri /usr/lib32/dri /usr/lib64/dri \
+        /usr/lib/xorg/modules/dri /usr/lib32/xorg/modules/dri \
+        /usr/lib64/xorg/modules/dri /usr/lib/i386-linux-gnu/dri \
+        /usr/lib/x86_64-linux-gnu/dri; do
+        if [ -d $dir ]; then
+            rm -f "$dir/vboxvideo_dri.so"
+            ln -s "$LIB/VBoxOGL.so" "$dir/vboxvideo_dri.so"
+        fi
+    done
 
     # And set up VBoxClient to start when the X session does
     install_x11_startup_app "$lib_dir/98vboxadd-xclient" "$share_dir/vboxclient.desktop" VBoxClient VBoxClient-all ||
