@@ -282,9 +282,8 @@
 
       <para>Le module noyau de VirtualBox est automatiquement installé sur votre
       système quand vous installez VirtualBox. Pour le maintenir avec les futures
-      mises à jour du noyau, pour les distributions Linux récentes, -- par 
-      exemple,  Fedora Core 5 et supérieur, Ubuntu 7.10 (Gutsy) et supérieur et
-      Mandriva 2007.1 et supérieur --, nous recommandons en général d'installer
+      mises à jour du noyau, pour les distributions Linux qui le fournissent --
+      la plupart des distributions actuelles --, nous recommandons d'installer
       le Dynamic Kernel Module Support (DKMS) (support de module noyau dynamique)<footnote>
           <para>Voir <ulink
           url="http://en.wikipedia.org/wiki/Dynamic_Kernel_Module_Support">http://en.wikipedia.org/wiki/Dynamic_Kernel_Module_Support</ulink>
@@ -305,7 +304,7 @@
           </listitem>
 
           <listitem>
-            <para>Sur un système Mandriva&nbsp;:<screen>urpmi dkms</screen></para>
+            <para>Sur un système Mandriva ou Mageia&nbsp;:<screen>urpmi dkms</screen></para>
           </listitem>
         </itemizedlist></para>
 
