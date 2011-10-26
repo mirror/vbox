@@ -47,17 +47,17 @@ using namespace com;
 // funcs
 ///////////////////////////////////////////////////////////////////////////////
 
-void showSnapshots(ComPtr<ISnapshot> &rootSnapshot,
-                   ComPtr<ISnapshot> &currentSnapshot,
-                   VMINFO_DETAILS details,
-                   const Bstr &prefix /* = ""*/,
-                   int level /*= 0*/)
+HRESULT showSnapshots(ComPtr<ISnapshot> &rootSnapshot,
+                      ComPtr<ISnapshot> &currentSnapshot,
+                      VMINFO_DETAILS details,
+                      const Bstr &prefix /* = ""*/,
+                      int level /*= 0*/)
 {
     /* start with the root */
     Bstr name;
     Bstr uuid;
-    rootSnapshot->COMGETTER(Name)(name.asOutParam());
-    rootSnapshot->COMGETTER(Id)(uuid.asOutParam());
+    CHECK_ERROR2_RET(rootSnapshot,COMGETTER(Name)(name.asOutParam()), hrcCheck);
+    CHECK_ERROR2_RET(rootSnapshot,COMGETTER(Id)(uuid.asOutParam()), hrcCheck);
     if (details == VMINFO_MACHINEREADABLE)
     {
         /* print with hierarchical numbering */
@@ -76,8 +76,9 @@ void showSnapshots(ComPtr<ISnapshot> &rootSnapshot,
     }
 
     /* get the children */
+    HRESULT hrc = S_OK;
     SafeIfaceArray <ISnapshot> coll;
-    rootSnapshot->COMGETTER(Children)(ComSafeArrayAsOutParam(coll));
+    CHECK_ERROR2_RET(rootSnapshot,COMGETTER(Children)(ComSafeArrayAsOutParam(coll)), hrcCheck);
     if (!coll.isNull())
     {
         for (size_t index = 0; index < coll.size(); ++index)
@@ -94,10 +95,13 @@ void showSnapshots(ComPtr<ISnapshot> &rootSnapshot,
                 }
 
                 /* recursive call */
-                showSnapshots(snapshot, currentSnapshot, details, newPrefix, level + 1);
+                HRESULT hrc2 = showSnapshots(snapshot, currentSnapshot, details, newPrefix, level + 1);
+                if (FAILED(hrc2))
+                    hrc = hrc2;
             }
         }
     }
+    return hrc;
 }
 
 static void makeTimeStr(char *s, int cb, int64_t millies)

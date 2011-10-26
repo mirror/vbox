@@ -156,6 +156,52 @@ void DumpMediumWithChildren(ComPtr<IMedium> &pCurrentStateMedium,
     } while (0);
 }
 
+
+/**
+ * Handles the 'snapshot myvm list' sub-command.
+ * @returns Exit code.
+ * @param   pArgs           The handler argument package.
+ * @param   rptrMachine     Reference to the VM (locked) we're operating on.
+ */
+static RTEXITCODE handleSnapshotList(HandlerArg *pArgs, ComPtr<IMachine> &rptrMachine)
+{
+    static const RTGETOPTDEF g_aOptions[] =
+    {
+        { "--details",          'D', RTGETOPT_REQ_NOTHING },
+        { "--machinereadable",  'M', RTGETOPT_REQ_NOTHING },
+    };
+
+    VMINFO_DETAILS enmDetails = VMINFO_STANDARD;
+
+    int c;
+    RTGETOPTUNION ValueUnion;
+    RTGETOPTSTATE GetState;
+    // start at 0 because main() has hacked both the argc and argv given to us
+    RTGetOptInit(&GetState, pArgs->argc, pArgs->argv, g_aOptions, RT_ELEMENTS(g_aOptions), 2 /*iArg*/, 0 /*fFlags*/);
+    while ((c = RTGetOpt(&GetState, &ValueUnion)))
+    {
+        switch (c)
+        {
+            case 'D':   enmDetails = VMINFO_FULL; break;
+            case 'M':   enmDetails = VMINFO_MACHINEREADABLE; break;
+            default:    return errorGetOpt(USAGE_SNAPSHOT, c, &ValueUnion);
+        }
+    }
+
+    /* See showVMInfo. */
+    ComPtr<ISnapshot> ptrSnapshot;
+    CHECK_ERROR2_RET(rptrMachine, FindSnapshot(Bstr().raw(), ptrSnapshot.asOutParam()), RTEXITCODE_FAILURE);
+    if (ptrSnapshot)
+    {
+        ComPtr<ISnapshot> ptrCurrentSnapshot;
+        CHECK_ERROR2_RET(rptrMachine,COMGETTER(CurrentSnapshot)(ptrCurrentSnapshot.asOutParam()), RTEXITCODE_FAILURE);
+        HRESULT hrc = showSnapshots(ptrSnapshot, ptrCurrentSnapshot, enmDetails);
+        if (FAILED(hrc))
+            return RTEXITCODE_FAILURE;
+    }
+    return RTEXITCODE_SUCCESS;
+}
+
 /**
  * Implementation for "VBoxManage snapshot ... dump". This goes thru the machine's
  * medium attachments and calls DumpMediumWithChildren() for each hard disk medium found,
@@ -225,16 +271,16 @@ int handleSnapshot(HandlerArg *a)
 
     /* the first argument must be the VM */
     Bstr bstrMachine(a->argv[0]);
-    ComPtr<IMachine> pMachine;
+    ComPtr<IMachine> ptrMachine;
     CHECK_ERROR(a->virtualBox, FindMachine(bstrMachine.raw(),
-                                           pMachine.asOutParam()));
-    if (!pMachine)
+                                           ptrMachine.asOutParam()));
+    if (!ptrMachine)
         return 1;
 
     do
     {
         /* we have to open a session for this task (new or shared) */
-        rc = pMachine->LockMachine(a->session, LockType_Shared);
+        rc = ptrMachine->LockMachine(a->session, LockType_Shared);
         ComPtr<IConsole> console;
         CHECK_ERROR_BREAK(a->session, COMGETTER(Console)(console.asOutParam()));
 
@@ -349,12 +395,12 @@ int handleSnapshot(HandlerArg *a)
 
             if (fRestoreCurrent)
             {
-                CHECK_ERROR_BREAK(pMachine, COMGETTER(CurrentSnapshot)(pSnapshot.asOutParam()));
+                CHECK_ERROR_BREAK(ptrMachine, COMGETTER(CurrentSnapshot)(pSnapshot.asOutParam()));
             }
             else
             {
                 // restore or delete snapshot: then resolve cmd line argument to snapshot instance
-                CHECK_ERROR_BREAK(pMachine, FindSnapshot(Bstr(a->argv[2]).raw(),
+                CHECK_ERROR_BREAK(ptrMachine, FindSnapshot(Bstr(a->argv[2]).raw(),
                                                          pSnapshot.asOutParam()));
             }
 
@@ -389,12 +435,12 @@ int handleSnapshot(HandlerArg *a)
             if (   !strcmp(a->argv[2], "--current")
                 || !strcmp(a->argv[2], "-current"))
             {
-                CHECK_ERROR_BREAK(pMachine, COMGETTER(CurrentSnapshot)(snapshot.asOutParam()));
+                CHECK_ERROR_BREAK(ptrMachine, COMGETTER(CurrentSnapshot)(snapshot.asOutParam()));
             }
             else
             {
-                CHECK_ERROR_BREAK(pMachine, FindSnapshot(Bstr(a->argv[2]).raw(),
-                                                         snapshot.asOutParam()));
+                CHECK_ERROR_BREAK(ptrMachine, FindSnapshot(Bstr(a->argv[2]).raw(),
+                                                           snapshot.asOutParam()));
             }
 
             /* parse options */
@@ -447,16 +493,18 @@ int handleSnapshot(HandlerArg *a)
 
             ComPtr<ISnapshot> snapshot;
 
-            CHECK_ERROR_BREAK(pMachine, FindSnapshot(Bstr(a->argv[2]).raw(),
-                                                     snapshot.asOutParam()));
+            CHECK_ERROR_BREAK(ptrMachine, FindSnapshot(Bstr(a->argv[2]).raw(),
+                                                       snapshot.asOutParam()));
 
             /* get the machine of the given snapshot */
-            ComPtr<IMachine> pMachine2;
-            snapshot->COMGETTER(Machine)(pMachine2.asOutParam());
-            showVMInfo(a->virtualBox, pMachine2, VMINFO_NONE, console);
+            ComPtr<IMachine> ptrMachine2;
+            snapshot->COMGETTER(Machine)(ptrMachine2.asOutParam());
+            showVMInfo(a->virtualBox, ptrMachine2, VMINFO_NONE, console);
         }
+        else if (!strcmp(a->argv[1], "list"))
+            rc = handleSnapshotList(a, ptrMachine) == RTEXITCODE_SUCCESS ? S_OK : E_FAIL;
         else if (!strcmp(a->argv[1], "dump"))          // undocumented parameter to debug snapshot info
-            DumpSnapshot(pMachine);
+            DumpSnapshot(ptrMachine);
         else
         {
             errorSyntax(USAGE_SNAPSHOT, "Invalid parameter '%s'", Utf8Str(a->argv[1]).c_str());

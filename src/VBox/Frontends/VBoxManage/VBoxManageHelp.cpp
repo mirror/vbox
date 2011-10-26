@@ -445,6 +445,7 @@ void printUsage(USAGECATEGORY u64Cmd, PRTSTREAM pStrm)
                      "                            edit <uuid>|<name>|--current\n"
                      "                                 [--name <name>]\n"
                      "                                 [--description <desc>] |\n"
+                     "                            list [--details|--machinereadable]\n"
                      "                            showvminfo <uuid>|<name>\n"
                      "\n");
 
