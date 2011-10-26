@@ -208,11 +208,11 @@
     </message>
     <message>
         <source>Copy all errors to the clipboard</source>
-        <translation type="unfinished"></translation>
+        <translation>Kopiera alla fel till urklipp</translation>
     </message>
     <message>
         <source>Copy</source>
-        <translation type="unfinished">Kopiera</translation>
+        <translation>Kopiera</translation>
     </message>
 </context>
 <context>
@@ -882,7 +882,7 @@
     </message>
     <message>
         <source>Linked Base for %1 and %2</source>
-        <translation type="unfinished"></translation>
+        <translation>Länkad bas för %1 och %2</translation>
     </message>
 </context>
 <context>
@@ -913,7 +913,7 @@
     </message>
     <message>
         <source>When checked a new unique MAC address will be assigned to all configured network cards.</source>
-        <translation type="unfinished"></translation>
+        <translation>När kryssad kommer en ny unik MAC-adress att tilldelas till alla konfigurerade nätverkskort.</translation>
     </message>
 </context>
 <context>
@@ -952,11 +952,11 @@
     </message>
     <message>
         <source>Full Clone</source>
-        <translation type="unfinished"></translation>
+        <translation>Fullständig klon</translation>
     </message>
     <message>
         <source>Linked Clone</source>
-        <translation type="unfinished"></translation>
+        <translation>Länkad klon</translation>
     </message>
     <message>
         <source>&lt;p&gt;Please select the type of the clone.&lt;/p&gt;&lt;p&gt;If you choose &lt;b&gt;Full Clone&lt;/b&gt; an exact copy (including all virtual disk images) of the original VM will be created. If you select &lt;b&gt;Linked Clone&lt;/b&gt;, a new VM will be created, but the virtual disk images will point to the virtual disk images of original VM.&lt;/p&gt;</source>
@@ -971,35 +971,35 @@
     <name>UICloneVMWizardPage3</name>
     <message>
         <source>Current machine state</source>
-        <translation type="unfinished">Aktuellt maskintillstånd</translation>
+        <translation>Aktuellt maskintillstånd</translation>
     </message>
     <message>
         <source>Current machine and all child states</source>
-        <translation type="unfinished">Tillstånd för aktuell maskin och alla barn</translation>
+        <translation>Tillstånd för aktuell maskin och alla barn</translation>
     </message>
     <message>
         <source>All states</source>
-        <translation type="unfinished">Alla tillstånd</translation>
+        <translation>Alla tillstånd</translation>
     </message>
     <message>
         <source>Cloning Configuration</source>
-        <translation type="unfinished">Kloningskonfiguration</translation>
+        <translation>Kloningskonfiguration</translation>
     </message>
     <message>
         <source>Please choose which parts of the virtual machine should be cloned.</source>
-        <translation type="unfinished">Välj vilka delar av den virtuella maskinen som ska klonas.</translation>
+        <translation>Välj vilka delar av den virtuella maskinen som ska klonas.</translation>
     </message>
     <message>
         <source>If you select &lt;b&gt;Current machine state&lt;/b&gt;, only the current state of the virtual machine is cloned.</source>
-        <translation type="unfinished">Om du väljer &lt;b&gt;Aktuellt maskintillstånd&lt;/b&gt; kommer endast det aktuella tillståndet för den virtuella maskinen att klonas.</translation>
+        <translation>Om du väljer &lt;b&gt;Aktuellt maskintillstånd&lt;/b&gt; kommer endast det aktuella tillståndet för den virtuella maskinen att klonas.</translation>
     </message>
     <message>
         <source>If you select &lt;b&gt;Current machine and all child states&lt;/b&gt; the current state of the virtual machine and any states of child snapshots are cloned.</source>
-        <translation type="unfinished">Om du väljer &lt;b&gt;Tillstånd för aktuell maskin och alla barn&lt;/b&gt; kommer det aktuella tillståndet för den virtuella maskinen och alla tillstånd för barnögonblicksbilder att klonas.</translation>
+        <translation>Om du väljer &lt;b&gt;Tillstånd för aktuell maskin och alla barn&lt;/b&gt; kommer det aktuella tillståndet för den virtuella maskinen och alla tillstånd för barnögonblicksbilder att klonas.</translation>
     </message>
     <message>
         <source>If you select &lt;b&gt;All states&lt;/b&gt;, the current machine state and all snapshots are cloned.</source>
-        <translation type="unfinished">Om du väljer &lt;b&gt;Alla tillstånd&lt;/b&gt; kommer tillståndet för den aktuella maskinen och alla ögonblicksbilder att klonas.</translation>
+        <translation>Om du väljer &lt;b&gt;Alla tillstånd&lt;/b&gt; kommer tillståndet för den aktuella maskinen och alla ögonblicksbilder att klonas.</translation>
     </message>
 </context>
 <context>
@@ -1379,7 +1379,7 @@
     <name>UIDownloaderExtensionPack</name>
     <message>
         <source>Select folder to save %1 to</source>
-        <translation type="unfinished"></translation>
+        <translation>Välj mapp att spara %1 till</translation>
     </message>
 </context>
 <context>
@@ -2503,23 +2503,23 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Left Shift</source>
-        <translation type="unfinished">Vänster skift</translation>
+        <translation>Vänster Skift</translation>
     </message>
     <message>
         <source>Right Shift</source>
-        <translation type="unfinished">Höger skift</translation>
+        <translation>Höger Skift</translation>
     </message>
     <message>
         <source>Left Ctrl</source>
-        <translation type="unfinished">Vänster Ctrl</translation>
+        <translation>Vänster Ctrl</translation>
     </message>
     <message>
         <source>Right Ctrl</source>
-        <translation type="unfinished">Höger Ctrl</translation>
+        <translation>Höger Ctrl</translation>
     </message>
     <message>
         <source>Left Alt</source>
-        <translation type="unfinished">Vänster Alt</translation>
+        <translation>Vänster Alt</translation>
     </message>
     <message>
         <source>Right Alt</source>
@@ -4486,7 +4486,7 @@ serial ports</comment>
     </message>
     <message>
         <source>&amp;Port Count:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Portantal:</translation>
     </message>
     <message>
         <source>Selects the port count of the SATA storage controller currently selected in the Storage Tree. This must be at least one more than the highest port number you need to use.</source>
@@ -6330,33 +6330,33 @@ serial ports</comment>
     </message>
     <message>
         <source>Can&apos;t find snapshot named &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Kan inte hitta ögonblicksbild med namnet &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>&lt;p&gt;Failed to save the downloaded file as &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;</source>
-        <translation type="unfinished">&lt;p&gt;Misslyckades med att spara den hämtade filen som &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Misslyckades med att spara den hämtade filen som &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;You have an old version (%1) of the &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt; installed.&lt;/p&gt;&lt;p&gt;Do you wish to download latest one from the Internet?&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Du har en gammal version (%1) av &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt; installerad.&lt;/p&gt;&lt;p&gt;Vill du hämta den senaste från Internet?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Download</source>
         <comment>extension pack</comment>
-        <translation type="unfinished">Hämta</translation>
+        <translation>Hämta</translation>
     </message>
     <message>
         <source>&lt;p&gt;Are you sure you want to download the &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; from &lt;nobr&gt;&lt;a href=&quot;%2&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; (size %3 bytes)?&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Är du säker på att du vill hämta &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; från &lt;nobr&gt;&lt;a href=&quot;%2&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; (storlek %3 byte)?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;The &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%2&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; and saved locally as &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to install this extension pack?&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;&lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; har nu hämtats från &lt;nobr&gt;&lt;a href=&quot;%2&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; och sparats lokalt som &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Vill du installera detta tilläggspaket nu?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Install</source>
         <comment>extension pack</comment>
-        <translation type="unfinished">Installera</translation>
+        <translation>Installera</translation>
     </message>
     <message>
         <source>&lt;p&gt;The &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%2&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; but can&apos;t be saved locally as &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Please choose another location for that file.&lt;/p&gt;</source>
@@ -6405,22 +6405,22 @@ serial ports</comment>
     <name>UIMiniProgressWidgetAdditions</name>
     <message>
         <source>Cancel the VirtualBox Guest Additions CD image download</source>
-        <translation type="unfinished">Avbryt hämtning av cd-avbildning för VirtualBox Gästtillägg</translation>
+        <translation>Avbryt hämtning av cd-avbildning för VirtualBox Gästtillägg</translation>
     </message>
     <message>
         <source>Downloading the VirtualBox Guest Additions CD image from &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</source>
-        <translation type="unfinished">Hämtar ner cd-avbildning för VirtualBox Gästtillägg från &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</translation>
+        <translation>Hämtar ner cd-avbildning för VirtualBox Gästtillägg från &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</translation>
     </message>
 </context>
 <context>
     <name>UIMiniProgressWidgetExtension</name>
     <message>
         <source>Cancel the &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; download</source>
-        <translation type="unfinished"></translation>
+        <translation>Avbryt hämtning av &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>Downloading the &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; from &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;...&lt;/nobr&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>Hämtar &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; från &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;...&lt;/nobr&gt;</translation>
     </message>
 </context>
 <context>
@@ -6737,19 +6737,19 @@ serial ports</comment>
     </message>
     <message>
         <source>Please type the name of the new virtual disk file into the box below or click on the folder icon to select a different folder to create the file in.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ange namnet för den nya virtuella diskfilen i rutan nedan eller klicka på mappikonen för att välja en annan mapp att skapa filen i.</translation>
     </message>
     <message>
         <source>H&amp;DD (Parallels Hard Disk)</source>
-        <translation type="unfinished"></translation>
+        <translation>H&amp;DD (Parallels-hårddisk)</translation>
     </message>
     <message>
         <source>Q&amp;ED (QEMU enhanced disk)</source>
-        <translation type="unfinished"></translation>
+        <translation>Q&amp;ED (QEMU utökad disk)</translation>
     </message>
     <message>
         <source>&amp;QCOW (QEMU Copy-On-Write)</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;QCOW (QEMU Copy-On-Write)</translation>
     </message>
 </context>
 <context>
@@ -7142,11 +7142,11 @@ serial ports</comment>
     </message>
     <message>
         <source>Start-up &amp;Disk</source>
-        <translation type="unfinished"></translation>
+        <translation>Uppstarts&amp;disk</translation>
     </message>
     <message>
         <source>The recommended size of the start-up disk is &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Rekommenderad storlek för uppstartsdisken är &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
 </context>
 <context>
@@ -7191,7 +7191,7 @@ serial ports</comment>
     <message>
         <source>Start-up Disk</source>
         <comment>summary</comment>
-        <translation type="unfinished"></translation>
+        <translation>Uppstartsdisk</translation>
     </message>
 </context>
 <context>
