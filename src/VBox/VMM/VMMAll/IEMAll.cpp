@@ -816,13 +816,13 @@ static VBOXSTRICTRC iemOpcodeFetchMoreBytes(PIEMCPU pIemCpu, size_t cbMin)
 
 
 /**
- * Deals with the problematic cases that iemOpcodeGetNextByte doesn't like.
+ * Deals with the problematic cases that iemOpcodeGetNextU8 doesn't like.
  *
  * @returns Strict VBox status code.
  * @param   pIemCpu             The IEM state.
  * @param   pb                  Where to return the opcode byte.
  */
-DECL_NO_INLINE(static, VBOXSTRICTRC) iemOpcodeGetNextByteSlow(PIEMCPU pIemCpu, uint8_t *pb)
+DECL_NO_INLINE(static, VBOXSTRICTRC) iemOpcodeGetNextU8Slow(PIEMCPU pIemCpu, uint8_t *pb)
 {
     VBOXSTRICTRC rcStrict = iemOpcodeFetchMoreBytes(pIemCpu, 1);
     if (rcStrict == VINF_SUCCESS)
@@ -838,124 +838,6 @@ DECL_NO_INLINE(static, VBOXSTRICTRC) iemOpcodeGetNextByteSlow(PIEMCPU pIemCpu, u
 
 
 /**
- * Deals with the problematic cases that iemOpcodeGetNextS8SxU16 doesn't like.
- *
- * @returns Strict VBox status code.
- * @param   pIemCpu             The IEM state.
- * @param   pu16                Where to return the opcode dword.
- */
-DECL_NO_INLINE(static, VBOXSTRICTRC) iemOpcodeGetNextS8SxU16Slow(PIEMCPU pIemCpu, uint16_t *pu16)
-{
-    uint8_t     u8;
-    VBOXSTRICTRC rcStrict = iemOpcodeGetNextByteSlow(pIemCpu, &u8);
-    if (rcStrict == VINF_SUCCESS)
-        *pu16 = (int8_t)u8;
-    return rcStrict;
-}
-
-
-/**
- * Deals with the problematic cases that iemOpcodeGetNextU16 doesn't like.
- *
- * @returns Strict VBox status code.
- * @param   pIemCpu             The IEM state.
- * @param   pu16                Where to return the opcode word.
- */
-DECL_NO_INLINE(static, VBOXSTRICTRC) iemOpcodeGetNextU16Slow(PIEMCPU pIemCpu, uint16_t *pu16)
-{
-    VBOXSTRICTRC rcStrict = iemOpcodeFetchMoreBytes(pIemCpu, 2);
-    if (rcStrict == VINF_SUCCESS)
-    {
-        uint8_t offOpcode = pIemCpu->offOpcode;
-        *pu16 = RT_MAKE_U16(pIemCpu->abOpcode[offOpcode], pIemCpu->abOpcode[offOpcode + 1]);
-        pIemCpu->offOpcode = offOpcode + 2;
-    }
-    else
-        *pu16 = 0;
-    return rcStrict;
-}
-
-
-/**
- * Deals with the problematic cases that iemOpcodeGetNextU32 doesn't like.
- *
- * @returns Strict VBox status code.
- * @param   pIemCpu             The IEM state.
- * @param   pu32                Where to return the opcode dword.
- */
-DECL_NO_INLINE(static, VBOXSTRICTRC) iemOpcodeGetNextU32Slow(PIEMCPU pIemCpu, uint32_t *pu32)
-{
-    VBOXSTRICTRC rcStrict = iemOpcodeFetchMoreBytes(pIemCpu, 4);
-    if (rcStrict == VINF_SUCCESS)
-    {
-        uint8_t offOpcode = pIemCpu->offOpcode;
-        *pu32 = RT_MAKE_U32_FROM_U8(pIemCpu->abOpcode[offOpcode],
-                                    pIemCpu->abOpcode[offOpcode + 1],
-                                    pIemCpu->abOpcode[offOpcode + 2],
-                                    pIemCpu->abOpcode[offOpcode + 3]);
-        pIemCpu->offOpcode = offOpcode + 4;
-    }
-    else
-        *pu32 = 0;
-    return rcStrict;
-}
-
-
-/**
- * Deals with the problematic cases that iemOpcodeGetNextS32SxU64 doesn't like.
- *
- * @returns Strict VBox status code.
- * @param   pIemCpu             The IEM state.
- * @param   pu64                Where to return the opcode qword.
- */
-DECL_NO_INLINE(static, VBOXSTRICTRC) iemOpcodeGetNextS32SxU64Slow(PIEMCPU pIemCpu, uint64_t *pu64)
-{
-    VBOXSTRICTRC rcStrict = iemOpcodeFetchMoreBytes(pIemCpu, 4);
-    if (rcStrict == VINF_SUCCESS)
-    {
-        uint8_t offOpcode = pIemCpu->offOpcode;
-        *pu64 = (int32_t)RT_MAKE_U32_FROM_U8(pIemCpu->abOpcode[offOpcode],
-                                             pIemCpu->abOpcode[offOpcode + 1],
-                                             pIemCpu->abOpcode[offOpcode + 2],
-                                             pIemCpu->abOpcode[offOpcode + 3]);
-        pIemCpu->offOpcode = offOpcode + 4;
-    }
-    else
-        *pu64 = 0;
-    return rcStrict;
-}
-
-
-/**
- * Deals with the problematic cases that iemOpcodeGetNextU64 doesn't like.
- *
- * @returns Strict VBox status code.
- * @param   pIemCpu             The IEM state.
- * @param   pu64                Where to return the opcode qword.
- */
-DECL_NO_INLINE(static, VBOXSTRICTRC) iemOpcodeGetNextU64Slow(PIEMCPU pIemCpu, uint64_t *pu64)
-{
-    VBOXSTRICTRC rcStrict = iemOpcodeFetchMoreBytes(pIemCpu, 8);
-    if (rcStrict == VINF_SUCCESS)
-    {
-        uint8_t offOpcode = pIemCpu->offOpcode;
-        *pu64 = RT_MAKE_U64_FROM_U8(pIemCpu->abOpcode[offOpcode],
-                                    pIemCpu->abOpcode[offOpcode + 1],
-                                    pIemCpu->abOpcode[offOpcode + 2],
-                                    pIemCpu->abOpcode[offOpcode + 3],
-                                    pIemCpu->abOpcode[offOpcode + 4],
-                                    pIemCpu->abOpcode[offOpcode + 5],
-                                    pIemCpu->abOpcode[offOpcode + 6],
-                                    pIemCpu->abOpcode[offOpcode + 7]);
-        pIemCpu->offOpcode = offOpcode + 8;
-    }
-    else
-        *pu64 = 0;
-    return rcStrict;
-}
-
-
-/**
  * Fetches the next opcode byte.
  *
  * @returns Strict VBox status code.
@@ -966,12 +848,13 @@ DECLINLINE(VBOXSTRICTRC) iemOpcodeGetNextU8(PIEMCPU pIemCpu, uint8_t *pu8)
 {
     uint8_t const offOpcode = pIemCpu->offOpcode;
     if (RT_UNLIKELY(offOpcode >= pIemCpu->cbOpcode))
-        return iemOpcodeGetNextByteSlow(pIemCpu, pu8);
+        return iemOpcodeGetNextU8Slow(pIemCpu, pu8);
 
     *pu8 = pIemCpu->abOpcode[offOpcode];
     pIemCpu->offOpcode = offOpcode + 1;
     return VINF_SUCCESS;
 }
+
 
 /**
  * Fetches the next opcode byte, returns automatically on failure.
@@ -1000,6 +883,7 @@ DECLINLINE(VBOXSTRICTRC) iemOpcodeGetNextS8(PIEMCPU pIemCpu, int8_t *pi8)
     return iemOpcodeGetNextU8(pIemCpu, (uint8_t *)pi8);
 }
 
+
 /**
  * Fetches the next signed byte from the opcode stream, returning automatically
  * on failure.
@@ -1014,6 +898,23 @@ DECLINLINE(VBOXSTRICTRC) iemOpcodeGetNextS8(PIEMCPU pIemCpu, int8_t *pi8)
         if (rcStrict2 != VINF_SUCCESS) \
             return rcStrict2; \
     } while (0)
+
+
+/**
+ * Deals with the problematic cases that iemOpcodeGetNextS8SxU16 doesn't like.
+ *
+ * @returns Strict VBox status code.
+ * @param   pIemCpu             The IEM state.
+ * @param   pu16                Where to return the opcode dword.
+ */
+DECL_NO_INLINE(static, VBOXSTRICTRC) iemOpcodeGetNextS8SxU16Slow(PIEMCPU pIemCpu, uint16_t *pu16)
+{
+    uint8_t      u8;
+    VBOXSTRICTRC rcStrict = iemOpcodeGetNextU8Slow(pIemCpu, &u8);
+    if (rcStrict == VINF_SUCCESS)
+        *pu16 = (int8_t)u8;
+    return rcStrict;
+}
 
 
 /**
@@ -1053,6 +954,28 @@ DECLINLINE(VBOXSTRICTRC) iemOpcodeGetNextS8SxU16(PIEMCPU pIemCpu, uint16_t *pu16
 
 
 /**
+ * Deals with the problematic cases that iemOpcodeGetNextU16 doesn't like.
+ *
+ * @returns Strict VBox status code.
+ * @param   pIemCpu             The IEM state.
+ * @param   pu16                Where to return the opcode word.
+ */
+DECL_NO_INLINE(static, VBOXSTRICTRC) iemOpcodeGetNextU16Slow(PIEMCPU pIemCpu, uint16_t *pu16)
+{
+    VBOXSTRICTRC rcStrict = iemOpcodeFetchMoreBytes(pIemCpu, 2);
+    if (rcStrict == VINF_SUCCESS)
+    {
+        uint8_t offOpcode = pIemCpu->offOpcode;
+        *pu16 = RT_MAKE_U16(pIemCpu->abOpcode[offOpcode], pIemCpu->abOpcode[offOpcode + 1]);
+        pIemCpu->offOpcode = offOpcode + 2;
+    }
+    else
+        *pu16 = 0;
+    return rcStrict;
+}
+
+
+/**
  * Fetches the next opcode word.
  *
  * @returns Strict VBox status code.
@@ -1070,6 +993,7 @@ DECLINLINE(VBOXSTRICTRC) iemOpcodeGetNextU16(PIEMCPU pIemCpu, uint16_t *pu16)
     return VINF_SUCCESS;
 }
 
+
 /**
  * Fetches the next opcode word, returns automatically on failure.
  *
@@ -1080,6 +1004,120 @@ DECLINLINE(VBOXSTRICTRC) iemOpcodeGetNextU16(PIEMCPU pIemCpu, uint16_t *pu16)
     do \
     { \
         VBOXSTRICTRC rcStrict2 = iemOpcodeGetNextU16(pIemCpu, (a_pu16)); \
+        if (rcStrict2 != VINF_SUCCESS) \
+            return rcStrict2; \
+    } while (0)
+
+
+/**
+ * Deals with the problematic cases that iemOpcodeGetNextU16ZxU32 doesn't like.
+ *
+ * @returns Strict VBox status code.
+ * @param   pIemCpu             The IEM state.
+ * @param   pu32                Where to return the opcode double word.
+ */
+DECL_NO_INLINE(static, VBOXSTRICTRC) iemOpcodeGetNextU16ZxU32Slow(PIEMCPU pIemCpu, uint32_t *pu32)
+{
+    VBOXSTRICTRC rcStrict = iemOpcodeFetchMoreBytes(pIemCpu, 2);
+    if (rcStrict == VINF_SUCCESS)
+    {
+        uint8_t offOpcode = pIemCpu->offOpcode;
+        *pu32 = RT_MAKE_U16(pIemCpu->abOpcode[offOpcode], pIemCpu->abOpcode[offOpcode + 1]);
+        pIemCpu->offOpcode = offOpcode + 2;
+    }
+    else
+        *pu32 = 0;
+    return rcStrict;
+}
+
+
+/**
+ * Fetches the next opcode word, zero extending it to a double word.
+ *
+ * @returns Strict VBox status code.
+ * @param   pIemCpu             The IEM state.
+ * @param   pu32                Where to return the opcode double word.
+ */
+DECLINLINE(VBOXSTRICTRC) iemOpcodeGetNextU16ZxU32(PIEMCPU pIemCpu, uint32_t *pu32)
+{
+    uint8_t const offOpcode = pIemCpu->offOpcode;
+    if (RT_UNLIKELY(offOpcode + 2 > pIemCpu->cbOpcode))
+        return iemOpcodeGetNextU16ZxU32Slow(pIemCpu, pu32);
+
+    *pu32 = RT_MAKE_U16(pIemCpu->abOpcode[offOpcode], pIemCpu->abOpcode[offOpcode + 1]);
+    pIemCpu->offOpcode = offOpcode + 2;
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Fetches the next opcode word and zero extends it to a double word, returns
+ * automatically on failure.
+ *
+ * @param   a_pu32              Where to return the opcode double word.
+ * @remark Implicitly references pIemCpu.
+ */
+#define IEM_OPCODE_GET_NEXT_U16_ZX_U32(a_pu32) \
+    do \
+    { \
+        VBOXSTRICTRC rcStrict2 = iemOpcodeGetNextU16ZxU32(pIemCpu, (a_pu32)); \
+        if (rcStrict2 != VINF_SUCCESS) \
+            return rcStrict2; \
+    } while (0)
+
+
+/**
+ * Deals with the problematic cases that iemOpcodeGetNextU16ZxU64 doesn't like.
+ *
+ * @returns Strict VBox status code.
+ * @param   pIemCpu             The IEM state.
+ * @param   pu64                Where to return the opcode quad word.
+ */
+DECL_NO_INLINE(static, VBOXSTRICTRC) iemOpcodeGetNextU16ZxU64Slow(PIEMCPU pIemCpu, uint64_t *pu64)
+{
+    VBOXSTRICTRC rcStrict = iemOpcodeFetchMoreBytes(pIemCpu, 2);
+    if (rcStrict == VINF_SUCCESS)
+    {
+        uint8_t offOpcode = pIemCpu->offOpcode;
+        *pu64 = RT_MAKE_U16(pIemCpu->abOpcode[offOpcode], pIemCpu->abOpcode[offOpcode + 1]);
+        pIemCpu->offOpcode = offOpcode + 2;
+    }
+    else
+        *pu64 = 0;
+    return rcStrict;
+}
+
+
+/**
+ * Fetches the next opcode word, zero extending it to a quad word.
+ *
+ * @returns Strict VBox status code.
+ * @param   pIemCpu             The IEM state.
+ * @param   pu64                Where to return the opcode quad word.
+ */
+DECLINLINE(VBOXSTRICTRC) iemOpcodeGetNextU16ZxU64(PIEMCPU pIemCpu, uint64_t *pu64)
+{
+    uint8_t const offOpcode = pIemCpu->offOpcode;
+    if (RT_UNLIKELY(offOpcode + 2 > pIemCpu->cbOpcode))
+        return iemOpcodeGetNextU16ZxU64Slow(pIemCpu, pu64);
+
+    *pu64 = RT_MAKE_U16(pIemCpu->abOpcode[offOpcode], pIemCpu->abOpcode[offOpcode + 1]);
+    pIemCpu->offOpcode = offOpcode + 2;
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Fetches the next opcode word and zero extends it to a quad word, returns
+ * automatically on failure.
+ *
+ * @param   a_pu64              Where to return the opcode quad word.
+ * @remark Implicitly references pIemCpu.
+ */
+#define IEM_OPCODE_GET_NEXT_U16_ZX_U64(a_pu64) \
+    do \
+    { \
+        VBOXSTRICTRC rcStrict2 = iemOpcodeGetNextU16ZxU64(pIemCpu, (a_pu64)); \
         if (rcStrict2 != VINF_SUCCESS) \
             return rcStrict2; \
     } while (0)
@@ -1097,6 +1135,7 @@ DECLINLINE(VBOXSTRICTRC) iemOpcodeGetNextS16(PIEMCPU pIemCpu, int16_t *pi16)
     return iemOpcodeGetNextU16(pIemCpu, (uint16_t *)pi16);
 }
 
+
 /**
  * Fetches the next signed word from the opcode stream, returning automatically
  * on failure.
@@ -1111,6 +1150,31 @@ DECLINLINE(VBOXSTRICTRC) iemOpcodeGetNextS16(PIEMCPU pIemCpu, int16_t *pi16)
         if (rcStrict2 != VINF_SUCCESS) \
             return rcStrict2; \
     } while (0)
+
+
+/**
+ * Deals with the problematic cases that iemOpcodeGetNextU32 doesn't like.
+ *
+ * @returns Strict VBox status code.
+ * @param   pIemCpu             The IEM state.
+ * @param   pu32                Where to return the opcode dword.
+ */
+DECL_NO_INLINE(static, VBOXSTRICTRC) iemOpcodeGetNextU32Slow(PIEMCPU pIemCpu, uint32_t *pu32)
+{
+    VBOXSTRICTRC rcStrict = iemOpcodeFetchMoreBytes(pIemCpu, 4);
+    if (rcStrict == VINF_SUCCESS)
+    {
+        uint8_t offOpcode = pIemCpu->offOpcode;
+        *pu32 = RT_MAKE_U32_FROM_U8(pIemCpu->abOpcode[offOpcode],
+                                    pIemCpu->abOpcode[offOpcode + 1],
+                                    pIemCpu->abOpcode[offOpcode + 2],
+                                    pIemCpu->abOpcode[offOpcode + 3]);
+        pIemCpu->offOpcode = offOpcode + 4;
+    }
+    else
+        *pu32 = 0;
+    return rcStrict;
+}
 
 
 /**
@@ -1134,16 +1198,80 @@ DECLINLINE(VBOXSTRICTRC) iemOpcodeGetNextU32(PIEMCPU pIemCpu, uint32_t *pu32)
     return VINF_SUCCESS;
 }
 
+
 /**
  * Fetches the next opcode dword, returns automatically on failure.
  *
- * @param   a_u32               Where to return the opcode dword.
+ * @param   a_pu32              Where to return the opcode dword.
  * @remark Implicitly references pIemCpu.
  */
 #define IEM_OPCODE_GET_NEXT_U32(a_pu32) \
     do \
     { \
         VBOXSTRICTRC rcStrict2 = iemOpcodeGetNextU32(pIemCpu, (a_pu32)); \
+        if (rcStrict2 != VINF_SUCCESS) \
+            return rcStrict2; \
+    } while (0)
+
+
+/**
+ * Deals with the problematic cases that iemOpcodeGetNextU32ZxU64 doesn't like.
+ *
+ * @returns Strict VBox status code.
+ * @param   pIemCpu             The IEM state.
+ * @param   pu32                Where to return the opcode dword.
+ */
+DECL_NO_INLINE(static, VBOXSTRICTRC) iemOpcodeGetNextU32ZxU64Slow(PIEMCPU pIemCpu, uint64_t *pu64)
+{
+    VBOXSTRICTRC rcStrict = iemOpcodeFetchMoreBytes(pIemCpu, 4);
+    if (rcStrict == VINF_SUCCESS)
+    {
+        uint8_t offOpcode = pIemCpu->offOpcode;
+        *pu64 = RT_MAKE_U32_FROM_U8(pIemCpu->abOpcode[offOpcode],
+                                    pIemCpu->abOpcode[offOpcode + 1],
+                                    pIemCpu->abOpcode[offOpcode + 2],
+                                    pIemCpu->abOpcode[offOpcode + 3]);
+        pIemCpu->offOpcode = offOpcode + 4;
+    }
+    else
+        *pu64 = 0;
+    return rcStrict;
+}
+
+
+/**
+ * Fetches the next opcode dword, zero extending it to a quad word.
+ *
+ * @returns Strict VBox status code.
+ * @param   pIemCpu             The IEM state.
+ * @param   pu64                Where to return the opcode quad word.
+ */
+DECLINLINE(VBOXSTRICTRC) iemOpcodeGetNextU32ZxU64(PIEMCPU pIemCpu, uint64_t *pu64)
+{
+    uint8_t const offOpcode = pIemCpu->offOpcode;
+    if (RT_UNLIKELY(offOpcode + 4 > pIemCpu->cbOpcode))
+        return iemOpcodeGetNextU32ZxU64Slow(pIemCpu, pu64);
+
+    *pu64 = RT_MAKE_U32_FROM_U8(pIemCpu->abOpcode[offOpcode],
+                                pIemCpu->abOpcode[offOpcode + 1],
+                                pIemCpu->abOpcode[offOpcode + 2],
+                                pIemCpu->abOpcode[offOpcode + 3]);
+    pIemCpu->offOpcode = offOpcode + 4;
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Fetches the next opcode dword and zero extends it to a quad word, returns
+ * automatically on failure.
+ *
+ * @param   a_pu64              Where to return the opcode quad word.
+ * @remark Implicitly references pIemCpu.
+ */
+#define IEM_OPCODE_GET_NEXT_U32_ZX_U64(a_pu64) \
+    do \
+    { \
+        VBOXSTRICTRC rcStrict2 = iemOpcodeGetNextU32ZxU64(pIemCpu, (a_pu64)); \
         if (rcStrict2 != VINF_SUCCESS) \
             return rcStrict2; \
     } while (0)
@@ -1178,6 +1306,31 @@ DECLINLINE(VBOXSTRICTRC) iemOpcodeGetNextS32(PIEMCPU pIemCpu, int32_t *pi32)
 
 
 /**
+ * Deals with the problematic cases that iemOpcodeGetNextS32SxU64 doesn't like.
+ *
+ * @returns Strict VBox status code.
+ * @param   pIemCpu             The IEM state.
+ * @param   pu64                Where to return the opcode qword.
+ */
+DECL_NO_INLINE(static, VBOXSTRICTRC) iemOpcodeGetNextS32SxU64Slow(PIEMCPU pIemCpu, uint64_t *pu64)
+{
+    VBOXSTRICTRC rcStrict = iemOpcodeFetchMoreBytes(pIemCpu, 4);
+    if (rcStrict == VINF_SUCCESS)
+    {
+        uint8_t offOpcode = pIemCpu->offOpcode;
+        *pu64 = (int32_t)RT_MAKE_U32_FROM_U8(pIemCpu->abOpcode[offOpcode],
+                                             pIemCpu->abOpcode[offOpcode + 1],
+                                             pIemCpu->abOpcode[offOpcode + 2],
+                                             pIemCpu->abOpcode[offOpcode + 3]);
+        pIemCpu->offOpcode = offOpcode + 4;
+    }
+    else
+        *pu64 = 0;
+    return rcStrict;
+}
+
+
+/**
  * Fetches the next opcode dword, sign extending it into a quad word.
  *
  * @returns Strict VBox status code.
@@ -1199,6 +1352,7 @@ DECLINLINE(VBOXSTRICTRC) iemOpcodeGetNextS32SxU64(PIEMCPU pIemCpu, uint64_t *pu6
     return VINF_SUCCESS;
 }
 
+
 /**
  * Fetches the next opcode double word and sign extends it to a quad word,
  * returns automatically on failure.
@@ -1213,6 +1367,35 @@ DECLINLINE(VBOXSTRICTRC) iemOpcodeGetNextS32SxU64(PIEMCPU pIemCpu, uint64_t *pu6
         if (rcStrict2 != VINF_SUCCESS) \
             return rcStrict2; \
     } while (0)
+
+
+/**
+ * Deals with the problematic cases that iemOpcodeGetNextU64 doesn't like.
+ *
+ * @returns Strict VBox status code.
+ * @param   pIemCpu             The IEM state.
+ * @param   pu64                Where to return the opcode qword.
+ */
+DECL_NO_INLINE(static, VBOXSTRICTRC) iemOpcodeGetNextU64Slow(PIEMCPU pIemCpu, uint64_t *pu64)
+{
+    VBOXSTRICTRC rcStrict = iemOpcodeFetchMoreBytes(pIemCpu, 8);
+    if (rcStrict == VINF_SUCCESS)
+    {
+        uint8_t offOpcode = pIemCpu->offOpcode;
+        *pu64 = RT_MAKE_U64_FROM_U8(pIemCpu->abOpcode[offOpcode],
+                                    pIemCpu->abOpcode[offOpcode + 1],
+                                    pIemCpu->abOpcode[offOpcode + 2],
+                                    pIemCpu->abOpcode[offOpcode + 3],
+                                    pIemCpu->abOpcode[offOpcode + 4],
+                                    pIemCpu->abOpcode[offOpcode + 5],
+                                    pIemCpu->abOpcode[offOpcode + 6],
+                                    pIemCpu->abOpcode[offOpcode + 7]);
+        pIemCpu->offOpcode = offOpcode + 8;
+    }
+    else
+        *pu64 = 0;
+    return rcStrict;
+}
 
 
 /**
@@ -1239,6 +1422,7 @@ DECLINLINE(VBOXSTRICTRC) iemOpcodeGetNextU64(PIEMCPU pIemCpu, uint64_t *pu64)
     pIemCpu->offOpcode = offOpcode + 8;
     return VINF_SUCCESS;
 }
+
 
 /**
  * Fetches the next opcode quad word, returns automatically on failure.
