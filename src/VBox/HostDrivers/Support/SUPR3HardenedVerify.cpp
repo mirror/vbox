@@ -1127,8 +1127,8 @@ static int supR3HardenedIsSameFsObject(PCSUPR3HARDENEDFSOBJSTATE pFsObjState1, P
  * @param   fRelaxed            Whether we can be more relaxed about this
  *                              directory (only used for grand parent
  *                              directories).
- * @param   pszPath             The path to the object. (For error messages
- *                              only.)
+ * @param   pszPath             The path to the object. For error messages and
+ *                              securing a couple of hacks.
  * @param   pErrInfo            The error info structure.
  */
 static int supR3HardenedVerifyFsObject(PCSUPR3HARDENEDFSOBJSTATE pFsObjState, bool fDir, bool fRelaxed,
@@ -1189,17 +1189,16 @@ static int supR3HardenedVerifyFsObject(PCSUPR3HARDENEDFSOBJSTATE pFsObjState, bo
         /* HACK ALERT: On Darwin /Applications is root:admin with admin having
            full access. So, to work around we relax the hardening a bit and
            permit grand parents and beyond to be group writable by admin. */
-        bool fBad = !fRelaxed || pFsObjState->Stat.st_gid != 80 /*admin*/; /** @todo dynamically resolve the admin group? */
+        /** @todo dynamically resolve the admin group? */
+        bool fBad = !fRelaxed || pFsObjState->Stat.st_gid != 80 /*admin*/ || strcmp(pszPath, "/Applications");
 
 #elif defined(RT_OS_FREEBSD)
-        /* HACK ALERT: PC-BSD 9 has group-writable application directory,
-           similar to OS X and their /Applications directory (see above).
-           On FreeBSD root is normally the only member of this group. */
-        /** @todo Can we test for fRelaxed here like on the mac or is the 'operator'
-         *        group the owner of the immediate installation directory? More
-         *        details would be greatly appreciated as this HACK affects real FreeBSD
-         *        as well as the PC-BSD fork! */
-        bool fBad = pFsObjState->Stat.st_gid != 5 /*operator*/;
+        /* HACK ALERT: PC-BSD 9 has group-writable /usr/pib directory which is
+           similar to /Applications on OS X (see above).
+           On FreeBSD root is normally the only member of this group, on
+           PC-BSD the default user is a member. */
+        /** @todo dynamically resolve the operator group? */
+        bool fBad = !fRelaxed || pFsObjState->Stat.st_gid != 5 /*operator*/ || strcmp(pszPath, "/usr/pbi");
         NOREF(fRelaxed);
 #else
         NOREF(fRelaxed);
