@@ -812,7 +812,7 @@ void UINewHDWizardPageOptions::sltSelectLocationButtonClicked()
     if (!strChosenFilePath.isEmpty())
     {
         /* If valid file extension is missed, append it: */
-        if (QFileInfo(strChosenFilePath).completeSuffix().isEmpty())
+        if (QFileInfo(strChosenFilePath).suffix().isEmpty())
             strChosenFilePath += QString(".%1").arg(m_strDefaultExtension);
         m_pLocationEditor->setText(QDir::toNativeSeparators(strChosenFilePath));
         m_pLocationEditor->selectAll();
@@ -877,7 +877,7 @@ QString UINewHDWizardPageOptions::toFileName(const QString &strName, const QStri
         strFileName.truncate(iLen - 1);
 
     /* Add passed extension if its not done yet: */
-    if (QFileInfo(strFileName).completeSuffix().toLower() != strExtension)
+    if (QFileInfo(strFileName).suffix().toLower() != strExtension)
         strFileName += QString(".%1").arg(strExtension);
 
     /* Return result: */
