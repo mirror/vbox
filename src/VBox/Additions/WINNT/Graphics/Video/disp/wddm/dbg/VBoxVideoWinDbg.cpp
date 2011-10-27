@@ -155,11 +155,7 @@ DECLARE_API(ms)
         return;
     }
     ULONG uRc = 0;
-#if 0
     if(u64DefaultPitch == u64Pitch)
-#else
-    if(0)
-#endif
     {
         ULONG cbRead = 0;
         dprintf("reading the entire memory buffer...\n");
