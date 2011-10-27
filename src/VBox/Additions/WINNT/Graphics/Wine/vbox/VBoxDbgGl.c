@@ -279,7 +279,7 @@ void dbglCmpTexImage2D(const struct wined3d_gl_info *gl_info, const char* pszDes
     dbglFree(pvTexImg);
 }
 
-void dbglCheckTexUnits(const struct wined3d_gl_info *gl_info, const struct IWineD3DDeviceImpl *pDevice, bool fBreakIfCanNotMatch)
+void dbglCheckTexUnits(const struct wined3d_gl_info *gl_info, const struct IWineD3DDeviceImpl *pDevice, BOOL fBreakIfCanNotMatch)
 {
     int iStage;
     GLint ActiveTexUnit = 0;

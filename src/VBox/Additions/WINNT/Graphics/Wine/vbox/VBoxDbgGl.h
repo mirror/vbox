@@ -25,7 +25,7 @@
 void dbglGetTexImage2D(const struct wined3d_gl_info *gl_info, GLint texTarget, GLint texName, GLint level, GLvoid **ppvImage, GLint *pw, GLint *ph, GLenum format, GLenum type);
 void dbglDumpTexImage2D(const struct wined3d_gl_info *gl_info, const char* pszDesc, GLint texTarget, GLint texName, GLint level, GLboolean fBreak);
 void dbglCmpTexImage2D(const struct wined3d_gl_info *gl_info, const char* pszDesc, GLint texTarget, GLint texName, GLint level, void *pvImage, GLint width, GLint height, GLenum format, GLenum type);
-void dbglCheckTexUnits(const struct wined3d_gl_info *gl_info, const struct IWineD3DDeviceImpl *pDevice, bool fBreakIfCanNotMatch);
+void dbglCheckTexUnits(const struct wined3d_gl_info *gl_info, const struct IWineD3DDeviceImpl *pDevice, BOOL fBreakIfCanNotMatch);
 
 #ifdef DEBUG_misha
 #define DBGL_CHECK_DRAWPRIM(_gl_info, _pDevice) do { \
