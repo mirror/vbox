@@ -881,7 +881,7 @@ static DECLCALLBACK(void) VBoxServiceVMInfoTerm(void)
 
 #ifdef RT_OS_WINDOWS
 # ifndef RT_OS_NT4
-    /* Install console control handler. */
+    /* Uninstall console control handler. */
     if (!SetConsoleCtrlHandler((PHANDLER_ROUTINE)NULL, FALSE /* Remove handler */))
     {
         VBoxServiceError("VMInfo: Unable to remove console control handler, error=%ld\n", GetLastError());
