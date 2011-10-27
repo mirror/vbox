@@ -7797,10 +7797,7 @@ FNIEMOP_DEF(iemOp_call_Ap)
     if (pIemCpu->enmEffOpSize != IEMMODE_16BIT)
         IEM_OPCODE_GET_NEXT_U32(&offSeg);
     else
-    {
-        uint16_t offSeg16; IEM_OPCODE_GET_NEXT_U16(&offSeg16); /** @todo add GET_NEXT_U16_ZX_U32 to reduce code size. */
-        offSeg = offSeg16;
-    }
+        IEM_OPCODE_GET_NEXT_U16_ZX_U32(&offSeg);
     uint16_t uSel;  IEM_OPCODE_GET_NEXT_U16(&uSel);
     IEMOP_HLP_NO_LOCK_PREFIX();
     return IEM_MC_DEFER_TO_CIMPL_3(iemCImpl_callf, uSel, offSeg, pIemCpu->enmEffOpSize);
@@ -7894,17 +7891,11 @@ FNIEMOP_DEF(iemOp_lahf)
         switch (pIemCpu->enmEffAddrMode) \
         { \
             case IEMMODE_16BIT: \
-            { \
-                uint16_t u16Off; IEM_OPCODE_GET_NEXT_U16(&u16Off); \
-                (a_GCPtrMemOff) = u16Off; \
+                IEM_OPCODE_GET_NEXT_U16_ZX_U64(&(a_GCPtrMemOff)); \
                 break; \
-            } \
             case IEMMODE_32BIT: \
-            { \
-                uint32_t u32Off; IEM_OPCODE_GET_NEXT_U32(&u32Off); \
-                (a_GCPtrMemOff) = u32Off; \
+                IEM_OPCODE_GET_NEXT_U32_ZX_U64(&(a_GCPtrMemOff)); \
                 break; \
-            } \
             case IEMMODE_64BIT: \
                 IEM_OPCODE_GET_NEXT_U64(&(a_GCPtrMemOff)); \
                 break; \
@@ -10400,7 +10391,7 @@ FNIEMOP_DEF(iemOp_call_Jv)
         case IEMMODE_16BIT:
         {
             uint16_t u16Imm; IEM_OPCODE_GET_NEXT_U16(&u16Imm);
-            return IEM_MC_DEFER_TO_CIMPL_1(iemCImpl_call_rel_16, (int32_t)u16Imm);
+            return IEM_MC_DEFER_TO_CIMPL_1(iemCImpl_call_rel_16, (int16_t)u16Imm);
         }
 
         case IEMMODE_32BIT:
@@ -10462,10 +10453,7 @@ FNIEMOP_DEF(iemOp_jmp_Ap)
     if (pIemCpu->enmEffOpSize != IEMMODE_16BIT)
         IEM_OPCODE_GET_NEXT_U32(&offSeg);
     else
-    {
-        uint16_t offSeg16; IEM_OPCODE_GET_NEXT_U16(&offSeg16);
-        offSeg = offSeg16;
-    }
+        IEM_OPCODE_GET_NEXT_U16_ZX_U32(&offSeg);
     uint16_t uSel;  IEM_OPCODE_GET_NEXT_U16(&uSel);
     IEMOP_HLP_NO_LOCK_PREFIX();
     return IEM_MC_DEFER_TO_CIMPL_3(iemCImpl_FarJmp, uSel, offSeg, pIemCpu->enmEffOpSize);
