@@ -2168,6 +2168,22 @@ DECL_NO_INLINE(static, VBOXSTRICTRC) iemRaiseMathFault(PIEMCPU pIemCpu)
 
 
 /**
+ * Macro for calling iemCImplRaiseDivideError().
+ *
+ * This enables us to add/remove arguments and force different levels of
+ * inlining as we wish.
+ *
+ * @return  Strict VBox status code.
+ */
+#define IEMOP_RAISE_DIVIDE_ERROR()          IEM_MC_DEFER_TO_CIMPL_0(iemCImplRaiseDivideError)
+IEM_CIMPL_DEF_0(iemCImplRaiseDivideError)
+{
+    NOREF(cbInstr);
+    return iemRaiseXcptOrInt(pIemCpu, 0, X86_XCPT_DE, IEM_XCPT_FLAGS_T_CPU_XCPT, 0, 0);
+}
+
+
+/**
  * Macro for calling iemCImplRaiseInvalidLockPrefix().
  *
  * This enables us to add/remove arguments and force different levels of

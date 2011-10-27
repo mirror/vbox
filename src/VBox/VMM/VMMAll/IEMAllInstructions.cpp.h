@@ -7798,7 +7798,7 @@ FNIEMOP_DEF(iemOp_call_Ap)
         IEM_OPCODE_GET_NEXT_U32(&offSeg);
     else
     {
-        uint16_t offSeg16; IEM_OPCODE_GET_NEXT_U16(&offSeg16);
+        uint16_t offSeg16; IEM_OPCODE_GET_NEXT_U16(&offSeg16); /** @todo add GET_NEXT_U16_ZX_U32 to reduce code size. */
         offSeg = offSeg16;
     }
     uint16_t uSel;  IEM_OPCODE_GET_NEXT_U16(&uSel);
@@ -7845,15 +7845,17 @@ FNIEMOP_DEF(iemOp_sahf)
 {
     IEMOP_MNEMONIC("sahf");
     IEMOP_HLP_NO_LOCK_PREFIX();
-    IEMOP_HLP_NO_64BIT();
+    if (   pIemCpu->enmCpuMode == IEMMODE_64BIT
+        && !IEM_IS_AMD_CPUID_FEATURE_PRESENT_ECX(X86_CPUID_AMD_FEATURE_ECX_LAHF_SAHF))
+        return IEMOP_RAISE_INVALID_OPCODE();
     IEM_MC_BEGIN(0, 2);
     IEM_MC_LOCAL(uint32_t, u32Flags);
     IEM_MC_LOCAL(uint32_t, EFlags);
     IEM_MC_FETCH_EFLAGS(EFlags);
     IEM_MC_FETCH_GREG_U8_ZX_U32(u32Flags, X86_GREG_xSP/*=AH*/);
-    IEM_MC_AND_LOCAL_U32(u32Flags, UINT32_C(0xd7));
+    IEM_MC_AND_LOCAL_U32(u32Flags, X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF | X86_EFL_CF);
     IEM_MC_AND_LOCAL_U32(EFlags, UINT32_C(0xffffff00));
-    IEM_MC_OR_LOCAL_U32(u32Flags, UINT32_C(0x00000002));
+    IEM_MC_OR_LOCAL_U32(u32Flags, X86_EFL_1);
     IEM_MC_OR_2LOCS_U32(EFlags, u32Flags);
     IEM_MC_COMMIT_EFLAGS(EFlags);
     IEM_MC_ADVANCE_RIP();
@@ -7867,7 +7869,9 @@ FNIEMOP_DEF(iemOp_lahf)
 {
     IEMOP_MNEMONIC("lahf");
     IEMOP_HLP_NO_LOCK_PREFIX();
-    IEMOP_HLP_NO_64BIT();
+    if (   pIemCpu->enmCpuMode == IEMMODE_64BIT
+        && !IEM_IS_AMD_CPUID_FEATURE_PRESENT_ECX(X86_CPUID_AMD_FEATURE_ECX_LAHF_SAHF))
+        return IEMOP_RAISE_INVALID_OPCODE();
     IEM_MC_BEGIN(0, 1);
     IEM_MC_LOCAL(uint8_t, u8Flags);
     IEM_MC_FETCH_EFLAGS_U8(u8Flags);
@@ -9862,6 +9866,8 @@ FNIEMOP_DEF(iemOp_aam_Ib)
     uint8_t bImm; IEM_OPCODE_GET_NEXT_U8(&bImm);
     IEMOP_HLP_NO_LOCK_PREFIX();
     IEMOP_HLP_NO_64BIT();
+    if (!bImm)
+        return IEMOP_RAISE_DIVIDE_ERROR();
     return IEM_MC_DEFER_TO_CIMPL_1(iemCImpl_aam, bImm);
 }
 
