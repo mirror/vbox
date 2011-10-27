@@ -2557,6 +2557,7 @@ static void context_apply_state(struct wined3d_context *context, IWineD3DDeviceI
             break;
 
         case CTXUSAGE_BLIT:
+        case CTXUSAGE_BLIT_LIGHT:
             if (wined3d_settings.offscreen_rendering_mode == ORM_FBO) {
                 if (!context->render_offscreen) context_validate_onscreen_formats(device, context);
                 if (context->render_offscreen)
@@ -2590,6 +2591,7 @@ static void context_apply_state(struct wined3d_context *context, IWineD3DDeviceI
 
     switch(usage) {
         case CTXUSAGE_RESOURCELOAD:
+        case CTXUSAGE_BLIT_LIGHT:
             /* This does not require any special states to be set up */
             break;
 

@@ -64,10 +64,19 @@ DWORD g_VBoxVDbgFBreakShared = VBOXWDDMDISP_DEBUG_DUMP_DEFAULT;
 DWORD g_VBoxVDbgFBreakDdi = 0;
 
 DWORD g_VBoxVDbgFCheckSysMemSync = 0;
+DWORD g_VBoxVDbgFCheckBlt = 0;
+DWORD g_VBoxVDbgFCheckTexBlt = 0;
+
+DWORD g_VBoxVDbgFSkipCheckTexBltDwmWndUpdate = 1;
 
 DWORD g_VBoxVDbgFLogRel = 1;
 DWORD g_VBoxVDbgFLog = 1;
 DWORD g_VBoxVDbgFLogFlow = 0;
+
+DWORD g_VBoxVDbgFIsModuleNameInited = 0;
+char g_VBoxVDbgModuleName[MAX_PATH];
+
+LONG g_VBoxVDbgFIsDwm = -1;
 
 DWORD g_VBoxVDbgPid = 0;
 typedef enum
@@ -188,11 +197,21 @@ VOID vboxVDbgDoDumpSurfRectByAlloc(const char * pPrefix, PVBOXWDDMDISP_ALLOCATIO
     vboxVDbgDoDumpSurfRectByRc(pPrefix, pAlloc->pRc, pAlloc->iAlloc, pRect, pSuffix);
 }
 
-VOID vboxVDbgDoPrintDumpCmd(const void *pvData, uint32_t width, uint32_t height, uint32_t bpp, uint32_t pitch)
+VOID vboxVDbgDoPrintDmlCmd(const char* pszDesc, const char* pszCmd)
 {
-    vboxVDbgPrint(("<?dml?><exec cmd=\"!vbvdbg.ms 0x%p 0n%d 0n%d 0n%d 0n%d\">surface info</exec>, ( !vbvdbg.ms 0x%p 0n%d 0n%d 0n%d 0n%d )\n",
-            pvData, width, height, bpp, pitch,
-            pvData, width, height, bpp, pitch));
+    vboxVDbgPrint(("<?dml?><exec cmd=\"%s\">%s</exec>, ( %s )\n", pszCmd, pszDesc, pszCmd));
+}
+
+VOID vboxVDbgDoPrintDumpCmd(const char* pszDesc, const void *pvData, uint32_t width, uint32_t height, uint32_t bpp, uint32_t pitch)
+{
+    char Cmd[1024];
+    sprintf(Cmd, "!vbvdbg.ms 0x%p 0n%d 0n%d 0n%d 0n%d", pvData, width, height, bpp, pitch);
+    vboxVDbgDoPrintDmlCmd(pszDesc, Cmd);
+}
+
+VOID vboxVDbgDoPrintLopLastCmd(const char* pszDesc)
+{
+    vboxVDbgDoPrintDmlCmd(pszDesc, "ed @@(&vboxVDbgLoop) 0");
 }
 
 VOID vboxVDbgDoDumpAllocRect(const char * pPrefix, PVBOXWDDMDISP_ALLOCATION pAlloc, const RECT *pRect, const char* pSuffix)
@@ -225,13 +244,13 @@ VOID vboxVDbgDoDumpAllocRect(const char * pPrefix, PVBOXWDDMDISP_ALLOCATION pAll
     if (hr == S_OK)
     {
         UINT bpp = vboxWddmCalcBitsPerPixel(pAlloc->SurfDesc.format);
-        vboxVDbgDoPrintDumpCmd(LockData.pData, pAlloc->D3DWidth, pAlloc->SurfDesc.height, bpp, pAlloc->SurfDesc.pitch);
+        vboxVDbgDoPrintDumpCmd("Surf Info", LockData.pData, pAlloc->D3DWidth, pAlloc->SurfDesc.height, bpp, pAlloc->SurfDesc.pitch);
         if (pRect)
         {
             Assert(pRect->right > pRect->left);
             Assert(pRect->bottom > pRect->top);
             vboxVDbgDoPrintRect("rect: ", pRect, "\n");
-            vboxVDbgDoPrintDumpCmd(((uint8_t*)LockData.pData) + (pRect->top * pAlloc->SurfDesc.pitch) + ((pRect->left * bpp) >> 3),
+            vboxVDbgDoPrintDumpCmd("Rect Info", ((uint8_t*)LockData.pData) + (pRect->top * pAlloc->SurfDesc.pitch) + ((pRect->left * bpp) >> 3),
                     pRect->right - pRect->left, pRect->bottom - pRect->top, bpp, pAlloc->SurfDesc.pitch);
         }
         Assert(0);
@@ -283,13 +302,13 @@ VOID vboxVDbgDoDumpSurfRect(const char * pPrefix, IDirect3DSurface9 *pSurf, cons
         if (hr == S_OK)
         {
             UINT bpp = vboxWddmCalcBitsPerPixel((D3DDDIFORMAT)Desc.Format);
-            vboxVDbgDoPrintDumpCmd(Lr.pBits, Desc.Width, Desc.Height, bpp, Lr.Pitch);
+            vboxVDbgDoPrintDumpCmd("Surf Info", Lr.pBits, Desc.Width, Desc.Height, bpp, Lr.Pitch);
             if (pRect)
             {
                 Assert(pRect->right > pRect->left);
                 Assert(pRect->bottom > pRect->top);
                 vboxVDbgDoPrintRect("rect: ", pRect, "\n");
-                vboxVDbgDoPrintDumpCmd(((uint8_t*)Lr.pBits) + (pRect->top * Lr.Pitch) + ((pRect->left * bpp) >> 3),
+                vboxVDbgDoPrintDumpCmd("Rect Info", ((uint8_t*)Lr.pBits) + (pRect->top * Lr.Pitch) + ((pRect->left * bpp) >> 3),
                         pRect->right - pRect->left, pRect->bottom - pRect->top, bpp, Lr.Pitch);
             }
 
@@ -498,7 +517,7 @@ VOID vboxVDbgDoDumpLockUnlockSurfTex(const char * pPrefix, const PVBOXWDDMDISP_A
 
     vboxVDbgPrint(("pRc(0x%p) iAlloc(%d), type(%d), cLocks(%d)\n", pAlloc->pRc, pAlloc->iAlloc, pAlloc->enmD3DIfType, pAlloc->LockInfo.cLocks));
 
-    vboxVDbgDoPrintDumpCmd(pvData, width, height, bpp, pitch);
+    vboxVDbgDoPrintDumpCmd("Surf Info", pvData, width, height, bpp, pitch);
 
     if (fBreak)
     {
@@ -527,6 +546,130 @@ VOID vboxVDbgDoDumpUnlockSurfTex(const char * pPrefix, const D3DDDIARG_UNLOCK* p
     vboxVDbgDoDumpLockUnlockSurfTex(pPrefix, pAlloc, pSuffix, fBreak);
 }
 
+BOOL vboxVDbgDoCheckLRects(D3DLOCKED_RECT *pDstLRect, const RECT *pDstRect, D3DLOCKED_RECT *pSrcLRect, const RECT *pSrcRect, DWORD bpp, BOOL fBreakOnMismatch)
+{
+    LONG DstH, DstW, SrcH, SrcW, DstWBytes;
+    BOOL fMatch = FALSE;
+    DstH = pDstRect->bottom - pDstRect->top;
+    DstW = pDstRect->right - pDstRect->left;
+    SrcH = pSrcRect->bottom - pSrcRect->top;
+    SrcW = pSrcRect->right - pSrcRect->left;
+
+    DstWBytes = ((DstW * bpp + 7) >> 3);
+
+    if(DstW != SrcW && DstH != SrcH)
+    {
+        WARN(("stretched comparison not supported!!"));
+        return FALSE;
+    }
+
+    uint8_t *pDst = (uint8_t*)pDstLRect->pBits;
+    uint8_t *pSrc = (uint8_t*)pSrcLRect->pBits;
+    for (LONG i = 0; i < DstH; ++i)
+    {
+        if (!(fMatch = !memcmp(pDst, pSrc, DstWBytes)))
+        {
+            vboxVDbgPrint(("not match!\n"));
+            if (fBreakOnMismatch)
+                Assert(0);
+            break;
+        }
+        pDst += pDstLRect->Pitch;
+        pSrc += pSrcLRect->Pitch;
+    }
+    return fMatch;
+}
+
+BOOL vboxVDbgDoCheckRectsMatch(const PVBOXWDDMDISP_RESOURCE pDstRc, uint32_t iDstAlloc,
+                            const PVBOXWDDMDISP_RESOURCE pSrcRc, uint32_t iSrcAlloc,
+                            const RECT *pDstRect,
+                            const RECT *pSrcRect,
+                            BOOL fBreakOnMismatch)
+{
+    BOOL fMatch = FALSE;
+    RECT DstRect = {0}, SrcRect = {0};
+    if (!pDstRect)
+    {
+        DstRect.left = 0;
+        DstRect.right = pDstRc->aAllocations[iDstAlloc].SurfDesc.width;
+        DstRect.top = 0;
+        DstRect.bottom = pDstRc->aAllocations[iDstAlloc].SurfDesc.height;
+        pDstRect = &DstRect;
+    }
+
+    if (!pSrcRect)
+    {
+        SrcRect.left = 0;
+        SrcRect.right = pSrcRc->aAllocations[iSrcAlloc].SurfDesc.width;
+        SrcRect.top = 0;
+        SrcRect.bottom = pSrcRc->aAllocations[iSrcAlloc].SurfDesc.height;
+        pSrcRect = &SrcRect;
+    }
+
+    if (pDstRc == pSrcRc
+            && iDstAlloc == iSrcAlloc)
+    {
+        if (!memcmp(pDstRect, pSrcRect, sizeof (*pDstRect)))
+        {
+            vboxVDbgPrint(("matching same rect of one allocation, skipping..\n"));
+            return TRUE;
+        }
+        WARN(("matching different rects of the same allocation, unsupported!"));
+        return FALSE;
+    }
+
+    if (pDstRc->RcDesc.enmFormat != pSrcRc->RcDesc.enmFormat)
+    {
+        WARN(("matching different formats, unsupported!"));
+        return FALSE;
+    }
+
+    DWORD bpp = pDstRc->aAllocations[iDstAlloc].SurfDesc.bpp;
+    if (!bpp)
+    {
+        WARN(("uninited bpp! unsupported!"));
+        return FALSE;
+    }
+
+    LONG DstH, DstW, SrcH, SrcW;
+    DstH = pDstRect->bottom - pDstRect->top;
+    DstW = pDstRect->right - pDstRect->left;
+    SrcH = pSrcRect->bottom - pSrcRect->top;
+    SrcW = pSrcRect->right - pSrcRect->left;
+
+    if(DstW != SrcW && DstH != SrcH)
+    {
+        WARN(("stretched comparison not supported!!"));
+        return FALSE;
+    }
+
+    D3DLOCKED_RECT SrcLRect, DstLRect;
+    HRESULT hr = vboxWddmLockRect(pDstRc, iDstAlloc, &DstLRect, pDstRect, D3DLOCK_READONLY);
+    if (FAILED(hr))
+    {
+        WARN(("vboxWddmLockRect failed, hr(0x%x)", hr));
+        return FALSE;
+    }
+
+    hr = vboxWddmLockRect(pSrcRc, iSrcAlloc, &SrcLRect, pSrcRect, D3DLOCK_READONLY);
+    if (FAILED(hr))
+    {
+        WARN(("vboxWddmLockRect failed, hr(0x%x)", hr));
+        hr = vboxWddmUnlockRect(pDstRc, iDstAlloc);
+        return FALSE;
+    }
+
+    fMatch = vboxVDbgDoCheckLRects(&DstLRect, pDstRect, &SrcLRect, pSrcRect, bpp, fBreakOnMismatch);
+
+    hr = vboxWddmUnlockRect(pDstRc, iDstAlloc);
+    Assert(hr == S_OK);
+
+    hr = vboxWddmUnlockRect(pSrcRc, iSrcAlloc);
+    Assert(hr == S_OK);
+
+    return fMatch;
+}
+
 void vboxVDbgDoPrintAlloc(const char * pPrefix, const PVBOXWDDMDISP_RESOURCE pRc, uint32_t iAlloc, const char * pSuffix)
 {
     Assert(pRc->cAllocations > iAlloc);
@@ -550,6 +693,37 @@ void vboxVDbgDoPrintAlloc(const char * pPrefix, const PVBOXWDDMDISP_RESOURCE pRc
 void vboxVDbgDoPrintRect(const char * pPrefix, const RECT *pRect, const char * pSuffix)
 {
     vboxVDbgPrint(("%s left(%d), top(%d), right(%d), bottom(%d) %s", pPrefix, pRect->left, pRect->top, pRect->right, pRect->bottom, pSuffix));
+}
+
+char *vboxVDbgDoGetModuleName()
+{
+    if (!g_VBoxVDbgFIsModuleNameInited)
+    {
+        DWORD cName = GetModuleFileNameA(NULL, g_VBoxVDbgModuleName, RT_ELEMENTS(g_VBoxVDbgModuleName));
+        if (!cName)
+        {
+            DWORD winEr = GetLastError();
+            WARN(("GetModuleFileNameA failed, winEr %d", winEr));
+            return NULL;
+        }
+        g_VBoxVDbgFIsModuleNameInited = TRUE;
+    }
+    return g_VBoxVDbgModuleName;
+}
+
+BOOL vboxVDbgDoCheckExe(const char * pszName)
+{
+    char *pszModule = vboxVDbgDoGetModuleName();
+    if (!pszModule)
+        return FALSE;
+    DWORD cbModule, cbName;
+    cbModule = strlen(pszModule);
+    cbName = strlen(pszName);
+    if (cbName > cbModule)
+        return FALSE;
+    if (_stricmp(pszName, pszModule + (cbModule - cbName)))
+        return FALSE;
+    return TRUE;
 }
 #endif
 

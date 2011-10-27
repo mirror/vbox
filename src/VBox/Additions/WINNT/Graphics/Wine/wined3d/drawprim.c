@@ -36,6 +36,10 @@
 #include "config.h"
 #include "wined3d_private.h"
 
+#if defined(VBOX_WITH_WDDM)
+#include "../VBox/VBoxDbgGl.h"
+#endif
+
 WINE_DEFAULT_DEBUG_CHANNEL(d3d_draw);
 #define GLINFO_LOCATION This->adapter->gl_info
 
@@ -613,6 +617,10 @@ void drawPrimitive(IWineD3DDevice *iface, UINT index_count, UINT StartIdx, UINT 
         WARN("Invalid context, skipping draw.\n");
         return;
     }
+
+#if defined(VBOX_WITH_WDDM)
+    DBGL_CHECK_DRAWPRIM(context->gl_info, This);
+#endif
 
     if (This->stencilBufferTarget) {
         /* Note that this depends on the context_acquire() call above to set

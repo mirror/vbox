@@ -32,7 +32,11 @@
 #define VBOXWDDMDISP_MAX_SWAPCHAIN_SIZE 16
 /* maximum number of direct render targets to be used before
  * switching to offscreen rendering */
+#ifdef DEBUG_misha
+#define VBOXWDDMDISP_MAX_DIRECT_RTS      0
+#else
 #define VBOXWDDMDISP_MAX_DIRECT_RTS      3
+#endif
 
 #define VBOXWDDMDISP_IS_TEXTURE(_f) ((_f).Texture || (_f).Value == 0)
 
@@ -380,6 +384,12 @@ DECLINLINE(HRESULT) vboxWddmSurfGet(PVBOXWDDMDISP_RESOURCE pRc, UINT iAlloc, IDi
     }
     return hr;
 }
+
+HRESULT vboxWddmLockRect(PVBOXWDDMDISP_RESOURCE pRc, UINT iAlloc,
+        D3DLOCKED_RECT * pLockedRect,
+        CONST RECT *pRect,
+        DWORD fLockFlags);
+HRESULT vboxWddmUnlockRect(PVBOXWDDMDISP_RESOURCE pRc, UINT iAlloc);
 
 #define VBOXDISPMODE_IS_3D(_p) (!!((_p)->pD3D9If))
 #ifdef VBOXDISP_EARLYCREATEDEVICE

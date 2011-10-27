@@ -1253,6 +1253,7 @@ typedef enum ContextUsage {
     CTXUSAGE_DRAWPRIM           = 2,    /* OpenGL states are set up for blitting DirectDraw surfaces */
     CTXUSAGE_BLIT               = 3,    /* OpenGL states are set up 3D drawing */
     CTXUSAGE_CLEAR              = 4,    /* Drawable and states are set up for clearing */
+    CTXUSAGE_BLIT_LIGHT         = 5,    /* OpenGL states are set up 3D drawing */
 } ContextUsage;
 
 struct wined3d_context *context_acquire(IWineD3DDeviceImpl *This,

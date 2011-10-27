@@ -52,12 +52,20 @@ extern DWORD g_VBoxVDbgFBreakShared;
 extern DWORD g_VBoxVDbgFBreakDdi;
 
 extern DWORD g_VBoxVDbgFCheckSysMemSync;
+extern DWORD g_VBoxVDbgFCheckBlt;
+extern DWORD g_VBoxVDbgFCheckTexBlt;
+
+extern DWORD g_VBoxVDbgFSkipCheckTexBltDwmWndUpdate;
 
 /* log enable flags */
 extern DWORD g_VBoxVDbgFLogRel;
 extern DWORD g_VBoxVDbgFLog;
 extern DWORD g_VBoxVDbgFLogFlow;
 
+extern DWORD g_VBoxVDbgFIsModuleNameInited;
+extern char g_VBoxVDbgModuleName[];
+
+extern LONG g_VBoxVDbgFIsDwm;
 
 #endif
 
@@ -176,10 +184,22 @@ void vboxVDbgDoPrintAlloc(const char * pPrefix, const PVBOXWDDMDISP_RESOURCE pRc
 VOID vboxVDbgDoDumpLockSurfTex(const char * pPrefix, const D3DDDIARG_LOCK* pData, const char * pSuffix, bool fBreak);
 VOID vboxVDbgDoDumpUnlockSurfTex(const char * pPrefix, const D3DDDIARG_UNLOCK* pData, const char * pSuffix, bool fBreak);
 
+BOOL vboxVDbgDoCheckRectsMatch(const PVBOXWDDMDISP_RESOURCE pDstRc, uint32_t iDstAlloc,
+                            const PVBOXWDDMDISP_RESOURCE pSrcRc, uint32_t iSrcAlloc,
+                            const RECT *pDstRect,
+                            const RECT *pSrcRect,
+                            BOOL fBreakOnMismatch);
+
+BOOL vboxVDbgDoCheckExe(const char * pszName);
+
+VOID vboxVDbgDoPrintLopLastCmd(const char* pszDesc);
 
 extern DWORD g_VBoxVDbgPid;
 #define VBOXVDBG_IS_PID(_pid) ((_pid) == (g_VBoxVDbgPid ? g_VBoxVDbgPid : (g_VBoxVDbgPid = GetCurrentProcessId())))
 #define VBOXVDBG_IS_DUMP_ALLOWED_PID(_pid) (((int)(_pid)) > 0 ? VBOXVDBG_IS_PID(_pid) : !VBOXVDBG_IS_PID(-((int)(_pid))))
+
+#define VBOXVDBG_CHECK_EXE(_pszName) (vboxVDbgDoCheckExe(_pszName))
+#define VBOXVDBG_IS_DWM() (!!(g_VBoxVDbgFIsDwm >=0 ? g_VBoxVDbgFIsDwm : (g_VBoxVDbgFIsDwm = VBOXVDBG_CHECK_EXE("dwm.exe"))))
 
 #define VBOXVDBG_IS_DUMP_ALLOWED(_type) ( \
         g_VBoxVDbgFDump##_type \
@@ -225,10 +245,41 @@ extern DWORD g_VBoxVDbgPid;
         } \
     } while (0)
 
+#define VBOXVDBG_LOOP_LAST() do { vboxVDbgLoop = 0; } while (0)
+
+#define VBOXVDBG_LOOP(_op) do { \
+        DWORD vboxVDbgLoop = 1; \
+        do { \
+            _op; \
+        } while (vboxVDbgLoop); \
+    } while (0)
+
 #define VBOXVDBG_CHECK_SMSYNC(_pRc) do { \
         if (VBOXVDBG_IS_CHECK_ALLOWED(SysMemSync)) { \
             vboxWddmDbgRcSynchMemCheck((_pRc)); \
         } \
+    } while (0)
+
+#define VBOXVDBG_DUMP_RECTS_INIT(_d) DWORD vboxVDbgDumpRects = _d;
+#define VBOXVDBG_DUMP_RECTS_FORCE() vboxVDbgDumpRects = 1;
+#define VBOXVDBG_DUMP_RECTS_FORCED() (!!vboxVDbgDumpRects)
+
+#define VBOXVDBG_CHECK_RECTS(_opRests, _opDump, _pszOpName, _pDstRc, _iDstAlloc, _pSrcRc, _iSrcAlloc, _pDstRect, _pSrcRect) do { \
+        VBOXVDBG_LOOP(\
+                VBOXVDBG_DUMP_RECTS_INIT(0); \
+                _opRests; \
+                if (vboxVDbgDoCheckRectsMatch(_pDstRc, _iDstAlloc, _pSrcRc, _iSrcAlloc, _pDstRect, _pSrcRect, FALSE)) { \
+                    VBOXVDBG_LOOP_LAST(); \
+                } \
+                else \
+                { \
+                    VBOXVDBG_DUMP_RECTS_FORCE(); \
+                    vboxVDbgPrint(("vboxVDbgDoCheckRectsMatch failed! The " _pszOpName " will be re-done so it can be debugged\n")); \
+                    vboxVDbgDoPrintLopLastCmd("Don't redo the" _pszOpName); \
+                    Assert(0); \
+                } \
+                _opDump; \
+         ); \
     } while (0)
 
 #define VBOXVDBG_DEV_CHECK_SHARED(_pDevice, _pIsShared) do { \
@@ -290,7 +341,8 @@ extern DWORD g_VBoxVDbgPid;
     } while (0)
 
 #define VBOXVDBG_DUMP_TEXBLT_LEAVE(_pSrcRc, _pSrcRect, _pDstRc, _pDstPoint) do { \
-        if (VBOXVDBG_IS_DUMP_ALLOWED(TexBlt) \
+        if (VBOXVDBG_DUMP_RECTS_FORCED() \
+                || VBOXVDBG_IS_DUMP_ALLOWED(TexBlt) \
                 || VBOXVDBG_IS_DUMP_SHARED_ALLOWED(_pSrcRc) \
                 || VBOXVDBG_IS_DUMP_SHARED_ALLOWED(_pDstRc) \
                 ) \
@@ -308,19 +360,97 @@ extern DWORD g_VBoxVDbgPid;
                 || VBOXVDBG_IS_DUMP_SHARED_ALLOWED((_pDstAlloc)->pRc) \
                 ) \
         { \
-            vboxVDbgDoDumpRcRectByAlloc("==>"__FUNCTION__" Src: ", (_pSrcAlloc), (_pSrcSurf), (_pSrcRect), "\n"); \
-            vboxVDbgDoDumpRcRectByAlloc("==>"__FUNCTION__" Dst: ", (_pDstAlloc), (_pDstSurf), (_pDstRect), "\n"); \
+            if ((_pSrcAlloc) == (_pDstAlloc) && !memcmp((_pSrcRect), (_pDstRect), sizeof (_pDstRect))) \
+            { \
+                vboxVDbgPrint(("BLT_ENTER: skipping dump of the same rect for one surfcace\n")); \
+            } \
+            else \
+            { \
+                vboxVDbgDoDumpRcRectByAlloc("==>"__FUNCTION__" Src: ", (_pSrcAlloc), (_pSrcSurf), (_pSrcRect), "\n"); \
+                vboxVDbgDoDumpRcRectByAlloc("==>"__FUNCTION__" Dst: ", (_pDstAlloc), (_pDstSurf), (_pDstRect), "\n"); \
+            } \
         } \
     } while (0)
 
 #define VBOXVDBG_DUMP_BLT_LEAVE(_pSrcAlloc, _pSrcSurf, _pSrcRect, _pDstAlloc, _pDstSurf, _pDstRect) do { \
-        if (VBOXVDBG_IS_DUMP_ALLOWED(Blt) \
+        if (VBOXVDBG_DUMP_RECTS_FORCED() \
+                || VBOXVDBG_IS_DUMP_ALLOWED(Blt) \
                 || VBOXVDBG_IS_DUMP_SHARED_ALLOWED((_pSrcAlloc)->pRc) \
                 || VBOXVDBG_IS_DUMP_SHARED_ALLOWED((_pDstAlloc)->pRc) \
                 ) \
         { \
-            vboxVDbgDoDumpRcRectByAlloc("<=="__FUNCTION__" Src: ", (_pSrcAlloc), (_pSrcSurf), (_pSrcRect), "\n"); \
-            vboxVDbgDoDumpRcRectByAlloc("<=="__FUNCTION__" Dst: ", (_pDstAlloc), (_pDstSurf), (_pDstRect), "\n"); \
+            if ((_pSrcAlloc) == (_pDstAlloc) && !memcmp((_pSrcRect), (_pDstRect), sizeof (_pDstRect))) \
+            { \
+                vboxVDbgPrint(("BLT_LEAVE: skipping dump of the same rect for one surfcace\n")); \
+            } \
+            else \
+            { \
+                vboxVDbgDoDumpRcRectByAlloc("<=="__FUNCTION__" Src: ", (_pSrcAlloc), (_pSrcSurf), (_pSrcRect), "\n"); \
+                vboxVDbgDoDumpRcRectByAlloc("<=="__FUNCTION__" Dst: ", (_pDstAlloc), (_pDstSurf), (_pDstRect), "\n"); \
+            } \
+        } \
+    } while (0)
+
+#define VBOXVDBG_IS_SKIP_DWM_WND_UPDATE(_pSrcRc, _pSrcRect, _pDstRc, _pDstPoint) ( \
+            g_VBoxVDbgFSkipCheckTexBltDwmWndUpdate \
+            && ( \
+                VBOXVDBG_IS_DWM() \
+                && (_pSrcRc)->RcDesc.enmPool == D3DDDIPOOL_SYSTEMMEM \
+                && (_pSrcRc)->RcDesc.enmFormat == D3DDDIFMT_A8R8G8B8 \
+                && (_pSrcRc)->cAllocations == 1 \
+                && (_pDstRc)->RcDesc.enmPool == D3DDDIPOOL_VIDEOMEMORY \
+                && (_pDstRc)->RcDesc.enmFormat == D3DDDIFMT_A8R8G8B8 \
+                && (_pDstRc)->RcDesc.fFlags.RenderTarget \
+                && (_pDstRc)->RcDesc.fFlags.NotLockable \
+                && (_pDstRc)->cAllocations == 1 \
+                && (_pSrcRc)->aAllocations[0].SurfDesc.width == (_pDstRc)->aAllocations[0].SurfDesc.width \
+                && (_pSrcRc)->aAllocations[0].SurfDesc.height == (_pDstRc)->aAllocations[0].SurfDesc.height \
+            ) \
+        )
+
+#define VBOXVDBG_CHECK_TEXBLT(_opTexBlt, _pSrcRc, _pSrcRect, _pDstRc, _pDstPoint) do { \
+        if (VBOXVDBG_IS_CHECK_ALLOWED(TexBlt)) { \
+            if (VBOXVDBG_IS_SKIP_DWM_WND_UPDATE(_pSrcRc, _pSrcRect, _pDstRc, _pDstPoint)) \
+            { \
+                vboxVDbgPrint(("TEXBLT: skipping check for dwm wnd update\n")); \
+            } \
+            else \
+            { \
+                RECT DstRect; \
+                DstRect.left = (_pDstPoint)->x; \
+                DstRect.right = (_pDstPoint)->x + (_pSrcRect)->right - (_pSrcRect)->left; \
+                DstRect.top = (_pDstPoint)->y; \
+                DstRect.bottom = (_pDstPoint)->y + (_pSrcRect)->bottom - (_pSrcRect)->top; \
+                VBOXVDBG_CHECK_RECTS(\
+                        VBOXVDBG_DUMP_TEXBLT_ENTER(_pSrcRc, _pSrcRect, _pDstRc, _pDstPoint); \
+                        _opTexBlt ,\
+                        VBOXVDBG_DUMP_TEXBLT_LEAVE(_pSrcRc, _pSrcRect, _pDstRc, _pDstPoint), \
+                        "TexBlt", \
+                        _pDstRc, 0, _pSrcRc, 0, &DstRect, _pSrcRect); \
+                break; \
+            } \
+        } \
+        VBOXVDBG_DUMP_RECTS_INIT(0); \
+        VBOXVDBG_DUMP_TEXBLT_ENTER(_pSrcRc, _pSrcRect, _pDstRc, _pDstPoint); \
+        _opTexBlt;\
+        VBOXVDBG_DUMP_TEXBLT_LEAVE(_pSrcRc, _pSrcRect, _pDstRc, _pDstPoint); \
+    } while (0)
+
+#define VBOXVDBG_CHECK_BLT(_opBlt, _pSrcAlloc, _pSrcSurf, _pSrcRect, _pDstAlloc, _pDstSurf, _pDstRect) do { \
+        if (VBOXVDBG_IS_CHECK_ALLOWED(Blt)) { \
+            VBOXVDBG_CHECK_RECTS(\
+                    VBOXVDBG_DUMP_BLT_ENTER(_pSrcAlloc, _pSrcSurf, _pSrcRect, _pDstAlloc, _pDstSurf, _pDstRect); \
+                    _opBlt ,\
+                    VBOXVDBG_DUMP_BLT_LEAVE(_pSrcAlloc, _pSrcSurf, _pSrcRect, _pDstAlloc, _pDstSurf, _pDstRect), \
+                    "Blt", \
+                    _pDstAlloc->pRc, _pDstAlloc->iAlloc, _pSrcAlloc->pRc, _pSrcAlloc->iAlloc, _pDstRect, _pSrcRect); \
+        } \
+        else \
+        { \
+            VBOXVDBG_DUMP_RECTS_INIT(0); \
+            VBOXVDBG_DUMP_BLT_ENTER(_pSrcAlloc, _pSrcSurf, _pSrcRect, _pDstAlloc, _pDstSurf, _pDstRect); \
+            _opBlt;\
+            VBOXVDBG_DUMP_BLT_LEAVE(_pSrcAlloc, _pSrcSurf, _pSrcRect, _pDstAlloc, _pDstSurf, _pDstRect); \
         } \
     } while (0)
 
@@ -370,6 +500,8 @@ extern DWORD g_VBoxVDbgPid;
 #define VBOXVDBG_BREAK_SHARED(_pRc) do { } while (0)
 #define VBOXVDBG_BREAK_DDI() do { } while (0)
 #define VBOXVDBG_CHECK_SMSYNC(_pRc) do { } while (0)
+#define VBOXVDBG_CHECK_BLT(_opBlt, _pSrcAlloc, _pSrcSurf, _pSrcRect, _pDstAlloc, _pDstSurf, _pDstRect) do { } while (0)
+#define VBOXVDBG_CHECK_TEXBLT(_opTexBlt, _pSrcRc, _pSrcRect, _pDstRc, _pDstPoint) do { } while (0)
 #endif
 
 
