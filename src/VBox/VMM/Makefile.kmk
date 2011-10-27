@@ -573,11 +573,14 @@ endif
 # Always optimize the interpreter.
 #
 if1of ($(KBUILD_TARGET), win)
-#VMMAll/IEMAll.cpp_CXXFLAGS = TODO
+#VMMAll/IEMAll.cpp_CXXFLAGS += TODO
 #else if1of ($(KBUILD_TARGET_ARCH), amd64)
-# VMMAll/IEMAll.cpp_CXXFLAGS = -O2 -fomit-frame-pointer
+# VMMAll/IEMAll.cpp_CXXFLAGS += -O2 -fomit-frame-pointer
 else
- VMMAll/IEMAll.cpp_CXXFLAGS = -O2 #-fomit-frame-pointer - latter causes trouble on mac.
+ VMMAll/IEMAll.cpp_CXXFLAGS += -O2
+ #VMMAll/IEMAll.cpp_CXXFLAGS += -fno-align-functions -fno-align-jumps -fno-align-loops # Saves a few of percents, not worth it.
+ #VMMAll/IEMAll.cpp_CXXFLAGS += -fno-reorder-blocks    # Saves one or two percent ... never mind.
+ VMMAll/IEMAll.cpp_CXXFLAGS += -fomit-frame-pointer # Omitting the frame pointer results in larger code, but it might be worth it. (esp addressing vs ebp?)
 endif
 
 
