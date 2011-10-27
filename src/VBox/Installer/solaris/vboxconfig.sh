@@ -21,11 +21,6 @@
 LANG=C
 export LANG
 
-# S10 or S11
-HOST_OS_MAJORVERSION=`uname -r`
-# Which Solaris version (snv_xxx or oi_xxx or 11.x)?
-HOST_OS_MINORVERSION=`uname -v | egrep 'snv|oi|11.' | sed -e "s/snv_//" -e "s/oi_//" -e "s/[^0-9.]//"`
-
 DIR_VBOXBASE="$PKG_INSTALL_ROOT/opt/VirtualBox"
 DIR_CONF="$PKG_INSTALL_ROOT/platform/i86pc/kernel/drv"
 DIR_MOD_32="$PKG_INSTALL_ROOT/platform/i86pc/kernel/drv"
@@ -225,30 +220,54 @@ check_root()
 # cannot fail
 get_sysinfo()
 {
-    if test "$HOST_OS_MAJORVERSION" = "5.11" && test "$HOST_OS_MINORVERSION" = "11.0"; then
-        HOST_OS_MINORVERSION="175"
-    else
-        # try find version for remote installs or if previous version parsing failed (empty strings), will minor will be empty
-        # for S10 hosts
-        if test "$REMOTEINST" -eq 1 || test -z "$HOST_OS_MINORVERSION" || test -z "$HOST_OS_MAJORVERSION"; then
-            if test -f "$PKG_INSTALL_ROOT/etc/release"; then
-                HOST_OS_MAJORVERSION=`cat "$PKG_INSTALL_ROOT/etc/release" | grep "Solaris 10"`
-                if test -n "$HOST_OS_MAJORVERSION"; then
-                    HOST_OS_MAJORVERSION="5.10"
-                else
-                    HOST_OS_MAJORVERSION=`cat "$PKG_INSTALL_ROOT/etc/release" | egrep "snv_|oi_"`
-                    if test -n "$HOST_OS_MAJORVERSION"; then
-                        HOST_OS_MAJORVERSION="5.11"
-                    fi
-                fi
-                if test "$HOST_OS_MAJORVERSION" != "5.10"; then
-                    HOST_OS_MINORVERSION=`cat "$PKG_INSTALL_ROOT/etc/release" | tr ' ' '\n' | egrep 'snv_|oi_' | sed -e "s/snv_//" -e "s/oi_//" -e "s/[^0-9]//"`
-                else
-                    HOST_OS_MINORVERSION=""
-                fi
+    BIN_PKG=`which pkg 2> /dev/null`
+    if test -x "$BIN_PKG"; then
+        PKGFMRI=`$BIN_PKG $BASEDIR_PKGOPT contents -H -t set -a name=pkg.fmri -o pkg.fmri pkg:/system/kernel 2> /dev/null`
+        if test ! -z "$PKGFMRI"; then
+            # The format is "pkg://solaris/system/kernel@0.5.11,5.11-0.161:20110315T070332Z"
+            #            or "pkg://solaris/system/kernel@0.5.11,5.11-0.175.0.0.0.1.0:20111012T032837Z"
+            STR_KERN=`echo "$PKGFMRI" | sed 's/^.*\@//;s/\:.*//;s/.*,//'`
+            if test ! -z "$STR_KERN"; then
+                # The format is "5.11-0.161" or "5.11-0.175.0.0.0.1.0"
+                HOST_OS_MAJORVERSION=`echo "$STR_KERN" | cut -f1 -d'-'`
+                HOST_OS_MINORVERSION=`echo "$STR_KERN" | cut -f2 -d'-' | cut -f2 -d '.'`
             else
-                HOST_OS_MAJORVERSION=""
+                errorprint "Failed to parse the Solaris kernel version."
+                exit 1
+            fi        
+        else
+            errorprint "Failed to detect the Solaris kernel version."
+            exit 1
+        fi
+    else
+        HOST_OS_MAJORVERSION=`uname -r`
+        if test -z "$HOST_OS_MAJORVERSION" || test "$HOST_OS_MAJORVERSION" != "5.10";  then
+            # S11 without 'pkg' ?? Something's wrong... bail.
+            errorprint "Solaris $HOST_OS_MAJOR_VERSION detected without executable $BIN_PKG !? Confused."
+            exit 1
+        fi
+        if test "$REMOTEINST" -eq 0; then
+            # Use uname to verify it's S10.
+            # Major version is S10, Minor version is no longer relevant (or used), use uname -v so it gets something
+            # like "Generic_blah" for purely cosmetic purposes
+            HOST_OS_MINORVERSION=`uname -v`
+        else
+            # Remote installs from S10 local.
+            BIN_PKGCHK=`which pkgchk 2> /dev/null`
+            if test ! -x "$BIN_PKGCHK"; then
+                errorprint "Failed to find an executable pkgchk binary $BIN_PKGCHK."
+                errorprint "Cannot determine Solaris version on remote target $PKG_INSTALL_ROOT"
+                exit 1
+            fi
+
+            REMOTE_S10=`$BIN_PKGCHK -l -p /kernel/amd64/genunix $BASEDIR_PKGOPT 2> /dev/null | grep SUNWckr | tr -d ' \t'`
+            if test ! -z "$REMOTE_S10" && test "$REMOTE_S10" = "SUNWckr"; then
+                HOST_OS_MAJORVERSION="5.10"
                 HOST_OS_MINORVERSION=""
+            else
+                errorprint "Remote target $PKG_INSTALL_ROOT is not Solaris 10."
+                errorprint "Will not attempt to install to an unidentified remote target."
+                exit 1
             fi
         fi
     fi
@@ -1013,18 +1032,18 @@ preremove()
 }
 
 
-
 # And it begins...
+if test "x${PKG_INSTALL_ROOT:=/}" != "x/"; then
+    BASEDIR_OPT="-b $PKG_INSTALL_ROOT"
+    BASEDIR_PKGOPT="-R $PKG_INSTALL_ROOT"
+    REMOTEINST=1
+fi
 find_bins
 check_root
 check_isa
 check_zone
 get_sysinfo
 
-if test "x${PKG_INSTALL_ROOT:=/}" != "x/"; then
-    BASEDIR_OPT="-b $PKG_INSTALL_ROOT"
-    REMOTEINST=1
-fi
 
 # Get command line options
 while test $# -gt 0;
