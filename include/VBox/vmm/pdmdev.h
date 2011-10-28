@@ -125,9 +125,9 @@ typedef FNPDMDEVRELOCATE *PFNPDMDEVRELOCATE;
  *
  * @remarks Not used.
  */
-typedef DECLCALLBACK(int) FNPDMDEVIOCTL(PPDMDEVINS pDevIns, RTUINT uFunction,
-                                        void *pvIn, RTUINT cbIn,
-                                        void *pvOut, RTUINT cbOut, PRTUINT pcbOut);
+typedef DECLCALLBACK(int) FNPDMDEVIOCTL(PPDMDEVINS pDevIns, uint32_t uFunction,
+                                        void *pvIn, uint32_t cbIn,
+                                        void *pvOut, uint32_t cbOut, PRTUINT pcbOut);
 /** Pointer to a FNPDMDEVIOCTL() function. */
 typedef FNPDMDEVIOCTL *PFNPDMDEVIOCTL;
 
@@ -2162,7 +2162,7 @@ typedef struct PDMDEVHLPR3
      * @param   pfnInStr            Pointer to function which is gonna handle string IN operations.
      * @param   pszDesc             Pointer to description string. This must not be freed.
      */
-    DECLR3CALLBACKMEMBER(int, pfnIOPortRegister,(PPDMDEVINS pDevIns, RTIOPORT Port, RTUINT cPorts, RTHCPTR pvUser,
+    DECLR3CALLBACKMEMBER(int, pfnIOPortRegister,(PPDMDEVINS pDevIns, RTIOPORT Port, RTIOPORT cPorts, RTHCPTR pvUser,
                                                  PFNIOMIOPORTOUT pfnOut, PFNIOMIOPORTIN pfnIn,
                                                  PFNIOMIOPORTOUTSTRING pfnOutStr, PFNIOMIOPORTINSTRING pfnInStr, const char *pszDesc));
 
@@ -2186,7 +2186,7 @@ typedef struct PDMDEVHLPR3
      * @param   pszInStr            Name of the RC function which is gonna handle string IN operations.
      * @param   pszDesc             Pointer to description string. This must not be freed.
      */
-    DECLR3CALLBACKMEMBER(int, pfnIOPortRegisterRC,(PPDMDEVINS pDevIns, RTIOPORT Port, RTUINT cPorts, RTRCPTR pvUser,
+    DECLR3CALLBACKMEMBER(int, pfnIOPortRegisterRC,(PPDMDEVINS pDevIns, RTIOPORT Port, RTIOPORT cPorts, RTRCPTR pvUser,
                                                    const char *pszOut, const char *pszIn,
                                                    const char *pszOutStr, const char *pszInStr, const char *pszDesc));
 
@@ -2207,7 +2207,7 @@ typedef struct PDMDEVHLPR3
      * @param   pszInStr            Name of the R0 function which is gonna handle string IN operations.
      * @param   pszDesc             Pointer to description string. This must not be freed.
      */
-    DECLR3CALLBACKMEMBER(int, pfnIOPortRegisterR0,(PPDMDEVINS pDevIns, RTIOPORT Port, RTUINT cPorts, RTR0PTR pvUser,
+    DECLR3CALLBACKMEMBER(int, pfnIOPortRegisterR0,(PPDMDEVINS pDevIns, RTIOPORT Port, RTIOPORT cPorts, RTR0PTR pvUser,
                                                    const char *pszOut, const char *pszIn,
                                                    const char *pszOutStr, const char *pszInStr, const char *pszDesc));
 
@@ -2221,7 +2221,7 @@ typedef struct PDMDEVHLPR3
      * @param   Port                First port number in the range.
      * @param   cPorts              Number of ports to deregister.
      */
-    DECLR3CALLBACKMEMBER(int, pfnIOPortDeregister,(PPDMDEVINS pDevIns, RTIOPORT Port, RTUINT cPorts));
+    DECLR3CALLBACKMEMBER(int, pfnIOPortDeregister,(PPDMDEVINS pDevIns, RTIOPORT Port, RTIOPORT cPorts));
 
     /**
      * Register a Memory Mapped I/O (MMIO) region.
@@ -2241,7 +2241,7 @@ typedef struct PDMDEVHLPR3
      * @param   fFlags              Flags, IOMMMIO_FLAGS_XXX.
      * @param   pszDesc             Pointer to description string. This must not be freed.
      */
-    DECLR3CALLBACKMEMBER(int, pfnMMIORegister,(PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, RTUINT cbRange, RTHCPTR pvUser,
+    DECLR3CALLBACKMEMBER(int, pfnMMIORegister,(PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, uint32_t cbRange, RTHCPTR pvUser,
                                                PFNIOMMMIOWRITE pfnWrite, PFNIOMMMIOREAD pfnRead, PFNIOMMMIOFILL pfnFill,
                                                uint32_t fFlags, const char *pszDesc));
 
@@ -2261,7 +2261,7 @@ typedef struct PDMDEVHLPR3
      * @param   pszRead             Name of the RC function which is gonna handle Read operations.
      * @param   pszFill             Name of the RC function which is gonna handle Fill/memset operations. (optional)
      */
-    DECLR3CALLBACKMEMBER(int, pfnMMIORegisterRC,(PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, RTUINT cbRange, RTGCPTR pvUser,
+    DECLR3CALLBACKMEMBER(int, pfnMMIORegisterRC,(PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, uint32_t cbRange, RTRCPTR pvUser,
                                                  const char *pszWrite, const char *pszRead, const char *pszFill));
 
     /**
@@ -2281,7 +2281,7 @@ typedef struct PDMDEVHLPR3
      * @param   pszFill             Name of the RC function which is gonna handle Fill/memset operations. (optional)
      * @param   pszDesc             Obsolete. NULL is fine.
      */
-    DECLR3CALLBACKMEMBER(int, pfnMMIORegisterR0,(PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, RTUINT cbRange, RTR0PTR pvUser,
+    DECLR3CALLBACKMEMBER(int, pfnMMIORegisterR0,(PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, uint32_t cbRange, RTR0PTR pvUser,
                                                  const char *pszWrite, const char *pszRead, const char *pszFill));
 
     /**
@@ -2294,7 +2294,7 @@ typedef struct PDMDEVHLPR3
      * @param   GCPhysStart         First physical address in the range.
      * @param   cbRange             The size of the range (in bytes).
      */
-    DECLR3CALLBACKMEMBER(int, pfnMMIODeregister,(PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, RTUINT cbRange));
+    DECLR3CALLBACKMEMBER(int, pfnMMIODeregister,(PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, uint32_t cbRange));
 
     /**
      * Allocate and register a MMIO2 region.
@@ -2421,7 +2421,7 @@ typedef struct PDMDEVHLPR3
      * @remark  There is no way to remove the rom, automatically on device cleanup or
      *          manually from the device yet. At present I doubt we need such features...
      */
-    DECLR3CALLBACKMEMBER(int, pfnROMRegister,(PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, RTUINT cbRange,
+    DECLR3CALLBACKMEMBER(int, pfnROMRegister,(PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, uint32_t cbRange,
                                               const void *pvBinary, uint32_t cbBinary, uint32_t fFlags, const char *pszDesc));
 
     /**
@@ -2435,7 +2435,7 @@ typedef struct PDMDEVHLPR3
      * @param   cbRange             The size of the mapping.
      * @param   enmProt             The new protection type.
      */
-    DECLR3CALLBACKMEMBER(int, pfnROMProtectShadow,(PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, RTUINT cbRange, PGMROMPROT enmProt));
+    DECLR3CALLBACKMEMBER(int, pfnROMProtectShadow,(PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, uint32_t cbRange, PGMROMPROT enmProt));
 
     /**
      * Register a save state data unit.
@@ -2919,7 +2919,7 @@ typedef struct PDMDEVHLPR3
      * @param   pszDesc             Pointer to a string describing the LUN. This string must remain valid
      *                              for the live of the device instance.
      */
-    DECLR3CALLBACKMEMBER(int, pfnDriverAttach,(PPDMDEVINS pDevIns, RTUINT iLun, PPDMIBASE pBaseInterface, PPDMIBASE *ppBaseInterface, const char *pszDesc));
+    DECLR3CALLBACKMEMBER(int, pfnDriverAttach,(PPDMDEVINS pDevIns, uint32_t iLun, PPDMIBASE pBaseInterface, PPDMIBASE *ppBaseInterface, const char *pszDesc));
 
     /**
      * Create a queue.
@@ -2937,7 +2937,7 @@ typedef struct PDMDEVHLPR3
      * @param   ppQueue             Where to store the queue handle on success.
      * @thread  The emulation thread.
      */
-    DECLR3CALLBACKMEMBER(int, pfnQueueCreate,(PPDMDEVINS pDevIns, RTUINT cbItem, RTUINT cItems, uint32_t cMilliesInterval,
+    DECLR3CALLBACKMEMBER(int, pfnQueueCreate,(PPDMDEVINS pDevIns, size_t cbItem, uint32_t cItems, uint32_t cMilliesInterval,
                                               PFNPDMQUEUEDEV pfnCallback, bool fRZEnabled, const char *pszName, PPDMQUEUE *ppQueue));
 
     /**
@@ -4066,7 +4066,7 @@ typedef struct PDMDEVINS
 /**
  * @copydoc PDMDEVHLPR3::pfnIOPortRegister
  */
-DECLINLINE(int) PDMDevHlpIOPortRegister(PPDMDEVINS pDevIns, RTIOPORT Port, RTUINT cPorts, RTHCPTR pvUser,
+DECLINLINE(int) PDMDevHlpIOPortRegister(PPDMDEVINS pDevIns, RTIOPORT Port, RTIOPORT cPorts, RTHCPTR pvUser,
                                         PFNIOMIOPORTOUT pfnOut, PFNIOMIOPORTIN pfnIn,
                                         PFNIOMIOPORTOUTSTRING pfnOutStr, PFNIOMIOPORTINSTRING pfnInStr, const char *pszDesc)
 {
@@ -4076,7 +4076,7 @@ DECLINLINE(int) PDMDevHlpIOPortRegister(PPDMDEVINS pDevIns, RTIOPORT Port, RTUIN
 /**
  * @copydoc PDMDEVHLPR3::pfnIOPortRegisterRC
  */
-DECLINLINE(int) PDMDevHlpIOPortRegisterRC(PPDMDEVINS pDevIns, RTIOPORT Port, RTUINT cPorts, RTRCPTR pvUser,
+DECLINLINE(int) PDMDevHlpIOPortRegisterRC(PPDMDEVINS pDevIns, RTIOPORT Port, RTIOPORT cPorts, RTRCPTR pvUser,
                                           const char *pszOut, const char *pszIn, const char *pszOutStr,
                                           const char *pszInStr, const char *pszDesc)
 {
@@ -4086,7 +4086,7 @@ DECLINLINE(int) PDMDevHlpIOPortRegisterRC(PPDMDEVINS pDevIns, RTIOPORT Port, RTU
 /**
  * @copydoc PDMDEVHLPR3::pfnIOPortRegisterR0
  */
-DECLINLINE(int) PDMDevHlpIOPortRegisterR0(PPDMDEVINS pDevIns, RTIOPORT Port, RTUINT cPorts, RTR0PTR pvUser,
+DECLINLINE(int) PDMDevHlpIOPortRegisterR0(PPDMDEVINS pDevIns, RTIOPORT Port, RTIOPORT cPorts, RTR0PTR pvUser,
                                           const char *pszOut, const char *pszIn, const char *pszOutStr,
                                           const char *pszInStr, const char *pszDesc)
 {
@@ -4096,15 +4096,29 @@ DECLINLINE(int) PDMDevHlpIOPortRegisterR0(PPDMDEVINS pDevIns, RTIOPORT Port, RTU
 /**
  * @copydoc PDMDEVHLPR3::pfnIOPortDeregister
  */
-DECLINLINE(int) PDMDevHlpIOPortDeregister(PPDMDEVINS pDevIns, RTIOPORT Port, RTUINT cPorts)
+DECLINLINE(int) PDMDevHlpIOPortDeregister(PPDMDEVINS pDevIns, RTIOPORT Port, RTIOPORT cPorts)
 {
     return pDevIns->pHlpR3->pfnIOPortDeregister(pDevIns, Port, cPorts);
 }
 
 /**
- * @copydoc PDMDEVHLPR3::pfnMMIORegister
+ * Register a Memory Mapped I/O (MMIO) region.
+ *
+ * These callbacks are of course for the ring-3 context (R3). Register HC
+ * handlers before raw-mode context (RC) and ring-0 context (R0) handlers! There
+ * must be a R3 handler for every RC and R0 handler!
+ *
+ * @returns VBox status.
+ * @param   pDevIns             The device instance to register the MMIO with.
+ * @param   GCPhysStart         First physical address in the range.
+ * @param   cbRange             The size of the range (in bytes).
+ * @param   pvUser              User argument.
+ * @param   fFlags              Flags, IOMMMIO_FLAGS_XXX.
+ * @param   pfnWrite            Pointer to function which is gonna handle Write operations.
+ * @param   pfnRead             Pointer to function which is gonna handle Read operations.
+ * @param   pszDesc             Pointer to description string. This must not be freed.
  */
-DECLINLINE(int) PDMDevHlpMMIORegister(PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, RTUINT cbRange, RTHCPTR pvUser,
+DECLINLINE(int) PDMDevHlpMMIORegister(PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, uint32_t cbRange, RTHCPTR pvUser,
                                       uint32_t fFlags, PFNIOMMMIOWRITE pfnWrite, PFNIOMMMIOREAD pfnRead, const char *pszDesc)
 {
     return pDevIns->pHlpR3->pfnMMIORegister(pDevIns, GCPhysStart, cbRange, pvUser, pfnWrite, pfnRead, NULL /*pfnFill*/,
@@ -4112,9 +4126,39 @@ DECLINLINE(int) PDMDevHlpMMIORegister(PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, 
 }
 
 /**
+ * Register a Memory Mapped I/O (MMIO) region for GC.
+ *
+ * These callbacks are for the raw-mode context (RC). Register ring-3 context
+ * (R3) handlers before guest context handlers! There must be a R3 handler for
+ * every RC handler!
+ *
+ * @returns VBox status.
+ * @param   pDevIns             The device instance to register the MMIO with.
+ * @param   GCPhysStart         First physical address in the range.
+ * @param   cbRange             The size of the range (in bytes).
+ * @param   pvUser              User argument.
+ * @param   pszWrite            Name of the RC function which is gonna handle Write operations.
+ * @param   pszRead             Name of the RC function which is gonna handle Read operations.
+ */
+DECLINLINE(int) PDMDevHlpMMIORegisterRC(PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, uint32_t cbRange, RTRCPTR pvUser,
+                                        const char *pszWrite, const char *pszRead)
+{
+    return pDevIns->pHlpR3->pfnMMIORegisterRC(pDevIns, GCPhysStart, cbRange, pvUser, pszWrite, pszRead, NULL /*pszFill*/);
+}
+
+/**
+ * @copydoc PDMDEVHLPR3::pfnMMIORegisterR0
+ */
+DECLINLINE(int) PDMDevHlpMMIORegisterR0(PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, uint32_t cbRange, RTR0PTR pvUser,
+                                        const char *pszWrite, const char *pszRead)
+{
+    return pDevIns->pHlpR3->pfnMMIORegisterR0(pDevIns, GCPhysStart, cbRange, pvUser, pszWrite, pszRead, NULL /*pszFill*/);
+}
+
+/**
  * @copydoc PDMDEVHLPR3::pfnMMIORegister
  */
-DECLINLINE(int) PDMDevHlpMMIORegisterEx(PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, RTUINT cbRange, RTHCPTR pvUser,
+DECLINLINE(int) PDMDevHlpMMIORegisterEx(PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, uint32_t cbRange, RTHCPTR pvUser,
                                         uint32_t fFlags, PFNIOMMMIOWRITE pfnWrite, PFNIOMMMIOREAD pfnRead,
                                         PFNIOMMMIOFILL pfnFill, const char *pszDesc)
 {
@@ -4125,7 +4169,7 @@ DECLINLINE(int) PDMDevHlpMMIORegisterEx(PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart
 /**
  * @copydoc PDMDEVHLPR3::pfnMMIORegisterRC
  */
-DECLINLINE(int) PDMDevHlpMMIORegisterRC(PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, RTUINT cbRange, RTGCPTR pvUser,
+DECLINLINE(int) PDMDevHlpMMIORegisterRCEx(PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, uint32_t cbRange, RTGCPTR pvUser,
                                         const char *pszWrite, const char *pszRead, const char *pszFill)
 {
     return pDevIns->pHlpR3->pfnMMIORegisterRC(pDevIns, GCPhysStart, cbRange, pvUser, pszWrite, pszRead, pszFill);
@@ -4134,7 +4178,7 @@ DECLINLINE(int) PDMDevHlpMMIORegisterRC(PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart
 /**
  * @copydoc PDMDEVHLPR3::pfnMMIORegisterR0
  */
-DECLINLINE(int) PDMDevHlpMMIORegisterR0(PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, RTUINT cbRange, RTR0PTR pvUser,
+DECLINLINE(int) PDMDevHlpMMIORegisterR0Ex(PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, uint32_t cbRange, RTR0PTR pvUser,
                                         const char *pszWrite, const char *pszRead, const char *pszFill)
 {
     return pDevIns->pHlpR3->pfnMMIORegisterR0(pDevIns, GCPhysStart, cbRange, pvUser, pszWrite, pszRead, pszFill);
@@ -4143,7 +4187,7 @@ DECLINLINE(int) PDMDevHlpMMIORegisterR0(PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart
 /**
  * @copydoc PDMDEVHLPR3::pfnMMIODeregister
  */
-DECLINLINE(int) PDMDevHlpMMIODeregister(PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, RTUINT cbRange)
+DECLINLINE(int) PDMDevHlpMMIODeregister(PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, uint32_t cbRange)
 {
     return pDevIns->pHlpR3->pfnMMIODeregister(pDevIns, GCPhysStart, cbRange);
 }
@@ -4201,7 +4245,7 @@ DECLINLINE(int) PDMDevHlpMMIO2MapKernel(PPDMDEVINS pDevIns, uint32_t iRegion, RT
 /**
  * @copydoc PDMDEVHLPR3::pfnROMRegister
  */
-DECLINLINE(int) PDMDevHlpROMRegister(PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, RTUINT cbRange,
+DECLINLINE(int) PDMDevHlpROMRegister(PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, uint32_t cbRange,
                                      const void *pvBinary, uint32_t cbBinary, uint32_t fFlags, const char *pszDesc)
 {
     return pDevIns->pHlpR3->pfnROMRegister(pDevIns, GCPhysStart, cbRange, pvBinary, cbBinary, fFlags, pszDesc);
@@ -4210,7 +4254,7 @@ DECLINLINE(int) PDMDevHlpROMRegister(PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, R
 /**
  * @copydoc PDMDEVHLPR3::pfnROMProtectShadow
  */
-DECLINLINE(int) PDMDevHlpROMProtectShadow(PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, RTUINT cbRange, PGMROMPROT enmProt)
+DECLINLINE(int) PDMDevHlpROMProtectShadow(PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, uint32_t cbRange, PGMROMPROT enmProt)
 {
     return pDevIns->pHlpR3->pfnROMProtectShadow(pDevIns, GCPhysStart, cbRange, enmProt);
 }
@@ -4564,7 +4608,7 @@ DECLINLINE(void) PDMDevHlpISASetIrqNoWait(PPDMDEVINS pDevIns, int iIrq, int iLev
 /**
  * @copydoc PDMDEVHLPR3::pfnDriverAttach
  */
-DECLINLINE(int) PDMDevHlpDriverAttach(PPDMDEVINS pDevIns, RTUINT iLun, PPDMIBASE pBaseInterface, PPDMIBASE *ppBaseInterface, const char *pszDesc)
+DECLINLINE(int) PDMDevHlpDriverAttach(PPDMDEVINS pDevIns, uint32_t iLun, PPDMIBASE pBaseInterface, PPDMIBASE *ppBaseInterface, const char *pszDesc)
 {
     return pDevIns->pHlpR3->pfnDriverAttach(pDevIns, iLun, pBaseInterface, ppBaseInterface, pszDesc);
 }
@@ -4572,10 +4616,10 @@ DECLINLINE(int) PDMDevHlpDriverAttach(PPDMDEVINS pDevIns, RTUINT iLun, PPDMIBASE
 /**
  * @copydoc PDMDEVHLPR3::pfnQueueCreate
  */
-DECLINLINE(int) PDMDevHlpQueueCreate(PPDMDEVINS pDevIns, RTUINT cbItem, RTUINT cItems, uint32_t cMilliesInterval,
-                                     PFNPDMQUEUEDEV pfnCallback, bool fGCEnabled, const char *pszName, PPDMQUEUE *ppQueue)
+DECLINLINE(int) PDMDevHlpQueueCreate(PPDMDEVINS pDevIns, size_t cbItem, uint32_t cItems, uint32_t cMilliesInterval,
+                                     PFNPDMQUEUEDEV pfnCallback, bool fRZEnabled, const char *pszName, PPDMQUEUE *ppQueue)
 {
-    return pDevIns->pHlpR3->pfnQueueCreate(pDevIns, cbItem, cItems, cMilliesInterval, pfnCallback, fGCEnabled, pszName, ppQueue);
+    return pDevIns->pHlpR3->pfnQueueCreate(pDevIns, cbItem, cItems, cMilliesInterval, pfnCallback, fRZEnabled, pszName, ppQueue);
 }
 
 /**

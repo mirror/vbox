@@ -342,14 +342,10 @@ int vmmdevTestingInitialize(PPDMDEVINS pDevIns)
     if (pThis->fRZEnabled)
     {
         rc = PDMDevHlpMMIORegisterR0(pDevIns, VMMDEV_TESTING_MMIO_BASE, VMMDEV_TESTING_MMIO_SIZE, NIL_RTR0PTR /*pvUser*/,
-                                     "vmmdevTestingMmioWrite",
-                                     "vmmdevTestingMmioRead",
-                                     NULL /*pszFill*/);
+                                     "vmmdevTestingMmioWrite", "vmmdevTestingMmioRead");
         AssertRCReturn(rc, rc);
         rc = PDMDevHlpMMIORegisterRC(pDevIns, VMMDEV_TESTING_MMIO_BASE, VMMDEV_TESTING_MMIO_SIZE, NIL_RTRCPTR /*pvUser*/,
-                                     "vmmdevTestingMmioWrite",
-                                     "vmmdevTestingMmioRead",
-                                     NULL /*pszFill*/);
+                                     "vmmdevTestingMmioWrite", "vmmdevTestingMmioRead");
         AssertRCReturn(rc, rc);
     }
 

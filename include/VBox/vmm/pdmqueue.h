@@ -3,7 +3,7 @@
  */
 
 /*
- * Copyright (C) 2006-2010 Oracle Corporation
+ * Copyright (C) 2006-2011 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -118,18 +118,20 @@ typedef DECLCALLBACK(bool) FNPDMQUEUEEXT(void *pvUser, PPDMQUEUEITEMCORE pItem);
 /** Pointer to a FNPDMQUEUEEXT(). */
 typedef FNPDMQUEUEEXT *PFNPDMQUEUEEXT;
 
-VMMR3DECL(int)  PDMR3QueueCreateDevice(PVM pVM, PPDMDEVINS pDevIns, RTUINT cbItem, RTUINT cItems, uint32_t cMilliesInterval,
-                                       PFNPDMQUEUEDEV pfnCallback, bool fGCEnabled, const char *pszName, PPDMQUEUE *ppQueue);
-VMMR3DECL(int)  PDMR3QueueCreateDriver(PVM pVM, PPDMDRVINS pDrvIns, RTUINT cbItem, RTUINT cItems, uint32_t cMilliesInterval,
-                                       PFNPDMQUEUEDRV pfnCallback, const char *pszName, PPDMQUEUE *ppQueue);
-VMMR3DECL(int)  PDMR3QueueCreateInternal(PVM pVM, RTUINT cbItem, RTUINT cItems, uint32_t cMilliesInterval,
-                                         PFNPDMQUEUEINT pfnCallback, bool fGCEnabled, const char *pszName, PPDMQUEUE *ppQueue);
-VMMR3DECL(int)  PDMR3QueueCreateExternal(PVM pVM, RTUINT cbItem, RTUINT cItems, uint32_t cMilliesInterval,
-                                         PFNPDMQUEUEEXT pfnCallback, void *pvUser, const char *pszName, PPDMQUEUE *ppQueue);
-VMMR3DECL(int)  PDMR3QueueDestroy(PPDMQUEUE pQueue);
-VMMR3DECL(int)  PDMR3QueueDestroyDevice(PVM pVM, PPDMDEVINS pDevIns);
-VMMR3DECL(int)  PDMR3QueueDestroyDriver(PVM pVM, PPDMDRVINS pDrvIns);
-VMMR3DECL(void) PDMR3QueueFlushAll(PVM pVM);
+#ifdef VBOX_IN_VMM
+VMMR3_INT_DECL(int)  PDMR3QueueCreateDevice(PVM pVM, PPDMDEVINS pDevIns, size_t cbItem, uint32_t cItems, uint32_t cMilliesInterval,
+                                            PFNPDMQUEUEDEV pfnCallback, bool fRZEnabled, const char *pszName, PPDMQUEUE *ppQueue);
+VMMR3_INT_DECL(int)  PDMR3QueueCreateDriver(PVM pVM, PPDMDRVINS pDrvIns, size_t cbItem, uint32_t cItems, uint32_t cMilliesInterval,
+                                            PFNPDMQUEUEDRV pfnCallback, const char *pszName, PPDMQUEUE *ppQueue);
+VMMR3_INT_DECL(int)  PDMR3QueueCreateInternal(PVM pVM, size_t cbItem, uint32_t cItems, uint32_t cMilliesInterval,
+                                              PFNPDMQUEUEINT pfnCallback, bool fGCEnabled, const char *pszName, PPDMQUEUE *ppQueue);
+VMMR3_INT_DECL(int)  PDMR3QueueCreateExternal(PVM pVM, size_t cbItem, uint32_t cItems, uint32_t cMilliesInterval,
+                                              PFNPDMQUEUEEXT pfnCallback, void *pvUser, const char *pszName, PPDMQUEUE *ppQueue);
+VMMR3_INT_DECL(int)  PDMR3QueueDestroy(PPDMQUEUE pQueue);
+VMMR3_INT_DECL(int)  PDMR3QueueDestroyDevice(PVM pVM, PPDMDEVINS pDevIns);
+VMMR3_INT_DECL(int)  PDMR3QueueDestroyDriver(PVM pVM, PPDMDRVINS pDrvIns);
+VMMR3_INT_DECL(void) PDMR3QueueFlushAll(PVM pVM);
+#endif /* VBOX_IN_VMM */
 
 VMMDECL(PPDMQUEUEITEMCORE)    PDMQueueAlloc(PPDMQUEUE pQueue);
 VMMDECL(void)                 PDMQueueInsert(PPDMQUEUE pQueue, PPDMQUEUEITEMCORE pItem);

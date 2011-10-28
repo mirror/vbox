@@ -28,7 +28,7 @@ include $(PATH_SUB_CURRENT)/testcase/Makefile.kmk
 
 ## DEFS variable that is picked up by all three VMM targets.
 # Can be prepended to by setting it in LocalConfig.kmk
-VMM_COMMON_DEFS ?=
+VMM_COMMON_DEFS ?= VBOX_IN_VMM
 ifdef VBOX_WITH_RAW_MODE
  VMM_COMMON_DEFS += VBOX_WITH_RAW_MODE
 endif

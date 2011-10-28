@@ -2520,37 +2520,17 @@ static DECLCALLBACK(int) ich9pciConstruct(PPDMDEVINS pDevIns,
 
         if (fGCEnabled)
         {
-
-            rc = PDMDevHlpMMIORegisterRC(pDevIns,
-                                         pGlobals->u64PciConfigMMioAddress,
-                                         pGlobals->u64PciConfigMMioLength,
-                                         0,
-                                         "ich9pciMcfgMMIOWrite",
-                                         "ich9pciMcfgMMIORead",
-                                         NULL /* fill */);
-            if (RT_FAILURE(rc))
-            {
-                AssertMsgRC(rc, ("Cannot register MCFG MMIO (GC): %Rrc\n", rc));
-                return rc;
-            }
+            rc = PDMDevHlpMMIORegisterRC(pDevIns, pGlobals->u64PciConfigMMioAddress, pGlobals->u64PciConfigMMioLength,
+                                         NIL_RTRCPTR /*pvUser*/, "ich9pciMcfgMMIOWrite", "ich9pciMcfgMMIORead");
+            AssertRCReturn(rc, rc);
         }
 
 
         if (fR0Enabled)
         {
-
-            rc = PDMDevHlpMMIORegisterR0(pDevIns,
-                                         pGlobals->u64PciConfigMMioAddress,
-                                         pGlobals->u64PciConfigMMioLength,
-                                         0,
-                                         "ich9pciMcfgMMIOWrite",
-                                         "ich9pciMcfgMMIORead",
-                                         NULL /* fill */);
-            if (RT_FAILURE(rc))
-            {
-                AssertMsgRC(rc, ("Cannot register MCFG MMIO (R0): %Rrc\n", rc));
-                return rc;
-            }
+            rc = PDMDevHlpMMIORegisterR0(pDevIns, pGlobals->u64PciConfigMMioAddress, pGlobals->u64PciConfigMMioLength,
+                                         NIL_RTR0PTR /*pvUser*/, "ich9pciMcfgMMIOWrite", "ich9pciMcfgMMIORead");
+            AssertRCReturn(rc, rc);
         }
     }
 
