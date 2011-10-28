@@ -90,7 +90,7 @@ static int pdmR3QueueCreate(PVM pVM, size_t cbItem, uint32_t cItems, uint32_t cM
     pQueue->pszName = pszName;
     pQueue->cMilliesInterval = cMilliesInterval;
     //pQueue->pTimer = NULL;
-    pQueue->cbItem = cbItem;
+    pQueue->cbItem = (uint32_t)cbItem;
     pQueue->cItems = cItems;
     //pQueue->pPendingR3 = NULL;
     //pQueue->pPendingR0 = NULL;
