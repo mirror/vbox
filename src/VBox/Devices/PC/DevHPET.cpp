@@ -1449,8 +1449,7 @@ static DECLCALLBACK(int) hpetConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
 
     if (fRCEnabled)
     {
-        rc = PDMDevHlpMMIORegisterRC(pDevIns, HPET_BASE, 0x1000, 0,
-                                     "hpetMMIOWrite", "hpetMMIORead", NULL);
+        rc = PDMDevHlpMMIORegisterRC(pDevIns, HPET_BASE, 0x1000, NIL_RTRCPTR /*pvUser*/, "hpetMMIOWrite", "hpetMMIORead");
         AssertRCReturn(rc, rc);
 
         pThis->pHpetHlpRC = pThis->pHpetHlpR3->pfnGetRCHelpers(pDevIns);
@@ -1459,8 +1458,8 @@ static DECLCALLBACK(int) hpetConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
 
     if (fR0Enabled)
     {
-        rc = PDMDevHlpMMIORegisterR0(pDevIns, HPET_BASE, 0x1000, 0,
-                                     "hpetMMIOWrite", "hpetMMIORead", NULL);
+        rc = PDMDevHlpMMIORegisterR0(pDevIns, HPET_BASE, 0x1000, NIL_RTR0PTR /*pvUser*/,
+                                     "hpetMMIOWrite", "hpetMMIORead");
         AssertRCReturn(rc, rc);
 
         pThis->pHpetHlpR0 = pThis->pHpetHlpR3->pfnGetR0Helpers(pDevIns);

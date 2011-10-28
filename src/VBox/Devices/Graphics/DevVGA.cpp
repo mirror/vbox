@@ -5989,13 +5989,15 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
         return rc;
     if (pThis->fGCEnabled)
     {
-        rc = PDMDevHlpMMIORegisterRC(pDevIns, 0x000a0000, 0x00020000, 0, "vgaMMIOWrite", "vgaMMIORead", "vgaMMIOFill");
+        rc = PDMDevHlpMMIORegisterRCEx(pDevIns, 0x000a0000, 0x00020000, NIL_RTRCPTR /*pvUser*/,
+                                       "vgaMMIOWrite", "vgaMMIORead", "vgaMMIOFill");
         if (RT_FAILURE(rc))
             return rc;
     }
     if (pThis->fR0Enabled)
     {
-        rc = PDMDevHlpMMIORegisterR0(pDevIns, 0x000a0000, 0x00020000, 0, "vgaMMIOWrite", "vgaMMIORead", "vgaMMIOFill");
+        rc = PDMDevHlpMMIORegisterR0Ex(pDevIns, 0x000a0000, 0x00020000, NIL_RTR0PTR /*pvUser*/,
+                                       "vgaMMIOWrite", "vgaMMIORead", "vgaMMIOFill");
         if (RT_FAILURE(rc))
             return rc;
     }

@@ -56,7 +56,7 @@ static DECLCALLBACK(void)   pdmR3QueueTimer(PVM pVM, PTMTIMER pTimer, void *pvUs
  * @param   pszName             The queue name. Unique. Not copied.
  * @param   ppQueue             Where to store the queue handle.
  */
-static int pdmR3QueueCreate(PVM pVM, RTUINT cbItem, RTUINT cItems, uint32_t cMilliesInterval, bool fRZEnabled,
+static int pdmR3QueueCreate(PVM pVM, size_t cbItem, uint32_t cItems, uint32_t cMilliesInterval, bool fRZEnabled,
                             const char *pszName, PPDMQUEUE *ppQueue)
 {
     PUVM pUVM = pVM->pUVM;
@@ -64,16 +64,8 @@ static int pdmR3QueueCreate(PVM pVM, RTUINT cbItem, RTUINT cItems, uint32_t cMil
     /*
      * Validate input.
      */
-    if (cbItem < sizeof(PDMQUEUEITEMCORE))
-    {
-        AssertMsgFailed(("cbItem=%d\n", cbItem));
-        return VERR_INVALID_PARAMETER;
-    }
-    if (cItems < 1 || cItems >= 0x10000)
-    {
-        AssertMsgFailed(("cItems=%d valid:[1-65535]\n", cItems));
-        return VERR_INVALID_PARAMETER;
-    }
+    AssertMsgReturn(cbItem >= sizeof(PDMQUEUEITEMCORE) && cbItem < _1M, ("cbItem=%zu\n", cbItem), VERR_OUT_OF_RANGE);
+    AssertMsgReturn(cItems >= 1 && cItems <= _64K, ("cItems=%u\n", cItems), VERR_OUT_OF_RANGE);
 
     /*
      * Align the item size and calculate the structure size.
@@ -210,8 +202,8 @@ static int pdmR3QueueCreate(PVM pVM, RTUINT cbItem, RTUINT cItems, uint32_t cMil
  * @param   ppQueue             Where to store the queue handle on success.
  * @thread  Emulation thread only.
  */
-VMMR3DECL(int) PDMR3QueueCreateDevice(PVM pVM, PPDMDEVINS pDevIns, RTUINT cbItem, RTUINT cItems, uint32_t cMilliesInterval,
-                                      PFNPDMQUEUEDEV pfnCallback, bool fRZEnabled, const char *pszName, PPDMQUEUE *ppQueue)
+VMMR3_INT_DECL(int) PDMR3QueueCreateDevice(PVM pVM, PPDMDEVINS pDevIns, size_t cbItem, uint32_t cItems, uint32_t cMilliesInterval,
+                                           PFNPDMQUEUEDEV pfnCallback, bool fRZEnabled, const char *pszName, PPDMQUEUE *ppQueue)
 {
     LogFlow(("PDMR3QueueCreateDevice: pDevIns=%p cbItem=%d cItems=%d cMilliesInterval=%d pfnCallback=%p fRZEnabled=%RTbool pszName=%s\n",
              pDevIns, cbItem, cItems, cMilliesInterval, pfnCallback, fRZEnabled, pszName));
@@ -260,8 +252,8 @@ VMMR3DECL(int) PDMR3QueueCreateDevice(PVM pVM, PPDMDEVINS pDevIns, RTUINT cbItem
  * @param   ppQueue             Where to store the queue handle on success.
  * @thread  Emulation thread only.
  */
-VMMR3DECL(int) PDMR3QueueCreateDriver(PVM pVM, PPDMDRVINS pDrvIns, RTUINT cbItem, RTUINT cItems, uint32_t cMilliesInterval,
-                                      PFNPDMQUEUEDRV pfnCallback, const char *pszName, PPDMQUEUE *ppQueue)
+VMMR3_INT_DECL(int) PDMR3QueueCreateDriver(PVM pVM, PPDMDRVINS pDrvIns, size_t cbItem, uint32_t cItems, uint32_t cMilliesInterval,
+                                           PFNPDMQUEUEDRV pfnCallback, const char *pszName, PPDMQUEUE *ppQueue)
 {
     LogFlow(("PDMR3QueueCreateDriver: pDrvIns=%p cbItem=%d cItems=%d cMilliesInterval=%d pfnCallback=%p pszName=%s\n",
              pDrvIns, cbItem, cItems, cMilliesInterval, pfnCallback, pszName));
@@ -310,8 +302,8 @@ VMMR3DECL(int) PDMR3QueueCreateDriver(PVM pVM, PPDMDRVINS pDrvIns, RTUINT cbItem
  * @param   ppQueue             Where to store the queue handle on success.
  * @thread  Emulation thread only.
  */
-VMMR3DECL(int) PDMR3QueueCreateInternal(PVM pVM, RTUINT cbItem, RTUINT cItems, uint32_t cMilliesInterval,
-                                        PFNPDMQUEUEINT pfnCallback, bool fRZEnabled, const char *pszName, PPDMQUEUE *ppQueue)
+VMMR3_INT_DECL(int) PDMR3QueueCreateInternal(PVM pVM, size_t cbItem, uint32_t cItems, uint32_t cMilliesInterval,
+                                             PFNPDMQUEUEINT pfnCallback, bool fRZEnabled, const char *pszName, PPDMQUEUE *ppQueue)
 {
     LogFlow(("PDMR3QueueCreateInternal: cbItem=%d cItems=%d cMilliesInterval=%d pfnCallback=%p fRZEnabled=%RTbool pszName=%s\n",
              cbItem, cItems, cMilliesInterval, pfnCallback, fRZEnabled, pszName));
@@ -359,7 +351,8 @@ VMMR3DECL(int) PDMR3QueueCreateInternal(PVM pVM, RTUINT cbItem, RTUINT cItems, u
  * @param   ppQueue             Where to store the queue handle on success.
  * @thread  Emulation thread only.
  */
-VMMR3DECL(int) PDMR3QueueCreateExternal(PVM pVM, RTUINT cbItem, RTUINT cItems, uint32_t cMilliesInterval, PFNPDMQUEUEEXT pfnCallback, void *pvUser, const char *pszName, PPDMQUEUE *ppQueue)
+VMMR3_INT_DECL(int) PDMR3QueueCreateExternal(PVM pVM, size_t cbItem, uint32_t cItems, uint32_t cMilliesInterval,
+                                             PFNPDMQUEUEEXT pfnCallback, void *pvUser, const char *pszName, PPDMQUEUE *ppQueue)
 {
     LogFlow(("PDMR3QueueCreateExternal: cbItem=%d cItems=%d cMilliesInterval=%d pfnCallback=%p pszName=%s\n", cbItem, cItems, cMilliesInterval, pfnCallback, pszName));
 
@@ -399,7 +392,7 @@ VMMR3DECL(int) PDMR3QueueCreateExternal(PVM pVM, RTUINT cbItem, RTUINT cItems, u
  * @param   pQueue      Queue to destroy.
  * @thread  Emulation thread only.
  */
-VMMR3DECL(int) PDMR3QueueDestroy(PPDMQUEUE pQueue)
+VMMR3_INT_DECL(int) PDMR3QueueDestroy(PPDMQUEUE pQueue)
 {
     LogFlow(("PDMR3QueueDestroy: pQueue=%p\n", pQueue));
 
@@ -502,7 +495,7 @@ VMMR3DECL(int) PDMR3QueueDestroy(PPDMQUEUE pQueue)
  * @param   pDevIns     Device instance.
  * @thread  Emulation thread only.
  */
-VMMR3DECL(int) PDMR3QueueDestroyDevice(PVM pVM, PPDMDEVINS pDevIns)
+VMMR3_INT_DECL(int) PDMR3QueueDestroyDevice(PVM pVM, PPDMDEVINS pDevIns)
 {
     LogFlow(("PDMR3QueueDestroyDevice: pDevIns=%p\n", pDevIns));
 
@@ -554,7 +547,7 @@ VMMR3DECL(int) PDMR3QueueDestroyDevice(PVM pVM, PPDMDEVINS pDevIns)
  * @param   pDrvIns     Driver instance.
  * @thread  Emulation thread only.
  */
-VMMR3DECL(int) PDMR3QueueDestroyDriver(PVM pVM, PPDMDRVINS pDrvIns)
+VMMR3_INT_DECL(int) PDMR3QueueDestroyDriver(PVM pVM, PPDMDRVINS pDrvIns)
 {
     LogFlow(("PDMR3QueueDestroyDriver: pDrvIns=%p\n", pDrvIns));
 
@@ -659,7 +652,7 @@ void pdmR3QueueRelocate(PVM pVM, RTGCINTPTR offDelta)
  * @param   pVM     VM handle.
  * @thread  Emulation thread only.
  */
-VMMR3DECL(void) PDMR3QueueFlushAll(PVM pVM)
+VMMR3_INT_DECL(void) PDMR3QueueFlushAll(PVM pVM)
 {
     VM_ASSERT_EMT(pVM);
     LogFlow(("PDMR3QueuesFlush:\n"));

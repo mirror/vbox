@@ -2081,16 +2081,16 @@ static DECLCALLBACK(int) buslogicMMIOMap(PPCIDEVICE pPciDev, /*unsigned*/ int iR
 
         if (pThis->fR0Enabled)
         {
-            rc = PDMDevHlpMMIORegisterR0(pDevIns, GCPhysAddress, cb, 0,
-                                         "buslogicMMIOWrite", "buslogicMMIORead", NULL);
+            rc = PDMDevHlpMMIORegisterR0(pDevIns, GCPhysAddress, cb, NIL_RTR0PTR /*pvUser*/,
+                                         "buslogicMMIOWrite", "buslogicMMIORead");
             if (RT_FAILURE(rc))
                 return rc;
         }
 
         if (pThis->fGCEnabled)
         {
-            rc = PDMDevHlpMMIORegisterRC(pDevIns, GCPhysAddress, cb, 0,
-                                         "buslogicMMIOWrite", "buslogicMMIORead", NULL);
+            rc = PDMDevHlpMMIORegisterRC(pDevIns, GCPhysAddress, cb, NIL_RTRCPTR /*pvUser*/,
+                                         "buslogicMMIOWrite", "buslogicMMIORead");
             if (RT_FAILURE(rc))
                 return rc;
         }
