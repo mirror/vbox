@@ -336,10 +336,8 @@ int vmmdevTestingInitialize(PPDMDEVINS pDevIns)
      * tests interfaces.
      */
     int rc = PDMDevHlpMMIORegister(pDevIns, VMMDEV_TESTING_MMIO_BASE, VMMDEV_TESTING_MMIO_SIZE, NULL /*pvUser*/,
-                                   vmmdevTestingMmioWrite,
-                                   vmmdevTestingMmioRead,
-                                   NULL /*pfnFill*/,
-                                   "VMMDev Testing");
+                                   IOMMMIO_FLAGS_READ_PASSTHRU | IOMMMIO_FLAGS_WRITE_PASSTHRU,
+                                   vmmdevTestingMmioWrite, vmmdevTestingMmioRead, "VMMDev Testing");
     AssertRCReturn(rc, rc);
     if (pThis->fRZEnabled)
     {

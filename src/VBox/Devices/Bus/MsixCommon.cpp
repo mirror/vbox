@@ -156,7 +156,8 @@ static DECLCALLBACK(int) msixMap (PPCIDEVICE pPciDev, int iRegion,
     NOREF(iRegion); NOREF(enmType);
 
     int rc = PDMDevHlpMMIORegister(pPciDev->pDevIns, GCPhysAddress, cb, pPciDev,
-                                   msixMMIOWrite, msixMMIORead, NULL, "MSI-X tables");
+                                   IOMMMIO_FLAGS_READ_PASSTHRU | IOMMMIO_FLAGS_WRITE_PASSTHRU,
+                                   msixMMIOWrite, msixMMIORead, "MSI-X tables");
 
     if (RT_FAILURE(rc))
         return rc;

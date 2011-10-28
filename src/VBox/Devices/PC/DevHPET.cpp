@@ -1443,7 +1443,8 @@ static DECLCALLBACK(int) hpetConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
      * addresses and sizes.
      */
     rc = PDMDevHlpMMIORegister(pDevIns, HPET_BASE, 0x1000, pThis,
-                               hpetMMIOWrite, hpetMMIORead, NULL, "HPET Memory");
+                               IOMMMIO_FLAGS_READ_PASSTHRU | IOMMMIO_FLAGS_WRITE_PASSTHRU,
+                               hpetMMIOWrite, hpetMMIORead, "HPET Memory");
     AssertRCReturn(rc, rc);
 
     if (fRCEnabled)

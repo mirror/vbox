@@ -2279,7 +2279,8 @@ static DECLCALLBACK(int) apicR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
      */
     uint32_t ApicBase = pDev->paLapicsR3[0].apicbase & ~0xfff;
     rc = PDMDevHlpMMIORegister(pDevIns, ApicBase, 0x1000, pDev,
-                               apicMMIOWrite, apicMMIORead, NULL, "APIC Memory");
+                               IOMMMIO_FLAGS_READ_PASSTHRU | IOMMMIO_FLAGS_WRITE_PASSTHRU,
+                               apicMMIOWrite, apicMMIORead, "APIC Memory");
     if (RT_FAILURE(rc))
         return rc;
 

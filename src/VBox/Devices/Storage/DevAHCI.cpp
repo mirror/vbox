@@ -2505,8 +2505,9 @@ static DECLCALLBACK(int) ahciR3MMIOMap(PPCIDEVICE pPciDev, /*unsigned*/ int iReg
     Assert(cb >= 4352);
 
     /* We use the assigned size here, because we currently only support page aligned MMIO ranges. */
-    rc = PDMDevHlpMMIORegister(pDevIns, GCPhysAddress, cb, NULL,
-                               ahciMMIOWrite, ahciMMIORead, NULL, "AHCI");
+    rc = PDMDevHlpMMIORegisterEx(pDevIns, GCPhysAddress, cb, NULL /*pvUser*/,
+                                 IOMMMIO_FLAGS_READ_PASSTHRU | IOMMMIO_FLAGS_WRITE_PASSTHRU,
+                                 ahciMMIOWrite, ahciMMIORead, NULL, "AHCI");
     if (RT_FAILURE(rc))
         return rc;
 
@@ -6116,7 +6117,7 @@ static int ahciTrimRangesCreate(PAHCIPort pAhciPort, PAHCIPORTTASKSTATE pAhciPor
 
         /*
          * Count the number of valid ranges in the buffer.
-         * A length of 0 is invalid and is only used for padding 
+         * A length of 0 is invalid and is only used for padding
          */
         for (unsigned i = 0; i < RT_ELEMENTS(aRanges); i++)
         {

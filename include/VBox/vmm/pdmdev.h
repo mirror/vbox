@@ -4105,11 +4105,21 @@ DECLINLINE(int) PDMDevHlpIOPortDeregister(PPDMDEVINS pDevIns, RTIOPORT Port, RTU
  * @copydoc PDMDEVHLPR3::pfnMMIORegister
  */
 DECLINLINE(int) PDMDevHlpMMIORegister(PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, RTUINT cbRange, RTHCPTR pvUser,
-                                      PFNIOMMMIOWRITE pfnWrite, PFNIOMMMIOREAD pfnRead, PFNIOMMMIOFILL pfnFill,
-                                      const char *pszDesc)
+                                      uint32_t fFlags, PFNIOMMMIOWRITE pfnWrite, PFNIOMMMIOREAD pfnRead, const char *pszDesc)
+{
+    return pDevIns->pHlpR3->pfnMMIORegister(pDevIns, GCPhysStart, cbRange, pvUser, pfnWrite, pfnRead, NULL /*pfnFill*/,
+                                            fFlags, pszDesc);
+}
+
+/**
+ * @copydoc PDMDEVHLPR3::pfnMMIORegister
+ */
+DECLINLINE(int) PDMDevHlpMMIORegisterEx(PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, RTUINT cbRange, RTHCPTR pvUser,
+                                        uint32_t fFlags, PFNIOMMMIOWRITE pfnWrite, PFNIOMMMIOREAD pfnRead,
+                                        PFNIOMMMIOFILL pfnFill, const char *pszDesc)
 {
     return pDevIns->pHlpR3->pfnMMIORegister(pDevIns, GCPhysStart, cbRange, pvUser, pfnWrite, pfnRead, pfnFill,
-                                            IOMMMIO_FLAGS_WRITE_PASSTHRU | IOMMMIO_FLAGS_READ_PASSTHRU, pszDesc);
+                                            fFlags, pszDesc);
 }
 
 /**
