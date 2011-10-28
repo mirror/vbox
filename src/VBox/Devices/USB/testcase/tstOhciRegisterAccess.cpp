@@ -51,6 +51,7 @@ static const char * const g_apszRegNms[] =
     "HcBulkCurrentED",
     "HcDoneHead",
     "HcFmInterval",
+
     "HcFmRemaining",
     "HcFmNumber",
     "HcPeriodicStart",
@@ -71,7 +72,79 @@ static const char * const g_apszRegNms[] =
 
 static bool TestOhciWrites(RTVPTRUNION uPtr)
 {
-    return true;
+    static struct
+    {
+        unsigned iReg;
+        uint32_t uVal1;
+        uint32_t uVal2;
+    }  const s_aRegs[] =
+    {
+        { 13 /* HcFmInterval */, 0x58871120, 0 }
+    };
+
+    bool fSuccess = true;
+    for (unsigned i = 0; i < RT_ELEMENTS(s_aRegs); i++)
+    {
+        uint32_t const      iReg = s_aRegs[i].iReg;
+        RTVPTRUNION         uPtrReg;
+        uPtrReg.pu32 = &uPtr.pu32[iReg];
+
+        uint32_t uInitialValue = *uPtrReg.pu32;
+        LogRel(("TestOhciWrites: %p iReg=%2d %20s = %08RX32\n", uPtrReg.pv, iReg, g_apszRegNms[iReg], uInitialValue));
+
+        bool                fDone    = true;
+        const char         *pszError = NULL;
+        RTCCUINTREG const   fFlags   = ASMIntDisableFlags();
+
+        /*
+         * DWORD writes.
+         */
+        uInitialValue = *uPtrReg.pu32;
+        *uPtrReg.pu32 = uInitialValue;
+        uint32_t u32A = *uPtrReg.pu32;
+        uint32_t const uChangedValue = s_aRegs[i].uVal1 != uInitialValue ? s_aRegs[i].uVal1 : s_aRegs[i].uVal2;
+        if (u32A == uInitialValue)
+        {
+            /* Change the value. */
+            *uPtrReg.pu32 = uChangedValue;
+            u32A = *uPtrReg.pu32;
+            *uPtrReg.pu32 = uInitialValue;
+            if (u32A != uChangedValue)
+                pszError = "Writing changed value failed";
+        }
+        else
+            pszError = "Writing back initial value failed";
+
+
+        /*
+         * Write byte changes.
+         */
+        if (!pszError)
+        {
+
+        }
+
+
+        *uPtrReg.pu32 = uInitialValue;
+
+        ASMSetFlags(fFlags);
+        ASMNopPause();
+
+        /*
+         * Complain on failure.
+         */
+        if (!fDone)
+            LogRel(("TestOhciWrites: Warning! Register %s was never stable enough for testing! %08RX32 %08RX32 %08RX32\n",
+                    g_apszRegNms[iReg], uInitialValue, u32A, uChangedValue, uInitialValue));
+        else if (pszError)
+        {
+            LogRel(("TestOhciWrites: Error! Register %s failed: %s; uInitialValue=%08RX32 uChangedValue=%08RX32 u32A=%08RX32\n",
+                    g_apszRegNms[iReg], pszError, uInitialValue, uChangedValue, u32A));
+            fSuccess = false;
+        }
+    }
+
+    return fSuccess;
 }
 
 
