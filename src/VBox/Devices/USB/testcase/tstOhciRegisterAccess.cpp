@@ -111,6 +111,12 @@ static bool TestOhciWrites(RTVPTRUNION uPtr)
             *uPtrReg.pu32 = uInitialValue;
             if (u32A != uChangedValue)
                 pszError = "Writing changed value failed";
+            else
+            {
+                u32A = *uPtrReg.pu32;
+                if (u32A != uInitialValue)
+                    pszError = "Restore error 1";
+            }
         }
         else
             pszError = "Writing back initial value failed";
@@ -119,11 +125,24 @@ static bool TestOhciWrites(RTVPTRUNION uPtr)
         /*
          * Write byte changes.
          */
-        if (!pszError)
+        for (unsigned iByte = 0; !pszError && iByte < 4; iByte)
         {
-
+            /* Change the value. */
+            uPtrReg.pu8[iByte] = (uint8_t)(uChangedValue >> iByte * 8);
+            u32A = *uPtrReg.pu32;
+            *uPtrReg.pu32 = uInitialValue;
+            if (u32A != (uChangedValue & UINT32_C(0xff) << iByte * 8))
+            {
+                static const char * const s_apsz[] = { "byte 0", "byte 1", "byte 2", "byte 3" };
+                pszError = s_apsz[iByte];
+            }
+            else
+            {
+                u32A = *uPtrReg.pu32;
+                if (u32A != uInitialValue)
+                    pszError = "Restore error 2";
+            }
         }
-
 
         *uPtrReg.pu32 = uInitialValue;
 
