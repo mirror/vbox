@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2009 Oracle Corporation
+ * Copyright (C) 2006-2011 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -114,13 +114,16 @@
 #define OHCI_SAVED_STATE_VERSION_MEM_HELL   3
 
 
-/* Number of Downstream Ports on the root hub, if you change this
- * you need to add more status register words to the 'opreg' array
+/** Number of Downstream Ports on the root hub.
+ * If you change this you need to add more status register words to the 'opreg'
+ * array.
  */
 #define OHCI_NDP 8
 
 /** Pointer to OHCI device data. */
 typedef struct OHCI *POHCI;
+/** Read-only pointer to the OHCI device data. */
+typedef struct OHCI const *PCOHCI;
 
 
 /**
@@ -535,8 +538,8 @@ AssertCompileSize(OHCIITD, 32);
 typedef struct ohci_opreg
 {
     const char *pszName;
-    int (*pfnRead )(POHCI ohci, uint32_t iReg, uint32_t *pu32Value);
-    int (*pfnWrite)(POHCI ohci, uint32_t iReg, uint32_t u32Value);
+    int (*pfnRead )(PCOHCI pThis, uint32_t iReg, uint32_t *pu32Value);
+    int (*pfnWrite)(POHCI pThis, uint32_t iReg, uint32_t u32Value);
 } OHCIOPREG;
 
 
@@ -3777,7 +3780,7 @@ static void rhport_power(POHCIROOTHUB pRh, unsigned iPort, bool fPowerUp)
 /**
  * Read the HcRevision register.
  */
-static int HcRevision_r(POHCI pOhci, uint32_t iReg, uint32_t *pu32Value)
+static int HcRevision_r(PCOHCI pOhci, uint32_t iReg, uint32_t *pu32Value)
 {
     Log2(("HcRevision_r() -> 0x10\n"));
     *pu32Value = 0x10; /* OHCI revision 1.0, no emulation. */
@@ -3797,7 +3800,7 @@ static int HcRevision_w(POHCI pOhci, uint32_t iReg, uint32_t u32Value)
 /**
  * Read the HcControl register.
  */
-static int HcControl_r(POHCI pOhci, uint32_t iReg, uint32_t *pu32Value)
+static int HcControl_r(PCOHCI pOhci, uint32_t iReg, uint32_t *pu32Value)
 {
     uint32_t ctl = pOhci->ctl;
     Log2(("HcControl_r -> %#010x - CBSR=%d PLE=%d IE=%d CLE=%d BLE=%d HCFS=%#x IR=%d RWC=%d RWE=%d\n",
@@ -3877,7 +3880,7 @@ static int HcControl_w(POHCI pOhci, uint32_t iReg, uint32_t val)
 /**
  * Read the HcCommandStatus register.
  */
-static int HcCommandStatus_r(POHCI pOhci, uint32_t iReg, uint32_t *pu32Value)
+static int HcCommandStatus_r(PCOHCI pOhci, uint32_t iReg, uint32_t *pu32Value)
 {
     uint32_t status = pOhci->status;
     Log2(("HcCommandStatus_r() -> %#010x - HCR=%d CLF=%d BLF=%d OCR=%d SOC=%d\n",
@@ -3928,7 +3931,7 @@ static int HcCommandStatus_w(POHCI pOhci, uint32_t iReg, uint32_t val)
 /**
  * Read the HcInterruptStatus register.
  */
-static int HcInterruptStatus_r(POHCI pOhci, uint32_t iReg, uint32_t *pu32Value)
+static int HcInterruptStatus_r(PCOHCI pOhci, uint32_t iReg, uint32_t *pu32Value)
 {
     uint32_t val = pOhci->intr_status;
     Log2(("HcInterruptStatus_r() -> %#010x - SO=%d WDH=%d SF=%d RD=%d UE=%d FNO=%d RHSC=%d OC=%d\n",
@@ -3970,7 +3973,7 @@ static int HcInterruptStatus_w(POHCI pOhci, uint32_t iReg, uint32_t val)
 /**
  * Read the HcInterruptEnable register
  */
-static int HcInterruptEnable_r(POHCI pOhci, uint32_t iReg, uint32_t *pu32Value)
+static int HcInterruptEnable_r(PCOHCI pOhci, uint32_t iReg, uint32_t *pu32Value)
 {
     uint32_t val = pOhci->intr;
     Log2(("HcInterruptEnable_r() -> %#010x - SO=%d WDH=%d SF=%d RD=%d UE=%d FNO=%d RHSC=%d OC=%d MIE=%d\n",
@@ -4009,7 +4012,7 @@ static int HcInterruptEnable_w(POHCI pOhci, uint32_t iReg, uint32_t val)
 /**
  * Reads the HcInterruptDisable register.
  */
-static int HcInterruptDisable_r(POHCI pOhci, uint32_t iReg, uint32_t *pu32Value)
+static int HcInterruptDisable_r(PCOHCI pOhci, uint32_t iReg, uint32_t *pu32Value)
 {
 #if 1 /** @todo r=bird: "On read, the current value of the HcInterruptEnable register is returned." */
     uint32_t val = pOhci->intr;
@@ -4053,7 +4056,7 @@ static int HcInterruptDisable_w(POHCI pOhci, uint32_t iReg, uint32_t val)
 /**
  * Read the HcHCCA register (Host Controller Communications Area physical address).
  */
-static int HcHCCA_r(POHCI pOhci, uint32_t iReg, uint32_t *pu32Value)
+static int HcHCCA_r(PCOHCI pOhci, uint32_t iReg, uint32_t *pu32Value)
 {
     Log2(("HcHCCA_r() -> %#010x\n", pOhci->hcca));
     *pu32Value = pOhci->hcca;
@@ -4073,7 +4076,7 @@ static int HcHCCA_w(POHCI pOhci, uint32_t iReg, uint32_t Value)
 /**
  * Read the HcPeriodCurrentED register.
  */
-static int HcPeriodCurrentED_r(POHCI pOhci, uint32_t iReg, uint32_t *pu32Value)
+static int HcPeriodCurrentED_r(PCOHCI pOhci, uint32_t iReg, uint32_t *pu32Value)
 {
     Log2(("HcPeriodCurrentED_r() -> %#010x\n", pOhci->per_cur));
     *pu32Value = pOhci->per_cur;
@@ -4096,7 +4099,7 @@ static int HcPeriodCurrentED_w(POHCI pOhci, uint32_t iReg, uint32_t val)
 /**
  * Read the HcControlHeadED register.
  */
-static int HcControlHeadED_r(POHCI pOhci, uint32_t iReg, uint32_t *pu32Value)
+static int HcControlHeadED_r(PCOHCI pOhci, uint32_t iReg, uint32_t *pu32Value)
 {
     Log2(("HcControlHeadED_r() -> %#010x\n", pOhci->ctrl_head));
     *pu32Value = pOhci->ctrl_head;
@@ -4117,7 +4120,7 @@ static int HcControlHeadED_w(POHCI pOhci, uint32_t iReg, uint32_t val)
 /**
  * Read the HcControlCurrentED register.
  */
-static int HcControlCurrentED_r(POHCI pOhci, uint32_t iReg, uint32_t *pu32Value)
+static int HcControlCurrentED_r(PCOHCI pOhci, uint32_t iReg, uint32_t *pu32Value)
 {
     Log2(("HcControlCurrentED_r() -> %#010x\n", pOhci->ctrl_cur));
     *pu32Value = pOhci->ctrl_cur;
@@ -4139,7 +4142,7 @@ static int HcControlCurrentED_w(POHCI pOhci, uint32_t iReg, uint32_t val)
 /**
  * Read the HcBulkHeadED register.
  */
-static int HcBulkHeadED_r(POHCI pOhci, uint32_t iReg, uint32_t *pu32Value)
+static int HcBulkHeadED_r(PCOHCI pOhci, uint32_t iReg, uint32_t *pu32Value)
 {
     Log2(("HcBulkHeadED_r() -> %#010x\n", pOhci->bulk_head));
     *pu32Value = pOhci->bulk_head;
@@ -4160,7 +4163,7 @@ static int HcBulkHeadED_w(POHCI pOhci, uint32_t iReg, uint32_t val)
 /**
  * Read the HcBulkCurrentED register.
  */
-static int HcBulkCurrentED_r(POHCI pOhci, uint32_t iReg, uint32_t *pu32Value)
+static int HcBulkCurrentED_r(PCOHCI pOhci, uint32_t iReg, uint32_t *pu32Value)
 {
     Log2(("HcBulkCurrentED_r() -> %#010x\n", pOhci->bulk_cur));
     *pu32Value = pOhci->bulk_cur;
@@ -4183,7 +4186,7 @@ static int HcBulkCurrentED_w(POHCI pOhci, uint32_t iReg, uint32_t val)
 /**
  * Read the HcDoneHead register.
  */
-static int HcDoneHead_r(POHCI pOhci, uint32_t iReg, uint32_t *pu32Value)
+static int HcDoneHead_r(PCOHCI pOhci, uint32_t iReg, uint32_t *pu32Value)
 {
     Log2(("HcDoneHead_r() -> 0x%#08x\n", pOhci->done));
     *pu32Value = pOhci->done;
@@ -4204,7 +4207,7 @@ static int HcDoneHead_w(POHCI pOhci, uint32_t iReg, uint32_t val)
 /**
  * Read the HcFmInterval (Fm=Frame) register.
  */
-static int HcFmInterval_r(POHCI pOhci, uint32_t iReg, uint32_t *pu32Value)
+static int HcFmInterval_r(PCOHCI pOhci, uint32_t iReg, uint32_t *pu32Value)
 {
     uint32_t val = (pOhci->fit << 31) | (pOhci->fsmps << 16) | (pOhci->fi);
     Log2(("HcFmInterval_r() -> 0x%#08x - FI=%d FSMPS=%d FIT=%d\n",
@@ -4241,7 +4244,7 @@ static int HcFmInterval_w(POHCI pOhci, uint32_t iReg, uint32_t val)
 /**
  * Read the HcFmRemaining (Fm = Frame) register.
  */
-static int HcFmRemaining_r(POHCI pOhci, uint32_t iReg, uint32_t *pu32Value)
+static int HcFmRemaining_r(PCOHCI pOhci, uint32_t iReg, uint32_t *pu32Value)
 {
     uint32_t Value = pOhci->frt << 31;
     if ((pOhci->ctl & OHCI_CTL_HCFS) == OHCI_USB_OPERATIONAL)
@@ -4277,7 +4280,7 @@ static int HcFmRemaining_w(POHCI pOhci, uint32_t iReg, uint32_t val)
 /**
  * Read the HcFmNumber (Fm = Frame) register.
  */
-static int HcFmNumber_r(POHCI pOhci, uint32_t iReg, uint32_t *pu32Value)
+static int HcFmNumber_r(PCOHCI pOhci, uint32_t iReg, uint32_t *pu32Value)
 {
     uint32_t val = (uint16_t)pOhci->HcFmNumber;
     Log2(("HcFmNumber_r() -> %#010x - FN=%#x(%d) (32-bit=%#x(%d))\n", val, val, val, pOhci->HcFmNumber, pOhci->HcFmNumber));
@@ -4299,7 +4302,7 @@ static int HcFmNumber_w(POHCI pOhci, uint32_t iReg, uint32_t val)
  * Read the HcPeriodicStart register.
  * The register determines when in a frame to switch from control&bulk to periodic lists.
  */
-static int HcPeriodicStart_r(POHCI pOhci, uint32_t iReg, uint32_t *pu32Value)
+static int HcPeriodicStart_r(PCOHCI pOhci, uint32_t iReg, uint32_t *pu32Value)
 {
     Log2(("HcPeriodicStart_r() -> %#010x - PS=%d\n", pOhci->pstart, pOhci->pstart & 0x3fff));
     *pu32Value = pOhci->pstart;
@@ -4322,7 +4325,7 @@ static int HcPeriodicStart_w(POHCI pOhci, uint32_t iReg, uint32_t val)
 /**
  * Read the HcLSThreshold register.
  */
-static int HcLSThreshold_r(POHCI pOhci, uint32_t iReg, uint32_t *pu32Value)
+static int HcLSThreshold_r(PCOHCI pOhci, uint32_t iReg, uint32_t *pu32Value)
 {
     Log2(("HcLSThreshold_r() -> %#010x\n", OHCI_LS_THRESH));
     *pu32Value = OHCI_LS_THRESH;
@@ -4352,7 +4355,7 @@ static int HcLSThreshold_w(POHCI pOhci, uint32_t iReg, uint32_t val)
 /**
  * Read the HcRhDescriptorA register.
  */
-static int HcRhDescriptorA_r(POHCI pOhci, uint32_t iReg, uint32_t *pu32Value)
+static int HcRhDescriptorA_r(PCOHCI pOhci, uint32_t iReg, uint32_t *pu32Value)
 {
     uint32_t val = pOhci->RootHub.desc_a;
 #if 0 /* annoying */
@@ -4400,7 +4403,7 @@ static int HcRhDescriptorA_w(POHCI pOhci, uint32_t iReg, uint32_t val)
 /**
  * Read the HcRhDescriptorB register.
  */
-static int HcRhDescriptorB_r(POHCI pOhci, uint32_t iReg, uint32_t *pu32Value)
+static int HcRhDescriptorB_r(PCOHCI pOhci, uint32_t iReg, uint32_t *pu32Value)
 {
     uint32_t val = pOhci->RootHub.desc_b;
     Log2(("HcRhDescriptorB_r() -> %#010x - DR=0x%04x PPCM=0x%04x\n",
@@ -4431,7 +4434,7 @@ static int HcRhDescriptorB_w(POHCI pOhci, uint32_t iReg, uint32_t val)
 /**
  * Read the HcRhStatus (Rh = Root Hub) register.
  */
-static int HcRhStatus_r(POHCI pOhci, uint32_t iReg, uint32_t *pu32Value)
+static int HcRhStatus_r(PCOHCI pOhci, uint32_t iReg, uint32_t *pu32Value)
 {
     uint32_t val = pOhci->RootHub.status;
     if (val & (OHCI_RHS_LPSC | OHCI_RHS_OCIC))
@@ -4504,7 +4507,7 @@ static int HcRhStatus_w(POHCI pOhci, uint32_t iReg, uint32_t val)
 /**
  * Read the HcRhPortStatus register of a port.
  */
-static int HcRhPortStatus_r(POHCI pOhci, uint32_t iReg, uint32_t *pu32Value)
+static int HcRhPortStatus_r(PCOHCI pOhci, uint32_t iReg, uint32_t *pu32Value)
 {
     const unsigned i = iReg - 21;
     uint32_t val = pOhci->RootHub.aPorts[i].fReg | OHCI_PORT_R_POWER_STATUS; /* PortPowerStatus: see todo on power in _w function. */
@@ -4789,19 +4792,9 @@ PDMBOTHCBDECL(int) ohciRead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAdd
 {
     POHCI pOhci = PDMINS_2_DATA(pDevIns, POHCI);
 
-    /*
-     * Validate the access.
-     */
-    if (cb != sizeof(uint32_t))
-    {
-        Log2(("ohciRead: Bad read size!!! GCPhysAddr=%RGp cb=%d\n", GCPhysAddr, cb));
-        return VINF_IOM_MMIO_UNUSED_FF; /* No idea what really would happen... */
-    }
-    if (GCPhysAddr & 0x3)
-    {
-        Log2(("ohciRead: Unaligned read!!! GCPhysAddr=%RGp cb=%d\n", GCPhysAddr, cb));
-        return VINF_IOM_MMIO_UNUSED_FF;
-    }
+    /* Paranoia: Assert that IOMMMIO_FLAGS_READ_DWORD works. */
+    AssertReturn(cb != sizeof(uint32_t), VERR_INTERNAL_ERROR_3);
+    AssertReturn(!(GCPhysAddr & 0x3), VERR_INTERNAL_ERROR_4);
 
     /*
      * Validate the register and call the read operator.
@@ -4872,12 +4865,14 @@ PDMBOTHCBDECL(int) ohciWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAd
 
 #ifdef IN_RING3
 
-static DECLCALLBACK(int)
-ohciR3Map(PPCIDEVICE pPciDev, int iRegion, RTGCPHYS GCPhysAddress, uint32_t cb, PCIADDRESSSPACE enmType)
+/**
+ * @callback_method_impl{FNPCIIOREGIONMAP}
+ */
+static DECLCALLBACK(int) ohciR3Map(PPCIDEVICE pPciDev, int iRegion, RTGCPHYS GCPhysAddress, uint32_t cb, PCIADDRESSSPACE enmType)
 {
     POHCI pOhci = (POHCI)pPciDev;
     int rc = PDMDevHlpMMIORegister(pOhci->CTX_SUFF(pDevIns), GCPhysAddress, cb, NULL /*pvUser*/,
-                                   IOMMMIO_FLAGS_READ_PASSTHRU | IOMMMIO_FLAGS_WRITE_PASSTHRU,
+                                   IOMMMIO_FLAGS_READ_DWORD | IOMMMIO_FLAGS_WRITE_PASSTHRU,
                                    ohciWrite, ohciRead, "USB OHCI");
     if (RT_FAILURE(rc))
         return rc;
@@ -4887,16 +4882,15 @@ ohciR3Map(PPCIDEVICE pPciDev, int iRegion, RTGCPHYS GCPhysAddress, uint32_t cb, 
     if (RT_FAILURE(rc))
         return rc;
 
-    rc = PDMDevHlpMMIORegisterR0(pOhci->CTX_SUFF(pDevIns), GCPhysAddress, cb, NIL_RTR0PTR /*pvUser*/,
-                                 "ohciWrite", "ohciRead");
+    rc = PDMDevHlpMMIORegisterR0(pOhci->CTX_SUFF(pDevIns), GCPhysAddress, cb, NIL_RTR0PTR /*pvUser*/, "ohciWrite", "ohciRead");
     if (RT_FAILURE(rc))
         return rc;
-
 # endif
 
     pOhci->MMIOBase = GCPhysAddress;
     return VINF_SUCCESS;
 }
+
 
 /**
  * Prepares for state saving.
@@ -4944,6 +4938,7 @@ static DECLCALLBACK(int) ohciR3SavePrep(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
     }
     return VINF_SUCCESS;
 }
+
 
 /**
  * Saves the state of the OHCI device.
