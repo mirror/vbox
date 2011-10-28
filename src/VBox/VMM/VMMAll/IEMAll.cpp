@@ -68,46 +68,6 @@
 /*******************************************************************************
 *   Structures and Typedefs                                                    *
 *******************************************************************************/
-/**
- * Generic pointer union.
- * @todo move me to iprt/types.h
- */
-typedef union RTPTRUNION
-{
-    /** Pointer into the void... */
-    void        *pv;
-    /** Pointer to a 8-bit unsigned value. */
-    uint8_t     *pu8;
-    /** Pointer to a 16-bit unsigned value. */
-    uint16_t    *pu16;
-    /** Pointer to a 32-bit unsigned value. */
-    uint32_t    *pu32;
-    /** Pointer to a 64-bit unsigned value. */
-    uint64_t    *pu64;
-} RTPTRUNION;
-/** Pointer to a pointer union. */
-typedef RTPTRUNION *PRTPTRUNION;
-
-/**
- * Generic const pointer union.
- * @todo move me to iprt/types.h
- */
-typedef union RTCPTRUNION
-{
-    /** Pointer into the void... */
-    void const       *pv;
-    /** Pointer to a 8-bit unsigned value. */
-    uint8_t const     *pu8;
-    /** Pointer to a 16-bit unsigned value. */
-    uint16_t const    *pu16;
-    /** Pointer to a 32-bit unsigned value. */
-    uint32_t const    *pu32;
-    /** Pointer to a 64-bit unsigned value. */
-    uint64_t const    *pu64;
-} RTCPTRUNION;
-/** Pointer to a const pointer union. */
-typedef RTCPTRUNION *PRTCPTRUNION;
-
 /** @typedef PFNIEMOP
  * Pointer to an opcode decoder function.
  */
