@@ -111,9 +111,9 @@ typedef struct
     /** Actual bus number. */
     uint8_t             uBus;
 #endif
-    /* Physical address of PCI config space MMIO region */
+    /** Physical address of PCI config space MMIO region. */
     uint64_t            u64PciConfigMMioAddress;
-    /* Length of PCI config space MMIO region */
+    /** Length of PCI config space MMIO region. */
     uint64_t            u64PciConfigMMioLength;
 
     /** PCI bus which is attached to the host-to-PCI bridge. */
@@ -2513,19 +2513,10 @@ static DECLCALLBACK(int) ich9pciConstruct(PPDMDEVINS pDevIns,
 
     if (pGlobals->u64PciConfigMMioAddress != 0)
     {
-        rc = PDMDevHlpMMIORegister(pDevIns,
-                                   pGlobals->u64PciConfigMMioAddress,
-                                   pGlobals->u64PciConfigMMioLength,
-                                   0,
-                                   ich9pciMcfgMMIOWrite,
-                                   ich9pciMcfgMMIORead,
-                                   NULL /* fill */,
-                                   "MCFG ranges");
-        if (RT_FAILURE(rc))
-        {
-            AssertMsgRC(rc, ("Cannot register MCFG MMIO: %Rrc\n", rc));
-            return rc;
-        }
+        rc = PDMDevHlpMMIORegister(pDevIns, pGlobals->u64PciConfigMMioAddress, pGlobals->u64PciConfigMMioLength, NULL /*pvUser*/,
+                                   IOMMMIO_FLAGS_READ_PASSTHRU | IOMMMIO_FLAGS_WRITE_PASSTHRU,
+                                   ich9pciMcfgMMIOWrite, ich9pciMcfgMMIORead, "MCFG ranges");
+        AssertMsgRCReturn(rc, ("rc=%Rrc %#llx/%#llx\n", rc,  pGlobals->u64PciConfigMMioAddress, pGlobals->u64PciConfigMMioLength), rc);
 
         if (fGCEnabled)
         {

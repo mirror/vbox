@@ -4634,8 +4634,9 @@ static DECLCALLBACK(int) e1kMap(PPCIDEVICE pPciDev, int iRegion,
             break;
         case PCI_ADDRESS_SPACE_MEM:
             pState->addrMMReg = GCPhysAddress;
-            rc = PDMDevHlpMMIORegister(pPciDev->pDevIns, GCPhysAddress, cb, 0,
-                                       e1kMMIOWrite, e1kMMIORead, NULL, "E1000");
+            rc = PDMDevHlpMMIORegister(pPciDev->pDevIns, GCPhysAddress, cb, NULL /*pvUser*/,
+                                       IOMMMIO_FLAGS_READ_PASSTHRU | IOMMMIO_FLAGS_WRITE_PASSTHRU,
+                                       e1kMMIOWrite, e1kMMIORead, "E1000");
             if (pState->fR0Enabled)
             {
                 rc = PDMDevHlpMMIORegisterR0(pPciDev->pDevIns, GCPhysAddress, cb, 0,

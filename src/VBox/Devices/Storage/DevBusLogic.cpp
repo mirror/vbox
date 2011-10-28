@@ -2073,8 +2073,9 @@ static DECLCALLBACK(int) buslogicMMIOMap(PPCIDEVICE pPciDev, /*unsigned*/ int iR
     if (enmType == PCI_ADDRESS_SPACE_MEM)
     {
         /* We use the assigned size here, because we currently only support page aligned MMIO ranges. */
-        rc = PDMDevHlpMMIORegister(pDevIns, GCPhysAddress, cb, NULL,
-                                   buslogicMMIOWrite, buslogicMMIORead, NULL, "BusLogic");
+        rc = PDMDevHlpMMIORegister(pDevIns, GCPhysAddress, cb, NULL /*pvUser*/,
+                                   IOMMMIO_FLAGS_READ_PASSTHRU | IOMMMIO_FLAGS_WRITE_PASSTHRU,
+                                   buslogicMMIOWrite, buslogicMMIORead, "BusLogic");
         if (RT_FAILURE(rc))
             return rc;
 
