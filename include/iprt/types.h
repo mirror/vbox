@@ -685,6 +685,82 @@ typedef RTMSINTERVAL       *PRTMSINTERVAL;
 /** Pointer to a const millisecond interval. */
 typedef const RTMSINTERVAL *PCRTMSINTERVAL;
 
+/**
+ * Generic pointer union.
+ */
+typedef union RTPTRUNION
+{
+    /** Pointer into the void... */
+    void               *pv;
+    /** Pointer to a 8-bit unsigned value. */
+    uint8_t            *pu8;
+    /** Pointer to a 16-bit unsigned value. */
+    uint16_t           *pu16;
+    /** Pointer to a 32-bit unsigned value. */
+    uint32_t           *pu32;
+    /** Pointer to a 64-bit unsigned value. */
+    uint64_t           *pu64;
+} RTPTRUNION;
+/** Pointer to a pointer union. */
+typedef RTPTRUNION *PRTPTRUNION;
+
+/**
+ * Generic const pointer union.
+ */
+typedef union RTCPTRUNION
+{
+    /** Pointer into the void... */
+    void const         *pv;
+    /** Pointer to a 8-bit unsigned value. */
+    uint8_t const      *pu8;
+    /** Pointer to a 16-bit unsigned value. */
+    uint16_t const     *pu16;
+    /** Pointer to a 32-bit unsigned value. */
+    uint32_t const     *pu32;
+    /** Pointer to a 64-bit unsigned value. */
+    uint64_t const     *pu64;
+} RTCPTRUNION;
+/** Pointer to a const pointer union. */
+typedef RTCPTRUNION *PRTCPTRUNION;
+
+/**
+ * Generic volatile pointer union.
+ */
+typedef union RTVPTRUNION
+{
+    /** Pointer into the void... */
+    void volatile      *pv;
+    /** Pointer to a 8-bit unsigned value. */
+    uint8_t volatile   *pu8;
+    /** Pointer to a 16-bit unsigned value. */
+    uint16_t volatile  *pu16;
+    /** Pointer to a 32-bit unsigned value. */
+    uint32_t volatile  *pu32;
+    /** Pointer to a 64-bit unsigned value. */
+    uint64_t volatile  *pu64;
+} RTVPTRUNION;
+/** Pointer to a const pointer union. */
+typedef RTVPTRUNION *PRTVPTRUNION;
+
+/**
+ * Generic const volatile pointer union.
+ */
+typedef union RTCVPTRUNION
+{
+    /** Pointer into the void... */
+    void const volatile        *pv;
+    /** Pointer to a 8-bit unsigned value. */
+    uint8_t const volatile     *pu8;
+    /** Pointer to a 16-bit unsigned value. */
+    uint16_t const volatile    *pu16;
+    /** Pointer to a 32-bit unsigned value. */
+    uint32_t const volatile    *pu32;
+    /** Pointer to a 64-bit unsigned value. */
+    uint64_t const volatile    *pu64;
+} RTCVPTRUNION;
+/** Pointer to a const pointer union. */
+typedef RTCVPTRUNION *PRTCVPTRUNION;
+
 
 /** @defgroup grp_rt_types_both  Common Guest and Host Context Basic Types
  * @ingroup grp_rt_types
