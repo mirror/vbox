@@ -351,6 +351,9 @@ typedef struct OHCI
     /** A flag indicating that the bulk list may have in-flight URBs. */
     bool                fBulkNeedsCleaning;
 
+    /** Whether RC/R0 is enabled. */
+    bool                fRZEnabled;
+
     uint32_t            Alignment3;     /**< Align size on a 8 byte boundary. */
 } OHCI;
 
@@ -4789,7 +4792,7 @@ static const OHCIOPREG g_aOpRegs[] =
  * @param   pv          Where to put the data we read.
  * @param   cb          The size of the read.
  */
-PDMBOTHCBDECL(int) ohciRead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr, void *pv, unsigned cb)
+PDMBOTHCBDECL(int) ohciMmioRead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr, void *pv, unsigned cb)
 {
     POHCI pOhci = PDMINS_2_DATA(pDevIns, POHCI);
 
@@ -4828,7 +4831,7 @@ PDMBOTHCBDECL(int) ohciRead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAdd
  * @param   pv          Pointer to the data being written.
  * @param   cb          The size of the data being written.
  */
-PDMBOTHCBDECL(int) ohciWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr, void const *pv, unsigned cb)
+PDMBOTHCBDECL(int) ohciMmioWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr, void const *pv, unsigned cb)
 {
     POHCI pOhci = PDMINS_2_DATA(pDevIns, POHCI);
 
@@ -4837,12 +4840,12 @@ PDMBOTHCBDECL(int) ohciWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAd
      */
     if (cb != sizeof(uint32_t))
     {
-        Log2(("ohciWrite: Bad write size!!! GCPhysAddr=%RGp cb=%d\n", GCPhysAddr, cb));
+        Log2(("ohciMmioWrite: Bad write size!!! GCPhysAddr=%RGp cb=%d\n", GCPhysAddr, cb));
         return VINF_SUCCESS;
     }
     if (GCPhysAddr & 0x3)
     {
-        Log2(("ohciWrite: Unaligned write!!! GCPhysAddr=%RGp cb=%d\n", GCPhysAddr, cb));
+        Log2(("ohciMmioWrite: Unaligned write!!! GCPhysAddr=%RGp cb=%d\n", GCPhysAddr, cb));
         return VINF_SUCCESS;
     }
 
@@ -4873,20 +4876,24 @@ static DECLCALLBACK(int) ohciR3Map(PPCIDEVICE pPciDev, int iRegion, RTGCPHYS GCP
 {
     POHCI pOhci = (POHCI)pPciDev;
     int rc = PDMDevHlpMMIORegister(pOhci->CTX_SUFF(pDevIns), GCPhysAddress, cb, NULL /*pvUser*/,
-                                   IOMMMIO_FLAGS_READ_DWORD | IOMMMIO_FLAGS_WRITE_PASSTHRU,
-                                   ohciWrite, ohciRead, "USB OHCI");
+                                   IOMMMIO_FLAGS_READ_DWORD | IOMMMIO_FLAGS_WRITE_DWORD_ZEROED
+                                   | IOMMMIO_FLAGS_DBGSTOP_ON_COMPLICATED_WRITE,
+                                   ohciMmioWrite, ohciMmioRead, "USB OHCI");
     if (RT_FAILURE(rc))
         return rc;
 
-# if 1 /* this enabled / disabled GC/R0 stuff */
-    rc = PDMDevHlpMMIORegisterRC(pOhci->CTX_SUFF(pDevIns), GCPhysAddress, cb, NIL_RTRCPTR /*pvUser*/, "ohciWrite", "ohciRead");
-    if (RT_FAILURE(rc))
-        return rc;
+    if (pOhci->fRZEnabled)
+    {
+        rc = PDMDevHlpMMIORegisterRC(pOhci->CTX_SUFF(pDevIns), GCPhysAddress, cb,
+                                     NIL_RTRCPTR /*pvUser*/, "ohciMmioWrite", "ohciMmioRead");
+        if (RT_FAILURE(rc))
+            return rc;
 
-    rc = PDMDevHlpMMIORegisterR0(pOhci->CTX_SUFF(pDevIns), GCPhysAddress, cb, NIL_RTR0PTR /*pvUser*/, "ohciWrite", "ohciRead");
-    if (RT_FAILURE(rc))
-        return rc;
-# endif
+        rc = PDMDevHlpMMIORegisterR0(pOhci->CTX_SUFF(pDevIns), GCPhysAddress, cb,
+                                     NIL_RTR0PTR /*pvUser*/, "ohciMmioWrite", "ohciMmioRead");
+        if (RT_FAILURE(rc))
+            return rc;
+    }
 
     pOhci->MMIOBase = GCPhysAddress;
     return VINF_SUCCESS;
@@ -5365,16 +5372,8 @@ static DECLCALLBACK(int) ohciR3Destruct(PPDMDEVINS pDevIns)
  */
 static DECLCALLBACK(int) ohciR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGMNODE pCfg)
 {
-    POHCI   pOhci = PDMINS_2_DATA(pDevIns, POHCI);
-    int     rc;
+    POHCI pOhci = PDMINS_2_DATA(pDevIns, POHCI);
     PDMDEV_CHECK_VERSIONS_RETURN(pDevIns);
-
-    /*
-     * Read configuration. No configuration keys are currently supported.
-     */
-    if (!CFGMR3AreValuesValid(pCfg, "\0"))
-        return PDMDEV_SET_ERROR(pDevIns, VERR_PDM_DEVINS_UNKNOWN_CFG_VALUES,
-                                N_("Configuration error: Unknown config key"));
 
     /*
      * Init instance data.
@@ -5408,6 +5407,15 @@ static DECLCALLBACK(int) ohciR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
     pOhci->RootHub.Led.u32Magic                  = PDMLED_MAGIC;
     pOhci->RootHub.ILeds.pfnQueryStatusLed       = ohciRhQueryStatusLed;
 
+
+    /*
+     * Read configuration. No configuration keys are currently supported.
+     */
+    PDMDEV_VALIDATE_CONFIG_RETURN(pDevIns, "RZEnabled", "");
+    int rc = CFGMR3QueryBoolDef(pCfg, "RZEnabled", &pOhci->fRZEnabled, true);
+    AssertLogRelRCReturn(rc, rc);
+
+
     /*
      * Register PCI device and I/O region.
      */
@@ -5422,7 +5430,7 @@ static DECLCALLBACK(int) ohciR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
     aMsiReg.iMsiCapOffset = 0x80;
     aMsiReg.iMsiNextOffset = 0x0;
     rc = PDMDevHlpPCIRegisterMsi(pDevIns, &aMsiReg);
-    if (RT_FAILURE (rc))
+    if (RT_FAILURE(rc))
     {
         PCIDevSetCapabilityList(&pOhci->PciDev, 0x0);
         /* That's OK, we can work without MSI */

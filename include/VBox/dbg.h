@@ -41,6 +41,8 @@
 
 RT_C_DECLS_BEGIN
 
+#ifdef IN_RING3 /* The debugger stuff is ring-3 only. */
+
 /** @def VBOX_WITH_DEBUGGER
  * The build is with debugger module. Test if this is defined before registering
  * external debugger commands. This is normally defined in Config.kmk.
@@ -1067,6 +1069,8 @@ typedef FNDBGCPLUGIN *PFNDBGCPLUGIN;
 
 /** @copydoc FNDBGCPLUGIN */
 DECLEXPORT(int) DBGCPlugInEntry(DBGCPLUGINOP enmOperation, PVM pVM, uintptr_t uArg);
+
+#endif /* IN_RING3 */
 
 /** @} */
 

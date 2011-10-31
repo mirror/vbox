@@ -103,6 +103,7 @@ typedef enum DBGFINFOTYPE
 /** Pointer to info structure. */
 typedef struct DBGFINFO *PDBGFINFO;
 
+#ifdef IN_RING3
 /**
  * Info structure.
  */
@@ -159,6 +160,7 @@ typedef struct DBGFINFO
     /** The identifier name. (Extends 'beyond' the struct as usual.) */
     char            szName[1];
 } DBGFINFO;
+#endif /* IN_RING3 */
 
 
 /**
