@@ -66,12 +66,18 @@
         _logger(("\n")); \
     } while (0)
 
+#ifdef VBOX_WDDM_MINIPORT
+# define _WARN_LOGGER LogRel
+#else
+# define _WARN_LOGGER Log
+#endif
+
 #define WARN_NOBP(_a)                                                          \
     do                                                                            \
     {                                                                             \
-        Log((VBOX_VIDEO_LOG_PREFIX_FMT"WARNING! ", VBOX_VIDEO_LOG_PREFIX_PARMS)); \
-        Log(_a);                                                                  \
-        Log((VBOX_VIDEO_LOG_SUFFIX_FMT VBOX_VIDEO_LOG_SUFFIX_PARMS));             \
+        _WARN_LOGGER((VBOX_VIDEO_LOG_PREFIX_FMT"WARNING! ", VBOX_VIDEO_LOG_PREFIX_PARMS)); \
+        _WARN_LOGGER(_a);                                                                  \
+        _WARN_LOGGER((VBOX_VIDEO_LOG_SUFFIX_FMT VBOX_VIDEO_LOG_SUFFIX_PARMS));             \
     } while (0)
 
 #define WARN(_a)                                                                  \
@@ -79,6 +85,12 @@
     {                                                                             \
         WARN_NOBP(_a);                                                         \
         BP_WARN();                                                             \
+    } while (0)
+
+#define ASSERT_WARN(_a, _w) do {\
+        if(!(_a)) { \
+            WARN(_w); \
+        }\
     } while (0)
 
 #define LOG(_a) _LOGMSG(Log, _a)

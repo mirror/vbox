@@ -3096,6 +3096,14 @@ static HRESULT vboxWddmSwapchainPresentPerform(PVBOXWDDMDISP_DEVICE pDevice, PVB
 
 static HRESULT vboxWddmSwapchainPresent(PVBOXWDDMDISP_DEVICE pDevice, PVBOXWDDMDISP_ALLOCATION pBbAlloc)
 {
+    /* we currently *assume* that presenting shared resource is only possible when 3d app is rendering with composited desktop on,
+     * no need to do anything else since dwm will present everything for us */
+    if (pBbAlloc->hSharedHandle)
+    {
+        VBOXVDBG_ASSERT_IS_DWM(FALSE);
+        return S_OK;
+    }
+
     BOOL bNeedPresent;
     PVBOXWDDMDISP_SWAPCHAIN pSwapchain = vboxWddmSwapchainFindCreate(pDevice, pBbAlloc, &bNeedPresent);
     Assert(pSwapchain);
@@ -5303,11 +5311,7 @@ static HRESULT APIENTRY vboxWddmDDevCreateResource(HANDLE hDevice, D3DDDIARG_CRE
 
                 if (SUCCEEDED(hr))
                 {
-                    if (pResource->Pool != D3DDDIPOOL_SYSTEMMEM)
-                    {
-                        vboxWddmMemsetRc(pRc, 0);
-                    }
-                    else
+                    if (pResource->Pool == D3DDDIPOOL_SYSTEMMEM)
                     {
                         vboxWddmSurfSynchMem(pRc);
                     }
@@ -5346,11 +5350,7 @@ static HRESULT APIENTRY vboxWddmDDevCreateResource(HANDLE hDevice, D3DDDIARG_CRE
 
                 if (SUCCEEDED(hr))
                 {
-                    if (pResource->Pool != D3DDDIPOOL_SYSTEMMEM)
-                    {
-                        vboxWddmMemsetRc(pRc, 0);
-                    }
-                    else
+                    if (pResource->Pool == D3DDDIPOOL_SYSTEMMEM)
                     {
                         vboxWddmSurfSynchMem(pRc);
                     }
@@ -5391,11 +5391,7 @@ static HRESULT APIENTRY vboxWddmDDevCreateResource(HANDLE hDevice, D3DDDIARG_CRE
 
                 if (SUCCEEDED(hr))
                 {
-                    if (pResource->Pool != D3DDDIPOOL_SYSTEMMEM)
-                    {
-                        vboxWddmMemsetRc(pRc, 0);
-                    }
-                    else
+                    if (pResource->Pool == D3DDDIPOOL_SYSTEMMEM)
                     {
                         vboxWddmSurfSynchMem(pRc);
                     }
@@ -5567,11 +5563,7 @@ static HRESULT APIENTRY vboxWddmDDevCreateResource(HANDLE hDevice, D3DDDIARG_CRE
 
                 if (SUCCEEDED(hr))
                 {
-                    if (pResource->Pool != D3DDDIPOOL_SYSTEMMEM)
-                    {
-                        vboxWddmMemsetRc(pRc, 0);
-                    }
-                    else
+                    if (pResource->Pool == D3DDDIPOOL_SYSTEMMEM)
                     {
                         vboxWddmSurfSynchMem(pRc);
                     }
@@ -5638,11 +5630,7 @@ static HRESULT APIENTRY vboxWddmDDevCreateResource(HANDLE hDevice, D3DDDIARG_CRE
 
                     if (SUCCEEDED(hr))
                     {
-                        if (pResource->Pool != D3DDDIPOOL_SYSTEMMEM)
-                        {
-                            vboxWddmMemsetRc(pRc, 0);
-                        }
-                        else
+                        if (pResource->Pool == D3DDDIPOOL_SYSTEMMEM)
                         {
                             Assert(0);
                             vboxWddmSurfSynchMem(pRc);
@@ -5954,14 +5942,8 @@ static HRESULT APIENTRY vboxWddmDDevSetDisplayMode(HANDLE hDevice, CONST D3DDDIA
     Assert(pRc->RcDesc.fFlags.RenderTarget);
     Assert(pRc->RcDesc.fFlags.Primary);
     Assert(pAlloc->hAllocation);
-//    PVBOXWDDMDISP_SCREEN pScreen = &pDevice->aScreens[pRc->RcDesc.VidPnSourceId];
-//    Assert(pScreen->hWnd);
-//    Assert(pScreen->pDevice9If);
     D3DDDICB_SETDISPLAYMODE DdiDm = {0};
     DdiDm.hPrimaryAllocation = pAlloc->hAllocation;
-//    DdiDm.PrivateDriverFormatAttribute = 0;
-//    Assert(pScreen->pRenderTargetRc == pRc);
-//    Assert(pScreen->iRenderTargetFrontBuf == pData->SubResourceIndex);
 
     {
         hr = pDevice->RtCallbacks.pfnSetDisplayModeCb(pDevice->hDevice, &DdiDm);
