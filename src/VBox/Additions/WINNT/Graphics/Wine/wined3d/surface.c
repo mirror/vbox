@@ -4319,7 +4319,7 @@ static HRESULT WINAPI IWineD3DSurfaceImpl_Blt(IWineD3DSurface *iface, const RECT
 
 #ifdef VBOX_WITH_WDDM
     surface_shrc_lock(This);
-    surface_shrc_lock(Src);
+    if (Src) surface_shrc_lock(Src);
 #endif
 
     /* Accessing the depth stencil is supposed to fail between a BeginScene and EndScene pair,
@@ -4348,7 +4348,7 @@ static HRESULT WINAPI IWineD3DSurfaceImpl_Blt(IWineD3DSurface *iface, const RECT
     }
 
 #ifdef VBOX_WITH_WDDM
-    if (IWineD3DSurfaceImpl_BltSys2Vram(This, DestRect, SrcSurface, SrcRect, Flags, DDBltFx, Filter) == WINED3D_OK)
+    if (SrcSurface && IWineD3DSurfaceImpl_BltSys2Vram(This, DestRect, SrcSurface, SrcRect, Flags, DDBltFx, Filter) == WINED3D_OK)
     {
         hr = WINED3D_OK;
         goto end;
@@ -4363,7 +4363,7 @@ static HRESULT WINAPI IWineD3DSurfaceImpl_Blt(IWineD3DSurface *iface, const RECT
 end:
 #ifdef VBOX_WITH_WDDM
     surface_shrc_unlock(This);
-    surface_shrc_unlock(Src);
+    if (Src) surface_shrc_unlock(Src);
 #endif
     return hr;
 }
