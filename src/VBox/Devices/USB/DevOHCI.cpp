@@ -4156,7 +4156,7 @@ static int HcBulkHeadED_w(POHCI pOhci, uint32_t iReg, uint32_t val)
 {
     Log2(("HcBulkHeadED_w(%#010x) - old=%#010x new=%#010x\n", val, pOhci->bulk_head, val & ~7));
     AssertMsg(!(val & 7), ("Invalid alignment, val=%#010x\n", val));
-    pOhci->bulk_head = val & ~7;
+    pOhci->bulk_head = val & ~7; /** @todo The ATI OHCI controller on my machine enforces 16-byte address alignment. */
     return VINF_SUCCESS;
 }
 
@@ -4346,9 +4346,10 @@ static int HcLSThreshold_r(PCOHCI pOhci, uint32_t iReg, uint32_t *pu32Value)
  */
 static int HcLSThreshold_w(POHCI pOhci, uint32_t iReg, uint32_t val)
 {
-    Log2(("HcLSThreshold_w(%#010x) => LST=0x%03x(%d)\n", val, val & 0x0fff, val & 0x0fff));
+    Log2(("HcLSThreshold_w(%#010x) => LST=0x%03x(%d)\n", val, val & 0x0fff));
     AssertMsg(val == OHCI_LS_THRESH,
               ("HCD tried to write bad LS threshold: 0x%x (see function header)\n", val));
+    /** @todo the HCD can change this. */
     return VINF_SUCCESS;
 }
 
