@@ -635,7 +635,7 @@ void UIMachineView::setMaxGuestSize()
             maxSize = QSize(0, 0);
     }
     ASMAtomicWriteU64(&m_u64MaxGuestSize,
-                      RT_MAKE_U64(maxSize.width(), maxSize.height()));
+                      RT_MAKE_U64(maxSize.height(), maxSize.width()));
 }
 
 QSize UIMachineView::maxGuestSize()
