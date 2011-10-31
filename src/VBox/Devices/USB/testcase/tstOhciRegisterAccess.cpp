@@ -75,16 +75,18 @@ static bool TestOhciWrites(RTVPTRUNION uPtr)
     static struct
     {
         unsigned iReg;
+        uint32_t fMask;
         uint32_t uVal1;
         uint32_t uVal2;
     }  const s_aRegs[] =
     {
-        {  4 /* HcInterruptEnable */,   0x3fffff80, 0x3e555580 },
-        {  5 /* HcInterruptDisable */,  0xffffffff, 0x59575351 },
 #if 0 /* deadly when missing bytes are taken as zero. */
-        { 13 /* HcFmInterval */,        0x58871120, 0x01010101 },
+        { 13 /* HcFmInterval */,        0xffffffff, 0x58871120, 0x01010101 },
 #endif
-        { 16 /* HcPeriodicStart */,     0x01020304, 0x02010403 },
+        { 16 /* HcPeriodicStart */,     0x00003fff, 0x01020304, 0x02010403 },
+        { 17 /* HcLSThreshold */,       0x00000fff, 0xffffffff, 0x66666666 },
+        { 10 /* HcBulkHeadED */,        0xfffffff0, 0xffffffff, 0xfefefef8 }, /* a bit risky... */
+        { 11 /* HcBulkCurrentED */,     0xfffffff0, 0xffffffff, 0xfefefef8 }, /* a bit risky... */
     };
 
     bool fSuccess = true;
@@ -97,73 +99,141 @@ static bool TestOhciWrites(RTVPTRUNION uPtr)
         uint32_t uInitialValue = *uPtrReg.pu32;
         LogRel(("TestOhciWrites: %p iReg=%2d %20s = %08RX32\n", uPtrReg.pv, iReg, g_apszRegNms[iReg], uInitialValue));
 
-        bool                fDone    = true;
-        const char         *pszError = NULL;
-        RTCCUINTREG const   fFlags   = ASMIntDisableFlags();
+        bool                fTryAgain       = true;
+        const char         *pszError        = NULL;
+        uint32_t            u32A            = 0;
+        uint32_t            uChangedValue   = 0;
+        uint32_t            uExpectedValue  = 0;
 
-        /*
-         * DWORD writes.
-         */
-        uInitialValue = *uPtrReg.pu32;
-        *uPtrReg.pu32 = uInitialValue;
-        uint32_t u32A = *uPtrReg.pu32;
-        uint32_t const uChangedValue = s_aRegs[i].uVal1 != uInitialValue ? s_aRegs[i].uVal1 : s_aRegs[i].uVal2;
-        if (u32A == uInitialValue)
+        for (uint32_t iTry = 0; fTryAgain && iTry < 1024; iTry++)
         {
-            /* Change the value. */
-            *uPtrReg.pu32 = uChangedValue;
-            u32A = *uPtrReg.pu32;
+            pszError        = NULL;
+            fTryAgain       = false;
+            u32A            = 0;
+            uChangedValue   = 0;
+            uExpectedValue  = 0;
+
+            RTCCUINTREG const   fFlags = ASMIntDisableFlags();
+            uInitialValue = *uPtrReg.pu32;
+
+            /*
+             * DWORD writes.
+             */
+            if ((fTryAgain = (*uPtrReg.pu32 != uInitialValue)))
+                break;
             *uPtrReg.pu32 = uInitialValue;
-            if (u32A != uChangedValue)
-                pszError = "Writing changed value failed";
-            else
+            u32A = *uPtrReg.pu32;
+            uChangedValue = s_aRegs[i].uVal1 != uInitialValue ? s_aRegs[i].uVal1 : s_aRegs[i].uVal2;
+            if (u32A == uInitialValue)
             {
+                /* Change the value. */
+                *uPtrReg.pu32  = uChangedValue;
                 u32A = *uPtrReg.pu32;
-                if (u32A != uInitialValue)
-                    pszError = "Restore error 1";
-            }
-        }
-        else
-            pszError = "Writing back initial value failed";
-
-
-        /*
-         * Write byte changes.
-         */
-        for (unsigned iByte = 0; !pszError && iByte < 4; iByte)
-        {
-            /* Change the value. */
-            uPtrReg.pu8[iByte] = (uint8_t)(uChangedValue >> iByte * 8);
-            u32A = *uPtrReg.pu32;
-            *uPtrReg.pu32 = uInitialValue;
-            if (u32A != (uChangedValue & UINT32_C(0xff) << iByte * 8))
-            {
-                static const char * const s_apsz[] = { "byte 0", "byte 1", "byte 2", "byte 3" };
-                pszError = s_apsz[iByte];
+                *uPtrReg.pu32  = uInitialValue;
+                uExpectedValue = uChangedValue & s_aRegs[i].fMask;
+                if (u32A != uExpectedValue)
+                    pszError = "Writing changed value failed";
+                else
+                {
+                    u32A = *uPtrReg.pu32;
+                    if (u32A != uInitialValue)
+                        pszError = "Restore error 1";
+                }
             }
             else
+                pszError = "Writing back initial value failed";
+
+            /*
+             * Write aligned word changes.
+             */
+            for (unsigned iWord = 0; iWord < 2 && !pszError && !fTryAgain; iWord++)
             {
+                if ((fTryAgain = (*uPtrReg.pu32 != uInitialValue)))
+                    break;
+
+                /* Change the value. */
+                uPtrReg.pu16[iWord] = (uint16_t)(uChangedValue >> iWord * 16);
                 u32A = *uPtrReg.pu32;
-                if (u32A != uInitialValue)
-                    pszError = "Restore error 2";
+                *uPtrReg.pu32  = uInitialValue;
+                uExpectedValue = (uChangedValue & UINT32_C(0xffff) << iWord * 16) & s_aRegs[i].fMask;
+                if (u32A != uExpectedValue)
+                {
+                    static const char * const s_apsz[] = { "word 0", "word 1" };
+                    pszError = s_apsz[iWord];
+                }
+                else
+                {
+                    u32A = *uPtrReg.pu32;
+                    if (u32A != uInitialValue)
+                        pszError = "Restore error 2";
+                }
             }
+
+            /*
+             * Write aligned word change. We have to keep within the register,
+             * unfortunately.
+             */
+            if (!pszError && !fTryAgain)
+            {
+                fTryAgain = *uPtrReg.pu32 != uInitialValue;
+                if (!fTryAgain)
+                {
+                    /* Change the value. */
+                    *(uint16_t volatile *)&uPtrReg.pu8[1] = (uint16_t)(uChangedValue >> 8);
+                    u32A = *uPtrReg.pu32;
+                    *uPtrReg.pu32  = uInitialValue;
+                    uExpectedValue = (uChangedValue & UINT32_C(0x00ffff00)) & s_aRegs[i].fMask;
+                    if (u32A != uExpectedValue)
+                        pszError = "Unaligned word access";
+                    else
+                    {
+                        u32A = *uPtrReg.pu32;
+                        if (u32A != uInitialValue)
+                            pszError = "Restore error 3";
+                    }
+                }
+            }
+
+            /*
+             * Write byte changes.
+             */
+            for (unsigned iByte = 0; iByte < 4 && !pszError && !fTryAgain; iByte++)
+            {
+                if ((fTryAgain = (*uPtrReg.pu32 != uInitialValue)))
+                    break;
+
+                /* Change the value. */
+                uPtrReg.pu8[iByte] = (uint8_t)(uChangedValue >> iByte * 8);
+                u32A = *uPtrReg.pu32;
+                *uPtrReg.pu32  = uInitialValue;
+                uExpectedValue = (uChangedValue & UINT32_C(0xff) << iByte * 8) & s_aRegs[i].fMask;
+                if (u32A != uExpectedValue)
+                {
+                    static const char * const s_apsz[] = { "byte 0", "byte 1", "byte 2", "byte 3" };
+                    pszError = s_apsz[iByte];
+                }
+                else
+                {
+                    u32A = *uPtrReg.pu32;
+                    if (u32A != uInitialValue)
+                        pszError = "Restore error 4";
+                }
+            }
+
+            ASMSetFlags(fFlags);
+            ASMNopPause();
         }
-
-        *uPtrReg.pu32 = uInitialValue;
-
-        ASMSetFlags(fFlags);
-        ASMNopPause();
 
         /*
          * Complain on failure.
          */
-        if (!fDone)
+        if (fTryAgain)
             LogRel(("TestOhciWrites: Warning! Register %s was never stable enough for testing! %08RX32 %08RX32 %08RX32\n",
                     g_apszRegNms[iReg], uInitialValue, u32A, uChangedValue, uInitialValue));
         else if (pszError)
         {
-            LogRel(("TestOhciWrites: Error! Register %s failed: %s; uInitialValue=%08RX32 uChangedValue=%08RX32 u32A=%08RX32\n",
-                    g_apszRegNms[iReg], pszError, uInitialValue, uChangedValue, u32A));
+            LogRel(("TestOhciWrites: Error! Register %s failed: %s; Initial=%08RX32 Changed=%08RX32 Expected=%08RX32 u32A=%08RX32\n",
+                    g_apszRegNms[iReg], pszError, uInitialValue, uChangedValue, uExpectedValue, u32A));
             fSuccess = false;
         }
     }
