@@ -4793,7 +4793,7 @@ PDMBOTHCBDECL(int) ohciRead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAdd
     POHCI pOhci = PDMINS_2_DATA(pDevIns, POHCI);
 
     /* Paranoia: Assert that IOMMMIO_FLAGS_READ_DWORD works. */
-    AssertReturn(cb != sizeof(uint32_t), VERR_INTERNAL_ERROR_3);
+    AssertReturn(cb == sizeof(uint32_t), VERR_INTERNAL_ERROR_3);
     AssertReturn(!(GCPhysAddr & 0x3), VERR_INTERNAL_ERROR_4);
 
     /*
