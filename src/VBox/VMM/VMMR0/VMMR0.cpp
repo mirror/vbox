@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2010 Oracle Corporation
+ * Copyright (C) 2006-2011 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -67,7 +67,7 @@ VMMR0DECL(void) ModuleTerm(void);
 #if defined(RT_ARCH_X86) && (defined(RT_OS_SOLARIS) || defined(RT_OS_FREEBSD))
 extern uint64_t __udivdi3(uint64_t, uint64_t);
 extern uint64_t __umoddi3(uint64_t, uint64_t);
-#endif // RT_ARCH_X86 && (RT_OS_SOLARIS || RT_OS_FREEBSD)
+#endif
 RT_C_DECLS_END
 
 
@@ -83,7 +83,7 @@ PFNRT g_VMMGCDeps[] =
 #if defined(RT_ARCH_X86) && (defined(RT_OS_SOLARIS) || defined(RT_OS_FREEBSD))
     (PFNRT)__udivdi3,
     (PFNRT)__umoddi3,
-#endif // RT_ARCH_X86 && (RT_OS_SOLARIS || RT_OS_FREEBSD)
+#endif
     NULL
 };
 
@@ -93,13 +93,6 @@ extern "C" { char _depends_on[] = "vboxdrv"; }
 #endif
 
 
-
-#if defined(RT_OS_WINDOWS) && defined(RT_ARCH_AMD64)
-/* Increase the size of the image to work around the refusal of Win64 to
- * load images in the 0x80000 range.
- */
-static uint64_t u64BloatImage[8192] = {0};
-#endif
 
 /**
  * Initialize the module.
