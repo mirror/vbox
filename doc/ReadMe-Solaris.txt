@@ -10,14 +10,6 @@ a newer version of VirtualBox, please uninstall the previous version
 before installing a newer one. Please refer to the "Uninstalling" section
 at the end of this document for details.
 
- +--------+
- |  NOTE  |
- +--------+
-
- VirtualBox 3.1+ includes experimental USB support for Solaris 11, Nevada
- and OpenSolaris build 124 or higher. VirtualBox does not support USB devices
- attached to the host on Solaris 10 due to limitations in the kernel.
-
 
 Installing:
 -----------
