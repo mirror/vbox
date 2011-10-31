@@ -37,38 +37,38 @@
 /** Register names. */
 static const char * const g_apszRegNms[] =
 {
-    "HcRevision",
-    "HcControl",
-    "HcCommandStatus",
-    "HcInterruptStatus",
-    "HcInterruptEnable",
-    "HcInterruptDisable",
-    "HcHCCA",
-    "HcPeriodCurrentED",
-    "HcControlHeadED",
-    "HcControlCurrentED",
-    "HcBulkHeadED",
-    "HcBulkCurrentED",
-    "HcDoneHead",
-    "HcFmInterval",
-
-    "HcFmRemaining",
-    "HcFmNumber",
-    "HcPeriodicStart",
-    "HcLSThreshold",
-    "HcRhDescriptorA",
-    "HcRhDescriptorB",
-    "HcRhStatus",
+    /* 00 */ "HcRevision",
+    /* 01 */ "HcControl",
+    /* 02 */ "HcCommandStatus",
+    /* 03 */ "HcInterruptStatus",
+    /* 04 */ "HcInterruptEnable",
+    /* 05 */ "HcInterruptDisable",
+    /* 06 */ "HcHCCA",
+    /* 07 */ "HcPeriodCurrentED",
+    /* 08 */ "HcControlHeadED",
+    /* 09 */ "HcControlCurrentED",
+    /* 10 */ "HcBulkHeadED",
+    /* 11 */ "HcBulkCurrentED",
+    /* 12 */ "HcDoneHead",
+    /* 13 */ "HcFmInterval",
+    /* 14 */ "HcFmRemaining",
+    /* 15 */ "HcFmNumber",
+    /* 16 */ "HcPeriodicStart",
+    /* 17 */ "HcLSThreshold",
+    /* 18 */ "HcRhDescriptorA",
+    /* 19 */ "HcRhDescriptorB",
+    /* 20 */ "HcRhStatus",
     /* Variable number of root hub ports: */
-    "HcRhPortStatus[0]",
-    "HcRhPortStatus[1]",
-    "HcRhPortStatus[2]",
-    "HcRhPortStatus[3]",
-    "HcRhPortStatus[4]",
-    "HcRhPortStatus[5]",
-    "HcRhPortStatus[6]",
-    "HcRhPortStatus[7]"
+    /* 21 */ "HcRhPortStatus[0]",
+    /* 22 */ "HcRhPortStatus[1]",
+    /* 23 */ "HcRhPortStatus[2]",
+    /* 24 */ "HcRhPortStatus[3]",
+    /* 25 */ "HcRhPortStatus[4]",
+    /* 26 */ "HcRhPortStatus[5]",
+    /* 27 */ "HcRhPortStatus[6]",
+    /* 28 */ "HcRhPortStatus[7]"
 };
+
 
 static bool TestOhciWrites(RTVPTRUNION uPtr)
 {
@@ -79,7 +79,12 @@ static bool TestOhciWrites(RTVPTRUNION uPtr)
         uint32_t uVal2;
     }  const s_aRegs[] =
     {
-        { 13 /* HcFmInterval */, 0x58871120, 0 }
+        {  4 /* HcInterruptEnable */,   0x3fffff80, 0x3e555580 },
+        {  5 /* HcInterruptDisable */,  0xffffffff, 0x59575351 },
+#if 0 /* deadly when missing bytes are taken as zero. */
+        { 13 /* HcFmInterval */,        0x58871120, 0x01010101 },
+#endif
+        { 16 /* HcPeriodicStart */,     0x01020304, 0x02010403 },
     };
 
     bool fSuccess = true;
@@ -158,6 +163,136 @@ static bool TestOhciWrites(RTVPTRUNION uPtr)
         else if (pszError)
         {
             LogRel(("TestOhciWrites: Error! Register %s failed: %s; uInitialValue=%08RX32 uChangedValue=%08RX32 u32A=%08RX32\n",
+                    g_apszRegNms[iReg], pszError, uInitialValue, uChangedValue, u32A));
+            fSuccess = false;
+        }
+    }
+
+    return fSuccess;
+}
+
+
+static bool TestOhciReadOnly(RTVPTRUNION uPtr)
+{
+    static struct
+    {
+        unsigned    iReg;
+        uint32_t    cValues;
+        uint32_t    auValues[8];
+    }  const s_aRegs[] =
+    {
+        {  0 /* HcRevision */,    8, { 0, UINT32_MAX, 0x10100110, 0x200, 0x111, 0x11f, 0xf110, 0x0f10 } },
+        { 12 /* HcDoneHead */,    3, { 0, UINT32_MAX, 0x55555555, 0, 0, 0, 0, 0 } },
+        { 14 /* HcFmRemaining */, 3, { 0, UINT32_MAX, 0x55555555, 0, 0, 0, 0, 0  } },
+        { 15 /* HcFmNumber */,    5, { 0, UINT32_MAX, 0x55555555, 0x7899, 0x00012222, 0, 0, 0  } },
+#if 0 /* HCD can write this */
+        { 17 /* HcLSThreshold */, 5, { 0x627, 0x628, 0x629, 0x666, 0x599, 0, 0, 0  } } /* ??? */
+#endif
+    };
+
+    bool fSuccess = true;
+    for (unsigned i = 0; i < RT_ELEMENTS(s_aRegs); i++)
+    {
+        uint32_t const      iReg = s_aRegs[i].iReg;
+        RTVPTRUNION         uPtrReg;
+        uPtrReg.pu32 = &uPtr.pu32[iReg];
+
+        uint32_t uInitialValue = *uPtrReg.pu32;
+        LogRel(("TestOhciReadOnly: %p iReg=%2d %20s = %08RX32\n", uPtrReg.pv, iReg, g_apszRegNms[iReg], uInitialValue));
+
+        bool                fTryAgain     = true;
+        const char         *pszError      = NULL;
+        uint32_t            uChangedValue = 0;
+        uint32_t            u32A          = 0;
+
+        for (uint32_t iTry = 0; fTryAgain && iTry < 1024; iTry++)
+        {
+            pszError      = NULL;
+            fTryAgain     = false;
+            u32A          = 0;
+            uChangedValue = 0;
+
+            RTCCUINTREG const   fFlags = ASMIntDisableFlags();
+            uInitialValue = *uPtrReg.pu32;
+
+            /*
+             * Try aligned dword, word and byte writes for now.
+             */
+            for (unsigned iValue = 0; iValue < s_aRegs[i].cValues && !pszError && !fTryAgain; iValue++)
+            {
+                uChangedValue = s_aRegs[i].auValues[iValue];
+                if (uInitialValue == uChangedValue)
+                    continue;
+
+                /* dword */
+                if ((fTryAgain = (*uPtrReg.pu32 != uInitialValue)))
+                    break;
+
+                *uPtrReg.pu32 = uChangedValue;
+                u32A = *uPtrReg.pu32;
+                *uPtrReg.pu32 = uInitialValue;
+                if (u32A != uInitialValue)
+                    pszError = "dword access";
+                else
+                {
+                    u32A = *uPtrReg.pu32;
+                    if (u32A != uInitialValue)
+                        pszError = "Restore error 1";
+                }
+
+                /* word */
+                for (unsigned iWord = 0; iWord < 2 && !pszError && !fTryAgain; iWord++)
+                {
+                    if ((fTryAgain = (*uPtrReg.pu32 != uInitialValue)))
+                        break;
+                    uPtrReg.pu16[iWord] = (uint16_t)(uChangedValue >> iWord * 16);
+                    u32A = *uPtrReg.pu32;
+                    *uPtrReg.pu32 = uInitialValue;
+                    if (u32A != uInitialValue)
+                        pszError = iWord == 0 ? "aligned word 0 access" : "aligned word 1 access";
+                    else
+                    {
+                        u32A = *uPtrReg.pu32;
+                        if (u32A != uInitialValue)
+                            pszError = "Restore error 2";
+                    }
+                }
+
+                /* byte */
+                for (unsigned iByte = 0; iByte < 4 && !pszError && !fTryAgain; iByte++)
+                {
+                    if ((fTryAgain = (*uPtrReg.pu32 != uInitialValue)))
+                        break;
+                    uPtrReg.pu8[iByte] = (uint8_t)(uChangedValue >> iByte * 8);
+                    u32A = *uPtrReg.pu32;
+                    *uPtrReg.pu32 = uInitialValue;
+                    if (u32A != uInitialValue)
+                    {
+                        static const char * const s_apsz[] = { "byte 0", "byte 1", "byte 2", "byte 3" };
+                        pszError = s_apsz[iByte];
+                    }
+                    else
+                    {
+                        u32A = *uPtrReg.pu32;
+                        if (u32A != uInitialValue)
+                            pszError = "Restore error 3";
+                    }
+                }
+            }
+
+            ASMSetFlags(fFlags);
+            ASMNopPause();
+        }
+
+        /*
+         * Complain on failure.
+         */
+        if (fTryAgain)
+            LogRel(("TestOhciReadOnly: Warning! Register %s was never stable enough for testing! %08RX32 %08RX32 %08RX32\n",
+                    g_apszRegNms[iReg], uInitialValue, u32A, uChangedValue, uInitialValue));
+        else if (pszError)
+        {
+            LogRel(("TestOhciReadOnly: Error! Register %s failed: %s; uInitialValue=%08RX32 uChangedValue=%08RX32 u32A=%08RX32\n",
                     g_apszRegNms[iReg], pszError, uInitialValue, uChangedValue, u32A));
             fSuccess = false;
         }
@@ -364,6 +499,8 @@ int tstOhciRegisterAccess(RTHCPHYS HCPhysOHCI)
              * Do the access tests.
              */
             bool fSuccess = TestOhciReads(uPtr);
+            if (fSuccess)
+                fSuccess = TestOhciReadOnly(uPtr);
             if (fSuccess)
                 fSuccess = TestOhciWrites(uPtr);
             if (fSuccess)

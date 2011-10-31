@@ -4740,39 +4740,39 @@ static int HcRhPortStatus_w(POHCI pOhci, uint32_t iReg, uint32_t val)
  */
 static const OHCIOPREG g_aOpRegs[] =
 {
-    {"HcRevision",          HcRevision_r,           HcRevision_w},
-    {"HcControl",           HcControl_r,            HcControl_w},
-    {"HcCommandStatus",     HcCommandStatus_r,      HcCommandStatus_w},
-    {"HcInterruptStatus",   HcInterruptStatus_r,    HcInterruptStatus_w},
-    {"HcInterruptEnable",   HcInterruptEnable_r,    HcInterruptEnable_w},
-    {"HcInterruptDisable",  HcInterruptDisable_r,   HcInterruptDisable_w},
-    {"HcHCCA",              HcHCCA_r,               HcHCCA_w},
-    {"HcPeriodCurrentED",   HcPeriodCurrentED_r,    HcPeriodCurrentED_w},
-    {"HcControlHeadED",     HcControlHeadED_r,      HcControlHeadED_w},
-    {"HcControlCurrentED",  HcControlCurrentED_r,   HcControlCurrentED_w},
-    {"HcBulkHeadED",        HcBulkHeadED_r,         HcBulkHeadED_w},
-    {"HcBulkCurrentED",     HcBulkCurrentED_r,      HcBulkCurrentED_w},
-    {"HcDoneHead",          HcDoneHead_r,           HcDoneHead_w},
-    {"HcFmInterval",        HcFmInterval_r,         HcFmInterval_w},
-    {"HcFmRemaining",       HcFmRemaining_r,        HcFmRemaining_w},
-    {"HcFmNumber",          HcFmNumber_r,           HcFmNumber_w},
-    {"HcPeriodicStart",     HcPeriodicStart_r,      HcPeriodicStart_w},
-    {"HcLSThreshold",       HcLSThreshold_r,        HcLSThreshold_w},
-    {"HcRhDescriptorA",     HcRhDescriptorA_r,      HcRhDescriptorA_w},
-    {"HcRhDescriptorB",     HcRhDescriptorB_r,      HcRhDescriptorB_w},
-    {"HcRhStatus",          HcRhStatus_r,           HcRhStatus_w},
+    { "HcRevision",          HcRevision_r,           HcRevision_w },            /*  0 */
+    { "HcControl",           HcControl_r,            HcControl_w },             /*  1 */
+    { "HcCommandStatus",     HcCommandStatus_r,      HcCommandStatus_w },       /*  2 */
+    { "HcInterruptStatus",   HcInterruptStatus_r,    HcInterruptStatus_w },     /*  3 */
+    { "HcInterruptEnable",   HcInterruptEnable_r,    HcInterruptEnable_w },     /*  4 */
+    { "HcInterruptDisable",  HcInterruptDisable_r,   HcInterruptDisable_w },    /*  5 */
+    { "HcHCCA",              HcHCCA_r,               HcHCCA_w },                /*  6 */
+    { "HcPeriodCurrentED",   HcPeriodCurrentED_r,    HcPeriodCurrentED_w },     /*  7 */
+    { "HcControlHeadED",     HcControlHeadED_r,      HcControlHeadED_w },       /*  8 */
+    { "HcControlCurrentED",  HcControlCurrentED_r,   HcControlCurrentED_w },    /*  9 */
+    { "HcBulkHeadED",        HcBulkHeadED_r,         HcBulkHeadED_w },          /* 10 */
+    { "HcBulkCurrentED",     HcBulkCurrentED_r,      HcBulkCurrentED_w },       /* 11 */
+    { "HcDoneHead",          HcDoneHead_r,           HcDoneHead_w },            /* 12 */
+    { "HcFmInterval",        HcFmInterval_r,         HcFmInterval_w },          /* 13 */
+    { "HcFmRemaining",       HcFmRemaining_r,        HcFmRemaining_w },         /* 14 */
+    { "HcFmNumber",          HcFmNumber_r,           HcFmNumber_w },            /* 15 */
+    { "HcPeriodicStart",     HcPeriodicStart_r,      HcPeriodicStart_w },       /* 16 */
+    { "HcLSThreshold",       HcLSThreshold_r,        HcLSThreshold_w },         /* 17 */
+    { "HcRhDescriptorA",     HcRhDescriptorA_r,      HcRhDescriptorA_w },       /* 18 */
+    { "HcRhDescriptorB",     HcRhDescriptorB_r,      HcRhDescriptorB_w },       /* 19 */
+    { "HcRhStatus",          HcRhStatus_r,           HcRhStatus_w },            /* 20 */
 
     /* The number of port status register depends on the definition
      * of OHCI_NDP macro
      */
-    {"HcRhPortStatus[0]",   HcRhPortStatus_r,       HcRhPortStatus_w},
-    {"HcRhPortStatus[1]",   HcRhPortStatus_r,       HcRhPortStatus_w},
-    {"HcRhPortStatus[2]",   HcRhPortStatus_r,       HcRhPortStatus_w},
-    {"HcRhPortStatus[3]",   HcRhPortStatus_r,       HcRhPortStatus_w},
-    {"HcRhPortStatus[4]",   HcRhPortStatus_r,       HcRhPortStatus_w},
-    {"HcRhPortStatus[5]",   HcRhPortStatus_r,       HcRhPortStatus_w},
-    {"HcRhPortStatus[6]",   HcRhPortStatus_r,       HcRhPortStatus_w},
-    {"HcRhPortStatus[7]",   HcRhPortStatus_r,       HcRhPortStatus_w},
+    { "HcRhPortStatus[0]",   HcRhPortStatus_r,       HcRhPortStatus_w },        /* 21 */
+    { "HcRhPortStatus[1]",   HcRhPortStatus_r,       HcRhPortStatus_w },        /* 22 */
+    { "HcRhPortStatus[2]",   HcRhPortStatus_r,       HcRhPortStatus_w },        /* 23 */
+    { "HcRhPortStatus[3]",   HcRhPortStatus_r,       HcRhPortStatus_w },        /* 24 */
+    { "HcRhPortStatus[4]",   HcRhPortStatus_r,       HcRhPortStatus_w },        /* 25 */
+    { "HcRhPortStatus[5]",   HcRhPortStatus_r,       HcRhPortStatus_w },        /* 26 */
+    { "HcRhPortStatus[6]",   HcRhPortStatus_r,       HcRhPortStatus_w },        /* 27 */
+    { "HcRhPortStatus[7]",   HcRhPortStatus_r,       HcRhPortStatus_w },        /* 28 */
 };
 
 
