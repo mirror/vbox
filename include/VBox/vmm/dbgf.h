@@ -53,6 +53,8 @@ VMMRZDECL(int) DBGFRZTrap03Handler(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame
 
 
 
+#ifdef IN_RING3
+
 /**
  * Mixed address.
  */
@@ -123,6 +125,7 @@ VMMR3DECL(int)          DBGFR3AddrToVolatileR3Ptr(PVM pVM, VMCPUID idCpu, PDBGFA
 VMMR3DECL(PDBGFADDRESS) DBGFR3AddrAdd(PDBGFADDRESS pAddress, RTGCUINTPTR uAddend);
 VMMR3DECL(PDBGFADDRESS) DBGFR3AddrSub(PDBGFADDRESS pAddress, RTGCUINTPTR uSubtrahend);
 
+#endif /* IN_RING3 */
 
 
 
@@ -264,6 +267,7 @@ typedef DBGFEVENT *PDBGFEVENT;
 /** Pointer to const VMM Debug Event. */
 typedef const DBGFEVENT *PCDBGFEVENT;
 
+#ifdef IN_RING3 /* The event API only works in ring-3. */
 
 /** @def DBGFSTOP
  * Stops the debugger raising a DBGFEVENT_DEVELOPER_STOP event.
@@ -271,11 +275,11 @@ typedef const DBGFEVENT *PCDBGFEVENT;
  * @returns VBox status code which must be propagated up to EM if not VINF_SUCCESS.
  * @param   pVM     VM Handle.
  */
-#ifdef VBOX_STRICT
-# define DBGFSTOP(pVM)  DBGFR3EventSrc(pVM, DBGFEVENT_DEV_STOP, __FILE__, __LINE__, __PRETTY_FUNCTION__, NULL)
-#else
-# define DBGFSTOP(pVM)  VINF_SUCCESS
-#endif
+# ifdef VBOX_STRICT
+#  define DBGFSTOP(pVM)  DBGFR3EventSrc(pVM, DBGFEVENT_DEV_STOP, __FILE__, __LINE__, __PRETTY_FUNCTION__, NULL)
+# else
+#  define DBGFSTOP(pVM)  VINF_SUCCESS
+# endif
 
 VMMR3DECL(int)  DBGFR3Init(PVM pVM);
 VMMR3DECL(int)  DBGFR3Term(PVM pVM);
@@ -295,6 +299,9 @@ VMMR3DECL(bool) DBGFR3CanWait(PVM pVM);
 VMMR3DECL(int)  DBGFR3Resume(PVM pVM);
 VMMR3DECL(int)  DBGFR3Step(PVM pVM, VMCPUID idCpu);
 VMMR3DECL(int)  DBGFR3PrgStep(PVMCPU pVCpu);
+
+#endif /* IN_RING3 */
+
 
 
 /** Breakpoint type. */
@@ -376,7 +383,7 @@ typedef DBGFBP *PDBGFBP;
 /** Pointer to a const breakpoint. */
 typedef const DBGFBP *PCDBGFBP;
 
-
+#ifdef IN_RING3 /* The breakpoint management API is only available in ring-3. */
 VMMR3DECL(int)  DBGFR3BpSet(PVM pVM, PCDBGFADDRESS pAddress, uint64_t iHitTrigger, uint64_t iHitDisable, uint32_t *piBp);
 VMMR3DECL(int)  DBGFR3BpSetReg(PVM pVM, PCDBGFADDRESS pAddress, uint64_t iHitTrigger, uint64_t iHitDisable,
                                uint8_t fType, uint8_t cb, uint32_t *piBp);
@@ -398,6 +405,8 @@ typedef DECLCALLBACK(int) FNDBGFBPENUM(PVM pVM, void *pvUser, PCDBGFBP pBp);
 typedef FNDBGFBPENUM *PFNDBGFBPENUM;
 
 VMMR3DECL(int)          DBGFR3BpEnum(PVM pVM, PFNDBGFBPENUM pfnCallback, void *pvUser);
+#endif /* IN_RING3 */
+
 VMMDECL(RTGCUINTREG)    DBGFBpGetDR7(PVM pVM);
 VMMDECL(RTGCUINTREG)    DBGFBpGetDR0(PVM pVM);
 VMMDECL(RTGCUINTREG)    DBGFBpGetDR1(PVM pVM);
@@ -406,11 +415,13 @@ VMMDECL(RTGCUINTREG)    DBGFBpGetDR3(PVM pVM);
 VMMDECL(bool)           DBGFIsStepping(PVMCPU pVCpu);
 
 
-
+#ifdef IN_RING3 /* The CPU mode API only works in ring-3. */
 VMMR3DECL(CPUMMODE)     DBGFR3CpuGetMode(PVM pVM, VMCPUID idCpu);
+#endif
 
 
 
+#ifdef IN_RING3 /* The info callbacks API only works in ring-3. */
 
 /**
  * Info helper callback structure.
@@ -550,13 +561,16 @@ VMMR3DECL(int)              DBGFR3InfoEnum(PVM pVM, PFNDBGFINFOENUM pfnCallback,
 VMMR3DECL(PCDBGFINFOHLP)    DBGFR3InfoLogHlp(void);
 VMMR3DECL(PCDBGFINFOHLP)    DBGFR3InfoLogRelHlp(void);
 
+#endif /* IN_RING3 */
 
 
+#ifdef IN_RING3 /* The log contrl API only works in ring-3. */
 VMMR3DECL(int) DBGFR3LogModifyGroups(PVM pVM, const char *pszGroupSettings);
 VMMR3DECL(int) DBGFR3LogModifyFlags(PVM pVM, const char *pszFlagSettings);
 VMMR3DECL(int) DBGFR3LogModifyDestinations(PVM pVM, const char *pszDestSettings);
+#endif /* IN_RING3 */
 
-
+#ifdef IN_RING3 /* The debug information management APIs only works in ring-3. */
 
 /** Max length (including '\\0') of a symbol name. */
 #define DBGF_SYMBOL_NAME_LENGTH   512
@@ -620,8 +634,10 @@ typedef const DBGFLINE *PCDBGFLINE;
 #define DBGF_AS_FIRST               DBGF_AS_RC_AND_GC_GLOBAL
 /** The last special one. */
 #define DBGF_AS_LAST                DBGF_AS_GLOBAL
+#endif
 /** The number of special address space handles. */
 #define DBGF_AS_COUNT               (6U)
+#ifdef IN_RING3
 /** Converts an alias handle to an array index. */
 #define DBGF_AS_ALIAS_2_INDEX(hAlias) \
     ( (uintptr_t)(hAlias) - (uintptr_t)DBGF_AS_FIRST )
@@ -662,6 +678,9 @@ VMMR3DECL(int)          DBGFR3LineByAddr(PVM pVM, RTGCUINTPTR Address, PRTGCINTP
 VMMR3DECL(PDBGFLINE)    DBGFR3LineByAddrAlloc(PVM pVM, RTGCUINTPTR Address, PRTGCINTPTR poffDisplacement);
 VMMR3DECL(void)         DBGFR3LineFree(PDBGFLINE pLine);
 
+#endif /* IN_RING3 */
+
+#ifdef IN_RING3 /* The stack API only works in ring-3. */
 
 /**
  * Return type.
@@ -794,20 +813,20 @@ typedef struct DBGFSTACKFRAME
  * @{ */
 /** Set if the content of the frame is filled in by DBGFR3StackWalk() and can be used
  * to construct the next frame. */
-#define DBGFSTACKFRAME_FLAGS_ALL_VALID  RT_BIT(0)
+# define DBGFSTACKFRAME_FLAGS_ALL_VALID RT_BIT(0)
 /** This is the last stack frame we can read.
  * This flag is not set if the walk stop because of max dept or recursion. */
-#define DBGFSTACKFRAME_FLAGS_LAST       RT_BIT(1)
+# define DBGFSTACKFRAME_FLAGS_LAST      RT_BIT(1)
 /** This is the last record because we detected a loop. */
-#define DBGFSTACKFRAME_FLAGS_LOOP       RT_BIT(2)
+# define DBGFSTACKFRAME_FLAGS_LOOP      RT_BIT(2)
 /** This is the last record because we reached the maximum depth. */
-#define DBGFSTACKFRAME_FLAGS_MAX_DEPTH  RT_BIT(3)
+# define DBGFSTACKFRAME_FLAGS_MAX_DEPTH RT_BIT(3)
 /** 16-bit frame. */
-#define DBGFSTACKFRAME_FLAGS_16BIT      RT_BIT(4)
+# define DBGFSTACKFRAME_FLAGS_16BIT     RT_BIT(4)
 /** 32-bit frame. */
-#define DBGFSTACKFRAME_FLAGS_32BIT      RT_BIT(5)
+# define DBGFSTACKFRAME_FLAGS_32BIT     RT_BIT(5)
 /** 64-bit frame. */
-#define DBGFSTACKFRAME_FLAGS_64BIT      RT_BIT(6)
+# define DBGFSTACKFRAME_FLAGS_64BIT     RT_BIT(6)
 /** @} */
 
 /** @name DBGFCODETYPE
@@ -834,8 +853,10 @@ VMMR3DECL(int)              DBGFR3StackWalkBeginEx(PVM pVM, VMCPUID idCpu, DBGFC
 VMMR3DECL(PCDBGFSTACKFRAME) DBGFR3StackWalkNext(PCDBGFSTACKFRAME pCurrent);
 VMMR3DECL(void)             DBGFR3StackWalkEnd(PCDBGFSTACKFRAME pFirstFrame);
 
+#endif /* IN_RING3 */
 
 
+#ifdef IN_RING3 /* The disassembly API only works in ring-3. */
 
 /** Flags to pass to DBGFR3DisasInstrEx().
  * @{ */
@@ -899,22 +920,25 @@ VMMR3DECL(int) DBGFR3DisasInstrLogInternal(PVMCPU pVCpu, RTSEL Sel, RTGCPTR GCPt
  * Addresses will be attempted resolved to symbols.
  * @thread Any EMT.
  */
-#ifdef LOG_ENABLED
-# define DBGFR3DisasInstrLog(pVCpu, Sel, GCPtr) \
+# ifdef LOG_ENABLED
+#  define DBGFR3DisasInstrLog(pVCpu, Sel, GCPtr) \
     do { \
         if (LogIsEnabled()) \
             DBGFR3DisasInstrLogInternal(pVCpu, Sel, GCPtr); \
     } while (0)
-#else
-# define DBGFR3DisasInstrLog(pVCpu, Sel, GCPtr) do { } while (0)
+# else
+#  define DBGFR3DisasInstrLog(pVCpu, Sel, GCPtr) do { } while (0)
+# endif
 #endif
 
 
+#ifdef IN_RING3
 VMMR3DECL(int) DBGFR3MemScan(PVM pVM, VMCPUID idCpu, PCDBGFADDRESS pAddress, RTGCUINTPTR cbRange, RTGCUINTPTR uAlign,
                              const void *pvNeedle, size_t cbNeedle, PDBGFADDRESS pHitAddress);
 VMMR3DECL(int) DBGFR3MemRead(PVM pVM, VMCPUID idCpu, PCDBGFADDRESS pAddress, void *pvBuf, size_t cbRead);
 VMMR3DECL(int) DBGFR3MemReadString(PVM pVM, VMCPUID idCpu, PCDBGFADDRESS pAddress, char *pszBuf, size_t cbBuf);
 VMMR3DECL(int) DBGFR3MemWrite(PVM pVM, VMCPUID idCpu, PCDBGFADDRESS pAddress, void const *pvBuf, size_t cbRead);
+#endif
 
 
 /** @name Flags for DBGFR3PagingDumpEx, PGMR3DumpHierarchyHCEx and

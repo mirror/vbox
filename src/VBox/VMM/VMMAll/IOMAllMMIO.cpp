@@ -84,12 +84,13 @@ static const unsigned g_aSize2Shift[] =
  *          VINF_IOM_HC_MMIO_WRITE, VINF_IOM_HC_MMIO_READ_WRITE or
  *          VINF_IOM_HC_MMIO_READ may be returned.
  *
+ * @param   pVM                 The VM handle.
  * @param   pRange              The range to write to.
  * @param   GCPhys              The physical address to start writing.
  * @param   pvValue             Where to store the value.
  * @param   cbValue             The size of the value to write.
  */
-static VBOXSTRICTRC iomMMIODoComplicatedWrite(PIOMMMIORANGE pRange, RTGCPHYS GCPhys, void const *pvValue, unsigned cbValue)
+static VBOXSTRICTRC iomMMIODoComplicatedWrite(PVM pVM, PIOMMMIORANGE pRange, RTGCPHYS GCPhys, void const *pvValue, unsigned cbValue)
 {
     AssertReturn(   (pRange->fFlags & IOMMMIO_FLAGS_WRITE_MODE) != IOMMMIO_FLAGS_WRITE_PASSTHRU
                  || (pRange->fFlags & IOMMMIO_FLAGS_WRITE_MODE) <= IOMMMIO_FLAGS_WRITE_DWORD_QWORD_READ_MISSING,
@@ -99,9 +100,23 @@ static VBOXSTRICTRC iomMMIODoComplicatedWrite(PIOMMMIORANGE pRange, RTGCPHYS GCP
     bool const     fReadMissing = (pRange->fFlags & IOMMMIO_FLAGS_WRITE_MODE) >= IOMMMIO_FLAGS_WRITE_DWORD_READ_MISSING;
 
     /*
+     * Do debug stop if requested.
+     */
+    int rc = VINF_SUCCESS; NOREF(pVM);
+#ifdef VBOX_STRICT
+    if (pRange->fFlags & IOMMMIO_FLAGS_DBGSTOP_ON_COMPLICATED_WRITE)
+# ifdef IN_RING3
+        rc = DBGFR3EventSrc(pVM, DBGFEVENT_DEV_STOP, RT_SRC_POS,
+                            "Complicated write %#x byte at %RGp to %s\n", cbValue, GCPhys, R3STRING(pRange->pszDesc));
+# else
+        return VINF_IOM_HC_MMIO_WRITE;
+# endif
+#endif
+
+
+    /*
      * Split and conquer.
      */
-    int rc = VINF_SUCCESS;
     for (;;)
     {
         unsigned const  offAccess  = GCPhys & 3;
@@ -250,7 +265,7 @@ static int iomMMIODoWrite(PVM pVM, PIOMMMIORANGE pRange, RTGCPHYS GCPhysFault, c
             rc = pRange->CTX_SUFF(pfnWriteCallback)(pRange->CTX_SUFF(pDevIns), pRange->CTX_SUFF(pvUser),
                                                     GCPhysFault, (void *)pvData, cb); /** @todo fix const!! */
         else
-            rc = iomMMIODoComplicatedWrite(pRange, GCPhysFault, pvData, cb);
+            rc = iomMMIODoComplicatedWrite(pVM, pRange, GCPhysFault, pvData, cb);
     }
     else
         rc = VINF_SUCCESS;
@@ -270,12 +285,13 @@ static int iomMMIODoWrite(PVM pVM, PIOMMMIORANGE pRange, RTGCPHYS GCPhysFault, c
  *          VINF_IOM_HC_MMIO_READ, VINF_IOM_HC_MMIO_READ_WRITE or
  *          VINF_IOM_HC_MMIO_WRITE may be returned.
  *
+ * @param   pVM                 The VM handle.
  * @param   pRange              The range to read from.
  * @param   GCPhys              The physical address to start reading.
  * @param   pvValue             Where to store the value.
  * @param   cbValue             The size of the value to read.
  */
-static VBOXSTRICTRC iomMMIODoComplicatedRead(PIOMMMIORANGE pRange, RTGCPHYS GCPhys, void *pvValue, unsigned cbValue)
+static VBOXSTRICTRC iomMMIODoComplicatedRead(PVM pVM, PIOMMMIORANGE pRange, RTGCPHYS GCPhys, void *pvValue, unsigned cbValue)
 {
     AssertReturn(   (pRange->fFlags & IOMMMIO_FLAGS_READ_MODE) == IOMMMIO_FLAGS_READ_DWORD
                  || (pRange->fFlags & IOMMMIO_FLAGS_READ_MODE) == IOMMMIO_FLAGS_READ_DWORD_QWORD,
@@ -284,9 +300,22 @@ static VBOXSTRICTRC iomMMIODoComplicatedRead(PIOMMMIORANGE pRange, RTGCPHYS GCPh
     RTGCPHYS const GCPhysStart = GCPhys; NOREF(GCPhysStart);
 
     /*
+     * Do debug stop if requested.
+     */
+    int rc = VINF_SUCCESS; NOREF(pVM);
+#ifdef VBOX_STRICT
+    if (pRange->fFlags & IOMMMIO_FLAGS_DBGSTOP_ON_COMPLICATED_WRITE)
+# ifdef IN_RING3
+        rc = DBGFR3EventSrc(pVM, DBGFEVENT_DEV_STOP, RT_SRC_POS,
+                            "Complicated read %#x byte at %RGp to %s\n", cbValue, GCPhys, R3STRING(pRange->pszDesc));
+# else
+        return VINF_IOM_HC_MMIO_READ;
+# endif
+#endif
+
+    /*
      * Split and conquer.
      */
-    int rc = VINF_SUCCESS;
     for (;;)
     {
         /*
@@ -438,7 +467,7 @@ DECLINLINE(int) iomMMIODoRead(PVM pVM, PIOMMMIORANGE pRange, RTGCPHYS GCPhys, vo
             || (cbValue == 8 && !(GCPhys & 7)) )
             rc = pRange->CTX_SUFF(pfnReadCallback)(pRange->CTX_SUFF(pDevIns), pRange->CTX_SUFF(pvUser), GCPhys, pvValue, cbValue);
         else
-            rc = iomMMIODoComplicatedRead(pRange, GCPhys, pvValue, cbValue);
+            rc = iomMMIODoComplicatedRead(pVM, pRange, GCPhys, pvValue, cbValue);
     }
     else
         rc = VINF_IOM_MMIO_UNUSED_FF;
@@ -1803,7 +1832,7 @@ VMMDECL(VBOXSTRICTRC) IOMMMIORead(PVM pVM, RTGCPHYS GCPhys, uint32_t *pu32Value,
             rc = pRange->CTX_SUFF(pfnReadCallback)(pRange->CTX_SUFF(pDevIns), pRange->CTX_SUFF(pvUser), GCPhys,
                                                    pu32Value, (unsigned)cbValue);
         else
-            rc = iomMMIODoComplicatedRead(pRange, GCPhys, pu32Value, (unsigned)cbValue);
+            rc = iomMMIODoComplicatedRead(pVM, pRange, GCPhys, pu32Value, (unsigned)cbValue);
         STAM_PROFILE_STOP(&pStats->CTX_SUFF_Z(ProfRead), a);
         switch (VBOXSTRICTRC_VAL(rc))
         {
@@ -1932,7 +1961,7 @@ VMMDECL(VBOXSTRICTRC) IOMMMIOWrite(PVM pVM, RTGCPHYS GCPhys, uint32_t u32Value, 
             rc = pRange->CTX_SUFF(pfnWriteCallback)(pRange->CTX_SUFF(pDevIns), pRange->CTX_SUFF(pvUser),
                                                     GCPhys, &u32Value, (unsigned)cbValue);
         else
-            rc = iomMMIODoComplicatedWrite(pRange, GCPhys, &u32Value, (unsigned)cbValue);
+            rc = iomMMIODoComplicatedWrite(pVM, pRange, GCPhys, &u32Value, (unsigned)cbValue);
         STAM_PROFILE_STOP(&pStats->CTX_SUFF_Z(ProfWrite), a);
 #ifndef IN_RING3
         if (    rc == VINF_IOM_HC_MMIO_WRITE

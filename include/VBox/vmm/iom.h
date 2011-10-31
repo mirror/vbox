@@ -119,8 +119,17 @@ RT_C_DECLS_BEGIN
 /** The read access mode mask. */
 #define IOMMMIO_FLAGS_WRITE_MODE                        UINT32_C(0x00000070)
 
+/** Whether to do a DBGSTOP on complicated reads.
+ * What this includes depends on the read mode, but generally all misaligned
+ * reads as well as word and byte reads and maybe qword reads. */
+#define IOMMMIO_FLAGS_DBGSTOP_ON_COMPLICATED_READ       UINT32_C(0x00000100)
+/** Whether to do a DBGSTOP on complicated writes.
+ * This depends on the write mode, but generally all writes where we have to
+ * supply bytes (zero them or read them). */
+#define IOMMMIO_FLAGS_DBGSTOP_ON_COMPLICATED_WRITE      UINT32_C(0x00000200)
+
 /** Mask of valid flags. */
-#define IOMMMIO_FLAGS_VALID_MASK                        UINT32_C(0x00000073)
+#define IOMMMIO_FLAGS_VALID_MASK                        UINT32_C(0x00000373)
 /** @} */
 
 
