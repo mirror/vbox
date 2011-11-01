@@ -1799,7 +1799,7 @@ Virtual system 0:
         </glossentry>
 
         <glossentry>
-          <glossterm>port</glossterm>
+          <glossterm>tport</glossterm>
 
           <glossdef>
             <para>TCP/IP port number of the iSCSI service on the target
