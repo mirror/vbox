@@ -563,7 +563,7 @@ Function ${un}W2K_Uninstall
   ; Remove video driver
 !if $%VBOX_WITH_WDDM% == "1"
   DetailPrint "Uninstalling WDDM video driver ..."
-  nsExec::ExecToLog '"$INSTDIR\VBoxDrvInst.exe" driver install "$INSTDIR\VBoxVideoWddm.inf"'
+  nsExec::ExecToLog '"$INSTDIR\VBoxDrvInst.exe" driver uninstall "$INSTDIR\VBoxVideoWddm.inf"'
   Pop $0 ; Ret value
   ; Always try to remove both VBoxVideoWddm & VBoxVideo services no matter what is installed currently
   nsExec::ExecToLog '"$INSTDIR\VBoxDrvInst.exe" service delete VBoxVideoWddm'
