@@ -148,7 +148,7 @@ HRESULT vboxDispKmtAdpHdcCreate(HDC *phDc)
         else
         {
             DWORD winEr = GetLastError();
-            WARN_BREAK();
+//            BP_WARN();
             hr = HRESULT_FROM_WIN32(winEr);
 #ifdef DEBUG_misha
             Assert(FAILED(hr));
