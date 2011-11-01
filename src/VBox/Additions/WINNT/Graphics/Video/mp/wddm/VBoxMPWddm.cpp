@@ -3842,10 +3842,15 @@ DxgkDdiEscape(
 #if defined(DEBUG_misha) || defined(DEBUG_leo)
                     DbgPrint("%s", pDbgPrint->aStringBuf);
 #else
-                    LOGREL(("%s", pDbgPrint->aStringBuf));
+                    LOGREL_EXACT(("%s", pDbgPrint->aStringBuf));
 #endif
                 }
                 Status = STATUS_SUCCESS;
+                break;
+            }
+            case VBOXESC_DBGDUMPBUF:
+            {
+                Status = vboxUmdDumpBuf((PVBOXDISPIFESCAPE_DBGDUMPBUF)pEscapeHdr, pEscape->PrivateDriverDataSize);
                 break;
             }
             default:

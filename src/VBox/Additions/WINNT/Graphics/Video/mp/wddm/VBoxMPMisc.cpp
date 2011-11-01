@@ -1473,6 +1473,101 @@ VOID vboxWddmCounterU32Wait(uint32_t volatile * pu32, uint32_t u32Val)
     }
 }
 
+/* dump user-mode driver debug info */
+static char    g_aVBoxUmdD3DCAPS9[304];
+static VBOXDISPIFESCAPE_DBGDUMPBUF_FLAGS g_VBoxUmdD3DCAPS9Flags;
+static BOOLEAN g_bVBoxUmdD3DCAPS9IsInited = FALSE;
+
+static void vboxUmdDumpDword(DWORD *pvData, DWORD cData)
+{
+    char aBuf[16*4];
+    DWORD dw1, dw2, dw3, dw4;
+    for (UINT i = 0; i < (cData & (~3)); i+=4)
+    {
+        dw1 = *pvData++;
+        dw2 = *pvData++;
+        dw3 = *pvData++;
+        dw4 = *pvData++;
+        sprintf(aBuf, "0x%08x, 0x%08x, 0x%08x, 0x%08x,\n", dw1, dw2, dw3, dw4);
+        LOGREL(("%s", aBuf));
+    }
+
+    cData = cData % 4;
+    switch (cData)
+    {
+        case 3:
+            dw1 = *pvData++;
+            dw2 = *pvData++;
+            dw3 = *pvData++;
+            sprintf(aBuf, "0x%08x, 0x%08x, 0x%08x\n", dw1, dw2, dw3);
+            LOGREL(("%s", aBuf));
+            break;
+        case 2:
+            dw1 = *pvData++;
+            dw2 = *pvData++;
+            sprintf(aBuf, "0x%08x, 0x%08x\n", dw1, dw2);
+            LOGREL(("%s", aBuf));
+            break;
+        case 1:
+            dw1 = *pvData++;
+            sprintf(aBuf, "0x%8x\n", dw1);
+            LOGREL(("%s", aBuf));
+            break;
+        default:
+            break;
+    }
+}
+
+static void vboxUmdDumpD3DCAPS9(void *pvData, PVBOXDISPIFESCAPE_DBGDUMPBUF_FLAGS pFlags)
+{
+    AssertCompile(!(sizeof (g_aVBoxUmdD3DCAPS9) % sizeof (DWORD)));
+    LOGREL(("*****Start Dumping D3DCAPS9:*******"));
+    LOGREL(("WoW64 flag(%d)", (UINT)pFlags->WoW64));
+    vboxUmdDumpDword((DWORD*)pvData, sizeof (g_aVBoxUmdD3DCAPS9) / sizeof (DWORD));
+    LOGREL(("*****End Dumping D3DCAPS9**********"));
+}
+
+NTSTATUS vboxUmdDumpBuf(PVBOXDISPIFESCAPE_DBGDUMPBUF pBuf, uint32_t cbBuffer)
+{
+    if (cbBuffer < RT_OFFSETOF(VBOXDISPIFESCAPE_DBGDUMPBUF, aBuf[0]))
+    {
+        WARN(("Buffer too small"));
+        return STATUS_BUFFER_TOO_SMALL;
+    }
+
+    NTSTATUS Status = STATUS_SUCCESS;
+    uint32_t cbString = cbBuffer - RT_OFFSETOF(VBOXDISPIFESCAPE_DBGDUMPBUF, aBuf[0]);
+    switch (pBuf->enmType)
+    {
+        case VBOXDISPIFESCAPE_DBGDUMPBUF_TYPE_D3DCAPS9:
+        {
+            if (cbString != sizeof (g_aVBoxUmdD3DCAPS9))
+            {
+                WARN(("wrong caps size, expected %d, but was %d", sizeof (g_aVBoxUmdD3DCAPS9), cbString));
+                Status = STATUS_INVALID_PARAMETER;
+                break;
+            }
+
+            if (g_bVBoxUmdD3DCAPS9IsInited)
+            {
+                if (!memcmp(g_aVBoxUmdD3DCAPS9, pBuf->aBuf, sizeof (g_aVBoxUmdD3DCAPS9)))
+                    break;
+
+                WARN(("caps do not match!"));
+                vboxUmdDumpD3DCAPS9(pBuf->aBuf, &pBuf->Flags);
+                break;
+            }
+
+            memcpy(g_aVBoxUmdD3DCAPS9, pBuf->aBuf, sizeof (g_aVBoxUmdD3DCAPS9));
+            g_VBoxUmdD3DCAPS9Flags = pBuf->Flags;
+            g_bVBoxUmdD3DCAPS9IsInited = TRUE;
+            vboxUmdDumpD3DCAPS9(pBuf->aBuf, &pBuf->Flags);
+        }
+    }
+
+    return Status;
+}
+
 #if 0
 VOID vboxShRcTreeInit(PVBOXMP_DEVEXT pDevExt)
 {

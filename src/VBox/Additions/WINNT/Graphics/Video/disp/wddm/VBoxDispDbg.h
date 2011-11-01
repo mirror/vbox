@@ -19,6 +19,14 @@
 #ifndef ___VBoxDispDbg_h__
 #define ___VBoxDispDbg_h__
 
+#define VBOX_VIDEO_LOG_NAME "VBoxD3D"
+#define VBOX_VIDEO_LOG_LOGGER vboxVDbgInternalLogLogger
+#define VBOX_VIDEO_LOGREL_LOGGER vboxVDbgInternalLogRelLogger
+#define VBOX_VIDEO_LOGFLOW_LOGGER vboxVDbgInternalLogFlowLogger
+#define VBOX_VIDEO_LOG_FN_FMT "%s"
+
+#include "../../common/VBoxVideoLog.h"
+
 #ifdef DEBUG
 /* debugging configuration flags */
 
@@ -89,10 +97,10 @@ void vboxVDbgVEHandlerRegister();
 void vboxVDbgVEHandlerUnregister();
 #endif
 
-#ifdef VBOXWDDMDISP_DEBUG_PRINTDRV
+#if defined(LOG_TO_BACKDOOR_DRV) || defined(VBOXWDDMDISP_DEBUG_PRINTDRV)
 # define DbgPrintDrv(_m) do { vboxDispLogDrvF _m; } while (0)
 # define DbgPrintDrvRel(_m) do { vboxDispLogDrvF _m; } while (0)
-# define DbgPrintDrvFlow(_m) do { } while (0)
+# define DbgPrintDrvFlow(_m) do { vboxDispLogDrvF _m; } while (0)
 #else
 # define DbgPrintDrv(_m) do { } while (0)
 # define DbgPrintDrvRel(_m) do { } while (0)
@@ -108,11 +116,6 @@ void vboxVDbgVEHandlerUnregister();
 # define DbgPrintUsrRel(_m) do { } while (0)
 # define DbgPrintUsrFlow(_m) do { } while (0)
 #endif
-#ifdef DEBUG_misha
-# define WARN_BREAK() do { AssertFailed(); } while (0)
-#else
-# define WARN_BREAK() do { } while (0)
-#endif
 
 #ifdef VBOXWDDMDISP_DEBUG
 #define vboxVDbgInternalLog(_p) if (g_VBoxVDbgFLog) { _p }
@@ -124,29 +127,28 @@ void vboxVDbgVEHandlerUnregister();
 #define vboxVDbgInternalLogRel(_p) do { _p } while (0)
 #endif
 
-#define WARN(_m) do { \
-        vboxVDbgInternalLog( \
-            Log(_m); \
-            DbgPrintUsr(_m); \
-            DbgPrintDrv(_m); \
-        ); \
-        WARN_BREAK(); \
-    } while (0)
-#define vboxVDbgPrint(_m) do { \
+/* @todo: remove these from the code and from here */
+#define vboxVDbgPrint(_m) LOG_EXACT(_m)
+#define vboxVDbgPrintF(_m) LOGF_EXACT(_m)
+#define vboxVDbgPrintR(_m)  LOGREL_EXACT(_m)
+
+#define vboxVDbgInternalLogLogger(_m) do { \
         vboxVDbgInternalLog( \
             Log(_m); \
             DbgPrintUsr(_m); \
             DbgPrintDrv(_m); \
         ); \
     } while (0)
-#define vboxVDbgPrintF(_m)  do { \
+
+#define vboxVDbgInternalLogFlowLogger(_m)  do { \
         vboxVDbgInternalLogFlow( \
             LogFlow(_m); \
             DbgPrintUsrFlow(_m); \
             DbgPrintDrvFlow(_m); \
         ); \
     } while (0)
-#define vboxVDbgPrintR(_m)  do { \
+
+#define vboxVDbgInternalLogRelLogger(_m)  do { \
         vboxVDbgInternalLogRel( \
             LogRel(_m); \
             DbgPrintUsrRel(_m); \
@@ -154,14 +156,19 @@ void vboxVDbgVEHandlerUnregister();
         ); \
     } while (0)
 
-#define LOG vboxVDbgPrint
-#define LOGREL vboxVDbgPrintR
-#define LOGFLOW vboxVDbgPrintF
-
-#ifdef VBOXWDDMDISP_DEBUG
+#if defined(VBOXWDDMDISP_DEBUG) || defined(LOG_TO_BACKDOOR_DRV)
 
 void vboxDispLogDrvF(char * szString, ...);
 void vboxDispLogDrv(char * szString);
+void vboxDispDumpD3DCAPS9Drv(D3DCAPS9 *pCaps);
+
+# define vboxDispDumpD3DCAPS9(_pCaps) do { vboxDispDumpD3DCAPS9Drv(_pCaps); } while (0)
+#else
+# define vboxDispDumpD3DCAPS9(_pCaps) do { } while (0)
+#endif
+
+#ifdef VBOXWDDMDISP_DEBUG
+
 void vboxDispLogDbgPrintF(char * szString, ...);
 
 typedef struct VBOXWDDMDISP_ALLOCATION *PVBOXWDDMDISP_ALLOCATION;

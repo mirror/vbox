@@ -150,6 +150,8 @@ NTSTATUS vboxVideoAMgrCtxAllocSubmit(PVBOXMP_DEVEXT pDevExt, PVBOXVIDEOCM_ALLOC_
 VOID vboxWddmSleep(uint32_t u32Val);
 VOID vboxWddmCounterU32Wait(uint32_t volatile * pu32, uint32_t u32Val);
 
+NTSTATUS vboxUmdDumpBuf(PVBOXDISPIFESCAPE_DBGDUMPBUF pBuf, uint32_t cbBuffer);
+
 #if 0
 /* wine shrc handle -> allocation map */
 VOID vboxShRcTreeInit(PVBOXMP_DEVEXT pDevExt);

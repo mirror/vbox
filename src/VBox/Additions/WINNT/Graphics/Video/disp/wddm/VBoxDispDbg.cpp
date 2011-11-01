@@ -79,106 +79,6 @@ char g_VBoxVDbgModuleName[MAX_PATH];
 LONG g_VBoxVDbgFIsDwm = -1;
 
 DWORD g_VBoxVDbgPid = 0;
-typedef enum
-{
-    VBOXDISPDBG_STATE_UNINITIALIZED = 0,
-    VBOXDISPDBG_STATE_INITIALIZING,
-    VBOXDISPDBG_STATE_INITIALIZED,
-} VBOXDISPDBG_STATE;
-
-typedef struct VBOXDISPDBG
-{
-    VBOXDISPKMT_CALLBACKS KmtCallbacks;
-    VBOXDISPDBG_STATE enmState;
-} VBOXDISPDBG, *PVBOXDISPDBG;
-
-static VBOXDISPDBG g_VBoxDispDbg = {0};
-
-PVBOXDISPDBG vboxDispDbgGet()
-{
-    if (ASMAtomicCmpXchgU32((volatile uint32_t *)&g_VBoxDispDbg.enmState, VBOXDISPDBG_STATE_INITIALIZING, VBOXDISPDBG_STATE_UNINITIALIZED))
-    {
-        HRESULT hr = vboxDispKmtCallbacksInit(&g_VBoxDispDbg.KmtCallbacks);
-        Assert(hr == S_OK);
-        if (hr == S_OK)
-        {
-            ASMAtomicWriteU32((volatile uint32_t *)&g_VBoxDispDbg.enmState, VBOXDISPDBG_STATE_INITIALIZED);
-            return &g_VBoxDispDbg;
-        }
-        else
-        {
-            ASMAtomicWriteU32((volatile uint32_t *)&g_VBoxDispDbg.enmState, VBOXDISPDBG_STATE_UNINITIALIZED);
-        }
-    }
-    else if (ASMAtomicReadU32((volatile uint32_t *)&g_VBoxDispDbg.enmState) == VBOXDISPDBG_STATE_INITIALIZED)
-    {
-        return &g_VBoxDispDbg;
-    }
-    Assert(0);
-    return NULL;
-}
-
-void vboxDispLogDrv(char * szString)
-{
-    PVBOXDISPDBG pDbg = vboxDispDbgGet();
-    if (!pDbg)
-    {
-        /* do not use WARN her esince this would lead to a recursion */
-        WARN_BREAK();
-        return;
-    }
-
-    VBOXDISPKMT_ADAPTER Adapter;
-    HRESULT hr = vboxDispKmtOpenAdapter(&pDbg->KmtCallbacks, &Adapter);
-    if (hr == S_OK)
-    {
-        uint32_t cbString = (uint32_t)strlen(szString) + 1;
-        uint32_t cbCmd = RT_OFFSETOF(VBOXDISPIFESCAPE_DBGPRINT, aStringBuf[cbString]);
-        PVBOXDISPIFESCAPE_DBGPRINT pCmd = (PVBOXDISPIFESCAPE_DBGPRINT)RTMemAllocZ(cbCmd);
-        if (pCmd)
-        {
-            pCmd->EscapeHdr.escapeCode = VBOXESC_DBGPRINT;
-            memcpy(pCmd->aStringBuf, szString, cbString);
-
-            D3DKMT_ESCAPE EscapeData = {0};
-            EscapeData.hAdapter = Adapter.hAdapter;
-            //EscapeData.hDevice = NULL;
-            EscapeData.Type = D3DKMT_ESCAPE_DRIVERPRIVATE;
-    //        EscapeData.Flags.HardwareAccess = 1;
-            EscapeData.pPrivateDriverData = pCmd;
-            EscapeData.PrivateDriverDataSize = cbCmd;
-            //EscapeData.hContext = NULL;
-
-            int Status = pDbg->KmtCallbacks.pfnD3DKMTEscape(&EscapeData);
-            if (Status)
-            {
-                WARN_BREAK();
-            }
-
-            RTMemFree(pCmd);
-        }
-        else
-        {
-            WARN_BREAK();
-        }
-        hr = vboxDispKmtCloseAdapter(&Adapter);
-        if(hr != S_OK)
-        {
-            WARN_BREAK();
-        }
-    }
-}
-
-void vboxDispLogDrvF(char * szString, ...)
-{
-    char szBuffer[4096] = {0};
-    va_list pArgList;
-    va_start(pArgList, szString);
-    _vsnprintf(szBuffer, sizeof(szBuffer) / sizeof(szBuffer[0]), szString, pArgList);
-    va_end(pArgList);
-
-    vboxDispLogDrv(szBuffer);
-}
 
 void vboxDispLogDbgPrintF(char * szString, ...)
 {
@@ -190,7 +90,6 @@ void vboxDispLogDbgPrintF(char * szString, ...)
 
     OutputDebugStringA(szBuffer);
 }
-
 
 VOID vboxVDbgDoDumpSurfRectByAlloc(const char * pPrefix, PVBOXWDDMDISP_ALLOCATION pAlloc, const RECT *pRect, const char* pSuffix)
 {
@@ -769,4 +668,166 @@ void vboxVDbgVEHandlerUnregister()
     g_VBoxWDbgVEHandler = NULL;
 }
 
+#endif
+
+#if defined(VBOXWDDMDISP_DEBUG) || defined(LOG_TO_BACKDOOR_DRV)
+typedef enum
+{
+    VBOXDISPDBG_STATE_UNINITIALIZED = 0,
+    VBOXDISPDBG_STATE_INITIALIZING,
+    VBOXDISPDBG_STATE_INITIALIZED,
+} VBOXDISPDBG_STATE;
+
+typedef struct VBOXDISPDBG
+{
+    VBOXDISPKMT_CALLBACKS KmtCallbacks;
+    VBOXDISPDBG_STATE enmState;
+} VBOXDISPDBG, *PVBOXDISPDBG;
+
+static VBOXDISPDBG g_VBoxDispDbg = {0};
+
+PVBOXDISPDBG vboxDispDbgGet()
+{
+    if (ASMAtomicCmpXchgU32((volatile uint32_t *)&g_VBoxDispDbg.enmState, VBOXDISPDBG_STATE_INITIALIZING, VBOXDISPDBG_STATE_UNINITIALIZED))
+    {
+        HRESULT hr = vboxDispKmtCallbacksInit(&g_VBoxDispDbg.KmtCallbacks);
+        Assert(hr == S_OK);
+        if (hr == S_OK)
+        {
+            ASMAtomicWriteU32((volatile uint32_t *)&g_VBoxDispDbg.enmState, VBOXDISPDBG_STATE_INITIALIZED);
+            return &g_VBoxDispDbg;
+        }
+        else
+        {
+            ASMAtomicWriteU32((volatile uint32_t *)&g_VBoxDispDbg.enmState, VBOXDISPDBG_STATE_UNINITIALIZED);
+        }
+    }
+    else if (ASMAtomicReadU32((volatile uint32_t *)&g_VBoxDispDbg.enmState) == VBOXDISPDBG_STATE_INITIALIZED)
+    {
+        return &g_VBoxDispDbg;
+    }
+    Assert(0);
+    return NULL;
+}
+
+void vboxDispLogDrv(char * szString)
+{
+    PVBOXDISPDBG pDbg = vboxDispDbgGet();
+    if (!pDbg)
+    {
+        /* do not use WARN her esince this would lead to a recursion */
+        BP_WARN();
+        return;
+    }
+
+    VBOXDISPKMT_ADAPTER Adapter;
+    HRESULT hr = vboxDispKmtOpenAdapter(&pDbg->KmtCallbacks, &Adapter);
+    if (hr == S_OK)
+    {
+        uint32_t cbString = (uint32_t)strlen(szString) + 1;
+        uint32_t cbCmd = RT_OFFSETOF(VBOXDISPIFESCAPE_DBGPRINT, aStringBuf[cbString]);
+        PVBOXDISPIFESCAPE_DBGPRINT pCmd = (PVBOXDISPIFESCAPE_DBGPRINT)RTMemAllocZ(cbCmd);
+        if (pCmd)
+        {
+            pCmd->EscapeHdr.escapeCode = VBOXESC_DBGPRINT;
+            memcpy(pCmd->aStringBuf, szString, cbString);
+
+            D3DKMT_ESCAPE EscapeData = {0};
+            EscapeData.hAdapter = Adapter.hAdapter;
+            //EscapeData.hDevice = NULL;
+            EscapeData.Type = D3DKMT_ESCAPE_DRIVERPRIVATE;
+    //        EscapeData.Flags.HardwareAccess = 1;
+            EscapeData.pPrivateDriverData = pCmd;
+            EscapeData.PrivateDriverDataSize = cbCmd;
+            //EscapeData.hContext = NULL;
+
+            int Status = pDbg->KmtCallbacks.pfnD3DKMTEscape(&EscapeData);
+            if (Status)
+            {
+                BP_WARN();
+            }
+
+            RTMemFree(pCmd);
+        }
+        else
+        {
+            BP_WARN();
+        }
+        hr = vboxDispKmtCloseAdapter(&Adapter);
+        if(hr != S_OK)
+        {
+            BP_WARN();
+        }
+    }
+}
+
+void vboxDispLogDrvF(char * szString, ...)
+{
+    char szBuffer[4096] = {0};
+    va_list pArgList;
+    va_start(pArgList, szString);
+    _vsnprintf(szBuffer, sizeof(szBuffer) / sizeof(szBuffer[0]), szString, pArgList);
+    va_end(pArgList);
+
+    vboxDispLogDrv(szBuffer);
+}
+
+static void vboxDispDumpBufDrv(void *pvBuf, uint32_t cbBuf, VBOXDISPIFESCAPE_DBGDUMPBUF_TYPE enmBuf)
+{
+    PVBOXDISPDBG pDbg = vboxDispDbgGet();
+    if (!pDbg)
+    {
+        /* do not use WARN her esince this would lead to a recursion */
+        BP_WARN();
+        return;
+    }
+
+    VBOXDISPKMT_ADAPTER Adapter;
+    HRESULT hr = vboxDispKmtOpenAdapter(&pDbg->KmtCallbacks, &Adapter);
+    if (hr == S_OK)
+    {
+        uint32_t cbCmd = RT_OFFSETOF(VBOXDISPIFESCAPE_DBGDUMPBUF, aBuf[cbBuf]);
+        PVBOXDISPIFESCAPE_DBGDUMPBUF pCmd = (PVBOXDISPIFESCAPE_DBGDUMPBUF)RTMemAllocZ(cbCmd);
+        if (pCmd)
+        {
+            pCmd->EscapeHdr.escapeCode = VBOXESC_DBGDUMPBUF;
+            pCmd->enmType = enmBuf;
+#ifdef VBOX_WDDM_WOW64
+            pCmd->Flags.WoW64 = 1;
+#endif
+            memcpy(pCmd->aBuf, pvBuf, cbBuf);
+
+            D3DKMT_ESCAPE EscapeData = {0};
+            EscapeData.hAdapter = Adapter.hAdapter;
+            //EscapeData.hDevice = NULL;
+            EscapeData.Type = D3DKMT_ESCAPE_DRIVERPRIVATE;
+    //        EscapeData.Flags.HardwareAccess = 1;
+            EscapeData.pPrivateDriverData = pCmd;
+            EscapeData.PrivateDriverDataSize = cbCmd;
+            //EscapeData.hContext = NULL;
+
+            int Status = pDbg->KmtCallbacks.pfnD3DKMTEscape(&EscapeData);
+            if (Status)
+            {
+                BP_WARN();
+            }
+
+            RTMemFree(pCmd);
+        }
+        else
+        {
+            BP_WARN();
+        }
+        hr = vboxDispKmtCloseAdapter(&Adapter);
+        if(hr != S_OK)
+        {
+            BP_WARN();
+        }
+    }
+}
+
+void vboxDispDumpD3DCAPS9Drv(D3DCAPS9 *pCaps)
+{
+    vboxDispDumpBufDrv(pCaps, sizeof (*pCaps), VBOXDISPIFESCAPE_DBGDUMPBUF_TYPE_D3DCAPS9);
+}
 #endif
