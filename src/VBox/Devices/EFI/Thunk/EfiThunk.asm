@@ -198,18 +198,28 @@ code_32:
         mov     esp,  0xfffff000;
 
         ;
+        ; UEFI spec requires FPU initialization.
+        ;
+
+        mov eax,cr4
+        or eax, X86_CR4_OSFSXR|X86_CR4_OSXMMEEXCPT
+        mov cr4,eax
+        ;
         ; Jump to 32-bit entry point of the firmware, interrupts still disabled.
         ;
         ; It's up to the firmware init code to setup a working IDT (and optionally
         ; GDT and TSS) before enabling interrupts. It may also switch the stack
         ; around all it wants for all we care.
         ;
+
         mov     eax,[0xfffff000 + DEVEFIINFO.fFlags]
         and      eax, DEVEFI_INFO_FLAGS_AMD64
         jnz trampoline_64
+        xor     eax,eax
+        xor     edi,edi
         mov     ebp, [0xfffff000 + DEVEFIINFO.PhysFwVol]
-        mov     esi, [0xfffff000 + DEVEFIINFO.pfnFirmwareEP]
-        mov     edi, [0xfffff000 + DEVEFIINFO.pfnPeiEP]
+        ;mov     esi, [0xfffff000 + DEVEFIINFO.pfnFirmwareEP]
+        ;mov     edi, [0xfffff000 + DEVEFIINFO.pfnPeiEP]
         jmp     [0xfffff000 + DEVEFIINFO.pfnFirmwareEP]
         jmp     HaltForEver
 trampoline_64:
@@ -280,7 +290,7 @@ trampoline_64:
 
 
         mov eax,cr4
-        or eax, X86_CR4_PAE|X86_CR4_OSFSXR|X86_CR4_OSXMMEEXCPT
+        or eax, X86_CR4_PAE
         mov cr4,eax
 
         mov ecx, MSR_K6_EFER
@@ -300,8 +310,10 @@ compat:
 BITS 64
 efi_64:
         mov     ebp, [0xff009] ;  DEVEFIINFO.PhysFwVol
-        mov     esi, [0xff000]; + DEVEFIINFO.pfnFirmwareEP]
-        mov     edi, [0xff000 + 0x28]; + DEVEFIINFO.pfnPeiEP]
+        ;mov     esi, [0xff000]; + DEVEFIINFO.pfnFirmwareEP]
+        ;mov     edi, [0xff000 + 0x28]; + DEVEFIINFO.pfnPeiEP]
+        xor     rax,rax
+        xor     rdi,rdi
         jmp     [0xff000]; + DEVEFIINFO.pfnFirmwareEP]
         jmp     HaltForEver
 
