@@ -309,7 +309,7 @@ compat:
         jmp 0x38:0xffff0000 + efi_64
 BITS 64
 efi_64:
-        mov     ebp, [0xff009] ;  DEVEFIINFO.PhysFwVol
+        mov     rbp, [0xff008] ;  DEVEFIINFO.PhysFwVol
         ;mov     esi, [0xff000]; + DEVEFIINFO.pfnFirmwareEP]
         ;mov     edi, [0xff000 + 0x28]; + DEVEFIINFO.pfnPeiEP]
         xor     rax,rax
