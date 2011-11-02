@@ -219,6 +219,24 @@
           </listitem>
         </itemizedlist></para>
     </listitem>
+    
+    <listitem>
+      <para><emphasis role="bold">Guest Additions of version 4.1, 4.1.2 and 4.1.4 for Windows</emphasis>
+      Thus VirtualBox WDDM Video driver may be installed & kept in guest system 
+      if Guest additions uninstallation is performed. 
+      This is caused by a bug in Guest Additions uninstaller.
+      <note>
+        <para>This does <emphasis role="bold">not</emphasis> apply to Guest Additions update, 
+        i.e. installing a one version of Guest Additions on top of another works correctly.</para>
+      </note>
+      To solve this problem, one should uninstall the VirtualBox WDDM Video driver manually.
+      To do that open Device Manager, and check whether the Display Adapter is named 
+      "VirtualBox Graphics Adapter ..". If no - there is nothing to be done. If yes - right-clik 
+      the VirtualBox Graphics Adapter in Device Manager, select "Uninstall", check "Delete the driver software for this device"
+      and click "OK". Once uninstallation is done - in Device Manager go to menu "Action" and select 
+      "Scan for hardware changes" to make the propper (Windows default) driver be picked up for the Graphics adapter.
+      </para>
+    </listitem>
 
     <listitem>
       <para><emphasis role="bold">Guest Additions for OS/2.</emphasis> Shared
