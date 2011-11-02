@@ -796,10 +796,7 @@ RTEXITCODE handleConvertFromRaw(int argc, char *argv[])
                 if (!srcfilename)
                 {
                     srcfilename = ValueUnion.psz;
-// If you change the OS list here don't forget to update VBoxManageHelp.cpp.
-#ifndef RT_OS_WINDOWS
                     fReadFromStdIn = !strcmp(srcfilename, "stdin");
-#endif
                 }
                 else if (!dstfilename)
                     dstfilename = ValueUnion.psz;
@@ -833,7 +830,7 @@ RTEXITCODE handleConvertFromRaw(int argc, char *argv[])
     /* open raw image file. */
     RTFILE File;
     if (fReadFromStdIn)
-        File = 0;
+        rc = RTFileFromNative(&File, RTFILE_NATIVE_STDIN);
     else
         rc = RTFileOpen(&File, srcfilename, RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_WRITE);
     if (RT_FAILURE(rc))
