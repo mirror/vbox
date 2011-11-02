@@ -304,7 +304,7 @@ static VBOXSTRICTRC iomMMIODoComplicatedRead(PVM pVM, PIOMMMIORANGE pRange, RTGC
      */
     int rc = VINF_SUCCESS; NOREF(pVM);
 #ifdef VBOX_STRICT
-    if (pRange->fFlags & IOMMMIO_FLAGS_DBGSTOP_ON_COMPLICATED_WRITE)
+    if (pRange->fFlags & IOMMMIO_FLAGS_DBGSTOP_ON_COMPLICATED_READ)
 # ifdef IN_RING3
         rc = DBGFR3EventSrc(pVM, DBGFEVENT_DEV_STOP, RT_SRC_POS,
                             "Complicated read %#x byte at %RGp to %s\n", cbValue, GCPhys, R3STRING(pRange->pszDesc));
