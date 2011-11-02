@@ -546,12 +546,10 @@ void printUsage(USAGECATEGORY u64Cmd, PRTSTREAM pStrm)
                      "                            [--format VDI|VMDK|VHD]\n"
                      "                            [--variant Standard,Fixed,Split2G,Stream,ESX]\n"
                      "                            [--uuid <uuid>]\n"
-#ifndef RT_OS_WINDOWS
                      "VBoxManage convertfromraw   stdin <outputfile> <bytes>\n"
                      "                            [--format VDI|VMDK|VHD]\n"
                      "                            [--variant Standard,Fixed,Split2G,Stream,ESX]\n"
                      "                            [--uuid <uuid>]\n"
-#endif
                      "\n");
 
     if (u64Cmd & USAGE_GETEXTRADATA)
