@@ -15,6 +15,7 @@
  * VirtualBox OSE distribution. VirtualBox OSE is distributed in the
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
+#include <iprt/ctype.h>
 
 #include <config.h>
 #include "../wined3d/wined3d_private.h"
@@ -23,11 +24,6 @@
 
 DWORD g_VBoxDbgGlFCheckDrawPrim = 0;
 DWORD g_VBoxDbgGlFBreakDrawPrimIfCanNotMatch = 0;
-
-//#include <config.h>
-//#include <wined3d_private.h>
-
-#include <iprt/assert.h>
 
 void dbglFree(void *pvData)
 {
