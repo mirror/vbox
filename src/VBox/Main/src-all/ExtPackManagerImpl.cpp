@@ -389,8 +389,22 @@ STDMETHODIMP ExtPackFile::COMGETTER(Version)(BSTR *a_pbstrVersion)
     HRESULT hrc = autoCaller.rc();
     if (SUCCEEDED(hrc))
     {
-        Bstr str(m->Desc.strVersion);
-        str.cloneTo(a_pbstrVersion);
+        /* HACK ALERT: This is for easing backporting to 4.1. The edition stuff
+           will be changed into a separate */
+        if (m->Desc.strEdition.isEmpty())
+        {
+            Bstr str(m->Desc.strVersion);
+            str.cloneTo(a_pbstrVersion);
+        }
+        else
+        {
+            RTCString strHack(m->Desc.strVersion);
+            strHack.append('-');
+            strHack.append(m->Desc.strEdition);
+
+            Bstr str(strHack);
+            str.cloneTo(a_pbstrVersion);
+        }
     }
     return hrc;
 }
@@ -1609,8 +1623,22 @@ STDMETHODIMP ExtPack::COMGETTER(Version)(BSTR *a_pbstrVersion)
     HRESULT hrc = autoCaller.rc();
     if (SUCCEEDED(hrc))
     {
-        Bstr str(m->Desc.strVersion);
-        str.cloneTo(a_pbstrVersion);
+        /* HACK ALERT: This is for easing backporting to 4.1. The edition stuff
+           will be changed into a separate */
+        if (m->Desc.strEdition.isEmpty())
+        {
+            Bstr str(m->Desc.strVersion);
+            str.cloneTo(a_pbstrVersion);
+        }
+        else
+        {
+            RTCString strHack(m->Desc.strVersion);
+            strHack.append('-');
+            strHack.append(m->Desc.strEdition);
+
+            Bstr str(strHack);
+            str.cloneTo(a_pbstrVersion);
+        }
     }
     return hrc;
 }
@@ -3051,16 +3079,20 @@ void ExtPackManager::dumpAllToReleaseLog(void)
         if (pExtPackData)
         {
             if (pExtPackData->fUsable)
-                LogRel(("  %s (Version: %s r%u; VRDE Module: %s)\n",
+                LogRel(("  %s (Version: %s r%u%s%s; VRDE Module: %s)\n",
                         pExtPackData->Desc.strName.c_str(),
                         pExtPackData->Desc.strVersion.c_str(),
                         pExtPackData->Desc.uRevision,
+                        pExtPackData->Desc.strEdition.isEmpty() ? "" : " ",
+                        pExtPackData->Desc.strEdition.c_str(),
                         pExtPackData->Desc.strVrdeModule.c_str() ));
             else
-                LogRel(("  %s (Version: %s r%u; VRDE Module: %s unusable because of '%s')\n",
+                LogRel(("  %s (Version: %s r%u%s%s; VRDE Module: %s unusable because of '%s')\n",
                         pExtPackData->Desc.strName.c_str(),
                         pExtPackData->Desc.strVersion.c_str(),
                         pExtPackData->Desc.uRevision,
+                        pExtPackData->Desc.strEdition.isEmpty() ? "" : " ",
+                        pExtPackData->Desc.strEdition.c_str(),
                         pExtPackData->Desc.strVrdeModule.c_str(),
                         pExtPackData->strWhyUnusable.c_str() ));
         }

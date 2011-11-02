@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2010 Oracle Corporation
+ * Copyright (C) 2010-2011 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -69,6 +69,7 @@ static void vboxExtPackClearDesc(PVBOXEXTPACKDESC a_pExtPackDesc)
     a_pExtPackDesc->strName.setNull();
     a_pExtPackDesc->strDescription.setNull();
     a_pExtPackDesc->strVersion.setNull();
+    a_pExtPackDesc->strEdition.setNull();
     a_pExtPackDesc->uRevision = 0;
     a_pExtPackDesc->strMainModule.setNull();
     a_pExtPackDesc->strVrdeModule.setNull();
@@ -145,6 +146,12 @@ static RTCString *vboxExtPackLoadDescFromDoc(xml::Document *a_pDoc, PVBOXEXTPACK
     if (!pVersionElm->getAttributeValue("revision", uRevision))
         uRevision = 0;
 
+    const char *pszEdition;
+    if (!pVersionElm->getAttributeValue("edition", pszEdition))
+        pszEdition = "";
+    if (!VBoxExtPackIsValidEditionString(pszEdition))
+        return &(new RTCString("Invalid edition string: "))->append(pszEdition);
+
     const xml::ElementNode *pMainModuleElm = pVBoxExtPackElm->findChildElement("MainModule");
     if (!pMainModuleElm)
         return new RTCString("The 'MainModule' element is missing");
@@ -193,6 +200,7 @@ static RTCString *vboxExtPackLoadDescFromDoc(xml::Document *a_pDoc, PVBOXEXTPACK
     a_pExtPackDesc->strName         = pszName;
     a_pExtPackDesc->strDescription  = pszDesc;
     a_pExtPackDesc->strVersion      = pszVersion;
+    a_pExtPackDesc->strEdition      = pszEdition;
     a_pExtPackDesc->uRevision       = uRevision;
     a_pExtPackDesc->strMainModule   = pszMainModule;
     a_pExtPackDesc->strVrdeModule   = pszVrdeModule;
@@ -349,6 +357,7 @@ void VBoxExtPackFreeDesc(PVBOXEXTPACKDESC a_pExtPackDesc)
     a_pExtPackDesc->strName.setNull();
     a_pExtPackDesc->strDescription.setNull();
     a_pExtPackDesc->strVersion.setNull();
+    a_pExtPackDesc->strEdition.setNull();
     a_pExtPackDesc->uRevision = 0;
     a_pExtPackDesc->strMainModule.setNull();
     a_pExtPackDesc->strVrdeModule.setNull();
@@ -572,6 +581,8 @@ bool VBoxExtPackIsValidVersionString(const char *pszVersion)
     /* upper case string + numbers indicating the build type */
     if (*pszVersion == '-' || *pszVersion == '_')
     {
+        /** @todo Should probably restrict this to known build types (alpha,
+         *        beta, rc, ++). */
         do
             pszVersion++;
         while (   RT_C_IS_DIGIT(*pszVersion)
@@ -580,25 +591,30 @@ bool VBoxExtPackIsValidVersionString(const char *pszVersion)
                || *pszVersion == '_');
     }
 
-    /* revision or nothing */
-    if (*pszVersion != '\0')
-    {
-        if (*pszVersion != 'r')
-            return false;
-        do
-            pszVersion++;
-        while (RT_C_IS_DIGIT(*pszVersion));
-    }
-
-    /* upper case string indicating the edition */
-    if (*pszVersion == '-')
-    {
-        do
-            pszVersion++;
-        while (RT_C_IS_UPPER(*pszVersion));
-    }
-
     return *pszVersion == '\0';
+}
+
+/**
+ * Validates the extension pack edition string.
+ *
+ * @returns true if valid, false if not.
+ * @param   pszEdition          The edition string to validate.
+ */
+bool VBoxExtPackIsValidEditionString(const char *pszEdition)
+{
+    if (*pszEdition)
+    {
+        if (!RT_C_IS_UPPER(*pszEdition))
+            return false;
+
+        do
+            pszEdition++;
+        while (   RT_C_IS_UPPER(*pszEdition)
+               || RT_C_IS_DIGIT(*pszEdition)
+               || *pszEdition == '-'
+               || *pszEdition == '_');
+    }
+    return *pszEdition == '\0';
 }
 
 /**

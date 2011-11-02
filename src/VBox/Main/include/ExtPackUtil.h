@@ -89,6 +89,8 @@ typedef struct VBOXEXTPACKDESC
     RTCString               strDescription;
     /** The version string. */
     RTCString               strVersion;
+    /** The edition string. */
+    RTCString               strEdition;
     /** The internal revision number. */
     uint32_t                uRevision;
     /** The name of the main module. */
@@ -119,7 +121,8 @@ bool                VBoxExtPackIsValidMangledName(const char *pszMangledName, si
 RTCString   *VBoxExtPackMangleName(const char *pszName);
 RTCString   *VBoxExtPackUnmangleName(const char *pszMangledName, size_t cbMax);
 int                 VBoxExtPackCalcDir(char *pszExtPackDir, size_t cbExtPackDir, const char *pszParentDir, const char *pszName);
-bool                VBoxExtPackIsValidVersionString(const char *pszName);
+bool                VBoxExtPackIsValidVersionString(const char *pszVersion);
+bool                VBoxExtPackIsValidEditionString(const char *pszEdition);
 bool                VBoxExtPackIsValidModuleString(const char *pszModule);
 
 int                 VBoxExtPackValidateMember(const char *pszName, RTVFSOBJTYPE enmType, RTVFSOBJ hVfsObj, char *pszError, size_t cbError);
