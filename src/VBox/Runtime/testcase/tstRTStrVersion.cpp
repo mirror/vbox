@@ -106,7 +106,11 @@ int main()
         { "4.0.0_ALPHAr68483",          "4.0.0_BETA2r68783",                -1 },
         { "4.0.0_ALPHAr68483",          "4.0.0_BETA2r68784",                -1 },
         { "4.0.6",                      "4.0.6_Ubuntu",                     -1 }, /* Without stripped guest OS string (Ubuntu). */
-        { "4.0.6_Windows",              "4.0.6",                             1 }  /* Without stripped guest OS string (Windows). */
+        { "4.0.6_Windows",              "4.0.6",                             1 }, /* Without stripped guest OS string (Windows). */
+        { "4.1.6r74567",                "4.1.6r74567",                       0 },
+        { "4.1.7r74567",                "4.1.6r74567",                       1 },
+        { "4.1.5r74567",                "4.1.6r74567",                      -1 },
+        { "4.1.6r74567-ENTERPRISE",     "4.1.6r74567",                       1 }  /* The tagged version is "newer". */
     };
     for (unsigned iTest = 0; iTest < RT_ELEMENTS(aTests); iTest++)
     {
