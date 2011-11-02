@@ -342,8 +342,8 @@ int udp_output2(PNATState pData, struct socket *so, struct mbuf *m,
     int error;
     int mlen = 0;
 
-    LogFlowFunc(("ENTER: so = %R[natsock], m = %lx, saddr = %lx, daddr = %lx\n",
-                 so, (long)m, (long)saddr->sin_addr.s_addr, (long)daddr->sin_addr.s_addr));
+    LogFlowFunc(("ENTER: so = %R[natsock], m = %p, saddr = %RTnaipv4, daddr = %RTnaipv4\n",
+                 so, m, saddr->sin_addr.s_addr, daddr->sin_addr.s_addr));
 
     /*
      * Adjust for header
@@ -394,13 +394,18 @@ int udp_output(PNATState pData, struct socket *so, struct mbuf *m,
                struct sockaddr_in *addr)
 {
     struct sockaddr_in saddr, daddr;
+    LogFlowFunc(("ENTER: so = %R[natsock], m = %p, saddr = %RTnaipv4\n",
+                 so, (long)m, addr->sin_addr.s_addr));
 
     saddr = *addr;
     if ((so->so_faddr.s_addr & RT_H2N_U32(pData->netmask)) == pData->special_addr.s_addr)
     {
         saddr.sin_addr.s_addr = so->so_faddr.s_addr;
         if ((so->so_faddr.s_addr & RT_H2N_U32(~pData->netmask)) == RT_H2N_U32(~pData->netmask))
-            saddr.sin_addr.s_addr = alias_addr.s_addr;
+        {
+            saddr.sin_addr.s_addr = addr->sin_addr.s_addr;
+            so->so_faddr.s_addr = addr->sin_addr.s_addr;
+        }
     }
 
     /* Any UDP packet to the loopback address must be translated to be from
