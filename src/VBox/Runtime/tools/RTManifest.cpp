@@ -149,13 +149,13 @@ static int rtManifestAddFileToManifest(RTMANIFEST hManifest, const char *pszFile
     if (RT_FAILURE(rc))
     {
         if (pszError && *pszError)
-            return RTMsgErrorExit(RTEXITCODE_FAILURE,
-                                  "RTVfsChainOpenIoStream failed with rc=%Rrc:\n"
-                                  "    '%s'\n",
-                                  "     %*s^\n",
-                                  rc, pszFilename, pszError - pszFilename, "");
-        return RTMsgErrorExit(RTEXITCODE_FAILURE,
-                              "Failed with %Rrc opening '%s'", rc, pszFilename);
+            RTMsgError("RTVfsChainOpenIoStream failed with rc=%Rrc:\n"
+                       "    '%s'\n",
+                       "     %*s^\n",
+                       rc, pszFilename, pszError - pszFilename, "");
+        else
+            RTMsgError("Failed with %Rrc opening '%s'", rc, pszFilename);
+        return rc;
     }
 
     rc = RTManifestEntryAddIoStream(hManifest, hVfsIos, pszFilename, fAttr);
@@ -241,7 +241,7 @@ static RTEXITCODE rtManifestDoCreate(const char *pszManifest, bool fStdFormat, c
                 /* next */
                 chOpt = RTGetOpt(pGetState, pUnion);
             }
-            if (RT_SUCCESS(rc) &&  chOpt != 0)
+            if (RT_SUCCESS(rc) && chOpt != 0)
             {
                 RTGetOptPrintError(chOpt, pUnion);
                 rc = chOpt < 0 ? chOpt : -chOpt;
