@@ -590,6 +590,14 @@ bool VBoxExtPackIsValidVersionString(const char *pszVersion)
         while (RT_C_IS_DIGIT(*pszVersion));
     }
 
+    /* upper case string indicating the edition */
+    if (*pszVersion == '-')
+    {
+        do
+            pszVersion++;
+        while (RT_C_IS_UPPER(*pszVersion));
+    }
+
     return *pszVersion == '\0';
 }
 
