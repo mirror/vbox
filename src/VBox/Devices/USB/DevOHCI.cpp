@@ -4202,7 +4202,7 @@ static int HcDoneHead_r(PCOHCI pOhci, uint32_t iReg, uint32_t *pu32Value)
 static int HcDoneHead_w(POHCI pOhci, uint32_t iReg, uint32_t val)
 {
     Log2(("HcDoneHead_w(0x%#08x) - denied!!!\n", val));
-    AssertMsgFailed(("Illegal operation!!! val=%#010x\n", val));
+    /*AssertMsgFailed(("Illegal operation!!! val=%#010x\n", val)); - OS/2 does this */
     return VINF_SUCCESS;
 }
 
