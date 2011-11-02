@@ -45,7 +45,9 @@
 # else
 #  define AssertBreakpoint() do { } while (0)
 #  define Assert(_expr) do { } while (0)
-#  define RT_BREAKPOINT()
+#  ifdef DEBUG_misha
+#   include <iprt/cdefs.h>
+#  endif
 # endif
 #endif
 
