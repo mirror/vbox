@@ -98,8 +98,6 @@
   DebugLib|VBoxPkg/Library/VBoxDebugLib/VBoxDebugLib.inf
   # r9628
   ReportStatusCodeLib|MdeModulePkg/Library/PeiReportStatusCodeLib/PeiReportStatusCodeLib.inf
-  # r9668
-  ExtractGuidedSectionLib|OvmfPkg/Library/SecExtractGuidedSectionLib/SecExtractGuidedSectionLib.inf
 
 [LibraryClasses.common.PEI_CORE]
   BaseMemoryLib|MdePkg/Library/BaseMemoryLib/BaseMemoryLib.inf
