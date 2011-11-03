@@ -31,8 +31,8 @@
 
 [Packages]
         MdePkg/MdePkg.dec
-	# r9628 moves ReportStatusCodeLib to MdeModulePkg
-        MdeModulePkg/MdeModulePkg.dec
+        IntelFrameworkPkg/IntelFrameworkPkg.dec
+        IntelFrameworkModulePkg/IntelFrameworkModulePkg.dec
         VBoxPkg/VBoxPkg.dec
 
 [LibraryClasses]
