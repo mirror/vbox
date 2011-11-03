@@ -1434,7 +1434,15 @@ USBLIB_DECL(int) USBLibInit(void)
                         }
 #else
                         /*
-                         * ??? Please explain this....
+                         * We can not use USB Mon for reliable device add/remove tracking
+                         * since once USB Mon is notified about PDO creation and/or IRP_MN_START_DEVICE,
+                         * the function device driver may still do some initialization, which might result in
+                         * notifying too early.
+                         * Instead we use WM_DEVICECHANGE + DBT_DEVNODES_CHANGED to make Windows notify us about
+                         * device arivals/removals.
+                         * Since WM_DEVICECHANGE is a window message, create a dedicated thread to be used for WndProc and stuff.
+                         * The thread would create a window, track windows messages and call usbLibOnDeviceChange on WM_DEVICECHANGE arrival.
+                         * See comments in usbLibOnDeviceChange function for detail about using the timer queue.
                          */
                         g_VBoxUsbGlobal.hTimerQueue = CreateTimerQueue();
                         if (g_VBoxUsbGlobal.hTimerQueue)
