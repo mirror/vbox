@@ -50,16 +50,9 @@ public:
         setText(1, m_data.m_strName);
 
         /* Version, Revision, Edition: */
-        QString strVersion(m_data.m_strVersion);
-        QString strEdition;
-
-        if (strVersion.endsWith("-ENTERPRISE"))
-        {
-            strEdition = "-ENTERPRISE";
-            strVersion.chop(strEdition.size());
-        }
-
-        setText(2, QString("%1r%2%3").arg(strVersion).arg(m_data.m_strRevision).arg(strEdition));
+        QString strVersion(m_data.m_strVersion.section(QRegExp("[-_]"), 0, 0));
+        QString strAppend(m_data.m_strVersion.section(QRegExp("[-_]"), 1, -1, QString::SectionIncludeLeadingSep));
+        setText(2, QString("%1r%2%3").arg(strVersion).arg(m_data.m_strRevision).arg(strAppend));
 
         /* Tool-tip: */
         QString strTip = m_data.m_strDescription;
@@ -143,14 +136,9 @@ UIGlobalSettingsExtension::UIGlobalSettingsExtension()
 
     QString strPackName = extPackFile.GetName();
     QString strPackDescription = extPackFile.GetDescription();
-    QString strVersion(extPackFile.GetVersion());
-    QString strEdition;
-    if (strVersion.endsWith("-ENTERPRISE"))
-    {
-        strEdition = "-ENTERPRISE";
-        strVersion.chop(strEdition.size());
-    }
-    QString strPackVersion = QString("%1r%2%3").arg(strVersion).arg(extPackFile.GetRevision()).arg(strEdition);
+    QString strVersion(extPackFile.GetVersion().section(QRegExp("[-_]"), 0, 0));
+    QString strAppend(extPackFile.GetVersion().section(QRegExp("[-_]"), 1, -1, QString::SectionIncludeLeadingSep));
+    QString strPackVersion = QString("%1r%2%3").arg(strVersion).arg(extPackFile.GetRevision()).arg(strAppend);
 
     /*
      * Check if there is a version of the extension pack already
@@ -161,14 +149,9 @@ UIGlobalSettingsExtension::UIGlobalSettingsExtension()
     bool fReplaceIt = extPackCur.isOk();
     if (fReplaceIt)
     {
-        QString strVersionCur(extPackCur.GetVersion());
-        QString strEditionCur;
-        if (strVersionCur.endsWith("-ENTERPRISE"))
-        {
-            strEditionCur = "-ENTERPRISE";
-            strVersionCur.chop(strEditionCur.size());
-        }
-        QString strPackVersionCur = QString("%1r%2%3").arg(strVersionCur).arg(extPackCur.GetRevision()).arg(strEditionCur);
+        QString strVersionCur(extPackCur.GetVersion().section(QRegExp("[-_]"), 0, 0));
+        QString strAppendCur(extPackCur.GetVersion().section(QRegExp("[-_]"), 1, -1, QString::SectionIncludeLeadingSep));
+        QString strPackVersionCur = QString("%1r%2%3").arg(strVersionCur).arg(extPackCur.GetRevision()).arg(strAppendCur);
         if (!msgCenter().confirmReplacePackage(strPackName, strPackVersion, strPackVersionCur, strPackDescription, pParent))
             return;
     }
