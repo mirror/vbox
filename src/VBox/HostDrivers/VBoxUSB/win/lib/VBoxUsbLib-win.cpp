@@ -326,33 +326,28 @@ static int usbLibDevPopulate(PUSBDEVICE pDev, PUSB_NODE_CONNECTION_INFORMATION_E
 
     for (; pDrList; pDrList = pDrList->pNext)
     {
-        LPSTR *lppszString = NULL;
+        char ** lppszString = NULL;
         if (pConInfo->DeviceDescriptor.iManufacturer && pDrList->iDr == pConInfo->DeviceDescriptor.iManufacturer)
         {
-            lppszString = (LPSTR*)&pDev->pszManufacturer;
+            lppszString = (char**)&pDev->pszManufacturer;
         }
         else if (pConInfo->DeviceDescriptor.iProduct && pDrList->iDr == pConInfo->DeviceDescriptor.iProduct)
         {
-            lppszString = (LPSTR*)&pDev->pszProduct;
+            lppszString = (char**)&pDev->pszProduct;
         }
         else if (pConInfo->DeviceDescriptor.iSerialNumber && pDrList->iDr == pConInfo->DeviceDescriptor.iSerialNumber)
         {
-            lppszString = (LPSTR*)&pDev->pszSerialNumber;
+            lppszString = (char**)&pDev->pszSerialNumber;
         }
 
         if (lppszString)
         {
-            char *pStringUTF8 = NULL;
 /** @todo r=bird: This code is making bad asumptions that strings are sane and
  *  that stuff succeeds:
  *  http://vbox.innotek.de/pipermail/vbox-dev/2011-August/004516.html
  *
- *  Also, why is this code converting stuff to the ANSI code page?!?  If
- *  That's somehow required, the reason must be documented since all strings in
- *  VBox are UTF-8 unless explicitly stated otherwise! */
-            RTUtf16ToUtf8((PCRTUTF16)pDrList->StrDr.bString, &pStringUTF8);
-            RTStrUtf8ToCurrentCP(lppszString, pStringUTF8);
-            RTStrFree(pStringUTF8);
+ *  */
+            RTUtf16ToUtf8((PCRTUTF16)pDrList->StrDr.bString, lppszString);
             if (pDrList->iDr == pConInfo->DeviceDescriptor.iSerialNumber)
             {
                 pDev->u64SerialHash = USBLibHashSerial(pDev->pszSerialNumber);
