@@ -1831,6 +1831,19 @@ bool UIMessageCenter::proposeDownloadExtensionPack(const QString &strExtPackName
                            tr("Download", "extension pack"));
 }
 
+bool UIMessageCenter::requestUserDownloadExtensionPack(const QString &strExtPackName, const QString &strExtPackVersion, const QString &strVBoxVersion)
+{
+    return message(mainWindowShown(), Info,
+                   tr("<p>You have version %1 of the <b><nobr>%2</nobr></b> installed.</p>"
+                      "<p>You should download and install version %3 of this extension pack from Oracle!</p>")
+                      .arg(strExtPackVersion).arg(strExtPackName).arg(strVBoxVersion),
+                      0, /* Auto-confirm Id */
+                      QIMessageBox::Ok | QIMessageBox::Default,
+                      0,
+                      0,
+                      tr("Ok", "extension pack"));
+}
+
 bool UIMessageCenter::confirmDownloadExtensionPack(const QString &strExtPackName, const QString &strURL, qulonglong uSize)
 {
     QLocale loc(VBoxGlobal::languageId());

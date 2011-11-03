@@ -4574,6 +4574,10 @@
         <translation>Herunterladen</translation>
     </message>
     <message>
+        <source>&lt;p&gt;You have version %1 of the &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt; installed.&lt;/p&gt;&lt;p&gt;You should download and install version %3 of this extension pack from Oracle!&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Sie haben Version %1 des &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt; installiert.&lt;/p&gt;&lt;p&gt;Sie sollten Version %3 dieses Zusatzpaketes von Oracle herunterladen und installieren!&lt;/p&gt;</translation>
+    </message>
+    <message>
         <source>&lt;p&gt;Are you sure you want to download the &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; from &lt;nobr&gt;&lt;a href=&quot;%2&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; (size %3 bytes)?&lt;/p&gt;</source>
         <translation>&lt;p&gt;Möchten Sie wirklich das &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; von &lt;nobr&gt;&lt;a href=&quot;%2&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; (Größe %3 Byte) herunterladen?&lt;/p&gt;</translation>
     </message>
