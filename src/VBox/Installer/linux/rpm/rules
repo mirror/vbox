@@ -28,6 +28,9 @@ ifeq ($(shell if grep -q '^/usr/lib/virtualbox' /etc/permissions* 2>/dev/null; t
 # make sure openSUSE permissions fixes don't interfere with us
 $(error Fix /etc/permissions*)
 endif
+ifeq ($(shell if grep -q '^%disttag' /usr/lib/rpm/macros.d/mandriva 2>/dev/null; then echo yes; fi),yes)
+$(error Fix /usr/lib/rpm/macros.d/mandriva)
+endif
 
 verpkg   := VirtualBox-4.1
 current  := $(shell pwd)
@@ -61,7 +64,7 @@ ifneq ($(MAKECMDGOALS),clean)
  ifeq ($(filter-out openSUSE110 openSUSE111 openSUSE112 openSUSE113 openSUSE114 sles10.1 sles11.0,$(rpmrel)),)
   rpmspec := rpm_suse
  endif
- ifeq ($(filter-out mdv2009.1 mdv2010.0,$(rpmrel)),)
+ ifeq ($(filter-out mdv2009.1 mdv2010.0 mdv2011.0,$(rpmrel)),)
   rpmspec := rpm_mdv
  endif
  ifeq ($(rpmspec),)
@@ -197,7 +200,7 @@ binary: rpm/build-stamp
 	tar -cjf rpm/VirtualBox.tar.bz2 -C rpm $(rpmname)
 	rm -f /usr/src/packages/RPMS/*/VirtualBox*rpm
 	rm -f /usr/src/packages/SPECS/*
-	rpmbuild -tb --clean rpm/VirtualBox.tar.bz2
+	(cd rpm; rpmbuild -tb --clean VirtualBox.tar.bz2)
 	mv /usr/src/packages/RPMS/*/$(verpkg)-debug* $(pkgdir) || true
 	file=`find /usr/src/packages/RPMS -name $(verpkg)*rpm -print`; \
 	    mv $$file $(pkgdir)
