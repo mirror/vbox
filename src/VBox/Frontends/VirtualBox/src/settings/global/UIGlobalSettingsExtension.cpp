@@ -49,8 +49,17 @@ public:
         /* Name: */
         setText(1, m_data.m_strName);
 
-        /* Version: */
-        setText(2, QString("%1r%2").arg(m_data.m_strVersion).arg(m_data.m_strRevision));
+        /* Version, Revision, Edition: */
+        QString strVersion(m_data.m_strVersion);
+        QString strEdition;
+
+        if (strVersion.endsWith("-ENTERPRISE"))
+        {
+            strEdition = "-ENTERPRISE";
+            strVersion.chop(strEdition.size());
+        }
+
+        setText(2, QString("%1r%2%3").arg(strVersion).arg(m_data.m_strRevision).arg(strEdition));
 
         /* Tool-tip: */
         QString strTip = m_data.m_strDescription;
@@ -134,7 +143,14 @@ UIGlobalSettingsExtension::UIGlobalSettingsExtension()
 
     QString strPackName = extPackFile.GetName();
     QString strPackDescription = extPackFile.GetDescription();
-    QString strPackVersion = QString("%1r%2").arg(extPackFile.GetVersion()).arg(extPackFile.GetRevision());
+    QString strVersion(extPackFile.GetVersion());
+    QString strEdition;
+    if (strVersion.endsWith("-ENTERPRISE"))
+    {
+        strEdition = "-ENTERPRISE";
+        strVersion.chop(strEdition.size());
+    }
+    QString strPackVersion = QString("%1r%2%3").arg(strVersion).arg(extPackFile.GetRevision()).arg(strEdition);
 
     /*
      * Check if there is a version of the extension pack already
@@ -145,7 +161,14 @@ UIGlobalSettingsExtension::UIGlobalSettingsExtension()
     bool fReplaceIt = extPackCur.isOk();
     if (fReplaceIt)
     {
-        QString strPackVersionCur = QString("%1r%2").arg(extPackCur.GetVersion()).arg(extPackCur.GetRevision());
+        QString strVersionCur(extPackCur.GetVersion());
+        QString strEditionCur;
+        if (strVersionCur.endsWith("-ENTERPRISE"))
+        {
+            strEditionCur = "-ENTERPRISE";
+            strVersionCur.chop(strEditionCur.size());
+        }
+        QString strPackVersionCur = QString("%1r%2%3").arg(strVersionCur).arg(extPackCur.GetRevision()).arg(strEditionCur);
         if (!msgCenter().confirmReplacePackage(strPackName, strPackVersion, strPackVersionCur, strPackDescription, pParent))
             return;
     }
