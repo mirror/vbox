@@ -149,6 +149,8 @@ void UIUpdateManager::checkIfUpdateIsNecessaryForExtensionPack(bool /* fForceCal
     {
         /* Inform the user that he should update the extension pack: */
         msgCenter().requestUserDownloadExtensionPack(UI_ExtPackName, strExtPackVersion, strVBoxVersion);
+        /* Never try to download here! */
+        return;
     }
     else
     {
