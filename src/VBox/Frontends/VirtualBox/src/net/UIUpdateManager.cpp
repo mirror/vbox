@@ -135,7 +135,8 @@ void UIUpdateManager::checkIfUpdateIsNecessaryForExtensionPack(bool /* fForceCal
         return;
 
     /* Get VirtualBox version: */
-    VBoxVersion vboxVersion(vboxGlobal().vboxVersionStringNormalized());
+    QString strVBoxVersion(vboxGlobal().vboxVersionStringNormalized());
+    VBoxVersion vboxVersion(strVBoxVersion);
     /* Get extension pack version: */
     QString strExtPackVersion(extPack.GetVersion().remove(VBOX_BUILD_PUBLISHER));
     VBoxVersion extPackVersion(strExtPackVersion);
@@ -144,9 +145,17 @@ void UIUpdateManager::checkIfUpdateIsNecessaryForExtensionPack(bool /* fForceCal
         !(extPackVersion < vboxVersion) /* Ext Pack version more or equal to VBox version */)
         return;
 
-    /* Ask the user about extension pack downloading: */
-    if (!msgCenter().proposeDownloadExtensionPack(UI_ExtPackName, strExtPackVersion))
-        return;
+    if (strExtPackVersion.contains("ENTERPRISE"))
+    {
+        /* Inform the user that he should update the extension pack: */
+        msgCenter().requestUserDownloadExtensionPack(UI_ExtPackName, strExtPackVersion, strVBoxVersion);
+    }
+    else
+    {
+        /* Ask the user about extension pack downloading: */
+        if (!msgCenter().proposeDownloadExtensionPack(UI_ExtPackName, strExtPackVersion))
+            return;
+    }
 
     /* Run downloader for VirtualBox extension pack: */
     UIDownloaderExtensionPack::download(this);
