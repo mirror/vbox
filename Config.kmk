@@ -415,7 +415,9 @@ VBOX_WITH_EFI = 1
 # Include the EFI firmware into the package
 VBOX_WITH_EFIFW_PACKING = 1
 # Use kStuff for MACH-O and LX binary loading.
-IPRT_WITH_KSTUFF = 1
+ifneq ($(KBUILD_TARGET),win) # temporarily, build fixing needed.
+ IPRT_WITH_KSTUFF = 1
+endif
 # Enable Crossbow support for Solaris TAP driver.
 VBOX_WITH_CROSSBOW = 1
 # Enable setuid wrapper for Solaris host DVD.
