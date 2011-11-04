@@ -506,6 +506,11 @@
           </itemizedlist></para>
       </listitem>
     </itemizedlist>
+    <para>Note that the above list is informal. Oracle support for customers
+    who have a support contract is limited to a subset of the listed host
+    operating systems. Also, any feature which is marked as  <emphasis
+    role="bold">experimental</emphasis> is not supported. Feedback and
+    suggestions about such features are welcome.</para>
   </sect1>
 
   <sect1 id="intro-installing">
