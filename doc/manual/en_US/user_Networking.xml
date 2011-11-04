@@ -229,11 +229,14 @@
     <para>A virtual machine with NAT enabled acts much like a real computer
     that connects to the Internet through a router. The "router", in this
     case, is the VirtualBox networking engine, which maps traffic from and to
-    the virtual machine transparently. The disadvantage of NAT mode is that,
-    much like a private network behind a router, the virtual machine is
-    invisible and unreachable from the outside internet; you cannot run a
-    server this way unless you set up port forwarding (described
-    below).</para>
+    the virtual machine transparently. In VirtualBox this router is placed
+    between each virtual machine and the host. This separation maximizes
+    security since by default virtual machines cannot talk to each other.</para>
+
+    <para>The disadvantage of NAT mode is that, much like a private network
+    behind a router, the virtual machine is invisible and unreachable from the
+    outside internet; you cannot run a server this way unless you set up port
+    forwarding (described below).</para>
 
     <para>The network frames sent out by the guest operating system are
     received by VirtualBox's NAT engine, which extracts the TCP/IP data and
