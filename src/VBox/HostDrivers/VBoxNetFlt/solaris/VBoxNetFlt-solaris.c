@@ -446,7 +446,10 @@ vboxNetFltSolarisProbeCtf(void)
         int err;
         ctf_file_t *pCtfFile = ctf_modopen(pModCtl->mod_mp, &err);
         if (pCtfFile)
+        {
             rc = vboxNetFltSolarisCtfGetMemberOffset(pCtfFile, "file_t", "f_vnode", &s_off_vnode);
+            ctf_close(pCtfFile);
+        }
         else
             LogRel((DEVICE_NAME ":ctf_modopen failed. err=%d\n", err));
 

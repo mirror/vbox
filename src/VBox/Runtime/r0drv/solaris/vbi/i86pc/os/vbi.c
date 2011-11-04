@@ -279,6 +279,7 @@ vbi_init(void)
 				err = vbi_get_ctf_member_offset(ctfp, "cpu_t", "cpu_runrun", &off_cpu_runrun); AssertBreak(!err);
 				err = vbi_get_ctf_member_offset(ctfp, "cpu_t", "cpu_kprunrun", &off_cpu_kprunrun); AssertBreak(!err);
 			} while (0);
+			ctf_close(ctfp);
 		}
 
 		mod_release_mod(genunix_modctl);
