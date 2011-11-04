@@ -19,7 +19,7 @@ SUB_DEPTH = ../../..
 include $(KBUILD_PATH)/subheader.kmk
 
 #
-# The library.
+# The library for dynamic linking.
 #
 LIBRARIES += VBox-kStuff
 VBox-kStuff_TEMPLATE = VBOXR3
@@ -70,7 +70,18 @@ VBox-kStuff_SOURCES = \
 	iprt/kHlpString-iprt.cpp \
 	iprt/kRdrFile-iprt.cpp
 
+
+#
+# The library for static linking.
+#
+LIBRARIES += VBox-kStuffStatic
+VBox-kStuffStatic_TEMPLATE = VBoxR3Static
+VBox-kStuffStatic_EXTENDS = VBox-kStuff
+
+
+#
 # Generate the error constants.
+#
 $$(VBox-kStuff_0_OUTDIR)/kErrNameConsts.h: \
 		$(PATH_SUB_CURRENT)/kStuff/include/k/kErrors.h \
 		$(MAKEFILE_CURRENT) \
