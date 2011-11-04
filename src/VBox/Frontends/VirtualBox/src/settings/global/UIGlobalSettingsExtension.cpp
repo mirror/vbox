@@ -51,7 +51,10 @@ public:
 
         /* Version, Revision, Edition: */
         QString strVersion(m_data.m_strVersion.section(QRegExp("[-_]"), 0, 0));
-        QString strAppend(m_data.m_strVersion.section(QRegExp("[-_]"), 1, -1, QString::SectionIncludeLeadingSep));
+        QString strAppend;
+        /* workaround for http://qt.gitorious.org/qt/qt/commit/7fc63dd0ff368a637dcd17e692b9d6b26278b538this */
+        if (m_data.m_strVersion.contains(QRegExp("[-_]")))
+            strAppend = m_data.m_strVersion.section(QRegExp("[-_]"), 1, -1, QString::SectionIncludeLeadingSep);
         setText(2, QString("%1r%2%3").arg(strVersion).arg(m_data.m_strRevision).arg(strAppend));
 
         /* Tool-tip: */
@@ -137,7 +140,10 @@ UIGlobalSettingsExtension::UIGlobalSettingsExtension()
     QString strPackName = extPackFile.GetName();
     QString strPackDescription = extPackFile.GetDescription();
     QString strVersion(extPackFile.GetVersion().section(QRegExp("[-_]"), 0, 0));
-    QString strAppend(extPackFile.GetVersion().section(QRegExp("[-_]"), 1, -1, QString::SectionIncludeLeadingSep));
+    QString strAppend;
+    /* workaround for http://qt.gitorious.org/qt/qt/commit/7fc63dd0ff368a637dcd17e692b9d6b26278b538this */
+    if (extPackFile.GetVersion().contains(QRegExp("[-_]")))
+        strAppend = extPackFile.GetVersion().section(QRegExp("[-_]"), 1, -1, QString::SectionIncludeLeadingSep);
     QString strPackVersion = QString("%1r%2%3").arg(strVersion).arg(extPackFile.GetRevision()).arg(strAppend);
 
     /*
@@ -150,7 +156,10 @@ UIGlobalSettingsExtension::UIGlobalSettingsExtension()
     if (fReplaceIt)
     {
         QString strVersionCur(extPackCur.GetVersion().section(QRegExp("[-_]"), 0, 0));
-        QString strAppendCur(extPackCur.GetVersion().section(QRegExp("[-_]"), 1, -1, QString::SectionIncludeLeadingSep));
+        QString strAppendCur;
+        /* workaround for http://qt.gitorious.org/qt/qt/commit/7fc63dd0ff368a637dcd17e692b9d6b26278b538this */
+        if (extPackCur.GetVersion().contains(QRegExp("[-_]")))
+            strAppendCur = extPackCur.GetVersion().section(QRegExp("[-_]"), 1, -1, QString::SectionIncludeLeadingSep);
         QString strPackVersionCur = QString("%1r%2%3").arg(strVersionCur).arg(extPackCur.GetRevision()).arg(strAppendCur);
         if (!msgCenter().confirmReplacePackage(strPackName, strPackVersion, strPackVersionCur, strPackDescription, pParent))
             return;
