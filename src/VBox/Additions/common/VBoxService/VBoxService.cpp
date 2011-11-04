@@ -373,6 +373,35 @@ static unsigned vboxServiceCountEnabledServices(void)
 }
 
 
+#ifdef RT_OS_WINDOWS
+static BOOL WINAPI VBoxServiceConsoleControlHandler(DWORD dwCtrlType)
+{
+    int rc = VINF_SUCCESS;
+    bool fEventHandled = FALSE;
+    switch (dwCtrlType)
+    {
+        /* User pressed CTRL+C or CTRL+BREAK or an external event was sent
+         * via GenerateConsoleCtrlEvent(). */
+        case CTRL_BREAK_EVENT:
+        case CTRL_CLOSE_EVENT:
+        case CTRL_C_EVENT:
+            VBoxServiceVerbose(2, "ControlHandler: Received break/close event\n");
+            rc = VBoxServiceStopServices();
+            fEventHandled = TRUE;
+            break;
+        default:
+            break;
+        /** @todo Add other events here. */
+    }
+
+    if (RT_FAILURE(rc))
+        VBoxServiceError("ControlHandler: Event %ld handled with error rc=%Rrc\n",
+                         dwCtrlType, rc);
+    return fEventHandled;
+}
+#endif /* RT_OS_WINDOWS */
+
+
 /**
  * Starts the service.
  *
@@ -554,7 +583,6 @@ void VBoxServiceMainWait(void)
     }
     RTSemEventDestroy(g_hEvtWindowsService);
     g_hEvtWindowsService = NIL_RTSEMEVENT;
-
 #else
     /*
      * Wait explicitly for a HUP, INT, QUIT, ABRT or TERM signal, blocking
@@ -863,11 +891,35 @@ int main(int argc, char **argv)
          * POSIX:   This is used for both daemons and console runs. Start all services
          *          and return immediately.
          */
+#ifdef RT_OS_WINDOWS
+# ifndef RT_OS_NT4
+        /* Install console control handler. */
+        if (!SetConsoleCtrlHandler((PHANDLER_ROUTINE)VBoxServiceConsoleControlHandler, TRUE /* Add handler */))
+        {
+            VBoxServiceError("Unable to add console control handler, error=%ld\n", GetLastError());
+            /* Just skip this error, not critical. */
+        }
+# endif /* !RT_OS_NT4 */
+#endif /* RT_OS_WINDOWS */
         rc = VBoxServiceStartServices();
         rcExit = RT_SUCCESS(rc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
         if (RT_SUCCESS(rc))
             VBoxServiceMainWait();
+#ifdef RT_OS_WINDOWS
+# ifndef RT_OS_NT4
+        /* Uninstall console control handler. */
+        if (!SetConsoleCtrlHandler((PHANDLER_ROUTINE)NULL, FALSE /* Remove handler */))
+        {
+            VBoxServiceError("Unable to remove console control handler, error=%ld\n", GetLastError());
+            /* Just skip this error, not critical. */
+        }
+# endif /* !RT_OS_NT4 */
+#else /* !RT_OS_WINDOWS */
+        /* On Windows - since we're running as a console application - we already stopped all services
+         * through the console control handler. So only do the stopping of services here on other platforms
+         * where the break/shutdown/whatever signal was just received. */
         VBoxServiceStopServices();
+#endif /* RT_OS_WINDOWS */
     }
     VBoxServiceReportStatus(VBoxGuestFacilityStatus_Terminated);
 
