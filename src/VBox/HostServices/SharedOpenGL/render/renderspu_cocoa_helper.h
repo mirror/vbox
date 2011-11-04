@@ -1,10 +1,10 @@
+/* $Id$ */
 /** @file
- *
  * VirtualBox OpenGL Cocoa Window System Helper definition
  */
 
 /*
- * Copyright (C) 2009 Oracle Corporation
+ * Copyright (C) 2009-2011 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -15,11 +15,11 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef __renderspu_cocoa_helper_h
-#define __renderspu_cocoa_helper_h
+#ifndef ___renderspu_cocoa_helper_h
+#define ___renderspu_cocoa_helper_h
 
-#include <VBox/VBoxCocoa.h>
 #include <iprt/cdefs.h>
+#include <VBox/VBoxCocoa.h>
 #include <OpenGL/OpenGL.h>
 
 RT_C_DECLS_BEGIN
@@ -55,5 +55,5 @@ void cocoaDrawBuffer(GLenum mode);
 
 RT_C_DECLS_END
 
-#endif /* __renderspu_cocoa_helper_h */
+#endif /* !___renderspu_cocoa_helper_h */
 
