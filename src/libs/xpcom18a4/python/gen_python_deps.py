@@ -74,7 +74,10 @@ def main(argv):
 
     if target == 'darwin':
         ## @todo Pick up the locations from VBOX_PATH_MACOSX_SDK_10_*.
-        prefixes = ['/Developer/SDKs/MacOSX10.4u.sdk/usr', '/Developer/SDKs/MacOSX10.5.sdk/usr', '/Developer/SDKs/MacOSX10.6.sdk/usr']
+        prefixes = ['/Developer/SDKs/MacOSX10.4u.sdk/usr',
+                    '/Developer/SDKs/MacOSX10.5.sdk/usr',
+                    '/Developer/SDKs/MacOSX10.6.sdk/usr',
+                    '/Developer/SDKs/MacOSX10.7.sdk/usr']
         dllsuff = '.dylib'
 
     if target == 'solaris' and arch == 'amd64':

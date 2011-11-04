@@ -28,7 +28,31 @@ endif
 # List of supported Python versions, defining a number of
 # VBOX_PYTHON[25|26|27|28|DEF]_[INC|LIB] variables which get picked up below.
 #
-$(eval $(subst |,$(NL),$(shell $(VBOX_BLD_PYTHON) $(PATH_SUB_CURRENT)/gen_python_deps.py $(KBUILD_TARGET) $(KBUILD_TARGET_ARCH) $(VBOX_MULTIPYTHON))))
+ifeq ($(KBUILD_TARGET),darwin) # Relatively predictable, don't script.
+ ifeq ($(KBUILD_TARGET_ARCH),x86)
+  VBOX_PYTHON25_INC = $(VBOX_PATH_MACOSX_SDK)/usr/include/python2.5
+  VBOX_PYTHON25_LIB = $(VBOX_PATH_MACOSX_SDK)/usr/lib/libpython2.5.dylib
+ endif
+ if  !defined(VBOX_WITHOUT_VBOXPYTHON_FOR_OSX_10_6) \
+  && (   !defined(VBOX_OSE) \
+      || "$(wildcard $(VBOX_PATH_MACOSX_SDK)/usr/lib/libpython2.6.dylib)" != "")
+  VBOX_PYTHON26_INC = $(VBOX_PATH_MACOSX_SDK)/usr/include/python2.6
+  VBOX_PYTHON26_LIB = $(VBOX_PATH_MACOSX_SDK)/usr/lib/libpython2.6.dylib
+ endif
+ if  !defined(VBOX_WITHOUT_VBOXPYTHON_FOR_OSX_10_7) \
+  && (   defined(VBOX_NOT_OSE_LATER_SOMETIME) \
+      || "$(wildcard $(VBOX_PATH_MACOSX_SDK_10_7)/usr/lib/libpython2.7.dylib)" != "")
+  VBOX_PYTHON27_INC = $(VBOX_PATH_MACOSX_SDK_10_7)/usr/include/python2.7
+  VBOX_PYTHON27_LIB = $(VBOX_PATH_MACOSX_SDK_10_7)/usr/lib/libpython2.7.dylib
+ endif
+else
+ # Use the script.
+ $(eval $(subst |,$(NL),$(shell $(VBOX_BLD_PYTHON) \
+	$(PATH_SUB_CURRENT)/gen_python_deps.py \
+	    $(KBUILD_TARGET) \
+	    $(KBUILD_TARGET_ARCH) \
+	    $(VBOX_MULTIPYTHON) )))
+endif
 
 ifndef VBOX_ONLY_SDK
 
@@ -76,8 +100,7 @@ VBoxPythonBase_LIBS     = \
 	$(PATH_STAGE_BIN)/VBoxXPCOM$(VBOX_SUFF_DLL)
 
 
-if defined(VBOX_PYTHON23_INC) \
-  && ("$(KBUILD_TARGET)" != "darwin" || ("$(KBUILD_TARGET_ARCH)" == "x86" && defined(VBOX_WITH_MAC_OS_X_10_4_SUPPORT) ))
+ifdef VBOX_PYTHON23_INC
 #
 # Python 2.3 version
 #
@@ -89,7 +112,7 @@ VBoxPython2_3_INCS       = $(VBOX_PYTHON23_INC)
 VBoxPython2_3_LIBS       = $(VBOX_PYTHON23_LIB)
 endif
 
-if defined(VBOX_PYTHON24_INC) && "$(KBUILD_TARGET)" != "darwin"
+ifdef VBOX_PYTHON24_INC
 #
 # Python 2.4 version
 #
@@ -100,8 +123,7 @@ VBoxPython2_4_INCS       = $(VBOX_PYTHON24_INC)
 VBoxPython2_4_LIBS       = $(VBOX_PYTHON24_LIB)
 endif
 
-if defined(VBOX_PYTHON25_INC) \
-  && ("$(KBUILD_TARGET)" != "darwin" || ("$(KBUILD_TARGET_ARCH)" == "x86" && "$(VBOX_DEF_MACOSX_VERSION_MIN)" == "10.5"))
+ifdef VBOX_PYTHON25_INC
 #
 # Python 2.5 version
 #
@@ -113,8 +135,7 @@ VBoxPython2_5_INCS       = $(VBOX_PYTHON25_INC)
 VBoxPython2_5_LIBS       = $(VBOX_PYTHON25_LIB)
 endif
 
-if defined(VBOX_PYTHON26_INC) \
-  && ("$(KBUILD_TARGET)" != "darwin" || "$(VBOX_DEF_MACOSX_VERSION_MIN)" <= "10.6")
+ifdef VBOX_PYTHON26_INC
 #
 # Python 2.6 version
 #
@@ -126,18 +147,19 @@ VBoxPython2_6_INCS       = $(VBOX_PYTHON26_INC)
 VBoxPython2_6_LIBS       = $(VBOX_PYTHON26_LIB)
 endif
 
-if defined(VBOX_PYTHON27_INC) && "$(KBUILD_TARGET)" != "darwin"
+ifdef VBOX_PYTHON27_INC
 #
 # Python 2.7 version
 #
 DLLS += VBoxPython2_7
 VBoxPython2_7_EXTENDS    = VBoxPythonBase
 VBoxPython2_7_EXTENDS_BY = appending
+VBoxPython2_6_TEMPLATE   = XPCOM$(if-expr "$(KBUILD_TARGET)" == "darwin",OSX107,)
 VBoxPython2_7_INCS       = $(VBOX_PYTHON27_INC)
 VBoxPython2_7_LIBS       = $(VBOX_PYTHON27_LIB)
 endif
 
-if defined(VBOX_PYTHON28_INC) && "$(KBUILD_TARGET)" != "darwin"
+ifdef VBOX_PYTHON28_INC
 #
 # Python 2.8 version
 #
@@ -148,7 +170,7 @@ VBoxPython2_8_INCS       = $(VBOX_PYTHON28_INC)
 VBoxPython2_8_LIBS       = $(VBOX_PYTHON28_LIB)
 endif
 
-if defined(VBOX_PYTHONDEF_INC) && "$(KBUILD_TARGET)" != "darwin"
+ifdef VBOX_PYTHONDEF_INC
 #
 # Python without versioning
 #

@@ -2076,8 +2076,6 @@ check_darwinversion()
       darwin_ver="10.7" # Lion
       sdk=/Developer/SDKs/MacOSX10.6.sdk
       CXX_FLAGS="-mmacosx-version-min=10.6 -isysroot $sdk -Wl,-syslibroot,$sdk"
-      # We disable the java stuff until Apple make the java stuff downloadable.
-      WITH_JAVA=0
       ;;
     10\.*)
       darwin_ver="10.6" # Snow Leopard
@@ -2091,6 +2089,7 @@ check_darwinversion()
       fi
 #      test "$CC" = "gcc" && CC="gcc-4.0"
 #      test "$CXX" = "g++" && CXX="g++-4.0"
+      cnf_append "VBOX_WITHOUT_VBOXPYTHON_FOR_OSX_10_7" "1"
       ;;
     9\.*)
       darwin_ver="10.5" # Leopard
@@ -2099,6 +2098,7 @@ check_darwinversion()
 #      test "$CC" = "gcc" && CC="gcc-4.0"
 #      test "$CXX" = "g++" && CXX="g++-4.0"
       cnf_append "VBOX_WITHOUT_VBOXPYTHON_FOR_OSX_10_6" "1"
+      cnf_append "VBOX_WITHOUT_VBOXPYTHON_FOR_OSX_10_7" "1"
       ;;
     8\.*)
       darwin_ver="10.4" # Tiger
@@ -2108,6 +2108,7 @@ check_darwinversion()
 #      test "$CXX" = "g++" && CXX="g++-4.0"
       cnf_append "VBOX_WITH_COCOA_QT" ""
       cnf_append "VBOX_WITHOUT_VBOXPYTHON_FOR_OSX_10_6" "1"
+      cnf_append "VBOX_WITHOUT_VBOXPYTHON_FOR_OSX_10_7" "1"
       ;;
     *)
       echo "  failed to determine Darwin version. (uname -r: $darwin_ver)"
