@@ -35,9 +35,9 @@ ifeq ($(KBUILD_TARGET),darwin) # Relatively predictable, don't script.
  endif
  if  !defined(VBOX_WITHOUT_VBOXPYTHON_FOR_OSX_10_6) \
   && (   !defined(VBOX_OSE) \
-      || "$(wildcard $(VBOX_PATH_MACOSX_SDK)/usr/lib/libpython2.6.dylib)" != "")
-  VBOX_PYTHON26_INC = $(VBOX_PATH_MACOSX_SDK)/usr/include/python2.6
-  VBOX_PYTHON26_LIB = $(VBOX_PATH_MACOSX_SDK)/usr/lib/libpython2.6.dylib
+      || "$(wildcard $(VBOX_PATH_MACOSX_SDK_10_6)/usr/lib/libpython2.6.dylib)" != "")
+  VBOX_PYTHON26_INC = $(VBOX_PATH_MACOSX_SDK_10_6)/usr/include/python2.6
+  VBOX_PYTHON26_LIB = $(VBOX_PATH_MACOSX_SDK_10_6)/usr/lib/libpython2.6.dylib
  endif
  if  !defined(VBOX_WITHOUT_VBOXPYTHON_FOR_OSX_10_7) \
   && (   defined(VBOX_NOT_OSE_LATER_SOMETIME) \
@@ -154,7 +154,7 @@ ifdef VBOX_PYTHON27_INC
 DLLS += VBoxPython2_7
 VBoxPython2_7_EXTENDS    = VBoxPythonBase
 VBoxPython2_7_EXTENDS_BY = appending
-VBoxPython2_6_TEMPLATE   = XPCOM$(if-expr "$(KBUILD_TARGET)" == "darwin",OSX107,)
+VBoxPython2_7_TEMPLATE   = XPCOM$(if-expr "$(KBUILD_TARGET)" == "darwin",OSX107,)
 VBoxPython2_7_INCS       = $(VBOX_PYTHON27_INC)
 VBoxPython2_7_LIBS       = $(VBOX_PYTHON27_LIB)
 endif
