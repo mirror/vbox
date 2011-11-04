@@ -807,10 +807,6 @@ ifeq ($(KBUILD_TARGET),darwin)
  # Temporary while Lion is being worked on by apple and others (mac ports).
  if "$(VBOX_DARWIN_HOST_VERSION_MAJOR)" == "7" # Lion
   VBOX_WITH_DOCS=
-  # Using the 10.7 SDK triggers some gl.h include issue. Our problem.
-  ifeq ($(VBOX_DEF_MACOSX_VERSION_MIN),10.7)
-   VBOX_WITH_CROGL=
-  endif
  endif
 endif
 
