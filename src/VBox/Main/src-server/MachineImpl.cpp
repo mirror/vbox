@@ -6471,10 +6471,32 @@ void Machine::getLogFolder(Utf8Str &aLogFolder)
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    aLogFolder = mData->m_strConfigFileFull;    // path/to/machinesfolder/vmname/vmname.vbox
-    aLogFolder.stripFilename();                 // path/to/machinesfolder/vmname
-    aLogFolder.append(RTPATH_DELIMITER);
-    aLogFolder.append("Logs");                  // path/to/machinesfolder/vmname/Logs
+    char szTmp[RTPATH_MAX];
+    int vrc = RTEnvGetEx(RTENV_DEFAULT, "VBOX_USER_VMLOGDIR", szTmp, sizeof(szTmp), NULL);
+    if (RT_SUCCESS(vrc))
+    {
+        if (szTmp[0] && !mUserData.isNull())
+        {
+            char szTmp2[RTPATH_MAX];
+            vrc = RTPathAbs(szTmp, szTmp2, sizeof(szTmp2));
+            if (RT_SUCCESS(vrc))
+                aLogFolder = BstrFmt("%s%c%s",
+                                     szTmp2,
+                                     RTPATH_DELIMITER,
+                                     mUserData->s.strName.c_str()); // path/to/logfolder/vmname
+        }
+        else
+            vrc = VERR_PATH_IS_RELATIVE;
+    }
+
+    if (RT_FAILURE(vrc))
+    {
+        // fallback if VBOX_USER_LOGHOME is not set or invalid
+        aLogFolder = mData->m_strConfigFileFull;    // path/to/machinesfolder/vmname/vmname.vbox
+        aLogFolder.stripFilename();                 // path/to/machinesfolder/vmname
+        aLogFolder.append(RTPATH_DELIMITER);
+        aLogFolder.append("Logs");                  // path/to/machinesfolder/vmname/Logs
+    }
 }
 
 /**
