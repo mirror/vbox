@@ -251,6 +251,18 @@ TEMPLATE_XPCOMOSX106_LDFLAGS.darwin     = $(filter-out $(VBOX_DARWIN_DEF_SDK_LDF
 TEMPLATE_XPCOMOSX106_DEFS.darwin        = $(filter-out $(VBOX_DARWIN_DEF_SDK_DEFS),$(TEMPLATE_XPCOM_DEFS.darwin)) $(VBOX_DARWIN_DEF_SDK_10_6_DEFS)
 TEMPLATE_XPCOMOSX106_INCS.darwin        = $(VBOX_PATH_MACOSX_SDK_10_6)/Developer/Headers/FlatCarbon
 
+#
+# Template for building VBoxPhython against the Mac OS X 10.7 SDK.
+# ASSUMES that the SDK bits are in the .darwin properties we're overriding below.
+#
+TEMPLATE_XPCOMOSX107                    = XPCOM libraries (shared) built against the Mac OS X 10.7 SDK
+TEMPLATE_XPCOMOSX107_EXTENDS            = XPCOM
+TEMPLATE_XPCOMOSX107_CXXFLAGS.darwin    = $(filter-out $(VBOX_DARWIN_DEF_SDK_CXXFLAGS),$(TEMPLATE_XPCOM_CXXFLAGS.darwin)) $(VBOX_DARWIN_DEF_SDK_10_7_CXXFLAGS)
+TEMPLATE_XPCOMOSX107_CFLAGS.darwin      = $(filter-out $(VBOX_DARWIN_DEF_SDK_CFLAGS),$(TEMPLATE_XPCOM_CFLAGS.darwin)) $(VBOX_DARWIN_DEF_SDK_10_7_CFLAGS)
+TEMPLATE_XPCOMOSX107_LDFLAGS.darwin     = $(filter-out $(VBOX_DARWIN_DEF_SDK_LDFLAGS),$(TEMPLATE_XPCOM_LDFLAGS.darwin)) $(VBOX_DARWIN_DEF_SDK_10_7_LDFLAGS)
+TEMPLATE_XPCOMOSX107_DEFS.darwin        = $(filter-out $(VBOX_DARWIN_DEF_SDK_DEFS),$(TEMPLATE_XPCOM_DEFS.darwin)) $(VBOX_DARWIN_DEF_SDK_10_7_DEFS)
+TEMPLATE_XPCOMOSX107_INCS.darwin        = $(VBOX_PATH_MACOSX_SDK_10_7)/Developer/Headers/FlatCarbon
+
 
 #
 # The list of XPCOM's IDL files.
