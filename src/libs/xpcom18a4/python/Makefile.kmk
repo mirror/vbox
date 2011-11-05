@@ -45,6 +45,7 @@ ifeq ($(KBUILD_TARGET),darwin) # Relatively predictable, don't script.
   VBOX_PYTHON27_INC = $(VBOX_PATH_MACOSX_SDK_10_7)/usr/include/python2.7
   VBOX_PYTHON27_LIB = $(VBOX_PATH_MACOSX_SDK_10_7)/usr/lib/libpython2.7.dylib
  endif
+
 else
  # Use the script.
  $(eval $(subst |,$(NL),$(shell $(VBOX_BLD_PYTHON) \

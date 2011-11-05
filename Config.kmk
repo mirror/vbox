@@ -1887,7 +1887,13 @@ ifeq ($(KBUILD_TARGET),darwin)
  endif
 
  if1of ($(VBOX_DEF_MACOSX_VERSION_MIN), 10.4 10.5 10.6 10.7)
-  VBOX_PATH_MACOSX_SDK_10_7            ?= /Developer/SDKs/MacOSX10.7.sdk
+  ifndef VBOX_PATH_MACOSX_SDK_10_7
+   ifneq ($(wildcard /Developer/SDKs/MacOSX10.7.sdk),)
+    VBOX_PATH_MACOSX_SDK_10_7           = /Developer/SDKs/MacOSX10.7.sdk
+   else
+    VBOX_PATH_MACOSX_SDK_10_7           = $(PATH_DEVTOOLS)/darwin.x86/SDKs/MacOSX10.7.sdk
+   endif
+  endif
   VBOX_DARWIN_DEF_SDK_10_7_DEFS        := MAC_OS_X_VERSION_MIN_REQUIRED=1070 MAC_OS_X_VERSION_MAX_ALLOWED=1070
   VBOX_DARWIN_DEF_SDK_10_7_CFLAGS      := -mmacosx-version-min=10.7 -isysroot $(VBOX_PATH_MACOSX_SDK_10_7)
   VBOX_DARWIN_DEF_SDK_10_7_CXXFLAGS    := -mmacosx-version-min=10.7 -isysroot $(VBOX_PATH_MACOSX_SDK_10_7)
