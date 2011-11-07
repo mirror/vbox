@@ -56,11 +56,13 @@ check_if_installed()
 
 module_loaded()
 {
-    if test -f "/etc/name_to_major"; then
-        loadentry=`cat /etc/name_to_major | grep "$1 "`
-    else
-        loadentry=`/usr/sbin/modinfo | grep "$1 "`
+    if test -z "$1"; then
+        abort "missing argument to module_loaded()"
     fi
+
+    modname=$1
+    # modinfo should now work properly since we prevent module autounloading.
+    loadentry=`/usr/sbin/modinfo | grep "$modname "`
     if test -z "$loadentry"; then
         return 1
     fi
