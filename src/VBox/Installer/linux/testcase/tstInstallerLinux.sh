@@ -21,6 +21,29 @@ CERRS=0
 
 echo "Testing udev rule generation"
 
+extern_test_input_install_udev() {
+    command="$1"
+    shift
+    case "$command" in
+        "which") my_which "$@";;
+        "test")  my_test "$@";;
+        "rm")    my_rm "$@";;
+        *) echo Unknown command $command >&2; exit 1;;
+    esac        
+}
+
+setup_test_input_install_udev() {
+    # Set up unit testing environment for the "install_udev" function below.
+    TEST_NAME="$1"          # used to identify the current test
+    TEST_UDEV_VERSION="$2"  # udev version to simulate
+    EXTERN=extern_test_input_install_udev
+    eval 'my_which() { echo test_udev ; }'
+    eval 'my_test() { true ; }'
+    eval 'my_rm() { case "$2" in "/etc/udev/rules.d/60-vboxdrv.rules") true ;; *) echo "rm: bad file name \"$2\"!"; false ;; esac ; }'
+    eval 'test_udev() { echo "$TEST_UDEV_VERSION" ; }'
+    DELETED_UDEV_FILE=""
+}
+
 setup_test_input_install_udev ".run, udev-59" 59
 
 udev_59_rules=`cat <<'UDEV_END'
@@ -43,8 +66,6 @@ case "$install_udev_output" in
         ;;
 esac
 
-cleanup_test_input_install_udev
-
 setup_test_input_install_udev ".run, udev-55" 55
 
 udev_55_rules=`cat <<'UDEV_END'
@@ -62,8 +83,6 @@ case "$install_udev_output" in
         CERRS="`expr "$CERRS" + 1`"
         ;;
 esac
-
-cleanup_test_input_install_udev
 
 setup_test_input_install_udev ".run, udev-54" 54
 
@@ -83,9 +102,43 @@ case "$install_udev_output" in
         ;;
 esac
 
-cleanup_test_input_install_udev
-
 echo "Testing device node setup"
+
+extern_test_input_install_device_node_setup() {
+    command="$1"
+    shift
+    case "$command" in
+        "install_udev")
+            do_install_udev "$@";;
+        "install_create_usb_node_for_sysfs")
+            do_install_create_usb_node_for_sysfs "$@";;
+        *)
+            echo Unknown command $command >&2; exit 1;;
+    esac        
+}
+
+setup_test_input_install_device_node_setup() {
+    # Set up unit testing environment for the "install_udev" function below.
+    test_drv_grp="$1"  # The expected vboxdrv group
+    test_drv_mode="$2" # The expected vboxdrv mode
+    test_inst_dir="$3" # The expected installation directory
+    test_usb_grp="$4"  # The expected USB node group
+    udev_rule_file=/dev/null
+    sysfs_usb_devices=test_sysfs_path
+    EXTERN=extern_test_input_install_device_node_setup
+    eval 'do_install_udev() {    test    "$1" = "${test_drv_grp}" \
+                                      -a "$2" = "${test_drv_mode}" \
+                                      -a "$3" = "${test_inst_dir}" \
+                                      -a "$4" = "${test_usb_grp}" \
+                                      -a "$5" = "${INSTALL_NO_UDEV}" \
+                              || echo "do_install_udev: bad parameters: $@" >&2 ; }'
+    eval 'do_install_create_usb_node_for_sysfs() { \
+                       test    "$1" = "${sysfs_usb_devices}" \
+                            -a "$2" = "${test_inst_dir}/VBoxCreateUSBNode.sh" \
+                            -a "$3" = "${test_usb_grp}" \
+                    || echo "do_install_create_usb_node_for_sysfs: \
+bad parameters: $@" >&2 ; }'
+}
 
 unset INSTALL_NO_GROUP
 unset INSTALL_NO_UDEV
@@ -99,8 +152,6 @@ test -n "${err}" && {
     echo "Error: ${err}"
     CERRS="`expr "$CERRS" + 1`"
 }
-
-cleanup_test_input_install_device_node_setup
 
 INSTALL_NO_GROUP=1
 unset INSTALL_NO_UDEV
@@ -114,8 +165,6 @@ test -n "${err}" && {
     CERRS="`expr "$CERRS" + 1`"
 }
 
-cleanup_test_input_install_device_node_setup
-
 unset INSTALL_NO_GROUP
 INSTALL_NO_UDEV=1
 setup_test_input_install_device_node_setup vboxusers 0660 /opt/VirtualBox \
@@ -128,7 +177,5 @@ test -n "${err}" && {
     echo "Error: ${err}"
     CERRS="`expr "$CERRS" + 1`"
 }
-
-cleanup_test_input_install_device_node_setup
 
 echo "Done.  Error count $CERRS."
