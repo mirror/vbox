@@ -8,7 +8,7 @@
  */
 
 /*
- * Copyright (C) 2008-2010 Oracle Corporation
+ * Copyright (C) 2008-2011 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -283,12 +283,12 @@ const Global::OSType Global::sOSTypes[SchemaDefs::OSTypeId_COUNT] =
       VBOXOSTYPE_OS2,             VBOXOSHINT_HWVIRTEX | VBOXOSHINT_FLOPPY | VBOXOSHINT_NOUSB,
         96,   4,  2 * _1G64, NetworkAdapterType_Am79C973, 1, StorageControllerType_PIIX4, StorageBus_IDE,
         StorageControllerType_PIIX4, StorageBus_IDE, ChipsetType_PIIX3, AudioControllerType_SB16  },
-    { "MacOS",   "Mac OS X",          SchemaDefs_OSTypeId_MacOS,           "Mac OS X Server",
+    { "MacOS",   "Mac OS X",          SchemaDefs_OSTypeId_MacOS,           "Mac OS X",
       VBOXOSTYPE_MacOS,           VBOXOSHINT_HWVIRTEX | VBOXOSHINT_IOAPIC | VBOXOSHINT_EFI | VBOXOSHINT_PAE | VBOXOSHINT_USBHID | VBOXOSHINT_HPET | VBOXOSHINT_USBTABLET,
       1024,   4, 20 * _1G64, NetworkAdapterType_I82543GC, 0,
        StorageControllerType_ICH6, StorageBus_IDE, StorageControllerType_IntelAhci, StorageBus_SATA,
       ChipsetType_ICH9, AudioControllerType_HDA  },
-    { "MacOS",   "Mac OS X",          SchemaDefs_OSTypeId_MacOS_64,        "Mac OS X Server (64 bit)",
+    { "MacOS",   "Mac OS X",          SchemaDefs_OSTypeId_MacOS_64,        "Mac OS X (64 bit)",
       VBOXOSTYPE_MacOS_x64,       VBOXOSHINT_HWVIRTEX | VBOXOSHINT_IOAPIC | VBOXOSHINT_EFI | VBOXOSHINT_PAE |  VBOXOSHINT_64BIT | VBOXOSHINT_USBHID | VBOXOSHINT_HPET | VBOXOSHINT_USBTABLET,
       1024,   4, 20 * _1G64, NetworkAdapterType_I82543GC, 0,
       StorageControllerType_ICH6, StorageBus_IDE, StorageControllerType_IntelAhci, StorageBus_SATA,
