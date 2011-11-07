@@ -1470,6 +1470,9 @@ sffs_rmdir(
 		sfnode_clear_dir_list(node->sf_parent);
 done:
 	mutex_exit(&sffs_lock);
+#ifdef VBOXVFS_WITH_MMAP
+	vn_vfsunlock(vp);
+#endif
 	VN_RELE(vp);
 	return (error);
 }
