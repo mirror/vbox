@@ -1601,6 +1601,7 @@ sffs_getpage(
 	)
 {
 	int error = 0;
+	int is_recursive = 0;
 	page_t **pageliststart = pagelist;
 	sfnode_t *node = VN2SFN(dvp);
 	ASSERT(node);
@@ -1622,7 +1623,15 @@ sffs_getpage(
 	if (protp)
 		*protp = PROT_ALL;
 
-	mutex_enter(&sffs_lock);
+	/*
+	 * The buffer passed to sffs_write may be mmap'd so we may get a
+	 * pagefault there, in which case we'll end up here with this thread
+	 * already owning the mutex. Mutexes aren't recursive.
+	 */
+	if (mutex_owner(&sffs_lock) == curthread)
+		is_recursive = 1;
+	else
+		mutex_enter(&sffs_lock);
 
 	/* Don't map pages past end of the file. */
 	if (off + len > node->sf_stat.sf_size + PAGEOFFSET)
@@ -1644,7 +1653,8 @@ sffs_getpage(
 				page_unlock(*--pagelist);
 
 			*pagelist = NULL;
-			mutex_exit(&sffs_lock);
+			if (!is_recursive)
+				mutex_exit(&sffs_lock);
 			return (error);
 		}
 
@@ -1676,7 +1686,8 @@ sffs_getpage(
 	}
 
 	*pagelist = NULL;
-	mutex_exit(&sffs_lock);
+	if (!is_recursive)
+		mutex_exit(&sffs_lock);
 	return (error);
 }
 
