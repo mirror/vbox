@@ -90,7 +90,7 @@ ifneq ($(MAKECMDGOALS),clean)
 endif
 
 # Location of custom built Qt libraries (see below)
-qtstdc6  := /home/vbox/Qt-4.4.3-stdc++6-$(arch)
+qtstdc6  := /home/vbox/Qt-4.7.4-stdc++6-$(arch)
 
 cfg_flags := $(if $(NOQT),--disable-qt,) \
 	     $(if $(ose),--ose,) $(if $(LINUX),--with-linux=$(LINUX),) \
