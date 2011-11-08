@@ -126,7 +126,6 @@ protected:
 
 private:
     bool m_fItemInMove;
-    QModelIndex m_previousCurrentIndex;
 };
 
 Q_DECLARE_METATYPE(QList<QUrl>);

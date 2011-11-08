@@ -420,14 +420,23 @@ void UIVMListView::ensureSomeRowSelected(int aRowHint)
 
 UIVMItem *UIVMListView::currentItem() const
 {
-    return model()->data(currentIndex(), UIVMItemModel::UIVMItemPtrRole).value<UIVMItem*>();
+    /* Get current selection: */
+    QModelIndexList selectedIndexes = selectionModel()->selectedIndexes();
+    /* Return 1st of selected items or NULL if nothing selected: */
+    return selectedIndexes.isEmpty() ? 0 :
+           model()->data(selectedIndexes[0], UIVMItemModel::UIVMItemPtrRole).value<UIVMItem*>();
 }
 
 QList<UIVMItem*> UIVMListView::currentItems() const
 {
+    /* Prepare selected item list: */
     QList<UIVMItem*> currentItems;
-    for (int i = 0; i < selectionModel()->selectedIndexes().size(); ++i)
-        currentItems << model()->data(selectionModel()->selectedIndexes()[i], UIVMItemModel::UIVMItemPtrRole).value<UIVMItem*>();
+    /* Get current selection: */
+    QModelIndexList selectedIndexes = selectionModel()->selectedIndexes();
+    /* For every item of the selection => add it into the selected item list: */
+    for (int i = 0; i < selectedIndexes.size(); ++i)
+        currentItems << model()->data(selectedIndexes[i], UIVMItemModel::UIVMItemPtrRole).value<UIVMItem*>();
+    /* Return selected item list: */
     return currentItems;
 }
 
@@ -441,21 +450,9 @@ void UIVMListView::selectionChanged(const QItemSelection &aSelected, const QItem
     /* Call for the base-class paint event: */
     QListView::selectionChanged(aSelected, aDeselected);
 
-    /* If selection still contains previous 'current index' =>
-     * make it the new 'current index': */
-    if (selectionModel()->selection().contains(m_previousCurrentIndex))
-        selectionModel()->setCurrentIndex(m_previousCurrentIndex, QItemSelectionModel::NoUpdate);
-    /* If selection do NOT contains previous 'current item' but contains at least something =>
-     * set first of the selected items as the new 'current item': */
-    else if (!selectionModel()->selectedIndexes().isEmpty())
-        selectionModel()->setCurrentIndex(selectionModel()->selectedIndexes()[0], QItemSelectionModel::NoUpdate);
-    /* If selection do NOT contains anything at all (is empty) =>
-     * select current index: */
-    else
+    /* If selection is empty => select 'current item': */
+    if (selectionModel()->selectedIndexes().isEmpty())
         selectionModel()->select(currentIndex(), QItemSelectionModel::SelectCurrent);
-
-    /* Remember the current item: */
-    m_previousCurrentIndex = currentIndex();
 
     /* Ensure current index is visible: */
     ensureCurrentVisible();
