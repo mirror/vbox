@@ -174,8 +174,8 @@ binary: rpm/build-stamp
 	  -e 's|%INSTMOD%|$(instmod)|g' \
 	  -e 's|%LIBASOUND%|$(if $(filter lib64,$(rpmlib)),libasound.so.2()(64bit),libasound.so.2)|g' \
 	  -e 's|%INITSCRIPTS%|$(if $(filter fedora,$(rpmspec)),initscripts,)|g' \
-	  -e '/#include installer-utils.sh/ {' \
-	  -e "r $(vboxroot)/src/VBox/Installer/linux/installer-utils.sh" \
+	  -e '/#include installer-common.sh/ {' \
+	  -e "r $(vboxroot)/src/VBox/Installer/linux/installer-common.sh" \
 	  -e 'd' \
 	  -e '}' \
 	   rpm/VirtualBox.tmpl.spec > $(archdir)/VirtualBox.spec

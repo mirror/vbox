@@ -218,7 +218,7 @@ fi
 
 
 %post
-#include installer-utils.sh
+#include installer-common.sh
 
 LOG="/var/log/vbox-install.log"
 

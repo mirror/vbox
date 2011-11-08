@@ -27,11 +27,11 @@ tstInstallerLinux_CLEAN   = $(tstInstallerLinux_0_OUTDIR)/tstInstallerLinux.sh
 
 $$(tstInstallerLinux_0_OUTDIR)/tstInstallerLinux.sh: \
 		$(PATH_SUB_CURRENT)/tstInstallerLinux.sh \
-		$(PATH_SUB_CURRENT)/../installer-utils.sh \
+		$(PATH_SUB_CURRENT)/../installer-common.sh \
 		| $$(dir $$@)
 	$(QUIET)$(SED) \
-		-e '/#include installer-utils.sh/ {' \
-		-e "r $(PATH_ROOT)/src/VBox/Installer/linux/installer-utils.sh" \
+		-e '/#include installer-common.sh/ {' \
+		-e "r $(PATH_ROOT)/src/VBox/Installer/linux/installer-common.sh" \
 		-e 'd' \
 		-e '}' \
 		--output $@ \

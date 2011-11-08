@@ -19,7 +19,7 @@ PATH=$PATH:/bin:/sbin:/usr/sbin
 
 # Include routines and utilities needed by the installer
 . ./routines.sh
-#include installer-utils.sh
+#include installer-common.sh
 
 LOG="/var/log/vbox-install.log"
 VERSION="_VERSION_"
