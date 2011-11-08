@@ -5171,15 +5171,15 @@ HRESULT Console::getGuestProperty(IN_BSTR aName, BSTR *aValue,
     {
         VBOXHGCMSVCPARM parm[4];
         Utf8Str Utf8Name = aName;
-        char pszBuffer[MAX_VALUE_LEN + MAX_FLAGS_LEN];
+        char szBuffer[MAX_VALUE_LEN + MAX_FLAGS_LEN];
 
         parm[0].type = VBOX_HGCM_SVC_PARM_PTR;
         parm[0].u.pointer.addr = (void*)Utf8Name.c_str();
         /* The + 1 is the null terminator */
         parm[0].u.pointer.size = (uint32_t)Utf8Name.length() + 1;
         parm[1].type = VBOX_HGCM_SVC_PARM_PTR;
-        parm[1].u.pointer.addr = pszBuffer;
-        parm[1].u.pointer.size = sizeof(pszBuffer);
+        parm[1].u.pointer.addr = szBuffer;
+        parm[1].u.pointer.size = sizeof(szBuffer);
         int vrc = m_pVMMDev->hgcmHostCall("VBoxGuestPropSvc", GET_PROP_HOST,
                                           4, &parm[0]);
         /* The returned string should never be able to be greater than our buffer */
@@ -5190,7 +5190,7 @@ HRESULT Console::getGuestProperty(IN_BSTR aName, BSTR *aValue,
             rc = S_OK;
             if (vrc != VERR_NOT_FOUND)
             {
-                Utf8Str strBuffer(pszBuffer);
+                Utf8Str strBuffer(szBuffer);
                 strBuffer.cloneTo(aValue);
 
                 if (aTimestamp)
@@ -5199,7 +5199,7 @@ HRESULT Console::getGuestProperty(IN_BSTR aName, BSTR *aValue,
                 if (aFlags)
                 {
                     size_t iFlags = strBuffer.length() + 1;
-                    Utf8Str(pszBuffer + iFlags).cloneTo(aFlags);
+                    Utf8Str(szBuffer + iFlags).cloneTo(aFlags);
                 }
             }
             else
