@@ -37,64 +37,57 @@ udev_write_usb() {
     echo "SUBSYSTEM==\"usb\", ACTION==\"remove\", ENV{DEVTYPE}==\"usb_device\", RUN+=\"$INSTALLATION_DIR/VBoxCreateUSBNode.sh --remove \$major \$minor\""
 }
 
-install_udev() {
-    # install udev rule (disable with INSTALL_NO_UDEV=1 in /etc/default/virtualbox) for distribution packages
-    # To unit test, set $EXTERN to point to a function simulating external
-    # commands: test; which; rm.  See the code for usage.
+generate_udev_rule() {
     VBOXDRV_GRP="$1"      # The group owning the vboxdrv device
     VBOXDRV_MODE="$2"     # The access mode for the vboxdrv device
     INSTALLATION_DIR="$3" # The directory VirtualBox is installed in
     USB_GROUP="$4"        # The group that has permission to access USB devices
     NO_INSTALL="$5"       # Set this to "1" to remove but not re-install rules
+    UDEV_STRING="$6"      # The output of the udev version command
 
     # Extra space!
     case "$USB_GROUP" in ?*) USB_GROUP=" $USB_GROUP" ;; esac
     case "$NO_INSTALL" in
     "1") ;;
     *)
-        if $EXTERN test -d /etc/udev/rules.d; then
-            udev_call=""
-            udev_app=`$EXTERN which udevadm 2> /dev/null`
-            if [ $? -eq 0 ]; then
-                udev_call="${udev_app} version 2> /dev/null"
-            else
-                udev_app=`$EXTERN which udevinfo 2> /dev/null`
-                if [ $? -eq 0 ]; then
-                    udev_call="${udev_app} -V 2> /dev/null"
-                fi
-            fi
-            udev_fix=""
-            if [ "${udev_call}" != "" ]; then
-                udev_out=`${udev_call}`
-                udev_ver=`expr "$udev_out" : '[^0-9]*\([0-9]*\)'`
-                if [ "$udev_ver" = "" -o "$udev_ver" -lt 55 ]; then
-                    udev_fix="1"
-                fi
-                udev_do_usb=""
-                if [ "$udev_ver" -ge 59 ]; then
-                    udev_do_usb="1"
-                fi
-            fi
-            case "$udev_fix" in
-            "1")
-                udev_write_vboxdrv "$VBOXDRV_GRP" "$VBOXDRV_MODE" |
-                    sed 's/\([^+=]*\)[+=]*\([^"]*"[^"]*"\)/\1=\2/g'
-                ;;
-            *)
-                udev_write_vboxdrv "$VBOXDRV_GRP" "$VBOXDRV_MODE"
-                case "$udev_do_usb" in "1")
-                    udev_write_usb "$INSTALLATION_DIR" "$USB_GROUP" ;;
-                esac
-                ;;
+        udev_ver=`expr "$UDEV_STRING" : '[^0-9]*\([0-9]*\)'`
+        udev_fix=""
+        test "$udev_ver" = "" -o "$udev_ver" -lt 55 &&
+            udev_fix="1"
+        udev_do_usb=""
+        test "$udev_ver" -ge 59 &&
+            udev_do_usb="1"
+        case "$udev_fix" in
+        "1")
+            udev_write_vboxdrv "$VBOXDRV_GRP" "$VBOXDRV_MODE" |
+                sed 's/\([^+=]*\)[+=]*\([^"]*"[^"]*"\)/\1=\2/g'
+            ;;
+        *)
+            udev_write_vboxdrv "$VBOXDRV_GRP" "$VBOXDRV_MODE"
+            case "$udev_do_usb" in "1")
+                udev_write_usb "$INSTALLATION_DIR" "$USB_GROUP" ;;
             esac
-
-        fi
+            ;;
+        esac
         ;;
     esac
-    # Remove old udev description file
-    if $EXTERN test -f /etc/udev/rules.d/60-vboxdrv.rules; then
-        $EXTERN rm -f /etc/udev/rules.d/60-vboxdrv.rules 2> /dev/null
+}
+
+install_udev() {
+    # install udev rule (disable with INSTALL_NO_UDEV=1 in /etc/default/virtualbox) for distribution packages
+    VBOXDRV_GRP="$1"      # The group owning the vboxdrv device
+    VBOXDRV_MODE="$2"     # The access mode for the vboxdrv device
+    INSTALLATION_DIR="$3" # The directory VirtualBox is installed in
+    USB_GROUP="$4"        # The group that has permission to access USB devices
+    NO_INSTALL="$5"       # Set this to "1" to remove but not re-install rules
+
+    if test -d /etc/udev/rules.d; then
+        udev_out="`udevadm version 2>/dev/null ||  udevinfo -V 2>/dev/null`"
+        generate_udev_rule "$VBOXDRV_GRP" "$VBOXDRV_MODE" "$INSTALLATION_DIR" \
+                           "$USB_GROUP" "$NO_INSTALL" "$udev_out"
     fi
+    # Remove old udev description file
+    rm -f /etc/udev/rules.d/60-vboxdrv.rules 2> /dev/null
 }
 
 # Add a unit test if/when needed following the same pattern as for

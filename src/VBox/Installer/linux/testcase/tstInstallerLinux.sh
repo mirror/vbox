@@ -21,30 +21,21 @@ CERRS=0
 
 echo "Testing udev rule generation"
 
-extern_test_input_install_udev() {
-    command="$1"
-    shift
-    case "$command" in
-        "which") my_which "$@";;
-        "test")  my_test "$@";;
-        "rm")    my_rm "$@";;
-        *) echo Unknown command $command >&2; exit 1;;
-    esac        
+check_udev_rule_generation() {
+    OUTPUT="$2"
+    EXPECTED="$4"
+    VERSION="$6"
+    case "$OUTPUT" in
+        "$EXPECTED") ;;
+        *)
+            echo "Bad output for udev version $VERSION.  Expected:"
+            echo "$EXPECTED"
+            echo "Actual:"
+            echo "$OUTPUT"
+            CERRS="`expr "$CERRS" + 1`"
+            ;;
+    esac
 }
-
-setup_test_input_install_udev() {
-    # Set up unit testing environment for the "install_udev" function below.
-    TEST_NAME="$1"          # used to identify the current test
-    TEST_UDEV_VERSION="$2"  # udev version to simulate
-    EXTERN=extern_test_input_install_udev
-    eval 'my_which() { echo test_udev ; }'
-    eval 'my_test() { true ; }'
-    eval 'my_rm() { case "$2" in "/etc/udev/rules.d/60-vboxdrv.rules") true ;; *) echo "rm: bad file name \"$2\"!"; false ;; esac ; }'
-    eval 'test_udev() { echo "$TEST_UDEV_VERSION" ; }'
-    DELETED_UDEV_FILE=""
-}
-
-setup_test_input_install_udev ".run, udev-59" 59
 
 udev_59_rules=`cat <<'UDEV_END'
 KERNEL=="vboxdrv", NAME="vboxdrv", OWNER="root", GROUP="vboxusers", MODE="0660"
@@ -54,53 +45,28 @@ SUBSYSTEM=="usb_device", ACTION=="remove", RUN+="/opt/VirtualBox/VBoxCreateUSBNo
 SUBSYSTEM=="usb", ACTION=="remove", ENV{DEVTYPE}=="usb_device", RUN+="/opt/VirtualBox/VBoxCreateUSBNode.sh --remove $major $minor"
 UDEV_END`
 
-install_udev_output="`install_udev vboxusers 0660 /opt/VirtualBox`"
-case "$install_udev_output" in
-    "$udev_59_rules") ;;
-    *)
-        echo "Bad output for udev version 59.  Expected:"
-        echo "$udev_59_rules"
-        echo "Actual:"
-        echo "$install_udev_output"
-        CERRS="`expr "$CERRS" + 1`"
-        ;;
-esac
-
-setup_test_input_install_udev ".run, udev-55" 55
+install_udev_output="`generate_udev_rule vboxusers 0660 /opt/VirtualBox "" "" "udevinfo, version 059"`"
+check_udev_rule_generation OUTPUT "$install_udev_output" \
+                           EXPECTED "$udev_59_rules" \
+                           VERSION 59
 
 udev_55_rules=`cat <<'UDEV_END'
 KERNEL=="vboxdrv", NAME="vboxdrv", OWNER="root", GROUP="vboxusers", MODE="0660"
 UDEV_END`
 
-install_udev_output="`install_udev vboxusers 0660 /opt/VirtualBox`"
-case "$install_udev_output" in
-    "$udev_55_rules") ;;
-    *)
-        echo "Bad output for udev version 55.  Expected:"
-        echo "$udev_55_rules"
-        echo "Actual:"
-        echo "$install_udev_output"
-        CERRS="`expr "$CERRS" + 1`"
-        ;;
-esac
-
-setup_test_input_install_udev ".run, udev-54" 54
+install_udev_output="`generate_udev_rule vboxusers 0660 /opt/VirtualBox "" "" "v 0055"`"
+check_udev_rule_generation OUTPUT "$install_udev_output" \
+                           EXPECTED "$udev_55_rules" \
+                           VERSION 55
 
 udev_54_rules=`cat <<'UDEV_END'
 KERNEL="vboxdrv", NAME="vboxdrv", OWNER="root", GROUP="root", MODE="0600"
 UDEV_END`
 
-install_udev_output="`install_udev root 0600 /usr/lib/virtualbox`"
-case "$install_udev_output" in
-    "$udev_54_rules") ;;
-    *)
-        echo "Bad output for udev version 54.  Expected:"
-        echo "$udev_54_rules"
-        echo "Actual:"
-        echo "$install_udev_output"
-        CERRS="`expr "$CERRS" + 1`"
-        ;;
-esac
+install_udev_output="`generate_udev_rule root 0600 /usr/lib/virtualbox "" "" 54`"
+check_udev_rule_generation OUTPUT "$install_udev_output" \
+                           EXPECTED "$udev_54_rules" \
+                           VERSION 54
 
 echo "Testing device node setup"
 
