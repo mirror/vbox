@@ -24,8 +24,8 @@
 
 echo "Removing VirtualBox service..."
 
-# stop and unregister VBoxService daemon
-/usr/sbin/svcadm disable -s virtualbox/vboxservice:default
+# stop and unregister VBoxService
+/usr/sbin/svcadm disable -s virtualbox/vboxservice
 # Don't need to delete, taken care of by the manifest action
 # /usr/sbin/svccfg delete svc:/application/virtualbox/vboxservice:default
 

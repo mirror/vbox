@@ -435,9 +435,9 @@ fi
 if test "$currentzone" = "global"; then
     /usr/sbin/devfsadm -i vboxguest
 
-    # Setup our VBoxService SMF service (needs the full FMRI here)
+    # Setup our VBoxService SMF service
     echo "Configuring service..."
-    /usr/sbin/svcadm enable -s svc:/application/virtualbox/vboxservice
+    /usr/sbin/svcadm enable -s virtualbox/vboxservice
 
     # Update boot archive
     BOOTADMBIN=/sbin/bootadm
