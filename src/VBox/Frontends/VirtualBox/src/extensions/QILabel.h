@@ -47,9 +47,6 @@ public:
     /* Default QLabel methods */
     QString text() const;
 
-signals:
-    void shown();
-
 public slots:
 
     void clear();
@@ -66,7 +63,6 @@ protected:
     void focusInEvent (QFocusEvent *aEvent);
     void focusOutEvent (QFocusEvent *aEvent);
     void paintEvent (QPaintEvent *aEvent);
-    void showEvent(QShowEvent *pEvent);
 
 private:
 

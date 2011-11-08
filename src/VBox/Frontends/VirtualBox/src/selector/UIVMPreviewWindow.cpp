@@ -148,50 +148,55 @@ void UIVMPreviewWindow::hideEvent(QHideEvent *pEvent)
 
 void UIVMPreviewWindow::paintEvent(QPaintEvent *pEvent)
 {
+    /* Prepare painter: */
     QPainter painter(this);
-    /* Enable clipping */
+    /* Enable clipping: */
     painter.setClipRect(pEvent->rect());
-    /* Where should the content go */
+    /* Where should the content go: */
     QRect cr = contentsRect();
-    /* Draw the background with the monitor and the shadow */
+    if (!cr.isValid())
+        return;
+    /* Draw the background with the monitor and the shadow: */
     if (m_pbgImage)
         painter.drawImage(cr.x(), cr.y(), *m_pbgImage);
-//    painter.setPen(Qt::red);
-//    painter.drawRect(cr.adjusted(0, 0, -1, -1));
-//    return;
-    /* If there is a preview image available, use it. */
+
+    /* If there is a preview image available: */
     if (m_pPreviewImg)
+    {
+        /* Draw that image: */
         painter.drawImage(0, 0, *m_pPreviewImg);
+    }
     else
     {
-        QString strName = tr("No Preview");
-        if (!m_machine.isNull())
-            strName = m_machine.GetName();
-
-        /* Paint the name in the center of the monitor */
+        /* Fill rectangle with black color: */
         painter.fillRect(m_vRect, Qt::black);
-                QFont font = painter.font();
-        font.setBold(true);
-        int fFlags = Qt::AlignCenter | Qt::TextWordWrap;
-        float h = m_vRect.size().height() * .2;
-        QRect r;
-        /* Make a little magic to find out if the given text fits into
-         * our rectangle. Decrease the font pixel size as long as it
-         * doesn't fit. */
-        int cMax = 30;
-        do
-        {
-            h = h * .8;
-            font.setPixelSize((int)h);
-            painter.setFont(font);
-            r = painter.boundingRect(m_vRect, fFlags, strName);
-        }while ((   r.height() > m_vRect.height()
-                 || r.width() > m_vRect.width())
-                && cMax-- != 0);
-        painter.setPen(Qt::white);
-        painter.drawText(m_vRect, fFlags, strName);
     }
-    /* Draw the glossy overlay last */
+
+    /* Compose name: */
+    QString strName = tr("No Preview");
+    if (!m_machine.isNull())
+        strName = m_machine.GetName();
+    /* Paint that name: */
+    QFont font = painter.font();
+    font.setBold(true);
+    int fFlags = Qt::AlignCenter | Qt::TextWordWrap;
+    float h = m_vRect.size().height() * .2;
+    QRect r;
+    /* Make a little magic to find out if the given text fits into our rectangle.
+     * Decrease the font pixel size as long as it doesn't fit. */
+    int cMax = 30;
+    do
+    {
+        h = h * .8;
+        font.setPixelSize((int)h);
+        painter.setFont(font);
+        r = painter.boundingRect(m_vRect, fFlags, strName);
+    }
+    while ((r.height() > m_vRect.height() || r.width() > m_vRect.width()) && cMax-- != 0);
+    painter.setPen(Qt::white);
+    painter.drawText(m_vRect, fFlags, strName);
+
+    /* Draw the glossy overlay last: */
     if (m_pGlossyImg)
         painter.drawImage(m_vRect.x(), m_vRect.y(), *m_pGlossyImg);
 }

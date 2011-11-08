@@ -42,7 +42,7 @@ public:
 
     UIVMDesktop(UIToolBar *pToolBar, QAction *pRefreshAction, QWidget *pParent = 0);
 
-    void updateDetails(UIVMItem *pVMItem, const CMachine& machine);
+    void updateDetails(UIVMItem *pVMItem, const QList<CMachine> &machines);
     void updateDetailsText(const QString &strText);
     void updateDetailsErrorText(const QString &strText);
 

@@ -844,6 +844,7 @@ void UISelectorWindow::sltCurrentVMItemChanged(bool fRefreshDetails, bool fRefre
 {
     /* Get current item: */
     UIVMItem *pItem = m_pVMListView->currentItem();
+    QList<UIVMItem*> items = m_pVMListView->currentItems();
 
     /* Enable/disable actions: */
     m_pSettingsDialogAction->setEnabled(isActionEnabled(UIActionIndexSelector_Simple_Machine_SettingsDialog, pItem));
@@ -865,10 +866,13 @@ void UISelectorWindow::sltCurrentVMItemChanged(bool fRefreshDetails, bool fRefre
     if (pItem && pItem->accessible())
     {
         CMachine m = pItem->machine();
+        QList<CMachine> machines;
+        for (int i = 0; i < items.size(); ++i)
+            machines << items[i]->machine();
         KMachineState state = pItem->machineState();
 
         if (fRefreshDetails || fRefreshDescription)
-            m_pVMDesktop->updateDetails(pItem, m);
+            m_pVMDesktop->updateDetails(pItem, machines);
         if (fRefreshSnapshots)
             m_pVMDesktop->updateSnapshots(pItem, m);
 
