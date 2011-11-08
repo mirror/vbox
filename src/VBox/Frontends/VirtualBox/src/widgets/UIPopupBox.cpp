@@ -128,16 +128,31 @@ QWidget* UIPopupBox::contentWidget() const
 
 void UIPopupBox::setOpen(bool fOpen)
 {
+    /* Do not do anything if already done: */
+    if (m_fOpen == fOpen)
+        return;
+
+    /* Store new value: */
     m_fOpen = fOpen;
+
+    /* Update content widget if present or this itself: */
     if (m_pContentWidget)
         m_pContentWidget->setVisible(m_fOpen);
     else
         update();
+
+    /* Notify listeners about content widget visibility: */
+    if (m_pContentWidget && m_pContentWidget->isVisible())
+        emit sigUpdateContentWidget();
 }
 
 void UIPopupBox::toggleOpen()
 {
+    /* Switch 'opened' state: */
     setOpen(!m_fOpen);
+
+    /* Notify listeners about toggling: */
+    emit toggled(m_fOpen);
 }
 
 bool UIPopupBox::isOpen() const
@@ -238,7 +253,7 @@ void UIPopupBox::paintEvent(QPaintEvent *pEvent)
 void UIPopupBox::updateHover(bool fForce /* = false */)
 {
     bool fOld = m_fHeaderHover;
-    QPoint bl = mapFromGlobal(QCursor::pos());
+//    QPoint bl = mapFromGlobal(QCursor::pos());
 //    printf("%d %d\n", bl.x(), bl.y());
     if (   m_pLabelPath
         && m_pLabelPath->contains(mapFromGlobal(QCursor::pos())))

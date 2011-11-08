@@ -54,8 +54,13 @@ public:
     void toggleOpen();
     bool isOpen() const;
 
+    void callForUpdateContentWidget() { emit sigUpdateContentWidget(); }
+
 signals:
-    void titleClicked(const QString);
+
+    void titleClicked(const QString &);
+    void toggled(bool fOpened);
+    void sigUpdateContentWidget();
 
 protected:
 
