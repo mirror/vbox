@@ -334,6 +334,7 @@ static void testEnumPropsHost(VBOXHGCMSVCFNTABLE *ptable)
         /* Check that we get buffer overflow with a too small buffer. */
         aParms[0].setPointer((void *)g_aEnumStrings[i].pszPatterns, g_aEnumStrings[i].cchPatterns);
         aParms[1].setPointer((void *)abBuffer, g_aEnumStrings[i].cbBuffer - 1);
+        memset(abBuffer, 0x55, sizeof(abBuffer));
         int rc2 = ptable->pfnHostCall(ptable->pvService, ENUM_PROPS_HOST, 3, aParms);
         if (rc2 == VERR_BUFFER_OVERFLOW)
         {
@@ -349,6 +350,7 @@ static void testEnumPropsHost(VBOXHGCMSVCFNTABLE *ptable)
         /* Make a successfull call. */
         aParms[0].setPointer((void *)g_aEnumStrings[i].pszPatterns, g_aEnumStrings[i].cchPatterns);
         aParms[1].setPointer((void *)abBuffer, g_aEnumStrings[i].cbBuffer);
+        memset(abBuffer, 0x55, sizeof(abBuffer));
         rc2 = ptable->pfnHostCall(ptable->pvService, ENUM_PROPS_HOST, 3, aParms);
         if (rc2 == VINF_SUCCESS)
         {
@@ -409,9 +411,9 @@ int doSetProperty(VBOXHGCMSVCFNTABLE *pTable, const char *pcszName,
     RTStrPrintf(szName, sizeof(szName), "%s", pcszName);
     RTStrPrintf(szValue, sizeof(szValue), "%s", pcszValue);
     RTStrPrintf(szFlags, sizeof(szFlags), "%s", pcszFlags);
-    aParms[0].setPointer (szName, (uint32_t)strlen(szName) + 1);
-    aParms[1].setPointer (szValue, (uint32_t)strlen(szValue) + 1);
-    aParms[2].setPointer (szFlags, (uint32_t)strlen(szFlags) + 1);
+    aParms[0].setString(szName);
+    aParms[1].setString(szValue);
+    aParms[2].setString(szFlags);
     if (isHost)
         callHandle.rc = pTable->pfnHostCall(pTable->pvService, command,
                                             useSetProp ? 3 : 2, aParms);
@@ -493,11 +495,7 @@ static int doDelProp(VBOXHGCMSVCFNTABLE *pTable, const char *pcszName, bool isHo
     if (isHost)
         command = DEL_PROP_HOST;
     VBOXHGCMSVCPARM aParms[1];
-    /* Work around silly constant issues - we ought to allow passing
-     * constant strings in the hgcm parameters. */
-    char szName[MAX_NAME_LEN];
-    RTStrPrintf(szName, sizeof(szName), "%s", pcszName);
-    aParms[0].setPointer (szName, (uint32_t)strlen(szName) + 1);
+    aParms[0].setString(pcszName);
     if (isHost)
         callHandle.rc = pTable->pfnHostCall(pTable->pvService, command, 1, aParms);
     else
@@ -595,13 +593,11 @@ static void testGetProp(VBOXHGCMSVCFNTABLE *pTable)
         VBOXHGCMSVCPARM aParms[4];
         /* Work around silly constant issues - we ought to allow passing
          * constant strings in the hgcm parameters. */
-        char szName[MAX_NAME_LEN] = "";
         char szBuffer[MAX_VALUE_LEN + MAX_FLAGS_LEN];
         RTTESTI_CHECK_RETV(s_aGetProperties[i].cchValue < sizeof(szBuffer));
-        RTTESTI_CHECK_RETV(strlen(s_aGetProperties[i].pcszName) < sizeof(szName));
 
-        strcpy(szName, s_aGetProperties[i].pcszName);
-        aParms[0].setPointer(szName, (uint32_t)(strlen(szName) + 1));
+        aParms[0].setString(s_aGetProperties[i].pcszName);
+        memset(szBuffer, 0x55, sizeof(szBuffer));
         aParms[1].setPointer(szBuffer, sizeof(szBuffer));
         int rc2 = pTable->pfnHostCall(pTable->pvService, GET_PROP_HOST, 4, aParms);
 
@@ -966,7 +962,6 @@ static void test3(void)
     testDelPropROGuest(&svcTable);
 }
 
-
 static void test4(void)
 {
     RTTestISub("GET_PROP_HOST buffer handling");
@@ -983,25 +978,63 @@ static void test4(void)
 
 
     /* Get the value with buffer sizes up to 1K.  */
-    for (uint32_t cbBuf = 0; cbBuf < _1K; cbBuf++)
+    for (unsigned iVariation = 0; iVariation < 2; iVariation++)
     {
-        void *pvBuf = RTTestGuardedAllocTail(g_hTest, cbBuf);
+        for (uint32_t cbBuf = 0; cbBuf < _1K; cbBuf++)
+        {
+            void *pvBuf;
+            RTTESTI_CHECK_RC_BREAK(RTTestGuardedAlloc(g_hTest, cbBuf, 1, iVariation == 0, &pvBuf), VINF_SUCCESS);
 
-        VBOXHGCMSVCPARM aParms[4];
-        aParms[0].setString(s_szProp);
-        aParms[1].setPointer(pvBuf, cbBuf);
-        int rc = svcTable.pfnHostCall(svcTable.pvService, GET_PROP_HOST, 4, aParms);
+            VBOXHGCMSVCPARM aParms[4];
+            aParms[0].setString(s_szProp);
+            aParms[1].setPointer(pvBuf, cbBuf);
+            int rc = svcTable.pfnHostCall(svcTable.pvService, GET_PROP_HOST, RT_ELEMENTS(aParms), aParms);
 
-        RTTestGuardedFree(g_hTest, pvBuf);
+            RTTestGuardedFree(g_hTest, pvBuf);
+        }
     }
 
     /* Done. */
     RTTESTI_CHECK_RC_OK(svcTable.pfnUnload(svcTable.pvService));
 }
 
-
-
 static void test5(void)
+{
+    RTTestISub("ENUM_PROPS_HOST buffer handling");
+
+    VBOXHGCMSVCFNTABLE  svcTable;
+    VBOXHGCMSVCHELPERS  svcHelpers;
+    initTable(&svcTable, &svcHelpers);
+    RTTESTI_CHECK_RC_OK_RETV(VBoxHGCMSvcLoad(&svcTable));
+
+    /* Insert a few property that we can mess around with. */
+    RTTESTI_CHECK_RC_OK(doSetProperty(&svcTable, "/MyProperties/Sub/Sub/Sub/Sub/Sub/Sub/Sub/Property", "Property Value", "", true, true));
+    RTTESTI_CHECK_RC_OK(doSetProperty(&svcTable, "/MyProperties/12357",  "83848569", "", true, true));
+    RTTESTI_CHECK_RC_OK(doSetProperty(&svcTable, "/MyProperties/56678",  "abcdefghijklm", "", true, true));
+    RTTESTI_CHECK_RC_OK(doSetProperty(&svcTable, "/MyProperties/932769", "n", "", true, true));
+
+    /* Get the value with buffer sizes up to 1K.  */
+    for (unsigned iVariation = 0; iVariation < 2; iVariation++)
+    {
+        for (uint32_t cbBuf = 0; cbBuf < _1K; cbBuf++)
+        {
+            void *pvBuf;
+            RTTESTI_CHECK_RC_BREAK(RTTestGuardedAlloc(g_hTest, cbBuf, 1, iVariation == 0, &pvBuf), VINF_SUCCESS);
+
+            VBOXHGCMSVCPARM aParms[3];
+            aParms[0].setString("*");
+            aParms[1].setPointer(pvBuf, cbBuf);
+            int rc2 = svcTable.pfnHostCall(svcTable.pvService, ENUM_PROPS_HOST, RT_ELEMENTS(aParms), aParms);
+
+            RTTestGuardedFree(g_hTest, pvBuf);
+        }
+    }
+
+    /* Done. */
+    RTTESTI_CHECK_RC_OK(svcTable.pfnUnload(svcTable.pvService));
+}
+
+static void test6(void)
 {
     RTTestISub("Max properties");
 
@@ -1098,6 +1131,7 @@ int main(int argc, char **argv)
     test3();
     test4();
     test5();
+    test6();
 
     return RTTestSummaryAndDestroy(g_hTest);
 }
