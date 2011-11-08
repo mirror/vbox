@@ -969,6 +969,40 @@ static void test3(void)
 
 static void test4(void)
 {
+    RTTestISub("GET_PROP_HOST buffer handling");
+
+    VBOXHGCMSVCFNTABLE  svcTable;
+    VBOXHGCMSVCHELPERS  svcHelpers;
+    initTable(&svcTable, &svcHelpers);
+    RTTESTI_CHECK_RC_OK_RETV(VBoxHGCMSvcLoad(&svcTable));
+
+    /* Insert a property that we can mess around with. */
+    static char const s_szProp[]  = "/MyProperties/Sub/Sub/Sub/Sub/Sub/Sub/Sub/Property";
+    static char const s_szValue[] = "Property Value";
+    RTTESTI_CHECK_RC_OK(doSetProperty(&svcTable, s_szProp, s_szValue, "", true, true));
+
+
+    /* Get the value with buffer sizes up to 1K.  */
+    for (uint32_t cbBuf = 0; cbBuf < _1K; cbBuf++)
+    {
+        void *pvBuf = RTTestGuardedAllocTail(g_hTest, cbBuf);
+
+        VBOXHGCMSVCPARM aParms[4];
+        aParms[0].setString(s_szProp);
+        aParms[1].setPointer(pvBuf, cbBuf);
+        int rc = svcTable.pfnHostCall(svcTable.pvService, GET_PROP_HOST, 4, aParms);
+
+        RTTestGuardedFree(g_hTest, pvBuf);
+    }
+
+    /* Done. */
+    RTTESTI_CHECK_RC_OK(svcTable.pfnUnload(svcTable.pvService));
+}
+
+
+
+static void test5(void)
+{
     RTTestISub("Max properties");
 
     VBOXHGCMSVCFNTABLE  svcTable;
@@ -1050,6 +1084,8 @@ static void test4(void)
 }
 
 
+
+
 int main(int argc, char **argv)
 {
     RTEXITCODE rcExit = RTTestInitAndCreate("tstGuestPropSvc", &g_hTest);
@@ -1061,6 +1097,7 @@ int main(int argc, char **argv)
     test2();
     test3();
     test4();
+    test5();
 
     return RTTestSummaryAndDestroy(g_hTest);
 }
