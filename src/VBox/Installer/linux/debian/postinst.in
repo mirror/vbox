@@ -17,7 +17,7 @@
 #  abort-remove:      (our version): removing this package failed
 #  abort-deconfigure: (our version): error during resolving conflicts
 
-#include installer-utils.sh
+#include installer-common.sh
 
 LOG="/var/log/vbox-install.log"
 

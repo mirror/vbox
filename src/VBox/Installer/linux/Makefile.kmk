@@ -314,7 +314,7 @@ $(PATH_STAGE_BIN)/$(VBOX_LNX_PACKAGE_NAME): \
 		$(VBOX_LNX_INST_OUT_DIR)/vboxdrv.sh \
 		$(VBOX_LNX_INST_OUT_DIR)/vboxweb-service.sh \
 		$(VBOX_LNX_INST_OUT_DIR)/install.sh \
-		$(VBOX_PATH_LNX_INST_SRC)/installer-utils.sh \
+		$(VBOX_PATH_LNX_INST_SRC)/installer-common.sh \
 		$(VBOX_PATH_LNX_INST_SRC)/vboxdrv-pardus.py \
 		$(VBOX_PATH_LNX_INST_SRC)/uninstall.sh
 	$(call MSG_TOOL,makeself,,$@)
@@ -358,7 +358,7 @@ $(VBOX_LNX_INST_OUT_DIR)/vboxweb-service.sh: $(VBOX_PATH_LNX_INST_SRC)/vboxweb-s
 		--output $@ \
 		$<
 
-$(VBOX_LNX_INST_OUT_DIR)/install.sh: $(VBOX_PATH_LNX_INST_SRC)/install.sh $(VBOX_PATH_LNX_INST_SRC)/installer-utils.sh $(VBOX_VERSION_STAMP) $(VBOX_SVN_REV_KMK).ts | $$(dir $$@)
+$(VBOX_LNX_INST_OUT_DIR)/install.sh: $(VBOX_PATH_LNX_INST_SRC)/install.sh $(VBOX_PATH_LNX_INST_SRC)/installer-common.sh $(VBOX_VERSION_STAMP) $(VBOX_SVN_REV_KMK).ts | $$(dir $$@)
 	$(QUIET)$(SED) \
 		-e "s;_VERSION_;$(VBOX_VERSION_STRING);g" \
 		-e "s;_SVNREV_;$(VBOX_SVN_REV);g" \
@@ -366,8 +366,8 @@ $(VBOX_LNX_INST_OUT_DIR)/install.sh: $(VBOX_PATH_LNX_INST_SRC)/install.sh $(VBOX
 		-e "s;_ARCH_;$(KBUILD_TARGET_ARCH);g" \
 		-e "s;_HARDENED_;$(VBOX_WITH_HARDENING);g" \
 		-e "s;_PYTHON_;$(VBOX_WITH_PYTHON);g" \
-		-e '/#include installer-utils.sh/ {' \
-		-e "r $(PATH_ROOT)/src/VBox/Installer/linux/installer-utils.sh" \
+		-e '/#include installer-common.sh/ {' \
+		-e "r $(PATH_ROOT)/src/VBox/Installer/linux/installer-common.sh" \
 		-e 'd' \
 		-e '}' \
 		--output $@ \
