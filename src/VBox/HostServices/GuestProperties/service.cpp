@@ -63,7 +63,7 @@ namespace guestProp {
  */
 struct Property
 {
-//#define USE_STRSPACE - later.
+#define USE_STRSPACE
 #ifdef USE_STRSPACE
     /** The string space core record. */
     RTSTRSPACECORE mStrCore;
