@@ -482,9 +482,9 @@ typedef struct VBOXWDDM_QI
 /* submit cmd func */
 
 /* tooling */
-DECLINLINE(UINT) vboxWddmCalcBitsPerPixel(D3DDDIFORMAT format)
+DECLINLINE(UINT) vboxWddmCalcBitsPerPixel(D3DDDIFORMAT enmFormat)
 {
-    switch (format)
+    switch (enmFormat)
     {
         case D3DDDIFMT_R8G8B8:
             return 24;
@@ -562,14 +562,14 @@ DECLINLINE(UINT) vboxWddmCalcBitsPerPixel(D3DDDIFORMAT format)
     }
 }
 
-DECLINLINE(uint32_t) vboxWddmFormatToFourcc(D3DDDIFORMAT format)
+DECLINLINE(uint32_t) vboxWddmFormatToFourcc(D3DDDIFORMAT enmFormat)
 {
-    uint32_t uFormat = (uint32_t)format;
+    uint32_t uFormat = (uint32_t)enmFormat;
     /* assume that in case both four bytes are non-zero, this is a fourcc */
-    if ((format & 0xff000000)
-            && (format & 0x00ff0000)
-            && (format & 0x0000ff00)
-            && (format & 0x000000ff)
+    if ((uFormat & 0xff000000)
+            && (uFormat & 0x00ff0000)
+            && (uFormat & 0x0000ff00)
+            && (uFormat & 0x000000ff)
             )
         return uFormat;
     return 0;
@@ -577,11 +577,165 @@ DECLINLINE(uint32_t) vboxWddmFormatToFourcc(D3DDDIFORMAT format)
 
 #define VBOXWDDM_ROUNDBOUND(_v, _b) (((_v) + ((_b) - 1)) & ~((_b) - 1))
 
-DECLINLINE(UINT) vboxWddmCalcPitch(UINT w, UINT bitsPerPixel)
+DECLINLINE(UINT) vboxWddmCalcOffXru(UINT w, D3DDDIFORMAT enmFormat)
 {
-    UINT Pitch = bitsPerPixel * w;
-    /* pitch is now in bits, translate in bytes */
-    return VBOXWDDM_ROUNDBOUND(Pitch, 8) >> 3;
+    switch (enmFormat)
+    {
+        /* pitch for the DXT* (aka compressed) formats is the size in bytes of blocks that fill in an image width
+         * i.e. each block decompressed into 4 x 4 pixels, so we have ((Width + 3) / 4) blocks for Width.
+         * then each block has 64 bits (8 bytes) for DXT1 and 64+64 bits (16 bytes) for DXT2-DXT5, so.. : */
+        case D3DDDIFMT_DXT1:
+        {
+            UINT Pitch = (w + 3) / 4; /* <- pitch size in blocks */
+            Pitch *= 8;               /* <- pitch size in bytes */
+            return Pitch;
+        }
+        case D3DDDIFMT_DXT2:
+        case D3DDDIFMT_DXT3:
+        case D3DDDIFMT_DXT4:
+        case D3DDDIFMT_DXT5:
+        {
+            UINT Pitch = (w + 3) / 4; /* <- pitch size in blocks */
+            Pitch *= 8;               /* <- pitch size in bytes */
+            return Pitch;
+        }
+        default:
+        {
+            /* the default is just to calculate the pitch from bpp */
+            UINT bpp = vboxWddmCalcBitsPerPixel(enmFormat);
+            UINT Pitch = bpp * w;
+            /* pitch is now in bits, translate in bytes */
+            return VBOXWDDM_ROUNDBOUND(Pitch, 8) >> 3;
+        }
+    }
+}
+
+DECLINLINE(UINT) vboxWddmCalcOffXrd(UINT w, D3DDDIFORMAT enmFormat)
+{
+    switch (enmFormat)
+    {
+        /* pitch for the DXT* (aka compressed) formats is the size in bytes of blocks that fill in an image width
+         * i.e. each block decompressed into 4 x 4 pixels, so we have ((Width + 3) / 4) blocks for Width.
+         * then each block has 64 bits (8 bytes) for DXT1 and 64+64 bits (16 bytes) for DXT2-DXT5, so.. : */
+        case D3DDDIFMT_DXT1:
+        {
+            UINT Pitch = w / 4; /* <- pitch size in blocks */
+            Pitch *= 8;         /* <- pitch size in bytes */
+            return Pitch;
+        }
+        case D3DDDIFMT_DXT2:
+        case D3DDDIFMT_DXT3:
+        case D3DDDIFMT_DXT4:
+        case D3DDDIFMT_DXT5:
+        {
+            UINT Pitch = w / 4; /* <- pitch size in blocks */
+            Pitch *= 16;               /* <- pitch size in bytes */
+            return Pitch;
+        }
+        default:
+        {
+            /* the default is just to calculate the pitch from bpp */
+            UINT bpp = vboxWddmCalcBitsPerPixel(enmFormat);
+            UINT Pitch = bpp * w;
+            /* pitch is now in bits, translate in bytes */
+            return Pitch >> 3;
+        }
+    }
+}
+
+DECLINLINE(UINT) vboxWddmCalcHightPacking(D3DDDIFORMAT enmFormat)
+{
+    switch (enmFormat)
+    {
+        /* for the DXT* (aka compressed) formats each block is decompressed into 4 x 4 pixels,
+         * so packing is 4
+         */
+        case D3DDDIFMT_DXT1:
+        case D3DDDIFMT_DXT2:
+        case D3DDDIFMT_DXT3:
+        case D3DDDIFMT_DXT4:
+        case D3DDDIFMT_DXT5:
+            return 4;
+        default:
+            return 1;
+    }
+}
+
+DECLINLINE(UINT) vboxWddmCalcOffYru(UINT height, D3DDDIFORMAT enmFormat)
+{
+    UINT packing = vboxWddmCalcHightPacking(enmFormat);
+    /* round it up */
+    return (height + packing - 1) / packing;
+}
+
+DECLINLINE(UINT) vboxWddmCalcOffYrd(UINT height, D3DDDIFORMAT enmFormat)
+{
+    UINT packing = vboxWddmCalcHightPacking(enmFormat);
+    /* round it up */
+    return height / packing;
+}
+
+DECLINLINE(UINT) vboxWddmCalcPitch(UINT w, D3DDDIFORMAT enmFormat)
+{
+    return vboxWddmCalcOffXru(w, enmFormat);
+}
+
+DECLINLINE(UINT) vboxWddmCalcWidthForPitch(UINT Pitch, D3DDDIFORMAT enmFormat)
+{
+    switch (enmFormat)
+    {
+        /* pitch for the DXT* (aka compressed) formats is the size in bytes of blocks that fill in an image width
+         * i.e. each block decompressed into 4 x 4 pixels, so we have ((Width + 3) / 4) blocks for Width.
+         * then each block has 64 bits (8 bytes) for DXT1 and 64+64 bits (16 bytes) for DXT2-DXT5, so.. : */
+        case D3DDDIFMT_DXT1:
+        {
+            return (Pitch / 8) * 4;
+        }
+        case D3DDDIFMT_DXT2:
+        case D3DDDIFMT_DXT3:
+        case D3DDDIFMT_DXT4:
+        case D3DDDIFMT_DXT5:
+        {
+            return (Pitch / 16) * 4;;
+        }
+        default:
+        {
+            /* the default is just to calculate it from bpp */
+            UINT bpp = vboxWddmCalcBitsPerPixel(enmFormat);
+            return (Pitch << 3) / bpp;
+        }
+    }
+}
+
+DECLINLINE(UINT) vboxWddmCalcNumRows(UINT top, UINT bottom, D3DDDIFORMAT enmFormat)
+{
+    Assert(bottom > top);
+    top = top ? vboxWddmCalcOffYrd(top, enmFormat) : 0; /* <- just to optimize it a bit */
+    bottom = vboxWddmCalcOffYru(bottom, enmFormat);
+    return bottom - top;
+}
+
+DECLINLINE(UINT) vboxWddmCalcRowSize(UINT left, UINT right, D3DDDIFORMAT enmFormat)
+{
+    Assert(right > left);
+    left = left ? vboxWddmCalcOffXrd(left, enmFormat) : 0; /* <- just to optimize it a bit */
+    right = vboxWddmCalcOffXru(right, enmFormat);
+    return right - left;
+}
+
+DECLINLINE(UINT) vboxWddmCalcSize(UINT pitch, UINT height, D3DDDIFORMAT enmFormat)
+{
+    UINT cRows = vboxWddmCalcNumRows(0, height, enmFormat);
+    return pitch * cRows;
+}
+
+DECLINLINE(UINT) vboxWddmCalcOffXYrd(UINT x, UINT y, UINT pitch, D3DDDIFORMAT enmFormat)
+{
+    UINT offY = 0;
+    if (y)
+        offY = vboxWddmCalcSize(pitch, y, enmFormat);
+
+    return offY + vboxWddmCalcOffXrd(x, enmFormat);
 }
 
 DECLINLINE(void) vboxWddmRectUnite(RECT *pR, const RECT *pR2Unite)

@@ -698,35 +698,32 @@ NTSTATUS vboxVdmaGgDmaBltPerform(PVBOXMP_DEVEXT pDevExt, PVBOXWDDM_ALLOCATION pS
     {
         Assert(!pDstRect->left);
         Assert(!pSrcRect->left);
-        uint32_t cbOff = pDstAlloc->SurfDesc.pitch * pDstRect->top;
-        uint32_t cbSize = pDstAlloc->SurfDesc.pitch * dstHeight;
-        memcpy(pvDstSurf + cbOff, pvSrcSurf + cbOff, cbSize);
+        uint32_t cbDstOff = vboxWddmCalcOffXYrd(0 /* x */, pDstRect->top, pDstAlloc->SurfDesc.pitch, pDstAlloc->SurfDesc.format);
+        uint32_t cbSrcOff = vboxWddmCalcOffXYrd(0 /* x */, pSrcRect->top, pSrcAlloc->SurfDesc.pitch, pSrcAlloc->SurfDesc.format);
+        uint32_t cbSize = vboxWddmCalcSize(pDstAlloc->SurfDesc.pitch, dstHeight, pDstAlloc->SurfDesc.format);
+        memcpy(pvDstSurf + cbDstOff, pvSrcSurf + cbSrcOff, cbSize);
     }
     else
     {
-        uint32_t offDstLineStart = pDstRect->left * pDstAlloc->SurfDesc.bpp >> 3;
-        uint32_t offDstLineEnd = ((pDstRect->left * pDstAlloc->SurfDesc.bpp + 7) >> 3) + ((pDstAlloc->SurfDesc.bpp * dstWidth + 7) >> 3);
-        uint32_t cbDstLine = offDstLineEnd - offDstLineStart;
-        uint32_t offDstStart = pDstAlloc->SurfDesc.pitch * pDstRect->top + offDstLineStart;
+        uint32_t cbDstLine =  vboxWddmCalcRowSize(pDstRect->left, pDstRect->right, pDstAlloc->SurfDesc.format);
+        uint32_t offDstStart = vboxWddmCalcOffXYrd(pDstRect->left, pDstRect->top, pDstAlloc->SurfDesc.pitch, pDstAlloc->SurfDesc.format);
         Assert(cbDstLine <= pDstAlloc->SurfDesc.pitch);
         uint32_t cbDstSkip = pDstAlloc->SurfDesc.pitch;
         uint8_t * pvDstStart = pvDstSurf + offDstStart;
 
-        uint32_t offSrcLineStart = pSrcRect->left * pSrcAlloc->SurfDesc.bpp >> 3;
-        uint32_t offSrcLineEnd = ((pSrcRect->left * pSrcAlloc->SurfDesc.bpp + 7) >> 3) + ((pSrcAlloc->SurfDesc.bpp * srcWidth + 7) >> 3);
-        uint32_t cbSrcLine = offSrcLineEnd - offSrcLineStart;
-        uint32_t offSrcStart = pSrcAlloc->SurfDesc.pitch * pSrcRect->top + offSrcLineStart;
+        uint32_t cbSrcLine = vboxWddmCalcRowSize(pSrcRect->left, pSrcRect->right, pSrcAlloc->SurfDesc.format);
+        uint32_t offSrcStart = vboxWddmCalcOffXYrd(pSrcRect->left, pSrcRect->top, pSrcAlloc->SurfDesc.pitch, pSrcAlloc->SurfDesc.format);
         Assert(cbSrcLine <= pSrcAlloc->SurfDesc.pitch);
         uint32_t cbSrcSkip = pSrcAlloc->SurfDesc.pitch;
         const uint8_t * pvSrcStart = pvSrcSurf + offSrcStart;
 
+        uint32_t cRows = vboxWddmCalcNumRows(pDstRect->top, pDstRect->bottom, pDstAlloc->SurfDesc.format);
+
         Assert(cbDstLine == cbSrcLine);
 
-        for (uint32_t i = 0; ; ++i)
+        for (uint32_t i = 0; i < cRows; ++i)
         {
             memcpy (pvDstStart, pvSrcStart, cbDstLine);
-            if (i == dstHeight)
-                break;
             pvDstStart += cbDstSkip;
             pvSrcStart += cbSrcSkip;
         }
