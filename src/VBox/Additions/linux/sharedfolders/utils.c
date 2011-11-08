@@ -110,7 +110,11 @@ void sf_init_inode(struct sf_glob_info *sf_g, struct inode *inode,
         inode->i_fop   = &sf_dir_fops;
         /* XXX: this probably should be set to the number of entries
            in the directory plus two (. ..) */
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 2, 0)
+        set_nlink(inode, 1);
+#else
         inode->i_nlink = 1;
+#endif
     }
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
     else if (RTFS_IS_SYMLINK(attr->fMode))
@@ -119,7 +123,11 @@ void sf_init_inode(struct sf_glob_info *sf_g, struct inode *inode,
         inode->i_mode &= ~sf_g->fmask;
         inode->i_mode |= S_IFLNK;
         inode->i_op    = &sf_lnk_iops;
+# if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 2, 0)
+        set_nlink(inode, 1);
+# else
         inode->i_nlink = 1;
+# endif
     }
 #endif
     else
@@ -129,7 +137,11 @@ void sf_init_inode(struct sf_glob_info *sf_g, struct inode *inode,
         inode->i_mode |= S_IFREG;
         inode->i_op    = &sf_reg_iops;
         inode->i_fop   = &sf_reg_fops;
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 2, 0)
+        set_nlink(inode, 1);
+#else
         inode->i_nlink = 1;
+#endif
     }
 
     inode->i_uid = sf_g->uid;
