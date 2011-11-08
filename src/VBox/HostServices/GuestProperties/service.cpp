@@ -286,7 +286,7 @@ public:
      * @copydoc VBOXHGCMSVCHELPERS::pfnUnload
      * Simply deletes the service object
      */
-    static DECLCALLBACK(int) svcUnload (void *pvService)
+    static DECLCALLBACK(int) svcUnload(void *pvService)
     {
         AssertLogRelReturn(VALID_PTR(pvService), VERR_INVALID_PARAMETER);
         SELF *pSelf = reinterpret_cast<SELF *>(pvService);
@@ -301,9 +301,9 @@ public:
      * @copydoc VBOXHGCMSVCHELPERS::pfnConnect
      * Stub implementation of pfnConnect and pfnDisconnect.
      */
-    static DECLCALLBACK(int) svcConnectDisconnect (void * /* pvService */,
-                                                   uint32_t /* u32ClientID */,
-                                                   void * /* pvClient */)
+    static DECLCALLBACK(int) svcConnectDisconnect(void * /* pvService */,
+                                                  uint32_t /* u32ClientID */,
+                                                  void * /* pvClient */)
     {
         return VINF_SUCCESS;
     }
@@ -312,35 +312,35 @@ public:
      * @copydoc VBOXHGCMSVCHELPERS::pfnCall
      * Wraps to the call member function
      */
-    static DECLCALLBACK(void) svcCall (void * pvService,
-                                       VBOXHGCMCALLHANDLE callHandle,
-                                       uint32_t u32ClientID,
-                                       void *pvClient,
-                                       uint32_t u32Function,
-                                       uint32_t cParms,
-                                       VBOXHGCMSVCPARM paParms[])
+    static DECLCALLBACK(void) svcCall(void * pvService,
+                                      VBOXHGCMCALLHANDLE callHandle,
+                                      uint32_t u32ClientID,
+                                      void *pvClient,
+                                      uint32_t u32Function,
+                                      uint32_t cParms,
+                                      VBOXHGCMSVCPARM paParms[])
     {
         AssertLogRelReturnVoid(VALID_PTR(pvService));
-        LogFlowFunc (("pvService=%p, callHandle=%p, u32ClientID=%u, pvClient=%p, u32Function=%u, cParms=%u, paParms=%p\n", pvService, callHandle, u32ClientID, pvClient, u32Function, cParms, paParms));
+        LogFlowFunc(("pvService=%p, callHandle=%p, u32ClientID=%u, pvClient=%p, u32Function=%u, cParms=%u, paParms=%p\n", pvService, callHandle, u32ClientID, pvClient, u32Function, cParms, paParms));
         SELF *pSelf = reinterpret_cast<SELF *>(pvService);
         pSelf->call(callHandle, u32ClientID, pvClient, u32Function, cParms, paParms);
-        LogFlowFunc (("returning\n"));
+        LogFlowFunc(("returning\n"));
     }
 
     /**
      * @copydoc VBOXHGCMSVCHELPERS::pfnHostCall
      * Wraps to the hostCall member function
      */
-    static DECLCALLBACK(int) svcHostCall (void *pvService,
-                                          uint32_t u32Function,
-                                          uint32_t cParms,
-                                          VBOXHGCMSVCPARM paParms[])
+    static DECLCALLBACK(int) svcHostCall(void *pvService,
+                                         uint32_t u32Function,
+                                         uint32_t cParms,
+                                         VBOXHGCMSVCPARM paParms[])
     {
         AssertLogRelReturn(VALID_PTR(pvService), VERR_INVALID_PARAMETER);
-        LogFlowFunc (("pvService=%p, u32Function=%u, cParms=%u, paParms=%p\n", pvService, u32Function, cParms, paParms));
+        LogFlowFunc(("pvService=%p, u32Function=%u, cParms=%u, paParms=%p\n", pvService, u32Function, cParms, paParms));
         SELF *pSelf = reinterpret_cast<SELF *>(pvService);
         int rc = pSelf->hostCall(u32Function, cParms, paParms);
-        LogFlowFunc (("rc=%Rrc\n", rc));
+        LogFlowFunc(("rc=%Rrc\n", rc));
         return rc;
     }
 
@@ -348,9 +348,9 @@ public:
      * @copydoc VBOXHGCMSVCHELPERS::pfnRegisterExtension
      * Installs a host callback for notifications of property changes.
      */
-    static DECLCALLBACK(int) svcRegisterExtension (void *pvService,
-                                                   PFNHGCMSVCEXT pfnExtension,
-                                                   void *pvExtension)
+    static DECLCALLBACK(int) svcRegisterExtension(void *pvService,
+                                                  PFNHGCMSVCEXT pfnExtension,
+                                                  void *pvExtension)
     {
         AssertLogRelReturn(VALID_PTR(pvService), VERR_INVALID_PARAMETER);
         SELF *pSelf = reinterpret_cast<SELF *>(pvService);
@@ -377,11 +377,11 @@ private:
     int notifyHost(const char *pszName, const char *pszValue,
                    uint64_t u64Timestamp, const char *pszFlags);
 
-    void call (VBOXHGCMCALLHANDLE callHandle, uint32_t u32ClientID,
-               void *pvClient, uint32_t eFunction, uint32_t cParms,
-               VBOXHGCMSVCPARM paParms[]);
-    int hostCall (uint32_t eFunction, uint32_t cParms, VBOXHGCMSVCPARM paParms[]);
-    int uninit ();
+    void call(VBOXHGCMCALLHANDLE callHandle, uint32_t u32ClientID,
+              void *pvClient, uint32_t eFunction, uint32_t cParms,
+              VBOXHGCMSVCPARM paParms[]);
+    int hostCall(uint32_t eFunction, uint32_t cParms, VBOXHGCMSVCPARM paParms[]);
+    int uninit();
 };
 
 
