@@ -337,19 +337,8 @@ if [ "$ACTION" = "install" ]; then
     echo "uninstall.sh" >> $CONFIG_DIR/$CONFIG_FILES
 
     # XXX SELinux: allow text relocation entries
-    if [ -x /usr/bin/chcon ]; then
-        chcon -t texrel_shlib_t $INSTALLATION_DIR/VBox* > /dev/null 2>&1
-        chcon -t texrel_shlib_t $INSTALLATION_DIR/VBoxAuth.so > /dev/null 2>&1
-        chcon -t texrel_shlib_t $INSTALLATION_DIR/VirtualBox.so > /dev/null 2>&1
-        chcon -t texrel_shlib_t $INSTALLATION_DIR/components/VBox*.so > /dev/null 2>&1
-        chcon -t java_exec_t    $INSTALLATION_DIR/VirtualBox > /dev/null 2>&1
-        chcon -t java_exec_t    $INSTALLATION_DIR/VBoxSDL > /dev/null 2>&1
-        chcon -t java_exec_t    $INSTALLATION_DIR/VBoxHeadless > /dev/null 2>&1
-        chcon -t java_exec_t    $INSTALLATION_DIR/VBoxNetDHCP > /dev/null 2>&1
-        chcon -t java_exec_t    $INSTALLATION_DIR/VBoxExtPackHelperApp > /dev/null 2>&1
-        chcon -t java_exec_t    $INSTALLATION_DIR/vboxwebsrv > /dev/null 2>&1
-        chcon -t java_exec_t    $INSTALLATION_DIR/webtest > /dev/null 2>&1
-    fi
+    set_selinux_permissions "$INSTALLATION_DIR" \
+                            "$INSTALLATION_DIR"
 
     # Hardened build: Mark selected binaries set-user-ID-on-execution,
     #                 create symlinks for working around unsupported $ORIGIN/.. in VBoxC.so (setuid),

@@ -238,18 +238,7 @@ rm -f /etc/vbox/module_not_compiled
 
 # XXX SELinux: allow text relocation entries
 %if %{?rpm_redhat:1}%{!?rpm_redhat:0}
-if [ -x /usr/bin/chcon ]; then
-  chcon -t texrel_shlib_t /usr/lib/virtualbox/*VBox* > /dev/null 2>&1
-  chcon -t texrel_shlib_t /usr/lib/virtualbox/VirtualBox.so > /dev/null 2>&1
-  chcon -t texrel_shlib_t /usr/lib/virtualbox/VBoxAuth.so > /dev/null 2>&1
-  chcon -t texrel_shlib_t /usr/lib/virtualbox/components/VBox*.so > /dev/null 2>&1
-  chcon -t java_exec_t    /usr/lib/virtualbox/VirtualBox > /dev/null 2>&1
-  chcon -t java_exec_t    /usr/lib/virtualbox/VBoxSDL > /dev/null 2>&1
-  chcon -t java_exec_t    /usr/lib/virtualbox/VBoxHeadless > /dev/null 2>&1
-  chcon -t java_exec_t    /usr/lib/virtualbox/VBoxExtPackHelperApp > /dev/null 2>&1
-  chcon -t java_exec_t    /usr/lib/virtualbox/VBoxBalloonCtrl > /dev/null 2>&1
-  chcon -t java_exec_t    /usr/lib/virtualbox/vboxwebsrv > /dev/null 2>&1
-fi
+set_selinux_permissions /usr/lib/virtualbox /usr/share/virtualbox
 %endif
 
 # create users groups (disable with INSTALL_NO_GROUP=1 in /etc/default/virtualbox)
