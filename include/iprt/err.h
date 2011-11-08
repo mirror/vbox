@@ -863,6 +863,8 @@ RT_C_DECLS_END
 #define VERR_DUPLICATE                      (-98)
 /** Something is missing. */
 #define VERR_MISSING                        (-99)
+/** An unexpected (/unknown) exception was caught. */
+#define VERR_UNEXPECTED_EXCEPTION           (-22400)
 /** @} */
 
 
