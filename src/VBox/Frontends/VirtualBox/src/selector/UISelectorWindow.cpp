@@ -1053,7 +1053,7 @@ void UISelectorWindow::sltMachineStateChanged(QString strMachineId, KMachineStat
     }
 #endif /* VBOX_GUI_WITH_SYSTRAY */
 
-    sltRefreshVMItem(strMachineId, false /* aDetails */, false /* aSnapshots */, false /* aDescription */);
+    sltRefreshVMItem(strMachineId, false /* aDetails */, true /* aSnapshots */, false /* aDescription */);
 
     /* Simulate a state change signal: */
 //    m_pVMDesktop->updateDescriptionState();
