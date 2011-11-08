@@ -20,9 +20,9 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #include <VBox/HostServices/GuestPropertySvc.h>
-#include <iprt/initterm.h>
-#include <iprt/stream.h>
 #include <iprt/test.h>
+#include <iprt/time.h>
+
 
 /*******************************************************************************
 *   Global Variables                                                           *
@@ -53,10 +53,10 @@ static void callComplete(VBOXHGCMCALLHANDLE callHandle, int32_t rc)
  */
 void initTable(VBOXHGCMSVCFNTABLE *pTable, VBOXHGCMSVCHELPERS *pHelpers)
 {
-    pTable->cbSize = sizeof (VBOXHGCMSVCFNTABLE);
-    pTable->u32Version = VBOX_HGCM_SVC_VERSION;
-    pHelpers->pfnCallComplete = callComplete;
-    pTable->pHelpers = pHelpers;
+    pTable->cbSize              = sizeof (VBOXHGCMSVCFNTABLE);
+    pTable->u32Version          = VBOX_HGCM_SVC_VERSION;
+    pHelpers->pfnCallComplete   = callComplete;
+    pTable->pHelpers            = pHelpers;
 }
 
 /**
@@ -71,7 +71,7 @@ struct flagStrings
     /** How the functions should output the string again */
     const char *pcszOut;
 }
-g_validFlagStrings[] =
+g_aValidFlagStrings[] =
 {
     /* pcszIn,                                          pcszOut */
     { "  ",                                             "" },
@@ -90,7 +90,7 @@ g_validFlagStrings[] =
  * A list of invalid flag strings for testConvertFlags.  The flag conversion
  * functions should reject these.
  */
-const char *g_invalidFlagStrings[] =
+const char *g_apszInvalidFlagStrings[] =
 {
     "RDONLYHOST,,",
     "  TRANSIENT READONLY"
@@ -101,50 +101,50 @@ const char *g_invalidFlagStrings[] =
  * @returns iprt status value to indicate whether the test went as expected.
  * @note    prints its own diagnostic information to stdout.
  */
-int testConvertFlags()
+static void testConvertFlags(void)
 {
     int rc = VINF_SUCCESS;
     char *pszFlagBuffer = (char *)RTTestGuardedAllocTail(g_hTest, MAX_FLAGS_LEN);
 
-    RTPrintf("tstGuestPropSvc: Testing conversion of valid flags strings.\n");
-    for (unsigned i = 0; i < RT_ELEMENTS(g_validFlagStrings) && RT_SUCCESS(rc); ++i)
+    RTTestISub("Conversion of valid flags strings");
+    for (unsigned i = 0; i < RT_ELEMENTS(g_aValidFlagStrings) && RT_SUCCESS(rc); ++i)
     {
         uint32_t fFlags;
-        rc = validateFlags(g_validFlagStrings[i].pcszIn, &fFlags);
+        rc = validateFlags(g_aValidFlagStrings[i].pcszIn, &fFlags);
         if (RT_FAILURE(rc))
-            RTPrintf("tstGuestPropSvc: FAILURE - Failed to validate flag string '%s'.\n", g_validFlagStrings[i].pcszIn);
+            RTTestIFailed("Failed to validate flag string '%s'", g_aValidFlagStrings[i].pcszIn);
         if (RT_SUCCESS(rc))
         {
             rc = writeFlags(fFlags, pszFlagBuffer);
             if (RT_FAILURE(rc))
-                RTPrintf("tstGuestPropSvc: FAILURE - Failed to convert flag string '%s' back to a string.\n",
-                         g_validFlagStrings[i].pcszIn);
+                RTTestIFailed("Failed to convert flag string '%s' back to a string.",
+                              g_aValidFlagStrings[i].pcszIn);
         }
         if (RT_SUCCESS(rc) && (strlen(pszFlagBuffer) > MAX_FLAGS_LEN - 1))
         {
-            RTPrintf("tstGuestPropSvc: FAILURE - String '%s' converts back to a flag string which is too long.\n",
-                     g_validFlagStrings[i].pcszIn);
+            RTTestIFailed("String '%s' converts back to a flag string which is too long.\n",
+                          g_aValidFlagStrings[i].pcszIn);
             rc = VERR_TOO_MUCH_DATA;
         }
-        if (RT_SUCCESS(rc) && (strcmp(pszFlagBuffer, g_validFlagStrings[i].pcszOut) != 0))
+        if (RT_SUCCESS(rc) && (strcmp(pszFlagBuffer, g_aValidFlagStrings[i].pcszOut) != 0))
         {
-            RTPrintf("tstGuestPropSvc: FAILURE - String '%s' converts back to '%s' instead of to '%s'\n",
-                     g_validFlagStrings[i].pcszIn, pszFlagBuffer,
-                     g_validFlagStrings[i].pcszOut);
+            RTTestIFailed("String '%s' converts back to '%s' instead of to '%s'\n",
+                          g_aValidFlagStrings[i].pcszIn, pszFlagBuffer,
+                          g_aValidFlagStrings[i].pcszOut);
             rc = VERR_PARSE_ERROR;
         }
     }
     if (RT_SUCCESS(rc))
     {
-        RTPrintf("Testing rejection of invalid flags strings.\n");
-        for (unsigned i = 0; i < RT_ELEMENTS(g_invalidFlagStrings) && RT_SUCCESS(rc); ++i)
+        RTTestISub("Rejection of invalid flags strings");
+        for (unsigned i = 0; i < RT_ELEMENTS(g_apszInvalidFlagStrings) && RT_SUCCESS(rc); ++i)
         {
             uint32_t fFlags;
             /* This is required to fail. */
-            if (RT_SUCCESS(validateFlags(g_invalidFlagStrings[i], &fFlags)))
+            if (RT_SUCCESS(validateFlags(g_apszInvalidFlagStrings[i], &fFlags)))
             {
-                RTPrintf("String '%s' was incorrectly accepted as a valid flag string.\n",
-                         g_invalidFlagStrings[i]);
+                RTTestIFailed("String '%s' was incorrectly accepted as a valid flag string.\n",
+                              g_apszInvalidFlagStrings[i]);
                 rc = VERR_PARSE_ERROR;
             }
         }
@@ -152,24 +152,23 @@ int testConvertFlags()
     if (RT_SUCCESS(rc))
     {
         uint32_t u32BadFlags = ALLFLAGS << 1;
-        RTPrintf("Testing rejection of an invalid flags field.\n");
+        RTTestISub("Rejection of an invalid flags field");
         /* This is required to fail. */
         if (RT_SUCCESS(writeFlags(u32BadFlags, pszFlagBuffer)))
         {
-            RTPrintf("Flags 0x%x were incorrectly written out as '%.*s'\n",
-                     u32BadFlags, MAX_FLAGS_LEN, pszFlagBuffer);
+            RTTestIFailed("Flags 0x%x were incorrectly written out as '%.*s'\n",
+                          u32BadFlags, MAX_FLAGS_LEN, pszFlagBuffer);
             rc = VERR_PARSE_ERROR;
         }
     }
 
     RTTestGuardedFree(g_hTest, pszFlagBuffer);
-    return rc;
 }
 
 /**
  * List of property names for testSetPropsHost.
  */
-const char *apcszNameBlock[] =
+const char *g_apcszNameBlock[] =
 {
     "test/name/",
     "test name",
@@ -181,7 +180,7 @@ const char *apcszNameBlock[] =
 /**
  * List of property values for testSetPropsHost.
  */
-const char *apcszValueBlock[] =
+const char *g_apcszValueBlock[] =
 {
     "test/value/",
     "test value",
@@ -193,7 +192,7 @@ const char *apcszValueBlock[] =
 /**
  * List of property timestamps for testSetPropsHost.
  */
-uint64_t au64TimestampBlock[] =
+uint64_t g_au64TimestampBlock[] =
 {
     0, 999, 999999, UINT64_C(999999999999), 0
 };
@@ -201,7 +200,7 @@ uint64_t au64TimestampBlock[] =
 /**
  * List of property flags for testSetPropsHost.
  */
-const char *apcszFlagsBlock[] =
+const char *g_apcszFlagsBlock[] =
 {
     "",
     "readonly, transient",
@@ -215,32 +214,21 @@ const char *apcszFlagsBlock[] =
  * @returns iprt status value to indicate whether the test went as expected.
  * @note    prints its own diagnostic information to stdout.
  */
-int testSetPropsHost(VBOXHGCMSVCFNTABLE *ptable)
+static void testSetPropsHost(VBOXHGCMSVCFNTABLE *ptable)
 {
-    int rc = VINF_SUCCESS;
-    RTPrintf("Testing the SET_PROPS_HOST call.\n");
-    if (!VALID_PTR(ptable->pfnHostCall))
-    {
-        RTPrintf("Invalid pfnHostCall() pointer\n");
-        rc = VERR_INVALID_POINTER;
-    }
-    if (RT_SUCCESS(rc))
-    {
-        VBOXHGCMSVCPARM paParms[4];
-        paParms[0].setPointer ((void *) apcszNameBlock, 0);
-        paParms[1].setPointer ((void *) apcszValueBlock, 0);
-        paParms[2].setPointer ((void *) au64TimestampBlock, 0);
-        paParms[3].setPointer ((void *) apcszFlagsBlock, 0);
-        rc = ptable->pfnHostCall(ptable->pvService, SET_PROPS_HOST, 4,
-                                 paParms);
-        if (RT_FAILURE(rc))
-            RTPrintf("SET_PROPS_HOST call failed with rc=%Rrc\n", rc);
-    }
-    return rc;
+    RTTestISub("SET_PROPS_HOST");
+    RTTESTI_CHECK_RETV(RT_VALID_PTR(ptable->pfnHostCall));
+
+    VBOXHGCMSVCPARM aParms[4];
+    aParms[0].setPointer((void *)g_apcszNameBlock, 0);
+    aParms[1].setPointer((void *)g_apcszValueBlock, 0);
+    aParms[2].setPointer((void *)g_au64TimestampBlock, 0);
+    aParms[3].setPointer((void *)g_apcszFlagsBlock, 0);
+    RTTESTI_CHECK_RC(ptable->pfnHostCall(ptable->pvService, SET_PROPS_HOST, 4, &aParms[0]), VINF_SUCCESS);
 }
 
 /** Result strings for zeroth enumeration test */
-static const char *pcchEnumResult0[] =
+static const char *g_apchEnumResult0[] =
 {
     "test/name/\0test/value/\0""0\0",
     "test name\0test value\0""999\0TRANSIENT, READONLY",
@@ -250,7 +238,7 @@ static const char *pcchEnumResult0[] =
 };
 
 /** Result string sizes for zeroth enumeration test */
-static const uint32_t cchEnumResult0[] =
+static const uint32_t g_acbEnumResult0[] =
 {
     sizeof("test/name/\0test/value/\0""0\0"),
     sizeof("test name\0test value\0""999\0TRANSIENT, READONLY"),
@@ -263,14 +251,14 @@ static const uint32_t cchEnumResult0[] =
  * The size of the buffer returned by the zeroth enumeration test -
  * the - 1 at the end is because of the hidden zero terminator
  */
-static const uint32_t cchEnumBuffer0 =
-sizeof("test/name/\0test/value/\0""0\0\0"
-"test name\0test value\0""999\0TRANSIENT, READONLY\0"
-"TEST NAME\0TEST VALUE\0""999999\0RDONLYHOST\0"
-"/test/name\0/test/value\0""999999999999\0RDONLYGUEST\0\0\0\0\0") - 1;
+static const uint32_t g_cbEnumBuffer0 =
+    sizeof("test/name/\0test/value/\0""0\0\0"
+           "test name\0test value\0""999\0TRANSIENT, READONLY\0"
+           "TEST NAME\0TEST VALUE\0""999999\0RDONLYHOST\0"
+           "/test/name\0/test/value\0""999999999999\0RDONLYGUEST\0\0\0\0\0") - 1;
 
 /** Result strings for first and second enumeration test */
-static const char *pcchEnumResult1[] =
+static const char *g_apchEnumResult1[] =
 {
     "TEST NAME\0TEST VALUE\0""999999\0RDONLYHOST",
     "/test/name\0/test/value\0""999999999999\0RDONLYGUEST",
@@ -278,7 +266,7 @@ static const char *pcchEnumResult1[] =
 };
 
 /** Result string sizes for first and second enumeration test */
-static const uint32_t cchEnumResult1[] =
+static const uint32_t g_acbEnumResult1[] =
 {
     sizeof("TEST NAME\0TEST VALUE\0""999999\0RDONLYHOST"),
     sizeof("/test/name\0/test/value\0""999999999999\0RDONLYGUEST"),
@@ -289,42 +277,41 @@ static const uint32_t cchEnumResult1[] =
  * The size of the buffer returned by the first enumeration test -
  * the - 1 at the end is because of the hidden zero terminator
  */
-static const uint32_t cchEnumBuffer1 =
-sizeof("TEST NAME\0TEST VALUE\0""999999\0RDONLYHOST\0"
-"/test/name\0/test/value\0""999999999999\0RDONLYGUEST\0\0\0\0\0") - 1;
+static const uint32_t g_cbEnumBuffer1 =
+    sizeof("TEST NAME\0TEST VALUE\0""999999\0RDONLYHOST\0"
+           "/test/name\0/test/value\0""999999999999\0RDONLYGUEST\0\0\0\0\0") - 1;
 
 static const struct enumStringStruct
 {
     /** The enumeration pattern to test */
-    const char *pcszPatterns;
+    const char     *pszPatterns;
     /** The size of the pattern string */
-    const uint32_t cchPatterns;
+    const uint32_t  cchPatterns;
     /** The expected enumeration output strings */
-    const char **ppcchResult;
+    const char    **papchResult;
     /** The size of the output strings */
-    const uint32_t *pcchResult;
+    const uint32_t *pacchResult;
     /** The size of the buffer needed for the enumeration */
-    const uint32_t cchBuffer;
-}
-enumStrings[] =
+    const uint32_t  cbBuffer;
+}   g_aEnumStrings[] =
 {
     {
         "", sizeof(""),
-        pcchEnumResult0,
-        cchEnumResult0,
-        cchEnumBuffer0
+        g_apchEnumResult0,
+        g_acbEnumResult0,
+        g_cbEnumBuffer0
     },
     {
         "/*\0?E*", sizeof("/*\0?E*"),
-        pcchEnumResult1,
-        cchEnumResult1,
-        cchEnumBuffer1
+        g_apchEnumResult1,
+        g_acbEnumResult1,
+        g_cbEnumBuffer1
     },
     {
         "/*|?E*", sizeof("/*|?E*"),
-        pcchEnumResult1,
-        cchEnumResult1,
-        cchEnumBuffer1
+        g_apchEnumResult1,
+        g_acbEnumResult1,
+        g_cbEnumBuffer1
     }
 };
 
@@ -333,78 +320,55 @@ enumStrings[] =
  * @returns iprt status value to indicate whether the test went as expected.
  * @note    prints its own diagnostic information to stdout.
  */
-int testEnumPropsHost(VBOXHGCMSVCFNTABLE *ptable)
+static void testEnumPropsHost(VBOXHGCMSVCFNTABLE *ptable)
 {
-    int rc = VINF_SUCCESS;
-    RTPrintf("Testing the ENUM_PROPS_HOST call.\n");
-    if (!VALID_PTR(ptable->pfnHostCall))
+    RTTestISub("ENUM_PROPS_HOST");
+    RTTESTI_CHECK_RETV(RT_VALID_PTR(ptable->pfnHostCall));
+
+    for (unsigned i = 0; i < RT_ELEMENTS(g_aEnumStrings); ++i)
     {
-        RTPrintf("Invalid pfnHostCall() pointer\n");
-        rc = VERR_INVALID_POINTER;
-    }
-    for (unsigned i = 0; RT_SUCCESS(rc) && i < RT_ELEMENTS(enumStrings);
-         ++i)
-    {
-        char buffer[2048];
-        VBOXHGCMSVCPARM paParms[3];
-        paParms[0].setPointer ((void *) enumStrings[i].pcszPatterns,
-                               enumStrings[i].cchPatterns);
-        paParms[1].setPointer ((void *) buffer,
-                               enumStrings[i].cchBuffer - 1);
-        AssertBreakStmt(sizeof(buffer) > enumStrings[i].cchBuffer,
-                        rc = VERR_INTERNAL_ERROR);
-        if (RT_SUCCESS(rc))
+        VBOXHGCMSVCPARM aParms[3];
+        char            abBuffer[2048];
+        RTTESTI_CHECK_RETV(g_aEnumStrings[i].cbBuffer < sizeof(abBuffer));
+
+        /* Check that we get buffer overflow with a too small buffer. */
+        aParms[0].setPointer((void *)g_aEnumStrings[i].pszPatterns, g_aEnumStrings[i].cchPatterns);
+        aParms[1].setPointer((void *)abBuffer, g_aEnumStrings[i].cbBuffer - 1);
+        int rc2 = ptable->pfnHostCall(ptable->pvService, ENUM_PROPS_HOST, 3, aParms);
+        if (rc2 == VERR_BUFFER_OVERFLOW)
         {
-            /* This should fail as the buffer is too small. */
-            int rc2 = ptable->pfnHostCall(ptable->pvService, ENUM_PROPS_HOST,
-                                          3, paParms);
-            if (rc2 != VERR_BUFFER_OVERFLOW)
+            uint32_t cbNeeded;
+            RTTESTI_CHECK_RC(rc2 = aParms[2].getUInt32(&cbNeeded), VINF_SUCCESS);
+            if (RT_SUCCESS(rc2))
+                RTTESTI_CHECK_MSG(cbNeeded == g_aEnumStrings[i].cbBuffer,
+                                  ("expected %u, got %u, pattern %d\n", g_aEnumStrings[i].cbBuffer, cbNeeded, i));
+        }
+        else
+            RTTestIFailed("ENUM_PROPS_HOST returned %Rrc instead of VERR_BUFFER_OVERFLOW on too small buffer, pattern number %d.", rc2, i);
+
+        /* Make a successfull call. */
+        aParms[0].setPointer((void *)g_aEnumStrings[i].pszPatterns, g_aEnumStrings[i].cchPatterns);
+        aParms[1].setPointer((void *)abBuffer, g_aEnumStrings[i].cbBuffer);
+        rc2 = ptable->pfnHostCall(ptable->pvService, ENUM_PROPS_HOST, 3, aParms);
+        if (rc2 == VINF_SUCCESS)
+        {
+            /* Look for each of the result strings in the buffer which was returned */
+            for (unsigned j = 0; g_aEnumStrings[i].papchResult[j] != NULL; ++j)
             {
-                RTPrintf("ENUM_PROPS_HOST returned %Rrc instead of VERR_BUFFER_OVERFLOW on too small buffer, pattern number %d\n", rc2, i);
-                rc = VERR_BUFFER_OVERFLOW;
-            }
-            else
-            {
-                uint32_t cchBufferActual;
-                rc = paParms[2].getUInt32 (&cchBufferActual);
-                if (RT_SUCCESS(rc) && cchBufferActual != enumStrings[i].cchBuffer)
-                {
-                    RTPrintf("ENUM_PROPS_HOST requested a buffer size of %lu instead of %lu for pattern number %d\n", cchBufferActual, enumStrings[i].cchBuffer, i);
-                    rc = VERR_OUT_OF_RANGE;
-                }
-                else if (RT_FAILURE(rc))
-                    RTPrintf("ENUM_PROPS_HOST did not return the required buffer size properly for pattern %d\n", i);
+                bool found = false;
+                for (unsigned k = 0; !found && k <   g_aEnumStrings[i].cbBuffer
+                                                   - g_aEnumStrings[i].pacchResult[j];
+                     ++k)
+                    if (memcmp(abBuffer + k, g_aEnumStrings[i].papchResult[j],
+                        g_aEnumStrings[i].pacchResult[j]) == 0)
+                        found = true;
+                if (!found)
+                    RTTestIFailed("ENUM_PROPS_HOST did not produce the expected output for pattern %d.", i);
             }
         }
-        if (RT_SUCCESS(rc))
-        {
-            paParms[1].setPointer ((void *) buffer, enumStrings[i].cchBuffer);
-            rc = ptable->pfnHostCall(ptable->pvService, ENUM_PROPS_HOST,
-                                      3, paParms);
-            if (RT_FAILURE(rc))
-                RTPrintf("ENUM_PROPS_HOST call failed for pattern %d with rc=%Rrc\n", i, rc);
-            else
-                /* Look for each of the result strings in the buffer which was returned */
-                for (unsigned j = 0; RT_SUCCESS(rc) && enumStrings[i].ppcchResult[j] != NULL;
-                     ++j)
-                {
-                    bool found = false;
-                    for (unsigned k = 0; !found && k <   enumStrings[i].cchBuffer
-                                                       - enumStrings[i].pcchResult[j];
-                         ++k)
-                        if (memcmp(buffer + k, enumStrings[i].ppcchResult[j],
-                            enumStrings[i].pcchResult[j]) == 0)
-                            found = true;
-                    if (!found)
-                    {
-                        RTPrintf("ENUM_PROPS_HOST did not produce the expected output for pattern %d\n",
-                                 i);
-                        rc = VERR_UNRESOLVED_ERROR;
-                    }
-                }
-        }
+        else
+            RTTestIFailed("ENUM_PROPS_HOST returned %Rrc instead of VINF_SUCCESS, pattern number %d.", rc2, i);
     }
-    return rc;
 }
 
 /**
@@ -436,7 +400,7 @@ int doSetProperty(VBOXHGCMSVCFNTABLE *pTable, const char *pcszName,
     }
     else if (useSetProp)
         command = SET_PROP;
-    VBOXHGCMSVCPARM paParms[3];
+    VBOXHGCMSVCPARM aParms[3];
     /* Work around silly constant issues - we ought to allow passing
      * constant strings in the hgcm parameters. */
     char szName[MAX_NAME_LEN];
@@ -445,47 +409,17 @@ int doSetProperty(VBOXHGCMSVCFNTABLE *pTable, const char *pcszName,
     RTStrPrintf(szName, sizeof(szName), "%s", pcszName);
     RTStrPrintf(szValue, sizeof(szValue), "%s", pcszValue);
     RTStrPrintf(szFlags, sizeof(szFlags), "%s", pcszFlags);
-    paParms[0].setPointer (szName, (uint32_t)strlen(szName) + 1);
-    paParms[1].setPointer (szValue, (uint32_t)strlen(szValue) + 1);
-    paParms[2].setPointer (szFlags, (uint32_t)strlen(szFlags) + 1);
+    aParms[0].setPointer (szName, (uint32_t)strlen(szName) + 1);
+    aParms[1].setPointer (szValue, (uint32_t)strlen(szValue) + 1);
+    aParms[2].setPointer (szFlags, (uint32_t)strlen(szFlags) + 1);
     if (isHost)
         callHandle.rc = pTable->pfnHostCall(pTable->pvService, command,
-                                            useSetProp ? 3 : 2, paParms);
+                                            useSetProp ? 3 : 2, aParms);
     else
         pTable->pfnCall(pTable->pvService, &callHandle, 0, NULL, command,
-                        useSetProp ? 3 : 2, paParms);
+                        useSetProp ? 3 : 2, aParms);
     return callHandle.rc;
 }
-
-
-/** Array of properties for testing SET_PROP_HOST and _GUEST. */
-static const struct
-{
-    /** Property name */
-    const char *pcszName;
-    /** Property value */
-    const char *pcszValue;
-    /** Property flags */
-    const char *pcszFlags;
-    /** Should this be set as the host or the guest? */
-    bool isHost;
-    /** Should we use SET_PROP or SET_PROP_VALUE? */
-    bool useSetProp;
-    /** Should this succeed or be rejected with VERR_PERMISSION_DENIED? */
-    bool isAllowed;
-}
-setProperties[] =
-{
-    { "Red", "Stop!", "transient", false, true, true },
-    { "Amber", "Caution!", "", false, false, true },
-    { "Green", "Go!", "readonly", true, true, true },
-    { "Blue", "What on earth...?", "", true, false, true },
-    { "/test/name", "test", "", false, true, false },
-    { "TEST NAME", "test", "", true, true, false },
-    { "Green", "gone out...", "", false, false, false },
-    { "Green", "gone out...", "", true, false, false },
-    { NULL, NULL, NULL, false, false, false }
-};
 
 /**
  * Test the SET_PROP, SET_PROP_VALUE, SET_PROP_HOST and SET_PROP_VALUE_HOST
@@ -493,32 +427,54 @@ setProperties[] =
  * @returns iprt status value to indicate whether the test went as expected.
  * @note    prints its own diagnostic information to stdout.
  */
-int testSetProp(VBOXHGCMSVCFNTABLE *pTable)
+static void testSetProp(VBOXHGCMSVCFNTABLE *pTable)
 {
-    int rc = VINF_SUCCESS;
-    RTPrintf("Testing the SET_PROP, SET_PROP_VALUE, SET_PROP_HOST and SET_PROP_VALUE_HOST calls.\n");
-    for (unsigned i = 0; RT_SUCCESS(rc) && (setProperties[i].pcszName != NULL);
-         ++i)
+    RTTestISub("SET_PROP, SET_PROP_VALUE, SET_PROP_HOST, SET_PROP_VALUE_HOST");
+
+    /** Array of properties for testing SET_PROP_HOST and _GUEST. */
+    static const struct
     {
-        rc = doSetProperty(pTable, setProperties[i].pcszName,
-                           setProperties[i].pcszValue,
-                           setProperties[i].pcszFlags,
-                           setProperties[i].isHost,
-                           setProperties[i].useSetProp);
-        if (setProperties[i].isAllowed && RT_FAILURE(rc))
-            RTPrintf("Setting property '%s' failed with rc=%Rrc.\n",
-                     setProperties[i].pcszName, rc);
-        else if (   !setProperties[i].isAllowed
-                 && (rc != VERR_PERMISSION_DENIED))
-        {
-            RTPrintf("Setting property '%s' returned %Rrc instead of VERR_PERMISSION_DENIED.\n",
-                     setProperties[i].pcszName, rc);
-            rc = VERR_IPE_UNEXPECTED_STATUS;
-        }
-        else
-            rc = VINF_SUCCESS;
+        /** Property name */
+        const char *pcszName;
+        /** Property value */
+        const char *pcszValue;
+        /** Property flags */
+        const char *pcszFlags;
+        /** Should this be set as the host or the guest? */
+        bool isHost;
+        /** Should we use SET_PROP or SET_PROP_VALUE? */
+        bool useSetProp;
+        /** Should this succeed or be rejected with VERR_PERMISSION_DENIED? */
+        bool isAllowed;
     }
-    return rc;
+    s_aSetProperties[] =
+    {
+        { "Red", "Stop!", "transient", false, true, true },
+        { "Amber", "Caution!", "", false, false, true },
+        { "Green", "Go!", "readonly", true, true, true },
+        { "Blue", "What on earth...?", "", true, false, true },
+        { "/test/name", "test", "", false, true, false },
+        { "TEST NAME", "test", "", true, true, false },
+        { "Green", "gone out...", "", false, false, false },
+        { "Green", "gone out...", "", true, false, false },
+    };
+
+    for (unsigned i = 0; i < RT_ELEMENTS(s_aSetProperties); ++i)
+    {
+        int rc = doSetProperty(pTable,
+                               s_aSetProperties[i].pcszName,
+                               s_aSetProperties[i].pcszValue,
+                               s_aSetProperties[i].pcszFlags,
+                               s_aSetProperties[i].isHost,
+                               s_aSetProperties[i].useSetProp);
+        if (s_aSetProperties[i].isAllowed && RT_FAILURE(rc))
+            RTTestIFailed("Setting property '%s' failed with rc=%Rrc.",
+                          s_aSetProperties[i].pcszName, rc);
+        else if (   !s_aSetProperties[i].isAllowed
+                 && rc != VERR_PERMISSION_DENIED)
+            RTTestIFailed("Setting property '%s' returned %Rrc instead of VERR_PERMISSION_DENIED.",
+                          s_aSetProperties[i].pcszName, rc);
+    }
 }
 
 /**
@@ -530,186 +486,165 @@ int testSetProp(VBOXHGCMSVCFNTABLE *pTable)
  * @param   isHost    whether the DEL_PROP_HOST command should be used, rather
  *                    than the guest one
  */
-int doDelProp(VBOXHGCMSVCFNTABLE *pTable, const char *pcszName, bool isHost)
+static int doDelProp(VBOXHGCMSVCFNTABLE *pTable, const char *pcszName, bool isHost)
 {
     VBOXHGCMCALLHANDLE_TYPEDEF callHandle = { VINF_SUCCESS };
     int command = DEL_PROP;
     if (isHost)
         command = DEL_PROP_HOST;
-    VBOXHGCMSVCPARM paParms[1];
+    VBOXHGCMSVCPARM aParms[1];
     /* Work around silly constant issues - we ought to allow passing
      * constant strings in the hgcm parameters. */
     char szName[MAX_NAME_LEN];
     RTStrPrintf(szName, sizeof(szName), "%s", pcszName);
-    paParms[0].setPointer (szName, (uint32_t)strlen(szName) + 1);
+    aParms[0].setPointer (szName, (uint32_t)strlen(szName) + 1);
     if (isHost)
-        callHandle.rc = pTable->pfnHostCall(pTable->pvService, command,
-                                            1, paParms);
+        callHandle.rc = pTable->pfnHostCall(pTable->pvService, command, 1, aParms);
     else
-        pTable->pfnCall(pTable->pvService, &callHandle, 0, NULL, command,
-                        1, paParms);
+        pTable->pfnCall(pTable->pvService, &callHandle, 0, NULL, command, 1, aParms);
     return callHandle.rc;
 }
-
-/** Array of properties for testing DEL_PROP_HOST and _GUEST. */
-static const struct
-{
-    /** Property name */
-    const char *pcszName;
-    /** Should this be set as the host or the guest? */
-    bool isHost;
-    /** Should this succeed or be rejected with VERR_PERMISSION_DENIED? */
-    bool isAllowed;
-}
-delProperties[] =
-{
-    { "Red", false, true },
-    { "Amber", true, true },
-    { "Red2", false, true },
-    { "Amber2", true, true },
-    { "Green", false, false },
-    { "Green", true, false },
-    { "/test/name", false, false },
-    { "TEST NAME", true, false },
-    { NULL, false, false }
-};
 
 /**
  * Test the DEL_PROP, and DEL_PROP_HOST functions.
  * @returns iprt status value to indicate whether the test went as expected.
  * @note    prints its own diagnostic information to stdout.
  */
-int testDelProp(VBOXHGCMSVCFNTABLE *pTable)
+static void testDelProp(VBOXHGCMSVCFNTABLE *pTable)
 {
-    int rc = VINF_SUCCESS;
-    RTPrintf("Testing the DEL_PROP and DEL_PROP_HOST calls.\n");
-    for (unsigned i = 0; RT_SUCCESS(rc) && (delProperties[i].pcszName != NULL);
-         ++i)
-    {
-        rc = doDelProp(pTable, delProperties[i].pcszName,
-                       delProperties[i].isHost);
-        if (delProperties[i].isAllowed && RT_FAILURE(rc))
-            RTPrintf("Deleting property '%s' failed with rc=%Rrc.\n",
-                     delProperties[i].pcszName, rc);
-        else if (   !delProperties[i].isAllowed
-                 && (rc != VERR_PERMISSION_DENIED)
-                )
-        {
-            RTPrintf("Deleting property '%s' returned %Rrc instead of VERR_PERMISSION_DENIED.\n",
-                     delProperties[i].pcszName, rc);
-            rc = VERR_IPE_UNEXPECTED_STATUS;
-        }
-        else
-            rc = VINF_SUCCESS;
-    }
-    return rc;
-}
+    RTTestISub("DEL_PROP, DEL_PROP_HOST");
 
-/** Array of properties for testing GET_PROP_HOST. */
-static const struct
-{
-    /** Property name */
-    const char *pcszName;
-    /** What value/flags pattern do we expect back? */
-    const char *pcchValue;
-    /** What size should the value/flags array be? */
-    uint32_t cchValue;
-    /** Should this property exist? */
-    bool exists;
-    /** Do we expect a particular timestamp? */
-    bool hasTimestamp;
-    /** What timestamp if any do ex expect? */
-    uint64_t u64Timestamp;
+    /** Array of properties for testing DEL_PROP_HOST and _GUEST. */
+    static const struct
+    {
+        /** Property name */
+        const char *pcszName;
+        /** Should this be set as the host or the guest? */
+        bool isHost;
+        /** Should this succeed or be rejected with VERR_PERMISSION_DENIED? */
+        bool isAllowed;
+    }
+    s_aDelProperties[] =
+    {
+        { "Red", false, true },
+        { "Amber", true, true },
+        { "Red2", false, true },
+        { "Amber2", true, true },
+        { "Green", false, false },
+        { "Green", true, false },
+        { "/test/name", false, false },
+        { "TEST NAME", true, false },
+    };
+
+    for (unsigned i = 0; i < RT_ELEMENTS(s_aDelProperties); ++i)
+    {
+        int rc = doDelProp(pTable, s_aDelProperties[i].pcszName,
+                           s_aDelProperties[i].isHost);
+        if (s_aDelProperties[i].isAllowed && RT_FAILURE(rc))
+            RTTestIFailed("Deleting property '%s' failed with rc=%Rrc.",
+                          s_aDelProperties[i].pcszName, rc);
+        else if (   !s_aDelProperties[i].isAllowed
+                 && rc != VERR_PERMISSION_DENIED )
+            RTTestIFailed("Deleting property '%s' returned %Rrc instead of VERR_PERMISSION_DENIED.",
+                          s_aDelProperties[i].pcszName, rc);
+    }
 }
-getProperties[] =
-{
-    { "test/name/", "test/value/\0", sizeof("test/value/\0"), true, true, 0 },
-    { "test name", "test value\0TRANSIENT, READONLY",
-      sizeof("test value\0TRANSIENT, READONLY"), true, true, 999 },
-    { "TEST NAME", "TEST VALUE\0RDONLYHOST", sizeof("TEST VALUE\0RDONLYHOST"),
-      true, true, 999999 },
-    { "/test/name", "/test/value\0RDONLYGUEST",
-      sizeof("/test/value\0RDONLYGUEST"), true, true, UINT64_C(999999999999) },
-    { "Green", "Go!\0READONLY", sizeof("Go!\0READONLY"), true, false, 0 },
-    { "Blue", "What on earth...?\0", sizeof("What on earth...?\0"), true,
-      false, 0 },
-    { "Red", "", 0, false, false, 0 },
-    { NULL, NULL, 0, false, false, 0 }
-};
 
 /**
  * Test the GET_PROP_HOST function.
  * @returns iprt status value to indicate whether the test went as expected.
  * @note    prints its own diagnostic information to stdout.
  */
-int testGetProp(VBOXHGCMSVCFNTABLE *pTable)
+static void testGetProp(VBOXHGCMSVCFNTABLE *pTable)
 {
-    int rc = VINF_SUCCESS, rc2 = VINF_SUCCESS;
-    RTPrintf("Testing the GET_PROP_HOST call.\n");
-    for (unsigned i = 0; RT_SUCCESS(rc) && (getProperties[i].pcszName != NULL);
-         ++i)
+    RTTestISub("GET_PROP_HOST");
+
+    /** Array of properties for testing GET_PROP_HOST. */
+    static const struct
     {
-        VBOXHGCMSVCPARM paParms[4];
+        /** Property name */
+        const char *pcszName;
+        /** What value/flags pattern do we expect back? */
+        const char *pchValue;
+        /** What size should the value/flags array be? */
+        uint32_t cchValue;
+        /** Should this property exist? */
+        bool exists;
+        /** Do we expect a particular timestamp? */
+        bool hasTimestamp;
+        /** What timestamp if any do ex expect? */
+        uint64_t u64Timestamp;
+    }
+    s_aGetProperties[] =
+    {
+        { "test/name/", "test/value/\0", sizeof("test/value/\0"), true, true, 0 },
+        { "test name", "test value\0TRANSIENT, READONLY",
+          sizeof("test value\0TRANSIENT, READONLY"), true, true, 999 },
+        { "TEST NAME", "TEST VALUE\0RDONLYHOST", sizeof("TEST VALUE\0RDONLYHOST"),
+          true, true, 999999 },
+        { "/test/name", "/test/value\0RDONLYGUEST",
+          sizeof("/test/value\0RDONLYGUEST"), true, true, UINT64_C(999999999999) },
+        { "Green", "Go!\0READONLY", sizeof("Go!\0READONLY"), true, false, 0 },
+        { "Blue", "What on earth...?\0", sizeof("What on earth...?\0"), true,
+          false, 0 },
+        { "Red", "", 0, false, false, 0 },
+    };
+
+    for (unsigned i = 0; i < RT_ELEMENTS(s_aGetProperties); ++i)
+    {
+        VBOXHGCMSVCPARM aParms[4];
         /* Work around silly constant issues - we ought to allow passing
          * constant strings in the hgcm parameters. */
         char szName[MAX_NAME_LEN] = "";
         char szBuffer[MAX_VALUE_LEN + MAX_FLAGS_LEN];
-        AssertBreakStmt(sizeof(szBuffer) >= getProperties[i].cchValue,
-                        rc = VERR_INTERNAL_ERROR);
-        RTStrPrintf(szName, sizeof(szName), "%s", getProperties[i].pcszName);
-        paParms[0].setPointer (szName, (uint32_t)strlen(szName) + 1);
-        paParms[1].setPointer (szBuffer, sizeof(szBuffer));
-        rc2 = pTable->pfnHostCall(pTable->pvService, GET_PROP_HOST, 4,
-                                  paParms);
-        if (getProperties[i].exists && RT_FAILURE(rc2))
+        RTTESTI_CHECK_RETV(s_aGetProperties[i].cchValue < sizeof(szBuffer));
+        RTTESTI_CHECK_RETV(strlen(s_aGetProperties[i].pcszName) < sizeof(szName));
+
+        strcpy(szName, s_aGetProperties[i].pcszName);
+        aParms[0].setPointer(szName, (uint32_t)(strlen(szName) + 1));
+        aParms[1].setPointer(szBuffer, sizeof(szBuffer));
+        int rc2 = pTable->pfnHostCall(pTable->pvService, GET_PROP_HOST, 4, aParms);
+
+        if (s_aGetProperties[i].exists && RT_FAILURE(rc2))
         {
-            RTPrintf("Getting property '%s' failed with rc=%Rrc.\n",
-                     getProperties[i].pcszName, rc2);
-            rc = rc2;
+            RTTestIFailed("Getting property '%s' failed with rc=%Rrc.",
+                          s_aGetProperties[i].pcszName, rc2);
+            continue;
         }
-        else if (!getProperties[i].exists && (rc2 != VERR_NOT_FOUND))
+
+        if (!s_aGetProperties[i].exists && rc2 != VERR_NOT_FOUND)
         {
-            RTPrintf("Getting property '%s' returned %Rrc instead of VERR_NOT_FOUND.\n",
-                     getProperties[i].pcszName, rc2);
-            rc = VERR_IPE_UNEXPECTED_STATUS;
+            RTTestIFailed("Getting property '%s' returned %Rrc instead of VERR_NOT_FOUND.",
+                          s_aGetProperties[i].pcszName, rc2);
+            continue;
         }
-        if (RT_SUCCESS(rc) && getProperties[i].exists)
+
+        if (s_aGetProperties[i].exists)
         {
-            uint32_t u32ValueLen;
-            rc = paParms[3].getUInt32 (&u32ValueLen);
-            if (RT_FAILURE(rc))
-                RTPrintf("Failed to get the size of the output buffer for property '%s'\n",
-                         getProperties[i].pcszName);
-            if (   RT_SUCCESS(rc)
-                && (memcmp(szBuffer, getProperties[i].pcchValue,
-                           getProperties[i].cchValue) != 0)
-               )
+            AssertRC(rc2);
+
+            uint32_t u32ValueLen = UINT32_MAX;
+            RTTESTI_CHECK_RC(rc2 = aParms[3].getUInt32(&u32ValueLen), VINF_SUCCESS);
+            if (RT_SUCCESS(rc2))
             {
-                RTPrintf("Unexpected result '%.*s' for property '%s', expected '%.*s'.\n",
-                         u32ValueLen, szBuffer, getProperties[i].pcszName,
-                         getProperties[i].cchValue, getProperties[i].pcchValue);
-                rc = VERR_UNRESOLVED_ERROR;
+                RTTESTI_CHECK_MSG(u32ValueLen <= sizeof(szBuffer), ("u32ValueLen=%d", u32ValueLen));
+                if (memcmp(szBuffer, s_aGetProperties[i].pchValue, s_aGetProperties[i].cchValue) != 0)
+                    RTTestIFailed("Unexpected result '%.*s' for property '%s', expected '%.*s'.",
+                                  u32ValueLen, szBuffer, s_aGetProperties[i].pcszName,
+                                  s_aGetProperties[i].cchValue, s_aGetProperties[i].pchValue);
             }
-            if (RT_SUCCESS(rc) && getProperties[i].hasTimestamp)
+
+            if (s_aGetProperties[i].hasTimestamp)
             {
-                uint64_t u64Timestamp;
-                rc = paParms[2].getUInt64 (&u64Timestamp);
-                if (RT_FAILURE(rc))
-                    RTPrintf("Failed to get the timestamp for property '%s'\n",
-                             getProperties[i].pcszName);
-                if (   RT_SUCCESS(rc)
-                    && (u64Timestamp != getProperties[i].u64Timestamp)
-                   )
-                {
-                    RTPrintf("Bad timestamp %llu for property '%s', expected %llu.\n",
-                             u64Timestamp, getProperties[i].pcszName,
-                             getProperties[i].u64Timestamp);
-                    rc = VERR_UNRESOLVED_ERROR;
-                }
+                uint64_t u64Timestamp = UINT64_MAX;
+                RTTESTI_CHECK_RC(rc2 = aParms[2].getUInt64(&u64Timestamp), VINF_SUCCESS);
+                if (u64Timestamp != s_aGetProperties[i].u64Timestamp)
+                    RTTestIFailed("Bad timestamp %llu for property '%s', expected %llu.",
+                                  u64Timestamp, s_aGetProperties[i].pcszName,
+                                  s_aGetProperties[i].u64Timestamp);
             }
         }
     }
-    return rc;
 }
 
 /** Array of properties for testing GET_PROP_HOST. */
@@ -718,9 +653,9 @@ static const struct
     /** Buffer returned */
     const char *pchBuffer;
     /** What size should the buffer be? */
-    uint32_t cchBuffer;
+    uint32_t cbBuffer;
 }
-getNotifications[] =
+g_aGetNotifications[] =
 {
     { "Red\0Stop!\0TRANSIENT", sizeof("Red\0Stop!\0TRANSIENT") },
     { "Amber\0Caution!\0", sizeof("Amber\0Caution!\0") },
@@ -728,7 +663,6 @@ getNotifications[] =
     { "Blue\0What on earth...?\0", sizeof("Blue\0What on earth...?\0") },
     { "Red\0\0", sizeof("Red\0\0") },
     { "Amber\0\0", sizeof("Amber\0\0") },
-    { NULL, 0 }
 };
 
 /**
@@ -736,60 +670,52 @@ getNotifications[] =
  * @returns iprt status value to indicate whether the test went as expected.
  * @note    prints its own diagnostic information to stdout.
  */
-int testGetNotification(VBOXHGCMSVCFNTABLE *pTable)
+static void testGetNotification(VBOXHGCMSVCFNTABLE *pTable)
 {
-    int rc = VINF_SUCCESS;
-    VBOXHGCMCALLHANDLE_TYPEDEF callHandle = { VINF_SUCCESS };
-    char achBuffer[MAX_NAME_LEN + MAX_VALUE_LEN + MAX_FLAGS_LEN];
-    static char szPattern[] = "";
-
-    RTPrintf("Testing the GET_NOTIFICATION call.\n");
-    uint64_t u64Timestamp;
-    uint32_t u32Size = 0;
-    VBOXHGCMSVCPARM paParms[4];
+    RTTestISub("GET_NOTIFICATION");
 
     /* Test "buffer too small" */
-    u64Timestamp = 1;
-    paParms[0].setPointer ((void *) szPattern, sizeof(szPattern));
-    paParms[1].setUInt64 (u64Timestamp);
-    paParms[2].setPointer ((void *) achBuffer, getNotifications[0].cchBuffer - 1);
-    pTable->pfnCall(pTable->pvService, &callHandle, 0, NULL,
-                    GET_NOTIFICATION, 4, paParms);
+    char                        achBuffer[MAX_NAME_LEN + MAX_VALUE_LEN + MAX_FLAGS_LEN];
+    static char                 s_szPattern[] = "";
+    VBOXHGCMCALLHANDLE_TYPEDEF  callHandle = { VINF_SUCCESS };
+    VBOXHGCMSVCPARM             aParms[4];
+    aParms[0].setPointer((void *)s_szPattern, sizeof(s_szPattern));
+    aParms[1].setUInt64(1);
+    aParms[2].setPointer((void *)achBuffer, g_aGetNotifications[0].cbBuffer - 1);
+    pTable->pfnCall(pTable->pvService, &callHandle, 0, NULL, GET_NOTIFICATION, 4, aParms);
+
+    uint32_t cbRetNeeded;
     if (   callHandle.rc != VERR_BUFFER_OVERFLOW
-        || RT_FAILURE(paParms[3].getUInt32 (&u32Size))
-        || u32Size != getNotifications[0].cchBuffer
+        || RT_FAILURE(aParms[3].getUInt32(&cbRetNeeded))
+        || cbRetNeeded != g_aGetNotifications[0].cbBuffer
        )
     {
-        RTPrintf("Getting notification for property '%s' with a too small buffer did not fail correctly.\n",
-                 getNotifications[0].pchBuffer);
-        rc = VERR_UNRESOLVED_ERROR;
+        RTTestIFailed("Getting notification for property '%s' with a too small buffer did not fail correctly.",
+                      g_aGetNotifications[0].pchBuffer);
+        return;
     }
 
     /* Test successful notification queries.  Start with an unknown timestamp
      * to get the oldest available notification. */
-    u64Timestamp = 1;
-    for (unsigned i = 0; RT_SUCCESS(rc) && (getNotifications[i].pchBuffer != NULL);
-         ++i)
+    uint64_t u64Timestamp = 1;
+    for (unsigned i = 0; i < RT_ELEMENTS(g_aGetNotifications); ++i)
     {
-        paParms[0].setPointer ((void *) szPattern, sizeof(szPattern));
-        paParms[1].setUInt64 (u64Timestamp);
-        paParms[2].setPointer ((void *) achBuffer, sizeof(achBuffer));
-        pTable->pfnCall(pTable->pvService, &callHandle, 0, NULL,
-                        GET_NOTIFICATION, 4, paParms);
+        aParms[0].setPointer((void *)s_szPattern, sizeof(s_szPattern));
+        aParms[1].setUInt64(u64Timestamp);
+        aParms[2].setPointer((void *)achBuffer, sizeof(achBuffer));
+        pTable->pfnCall(pTable->pvService, &callHandle, 0, NULL, GET_NOTIFICATION, 4, aParms);
         if (   RT_FAILURE(callHandle.rc)
             || (i == 0 && callHandle.rc != VWRN_NOT_FOUND)
-            || RT_FAILURE(paParms[1].getUInt64 (&u64Timestamp))
-            || RT_FAILURE(paParms[3].getUInt32 (&u32Size))
-            || u32Size != getNotifications[i].cchBuffer
-            || memcmp(achBuffer, getNotifications[i].pchBuffer, u32Size) != 0
+            || RT_FAILURE(aParms[1].getUInt64(&u64Timestamp))
+            || RT_FAILURE(aParms[3].getUInt32(&cbRetNeeded))
+            || cbRetNeeded != g_aGetNotifications[i].cbBuffer
+            || memcmp(achBuffer, g_aGetNotifications[i].pchBuffer, cbRetNeeded) != 0
            )
         {
-            RTPrintf("Failed to get notification for property '%s' (rc=%Rrc).\n",
-                     getNotifications[i].pchBuffer, rc);
-            rc = VERR_UNRESOLVED_ERROR;
+            RTTestIFailed("Failed to get notification for property '%s' (rc=%Rrc).",
+                          g_aGetNotifications[i].pchBuffer, callHandle.rc);
         }
     }
-    return rc;
 }
 
 /** Parameters for the asynchronous guest notification call */
@@ -798,99 +724,77 @@ struct asyncNotification_
     /** Call parameters */
     VBOXHGCMSVCPARM aParms[4];
     /** Result buffer */
-    char chBuffer[MAX_NAME_LEN + MAX_VALUE_LEN + MAX_FLAGS_LEN];
+    char abBuffer[MAX_NAME_LEN + MAX_VALUE_LEN + MAX_FLAGS_LEN];
     /** Return value */
     VBOXHGCMCALLHANDLE_TYPEDEF callHandle;
-} asyncNotification;
+} g_AsyncNotification;
 
 /**
  * Set up the test for the asynchronous GET_NOTIFICATION function.
- * @returns iprt status value to indicate whether the test went as expected.
- * @note    prints its own diagnostic information to stdout.
  */
-int setupAsyncNotification(VBOXHGCMSVCFNTABLE *pTable)
+static void setupAsyncNotification(VBOXHGCMSVCFNTABLE *pTable)
 {
-    int rc = VINF_SUCCESS;
+    RTTestISub("Asynchronous GET_NOTIFICATION call with no notifications are available");
+    static char s_szPattern[] = "";
 
-    RTPrintf("Testing the asynchronous GET_NOTIFICATION call with no notifications are available.\n");
-    uint64_t u64Timestamp = 0;
-    uint32_t u32Size = 0;
-    static char szPattern[] = "";
-
-    asyncNotification.aParms[0].setPointer ((void *) szPattern, sizeof(szPattern));
-    asyncNotification.aParms[1].setUInt64 (u64Timestamp);
-    asyncNotification.aParms[2].setPointer ((void *) asyncNotification.chBuffer,
-                                            sizeof(asyncNotification.chBuffer));
-    asyncNotification.callHandle.rc = VINF_HGCM_ASYNC_EXECUTE;
-    pTable->pfnCall(pTable->pvService, &asyncNotification.callHandle, 0, NULL,
-                    GET_NOTIFICATION, 4, asyncNotification.aParms);
-    if (RT_FAILURE(asyncNotification.callHandle.rc))
-    {
-        RTPrintf("GET_NOTIFICATION call failed, rc=%Rrc.\n", asyncNotification.callHandle.rc);
-        rc = VERR_UNRESOLVED_ERROR;
-    }
-    else if (asyncNotification.callHandle.rc != VINF_HGCM_ASYNC_EXECUTE)
-    {
-        RTPrintf("GET_NOTIFICATION call completed when no new notifications should be available.\n");
-        rc = VERR_UNRESOLVED_ERROR;
-    }
-    return rc;
+    g_AsyncNotification.aParms[0].setPointer((void *)s_szPattern, sizeof(s_szPattern));
+    g_AsyncNotification.aParms[1].setUInt64(0);
+    g_AsyncNotification.aParms[2].setPointer((void *)g_AsyncNotification.abBuffer,
+                                             sizeof(g_AsyncNotification.abBuffer));
+    g_AsyncNotification.callHandle.rc = VINF_HGCM_ASYNC_EXECUTE;
+    pTable->pfnCall(pTable->pvService, &g_AsyncNotification.callHandle, 0, NULL,
+                    GET_NOTIFICATION, 4, g_AsyncNotification.aParms);
+    if (RT_FAILURE(g_AsyncNotification.callHandle.rc))
+        RTTestIFailed("GET_NOTIFICATION call failed, rc=%Rrc.", g_AsyncNotification.callHandle.rc);
+    else if (g_AsyncNotification.callHandle.rc != VINF_HGCM_ASYNC_EXECUTE)
+        RTTestIFailed("GET_NOTIFICATION call completed when no new notifications should be available.");
 }
 
 /**
  * Test the asynchronous GET_NOTIFICATION function.
- * @returns iprt status value to indicate whether the test went as expected.
- * @note    prints its own diagnostic information to stdout.
  */
-int testAsyncNotification(VBOXHGCMSVCFNTABLE *pTable)
+static void testAsyncNotification(VBOXHGCMSVCFNTABLE *pTable)
 {
-    int rc = VINF_SUCCESS;
     uint64_t u64Timestamp;
     uint32_t u32Size;
-    if (   asyncNotification.callHandle.rc != VINF_SUCCESS
-        || RT_FAILURE(asyncNotification.aParms[1].getUInt64 (&u64Timestamp))
-        || RT_FAILURE(asyncNotification.aParms[3].getUInt32 (&u32Size))
-        || u32Size != getNotifications[0].cchBuffer
-        || memcmp(asyncNotification.chBuffer, getNotifications[0].pchBuffer, u32Size) != 0
+    if (   g_AsyncNotification.callHandle.rc != VINF_SUCCESS
+        || RT_FAILURE(g_AsyncNotification.aParms[1].getUInt64(&u64Timestamp))
+        || RT_FAILURE(g_AsyncNotification.aParms[3].getUInt32(&u32Size))
+        || u32Size != g_aGetNotifications[0].cbBuffer
+        || memcmp(g_AsyncNotification.abBuffer, g_aGetNotifications[0].pchBuffer, u32Size) != 0
        )
     {
-        RTPrintf("Asynchronous GET_NOTIFICATION call did not complete as expected, rc=%Rrc\n",
-                 asyncNotification.callHandle.rc);
-        rc = VERR_UNRESOLVED_ERROR;
+        RTTestIFailed("Asynchronous GET_NOTIFICATION call did not complete as expected, rc=%Rrc.",
+                      g_AsyncNotification.callHandle.rc);
     }
-    return rc;
 }
 
-/** Array of properties for testing SET_PROP_HOST and _GUEST with the
- * READONLYGUEST global flag set. */
-static const struct
+
+static void test2(void)
 {
-    /** Property name */
-    const char *pcszName;
-    /** Property value */
-    const char *pcszValue;
-    /** Property flags */
-    const char *pcszFlags;
-    /** Should this be set as the host or the guest? */
-    bool isHost;
-    /** Should we use SET_PROP or SET_PROP_VALUE? */
-    bool useSetProp;
-    /** Should this succeed or be rejected with VERR_ (NOT VINF_!)
-     * PERMISSION_DENIED?  The global check is done after the property one. */
-    bool isAllowed;
+    VBOXHGCMSVCFNTABLE  svcTable;
+    VBOXHGCMSVCHELPERS  svcHelpers;
+    initTable(&svcTable, &svcHelpers);
+
+    /* The function is inside the service, not HGCM. */
+    RTTESTI_CHECK_RC_OK_RETV(VBoxHGCMSvcLoad(&svcTable));
+
+    testSetPropsHost(&svcTable);
+    testEnumPropsHost(&svcTable);
+
+    /* Set up the asynchronous notification test */
+    setupAsyncNotification(&svcTable);
+    testSetProp(&svcTable);
+    RTTestISub("Checking the data returned by the asynchronous notification call");
+    testAsyncNotification(&svcTable); /* Our previous notification call should have completed by now. */
+
+    testDelProp(&svcTable);
+    testGetProp(&svcTable);
+    testGetNotification(&svcTable);
+
+    /* Cleanup */
+    RTTESTI_CHECK_RC_OK(svcTable.pfnUnload(svcTable.pvService));
 }
-setPropertiesROGuest[] =
-{
-    { "Red", "Stop!", "transient", false, true, true },
-    { "Amber", "Caution!", "", false, false, true },
-    { "Green", "Go!", "readonly", true, true, true },
-    { "Blue", "What on earth...?", "", true, false, true },
-    { "/test/name", "test", "", false, true, true },
-    { "TEST NAME", "test", "", true, true, true },
-    { "Green", "gone out...", "", false, false, false },
-    { "Green", "gone out....", "", true, false, false },
-    { NULL, NULL, NULL, false, false, true }
-};
 
 /**
  * Set the global flags value by calling the service
@@ -899,20 +803,18 @@ setPropertiesROGuest[] =
  * @param   pTable  the service instance handle
  * @param   eFlags  the flags to set
  */
-int doSetGlobalFlags(VBOXHGCMSVCFNTABLE *pTable, ePropFlags eFlags)
+static int doSetGlobalFlags(VBOXHGCMSVCFNTABLE *pTable, ePropFlags eFlags)
 {
     VBOXHGCMSVCPARM paParm;
     paParm.setUInt32(eFlags);
-    int rc = pTable->pfnHostCall(pTable->pvService, SET_GLOBAL_FLAGS_HOST,
-                                 1, &paParm);
+    int rc = pTable->pfnHostCall(pTable->pvService, SET_GLOBAL_FLAGS_HOST, 1, &paParm);
     if (RT_FAILURE(rc))
     {
         char szFlags[MAX_FLAGS_LEN];
         if (RT_FAILURE(writeFlags(eFlags, szFlags)))
-            RTPrintf("Failed to set the global flags.\n");
+            RTTestIFailed("Failed to set the global flags.");
         else
-            RTPrintf("Failed to set the global flags \"%s\".\n",
-                     szFlags);
+            RTTestIFailed("Failed to set the global flags \"%s\".", szFlags);
     }
     return rc;
 }
@@ -923,182 +825,242 @@ int doSetGlobalFlags(VBOXHGCMSVCFNTABLE *pTable, ePropFlags eFlags)
  * @returns iprt status value to indicate whether the test went as expected.
  * @note    prints its own diagnostic information to stdout.
  */
-int testSetPropROGuest(VBOXHGCMSVCFNTABLE *pTable)
+static void testSetPropROGuest(VBOXHGCMSVCFNTABLE *pTable)
 {
-    int rc = VINF_SUCCESS;
-    RTPrintf("Testing the SET_PROP, SET_PROP_VALUE, SET_PROP_HOST and SET_PROP_VALUE_HOST calls with READONLYGUEST set globally.\n");
-    rc = VBoxHGCMSvcLoad(pTable);
-    if (RT_FAILURE(rc))
-        RTPrintf("Failed to start the HGCM service.\n");
-    if (RT_SUCCESS(rc))
-        rc = doSetGlobalFlags(pTable, RDONLYGUEST);
-    for (unsigned i = 0; RT_SUCCESS(rc) && (setPropertiesROGuest[i].pcszName != NULL);
-         ++i)
-    {
-        rc = doSetProperty(pTable, setPropertiesROGuest[i].pcszName,
-                           setPropertiesROGuest[i].pcszValue,
-                           setPropertiesROGuest[i].pcszFlags,
-                           setPropertiesROGuest[i].isHost,
-                           setPropertiesROGuest[i].useSetProp);
-        if (setPropertiesROGuest[i].isAllowed && RT_FAILURE(rc))
-            RTPrintf("Setting property '%s' to '%s' failed with rc=%Rrc.\n",
-                     setPropertiesROGuest[i].pcszName,
-                     setPropertiesROGuest[i].pcszValue, rc);
-        else if (   !setPropertiesROGuest[i].isAllowed
-                 && (rc != VERR_PERMISSION_DENIED))
-        {
-            RTPrintf("Setting property '%s' to '%s' returned %Rrc instead of VERR_PERMISSION_DENIED.\n",
-                     setPropertiesROGuest[i].pcszName,
-                     setPropertiesROGuest[i].pcszValue, rc);
-            rc = VERR_IPE_UNEXPECTED_STATUS;
-        }
-        else if (   !setPropertiesROGuest[i].isHost
-                 && setPropertiesROGuest[i].isAllowed
-                 && (rc != VINF_PERMISSION_DENIED))
-        {
-            RTPrintf("Setting property '%s' to '%s' returned %Rrc instead of VINF_PERMISSION_DENIED.\n",
-                     setPropertiesROGuest[i].pcszName,
-                     setPropertiesROGuest[i].pcszValue, rc);
-            rc = VERR_IPE_UNEXPECTED_STATUS;
-        }
-        else
-            rc = VINF_SUCCESS;
-    }
-    if (RT_FAILURE(pTable->pfnUnload(pTable->pvService)))
-        RTPrintf("Failed to unload the HGCM service.\n");
-    return rc;
-}
+    RTTestISub("SET_PROP, SET_PROP_VALUE, SET_PROP_HOST and SET_PROP_VALUE_HOST calls with READONLYGUEST set globally");
 
-/** Array of properties for testing DEL_PROP_HOST and _GUEST with
- * READONLYGUEST set globally. */
-static const struct
-{
-    /** Property name */
-    const char *pcszName;
-    /** Should this be deleted as the host (or the guest)? */
-    bool isHost;
-    /** Should this property be created first?  (As host, obviously) */
-    bool shouldCreate;
-    /** And with what flags? */
-    const char *pcszFlags;
-    /** Should this succeed or be rejected with VERR_ (NOT VINF_!)
-     * PERMISSION_DENIED?  The global check is done after the property one. */
-    bool isAllowed;
+    /** Array of properties for testing SET_PROP_HOST and _GUEST with the
+     * READONLYGUEST global flag set. */
+    static const struct
+    {
+        /** Property name */
+        const char *pcszName;
+        /** Property value */
+        const char *pcszValue;
+        /** Property flags */
+        const char *pcszFlags;
+        /** Should this be set as the host or the guest? */
+        bool isHost;
+        /** Should we use SET_PROP or SET_PROP_VALUE? */
+        bool useSetProp;
+        /** Should this succeed or be rejected with VERR_ (NOT VINF_!)
+         * PERMISSION_DENIED?  The global check is done after the property one. */
+        bool isAllowed;
+    }
+    s_aSetPropertiesROGuest[] =
+    {
+        { "Red", "Stop!", "transient", false, true, true },
+        { "Amber", "Caution!", "", false, false, true },
+        { "Green", "Go!", "readonly", true, true, true },
+        { "Blue", "What on earth...?", "", true, false, true },
+        { "/test/name", "test", "", false, true, true },
+        { "TEST NAME", "test", "", true, true, true },
+        { "Green", "gone out...", "", false, false, false },
+        { "Green", "gone out....", "", true, false, false },
+    };
+
+    RTTESTI_CHECK_RC_OK_RETV(VBoxHGCMSvcLoad(pTable));
+    int rc = doSetGlobalFlags(pTable, RDONLYGUEST);
+    if (RT_SUCCESS(rc))
+    {
+        for (unsigned i = 0; i < RT_ELEMENTS(s_aSetPropertiesROGuest); ++i)
+        {
+            rc = doSetProperty(pTable, s_aSetPropertiesROGuest[i].pcszName,
+                               s_aSetPropertiesROGuest[i].pcszValue,
+                               s_aSetPropertiesROGuest[i].pcszFlags,
+                               s_aSetPropertiesROGuest[i].isHost,
+                               s_aSetPropertiesROGuest[i].useSetProp);
+            if (s_aSetPropertiesROGuest[i].isAllowed && RT_FAILURE(rc))
+                RTTestIFailed("Setting property '%s' to '%s' failed with rc=%Rrc.",
+                              s_aSetPropertiesROGuest[i].pcszName,
+                              s_aSetPropertiesROGuest[i].pcszValue, rc);
+            else if (   !s_aSetPropertiesROGuest[i].isAllowed
+                     && rc != VERR_PERMISSION_DENIED)
+                RTTestIFailed("Setting property '%s' to '%s' returned %Rrc instead of VERR_PERMISSION_DENIED.\n",
+                              s_aSetPropertiesROGuest[i].pcszName,
+                              s_aSetPropertiesROGuest[i].pcszValue, rc);
+            else if (   !s_aSetPropertiesROGuest[i].isHost
+                     && s_aSetPropertiesROGuest[i].isAllowed
+                     && rc != VINF_PERMISSION_DENIED)
+                RTTestIFailed("Setting property '%s' to '%s' returned %Rrc instead of VINF_PERMISSION_DENIED.\n",
+                              s_aSetPropertiesROGuest[i].pcszName,
+                              s_aSetPropertiesROGuest[i].pcszValue, rc);
+        }
+    }
+    RTTESTI_CHECK_RC_OK(pTable->pfnUnload(pTable->pvService));
 }
-delPropertiesROGuest[] =
-{
-    { "Red", true, true, "", true },
-    { "Amber", false, true, "", true },
-    { "Red2", true, false, "", true },
-    { "Amber2", false, false, "", true },
-    { "Red3", true, true, "READONLY", false },
-    { "Amber3", false, true, "READONLY", false },
-    { "Red4", true, true, "RDONLYHOST", false },
-    { "Amber4", false, true, "RDONLYHOST", true },
-    { NULL, false, false, "", false }
-};
 
 /**
  * Test the DEL_PROP, and DEL_PROP_HOST functions.
  * @returns iprt status value to indicate whether the test went as expected.
  * @note    prints its own diagnostic information to stdout.
  */
-int testDelPropROGuest(VBOXHGCMSVCFNTABLE *pTable)
+static void testDelPropROGuest(VBOXHGCMSVCFNTABLE *pTable)
 {
-    int rc = VINF_SUCCESS;
-    RTPrintf("Testing the DEL_PROP and DEL_PROP_HOST calls with RDONLYGUEST set globally.\n");
-    rc = VBoxHGCMSvcLoad(pTable);
-    if (RT_FAILURE(rc))
-        RTPrintf("Failed to start the HGCM service.\n");
-    if (RT_SUCCESS(rc))
-        rc = doSetGlobalFlags(pTable, RDONLYGUEST);
-    for (unsigned i = 0;    RT_SUCCESS(rc)
-                         && (delPropertiesROGuest[i].pcszName != NULL); ++i)
+    RTTestISub("DEL_PROP and DEL_PROP_HOST calls with RDONLYGUEST set globally");
+
+    /** Array of properties for testing DEL_PROP_HOST and _GUEST with
+     * READONLYGUEST set globally. */
+    static const struct
     {
-        if (RT_SUCCESS(rc) && delPropertiesROGuest[i].shouldCreate)
-            rc = doSetProperty(pTable, delPropertiesROGuest[i].pcszName,
-                               "none", delPropertiesROGuest[i].pcszFlags,
-                               true, true);
-        rc = doDelProp(pTable, delPropertiesROGuest[i].pcszName,
-                       delPropertiesROGuest[i].isHost);
-        if (delPropertiesROGuest[i].isAllowed && RT_FAILURE(rc))
-            RTPrintf("Deleting property '%s' failed with rc=%Rrc.\n",
-                     delPropertiesROGuest[i].pcszName, rc);
-        else if (   !delPropertiesROGuest[i].isAllowed
-                 && (rc != VERR_PERMISSION_DENIED)
-                )
-        {
-            RTPrintf("Deleting property '%s' returned %Rrc instead of VERR_PERMISSION_DENIED.\n",
-                     delPropertiesROGuest[i].pcszName, rc);
-            rc = VERR_IPE_UNEXPECTED_STATUS;
-        }
-        else if (   !delPropertiesROGuest[i].isHost
-                 && delPropertiesROGuest[i].shouldCreate
-                 && delPropertiesROGuest[i].isAllowed
-                 && (rc != VINF_PERMISSION_DENIED))
-        {
-            RTPrintf("Deleting property '%s' as guest returned %Rrc instead of VINF_PERMISSION_DENIED.\n",
-                     delPropertiesROGuest[i].pcszName, rc);
-            rc = VERR_IPE_UNEXPECTED_STATUS;
-        }
-        else
-            rc = VINF_SUCCESS;
+        /** Property name */
+        const char *pcszName;
+        /** Should this be deleted as the host (or the guest)? */
+        bool isHost;
+        /** Should this property be created first?  (As host, obviously) */
+        bool shouldCreate;
+        /** And with what flags? */
+        const char *pcszFlags;
+        /** Should this succeed or be rejected with VERR_ (NOT VINF_!)
+         * PERMISSION_DENIED?  The global check is done after the property one. */
+        bool isAllowed;
     }
-    if (RT_FAILURE(pTable->pfnUnload(pTable->pvService)))
-        RTPrintf("Failed to unload the HGCM service.\n");
-    return rc;
+    s_aDelPropertiesROGuest[] =
+    {
+        { "Red", true, true, "", true },
+        { "Amber", false, true, "", true },
+        { "Red2", true, false, "", true },
+        { "Amber2", false, false, "", true },
+        { "Red3", true, true, "READONLY", false },
+        { "Amber3", false, true, "READONLY", false },
+        { "Red4", true, true, "RDONLYHOST", false },
+        { "Amber4", false, true, "RDONLYHOST", true },
+    };
+
+    RTTESTI_CHECK_RC_OK_RETV(VBoxHGCMSvcLoad(pTable));
+    int rc = doSetGlobalFlags(pTable, RDONLYGUEST);
+    if (RT_SUCCESS(rc))
+    {
+        for (unsigned i = 0; i < RT_ELEMENTS(s_aDelPropertiesROGuest); ++i)
+        {
+            if (s_aDelPropertiesROGuest[i].shouldCreate)
+                rc = doSetProperty(pTable, s_aDelPropertiesROGuest[i].pcszName,
+                                   "none", s_aDelPropertiesROGuest[i].pcszFlags,
+                                   true, true);
+            rc = doDelProp(pTable, s_aDelPropertiesROGuest[i].pcszName,
+                           s_aDelPropertiesROGuest[i].isHost);
+            if (s_aDelPropertiesROGuest[i].isAllowed && RT_FAILURE(rc))
+                RTTestIFailed("Deleting property '%s' failed with rc=%Rrc.",
+                              s_aDelPropertiesROGuest[i].pcszName, rc);
+            else if (   !s_aDelPropertiesROGuest[i].isAllowed
+                     && rc != VERR_PERMISSION_DENIED)
+                RTTestIFailed("Deleting property '%s' returned %Rrc instead of VERR_PERMISSION_DENIED.",
+                              s_aDelPropertiesROGuest[i].pcszName, rc);
+            else if (   !s_aDelPropertiesROGuest[i].isHost
+                     && s_aDelPropertiesROGuest[i].shouldCreate
+                     && s_aDelPropertiesROGuest[i].isAllowed
+                     && rc != VINF_PERMISSION_DENIED)
+                RTTestIFailed("Deleting property '%s' as guest returned %Rrc instead of VINF_PERMISSION_DENIED.",
+                              s_aDelPropertiesROGuest[i].pcszName, rc);
+        }
+    }
+    RTTESTI_CHECK_RC_OK(pTable->pfnUnload(pTable->pvService));
 }
 
-int main(int argc, char **argv)
+static void test3(void)
 {
     VBOXHGCMSVCFNTABLE  svcTable;
     VBOXHGCMSVCHELPERS  svcHelpers;
-    RTEXITCODE          rcExit;
+    initTable(&svcTable, &svcHelpers);
+    testSetPropROGuest(&svcTable);
+    testDelPropROGuest(&svcTable);
+}
 
-    rcExit  = RTTestInitAndCreate("tstGuestPropSvc", &g_hTest);
+
+static void test4(void)
+{
+    RTTestISub("Max properties");
+
+    VBOXHGCMSVCFNTABLE  svcTable;
+    VBOXHGCMSVCHELPERS  svcHelpers;
+    initTable(&svcTable, &svcHelpers);
+    RTTESTI_CHECK_RC_OK_RETV(VBoxHGCMSvcLoad(&svcTable));
+
+    /* Insert the max number of properties. */
+    static char const   s_szPropFmt[] = "/MyProperties/Sub/Sub/Sub/Sub/Sub/Sub/Sub/PropertyNo#%u";
+    char                szProp[80];
+    unsigned            cProps = 0;
+    for (;;)
+    {
+        RTStrPrintf(szProp, sizeof(szProp), s_szPropFmt, cProps);
+        int rc = doSetProperty(&svcTable, szProp, "myvalue", "", true, true);
+        if (rc == VERR_TOO_MUCH_DATA)
+            break;
+        if (RT_FAILURE(rc))
+        {
+            RTTestIFailed("Unexpected error %Rrc setting property number %u", rc, cProps);
+            break;
+        }
+        cProps++;
+    }
+    RTTestIValue("Max Properties", cProps, RTTESTUNIT_OCCURRENCES);
+
+    /* Touch them all again. */
+    for (unsigned iProp = 0; iProp < cProps; iProp++)
+    {
+        RTStrPrintf(szProp, sizeof(szProp), s_szPropFmt, iProp);
+        int rc;
+        RTTESTI_CHECK_MSG((rc = doSetProperty(&svcTable, szProp, "myvalue", "", true, true)) == VINF_SUCCESS,
+                          ("%Rrc - #%u\n", rc, iProp));
+        RTTESTI_CHECK_MSG((rc = doSetProperty(&svcTable, szProp, "myvalue", "", true, false)) == VINF_SUCCESS,
+                          ("%Rrc - #%u\n", rc, iProp));
+        RTTESTI_CHECK_MSG((rc = doSetProperty(&svcTable, szProp, "myvalue", "", false, true)) == VINF_SUCCESS,
+                          ("%Rrc - #%u\n", rc, iProp));
+        RTTESTI_CHECK_MSG((rc = doSetProperty(&svcTable, szProp, "myvalue", "", false, false)) == VINF_SUCCESS,
+                          ("%Rrc - #%u\n", rc, iProp));
+    }
+
+    /* Benchmark. */
+    uint64_t cNsMax = 0;
+    uint64_t cNsMin = UINT64_MAX;
+    uint64_t cNsAvg = 0;
+    for (unsigned iProp = 0; iProp < cProps; iProp++)
+    {
+        size_t cchProp = RTStrPrintf(szProp, sizeof(szProp), s_szPropFmt, iProp);
+
+        uint64_t cNsElapsed = RTTimeNanoTS();
+        unsigned iCall;
+        for (iCall = 0; iCall < 1000; iCall++)
+        {
+            VBOXHGCMSVCPARM aParms[4];
+            char            szBuffer[256];
+            aParms[0].setPointer(szProp, cchProp + 1);
+            aParms[1].setPointer(szBuffer, sizeof(szBuffer));
+            RTTESTI_CHECK_RC_BREAK(svcTable.pfnHostCall(svcTable.pvService, GET_PROP_HOST, 4, aParms), VINF_SUCCESS);
+        }
+        cNsElapsed = RTTimeNanoTS() - cNsElapsed;
+        if (iCall)
+        {
+            uint64_t cNsPerCall = cNsElapsed / iCall;
+            cNsAvg += cNsPerCall;
+            if (cNsPerCall < cNsMin)
+                cNsMin = cNsPerCall;
+            if (cNsPerCall > cNsMax)
+                cNsMax = cNsPerCall;
+        }
+    }
+    if (cProps)
+        cNsAvg /= cProps;
+    RTTestIValue("GET_PROP_HOST Min", cNsMin, RTTESTUNIT_NS_PER_CALL);
+    RTTestIValue("GET_PROP_HOST Avg", cNsAvg, RTTESTUNIT_NS_PER_CALL);
+    RTTestIValue("GET_PROP_HOST Max", cNsMax, RTTESTUNIT_NS_PER_CALL);
+
+    /* Done. */
+    RTTESTI_CHECK_RC_OK(svcTable.pfnUnload(svcTable.pvService));
+}
+
+
+int main(int argc, char **argv)
+{
+    RTEXITCODE rcExit = RTTestInitAndCreate("tstGuestPropSvc", &g_hTest);
     if (rcExit != RTEXITCODE_SUCCESS)
         return rcExit;
     RTTestBanner(g_hTest);
 
-/** @todo convert the rest of this testcase. */
-    initTable(&svcTable, &svcHelpers);
-
-    if (RT_FAILURE(testConvertFlags()))
-        return 1;
-    /* The function is inside the service, not HGCM. */
-    if (RT_FAILURE(VBoxHGCMSvcLoad(&svcTable)))
-    {
-        RTPrintf("Failed to start the HGCM service.\n");
-        return 1;
-    }
-    if (RT_FAILURE(testSetPropsHost(&svcTable)))
-        return 1;
-    if (RT_FAILURE(testEnumPropsHost(&svcTable)))
-        return 1;
-    /* Set up the asynchronous notification test */
-    if (RT_FAILURE(setupAsyncNotification(&svcTable)))
-        return 1;
-    if (RT_FAILURE(testSetProp(&svcTable)))
-        return 1;
-    RTPrintf("Checking the data returned by the asynchronous notification call.\n");
-    /* Our previous notification call should have completed by now. */
-    if (RT_FAILURE(testAsyncNotification(&svcTable)))
-        return 1;
-    if (RT_FAILURE(testDelProp(&svcTable)))
-        return 1;
-    if (RT_FAILURE(testGetProp(&svcTable)))
-        return 1;
-    if (RT_FAILURE(testGetNotification(&svcTable)))
-        return 1;
-    if (RT_FAILURE(svcTable.pfnUnload(svcTable.pvService)))
-    {
-        RTPrintf("Failed to unload the HGCM service.\n");
-        return 1;
-    }
-    if (RT_FAILURE(testSetPropROGuest(&svcTable)))
-        return 1;
-    if (RT_FAILURE(testDelPropROGuest(&svcTable)))
-        return 1;
+    testConvertFlags();
+    test2();
+    test3();
+    test4();
 
     return RTTestSummaryAndDestroy(g_hTest);
 }
