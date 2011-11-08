@@ -13,6 +13,9 @@
 # hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
 #
 
+## @todo Make this file into a script in the VirtualBox lib directory once
+#        enough code has been made shared between the different installers.
+
 # This is used for unit testing and will be reset after the file is sourced for
 # test runs.
 unset EXTERN
@@ -146,4 +149,31 @@ install_device_node_setup() {
         $EXTERN install_create_usb_node_for_sysfs "$i" "${usb_createnode}" \
                                                   "${usb_group}"
     done
+}
+
+set_selinux_permissions() {
+    # XXX SELinux: allow text relocation entries
+    INSTALLATION_DIR="$1"  # Where the VirtualBox binaries are installed to
+    SHARE_DIR="$2"         # Where shared bits are installed to
+    if [ -x /usr/bin/chcon ]; then
+        chcon -t texrel_shlib_t "$INSTALLATION_DIR"/*VBox* > /dev/null 2>&1
+        chcon -t texrel_shlib_t "$INSTALLATION_DIR"/VBoxAuth.so \
+            > /dev/null 2>&1
+        chcon -t texrel_shlib_t "$INSTALLATION_DIR"/VirtualBox.so \
+            > /dev/null 2>&1
+        chcon -t texrel_shlib_t "$INSTALLATION_DIR"/components/VBox*.so \
+            > /dev/null 2>&1
+        chcon -t java_exec_t    "$INSTALLATION_DIR"/VirtualBox > /dev/null 2>&1
+        chcon -t java_exec_t    "$INSTALLATION_DIR"/VBoxSDL > /dev/null 2>&1
+        chcon -t java_exec_t    "$INSTALLATION_DIR"/VBoxHeadless \
+            > /dev/null 2>&1
+        chcon -t java_exec_t    "$INSTALLATION_DIR"/VBoxNetDHCP \
+            > /dev/null 2>&1
+        chcon -t java_exec_t    "$INSTALLATION_DIR"/VBoxExtPackHelperApp \
+            > /dev/null 2>&1
+        chcon -t java_exec_t    "$INSTALLATION_DIR"/vboxwebsrv > /dev/null 2>&1
+        chcon -t java_exec_t    "$INSTALLATION_DIR"/webtest > /dev/null 2>&1
+        chcon -t bin_t          "$SHARE_DIR"/src/vboxhost/*/build_in_tmp \
+             > /dev/null 2>&1
+    fi
 }
