@@ -10,6 +10,6 @@ VENDOR="@VBOX_VENDOR@"
 EMAIL="info@virtualbox.org"
 HOTLINE="Please contact your local service provider"
 BASEDIR="/"
-CLASSES=none sed
+CLASSES=none manifest
 DESC="@VBOX_PRODUCT@ Guest Additions for Solaris guests"
 

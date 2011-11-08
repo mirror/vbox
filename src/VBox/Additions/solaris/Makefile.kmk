@@ -68,7 +68,7 @@ SOLARIS_ADD_SYSLIBINST_DIR_64           := $(SOLARIS_ADDINST_OUT_DIR)/usr/lib/am
 
 SOLARIS_ADD_USRBIN_DIR                  := $(SOLARIS_ADDINST_OUT_DIR)/usr/bin
 SOLARIS_ADD_ETCFS_DIR                   := $(SOLARIS_ADDINST_OUT_DIR)/etc/fs/vboxfs
-SOLARIS_ADD_SERVICESINST_DIR            := $(SOLARIS_ADDINST_OUT_DIR)/var/svc/manifest/system/virtualbox
+SOLARIS_ADD_SERVICESINST_DIR            := $(SOLARIS_ADDINST_OUT_DIR)/var/svc/manifest/application/virtualbox
 
 ifeq ($(KBUILD_TARGET_ARCH),x86)
  SOLARIS_ADDDIR_NAME_ISA                := $(SOLARIS_ADDDIR_NAME_32)
@@ -148,8 +148,8 @@ BLDDIRS          += \
 	var \
 	var/svc \
 	var/svc/manifest \
-	var/svc/manifest/system \
-	var/svc/manifest/system/virtualbox \
+	var/svc/manifest/application \
+	var/svc/manifest/application/virtualbox \
 	)
 
 SOLARIS_ADD_STRIP_BINS = \
@@ -301,6 +301,7 @@ $(PATH_STAGE_BIN)/additions/$(PKGFILENAME): \
 	#$(QUIET)$(INSTALL) -m 0644 $(VBOX_BRAND_LICENSE_TXT)                                                  $(SOLARIS_ADDINST_OUT_DIR)/vboxguest.copyright
 	$(call MSG_L1,Creating install package: $@)
 	$(QUIET)$(MKDIR) -p $(SOLARIS_ADD_ETCFS_DIR)
+	$(QUIET)$(MKDIR) -p $(VBOX_PATH_SOLARIS_ADDITION_INSTALLER)
 	$(QUIET)$(LN_SYMLINK) -f ../..$(SOLARIS_VBOXADDINST_SUBDIR)/1099.vboxclient                           $(SOLARIS_ADD_USRBIN_DIR)/VBoxClient-all
 ifdef VBOX_WITH_COMBINED_SOLARIS_GUEST_PACKAGE
  ifdef VBOX_COMPRESS
@@ -314,6 +315,7 @@ else # !VBOX_WITH_COMBINED_SOLARIS_GUEST_PACKAGE
  endif
 	$(LN_SYMLINK) -f ../../..$(SOLARIS_VBOXADDINST_SUBDIR)/$(SOLARIS_ADDDIR_NAME_ISA)/vboxfsmount         $(SOLARIS_ADD_ETCFS_DIR)/mount
 endif
+	$(QUIET)$(INSTALL) -m 0644 $(VBOX_PATH_SOLARIS_ADDITION_INSTALLER)/vboxservice.xml                    $(SOLARIS_ADD_SERVICESINST_DIR)/vboxservice.xml
 	$(QUIET)$(SOLARIS_ADDINST_OUT_DIR)/makepackage.sh $(SOLARIS_ADDINST_OUT_DIR) $(PKGFILENAME) $(VBOX_SVN_REV)
 	$(QUIET)$(INSTALL) -m 0644 $(SOLARIS_ADDINST_OUT_DIR)/$(PKGFILENAME) $(PATH_STAGE_BIN)/additions/$(PKGFILENAME)
 	$(QUIET)$(RM) -f $(SOLARIS_ADDINST_OUT_DIR)/$(PKGFILENAME)

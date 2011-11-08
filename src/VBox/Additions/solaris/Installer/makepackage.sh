@@ -58,6 +58,11 @@ filelist_fixup()
     mv -f "tmp-$1" "$1"
 }
 
+dirlist_fixup()
+{
+  "$VBOX_AWK" 'NF == 6 && $1 == "d" && '"$2"' { '"$3"' } { print }' "$1" > "tmp-$1"
+  mv -f "tmp-$1" "$1"
+}
 
 # Create relative hardlinks
 cd "$VBOX_INSTALLED_DIR"
@@ -80,7 +85,7 @@ fi
 find . ! -type d | $VBOX_GGREP -v -E 'prototype|makepackage.sh|vboxguest.pkginfo|postinstall.sh|preremove.sh|vboxguest.space|vboxguest.depend|vboxguest.copyright' | pkgproto >> prototype
 
 # Include opt/VirtualBoxAdditions and subdirectories as we want uninstall to clean up directory structure as well
-find . -type d | $VBOX_GGREP -E 'opt/VirtualBoxAdditions' | pkgproto >> prototype
+find . -type d | $VBOX_GGREP -E 'opt/VirtualBoxAdditions|var/svc/manifest/application/virtualbox' | pkgproto >> prototype
 
 # Include /etc/fs/vboxfs (as we need to create the subdirectory)
 find . -type d | $VBOX_GGREP -E 'etc/fs/vboxfs' | pkgproto >> prototype
@@ -93,9 +98,16 @@ filelist_fixup prototype '$2 == "none"'                                         
 filelist_fixup prototype '$3 == "opt/VirtualBoxAdditions/VBoxService"'                                       '$4 = "4755"'
 filelist_fixup prototype '$3 == "opt/VirtualBoxAdditions/amd64/VBoxService"'                                 '$4 = "4755"'
 
+# Manifest class action scripts
+filelist_fixup prototype '$3 == "var/svc/manifest/application/virtualbox/vboxservice.xml"'                   '$2 = "manifest";$6 = "sys"'
+
 # vboxguest
 filelist_fixup prototype '$3 == "usr/kernel/drv/vboxguest"'                                                  '$6="sys"'
 filelist_fixup prototype '$3 == "usr/kernel/drv/amd64/vboxguest"'                                            '$6="sys"'
+
+# Use 'root' as group so as to match attributes with the previous installation and prevent a conflict. Otherwise pkgadd bails out thinking
+# we're violating directory attributes of another (non existing) package
+dirlist_fixup prototype  '$3 == "var/svc/manifest/application/virtualbox"'                                   '$6 = "root"'
 
 echo " --- start of prototype  ---"
 cat prototype

@@ -76,12 +76,53 @@ uncompress_files()
     uncompress_file "$1" "vboxmouse_drv_71.so"
 }
 
+abort()
+{
+    echo 1>&2 "## $1"
+    exit 1
+}
+
+get_sysinfo()
+{
+    BIN_PKG=`which pkg 2> /dev/null`
+    if test -x "$BIN_PKG"; then
+        PKGFMRI=`$BIN_PKG contents -H -t set -a name=pkg.fmri -o pkg.fmri pkg:/system/kernel 2> /dev/null`
+        if test ! -z "$PKGFMRI"; then
+            # The format is "pkg://solaris/system/kernel@0.5.11,5.11-0.161:20110315T070332Z"
+            #            or "pkg://solaris/system/kernel@0.5.11,5.11-0.175.0.0.0.1.0:20111012T032837Z"
+            STR_KERN=`echo "$PKGFMRI" | sed 's/^.*\@//;s/\:.*//;s/.*,//'`
+            if test ! -z "$STR_KERN"; then
+                # The format is "5.11-0.161" or "5.11-0.175.0.0.0.1.0"
+                HOST_OS_MAJORVERSION=`echo "$STR_KERN" | cut -f1 -d'-'`
+                HOST_OS_MINORVERSION=`echo "$STR_KERN" | cut -f2 -d'-' | cut -f2 -d '.'`
+            else
+                abort "Failed to parse the Solaris kernel version."
+            fi        
+        else
+            abort "Failed to detect the Solaris kernel version."
+        fi
+    else
+        HOST_OS_MAJORVERSION=`uname -r`
+        if test -z "$HOST_OS_MAJORVERSION" || test "$HOST_OS_MAJORVERSION" != "5.10";  then
+            # S11 without 'pkg' ?? Something's wrong... bail.
+            abort "Solaris $HOST_OS_MAJOR_VERSION detected without executable $BIN_PKG !? Confused."
+        fi
+        # Use uname to verify it's S10.
+        # Major version is S10, Minor version is no longer relevant (or used), use uname -v so it gets something
+        # like "Generic_blah" for purely cosmetic purposes
+        HOST_OS_MINORVERSION=`uname -v`
+    fi
+    echo "Detected Solaris $HOST_OS_MAJORVERSION version $HOST_OS_MINORVERSION"
+}
+
 solaris64dir="amd64"
 solaris32dir="i386"
 vboxadditions_path="$BASEDIR/opt/VirtualBoxAdditions"
 vboxadditions32_path=$vboxadditions_path/$solaris32dir
 vboxadditions64_path=$vboxadditions_path/$solaris64dir
 
+# get OS details
+get_sysinfo
 # get the current zone
 currentzone=`zonename`
 # get what ISA the guest is running
@@ -392,13 +433,11 @@ fi
 
 
 if test "$currentzone" = "global"; then
-    # Setup our VBoxService SMF service
-    echo "Configuring service..."
-
-    /usr/sbin/svccfg import /var/svc/manifest/system/virtualbox/vboxservice.xml
-    /usr/sbin/svcadm enable svc:/system/virtualbox/vboxservice
-
     /usr/sbin/devfsadm -i vboxguest
+
+    # Setup our VBoxService SMF service (needs the full FMRI here)
+    echo "Configuring service..."
+    /usr/sbin/svcadm enable -s svc:/application/virtualbox/vboxservice
 
     # Update boot archive
     BOOTADMBIN=/sbin/bootadm

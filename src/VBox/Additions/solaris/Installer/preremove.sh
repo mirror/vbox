@@ -22,18 +22,20 @@
 # terms and conditions of either the GPL or the CDDL or both.
 #
 
-echo "VirtualBox Guest Additions - preremove script"
-echo "This script will unload the VirtualBox Guest kernel module..."
+echo "Removing VirtualBox service..."
 
 # stop and unregister VBoxService daemon
-/usr/sbin/svcadm disable -s svc:/system/virtualbox/vboxservice:default
-/usr/sbin/svccfg delete svc:/system/virtualbox/vboxservice:default
+/usr/sbin/svcadm disable -s virtualbox/vboxservice:default
+# Don't need to delete, taken care of by the manifest action
+# /usr/sbin/svccfg delete svc:/application/virtualbox/vboxservice:default
 
 # stop VBoxClient
 pkill -INT VBoxClient
 
+echo "Removing VirtualBox kernel modules..."
+
 # vboxguest.sh would've been installed, we just need to call it.
-/opt/VirtualBoxAdditions/vboxguest.sh stopall
+/opt/VirtualBoxAdditions/vboxguest.sh stopall silentunload
 
 # remove devlink.tab entry for vboxguest
 sed -e '
