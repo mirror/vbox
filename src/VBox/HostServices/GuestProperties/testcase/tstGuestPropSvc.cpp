@@ -671,24 +671,33 @@ static void testGetNotification(VBOXHGCMSVCFNTABLE *pTable)
     RTTestISub("GET_NOTIFICATION");
 
     /* Test "buffer too small" */
-    char                        achBuffer[MAX_NAME_LEN + MAX_VALUE_LEN + MAX_FLAGS_LEN];
     static char                 s_szPattern[] = "";
     VBOXHGCMCALLHANDLE_TYPEDEF  callHandle = { VINF_SUCCESS };
     VBOXHGCMSVCPARM             aParms[4];
-    aParms[0].setPointer((void *)s_szPattern, sizeof(s_szPattern));
-    aParms[1].setUInt64(1);
-    aParms[2].setPointer((void *)achBuffer, g_aGetNotifications[0].cbBuffer - 1);
-    pTable->pfnCall(pTable->pvService, &callHandle, 0, NULL, GET_NOTIFICATION, 4, aParms);
+    uint32_t                    cbRetNeeded;
 
-    uint32_t cbRetNeeded;
-    if (   callHandle.rc != VERR_BUFFER_OVERFLOW
-        || RT_FAILURE(aParms[3].getUInt32(&cbRetNeeded))
-        || cbRetNeeded != g_aGetNotifications[0].cbBuffer
-       )
+    for (uint32_t cbBuf = 1;
+         cbBuf < g_aGetNotifications[0].cbBuffer - 1;
+         cbBuf++)
     {
-        RTTestIFailed("Getting notification for property '%s' with a too small buffer did not fail correctly.",
-                      g_aGetNotifications[0].pchBuffer);
-        return;
+        void *pvBuf = RTTestGuardedAllocTail(g_hTest, cbBuf);
+        RTTESTI_CHECK_BREAK(pvBuf);
+        memset(pvBuf, 0x55, cbBuf);
+
+        aParms[0].setPointer((void *)s_szPattern, sizeof(s_szPattern));
+        aParms[1].setUInt64(1);
+        aParms[2].setPointer(pvBuf, cbBuf);
+        pTable->pfnCall(pTable->pvService, &callHandle, 0, NULL, GET_NOTIFICATION, 4, aParms);
+
+        if (   callHandle.rc != VERR_BUFFER_OVERFLOW
+            || RT_FAILURE(aParms[3].getUInt32(&cbRetNeeded))
+            || cbRetNeeded != g_aGetNotifications[0].cbBuffer
+           )
+        {
+            RTTestIFailed("Getting notification for property '%s' with a too small buffer did not fail correctly: %Rrc",
+                          g_aGetNotifications[0].pchBuffer, callHandle.rc);
+        }
+        RTTestGuardedFree(g_hTest, pvBuf);
     }
 
     /* Test successful notification queries.  Start with an unknown timestamp
@@ -696,21 +705,27 @@ static void testGetNotification(VBOXHGCMSVCFNTABLE *pTable)
     uint64_t u64Timestamp = 1;
     for (unsigned i = 0; i < RT_ELEMENTS(g_aGetNotifications); ++i)
     {
+        uint32_t cbBuf = g_aGetNotifications[i].cbBuffer + _1K;
+        void *pvBuf = RTTestGuardedAllocTail(g_hTest, cbBuf);
+        RTTESTI_CHECK_BREAK(pvBuf);
+        memset(pvBuf, 0x55, cbBuf);
+
         aParms[0].setPointer((void *)s_szPattern, sizeof(s_szPattern));
         aParms[1].setUInt64(u64Timestamp);
-        aParms[2].setPointer((void *)achBuffer, sizeof(achBuffer));
+        aParms[2].setPointer(pvBuf, cbBuf);
         pTable->pfnCall(pTable->pvService, &callHandle, 0, NULL, GET_NOTIFICATION, 4, aParms);
         if (   RT_FAILURE(callHandle.rc)
             || (i == 0 && callHandle.rc != VWRN_NOT_FOUND)
             || RT_FAILURE(aParms[1].getUInt64(&u64Timestamp))
             || RT_FAILURE(aParms[3].getUInt32(&cbRetNeeded))
             || cbRetNeeded != g_aGetNotifications[i].cbBuffer
-            || memcmp(achBuffer, g_aGetNotifications[i].pchBuffer, cbRetNeeded) != 0
+            || memcmp(pvBuf, g_aGetNotifications[i].pchBuffer, cbRetNeeded) != 0
            )
         {
             RTTestIFailed("Failed to get notification for property '%s' (rc=%Rrc).",
                           g_aGetNotifications[i].pchBuffer, callHandle.rc);
         }
+        RTTestGuardedFree(g_hTest, pvBuf);
     }
 }
 
