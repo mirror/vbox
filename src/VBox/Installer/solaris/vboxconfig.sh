@@ -944,7 +944,7 @@ postinstall()
                 # Enable Zone access service for non-remote installs, other services (Webservice) are delivered disabled by the manifest class action
                 servicefound=`$BIN_SVCS -a | grep "virtualbox/zoneaccess" | grep "disabled" 2>/dev/null`
                 if test ! -z "$servicefound"; then
-                    /usr/sbin/svcadm enable -s svc:/application/virtualbox/zoneaccess
+                    $BIN_SVCADM enable -s svc:/application/virtualbox/zoneaccess
                     if test "$?" -eq 0; then
                         subprint "Loaded: Zone access service"
                     else
