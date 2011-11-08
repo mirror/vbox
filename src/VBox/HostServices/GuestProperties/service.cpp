@@ -63,11 +63,8 @@ namespace guestProp {
  */
 struct Property
 {
-#define USE_STRSPACE
-#ifdef USE_STRSPACE
     /** The string space core record. */
     RTSTRSPACECORE mStrCore;
-#endif
     /** The name of the property */
     std::string mName;
     /** The property value */
@@ -80,9 +77,7 @@ struct Property
     /** Default constructor */
     Property() : mTimestamp(0), mFlags(NILFLAG)
     {
-#ifdef USE_STRSPACE
         RT_ZERO(mStrCore);
-#endif
     }
     /** Constructor with const char * */
     Property(const char *pcszName, const char *pcszValue,
@@ -90,10 +85,8 @@ struct Property
         : mName(pcszName), mValue(pcszValue), mTimestamp(u64Timestamp),
           mFlags(u32Flags)
     {
-#ifdef USE_STRSPACE
         RT_ZERO(mStrCore);
         mStrCore.pszString = mName.c_str();
-#endif
     }
     /** Constructor with std::string */
     Property(std::string name, std::string value, uint64_t u64Timestamp,
@@ -171,15 +164,10 @@ private:
     PVBOXHGCMSVCHELPERS mpHelpers;
     /** Global flags for the service */
     ePropFlags meGlobalFlags;
-#ifdef USE_STRSPACE
     /** The property string space handle. */
     RTSTRSPACE mhProperties;
     /** The number of properties. */
     unsigned mcProperties;
-#else
-    /** The property list */
-    PropertyList mProperties;
-#endif
     /** The list of property changes for guest notifications */
     PropertyList mGuestNotifications;
     /** The list of outstanding guest notification calls */
@@ -279,26 +267,15 @@ private:
      */
     Property *getPropertyInternal(const char *pszName)
     {
-#ifdef USE_STRSPACE
         return (Property *)RTStrSpaceGet(&mhProperties, pszName);
-#else
-        for (PropertyList::iterator it = mProperties.begin();
-              it != mProperties.end();
-              ++it)
-            if (it->mName.compare(pszName) == 0)
-                return &*it; /* the wonders of stdandard C++... ;-) */
-        return NULL;
-#endif
     }
 
 public:
     explicit Service(PVBOXHGCMSVCHELPERS pHelpers)
         : mpHelpers(pHelpers)
         , meGlobalFlags(NILFLAG)
-#ifdef USE_STRSPACE
         , mhProperties(NULL)
         , mcProperties(0)
-#endif
         , mpfnHostCallback(NULL)
         , mpvHostData(NULL)
         , mPrevTimestamp(0)
@@ -508,7 +485,6 @@ int Service::setPropertyBlock(uint32_t cParms, VBOXHGCMSVCPARM paParms[])
         rc = VERR_INVALID_PARAMETER;
     /** @todo validate the array sizes... */
 
-#ifdef USE_STRSPACE
     for (unsigned i = 0; RT_SUCCESS(rc) && papszNames[i] != NULL; ++i)
     {
         if (   !RT_VALID_PTR(papszNames[i])
@@ -563,64 +539,6 @@ int Service::setPropertyBlock(uint32_t cParms, VBOXHGCMSVCPARM paParms[])
         }
     }
 
-#else  /* !USE_STRSPACE */
-    /*
-     * Add the properties to the end of the list.  If we succeed then we
-     * will remove duplicates afterwards.
-     */
-    /* Remember the last property before we started adding, for rollback or
-     * cleanup. */
-    PropertyList::iterator itEnd = mProperties.end();
-    if (!mProperties.empty())
-        --itEnd;
-    try
-    {
-        for (unsigned i = 0; RT_SUCCESS(rc) && papszNames[i] != NULL; ++i)
-        {
-            uint32_t fFlags;
-            if (   !VALID_PTR(papszNames[i])
-                || !VALID_PTR(papszValues[i])
-                || !VALID_PTR(papszFlags[i])
-              )
-                rc = VERR_INVALID_POINTER;
-            if (RT_SUCCESS(rc))
-                rc = validateFlags(papszFlags[i], &fFlags);
-            if (RT_SUCCESS(rc))
-                mProperties.push_back(Property(papszNames[i], papszValues[i],
-                                               pau64Timestamps[i], fFlags));
-        }
-    }
-    catch (std::bad_alloc)
-    {
-        rc = VERR_NO_MEMORY;
-    }
-
-    /*
-     * If all went well then remove the duplicate elements.
-     */
-    if (RT_SUCCESS(rc) && itEnd != mProperties.end())
-    {
-        ++itEnd;
-        for (unsigned i = 0; papszNames[i] != NULL; ++i)
-            for (PropertyList::iterator it = mProperties.begin(); it != itEnd; ++it)
-                if (it->mName.compare(papszNames[i]) == 0)
-                {
-                    mProperties.erase(it);
-                    break;
-                }
-    }
-
-    /*
-     * If something went wrong then rollback.  This is possible because we
-     * haven't deleted anything yet.
-     */
-    if (RT_FAILURE(rc))
-    {
-        if (itEnd != mProperties.end())
-            ++itEnd;
-        mProperties.erase(itEnd, mProperties.end());
-    }
-#endif /* !USE_STRSPACE */
     return rc;
 }
 
@@ -638,11 +556,10 @@ int Service::setPropertyBlock(uint32_t cParms, VBOXHGCMSVCPARM paParms[])
  */
 int Service::getProperty(uint32_t cParms, VBOXHGCMSVCPARM paParms[])
 {
-    int rc = VINF_SUCCESS;
+    int         rc;
     const char *pcszName = NULL;        /* shut up gcc */
-    char *pchBuf;
-    uint32_t cbName, cchBuf;
-    char szFlags[MAX_FLAGS_LEN];
+    char       *pchBuf;
+    uint32_t    cbName, cbBuf;
 
     /*
      * Get and validate the parameters
@@ -650,66 +567,54 @@ int Service::getProperty(uint32_t cParms, VBOXHGCMSVCPARM paParms[])
     LogFlowThisFunc(("\n"));
     if (   cParms != 4  /* Hardcoded value as the next lines depend on it. */
         || RT_FAILURE(paParms[0].getString(&pcszName, &cbName))  /* name */
-        || RT_FAILURE(paParms[1].getBuffer((void **)&pchBuf, &cchBuf))  /* buffer */
+        || RT_FAILURE(paParms[1].getBuffer((void **)&pchBuf, &cbBuf))  /* buffer */
        )
         rc = VERR_INVALID_PARAMETER;
     else
         rc = validateName(pcszName, cbName);
+    if (RT_FAILURE(rc))
+    {
+        LogFlowThisFunc(("rc = %Rrc\n", rc));
+        return rc;
+    }
 
     /*
      * Read and set the values we will return
      */
 
-#ifdef USE_STRSPACE
     /* Get the property. */
-    Property *it = NULL;
-    if (RT_SUCCESS(rc))
+    Property *pProp = getPropertyInternal(pcszName);
+    if (pProp)
     {
-        it = getPropertyInternal(pcszName);
-        if (!it)
-            rc = VERR_NOT_FOUND;
-    }
-
-#else  /* !USE_STRSPACE */
-    /* Get the value size */
-    PropertyList::const_iterator it;
-    if (RT_SUCCESS(rc))
-    {
-        rc = VERR_NOT_FOUND;
-        for (it = mProperties.begin(); it != mProperties.end(); ++it)
-            if (it->mName.compare(pcszName) == 0)
-            {
-                rc = VINF_SUCCESS;
-                break;
-            }
-    }
-#endif /* !USE_STRSPACE */
-    if (RT_SUCCESS(rc))
-        rc = writeFlags(it->mFlags, szFlags);
-    if (RT_SUCCESS(rc))
-    {
-        /* Check that the buffer is big enough */
-        size_t cchBufActual = it->mValue.size() + 1 + strlen(szFlags);
-        paParms[3].setUInt32 ((uint32_t)cchBufActual);
-        if (cchBufActual <= cchBuf)
+        char szFlags[MAX_FLAGS_LEN];
+        rc = writeFlags(pProp->mFlags, szFlags);
+        if (RT_SUCCESS(rc))
         {
-            /* Write the value, flags and timestamp */
-            it->mValue.copy(pchBuf, cchBuf, 0);
-            pchBuf[it->mValue.size()] = '\0'; /* Terminate the value */
-            strcpy(pchBuf + it->mValue.size() + 1, szFlags);
-            paParms[2].setUInt64 (it->mTimestamp);
+            /* Check that the buffer is big enough */
+            size_t cchBufActual = pProp->mValue.size() + 1 + strlen(szFlags);   /** @todo r=bird: Buffer overflow bug here? size() == strlen(). */
+            paParms[3].setUInt32((uint32_t)cchBufActual);
+            if (cchBufActual <= cbBuf)
+            {
+                /* Write the value, flags and timestamp */
+                pProp->mValue.copy(pchBuf, cbBuf, 0);
+                pchBuf[pProp->mValue.size()] = '\0'; /* Terminate the value */
+                strcpy(pchBuf + pProp->mValue.size() + 1, szFlags);
+                paParms[2].setUInt64(pProp->mTimestamp);
 
-            /*
-             * Done!  Do exit logging and return.
-             */
-            Log2(("Queried string %s, value=%s, timestamp=%lld, flags=%s\n",
-                  pcszName, it->mValue.c_str(), it->mTimestamp, szFlags));
+                /*
+                 * Done!  Do exit logging and return.
+                 */
+                Log2(("Queried string %s, value=%s, timestamp=%lld, flags=%s\n",
+                      pcszName, pProp->mValue.c_str(), pProp->mTimestamp, szFlags));
+            }
+            else
+                rc = VERR_BUFFER_OVERFLOW;
         }
-        else
-            rc = VERR_BUFFER_OVERFLOW;
     }
+    else
+        rc = VERR_NOT_FOUND;
 
-    LogFlowThisFunc(("rc = %Rrc\n", rc));
+    LogFlowThisFunc(("rc = %Rrc (%s)\n", rc, pcszName));
     return rc;
 }
 
@@ -738,15 +643,6 @@ int Service::setProperty(uint32_t cParms, VBOXHGCMSVCPARM paParms[], bool isGues
 
     LogFlowThisFunc(("\n"));
 
-#ifndef USE_STRSPACE /** @todo r=bird: This check is wrong as it will prevent updating
-                      *        existing properties when the maximum is reached! */
-    /*
-     * First of all, make sure that we won't exceed the maximum number of properties.
-     */
-    if (mProperties.size() >= MAX_PROPS)
-        rc = VERR_TOO_MUCH_DATA;
-#endif
-
     /*
      * General parameter correctness checking.
      */
@@ -773,76 +669,60 @@ int Service::setProperty(uint32_t cParms, VBOXHGCMSVCPARM paParms[], bool isGues
                                      RTSTR_VALIDATE_ENCODING_ZERO_TERMINATED);
     if ((3 == cParms) && RT_SUCCESS(rc))
         rc = validateFlags(pcszFlags, &fFlags);
-    if (RT_SUCCESS(rc))
+    if (RT_FAILURE(rc))
     {
-        /*
-         * If the property already exists, check its flags to see if we are allowed
-         * to change it.
-         */
-#ifdef USE_STRSPACE
-        Property *it = getPropertyInternal(pcszName);
-        bool found = it != NULL;
-#else
-        PropertyList::iterator it;
-        bool found = false;
-        for (it = mProperties.begin(); it != mProperties.end(); ++it)
-            if (it->mName.compare(pcszName) == 0)
-            {
-                found = true;
-                break;
-            }
-#endif /* !USE_STRSPACE */
-
-        rc = checkPermission(found ? (ePropFlags)it->mFlags : NILFLAG,
-                             isGuest);
-        if (rc == VINF_SUCCESS)
-        {
-            /*
-             * Set the actual value
-             */
-            if (found)
-            {
-                it->mValue = pcszValue;
-                it->mTimestamp = u64TimeNano;
-                it->mFlags = fFlags;
-            }
-#ifdef USE_STRSPACE
-            else if (mcProperties < MAX_PROPS)
-            {
-                /* Create a new string space record. */
-                it = new Property(pcszName, pcszValue, u64TimeNano, fFlags);
-                if (it)
-                {
-                    if (RTStrSpaceInsert(&mhProperties, &it->mStrCore))
-                        mcProperties++;
-                    else
-                    {
-                        AssertFailed();
-                        delete it;
-                        rc = VERR_INTERNAL_ERROR_3;
-                    }
-                }
-                else
-                    rc = VERR_NO_MEMORY;
-            }
-            else
-                rc = VERR_TOO_MUCH_DATA;
-#else
-            else  /* This can throw.  No problem as we have nothing to roll back. */
-                mProperties.push_back(Property(pcszName, pcszValue, u64TimeNano, fFlags));
-#endif
-
-            /*
-             * Send a notification to the host and return.
-             */
-            // if (isGuest)  /* Notify the host even for properties that the host
-            //                * changed.  Less efficient, but ensures consistency. */
-                doNotifications(pcszName, u64TimeNano);
-            Log2(("Set string %s, rc=%Rrc, value=%s\n", pcszName, rc, pcszValue));
-        }
+        LogFlowThisFunc(("rc = %Rrc\n", rc));
+        return rc;
     }
 
-    LogFlowThisFunc(("rc = %Rrc\n", rc));
+    /*
+     * If the property already exists, check its flags to see if we are allowed
+     * to change it.
+     */
+    Property *pProp = getPropertyInternal(pcszName);
+    rc = checkPermission(pProp ? (ePropFlags)pProp->mFlags : NILFLAG, isGuest);
+    if (rc == VINF_SUCCESS)
+    {
+        /*
+         * Set the actual value
+         */
+        if (pProp)
+        {
+            pProp->mValue = pcszValue;
+            pProp->mTimestamp = u64TimeNano;
+            pProp->mFlags = fFlags;
+        }
+        else if (mcProperties < MAX_PROPS)
+        {
+            /* Create a new string space record. */
+            pProp = new Property(pcszName, pcszValue, u64TimeNano, fFlags);
+            if (pProp)
+            {
+                if (RTStrSpaceInsert(&mhProperties, &pProp->mStrCore))
+                    mcProperties++;
+                else
+                {
+                    AssertFailed();
+                    delete pProp;
+                    rc = VERR_INTERNAL_ERROR_3;
+                }
+            }
+            else
+                rc = VERR_NO_MEMORY;
+        }
+        else
+            rc = VERR_TOO_MUCH_DATA;
+
+        /*
+         * Send a notification to the host and return.
+         */
+        // if (isGuest)  /* Notify the host even for properties that the host
+        //                * changed.  Less efficient, but ensures consistency. */
+            doNotifications(pcszName, u64TimeNano);
+        Log2(("Set string %s, rc=%Rrc, value=%s\n", pcszName, rc, pcszValue));
+    }
+
+    LogFlowThisFunc(("rc = %Rrc (%s = %s)\n", rc, pcszName, pcszValue));
     return rc;
 }
 
@@ -859,9 +739,9 @@ int Service::setProperty(uint32_t cParms, VBOXHGCMSVCPARM paParms[], bool isGues
  */
 int Service::delProperty(uint32_t cParms, VBOXHGCMSVCPARM paParms[], bool isGuest)
 {
-    int rc = VINF_SUCCESS;
+    int         rc;
     const char *pcszName = NULL;        /* shut up gcc */
-    uint32_t cbName;
+    uint32_t    cbName;
 
     LogFlowThisFunc(("\n"));
 
@@ -874,54 +754,38 @@ int Service::delProperty(uint32_t cParms, VBOXHGCMSVCPARM paParms[], bool isGues
         rc = validateName(pcszName, cbName);
     else
         rc = VERR_INVALID_PARAMETER;
-    if (RT_SUCCESS(rc))
+    if (RT_FAILURE(rc))
     {
-        /*
-         * If the property exists, check its flags to see if we are allowed
-         * to change it.
-         */
-#ifdef USE_STRSPACE
-        Property *it = getPropertyInternal(pcszName);
-        bool found = it != NULL;
-        if (it)
-            rc = checkPermission((ePropFlags)it->mFlags, isGuest);
-#else
-        PropertyList::iterator it;
-        bool found = false;
-        for (it = mProperties.begin(); it != mProperties.end(); ++it)
-            if (it->mName.compare(pcszName) == 0)
-            {
-                found = true;
-                rc = checkPermission((ePropFlags)it->mFlags, isGuest);
-                break;
-            }
-#endif
-
-        /*
-         * And delete the property if all is well.
-         */
-        if (rc == VINF_SUCCESS && found)
-        {
-            uint64_t u64Timestamp = getCurrentTimestamp();
-#ifdef USE_STRSPACE
-            bool fRc = RTStrSpaceRemove(&mhProperties, it->mStrCore.pszString);
-            Assert(fRc); NOREF(fRc);
-            mcProperties--;
-            delete it;
-#else
-            mProperties.erase(it);
-#endif
-            // if (isGuest)  /* Notify the host even for properties that the host
-            //                * changed.  Less efficient, but ensures consistency. */
-                doNotifications(pcszName, u64Timestamp);
-        }
+        LogFlowThisFunc(("rc = %Rrc\n", rc));
+        return rc;
     }
 
-    LogFlowThisFunc(("rc = %Rrc\n", rc));
+    /*
+     * If the property exists, check its flags to see if we are allowed
+     * to change it.
+     */
+    Property *pProp = getPropertyInternal(pcszName);
+    if (pProp)
+        rc = checkPermission((ePropFlags)pProp->mFlags, isGuest);
+
+    /*
+     * And delete the property if all is well.
+     */
+    if (rc == VINF_SUCCESS && pProp)
+    {
+        uint64_t u64Timestamp = getCurrentTimestamp();
+        bool fRc = RTStrSpaceRemove(&mhProperties, pProp->mStrCore.pszString);
+        Assert(fRc); NOREF(fRc);
+        mcProperties--;
+        delete pProp;
+        // if (isGuest)  /* Notify the host even for properties that the host
+        //                * changed.  Less efficient, but ensures consistency. */
+            doNotifications(pcszName, u64Timestamp);
+    }
+
+    LogFlowThisFunc(("rc = %Rrc (%s)\n", rc, pcszName));
     return rc;
 }
-
-#ifdef USE_STRSPACE
 
 /**
  * Enumeration data shared between enumPropsCallback and Service::enumProps.
@@ -989,7 +853,6 @@ static DECLCALLBACK(int) enumPropsCallback(PRTSTRSPACECORE pStr, void *pvUser)
     Assert(pchCur == pEnum->pchCur);
     return 0;
 }
-#endif /* USE_STRSPACE */
 
 /**
  * Enumerate guest properties by mask, checking the validity
@@ -1010,11 +873,11 @@ int Service::enumProps(uint32_t cParms, VBOXHGCMSVCPARM paParms[])
     char const *pchPatterns = NULL;
     char *pchBuf = NULL;
     uint32_t cbPatterns = 0;
-    uint32_t cchBuf = 0;
+    uint32_t cbBuf = 0;
     LogFlowThisFunc(("\n"));
     if (   (cParms != 3)  /* Hardcoded value as the next lines depend on it. */
         || RT_FAILURE(paParms[0].getString(&pchPatterns, &cbPatterns))  /* patterns */
-        || RT_FAILURE(paParms[1].getBuffer((void **) &pchBuf, &cchBuf))  /* return buffer */
+        || RT_FAILURE(paParms[1].getBuffer((void **)&pchBuf, &cbBuf))  /* return buffer */
        )
         rc = VERR_INVALID_PARAMETER;
     if (RT_SUCCESS(rc) && cbPatterns > MAX_PATTERN_LEN)
@@ -1023,27 +886,26 @@ int Service::enumProps(uint32_t cParms, VBOXHGCMSVCPARM paParms[])
     /*
      * First repack the patterns into the format expected by RTStrSimplePatternMatch()
      */
-    char pszPatterns[MAX_PATTERN_LEN];
+    char szPatterns[MAX_PATTERN_LEN];
     if (RT_SUCCESS(rc))
     {
         for (unsigned i = 0; i < cbPatterns - 1; ++i)
             if (pchPatterns[i] != '\0')
-                pszPatterns[i] = pchPatterns[i];
+                szPatterns[i] = pchPatterns[i];
             else
-                pszPatterns[i] = '|';
-        pszPatterns[cbPatterns - 1] = '\0';
+                szPatterns[i] = '|';
+        szPatterns[cbPatterns - 1] = '\0';
     }
 
-#ifdef USE_STRSPACE
     /*
      * Next enumerate into the buffer.
      */
     if (RT_SUCCESS(rc))
     {
         EnumData EnumData;
-        EnumData.pszPattern = pszPatterns;
+        EnumData.pszPattern = szPatterns;
         EnumData.pchCur     = pchBuf;
-        EnumData.cbLeft     = cchBuf;
+        EnumData.cbLeft     = cbBuf;
         EnumData.cbNeeded   = 0;
         rc = RTStrSpaceEnumerate(&mhProperties, enumPropsCallback, &EnumData);
         AssertRCSuccess(rc);
@@ -1063,51 +925,6 @@ int Service::enumProps(uint32_t cParms, VBOXHGCMSVCPARM paParms[])
         }
     }
 
-#else  /* !USE_STRSPACE */
-    /*
-     * Next enumerate into a temporary buffer.  This can throw, but this is
-     * not a problem as we have nothing to roll back.
-     */
-    std::string buffer;
-    for (PropertyList::const_iterator it = mProperties.begin();
-         RT_SUCCESS(rc) && (it != mProperties.end()); ++it)
-    {
-        if (it->Matches(pszPatterns))
-        {
-            char szFlags[MAX_FLAGS_LEN];
-            char szTimestamp[256];
-            uint32_t cchTimestamp;
-            buffer += it->mName;
-            buffer += '\0';
-            buffer += it->mValue;
-            buffer += '\0';
-            cchTimestamp = RTStrFormatNumber(szTimestamp, it->mTimestamp,
-                                             10, 0, 0, 0);
-            buffer.append(szTimestamp, cchTimestamp);
-            buffer += '\0';
-            rc = writeFlags(it->mFlags, szFlags);
-            if (RT_SUCCESS(rc))
-                buffer += szFlags;
-            buffer += '\0';
-        }
-    }
-    if (RT_SUCCESS(rc))
-        buffer.append(4, '\0');  /* The final terminators */
-
-    /*
-     * Finally write out the temporary buffer to the real one if it is not too
-     * small.
-     */
-    if (RT_SUCCESS(rc))
-    {
-        paParms[2].setUInt32((uint32_t)buffer.size());
-        /* Copy the memory if it fits into the guest buffer */
-        if (buffer.size() <= cchBuf)
-            buffer.copy(pchBuf, cchBuf);
-        else
-            rc = VERR_BUFFER_OVERFLOW;
-    }
-#endif /* !USE_STRSPACE */
     return rc;
 }
 
@@ -1150,8 +967,8 @@ int Service::getNotificationWriteOut(VBOXHGCMSVCPARM paParms[], Property prop)
     std::string buffer;
     uint64_t u64Timestamp;
     char *pchBuf;
-    uint32_t cchBuf;
-    rc = paParms[2].getBuffer((void **) &pchBuf, &cchBuf);
+    uint32_t cbBuf;
+    rc = paParms[2].getBuffer((void **)&pchBuf, &cbBuf);
     if (RT_SUCCESS(rc))
     {
         char szFlags[MAX_FLAGS_LEN];
@@ -1172,8 +989,8 @@ int Service::getNotificationWriteOut(VBOXHGCMSVCPARM paParms[], Property prop)
     {
         paParms[1].setUInt64(u64Timestamp);
         paParms[3].setUInt32((uint32_t)buffer.size());
-        if (buffer.size() <= cchBuf)
-            buffer.copy(pchBuf, cchBuf);
+        if (buffer.size() <= cbBuf)
+            buffer.copy(pchBuf, cbBuf);
         else
             rc = VERR_BUFFER_OVERFLOW;
     }
@@ -1197,7 +1014,7 @@ int Service::getNotification(VBOXHGCMCALLHANDLE callHandle, uint32_t cParms,
     char *pszPatterns = NULL;           /* shut up gcc */
     char *pchBuf;
     uint32_t cchPatterns = 0;
-    uint32_t cchBuf = 0;
+    uint32_t cbBuf = 0;
     uint64_t u64Timestamp;
 
     /*
@@ -1207,7 +1024,7 @@ int Service::getNotification(VBOXHGCMCALLHANDLE callHandle, uint32_t cParms,
     if (   (cParms != 4)  /* Hardcoded value as the next lines depend on it. */
         || RT_FAILURE(paParms[0].getString(&pszPatterns, &cchPatterns))  /* patterns */
         || RT_FAILURE(paParms[1].getUInt64(&u64Timestamp))  /* timestamp */
-        || RT_FAILURE(paParms[2].getBuffer((void **) &pchBuf, &cchBuf))  /* return buffer */
+        || RT_FAILURE(paParms[2].getBuffer((void **)&pchBuf, &cbBuf))  /* return buffer */
        )
         rc = VERR_INVALID_PARAMETER;
     if (RT_SUCCESS(rc))
@@ -1250,8 +1067,6 @@ int Service::getNotification(VBOXHGCMCALLHANDLE callHandle, uint32_t cParms,
  */
 void Service::doNotifications(const char *pszProperty, uint64_t u64Timestamp)
 {
-    int rc = VINF_SUCCESS;
-
     AssertPtrReturnVoid(pszProperty);
     LogFlowThisFunc (("pszProperty=%s, u64Timestamp=%llu\n", pszProperty, u64Timestamp));
     /* Ensure that our timestamp is different to the last one. */
@@ -1267,62 +1082,42 @@ void Service::doNotifications(const char *pszProperty, uint64_t u64Timestamp)
     prop.mName = pszProperty;
     prop.mTimestamp = u64Timestamp;
     /* prop is currently a delete event for pszProperty */
-    bool found = false;
-#ifdef USE_STRSPACE
-    if (RT_SUCCESS(rc))
+    Property const * const pProp = getPropertyInternal(pszProperty);
+    if (pProp)
     {
-        Property *pProp = getPropertyInternal(pszProperty);
-        if (pProp)
-        {
-            found = true;
-            /* Make prop into a change event. */
-            prop.mValue = pProp->mValue;
-            prop.mFlags = pProp->mFlags;
-        }
+        /* Make prop into a change event. */
+        prop.mValue = pProp->mValue;
+        prop.mFlags = pProp->mFlags;
     }
-#else  /* !USE_STRSPACE */
-    if (RT_SUCCESS(rc))
-        for (PropertyList::const_iterator it = mProperties.begin();
-             !found && it != mProperties.end(); ++it)
-            if (it->mName.compare(pszProperty) == 0)
-            {
-                found = true;
-                /* Make prop into a change event. */
-                prop.mValue = it->mValue;
-                prop.mFlags = it->mFlags;
-            }
-#endif /* !USE_STRSPACE */
 
     /* Release waiters if applicable and add the event to the queue for
      * guest notifications */
-    if (RT_SUCCESS(rc))
+    int rc = VINF_SUCCESS;
+    try
     {
-        try
+        CallList::iterator it = mGuestWaiters.begin();
+        while (it != mGuestWaiters.end())
         {
-            CallList::iterator it = mGuestWaiters.begin();
-            while (it != mGuestWaiters.end())
+            const char *pszPatterns;
+            uint32_t cchPatterns;
+            it->mParms[0].getString(&pszPatterns, &cchPatterns);
+            if (prop.Matches(pszPatterns))
             {
-                const char *pszPatterns;
-                uint32_t cchPatterns;
-                it->mParms[0].getString(&pszPatterns, &cchPatterns);
-                if (prop.Matches(pszPatterns))
-                {
-                    GuestCall curCall = *it;
-                    int rc2 = getNotificationWriteOut(curCall.mParms, prop);
-                    if (RT_SUCCESS(rc2))
-                        rc2 = curCall.mRc;
-                    mpHelpers->pfnCallComplete(curCall.mHandle, rc2);
-                    it = mGuestWaiters.erase(it);
-                }
-                else
-                    ++it;
+                GuestCall curCall = *it;
+                int rc2 = getNotificationWriteOut(curCall.mParms, prop);
+                if (RT_SUCCESS(rc2))
+                    rc2 = curCall.mRc;
+                mpHelpers->pfnCallComplete(curCall.mHandle, rc2);
+                it = mGuestWaiters.erase(it);
             }
-            mGuestNotifications.push_back(prop);
+            else
+                ++it;
         }
-        catch (std::bad_alloc)
-        {
-            rc = VERR_NO_MEMORY;
-        }
+        mGuestNotifications.push_back(prop);
+    }
+    catch (std::bad_alloc)
+    {
+        rc = VERR_NO_MEMORY;
     }
     if (mGuestNotifications.size() > MAX_GUEST_NOTIFICATIONS)
         mGuestNotifications.pop_front();
@@ -1331,7 +1126,7 @@ void Service::doNotifications(const char *pszProperty, uint64_t u64Timestamp)
      * Host notifications - first case: if the property exists then send its
      * current value
      */
-    if (found && mpfnHostCallback != NULL)
+    if (pProp && mpfnHostCallback != NULL)
     {
         char szFlags[MAX_FLAGS_LEN];
         /* Send out a host notification */
@@ -1346,13 +1141,13 @@ void Service::doNotifications(const char *pszProperty, uint64_t u64Timestamp)
      * Host notifications - second case: if the property does not exist then
      * send the host an empty value
      */
-    if (!found && mpfnHostCallback != NULL)
+    if (!pProp && mpfnHostCallback != NULL)
     {
         /* Send out a host notification */
         if (RT_SUCCESS(rc))
             rc = notifyHost(pszProperty, NULL, u64Timestamp, NULL);
     }
-    LogFlowThisFunc (("returning\n"));
+    LogFlowThisFunc(("returning\n"));
 }
 
 /**
@@ -1366,8 +1161,8 @@ void Service::doNotifications(const char *pszProperty, uint64_t u64Timestamp)
 int Service::notifyHost(const char *pszName, const char *pszValue,
                         uint64_t u64Timestamp, const char *pszFlags)
 {
-    LogFlowFunc (("pszName=%s, pszValue=%s, u64Timestamp=%llu, pszFlags=%s\n",
-                  pszName, pszValue, u64Timestamp, pszFlags));
+    LogFlowFunc(("pszName=%s, pszValue=%s, u64Timestamp=%llu, pszFlags=%s\n",
+                 pszName, pszValue, u64Timestamp, pszFlags));
     HOSTCALLBACKDATA HostCallbackData;
     HostCallbackData.u32Magic     = HOSTCALLBACKMAGIC;
     HostCallbackData.pcszName     = pszName;
@@ -1549,33 +1344,35 @@ using guestProp::Service;
  */
 extern "C" DECLCALLBACK(DECLEXPORT(int)) VBoxHGCMSvcLoad (VBOXHGCMSVCFNTABLE *ptable)
 {
-    int rc = VINF_SUCCESS;
+    int rc = VERR_IPE_UNINITIALIZED_STATUS;
 
     LogFlowFunc(("ptable = %p\n", ptable));
 
-    if (!VALID_PTR(ptable))
-    {
+    if (!RT_VALID_PTR(ptable))
         rc = VERR_INVALID_PARAMETER;
-    }
     else
     {
         LogFlowFunc(("ptable->cbSize = %d, ptable->u32Version = 0x%08X\n", ptable->cbSize, ptable->u32Version));
 
-        if (   ptable->cbSize != sizeof (VBOXHGCMSVCFNTABLE)
+        if (   ptable->cbSize != sizeof(VBOXHGCMSVCFNTABLE)
             || ptable->u32Version != VBOX_HGCM_SVC_VERSION)
-        {
             rc = VERR_VERSION_MISMATCH;
-        }
         else
         {
-            std::auto_ptr<Service> apService;
+            Service *pService = NULL;
             /* No exceptions may propagate outside. */
-            try {
-                apService = std::auto_ptr<Service>(new Service(ptable->pHelpers));
-            } catch (int rcThrown) {
+            try
+            {
+                pService = new Service(ptable->pHelpers);
+                rc = VINF_SUCCESS;
+            }
+            catch (int rcThrown)
+            {
                 rc = rcThrown;
-            } catch (...) {
-                rc = VERR_UNRESOLVED_ERROR;
+            }
+            catch (...)
+            {
+                rc = VERR_UNEXPECTED_EXCEPTION;
             }
 
             if (RT_SUCCESS(rc))
@@ -1593,8 +1390,10 @@ extern "C" DECLCALLBACK(DECLEXPORT(int)) VBoxHGCMSvcLoad (VBOXHGCMSVCFNTABLE *pt
                 ptable->pfnRegisterExtension  = Service::svcRegisterExtension;
 
                 /* Service specific initialization. */
-                ptable->pvService = apService.release();
+                ptable->pvService = pService;
             }
+            else
+                Assert(!pService);
         }
     }
 
