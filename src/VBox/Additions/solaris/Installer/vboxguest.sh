@@ -26,7 +26,7 @@ SILENTUNLOAD=""
 MODNAME="vboxguest"
 VFSMODNAME="vboxfs"
 MODDIR32="/usr/kernel/drv"
-MODDIR64=$MODDIR32/amd64
+MODDIR64="/usr/kernel/drv/amd64"
 VFSDIR32="/usr/kernel/fs"
 VFSDIR64="/usr/kernel/fs/amd64"
 
@@ -113,7 +113,7 @@ start_module()
 stop_module()
 {
     if vboxguest_loaded; then
-        /usr/sbin/rem_drv $MODNAME || abort "## Failed to unload VirtualBox guest kernel module."
+        /usr/sbin/rem_drv $MODNAME || abort "Failed to unload VirtualBox guest kernel module."
         info "VirtualBox guest kernel module unloaded."
     elif test -z "$SILENTUNLOAD"; then
         info "VirtualBox guest kernel module not loaded."
@@ -147,22 +147,6 @@ stop_vboxfs()
     fi
 }
 
-restart_module()
-{
-    stop_module
-    sync
-    start_module
-    return 0
-}
-
-restart_all()
-{
-    stop_module
-    sync
-    start_module
-    return 0
-}
-
 status_module()
 {
     if vboxguest_loaded; then
@@ -176,6 +160,14 @@ stop_all()
 {
     stop_vboxfs
     stop_module
+    return 0
+}
+
+restart_all()
+{
+    stop_all
+    start_module
+    start_vboxfs
     return 0
 }
 
@@ -198,9 +190,6 @@ start)
     ;;
 stop)
     stop_module
-    ;;
-restart)
-    restart_module
     ;;
 status)
     status_module

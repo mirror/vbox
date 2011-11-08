@@ -24,10 +24,10 @@
 -->
 <!DOCTYPE service_bundle SYSTEM "/usr/share/lib/xml/dtd/service_bundle.dtd.1">
 
-<service_bundle type='manifest' name='export'>
+<service_bundle type='manifest' name='SUNWvboxguest:vboxservice'>
 
 <service
-    name='system/virtualbox/vboxservice'
+    name='application/virtualbox/vboxservice'
     type='service'
     version='1'>
 
