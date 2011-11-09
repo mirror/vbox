@@ -149,6 +149,18 @@ static void CDECL wined3d_do_nothing(void)
 {
 }
 
+#ifdef VBOX_WITH_WDDM
+void WINAPI wined3d_mutex_init(void)
+{
+    InitializeCriticalSection(&wined3d_cs);
+}
+
+void WINAPI wined3d_mutex_term(void)
+{
+    DeleteCriticalSection(&wined3d_cs);
+}
+#endif
+
 static BOOL wined3d_dll_init(HINSTANCE hInstDLL)
 {
     DWORD wined3d_context_tls_idx;
@@ -160,11 +172,18 @@ static BOOL wined3d_dll_init(HINSTANCE hInstDLL)
     DWORD len, tmpvalue;
     WNDCLASSA wc;
 
+#ifdef VBOX_WITH_WDDM
+    wined3d_mutex_init();
+#endif
+
     wined3d_context_tls_idx = TlsAlloc();
     if (wined3d_context_tls_idx == TLS_OUT_OF_INDEXES)
     {
         DWORD err = GetLastError();
         ERR("Failed to allocate context TLS index, err %#x.\n", err);
+#ifdef VBOX_WITH_WDDM
+        wined3d_mutex_term();
+#endif
         return FALSE;
     }
     context_set_tls_idx(wined3d_context_tls_idx);
@@ -191,6 +210,9 @@ static BOOL wined3d_dll_init(HINSTANCE hInstDLL)
             DWORD err = GetLastError();
             ERR("Failed to free context TLS index, err %#x.\n", err);
         }
+#ifdef VBOX_WITH_WDDM
+        wined3d_mutex_term();
+#endif
         return FALSE;
     }
 
@@ -388,6 +410,10 @@ static BOOL wined3d_dll_destroy(HINSTANCE hInstDLL)
 
     HeapFree(GetProcessHeap(), 0, wined3d_settings.logo);
     UnregisterClassA(WINED3D_OPENGL_WINDOW_CLASS_NAME, hInstDLL);
+
+#ifdef VBOX_WITH_WDDM
+    wined3d_mutex_term();
+#endif
 
     return TRUE;
 }
