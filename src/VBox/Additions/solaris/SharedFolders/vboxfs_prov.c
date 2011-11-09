@@ -863,8 +863,7 @@ int
 sfprov_readdir(
 	sfp_mount_t *mnt,
 	char *path,
-	sffs_dirents_t **dirents,
-	sffs_stats_t **stats)
+	sffs_dirents_t **dirents)
 {
 	int error;
 	char *cp;
@@ -879,20 +878,19 @@ sfprov_readdir(
 	uint32_t size;
 	off_t offset;
 	sffs_dirents_t *cur_buf;
-	sffs_stats_t *cur_stats;
-	struct dirent64 *dirent;
+	struct sffs_dirent *dirent;
 	sffs_stat_t *stat;
 	unsigned short reclen;
+	unsigned short entlen;
 
 	*dirents = NULL;
-	*stats = NULL;
 
 	error = sfprov_open(mnt, path, &fp);
 	if (error != 0)
 		return (ENOENT);
 
 	/*
-	 * Allocate the first dirents and stats buffers.
+	 * Allocate the first dirents buffers.
 	 */
 	*dirents = kmem_alloc(SFFS_DIRENTS_SIZE, KM_SLEEP);
 	if (*dirents == NULL) {
@@ -902,15 +900,6 @@ sfprov_readdir(
 	cur_buf = *dirents;
 	cur_buf->sf_next = NULL;
 	cur_buf->sf_len = 0;
-
-	*stats = kmem_alloc(sizeof(**stats), KM_SLEEP);
-	if (*stats == NULL) {
-		error = (ENOSPC);
-		goto done;
-	}
-	cur_stats = *stats;
-	cur_stats->sf_next = NULL;
-	cur_stats->sf_num = 0;
 
 	/*
 	 * Create mask that VBox expects. This needs to be the directory path,
@@ -963,7 +952,8 @@ sfprov_readdir(
 		for (info = infobuff; (char *) info < (char *) infobuff + numbytes; nents--) {
 			/* expand buffers if we need more space */
 			reclen = DIRENT64_RECLEN(strlen(info->name.String.utf8));
-			if (SFFS_DIRENTS_OFF + cur_buf->sf_len + reclen > SFFS_DIRENTS_SIZE) {
+			entlen = sizeof(sffs_stat_t) + reclen;
+			if (SFFS_DIRENTS_OFF + cur_buf->sf_len + entlen > SFFS_DIRENTS_SIZE) {
 				cur_buf->sf_next = kmem_alloc(SFFS_DIRENTS_SIZE, KM_SLEEP);
 				if (cur_buf->sf_next == NULL) {
 					error = ENOSPC;
@@ -974,30 +964,16 @@ sfprov_readdir(
 				cur_buf->sf_len = 0;
 			}
 
-			if (cur_stats->sf_num >= SFFS_STATS_LEN) {
-				cur_stats->sf_next = kmem_alloc(sizeof(**stats), KM_SLEEP);
-				if (cur_stats->sf_next == NULL) {
-					error = (ENOSPC);
-					goto done;
-				}
-				cur_stats = cur_stats->sf_next;
-				cur_stats->sf_next = NULL;
-				cur_stats->sf_num = 0;
-			}
-
 			/* create the dirent with the name, offset, and len */
-			dirent = (dirent64_t *)
+			dirent = (struct sffs_dirent *)
 			    (((char *) &cur_buf->sf_entries[0]) + cur_buf->sf_len);
-			strncpy(&dirent->d_name[0], info->name.String.utf8, DIRENT64_NAMELEN(reclen));
-			dirent->d_reclen = reclen;
-			offset += reclen;
-			dirent->d_off = offset;
-
-			cur_buf->sf_len += reclen;
+			strncpy(&dirent->sf_entry.d_name[0], info->name.String.utf8, DIRENT64_NAMELEN(reclen));
+			dirent->sf_entry.d_reclen = reclen;
+			offset += entlen;
+			dirent->sf_entry.d_off = offset;
 
 			/* save the stats */
-			stat = &cur_stats->sf_stats[cur_stats->sf_num];
-			++cur_stats->sf_num;
+			stat = &dirent->sf_stat;
 
 			sfprov_mode_from_fmode(&stat->sf_mode, info->Info.Attr.fMode);
 			stat->sf_size = info->Info.cbObject;
@@ -1006,6 +982,7 @@ sfprov_readdir(
 			sfprov_ftime_from_timespec(&stat->sf_ctime, &info->Info.ChangeTime);
 
 			/* next info */
+			cur_buf->sf_len += entlen;
 			size = offsetof (SHFLDIRINFO, name.String) + info->name.u16Size;
 			info = (SHFLDIRINFO *) ((uintptr_t) info + size);
 		}
@@ -1023,11 +1000,6 @@ done:
 			cur_buf = (*dirents)->sf_next;
 			kmem_free(*dirents, SFFS_DIRENTS_SIZE);
 			*dirents = cur_buf;
-		}
-		while (*stats) {
-			cur_stats = (*stats)->sf_next;
-			kmem_free(*stats, sizeof(**stats));
-			*stats = cur_stats;
 		}
 	}
 	if (infobuff != NULL)
