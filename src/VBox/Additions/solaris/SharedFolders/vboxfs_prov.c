@@ -877,7 +877,7 @@ sfprov_readdir(
 	uint32_t numbytes;
 	uint32_t nents;
 	uint32_t size;
-	uint32_t cnt;
+	off_t offset;
 	sffs_dirents_t *cur_buf;
 	sffs_stats_t *cur_stats;
 	struct dirent64 *dirent;
@@ -936,7 +936,7 @@ sfprov_readdir(
 		goto done;
 	}
 
-	cnt = 0;
+	offset = 0;
 	for (;;) {
 		numbytes = infobuff_alloc;
 		error = vboxCallDirInfo(&vbox_client, &fp->map, fp->handle,
@@ -988,12 +988,12 @@ sfprov_readdir(
 			/* create the dirent with the name, offset, and len */
 			dirent = (dirent64_t *)
 			    (((char *) &cur_buf->sf_entries[0]) + cur_buf->sf_len);
-			strcpy(&dirent->d_name[0], info->name.String.utf8);
+			strncpy(&dirent->d_name[0], info->name.String.utf8, DIRENT64_NAMELEN(reclen));
 			dirent->d_reclen = reclen;
-			dirent->d_off = cnt;
+			offset += reclen;
+			dirent->d_off = offset;
 
 			cur_buf->sf_len += reclen;
-			++cnt;
 
 			/* save the stats */
 			stat = &cur_stats->sf_stats[cur_stats->sf_num];

@@ -355,7 +355,11 @@ sffs_mount(vfs_t *vfsp, vnode_t *mvp, struct mounta *uap, cred_t *cr)
 	if (vfs_optionisset(vfsp, "stat_ttl", &optval) &&
 	    ddi_strtol(optval, NULL, 10, &val) == 0 &&
 	    (int)val == val)
+	{
 		stat_ttl = val;
+	}
+	else
+		vfs_setmntopt(vfsp, "stat_ttl", VBOXSOLQUOTE(DEF_STAT_TTL_MS), 0);
 
 	/*
 	 * whether to honor fsync
