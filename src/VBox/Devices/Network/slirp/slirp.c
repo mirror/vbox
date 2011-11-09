@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2010 Oracle Corporation
+ * Copyright (C) 2006-2011 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -1986,10 +1986,11 @@ void slirp_set_somaxconn(PNATState pData, int iSoMaxConn)
     if (iSoMaxConn > SOMAXCONN)
     {
         LogRel(("New value of somaxconn(%d) bigger than SOMAXCONN(%d)\n", iSoMaxConn, SOMAXCONN));
-        pData->soMaxConn = SOMAXCONN;
+        iSoMaxConn = SOMAXCONN;
     }
     pData->soMaxConn = iSoMaxConn > 0 ? iSoMaxConn : pData->soMaxConn;
-    LogRel(("New value of somaxconn: %d\n", pData->soMaxConn));
+    if (pData->soMaxConn > 1)
+        LogRel(("New value of somaxconn: %d\n", pData->soMaxConn));
     LogFlowFuncLeave();
 }
 /* don't allow user set less 8kB and more than 1M values */

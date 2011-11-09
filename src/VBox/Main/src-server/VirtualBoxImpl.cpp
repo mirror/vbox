@@ -1,5 +1,4 @@
 /* $Id$ */
-
 /** @file
  * Implementation of IVirtualBox in VBoxSVC.
  */
@@ -416,7 +415,7 @@ HRESULT VirtualBox::init()
         if (FAILED(rc)) throw rc;
 
         /* guest OS type objects, needed by machines */
-        for (size_t i = 0; i < RT_ELEMENTS(Global::sOSTypes); ++i)
+        for (size_t i = 0; i < Global::cOSTypes; ++i)
         {
             ComObjPtr<GuestOSType> guestOSTypeObj;
             rc = guestOSTypeObj.createObject();
@@ -1108,15 +1107,11 @@ STDMETHODIMP VirtualBox::COMGETTER(InternalNetworks)(ComSafeArrayOut(BSTR, aInte
 
         if (pMachine->isAccessible())
         {
-            ULONG cNetworkAdapters = 0;
-            HRESULT rc = m->pSystemProperties->GetMaxNetworkAdapters(pMachine->getChipsetType(), &cNetworkAdapters);
-            if (FAILED(rc))
-                continue;
-            cNetworkAdapters = RT_MIN(4, cNetworkAdapters);
+            uint32_t cNetworkAdapters = Global::getMaxNetworkAdapters(pMachine->getChipsetType());
             for (ULONG i = 0; i < cNetworkAdapters; i++)
             {
                 ComPtr<INetworkAdapter> pNet;
-                rc = pMachine->GetNetworkAdapter(i, pNet.asOutParam());
+                HRESULT rc = pMachine->GetNetworkAdapter(i, pNet.asOutParam());
                 if (FAILED(rc) || pNet.isNull())
                     continue;
                 Bstr strInternalNetwork;
@@ -1174,15 +1169,11 @@ STDMETHODIMP VirtualBox::COMGETTER(GenericNetworkDrivers)(ComSafeArrayOut(BSTR, 
 
         if (pMachine->isAccessible())
         {
-            ULONG cNetworkAdapters = 0;
-            HRESULT rc = m->pSystemProperties->GetMaxNetworkAdapters(pMachine->getChipsetType(), &cNetworkAdapters);
-            if (FAILED(rc))
-                continue;
-            cNetworkAdapters = RT_MIN(4, cNetworkAdapters);
+            uint32_t cNetworkAdapters = Global::getMaxNetworkAdapters(pMachine->getChipsetType());
             for (ULONG i = 0; i < cNetworkAdapters; i++)
             {
                 ComPtr<INetworkAdapter> pNet;
-                rc = pMachine->GetNetworkAdapter(i, pNet.asOutParam());
+                HRESULT rc = pMachine->GetNetworkAdapter(i, pNet.asOutParam());
                 if (FAILED(rc) || pNet.isNull())
                     continue;
                 Bstr strGenericNetworkDriver;
@@ -1702,40 +1693,10 @@ STDMETHODIMP VirtualBox::FindMedium(IN_BSTR   aLocation,
 /** @note Locks this object for reading. */
 STDMETHODIMP VirtualBox::GetGuestOSType(IN_BSTR aId, IGuestOSType **aType)
 {
-    /* Old ID to new ID conversion table. See r39691 for a source */
-    static const wchar_t *kOldNewIDs[] =
-    {
-        L"unknown", L"Other",
-        L"win31", L"Windows31",
-        L"win95", L"Windows95",
-        L"win98", L"Windows98",
-        L"winme", L"WindowsMe",
-        L"winnt4", L"WindowsNT4",
-        L"win2k", L"Windows2000",
-        L"winxp", L"WindowsXP",
-        L"win2k3", L"Windows2003",
-        L"winvista", L"WindowsVista",
-        L"win2k8", L"Windows2008",
-        L"ecs", L"OS2eCS",
-        L"fedoracore", L"Fedora",
-        /* the rest is covered by the case-insensitive comparison */
-    };
-
     CheckComArgNotNull(aType);
 
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
-
-    /* first, look for a substitution */
-    Bstr id = aId;
-    for (size_t i = 0; i < RT_ELEMENTS(kOldNewIDs) / 2; i += 2)
-    {
-        if (id == kOldNewIDs[i])
-        {
-            id = kOldNewIDs[i + 1];
-            break;
-        }
-    }
 
     *aType = NULL;
 
@@ -1746,7 +1707,7 @@ STDMETHODIMP VirtualBox::GetGuestOSType(IN_BSTR aId, IGuestOSType **aType)
     {
         const Bstr &typeId = (*it)->id();
         AssertMsg(!typeId.isEmpty(), ("ID must not be NULL"));
-        if (typeId.compare(id, Bstr::CaseInsensitive) == 0)
+        if (typeId.compare(aId, Bstr::CaseInsensitive) == 0)
         {
             (*it).queryInterfaceTo(aType);
             break;

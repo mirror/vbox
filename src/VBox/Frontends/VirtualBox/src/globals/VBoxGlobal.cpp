@@ -4928,6 +4928,7 @@ void VBoxGlobal::init()
         {"Solaris_64",      ":/os_solaris_64.png"},
         {"OpenSolaris",     ":/os_oraclesolaris.png"},
         {"OpenSolaris_64",  ":/os_oraclesolaris_64.png"},
+        {"Solaris11_64",    ":/os_oraclesolaris_64.png"},
         {"QNX",             ":/os_qnx.png"},
         {"MacOS",           ":/os_macosx.png"},
         {"MacOS_64",        ":/os_macosx_64.png"},

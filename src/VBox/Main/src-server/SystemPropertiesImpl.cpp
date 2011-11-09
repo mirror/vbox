@@ -1,12 +1,11 @@
 /* $Id$ */
-
 /** @file
  *
  * VirtualBox COM class implementation
  */
 
 /*
- * Copyright (C) 2006-2010 Oracle Corporation
+ * Copyright (C) 2006-2011 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -321,20 +320,10 @@ STDMETHODIMP SystemProperties::GetMaxNetworkAdapters(ChipsetType_T aChipset, ULO
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    ULONG uResult = 0;
-
     /* no need for locking, no state */
-    switch (aChipset)
-    {
-        case ChipsetType_PIIX3:
-            uResult = SchemaDefs::NetworkAdapterCount; /* == 8 */
-            break;
-        case ChipsetType_ICH9:
-            uResult = 36;
-            break;
-        default:
-            AssertMsgFailed(("Invalid chipset type %d\n", aChipset));
-    }
+    uint32_t uResult = Global::getMaxNetworkAdapters(aChipset);
+    if (uResult == 0)
+        AssertMsgFailed(("Invalid chipset type %d\n", aChipset));
 
     *count = uResult;
 
@@ -348,12 +337,11 @@ STDMETHODIMP SystemProperties::GetMaxNetworkAdaptersOfType(ChipsetType_T aChipse
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    ULONG uResult = 0;
-    HRESULT rc = GetMaxNetworkAdapters(aChipset, &uResult);
-    if (FAILED(rc))
-        return rc;
-
     /* no need for locking, no state */
+    uint32_t uResult = Global::getMaxNetworkAdapters(aChipset);
+    if (uResult == 0)
+        AssertMsgFailed(("Invalid chipset type %d\n", aChipset));
+
     switch (aType)
     {
         case NetworkAttachmentType_NAT:
@@ -364,7 +352,7 @@ STDMETHODIMP SystemProperties::GetMaxNetworkAdaptersOfType(ChipsetType_T aChipse
             /* Maybe use current host interface count here? */
             break;
         case NetworkAttachmentType_HostOnly:
-            uResult = 8;
+            uResult = RT_MIN(uResult, 8);
             break;
         default:
             AssertMsgFailed(("Unhandled attachment type %d\n", aType));

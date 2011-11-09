@@ -1,5 +1,4 @@
 /* $Id$ */
-
 /** @file
  *
  * COM class implementation for Snapshot and SnapshotMachine in VBoxSVC.
@@ -1037,7 +1036,8 @@ HRESULT SnapshotMachine::init(SessionMachine *aSessionMachine,
     unconst(mUSBController).createObject();
     mUSBController->initCopy(this, mPeer->mUSBController);
 
-    for (ULONG slot = 0; slot < RT_ELEMENTS(mNetworkAdapters); slot++)
+    mNetworkAdapters.resize(mPeer->mNetworkAdapters.size());
+    for (ULONG slot = 0; slot < mNetworkAdapters.size(); slot++)
     {
         unconst(mNetworkAdapters[slot]).createObject();
         mNetworkAdapters[slot]->initCopy(this, mPeer->mNetworkAdapters[slot]);
@@ -1086,7 +1086,7 @@ HRESULT SnapshotMachine::init(Machine *aMachine,
     LogFlowThisFuncEnter();
     LogFlowThisFunc(("mName={%s}\n", aMachine->mUserData->s.strName.c_str()));
 
-    AssertReturn(aMachine &&  !Guid(aSnapshotId).isEmpty(), E_INVALIDARG);
+    AssertReturn(aMachine && !Guid(aSnapshotId).isEmpty(), E_INVALIDARG);
 
     /* Enclose the state transition NotReady->InInit->Ready */
     AutoInitSpan autoInitSpan(this);
@@ -1131,7 +1131,8 @@ HRESULT SnapshotMachine::init(Machine *aMachine,
     unconst(mUSBController).createObject();
     mUSBController->init(this);
 
-    for (ULONG slot = 0; slot < RT_ELEMENTS(mNetworkAdapters); slot++)
+    mNetworkAdapters.resize(Global::getMaxNetworkAdapters(mHWData->mChipsetType));
+    for (ULONG slot = 0; slot < mNetworkAdapters.size(); slot++)
     {
         unconst(mNetworkAdapters[slot]).createObject();
         mNetworkAdapters[slot]->init(this, slot);

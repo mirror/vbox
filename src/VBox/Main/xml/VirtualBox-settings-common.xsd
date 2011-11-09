@@ -134,81 +134,6 @@
   </xsd:restriction>
 </xsd:simpleType>
 
-<xsd:simpleType name="TGuestOSType">
-  <xsd:restriction base="xsd:string">
-    <xsd:enumeration value="Other"/>
-    <xsd:enumeration value="DOS"/>
-    <xsd:enumeration value="Netware"/>
-    <xsd:enumeration value="L4"/>
-    <xsd:enumeration value="Windows31"/>
-    <xsd:enumeration value="Windows95"/>
-    <xsd:enumeration value="Windows98"/>
-    <xsd:enumeration value="WindowsMe"/>
-    <xsd:enumeration value="WindowsNT4"/>
-    <xsd:enumeration value="Windows2000"/>
-    <xsd:enumeration value="WindowsXP"/>
-    <xsd:enumeration value="WindowsXP_64"/>
-    <xsd:enumeration value="Windows2003"/>
-    <xsd:enumeration value="Windows2003_64"/>
-    <xsd:enumeration value="WindowsVista"/>
-    <xsd:enumeration value="WindowsVista_64"/>
-    <xsd:enumeration value="Windows2008"/>
-    <xsd:enumeration value="Windows2008_64"/>
-    <xsd:enumeration value="Windows7"/>
-    <xsd:enumeration value="Windows7_64"/>
-    <xsd:enumeration value="Windows8"/>
-    <xsd:enumeration value="Windows8_64"/>
-    <xsd:enumeration value="WindowsNT"/>
-    <xsd:enumeration value="OS2Warp3"/>
-    <xsd:enumeration value="OS2Warp4"/>
-    <xsd:enumeration value="OS2Warp45"/>
-    <xsd:enumeration value="OS2eCS"/>
-    <xsd:enumeration value="OS2"/>
-    <xsd:enumeration value="Linux22"/>
-    <xsd:enumeration value="Linux24"/>
-    <xsd:enumeration value="Linux24_64"/>
-    <xsd:enumeration value="Linux26"/>
-    <xsd:enumeration value="Linux26_64"/>
-    <xsd:enumeration value="ArchLinux"/>
-    <xsd:enumeration value="ArchLinux_64"/>
-    <xsd:enumeration value="Debian"/>
-    <xsd:enumeration value="Debian_64"/>
-    <xsd:enumeration value="OpenSUSE"/>
-    <xsd:enumeration value="OpenSUSE_64"/>
-    <xsd:enumeration value="Fedora"/>
-    <xsd:enumeration value="Fedora_64"/>
-    <xsd:enumeration value="Gentoo"/>
-    <xsd:enumeration value="Gentoo_64"/>
-    <xsd:enumeration value="Mandriva"/>
-    <xsd:enumeration value="Mandriva_64"/>
-    <xsd:enumeration value="RedHat"/>
-    <xsd:enumeration value="RedHat_64"/>
-    <xsd:enumeration value="Turbolinux"/>
-    <xsd:enumeration value="Turbolinux_64"/>
-    <xsd:enumeration value="Ubuntu"/>
-    <xsd:enumeration value="Ubuntu_64"/>
-    <xsd:enumeration value="Xandros"/>
-    <xsd:enumeration value="Xandros_64"/>
-    <xsd:enumeration value="Oracle"/>
-    <xsd:enumeration value="Oracle_64"/>
-    <xsd:enumeration value="Linux"/>
-    <xsd:enumeration value="FreeBSD"/>
-    <xsd:enumeration value="FreeBSD_64"/>
-    <xsd:enumeration value="OpenBSD"/>
-    <xsd:enumeration value="OpenBSD_64"/>
-    <xsd:enumeration value="NetBSD"/>
-    <xsd:enumeration value="NetBSD_64"/>
-    <xsd:enumeration value="Solaris"/>
-    <xsd:enumeration value="Solaris_64"/>
-    <xsd:enumeration value="OpenSolaris"/>
-    <xsd:enumeration value="OpenSolaris_64"/>
-    <xsd:enumeration value="QNX"/>
-    <xsd:enumeration value="MacOS"/>
-    <xsd:enumeration value="MacOS_64"/>
-    <xsd:enumeration value="JRockitVE"/>
-  </xsd:restriction>
-</xsd:simpleType>
-
 
 <xsd:simpleType name="TAuthType">
   <xsd:restriction base="xsd:string">
@@ -782,14 +707,7 @@
     <!-- The DisabledModes tag is not part of this XSD file right now. -->
   </xsd:choice>
   <xsd:attribute name="type" type="TNetworkAdapterType" default="Am79C970A"/>
-  <xsd:attribute name="slot" use="required">
-    <xsd:simpleType>
-      <xsd:restriction base="xsd:unsignedInt">
-        <xsd:minInclusive value="0"/>
-        <xsd:maxExclusive value="8"/>
-      </xsd:restriction>
-    </xsd:simpleType>
-  </xsd:attribute>
+  <xsd:attribute name="slot" type="xsd:unsignedInt" use="required"/>
   <xsd:attribute name="enabled" type="xsd:boolean" use="required"/>
   <xsd:attribute name="MACAddress">
     <xsd:simpleType>
@@ -966,7 +884,7 @@
   </xsd:all>
   <xsd:attribute name="name" type="TNonEmptyString" use="required"/>
   <xsd:attribute name="nameSync" type="xsd:boolean" default="true"/>
-  <xsd:attribute name="OSType" type="TGuestOSType" use="required"/>
+  <xsd:attribute name="OSType" type="TNonEmptyString" use="required"/>
   <xsd:attribute name="uuid" type="TNonNullUUID" use="required"/>
   <xsd:attribute name="stateFile" type="TLocalFile"/>
   <xsd:attribute name="currentSnapshot" type="TNonNullUUID"/>

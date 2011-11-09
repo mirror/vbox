@@ -6,7 +6,7 @@
  */
 
 /*
- * Copyright (C) 2006-2010 Oracle Corporation
+ * Copyright (C) 2006-2011 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -68,8 +68,9 @@ static const osTypePattern gs_OSTypePattern[] =
     { QRegExp("Wi", Qt::CaseInsensitive), "WindowsXP" },
 
     /* Solaris */
-    { QRegExp("((Op.*So)|(os20[01][0-9])|(So.*1[01])|(India)|(Neva)).*64", Qt::CaseInsensitive), "OpenSolaris_64" },
-    { QRegExp("(Op.*So)|(os20[01][0-9])|(So.*1[01])|(India)|(Neva)", Qt::CaseInsensitive), "OpenSolaris" },
+    { QRegExp("So.*11", Qt::CaseInsensitive), "Solaris11_64" },
+    { QRegExp("((Op.*So)|(os20[01][0-9])|(So.*10)|(India)|(Neva)).*64", Qt::CaseInsensitive), "OpenSolaris_64" },
+    { QRegExp("(Op.*So)|(os20[01][0-9])|(So.*10)|(India)|(Neva)", Qt::CaseInsensitive), "OpenSolaris" },
     { QRegExp("So.*64", Qt::CaseInsensitive), "Solaris_64" },
     { QRegExp("So", Qt::CaseInsensitive), "Solaris" },
 
@@ -891,7 +892,7 @@ bool UINewVMWzdPage5::constructMachine()
             if (type.GetRecommendedFloppy()) {
                 m.AttachDevice(ctrFloppyName, 0, 0, KDeviceType_Floppy, CMedium());
                 if (!m.isOk())
-                    msgCenter().cannotAttachDevice(m, VBoxDefs::MediumType_Floppy, QString(), 
+                    msgCenter().cannotAttachDevice(m, VBoxDefs::MediumType_Floppy, QString(),
                                                    StorageSlot(KStorageBus_Floppy, 0, 0), this);
             }
 

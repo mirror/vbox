@@ -19,7 +19,6 @@
 #define ____H_CONSOLEIMPL
 
 #include "VirtualBoxBase.h"
-#include "SchemaDefs.h"
 #include "VBox/com/array.h"
 #include "EventImpl.h"
 
@@ -60,6 +59,7 @@ struct VUSBIRHCONFIG;
 typedef struct VUSBIRHCONFIG *PVUSBIRHCONFIG;
 
 #include <list>
+#include <vector>
 
 // defines
 ///////////////////////////////////////////////////////////////////////////////
@@ -732,7 +732,8 @@ private:
      * NetworkAdapter. This is needed to change the network attachment
      * dynamically.
      */
-    NetworkAttachmentType_T meAttachmentType[SchemaDefs::NetworkAdapterCount];
+    typedef std::vector<NetworkAttachmentType_T> NetworkAttachmentTypeVector;
+    NetworkAttachmentTypeVector meAttachmentType;
 
     VMMDev * m_pVMMDev;
     AudioSniffer * const mAudioSniffer;
@@ -757,7 +758,7 @@ private:
     };
     DeviceType_T maStorageDevType[cLedStorage];
     PPDMLED      mapStorageLeds[cLedStorage];
-    PPDMLED      mapNetworkLeds[SchemaDefs::NetworkAdapterCount];
+    PPDMLED      mapNetworkLeds[36];    /**< @todo adapt this to the maximum network card count */
     PPDMLED      mapSharedFolderLed;
     PPDMLED      mapUSBLed[2];
 

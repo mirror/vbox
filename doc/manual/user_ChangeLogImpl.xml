@@ -12,6 +12,11 @@
         <para>dummy</para>
       </listitem>
 
+      <listitem>
+        <para>Support for up to 36 network cards, in combination with an
+          ICH9 chipset configuration.</para>
+      </listitem>
+
     </itemizedlist>
 
     <para>In addition, the following items were fixed and/or added:</para>

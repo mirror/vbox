@@ -3,7 +3,7 @@
  */
 
 /*
- * Copyright (C) 2006-2010 Oracle Corporation
+ * Copyright (C) 2006-2011 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -109,6 +109,7 @@ typedef enum VBOXOSTYPE
     VBOXOSTYPE_Solaris_x64      = 0x80100,
     VBOXOSTYPE_OpenSolaris      = 0x81000,
     VBOXOSTYPE_OpenSolaris_x64  = 0x81100,
+    VBOXOSTYPE_Solaris11_x64    = 0x82100,
     VBOXOSTYPE_L4               = 0x90000,
     VBOXOSTYPE_QNX              = 0xA0000,
     VBOXOSTYPE_MacOS            = 0xB0000,

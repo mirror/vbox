@@ -352,16 +352,18 @@ STDMETHODIMP Appliance::Interpret()
             /* If there is a <vbox:Machine>, we always prefer the setting from there. */
             if (vsysThis.pelmVboxMachine)
             {
+                uint32_t maxNetworkAdapters = Global::getMaxNetworkAdapters(pNewDesc->m->pConfig->hardwareMachine.chipsetType);
+
                 const settings::NetworkAdaptersList &llNetworkAdapters = pNewDesc->m->pConfig->hardwareMachine.llNetworkAdapters;
                 /* Check for the constrains */
-                if (llNetworkAdapters.size() > SchemaDefs::NetworkAdapterCount)
+                if (llNetworkAdapters.size() > maxNetworkAdapters)
                     addWarning(tr("The virtual system \"%s\" claims support for %zu network adapters, but VirtualBox has support for max %u network adapter only."),
-                                  vsysThis.strName.c_str(), llNetworkAdapters.size(), SchemaDefs::NetworkAdapterCount);
+                                  vsysThis.strName.c_str(), llNetworkAdapters.size(), maxNetworkAdapters);
                 /* Iterate through all network adapters. */
                 settings::NetworkAdaptersList::const_iterator it1;
                 size_t a = 0;
                 for (it1 = llNetworkAdapters.begin();
-                     it1 != llNetworkAdapters.end() && a < SchemaDefs::NetworkAdapterCount;
+                     it1 != llNetworkAdapters.end() && a < maxNetworkAdapters;
                      ++it1, ++a)
                 {
                     if (it1->fEnabled)
@@ -379,10 +381,12 @@ STDMETHODIMP Appliance::Interpret()
             /* else we use the ovf configuration. */
             else if (size_t cEthernetAdapters = vsysThis.llEthernetAdapters.size() >  0)
             {
+                uint32_t maxNetworkAdapters = Global::getMaxNetworkAdapters(ChipsetType_PIIX3);
+
                 /* Check for the constrains */
-                if (cEthernetAdapters > SchemaDefs::NetworkAdapterCount)
+                if (cEthernetAdapters > maxNetworkAdapters)
                     addWarning(tr("The virtual system \"%s\" claims support for %zu network adapters, but VirtualBox has support for max %u network adapter only."),
-                                  vsysThis.strName.c_str(), cEthernetAdapters, SchemaDefs::NetworkAdapterCount);
+                                  vsysThis.strName.c_str(), cEthernetAdapters, maxNetworkAdapters);
 
                 /* Get the default network adapter type for the selected guest OS */
                 NetworkAdapterType_T defaultAdapterVBox = NetworkAdapterType_Am79C970A;
@@ -390,11 +394,11 @@ STDMETHODIMP Appliance::Interpret()
                 if (FAILED(rc)) throw rc;
 
                 ovf::EthernetAdaptersList::const_iterator itEA;
-                /* Iterate through all abstract networks. We support 8 network
-                 * adapters at the maximum, so the first 8 will be added only. */
+                /* Iterate through all abstract networks. Ignore network cards
+                 * which exceed the limit of VirtualBox. */
                 size_t a = 0;
                 for (itEA = vsysThis.llEthernetAdapters.begin();
-                     itEA != vsysThis.llEthernetAdapters.end() && a < SchemaDefs::NetworkAdapterCount;
+                     itEA != vsysThis.llEthernetAdapters.end() && a < maxNetworkAdapters;
                      ++itEA, ++a)
                 {
                     const ovf::EthernetAdapter &ea = *itEA; // logical network to connect to
@@ -2025,6 +2029,8 @@ void Appliance::importMachineGeneric(const ovf::VirtualSystem &vsysThis,
 #endif /* VBOX_WITH_USB */
 
     /* Change the network adapters */
+    uint32_t maxNetworkAdapters = Global::getMaxNetworkAdapters(ChipsetType_PIIX3);
+
     std::list<VirtualSystemDescriptionEntry*> vsdeNW = vsdescThis->findByType(VirtualSystemDescriptionType_NetworkAdapter);
     if (vsdeNW.size() == 0)
     {
@@ -2035,10 +2041,10 @@ void Appliance::importMachineGeneric(const ovf::VirtualSystem &vsysThis,
         rc = nwVBox->COMSETTER(Enabled)(false);
         if (FAILED(rc)) throw rc;
     }
-    else if (vsdeNW.size() > SchemaDefs::NetworkAdapterCount)
+    else if (vsdeNW.size() > maxNetworkAdapters)
         throw setError(VBOX_E_FILE_ERROR,
                        tr("Too many network adapters: OVF requests %d network adapters, but VirtualBox only supports %d"),
-                       vsdeNW.size(), SchemaDefs::NetworkAdapterCount);
+                       vsdeNW.size(), maxNetworkAdapters);
     else
     {
         list<VirtualSystemDescriptionEntry*>::const_iterator nwIt;

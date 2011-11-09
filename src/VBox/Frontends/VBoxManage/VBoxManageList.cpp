@@ -369,7 +369,17 @@ static HRESULT produceList(enum enmListType enmCommand, bool fOptLong, const Com
                     RTPrintf("ID:          %ls\n", guestId.raw());
                     Bstr guestDescription;
                     guestOS->COMGETTER(Description)(guestDescription.asOutParam());
-                    RTPrintf("Description: %ls\n\n", guestDescription.raw());
+                    RTPrintf("Description: %ls\n", guestDescription.raw());
+                    Bstr familyId;
+                    guestOS->COMGETTER(FamilyId)(familyId.asOutParam());
+                    RTPrintf("Family ID:   %ls\n", familyId.raw());
+                    Bstr familyDescription;
+                    guestOS->COMGETTER(FamilyDescription)(familyDescription.asOutParam());
+                    RTPrintf("Family Desc: %ls\n", familyDescription.raw());
+                    BOOL is64Bit;
+                    guestOS->COMGETTER(Is64Bit)(&is64Bit);
+                    RTPrintf("64 bit:      %RTbool\n", is64Bit);
+                    RTPrintf("\n");
                 }
             }
             break;
