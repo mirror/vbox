@@ -177,7 +177,8 @@ if  !defined(VBOX_ONLY_DOCS) \
 ifeq ($(KBUILD_TARGET),win)
 VBoxDrv_TEMPLATE      = VBOXR0DRV
 ifdef VBOX_SIGNING_MODE
- VBoxDrv_NOINST       = true
+ VBoxDrv_INSTTYPE     = none
+ VBoxDrv_DEBUG_INSTTYPE = both
 endif
 VBoxDrv_DEFS          = IN_RT_R0 IN_SUP_R0 SUPDRV_WITH_RELEASE_LOGGER
 ifdef VBOX_WITHOUT_NATIVE_R0_LOADER
@@ -236,7 +237,6 @@ endif # win
 #
 ifeq ($(KBUILD_TARGET),linux)
 vboxdrv_TEMPLATE      = VBOXR0DRV
-vboxdrv_NOINST        = true
 vboxdrv_DEFS          = KBUILD_MODNAME=KBUILD_STR\(vboxdrv\) KBUILD_BASENAME=KBUILD_STR\(vboxdrv\) MODULE IN_RT_R0 IN_SUP_R0 CONFIG_VBOXDRV_AS_MISC
 ifdef VBOX_LINUX_VERSION_2_4
  vboxdrv_DEFS        += EXPORT_SYMTAB
@@ -379,7 +379,7 @@ VBoxDrv_LIBS          = \
 # temp hack to ensure that SUPDrvA-os2.asm is first in the link.
 LIBRARIES += VBoxDrvLib
 VBoxDrvLib_TEMPLATE   = VBOXR0DRV
-VBoxDrvLib_NOINST     = 1
+VBoxDrvLib_INSTTYPE   = none
 VBoxDrvLib_DEFS       = IN_RT_R0 IN_SUP_R0
 VBoxDrvLib_INCS      := \
 	. \

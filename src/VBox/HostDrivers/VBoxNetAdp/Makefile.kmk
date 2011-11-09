@@ -30,7 +30,6 @@ if1of ($(KBUILD_TARGET), solaris darwin linux freebsd)
   VBoxNetAdp_NAME.solaris     = vboxnet
   VBoxNetAdp_NAME.linux       = vboxnetadp
   VBoxNetAdp_NAME.freebsd     = vboxnetadp
-  VBoxNetAdp_NOINST.linux     = true
   VBoxNetAdp_DEPS.solaris    += $(VBOX_SVN_REV_KMK)
   VBoxNetAdp_DEFS             = IN_RT_R0 VBOX_SVN_REV=$(VBOX_SVN_REV) IN_SUP_STATIC
   VBoxNetAdp_DEFS.linux       = KBUILD_MODNAME=KBUILD_STR\(vboxnetadp\) KBUILD_BASENAME=KBUILD_STR\(vboxnetadp\) MODULE

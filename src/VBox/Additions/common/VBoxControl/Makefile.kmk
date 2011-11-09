@@ -28,7 +28,8 @@ PROGRAMS += VBoxControl
 VBoxControl_TEMPLATE = VBOXGUESTR3EXE
 ifeq ($(KBUILD_TARGET),win)
  ifdef VBOX_SIGN_ADDITIONS # (See the main Windows Additions makefile.)
-  VBoxControl_NOINST  = true
+  VBoxControl_INSTTYPE = none
+  VBoxControl_DEBUG_INSTTYPE = both
  endif
 endif
 VBoxControl_DEFS     += \

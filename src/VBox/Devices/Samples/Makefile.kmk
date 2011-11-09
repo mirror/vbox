@@ -24,7 +24,7 @@ include $(KBUILD_PATH)/subheader.kmk
 #
 DLLS += VBoxSampleDevice
 VBoxSampleDevice_TEMPLATE = VBOXR3
-VBoxSampleDevice_NOINST   = true
+VBoxSampleDevice_INSTTYPE = none
 VBoxSampleDevice_SOURCES  = \
 	VBoxSampleDevice.cpp
 VBoxSampleDevice_LIBS     = \

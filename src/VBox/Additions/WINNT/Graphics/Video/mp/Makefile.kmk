@@ -129,9 +129,11 @@ endif # VBOX_WITH_WDDM
 # Signing requires both miniport and display drivers
 # so it'd be dealt with in the parent makefile.
 ifdef VBOX_SIGN_ADDITIONS
- VBoxVideo_NOINST      = true
+ VBoxVideo_INSTTYPE            = none
+ VBoxVideo_DEBUG_INSTTYPE      = both
  ifdef VBOX_WITH_WDDM
-  VBoxVideoWddm_NOINST = true
+  VBoxVideoWddm_INSTTYPE       = none
+  VBoxVideoWddm_DEBUG_INSTTYPE = both
  endif
 endif
 

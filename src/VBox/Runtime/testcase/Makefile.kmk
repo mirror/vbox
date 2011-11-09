@@ -182,7 +182,7 @@ endif
 #
 
 tstRTAssertCompile_TEMPLATE = VBOXR3TSTEXE
-tstRTAssertCompile_NOINST = true
+tstRTAssertCompile_INSTTYPE = none
 tstRTAssertCompile_SOURCES = tstRTAssertCompile.cpp
 
 tstRTAvl_TEMPLATE = VBOXR3TSTEXE

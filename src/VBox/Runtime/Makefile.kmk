@@ -1334,13 +1334,14 @@ endif
 ifeq ($(KBUILD_TARGET),linux)
  if1of (VBoxRT, $(DLLS))
   ifneq ($(wildcard /usr/bin/chcon),)
-VBoxRT_NOINST = true
+VBoxRT_INSTTYPE = none
+VBoxRT_DEBUG_INSTTYPE = both
 
 DLLS += VBoxRTDummy
 VBoxRTDummy_TEMPLATE = VBOXR3
-VBoxRTDummy_NOINST = true
-VBoxRTDummy_LIBS = $(PATH_STAGE_BIN)/VBoxRT.so
-VBoxRTDummy_CLEAN= $(PATH_STAGE_BIN)/VBoxRT.so
+VBoxRTDummy_INSTTYPE = none
+VBoxRTDummy_LIBS  = $(PATH_STAGE_BIN)/VBoxRT.so
+VBoxRTDummy_CLEAN = $(PATH_STAGE_BIN)/VBoxRT.so
 BLDDIRS += $(PATH_STAGE_BIN)
 
 $(PATH_STAGE_BIN)/VBoxRT.so: $$(VBoxRT_1_TARGET) | $$(dir $$@)

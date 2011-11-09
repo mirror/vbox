@@ -27,7 +27,8 @@ if1of ($(KBUILD_TARGET), darwin win) # this ifeq must go, see @todo around elif
  VBoxNetFlt_TEMPLATE = VBOXR0DRV
  VBoxNetFlt_INST = $(INST_VBOXNETFLT)$(if $(eq $(KBUILD_TARGET),darwin),Contents/MacOS/)
  if defined(VBOX_SIGNING_MODE) && "$(KBUILD_TARGET)" == "win"
-  VBoxNetFlt_NOINST = true
+  VBoxNetFlt_INSTTYPE = none
+  VBoxNetFlt_DEBUG_INSTTYPE = both
  endif
  VBoxNetFlt_DEFS = IN_RT_R0 IN_SUP_STATIC
  VBoxNetFlt_INCS = .
@@ -208,7 +209,8 @@ $(PATH_TARGET)/VBoxNetFltCat.dir/VBoxNetFlt.cat: \
  DLLS.win += VBoxNetFltNobj
  VBoxNetFltNobj_TEMPLATE   = VBOXR3STATIC
  if defined(VBOX_SIGNING_MODE)
-  VBoxNetFltNobj_NOINST    = true
+  VBoxNetFltNobj_INSTTYPE  = none
+  VBoxNetFltNobj_DEBUG_INSTTYPE = both
  endif
  VBoxNetFltNobj_SDKS       = WINPSDK W2K3DDK VBOX_NTDLL
  VBoxNetFltNobj_DEFS       = _WIN32_WINNT=0x0500 WIN32 _ATL_STATIC_REGISTRY
@@ -255,7 +257,8 @@ $$(VBoxNetFltNobj_0_OUTDIR)/VBoxNetFltNobjT_i.c \
  VBoxNetAdp_TEMPLATE = VBOXR0DRV
  #VBoxNetAdp_INST = $(INST_VBOXNETADP)
  if defined(VBOX_SIGNING_MODE)
-  VBoxNetAdp_NOINST = true
+  VBoxNetAdp_INSTTYPE = none
+  VBoxNetAdp_DEBUG_INSTTYPE = both
  endif
  VBoxNetAdp_DEFS = IN_RT_R0 IN_SUP_STATIC
  VBoxNetAdp_INCS := $(PATH_SUB_CURRENT)
@@ -322,7 +325,6 @@ else if1of ($(KBUILD_TARGET), linux solaris freebsd) ## @todo merge this with th
   vboxnetflt_DEFS.linux    = KBUILD_MODNAME=KBUILD_STR\(vboxnetflt\) KBUILD_BASENAME=KBUILD_STR\(vboxnetflt\) MODULE
   vboxnetflt_DEFS          = IN_RT_R0
   vboxnetflt_DEPS.solaris += $(VBOX_SVN_REV_KMK)
-  vboxnetflt_NOINST.linux  = true
   vboxnetflt_INCS.linux   := \
   	$(PATH_ROOT)/src/VBox/Runtime/r0drv/linux
   vboxnetflt_INCS         := \

@@ -69,9 +69,11 @@ VBoxDisp_LIBS = \
 # Signing requires both miniport and display drivers
 # so it'd be dealt with in the parent makefile.
 ifdef VBOX_SIGN_ADDITIONS
- VBoxDisp_NOINST     = true
+ VBoxDisp_INSTTYPE           = none
+ VBoxDisp_DEBUG_INSTTYPE     = both
  ifdef VBOX_WITH_WDDM
-  VBoxDispD3D_NOINST = true
+  VBoxDispD3D_INSTTYPE       = none
+  VBoxDispD3D_DEBUG_INSTTYPE = both
  endif
 endif
 

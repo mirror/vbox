@@ -498,7 +498,7 @@ xpt_link_SOURCES = \
 # The NSPR Library.
 #
 VBox-xpcom-nspr_TEMPLATE   = XPCOM
-VBox-xpcom-nspr_NOINST     = 1
+VBox-xpcom-nspr_INSTTYPE   = none
 VBox-xpcom-nspr_DEFS       = \
 	_NSPR_BUILD_ \
 	HAVE_LCHOWN=1 \
@@ -712,14 +712,14 @@ $$(VBox-xpcom-nspr_0_OUTDIR)/_pl_bld.h: | $$(VBox-xpcom-nspr_0_OUTDIR)/
 
 
 VBox-xpcom-typelib_TEMPLATE = XPCOM
-VBox-xpcom-typelib_NOINST   = 1
+VBox-xpcom-typelib_INSTTYPE = none
 VBox-xpcom-typelib_SOURCES = \
 	xpcom/typelib/xpt/src/xpt_arena.c \
 	xpcom/typelib/xpt/src/xpt_struct.c \
 	xpcom/typelib/xpt/src/xpt_xdr.c
 
 VBox-xpcom-string_TEMPLATE = XPCOM
-VBox-xpcom-string_NOINST = 1
+VBox-xpcom-string_INSTTYPE = none
 VBox-xpcom-string_SOURCES = \
 	xpcom/string/src/nsAString.cpp \
 	xpcom/string/src/nsDependentSubstring.cpp \
@@ -734,7 +734,7 @@ VBox-xpcom-string_SOURCES = \
 	xpcom/string/src/nsStringObsolete.cpp
 
 VBox-xpcom-base_TEMPLATE = XPCOM
-VBox-xpcom-base_NOINST = 1
+VBox-xpcom-base_INSTTYPE = none
 VBox-xpcom-base_DEFS = _IMPL_NS_COM
 VBox-xpcom-base_SOURCES = \
 	xpcom/base/nsAllocator.cpp \
@@ -749,7 +749,7 @@ VBox-xpcom-base_SOURCES = \
 	xpcom/base/nsStackFrameUnix.cpp
 
 VBox-xpcom-ds_TEMPLATE = XPCOM
-VBox-xpcom-ds_NOINST = 1
+VBox-xpcom-ds_INSTTYPE = none
 VBox-xpcom-ds_DEFS = _IMPL_NS_COM
 VBox-xpcom-ds_SOURCES = \
 	xpcom/ds/pldhash.c \
@@ -789,7 +789,7 @@ VBox-xpcom-ds_SOURCES = \
 
 # @todo what about MOZ_USER_DIR?
 VBox-xpcom-io_TEMPLATE = XPCOM
-VBox-xpcom-io_NOINST = 1
+VBox-xpcom-io_INSTTYPE = none
 VBox-xpcom-io_DEFS = _IMPL_NS_COM MOZ_USER_DIR=\".mozilla\"
 VBox-xpcom-io_INCS.darwin = \
 	xpcom/MoreFiles
@@ -828,7 +828,7 @@ VBox-xpcom-io_SOURCES.os2 = \
 	xpcom/io/nsLocalFileOS2.cpp
 
 VBox-xpcom-components_TEMPLATE = XPCOM
-VBox-xpcom-components_NOINST = 1
+VBox-xpcom-components_INSTTYPE = none
 VBox-xpcom-components_DEFS = _IMPL_NS_COM EXPORT_XPTI_API
 VBox-xpcom-components_SOURCES = \
 	xpcom/components/nsCategoryManager.cpp \
@@ -840,7 +840,7 @@ VBox-xpcom-components_SOURCES = \
 	xpcom/components/nsStaticComponentLoader.cpp
 
 VBox-xpcom-threads_TEMPLATE = XPCOM
-VBox-xpcom-threads_NOINST = 1
+VBox-xpcom-threads_INSTTYPE = none
 VBox-xpcom-threads_DEFS = _IMPL_NS_COM
 VBox-xpcom-threads_SOURCES = \
 	xpcom/threads/plevent.c \
@@ -854,7 +854,7 @@ VBox-xpcom-threads_SOURCES = \
 	xpcom/threads/TimerThread.cpp
 
 VBox-xpcom-xptinfo_TEMPLATE = XPCOM
-VBox-xpcom-xptinfo_NOINST = 1
+VBox-xpcom-xptinfo_INSTTYPE = none
 VBox-xpcom-xptinfo_DEFS = _IMPL_NS_COM _IMPL_NS_BASE EXPORT_XPTI_API EXPORT_XPT_API
 VBox-xpcom-xptinfo_SOURCES = \
 	xpcom/reflect/xptinfo/src/xptiFile.cpp \
@@ -869,7 +869,7 @@ VBox-xpcom-xptinfo_SOURCES = \
 
 
 VBox-xpcom-xptcall_TEMPLATE = XPCOM
-VBox-xpcom-xptcall_NOINST = 1
+VBox-xpcom-xptcall_INSTTYPE = none
 VBox-xpcom-xptcall_DEFS                = _IMPL_NS_COM _IMPL_NS_BASE EXPORT_XPTC_API
 VBox-xpcom-xptcall_DEFS.darwin         = KEEP_STACK_16_BYTE_ALIGNED
 VBox-xpcom-xptcall_DEFS.l4             = L4
@@ -903,7 +903,7 @@ xpcom/reflect/xptcall/src/md/unix/xptcstubs_x86_solaris.cpp_CXXFLAGS = -O0
 
 
 VBox-xpcom-proxy_TEMPLATE = XPCOM
-VBox-xpcom-proxy_NOINST   = 1
+VBox-xpcom-proxy_INSTTYPE = none
 VBox-xpcom-proxy_DEFS     = _IMPL_NS_COM EXPORT_XPTC_API EXPORT_XPTI_API
 VBox-xpcom-proxy_SOURCES  = xpcom/proxy/src/nsProxyEvent.cpp \
                             xpcom/proxy/src/nsProxyEventClass.cpp \
@@ -940,7 +940,7 @@ VBoxXPCOMGlue_COMMON_SOURCES = \
 
 # dependent glue library which goes in to the VBoxXPCOM shared library
 VBoxXPCOMGlue_s_TEMPLATE = XPCOM
-VBoxXPCOMGlue_s_NOINST   = 1
+VBoxXPCOMGlue_s_INSTTYPE = none
 VBoxXPCOMGlue_s_DEFS     = _IMPL_NS_COM
 VBoxXPCOMGlue_s_SOURCES  = $(VBoxXPCOMGlue_COMMON_SOURCES)
 
@@ -1058,13 +1058,13 @@ ifdef IPC_LOGGING
 endif
 
 VBox-xpcom-ipcutils_TEMPLATE = XPCOMIPC
-VBox-xpcom-ipcutils_NOINST = 1
+VBox-xpcom-ipcutils_INSTTYPE = none
 VBox-xpcom-ipcutils_SOURCES = \
 	ipc/ipcd/util/src/ipcMessageReader.cpp \
 	ipc/ipcd/util/src/ipcMessageWriter.cpp
 
 VBox-xpcom-ipcshared_TEMPLATE = XPCOMIPC
-VBox-xpcom-ipcshared_NOINST = 1
+VBox-xpcom-ipcshared_INSTTYPE = none
 VBox-xpcom-ipcshared_SOURCES = \
 	ipc/ipcd/shared/src/ipcLog.cpp \
 	ipc/ipcd/shared/src/ipcConfig.cpp \
@@ -1075,18 +1075,18 @@ VBox-xpcom-ipcshared_SOURCES = \
 	ipc/ipcd/shared/src/ipcm.cpp
 
 VBox-xpcom-ipcdlock_TEMPLATE = XPCOMIPC
-VBox-xpcom-ipcdlock_NOINST = 1
+VBox-xpcom-ipcdlock_INSTTYPE = none
 VBox-xpcom-ipcdlock_SOURCES = \
 	ipc/ipcd/extensions/lock/src/ipcLockProtocol.cpp \
 	ipc/ipcd/extensions/lock/src/ipcLockService.cpp
 
 VBox-xpcom-ipctransmgr_TEMPLATE = XPCOMIPC
-VBox-xpcom-ipctransmgr_NOINST = 1
+VBox-xpcom-ipctransmgr_INSTTYPE = none
 VBox-xpcom-ipctransmgr_SOURCES = \
 	ipc/ipcd/extensions/transmngr/src/tmTransactionService.cpp
 
 VBox-xpcom-ipctmgrcom_TEMPLATE = XPCOMIPC
-VBox-xpcom-ipctmgrcom_NOINST = 1
+VBox-xpcom-ipctmgrcom_INSTTYPE = none
 VBox-xpcom-ipctmgrcom_SOURCES = \
 	ipc/ipcd/extensions/transmngr/common/tmTransaction.cpp \
 	ipc/ipcd/extensions/transmngr/common/tmVector.cpp

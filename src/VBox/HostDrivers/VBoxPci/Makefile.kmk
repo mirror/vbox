@@ -28,7 +28,6 @@ if1of ($(KBUILD_TARGET), linux)
   VBoxPci_TEMPLATE       = VBOXR0DRV
   VBoxPci_INST           = $(INST_VBOXPCI)$(if $(eq $(KBUILD_TARGET),darwin),Contents/MacOS/)
   VBoxPci_NAME.linux     = vboxpci
-  VBoxPci_NOINST.linux   = true
   VBoxPci_DEFS           = IN_RT_R0 VBOX_SVN_REV=$(VBOX_SVN_REV) IN_SUP_STATIC
   VBoxPci_DEFS.linux     = KBUILD_MODNAME=KBUILD_STR\(vboxpci\) KBUILD_BASENAME=KBUILD_STR\(vboxpci\) MODULE
   VBoxPci_INCS.linux    := \

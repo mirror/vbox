@@ -180,7 +180,8 @@ ifdef VBOX_WITH_WDDM
 DLLS += wined3dwddm
 wined3dwddm_EXTENDS        = wined3d
 if defined(VBOX_SIGNING_MODE) && defined(VBOX_WITH_WDDM)
- wined3dwddm_NOINST.win    = true
+ wined3dwddm_INSTTYPE.win  = none
+ wined3dwddm_DEBUG_INSTTYPE.win = both
 endif
 wined3dwddm_INCS           = vbox/libWineStub/include
 wined3dwddm_INCS.x86       = $(NO_SUCH_VARIABLE)
@@ -303,7 +304,8 @@ ifdef VBOX_WITH_WDDM
 DLLS += VBoxD3D9wddm
 VBoxD3D9wddm_EXTENDS        = VBoxD3D9
 if defined(VBOX_SIGNING_MODE) && defined(VBOX_WITH_WDDM)
- VBoxD3D9wddm_NOINST.win = true
+ VBoxD3D9wddm_INSTTYPE  = none
+ VBoxD3D9wddm_DEBUG_INSTTYPE = both
 endif
 VBoxD3D9wddm_INCS           = vbox/libWineStub/include
 VBoxD3D9wddm_INCS.x86       = $(NO_SUCH_VARIABLE)
