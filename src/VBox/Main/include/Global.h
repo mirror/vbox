@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2008-2010 Oracle Corporation
+ * Copyright (C) 2008-2011 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -17,9 +17,6 @@
 
 #ifndef ____H_GLOBAL
 #define ____H_GLOBAL
-
-/* generated header */
-#include "SchemaDefs.h"
 
 /* interface definitions */
 #include "VBox/com/VirtualBox.h"
@@ -63,7 +60,7 @@ public:
     {
         const char                    *familyId;          /* utf-8 */
         const char                    *familyDescription; /* utf-8 */
-        const char                    *id;          /* utf-8 */
+        const char                    *id;          /* utf-8, VM config file value */
         const char                    *description; /* utf-8 */
         const VBOXOSTYPE               osType;
         const uint32_t                 osHint;
@@ -80,9 +77,18 @@ public:
         const AudioControllerType_T    audioControllerType;
     };
 
-    static const OSType sOSTypes[SchemaDefs::OSTypeId_COUNT];
+    static const OSType sOSTypes[];
+    static uint32_t cOSTypes;
 
+    /**
+     * Maps VBOXOSTYPE to the OS type which is used in VM configs.
+     */
     static const char *OSTypeId(VBOXOSTYPE aOSType);
+
+    /**
+     * Get the network adapter limit for each chipset type.
+     */
+    static uint32_t getMaxNetworkAdapters(ChipsetType_T aChipsetType);
 
     /**
      * Returns @c true if the given machine state is an online state. This is a

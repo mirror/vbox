@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2009-2010 Oracle Corporation
+ * Copyright (C) 2009-2011 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -2092,7 +2092,7 @@ const PDMDEVREG g_DeviceVirtioNet =
     /* Device class(es), combination of the PDM_DEVREG_CLASS_* \#defines. */
     PDM_DEVREG_CLASS_NETWORK,
     /* Maximum number of instances (per VM). */
-    8,
+    ~0,
     /* Size of the instance data. */
     sizeof(VNETSTATE),
 

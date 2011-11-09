@@ -68,8 +68,6 @@
 #endif
 #include "BusAssignmentManager.h"
 
-// generated header
-#include "SchemaDefs.h"
 #include "VBoxEvents.h"
 #include "AutoCaller.h"
 #include "Logging.h"
@@ -378,8 +376,6 @@ Console::Console()
     , mfUseHostClipboard(true)
     , mMachineState(MachineState_PoweredOff)
 {
-    for (ULONG slot = 0; slot < SchemaDefs::NetworkAdapterCount; ++slot)
-        meAttachmentType[slot] = NetworkAttachmentType_Null;
 }
 
 Console::~Console()
@@ -394,7 +390,7 @@ HRESULT Console::FinalConstruct()
     memset(&mapUSBLed, 0, sizeof(mapUSBLed));
     memset(&mapSharedFolderLed, 0, sizeof(mapSharedFolderLed));
 
-    for (unsigned i = 0; i < RT_ELEMENTS(maStorageDevType); ++ i)
+    for (unsigned i = 0; i < RT_ELEMENTS(maStorageDevType); ++i)
         maStorageDevType[i] = DeviceType_Null;
 
     MYVMM2USERMETHODS *pVmm2UserMethods = (MYVMM2USERMETHODS *)RTMemAllocZ(sizeof(*mpVmm2UserMethods) + sizeof(Console *));
@@ -500,6 +496,23 @@ HRESULT Console::init(IMachine *aMachine, IInternalMachineControl *aControl)
     mu32SingleRDPClientId = 0;
     mcGuestCredentialsProvided = false;
 
+    /* Figure out size of meAttachmentType vector */
+    ComPtr<IVirtualBox> pVirtualBox;
+    rc = aMachine->COMGETTER(Parent)(pVirtualBox.asOutParam());
+    AssertComRC(rc);
+    ComPtr<ISystemProperties> pSystemProperties;
+    if (pVirtualBox)
+        pVirtualBox->COMGETTER(SystemProperties)(pSystemProperties.asOutParam());
+    ChipsetType_T chipsetType = ChipsetType_PIIX3;
+    aMachine->COMGETTER(ChipsetType)(&chipsetType);
+    ULONG maxNetworkAdapters = 0;
+    if (pSystemProperties)
+        pSystemProperties->GetMaxNetworkAdapters(chipsetType, &maxNetworkAdapters);
+    meAttachmentType.resize(maxNetworkAdapters);
+    for (ULONG slot = 0; slot < SchemaDefs::NetworkAdapterCount; ++slot)
+        meAttachmentType[slot] = NetworkAttachmentType_Null;
+
+
     // VirtualBox 4.0: We no longer initialize the VMMDev instance here,
     // which starts the HGCM thread. Instead, this is now done in the
     // power-up thread when a VM is actually being powered up to avoid
@@ -517,10 +530,6 @@ HRESULT Console::init(IMachine *aMachine, IInternalMachineControl *aControl)
 
     /* VirtualBox events registration. */
     {
-        ComPtr<IVirtualBox> pVirtualBox;
-        rc = aMachine->COMGETTER(Parent)(pVirtualBox.asOutParam());
-        AssertComRC(rc);
-
         ComPtr<IEventSource> pES;
         rc = pVirtualBox->COMGETTER(EventSource)(pES.asOutParam());
         AssertComRC(rc);
@@ -1328,7 +1337,7 @@ Console::saveStateFileExec(PSSMHANDLE pSSM, void *pvUser)
 
     for (SharedFolderMap::const_iterator it = that->m_mapSharedFolders.begin();
          it != that->m_mapSharedFolders.end();
-         ++ it)
+         ++it)
     {
         SharedFolder *pSF = (*it).second;
         AutoCaller sfCaller(pSF);
@@ -1408,7 +1417,7 @@ Console::loadStateFileExecInternal(PSSMHANDLE pSSM, uint32_t u32Version)
     int vrc = SSMR3GetU32(pSSM, &size);
     AssertRCReturn(vrc, vrc);
 
-    for (uint32_t i = 0; i < size; ++ i)
+    for (uint32_t i = 0; i < size; ++i)
     {
         Utf8Str strName;
         Utf8Str strHostPath;
@@ -2845,7 +2854,7 @@ STDMETHODIMP Console::DetachUSBDevice(IN_BSTR aId, IUSBDevice **aDevice)
             pUSBDevice = *it;
             break;
         }
-        ++ it;
+        ++it;
     }
 
     if (!pUSBDevice)
@@ -4468,16 +4477,26 @@ DECLCALLBACK(int) Console::changeNetworkAttachment(Console *pThis,
 
     AssertReturn(pThis, VERR_INVALID_PARAMETER);
 
+    AutoCaller autoCaller(pThis);
+    AssertComRCReturn(autoCaller.rc(), VERR_ACCESS_DENIED);
+
+    ComPtr<IVirtualBox> pVirtualBox;
+    pThis->mMachine->COMGETTER(Parent)(pVirtualBox.asOutParam());
+    ComPtr<ISystemProperties> pSystemProperties;
+    if (pVirtualBox)
+        pVirtualBox->COMGETTER(SystemProperties)(pSystemProperties.asOutParam());
+    ChipsetType_T chipsetType = ChipsetType_PIIX3;
+    pThis->mMachine->COMGETTER(ChipsetType)(&chipsetType);
+    ULONG maxNetworkAdapters = 0;
+    if (pSystemProperties)
+        pSystemProperties->GetMaxNetworkAdapters(chipsetType, &maxNetworkAdapters);
     AssertMsg(   (   !strcmp(pszDevice, "pcnet")
                   || !strcmp(pszDevice, "e1000")
                   || !strcmp(pszDevice, "virtio-net"))
               && uLun == 0
-              && uInstance < SchemaDefs::NetworkAdapterCount,
+              && uInstance < maxNetworkAdapters,
               ("pszDevice=%s uLun=%d uInstance=%d\n", pszDevice, uLun, uInstance));
     Log(("pszDevice=%s uLun=%d uInstance=%d\n", pszDevice, uLun, uInstance));
-
-    AutoCaller autoCaller(pThis);
-    AssertComRCReturn(autoCaller.rc(), VERR_ACCESS_DENIED);
 
     /*
      * Suspend the VM first.
@@ -4993,7 +5012,7 @@ HRESULT Console::onUSBDeviceDetach(IN_BSTR aId,
             pUSBDevice = *it;
             break;
         }
-        ++ it;
+        ++it;
     }
 
 
@@ -6003,7 +6022,7 @@ HRESULT Console::consoleInitReleaseLog(const ComPtr<IMachine> aMachine)
             Utf8Str *files[] = { &logFile, &pngFile };
             Utf8Str oldName, newName;
 
-            for (unsigned int j = 0; j < RT_ELEMENTS(files); ++ j)
+            for (unsigned int j = 0; j < RT_ELEMENTS(files); ++j)
             {
                 if (i > 0)
                     oldName = Utf8StrFmt("%s.%d", files[j]->c_str(), i);
@@ -6230,7 +6249,7 @@ HRESULT Console::powerUp(IProgress **aProgress, bool aPaused)
 #if 0
         /* the network cards will undergo a quick consistency check */
         for (ULONG slot = 0;
-             slot < SchemaDefs::NetworkAdapterCount;
+             slot < maxNetworkAdapters;
              ++slot)
         {
             ComPtr<INetworkAdapter> pNetworkAdapter;
@@ -6670,7 +6689,7 @@ HRESULT Console::powerDown(IProgress *aProgress /*= NULL*/)
 
     /* advance percent count */
     if (aProgress)
-        aProgress->SetCurrentOperationProgress(99 * (++ step) / StepCount );
+        aProgress->SetCurrentOperationProgress(99 * (++step) / StepCount );
 
 
     /* ----------------------------------------------------------------------
@@ -6700,7 +6719,7 @@ HRESULT Console::powerDown(IProgress *aProgress /*= NULL*/)
 
     /* advance percent count */
     if (aProgress)
-        aProgress->SetCurrentOperationProgress(99 * (++ step) / StepCount );
+        aProgress->SetCurrentOperationProgress(99 * (++step) / StepCount );
 
     vrc = VINF_SUCCESS;
 
@@ -6725,7 +6744,7 @@ HRESULT Console::powerDown(IProgress *aProgress /*= NULL*/)
 
     /* advance percent count */
     if (aProgress)
-        aProgress->SetCurrentOperationProgress(99 * (++ step) / StepCount );
+        aProgress->SetCurrentOperationProgress(99 * (++step) / StepCount );
 
 #ifdef VBOX_WITH_HGCM
     /* Shutdown HGCM services before destroying the VM. */
@@ -6743,7 +6762,7 @@ HRESULT Console::powerDown(IProgress *aProgress /*= NULL*/)
 
     /* advance percent count */
     if (aProgress)
-        aProgress->SetCurrentOperationProgress(99 * (++ step) / StepCount );
+        aProgress->SetCurrentOperationProgress(99 * (++step) / StepCount);
 
 #endif /* VBOX_WITH_HGCM */
 
@@ -6789,7 +6808,7 @@ HRESULT Console::powerDown(IProgress *aProgress /*= NULL*/)
 
         /* advance percent count */
         if (aProgress)
-            aProgress->SetCurrentOperationProgress(99 * (++ step) / StepCount );
+            aProgress->SetCurrentOperationProgress(99 * (++step) / StepCount);
 
         if (RT_SUCCESS(vrc))
         {
@@ -6819,7 +6838,7 @@ HRESULT Console::powerDown(IProgress *aProgress /*= NULL*/)
 
         /* advance percent count */
         if (aProgress)
-            aProgress->SetCurrentOperationProgress(99 * (++ step) / StepCount );
+            aProgress->SetCurrentOperationProgress(99 * (++step) / StepCount);
     }
     else
     {
@@ -7046,7 +7065,7 @@ HRESULT Console::fetchSharedFolders(BOOL aGlobal)
             if (online)
             {
                 for (SharedFolderDataMap::const_iterator it = oldFolders.begin();
-                     it != oldFolders.end(); ++ it)
+                     it != oldFolders.end(); ++it)
                 {
                     if (m_mapSharedFolders.find(it->first) != m_mapSharedFolders.end())
                         ; /* the console folder exists, nothing to do */
@@ -8085,8 +8104,19 @@ HRESULT Console::powerDownHostInterfaces()
     /*
      * host interface termination handling
      */
-    HRESULT rc;
-    for (ULONG slot = 0; slot < SchemaDefs::NetworkAdapterCount; slot ++)
+    HRESULT rc = S_OK;
+    ComPtr<IVirtualBox> pVirtualBox;
+    mMachine->COMGETTER(Parent)(pVirtualBox.asOutParam());
+    ComPtr<ISystemProperties> pSystemProperties;
+    if (pVirtualBox)
+        pVirtualBox->COMGETTER(SystemProperties)(pSystemProperties.asOutParam());
+    ChipsetType_T chipsetType = ChipsetType_PIIX3;
+    mMachine->COMGETTER(ChipsetType)(&chipsetType);
+    ULONG maxNetworkAdapters = 0;
+    if (pSystemProperties)
+        pSystemProperties->GetMaxNetworkAdapters(chipsetType, &maxNetworkAdapters);
+
+    for (ULONG slot = 0; slot < maxNetworkAdapters; slot++)
     {
         ComPtr<INetworkAdapter> pNetworkAdapter;
         rc = mMachine->GetNetworkAdapter(slot, pNetworkAdapter.asOutParam());
@@ -8392,7 +8422,7 @@ void Console::processRemoteUSBDevices(uint32_t u32ClientId, VRDEUSBDEVICEDESC *p
                 break;
             }
 
-            ++ it;
+            ++it;
         }
 
         if (!pUSBDevice)
@@ -8497,7 +8527,7 @@ DECLCALLBACK(int) Console::powerUpThread(RTTHREAD Thread, void *pvUser)
          * the attached hard disks by calling LockMedia() below */
         for (VMPowerUpTask::ProgressList::const_iterator
              it = task->hardDiskProgresses.begin();
-             it != task->hardDiskProgresses.end(); ++ it)
+             it != task->hardDiskProgresses.end(); ++it)
         {
             HRESULT rc2 = (*it)->WaitForCompletion(-1);
             AssertComRC(rc2);

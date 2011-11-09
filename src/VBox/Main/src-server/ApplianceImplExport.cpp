@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2008-2010 Oracle Corporation
+ * Copyright (C) 2008-2011 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -33,6 +33,7 @@
 #include "MachineImpl.h"
 #include "MediumImpl.h"
 #include "MediumFormatImpl.h"
+#include "Global.h"
 #include "SystemPropertiesImpl.h"
 
 #include "AutoCaller.h"
@@ -453,10 +454,9 @@ STDMETHODIMP Machine::Export(IAppliance *aAppliance, IN_BSTR location, IVirtualS
         }
 
 //     <const name="NetworkAdapter" />
+        uint32_t maxNetworkAdapters = Global::getMaxNetworkAdapters(getChipsetType());
         size_t a;
-        for (a = 0;
-             a < SchemaDefs::NetworkAdapterCount;
-             ++a)
+        for (a = 0; a < maxNetworkAdapters; ++a)
         {
             ComPtr<INetworkAdapter> pNetworkAdapter;
             BOOL fEnabled;

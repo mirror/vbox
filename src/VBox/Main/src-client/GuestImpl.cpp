@@ -140,7 +140,7 @@ void Guest::uninit()
 // IGuest properties
 /////////////////////////////////////////////////////////////////////////////
 
-STDMETHODIMP Guest::COMGETTER(OSTypeId) (BSTR *aOSTypeId)
+STDMETHODIMP Guest::COMGETTER(OSTypeId)(BSTR *aOSTypeId)
 {
     CheckComArgOutPointerValid(aOSTypeId);
 
@@ -601,7 +601,7 @@ void Guest::setAdditionsInfo(Bstr aInterfaceVersion, VBOXOSTYPE aOsType)
      * mSupportsGraphics here and disabling/enabling it later according to
      * its real status when using new(er) Guest Additions.
      */
-    mData.mOSTypeId = Global::OSTypeId (aOsType);
+    mData.mOSTypeId = Global::OSTypeId(aOsType);
 }
 
 /**

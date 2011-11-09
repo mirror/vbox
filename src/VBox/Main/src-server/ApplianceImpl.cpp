@@ -25,6 +25,7 @@
 #include "VFSExplorerImpl.h"
 #include "VirtualBoxImpl.h"
 #include "GuestOSTypeImpl.h"
+#include "Global.h"
 #include "ProgressImpl.h"
 #include "MachineImpl.h"
 
@@ -44,99 +45,99 @@ using namespace std;
 static const struct
 {
     ovf::CIMOSType_T    cim;
-    const char          *pcszVbox;
+    VBOXOSTYPE          osType;
 }
 g_osTypes[] =
 {
-    { ovf::CIMOSType_CIMOS_Unknown,                              SchemaDefs_OSTypeId_Other },
-    { ovf::CIMOSType_CIMOS_OS2,                                  SchemaDefs_OSTypeId_OS2 },
-    { ovf::CIMOSType_CIMOS_OS2,                                  SchemaDefs_OSTypeId_OS2Warp3 },
-    { ovf::CIMOSType_CIMOS_OS2,                                  SchemaDefs_OSTypeId_OS2Warp4 },
-    { ovf::CIMOSType_CIMOS_OS2,                                  SchemaDefs_OSTypeId_OS2Warp45 },
-    { ovf::CIMOSType_CIMOS_MSDOS,                                SchemaDefs_OSTypeId_DOS },
-    { ovf::CIMOSType_CIMOS_WIN3x,                                SchemaDefs_OSTypeId_Windows31 },
-    { ovf::CIMOSType_CIMOS_WIN95,                                SchemaDefs_OSTypeId_Windows95 },
-    { ovf::CIMOSType_CIMOS_WIN98,                                SchemaDefs_OSTypeId_Windows98 },
-    { ovf::CIMOSType_CIMOS_WINNT,                                SchemaDefs_OSTypeId_WindowsNT },
-    { ovf::CIMOSType_CIMOS_WINNT,                                SchemaDefs_OSTypeId_WindowsNT4 },
-    { ovf::CIMOSType_CIMOS_NetWare,                              SchemaDefs_OSTypeId_Netware },
-    { ovf::CIMOSType_CIMOS_NovellOES,                            SchemaDefs_OSTypeId_Netware },
-    { ovf::CIMOSType_CIMOS_Solaris,                              SchemaDefs_OSTypeId_Solaris },
-    { ovf::CIMOSType_CIMOS_SunOS,                                SchemaDefs_OSTypeId_Solaris },
-    { ovf::CIMOSType_CIMOS_FreeBSD,                              SchemaDefs_OSTypeId_FreeBSD },
-    { ovf::CIMOSType_CIMOS_NetBSD,                               SchemaDefs_OSTypeId_NetBSD },
-    { ovf::CIMOSType_CIMOS_QNX,                                  SchemaDefs_OSTypeId_QNX },
-    { ovf::CIMOSType_CIMOS_Windows2000,                          SchemaDefs_OSTypeId_Windows2000 },
-    { ovf::CIMOSType_CIMOS_WindowsMe,                            SchemaDefs_OSTypeId_WindowsMe },
-    { ovf::CIMOSType_CIMOS_OpenBSD,                              SchemaDefs_OSTypeId_OpenBSD },
-    { ovf::CIMOSType_CIMOS_WindowsXP,                            SchemaDefs_OSTypeId_WindowsXP },
-    { ovf::CIMOSType_CIMOS_WindowsXPEmbedded,                    SchemaDefs_OSTypeId_WindowsXP },
-    { ovf::CIMOSType_CIMOS_WindowsEmbeddedforPointofService,     SchemaDefs_OSTypeId_WindowsXP },
-    { ovf::CIMOSType_CIMOS_MicrosoftWindowsServer2003,           SchemaDefs_OSTypeId_Windows2003 },
-    { ovf::CIMOSType_CIMOS_MicrosoftWindowsServer2003_64,        SchemaDefs_OSTypeId_Windows2003_64 },
-    { ovf::CIMOSType_CIMOS_WindowsXP_64,                         SchemaDefs_OSTypeId_WindowsXP_64 },
-    { ovf::CIMOSType_CIMOS_WindowsVista,                         SchemaDefs_OSTypeId_WindowsVista },
-    { ovf::CIMOSType_CIMOS_WindowsVista_64,                      SchemaDefs_OSTypeId_WindowsVista_64 },
-    { ovf::CIMOSType_CIMOS_MicrosoftWindowsServer2008,           SchemaDefs_OSTypeId_Windows2008 },
-    { ovf::CIMOSType_CIMOS_MicrosoftWindowsServer2008_64,        SchemaDefs_OSTypeId_Windows2008_64 },
-    { ovf::CIMOSType_CIMOS_FreeBSD_64,                           SchemaDefs_OSTypeId_FreeBSD_64 },
-    { ovf::CIMOSType_CIMOS_MACOS,                                SchemaDefs_OSTypeId_MacOS },
-    { ovf::CIMOSType_CIMOS_MACOS,                                SchemaDefs_OSTypeId_MacOS_64 },            // there is no CIM 64-bit type for this
+    { ovf::CIMOSType_CIMOS_Unknown,                              VBOXOSTYPE_Unknown },
+    { ovf::CIMOSType_CIMOS_OS2,                                  VBOXOSTYPE_OS2 },
+    { ovf::CIMOSType_CIMOS_OS2,                                  VBOXOSTYPE_OS2Warp3 },
+    { ovf::CIMOSType_CIMOS_OS2,                                  VBOXOSTYPE_OS2Warp4 },
+    { ovf::CIMOSType_CIMOS_OS2,                                  VBOXOSTYPE_OS2Warp45 },
+    { ovf::CIMOSType_CIMOS_MSDOS,                                VBOXOSTYPE_DOS },
+    { ovf::CIMOSType_CIMOS_WIN3x,                                VBOXOSTYPE_Win31 },
+    { ovf::CIMOSType_CIMOS_WIN95,                                VBOXOSTYPE_Win95 },
+    { ovf::CIMOSType_CIMOS_WIN98,                                VBOXOSTYPE_Win98 },
+    { ovf::CIMOSType_CIMOS_WINNT,                                VBOXOSTYPE_WinNT },
+    { ovf::CIMOSType_CIMOS_WINNT,                                VBOXOSTYPE_WinNT4 },
+    { ovf::CIMOSType_CIMOS_NetWare,                              VBOXOSTYPE_Netware },
+    { ovf::CIMOSType_CIMOS_NovellOES,                            VBOXOSTYPE_Netware },
+    { ovf::CIMOSType_CIMOS_Solaris,                              VBOXOSTYPE_Solaris },
+    { ovf::CIMOSType_CIMOS_SunOS,                                VBOXOSTYPE_Solaris },
+    { ovf::CIMOSType_CIMOS_FreeBSD,                              VBOXOSTYPE_FreeBSD },
+    { ovf::CIMOSType_CIMOS_NetBSD,                               VBOXOSTYPE_NetBSD },
+    { ovf::CIMOSType_CIMOS_QNX,                                  VBOXOSTYPE_QNX },
+    { ovf::CIMOSType_CIMOS_Windows2000,                          VBOXOSTYPE_Win2k },
+    { ovf::CIMOSType_CIMOS_WindowsMe,                            VBOXOSTYPE_WinMe },
+    { ovf::CIMOSType_CIMOS_OpenBSD,                              VBOXOSTYPE_OpenBSD },
+    { ovf::CIMOSType_CIMOS_WindowsXP,                            VBOXOSTYPE_WinXP },
+    { ovf::CIMOSType_CIMOS_WindowsXPEmbedded,                    VBOXOSTYPE_WinXP },
+    { ovf::CIMOSType_CIMOS_WindowsEmbeddedforPointofService,     VBOXOSTYPE_WinXP },
+    { ovf::CIMOSType_CIMOS_MicrosoftWindowsServer2003,           VBOXOSTYPE_Win2k3 },
+    { ovf::CIMOSType_CIMOS_MicrosoftWindowsServer2003_64,        VBOXOSTYPE_Win2k3_x64 },
+    { ovf::CIMOSType_CIMOS_WindowsXP_64,                         VBOXOSTYPE_WinXP_x64 },
+    { ovf::CIMOSType_CIMOS_WindowsVista,                         VBOXOSTYPE_WinVista },
+    { ovf::CIMOSType_CIMOS_WindowsVista_64,                      VBOXOSTYPE_WinVista_x64 },
+    { ovf::CIMOSType_CIMOS_MicrosoftWindowsServer2008,           VBOXOSTYPE_Win2k8 },
+    { ovf::CIMOSType_CIMOS_MicrosoftWindowsServer2008_64,        VBOXOSTYPE_Win2k8_x64 },
+    { ovf::CIMOSType_CIMOS_FreeBSD_64,                           VBOXOSTYPE_FreeBSD_x64 },
+    { ovf::CIMOSType_CIMOS_MACOS,                                VBOXOSTYPE_MacOS },
+    { ovf::CIMOSType_CIMOS_MACOS,                                VBOXOSTYPE_MacOS_x64 },            // there is no CIM 64-bit type for this
 
     // Linuxes
-    { ovf::CIMOSType_CIMOS_RedHatEnterpriseLinux,                SchemaDefs_OSTypeId_RedHat },
-    { ovf::CIMOSType_CIMOS_RedHatEnterpriseLinux_64,             SchemaDefs_OSTypeId_RedHat_64 },
-    { ovf::CIMOSType_CIMOS_Solaris_64,                           SchemaDefs_OSTypeId_Solaris_64 },
-    { ovf::CIMOSType_CIMOS_SUSE,                                 SchemaDefs_OSTypeId_OpenSUSE },
-    { ovf::CIMOSType_CIMOS_SLES,                                 SchemaDefs_OSTypeId_OpenSUSE },
-    { ovf::CIMOSType_CIMOS_NovellLinuxDesktop,                   SchemaDefs_OSTypeId_OpenSUSE },
-    { ovf::CIMOSType_CIMOS_SUSE_64,                              SchemaDefs_OSTypeId_OpenSUSE_64 },
-    { ovf::CIMOSType_CIMOS_SLES_64,                              SchemaDefs_OSTypeId_OpenSUSE_64 },
-    { ovf::CIMOSType_CIMOS_LINUX,                                SchemaDefs_OSTypeId_Linux },
-    { ovf::CIMOSType_CIMOS_LINUX,                                SchemaDefs_OSTypeId_Linux22 },
-    { ovf::CIMOSType_CIMOS_SunJavaDesktopSystem,                 SchemaDefs_OSTypeId_Linux },
-    { ovf::CIMOSType_CIMOS_TurboLinux,                           SchemaDefs_OSTypeId_Turbolinux },
-    { ovf::CIMOSType_CIMOS_TurboLinux_64,                        SchemaDefs_OSTypeId_Turbolinux_64 },
-    { ovf::CIMOSType_CIMOS_Mandriva,                             SchemaDefs_OSTypeId_Mandriva },
-    { ovf::CIMOSType_CIMOS_Mandriva_64,                          SchemaDefs_OSTypeId_Mandriva_64 },
-    { ovf::CIMOSType_CIMOS_Ubuntu,                               SchemaDefs_OSTypeId_Ubuntu },
-    { ovf::CIMOSType_CIMOS_Ubuntu_64,                            SchemaDefs_OSTypeId_Ubuntu_64 },
-    { ovf::CIMOSType_CIMOS_Debian,                               SchemaDefs_OSTypeId_Debian },
-    { ovf::CIMOSType_CIMOS_Debian_64,                            SchemaDefs_OSTypeId_Debian_64 },
-    { ovf::CIMOSType_CIMOS_Linux_2_4_x,                          SchemaDefs_OSTypeId_Linux24 },
-    { ovf::CIMOSType_CIMOS_Linux_2_4_x_64,                       SchemaDefs_OSTypeId_Linux24_64 },
-    { ovf::CIMOSType_CIMOS_Linux_2_6_x,                          SchemaDefs_OSTypeId_Linux26 },
-    { ovf::CIMOSType_CIMOS_Linux_2_6_x_64,                       SchemaDefs_OSTypeId_Linux26_64 },
-    { ovf::CIMOSType_CIMOS_Linux_64,                             SchemaDefs_OSTypeId_Linux26_64 },
+    { ovf::CIMOSType_CIMOS_RedHatEnterpriseLinux,                VBOXOSTYPE_RedHat },
+    { ovf::CIMOSType_CIMOS_RedHatEnterpriseLinux_64,             VBOXOSTYPE_RedHat_x64 },
+    { ovf::CIMOSType_CIMOS_Solaris_64,                           VBOXOSTYPE_Solaris_x64 },
+    { ovf::CIMOSType_CIMOS_SUSE,                                 VBOXOSTYPE_OpenSUSE },
+    { ovf::CIMOSType_CIMOS_SLES,                                 VBOXOSTYPE_OpenSUSE },
+    { ovf::CIMOSType_CIMOS_NovellLinuxDesktop,                   VBOXOSTYPE_OpenSUSE },
+    { ovf::CIMOSType_CIMOS_SUSE_64,                              VBOXOSTYPE_OpenSUSE_x64 },
+    { ovf::CIMOSType_CIMOS_SLES_64,                              VBOXOSTYPE_OpenSUSE_x64 },
+    { ovf::CIMOSType_CIMOS_LINUX,                                VBOXOSTYPE_Linux },
+    { ovf::CIMOSType_CIMOS_LINUX,                                VBOXOSTYPE_Linux22 },
+    { ovf::CIMOSType_CIMOS_SunJavaDesktopSystem,                 VBOXOSTYPE_Linux },
+    { ovf::CIMOSType_CIMOS_TurboLinux,                           VBOXOSTYPE_Turbolinux },
+    { ovf::CIMOSType_CIMOS_TurboLinux_64,                        VBOXOSTYPE_Turbolinux_x64 },
+    { ovf::CIMOSType_CIMOS_Mandriva,                             VBOXOSTYPE_Mandriva },
+    { ovf::CIMOSType_CIMOS_Mandriva_64,                          VBOXOSTYPE_Mandriva_x64 },
+    { ovf::CIMOSType_CIMOS_Ubuntu,                               VBOXOSTYPE_Ubuntu },
+    { ovf::CIMOSType_CIMOS_Ubuntu_64,                            VBOXOSTYPE_Ubuntu_x64 },
+    { ovf::CIMOSType_CIMOS_Debian,                               VBOXOSTYPE_Debian },
+    { ovf::CIMOSType_CIMOS_Debian_64,                            VBOXOSTYPE_Debian_x64 },
+    { ovf::CIMOSType_CIMOS_Linux_2_4_x,                          VBOXOSTYPE_Linux24 },
+    { ovf::CIMOSType_CIMOS_Linux_2_4_x_64,                       VBOXOSTYPE_Linux24_x64 },
+    { ovf::CIMOSType_CIMOS_Linux_2_6_x,                          VBOXOSTYPE_Linux26 },
+    { ovf::CIMOSType_CIMOS_Linux_2_6_x_64,                       VBOXOSTYPE_Linux26_x64 },
+    { ovf::CIMOSType_CIMOS_Linux_64,                             VBOXOSTYPE_Linux26_x64 },
 
     // types that we have support for but CIM doesn't
-    { ovf::CIMOSType_CIMOS_Linux_2_6_x,                          SchemaDefs_OSTypeId_ArchLinux },
-    { ovf::CIMOSType_CIMOS_Linux_2_6_x_64,                       SchemaDefs_OSTypeId_ArchLinux_64 },
-    { ovf::CIMOSType_CIMOS_Linux_2_6_x,                          SchemaDefs_OSTypeId_Fedora },
-    { ovf::CIMOSType_CIMOS_Linux_2_6_x_64,                       SchemaDefs_OSTypeId_Fedora_64 },
-    { ovf::CIMOSType_CIMOS_Linux_2_6_x,                          SchemaDefs_OSTypeId_Gentoo },
-    { ovf::CIMOSType_CIMOS_Linux_2_6_x_64,                       SchemaDefs_OSTypeId_Gentoo_64 },
-    { ovf::CIMOSType_CIMOS_Linux_2_6_x,                          SchemaDefs_OSTypeId_Xandros },
-    { ovf::CIMOSType_CIMOS_Linux_2_6_x_64,                       SchemaDefs_OSTypeId_Xandros_64 },
-    { ovf::CIMOSType_CIMOS_Solaris,                              SchemaDefs_OSTypeId_OpenSolaris },
-    { ovf::CIMOSType_CIMOS_Solaris_64,                           SchemaDefs_OSTypeId_OpenSolaris_64 },
+    { ovf::CIMOSType_CIMOS_Linux_2_6_x,                          VBOXOSTYPE_ArchLinux },
+    { ovf::CIMOSType_CIMOS_Linux_2_6_x_64,                       VBOXOSTYPE_ArchLinux_x64 },
+    { ovf::CIMOSType_CIMOS_Linux_2_6_x,                          VBOXOSTYPE_FedoraCore },
+    { ovf::CIMOSType_CIMOS_Linux_2_6_x_64,                       VBOXOSTYPE_FedoraCore_x64 },
+    { ovf::CIMOSType_CIMOS_Linux_2_6_x,                          VBOXOSTYPE_Gentoo },
+    { ovf::CIMOSType_CIMOS_Linux_2_6_x_64,                       VBOXOSTYPE_Gentoo_x64 },
+    { ovf::CIMOSType_CIMOS_Linux_2_6_x,                          VBOXOSTYPE_Xandros },
+    { ovf::CIMOSType_CIMOS_Linux_2_6_x_64,                       VBOXOSTYPE_Xandros_x64 },
+    { ovf::CIMOSType_CIMOS_Solaris,                              VBOXOSTYPE_OpenSolaris },
+    { ovf::CIMOSType_CIMOS_Solaris_64,                           VBOXOSTYPE_OpenSolaris_x64 },
 
     // types added with CIM 2.25.0 follow:
-    { ovf::CIMOSType_CIMOS_WindowsServer2008R2,                  SchemaDefs_OSTypeId_Windows2008 },         // duplicate, see above
-//     { ovf::CIMOSType_CIMOS_VMwareESXi = 104,                                                             // we can't run ESX in a VM
-    { ovf::CIMOSType_CIMOS_Windows7,                             SchemaDefs_OSTypeId_Windows7 },
-    { ovf::CIMOSType_CIMOS_Windows7,                             SchemaDefs_OSTypeId_Windows7_64 },         // there is no CIM 64-bit type for this
-    { ovf::CIMOSType_CIMOS_CentOS,                               SchemaDefs_OSTypeId_RedHat },
-    { ovf::CIMOSType_CIMOS_CentOS_64,                            SchemaDefs_OSTypeId_RedHat_64 },
-    { ovf::CIMOSType_CIMOS_OracleEnterpriseLinux,                SchemaDefs_OSTypeId_Oracle },
-    { ovf::CIMOSType_CIMOS_OracleEnterpriseLinux_64,             SchemaDefs_OSTypeId_Oracle_64 },
-    { ovf::CIMOSType_CIMOS_eComStation,                          SchemaDefs_OSTypeId_OS2eCS }
+    { ovf::CIMOSType_CIMOS_WindowsServer2008R2,                  VBOXOSTYPE_Win2k8 },           // duplicate, see above
+//     { ovf::CIMOSType_CIMOS_VMwareESXi = 104,                                                 // we can't run ESX in a VM
+    { ovf::CIMOSType_CIMOS_Windows7,                             VBOXOSTYPE_Win7 },
+    { ovf::CIMOSType_CIMOS_Windows7,                             VBOXOSTYPE_Win7_x64 },         // there is no CIM 64-bit type for this
+    { ovf::CIMOSType_CIMOS_CentOS,                               VBOXOSTYPE_RedHat },
+    { ovf::CIMOSType_CIMOS_CentOS_64,                            VBOXOSTYPE_RedHat_x64 },
+    { ovf::CIMOSType_CIMOS_OracleEnterpriseLinux,                VBOXOSTYPE_Oracle },
+    { ovf::CIMOSType_CIMOS_OracleEnterpriseLinux_64,             VBOXOSTYPE_Oracle_x64 },
+    { ovf::CIMOSType_CIMOS_eComStation,                          VBOXOSTYPE_ECS }
 
     // there are no CIM types for these, so these turn to "other" on export:
-    //      SchemaDefs_OSTypeId_OpenBSD
-    //      SchemaDefs_OSTypeId_OpenBSD_64
-    //      SchemaDefs_OSTypeId_NetBSD
-    //      SchemaDefs_OSTypeId_NetBSD_64
+    //      VBOXOSTYPE_OpenBSD
+    //      VBOXOSTYPE_OpenBSD_x64
+    //      VBOXOSTYPE_NetBSD
+    //      VBOXOSTYPE_NetBSD_x64
 
 };
 
@@ -144,59 +145,59 @@ g_osTypes[] =
 struct osTypePattern
 {
     const char *pcszPattern;
-    const char *pcszVbox;
+    VBOXOSTYPE osType;
 };
 
 /* These are the 32-Bit ones. They are sorted by priority. */
 static const osTypePattern g_osTypesPattern[] =
 {
-    {"Windows NT",    SchemaDefs_OSTypeId_WindowsNT4},
-    {"Windows XP",    SchemaDefs_OSTypeId_WindowsXP},
-    {"Windows 2000",  SchemaDefs_OSTypeId_Windows2000},
-    {"Windows 2003",  SchemaDefs_OSTypeId_Windows2003},
-    {"Windows Vista", SchemaDefs_OSTypeId_WindowsVista},
-    {"Windows 2008",  SchemaDefs_OSTypeId_Windows2008},
-    {"SUSE",          SchemaDefs_OSTypeId_OpenSUSE},
-    {"Novell",        SchemaDefs_OSTypeId_OpenSUSE},
-    {"Red Hat",       SchemaDefs_OSTypeId_RedHat},
-    {"Mandriva",      SchemaDefs_OSTypeId_Mandriva},
-    {"Ubuntu",        SchemaDefs_OSTypeId_Ubuntu},
-    {"Debian",        SchemaDefs_OSTypeId_Debian},
-    {"QNX",           SchemaDefs_OSTypeId_QNX},
-    {"Linux 2.4",     SchemaDefs_OSTypeId_Linux24},
-    {"Linux 2.6",     SchemaDefs_OSTypeId_Linux26},
-    {"Linux",         SchemaDefs_OSTypeId_Linux},
-    {"OpenSolaris",   SchemaDefs_OSTypeId_OpenSolaris},
-    {"Solaris",       SchemaDefs_OSTypeId_OpenSolaris},
-    {"FreeBSD",       SchemaDefs_OSTypeId_FreeBSD},
-    {"NetBSD",        SchemaDefs_OSTypeId_NetBSD},
-    {"Windows 95",    SchemaDefs_OSTypeId_Windows95},
-    {"Windows 98",    SchemaDefs_OSTypeId_Windows98},
-    {"Windows Me",    SchemaDefs_OSTypeId_WindowsMe},
-    {"Windows 3.",    SchemaDefs_OSTypeId_Windows31},
-    {"DOS",           SchemaDefs_OSTypeId_DOS},
-    {"OS2",           SchemaDefs_OSTypeId_OS2}
+    {"Windows NT",    VBOXOSTYPE_WinNT4},
+    {"Windows XP",    VBOXOSTYPE_WinXP},
+    {"Windows 2000",  VBOXOSTYPE_Win2k},
+    {"Windows 2003",  VBOXOSTYPE_Win2k3},
+    {"Windows Vista", VBOXOSTYPE_WinVista},
+    {"Windows 2008",  VBOXOSTYPE_Win2k8},
+    {"SUSE",          VBOXOSTYPE_OpenSUSE},
+    {"Novell",        VBOXOSTYPE_OpenSUSE},
+    {"Red Hat",       VBOXOSTYPE_RedHat},
+    {"Mandriva",      VBOXOSTYPE_Mandriva},
+    {"Ubuntu",        VBOXOSTYPE_Ubuntu},
+    {"Debian",        VBOXOSTYPE_Debian},
+    {"QNX",           VBOXOSTYPE_QNX},
+    {"Linux 2.4",     VBOXOSTYPE_Linux24},
+    {"Linux 2.6",     VBOXOSTYPE_Linux26},
+    {"Linux",         VBOXOSTYPE_Linux},
+    {"OpenSolaris",   VBOXOSTYPE_OpenSolaris},
+    {"Solaris",       VBOXOSTYPE_OpenSolaris},
+    {"FreeBSD",       VBOXOSTYPE_FreeBSD},
+    {"NetBSD",        VBOXOSTYPE_NetBSD},
+    {"Windows 95",    VBOXOSTYPE_Win95},
+    {"Windows 98",    VBOXOSTYPE_Win98},
+    {"Windows Me",    VBOXOSTYPE_WinMe},
+    {"Windows 3.",    VBOXOSTYPE_Win31},
+    {"DOS",           VBOXOSTYPE_DOS},
+    {"OS2",           VBOXOSTYPE_OS2}
 };
 
 /* These are the 64-Bit ones. They are sorted by priority. */
 static const osTypePattern g_osTypesPattern64[] =
 {
-    {"Windows XP",    SchemaDefs_OSTypeId_WindowsXP_64},
-    {"Windows 2003",  SchemaDefs_OSTypeId_Windows2003_64},
-    {"Windows Vista", SchemaDefs_OSTypeId_WindowsVista_64},
-    {"Windows 2008",  SchemaDefs_OSTypeId_Windows2008_64},
-    {"SUSE",          SchemaDefs_OSTypeId_OpenSUSE_64},
-    {"Novell",        SchemaDefs_OSTypeId_OpenSUSE_64},
-    {"Red Hat",       SchemaDefs_OSTypeId_RedHat_64},
-    {"Mandriva",      SchemaDefs_OSTypeId_Mandriva_64},
-    {"Ubuntu",        SchemaDefs_OSTypeId_Ubuntu_64},
-    {"Debian",        SchemaDefs_OSTypeId_Debian_64},
-    {"Linux 2.4",     SchemaDefs_OSTypeId_Linux24_64},
-    {"Linux 2.6",     SchemaDefs_OSTypeId_Linux26_64},
-    {"Linux",         SchemaDefs_OSTypeId_Linux26_64},
-    {"OpenSolaris",   SchemaDefs_OSTypeId_OpenSolaris_64},
-    {"Solaris",       SchemaDefs_OSTypeId_OpenSolaris_64},
-    {"FreeBSD",       SchemaDefs_OSTypeId_FreeBSD_64},
+    {"Windows XP",    VBOXOSTYPE_WinXP_x64},
+    {"Windows 2003",  VBOXOSTYPE_Win2k3_x64},
+    {"Windows Vista", VBOXOSTYPE_WinVista_x64},
+    {"Windows 2008",  VBOXOSTYPE_Win2k8_x64},
+    {"SUSE",          VBOXOSTYPE_OpenSUSE_x64},
+    {"Novell",        VBOXOSTYPE_OpenSUSE_x64},
+    {"Red Hat",       VBOXOSTYPE_RedHat_x64},
+    {"Mandriva",      VBOXOSTYPE_Mandriva_x64},
+    {"Ubuntu",        VBOXOSTYPE_Ubuntu_x64},
+    {"Debian",        VBOXOSTYPE_Debian_x64},
+    {"Linux 2.4",     VBOXOSTYPE_Linux24_x64},
+    {"Linux 2.6",     VBOXOSTYPE_Linux26_x64},
+    {"Linux",         VBOXOSTYPE_Linux26_x64},
+    {"OpenSolaris",   VBOXOSTYPE_OpenSolaris_x64},
+    {"Solaris",       VBOXOSTYPE_OpenSolaris_x64},
+    {"FreeBSD",       VBOXOSTYPE_FreeBSD_x64},
 };
 
 /**
@@ -214,7 +215,7 @@ void convertCIMOSType2VBoxOSType(Utf8Str &strType, ovf::CIMOSType_T c, const Utf
         for (size_t i=0; i < RT_ELEMENTS(g_osTypesPattern); ++i)
             if (cStr.contains (g_osTypesPattern[i].pcszPattern, Utf8Str::CaseInsensitive))
             {
-                strType = g_osTypesPattern[i].pcszVbox;
+                strType = Global::OSTypeId(g_osTypesPattern[i].osType);
                 return;
             }
     }
@@ -223,7 +224,7 @@ void convertCIMOSType2VBoxOSType(Utf8Str &strType, ovf::CIMOSType_T c, const Utf
         for (size_t i=0; i < RT_ELEMENTS(g_osTypesPattern64); ++i)
             if (cStr.contains (g_osTypesPattern64[i].pcszPattern, Utf8Str::CaseInsensitive))
             {
-                strType = g_osTypesPattern64[i].pcszVbox;
+                strType = Global::OSTypeId(g_osTypesPattern64[i].osType);
                 return;
             }
     }
@@ -232,12 +233,12 @@ void convertCIMOSType2VBoxOSType(Utf8Str &strType, ovf::CIMOSType_T c, const Utf
     {
         if (c == g_osTypes[i].cim)
         {
-            strType = g_osTypes[i].pcszVbox;
+            strType = Global::OSTypeId(g_osTypes[i].osType);
             return;
         }
     }
 
-    strType = SchemaDefs_OSTypeId_Other;
+    strType = Global::OSTypeId(VBOXOSTYPE_Unknown);
 }
 
 /**
@@ -250,7 +251,7 @@ ovf::CIMOSType_T convertVBoxOSType2CIMOSType(const char *pcszVbox)
 {
     for (size_t i = 0; i < RT_ELEMENTS(g_osTypes); ++i)
     {
-        if (!RTStrICmp(pcszVbox, g_osTypes[i].pcszVbox))
+        if (!RTStrICmp(pcszVbox, Global::OSTypeId(g_osTypes[i].osType)))
             return g_osTypes[i].cim;
     }
 

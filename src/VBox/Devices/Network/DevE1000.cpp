@@ -15,7 +15,7 @@
  */
 
 /*
- * Copyright (C) 2007-2010 Oracle Corporation
+ * Copyright (C) 2007-2011 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -5564,7 +5564,7 @@ static DECLCALLBACK(int) e1kDestruct(PPDMDEVINS pDevIns)
 static DECLCALLBACK(void) e1kInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const char *pszArgs)
 {
     E1KSTATE* pState = PDMINS_2_DATA(pDevIns, E1KSTATE*);
-    int       i;
+    unsigned    i;
     bool        fRcvRing = false;
     bool        fXmtRing = false;
 
@@ -6106,7 +6106,7 @@ const PDMDEVREG g_DeviceE1000 =
     /* Device class(es), combination of the PDM_DEVREG_CLASS_* \#defines. */
     PDM_DEVREG_CLASS_NETWORK,
     /* Maximum number of instances (per VM). */
-    8,
+    ~0,
     /* Size of the instance data. */
     sizeof(E1KSTATE),
 

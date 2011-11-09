@@ -326,7 +326,7 @@ HRESULT Machine::init(VirtualBox *aParent,
             mBIOSSettings->applyDefaults(aOsType);
 
             /* Apply network adapters defaults */
-            for (ULONG slot = 0; slot < RT_ELEMENTS(mNetworkAdapters); ++slot)
+            for (ULONG slot = 0; slot < mNetworkAdapters.size(); ++slot)
                 mNetworkAdapters[slot]->applyDefaults(aOsType);
 
             /* Apply serial port defaults */
@@ -1187,9 +1187,27 @@ STDMETHODIMP Machine::COMSETTER(ChipsetType)(ChipsetType_T aChipsetType)
     int rc = checkStateDependency(MutableStateDep);
     if (FAILED(rc)) return rc;
 
-    setModified(IsModified_MachineData);
-    mHWData.backup();
-    mHWData->mChipsetType = aChipsetType;
+    if (aChipsetType != mHWData->mChipsetType)
+    {
+        setModified(IsModified_MachineData);
+        mHWData.backup();
+        mHWData->mChipsetType = aChipsetType;
+
+        // Resize network adapter array, to be finalized on commit/rollback.
+        // We must not throw away entries yet, otherwise settings are lost
+        // without a way to roll back.
+        uint32_t newCount = Global::getMaxNetworkAdapters(aChipsetType);
+        uint32_t oldCount = mNetworkAdapters.size();
+        if (newCount > oldCount)
+        {
+            mNetworkAdapters.resize(newCount);
+            for (ULONG slot = oldCount; slot < mNetworkAdapters.size(); slot++)
+            {
+                unconst(mNetworkAdapters[slot]).createObject();
+                mNetworkAdapters[slot]->init(this, slot);
+            }
+        }
+    }
 
     return S_OK;
 }
@@ -4369,7 +4387,7 @@ STDMETHODIMP Machine::GetParallelPort(ULONG slot, IParallelPort **port)
 STDMETHODIMP Machine::GetNetworkAdapter(ULONG slot, INetworkAdapter **adapter)
 {
     CheckComArgOutPointerValid(adapter);
-    CheckComArgExpr(slot, slot < RT_ELEMENTS(mNetworkAdapters));
+    CheckComArgExpr(slot, slot < mNetworkAdapters.size());
 
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
@@ -7286,7 +7304,8 @@ HRESULT Machine::initDataAndChildObjects()
     mUSBController->init(this);
 
     /* create associated network adapter objects */
-    for (ULONG slot = 0; slot < RT_ELEMENTS(mNetworkAdapters); slot ++)
+    mNetworkAdapters.resize(Global::getMaxNetworkAdapters(mHWData->mChipsetType));
+    for (ULONG slot = 0; slot < mNetworkAdapters.size(); slot++)
     {
         unconst(mNetworkAdapters[slot]).createObject();
         mNetworkAdapters[slot]->init(this, slot);
@@ -7322,7 +7341,7 @@ void Machine::uninitDataAndChildObjects()
         unconst(mBandwidthControl).setNull();
     }
 
-    for (ULONG slot = 0; slot < RT_ELEMENTS(mNetworkAdapters); slot++)
+    for (ULONG slot = 0; slot < mNetworkAdapters.size(); slot++)
     {
         if (mNetworkAdapters[slot])
         {
@@ -7894,6 +7913,19 @@ HRESULT Machine::loadHardware(const settings::Hardware &data)
         if (FAILED(rc)) return rc;
 
         // network adapters
+        uint32_t newCount = Global::getMaxNetworkAdapters(mHWData->mChipsetType);
+        uint32_t oldCount = mNetworkAdapters.size();
+        if (newCount > oldCount)
+        {
+            mNetworkAdapters.resize(newCount);
+            for (ULONG slot = oldCount; slot < mNetworkAdapters.size(); slot++)
+            {
+                unconst(mNetworkAdapters[slot]).createObject();
+                mNetworkAdapters[slot]->init(this, slot);
+            }
+        }
+        else if (newCount < oldCount)
+            mNetworkAdapters.resize(newCount);
         for (settings::NetworkAdaptersList::const_iterator it = data.llNetworkAdapters.begin();
             it != data.llNetworkAdapters.end();
             ++it)
@@ -7901,7 +7933,7 @@ HRESULT Machine::loadHardware(const settings::Hardware &data)
             const settings::NetworkAdapter &nic = *it;
 
             /* slot unicity is guaranteed by XML Schema */
-            AssertBreak(nic.ulSlot < RT_ELEMENTS(mNetworkAdapters));
+            AssertBreak(nic.ulSlot < mNetworkAdapters.size());
             rc = mNetworkAdapters[nic.ulSlot]->loadSettings(mBandwidthControl, nic);
             if (FAILED(rc)) return rc;
         }
@@ -9003,9 +9035,7 @@ HRESULT Machine::saveHardware(settings::Hardware &data)
 
         /* Network adapters (required) */
         data.llNetworkAdapters.clear();
-        for (ULONG slot = 0;
-             slot < RT_ELEMENTS(mNetworkAdapters);
-             ++slot)
+        for (ULONG slot = 0; slot < mNetworkAdapters.size(); ++slot)
         {
             settings::NetworkAdapter nic;
             nic.ulSlot = slot;
@@ -10289,12 +10319,14 @@ void Machine::rollback(bool aNotify)
     if (mBandwidthControl && (mData->flModifications & IsModified_BandwidthControl))
         mBandwidthControl->rollback();
 
-    ComPtr<INetworkAdapter> networkAdapters[RT_ELEMENTS(mNetworkAdapters)];
+    if (!mHWData.isNull())
+        mNetworkAdapters.resize(Global::getMaxNetworkAdapters(mHWData->mChipsetType));
+    NetworkAdapterVector networkAdapters(mNetworkAdapters.size());
     ComPtr<ISerialPort> serialPorts[RT_ELEMENTS(mSerialPorts)];
     ComPtr<IParallelPort> parallelPorts[RT_ELEMENTS(mParallelPorts)];
 
     if (mData->flModifications & IsModified_NetworkAdapters)
-        for (ULONG slot = 0; slot < RT_ELEMENTS(mNetworkAdapters); slot++)
+        for (ULONG slot = 0; slot < mNetworkAdapters.size(); slot++)
             if (    mNetworkAdapters[slot]
                  && mNetworkAdapters[slot]->isModified())
             {
@@ -10336,13 +10368,13 @@ void Machine::rollback(bool aNotify)
         if (flModifications & IsModified_USB)
             that->onUSBControllerChange();
 
-        for (ULONG slot = 0; slot < RT_ELEMENTS(networkAdapters); slot ++)
+        for (ULONG slot = 0; slot < networkAdapters.size(); slot++)
             if (networkAdapters[slot])
                 that->onNetworkAdapterChange(networkAdapters[slot], FALSE);
-        for (ULONG slot = 0; slot < RT_ELEMENTS(serialPorts); slot ++)
+        for (ULONG slot = 0; slot < RT_ELEMENTS(serialPorts); slot++)
             if (serialPorts[slot])
                 that->onSerialPortChange(serialPorts[slot]);
-        for (ULONG slot = 0; slot < RT_ELEMENTS(parallelPorts); slot ++)
+        for (ULONG slot = 0; slot < RT_ELEMENTS(parallelPorts); slot++)
             if (parallelPorts[slot])
                 that->onParallelPortChange(parallelPorts[slot]);
 
@@ -10390,7 +10422,8 @@ void Machine::commit()
     mUSBController->commit();
     mBandwidthControl->commit();
 
-    for (ULONG slot = 0; slot < RT_ELEMENTS(mNetworkAdapters); slot++)
+    mNetworkAdapters.resize(Global::getMaxNetworkAdapters(mHWData->mChipsetType));
+    for (ULONG slot = 0; slot < mNetworkAdapters.size(); slot++)
         mNetworkAdapters[slot]->commit();
     for (ULONG slot = 0; slot < RT_ELEMENTS(mSerialPorts); slot++)
         mSerialPorts[slot]->commit();
@@ -10534,7 +10567,7 @@ void Machine::copyFrom(Machine *aThat)
         mStorageControllers->push_back(ctrl);
     }
 
-    for (ULONG slot = 0; slot < RT_ELEMENTS(mNetworkAdapters); slot++)
+    for (ULONG slot = 0; slot < mNetworkAdapters.size(); slot++)
         mNetworkAdapters[slot]->copyFrom(aThat->mNetworkAdapters[slot]);
     for (ULONG slot = 0; slot < RT_ELEMENTS(mSerialPorts); slot++)
         mSerialPorts[slot]->copyFrom(aThat->mSerialPorts[slot]);
@@ -10894,7 +10927,8 @@ HRESULT SessionMachine::init(Machine *aMachine)
     mUSBController->init(this, aMachine->mUSBController);
 
     /* create a list of network adapters that will be mutable */
-    for (ULONG slot = 0; slot < RT_ELEMENTS(mNetworkAdapters); slot++)
+    mNetworkAdapters.resize(aMachine->mNetworkAdapters.size());
+    for (ULONG slot = 0; slot < mNetworkAdapters.size(); slot++)
     {
         unconst(mNetworkAdapters[slot]).createObject();
         mNetworkAdapters[slot]->init(this, aMachine->mNetworkAdapters[slot]);

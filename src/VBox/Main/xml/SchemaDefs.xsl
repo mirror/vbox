@@ -8,7 +8,7 @@
  *  This template depends on XML Schema structure (type names and constraints)
  *  and should be reviewed on every Schema change.
 
-     Copyright (C) 2006-2008 Oracle Corporation
+     Copyright (C) 2006-2011 Oracle Corporation
 
      This file is part of VirtualBox Open Source Edition (OSE), as
      available from http://www.virtualbox.org. This file is free software;
@@ -171,12 +171,6 @@ namespace SchemaDefs
       xsd:complexType[@name='TDisplay']/xsd:attribute[@name='monitorCount']//xsd:maxInclusive/@value
     "/>
   </xsl:call-template>
-  <xsl:call-template name="defineEnumMember">
-    <xsl:with-param name="member" select="'        NetworkAdapterCount'"/>
-    <xsl:with-param name="select" select="
-      xsd:complexType[@name='TNetworkAdapter']/xsd:attribute[@name='slot']//xsd:maxExclusive/@value
-    "/>
-  </xsl:call-template>
 
   <xsl:call-template name="defineEnumMember">
     <xsl:with-param name="member" select="'        SerialPortCount'"/>
@@ -198,33 +192,6 @@ namespace SchemaDefs
       xsd:complexType[@name='TBoot']//xsd:element[@name='Order']//xsd:attribute[@name='position']//xsd:maxInclusive/@value
     "/>
   </xsl:call-template>
-
-</xsl:template>
-
-<!--
- *  aliases (defines) for individual OSTypeIds array elements
--->
-<xsl:template match="xsd:schema" mode="declare">
-
-  <xsl:text>&#x0A;    extern const char *OSTypeIds[];&#x0A;</xsl:text>
-
-  <xsl:text>&#x0A;    enum { OSTypeId_COUNT = </xsl:text>
-  <xsl:value-of select="count (
-    xsd:simpleType[@name='TGuestOSType']/xsd:restriction[@base='xsd:string']/xsd:enumeration |
-    document(xsd:include[not(@schemaLocation='VirtualBox-settings-root.xsd')]/@schemaLocation)/xsd:schema/xsd:simpleType[@name='TGuestOSType']/xsd:restriction[@base='xsd:string']/xsd:enumeration
-  )"/>
-  <xsl:text> };&#x0A;&#x0A;</xsl:text>
-
-  <xsl:for-each select="
-    xsd:simpleType[@name='TGuestOSType']/xsd:restriction[@base='xsd:string']/xsd:enumeration |
-    document(xsd:include[not(@schemaLocation='VirtualBox-settings-root.xsd')]/@schemaLocation)/xsd:schema/xsd:simpleType[@name='TGuestOSType']/xsd:restriction[@base='xsd:string']/xsd:enumeration
-  ">
-    <xsl:text>    #define SchemaDefs_OSTypeId_</xsl:text>
-    <xsl:value-of select="@value"/>
-    <xsl:text> SchemaDefs::OSTypeIds [</xsl:text>
-    <xsl:value-of select="position()-1"/>
-    <xsl:text>]&#x0A;</xsl:text>
-  </xsl:for-each>
 
 </xsl:template>
 
@@ -252,26 +219,6 @@ namespace SchemaDefs
 <xsl:apply-templates select="xsd:schema" mode="define"/>
 
 <xsl:text>}
-</xsl:text>
-</xsl:template>
-
-<!--
- *  array of OSTypeIds
--->
-<xsl:template match="xsd:schema" mode="define">
-  <xsl:text>    const char *OSTypeIds[] =
-    {
-</xsl:text>
-  <xsl:for-each select="
-    xsd:simpleType[@name='TGuestOSType']/xsd:restriction[@base='xsd:string']/xsd:enumeration |
-    document(xsd:include[not(@schemaLocation='VirtualBox-settings-root.xsd')]/@schemaLocation)/xsd:schema/xsd:simpleType[@name='TGuestOSType']/xsd:restriction[@base='xsd:string']/xsd:enumeration
-  ">
-    <xsl:text>        "</xsl:text>
-    <xsl:value-of select="@value"/>
-    <xsl:text>",
-</xsl:text>
-  </xsl:for-each>
-  <xsl:text>    };
 </xsl:text>
 </xsl:template>
 
