@@ -1557,6 +1557,7 @@ RuntimeR0Stub_SOURCES.solaris = \
 # RuntimeR0Drv - Ring-0 library for host drivers.
 #
 RuntimeR0Drv_TEMPLATE   = VBOXR0DRV
+RuntimeR0Drv_INSTTYPE   = stage
 RuntimeR0Drv_SDKS.win   = $(VBOX_WINDDK) WINPSDKINCS
 RuntimeR0Drv_DEFS       = IN_RT_R0 RT_WITH_VBOX RT_WITHOUT_NOCRT_WRAPPERS RT_NO_EXPORT_SYMBOL
 RuntimeR0Drv_DEFS.win   = IN_SUP_R0
