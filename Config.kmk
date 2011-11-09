@@ -1775,6 +1775,10 @@ ifeq ($(KBUILD_TARGET),darwin)
    VBOX_XCODE_VERSION := 4.2
   endif
  endif
+ ifeq ($(VBOX_XCODE_VERSION),4.2)
+  $(warning Xcode 4.2 is not able to correctly build the recompiler!)
+  $(warning Please downgrade to Xcode 4.1 if you want a working VMM!)
+ endif
  VBOX_XCODE_VERSION_MAJOR := $(word 1, $(subst ., ,$(VBOX_XCODE_VERSION)))
  VBOX_XCODE_VERSION_MINOR := $(word 2, $(subst ., ,$(VBOX_XCODE_VERSION)))
  VBOX_XCODE_VERSION       := $(VBOX_XCODE_VERSION_MAJOR).$(VBOX_XCODE_VERSION_MINOR)
