@@ -1546,7 +1546,7 @@ RuntimeR0_SOURCES.os2 = \
 #
 # RuntimeR0Stub - Ring-0 context startup stub for Windows and Solaris.
 #
-RuntimeR0Stub_TEMPLATE    = $(if-expr "$(KBUILD_TARGET)" == "solaris",VBOXR0DRV,VBoxR0)
+RuntimeR0Stub_TEMPLATE    = $(if-expr "$(KBUILD_TARGET)" == "solaris",VBoxR0DrvLib,VBoxR0)
 RuntimeR0Stub_SOURCES.win = \
 	nt/NtProcessStartup-stub.cpp
 RuntimeR0Stub_SOURCES.solaris = \
@@ -1556,8 +1556,7 @@ RuntimeR0Stub_SOURCES.solaris = \
 #
 # RuntimeR0Drv - Ring-0 library for host drivers.
 #
-RuntimeR0Drv_TEMPLATE   = VBOXR0DRV
-RuntimeR0Drv_INSTTYPE   = stage
+RuntimeR0Drv_TEMPLATE   = VBoxR0DrvLib
 RuntimeR0Drv_SDKS.win   = $(VBOX_WINDDK) WINPSDKINCS
 RuntimeR0Drv_DEFS       = IN_RT_R0 RT_WITH_VBOX RT_WITHOUT_NOCRT_WRAPPERS RT_NO_EXPORT_SYMBOL
 RuntimeR0Drv_DEFS.win   = IN_SUP_R0
