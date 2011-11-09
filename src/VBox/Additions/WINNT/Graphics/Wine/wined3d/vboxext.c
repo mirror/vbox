@@ -185,6 +185,8 @@ HRESULT VBoxExtWorkerDestroy(PVBOXEXT_WORKER pWorker)
 
     FreeLibrary(pWorker->hSelf);
 
+    CloseHandle(pWorker->hThread);
+
     return S_OK;
 }
 
