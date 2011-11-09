@@ -64,7 +64,8 @@
  */
 DECL_FORCE_INLINE(bool) RTLocCIsBlank(int ch)
 {
-    return ch == ' ' || ch == '\t';
+    return ch == 0x20  /* space */
+        || ch == 0x09; /* horizontal tab */
 }
 
 /**
@@ -75,7 +76,8 @@ DECL_FORCE_INLINE(bool) RTLocCIsBlank(int ch)
  */
 DECL_FORCE_INLINE(bool) RTLocCIsCntrl(int ch)
 {
-    return (ch) >= 0   && (ch) <  32;
+    return (unsigned)ch < 32U /* 0..2f */
+        || ch == 0x7f;
 }
 
 /**
@@ -86,7 +88,7 @@ DECL_FORCE_INLINE(bool) RTLocCIsCntrl(int ch)
  */
 DECL_FORCE_INLINE(bool) RTLocCIsDigit(int ch)
 {
-    return (ch) >= '0' && (ch) <= '9';
+    return (unsigned)ch - 0x30 < 10U; /* 30..39 */
 }
 
 /**
@@ -97,7 +99,7 @@ DECL_FORCE_INLINE(bool) RTLocCIsDigit(int ch)
  */
 DECL_FORCE_INLINE(bool) RTLocCIsLower(int ch)
 {
-    return (ch) >= 'a' && (ch) <= 'z';
+    return (unsigned)ch - 0x61U < 26U; /* 61..7a */
 }
 
 /**
@@ -108,7 +110,7 @@ DECL_FORCE_INLINE(bool) RTLocCIsLower(int ch)
  */
 DECL_FORCE_INLINE(bool) RTLocCIsODigit(int ch)
 {
-    return (ch) >= '0' && (ch) <= '7';
+    return (unsigned)ch - 0x30 < 8U; /* 30..37 */
 }
 
 /**
@@ -119,8 +121,7 @@ DECL_FORCE_INLINE(bool) RTLocCIsODigit(int ch)
  */
 DECL_FORCE_INLINE(bool) RTLocCIsPrint(int ch)
 {
-    /** @todo quite possibly incorrect */
-    return (ch) >= 32  && (ch) < 127;
+    return (unsigned)ch - 0x20U < 95U; /* 20..7e */
 }
 
 /**
@@ -131,8 +132,11 @@ DECL_FORCE_INLINE(bool) RTLocCIsPrint(int ch)
  */
 DECL_FORCE_INLINE(bool) RTLocCIsPunct(int ch)
 {
-    /** @todo possibly incorrect */
-    return (ch) == ',' || (ch) == '.'  || (ch) == ':'  || (ch) == ';'  || (ch) == '!'  || (ch) == '?';
+    return (unsigned)ch - 0x21U < 15U /* 21..2f */
+        || (unsigned)ch - 0x2aU <  6U /* 2a..2f */
+        || (unsigned)ch - 0x3aU <  7U /* 3a..40 */
+        || (unsigned)ch - 0x5bU <  6U /* 5a..60 */
+        || (unsigned)ch - 0x7bU <  4U /* 7b..7e */;
 }
 
 /**
@@ -143,8 +147,8 @@ DECL_FORCE_INLINE(bool) RTLocCIsPunct(int ch)
  */
 DECL_FORCE_INLINE(bool) RTLocCIsSpace(int ch)
 {
-    /* \t (9), \n (10), \v (11), \f (12), \r (13), ' ' (32). */
-    return (ch) == ' ' || ((ch) >= 9 && (ch) <= 13);
+    return ch == 0x20                 /* 20 (space) */
+        || (unsigned)ch - 0x09U < 5U; /* 09..0d */
 }
 
 /**
@@ -155,7 +159,7 @@ DECL_FORCE_INLINE(bool) RTLocCIsSpace(int ch)
  */
 DECL_FORCE_INLINE(bool) RTLocCIsUpper(int ch)
 {
-    return (ch) >= 'A' && (ch) <= 'Z';
+    return (unsigned)ch - 0x41 < 26U; /* 41..5a */
 }
 
 /**
@@ -166,7 +170,9 @@ DECL_FORCE_INLINE(bool) RTLocCIsUpper(int ch)
  */
 DECL_FORCE_INLINE(bool) RTLocCIsXDigit(int ch)
 {
-    return RTLocCIsDigit(ch) || ((ch) >= 'a' && (ch) <= 'f') || ((ch) >= 'A' && (ch) <= 'F');
+    return (unsigned)ch - 0x30 < 10U /* 30..39 (0-9) */
+        || (unsigned)ch - 0x41 < 6   /* 41..46 (A-F) */
+        || (unsigned)ch - 0x61 < 6;  /* 61..66 (a-f) */
 }
 
 /**
@@ -211,7 +217,7 @@ DECL_FORCE_INLINE(bool) RTLocCIsGraph(int ch)
  */
 DECL_FORCE_INLINE(int) RTLocCToLower(int ch)
 {
-    return RTLocCIsUpper(ch) ? (ch) + ('a' - 'A') : (ch);
+    return RTLocCIsUpper(ch) ? (ch) + 0x20 : (ch);
 }
 
 /**
@@ -222,7 +228,7 @@ DECL_FORCE_INLINE(int) RTLocCToLower(int ch)
  */
 DECL_FORCE_INLINE(int) RTLocCToUpper(int ch)
 {
-    return RTLocCIsLower(ch) ? (ch) - ('a' - 'A') : (ch);
+    return RTLocCIsLower(ch) ? (ch) - 0x20 : (ch);
 }
 
 
