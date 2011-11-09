@@ -59,7 +59,6 @@ if defined(VBOX_WITH_ADDITION_DRIVERS) \
   && "$(strip $(foreach inc,$(VBOX_LINUX_INCS),$(wildcard $(inc)/drm/drmP.h)))" != ""
  SYSMODS += vboxvideo_drm
  vboxvideo_drm_TEMPLATE        = VBOXGUESTR0
- vboxvideo_drm_NOINST          = 1
  vboxvideo_drm_CFLAGS          = -fshort-wchar
  vboxvideo_drm_DEFS            = \
  	MODULE IN_RT_R0 VBOXGUEST VBOX_WITH_HGCM \

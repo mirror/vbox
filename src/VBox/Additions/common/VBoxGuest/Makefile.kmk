@@ -28,9 +28,9 @@ if1of ($(KBUILD_TARGET), freebsd $(if $(defined VBOX_WITH_ADDITION_DRIVERS),linu
  VBoxGuest_NAME.freebsd  = vboxguest
  VBoxGuest_NAME.linux    = vboxguest
  VBoxGuest_NAME.solaris  = vboxguest
- VBoxGuest_NOINST.linux  = true
  ifdef VBOX_SIGN_ADDITIONS # See Additions/WINNT/Makefile.kmk?
-  VBoxGuest_NOINST.win   = true
+  VBoxGuest_INSTTYPE.win = none
+  VBoxGuest_DEBUG_INSTTYPE.win = both
  endif
  VBoxGuest_DEFS.linux    = KBUILD_MODNAME=KBUILD_STR\(vboxguest\) KBUILD_BASENAME=KBUILD_STR\(vboxguest\) DEBUG_HASH=2 DEBUG_HASH2=3 EXPORT_SYMTAB
  VBoxGuest_DEFS.solaris  = VBOX_SVN_REV=$(VBOX_SVN_REV)
@@ -106,7 +106,7 @@ if1of ($(KBUILD_TARGET), freebsd $(if $(defined VBOX_WITH_ADDITION_DRIVERS),linu
   # see
   LIBRARIES += VBoxGuestLibOs2Hack
   VBoxGuestLibOs2Hack_TEMPLATE = VBOXGUESTR0LIB
-  VBoxGuestLibOs2Hack_NOINST = true
+  VBoxGuestLibOs2Hack_INSTTYPE = none
   VBoxGuestLibOs2Hack_DEFS = $(VBoxGuest_DEFS)
   VBoxGuestLibOs2Hack_INCS = \
   	. \
@@ -126,7 +126,7 @@ if1of ($(KBUILD_TARGET), freebsd $(if $(defined VBOX_WITH_ADDITION_DRIVERS),linu
   #
   SYSMODS.x86 += VBoxGuestNT
   VBoxGuestNT_EXTENDS = VBoxGuest
-  VBoxGuestNT_NOINST.win = $(NO_SUCH_VARIABLE)
+  VBoxGuestNT_INSTTYPE.win = both
   VBoxGuestNT_DEFS    = $(VBoxGuest_DEFS) TARGET_NT4
   VBoxGuestNT_SOURCES = \
   	VBoxGuest.cpp \

@@ -94,7 +94,8 @@ ifeq ($(KBUILD_TARGET),win)
 #fixme?, INTERMEDIATES.win ain't working
  VBoxOGL_INTERMEDIATES += $(VBOX_PATH_CROGL_GENFILES)/cr_gl.h
  if defined(VBOX_SIGNING_MODE) && defined(VBOX_WITH_WDDM)
-  VBoxOGL_NOINST.win = true
+  VBoxOGL_INSTTYPE.win = none
+  VBoxOGL_DEBUG_INSTTYPE.win = both
  endif
 endif
 ifdef VBoxOGL_DRI
@@ -382,7 +383,8 @@ if1of ($(KBUILD_TARGET), linux solaris freebsd)
         $(VBOX_MESA_INCS)
 endif
 if defined(VBOX_SIGNING_MODE) && defined(VBOX_WITH_WDDM)
- VBoxOGLarrayspu_NOINST.win = true
+ VBoxOGLarrayspu_INSTTYPE.win = none
+ VBoxOGLarrayspu_DEBUG_INSTTYPE.win = both
 endif
 VBoxOGLarrayspu_INCS.darwin  += $(PATH_OUT)/obj/VBoxOGL
 VBoxOGLarrayspu_INTERMEDIATES = \
@@ -424,7 +426,8 @@ if1of ($(KBUILD_TARGET), linux solaris freebsd)
         $(VBOX_MESA_INCS)
 endif
 if defined(VBOX_SIGNING_MODE) && defined(VBOX_WITH_WDDM)
- VBoxOGLpassthroughspu_NOINST.win = true
+ VBoxOGLpassthroughspu_INSTTYPE.win = none
+ VBoxOGLpassthroughspu_DEBUG_INSTTYPE.win = both
 endif
 VBoxOGLpassthroughspu_SOURCES     = \
 	passthrough/passthroughspu_init.c \
@@ -467,7 +470,8 @@ if1of ($(KBUILD_TARGET), linux solaris freebsd)
         $(VBOX_MESA_INCS)
 endif
 if defined(VBOX_SIGNING_MODE) && defined(VBOX_WITH_WDDM)
- VBoxOGLpackspu_NOINST.win = true
+ VBoxOGLpackspu_INSTTYPE.win = none
+ VBoxOGLpackspu_DEBUG_INSTTYPE.win = both
 endif
 VBoxOGLpackspu_INTERMEDIATES = \
 	$(VBOX_PATH_CROGL_GENFILES)/packspu_proto.h \
@@ -554,7 +558,8 @@ if1of ($(KBUILD_TARGET), linux solaris freebsd)
         $(VBOX_MESA_INCS)
 endif
 if defined(VBOX_SIGNING_MODE) && defined(VBOX_WITH_WDDM)
- VBoxOGLfeedbackspu_NOINST.win = true
+ VBoxOGLfeedbackspu_INSTTYPE.win = none
+ VBoxOGLfeedbackspu_DEBUG_INSTTYPE.win = both
 endif
 VBoxOGLarrayspu_INTERMEDIATES = \
 	$(VBOX_PATH_CROGL_GENFILES)/feedbackspu_proto.h

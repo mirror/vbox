@@ -53,7 +53,6 @@ $$(vboxsf-mod_0_OUTDIR)/build_in_tmp: \
 ifdef VBOX_WITH_ADDITION_DRIVERS
  SYSMODS += vboxsf
  vboxsf_TEMPLATE        = VBOXGUESTR0
- vboxsf_NOINST          = 1
  vboxsf_CFLAGS          = -fshort-wchar
  vboxsf_DEFS            = \
  	MODULE IN_RT_R0 VBOXGUEST VBOX_WITH_HGCM \

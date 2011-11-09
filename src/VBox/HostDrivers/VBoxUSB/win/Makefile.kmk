@@ -34,7 +34,8 @@ usbd_SOURCES        = usbd/usbd.def
 #
 VBoxUSB_TEMPLATE    = VBOXR0DRV
 ifdef VBOX_SIGNING_MODE
- VBoxUSB_NOINST     = true
+ VBoxUSB_INSTTYPE   = none
+ VBoxUSB_DEBUG_INSTTYPE = both
 endif
 VBoxUSB_SDKS        = W2K3DDK WINPSDKINCS
 VBoxUSB_DEFS        = IN_RT_R0 IN_SUP_R0 VBOX_DBG_LOG_NAME=\"USBDev\"
@@ -59,7 +60,8 @@ VBoxUSB_LIBS        = \
 #
 VBoxUSBMon_TEMPLATE    = VBOXR0DRV
 ifdef VBOX_SIGNING_MODE
- VBoxUSBMon_NOINST     = true
+ VBoxUSBMon_INSTTYPE = none
+ VBoxUSBMon_DEBUG_INSTTYPE = both
 endif
 VBoxUSBMon_INCS       := $(PATH_SUB_CURRENT)/..
 VBoxUSBMon_SDKS        = W2K3DDK WINPSDKINCS
