@@ -3084,6 +3084,14 @@ ifn1of ($(KBUILD_TARGET), darwin os2 win solaris)
  TEMPLATE_VBOXR0DRV_CXXFLAGS  += -include $(PATH_ROOT)/include/VBox/SUPDrvMangling.h
 endif
 
+#
+# Template for building libraries used by ring-0 drivers.
+#
+TEMPLATE_VBoxR0DrvLib = VBox Ring 0 Driver Library
+TEMPLATE_VBoxR0DrvLib_EXTENDS = VBOXR0DRV
+TEMPLATE_VBoxR0DrvLib_INSTTYPE = stage
+TEMPLATE_VBoxR0DrvLib_INSTTYPE.linux = stage
+
 
 #
 # Template for building R3 executables and static libraries which are linked into executables.

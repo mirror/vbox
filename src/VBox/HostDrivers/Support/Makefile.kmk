@@ -155,8 +155,7 @@ endif
 #
 # SUPR0IdcClient - The Ring-0 IDC client driver library.
 #
-SUPR0IdcClient_TEMPLATE = VBOXR0DRV
-SUPR0IdcClient_INSTTYPE = stage
+SUPR0IdcClient_TEMPLATE = VBoxR0DrvLib
 SUPR0IdcClient_DEFS = IN_RT_R0 IN_SUP_R0 IN_SUP_STATIC
 SUPR0IdcClient_SDKS.win = W2K3DDK WINPSDKINCS
 SUPR0IdcClient_SOURCES.$(KBUILD_TARGET) = \
