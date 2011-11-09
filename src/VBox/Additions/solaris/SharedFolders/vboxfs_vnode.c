@@ -170,12 +170,6 @@ sfnode_clear_dir_list(sfnode_t *node)
 		kmem_free(node->sf_dir_list, SFFS_DIRENTS_SIZE);
 		node->sf_dir_list = next;
 	}
-
-	while (node->sf_dir_stats != NULL) {
-		sffs_stats_t *next = node->sf_dir_stats->sf_next;
-		kmem_free(node->sf_dir_stats, sizeof(*node->sf_dir_stats));
-		node->sf_dir_stats = next;
-	}
 }
 
 /*
@@ -261,7 +255,6 @@ sfnode_make(
 	if (parent)
 		++parent->sf_children;
 	node->sf_dir_list = NULL;
-	node->sf_dir_stats = NULL;
 	if (stat != NULL) {
 		node->sf_stat = *stat;
 		node->sf_stat_time = stat_time;
@@ -701,11 +694,10 @@ sffs_readdir(
 {
 	sfnode_t *dir = VN2SFN(vp);
 	sfnode_t *node;
-	struct dirent64 *dirent;
+	struct sffs_dirent *dirent = NULL;
 	sffs_dirents_t *cur_buf;
-	sffs_stats_t *cur_stats;
-	int cur_snum;
-	offset_t offset;
+	offset_t offset = 0;
+	offset_t orig_off = uiop->uio_loffset;
 	int dummy_eof;
 	int error = 0;
 
@@ -733,61 +725,91 @@ sffs_readdir(
 
 	if (dir->sf_dir_list == NULL) {
 		error = sfprov_readdir(dir->sf_sffs->sf_handle, dir->sf_path,
-		    &dir->sf_dir_list, &dir->sf_dir_stats);
+		    &dir->sf_dir_list);
 		if (error != 0)
 			goto done;
 	}
+
+ 	/*
+	 * Validate and skip to the desired offset.
+	 */
+	cur_buf = dir->sf_dir_list;
+	offset = 0;
+
+	while (cur_buf != NULL &&
+	    offset + cur_buf->sf_len <= uiop->uio_loffset) {
+		offset += cur_buf->sf_len;
+		cur_buf = cur_buf->sf_next;
+	}
+
+	if (cur_buf == NULL && offset != uiop->uio_loffset) {
+		error = EINVAL;
+		goto done;
+	}
+	if (cur_buf != NULL && offset != uiop->uio_loffset) {
+		offset_t off = offset;
+		int step;
+		dirent = &cur_buf->sf_entries[0];
+
+		while (off < uiop->uio_loffset) {
+			if (dirent->sf_entry.d_off == uiop->uio_loffset)
+				break;
+			step = sizeof(sffs_stat_t) + dirent->sf_entry.d_reclen;
+			dirent = (struct sffs_dirent *) (((char *) dirent) + step);
+			off += step;
+		}
+
+		if (off >= uiop->uio_loffset) {
+			error = EINVAL;
+			goto done;
+		}
+	}
+
+	offset = uiop->uio_loffset - offset;
 
 	/*
 	 * Lookup each of the names, so that we have ino's, and copy to
 	 * result buffer.
 	 */
-	offset = 0;
-	cur_buf = dir->sf_dir_list;
-	cur_stats = dir->sf_dir_stats;
-	cur_snum = 0;
 	while (cur_buf != NULL) {
-		if (offset + cur_buf->sf_len <= uiop->uio_loffset) {
-			offset += cur_buf->sf_len;
+		if (offset >= cur_buf->sf_len) {
 			cur_buf = cur_buf->sf_next;
+			offset = 0;
 			continue;
 		}
 
-		if (cur_snum >= SFFS_STATS_LEN) {
-			cur_stats = cur_stats->sf_next;
-			cur_snum = 0;
-		}
-
-		dirent = (dirent64_t *)
-		    (((char *) &cur_buf->sf_entries[0]) +
-		     (uiop->uio_loffset - offset));
-		if (dirent->d_reclen > uiop->uio_resid)
+		dirent = (struct sffs_dirent *)
+		    (((char *) &cur_buf->sf_entries[0]) + offset);
+		if (dirent->sf_entry.d_reclen > uiop->uio_resid)
 			break;
 
-		if (strcmp(dirent->d_name, ".") == 0) {
+		if (strcmp(dirent->sf_entry.d_name, ".") == 0) {
 			node = dir;
-		} else if (strcmp(dirent->d_name, "..") == 0) {
+		} else if (strcmp(dirent->sf_entry.d_name, "..") == 0) {
 			node = dir->sf_parent;
 			if (node == NULL)
 				node = dir;
 		} else {
-			node = sfnode_lookup(dir, dirent->d_name, VNON,
-			    &cur_stats->sf_stats[cur_snum],
-			    sfnode_cur_time_usec(), NULL);
+			node = sfnode_lookup(dir, dirent->sf_entry.d_name, VNON,
+			    &dirent->sf_stat, sfnode_cur_time_usec(), NULL);
 			if (node == NULL)
 				panic("sffs_readdir() lookup failed");
 		}
-		dirent->d_ino = node->sf_ino;
+		dirent->sf_entry.d_ino = node->sf_ino;
 
-		error = uiomove(dirent, dirent->d_reclen, UIO_READ, uiop);
-		++cur_snum;
+		error = uiomove(&dirent->sf_entry, dirent->sf_entry.d_reclen, UIO_READ, uiop);
 		if (error != 0)
 			break;
+
+		uiop->uio_loffset= dirent->sf_entry.d_off;
+		offset += sizeof(sffs_stat_t) + dirent->sf_entry.d_reclen;
 	}
 	if (error == 0 && cur_buf == NULL)
 		*eofp = 1;
 done:
 	mutex_exit(&sffs_lock);
+	if (error != 0)
+		uiop->uio_loffset = orig_off;
 	return (error);
 }
 

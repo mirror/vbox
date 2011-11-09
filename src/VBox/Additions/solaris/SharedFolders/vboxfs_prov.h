@@ -119,23 +119,6 @@ extern int sfprov_mkdir(sfp_mount_t *, char *path, sfp_file_t **fp);
 extern int sfprov_rmdir(sfp_mount_t *, char *path);
 extern int sfprov_rename(sfp_mount_t *, char *from, char *to, uint_t is_dir);
 
-/*
- * Read directory entries.
- */
-/*
- * a singly linked list of buffers, each containing an array of dirent's.
- * sf_len is length of the sf_entries array, in bytes.
- */
-typedef struct sffs_dirents {
-	struct sffs_dirents	*sf_next;
-	len_t			sf_len;
-	dirent64_t		sf_entries[1];
-} sffs_dirents_t;
-
-#define SFFS_DIRENTS_SIZE	8192
-#define SFFS_DIRENTS_OFF	(offsetof(sffs_dirents_t, sf_entries[0]))
-#define SFFS_STATS_LEN		100
-
 typedef struct sffs_stat {
 	mode_t		sf_mode;
 	off_t		sf_size;
@@ -144,14 +127,27 @@ typedef struct sffs_stat {
 	timestruc_t	sf_ctime;
 } sffs_stat_t;
 
-typedef struct sffs_stats {
-	struct sffs_stats	*sf_next;
-	len_t			sf_num;
-	sffs_stat_t		sf_stats[SFFS_STATS_LEN];
-} sffs_stats_t;
+/*
+ * Read directory entries.
+ */
+/*
+ * a singly linked list of buffers, each containing an array of stat's+dirent's.
+ * sf_len is length of the sf_entries array, in bytes.
+ */
+typedef struct sffs_dirents {
+	struct sffs_dirents	*sf_next;
+	len_t			sf_len;
+	struct sffs_dirent {
+		sffs_stat_t	sf_stat;
+		dirent64_t	sf_entry;	/* this is variable length */
+	}			sf_entries[1];
+} sffs_dirents_t;
 
-extern int sfprov_readdir(sfp_mount_t *mnt, char *path, sffs_dirents_t **dirents,
-    sffs_stats_t **stats);
+#define SFFS_DIRENTS_SIZE	8192
+#define SFFS_DIRENTS_OFF	(offsetof(sffs_dirents_t, sf_entries[0]))
+
+extern int sfprov_readdir(sfp_mount_t *mnt, char *path,
+	sffs_dirents_t **dirents);
 
 #ifdef	__cplusplus
 }
