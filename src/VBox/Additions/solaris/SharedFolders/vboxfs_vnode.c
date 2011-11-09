@@ -312,7 +312,7 @@ top:
 	if (parent != NULL) {
 		sfnode_clear_dir_list(parent);
 		if (parent->sf_children == 0)
-			panic("sfnode_destroy(%s) parent has no child", node->sf_path);
+			panic("sfnode_destroy parent (%s) has no child", parent->sf_path);
 		--parent->sf_children;
 		if (parent->sf_children == 0 &&
 		    parent->sf_is_stale &&
@@ -2137,6 +2137,23 @@ sffs_seek(vnode_t *v, offset_t o, offset_t *no, caller_context_t *ct)
 {
 	if (*no < 0 || *no > MAXOFFSET_T)
 		return (EINVAL);
+
+	if (v->v_type == VDIR)
+	{
+		sffs_dirents_t *cur_buf = VN2SFN(v)->sf_dir_list;
+		off_t offset = 0;
+
+		if (cur_buf == NULL)
+			return (0);
+
+		while (cur_buf != NULL) {
+			if (*no >= offset && *no <= offset + cur_buf->sf_len)
+				return (0);
+			offset += cur_buf->sf_len;
+			cur_buf = cur_buf->sf_next;
+		}
+		return (EINVAL);
+	}
 	return (0);
 }
 
