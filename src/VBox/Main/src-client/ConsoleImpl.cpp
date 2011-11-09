@@ -509,7 +509,7 @@ HRESULT Console::init(IMachine *aMachine, IInternalMachineControl *aControl)
     if (pSystemProperties)
         pSystemProperties->GetMaxNetworkAdapters(chipsetType, &maxNetworkAdapters);
     meAttachmentType.resize(maxNetworkAdapters);
-    for (ULONG slot = 0; slot < SchemaDefs::NetworkAdapterCount; ++slot)
+    for (ULONG slot = 0; slot < maxNetworkAdapters; ++slot)
         meAttachmentType[slot] = NetworkAttachmentType_Null;
 
 
