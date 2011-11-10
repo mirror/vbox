@@ -66,12 +66,11 @@ debrel  := $(if $(shell which lsb_release),_$(shell lsb_release -si)_$(shell lsb
 instmod := $(if $(filter _Ubuntu_lucid _Ubuntu_maverick _Ubuntu_natty _Ubuntu_oneiric _Debian_sid,$(debrel)),,1)
 
 # Location of custom built Qt libraries (see below)
-qtstdc6  := /home/vbox/Qt-4.4.3-stdc++6-$(arch)
+qtstdc6  := /home/vbox/Qt-4.7.4-stdc++6-$(arch)
 
 cfg_flags := $(if $(NOQT),--disable-qt,) \
 	     $(if $(ose),--ose,) $(if $(LINUX),--with-linux=$(LINUX),) \
-	     $(if $(filter _Debian_etch,$(debrel)),$(if $(ose),,--build-libcurl),) \
-	     $(if $(filter _Debian_etch _Ubuntu_hardy,$(debrel)),--with-qt4-dir=$(qtstdc6)) \
+	     $(if $(filter _Ubuntu_hardy,$(debrel)),--with-qt4-dir=$(qtstdc6)) \
 	     $(if $(HEADLESS),--build-headless,) \
 	     $(if $(DEBUG),--build-debug,) \
 	     $(if $(NOWINE),,--setup-wine) \
@@ -91,7 +90,7 @@ bld_flags := AUTOCFG=$(current)/debian/AutoConfig.kmk \
 	     $(if $(VERBOSE),--print-directory KBUILD_VERBOSE=2,--no-print-directory) \
 	     $(if $(STAGEDISO),VBOX_WITHOUT_ADDITIONS=1,) \
 	     $(if $(BLEEDING_EDGE),VBOX_BLEEDING_EDGE=$(BLEEDING_EDGE),) \
-	     $(if $(filter _Debian_etch _Ubuntu_hardy,$(debrel)),,VBOX_WITH_SYSFS_BY_DEFAULT=1)
+	     $(if $(filter _Ubuntu_hardy,$(debrel)),,VBOX_WITH_SYSFS_BY_DEFAULT=1)
 
 configure: debian/configure-stamp
 debian/configure-stamp:
@@ -310,6 +309,10 @@ endif
 	sed -e 's|%VER%|$(ver)|g' \
 	    debian/prerm.in > debian/prerm
 	sed -e 's|%VER%|$(ver)|g' \
+	    -e '/#include installer-common.sh/ {' \
+	    -e "r $(vboxroot)/src/VBox/Installer/linux/installer-common.sh" \
+	    -e 'd' \
+	    -e '}' \
 	    debian/postinst.in > debian/postinst
 	dh_installdebconf
 	dh_installchangelogs
@@ -343,7 +346,7 @@ endif
 	  -Valsa=$(if $(HEADLESS),,libasound2) \
 	  -Vpulse=$(if $(HEADLESS),,libpulse0) \
 	  -Vsdlttf=$(if $(HEADLESS),,libsdl-ttf2.0-0) \
-	  -Vdkms=$(if $(filter _Debian_etch _Debian_lenny,$(debrel)),,dkms)
+	  -Vdkms=$(if $(filter _Debian_lenny,$(debrel)),,dkms)
 	dh_md5sums
 	dh_builddeb --destdir $(pkgdir)
 endif

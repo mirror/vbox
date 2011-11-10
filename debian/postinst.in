@@ -17,6 +17,8 @@
 #  abort-remove:      (our version): removing this package failed
 #  abort-deconfigure: (our version): error during resolving conflicts
 
+#include installer-common.sh
+
 LOG="/var/log/vbox-install.log"
 
 # defaults
@@ -39,64 +41,16 @@ if [ "$1" = "configure" ]; then
     rm /etc/vbox/vbox.cfg
   fi
 
-  # install udev rule (disable with INSTALL_NO_UDEV=1 in /etc/default/virtualbox)
-  if [ -d /etc/udev/rules.d -a "$INSTALL_NO_UDEV" != "1" ]; then
-    udev_call=""
-    udev_app=`which udevadm 2> /dev/null`
-    if [ $? -eq 0 ]; then
-      udev_call="${udev_app} version 2> /dev/null"
-    else
-      udev_app=`which udevinfo 2> /dev/null`
-      if [ $? -eq 0 ]; then
-        udev_call="${udev_app} -V 2> /dev/null"
-      fi
-    fi
-    udev_fix="="
-    if [ "${udev_call}" != "" ]; then
-      udev_out=`${udev_call}`
-      udev_ver=`expr "$udev_out" : '[^0-9]*\([0-9]*\)'`
-      if [ "$udev_ver" = "" -o "$udev_ver" -lt 55 ]; then
-        udev_fix=""
-      fi
-    fi
-    echo "KERNEL=${udev_fix}\"vboxdrv\", NAME=\"vboxdrv\", OWNER=\"root\", GROUP=\"root\", MODE=\"0600\"" \
-      > /etc/udev/rules.d/10-vboxdrv.rules
-    if [ "$INSTALL_NO_GROUP" != "1" ]; then
-        usb_group=vboxusers
-    else
-        usb_group=root
-    fi
-    usb_createnode="/usr/share/virtualbox/VBoxCreateUSBNode.sh"
-    echo "SUBSYSTEM=${udev_fix}\"usb_device\", ACTION=${udev_fix}\"add\", RUN=\"${usb_createnode} \$major \$minor \$attr{bDeviceClass} ${usb_group}\"" \
-        >> /etc/udev/rules.d/10-vboxdrv.rules
-    echo "SUBSYSTEM=${udev_fix}\"usb\", ACTION=${udev_fix}\"add\", ENV{DEVTYPE}==\"usb_device\", RUN=\"${usb_createnode} \$major \$minor \$attr{bDeviceClass} ${usb_group}\"" \
-        >> /etc/udev/rules.d/10-vboxdrv.rules
-    echo "SUBSYSTEM=${udev_fix}\"usb_device\", ACTION=${udev_fix}\"remove\", RUN=\"${usb_createnode} --remove \$major \$minor\"" \
-        >> /etc/udev/rules.d/10-vboxdrv.rules
-    echo "SUBSYSTEM=${udev_fix}\"usb\", ACTION=${udev_fix}\"remove\", ENV{DEVTYPE}==\"usb_device\", RUN=\"${usb_createnode} --remove \$major \$minor\"" \
-        >> /etc/udev/rules.d/10-vboxdrv.rules
-  fi
-  # Remove old udev description file
-  if [ -f /etc/udev/rules.d/60-vboxdrv.rules ]; then
-      rm -f /etc/udev/rules.d/60-vboxdrv.rules 2> /dev/null
-  fi
-  # Build our device tree
-  for i in /sys/bus/usb/devices/*; do
-    if test -r "$i/dev"; then
-      dev="`cat "$i/dev" 2> /dev/null`"
-      major="`expr "$dev" : '\(.*\):' 2> /dev/null`"
-      minor="`expr "$dev" : '.*:\(.*\)' 2> /dev/null`"
-      class="`cat $i/bDeviceClass 2> /dev/null`"
-      sh ${usb_createnode} "$major" "$minor" "$class" ${usb_group} 2>/dev/null
-    fi
-  done
-
   # create users groups (disable with INSTALL_NO_GROUP=1 in /etc/default/virtualbox)
   if [ "$INSTALL_NO_GROUP" != "1" ]; then
     db_input low virtualbox/group-vboxusers || true
     db_go || true
     addgroup --system vboxusers || true
   fi
+
+  # install udev rule (disable with INSTALL_NO_UDEV=1 in
+  # /etc/default/virtualbox) and /dev/vboxdrv and /dev/vboxusb/*/* device nodes
+  install_device_node_setup root 0600 /usr/share/virtualbox "${usb_group}"
 
   # The starters need to be Suid root. They drop the privileges before starting
   # the real frontend.
