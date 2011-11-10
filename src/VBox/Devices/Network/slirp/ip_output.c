@@ -168,7 +168,7 @@ ip_output0(PNATState pData, struct socket *so, struct mbuf *m0, int urg)
         ip->ip_sum = 0;
         ip->ip_sum = cksum(m, hlen);
 
-        {
+        if (!(m->m_flags & M_SKIP_FIREWALL)){
             struct m_tag *t;
             STAM_PROFILE_START(&pData->StatALIAS_output, b);
             if ((t = m_tag_find(m, PACKET_TAG_ALIAS, NULL)) != 0)
@@ -185,6 +185,8 @@ ip_output0(PNATState pData, struct socket *so, struct mbuf *m0, int urg)
             }
             STAM_PROFILE_STOP(&pData->StatALIAS_output, b);
         }
+        else
+            m->m_flags &= ~M_SKIP_FIREWALL;
 
         memcpy(eh->h_source, eth_dst, ETH_ALEN);
 
@@ -291,7 +293,7 @@ ip_output0(PNATState pData, struct socket *so, struct mbuf *m0, int urg)
         ip->ip_sum = cksum(m, mhlen);
 
 send_or_free:
-        {
+        if (!(m->m_flags & M_SKIP_FIREWALL)){
             /* @todo: We can't alias all fragments because the way libalias processing
              * the fragments brake the sequence. libalias put alias_address to the source
              * address of IP header of fragment, while IP header of the first packet is
@@ -315,6 +317,8 @@ send_or_free:
             }
             Log2(("NAT: LibAlias return %d\n", rcLa));
         }
+        else
+            m->m_flags &= ~M_SKIP_FIREWALL;
         for (m = m0; m; m = m0)
         {
             m0 = m->m_nextpkt;
