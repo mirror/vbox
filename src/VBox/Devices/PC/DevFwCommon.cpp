@@ -898,8 +898,8 @@ void FwCommonPlantMpsTable(PPDMDEVINS pDevIns, uint8_t *pTable, unsigned cbMax, 
         pProcEntry++;
     }
 
-    uint32_t iBusIdPci0 = 0;
-    uint32_t iBusIdIsa  = 1;
+    uint32_t iBusIdIsa  = 0;
+    uint32_t iBusIdPci0 = 1;
 
     /* ISA bus */
     PMPSBUSENTRY pBusEntry         = (PMPSBUSENTRY)pProcEntry;
