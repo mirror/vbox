@@ -214,7 +214,6 @@ sfnode_get_vnode(sfnode_t *node)
 		vp->v_data = node;
 		node->sf_vnode = vp;
 	}
-	sfnode_open(node);
 	return (node->sf_vnode);
 }
 
@@ -2116,7 +2115,19 @@ sffs_inactive(vnode_t *vp, cred_t *cr, caller_context_t *ct)
 static int
 sffs_open(vnode_t **vpp, int flag, cred_t *cr, caller_context_t *ct)
 {
-	return (0);
+	sfnode_t *node;
+	int	error = 0;
+
+	mutex_enter(&sffs_lock);
+
+	node = VN2SFN(*vpp);
+	sfnode_open(node);
+	if (node->sf_file == NULL)
+		error = EINVAL;
+
+	mutex_exit(&sffs_lock);
+
+	return (error);
 }
 
 /*
@@ -2149,6 +2160,12 @@ sffs_close(
 	sfnode_clear_dir_list(node);
 
 	sfnode_invalidate_stat_cache(node);
+
+	if (node->sf_file != NULL && vp->v_count <= 1)
+	{
+		(void)sfprov_close(node->sf_file);
+		node->sf_file = NULL;
+	}
 
 	mutex_exit(&sffs_lock);
 	return (0);
