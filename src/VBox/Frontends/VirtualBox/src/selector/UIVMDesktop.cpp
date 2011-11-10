@@ -223,7 +223,7 @@ void UIDetailsPagePrivate::setMachines(const QList<CMachine> &machines)
         const CMachine &machine = machines[i];
         /* Assign corresponding vector values: */
         m_machines[i] = machine;
-        m_changeable[i] = machine.isNull() ? false :
+        m_changeable[i] = machine.isNull() || !machine.GetAccessible() ? false :
                           machine.GetState() != KMachineState_Stuck &&
                           machine.GetState() != KMachineState_Saved /* for now! */;
     }
@@ -369,8 +369,16 @@ void UIDetailsPagePrivate::sltUpdateGeneral()
     {
         if (!machine.isNull())
         {
-            QString item = sSectionItemTpl2.arg(tr("Name", "details report"), machine.GetName())
-                         + sSectionItemTpl2.arg(tr("OS Type", "details report"), vboxGlobal().vmGuestOSTypeDescription(machine.GetOSTypeId()));
+            QString item;
+            if (machine.GetAccessible())
+            {
+                item = sSectionItemTpl2.arg(tr("Name", "details report"), machine.GetName())
+                     + sSectionItemTpl2.arg(tr("OS Type", "details report"), vboxGlobal().vmGuestOSTypeDescription(machine.GetOSTypeId()));
+            }
+            else
+            {
+                item = QString(sSectionItemTpl1).arg(tr("Information inaccessible", "details report"));
+            }
             pLabel->setText(sTableTpl.arg(item));
         }
         else
@@ -402,71 +410,78 @@ void UIDetailsPagePrivate::sltUpdateSystem()
     {
         if (!machine.isNull())
         {
-            QString item = sSectionItemTpl2.arg(tr("Base Memory", "details report"), tr("<nobr>%1 MB</nobr>", "details report"))
-                                           .arg(machine.GetMemorySize());
-
-            int cCPU = machine.GetCPUCount();
-            if (cCPU > 1)
-                item += sSectionItemTpl2.arg(tr("Processors", "details report"), tr("<nobr>%1</nobr>", "details report"))
-                                        .arg(cCPU);
-
-            int iCPUExecCap = machine.GetCPUExecutionCap();
-            if (iCPUExecCap < 100)
-                item += sSectionItemTpl2.arg(tr("Execution Cap", "details report"), tr("<nobr>%1%</nobr>", "details report"))
-                                        .arg(iCPUExecCap);
-
-            /* Boot order: */
-            QStringList bootOrder;
-            for (ulong i = 1; i <= m_vbox.GetSystemProperties().GetMaxBootPosition(); ++i)
+            QString item;
+            if (machine.GetAccessible())
             {
-                KDeviceType device = machine.GetBootOrder(i);
-                if (device == KDeviceType_Null)
-                    continue;
-                bootOrder << vboxGlobal().toString(device);
-            }
-            if (bootOrder.isEmpty())
-                bootOrder << vboxGlobal().toString(KDeviceType_Null);
+                item = sSectionItemTpl2.arg(tr("Base Memory", "details report"), tr("<nobr>%1 MB</nobr>", "details report"))
+                                       .arg(machine.GetMemorySize());
 
-            item += sSectionItemTpl2.arg(tr("Boot Order", "details report"), bootOrder.join(", "));
+                int cCPU = machine.GetCPUCount();
+                if (cCPU > 1)
+                    item += sSectionItemTpl2.arg(tr("Processors", "details report"), tr("<nobr>%1</nobr>", "details report"))
+                                            .arg(cCPU);
+
+                int iCPUExecCap = machine.GetCPUExecutionCap();
+                if (iCPUExecCap < 100)
+                    item += sSectionItemTpl2.arg(tr("Execution Cap", "details report"), tr("<nobr>%1%</nobr>", "details report"))
+                                            .arg(iCPUExecCap);
+
+                /* Boot order: */
+                QStringList bootOrder;
+                for (ulong i = 1; i <= m_vbox.GetSystemProperties().GetMaxBootPosition(); ++i)
+                {
+                    KDeviceType device = machine.GetBootOrder(i);
+                    if (device == KDeviceType_Null)
+                        continue;
+                    bootOrder << vboxGlobal().toString(device);
+                }
+                if (bootOrder.isEmpty())
+                    bootOrder << vboxGlobal().toString(KDeviceType_Null);
+
+                item += sSectionItemTpl2.arg(tr("Boot Order", "details report"), bootOrder.join(", "));
 
 #ifdef VBOX_WITH_FULL_DETAILS_REPORT
-            /* BIOS Settings holder: */
-            const CBIOSSettings &biosSettings = machine.GetBIOSSettings();
-            QStringList bios;
+                /* BIOS Settings holder: */
+                const CBIOSSettings &biosSettings = machine.GetBIOSSettings();
+                QStringList bios;
 
-            /* ACPI: */
-            if (biosSettings.GetACPIEnabled())
-                bios << tr("ACPI", "details report");
+                /* ACPI: */
+                if (biosSettings.GetACPIEnabled())
+                    bios << tr("ACPI", "details report");
 
-            /* IO APIC: */
-            if (biosSettings.GetIOAPICEnabled())
-                bios << tr("IO APIC", "details report");
+                /* IO APIC: */
+                if (biosSettings.GetIOAPICEnabled())
+                    bios << tr("IO APIC", "details report");
 
-            if (!bios.isEmpty())
-                item += sSectionItemTpl2.arg(tr("BIOS", "details report"), bios.join(", "));
+                if (!bios.isEmpty())
+                    item += sSectionItemTpl2.arg(tr("BIOS", "details report"), bios.join(", "));
 #endif /* VBOX_WITH_FULL_DETAILS_REPORT */
 
-            QStringList accel;
-            if (m_vbox.GetHost().GetProcessorFeature(KProcessorFeature_HWVirtEx))
-            {
-                /* VT-x/AMD-V: */
-                if (machine.GetHWVirtExProperty(KHWVirtExPropertyType_Enabled))
+                QStringList accel;
+                if (m_vbox.GetHost().GetProcessorFeature(KProcessorFeature_HWVirtEx))
                 {
-                    accel << tr("VT-x/AMD-V", "details report");
+                    /* VT-x/AMD-V: */
+                    if (machine.GetHWVirtExProperty(KHWVirtExPropertyType_Enabled))
+                    {
+                        accel << tr("VT-x/AMD-V", "details report");
 
-                    /* Nested Paging (only when hw virt is enabled): */
-                    if (machine.GetHWVirtExProperty(KHWVirtExPropertyType_NestedPaging))
-                        accel << tr("Nested Paging", "details report");
+                        /* Nested Paging (only when hw virt is enabled): */
+                        if (machine.GetHWVirtExProperty(KHWVirtExPropertyType_NestedPaging))
+                            accel << tr("Nested Paging", "details report");
+                    }
                 }
+
+                /* PAE/NX: */
+                if (machine.GetCPUProperty(KCPUPropertyType_PAE))
+                    accel << tr("PAE/NX", "details report");
+
+                if (!accel.isEmpty())
+                    item += sSectionItemTpl2.arg(tr("Acceleration", "details report"), accel.join(", "));
             }
-
-            /* PAE/NX: */
-            if (machine.GetCPUProperty(KCPUPropertyType_PAE))
-                accel << tr("PAE/NX", "details report");
-
-            if (!accel.isEmpty())
-                item += sSectionItemTpl2.arg(tr("Acceleration", "details report"), accel.join(", "));
-
+            else
+            {
+                item = QString(sSectionItemTpl1).arg(tr("Information inaccessible", "details report"));
+            }
             pLabel->setText(sTableTpl.arg(item));
         }
         else
@@ -1149,6 +1164,8 @@ void UIDetailsPagePrivate::prepareSection(UIDetailsBlock &block, int iBlockNumbe
     pPopup->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
     pPopup->setProperty("block-number", iBlockNumber);
     pPopup->setProperty("section-type", static_cast<int>(section));
+    if (!m_machines[iBlockNumber].GetAccessible())
+        pPopup->setWarningIcon(UIIconPool::iconSet(":/state_aborted_16px.png"));
 
     /* Configure the popup box: */
     switch (section)

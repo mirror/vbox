@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2010 Oracle Corporation
+ * Copyright (C) 2010-2011 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -23,30 +23,33 @@
 #include "QIWithRetranslateUI.h"
 #include "COMDefs.h"
 
-/* Global includes */
+/* Global includes: */
 #include <QWidget>
 #include <QHash>
 
-/* Global forward declarations */
+/* Forward declarations: */
 class QAction;
 class QImage;
 class QMenu;
 class QTimer;
 
+/* Update interval type: */
+enum UpdateInterval
+{
+    UpdateInterval_Disabled,
+    UpdateInterval_500ms,
+    UpdateInterval_1000ms,
+    UpdateInterval_2000ms,
+    UpdateInterval_5000ms,
+    UpdateInterval_10000ms,
+    UpdateInterval_Max
+};
+typedef QMap<UpdateInterval, QString> UpdateIntervalMap;
+
+/* Preview window class: */
 class UIVMPreviewWindow : public QIWithRetranslateUI<QWidget>
 {
     Q_OBJECT;
-
-    enum UpdateInterval
-    {
-        UpdateDisabled,
-        Update500ms,
-        Update1000ms,
-        Update2000ms,
-        Update5000ms,
-        Update10000ms,
-        UpdateEnd
-    };
 
 public:
 
@@ -76,10 +79,12 @@ private slots:
 private:
 
     void setUpdateInterval(UpdateInterval interval, bool fSave);
-    void restart();
     void repaintBGImages();
 
-    /* Private member vars */
+    void restart();
+    void stop();
+
+    /* Variables: */
     CSession m_session;
     CMachine m_machine;
     KMachineState m_machineState;
@@ -92,6 +97,8 @@ private:
     QImage *m_pbgImage;
     QImage *m_pPreviewImg;
     QImage *m_pGlossyImg;
+
+    static UpdateIntervalMap m_intervals;
 };
 
 #endif /* !__UIVMPreviewWindow_h__ */

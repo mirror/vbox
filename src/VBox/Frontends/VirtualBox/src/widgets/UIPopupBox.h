@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2010 Oracle Corporation
+ * Copyright (C) 2010-2011 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -40,6 +40,9 @@ public:
 
     void setTitleIcon(const QIcon& icon);
     QIcon titleIcon() const;
+
+    void setWarningIcon(const QIcon& icon);
+    QIcon warningIcon() const;
 
     void setTitleLink(const QString& strLink);
     QString titleLink() const;
@@ -83,7 +86,9 @@ private:
     QLabel *m_pTitleLabel;
     QString m_strTitle;
     QLabel *m_pTitleIcon;
-    QIcon m_icon;
+    QLabel *m_pWarningIcon;
+    QIcon m_titleIcon;
+    QIcon m_warningIcon;
     QString m_strLink;
     bool m_fLinkEnabled;
     QWidget *m_pContentWidget;

@@ -6,7 +6,7 @@
  */
 
 /*
- * Copyright (C) 2010 Oracle Corporation
+ * Copyright (C) 2010-2011 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -17,18 +17,33 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-/* Local includes */
-#include "UIVMPreviewWindow.h"
-#include "UIVirtualBoxEventHandler.h"
-#include "UIImageTools.h"
-#include "VBoxGlobal.h"
-
-/* Global includes */
+/* Global includes: */
 #include <QContextMenuEvent>
 #include <QMenu>
 #include <QPainter>
 #include <QTimer>
 
+/* Local includes: */
+#include "UIVMPreviewWindow.h"
+#include "UIVirtualBoxEventHandler.h"
+#include "UIImageTools.h"
+#include "VBoxGlobal.h"
+
+/* Initialize map: */
+UpdateIntervalMap UpdateIntervalMapConstructor()
+{
+    UpdateIntervalMap map;
+    map[UpdateInterval_Disabled] = "disabled";
+    map[UpdateInterval_500ms]    = "500";
+    map[UpdateInterval_1000ms]   = "1000";
+    map[UpdateInterval_2000ms]   = "2000";
+    map[UpdateInterval_5000ms]   = "5000";
+    map[UpdateInterval_10000ms]  = "10000";
+    return map;
+}
+UpdateIntervalMap UIVMPreviewWindow::m_intervals = UpdateIntervalMapConstructor();
+
+/* Constructor: */
 UIVMPreviewWindow::UIVMPreviewWindow(QWidget *pParent)
   : QIWithRetranslateUI<QWidget>(pParent)
   , m_machineState(KMachineState_Null)
@@ -38,22 +53,19 @@ UIVMPreviewWindow::UIVMPreviewWindow(QWidget *pParent)
   , m_pPreviewImg(0)
   , m_pGlossyImg(0)
 {
-    m_session.createInstance(CLSID_Session);
-
+    /* Setup contents: */
     setContentsMargins(0, 5, 0, 5);
     setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
-    /* Connect the update timer */
-    connect(m_pUpdateTimer, SIGNAL(timeout()),
-            this, SLOT(sltRecreatePreview()));
-    /* Connect the machine state event */
-    connect(gVBoxEvents, SIGNAL(sigMachineStateChange(QString, KMachineState)),
-            this, SLOT(sltMachineStateChange(QString, KMachineState)));
-    /* Create the context menu */
+
+    /* Create session instance: */
+    m_session.createInstance(CLSID_Session);
+
+    /* Create the context menu: */
     setContextMenuPolicy(Qt::DefaultContextMenu);
     m_pUpdateTimerMenu = new QMenu(this);
     QActionGroup *pUpdateTimeG = new QActionGroup(this);
     pUpdateTimeG->setExclusive(true);
-    for(int i = 0; i < UpdateEnd; ++i)
+    for(int i = 0; i < UpdateInterval_Max; ++i)
     {
         QAction *pUpdateTime = new QAction(pUpdateTimeG);
         pUpdateTime->setData(i);
@@ -62,24 +74,19 @@ UIVMPreviewWindow::UIVMPreviewWindow(QWidget *pParent)
         m_pUpdateTimerMenu->addAction(pUpdateTime);
         m_actions[static_cast<UpdateInterval>(i)] = pUpdateTime;
     }
-    m_pUpdateTimerMenu->insertSeparator(m_actions[static_cast<UpdateInterval>(Update500ms)]);
-    /* Default value */
-    UpdateInterval interval = Update1000ms;
+    m_pUpdateTimerMenu->insertSeparator(m_actions[static_cast<UpdateInterval>(UpdateInterval_500ms)]);
+
+    /* Load preview update interval: */
     QString strInterval = vboxGlobal().virtualBox().GetExtraData(VBoxDefs::GUI_PreviewUpdate);
-    if (strInterval == "disabled")
-        interval = UpdateDisabled;
-    else if (strInterval == "500")
-        interval = Update500ms;
-    else if (strInterval == "1000")
-        interval = Update1000ms;
-    else if (strInterval == "2000")
-        interval = Update2000ms;
-    else if (strInterval == "5000")
-        interval = Update5000ms;
-    else if (strInterval == "10000")
-        interval = Update10000ms;
-    /* Initialize with the new update interval */
+    /* Parse loaded value: */
+    UpdateInterval interval = m_intervals.key(strInterval, UpdateInterval_1000ms);
+    /* Initialize with the new update interval: */
     setUpdateInterval(interval, false);
+
+    /* Setup connections: */
+    connect(m_pUpdateTimer, SIGNAL(timeout()), this, SLOT(sltRecreatePreview()));
+    connect(gVBoxEvents, SIGNAL(sigMachineStateChange(QString, KMachineState)),
+            this, SLOT(sltMachineStateChange(QString, KMachineState)));
 
     /* Retranslate the UI */
     retranslateUi();
@@ -87,7 +94,7 @@ UIVMPreviewWindow::UIVMPreviewWindow(QWidget *pParent)
 
 UIVMPreviewWindow::~UIVMPreviewWindow()
 {
-    /* Close any open session */
+    /* Close any open session: */
     if (m_session.GetState() == KSessionState_Locked)
         m_session.UnlockMachine();
     if (m_pbgImage)
@@ -100,7 +107,7 @@ UIVMPreviewWindow::~UIVMPreviewWindow()
 
 void UIVMPreviewWindow::setMachine(const CMachine& machine)
 {
-    m_pUpdateTimer->stop();
+    stop();
     m_machine = machine;
     restart();
 }
@@ -117,12 +124,12 @@ QSize UIVMPreviewWindow::sizeHint() const
 
 void UIVMPreviewWindow::retranslateUi()
 {
-    m_actions.value(UpdateDisabled)->setText(tr("Update Disabled"));
-    m_actions.value(Update500ms)->setText(tr("Every 0.5 s"));
-    m_actions.value(Update1000ms)->setText(tr("Every 1 s"));
-    m_actions.value(Update2000ms)->setText(tr("Every 2 s"));
-    m_actions.value(Update5000ms)->setText(tr("Every 5 s"));
-    m_actions.value(Update10000ms)->setText(tr("Every 10 s"));
+    m_actions.value(UpdateInterval_Disabled)->setText(tr("Update Disabled"));
+    m_actions.value(UpdateInterval_500ms)->setText(tr("Every 0.5 s"));
+    m_actions.value(UpdateInterval_1000ms)->setText(tr("Every 1 s"));
+    m_actions.value(UpdateInterval_2000ms)->setText(tr("Every 2 s"));
+    m_actions.value(UpdateInterval_5000ms)->setText(tr("Every 5 s"));
+    m_actions.value(UpdateInterval_10000ms)->setText(tr("Every 10 s"));
 }
 
 void UIVMPreviewWindow::resizeEvent(QResizeEvent *pEvent)
@@ -134,15 +141,15 @@ void UIVMPreviewWindow::resizeEvent(QResizeEvent *pEvent)
 
 void UIVMPreviewWindow::showEvent(QShowEvent *pEvent)
 {
-    /* Make sure there is some valid preview image when shown. */
+    /* Make sure there is some valid preview image when shown: */
     restart();
     QWidget::showEvent(pEvent);
 }
 
 void UIVMPreviewWindow::hideEvent(QHideEvent *pEvent)
 {
-    /* Stop the update time when we aren't visible */
-    m_pUpdateTimer->stop();
+    /* Stop the update time when we aren't visible: */
+    stop();
     QWidget::hideEvent(pEvent);
 }
 
@@ -170,31 +177,32 @@ void UIVMPreviewWindow::paintEvent(QPaintEvent *pEvent)
     {
         /* Fill rectangle with black color: */
         painter.fillRect(m_vRect, Qt::black);
-    }
 
-    /* Compose name: */
-    QString strName = tr("No Preview");
-    if (!m_machine.isNull())
-        strName = m_machine.GetName();
-    /* Paint that name: */
-    QFont font = painter.font();
-    font.setBold(true);
-    int fFlags = Qt::AlignCenter | Qt::TextWordWrap;
-    float h = m_vRect.size().height() * .2;
-    QRect r;
-    /* Make a little magic to find out if the given text fits into our rectangle.
-     * Decrease the font pixel size as long as it doesn't fit. */
-    int cMax = 30;
-    do
-    {
-        h = h * .8;
-        font.setPixelSize((int)h);
-        painter.setFont(font);
-        r = painter.boundingRect(m_vRect, fFlags, strName);
+        /* Compose name: */
+        QString strName = tr("No Preview");
+        if (!m_machine.isNull())
+            strName = m_machine.GetAccessible() ? m_machine.GetName() :
+                      QApplication::translate("UIVMListView", "Inaccessible");
+        /* Paint that name: */
+        QFont font = painter.font();
+        font.setBold(true);
+        int fFlags = Qt::AlignCenter | Qt::TextWordWrap;
+        float h = m_vRect.size().height() * .2;
+        QRect r;
+        /* Make a little magic to find out if the given text fits into our rectangle.
+         * Decrease the font pixel size as long as it doesn't fit. */
+        int cMax = 30;
+        do
+        {
+            h = h * .8;
+            font.setPixelSize((int)h);
+            painter.setFont(font);
+            r = painter.boundingRect(m_vRect, fFlags, strName);
+        }
+        while ((r.height() > m_vRect.height() || r.width() > m_vRect.width()) && cMax-- != 0);
+        painter.setPen(Qt::white);
+        painter.drawText(m_vRect, fFlags, strName);
     }
-    while ((r.height() > m_vRect.height() || r.width() > m_vRect.width()) && cMax-- != 0);
-    painter.setPen(Qt::white);
-    painter.drawText(m_vRect, fFlags, strName);
 
     /* Draw the glossy overlay last: */
     if (m_pGlossyImg)
@@ -214,10 +222,9 @@ void UIVMPreviewWindow::contextMenuEvent(QContextMenuEvent *pEvent)
 
 void UIVMPreviewWindow::sltMachineStateChange(QString strId, KMachineState state)
 {
-    if (   !m_machine.isNull()
-        && m_machine.GetId() == strId)
+    if (!m_machine.isNull() && m_machine.GetId() == strId)
     {
-        /* Cache the machine state */
+        /* Cache the machine state: */
         m_machineState = state;
         restart();
     }
@@ -225,21 +232,23 @@ void UIVMPreviewWindow::sltMachineStateChange(QString strId, KMachineState state
 
 void UIVMPreviewWindow::sltRecreatePreview()
 {
-    /* Only do this if we are visible */
+    /* Only do this if we are visible: */
     if (!isVisible())
         return;
 
+    /* Remove preview if any: */
     if (m_pPreviewImg)
     {
         delete m_pPreviewImg;
         m_pPreviewImg = 0;
     }
 
-    if (   !m_machine.isNull()
-        && m_vRect.width() > 0
-        && m_vRect.height() > 0)
+    /* We are not creating preview for inaccessible VMs: */
+    if (m_machineState == KMachineState_Null)
+        return;
+
+    if (!m_machine.isNull() && m_vRect.width() > 0 && m_vRect.height() > 0)
     {
-        Assert(m_machineState != KMachineState_Null);
         QImage image(size(), QImage::Format_ARGB32);
         image.fill(Qt::transparent);
         QPainter painter(&image);
@@ -321,89 +330,85 @@ void UIVMPreviewWindow::setUpdateInterval(UpdateInterval interval, bool fSave)
 {
     switch (interval)
     {
-        case UpdateDisabled:
+        case UpdateInterval_Disabled:
         {
-            if (fSave)
-                vboxGlobal().virtualBox().SetExtraData(VBoxDefs::GUI_PreviewUpdate, "disabled");
             m_pUpdateTimer->setInterval(0);
             m_pUpdateTimer->stop();
             m_actions[interval]->setChecked(true);
             break;
         }
-        case Update500ms:
+        case UpdateInterval_500ms:
         {
-            if (fSave)
-                vboxGlobal().virtualBox().SetExtraData(VBoxDefs::GUI_PreviewUpdate, "500");
             m_pUpdateTimer->setInterval(500);
             m_actions[interval]->setChecked(true);
             break;
         }
-        case Update1000ms:
+        case UpdateInterval_1000ms:
         {
-            if (fSave)
-                vboxGlobal().virtualBox().SetExtraData(VBoxDefs::GUI_PreviewUpdate, "1000");
             m_pUpdateTimer->setInterval(1000);
             m_actions[interval]->setChecked(true);
             break;
         }
-        case Update2000ms:
+        case UpdateInterval_2000ms:
         {
-            if (fSave)
-                vboxGlobal().virtualBox().SetExtraData(VBoxDefs::GUI_PreviewUpdate, "2000");
             m_pUpdateTimer->setInterval(2000);
             m_actions[interval]->setChecked(true);
             break;
         }
-        case Update5000ms:
+        case UpdateInterval_5000ms:
         {
-            if (fSave)
-                vboxGlobal().virtualBox().SetExtraData(VBoxDefs::GUI_PreviewUpdate, "5000");
             m_pUpdateTimer->setInterval(5000);
             m_actions[interval]->setChecked(true);
             break;
         }
-        case Update10000ms:
+        case UpdateInterval_10000ms:
         {
-            if (fSave)
-                vboxGlobal().virtualBox().SetExtraData(VBoxDefs::GUI_PreviewUpdate, "10000");
             m_pUpdateTimer->setInterval(10000);
             m_actions[interval]->setChecked(true);
             break;
         }
-        case UpdateEnd: break;
+        case UpdateInterval_Max: break;
     }
+    if (fSave && m_intervals.contains(interval))
+        vboxGlobal().virtualBox().SetExtraData(VBoxDefs::GUI_PreviewUpdate, m_intervals[interval]);
 }
 
 void UIVMPreviewWindow::restart()
 {
-    /* Close any open session */
+    /* Reopen session if necessary: */
     if (m_session.GetState() == KSessionState_Locked)
         m_session.UnlockMachine();
     if (!m_machine.isNull())
     {
-        /* Fetch the latest machine state */
+        /* Fetch the latest machine state: */
         m_machineState = m_machine.GetState();
-        /* Lock the session for the current machine */
-        if (   m_machineState == KMachineState_Running
-//            || m_machineState == KMachineState_Saving /* Not sure if this is valid */
+        /* Lock the session for the current machine: */
+        if (m_machineState == KMachineState_Running
+//          || m_machineState == KMachineState_Saving /* Not sure if this is valid */
             || m_machineState == KMachineState_Paused)
             m_machine.LockMachine(m_session, KLockType_Shared);
     }
 
-    /* Recreate the preview image */
+    /* Recreate the preview image: */
     sltRecreatePreview();
-    /* Start the timer */
+
+    /* Start the timer if necessary: */
     if (!m_machine.isNull())
     {
-        if (   m_pUpdateTimer->interval() > 0
-            && m_machineState == KMachineState_Running)
+        if (m_pUpdateTimer->interval() > 0 && m_machineState == KMachineState_Running)
             m_pUpdateTimer->start();
     }
 }
 
+void UIVMPreviewWindow::stop()
+{
+    /* Stop the timer: */
+    m_pUpdateTimer->stop();
+}
+
 void UIVMPreviewWindow::repaintBGImages()
 {
-    /* Delete the old images */
+    /* Delete the old images: */
     if (m_pbgImage)
     {
         delete m_pbgImage;
@@ -415,18 +420,17 @@ void UIVMPreviewWindow::repaintBGImages()
         m_pGlossyImg = 0;
     }
 
-    /* Check that there is enough room for our fancy stuff. If not we just
-     * draw nothing (the border and the blur radius). */
+    /* Check that there is enough room for our fancy stuff.
+     * If not we just draw nothing (the border and the blur radius). */
     QRect cr = contentsRect();
-    if (   cr.width()  < 41
-        || cr.height() < 41)
+    if (cr.width()  < 41 || cr.height() < 41)
         return;
 
     QPalette pal = palette();
     m_wRect = cr.adjusted(10, 10, -10, -10);
     m_vRect = m_wRect.adjusted(m_vMargin, m_vMargin, -m_vMargin, -m_vMargin).adjusted(-3, -3, 3, 3);
 
-    /* First draw the shadow. Its a rounded rectangle which get blurred. */
+    /* First draw the shadow. Its a rounded rectangle which get blurred: */
     QImage imageW(cr.size(), QImage::Format_ARGB32);
     QColor bg = pal.color(QPalette::Base);
     bg.setAlpha(0); /* We want blur to transparent _and_ whatever the base color is. */
@@ -441,12 +445,11 @@ void UIVMPreviewWindow::repaintBGImages()
     blurImage(imageW, imageO, 10);
     QPainter pO(&imageO);
 
-#if 1
-    /* Now paint the border with a gradient to get a look of a monitor. */
+    /* Now paint the border with a gradient to get a look of a monitor: */
     QRect rr = QRect(QPoint(0, 0), cr.size()).adjusted(10, 10, -10, -10);
     QLinearGradient lg(0, rr.y(), 0, rr.height());
     QColor base(200, 200, 200); /* light variant */
-    //        QColor base(80, 80, 80); /* Dark variant */
+    // QColor base(80, 80, 80); /* Dark variant */
     lg.setColorAt(0, base);
     lg.setColorAt(0.4, base.darker(300));
     lg.setColorAt(0.5, base.darker(400));
@@ -456,12 +459,12 @@ void UIVMPreviewWindow::repaintBGImages()
     pO.setPen(QPen(base.darker(150), 1));
     pO.drawRoundedRect(rr, m_vMargin, m_vMargin);
     pO.end();
-#endif
-    /* Make a copy of the new bg image */
+
+    /* Make a copy of the new bg image: */
     m_pbgImage = new QImage(imageO);
 
-    /* Now the glossy overlay has to be created. Start with defining a nice
-     * looking painter path. */
+    /* Now the glossy overlay has to be created.
+     * Start with defining a nice looking painter path. */
     QRect gRect = QRect(QPoint(0, 0), m_vRect.size());
     QPainterPath glossyPath(QPointF(gRect.x(), gRect.y()));
     glossyPath.lineTo(gRect.x() + gRect.width(), gRect.y());
@@ -471,7 +474,7 @@ void UIVMPreviewWindow::repaintBGImages()
                        gRect.x(), gRect.y() + gRect.height() * 2.0/3.0);
     glossyPath.closeSubpath();
 
-    /* Paint the glossy path on a QImage */
+    /* Paint the glossy path on a QImage: */
     QImage image(m_vRect.size(), QImage::Format_ARGB32);
     QColor bg1(Qt::white); /* We want blur to transparent _and_ white. */
     bg1.setAlpha(0);
@@ -484,7 +487,7 @@ void UIVMPreviewWindow::repaintBGImages()
     blurImage(image, image1, 7);
     m_pGlossyImg = new QImage(image1);
 
-    /* Repaint */
+    /* Repaint: */
     update();
 }
 
