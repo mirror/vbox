@@ -1661,7 +1661,8 @@ sffs_getpage(
 	/* Don't map pages past end of the file. */
 	if (off + len > node->sf_stat.sf_size + PAGEOFFSET)
 	{
-		mutex_exit(&sffs_lock);
+		if (!is_recursive)
+			mutex_exit(&sffs_lock);
 		return (EFAULT);
 	}
 
