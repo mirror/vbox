@@ -122,6 +122,7 @@ extern int sfprov_rename(sfp_mount_t *, char *from, char *to, uint_t is_dir);
 typedef struct sffs_stat {
 	mode_t		sf_mode;
 	off_t		sf_size;
+	off_t       sf_alloc;
 	timestruc_t	sf_atime;
 	timestruc_t	sf_mtime;
 	timestruc_t	sf_ctime;

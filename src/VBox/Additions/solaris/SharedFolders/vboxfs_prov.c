@@ -977,6 +977,7 @@ sfprov_readdir(
 
 			sfprov_mode_from_fmode(&stat->sf_mode, info->Info.Attr.fMode);
 			stat->sf_size = info->Info.cbObject;
+			stat->sf_alloc = info->Info.cbAllocated;
 			sfprov_ftime_from_timespec(&stat->sf_atime, &info->Info.AccessTime);
 			sfprov_ftime_from_timespec(&stat->sf_mtime, &info->Info.ModificationTime);
 			sfprov_ftime_from_timespec(&stat->sf_ctime, &info->Info.ChangeTime);
