@@ -50,7 +50,12 @@ typedef void (*CRPackFlushFunc)(void *arg);
 typedef void (*CRPackSendHugeFunc)(CROpcode, void *);
 typedef void (*CRPackErrorHandlerFunc)(int line, const char *file, GLenum error, const char *info);
 
-
+typedef enum
+{
+    CRPackBeginEndStateNone = 0, /* not in begin end */
+    CRPackBeginEndStateStarted,       /* begin issued */
+    CRPackBeginEndStateFlushDone /* begin issued & buffer flash is done thus part of commands is issued to host */
+} CRPackBeginEndState;
 /**
  * Packer context
  */
@@ -62,6 +67,7 @@ struct CRPackContext_t
     CRPackSendHugeFunc SendHuge;
     CRPackErrorHandlerFunc Error;
     CRCurrentStatePointers current;
+    CRPackBeginEndState enmBeginEndState;
     GLvectorf bounds_min, bounds_max;
     int updateBBOX;
     int swapping;
@@ -202,6 +208,9 @@ crPackCanHoldOpcode(const CRPackContext *pc, int num_opcode, int num_data)
     if ( !crPackCanHoldOpcode( pc, 1, (len) ) ) {                   \
       pc->Flush( pc->flush_arg );                                   \
       CRASSERT(crPackCanHoldOpcode( pc, 1, (len) ) );               \
+      if (pc->enmBeginEndState == CRPackBeginEndStateStarted) {     \
+        pc->enmBeginEndState = CRPackBeginEndStateFlushDone;        \
+      }                                                             \
     }                                                               \
     data_ptr = pc->buffer.data_current;                             \
     pc->buffer.data_current += (len);                               \
@@ -217,6 +226,7 @@ crPackCanHoldOpcode(const CRPackContext *pc, int num_opcode, int num_data)
     CR_LOCK_PACKER_CONTEXT(pc);                                     \
     CRASSERT( pc->currentBuffer );                                  \
     if ( pc->buffer.holds_BeginEnd && !pc->buffer.in_BeginEnd ) {   \
+      CRASSERT( 0 );  /* should never be here currently */          \
       pc->Flush( pc->flush_arg );                                   \
       pc->buffer.holds_BeginEnd = 0;                                \
     }                                                               \
@@ -230,6 +240,7 @@ crPackCanHoldOpcode(const CRPackContext *pc, int num_opcode, int num_data)
   do {                                                              \
     CRASSERT( pc->currentBuffer );                                  \
     if ( pc->buffer.holds_BeginEnd && !pc->buffer.in_BeginEnd ) {   \
+      CRASSERT( 0 );  /* should never be here currently */          \
       pc->Flush( pc->flush_arg );                                   \
       pc->buffer.holds_BeginEnd = 0;                                \
     }                                                               \
@@ -247,6 +258,9 @@ crPackCanHoldOpcode(const CRPackContext *pc, int num_opcode, int num_data)
     if ( !crPackCanHoldOpcode( pc, 1, (len) ) ) {       \
       pc->Flush( pc->flush_arg );                       \
       CRASSERT( crPackCanHoldOpcode( pc, 1, (len) ) );  \
+      if (pc->enmBeginEndState == CRPackBeginEndStateStarted) {     \
+        pc->enmBeginEndState = CRPackBeginEndStateFlushDone;        \
+      }                                                             \
     }                                                   \
     data_ptr = pc->buffer.data_current;                 \
     pc->current.vtx_count++;                            \

@@ -116,7 +116,11 @@ GLint crServerDispatchCreateContextEx(const char *dpyName, GLint visualBits, GLi
         err = cr_server.head_spu->dispatch_table.GetError();
         if (err!=GL_NO_ERROR)
         {
+#ifdef DEBUG_misha
+            crDebug("Cleared gl error %#x on context creation", err);
+#else
             crWarning("Cleared gl error %#x on context creation", err);
+#endif
         }
     }
 

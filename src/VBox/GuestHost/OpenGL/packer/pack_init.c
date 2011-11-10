@@ -28,6 +28,7 @@ CRPackContext *crPackNewContext( int swapping )
     GET_PACKER_CONTEXT(pc);
         crMemZero( pc, sizeof(CRPackContext));
 #endif
+    pc->enmBeginEndState = CRPackBeginEndStateNone;
     pc->swapping = swapping;
     pc->Flush = NULL;
     pc->SendHuge = NULL;

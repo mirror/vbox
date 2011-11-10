@@ -20,6 +20,8 @@ void PACK_APIENTRY crPackBegin( GLenum mode )
         pc->buffer.holds_BeginEnd = 1;
     }
     CR_GET_BUFFERED_POINTER( pc, 4 );
+    CRASSERT(pc->enmBeginEndState == CRPackBeginEndStateNone);
+    pc->enmBeginEndState = CRPackBeginEndStateStarted;
     pc->current.begin_data = data_ptr;
     pc->current.begin_op = pc->buffer.opcode_current;
     pc->current.attribsUsedMask = 0;
@@ -41,6 +43,8 @@ void PACK_APIENTRY crPackBeginSWAP( GLenum mode )
         pc->buffer.holds_BeginEnd = 1;
     }
     CR_GET_BUFFERED_POINTER( pc, 4 );
+    CRASSERT(pc->enmBeginEndState == CRPackBeginEndStateNone);
+    pc->enmBeginEndState = CRPackBeginEndStateStarted;
     pc->current.begin_data = data_ptr;
     pc->current.begin_op = pc->buffer.opcode_current;
     pc->current.attribsUsedMask = 0;
@@ -57,6 +61,13 @@ void PACK_APIENTRY crPackEnd( void )
     CR_GET_BUFFERED_POINTER_NO_ARGS( pc );
     WRITE_OPCODE( pc, CR_END_OPCODE );
     pc->buffer.in_BeginEnd = 0;
+    CRASSERT(pc->enmBeginEndState == CRPackBeginEndStateStarted
+            || pc->enmBeginEndState == CRPackBeginEndStateFlushDone);
+    if (pc->enmBeginEndState == CRPackBeginEndStateFlushDone)
+    {
+        pc->Flush( pc->flush_arg );
+    }
+    pc->enmBeginEndState = CRPackBeginEndStateNone;
     CR_UNLOCK_PACKER_CONTEXT(pc);
 }
 
@@ -68,6 +79,12 @@ void PACK_APIENTRY crPackEndSWAP( void )
     CR_GET_BUFFERED_POINTER_NO_ARGS( pc );
     WRITE_OPCODE( pc, CR_END_OPCODE );
     pc->buffer.in_BeginEnd = 0;
+    CRASSERT(pc->enmBeginEndState == CRPackBeginEndStateStarted
+            || pc->enmBeginEndState == CRPackBeginEndStateFlushDone);
+    if (pc->enmBeginEndState == CRPackBeginEndStateFlushDone)
+    {
+        pc->Flush( pc->flush_arg );
+    }
     CR_UNLOCK_PACKER_CONTEXT(pc);
 }
 
