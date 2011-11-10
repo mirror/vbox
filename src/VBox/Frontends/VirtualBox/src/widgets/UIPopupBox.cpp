@@ -6,7 +6,7 @@
  */
 
 /*
- * Copyright (C) 2010 Oracle Corporation
+ * Copyright (C) 2010-2011 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -39,21 +39,27 @@ UIPopupBox::UIPopupBox(QWidget *pParent)
   , m_aw(9)
   , m_fHeaderHover(false)
 {
+    /* Placing content: */
     QVBoxLayout *pMainLayout = new QVBoxLayout(this);
     pMainLayout->setContentsMargins(10, 5, 5, 5);
     QHBoxLayout *pTitleLayout = new QHBoxLayout();
     m_pTitleIcon = new QLabel(this);
+    m_pWarningIcon = new QLabel(this);
     m_pTitleLabel = new QLabel(this);
-    connect(m_pTitleLabel, SIGNAL(linkActivated(const QString)),
-            this, SIGNAL(titleClicked(const QString)));
     pTitleLayout->addWidget(m_pTitleIcon);
+    pTitleLayout->addWidget(m_pWarningIcon);
     pTitleLayout->addWidget(m_pTitleLabel, Qt::AlignLeft);
     pMainLayout->addLayout(pTitleLayout);
 
+    /* Configure widgets: */
+    m_pWarningIcon->setHidden(true);
     m_arrowPath.lineTo(m_aw / 2.0, m_aw / 2.0);
     m_arrowPath.lineTo(m_aw, 0);
 
-//    setMouseTracking(true);
+    /* Setup connections: */
+    connect(m_pTitleLabel, SIGNAL(linkActivated(const QString)), this, SIGNAL(titleClicked(const QString)));
+
+    /* Install event-filter: */
     qApp->installEventFilter(this);
 }
 
@@ -77,14 +83,27 @@ QString UIPopupBox::title() const
 
 void UIPopupBox::setTitleIcon(const QIcon& icon)
 {
-    m_icon = icon;
+    m_titleIcon = icon;
     updateHover(true);
     recalc();
 }
 
 QIcon UIPopupBox::titleIcon() const
 {
-    return m_icon;
+    return m_titleIcon;
+}
+
+void UIPopupBox::setWarningIcon(const QIcon& icon)
+{
+    m_warningIcon = icon;
+    m_pWarningIcon->setHidden(m_warningIcon.isNull());
+    updateHover(true);
+    recalc();
+}
+
+QIcon UIPopupBox::warningIcon() const
+{
+    return m_warningIcon;
 }
 
 void UIPopupBox::setTitleLink(const QString& strLink)
@@ -276,13 +295,17 @@ void UIPopupBox::updateHover(bool fForce /* = false */)
                                .arg(m_strLink)
                                .arg(m_strTitle));
 
-        QPixmap i = m_icon.pixmap(16, 16);
+        QPixmap titleIcon = m_titleIcon.pixmap(16, 16);
+        QPixmap warningIcon = m_warningIcon.pixmap(16, 16);
 #ifdef Q_WS_MAC
-        /* todo: fix this */
+        /* TODO: Fix this! */
 //        if (!m_fHeaderHover)
-//            i = QPixmap::fromImage(toGray(i.toImage()));
+//            titleIcon = QPixmap::fromImage(toGray(titleIcon.toImage()));
+//        if (!m_fHeaderHover)
+//            warningIcon = QPixmap::fromImage(toGray(warningIcon.toImage()));
 #endif /* Q_WS_MAC */
-        m_pTitleIcon->setPixmap(i);
+        m_pTitleIcon->setPixmap(titleIcon);
+        m_pWarningIcon->setPixmap(warningIcon);
         update();
     }
 }
