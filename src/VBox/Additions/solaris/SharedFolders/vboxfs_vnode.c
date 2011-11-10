@@ -910,7 +910,7 @@ sffs_getattr(
 
 	vap->va_size = node->sf_stat.sf_size;
 	vap->va_blksize = 512;
-	vap->va_nblocks = (vap->va_size + 511) / 512;
+	vap->va_nblocks = (node->sf_stat.sf_alloc + 511) / 512;
 
 done:
 	mutex_exit(&sffs_lock);
