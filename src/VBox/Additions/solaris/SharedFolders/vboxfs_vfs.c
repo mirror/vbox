@@ -525,47 +525,35 @@ static int
 sffs_statvfs(vfs_t *vfsp, statvfs64_t *sbp)
 {
 	sffs_data_t *sffs = (sffs_data_t *)vfsp->vfs_data;
-	uint64_t x;
-	uint32_t u;
+	sffs_fsinfo_t fsinfo;
 	dev32_t d32;
 	int error;
 
 	bzero(sbp, sizeof(*sbp));
-	error = sfprov_get_blksize(sffs->sf_handle, &x);
+	error = sfprov_get_fsinfo(sffs->sf_handle, &fsinfo);
 	if (error != 0)
 		return (error);
-	sbp->f_bsize = x;
-	sbp->f_frsize = x;
 
-	error = sfprov_get_blksavail(sffs->sf_handle, &x);
-	if (error != 0)
-		return (error);
-	sbp->f_bfree = x;
-	sbp->f_bavail = x;
-	sbp->f_files = x / 4;	/* some kind of reasonable value */
-	sbp->f_ffree = x / 4;
-	sbp->f_favail = x / 4;
+	sbp->f_bsize = fsinfo.blksize;
+	sbp->f_frsize = fsinfo.blksize;
 
-	error = sfprov_get_blksused(sffs->sf_handle, &x);
-	if (error != 0)
-		return (error);
-	sbp->f_blocks = x + sbp->f_bavail;
+	sbp->f_bfree = fsinfo.blksavail;
+	sbp->f_bavail = fsinfo.blksavail;
+	sbp->f_files = fsinfo.blksavail / 4; /* some kind of reasonable value */
+	sbp->f_ffree = fsinfo.blksavail / 4;
+	sbp->f_favail = fsinfo.blksavail / 4;
+
+	sbp->f_blocks = fsinfo.blksused + sbp->f_bavail;
 
 	(void) cmpldev(&d32, vfsp->vfs_dev);
 	sbp->f_fsid = d32;
 	strcpy(&sbp->f_basetype[0], "sffs");
 	sbp->f_flag |= ST_NOSUID;
 
-	error = sfprov_get_readonly(sffs->sf_handle, &u);
-	if (error != 0)
-		return (error);
-	if (u)
+	if (fsinfo.readonly)
 		sbp->f_flag |= ST_RDONLY;
 
-	error = sfprov_get_maxnamesize(sffs->sf_handle, &u);
-	if (error != 0)
-		return (error);
-	sbp->f_namemax = u;
+	sbp->f_namemax = fsinfo.maxnamesize;
 	return (0);
 }
 
