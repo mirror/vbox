@@ -334,7 +334,6 @@ extern int          VBoxServiceControlThreadStart(uint32_t uClientID, uint32_t u
                                                   const char *pszUser, const char *pszPassword, uint32_t uTimeLimitMS,
                                                   PRTLISTNODE *ppNode);
 extern void         VBoxServiceControlThreadSignalShutdown(const PVBOXSERVICECTRLTHREAD pThread);
-extern int          VBoxServiceControlThreadWaitForShutdown(const PVBOXSERVICECTRLTHREAD pThread);
 #endif /* VBOX_WITH_GUEST_CONTROL */
 
 #ifdef VBOXSERVICE_MANAGEMENT

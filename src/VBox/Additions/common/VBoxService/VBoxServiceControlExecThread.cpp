@@ -42,9 +42,9 @@
 using namespace guestControl;
 
 /* Internal functions. */
-int vboxServiceControlExecThreadAssignPID(PVBOXSERVICECTRLTHREAD pData, uint32_t uPID);
-void vboxServiceControlExecThreadFree(PVBOXSERVICECTRLTHREAD pData);
-int vboxServiceControlThreadWaitForShutdown(const PVBOXSERVICECTRLTHREAD pThread);
+static int vboxServiceControlExecThreadAssignPID(PVBOXSERVICECTRLTHREAD pData, uint32_t uPID);
+static void vboxServiceControlExecThreadFree(PVBOXSERVICECTRLTHREAD pData);
+static int vboxServiceControlThreadWaitForShutdown(const PVBOXSERVICECTRLTHREAD pThread);
 
 /**
  *  Allocates and gives back a thread data struct which then can be used by the worker thread.
@@ -524,7 +524,7 @@ static int VBoxServiceControlExecProcLoop(PVBOXSERVICECTRLTHREAD pThread,
 
                     /* In any case, regardless of the result, we notify
                      * the main guest control to unblock it. */
-                    int rc2 = RTSemEventMultiSignal(pThread->RequestEvent);
+                    rc2 = RTSemEventMultiSignal(pThread->RequestEvent);
                     AssertRC(rc2);
                     /* No access to pRequest here anymore -- could be out of scope
                      * or modified already! */
