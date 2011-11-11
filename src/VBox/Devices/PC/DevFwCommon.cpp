@@ -860,12 +860,7 @@ void FwCommonPlantMpsTable(PPDMDEVINS pDevIns, uint8_t *pTable, unsigned cbMax, 
     memcpy(pCfgTab->au8ProductId, "VirtualBox  ", 12);
     pCfgTab->u32OemTablePtr        =  0;
     pCfgTab->u16OemTableSize       =  0;
-    pCfgTab->u16EntryCount         =  cCpus /* Processors */
-                                   +  1 /* ISA Bus */
-                                   +  1 /* PCI Bus */
-                                   +  1 /* I/O-APIC */
-                                   + 16 /* Interrupts */
-                                   +  1 /* Local interrupts */;
+    pCfgTab->u16EntryCount         =  0;    /* Incremented as we go. */
     pCfgTab->u32AddrLocalApic      = 0xfee00000;
     pCfgTab->u16ExtTableLength     =  0;
     pCfgTab->u8ExtTableChecksum    =  0;
@@ -896,6 +891,7 @@ void FwCommonPlantMpsTable(PPDMDEVINS pDevIns, uint8_t *pTable, unsigned cbMax, 
         pProcEntry->u32Reserved[0]     =
         pProcEntry->u32Reserved[1]     = 0;
         pProcEntry++;
+        pCfgTab->u16EntryCount++;
     }
 
     uint32_t iBusIdIsa  = 0;
@@ -907,11 +903,13 @@ void FwCommonPlantMpsTable(PPDMDEVINS pDevIns, uint8_t *pTable, unsigned cbMax, 
     pBusEntry->u8BusId             = iBusIdIsa; /* this ID is referenced by the interrupt entries */
     memcpy(pBusEntry->au8BusTypeStr, "ISA   ", 6);
     pBusEntry++;
+    pCfgTab->u16EntryCount++;
 
     /* PCI bus */
     pBusEntry->u8EntryType         = 1; /* bus entry */
     pBusEntry->u8BusId             = iBusIdPci0; /* this ID can be referenced by the interrupt entries */
     memcpy(pBusEntry->au8BusTypeStr, "PCI   ", 6);
+    pCfgTab->u16EntryCount++;
 
 
     /* I/O-APIC.
@@ -924,11 +922,15 @@ void FwCommonPlantMpsTable(PPDMDEVINS pDevIns, uint8_t *pTable, unsigned cbMax, 
     pIOAPICEntry->u8Version        = 0x11;
     pIOAPICEntry->u8Flags          = 1 /* enable */;
     pIOAPICEntry->u32Addr          = 0xfec00000;
+    pCfgTab->u16EntryCount++;
 
     /* Interrupt tables */
     /* Bus vectors */
+    /* Note: The PIC is currently not routed to the I/O APIC. Therefore we skip
+     * pin 0 on the I/O APIC.
+     */
     PMPSIOIRQENTRY pIrqEntry       = (PMPSIOIRQENTRY)(pIOAPICEntry+1);
-    for (int iPin = 0; iPin < 16; iPin++, pIrqEntry++)
+    for (int iPin = 1; iPin < 16; iPin++, pIrqEntry++)
     {
         pIrqEntry->u8EntryType     = 3; /* I/O interrupt entry */
         /*
@@ -945,6 +947,7 @@ void FwCommonPlantMpsTable(PPDMDEVINS pDevIns, uint8_t *pTable, unsigned cbMax, 
         pIrqEntry->u8SrcBusIrq     = (iPin == 2) ? 0 : iPin; /* IRQ on the bus */
         pIrqEntry->u8DstIOAPICId   = iApicId;        /* destination IO-APIC */
         pIrqEntry->u8DstIOAPICInt  = iPin;           /* pin on destination IO-APIC */
+        pCfgTab->u16EntryCount++;
     }
     /* Local delivery */
     pIrqEntry->u8EntryType     = 4; /* Local interrupt entry */
@@ -955,6 +958,16 @@ void FwCommonPlantMpsTable(PPDMDEVINS pDevIns, uint8_t *pTable, unsigned cbMax, 
     pIrqEntry->u8DstIOAPICId   = 0xff;
     pIrqEntry->u8DstIOAPICInt  = 0;
     pIrqEntry++;
+    pCfgTab->u16EntryCount++;
+    pIrqEntry->u8EntryType     = 4; /* Local interrupt entry */
+    pIrqEntry->u8Type          = 1; /* NMI */
+    pIrqEntry->u16Flags        = (1 << 2) | 1; /* active-high, edge-triggered */
+    pIrqEntry->u8SrcBusId      = iBusIdIsa;
+    pIrqEntry->u8SrcBusIrq     = 0;
+    pIrqEntry->u8DstIOAPICId   = 0xff;
+    pIrqEntry->u8DstIOAPICInt  = 1;
+    pIrqEntry++;
+    pCfgTab->u16EntryCount++;
 
     pCfgTab->u16Length             = (uint8_t*)pIrqEntry - pTable;
     pCfgTab->u8Checksum            = fwCommonChecksum(pTable, pCfgTab->u16Length);
