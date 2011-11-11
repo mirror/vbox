@@ -855,8 +855,7 @@ sorecvfrom(PNATState pData, struct socket *so)
             }
 #endif
 
-            /* aliasing fragmented packets insult the receiver on guest
-             */
+            /* packets definetly will be fragmented, could confuse receiver peer. */
             if (m_length(m, NULL) > if_mtu)
                 m->m_flags |= M_SKIP_FIREWALL;
             /*
