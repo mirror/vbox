@@ -51,8 +51,8 @@
  * sub-components.  We'll list some of them here.
  *
  * On 64-bit hosts:
- *      - Max 1023 VMs.  Imposed by GVMM's handle allocation
- *        (GVMM_MAX_HANDLES), can be increased up to 64K.
+ *      - Max 8191 VMs.  Imposed by GVMM's handle allocation (GVMM_MAX_HANDLES),
+ *        can be increased up to 64K - 1.
  *      - Max 16TB - 64KB of the host memory can be used for backing VM RAM and
  *        ROM pages.  The limit is imposed by the 32-bit page ID used by GMM.
  *      - A VM can be assigned all the memory we can use (16TB), however, the
