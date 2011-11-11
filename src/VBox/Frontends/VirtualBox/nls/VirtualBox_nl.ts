@@ -8112,7 +8112,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Bridged Adapter</source>
         <comment>NetworkAttachmentType</comment>
-        <translation>Netwerk brdige adapter</translation>
+        <translation>Netwerk bridge adapter</translation>
     </message>
     <message>
         <source>Internal Network</source>
