@@ -673,8 +673,28 @@ int VBoxServiceWinGetComponentVersions(uint32_t uClientID)
         { szSysDir, "VBoxGINA.dll" },
         { szSysDir, "VBoxCredProv.dll" },
 
- /* On 64-bit we don't yet have the OpenGL DLLs in native format.
-    So just enumerate the 32-bit files in the SYSWOW directory. */
+        /* Handy-to-know stuff, mostly patched stuff. */
+        { szSysDir, "libWine.dll" },
+        { szSysDir, "wined3d.dll" },
+        { szSysDir, "d3d8.dll" },
+        { szSysDir, "d3d9.dll" },
+
+        /* Direct3D. */
+        { szSysDir, "VBoxDispD3D.dll" },
+        { szSysDir, "VBoxD3D8.dll" },
+        { szSysDir, "VBoxD3D9.dll" },
+
+        /* OpenGL. */
+        { szSysDir, "VBoxOGLarrayspu.dll" },
+        { szSysDir, "VBoxOGLcrutil.dll" },
+        { szSysDir, "VBoxOGLerrorspu.dll" },
+        { szSysDir, "VBoxOGLpackspu.dll" },
+        { szSysDir, "VBoxOGLpassthroughspu.dll" },
+        { szSysDir, "VBoxOGLfeedbackspu.dll" },
+        { szSysDir, "VBoxOGL.dll" },
+
+        /* On 64-bit OSes we also have our OpenGL + D3D DLLs in 32-bit,
+           so enumerate these files in the SYSWOW directory. */
 # ifdef RT_ARCH_AMD64
         { szSysWowDir, "VBoxOGLarrayspu.dll" },
         { szSysWowDir, "VBoxOGLcrutil.dll" },
@@ -683,20 +703,16 @@ int VBoxServiceWinGetComponentVersions(uint32_t uClientID)
         { szSysWowDir, "VBoxOGLpassthroughspu.dll" },
         { szSysWowDir, "VBoxOGLfeedbackspu.dll" },
         { szSysWowDir, "VBoxOGL.dll" },
-# else  /* !RT_ARCH_AMD64 */
-        { szSysDir, "VBoxOGLarrayspu.dll" },
-        { szSysDir, "VBoxOGLcrutil.dll" },
-        { szSysDir, "VBoxOGLerrorspu.dll" },
-        { szSysDir, "VBoxOGLpackspu.dll" },
-        { szSysDir, "VBoxOGLpassthroughspu.dll" },
-        { szSysDir, "VBoxOGLfeedbackspu.dll" },
-        { szSysDir, "VBoxOGL.dll" },
-# endif /* !RT_ARCH_AMD64 */
 
+        { szSysWowDir, "VBoxDispD3D.dll" },
+# endif /* RT_ARCH_AMD64 */
+
+        /* Installed drivers. */
         { szDriversDir, "VBoxGuest.sys" },
         { szDriversDir, "VBoxMouse.sys" },
         { szDriversDir, "VBoxSF.sys"    },
         { szDriversDir, "VBoxVideo.sys" },
+        { szDriversDir, "VBoxVideoWddm.sys" },
     };
 
 #else  /* TARGET_NT4 */
