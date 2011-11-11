@@ -172,7 +172,7 @@ sfprov_unmount(sfp_mount_t *mnt)
  * query information about a mounted file system
  */
 int
-sfprov_get_blksize(sfp_mount_t *mnt, uint64_t *blksize)
+sfprov_get_fsinfo(sfp_mount_t *mnt, sffs_fsinfo_t *fsinfo)
 {
 	int rc;
 	SHFLVOLINFO info;
@@ -182,69 +182,12 @@ sfprov_get_blksize(sfp_mount_t *mnt, uint64_t *blksize)
 	    (SHFL_INFO_GET | SHFL_INFO_VOLUME), &bytes, (SHFLDIRINFO *)&info);
 	if (RT_FAILURE(rc))
 		return (EINVAL);
-	*blksize = info.ulBytesPerAllocationUnit;
-	return (0);
-}
 
-int
-sfprov_get_blksused(sfp_mount_t *mnt, uint64_t *blksused)
-{
-	int rc;
-	SHFLVOLINFO info;
-	uint32_t bytes = sizeof(SHFLVOLINFO);
-
-	rc = vboxCallFSInfo(&vbox_client, &mnt->map, 0,
-	    (SHFL_INFO_GET | SHFL_INFO_VOLUME), &bytes, (SHFLDIRINFO *)&info);
-	if (RT_FAILURE(rc))
-		return (EINVAL);
-	*blksused = (info.ullTotalAllocationBytes -
-	    info.ullAvailableAllocationBytes) / info.ulBytesPerAllocationUnit;
-	return (0);
-}
-
-int
-sfprov_get_blksavail(sfp_mount_t *mnt, uint64_t *blksavail)
-{
-	int rc;
-	SHFLVOLINFO info;
-	uint32_t bytes = sizeof(SHFLVOLINFO);
-
-	rc = vboxCallFSInfo(&vbox_client, &mnt->map, 0,
-	    (SHFL_INFO_GET | SHFL_INFO_VOLUME), &bytes, (SHFLDIRINFO *)&info);
-	if (RT_FAILURE(rc))
-		return (EINVAL);
-	*blksavail =
-	    info.ullAvailableAllocationBytes / info.ulBytesPerAllocationUnit;
-	return (0);
-}
-
-int
-sfprov_get_maxnamesize(sfp_mount_t *mnt, uint32_t *maxnamesize)
-{
-	int rc;
-	SHFLVOLINFO info;
-	uint32_t bytes = sizeof(SHFLVOLINFO);
-
-	rc = vboxCallFSInfo(&vbox_client, &mnt->map, 0,
-	    (SHFL_INFO_GET | SHFL_INFO_VOLUME), &bytes, (SHFLDIRINFO *)&info);
-	if (RT_FAILURE(rc))
-		return (EINVAL);
-	*maxnamesize = info.fsProperties.cbMaxComponent;
-	return (0);
-}
-
-int
-sfprov_get_readonly(sfp_mount_t *mnt, uint32_t *readonly)
-{
-	int rc;
-	SHFLVOLINFO info;
-	uint32_t bytes = sizeof(SHFLVOLINFO);
-
-	rc = vboxCallFSInfo(&vbox_client, &mnt->map, 0,
-	    (SHFL_INFO_GET | SHFL_INFO_VOLUME), &bytes, (SHFLDIRINFO *)&info);
-	if (RT_FAILURE(rc))
-		return (EINVAL);
-	*readonly = info.fsProperties.fReadOnly;
+	fsinfo->blksize = info.ulBytesPerAllocationUnit;
+	fsinfo->blksused = (info.ullTotalAllocationBytes - info.ullAvailableAllocationBytes) / info.ulBytesPerAllocationUnit;
+	fsinfo->blksavail = info.ullAvailableAllocationBytes / info.ulBytesPerAllocationUnit;
+	fsinfo->maxnamesize = info.fsProperties.cbMaxComponent;
+	fsinfo->readonly = info.fsProperties.fReadOnly;
 	return (0);
 }
 

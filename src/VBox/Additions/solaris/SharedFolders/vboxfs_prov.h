@@ -71,11 +71,15 @@ extern int sfprov_unmount(sfp_mount_t *);
 /*
  * query information about a mounted file system
  */
-extern int sfprov_get_blksize(sfp_mount_t *, uint64_t *);
-extern int sfprov_get_blksused(sfp_mount_t *, uint64_t *);
-extern int sfprov_get_blksavail(sfp_mount_t *, uint64_t *);
-extern int sfprov_get_maxnamesize(sfp_mount_t *, uint32_t *);
-extern int sfprov_get_readonly(sfp_mount_t *, uint32_t *);
+typedef struct sffs_fsinfo {
+	uint64_t blksize;
+	uint64_t blksused;
+	uint64_t blksavail;
+	uint32_t maxnamesize;
+	uint32_t readonly;
+} sffs_fsinfo_t;
+
+extern int sfprov_get_fsinfo(sfp_mount_t *, sffs_fsinfo_t *);
 
 /*
  * File operations: open/close/read/write/etc.
