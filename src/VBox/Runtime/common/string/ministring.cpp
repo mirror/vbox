@@ -327,7 +327,7 @@ int RTCString::toInt(uint32_t &i) const
 }
 
 RTCList<RTCString, RTCString *>
-RTCString::split(const RTCString &a_rstrSep, SplitMode mode /* = RemoveEmptyParts */)
+RTCString::split(const RTCString &a_rstrSep, SplitMode mode /* = RemoveEmptyParts */) const
 {
     RTCList<RTCString> strRet;
     if (!m_psz)
