@@ -14,7 +14,7 @@
 
       <listitem>
         <para>Support for up to 36 network cards, in combination with an
-          ICH9 chipset configuration.</para>
+          ICH9 chipset configuration (bug #8805).</para>
       </listitem>
 
     </itemizedlist>
