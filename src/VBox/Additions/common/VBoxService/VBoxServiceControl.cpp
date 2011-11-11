@@ -38,18 +38,20 @@ using namespace guestControl;
 *******************************************************************************/
 /** The control interval (milliseconds). */
 uint32_t g_ControlInterval = 0;
-/** The semaphore we're blocking on. */
-static RTSEMEVENTMULTI      g_hControlEvent = NIL_RTSEMEVENTMULTI;
+/** The semaphore we're blocking our main control thread on. */
+RTSEMEVENTMULTI             g_hControlEvent = NIL_RTSEMEVENTMULTI;
 /** The guest control service client ID. */
 static uint32_t             g_GuestControlSvcClientID = 0;
 /** How many started guest processes are kept into memory for supplying
- *  information to the host. Default is 5 processes. If 0 is specified,
+ *  information to the host. Default is 25 processes. If 0 is specified,
  *  the maximum number of processes is unlimited. */
-uint32_t                    g_GuestControlProcsMaxKept = 5;
+uint32_t                    g_GuestControlProcsMaxKept = 25;
 /** List of guest control threads. */
 RTLISTNODE                  g_GuestControlThreads;
 /** Critical section protecting g_GuestControlExecThreads. */
 RTCRITSECT                  g_GuestControlThreadsCritSect;
+
+static int VBoxServiceControlStartAllowed(bool *pbAllowed);
 
 /** @copydoc VBOXSERVICE::pfnPreInit */
 static DECLCALLBACK(int) VBoxServiceControlPreInit(void)
@@ -190,16 +192,16 @@ DECLCALLBACK(int) VBoxServiceControlWorker(bool volatile *pfShutdown)
                     break;
 
                 case HOST_EXEC_CMD:
-                    rc = VBoxServiceControlExecHandleCmdStartProcess(g_GuestControlSvcClientID, uNumParms);
+                    rc = VBoxServiceControlHandleCmdStartProc(g_GuestControlSvcClientID, uNumParms);
                     break;
 
                 case HOST_EXEC_SET_INPUT:
                     /** @todo Make buffer size configurable via guest properties/argv! */
-                    rc = VBoxServiceControlExecHandleCmdSetInput(g_GuestControlSvcClientID, uNumParms, _1M /* Buffer size */);
+                    rc = VBoxServiceControlHandleCmdSetInput(g_GuestControlSvcClientID, uNumParms, _1M /* Buffer size */);
                     break;
 
                 case HOST_EXEC_GET_OUTPUT:
-                    rc = VBoxServiceControlExecHandleCmdGetOutput(g_GuestControlSvcClientID, uNumParms);
+                    rc = VBoxServiceControlHandleCmdGetOutput(g_GuestControlSvcClientID, uNumParms);
                     break;
 
                 default:
@@ -230,12 +232,355 @@ DECLCALLBACK(int) VBoxServiceControlWorker(bool volatile *pfShutdown)
 }
 
 
+/**
+ * Handles starting processes on the guest.
+ *
+ * @returns IPRT status code.
+ * @param   u32ClientId                 The HGCM client session ID.
+ * @param   uNumParms                   The number of parameters the host is offering.
+ */
+int VBoxServiceControlHandleCmdStartProc(uint32_t uClientID, uint32_t uNumParms)
+{
+    uint32_t uContextID;
+    char szCmd[_1K];
+    uint32_t uFlags;
+    char szArgs[_1K];
+    uint32_t uNumArgs;
+    char szEnv[_64K];
+    uint32_t cbEnv = sizeof(szEnv);
+    uint32_t uNumEnvVars;
+    char szUser[128];
+    char szPassword[128];
+    uint32_t uTimeLimitMS;
+
+#if 0 /* for valgrind */
+    RT_ZERO(szCmd);
+    RT_ZERO(szArgs);
+    RT_ZERO(szEnv);
+    RT_ZERO(szUser);
+    RT_ZERO(szPassword);
+#endif
+
+    if (uNumParms != 11)
+        return VERR_INVALID_PARAMETER;
+
+    int rc = VbglR3GuestCtrlExecGetHostCmd(uClientID,
+                                           uNumParms,
+                                           &uContextID,
+                                           /* Command */
+                                           szCmd,      sizeof(szCmd),
+                                           /* Flags */
+                                           &uFlags,
+                                           /* Arguments */
+                                           szArgs,     sizeof(szArgs), &uNumArgs,
+                                           /* Environment */
+                                           szEnv, &cbEnv, &uNumEnvVars,
+                                           /* Credentials */
+                                           szUser,     sizeof(szUser),
+                                           szPassword, sizeof(szPassword),
+                                           /* Timelimit */
+                                           &uTimeLimitMS);
+    if (RT_SUCCESS(rc))
+    {
+#ifdef DEBUG
+        VBoxServiceVerbose(3, "ControlExec: Start process szCmd=%s, uFlags=%u, szArgs=%s, szEnv=%s, szUser=%s, szPW=%s, uTimeout=%u\n",
+                           szCmd, uFlags, uNumArgs ? szArgs : "<None>", uNumEnvVars ? szEnv : "<None>", szUser, szPassword, uTimeLimitMS);
+#endif
+        bool fAllowed = false;
+        int rc = VBoxServiceControlStartAllowed(&fAllowed);
+        if (RT_FAILURE(rc))
+            VBoxServiceError("ControlExec: Error determining whether process can be started or not, rc=%Rrc\n", rc);
+
+        if (   RT_SUCCESS(rc)
+            && fAllowed)
+        {
+            int rc = RTCritSectEnter(&g_GuestControlThreadsCritSect);
+            if (RT_SUCCESS(rc))
+            {
+                /** @todo Put the following params into a struct! */
+                RTLISTNODE *pThreadNode;
+                rc = VBoxServiceControlThreadStart(uClientID, uContextID,
+                                                   szCmd, uFlags, szArgs, uNumArgs,
+                                                   szEnv, cbEnv, uNumEnvVars,
+                                                   szUser, szPassword, uTimeLimitMS,
+                                                   &pThreadNode);
+                if (RT_SUCCESS(rc))
+                {
+                    /* Insert thread node into thread list. */
+                    /*rc =*/ RTListAppend(&g_GuestControlThreads, pThreadNode);
+                }
+
+                int rc2 = RTCritSectLeave(&g_GuestControlThreadsCritSect);
+                if (RT_SUCCESS(rc))
+                    rc = rc2;
+            }
+        }
+        else /* Process start is not allowed due to policy settings. */
+        {
+            /* Tell the host. */
+            rc = VbglR3GuestCtrlExecReportStatus(uClientID, uContextID, 0 /* PID, invalid. */,
+                                                 PROC_STS_ERROR, VERR_MAX_PROCS_REACHED,
+                                                 NULL /* pvData */, 0 /* cbData */);
+        }
+    }
+    else
+        VBoxServiceError("ControlExec: Failed to retrieve exec start command! Error: %Rrc\n", rc);
+    return rc;
+}
+
+
+/**
+ * Gets output from stdout/stderr of a specified guest process.
+ *
+ * @return  IPRT status code.
+ * @param   uPID                    PID of process to retrieve the output from.
+ * @param   uHandleId               Stream ID (stdout = 0, stderr = 2) to get the output from.
+ * @param   uTimeout                Timeout (in ms) to wait for output becoming available.
+ * @param   pvBuf                   Pointer to a pre-allocated buffer to store the output.
+ * @param   cbBuf                   Size (in bytes) of the pre-allocated buffer.
+ * @param   pcbRead                 Pointer to number of bytes read.  Optional.
+ */
+int VBoxServiceControlExecGetOutput(uint32_t uPID, uint32_t uHandleId, uint32_t uTimeout,
+                                    void *pvBuf, uint32_t cbBuf, uint32_t *pcbRead)
+{
+    AssertPtrReturn(pvBuf, VERR_INVALID_POINTER);
+    AssertReturn(cbBuf, VERR_INVALID_PARAMETER);
+    /* pcbRead is optional. */
+
+    int rc = VINF_SUCCESS;
+
+    VBOXSERVICECTRLREQUEST ctrlRequest;
+    ctrlRequest.cbData = cbBuf;
+    ctrlRequest.pvData = (uint8_t*)pvBuf;
+
+    switch (uHandleId)
+    {
+        case OUTPUT_HANDLE_ID_STDERR:
+            ctrlRequest.enmType = VBOXSERVICECTRLREQUEST_STDERR_READ;
+            break;
+
+        case OUTPUT_HANDLE_ID_STDOUT:
+        case OUTPUT_HANDLE_ID_STDOUT_DEPRECATED:
+            ctrlRequest.enmType = VBOXSERVICECTRLREQUEST_STDOUT_READ;
+            break;
+
+        default:
+            rc = VERR_INVALID_PARAMETER;
+            break;
+    }
+
+    if (RT_SUCCESS(rc))
+        rc = VBoxServiceControlExecThreadPerform(uPID, &ctrlRequest);
+
+    if (RT_SUCCESS(rc))
+    {
+        if (pcbRead)
+            *pcbRead = ctrlRequest.cbData;
+    }
+
+    return rc;
+}
+
+
+/**
+ * Injects input to a specified running process.
+ *
+ * @return  IPRT status code.
+ * @param   uPID                    PID of process to set the input for.
+ * @param   fPendingClose           Flag indicating whether this is the last input block sent to the process.
+ * @param   pvBuf                   Pointer to a buffer containing the actual input data.
+ * @param   cbBuf                   Size (in bytes) of the input buffer data.
+ * @param   pcbWritten              Pointer to number of bytes written to the process.  Optional.
+ */
+int VBoxServiceControlSetInput(uint32_t uPID, bool fPendingClose,
+                               void *pvBuf, uint32_t cbBuf,
+                               uint32_t *pcbWritten)
+{
+    AssertPtrReturn(pvBuf, VERR_INVALID_PARAMETER);
+    AssertReturn(cbBuf, VERR_INVALID_PARAMETER);
+    /* pcbWritten is optional. */
+
+    int rc = VINF_SUCCESS;
+
+    VBOXSERVICECTRLREQUEST ctrlRequest;
+    ctrlRequest.cbData  = cbBuf;
+    ctrlRequest.pvData  = pvBuf;
+    ctrlRequest.enmType = fPendingClose
+                        ? VBOXSERVICECTRLREQUEST_STDIN_WRITE_EOF : VBOXSERVICECTRLREQUEST_STDIN_WRITE;
+    if (RT_SUCCESS(rc))
+        rc = VBoxServiceControlExecThreadPerform(uPID, &ctrlRequest);
+
+    if (RT_SUCCESS(rc))
+    {
+        if (pcbWritten)
+            *pcbWritten = ctrlRequest.cbData;
+    }
+
+    return rc;
+}
+
+
+/**
+ * Handles input for a started process by copying the received data into its
+ * stdin pipe.
+ *
+ * @returns IPRT status code.
+ * @param   u32ClientId                 The HGCM client session ID.
+ * @param   uNumParms                   The number of parameters the host is offering.
+ * @param   cMaxBufSize                 The maximum buffer size for retrieving the input data.
+ */
+int VBoxServiceControlHandleCmdSetInput(uint32_t u32ClientId, uint32_t uNumParms, size_t cbMaxBufSize)
+{
+    uint32_t uContextID;
+    uint32_t uPID;
+    uint32_t uFlags;
+    uint32_t cbSize;
+
+    AssertReturn(RT_IS_POWER_OF_TWO(cbMaxBufSize), VERR_INVALID_PARAMETER);
+    uint8_t *pabBuffer = (uint8_t*)RTMemAlloc(cbMaxBufSize);
+    AssertPtrReturn(pabBuffer, VERR_NO_MEMORY);
+
+    uint32_t uStatus = INPUT_STS_UNDEFINED; /* Status sent back to the host. */
+    uint32_t cbWritten = 0; /* Number of bytes written to the guest. */
+
+    /*
+     * Ask the host for the input data.
+     */
+    int rc = VbglR3GuestCtrlExecGetHostCmdInput(u32ClientId, uNumParms,
+                                                &uContextID, &uPID, &uFlags,
+                                                pabBuffer, cbMaxBufSize, &cbSize);
+    if (RT_FAILURE(rc))
+    {
+        VBoxServiceError("ControlExec: [PID %u]: Failed to retrieve exec input command! Error: %Rrc\n",
+                         uPID, rc);
+    }
+    else if (cbSize >  cbMaxBufSize)
+    {
+        VBoxServiceError("ControlExec: [PID %u]: Too much input received! cbSize=%u, cbMaxBufSize=%u\n",
+                         uPID, cbSize, cbMaxBufSize);
+        rc = VERR_INVALID_PARAMETER;
+    }
+    else
+    {
+        /*
+         * Is this the last input block we need to deliver? Then let the pipe know ...
+         */
+        bool fPendingClose = false;
+        if (uFlags & INPUT_FLAG_EOF)
+        {
+            fPendingClose = true;
+            VBoxServiceVerbose(4, "ControlExec: [PID %u]: Got last input block of size %u ...\n",
+                               uPID, cbSize);
+        }
+
+        rc = VBoxServiceControlSetInput(uPID, fPendingClose, pabBuffer,
+                                                  cbSize, &cbWritten);
+        VBoxServiceVerbose(4, "ControlExec: [PID %u]: Written input, rc=%Rrc, uFlags=0x%x, fPendingClose=%d, cbSize=%u, cbWritten=%u\n",
+                           uPID, rc, uFlags, fPendingClose, cbSize, cbWritten);
+        if (RT_SUCCESS(rc))
+        {
+            if (cbWritten || !cbSize) /* Did we write something or was there anything to write at all? */
+            {
+                uStatus = INPUT_STS_WRITTEN;
+                uFlags = 0;
+            }
+        }
+        else
+        {
+            if (rc == VERR_BAD_PIPE)
+                uStatus = INPUT_STS_TERMINATED;
+            else if (rc == VERR_BUFFER_OVERFLOW)
+                uStatus = INPUT_STS_OVERFLOW;
+        }
+    }
+    RTMemFree(pabBuffer);
+
+    /*
+     * If there was an error and we did not set the host status
+     * yet, then do it now.
+     */
+    if (   RT_FAILURE(rc)
+        && uStatus == INPUT_STS_UNDEFINED)
+    {
+        uStatus = INPUT_STS_ERROR;
+        uFlags = rc;
+    }
+    Assert(uStatus > INPUT_STS_UNDEFINED);
+
+    VBoxServiceVerbose(3, "ControlExec: [PID %u]: Input processed, CID=%u, uStatus=%u, uFlags=0x%x, cbWritten=%u\n",
+                       uPID, uContextID, uStatus, uFlags, cbWritten);
+
+    /* Note: Since the context ID is unique the request *has* to be completed here,
+     *       regardless whether we got data or not! Otherwise the progress object
+     *       on the host never will get completed! */
+    rc = VbglR3GuestCtrlExecReportStatusIn(u32ClientId, uContextID, uPID,
+                                           uStatus, uFlags, (uint32_t)cbWritten);
+
+    if (RT_FAILURE(rc))
+        VBoxServiceError("ControlExec: [PID %u]: Failed to report input status! Error: %Rrc\n",
+                         uPID, rc);
+    return rc;
+}
+
+
+/**
+ * Handles the guest control output command.
+ *
+ * @return  IPRT status code.
+ * @param   u32ClientId     idClient    The HGCM client session ID.
+ * @param   uNumParms       cParms      The number of parameters the host is
+ *                                      offering.
+ */
+int VBoxServiceControlHandleCmdGetOutput(uint32_t u32ClientId, uint32_t uNumParms)
+{
+    uint32_t uContextID;
+    uint32_t uPID;
+    uint32_t uHandleID;
+    uint32_t uFlags;
+
+    int rc = VbglR3GuestCtrlExecGetHostCmdOutput(u32ClientId, uNumParms,
+                                                 &uContextID, &uPID, &uHandleID, &uFlags);
+    if (RT_SUCCESS(rc))
+    {
+        uint32_t cbRead = 0;
+        uint8_t *pBuf = (uint8_t*)RTMemAlloc(_64K);
+        if (pBuf)
+        {
+            rc = VBoxServiceControlExecGetOutput(uPID, uHandleID, RT_INDEFINITE_WAIT /* Timeout */,
+                                                 pBuf, _64K /* cbSize */, &cbRead);
+            if (RT_SUCCESS(rc))
+                VBoxServiceVerbose(3, "ControlExec: [PID %u]: Got output, CID=%u, cbRead=%u, uHandle=%u, uFlags=%u\n",
+                                   uPID, uContextID, cbRead, uHandleID, uFlags);
+            else
+                VBoxServiceError("ControlExec: [PID %u]: Failed to retrieve output, CID=%u, uHandle=%u, rc=%Rrc\n",
+                                 uPID, uContextID, uHandleID, rc);
+            /* Note: Since the context ID is unique the request *has* to be completed here,
+             *       regardless whether we got data or not! Otherwise the progress object
+             *       on the host never will get completed! */
+            /* cbRead now contains actual size. */
+            int rc2 = VbglR3GuestCtrlExecSendOut(u32ClientId, uContextID, uPID, uHandleID, uFlags,
+                                                 pBuf, cbRead);
+            if (RT_SUCCESS(rc))
+                rc = rc2;
+            RTMemFree(pBuf);
+        }
+        else
+            rc = VERR_NO_MEMORY;
+    }
+
+    if (RT_FAILURE(rc))
+        VBoxServiceError("ControlExec: [PID %u]: Error handling output command! Error: %Rrc\n",
+                         uPID, rc);
+    return rc;
+}
+
+
 /** @copydoc VBOXSERVICE::pfnStop */
 static DECLCALLBACK(void) VBoxServiceControlStop(void)
 {
     VBoxServiceVerbose(3, "Control: Stopping ...\n");
 
-    /** @todo Later, figure what to do if we're in RTProcWait(). it's a very
+    /** @todo Later, figure what to do if we're in RTProcWait(). It's a very
      *        annoying call since doesn't support timeouts in the posix world. */
     RTSemEventMultiSignal(g_hControlEvent);
 
@@ -252,27 +597,6 @@ static DECLCALLBACK(void) VBoxServiceControlStop(void)
 }
 
 
-void VBoxServiceControlThreadSignalShutdown(const PVBOXSERVICECTRLTHREAD pThread)
-{
-    AssertPtrReturnVoid(pThread);
-    ASMAtomicXchgBool(&pThread->fShutdown, true);
-}
-
-
-int VBoxServiceControlThreadWaitForShutdown(const PVBOXSERVICECTRLTHREAD pThread)
-{
-    AssertPtrReturn(pThread, VERR_INVALID_POINTER);
-    int rc = VINF_SUCCESS;
-    if (   pThread->Thread != NIL_RTTHREAD
-        && !pThread->fShutdown) /* Only shutdown threads which aren't yet. */
-    {
-        /* Wait a bit ... */
-        rc = RTThreadWait(pThread->Thread, 30 * 1000 /* Wait 30 seconds max. */, NULL);
-    }
-    return rc;
-}
-
-
 static void VBoxServiceControlDestroyThreads(void)
 {
     VBoxServiceVerbose(3, "Control: Destroying threads ...\n");
@@ -281,49 +605,39 @@ static void VBoxServiceControlDestroyThreads(void)
     if (RT_SUCCESS(rc))
     {
         /* Signal all threads that we want to shutdown. */
-        PVBOXSERVICECTRLTHREAD pNode;
-        RTListForEach(&g_GuestControlThreads, pNode, VBOXSERVICECTRLTHREAD, Node)
-            VBoxServiceControlThreadSignalShutdown(pNode);
+        PVBOXSERVICECTRLTHREAD pThread;
+        RTListForEach(&g_GuestControlThreads, pThread, VBOXSERVICECTRLTHREAD, Node)
+            VBoxServiceControlThreadSignalShutdown(pThread);
 
         /* Wait for threads to shutdown. */
-        RTListForEach(&g_GuestControlThreads, pNode, VBOXSERVICECTRLTHREAD, Node)
+        RTListForEach(&g_GuestControlThreads, pThread, VBOXSERVICECTRLTHREAD, Node)
         {
-            int rc2 = VBoxServiceControlThreadWaitForShutdown(pNode);
+            int rc2 = VBoxServiceControlExecThreadShutdown(pThread);
             if (RT_FAILURE(rc2))
-                VBoxServiceError("Control: Thread failed to stop; rc2=%Rrc\n", rc2);
-
-            /* Destroy thread specific data. */
-            switch (pNode->enmType)
-            {
-                case kVBoxServiceCtrlThreadDataExec:
-                    VBoxServiceControlExecThreadDataDestroy((PVBOXSERVICECTRLTHREADDATAEXEC)pNode->pvData);
-                    break;
-
-                default:
-                    break;
-            }
+                VBoxServiceError("Control: Guest process thread failed to stop; rc2=%Rrc\n", rc2);
         }
 
         /* Finally destroy thread list. */
-        pNode = RTListGetFirst(&g_GuestControlThreads, VBOXSERVICECTRLTHREAD, Node);
-        while (pNode)
+        pThread = RTListGetFirst(&g_GuestControlThreads, VBOXSERVICECTRLTHREAD, Node);
+        while (pThread)
         {
-            PVBOXSERVICECTRLTHREAD pNext = RTListNodeGetNext(&pNode->Node, VBOXSERVICECTRLTHREAD, Node);
-            bool fLast = RTListNodeIsLast(&g_GuestControlThreads, &pNode->Node);
+            PVBOXSERVICECTRLTHREAD pNext = RTListNodeGetNext(&pThread->Node, VBOXSERVICECTRLTHREAD, Node);
+            bool fLast = RTListNodeIsLast(&g_GuestControlThreads, &pThread->Node);
 
-            RTListNodeRemove(&pNode->Node);
-            RTMemFree(pNode);
+            VBoxServiceControlRemoveThread(pThread);
+            VBoxServiceControlExecThreadDestroy(pThread);
 
             if (fLast)
                 break;
 
-            pNode = pNext;
+            pThread = pNext;
         }
 
         int rc2 = RTCritSectLeave(&g_GuestControlThreadsCritSect);
         if (RT_SUCCESS(rc))
             rc = rc2;
     }
+
     RTCritSectDelete(&g_GuestControlThreadsCritSect);
 }
 
@@ -346,6 +660,106 @@ static DECLCALLBACK(void) VBoxServiceControlTerm(void)
 }
 
 
+static int VBoxServiceControlStartAllowed(bool *pbAllowed)
+{
+    AssertPtrReturn(pbAllowed, VERR_INVALID_POINTER);
+
+    int rc = RTCritSectEnter(&g_GuestControlThreadsCritSect);
+    if (RT_SUCCESS(rc))
+    {
+        /*
+         * Check if we're respecting our memory policy by checking
+         * how many guest processes are started and served already.
+         */
+        bool fLimitReached = false;
+        if (g_GuestControlProcsMaxKept) /* If we allow unlimited processes (=0), take a shortcut. */
+        {
+            uint32_t uProcsRunning = 0;
+            uint32_t uProcsStopped = 0;
+            PVBOXSERVICECTRLTHREAD pThread;
+            RTListForEach(&g_GuestControlThreads, pThread, VBOXSERVICECTRLTHREAD, Node)
+            {
+    // THREAD LOCKING!!
+                Assert(pThread->fStarted != pThread->fStopped);
+                if (pThread->fStarted)
+                    uProcsRunning++;
+                else if (pThread->fStopped)
+                    uProcsStopped++;
+                else
+                    AssertMsgFailed(("ControlExec: Guest process neither started nor stopped!?\n"));
+            }
+
+            VBoxServiceVerbose(2, "ControlExec: Maximum served guest processes set to %u, running=%u, stopped=%u\n",
+                               g_GuestControlProcsMaxKept, uProcsRunning, uProcsStopped);
+
+            int32_t iProcsLeft = (g_GuestControlProcsMaxKept - uProcsRunning - 1);
+            if (iProcsLeft < 0)
+            {
+                VBoxServiceVerbose(3, "ControlExec: Maximum running guest processes reached (%u)\n",
+                                   g_GuestControlProcsMaxKept);
+                fLimitReached = true;
+            }
+        }
+
+        *pbAllowed = !fLimitReached;
+
+        int rc2 = RTCritSectLeave(&g_GuestControlThreadsCritSect);
+        if (RT_SUCCESS(rc))
+            rc = rc2;
+    }
+
+    return rc;
+}
+
+
+/**
+ * Finds a (formerly) started process given by its PID.
+ *
+ * @return  PVBOXSERVICECTRLTHREAD      Process structure if found, otherwise NULL.
+ * @param   uPID                        PID to search for.
+ */
+const PVBOXSERVICECTRLTHREAD VBoxServiceControlGetThreadByPID(uint32_t uPID)
+{
+    PVBOXSERVICECTRLTHREAD pNode = NULL;
+    int rc = RTCritSectEnter(&g_GuestControlThreadsCritSect);
+    if (RT_SUCCESS(rc))
+    {
+        PVBOXSERVICECTRLTHREAD pNodeCur;
+        RTListForEach(&g_GuestControlThreads, pNodeCur, VBOXSERVICECTRLTHREAD, Node)
+        {
+            if (pNodeCur->uPID == uPID)
+            {
+                pNode = pNodeCur;
+                break;
+            }
+        }
+
+        int rc2 = RTCritSectLeave(&g_GuestControlThreadsCritSect);
+        if (RT_SUCCESS(rc))
+            rc = rc2;
+    }
+
+    return pNode;
+}
+
+
+void VBoxServiceControlRemoveThread(PVBOXSERVICECTRLTHREAD pThread)
+{
+    if (!pThread)
+        return;
+
+    int rc = RTCritSectEnter(&g_GuestControlThreadsCritSect);
+    if (RT_SUCCESS(rc))
+    {
+        RTListNodeRemove(&pThread->Node);
+
+        int rc2 = RTCritSectLeave(&g_GuestControlThreadsCritSect);
+        if (RT_SUCCESS(rc))
+            rc = rc2;
+    }
+}
+
+
 /**
  * The 'vminfo' service description.
  */
@@ -356,14 +770,15 @@ VBOXSERVICE g_Control =
     /* pszDescription. */
     "Host-driven Guest Control",
     /* pszUsage. */
-    "              [--control-interval <ms>] [--control-procs-max-kept <x>]"
+    "              [--control-interval <ms>] [--control-procs-max-kept <x>]\n"
+    "              [--control-procs-mem-std[in|out|err] <KB>]"
     ,
     /* pszOptions. */
     "    --control-interval      Specifies the interval at which to check for\n"
     "                            new control commands. The default is 1000 ms.\n"
     "    --control-procs-max-kept\n"
     "                            Specifies how many started guest processes are\n"
-    "                            kept into memory to work with.\n"
+    "                            kept into memory to work with. Default is 25.\n"
     ,
     /* methods */
     VBoxServiceControlPreInit,
