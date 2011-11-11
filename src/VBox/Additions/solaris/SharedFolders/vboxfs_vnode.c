@@ -404,13 +404,6 @@ sfnode_stat_cached(sfnode_t *node)
 	    node->sf_sffs->sf_stat_ttl * 1000L;
 }
 
-static int
-sfnode_get_stat(sfp_mount_t *mnt, char *path, sffs_stat_t *stat)
-{
-	return sfprov_get_attr(mnt, path, &stat->sf_mode, &stat->sf_size,
-	    &stat->sf_atime, &stat->sf_mtime, &stat->sf_ctime);
-}
-
 static void
 sfnode_invalidate_stat_cache(sfnode_t *node)
 {
@@ -422,7 +415,7 @@ sfnode_update_stat_cache(sfnode_t *node)
 {
 	int error;
 
-	error = sfnode_get_stat(node->sf_sffs->sf_handle, node->sf_path,
+	error = sfprov_get_attr(node->sf_sffs->sf_handle, node->sf_path,
 	    &node->sf_stat);
 	if (error == ENOENT)
 		sfnode_make_stale(node);
@@ -603,7 +596,7 @@ sfnode_lookup(
 		type = VNON;
 		if (stat == NULL) {
 			stat = &tmp_stat;
-			error = sfnode_get_stat(dir->sf_sffs->sf_handle,
+			error = sfprov_get_attr(dir->sf_sffs->sf_handle,
 			    fullpath, stat);
 			stat_time = sfnode_cur_time_usec();
 		} else {
@@ -616,6 +609,8 @@ sfnode_lookup(
 			type = VDIR;
 		else if (S_ISREG(m))
 			type = VREG;
+		else if (S_ISLNK(m))
+			type = VLNK;
 	}
 
 	if (err)
@@ -1890,6 +1885,118 @@ sffs_delmap(
 
 /*ARGSUSED*/
 static int
+sffs_readlink(
+	vnode_t		*vp,
+	uio_t		*uiop,
+	cred_t		*cred
+#if !defined(VBOX_VFS_SOLARIS_10U6)
+	,
+	caller_context_t *ct
+#endif
+	)
+{
+	sfnode_t	*node;
+	int			error = 0;
+	char		*target = NULL;
+
+	if (uiop->uio_iovcnt != 1)
+		return (EINVAL);
+
+	if (vp->v_type != VLNK)
+		return (EINVAL);
+
+	mutex_enter(&sffs_lock);
+	node = VN2SFN(vp);
+
+	target = kmem_alloc(MAXPATHLEN, KM_SLEEP);
+
+	error = sfprov_readlink(node->sf_sffs->sf_handle, node->sf_path, target,
+	    MAXPATHLEN);
+	if (error)
+		goto done;
+
+	error = uiomove(target, strlen(target), UIO_READ, uiop);
+
+done:
+	mutex_exit(&sffs_lock);
+	if (target)
+		kmem_free(target, MAXPATHLEN);
+	return (error);
+}
+
+
+/*ARGSUSED*/
+static int
+sffs_symlink(
+	vnode_t		*dvp,
+	char		*linkname,
+	vattr_t		*vap,
+	char		*target,
+	cred_t		*cred
+#if !defined(VBOX_VFS_SOLARIS_10U6)
+	,
+	caller_context_t *ct,
+	int		flags
+#endif
+	)
+{
+	sfnode_t	*dir;
+	sfnode_t	*node;
+	sffs_stat_t  stat;
+	int			 error = 0;
+	char		*fullpath;
+
+	/*
+	 * These should never happen
+	 */
+	ASSERT(linkname != NULL);
+	ASSERT(strcmp(linkname, "") != 0);
+	ASSERT(strcmp(linkname, ".") != 0);
+	ASSERT(strcmp(linkname, "..") != 0);
+
+	/*
+	 * Basic checks.
+	 */
+	if (vap->va_type != VLNK)
+		return (EINVAL);
+
+	mutex_enter(&sffs_lock);
+
+	if (sfnode_lookup(VN2SFN(dvp), linkname, VNON, NULL, 0, NULL) != NULL) {
+		error = EEXIST;
+		goto done;
+	}
+
+	dir = VN2SFN(dvp);
+	error = sfnode_access(dir, VWRITE, cred);
+	if (error)
+		goto done;
+
+	/*
+	 * Create symlink. Note that we ignore vap->va_mode because generally
+	 * we can't change the attributes of the symlink itself.
+	 */
+	fullpath = sfnode_construct_path(dir, linkname);
+	error = sfprov_symlink(dir->sf_sffs->sf_handle, fullpath, target,
+	    &stat);
+	kmem_free(fullpath, strlen(fullpath) + 1);
+	if (error)
+		goto done;
+
+	node = sfnode_lookup(dir, linkname, VLNK, &stat, sfnode_cur_time_usec(),
+	    NULL);
+
+	sfnode_invalidate_stat_cache(dir);
+	sfnode_clear_dir_list(dir);
+
+done:
+	mutex_exit(&sffs_lock);
+	return (error);
+}
+
+
+/*ARGSUSED*/
+static int
 sffs_remove(
 	vnode_t		*dvp,
 	char		*name,
@@ -1939,7 +2046,8 @@ sffs_remove(
 	 */
 	sfnode_invalidate_stat_cache(VN2SFN(dvp));
 
-	error = sfprov_remove(node->sf_sffs->sf_handle, node->sf_path);
+	error = sfprov_remove(node->sf_sffs->sf_handle, node->sf_path,
+		node->sf_type == VLNK);
 	if (error == ENOENT || error == 0)
 		sfnode_make_stale(node);
 
@@ -2228,12 +2336,14 @@ const fs_operation_def_t sffs_ops_template[] = {
 	VOPNAME_PATHCONF,	sffs_pathconf,
 	VOPNAME_READ,		sffs_read,
 	VOPNAME_READDIR,	sffs_readdir,
+	VOPNAME_READLINK,	sffs_readlink,
 	VOPNAME_REMOVE,		sffs_remove,
 	VOPNAME_RENAME,		sffs_rename,
 	VOPNAME_RMDIR,		sffs_rmdir,
 	VOPNAME_SEEK,		sffs_seek,
 	VOPNAME_SETATTR,	sffs_setattr,
 	VOPNAME_SPACE,		sffs_space,
+	VOPNAME_SYMLINK,	sffs_symlink,
 	VOPNAME_WRITE,		sffs_write,
 
 # ifdef VBOXVFS_WITH_MMAP
@@ -2259,12 +2369,14 @@ const fs_operation_def_t sffs_ops_template[] = {
 	VOPNAME_PATHCONF,	{ .vop_pathconf = sffs_pathconf },
 	VOPNAME_READ,		{ .vop_read = sffs_read },
 	VOPNAME_READDIR,	{ .vop_readdir = sffs_readdir },
+	VOPNAME_READLINK,	{ .vop_readlink = sffs_readlink },
 	VOPNAME_REMOVE,		{ .vop_remove = sffs_remove },
 	VOPNAME_RENAME,		{ .vop_rename = sffs_rename },
 	VOPNAME_RMDIR,		{ .vop_rmdir = sffs_rmdir },
 	VOPNAME_SEEK,		{ .vop_seek = sffs_seek },
 	VOPNAME_SETATTR,	{ .vop_setattr = sffs_setattr },
 	VOPNAME_SPACE,		{ .vop_space = sffs_space },
+	VOPNAME_SYMLINK,	{ .vop_symlink = sffs_symlink },
 	VOPNAME_WRITE,		{ .vop_write = sffs_write },
 
 # ifdef VBOXVFS_WITH_MMAP
@@ -2377,6 +2489,7 @@ sfnode_print(sfnode_t *node)
 	Log((" type=%s (%d)",
 	    node->sf_type == VDIR ? "VDIR" :
 	    node->sf_type == VNON ? "VNON" :
+		node->sf_type == VLNK ? "VLNK" :
 	    node->sf_type == VREG ? "VREG" : "other", node->sf_type));
 	Log((" ino=%d", (uint_t)node->sf_ino));
 	Log((" path=%s", node->sf_path));

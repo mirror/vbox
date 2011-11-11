@@ -186,8 +186,14 @@ sffs_init(int fstype, char *name)
 	 */
 	sfprov = sfprov_connect(SFPROV_VERSION);
 	if (sfprov == NULL) {
-		cmn_err(CE_WARN, "sffs_init(): couldn't init sffs provider");
+		cmn_err(CE_WARN, "sffs_init: couldn't init sffs provider");
 		return (ENODEV);
+	}
+
+	error = sfprov_set_show_symlinks();
+	if (error != 0) {
+		cmn_err(CE_WARN,  "sffs_init: host unable to show symlinks, "
+						  "rc=%d\n", error);
 	}
 
 	error = vfs_setfsops(fstype, sffs_vfsops_template, NULL);
