@@ -954,7 +954,8 @@
         </listitem>
 
         <listitem>
-          <para>Currently only Linux Guest Additions support symlinks.</para>
+          <para>Currently only Linux and Solaris Guest Additions support
+          symlinks.</para>
         </listitem>
       </orderedlist></para>
 
