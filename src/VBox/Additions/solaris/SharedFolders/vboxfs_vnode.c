@@ -2487,10 +2487,10 @@ sfnode_print(sfnode_t *node)
 {
 	Log(("0x%p", node));
 	Log((" type=%s (%d)",
-	    node->sf_type == VDIR ? "VDIR" :
-	    node->sf_type == VNON ? "VNON" :
+		node->sf_type == VDIR ? "VDIR" :
+		node->sf_type == VNON ? "VNON" :
 		node->sf_type == VLNK ? "VLNK" :
-	    node->sf_type == VREG ? "VREG" : "other", node->sf_type));
+		node->sf_type == VREG ? "VREG" : "other", node->sf_type));
 	Log((" ino=%d", (uint_t)node->sf_ino));
 	Log((" path=%s", node->sf_path));
 	Log((" parent=0x%p", node->sf_parent));
