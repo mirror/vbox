@@ -855,6 +855,10 @@ sorecvfrom(PNATState pData, struct socket *so)
             }
 #endif
 
+            /* aliasing fragmented packets insult the receiver on guest
+             */
+            if (m_length(m, NULL) > if_mtu)
+                m->m_flags |= M_SKIP_FIREWALL;
             /*
              * If this packet was destined for CTL_ADDR,
              * make it look like that's where it came from, done by udp_output
