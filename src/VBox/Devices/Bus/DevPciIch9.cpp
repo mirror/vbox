@@ -1862,7 +1862,7 @@ static DECLCALLBACK(uint32_t) ich9pciConfigReadDev(PCIDevice *aDev, uint32_t u32
                     0);
     if (   pciDevIsMsiCapable(aDev)
         && (u32Address >= aDev->Int.s.u8MsiCapOffset)
-        && (u32Address <  aDev->Int.s.u8MsiCapOffset + aDev->Int.s.u8MsiCapSize)
+        && (u32Address < (unsigned)(aDev->Int.s.u8MsiCapOffset + aDev->Int.s.u8MsiCapSize))
        )
     {
         return MsiPciConfigRead(aDev->Int.s.CTX_SUFF(pBus)->CTX_SUFF(pDevIns), aDev, u32Address, len);
@@ -1870,7 +1870,7 @@ static DECLCALLBACK(uint32_t) ich9pciConfigReadDev(PCIDevice *aDev, uint32_t u32
 
     if (   pciDevIsMsixCapable(aDev)
         && (u32Address >= aDev->Int.s.u8MsixCapOffset)
-        && (u32Address <  aDev->Int.s.u8MsixCapOffset + aDev->Int.s.u8MsixCapSize)
+        && (u32Address < (unsigned)(aDev->Int.s.u8MsixCapOffset + aDev->Int.s.u8MsixCapSize))
        )
     {
         return MsixPciConfigRead(aDev->Int.s.CTX_SUFF(pBus)->CTX_SUFF(pDevIns), aDev, u32Address, len);
@@ -1955,7 +1955,7 @@ static DECLCALLBACK(void) ich9pciConfigWriteDev(PCIDevice *aDev, uint32_t u32Add
 
     if (   pciDevIsMsiCapable(aDev)
         && (u32Address >= aDev->Int.s.u8MsiCapOffset)
-        && (u32Address <  aDev->Int.s.u8MsiCapOffset + aDev->Int.s.u8MsiCapSize)
+        && (u32Address < (unsigned)(aDev->Int.s.u8MsiCapOffset + aDev->Int.s.u8MsiCapSize))
        )
     {
         MsiPciConfigWrite(aDev->Int.s.CTX_SUFF(pBus)->CTX_SUFF(pDevIns),
@@ -1966,7 +1966,7 @@ static DECLCALLBACK(void) ich9pciConfigWriteDev(PCIDevice *aDev, uint32_t u32Add
 
     if (   pciDevIsMsixCapable(aDev)
         && (u32Address >= aDev->Int.s.u8MsixCapOffset)
-        && (u32Address <  aDev->Int.s.u8MsixCapOffset + aDev->Int.s.u8MsixCapSize)
+        && (u32Address < (unsigned)(aDev->Int.s.u8MsixCapOffset + aDev->Int.s.u8MsixCapSize))
        )
     {
         MsixPciConfigWrite(aDev->Int.s.CTX_SUFF(pBus)->CTX_SUFF(pDevIns),
@@ -2281,7 +2281,7 @@ static void ich9pciBusInfo(PICH9PCIBUS pBus, PCDBGFINFOHLP pHlp, int iIndent, bo
                     const char * pszDesc;
                     char szDescBuf[128];
 
-                    bool f64Bit = (pRegion->type & PCI_ADDRESS_SPACE_BAR64);
+                    bool f64Bit = !!(pRegion->type & PCI_ADDRESS_SPACE_BAR64);
                     if (pRegion->type & PCI_ADDRESS_SPACE_IO)
                     {
                         pszDesc = "IO";
@@ -2545,7 +2545,8 @@ static DECLCALLBACK(int) ich9pciConstruct(PPDMDEVINS pDevIns,
 
     /** @todo: other chipset devices shall be registered too */
 
-    PDMDevHlpDBGFInfoRegister(pDevIns, "pci", "Display PCI bus status. (no arguments)", ich9pciInfo);
+    PDMDevHlpDBGFInfoRegister(pDevIns, "pci", "Display PCI bus status. Recognizes 'basic' or 'verbose' "
+                                              "as arguments, defaults to 'basic'.", ich9pciInfo);
 
     return VINF_SUCCESS;
 }
