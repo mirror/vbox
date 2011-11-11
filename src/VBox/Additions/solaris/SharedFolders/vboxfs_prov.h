@@ -98,13 +98,21 @@ extern int sfprov_fsync(sfp_file_t *fp);
 /*
  * get/set information about a file (or directory) using pathname
  */
+typedef struct sffs_stat {
+	mode_t		sf_mode;
+	off_t		sf_size;
+	off_t		sf_alloc;
+	timestruc_t	sf_atime;
+	timestruc_t	sf_mtime;
+	timestruc_t	sf_ctime;
+} sffs_stat_t;
+
 extern int sfprov_get_mode(sfp_mount_t *, char *, mode_t *);
 extern int sfprov_get_size(sfp_mount_t *, char *, uint64_t *);
 extern int sfprov_get_atime(sfp_mount_t *, char *, timestruc_t *);
 extern int sfprov_get_mtime(sfp_mount_t *, char *, timestruc_t *);
 extern int sfprov_get_ctime(sfp_mount_t *, char *, timestruc_t *);
-extern int sfprov_get_attr(sfp_mount_t *, char *, mode_t *, uint64_t *,
-   timestruc_t *, timestruc_t *, timestruc_t *);
+extern int sfprov_get_attr(sfp_mount_t *, char *, sffs_stat_t *);
 extern int sfprov_set_attr(sfp_mount_t *, char *, uint_t, mode_t,
    timestruc_t, timestruc_t, timestruc_t);
 extern int sfprov_set_size(sfp_mount_t *, char *, uint64_t);
@@ -114,19 +122,21 @@ extern int sfprov_set_size(sfp_mount_t *, char *, uint64_t);
  * File/Directory operations
  */
 extern int sfprov_trunc(sfp_mount_t *, char *);
-extern int sfprov_remove(sfp_mount_t *, char *path);
+extern int sfprov_remove(sfp_mount_t *, char *path, uint_t is_link);
 extern int sfprov_mkdir(sfp_mount_t *, char *path, sfp_file_t **fp);
 extern int sfprov_rmdir(sfp_mount_t *, char *path);
 extern int sfprov_rename(sfp_mount_t *, char *from, char *to, uint_t is_dir);
 
-typedef struct sffs_stat {
-	mode_t		sf_mode;
-	off_t		sf_size;
-	off_t       sf_alloc;
-	timestruc_t	sf_atime;
-	timestruc_t	sf_mtime;
-	timestruc_t	sf_ctime;
-} sffs_stat_t;
+
+/*
+ * Symbolic link operations
+ */
+extern int sfprov_set_show_symlinks(void);
+extern int sfprov_readlink(sfp_mount_t *, char *path, char *target,
+    size_t tgt_size);
+extern int sfprov_symlink(sfp_mount_t *, char *linkname, char *target,
+    sffs_stat_t *stat);
+
 
 /*
  * Read directory entries.

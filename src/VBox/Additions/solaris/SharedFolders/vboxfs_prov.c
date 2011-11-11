@@ -527,6 +527,17 @@ sfprov_ftime_from_timespec(timestruc_t *time, RTTIMESPEC *ts)
 	time->tv_nsec = nanosec % UINT64_C(1000000000);
 }
 
+static void
+sfprov_stat_from_info(sffs_stat_t *stat, SHFLFSOBJINFO *info)
+{
+	sfprov_mode_from_fmode(&stat->sf_mode, info->Attr.fMode);
+	stat->sf_size  = info->cbObject;
+	stat->sf_alloc = info->cbAllocated;
+	sfprov_ftime_from_timespec(&stat->sf_atime, &info->AccessTime);
+	sfprov_ftime_from_timespec(&stat->sf_mtime, &info->ModificationTime);
+	sfprov_ftime_from_timespec(&stat->sf_ctime, &info->ChangeTime);
+}
+
 int
 sfprov_get_atime(sfp_mount_t *mnt, char *path, timestruc_t *time)
 {
@@ -567,14 +578,7 @@ sfprov_get_ctime(sfp_mount_t *mnt, char *path, timestruc_t *time)
 }
 
 int
-sfprov_get_attr(
-	sfp_mount_t *mnt,
-	char *path,
-	mode_t *mode,
-	uint64_t *size,
-	timestruc_t *atime,
-	timestruc_t *mtime,
-	timestruc_t *ctime)
+sfprov_get_attr(sfp_mount_t *mnt, char *path, sffs_stat_t *attr)
 {
 	int rc;
 	SHFLFSOBJINFO info;
@@ -582,18 +586,7 @@ sfprov_get_attr(
 	rc = sfprov_getinfo(mnt, path, &info);
 	if (rc)
 		return (rc);
-
-	if (mode)
-		sfprov_mode_from_fmode(mode, info.Attr.fMode);
-	if (size != NULL)
-		*size = info.cbObject;
-	if (atime != NULL)
-		sfprov_ftime_from_timespec(atime, &info.AccessTime);
-	if (mtime != NULL)
-		sfprov_ftime_from_timespec(mtime, &info.ModificationTime);
-	if (ctime != NULL)
-		sfprov_ftime_from_timespec(ctime, &info.ChangeTime);
-
+	sfprov_stat_from_info(attr, &info);
 	return (0);
 }
 
@@ -799,18 +792,84 @@ sfprov_mkdir(sfp_mount_t *mnt, char *path, sfp_file_t **fp)
 }
 
 int
-sfprov_remove(sfp_mount_t *mnt, char *path)
+sfprov_set_show_symlinks(void)
+{
+	int rc;
+
+	rc = vboxCallSetSymlinks(&vbox_client);
+	if (RT_FAILURE(rc))
+		return (sfprov_vbox2errno(rc));
+
+	return (0);
+}
+
+int
+sfprov_remove(sfp_mount_t *mnt, char *path, uint_t is_link)
 {
 	int rc;
 	SHFLSTRING *str;
 	int size;
 
 	str = sfprov_string(path, &size);
-	rc = vboxCallRemove(&vbox_client, &mnt->map, str, SHFL_REMOVE_FILE);
+	rc = vboxCallRemove(&vbox_client, &mnt->map, str,
+		SHFL_REMOVE_FILE | (is_link ? SHFL_REMOVE_SYMLINK : 0));
 	kmem_free(str, size);
 	if (RT_FAILURE(rc))
 		return (sfprov_vbox2errno(rc));
 	return (0);
+}
+
+int
+sfprov_readlink(
+	sfp_mount_t *mnt,
+	char *path,
+	char *target,
+	size_t tgt_size)
+{
+	int rc;
+	SHFLSTRING *str;
+	int size;
+
+	str = sfprov_string(path, &size);
+
+	rc = vboxReadLink(&vbox_client, &mnt->map, str, (uint32_t) tgt_size,
+	    target);
+	if (RT_FAILURE(rc))
+		rc = sfprov_vbox2errno(rc);
+
+	kmem_free(str, size);
+	return (rc);
+}
+
+int
+sfprov_symlink(
+	sfp_mount_t *mnt,
+	char *linkname,
+	char *target,
+	sffs_stat_t *stat)
+{
+	int rc;
+	SHFLSTRING *lnk, *tgt;
+	int lnk_size, tgt_size;
+	SHFLFSOBJINFO info;
+
+	lnk = sfprov_string(linkname, &lnk_size);
+	tgt = sfprov_string(target, &tgt_size);
+
+	rc = vboxCallSymlink(&vbox_client, &mnt->map, lnk, tgt, &info);
+	if (RT_FAILURE(rc)) {
+		rc = sfprov_vbox2errno(rc);
+		goto done;
+	}
+
+	if (stat != NULL)
+		sfprov_stat_from_info(stat, &info);
+
+done:
+	kmem_free(lnk, lnk_size);
+	kmem_free(tgt, tgt_size);
+
+	return (rc);
 }
 
 int
@@ -879,7 +938,6 @@ sfprov_readdir(
 	off_t offset;
 	sffs_dirents_t *cur_buf;
 	struct sffs_dirent *dirent;
-	sffs_stat_t *stat;
 	unsigned short reclen;
 	unsigned short entlen;
 
@@ -973,14 +1031,7 @@ sfprov_readdir(
 			dirent->sf_entry.d_off = offset;
 
 			/* save the stats */
-			stat = &dirent->sf_stat;
-
-			sfprov_mode_from_fmode(&stat->sf_mode, info->Info.Attr.fMode);
-			stat->sf_size = info->Info.cbObject;
-			stat->sf_alloc = info->Info.cbAllocated;
-			sfprov_ftime_from_timespec(&stat->sf_atime, &info->Info.AccessTime);
-			sfprov_ftime_from_timespec(&stat->sf_mtime, &info->Info.ModificationTime);
-			sfprov_ftime_from_timespec(&stat->sf_ctime, &info->Info.ChangeTime);
+			sfprov_stat_from_info(&dirent->sf_stat, &info->Info);
 
 			/* next info */
 			cur_buf->sf_len += entlen;
