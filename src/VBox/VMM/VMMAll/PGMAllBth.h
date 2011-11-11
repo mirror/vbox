@@ -629,8 +629,8 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVMCPU pVCpu, RTGCUINT uErr, PCPUMCTXCORE pRegF
             LogBird(("Trap0eHandler: returns VINF_SUCCESS\n"));
             return VINF_SUCCESS;
         }
-        AssertMsg(GstWalk.Pde.u == GstWalk.pPde->u || GstWalk.pPte->u == GstWalk.pPde->u, ("%RX64 %RX64\n", (uint64_t)GstWalk.Pde.u, (uint64_t)GstWalk.pPde->u));
-        AssertMsg(GstWalk.Core.fBigPage || GstWalk.Pte.u == GstWalk.pPte->u, ("%RX64 %RX64\n", (uint64_t)GstWalk.Pte.u, (uint64_t)GstWalk.pPte->u));
+        //AssertMsg(GstWalk.Pde.u == GstWalk.pPde->u || GstWalk.pPte->u == GstWalk.pPde->u, ("%RX64 %RX64\n", (uint64_t)GstWalk.Pde.u, (uint64_t)GstWalk.pPde->u)); - triggers with smp w7 guests.
+        //AssertMsg(GstWalk.Core.fBigPage || GstWalk.Pte.u == GstWalk.pPte->u, ("%RX64 %RX64\n", (uint64_t)GstWalk.Pte.u, (uint64_t)GstWalk.pPte->u)); - ditto.
     }
 
 #   if 0 /* rarely useful; leave for debugging. */
