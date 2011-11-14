@@ -191,4 +191,12 @@ void sofcantsendmore (struct socket *);
 void soisfdisconnected (struct socket *);
 void sofwdrain (struct socket *);
 
+/**
+ * Creates copy of UDP socket with specified addr
+ * @return copy of the socket with f_addr equal to u32ForeignAddr
+ */
+#ifdef VBOX_WITH_NAT_UDP_SOCKET_CLONE
+struct socket * soCloneUDPSocketWithForegnAddr(PNATState pData, const struct socket *so, uint32_t u32ForeignAddr);
+#endif
+
 #endif /* _SOCKET_H_ */

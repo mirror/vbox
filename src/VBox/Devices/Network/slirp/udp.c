@@ -244,7 +244,7 @@ udp_input(PNATState pData, register struct mbuf *m, int iphlen)
             Log2(("NAT: IP(id: %hd) failed to create socket\n", ip->ip_id));
             goto bad_free_mbuf;
         }
-        if (udp_attach(pData, so, 0) == -1)
+        if (udp_attach(pData, so, 0) <= 0)
         {
             Log2(("NAT: IP(id: %hd) udp_attach errno = %d (%s)\n",
                         ip->ip_id, errno, strerror(errno)));
@@ -401,7 +401,7 @@ int udp_output(PNATState pData, struct socket *so, struct mbuf *m,
     if ((so->so_faddr.s_addr & RT_H2N_U32(pData->netmask)) == pData->special_addr.s_addr)
     {
         saddr.sin_addr.s_addr = so->so_faddr.s_addr;
-        if ((so->so_faddr.s_addr & RT_H2N_U32(~pData->netmask)) == RT_H2N_U32(~pData->netmask))
+        if (slirpIsWideCasting(pData, so->so_faddr.s_addr))
         {
             /**
              * We haven't got real firewall but have got its submodule libalias.
@@ -416,7 +416,13 @@ int udp_output(PNATState pData, struct socket *so, struct mbuf *m,
                 saddr.sin_addr.s_addr = alias_addr.s_addr;
             else
                 saddr.sin_addr.s_addr = addr->sin_addr.s_addr;
+            /* we shouldn't override initial socket */
+#ifdef VBOX_WITH_NAT_UDP_SOCKET_CLONE
+            so = soCloneUDPSocketWithForegnAddr(pData, so, addr->sin_addr.s_addr);
+            Assert((so));
+#else
             so->so_faddr.s_addr = addr->sin_addr.s_addr;
+#endif
         }
     }
 
@@ -477,6 +483,9 @@ udp_attach(PNATState pData, struct socket *so, int service_port)
     Assert(status == 0 && sa_addr.sa_family == AF_INET);
     so->so_hlport = ((struct sockaddr_in *)&sa_addr)->sin_port;
     so->so_hladdr.s_addr = ((struct sockaddr_in *)&sa_addr)->sin_addr.s_addr;
+#if 0
+    so->so_state = SS_ISFCONNECTED; /* validly opened UDP socked always connected */
+#endif
     SOCKET_LOCK_CREATE(so);
     QSOCKET_LOCK(udb);
     insque(pData, so, &udb);

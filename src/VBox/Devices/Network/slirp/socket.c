@@ -37,7 +37,61 @@
 #include <icmpapi.h>
 #endif
 
+#ifdef VBOX_WITH_NAT_UDP_SOCKET_CLONE
+/**
+ *
+ */
+struct socket * soCloneUDPSocketWithForegnAddr(PNATState pData, const struct socket *pSo, uint32_t u32ForeignAddr)
+{
+    struct socket *pNewSocket = NULL;
+    LogFlowFunc(("Enter: so:%R[natsock], u32ForeignAddr:%RTnaipv4\n", pSo, u32ForeignAddr));
+    pNewSocket = socreate();
+    if (!pNewSocket)
+    {
+        LogFunc(("Can't create socket\n"));
+        LogFlowFunc(("Leave: NULL\n"));
+        return NULL;
+    }
+    if (udp_attach(pData, pNewSocket, 0) <= 0)
+    {
+        sofree(pData, pNewSocket);
+        LogFunc(("Can't attach fresh created socket\n"));
+        return NULL;
+    }
+    pNewSocket->so_laddr = pSo->so_laddr;
+    pNewSocket->so_lport = pSo->so_lport;
+    pNewSocket->so_faddr.s_addr = u32ForeignAddr;
+    pNewSocket->so_fport = pSo->so_fport;
+    return pNewSocket;
+}
+#endif
 
+#ifdef VBOX_WITH_NAT_SEND2HOME
+DECLINLINE(bool) slirpSend2Home(PNATState pData, struct socket *pSo, const void *pvBuf, uint32_t cbBuf, int iFlags)
+{
+    int idxAddr;
+    int ret = 0;
+    bool fSendDone = false;
+    LogFlowFunc(("Enter pSo:%R[natsock] pvBuf: %p, cbBuf: %d, iFlags: %d\n", pSo, pvBuf, cbBuf, iFlags));
+    for (idxAddr = 0; idxAddr < pData->cInHomeAddressSize; ++idxAddr)
+    {
+
+        struct socket *pNewSocket = soCloneUDPSocketWithForegnAddr(pData, pSo, pData->pInSockAddrHomeAddress[idxAddr].sin_addr);
+        AssertReturn((pNewSocket, false));
+        pData->pInSockAddrHomeAddress[idxAddr].sin_port = pSo->so_fport;
+        /* @todo: more verbose on errors,
+         * @note: we shouldn't care if this send fail or not (we're in broadcast).
+         */
+        LogFunc(("send %d bytes to %RTnaipv4 from %R[natsock]\n", cbBuf, pData->pInSockAddrHomeAddress[idxAddr].sin_addr.s_addr, pNewSocket));
+        ret = sendto(pNewSocket->s, pvBuf, cbBuf, iFlags, (struct sockaddr *)&pData->pInSockAddrHomeAddress[idxAddr], sizeof(struct sockaddr_in));
+        if (ret < 0)
+            LogFunc(("Failed to send %d bytes to %RTnaipv4\n", cbBuf, pData->pInSockAddrHomeAddress[idxAddr].sin_addr.s_addr));
+        fSendDone |= ret > 0;
+    }
+    LogFlowFunc(("Leave %RTbool\n", fSendDone));
+    return fSendDone;
+}
+#endif /* !VBOX_WITH_NAT_SEND2HOME */
 static void send_icmp_to_guest(PNATState, char *, size_t, const struct sockaddr_in *);
 #ifdef RT_OS_WINDOWS
 static void sorecvfrom_icmp_win(PNATState, struct socket *);
@@ -947,6 +1001,12 @@ sosendto(PNATState pData, struct socket *so, struct mbuf *m)
     }
     ret = sendto(so->s, buf, mlen, 0,
                  (struct sockaddr *)&addr, sizeof (struct sockaddr));
+#ifdef VBOX_WITH_NAT_SEND2HOME
+    if (slirpIsWideCasting(pData, so->so_faddr.s_addr))
+    {
+        slirpSend2Home(pData, so, buf, mlen, 0);
+    }
+#endif
     if (buf)
         RTMemFree(buf);
     if (ret < 0)

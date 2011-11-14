@@ -53,6 +53,7 @@
 #ifndef RT_OS_WINDOWS
 # include <sys/ioctl.h>
 # include <poll.h>
+# include <netinet/in.h>
 #else
 # include <Winnls.h>
 # define _WINSOCK2API_
@@ -680,6 +681,16 @@ int slirp_init(PNATState *ppData, uint32_t u32NetAddr, uint32_t u32Netmask,
         if (pData->fUseHostResolver)
             dns_alias_load(pData);
     }
+#ifdef VBOX_WITH_NAT_SEND2HOME
+    /* @todo: we should know all interfaces available on host. */
+    pData->pInSockAddrHomeAddress = RTMemAllocZ(sizeof(struct sockaddr));
+    pData->cInHomeAddressSize = 1;
+    inet_aton("192.168.1.25", &pData->pInSockAddrHomeAddress[0].sin_addr);
+    pData->pInSockAddrHomeAddress[0].sin_family = AF_INET;
+#ifdef RT_OS_DARWIN
+    pData->pInSockAddrHomeAddress[0].sin_len = sizeof(struct sockaddr_in);
+#endif
+#endif
     return fNATfailed ? VINF_NAT_DNS : VINF_SUCCESS;
 }
 
