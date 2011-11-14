@@ -52,11 +52,11 @@ typedef union {
 #define CRDBGPTR_SETZ(_p) crMemset((_p), 0, sizeof (CRNetworkPointer))
 #define CRDBGPTR_CHECKZ(_p) do { \
         CRNetworkPointer _ptr = {0}; \
-        Assert(!crMemcmp((_p), &_ptr, sizeof (CRNetworkPointer))); \
+        CRASSERT(!crMemcmp((_p), &_ptr, sizeof (CRNetworkPointer))); \
     } while (0)
 #define CRDBGPTR_CHECKNZ(_p) do { \
         CRNetworkPointer _ptr = {0}; \
-        Assert(crMemcmp((_p), &_ptr, sizeof (CRNetworkPointer))); \
+        CRASSERT(crMemcmp((_p), &_ptr, sizeof (CRNetworkPointer))); \
     } while (0)
 # if 0
 #  define _CRDBGPTR_PRINT(_tStr, _id, _p) do { \
