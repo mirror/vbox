@@ -287,11 +287,16 @@ typedef struct NATState
     int cRedirectionsActive;
     int cRedirectionsStored;
     struct arp_cache_head arp_cache;
-    /*libalis modules' handlers*/
+    /* libalis modules' handlers*/
     struct proto_handler *ftp_module;
     struct proto_handler *nbt_module;
     struct proto_handler *dns_module;
-
+#ifdef VBOX_WITH_NAT_SEND2HOME
+    /* array of home addresses */
+    struct sockaddr_in *pInSockAddrHomeAddress;
+    /* size of pInSockAddrHomeAddress in elements */
+    int cInHomeAddressSize;
+#endif
 } NATState;
 
 
