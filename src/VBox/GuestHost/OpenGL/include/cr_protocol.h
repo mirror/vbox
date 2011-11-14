@@ -48,6 +48,106 @@ typedef union {
     /* unsigned int  junk[512]; */
 } CRNetworkPointer;
 
+#ifdef DEBUG_misha
+#define CRDBGPTR_SETZ(_p) crMemset((_p), 0, sizeof (CRNetworkPointer))
+#define CRDBGPTR_CHECKZ(_p) do { \
+        CRNetworkPointer _ptr = {0}; \
+        Assert(!crMemcmp((_p), &_ptr, sizeof (CRNetworkPointer))); \
+    } while (0)
+#define CRDBGPTR_CHECKNZ(_p) do { \
+        CRNetworkPointer _ptr = {0}; \
+        Assert(crMemcmp((_p), &_ptr, sizeof (CRNetworkPointer))); \
+    } while (0)
+# if 0
+#  define _CRDBGPTR_PRINT(_tStr, _id, _p) do { \
+        crDebug(_tStr "%d:0x%08x%08x", (_id), (_p)->ptrAlign[1], (_p)->ptrAlign[0]); \
+    } while (0)
+# else
+#  define _CRDBGPTR_PRINT(_tStr, _id, _p) do { } while (0)
+# endif
+#define CRDBGPTR_PRINTWB(_id, _p) _CRDBGPTR_PRINT("wbptr:", _id, _p)
+#define CRDBGPTR_PRINTRB(_id, _p) _CRDBGPTR_PRINT("rbptr:", _id, _p)
+#else
+#define CRDBGPTR_SETZ(_p) do { } while (0)
+#define CRDBGPTR_CHECKZ(_p) do { } while (0)
+#define CRDBGPTR_CHECKNZ(_p) do { } while (0)
+#define CRDBGPTR_PRINTWB(_id, _p) do { } while (0)
+#define CRDBGPTR_PRINTRB(_id, _p) do { } while (0)
+#endif
+
+#ifdef VBOX_WITH_CRHGSMI
+typedef struct CRVBOXHGSMI_CMDDATA {
+    struct VBOXVDMACMD_CHROMIUM_CMD *pCmd;
+    int          *pCmdRc;
+    char         *pWriteback;
+    unsigned int *pcbWriteback;
+    unsigned int cbWriteback;
+} CRVBOXHGSMI_CMDDATA, *PCRVBOXHGSMI_CMDDATA;
+
+#ifdef DEBUG
+# define CRVBOXHGSMI_CMDDATA_ASSERT_CONSISTENT(_pData)  do { \
+        CRASSERT(!(_pData)->pCmd == !(_pData)->pCmdRc); \
+        CRASSERT(!(_pData)->pWriteback == !(_pData)->pcbWriteback); \
+        CRASSERT(!(_pData)->pWriteback == !(_pData)->cbWriteback); \
+        if ((_pData)->pWriteback) \
+        { \
+            CRASSERT((_pData)->pCmd); \
+        } \
+    } while (0)
+
+# define CRVBOXHGSMI_CMDDATA_ASSERT_CLEANED(_pData)  do { \
+        CRASSERT(!(_pData)->pCmd); \
+        CRASSERT(!(_pData)->pCmdRc); \
+        CRASSERT(!(_pData)->pWriteback); \
+        CRASSERT(!(_pData)->pcbWriteback); \
+        CRASSERT(!(_pData)->cbWriteback); \
+    } while (0)
+
+# define CRVBOXHGSMI_CMDDATA_ASSERT_ISSET(_pData)  do { \
+        CRVBOXHGSMI_CMDDATA_ASSERT_CONSISTENT(_pData); \
+        CRASSERT(CRVBOXHGSMI_CMDDATA_IS_SET(_pData)); \
+    } while (0)
+
+# define CRVBOXHGSMI_CMDDATA_ASSERT_ISSETWB(_pData)  do { \
+        CRVBOXHGSMI_CMDDATA_ASSERT_CONSISTENT(_pData); \
+        CRASSERT(CRVBOXHGSMI_CMDDATA_IS_SETWB(_pData)); \
+    } while (0)
+#else
+# define CRVBOXHGSMI_CMDDATA_ASSERT_CONSISTENT(_pData)  do { } while (0)
+# define CRVBOXHGSMI_CMDDATA_ASSERT_CLEANED(_pData)  do { } while (0)
+# define CRVBOXHGSMI_CMDDATA_ASSERT_ISSET(_pData)  do { } while (0)
+# define CRVBOXHGSMI_CMDDATA_ASSERT_ISSETWB(_pData)  do { } while (0)
+#endif
+
+#define CRVBOXHGSMI_CMDDATA_IS_SET(_pData) (!!(_pData)->pCmd)
+#define CRVBOXHGSMI_CMDDATA_IS_SETWB(_pData) (!!(_pData)->pWriteback)
+
+#define CRVBOXHGSMI_CMDDATA_CLEANUP(_pData) do { \
+        crMemset(_pData, 0, sizeof (CRVBOXHGSMI_CMDDATA)); \
+        CRVBOXHGSMI_CMDDATA_ASSERT_CLEANED(_pData); \
+        CRVBOXHGSMI_CMDDATA_ASSERT_CONSISTENT(_pData); \
+    } while (0)
+
+#define CRVBOXHGSMI_CMDDATA_SET(_pData, _pCmd, _pHdr) do { \
+        CRVBOXHGSMI_CMDDATA_ASSERT_CLEANED(_pData); \
+        (_pData)->pCmd = (_pCmd); \
+        (_pData)->pCmdRc = &(_pHdr)->result; \
+        CRVBOXHGSMI_CMDDATA_ASSERT_CONSISTENT(_pData); \
+    } while (0)
+
+#define CRVBOXHGSMI_CMDDATA_SETWB(_pData, _pCmd, _pHdr, _pWb, _cbWb, _pcbWb) do { \
+        CRVBOXHGSMI_CMDDATA_SET(_pData, _pCmd, _pHdr); \
+        (_pData)->pWriteback = (_pWb); \
+        (_pData)->pcbWriteback = (_pcbWb); \
+        (_pData)->cbWriteback = (_cbWb); \
+        CRVBOXHGSMI_CMDDATA_ASSERT_CONSISTENT(_pData); \
+    } while (0)
+
+#define CRVBOXHGSMI_CMDDATA_RC(_pData, _rc) do { \
+        *(_pData)->pCmdRc = (_rc); \
+    } while (0)
+#endif
+
 typedef struct {
     CRMessageType          type;
     unsigned int           conn_id;
@@ -61,6 +161,9 @@ typedef struct CRMessageOpcodes {
 typedef struct CRMessageRedirPtr {
     CRMessageHeader        header;
     CRMessageHeader*       pMessage;
+#ifdef VBOX_WITH_CRHGSMI
+    CRVBOXHGSMI_CMDDATA   CmdData;
+#endif
 } CRMessageRedirPtr;
 
 typedef struct CRMessageWriteback {
