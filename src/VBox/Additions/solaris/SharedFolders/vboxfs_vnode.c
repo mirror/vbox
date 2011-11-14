@@ -534,6 +534,7 @@ sfnode_lookup(
 	sfnode_t *dir,
 	char *name,
 	vtype_t create,
+	mode_t c_mode,
 	sffs_stat_t *stat,
 	uint64_t stat_time,
 	int *err)
@@ -586,10 +587,14 @@ sfnode_lookup(
 	 */
 	if (create == VREG) {
 		type = VREG;
-		error = sfprov_create(dir->sf_sffs->sf_handle, fullpath, &fp);
+		error = sfprov_create(dir->sf_sffs->sf_handle, fullpath, c_mode,
+					&fp, stat);
+		stat_time = sfnode_cur_time_usec();
 	} else if (create == VDIR) {
 		type = VDIR;
-		error = sfprov_mkdir(dir->sf_sffs->sf_handle, fullpath, &fp);
+		error = sfprov_mkdir(dir->sf_sffs->sf_handle, fullpath, c_mode,
+					&fp, stat);
+		stat_time = sfnode_cur_time_usec();
 	} else {
 		mode_t m;
 		fp = NULL;
@@ -785,7 +790,7 @@ sffs_readdir(
 				node = dir;
 		} else {
 			node = sfnode_lookup(dir, dirent->sf_entry.d_name, VNON,
-			    &dirent->sf_stat, sfnode_cur_time_usec(), NULL);
+				0, &dirent->sf_stat, sfnode_cur_time_usec(), NULL);
 			if (node == NULL)
 				panic("sffs_readdir() lookup failed");
 		}
@@ -1216,7 +1221,7 @@ sffs_lookup(
 	/*
 	 * Lookup the node.
 	 */
-	node = sfnode_lookup(VN2SFN(dvp), name, VNON, NULL, 0, NULL);
+	node = sfnode_lookup(VN2SFN(dvp), name, VNON, 0, NULL, 0, NULL);
 	if (node != NULL)
 		*vpp = sfnode_get_vnode(node);
 	mutex_exit(&sffs_lock);
@@ -1311,7 +1316,7 @@ sffs_create(
 	 * Create a new node. First check for a race creating it.
 	 */
 	mutex_enter(&sffs_lock);
-	node = sfnode_lookup(VN2SFN(dvp), name, VNON, NULL, 0, NULL);
+	node = sfnode_lookup(VN2SFN(dvp), name, VNON, 0, NULL, 0, NULL);
 	if (node != NULL) {
 		mutex_exit(&sffs_lock);
 		return (EEXIST);
@@ -1322,15 +1327,8 @@ sffs_create(
 	 */
 	sfnode_invalidate_stat_cache(VN2SFN(dvp));
 	int lookuperr;
-	node = sfnode_lookup(VN2SFN(dvp), name, VREG, NULL, 0, &lookuperr);
-	if (node && (vap->va_mask & AT_MODE)) {
-		timestruc_t dummy;
-		error = sfprov_set_attr(node->sf_sffs->sf_handle, node->sf_path,
-		    AT_MODE, vap->va_mode, dummy, dummy, dummy);
-		if (error)
-			cmn_err(CE_WARN, "sffs_create: set_mode(%s, %o) failed"
-			    " rc=%d", node->sf_path, vap->va_mode, error);
-	}
+	node = sfnode_lookup(VN2SFN(dvp), name, VREG,
+		(vap->va_mask & AT_MODE) ? vap->va_mode : 0, NULL, 0, &lookuperr);
 
 	if (node && node->sf_parent)
 		sfnode_clear_dir_list(node->sf_parent);
@@ -1389,15 +1387,8 @@ sffs_mkdir(
 
 	sfnode_invalidate_stat_cache(VN2SFN(dvp));
 	int lookuperr = EACCES;
-	node = sfnode_lookup(VN2SFN(dvp), nm, VDIR, NULL, 0, &lookuperr);
-	if (node && (va->va_mask & AT_MODE)) {
-		timestruc_t dummy;
-		error = sfprov_set_attr(node->sf_sffs->sf_handle, node->sf_path,
-		    AT_MODE, va->va_mode, dummy, dummy, dummy);
-		if (error)
-			cmn_err(CE_WARN, "sffs_mkdir: set_mode(%s, %o) failed"
-			    " rc=%d", node->sf_path, va->va_mode, error);
-	}
+	node = sfnode_lookup(VN2SFN(dvp), nm, VDIR,
+		(va->va_mode & AT_MODE) ? va->va_mode : 0, NULL, 0, &lookuperr);
 
 	if (node && node->sf_parent)
 		sfnode_clear_dir_list(node->sf_parent);
@@ -1962,7 +1953,8 @@ sffs_symlink(
 
 	mutex_enter(&sffs_lock);
 
-	if (sfnode_lookup(VN2SFN(dvp), linkname, VNON, NULL, 0, NULL) != NULL) {
+	if (sfnode_lookup(VN2SFN(dvp), linkname, VNON, 0, NULL, 0, NULL) !=
+		NULL) {
 		error = EEXIST;
 		goto done;
 	}
@@ -1983,8 +1975,8 @@ sffs_symlink(
 	if (error)
 		goto done;
 
-	node = sfnode_lookup(dir, linkname, VLNK, &stat, sfnode_cur_time_usec(),
-	    NULL);
+	node = sfnode_lookup(dir, linkname, VLNK, 0, &stat,
+		sfnode_cur_time_usec(), NULL);
 
 	sfnode_invalidate_stat_cache(dir);
 	sfnode_clear_dir_list(dir);
@@ -2092,7 +2084,7 @@ sffs_rename(
 	if (error)
 		goto done;
 
-	node = sfnode_lookup(VN2SFN(old_dir), old_nm, VNON, NULL, 0, NULL);
+	node = sfnode_lookup(VN2SFN(old_dir), old_nm, VNON, 0, NULL, 0, NULL);
 	if (node == NULL) {
 		error = ENOENT;
 		goto done;

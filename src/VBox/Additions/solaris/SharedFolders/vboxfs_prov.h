@@ -87,9 +87,19 @@ extern int sfprov_get_fsinfo(sfp_mount_t *, sffs_fsinfo_t *);
  * open/create can return any relevant errno, however ENOENT
  * generally means that the host file didn't exist.
  */
+typedef struct sffs_stat {
+	mode_t		sf_mode;
+	off_t		sf_size;
+	off_t		sf_alloc;
+	timestruc_t	sf_atime;
+	timestruc_t	sf_mtime;
+	timestruc_t	sf_ctime;
+} sffs_stat_t;
+
 typedef struct sfp_file sfp_file_t;
 
-extern int sfprov_create(sfp_mount_t *, char *path, sfp_file_t **fp);
+extern int sfprov_create(sfp_mount_t *, char *path, mode_t mode,
+    sfp_file_t **fp, sffs_stat_t *stat);
 extern int sfprov_open(sfp_mount_t *, char *path, sfp_file_t **fp);
 extern int sfprov_close(sfp_file_t *fp);
 extern int sfprov_read(sfp_file_t *, char * buffer, uint64_t offset,
@@ -102,15 +112,6 @@ extern int sfprov_fsync(sfp_file_t *fp);
 /*
  * get/set information about a file (or directory) using pathname
  */
-typedef struct sffs_stat {
-	mode_t		sf_mode;
-	off_t		sf_size;
-	off_t		sf_alloc;
-	timestruc_t	sf_atime;
-	timestruc_t	sf_mtime;
-	timestruc_t	sf_ctime;
-} sffs_stat_t;
-
 extern int sfprov_get_mode(sfp_mount_t *, char *, mode_t *);
 extern int sfprov_get_size(sfp_mount_t *, char *, uint64_t *);
 extern int sfprov_get_atime(sfp_mount_t *, char *, timestruc_t *);
@@ -127,7 +128,8 @@ extern int sfprov_set_size(sfp_mount_t *, char *, uint64_t);
  */
 extern int sfprov_trunc(sfp_mount_t *, char *);
 extern int sfprov_remove(sfp_mount_t *, char *path, uint_t is_link);
-extern int sfprov_mkdir(sfp_mount_t *, char *path, sfp_file_t **fp);
+extern int sfprov_mkdir(sfp_mount_t *, char *path, mode_t mode,
+    sfp_file_t **fp, sffs_stat_t *stat);
 extern int sfprov_rmdir(sfp_mount_t *, char *path);
 extern int sfprov_rename(sfp_mount_t *, char *from, char *to, uint_t is_dir);
 
