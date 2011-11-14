@@ -24,6 +24,11 @@
     <itemizedlist>
 
       <listitem>
+        <para>VMM: fixed MP tables fixes for I/O APIC interrupt routing relevant
+          for ancient SMP guests (e.g. old OS/2 releases)</para>
+      </listitem>
+
+      <listitem>
         <para>E1000: fixed rare Windows 7 guest hangs, either at boot time
           or when reconfiguring the network card in unusual setups (bug #6223)</para>
       </listitem>
