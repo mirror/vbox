@@ -8,6 +8,9 @@
 #define CR_PROTOCOL_H
 
 #include <iprt/cdefs.h>
+#ifdef DEBUG_misha
+#include "cr_error.h"
+#endif
 
 #ifdef __cplusplus
 extern "C" {
