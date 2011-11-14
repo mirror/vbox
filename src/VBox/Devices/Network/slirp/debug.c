@@ -266,9 +266,9 @@ print_socket(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput,
     if (so == NULL)
         return RTStrFormat(pfnOutput, pvArgOutput, NULL, 0,
                 "socket is null");
-    if (so->so_state == SS_NOFDREF || so->s == -1)
+    if (so->s == -1)
         return RTStrFormat(pfnOutput, pvArgOutput, NULL, 0,
-                "socket(%d) SS_NOFDREF", so->s);
+                "socket(%d)", so->s);
 
     status = getsockname(so->s, &addr, &socklen);
     if(status != 0 || addr.sa_family != AF_INET)
