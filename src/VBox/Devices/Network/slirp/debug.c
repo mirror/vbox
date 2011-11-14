@@ -55,6 +55,26 @@ static char *g_apszTcpStates[TCP_NSTATES] =
     STRINGIFY(TCPS_TIME_WAIT)
 };
 
+typedef struct DEBUGSTRSOCKETSTATE
+{
+    uint32_t u32SocketState;
+    const char *pcszSocketStateName;
+} DEBUGSTRSOCKETSTATE;
+
+#define DEBUGSTRSOCKETSTATE_HELPER(x) {(x), #x}
+
+static DEBUGSTRSOCKETSTATE g_apszSocketStates[8] =
+{
+    DEBUGSTRSOCKETSTATE_HELPER(SS_NOFDREF),
+    DEBUGSTRSOCKETSTATE_HELPER(SS_ISFCONNECTING),
+    DEBUGSTRSOCKETSTATE_HELPER(SS_ISFCONNECTED),
+    DEBUGSTRSOCKETSTATE_HELPER(SS_FCANTRCVMORE),
+    DEBUGSTRSOCKETSTATE_HELPER(SS_FCANTSENDMORE),
+    DEBUGSTRSOCKETSTATE_HELPER(SS_FWDRAIN),
+    DEBUGSTRSOCKETSTATE_HELPER(SS_FACCEPTCONN),
+    DEBUGSTRSOCKETSTATE_HELPER(SS_FACCEPTONCE),
+};
+
 /*
  * Dump a packet in the same format as tcpdump -x
  */
@@ -247,7 +267,7 @@ sockstats(PNATState pData)
 #endif
 
 static DECLCALLBACK(size_t)
-print_socket(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput,
+printSocket(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput,
              const char *pszType, void const *pvValue,
              int cchWidth, int cchPrecision, unsigned fFlags,
              void *pvUser)
@@ -279,7 +299,7 @@ print_socket(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput,
 
     in_addr = (struct sockaddr_in *)&addr;
     return RTStrFormat(pfnOutput, pvArgOutput, NULL, 0, "socket %d:(proto:%u) "
-            "state=%04x "
+            "state=%R[natsockstate] "
             "f_(addr:port)=%RTnaipv4:%d "
             "l_(addr:port)=%RTnaipv4:%d "
             "name=%RTnaipv4:%d",
@@ -290,6 +310,28 @@ print_socket(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput,
             RT_N2H_U16(so->so_lport),
             in_addr->sin_addr.s_addr,
             RT_N2H_U16(in_addr->sin_port));
+}
+
+static DECLCALLBACK(size_t)
+printNATSocketState(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput,
+             const char *pszType, void const *pvValue,
+             int cchWidth, int cchPrecision, unsigned fFlags,
+             void *pvUser)
+{
+    uint32_t u32SocketState = (uint32_t)(uintptr_t)pvValue;
+    int idxNATState = 0;
+    NOREF(cchWidth);
+    NOREF(cchPrecision);
+    NOREF(fFlags);
+    NOREF(pvUser);
+    AssertReturn(strcmp(pszType, "natsockstate") == 0, 0);
+
+    for (idxNATState = 0; idxNATState < RT_ELEMENTS(g_apszSocketStates); ++idxNATState)
+    {
+        if (u32SocketState == g_apszSocketStates[idxNATState].u32SocketState)
+            return RTStrFormat(pfnOutput, pvArgOutput, NULL, 0, g_apszSocketStates[idxNATState].pcszSocketStateName);
+    }
+    return RTStrFormat(pfnOutput, pvArgOutput, NULL, 0, "[unknown state %RX32]", u32SocketState);
 }
 
 /**
@@ -501,7 +543,8 @@ debug_init()
     if (!g_fFormatRegistered)
     {
 
-        rc = RTStrFormatTypeRegister("natsock", print_socket, NULL);            AssertRC(rc);
+        rc = RTStrFormatTypeRegister("natsock", printSocket, NULL);            AssertRC(rc);
+        rc = RTStrFormatTypeRegister("natsockstate", printNATSocketState, NULL);            AssertRC(rc);
         rc = RTStrFormatTypeRegister("natwinnetevents",
                                      print_networkevents, NULL);                AssertRC(rc);
         rc = RTStrFormatTypeRegister("tcpcb793", printTcpcbRfc793, NULL);       AssertRC(rc);
