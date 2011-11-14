@@ -26,6 +26,7 @@
 /* Local includes */
 #include "QIWithRetranslateUI.h"
 #include "UIMachineWindow.h"
+#include "COMDefs.h"
 
 /* Local forwards */
 class CMediumAttachment;
@@ -103,6 +104,7 @@ private:
     /* Other members: */
     void showSimple();
     bool isMaximizedChecked();
+    void updateIndicatorState(QIStateIndicator *pIndicator, KDeviceType deviceType);
 
     /* Indicators pool: */
     UIIndicatorsPool *m_pIndicatorsPool;

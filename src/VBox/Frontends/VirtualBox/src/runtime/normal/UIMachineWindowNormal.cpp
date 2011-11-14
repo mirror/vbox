@@ -125,7 +125,7 @@ UIMachineWindowNormal::~UIMachineWindowNormal()
 void UIMachineWindowNormal::sltMachineStateChanged()
 {
     UIMachineWindow::sltMachineStateChanged();
-    updateAppearanceOf(UIVisualElement_VirtualizationStuff);
+    updateAppearanceOf(UIVisualElement_PauseStuff | UIVisualElement_VirtualizationStuff);
 }
 
 void UIMachineWindowNormal::sltMediumChange(const CMediumAttachment &attachment)
@@ -192,51 +192,12 @@ void UIMachineWindowNormal::sltEmbedDownloaderForExtensionPack()
 
 void UIMachineWindowNormal::sltUpdateIndicators()
 {
-    CConsole console = session().GetConsole();
-    QIStateIndicator *pStateIndicator = 0;
-
-    pStateIndicator = indicatorsPool()->indicator(UIIndicatorIndex_HardDisks);
-    if (pStateIndicator->state() != KDeviceActivity_Null)
-    {
-        int state = console.GetDeviceActivity(KDeviceType_HardDisk);
-        if (pStateIndicator->state() != state)
-            pStateIndicator->setState(state);
-    }
-    pStateIndicator = indicatorsPool()->indicator(UIIndicatorIndex_OpticalDisks);
-    if (pStateIndicator->state() != KDeviceActivity_Null)
-    {
-        int state = console.GetDeviceActivity(KDeviceType_DVD);
-        if (pStateIndicator->state() != state)
-            pStateIndicator->setState(state);
-    }
-    pStateIndicator = indicatorsPool()->indicator(UIIndicatorIndex_FloppyDisks);
-    if (pStateIndicator->state() != KDeviceActivity_Null)
-    {
-        int state = console.GetDeviceActivity(KDeviceType_Floppy);
-        if (pStateIndicator->state() != state)
-            pStateIndicator->setState(state);
-    }
-    pStateIndicator = indicatorsPool()->indicator(UIIndicatorIndex_USBDevices);
-    if (pStateIndicator->state() != KDeviceActivity_Null)
-    {
-        int state = console.GetDeviceActivity(KDeviceType_USB);
-        if (pStateIndicator->state() != state)
-            pStateIndicator->setState(state);
-    }
-    pStateIndicator = indicatorsPool()->indicator(UIIndicatorIndex_NetworkAdapters);
-    if (pStateIndicator->state() != KDeviceActivity_Null)
-    {
-        int state = console.GetDeviceActivity(KDeviceType_Network);
-        if (pStateIndicator->state() != state)
-            pStateIndicator->setState(state);
-    }
-    pStateIndicator = indicatorsPool()->indicator(UIIndicatorIndex_SharedFolders);
-    if (pStateIndicator->state() != KDeviceActivity_Null)
-    {
-        int state = console.GetDeviceActivity(KDeviceType_SharedFolder);
-        if (pStateIndicator->state() != state)
-            pStateIndicator->setState(state);
-    }
+    updateIndicatorState(indicatorsPool()->indicator(UIIndicatorIndex_HardDisks), KDeviceType_HardDisk);
+    updateIndicatorState(indicatorsPool()->indicator(UIIndicatorIndex_OpticalDisks), KDeviceType_DVD);
+    updateIndicatorState(indicatorsPool()->indicator(UIIndicatorIndex_FloppyDisks), KDeviceType_Floppy);
+    updateIndicatorState(indicatorsPool()->indicator(UIIndicatorIndex_USBDevices), KDeviceType_USB);
+    updateIndicatorState(indicatorsPool()->indicator(UIIndicatorIndex_NetworkAdapters), KDeviceType_Network);
+    updateIndicatorState(indicatorsPool()->indicator(UIIndicatorIndex_SharedFolders), KDeviceType_SharedFolder);
 }
 
 void UIMachineWindowNormal::sltShowIndicatorsContextMenu(QIStateIndicator *pIndicator, QContextMenuEvent *pEvent)
@@ -297,6 +258,14 @@ void UIMachineWindowNormal::updateAppearanceOf(int iElement)
     UIMachineWindow::updateAppearanceOf(iElement);
 
     /* Update that machine window: */
+    if (iElement & UIVisualElement_PauseStuff)
+    {
+        if (uisession()->isPaused() && m_pIdleTimer->isActive())
+            m_pIdleTimer->stop();
+        else if (uisession()->isRunning() && !m_pIdleTimer->isActive())
+            m_pIdleTimer->start(500);
+        sltUpdateIndicators();
+    }
     if (iElement & UIVisualElement_HDStuff)
         indicatorsPool()->indicator(UIIndicatorIndex_HardDisks)->updateAppearance();
     if (iElement & UIVisualElement_CDStuff)
@@ -481,7 +450,7 @@ void UIMachineWindowNormal::prepareStatusBar()
     /* Create & start timer to update LEDs: */
     m_pIdleTimer = new QTimer(this);
     connect(m_pIdleTimer, SIGNAL(timeout()), this, SLOT(sltUpdateIndicators()));
-    m_pIdleTimer->start(50);
+    m_pIdleTimer->start(500);
 
 #ifdef Q_WS_MAC
     /* For the status bar on Cocoa: */
@@ -704,5 +673,29 @@ bool UIMachineWindowNormal::isMaximizedChecked()
 #else /* Q_WS_MAC */
     return isMaximized();
 #endif /* !Q_WS_MAC */
+}
+
+void UIMachineWindowNormal::updateIndicatorState(QIStateIndicator *pIndicator, KDeviceType deviceType)
+{
+    /* Do NOT update indicators with NULL state: */
+    if (pIndicator->state() == KDeviceActivity_Null)
+        return;
+
+    /* Paused VM have all indicator states set to IDLE: */
+    bool fPaused = uisession()->isPaused();
+    if (fPaused)
+    {
+        /* If state differs from IDLE => set IDLE one:  */
+        if (pIndicator->state() != KDeviceActivity_Idle)
+            pIndicator->setState(KDeviceActivity_Idle);
+    }
+    else
+    {
+        /* Get current indicator state: */
+        int state = session().GetConsole().GetDeviceActivity(deviceType);
+        /* If state differs => set new one:  */
+        if (pIndicator->state() != state)
+            pIndicator->setState(state);
+    }
 }
 
