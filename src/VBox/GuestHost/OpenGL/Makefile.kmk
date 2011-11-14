@@ -138,7 +138,7 @@ VBoxOGLhostcrutil_LDFLAGS.darwin = $(VBoxOGLcrutil_LDFLAGS.darwin) \
 VBoxOGLhostcrutil_LIBS.win = $(VBoxOGLcrutil_LIBS.win)
 VBoxOGLhostcrutil_LIBS     = $(LIB_RUNTIME)
 ifdef VBOX_WITH_CRHGSMI
-VBoxOGLhostcrutil_DEFS.win = $(subst VBOX_WITH_CRHGSMI,,$(VBoxOGLcrutil_DEFS.win))
+VBoxOGLhostcrutil_DEFS    += VBOX_WITH_CRHGSMI
 VBoxOGLhostcrutil_LIBS.win = $(subst $(VBOX_PATH_ADDITIONS_LIB)/VBoxCrHgsmi$(VBOX_SUFF_LIB),,$(VBoxOGLcrutil_LIBS.win))
 endif
 

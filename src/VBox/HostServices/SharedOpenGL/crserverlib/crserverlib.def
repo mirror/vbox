@@ -10,3 +10,5 @@ crVBoxServerAddClient
 crVBoxServerRemoveClient
 crVBoxServerClientWrite
 crVBoxServerClientRead
+crVBoxServerCrHgsmiCmd
+crVBoxServerCrHgsmiCtl

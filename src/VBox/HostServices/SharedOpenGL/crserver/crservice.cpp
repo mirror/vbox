@@ -52,10 +52,6 @@
 # include <VBox/com/ErrorInfo.h>
 #endif /* RT_OS_WINDOWS */
 
-#ifdef VBOX_WITH_CRHGSMI
-# include <VBox/VBoxVideo.h>
-#endif
-
 #include <VBox/com/errorprint.h>
 #include <iprt/thread.h>
 #include <iprt/critsect.h>
@@ -67,9 +63,6 @@
 PVBOXHGCMSVCHELPERS g_pHelpers;
 static IConsole* g_pConsole = NULL;
 static PVM g_pVM = NULL;
-#ifdef VBOX_WITH_CRHGSMI
-static uint8_t* g_pvVRamBase;
-#endif
 
 #ifndef RT_OS_WINDOWS
 # define DWORD int
@@ -918,237 +911,6 @@ static DECLCALLBACK(void) svcCall (void *, VBOXHGCMCALLHANDLE callHandle, uint32
     g_pHelpers->pfnCallComplete (callHandle, rc);
 }
 
-#ifdef VBOX_WITH_CRHGSMI
-static int vboxCrHgsmiCtl(PVBOXVDMACMD_CHROMIUM_CTL pCtl)
-{
-    int rc;
-
-    switch (pCtl->enmType)
-    {
-        case VBOXVDMACMD_CHROMIUM_CTL_TYPE_CRHGSMI_SETUP:
-        {
-            PVBOXVDMACMD_CHROMIUM_CTL_CRHGSMI_SETUP pSetup = (PVBOXVDMACMD_CHROMIUM_CTL_CRHGSMI_SETUP)pCtl;
-            g_pvVRamBase = (uint8_t*)pSetup->pvRamBase;
-            rc = VINF_SUCCESS;
-        } break;
-        case VBOXVDMACMD_CHROMIUM_CTL_TYPE_SAVESTATE_BEGIN:
-        case VBOXVDMACMD_CHROMIUM_CTL_TYPE_SAVESTATE_END:
-            rc = VINF_SUCCESS;
-            break;
-        default:
-            Assert(0);
-            rc = VERR_INVALID_PARAMETER;
-    }
-
-    return rc;
-}
-
-#define VBOXCRHGSMI_PTR(_off, _t) ((_t*)(g_pvVRamBase + (_off)))
-static int vboxCrHgsmiCmd(PVBOXVDMACMD_CHROMIUM_CMD pCmd)
-{
-    int rc;
-    uint32_t cBuffers = pCmd->cBuffers;
-    uint32_t cParams;
-
-    if (!g_pvVRamBase)
-    {
-        Assert(0);
-        return VERR_INVALID_STATE;
-    }
-
-    if (!cBuffers)
-    {
-        Assert(0);
-        return VERR_INVALID_PARAMETER;
-    }
-
-    cParams = cBuffers-1;
-
-    CRVBOXHGSMIHDR *pHdr = VBOXCRHGSMI_PTR(pCmd->aBuffers[0].offBuffer, CRVBOXHGSMIHDR);
-    uint32_t u32Function = pHdr->u32Function;
-    uint32_t u32ClientID = pHdr->u32ClientID;
-    /* now we compile HGCM params out of HGSMI
-     * @todo: can we avoid this ? */
-    switch (u32Function)
-    {
-
-        case SHCRGL_GUEST_FN_WRITE:
-        {
-            Log(("svcCall: SHCRGL_GUEST_FN_WRITE\n"));
-
-            CRVBOXHGSMIWRITE* pFnCmd = (CRVBOXHGSMIWRITE*)pHdr;
-
-            /* @todo: Verify  */
-            if (cParams == 1)
-            {
-                VBOXVDMACMD_CHROMIUM_BUFFER *pBuf = &pCmd->aBuffers[1];
-                /* Fetch parameters. */
-                uint8_t *pBuffer  = VBOXCRHGSMI_PTR(pBuf->offBuffer, uint8_t);
-                uint32_t cbBuffer = pBuf->cbBuffer;
-
-                /* Execute the function. */
-                rc = crVBoxServerClientWrite(u32ClientID, pBuffer, cbBuffer);
-                if (!RT_SUCCESS(rc))
-                {
-                    Assert(VERR_NOT_SUPPORTED==rc);
-                    svcClientVersionUnsupported(0, 0);
-                }
-            }
-            else
-            {
-                Assert(0);
-                rc = VERR_INVALID_PARAMETER;
-            }
-            break;
-        }
-
-        case SHCRGL_GUEST_FN_INJECT:
-        {
-            Log(("svcCall: SHCRGL_GUEST_FN_INJECT\n"));
-
-            CRVBOXHGSMIINJECT *pFnCmd = (CRVBOXHGSMIINJECT*)pHdr;
-
-            /* @todo: Verify  */
-            if (cParams == 1)
-            {
-                /* Fetch parameters. */
-                uint32_t u32InjectClientID = pFnCmd->u32ClientID;
-                VBOXVDMACMD_CHROMIUM_BUFFER *pBuf = &pCmd->aBuffers[1];
-                uint8_t *pBuffer  = VBOXCRHGSMI_PTR(pBuf->offBuffer, uint8_t);
-                uint32_t cbBuffer = pBuf->cbBuffer;
-
-                /* Execute the function. */
-                rc = crVBoxServerClientWrite(u32InjectClientID, pBuffer, cbBuffer);
-                if (!RT_SUCCESS(rc))
-                {
-                    if (VERR_NOT_SUPPORTED==rc)
-                    {
-                        svcClientVersionUnsupported(0, 0);
-                    }
-                    else
-                    {
-                        crWarning("SHCRGL_GUEST_FN_INJECT failed to inject for %i from %i", u32InjectClientID, u32ClientID);
-                    }
-                }
-            }
-            else
-            {
-                Assert(0);
-                rc = VERR_INVALID_PARAMETER;
-            }
-            break;
-        }
-
-        case SHCRGL_GUEST_FN_READ:
-        {
-            Log(("svcCall: SHCRGL_GUEST_FN_READ\n"));
-
-            /* @todo: Verify  */
-            if (cParams == 1)
-            {
-                CRVBOXHGSMIREAD *pFnCmd = (CRVBOXHGSMIREAD*)pHdr;
-                VBOXVDMACMD_CHROMIUM_BUFFER *pBuf = &pCmd->aBuffers[1];
-                /* Fetch parameters. */
-                uint8_t *pBuffer  = VBOXCRHGSMI_PTR(pBuf->offBuffer, uint8_t);
-                uint32_t cbBuffer = pBuf->cbBuffer;
-
-                /* Execute the function. */
-                rc = crVBoxServerClientRead(u32ClientID, pBuffer, &cbBuffer);
-
-                if (RT_SUCCESS(rc))
-                {
-                    /* Update parameters.*/
-//                    paParms[0].u.pointer.size = cbBuffer; //@todo guest doesn't see this change somehow?
-                } else if (VERR_NOT_SUPPORTED==rc)
-                {
-                    svcClientVersionUnsupported(0, 0);
-                }
-
-                /* Return the required buffer size always */
-                pFnCmd->cbBuffer = cbBuffer;
-            }
-            else
-            {
-                Assert(0);
-                rc = VERR_INVALID_PARAMETER;
-            }
-
-            break;
-        }
-
-        case SHCRGL_GUEST_FN_WRITE_READ:
-        {
-            Log(("svcCall: SHCRGL_GUEST_FN_WRITE_READ\n"));
-
-            /* @todo: Verify  */
-            if (cParams == 2)
-            {
-                CRVBOXHGSMIWRITEREAD *pFnCmd = (CRVBOXHGSMIWRITEREAD*)pHdr;
-                VBOXVDMACMD_CHROMIUM_BUFFER *pBuf = &pCmd->aBuffers[1];
-                VBOXVDMACMD_CHROMIUM_BUFFER *pWbBuf = &pCmd->aBuffers[2];
-
-                /* Fetch parameters. */
-                uint8_t *pBuffer  = VBOXCRHGSMI_PTR(pBuf->offBuffer, uint8_t);
-                uint32_t cbBuffer = pBuf->cbBuffer;
-
-                uint8_t *pWriteback  = VBOXCRHGSMI_PTR(pWbBuf->offBuffer, uint8_t);
-                uint32_t cbWriteback = pWbBuf->cbBuffer;
-
-                /* Execute the function. */
-                rc = crVBoxServerClientWrite(u32ClientID, pBuffer, cbBuffer);
-                if (!RT_SUCCESS(rc))
-                {
-                    Assert(VERR_NOT_SUPPORTED==rc);
-                    svcClientVersionUnsupported(0, 0);
-                }
-
-                rc = crVBoxServerClientRead(u32ClientID, pWriteback, &cbWriteback);
-
-//                if (RT_SUCCESS(rc))
-//                {
-//                    /* Update parameters.*/
-//                    paParms[1].u.pointer.size = cbWriteback;
-//                }
-                /* Return the required buffer size always */
-                pFnCmd->cbWriteback = cbWriteback;
-            }
-            else
-            {
-                Assert(0);
-                rc = VERR_INVALID_PARAMETER;
-            }
-
-            break;
-        }
-
-        case SHCRGL_GUEST_FN_SET_VERSION:
-        {
-            Assert(0);
-            rc = VERR_NOT_IMPLEMENTED;
-            break;
-        }
-
-        case SHCRGL_GUEST_FN_SET_PID:
-        {
-            Assert(0);
-            rc = VERR_NOT_IMPLEMENTED;
-            break;
-        }
-
-        default:
-        {
-            Assert(0);
-            rc = VERR_NOT_IMPLEMENTED;
-        }
-
-    }
-
-    pHdr->result = rc;
-
-    return VINF_SUCCESS;
-}
-#endif
-
 /*
  * We differentiate between a function handler for the guest and one for the host.
  */
@@ -1175,7 +937,13 @@ static DECLCALLBACK(int) svcHostCall (void *, uint32_t u32Function, uint32_t cPa
         {
             Assert(cParms == 1 && paParms[0].type == VBOX_HGCM_SVC_PARM_PTR);
             if (cParms == 1 && paParms[0].type == VBOX_HGCM_SVC_PARM_PTR)
-                rc = vboxCrHgsmiCmd((PVBOXVDMACMD_CHROMIUM_CMD)paParms[0].u.pointer.addr);
+            {
+                rc = crVBoxServerCrHgsmiCmd((PVBOXVDMACMD_CHROMIUM_CMD)paParms[0].u.pointer.addr);
+                if (VERR_NOT_SUPPORTED == rc)
+                {
+                    svcClientVersionUnsupported(0, 0);
+                }
+            }
             else
                 rc = VERR_INVALID_PARAMETER;
         } break;
@@ -1183,7 +951,7 @@ static DECLCALLBACK(int) svcHostCall (void *, uint32_t u32Function, uint32_t cPa
         {
             Assert(cParms == 1 && paParms[0].type == VBOX_HGCM_SVC_PARM_PTR);
             if (cParms == 1 && paParms[0].type == VBOX_HGCM_SVC_PARM_PTR)
-                rc = vboxCrHgsmiCtl((PVBOXVDMACMD_CHROMIUM_CTL)paParms[0].u.pointer.addr);
+                rc = crVBoxServerCrHgsmiCtl((PVBOXVDMACMD_CHROMIUM_CTL)paParms[0].u.pointer.addr);
             else
                 rc = VERR_INVALID_PARAMETER;
         } break;

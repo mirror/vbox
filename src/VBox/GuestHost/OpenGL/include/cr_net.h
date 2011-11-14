@@ -105,7 +105,8 @@ typedef struct CRMultiBuffer {
     void         *buf;  /* data buffer */
 } CRMultiBuffer;
 
-#if defined(VBOX_WITH_CRHGSMI) && defined(IN_GUEST)
+#ifdef VBOX_WITH_CRHGSMI
+# ifdef IN_GUEST
 typedef struct CRVBOXHGSMI_CLIENT {
     struct VBOXUHGSMI *pHgsmi;
     struct VBOXUHGSMI_BUFFER *pCmdBuffer;
@@ -113,7 +114,8 @@ typedef struct CRVBOXHGSMI_CLIENT {
     void *pvHGBuffer;
     struct CRBufferPool_t *bufpool;
 } CRVBOXHGSMI_CLIENT, *PCRVBOXHGSMI_CLIENT;
-#endif
+#endif /* IN_GUEST */
+#endif /* #ifdef VBOX_WITH_CRHGSMI */
 /**
  * Chromium network connection (bidirectional).
  */
@@ -237,6 +239,11 @@ struct CRConnection {
     CRVBOXHGSMI_CLIENT HgsmiClient;
 #  endif
 # endif
+#else
+# ifdef VBOX_WITH_CRHGSMI
+    struct _crclient *pClient; /* back reference, just for simplicity */
+    CRVBOXHGSMI_CMDDATA CmdData;
+# endif
 #endif
     /* Used on host side to indicate that we are not allowed to store above pointers for later use
      * in crVBoxHGCMReceiveMessage. As those messages are going to be processed after the corresponding 
@@ -276,6 +283,11 @@ extern DECLEXPORT(unsigned int) crNetPeekMessage( CRConnection *conn, CRMessage 
 extern DECLEXPORT(int) crNetNumMessages(CRConnection *conn);
 extern DECLEXPORT(void) crNetReadline( CRConnection *conn, void *buf );
 extern DECLEXPORT(int) crNetRecv( void );
+#define CR_WRITEBACK_WAIT() do { \
+        while (writeback) { \
+            crNetRecv();    \
+        }                   \
+    } while (0)
 extern DECLEXPORT(void) crNetDefaultRecv( CRConnection *conn, CRMessage *msg, unsigned int len );
 extern DECLEXPORT(void) crNetDispatchMessage( CRNetReceiveFuncList *rfl, CRConnection *conn, CRMessage *msg, unsigned int len );
 

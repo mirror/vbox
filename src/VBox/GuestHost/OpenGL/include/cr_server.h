@@ -22,6 +22,10 @@
 
 #include <VBox/vmm/ssm.h>
 
+#ifdef VBOX_WITH_CRHGSMI
+# include <VBox/VBoxVideo.h>
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -295,6 +299,24 @@ extern DECLEXPORT(void) crVBoxServerSetPresentFBOCB(PFNCRSERVERPRESENTFBO pfnPre
 extern DECLEXPORT(int32_t) crVBoxServerSetOffscreenRendering(GLboolean value);
 
 extern DECLEXPORT(int32_t) crVBoxServerOutputRedirectSet(const CROutputRedirect *pCallbacks);
+
+#ifdef VBOX_WITH_CRHGSMI
+/* We moved all CrHgsmi command processing to crserverlib to keep the logic of dealing with CrHgsmi commands in one place.
+ *
+ * For now we need the notion of CrHgdmi commands in the crserver_lib to be able to complete it asynchronously once it is really processed.
+ * This help avoiding the "blocked-client" issues. The client is blocked if another client is doing begin-end stuff.
+ * For now we eliminated polling that could occur on block, which caused a higher-priority thread (in guest) polling for the blocked command complition
+ * to block the lower-priority thread trying to complete the blocking command.
+ * And removed extra memcpy done on blocked command arrival.
+ *
+ * In the future we will extend CrHgsmi functionality to maintain texture data directly in CrHgsmi allocation to avoid extra memcpy-ing with PBO,
+ * implement command completion and stuff necessary for GPU scheduling to work properly for WDDM Windows guests, etc.
+ *
+ * NOTE: it is ALWAYS responsibility of the crVBoxServerCrHgsmiCmd to complete the command!
+ * */
+extern DECLEXPORT(int32_t) crVBoxServerCrHgsmiCmd(struct VBOXVDMACMD_CHROMIUM_CMD *pCmd);
+extern DECLEXPORT(int32_t) crVBoxServerCrHgsmiCtl(struct VBOXVDMACMD_CHROMIUM_CTL *pCtl);
+#endif
 
 #ifdef __cplusplus
 }

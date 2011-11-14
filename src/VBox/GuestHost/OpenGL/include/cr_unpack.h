@@ -65,11 +65,16 @@ DECLEXPORT(double) crReadUnalignedDouble( const void *buffer );
 #define INCR_VAR_PTR() \
     INCR_DATA_PTR( *((int *) cr_unpackData ) )
 
-#define SET_RETURN_PTR( offset ) \
-    crMemcpy( return_ptr, cr_unpackData + (offset), sizeof( *return_ptr ) );
+#define SET_RETURN_PTR( offset ) do { \
+        CRDBGPTR_CHECKZ(return_ptr); \
+        crMemcpy( return_ptr, cr_unpackData + (offset), sizeof( *return_ptr ) ); \
+    } while (0);
 
-#define SET_WRITEBACK_PTR( offset ) \
-    crMemcpy( writeback_ptr, cr_unpackData + (offset), sizeof( *writeback_ptr ) );
+
+#define SET_WRITEBACK_PTR( offset ) do { \
+        CRDBGPTR_CHECKZ(writeback_ptr); \
+        crMemcpy( writeback_ptr, cr_unpackData + (offset), sizeof( *writeback_ptr ) ); \
+    } while (0);
 
 #ifdef __cplusplus
 }

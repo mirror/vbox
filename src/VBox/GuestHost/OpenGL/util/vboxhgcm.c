@@ -1269,6 +1269,12 @@ static void _crVBoxHGCMReceiveMessage(CRConnection *conn)
         msg->redirptr.pMessage = (CRMessageHeader*) (conn->pBuffer);
         msg->header.conn_id = msg->redirptr.pMessage->conn_id;
 
+#if defined(VBOX_WITH_CRHGSMI) && !defined(IN_GUEST)
+        msg->redirptr.CmdData = conn->CmdData;
+        CRVBOXHGSMI_CMDDATA_ASSERT_CONSISTENT(&msg->redirptr.CmdData);
+        CRVBOXHGSMI_CMDDATA_CLEANUP(&conn->CmdData);
+#endif
+
         cached_type = msg->redirptr.pMessage->type;
 
         conn->cbBuffer = 0;
@@ -1277,6 +1283,8 @@ static void _crVBoxHGCMReceiveMessage(CRConnection *conn)
     }
     else
     {
+        /* we should NEVER have redir_ptr disabled with HGSMI command now */
+        CRASSERT(!conn->CmdData.pCmd);
         if ( len <= conn->buffer_size )
         {
             /* put in pre-allocated buffer */
