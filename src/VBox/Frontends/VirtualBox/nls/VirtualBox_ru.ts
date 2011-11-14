@@ -6850,7 +6850,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>The recommended size of the start-up disk is &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>Рекомендуемый размер загрузочного диска: &lt;b&gt;%1&lt;/b&gt; МБ.</translation>
+        <translation>Рекомендуемый размер загрузочного диска: &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
 </context>
 <context>
