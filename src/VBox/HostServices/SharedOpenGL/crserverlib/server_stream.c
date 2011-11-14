@@ -24,6 +24,7 @@ crServerAddNewClient(void)
         newClient->conn = crNetAcceptClient( cr_server.protocol, NULL,
                                                                                  cr_server.tcpip_port,
                                                                                  cr_server.mtu, 1 );
+
         newClient->currentCtx = cr_server.DummyContext;
 
         /* add to array */
@@ -75,6 +76,11 @@ PrintQueue(void)
 void crServerAddToRunQueue( CRClient *client )
 {
     RunQueue *q = (RunQueue *) crAlloc( sizeof( *q ) );
+
+#ifdef VBOX_WITH_CRHGSMI
+    client->conn->pClient = client;
+    CRVBOXHGSMI_CMDDATA_CLEANUP(&client->conn->CmdData);
+#endif
 
     /* give this client a unique number if needed */
     if (!client->number) {
@@ -392,14 +398,20 @@ getNextClient(GLboolean block)
  * rendering commands) and executes it.
  */
 static void
-crServerDispatchMessage(CRMessage *msg)
+crServerDispatchMessage(CRConnection *conn, CRMessage *msg)
 {
     const CRMessageOpcodes *msg_opcodes;
     int opcodeBytes;
     const char *data_ptr;
+#ifdef VBOX_WITH_CRHGSMI
+    PCRVBOXHGSMI_CMDDATA pCmdData = NULL;
+#endif
 
     if (msg->header.type == CR_MESSAGE_REDIR_PTR)
     {
+#ifdef VBOX_WITH_CRHGSMI
+        pCmdData = &msg->redirptr.CmdData;
+#endif
         msg = (CRMessage *) msg->redirptr.pMessage;
     }
 
@@ -418,6 +430,22 @@ crServerDispatchMessage(CRMessage *msg)
              data_ptr - 1,             /* first command's opcode */
              msg_opcodes->numOpcodes,  /* how many opcodes */
              &(cr_server.dispatch));   /* the CR dispatch table */
+
+#ifdef VBOX_WITH_CRHGSMI
+    if (pCmdData)
+    {
+        int rc = VINF_SUCCESS;
+        CRVBOXHGSMI_CMDDATA_ASSERT_CONSISTENT(pCmdData);
+        if (CRVBOXHGSMI_CMDDATA_IS_SETWB(pCmdData))
+        {
+            uint32_t cbWriteback = pCmdData->cbWriteback;
+            rc = crVBoxServerInternalClientRead(conn->pClient, pCmdData->pWriteback, &cbWriteback);
+            CRASSERT(rc == VINF_SUCCESS || rc == VERR_BUFFER_OVERFLOW);
+            *pCmdData->pcbWriteback = cbWriteback;
+        }
+        VBOXCRHGSMI_CMD_CHECK_COMPLETE(pCmdData, rc);
+    }
+#endif
 }
 
 
@@ -531,7 +559,7 @@ crServerServiceClient(const RunQueue *qEntry)
         cr_server.currentSerialNo = 0;
 
         /* Commands get dispatched here */
-        crServerDispatchMessage(msg);
+        crServerDispatchMessage( conn, msg );
 
         crNetFree( conn, msg );
 
@@ -539,6 +567,7 @@ crServerServiceClient(const RunQueue *qEntry)
             /* Note/assert: we should not be inside a glBegin/End or glNewList/
              * glEndList pair at this time!
              */
+            CRASSERT(0);
             return CLIENT_NEXT;
         }
 

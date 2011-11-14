@@ -238,7 +238,7 @@ void PACKSPU_APIENTRY packspu_MakeCurrent( GLint window, GLint nativeWindow, GLi
             if (newCtx->currentThread && newCtx->currentThread != thread)
             {
                 crLockMutex(&_PackMutex);
-                /* do a flush for the previusly assigned thread
+                /* do a flush for the previously assigned thread
                  * to ensure all commands issued there are submitted */
                 if (newCtx->currentThread
                     && newCtx->currentThread->inUse

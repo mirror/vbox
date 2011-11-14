@@ -146,6 +146,9 @@ VBoxOGLcrserverlib_CLEAN = \
 ifdef VBOXCR_LOGFPS
 VBoxOGLcrserverlib_DEFS += VBOXCR_LOGFPS
 endif
+ifdef VBOX_WITH_CRHGSMI
+VBoxOGLcrserverlib_DEFS += ifdef VBOX_WITH_CRHGSMI
+endif 
 
 #
 # Generate files for VBoxOGLcrserverlib

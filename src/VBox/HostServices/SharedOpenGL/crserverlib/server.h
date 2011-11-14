@@ -15,6 +15,34 @@
 
 #include "cr_server.h"
 
+#ifdef VBOX_WITH_CRHGSMI
+# include <VBox/VBoxVideo.h>
+
+extern uint8_t* g_pvVRamBase;
+extern HCRHGSMICMDCOMPLETION g_hCrHgsmiCompletion;
+extern PFNCRHGSMICMDCOMPLETION g_pfnCrHgsmiCompletion;
+
+#define VBOXCRHGSMI_PTR(_off, _t) ((_t*)(g_pvVRamBase + (_off)))
+
+DECLINLINE(void) crServerCrHgsmiCmdComplete(struct VBOXVDMACMD_CHROMIUM_CMD *pCmd, int cmdProcessingRc)
+{
+    g_pfnCrHgsmiCompletion(g_hCrHgsmiCompletion, pCmd, cmdProcessingRc);
+}
+
+#define VBOXCRHGSMI_CMD_COMPLETE(_pData, _rc) do { \
+        CRVBOXHGSMI_CMDDATA_ASSERT_ISSET(_pData); \
+        CRVBOXHGSMI_CMDDATA_RC(_pData, _rc); \
+        crServerCrHgsmiCmdComplete((_pData)->pCmd, VINF_SUCCESS); \
+    } while (0)
+
+#define VBOXCRHGSMI_CMD_CHECK_COMPLETE(_pData, _rc) do { \
+        if (CRVBOXHGSMI_CMDDATA_IS_SET(_pData)) { \
+            VBOXCRHGSMI_CMD_COMPLETE(_pData, _rc); \
+        } \
+    } while (0)
+
+#endif
+
 /*
  * This is the base number for window and context IDs
  */
@@ -96,5 +124,7 @@ void crServerCreateMuralFBO(CRMuralInfo *mural);
 void crServerDeleteMuralFBO(CRMuralInfo *mural);
 void crServerPresentFBO(CRMuralInfo *mural);
 GLboolean crServerIsRedirectedToFBO();
+
+int32_t crVBoxServerInternalClientRead(CRClient *pClient, uint8_t *pBuffer, uint32_t *pcbBuffer);
 
 #endif /* CR_SERVER_H */
