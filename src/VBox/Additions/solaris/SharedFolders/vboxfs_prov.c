@@ -384,8 +384,47 @@ sfprov_getinfo(sfp_mount_t *mnt, char *path, PSHFLFSOBJINFO info)
 }
 
 /*
- * get information about a file (or directory)
+ * file/directory information conversions.
  */
+static void
+sfprov_fmode_from_mode(RTFMODE *fMode, mode_t mode)
+{
+	RTFMODE m = 0;
+
+#define mode_set(r) ((mode & (S_##r)) ? RTFS_UNIX_##r : 0)
+	m  = mode_set (ISUID);
+	m |= mode_set (ISGID);
+	m |= (mode & S_ISVTX) ? RTFS_UNIX_ISTXT : 0;
+	m |= mode_set (IRUSR);
+	m |= mode_set (IWUSR);
+	m |= mode_set (IXUSR);
+	m |= mode_set (IRGRP);
+	m |= mode_set (IWGRP);
+	m |= mode_set (IXGRP);
+	m |= mode_set (IROTH);
+	m |= mode_set (IWOTH);
+	m |= mode_set (IXOTH);
+
+	if (S_ISDIR(mode))
+		m |= RTFS_TYPE_DIRECTORY;
+	else if (S_ISREG(mode))
+		m |= RTFS_TYPE_FILE;
+	else if (S_ISFIFO(mode))
+		m |= RTFS_TYPE_FIFO;
+	else if (S_ISCHR(mode))
+		m |= RTFS_TYPE_DEV_CHAR;
+	else if (S_ISBLK(mode))
+		m |= RTFS_TYPE_DEV_BLOCK;
+	else if (S_ISLNK(mode))
+		m |= RTFS_TYPE_SYMLINK;
+	else if (S_ISSOCK(mode))
+		m |= RTFS_TYPE_SOCKET;
+	else
+		m |= RTFS_TYPE_FILE;
+
+	*fMode = m;
+}
+
 static void
 sfprov_mode_from_fmode(mode_t *mode, RTFMODE fMode)
 {
@@ -578,40 +617,8 @@ sfprov_set_attr(
 	}
 
 	RT_ZERO(info);
-	if (mask & AT_MODE) {
-#define mode_set(r) ((mode & (S_##r)) ? RTFS_UNIX_##r : 0)
-
-		info.Attr.fMode  = mode_set (ISUID);
-		info.Attr.fMode |= mode_set (ISGID);
-		info.Attr.fMode |= (mode & S_ISVTX) ? RTFS_UNIX_ISTXT : 0;
-		info.Attr.fMode |= mode_set (IRUSR);
-		info.Attr.fMode |= mode_set (IWUSR);
-		info.Attr.fMode |= mode_set (IXUSR);
-		info.Attr.fMode |= mode_set (IRGRP);
-		info.Attr.fMode |= mode_set (IWGRP);
-		info.Attr.fMode |= mode_set (IXGRP);
-		info.Attr.fMode |= mode_set (IROTH);
-		info.Attr.fMode |= mode_set (IWOTH);
-		info.Attr.fMode |= mode_set (IXOTH);
-
-		if (S_ISDIR(mode))
-			info.Attr.fMode |= RTFS_TYPE_DIRECTORY;
-		else if (S_ISREG(mode))
-			info.Attr.fMode |= RTFS_TYPE_FILE;
-		else if (S_ISFIFO(mode))
-			info.Attr.fMode |= RTFS_TYPE_FIFO;
-		else if (S_ISCHR(mode))
-			info.Attr.fMode |= RTFS_TYPE_DEV_CHAR;
-		else if (S_ISBLK(mode))
-			info.Attr.fMode |= RTFS_TYPE_DEV_BLOCK;
-		else if (S_ISLNK(mode))
-			info.Attr.fMode |= RTFS_TYPE_SYMLINK;
-		else if (S_ISSOCK(mode))
-			info.Attr.fMode |= RTFS_TYPE_SOCKET;
-		else
-			info.Attr.fMode |= RTFS_TYPE_FILE;
-	}
-
+	if (mask & AT_MODE)
+		sfprov_fmode_from_mode(&info.Attr.fMode, mode);
 	if (mask & AT_ATIME)
 		sfprov_timespec_from_ftime(&info.AccessTime, atime);
 	if (mask & AT_MTIME)
