@@ -176,6 +176,16 @@ tstMvWnd_SOURCES  = \
 	wddm/dbg/tstMvWnd.cpp
 tstMvWnd_LIBS  = $(LIB_RUNTIME)
 tstMvWnd_LDFLAGS.win = /SUBSYSTEM:windows
+
+PROGRAMS += DumpD3DCaps9
+DumpD3DCaps9_TEMPLATE = VBOXR3EXE
+DumpD3DCaps9_DEFS = UNICODE _UNICODE
+DumpD3DCaps9_SOURCES  = \
+	wddm/dbg/DumpD3DCaps9.cpp
+DumpD3DCaps9_LIBS  = $(LIB_RUNTIME)
+DumpD3DCaps9_LDFLAGS.win = /SUBSYSTEM:CONSOLE
+DumpD3DCaps9_SDKS     = WINDDKWLH
+
 endif #VBOXVIDEOWINDBG
 
 include	$(KBUILD_PATH)/subfooter.kmk
