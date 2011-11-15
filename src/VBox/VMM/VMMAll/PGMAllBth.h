@@ -467,13 +467,13 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVMCPU pVCpu, RTGCUINT uErr, PCPUMCTXCORE pRegF
 
     /* assert some GstWalk sanity. */
 #   if PGM_GST_TYPE == PGM_TYPE_AMD64
-    AssertMsg(GstWalk.Pml4e.u == GstWalk.pPml4e->u, ("%RX64 %RX64\n", (uint64_t)GstWalk.Pml4e.u, (uint64_t)GstWalk.pPml4e->u));
+    /*AssertMsg(GstWalk.Pml4e.u == GstWalk.pPml4e->u, ("%RX64 %RX64\n", (uint64_t)GstWalk.Pml4e.u, (uint64_t)GstWalk.pPml4e->u));  - not always true with SMP guests. */
 #   endif
 #   if PGM_GST_TYPE == PGM_TYPE_AMD64 || PGM_GST_TYPE == PGM_TYPE_PAE
-    AssertMsg(GstWalk.Pdpe.u == GstWalk.pPdpe->u, ("%RX64 %RX64\n", (uint64_t)GstWalk.Pdpe.u, (uint64_t)GstWalk.pPdpe->u));
+    /*AssertMsg(GstWalk.Pdpe.u == GstWalk.pPdpe->u, ("%RX64 %RX64\n", (uint64_t)GstWalk.Pdpe.u, (uint64_t)GstWalk.pPdpe->u)); - ditto */
 #   endif
-    AssertMsg(GstWalk.Pde.u == GstWalk.pPde->u, ("%RX64 %RX64\n", (uint64_t)GstWalk.Pde.u, (uint64_t)GstWalk.pPde->u));
-    AssertMsg(GstWalk.Core.fBigPage || GstWalk.Pte.u == GstWalk.pPte->u, ("%RX64 %RX64\n", (uint64_t)GstWalk.Pte.u, (uint64_t)GstWalk.pPte->u));
+    /*AssertMsg(GstWalk.Pde.u == GstWalk.pPde->u, ("%RX64 %RX64\n", (uint64_t)GstWalk.Pde.u, (uint64_t)GstWalk.pPde->u)); - ditto */
+    /*AssertMsg(GstWalk.Core.fBigPage || GstWalk.Pte.u == GstWalk.pPte->u, ("%RX64 %RX64\n", (uint64_t)GstWalk.Pte.u, (uint64_t)GstWalk.pPte->u)); - ditto */
     Assert(GstWalk.Core.fSucceeded);
 
     if (uErr & (X86_TRAP_PF_RW | X86_TRAP_PF_US | X86_TRAP_PF_ID))
