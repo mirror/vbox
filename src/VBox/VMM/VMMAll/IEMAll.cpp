@@ -578,7 +578,7 @@ static VBOXSTRICTRC     iemVerifyFakeIOPortWrite(PIEMCPU pIemCpu, RTIOPORT Port,
  *
  * @param   pIemCpu             The per CPU IEM state.
  */
-DECLINLINE(void) iemInitDecode(PIEMCPU pIemCpu)
+DECLINLINE(void) iemInitDecoder(PIEMCPU pIemCpu)
 {
     PCPUMCTX pCtx = pIemCpu->CTX_SUFF(pCtx);
 
@@ -616,7 +616,7 @@ static VBOXSTRICTRC iemInitDecoderAndPrefetchOpcodes(PIEMCPU pIemCpu)
 #ifdef IEM_VERIFICATION_MODE
     uint8_t const cbOldOpcodes = pIemCpu->cbOpcode;
 #endif
-    iemInitDecode(pIemCpu);
+    iemInitDecoder(pIemCpu);
 
     /*
      * What we're doing here is very similar to iemMemMap/iemMemBounceBufferMap.
@@ -1689,7 +1689,7 @@ iemRaiseXcptOrIntInProtMode(PIEMCPU     pIemCpu,
                             uint16_t    uErr,
                             uint64_t    uCr2)
 {
-    NOREF(cbInstr); NOREF(uCr2);
+    NOREF(cbInstr);
 
     /*
      * Read the IDT entry.
@@ -1961,6 +1961,9 @@ iemRaiseXcptOrIntInProtMode(PIEMCPU     pIemCpu,
 
     pCtx->rip               = uNewEip;
     pCtx->rflags.u         &= ~fEflToClear;
+
+    if (fFlags & IEM_XCPT_FLAGS_CR2)
+        pCtx->cr2 = uCr2;
 
     if (fFlags & IEM_XCPT_FLAGS_T_CPU_XCPT)
         iemRaiseXcptAdjustState(pCtx, u8Vector);
@@ -5599,6 +5602,9 @@ static void iemExecVerificationModeSetup(PIEMCPU pIemCpu)
              || pOrgCtx->rip == 0x00100ffe
             )
 #endif
+#if 1
+       && pOrgCtx->rip == 0x9022bb3a
+#endif
 #if 0
        && 0
 #endif
@@ -6422,6 +6428,8 @@ VMMDECL(VBOXSTRICTRC) IEMExecOne(PVMCPU pVCpu)
  */
 VMM_INT_DECL(VBOXSTRICTRC) IEMInjectTrap(PVMCPU pVCpu, uint8_t u8TrapNo, TRPMEVENT enmType, uint16_t uErrCode, RTGCPTR uCr2)
 {
+    iemInitDecoder(&pVCpu->iem.s);
+
     uint32_t fFlags;
     switch (enmType)
     {
