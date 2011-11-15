@@ -29,7 +29,7 @@
  %define VMM_STACK_SIZE             8192
 %endif
 %define VMM_MIN_CPU_COUNT           1
-%define VMM_MAX_CPU_COUNT           32
+%define VMM_MAX_CPU_COUNT           64
 %define VBOX_PCI_VENDORID           (0x80ee)
 %define VBOX_VENDORID               VBOX_PCI_VENDORID
 %define VBOX_DEVICEID               (0xbeef)
