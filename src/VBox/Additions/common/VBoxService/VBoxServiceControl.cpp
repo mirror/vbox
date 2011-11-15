@@ -587,7 +587,8 @@ static DECLCALLBACK(void) VBoxServiceControlStop(void)
      */
     if (g_GuestControlSvcClientID)
     {
-        VBoxServiceVerbose(3, "Control: Cancelling pending waits ...\n");
+        VBoxServiceVerbose(3, "Control: Cancelling pending waits (client ID=%u) ...\n",
+                           g_GuestControlSvcClientID);
 
         int rc = VbglR3GuestCtrlCancelPendingWaits(g_GuestControlSvcClientID);
         if (RT_FAILURE(rc))
@@ -638,6 +639,8 @@ static DECLCALLBACK(void) VBoxServiceControlTerm(void)
 
     VBoxServiceControlDestroyThreads();
 
+    VBoxServiceVerbose(3, "Control: Disconnecting client ID=%u ...\n",
+                       g_GuestControlSvcClientID);
     VbglR3GuestCtrlDisconnect(g_GuestControlSvcClientID);
     g_GuestControlSvcClientID = 0;
 
