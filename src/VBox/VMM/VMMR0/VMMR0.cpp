@@ -106,69 +106,74 @@ VMMR0DECL(int) ModuleInit(void)
     LogFlow(("ModuleInit:\n"));
 
     /*
-     * Initialize the GVMM, GMM, HWACCM, PGM (Darwin) and INTNET.
+     * Initialize the VMM, GVMM, GMM, HWACCM, PGM (Darwin) and INTNET.
      */
-    int rc = GVMMR0Init();
+    int rc = vmmInitFormatTypes();
     if (RT_SUCCESS(rc))
     {
-        rc = GMMR0Init();
+        rc = GVMMR0Init();
         if (RT_SUCCESS(rc))
         {
-            rc = HWACCMR0Init();
+            rc = GMMR0Init();
             if (RT_SUCCESS(rc))
             {
-                rc = PGMRegisterStringFormatTypes();
+                rc = HWACCMR0Init();
                 if (RT_SUCCESS(rc))
                 {
-#ifdef VBOX_WITH_2X_4GB_ADDR_SPACE
-                    rc = PGMR0DynMapInit();
-#endif
+                    rc = PGMRegisterStringFormatTypes();
                     if (RT_SUCCESS(rc))
                     {
-                        rc = IntNetR0Init();
+#ifdef VBOX_WITH_2X_4GB_ADDR_SPACE
+                        rc = PGMR0DynMapInit();
+#endif
                         if (RT_SUCCESS(rc))
                         {
-#ifdef VBOX_WITH_PCI_PASSTHROUGH
-                            rc = PciRawR0Init();
-#endif
+                            rc = IntNetR0Init();
                             if (RT_SUCCESS(rc))
                             {
-                                rc = CPUMR0ModuleInit();
+#ifdef VBOX_WITH_PCI_PASSTHROUGH
+                                rc = PciRawR0Init();
+#endif
                                 if (RT_SUCCESS(rc))
                                 {
-#ifdef VBOX_WITH_TRIPLE_FAULT_HACK
-                                    rc = vmmR0TripleFaultHackInit();
+                                    rc = CPUMR0ModuleInit();
                                     if (RT_SUCCESS(rc))
-#endif
                                     {
-                                        LogFlow(("ModuleInit: returns success.\n"));
-                                        return VINF_SUCCESS;
-                                    }
-
-                                    /*
-                                     * Bail out.
-                                     */
 #ifdef VBOX_WITH_TRIPLE_FAULT_HACK
-                                    vmmR0TripleFaultHackTerm();
+                                        rc = vmmR0TripleFaultHackInit();
+                                        if (RT_SUCCESS(rc))
+#endif
+                                        {
+                                            LogFlow(("ModuleInit: returns success.\n"));
+                                            return VINF_SUCCESS;
+                                        }
+
+                                        /*
+                                         * Bail out.
+                                         */
+#ifdef VBOX_WITH_TRIPLE_FAULT_HACK
+                                        vmmR0TripleFaultHackTerm();
+#endif
+                                    }
+#ifdef VBOX_WITH_PCI_PASSTHROUGH
+                                    PciRawR0Term();
 #endif
                                 }
-#ifdef VBOX_WITH_PCI_PASSTHROUGH
-                                PciRawR0Term();
-#endif
+                                IntNetR0Term();
                             }
-                            IntNetR0Term();
-                        }
 #ifdef VBOX_WITH_2X_4GB_ADDR_SPACE
-                        PGMR0DynMapTerm();
+                            PGMR0DynMapTerm();
 #endif
+                        }
+                        PGMDeregisterStringFormatTypes();
                     }
-                    PGMDeregisterStringFormatTypes();
+                    HWACCMR0Term();
                 }
-                HWACCMR0Term();
+                GMMR0Term();
             }
-            GMMR0Term();
+           GVMMR0Term();
         }
-       GVMMR0Term();
+        vmmTermFormatTypes();
     }
 
     LogFlow(("ModuleInit: failed %Rrc\n", rc));
@@ -214,6 +219,8 @@ VMMR0DECL(void) ModuleTerm(void)
      */
     GMMR0Term();
     GVMMR0Term();
+
+    vmmTermFormatTypes();
 
     LogFlow(("ModuleTerm: returns\n"));
 }

@@ -505,6 +505,9 @@ typedef enum VMMGCOPERATION
 
 RT_C_DECLS_BEGIN
 
+int  vmmInitFormatTypes(void);
+void vmmTermFormatTypes(void);
+
 #ifdef IN_RING3
 int  vmmR3SwitcherInit(PVM pVM);
 void vmmR3SwitcherRelocate(PVM pVM, RTGCINTPTR offDelta);

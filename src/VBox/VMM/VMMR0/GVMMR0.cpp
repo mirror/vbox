@@ -55,6 +55,7 @@
 #include "GVMMR0Internal.h"
 #include <VBox/vmm/gvm.h>
 #include <VBox/vmm/vm.h>
+#include <VBox/vmm/vmcpuset.h>
 #include <VBox/vmm/vmm.h>
 #include <VBox/param.h>
 #include <VBox/err.h>
