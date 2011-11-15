@@ -37,14 +37,13 @@
 #include <VBox/HostServices/GuestControlSvc.h>
 
 #include "VBoxServiceInternal.h"
-#include "VBoxServiceControlExecThread.h"
 
 using namespace guestControl;
 
 /* Internal functions. */
-static int vboxServiceControlExecThreadAssignPID(PVBOXSERVICECTRLTHREAD pData, uint32_t uPID);
-static void vboxServiceControlExecThreadFree(PVBOXSERVICECTRLTHREAD pData);
-static int vboxServiceControlThreadWaitForShutdown(const PVBOXSERVICECTRLTHREAD pThread);
+static int vboxServiceControlThreadAssignPID(PVBOXSERVICECTRLTHREAD pData, uint32_t uPID);
+static void vboxServiceControlThreadFree(PVBOXSERVICECTRLTHREAD pData);
+static int vboxServiceControlThreadShutdown(PVBOXSERVICECTRLTHREAD pThread);
 
 /**
  *  Allocates and gives back a thread data struct which then can be used by the worker thread.
@@ -83,7 +82,9 @@ int VBoxServiceControlExecThreadAlloc(PVBOXSERVICECTRLTHREAD pThread,
     pThread->fStopped  = false;
 
     pThread->uContextID = u32ContextID;
-    /* ClientID will be assigned when thread is started! */
+    /* ClientID will be assigned when thread is started; every guest
+     * process has its own client ID to detect crashes on a per-guest-process
+     * level. */
 
     int rc = RTCritSectInit(&pThread->CritSect);
     if (RT_FAILURE(rc))
@@ -140,50 +141,74 @@ int VBoxServiceControlExecThreadAlloc(PVBOXSERVICECTRLTHREAD pThread,
 
         /* User management. */
         pThread->pszUser     = RTStrDup(pszUser);
+        AssertPtr(pThread->pszUser);
         pThread->pszPassword = RTStrDup(pszPassword);
+        AssertPtr(pThread->pszPassword);
     }
 
     if (RT_FAILURE(rc)) /* Clean up on failure. */
-        vboxServiceControlExecThreadFree(pThread);
+        vboxServiceControlThreadFree(pThread);
     return rc;
 }
 
 
 /**
- * TODO
+ * Signals a guest process thread that we want it to shut down in
+ * a gentle way.
  *
- * @param   pThread
+ * @return  IPRT status code.
+ * @param   pThread             Thread to shut down.
  */
-void VBoxServiceControlThreadSignalShutdown(const PVBOXSERVICECTRLTHREAD pThread)
+int VBoxServiceControlThreadSignalShutdown(const PVBOXSERVICECTRLTHREAD pThread)
 {
-    AssertPtrReturnVoid(pThread);
+    AssertPtrReturn(pThread, VERR_INVALID_POINTER);
 
     VBoxServiceVerbose(3, "ControlExec: [PID %u]: Signalling shutdown ...\n",
                        pThread->uPID);
 
-    /* First, set the shutdown flag. */
-    ASMAtomicXchgBool(&pThread->fShutdown, true);
+    /* Do *not* set pThread->fShutdown or other stuff here!
+     * The guest thread loop will do that as soon as it processes the quit message. */
 
     VBOXSERVICECTRLREQUEST ctrlRequest;
     RT_ZERO(ctrlRequest);
     ctrlRequest.enmType = VBOXSERVICECTRLREQUEST_QUIT;
 
-    int rc = VBoxServiceControlExecThreadPerform(pThread->uPID, &ctrlRequest);
+    int rc = VBoxServiceControlThreadPerform(pThread->uPID, &ctrlRequest);
     if (RT_FAILURE(rc))
         VBoxServiceVerbose(3, "ControlExec: [PID %u]: Sending quit request failed with rc=%Rrc\n",
                            pThread->uPID, rc);
+    return rc;
 }
 
 
-static int vboxServiceControlThreadWaitForShutdown(const PVBOXSERVICECTRLTHREAD pThread)
+/**
+ * Wait for a guest process thread to shut down.
+ *
+ * @return  IPRT status code.
+ * @param   pThread             Thread to wait shutting down for.
+ * @param   RTMSINTERVAL        Timeout in ms to wait for shutdown.
+ */
+int VBoxServiceControlThreadWaitForShutdown(const PVBOXSERVICECTRLTHREAD pThread,
+                                            RTMSINTERVAL msTimeout)
 {
     AssertPtrReturn(pThread, VERR_INVALID_POINTER);
     int rc = VINF_SUCCESS;
     if (   pThread->Thread != NIL_RTTHREAD
-        && !pThread->fShutdown) /* Only shutdown threads which aren't yet. */
+        && !ASMAtomicReadBool(&pThread->fStopped)) /* Only shutdown threads which aren't yet. */
     {
+        VBoxServiceVerbose(3, "ControlExec: [PID %u]: Waiting for shutdown ...\n",
+                           pThread->uPID);
+
         /* Wait a bit ... */
-        rc = RTThreadWait(pThread->Thread, 30 * 1000 /* Wait 30 seconds max. */, NULL);
+        int rcThread;
+        rc = RTThreadWait(pThread->Thread, msTimeout, &rcThread);
+        if (RT_FAILURE(rcThread))
+        {
+            VBoxServiceError("ControlExec: [PID %u]: Shutdown returned error rc=%Rrc\n",
+                             pThread->uPID, rcThread);
+            if (RT_SUCCESS(rc))
+                rc = rcThread;
+        }
     }
     return rc;
 }
@@ -192,25 +217,31 @@ static int vboxServiceControlThreadWaitForShutdown(const PVBOXSERVICECTRLTHREAD 
 /**
  * Frees an allocated thread data structure along with all its allocated parameters.
  *
- * @param   pThread        Pointer to thread data to free.
+ * @param   pThread             Pointer to thread data to free.
  */
-static void vboxServiceControlExecThreadFree(const PVBOXSERVICECTRLTHREAD pThread)
+static void vboxServiceControlThreadFree(const PVBOXSERVICECTRLTHREAD pThread)
 {
-    if (pThread)
-    {
-        VBoxServiceVerbose(3, "ControlExec: [PID %u]: Freeing thread data ...\n",
-                           pThread->uPID);
+    if (!pThread)
+        return;
 
-        RTStrFree(pThread->pszCmd);
-        if (pThread->uNumEnvVars)
-        {
-            for (uint32_t i = 0; i < pThread->uNumEnvVars; i++)
-                RTStrFree(pThread->papszEnv[i]);
-            RTMemFree(pThread->papszEnv);
-        }
-        RTGetOptArgvFree(pThread->papszArgs);
-        RTStrFree(pThread->pszUser);
-        RTStrFree(pThread->pszPassword);
+    VBoxServiceVerbose(3, "ControlExec: [PID %u]: Freeing thread data ...\n",
+                       pThread->uPID);
+
+    RTStrFree(pThread->pszCmd);
+    if (pThread->uNumEnvVars)
+    {
+        for (uint32_t i = 0; i < pThread->uNumEnvVars; i++)
+            RTStrFree(pThread->papszEnv[i]);
+        RTMemFree(pThread->papszEnv);
+    }
+    RTGetOptArgvFree(pThread->papszArgs);
+    RTStrFree(pThread->pszUser);
+    RTStrFree(pThread->pszPassword);
+
+    if (pThread->RequestEvent != NIL_RTSEMEVENTMULTI)
+    {
+        int rc2 = RTSemEventMultiDestroy(pThread->RequestEvent);
+        AssertRC(rc2);
     }
 }
 
@@ -222,7 +253,7 @@ static void vboxServiceControlExecThreadFree(const PVBOXSERVICECTRLTHREAD pThrea
  * @param   hPollSet            The polling set.
  * @param   phStdInW            The standard input pipe handle.
  */
-static int VBoxServiceControlExecProcCloseStdIn(RTPOLLSET hPollSet, PRTPIPE phStdInW)
+static int VBoxServiceControlThreadCloseStdIn(RTPOLLSET hPollSet, PRTPIPE phStdInW)
 {
     int rc = RTPollSetRemove(hPollSet, VBOXSERVICECTRLPIPEID_STDIN);
     if (rc != VERR_POLL_HANDLE_ID_NOT_FOUND)
@@ -244,11 +275,11 @@ static int VBoxServiceControlExecProcCloseStdIn(RTPOLLSET hPollSet, PRTPIPE phSt
  * @param   fPollEvt            The event mask returned by RTPollNoResume.
  * @param   phStdInW            The standard input pipe handle.
  */
-static int VBoxServiceControlExecProcHandleStdInErrorEvent(RTPOLLSET hPollSet, uint32_t fPollEvt, PRTPIPE phStdInW)
+static int VBoxServiceControlThreadHandleStdInErrorEvent(RTPOLLSET hPollSet, uint32_t fPollEvt, PRTPIPE phStdInW)
 {
     NOREF(fPollEvt);
 
-    return VBoxServiceControlExecProcCloseStdIn(hPollSet, phStdInW);
+    return VBoxServiceControlThreadCloseStdIn(hPollSet, phStdInW);
 }
 
 
@@ -262,8 +293,8 @@ static int VBoxServiceControlExecProcHandleStdInErrorEvent(RTPOLLSET hPollSet, u
  * @param   idPollHnd           The pipe ID to handle.
  *
  */
-static int VBoxServiceControlExecProcHandleOutputEvent(RTPOLLSET hPollSet, uint32_t fPollEvt,
-                                                       PRTPIPE phPipeR, uint32_t idPollHnd)
+static int VBoxServiceControlThreadHandleOutputEvent(RTPOLLSET hPollSet, uint32_t fPollEvt,
+                                                     PRTPIPE phPipeR, uint32_t idPollHnd)
 {
     int rc = VINF_SUCCESS;
 
@@ -305,109 +336,121 @@ static int VBoxServiceControlExecProcHandleOutputEvent(RTPOLLSET hPollSet, uint3
 }
 
 
-int VBoxServiceControlExecProcHandleIPCNotify(RTPOLLSET hPollSet, uint32_t fPollEvt,
-                                              PRTPIPE phNotificationPipeR)
-{
-#ifdef DEBUG_andy
-    VBoxServiceVerbose(4, "ControlExec: HandleIPCNotify\n");
-#endif
-    /* Drain the notification pipe. */
-    uint8_t abBuf[8];
-    size_t cbIgnore;
-    int rc = RTPipeRead(*phNotificationPipeR, abBuf, sizeof(abBuf), &cbIgnore);
-    if (RT_FAILURE(rc))
-        VBoxServiceError("ControlExec: Draining IPC notification pipe failed with rc=%Rrc\n", rc);
-    return rc;
-}
-
-
-static int VBoxServiceControlExecHandleIPCRequest(RTPOLLSET hPollSet, uint32_t fPollEvt,
-                                                  PRTPIPE phStdInW, PRTPIPE phStdOutR, PRTPIPE phStdErrR,
-                                                  PVBOXSERVICECTRLREQUEST pRequest)
+static int VBoxServiceControlThreadHandleIPCRequest(RTPOLLSET hPollSet, uint32_t fPollEvt,
+                                                    PRTPIPE phStdInW, PRTPIPE phStdOutR, PRTPIPE phStdErrR,
+                                                    PVBOXSERVICECTRLTHREAD pThread)
 {
 #ifdef DEBUG_andy
     VBoxServiceVerbose(4, "ControlExec: HandleIPCRequest\n");
 #endif
 
+    AssertPtrReturn(pThread, VERR_INVALID_POINTER);
     AssertPtrReturn(phStdInW, VERR_INVALID_POINTER);
     AssertPtrReturn(phStdOutR, VERR_INVALID_POINTER);
     AssertPtrReturn(phStdErrR, VERR_INVALID_POINTER);
-    AssertPtrReturn(pRequest, VERR_INVALID_POINTER);
 
-    int rc = VINF_SUCCESS;
-    int rcReq = VINF_SUCCESS; /* Actual request result. */
-
-    switch (pRequest->enmType)
+    int rc = RTCritSectEnter(&pThread->CritSect);
+    if (RT_SUCCESS(rc))
     {
-        case VBOXSERVICECTRLREQUEST_QUIT: /* Main control asked us to quit. */
-            /** @todo Check for some conditions to check to
-             *        veto quitting. */
-            pRequest->rc = VINF_SUCCESS;
-            break;
+        /* Drain the notification pipe. */
+        uint8_t abBuf[8];
+        size_t cbIgnore;
+        int rc = RTPipeRead(pThread->hNotificationPipeR, abBuf, sizeof(abBuf), &cbIgnore);
+        if (RT_FAILURE(rc))
+            VBoxServiceError("ControlExec: Draining IPC notification pipe failed with rc=%Rrc\n", rc);
 
-        case VBOXSERVICECTRLREQUEST_STDIN_WRITE:
-            /* Fall through is intentional. */
-        case VBOXSERVICECTRLREQUEST_STDIN_WRITE_EOF:
+        int rcReq = VINF_SUCCESS; /* Actual request result. */
+
+        PVBOXSERVICECTRLREQUEST pRequest = pThread->pRequest;
+        AssertPtr(pRequest);
+
+        switch (pRequest->enmType)
         {
-            AssertPtrReturn(pRequest->pvData, VERR_INVALID_POINTER);
-            AssertReturn(pRequest->cbData, VERR_INVALID_PARAMETER);
-
-            size_t cbWritten = 0;
-            if (*phStdInW != NIL_RTPIPE)
+            case VBOXSERVICECTRLREQUEST_QUIT: /* Main control asked us to quit. */
             {
-                rcReq = RTPipeWrite(*phStdInW,
-                                    pRequest->pvData, pRequest->cbData, &cbWritten);
+                /** @todo Check for some conditions to check to
+                 *        veto quitting. */
+                pThread->fShutdown = true;
+                rcReq = VINF_SUCCESS;
+                break;
             }
-            else
-                rcReq = VINF_EOF;
 
-            /* If this is the last write we need to close the stdin pipe on our
-             * end and remove it from the poll set. */
-            if (VBOXSERVICECTRLREQUEST_STDIN_WRITE_EOF == pRequest->enmType)
-                rc = VBoxServiceControlExecProcCloseStdIn(hPollSet, phStdInW);
-
-            /* Reqport back actual data written (if any). */
-            pRequest->cbData = cbWritten;
-            break;
-        }
-
-        case VBOXSERVICECTRLREQUEST_STDOUT_READ:
-            /* Fall through is intentional. */
-        case VBOXSERVICECTRLREQUEST_STDERR_READ:
-        {
-            AssertPtrReturn(pRequest->pvData, VERR_INVALID_POINTER);
-            AssertReturn(pRequest->cbData, VERR_INVALID_PARAMETER);
-
-            PRTPIPE pPipeR = pRequest->enmType == VBOXSERVICECTRLREQUEST_STDERR_READ
-                           ? phStdErrR : phStdOutR;
-            AssertPtr(pPipeR);
-
-            size_t cbRead = 0;
-            if (*pPipeR != NIL_RTPIPE)
+            case VBOXSERVICECTRLREQUEST_STDIN_WRITE:
+                /* Fall through is intentional. */
+            case VBOXSERVICECTRLREQUEST_STDIN_WRITE_EOF:
             {
-                rcReq = RTPipeRead(*pPipeR,
-                                   pRequest->pvData, pRequest->cbData, &cbRead);
-                if (rcReq == VERR_BROKEN_PIPE)
+                AssertPtrReturn(pRequest->pvData, VERR_INVALID_POINTER);
+                AssertReturn(pRequest->cbData, VERR_INVALID_PARAMETER);
+
+                size_t cbWritten = 0;
+                if (*phStdInW != NIL_RTPIPE)
+                {
+                    rcReq = RTPipeWrite(*phStdInW,
+                                        pRequest->pvData, pRequest->cbData, &cbWritten);
+                }
+                else
                     rcReq = VINF_EOF;
-            }
-            else
-                rcReq = VINF_EOF;
 
-            /* Report back actual data read (if any). */
-            pRequest->cbData = cbRead;
-            break;
+                /* If this is the last write we need to close the stdin pipe on our
+                 * end and remove it from the poll set. */
+                if (VBOXSERVICECTRLREQUEST_STDIN_WRITE_EOF == pRequest->enmType)
+                    rc = VBoxServiceControlThreadCloseStdIn(hPollSet, phStdInW);
+
+                /* Reqport back actual data written (if any). */
+                pRequest->cbData = cbWritten;
+                break;
+            }
+
+            case VBOXSERVICECTRLREQUEST_STDOUT_READ:
+                /* Fall through is intentional. */
+            case VBOXSERVICECTRLREQUEST_STDERR_READ:
+            {
+                AssertPtrReturn(pRequest->pvData, VERR_INVALID_POINTER);
+                AssertReturn(pRequest->cbData, VERR_INVALID_PARAMETER);
+
+                PRTPIPE pPipeR = pRequest->enmType == VBOXSERVICECTRLREQUEST_STDERR_READ
+                               ? phStdErrR : phStdOutR;
+                AssertPtr(pPipeR);
+
+                size_t cbRead = 0;
+                if (*pPipeR != NIL_RTPIPE)
+                {
+                    rcReq = RTPipeRead(*pPipeR,
+                                       pRequest->pvData, pRequest->cbData, &cbRead);
+                    if (rcReq == VERR_BROKEN_PIPE)
+                        rcReq = VINF_EOF;
+                }
+                else
+                    rcReq = VINF_EOF;
+
+                /* Report back actual data read (if any). */
+                pRequest->cbData = cbRead;
+                break;
+            }
+
+            default:
+                rcReq = VERR_NOT_IMPLEMENTED;
+                break;
         }
 
-        default:
-            rcReq = VERR_INVALID_PARAMETER;
-            break;
+        /* Assign overall result. */
+        pRequest->rc = RT_SUCCESS(rc)
+                     ? rcReq : rc;
+
+        VBoxServiceVerbose(4, "ControlExec: Handled IPC request with rcReq=%Rrc, enmType=%u, cbData=%u\n",
+                           rcReq, pRequest->enmType, pRequest->cbData);
+
+        /* In any case, regardless of the result, we notify
+         * the main guest control to unblock it. */
+        int rc2 = RTSemEventMultiSignal(pThread->RequestEvent);
+        AssertRC(rc2);
+        /* No access to pRequest here anymore -- could be out of scope
+         * or modified already! */
+
+        rc2 = RTCritSectLeave(&pThread->CritSect);
+        AssertRC(rc2);
     }
 
-    pRequest->rc = RT_SUCCESS(rc)
-                 ? rcReq : rc;
-
-    VBoxServiceVerbose(4, "ControlExec: Handled IPC request with rcReq=%Rrc, enmType=%u, cbData=%u\n",
-                       rcReq, pRequest->enmType, pRequest->cbData);
     return rc;
 }
 
@@ -425,9 +468,9 @@ static int VBoxServiceControlExecHandleIPCRequest(RTPOLLSET hPollSet, uint32_t f
  * @param   hStdOutR                    Handle to the process' stdout read end.
  * @param   hStdErrR                    Handle to the process' stderr read end.
  */
-static int VBoxServiceControlExecProcLoop(PVBOXSERVICECTRLTHREAD pThread,
-                                          RTPROCESS hProcess, RTMSINTERVAL cMsTimeout, RTPOLLSET hPollSet,
-                                          PRTPIPE phStdInW, PRTPIPE phStdOutR, PRTPIPE phStdErrR)
+static int VBoxServiceControlThreadProcLoop(PVBOXSERVICECTRLTHREAD pThread,
+                                            RTPROCESS hProcess, RTMSINTERVAL cMsTimeout, RTPOLLSET hPollSet,
+                                            PRTPIPE phStdInW, PRTPIPE phStdOutR, PRTPIPE phStdErrR)
 {
     AssertPtrReturn(pThread, VERR_INVALID_POINTER);
     AssertPtrReturn(phStdInW, VERR_INVALID_PARAMETER);
@@ -451,7 +494,7 @@ static int VBoxServiceControlExecProcLoop(PVBOXSERVICECTRLTHREAD pThread,
      * Also check if there already was a thread with the same PID and shut it down -- otherwise
      * the first (stale) entry will be found and we get really weird results!
      */
-    rc = vboxServiceControlExecThreadAssignPID(pThread, hProcess);
+    rc = vboxServiceControlThreadAssignPID(pThread, hProcess);
     if (RT_FAILURE(rc))
     {
         VBoxServiceError("ControlExec: Unable to assign PID to new thread, rc=%Rrc\n", rc);
@@ -492,49 +535,34 @@ static int VBoxServiceControlExecProcLoop(PVBOXSERVICECTRLTHREAD pThread,
             switch (idPollHnd)
             {
                 case VBOXSERVICECTRLPIPEID_STDIN:
-                    rc = VBoxServiceControlExecProcHandleStdInErrorEvent(hPollSet, fPollEvt, phStdInW);
+                    rc = VBoxServiceControlThreadHandleStdInErrorEvent(hPollSet, fPollEvt, phStdInW);
                     break;
 
                 case VBOXSERVICECTRLPIPEID_STDOUT:
-                    rc = VBoxServiceControlExecProcHandleOutputEvent(hPollSet, fPollEvt,
-                                                                     phStdOutR, idPollHnd);
+                    rc = VBoxServiceControlThreadHandleOutputEvent(hPollSet, fPollEvt,
+                                                                   phStdOutR, idPollHnd);
                     break;
 
                 case VBOXSERVICECTRLPIPEID_STDERR:
-                    rc = VBoxServiceControlExecProcHandleOutputEvent(hPollSet, fPollEvt,
-                                                                     phStdErrR, idPollHnd);
+                    rc = VBoxServiceControlThreadHandleOutputEvent(hPollSet, fPollEvt,
+                                                                   phStdErrR, idPollHnd);
                     break;
 
                 case VBOXSERVICECTRLPIPEID_IPC_NOTIFY:
-                    rc = VBoxServiceControlExecProcHandleIPCNotify(hPollSet, fPollEvt,
-                                                                   &pThread->hNotificationPipeR);
-                    /* Fall through is intentional. */
-                default:
-                    /* Handle IPC requests. */
-                    if (RT_SUCCESS(rc))
-                    {
-                        rc = VBoxServiceControlExecHandleIPCRequest(hPollSet, fPollEvt,
-                                                                    phStdInW, phStdOutR, phStdErrR,
-                                                                    pThread->pRequest);
-                    }
-
-                    /* If we were asked to terminate do so ... */
-                    if (pThread->pRequest->enmType == VBOXSERVICECTRLREQUEST_QUIT)
-                        rc = VINF_EOF;
-
-                    /* In any case, regardless of the result, we notify
-                     * the main guest control to unblock it. */
-                    rc2 = RTSemEventMultiSignal(pThread->RequestEvent);
-                    AssertRC(rc2);
-                    /* No access to pRequest here anymore -- could be out of scope
-                     * or modified already! */
+                    rc = VBoxServiceControlThreadHandleIPCRequest(hPollSet, fPollEvt,
+                                                                  phStdInW,phStdOutR,phStdErrR, pThread);
                     break;
             }
+
             if (RT_FAILURE(rc) || rc == VINF_EOF)
                 break; /* Abort command, or client dead or something. */
 
-            /* Only notification pipe left? Then there's nothing to poll for anymore really.
-             * Bail out .. */
+            if (RT_UNLIKELY(pThread->fShutdown))
+                break; /* We were asked to shutdown. */
+
+            /* Do we have more to poll for (e.g. is there (still) something in our pollset
+             * like stdout, stderr or stdin)? If we only have our notification pipe left we
+             * need to bail out. */
             if (RTPollSetGetCount(hPollSet) > 1)
                 continue;
         }
@@ -654,9 +682,6 @@ static int VBoxServiceControlExecProcLoop(PVBOXSERVICECTRLTHREAD pThread,
      */
     if (RT_SUCCESS(rc))
     {
-        /* Mark this thread as stopped and do some action required for stopping ... */
-        //VBoxServiceControlExecThreadCleanup(pThread);
-
         uint32_t uStatus = PROC_STS_UNDEFINED;
         uint32_t uFlags = 0;
 
@@ -717,15 +742,14 @@ static int VBoxServiceControlExecProcLoop(PVBOXSERVICECTRLTHREAD pThread,
             VBoxServiceVerbose(1, "ControlExec: [PID %u]: Handling process status %u not implemented\n",
                                pThread->uPID, ProcessStatus.enmReason);
 
+        VBoxServiceVerbose(3, "ControlExec: [PID %u]: Sending final status, ClientID=%u, CID=%u, Status=%u, Flags=0x%x\n",
+                           pThread->uPID, pThread->uClientID, pThread->uContextID, uStatus, uFlags);
         rc = VbglR3GuestCtrlExecReportStatus(pThread->uClientID, pThread->uContextID,
                                              pThread->uPID, uStatus, uFlags,
                                              NULL /* pvData */, 0 /* cbData */);
         if (RT_FAILURE(rc))
             VBoxServiceError("ControlExec: [PID %u]: Error reporting final status to host; rc=%Rrc\n",
                              pThread->uPID, rc);
-
-        VBoxServiceVerbose(3, "ControlExec: [PID %u]: Ended, CID=%u, Status=%u, Flags=%u\n",
-                           pThread->uPID, pThread->uContextID, uStatus, uFlags);
 
         VBoxServiceVerbose(3, "ControlExec: [PID %u]: Process loop ended with rc=%Rrc\n",
                            pThread->uPID, rc);
@@ -750,7 +774,7 @@ static int VBoxServiceControlExecProcLoop(PVBOXSERVICECTRLTHREAD pThread,
  * @param   phPipe              Where to return the end of the pipe that we
  *                              should service.  Always set.
  */
-static int VBoxServiceControlExecSetupPipe(int fd, PRTHANDLE ph, PRTHANDLE *pph, PRTPIPE phPipe)
+static int VBoxServiceControlThreadSetupPipe(int fd, PRTHANDLE ph, PRTHANDLE *pph, PRTPIPE phPipe)
 {
     AssertPtrReturn(ph, VERR_INVALID_PARAMETER);
     AssertPtrReturn(pph, VERR_INVALID_PARAMETER);
@@ -797,7 +821,7 @@ static int VBoxServiceControlExecSetupPipe(int fd, PRTHANDLE ph, PRTHANDLE *pph,
  * @param   pszExpanded                 Pointer to string to store the resolved path in.
  * @param   cbExpanded                  Size (in bytes) of string to store the resolved path.
  */
-static int VBoxServiceControlExecMakeFullPath(const char *pszPath, char *pszExpanded, size_t cbExpanded)
+static int VBoxServiceControlThreadMakeFullPath(const char *pszPath, char *pszExpanded, size_t cbExpanded)
 {
     int rc = VINF_SUCCESS;
 #ifdef RT_OS_WINDOWS
@@ -824,7 +848,7 @@ static int VBoxServiceControlExecMakeFullPath(const char *pszPath, char *pszExpa
  * @param   pszResolved                 Pointer to a string where the resolved file name will be stored.
  * @param   cbResolved                  Size (in bytes) of resolved file name string.
  */
-static int VBoxServiceControlExecResolveExecutable(const char *pszFileName, char *pszResolved, size_t cbResolved)
+static int VBoxServiceControlThreadResolveExecutable(const char *pszFileName, char *pszResolved, size_t cbResolved)
 {
     int rc = VINF_SUCCESS;
 
@@ -843,7 +867,7 @@ static int VBoxServiceControlExecResolveExecutable(const char *pszFileName, char
             pszExecResolved = RTStrDup(pszFileName);
         AssertPtr(pszExecResolved);
 
-        rc = VBoxServiceControlExecMakeFullPath(pszExecResolved, pszResolved, cbResolved);
+        rc = VBoxServiceControlThreadMakeFullPath(pszExecResolved, pszResolved, cbResolved);
 #ifdef DEBUG
         VBoxServiceVerbose(3, "ControlExec: VBoxServiceControlExecResolveExecutable: %s -> %s\n",
                            pszFileName, pszResolved);
@@ -864,8 +888,8 @@ static int VBoxServiceControlExecResolveExecutable(const char *pszFileName, char
  * @param  ppapszArgv       Pointer to a pointer with the new argv command line.
  *                          Needs to be freed with RTGetOptArgvFree.
  */
-static int VBoxServiceControlExecPrepareArgv(const char *pszArgv0,
-                                             const char * const *papszArgs, char ***ppapszArgv)
+static int VBoxServiceControlThreadPrepareArgv(const char *pszArgv0,
+                                               const char * const *papszArgs, char ***ppapszArgv)
 {
 /** @todo RTGetOptArgvToString converts to MSC quoted string, while
  *        RTGetOptArgvFromString takes bourne shell according to the docs...
@@ -919,9 +943,9 @@ static int VBoxServiceControlExecPrepareArgv(const char *pszArgv0,
  * @param   phProcess                   Pointer which will receive the process handle after
  *                                      successful process start.
  */
-static int VBoxServiceControlExecCreateProcess(const char *pszExec, const char * const *papszArgs, RTENV hEnv, uint32_t fFlags,
-                                               PCRTHANDLE phStdIn, PCRTHANDLE phStdOut, PCRTHANDLE phStdErr, const char *pszAsUser,
-                                               const char *pszPassword, PRTPROCESS phProcess)
+static int VBoxServiceControlThreadCreateProcess(const char *pszExec, const char * const *papszArgs, RTENV hEnv, uint32_t fFlags,
+                                                 PCRTHANDLE phStdIn, PCRTHANDLE phStdOut, PCRTHANDLE phStdErr, const char *pszAsUser,
+                                                 const char *pszPassword, PRTPROCESS phProcess)
 {
     AssertPtrReturn(pszExec, VERR_INVALID_PARAMETER);
     AssertPtrReturn(papszArgs, VERR_INVALID_PARAMETER);
@@ -959,7 +983,7 @@ static int VBoxServiceControlExecCreateProcess(const char *pszExec, const char *
         if (RT_SUCCESS(rc))
         {
             char **papszArgsExp;
-            rc = VBoxServiceControlExecPrepareArgv(szSysprepCmd /* argv0 */, papszArgs, &papszArgsExp);
+            rc = VBoxServiceControlThreadPrepareArgv(szSysprepCmd /* argv0 */, papszArgs, &papszArgsExp);
             if (RT_SUCCESS(rc))
             {
                 rc = RTProcCreateEx(szSysprepCmd, papszArgsExp, hEnv, 0 /* fFlags */,
@@ -977,7 +1001,7 @@ static int VBoxServiceControlExecCreateProcess(const char *pszExec, const char *
     {
         /* We want to use the internal toolbox (all internal
          * tools are starting with "vbox_" (e.g. "vbox_cat"). */
-        rc = VBoxServiceControlExecResolveExecutable(VBOXSERVICE_NAME, szExecExp, sizeof(szExecExp));
+        rc = VBoxServiceControlThreadResolveExecutable(VBOXSERVICE_NAME, szExecExp, sizeof(szExecExp));
     }
     else
     {
@@ -985,15 +1009,15 @@ static int VBoxServiceControlExecCreateProcess(const char *pszExec, const char *
         /*
          * Do the environment variables expansion on executable and arguments.
          */
-        rc = VBoxServiceControlExecResolveExecutable(pszExec, szExecExp, sizeof(szExecExp));
+        rc = VBoxServiceControlThreadResolveExecutable(pszExec, szExecExp, sizeof(szExecExp));
 #ifdef VBOXSERVICE_TOOLBOX
     }
 #endif
     if (RT_SUCCESS(rc))
     {
         char **papszArgsExp;
-        rc = VBoxServiceControlExecPrepareArgv(pszExec /* Always use the unmodified executable name as argv0. */,
-                                               papszArgs /* Append the rest of the argument vector (if any). */, &papszArgsExp);
+        rc = VBoxServiceControlThreadPrepareArgv(pszExec /* Always use the unmodified executable name as argv0. */,
+                                                 papszArgs /* Append the rest of the argument vector (if any). */, &papszArgsExp);
         if (RT_SUCCESS(rc))
         {
             uint32_t uProcFlags = 0;
@@ -1038,7 +1062,7 @@ static int VBoxServiceControlExecCreateProcess(const char *pszExec, const char *
  * @return  IPRT status code.
  * @param   PVBOXSERVICECTRLTHREAD         Thread data associated with a started process.
  */
-static DECLCALLBACK(int) VBoxServiceControlExecProcessWorker(PVBOXSERVICECTRLTHREAD pThread)
+static DECLCALLBACK(int) VBoxServiceControlThreadProcessWorker(PVBOXSERVICECTRLTHREAD pThread)
 {
     AssertPtrReturn(pThread, VERR_INVALID_POINTER);
     VBoxServiceVerbose(3, "ControlExec: Thread of process \"%s\" started\n", pThread->pszCmd);
@@ -1050,6 +1074,8 @@ static DECLCALLBACK(int) VBoxServiceControlExecProcessWorker(PVBOXSERVICECTRLTHR
         RTThreadUserSignal(RTThreadSelf());
         return rc;
     }
+    VBoxServiceVerbose(3, "ControlExec: Guest process \"%s\" got client ID=%u\n",
+                       pThread->pszCmd, pThread->uClientID);
 
     bool fSignalled = false; /* Indicator whether we signalled the thread user event already. */
 
@@ -1075,19 +1101,19 @@ static DECLCALLBACK(int) VBoxServiceControlExecProcessWorker(PVBOXSERVICECTRLTHR
             /** @todo consider supporting: gcc stuff.c >file 2>&1.  */
             RTHANDLE    hStdIn;
             PRTHANDLE   phStdIn;
-            rc = VBoxServiceControlExecSetupPipe(0 /*STDIN_FILENO*/, &hStdIn, &phStdIn, &pThread->pipeStdInW);
+            rc = VBoxServiceControlThreadSetupPipe(0 /*STDIN_FILENO*/, &hStdIn, &phStdIn, &pThread->pipeStdInW);
             if (RT_SUCCESS(rc))
             {
                 RTHANDLE    hStdOut;
                 PRTHANDLE   phStdOut;
                 RTPIPE      hStdOutR;
-                rc = VBoxServiceControlExecSetupPipe(1 /*STDOUT_FILENO*/, &hStdOut, &phStdOut, &hStdOutR);
+                rc = VBoxServiceControlThreadSetupPipe(1 /*STDOUT_FILENO*/, &hStdOut, &phStdOut, &hStdOutR);
                 if (RT_SUCCESS(rc))
                 {
                     RTHANDLE    hStdErr;
                     PRTHANDLE   phStdErr;
                     RTPIPE      hStdErrR;
-                    rc = VBoxServiceControlExecSetupPipe(2 /*STDERR_FILENO*/, &hStdErr, &phStdErr, &hStdErrR);
+                    rc = VBoxServiceControlThreadSetupPipe(2 /*STDERR_FILENO*/, &hStdErr, &phStdErr, &hStdErrR);
                     if (RT_SUCCESS(rc))
                     {
                         /*
@@ -1116,10 +1142,10 @@ static DECLCALLBACK(int) VBoxServiceControlExecProcessWorker(PVBOXSERVICECTRLTHR
                             if (RT_SUCCESS(rc))
                             {
                                 RTPROCESS hProcess;
-                                rc = VBoxServiceControlExecCreateProcess(pThread->pszCmd, pThread->papszArgs, hEnv, pThread->uFlags,
-                                                                         phStdIn, phStdOut, phStdErr,
-                                                                         pThread->pszUser, pThread->pszPassword,
-                                                                         &hProcess);
+                                rc = VBoxServiceControlThreadCreateProcess(pThread->pszCmd, pThread->papszArgs, hEnv, pThread->uFlags,
+                                                                           phStdIn, phStdOut, phStdErr,
+                                                                           pThread->pszUser, pThread->pszPassword,
+                                                                           &hProcess);
                                 if (RT_FAILURE(rc))
                                     VBoxServiceError("ControlExec: Error starting process, rc=%Rrc\n", rc);
                                 /*
@@ -1146,11 +1172,14 @@ static DECLCALLBACK(int) VBoxServiceControlExecProcessWorker(PVBOXSERVICECTRLTHR
                                     phStdErr   = NULL;
 
                                     /* Enter the process loop. */
-                                    rc = VBoxServiceControlExecProcLoop(pThread,
-                                                                        hProcess, pThread->uTimeLimitMS, hPollSet,
-                                                                        &pThread->pipeStdInW, &hStdOutR, &hStdErrR);
+                                    rc = VBoxServiceControlThreadProcLoop(pThread,
+                                                                          hProcess, pThread->uTimeLimitMS, hPollSet,
+                                                                          &pThread->pipeStdInW, &hStdOutR, &hStdErrR);
 
-                                    /* Before cleaning up everything else, remove the thread from our thread list. */
+                                    /*
+                                     * Remove thread from global thread list. After this it's safe to shutdown
+                                     * and deallocate this thread.
+                                     */
                                     VBoxServiceControlRemoveThread(pThread);
 
                                     /*
@@ -1206,19 +1235,28 @@ static DECLCALLBACK(int) VBoxServiceControlExecProcessWorker(PVBOXSERVICECTRLTHR
         RTEnvDestroy(hEnv);
     }
 
+    if (pThread->uClientID)
+    {
+        VBoxServiceVerbose(3, "ControlExec: [PID %u]: Cancelling pending waits (client ID=%u)\n",
+                           pThread->uPID, pThread->uClientID);
+        int rc2 = VbglR3GuestCtrlCancelPendingWaits(pThread->uClientID);
+        if (RT_FAILURE(rc2))
+        {
+            VBoxServiceError("ControlExec: [PID %u]: Cancelling pending waits failed; rc=%Rrc\n",
+                             pThread->uPID, rc2);
+            if (RT_SUCCESS(rc))
+                rc = rc2;
+        }
+
+        /* Disconnect from guest control service. */
+        VbglR3GuestCtrlDisconnect(pThread->uClientID);
+        pThread->uClientID = 0;
+    }
+
     VBoxServiceVerbose(3, "ControlExec: [PID %u]: Thread of process \"%s\" ended with rc=%Rrc\n",
                        pThread->uPID, pThread->pszCmd, rc);
 
-    /* Disconnect from guest control service. */
-    VbglR3GuestCtrlDisconnect(pThread->uClientID);
-    pThread->uClientID = 0;
-
     ASMAtomicXchgBool(&pThread->fStarted, false);
-    ASMAtomicXchgBool(&pThread->fStopped, true);
-
-    int rc2 = VBoxServiceControlExecThreadShutdown(pThread);
-    if (RT_SUCCESS(rc2))
-        VBoxServiceControlExecThreadDestroy(pThread);
 
     /*
      * If something went wrong signal the user event so that others don't wait
@@ -1226,6 +1264,10 @@ static DECLCALLBACK(int) VBoxServiceControlExecProcessWorker(PVBOXSERVICECTRLTHR
      */
     if (RT_FAILURE(rc) && !fSignalled)
         RTThreadUserSignal(RTThreadSelf());
+
+    int rc2 = vboxServiceControlThreadShutdown(pThread);
+    if (RT_SUCCESS(rc))
+        rc = rc2;
 
     return rc;
 }
@@ -1239,11 +1281,11 @@ static DECLCALLBACK(int) VBoxServiceControlExecProcessWorker(PVBOXSERVICECTRLTHR
  * @param  void*                User-supplied argument pointer.
  *
  */
-static DECLCALLBACK(int) VBoxServiceControlExecThread(RTTHREAD ThreadSelf, void *pvUser)
+static DECLCALLBACK(int) VBoxServiceControlThread(RTTHREAD ThreadSelf, void *pvUser)
 {
     PVBOXSERVICECTRLTHREAD pThread = (VBOXSERVICECTRLTHREAD*)pvUser;
     AssertPtrReturn(pThread, VERR_INVALID_POINTER);
-    return VBoxServiceControlExecProcessWorker(pThread);
+    return VBoxServiceControlThreadProcessWorker(pThread);
 }
 
 
@@ -1298,7 +1340,7 @@ int VBoxServiceControlThreadStart(uint32_t uClientID, uint32_t uContextID,
         if (!RTStrPrintf(szThreadName, sizeof(szThreadName), "controlexec%ld", uCtrlExecThread++))
             AssertMsgFailed(("Unable to create unique control exec thread name!\n"));
 
-        rc = RTThreadCreate(&pThread->Thread, VBoxServiceControlExecThread,
+        rc = RTThreadCreate(&pThread->Thread, VBoxServiceControlThread,
                             (void *)(PVBOXSERVICECTRLTHREAD*)pThread, 0,
                             RTTHREADTYPE_DEFAULT, RTTHREADFLAGS_WAITABLE, szThreadName);
         if (RT_FAILURE(rc))
@@ -1312,7 +1354,7 @@ int VBoxServiceControlThreadStart(uint32_t uClientID, uint32_t uContextID,
 
             /* Wait for the thread to initialize. */
             RTThreadUserWait(pThread->Thread, 60 * 1000 /* 60 seconds max. */);
-            if (pThread->fShutdown)
+            if (ASMAtomicReadBool(&pThread->fShutdown))
             {
                 VBoxServiceError("ControlExec: Thread for process \"%s\" failed to start!\n", pszCmd);
                 rc = VERR_GENERAL_FAILURE;
@@ -1342,7 +1384,7 @@ int VBoxServiceControlThreadStart(uint32_t uClientID, uint32_t uContextID,
  * @param   pData          Pointer to guest control execution thread data.
  * @param   uPID           PID to assign to the specified guest control execution thread.
  */
-int vboxServiceControlExecThreadAssignPID(PVBOXSERVICECTRLTHREAD pThread, uint32_t uPID)
+int vboxServiceControlThreadAssignPID(PVBOXSERVICECTRLTHREAD pThread, uint32_t uPID)
 {
     AssertPtrReturn(pThread, VERR_INVALID_POINTER);
     AssertReturn(uPID, VERR_INVALID_PARAMETER);
@@ -1359,7 +1401,7 @@ int vboxServiceControlExecThreadAssignPID(PVBOXSERVICECTRLTHREAD pThread, uint32
 
         VBoxServiceVerbose(3, "ControlExec: PID %u was used before, shutting down stale exec thread ...\n",
                            uPID);
-        rc = VBoxServiceControlExecThreadShutdown(pOldThread);
+        rc = vboxServiceControlThreadShutdown(pOldThread);
         if (RT_FAILURE(rc))
         {
             VBoxServiceVerbose(3, "ControlExec: Unable to shut down stale exec thread, rc=%Rrc\n", rc);
@@ -1375,25 +1417,26 @@ int vboxServiceControlExecThreadAssignPID(PVBOXSERVICECTRLTHREAD pThread, uint32
 
 
 /**
- * TODO
+ * Performs a request to a specific (formerly started) guest process and waits
+ * for its response.
  *
  * @return  IPRT status code.
- * @return  int
- * @param   uPID
- * @param   pRequest
+ * @param   uPID                PID of guest process to perform a request to.
+ * @param   pRequest            Pointer to request  to perform.
  */
-int VBoxServiceControlExecThreadPerform(uint32_t uPID, PVBOXSERVICECTRLREQUEST pRequest)
+int VBoxServiceControlThreadPerform(uint32_t uPID, PVBOXSERVICECTRLREQUEST pRequest)
 {
     AssertPtrReturn(pRequest, VERR_INVALID_POINTER);
     AssertReturn(pRequest->enmType > VBOXSERVICECTRLREQUEST_UNKNOWN, VERR_INVALID_PARAMETER);
     /* Rest in pRequest is optional (based on the request type). */
 
-    VBoxServiceVerbose(4, "ControlExec: [PID %u]: Performing enmType=%u, pvData=0x%p, cbData=%u ...\n",
+    VBoxServiceVerbose(4, "ControlExec: Performing PID=%u, enmType=%u, pvData=0x%p, cbData=%u ...\n",
                        uPID, pRequest->enmType, pRequest->pvData, pRequest->cbData);
 
     int rc;
     const PVBOXSERVICECTRLTHREAD pThread = VBoxServiceControlGetThreadByPID(uPID);
-    if (pThread)
+    if (   pThread
+        && !ASMAtomicReadBool(&pThread->fStopped))
     {
         rc = RTCritSectEnter(&pThread->CritSect);
         if (RT_SUCCESS(rc))
@@ -1401,8 +1444,8 @@ int VBoxServiceControlExecThreadPerform(uint32_t uPID, PVBOXSERVICECTRLREQUEST p
             /* Set request structure pointer. */
             pThread->pRequest = pRequest;
 
-            /** @todo To speed up simultaneous guest process handling we could add a worker threads in order
-             *        to wait for the request to happen. Later. */
+            /** @todo To speed up simultaneous guest process handling we could add a worker threads
+             *        or queue in order to wait for the request to happen. Later. */
 
             /* Wake up guest thrad by sending a wakeup byte to the notification pipe so
              * that RTPoll unblocks (returns) and we then can do our requested operation. */
@@ -1411,8 +1454,15 @@ int VBoxServiceControlExecThreadPerform(uint32_t uPID, PVBOXSERVICECTRLREQUEST p
             size_t cbWritten;
             if (RT_SUCCESS(rc))
                 rc = RTPipeWrite(pThread->hNotificationPipeW, "i", 1, &cbWritten);
+
+            /* Make sure we leave the critical section before doing the wait. */
+            int rc2 = RTCritSectLeave(&pThread->CritSect);
+            AssertRCReturn(rc2, rc2);
+
             if (RT_SUCCESS(rc) && cbWritten)
             {
+                VBoxServiceVerbose(4, "ControlExec: [PID %u]: Waiting for response on enmType=%u, pvData=0x%p, cbData=%u\n",
+                                   uPID, pRequest->enmType, pRequest->pvData, pRequest->cbData);
                 /* Wait on the request to get completed (or we are asked to abort/shutdown). */
                 rc = RTSemEventMultiWait(pThread->RequestEvent, RT_INDEFINITE_WAIT);
                 if (RT_SUCCESS(rc))
@@ -1420,89 +1470,71 @@ int VBoxServiceControlExecThreadPerform(uint32_t uPID, PVBOXSERVICECTRLREQUEST p
                     VBoxServiceVerbose(4, "ControlExec: [PID %u]: Performed with rc=%Rrc, cbData=%u\n",
                                        uPID, pRequest->rc, pRequest->cbData);
 
-                    /* Give back overall request result. */
-                    rc = pRequest->rc;
+                    rc = RTCritSectEnter(&pThread->CritSect);
+                    if (RT_SUCCESS(rc))
+                    {
+                        /* Give back overall request result. */
+                        rc = pRequest->rc;
 
-                    /* Reset the semaphore. */
-                    int rc2 = RTSemEventMultiReset(pThread->RequestEvent);
-                    if (RT_FAILURE(rc2))
-                        VBoxServiceError("ControlExec: Unable to reset request event, rc=%Rrc\n", rc2);
+                        /* Reset the semaphore. */
+                        rc2 = RTSemEventMultiReset(pThread->RequestEvent);
+                        if (RT_FAILURE(rc2))
+                            VBoxServiceError("ControlExec: Unable to reset request event, rc=%Rrc\n", rc2);
+
+                        rc2 = RTCritSectLeave(&pThread->CritSect);
+                        AssertRCReturn(rc2, rc2);
+                    }
                 }
             }
-
-            int rc2 = RTCritSectLeave(&pThread->CritSect);
-            AssertRCReturn(rc2, rc2);
         }
     }
     else /* PID not found! */
         rc = VERR_NOT_FOUND;
 
-    VBoxServiceVerbose(4, "ControlExec: [PID %u]: Performed enmType=%u, pvData=0x%p, cbData=%u with rc=%Rrc\n",
+    VBoxServiceVerbose(4, "ControlExec: Performed PID=%u, enmType=%u, pvData=0x%p, cbData=%u with rc=%Rrc\n",
                        uPID, pRequest->enmType, pRequest->pvData, pRequest->cbData, rc);
     return rc;
 }
 
 
 /**
- * Removes the guest thread from the global guest thread list and finally
- * destroys it. Does not do locking, must be done by the caller!
- *
- * @param   pThread                 Thread to destroy.
- */
-void VBoxServiceControlExecThreadDestroy(PVBOXSERVICECTRLTHREAD pThread)
-{
-    if (!pThread)
-        return;
-
-    if (RTCritSectIsInitialized(&pThread->CritSect))
-        RTCritSectDelete(&pThread->CritSect);
-
-    /* Destroy thread structure as final step. */
-    RTMemFree(pThread);
-    pThread = NULL;
-}
-
-
-/**
  * Shuts down a guest thread.
- * Does not do locking, must be done by the caller!
  *
  * @return  IPRT status code.
  * @param   pThread                 Thread to shut down.
  */
-int VBoxServiceControlExecThreadShutdown(PVBOXSERVICECTRLTHREAD pThread)
+static int vboxServiceControlThreadShutdown(PVBOXSERVICECTRLTHREAD pThread)
 {
     AssertPtrReturn(pThread, VERR_INVALID_POINTER);
 
-    if (ASMAtomicReadBool(&pThread->fShutdown)) /* Already shut down. */
-        return VINF_SUCCESS;
-
-    /* First, signal shut down. */
-    VBoxServiceControlThreadSignalShutdown(pThread);
-
-    /*
-     * Wait for thread to shutdown.
-     */
-    VBoxServiceVerbose(2, "ControlExec: [PID %u]: Waitng for shutting down ...\n",
-                       pThread->uPID);
-    int rc;
-    for (int i = 0; i < 3; i++)
+    int rc = RTCritSectEnter(&pThread->CritSect);
+    if (RT_SUCCESS(rc))
     {
-        rc = vboxServiceControlThreadWaitForShutdown(pThread);
-        if (RT_SUCCESS(rc))
-            break;
+        VBoxServiceVerbose(3, "ControlExec: [PID %u]: Shutting down ...\n",
+                           pThread->uPID);
 
-        VBoxServiceError("ControlExec: [PID %u]: Attempt #%d: Waiting for shutdown failed with rc=%Rrc ...\n",
-                         pThread->uPID, i + 1, rc);
-        RTThreadSleep(500); /* Wait a bit before next try. */
+        /*
+         * Destroy thread-specific data.
+         */
+        vboxServiceControlThreadFree(pThread);
+
+        /* Set stopped status. */
+        ASMAtomicXchgBool(&pThread->fStopped, true);
+
+        rc = RTCritSectLeave(&pThread->CritSect);
     }
 
-    /* Do not destroy critical section here! */
+    /*
+     * Destroy other thread data.
+     */
+    if (RTCritSectIsInitialized(&pThread->CritSect))
+        RTCritSectDelete(&pThread->CritSect);
 
     /*
-     * Destroy thread-specific data.
+     * Destroy thread structure as final step.
      */
-    vboxServiceControlExecThreadFree(pThread);
+    RTMemFree(pThread);
+    pThread = NULL;
 
     return rc;
 }

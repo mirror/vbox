@@ -29,7 +29,6 @@
 #include <VBox/HostServices/GuestControlSvc.h>
 #include "VBoxServiceInternal.h"
 #include "VBoxServiceUtils.h"
-#include "VBoxServiceControlExecThread.h"
 
 using namespace guestControl;
 
@@ -209,9 +208,6 @@ DECLCALLBACK(int) VBoxServiceControlWorker(bool volatile *pfShutdown)
                     /* Don't terminate here; just wait for the next message. */
                     break;
             }
-
-            if (RT_FAILURE(rc))
-                VBoxServiceVerbose(3, "Control: Message was processed with rc=%Rrc\n", rc);
         }
 
         /* Do we need to shutdown? */
@@ -226,8 +222,6 @@ DECLCALLBACK(int) VBoxServiceControlWorker(bool volatile *pfShutdown)
         RTThreadYield();
     }
 
-    RTSemEventMultiDestroy(g_hControlEvent);
-    g_hControlEvent = NIL_RTSEMEVENTMULTI;
     return rc;
 }
 
@@ -370,13 +364,15 @@ int VBoxServiceControlExecGetOutput(uint32_t uPID, uint32_t uHandleId, uint32_t 
     }
 
     if (RT_SUCCESS(rc))
-        rc = VBoxServiceControlExecThreadPerform(uPID, &ctrlRequest);
+        rc = VBoxServiceControlThreadPerform(uPID, &ctrlRequest);
 
     if (RT_SUCCESS(rc))
     {
         if (pcbRead)
             *pcbRead = ctrlRequest.cbData;
     }
+    else /* Something went wrong, nothing read. */
+        *pcbRead = 0;
 
     return rc;
 }
@@ -408,7 +404,7 @@ int VBoxServiceControlSetInput(uint32_t uPID, bool fPendingClose,
     ctrlRequest.enmType = fPendingClose
                         ? VBOXSERVICECTRLREQUEST_STDIN_WRITE_EOF : VBOXSERVICECTRLREQUEST_STDIN_WRITE;
     if (RT_SUCCESS(rc))
-        rc = VBoxServiceControlExecThreadPerform(uPID, &ctrlRequest);
+        rc = VBoxServiceControlThreadPerform(uPID, &ctrlRequest);
 
     if (RT_SUCCESS(rc))
     {
@@ -582,7 +578,8 @@ static DECLCALLBACK(void) VBoxServiceControlStop(void)
 
     /** @todo Later, figure what to do if we're in RTProcWait(). It's a very
      *        annoying call since doesn't support timeouts in the posix world. */
-    RTSemEventMultiSignal(g_hControlEvent);
+    if (g_hControlEvent != NIL_RTSEMEVENTMULTI)
+        RTSemEventMultiSignal(g_hControlEvent);
 
     /*
      * Ask the host service to cancel all pending requests so that we can
@@ -590,6 +587,8 @@ static DECLCALLBACK(void) VBoxServiceControlStop(void)
      */
     if (g_GuestControlSvcClientID)
     {
+        VBoxServiceVerbose(3, "Control: Cancelling pending waits ...\n");
+
         int rc = VbglR3GuestCtrlCancelPendingWaits(g_GuestControlSvcClientID);
         if (RT_FAILURE(rc))
             VBoxServiceError("Control: Cancelling pending waits failed; rc=%Rrc\n", rc);
@@ -601,43 +600,33 @@ static void VBoxServiceControlDestroyThreads(void)
 {
     VBoxServiceVerbose(3, "Control: Destroying threads ...\n");
 
-    int rc = RTCritSectEnter(&g_GuestControlThreadsCritSect);
-    if (RT_SUCCESS(rc))
+    /* Signal all threads that we want to shutdown. */
+    PVBOXSERVICECTRLTHREAD pThread;
+    RTListForEach(&g_GuestControlThreads, pThread, VBOXSERVICECTRLTHREAD, Node)
+        VBoxServiceControlThreadSignalShutdown(pThread);
+
+    /* Wait for threads to shutdown and destroy thread list. */
+    pThread = RTListGetFirst(&g_GuestControlThreads, VBOXSERVICECTRLTHREAD, Node);
+    while (pThread)
     {
-        /* Signal all threads that we want to shutdown. */
-        PVBOXSERVICECTRLTHREAD pThread;
-        RTListForEach(&g_GuestControlThreads, pThread, VBOXSERVICECTRLTHREAD, Node)
-            VBoxServiceControlThreadSignalShutdown(pThread);
+        PVBOXSERVICECTRLTHREAD pNext = RTListNodeGetNext(&pThread->Node, VBOXSERVICECTRLTHREAD, Node);
+        bool fLast = RTListNodeIsLast(&g_GuestControlThreads, &pThread->Node);
 
-        /* Wait for threads to shutdown. */
-        RTListForEach(&g_GuestControlThreads, pThread, VBOXSERVICECTRLTHREAD, Node)
-        {
-            int rc2 = VBoxServiceControlExecThreadShutdown(pThread);
-            if (RT_FAILURE(rc2))
-                VBoxServiceError("Control: Guest process thread failed to stop; rc2=%Rrc\n", rc2);
-        }
+        int rc2 = VBoxServiceControlThreadWaitForShutdown(pThread,
+                                                          30 * 1000 /* Wait 30 seconds max. */);
+        if (RT_FAILURE(rc2))
+            VBoxServiceError("Control: Guest process thread failed to stop; rc=%Rrc\n", rc2);
 
-        /* Finally destroy thread list. */
-        pThread = RTListGetFirst(&g_GuestControlThreads, VBOXSERVICECTRLTHREAD, Node);
-        while (pThread)
-        {
-            PVBOXSERVICECTRLTHREAD pNext = RTListNodeGetNext(&pThread->Node, VBOXSERVICECTRLTHREAD, Node);
-            bool fLast = RTListNodeIsLast(&g_GuestControlThreads, &pThread->Node);
+        if (fLast)
+            break;
 
-            VBoxServiceControlRemoveThread(pThread);
-            VBoxServiceControlExecThreadDestroy(pThread);
-
-            if (fLast)
-                break;
-
-            pThread = pNext;
-        }
-
-        int rc2 = RTCritSectLeave(&g_GuestControlThreadsCritSect);
-        if (RT_SUCCESS(rc))
-            rc = rc2;
+        pThread = pNext;
     }
 
+    AssertMsg(RTListIsEmpty(&g_GuestControlThreads),
+              ("Guest process thread list still contains children when it should not\n"));
+
+    /* Destroy critical section. */
     RTCritSectDelete(&g_GuestControlThreadsCritSect);
 }
 
@@ -660,6 +649,14 @@ static DECLCALLBACK(void) VBoxServiceControlTerm(void)
 }
 
 
+/**
+ * Determines whether starting a new guest process according to the
+ * maximum number of concurrent guest processes defined is allowed or not.
+ *
+ * @return  IPRT status code.
+ * @param   pbAllowed           True if starting (another) guest process
+ *                              is allowed, false if not.
+ */
 static int VBoxServiceControlStartAllowed(bool *pbAllowed)
 {
     AssertPtrReturn(pbAllowed, VERR_INVALID_POINTER);
@@ -720,16 +717,16 @@ static int VBoxServiceControlStartAllowed(bool *pbAllowed)
  */
 const PVBOXSERVICECTRLTHREAD VBoxServiceControlGetThreadByPID(uint32_t uPID)
 {
-    PVBOXSERVICECTRLTHREAD pNode = NULL;
+    PVBOXSERVICECTRLTHREAD pThread = NULL;
     int rc = RTCritSectEnter(&g_GuestControlThreadsCritSect);
     if (RT_SUCCESS(rc))
     {
-        PVBOXSERVICECTRLTHREAD pNodeCur;
-        RTListForEach(&g_GuestControlThreads, pNodeCur, VBOXSERVICECTRLTHREAD, Node)
+        PVBOXSERVICECTRLTHREAD pThreadCur;
+        RTListForEach(&g_GuestControlThreads, pThreadCur, VBOXSERVICECTRLTHREAD, Node)
         {
-            if (pNodeCur->uPID == uPID)
+            if (pThreadCur->uPID == uPID)
             {
-                pNode = pNodeCur;
+                pThread = pThreadCur;
                 break;
             }
         }
@@ -739,10 +736,17 @@ const PVBOXSERVICECTRLTHREAD VBoxServiceControlGetThreadByPID(uint32_t uPID)
             rc = rc2;
     }
 
-    return pNode;
+    return pThread;
 }
 
 
+/**
+ * Removes the specified guest process thread from the global thread
+ * list.
+ *
+ * @return  IPRT status code.
+ * @param   pThread             Thread to remove.
+ */
 void VBoxServiceControlRemoveThread(PVBOXSERVICECTRLTHREAD pThread)
 {
     if (!pThread)
@@ -751,11 +755,12 @@ void VBoxServiceControlRemoveThread(PVBOXSERVICECTRLTHREAD pThread)
     int rc = RTCritSectEnter(&g_GuestControlThreadsCritSect);
     if (RT_SUCCESS(rc))
     {
+        VBoxServiceVerbose(4, "ControlExec: Removing thread (PID: %u) from thread list\n",
+                           pThread->uPID);
         RTListNodeRemove(&pThread->Node);
 
         int rc2 = RTCritSectLeave(&g_GuestControlThreadsCritSect);
-        if (RT_SUCCESS(rc))
-            rc = rc2;
+        AssertRC(rc2);
     }
 }
 

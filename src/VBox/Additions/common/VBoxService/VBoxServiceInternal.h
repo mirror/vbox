@@ -142,12 +142,16 @@ typedef enum VBOXSERVICECTRLREQUESTTYPE
     /** Same as VBOXSERVICECTRLREQUEST_STDIN_WRITE, but
      *  marks the end of input. */
     VBOXSERVICECTRLREQUEST_STDIN_WRITE_EOF  = 71,
-    /** Kill process.
+    /** Kill/terminate process.
      *  @todo Implement this! */
     VBOXSERVICECTRLREQUEST_KILL             = 90,
     /** Gently ask process to terminate.
      *  @todo Implement this! */
-    VBOXSERVICECTRLREQUEST_HANGUP           = 91
+    VBOXSERVICECTRLREQUEST_HANGUP           = 91,
+    /** Ask the process in which status it
+     *  currently is.
+     *  @todo Implement this! */
+    VBOXSERVICECTRLREQUEST_STATUS           = 100
 } VBOXSERVICECTRLREQUESTTYPE;
 
 /**
@@ -160,11 +164,11 @@ typedef struct VBOXSERVICECTRLREQUEST
 {
     /** The request type to handle. */
     VBOXSERVICECTRLREQUESTTYPE enmType;
-    /** On input, this contains the (maximum) amount
-     *  of buffered data to read or write. On output,
+    /** Payload size; on input, this contains the (maximum) amount
+     *  of data the caller  wants to write or to read. On output,
      *  this show the actual amount of data read/written. */
     size_t                     cbData;
-    /** The provided, allocated data buffer for input/output. */
+    /** Payload data; a pre-allocated data buffer for input/output. */
     void                      *pvData;
     /** The overall result of the operation. */
     int                        rc;
@@ -333,7 +337,9 @@ extern int          VBoxServiceControlThreadStart(uint32_t uClientID, uint32_t u
                                                   const char *pszEnv, uint32_t cbEnv, uint32_t uNumEnvVars,
                                                   const char *pszUser, const char *pszPassword, uint32_t uTimeLimitMS,
                                                   PRTLISTNODE *ppNode);
-extern void         VBoxServiceControlThreadSignalShutdown(const PVBOXSERVICECTRLTHREAD pThread);
+int                 VBoxServiceControlThreadPerform(uint32_t uPID, PVBOXSERVICECTRLREQUEST pRequest);
+extern int          VBoxServiceControlThreadSignalShutdown(const PVBOXSERVICECTRLTHREAD pThread);
+extern int          VBoxServiceControlThreadWaitForShutdown(const PVBOXSERVICECTRLTHREAD pThread, RTMSINTERVAL msTimeout);
 #endif /* VBOX_WITH_GUEST_CONTROL */
 
 #ifdef VBOXSERVICE_MANAGEMENT
