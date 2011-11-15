@@ -394,6 +394,9 @@ int udp_output(PNATState pData, struct socket *so, struct mbuf *m,
                struct sockaddr_in *addr)
 {
     struct sockaddr_in saddr, daddr;
+#ifdef VBOX_WITH_NAT_UDP_SOCKET_CLONE
+    struct socket *pSocketClone = NULL;
+#endif
     LogFlowFunc(("ENTER: so = %R[natsock], m = %p, saddr = %RTnaipv4\n",
                  so, (long)m, addr->sin_addr.s_addr));
 
@@ -418,8 +421,12 @@ int udp_output(PNATState pData, struct socket *so, struct mbuf *m,
                 saddr.sin_addr.s_addr = addr->sin_addr.s_addr;
             /* we shouldn't override initial socket */
 #ifdef VBOX_WITH_NAT_UDP_SOCKET_CLONE
-            so = soCloneUDPSocketWithForegnAddr(pData, so, addr->sin_addr.s_addr);
-            Assert((so));
+            if (so->so_cCloneCounter)
+                pSocketClone = soLookUpClonedUDPSocket(pData, so, addr->sin_addr.s_addr);
+            if (!pSocketClone)
+                pSocketClone = soCloneUDPSocketWithForegnAddr(pData, false, so, addr->sin_addr.s_addr);
+            Assert((pSocketClone));
+            so = pSocketClone;
 #else
             so->so_faddr.s_addr = addr->sin_addr.s_addr;
 #endif
@@ -483,9 +490,7 @@ udp_attach(PNATState pData, struct socket *so, int service_port)
     Assert(status == 0 && sa_addr.sa_family == AF_INET);
     so->so_hlport = ((struct sockaddr_in *)&sa_addr)->sin_port;
     so->so_hladdr.s_addr = ((struct sockaddr_in *)&sa_addr)->sin_addr.s_addr;
-#if 0
-    so->so_state = SS_ISFCONNECTED; /* validly opened UDP socked always connected */
-#endif
+
     SOCKET_LOCK_CREATE(so);
     QSOCKET_LOCK(udb);
     insque(pData, so, &udb);
@@ -505,6 +510,16 @@ udp_detach(PNATState pData, struct socket *so)
         QSOCKET_LOCK(udb);
         SOCKET_LOCK(so);
         QSOCKET_UNLOCK(udb);
+#ifdef VBOX_WITH_NAT_UDP_SOCKET_CLONE
+        if (so->so_cloneOf)
+            so->so_cloneOf->so_cCloneCounter--;
+        else if (so->so_cCloneCounter > 0)
+        {
+            /* we can't close socket yet */
+            SOCKET_UNLOCK(so);
+            return;
+        }
+#endif
         closesocket(so->s);
         sofree(pData, so);
         SOCKET_UNLOCK(so);

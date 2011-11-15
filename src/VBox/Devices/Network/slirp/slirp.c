@@ -912,7 +912,10 @@ void slirp_select_fill(PNATState pData, int *pnfds, struct pollfd *polls)
         so->so_poll_index = -1;
 #endif
         STAM_COUNTER_INC(&pData->StatTCP);
-
+#ifdef VBOX_WITH_NAT_UDP_SOCKET_CLONE
+        /* TCP socket can't be cloned */
+        Assert((!so->so_cloneOf));
+#endif
         /*
          * See if we need a tcp_fasttimo
          */
@@ -994,6 +997,10 @@ void slirp_select_fill(PNATState pData, int *pnfds, struct pollfd *polls)
         STAM_COUNTER_INC(&pData->StatUDP);
 #if !defined(RT_OS_WINDOWS)
         so->so_poll_index = -1;
+#endif
+#ifdef VBOX_WITH_NAT_UDP_SOCKET_CLONE
+        if (so->so_cloneOf)
+                CONTINUE_NO_UNLOCK(udp);
 #endif
 
         /*
@@ -1200,6 +1207,10 @@ void slirp_select_poll(PNATState pData, struct pollfd *polls, int ndfs)
             CONTINUE_NO_UNLOCK(tcp);
         }
 #endif
+        /* TCP socket can't be cloned */
+#ifdef VBOX_WITH_NAT_UDP_SOCKET_CLONE
+        Assert((!so->so_cloneOf));
+#endif
         /*
          * FD_ISSET is meaningless on these sockets
          * (and they can crash the program)
@@ -1401,6 +1412,10 @@ void slirp_select_poll(PNATState pData, struct pollfd *polls, int ndfs)
                 SOCKET_UNLOCK(sop);
             CONTINUE_NO_UNLOCK(udp);
         }
+#endif
+#ifdef VBOX_WITH_NAT_UDP_SOCKET_CLONE
+        if (so->so_cloneOf)
+            CONTINUE_NO_UNLOCK(udp);
 #endif
         POLL_UDP_EVENTS(rc, error, so, &NetworkEvents);
 
