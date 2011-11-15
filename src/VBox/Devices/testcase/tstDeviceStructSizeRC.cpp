@@ -630,11 +630,11 @@ int main()
     GEN_CHECK_OFF(APICState, log_dest);
     GEN_CHECK_OFF(APICState, dest_mode);
     GEN_CHECK_OFF(APICState, isr);
-    GEN_CHECK_OFF(APICState, isr[1]);
+    GEN_CHECK_OFF(APICState, isr.au32Bitmap[1]);
     GEN_CHECK_OFF(APICState, tmr);
-    GEN_CHECK_OFF(APICState, tmr[1]);
+    GEN_CHECK_OFF(APICState, tmr.au32Bitmap[1]);
     GEN_CHECK_OFF(APICState, irr);
-    GEN_CHECK_OFF(APICState, irr[1]);
+    GEN_CHECK_OFF(APICState, irr.au32Bitmap[1]);
     GEN_CHECK_OFF(APICState, lvt);
     GEN_CHECK_OFF(APICState, lvt[1]);
     GEN_CHECK_OFF(APICState, lvt[APIC_LVT_NB - 1]);
