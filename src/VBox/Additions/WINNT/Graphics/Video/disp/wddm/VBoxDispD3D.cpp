@@ -3217,6 +3217,9 @@ static HRESULT vboxWddmGetD3D9Caps(PVBOXWDDMDISP_ADAPTER pAdapter, D3DCAPS9 *pCa
     }
 #endif
 
+    /* needed for Windows Media Player to work properly */
+    pCaps->Caps |= D3DCAPS_READ_SCANLINE;
+
     vboxDispDumpD3DCAPS9(pCaps);
 
     return S_OK;
