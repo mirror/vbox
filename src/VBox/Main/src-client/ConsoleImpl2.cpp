@@ -1792,7 +1792,7 @@ int Console::configConstructorInner(PVM pVM, AutoWriteLock *pAlock)
             hrc = BusMgr->assignPciDevice(pszAdapterName, pInst, PciAddr);                  H();
 
             InsertConfigNode(pInst, "Config", &pCfg);
-#ifdef VBOX_WITH_2X_4GB_ADDR_SPACE   /* not safe here yet. */
+#ifdef VBOX_WITH_2X_4GB_ADDR_SPACE   /* not safe here yet. */ /** @todo Make PCNet ring-0 safe on 32-bit mac kernels! */
             if (pDev == pDevPCNet)
             {
                 InsertConfigInteger(pCfg, "R0Enabled",    false);

@@ -22,6 +22,7 @@
 #include <VBox/vmm/pdmdev.h>
 #include <VBox/vmm/pgm.h>
 #include <VBox/vmm/dbgftrace.h>
+#include <VBox/vmm/vmcpuset.h>
 #include <VBox/log.h>
 #include <VBox/param.h>
 #include <iprt/assert.h>

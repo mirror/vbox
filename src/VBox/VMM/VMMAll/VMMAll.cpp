@@ -23,10 +23,145 @@
 #include <VBox/vmm/vmm.h>
 #include "VMMInternal.h"
 #include <VBox/vmm/vm.h>
-#include <VBox/vmm/vmm.h>
+#include <VBox/vmm/vmcpuset.h>
 #include <VBox/param.h>
 #include <iprt/thread.h>
 #include <iprt/mp.h>
+
+
+/*******************************************************************************
+*   Global Variables                                                           *
+*******************************************************************************/
+/** User counter for the vmmInitFormatTypes function (pro forma). */
+static volatile uint32_t g_cFormatTypeUsers = 0;
+
+
+/**
+ * Helper that formats a decimal number in the range 0..9999.
+ *
+ * @returns The length of the formatted number.
+ * @param   pszBuf              Output buffer with sufficient space.
+ * @param   uNum                The number to format.
+ */
+static unsigned vmmFormatTypeShortNumber(char *pszBuf, uint32_t uNumber)
+{
+    unsigned  off = 0;
+    if (uNumber >= 10)
+    {
+        if (uNumber >= 100)
+        {
+            if (uNumber >= 1000)
+                pszBuf[off++] = ((uNumber / 1000) % 10) + '0';
+            pszBuf[off++] = ((uNumber / 100) % 10) + '0';
+        }
+        pszBuf[off++] = ((uNumber / 10) % 10) + '0';
+    }
+    pszBuf[off++] = (uNumber % 10) + '0';
+    pszBuf[off] = '\0';
+    return off;
+}
+
+
+/**
+ * @callback_method_impl{FNRTSTRFORMATTYPE, vmsetcpu}
+ */
+static DECLCALLBACK(size_t) vmmFormatTypeVmCpuSet(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput,
+                                                  const char *pszType, void const *pvValue,
+                                                  int cchWidth, int cchPrecision, unsigned fFlags,
+                                                  void *pvUser)
+{
+    PCVMCPUSET  pSet   = (PCVMCPUSET)pvValue;
+    uint32_t    cCpus  = 0;
+    uint32_t    iCpu   = RT_ELEMENTS(pSet->au32Bitmap) * 32;
+    while (iCpu--)
+        if (VMCPUSET_IS_PRESENT(pSet, iCpu))
+            cCpus++;
+
+    char szTmp[32];
+    AssertCompile(RT_ELEMENTS(pSet->au32Bitmap) * 32 < 999);
+    if (cCpus == 1)
+    {
+        iCpu = RT_ELEMENTS(pSet->au32Bitmap) * 32;
+        while (iCpu--)
+            if (VMCPUSET_IS_PRESENT(pSet, iCpu))
+            {
+                szTmp[0] = 'c';
+                szTmp[1] = 'p';
+                szTmp[2] = 'u';
+                return pfnOutput(pvArgOutput, szTmp, 3 + vmmFormatTypeShortNumber(&szTmp[3], iCpu));
+            }
+        cCpus = 0;
+    }
+    if (cCpus == 0)
+        return pfnOutput(pvArgOutput, "<empty>", sizeof("<empty>") - 1);
+    if (cCpus == RT_ELEMENTS(pSet->au32Bitmap) * 32)
+        return pfnOutput(pvArgOutput, "<full>", sizeof("<full>") - 1);
+
+    /*
+     * Print cpus that are present: {1,2,7,9 ... }
+     */
+    size_t cchRet = pfnOutput(pvArgOutput, "{", 1);
+
+    cCpus = 0;
+    iCpu  = 0;
+    while (iCpu < RT_ELEMENTS(pSet->au32Bitmap) * 32)
+    {
+        if (VMCPUSET_IS_PRESENT(pSet, iCpu))
+        {
+            /* Output the first cpu number. */
+            int off = 0;
+            if (cCpus != 0)
+                szTmp[off++] = ',';
+            off += vmmFormatTypeShortNumber(&szTmp[off], iCpu);
+
+            /* Check for sequence. */
+            uint32_t const iStart = ++iCpu;
+            while (   iCpu < RT_ELEMENTS(pSet->au32Bitmap) * 32
+                   && VMCPUSET_IS_PRESENT(pSet, iCpu))
+                iCpu++;
+            if (iCpu != iStart)
+            {
+                szTmp[off++] = '-';
+                off += vmmFormatTypeShortNumber(&szTmp[off], iCpu);
+            }
+
+            /* Terminate and output. */
+            szTmp[off] = '\0';
+            cchRet += pfnOutput(pvArgOutput, szTmp, off);
+        }
+        iCpu++;
+    }
+
+    cchRet += pfnOutput(pvArgOutput, "}", 1);
+    NOREF(pvUser);
+    return cchRet;
+}
+
+
+/**
+ * Registers the VMM wide format types.
+ *
+ * Called by VMMR3Init, VMMR0Init and VMMRCInit.
+ */
+int vmmInitFormatTypes(void)
+{
+    int rc = VINF_SUCCESS;
+    if (ASMAtomicIncU32(&g_cFormatTypeUsers) == 1)
+        rc = RTStrFormatTypeRegister("vmcpuset", vmmFormatTypeVmCpuSet, NULL);
+    return rc;
+}
+
+
+#ifndef IN_RC
+/**
+ * Counterpart to vmmInitFormatTypes, called by VMMR3Term and VMMR0Term.
+ */
+void vmmTermFormatTypes(void)
+{
+    if (ASMAtomicDecU32(&g_cFormatTypeUsers) == 0)
+        RTStrFormatTypeDeregister("vmcpuset");
+}
+#endif
 
 
 /**
@@ -202,3 +337,4 @@ VMMDECL(VMMSWITCHER) VMMGetSwitcher(PVM pVM)
 {
     return pVM->vmm.s.enmSwitcher;
 }
+
