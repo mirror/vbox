@@ -34,6 +34,10 @@
       </listitem>
 
       <listitem>
+        <para>E1000: 802.1q VLAN support</para>
+      </listitem>
+
+      <listitem>
         <para>Windows Additions: fixed guest hangs when switching back from fullscreen text mode apps (bug #9636)</para>
       </listitem>
 

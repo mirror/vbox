@@ -10,7 +10,6 @@
  *      317453-002 Revision 3.5
  *
  * @todo IPv6 checksum offloading support
- * @todo VLAN checksum offloading support
  * @todo Flexible Filter / Wakeup (optional?)
  */
 
@@ -226,6 +225,8 @@ struct E1kChips
 #define RCTL_BSIZE_MASK  0x00030000
 #define RCTL_BSIZE_SHIFT 16
 #define RCTL_VFE         0x00040000
+#define RCTL_CFIEN       0x00080000
+#define RCTL_CFI         0x00100000
 #define RCTL_BSEX        0x02000000
 #define RCTL_SECRC       0x04000000
 
@@ -610,6 +611,10 @@ class E1kEEPROM
 };
 
 
+#define E1K_SPEC_VLAN(s)    (s      & 0xFFF)
+#define E1K_SPEC_CFI(s) (!!((s>>12) & 0x1))
+#define E1K_SPEC_PRI(s)    ((s>>13) & 0x7)
+
 struct E1kRxDStatus
 {
     /** @name Descriptor Status field (3.2.3.1)
@@ -634,9 +639,7 @@ struct E1kRxDStatus
     /** @} */
     /** @name Descriptor Special field (3.2.3.3)
      * @{  */
-    unsigned u12VLAN : 12;                            /**< VLAN identifier. */
-    unsigned fCFI    : 1;             /**< Canonical form indicator (VLAN). */
-    unsigned u3PRI   : 3;                        /**< User priority (VLAN). */
+    unsigned u16Special : 16;      /**< VLAN: Id, Canonical form, Priority. */
     /** @} */
 };
 typedef struct E1kRxDStatus E1KRXDST;
@@ -684,9 +687,7 @@ struct E1kTDLegacy
         /* CSS field */
         unsigned u8CSS     : 8;
         /* Special field*/
-        unsigned u12VLAN   : 12;
-        unsigned fCFI      : 1;
-        unsigned u3PRI     : 3;
+        unsigned u16Special: 16;
     } dw3;
 };
 
@@ -800,9 +801,7 @@ struct E1kTDData
         /** @name SPECIAL field - VLAN tag to be inserted after ethernet header.
          * Requires fEOP, fVLE and CTRL.VME to be set.
          * @{ */
-        unsigned u12VLAN   : 12;                      /**< VLAN identifier. */
-        unsigned fCFI      : 1;       /**< Canonical form indicator (VLAN). */
-        unsigned u3PRI     : 3;                  /**< User priority (VLAN). */
+        unsigned u16Special: 16;   /**< VLAN: Id, Canonical form, Priority. */
         /** @}  */
     } dw3;
 };
@@ -887,7 +886,10 @@ AssertCompileSize(struct E1kTcpHeader, 20);
 
 
 /** The current Saved state version. */
-#define E1K_SAVEDSTATE_VERSION          2
+#define E1K_SAVEDSTATE_VERSION          3
+/** Saved state version for VirtualBox 4.1 and earlier.
+ * These did not include VLAN tag fields.  */
+#define E1K_SAVEDSTATE_VERSION_VBOX_41  2
 /** Saved state version for VirtualBox 3.0 and earlier.
  * This did not include the configuration part nor the E1kEEPROM.  */
 #define E1K_SAVEDSTATE_VERSION_VBOX_30  1
@@ -1027,6 +1029,10 @@ struct E1kState_st
     bool        fIPcsum;
     /** TX: TCP/UDP checksum has to be inserted if true. */
     bool        fTCPcsum;
+    /** TX: VLAN tag has to be inserted if true. */
+    bool        fVTag;
+    /** TX: TCI part of VLAN tag to be inserted. */
+    uint16_t    u16VTagTCI;
     /** TX TSE fallback: Number of payload bytes remaining in TSE context. */
     uint32_t    u32PayRemain;
     /** TX TSE fallback: Number of header bytes remaining in TSE context. */
@@ -1037,7 +1043,6 @@ struct E1kState_st
     uint32_t    u32SavedCsum;
     /** ?: Emulated controller type. */
     E1KCHIP     eChip;
-    uint32_t    alignmentFix;
 
     /** EMT: EEPROM emulation */
     E1kEEPROM   eeprom;
@@ -1639,9 +1644,9 @@ static void e1kPrintRDesc(E1KSTATE* pState, E1KRXDESC* pDesc)
              pDesc->status.fIPE ? "IPE" : "ipe",
              pDesc->status.fTCPE ? "TCPE" : "tcpe",
              pDesc->status.fCE ? "CE" : "ce",
-             pDesc->status.fCFI ? "CFI" :"cfi",
-             pDesc->status.u12VLAN,
-             pDesc->status.u3PRI));
+             E1K_SPEC_CFI(pDesc->status.u16Special) ? "CFI" :"cfi",
+             E1K_SPEC_VLAN(pDesc->status.u16Special),
+             E1K_SPEC_PRI(pDesc->status.u16Special)));
 }
 
 /**
@@ -1691,9 +1696,9 @@ static void e1kPrintTDesc(E1KSTATE* pState, E1KTXDESC* pDesc, const char* cszDir
                     pDesc->data.dw3.fLC  ? " LC"  :"",
                     pDesc->data.dw3.fTXSM? " TXSM":"",
                     pDesc->data.dw3.fIXSM? " IXSM":"",
-                    pDesc->data.dw3.fCFI ? " CFI" :"",
-                    pDesc->data.dw3.u12VLAN,
-                    pDesc->data.dw3.u3PRI));
+                    E1K_SPEC_CFI(pDesc->data.dw3.u16Special) ? "CFI" :"cfi",
+                    E1K_SPEC_VLAN(pDesc->data.dw3.u16Special),
+                    E1K_SPEC_PRI(pDesc->data.dw3.u16Special)));
             break;
         case E1K_DTYP_LEGACY:
             E1kLog2(("%s %s Legacy Transmit Descriptor (%d bytes) %s\n",
@@ -1713,9 +1718,9 @@ static void e1kPrintTDesc(E1KSTATE* pState, E1KTXDESC* pDesc, const char* cszDir
                     pDesc->legacy.dw3.fLC  ? " LC"  :"",
                     pDesc->legacy.cmd.u8CSO,
                     pDesc->legacy.dw3.u8CSS,
-                    pDesc->legacy.dw3.fCFI ? " CFI" :"",
-                    pDesc->legacy.dw3.u12VLAN,
-                    pDesc->legacy.dw3.u3PRI));
+                    E1K_SPEC_CFI(pDesc->legacy.dw3.u16Special) ? "CFI" :"cfi",
+                    E1K_SPEC_VLAN(pDesc->legacy.dw3.u16Special),
+                    E1K_SPEC_PRI(pDesc->legacy.dw3.u16Special)));
             break;
         default:
             E1kLog(("%s %s Invalid Transmit Descriptor %s\n",
@@ -2013,7 +2018,17 @@ static int e1kHandleRxPacket(E1KSTATE* pState, const void *pvBuf, size_t cb, E1K
         pState->led.Asserted.s.fReading = pState->led.Actual.s.fReading = 1;
 
     Assert(cb <= E1K_MAX_RX_PKT_SIZE);
-    memcpy(rxPacket, pvBuf, cb);
+    Assert(cb > 16);
+    if (status.fVP && cb > 16)
+    {
+        uint16_t *u16Ptr = (uint16_t*)pvBuf;
+        /* VLAN packet -- strip VLAN tag */
+        memcpy(rxPacket, pvBuf, 12); /* Copy src and dst addresses */
+        status.u16Special = RT_BE2H_U16(u16Ptr[7]); /* Extract VLAN tag */
+        memcpy(rxPacket + 12, (uint8_t*)pvBuf + 16, cb - 16); /* Copy the rest of the packet */
+    }
+    else
+        memcpy(rxPacket, pvBuf, cb);
     /* Pad short packets */
     if (cb < 60)
     {
@@ -2203,7 +2218,7 @@ static int e1kRegWriteCTRL(E1KSTATE* pState, uint32_t offset, uint32_t index, ui
         }
         if (value & CTRL_VME)
         {
-            E1kLog(("%s VLAN Mode is not supported yet!\n", INSTANCE(pState)));
+            E1kLog(("%s VLAN Mode Enabled\n", INSTANCE(pState)));
         }
         E1kLog(("%s e1kRegWriteCTRL: mdio dir=%s mdc dir=%s mdc=%s mdio=%d\n",
                 INSTANCE(pState), (value & CTRL_MDIO_DIR)?"OUT":"IN ",
@@ -3176,7 +3191,7 @@ DECLINLINE(void) e1kWriteBackDesc(E1KSTATE* pState, E1KTXDESC* pDesc, RTGCPHYS a
 static void e1kTransmitFrame(E1KSTATE* pState, bool fOnWorkerThread)
 {
     PPDMSCATTERGATHER   pSg     = pState->CTX_SUFF(pTxSg);
-    uint32_t const      cbFrame = pSg ? (uint32_t)pSg->cbUsed : 0;
+    uint32_t const      cbFrame = pSg ? ((uint32_t)pSg->cbUsed + (pState->fVTag ? 4 : 0)) : 0;
     Assert(!pSg || pSg->cSegs == 1);
 
 /*    E1kLog2(("%s <<< Outgoing packet. Dump follows: >>>\n"
@@ -3187,6 +3202,14 @@ static void e1kTransmitFrame(E1KSTATE* pState, bool fOnWorkerThread)
     if (cbFrame > 70) /* unqualified guess */
         pState->led.Asserted.s.fWriting = pState->led.Actual.s.fWriting = 1;
 
+    /* Add VLAN tag */
+    if (cbFrame > 16 && pState->fVTag)
+    {
+        E1kLog3(("%s Inserting VLAN tag %08x\n",
+            INSTANCE(pState), RT_BE2H_U16(VET) | (RT_BE2H_U16(pState->u16VTagTCI) << 16)));
+        memmove((uint8_t*)pSg->aSegs[0].pvSeg + 16, (uint8_t*)pSg->aSegs[0].pvSeg + 12, cbFrame - 12);
+        *((uint32_t*)pSg->aSegs[0].pvSeg + 3) = RT_BE2H_U16(VET) | (RT_BE2H_U16(pState->u16VTagTCI) << 16);
+    }
     /* Update the stats */
     E1K_INC_CNT32(TPT);
     E1K_ADD_CNT64(TOTL, TOTH, cbFrame);
@@ -3616,6 +3639,8 @@ static void e1kDescReport(E1KSTATE* pState, E1KTXDESC* pDesc, RTGCPHYS addr)
  */
 static void e1kXmitDesc(E1KSTATE* pState, E1KTXDESC* pDesc, RTGCPHYS addr, bool fOnWorkerThread)
 {
+    uint32_t cbVTag = 0;
+
     e1kPrintTDesc(pState, pDesc, "vvv");
 
 #ifdef E1K_USE_TX_TIMERS
@@ -3666,6 +3691,18 @@ static void e1kXmitDesc(E1KSTATE* pState, E1KTXDESC* pDesc, RTGCPHYS addr, bool 
             E1K_INC_ISTAT_CNT(pState->uStatDescDat);
 
             /*
+             * The last descriptor of non-TSE packet must contain VLE flag.
+             * TSE packets have VLE flag in the first descriptor. The later
+             * case is taken care of a bit later when cbVTag gets assigned.
+             *
+             * 1) pDesc->data.cmd.fEOP && !pDesc->data.cmd.fTSE
+             */
+            if (pDesc->data.cmd.fEOP && !pDesc->data.cmd.fTSE)
+            {
+                pState->fVTag      = pDesc->data.cmd.fVLE;
+                pState->u16VTagTCI = pDesc->data.dw3.u16Special;
+            }
+            /*
              * First fragment: Allocate new buffer and save the IXSM and TXSM
              * packet options as these are only valid in the first fragment.
              */
@@ -3676,11 +3713,23 @@ static void e1kXmitDesc(E1KSTATE* pState, E1KTXDESC* pDesc, RTGCPHYS addr, bool 
                 E1kLog2(("%s Saving checksum flags:%s%s; \n", INSTANCE(pState),
                          pState->fIPcsum ? " IP" : "",
                          pState->fTCPcsum ? " TCP/UDP" : ""));
+                if (pDesc->data.cmd.fTSE)
+                {
+                    /* 2) pDesc->data.cmd.fTSE && pState->u16TxPktLen == 0 */
+                    pState->fVTag      = pDesc->data.cmd.fVLE;
+                    pState->u16VTagTCI = pDesc->data.dw3.u16Special;
+                    cbVTag = pState->fVTag ? 4 : 0;
+                }
+                else if (pDesc->data.cmd.fEOP)
+                    cbVTag = pDesc->data.cmd.fVLE ? 4 : 0;
+                else
+                    cbVTag = 4;
+                E1kLog3(("%s About to allocate TX buffer: cbVTag=%u\n", INSTANCE(pState), cbVTag));
                 if (e1kCanDoGso(&pState->GsoCtx, &pDesc->data, &pState->contextTSE))
-                    e1kXmitAllocBuf(pState, pState->contextTSE.dw2.u20PAYLEN + pState->contextTSE.dw3.u8HDRLEN,
+                    e1kXmitAllocBuf(pState, pState->contextTSE.dw2.u20PAYLEN + pState->contextTSE.dw3.u8HDRLEN + cbVTag,
                                     true /*fExactSize*/, true /*fGso*/);
                 else
-                    e1kXmitAllocBuf(pState, pState->contextTSE.dw3.u16MSS + pState->contextTSE.dw3.u8HDRLEN,
+                    e1kXmitAllocBuf(pState, pState->contextTSE.dw3.u16MSS + pState->contextTSE.dw3.u8HDRLEN + cbVTag,
                                     pDesc->data.cmd.fTSE  /*fExactSize*/, false /*fGso*/);
                 /** @todo Is there any way to indicating errors other than collisions? Like
                  *        VERR_NET_DOWN. */
@@ -3764,10 +3813,17 @@ static void e1kXmitDesc(E1KSTATE* pState, E1KTXDESC* pDesc, RTGCPHYS addr, bool 
 
             /* First fragment: allocate new buffer. */
             if (pState->u16TxPktLen == 0)
+            {
+                if (pDesc->legacy.cmd.fEOP)
+                    cbVTag = pDesc->legacy.cmd.fVLE ? 4 : 0;
+                else
+                    cbVTag = 4;
+                E1kLog3(("%s About to allocate TX buffer: cbVTag=%u\n", INSTANCE(pState), cbVTag));
                 /** @todo reset status bits? */
-                e1kXmitAllocBuf(pState, pDesc->legacy.cmd.u16Length, pDesc->legacy.cmd.fEOP, false /*fGso*/);
+                e1kXmitAllocBuf(pState, pDesc->legacy.cmd.u16Length + cbVTag, pDesc->legacy.cmd.fEOP, false /*fGso*/);
                 /** @todo Is there any way to indicating errors other than collisions? Like
                  *        VERR_NET_DOWN. */
+            }
 
             /* Add fragment to frame. */
             if (e1kAddToFrame(pState, pDesc->data.u64BufAddr, pDesc->legacy.cmd.u16Length))
@@ -3777,6 +3833,8 @@ static void e1kXmitDesc(E1KSTATE* pState, E1KTXDESC* pDesc, RTGCPHYS addr, bool 
                 /* Last fragment: Transmit and reset the packet storage counter.  */
                 if (pDesc->legacy.cmd.fEOP)
                 {
+                    pState->fVTag       = pDesc->legacy.cmd.fVLE;
+                    pState->u16VTagTCI  = pDesc->legacy.dw3.u16Special;
                     /** @todo Offload processing goes here. */
                     e1kTransmitFrame(pState, fOnWorkerThread);
                     pState->u16TxPktLen = 0;
@@ -4852,6 +4910,39 @@ static bool e1kAddressFilter(E1KSTATE *pState, const void *pvBuf, size_t cb, E1K
         return false;
     }
 
+    /* Is VLAN filtering enabled? */
+    if (RCTL & RCTL_VFE)
+    {
+        uint16_t *u16Ptr = (uint16_t*)pvBuf;
+        /* Compare TPID with VLAN Ether Type */
+        if (RT_BE2H_U16(u16Ptr[6]) == VET)
+        {
+            pStatus->fVP = true;
+            /* It is 802.1q packet indeed, let's filter by VID */
+            if (RCTL & RCTL_CFIEN)
+            {
+                E1kLog3(("%s VLAN filter: VLAN=%d CFI=%d RCTL_CFI=%d\n", INSTANCE(pState),
+                         E1K_SPEC_VLAN(RT_BE2H_U16(u16Ptr[7])),
+                         E1K_SPEC_CFI(RT_BE2H_U16(u16Ptr[7])),
+                         !!(RCTL & RCTL_CFI)));
+                if (E1K_SPEC_CFI(RT_BE2H_U16(u16Ptr[7])) != !!(RCTL & RCTL_CFI))
+                {
+                    E1kLog2(("%s Packet filter: CFIs do not match in packet and RCTL (%d!=%d)\n",
+                             INSTANCE(pState), E1K_SPEC_CFI(RT_BE2H_U16(u16Ptr[7])), !!(RCTL & RCTL_CFI)));
+                    return false;
+                }
+            }
+            else
+                E1kLog3(("%s VLAN filter: VLAN=%d\n", INSTANCE(pState),
+                         E1K_SPEC_VLAN(RT_BE2H_U16(u16Ptr[7]))));
+            if (!ASMBitTest(pState->auVFTA, E1K_SPEC_VLAN(RT_BE2H_U16(u16Ptr[7]))))
+            {
+                E1kLog2(("%s Packet filter: no VLAN match (id=%d)\n", 
+                         INSTANCE(pState), E1K_SPEC_VLAN(RT_BE2H_U16(u16Ptr[7]))));
+                return false;
+            }
+        }
+    }
     /* Broadcast filtering */
     if (e1kIsBroadcast(pvBuf) && (RCTL & RCTL_BAM))
         return true;
@@ -4884,20 +4975,6 @@ static bool e1kAddressFilter(E1KSTATE *pState, const void *pvBuf, size_t cb, E1K
             return true;
         }
         E1kLog2(("%s Packet filter: no perfect match\n", INSTANCE(pState)));
-    }
-    /* Is VLAN filtering enabled? */
-    if (RCTL & RCTL_VFE)
-    {
-        uint16_t *u16Ptr = (uint16_t*)pvBuf;
-        /* Compare TPID with VLAN Ether Type */
-        if (u16Ptr[6] == VET)
-        {
-            pStatus->fVP = true;
-            /* It is 802.1q packet indeed, let's filter by VID */
-            if (ASMBitTest(pState->auVFTA, RT_BE2H_U16(u16Ptr[7]) & 0xFFF))
-                return true;
-            E1kLog2(("%s Packet filter: no VLAN match\n", INSTANCE(pState)));
-        }
     }
     E1kLog2(("%s Packet filter: packet discarded\n", INSTANCE(pState)));
     return false;
@@ -5175,6 +5252,8 @@ static DECLCALLBACK(int) e1kSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
     SSMR3PutBool(pSSM, pState->fTCPcsum);
     SSMR3PutMem(pSSM, &pState->contextTSE, sizeof(pState->contextTSE));
     SSMR3PutMem(pSSM, &pState->contextNormal, sizeof(pState->contextNormal));
+    SSMR3PutBool(pSSM, pState->fVTag);
+    SSMR3PutU16(pSSM, pState->u16VTagTCI);
 /**@todo GSO requires some more state here. */
     E1kLog(("%s State has been saved\n", INSTANCE(pState)));
     return VINF_SUCCESS;
@@ -5239,6 +5318,7 @@ static DECLCALLBACK(int) e1kLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32
     int       rc;
 
     if (    uVersion != E1K_SAVEDSTATE_VERSION
+        &&  uVersion != E1K_SAVEDSTATE_VERSION_VBOX_41
         &&  uVersion != E1K_SAVEDSTATE_VERSION_VBOX_30)
         return VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION;
 
@@ -5287,7 +5367,17 @@ static DECLCALLBACK(int) e1kLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32
         SSMR3GetMem(pSSM, &pState->contextTSE, sizeof(pState->contextTSE));
         rc = SSMR3GetMem(pSSM, &pState->contextNormal, sizeof(pState->contextNormal));
         AssertRCReturn(rc, rc);
-
+        if (uVersion > E1K_SAVEDSTATE_VERSION_VBOX_41)
+        {
+            SSMR3GetBool(pSSM, &pState->fVTag);
+            rc = SSMR3GetU16(pSSM, &pState->u16VTagTCI);
+            AssertRCReturn(rc, rc);
+        }
+        else
+        {
+            pState->fVTag      = false;
+            pState->u16VTagTCI = 0;
+        }
         /* derived state  */
         e1kSetupGsoCtx(&pState->GsoCtx, &pState->contextTSE);
 
@@ -5564,18 +5654,18 @@ static DECLCALLBACK(int) e1kDestruct(PPDMDEVINS pDevIns)
 static DECLCALLBACK(void) e1kInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const char *pszArgs)
 {
     E1KSTATE* pState = PDMINS_2_DATA(pDevIns, E1KSTATE*);
-    unsigned    i;
-    bool        fRcvRing = false;
-    bool        fXmtRing = false;
+    unsigned  i;
+    // bool        fRcvRing = false;
+    // bool        fXmtRing = false;
 
     /*
      * Parse args.
-     */
     if (pszArgs)
     {
         fRcvRing = strstr(pszArgs, "verbose") || strstr(pszArgs, "rcv");
         fXmtRing = strstr(pszArgs, "verbose") || strstr(pszArgs, "xmt");
     }
+     */
 
     /*
      * Show info.
