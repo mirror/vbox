@@ -29,20 +29,330 @@
       </listitem>
 
       <listitem>
+        <para>E1000: 802.1q VLAN support</para>
+      </listitem>
+
+    </itemizedlist>
+  </sect1>
+
+  <sect1>
+    <title>Version 4.1.6 (2011-11-04)</title>
+
+    <para>This is a maintenance release. The following items were fixed and/or
+      added:</para>
+
+    <itemizedlist>
+
+      <listitem>
+        <para>VRDP: fixed screen corruption</para>
+      </listitem>
+
+      <listitem>
+        <para>NAT: the interface stopped working after a lot of failed
+          ICMP requests (bug #9371)</para>
+      </listitem>
+
+      <listitem>
         <para>E1000: fixed rare Windows 7 guest hangs, either at boot time
           or when reconfiguring the network card in unusual setups (bug #6223)</para>
       </listitem>
 
       <listitem>
-        <para>E1000: 802.1q VLAN support</para>
+        <para>ATA: fixed a possible crash during ATAPI passthrough with
+          certain guests</para>
       </listitem>
 
       <listitem>
-        <para>Windows Additions: fixed guest hangs when switching back from fullscreen text mode apps (bug #9636)</para>
+        <para>ATA: improved compatibility with ancient Linux kernels</para>
+      </listitem>
+
+      <listitem>
+        <para>Main: fixed incorrect framebuffer information after leaving
+          the fullscreen mode with X11 guests, this lead to a scrambled
+          preview window in the GUI for example</para>
+      </listitem>
+
+      <listitem>
+        <para>Mac OS X hosts: fixed the problem with duplicate packets when
+          bridged to a wireless interface (bug #9648)</para>
+      </listitem>
+
+      <listitem>
+        <para>Linux hosts: fix for 3D support on Fedora 15 (bug #9799)</para>
+      </listitem>
+
+      <listitem>
+        <para>Linux hosts: don't call <emphasis>del_timer_sync</emphasis>
+          from an interrupt context (Fedora bug report 746331)</para>
+      </listitem>
+
+      <listitem>
+        <para>Windows Vista and 7 guests: more WDDM fixes</para>
+      </listitem>
+
+      <listitem>
+        <para>Linux Additions: fixed kernel module compilation failure on Redhat
+           Enterprise Linux 4 (bug #9709)</para>
+      </listitem>
+
+      <listitem>
+        <para>Linux Additions: install the DRI driver correctly on Ubuntu 11.10
+          guests</para>
+      </listitem>
+
+      <listitem>
+        <para>Solaris Additions: added read-only mmap support for shared
+           folders</para>
+      </listitem>
+
+      <listitem>
+        <para>Solaris Additions: added directory, file mode and mask options for
+          shared folders</para>
+      </listitem>
+
+      <listitem>
+        <para>Windows Additions: implemented faster detection of logged-in guest
+          users and stale sessions</para>
+      </listitem>
+
+      <listitem>
+        <para>X.Org Additions: fixed graphical corruption when switching to a
+           virtual terminal (bug #9490)</para>
+      </listitem>
+
+    </itemizedlist>
+  </sect1>
+
+  <sect1>
+    <title>Version 4.1.4 (2011-10-03)</title>
+
+    <para>This is a maintenance release. The following items were fixed and/or
+      added:</para>
+
+    <itemizedlist>
+
+      <listitem>
+        <para>VMM: fixed PAE guests running on 32-bit hosts (4.0 regression;
+          bug #9458)</para>
+      </listitem>
+
+      <listitem>
+        <para>VMM: fixed <emphasis>INVALID_PARAMETER</emphasis> guru meditation
+          caused by insufficient memory conditions (4.1.0 regression; bug #9240)</para>
+      </listitem>
+
+      <listitem>
+        <para>VMM: fixed clobbered CPU registers during <emphasis>stos/lods/ins/outs</emphasis>
+          emulation under rare circumstances</para>
+      </listitem>
+
+      <listitem>
+        <para>VMM: another fix for 64-bit guests on recent AMD CPUs</para>
+      </listitem>
+
+      <listitem>
+        <para>GUI: warn the user if he uses an outdated extension pack and allow
+          to download and upgrade in that case (bug #8025)</para>
+      </listitem>
+
+      <listitem>
+        <para>GUI: fixed spurious LCtrl key events on some Windows hosts
+          (4.0.6 regression; bug #373)</para>
+      </listitem>
+
+      <listitem>
+        <para>VBoxManage: another fix for <emphasis>extpack install --replace</emphasis>
+          (bug #9308)</para>
+      </listitem>
+
+      <listitem>
+        <para>VBoxManage: allow to specify the UUID of the target image in
+          <emphasis>convertfromraw</emphasis></para>
+      </listitem>
+
+      <listitem>
+        <para>VRDP: fixed a rare crash when two or more clients connect to the server
+          (bug #9503)</para>
+      </listitem>
+
+      <listitem>
+        <para>VRDP: fixed a case when a client was not resized correctly
+          (bug #9242)</para>
+      </listitem>
+
+      <listitem>
+        <para>USB: make device capturing work on Windows hosts with
+          usbhub class filter drivers installed (bug #9298);
+          bugfixes for Windows host USB support</para>
+      </listitem>
+
+      <listitem>
+        <para>VHD: fixed reads crossing block boundaries (bug #8532)</para>
+      </listitem>
+
+      <listitem>
+        <para>VMDK: fixed progress indicator when creating split VMDK
+          images</para>
+      </listitem>
+
+      <listitem>
+        <para>Floppy: fixed medium size detection for physical mediums
+          (Windows hosts only)</para>
+      </listitem>
+
+      <listitem>
+        <para>Main: fixed VM initialization if a shared folder does
+          not exist (bug #7941)</para>
+      </listitem>
+
+      <listitem>
+        <para>Main: fixed possible deadlock between hard disk enumeration and
+          resetting of immutable disks (bug #9549)</para>
+      </listitem>
+
+      <listitem>
+        <para>Main: fixed not detaching of virtual storage after a snapshot
+          restore operation (bug #8296)</para>
+      </listitem>
+
+      <listitem>
+        <para>Main: always reset modified state after restoring a snapshot (bug
+          #9387)</para>
+      </listitem>
+
+      <listitem>
+        <para>Main: fixed writing of changed VM settings to disk when using
+          snapshots (bug #8932)</para>
+      </listitem>
+
+      <listitem>
+        <para>Main: fixed taking screen shots (e.g. the preview window) for
+          headless VMs if the Guest Additions are active</para>
+      </listitem>
+
+      <listitem>
+        <para>Virtio-net: fixed the problem with UDP packets exceeding
+          MTU (bug #9370)</para>
+      </listitem>
+
+      <listitem>
+        <para>3D Support: fixed incorrect rendering and possible crashes when switching
+          to/from fullscreen with enabled 2D acceleration</para>
       </listitem>
 
       <listitem>
         <para>3D Support: fixed compiz under ubuntu 9.10</para>
+      </listitem>
+
+      <listitem>
+        <para>Guest control: Miscellaneous small bugfixes</para>
+      </listitem>
+
+      <listitem>
+        <para>Linux / Solaris hosts: don't use hard links in packages
+          (4.1.2 regression; bug #9441)</para>
+      </listitem>
+
+      <listitem>
+        <para>Mac OS X hosts: fix installation issues when installed as root
+          (bug #1578)</para>
+      </listitem>
+
+      <listitem>
+        <para>Mac OS X hosts: fixed packet capture issues with vboxnetX host-only
+          interfaces (bug #8076)</para>
+      </listitem>
+
+      <listitem>
+        <para>Solaris hosts: fixed incoming multicast packets for Crossbow based
+          bridged networking (bug #9532)</para>
+      </listitem>
+
+      <listitem>
+        <para>Solaris hosts: fixed starting EFI guests due to missing EFI ROM files
+          (bug #9535)</para>
+      </listitem>
+
+      <listitem>
+        <para>Windows hosts installer: fixed <emphasis>ADDLOCAL</emphasis> usage
+          on command line (4.1.0 regression; bug #9488)</para>
+      </listitem>
+
+      <listitem>
+        <para>Windows hosts installer: fixed dangling shortcut to the .chm
+          help file (bug #9646)</para>
+      </listitem>
+
+      <listitem>
+        <para>Windows hosts installer: try to fix installation error 2869 which
+          appeared under certain circumstances (bug #9664)</para>
+      </listitem>
+
+      <listitem>
+        <para>Windows hosts: VBoxHeadless should never open a separate
+          console window (bug #3549)</para>
+      </listitem>
+
+      <listitem>
+        <para>Guest Additions: fixed hang while waiting for guest execution
+          output (4.1.2 regression; bug #9446)</para>
+      </listitem>
+
+      <listitem>
+        <para>Linux Additions: add support for X.Org Server 1.11 (bug #9519)
+          </para>
+      </listitem>
+
+      <listitem>
+        <para>Linux Additions: suppress an incorrect error message and allow
+           a shared folder to be mounted in multiple places (bug #9627)
+          </para>
+      </listitem>
+
+      <listitem>
+        <para>Linux Additions: start VBoxService correctly on openSUSE 12.1
+           (bug #6229)
+          </para>
+      </listitem>
+
+      <listitem>
+        <para>Linux Additions: properly finish the installation even if the
+          compilation of the DRM module fails (which is not fatal)</para>
+      </listitem>
+
+      <listitem>
+        <para>Solaris Additions: fixed memory leaks and panics while mounting
+          (from console) and unmounting shared folders</para>
+      </listitem>
+
+      <listitem>
+        <para>Windows Additions: fixed swapped mouse cursor hotspot coordinates
+          (4.1.0 regression; bug #9447)</para>
+      </listitem>
+
+      <listitem>
+        <para>Windows Additions: fixed <emphasis>PAGE_FAULT_IN_NONPAGED_AREA</emphasis>
+          BSOD in VBoxDisp.dll when running SnippingTool (bug #9508)</para>
+      </listitem>
+
+      <listitem>
+        <para>Windows Additions: make image viewer work correctly
+          with Aero enabled (Vista and Windows 7)</para>
+      </listitem>
+
+      <listitem>
+        <para>Windows Additions: fixed incorrect window border blurs under Aero
+          with ATI cards (Vista and Windows 7)</para>
+      </listitem>
+
+      <listitem>
+        <para>Windows Additions: fixed incorrect rendering when moving 3D applications
+          outside guest desktop and back under Aero (Vista and Windows 7)</para>
+      </listitem>
+
+      <listitem>
+        <para>Windows Additions: fixed guest hangs when switching back from fullscreen
+          text mode applications (bug #9636)</para>
       </listitem>
 
     </itemizedlist>
@@ -544,6 +854,151 @@
 
     </itemizedlist>
 
+  </sect1>
+
+  <sect1>
+    <title>Version 4.0.14 (2011-10-13)</title>
+
+    <para>This is a maintenance release. The following items were fixed and/or
+      added:</para>
+
+    <itemizedlist>
+
+      <listitem>
+        <para>VMM: fixed 64bit guests on AMD Fusion CPUs (bug #8824)</para>
+      </listitem>
+
+      <listitem>
+        <para>VMM: fixed handling of the <emphasis>sysenter/sysexit</emphasis>
+          machine instructions in 64-bit guests on Intel hosts</para>
+      </listitem>
+
+      <listitem>
+        <para>GUI: fixed the inclusion of additional information (license,
+          vendor, ...) on OVF export</para>
+      </listitem>
+
+      <listitem>
+        <para>GUI: when taking a snapshot from the VM selector, don't do
+          a live snapshot</para>
+      </listitem>
+
+      <listitem>
+        <para>GUI: fixed spurious LCtrl key events on some Windows hosts
+          (4.0.6 regression; bug #5908)</para>
+      </listitem>
+
+      <listitem>
+        <para>VBoxManage: fixed <emphasis>extpack install --replace</emphasis></para>
+      </listitem>
+
+      <listitem>
+        <para>VRDP: fixed a rare screen corruption</para>
+      </listitem>
+
+      <listitem>
+        <para>E1000: fixed rare Windows 7 guest hangs, either at boot time
+          or when reconfiguring the network card in unusual setups (bug #6223)</para>
+      </listitem>
+
+      <listitem>
+        <para>Mouse support: fixed an off-by-one pointer position error
+           affecting Windows guests (bugs #7566, #9321)</para>
+      </listitem>
+
+      <listitem>
+        <para>NAT: changed TCP connection establishment according to Winsock API
+          requirements (Windows hosts only; bug #8919)</para>
+      </listitem>
+
+      <listitem>
+        <para>VHD: fixed reads crossing block boundaries (bug #8532)</para>
+      </listitem>
+
+      <listitem>
+        <para>VMDK: fixed progress indicator when creating split VMDK
+          images</para>
+      </listitem>
+
+      <listitem>
+        <para>Floppy: fixed medium size detection for physical mediums
+          (Windows hosts only)</para>
+      </listitem>
+      <listitem>
+        <para>VBoxSVC: made the path comparison OS independent when images are
+          registered (bug #9303)</para>
+      </listitem>
+
+      <listitem>
+        <para>Main: return the correct RDP default port fixing settings
+          warnings in the GUI if the remote display was enabled at runtime (bug #9368)</para>
+      </listitem>
+
+      <listitem>
+        <para>Main: fix VM initialization if a shared folder does not exist (bug #7941)</para>
+      </listitem>
+
+      <listitem>
+        <para>Main: fixed taking screen shots (e.g. the preview window) for
+          headless VMs if the Guest Additions are active</para>
+      </listitem>
+
+      <listitem>
+        <para>Main: fixed possible deadlock between hard disk enumeration and
+          the resetting of immutable disks (bug #9549)</para>
+      </listitem>
+
+      <listitem>
+        <para>OVA: fixed import of renamed OVA files (bug #9033)</para>
+      </listitem>
+
+      <listitem>
+        <para>Virtio-net: fixed the problem with UDP packets exceeding MTU
+          (bug #9370)</para>
+      </listitem>
+
+      <listitem>
+        <para>Solaris hosts: fixed starting EFI guests due to missing EFI ROM files
+          (bug #9535)</para>
+      </listitem>
+
+      <listitem>
+        <para>Mac OS X hosts: fix installation issues when installed as root
+          (bug #1578)</para>
+      </listitem>
+
+      <listitem>
+        <para>Windows Additions: fixed file truncation on a shared folder with
+          some applications (bugs #9276, #9315)</para>
+      </listitem>
+
+      <listitem>
+        <para>Linux Additions: suppress an incorrect error message and allow
+           a shared folder to be mounted in multiple places (bug #9627)
+          </para>
+      </listitem>
+
+      <listitem>
+        <para>Linux Additions: add support for X.Org Server 1.11 (bug #9519)
+          </para>
+      </listitem>
+
+      <listitem>
+        <para>Linux Additions: fixed <emphasis>llseek</emphasis> for Linux kernels
+          2.6.37 and above</para>
+      </listitem>
+
+      <listitem>
+        <para>Linux Additions: start VBoxService correctly on openSUSE 12.1
+           (bug #6229)</para>
+      </listitem>
+
+      <listitem>
+        <para>Linux Additions: properly finish the installation even if the
+          compilation of the DRM module fails (which is not fatal)</para>
+      </listitem>
+
+    </itemizedlist>
   </sect1>
 
   <sect1>
