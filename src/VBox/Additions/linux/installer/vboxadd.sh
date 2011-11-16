@@ -30,10 +30,9 @@
 
 PATH=$PATH:/bin:/sbin:/usr/sbin
 PACKAGE=VBoxGuestAdditions
-BUILDVBOXGUEST=`/bin/ls /usr/src/vboxguest*/vboxguest/build_in_tmp 2>/dev/null|cut -d' ' -f1`
-BUILDVBOXSF=`/bin/ls /usr/src/vboxguest*/vboxsf/build_in_tmp 2>/dev/null|cut -d' ' -f1`
-BUILDVBOXVIDEO=`/bin/ls /usr/src/vboxguest*/vboxvideo/build_in_tmp 2>/dev/null|cut -d' ' -f1`
-DODKMS=`/bin/ls /usr/src/vboxguest*/do_dkms 2>/dev/null|cut -d' ' -f1`
+MODULE_SRC=`/bin/ls /usr/src/vboxguest* 2>/dev/null|cut -d' ' -f1`
+BUILDINTMP="$MODULE_SRC/build_in_tmp"
+DODKMS="$MODULE_SRC/do_dkms"
 LOG="/var/log/vboxadd-install.log"
 MODPROBE=/sbin/modprobe
 
@@ -382,35 +381,32 @@ setup_modules()
     test_sane_kernel_dir
 
     echo
+    begin "Building the main Guest Additions module"
+    if ! $BUILDINTMP \
+        --save-module-symvers /tmp/vboxguest-Module.symvers \
+        --module-source $MODULE_SRC/vboxguest \
+        --no-print-directory install >> $LOG 2>&1; then
+        show_error "Look at $LOG to find out what went wrong"
+        return 1
+    fi
+    succ_msg
+    begin "Building the shared folder support module"
+    if ! $BUILDINTMP \
+        --use-module-symvers /tmp/vboxguest-Module.symvers \
+        --module-source $MODULE_SRC/vboxsf \
+        --no-print-directory install >> $LOG 2>&1; then
+        show_error  "Look at $LOG to find out what went wrong"
+        return 1
+    fi
+    succ_msg
     if expr `uname -r` '<' '2.6.27' > /dev/null; then
         echo "Not building the VirtualBox advanced graphics driver as this Linux version is"
         echo "too old to use it."
-        BUILDVBOXVIDEO=
-    fi
-    if [ -n "$BUILDVBOXGUEST" ]; then
-        begin "Building the main Guest Additions module"
-        if ! $BUILDVBOXGUEST \
-            --save-module-symvers /tmp/vboxguest-Module.symvers \
-            --no-print-directory install >> $LOG 2>&1; then
-            show_error "Look at $LOG to find out what went wrong"
-            return 1
-        fi
-        succ_msg
-    fi
-    if [ -n "$BUILDVBOXSF" ]; then
-        begin "Building the shared folder support module"
-        if ! $BUILDVBOXSF \
-            --use-module-symvers /tmp/vboxguest-Module.symvers \
-            --no-print-directory install >> $LOG 2>&1; then
-            show_error  "Look at $LOG to find out what went wrong"
-            return 1
-        fi
-        succ_msg
-    fi
-    if [ -n "$BUILDVBOXVIDEO" ]; then
+    else
         begin "Building the OpenGL support module"
-        if ! $BUILDVBOXVIDEO \
+        if ! $BUILDINTMP \
             --use-module-symvers /tmp/vboxguest-Module.symvers \
+            --module-source $MODULE_SRC/vboxvideo \
             --no-print-directory install >> $LOG 2>&1; then
             show_error "Look at $LOG to find out what went wrong"
             return 1
