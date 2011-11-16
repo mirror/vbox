@@ -39,6 +39,9 @@ fi
 
 [ -f /lib/lsb/init-functions ] || NOLSB=yes
 [ -f /etc/vbox/vbox.cfg ] && . /etc/vbox/vbox.cfg
+export BUILD_TYPE
+export USERNAME
+export USER=$USERNAME
 
 if [ -n "$INSTALL_DIR" ]; then
     VBOXMANAGE="$INSTALL_DIR/VBoxManage"
