@@ -154,17 +154,18 @@ ifeq ($(KBUILD_TARGET),linux)
  vboxguest-src_MODE     = a+r,u+w
  vboxguest-src_SOURCES  = $(subst ",,$(FILES_VBOXGUEST_NOBIN))
 
- INSTALLS += vboxguest-dkms-conf
- vboxguest-dkms-conf_INST    = $(INST_ADDITIONS)src/
- vboxguest-dkms-conf_MODE    = a+r,u+w
- vboxguest-dkms-conf_SOURCES = $(vboxguest-sh_0_OUTDIR)/dkms.conf
- vboxguest-dkms-conf_CLEAN   = $(vboxguest-sh_0_OUTDIR)/dkms.conf
+ INSTALLS += vboxguest-conf
+ vboxguest-conf_INST    = $(INST_ADDITIONS)src/
+ vboxguest-conf_MODE    = a+r,u+w
+ vboxguest-conf_SOURCES = $(vboxguest-sh_0_OUTDIR)/dkms.conf
+ vboxguest-conf_CLEAN   = $(vboxguest-sh_0_OUTDIR)/dkms.conf
 
- INSTALLS += vboxguest-dkms-sh
- vboxguest-dkms-sh_INST    = $(INST_ADDITIONS)src/
- vboxguest-dkms-sh_MODE    = a+rx,u+w
- vboxguest-dkms-sh_SOURCES = $(vboxguest-sh_0_OUTDIR)/do_dkms
- vboxguest-dkms-sh_CLEAN   = $(vboxguest-sh_0_OUTDIR)/do_dkms
+ INSTALLS += vboxguest-scripts
+ vboxguest-scripts_INST    = $(INST_ADDITIONS)src/
+ vboxguest-scripts_MODE    = a+rx,u+w
+ vboxguest-scripts_SOURCES = $(vboxguest-sh_0_OUTDIR)/do_dkms \
+                             ../../../HostDrivers/linux/build_in_tmp
+ vboxguest-scripts_CLEAN   = $(vboxguest-sh_0_OUTDIR)/do_dkms
 
  $$(vboxguest-sh_0_OUTDIR)/dkms.conf: \
  		$(PATH_SUB_CURRENT)/linux/dkms.conf \
@@ -194,16 +195,6 @@ ifeq ($(KBUILD_TARGET),linux)
  vboxguest-sh_MODE      = a+rx,u+w
  vboxguest-sh_SOURCES   = $(subst ",,$(FILES_VBOXGUEST_BIN))
  vboxguest-sh_SOURCES  += $(PATH_ROOT)/src/VBox/HostDrivers/linux/do_Module.symvers
- vboxguest-sh_SOURCES  += $(vboxguest-sh_0_OUTDIR)/build_in_tmp
- vboxguest-sh_CLEAN     = $(vboxguest-sh_0_OUTDIR)/build_in_tmp
-
- $$(vboxguest-sh_0_OUTDIR)/build_in_tmp: \
- 		$(PATH_ROOT)/src/VBox/HostDrivers/linux/build_in_tmp \
- 		$(VBOX_VERSION_STAMP) \
- 		| $$(dir $$@)
-	$(call MSG_TOOL,Creating,,$@)
-	$(QUIET)$(SED) -e "s;_VERSION_;${VBOX_VERSION_STRING};g; s;_MODULE_;vboxguest;g; s;_BUILDTYPE_;${KBUILD_TYPE};g" --output $@ $<
-	$(QUIET)$(CHMOD) 0755 $@
 
 endif # Linux
 

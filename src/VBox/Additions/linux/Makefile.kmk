@@ -154,7 +154,7 @@ VBOX_ADD_STRIP_OBJ.linux = \
 	vboxmouse_drv.o \
 	vboxvideo_drv.o
 
-VBOX_ADD_KMOD_FILES = $(addprefix vboxguest-$(VBOX_VERSION_STRING)/, Makefile dkms.conf do_dkms)
+VBOX_ADD_KMOD_FILES = $(addprefix vboxguest-$(VBOX_VERSION_STRING)/, Makefile dkms.conf do_dkms build_in_tmp)
 VBOX_ADD_KMOD_DIRS =  $(addprefix vboxguest-$(VBOX_VERSION_STRING)/, vboxguest/ vboxsf/ vboxvideo/)
 
 VBOX_ADD_INIT.linux = \

@@ -15,9 +15,6 @@
 # hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
 #
 
-# Set the build type
-export BUILD_TYPE=_BUILDTYPE_
-
 # find a unique temp directory
 num=0
 while true; do
@@ -32,20 +29,30 @@ while true; do
   fi
 done
 
-if [ "$1" = "--save-module-symvers" ]; then
-  shift
-  SAVE_MOD_SYMVERS="$1"
-  shift
-fi
-
-if [ "$1" = "--use-module-symvers" ]; then
-  shift
-  USE_MOD_SYMVERS="$1"
-  shift
-fi
+while true; do
+    if [ "$1" = "--save-module-symvers" ]; then
+      shift
+      SAVE_MOD_SYMVERS="$1"
+      shift
+    elif [ "$1" = "--use-module-symvers" ]; then
+      shift
+      USE_MOD_SYMVERS="$1"
+      shift
+    elif [ "$1" = "--module-source" ]; then
+      shift
+      MODULE_SOURCE="$1"
+      shift
+    else
+      break
+    fi
+done
 
 # copy
-cp -a ${0%/*}/* $tmpdir/
+if [ -n "$MODULE_SOURCE" ]; then
+  cp -a "$MODULE_SOURCE"/* $tmpdir/
+else
+  cp -a ${0%/*}/* $tmpdir/
+fi
 if [ -n "$USE_MOD_SYMVERS" ]; then
   cp $USE_MOD_SYMVERS $tmpdir/Module.symvers
 fi
