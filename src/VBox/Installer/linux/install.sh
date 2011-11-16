@@ -442,6 +442,9 @@ if [ "$ACTION" = "install" ]; then
     echo "# VirtualBox version" >> $CONFIG_DIR/$CONFIG
     echo "INSTALL_VER='$VERSION'" >> $CONFIG_DIR/$CONFIG
     echo "INSTALL_REV='$SVNREV'" >> $CONFIG_DIR/$CONFIG
+    echo "# Build type and user name for logging purposes" >> $CONFIG_DIR/$CONFIG
+    echo "BUILD_TYPE='$BUILD_TYPE'" >> $CONFIG_DIR/$CONFIG
+    echo "USERNAME='$USERNAME'" >> $CONFIG_DIR/$CONFIG
 
     # Make kernel module
     MODULE_FAILED="false"

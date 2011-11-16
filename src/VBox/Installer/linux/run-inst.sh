@@ -30,6 +30,9 @@ UNINSTALL="uninstall.sh"
 ROUTINES="routines.sh"
 ARCH="_ARCH_"
 INSTALLATION_VER="_VERSION_"
+INSTALLATION_REV="_SVNREV_"
+BUILD_TYPE="_BUILDTYPE_"
+USERNAME="_USERNAME_"
 UNINSTALL_SCRIPTS="_UNINSTALL_SCRIPTS_"
 
 INSTALLATION_DIR="/opt/$PACKAGE-$INSTALLATION_VER"
@@ -272,16 +275,7 @@ link_into_fs "lib" "$lib_path"
 link_into_fs "share" "/usr/share"
 link_into_fs "src" "/usr/src"
 
-# Install, set up and start init scripts
-for i in "$INSTALLATION_DIR/init/"*; do
-  if test -r "$i"; then
-    install_init_script "$i" "`basename "$i"`"
-    test -n "$DO_SETUP" && setup_init_script "`basename "$i"`" 1>&2
-    start_init_script "`basename "$i"`"
-  fi
-done
-
-# Remember our installation configuration
+# Remember our installation configuration before we call any init scripts
 cat > "$CONFIG_DIR/$CONFIG" << EOF
 # $PACKAGE installation record.
 # Package installation directory
@@ -293,7 +287,20 @@ INSTALL_DIR='$INSTALLATION_DIR'
 UNINSTALLER='$UNINSTALL'
 # Package version
 INSTALL_VER='$INSTALLATION_VER'
+INSTALL_REV='$INSTALLATION_REV'
+# Build type and user name for logging purposes
+BUILD_TYPE='$BUILD_TYPE'
+USERNAME='$USERNAME'
 EOF
+
+# Install, set up and start init scripts
+for i in "$INSTALLATION_DIR/init/"*; do
+  if test -r "$i"; then
+    install_init_script "$i" "`basename "$i"`"
+    test -n "$DO_SETUP" && setup_init_script "`basename "$i"`" 1>&2
+    start_init_script "`basename "$i"`"
+  fi
+done
 
 cp $ROUTINES $INSTALLATION_DIR
 echo $INSTALLATION_DIR/$ROUTINES >> "$CONFIG_DIR/$CONFIG_FILES"

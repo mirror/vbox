@@ -28,9 +28,13 @@
 # Description:    VirtualBox Linux Additions kernel modules
 ### END INIT INFO
 
+. /var/lib/VBoxGuestAdditions/config
+export BUILD_TYPE
+export USERNAME
+
 PATH=$PATH:/bin:/sbin:/usr/sbin
 PACKAGE=VBoxGuestAdditions
-MODULE_SRC=`/bin/ls /usr/src/vboxguest* 2>/dev/null|cut -d' ' -f1`
+MODULE_SRC="$INSTALL_DIR/src/vboxguest-$INSTALL_VER"
 BUILDINTMP="$MODULE_SRC/build_in_tmp"
 DODKMS="$MODULE_SRC/do_dkms"
 LOG="/var/log/vboxadd-install.log"
