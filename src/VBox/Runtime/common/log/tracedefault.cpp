@@ -54,4 +54,3 @@ RTDECL(RTTRACEBUF)  RTTraceGetDefaultBuf(void)
     return g_hDefaultTraceBuf;
 }
 
-

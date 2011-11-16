@@ -190,4 +190,3 @@ DECL_HIDDEN_CONST(RTDBGMODVTIMG) const g_rtDbgModVtImgLdr =
     /*.u32EndMagic = */                 RTDBGMODVTIMG_MAGIC
 };
 
-

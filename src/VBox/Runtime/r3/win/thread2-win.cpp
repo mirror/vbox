@@ -65,4 +65,3 @@ RTR3DECL(bool) RTThreadYield(void)
     return fRc;
 }
 
-
