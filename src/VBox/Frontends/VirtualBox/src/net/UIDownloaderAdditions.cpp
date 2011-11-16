@@ -54,6 +54,14 @@ QAction *UIDownloaderAdditions::action() const
     return m_pAction;
 }
 
+void UIDownloaderAdditions::start()
+{
+    /* Call for base-class: */
+    UIDownloader::start();
+    /* Notify about downloading started: */
+    emit sigDownloadingStarted(UIDownloadType_Additions);
+}
+
 UIDownloaderAdditions::UIDownloaderAdditions()
     : UIDownloader()
 {

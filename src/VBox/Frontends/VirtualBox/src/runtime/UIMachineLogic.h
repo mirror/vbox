@@ -80,11 +80,6 @@ public:
     UIMachineView* dockPreviewView() const;
 #endif /* Q_WS_MAC */
 
-signals:
-
-    /* Signal to notify listeners about additions downloader created: */
-    void sigDownloaderAdditionsCreated();
-
 protected:
 
     /* Machine logic constructor/destructor: */

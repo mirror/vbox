@@ -58,6 +58,8 @@ public:
     void setAction(QAction *pAction);
     QAction *action() const;
 
+    void start();
+
 signals:
 
     void sigDownloadFinished(const QString &strFile);

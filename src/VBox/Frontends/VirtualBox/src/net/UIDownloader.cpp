@@ -126,6 +126,7 @@ UIDownloader::UIDownloader()
 {
     connect(this, SIGNAL(sigToStartAcknowledging()), this, SLOT(sltStartAcknowledging()), Qt::QueuedConnection);
     connect(this, SIGNAL(sigToStartDownloading()), this, SLOT(sltStartDownloading()), Qt::QueuedConnection);
+    connect(this, SIGNAL(sigDownloadingStarted(UIDownloadType)), gNetworkManager, SIGNAL(sigDownloaderCreated(UIDownloadType)));
 }
 
 /* Start acknowledging: */

@@ -22,6 +22,9 @@
 /* Global includes: */
 #include <QNetworkAccessManager>
 
+/* Local inludes: */
+#include "UINetworkDefs.h"
+
 /* QNetworkAccessManager class reimplementation providing
  * network access for the VirtualBox application purposes. */
 class UINetworkManager : public QNetworkAccessManager
@@ -36,6 +39,11 @@ public:
     /* Create/destroy singleton: */
     static void create();
     static void destroy();
+
+signals:
+
+    /* Signal to notify listeners about downloader creation: */
+    void sigDownloaderCreated(UIDownloadType downloaderType);
 
 private:
 

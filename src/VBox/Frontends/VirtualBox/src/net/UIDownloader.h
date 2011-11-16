@@ -24,6 +24,9 @@
 #include <QUrl>
 #include <QPointer>
 
+/* Local includes: */
+#include "UINetworkDefs.h"
+
 /* Forward declarations: */
 class QProgressBar;
 class UIMiniCancelButton;
@@ -122,6 +125,9 @@ signals:
 
     /* Notifies about downloading progress: */
     void sigDownloadProgress(qint64 cDone, qint64 cTotal);
+
+    /* Notifies network manager about downloading started: */
+    void sigDownloadingStarted(UIDownloadType downloadType);
 
 protected:
 

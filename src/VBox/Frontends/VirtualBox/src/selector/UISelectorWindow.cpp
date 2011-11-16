@@ -28,6 +28,7 @@
 /* Local includes: */
 #include "QISplitter.h"
 #include "UIBar.h"
+#include "UINetworkManager.h"
 #include "UIUpdateManager.h"
 #include "UIDownloaderUserManual.h"
 #include "UIDownloaderExtensionPack.h"
@@ -1180,18 +1181,25 @@ void UISelectorWindow::sltMediumEnumFinished(const VBoxMediaList &list)
     while (0);
 }
 
-void UISelectorWindow::sltEmbedDownloaderForUserManual()
+void UISelectorWindow::sltEmbedDownloader(UIDownloadType downloaderType)
 {
-    /* If there is User Manual downloader created => show the process bar: */
-    if (UIDownloaderUserManual *pDl = UIDownloaderUserManual::current())
-        statusBar()->addWidget(pDl->progressWidget(this), 0);
-}
-
-void UISelectorWindow::sltEmbedDownloaderForExtensionPack()
-{
-    /* If there is Extension Pack downloader created => show the process bar: */
-    if (UIDownloaderExtensionPack *pDl = UIDownloaderExtensionPack::current())
-        statusBar()->addWidget(pDl->progressWidget(this), 0);
+    switch (downloaderType)
+    {
+        case UIDownloadType_UserManual:
+        {
+            if (UIDownloaderUserManual *pDl = UIDownloaderUserManual::current())
+                statusBar()->addWidget(pDl->progressWidget(this), 0);
+            break;
+        }
+        case UIDownloadType_ExtensionPack:
+        {
+            if (UIDownloaderExtensionPack *pDl = UIDownloaderExtensionPack::current())
+                statusBar()->addWidget(pDl->progressWidget(this), 0);
+            break;
+        }
+        default:
+            break;
+    }
 }
 
 void UISelectorWindow::retranslateUi()
@@ -1591,9 +1599,8 @@ void UISelectorWindow::prepareConnections()
     connect(&vboxGlobal(), SIGNAL(mediumEnumStarted()), this, SLOT(sltMediumEnumerationStarted()));
     connect(&vboxGlobal(), SIGNAL(mediumEnumFinished(const VBoxMediaList &)), this, SLOT(sltMediumEnumFinished(const VBoxMediaList &)));
 
-    /* Downloader connections: */
-    connect(&msgCenter(), SIGNAL(sigDownloaderUserManualCreated()), this, SLOT(sltEmbedDownloaderForUserManual()));
-    connect(gUpdateManager, SIGNAL(sigDownloaderCreatedForExtensionPack()), this, SLOT(sltEmbedDownloaderForExtensionPack()));
+    /* Network manager connections: */
+    connect(gNetworkManager, SIGNAL(sigDownloaderCreated(UIDownloadType)), this, SLOT(sltEmbedDownloader(UIDownloadType)));
 
     /* Menu-bar connections: */
     connect(menuBar(), SIGNAL(customContextMenuRequested(const QPoint&)), this, SLOT(sltShowSelectorContextMenu(const QPoint&)));
