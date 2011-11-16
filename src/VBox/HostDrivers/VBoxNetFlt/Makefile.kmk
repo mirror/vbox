@@ -370,12 +370,10 @@ ifeq ($(KBUILD_TARGET),linux)
 	$(subst $(DQUOTE),,$(VBOX_VBOXNETFLT_SOURCES)) \
 	$(VBoxNetFlt-src_0_OUTDIR)/Makefile
  VBoxNetFlt-src_EXEC_SOURCES = \
-	$(VBoxNetFlt-src_0_OUTDIR)/build_in_tmp \
 	$(PATH_ROOT)/src/VBox/HostDrivers/linux/do_Module.symvers
  VBoxNetFlt-src_CLEAN   = \
 	$(VBoxNetFlt-src_0_OUTDIR)/Makefile \
 	$(PATH_TARGET)/VBoxNetFlt-src-1.dep \
- 	$(VBoxNetFlt-src_0_OUTDIR)/build_in_tmp
 
  # Scripts needed for building the kernel module.
 
@@ -392,15 +390,6 @@ ifeq ($(KBUILD_TARGET),linux)
  endif
 	%$(QUIET2)$(RM) -f -- $(PATH_TARGET)/VBoxNetFlt-src-1.dep
 	%$(QUIET2)$(APPEND) '$(PATH_TARGET)/VBoxNetFlt-src-1.dep' 'VBoxNetFlt/linux/Makefile_VBOX_HARDENED=$(VBOX_WITH_HARDENING)'
-
- $$(VBoxNetFlt-src_0_OUTDIR)/build_in_tmp: \
-		$(PATH_ROOT)/src/VBox/HostDrivers/linux/build_in_tmp \
-		$(VBOX_VERSION_STAMP) \
-		| $$(dir $$@)
-	$(call MSG_TOOL,Creating,,$@)
-	$(QUIET)$(RM) -f -- $@
-	$(QUIET)$(SED) -e "s;_VERSION_;${VBOX_VERSION_STRING};g; s;_MODULE_;vboxnetflt;g; s;_BUILDTYPE_;${KBUILD_TYPE};g" --output $@ $<
-	$(QUIET)$(CHMOD) 0755 $@
 
 endif # linux
 

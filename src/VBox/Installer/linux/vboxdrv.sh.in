@@ -42,23 +42,17 @@ fi
 
 if [ -n "$INSTALL_DIR" ]; then
     VBOXMANAGE="$INSTALL_DIR/VBoxManage"
-    DODKMS="$INSTALL_DIR/src/vboxhost/do_dkms"
-    BUILDVBOXDRV="$INSTALL_DIR/src/vboxhost/vboxdrv/build_in_tmp"
-    BUILDVBOXNETFLT="$INSTALL_DIR/src/vboxhost/vboxnetflt/build_in_tmp"
-    BUILDVBOXNETADP="$INSTALL_DIR/src/vboxhost/vboxnetadp/build_in_tmp"
-    BUILDVBOXPCI="$INSTALL_DIR/src/vboxhost/vboxpci/build_in_tmp"
+    MODULE_SRC="$INSTALL_DIR/src/vboxhost"
 else
     VBOXMANAGE="/usr/lib/%PACKAGE%/VBoxManage"
-    DODKMS="/usr/share/%PACKAGE%/src/vboxhost/do_dkms"
-    BUILDVBOXDRV="/usr/share/%PACKAGE%/src/vboxhost/vboxdrv/build_in_tmp"
-    BUILDVBOXNETFLT="/usr/share/%PACKAGE%/src/vboxhost/vboxnetflt/build_in_tmp"
-    BUILDVBOXNETADP="/usr/share/%PACKAGE%/src/vboxhost/vboxnetadp/build_in_tmp"
-    BUILDVBOXPCI="/usr/share/%PACKAGE%/src/vboxhost/vboxpci/build_in_tmp"
+    MODULE_SRC="/usr/share/%PACKAGE%/src/vboxhost"
 fi
+BUILDINTMP="$MODULE_SRC/build_in_tmp"
+DODKMS="$MODULE_SRC/do_dkms"
 
 # silently exit if the package was uninstalled but not purged,
 # applies to Debian packages only
-[ -z "$DEBIAN" -o -x $VBOXMANAGE -a -x $BUILDVBOXDRV ] || exit 0
+[ -z "$DEBIAN" -o -x $VBOXMANAGE -a -x $BUILDINTMP ] || exit 0
 
 if [ -n "$NOLSB" ]; then
     if [ -f /etc/redhat-release ]; then
@@ -327,23 +321,27 @@ setup()
     if ! $DODKMS install >> $LOG; then
       fail_msg "Failed, trying without DKMS"
       begin_msg "Recompiling VirtualBox kernel modules"
-      if ! $BUILDVBOXDRV \
+      if ! $BUILDINTMP \
           --save-module-symvers /tmp/vboxdrv-Module.symvers \
+          --module-source "$MODULE_SRC/vboxdrv" \
           --no-print-directory install >> $LOG 2>&1; then
           failure "Look at $LOG to find out what went wrong"
       fi
-      if ! $BUILDVBOXNETFLT \
+      if ! $BUILDINTMP \
           --use-module-symvers /tmp/vboxdrv-Module.symvers \
+          --module-source "$MODULE_SRC/vboxnetflt" \
           --no-print-directory install >> $LOG 2>&1; then
           failure "Look at $LOG to find out what went wrong"
       fi
-      if ! $BUILDVBOXNETADP \
+      if ! $BUILDINTMP \
           --use-module-symvers /tmp/vboxdrv-Module.symvers \
+          --module-source "$MODULE_SRC/vboxnetadp" \
           --no-print-directory install >> $LOG 2>&1; then
           failure "Look at $LOG to find out what went wrong"
       fi
-      if ! $BUILDVBOXPCI \
+      if ! $BUILDINTMP \
           --use-module-symvers /tmp/vboxdrv-Module.symvers \
+          --module-source "$MODULE_SRC/vboxpci" \
           --no-print-directory install >> $LOG 2>&1; then
           failure "Look at $LOG to find out what went wrong"
       fi

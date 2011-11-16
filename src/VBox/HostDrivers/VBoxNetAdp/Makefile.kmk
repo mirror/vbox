@@ -101,12 +101,10 @@ ifeq ($(KBUILD_TARGET),linux)
 	$(subst $(DQUOTE),,$(VBOX_VBOXNETADP_SOURCES)) \
 	$(VBoxNetAdp-src_0_OUTDIR)/Makefile
  VBoxNetAdp-src_EXEC_SOURCES = \
-	$(VBoxNetAdp-src_0_OUTDIR)/build_in_tmp \
 	$(PATH_ROOT)/src/VBox/HostDrivers/linux/do_Module.symvers
  VBoxNetAdp-src_CLEAN = \
 	$(VBoxNetAdp-src_0_OUTDIR)/Makefile \
 	$(PATH_TARGET)/VBoxNetAdp-src-1.dep \
- 	$(VBoxNetAdp-src_0_OUTDIR)/build_in_tmp
 
  # Scripts needed for building the kernel modules
  includedep $(PATH_TARGET)/VBoxNetAdp-src-1.dep
@@ -122,15 +120,6 @@ $$(VBoxNetAdp-src_0_OUTDIR)/Makefile: \
  endif
 	%$(QUIET2)$(APPEND) -t '$(PATH_TARGET)/VBoxNetAdp-src-1.dep' 'VBoxNetAdp/linux/Makefile_VBOX_HARDENED=$(VBOX_WITH_HARDENING)'
 
-
-$$(VBoxNetAdp-src_0_OUTDIR)/build_in_tmp: \
-		$(PATH_ROOT)/src/VBox/HostDrivers/linux/build_in_tmp \
-		$(VBOX_VERSION_STAMP) \
-		| $$(dir $$@)
-	$(call MSG_TOOL,Creating,,$@)
-	$(QUIET)$(RM) -f -- $@
-	$(QUIET)$(SED) -e "s;_VERSION_;${VBOX_VERSION_STRING};g; s;_MODULE_;vboxnetadp;g; s;_BUILDTYPE_;${KBUILD_TYPE};g" --output $@ $<
-	$(QUIET)chmod 0755 $@
 
 endif # linux
 

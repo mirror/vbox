@@ -265,25 +265,12 @@ vboxdrv-mod_SOURCES = \
 	$(vboxdrv-mod_0_OUTDIR)/Makefile
 vboxdrv-mod_EXEC_SOURCES  = \
 	$(subst $(DQUOTE),,$(FILES_VBOXDRV_BIN)) \
-	$(vboxdrv-mod_0_OUTDIR)/build_in_tmp \
 	$(PATH_ROOT)/src/VBox/HostDrivers/linux/do_Module.symvers
 vboxdrv-mod_CLEAN   = \
 	$(vboxdrv-mod_0_OUTDIR)/Makefile \
 	$(PATH_TARGET)/vboxdrv-mod-1.dep \
-	$(vboxdrv-mod_0_OUTDIR)/build_in_tmp
 
 # Scripts needed for building the kernel modules
-
-$$(vboxdrv-mod_0_OUTDIR)/build_in_tmp: \
-		$(PATH_ROOT)/src/VBox/HostDrivers/linux/build_in_tmp \
-		$(VBOX_VERSION_STAMP) \
-		| $$(dir $$@)
-	$(call MSG_TOOL,Creating,,$@)
-	$(QUIET)$(SED) \
-		-e "s;_VERSION_;${VBOX_VERSION_STRING};g" \
-		-e "s;_MODULE_;vboxdrv;g" \
-		-e "s;_BUILDTYPE_;${KBUILD_TYPE};g" --output $@ $<
-	$(QUIET)chmod 0755 $@
 
 includedep $(PATH_TARGET)/vboxdrv-mod-1.dep
 $$(vboxdrv-mod_0_OUTDIR)/Makefile: \

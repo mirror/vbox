@@ -166,7 +166,7 @@ set_selinux_permissions() {
             > /dev/null 2>&1
         chcon -t java_exec_t    "$INSTALLATION_DIR"/vboxwebsrv > /dev/null 2>&1
         chcon -t java_exec_t    "$INSTALLATION_DIR"/webtest > /dev/null 2>&1
-        chcon -t bin_t          "$SHARE_DIR"/src/vboxhost/*/build_in_tmp \
+        chcon -t bin_t          "$SHARE_DIR"/src/vboxhost/build_in_tmp \
              > /dev/null 2>&1
     fi
 }

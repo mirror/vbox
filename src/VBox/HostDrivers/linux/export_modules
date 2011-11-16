@@ -5,7 +5,6 @@
 #
 # Copyright (C) 2007 Oracle Corporation
 #
-# This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;
 # you can redistribute it and/or modify it under the terms of the GNU
 # General Public License (GPL) as published by the Free Software
@@ -25,9 +24,6 @@ if [ "$2" = "--without-hardening" ]; then
     VBOX_WITH_HARDENING=
 fi
 
-PATH_TMP="`cd \`dirname $1\`; pwd`/.vbox_modules"
-PATH_OUT=$PATH_TMP
-FILE_OUT="`cd \`dirname $1\`; pwd`/`basename $1`"
 PATH_ROOT="`cd \`dirname $0\`/../../../..; pwd`"
 PATH_LINUX="$PATH_ROOT/src/VBox/HostDrivers/linux"
 PATH_VBOXDRV="$PATH_ROOT/src/VBox/HostDrivers/Support"
@@ -88,8 +84,6 @@ done
 for f in $FILES_VBOXDRV_BIN; do
     install -D -m 0755 `echo $f|cut -d'=' -f1` "$PATH_TMP/vboxdrv/`echo $f|cut -d'>' -f2`"
 done
-sed -e "s;_VERSION_;$VBOX_VERSION_STRING;g" < $PATH_LINUX/build_in_tmp > $PATH_TMP/vboxdrv/build_in_tmp
-chmod 0755 $PATH_TMP/vboxdrv/build_in_tmp
 sed -e "s;_VERSION_;$VBOX_VERSION_STRING;g" < $PATH_VBOXDRV/linux/dkms.conf > $PATH_TMP/vboxdrv/dkms.conf
 if [ -n "$VBOX_WITH_HARDENING" ]; then
     cat                                   $PATH_VBOXDRV/linux/Makefile > $PATH_TMP/vboxdrv/Makefile
@@ -102,8 +96,6 @@ mkdir $PATH_TMP/vboxnetflt || exit 1
 for f in $VBOX_VBOXNETFLT_SOURCES; do
     install -D -m 0644 `echo $f|cut -d'=' -f1` "$PATH_TMP/vboxnetflt/`echo $f|cut -d'>' -f2`"
 done
-sed -e "s;_VERSION_;$VBOX_VERSION_STRING;g" < $PATH_LINUX/build_in_tmp > $PATH_TMP/vboxnetflt/build_in_tmp
-chmod 0755 $PATH_TMP/vboxnetflt/build_in_tmp
 sed -e "s;_VERSION_;$VBOX_VERSION_STRING;g" < $PATH_VBOXNET/linux/dkms.conf > $PATH_TMP/vboxnetflt/dkms.conf
 if [ -n "$VBOX_WITH_HARDENING" ]; then
     cat                                   $PATH_VBOXNET/linux/Makefile > $PATH_TMP/vboxnetflt/Makefile
@@ -116,8 +108,6 @@ mkdir $PATH_TMP/vboxnetadp || exit 1
 for f in $VBOX_VBOXNETADP_SOURCES; do
     install -D -m 0644 `echo $f|cut -d'=' -f1` "$PATH_TMP/vboxnetadp/`echo $f|cut -d'>' -f2`"
 done
-sed -e "s;_VERSION_;$VBOX_VERSION_STRING;g" < $PATH_LINUX/build_in_tmp > $PATH_TMP/vboxnetadp/build_in_tmp
-chmod 0755 $PATH_TMP/vboxnetadp/build_in_tmp
 sed -e "s;_VERSION_;$VBOX_VERSION_STRING;g" < $PATH_VBOXADP/linux/dkms.conf > $PATH_TMP/vboxnetadp/dkms.conf
 if [ -n "$VBOX_WITH_HARDENING" ]; then
     cat                                   $PATH_VBOXADP/linux/Makefile > $PATH_TMP/vboxnetadp/Makefile
@@ -130,8 +120,6 @@ mkdir $PATH_TMP/vboxpci || exit 1
 for f in $VBOX_VBOXPCI_SOURCES; do
     install -D -m 0644 `echo $f|cut -d'=' -f1` "$PATH_TMP/vboxpci/`echo $f|cut -d'>' -f2`"
 done
-sed -e "s;_VERSION_;$VBOX_VERSION_STRING;g" < $PATH_LINUX/build_in_tmp > $PATH_TMP/vboxpci/build_in_tmp
-chmod 0755 $PATH_TMP/vboxpci/build_in_tmp
 sed -e "s;_VERSION_;$VBOX_VERSION_STRING;g" < $PATH_VBOXPCI/linux/dkms.conf > $PATH_TMP/vboxpci/dkms.conf
 if [ -n "$VBOX_WITH_HARDENING" ]; then
     cat                                   $PATH_VBOXPCI/linux/Makefile > $PATH_TMP/vboxpci/Makefile
@@ -140,6 +128,7 @@ else
 fi
 
 install -D -m 0644 $PATH_LINUX/Makefile $PATH_TMP/Makefile
+install -D -m 0755 $PATH_LINUX/build_in_tmp $PATH_TMP/build_in_tmp
 
 # Only temporary, omit from archive
 rm $PATH_TMP/version-generated.h
