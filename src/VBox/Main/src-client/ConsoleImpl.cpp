@@ -1950,7 +1950,7 @@ STDMETHODIMP Console::PowerDown(IProgress **aProgress)
         int vrc = RTThreadCreate(NULL, Console::powerDownThread,
                                  (void *) task.get(), 0,
                                  RTTHREADTYPE_MAIN_WORKER, 0,
-                                 "VMPowerDown");
+                                 "VMPwrDwn");
         if (RT_FAILURE(vrc))
         {
             rc = setError(E_FAIL, "Could not create VMPowerDown thread (%Rrc)", vrc);
@@ -3219,7 +3219,7 @@ STDMETHODIMP Console::TakeSnapshot(IN_BSTR aName,
                                  0,
                                  RTTHREADTYPE_MAIN_WORKER,
                                  0,
-                                 "ConsoleTakeSnap");
+                                 "TakeSnap");
         if (FAILED(vrc))
             throw setError(E_FAIL,
                            tr("Could not create VMTakeSnap thread (%Rrc)"),
@@ -6526,7 +6526,7 @@ HRESULT Console::powerUp(IProgress **aProgress, bool aPaused)
 
         int vrc = RTThreadCreate(NULL, Console::powerUpThread,
                                  (void *)task.get(), 0,
-                                 RTTHREADTYPE_MAIN_WORKER, 0, "VMPowerUp");
+                                 RTTHREADTYPE_MAIN_WORKER, 0, "VMPwrUp");
         if (RT_FAILURE(vrc))
             throw setError(E_FAIL, "Could not create VMPowerUp thread (%Rrc)", vrc);
 
@@ -7385,7 +7385,7 @@ DECLCALLBACK(void) Console::vmstateChangeCallback(PVM aVM,
                 int vrc = RTThreadCreate(NULL, Console::powerDownThread,
                                          (void *) task.get(), 0,
                                          RTTHREADTYPE_MAIN_WORKER, 0,
-                                         "VMPowerDown");
+                                         "VMPwrDwn");
                 AssertMsgRCBreak(vrc, ("Could not create VMPowerDown thread (%Rrc)\n", vrc));
 
                 /* task is now owned by powerDownThread(), so release it */
