@@ -513,10 +513,7 @@ ifndef VBOX_ONLY_EXTPACKS
  	VMMAll/VMAll.cpp \
  	VMMAll/VMMAll.cpp \
  	VMMAll/VMMAllA.asm
- ifeq ($(VBOX_LDR_FMT),pe)
-  VMMR0_SOURCES += VMMR0/VMMR0.def
- endif
- ifeq ($(VBOX_LDR_FMT),lx)
+ if1of($(VBOX_LDR_FMT),pe lx)
   VMMR0_SOURCES += $(VMMR0Imp_0_OUTDIR)/VMMR0.def
  endif
  ifdef VBOX_WITH_TRIPLE_FAULT_HACK
