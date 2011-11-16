@@ -33,7 +33,6 @@ vboxvideo_drm-mod_SOURCES      = \
 vboxvideo_drm-mod_EXEC_SOURCES = \
 	$(subst $(DQUOTE),,$(FILES_VBOXVIDEO_DRM_BIN)) \
 	$(PATH_ROOT)/src/VBox/HostDrivers/linux/do_Module.symvers
-vboxvideo_drm-mod_CLEAN       += $(vboxvideo_drm-mod_0_OUTDIR)/build_in_tmp
 
 
 #
@@ -68,12 +67,16 @@ if defined(VBOX_WITH_ADDITION_DRIVERS) \
  if !defined(VBOX_WITH_GUEST_KMS_DRIVER)
   vboxvideo_drm_SOURCES         = vboxvideo_drm.c
  else
+  vboxvideo_drm_INCS           += ../../../Runtime/r0drv/linux
   vboxvideo_drm_SOURCES         = \
-     ../../common/VBoxVideo/Modesetting.cpp \
+    ../../common/VBoxVideo/Modesetting.cpp \
+  	vboxvideo_crtc.c \
+  	vboxvideo_dac.c \
   	vboxvideo_device.c \
   	vboxvideo_display.c \
   	vboxvideo_drv.c \
-  	vboxvideo_kms.c
+  	vboxvideo_kms.c \
+  	vboxvideo_vga.c
  endif
 
 endif
