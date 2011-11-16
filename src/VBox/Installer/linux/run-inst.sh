@@ -135,7 +135,7 @@ EOF
     fi
     # Stop what we can in the way of services and remove them from the
     # system
-    for i in vboxvfs vboxadd-timesync vboxadd-service vboxadd; do
+    for i in $UNINSTALL_SCRIPTS; do
         stop_init_script "$i"
         cleanup_init "$i" 1>&2 2>> "$LOGFILE"
         test -x "./$i" && "./$i" cleanup 1>&2 2>> "$LOGFILE"
@@ -285,14 +285,14 @@ done
 cat > "$CONFIG_DIR/$CONFIG" << EOF
 # $PACKAGE installation record.
 # Package installation directory
-INSTALL_DIR=$INSTALLATION_DIR
+INSTALL_DIR='$INSTALLATION_DIR'
 # Package uninstaller.  If you repackage this software, please make sure
 # that this prints a message and returns an error so that the default
 # uninstaller does not attempt to delete the files installed by your
 # package.
-UNINSTALLER=$UNINSTALL
+UNINSTALLER='$UNINSTALL'
 # Package version
-INSTALL_VER=$INSTALLATION_VER
+INSTALL_VER='$INSTALLATION_VER'
 EOF
 
 cp $ROUTINES $INSTALLATION_DIR
