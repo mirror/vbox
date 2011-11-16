@@ -29,6 +29,14 @@
   horribly. DOS 6.x with EMM386 is a good testcase (esp. loading drivers
   into UMBs).
 
+- Many older OSes (especially UNIX based) require the FDPT to contain
+  physical ATA disk geometry; for that reason, disks smaller than ~500MB are
+  easiest to use. Otherwise a "large" BIOS disk option would be required.
+
+- Some really old OSes (Xenix circa 1986-7) do not understand the EBDA idea
+  and clear the memory. For those, the FDPT must be in the BIOS ROM area, or
+  the OS will destroy it (even when it's at 0:300 in the IVT).
+
 
  Notes on BIOS implementation
  ----------------------------

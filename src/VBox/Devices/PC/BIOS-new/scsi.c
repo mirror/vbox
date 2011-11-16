@@ -157,8 +157,8 @@ int scsi_read_sectors(uint8_t device_id, uint16_t count, uint32_t lba, void __fa
     ebda_data = MK_FP(ebda_seg, 0);
 
     // Reset count of transferred data
-    ebda_data->ata.trsfsectors = 0;
-    ebda_data->ata.trsfbytes   = 0;
+    ebda_data->bdisk.trsfsectors = 0;
+    ebda_data->bdisk.trsfbytes   = 0;
 
     /* Prepare CDB */
     //@todo: make CDB a struct, this is stupid
@@ -180,8 +180,8 @@ int scsi_read_sectors(uint8_t device_id, uint16_t count, uint32_t lba, void __fa
 
     if (!rc)
     {
-        ebda_data->ata.trsfsectors = count;
-        ebda_data->ata.trsfbytes   = count * 512;
+        ebda_data->bdisk.trsfsectors = count;
+        ebda_data->bdisk.trsfbytes   = count * 512;
     }
 
     return rc;
@@ -211,8 +211,8 @@ int scsi_write_sectors(uint8_t device_id, uint16_t count, uint32_t lba, void __f
     ebda_data = MK_FP(ebda_seg, 0);
 
     // Reset count of transferred data
-    ebda_data->ata.trsfsectors = 0;
-    ebda_data->ata.trsfbytes   = 0;
+    ebda_data->bdisk.trsfsectors = 0;
+    ebda_data->bdisk.trsfbytes   = 0;
 
     /* Prepare CDB */
     //@todo: make CDB a struct, this is stupid
@@ -234,8 +234,8 @@ int scsi_write_sectors(uint8_t device_id, uint16_t count, uint32_t lba, void __f
 
     if (!rc)
     {
-        ebda_data->ata.trsfsectors = count;
-        ebda_data->ata.trsfbytes   = (count * 512);
+        ebda_data->bdisk.trsfsectors = count;
+        ebda_data->bdisk.trsfbytes   = (count * 512);
     }
 
     return rc;
@@ -365,10 +365,10 @@ void scsi_enumerate_attached_devices(uint16_t io_base)
                 ebda_data->scsi.devices[hdcount_scsi].device_info.sectors = sectors;
 
                 /* Store the id of the disk in the ata hdidmap. */
-                hdcount = ebda_data->ata.hdcount;
-                ebda_data->ata.hdidmap[hdcount] = hdcount_scsi + BX_MAX_ATA_DEVICES;
+                hdcount = ebda_data->bdisk.hdcount;
+                ebda_data->bdisk.hdidmap[hdcount] = hdcount_scsi + BX_MAX_ATA_DEVICES;
                 hdcount++;
-                ebda_data->ata.hdcount = hdcount;
+                ebda_data->bdisk.hdcount = hdcount;
 
                 /* Update hdcount in the BDA. */
                 hdcount = read_byte(0x40, 0x75);

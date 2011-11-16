@@ -82,9 +82,9 @@ void BIOSCALL ata_init(void)
 {
     uint16_t        ebda_seg=read_word(0x0040,0x000E);
     uint8_t         channel, device;
-    ata_t __far     *AtaData;
+    bio_dsk_t __far *AtaData;
     
-    AtaData = ebda_seg :> &EbdaData->ata;
+    AtaData = ebda_seg :> &EbdaData->bdisk;
     
     // Channels info init.
     for (channel=0; channel<BX_MAX_ATA_INTERFACES; channel++) {
@@ -135,9 +135,9 @@ void   ata_reset(uint16_t device)
     uint8_t         channel, slave, sn, sc;
     uint16_t        max;
     uint16_t        pdelay;
-    ata_t __far     *AtaData;
+    bio_dsk_t __far *AtaData;
     
-    AtaData = ebda_seg :> &EbdaData->ata;
+    AtaData = ebda_seg :> &EbdaData->bdisk;
     channel = device / 2;
     slave = device % 2;
     
@@ -213,9 +213,9 @@ uint16_t ata_cmd_data_in(uint16_t device, uint16_t command, uint16_t count, uint
     uint16_t        iobase1, iobase2, blksize, mult_blk_cnt;
     uint8_t         channel, slave;
     uint8_t         status, current, mode;
-    ata_t __far     *AtaData;
+    bio_dsk_t __far *AtaData;
     
-    AtaData = ebda_seg :> &EbdaData->ata;
+    AtaData = ebda_seg :> &EbdaData->bdisk;
     
     channel = device / 2;
     slave   = device % 2;
@@ -363,9 +363,9 @@ void BIOSCALL ata_detect(void)
     uint16_t        ebda_seg = read_word(0x0040,0x000E);
     uint8_t         hdcount, cdcount, device, type;
     uint8_t         buffer[0x0200];
-    ata_t __far     *AtaData;
+    bio_dsk_t __far *AtaData;
     
-    AtaData = ebda_seg :> &EbdaData->ata;
+    AtaData = ebda_seg :> &EbdaData->bdisk;
 
 #if BX_MAX_ATA_INTERFACES > 0
     AtaData->channels[0].iface   = ATA_IFACE_ISA;
@@ -696,13 +696,13 @@ void BIOSCALL ata_detect(void)
 uint16_t ata_cmd_data_out(uint16_t device, uint16_t command, uint16_t count, uint16_t cylinder, 
                           uint16_t head, uint16_t sector, uint32_t lba, char __far *buffer)
 {
-    uint16_t    ebda_seg = read_word(0x0040,0x000E);
-    uint16_t    iobase1, iobase2, blksize;
-    uint8_t     channel, slave;
-    uint8_t     status, current, mode;
-    ata_t __far *AtaData;
+    uint16_t        ebda_seg = read_word(0x0040,0x000E);
+    uint16_t        iobase1, iobase2, blksize;
+    uint8_t         channel, slave;
+    uint8_t         status, current, mode;
+    bio_dsk_t __far *AtaData;
     
-    AtaData = ebda_seg :> &EbdaData->ata;
+    AtaData = ebda_seg :> &EbdaData->bdisk;
     
     channel = device / 2;
     slave   = device % 2;
@@ -839,15 +839,15 @@ uint16_t ata_cmd_data_out(uint16_t device, uint16_t command, uint16_t count, uin
 uint16_t ata_cmd_packet(uint16_t device, uint8_t cmdlen, char __far *cmdbuf, 
                         uint16_t header, uint32_t length, uint8_t inout, char __far *buffer)
 {
-    uint16_t    ebda_seg = read_word(0x0040,0x000E);
-    uint16_t    iobase1, iobase2;
-    uint16_t    lcount, lbefore, lafter, count;
-    uint8_t     channel, slave;
-    uint8_t     status, mode, lmode;
-    uint32_t    transfer;
-    ata_t __far *AtaData;
+    uint16_t        ebda_seg = read_word(0x0040,0x000E);
+    uint16_t        iobase1, iobase2;
+    uint16_t        lcount, lbefore, lafter, count;
+    uint8_t         channel, slave;
+    uint8_t         status, mode, lmode;
+    uint32_t        transfer;
+    bio_dsk_t __far *AtaData;
 
-    AtaData = ebda_seg :> &EbdaData->ata;
+    AtaData = ebda_seg :> &EbdaData->bdisk;
 
     channel = device / 2;
     slave = device % 2;
@@ -1064,9 +1064,9 @@ uint16_t ata_cmd_packet(uint16_t device, uint8_t cmdlen, char __far *cmdbuf,
 uint16_t atapi_is_cdrom(uint8_t device)
 {
     uint16_t        ebda_seg = read_word(0x0040,0x000E);
-    ata_t __far     *AtaData;
+    bio_dsk_t __far *AtaData;
     
-    AtaData = ebda_seg :> &EbdaData->ata;
+    AtaData = ebda_seg :> &EbdaData->bdisk;
     
     if (device >= BX_MAX_ATA_DEVICES)
         return 0;

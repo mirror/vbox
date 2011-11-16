@@ -28,7 +28,7 @@
 #include "pciutil.h"
 #include "vds.h"
 
-#define VBOX_AHCI_DEBUG         0
+#define VBOX_AHCI_DEBUG         1
 #define VBOX_AHCI_INT13_DEBUG   0
 
 #if VBOX_AHCI_DEBUG
@@ -671,7 +671,7 @@ void BIOSCALL ahci_int13(volatile uint16_t RET, volatile uint16_t ES, volatile u
                          AX, CX, DX, BX, ES, SP, BP, SI, DI, IP, CS, FLAGS);
 
     ebda_seg  = read_word(0x0040, 0x000E);
-    ahci_seg   = read_word(ebda_seg, (uint16_t)&EbdaData->ahci_seg);
+    ahci_seg  = read_word(ebda_seg, (uint16_t)&EbdaData->ahci_seg);
     u16IoBase = read_word(ahci_seg, (uint16_t)&AhciData->iobase);
     old_disks = read_byte(ahci_seg, (uint16_t)&AhciData->cHardDisksOld);
     VBOXAHCI_INT13_DEBUG("ahci_int13: ahci_seg=%x u16IoBase=%x old_disks=%d\n", ahci_seg, u16IoBase, old_disks);
@@ -765,7 +765,7 @@ void BIOSCALL ahci_int13(volatile uint16_t RET, volatile uint16_t ES, volatile u
                 ahci_cmd_data_out(ahci_seg, u16IoBase, u8Port, AHCI_CMD_WRITE_DMA_EXT, lba, count, segment, offset);
 
             // Set nb of sector transferred
-            SET_AL(read_word(ebda_seg, (uint16_t)&EbdaData->ata.trsfsectors));
+            SET_AL(read_word(ebda_seg, (uint16_t)&EbdaData->bdisk.trsfsectors));
 
             if (status != 0)
             {
@@ -868,9 +868,9 @@ void BIOSCALL ahci_int13(volatile uint16_t RET, volatile uint16_t ES, volatile u
                     status=ata_cmd_data_in(device, ATA_CMD_READ_SECTORS_EXT, count, 0, 0, 0, lba, segment, offset);
                 else
                 {
-                    write_word(ebda_seg,&EbdaData->ata.devices[device].blksize,count * 0x200);
+                    write_word(ebda_seg,&EbdaData->bdisk.devices[device].blksize,count * 0x200);
                     status=ata_cmd_data_in(device, ATA_CMD_READ_MULTIPLE, count, 0, 0, 0, lba, segment, offset);
-                    write_word(ebda_seg,&EbdaData->ata.devices[device].blksize,0x200);
+                    write_word(ebda_seg,&EbdaData->bdisk.devices[device].blksize,0x200);
                 }
             }
             else
@@ -881,7 +881,7 @@ void BIOSCALL ahci_int13(volatile uint16_t RET, volatile uint16_t ES, volatile u
                     status=ata_cmd_data_out(device, ATA_CMD_WRITE_SECTORS, count, 0, 0, 0, lba, segment, offset);
             }
 
-            count=read_word(ebda_seg, &EbdaData->ata.trsfsectors);
+            count=read_word(ebda_seg, &EbdaData->bdisk.trsfsectors);
             write_word(DS, SI+(uint16_t)&Int13Ext->count, count);
 
             if (status != 0)
@@ -942,15 +942,15 @@ void BIOSCALL ahci_int13(volatile uint16_t RET, volatile uint16_t ES, volatile u
                 write_word(DS, SI+(uint16_t)&Int13DPT->size, 0x1e);
 
                 write_word(DS, SI+(uint16_t)&Int13DPT->dpte_segment, ebda_seg);
-                write_word(DS, SI+(uint16_t)&Int13DPT->dpte_offset, &EbdaData->ata.dpte);
+                write_word(DS, SI+(uint16_t)&Int13DPT->dpte_offset, &EbdaData->bdisk.dpte);
 
                 // Fill in dpte
                 channel = device / 2;
-                iobase1 = read_word(ebda_seg, &EbdaData->ata.channels[channel].iobase1);
-                iobase2 = read_word(ebda_seg, &EbdaData->ata.channels[channel].iobase2);
-                irq = read_byte(ebda_seg, &EbdaData->ata.channels[channel].irq);
-                mode = read_byte(ebda_seg, &EbdaData->ata.devices[device].mode);
-                translation = read_byte(ebda_seg, &EbdaData->ata.devices[device].translation);
+                iobase1 = read_word(ebda_seg, &EbdaData->bdisk.channels[channel].iobase1);
+                iobase2 = read_word(ebda_seg, &EbdaData->bdisk.channels[channel].iobase2);
+                irq = read_byte(ebda_seg, &EbdaData->bdisk.channels[channel].irq);
+                mode = read_byte(ebda_seg, &EbdaData->bdisk.devices[device].mode);
+                translation = read_byte(ebda_seg, &EbdaData->bdisk.devices[device].translation);
 
                 options  = (translation==ATA_TRANSLATION_NONE?0:1<<3); // chs translation
                 options |= (1<<4); // lba translation
@@ -958,24 +958,24 @@ void BIOSCALL ahci_int13(volatile uint16_t RET, volatile uint16_t ES, volatile u
                 options |= (translation==ATA_TRANSLATION_LBA?1:0<<9);
                 options |= (translation==ATA_TRANSLATION_RECHS?3:0<<9);
 
-                write_word(ebda_seg, &EbdaData->ata.dpte.iobase1, iobase1);
-                write_word(ebda_seg, &EbdaData->ata.dpte.iobase2, iobase2);
-                //write_byte(ebda_seg, &EbdaData->ata.dpte.prefix, (0xe | /*(device % 2))<<4*/ );
-                write_byte(ebda_seg, &EbdaData->ata.dpte.unused, 0xcb );
-                write_byte(ebda_seg, &EbdaData->ata.dpte.irq, irq );
-                write_byte(ebda_seg, &EbdaData->ata.dpte.blkcount, 1 );
-                write_byte(ebda_seg, &EbdaData->ata.dpte.dma, 0 );
-                write_byte(ebda_seg, &EbdaData->ata.dpte.pio, 0 );
-                write_word(ebda_seg, &EbdaData->ata.dpte.options, options);
-                write_word(ebda_seg, &EbdaData->ata.dpte.reserved, 0);
-                write_byte(ebda_seg, &EbdaData->ata.dpte.revision, 0x11);
+                write_word(ebda_seg, &EbdaData->bdisk.dpte.iobase1, iobase1);
+                write_word(ebda_seg, &EbdaData->bdisk.dpte.iobase2, iobase2);
+                //write_byte(ebda_seg, &EbdaData->bdisk.dpte.prefix, (0xe | /*(device % 2))<<4*/ );
+                write_byte(ebda_seg, &EbdaData->bdisk.dpte.unused, 0xcb );
+                write_byte(ebda_seg, &EbdaData->bdisk.dpte.irq, irq );
+                write_byte(ebda_seg, &EbdaData->bdisk.dpte.blkcount, 1 );
+                write_byte(ebda_seg, &EbdaData->bdisk.dpte.dma, 0 );
+                write_byte(ebda_seg, &EbdaData->bdisk.dpte.pio, 0 );
+                write_word(ebda_seg, &EbdaData->bdisk.dpte.options, options);
+                write_word(ebda_seg, &EbdaData->bdisk.dpte.reserved, 0);
+                write_byte(ebda_seg, &EbdaData->bdisk.dpte.revision, 0x11);
 
                 checksum=0;
                 for (i=0; i<15; i++)
-                    checksum+=read_byte(ebda_seg, (&EbdaData->ata.dpte) + i);
+                    checksum+=read_byte(ebda_seg, (&EbdaData->bdisk.dpte) + i);
 
                 checksum = -checksum;
-                write_byte(ebda_seg, &EbdaData->ata.dpte.checksum, checksum);
+                write_byte(ebda_seg, &EbdaData->bdisk.dpte.checksum, checksum);
             }
 
             // EDD 3.x
@@ -985,8 +985,8 @@ void BIOSCALL ahci_int13(volatile uint16_t RET, volatile uint16_t ES, volatile u
                 uint16_t    iobase1;
 
                 channel = device / 2;
-                iface = read_byte(ebda_seg, &EbdaData->ata.channels[channel].iface);
-                iobase1 = read_word(ebda_seg, &EbdaData->ata.channels[channel].iobase1);
+                iface = read_byte(ebda_seg, &EbdaData->bdisk.channels[channel].iface);
+                iobase1 = read_word(ebda_seg, &EbdaData->bdisk.channels[channel].iobase1);
 
                 write_word(DS, SI+(uint16_t)&Int13DPT->size, 0x42);
                 write_word(DS, SI+(uint16_t)&Int13DPT->key, 0xbedd);
