@@ -49,7 +49,7 @@ NTSTATUS DriverEntry(IN PDRIVER_OBJECT DriverObject, IN PUNICODE_STRING Registry
 
     DriverObject->MajorFunction[IRP_MJ_INTERNAL_DEVICE_CONTROL] = VBoxIrpInternalIOCTL;
     DriverObject->MajorFunction[IRP_MJ_PNP] = VBoxIrpPnP;
-	DriverObject->MajorFunction[IRP_MJ_POWER] = VBoxIrpPower;
+    DriverObject->MajorFunction[IRP_MJ_POWER] = VBoxIrpPower;
 
     NTSTATUS tmpStatus = VBoxNewProtInit();
     if (!NT_SUCCESS(tmpStatus))
@@ -249,7 +249,7 @@ NTSTATUS VBoxIrpPnP(IN PDEVICE_OBJECT DeviceObject, IN PIRP Irp)
 
 NTSTATUS VBoxIrpPower(IN PDEVICE_OBJECT DeviceObject, IN PIRP Irp)
 {
-	PVBOXMOUSE_DEVEXT pDevExt;
+    PVBOXMOUSE_DEVEXT pDevExt;
     PAGED_CODE();
     LOGF_ENTER();
     pDevExt = (PVBOXMOUSE_DEVEXT) DeviceObject->DeviceExtension;
