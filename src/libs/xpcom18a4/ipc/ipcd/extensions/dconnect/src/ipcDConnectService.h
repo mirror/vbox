@@ -234,7 +234,7 @@ public:
   NS_HIDDEN_(nsresult) DeserializeException(ipcMessageReader &reader,
                                             PRUint32 peer, nsIException **xcpt);
 
-  NS_HIDDEN_(void)     ReleaseWrappers(nsVoidArray &wrappers);
+  NS_HIDDEN_(void)     ReleaseWrappers(nsVoidArray &wrappers,  PRUint32 peer);
 
   NS_HIDDEN_(nsresult) CreateStub(const nsID &, PRUint32, DConAddr, DConnectStub **);
 #if 0

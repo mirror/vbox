@@ -299,12 +299,18 @@ private:
 };
 
 void
-ipcDConnectService::ReleaseWrappers(nsVoidArray &wrappers)
+ipcDConnectService::ReleaseWrappers(nsVoidArray &wrappers, PRUint32 peer)
 {
+  nsAutoLock lock (mLock);
+
   for (PRInt32 i=0; i<wrappers.Count(); ++i)
   {
-    ((DConnectInstance *) wrappers[i])->ReleaseIPC();
-    ((DConnectInstance *) wrappers[i])->Release();
+    DConnectInstance *wrapper = (DConnectInstance *)wrappers[i];
+    if (mInstanceSet.Contains(wrapper) && wrapper->Peer() == peer)
+    {
+      ((DConnectInstance *) wrappers[i])->ReleaseIPC();
+      ((DConnectInstance *) wrappers[i])->Release();
+    }
   }
 }
 
@@ -2570,7 +2576,7 @@ DConnectStub::CallMethod(PRUint16 aMethodIndex,
   if (NS_FAILED(rv))
   {
     // INVOKE message wasn't sent; clean up wrappers
-    dConnect->ReleaseWrappers(wrappers);
+    dConnect->ReleaseWrappers(wrappers, mPeerID);
     return rv;
   }
 
@@ -2590,7 +2596,7 @@ DConnectStub::CallMethod(PRUint16 aMethodIndex,
       if (NS_FAILED(rv))
       {
         // INVOKE message wasn't sent; clean up wrappers
-        dConnect->ReleaseWrappers(wrappers);
+        dConnect->ReleaseWrappers(wrappers, mPeerID);
         return rv;
       }
     }
@@ -2607,7 +2613,7 @@ DConnectStub::CallMethod(PRUint16 aMethodIndex,
   if (NS_FAILED(rv))
   {
     // INVOKE message wasn't delivered; clean up wrappers
-    dConnect->ReleaseWrappers(wrappers);
+    dConnect->ReleaseWrappers(wrappers, mPeerID);
     return rv;
   }
 
@@ -2628,7 +2634,7 @@ DConnectStub::CallMethod(PRUint16 aMethodIndex,
     if (NS_FAILED(rv))
     {
       // INVOKE message wasn't received; clean up wrappers
-      dConnect->ReleaseWrappers(wrappers);
+      dConnect->ReleaseWrappers(wrappers, mPeerID);
       return rv;
     }
   }
@@ -3760,7 +3766,7 @@ ipcDConnectService::OnSetup(PRUint32 peer, const DConnectSetup *setup, PRUint32 
   if (NS_FAILED(rv))
   {
     LOG(("unable to send SETUP_REPLY: rv=%x\n", rv));
-    ReleaseWrappers(wrappers);
+    ReleaseWrappers(wrappers, peer);
   }
 }
 
@@ -4041,7 +4047,7 @@ end:
   if (NS_FAILED(rv))
   {
     LOG(("unable to send INVOKE_REPLY: rv=%x\n", rv));
-    ReleaseWrappers(wrappers);
+    ReleaseWrappers(wrappers, peer);
   }
 
   if (params)
