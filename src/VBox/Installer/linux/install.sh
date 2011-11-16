@@ -27,6 +27,10 @@ SVNREV="_SVNREV_"
 BUILD="_BUILD_"
 ARCH="_ARCH_"
 HARDENED="_HARDENED_"
+# The "BUILD_" prefixes prevent the variables from being overwritten when we
+# read the configuration from the previous installation.
+BUILD_BUILDTYPE="_BUILDTYPE_"
+BUILD_USERNAME="_USERNAME_"
 CONFIG_DIR="/etc/vbox"
 CONFIG="vbox.cfg"
 CONFIG_FILES="filelist"
@@ -443,8 +447,8 @@ if [ "$ACTION" = "install" ]; then
     echo "INSTALL_VER='$VERSION'" >> $CONFIG_DIR/$CONFIG
     echo "INSTALL_REV='$SVNREV'" >> $CONFIG_DIR/$CONFIG
     echo "# Build type and user name for logging purposes" >> $CONFIG_DIR/$CONFIG
-    echo "BUILD_TYPE='$BUILD_TYPE'" >> $CONFIG_DIR/$CONFIG
-    echo "USERNAME='$USERNAME'" >> $CONFIG_DIR/$CONFIG
+    echo "BUILD_TYPE='$BUILD_BUILDTYPE'" >> $CONFIG_DIR/$CONFIG
+    echo "USERNAME='$BUILD_USERNAME'" >> $CONFIG_DIR/$CONFIG
 
     # Make kernel module
     MODULE_FAILED="false"
