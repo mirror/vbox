@@ -1,7 +1,6 @@
 /* $Id$ */
-
 /** @file
- * VBox Mouse filter interface functions
+ * VBox Mouse Filter Driver - Interface functions.
  */
 
 /*
@@ -22,7 +21,7 @@
 #include <iprt/assert.h>
 
 #ifdef ALLOC_PRAGMA
-#pragma alloc_text(INIT, DriverEntry)
+# pragma alloc_text(INIT, DriverEntry)
 #endif
 
 /* Driver entry point */
@@ -258,3 +257,4 @@ NTSTATUS VBoxIrpPower(IN PDEVICE_OBJECT DeviceObject, IN PIRP Irp)
     LOGF_LEAVE();
     return PoCallDriver(pDevExt->pdoParent, Irp);
 }
+
