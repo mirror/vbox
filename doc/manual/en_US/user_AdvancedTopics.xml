@@ -808,7 +808,7 @@ vga = 864</screen>
       disk without going through the host OS file system. The actual
       performance difference for image files vs. raw disk varies greatly
       depending on the overhead of the host file system, whether dynamically
-      growing images are used and on host OS caching strategies. The caching
+      growing images are used, and on host OS caching strategies. The caching
       indirectly also affects other aspects such as failure behavior, i.e.
       whether the virtual disk contains all data written before a host OS
       crash. Consult your host OS documentation for details on this.</para>
@@ -827,7 +827,7 @@ vga = 864</screen>
       As a result, you will need to create a special VMDK image file which
       defines where the data will be stored. After creating such a special
       VMDK image, you can use it like a regular virtual disk image. For
-      example, you can use the Virtual Media Manager (<xref linkend="vdis" />)
+      example, you can use the VirtualBox Manager (<xref linkend="vdis" />)
       or <computeroutput>VBoxManage</computeroutput> to assign the image to a
       virtual machine.</para>
 
@@ -858,7 +858,9 @@ vga = 864</screen>
 
         <para>Creating the image requires read/write access for the given
         device. Read/write access is also later needed when using the image
-        from a virtual machine.</para>
+        from a virtual machine. On some host platforms (e.g. Windows Vista
+	and later), raw disk access may be restricted and not permitted by
+	the host OS in some situations.</para>
 
         <para>Just like with regular disk images, this does not automatically
         attach the newly created image to a virtual machine. This can be done
@@ -976,7 +978,7 @@ VBoxManage setextradata "VM name"
 VBoxManage setextradata "VM name"
       "VBoxInternal/Devices/piix3ide/0/Config/PrimaryMaster/ModelNumber" "model"</screen>
 
-      <para>For hard disks it's also possible (experimental!) to mark the
+      <para>For hard disks it's also possible to mark the
       drive as having a non-rotational medium with:</para>
 
       <screen>VBoxManage setextradata "VM name"
