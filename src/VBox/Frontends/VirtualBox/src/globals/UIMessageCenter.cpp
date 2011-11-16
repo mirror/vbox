@@ -2945,19 +2945,16 @@ void UIMessageCenter::sltShowHelpHelpDialog()
         sltShowUserManual(strUserManualFileName2);
     else if (!UIDownloaderUserManual::current() && askAboutUserManualDownload(strUserManualFileName1))
     {
-        /* Create User Manual downloader: */
+        /* Create and configure the User Manual downloader: */
         UIDownloaderUserManual *pDl = UIDownloaderUserManual::create();
-        /* Configure User Manual downloader: */
         CVirtualBox vbox = vboxGlobal().virtualBox();
         pDl->addSource(QString("http://download.virtualbox.org/virtualbox/%1/").arg(vboxGlobal().vboxVersionStringNormalized()) + strShortFileName);
         pDl->addSource(QString("http://download.virtualbox.org/virtualbox/") + strShortFileName);
         pDl->setTarget(strUserManualFileName2);
         pDl->setParentWidget(mainWindowShown());
-        /* After the download is finished => show the document: */
+        /* After downloading finished => show the User Manual: */
         connect(pDl, SIGNAL(sigDownloadFinished(const QString&)), this, SLOT(sltShowUserManual(const QString&)));
-        /* Notify listeners: */
-        emit sigDownloaderUserManualCreated();
-        /* Start the downloader: */
+        /* Start downloading: */
         pDl->start();
     }
 #endif /* #ifdef VBOX_OSE */

@@ -36,7 +36,7 @@
 #include "UIMachineLogic.h"
 #include "UIMachineWindowNormal.h"
 #include "UIMachineView.h"
-#include "UIUpdateManager.h"
+#include "UINetworkManager.h"
 #include "UIDownloaderAdditions.h"
 #include "UIDownloaderUserManual.h"
 #include "UIDownloaderExtensionPack.h"
@@ -169,25 +169,31 @@ void UIMachineWindowNormal::sltTryClose()
     UIMachineWindow::sltTryClose();
 }
 
-void UIMachineWindowNormal::sltEmbedDownloaderForAdditions()
+void UIMachineWindowNormal::sltEmbedDownloader(UIDownloadType downloaderType)
 {
-    /* If there is an additions download running show the process bar: */
-    if (UIDownloaderAdditions *pDl = UIDownloaderAdditions::current())
-        statusBar()->addWidget(pDl->progressWidget(this), 0);
-}
-
-void UIMachineWindowNormal::sltEmbedDownloaderForUserManual()
-{
-    /* If there is an additions download running show the process bar: */
-    if (UIDownloaderUserManual *pDl = UIDownloaderUserManual::current())
-        statusBar()->addWidget(pDl->progressWidget(this), 0);
-}
-
-void UIMachineWindowNormal::sltEmbedDownloaderForExtensionPack()
-{
-    /* If there is an extension pack download running show the process bar: */
-    if (UIDownloaderExtensionPack *pDl = UIDownloaderExtensionPack::current())
-        statusBar()->addWidget(pDl->progressWidget(this), 0);
+    switch (downloaderType)
+    {
+        case UIDownloadType_Additions:
+        {
+            if (UIDownloaderAdditions *pDl = UIDownloaderAdditions::current())
+                statusBar()->addWidget(pDl->progressWidget(this), 0);
+            break;
+        }
+        case UIDownloadType_UserManual:
+        {
+            if (UIDownloaderUserManual *pDl = UIDownloaderUserManual::current())
+                statusBar()->addWidget(pDl->progressWidget(this), 0);
+            break;
+        }
+        case UIDownloadType_ExtensionPack:
+        {
+            if (UIDownloaderExtensionPack *pDl = UIDownloaderExtensionPack::current())
+                statusBar()->addWidget(pDl->progressWidget(this), 0);
+            break;
+        }
+        default:
+            break;
+    }
 }
 
 void UIMachineWindowNormal::sltUpdateIndicators()
@@ -437,15 +443,15 @@ void UIMachineWindowNormal::prepareStatusBar()
 
     /* Add the additions downloader progress bar to the status bar,
      * if a download is actually running: */
-    sltEmbedDownloaderForAdditions();
+    tryToEmbedDownloaderForAdditions();
 
     /* Add the user manual progress bar to the status bar,
      * if a download is actually running: */
-    sltEmbedDownloaderForUserManual();
+    tryToEmbedDownloaderForUserManual();
 
     /* Add the extension pack progress bar to the status bar,
      * if a download is actually running: */
-    sltEmbedDownloaderForExtensionPack();
+    tryToEmbedDownloaderForExtensionPack();
 
     /* Create & start timer to update LEDs: */
     m_pIdleTimer = new QTimer(this);
@@ -463,12 +469,8 @@ void UIMachineWindowNormal::prepareConnections()
     /* Setup global settings change updater: */
     connect(&vboxGlobal().settings(), SIGNAL(propertyChanged(const char *, const char *)),
             this, SLOT(sltProcessGlobalSettingChange(const char *, const char *)));
-    /* Setup additions downloader listener: */
-    connect(machineLogic(), SIGNAL(sigDownloaderAdditionsCreated()), this, SLOT(sltEmbedDownloaderForAdditions()));
-    /* Setup user manual downloader listener: */
-    connect(&msgCenter(), SIGNAL(sigDownloaderUserManualCreated()), this, SLOT(sltEmbedDownloaderForUserManual()));
-    /* Setup extension pack downloader listener: */
-    connect(gUpdateManager, SIGNAL(sigDownloaderCreatedForExtensionPack()), this, SLOT(sltEmbedDownloaderForExtensionPack()));
+    /* Setup network manager listener: */
+    connect(gNetworkManager, SIGNAL(sigDownloaderCreated(UIDownloadType)), this, SLOT(sltEmbedDownloader(UIDownloadType)));
 }
 
 void UIMachineWindowNormal::prepareMachineView()

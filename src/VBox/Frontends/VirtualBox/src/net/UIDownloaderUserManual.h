@@ -78,6 +78,8 @@ private:
     UIDownloaderUserManual();
     ~UIDownloaderUserManual();
 
+    void startDownloading();
+
     void handleError(QNetworkReply *pReply);
 
     UIMiniProgressWidget* createProgressWidgetFor(QWidget *pParent) const;

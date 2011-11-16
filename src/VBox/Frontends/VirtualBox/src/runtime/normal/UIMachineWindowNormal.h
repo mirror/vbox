@@ -27,6 +27,7 @@
 #include "QIWithRetranslateUI.h"
 #include "UIMachineWindow.h"
 #include "COMDefs.h"
+#include "UINetworkDefs.h"
 
 /* Local forwards */
 class CMediumAttachment;
@@ -62,10 +63,8 @@ private slots:
     /* Close window reimplementation: */
     void sltTryClose();
 
-    /* Downloader listeners: */
-    void sltEmbedDownloaderForAdditions();
-    void sltEmbedDownloaderForUserManual();
-    void sltEmbedDownloaderForExtensionPack();
+    /* Network manager handler: */
+    void sltEmbedDownloader(UIDownloadType downloaderType);
 
 private:
 
@@ -105,6 +104,11 @@ private:
     void showSimple();
     bool isMaximizedChecked();
     void updateIndicatorState(QIStateIndicator *pIndicator, KDeviceType deviceType);
+
+    /* Network manager helpers: */
+    void tryToEmbedDownloaderForAdditions() { sltEmbedDownloader(UIDownloadType_Additions); }
+    void tryToEmbedDownloaderForUserManual() { sltEmbedDownloader(UIDownloadType_UserManual); }
+    void tryToEmbedDownloaderForExtensionPack() { sltEmbedDownloader(UIDownloadType_ExtensionPack); }
 
     /* Indicators pool: */
     UIIndicatorsPool *m_pIndicatorsPool;

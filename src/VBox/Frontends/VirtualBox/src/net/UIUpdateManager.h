@@ -43,11 +43,6 @@ public:
     /* Manager instance: */
     static UIUpdateManager* instance() { return m_pInstance; }
 
-signals:
-
-    /* Signal to notify listeners about downloading: */
-    void sigDownloaderCreatedForExtensionPack();
-
 public slots:
 
     /* Force call for new version check: */

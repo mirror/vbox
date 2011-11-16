@@ -430,7 +430,6 @@ public:
 
 signals:
 
-    void sigDownloaderUserManualCreated();
     void sigToCloseAllWarnings();
 
     /* Stuff supporting interthreading: */

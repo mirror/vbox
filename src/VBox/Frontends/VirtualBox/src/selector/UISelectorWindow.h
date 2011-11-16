@@ -30,6 +30,7 @@
 #include "QIWithRetranslateUI.h"
 #include "VBoxMedium.h"
 #include "COMDefs.h"
+#include "UINetworkDefs.h"
 
 /* Forward declarations: */
 class QISplitter;
@@ -126,9 +127,8 @@ private slots:
     void sltMediumEnumerationStarted();
     void sltMediumEnumFinished(const VBoxMediaList &mediumList);
 
-    /* Downloader related slots: */
-    void sltEmbedDownloaderForUserManual();
-    void sltEmbedDownloaderForExtensionPack();
+    /* Downloading handler: */
+    void sltEmbedDownloader(UIDownloadType downloaderType);
 
 private:
 

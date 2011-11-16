@@ -1501,22 +1501,18 @@ void UIMachineLogic::sltInstallGuestAdditions()
     int result = msgCenter().cannotFindGuestAdditions(QDir::toNativeSeparators(strSrc1), QDir::toNativeSeparators(strSrc2));
     if (result == QIMessageBox::Yes)
     {
+        /* Create and configure the Additions downloader: */
+        UIDownloaderAdditions *pDl = UIDownloaderAdditions::create();
         const QString &source = QString("http://download.virtualbox.org/virtualbox/%1/").arg(vboxGlobal().vboxVersionStringNormalized()) + name;
         const QString &target = QDir(vboxGlobal().virtualBox().GetHomeFolder()).absoluteFilePath(name);
-
-        UIDownloaderAdditions *pDl = UIDownloaderAdditions::create();
-        /* Configure the additions downloader. */
         pDl->setSource(source);
         pDl->setTarget(target);
         pDl->setAction(gActionPool->action(UIActionIndexRuntime_Simple_InstallGuestTools));
         pDl->setParentWidget(mainMachineWindow()->machineWindow());
-        /* After the download is finished the user may like to install the
-         * additions.*/
+        /* After downloading finished => propose to install the Additions: */
         connect(pDl, SIGNAL(sigDownloadFinished(const QString&)),
                 uisession(), SLOT(sltInstallGuestAdditionsFrom(const QString&)));
-        /* Some of the modes may show additional info of the download progress: */
-        emit sigDownloaderAdditionsCreated();
-        /* Start the download: */
+        /* Start downloading: */
         pDl->start();
     }
 }
