@@ -34,6 +34,7 @@ export USERNAME
 
 PATH=$PATH:/bin:/sbin:/usr/sbin
 PACKAGE=VBoxGuestAdditions
+OLDMODULES="vboxguest vboxadd vboxsf vboxvfs vboxvideo"
 MODULE_SRC="$INSTALL_DIR/src/vboxguest-$INSTALL_VER"
 BUILDINTMP="$MODULE_SRC/build_in_tmp"
 DODKMS="$MODULE_SRC/do_dkms"
@@ -360,11 +361,9 @@ cleanup_modules()
     $DODKMS uninstall > $LOG
     succ_msg
     begin "Removing existing VirtualBox non-DKMS kernel modules"
-    find /lib/modules -name vboxadd\* | xargs rm 2>/dev/null
-    find /lib/modules -name vboxguest\* | xargs rm 2>/dev/null
-    find /lib/modules -name vboxvfs\* | xargs rm 2>/dev/null
-    find /lib/modules -name vboxsf\* | xargs rm 2>/dev/null
-    find /lib/modules -name vboxvideo\* | xargs rm 2>/dev/null
+    for i in $OLDMODULES; do
+        find /lib/modules -name $i\* | xargs rm 2>/dev/null
+    done
     succ_msg
 }
 
@@ -507,7 +506,9 @@ cleanup()
     depmod
 
     # Remove old module sources
-    rm -rf /usr/src/vboxadd-* /usr/src/vboxguest-* /usr/src/vboxvfs-* /usr/src/vboxsf-* /usr/src/vboxvideo-*
+    for i in $OLDMODULES; do
+      rm -rf /usr/src/$i-*
+    done
 
     # Remove other files
     rm /sbin/mount.vboxsf 2>/dev/null
