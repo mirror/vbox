@@ -371,12 +371,9 @@ $(VBOX_LNX_ADD_INST_STAGE_DIR)install.sh: \
 		-e "s;_VERSION_;$(VBOX_VERSION_STRING);g" \
 		-e "s;_PACKAGE_NAME_;VirtualBox Guest Additions;g" \
 		-e "s;_PACKAGE_;VBoxGuestAdditions;g" \
-		-e "s;_VERSION_;$(VBOX_VERSION_STRING);g" \
-		-e "s;_BUILD_;$(shell date);g" \
-		-e "s;_OSE_;$(VBOX_OSE);g" \
 		-e "s;_BUILDTYPE_;$(KBUILD_TYPE);g" \
 		-e "s;_ARCH_;$(KBUILD_TARGET_ARCH);g" \
-		-e "s;_UNINSTALL_SCRIPTS_;vboxadd-x11 vboxadd-timesync vboxadd-service vboxadd;g" \
+		-e "s;_UNINSTALL_SCRIPTS_;vboxadd-x11 vboxvfs vboxadd-timesync vboxadd-service vboxadd;g" \
 		--output $@ \
 		$<
 	$(QUIET)$(CHMOD) 0755 $@
