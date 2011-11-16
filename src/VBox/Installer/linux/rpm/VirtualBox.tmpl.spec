@@ -117,20 +117,24 @@ mv VBoxTunctl $RPM_BUILD_ROOT/usr/bin
 for d in /lib/modules/*; do
   if [ -L $d/build ]; then
     rm -f /tmp/vboxdrv-Module.symvers
-    ./src/vboxhost/vboxdrv/build_in_tmp \
+    ./src/vboxhost/build_in_tmp \
       --save-module-symvers /tmp/vboxdrv-Module.symvers \
+      --module-source $MODULE_SRC/vboxdrv \ 
       KBUILD_VERBOSE= KERN_DIR=$d/build MODULE_DIR=$RPM_BUILD_ROOT/$d/misc -j4 \
       %INSTMOD%
-    ./src/vboxhost/vboxnetflt/build_in_tmp \
+    ./src/vboxhost/build_in_tmp \
       --use-module-symvers /tmp/vboxdrv-Module.symvers \
+      --module-source $MODULE_SRC/vboxnetflt \ 
       KBUILD_VERBOSE= KERN_DIR=$d/build MODULE_DIR=$RPM_BUILD_ROOT/$d/misc -j4 \
       %INSTMOD%
-    ./src/vboxhost/vboxnetadp/build_in_tmp \
+    ./src/vboxhost/build_in_tmp \
       --use-module-symvers /tmp/vboxdrv-Module.symvers \
+      --module-source $MODULE_SRC/vboxnetadp \ 
       KBUILD_VERBOSE= KERN_DIR=$d/build MODULE_DIR=$RPM_BUILD_ROOT/$d/misc -j4 \
       %INSTMOD%
-    ./src/vboxhost/vboxpci/build_in_tmp \
+    ./src/vboxhost/build_in_tmp \
       --use-module-symvers /tmp/vboxdrv-Module.symvers \
+      --module-source $MODULE_SRC/vboxpci \ 
       KBUILD_VERBOSE= KERN_DIR=$d/build MODULE_DIR=$RPM_BUILD_ROOT/$d/misc -j4 \
       %INSTMOD%
   fi

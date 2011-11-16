@@ -52,12 +52,10 @@ if1of ($(KBUILD_TARGET), linux)
 	$(subst $(DQUOTE),,$(VBOX_VBOXPCI_SOURCES)) \
  	$(VBoxPci-src_0_OUTDIR)/Makefile
  VBoxPci-src_EXEC_SOURCES = \
- 	$(VBoxPci-src_0_OUTDIR)/build_in_tmp \
  	$(PATH_ROOT)/src/VBox/HostDrivers/linux/do_Module.symvers
  VBoxPci-src_CLEAN      = \
  	$(VBoxPci-src_0_OUTDIR)/Makefile \
  	$(PATH_TARGET)/VBoxPciSrc-src-1.dep \
- 	$(VBoxPci-src_0_OUTDIR)/build_in_tmp
 
  # Generate the scripts needed for building the kernel module.
 
@@ -73,15 +71,6 @@ $$(VBoxPci-src_0_OUTDIR)/Makefile: \
 	$(QUIET)$(CP) -f $< $@
  endif
 	%$(QUIET2)$(APPEND) -t '$(PATH_TARGET)/VBoxPci-src-1.dep' 'VBoxPci/linux/Makefile_VBOX_HARDENED=$(VBOX_WITH_HARDENING)'
-
-$$(VBoxPci-src_0_OUTDIR)/build_in_tmp: \
-		$(PATH_ROOT)/src/VBox/HostDrivers/linux/build_in_tmp \
-		$(VBOX_VERSION_STAMP) \
-		| $$(dir $$@)
-	$(call MSG_TOOL,Creating,,$@)
-	$(QUIET)$(RM) -f -- $@
-	$(QUIET)$(SED) -e "s;_VERSION_;${VBOX_VERSION_STRING};g; s;_MODULE_;vboxpci;g; s;_BUILDTYPE_;${KBUILD_TYPE};g" --output $@ $<
-	$(QUIET)$(CHMOD) 0755 $@
 
 endif # Supported platform.
 include $(KBUILD_PATH)/subfooter.kmk
