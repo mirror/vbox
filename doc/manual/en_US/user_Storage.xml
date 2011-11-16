@@ -23,7 +23,7 @@
     </listitem>
 
     <listitem>
-      <para>Finally, as an experimental feature, you can allow a virtual
+      <para>Finally, as an advanced feature, you can allow a virtual
       machine to access one of your host disks directly; this advanced feature
       is described in <xref linkend="rawdisk" />.</para>
     </listitem>
@@ -49,18 +49,19 @@
         VirtualBox 3.2.</para>
       </footnote><itemizedlist>
         <listitem>
-          <para><emphasis role="bold">IDE (ATA)</emphasis> controllers have
-          been in use since the 1980s. Initially, this type of interface
+          <para><emphasis role="bold">IDE (ATA)</emphasis> controllers are a
+          backwards compatible yet very advanced extension of the disk
+	  controller in the IBM PC/AT (1984). Initially, this interface
           worked only with hard disks, but was later extended to also support
           CD-ROM drives and other types of removable media. In physical PCs,
           this standard uses flat ribbon parallel cables with 40 or 80 wires.
           Each such cable can connect two devices to a controller, which have
-          traditionally been called "master" and "slave". Typical hard disk
-          controllers have two connectors for such cables; as a result, most
-          PCs support up to four devices.</para>
+          traditionally been called "master" and "slave". Typical PCs had
+          two connectors for such cables; as a result, support for up to four
+	  IDE devices was most common.</para>
 
-          <para>In VirtualBox, each virtual machine has one IDE controller
-          enabled by default, which gives you up to four virtual storage
+          <para>In VirtualBox, each virtual machine may have one IDE
+          contoller enabled, which gives you up to four virtual storage
           devices that you can attach to the machine. (By default, one of
           these four -- the secondary master -- is preconfigured to be the
           machine's virtual CD/DVD drive, but this can be changed.<footnote>
@@ -71,15 +72,15 @@
             </footnote>)</para>
 
           <para>So even if your guest operating system has no support for SCSI
-          or SATA devices, it should always be able to see the default IDE
-          controller that is enabled by default.</para>
+          or SATA devices, it should always be able to see an IDE controller.
+          </para>
 
           <para>You can also select which exact type of IDE controller
           hardware VirtualBox should present to the virtual machine (PIIX3,
           PIIX4 or ICH6). This makes no difference in terms of performance,
           but if you import a virtual machine from another virtualization
           product, the operating system in that machine may expect a
-          particular controller and crash if it isn't found.</para>
+          particular controller type and crash if it isn't found.</para>
 
           <para>After you have created a new virtual machine with the "New
           Virtual Machine" wizard of the graphical user interface, you will
@@ -91,7 +92,7 @@
         <listitem>
           <para><emphasis role="bold">Serial ATA (SATA)</emphasis> is a newer
           standard introduced in 2003. Compared to IDE, it supports both much
-          higher speeds and more devices per hard disk controller. Also, with
+          higher speeds and more devices per controller. Also, with
           physical hardware, devices can be added and removed while the system
           is running. The standard interface for SATA controllers is called
           Advanced Host Controller Interface (<emphasis
@@ -123,7 +124,7 @@
               seen by operating systems that do not have device support for
               AHCI. In particular, <emphasis role="bold">there is no support
               for AHCI in Windows before Windows Vista</emphasis>, so Windows
-              XP (even SP2) will not see such disks unless you install
+              XP (even SP3) will not see such disks unless you install
               additional drivers. It is possible to switch from IDE to SATA
               after installation by installing the SATA drivers and changing
               the controller type in the VM settings dialog.<footnote>
@@ -194,7 +195,7 @@
             <para>As with SATA, the SAS controller will only be seen by
             operating systems with device support for it. In particular,
             <emphasis role="bold">there is no support for SAS in Windows
-            before Windows Vista</emphasis>, so Windows XP (even SP2) will not
+            before Windows Vista</emphasis>, so Windows XP (even SP3) will not
             see such disks unless you install additional drivers.</para>
           </warning>
         </listitem>
