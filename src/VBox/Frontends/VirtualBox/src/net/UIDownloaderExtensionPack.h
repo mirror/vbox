@@ -46,20 +46,18 @@ class UIDownloaderExtensionPack : public UIDownloader
 
 public:
 
-    /* Returns updater if exists: */
-    static UIDownloaderExtensionPack* current() { return m_pInstance; }
-    /* Start downloading: */
-    static void download(QObject *pListener);
+    /* Create downloader: */
+    static UIDownloaderExtensionPack* create();
+    /* Return downloader: */
+    static UIDownloaderExtensionPack* current();
+
+    /* Starts downloading: */
+    void start();
 
 signals:
 
     /* Notify listeners about extension pack downloaded: */
     void sigNotifyAboutExtensionPackDownloaded(const QString &strSource, const QString &strTarget);
-
-protected:
-
-    /* Starts downloading: */
-    void start();
 
 private:
 
