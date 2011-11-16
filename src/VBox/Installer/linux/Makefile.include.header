@@ -76,6 +76,9 @@ else
   $(warning Using BUILD_TYPE='$(BUILD_TYPE)' from the $(origin BUILD_TYPE).)
  endif
 endif
+ifeq ($(USERNAME),)
+ USERNAME := noname
+endif
 
 ifneq ($(MAKECMDGOALS),clean)
 

@@ -35,7 +35,7 @@ ifndef INCL
 endif
 KFLAGS   := -D__KERNEL__ -DMODULE $(MOD_DEFS)
 ifeq ($(BUILD_TYPE),debug)
- KFLAGS  += -DDEBUG
+ KFLAGS  += -DDEBUG -DDEBUG_$(subst $(subst _, ,_),_,$(USERNAME)) -DDEBUG_USERNAME=$(subst $(subst _, ,_),_,$(USERNAME))
 endif
 
 ifeq ($(KERN_VERSION), 24)
