@@ -308,8 +308,8 @@ ipcDConnectService::ReleaseWrappers(nsVoidArray &wrappers, PRUint32 peer)
     DConnectInstance *wrapper = (DConnectInstance *)wrappers[i];
     if (mInstanceSet.Contains(wrapper) && wrapper->Peer() == peer)
     {
-      ((DConnectInstance *) wrappers[i])->ReleaseIPC();
-      ((DConnectInstance *) wrappers[i])->Release();
+      wrapper->ReleaseIPC(PR_TRUE /* locked */);
+      wrapper->Release();
     }
   }
 }
