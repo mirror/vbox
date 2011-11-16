@@ -39,6 +39,9 @@
  */
 
 
+/* Compile-time assertion macro. */
+#define ct_assert(a)    extern int ct_ass_arr[!!(a) == 1];
+
 /* For functions called from assembly code. */
 #define BIOSCALL	__cdecl
 

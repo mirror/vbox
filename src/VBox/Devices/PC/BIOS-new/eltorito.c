@@ -345,7 +345,7 @@ uint16_t cdrom_boot(void)
         if(cdemu->emulated_drive == 0x00)
             write_byte(0x40,0x10,read_byte(0x40,0x10)|0x41);
         else
-            write_byte(ebda_seg,(uint16_t)&EbdaData->ata.hdcount, read_byte(ebda_seg, (uint16_t)&EbdaData->ata.hdcount) + 1);
+            write_byte(ebda_seg,(uint16_t)&EbdaData->bdisk.hdcount, read_byte(ebda_seg, (uint16_t)&EbdaData->bdisk.hdcount) + 1);
     }
     
     
@@ -571,9 +571,9 @@ void BIOSCALL int13_cdrom(uint16_t EHBX, disk_regs_t r)
     uint8_t         atacmd[12];
     uint32_t        lba;
     uint16_t        count, segment, offset, size;
-    ata_t __far     *ata;
+    bio_dsk_t __far *ata;
 
-    ata = ebda_seg :> &EbdaData->ata;
+    ata = ebda_seg :> &EbdaData->bdisk;
 
     
     BX_DEBUG_INT13_CD("%s: AX=%04x BX=%04x CX=%04x DX=%04x ES=%04x\n", __func__, AX, BX, CX, DX, ES);
@@ -779,7 +779,7 @@ int13_cdrom_rme_end:
         write_word(DS, SI+(uint16_t)&Int13DPT->size, 0x1e);
 
         write_word(DS, SI+(uint16_t)&Int13DPT->dpte_segment, ebda_seg);
-        write_word(DS, SI+(uint16_t)&Int13DPT->dpte_offset, (uint16_t)&EbdaData->ata.dpte);
+        write_word(DS, SI+(uint16_t)&Int13DPT->dpte_offset, (uint16_t)&EbdaData->bdisk.dpte);
 
         // Fill in dpte
         channel = device / 2;
@@ -807,7 +807,8 @@ int13_cdrom_rme_end:
         ata->dpte.revision  = 0x11;
 
         checksum=0;
-        for (i=0; i<15; i++) checksum += read_byte(ebda_seg, (uint16_t)&EbdaData->ata.dpte + i);
+        for (i=0; i<15; i++)
+            checksum += read_byte(ebda_seg, (uint16_t)&EbdaData->bdisk.dpte + i);
         checksum = -checksum;
         ata->dpte.checksum = checksum;
         }

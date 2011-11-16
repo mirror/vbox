@@ -87,7 +87,7 @@ void BIOSCALL int13_harddisk(disk_regs_t r)
     }
     
     // Get the ata channel
-    device = ebda_data->ata.hdidmap[GET_ELDL()-0x80];
+    device = ebda_data->bdisk.hdidmap[GET_ELDL()-0x80];
     
     // basic check : device has to be valid
     if (device >= BX_MAX_STORAGE_DEVICES) {
@@ -135,9 +135,9 @@ void BIOSCALL int13_harddisk(disk_regs_t r)
         if (!VBOX_IS_SCSI_DEVICE(device))
 #endif
         {
-            nlc   = ebda_data->ata.devices[device].lchs.cylinders;
-            nlh   = ebda_data->ata.devices[device].lchs.heads;
-            nlspt = ebda_data->ata.devices[device].lchs.spt;
+            nlc   = ebda_data->bdisk.devices[device].lchs.cylinders;
+            nlh   = ebda_data->bdisk.devices[device].lchs.heads;
+            nlspt = ebda_data->bdisk.devices[device].lchs.spt;
         }
 #ifdef VBOX_WITH_SCSI
         else {
@@ -163,8 +163,8 @@ void BIOSCALL int13_harddisk(disk_regs_t r)
         if (!VBOX_IS_SCSI_DEVICE(device))
 #endif
         {
-            nph   = ebda_data->ata.devices[device].pchs.heads;
-            npspt = ebda_data->ata.devices[device].pchs.spt;
+            nph   = ebda_data->bdisk.devices[device].pchs.heads;
+            npspt = ebda_data->bdisk.devices[device].pchs.spt;
         }
 #ifdef VBOX_WITH_SCSI
         else {
@@ -195,9 +195,9 @@ void BIOSCALL int13_harddisk(disk_regs_t r)
             else
 #endif
             {
-                ebda_data->ata.devices[device].blksize = count * 0x200;
+                ebda_data->bdisk.devices[device].blksize = count * 0x200;
                 status=ata_cmd_data_in(device, ATA_CMD_READ_MULTIPLE, count, cylinder, head, sector, lba, MK_FP(ES, BX));
-                ebda_data->ata.devices[device].blksize = 0x200;
+                ebda_data->bdisk.devices[device].blksize = 0x200;
             }
         } else {
 #ifdef VBOX_WITH_SCSI
@@ -209,7 +209,7 @@ void BIOSCALL int13_harddisk(disk_regs_t r)
         }
 
         // Set nb of sector transferred
-        SET_AL(ebda_data->ata.trsfsectors);
+        SET_AL(ebda_data->bdisk.trsfsectors);
         
         if (status != 0) {
             BX_INFO("%s: function %02x, error %02x !\n", __func__, GET_AH(), status);
@@ -233,9 +233,9 @@ void BIOSCALL int13_harddisk(disk_regs_t r)
         if (!VBOX_IS_SCSI_DEVICE(device))
 #endif
         {
-            nlc   = ebda_data->ata.devices[device].lchs.cylinders;
-            nlh   = ebda_data->ata.devices[device].lchs.heads;
-            nlspt = ebda_data->ata.devices[device].lchs.spt;
+            nlc   = ebda_data->bdisk.devices[device].lchs.cylinders;
+            nlh   = ebda_data->bdisk.devices[device].lchs.heads;
+            nlspt = ebda_data->bdisk.devices[device].lchs.spt;
         }
 #ifdef VBOX_WITH_SCSI
         else {
@@ -246,7 +246,7 @@ void BIOSCALL int13_harddisk(disk_regs_t r)
         }
 #endif
 
-        count = ebda_data->ata.hdcount;
+        count = ebda_data->bdisk.hdcount;
         /* Maximum cylinder number is just one less than the number of cylinders. */
         nlc = nlc - 1; /* 0 based , last sector not used */
         SET_AL(0);
@@ -265,7 +265,7 @@ void BIOSCALL int13_harddisk(disk_regs_t r)
         // should look at 40:8E also???
 
         // Read the status from controller
-        status = inb(ebda_data->ata.channels[device/2].iobase1 + ATA_CB_STAT);
+        status = inb(ebda_data->bdisk.channels[device/2].iobase1 + ATA_CB_STAT);
         if ( (status & ( ATA_CB_STAT_BSY | ATA_CB_STAT_RDY )) == ATA_CB_STAT_RDY ) {
             goto int13_success;
         } else {
@@ -281,9 +281,9 @@ void BIOSCALL int13_harddisk(disk_regs_t r)
         if (!VBOX_IS_SCSI_DEVICE(device))
 #endif
         {
-            npc   = ebda_data->ata.devices[device].pchs.cylinders;
-            nph   = ebda_data->ata.devices[device].pchs.heads;
-            npspt = ebda_data->ata.devices[device].pchs.spt;
+            npc   = ebda_data->bdisk.devices[device].pchs.cylinders;
+            nph   = ebda_data->bdisk.devices[device].pchs.heads;
+            npspt = ebda_data->bdisk.devices[device].pchs.spt;
         }
 #ifdef VBOX_WITH_SCSI
         else {
@@ -363,7 +363,7 @@ void BIOSCALL int13_harddisk_ext(disk_regs_t r)
     }
     
     // Get the ata channel
-    device = ebda_data->ata.hdidmap[GET_ELDL()-0x80];
+    device = ebda_data->bdisk.hdidmap[GET_ELDL()-0x80];
     
     // basic check : device has to be valid
     if (device >= BX_MAX_STORAGE_DEVICES) {
@@ -411,7 +411,7 @@ void BIOSCALL int13_harddisk_ext(disk_regs_t r)
         }
         else
 #endif
-        if (lba >= ebda_data->ata.devices[device].sectors) {
+        if (lba >= ebda_data->bdisk.devices[device].sectors) {
               BX_INFO("%s: function %02x. LBA out of range\n", __func__, GET_AH());
               goto int13x_fail;
         }
@@ -430,9 +430,9 @@ void BIOSCALL int13_harddisk_ext(disk_regs_t r)
                 if (lba + count >= 268435456)
                     status=ata_cmd_data_in(device, ATA_CMD_READ_SECTORS_EXT, count, 0, 0, 0, lba, MK_FP(segment, offset));
                 else {
-                    ebda_data->ata.devices[device].blksize = count * 0x200;
+                    ebda_data->bdisk.devices[device].blksize = count * 0x200;
                     status=ata_cmd_data_in(device, ATA_CMD_READ_MULTIPLE, count, 0, 0, 0, lba, MK_FP(segment, offset));
-                    ebda_data->ata.devices[device].blksize = 0x200;
+                    ebda_data->bdisk.devices[device].blksize = 0x200;
                 }
             }
         } else {
@@ -448,7 +448,7 @@ void BIOSCALL int13_harddisk_ext(disk_regs_t r)
             }
         }
 
-        count = ebda_data->ata.trsfsectors;
+        count = ebda_data->bdisk.trsfsectors;
         i13_ext->count = count;
         
         if (status != 0) {
@@ -486,11 +486,11 @@ void BIOSCALL int13_harddisk_ext(disk_regs_t r)
             if (!VBOX_IS_SCSI_DEVICE(device))
 #endif
             {
-                npc     = ebda_data->ata.devices[device].pchs.cylinders;
-                nph     = ebda_data->ata.devices[device].pchs.heads;
-                npspt   = ebda_data->ata.devices[device].pchs.spt;
-                lba     = ebda_data->ata.devices[device].sectors;
-                blksize = ebda_data->ata.devices[device].blksize;
+                npc     = ebda_data->bdisk.devices[device].pchs.cylinders;
+                nph     = ebda_data->bdisk.devices[device].pchs.heads;
+                npspt   = ebda_data->bdisk.devices[device].pchs.spt;
+                lba     = ebda_data->bdisk.devices[device].sectors;
+                blksize = ebda_data->bdisk.devices[device].blksize;
             }
 #ifdef VBOX_WITH_SCSI
             else {
@@ -519,15 +519,15 @@ void BIOSCALL int13_harddisk_ext(disk_regs_t r)
             
             dpt->size = 0x1e;
             dpt->dpte_segment = ebda_seg;
-            dpt->dpte_offset  = (uint16_t)&EbdaData->ata.dpte;
+            dpt->dpte_offset  = (uint16_t)&EbdaData->bdisk.dpte;
             
             // Fill in dpte
             channel = device / 2;
-            iobase1 = ebda_data->ata.channels[channel].iobase1;
-            iobase2 = ebda_data->ata.channels[channel].iobase2;
-            irq     = ebda_data->ata.channels[channel].irq;
-            mode    = ebda_data->ata.devices[device].mode;
-            translation = ebda_data->ata.devices[device].translation;
+            iobase1 = ebda_data->bdisk.channels[channel].iobase1;
+            iobase2 = ebda_data->bdisk.channels[channel].iobase2;
+            irq     = ebda_data->bdisk.channels[channel].irq;
+            mode    = ebda_data->bdisk.devices[device].mode;
+            translation = ebda_data->bdisk.devices[device].translation;
             
             options  = (translation == ATA_TRANSLATION_NONE ? 0 : 1 << 3);  // chs translation
             options |= (1 << 4);    // lba translation
@@ -535,23 +535,23 @@ void BIOSCALL int13_harddisk_ext(disk_regs_t r)
             options |= (translation==ATA_TRANSLATION_LBA ? 1 : 0 << 9);
             options |= (translation==ATA_TRANSLATION_RECHS ? 3 : 0 << 9);
             
-            ebda_data->ata.dpte.iobase1  = iobase1;
-            ebda_data->ata.dpte.iobase2  = iobase2;
-            ebda_data->ata.dpte.prefix   = (0xe | (device % 2)) << 4;
-            ebda_data->ata.dpte.unused   = 0xcb;
-            ebda_data->ata.dpte.irq      = irq;
-            ebda_data->ata.dpte.blkcount = 1;
-            ebda_data->ata.dpte.dma      = 0;
-            ebda_data->ata.dpte.pio      = 0;
-            ebda_data->ata.dpte.options  = options;
-            ebda_data->ata.dpte.reserved = 0;
-            ebda_data->ata.dpte.revision = 0x11;
+            ebda_data->bdisk.dpte.iobase1  = iobase1;
+            ebda_data->bdisk.dpte.iobase2  = iobase2;
+            ebda_data->bdisk.dpte.prefix   = (0xe | (device % 2)) << 4;
+            ebda_data->bdisk.dpte.unused   = 0xcb;
+            ebda_data->bdisk.dpte.irq      = irq;
+            ebda_data->bdisk.dpte.blkcount = 1;
+            ebda_data->bdisk.dpte.dma      = 0;
+            ebda_data->bdisk.dpte.pio      = 0;
+            ebda_data->bdisk.dpte.options  = options;
+            ebda_data->bdisk.dpte.reserved = 0;
+            ebda_data->bdisk.dpte.revision = 0x11;
             
             checksum = 0;
             for (i=0; i<15; i++)
-                checksum += read_byte(ebda_seg, (uint16_t)&EbdaData->ata.dpte + i);
+                checksum += read_byte(ebda_seg, (uint16_t)&EbdaData->bdisk.dpte + i);
             checksum = -checksum;
-            ebda_data->ata.dpte.checksum = checksum;
+            ebda_data->bdisk.dpte.checksum = checksum;
         }
 
         // EDD 3.x
@@ -560,8 +560,8 @@ void BIOSCALL int13_harddisk_ext(disk_regs_t r)
             uint16_t    iobase1;
 
             channel = device / 2;
-            iface   = ebda_data->ata.channels[channel].iface;
-            iobase1 = ebda_data->ata.channels[channel].iobase1;
+            iface   = ebda_data->bdisk.channels[channel].iface;
+            iobase1 = ebda_data->bdisk.channels[channel].iobase1;
             
             dpt->size       = 0x42;
             dpt->key        = 0xbedd;
