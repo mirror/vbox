@@ -659,5 +659,3 @@ RTDECL(int) RTTraceBufDumpToAssert(RTTRACEBUF hTraceBuf)
     return VINF_SUCCESS;
 }
 
-
-

@@ -95,7 +95,7 @@ static RTSTREAM    g_StdIn =
     RTSTREAM_MAGIC,
     0,
     stdin,
-    true, 
+    true,
     /*.fBinary = */ false,
     /*.fRecheckMode = */ true
 #ifndef HAVE_FWRITE_UNLOCKED
@@ -108,7 +108,7 @@ static RTSTREAM    g_StdErr =
 {
     RTSTREAM_MAGIC,
     0,
-    stderr, 
+    stderr,
     true,
     /*.fBinary = */ false,
     /*.fRecheckMode = */ true
@@ -468,8 +468,8 @@ RTR3DECL(int) RTStrmRewind(PRTSTREAM pStream)
 
 
 /**
- * Recheck the stream mode. 
- *  
+ * Recheck the stream mode.
+ *
  * @param   pStream             The stream (locked).
  */
 static void rtStreamRecheckMode(PRTSTREAM pStream)
@@ -563,8 +563,8 @@ RTR3DECL(int) RTStrmReadEx(PRTSTREAM pStream, void *pvBuf, size_t cbRead, size_t
 
 
 /**
- * Check if the input text is valid UTF-8. 
- *  
+ * Check if the input text is valid UTF-8.
+ *
  * @returns true/false.
  * @param   pvBuf               Pointer to the buffer.
  * @param   cbBuf               Size of the buffer.
@@ -580,8 +580,8 @@ static bool rtStrmIsUtf8Text(const void *pvBuf, size_t cbBuf)
 
 #ifdef RT_OS_WINDOWS
 /**
- * Check if the stream is for a Window console. 
- *  
+ * Check if the stream is for a Window console.
+ *
  * @returns true / false.
  * @param   pStream             The stream.
  * @param   phCon               Where to return the console handle.
@@ -605,17 +605,17 @@ static bool rtStrmIsConsoleUnlocked(PRTSTREAM pStream, HANDLE *phCon)
 
 
 /**
- * Internal write API, stream lock already held. 
- *  
+ * Internal write API, stream lock already held.
+ *
  * @returns IPRT status code.
  * @param   pStream             The stream.
  * @param   pvBuf               What to write.
  * @param   cbWrite             How much to write.
- * @param   pcbWritten          Where to optionally return the number of bytes 
+ * @param   pcbWritten          Where to optionally return the number of bytes
  *                              written.
  * @param   fSureIsText         Set if we're sure this is UTF-8 text already.
  */
-static int rtStrmWriteLocked(PRTSTREAM pStream, const void *pvBuf, size_t cbWrite, size_t *pcbWritten, 
+static int rtStrmWriteLocked(PRTSTREAM pStream, const void *pvBuf, size_t cbWrite, size_t *pcbWritten,
                               bool fSureIsText)
 {
     int rc = pStream->i32Error;
@@ -626,7 +626,7 @@ static int rtStrmWriteLocked(PRTSTREAM pStream, const void *pvBuf, size_t cbWrit
 
 #ifdef RT_OS_WINDOWS
     /*
-     * Use the unicode console API when possible in order to avoid stuff 
+     * Use the unicode console API when possible in order to avoid stuff
      * getting lost in unnecessary code page translations.
      */
     HANDLE hCon;
@@ -655,7 +655,7 @@ static int rtStrmWriteLocked(PRTSTREAM pStream, const void *pvBuf, size_t cbWrit
                         DWORD cwcThis;
                         if (!WriteConsoleW(hCon, &pwszSrc[cwcWritten], 1, &cwcThis, NULL))
                         {
-                            if (!pcbWritten || cwcWritten == 0) 
+                            if (!pcbWritten || cwcWritten == 0)
                                 rc = RTErrConvertFromErrno(GetLastError());
                             break;
                         }
@@ -695,19 +695,19 @@ static int rtStrmWriteLocked(PRTSTREAM pStream, const void *pvBuf, size_t cbWrit
             ASMAtomicWriteS32(&pStream->i32Error, rc);
         return rc;
     }
-#endif /* RT_OS_WINDOWS */ 
+#endif /* RT_OS_WINDOWS */
 
     /*
-     * If we're sure it's text output, convert it from UTF-8 to the current 
-     * code page before printing it. 
-     *  
-     * Note! Partial writes are not supported in this scenario because we 
+     * If we're sure it's text output, convert it from UTF-8 to the current
+     * code page before printing it.
+     *
+     * Note! Partial writes are not supported in this scenario because we
      *       cannot easily report back a written length matching the input.
      */
     /** @todo Skip this if the current code set is UTF-8. */
     if (   pStream->fCurrentCodeSet
         && !pStream->fBinary
-        && (   fSureIsText 
+        && (   fSureIsText
             || rtStrmIsUtf8Text(pvBuf, cbWrite))
        )
     {
@@ -760,7 +760,7 @@ static int rtStrmWriteLocked(PRTSTREAM pStream, const void *pvBuf, size_t cbWrit
     }
 
     /*
-     * Otherwise, just write it as-is. 
+     * Otherwise, just write it as-is.
      */
     if (pcbWritten)
     {
@@ -808,13 +808,13 @@ static int rtStrmWriteLocked(PRTSTREAM pStream, const void *pvBuf, size_t cbWrit
 
 
 /**
- * Internal write API. 
- *  
+ * Internal write API.
+ *
  * @returns IPRT status code.
  * @param   pStream             The stream.
  * @param   pvBuf               What to write.
  * @param   cbWrite             How much to write.
- * @param   pcbWritten          Where to optionally return the number of bytes 
+ * @param   pcbWritten          Where to optionally return the number of bytes
  *                              written.
  * @param   fSureIsText         Set if we're sure this is UTF-8 text already.
  */

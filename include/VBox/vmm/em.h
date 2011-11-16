@@ -142,8 +142,8 @@ typedef FNEMULATELOCKPARAM3    *PFNEMULATELOCKPARAM3;
 #define EMIsHwVirtExecutionEnabled(pVM) (!(pVM)->fRecompileSupervisor && !(pVM)->fRecompileUser)
 
 /**
- * Checks if execution of supervisor code should be done in the 
- * recompiler or not. 
+ * Checks if execution of supervisor code should be done in the
+ * recompiler or not.
  *
  * @returns true if enabled.
  * @returns false if disabled.

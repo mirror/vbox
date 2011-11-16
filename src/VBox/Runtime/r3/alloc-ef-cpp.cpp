@@ -127,4 +127,3 @@ void RT_EF_CDECL operator delete[](void *pv, const std::nothrow_t &) RT_NO_THROW
     rtR3MemFree("delete[] nothrow", RTMEMTYPE_DELETE_ARRAY, pv, ASMReturnAddress(), NULL, 0, NULL);
 }
 
-

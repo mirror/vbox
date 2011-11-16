@@ -215,7 +215,7 @@ VMMR3DECL(int) VMR3ReqCallVoidNoWait(PVM pVM, VMCPUID idDstCpu, PFNRT pfnFunctio
  * This assumes (1) you're calling a function that returns an VBox status code,
  * (2) that you want it's return code on success, (3) that you wish to wait for
  * ever for it to return, and (4) that it's priority request that can be safely
- * be handled during async suspend and power off. 
+ * be handled during async suspend and power off.
  *
  * @returns VBox status code.  In the unlikely event that VMR3ReqCallVU fails,
  *          its status code is return.  Otherwise, the status of pfnFunction is
@@ -249,9 +249,9 @@ VMMR3DECL(int) VMR3ReqPriorityCallWait(PVM pVM, VMCPUID idDstCpu, PFNRT pfnFunct
 /**
  * Convenience wrapper for VMR3ReqCallU.
  *
- * This assumes (1) you're calling a function that returns void, (2) that you 
- * wish to wait for ever for it to return, and (3) that it's priority request 
- * that can be safely be handled during async suspend and power off. 
+ * This assumes (1) you're calling a function that returns void, (2) that you
+ * wish to wait for ever for it to return, and (3) that it's priority request
+ * that can be safely be handled during async suspend and power off.
  *
  * @returns VBox status code of VMR3ReqCallVU.
  *
@@ -932,8 +932,8 @@ VMMR3DECL(int) VMR3ReqWait(PVMREQ pReq, RTMSINTERVAL cMillies)
 
 
 /**
- * Sets the relevant FF. 
- *  
+ * Sets the relevant FF.
+ *
  * @param   pUVM            Pointer to the user mode VM structure.
  * @param   idDstCpu        VMCPUID_ANY or the ID of the current CPU.
  */
@@ -963,7 +963,7 @@ static PVMREQ vmR3ReqProcessUTooManyHelper(PUVM pUVM, VMCPUID idDstCpu, PVMREQ p
 {
     STAM_COUNTER_INC(&pUVM->vm.s.StatReqMoreThan1);
 
-    /* 
+    /*
      * Chop off the last one (pReq).
      */
     PVMREQ pPrev;
@@ -975,7 +975,7 @@ static PVMREQ vmR3ReqProcessUTooManyHelper(PUVM pUVM, VMCPUID idDstCpu, PVMREQ p
     } while (pReqRet->pNext);
     ASMAtomicWriteNullPtr(&pPrev->pNext);
 
-    /* 
+    /*
      * Push the others back onto the list (end of it).
      */
     Log2(("VMR3ReqProcess: Pushing back %p %p...\n", pReqList, pReqList->pNext));
@@ -1014,11 +1014,11 @@ static PVMREQ vmR3ReqProcessUTooManyHelper(PUVM pUVM, VMCPUID idDstCpu, PVMREQ p
  * @param   idDstCpu        Pass VMCPUID_ANY to process the common request queue
  *                          and the CPU ID for a CPU specific one. In the latter
  *                          case the calling thread must be the EMT of that CPU.
- * @param   fPriorityOnly   When set, only process the priority request queue. 
+ * @param   fPriorityOnly   When set, only process the priority request queue.
  *
  * @note    SMP safe (multiple EMTs trying to satisfy VM_FF_REQUESTs).
  *
- * @remarks This was made reentrant for async PDM handling, the debugger and 
+ * @remarks This was made reentrant for async PDM handling, the debugger and
  *          others.
  */
 VMMR3DECL(int) VMR3ReqProcessU(PUVM pUVM, VMCPUID idDstCpu, bool fPriorityOnly)
@@ -1053,8 +1053,8 @@ VMMR3DECL(int) VMR3ReqProcessU(PUVM pUVM, VMCPUID idDstCpu, bool fPriorityOnly)
     for (;;)
     {
         /*
-         * Get the pending requests. 
-         *  
+         * Get the pending requests.
+         *
          * If there are more than one request, unlink the oldest and put the
          * rest back so that we're reentrant.
          */
@@ -1115,8 +1115,8 @@ static int  vmR3ReqProcessOneU(PUVM pUVM, PVMREQ pReq)
 
 #if 1 /*def VBOX_STRICT */
     /*
-     * Disable rendezvous if servicing a priority request.  Priority requests 
-     * can not make use of the EMT rendezvous API. 
+     * Disable rendezvous if servicing a priority request.  Priority requests
+     * can not make use of the EMT rendezvous API.
      */
     PVMCPU      pVCpu               = NULL;
     bool        fSavedInRendezvous  = true;

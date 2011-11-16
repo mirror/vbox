@@ -547,4 +547,3 @@ RTDECL(int) RTLdrRvaToSegOffset(RTLDRMOD hLdrMod, RTLDRADDR Rva, uint32_t *piSeg
 }
 RT_EXPORT_SYMBOL(RTLdrRvaToSegOffset);
 
-
