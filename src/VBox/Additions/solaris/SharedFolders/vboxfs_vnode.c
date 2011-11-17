@@ -587,11 +587,13 @@ sfnode_lookup(
 	 */
 	if (create == VREG) {
 		type = VREG;
+		stat = &tmp_stat;
 		error = sfprov_create(dir->sf_sffs->sf_handle, fullpath, c_mode,
 					&fp, stat);
 		stat_time = sfnode_cur_time_usec();
 	} else if (create == VDIR) {
 		type = VDIR;
+		stat = &tmp_stat;
 		error = sfprov_mkdir(dir->sf_sffs->sf_handle, fullpath, c_mode,
 					&fp, stat);
 		stat_time = sfnode_cur_time_usec();
