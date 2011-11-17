@@ -685,13 +685,13 @@ static int __init vboxguestLinuxModInit(void)
             }
             vboxguestLinuxTermISR();
         }
-        pci_unregister_driver(&g_PciDriver);
     }
     else
     {
-        LogRel((DEVICE_NAME ": PCI device registration failed (pci_register_device returned %d)\n", rc));
-        rc = -EINVAL;
+        LogRel((DEVICE_NAME ": PCI device not found, probably running on physical hardware.\n"));
+        rc = -ENODEV;
     }
+    pci_unregister_driver(&g_PciDriver);
     RTLogDestroy(RTLogRelSetDefaultInstance(NULL));
     RTLogDestroy(RTLogSetDefaultInstance(NULL));
     RTR0Term();
