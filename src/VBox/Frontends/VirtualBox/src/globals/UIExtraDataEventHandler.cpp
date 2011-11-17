@@ -63,17 +63,6 @@ public slots:
                     return;
                 }
 
-                if (strKey == VBoxDefs::GUI_UpdateDlgWinID)
-                {
-                    if (m_fIsUpdDlgOwner)
-                    {
-                        if (!(strValue.isEmpty() ||
-                              strValue == QString("%1")
-                              .arg((qulonglong)vboxGlobal().mainWindow()->winId())))
-                            fVeto = true;
-                    }
-                    return;
-                }
 #ifdef VBOX_GUI_WITH_SYSTRAY
                 if (strKey == VBoxDefs::GUI_TrayIconWinID)
                 {
@@ -125,22 +114,6 @@ public slots:
                    }
                    else
                        emit sigCanShowRegistrationDlg(false);
-               }
-               if (strKey == VBoxDefs::GUI_UpdateDlgWinID)
-               {
-                   if (strValue.isEmpty())
-                   {
-                       m_fIsUpdDlgOwner = false;
-                       emit sigCanShowUpdateDlg(true);
-                   }
-                   else if (strValue == QString("%1")
-                            .arg((qulonglong)vboxGlobal().mainWindow()->winId()))
-                   {
-                       m_fIsUpdDlgOwner = true;
-                       emit sigCanShowUpdateDlg(true);
-                   }
-                   else
-                       emit sigCanShowUpdateDlg(false);
                }
                if (strKey == VBoxDefs::GUI_LanguageId)
                        emit sigGUILanguageChange(strValue);
@@ -201,7 +174,6 @@ public slots:
 
 signals:
     void sigCanShowRegistrationDlg(bool fEnabled);
-    void sigCanShowUpdateDlg(bool fEnabled);
     void sigGUILanguageChange(QString strLang);
 #ifdef VBOX_GUI_WITH_SYSTRAY
     void sigMainWindowCountChange(int count);
@@ -277,10 +249,6 @@ UIExtraDataEventHandler::UIExtraDataEventHandler()
     /* UI signals */
     connect(m_pHandler, SIGNAL(sigCanShowRegistrationDlg(bool)),
             this, SIGNAL(sigCanShowRegistrationDlg(bool)),
-            Qt::QueuedConnection);
-
-    connect(m_pHandler, SIGNAL(sigCanShowUpdateDlg(bool)),
-            this, SIGNAL(sigCanShowUpdateDlg(bool)),
             Qt::QueuedConnection);
 
     connect(m_pHandler, SIGNAL(sigGUILanguageChange(QString)),

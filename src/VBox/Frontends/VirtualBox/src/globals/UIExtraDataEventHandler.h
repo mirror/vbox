@@ -36,7 +36,6 @@ public:
 signals:
     /* Specialized extra data signals */
     void sigCanShowRegistrationDlg(bool fEnabled);
-    void sigCanShowUpdateDlg(bool fEnabled);
     void sigGUILanguageChange(QString strLang);
 #ifdef VBOX_GUI_WITH_SYSTRAY
     void sigMainWindowCountChange(int count);
