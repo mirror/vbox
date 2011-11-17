@@ -1100,8 +1100,8 @@ static int sha1ReadSyncCallback(void *pvUser, void *pvStorage, uint64_t uOffset,
         rc = VINF_SUCCESS;
 
     /* Signal the thread to read more data in the mean time. */
-    if (    RT_SUCCESS(rc)
-        &&  RTCircBufFree(pInt->pCircBuf) >= (RTCircBufSize(pInt->pCircBuf) / 2))
+    if (   RT_SUCCESS(rc)
+        && RTCircBufFree(pInt->pCircBuf) >= (RTCircBufSize(pInt->pCircBuf) / 2))
         rc = sha1SignalManifestThread(pInt, STATUS_READ);
 
     return rc;
