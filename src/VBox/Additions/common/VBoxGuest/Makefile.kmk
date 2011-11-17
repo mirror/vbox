@@ -163,9 +163,8 @@ ifeq ($(KBUILD_TARGET),linux)
  INSTALLS += vboxguest-scripts
  vboxguest-scripts_INST    = $(INST_ADDITIONS)src/
  vboxguest-scripts_MODE    = a+rx,u+w
- vboxguest-scripts_SOURCES = $(vboxguest-sh_0_OUTDIR)/do_dkms \
+ vboxguest-scripts_SOURCES = ../../../HostDrivers/linux/do_dkms \
                              ../../../HostDrivers/linux/build_in_tmp
- vboxguest-scripts_CLEAN   = $(vboxguest-sh_0_OUTDIR)/do_dkms
 
  $$(vboxguest-sh_0_OUTDIR)/dkms.conf: \
  		$(PATH_SUB_CURRENT)/linux/dkms.conf \
@@ -176,18 +175,6 @@ ifeq ($(KBUILD_TARGET),linux)
 		-e "s;_VERSION_;${VBOX_VERSION_STRING};g" \
 		-e "s;_BUILDTYPE_;$(KBUILD_TYPE);g" \
 		--output $@ $<
-
- $$(vboxguest-sh_0_OUTDIR)/do_dkms: \
- 		$(PATH_ROOT)/src/VBox/HostDrivers/linux/do_dkms \
- 		$(VBOX_VERSION_STAMP) \
- 		| $$(dir $$@)
-	$(call MSG_TOOL,Creating,,$@)
-	$(QUIET)$(SED) \
-		-e "s;_VERSION_;${VBOX_VERSION_STRING};g" \
-		-e "s;_MODULE_;vboxguest;g" \
-		-e "s;_OLDMODULES_;vboxguest vboxadd vboxsf vboxvfs vboxvideo;g" \
-		--output $@ $<
-	$(QUIET)$(CHMOD) a+rx,u+w $@
 
  # scripts.
  INSTALLS += vboxguest-sh

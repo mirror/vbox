@@ -338,6 +338,7 @@ $(VBOX_LNX_INST_OUT_DIR)/vboxballoonctrl-service.sh: $(VBOX_PATH_LNX_INST_SRC)/v
 		-e "s|%NOLSB%|yes|g" \
 		-e "s|%DEBIAN%||g" \
 		-e "s|%PACKAGE%|virtualbox|g" \
+		-e "s|%VERSION%|$(VBOX_VERSION_STRING)|g" \
 		--output $@ \
 		$<
 
@@ -346,6 +347,7 @@ $(VBOX_LNX_INST_OUT_DIR)/vboxdrv.sh: $(VBOX_PATH_LNX_INST_SRC)/vboxdrv.sh.in | $
 		-e "s|%NOLSB%|yes|g" \
 		-e "s|%DEBIAN%||g" \
 		-e "s|%PACKAGE%|virtualbox|g" \
+		-e "s|%VERSION%|$(VBOX_VERSION_STRING)|g" \
 		-e "s|%GROUP%|$(if $(VBOX_WITHOUT_HARDENING),vboxusers,root)|g" \
 		--output $@ \
 		$<

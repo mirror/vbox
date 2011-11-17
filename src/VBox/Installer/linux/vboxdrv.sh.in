@@ -31,6 +31,7 @@ DEVICE=/dev/vboxdrv
 LOG="/var/log/vbox-install.log"
 NOLSB=%NOLSB%
 DEBIAN=%DEBIAN%
+VERSION=%VERSION%
 MODPROBE=/sbin/modprobe
 
 if $MODPROBE -c | grep -q '^allow_unsupported_modules  *0'; then
@@ -298,7 +299,7 @@ setup()
 {
     stop
     begin_msg "Uninstalling old VirtualBox DKMS kernel modules"
-    $DODKMS uninstall > $LOG
+    $DODKMS uninstall vboxhost vboxdrv vboxnetflt vboxnetadp > $LOG
     succ_msg
     if find /lib/modules/`uname -r` -name "vboxpci\.*" 2>/dev/null|grep -q vboxpci; then
         begin_msg "Removing old VirtualBox pci kernel module"
@@ -321,7 +322,7 @@ setup()
         succ_msg
     fi
     begin_msg "Trying to register the VirtualBox kernel modules using DKMS"
-    if ! $DODKMS install >> $LOG; then
+    if ! $DODKMS install vboxhost $VERSION >> $LOG; then
       fail_msg "Failed, trying without DKMS"
       begin_msg "Recompiling VirtualBox kernel modules"
       if ! $BUILDINTMP \
