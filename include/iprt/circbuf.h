@@ -91,6 +91,9 @@ RTDECL(size_t) RTCircBufUsed(PRTCIRCBUF pBuf);
  */
 RTDECL(size_t) RTCircBufSize(PRTCIRCBUF pBuf);
 
+RTDECL(bool) RTCircBufIsReading(PRTCIRCBUF pBuf);
+RTDECL(bool) RTCircBufIsWriting(PRTCIRCBUF pBuf);
+
 /**
  * Acquire a block of the circular buffer for reading.
  *
