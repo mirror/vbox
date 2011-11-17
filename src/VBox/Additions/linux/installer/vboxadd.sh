@@ -304,19 +304,17 @@ start()
         do_vboxguest_non_udev;;
     esac
 
-    if [ -n "$BUILDVBOXSF" ]; then
-        running_vboxsf || {
-            $MODPROBE vboxsf > /dev/null 2>&1 || {
-                if dmesg | grep "vboxConnect failed" > /dev/null 2>&1; then
-                    fail_msg
-                    echo "Unable to start shared folders support.  Make sure that your VirtualBox build"
-                    echo "supports this feature."
-                    exit 1
-                fi
-                fail "modprobe vboxsf failed"
-            }
+    running_vboxsf || {
+        $MODPROBE vboxsf > /dev/null 2>&1 || {
+            if dmesg | grep "vboxConnect failed" > /dev/null 2>&1; then
+                fail_msg
+                echo "Unable to start shared folders support.  Make sure that your VirtualBox build"
+                echo "supports this feature."
+                exit 1
+            fi
+            fail "modprobe vboxsf failed"
         }
-    fi
+    }
 
     # Mount all shared folders from /etc/fstab. Normally this is done by some
     # other startup script but this requires the vboxdrv kernel module loaded.
@@ -333,10 +331,8 @@ stop()
     if ! umount -a -t vboxsf 2>/dev/null; then
         fail "Cannot unmount vboxsf folders"
     fi
-    if [ -n "$BUILDVBOXSF" ]; then
-        if running_vboxsf; then
-            rmmod vboxsf 2>/dev/null || fail "Cannot unload module vboxsf"
-        fi
+    if running_vboxsf; then
+        rmmod vboxsf 2>/dev/null || fail "Cannot unload module vboxsf"
     fi
     if running_vboxguest; then
         rmmod vboxguest 2>/dev/null || fail "Cannot unload module vboxguest"
