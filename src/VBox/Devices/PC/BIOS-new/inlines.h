@@ -86,3 +86,12 @@ char __far *rep_outsw(char __far *buffer, unsigned nwords, unsigned port);
 char __far *rep_outsd(char __far *buffer, unsigned ndwords, unsigned port);
 #pragma aux rep_outsd = ".386" "rep outs dx,dword ptr es:[si]" parm [es si] [cx] [dx] value [es si] modify exact [cx si];
 
+uint16_t __far swap_16(uint16_t val);
+#pragma aux swap_16 = "xchg ah,al" parm [ax] value [ax] modify exact [ax] nomemory;
+
+uint32_t __far swap_32(uint32_t val);
+#pragma aux swap_32 =   \
+    "xchg   ah, al"     \
+    "xchg   dh, dl"     \
+    "xchg   ax, dx"     \
+    parm [dx ax] value [dx ax] modify exact [dx ax] nomemory;

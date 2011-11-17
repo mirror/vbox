@@ -23,6 +23,16 @@
 #include "ata.h"
 
 
+//#define VBOX_SCSI_DEBUG 1 /* temporary */
+
+#ifdef VBOX_SCSI_DEBUG
+# define VBSCSI_DEBUG(...)    BX_INFO(__VA_ARGS__)
+#else
+# define VBSCSI_DEBUG(...)
+#endif
+
+#define VBSCSI_BUSY (1 << 0)
+
 /* The I/O port of the BusLogic SCSI adapter. */
 #define BUSLOGIC_ISA_IO_PORT 0x330
 /* The I/O port of the LsiLogic SCSI adapter. */
@@ -48,15 +58,20 @@
 #define SCSI_TXDIR_FROM_DEVICE 0
 #define SCSI_TXDIR_TO_DEVICE   1
 
-#define VBSCSI_BUSY (1 << 0)
+#pragma pack(1)
 
-//#define VBOX_SCSI_DEBUG 1 /* temporary */
+/* READ_10/WRITE_10 CDB layout. */
+typedef struct {
+    uint16_t    command;    /* Command. */
+    uint32_t    lba;        /* LBA, MSB first! */
+    uint8_t     pad1;       /* Unused. */
+    uint16_t    nsect;      /* Sector count, MSB first! */
+    uint8_t     pad2;       /* Unused. */
+} cdb_rw10;
 
-#ifdef VBOX_SCSI_DEBUG
-# define VBSCSI_DEBUG(...)    BX_INFO(__VA_ARGS__)
-#else
-# define VBSCSI_DEBUG(...)
-#endif
+#pragma pack()
+
+ct_assert(sizeof(cdb_rw10) == 10);
 
 int scsi_cmd_data_in(uint16_t io_base, uint8_t device_id, uint8_t __far *aCDB,
                      uint8_t cbCDB, uint8_t __far *buffer, uint16_t cbBuffer)
@@ -145,7 +160,7 @@ int scsi_cmd_data_out(uint16_t io_base, uint8_t device_id, uint8_t __far *aCDB,
 int scsi_read_sectors(uint8_t device_id, uint16_t count, uint32_t lba, void __far *buffer)
 {
     uint8_t             rc;
-    uint8_t             aCDB[10];
+    cdb_rw10            cdb;
     uint16_t            io_base;
     uint8_t             target_id;
     bio_dsk_t __far     *bios_dsk;
@@ -153,34 +168,24 @@ int scsi_read_sectors(uint8_t device_id, uint16_t count, uint32_t lba, void __fa
     if (device_id > BX_MAX_SCSI_DEVICES)
         BX_PANIC("scsi_read_sectors: device_id out of range %d\n", device_id);
 
+    /* Prepare a CDB. */
+    cdb.command = SCSI_READ_10;
+    cdb.lba     = swap_32(lba);
+    cdb.pad1    = 0;
+    cdb.nsect   = swap_16(count);
+    cdb.pad2    = 0;
+
     bios_dsk = read_word(0x0040, 0x000E) :> &EbdaData->bdisk;
-
-    /* Reset the count of transferred sectors/bytes. */
-    bios_dsk->trsfsectors = 0;
-    bios_dsk->trsfbytes   = 0;
-
-    /* Prepare CDB */
-    //@todo: make CDB a struct, this is stupid
-    aCDB[0] = SCSI_READ_10;
-    aCDB[1] = 0;
-    aCDB[2] = (uint8_t)(lba >> 24);
-    aCDB[3] = (uint8_t)(lba >> 16);
-    aCDB[4] = (uint8_t)(lba >>  8);
-    aCDB[5] = (uint8_t)(lba);
-    aCDB[6] = 0;
-    aCDB[7] = (uint8_t)(count >> 8);
-    aCDB[8] = (uint8_t)(count);
-    aCDB[9] = 0;
 
     io_base   = bios_dsk->scsidev[device_id].io_base;
     target_id = bios_dsk->scsidev[device_id].target_id;
 
-    rc = scsi_cmd_data_in(io_base, target_id, aCDB, 10, buffer, (count * 512));
+    rc = scsi_cmd_data_in(io_base, target_id, (void __far *)&cdb, 10, buffer, (count * 512));
 
     if (!rc)
     {
-        bios_dsk->trsfsectors = count;
-        bios_dsk->trsfbytes   = count * 512;
+        bios_dsk->drqp.trsfsectors = count;
+        bios_dsk->drqp.trsfbytes   = count * 512;
     }
 
     return rc;
@@ -198,7 +203,7 @@ int scsi_read_sectors(uint8_t device_id, uint16_t count, uint32_t lba, void __fa
 int scsi_write_sectors(uint8_t device_id, uint16_t count, uint32_t lba, void __far *buffer)
 {
     uint8_t             rc;
-    uint8_t             aCDB[10];
+    cdb_rw10            cdb;
     uint16_t            io_base;
     uint8_t             target_id;
     bio_dsk_t __far     *bios_dsk;
@@ -206,34 +211,24 @@ int scsi_write_sectors(uint8_t device_id, uint16_t count, uint32_t lba, void __f
     if (device_id > BX_MAX_SCSI_DEVICES)
         BX_PANIC("scsi_write_sectors: device_id out of range %d\n", device_id);
 
+    /* Prepare a CDB. */
+    cdb.command = SCSI_WRITE_10;
+    cdb.lba     = swap_32(lba);
+    cdb.pad1    = 0;
+    cdb.nsect   = swap_16(count);
+    cdb.pad2    = 0;
+
     bios_dsk = read_word(0x0040, 0x000E) :> &EbdaData->bdisk;
-
-    // Reset count of transferred data
-    bios_dsk->trsfsectors = 0;
-    bios_dsk->trsfbytes   = 0;
-
-    /* Prepare CDB */
-    //@todo: make CDB a struct, this is stupid
-    aCDB[0] = SCSI_WRITE_10;
-    aCDB[1] = 0;
-    aCDB[2] = (uint8_t)(lba >> 24);
-    aCDB[3] = (uint8_t)(lba >> 16);
-    aCDB[4] = (uint8_t)(lba >>  8);
-    aCDB[5] = (uint8_t)(lba);
-    aCDB[6] = 0;
-    aCDB[7] = (uint8_t)(count >> 8);
-    aCDB[8] = (uint8_t)(count);
-    aCDB[9] = 0;
 
     io_base   = bios_dsk->scsidev[device_id].io_base;
     target_id = bios_dsk->scsidev[device_id].target_id;
 
-    rc = scsi_cmd_data_out(io_base, target_id, aCDB, 10, buffer, (count * 512));
+    rc = scsi_cmd_data_out(io_base, target_id, (void __far *)&cdb, 10, buffer, (count * 512));
 
     if (!rc)
     {
-        bios_dsk->trsfsectors = count;
-        bios_dsk->trsfbytes   = (count * 512);
+        bios_dsk->drqp.trsfsectors = count;
+        bios_dsk->drqp.trsfbytes   = (count * 512);
     }
 
     return rc;

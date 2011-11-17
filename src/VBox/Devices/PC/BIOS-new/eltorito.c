@@ -671,7 +671,7 @@ void BIOSCALL int13_cdrom(uint16_t EHBX, disk_regs_t r)
       atacmd[5]=(lba & 0x000000ff);
       status = ata_cmd_packet(device, 12, &atacmd, 0, count*2048L, ATA_DATA_IN, MK_FP(segment,offset));
 
-      count = (uint16_t)(ata->trsfbytes >> 11);
+      count = (uint16_t)(ata->drqp.trsfbytes >> 11);
       write_word(DS, SI+(uint16_t)&Int13Ext->count, count);
 
       if (status != 0) {
