@@ -14,13 +14,25 @@
 # hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
 #
 
+ACTION=
+if [ "$1" = "install" ]; then
+  ACTION="install"
+  MODULE="$2"
+  VERSION="$3"
+elif [ "$1" = "uninstall" ]; then
+  shift
+  ACTION="uninstall"
+  OLDMODULES="$*"
+  break
+fi
+
 DKMS=`which dkms 2>/dev/null`
 if [ -n "$DKMS" ]
 then
-    if [ "$1" = "uninstall" ]; then
+    if [ "$ACTION" = "uninstall" ]; then
 
         echo "Uninstalling modules from DKMS"
-        for m in _OLDMODULES_
+        for m in $OLDMODULES
         do
             $DKMS status -m $m | while read line
             # first, remove _any_ old module
@@ -36,22 +48,14 @@ then
                 fi
             done
         done
-        # there should not be any more matches
-        status=`$DKMS status -m _MODULE_ -v _VERSION_`
-        if echo $status | grep added > /dev/null ||
-            echo $status | grep built > /dev/null ||
-            echo $status | grep installed > /dev/null
-        then
-            $DKMS remove -m _MODULE_ -v _VERSION_ --all
-        fi
         exit 0
 
-    elif [ "$1" = "install" ]; then
+    elif [ "$ACTION" = "install" ]; then
 
         echo "Attempting to install using DKMS"
-        if $DKMS add -m _MODULE_ -v _VERSION_ &&
-            $DKMS build -m _MODULE_ -v _VERSION_ &&
-            $DKMS install -m _MODULE_ -v _VERSION_ --force
+        if $DKMS add -m $MODULE -v $VERSION &&
+            $DKMS build -m $MODULE -v $VERSION &&
+            $DKMS install -m $MODULE -v $VERSION --force
         then
             exit 0
         fi

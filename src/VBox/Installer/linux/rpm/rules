@@ -183,6 +183,7 @@ binary: rpm/build-stamp
 	   -e 's|%NOLSB%|yes|g' \
 	   -e 's|%DEBIAN%||g' \
 	   -e 's|%PACKAGE%|virtualbox|g' \
+	   -e "s|%VERSION%|$(VBOX_VERSION_STRING)|g" \
 	   -e "s|%GROUP%|$(if $(VBOX_WITHOUT_HARDENING),vboxusers,root)|g" \
 	   vboxdrv.sh.in > $(archdir)/vboxdrv.init
 	sed \

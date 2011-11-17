@@ -28,18 +28,11 @@
 # Description:    VirtualBox Linux Additions kernel modules
 ### END INIT INFO
 
-. /var/lib/VBoxGuestAdditions/config
-export BUILD_TYPE
-export USERNAME
-
 PATH=$PATH:/bin:/sbin:/usr/sbin
 PACKAGE=VBoxGuestAdditions
-OLDMODULES="vboxguest vboxadd vboxsf vboxvfs vboxvideo"
-MODULE_SRC="$INSTALL_DIR/src/vboxguest-$INSTALL_VER"
-BUILDINTMP="$MODULE_SRC/build_in_tmp"
-DODKMS="$MODULE_SRC/do_dkms"
 LOG="/var/log/vboxadd-install.log"
 MODPROBE=/sbin/modprobe
+OLDMODULES="vboxguest vboxadd vboxsf vboxvfs vboxvideo"
 
 if $MODPROBE -c | grep -q '^allow_unsupported_modules  *0'; then
   MODPROBE="$MODPROBE --allow-unsupported-modules"
@@ -167,8 +160,24 @@ if [ "$system" = "other" ]; then
     }
 fi
 
+show_error()
+{
+    if [ "$system" = "gentoo" ]; then
+        eerror $1
+    fi
+    fail_msg
+    echo "($1)"
+}
+
+fail()
+{
+    show_error "$1"
+    exit 1
+}
+
 dev=/dev/vboxguest
 userdev=/dev/vboxuser
+config=/var/lib/VBoxGuestAdditions/config
 owner=vboxadd
 group=1
 
@@ -198,21 +207,6 @@ test_sane_kernel_dir()
     elif [ "$system" = "debian" ]; then
         printf "The missing package can be probably installed with\napt-get install linux-headers-$KERN_VER\n"
     fi
-}
-
-show_error()
-{
-    if [ "$system" = "gentoo" ]; then
-        eerror $1
-    fi
-    fail_msg
-    echo "($1)"
-}
-
-fail()
-{
-    show_error "$1"
-    exit 1
 }
 
 running_vboxguest()
@@ -354,7 +348,7 @@ restart()
 cleanup_modules()
 {
     begin "Removing existing VirtualBox DKMS kernel modules"
-    $DODKMS uninstall > $LOG
+    $DODKMS uninstall $OLDMODULES > $LOG
     succ_msg
     begin "Removing existing VirtualBox non-DKMS kernel modules"
     for i in $OLDMODULES; do
@@ -371,7 +365,7 @@ setup_modules()
     begin "Building the VirtualBox Guest Additions kernel modules"
 
     # Short cut out if a dkms build succeeds
-    if $DODKMS install >> $LOG 2>&1; then
+    if $DODKMS install vboxguest $INSTALL_VER >> $LOG 2>&1; then
         succ_msg
         return 0
     fi
@@ -482,6 +476,20 @@ extra_setup()
 # setup_script
 setup()
 {
+    if test -r $config; then
+      . $config
+    else
+      fail "Configuration file $config not found"
+    fi
+    test -n "$INSTALL_DIR" -a -n "$INSTALL_VER" ||
+      fail "Configuration file $config not complete"
+    export BUILD_TYPE
+    export USERNAME
+
+    MODULE_SRC="$INSTALL_DIR/src/vboxguest-$INSTALL_VER"
+    BUILDINTMP="$MODULE_SRC/build_in_tmp"
+    DODKMS="$MODULE_SRC/do_dkms"
+
     setup_modules
     mod_succ="$?"
     extra_setup
@@ -497,6 +505,17 @@ setup()
 # cleanup_script
 cleanup()
 {
+    if test -r $config; then
+      . $config
+      test -n "$INSTALL_DIR" -a -n "$INSTALL_VER" ||
+        fail "Configuration file $config not complete"
+      DODKMS="$INSTALL_DIR/src/vboxguest-$INSTALL_VER/do_dkms"
+    elif test -x ./do_dkms; then  # Executing as part of the installer...
+      DODKMS=./do_dkms
+    else
+      fail "Configuration file $config not found"
+    fi
+
     # Delete old versions of VBox modules.
     cleanup_modules
     depmod

@@ -57,6 +57,8 @@ VBOX_PATH_X11_ADD_INST            := $(PATH_ROOT)/src/VBox/Additions/x11/Install
 VBOX_REL_X11_ADD_INST             := $(subst $(PATH_ROOT)/src/VBox, ../..,$(VBOX_PATH_X11_ADD_INST))
 VBOX_PATH_LNX_INST_SRC            := $(PATH_ROOT)/src/VBox/Installer/linux/
 VBOX_REL_LNX_INST_SRC             := $(subst $(PATH_ROOT)/src/VBox, ../..,$(VBOX_PATH_LNX_INST_SRC))
+VBOX_PATH_LNX_HOST_DRV            := $(PATH_ROOT)/src/VBox/HostDrivers/linux/
+VBOX_REL_LNX_HOST_DRV             := $(subst $(PATH_ROOT)/src/VBox, ../..,$(VBOX_PATH_LNX_HOST_DRV))
 
 # Unset this to speed up things during makefile hacking.
 VBOX_LNX_ADD_INST_DEP_ON_MAKEFILE := $(MAKEFILE_CURRENT)
@@ -338,6 +340,7 @@ LnxAdd-scripts_INSTTYPE = stage
 LnxAdd-scripts_SOURCES  = \
 	$(VBOX_REL_LNX_ADD_INST)deffiles
 LnxAdd-scripts_EXEC_SOURCES  = \
+	$(VBOX_REL_LNX_HOST_DRV)do_dkms \
 	$(VBOX_REL_LNX_INST_SRC)routines.sh \
 	$(VBOX_REL_LNX_ADD_INST)vboxadd.sh=>vboxadd \
 	$(VBOX_REL_LNX_ADD_INST)vboxadd-service.sh=>vboxadd-service \

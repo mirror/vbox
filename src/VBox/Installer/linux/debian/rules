@@ -317,6 +317,7 @@ endif
 	    -e 's|%NOLSB%||g' \
 	    -e 's|%DEBIAN%|yes|g' \
 	    -e 's|%PACKAGE%|virtualbox|g' \
+	    -e "s|%VERSION%|$(VBOX_VERSION_STRING)|g" \
 	    -e "s|%GROUP%|$(if $(VBOX_WITHOUT_HARDENING),vboxusers,root)|g" \
 	    $(vboxroot)/src/VBox/Installer/linux/vboxdrv.sh.in > debian/vboxdrv.init
 	dh_installinit --name=vboxdrv --noscripts

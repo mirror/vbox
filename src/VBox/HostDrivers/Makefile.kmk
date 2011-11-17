@@ -66,9 +66,8 @@ if  !defined(VBOX_ONLY_DOCS) \
   INSTALLS += HostDrivers-scripts
   HostDrivers-scripts_INST    = bin/src/
   HostDrivers-scripts_MODE    = a+rx,u+w
-  HostDrivers-scripts_SOURCES = $(HostDrivers-scripts_0_OUTDIR)/do_dkms \
+  HostDrivers-scripts_SOURCES = linux/do_dkms \
                                 linux/build_in_tmp
-  HostDrivers-scripts_CLEAN   = $(HostDrivers-scripts_0_OUTDIR)/do_dkms
 
   INSTALLS += HostDrivers-dkms-src
   HostDrivers-dkms-src_INST    = bin/src/
@@ -87,18 +86,6 @@ $$(HostDrivers-dkms-src_0_OUTDIR)/dkms.conf: \
 		-e "s;_OMIT_VBOXNETADP_;$(if $(VBOX_WITH_NETADP),,#);g" \
 		-e "s;_OMIT_VBOXPCI_;$(if $(VBOX_WITH_PCI_PASSTHROUGH),,#);g" \
 		--output $@ $<
-
-$$(HostDrivers-scripts_0_OUTDIR)/do_dkms: \
-		$(PATH_SUB_CURRENT)/linux/do_dkms \
-		$(VBOX_VERSION_STAMP) \
-		| $$(dir $$@)
-	$(call MSG_TOOL,Creating,,$@)
-	$(QUIET)$(SED) \
-		-e "s;_VERSION_;${VBOX_VERSION_STRING};g" \
-		-e "s;_MODULE_;vboxhost;g" \
-		-e "s;_OLDMODULES_;vboxhost vboxdrv vboxnetflt vboxnetadp;g" \
-		--output $@ $<
-	$(QUIET)$(CHMOD) a+rx,u+w $@
 
  endif
 
