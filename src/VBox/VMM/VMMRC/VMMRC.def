@@ -85,7 +85,6 @@ EXPORTS
     nocrt_memcmp
     nocrt_memcpy
     memcpy=nocrt_memcpy                 ; not-os2
-    nocrt_memmove
     nocrt_memset
     memset=nocrt_memset                 ; not-os2
     nocrt_strcpy

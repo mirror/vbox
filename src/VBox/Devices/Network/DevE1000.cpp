@@ -3205,10 +3205,19 @@ static void e1kTransmitFrame(E1KSTATE* pState, bool fOnWorkerThread)
     /* Add VLAN tag */
     if (cbFrame > 16 && pState->fVTag)
     {
-        E1kLog3(("%s Inserting VLAN tag %08x\n",
+        /*
+         * We should have 'adjusted' pvSeg earlier to make room for four
+         * additional bytes at the beginning of buffer. Now we move it back.
+         */
+        uint32_t *pSrc = (uint32_t*)pSg->aSegs[0].pvSeg;
+        uint32_t *pDst = pSrc - 1;
+        pSg->aSegs[0].pvSeg = pDst;
+        *pDst++ = *pSrc++; /* Copy destination address */
+        *pDst++ = *pSrc++; /* Copy destination and source addresses */
+        *pDst++ = *pSrc++; /* Copy source address */
+        *pDst++ = RT_BE2H_U16(VET) | (RT_BE2H_U16(pState->u16VTagTCI) << 16);
+        E1kLog3(("%s Inserted VLAN tag %08x\n",
             INSTANCE(pState), RT_BE2H_U16(VET) | (RT_BE2H_U16(pState->u16VTagTCI) << 16)));
-        memmove((uint8_t*)pSg->aSegs[0].pvSeg + 16, (uint8_t*)pSg->aSegs[0].pvSeg + 12, cbFrame - 12);
-        *((uint32_t*)pSg->aSegs[0].pvSeg + 3) = RT_BE2H_U16(VET) | (RT_BE2H_U16(pState->u16VTagTCI) << 16);
     }
     /* Update the stats */
     E1K_INC_CNT32(TPT);
@@ -3733,6 +3742,22 @@ static void e1kXmitDesc(E1KSTATE* pState, E1KTXDESC* pDesc, RTGCPHYS addr, bool 
                                     pDesc->data.cmd.fTSE  /*fExactSize*/, false /*fGso*/);
                 /** @todo Is there any way to indicating errors other than collisions? Like
                  *        VERR_NET_DOWN. */
+                /*
+                 * If allocate a bigger buffer we need to move pvSeg
+                 * accordingly, leaving room in front.
+                 *
+                 * Note that e1kTransmitFrame not necessarily moves it back. In
+                 * case of multi-descriptor packet with TSE we won't know if
+                 * VLAN tag has to be inserted until the last descriptor is
+                 * fetched. If it has not we simply leave pvSeg as it is (+4)
+                 * and send the packet without inserting VLAN tag.
+                 */
+                if (cbVTag)
+                {
+                    Assert(cbVTag == 4);
+                    pState->CTX_SUFF(pTxSg)->aSegs[0].pvSeg =
+                        (uint8_t*)(pState->CTX_SUFF(pTxSg)->aSegs[0].pvSeg) + cbVTag;
+                }
             }
 
             /*
@@ -3823,6 +3848,17 @@ static void e1kXmitDesc(E1KSTATE* pState, E1KTXDESC* pDesc, RTGCPHYS addr, bool 
                 e1kXmitAllocBuf(pState, pDesc->legacy.cmd.u16Length + cbVTag, pDesc->legacy.cmd.fEOP, false /*fGso*/);
                 /** @todo Is there any way to indicating errors other than collisions? Like
                  *        VERR_NET_DOWN. */
+                /*
+                 * If allocate a bigger buffer we need to move pvSeg
+                 * accordingly, leaving room in front. Also see the comment
+                 * in data descriptor processing.
+                 */
+                if (cbVTag)
+                {
+                    Assert(cbVTag == 4);
+                    pState->CTX_SUFF(pTxSg)->aSegs[0].pvSeg =
+                        (uint8_t*)(pState->CTX_SUFF(pTxSg)->aSegs[0].pvSeg) + cbVTag;
+                }
             }
 
             /* Add fragment to frame. */
