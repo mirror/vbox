@@ -212,11 +212,11 @@ void print_detected_harddisks(void)
     uint8_t     scsi_ctrl_printed = 0;
     uint8_t     device;
 
-    hd_count = read_byte(ebda_seg, (uint16_t)&EbdaData->ata.hdcount);
+    hd_count = read_byte(ebda_seg, (uint16_t)&EbdaData->bdisk.hdcount);
 
     for (hd_curr = 0; hd_curr < hd_count; hd_curr++)
     {
-        device = read_byte(ebda_seg, (uint16_t)&EbdaData->ata.hdidmap[hd_curr]);
+        device = read_byte(ebda_seg, (uint16_t)&EbdaData->bdisk.hdidmap[hd_curr]);
 
 #ifdef VBOX_WITH_SCSI
         if (!VBOX_IS_SCSI_DEVICE(device))
@@ -282,7 +282,7 @@ uint8_t get_boot_drive(uint8_t scode)
     uint16_t    ebda_seg=read_word(0x0040,0x000E);
 
     /* Check that the scan code is in the range of detected hard disks. */
-    uint8_t     hd_count = read_byte(ebda_seg, (uint16_t)&EbdaData->ata.hdcount);
+    uint8_t     hd_count = read_byte(ebda_seg, (uint16_t)&EbdaData->bdisk.hdcount);
 
     /* The key '1' has scancode 0x02 which represents the first disk */
     scode -= 2;

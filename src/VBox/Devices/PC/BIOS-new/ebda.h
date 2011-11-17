@@ -128,49 +128,66 @@ typedef struct {
     uint16_t    spt;        /* Number of sectors per track. */
 } chs_t;
 
+/* IDE/ATA specific device information. */
 typedef struct {
-    uint8_t     iface;        // ISA or PCI
-    uint8_t     irq;          // IRQ
-    uint16_t    iobase1;      // IO Base 1
-    uint16_t    iobase2;      // IO Base 2
+    uint8_t     iface;      /* ISA or PCI. */
+    uint8_t     irq;        /* IRQ (on the PIC). */
+    uint16_t    iobase1;    /* I/O base 1. */
+    uint16_t    iobase2;    /* I/O base 2. */
 } ata_chan_t;
 
+#ifdef VBOX_WITH_SCSI
+
+/* SCSI specific device information. */
 typedef struct {
-    uint8_t     type;         // Detected type of disk (ata/atapi/none/unknown/scsi)
-    uint8_t     device;       // Detected type of attached devices (hd/cd/none)
-    uint8_t     removable;    // Removable device flag
-    uint8_t     lock;         // Locks for removable devices
-    uint8_t     mode;         // transfer mode : PIO 16/32 bits - IRQ - ISADMA - PCIDMA
-    uint8_t     translation;  // type of translation
-    uint16_t    blksize;      // block size
-    chs_t       lchs;         // Logical CHS
-    chs_t       pchs;         // Physical CHS
-    uint32_t    sectors;      // Total sectors count
-} ata_dev_t;
+    uint16_t    io_base;        /* Port base for HBA communication. */
+    uint8_t     target_id;      /* Target ID. */
+} scsi_dev_t;
+
+#endif
+
+/* Generic disk information. */
+typedef struct {
+    uint8_t     type;         /* Device type (ATA/ATAPI/SCSI/none/unknown). */
+    uint8_t     device;       /* Detected type of attached device (HD/CD/none). */
+    uint8_t     removable;    /* Removable device flag. */
+    uint8_t     lock;         /* Lock count for removable devices. */
+    uint8_t     mode;         /* Transfer mode: PIO 16/32 bits - IRQ - ISADMA - PCIDMA. */
+    uint8_t     translation;  /* Type of geometry translation. */
+    uint16_t    blksize;      /* Disk block size. */
+    chs_t       lchs;         /* Logical CHS geometry. */
+    chs_t       pchs;         /* Physical CHS geometry. */
+    uint32_t    sectors;      /* Total sector count. */
+} disk_dev_t;
 
 typedef struct {
-    // ATA channels info
+    /* ATA bus-specific device information. */
     ata_chan_t  channels[BX_MAX_ATA_INTERFACES];
 
-    // ATA devices info
-    ata_dev_t   devices[BX_MAX_ATA_DEVICES];
-    //
-    // map between (bios hd id - 0x80) and ata channels and scsi disks.
-    uint8_t     hdcount, hdidmap[BX_MAX_STORAGE_DEVICES];
+    /* Bus-independent disk device information. */
+    disk_dev_t  devices[BX_MAX_ATA_DEVICES + BX_MAX_SCSI_DEVICES];
 
-    // map between (bios cd id - 0xE0) and ata channels
-    uint8_t     cdcount, cdidmap[BX_MAX_STORAGE_DEVICES];
+    uint8_t     hdcount;            /* Number of ATA disks. */
+    /* Map between (BIOS disk ID - 0x80) and ATA/SCSI disks. */
+    uint8_t     hdidmap[BX_MAX_STORAGE_DEVICES];
 
-    // Buffer for DPTE table
-    dpte_t      dpte;
+    uint8_t     cdcount;            /* Number of CD-ROMs. */
+    /* Map between (BIOS CD-ROM ID - 0xE0) and ATA channels. */
+    uint8_t     cdidmap[BX_MAX_STORAGE_DEVICES];
 
-    // Count of transferred sectors and bytes
-    uint16_t    trsfsectors;
-    uint32_t    trsfbytes;
+#ifdef VBOX_WITH_SCSI
+    /* SCSI bus-specific device information. */
+    scsi_dev_t  scsidev[BX_MAX_SCSI_DEVICES];
+    uint8_t     scsi_hdcount;       /* Number of SCSI disks. */
+#endif
+
+    dpte_t      dpte;               /* Buffer for building a DPTE. */
+    uint16_t    trsfsectors;        /* Count of sectors transferred. */
+    uint32_t    trsfbytes;          /* Count of bytes transferred. */
 } bio_dsk_t;
 
 #if BX_ELTORITO_BOOT
-  // ElTorito Device Emulation data
+/* El Torito device emulation state. */
 typedef struct {
     uint8_t     active;
     uint8_t     media;
@@ -181,26 +198,8 @@ typedef struct {
     uint32_t    ilba;
     uint16_t    load_segment;
     uint16_t    sector_count;
-    chs_t       vdevice;    /* Virtual device geometry. */
+    chs_t       vdevice;        /* Virtual device geometry. */
 } cdemu_t;
-#endif
-
-#ifdef VBOX_WITH_SCSI
-typedef struct {
-    // I/O port this device is attached to.
-    uint16_t    io_base;
-    // Target Id.
-    uint8_t     target_id;
-    // SCSI devices info
-    ata_dev_t   device_info;
-} scsi_dev_t;
-
-typedef struct {
-    // SCSI device info
-    scsi_dev_t  devices[BX_MAX_SCSI_DEVICES];
-    // Number of scsi disks.
-    uint8_t     hdcount;
-} scsi_t;
 #endif
 
 // for access to EBDA area
@@ -211,16 +210,15 @@ typedef struct {
  * which contains the keyboard ID for PS/2 BIOSes.
  */
 typedef struct {
-    unsigned char filler1[0x3D];
+    uint8_t     filler1[0x3D];
 
-    // FDPT - Can be split into data members if needed
-    fdpt_t      fdpt0;
+    fdpt_t      fdpt0;      /* FDPTs for the first two ATA disks. */
     fdpt_t      fdpt1;
 
 #if 0
-    unsigned char filler2[0xC4];
+    uint8_t     filler2[0xC4];
 #else
-    unsigned char filler2[0xC2];
+    uint8_t     filler2[0xC2];
     uint16_t    ahci_seg;
 #endif
 
@@ -228,11 +226,6 @@ typedef struct {
 
 #if BX_ELTORITO_BOOT
     cdemu_t     cdemu;      /* El Torito floppy/HD emulation data. */
-#endif
-
-#ifdef VBOX_WITH_SCSI
-    // SCSI Driver data
-    scsi_t      scsi;
 #endif
 
 #ifdef VBOX_WITH_BIOS_AHCI
