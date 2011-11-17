@@ -72,11 +72,11 @@ void BIOSCALL int13_harddisk(disk_regs_t r)
     uint16_t            npc, nph, npspt, nlc, nlh, nlspt;
     uint16_t            count;
     uint8_t             device, status;
-    ebda_data_t __far   *ebda_data;
+    bio_dsk_t __far     *bios_dsk;
 
     BX_DEBUG_INT13_HD("%s: AX=%04x BX=%04x CX=%04x DX=%04x ES=%04x\n", __func__, AX, BX, CX, DX, ES);
 
-    ebda_data = read_word(0x0040,0x000E) :> 0;
+    bios_dsk = read_word(0x0040,0x000E) :> &EbdaData->bdisk;
     write_byte(0x0040, 0x008e, 0);  // clear completion flag
     
     // basic check : device has to be defined
@@ -86,7 +86,7 @@ void BIOSCALL int13_harddisk(disk_regs_t r)
     }
     
     // Get the ata channel
-    device = ebda_data->bdisk.hdidmap[GET_ELDL()-0x80];
+    device = bios_dsk->hdidmap[GET_ELDL()-0x80];
     
     // basic check : device has to be valid
     if (device >= BX_MAX_STORAGE_DEVICES) {
@@ -131,9 +131,9 @@ void BIOSCALL int13_harddisk(disk_regs_t r)
         }
 
         /* Get the logical CHS geometry. */
-        nlc   = ebda_data->bdisk.devices[device].lchs.cylinders;
-        nlh   = ebda_data->bdisk.devices[device].lchs.heads;
-        nlspt = ebda_data->bdisk.devices[device].lchs.spt;
+        nlc   = bios_dsk->devices[device].lchs.cylinders;
+        nlh   = bios_dsk->devices[device].lchs.heads;
+        nlspt = bios_dsk->devices[device].lchs.spt;
 
         /* Sanity check the geometry. */
         if( (cylinder >= nlc) || (head >= nlh) || (sector > nlspt )) {
@@ -146,8 +146,8 @@ void BIOSCALL int13_harddisk(disk_regs_t r)
             goto int13_success;
 
         /* Now get relevant the physical geometry information. */
-        nph   = ebda_data->bdisk.devices[device].pchs.heads;
-        npspt = ebda_data->bdisk.devices[device].pchs.spt;
+        nph   = bios_dsk->devices[device].pchs.heads;
+        npspt = bios_dsk->devices[device].pchs.spt;
 
         /* If required, translate LCHS to LBA and execute command. */
         //@todo: The IS_SCSI_DEVICE check should be redundant...
@@ -164,9 +164,9 @@ void BIOSCALL int13_harddisk(disk_regs_t r)
             else
 #endif
             {
-                ebda_data->bdisk.devices[device].blksize = count * 0x200;
+                bios_dsk->devices[device].blksize = count * 0x200;
                 status=ata_cmd_data_in(device, ATA_CMD_READ_MULTIPLE, count, cylinder, head, sector, lba, MK_FP(ES, BX));
-                ebda_data->bdisk.devices[device].blksize = 0x200;
+                bios_dsk->devices[device].blksize = 0x200;
             }
         } else {
 #ifdef VBOX_WITH_SCSI
@@ -178,7 +178,7 @@ void BIOSCALL int13_harddisk(disk_regs_t r)
         }
 
         // Set nb of sector transferred
-        SET_AL(ebda_data->bdisk.trsfsectors);
+        SET_AL(bios_dsk->trsfsectors);
         
         if (status != 0) {
             BX_INFO("%s: function %02x, error %02x !\n", __func__, GET_AH(), status);
@@ -198,11 +198,11 @@ void BIOSCALL int13_harddisk(disk_regs_t r)
     case 0x08: /* read disk drive parameters */
 
         /* Get the logical geometry from internal table. */
-        nlc   = ebda_data->bdisk.devices[device].lchs.cylinders;
-        nlh   = ebda_data->bdisk.devices[device].lchs.heads;
-        nlspt = ebda_data->bdisk.devices[device].lchs.spt;
+        nlc   = bios_dsk->devices[device].lchs.cylinders;
+        nlh   = bios_dsk->devices[device].lchs.heads;
+        nlspt = bios_dsk->devices[device].lchs.spt;
 
-        count = ebda_data->bdisk.hdcount;
+        count = bios_dsk->hdcount;
         /* Maximum cylinder number is just one less than the number of cylinders. */
         nlc = nlc - 1; /* 0 based , last sector not used */
         SET_AL(0);
@@ -221,7 +221,7 @@ void BIOSCALL int13_harddisk(disk_regs_t r)
         // should look at 40:8E also???
 
         // Read the status from controller
-        status = inb(ebda_data->bdisk.channels[device/2].iobase1 + ATA_CB_STAT);
+        status = inb(bios_dsk->channels[device/2].iobase1 + ATA_CB_STAT);
         if ( (status & ( ATA_CB_STAT_BSY | ATA_CB_STAT_RDY )) == ATA_CB_STAT_RDY ) {
             goto int13_success;
         } else {
@@ -233,9 +233,9 @@ void BIOSCALL int13_harddisk(disk_regs_t r)
     case 0x15: /* read disk drive size */
 
         /* Get the physical geometry from internal table. */
-        npc   = ebda_data->bdisk.devices[device].pchs.cylinders;
-        nph   = ebda_data->bdisk.devices[device].pchs.heads;
-        npspt = ebda_data->bdisk.devices[device].pchs.spt;
+        npc   = bios_dsk->devices[device].pchs.cylinders;
+        nph   = bios_dsk->devices[device].pchs.heads;
+        npspt = bios_dsk->devices[device].pchs.spt;
 
         /* Calculate sector count seen by old style INT 13h. */
         lba = (uint32_t)npc * (uint32_t)nph * (uint32_t)npspt;
@@ -288,11 +288,11 @@ void BIOSCALL int13_harddisk_ext(disk_regs_t r)
     uint16_t            npc, nph, npspt;
     uint16_t            size, count;
     uint8_t             device, status;
-    ebda_data_t __far   *ebda_data;
+    bio_dsk_t __far     *bios_dsk;
     int13ext_t __far    *i13_ext;
     dpt_t __far         *dpt;
 
-    ebda_data = ebda_seg :> 0;
+    bios_dsk = read_word(0x0040,0x000E) :> &EbdaData->bdisk;
 
     BX_DEBUG_INT13_HD("%s: AX=%04x BX=%04x CX=%04x DX=%04x ES=%04x\n", __func__, AX, BX, CX, DX, ES);
     
@@ -305,7 +305,7 @@ void BIOSCALL int13_harddisk_ext(disk_regs_t r)
     }
     
     // Get the ata channel
-    device = ebda_data->bdisk.hdidmap[GET_ELDL()-0x80];
+    device = bios_dsk->hdidmap[GET_ELDL()-0x80];
     
     // basic check : device has to be valid
     if (device >= BX_MAX_STORAGE_DEVICES) {
@@ -343,7 +343,7 @@ void BIOSCALL int13_harddisk_ext(disk_regs_t r)
         // Get 32 bits lba and check
         lba = i13_ext->lba1;
 
-        if (lba >= ebda_data->bdisk.devices[device].sectors) {
+        if (lba >= bios_dsk->devices[device].sectors) {
               BX_INFO("%s: function %02x. LBA out of range\n", __func__, GET_AH());
               goto int13x_fail;
         }
@@ -362,9 +362,9 @@ void BIOSCALL int13_harddisk_ext(disk_regs_t r)
                 if (lba + count >= 268435456)
                     status=ata_cmd_data_in(device, ATA_CMD_READ_SECTORS_EXT, count, 0, 0, 0, lba, MK_FP(segment, offset));
                 else {
-                    ebda_data->bdisk.devices[device].blksize = count * 0x200;
+                    bios_dsk->devices[device].blksize = count * 0x200;
                     status=ata_cmd_data_in(device, ATA_CMD_READ_MULTIPLE, count, 0, 0, 0, lba, MK_FP(segment, offset));
-                    ebda_data->bdisk.devices[device].blksize = 0x200;
+                    bios_dsk->devices[device].blksize = 0x200;
                 }
             }
         } else {
@@ -380,7 +380,7 @@ void BIOSCALL int13_harddisk_ext(disk_regs_t r)
             }
         }
 
-        count = ebda_data->bdisk.trsfsectors;
+        count = bios_dsk->trsfsectors;
         i13_ext->count = count;
         
         if (status != 0) {
@@ -414,11 +414,11 @@ void BIOSCALL int13_harddisk_ext(disk_regs_t r)
         if (size >= 0x1a) {
             uint16_t   blksize;
 
-            npc     = ebda_data->bdisk.devices[device].pchs.cylinders;
-            nph     = ebda_data->bdisk.devices[device].pchs.heads;
-            npspt   = ebda_data->bdisk.devices[device].pchs.spt;
-            lba     = ebda_data->bdisk.devices[device].sectors;
-            blksize = ebda_data->bdisk.devices[device].blksize;
+            npc     = bios_dsk->devices[device].pchs.cylinders;
+            nph     = bios_dsk->devices[device].pchs.heads;
+            npspt   = bios_dsk->devices[device].pchs.spt;
+            lba     = bios_dsk->devices[device].sectors;
+            blksize = bios_dsk->devices[device].blksize;
 
             dpt->size      = 0x1a;
             dpt->infos     = 0x02;  // geometry is valid
@@ -441,11 +441,11 @@ void BIOSCALL int13_harddisk_ext(disk_regs_t r)
             
             // Fill in dpte
             channel = device / 2;
-            iobase1 = ebda_data->bdisk.channels[channel].iobase1;
-            iobase2 = ebda_data->bdisk.channels[channel].iobase2;
-            irq     = ebda_data->bdisk.channels[channel].irq;
-            mode    = ebda_data->bdisk.devices[device].mode;
-            translation = ebda_data->bdisk.devices[device].translation;
+            iobase1 = bios_dsk->channels[channel].iobase1;
+            iobase2 = bios_dsk->channels[channel].iobase2;
+            irq     = bios_dsk->channels[channel].irq;
+            mode    = bios_dsk->devices[device].mode;
+            translation = bios_dsk->devices[device].translation;
             
             options  = (translation == ATA_TRANSLATION_NONE ? 0 : 1 << 3);  // chs translation
             options |= (1 << 4);    // lba translation
@@ -453,23 +453,23 @@ void BIOSCALL int13_harddisk_ext(disk_regs_t r)
             options |= (translation==ATA_TRANSLATION_LBA ? 1 : 0 << 9);
             options |= (translation==ATA_TRANSLATION_RECHS ? 3 : 0 << 9);
             
-            ebda_data->bdisk.dpte.iobase1  = iobase1;
-            ebda_data->bdisk.dpte.iobase2  = iobase2;
-            ebda_data->bdisk.dpte.prefix   = (0xe | (device % 2)) << 4;
-            ebda_data->bdisk.dpte.unused   = 0xcb;
-            ebda_data->bdisk.dpte.irq      = irq;
-            ebda_data->bdisk.dpte.blkcount = 1;
-            ebda_data->bdisk.dpte.dma      = 0;
-            ebda_data->bdisk.dpte.pio      = 0;
-            ebda_data->bdisk.dpte.options  = options;
-            ebda_data->bdisk.dpte.reserved = 0;
-            ebda_data->bdisk.dpte.revision = 0x11;
+            bios_dsk->dpte.iobase1  = iobase1;
+            bios_dsk->dpte.iobase2  = iobase2;
+            bios_dsk->dpte.prefix   = (0xe | (device % 2)) << 4;
+            bios_dsk->dpte.unused   = 0xcb;
+            bios_dsk->dpte.irq      = irq;
+            bios_dsk->dpte.blkcount = 1;
+            bios_dsk->dpte.dma      = 0;
+            bios_dsk->dpte.pio      = 0;
+            bios_dsk->dpte.options  = options;
+            bios_dsk->dpte.reserved = 0;
+            bios_dsk->dpte.revision = 0x11;
             
             checksum = 0;
             for (i=0; i<15; i++)
                 checksum += read_byte(ebda_seg, (uint16_t)&EbdaData->bdisk.dpte + i);
             checksum = -checksum;
-            ebda_data->bdisk.dpte.checksum = checksum;
+            bios_dsk->dpte.checksum = checksum;
         }
 
         /* Fill in EDD 3.x table. */
@@ -478,8 +478,8 @@ void BIOSCALL int13_harddisk_ext(disk_regs_t r)
             uint16_t    iobase1;
 
             channel = device / 2;
-            iface   = ebda_data->bdisk.channels[channel].iface;
-            iobase1 = ebda_data->bdisk.channels[channel].iobase1;
+            iface   = bios_dsk->channels[channel].iface;
+            iobase1 = bios_dsk->channels[channel].iobase1;
             
             dpt->size       = 0x42;
             dpt->key        = 0xbedd;

@@ -146,19 +146,18 @@ int scsi_read_sectors(uint8_t device_id, uint16_t count, uint32_t lba, void __fa
 {
     uint8_t             rc;
     uint8_t             aCDB[10];
-    uint16_t            io_base, ebda_seg;
+    uint16_t            io_base;
     uint8_t             target_id;
-    ebda_data_t __far   *ebda_data;
+    bio_dsk_t __far     *bios_dsk;
 
     if (device_id > BX_MAX_SCSI_DEVICES)
         BX_PANIC("scsi_read_sectors: device_id out of range %d\n", device_id);
 
-    ebda_seg  = read_word(0x0040, 0x000E);
-    ebda_data = MK_FP(ebda_seg, 0);
+    bios_dsk = read_word(0x0040, 0x000E) :> &EbdaData->bdisk;
 
-    // Reset count of transferred data
-    ebda_data->bdisk.trsfsectors = 0;
-    ebda_data->bdisk.trsfbytes   = 0;
+    /* Reset the count of transferred sectors/bytes. */
+    bios_dsk->trsfsectors = 0;
+    bios_dsk->trsfbytes   = 0;
 
     /* Prepare CDB */
     //@todo: make CDB a struct, this is stupid
@@ -173,15 +172,15 @@ int scsi_read_sectors(uint8_t device_id, uint16_t count, uint32_t lba, void __fa
     aCDB[8] = (uint8_t)(count);
     aCDB[9] = 0;
 
-    io_base   = ebda_data->bdisk.scsidev[device_id].io_base;
-    target_id = ebda_data->bdisk.scsidev[device_id].target_id;
+    io_base   = bios_dsk->scsidev[device_id].io_base;
+    target_id = bios_dsk->scsidev[device_id].target_id;
 
     rc = scsi_cmd_data_in(io_base, target_id, aCDB, 10, buffer, (count * 512));
 
     if (!rc)
     {
-        ebda_data->bdisk.trsfsectors = count;
-        ebda_data->bdisk.trsfbytes   = count * 512;
+        bios_dsk->trsfsectors = count;
+        bios_dsk->trsfbytes   = count * 512;
     }
 
     return rc;
@@ -200,19 +199,18 @@ int scsi_write_sectors(uint8_t device_id, uint16_t count, uint32_t lba, void __f
 {
     uint8_t             rc;
     uint8_t             aCDB[10];
-    uint16_t            io_base, ebda_seg;
+    uint16_t            io_base;
     uint8_t             target_id;
-    ebda_data_t __far   *ebda_data;
+    bio_dsk_t __far     *bios_dsk;
 
     if (device_id > BX_MAX_SCSI_DEVICES)
         BX_PANIC("scsi_write_sectors: device_id out of range %d\n", device_id);
 
-    ebda_seg = read_word(0x0040, 0x000E);
-    ebda_data = MK_FP(ebda_seg, 0);
+    bios_dsk = read_word(0x0040, 0x000E) :> &EbdaData->bdisk;
 
     // Reset count of transferred data
-    ebda_data->bdisk.trsfsectors = 0;
-    ebda_data->bdisk.trsfbytes   = 0;
+    bios_dsk->trsfsectors = 0;
+    bios_dsk->trsfbytes   = 0;
 
     /* Prepare CDB */
     //@todo: make CDB a struct, this is stupid
@@ -227,15 +225,15 @@ int scsi_write_sectors(uint8_t device_id, uint16_t count, uint32_t lba, void __f
     aCDB[8] = (uint8_t)(count);
     aCDB[9] = 0;
 
-    io_base   = ebda_data->bdisk.scsidev[device_id].io_base;
-    target_id = ebda_data->bdisk.scsidev[device_id].target_id;
+    io_base   = bios_dsk->scsidev[device_id].io_base;
+    target_id = bios_dsk->scsidev[device_id].target_id;
 
     rc = scsi_cmd_data_out(io_base, target_id, aCDB, 10, buffer, (count * 512));
 
     if (!rc)
     {
-        ebda_data->bdisk.trsfsectors = count;
-        ebda_data->bdisk.trsfbytes   = (count * 512);
+        bios_dsk->trsfsectors = count;
+        bios_dsk->trsfbytes   = (count * 512);
     }
 
     return rc;
@@ -251,11 +249,9 @@ void scsi_enumerate_attached_devices(uint16_t io_base)
 {
     int                 i;
     uint8_t             buffer[0x0200];
-    uint16_t            ebda_seg;
-    ebda_data_t __far   *ebda_data;
+    bio_dsk_t __far     *bios_dsk;
 
-    ebda_seg  = read_word(0x0040, 0x000E);
-    ebda_data = MK_FP(ebda_seg, 0);
+    bios_dsk = read_word(0x0040, 0x000E) :> &EbdaData->bdisk;
 
     /* Go through target devices. */
     for (i = 0; i < VBSCSI_MAX_DEVICES; i++)
@@ -281,7 +277,7 @@ void scsi_enumerate_attached_devices(uint16_t io_base)
             VBSCSI_DEBUG("scsi_enumerate_attached_devices: Disk detected at %d\n", i);
 
             /* We add the disk only if the maximum is not reached yet. */
-            if (ebda_data->bdisk.scsi_hdcount < BX_MAX_SCSI_DEVICES)
+            if (bios_dsk->scsi_hdcount < BX_MAX_SCSI_DEVICES)
             {
                 uint32_t    sectors, sector_size, cylinders;
                 uint16_t    heads, sectors_per_track;
@@ -334,44 +330,44 @@ void scsi_enumerate_attached_devices(uint16_t io_base)
                     sectors_per_track = 32;
                 }
                 cylinders = (uint32_t)(sectors / (heads * sectors_per_track));
-                hdcount_scsi = ebda_data->bdisk.scsi_hdcount;
+                hdcount_scsi = bios_dsk->scsi_hdcount;
 
                 /* Calculate index into the generic disk table. */
                 hd_index = hdcount_scsi + BX_MAX_ATA_DEVICES;
 
-                ebda_data->bdisk.scsidev[hdcount_scsi].io_base   = io_base;
-                ebda_data->bdisk.scsidev[hdcount_scsi].target_id = i;
-                ebda_data->bdisk.devices[hd_index].type        = ATA_TYPE_SCSI;
-                ebda_data->bdisk.devices[hd_index].device      = ATA_DEVICE_HD;
-                ebda_data->bdisk.devices[hd_index].removable   = 0;
-                ebda_data->bdisk.devices[hd_index].lock        = 0;
-                ebda_data->bdisk.devices[hd_index].mode        = ATA_MODE_PIO16;
-                ebda_data->bdisk.devices[hd_index].blksize     = sector_size;
-                ebda_data->bdisk.devices[hd_index].translation = ATA_TRANSLATION_LBA;
+                bios_dsk->scsidev[hdcount_scsi].io_base   = io_base;
+                bios_dsk->scsidev[hdcount_scsi].target_id = i;
+                bios_dsk->devices[hd_index].type        = ATA_TYPE_SCSI;
+                bios_dsk->devices[hd_index].device      = ATA_DEVICE_HD;
+                bios_dsk->devices[hd_index].removable   = 0;
+                bios_dsk->devices[hd_index].lock        = 0;
+                bios_dsk->devices[hd_index].mode        = ATA_MODE_PIO16;
+                bios_dsk->devices[hd_index].blksize     = sector_size;
+                bios_dsk->devices[hd_index].translation = ATA_TRANSLATION_LBA;
 
                 /* Write LCHS values. */
-                ebda_data->bdisk.devices[hd_index].lchs.heads = heads;
-                ebda_data->bdisk.devices[hd_index].lchs.spt   = sectors_per_track;
+                bios_dsk->devices[hd_index].lchs.heads = heads;
+                bios_dsk->devices[hd_index].lchs.spt   = sectors_per_track;
                 if (cylinders > 1024)
-                    ebda_data->bdisk.devices[hd_index].lchs.cylinders = 1024;
+                    bios_dsk->devices[hd_index].lchs.cylinders = 1024;
                 else
-                    ebda_data->bdisk.devices[hd_index].lchs.cylinders = (uint16_t)cylinders;
+                    bios_dsk->devices[hd_index].lchs.cylinders = (uint16_t)cylinders;
 
                 /* Write PCHS values. */
-                ebda_data->bdisk.devices[hd_index].pchs.heads = heads;
-                ebda_data->bdisk.devices[hd_index].pchs.spt   = sectors_per_track;
+                bios_dsk->devices[hd_index].pchs.heads = heads;
+                bios_dsk->devices[hd_index].pchs.spt   = sectors_per_track;
                 if (cylinders > 1024)
-                    ebda_data->bdisk.devices[hd_index].pchs.cylinders = 1024;
+                    bios_dsk->devices[hd_index].pchs.cylinders = 1024;
                 else
-                    ebda_data->bdisk.devices[hd_index].pchs.cylinders = (uint16_t)cylinders;
+                    bios_dsk->devices[hd_index].pchs.cylinders = (uint16_t)cylinders;
 
-                ebda_data->bdisk.devices[hd_index].sectors = sectors;
+                bios_dsk->devices[hd_index].sectors = sectors;
 
                 /* Store the id of the disk in the ata hdidmap. */
-                hdcount = ebda_data->bdisk.hdcount;
-                ebda_data->bdisk.hdidmap[hdcount] = hdcount_scsi + BX_MAX_ATA_DEVICES;
+                hdcount = bios_dsk->hdcount;
+                bios_dsk->hdidmap[hdcount] = hdcount_scsi + BX_MAX_ATA_DEVICES;
                 hdcount++;
-                ebda_data->bdisk.hdcount = hdcount;
+                bios_dsk->hdcount = hdcount;
 
                 /* Update hdcount in the BDA. */
                 hdcount = read_byte(0x40, 0x75);
@@ -379,7 +375,7 @@ void scsi_enumerate_attached_devices(uint16_t io_base)
                 write_byte(0x40, 0x75, hdcount);
 
                 hdcount_scsi++;
-                ebda_data->bdisk.scsi_hdcount = hdcount_scsi;
+                bios_dsk->scsi_hdcount = hdcount_scsi;
             }
             else
             {
@@ -397,12 +393,12 @@ void scsi_enumerate_attached_devices(uint16_t io_base)
  */
 void BIOSCALL scsi_init(void)
 {
-    uint8_t     identifier;
-    uint16_t    ebda_seg;
+    uint8_t             identifier;
+    bio_dsk_t __far     *bios_dsk;
 
+    bios_dsk = read_word(0x0040, 0x000E) :> &EbdaData->bdisk;
 
-    ebda_seg = read_word(0x0040, 0x000E);
-    write_byte(ebda_seg, (uint16_t)&EbdaData->bdisk.scsi_hdcount, 0);
+    bios_dsk->scsi_hdcount = 0;
 
     identifier = 0;
 
