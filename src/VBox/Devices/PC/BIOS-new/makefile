@@ -48,7 +48,7 @@ vbxbios.bin : $(OBJS) $(__MAKEFILES__)
 	 library clibs.lib &
 	 disable 1014, 1023, 2120
 
-logo.obj : logo.c
+logo.obj : logo.c .autodepend
 	wcc -fo=.obj $(INCLS) $(CFLAGS) $(DEFS) -DVBOX_PC_BIOS $<
 
 clean : .symbolic

@@ -72,7 +72,6 @@ void BIOSCALL int13_harddisk(disk_regs_t r)
     uint16_t            npc, nph, npspt, nlc, nlh, nlspt;
     uint16_t            count;
     uint8_t             device, status;
-    uint8_t             scsi_device;
     ebda_data_t __far   *ebda_data;
 
     BX_DEBUG_INT13_HD("%s: AX=%04x BX=%04x CX=%04x DX=%04x ES=%04x\n", __func__, AX, BX, CX, DX, ES);
@@ -131,25 +130,12 @@ void BIOSCALL int13_harddisk(disk_regs_t r)
             goto int13_fail;
         }
 
-#ifdef VBOX_WITH_SCSI
-        if (!VBOX_IS_SCSI_DEVICE(device))
-#endif
-        {
-            nlc   = ebda_data->bdisk.devices[device].lchs.cylinders;
-            nlh   = ebda_data->bdisk.devices[device].lchs.heads;
-            nlspt = ebda_data->bdisk.devices[device].lchs.spt;
-        }
-#ifdef VBOX_WITH_SCSI
-        else {
-            scsi_device = VBOX_GET_SCSI_DEVICE(device);
-    
-            nlc   = ebda_data->scsi.devices[scsi_device].device_info.lchs.cylinders;
-            nlh   = ebda_data->scsi.devices[scsi_device].device_info.lchs.heads;
-            nlspt = ebda_data->scsi.devices[scsi_device].device_info.lchs.spt;
-        }
-#endif
+        /* Get the logical CHS geometry. */
+        nlc   = ebda_data->bdisk.devices[device].lchs.cylinders;
+        nlh   = ebda_data->bdisk.devices[device].lchs.heads;
+        nlspt = ebda_data->bdisk.devices[device].lchs.spt;
 
-        // sanity check on cyl heads, sec
+        /* Sanity check the geometry. */
         if( (cylinder >= nlc) || (head >= nlh) || (sector > nlspt )) {
             BX_INFO("%s: function %02x, disk %02x, parameters out of range %04x/%04x/%04x!\n", __func__, GET_AH(), GET_DL(), cylinder, head, sector);
             goto int13_fail;
@@ -159,33 +145,16 @@ void BIOSCALL int13_harddisk(disk_regs_t r)
         if ( GET_AH() == 0x04 )
             goto int13_success;
 
-#ifdef VBOX_WITH_SCSI
-        if (!VBOX_IS_SCSI_DEVICE(device))
-#endif
-        {
-            nph   = ebda_data->bdisk.devices[device].pchs.heads;
-            npspt = ebda_data->bdisk.devices[device].pchs.spt;
-        }
-#ifdef VBOX_WITH_SCSI
-        else {
-            scsi_device = VBOX_GET_SCSI_DEVICE(device);
-            nph   = ebda_data->scsi.devices[scsi_device].device_info.pchs.heads;
-            npspt = ebda_data->scsi.devices[scsi_device].device_info.pchs.spt;
-        }
-#endif
+        /* Now get relevant the physical geometry information. */
+        nph   = ebda_data->bdisk.devices[device].pchs.heads;
+        npspt = ebda_data->bdisk.devices[device].pchs.spt;
 
-        // if needed, translate lchs to lba, and execute command
-#ifdef VBOX_WITH_SCSI
+        /* If required, translate LCHS to LBA and execute command. */
+        //@todo: The IS_SCSI_DEVICE check should be redundant...
         if (( (nph != nlh) || (npspt != nlspt)) || VBOX_IS_SCSI_DEVICE(device)) {
             lba = ((((uint32_t)cylinder * (uint32_t)nlh) + (uint32_t)head) * (uint32_t)nlspt) + (uint32_t)sector - 1;
             sector = 0; // this forces the command to be lba
         }
-#else
-        if (( (nph != nlh) || (npspt != nlspt)) ) {
-            lba = ((((uint32_t)cylinder * (uint32_t)nlh) + (uint32_t)head) * (uint32_t)nlspt) + (uint32_t)sector - 1;
-            sector = 0; // this forces the command to be lba
-        }
-#endif
 
         if ( GET_AH() == 0x02 )
         {
@@ -228,23 +197,10 @@ void BIOSCALL int13_harddisk(disk_regs_t r)
 
     case 0x08: /* read disk drive parameters */
 
-        // Get logical geometry from table
-#ifdef VBOX_WITH_SCSI
-        if (!VBOX_IS_SCSI_DEVICE(device))
-#endif
-        {
-            nlc   = ebda_data->bdisk.devices[device].lchs.cylinders;
-            nlh   = ebda_data->bdisk.devices[device].lchs.heads;
-            nlspt = ebda_data->bdisk.devices[device].lchs.spt;
-        }
-#ifdef VBOX_WITH_SCSI
-        else {
-            scsi_device = VBOX_GET_SCSI_DEVICE(device);
-            nlc   = ebda_data->scsi.devices[scsi_device].device_info.lchs.cylinders;
-            nlh   = ebda_data->scsi.devices[scsi_device].device_info.lchs.heads;
-            nlspt = ebda_data->scsi.devices[scsi_device].device_info.lchs.spt;
-        }
-#endif
+        /* Get the logical geometry from internal table. */
+        nlc   = ebda_data->bdisk.devices[device].lchs.cylinders;
+        nlh   = ebda_data->bdisk.devices[device].lchs.heads;
+        nlspt = ebda_data->bdisk.devices[device].lchs.spt;
 
         count = ebda_data->bdisk.hdcount;
         /* Maximum cylinder number is just one less than the number of cylinders. */
@@ -276,25 +232,12 @@ void BIOSCALL int13_harddisk(disk_regs_t r)
 
     case 0x15: /* read disk drive size */
 
-      // Get physical geometry from table
-#ifdef VBOX_WITH_SCSI
-        if (!VBOX_IS_SCSI_DEVICE(device))
-#endif
-        {
-            npc   = ebda_data->bdisk.devices[device].pchs.cylinders;
-            nph   = ebda_data->bdisk.devices[device].pchs.heads;
-            npspt = ebda_data->bdisk.devices[device].pchs.spt;
-        }
-#ifdef VBOX_WITH_SCSI
-        else {
-            scsi_device = VBOX_GET_SCSI_DEVICE(device);
-            npc   = ebda_data->scsi.devices[scsi_device].device_info.pchs.cylinders;
-            nph   = ebda_data->scsi.devices[scsi_device].device_info.pchs.heads;
-            npspt = ebda_data->scsi.devices[scsi_device].device_info.pchs.spt;
-        }
-#endif
+        /* Get the physical geometry from internal table. */
+        npc   = ebda_data->bdisk.devices[device].pchs.cylinders;
+        nph   = ebda_data->bdisk.devices[device].pchs.heads;
+        npspt = ebda_data->bdisk.devices[device].pchs.spt;
 
-        // Compute sector count seen by int13
+        /* Calculate sector count seen by old style INT 13h. */
         lba = (uint32_t)npc * (uint32_t)nph * (uint32_t)npspt;
         CX = lba >> 16;
         DX = lba & 0xffff;
@@ -345,7 +288,6 @@ void BIOSCALL int13_harddisk_ext(disk_regs_t r)
     uint16_t            npc, nph, npspt;
     uint16_t            size, count;
     uint8_t             device, status;
-    uint8_t             scsi_device;
     ebda_data_t __far   *ebda_data;
     int13ext_t __far    *i13_ext;
     dpt_t __far         *dpt;
@@ -401,16 +343,6 @@ void BIOSCALL int13_harddisk_ext(disk_regs_t r)
         // Get 32 bits lba and check
         lba = i13_ext->lba1;
 
-#ifdef VBOX_WITH_SCSI
-        if (VBOX_IS_SCSI_DEVICE(device))
-        {
-            if (lba >= ebda_data->scsi.devices[VBOX_GET_SCSI_DEVICE(device)].device_info.sectors ) {
-                BX_INFO("%s: function %02x. LBA out of range\n", __func__, GET_AH());
-                goto int13x_fail;
-            }
-        }
-        else
-#endif
         if (lba >= ebda_data->bdisk.devices[device].sectors) {
               BX_INFO("%s: function %02x. LBA out of range\n", __func__, GET_AH());
               goto int13x_fail;
@@ -474,34 +406,20 @@ void BIOSCALL int13_harddisk_ext(disk_regs_t r)
         dpt = DS :> (dpt_t *)SI;
         size = dpt->size;
 
-        // Buffer is too small
-        if(size < 0x1a)
+        /* Check if buffer is large enough. */
+        if (size < 0x1a)
             goto int13x_fail;
         
-        // EDD 1.x
-        if(size >= 0x1a) {
+        /* Fill in EDD 1.x table. */
+        if (size >= 0x1a) {
             uint16_t   blksize;
 
-#ifdef VBOX_WITH_SCSI
-            if (!VBOX_IS_SCSI_DEVICE(device))
-#endif
-            {
-                npc     = ebda_data->bdisk.devices[device].pchs.cylinders;
-                nph     = ebda_data->bdisk.devices[device].pchs.heads;
-                npspt   = ebda_data->bdisk.devices[device].pchs.spt;
-                lba     = ebda_data->bdisk.devices[device].sectors;
-                blksize = ebda_data->bdisk.devices[device].blksize;
-            }
-#ifdef VBOX_WITH_SCSI
-            else {
-                scsi_device = VBOX_GET_SCSI_DEVICE(device);
-                npc     = ebda_data->scsi.devices[scsi_device].device_info.pchs.cylinders;
-                nph     = ebda_data->scsi.devices[scsi_device].device_info.pchs.heads;
-                npspt   = ebda_data->scsi.devices[scsi_device].device_info.pchs.spt;
-                lba     = ebda_data->scsi.devices[scsi_device].device_info.sectors;
-                blksize = ebda_data->scsi.devices[scsi_device].device_info.blksize;
-            }
-#endif
+            npc     = ebda_data->bdisk.devices[device].pchs.cylinders;
+            nph     = ebda_data->bdisk.devices[device].pchs.heads;
+            npspt   = ebda_data->bdisk.devices[device].pchs.spt;
+            lba     = ebda_data->bdisk.devices[device].sectors;
+            blksize = ebda_data->bdisk.devices[device].blksize;
+
             dpt->size      = 0x1a;
             dpt->infos     = 0x02;  // geometry is valid
             dpt->cylinders = npc;
@@ -512,8 +430,8 @@ void BIOSCALL int13_harddisk_ext(disk_regs_t r)
             dpt->sector_count2 = 0;
         }
 
-        // EDD 2.x
-        if(size >= 0x1e) {
+        /* Fill in EDD 2.x table. */
+        if (size >= 0x1e) {
             uint8_t     channel, irq, mode, checksum, i, translation;
             uint16_t    iobase1, iobase2, options;
             
@@ -554,7 +472,7 @@ void BIOSCALL int13_harddisk_ext(disk_regs_t r)
             ebda_data->bdisk.dpte.checksum = checksum;
         }
 
-        // EDD 3.x
+        /* Fill in EDD 3.x table. */
         if(size >= 0x42) {
             uint8_t     channel, iface, checksum, i;
             uint16_t    iobase1;

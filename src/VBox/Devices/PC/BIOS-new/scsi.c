@@ -173,8 +173,8 @@ int scsi_read_sectors(uint8_t device_id, uint16_t count, uint32_t lba, void __fa
     aCDB[8] = (uint8_t)(count);
     aCDB[9] = 0;
 
-    io_base   = ebda_data->scsi.devices[device_id].io_base;
-    target_id = ebda_data->scsi.devices[device_id].target_id;
+    io_base   = ebda_data->bdisk.scsidev[device_id].io_base;
+    target_id = ebda_data->bdisk.scsidev[device_id].target_id;
 
     rc = scsi_cmd_data_in(io_base, target_id, aCDB, 10, buffer, (count * 512));
 
@@ -227,8 +227,8 @@ int scsi_write_sectors(uint8_t device_id, uint16_t count, uint32_t lba, void __f
     aCDB[8] = (uint8_t)(count);
     aCDB[9] = 0;
 
-    io_base   = ebda_data->scsi.devices[device_id].io_base;
-    target_id = ebda_data->scsi.devices[device_id].target_id;
+    io_base   = ebda_data->bdisk.scsidev[device_id].io_base;
+    target_id = ebda_data->bdisk.scsidev[device_id].target_id;
 
     rc = scsi_cmd_data_out(io_base, target_id, aCDB, 10, buffer, (count * 512));
 
@@ -281,11 +281,11 @@ void scsi_enumerate_attached_devices(uint16_t io_base)
             VBSCSI_DEBUG("scsi_enumerate_attached_devices: Disk detected at %d\n", i);
 
             /* We add the disk only if the maximum is not reached yet. */
-            if (ebda_data->scsi.hdcount < BX_MAX_SCSI_DEVICES)
+            if (ebda_data->bdisk.scsi_hdcount < BX_MAX_SCSI_DEVICES)
             {
                 uint32_t    sectors, sector_size, cylinders;
                 uint16_t    heads, sectors_per_track;
-                uint8_t     hdcount, hdcount_scsi;
+                uint8_t     hdcount, hdcount_scsi, hd_index;
 
                 /* Issue a read capacity command now. */
                 _fmemset(aCDB, 0, sizeof(aCDB));
@@ -334,35 +334,38 @@ void scsi_enumerate_attached_devices(uint16_t io_base)
                     sectors_per_track = 32;
                 }
                 cylinders = (uint32_t)(sectors / (heads * sectors_per_track));
-                hdcount_scsi = ebda_data->scsi.hdcount;
+                hdcount_scsi = ebda_data->bdisk.scsi_hdcount;
 
-                ebda_data->scsi.devices[hdcount_scsi].io_base   = io_base;
-                ebda_data->scsi.devices[hdcount_scsi].target_id = i;
-                ebda_data->scsi.devices[hdcount_scsi].device_info.type        = ATA_TYPE_SCSI;
-                ebda_data->scsi.devices[hdcount_scsi].device_info.device      = ATA_DEVICE_HD;
-                ebda_data->scsi.devices[hdcount_scsi].device_info.removable   = 0;
-                ebda_data->scsi.devices[hdcount_scsi].device_info.lock        = 0;
-                ebda_data->scsi.devices[hdcount_scsi].device_info.mode        = ATA_MODE_PIO16;
-                ebda_data->scsi.devices[hdcount_scsi].device_info.blksize     = sector_size;
-                ebda_data->scsi.devices[hdcount_scsi].device_info.translation = ATA_TRANSLATION_LBA;
+                /* Calculate index into the generic disk table. */
+                hd_index = hdcount_scsi + BX_MAX_ATA_DEVICES;
 
-                /* Write lchs values. */
-                ebda_data->scsi.devices[hdcount_scsi].device_info.lchs.heads = heads;
-                ebda_data->scsi.devices[hdcount_scsi].device_info.lchs.spt   = sectors_per_track;
+                ebda_data->bdisk.scsidev[hdcount_scsi].io_base   = io_base;
+                ebda_data->bdisk.scsidev[hdcount_scsi].target_id = i;
+                ebda_data->bdisk.devices[hd_index].type        = ATA_TYPE_SCSI;
+                ebda_data->bdisk.devices[hd_index].device      = ATA_DEVICE_HD;
+                ebda_data->bdisk.devices[hd_index].removable   = 0;
+                ebda_data->bdisk.devices[hd_index].lock        = 0;
+                ebda_data->bdisk.devices[hd_index].mode        = ATA_MODE_PIO16;
+                ebda_data->bdisk.devices[hd_index].blksize     = sector_size;
+                ebda_data->bdisk.devices[hd_index].translation = ATA_TRANSLATION_LBA;
+
+                /* Write LCHS values. */
+                ebda_data->bdisk.devices[hd_index].lchs.heads = heads;
+                ebda_data->bdisk.devices[hd_index].lchs.spt   = sectors_per_track;
                 if (cylinders > 1024)
-                    ebda_data->scsi.devices[hdcount_scsi].device_info.lchs.cylinders = 1024;
+                    ebda_data->bdisk.devices[hd_index].lchs.cylinders = 1024;
                 else
-                    ebda_data->scsi.devices[hdcount_scsi].device_info.lchs.cylinders = (uint16_t)cylinders;
+                    ebda_data->bdisk.devices[hd_index].lchs.cylinders = (uint16_t)cylinders;
 
-                /* Write pchs values. */
-                ebda_data->scsi.devices[hdcount_scsi].device_info.pchs.heads = heads;
-                ebda_data->scsi.devices[hdcount_scsi].device_info.pchs.spt   = sectors_per_track;
+                /* Write PCHS values. */
+                ebda_data->bdisk.devices[hd_index].pchs.heads = heads;
+                ebda_data->bdisk.devices[hd_index].pchs.spt   = sectors_per_track;
                 if (cylinders > 1024)
-                    ebda_data->scsi.devices[hdcount_scsi].device_info.pchs.cylinders = 1024;
+                    ebda_data->bdisk.devices[hd_index].pchs.cylinders = 1024;
                 else
-                    ebda_data->scsi.devices[hdcount_scsi].device_info.pchs.cylinders = (uint16_t)cylinders;
+                    ebda_data->bdisk.devices[hd_index].pchs.cylinders = (uint16_t)cylinders;
 
-                ebda_data->scsi.devices[hdcount_scsi].device_info.sectors = sectors;
+                ebda_data->bdisk.devices[hd_index].sectors = sectors;
 
                 /* Store the id of the disk in the ata hdidmap. */
                 hdcount = ebda_data->bdisk.hdcount;
@@ -376,7 +379,7 @@ void scsi_enumerate_attached_devices(uint16_t io_base)
                 write_byte(0x40, 0x75, hdcount);
 
                 hdcount_scsi++;
-                ebda_data->scsi.hdcount = hdcount_scsi;
+                ebda_data->bdisk.scsi_hdcount = hdcount_scsi;
             }
             else
             {
@@ -399,7 +402,7 @@ void BIOSCALL scsi_init(void)
 
 
     ebda_seg = read_word(0x0040, 0x000E);
-    write_byte(ebda_seg, (uint16_t)&EbdaData->scsi.hdcount, 0);
+    write_byte(ebda_seg, (uint16_t)&EbdaData->bdisk.scsi_hdcount, 0);
 
     identifier = 0;
 
