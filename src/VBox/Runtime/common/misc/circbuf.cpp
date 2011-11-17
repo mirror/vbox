@@ -43,6 +43,10 @@ typedef struct RTCIRCBUF
 {
     /** The current read position in the buffer. */
     size_t          offRead;
+    /** Is a read block acquired currently? */
+    bool            fReading;
+    /** Is a write block acquired currently? */
+    bool            fWriting;
     /** The current write position in the buffer. */
     size_t          offWrite;
     /** How much space of the buffer is currently in use. */
@@ -96,7 +100,9 @@ RTDECL(void) RTCircBufReset(PRTCIRCBUF pBuf)
 
     pBuf->offRead  = 0;
     pBuf->offWrite = 0;
-    pBuf->cbUsed = 0;
+    pBuf->cbUsed   = 0;
+    pBuf->fReading = false;
+    pBuf->fWriting = false;
 }
 
 
@@ -117,7 +123,6 @@ RTDECL(size_t) RTCircBufUsed(PRTCIRCBUF pBuf)
     return ASMAtomicReadZ(&pBuf->cbUsed);
 }
 
-
 RTDECL(size_t) RTCircBufSize(PRTCIRCBUF pBuf)
 {
     /* Validate input. */
@@ -126,6 +131,21 @@ RTDECL(size_t) RTCircBufSize(PRTCIRCBUF pBuf)
     return pBuf->cbBuf;
 }
 
+RTDECL(bool) RTCircBufIsReading(PRTCIRCBUF pBuf)
+{
+    /* Validate input. */
+    AssertPtrReturn(pBuf, 0);
+
+    return ASMAtomicReadBool(&pBuf->fReading);
+}
+
+RTDECL(bool) RTCircBufIsWriting(PRTCIRCBUF pBuf)
+{
+    /* Validate input. */
+    AssertPtrReturn(pBuf, 0);
+
+    return ASMAtomicReadBool(&pBuf->fWriting);
+}
 
 RTDECL(void) RTCircBufAcquireReadBlock(PRTCIRCBUF pBuf, size_t cbReqSize, void **ppvStart, size_t *pcbSize)
 {
@@ -151,6 +171,8 @@ RTDECL(void) RTCircBufAcquireReadBlock(PRTCIRCBUF pBuf, size_t cbReqSize, void *
              * position. */
             *ppvStart = (char *)pBuf->pvBuf + pBuf->offRead;
             *pcbSize = cbSize;
+
+            ASMAtomicWriteBool(&pBuf->fReading, true);
         }
     }
 }
@@ -165,6 +187,7 @@ RTDECL(void) RTCircBufReleaseReadBlock(PRTCIRCBUF pBuf, size_t cbSize)
     pBuf->offRead = (pBuf->offRead + cbSize) % pBuf->cbBuf;
 
     ASMAtomicSubZ(&pBuf->cbUsed, cbSize);
+    ASMAtomicWriteBool(&pBuf->fReading, false);
 }
 
 
@@ -192,6 +215,8 @@ RTDECL(void) RTCircBufAcquireWriteBlock(PRTCIRCBUF pBuf, size_t cbReqSize, void 
              * position. */
             *ppvStart = (char*)pBuf->pvBuf + pBuf->offWrite;
             *pcbSize = cbSize;
+
+            ASMAtomicWriteBool(&pBuf->fWriting, true);
         }
     }
 }
@@ -206,5 +231,6 @@ RTDECL(void) RTCircBufReleaseWriteBlock(PRTCIRCBUF pBuf, size_t cbSize)
     pBuf->offWrite = (pBuf->offWrite + cbSize) % pBuf->cbBuf;
 
     ASMAtomicAddZ(&pBuf->cbUsed, cbSize);
+    ASMAtomicWriteBool(&pBuf->fWriting, false);
 }
 
