@@ -156,6 +156,10 @@ void BIOSCALL int13_harddisk(disk_regs_t r)
             sector = 0; // this forces the command to be lba
         }
 
+        /* Reset the count of transferred sectors/bytes. */
+        bios_dsk->drqp.trsfsectors = 0;
+        bios_dsk->drqp.trsfbytes   = 0;
+
         if ( GET_AH() == 0x02 )
         {
 #ifdef VBOX_WITH_SCSI
@@ -178,7 +182,7 @@ void BIOSCALL int13_harddisk(disk_regs_t r)
         }
 
         // Set nb of sector transferred
-        SET_AL(bios_dsk->trsfsectors);
+        SET_AL(bios_dsk->drqp.trsfsectors);
         
         if (status != 0) {
             BX_INFO("%s: function %02x, error %02x !\n", __func__, GET_AH(), status);
@@ -351,7 +355,11 @@ void BIOSCALL int13_harddisk_ext(disk_regs_t r)
         // If verify or seek
         if (( GET_AH() == 0x44 ) || ( GET_AH() == 0x47 ))
             goto int13x_success;
-        
+
+        /* Reset the count of transferred sectors/bytes. */
+        bios_dsk->drqp.trsfsectors = 0;
+        bios_dsk->drqp.trsfbytes   = 0;
+
         // Execute the command
         if ( GET_AH() == 0x42 ) {
 #ifdef VBOX_WITH_SCSI
@@ -380,7 +388,7 @@ void BIOSCALL int13_harddisk_ext(disk_regs_t r)
             }
         }
 
-        count = bios_dsk->trsfsectors;
+        count = bios_dsk->drqp.trsfsectors;
         i13_ext->count = count;
         
         if (status != 0) {
@@ -466,7 +474,7 @@ void BIOSCALL int13_harddisk_ext(disk_regs_t r)
             bios_dsk->dpte.revision = 0x11;
             
             checksum = 0;
-            for (i=0; i<15; i++)
+            for (i = 0; i < 15; ++i)
                 checksum += read_byte(ebda_seg, (uint16_t)&EbdaData->bdisk.dpte + i);
             checksum = -checksum;
             bios_dsk->dpte.checksum = checksum;

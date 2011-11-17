@@ -160,6 +160,24 @@ typedef struct {
     uint32_t    sectors;      /* Total sector count. */
 } disk_dev_t;
 
+/* A structure for passing disk request information around. This structure
+ * is designed for saving stack space. As BIOS requests cannot be overlapped,
+ * one such structure is sufficient.
+ */
+typedef struct {
+    uint32_t    lba;                /* Starting LBA. */
+    void __far  *buffer;            /* Read/write data buffer pointer. */
+    uint16_t    count;              /* Count of sectors to be transferred. */
+    uint16_t    cylinder;           /* Starting cylinder (CHS only). */
+    uint16_t    head;               /* Starting head (CHS only). */
+    uint16_t    sector;             /* Starting sector (CHS only). */
+    uint16_t    trsfsectors;        /* Actual sectors transferred. */
+    uint32_t    trsfbytes;          /* Actual bytes transferred. */
+} disk_req_t;
+
+/* All BIOS disk information. Disk-related code in the BIOS should not need
+ * anything outside of this structure.
+ */
 typedef struct {
     /* ATA bus-specific device information. */
     ata_chan_t  channels[BX_MAX_ATA_INTERFACES];
@@ -182,8 +200,7 @@ typedef struct {
 #endif
 
     dpte_t      dpte;               /* Buffer for building a DPTE. */
-    uint16_t    trsfsectors;        /* Count of sectors transferred. */
-    uint32_t    trsfbytes;          /* Count of bytes transferred. */
+    disk_req_t  drqp;               /* Disk request packet. */
 } bio_dsk_t;
 
 #if BX_ELTORITO_BOOT

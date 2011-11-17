@@ -266,9 +266,6 @@ uint16_t ata_cmd_data_in(uint16_t device, uint16_t command, uint16_t count, uint
         head = ((uint16_t) (lba & 0x0000000fL)) | 0x40;
     }
     
-    // Reset count of transferred data
-    AtaData->trsfsectors = 0;
-    AtaData->trsfbytes   = 0;
     current = 0;
     
     outb(iobase2 + ATA_CB_DC, ATA_CB_DC_HD15 | ATA_CB_DC_NIEN);
@@ -321,7 +318,7 @@ uint16_t ata_cmd_data_in(uint16_t device, uint16_t command, uint16_t count, uint
             buffer = rep_insw(buffer, blksize, iobase1);
         }
         current += mult_blk_cnt;
-        AtaData->trsfsectors = current;
+        AtaData->drqp.trsfsectors = current;
         count--;
         while (1) {
             status = inb(iobase1 + ATA_CB_STAT);
@@ -745,9 +742,6 @@ uint16_t ata_cmd_data_out(uint16_t device, uint16_t command, uint16_t count, uin
         head = ((uint16_t) (lba & 0x0000000fL)) | 0x40;
     }
     
-    // Reset count of transferred data
-    AtaData->trsfsectors = 0;
-    AtaData->trsfbytes   = 0;
     current = 0;
     
     outb(iobase2 + ATA_CB_DC, ATA_CB_DC_HD15 | ATA_CB_DC_NIEN);
@@ -794,7 +788,7 @@ uint16_t ata_cmd_data_out(uint16_t device, uint16_t command, uint16_t count, uin
         }
         
         current++;
-        AtaData->trsfsectors = current;
+        AtaData->drqp.trsfsectors = current;
         count--;
         while (1) {
             status = inb(iobase1 + ATA_CB_STAT);
@@ -876,8 +870,9 @@ uint16_t ata_cmd_packet(uint16_t device, uint8_t cmdlen, char __far *cmdbuf,
     cmdlen >>= 1;
     
     // Reset count of transferred data
-    AtaData->trsfsectors = 0;
-    AtaData->trsfbytes   = 0;
+    // @todo: clear in calling code?
+    AtaData->drqp.trsfsectors = 0;
+    AtaData->drqp.trsfbytes   = 0;
     
     status = inb(iobase1 + ATA_CB_STAT);
     if (status & ATA_CB_STAT_BSY)
@@ -1038,7 +1033,7 @@ uint16_t ata_cmd_packet(uint16_t device, uint8_t cmdlen, char __far *cmdbuf,
             
             // Save transferred bytes count
             transfer += count;
-            AtaData->trsfbytes = transfer;
+            AtaData->drqp.trsfbytes = transfer;
         }
     }
     

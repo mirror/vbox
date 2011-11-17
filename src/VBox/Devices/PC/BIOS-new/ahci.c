@@ -765,7 +765,7 @@ void BIOSCALL ahci_int13(volatile uint16_t RET, volatile uint16_t ES, volatile u
                 ahci_cmd_data_out(ahci_seg, u16IoBase, u8Port, AHCI_CMD_WRITE_DMA_EXT, lba, count, segment, offset);
 
             // Set nb of sector transferred
-            SET_AL(read_word(ebda_seg, (uint16_t)&EbdaData->bdisk.trsfsectors));
+            SET_AL(read_word(ebda_seg, (uint16_t)&EbdaData->bdisk.drqp.trsfsectors));
 
             if (status != 0)
             {
@@ -881,7 +881,7 @@ void BIOSCALL ahci_int13(volatile uint16_t RET, volatile uint16_t ES, volatile u
                     status=ata_cmd_data_out(device, ATA_CMD_WRITE_SECTORS, count, 0, 0, 0, lba, segment, offset);
             }
 
-            count=read_word(ebda_seg, &EbdaData->bdisk.trsfsectors);
+            count=read_word(ebda_seg, &EbdaData->bdisk.drqp.trsfsectors);
             write_word(DS, SI+(uint16_t)&Int13Ext->count, count);
 
             if (status != 0)
