@@ -26,10 +26,11 @@
 #ifndef ___VBox_VBoxVideo_h
 #define ___VBox_VBoxVideo_h
 
+#include <VBox/VMMDev.h>
+#include <VBox/Hardware/VBoxVideoVBE.h>
+
 #include <iprt/cdefs.h>
 #include <iprt/types.h>
-
-#include <VBox/VMMDev.h>
 
 /*
  * The last 4096 bytes of the guest VRAM contains the generic info for all
@@ -79,8 +80,6 @@
 
 #define VBOX_VIDEO_PRIMARY_SCREEN 0
 #define VBOX_VIDEO_NO_SCREEN ~0
-
-#define VBOX_VIDEO_MAX_SCREENS 64
 
 /* The size of the information. */
 /*
