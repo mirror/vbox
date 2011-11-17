@@ -680,6 +680,7 @@ static void pdmBlkCacheCommit(PPDMBLKCACHE pBlkCache)
         /* Commit the last endpoint */
         Assert(RTListNodeIsLast(&ListDirtyNotCommitted, &pEntry->NodeNotCommitted));
         pdmBlkCacheEntryCommit(pEntry);
+        cbCommitted += pEntry->cbData;
         RTListNodeRemove(&pEntry->NodeNotCommitted);
         AssertMsg(RTListIsEmpty(&ListDirtyNotCommitted),
                   ("Committed all entries but list is not empty\n"));
