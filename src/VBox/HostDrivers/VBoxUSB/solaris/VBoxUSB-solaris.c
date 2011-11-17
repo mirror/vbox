@@ -297,7 +297,6 @@ LOCAL int vboxUSBSolarisInitEndPointsForInterfaceAlt(vboxusb_state_t *pState, ui
 LOCAL void vboxUSBSolarisDestroyAllEndPoints(vboxusb_state_t *pState);
 LOCAL void vboxUSBSolarisDestroyEndPoint(vboxusb_state_t *pState, vboxusb_ep_t *pEp);
 LOCAL void vboxUSBSolarisCloseAllPipes(vboxusb_state_t *pState, bool fControlPipe);
-LOCAL void vboxUSBSolarisCloseInterface(vboxusb_state_t *pState, uint8_t bInterface);
 LOCAL int vboxUSBSolarisOpenPipe(vboxusb_state_t *pState, vboxusb_ep_t *pEp);
 LOCAL void vboxUSBSolarisClosePipe(vboxusb_state_t *pState, vboxusb_ep_t *pEp);
 LOCAL int vboxUSBSolarisCtrlXfer(vboxusb_state_t *pState, vboxusb_ep_t *pEp, vboxusb_urb_t *pUrb);
@@ -327,7 +326,6 @@ LOCAL int vboxUSBSolarisGetConfig(vboxusb_state_t *pState, uint8_t *pCfgValue);
 LOCAL int vboxUSBSolarisSetInterface(vboxusb_state_t *pState, uint8_t uInterface, uint8_t uAlt);
 LOCAL int vboxUSBSolarisCloseDevice(vboxusb_state_t *pState, VBOXUSB_RESET_LEVEL enmReset);
 LOCAL int vboxUSBSolarisAbortPipe(vboxusb_state_t *pState, uint8_t bEndpoint);
-LOCAL bool vboxUSBSolarisIsAnyPipeOpen(vboxusb_state_t *pState);
 LOCAL int vboxUSBSolarisGetConfigIndex(vboxusb_state_t *pState, uint_t uCfgValue);
 
 /** Hotplug & Power Management Hooks */
@@ -702,6 +700,7 @@ int VBoxUSBSolarisDetach(dev_info_t *pDip, ddi_detach_cmd_t enmCmd)
              * Close all endpoints.
              */
             vboxUSBSolarisCloseAllPipes(pState, true /* ControlPipe */);
+            pState->fClosed = true;
 
             /*
              * Deinitialize power, destroy endpoints.
@@ -1722,7 +1721,12 @@ LOCAL int vboxUSBSolarisSendURB(vboxusb_state_t *pState, PVBOXUSBREQ_URB pUrbReq
 
             if (RT_FAILURE(rc))
             {
-                freemsg(pUrb->pMsg);
+                mutex_enter(&pState->Mtx);
+                if (pUrb->pMsg)
+                {
+                    freemsg(pUrb->pMsg);
+                    pUrb->pMsg = NULL;
+                }
 
                 if (   pUrb->enmType == VUSBXFERTYPE_ISOC
                     && pUrb->enmDir  == VUSBDIRECTION_IN)
@@ -1735,6 +1739,7 @@ LOCAL int vboxUSBSolarisSendURB(vboxusb_state_t *pState, PVBOXUSBREQ_URB pUrbReq
                     pUrb->pMsg = NULL;
                     pUrb->enmState = VBOXUSB_URB_STATE_FREE;
                 }
+                mutex_exit(&pState->Mtx);
             }
         }
         else
@@ -2590,30 +2595,6 @@ LOCAL void vboxUSBSolarisCloseAllPipes(vboxusb_state_t *pState, bool fDefault)
 
 
 /**
- * Closes all pipes for a given interface.
- *
- * @param   pState          The USB device instance.
- * @param   bInterface      The Interface.
- */
-LOCAL void vboxUSBSolarisCloseInterface(vboxusb_state_t *pState, uint8_t bInterface)
-{
-    LogFunc((DEVICE_NAME ":vboxUSBSolarisCloseInterface pState=%p bInterface=%#x\n", pState, bInterface));
-
-    for (int i = 1; i < VBOXUSB_MAX_ENDPOINTS; i++)
-    {
-        vboxusb_ep_t *pEp = &pState->aEps[i];
-        if (   pEp
-            && pEp->pPipe
-            && pEp->uInterface == bInterface)
-        {
-            Log((DEVICE_NAME ":vboxUSBSolarisCloseInterface closing[%d]\n", i));
-            vboxUSBSolarisClosePipe(pState, pEp);
-        }
-    }
-}
-
-
-/**
  * Open the pipe for an Endpoint.
  *
  * @param   pState          The USB device instance.
@@ -2750,32 +2731,6 @@ LOCAL void vboxUSBSolarisClosePipe(vboxusb_state_t *pState, vboxusb_ep_t *pEp)
 
 
 /**
- * Check if any non-default Endpoints are open.
- *
- * @param   pState          The USB device instance.
- *
- * @returns Returns true if any non-default Endpoint is open, otherwise false.
- */
-LOCAL bool vboxUSBSolarisIsAnyPipeOpen(vboxusb_state_t *pState)
-{
-    LogFunc((DEVICE_NAME ":vboxUSBSolarisIsAnyPipeOpen pState=%p\n", pState));
-
-    for (int i = 1; i < VBOXUSB_MAX_ENDPOINTS; i++)
-    {
-        vboxusb_ep_t *pEp = &pState->aEps[i];
-        if (pEp->pPipe)
-        {
-            Log((DEVICE_NAME ":vboxUSBSolarisIsAnyPipeOpen pState=%p pEp=%p returns true.\n", pState, pEp));
-            return true;
-        }
-    }
-
-    Log((DEVICE_NAME ":vboxUSBSolarisIsAnyPipeOpen pState=%p returns false.\n", pState));
-    return false;
-}
-
-
-/**
  * Find the Configuration index for the passed in Configuration value.
  *
  * @param   pState          The USB device instance.
@@ -2878,14 +2833,13 @@ LOCAL vboxusb_urb_t *vboxUSBSolarisQueueURB(vboxusb_state_t *pState, PVBOXUSBREQ
         || (   pUrb
             && pUrb->enmState != VBOXUSB_URB_STATE_FREE))
     {
-        mutex_exit(&pState->Mtx);
         pUrb = RTMemAllocZ(sizeof(vboxusb_urb_t));
         if (RT_UNLIKELY(!pUrb))
         {
+            mutex_exit(&pState->Mtx);
             LogRel((DEVICE_NAME ":vboxUSBSolarisQueueURB failed to alloc %d bytes.\n", sizeof(vboxusb_urb_t)));
             return NULL;
         }
-        mutex_enter(&pState->Mtx);
     }
     else
     {
@@ -2900,8 +2854,6 @@ LOCAL vboxusb_urb_t *vboxUSBSolarisQueueURB(vboxusb_state_t *pState, PVBOXUSBREQ
     ++pState->cInflightUrbs;
 
     pUrb->enmState = VBOXUSB_URB_STATE_INFLIGHT;
-
-    mutex_exit(&pState->Mtx);
 
     Assert(pUrb->pMsg == NULL);
     pUrb->pState = pState;
@@ -2925,6 +2877,8 @@ LOCAL vboxusb_urb_t *vboxUSBSolarisQueueURB(vboxusb_state_t *pState, PVBOXUSBREQ
 
         pUrb->pMsg = pMsg;
     }
+
+    mutex_exit(&pState->Mtx);
 
     return pUrb;
 }
