@@ -47,7 +47,6 @@
 
 #define BX_USE_ATADRV           1
 #define BX_ELTORITO_BOOT        1
-#define BX_APM                  1
 
 #ifdef VBOX_WITH_SCSI
 /* Enough for now */
@@ -167,7 +166,8 @@ typedef struct {
 typedef struct {
     uint32_t    lba;                /* Starting LBA. */
     void __far  *buffer;            /* Read/write data buffer pointer. */
-    uint16_t    count;              /* Count of sectors to be transferred. */
+    uint8_t     dev_id;             /* Device ID; index into devices array. */
+    uint16_t    nsect;              /* Number of sectors to be transferred. */
     uint16_t    cylinder;           /* Starting cylinder (CHS only). */
     uint16_t    head;               /* Starting head (CHS only). */
     uint16_t    sector;             /* Starting sector (CHS only). */
@@ -179,6 +179,8 @@ typedef struct {
  * anything outside of this structure.
  */
 typedef struct {
+    disk_req_t  drqp;               /* Disk request packet. */
+
     /* ATA bus-specific device information. */
     ata_chan_t  channels[BX_MAX_ATA_INTERFACES];
 
@@ -198,9 +200,7 @@ typedef struct {
     scsi_dev_t  scsidev[BX_MAX_SCSI_DEVICES];
     uint8_t     scsi_hdcount;       /* Number of SCSI disks. */
 #endif
-
     dpte_t      dpte;               /* Buffer for building a DPTE. */
-    disk_req_t  drqp;               /* Disk request packet. */
 } bio_dsk_t;
 
 #if BX_ELTORITO_BOOT
@@ -254,12 +254,18 @@ typedef struct {
     unsigned char   uForceBootDevice;
 } ebda_data_t;
 
-ct_assert(sizeof(ebda_data_t) < 0x400);     /* Must be under 1K in size. */
+ct_assert(sizeof(ebda_data_t) < 0x380);     /* Must be under 1K in size. */
 
 // the last 16 bytes of the EBDA segment are used for the MPS floating
 // pointer structure (though only if an I/O APIC is present)
 
 #define EbdaData ((ebda_data_t *) 0)
+
+int __fastcall scsi_read_sectors(bio_dsk_t __far *bios_dsk);
+int __fastcall scsi_write_sectors(bio_dsk_t __far *bios_dsk);
+
+int __fastcall ata_read_sectors(bio_dsk_t __far *bios_dsk);
+int __fastcall ata_write_sectors(bio_dsk_t __far *bios_dsk);
 
 // @todo: put this elsewhere (and change/eliminate?)
 #define SET_DISK_RET_STATUS(status) write_byte(0x0040, 0x0074, status)

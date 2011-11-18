@@ -17,7 +17,6 @@
 #include <stdint.h>
 #include <string.h>
 #include "biosint.h"
-#include "ebda.h"
 #include "inlines.h"
 
 /** PCI BIOS functions. */

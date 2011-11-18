@@ -80,46 +80,45 @@ void insd_discard(unsigned ndwords, unsigned port);
 // ---------------------------------------------------------------------------
 void BIOSCALL ata_init(void)
 {
-    uint16_t        ebda_seg=read_word(0x0040,0x000E);
     uint8_t         channel, device;
-    bio_dsk_t __far *AtaData;
+    bio_dsk_t __far *bios_dsk;
     
-    AtaData = ebda_seg :> &EbdaData->bdisk;
+    bios_dsk = read_word(0x0040, 0x000E) :> &EbdaData->bdisk;
     
     // Channels info init.
     for (channel=0; channel<BX_MAX_ATA_INTERFACES; channel++) {
-        AtaData->channels[channel].iface   = ATA_IFACE_NONE;
-        AtaData->channels[channel].iobase1 = 0x0;
-        AtaData->channels[channel].iobase2 = 0x0;
-        AtaData->channels[channel].irq     = 0;
+        bios_dsk->channels[channel].iface   = ATA_IFACE_NONE;
+        bios_dsk->channels[channel].iobase1 = 0x0;
+        bios_dsk->channels[channel].iobase2 = 0x0;
+        bios_dsk->channels[channel].irq     = 0;
     }
     
     // Devices info init.
     for (device=0; device<BX_MAX_ATA_DEVICES; device++) {
-        AtaData->devices[device].type        = ATA_TYPE_NONE;
-        AtaData->devices[device].device      = ATA_DEVICE_NONE;
-        AtaData->devices[device].removable   = 0;
-        AtaData->devices[device].lock        = 0;
-        AtaData->devices[device].mode        = ATA_MODE_NONE;
-        AtaData->devices[device].blksize     = 0x200;
-        AtaData->devices[device].translation = ATA_TRANSLATION_NONE;
-        AtaData->devices[device].lchs.heads     = 0;
-        AtaData->devices[device].lchs.cylinders = 0;
-        AtaData->devices[device].lchs.spt       = 0;
-        AtaData->devices[device].pchs.heads     = 0;
-        AtaData->devices[device].pchs.cylinders = 0;
-        AtaData->devices[device].pchs.spt       = 0;
-        AtaData->devices[device].sectors     = 0;
+        bios_dsk->devices[device].type        = ATA_TYPE_NONE;
+        bios_dsk->devices[device].device      = ATA_DEVICE_NONE;
+        bios_dsk->devices[device].removable   = 0;
+        bios_dsk->devices[device].lock        = 0;
+        bios_dsk->devices[device].mode        = ATA_MODE_NONE;
+        bios_dsk->devices[device].blksize     = 0x200;
+        bios_dsk->devices[device].translation = ATA_TRANSLATION_NONE;
+        bios_dsk->devices[device].lchs.heads     = 0;
+        bios_dsk->devices[device].lchs.cylinders = 0;
+        bios_dsk->devices[device].lchs.spt       = 0;
+        bios_dsk->devices[device].pchs.heads     = 0;
+        bios_dsk->devices[device].pchs.cylinders = 0;
+        bios_dsk->devices[device].pchs.spt       = 0;
+        bios_dsk->devices[device].sectors     = 0;
     }
     
     // hdidmap  and cdidmap init.
     for (device=0; device<BX_MAX_STORAGE_DEVICES; device++) {
-        AtaData->hdidmap[device] = BX_MAX_STORAGE_DEVICES;
-        AtaData->cdidmap[device] = BX_MAX_STORAGE_DEVICES;
+        bios_dsk->hdidmap[device] = BX_MAX_STORAGE_DEVICES;
+        bios_dsk->cdidmap[device] = BX_MAX_STORAGE_DEVICES;
     }
     
-    AtaData->hdcount = 0;
-    AtaData->cdcount = 0;
+    bios_dsk->hdcount = 0;
+    bios_dsk->cdcount = 0;
 }
 
 // ---------------------------------------------------------------------------
@@ -130,19 +129,18 @@ void BIOSCALL ata_init(void)
 
 void   ata_reset(uint16_t device)
 {
-    uint16_t        ebda_seg = read_word(0x0040,0x000E);
     uint16_t        iobase1, iobase2;
     uint8_t         channel, slave, sn, sc;
     uint16_t        max;
     uint16_t        pdelay;
-    bio_dsk_t __far *AtaData;
+    bio_dsk_t __far *bios_dsk;
     
-    AtaData = ebda_seg :> &EbdaData->bdisk;
+    bios_dsk = read_word(0x0040, 0x000E) :> &EbdaData->bdisk;
     channel = device / 2;
     slave = device % 2;
     
-    iobase1 = AtaData->channels[channel].iobase1;
-    iobase2 = AtaData->channels[channel].iobase2;
+    iobase1 = bios_dsk->channels[channel].iobase1;
+    iobase2 = bios_dsk->channels[channel].iobase2;
 
     // Reset
 
@@ -160,7 +158,7 @@ void   ata_reset(uint16_t device)
     // 8.2.1 (f) -- clear SRST
     outb(iobase2+ATA_CB_DC, ATA_CB_DC_HD15 | ATA_CB_DC_NIEN);
 
-    if (AtaData->devices[device].type != ATA_TYPE_NONE) {
+    if (bios_dsk->devices[device].type != ATA_TYPE_NONE) {
         // 8.2.1 (g) -- check for sc==sn==0x01
         // select device
         outb(iobase1+ATA_CB_DH, slave?ATA_CB_DH_DEV1:ATA_CB_DH_DEV0);
@@ -206,24 +204,26 @@ void   ata_reset(uint16_t device)
       // 5 : more sectors to read/verify
       // 6 : no sectors left to write
       // 7 : more sectors to write
-uint16_t ata_cmd_data_in(uint16_t device, uint16_t command, uint16_t count, uint16_t cylinder, 
-                         uint16_t head, uint16_t sector, uint32_t lba, char __far *buffer)
+uint16_t ata_cmd_data_in(bio_dsk_t __far *bios_dsk, uint16_t command, uint16_t count)
 {
-    uint16_t        ebda_seg = read_word(0x0040,0x000E);
+    uint32_t        lba;
     uint16_t        iobase1, iobase2, blksize, mult_blk_cnt;
+    uint16_t        cylinder;
+    uint16_t        head;
+    uint16_t        sector;
+    uint16_t        device;
     uint8_t         channel, slave;
-    uint8_t         status, current, mode;
-    bio_dsk_t __far *AtaData;
-    
-    AtaData = ebda_seg :> &EbdaData->bdisk;
-    
+    uint8_t         status, mode;
+    char __far      *buffer;
+
+    device  = bios_dsk->drqp.dev_id;
     channel = device / 2;
     slave   = device % 2;
-    
-    iobase1 = AtaData->channels[channel].iobase1;
-    iobase2 = AtaData->channels[channel].iobase2;
-    mode    = AtaData->devices[device].mode;
-    blksize = AtaData->devices[device].blksize;
+
+    iobase1 = bios_dsk->channels[channel].iobase1;
+    iobase2 = bios_dsk->channels[channel].iobase2;
+    mode    = bios_dsk->devices[device].mode;
+    blksize = bios_dsk->devices[device].blksize;
     if (blksize == 0) {   /* If transfer size is exactly 64K */
         if (mode == ATA_MODE_PIO32)
             blksize = 0x4000;
@@ -244,7 +244,13 @@ uint16_t ata_cmd_data_in(uint16_t device, uint16_t command, uint16_t count, uint
         outb(iobase2+ATA_CB_DC, ATA_CB_DC_HD15);
         return 1;
     }
-    
+
+    lba      = bios_dsk->drqp.lba;
+    buffer   = bios_dsk->drqp.buffer;
+    sector   = bios_dsk->drqp.sector;
+    cylinder = bios_dsk->drqp.cylinder;
+    head     = bios_dsk->drqp.head;
+
     // sector will be 0 only on lba access. Convert to lba-chs
     if (sector == 0) {
         if (lba + count >= 268435456)
@@ -265,8 +271,6 @@ uint16_t ata_cmd_data_in(uint16_t device, uint16_t command, uint16_t count, uint
         lba >>= 16;
         head = ((uint16_t) (lba & 0x0000000fL)) | 0x40;
     }
-    
-    current = 0;
     
     outb(iobase2 + ATA_CB_DC, ATA_CB_DC_HD15 | ATA_CB_DC_NIEN);
     outb(iobase1 + ATA_CB_FR, 0x00);
@@ -317,8 +321,7 @@ uint16_t ata_cmd_data_in(uint16_t device, uint16_t command, uint16_t count, uint
         } else {
             buffer = rep_insw(buffer, blksize, iobase1);
         }
-        current += mult_blk_cnt;
-        AtaData->drqp.trsfsectors = current;
+        bios_dsk->drqp.trsfsectors += mult_blk_cnt;
         count--;
         while (1) {
             status = inb(iobase1 + ATA_CB_STAT);
@@ -360,34 +363,34 @@ void BIOSCALL ata_detect(void)
     uint16_t        ebda_seg = read_word(0x0040,0x000E);
     uint8_t         hdcount, cdcount, device, type;
     uint8_t         buffer[0x0200];
-    bio_dsk_t __far *AtaData;
+    bio_dsk_t __far *bios_dsk;
     
-    AtaData = ebda_seg :> &EbdaData->bdisk;
+    bios_dsk = ebda_seg :> &EbdaData->bdisk;
 
 #if BX_MAX_ATA_INTERFACES > 0
-    AtaData->channels[0].iface   = ATA_IFACE_ISA;
-    AtaData->channels[0].iobase1 = 0x1f0;
-    AtaData->channels[0].iobase2 = 0x3f0;
-    AtaData->channels[0].irq     = 14;
+    bios_dsk->channels[0].iface   = ATA_IFACE_ISA;
+    bios_dsk->channels[0].iobase1 = 0x1f0;
+    bios_dsk->channels[0].iobase2 = 0x3f0;
+    bios_dsk->channels[0].irq     = 14;
 #endif
 #if BX_MAX_ATA_INTERFACES > 1
-    AtaData->channels[1].iface   = ATA_IFACE_ISA;
-    AtaData->channels[1].iobase1 = 0x170;
-    AtaData->channels[1].iobase2 = 0x370;
-    AtaData->channels[1].irq     = 15;
+    bios_dsk->channels[1].iface   = ATA_IFACE_ISA;
+    bios_dsk->channels[1].iobase1 = 0x170;
+    bios_dsk->channels[1].iobase2 = 0x370;
+    bios_dsk->channels[1].irq     = 15;
 #endif
 #if 0   //@todo - temporarily removed to avoid conflict with AHCI
 #if BX_MAX_ATA_INTERFACES > 2
-    AtaData->channels[2].iface   = ATA_IFACE_ISA;
-    AtaData->channels[2].iobase1 = 0x1e8;
-    AtaData->channels[2].iobase2 = 0x3e0;
-    AtaData->channels[2].irq     = 12;
+    bios_dsk->channels[2].iface   = ATA_IFACE_ISA;
+    bios_dsk->channels[2].iobase1 = 0x1e8;
+    bios_dsk->channels[2].iobase2 = 0x3e0;
+    bios_dsk->channels[2].irq     = 12;
 #endif
 #if BX_MAX_ATA_INTERFACES > 3
-    AtaData->channels[3].iface   = ATA_IFACE_ISA;
-    AtaData->channels[3].iobase1 = 0x168;
-    AtaData->channels[3].iobase2 = 0x360;
-    AtaData->channels[3].irq     = 11;
+    bios_dsk->channels[3].iface   = ATA_IFACE_ISA;
+    bios_dsk->channels[3].iobase1 = 0x168;
+    bios_dsk->channels[3].iobase2 = 0x360;
+    bios_dsk->channels[3].irq     = 11;
 #endif
 #endif
 #if BX_MAX_ATA_INTERFACES > 4
@@ -405,8 +408,8 @@ void BIOSCALL ata_detect(void)
         channel = device / 2;
         slave = device % 2;
         
-        iobase1 = AtaData->channels[channel].iobase1;
-        iobase2 = AtaData->channels[channel].iobase2;
+        iobase1 = bios_dsk->channels[channel].iobase1;
+        iobase2 = bios_dsk->channels[channel].iobase2;
         
         // Disable interrupts
         outb(iobase2+ATA_CB_DC, ATA_CB_DC_HD15 | ATA_CB_DC_NIEN);
@@ -425,7 +428,7 @@ void BIOSCALL ata_detect(void)
         sn = inb(iobase1+ATA_CB_SN);
 
         if ( (sc == 0x55) && (sn == 0xaa) ) {
-            AtaData->devices[device].type = ATA_TYPE_UNKNOWN;
+            bios_dsk->devices[device].type = ATA_TYPE_UNKNOWN;
 
             // reset the channel
             ata_reset(device);
@@ -440,11 +443,11 @@ void BIOSCALL ata_detect(void)
                 st = inb(iobase1+ATA_CB_STAT);
 
                 if ((cl==0x14) && (ch==0xeb)) {
-                    AtaData->devices[device].type = ATA_TYPE_ATAPI;
+                    bios_dsk->devices[device].type = ATA_TYPE_ATAPI;
                 } else if ((cl==0x00) && (ch==0x00) && (st!=0x00)) {
-                    AtaData->devices[device].type = ATA_TYPE_ATA;
+                    bios_dsk->devices[device].type = ATA_TYPE_ATA;
                 } else if ((cl==0xff) && (ch==0xff)) {
-                    AtaData->devices[device].type = ATA_TYPE_NONE;
+                    bios_dsk->devices[device].type = ATA_TYPE_NONE;
                 }
             }
         }
@@ -452,7 +455,7 @@ void BIOSCALL ata_detect(void)
         // Enable interrupts
         outb(iobase2+ATA_CB_DC, ATA_CB_DC_HD15);
 
-        type = AtaData->devices[device].type;
+        type = bios_dsk->devices[device].type;
 
         // Now we send a IDENTIFY command to ATA device
         if (type == ATA_TYPE_ATA) {
@@ -463,10 +466,12 @@ void BIOSCALL ata_detect(void)
             uint8_t     removable, mode;
 
             //Temporary values to do the transfer
-            AtaData->devices[device].device = ATA_DEVICE_HD;
-            AtaData->devices[device].mode   = ATA_MODE_PIO16;
+            bios_dsk->devices[device].device = ATA_DEVICE_HD;
+            bios_dsk->devices[device].mode   = ATA_MODE_PIO16;
+            bios_dsk->drqp.buffer = buffer;
+            bios_dsk->drqp.dev_id = device;
 
-            if (ata_cmd_data_in(device, ATA_CMD_IDENTIFY_DEVICE, 1, 0, 0, 0, 0L, buffer) !=0 )
+            if (ata_cmd_data_in(bios_dsk, ATA_CMD_IDENTIFY_DEVICE, 1) !=0 )
                 BX_PANIC("ata-detect: Failed to detect ATA device\n");
 
             removable = (*(buffer+0) & 0x80) ? 1 : 0;
@@ -525,17 +530,17 @@ void BIOSCALL ata_detect(void)
             BX_INFO("ata%d-%d: PCHS=%u/%d/%d LCHS=%u/%u/%u\n", channel, slave,
                     cylinders,heads, spt, lcylinders, lheads, lspt);
 
-            AtaData->devices[device].device         = ATA_DEVICE_HD;
-            AtaData->devices[device].removable      = removable;
-            AtaData->devices[device].mode           = mode;
-            AtaData->devices[device].blksize        = blksize;
-            AtaData->devices[device].pchs.heads     = heads;
-            AtaData->devices[device].pchs.cylinders = cylinders;
-            AtaData->devices[device].pchs.spt       = spt;
-            AtaData->devices[device].sectors        = sectors;
-            AtaData->devices[device].lchs.heads     = lheads;
-            AtaData->devices[device].lchs.cylinders = lcylinders;
-            AtaData->devices[device].lchs.spt       = lspt;
+            bios_dsk->devices[device].device         = ATA_DEVICE_HD;
+            bios_dsk->devices[device].removable      = removable;
+            bios_dsk->devices[device].mode           = mode;
+            bios_dsk->devices[device].blksize        = blksize;
+            bios_dsk->devices[device].pchs.heads     = heads;
+            bios_dsk->devices[device].pchs.cylinders = cylinders;
+            bios_dsk->devices[device].pchs.spt       = spt;
+            bios_dsk->devices[device].sectors        = sectors;
+            bios_dsk->devices[device].lchs.heads     = lheads;
+            bios_dsk->devices[device].lchs.cylinders = lcylinders;
+            bios_dsk->devices[device].lchs.spt       = lspt;
             if (device < 2)
             {
                 uint8_t         sum, i;
@@ -565,7 +570,7 @@ void BIOSCALL ata_detect(void)
             }
 
             // fill hdidmap
-            AtaData->hdidmap[hdcount] = device;
+            bios_dsk->hdidmap[hdcount] = device;
             hdcount++;
         }
 
@@ -575,10 +580,12 @@ void BIOSCALL ata_detect(void)
             uint16_t    blksize;
 
             // Temporary values to do the transfer
-            AtaData->devices[device].device = ATA_DEVICE_CDROM;
-            AtaData->devices[device].mode   = ATA_MODE_PIO16;
+            bios_dsk->devices[device].device = ATA_DEVICE_CDROM;
+            bios_dsk->devices[device].mode   = ATA_MODE_PIO16;
+            bios_dsk->drqp.buffer = buffer;
+            bios_dsk->drqp.dev_id = device;
 
-            if (ata_cmd_data_in(device, ATA_CMD_IDENTIFY_DEVICE_PACKET, 1, 0, 0, 0, 0L, buffer) != 0)
+            if (ata_cmd_data_in(bios_dsk, ATA_CMD_IDENTIFY_DEVICE_PACKET, 1) != 0)
                 BX_PANIC("ata-detect: Failed to detect ATAPI device\n");
 
             type      = *(buffer+1) & 0x1f;
@@ -586,13 +593,13 @@ void BIOSCALL ata_detect(void)
             mode      = *(buffer+96) ? ATA_MODE_PIO32 : ATA_MODE_PIO16;
             blksize   = 2048;
 
-            AtaData->devices[device].device    = type;
-            AtaData->devices[device].removable = removable;
-            AtaData->devices[device].mode      = mode;
-            AtaData->devices[device].blksize   = blksize;
+            bios_dsk->devices[device].device    = type;
+            bios_dsk->devices[device].removable = removable;
+            bios_dsk->devices[device].mode      = mode;
+            bios_dsk->devices[device].blksize   = blksize;
 
             // fill cdidmap
-            AtaData->cdidmap[cdcount] = device;
+            bios_dsk->cdidmap[cdcount] = device;
             cdcount++;
         }
 
@@ -604,7 +611,7 @@ void BIOSCALL ata_detect(void)
 
             switch (type) {
             case ATA_TYPE_ATA:
-                sizeinmb = AtaData->devices[device].sectors;
+                sizeinmb = bios_dsk->devices[device].sectors;
                 sizeinmb >>= 11;
             case ATA_TYPE_ATAPI:
                 // Read ATA/ATAPI version
@@ -648,7 +655,7 @@ void BIOSCALL ata_detect(void)
                 i=0;
                 while(c=*(model+i++))
                     printf("%c", c);
-                if (AtaData->devices[device].device == ATA_DEVICE_CDROM)
+                if (bios_dsk->devices[device].device == ATA_DEVICE_CDROM)
                     printf(" ATAPI-%d CD-ROM/DVD-ROM\n", version);
                 else
                     printf(" ATAPI-%d Device\n", version);
@@ -662,8 +669,8 @@ void BIOSCALL ata_detect(void)
     }
 
     // Store the devices counts
-    AtaData->hdcount = hdcount;
-    AtaData->cdcount = cdcount;
+    bios_dsk->hdcount = hdcount;
+    bios_dsk->cdcount = cdcount;
     write_byte(0x40,0x75, hdcount);
 
 #ifdef VBOX
@@ -690,24 +697,26 @@ void BIOSCALL ata_detect(void)
       // 5 : more sectors to read/verify
       // 6 : no sectors left to write
       // 7 : more sectors to write
-uint16_t ata_cmd_data_out(uint16_t device, uint16_t command, uint16_t count, uint16_t cylinder, 
-                          uint16_t head, uint16_t sector, uint32_t lba, char __far *buffer)
+uint16_t ata_cmd_data_out(bio_dsk_t __far *bios_dsk, uint16_t command, uint16_t count)
 {
-    uint16_t        ebda_seg = read_word(0x0040,0x000E);
+    uint32_t        lba;
+    char __far      *buffer;
     uint16_t        iobase1, iobase2, blksize;
+    uint16_t        cylinder;
+    uint16_t        head;
+    uint16_t        sector;
+    uint16_t        device;
     uint8_t         channel, slave;
-    uint8_t         status, current, mode;
-    bio_dsk_t __far *AtaData;
+    uint8_t         status, mode;
     
-    AtaData = ebda_seg :> &EbdaData->bdisk;
-    
+    device  = bios_dsk->drqp.dev_id;
     channel = device / 2;
     slave   = device % 2;
     
-    iobase1 = AtaData->channels[channel].iobase1;
-    iobase2 = AtaData->channels[channel].iobase2;
-    mode    = AtaData->devices[device].mode;
-    blksize = 0x200; // was = AtaData->devices[device].blksize;
+    iobase1 = bios_dsk->channels[channel].iobase1;
+    iobase2 = bios_dsk->channels[channel].iobase2;
+    mode    = bios_dsk->devices[device].mode;
+    blksize = 0x200; // was = bios_dsk->devices[device].blksize;
     if (mode == ATA_MODE_PIO32)
         blksize >>= 2;
     else
@@ -720,7 +729,13 @@ uint16_t ata_cmd_data_out(uint16_t device, uint16_t command, uint16_t count, uin
         outb(iobase2+ATA_CB_DC, ATA_CB_DC_HD15);
         return 1;
     }
-    
+
+    lba      = bios_dsk->drqp.lba;
+    buffer   = bios_dsk->drqp.buffer;
+    sector   = bios_dsk->drqp.sector;
+    cylinder = bios_dsk->drqp.cylinder;
+    head     = bios_dsk->drqp.head;
+
     // sector will be 0 only on lba access. Convert to lba-chs
     if (sector == 0) {
         if (lba + count >= 268435456)
@@ -741,8 +756,6 @@ uint16_t ata_cmd_data_out(uint16_t device, uint16_t command, uint16_t count, uin
         lba >>= 16;
         head = ((uint16_t) (lba & 0x0000000fL)) | 0x40;
     }
-    
-    current = 0;
     
     outb(iobase2 + ATA_CB_DC, ATA_CB_DC_HD15 | ATA_CB_DC_NIEN);
     outb(iobase1 + ATA_CB_FR, 0x00);
@@ -787,8 +800,7 @@ uint16_t ata_cmd_data_out(uint16_t device, uint16_t command, uint16_t count, uin
             buffer = rep_outsw(buffer, blksize, iobase1);
         }
         
-        current++;
-        AtaData->drqp.trsfsectors = current;
+        bios_dsk->drqp.trsfsectors++;
         count--;
         while (1) {
             status = inb(iobase1 + ATA_CB_STAT);
@@ -821,6 +833,67 @@ uint16_t ata_cmd_data_out(uint16_t device, uint16_t command, uint16_t count, uin
     return 0;
 }
 
+
+/**
+ * Read sectors from an attached ATA device.
+ *
+ * @returns status code.
+ * @param   bios_dsk    Pointer to disk request packet (in the 
+ *                      EBDA).
+ */
+int ata_read_sectors(bio_dsk_t __far *bios_dsk)
+{
+    uint16_t    n_sect;
+    int         status;
+    uint8_t     device_id;
+
+    device_id = bios_dsk->drqp.dev_id;
+    n_sect    = bios_dsk->drqp.nsect;
+
+    if (bios_dsk->drqp.sector) {
+        /* CHS addressing. */
+        bios_dsk->devices[device_id].blksize = n_sect * 0x200;
+        status = ata_cmd_data_in(bios_dsk, ATA_CMD_READ_MULTIPLE, n_sect);
+        bios_dsk->devices[device_id].blksize = 0x200;
+    } else {
+        /* LBA addressing. */
+        if (bios_dsk->drqp.lba + n_sect >= 268435456)
+            status = ata_cmd_data_in(bios_dsk, ATA_CMD_READ_SECTORS_EXT, n_sect);
+        else {
+            bios_dsk->devices[device_id].blksize = n_sect * 0x200;
+            status = ata_cmd_data_in(bios_dsk, ATA_CMD_READ_MULTIPLE, n_sect);
+            bios_dsk->devices[device_id].blksize = 0x200;
+        }
+    }
+    return status;
+}
+
+/**
+ * Write sectors to an attached ATA device.
+ *
+ * @returns status code.
+ * @param   bios_dsk    Pointer to disk request packet (in the 
+ *                      EBDA).
+ */
+int ata_write_sectors(bio_dsk_t __far *bios_dsk)
+{
+    uint16_t    n_sect;
+
+    n_sect = bios_dsk->drqp.nsect;
+
+    if (bios_dsk->drqp.sector) {
+        /* CHS addressing. */
+        return ata_cmd_data_out(bios_dsk, ATA_CMD_WRITE_SECTORS, n_sect);
+    } else {
+        /* LBA addressing. */
+        if (bios_dsk->drqp.lba + n_sect >= 268435456)
+            return ata_cmd_data_out(bios_dsk, ATA_CMD_WRITE_SECTORS_EXT, n_sect);
+        else
+            return ata_cmd_data_out(bios_dsk, ATA_CMD_WRITE_SECTORS, n_sect);
+    }
+}
+
+
 // ---------------------------------------------------------------------------
 // ATA/ATAPI driver : execute a packet command
 // ---------------------------------------------------------------------------
@@ -833,15 +906,14 @@ uint16_t ata_cmd_data_out(uint16_t device, uint16_t command, uint16_t count, uin
 uint16_t ata_cmd_packet(uint16_t device, uint8_t cmdlen, char __far *cmdbuf, 
                         uint16_t header, uint32_t length, uint8_t inout, char __far *buffer)
 {
-    uint16_t        ebda_seg = read_word(0x0040,0x000E);
     uint16_t        iobase1, iobase2;
     uint16_t        lcount, lbefore, lafter, count;
     uint8_t         channel, slave;
     uint8_t         status, mode, lmode;
     uint32_t        transfer;
-    bio_dsk_t __far *AtaData;
+    bio_dsk_t __far *bios_dsk;
 
-    AtaData = ebda_seg :> &EbdaData->bdisk;
+    bios_dsk = read_word(0x0040, 0x000E) :> &EbdaData->bdisk;
 
     channel = device / 2;
     slave = device % 2;
@@ -858,9 +930,9 @@ uint16_t ata_cmd_packet(uint16_t device, uint8_t cmdlen, char __far *cmdbuf,
         return 1;
     }
     
-    iobase1  = AtaData->channels[channel].iobase1;
-    iobase2  = AtaData->channels[channel].iobase2;
-    mode     = AtaData->devices[device].mode;
+    iobase1  = bios_dsk->channels[channel].iobase1;
+    iobase2  = bios_dsk->channels[channel].iobase2;
+    mode     = bios_dsk->devices[device].mode;
     transfer = 0L;
     
     if (cmdlen < 12)
@@ -871,8 +943,8 @@ uint16_t ata_cmd_packet(uint16_t device, uint8_t cmdlen, char __far *cmdbuf,
     
     // Reset count of transferred data
     // @todo: clear in calling code?
-    AtaData->drqp.trsfsectors = 0;
-    AtaData->drqp.trsfbytes   = 0;
+    bios_dsk->drqp.trsfsectors = 0;
+    bios_dsk->drqp.trsfbytes   = 0;
     
     status = inb(iobase1 + ATA_CB_STAT);
     if (status & ATA_CB_STAT_BSY)
@@ -1033,7 +1105,7 @@ uint16_t ata_cmd_packet(uint16_t device, uint8_t cmdlen, char __far *cmdbuf,
             
             // Save transferred bytes count
             transfer += count;
-            AtaData->drqp.trsfbytes = transfer;
+            bios_dsk->drqp.trsfbytes = transfer;
         }
     }
     
@@ -1058,18 +1130,17 @@ uint16_t ata_cmd_packet(uint16_t device, uint8_t cmdlen, char __far *cmdbuf,
 
 uint16_t atapi_is_cdrom(uint8_t device)
 {
-    uint16_t        ebda_seg = read_word(0x0040,0x000E);
-    bio_dsk_t __far *AtaData;
+    bio_dsk_t __far *bios_dsk;
     
-    AtaData = ebda_seg :> &EbdaData->bdisk;
+    bios_dsk = read_word(0x0040, 0x000E) :> &EbdaData->bdisk;
     
     if (device >= BX_MAX_ATA_DEVICES)
         return 0;
     
-    if (AtaData->devices[device].type != ATA_TYPE_ATAPI)
+    if (bios_dsk->devices[device].type != ATA_TYPE_ATAPI)
         return 0;
     
-    if (AtaData->devices[device].device != ATA_DEVICE_CDROM)
+    if (bios_dsk->devices[device].device != ATA_DEVICE_CDROM)
         return 0;
     
     return 1;
