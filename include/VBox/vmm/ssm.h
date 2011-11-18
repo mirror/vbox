@@ -374,6 +374,10 @@ typedef struct SSMFIELD
 /** Band-aid for old SSMR3PutMem/SSMR3GetMem of structurs with host pointers. */
 #define SSMSTRUCT_FLAGS_MEM_BAND_AID        (  SSMSTRUCT_FLAGS_DONT_IGNORE | SSMSTRUCT_FLAGS_FULL_STRUCT \
                                              | SSMSTRUCT_FLAGS_NO_MARKERS  | SSMSTRUCT_FLAGS_SAVED_AS_MEM)
+/** Band-aid for old SSMR3PutMem/SSMR3GetMem of structurs with host
+ *  pointers, with relaxed checks. */
+#define SSMSTRUCT_FLAGS_MEM_BAND_AID_RELAXED (  SSMSTRUCT_FLAGS_DONT_IGNORE \
+                                              | SSMSTRUCT_FLAGS_NO_MARKERS  | SSMSTRUCT_FLAGS_SAVED_AS_MEM)
 /** Mask of the valid bits. */
 #define SSMSTRUCT_FLAGS_VALID_MASK          UINT32_C(0x0000000f)
 /** @} */
