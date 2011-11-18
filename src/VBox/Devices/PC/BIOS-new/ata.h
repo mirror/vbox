@@ -211,14 +211,6 @@ typedef struct {
 
 extern void     ata_reset(uint16_t device);
 extern uint16_t atapi_is_cdrom(uint8_t device);
-extern uint16_t ata_cmd_data_in(uint16_t device, uint16_t command, 
-                                uint16_t count, uint16_t cylinder,
-                                uint16_t head, uint16_t sector,
-                                uint32_t lba, char __far *buffer);
-extern uint16_t ata_cmd_data_out(uint16_t device, uint16_t command,
-                                 uint16_t count, uint16_t cylinder,
-                                 uint16_t head, uint16_t sector,
-                                 uint32_t lba, char __far *buffer);
 extern uint16_t ata_cmd_packet(uint16_t device, uint8_t cmdlen,
                                char __far *cmdbuf, uint16_t header, 
                                uint32_t length, uint8_t inout, 

@@ -864,21 +864,11 @@ void BIOSCALL ahci_int13(volatile uint16_t RET, volatile uint16_t ES, volatile u
             // Execute the command
             if ( GET_AH() == 0x42 )
             {
-                if (lba + count >= 268435456)
-                    status=ata_cmd_data_in(device, ATA_CMD_READ_SECTORS_EXT, count, 0, 0, 0, lba, segment, offset);
-                else
-                {
-                    write_word(ebda_seg,&EbdaData->bdisk.devices[device].blksize,count * 0x200);
-                    status=ata_cmd_data_in(device, ATA_CMD_READ_MULTIPLE, count, 0, 0, 0, lba, segment, offset);
-                    write_word(ebda_seg,&EbdaData->bdisk.devices[device].blksize,0x200);
-                }
+                ...
             }
             else
             {
-                if (lba + count >= 268435456)
-                    status=ata_cmd_data_out(device, ATA_CMD_WRITE_SECTORS_EXT, count, 0, 0, 0, lba, segment, offset);
-                else
-                    status=ata_cmd_data_out(device, ATA_CMD_WRITE_SECTORS, count, 0, 0, 0, lba, segment, offset);
+                ...
             }
 
             count=read_word(ebda_seg, &EbdaData->bdisk.drqp.trsfsectors);

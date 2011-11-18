@@ -69,7 +69,7 @@ void BIOSCALL int13_harddisk(disk_regs_t r)
 {
     uint32_t            lba;
     uint16_t            cylinder, head, sector;
-    uint16_t            npc, nph, npspt, nlc, nlh, nlspt;
+    uint16_t            nlc, nlh, nlspt;
     uint16_t            count;
     uint8_t             device, status;
     bio_dsk_t __far     *bios_dsk;
@@ -145,40 +145,41 @@ void BIOSCALL int13_harddisk(disk_regs_t r)
         if ( GET_AH() == 0x04 )
             goto int13_success;
 
-        /* Now get relevant the physical geometry information. */
-        nph   = bios_dsk->devices[device].pchs.heads;
-        npspt = bios_dsk->devices[device].pchs.spt;
-
         /* If required, translate LCHS to LBA and execute command. */
         //@todo: The IS_SCSI_DEVICE check should be redundant...
-        if (( (nph != nlh) || (npspt != nlspt)) || VBOX_IS_SCSI_DEVICE(device)) {
+        if (( (bios_dsk->devices[device].pchs.heads != nlh) || (bios_dsk->devices[device].pchs.spt != nlspt)) || VBOX_IS_SCSI_DEVICE(device)) {
             lba = ((((uint32_t)cylinder * (uint32_t)nlh) + (uint32_t)head) * (uint32_t)nlspt) + (uint32_t)sector - 1;
             sector = 0; // this forces the command to be lba
         }
 
-        /* Reset the count of transferred sectors/bytes. */
+        /* Clear the count of transferred sectors/bytes. */
         bios_dsk->drqp.trsfsectors = 0;
         bios_dsk->drqp.trsfbytes   = 0;
+
+        /* Pass request information to low level disk code. */
+        bios_dsk->drqp.lba      = lba;
+        bios_dsk->drqp.buffer   = MK_FP(ES, BX);
+        bios_dsk->drqp.nsect    = count;
+        bios_dsk->drqp.cylinder = cylinder;
+        bios_dsk->drqp.head     = head;
+        bios_dsk->drqp.sector   = sector;
+        bios_dsk->drqp.dev_id   = device;
 
         if ( GET_AH() == 0x02 )
         {
 #ifdef VBOX_WITH_SCSI
             if (VBOX_IS_SCSI_DEVICE(device))
-                status=scsi_read_sectors(VBOX_GET_SCSI_DEVICE(device), count, lba, MK_FP(ES, BX));
+                status = scsi_read_sectors(bios_dsk);
             else
 #endif
-            {
-                bios_dsk->devices[device].blksize = count * 0x200;
-                status=ata_cmd_data_in(device, ATA_CMD_READ_MULTIPLE, count, cylinder, head, sector, lba, MK_FP(ES, BX));
-                bios_dsk->devices[device].blksize = 0x200;
-            }
+                status = ata_read_sectors(bios_dsk);
         } else {
 #ifdef VBOX_WITH_SCSI
             if (VBOX_IS_SCSI_DEVICE(device))
-                status=scsi_write_sectors(VBOX_GET_SCSI_DEVICE(device), count, lba, MK_FP(ES, BX));
+                status = scsi_write_sectors(bios_dsk);
             else
 #endif
-                status=ata_cmd_data_out(device, ATA_CMD_WRITE_SECTORS, count, cylinder, head, sector, lba, MK_FP(ES, BX));
+                status = ata_write_sectors(bios_dsk);
         }
 
         // Set nb of sector transferred
@@ -237,12 +238,12 @@ void BIOSCALL int13_harddisk(disk_regs_t r)
     case 0x15: /* read disk drive size */
 
         /* Get the physical geometry from internal table. */
-        npc   = bios_dsk->devices[device].pchs.cylinders;
-        nph   = bios_dsk->devices[device].pchs.heads;
-        npspt = bios_dsk->devices[device].pchs.spt;
+        cylinder = bios_dsk->devices[device].pchs.cylinders;
+        head     = bios_dsk->devices[device].pchs.heads;
+        sector   = bios_dsk->devices[device].pchs.spt;
 
         /* Calculate sector count seen by old style INT 13h. */
-        lba = (uint32_t)npc * (uint32_t)nph * (uint32_t)npspt;
+        lba = (uint32_t)cylinder * head * sector;
         CX = lba >> 16;
         DX = lba & 0xffff;
         
@@ -356,36 +357,31 @@ void BIOSCALL int13_harddisk_ext(disk_regs_t r)
         if (( GET_AH() == 0x44 ) || ( GET_AH() == 0x47 ))
             goto int13x_success;
 
-        /* Reset the count of transferred sectors/bytes. */
+        /* Clear the count of transferred sectors/bytes. */
         bios_dsk->drqp.trsfsectors = 0;
         bios_dsk->drqp.trsfbytes   = 0;
 
+        /* Pass request information to low level disk code. */
+        bios_dsk->drqp.lba    = lba;
+        bios_dsk->drqp.buffer = MK_FP(segment, offset);
+        bios_dsk->drqp.nsect  = count;
+        bios_dsk->drqp.sector = 0;      /* Indicate LBA. */
+        
         // Execute the command
         if ( GET_AH() == 0x42 ) {
 #ifdef VBOX_WITH_SCSI
             if (VBOX_IS_SCSI_DEVICE(device))
-                status=scsi_read_sectors(VBOX_GET_SCSI_DEVICE(device), count, lba, MK_FP(segment, offset));
-            else {
+                status = scsi_read_sectors(bios_dsk);
+            else
 #endif
-                if (lba + count >= 268435456)
-                    status=ata_cmd_data_in(device, ATA_CMD_READ_SECTORS_EXT, count, 0, 0, 0, lba, MK_FP(segment, offset));
-                else {
-                    bios_dsk->devices[device].blksize = count * 0x200;
-                    status=ata_cmd_data_in(device, ATA_CMD_READ_MULTIPLE, count, 0, 0, 0, lba, MK_FP(segment, offset));
-                    bios_dsk->devices[device].blksize = 0x200;
-                }
-            }
+                status = ata_read_sectors(bios_dsk);
         } else {
 #ifdef VBOX_WITH_SCSI
             if (VBOX_IS_SCSI_DEVICE(device))
-                status=scsi_write_sectors(VBOX_GET_SCSI_DEVICE(device), count, lba, MK_FP(segment, offset));
-            else {
+                status = scsi_write_sectors(bios_dsk);
+            else 
 #endif
-                if (lba + count >= 268435456)
-                    status=ata_cmd_data_out(device, ATA_CMD_WRITE_SECTORS_EXT, count, 0, 0, 0, lba, MK_FP(segment, offset));
-                else
-                    status=ata_cmd_data_out(device, ATA_CMD_WRITE_SECTORS, count, 0, 0, 0, lba, MK_FP(segment, offset));
-            }
+                status = ata_write_sectors(bios_dsk);
         }
 
         count = bios_dsk->drqp.trsfsectors;

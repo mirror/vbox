@@ -42,7 +42,6 @@
 #include <stdint.h>
 #include "biosint.h"
 #include "inlines.h"
-#include "ebda.h"
 
 #if DEBUG_INT15
 #  define BX_DEBUG_INT15(...) BX_DEBUG(__VA_ARGS__)
@@ -277,7 +276,6 @@ void set_e820_range(uint16_t ES, uint16_t DI, uint32_t start, uint32_t end,
 
 void BIOSCALL int15_function(sys_regs_t r)
 {
-    uint16_t    ebda_seg=read_word(0x0040,0x000E);
     bx_bool     prev_a20_enable;
     uint16_t    base15_00;
     uint8_t     base23_16;
@@ -538,7 +536,7 @@ void BIOSCALL int15_function(sys_regs_t r)
         break;
 
     case 0xc1:
-        ES = ebda_seg;
+        ES = read_word(0x0040, 0x000E);
         CLEAR_CF();
         break;
 

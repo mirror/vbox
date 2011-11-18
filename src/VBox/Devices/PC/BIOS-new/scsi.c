@@ -147,40 +147,41 @@ int scsi_cmd_data_out(uint16_t io_base, uint8_t device_id, uint8_t __far *aCDB,
     return 0;
 }
 
-
 /**
- * Read sectors from an attached scsi device.
+ * Read sectors from an attached SCSI device.
  *
  * @returns status code.
- * @param   device_id   Id of the SCSI device to read from.
- * @param   count       The number of sectors to read.
- * @param   lba         The start sector to read from.
- * @param   buffer      A far pointer to the buffer.
+ * @param   bios_dsk    Pointer to disk request packet (in the 
+ *                      EBDA).
  */
-int scsi_read_sectors(uint8_t device_id, uint16_t count, uint32_t lba, void __far *buffer)
+int scsi_read_sectors(bio_dsk_t __far *bios_dsk)
 {
     uint8_t             rc;
     cdb_rw10            cdb;
+    uint16_t            count;
     uint16_t            io_base;
     uint8_t             target_id;
-    bio_dsk_t __far     *bios_dsk;
+    uint8_t             device_id;
 
+    device_id = bios_dsk->drqp.dev_id - BX_MAX_ATA_DEVICES;
     if (device_id > BX_MAX_SCSI_DEVICES)
         BX_PANIC("scsi_read_sectors: device_id out of range %d\n", device_id);
 
+    count    = bios_dsk->drqp.nsect;
+
     /* Prepare a CDB. */
     cdb.command = SCSI_READ_10;
-    cdb.lba     = swap_32(lba);
+    cdb.lba     = swap_32(bios_dsk->drqp.lba);
     cdb.pad1    = 0;
     cdb.nsect   = swap_16(count);
     cdb.pad2    = 0;
 
-    bios_dsk = read_word(0x0040, 0x000E) :> &EbdaData->bdisk;
 
     io_base   = bios_dsk->scsidev[device_id].io_base;
     target_id = bios_dsk->scsidev[device_id].target_id;
 
-    rc = scsi_cmd_data_in(io_base, target_id, (void __far *)&cdb, 10, buffer, (count * 512));
+    rc = scsi_cmd_data_in(io_base, target_id, (void __far *)&cdb, 10, 
+                          bios_dsk->drqp.buffer, (count * 512));
 
     if (!rc)
     {
@@ -192,38 +193,39 @@ int scsi_read_sectors(uint8_t device_id, uint16_t count, uint32_t lba, void __fa
 }
 
 /**
- * Write sectors to an attached scsi device.
+ * Write sectors to an attached SCSI device.
  *
  * @returns status code.
- * @param   device_id   Id of the SCSI device to write to.
- * @param   count       The number of sectors to write.
- * @param   lba         The start sector to write to.
- * @param   buffer      A far pointer to the buffer.
+ * @param   bios_dsk    Pointer to disk request packet (in the 
+ *                      EBDA).
  */
-int scsi_write_sectors(uint8_t device_id, uint16_t count, uint32_t lba, void __far *buffer)
+int scsi_write_sectors(bio_dsk_t __far *bios_dsk)
 {
     uint8_t             rc;
     cdb_rw10            cdb;
+    uint16_t            count;
     uint16_t            io_base;
     uint8_t             target_id;
-    bio_dsk_t __far     *bios_dsk;
+    uint8_t             device_id;
 
+    device_id = bios_dsk->drqp.dev_id - BX_MAX_ATA_DEVICES;
     if (device_id > BX_MAX_SCSI_DEVICES)
         BX_PANIC("scsi_write_sectors: device_id out of range %d\n", device_id);
 
+    count    = bios_dsk->drqp.nsect;
+
     /* Prepare a CDB. */
     cdb.command = SCSI_WRITE_10;
-    cdb.lba     = swap_32(lba);
+    cdb.lba     = swap_32(bios_dsk->drqp.lba);
     cdb.pad1    = 0;
     cdb.nsect   = swap_16(count);
     cdb.pad2    = 0;
 
-    bios_dsk = read_word(0x0040, 0x000E) :> &EbdaData->bdisk;
-
     io_base   = bios_dsk->scsidev[device_id].io_base;
     target_id = bios_dsk->scsidev[device_id].target_id;
 
-    rc = scsi_cmd_data_out(io_base, target_id, (void __far *)&cdb, 10, buffer, (count * 512));
+    rc = scsi_cmd_data_out(io_base, target_id, (void __far *)&cdb, 10,
+                           bios_dsk->drqp.buffer, (count * 512));
 
     if (!rc)
     {
