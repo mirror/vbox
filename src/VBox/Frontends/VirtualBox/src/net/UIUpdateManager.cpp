@@ -275,7 +275,8 @@ private slots:
         VBoxVersion vboxVersion(strVBoxVersion);
         /* Get extension pack version: */
         QString strExtPackVersion(extPack.GetVersion().remove(VBOX_BUILD_PUBLISHER));
-        VBoxVersion extPackVersion(strExtPackVersion);
+        QStringList strExtPackVersionParts = strExtPackVersion.split(QRegExp("[-_]"), QString::SkipEmptyParts);
+        VBoxVersion extPackVersion(strExtPackVersionParts[0]);
         /* Check if extension pack version less than required: */
         if ((vboxVersion.z() % 2 != 0) /* Skip unstable VBox version */ ||
             !(extPackVersion < vboxVersion) /* Ext Pack version more or equal to VBox version */)
