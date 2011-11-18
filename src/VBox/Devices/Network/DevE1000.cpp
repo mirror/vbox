@@ -3191,25 +3191,29 @@ DECLINLINE(void) e1kWriteBackDesc(E1KSTATE* pState, E1KTXDESC* pDesc, RTGCPHYS a
 static void e1kTransmitFrame(E1KSTATE* pState, bool fOnWorkerThread)
 {
     PPDMSCATTERGATHER   pSg     = pState->CTX_SUFF(pTxSg);
-    uint32_t const      cbFrame = pSg ? ((uint32_t)pSg->cbUsed + (pState->fVTag ? 4 : 0)) : 0;
+    uint32_t            cbFrame = pSg ? (uint32_t)pSg->cbUsed : 0;
     Assert(!pSg || pSg->cSegs == 1);
-
-/*    E1kLog2(("%s <<< Outgoing packet. Dump follows: >>>\n"
-            "%.*Rhxd\n"
-            "%s <<<<<<<<<<<<< End of dump >>>>>>>>>>>>\n",
-            INSTANCE(pState), cbFrame, pSg->aSegs[0].pvSeg, INSTANCE(pState)));*/
 
     if (cbFrame > 70) /* unqualified guess */
         pState->led.Asserted.s.fWriting = pState->led.Actual.s.fWriting = 1;
 
     /* Add VLAN tag */
-    if (cbFrame > 16 && pState->fVTag)
+    if (cbFrame > 12 && pState->fVTag)
     {
         E1kLog3(("%s Inserting VLAN tag %08x\n",
             INSTANCE(pState), RT_BE2H_U16(VET) | (RT_BE2H_U16(pState->u16VTagTCI) << 16)));
         memmove((uint8_t*)pSg->aSegs[0].pvSeg + 16, (uint8_t*)pSg->aSegs[0].pvSeg + 12, cbFrame - 12);
         *((uint32_t*)pSg->aSegs[0].pvSeg + 3) = RT_BE2H_U16(VET) | (RT_BE2H_U16(pState->u16VTagTCI) << 16);
+        pSg->cbUsed += 4;
+        cbFrame     += 4;
+        Assert(pSg->cbUsed == cbFrame);
+        Assert(pSg->cbUsed <= pSg->cbAvailable);
     }
+/*    E1kLog2(("%s <<< Outgoing packet. Dump follows: >>>\n"
+            "%.*Rhxd\n"
+            "%s <<<<<<<<<<<<< End of dump >>>>>>>>>>>>\n",
+            INSTANCE(pState), cbFrame, pSg->aSegs[0].pvSeg, INSTANCE(pState)));*/
+
     /* Update the stats */
     E1K_INC_CNT32(TPT);
     E1K_ADD_CNT64(TOTL, TOTH, cbFrame);
@@ -3416,7 +3420,7 @@ static void e1kFallbackAddSegment(E1KSTATE* pState, RTGCPHYS PhysAddr, uint16_t 
          * we copy of the data.
          */
         if (!pState->CTX_SUFF(pTxSg))
-            e1kXmitAllocBuf(pState, pState->u16TxPktLen, true /*fExactSize*/, false /*fGso*/);
+            e1kXmitAllocBuf(pState, pState->u16TxPktLen + (pState->fVTag ? 4 : 0), true /*fExactSize*/, false /*fGso*/);
         if (pState->CTX_SUFF(pTxSg))
         {
             Assert(pState->u16TxPktLen <= pState->CTX_SUFF(pTxSg)->cbAvailable);
