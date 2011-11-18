@@ -277,13 +277,13 @@ int VBoxServiceControlHandleCmdStartProc(uint32_t uClientID, uint32_t uNumParms)
     if (RT_SUCCESS(rc))
     {
 #ifdef DEBUG
-        VBoxServiceVerbose(3, "ControlExec: Start process szCmd=%s, uFlags=%u, szArgs=%s, szEnv=%s, szUser=%s, szPW=%s, uTimeout=%u\n",
+        VBoxServiceVerbose(3, "Control: Start process szCmd=%s, uFlags=%u, szArgs=%s, szEnv=%s, szUser=%s, szPW=%s, uTimeout=%u\n",
                            szCmd, uFlags, uNumArgs ? szArgs : "<None>", uNumEnvVars ? szEnv : "<None>", szUser, szPassword, uTimeLimitMS);
 #endif
         bool fAllowed = false;
         int rc = VBoxServiceControlStartAllowed(&fAllowed);
         if (RT_FAILURE(rc))
-            VBoxServiceError("ControlExec: Error determining whether process can be started or not, rc=%Rrc\n", rc);
+            VBoxServiceError("Control: Error determining whether process can be started or not, rc=%Rrc\n", rc);
 
         if (   RT_SUCCESS(rc)
             && fAllowed)
@@ -318,7 +318,7 @@ int VBoxServiceControlHandleCmdStartProc(uint32_t uClientID, uint32_t uNumParms)
         }
     }
     else
-        VBoxServiceError("ControlExec: Failed to retrieve exec start command! Error: %Rrc\n", rc);
+        VBoxServiceError("Control: Failed to retrieve exec start command! Error: %Rrc\n", rc);
     return rc;
 }
 
@@ -447,12 +447,12 @@ int VBoxServiceControlHandleCmdSetInput(uint32_t u32ClientId, uint32_t uNumParms
                                                 pabBuffer, cbMaxBufSize, &cbSize);
     if (RT_FAILURE(rc))
     {
-        VBoxServiceError("ControlExec: [PID %u]: Failed to retrieve exec input command! Error: %Rrc\n",
+        VBoxServiceError("Control: [PID %u]: Failed to retrieve exec input command! Error: %Rrc\n",
                          uPID, rc);
     }
     else if (cbSize >  cbMaxBufSize)
     {
-        VBoxServiceError("ControlExec: [PID %u]: Too much input received! cbSize=%u, cbMaxBufSize=%u\n",
+        VBoxServiceError("Control: [PID %u]: Too much input received! cbSize=%u, cbMaxBufSize=%u\n",
                          uPID, cbSize, cbMaxBufSize);
         rc = VERR_INVALID_PARAMETER;
     }
@@ -465,13 +465,13 @@ int VBoxServiceControlHandleCmdSetInput(uint32_t u32ClientId, uint32_t uNumParms
         if (uFlags & INPUT_FLAG_EOF)
         {
             fPendingClose = true;
-            VBoxServiceVerbose(4, "ControlExec: [PID %u]: Got last input block of size %u ...\n",
+            VBoxServiceVerbose(4, "Control: [PID %u]: Got last input block of size %u ...\n",
                                uPID, cbSize);
         }
 
         rc = VBoxServiceControlSetInput(uPID, fPendingClose, pabBuffer,
-                                                  cbSize, &cbWritten);
-        VBoxServiceVerbose(4, "ControlExec: [PID %u]: Written input, rc=%Rrc, uFlags=0x%x, fPendingClose=%d, cbSize=%u, cbWritten=%u\n",
+                                        cbSize, &cbWritten);
+        VBoxServiceVerbose(4, "Control: [PID %u]: Written input, rc=%Rrc, uFlags=0x%x, fPendingClose=%d, cbSize=%u, cbWritten=%u\n",
                            uPID, rc, uFlags, fPendingClose, cbSize, cbWritten);
         if (RT_SUCCESS(rc))
         {
@@ -503,7 +503,7 @@ int VBoxServiceControlHandleCmdSetInput(uint32_t u32ClientId, uint32_t uNumParms
     }
     Assert(uStatus > INPUT_STS_UNDEFINED);
 
-    VBoxServiceVerbose(3, "ControlExec: [PID %u]: Input processed, CID=%u, uStatus=%u, uFlags=0x%x, cbWritten=%u\n",
+    VBoxServiceVerbose(3, "Control: [PID %u]: Input processed, CID=%u, uStatus=%u, uFlags=0x%x, cbWritten=%u\n",
                        uPID, uContextID, uStatus, uFlags, cbWritten);
 
     /* Note: Since the context ID is unique the request *has* to be completed here,
@@ -513,7 +513,7 @@ int VBoxServiceControlHandleCmdSetInput(uint32_t u32ClientId, uint32_t uNumParms
                                            uStatus, uFlags, (uint32_t)cbWritten);
 
     if (RT_FAILURE(rc))
-        VBoxServiceError("ControlExec: [PID %u]: Failed to report input status! Error: %Rrc\n",
+        VBoxServiceError("Control: [PID %u]: Failed to report input status! Error: %Rrc\n",
                          uPID, rc);
     return rc;
 }
@@ -545,10 +545,10 @@ int VBoxServiceControlHandleCmdGetOutput(uint32_t u32ClientId, uint32_t uNumParm
             rc = VBoxServiceControlExecGetOutput(uPID, uHandleID, RT_INDEFINITE_WAIT /* Timeout */,
                                                  pBuf, _64K /* cbSize */, &cbRead);
             if (RT_SUCCESS(rc))
-                VBoxServiceVerbose(3, "ControlExec: [PID %u]: Got output, CID=%u, cbRead=%u, uHandle=%u, uFlags=%u\n",
+                VBoxServiceVerbose(3, "Control: [PID %u]: Got output, CID=%u, cbRead=%u, uHandle=%u, uFlags=%u\n",
                                    uPID, uContextID, cbRead, uHandleID, uFlags);
             else
-                VBoxServiceError("ControlExec: [PID %u]: Failed to retrieve output, CID=%u, uHandle=%u, rc=%Rrc\n",
+                VBoxServiceError("Control: [PID %u]: Failed to retrieve output, CID=%u, uHandle=%u, rc=%Rrc\n",
                                  uPID, uContextID, uHandleID, rc);
             /* Note: Since the context ID is unique the request *has* to be completed here,
              *       regardless whether we got data or not! Otherwise the progress object
@@ -565,7 +565,7 @@ int VBoxServiceControlHandleCmdGetOutput(uint32_t u32ClientId, uint32_t uNumParm
     }
 
     if (RT_FAILURE(rc))
-        VBoxServiceError("ControlExec: [PID %u]: Error handling output command! Error: %Rrc\n",
+        VBoxServiceError("Control: [PID %u]: Error handling output command! Error: %Rrc\n",
                          uPID, rc);
     return rc;
 }
@@ -686,16 +686,16 @@ static int VBoxServiceControlStartAllowed(bool *pbAllowed)
                 else if (pThread->fStopped)
                     uProcsStopped++;
                 else
-                    AssertMsgFailed(("ControlExec: Guest process neither started nor stopped!?\n"));
+                    AssertMsgFailed(("Control: Guest process neither started nor stopped!?\n"));
             }
 
-            VBoxServiceVerbose(2, "ControlExec: Maximum served guest processes set to %u, running=%u, stopped=%u\n",
+            VBoxServiceVerbose(2, "Control: Maximum served guest processes set to %u, running=%u, stopped=%u\n",
                                g_GuestControlProcsMaxKept, uProcsRunning, uProcsStopped);
 
             int32_t iProcsLeft = (g_GuestControlProcsMaxKept - uProcsRunning - 1);
             if (iProcsLeft < 0)
             {
-                VBoxServiceVerbose(3, "ControlExec: Maximum running guest processes reached (%u)\n",
+                VBoxServiceVerbose(3, "Control: Maximum running guest processes reached (%u)\n",
                                    g_GuestControlProcsMaxKept);
                 fLimitReached = true;
             }
@@ -758,7 +758,7 @@ void VBoxServiceControlRemoveThread(PVBOXSERVICECTRLTHREAD pThread)
     int rc = RTCritSectEnter(&g_GuestControlThreadsCritSect);
     if (RT_SUCCESS(rc))
     {
-        VBoxServiceVerbose(4, "ControlExec: Removing thread (PID: %u) from thread list\n",
+        VBoxServiceVerbose(4, "Control: Removing thread (PID: %u) from thread list\n",
                            pThread->uPID);
         RTListNodeRemove(&pThread->Node);
 
