@@ -49,16 +49,27 @@
 #define BX_ELTORITO_BOOT        1
 
 #ifdef VBOX_WITH_SCSI
-/* Enough for now */
-#    define BX_MAX_SCSI_DEVICES 4
-#    define BX_MAX_STORAGE_DEVICES (BX_MAX_ATA_DEVICES + BX_MAX_SCSI_DEVICES)
-
-/* A SCSI device starts always at BX_MAX_ATA_DEVICES. */
-#    define VBOX_IS_SCSI_DEVICE(device_id) (device_id >= BX_MAX_ATA_DEVICES)
-#    define VBOX_GET_SCSI_DEVICE(device_id) (device_id - BX_MAX_ATA_DEVICES)
+    /* Enough for now */
+    #define BX_MAX_SCSI_DEVICES 4
+    /* A SCSI device starts always at BX_MAX_ATA_DEVICES. */
+    #define VBOX_IS_SCSI_DEVICE(device_id) (device_id >= BX_MAX_ATA_DEVICES)
+    #define VBOX_GET_SCSI_DEVICE(device_id) (device_id - BX_MAX_ATA_DEVICES)
 #else
-#    define BX_MAX_STORAGE_DEVICES  BX_MAX_ATA_DEVICES
+    #define BX_MAX_SCSI_DEVICES 0
 #endif
+
+#ifdef VBOX_WITH_AHCI
+    /* Four should be enough for now */
+    #define BX_MAX_AHCI_DEVICES 4
+
+    /* An AHCI device starts always at BX_MAX_ATA_DEVICES + BX_MAX_SCSI_DEVICES. */
+    #define VBOX_IS_AHCI_DEVICE(device_id) (device_id >= (BX_MAX_ATA_DEVICES + BX_MAX_SCSI_DEVICES))
+    #define VBOX_GET_AHCI_DEVICE(device_id) (device_id - (BX_MAX_ATA_DEVICES + BX_MAX_SCSI_DEVICES))
+#else
+    #define BX_MAX_AHCI_DEVICES 0
+#endif
+
+#define BX_MAX_STORAGE_DEVICES (BX_MAX_ATA_DEVICES + BX_MAX_SCSI_DEVICES + BX_MAX_AHCI_DEVICES)
 
 /* Generic storage device types. Bit of a misnomer! */
 #define ATA_TYPE_NONE       0x00
@@ -66,11 +77,16 @@
 #define ATA_TYPE_ATA        0x02
 #define ATA_TYPE_ATAPI      0x03
 #define ATA_TYPE_SCSI       0x04 // SCSI disk
+#define ATA_TYPE_AHCI       0x05 // SATA disk
 
 #define ATA_DEVICE_NONE     0x00
 #define ATA_DEVICE_HD       0xFF
 #define ATA_DEVICE_CDROM    0x05
 
+#define ATA_TRANSLATION_NONE  0
+#define ATA_TRANSLATION_LBA   1
+#define ATA_TRANSLATION_LARGE 2
+#define ATA_TRANSLATION_RECHS 3
 
 #if 1 //BX_USE_ATADRV
 
@@ -145,12 +161,22 @@ typedef struct {
 
 #endif
 
+#ifdef VBOX_WITH_AHCI
+
+/* AHCI specific device information. */
+typedef struct {
+    uint8_t     port;           /* SATA port. */
+} ahci_dev_t;
+
+#endif
+
 /* Generic disk information. */
 typedef struct {
     uint8_t     type;         /* Device type (ATA/ATAPI/SCSI/none/unknown). */
     uint8_t     device;       /* Detected type of attached device (HD/CD/none). */
     uint8_t     removable;    /* Removable device flag. */
     uint8_t     lock;         /* Lock count for removable devices. */
+    //@todo: ATA specific - move?
     uint8_t     mode;         /* Transfer mode: PIO 16/32 bits - IRQ - ISADMA - PCIDMA. */
     uint8_t     translation;  /* Type of geometry translation. */
     uint16_t    blksize;      /* Disk block size. */
@@ -181,25 +207,33 @@ typedef struct {
 typedef struct {
     disk_req_t  drqp;               /* Disk request packet. */
 
-    /* ATA bus-specific device information. */
-    ata_chan_t  channels[BX_MAX_ATA_INTERFACES];
-
     /* Bus-independent disk device information. */
-    disk_dev_t  devices[BX_MAX_ATA_DEVICES + BX_MAX_SCSI_DEVICES];
+    disk_dev_t  devices[BX_MAX_STORAGE_DEVICES];
 
-    uint8_t     hdcount;            /* Number of ATA disks. */
-    /* Map between (BIOS disk ID - 0x80) and ATA/SCSI disks. */
+    uint8_t     hdcount;            /* Total number of BIOS disks. */
+    /* Map between (BIOS disk ID - 0x80) and ATA/SCSI/AHCI disks. */
     uint8_t     hdidmap[BX_MAX_STORAGE_DEVICES];
 
     uint8_t     cdcount;            /* Number of CD-ROMs. */
     /* Map between (BIOS CD-ROM ID - 0xE0) and ATA channels. */
     uint8_t     cdidmap[BX_MAX_STORAGE_DEVICES];
 
+    /* ATA bus-specific device information. */
+    ata_chan_t  channels[BX_MAX_ATA_INTERFACES];
+
 #ifdef VBOX_WITH_SCSI
     /* SCSI bus-specific device information. */
     scsi_dev_t  scsidev[BX_MAX_SCSI_DEVICES];
     uint8_t     scsi_hdcount;       /* Number of SCSI disks. */
 #endif
+
+#ifdef VBOX_WITH_AHCI
+    /* SATA (AHCI) bus-specific device information. */
+    ahci_dev_t  ahcidev[BX_MAX_AHCI_DEVICES];
+    uint8_t     ahci_hdcount;       /* Number of SATA disks. */
+    uint16_t    ahci_seg;           /* Segment of AHCI data block. */
+#endif
+
     dpte_t      dpte;               /* Buffer for building a DPTE. */
 } bio_dsk_t;
 
@@ -232,22 +266,12 @@ typedef struct {
     fdpt_t      fdpt0;      /* FDPTs for the first two ATA disks. */
     fdpt_t      fdpt1;
 
-#if 0
     uint8_t     filler2[0xC4];
-#else
-    uint8_t     filler2[0xC2];
-    uint16_t    ahci_seg;
-#endif
 
     bio_dsk_t   bdisk;      /* Disk driver data (ATA/SCSI/AHCI). */
 
 #if BX_ELTORITO_BOOT
     cdemu_t     cdemu;      /* El Torito floppy/HD emulation data. */
-#endif
-
-#ifdef VBOX_WITH_BIOS_AHCI
-//    ahci_t      ahci;
-//    uint16_t    ahci_seg;    //@todo: Someone is trashing the data here!?!
 #endif
 
     unsigned char   uForceBootDrive;
@@ -261,11 +285,15 @@ ct_assert(sizeof(ebda_data_t) < 0x380);     /* Must be under 1K in size. */
 
 #define EbdaData ((ebda_data_t *) 0)
 
+/* Note: Using fastcall reduces stack usage a little. */
+int __fastcall ata_read_sectors(bio_dsk_t __far *bios_dsk);
+int __fastcall ata_write_sectors(bio_dsk_t __far *bios_dsk);
+
 int __fastcall scsi_read_sectors(bio_dsk_t __far *bios_dsk);
 int __fastcall scsi_write_sectors(bio_dsk_t __far *bios_dsk);
 
-int __fastcall ata_read_sectors(bio_dsk_t __far *bios_dsk);
-int __fastcall ata_write_sectors(bio_dsk_t __far *bios_dsk);
+int __fastcall ahci_read_sectors(bio_dsk_t __far *bios_dsk);
+int __fastcall ahci_write_sectors(bio_dsk_t __far *bios_dsk);
 
 // @todo: put this elsewhere (and change/eliminate?)
 #define SET_DISK_RET_STATUS(status) write_byte(0x0040, 0x0074, status)
