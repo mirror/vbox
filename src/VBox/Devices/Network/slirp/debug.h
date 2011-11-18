@@ -31,7 +31,7 @@
 /* we've excluded stdio.h */
 #define FILE void
 
-int debug_init (void);
+int debug_init (PNATState);
 void ipstats (PNATState);
 void tcpstats (PNATState);
 void udpstats (PNATState);

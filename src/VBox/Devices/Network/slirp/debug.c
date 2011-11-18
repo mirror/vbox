@@ -276,11 +276,12 @@ printSocket(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput,
     struct sockaddr addr;
     struct sockaddr_in *in_addr;
     socklen_t socklen = sizeof(struct sockaddr);
+    PNATState pData = (PNATState)pvUser;
     int status = 0;
     NOREF(cchWidth);
     NOREF(cchPrecision);
     NOREF(fFlags);
-    NOREF(pvUser);
+    Assert(pData);
 
     AssertReturn(strcmp(pszType, "natsock") == 0, 0);
     if (so == NULL)
@@ -298,12 +299,14 @@ printSocket(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput,
     }
 
     in_addr = (struct sockaddr_in *)&addr;
-    return RTStrFormat(pfnOutput, pvArgOutput, NULL, 0, "socket %d:(proto:%u) "
+    return RTStrFormat(pfnOutput, pvArgOutput, NULL, 0, "socket %d:(proto:%u) exp. in %d "
             "state=%R[natsockstate] "
             "f_(addr:port)=%RTnaipv4:%d "
             "l_(addr:port)=%RTnaipv4:%d "
             "name=%RTnaipv4:%d",
-            so->s, so->so_type, so->so_state,
+            so->s, so->so_type,
+            so->so_expire - curtime,
+            so->so_state,
             so->so_faddr.s_addr,
             RT_N2H_U16(so->so_fport),
             so->so_laddr.s_addr,
@@ -534,7 +537,7 @@ int errno_func(const char *file, int line)
 #endif
 
 int
-debug_init()
+debug_init(PNATState pData)
 {
     int rc = VINF_SUCCESS;
 
@@ -543,7 +546,7 @@ debug_init()
     if (!g_fFormatRegistered)
     {
 
-        rc = RTStrFormatTypeRegister("natsock", printSocket, NULL);            AssertRC(rc);
+        rc = RTStrFormatTypeRegister("natsock", printSocket, pData);            AssertRC(rc);
         rc = RTStrFormatTypeRegister("natsockstate", printNATSocketState, NULL);            AssertRC(rc);
         rc = RTStrFormatTypeRegister("natwinnetevents",
                                      print_networkevents, NULL);                AssertRC(rc);
