@@ -5642,12 +5642,18 @@ static int ssmR3DataReadFinishV2(PSSMHANDLE pSSM)
     if (    !pSSM->u.Read.fEndOfData
         &&  RT_SUCCESS(rc))
     {
-        rc = ssmR3DataReadRecHdrV2(pSSM);
-        if (    RT_SUCCESS(rc)
-            &&  !pSSM->u.Read.fEndOfData)
-        {
+        if (   pSSM->u.Read.cbDataBuffer != pSSM->u.Read.offDataBuffer
+            && pSSM->u.Read.cbDataBuffer > 0)
             rc = VERR_SSM_LOADED_TOO_LITTLE;
-            AssertFailed();
+        else
+        {
+            rc = ssmR3DataReadRecHdrV2(pSSM);
+            if (    RT_SUCCESS(rc)
+                &&  !pSSM->u.Read.fEndOfData)
+            {
+                rc = VERR_SSM_LOADED_TOO_LITTLE;
+                AssertFailed();
+            }
         }
         pSSM->rc = rc;
     }

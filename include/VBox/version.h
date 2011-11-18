@@ -53,7 +53,7 @@
 # define VBOX_FULL_VERSION_MAKE(uMajor, uMinor, uBuild) \
     (  (uint32_t)((uMajor) &   0xff) << 24 \
      | (uint32_t)((uMinor) &   0xff) << 16 \
-     | (uint32_t)((uMinor) & 0xffff)       \
+     | (uint32_t)((uBuild) & 0xffff)       \
     )
 
 /** Combined version number. */

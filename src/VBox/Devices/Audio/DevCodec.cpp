@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2008 Oracle Corporation
+ * Copyright (C) 2006-2011 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -14,6 +14,11 @@
  * VirtualBox OSE distribution. VirtualBox OSE is distributed in the
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
+
+
+/*******************************************************************************
+*   Header Files                                                               *
+*******************************************************************************/
 #define LOG_GROUP LOG_GROUP_DEV_AUDIO
 #include <VBox/vmm/pdmdev.h>
 #include <iprt/assert.h>
@@ -29,21 +34,34 @@ extern "C" {
 }
 #include "DevCodec.h"
 
+
+/*******************************************************************************
+*   Structures and Typedefs                                                    *
+*******************************************************************************/
 #define CODECNODE_F0_PARAM_LENGTH 0x14
 #define CODECNODE_F02_PARAM_LENGTH 16
 
 typedef struct CODECCOMMONNODE
 {
     uint8_t id; /* 7 - bit format */
+    /** The node name. */
+    char const *pszName;
     /* RPM 5.3.6 */
     uint32_t au32F00_param[CODECNODE_F0_PARAM_LENGTH];
     uint32_t au32F02_param[CODECNODE_F02_PARAM_LENGTH];
 } CODECCOMMONNODE, *PCODECCOMMONNODE;
+AssertCompile(CODECNODE_F0_PARAM_LENGTH == 20);  /* saved state */
+AssertCompile(CODECNODE_F02_PARAM_LENGTH == 16); /* saved state */
+
+#define AssertNodeSize(a_Node, a_cParams) \
+    AssertCompile((a_cParams) <= (60 + 6)); /* the max size - saved state */ \
+    AssertCompile(sizeof(a_Node) - sizeof(CODECCOMMONNODE) == (((a_cParams) * sizeof(uint32_t) + sizeof(void *) - 1) & ~(sizeof(void *) - 1)))
 
 typedef struct ROOTCODECNODE
 {
     CODECCOMMONNODE node;
-}ROOTCODECNODE, *PROOTCODECNODE;
+} ROOTCODECNODE, *PROOTCODECNODE;
+AssertNodeSize(ROOTCODECNODE, 0);
 
 #define AMPLIFIER_SIZE 60
 typedef uint32_t AMPLIFIER[AMPLIFIER_SIZE];
@@ -65,6 +83,7 @@ typedef struct DACNODE
     AMPLIFIER B_params;
 
 } DACNODE, *PDACNODE;
+AssertNodeSize(DACNODE, 6 + 60);
 
 typedef struct ADCNODE
 {
@@ -78,6 +97,7 @@ typedef struct ADCNODE
     uint32_t    u32F01_param;
     AMPLIFIER   B_params;
 } ADCNODE, *PADCNODE;
+AssertNodeSize(DACNODE, 6 + 60);
 
 typedef struct SPDIFOUTNODE
 {
@@ -90,6 +110,7 @@ typedef struct SPDIFOUTNODE
     uint32_t    u32A_param;
     AMPLIFIER   B_params;
 } SPDIFOUTNODE, *PSPDIFOUTNODE;
+AssertNodeSize(SPDIFOUTNODE, 5 + 60);
 
 typedef struct SPDIFINNODE
 {
@@ -102,6 +123,7 @@ typedef struct SPDIFINNODE
     uint32_t    u32A_param;
     AMPLIFIER   B_params;
 } SPDIFINNODE, *PSPDIFINNODE;
+AssertNodeSize(SPDIFINNODE, 5 + 60);
 
 typedef struct AFGCODECNODE
 {
@@ -111,6 +133,7 @@ typedef struct AFGCODECNODE
     uint32_t  u32F20_param;
     uint32_t  u32F17_param;
 } AFGCODECNODE, *PAFGCODECNODE;
+AssertNodeSize(AFGCODECNODE, 4);
 
 typedef struct PORTNODE
 {
@@ -122,6 +145,7 @@ typedef struct PORTNODE
     uint32_t u32F1c_param;
     AMPLIFIER   B_params;
 } PORTNODE, *PPORTNODE;
+AssertNodeSize(PORTNODE, 5 + 60);
 
 typedef struct DIGOUTNODE
 {
@@ -132,6 +156,7 @@ typedef struct DIGOUTNODE
     uint32_t u32F09_param;
     uint32_t u32F1c_param;
 } DIGOUTNODE, *PDIGOUTNODE;
+AssertNodeSize(DIGOUTNODE, 5);
 
 typedef struct DIGINNODE
 {
@@ -144,6 +169,7 @@ typedef struct DIGINNODE
     uint32_t u32F1c_param;
     uint32_t u32F1e_param;
 } DIGINNODE, *PDIGINNODE;
+AssertNodeSize(DIGINNODE, 7);
 
 typedef struct ADCMUXNODE
 {
@@ -153,6 +179,7 @@ typedef struct ADCMUXNODE
     uint32_t    u32A_param;
     AMPLIFIER   B_params;
 } ADCMUXNODE, *PADCMUXNODE;
+AssertNodeSize(ADCMUXNODE, 2 + 60);
 
 typedef struct PCBEEPNODE
 {
@@ -162,8 +189,9 @@ typedef struct PCBEEPNODE
 
     uint32_t    u32A_param;
     AMPLIFIER   B_params;
-    uint32_t u32F1c_param;
+    uint32_t    u32F1c_param;
 } PCBEEPNODE, *PPCBEEPNODE;
+AssertNodeSize(PCBEEPNODE, 3 + 60 + 1);
 
 typedef struct CDNODE
 {
@@ -171,6 +199,7 @@ typedef struct CDNODE
     uint32_t u32F07_param;
     uint32_t u32F1c_param;
 } CDNODE, *PCDNODE;
+AssertNodeSize(CDNODE, 2);
 
 typedef struct VOLUMEKNOBNODE
 {
@@ -178,6 +207,7 @@ typedef struct VOLUMEKNOBNODE
     uint32_t    u32F08_param;
     uint32_t    u32F0f_param;
 } VOLUMEKNOBNODE, *PVOLUMEKNOBNODE;
+AssertNodeSize(VOLUMEKNOBNODE, 2);
 
 typedef struct ADCVOLNODE
 {
@@ -187,6 +217,7 @@ typedef struct ADCVOLNODE
     uint32_t    u32A_params;
     AMPLIFIER   B_params;
 } ADCVOLNODE, *PADCVOLNODE;
+AssertNodeSize(ADCVOLNODE, 3 + 60);
 
 typedef struct RESNODE
 {
@@ -196,6 +227,17 @@ typedef struct RESNODE
     uint32_t    u32F07_param;
     uint32_t    u32F1c_param;
 } RESNODE, *PRESNODE;
+AssertNodeSize(RESNODE, 4);
+
+/**
+ * Used for the saved state.
+ */
+typedef struct CODECSAVEDSTATENODE
+{
+    CODECCOMMONNODE Core;
+    uint32_t        au32Params[60 + 6];
+} CODECSAVEDSTATENODE;
+AssertNodeSize(CODECSAVEDSTATENODE, 60 + 6);
 
 typedef union CODECNODE
 {
@@ -215,24 +257,60 @@ typedef union CODECNODE
     VOLUMEKNOBNODE  volumeKnob;
     ADCVOLNODE      adcvol;
     RESNODE         reserved;
+    CODECSAVEDSTATENODE SavedState;
 } CODECNODE, *PCODECNODE;
+AssertNodeSize(CODECNODE, 60 + 6);
 
-/* STAC9220 */
-const static uint8_t au8Stac9220Ports[] = { 0xA, 0xB, 0xC, 0xD, 0xE, 0xF, 0};
-const static uint8_t au8Stac9220Dacs[] = { 0x2, 0x3, 0x4, 0x5, 0};
-const static uint8_t au8Stac9220Adcs[] = { 0x6, 0x7, 0};
-const static uint8_t au8Stac9220SpdifOuts[] = { 0x8, 0 };
-const static uint8_t au8Stac9220SpdifIns[] = { 0x9, 0 };
-const static uint8_t au8Stac9220DigOutPins[] = { 0x10, 0 };
-const static uint8_t au8Stac9220DigInPins[] = { 0x11, 0 };
-const static uint8_t au8Stac9220AdcVols[] = { 0x17, 0x18, 0};
-const static uint8_t au8Stac9220AdcMuxs[] = { 0x12, 0x13, 0};
-const static uint8_t au8Stac9220Pcbeeps[] = { 0x14, 0 };
-const static uint8_t au8Stac9220Cds[] = { 0x15, 0 };
-const static uint8_t au8Stac9220VolKnobs[] = { 0x16, 0 };
-const static uint8_t au8Stac9220Reserveds[] = { 0x9, 0x19, 0x1a, 0x1b, 0 };
 
+/*******************************************************************************
+*   Global Variables                                                           *
+*******************************************************************************/
+/* STAC9220 - Referenced thru STAC9220WIDGET in the constructor below. */
+static uint8_t const g_abStac9220Ports[] = { 0xA, 0xB, 0xC, 0xD, 0xE, 0xF, 0};
+static uint8_t const g_abStac9220Dacs[] = { 0x2, 0x3, 0x4, 0x5, 0};
+static uint8_t const g_abStac9220Adcs[] = { 0x6, 0x7, 0};
+static uint8_t const g_abStac9220SpdifOuts[] = { 0x8, 0 };
+static uint8_t const g_abStac9220SpdifIns[] = { 0x9, 0 };
+static uint8_t const g_abStac9220DigOutPins[] = { 0x10, 0 };
+static uint8_t const g_abStac9220DigInPins[] = { 0x11, 0 };
+static uint8_t const g_abStac9220AdcVols[] = { 0x17, 0x18, 0};
+static uint8_t const g_abStac9220AdcMuxs[] = { 0x12, 0x13, 0};
+static uint8_t const g_abStac9220Pcbeeps[] = { 0x14, 0 };
+static uint8_t const g_abStac9220Cds[] = { 0x15, 0 };
+static uint8_t const g_abStac9220VolKnobs[] = { 0x16, 0 };
+static uint8_t const g_abStac9220Reserveds[] = { 0x9, 0x19, 0x1a, 0x1b, 0 };
+
+
+/** SSM description of a CODECNODE. */
+static SSMFIELD const g_aCodecNodeFields[] =
+{
+    SSMFIELD_ENTRY(     CODECSAVEDSTATENODE, Core.id),
+    SSMFIELD_ENTRY_PAD_HC_AUTO(3, 3),
+    SSMFIELD_ENTRY(     CODECSAVEDSTATENODE, Core.au32F00_param),
+    SSMFIELD_ENTRY(     CODECSAVEDSTATENODE, Core.au32F02_param),
+    SSMFIELD_ENTRY(     CODECSAVEDSTATENODE, au32Params),
+    SSMFIELD_ENTRY_TERM()
+};
+
+/** Backward compatibility with v1 of the CODECNODE. */
+static SSMFIELD const g_aCodecNodeFieldsV1[] =
+{
+    SSMFIELD_ENTRY(     CODECSAVEDSTATENODE, Core.id),
+    SSMFIELD_ENTRY_PAD_HC_AUTO(3, 7),
+    SSMFIELD_ENTRY_OLD_HCPTR(Core.name),
+    SSMFIELD_ENTRY(     CODECSAVEDSTATENODE, Core.au32F00_param),
+    SSMFIELD_ENTRY(     CODECSAVEDSTATENODE, Core.au32F02_param),
+    SSMFIELD_ENTRY(     CODECSAVEDSTATENODE, au32Params),
+    SSMFIELD_ENTRY_TERM()
+};
+
+
+/*******************************************************************************
+*   Internal Functions                                                         *
+*******************************************************************************/
 static int stac9220ResetNode(struct CODECState *pState, uint8_t nodenum, PCODECNODE pNode);
+
+
 
 static int stac9220Construct(CODECState *pState)
 {
@@ -244,7 +322,7 @@ static int stac9220Construct(CODECState *pState)
     pState->u8AssemblyId = 0x80;
     pState->pNodes = (PCODECNODE)RTMemAllocZ(sizeof(CODECNODE) * pState->cTotalNodes);
     pState->fInReset = false;
-#define STAC9220WIDGET(type) pState->au8##type##s = au8Stac9220##type##s
+#define STAC9220WIDGET(type) pState->au8##type##s = g_abStac9220##type##s
     STAC9220WIDGET(Port);
     STAC9220WIDGET(Dac);
     STAC9220WIDGET(Adc);
@@ -1823,70 +1901,84 @@ int codecConstruct(PPDMDEVINS pDevIns, CODECState *pState, PCFGMNODE pCfgHandle)
 
     return VINF_SUCCESS;
 }
+
 int codecDestruct(CODECState *pCodecState)
 {
     RTMemFree(pCodecState->pNodes);
     return VINF_SUCCESS;
 }
 
-int codecSaveState(CODECState *pCodecState, PSSMHANDLE pSSMHandle)
+int codecSaveState(CODECState *pCodecState, PSSMHANDLE pSSM)
 {
-    SSMR3PutMem (pSSMHandle, pCodecState->pNodes, sizeof(CODECNODE) * pCodecState->cTotalNodes);
+    AssertLogRelMsgReturn(pCodecState->cTotalNodes == 0x1c, ("cTotalNodes=%#x, should be 0x1c", pCodecState->cTotalNodes),
+                          VERR_INTERNAL_ERROR);
+    SSMR3PutU32(pSSM, pCodecState->cTotalNodes);
+    for (unsigned idxNode = 0; idxNode < pCodecState->cTotalNodes; ++idxNode)
+        SSMR3PutStructEx(pSSM, &pCodecState->pNodes[idxNode].SavedState, sizeof(pCodecState->pNodes[idxNode].SavedState),
+                         0 /*fFlags*/, g_aCodecNodeFields, NULL /*pvUser*/);
     return VINF_SUCCESS;
 }
 
-static DECLCALLBACK(int)codecLoadV1(PCODECState pCodecState, PSSMHANDLE pSSMHandle, size_t cbOffset, size_t alignment)
+
+int codecLoadState(CODECState *pCodecState, PSSMHANDLE pSSM, uint32_t uVersion)
 {
-    size_t cbRawNodesV1 = (sizeof(CODECNODE) + cbOffset + alignment) * pCodecState->cTotalNodes;
-    uint8_t *pu8RawNodesV1 = (uint8_t *)RTMemAlloc(cbRawNodesV1);
-    uint8_t *pu8NodeV1 = NULL;
-    int idxNode = 0;
-    if (!pu8RawNodesV1)
-        return VERR_NO_MEMORY;
-    int rc = SSMR3GetMem (pSSMHandle, pu8RawNodesV1, cbRawNodesV1);
-
-    if (RT_FAILURE(rc))
+    PCSSMFIELD pFields;
+    uint32_t   fFlags;
+    switch (uVersion)
     {
-        RTMemFree(pu8RawNodesV1);
-        AssertRCReturn(rc, rc);
-    }
-    pu8NodeV1 = &pu8RawNodesV1[0];
-    for (idxNode = 0; idxNode < pCodecState->cTotalNodes; ++idxNode)
-    {
-        pCodecState->pNodes[idxNode].node.id = pu8NodeV1[0];
-        memcpy(pCodecState->pNodes[idxNode].node.au32F00_param,
-               pu8NodeV1 + RT_OFFSETOF(CODECCOMMONNODE, au32F00_param) + alignment,
-               sizeof(CODECNODE) - RT_OFFSETOF(CODECCOMMONNODE,au32F00_param));
-        pu8NodeV1 += sizeof(CODECNODE) + cbOffset;
+        case HDA_SSM_VERSION_1:
+            AssertReturn(pCodecState->cTotalNodes == 0x1c, VERR_INTERNAL_ERROR);
+            pFields = g_aCodecNodeFieldsV1;
+            fFlags  = SSMSTRUCT_FLAGS_MEM_BAND_AID_RELAXED;
+            break;
+
+        case HDA_SSM_VERSION_2:
+        case HDA_SSM_VERSION_3:
+            AssertReturn(pCodecState->cTotalNodes == 0x1c, VERR_INTERNAL_ERROR);
+            pFields = g_aCodecNodeFields;
+            fFlags  = SSMSTRUCT_FLAGS_MEM_BAND_AID_RELAXED;
+            break;
+
+        case HDA_SSM_VERSION:
+        {
+            uint32_t cNodes;
+            int rc2 = SSMR3GetU32(pSSM, &cNodes);
+            AssertRCReturn(rc2, rc2);
+            if (cNodes != 0x1c)
+                return VERR_SSM_DATA_UNIT_FORMAT_CHANGED;
+            AssertReturn(pCodecState->cTotalNodes == 0x1c, VERR_INTERNAL_ERROR);
+
+            pFields = g_aCodecNodeFields;
+            fFlags  = 0;
+            break;
+        }
+
+        default:
+            return VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION;
     }
 
-    RTMemFree(pu8RawNodesV1);
-    return rc;
-}
-
-int codecLoadState(CODECState *pCodecState, PSSMHANDLE pSSMHandle, uint32_t uVersion)
-{
-    int rc;
-    if (uVersion == HDA_SSM_VERSION_1)
+    for (unsigned idxNode = 0; idxNode < pCodecState->cTotalNodes; ++idxNode)
     {
-#if RT_ARCH_X86
-        if (SSMR3HandleHostBits(pSSMHandle) == 32)
-            rc = codecLoadV1(pCodecState, pSSMHandle, sizeof(long), 0);
-        else
-            rc = codecLoadV1(pCodecState, pSSMHandle, sizeof(uint64_t), 4);
-#else
-        if (SSMR3HandleHostBits(pSSMHandle) == 64)
-            rc = codecLoadV1(pCodecState, pSSMHandle, sizeof(long), 4);
-        else
-            rc = codecLoadV1(pCodecState, pSSMHandle, sizeof(uint32_t), 0);
-#endif
+        uint8_t idOld = pCodecState->pNodes[idxNode].SavedState.Core.id;
+        int rc = SSMR3GetStructEx(pSSM, &pCodecState->pNodes[idxNode].SavedState,
+                                  sizeof(pCodecState->pNodes[idxNode].SavedState),
+                                  fFlags, pFields, NULL);
+        if (RT_FAILURE(rc))
+            return rc;
+        AssertLogRelMsgReturn(idOld == pCodecState->pNodes[idxNode].SavedState.Core.id,
+                              ("loaded %#x, expected \n", pCodecState->pNodes[idxNode].SavedState.Core.id, idOld),
+                              VERR_SSM_DATA_UNIT_FORMAT_CHANGED);
     }
-    else
-        rc = SSMR3GetMem (pSSMHandle, pCodecState->pNodes, sizeof(CODECNODE) * pCodecState->cTotalNodes);
+
+    /*
+     * Update stuff after changing the state.
+     */
     if (codecIsDacNode(pCodecState, pCodecState->u8DacLineOut))
         codecToAudVolume(&pCodecState->pNodes[pCodecState->u8DacLineOut].dac.B_params, AUD_MIXER_VOLUME);
     else if (codecIsSpdifOutNode(pCodecState, pCodecState->u8DacLineOut))
         codecToAudVolume(&pCodecState->pNodes[pCodecState->u8DacLineOut].spdifout.B_params, AUD_MIXER_VOLUME);
     codecToAudVolume(&pCodecState->pNodes[pCodecState->u8AdcVolsLineIn].adcvol.B_params, AUD_MIXER_LINE_IN);
-    return rc;
+
+    return VINF_SUCCESS;
 }
+

@@ -20,6 +20,8 @@
 *******************************************************************************/
 #define LOG_GROUP LOG_GROUP_DEV_AUDIO
 #include <VBox/vmm/pdmdev.h>
+#include <VBox/version.h>
+
 #include <iprt/assert.h>
 #include <iprt/uuid.h>
 #include <iprt/string.h>
@@ -404,7 +406,6 @@ static DECLCALLBACK(void)  hdaReset (PPDMDEVINS pDevIns);
 
 #define SDBDPU(pState, num) HDA_REG((pState), SD(BDPU, num))
 
-/* Predicates */
 
 typedef struct HDABDLEDESC
 {
@@ -418,6 +419,8 @@ typedef struct HDABDLEDESC
     uint8_t     au8HdaBuffer[HDA_SDONFIFO_256B + 1];
 } HDABDLEDESC, *PHDABDLEDESC;
 
+
+/** HDABDLEDESC field descriptors the v3+ saved state. */
 static SSMFIELD const g_aHdaBDLEDescFields[] =
 {
     SSMFIELD_ENTRY(     HDABDLEDESC, u64BdleCviAddr),
@@ -426,6 +429,21 @@ static SSMFIELD const g_aHdaBDLEDescFields[] =
     SSMFIELD_ENTRY(     HDABDLEDESC, u32BdleCviLen),
     SSMFIELD_ENTRY(     HDABDLEDESC, u32BdleCviPos),
     SSMFIELD_ENTRY(     HDABDLEDESC, fBdleCviIoc),
+    SSMFIELD_ENTRY(     HDABDLEDESC, cbUnderFifoW),
+    SSMFIELD_ENTRY(     HDABDLEDESC, au8HdaBuffer),
+    SSMFIELD_ENTRY_TERM()
+};
+
+/** HDABDLEDESC field descriptors the v1 and v2 saved state. */
+static SSMFIELD const g_aHdaBDLEDescFieldsOld[] =
+{
+    SSMFIELD_ENTRY(     HDABDLEDESC, u64BdleCviAddr),
+    SSMFIELD_ENTRY(     HDABDLEDESC, u32BdleMaxCvi),
+    SSMFIELD_ENTRY(     HDABDLEDESC, u32BdleCvi),
+    SSMFIELD_ENTRY(     HDABDLEDESC, u32BdleCviLen),
+    SSMFIELD_ENTRY(     HDABDLEDESC, u32BdleCviPos),
+    SSMFIELD_ENTRY(     HDABDLEDESC, fBdleCviIoc),
+    SSMFIELD_ENTRY_PAD_HC_AUTO(3, 3),
     SSMFIELD_ENTRY(     HDABDLEDESC, cbUnderFifoW),
     SSMFIELD_ENTRY(     HDABDLEDESC, au8HdaBuffer),
     SSMFIELD_ENTRY_TERM()
@@ -495,43 +513,43 @@ typedef struct PCIINTELHDLinkState
 } PCIINTELHDLinkState;
 
 
-DECLCALLBACK(int)hdaRegReadUnimplemented(INTELHDLinkState* pState, uint32_t offset, uint32_t index, uint32_t *pu32Value);
-DECLCALLBACK(int)hdaRegWriteUnimplemented(INTELHDLinkState* pState, uint32_t offset, uint32_t index, uint32_t pu32Value);
-DECLCALLBACK(int)hdaRegReadGCTL(INTELHDLinkState* pState, uint32_t offset, uint32_t index, uint32_t *pu32Value);
-DECLCALLBACK(int)hdaRegWriteGCTL(INTELHDLinkState* pState, uint32_t offset, uint32_t index, uint32_t pu32Value);
-DECLCALLBACK(int)hdaRegReadSTATESTS(INTELHDLinkState* pState, uint32_t offset, uint32_t index, uint32_t *pu32Value);
-DECLCALLBACK(int)hdaRegWriteSTATESTS(INTELHDLinkState* pState, uint32_t offset, uint32_t index, uint32_t pu32Value);
-DECLCALLBACK(int)hdaRegReadGCAP(INTELHDLinkState* pState, uint32_t offset, uint32_t index, uint32_t *pu32Value);
-DECLCALLBACK(int)hdaRegReadINTSTS(INTELHDLinkState* pState, uint32_t offset, uint32_t index, uint32_t *pu32Value);
-DECLCALLBACK(int)hdaRegReadWALCLK(INTELHDLinkState* pState, uint32_t offset, uint32_t index, uint32_t *pu32Value);
-DECLCALLBACK(int)hdaRegWriteINTSTS(INTELHDLinkState* pState, uint32_t offset, uint32_t index, uint32_t pu32Value);
-DECLCALLBACK(int)hdaRegWriteCORBWP(INTELHDLinkState* pState, uint32_t offset, uint32_t index, uint32_t pu32Value);
-DECLCALLBACK(int)hdaRegWriteCORBRP(INTELHDLinkState* pState, uint32_t offset, uint32_t index, uint32_t u32Value);
-DECLCALLBACK(int)hdaRegWriteCORBCTL(INTELHDLinkState* pState, uint32_t offset, uint32_t index, uint32_t u32Value);
-DECLCALLBACK(int)hdaRegWriteCORBSTS(INTELHDLinkState* pState, uint32_t offset, uint32_t index, uint32_t u32Value);
-DECLCALLBACK(int)hdaRegWriteRIRBWP(INTELHDLinkState* pState, uint32_t offset, uint32_t index, uint32_t pu32Value);
-DECLCALLBACK(int)hdaRegWriteRIRBSTS(INTELHDLinkState* pState, uint32_t offset, uint32_t index, uint32_t u32Value);
-DECLCALLBACK(int)hdaRegWriteIRS(INTELHDLinkState* pState, uint32_t offset, uint32_t index, uint32_t u32Value);
-DECLCALLBACK(int)hdaRegReadIRS(INTELHDLinkState* pState, uint32_t offset, uint32_t index, uint32_t *pu32Value);
-DECLCALLBACK(int)hdaRegWriteSDCTL(INTELHDLinkState* pState, uint32_t offset, uint32_t index, uint32_t u32Value);
-DECLCALLBACK(int)hdaRegReadSDCTL(INTELHDLinkState* pState, uint32_t offset, uint32_t index, uint32_t *pu32Value);
+DECLCALLBACK(int) hdaRegReadUnimplemented(INTELHDLinkState* pState, uint32_t offset, uint32_t index, uint32_t *pu32Value);
+DECLCALLBACK(int) hdaRegWriteUnimplemented(INTELHDLinkState* pState, uint32_t offset, uint32_t index, uint32_t pu32Value);
+DECLCALLBACK(int) hdaRegReadGCTL(INTELHDLinkState* pState, uint32_t offset, uint32_t index, uint32_t *pu32Value);
+DECLCALLBACK(int) hdaRegWriteGCTL(INTELHDLinkState* pState, uint32_t offset, uint32_t index, uint32_t pu32Value);
+DECLCALLBACK(int) hdaRegReadSTATESTS(INTELHDLinkState* pState, uint32_t offset, uint32_t index, uint32_t *pu32Value);
+DECLCALLBACK(int) hdaRegWriteSTATESTS(INTELHDLinkState* pState, uint32_t offset, uint32_t index, uint32_t pu32Value);
+DECLCALLBACK(int) hdaRegReadGCAP(INTELHDLinkState* pState, uint32_t offset, uint32_t index, uint32_t *pu32Value);
+DECLCALLBACK(int) hdaRegReadINTSTS(INTELHDLinkState* pState, uint32_t offset, uint32_t index, uint32_t *pu32Value);
+DECLCALLBACK(int) hdaRegReadWALCLK(INTELHDLinkState* pState, uint32_t offset, uint32_t index, uint32_t *pu32Value);
+DECLCALLBACK(int) hdaRegWriteINTSTS(INTELHDLinkState* pState, uint32_t offset, uint32_t index, uint32_t pu32Value);
+DECLCALLBACK(int) hdaRegWriteCORBWP(INTELHDLinkState* pState, uint32_t offset, uint32_t index, uint32_t pu32Value);
+DECLCALLBACK(int) hdaRegWriteCORBRP(INTELHDLinkState* pState, uint32_t offset, uint32_t index, uint32_t u32Value);
+DECLCALLBACK(int) hdaRegWriteCORBCTL(INTELHDLinkState* pState, uint32_t offset, uint32_t index, uint32_t u32Value);
+DECLCALLBACK(int) hdaRegWriteCORBSTS(INTELHDLinkState* pState, uint32_t offset, uint32_t index, uint32_t u32Value);
+DECLCALLBACK(int) hdaRegWriteRIRBWP(INTELHDLinkState* pState, uint32_t offset, uint32_t index, uint32_t pu32Value);
+DECLCALLBACK(int) hdaRegWriteRIRBSTS(INTELHDLinkState* pState, uint32_t offset, uint32_t index, uint32_t u32Value);
+DECLCALLBACK(int) hdaRegWriteIRS(INTELHDLinkState* pState, uint32_t offset, uint32_t index, uint32_t u32Value);
+DECLCALLBACK(int) hdaRegReadIRS(INTELHDLinkState* pState, uint32_t offset, uint32_t index, uint32_t *pu32Value);
+DECLCALLBACK(int) hdaRegWriteSDCTL(INTELHDLinkState* pState, uint32_t offset, uint32_t index, uint32_t u32Value);
+DECLCALLBACK(int) hdaRegReadSDCTL(INTELHDLinkState* pState, uint32_t offset, uint32_t index, uint32_t *pu32Value);
 
-DECLCALLBACK(int)hdaRegWriteSDSTS(INTELHDLinkState* pState, uint32_t offset, uint32_t index, uint32_t u32Value);
-DECLCALLBACK(int)hdaRegWriteSDLVI(INTELHDLinkState* pState, uint32_t offset, uint32_t index, uint32_t u32Value);
-DECLCALLBACK(int)hdaRegWriteSDFIFOW(INTELHDLinkState* pState, uint32_t offset, uint32_t index, uint32_t u32Value);
-DECLCALLBACK(int)hdaRegWriteSDFIFOS(INTELHDLinkState* pState, uint32_t offset, uint32_t index, uint32_t u32Value);
-DECLCALLBACK(int)hdaRegWriteSDFMT(INTELHDLinkState* pState, uint32_t offset, uint32_t index, uint32_t u32Value);
-DECLCALLBACK(int)hdaRegWriteSDBDPL(INTELHDLinkState* pState, uint32_t offset, uint32_t index, uint32_t u32Value);
-DECLCALLBACK(int)hdaRegWriteSDBDPU(INTELHDLinkState* pState, uint32_t offset, uint32_t index, uint32_t u32Value);
-DECLCALLBACK(int)hdaRegWriteBase(INTELHDLinkState* pState, uint32_t offset, uint32_t index, uint32_t u32Value);
-DECLCALLBACK(int)hdaRegReadU32(INTELHDLinkState* pState, uint32_t offset, uint32_t index, uint32_t *pu32Value);
-DECLCALLBACK(int)hdaRegWriteU32(INTELHDLinkState* pState, uint32_t offset, uint32_t index, uint32_t pu32Value);
-DECLCALLBACK(int)hdaRegReadU24(INTELHDLinkState* pState, uint32_t offset, uint32_t index, uint32_t *pu32Value);
-DECLCALLBACK(int)hdaRegWriteU24(INTELHDLinkState* pState, uint32_t offset, uint32_t index, uint32_t pu32Value);
-DECLCALLBACK(int)hdaRegReadU16(INTELHDLinkState* pState, uint32_t offset, uint32_t index, uint32_t *pu32Value);
-DECLCALLBACK(int)hdaRegWriteU16(INTELHDLinkState* pState, uint32_t offset, uint32_t index, uint32_t pu32Value);
-DECLCALLBACK(int)hdaRegReadU8(INTELHDLinkState* pState, uint32_t offset, uint32_t index, uint32_t *pu32Value);
-DECLCALLBACK(int)hdaRegWriteU8(INTELHDLinkState* pState, uint32_t offset, uint32_t index, uint32_t pu32Value);
+DECLCALLBACK(int) hdaRegWriteSDSTS(INTELHDLinkState* pState, uint32_t offset, uint32_t index, uint32_t u32Value);
+DECLCALLBACK(int) hdaRegWriteSDLVI(INTELHDLinkState* pState, uint32_t offset, uint32_t index, uint32_t u32Value);
+DECLCALLBACK(int) hdaRegWriteSDFIFOW(INTELHDLinkState* pState, uint32_t offset, uint32_t index, uint32_t u32Value);
+DECLCALLBACK(int) hdaRegWriteSDFIFOS(INTELHDLinkState* pState, uint32_t offset, uint32_t index, uint32_t u32Value);
+DECLCALLBACK(int) hdaRegWriteSDFMT(INTELHDLinkState* pState, uint32_t offset, uint32_t index, uint32_t u32Value);
+DECLCALLBACK(int) hdaRegWriteSDBDPL(INTELHDLinkState* pState, uint32_t offset, uint32_t index, uint32_t u32Value);
+DECLCALLBACK(int) hdaRegWriteSDBDPU(INTELHDLinkState* pState, uint32_t offset, uint32_t index, uint32_t u32Value);
+DECLCALLBACK(int) hdaRegWriteBase(INTELHDLinkState* pState, uint32_t offset, uint32_t index, uint32_t u32Value);
+DECLCALLBACK(int) hdaRegReadU32(INTELHDLinkState* pState, uint32_t offset, uint32_t index, uint32_t *pu32Value);
+DECLCALLBACK(int) hdaRegWriteU32(INTELHDLinkState* pState, uint32_t offset, uint32_t index, uint32_t pu32Value);
+DECLCALLBACK(int) hdaRegReadU24(INTELHDLinkState* pState, uint32_t offset, uint32_t index, uint32_t *pu32Value);
+DECLCALLBACK(int) hdaRegWriteU24(INTELHDLinkState* pState, uint32_t offset, uint32_t index, uint32_t pu32Value);
+DECLCALLBACK(int) hdaRegReadU16(INTELHDLinkState* pState, uint32_t offset, uint32_t index, uint32_t *pu32Value);
+DECLCALLBACK(int) hdaRegWriteU16(INTELHDLinkState* pState, uint32_t offset, uint32_t index, uint32_t pu32Value);
+DECLCALLBACK(int) hdaRegReadU8(INTELHDLinkState* pState, uint32_t offset, uint32_t index, uint32_t *pu32Value);
+DECLCALLBACK(int) hdaRegWriteU8(INTELHDLinkState* pState, uint32_t offset, uint32_t index, uint32_t pu32Value);
 
 static inline void hdaInitTransferDescriptor(PINTELHDLinkState pState, PHDABDLEDESC pBdle, uint8_t u8Strm, PHDASTREAMTRANSFERDESC pStreamDesc);
 static int hdaMMIORegLookup(INTELHDLinkState* pState, uint32_t u32Offset);
@@ -2030,9 +2048,9 @@ PDMBOTHCBDECL(int) hdaMMIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhy
  *                          to pci_mem_base like earlier!
  * @param   enmType         One of the PCI_ADDRESS_SPACE_* values.
  */
-static DECLCALLBACK(int) hdaMap (PPCIDEVICE pPciDev, int iRegion,
-                                           RTGCPHYS GCPhysAddress, uint32_t cb,
-                                           PCIADDRESSSPACE enmType)
+static DECLCALLBACK(int) hdaMap(PPCIDEVICE pPciDev, int iRegion,
+                                RTGCPHYS GCPhysAddress, uint32_t cb,
+                                PCIADDRESSSPACE enmType)
 {
     int         rc;
     PPDMDEVINS  pDevIns = pPciDev->pDevIns;
@@ -2056,19 +2074,23 @@ static DECLCALLBACK(int) hdaMap (PPCIDEVICE pPciDev, int iRegion,
  *
  * @returns VBox status code.
  * @param   pDevIns     The device instance.
- * @param   pSSMHandle  The handle to save the state to.
+ * @param   pSSM  The handle to save the state to.
  */
-static DECLCALLBACK(int) hdaSaveExec (PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle)
+static DECLCALLBACK(int) hdaSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 {
     PCIINTELHDLinkState *pThis = PDMINS_2_DATA(pDevIns, PCIINTELHDLinkState *);
     /* Save Codec nodes states */
-    codecSaveState(&pThis->hda.Codec, pSSMHandle);
+    codecSaveState(&pThis->hda.Codec, pSSM);
+
     /* Save MMIO registers */
-    SSMR3PutMem (pSSMHandle, pThis->hda.au32Regs, sizeof (pThis->hda.au32Regs));
+    AssertCompile(RT_ELEMENTS(pThis->hda.au32Regs) == 112);
+    SSMR3PutU32(pSSM, RT_ELEMENTS(pThis->hda.au32Regs));
+    SSMR3PutMem(pSSM, pThis->hda.au32Regs, sizeof(pThis->hda.au32Regs));
+
     /* Save HDA dma counters */
-    SSMR3PutStruct (pSSMHandle, &pThis->hda.stOutBdle, g_aHdaBDLEDescFields);
-    SSMR3PutStruct (pSSMHandle, &pThis->hda.stMicBdle, g_aHdaBDLEDescFields);
-    SSMR3PutStruct (pSSMHandle, &pThis->hda.stInBdle, g_aHdaBDLEDescFields);
+    SSMR3PutStructEx(pSSM, &pThis->hda.stOutBdle, sizeof(pThis->hda.stOutBdle), 0 /*fFlags*/, g_aHdaBDLEDescFields, NULL);
+    SSMR3PutStructEx(pSSM, &pThis->hda.stMicBdle, sizeof(pThis->hda.stMicBdle), 0 /*fFlags*/, g_aHdaBDLEDescFields, NULL);
+    SSMR3PutStructEx(pSSM, &pThis->hda.stInBdle,  sizeof(pThis->hda.stInBdle),  0 /*fFlags*/, g_aHdaBDLEDescFields, NULL);
     return VINF_SUCCESS;
 }
 
@@ -2077,45 +2099,91 @@ static DECLCALLBACK(int) hdaSaveExec (PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle)
  *
  * @returns VBox status code.
  * @param   pDevIns     The device instance.
- * @param   pSSMHandle  The handle to the saved state.
+ * @param   pSSM  The handle to the saved state.
  * @param   uVersion    The data unit version number.
  * @param   uPass       The data pass.
  */
-static DECLCALLBACK(int) hdaLoadExec (PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle,
-                                          uint32_t uVersion, uint32_t uPass)
+static DECLCALLBACK(int) hdaLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass)
 {
     PCIINTELHDLinkState *pThis = PDMINS_2_DATA(pDevIns, PCIINTELHDLinkState *);
-    /* Load Codec nodes states */
-    Assert (uPass == SSM_PASS_FINAL); NOREF(uPass);
 
-    codecLoadState(&pThis->hda.Codec, pSSMHandle, uVersion);
-    /* Load MMIO registers */
-    SSMR3GetMem (pSSMHandle, pThis->hda.au32Regs, sizeof (pThis->hda.au32Regs));
-    /* Load HDA dma counters */
-    if (   uVersion == HDA_SSM_VERSION_1
-        || uVersion == HDA_SSM_VERSION_2)
+    Assert(uPass == SSM_PASS_FINAL); NOREF(uPass);
+
+    /*
+     * Load Codec nodes states.
+     */
+    int rc = codecLoadState(&pThis->hda.Codec, pSSM, uVersion);
+    if (RT_FAILURE(rc))
+        return rc;
+
+    /*
+     * Load MMIO registers.
+     */
+    uint32_t cRegs;
+    switch (uVersion)
     {
-        SSMR3GetMem (pSSMHandle, &pThis->hda.stOutBdle, sizeof (HDABDLEDESC));
-        SSMR3GetMem (pSSMHandle, &pThis->hda.stMicBdle, sizeof (HDABDLEDESC));
-        SSMR3GetMem (pSSMHandle, &pThis->hda.stInBdle, sizeof (HDABDLEDESC));
+        case HDA_SSM_VERSION_1:
+            /* Starting with r71199, we would save 112 instead of 113
+               registers due to some code cleanups.  This only affects trunk
+               builds in the 4.1 development period. */
+            cRegs = 113;
+            if (SSMR3HandleRevision(pSSM) >= 71199)
+            {
+                uint32_t uVer = SSMR3HandleVersion(pSSM);
+                if (   VBOX_FULL_VERSION_GET_MAJOR(uVer) == 4
+                    && VBOX_FULL_VERSION_GET_MINOR(uVer) == 0
+                    && VBOX_FULL_VERSION_GET_BUILD(uVer) >= 51)
+                    cRegs = 112;
+            }
+            break;
+
+        case HDA_SSM_VERSION_2:
+        case HDA_SSM_VERSION_3:
+            cRegs = 112;
+            AssertCompile(RT_ELEMENTS(pThis->hda.au32Regs) == 112);
+            break;
+
+        case HDA_SSM_VERSION:
+            rc = SSMR3GetU32(pSSM, &cRegs); AssertRCReturn(rc, rc);
+            AssertLogRelMsgReturn(cRegs == RT_ELEMENTS(pThis->hda.au32Regs),
+                                  ("cRegs is %d, expected %d\n", cRegs, RT_ELEMENTS(pThis->hda.au32Regs)),
+                                  VERR_SSM_DATA_UNIT_FORMAT_CHANGED);
+            break;
+
+        default:
+            return VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION;
+    }
+
+    if (cRegs >= RT_ELEMENTS(pThis->hda.au32Regs))
+    {
+        SSMR3GetMem(pSSM, pThis->hda.au32Regs, sizeof(pThis->hda.au32Regs));
+        SSMR3Skip(pSSM, sizeof(uint32_t) * (cRegs - RT_ELEMENTS(pThis->hda.au32Regs)));
     }
     else
     {
-        SSMR3GetStruct (pSSMHandle, &pThis->hda.stOutBdle, g_aHdaBDLEDescFields);
-        SSMR3GetStruct (pSSMHandle, &pThis->hda.stMicBdle, g_aHdaBDLEDescFields);
-        SSMR3GetStruct (pSSMHandle, &pThis->hda.stInBdle, g_aHdaBDLEDescFields);
+        RT_ZERO(pThis->hda.au32Regs);
+        SSMR3GetMem(pSSM, pThis->hda.au32Regs, sizeof(uint32_t) * cRegs);
     }
 
+    /*
+     * Load HDA dma counters.
+     */
+    uint32_t   fFlags   = uVersion <= HDA_SSM_VERSION_2 ? SSMSTRUCT_FLAGS_MEM_BAND_AID_RELAXED : 0;
+    PCSSMFIELD paFields = uVersion <= HDA_SSM_VERSION_2 ? g_aHdaBDLEDescFieldsOld              : g_aHdaBDLEDescFields;
+    SSMR3GetStructEx(pSSM, &pThis->hda.stOutBdle, sizeof(pThis->hda.stOutBdle), fFlags, paFields, NULL);
+    SSMR3GetStructEx(pSSM, &pThis->hda.stMicBdle, sizeof(pThis->hda.stMicBdle), fFlags, paFields, NULL);
+    rc = SSMR3GetStructEx(pSSM, &pThis->hda.stInBdle, sizeof(pThis->hda.stInBdle), fFlags, paFields, NULL);
+    AssertRCReturn(rc, rc);
 
+    /*
+     * Update stuff after the state changes.
+     */
     AUD_set_active_in(pThis->hda.Codec.SwVoiceIn, SDCTL(&pThis->hda, 0) & HDA_REG_FIELD_FLAG_MASK(SDCTL, RUN));
     AUD_set_active_out(pThis->hda.Codec.SwVoiceOut, SDCTL(&pThis->hda, 4) & HDA_REG_FIELD_FLAG_MASK(SDCTL, RUN));
 
-    pThis->hda.u64CORBBase = CORBLBASE(&pThis->hda);
-    pThis->hda.u64CORBBase |= ((uint64_t)CORBUBASE(&pThis->hda)) << 32;
-    pThis->hda.u64RIRBBase = RIRLBASE(&pThis->hda);
-    pThis->hda.u64RIRBBase |= ((uint64_t)RIRUBASE(&pThis->hda)) << 32;
-    pThis->hda.u64DPBase = DPLBASE(&pThis->hda);
-    pThis->hda.u64DPBase |= ((uint64_t)DPUBASE(&pThis->hda)) << 32;
+    pThis->hda.u64CORBBase = RT_MAKE_U64(CORBLBASE(&pThis->hda), CORBUBASE(&pThis->hda));
+    pThis->hda.u64RIRBBase = RT_MAKE_U64(RIRLBASE(&pThis->hda), RIRUBASE(&pThis->hda));
+    pThis->hda.u64DPBase   = RT_MAKE_U64(DPLBASE(&pThis->hda), DPUBASE(&pThis->hda));
     return VINF_SUCCESS;
 }
 
