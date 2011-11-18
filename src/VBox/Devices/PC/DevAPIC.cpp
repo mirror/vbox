@@ -1298,12 +1298,8 @@ static PVMCPUSET apic_get_delivery_bitmask(APICDeviceInfo *pDev, uint8_t dest, u
 
     if (dest_mode == 0)
     {
-        if (dest == 0xff)
-        {
-            /* was: mask = 0xff; - weird */ /** @todo check this; could this (1) differ on X2APIC and (2) actully mean a broadcast? */
-            for (VMCPUID iCpu = 0; iCpu < 8; iCpu++)
-                VMCPUSET_ADD(pDstSet, iCpu);
-        }
+        if (dest == 0xff) /* The broadcast ID. */
+            VMCPUSET_FILL(pDstSet);
         else
             VMCPUSET_ADD(pDstSet, dest);
     }
