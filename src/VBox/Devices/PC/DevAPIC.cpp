@@ -1,7 +1,6 @@
 /* $Id$ */
 /** @file
  * Advanced Programmable Interrupt Controller (APIC) Device and
- * I/O Advanced Programmable Interrupt Controller (IO-APIC) Device.
  */
 
 /*
