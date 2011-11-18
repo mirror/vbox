@@ -266,11 +266,14 @@ void UIMachineWindowNormal::updateAppearanceOf(int iElement)
     /* Update that machine window: */
     if (iElement & UIVisualElement_PauseStuff)
     {
-        if (uisession()->isPaused() && m_pIdleTimer->isActive())
-            m_pIdleTimer->stop();
-        else if (uisession()->isRunning() && !m_pIdleTimer->isActive())
-            m_pIdleTimer->start(100);
-        sltUpdateIndicators();
+        if (!statusBar()->isHidden())
+        {
+            if (uisession()->isPaused() && m_pIdleTimer->isActive())
+                m_pIdleTimer->stop();
+            else if (uisession()->isRunning() && !m_pIdleTimer->isActive())
+                m_pIdleTimer->start(100);
+            sltUpdateIndicators();
+        }
     }
     if (iElement & UIVisualElement_HDStuff)
         indicatorsPool()->indicator(UIIndicatorIndex_HardDisks)->updateAppearance();
@@ -623,6 +626,8 @@ void UIMachineWindowNormal::loadWindowSettings()
         VBoxGlobalSettings settings = vboxGlobal().settings();
         menuBar()->setHidden(settings.isFeatureActive("noMenuBar"));
         statusBar()->setHidden(settings.isFeatureActive("noStatusBar"));
+        if (statusBar()->isHidden())
+            m_pIdleTimer->stop();
     }
 }
 
