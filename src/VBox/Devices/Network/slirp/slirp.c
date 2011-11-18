@@ -630,7 +630,7 @@ int slirp_init(PNATState *ppData, uint32_t u32NetAddr, uint32_t u32Netmask,
         *ppData = NULL;
         return rc;
     }
-    debug_init();
+    debug_init(pData);
     if_init(pData);
     ip_init(pData);
     icmp_init(pData, iIcmpCacheLimit);
