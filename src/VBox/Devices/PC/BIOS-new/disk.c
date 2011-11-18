@@ -586,3 +586,8 @@ int13x_success_noah:
     CLEAR_CF();   // no error
     return;
 }
+
+/* Avoid saving general registers already saved by caller (PUSHA). */
+#pragma aux int13_harddisk modify [di si cx dx bx];
+#pragma aux int13_harddisk_ext modify [di si cx dx bx];
+

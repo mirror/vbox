@@ -218,8 +218,33 @@ void print_detected_harddisks(void)
     {
         device = read_byte(ebda_seg, (uint16_t)&EbdaData->bdisk.hdidmap[hd_curr]);
 
+#ifdef VBOX_WITH_AHCI
+        if (VBOX_IS_AHCI_DEVICE(device))
+        {
+            if (sata_ctrl_printed == 0)
+            {
+                printf("\n\nAHCI controller:\n");
+                sata_ctrl_printed = 1;
+            }
+
+            printf("\n    %d) Hard disk", hd_curr+1);
+
+        }
+        else
+#endif
 #ifdef VBOX_WITH_SCSI
-        if (!VBOX_IS_SCSI_DEVICE(device))
+        if (VBOX_IS_SCSI_DEVICE(device))
+        {
+            if (scsi_ctrl_printed == 0)
+            {
+                printf("\n\nSCSI controller:\n");
+                scsi_ctrl_printed = 1;
+            }
+
+            printf("\n    %d) Hard disk", hd_curr+1);
+
+        }
+        else
 #endif
         {
 
@@ -254,19 +279,6 @@ void print_detected_harddisks(void)
             else
                 printf("Master");
         }
-#ifdef VBOX_WITH_SCSI
-        else
-        {
-            if (scsi_ctrl_printed == 0)
-            {
-                printf("\n\nSCSI controller:\n");
-                scsi_ctrl_printed = 1;
-            }
-
-            printf("\n    %d) Hard disk", hd_curr+1);
-
-        }
-#endif
     }
 
     if (   (ide_ctrl_printed == 0)
