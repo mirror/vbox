@@ -305,7 +305,7 @@ printSocket(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput,
             "l_(addr:port)=%RTnaipv4:%d "
             "name=%RTnaipv4:%d",
             so->s, so->so_type,
-            so->so_expire - curtime,
+            so->so_expire ? so->so_expire - curtime : 0,
             so->so_state,
             so->so_faddr.s_addr,
             RT_N2H_U16(so->so_fport),
