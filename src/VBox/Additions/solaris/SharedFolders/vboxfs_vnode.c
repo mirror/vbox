@@ -1770,7 +1770,7 @@ sffs_map(
 	int error = 0;
 	sfnode_t *node = VN2SFN(dvp);
 	ASSERT(node);
-	if ((prot & PROT_WRITE))
+	if ((flags & MAP_SHARED) && (prot & PROT_WRITE))
 		return (ENOTSUP);
 
 	if (off < 0 || len > MAXOFFSET_T - off)
