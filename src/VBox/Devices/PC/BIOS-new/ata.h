@@ -43,11 +43,6 @@
 #define ATA_DATA_IN      0x01
 #define ATA_DATA_OUT     0x02
 
-#define ATA_TRANSLATION_NONE  0
-#define ATA_TRANSLATION_LBA   1
-#define ATA_TRANSLATION_LARGE 2
-#define ATA_TRANSLATION_RECHS 3
-
 #define ATA_IFACE_NONE    0x00
 #define ATA_IFACE_ISA     0x00
 #define ATA_IFACE_PCI     0x01

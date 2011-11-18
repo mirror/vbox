@@ -20,7 +20,6 @@
 #include "biosint.h"
 #include "inlines.h"
 #include "ebda.h"
-#include "ata.h"
 
 
 //#define VBOX_SCSI_DEBUG 1 /* temporary */
@@ -338,7 +337,6 @@ void scsi_enumerate_attached_devices(uint16_t io_base)
                 bios_dsk->devices[hd_index].device      = ATA_DEVICE_HD;
                 bios_dsk->devices[hd_index].removable   = 0;
                 bios_dsk->devices[hd_index].lock        = 0;
-                bios_dsk->devices[hd_index].mode        = ATA_MODE_PIO16;
                 bios_dsk->devices[hd_index].blksize     = sector_size;
                 bios_dsk->devices[hd_index].translation = ATA_TRANSLATION_LBA;
 

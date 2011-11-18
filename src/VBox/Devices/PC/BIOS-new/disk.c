@@ -167,6 +167,11 @@ void BIOSCALL int13_harddisk(disk_regs_t r)
 
         if ( GET_AH() == 0x02 )
         {
+#ifdef VBOX_WITH_AHCI
+            if (VBOX_IS_AHCI_DEVICE(device))
+                status = ahci_read_sectors(bios_dsk);
+            else
+#endif
 #ifdef VBOX_WITH_SCSI
             if (VBOX_IS_SCSI_DEVICE(device))
                 status = scsi_read_sectors(bios_dsk);
@@ -174,6 +179,11 @@ void BIOSCALL int13_harddisk(disk_regs_t r)
 #endif
                 status = ata_read_sectors(bios_dsk);
         } else {
+#ifdef VBOX_WITH_AHCI
+            if (VBOX_IS_AHCI_DEVICE(device))
+                status = ahci_write_sectors(bios_dsk);
+            else
+#endif
 #ifdef VBOX_WITH_SCSI
             if (VBOX_IS_SCSI_DEVICE(device))
                 status = scsi_write_sectors(bios_dsk);
@@ -369,6 +379,11 @@ void BIOSCALL int13_harddisk_ext(disk_regs_t r)
         
         // Execute the command
         if ( GET_AH() == 0x42 ) {
+#ifdef VBOX_WITH_AHCI
+            if (VBOX_IS_AHCI_DEVICE(device))
+                status = ahci_read_sectors(bios_dsk);
+            else
+#endif
 #ifdef VBOX_WITH_SCSI
             if (VBOX_IS_SCSI_DEVICE(device))
                 status = scsi_read_sectors(bios_dsk);
@@ -376,6 +391,11 @@ void BIOSCALL int13_harddisk_ext(disk_regs_t r)
 #endif
                 status = ata_read_sectors(bios_dsk);
         } else {
+#ifdef VBOX_WITH_AHCI
+            if (VBOX_IS_AHCI_DEVICE(device))
+                status = ahci_write_sectors(bios_dsk);
+            else 
+#endif
 #ifdef VBOX_WITH_SCSI
             if (VBOX_IS_SCSI_DEVICE(device))
                 status = scsi_write_sectors(bios_dsk);

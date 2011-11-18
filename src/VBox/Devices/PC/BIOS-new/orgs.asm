@@ -99,7 +99,6 @@ extrn		_int13_cdemu:near
 extrn		_int13_cdrom:near
 extrn		_cdemu_isactive:near
 extrn		_cdemu_emulated_drive:near
-extrn		_ahci_int13:near
 extrn		_int13_harddisk:near
 extrn		_int13_harddisk_ext:near
 extrn		_int14_function:near
@@ -154,7 +153,6 @@ public		eoi_master_pic
 public		ebda_post
 public		hard_drive_post
 public		int13_legacy
-public		ahci_int13_handler
 public		int70_handler
 public		int75_handler
 public		int15_handler32
@@ -452,6 +450,11 @@ ifdef VBOX_WITH_SCSI
 		call	_scsi_init
 endif
 
+ifdef VBOX_WITH_AHCI
+		; AHCI driver setup
+		call	_ahci_init
+endif
+
 		;; floppy setup
 		call	floppy_post
 
@@ -459,11 +462,6 @@ endif
 		call	hard_drive_post
 
 		C_SETUP			; in case assembly code changed things
-ifdef VBOX_WITH_BIOS_AHCI
-		; AHCI driver setup
-		call	_ahci_init
-endif
-
 		call	_print_bios_banner
 
 		;; El Torito floppy/hard disk emulation
@@ -1489,35 +1487,6 @@ boot_setup:
 include pcibios.inc
 include pirq.inc
 
-ifdef VBOX_WITH_BIOS_AHCI
-
-ahci_int13_handler:
-		;; allocate space for IRET frame used to call old INT 13h
-		push	ax
-		push	ax
-		push	ax
-
-		pusha
-		push	ds
-		push	es
-		push	0		; Room for return value (default 0)
-		C_SETUP
-		call	_ahci_int13
-		pop	ax
-		pop	es
-		pop	ds
-		cmp	ax, 0		; Check if interrupt was handled
-		je	ahci_int13_out
-
-		popa			; Restore caller's registers
-		iret			; Call old handler
-
-ahci_int13_out:
-		popa
-		add	sp, 6		; Remove the IRET frame
-		iret
-		
-endif
 
 ;; --------------------------------------------------------
 ;; INT 12h handler - Memory size
