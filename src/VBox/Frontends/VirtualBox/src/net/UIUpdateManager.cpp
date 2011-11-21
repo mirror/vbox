@@ -179,7 +179,6 @@ private slots:
         request.setUrl(url);
         request.setRawHeader("User-Agent", strUserAgent.toAscii());
         QNetworkReply *pReply = gNetworkManager->get(request);
-        connect(pReply, SIGNAL(sslErrors(QList<QSslError>)), pReply, SLOT(ignoreSslErrors()));
         connect(pReply, SIGNAL(finished()), this, SLOT(sltHandleCheckReply()));
     }
 
