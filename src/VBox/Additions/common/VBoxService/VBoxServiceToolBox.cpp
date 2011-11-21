@@ -143,6 +143,23 @@ static void VBoxServiceToolboxShowVersion(void)
 
 
 /**
+ * Initializes the parseable stream(s).
+ *
+ * @return  IPRT status code.
+ */
+static int VBoxServiceToolboxStrmInit(void)
+{
+    /* Set stdout's mode to binary. This is required for outputting all the machine-readable
+     * data correctly. */
+    int rc = RTStrmSetMode(g_pStdOut, 1 /* Binary mode */, -1 /* Current code set, not changed */);
+    if (RT_FAILURE(rc))
+        RTMsgError("Unable to set stdout to binary mode, rc=%Rrc\n", rc);
+
+    return rc;
+}
+
+
+/**
  * Prints a parseable stream header which contains the actual tool
  * which was called/used along with its stream version.
  *
@@ -156,6 +173,7 @@ static void VBoxServiceToolboxPrintStrmHeader(const char *pszToolName, uint32_t 
     RTPrintf("hdr_id=%s%chdr_ver=%u%c", pszToolName, 0, uVersion, 0);
 }
 
+
 /**
  * Prints a standardized termination sequence indicating that the
  * parseable stream just ended.
@@ -165,6 +183,7 @@ static void VBoxServiceToolboxPrintStrmTermination()
 {
     RTPrintf("%c%c%c%c", 0, 0, 0, 0);
 }
+
 
 /**
  * Destroys a path buffer list.
@@ -832,7 +851,12 @@ static RTEXITCODE VBoxServiceToolboxLs(int argc, char **argv)
 
         /* Print magic/version. */
         if (fOutputFlags & VBOXSERVICETOOLBOXOUTPUTFLAG_PARSEABLE)
+        {
+            rc = VBoxServiceToolboxStrmInit();
+            if (RT_FAILURE(rc))
+                RTMsgError("Error while initializing parseable streams, rc=%Rrc\n", rc);
             VBoxServiceToolboxPrintStrmHeader("vbt_ls", 1 /* Stream version */);
+        }
 
         PVBOXSERVICETOOLBOXPATHENTRY pNodeIt;
         RTListForEach(&fileList, pNodeIt, VBOXSERVICETOOLBOXPATHENTRY, Node)
@@ -1067,7 +1091,12 @@ static RTEXITCODE VBoxServiceToolboxStat(int argc, char **argv)
     if (RT_SUCCESS(rc))
     {
         if (fOutputFlags & VBOXSERVICETOOLBOXOUTPUTFLAG_PARSEABLE) /* Output termination. */
+        {
+            rc = VBoxServiceToolboxStrmInit();
+            if (RT_FAILURE(rc))
+                RTMsgError("Error while initializing parseable streams, rc=%Rrc\n", rc);
             VBoxServiceToolboxPrintStrmHeader("vbt_stat", 1 /* Stream version */);
+        }
 
         PVBOXSERVICETOOLBOXPATHENTRY pNodeIt;
         RTListForEach(&fileList, pNodeIt, VBOXSERVICETOOLBOXPATHENTRY, Node)
