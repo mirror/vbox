@@ -95,7 +95,7 @@ static RTSTREAM    g_StdIn =
     RTSTREAM_MAGIC,
     0,
     stdin,
-    true,
+    /*.fCurrentCodeSet = */ true,
     /*.fBinary = */ false,
     /*.fRecheckMode = */ true
 #ifndef HAVE_FWRITE_UNLOCKED
@@ -109,7 +109,7 @@ static RTSTREAM    g_StdErr =
     RTSTREAM_MAGIC,
     0,
     stderr,
-    true,
+    /*.fCurrentCodeSet = */ true,
     /*.fBinary = */ false,
     /*.fRecheckMode = */ true
 #ifndef HAVE_FWRITE_UNLOCKED
@@ -123,7 +123,7 @@ static RTSTREAM    g_StdOut =
     RTSTREAM_MAGIC,
     0,
     stdout,
-    true,
+    /*.fCurrentCodeSet = */ true,
     /*.fBinary = */ false,
     /*.fRecheckMode = */ true
 #ifndef HAVE_FWRITE_UNLOCKED
@@ -428,6 +428,26 @@ RTR3DECL(int) RTStrmClearError(PRTSTREAM pStream)
 
     clearerr(pStream->pFile);
     ASMAtomicWriteS32(&pStream->i32Error, VINF_SUCCESS);
+    return VINF_SUCCESS;
+}
+
+
+RTR3DECL(int) RTStrmSetMode(PRTSTREAM pStream, int fBinary, int fCurrentCodeSet)
+{
+    AssertPtrReturn(pStream, VERR_INVALID_HANDLE);
+    AssertReturn(pStream->u32Magic == RTSTREAM_MAGIC, VERR_INVALID_HANDLE);
+    AssertReturn(fBinary == true || fBinary == false || fBinary == -1, VERR_INVALID_PARAMETER);
+    AssertReturn(fCurrentCodeSet == true || fCurrentCodeSet == false || fCurrentCodeSet == -1, VERR_INVALID_PARAMETER);
+
+    rtStrmLock(pStream);
+
+    if (fBinary != -1)
+        pStream->fBinary = fBinary != false;
+    if (fCurrentCodeSet != -1)
+        pStream->fCurrentCodeSet = fCurrentCodeSet != false;
+
+    rtStrmUnlock(pStream);
+
     return VINF_SUCCESS;
 }
 
