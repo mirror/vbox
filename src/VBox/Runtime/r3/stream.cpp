@@ -446,6 +446,13 @@ RTR3DECL(int) RTStrmSetMode(PRTSTREAM pStream, int fBinary, int fCurrentCodeSet)
     if (fCurrentCodeSet != -1)
         pStream->fCurrentCodeSet = RT_BOOL(fCurrentCodeSet);
 
+    /* Re-check mode on next operation. */
+    if (   fBinary         != -1
+        || fCurrentCodeSet != -1)
+    {
+        pStream->fRecheckMode = true;
+    }
+
     rtStrmUnlock(pStream);
 
     return VINF_SUCCESS;
@@ -502,7 +509,7 @@ static void rtStreamRecheckMode(PRTSTREAM pStream)
         int fActual   = _setmode(fh, fExpected);
         if (fActual != -1 && fExpected != (fActual & (_O_BINARY | _O_TEXT)))
         {
-            _setmode(fh, fActual & (_O_BINARY | _O_TEXT));
+            fActual = _setmode(fh, fActual & (_O_BINARY | _O_TEXT));
             pStream->fBinary = !(fActual & _O_TEXT);
         }
     }
