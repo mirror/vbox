@@ -113,6 +113,19 @@ RTR3DECL(int) RTStrmError(PRTSTREAM pStream);
 RTR3DECL(int) RTStrmClearError(PRTSTREAM pStream);
 
 /**
+ * Changes the stream mode.
+ *
+ * @returns iprt status code.
+ * @param   pStream         The stream.
+ * @param   fBinary         The desired binary (@c true) / text mode (@c false).
+ *                          Pass -1 to leave it unchanged.
+ * @param   fCurrentCodeSet Whether converting the stream from UTF-8 to the
+ *                          current code set is desired (@c true) or not (@c
+ *                          false).  Pass -1 to leave this property unchanged.
+ */
+RTR3DECL(int) RTStrmSetMode(PRTSTREAM pStream, int fBinary, int fCurrentCodeSet);
+
+/**
  * Rewinds the stream.
  *
  * Stream errors will be reset on success.
