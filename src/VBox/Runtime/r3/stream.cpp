@@ -442,16 +442,13 @@ RTR3DECL(int) RTStrmSetMode(PRTSTREAM pStream, int fBinary, int fCurrentCodeSet)
     rtStrmLock(pStream);
 
     if (fBinary != -1)
-        pStream->fBinary = RT_BOOL(fBinary);
-    if (fCurrentCodeSet != -1)
-        pStream->fCurrentCodeSet = RT_BOOL(fCurrentCodeSet);
-
-    /* Re-check mode on next operation. */
-    if (   fBinary         != -1
-        || fCurrentCodeSet != -1)
     {
+        pStream->fBinary      = RT_BOOL(fBinary);
         pStream->fRecheckMode = true;
     }
+
+    if (fCurrentCodeSet != -1)
+        pStream->fCurrentCodeSet = RT_BOOL(fCurrentCodeSet);
 
     rtStrmUnlock(pStream);
 
