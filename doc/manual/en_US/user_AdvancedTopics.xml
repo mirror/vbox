@@ -1503,13 +1503,13 @@ VBoxManage setextradata "VM name"
     has support for it.</para>
 
     <para>To force installation of the older STREAMS based network filter
-    driver, execute as root execute the below command before installing the
+    driver, execute as root the following command before installing the
     VirtualBox package:</para>
 
     <screen>touch /etc/vboxinst_vboxflt</screen>
 
     <para>To force installation of the Crossbow based network filter driver,
-    execute as root the below command before installing the VirtualBox
+    execute as root the following command before installing the VirtualBox
     package:</para>
 
     <screen>touch /etc/vboxinst_vboxbow</screen>
