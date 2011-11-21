@@ -748,7 +748,9 @@
 
     <para>VDE is available on Linux and FreeBSD hosts only. It is only
       available if the VDE software and the VDE plugin library from the
-      VirtualSquare project are installed on the host system. For more
+      VirtualSquare project are installed on the host system<footnote>
+        <para>For Linux hosts, the shared library libvdeplug.so must be available
+        in the search path for shared libraries</para></footnote>. For more
       information on setting up VDE networks, please see the documentation
       accompanying the software.<footnote>
     <para><ulink
