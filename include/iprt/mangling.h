@@ -1249,6 +1249,7 @@
 # define RTStrmPutStr                                   RT_MANGLER(RTStrmPutStr)
 # define RTStrmReadEx                                   RT_MANGLER(RTStrmReadEx)
 # define RTStrmRewind                                   RT_MANGLER(RTStrmRewind)
+# define RTStrmSetMode                                  RT_MANGLER(RTStrmSetMode)
 # define RTStrmWriteEx                                  RT_MANGLER(RTStrmWriteEx)
 # define RTStrNCmp                                      RT_MANGLER(RTStrNCmp)
 # define RTStrNICmp                                     RT_MANGLER(RTStrNICmp)
