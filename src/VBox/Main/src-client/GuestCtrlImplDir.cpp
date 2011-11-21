@@ -29,6 +29,8 @@
 
 #include <VBox/VMMDev.h>
 #ifdef VBOX_WITH_GUEST_CONTROL
+# include <iprt/path.h>
+
 # include <VBox/com/array.h>
 # include <VBox/com/ErrorInfo.h>
 #endif
@@ -391,16 +393,15 @@ HRESULT Guest::directoryOpenInternal(IN_BSTR aDirectory, IN_BSTR aFilter,
 
         /* Construct and hand in actual directory name + filter we want to open. */
         char *pszDirectoryFinal;
-        int cbRet;
         if (Utf8Filter.isEmpty())
-            cbRet = RTStrAPrintf(&pszDirectoryFinal, "%s", Utf8Directory.c_str());
+            pszDirectoryFinal = RTStrDup(Utf8Directory.c_str());
         else
-            cbRet = RTStrAPrintf(&pszDirectoryFinal, "%s/%s",
-                                 Utf8Directory.c_str(), Utf8Filter.c_str());
-        if (!cbRet)
+            pszDirectoryFinal = RTPathJoinA(Utf8Directory.c_str(), Utf8Filter.c_str());
+        if (!pszDirectoryFinal)
             return setError(E_OUTOFMEMORY, tr("Out of memory while allocating final directory"));
 
         args.push_back(Bstr(pszDirectoryFinal).raw());  /* The directory we want to open. */
+        RTStrFree(pszDirectoryFinal);
 
         ULONG uPID;
         /** @todo Don't wait for tool to finish! Might take a lot of time! */
@@ -413,15 +414,17 @@ HRESULT Guest::directoryOpenInternal(IN_BSTR aDirectory, IN_BSTR aFilter,
         {
             /* Assign new directory handle ID. */
             ULONG uHandleNew;
-            int vrc = directoryCreateHandle(&uHandleNew, uPID,
-                                            aDirectory, aFilter, aFlags);
-            if (RT_SUCCESS(vrc))
+            int rc = directoryCreateHandle(&uHandleNew, uPID,
+                                           aDirectory, aFilter, aFlags);
+            if (RT_SUCCESS(rc))
             {
                 *aHandle = uHandleNew;
             }
             else
                 hr = setError(VBOX_E_IPRT_ERROR,
-                              tr("Unable to create guest directory handle (%Rrc)"), vrc);
+                              tr("Unable to create guest directory handle (%Rrc)"), rc);
+            if (pRC)
+                *pRC = rc;
         }
     }
     catch (std::bad_alloc &)
