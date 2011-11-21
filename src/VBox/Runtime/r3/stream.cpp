@@ -436,15 +436,15 @@ RTR3DECL(int) RTStrmSetMode(PRTSTREAM pStream, int fBinary, int fCurrentCodeSet)
 {
     AssertPtrReturn(pStream, VERR_INVALID_HANDLE);
     AssertReturn(pStream->u32Magic == RTSTREAM_MAGIC, VERR_INVALID_HANDLE);
-    AssertReturn(fBinary == TRUE || fBinary == FALSE || fBinary == -1, VERR_INVALID_PARAMETER);
-    AssertReturn(fCurrentCodeSet == TRUE || fCurrentCodeSet == FALSE || fCurrentCodeSet == -1, VERR_INVALID_PARAMETER);
+    AssertReturn(fBinary == 1 /* true */ || fBinary == 0 /* false */ || fBinary == -1, VERR_INVALID_PARAMETER);
+    AssertReturn(fCurrentCodeSet == 1 /* true */ || fCurrentCodeSet == 0 /* false */ || fCurrentCodeSet == -1, VERR_INVALID_PARAMETER);
 
     rtStrmLock(pStream);
 
     if (fBinary != -1)
-        pStream->fBinary = fBinary != FALSE;
+        pStream->fBinary = fBinary != 0 /* false */;
     if (fCurrentCodeSet != -1)
-        pStream->fCurrentCodeSet = fCurrentCodeSet != FALSE;
+        pStream->fCurrentCodeSet = fCurrentCodeSet != 0 /* false */;
 
     rtStrmUnlock(pStream);
 
