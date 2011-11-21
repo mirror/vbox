@@ -206,11 +206,12 @@ static int rtDbgModNmScanFile(PRTDBGMODNM pThis, PRTSTREAM pStrm, bool fAddSymbo
      */
     RTUINTPTR   SegZeroRva = fAddSymbols ? RTDbgModSegmentRva(pThis->hCnt, 0/*iSeg*/) : 0;
     char        szSym[RTDBG_SYMBOL_NAME_LENGTH] = "";
-    size_t      cchMod  = 0;
-    size_t      offSym  = 0;
-    unsigned    cchAddr = 0;
-    uint64_t    u64Low  = UINT64_MAX;
-    uint64_t    u64High = 0;
+    size_t      cchMod    = 0;
+    size_t      offSym    = 0;
+    unsigned    cchAddr   = 0;
+    uint64_t    u64Low    = UINT64_MAX;
+    uint64_t    u64High   = 0;
+    int         fWithType = -1;
     char        szLine[512];
     int         rc;
     while (RT_SUCCESS(rc = RTStrmGetLine(pStrm, szLine, sizeof(szLine))))
@@ -235,14 +236,25 @@ static int rtDbgModNmScanFile(PRTDBGMODNM pThis, PRTSTREAM pStrm, bool fAddSymbo
                 return VERR_DBG_NOT_NM_MAP_FILE;
 
             /* Get the type and check for single space before symbol. */
-            chType = szLine[cchAddr + 1];
-            if (    RT_C_IS_BLANK(chType)
-                ||  !RT_C_IS_BLANK(szLine[cchAddr + 2])
-                ||  RT_C_IS_BLANK(szLine[cchAddr + 3]))
-                return VERR_DBG_NOT_NM_MAP_FILE;
+            char *pszName;
+            if (fWithType < 0)
+                fWithType = RT_C_IS_BLANK(szLine[cchAddr + 2]) ? 1 : 0; /* have type? Linux 2.4 /proc/ksyms doesn't. */
+            if (fWithType)
+            {
+                chType  = szLine[cchAddr + 1];
+                pszName = &szLine[cchAddr + 3];
+                if (    RT_C_IS_BLANK(chType)
+                    ||  !RT_C_IS_BLANK(szLine[cchAddr + 2])
+                    ||  RT_C_IS_BLANK(szLine[cchAddr + 3]))
+                    return VERR_DBG_NOT_NM_MAP_FILE;
+            }
+            else
+            {
+                chType = 'T';
+                pszName = &szLine[cchAddr + 1];
+            }
 
             /* Find the end of the symbol name. */
-            char *pszName    = &szLine[cchAddr + 3];
             char *pszNameEnd = pszName;
             char ch;
             while ((ch = *pszNameEnd) != '\0' && !RT_C_IS_SPACE(ch))
