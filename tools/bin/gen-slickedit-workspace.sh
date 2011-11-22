@@ -359,6 +359,264 @@ my_generate_workspace()
 }
 
 
+##
+# Generate stuff
+#
+my_generate_usercpp_h()
+{
+    #
+    # Probe the slickedit user config, picking the most recent version.
+    #
+    if test -d "${HOME}/Library/Application Support/Slickedit"; then
+        MY_SLICKDIR_="${HOME}/Library/Application Support/Slickedit"
+        MY_USERCPP_H="unxcpp.h"
+    elif test -d "${HOMEDRIVE}${HOMEPATH}/Documents/My SlickEdit Config"; then
+        MY_SLICKDIR_="${HOMEDRIVE}${HOMEPATH}/Documents/My SlickEdit Config"
+        MY_USERCPP_H="usercpp.h"
+    else
+        MY_SLICKDIR_="${HOME}/.slickedit"
+        MY_USERCPP_H="unxcpp.h"
+    fi
+
+    MY_VER_NUM="0"
+    MY_VER="0.0.0"
+    for subdir in "${MY_SLICKDIR_}/"*;
+    do
+        if test -f "${subdir}/${MY_USERCPP_H}"; then
+            MY_CUR_VER_NUM=0
+            MY_CUR_VER=`echo "${subdir}" | ${MY_SED} -e 's,^.*/,,g'`
+
+            # Convert the dotted version number to an integer, checking that
+            # it is all numbers in the process.
+            set `echo "${MY_CUR_VER}" | ${MY_SED} 's/\./ /g' `
+            i=100000000
+            while test $# -gt 0;
+            do
+                if ! ${MY_EXPR} "$1" + 1 > /dev/null 2> /dev/null; then
+                    MY_CUR_VER_NUM=0;
+                    break
+                fi
+                if test "$i" -gt 0; then
+                    MY_CUR_VER_NUM=$((${MY_CUR_VER_NUM} + $1 * $i))
+                    i=$(($i / 100))
+                fi
+                shift
+            done
+
+            # More recent that what we have?
+            if test "${MY_CUR_VER_NUM}" -gt "${MY_VER_NUM}"; then
+                MY_VER_NUM="${MY_CUR_VER_NUM}"
+                MY_VER="${MY_CUR_VER}"
+            fi
+        fi
+    done
+
+    MY_SLICKDIR="${MY_SLICKDIR_}/${MY_VER}"
+    MY_USERCPP_H_FULL="${MY_SLICKDIR}/${MY_USERCPP_H}"
+    if test -f "${MY_USERCPP_H_FULL}"; then
+        echo "Found SlickEdit v${MY_VER} preprocessor file: ${MY_USERCPP_H_FULL}"
+    else
+        echo "Failed to locate SlickEdit preprocessor file. You need to manually merge ${MY_USERCPP_H}."
+        MY_USERCPP_H_FULL=""
+    fi
+
+    # Generate our
+    MY_FILE="${MY_USERCPP_H}"
+    ${MY_CAT} > ${MY_FILE} <<EOF
+#define IN_SLICKEDIT
+#define RT_C_DECLS_BEGIN
+#define RT_C_DECLS_END
+#define RT_NO_THROW
+#define RT_THROW(type) throw(type)
+#define RT_GCC_EXTENSION'
+#define RT_COMPILER_GROKS_64BIT_BITFIELDS'
+#define RT_COMPILER_WITH_80BIT_LONG_DOUBLE'
+
+#define ATL_NO_VTABLE
+#define BEGIN_COM_MAP(a)
+#define COM_INTERFACE_ENTRY(a)
+#define COM_INTERFACE_ENTRY2(a,b)
+#define COM_INTERFACE_ENTRY3(a,b,c)
+#define COM_INTERFACE_ENTRY4(a,b,c,d)
+#define END_COM_MAP(a)
+
+#define COM_DECL_READONLY_ENUM_AND_COLLECTION(a)
+#define COMGETTER(n)                    n
+#define COMSETTER(n)                    n
+#define ComSafeArrayIn(t,a)             t a[]
+#define ComSafeArrayOut(t,a)            t * a[]
+#define DECLARE_CLASSFACTORY(a)
+#define DECLARE_CLASSFACTORY_SINGLETON(a)
+#define DECLARE_REGISTRY_RESOURCEID(a)
+#define DECLARE_NOT_AGGREGATABLE(a)
+#define DECLARE_PROTECT_FINAL_CONSTRUCT(a)
+#define DECLARE_EMPTY_CTOR_DTOR(a)      a(); ~a();
+#define DEFINE_EMPTY_CTOR_DTOR(a)       a::a() {}   a::~a() {}
+#define NS_DECL_ISUPPORTS
+#define NS_IMETHOD                      virtual nsresult
+#define NS_IMETHOD_(type)               virtual type
+#define NS_IMETHODIMP                   nsresult
+#define NS_IMETHODIMP_(type)            type
+#define PARSERS_EXPORT
+EOF
+    if test -n "${MY_WINDOWS_HOST}"; then
+        ${MY_CAT} >> ${MY_FILE} <<EOF
+#define COM_STRUCT_OR_CLASS(I)          struct I
+#define STDMETHOD(m)                    virtual HRESULT m
+#define STDMETHOD_(type,m)              virtual type m
+#define STDMETHODIMP                    HRESULT
+#define STDMETHODIMP_(type)             type
+EOF
+    else
+        ${MY_CAT} >> ${MY_FILE} <<EOF
+#define COM_STRUCT_OR_CLASS(I)          class I
+#define STDMETHOD(m)                    virtual nsresult m
+#define STDMETHOD_(type,m)              virtual type m
+#define STDMETHODIMP                    nsresult
+#define STDMETHODIMP_(type)             type
+EOF
+    fi
+    ${MY_CAT} >> ${MY_FILE} <<EOF
+#define VBOX_SCRIPTABLE(a)              public a
+#define VBOX_SCRIPTABLE_IMPL(a)
+#define VIRTUALBOXBASE_ADD_ERRORINFO_SUPPORT(a)
+
+#define CTX_SUFF(var)                   var##R3
+#define CTXAllSUFF(var)                 var##R3
+#define CTXSUFF(var)                    var##HC
+#define OTHERCTXSUFF(var)  	        var##GC
+#define CTXALLMID(first, last)          first##R3##last
+#define CTXMID(first, last)             first##HC##last
+#define OTHERCTXMID(first, last)        first##GC##last
+#define CTXTYPE(GCType, R3Type, R0Type) R3Type
+#define RCTYPE(RCType, HCType)          RCType
+#define GCTYPE(GCType, HCType)          GCType
+#define RCPTRTYPE(RCType)               RCType
+#define GCPTRTYPE(GCType)               GCType
+#define HCPTRTYPE(HCType)               HCType
+#define R3R0PTRTYPE(HCType)             HCType
+#define R0PTRTYPE(R3Type)               R3Type
+#define R3PTRTYPE(R0Type)               R0Type
+#define RT_SRC_POS                      __FILE__, __LINE__, __PRETTY_FUNCTION__
+#define RT_SRC_POS_DECL                 const char *pszFile, unsigned iLine, const char *pszFunction
+#define RT_SRC_POS_ARGS                 pszFile, iLine, pszFunction
+#define RTCALL
+#define DECLINLINE(type)                inline type
+#define DECL_FORCE_INLINE(type)         inline type
+#define DECL_INVALID(type)              type
+
+#define PDMDEVINSINT_DECLARED           1
+#define VBOX_WITH_HGCM                  1
+#define VBOXCALL
+
+#define PGM_CTX(a,b)                    b
+#define PGM_CTX3(a,b,c)                 c
+#define PGM_GST_NAME(name)              PGM_GST_NAME_AMD64(name)
+#define PGM_GST_NAME_REAL(name)         PGM_CTX3(name)
+#define PGM_GST_NAME_PROT(name)         PGM_CTX3(pgm,GstProt,name)
+#define PGM_GST_NAME_32BIT(name)        PGM_CTX3(pgm,Gst32Bit,name)
+#define PGM_GST_NAME_PAE(name)          PGM_CTX3(pgm,GstPAE,name)
+#define PGM_GST_NAME_AMD64(name)        PGM_CTX3(pgm,GstAMD64,name)
+#define PGM_GST_DECL(type, name)        type PGM_GST_NAME(name)
+#define PGM_SHW_NAME(name)              PGM_GST_NAME_AMD64(name)
+#define PGM_SHW_NAME_32BIT(name)        PGM_CTX3(pgm,Shw32Bit,name)
+#define PGM_SHW_NAME_PAE(name)          PGM_CTX3(pgm,ShwPAE,name)
+#define PGM_SHW_NAME_AMD64(name)        PGM_CTX3(pgm,ShwAMD64,name)
+#define PGM_SHW_NAME_NESTED(name)       PGM_CTX3(pgm,ShwNested,name)
+#define PGM_SHW_NAME_EPT(name)          PGM_CTX3(pgm,ShwEPT,name)
+#define PGM_SHW_DECL(type, name)        type PGM_SHW_NAME(name)
+#define PGM_BTH_NAME(name)              PGM_BTH_NAME_NESTED_AMD64(name)
+#define PGM_BTH_NAME_32BIT_REAL(name)   PGM_CTX3(pgm,Bth,name)
+#define PGM_BTH_NAME_32BIT_PROT(name)   PGM_CTX3(pgm,Bth,name)
+#define PGM_BTH_NAME_32BIT_32BIT(name)  PGM_CTX3(pgm,Bth,name)
+#define PGM_BTH_NAME_PAE_REAL(name)     PGM_CTX3(pgm,Bth,name)
+#define PGM_BTH_NAME_PAE_PROT(name)     PGM_CTX3(pgm,Bth,name)
+#define PGM_BTH_NAME_PAE_32BIT(name)    PGM_CTX3(pgm,Bth,name)
+#define PGM_BTH_NAME_PAE_PAE(name)      PGM_CTX3(pgm,Bth,name)
+#define PGM_BTH_NAME_AMD64_PROT(name)   PGM_CTX3(pgm,Bth,name)
+#define PGM_BTH_NAME_AMD64_AMD64(name)  PGM_CTX3(pgm,Bth,name)
+#define PGM_BTH_NAME_NESTED_REAL(name)  PGM_CTX3(pgm,Bth,name)
+#define PGM_BTH_NAME_NESTED_PROT(name)  PGM_CTX3(pgm,Bth,name)
+#define PGM_BTH_NAME_NESTED_32BIT(name) PGM_CTX3(pgm,Bth,name)
+#define PGM_BTH_NAME_NESTED_PAE(name)   PGM_CTX3(pgm,Bth,name)
+#define PGM_BTH_NAME_NESTED_AMD64(name) PGM_CTX3(pgm,Bth,name)
+#define PGM_BTH_NAME_EPT_REAL(name)     PGM_CTX3(pgm,Bth,name)
+#define PGM_BTH_NAME_EPT_PROT(name)     PGM_CTX3(pgm,Bth,name)
+#define PGM_BTH_NAME_EPT_32BIT(name)    PGM_CTX3(pgm,Bth,name)
+#define PGM_BTH_NAME_EPT_PAE(name)      PGM_CTX3(pgm,Bth,name)
+#define PGM_BTH_NAME_EPT_AMD64(name)    PGM_CTX3(pgm,Bth,name)
+#define PGM_BTH_DECL(type, name)        type PGM_BTH_NAME(name)
+
+#define FNIEMOP_STUB(a_Name)        	   static VBOXSTRICTRC a_Name(PIEMCPU pIemCpu) { return VERR_NOT_IMPLEMENTED; }
+#define FNIEMOP_DEF(a_Name)        	   static VBOXSTRICTRC a_Name(PIEMCPU pIemCpu)
+#define FNIEMOP_DEF_1(a_Name, a_Type0, a_Name0) static VBOXSTRICTRC a_Name(PIEMCPU pIemCpu, a_Type0 a_Name0)
+#define FNIEMOP_DEF_2(a_Name, a_Type0, a_Name0, a_Type1, a_Name1) static VBOXSTRICTRC a_Name(PIEMCPU pIemCpu, a_Type0 a_Name0, a_Type1 a_Name1)
+#define IEM_CIMPL_DEF_0(a_Name)         static VBOXSTRICTRC a_Name(PIEMCPU pIemCpu)
+#define IEM_CIMPL_DEF_1(a_Name, a_Type0, a_Name0) static VBOXSTRICTRC a_Name(PIEMCPU pIemCpu, , a_Type0 a_Name0)
+#define IEM_CIMPL_DEF_2(a_Name, a_Type0, a_Name0, a_Type1, a_Name1) static VBOXSTRICTRC a_Name(PIEMCPU pIemCpu, , a_Type0 a_Name0, a_Type1 a_Name1)
+#define IEM_CIMPL_DEF_3(a_Name, a_Type0, a_Name0, a_Type1, a_Name1, a_Type2, a_Name2)  static VBOXSTRICTRC a_Name(PIEMCPU pIemCpu, , a_Type0 a_Name0, a_Type1 a_Name1, , a_Type2 a_Name2)
+#define IEM_MC_LOCAL(a_Type, a_Name)                       a_Type a_Name
+#define IEM_MC_ARG(a_Type, a_Name, a_iArg)                 a_Type a_Name
+#define IEM_MC_ARG_CONST(a_Type, a_Name, a_Value, a_iArg)  a_Type const a_Name = a_Value
+EOF
+
+    MY_HDR_FILES=`  echo ${MY_ROOT_DIR}/include/VBox/*.h ${MY_ROOT_DIR}/include/VBox/vmm/*.h \
+                  | ${MY_SED} -e '/VBox\/err.h/d' `
+    MY_HDR_FILES="${MY_HDR_FILES} ${MY_ROOT_DIR}/include/iprt/cdefs.h"
+    ${MY_SED} \
+        -e '/__cdecl/d' \
+        -e '/^ *# *define.*DECL/!d' \
+        -e '/DECLS/d' \
+        -e '/DECLARE_CLS_/d' \
+        -e '/_SRC_POS_DECL/d' \
+        -e '/declspec/d' \
+        -e '/__attribute__/d' \
+        -e 's/#  */#/g' \
+        -e 's/   */ /g' \
+        -e '/(type) DECLEXPORT/d' \
+        -e '/(a_Type) DECLEXPORT/d' \
+        -e '/ DECLEXPORT_CLASS/d' \
+        -e 's/ *VBOXCALL//' \
+        -e 's/ *RTCALL//' \
+        -e 's/(type) DECLIMPORT(type)/(type) type/' \
+        -e 's/(a_Type) DECLIMPORT(a_Type)/(type) type/' \
+        -e '/ DECLASM(type) type/d' \
+        -e '/define  *DECL..CALLBACKMEMBER(type[^)]*) *RT/d' \
+        -e '/define  *DECLINLINE(type)/d' \
+        -e '/define  *DECL_FORCE_INLINE(type)/d' \
+        -e '/  *DECL_INVALID(/d' \
+        -e '/define RT[DATGRC03]*DECL(type) *DECLHIDDEN(type)/d' \
+        -e '/define RT[DATGRC03]*DECL(a_Type) *DECLHIDDEN(a_Type)/d' \
+        -e 's/(type) DECLHIDDEN(type)/(type) type/' \
+        -e 's/(a_Type) DECLHIDDEN(a_Type)/(type) type/' \
+        \
+        --append "${MY_FILE}" \
+        ${MY_HDR_FILES}
+
+    ${MY_CAT} "${MY_FILE}" \
+        | ${MY_SED} -e 's/_/\x1F/g' -e 's/(/\x1E/g' -e 's/[[:space:]][[:space:]]*/\x1C/g' \
+        | ${MY_SED} -e 's/\x1F/_/g' -e 's/\x1E/(/g' -e 's/\x1C/ /g' \
+        | ${MY_SED} -e '/#define/s/$/ \/\/ vbox/' --output "${MY_FILE}.2"
+
+    # Append non-vbox bits from the current user config.
+    if test -n "${MY_USERCPP_H_FULL}"  -a  -f "${MY_USERCPP_H_FULL}"; then
+        ${MY_SED} -e '/ \/\/ vbox$/d' -e '/^[[:space:]]*$/d' --append "${MY_FILE}" "${MY_USERCPP_H_FULL}"
+    fi
+
+    # Finalize the file (sort + blank lines).
+    ${MY_CAT} "${MY_FILE}.2" \
+        | ${MY_SORT} \
+        | ${MY_SED} -e 's/$/\n/' --output "${MY_FILE}"
+    ${MY_RM} -f "${MY_FILE}.2"
+
+    # Install it.
+    if test -n "${MY_USERCPP_H_FULL}"  -a  -f "${MY_USERCPP_H_FULL}"; then
+       # ${MY_MV} -vf "${MY_USERCPP_H_FULL}" "${MY_USERCPP_H_FULL}.bak"
+       # ${MY_CP} -v "${MY_FILE}" "${MY_USERCPP_H_FULL}"
+        echo "Updated the SlickEdit preprocessor file. (Previous version renamed to .bak.)"
+    fi
+}
+
 ###### end of functions ####
 
 
@@ -661,6 +919,13 @@ if test -f "${MY_FILE}"; then
         -e '/^CurrentProject/p' \
         "${MY_FILE}.old" > "${MY_FILE}"
 fi
+
+
+#
+# Generate and update the usercpp.h/unxcpp.h file.
+#
+my_generate_usercpp_h
+
 
 echo "done"
 
