@@ -2948,7 +2948,6 @@ void Display::setupCrHgsmiData(void)
         Completion.hCompletion = mpDrv->pVBVACallbacks;
         Completion.pfnCompletion = mpDrv->pVBVACallbacks->pfnCrHgsmiCommandCompleteAsync;
 
-        int rc = VERR_INVALID_FUNCTION;
         VBOXHGCMSVCPARM parm;
         parm.type = VBOX_HGCM_SVC_PARM_PTR;
         parm.u.pointer.addr = &Completion;
