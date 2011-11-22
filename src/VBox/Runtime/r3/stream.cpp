@@ -683,7 +683,7 @@ static int rtStrmWriteLocked(PRTSTREAM pStream, const void *pvBuf, size_t cbWrit
                                 rc = RTErrConvertFromErrno(GetLastError());
                             break;
                         }
-                        if (cwcThis != 0)
+                        if (cwcThis != 1) /* Unable to write current char (amount)? */
                             break;
                         cwcWritten++;
                     }
