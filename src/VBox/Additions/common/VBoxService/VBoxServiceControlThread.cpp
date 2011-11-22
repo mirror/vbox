@@ -355,7 +355,7 @@ static int VBoxServiceControlThreadHandleIPCRequest(RTPOLLSET hPollSet, uint32_t
         /* Drain the notification pipe. */
         uint8_t abBuf[8];
         size_t cbIgnore;
-        int rc = RTPipeRead(pThread->hNotificationPipeR, abBuf, sizeof(abBuf), &cbIgnore);
+        rc = RTPipeRead(pThread->hNotificationPipeR, abBuf, sizeof(abBuf), &cbIgnore);
         if (RT_FAILURE(rc))
             VBoxServiceError("ControlThead: Draining IPC notification pipe failed with rc=%Rrc\n", rc);
 
