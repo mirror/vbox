@@ -71,33 +71,80 @@ static const int gsRightMargin = 5;
 static const int gsBottomMargin = 5;
 #endif /* !Q_WS_MAC */
 
+class UIEventForBlockUpdate : public QEvent
+{
+public:
+
+    enum { Type = QEvent::User + 1 };
+
+    UIEventForBlockUpdate(const QUuid &requestId, int iBlockNumber, bool fNewBlock)
+        : QEvent((QEvent::Type)Type), m_requestId(requestId), m_iBlockNumber(iBlockNumber), m_fNewBlock(fNewBlock)
+    {
+    }
+
+    QUuid requestId() const { return m_requestId; }
+    int blockNumber() const { return m_iBlockNumber; }
+    bool newBlock() const { return m_fNewBlock; }
+
+private:
+
+    QUuid m_requestId;
+    int m_iBlockNumber;
+    bool m_fNewBlock;
+};
+
+/* Section types: */
+enum Section
+{
+    Section_General,
+    Section_System,
+    Section_Preview,
+    Section_Display,
+    Section_Storage,
+    Section_Audio,
+    Section_Network,
+    Section_Serial,
+#ifdef VBOX_WITH_PARALLEL_PORTS
+    Section_Parallel,
+#endif /* VBOX_WITH_PARALLEL_PORTS */
+    Section_USB,
+    Section_SharedFolders,
+    Section_Description,
+    Section_End
+};
+
+/**
+ *  UIDetailsBlock class.
+ *  QWidget container to store UIPopupBox sections.
+ */
+class UIDetailsBlock : public QWidget
+{
+    Q_OBJECT;
+
+public:
+
+    UIDetailsBlock(QWidget *pParent)
+        : QWidget(pParent)
+    {
+    }
+
+    UIPopupBox*& operator[](Section section)
+    {
+        return m_sections[section];
+    }
+
+private:
+
+    QMap<Section, UIPopupBox*> m_sections;
+};
+typedef QVector<UIDetailsBlock*> UIDetailsSet;
+
 /**
  *  UIDescriptionPagePrivate
  */
 class UIDetailsPagePrivate : public QIWithRetranslateUI<QStackedWidget>
 {
     Q_OBJECT;
-
-    enum Section
-    {
-        Section_General,
-        Section_System,
-        Section_Preview,
-        Section_Display,
-        Section_Storage,
-        Section_Audio,
-        Section_Network,
-        Section_Serial,
-#ifdef VBOX_WITH_PARALLEL_PORTS
-        Section_Parallel,
-#endif /* VBOX_WITH_PARALLEL_PORTS */
-        Section_USB,
-        Section_SharedFolders,
-        Section_Description,
-        Section_End
-    };
-    typedef QMap<Section, UIPopupBox*> UIDetailsBlock;
-    typedef QVector<UIDetailsBlock> UIDetailsSet;
 
 public:
 
@@ -115,6 +162,7 @@ signals:
 protected:
 
     void retranslateUi();
+    bool event(QEvent *pEvent);
 
 private slots:
 
@@ -148,10 +196,9 @@ private:
 
     void prepareErrorPage();
 
-    void prepareSet();
-    void prepareBlock(int iBlockNumber);
+    void prepareSet(bool fNewSet);
+    void prepareBlock(int iBlockNumber, bool fNewBlock);
     void prepareSection(UIDetailsBlock &block, int iBlockNumber, Section section);
-    void updateSet();
 
     void saveSectionSetting();
 
@@ -173,6 +220,7 @@ private:
     QList<Section> m_sections;
     UIDetailsSet m_set;
     bool m_fUSBAvailable;
+    QUuid m_currentRequestId;
 
     /* Free text: */
     QRichTextBrowser *m_pText;
@@ -231,18 +279,8 @@ void UIDetailsPagePrivate::setMachines(const QList<CMachine> &machines)
     /* Prepare machine details page if necessary: */
     prepareDetails();
 
-    /* If count was changed: */
-    if (fCountChanged)
-    {
-        /* Recreate set of blocks of sections: */
-        prepareSet();
-    }
-    /* If count was NOT changed: */
-    else
-    {
-        /* Update set of blocks of sections: */
-        updateSet();
-    }
+    /* Prepare set of blocks: */
+    prepareSet(fCountChanged /* new set? */);
 
     /* Select corresponding widget: */
     setCurrentIndex(indexOf(m_pScrollArea));
@@ -316,20 +354,6 @@ void UIDetailsPagePrivate::retranslateUi()
             m_actions[Section_Description]->setText(tr("Description", "details report"));
     }
 
-    /* Translate set of blocks of sections: */
-    {
-        /* For every existing block: */
-        for (int i = 0; i < m_cMachineCount; ++i)
-        {
-            /* For every existing section: */
-            for (int j = 0; j < m_sections.size(); ++j)
-            {
-                /* Assign corresponding action text as section title: */
-                m_set[i][m_sections[j]]->setTitle(m_actions[m_sections[j]]->text());
-            }
-        }
-    }
-
     /* Translate error-label text: */
     if (m_pErrLabel)
         m_pErrLabel->setText(tr("The selected virtual machine is <i>inaccessible</i>. "
@@ -345,6 +369,36 @@ void UIDetailsPagePrivate::retranslateUi()
     }
 }
 
+bool UIDetailsPagePrivate::event(QEvent *pEvent)
+{
+    /* Handle special cases: */
+    switch (pEvent->type())
+    {
+        case UIEventForBlockUpdate::Type:
+        {
+            /* Cast and accept event: */
+            UIEventForBlockUpdate *pEventForBlockUpdate = static_cast<UIEventForBlockUpdate*>(pEvent);
+            pEventForBlockUpdate->accept();
+            /* Check that request is NOT outdated: */
+            if (pEventForBlockUpdate->requestId() == m_currentRequestId)
+            {
+                /* Process current request: */
+                prepareBlock(pEventForBlockUpdate->blockNumber(), pEventForBlockUpdate->newBlock());
+                /* Create next request: */
+                if (pEventForBlockUpdate->blockNumber() < m_cMachineCount - 1)
+                    QCoreApplication::postEvent(this, new UIEventForBlockUpdate(pEventForBlockUpdate->requestId(),
+                                                                                pEventForBlockUpdate->blockNumber() + 1,
+                                                                                pEventForBlockUpdate->newBlock()));
+            }
+            return true;
+        }
+        default:
+            break;
+    }
+    /* Call to base-class: */
+    return QIWithRetranslateUI<QStackedWidget>::event(pEvent);
+}
+
 void UIDetailsPagePrivate::sltUpdateGeneral()
 {
     /* Get current sender: */
@@ -356,7 +410,7 @@ void UIDetailsPagePrivate::sltUpdateGeneral()
     CMachine &machine = m_machines[iBlockNumber];
     AssertMsg(!machine.isNull(), ("Machine should be valid!\n"));
     /* Get details block: */
-    UIDetailsBlock &block = m_set[iBlockNumber];
+    UIDetailsBlock &block = *m_set[iBlockNumber];
     /* Get corresponding content widget: */
     QILabel *pLabel = qobject_cast<QILabel*>(block[Section_General]->contentWidget());
     AssertMsg(pLabel, ("Content widget should be valid!"));
@@ -397,7 +451,7 @@ void UIDetailsPagePrivate::sltUpdateSystem()
     CMachine &machine = m_machines[iBlockNumber];
     AssertMsg(!machine.isNull(), ("Machine should be valid!\n"));
     /* Get details block: */
-    UIDetailsBlock &block = m_set[iBlockNumber];
+    UIDetailsBlock &block = *m_set[iBlockNumber];
     /* Get corresponding content widget: */
     QILabel *pLabel = qobject_cast<QILabel*>(block[Section_System]->contentWidget());
     AssertMsg(pLabel, ("Content widget should be valid!"));
@@ -500,7 +554,7 @@ void UIDetailsPagePrivate::sltUpdatePreview()
     CMachine &machine = m_machines[iBlockNumber];
     AssertMsg(!machine.isNull(), ("Machine should be valid!\n"));
     /* Get details block: */
-    UIDetailsBlock &block = m_set[iBlockNumber];
+    UIDetailsBlock &block = *m_set[iBlockNumber];
     /* Get corresponding content widget: */
     UIVMPreviewWindow *pPreview = qobject_cast<UIVMPreviewWindow*>(block[Section_Preview]->contentWidget());
     AssertMsg(pPreview, ("Content widget should be valid!"));
@@ -524,7 +578,7 @@ void UIDetailsPagePrivate::sltUpdateDisplay()
     CMachine &machine = m_machines[iBlockNumber];
     AssertMsg(!machine.isNull(), ("Machine should be valid!\n"));
     /* Get details block: */
-    UIDetailsBlock &block = m_set[iBlockNumber];
+    UIDetailsBlock &block = *m_set[iBlockNumber];
     /* Get corresponding content widget: */
     QILabel *pLabel = qobject_cast<QILabel*>(block[Section_Display]->contentWidget());
     AssertMsg(pLabel, ("Content widget should be valid!"));
@@ -586,7 +640,7 @@ void UIDetailsPagePrivate::sltUpdateStorage()
     CMachine &machine = m_machines[iBlockNumber];
     AssertMsg(!machine.isNull(), ("Machine should be valid!\n"));
     /* Get details block: */
-    UIDetailsBlock &block = m_set[iBlockNumber];
+    UIDetailsBlock &block = *m_set[iBlockNumber];
     /* Get corresponding content widget: */
     QILabel *pLabel = qobject_cast<QILabel*>(block[Section_Storage]->contentWidget());
     AssertMsg(pLabel, ("Content widget should be valid!"));
@@ -669,7 +723,7 @@ void UIDetailsPagePrivate::sltUpdateAudio()
     CMachine &machine = m_machines[iBlockNumber];
     AssertMsg(!machine.isNull(), ("Machine should be valid!\n"));
     /* Get details block: */
-    UIDetailsBlock &block = m_set[iBlockNumber];
+    UIDetailsBlock &block = *m_set[iBlockNumber];
     /* Get corresponding content widget: */
     QILabel *pLabel = qobject_cast<QILabel*>(block[Section_Audio]->contentWidget());
     AssertMsg(pLabel, ("Content widget should be valid!"));
@@ -711,7 +765,7 @@ void UIDetailsPagePrivate::sltUpdateNetwork()
     CMachine &machine = m_machines[iBlockNumber];
     AssertMsg(!machine.isNull(), ("Machine should be valid!\n"));
     /* Get details block: */
-    UIDetailsBlock &block = m_set[iBlockNumber];
+    UIDetailsBlock &block = *m_set[iBlockNumber];
     /* Get corresponding content widget: */
     QILabel *pLabel = qobject_cast<QILabel*>(block[Section_Network]->contentWidget());
     AssertMsg(pLabel, ("Content widget should be valid!"));
@@ -780,7 +834,7 @@ void UIDetailsPagePrivate::sltUpdateSerialPorts()
     CMachine &machine = m_machines[iBlockNumber];
     AssertMsg(!machine.isNull(), ("Machine should be valid!\n"));
     /* Get details block: */
-    UIDetailsBlock &block = m_set[iBlockNumber];
+    UIDetailsBlock &block = *m_set[iBlockNumber];
     /* Get corresponding content widget: */
     QILabel *pLabel = qobject_cast<QILabel*>(block[Section_Serial]->contentWidget());
     AssertMsg(pLabel, ("Content widget should be valid!"));
@@ -834,7 +888,7 @@ void UIDetailsPagePrivate::sltUpdateParallelPorts()
     CMachine &machine = m_machines[iBlockNumber];
     AssertMsg(!machine.isNull(), ("Machine should be valid!\n"));
     /* Get details block: */
-    UIDetailsBlock &block = m_set[iBlockNumber];
+    UIDetailsBlock &block = *m_set[iBlockNumber];
     /* Get corresponding content widget: */
     QILabel *pLabel = qobject_cast<QILabel*>(block[Section_Parallel]->contentWidget());
     AssertMsg(pLabel, ("Content widget should be valid!"));
@@ -884,7 +938,7 @@ void UIDetailsPagePrivate::sltUpdateUSB()
     CMachine &machine = m_machines[iBlockNumber];
     AssertMsg(!machine.isNull(), ("Machine should be valid!\n"));
     /* Get details block: */
-    UIDetailsBlock &block = m_set[iBlockNumber];
+    UIDetailsBlock &block = *m_set[iBlockNumber];
     /* Get corresponding content widget: */
     QILabel *pLabel = qobject_cast<QILabel*>(block[Section_USB]->contentWidget());
     AssertMsg(pLabel, ("Content widget should be valid!"));
@@ -943,7 +997,7 @@ void UIDetailsPagePrivate::sltUpdateSharedFolders()
     CMachine &machine = m_machines[iBlockNumber];
     AssertMsg(!machine.isNull(), ("Machine should be valid!\n"));
     /* Get details block: */
-    UIDetailsBlock &block = m_set[iBlockNumber];
+    UIDetailsBlock &block = *m_set[iBlockNumber];
     /* Get corresponding content widget: */
     QILabel *pLabel = qobject_cast<QILabel*>(block[Section_SharedFolders]->contentWidget());
     AssertMsg(pLabel, ("Content widget should be valid!"));
@@ -984,7 +1038,7 @@ void UIDetailsPagePrivate::sltUpdateDescription()
     CMachine &machine = m_machines[iBlockNumber];
     AssertMsg(!machine.isNull(), ("Machine should be valid!\n"));
     /* Get details block: */
-    UIDetailsBlock &block = m_set[iBlockNumber];
+    UIDetailsBlock &block = *m_set[iBlockNumber];
     /* Get corresponding content widget: */
     QILabel *pLabel = qobject_cast<QILabel*>(block[Section_Description]->contentWidget());
     AssertMsg(pLabel, ("Content widget should be valid!"));
@@ -1031,7 +1085,7 @@ void UIDetailsPagePrivate::sltContextMenuRequested(const QPoint &pos)
         for (int i = 0; i < m_cMachineCount; ++i)
         {
             /* Get current popup: */
-            UIPopupBox *pPopup = m_set[i][section];
+            UIPopupBox *pPopup = (*m_set[i])[section];
             /* Show/hide popup if necessary: */
             if (pReturn->isChecked())
                 pPopup->show();
@@ -1052,113 +1106,163 @@ void UIDetailsPagePrivate::sltPopupToggled(bool fPopupOpened)
     m_sectionOpened[section] = fPopupOpened;
     /* Open/Close all the blocks: */
     for (int i = 0; i < m_cMachineCount; ++i)
-        m_set[i][section]->setOpen(fPopupOpened);
+        (*m_set[i])[section]->setOpen(fPopupOpened);
 }
 
-void UIDetailsPagePrivate::prepareSet()
+void UIDetailsPagePrivate::prepareSet(bool fNew)
 {
-    /* Which sections should be available: */
-    m_sections.clear();
-    if (m_cMachineCount == 1)
+    /* Do we need to create new set? */
+    if (fNew)
     {
-        m_sections << Section_General
-                   << Section_System
-                   << Section_Preview
-                   << Section_Display
-                   << Section_Storage
-                   << Section_Audio
-                   << Section_Network
-                   << Section_Serial
-#ifdef VBOX_WITH_PARALLEL_PORTS
-                   << Section_Parallel
-#endif /* VBOX_WITH_PARALLEL_PORTS */
-                   << Section_USB
-                   << Section_SharedFolders
-                   << Section_Description;
+        /* Which sections should be available: */
+        m_sections.clear();
+        if (m_cMachineCount == 1)
+        {
+            m_sections << Section_General
+                       << Section_System
+                       << Section_Preview
+                       << Section_Display
+                       << Section_Storage
+                       << Section_Audio
+                       << Section_Network
+                       << Section_Serial
+    #ifdef VBOX_WITH_PARALLEL_PORTS
+                       << Section_Parallel
+    #endif /* VBOX_WITH_PARALLEL_PORTS */
+                       << Section_USB
+                       << Section_SharedFolders
+                       << Section_Description;
+        }
+        else
+        {
+            m_sections << Section_General
+                       << Section_System
+                       << Section_Preview;
+        }
+
+        /* Recreate details set: */
+        m_set.clear();
+        m_set.resize(m_cMachineCount);
+
+        /* Re-create details widget: */
+        if (m_pDetails)
+            delete m_pDetails;
+        m_pDetails = new QWidget(m_pScrollArea);
+        m_pScrollArea->setWidget(m_pDetails);
+        m_pDetails->setContextMenuPolicy(Qt::CustomContextMenu);
+        connect(m_pDetails, SIGNAL(customContextMenuRequested(const QPoint&)), this, SLOT(sltContextMenuRequested(const QPoint&)));
+        QVBoxLayout *pMainLayout = new QVBoxLayout(m_pDetails);
+        pMainLayout->setContentsMargins(gsLeftMargin, gsTopMargin, gsRightMargin, gsBottomMargin);
+        pMainLayout->addStretch(1);
+
+        /* Generate new set id: */
+        m_currentRequestId = QUuid::createUuid();
+    }
+
+    /* Prepare set content (blocks): */
+    QCoreApplication::postEvent(this, new UIEventForBlockUpdate(m_currentRequestId, 0, fNew /* recreate block? */));
+}
+
+void UIDetailsPagePrivate::prepareBlock(int iBlockNumber, bool fNew)
+{
+    /* Prepare block pointer: */
+    UIDetailsBlock *pBlock = 0;
+
+    /* Do we need to create new block? */
+    if (fNew)
+    {
+        /* Create new block: */
+        pBlock = m_set[iBlockNumber] = new UIDetailsBlock(m_pDetails);
+        UIDetailsBlock &block = *pBlock;
+
+        /* Prepare block content (sections): */
+        for(int i = 0; i < m_sections.size(); ++i)
+            prepareSection(block, iBlockNumber, m_sections[i]);
+
+        /* Layout block content: */
+        QVBoxLayout *pContainerLayout = new QVBoxLayout(pBlock);
+        pContainerLayout->setContentsMargins(0, 0, 0, 0);
+        QHBoxLayout *pt1 = new QHBoxLayout;
+        QVBoxLayout *pt2 = new QVBoxLayout;
+        if (m_sections.contains(Section_General))
+            pt2->addWidget(block[Section_General]);
+        if (m_sections.contains(Section_System))
+            pt2->addWidget(block[Section_System]);
+        pt2->addStretch(1);
+        pt1->addLayout(pt2);
+        QVBoxLayout *pt3 = new QVBoxLayout;
+        if (m_sections.contains(Section_Preview))
+            pt3->addWidget(block[Section_Preview]);
+        pt3->addStretch(1);
+        pt1->addLayout(pt3);
+        pContainerLayout->addLayout(pt1);
+        if (m_sections.contains(Section_Display))
+            pContainerLayout->addWidget(block[Section_Display]);
+        if (m_sections.contains(Section_Storage))
+            pContainerLayout->addWidget(block[Section_Storage]);
+        if (m_sections.contains(Section_Audio))
+            pContainerLayout->addWidget(block[Section_Audio]);
+        if (m_sections.contains(Section_Network))
+            pContainerLayout->addWidget(block[Section_Network]);
+        if (m_sections.contains(Section_Serial))
+            pContainerLayout->addWidget(block[Section_Serial]);
+    #ifdef VBOX_WITH_PARALLEL_PORTS
+        if (m_sections.contains(Section_Parallel))
+            pContainerLayout->addWidget(block[Section_Parallel]);
+    #endif /* VBOX_WITH_PARALLEL_PORTS */
+        if (m_sections.contains(Section_USB))
+            pContainerLayout->addWidget(block[Section_USB]);
+        if (m_sections.contains(Section_SharedFolders))
+            pContainerLayout->addWidget(block[Section_SharedFolders]);
+        if (m_sections.contains(Section_Description))
+            pContainerLayout->addWidget(block[Section_Description]);
+        QVBoxLayout *pMainLayout = qobject_cast<QVBoxLayout*>(m_pDetails->layout());
+        pMainLayout->insertWidget(pMainLayout->count() - 1, pBlock);
+
+        /* Configure created block: */
+        for (int i = 0; i < m_sections.size(); ++i)
+        {
+            /* Assign corresponding action text as section title: */
+            block[m_sections[i]]->setTitle(m_actions[m_sections[i]]->text());
+
+            /* If corresponding action is checked: */
+            if (m_actions[m_sections[i]]->isChecked())
+            {
+                /* Unhide corresponding section: */
+                block[m_sections[i]]->show();
+            }
+        }
+
+        /* Show block: */
+        block.show();
+
+        /* Send and process layout request for the scroll-area: */
+        QEvent layoutEvent(QEvent::LayoutRequest);
+        QCoreApplication::sendEvent(m_pScrollArea, &layoutEvent);
     }
     else
     {
-        m_sections << Section_General
-                   << Section_System
-                   << Section_Preview;
+        /* Get existing block: */
+        pBlock = m_set[iBlockNumber];
+        UIDetailsBlock &block = *pBlock;
+
+        /* For every section of block: */
+        for (int i = 0; i < m_sections.size(); ++i)
+        {
+            /* Call for update: */
+            block[m_sections[i]]->callForUpdateContentWidget();
+        }
     }
 
-    /* Recreate details set: */
-    m_set.clear();
-    m_set.resize(m_cMachineCount);
-    /* Re-create details widget: */
-    if (m_pDetails)
-        delete m_pDetails;
-    m_pDetails = new QWidget(m_pScrollArea);
-    m_pScrollArea->setWidget(m_pDetails);
-    /* Configure the context-menu rules, which allows to show/hide the boxes: */
-    m_pDetails->setContextMenuPolicy(Qt::CustomContextMenu);
-    connect(m_pDetails, SIGNAL(customContextMenuRequested(const QPoint&)), this, SLOT(sltContextMenuRequested(const QPoint&)));
-    /* Configure details widget layout: */
-    QVBoxLayout *pMainLayout = new QVBoxLayout(m_pDetails);
-    pMainLayout->setContentsMargins(gsLeftMargin, gsTopMargin, gsRightMargin, gsBottomMargin);
-
-    /* Prepare set content (blocks): */
-    for (int i = 0; i < m_cMachineCount; ++i)
-        prepareBlock(i);
-
-    /* Layout set content: */
-    pMainLayout->addStretch(1);
-
-    retranslateUi();
-}
-
-void UIDetailsPagePrivate::prepareBlock(int iBlockNumber)
-{
-    /* Prepare new block: */
-    UIDetailsBlock& block = m_set[iBlockNumber];
-
-    /* Prepare block content (sections): */
-    for(int i = 0; i < m_sections.size(); ++i)
-        prepareSection(block, iBlockNumber, m_sections[i]);
-
-    /* Layout block content: */
-    QVBoxLayout *pMainLayout = qobject_cast<QVBoxLayout*>(m_pDetails->layout());
-    QHBoxLayout *tt1 = new QHBoxLayout;
-    QVBoxLayout *tt2 = new QVBoxLayout;
-    if (m_sections.contains(Section_General))
-        tt2->addWidget(block[Section_General]);
-    if (m_sections.contains(Section_System))
-        tt2->addWidget(block[Section_System]);
-    tt2->addStretch(1);
-    tt1->addLayout(tt2);
-    QVBoxLayout *tt3 = new QVBoxLayout;
-    if (m_sections.contains(Section_Preview))
-        tt3->addWidget(block[Section_Preview]);
-    tt3->addStretch(1);
-    tt1->addLayout(tt3);
-    pMainLayout->addLayout(tt1);
-    if (m_sections.contains(Section_Display))
-        pMainLayout->addWidget(block[Section_Display]);
-    if (m_sections.contains(Section_Storage))
-        pMainLayout->addWidget(block[Section_Storage]);
-    if (m_sections.contains(Section_Audio))
-        pMainLayout->addWidget(block[Section_Audio]);
-    if (m_sections.contains(Section_Network))
-        pMainLayout->addWidget(block[Section_Network]);
-    if (m_sections.contains(Section_Serial))
-        pMainLayout->addWidget(block[Section_Serial]);
-#ifdef VBOX_WITH_PARALLEL_PORTS
-    if (m_sections.contains(Section_Parallel))
-        pMainLayout->addWidget(block[Section_Parallel]);
-#endif /* VBOX_WITH_PARALLEL_PORTS */
-    if (m_sections.contains(Section_USB))
-        pMainLayout->addWidget(block[Section_USB]);
-    if (m_sections.contains(Section_SharedFolders))
-        pMainLayout->addWidget(block[Section_SharedFolders]);
-    if (m_sections.contains(Section_Description))
-        pMainLayout->addWidget(block[Section_Description]);
+    /* Paint block: */
+    pBlock->repaint();
 }
 
 void UIDetailsPagePrivate::prepareSection(UIDetailsBlock &block, int iBlockNumber, Section section)
 {
     /* Prepare new section (popup box): */
-    UIPopupBox *pPopup = block[section] = new UIPopupBox(m_pDetails);
+    UIPopupBox *pPopup = block[section] = new UIPopupBox(&block);
+    pPopup->hide();
     connect(pPopup, SIGNAL(titleClicked(const QString &)), this, SIGNAL(linkClicked(const QString &)));
     connect(pPopup, SIGNAL(toggled(bool)), this, SLOT(sltPopupToggled(bool)));
     pPopup->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
@@ -1298,29 +1402,11 @@ void UIDetailsPagePrivate::prepareSection(UIDetailsBlock &block, int iBlockNumbe
             break;
     }
 
-    /* Show/hide and open section: */
-    if (m_actions[section]->isChecked())
-        pPopup->show();
-    else
-        pPopup->hide();
+    /* Open/close section if necessary: */
     pPopup->setOpen(m_sectionOpened[section]);
 
     /* Call for update: */
     pPopup->callForUpdateContentWidget();
-}
-
-void UIDetailsPagePrivate::updateSet()
-{
-    /* For every block of set: */
-    for (int i = 0; i < m_cMachineCount; ++i)
-    {
-        /* For every section of block: */
-        for (int j = 0; j < m_sections.size(); ++j)
-        {
-            /* Call for update: */
-            m_set[i][m_sections[j]]->callForUpdateContentWidget();
-        }
-    }
 }
 
 void UIDetailsPagePrivate::prepareDetails()
@@ -1394,6 +1480,9 @@ void UIDetailsPagePrivate::prepareDetails()
             m_sectionOpened[section] = fSectionOpened;
         }
     }
+
+    /* Translate UI: */
+    retranslateUi();
 }
 
 void UIDetailsPagePrivate::cleanupDetails()
