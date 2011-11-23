@@ -20,7 +20,7 @@
 ;*******************************************************************************
 %include "VBox/asmdefs.mac"
 %include "VMMInternal.mac"
-%include "iprt/err.mac"
+%include "VBox/err.mac"
 %include "VBox/param.mac"
 
 
