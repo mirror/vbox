@@ -2215,7 +2215,7 @@ VMMR3_INT_DECL(int) PGMR3InitCompleted(PVM pVM, VMINITCOMPLETED enmWhat)
                 }
             }
 #else
-            AssertLogRelReturn(!pVM->pgm.s.fPciPassthrough, VERR_INTERNAL_ERROR_5);
+            AssertLogRelReturn(!pVM->pgm.s.fPciPassthrough, VERR_PGM_PCI_PASSTHRU_MISCONFIG);
 #endif
             break;
 

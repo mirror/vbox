@@ -115,7 +115,7 @@ VMMDECL(int) pgmPhysRomWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE p
                         return VINF_SUCCESS;
                 }
             }
-            else if (RT_UNLIKELY(rc == VERR_INTERNAL_ERROR))
+            else if (RT_UNLIKELY(rc == VERR_EM_INTERNAL_DISAS_ERROR))
                 return rc;
             break;
         }
@@ -134,7 +134,7 @@ VMMDECL(int) pgmPhysRomWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE p
         default:
             AssertMsgFailedReturn(("enmProt=%d iPage=%d GCPhysFault=%RGp\n",
                                    pRom->aPages[iPage].enmProt, iPage, GCPhysFault),
-                                  VERR_INTERNAL_ERROR);
+                                  VERR_IPE_NOT_REACHED_DEFAULT_CASE);
     }
 
     STAM_COUNTER_INC(&pVCpu->pgm.s.CTX_SUFF(pStats)->StatRZGuestROMWriteUnhandled);
@@ -512,7 +512,7 @@ static int pgmPhysEnsureHandyPage(PVM pVM)
             AssertMsgReturn(    pVM->pgm.s.cHandyPages > 0
                             &&  pVM->pgm.s.cHandyPages <= RT_ELEMENTS(pVM->pgm.s.aHandyPages),
                             ("%u\n", pVM->pgm.s.cHandyPages),
-                            VERR_INTERNAL_ERROR);
+                            VERR_PGM_HANDY_PAGE_IPE);
         }
         else
         {
@@ -1028,12 +1028,12 @@ static int pgmPhysPageMapCommon(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys, PPPGMP
     const uint32_t idChunk = PGM_PAGE_GET_CHUNKID(pPage);
     if (idChunk == NIL_GMM_CHUNKID)
     {
-        AssertMsgReturn(PGM_PAGE_GET_PAGEID(pPage) == NIL_GMM_PAGEID, ("pPage=%R[pgmpage]\n", pPage), VERR_INTERNAL_ERROR_2);
+        AssertMsgReturn(PGM_PAGE_GET_PAGEID(pPage) == NIL_GMM_PAGEID, ("pPage=%R[pgmpage]\n", pPage), VERR_PGM_PHYS_PAGE_MAP_IPE_1);
         if (PGM_PAGE_GET_TYPE(pPage) == PGMPAGETYPE_MMIO2)
         {
             /* Lookup the MMIO2 range and use pvR3 to calc the address. */
             PPGMRAMRANGE pRam = pgmPhysGetRange(pVM, GCPhys);
-            AssertMsgReturn(pRam || !pRam->pvR3, ("pRam=%p pPage=%R[pgmpage]\n", pRam, pPage), VERR_INTERNAL_ERROR_2);
+            AssertMsgReturn(pRam || !pRam->pvR3, ("pRam=%p pPage=%R[pgmpage]\n", pRam, pPage), VERR_PGM_PHYS_PAGE_MAP_IPE_2);
             *ppv = (void *)((uintptr_t)pRam->pvR3 + (uintptr_t)((GCPhys & ~(RTGCPHYS)PAGE_OFFSET_MASK) - pRam->GCPhys));
         }
         else if (PGM_PAGE_GET_TYPE(pPage) == PGMPAGETYPE_MMIO2_ALIAS_MMIO)
@@ -1042,15 +1042,15 @@ static int pgmPhysPageMapCommon(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys, PPPGMP
              * One solution would be to seed MMIO2 pages to GMM and get unique Page IDs for
              * them, that would also avoid this mess. It would actually be kind of
              * elegant... */
-            AssertLogRelMsgFailedReturn(("%RGp\n", GCPhys), VERR_INTERNAL_ERROR_3);
+            AssertLogRelMsgFailedReturn(("%RGp\n", GCPhys), VERR_PGM_MAP_MMIO2_ALIAS_MMIO);
         }
         else
         {
             /** @todo handle MMIO2 */
-            AssertMsgReturn(PGM_PAGE_IS_ZERO(pPage), ("pPage=%R[pgmpage]\n", pPage), VERR_INTERNAL_ERROR_2);
+            AssertMsgReturn(PGM_PAGE_IS_ZERO(pPage), ("pPage=%R[pgmpage]\n", pPage), VERR_PGM_PHYS_PAGE_MAP_IPE_3);
             AssertMsgReturn(PGM_PAGE_GET_HCPHYS(pPage) == pVM->pgm.s.HCPhysZeroPg,
                             ("pPage=%R[pgmpage]\n", pPage),
-                            VERR_INTERNAL_ERROR_2);
+                            VERR_PGM_PHYS_PAGE_MAP_IPE_4);
             *ppv = pVM->pgm.s.CTXALLSUFF(pvZeroPg);
         }
         *ppMap = NULL;
@@ -1305,7 +1305,7 @@ int pgmPhysPageLoadIntoTlbWithPage(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys)
 int pgmPhysGCPhys2CCPtrInternalDepr(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys, void **ppv)
 {
     int rc;
-    AssertReturn(pPage, VERR_INTERNAL_ERROR);
+    AssertReturn(pPage, VERR_PGM_PHYS_NULL_PAGE_PARAM);
     PGM_LOCK_ASSERT_OWNER(pVM);
     pVM->pgm.s.cDeprecatedPageLocks++;
 
@@ -1435,7 +1435,7 @@ DECLINLINE(void) pgmPhysPageMapLockForReading(PVM pVM, PPGMPAGE pPage, PPGMPAGEM
 int pgmPhysGCPhys2CCPtrInternal(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys, void **ppv, PPGMPAGEMAPLOCK pLock)
 {
     int rc;
-    AssertReturn(pPage, VERR_INTERNAL_ERROR);
+    AssertReturn(pPage, VERR_PGM_PHYS_NULL_PAGE_PARAM);
     PGM_LOCK_ASSERT_OWNER(pVM);
 
     /*
@@ -1498,7 +1498,7 @@ int pgmPhysGCPhys2CCPtrInternal(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys, void *
  */
 int pgmPhysGCPhys2CCPtrInternalReadOnly(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys, const void **ppv, PPGMPAGEMAPLOCK pLock)
 {
-    AssertReturn(pPage, VERR_INTERNAL_ERROR);
+    AssertReturn(pPage, VERR_PGM_PHYS_NULL_PAGE_PARAM);
     PGM_LOCK_ASSERT_OWNER(pVM);
     Assert(PGM_PAGE_GET_HCPHYS(pPage) != 0);
 

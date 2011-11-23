@@ -481,7 +481,7 @@ VMMDECL(int) PDMCritSectTryEnterDebug(PPDMCRITSECT pCritSect, RTHCUINTPTR uId, R
  */
 VMMR3DECL(int) PDMR3CritSectEnterEx(PPDMCRITSECT pCritSect, bool fCallRing3)
 {
-    int rc = PDMCritSectEnter(pCritSect, VERR_INTERNAL_ERROR);
+    int rc = PDMCritSectEnter(pCritSect, VERR_IGNORED);
     if (    rc == VINF_SUCCESS
         &&  fCallRing3
         &&  pCritSect->s.Core.pValidatorRec

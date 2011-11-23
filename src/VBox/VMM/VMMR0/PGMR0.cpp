@@ -79,7 +79,7 @@ VMMR0DECL(int) PGMR0PhysAllocateHandyPages(PVM pVM, PVMCPU pVCpu)
      * Try allocate a full set of handy pages.
      */
     uint32_t iFirst = pVM->pgm.s.cHandyPages;
-    AssertReturn(iFirst <= RT_ELEMENTS(pVM->pgm.s.aHandyPages), VERR_INTERNAL_ERROR);
+    AssertReturn(iFirst <= RT_ELEMENTS(pVM->pgm.s.aHandyPages), VERR_PGM_HANDY_PAGE_IPE);
     uint32_t cPages = RT_ELEMENTS(pVM->pgm.s.aHandyPages) - iFirst;
     if (!cPages)
         return VINF_SUCCESS;
@@ -588,7 +588,7 @@ VMMR0DECL(VBOXSTRICTRC) PGMR0Trap0eHandlerNPMisconfig(PVM pVM, PVMCPU pVCpu, PGM
 
 #else
     AssertLogRelFailed();
-    return VERR_INTERNAL_ERROR_4;
+    return VERR_PGM_NOT_USED_IN_MODE;
 #endif
 }
 

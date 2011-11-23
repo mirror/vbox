@@ -79,7 +79,7 @@ VMMRZDECL(int) VMMRZCallRing3(PVM pVM, PVMCPU pVCpu, VMMCALLRING3 enmOperation, 
 /** @todo profile this! */
     pVCpu->vmm.s.enmCallRing3Operation = enmOperation;
     pVCpu->vmm.s.u64CallRing3Arg = uArg;
-    pVCpu->vmm.s.rcCallRing3 = VERR_INTERNAL_ERROR;
+    pVCpu->vmm.s.rcCallRing3 = VERR_VMM_RING3_CALL_NO_RC;
 #ifdef IN_RC
     pVM->vmm.s.pfnGuestToHostRC(VINF_VMM_CALL_HOST);
 #else

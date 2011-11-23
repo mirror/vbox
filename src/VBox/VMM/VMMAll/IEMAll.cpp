@@ -153,7 +153,7 @@ typedef IEMSELDESC *PIEMSELDESC;
 
 /** Used to shut up GCC warnings about variables that 'may be used uninitialized'
  * due to GCC lacking knowledge about the value range of a switch. */
-#define IEM_NOT_REACHED_DEFAULT_CASE_RET() default: AssertFailedReturn(VERR_INTERNAL_ERROR_4)
+#define IEM_NOT_REACHED_DEFAULT_CASE_RET() default: AssertFailedReturn(VERR_IPE_NOT_REACHED_DEFAULT_CASE)
 
 /**
  * Call an opcode decoder function.

@@ -217,7 +217,7 @@ DECLINLINE(int) emDisCoreOne(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, RTGCUINTP
  *
  * @returns VBox status code, see SELMToFlatEx and EMInterpretDisasOneEx for
  *          details.
- * @retval  VERR_INTERNAL_ERROR on DISCoreOneEx failure.
+ * @retval  VERR_EM_INTERNAL_DISAS_ERROR on DISCoreOneEx failure.
  *
  * @param   pVM             The VM handle.
  * @param   pVCpu           The VMCPU handle.
@@ -245,7 +245,7 @@ VMMDECL(int) EMInterpretDisasOne(PVM pVM, PVMCPU pVCpu, PCCPUMCTXCORE pCtxCore, 
  * This is used by internally by the interpreter and by trap/access handlers.
  *
  * @returns VBox status code.
- * @retval  VERR_INTERNAL_ERROR on DISCoreOneEx failure.
+ * @retval  VERR_EM_INTERNAL_DISAS_ERROR on DISCoreOneEx failure.
  *
  * @param   pVM             The VM handle.
  * @param   pVCpu           The VMCPU handle.
@@ -290,7 +290,7 @@ VMMDECL(int) EMInterpretDisasOneEx(PVM pVM, PVMCPU pVCpu, RTGCUINTPTR GCPtrInstr
     if (RT_SUCCESS(rc))
         return VINF_SUCCESS;
     AssertMsgFailed(("DISCoreOne failed to GCPtrInstr=%RGv rc=%Rrc\n", GCPtrInstr, rc));
-    return VERR_INTERNAL_ERROR;
+    return VERR_EM_INTERNAL_DISAS_ERROR;
 }
 
 

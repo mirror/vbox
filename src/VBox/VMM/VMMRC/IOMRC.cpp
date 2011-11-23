@@ -86,7 +86,7 @@ VMMRCDECL(VBOXSTRICTRC) IOMGCIOPortHandler(PVM pVM, PCPUMCTXCORE pRegFrame, PDIS
          */
         default:
             AssertMsgFailed(("Unknown I/O port access opcode %d.\n", pCpu->pCurInstr->opcode));
-            return VERR_INTERNAL_ERROR;
+            return VERR_IOM_IOPORT_UNKNOWN_OPCODE;
     }
 }
 

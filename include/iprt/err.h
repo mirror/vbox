@@ -1029,6 +1029,8 @@ RT_C_DECLS_END
 /** Internal error: Uninitialized status code.
  * @remarks This is used by value elsewhere.  */
 #define VERR_IPE_UNINITIALIZED_STATUS       (-233)
+/** Internal error: Supposedly unreachable default case in a switch. */
+#define VERR_IPE_NOT_REACHED_DEFAULT_CASE   (-234)
 /** @} */
 
 

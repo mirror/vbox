@@ -178,16 +178,16 @@ GLOBALNAME vmmR0CallRing3SetJmpEx
     jmp     xCX
 
 .entry_error:
-    mov     eax, VERR_INTERNAL_ERROR_2
+    mov     eax, VERR_VMM_SET_JMP_ERROR
     jmp     .proper_return
 
 .stack_overflow:
-    mov     eax, VERR_INTERNAL_ERROR_5
+    mov     eax, VERR_VMM_SET_JMP_STACK_OVERFLOW
     mov     edx, ebx
     jmp     .proper_return
 
 .stack_overflow_almost:
-    mov     eax, VERR_INTERNAL_ERROR
+    mov     eax, VERR_VMM_SET_JMP_STACK_OVERFLOW
     mov     edx, ebx
     jmp     .proper_return
 
@@ -199,7 +199,7 @@ GLOBALNAME vmmR0CallRing3SetJmpEx
     mov     edi, [xDX + VMMR0JMPBUF.edi]
     mov     esi, [xDX + VMMR0JMPBUF.esi]
     mov     ebx, [xDX + VMMR0JMPBUF.ebx]
-    mov     eax, VERR_INTERNAL_ERROR_3    ; todo better return code!
+    mov     eax, VERR_VMM_SET_JMP_ABORTED_RESUME
     ret
 
     ;
@@ -372,7 +372,7 @@ BEGINPROC vmmR0CallRing3LongJmp
     pop     ebx
     pop     esi
     pop     edi
-    mov     eax, VERR_INTERNAL_ERROR_4
+    mov     eax, VERR_VMM_LONG_JMP_ERROR
     leave
     ret
 ENDPROC vmmR0CallRing3LongJmp

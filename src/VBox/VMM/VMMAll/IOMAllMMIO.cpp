@@ -94,8 +94,8 @@ static VBOXSTRICTRC iomMMIODoComplicatedWrite(PVM pVM, PIOMMMIORANGE pRange, RTG
 {
     AssertReturn(   (pRange->fFlags & IOMMMIO_FLAGS_WRITE_MODE) != IOMMMIO_FLAGS_WRITE_PASSTHRU
                  || (pRange->fFlags & IOMMMIO_FLAGS_WRITE_MODE) <= IOMMMIO_FLAGS_WRITE_DWORD_QWORD_READ_MISSING,
-                 VERR_INTERNAL_ERROR_5);
-    AssertReturn(cbValue != 0 && cbValue <= 16, VERR_INTERNAL_ERROR_4);
+                 VERR_IOM_MMIO_IPE_1);
+    AssertReturn(cbValue != 0 && cbValue <= 16, VERR_IOM_MMIO_IPE_2);
     RTGCPHYS const GCPhysStart  = GCPhys; NOREF(GCPhysStart);
     bool const     fReadMissing = (pRange->fFlags & IOMMMIO_FLAGS_WRITE_MODE) >= IOMMMIO_FLAGS_WRITE_DWORD_READ_MISSING;
 
@@ -188,7 +188,7 @@ static VBOXSTRICTRC iomMMIODoComplicatedWrite(PVM pVM, PIOMMMIORANGE pRange, RTG
                 u32GivenMask  = UINT32_C(0xffffffff);
                 break;
             default:
-                AssertFailedReturn(VERR_INTERNAL_ERROR_3);
+                AssertFailedReturn(VERR_IOM_MMIO_IPE_3);
         }
         if (offAccess)
         {
@@ -295,8 +295,8 @@ static VBOXSTRICTRC iomMMIODoComplicatedRead(PVM pVM, PIOMMMIORANGE pRange, RTGC
 {
     AssertReturn(   (pRange->fFlags & IOMMMIO_FLAGS_READ_MODE) == IOMMMIO_FLAGS_READ_DWORD
                  || (pRange->fFlags & IOMMMIO_FLAGS_READ_MODE) == IOMMMIO_FLAGS_READ_DWORD_QWORD,
-                 VERR_INTERNAL_ERROR_5);
-    AssertReturn(cbValue != 0 && cbValue <= 16, VERR_INTERNAL_ERROR_4);
+                 VERR_IOM_MMIO_IPE_1);
+    AssertReturn(cbValue != 0 && cbValue <= 16, VERR_IOM_MMIO_IPE_2);
     RTGCPHYS const GCPhysStart = GCPhys; NOREF(GCPhysStart);
 
     /*
@@ -1787,11 +1787,11 @@ VMMDECL(VBOXSTRICTRC) IOMMMIORead(PVM pVM, RTGCPHYS GCPhys, uint32_t *pu32Value,
      * Lookup the current context range node and statistics.
      */
     PIOMMMIORANGE pRange = iomMmioGetRange(pVM, GCPhys);
-    AssertMsg(pRange, ("Handlers and page tables are out of sync or something! GCPhys=%RGp cbValue=%d\n", GCPhys, cbValue));
     if (!pRange)
     {
+        AssertMsgFailed(("Handlers and page tables are out of sync or something! GCPhys=%RGp cbValue=%d\n", GCPhys, cbValue));
         IOM_UNLOCK(pVM);
-        return VERR_INTERNAL_ERROR;
+        return VERR_IOM_MMIO_RANGE_NOT_FOUND;
     }
 #ifdef VBOX_WITH_STATISTICS
     PIOMMMIOSTATS pStats = iomMmioGetStats(pVM, GCPhys, pRange);
@@ -1916,11 +1916,11 @@ VMMDECL(VBOXSTRICTRC) IOMMMIOWrite(PVM pVM, RTGCPHYS GCPhys, uint32_t u32Value, 
      * Lookup the current context range node.
      */
     PIOMMMIORANGE pRange = iomMmioGetRange(pVM, GCPhys);
-    AssertMsg(pRange, ("Handlers and page tables are out of sync or something! GCPhys=%RGp cbValue=%d\n", GCPhys, cbValue));
     if (!pRange)
     {
+        AssertMsgFailed(("Handlers and page tables are out of sync or something! GCPhys=%RGp cbValue=%d\n", GCPhys, cbValue));
         IOM_UNLOCK(pVM);
-        return VERR_INTERNAL_ERROR;
+        return VERR_IOM_MMIO_RANGE_NOT_FOUND;
     }
 #ifdef VBOX_WITH_STATISTICS
     PIOMMMIOSTATS pStats = iomMmioGetStats(pVM, GCPhys, pRange);

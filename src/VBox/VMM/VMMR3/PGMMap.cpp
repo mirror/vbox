@@ -550,8 +550,8 @@ int pgmR3MappingsFixInternal(PVM pVM, RTGCPTR GCPtrBase, uint32_t cb)
                     VERR_INVALID_PARAMETER);
     AssertMsgReturn(cb && !(cb & X86_PAGE_4M_OFFSET_MASK), ("cb (%#x) is 0 or not aligned on a 4MB address!\n", cb),
                     VERR_INVALID_PARAMETER);
-    AssertReturn(pgmMapAreMappingsEnabled(pVM), VERR_INTERNAL_ERROR_3);
-    AssertReturn(pVM->cCpus == 1, VERR_INTERNAL_ERROR_4);
+    AssertReturn(pgmMapAreMappingsEnabled(pVM), VERR_PGM_MAPPINGS_DISABLED);
+    AssertReturn(pVM->cCpus == 1, VERR_PGM_MAPPINGS_SMP);
 
     /*
      * Check that it's not conflicting with a core code mapping in the intermediate page table.
@@ -683,8 +683,8 @@ int pgmR3MappingsFixInternal(PVM pVM, RTGCPTR GCPtrBase, uint32_t cb)
  */
 VMMR3DECL(int) PGMR3MappingsDisable(PVM pVM)
 {
-    AssertReturn(!pVM->pgm.s.fMappingsFixed,            VERR_INTERNAL_ERROR_4);
-    AssertReturn(!pVM->pgm.s.fMappingsFixedRestored,    VERR_INTERNAL_ERROR_4);
+    AssertReturn(!pVM->pgm.s.fMappingsFixed,            VERR_PGM_MAPPINGS_FIXED);
+    AssertReturn(!pVM->pgm.s.fMappingsFixedRestored,    VERR_PGM_MAPPINGS_FIXED);
     if (pVM->pgm.s.fMappingsDisabled)
         return VINF_SUCCESS;
 

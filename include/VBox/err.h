@@ -235,6 +235,9 @@
 #define VINF_EM_RAW_EMULATE_DBG_STEP        1151
 /** Patch TPR access instruction. */
 #define VINF_EM_HWACCM_PATCH_TPR_INSTR      1152
+/** The EMInterpretDisasOne / EMInterpretDisasOneEx methods failed to
+ * disassemble the instruction. */
+#define VERR_EM_INTERNAL_DISAS_ERROR        (-1153)
 /** @} */
 
 
@@ -492,6 +495,70 @@
 #define VINF_PGM_SHARED_MODULE_COLLISION        (1649)
 /** Inconsistent local and global registration records. */
 #define VERR_PGM_SHARED_MODULE_REGISTRATION_INCONSISTENCY (-1650)
+/** pgmPhysPageMapCommon encountered PGMPAGETYPE_MMIO2_ALIAS_MMIO. */
+#define VERR_PGM_MAP_MMIO2_ALIAS_MMIO           (-1651)
+/** Guest mappings are disabled. */
+#define VERR_PGM_MAPPINGS_DISABLED              (-1652)
+/** No guest mappings when SMP is enabled. */
+#define VERR_PGM_MAPPINGS_SMP                   (-1653)
+/** Invalid saved page state. */
+#define VERR_PGM_INVALID_SAVED_PAGE_STATE       (-1654)
+/** Encountered an unexpected page type in the saved state. */
+#define VERR_PGM_LOAD_UNEXPECTED_PAGE_TYPE      (-1655)
+/** Encountered an unexpected page state in the saved state. */
+#define VERR_PGM_UNEXPECTED_PAGE_STATE          (-1656)
+/** Couldn't find MMIO2 range from saved state. */
+#define VERR_PGM_SAVED_MMIO2_RANGE_NOT_FOUND    (-1657)
+/** Couldn't find MMIO2 page from saved state. */
+#define VERR_PGM_SAVED_MMIO2_PAGE_NOT_FOUND     (-1658)
+/** Couldn't find ROM range from saved state. */
+#define VERR_PGM_SAVED_ROM_RANGE_NOT_FOUND      (-1659)
+/** Couldn't find ROM page from saved state. */
+#define VERR_PGM_SAVED_ROM_PAGE_NOT_FOUND       (-1660)
+/** ROM page mismatch between saved state and the VM. */
+#define VERR_PGM_SAVED_ROM_PAGE_PROT            (-1661)
+/** Unknown saved state record. */
+#define VERR_PGM_SAVED_REC_TYPE                 (-1662)
+/** Internal processing error in the PGM dynmap (r0/rc). */
+#define VERR_PGM_DYNMAP_IPE                     (-1663)
+/** Internal processing error in the PGM handy page allocator. */
+#define VERR_PGM_HANDY_PAGE_IPE                 (-1664)
+/** Failed to map the guest PML4. */
+#define VERR_PGM_PML4_MAPPING                   (-1665)
+/** Failed to obtain a pool page.  */
+#define VERR_PGM_POOL_GET_PAGE_FAILED           (-1666)
+/** A PGM function was called in a mode where it isn't supposed to be used. */
+#define VERR_PGM_NOT_USED_IN_MODE               (-1667)
+/** The CR3 address specified memory we don't know about. */
+#define VERR_PGM_INVALID_CR3_ADDR               (-1668)
+/** One or the PDPEs specified memory we don't know about. */
+#define VERR_PGM_INVALID_PDPE_ADDR              (-1669)
+/** Internal processing error in the PGM physical handler code. */
+#define VERR_PGM_PHYS_HANDLER_IPE               (-1670)
+/** Internal processing error #1 in the PGM physial page mapping code. */
+#define VERR_PGM_PHYS_PAGE_MAP_IPE_1            (-1671)
+/** Internal processing error #2 in the PGM physial page mapping code. */
+#define VERR_PGM_PHYS_PAGE_MAP_IPE_2            (-1672)
+/** Internal processing error #3 in the PGM physial page mapping code. */
+#define VERR_PGM_PHYS_PAGE_MAP_IPE_3            (-1673)
+/** Internal processing error #4 in the PGM physial page mapping code. */
+#define VERR_PGM_PHYS_PAGE_MAP_IPE_4            (-1674)
+/** Too many loops looking for a page to reuse. */
+#define VERR_PGM_POOL_TOO_MANY_LOOPS            (-1675)
+/** Internal procesing error related to guest mappings. */
+#define VERR_PGM_MAPPING_IPE                    (-1676)
+/** An attempt was made to grow an already maxed out page pool. */
+#define VERR_PGM_POOL_MAXED_OUT_ALREADY         (-1677)
+/** Internal processing error in the page pool code. */
+#define VERR_PGM_POOL_IPE                       (-1678)
+/** The write monitor is already engaged. */
+#define VERR_PGM_WRITE_MONITOR_ENGAGED          (-1679)
+/** Failed to get a guest page which is expected to be present.  */
+#define VERR_PGM_PHYS_PAGE_GET_IPE              (-1680)
+/** We were given a NULL pPage parameter. */
+#define VERR_PGM_PHYS_NULL_PAGE_PARAM           (-1681)
+/** PCI passthru is not supported by this build. */
+#define VERR_PGM_PCI_PASSTHRU_MISCONFIG         (-1682)
 /** @} */
 
 
@@ -503,6 +570,8 @@
 #define VERR_MM_RAM_CONFLICT                    (-1700)
 /** Hypervisor memory allocation failed. */
 #define VERR_MM_HYPER_NO_MEMORY                 (-1701)
+/** A bad trap type ended up in mmGCRamTrap0eHandler. */
+#define VERR_MM_BAD_TRAP_TYPE_IPE               (-1702)
 /** @} */
 
 
@@ -650,6 +719,20 @@
 #define VERR_SSM_FIELD_INVALID_VALUE            (-1870)
 /** Generic stream error. */
 #define VERR_SSM_STREAM_ERROR                   (-1871)
+/** SSM did a callback for a pass we didn't expect. */
+#define VERR_SSM_UNEXPECTED_PASS                (-1872)
+/** Someone is trying to skip backwards in the stream... */
+#define VERR_SSM_SKIP_BACKWARDS                 (-1873)
+/** Someone is trying to write a memory block which is too big to encode. */
+#define VERR_SSM_MEM_TOO_BIG                    (-1874)
+/** Encountered an bad (/unknown) record type. */
+#define VERR_SSM_BAD_REC_TYPE                   (-1875)
+/** Internal processing error #1 in SSM code.  */
+#define VERR_SSM_IPE_1                          (-1876)
+/** Internal processing error #2 in SSM code.  */
+#define VERR_SSM_IPE_2                          (-1877)
+/** Internal processing error #3 in SSM code.  */
+#define VERR_SSM_IPE_3                          (-1878)
 
 /** @} */
 
@@ -703,6 +786,16 @@
 #define VERR_VM_SAVE_STATE_NOT_ALLOWED          (-1913)
 /** An EMT called an API which cannot be called on such a thread. */
 #define VERR_VM_THREAD_IS_EMT                   (-1914)
+/** Encountered an unexpected VM state.  */
+#define VERR_VM_UNEXPECTED_VM_STATE             (-1915)
+/** Unexpected unstable VM state. */
+#define VERR_VM_UNEXPECTED_UNSTABLE_STATE       (-1916)
+/** Too many arguments passed to a VM request / request corruption.  */
+#define VERR_VM_REQUEST_TOO_MANY_ARGS_IPE       (-1017)
+/** Fatal EMT wait error. */
+#define VERR_VM_FATAL_WAIT_ERROR                (-1018)
+/** The VM request was killed at VM termination. */
+#define VERR_VM_REQUEST_KILLED                  (-1019)
 /** @} */
 
 
@@ -792,6 +885,22 @@
 #define VERR_TM_UNKNOWN_STATE               (-2202)
 /** The timer was stuck in an unstable state until we grew impatient and returned. */
 #define VERR_TM_UNSTABLE_STATE              (-2203)
+/** TM requires GIP. */
+#define VERR_TM_GIP_REQUIRED                (-2204)
+/** TM does not support the GIP version. */
+#define VERR_TM_GIP_VERSION                 (-2205)
+/** The GIP update interval is too large. */
+#define VERR_TM_GIP_UPDATE_INTERVAL_TOO_BIG (-2206)
+/** The timer has a bad clock enum value, probably corruption. */
+#define VERR_TM_TIMER_BAD_CLOCK             (-2207)
+/** The timer failed to reach a stable state. */
+#define VERR_TM_TIMER_UNSTABLE_STATE        (-2208)
+/** Attempt to resume a running TSC. */
+#define VERR_TM_TSC_ALREADY_TICKING         (-2209)
+/** Attempt to pause a paused TSC. */
+#define VERR_TM_TSC_ALREADY_PAUSED          (-2210)
+/** Invalid value for cVirtualTicking.  */
+#define VERR_TM_VIRTUAL_TICKING_IPE         (-2211)
 /** @} */
 
 
@@ -831,6 +940,14 @@
 #define VERR_TRPM_PANIC                     (-2404)
 /** The exception was dispatched for raw-mode execution. */
 #define VINF_TRPM_XCPT_DISPATCHED           2405
+/** Bad TRPM_TRAP_IN_OP. */
+#define VERR_TRPM_BAD_TRAP_IN_OP            (-2406)
+/** Internal processing error #1 in TRPM. */
+#define VERR_TRPM_IPE_1                     (-2507)
+/** Internal processing error #2 in TRPM. */
+#define VERR_TRPM_IPE_2                     (-2508)
+/** Internal processing error #3 in TRPM. */
+#define VERR_TRPM_IPE_3                     (-2509)
 /** @} */
 
 
@@ -853,6 +970,10 @@
 #define VINF_SELM_SYNC_GDT                  2503
 /** No valid TSS present. */
 #define VERR_SELM_NO_TSS                    (-2504)
+/** Invalid guest LDT selector. */
+#define VERR_SELM_INVALID_LDT               (-2505)
+/** The guest LDT selector is out of bounds. */
+#define VERR_SELM_LDT_OUT_OF_BOUNDS         (-2506)
 /** @} */
 
 
@@ -917,6 +1038,21 @@
 #define VINF_IOM_HC_MMIO_WRITE              2624
 /** Reason for leaving GC: MMIO read/write. */
 #define VINF_IOM_HC_MMIO_READ_WRITE         2625
+
+/** IOMGCIOPortHandler was given an unexpected opcode. */
+#define VERR_IOM_IOPORT_UNKNOWN_OPCODE      (-2630)
+/** Internal processing error #1 in the I/O port code. */
+#define VERR_IOM_IOPORT_IPE_1               (-2631)
+/** Internal processing error #2 in the I/O port code. */
+#define VERR_IOM_IOPORT_IPE_2               (-2632)
+/** Internal processing error #3 in the I/O port code. */
+#define VERR_IOM_IOPORT_IPE_3               (-2633)
+/** Internal processing error #1 in the MMIO code. */
+#define VERR_IOM_MMIO_IPE_1                 (-2634)
+/** Internal processing error #2 in the MMIO code. */
+#define VERR_IOM_MMIO_IPE_2                 (-2635)
+/** Internal processing error #3 in the MMIO code. */
+#define VERR_IOM_MMIO_IPE_3                 (-2636)
 /** @} */
 
 
@@ -940,6 +1076,18 @@
  * Re-install if you are a user.  Developers should make sure the build is
  * complete or try with a clean build. */
 #define VERR_VMM_RC_VERSION_MISMATCH        (-2705)
+/** VMM set jump error. */
+#define VERR_VMM_SET_JMP_ERROR              (-2706)
+/** VMM set jump stack overflow error. */
+#define VERR_VMM_SET_JMP_STACK_OVERFLOW     (-2707)
+/** VMM set jump resume error. */
+#define VERR_VMM_SET_JMP_ABORTED_RESUME     (-2708)
+/** VMM long jump error. */
+#define VERR_VMM_LONG_JMP_ERROR             (-2709)
+/** Unknown ring-3 call attempted. */
+#define VERR_VMM_UNKNOWN_RING3_CALL         (-2710)
+/** The ring-3 call didn't set an RC. */
+#define VERR_VMM_RING3_CALL_NO_RC           (-2711)
 /** @} */
 
 
@@ -1194,6 +1342,26 @@
  * terminated all VMs and upgraded any extension packs.  If this error
  * persists, try re-installing VirtualBox. */
 #define VERR_PDM_DRIVER_VERSION_MISMATCH            (-2878)
+/** PDMVMMDevHeapR3ToGCPhys failure. */
+#define VERR_PDM_DEV_HEAP_R3_TO_GCPHYS              (-2879)
+/** A legacy device isn't implementing the HPET notification interface. */
+#define VERR_PDM_HPET_LEGACY_NOTIFY_MISSING         (-2880)
+/** Internal processing error in the critical section code. */
+#define VERR_PDM_CRITSECT_IPE                       (-2881)
+/** The critical section being deleted was not found. */
+#define VERR_PDM_CRITSECT_NOT_FOUND                 (-2882)
+/** A PDMThread API was called by the wrong thread. */
+#define VERR_PDM_THREAD_INVALID_CALLER              (-2883)
+/** Internal processing error #1 in the PDM Thread code. */
+#define VERR_PDM_THREAD_IPE_1                       (-2884)
+/** Internal processing error #2 in the PDM Thread code. */
+#define VERR_PDM_THREAD_IPE_2                       (-2885)
+/** Only one PCI function is supported per PDM device. */
+#define VERR_PDM_ONE_PCI_FUNCTION_PER_DEVICE        (-2886)
+/** Bad PCI configuration. */
+#define VERR_PDM_BAD_PCI_CONFIG                     (-2887)
+/** Internal processing error # in the PDM device code. */
+#define VERR_PDM_DEV_IPE_1                          (-2888)
 /** @} */
 
 
@@ -1511,6 +1679,16 @@
 /** The reservation or reservation update was declined - too many VMs, too
  * little memory, and/or too low GMM configuration. */
 #define VERR_GMM_MEMORY_RESERVATION_DECLINED        (-3815)
+/** A GMM sanity check failed. */
+#define VERR_GMM_IS_NOT_SANE                        (-3816)
+/** Inserting a new chunk failed. */
+#define VERR_GMM_CHUNK_INSERT                       (-3817)
+/** Failed to obtain the GMM instance. */
+#define VERR_GMM_INSTANCE                           (-3818)
+/** Bad mutex semaphore flags. */
+#define VERR_GMM_MTX_FLAGS                          (-3819)
+/** Internal processing error in the page allocator. */
+#define VERR_GMM_ALLOC_PAGES_IPE                    (-3820)
 /** @} */
 
 
@@ -1599,6 +1777,20 @@
 #define VERR_HWACCM_SUSPEND_PENDING                 (-4102)
 /** Conflicting CFGM values. */
 #define VERR_HWACCM_CONFIG_MISMATCH                 (-4103)
+/** Internal processing error in the HM init code. */
+#define VERR_HM_ALREADY_ENABLED_IPE                 (-4104)
+/** Unexpected MSR in the load / restore list.  */
+#define VERR_HM_UNEXPECTED_LD_ST_MSR                (-4105)
+/** No 32-bit to 64-bit switcher in place. */
+#define VERR_HM_NO_32_TO_64_SWITCHER                (-4106)
+/** Invalid pVMCB. */
+#define VERR_HMSVM_INVALID_PVMCB                    (-4107)
+/** Unexpected SVM exit. */
+#define VERR_HMSVM_UNEXPECTED_EXIT                  (-4108)
+/** Unexpected SVM exception exit. */
+#define VERR_HMSVM_UNEXPECTED_XCPT_EXIT             (-4109)
+/** Unexpected SVM patch type. */
+#define VERR_HMSVM_UNEXPECTED_PATCH_TYPE            (-4110)
 /** @} */
 
 
@@ -1727,6 +1919,39 @@
 #define VERR_FAM_CONNECTION_LOST                    (-5003)
 /** @} */
 
+
+/** @name PCI Passtrhough Status Codes
+ * @{
+ */
+/** RamPreAlloc not set.
+ * RAM pre-allocation is currently a requirement for PCI passthrough. */
+#define VERR_PCI_PASSTHROUGH_NO_RAM_PREALLOC        (-5100)
+/** VT-x/AMD-V not active.
+ * PCI passthrough currently works only if VT-x/AMD-V is active. */
+#define VERR_PCI_PASSTHROUGH_NO_HWACCM              (-5101)
+/** Nested paging not active.
+ * PCI passthrough currently works only if nested paging is active. */
+#define VERR_PCI_PASSTHROUGH_NO_NESTED_PAGING       (-5102)
+/** @} */
+
+
+/** @name GVMM Status Codes
+ * @{
+ */
+/** Internal error obtaining the GVMM instance. */
+#define VERR_GVMM_INSTANCE                          (-5200)
+/** GVMM does not support the range of CPUs present/possible on the host. */
+#define VERR_GVMM_HOST_CPU_RANGE                    (-5201)
+/** GVMM ran into some broken IPRT code. */
+#define VERR_GVMM_BROKEN_IPRT                       (-5202)
+/** Internal processing error #1 in the GVMM code. */
+#define VERR_GVMM_IPE_1                             (-5203)
+/** Internal processing error #2 in the GVMM code. */
+#define VERR_GVMM_IPE_2                             (-5204)
+/** @} */
+
+
+
 /** @name VBox Extension Pack Status Codes
  * @{
  */
@@ -1741,19 +1966,6 @@
 #define VERR_EXTPACK_VBOX_VERSION_MISMATCH          (-6001)
 /** @} */
 
-/** @name PCI Passtrhough Status Codes
- * @{
- */
-/** RamPreAlloc not set.
- * RAM pre-allocation is currently a requirement for PCI passthrough. */
-#define VERR_PCI_PASSTHROUGH_NO_RAM_PREALLOC       (-7000)
-/** VT-x/AMD-V not active.
- * PCI passthrough currently works only if VT-x/AMD-V is active. */
-#define VERR_PCI_PASSTHROUGH_NO_HWACCM             (-7001)
-/** Nested paging not active.
- * PCI passthrough currently works only if nested paging is active. */
-#define VERR_PCI_PASSTHROUGH_NO_NESTED_PAGING      (-7002)
-/** @} */
 
 /* SED-END */
 

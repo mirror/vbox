@@ -351,7 +351,7 @@ VMMDECL(int) PDMApicReadMSR(PVM pVM, VMCPUID iCpu, uint32_t u32Reg, uint64_t *pu
 void pdmLock(PVM pVM)
 {
 #ifdef IN_RING3
-    int rc = PDMCritSectEnter(&pVM->pdm.s.CritSect, VERR_INTERNAL_ERROR);
+    int rc = PDMCritSectEnter(&pVM->pdm.s.CritSect, VERR_IGNORED);
 #else
     int rc = PDMCritSectEnter(&pVM->pdm.s.CritSect, VERR_GENERAL_FAILURE);
     if (rc == VERR_GENERAL_FAILURE)
@@ -401,7 +401,7 @@ VMMDECL(int) PDMVMMDevHeapR3ToGCPhys(PVM pVM, RTR3PTR pv, RTGCPHYS *pGCPhys)
     {
         Log(("PDMVMMDevHeapR3ToGCPhys: pv=%p pvVMMDevHeap=%p cbVMMDevHeap=%#x\n",
              pv, pVM->pdm.s.pvVMMDevHeap, pVM->pdm.s.cbVMMDevHeap));
-        return VERR_INTERNAL_ERROR_3;
+        return VERR_PDM_DEV_HEAP_R3_TO_GCPHYS;
     }
 
     *pGCPhys = (pVM->pdm.s.GCPhysVMMDevHeap + ((RTR3UINTPTR)pv - (RTR3UINTPTR)pVM->pdm.s.pvVMMDevHeap));

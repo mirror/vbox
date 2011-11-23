@@ -142,7 +142,7 @@ DECLCALLBACK(int) mmGCRamTrap0eHandler(PVM pVM, PCPUMCTXCORE pRegFrame)
         &&  (uintptr_t)pRegFrame->eip < (uintptr_t)&MMGCRamReadNoTrapHandler_EndProc)
     {
         /* Must be a read violation. */
-        AssertReturn(!(TRPMGetErrorCode(VMMGetCpu0(pVM)) & X86_TRAP_PF_RW), VERR_INTERNAL_ERROR);
+        AssertReturn(!(TRPMGetErrorCode(VMMGetCpu0(pVM)) & X86_TRAP_PF_RW), VERR_MM_BAD_TRAP_TYPE_IPE);
         pRegFrame->eip = (uintptr_t)&MMGCRamRead_Error;
         return VINF_SUCCESS;
     }
@@ -154,7 +154,7 @@ DECLCALLBACK(int) mmGCRamTrap0eHandler(PVM pVM, PCPUMCTXCORE pRegFrame)
         &&  (uintptr_t)pRegFrame->eip < (uintptr_t)&MMGCRamWriteNoTrapHandler_EndProc)
     {
         /* Must be a write violation. */
-        AssertReturn(TRPMGetErrorCode(VMMGetCpu0(pVM)) & X86_TRAP_PF_RW, VERR_INTERNAL_ERROR);
+        AssertReturn(TRPMGetErrorCode(VMMGetCpu0(pVM)) & X86_TRAP_PF_RW, VERR_MM_BAD_TRAP_TYPE_IPE);
         pRegFrame->eip = (uintptr_t)&MMGCRamWrite_Error;
         return VINF_SUCCESS;
     }

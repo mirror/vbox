@@ -1217,7 +1217,7 @@ static DECLCALLBACK(VBOXSTRICTRC) vmR3PowerOn(PVM pVM, PVMCPU pVCpu, void *pvUse
     VMSTATE enmVMState = VMR3GetState(pVM);
     AssertMsgReturn(enmVMState == VMSTATE_POWERING_ON,
                     ("%s\n", VMR3GetStateName(enmVMState)),
-                    VERR_INTERNAL_ERROR_4);
+                    VERR_VM_UNEXPECTED_UNSTABLE_STATE);
 
     /*
      * All EMTs changes their state to started.
@@ -1310,7 +1310,7 @@ static DECLCALLBACK(VBOXSTRICTRC) vmR3Suspend(PVM pVM, PVMCPU pVCpu, void *pvUse
     AssertMsgReturn(    enmVMState == VMSTATE_SUSPENDING
                     ||  enmVMState == VMSTATE_SUSPENDING_EXT_LS,
                     ("%s\n", VMR3GetStateName(enmVMState)),
-                    VERR_INTERNAL_ERROR_4);
+                    VERR_VM_UNEXPECTED_UNSTABLE_STATE);
 
     /*
      * EMT(0) does the actually suspending *after* all the other CPUs have
@@ -1324,7 +1324,7 @@ static DECLCALLBACK(VBOXSTRICTRC) vmR3Suspend(PVM pVM, PVMCPU pVCpu, void *pvUse
                                  VMSTATE_SUSPENDED,        VMSTATE_SUSPENDING,
                                  VMSTATE_SUSPENDED_EXT_LS, VMSTATE_SUSPENDING_EXT_LS);
         if (RT_FAILURE(rc))
-            return VERR_INTERNAL_ERROR_3;
+            return VERR_VM_UNEXPECTED_UNSTABLE_STATE;
     }
 
     return VINF_EM_SUSPEND;
@@ -1388,7 +1388,7 @@ static DECLCALLBACK(VBOXSTRICTRC) vmR3Resume(PVM pVM, PVMCPU pVCpu, void *pvUser
     VMSTATE enmVMState = VMR3GetState(pVM);
     AssertMsgReturn(enmVMState == VMSTATE_RESUMING,
                     ("%s\n", VMR3GetStateName(enmVMState)),
-                    VERR_INTERNAL_ERROR_4);
+                    VERR_VM_UNEXPECTED_UNSTABLE_STATE);
 
 #if 0
     /*
@@ -1503,7 +1503,7 @@ static DECLCALLBACK(VBOXSTRICTRC) vmR3LiveDoSuspend(PVM pVM, PVMCPU pVCpu, void 
             case VMSTATE_RESETTING_LS:
             default:
                 AssertMsgFailed(("%s\n", VMR3GetStateName(enmVMState)));
-                rc = VERR_INTERNAL_ERROR_3;
+                rc = VERR_VM_UNEXPECTED_VM_STATE;
                 break;
         }
         RTCritSectLeave(&pUVM->vm.s.AtStateCritSect);
@@ -1517,7 +1517,7 @@ static DECLCALLBACK(VBOXSTRICTRC) vmR3LiveDoSuspend(PVM pVM, PVMCPU pVCpu, void 
     VMSTATE enmVMState = VMR3GetState(pVM);
     AssertMsgReturn(enmVMState == VMSTATE_SUSPENDING_LS,
                     ("%s\n", VMR3GetStateName(enmVMState)),
-                    VERR_INTERNAL_ERROR_4);
+                    VERR_VM_UNEXPECTED_UNSTABLE_STATE);
 
     /*
      * Only EMT(0) have work to do since it's last thru here.
@@ -1528,7 +1528,7 @@ static DECLCALLBACK(VBOXSTRICTRC) vmR3LiveDoSuspend(PVM pVM, PVMCPU pVCpu, void 
         int rc = vmR3TrySetState(pVM, "VMR3Suspend", 1,
                                  VMSTATE_SUSPENDED_LS, VMSTATE_SUSPENDING_LS);
         if (RT_FAILURE(rc))
-            return VERR_INTERNAL_ERROR_3;
+            return VERR_VM_UNEXPECTED_UNSTABLE_STATE;
 
         *pfSuspended = true;
     }
@@ -2550,7 +2550,7 @@ static void vmR3DestroyUVM(PUVM pUVM, uint32_t cMilliesEMTWait)
 
         for (PVMREQ pReq = pReqHead; pReq; pReq = pReq->pNext)
         {
-            ASMAtomicUoWriteS32(&pReq->iStatus, VERR_INTERNAL_ERROR);
+            ASMAtomicUoWriteS32(&pReq->iStatus, VERR_VM_REQUEST_KILLED);
             ASMAtomicWriteSize(&pReq->enmState, VMREQSTATE_INVALID);
             RTSemEventSignal(pReq->EventSem);
             RTThreadSleep(2);
@@ -2580,7 +2580,7 @@ static void vmR3DestroyUVM(PUVM pUVM, uint32_t cMilliesEMTWait)
 
             for (PVMREQ pReq = pReqHead; pReq; pReq = pReq->pNext)
             {
-                ASMAtomicUoWriteS32(&pReq->iStatus, VERR_INTERNAL_ERROR);
+                ASMAtomicUoWriteS32(&pReq->iStatus, VERR_VM_REQUEST_KILLED);
                 ASMAtomicWriteSize(&pReq->enmState, VMREQSTATE_INVALID);
                 RTSemEventSignal(pReq->EventSem);
                 RTThreadSleep(2);
@@ -2796,7 +2796,7 @@ static DECLCALLBACK(VBOXSTRICTRC) vmR3Reset(PVM pVM, PVMCPU pVCpu, void *pvUser)
     AssertLogRelMsgReturn(   enmVMState == VMSTATE_RESETTING
                           || enmVMState == VMSTATE_RESETTING_LS,
                           ("%s\n", VMR3GetStateName(enmVMState)),
-                          VERR_INTERNAL_ERROR_4);
+                          VERR_VM_UNEXPECTED_UNSTABLE_STATE);
 
     /*
      * EMT(0) does the full cleanup *after* all the other EMTs has been

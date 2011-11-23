@@ -995,7 +995,7 @@ int pgmShwSyncPaePDPtr(PVMCPU pVCpu, RTGCPTR GCPtr, X86PGPAEUINT uGstPdpe, PX86P
     else
     {
         pShwPage = pgmPoolGetPage(pPool, pPdpe->u & X86_PDPE_PG_MASK);
-        AssertReturn(pShwPage, VERR_INTERNAL_ERROR);
+        AssertReturn(pShwPage, VERR_PGM_POOL_GET_PAGE_FAILED);
         Assert((pPdpe->u & X86_PDPE_PG_MASK) == pShwPage->Core.Key);
 
         pgmPoolCacheUsed(pPool, pShwPage);
@@ -1031,7 +1031,7 @@ DECLINLINE(int) pgmShwGetPaePoolPagePD(PVMCPU pVCpu, RTGCPTR GCPtr, PPGMPOOLPAGE
 
     /* Fetch the pgm pool shadow descriptor. */
     PPGMPOOLPAGE pShwPde = pgmPoolGetPage(pVM->pgm.s.CTX_SUFF(pPool), pPdpt->a[iPdPt].u & X86_PDPE_PG_MASK);
-    AssertReturn(pShwPde, VERR_INTERNAL_ERROR);
+    AssertReturn(pShwPde, VERR_PGM_POOL_GET_PAGE_FAILED);
 
     *ppShwPde = pShwPde;
     return VINF_SUCCESS;
@@ -1094,7 +1094,7 @@ static int pgmShwSyncLongModePDPtr(PVMCPU pVCpu, RTGCPTR64 GCPtr, X86PGPAEUINT u
     else
     {
         pShwPage = pgmPoolGetPage(pPool, pPml4e->u & X86_PML4E_PG_MASK);
-        AssertReturn(pShwPage, VERR_INTERNAL_ERROR);
+        AssertReturn(pShwPage, VERR_PGM_POOL_GET_PAGE_FAILED);
 
         pgmPoolCacheUsed(pPool, pShwPage);
     }
@@ -1131,7 +1131,7 @@ static int pgmShwSyncLongModePDPtr(PVMCPU pVCpu, RTGCPTR64 GCPtr, X86PGPAEUINT u
     else
     {
         pShwPage = pgmPoolGetPage(pPool, pPdpe->u & X86_PDPE_PG_MASK);
-        AssertReturn(pShwPage, VERR_INTERNAL_ERROR);
+        AssertReturn(pShwPage, VERR_PGM_POOL_GET_PAGE_FAILED);
 
         pgmPoolCacheUsed(pPool, pShwPage);
     }
@@ -1159,7 +1159,7 @@ DECLINLINE(int) pgmShwGetLongModePDPtr(PVMCPU pVCpu, RTGCPTR64 GCPtr, PX86PML4E 
 
     PGM_LOCK_ASSERT_OWNER(pVCpu->CTX_SUFF(pVM));
 
-    AssertReturn(pPml4e, VERR_INTERNAL_ERROR);
+    AssertReturn(pPml4e, VERR_PGM_PML4_MAPPING);
     if (ppPml4e)
         *ppPml4e = (PX86PML4E)pPml4e;
 
@@ -1171,7 +1171,7 @@ DECLINLINE(int) pgmShwGetLongModePDPtr(PVMCPU pVCpu, RTGCPTR64 GCPtr, PX86PML4E 
     PVM             pVM      = pVCpu->CTX_SUFF(pVM);
     PPGMPOOL        pPool    = pVM->pgm.s.CTX_SUFF(pPool);
     PPGMPOOLPAGE    pShwPage = pgmPoolGetPage(pPool, pPml4e->u & X86_PML4E_PG_MASK);
-    AssertReturn(pShwPage, VERR_INTERNAL_ERROR);
+    AssertReturn(pShwPage, VERR_PGM_POOL_GET_PAGE_FAILED);
 
     const unsigned  iPdPt = (GCPtr >> X86_PDPT_SHIFT) & X86_PDPT_MASK_AMD64;
     PCX86PDPT       pPdpt = *ppPdpt = (PX86PDPT)PGMPOOL_PAGE_2_PTR_V2(pVM, pVCpu, pShwPage);
@@ -1179,7 +1179,7 @@ DECLINLINE(int) pgmShwGetLongModePDPtr(PVMCPU pVCpu, RTGCPTR64 GCPtr, PX86PML4E 
         return VERR_PAGE_DIRECTORY_PTR_NOT_PRESENT;
 
     pShwPage = pgmPoolGetPage(pPool, pPdpt->a[iPdPt].u & X86_PDPE_PG_MASK);
-    AssertReturn(pShwPage, VERR_INTERNAL_ERROR);
+    AssertReturn(pShwPage, VERR_PGM_POOL_GET_PAGE_FAILED);
 
     *ppPD = (PX86PDPAE)PGMPOOL_PAGE_2_PTR_V2(pVM, pVCpu, pShwPage);
     Log4(("pgmShwGetLongModePDPtr %RGv -> *ppPD=%p PDE=%p/%RX64\n", GCPtr, *ppPD, &(*ppPD)->a[(GCPtr >> X86_PD_PAE_SHIFT) & X86_PD_PAE_MASK], (*ppPD)->a[(GCPtr >> X86_PD_PAE_SHIFT) & X86_PD_PAE_MASK].u));
@@ -1227,7 +1227,7 @@ static int pgmShwGetEPTPDPtr(PVMCPU pVCpu, RTGCPTR64 GCPtr, PEPTPDPT *ppPdpt, PE
     else
     {
         pShwPage = pgmPoolGetPage(pPool, pPml4e->u & EPT_PML4E_PG_MASK);
-        AssertReturn(pShwPage, VERR_INTERNAL_ERROR);
+        AssertReturn(pShwPage, VERR_PGM_POOL_GET_PAGE_FAILED);
 
         pgmPoolCacheUsed(pPool, pShwPage);
     }
@@ -1256,7 +1256,7 @@ static int pgmShwGetEPTPDPtr(PVMCPU pVCpu, RTGCPTR64 GCPtr, PEPTPDPT *ppPdpt, PE
     else
     {
         pShwPage = pgmPoolGetPage(pPool, pPdpe->u & EPT_PDPTE_PG_MASK);
-        AssertReturn(pShwPage, VERR_INTERNAL_ERROR);
+        AssertReturn(pShwPage, VERR_PGM_POOL_GET_PAGE_FAILED);
 
         pgmPoolCacheUsed(pPool, pShwPage);
     }
@@ -1322,7 +1322,7 @@ int pgmShwSyncNestedPageLocked(PVMCPU pVCpu, RTGCPHYS GCPhysFault, uint32_t cPag
         }
 
         default:
-            AssertMsgFailedReturn(("%d\n", enmShwPagingMode), VERR_INTERNAL_ERROR_5);
+            AssertMsgFailedReturn(("%d\n", enmShwPagingMode), VERR_IPE_NOT_REACHED_DEFAULT_CASE);
     }
     return rc;
 }
@@ -2053,7 +2053,7 @@ VMMDECL(int) PGMSyncCR3(PVMCPU pVCpu, uint64_t cr0, uint64_t cr3, uint64_t cr4, 
 #endif
         }
         AssertRCReturn(rc, rc);
-        AssertRCSuccessReturn(rc, VERR_INTERNAL_ERROR);
+        AssertRCSuccessReturn(rc, VERR_IPE_UNEXPECTED_INFO_STATUS);
     }
 
     /*

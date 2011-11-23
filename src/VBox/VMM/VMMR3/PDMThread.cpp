@@ -85,7 +85,7 @@ static DECLCALLBACK(int) pdmR3ThreadWakeUp(PPDMTHREAD pThread)
 
         default:
             AssertMsgFailed(("%d\n", pThread->Internal.s.enmType));
-            rc = VERR_INTERNAL_ERROR;
+            rc = VERR_PDM_THREAD_IPE_1;
             break;
     }
     AssertRC(rc);
@@ -155,7 +155,7 @@ static int pdmR3ThreadInit(PVM pVM, PPPDMTHREAD ppThread, size_t cbStack, RTTHRE
                 rc = RTThreadUserWait(Thread, 60*1000);
                 if (    RT_SUCCESS(rc)
                     &&  pThread->enmState != PDMTHREADSTATE_SUSPENDED)
-                    rc = VERR_INTERNAL_ERROR;
+                    rc = VERR_PDM_THREAD_IPE_2;
                 if (RT_SUCCESS(rc))
                 {
                     /*
@@ -408,7 +408,7 @@ VMMR3DECL(int) PDMR3ThreadDestroy(PPDMTHREAD pThread, int *pRcThread)
 
                 default:
                     AssertMsgFailed(("enmState=%d\n", enmState));
-                    rc = VERR_INTERNAL_ERROR;
+                    rc = VERR_PDM_THREAD_IPE_2;
                     break;
             }
             break;
@@ -667,7 +667,7 @@ VMMR3DECL(int) PDMR3ThreadIAmSuspending(PPDMTHREAD pThread)
                 return rc;
 
             if (RT_SUCCESS(rc))
-                rc = VERR_INTERNAL_ERROR;
+                rc = VERR_PDM_THREAD_IPE_2;
         }
     }
 
@@ -731,8 +731,8 @@ VMMR3DECL(int) PDMR3ThreadSleep(PPDMTHREAD pThread, RTMSINTERVAL cMillies)
     /*
      * Assert sanity.
      */
-    AssertReturn(pThread->enmState > PDMTHREADSTATE_INVALID && pThread->enmState < PDMTHREADSTATE_TERMINATED, VERR_INTERNAL_ERROR);
-    AssertReturn(pThread->Thread == RTThreadSelf(), VERR_INTERNAL_ERROR);
+    AssertReturn(pThread->enmState > PDMTHREADSTATE_INVALID && pThread->enmState < PDMTHREADSTATE_TERMINATED, VERR_PDM_THREAD_IPE_2);
+    AssertReturn(pThread->Thread == RTThreadSelf(), VERR_PDM_THREAD_INVALID_CALLER);
 
     /*
      * Reset the event semaphore, check the state and sleep.
@@ -797,7 +797,7 @@ static DECLCALLBACK(int) pdmR3ThreadMain(RTTHREAD Thread, void *pvUser)
 
             default:
                 AssertMsgFailed(("%d\n", pThread->Internal.s.enmType));
-                rc = VERR_INTERNAL_ERROR;
+                rc = VERR_PDM_THREAD_IPE_1;
                 break;
         }
         if (RT_FAILURE(rc))
@@ -946,7 +946,7 @@ VMMR3DECL(int) PDMR3ThreadSuspend(PPDMTHREAD pThread)
                         rc = RTThreadUserWait(pThread->Thread, 60*1000);
                     if (    RT_SUCCESS(rc)
                         &&  pThread->enmState != PDMTHREADSTATE_SUSPENDED)
-                        rc = VERR_INTERNAL_ERROR;
+                        rc = VERR_PDM_THREAD_IPE_2;
                     if (RT_SUCCESS(rc))
                         return rc;
                 }
@@ -1039,7 +1039,7 @@ VMMR3DECL(int) PDMR3ThreadResume(PPDMTHREAD pThread)
                 rc = RTThreadUserWait(pThread->Thread, 60*1000);
                 if (    RT_SUCCESS(rc)
                     &&  pThread->enmState != PDMTHREADSTATE_RUNNING)
-                    rc = VERR_INTERNAL_ERROR;
+                    rc = VERR_PDM_THREAD_IPE_2;
                 if (RT_SUCCESS(rc))
                     return rc;
             }
