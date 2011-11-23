@@ -382,7 +382,7 @@ my_generate_usercpp_h()
     MY_VER="0.0.0"
     for subdir in "${MY_SLICKDIR_}/"*;
     do
-        if test -f "${subdir}/${MY_USERCPP_H}"; then
+        if test -f "${subdir}/${MY_USERCPP_H}"  -o  -f "${subdir}/vslick.stu"; then
             MY_CUR_VER_NUM=0
             MY_CUR_VER=`echo "${subdir}" | ${MY_SED} -e 's,^.*/,,g'`
 
@@ -413,7 +413,7 @@ my_generate_usercpp_h()
 
     MY_SLICKDIR="${MY_SLICKDIR_}/${MY_VER}"
     MY_USERCPP_H_FULL="${MY_SLICKDIR}/${MY_USERCPP_H}"
-    if test -f "${MY_USERCPP_H_FULL}"; then
+    if test -d "${MY_SLICKDIR}"; then
         echo "Found SlickEdit v${MY_VER} preprocessor file: ${MY_USERCPP_H_FULL}"
     else
         echo "Failed to locate SlickEdit preprocessor file. You need to manually merge ${MY_USERCPP_H}."
@@ -622,10 +622,15 @@ EOF
     ${MY_RM} -f "${MY_FILE}.2" "${MY_FILE}.3"
 
     # Install it.
-    if test -n "${MY_USERCPP_H_FULL}"  -a  -f "${MY_USERCPP_H_FULL}"; then
-       # ${MY_MV} -vf "${MY_USERCPP_H_FULL}" "${MY_USERCPP_H_FULL}.bak"
-       # ${MY_CP} -v "${MY_FILE}" "${MY_USERCPP_H_FULL}"
-        echo "Updated the SlickEdit preprocessor file. (Previous version renamed to .bak.)"
+    if test -n "${MY_USERCPP_H_FULL}"  -a  -d "${MY_SLICKDIR}"; then
+        if test -f "${MY_USERCPP_H_FULL}"; then
+            ${MY_MV} -vf "${MY_USERCPP_H_FULL}" "${MY_USERCPP_H_FULL}.bak"
+
+            ${MY_CP} -v "${MY_FILE}" "${MY_USERCPP_H_FULL}"
+            echo "Updated the SlickEdit preprocessor file. (Previous version renamed to .bak.)"
+        else
+            echo "Created the SlickEdit preprocessor file."
+        fi
     fi
 }
 
