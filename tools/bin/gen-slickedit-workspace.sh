@@ -625,10 +625,10 @@ EOF
     if test -n "${MY_USERCPP_H_FULL}"  -a  -d "${MY_SLICKDIR}"; then
         if test -f "${MY_USERCPP_H_FULL}"; then
             ${MY_MV} -vf "${MY_USERCPP_H_FULL}" "${MY_USERCPP_H_FULL}.bak"
-
-            ${MY_CP} -v "${MY_FILE}" "${MY_USERCPP_H_FULL}"
+            ${MY_CP} "${MY_FILE}" "${MY_USERCPP_H_FULL}"
             echo "Updated the SlickEdit preprocessor file. (Previous version renamed to .bak.)"
         else
+            ${MY_CP} "${MY_FILE}" "${MY_USERCPP_H_FULL}"
             echo "Created the SlickEdit preprocessor file."
         fi
     fi
