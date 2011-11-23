@@ -13,11 +13,13 @@ s/^ *//g
 /^\.text$/d
 /^\.data$/d
 /^\.bss$/d
+s/[[:space:]][[:space:]]*/ /g
 
 #
 # Figure which type of line this is and process it accordingly.
 #
 /^[[:alpha:]_][[:alnum:]_]*:/b struct
+/^[[:alpha:]_][[:alnum:]_]*_size EQU \$ - .*$/b struct_equ
 /<gap>/b member
 /^\.[[:alpha:]_][[:alnum:]_.:]* res.*$/b member_two
 b error
@@ -27,6 +29,8 @@ b member_two
 #
 # Struct start / end.
 #
+:struct_equ
+s/_size EQU.*$/_size/
 :struct
 s/:$//
 h
