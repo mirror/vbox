@@ -561,7 +561,7 @@ EOF
 EOF
 
     MY_HDR_FILES=`  echo ${MY_ROOT_DIR}/include/VBox/*.h ${MY_ROOT_DIR}/include/VBox/vmm/*.h \
-                  | ${MY_SED} -e '/VBox\/err.h/d' `
+                  | ${MY_SED} -e 's,${MY_ROOT_DIR}/include/VBox/err.h,,' `
     MY_HDR_FILES="${MY_HDR_FILES} ${MY_ROOT_DIR}/include/iprt/cdefs.h"
     ${MY_SED} \
         -e '/__cdecl/d' \
@@ -573,22 +573,21 @@ EOF
         -e '/__attribute__/d' \
         -e 's/#  */#/g' \
         -e 's/   */ /g' \
-        -e '/(type) DECLEXPORT/d' \
-        -e '/(a_Type) DECLEXPORT/d' \
         -e '/ DECLEXPORT_CLASS/d' \
         -e 's/ *VBOXCALL//' \
         -e 's/ *RTCALL//' \
-        -e 's/(type) DECLIMPORT(type)/(type) type/' \
-        -e 's/(a_Type) DECLIMPORT(a_Type)/(type) type/' \
         -e '/ DECLASM(type) type/d' \
         -e '/define  *DECL..CALLBACKMEMBER(type[^)]*) *RT/d' \
         -e '/define  *DECLINLINE(type)/d' \
         -e '/define  *DECL_FORCE_INLINE(type)/d' \
         -e '/  *DECL_INVALID(/d' \
-        -e '/define RT[DATGRC03]*DECL(type) *DECLHIDDEN(type)/d' \
-        -e '/define RT[DATGRC03]*DECL(a_Type) *DECLHIDDEN(a_Type)/d' \
+        \
         -e 's/(type) DECLHIDDEN(type)/(type) type/' \
-        -e 's/(a_Type) DECLHIDDEN(a_Type)/(type) type/' \
+        -e 's/(type) DECLEXPORT(type)/(type) type/' \
+        -e 's/(type) DECLIMPORT(type)/(type) type/' \
+        -e 's/(a_Type) DECLHIDDEN(a_Type)/(a_Type) a_Type/' \
+        -e 's/(a_Type) DECLEXPORT(a_Type)/(a_Type) a_Type/' \
+        -e 's/(a_Type) DECLIMPORT(a_Type)/(a_Type) a_Type/' \
         \
         --append "${MY_FILE}" \
         ${MY_HDR_FILES}
@@ -596,18 +595,31 @@ EOF
     ${MY_CAT} "${MY_FILE}" \
         | ${MY_SED} -e 's/_/\x1F/g' -e 's/(/\x1E/g' -e 's/[[:space:]][[:space:]]*/\x1C/g' \
         | ${MY_SED} -e 's/\x1F/_/g' -e 's/\x1E/(/g' -e 's/\x1C/ /g' \
+        | ${MY_SORT} \
         | ${MY_SED} -e '/#define/s/$/ \/\/ vbox/' --output "${MY_FILE}.2"
+
+    # Eliminate duplicates.
+    > "${MY_FILE}.3"
+    exec < "${MY_FILE}.2"
+    MY_PREV_DEFINE=""
+    while read MY_LINE;
+    do
+        MY_DEFINE=`echo "${MY_LINE}" | ${MY_SED} -e 's/^#define \([^ ()]*\).*$/\1/' `
+        if test "${MY_DEFINE}" != "${MY_PREV_DEFINE}"; then
+            MY_PREV_DEFINE=${MY_DEFINE}
+            echo "${MY_LINE}" >> "${MY_FILE}.3"
+        fi
+    done
 
     # Append non-vbox bits from the current user config.
     if test -n "${MY_USERCPP_H_FULL}"  -a  -f "${MY_USERCPP_H_FULL}"; then
-        ${MY_SED} -e '/ \/\/ vbox$/d' -e '/^[[:space:]]*$/d' --append "${MY_FILE}" "${MY_USERCPP_H_FULL}"
+        ${MY_SED} -e '/ \/\/ vbox$/d' -e '/^[[:space:]]*$/d' --append "${MY_FILE}.3" "${MY_USERCPP_H_FULL}"
     fi
 
     # Finalize the file (sort + blank lines).
-    ${MY_CAT} "${MY_FILE}.2" \
-        | ${MY_SORT} \
+    ${MY_CAT} "${MY_FILE}.3" \
         | ${MY_SED} -e 's/$/\n/' --output "${MY_FILE}"
-    ${MY_RM} -f "${MY_FILE}.2"
+    ${MY_RM} -f "${MY_FILE}.2" "${MY_FILE}.3"
 
     # Install it.
     if test -n "${MY_USERCPP_H_FULL}"  -a  -f "${MY_USERCPP_H_FULL}"; then
