@@ -50,7 +50,7 @@ static DECLCALLBACK(int) cpumR3RegGet_Generic(void *pvUser, PCDBGFREGDESC pDesc,
         case DBGFREGVALTYPE_U64:       pValue->u64  = *(uint64_t const *)pv; return VINF_SUCCESS;
         case DBGFREGVALTYPE_U128:      pValue->u128 = *(PCRTUINT128U    )pv; return VINF_SUCCESS;
         default:
-            AssertMsgFailedReturn(("%d %s\n", pDesc->enmType, pDesc->pszName), VERR_INTERNAL_ERROR_3);
+            AssertMsgFailedReturn(("%d %s\n", pDesc->enmType, pDesc->pszName), VERR_IPE_NOT_REACHED_DEFAULT_CASE);
     }
 }
 
@@ -96,7 +96,7 @@ static DECLCALLBACK(int) cpumR3RegSet_Generic(void *pvUser, PCDBGFREGDESC pDesc,
         }
 
         default:
-            AssertMsgFailedReturn(("%d %s\n", pDesc->enmType, pDesc->pszName), VERR_INTERNAL_ERROR_3);
+            AssertMsgFailedReturn(("%d %s\n", pDesc->enmType, pDesc->pszName), VERR_IPE_NOT_REACHED_DEFAULT_CASE);
     }
 }
 
@@ -279,7 +279,7 @@ static DECLCALLBACK(int) cpumR3RegGstGet_crX(void *pvUser, PCDBGFREGDESC pDesc, 
         case DBGFREGVALTYPE_U64:    pValue->u64 = u64Value; break;
         case DBGFREGVALTYPE_U32:    pValue->u32 = (uint32_t)u64Value; break;
         default:
-            AssertFailedReturn(VERR_INTERNAL_ERROR_4);
+            AssertFailedReturn(VERR_IPE_NOT_REACHED_DEFAULT_CASE);
     }
     return VINF_SUCCESS;
 }
@@ -313,7 +313,8 @@ static DECLCALLBACK(int) cpumR3RegGstSet_crX(void *pvUser, PCDBGFREGDESC pDesc, 
             fMask    = pfMask->u32;
             fMaskMax = UINT32_MAX;
             break;
-        default:                    AssertFailedReturn(VERR_INTERNAL_ERROR_4);
+        default:                    
+            AssertFailedReturn(VERR_IPE_NOT_REACHED_DEFAULT_CASE);
     }
     if (fMask != fMaskMax)
     {
@@ -336,7 +337,7 @@ static DECLCALLBACK(int) cpumR3RegGstSet_crX(void *pvUser, PCDBGFREGDESC pDesc, 
         case 4: rc = CPUMSetGuestCR4(pVCpu, u64Value); break;
         case 8: rc = PDMApicSetTPR(pVCpu, (uint8_t)(u64Value << 4)); break;
         default:
-            AssertFailedReturn(VERR_INTERNAL_ERROR_2);
+            AssertFailedReturn(VERR_IPE_NOT_REACHED_DEFAULT_CASE);
     }
     return rc;
 }
@@ -358,7 +359,7 @@ static DECLCALLBACK(int) cpumR3RegGstGet_drX(void *pvUser, PCDBGFREGDESC pDesc, 
         case DBGFREGVALTYPE_U64:    pValue->u64 = u64Value; break;
         case DBGFREGVALTYPE_U32:    pValue->u32 = (uint32_t)u64Value; break;
         default:
-            AssertFailedReturn(VERR_INTERNAL_ERROR_4);
+            AssertFailedReturn(VERR_IPE_NOT_REACHED_DEFAULT_CASE);
     }
     return VINF_SUCCESS;
 }
@@ -392,7 +393,8 @@ static DECLCALLBACK(int) cpumR3RegGstSet_drX(void *pvUser, PCDBGFREGDESC pDesc, 
             fMask    = pfMask->u32;
             fMaskMax = UINT32_MAX;
             break;
-        default:                    AssertFailedReturn(VERR_INTERNAL_ERROR_4);
+        default:                    
+            AssertFailedReturn(VERR_IPE_NOT_REACHED_DEFAULT_CASE);
     }
     if (fMask != fMaskMax)
     {
@@ -429,7 +431,7 @@ static DECLCALLBACK(int) cpumR3RegGstGet_msr(void *pvUser, PCDBGFREGDESC pDesc, 
             case DBGFREGVALTYPE_U32:    pValue->u32 = (uint32_t)u64Value; break;
             case DBGFREGVALTYPE_U16:    pValue->u16 = (uint16_t)u64Value; break;
             default:
-                AssertFailedReturn(VERR_INTERNAL_ERROR_4);
+                AssertFailedReturn(VERR_IPE_NOT_REACHED_DEFAULT_CASE);
         }
     }
     /** @todo what to do about errors? */
@@ -470,7 +472,8 @@ static DECLCALLBACK(int) cpumR3RegGstSet_msr(void *pvUser, PCDBGFREGDESC pDesc, 
             fMask    = pfMask->u16;
             fMaskMax = UINT16_MAX;
             break;
-        default:                    AssertFailedReturn(VERR_INTERNAL_ERROR_4);
+        default:                    
+            AssertFailedReturn(VERR_IPE_NOT_REACHED_DEFAULT_CASE);
     }
     if (fMask != fMaskMax)
     {
@@ -554,14 +557,14 @@ static DECLCALLBACK(int) cpumR3RegHyperGet_crX(void *pvUser, PCDBGFREGDESC pDesc
         case 4: u64Value = UINT64_MAX; break;
         case 8: u64Value = UINT64_MAX; break;
         default:
-            AssertFailedReturn(VERR_INTERNAL_ERROR_3);
+            AssertFailedReturn(VERR_IPE_NOT_REACHED_DEFAULT_CASE);
     }
     switch (pDesc->enmType)
     {
         case DBGFREGVALTYPE_U64:    pValue->u64 = u64Value; break;
         case DBGFREGVALTYPE_U32:    pValue->u32 = (uint32_t)u64Value; break;
         default:
-            AssertFailedReturn(VERR_INTERNAL_ERROR_4);
+            AssertFailedReturn(VERR_IPE_NOT_REACHED_DEFAULT_CASE);
     }
     return VINF_SUCCESS;
 }
@@ -596,14 +599,14 @@ static DECLCALLBACK(int) cpumR3RegHyperGet_drX(void *pvUser, PCDBGFREGDESC pDesc
         case 6: u64Value = CPUMGetHyperDR6(pVCpu); break;
         case 7: u64Value = CPUMGetHyperDR7(pVCpu); break;
         default:
-            AssertFailedReturn(VERR_INTERNAL_ERROR_3);
+            AssertFailedReturn(VERR_IPE_NOT_REACHED_DEFAULT_CASE);
     }
     switch (pDesc->enmType)
     {
         case DBGFREGVALTYPE_U64:    pValue->u64 = u64Value; break;
         case DBGFREGVALTYPE_U32:    pValue->u32 = (uint32_t)u64Value; break;
         default:
-            AssertFailedReturn(VERR_INTERNAL_ERROR_4);
+            AssertFailedReturn(VERR_IPE_NOT_REACHED_DEFAULT_CASE);
     }
     return VINF_SUCCESS;
 }
@@ -635,7 +638,7 @@ static DECLCALLBACK(int) cpumR3RegHyperGet_msr(void *pvUser, PCDBGFREGDESC pDesc
         case DBGFREGVALTYPE_U32:    pValue->u32 = (uint32_t)u64Value; break;
         case DBGFREGVALTYPE_U16:    pValue->u16 = (uint16_t)u64Value; break;
         default:
-            AssertFailedReturn(VERR_INTERNAL_ERROR_4);
+            AssertFailedReturn(VERR_IPE_NOT_REACHED_DEFAULT_CASE);
     }
     return VINF_SUCCESS;
 }

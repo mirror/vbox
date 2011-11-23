@@ -94,7 +94,7 @@ VMMRZDECL(int) DBGFRZTrap01Handler(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame
 #endif
 
     LogFlow(("DBGFRZTrap01Handler: guest debug event %RTreg at %04x:%RGv!\n", uDr6, pRegFrame->cs, pRegFrame->rip));
-    return fInHyper ? VERR_INTERNAL_ERROR : VINF_EM_RAW_GUEST_TRAP;
+    return fInHyper ? VERR_DBGF_HYPER_DB_XCPT : VINF_EM_RAW_GUEST_TRAP;
 }
 
 

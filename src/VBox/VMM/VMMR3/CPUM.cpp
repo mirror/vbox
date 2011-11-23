@@ -391,7 +391,7 @@ static int cpumR3CpuIdInit(PVM pVM)
      * Enables the Synthetic CPU.  The Vendor ID and Processor Name are
      * completely overridden by VirtualBox custom strings.  Some
      * CPUID information is withheld, like the cache info. */
-    rc = CFGMR3QueryBoolDef(pCpumCfg, "SyntheticCpu",  &pCPUM->fSyntheticCpu,  false);
+    rc = CFGMR3QueryBoolDef(pCpumCfg, "SyntheticCpu",  &pCPUM->fSyntheticCpu, false);
     AssertRCReturn(rc, rc);
 
     /** @cfgm{CPUM/PortableCpuIdLevel, 8-bit, 0, 3, 0}
@@ -402,7 +402,7 @@ static int cpumR3CpuIdInit(PVM pVM)
     rc = CFGMR3QueryU8Def(pCpumCfg, "PortableCpuIdLevel", &pCPUM->u8PortableCpuIdLevel, 0);
     AssertRCReturn(rc, rc);
 
-    AssertLogRelReturn(!pCPUM->fSyntheticCpu || !pCPUM->u8PortableCpuIdLevel, VERR_INTERNAL_ERROR_2);
+    AssertLogRelReturn(!pCPUM->fSyntheticCpu || !pCPUM->u8PortableCpuIdLevel, VERR_CPUM_INCOMPATIBLE_CONFIG);
 
     /*
      * Get the host CPUID leaves and redetect the guest CPU vendor (could've
@@ -1908,7 +1908,7 @@ static int cpumR3LoadCpuId(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion)
  */
 static DECLCALLBACK(int) cpumR3LiveExec(PVM pVM, PSSMHANDLE pSSM, uint32_t uPass)
 {
-    AssertReturn(uPass == 0, VERR_INTERNAL_ERROR_4);
+    AssertReturn(uPass == 0, VERR_SSM_UNEXPECTED_PASS);
     cpumR3SaveCpuId(pVM, pSSM);
     return VINF_SSM_DONT_CALL_AGAIN;
 }

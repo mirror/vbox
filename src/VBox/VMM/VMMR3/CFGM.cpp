@@ -555,7 +555,7 @@ VMMR3DECL(int) CFGMR3QuerySize(PCFGMNODE pNode, const char *pszName, size_t *pcb
                 break;
 
             default:
-                rc = VERR_INTERNAL_ERROR;
+                rc = VERR_CFGM_IPE_1;
                 AssertMsgFailed(("Invalid value type %d\n", pLeaf->enmType));
                 break;
         }
