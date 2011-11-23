@@ -238,6 +238,8 @@
 /** The EMInterpretDisasOne / EMInterpretDisasOneEx methods failed to
  * disassemble the instruction. */
 #define VERR_EM_INTERNAL_DISAS_ERROR        (-1153)
+/** Unexpected guest mapping conflict detected. */
+#define VERR_EM_UNEXPECTED_MAPPING_CONFLICT (-1154)
 /** @} */
 
 
@@ -283,6 +285,16 @@
 #define VERR_DBGF_UNSUPPORTED_CAST          (-1213)
 /** The register is read-only and cannot be modified. */
 #define VERR_DBGF_READ_ONLY_REGISTER        (-1214)
+/** Internal processing error \#1 in the DBGF register code. */
+#define VERR_DBGF_REG_IPE_1                 (-1215)
+/** Internal processing error \#2 in the DBGF register code. */
+#define VERR_DBGF_REG_IPE_2                 (-1216)
+/** Unhandled \#DB in hypervisor code. */
+#define VERR_DBGF_HYPER_DB_XCPT             (-1217)
+/** Internal processing error \#1 in the DBGF stack code. */
+#define VERR_DBGF_STACK_IPE_1               (-1218)
+/** Internal processing error \#2 in the DBGF stack code. */
+#define VERR_DBGF_STACK_IPE_2               (-1218)
 /** @} */
 
 
@@ -535,13 +547,13 @@
 #define VERR_PGM_INVALID_PDPE_ADDR              (-1669)
 /** Internal processing error in the PGM physical handler code. */
 #define VERR_PGM_PHYS_HANDLER_IPE               (-1670)
-/** Internal processing error #1 in the PGM physial page mapping code. */
+/** Internal processing error \#1 in the PGM physial page mapping code. */
 #define VERR_PGM_PHYS_PAGE_MAP_IPE_1            (-1671)
-/** Internal processing error #2 in the PGM physial page mapping code. */
+/** Internal processing error \#2 in the PGM physial page mapping code. */
 #define VERR_PGM_PHYS_PAGE_MAP_IPE_2            (-1672)
-/** Internal processing error #3 in the PGM physial page mapping code. */
+/** Internal processing error \#3 in the PGM physial page mapping code. */
 #define VERR_PGM_PHYS_PAGE_MAP_IPE_3            (-1673)
-/** Internal processing error #4 in the PGM physial page mapping code. */
+/** Internal processing error \#4 in the PGM physial page mapping code. */
 #define VERR_PGM_PHYS_PAGE_MAP_IPE_4            (-1674)
 /** Too many loops looking for a page to reuse. */
 #define VERR_PGM_POOL_TOO_MANY_LOOPS            (-1675)
@@ -580,6 +592,8 @@
  */
 /** The caller shall raise an \#GP(0) exception. */
 #define VERR_CPUM_RAISE_GP_0                    (-1750)
+/** Incompatible CPUM configuration. */
+#define VERR_CPUM_INCOMPATIBLE_CONFIG           (-1751)
 /** @} */
 
 
@@ -727,11 +741,11 @@
 #define VERR_SSM_MEM_TOO_BIG                    (-1874)
 /** Encountered an bad (/unknown) record type. */
 #define VERR_SSM_BAD_REC_TYPE                   (-1875)
-/** Internal processing error #1 in SSM code.  */
+/** Internal processing error \#1 in SSM code.  */
 #define VERR_SSM_IPE_1                          (-1876)
-/** Internal processing error #2 in SSM code.  */
+/** Internal processing error \#2 in SSM code.  */
 #define VERR_SSM_IPE_2                          (-1877)
-/** Internal processing error #3 in SSM code.  */
+/** Internal processing error \#3 in SSM code.  */
 #define VERR_SSM_IPE_3                          (-1878)
 
 /** @} */
@@ -871,6 +885,8 @@
 #define VERR_CFGM_CONFIG_UNKNOWN_VALUE      (-2163)
 /** An unknown config node (key) was encountered. */
 #define VERR_CFGM_CONFIG_UNKNOWN_NODE       (-2164)
+/** Internal processing error \#1 in CFGM. */
+#define VERR_CFGM_IPE_1                     (-2165)
 /** @} */
 
 
@@ -942,11 +958,11 @@
 #define VINF_TRPM_XCPT_DISPATCHED           2405
 /** Bad TRPM_TRAP_IN_OP. */
 #define VERR_TRPM_BAD_TRAP_IN_OP            (-2406)
-/** Internal processing error #1 in TRPM. */
+/** Internal processing error \#1 in TRPM. */
 #define VERR_TRPM_IPE_1                     (-2507)
-/** Internal processing error #2 in TRPM. */
+/** Internal processing error \#2 in TRPM. */
 #define VERR_TRPM_IPE_2                     (-2508)
-/** Internal processing error #3 in TRPM. */
+/** Internal processing error \#3 in TRPM. */
 #define VERR_TRPM_IPE_3                     (-2509)
 /** @} */
 
@@ -1041,17 +1057,17 @@
 
 /** IOMGCIOPortHandler was given an unexpected opcode. */
 #define VERR_IOM_IOPORT_UNKNOWN_OPCODE      (-2630)
-/** Internal processing error #1 in the I/O port code. */
+/** Internal processing error \#1 in the I/O port code. */
 #define VERR_IOM_IOPORT_IPE_1               (-2631)
-/** Internal processing error #2 in the I/O port code. */
+/** Internal processing error \#2 in the I/O port code. */
 #define VERR_IOM_IOPORT_IPE_2               (-2632)
-/** Internal processing error #3 in the I/O port code. */
+/** Internal processing error \#3 in the I/O port code. */
 #define VERR_IOM_IOPORT_IPE_3               (-2633)
-/** Internal processing error #1 in the MMIO code. */
+/** Internal processing error \#1 in the MMIO code. */
 #define VERR_IOM_MMIO_IPE_1                 (-2634)
-/** Internal processing error #2 in the MMIO code. */
+/** Internal processing error \#2 in the MMIO code. */
 #define VERR_IOM_MMIO_IPE_2                 (-2635)
-/** Internal processing error #3 in the MMIO code. */
+/** Internal processing error \#3 in the MMIO code. */
 #define VERR_IOM_MMIO_IPE_3                 (-2636)
 /** @} */
 
@@ -1352,9 +1368,9 @@
 #define VERR_PDM_CRITSECT_NOT_FOUND                 (-2882)
 /** A PDMThread API was called by the wrong thread. */
 #define VERR_PDM_THREAD_INVALID_CALLER              (-2883)
-/** Internal processing error #1 in the PDM Thread code. */
+/** Internal processing error \#1 in the PDM Thread code. */
 #define VERR_PDM_THREAD_IPE_1                       (-2884)
-/** Internal processing error #2 in the PDM Thread code. */
+/** Internal processing error \#2 in the PDM Thread code. */
 #define VERR_PDM_THREAD_IPE_2                       (-2885)
 /** Only one PCI function is supported per PDM device. */
 #define VERR_PDM_ONE_PCI_FUNCTION_PER_DEVICE        (-2886)
@@ -1689,6 +1705,8 @@
 #define VERR_GMM_MTX_FLAGS                          (-3819)
 /** Internal processing error in the page allocator. */
 #define VERR_GMM_ALLOC_PAGES_IPE                    (-3820)
+/** Invalid page count given to GMMR3FreePagesPerform.  */
+#define VERR_GMM_ACTUAL_PAGES_IPE                   (-3821)
 /** @} */
 
 
@@ -1791,6 +1809,16 @@
 #define VERR_HMSVM_UNEXPECTED_XCPT_EXIT             (-4109)
 /** Unexpected SVM patch type. */
 #define VERR_HMSVM_UNEXPECTED_PATCH_TYPE            (-4110)
+/** HWACCMR0Leave was called on the wrong CPU. */
+#define VERR_HM_WRONG_CPU_1                         (-4111)
+/** Internal processing error \#1 in the HM code.  */
+#define VERR_HM_IPE_1                               (-4112)
+/** Internal processing error \#2 in the HM code.  */
+#define VERR_HM_IPE_2                               (-4113)
+/** Wrong 32/64-bit switcher. */
+#define VERR_HM_WRONG_SWITCHER                      (-4114)
+/** Unknown I/O instruction. */
+#define VERR_HM_UNKNOWN_IO_INSTRUCTION              (-4115)
 /** @} */
 
 
@@ -1944,9 +1972,9 @@
 #define VERR_GVMM_HOST_CPU_RANGE                    (-5201)
 /** GVMM ran into some broken IPRT code. */
 #define VERR_GVMM_BROKEN_IPRT                       (-5202)
-/** Internal processing error #1 in the GVMM code. */
+/** Internal processing error \#1 in the GVMM code. */
 #define VERR_GVMM_IPE_1                             (-5203)
-/** Internal processing error #2 in the GVMM code. */
+/** Internal processing error \#2 in the GVMM code. */
 #define VERR_GVMM_IPE_2                             (-5204)
 /** @} */
 

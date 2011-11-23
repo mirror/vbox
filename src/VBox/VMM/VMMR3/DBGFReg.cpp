@@ -1044,7 +1044,7 @@ static DECLCALLBACK(int) dbgfR3RegCpuQueryBatchWorker(PVM pVM, VMCPUID idCpu, PD
                         pReg->Val.au16[5] = pu->au16[5];
                         break;
                     default:
-                        AssertMsgFailedReturn(("%s %d\n", pDesc->pszName, pDesc->enmType), VERR_INTERNAL_ERROR_3);
+                        AssertMsgFailedReturn(("%s %d\n", pDesc->pszName, pDesc->enmType), VERR_IPE_NOT_REACHED_DEFAULT_CASE);
                 }
             }
             else
@@ -1872,7 +1872,7 @@ DECLINLINE(ssize_t) dbgfR3RegFormatValueInt(char *pszTmp, size_t cbTmp, PCDBGFRE
         {
             ssize_t cch = RTStrFormatU64(pszTmp, cbTmp, pValue->dtr.u64Base,
                                          16, 2+16, 0, RTSTR_F_SPECIAL | RTSTR_F_ZEROPAD);
-            AssertReturn(cch > 0, VERR_INTERNAL_ERROR_4);
+            AssertReturn(cch > 0, VERR_DBGF_REG_IPE_1);
             pszTmp[cch++] = ':';
             cch += RTStrFormatU64(&pszTmp[cch], cbTmp - cch, pValue->dtr.u32Limit,
                                   16, 4, 0, RTSTR_F_ZEROPAD | RTSTR_F_32BIT);
@@ -1887,7 +1887,7 @@ DECLINLINE(ssize_t) dbgfR3RegFormatValueInt(char *pszTmp, size_t cbTmp, PCDBGFRE
     }
 
     RTStrPrintf(pszTmp, cbTmp, "!enmType=%d!", enmType);
-    return VERR_INTERNAL_ERROR_5;
+    return VERR_DBGF_REG_IPE_2;
 }
 
 

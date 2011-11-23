@@ -306,7 +306,7 @@ static int emR3ExecuteIOInstruction(PVM pVM, PVMCPU pVCpu)
         return VBOXSTRICTRC_TODO(rcStrict);     /* rip already updated. */
     }
     AssertMsgReturn(rcStrict == VERR_NOT_FOUND, ("%Rrc\n", VBOXSTRICTRC_VAL(rcStrict)),
-                    RT_SUCCESS_NP(rcStrict) ? VERR_INTERNAL_ERROR_5 : VBOXSTRICTRC_TODO(rcStrict));
+                    RT_SUCCESS_NP(rcStrict) ? VERR_IPE_UNEXPECTED_INFO_STATUS : VBOXSTRICTRC_TODO(rcStrict));
 
     /** @todo probably we should fall back to the recompiler; otherwise we'll go back and forth between HC & GC
      *   as io instructions tend to come in packages of more than one
@@ -476,7 +476,7 @@ static int emR3HwaccmForcedActions(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
  */
 int emR3HwAccExecute(PVM pVM, PVMCPU pVCpu, bool *pfFFDone)
 {
-    int      rc = VERR_INTERNAL_ERROR;
+    int      rc = VERR_IPE_UNINITIALIZED_STATUS;
     PCPUMCTX pCtx = pVCpu->em.s.pCtx;
 
     LogFlow(("emR3HwAccExecute%d: (cs:eip=%04x:%RGv)\n", pVCpu->idCpu, pCtx->cs, (RTGCPTR)pCtx->rip));

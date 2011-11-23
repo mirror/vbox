@@ -210,7 +210,7 @@ GMMR3DECL(int) GMMR3FreePagesPerform(PVM pVM, PGMMFREEPAGESREQ pReq, uint32_t cA
      */
     if (cActualPages != pReq->cPages)
     {
-        AssertReturn(cActualPages < pReq->cPages, VERR_INTERNAL_ERROR);
+        AssertReturn(cActualPages < pReq->cPages, VERR_GMM_ACTUAL_PAGES_IPE);
         if (!cActualPages)
             return VINF_SUCCESS;
         pReq->cPages = cActualPages;
