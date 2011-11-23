@@ -1346,7 +1346,7 @@ VMMDECL(int) TMTimerSet(PTMTIMER pTimer, uint64_t u64Expire)
 
     AssertMsgFailed(("Failed waiting for stable state. state=%d (%s)\n", pTimer->enmState, R3STRING(pTimer->pszDesc)));
     STAM_PROFILE_STOP(&pVM->tm.s.CTX_SUFF_Z(StatTimerSet), a);
-    return VERR_INTERNAL_ERROR;
+    return VERR_TM_TIMER_UNSTABLE_STATE;
 }
 
 
@@ -1692,7 +1692,7 @@ VMMDECL(int) TMTimerSetRelative(PTMTIMER pTimer, uint64_t cTicksToNext, uint64_t
         if (cRetries <= 0)
         {
             AssertMsgFailed(("Failed waiting for stable state. state=%d (%s)\n", pTimer->enmState, R3STRING(pTimer->pszDesc)));
-            rc = VERR_INTERNAL_ERROR;
+            rc = VERR_TM_TIMER_UNSTABLE_STATE;
             tmTimerSetRelativeNowWorker(pVM, enmClock, pu64Now);
             break;
         }
@@ -1921,7 +1921,7 @@ VMMDECL(int) TMTimerStop(PTMTIMER pTimer)
 
     AssertMsgFailed(("Failed waiting for stable state. state=%d (%s)\n", pTimer->enmState, R3STRING(pTimer->pszDesc)));
     STAM_PROFILE_STOP(&pVM->tm.s.CTX_SUFF_Z(StatTimerStop), a);
-    return VERR_INTERNAL_ERROR;
+    return VERR_TM_TIMER_UNSTABLE_STATE;
 }
 
 
@@ -2118,7 +2118,7 @@ VMMDECL(int) TMTimerSetMillies(PTMTIMER pTimer, uint32_t cMilliesToNext)
 
         default:
             AssertMsgFailed(("Invalid enmClock=%d\n", pTimer->enmClock));
-            return VERR_INTERNAL_ERROR;
+            return VERR_TM_TIMER_BAD_CLOCK;
     }
 }
 
@@ -2148,7 +2148,7 @@ VMMDECL(int) TMTimerSetMicro(PTMTIMER pTimer, uint64_t cMicrosToNext)
 
         default:
             AssertMsgFailed(("Invalid enmClock=%d\n", pTimer->enmClock));
-            return VERR_INTERNAL_ERROR;
+            return VERR_TM_TIMER_BAD_CLOCK;
     }
 }
 
@@ -2178,7 +2178,7 @@ VMMDECL(int) TMTimerSetNano(PTMTIMER pTimer, uint64_t cNanosToNext)
 
         default:
             AssertMsgFailed(("Invalid enmClock=%d\n", pTimer->enmClock));
-            return VERR_INTERNAL_ERROR;
+            return VERR_TM_TIMER_BAD_CLOCK;
     }
 }
 

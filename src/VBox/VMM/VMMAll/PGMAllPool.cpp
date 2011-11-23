@@ -2029,7 +2029,7 @@ static int pgmPoolCacheFreeOne(PPGMPOOL pPool, uint16_t iUser)
             break;
         LogFlow(("pgmPoolCacheFreeOne: refuse CR3 mapping\n"));
         pgmPoolCacheUsed(pPool, pPage);
-        AssertLogRelReturn(iLoop < 8192, VERR_INTERNAL_ERROR);
+        AssertLogRelReturn(iLoop < 8192, VERR_PGM_POOL_TOO_MANY_LOOPS);
     }
 
     /*
@@ -4997,7 +4997,7 @@ int pgmPoolAllocEx(PVM pVM, RTGCPHYS GCPhys, PGMPOOLKIND enmKind, PGMPOOLACCESS 
             return rc;
         }
         iNew = pPool->iFreeHead;
-        AssertReleaseReturn(iNew != NIL_PGMPOOL_IDX, VERR_INTERNAL_ERROR);
+        AssertReleaseReturn(iNew != NIL_PGMPOOL_IDX, VERR_PGM_POOL_IPE);
     }
 
     /* unlink the free head */

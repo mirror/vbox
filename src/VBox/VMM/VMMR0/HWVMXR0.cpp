@@ -2137,7 +2137,7 @@ DECLINLINE(int) VMXR0SaveGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
             break;
         default:
             AssertFailed();
-            return VERR_INTERNAL_ERROR;
+            return VERR_HM_UNEXPECTED_LD_ST_MSR;
         }
     }
 #endif /* VBOX_WITH_AUTO_MSR_LOAD_RESTORE */
@@ -4816,7 +4816,7 @@ VMMR0DECL(int) VMXR0Execute64BitsHandler(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, R
     RTHCPHYS        HCPhysCpuPage;
     RTHCUINTREG     uOldEFlags;
 
-    AssertReturn(pVM->hwaccm.s.pfnHost32ToGuest64R0, VERR_INTERNAL_ERROR);
+    AssertReturn(pVM->hwaccm.s.pfnHost32ToGuest64R0, VERR_HM_NO_32_TO_64_SWITCHER);
     Assert(pfnHandler);
     Assert(pVCpu->hwaccm.s.vmx.VMCSCache.Write.cValidEntries <= RT_ELEMENTS(pVCpu->hwaccm.s.vmx.VMCSCache.Write.aField));
     Assert(pVCpu->hwaccm.s.vmx.VMCSCache.Read.cValidEntries <= RT_ELEMENTS(pVCpu->hwaccm.s.vmx.VMCSCache.Read.aField));

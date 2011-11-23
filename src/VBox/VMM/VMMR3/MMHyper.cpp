@@ -581,7 +581,7 @@ VMMR3DECL(int) MMR3HyperMapMMIO2(PVM pVM, PPDMDEVINS pDevIns, uint32_t iRegion, 
             {
                 RTHCPHYS HCPhys;
                 rc = PGMR3PhysMMIO2GetHCPhys(pVM, pDevIns, iRegion, offCur, &HCPhys);
-                AssertRCReturn(rc, VERR_INTERNAL_ERROR);
+                AssertRCReturn(rc, rc);
                 rc = PGMMap(pVM, GCPtr + (offCur - off), HCPhys, PAGE_SIZE, 0);
                 if (RT_FAILURE(rc))
                 {

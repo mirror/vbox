@@ -271,8 +271,8 @@ static PGVMM g_pGVMM = NULL;
  * On failure it will return from the invoking function with the specified return value.
  *
  * @param   pGVMM   The name of the pGVMM variable.
- * @param   rc      The return value on failure. Use VERR_INTERNAL_ERROR for
- *                  VBox status codes.
+ * @param   rc      The return value on failure. Use VERR_GVMM_INSTANCE for VBox
+ *                  status codes.
  */
 #define GVMM_GET_VALID_INSTANCE(pGVMM, rc) \
     do { \
@@ -321,7 +321,7 @@ GVMMR0DECL(int) GVMMR0Init(void)
      * Allocate and initialize the instance data.
      */
     uint32_t cHostCpus = RTMpGetArraySize();
-    AssertMsgReturn(cHostCpus > 0 && cHostCpus < _64K, ("%d", (int)cHostCpus), VERR_INTERNAL_ERROR_2);
+    AssertMsgReturn(cHostCpus > 0 && cHostCpus < _64K, ("%d", (int)cHostCpus), VERR_GVMM_HOST_CPU_RANGE);
 
     PGVMM pGVMM = (PGVMM)RTMemAllocZ(RT_UOFFSETOF(GVMM, aHostCpus[cHostCpus]));
     if (!pGVMM)
@@ -534,7 +534,7 @@ GVMMR0DECL(int) GVMMR0SetConfig(PSUPDRVSESSION pSession, const char *pszName, ui
      * Validate input.
      */
     PGVMM pGVMM;
-    GVMM_GET_VALID_INSTANCE(pGVMM, VERR_INTERNAL_ERROR);
+    GVMM_GET_VALID_INSTANCE(pGVMM, VERR_GVMM_INSTANCE);
     AssertPtrReturn(pSession, VERR_INVALID_HANDLE);
     AssertPtrReturn(pszName, VERR_INVALID_POINTER);
 
@@ -601,7 +601,7 @@ GVMMR0DECL(int) GVMMR0QueryConfig(PSUPDRVSESSION pSession, const char *pszName, 
      * Validate input.
      */
     PGVMM pGVMM;
-    GVMM_GET_VALID_INSTANCE(pGVMM, VERR_INTERNAL_ERROR);
+    GVMM_GET_VALID_INSTANCE(pGVMM, VERR_GVMM_INSTANCE);
     AssertPtrReturn(pSession, VERR_INVALID_HANDLE);
     AssertPtrReturn(pszName, VERR_INVALID_POINTER);
     AssertPtrReturn(pu64Value, VERR_INVALID_POINTER);
@@ -739,7 +739,7 @@ GVMMR0DECL(int) GVMMR0CreateVM(PSUPDRVSESSION pSession, uint32_t cCpus, PVM *ppV
 {
     LogFlow(("GVMMR0CreateVM: pSession=%p\n", pSession));
     PGVMM pGVMM;
-    GVMM_GET_VALID_INSTANCE(pGVMM, VERR_INTERNAL_ERROR);
+    GVMM_GET_VALID_INSTANCE(pGVMM, VERR_GVMM_INSTANCE);
 
     AssertPtrReturn(ppVM, VERR_INVALID_POINTER);
     *ppVM = NULL;
@@ -749,9 +749,9 @@ GVMMR0DECL(int) GVMMR0CreateVM(PSUPDRVSESSION pSession, uint32_t cCpus, PVM *ppV
         return VERR_INVALID_PARAMETER;
 
     RTNATIVETHREAD hEMT0 = RTThreadNativeSelf();
-    AssertReturn(hEMT0 != NIL_RTNATIVETHREAD, VERR_INTERNAL_ERROR);
+    AssertReturn(hEMT0 != NIL_RTNATIVETHREAD, VERR_GVMM_BROKEN_IPRT);
     RTNATIVETHREAD ProcId = RTProcSelf();
-    AssertReturn(ProcId != NIL_RTPROCESS, VERR_INTERNAL_ERROR);
+    AssertReturn(ProcId != NIL_RTPROCESS, VERR_GVMM_BROKEN_IPRT);
 
     /*
      * The whole allocation process is protected by the lock.
@@ -926,7 +926,7 @@ GVMMR0DECL(int) GVMMR0CreateVM(PSUPDRVSESSION pSession, uint32_t cCpus, PVM *ppV
             rc = VERR_NO_MEMORY;
         }
         else
-            rc = VERR_INTERNAL_ERROR;
+            rc = VERR_GVMM_IPE_1;
     }
     else
         rc = VERR_GVM_TOO_MANY_VMS;
@@ -1065,7 +1065,7 @@ GVMMR0DECL(int) GVMMR0DestroyVM(PVM pVM)
 {
     LogFlow(("GVMMR0DestroyVM: pVM=%p\n", pVM));
     PGVMM pGVMM;
-    GVMM_GET_VALID_INSTANCE(pGVMM, VERR_INTERNAL_ERROR);
+    GVMM_GET_VALID_INSTANCE(pGVMM, VERR_GVMM_INSTANCE);
 
 
     /*
@@ -1117,7 +1117,7 @@ GVMMR0DECL(int) GVMMR0DestroyVM(PVM pVM)
         SUPR0Printf("GVMMR0DestroyVM: pHandle=%p:{.pVM=%p, .hEMT0=%p, .ProcId=%u, .pvObj=%p} pVM=%p hSelf=%p\n",
                     pHandle, pHandle->pVM, pHandle->hEMT0, pHandle->ProcId, pHandle->pvObj, pVM, hSelf);
         gvmmR0CreateDestroyUnlock(pGVMM);
-        rc = VERR_INTERNAL_ERROR;
+        rc = VERR_GVMM_IPE_2;
     }
 
     return rc;
@@ -1390,7 +1390,7 @@ static int gvmmR0ByVM(PVM pVM, PGVM *ppGVM, PGVMM *ppGVMM, bool fTakeUsedLock)
 {
     RTPROCESS ProcId = RTProcSelf();
     PGVMM pGVMM;
-    GVMM_GET_VALID_INSTANCE(pGVMM, VERR_INTERNAL_ERROR);
+    GVMM_GET_VALID_INSTANCE(pGVMM, VERR_GVMM_INSTANCE);
 
     /*
      * Validate.
@@ -1483,7 +1483,7 @@ GVMMR0DECL(int) GVMMR0ByVM(PVM pVM, PGVM *ppGVM)
 static int gvmmR0ByVMAndEMT(PVM pVM, VMCPUID idCpu, PGVM *ppGVM, PGVMM *ppGVMM)
 {
     PGVMM pGVMM;
-    GVMM_GET_VALID_INSTANCE(pGVMM, VERR_INTERNAL_ERROR);
+    GVMM_GET_VALID_INSTANCE(pGVMM, VERR_GVMM_INSTANCE);
 
     /*
      * Validate.
@@ -1502,14 +1502,14 @@ static int gvmmR0ByVMAndEMT(PVM pVM, VMCPUID idCpu, PGVM *ppGVM, PGVMM *ppGVMM)
     AssertReturn(pHandle->pVM == pVM, VERR_NOT_OWNER);
     RTPROCESS ProcId = RTProcSelf();
     AssertReturn(pHandle->ProcId == ProcId, VERR_NOT_OWNER);
-    AssertPtrReturn(pHandle->pvObj, VERR_INTERNAL_ERROR);
+    AssertPtrReturn(pHandle->pvObj, VERR_NOT_OWNER);
 
     PGVM pGVM = pHandle->pGVM;
-    AssertPtrReturn(pGVM, VERR_INTERNAL_ERROR);
-    AssertReturn(pGVM->pVM == pVM, VERR_INTERNAL_ERROR);
+    AssertPtrReturn(pGVM, VERR_NOT_OWNER);
+    AssertReturn(pGVM->pVM == pVM, VERR_NOT_OWNER);
     RTNATIVETHREAD hAllegedEMT = RTThreadNativeSelf();
     AssertReturn(idCpu < pGVM->cCpus, VERR_INVALID_CPU_ID);
-    AssertReturn(pGVM->aCpus[idCpu].hEMT == hAllegedEMT, VERR_INTERNAL_ERROR);
+    AssertReturn(pGVM->aCpus[idCpu].hEMT == hAllegedEMT, VERR_NOT_OWNER);
 
     *ppGVM = pGVM;
     *ppGVMM = pGVMM;
@@ -2351,7 +2351,7 @@ GVMMR0DECL(int) GVMMR0QueryStatistics(PGVMMSTATS pStats, PSUPDRVSESSION pSession
     }
     else
     {
-        GVMM_GET_VALID_INSTANCE(pGVMM, VERR_INTERNAL_ERROR);
+        GVMM_GET_VALID_INSTANCE(pGVMM, VERR_GVMM_INSTANCE);
         memset(&pStats->SchedVM, 0, sizeof(pStats->SchedVM));
 
         int rc = gvmmR0UsedLock(pGVMM);
@@ -2500,7 +2500,7 @@ GVMMR0DECL(int) GVMMR0ResetStatistics(PCGVMMSTATS pStats, PSUPDRVSESSION pSessio
     }
     else
     {
-        GVMM_GET_VALID_INSTANCE(pGVMM, VERR_INTERNAL_ERROR);
+        GVMM_GET_VALID_INSTANCE(pGVMM, VERR_GVMM_INSTANCE);
 
         int rc = gvmmR0UsedLock(pGVMM);
         AssertRCReturn(rc, rc);

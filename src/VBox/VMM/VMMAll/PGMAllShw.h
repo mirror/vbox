@@ -305,7 +305,7 @@ PGM_SHW_DECL(int, GetPage)(PVMCPU pVCpu, RTGCUINTPTR GCPtr, uint64_t *pfFlags, P
         Assert(pgmMapAreMappingsEnabled(pVM));
 
         PPGMMAPPING pMap = pgmGetMapping(pVM, (RTGCPTR)GCPtr);
-        AssertMsgReturn(pMap, ("GCPtr=%RGv\n", GCPtr), VERR_INTERNAL_ERROR);
+        AssertMsgReturn(pMap, ("GCPtr=%RGv\n", GCPtr), VERR_PGM_MAPPING_IPE);
 #  if PGM_SHW_TYPE == PGM_TYPE_32BIT
         pPT = pMap->aPTs[(GCPtr - pMap->GCPtr) >> X86_PD_SHIFT].CTX_SUFF(pPT);
 #  else /* PAE */

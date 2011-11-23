@@ -991,7 +991,7 @@ VMMR3_INT_DECL(int) VMMR3DisableSwitcher(PVM pVM)
 {
 /** @todo r=bird: I would suggest that we create a dummy switcher which just does something like:
  * @code
- *       mov eax, VERR_INTERNAL_ERROR
+ *       mov eax, VERR_VMM_DUMMY_SWITCHER
  *       ret
  * @endcode
  * And then check for fSwitcherDisabled in VMMR3SelectSwitcher() in order to prevent it from being removed.

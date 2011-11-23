@@ -951,7 +951,7 @@ VMMR3_INT_DECL(int) IOMR3IOPortDeregister(PVM pVM, PPDMDEVINS pDevIns, RTIOPORT 
                 {
                     AssertMsgFailed(("This cannot happen!\n"));
                     MMHyperFree(pVM, pRangeNew);
-                    rc = VERR_INTERNAL_ERROR;
+                    rc = VERR_IOM_IOPORT_IPE_1;
                 }
                 break;
             }
@@ -1034,7 +1034,7 @@ VMMR3_INT_DECL(int) IOMR3IOPortDeregister(PVM pVM, PPDMDEVINS pDevIns, RTIOPORT 
                 {
                     AssertMsgFailed(("This cannot happen!\n"));
                     MMHyperFree(pVM, pRangeNew);
-                    rc = VERR_INTERNAL_ERROR;
+                    rc = VERR_IOM_IOPORT_IPE_1;
                 }
                 break;
             }
@@ -1116,7 +1116,7 @@ VMMR3_INT_DECL(int) IOMR3IOPortDeregister(PVM pVM, PPDMDEVINS pDevIns, RTIOPORT 
                 {
                     AssertMsgFailed(("This cannot happen!\n"));
                     MMHyperFree(pVM, pRangeNew);
-                    rc = VERR_INTERNAL_ERROR;
+                    rc = VERR_IOM_IOPORT_IPE_1;
                 }
                 break;
             }
@@ -1152,7 +1152,7 @@ static DECLCALLBACK(int) iomR3IOPortDummyIn(PPDMDEVINS pDevIns, void *pvUser, RT
         case 4: *pu32 = UINT32_C(0xffffffff); break;
         default:
             AssertReleaseMsgFailed(("cb=%d\n", cb));
-            return VERR_INTERNAL_ERROR;
+            return VERR_IOM_IOPORT_IPE_2;
     }
     return VINF_SUCCESS;
 }
@@ -1488,7 +1488,7 @@ IOMR3MmioRegisterR3(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, uint32_t 
             IOM_UNLOCK(pVM);
             DBGFR3Info(pVM, "mmio", NULL, NULL);
             AssertMsgFailed(("This cannot happen!\n"));
-            rc = VERR_INTERNAL_ERROR;
+            rc = VERR_IOM_IOPORT_IPE_3;
         }
         else
             IOM_UNLOCK(pVM);

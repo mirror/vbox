@@ -1997,7 +1997,7 @@ static DECLCALLBACK(int) pgmR3LivePrep(PVM pVM, PSSMHANDLE pSSM)
     if (pVM->pgm.s.fPhysWriteMonitoringEngaged)
     {
         pgmUnlock(pVM);
-        AssertLogRelFailedReturn(VERR_INTERNAL_ERROR_2);
+        AssertLogRelFailedReturn(VERR_PGM_WRITE_MONITOR_ENGAGED);
     }
     pVM->pgm.s.fPhysWriteMonitoringEngaged = true;
     pgmUnlock(pVM);
@@ -2265,7 +2265,7 @@ static int pgmR3LoadPageOld(PVM pVM, PSSMHANDLE pSSM, uint8_t uType, PPGMPAGE pP
     else if (uState == 1)
         rc = pgmR3LoadPageBitsOld(pVM, pSSM, uType, pPage, GCPhys, pRam);
     else
-        rc = VERR_INTERNAL_ERROR;
+        rc = VERR_PGM_INVALID_SAVED_PAGE_STATE;
     AssertLogRelMsgRCReturn(rc, ("pPage=%R[pgmpage] uState=%d uType=%d GCPhys=%RGp %s rc=%Rrc\n",
                                  pPage, uState, uType, GCPhys, pRam->pszDesc, rc),
                             rc);
@@ -2290,7 +2290,7 @@ static int pgmR3LoadShadowedRomPageOld(PVM pVM, PSSMHANDLE pSSM, PPGMPAGE pPage,
      * one is the active the other is the passive.
      */
     PPGMROMPAGE pRomPage = pgmR3GetRomPage(pVM, GCPhys);
-    AssertLogRelMsgReturn(pRomPage, ("GCPhys=%RGp %s\n", GCPhys, pRam->pszDesc), VERR_INTERNAL_ERROR);
+    AssertLogRelMsgReturn(pRomPage, ("GCPhys=%RGp %s\n", GCPhys, pRam->pszDesc), VERR_PGM_SAVED_ROM_PAGE_NOT_FOUND);
 
     uint8_t uProt;
     int rc = SSMR3GetU8(pSSM, &uProt);
@@ -2305,7 +2305,7 @@ static int pgmR3LoadShadowedRomPageOld(PVM pVM, PSSMHANDLE pSSM, PPGMPAGE pPage,
     {
         rc = PGMR3PhysRomProtect(pVM, GCPhys, PAGE_SIZE, enmProt);
         AssertLogRelRCReturn(rc, rc);
-        AssertLogRelReturn(pRomPage->enmProt == enmProt, VERR_INTERNAL_ERROR);
+        AssertLogRelReturn(pRomPage->enmProt == enmProt, VERR_PGM_SAVED_ROM_PAGE_PROT);
     }
 
     PPGMPAGE pPageActive  = PGMROMPROT_IS_ROM(enmProt) ? &pRomPage->Virgin      : &pRomPage->Shadow;
@@ -2676,7 +2676,7 @@ static int pgmR3LoadMemory(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t
                             break;
                         }
 
-                        AssertLogRelMsgReturn(PGM_PAGE_GET_STATE(pPage) == PGM_PAGE_STATE_ALLOCATED, ("GCPhys=%RGp %R[pgmpage]\n", GCPhys, pPage), VERR_INTERNAL_ERROR_5);
+                        AssertLogRelMsgReturn(PGM_PAGE_GET_STATE(pPage) == PGM_PAGE_STATE_ALLOCATED, ("GCPhys=%RGp %R[pgmpage]\n", GCPhys, pPage), VERR_PGM_UNEXPECTED_PAGE_STATE);
 
                         /* If this is a ROM page, we must clear it and not try
                            free it... */
@@ -2716,7 +2716,7 @@ static int pgmR3LoadMemory(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t
                             /** @todo handle large pages + ballooning when it works. (see #5515, #5545). */
                             AssertLogRelMsgReturn(   PGM_PAGE_GET_PDE_TYPE(pPage) != PGM_PAGE_PDE_TYPE_PDE
                                                   && PGM_PAGE_GET_PDE_TYPE(pPage) != PGM_PAGE_PDE_TYPE_PDE_DISABLED,
-                                                     ("GCPhys=%RGp %R[pgmpage]\n", GCPhys, pPage), VERR_INTERNAL_ERROR_5);
+                                                     ("GCPhys=%RGp %R[pgmpage]\n", GCPhys, pPage), VERR_PGM_LOAD_UNEXPECTED_PAGE_TYPE);
 
                             rc = pgmPhysFreePage(pVM, pReq, &cPendingPages, pPage, GCPhys);
                             AssertRCReturn(rc, rc);
@@ -2740,7 +2740,7 @@ static int pgmR3LoadMemory(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t
                     }
 
                     default:
-                        AssertMsgFailedReturn(("%#x\n", u8), VERR_INTERNAL_ERROR);
+                        AssertMsgFailedReturn(("%#x\n", u8), VERR_PGM_SAVED_REC_TYPE);
                 }
                 id = UINT8_MAX;
                 break;
@@ -2770,9 +2770,9 @@ static int pgmR3LoadMemory(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t
                     for (pMmio2 = pVM->pgm.s.pMmio2RangesR3; pMmio2; pMmio2 = pMmio2->pNextR3)
                         if (pMmio2->idSavedState == id)
                             break;
-                    AssertLogRelMsgReturn(pMmio2, ("id=%#u iPage=%#x\n", id, iPage), VERR_INTERNAL_ERROR);
+                    AssertLogRelMsgReturn(pMmio2, ("id=%#u iPage=%#x\n", id, iPage), VERR_PGM_SAVED_MMIO2_RANGE_NOT_FOUND);
                 }
-                AssertLogRelMsgReturn(iPage < (pMmio2->RamRange.cb >> PAGE_SHIFT), ("iPage=%#x cb=%RGp %s\n", iPage, pMmio2->RamRange.cb, pMmio2->RamRange.pszDesc), VERR_INTERNAL_ERROR);
+                AssertLogRelMsgReturn(iPage < (pMmio2->RamRange.cb >> PAGE_SHIFT), ("iPage=%#x cb=%RGp %s\n", iPage, pMmio2->RamRange.cb, pMmio2->RamRange.pszDesc), VERR_PGM_SAVED_MMIO2_PAGE_NOT_FOUND);
                 void *pvDstPage = (uint8_t *)pMmio2->RamRange.pvR3 + ((size_t)iPage << PAGE_SHIFT);
 
                 /*
@@ -2816,9 +2816,9 @@ static int pgmR3LoadMemory(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t
                     for (pRom = pVM->pgm.s.pRomRangesR3; pRom; pRom = pRom->pNextR3)
                         if (pRom->idSavedState == id)
                             break;
-                    AssertLogRelMsgReturn(pRom, ("id=%#u iPage=%#x\n", id, iPage), VERR_INTERNAL_ERROR);
+                    AssertLogRelMsgReturn(pRom, ("id=%#u iPage=%#x\n", id, iPage), VERR_PGM_SAVED_ROM_RANGE_NOT_FOUND);
                 }
-                AssertLogRelMsgReturn(iPage < (pRom->cb >> PAGE_SHIFT), ("iPage=%#x cb=%RGp %s\n", iPage, pRom->cb, pRom->pszDesc), VERR_INTERNAL_ERROR);
+                AssertLogRelMsgReturn(iPage < (pRom->cb >> PAGE_SHIFT), ("iPage=%#x cb=%RGp %s\n", iPage, pRom->cb, pRom->pszDesc), VERR_PGM_SAVED_ROM_PAGE_NOT_FOUND);
                 PPGMROMPAGE pRomPage = &pRom->aPages[iPage];
                 GCPhys = pRom->GCPhys + ((RTGCPHYS)iPage << PAGE_SHIFT);
 
@@ -2830,7 +2830,7 @@ static int pgmR3LoadMemory(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t
                 if (RT_FAILURE(rc))
                     return rc;
                 PGMROMPROT enmProt = (PGMROMPROT)u8Prot;
-                AssertLogRelMsgReturn(enmProt > PGMROMPROT_INVALID && enmProt < PGMROMPROT_END, ("GCPhys=%RGp enmProt=%d\n", GCPhys, enmProt), VERR_INTERNAL_ERROR);
+                AssertLogRelMsgReturn(enmProt > PGMROMPROT_INVALID && enmProt < PGMROMPROT_END, ("GCPhys=%RGp enmProt=%d\n", GCPhys, enmProt), VERR_PGM_SAVED_ROM_PAGE_PROT);
 
                 if (enmProt != pRomPage->enmProt)
                 {
@@ -2840,7 +2840,7 @@ static int pgmR3LoadMemory(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t
                                                 GCPhys, enmProt, pRom->pszDesc);
                     rc = PGMR3PhysRomProtect(pVM, GCPhys, PAGE_SIZE, enmProt);
                     AssertLogRelMsgRCReturn(rc, ("GCPhys=%RGp rc=%Rrc\n", GCPhys, rc), rc);
-                    AssertLogRelReturn(pRomPage->enmProt == enmProt, VERR_INTERNAL_ERROR);
+                    AssertLogRelReturn(pRomPage->enmProt == enmProt, VERR_PGM_SAVED_ROM_PAGE_PROT);
                 }
                 if ((u8 & ~PGM_STATE_REC_FLAG_ADDR) == PGM_STATE_REC_ROM_PROT)
                     break; /* done */
@@ -2870,7 +2870,7 @@ static int pgmR3LoadMemory(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t
                             pRealPage = NULL;
                         break;
 
-                    default: AssertLogRelFailedReturn(VERR_INTERNAL_ERROR); /* shut up gcc */
+                    default: AssertLogRelFailedReturn(VERR_IPE_NOT_REACHED_DEFAULT_CASE); /* shut up gcc */
                 }
                 if (!pRealPage)
                 {
@@ -2924,7 +2924,7 @@ static int pgmR3LoadMemory(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t
              * Unknown type.
              */
             default:
-                AssertLogRelMsgFailedReturn(("%#x\n", u8), VERR_INTERNAL_ERROR);
+                AssertLogRelMsgFailedReturn(("%#x\n", u8), VERR_PGM_SAVED_REC_TYPE);
         }
     } /* forever */
 }

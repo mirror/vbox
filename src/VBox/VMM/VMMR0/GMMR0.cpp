@@ -594,11 +594,13 @@ typedef GMMR0CHUNKMTXSTATE *PGMMR0CHUNKMTXSTATE;
 static PGMM g_pGMM = NULL;
 
 /** Macro for obtaining and validating the g_pGMM pointer.
- * On failure it will return from the invoking function with the specified return value.
+ *  
+ * On failure it will return from the invoking function with the specified
+ * return value. 
  *
  * @param   pGMM    The name of the pGMM variable.
- * @param   rc      The return value on failure. Use VERR_INTERNAL_ERROR for
- *                  VBox status codes.
+ * @param   rc      The return value on failure. Use VERR_GMM_INSTANCE for VBox
+ *                  status codes.
  */
 #define GMM_GET_VALID_INSTANCE(pGMM, rc) \
     do { \
@@ -607,8 +609,10 @@ static PGMM g_pGMM = NULL;
         AssertMsgReturn((pGMM)->u32Magic == GMM_MAGIC, ("%p - %#x\n", (pGMM), (pGMM)->u32Magic), (rc)); \
     } while (0)
 
-/** Macro for obtaining and validating the g_pGMM pointer, void function variant.
- * On failure it will return from the invoking function.
+/** Macro for obtaining and validating the g_pGMM pointer, void function
+ * variant. 
+ *  
+ * On failure it will return from the invoking function. 
  *
  * @param   pGMM    The name of the pGMM variable.
  */
@@ -1096,7 +1100,7 @@ static int gmmR0ChunkMutexRelease(PGMMR0CHUNKMTXSTATE pMtxState, PGMMCHUNK pChun
  */
 static int gmmR0ChunkMutexDropGiant(PGMMR0CHUNKMTXSTATE pMtxState)
 {
-    AssertReturn(pMtxState->fFlags == GMMR0CHUNK_MTX_KEEP_GIANT, VERR_INTERNAL_ERROR_2);
+    AssertReturn(pMtxState->fFlags == GMMR0CHUNK_MTX_KEEP_GIANT, VERR_GMM_MTX_FLAGS);
     Assert(pMtxState->pGMM->hMtxOwner == RTThreadNativeSelf());
     pMtxState->fFlags = GMMR0CHUNK_MTX_RETAKE_GIANT;
     /** @todo GMM life cycle cleanup (we may race someone
@@ -1457,7 +1461,7 @@ GMMR0DECL(int) GMMR0InitialReservation(PVM pVM, VMCPUID idCpu, uint64_t cBasePag
      * Validate, get basics and take the semaphore.
      */
     PGMM pGMM;
-    GMM_GET_VALID_INSTANCE(pGMM, VERR_INTERNAL_ERROR);
+    GMM_GET_VALID_INSTANCE(pGMM, VERR_GMM_INSTANCE);
     PGVM pGVM;
     int rc = GVMMR0ByVMAndEMT(pVM, idCpu, &pGVM);
     if (RT_FAILURE(rc))
@@ -1501,7 +1505,7 @@ GMMR0DECL(int) GMMR0InitialReservation(PVM pVM, VMCPUID idCpu, uint64_t cBasePag
         GMM_CHECK_SANITY_UPON_LEAVING(pGMM);
     }
     else
-        rc = VERR_INTERNAL_ERROR_5;
+        rc = VERR_GMM_IS_NOT_SANE;
     gmmR0MutexRelease(pGMM);
     LogFlow(("GMMR0InitialReservation: returns %Rrc\n", rc));
     return rc;
@@ -1554,7 +1558,7 @@ GMMR0DECL(int) GMMR0UpdateReservation(PVM pVM, VMCPUID idCpu, uint64_t cBasePage
      * Validate, get basics and take the semaphore.
      */
     PGMM pGMM;
-    GMM_GET_VALID_INSTANCE(pGMM, VERR_INTERNAL_ERROR);
+    GMM_GET_VALID_INSTANCE(pGMM, VERR_GMM_INSTANCE);
     PGVM pGVM;
     int rc = GVMMR0ByVMAndEMT(pVM, idCpu, &pGVM);
     if (RT_FAILURE(rc))
@@ -1595,7 +1599,7 @@ GMMR0DECL(int) GMMR0UpdateReservation(PVM pVM, VMCPUID idCpu, uint64_t cBasePage
         GMM_CHECK_SANITY_UPON_LEAVING(pGMM);
     }
     else
-        rc = VERR_INTERNAL_ERROR_5;
+        rc = VERR_GMM_IS_NOT_SANE;
     gmmR0MutexRelease(pGMM);
     LogFlow(("GMMR0UpdateReservation: returns %Rrc\n", rc));
     return rc;
@@ -2069,10 +2073,10 @@ static int gmmR0RegisterChunk(PGMM pGMM, PGMMCHUNKFREESET pSet, RTR0MEMOBJ MemOb
                 }
 
                 /* bail out */
-                rc = VERR_INTERNAL_ERROR;
+                rc = VERR_GMM_CHUNK_INSERT;
             }
             else
-                rc = VERR_INTERNAL_ERROR_5;
+                rc = VERR_GMM_IS_NOT_SANE;
             gmmR0MutexRelease(pGMM);
         }
 
@@ -2414,7 +2418,7 @@ static int gmmR0AllocatePagesNew(PGMM pGMM, PGVM pGVM, uint32_t cPages, PGMMPAGE
             }
             break;
         default:
-            AssertMsgFailedReturn(("enmAccount=%d\n", enmAccount), VERR_INTERNAL_ERROR);
+            AssertMsgFailedReturn(("enmAccount=%d\n", enmAccount), VERR_IPE_NOT_REACHED_DEFAULT_CASE);
     }
 
     /*
@@ -2438,7 +2442,7 @@ static int gmmR0AllocatePagesNew(PGMM pGMM, PGVM pGVM, uint32_t cPages, PGMMPAGE
         case GMMACCOUNT_BASE:   pGVM->gmm.s.Allocated.cBasePages   += cPages; break;
         case GMMACCOUNT_SHADOW: pGVM->gmm.s.Allocated.cShadowPages += cPages; break;
         case GMMACCOUNT_FIXED:  pGVM->gmm.s.Allocated.cFixedPages  += cPages; break;
-        default:                AssertMsgFailedReturn(("enmAccount=%d\n", enmAccount), VERR_INTERNAL_ERROR);
+        default:                AssertMsgFailedReturn(("enmAccount=%d\n", enmAccount), VERR_IPE_NOT_REACHED_DEFAULT_CASE);
     }
     pGVM->gmm.s.cPrivatePages += cPages;
     pGMM->cAllocatedPages     += cPages;
@@ -2450,7 +2454,7 @@ static int gmmR0AllocatePagesNew(PGMM pGMM, PGVM pGVM, uint32_t cPages, PGMMPAGE
     if (pGMM->fLegacyAllocationMode)
     {
         iPage = gmmR0AllocatePagesInBoundMode(pGVM, iPage, cPages, paPages);
-        AssertReleaseReturn(iPage == cPages, VERR_INTERNAL_ERROR_3);
+        AssertReleaseReturn(iPage == cPages, VERR_GMM_ALLOC_PAGES_IPE);
         return VINF_SUCCESS;
     }
 
@@ -2527,7 +2531,7 @@ static int gmmR0AllocatePagesNew(PGMM pGMM, PGVM pGVM, uint32_t cPages, PGMMPAGE
             case GMMACCOUNT_BASE:   pGVM->gmm.s.Allocated.cBasePages   -= cPages; break;
             case GMMACCOUNT_SHADOW: pGVM->gmm.s.Allocated.cShadowPages -= cPages; break;
             case GMMACCOUNT_FIXED:  pGVM->gmm.s.Allocated.cFixedPages  -= cPages; break;
-            default:                AssertMsgFailedReturn(("enmAccount=%d\n", enmAccount), VERR_INTERNAL_ERROR);
+            default:                AssertMsgFailedReturn(("enmAccount=%d\n", enmAccount), VERR_IPE_NOT_REACHED_DEFAULT_CASE);
         }
 
         /* Release the pages. */
@@ -2598,7 +2602,7 @@ GMMR0DECL(int) GMMR0AllocateHandyPages(PVM pVM, VMCPUID idCpu, uint32_t cPagesTo
      * (This is a relatively busy path, so make predictions where possible.)
      */
     PGMM pGMM;
-    GMM_GET_VALID_INSTANCE(pGMM, VERR_INTERNAL_ERROR);
+    GMM_GET_VALID_INSTANCE(pGMM, VERR_GMM_INSTANCE);
     PGVM pGVM;
     int rc = GVMMR0ByVMAndEMT(pVM, idCpu, &pGVM);
     if (RT_FAILURE(rc))
@@ -2754,7 +2758,7 @@ GMMR0DECL(int) GMMR0AllocateHandyPages(PVM pVM, VMCPUID idCpu, uint32_t cPagesTo
         GMM_CHECK_SANITY_UPON_LEAVING(pGMM);
     }
     else
-        rc = VERR_INTERNAL_ERROR_5;
+        rc = VERR_GMM_IS_NOT_SANE;
     gmmR0MutexRelease(pGMM);
     LogFlow(("GMMR0AllocateHandyPages: returns %Rrc\n", rc));
     return rc;
@@ -2792,7 +2796,7 @@ GMMR0DECL(int) GMMR0AllocatePages(PVM pVM, VMCPUID idCpu, uint32_t cPages, PGMMP
      * Validate, get basics and take the semaphore.
      */
     PGMM pGMM;
-    GMM_GET_VALID_INSTANCE(pGMM, VERR_INTERNAL_ERROR);
+    GMM_GET_VALID_INSTANCE(pGMM, VERR_GMM_INSTANCE);
     PGVM pGVM;
     int rc = GVMMR0ByVMAndEMT(pVM, idCpu, &pGVM);
     if (RT_FAILURE(rc))
@@ -2829,7 +2833,7 @@ GMMR0DECL(int) GMMR0AllocatePages(PVM pVM, VMCPUID idCpu, uint32_t cPages, PGMMP
         GMM_CHECK_SANITY_UPON_LEAVING(pGMM);
     }
     else
-        rc = VERR_INTERNAL_ERROR_5;
+        rc = VERR_GMM_IS_NOT_SANE;
     gmmR0MutexRelease(pGMM);
     LogFlow(("GMMR0AllocatePages: returns %Rrc\n", rc));
     return rc;
@@ -2891,7 +2895,7 @@ GMMR0DECL(int)  GMMR0AllocateLargePage(PVM pVM, VMCPUID idCpu, uint32_t cbPage, 
      * Validate, get basics and take the semaphore.
      */
     PGMM pGMM;
-    GMM_GET_VALID_INSTANCE(pGMM, VERR_INTERNAL_ERROR);
+    GMM_GET_VALID_INSTANCE(pGMM, VERR_GMM_INSTANCE);
     PGVM pGVM;
     int rc = GVMMR0ByVMAndEMT(pVM, idCpu, &pGVM);
     if (RT_FAILURE(rc))
@@ -2968,7 +2972,7 @@ GMMR0DECL(int)  GMMR0AllocateLargePage(PVM pVM, VMCPUID idCpu, uint32_t cbPage, 
     else
     {
         gmmR0MutexRelease(pGMM);
-        rc = VERR_INTERNAL_ERROR_5;
+        rc = VERR_GMM_IS_NOT_SANE;
     }
 
     LogFlow(("GMMR0AllocateLargePage: returns %Rrc\n", rc));
@@ -2992,7 +2996,7 @@ GMMR0DECL(int)  GMMR0FreeLargePage(PVM pVM, VMCPUID idCpu, uint32_t idPage)
      * Validate, get basics and take the semaphore.
      */
     PGMM pGMM;
-    GMM_GET_VALID_INSTANCE(pGMM, VERR_INTERNAL_ERROR);
+    GMM_GET_VALID_INSTANCE(pGMM, VERR_GMM_INSTANCE);
     PGVM pGVM;
     int rc = GVMMR0ByVMAndEMT(pVM, idCpu, &pGVM);
     if (RT_FAILURE(rc))
@@ -3035,7 +3039,7 @@ GMMR0DECL(int)  GMMR0FreeLargePage(PVM pVM, VMCPUID idCpu, uint32_t idPage)
             rc = VERR_GMM_PAGE_NOT_FOUND;
     }
     else
-        rc = VERR_INTERNAL_ERROR_5;
+        rc = VERR_GMM_IS_NOT_SANE;
 
     gmmR0MutexRelease(pGMM);
     LogFlow(("GMMR0FreeLargePage: returns %Rrc\n", rc));
@@ -3309,7 +3313,7 @@ static int gmmR0FreePages(PGMM pGMM, PGVM pGVM, uint32_t cPages, PGMMFREEPAGEDES
             }
             break;
         default:
-            AssertMsgFailedReturn(("enmAccount=%d\n", enmAccount), VERR_INTERNAL_ERROR);
+            AssertMsgFailedReturn(("enmAccount=%d\n", enmAccount), VERR_IPE_NOT_REACHED_DEFAULT_CASE);
     }
 
     /*
@@ -3380,7 +3384,7 @@ static int gmmR0FreePages(PGMM pGMM, PGVM pGVM, uint32_t cPages, PGMMFREEPAGEDES
         case GMMACCOUNT_SHADOW: pGVM->gmm.s.Allocated.cShadowPages -= iPage; break;
         case GMMACCOUNT_FIXED:  pGVM->gmm.s.Allocated.cFixedPages  -= iPage; break;
         default:
-            AssertMsgFailedReturn(("enmAccount=%d\n", enmAccount), VERR_INTERNAL_ERROR);
+            AssertMsgFailedReturn(("enmAccount=%d\n", enmAccount), VERR_IPE_NOT_REACHED_DEFAULT_CASE);
     }
 
     /*
@@ -3414,7 +3418,7 @@ GMMR0DECL(int) GMMR0FreePages(PVM pVM, VMCPUID idCpu, uint32_t cPages, PGMMFREEP
      * Validate input and get the basics.
      */
     PGMM pGMM;
-    GMM_GET_VALID_INSTANCE(pGMM, VERR_INTERNAL_ERROR);
+    GMM_GET_VALID_INSTANCE(pGMM, VERR_GMM_INSTANCE);
     PGVM pGVM;
     int rc = GVMMR0ByVMAndEMT(pVM, idCpu, &pGVM);
     if (RT_FAILURE(rc))
@@ -3439,7 +3443,7 @@ GMMR0DECL(int) GMMR0FreePages(PVM pVM, VMCPUID idCpu, uint32_t cPages, PGMMFREEP
         GMM_CHECK_SANITY_UPON_LEAVING(pGMM);
     }
     else
-        rc = VERR_INTERNAL_ERROR_5;
+        rc = VERR_GMM_IS_NOT_SANE;
     gmmR0MutexRelease(pGMM);
     LogFlow(("GMMR0FreePages: returns %Rrc\n", rc));
     return rc;
@@ -3506,7 +3510,7 @@ GMMR0DECL(int) GMMR0BalloonedPages(PVM pVM, VMCPUID idCpu, GMMBALLOONACTION enmA
      * Validate input and get the basics.
      */
     PGMM pGMM;
-    GMM_GET_VALID_INSTANCE(pGMM, VERR_INTERNAL_ERROR);
+    GMM_GET_VALID_INSTANCE(pGMM, VERR_GMM_INSTANCE);
     PGVM pGVM;
     int rc = GVMMR0ByVMAndEMT(pVM, idCpu, &pGVM);
     if (RT_FAILURE(rc))
@@ -3605,7 +3609,7 @@ GMMR0DECL(int) GMMR0BalloonedPages(PVM pVM, VMCPUID idCpu, GMMBALLOONACTION enmA
         GMM_CHECK_SANITY_UPON_LEAVING(pGMM);
     }
     else
-        rc = VERR_INTERNAL_ERROR_5;
+        rc = VERR_GMM_IS_NOT_SANE;
 
     gmmR0MutexRelease(pGMM);
     LogFlow(("GMMR0BalloonedPages: returns %Rrc\n", rc));
@@ -3657,7 +3661,7 @@ GMMR0DECL(int) GMMR0QueryHypervisorMemoryStatsReq(PVM pVM, PGMMMEMSTATSREQ pReq)
      * Validate input and get the basics.
      */
     PGMM pGMM;
-    GMM_GET_VALID_INSTANCE(pGMM, VERR_INTERNAL_ERROR);
+    GMM_GET_VALID_INSTANCE(pGMM, VERR_GMM_INSTANCE);
     pReq->cAllocPages     = pGMM->cAllocatedPages;
     pReq->cFreePages      = (pGMM->cChunks << (GMM_CHUNK_SHIFT- PAGE_SHIFT)) - pGMM->cAllocatedPages;
     pReq->cBalloonedPages = pGMM->cBalloonedPages;
@@ -3691,7 +3695,7 @@ GMMR0DECL(int)  GMMR0QueryMemoryStatsReq(PVM pVM, VMCPUID idCpu, PGMMMEMSTATSREQ
      * Validate input and get the basics.
      */
     PGMM pGMM;
-    GMM_GET_VALID_INSTANCE(pGMM, VERR_INTERNAL_ERROR);
+    GMM_GET_VALID_INSTANCE(pGMM, VERR_GMM_INSTANCE);
     PGVM pGVM;
     int rc = GVMMR0ByVMAndEMT(pVM, idCpu, &pGVM);
     if (RT_FAILURE(rc))
@@ -3709,7 +3713,7 @@ GMMR0DECL(int)  GMMR0QueryMemoryStatsReq(PVM pVM, VMCPUID idCpu, PGMMMEMSTATSREQ
         pReq->cFreePages      = pReq->cMaxPages - pReq->cAllocPages;
     }
     else
-        rc = VERR_INTERNAL_ERROR_5;
+        rc = VERR_GMM_IS_NOT_SANE;
 
     gmmR0MutexRelease(pGMM);
     LogFlow(("GMMR3QueryVMMemoryStats: returns %Rrc\n", rc));
@@ -3976,7 +3980,7 @@ GMMR0DECL(int) GMMR0MapUnmapChunk(PVM pVM, uint32_t idChunkMap, uint32_t idChunk
      * Validate input and get the basics.
      */
     PGMM pGMM;
-    GMM_GET_VALID_INSTANCE(pGMM, VERR_INTERNAL_ERROR);
+    GMM_GET_VALID_INSTANCE(pGMM, VERR_GMM_INSTANCE);
     PGVM pGVM;
     int rc = GVMMR0ByVM(pVM, &pGVM);
     if (RT_FAILURE(rc))
@@ -4041,7 +4045,7 @@ GMMR0DECL(int) GMMR0MapUnmapChunk(PVM pVM, uint32_t idChunkMap, uint32_t idChunk
         GMM_CHECK_SANITY_UPON_LEAVING(pGMM);
     }
     else
-        rc = VERR_INTERNAL_ERROR_5;
+        rc = VERR_GMM_IS_NOT_SANE;
     gmmR0MutexRelease(pGMM);
 
     LogFlow(("GMMR0MapUnmapChunk: returns %Rrc\n", rc));
@@ -4086,7 +4090,7 @@ GMMR0DECL(int) GMMR0SeedChunk(PVM pVM, VMCPUID idCpu, RTR3PTR pvR3)
      * Validate input and get the basics.
      */
     PGMM pGMM;
-    GMM_GET_VALID_INSTANCE(pGMM, VERR_INTERNAL_ERROR);
+    GMM_GET_VALID_INSTANCE(pGMM, VERR_GMM_INSTANCE);
     PGVM pGVM;
     int rc = GVMMR0ByVMAndEMT(pVM, idCpu, &pGVM);
     if (RT_FAILURE(rc))
@@ -4173,7 +4177,7 @@ GMMR0DECL(int) GMMR0RegisterSharedModule(PVM pVM, VMCPUID idCpu, VBOXOSFAMILY en
      * Validate input and get the basics.
      */
     PGMM pGMM;
-    GMM_GET_VALID_INSTANCE(pGMM, VERR_INTERNAL_ERROR);
+    GMM_GET_VALID_INSTANCE(pGMM, VERR_GMM_INSTANCE);
     PGVM pGVM;
     int rc = GVMMR0ByVMAndEMT(pVM, idCpu, &pGVM);
     if (RT_FAILURE(rc))
@@ -4321,7 +4325,7 @@ GMMR0DECL(int) GMMR0RegisterSharedModule(PVM pVM, VMCPUID idCpu, VBOXOSFAMILY en
         GMM_CHECK_SANITY_UPON_LEAVING(pGMM);
     }
     else
-        rc = VERR_INTERNAL_ERROR_5;
+        rc = VERR_GMM_IS_NOT_SANE;
 
 end:
     gmmR0MutexRelease(pGMM);
@@ -4377,7 +4381,7 @@ GMMR0DECL(int) GMMR0UnregisterSharedModule(PVM pVM, VMCPUID idCpu, char *pszModu
      * Validate input and get the basics.
      */
     PGMM pGMM;
-    GMM_GET_VALID_INSTANCE(pGMM, VERR_INTERNAL_ERROR);
+    GMM_GET_VALID_INSTANCE(pGMM, VERR_GMM_INSTANCE);
     PGVM pGVM;
     int rc = GVMMR0ByVMAndEMT(pVM, idCpu, &pGVM);
     if (RT_FAILURE(rc))
@@ -4442,7 +4446,7 @@ GMMR0DECL(int) GMMR0UnregisterSharedModule(PVM pVM, VMCPUID idCpu, char *pszModu
         GMM_CHECK_SANITY_UPON_LEAVING(pGMM);
     }
     else
-        rc = VERR_INTERNAL_ERROR_5;
+        rc = VERR_GMM_IS_NOT_SANE;
 
     gmmR0MutexRelease(pGMM);
     return rc;
@@ -4552,7 +4556,7 @@ GMMR0DECL(int) GMMR0SharedModuleCheckPage(PGVM pGVM, PGMMSHAREDMODULE pModule, u
 {
     int rc = VINF_SUCCESS;
     PGMM pGMM;
-    GMM_GET_VALID_INSTANCE(pGMM, VERR_INTERNAL_ERROR);
+    GMM_GET_VALID_INSTANCE(pGMM, VERR_GMM_INSTANCE);
     unsigned cPages = pModule->aRegions[idxRegion].cbRegion >> PAGE_SHIFT;
 
     AssertReturn(idxRegion < pModule->cRegions, VERR_INVALID_PARAMETER);
@@ -4700,7 +4704,7 @@ end:
 /**
  * RTAvlGCPtrDestroy callback.
  *
- * @returns 0 or VERR_INTERNAL_ERROR.
+ * @returns 0 or VERR_GMM_INSTANCE.
  * @param   pNode   The node to destroy.
  * @param   pvGVM   The GVM handle.
  */
@@ -4726,7 +4730,7 @@ static DECLCALLBACK(int) gmmR0CleanupSharedModule(PAVLGCPTRNODECORE pNode, void 
 
             /* Remove from the tree and free memory. */
             PGMM pGMM;
-            GMM_GET_VALID_INSTANCE(pGMM, VERR_INTERNAL_ERROR);
+            GMM_GET_VALID_INSTANCE(pGMM, VERR_GMM_INSTANCE);
             RTAvlGCPtrRemove(&pGMM->pGlobalSharedModuleTree, pRec->Core.Key);
             RTMemFree(pRec);
         }
@@ -4771,7 +4775,7 @@ GMMR0DECL(int) GMMR0ResetSharedModules(PVM pVM, VMCPUID idCpu)
      * Validate input and get the basics.
      */
     PGMM pGMM;
-    GMM_GET_VALID_INSTANCE(pGMM, VERR_INTERNAL_ERROR);
+    GMM_GET_VALID_INSTANCE(pGMM, VERR_GMM_INSTANCE);
     PGVM pGVM;
     int rc = GVMMR0ByVMAndEMT(pVM, idCpu, &pGVM);
     if (RT_FAILURE(rc))
@@ -4790,7 +4794,7 @@ GMMR0DECL(int) GMMR0ResetSharedModules(PVM pVM, VMCPUID idCpu)
         GMM_CHECK_SANITY_UPON_LEAVING(pGMM);
     }
     else
-        rc = VERR_INTERNAL_ERROR_5;
+        rc = VERR_GMM_IS_NOT_SANE;
 
     gmmR0MutexRelease(pGMM);
     return rc;
@@ -4844,14 +4848,14 @@ GMMR0DECL(int) GMMR0CheckSharedModulesStart(PVM pVM)
      * Validate input and get the basics.
      */
     PGMM pGMM;
-    GMM_GET_VALID_INSTANCE(pGMM, VERR_INTERNAL_ERROR);
+    GMM_GET_VALID_INSTANCE(pGMM, VERR_GMM_INSTANCE);
 
     /*
      * Take the semaphore and do some more validations.
      */
     gmmR0MutexAcquire(pGMM);
     if (!GMM_CHECK_SANITY_UPON_ENTERING(pGMM))
-        rc = VERR_INTERNAL_ERROR_5;
+        rc = VERR_GMM_IS_NOT_SANE;
     else
         rc = VINF_SUCCESS;
 
@@ -4870,7 +4874,7 @@ GMMR0DECL(int) GMMR0CheckSharedModulesEnd(PVM pVM)
      * Validate input and get the basics.
      */
     PGMM pGMM;
-    GMM_GET_VALID_INSTANCE(pGMM, VERR_INTERNAL_ERROR);
+    GMM_GET_VALID_INSTANCE(pGMM, VERR_GMM_INSTANCE);
 
     gmmR0MutexRelease(pGMM);
     return VINF_SUCCESS;
@@ -4892,7 +4896,7 @@ GMMR0DECL(int) GMMR0CheckSharedModules(PVM pVM, PVMCPU pVCpu)
      * Validate input and get the basics.
      */
     PGMM pGMM;
-    GMM_GET_VALID_INSTANCE(pGMM, VERR_INTERNAL_ERROR);
+    GMM_GET_VALID_INSTANCE(pGMM, VERR_GMM_INSTANCE);
     PGVM pGVM;
     int rc = GVMMR0ByVMAndEMT(pVM, pVCpu->idCpu, &pGVM);
     if (RT_FAILURE(rc))
@@ -4922,7 +4926,7 @@ GMMR0DECL(int) GMMR0CheckSharedModules(PVM pVM, PVMCPU pVCpu)
         GMM_CHECK_SANITY_UPON_LEAVING(pGMM);
     }
     else
-        rc = VERR_INTERNAL_ERROR_5;
+        rc = VERR_GMM_IS_NOT_SANE;
 
 # ifndef DEBUG_sandervl
     gmmR0MutexRelease(pGMM);
@@ -5006,7 +5010,7 @@ GMMR0DECL(int) GMMR0FindDuplicatePageReq(PVM pVM, PGMMFINDDUPLICATEPAGEREQ pReq)
     AssertMsgReturn(pReq->Hdr.cbReq == sizeof(*pReq), ("%#x != %#x\n", pReq->Hdr.cbReq, sizeof(*pReq)), VERR_INVALID_PARAMETER);
 
     PGMM pGMM;
-    GMM_GET_VALID_INSTANCE(pGMM, VERR_INTERNAL_ERROR);
+    GMM_GET_VALID_INSTANCE(pGMM, VERR_GMM_INSTANCE);
 
     PGVM pGVM;
     int rc = GVMMR0ByVM(pVM, &pGVM);
@@ -5051,7 +5055,7 @@ GMMR0DECL(int) GMMR0FindDuplicatePageReq(PVM pVM, PGMMFINDDUPLICATEPAGEREQ pReq)
             AssertFailed();
     }
     else
-        rc = VERR_INTERNAL_ERROR_5;
+        rc = VERR_GMM_IS_NOT_SANE;
 
     gmmR0MutexRelease(pGMM);
     return rc;

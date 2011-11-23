@@ -458,7 +458,7 @@ void pgmR3PoolRelocate(PVM pVM)
 VMMR3DECL(int) PGMR3PoolGrow(PVM pVM)
 {
     PPGMPOOL pPool = pVM->pgm.s.pPoolR3;
-    AssertReturn(pPool->cCurPages < pPool->cMaxPages, VERR_INTERNAL_ERROR);
+    AssertReturn(pPool->cCurPages < pPool->cMaxPages, VERR_PGM_POOL_MAXED_OUT_ALREADY);
 
     pgmLock(pVM);
 

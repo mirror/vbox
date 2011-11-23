@@ -306,7 +306,7 @@ static int vmR3FatalWaitError(PUVMCPU pUVCpu, const char *pszFmt, int rcFmt)
     ASMAtomicUoWriteBool(&pUVCpu->pUVM->vm.s.fTerminateEMT, true);
     if (pUVCpu->pVM)
         VM_FF_SET(pUVCpu->pVM, VM_FF_CHECK_VM_STATE);
-    return VERR_INTERNAL_ERROR;
+    return VERR_VM_FATAL_WAIT_ERROR;
 }
 
 

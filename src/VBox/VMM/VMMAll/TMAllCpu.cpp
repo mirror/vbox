@@ -75,7 +75,7 @@ int tmCpuTickResume(PVM pVM, PVMCPU pVCpu)
         return VINF_SUCCESS;
     }
     AssertFailed();
-    return VERR_INTERNAL_ERROR;
+    return VERR_TM_TSC_ALREADY_TICKING;
 }
 
 
@@ -95,7 +95,7 @@ int tmCpuTickPause(PVMCPU pVCpu)
         return VINF_SUCCESS;
     }
     AssertFailed();
-    return VERR_INTERNAL_ERROR;
+    return VERR_TM_TSC_ALREADY_PAUSED;
 }
 
 /**

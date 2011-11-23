@@ -223,9 +223,9 @@ VMM_INT_DECL(int) TMR3Init(PVM pVM)
      * as well and save costly world switches.
      */
     pVM->tm.s.pvGIPR3 = (void *)g_pSUPGlobalInfoPage;
-    AssertMsgReturn(pVM->tm.s.pvGIPR3, ("GIP support is now required!\n"), VERR_INTERNAL_ERROR);
+    AssertMsgReturn(pVM->tm.s.pvGIPR3, ("GIP support is now required!\n"), VERR_TM_GIP_REQUIRED);
     AssertMsgReturn((g_pSUPGlobalInfoPage->u32Version >> 16) == (SUPGLOBALINFOPAGE_VERSION >> 16),
-                    ("Unsupported GIP version!\n"), VERR_INTERNAL_ERROR);
+                    ("Unsupported GIP version!\n"), VERR_TM_GIP_VERSION);
 
     RTHCPHYS HCPhysGIP;
     rc = SUPR3GipGetPhys(&HCPhysGIP);
@@ -250,7 +250,7 @@ VMM_INT_DECL(int) TMR3Init(PVM pVM)
     /* Check assumptions made in TMAllVirtual.cpp about the GIP update interval. */
     if (    g_pSUPGlobalInfoPage->u32Magic == SUPGLOBALINFOPAGE_MAGIC
         &&  g_pSUPGlobalInfoPage->u32UpdateIntervalNS >= 250000000 /* 0.25s */)
-        return VMSetError(pVM, VERR_INTERNAL_ERROR, RT_SRC_POS,
+        return VMSetError(pVM, VERR_TM_GIP_UPDATE_INTERVAL_TOO_BIG, RT_SRC_POS,
                           N_("The GIP update interval is too big. u32UpdateIntervalNS=%RU32 (u32UpdateHz=%RU32)"),
                           g_pSUPGlobalInfoPage->u32UpdateIntervalNS, g_pSUPGlobalInfoPage->u32UpdateHz);
     LogRel(("TM: GIP - u32Mode=%d (%s) u32UpdateHz=%u\n", g_pSUPGlobalInfoPage->u32Mode,
@@ -281,7 +281,7 @@ VMM_INT_DECL(int) TMR3Init(PVM pVM)
 
     pVM->tm.s.VirtualGetRawDataRC.pu64Prev = MMHyperR3ToRC(pVM, (void *)&pVM->tm.s.u64VirtualRawPrev);
     pVM->tm.s.VirtualGetRawDataR0.pu64Prev = MMHyperR3ToR0(pVM, (void *)&pVM->tm.s.u64VirtualRawPrev);
-    AssertReturn(pVM->tm.s.VirtualGetRawDataR0.pu64Prev, VERR_INTERNAL_ERROR);
+    AssertRelease(pVM->tm.s.VirtualGetRawDataR0.pu64Prev);
     /* The rest is done in TMR3InitFinalize since it's too early to call PDM. */
 
     /*
@@ -1993,7 +1993,7 @@ static void tmR3TimerQueueRun(PVM pVM, PTMTIMERQUEUE pQueue)
         pNext = TMTIMER_GET_NEXT(pTimer);
         PPDMCRITSECT    pCritSect = pTimer->pCritSect;
         if (pCritSect)
-            PDMCritSectEnter(pCritSect, VERR_INTERNAL_ERROR);
+            PDMCritSectEnter(pCritSect, VERR_IGNORED);
         Log2(("tmR3TimerQueueRun: %p:{.enmState=%s, .enmClock=%d, .enmType=%d, u64Expire=%llx (now=%llx) .pszDesc=%s}\n",
               pTimer, tmTimerState(pTimer->enmState), pTimer->enmClock, pTimer->enmType, pTimer->u64Expire, u64Now, pTimer->pszDesc));
         bool fRc;
@@ -2180,7 +2180,7 @@ static void tmR3TimerQueueRunVirtualSync(PVM pVM)
         /* Take the associated lock. */
         PPDMCRITSECT pCritSect = pTimer->pCritSect;
         if (pCritSect)
-            PDMCritSectEnter(pCritSect, VERR_INTERNAL_ERROR);
+            PDMCritSectEnter(pCritSect, VERR_IGNORED);
 
         Log2(("tmR3TimerQueueRun: %p:{.enmState=%s, .enmClock=%d, .enmType=%d, u64Expire=%llx (now=%llx) .pszDesc=%s}\n",
               pTimer, tmTimerState(pTimer->enmState), pTimer->enmClock, pTimer->enmType, pTimer->u64Expire, u64Now, pTimer->pszDesc));

@@ -74,7 +74,7 @@ typedef VBOXSTRICTRC (* PFNIEMOP)(PIEMCPU pIemCpu);
 #define FNIEMOP_DEF_2(a_Name, a_Type0, a_Name0, a_Type1, a_Name1) \
     static VBOXSTRICTRC a_Name(PIEMCPU pIemCpu, a_Type0 a_Name0, a_Type1 a_Name1) RT_NO_THROW
 
-#define IEM_NOT_REACHED_DEFAULT_CASE_RET()                  default: return VERR_INTERNAL_ERROR_4
+#define IEM_NOT_REACHED_DEFAULT_CASE_RET()                  default: return VERR_IPE_NOT_REACHED_DEFAULT_CASE
 
 #define IEM_OPCODE_GET_NEXT_U8(a_pu8)                       do { *(a_pu8)  = g_bRandom; CHK_PTYPE(uint8_t  *, a_pu8);  } while (0)
 #define IEM_OPCODE_GET_NEXT_U16(a_pu16)                     do { *(a_pu16) = g_bRandom; CHK_PTYPE(uint16_t *, a_pu16); } while (0)

@@ -343,7 +343,7 @@ DECLASM(int) TRPMGCHyperTrap01Handler(PTRPMCPU pTrpmCpu, PCPUMCTXCORE pRegFrame)
      * Now leave the rest to the DBGF.
      */
     int rc = DBGFRZTrap01Handler(pVM, pVCpu, pRegFrame, uDr6);
-    AssertStmt(rc != VINF_EM_RAW_GUEST_TRAP, rc = VERR_INTERNAL_ERROR_3);
+    AssertStmt(rc != VINF_EM_RAW_GUEST_TRAP, rc = VERR_TRPM_IPE_1);
 
     Log6(("TRPMGCHyper01: %Rrc (%04x:%08x %RTreg)\n", rc, pRegFrame->cs, pRegFrame->eip, uDr6));
     return rc;
@@ -461,7 +461,7 @@ DECLASM(int) TRPMGCHyperTrap03Handler(PTRPMCPU pTrpmCpu, PCPUMCTXCORE pRegFrame)
      * Hand it over to DBGF.
      */
     int rc = DBGFRZTrap03Handler(pVM, pVCpu, pRegFrame);
-    AssertStmt(rc != VINF_EM_RAW_GUEST_TRAP, rc = VERR_INTERNAL_ERROR_3);
+    AssertStmt(rc != VINF_EM_RAW_GUEST_TRAP, rc = VERR_TRPM_IPE_2);
 
     Log6(("TRPMGCHyper03: %Rrc (%04x:%08x)\n", rc, pRegFrame->cs, pRegFrame->eip));
     return rc;
@@ -1316,7 +1316,7 @@ DECLCALLBACK(int) trpmGCTrapInGeneric(PVM pVM, PCPUMCTXCORE pRegFrame, uintptr_t
 
             default:
                 AssertMsgFailed(("Invalid uUser=%#x\n", uUser));
-                return VERR_INTERNAL_ERROR;
+                return VERR_TRPM_BAD_TRAP_IN_OP;
         }
     }
     else
@@ -1378,7 +1378,7 @@ DECLCALLBACK(int) trpmGCTrapInGeneric(PVM pVM, PCPUMCTXCORE pRegFrame, uintptr_t
 
             default:
                 AssertMsgFailed(("Invalid uUser=%#x\n", uUser));
-                return VERR_INTERNAL_ERROR;
+                return VERR_TRPM_BAD_TRAP_IN_OP;
         }
 
 
@@ -1387,6 +1387,6 @@ DECLCALLBACK(int) trpmGCTrapInGeneric(PVM pVM, PCPUMCTXCORE pRegFrame, uintptr_t
     }
 
     AssertMsgFailed(("Impossible!\n"));
-    return VERR_INTERNAL_ERROR;
+    return VERR_TRPM_IPE_3;
 }
 

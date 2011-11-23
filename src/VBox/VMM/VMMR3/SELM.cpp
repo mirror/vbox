@@ -1718,7 +1718,7 @@ VMMR3DECL(int) SELMR3DebugCheck(PVM pVM)
     if (SelLdt > GDTR.cbGdt)
     {
         Log(("SELMR3DebugCheck: ldt is out of bound SelLdt=%#x\n", SelLdt));
-        return VERR_INTERNAL_ERROR;
+        return VERR_SELM_LDT_OUT_OF_BOUNDS;
     }
     X86DESC    LDTDesc;
     int rc = PGMPhysSimpleReadGCPtr(pVCpu, &LDTDesc, GDTR.pGdt + (SelLdt & X86_SEL_MASK), sizeof(LDTDesc));
@@ -1744,7 +1744,7 @@ VMMR3DECL(int) SELMR3DebugCheck(PVM pVM)
         ||  SelLdt >= pVM->selm.s.GuestGdtr.cbGdt)
     {
         Log(("SELmR3DebugCheck: Invalid LDT %04x!\n", SelLdt));
-        return VERR_INTERNAL_ERROR;
+        return VERR_SELM_INVALID_LDT;
     }
 
     /*

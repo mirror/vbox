@@ -925,7 +925,7 @@ static DECLCALLBACK(int32_t) hmR0EnableAllCpuOnce(void *pvUser, void *pvUserIgno
      * Note! There is a potential race between this function and the suspend
      *       notification.  Kind of unlikely though, so ignored for now.
      */
-    AssertReturn(!g_HvmR0.fEnabled, VERR_INTERNAL_ERROR_3);
+    AssertReturn(!g_HvmR0.fEnabled, VERR_HM_ALREADY_ENABLED_IPE);
     ASMAtomicWriteBool(&g_HvmR0.fEnabled, true);
 
     /*
