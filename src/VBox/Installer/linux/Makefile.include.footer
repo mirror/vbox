@@ -74,8 +74,9 @@ all: $(MODULE)
 
 obj-m += $(MODULE).o
 
+# OL/UEK: disable module signing for external modules -- we don't have any private key
 $(MODULE):
-	$(MAKE) KBUILD_VERBOSE=$(KBUILD_VERBOSE) -C $(KERN_DIR) SUBDIRS=$(CURDIR) SRCROOT=$(CURDIR) modules
+	$(MAKE) KBUILD_VERBOSE=$(KBUILD_VERBOSE) CONFIG_MODULE_SIG= -C $(KERN_DIR) SUBDIRS=$(CURDIR) SRCROOT=$(CURDIR) modules
 
 endif
 

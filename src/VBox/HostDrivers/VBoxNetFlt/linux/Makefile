@@ -199,8 +199,9 @@ all: $(MODULE)
 
 obj-m += $(MODULE).o
 
+# OL/UEK: disable module signing for external modules -- we don't have any private key
 $(MODULE):
-	$(MAKE) KBUILD_VERBOSE=$(KBUILD_VERBOSE) SUBDIRS=$(CURDIR) SRCROOT=$(CURDIR) -C $(KERN_DIR) modules
+	$(MAKE) KBUILD_VERBOSE=$(KBUILD_VERBOSE) SUBDIRS=$(CURDIR) SRCROOT=$(CURDIR) CONFIG_MODULE_SIG= -C $(KERN_DIR) modules
 
 install: $(MODULE)
 	@mkdir -p $(MODULE_DIR); \
