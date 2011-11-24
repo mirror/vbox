@@ -150,8 +150,8 @@ VBoxNetNAT::VBoxNetNAT()
     m_MacAddress.au8[3]     = 0x40;
     m_MacAddress.au8[4]     = 0x41;
     m_MacAddress.au8[5]     = 0x42;
-    m_Ipv4Address.u         = RT_H2N_U32_C(RT_BSWAP_U32_C(RT_MAKE_U32_FROM_U8( 10,  0,  2,  1)));
-    m_Ipv4Netmask.u         = 0xffff0000;
+    m_Ipv4Address.u         = RT_H2N_U32_C(RT_BSWAP_U32_C(RT_MAKE_U32_FROM_U8( 10,  0,  2,  2)));
+    m_Ipv4Netmask.u         = RT_H2N_U32_C(0xffffff);
     cPkt = 0;
     cUrgPkt = 0;
 }
@@ -160,11 +160,17 @@ VBoxNetNAT::~VBoxNetNAT() { }
 void VBoxNetNAT::init()
 {
     int rc;
+#if 0
+    using namespace com;
+    HRESULT hrc = com::Initialize();
+    if (FAILED(hrc))
+        return RTMsgErrorExit(RTEXITCODE_FAILURE, "Failed to initialize COM!");
+#endif
 
     /*
      * Initialize slirp.
      */
-    rc = slirp_init(&m_pNATState, m_Ipv4Address.u, m_Ipv4Netmask.u, m_fPassDomain, false, 0, this);
+    rc = slirp_init(&m_pNATState, RT_H2N_U32_C(RT_BSWAP_U32_C(RT_MAKE_U32_FROM_U8( 10,  0,  2,  0))), m_Ipv4Netmask.u, m_fPassDomain, false, 0x40, 100, this);
     AssertReleaseRC(rc);
 
     slirp_set_ethaddr_and_activate_port_forwarding(m_pNATState, &m_MacAddress.au8[0], INADDR_ANY);
@@ -237,15 +243,13 @@ void VBoxNetNAT::run()
         while ((pHdr = IntNetRingGetNextFrameToRead(pRingBuf)) != NULL)
         {
             uint16_t const u16Type = pHdr->u16Type;
-            if (RT_LIKELY(   u16Type == INTNETHDR_TYPE_FRAME
-                          || u16Type == INTNETHDR_TYPE_GSO))
+            size_t       cbFrame = pHdr->cbFrame;
+            size_t       cbIgnored;
+            void        *pvSlirpFrame;
+            struct mbuf *m;
+            switch (u16Type)
             {
-                size_t       cbFrame = pHdr->cbFrame;
-                size_t       cbIgnored;
-                void        *pvSlirpFrame;
-                struct mbuf *m;
-                if (u16Type == INTNETHDR_TYPE_FRAME)
-                {
+                case INTNETHDR_TYPE_FRAME:
                     m = slirp_ext_m_get(g_pNAT->m_pNATState, cbFrame, &pvSlirpFrame, &cbIgnored);
                     if (!m)
                     {
@@ -259,8 +263,8 @@ void VBoxNetNAT::run()
                     rc = RTReqCallEx(m_pReqQueue, NULL /*ppReq*/, 0 /*cMillies*/, RTREQFLAGS_VOID | RTREQFLAGS_NO_WAIT,
                                      (PFNRT)SendWorker, 2, m, cbFrame);
                     AssertReleaseRC(rc);
-                }
-                else
+                break;
+                case INTNETHDR_TYPE_GSO:
                 {
                     /** @todo pass these unmodified. */
                     PCPDMNETWORKGSO pGso  = IntNetHdrGetGsoContext(pHdr, m_pIfBuf);
@@ -281,21 +285,31 @@ void VBoxNetNAT::run()
                         m = slirp_ext_m_get(g_pNAT->m_pNATState, cbFrame, &pvSlirpFrame, &cbIgnored);
                         if (!m)
                         {
-                            LogRel(("NAT: Can't allocate send buffer cbSegFrame=%u seg=%u/%u\n", cbSegFrame, iSeg, cSegs));
+                            LogRel(("NAT: Can't allocate send buffer cbSegFrame=%u seg=%u/%u\n",
+                                    cbSegFrame, iSeg, cSegs));
                             break;
                         }
                         memcpy(pvSlirpFrame, pvSegFrame, cbFrame);
 
-                        rc = RTReqCallEx(m_pReqQueue, NULL /*ppReq*/, 0 /*cMillies*/, RTREQFLAGS_VOID | RTREQFLAGS_NO_WAIT,
+                        rc = RTReqCallEx(m_pReqQueue, NULL /*ppReq*/, 0 /*cMillies*/,
+                                         RTREQFLAGS_VOID | RTREQFLAGS_NO_WAIT,
                                          (PFNRT)SendWorker, 2, m, cbSegFrame);
                         AssertReleaseRC(rc);
                     }
                     IntNetRingSkipFrame(&m_pIfBuf->Recv);
                 }
+                break;
+                case INTNETHDR_TYPE_PADDING:
+                    IntNetRingSkipFrame(&m_pIfBuf->Recv);
+                break;
+                default:
+                    IntNetRingSkipFrame(&m_pIfBuf->Recv);
+                    STAM_REL_COUNTER_INC(&m_pIfBuf->cStatBadFrames);
+                break;
+                }
 
 #ifndef RT_OS_WINDOWS
                 /* kick select() */
-                size_t cbIgnored;
                 rc = RTPipeWrite(m_hPipeWrite, "", 1, &cbIgnored);
                 AssertRC(rc);
 #else
@@ -304,14 +318,7 @@ void VBoxNetNAT::run()
                 AssertRelease(rc == TRUE);
 #endif
             }
-            else if (u16Type == INTNETHDR_TYPE_PADDING)
-                IntNetRingSkipFrame(&m_pIfBuf->Recv);
-            else
-            {
-                IntNetRingSkipFrame(&m_pIfBuf->Recv);
-                STAM_REL_COUNTER_INC(&m_pIfBuf->cStatBadFrames);
-            }
-        }
+            natNotifyNATThread();
 
     }
     fIsRunning = false;
