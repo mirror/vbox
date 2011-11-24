@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2009-2010 Oracle Corporation
+ * Copyright (C) 2009-2011 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -78,7 +78,6 @@ private slots:
 private:
 
     void initialize();
-    void recreateMask();
     void moveToBase();
     void setMouseTrackingEnabled(bool fEnabled);
 
@@ -103,7 +102,6 @@ private:
     int m_iPositionY;
 
     /* Lists of used spacers */
-    QList<QWidget*> m_Margins;
     QList<QWidget*> m_Spacings;
     QList<QWidget*> m_LabelMargins;
 
