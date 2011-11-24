@@ -262,11 +262,7 @@ static int dhcp_do_ack_offer(PNATState pData, struct mbuf *m, BOOTPClient *bc, i
     {
         rbp->bp_ciaddr.s_addr = bc->addr.s_addr; /* Client IP address */
     }
-#ifndef VBOX_WITH_NAT_SERVICE
     saddr.s_addr = RT_H2N_U32(RT_N2H_U32(pData->special_addr.s_addr) | CTL_ALIAS);
-#else
-    saddr.s_addr = pData->special_addr.s_addr;
-#endif
     Log(("NAT: DHCP: s_addr:%RTnaipv4\n", saddr));
 
 #define FILL_BOOTP_EXT(q, tag, len, pvalue)                     \
@@ -738,11 +734,7 @@ static void bootp_reply(PNATState pData, struct mbuf *m, int offReply, uint16_t 
     nack = (q[6] == DHCPNAK);
     q += offReply;
 
-#ifndef VBOX_WITH_NAT_SERVICE
     saddr.sin_addr.s_addr = RT_H2N_U32(RT_N2H_U32(pData->special_addr.s_addr) | CTL_ALIAS);
-#else
-    saddr.sin_addr.s_addr = pData->special_addr.s_addr;
-#endif
 
     FILL_BOOTP_EXT(q, RFC2132_SRV_ID, 4, &saddr.sin_addr);
 

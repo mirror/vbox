@@ -707,7 +707,10 @@ void slirp_register_statistics(PNATState pData, PPDMDRVINS pDrvIns)
 /** @todo register statistics for the variables dumped by:
  *  ipstats(pData); tcpstats(pData); udpstats(pData); icmpstats(pData);
  *  mbufstats(pData); sockstats(pData); */
-#endif /* VBOX_WITH_STATISTICS */
+#else /* VBOX_WITH_STATISTICS */
+    NOREF(pData);
+    NOREF(pDrvIns);
+#endif /* !VBOX_WITH_STATISTICS */
 }
 
 /**
@@ -721,7 +724,10 @@ void slirp_deregister_statistics(PNATState pData, PPDMDRVINS pDrvIns)
 # define PROFILE_COUNTER(name, dsc)     DEREGISTER_COUNTER(name, pData)
 # define COUNTING_COUNTER(name, dsc)    DEREGISTER_COUNTER(name, pData)
 # include "counters.h"
-#endif /* VBOX_WITH_STATISTICS */
+#else /* VBOX_WITH_STATISTICS */
+    NOREF(pData);
+    NOREF(pDrvIns);
+#endif /* !VBOX_WITH_STATISTICS */
 }
 
 /**
@@ -998,10 +1004,6 @@ void slirp_select_fill(PNATState pData, int *pnfds, struct pollfd *polls)
 #if !defined(RT_OS_WINDOWS)
         so->so_poll_index = -1;
 #endif
-#ifdef VBOX_WITH_NAT_UDP_SOCKET_CLONE
-        if (so->so_cloneOf)
-                CONTINUE_NO_UNLOCK(udp);
-#endif
 
         /*
          * See if it's timed out
@@ -1023,6 +1025,10 @@ void slirp_select_fill(PNATState pData, int *pnfds, struct pollfd *polls)
                 CONTINUE_NO_UNLOCK(udp);
             }
         }
+#ifdef VBOX_WITH_NAT_UDP_SOCKET_CLONE
+        if (so->so_cloneOf)
+                CONTINUE_NO_UNLOCK(udp);
+#endif
 
         /*
          * When UDP packets are received from over the link, they're
@@ -1483,16 +1489,10 @@ static void arp_input(PNATState pData, struct mbuf *m)
             rah = mtod(mr, struct arphdr *);
             mr->m_len = sizeof(struct arphdr);
             memcpy(reh->h_source, eh->h_source, ETH_ALEN); /* XXX: if_encap will swap src and dst*/
-            if (   0
-#ifdef VBOX_WITH_NAT_SERVICE
-                || (tip == pData->special_addr.s_addr)
-#endif
-                || (   ((htip & pData->netmask) == RT_N2H_U32(pData->special_addr.s_addr))
-                    && (   CTL_CHECK(htip, CTL_DNS)
-                        || CTL_CHECK(htip, CTL_ALIAS)
-                        || CTL_CHECK(htip, CTL_TFTP))
-                    )
-                )
+            if (   ((htip & pData->netmask) == RT_N2H_U32(pData->special_addr.s_addr))
+                && (   CTL_CHECK(htip, CTL_DNS)
+                    || CTL_CHECK(htip, CTL_ALIAS)
+                    || CTL_CHECK(htip, CTL_TFTP)))
             {
                 rah->ar_hrd = RT_H2N_U16_C(1);
                 rah->ar_pro = RT_H2N_U16_C(ETH_P_IP);
