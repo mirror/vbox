@@ -684,6 +684,18 @@
           memory, the specified amount will be allocated from the host's
           resident memory. Based on the amount of video memory, higher
           resolutions and color depths may be available.</para>
+          <para>The GUI will show a warning if the amount of video memory
+          is too small to be able to switch the VM into full screen mode.
+          The minimum value depends on the number of virtual monitors, the
+          screen resolution and the color depth of the host display as well
+          as of the activation of <emphasis>3D acceleration</emphasis> and
+          <emphasis>2D video acceleration</emphasis>. A rough estimate
+          is (<emphasis>color depth</emphasis> / 8) x 
+          <emphasis>vertical pixels</emphasis> x
+          <emphasis>horizontal pixels</emphasis> x
+          <emphasis>number of screens</emphasis> = <emphasis>number of bytes</emphasis>.
+          Like said above, there might be extra memory required for any
+          activated display acceleration setting.</para>
         </glossdef>
       </glossentry>
 
