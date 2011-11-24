@@ -18,6 +18,323 @@
 #include "renderspu.h"
 #include "cr_mem.h"
 
+
+/* IAT patcher stuff */
+#define RVA2PTR(_t, _base, _off) ((_t*)(((uint8_t*)(_base)) + (_off)))
+
+int renderspuIatPatcherGetImportAddress(HMODULE hModule, LPCSTR pszLib, LPCSTR pszName, void** ppAdr)
+{
+    PIMAGE_DOS_HEADER pDosHdr = (PIMAGE_DOS_HEADER)hModule;
+    PIMAGE_NT_HEADERS pNtHdr;
+    PIMAGE_IMPORT_DESCRIPTOR pImportDr;
+    DWORD rvaImport;
+
+    crDebug("searching entry %s from %s", pszName, pszLib);
+
+    *ppAdr = 0;
+
+    if (pDosHdr->e_magic != IMAGE_DOS_SIGNATURE)
+    {
+        crWarning("invalid dos signature");
+        return VERR_INVALID_HANDLE;
+    }
+    pNtHdr = RVA2PTR(IMAGE_NT_HEADERS, pDosHdr, pDosHdr->e_lfanew);
+    if (pNtHdr->Signature != IMAGE_NT_SIGNATURE)
+    {
+        crWarning("invalid nt signature");
+        return VERR_INVALID_HANDLE;
+    }
+    rvaImport = pNtHdr->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_IMPORT].VirtualAddress;
+    if (!rvaImport)
+    {
+        crWarning("no imports found");
+        return VERR_NOT_FOUND;
+    }
+    pImportDr =  RVA2PTR(IMAGE_IMPORT_DESCRIPTOR, pDosHdr, rvaImport);
+
+    for ( ;pImportDr->TimeDateStamp != 0 || pImportDr->Name != 0; ++pImportDr)
+    {
+        DWORD rvaINT, rvaIAT;
+        PIMAGE_THUNK_DATA pINT, pIAT;
+        LPCSTR pszLibCur = RVA2PTR(char, pDosHdr, pImportDr->Name);
+        if (stricmp(pszLibCur, pszLib))
+            continue;
+
+        /* got the necessary lib! */
+        crDebug("got info for lib");
+
+        rvaINT = pImportDr->OriginalFirstThunk;
+        rvaIAT = pImportDr->FirstThunk;
+
+        if (!rvaINT  || !rvaIAT)
+        {
+            crWarning("either rvaINT(0x%x) or rvaIAT(0x%x) are NULL, nothing found!", rvaINT, rvaIAT);
+            return VERR_NOT_FOUND;
+        }
+
+        pINT = RVA2PTR(IMAGE_THUNK_DATA, pDosHdr, rvaINT);
+        pIAT = RVA2PTR(IMAGE_THUNK_DATA, pDosHdr, rvaIAT);
+
+        for ( ; pINT->u1.AddressOfData; ++pINT, ++pIAT)
+        {
+            PIMAGE_IMPORT_BY_NAME pIbn;
+
+            if (IMAGE_SNAP_BY_ORDINAL(pINT->u1.Ordinal))
+                continue;
+
+            pIbn = RVA2PTR(IMAGE_IMPORT_BY_NAME, pDosHdr, pINT->u1.AddressOfData);
+
+            if (stricmp(pszName, (char*)pIbn->Name))
+                continue;
+
+            *ppAdr = &pIAT->u1.Function;
+
+            crDebug("search succeeded!");
+            return VINF_SUCCESS;
+        }
+    }
+
+    crDebug("not found");
+    return VERR_NOT_FOUND;
+}
+
+int renderspuIatPatcherPatchEntry(void *pvEntry, void *pvValue, void **ppvOldVal)
+{
+    void **ppfn = (void**)pvEntry;
+    DWORD dwOldProtect = 0;
+
+    if (!VirtualProtect(pvEntry, sizeof (pvEntry), PAGE_READWRITE, &dwOldProtect))
+    {
+        crWarning("VirtualProtect 1 failed, %d", GetLastError());
+        return VERR_ACCESS_DENIED;
+    }
+
+    if (ppvOldVal)
+        *ppvOldVal = *ppfn;
+    *ppfn = pvValue;
+
+    if (!VirtualProtect(pvEntry, sizeof (pvEntry), dwOldProtect, &dwOldProtect))
+    {
+        crWarning("VirtualProtect 2 failed, %d.. ignoring", GetLastError());
+    }
+
+    return VINF_SUCCESS;
+}
+
+
+int renderspuIatPatcherPatchFunction(HMODULE hModule, LPCSTR pszLib, LPCSTR pszName, void* pfn)
+{
+    void* pAdr;
+    int rc = renderspuIatPatcherGetImportAddress(hModule, pszLib, pszName, &pAdr);
+    if (RT_FAILURE(rc))
+    {
+        crDebug("renderspuIatPatcherGetImportAddress failed, %d", rc);
+        return rc;
+    }
+
+    rc = renderspuIatPatcherPatchEntry(pAdr, pfn, NULL);
+    if (RT_FAILURE(rc))
+    {
+        crWarning("renderspuIatPatcherPatchEntry failed, %d", rc);
+        return rc;
+    }
+
+    return VINF_SUCCESS;
+}
+
+/* patch */
+static HWND __stdcall renderspuAtiQuirk_GetForegroundWindow()
+{
+    crDebug("renderspuAtiQuirk_GetForegroundWindow");
+    return NULL;
+}
+
+
+#define CRREG_MAXKEYNAME 8
+static int renderspuAtiQuirk_GetICDDriverList(char *pBuf, DWORD cbBuf, DWORD *pcbResult)
+{
+    static LPCSTR aValueNames[] = {"OpenGLVendorName", "OpenGLDriverName"};
+    char *pBufPos = pBuf;
+    DWORD cbBufRemain = cbBuf, cbTotal = 0;
+    HKEY hKey;
+    DWORD dwIndex = 0;
+    int i;
+    int rc = VINF_SUCCESS;
+    char NameBuf[CRREG_MAXKEYNAME];
+    LONG lRc;
+
+    if (pcbResult)
+        *pcbResult = 0;
+
+    lRc = RegOpenKeyEx(HKEY_LOCAL_MACHINE,
+            "SYSTEM\\CurrentControlSet\\Control\\Class\\{4D36E968-E325-11CE-BFC1-08002BE10318}",
+            0, /* reserved*/
+            KEY_READ,
+            &hKey);
+    if (ERROR_SUCCESS != lRc)
+    {
+        crDebug("RegOpenKeyEx 1 failed, %d", lRc);
+        return VERR_OPEN_FAILED;
+    }
+
+    for ( ; ; ++dwIndex)
+    {
+        lRc = RegEnumKeyA(hKey, dwIndex, NameBuf, CRREG_MAXKEYNAME);
+        if (lRc == ERROR_NO_MORE_ITEMS)
+            break;
+        if (lRc == ERROR_MORE_DATA)
+            continue;
+        if (lRc != ERROR_SUCCESS)
+        {
+            crWarning("RegEnumKeyA failed, %d", lRc);
+            continue;
+        }
+
+        for (i = 0; i < RT_ELEMENTS(aValueNames); ++i)
+        {
+            DWORD cbCur = cbBufRemain;
+            lRc = RegGetValueA(hKey, NameBuf, aValueNames[i], RRF_RT_REG_MULTI_SZ,
+                    NULL, /* LPDWORD pdwType */
+                    pBufPos,
+                    &cbCur);
+            /* exclude second null termination */
+            --cbCur;
+            if (ERROR_MORE_DATA == lRc)
+            {
+                rc = VERR_BUFFER_OVERFLOW;
+                pBufPos = NULL;
+                cbBufRemain = 0;
+                CRASSERT(cbCur > 0 && cbCur < UINT32_MAX/2);
+                cbTotal += cbCur;
+                continue;
+            }
+            if (ERROR_SUCCESS != lRc)
+            {
+                crWarning("RegGetValueA failed, %d", lRc);
+                continue;
+            }
+
+            /* succeeded */
+            CRASSERT(cbCur > 0 && cbCur < UINT32_MAX/2);
+            pBufPos += cbCur;
+            cbBufRemain -= cbCur;
+            cbTotal += cbCur;
+            CRASSERT(cbBufRemain < UINT32_MAX/2);
+        }
+    }
+
+    if (cbTotal)
+    {
+        /* include second null termination */
+        CRASSERT(!pBufPos || pBufPos[0] == '\0');
+        ++cbTotal;
+    }
+
+    if (pcbResult)
+        *pcbResult = cbTotal;
+
+    return rc;
+}
+
+static int renderspuAtiQuirk_ApplyForModule(LPCSTR pszAtiDll)
+{
+    int rc;
+    HMODULE hAtiDll;
+
+    crDebug("renderspuAtiQuirk_ApplyForModule (%s)", pszAtiDll);
+
+    hAtiDll = GetModuleHandleA(pszAtiDll);
+    if (!hAtiDll)
+    {
+        crDebug("GetModuleHandle failed, %d", GetLastError());
+        return VERR_NOT_FOUND;
+    }
+
+    rc = renderspuIatPatcherPatchFunction(hAtiDll, "user32.dll", "GetForegroundWindow", (void*)renderspuAtiQuirk_GetForegroundWindow);
+    if (RT_FAILURE(rc))
+    {
+        crDebug("renderspuIatPatcherPatchFunction failed, %d", rc);
+        return rc;
+    }
+
+    crDebug("renderspuAtiQuirk_ApplyForModule SUCCEEDED!");
+    crInfo("ATI Fullscreen qwirk for SUCCEEDED!");
+
+    return VINF_SUCCESS;
+}
+
+static LPCSTR renderspuRegMultiSzNextVal(LPCSTR pszBuf)
+{
+    pszBuf += strlen(pszBuf) + sizeof (pszBuf[0]);
+
+    if (pszBuf[0] == '\0')
+        return NULL;
+
+    return pszBuf;
+}
+
+static LPCSTR renderspuRegMultiSzCurVal(LPCSTR pszBuf)
+{
+    if (pszBuf[0] == '\0')
+        return NULL;
+
+    return pszBuf;
+}
+
+
+static int renderspuAtiQuirk_Apply()
+{
+    char aBuf[4096];
+    DWORD cbResult = 0;
+    LPCSTR pszVal;
+    int rc;
+
+    crDebug("renderspuAtiQuirk_Apply..");
+
+    rc = renderspuAtiQuirk_GetICDDriverList(aBuf, sizeof (aBuf), &cbResult);
+    if (RT_FAILURE(rc))
+    {
+        crDebug("renderspuAtiQuirk_GetICDDriverList failed, rc(%d)", rc);
+        return rc;
+    }
+
+    for (pszVal = renderspuRegMultiSzCurVal(aBuf);
+            pszVal;
+            pszVal = renderspuRegMultiSzNextVal(pszVal))
+    {
+        renderspuAtiQuirk_ApplyForModule(pszVal);
+    }
+
+    return VINF_SUCCESS;
+}
+
+static GLboolean renderspuAtiQuirk_Needed()
+{
+    const char * pszString = render_spu.ws.glGetString(GL_VENDOR);
+    if (pszString && strstr(pszString, "ATI"))
+        return GL_TRUE;
+    pszString = render_spu.ws.glGetString(GL_RENDERER);
+    if (pszString && strstr(pszString, "ATI"))
+        return GL_TRUE;
+    return GL_FALSE;
+}
+
+
+static void renderspuAtiQuirk_ChkApply()
+{
+    static GLboolean fChecked = GL_FALSE;
+    if (fChecked)
+        return;
+
+    fChecked = GL_TRUE;
+    if (!renderspuAtiQuirk_Needed())
+        return;
+
+    crInfo("This is an ATI card, taking care of fullscreen..");
+
+    renderspuAtiQuirk_Apply();
+}
+
 #define WINDOW_NAME window->title
 
 static BOOL
@@ -902,6 +1219,7 @@ void renderspu_SystemMakeCurrent( WindowInfo *window, GLint nativeWindow, Contex
             }
         }
 
+        renderspuAtiQuirk_ChkApply();
     }
     else {
         render_spu.ws.wglMakeCurrent( 0, 0 );
