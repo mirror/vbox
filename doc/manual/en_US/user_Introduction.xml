@@ -154,7 +154,7 @@
           run your guest operating system "in" a VM. Normally, a VM will be
           shown as a window on your computer's desktop, but depending on which
           of the various frontends of VirtualBox you use, it can be displayed
-          in full-screen mode or remotely on another computer.</para>
+          in full screen mode or remotely on another computer.</para>
 
           <para>In a more abstract way, internally, VirtualBox thinks of a VM
           as a set of parameters that determine its behavior. They include
@@ -284,7 +284,7 @@
             VirtualBox can even report to ACPI-aware guest operating systems
             the power status of the host. For mobile systems running on
             battery, the guest can thus enable energy saving and notify the
-            user of the remaining power (e.g. in fullscreen modes).</para>
+            user of the remaining power (e.g. in full screen modes).</para>
           </listitem>
 
           <listitem>
@@ -909,7 +909,7 @@
       and keyboard devices, since the operating system in the virtual machine
       does not "know" that it is not running on a real computer, it expects to
       have exclusive control over your keyboard and mouse. This is, however,
-      not the case since, unless you are running the VM in full-screen mode,
+      not the case since, unless you are running the VM in full screen mode,
       your VM needs to share keyboard and mouse with other applications and
       possibly other VMs on your host.</para>
 

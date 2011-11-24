@@ -702,13 +702,13 @@
           <para>The output of the multiple monitors will be displayed on the
           host in multiple VM windows which are running side by side.</para>
 
-          <para>However, in fullscreen and seamless mode, they will use the
+          <para>However, in full screen and seamless mode, they will use the
           available physical monitors attached to the host. As a result, for
-          fullscreen and seamless modes to work with multiple monitors, you
+          full screen and seamless modes to work with multiple monitors, you
           will need at least as many physical monitors as you have virtual
           monitors configured, or VirtualBox will report an error. You can
           configure the relationship between guest and host monitors using the
-          view menu by pressing Host key + Home when you are in fullscreen or
+          view menu by pressing Host key + Home when you are in full screen or
           seamless mode.</para>
 
           <para>Please see <xref linkend="KnownIssues" /> also.</para>

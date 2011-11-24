@@ -42,7 +42,7 @@
     <sect2>
       <title>Secure labeling with VBoxSDL</title>
 
-      <para>When running guest operating systems in fullscreen mode, the guest
+      <para>When running guest operating systems in full screen mode, the guest
       operating system usually has control over the whole screen. This could
       present a security risk as the guest operating system might fool the
       user into thinking that it is either a different system (which might
@@ -772,7 +772,7 @@ vga = 864</screen>
       using the graphical frontend (the normal VirtualBox application), they
       will not be allowed to use screen resolutions greater than the host's
       screen size unless the user manually resizes them by dragging the
-      window, switching to fullscreen or seamless mode or sending a video mode
+      window, switching to full screen or seamless mode or sending a video mode
       hint using VBoxManage. This behavior is what most users will want, but
       if you have different needs, it is possible to change it by issuing one
       of the following commands from the command line:</para>
