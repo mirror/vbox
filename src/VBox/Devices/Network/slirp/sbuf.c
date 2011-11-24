@@ -202,6 +202,9 @@ void
 sbappendsb(PNATState pData, struct sbuf *sb, struct mbuf *m)
 {
     int len, n,  nn;
+#ifndef VBOX_WITH_STATISTICS
+    NOREF(pData);
+#endif
 
     len = m_length(m, NULL);
 

@@ -127,7 +127,11 @@ ip_output0(PNATState pData, struct socket *so, struct mbuf *m0, int urg)
 
     STAM_PROFILE_START(&pData->StatIP_output, a);
 
+#ifdef LOG_ENABLED
     LogFlowFunc(("ip_output: so = %R[natsock], m0 = %lx\n", so, (long)m0));
+#else
+    NOREF(so);
+#endif
 
     M_ASSERTPKTHDR(m);
     Assert(m->m_pkthdr.header);

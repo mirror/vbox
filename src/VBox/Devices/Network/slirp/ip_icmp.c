@@ -721,6 +721,8 @@ void icmp_error(PNATState pData, struct mbuf *msrc, u_char type, u_char code, in
         cpnt = (char *)m->m_data+m->m_len;
         m_append(pData, m, message_len, message);
     }
+#else
+    NOREF(message);
 #endif
 
     icp->icmp_cksum = 0;
