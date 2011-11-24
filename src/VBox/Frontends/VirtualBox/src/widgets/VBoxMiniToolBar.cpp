@@ -6,7 +6,7 @@
  */
 
 /*
- * Copyright (C) 2009-2010 Oracle Corporation
+ * Copyright (C) 2009-2011 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -66,9 +66,6 @@ VBoxMiniToolBar::VBoxMiniToolBar(QWidget *pParent, Alignment alignment, bool fAc
     setIconSize(QSize(16, 16));
     setVisible(false);
 
-    /* Left margin of tool-bar: */
-    m_Margins << widgetForAction(addWidget(new QWidget(this)));
-
     /* Add pushpin: */
     m_pAutoHideAction = new QAction(this);
     m_pAutoHideAction->setIcon(UIIconPool::iconSet(":/pin_16px.png"));
@@ -116,9 +113,6 @@ VBoxMiniToolBar::VBoxMiniToolBar(QWidget *pParent, Alignment alignment, bool fAc
     m_pCloseAction->setToolTip(tr("Close VM"));
     connect(m_pCloseAction, SIGNAL(triggered()), this, SIGNAL(closeAction()));
     addAction(m_pCloseAction);
-
-    /* Right margin of tool-bar: */
-    m_Margins << widgetForAction(addWidget(new QWidget(this)));
 
     /* Event-filter for parent widget to control resize: */
     pParent->installEventFilter(this);
@@ -333,10 +327,6 @@ void VBoxMiniToolBar::showEvent(QShowEvent *pEvent)
 {
     if (!m_fPolished)
     {
-        /* Tool-bar margins: */
-        foreach(QWidget *pMargin, m_Margins)
-            pMargin->setMinimumWidth(height());
-
         /* Tool-bar spacings: */
         foreach(QWidget *pSpacing, m_Spacings)
             pSpacing->setMinimumWidth(5);
@@ -380,58 +370,7 @@ void VBoxMiniToolBar::initialize()
     resize(sizeHint());
 
     /* Update geometry: */
-    recreateMask();
     moveToBase();
-}
-
-/* Recreate mini-toolbar mask */
-void VBoxMiniToolBar::recreateMask()
-{
-    int iEdgeShift = height();
-    int iPoints[8];
-    switch (m_alignment)
-    {
-        case AlignTop:
-        {
-            iPoints[0] = 0;
-            iPoints[1] = 0;
-
-            iPoints[2] = iEdgeShift;
-            iPoints[3] = height();
-
-            iPoints[4] = width() - iEdgeShift;
-            iPoints[5] = height();
-
-            iPoints[6] = width();
-            iPoints[7] = 0;
-
-            break;
-        }
-        case AlignBottom:
-        {
-            iPoints[0] = iEdgeShift;
-            iPoints[1] = 0;
-
-            iPoints[2] = 0;
-            iPoints[3] = height();
-
-            iPoints[4] = width();
-            iPoints[5] = height();
-
-            iPoints[6] = width() - iEdgeShift;
-            iPoints[7] = 0;
-
-            break;
-        }
-        default:
-            break;
-    }
-    /* Make sure any old mask is removed first: */
-    clearMask();
-    /* Set the new mask */
-    QPolygon polygon;
-    polygon.setPoints(4, iPoints);
-    setMask(polygon);
 }
 
 /* Move mini-toolbar to the base location */
