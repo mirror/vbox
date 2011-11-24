@@ -405,6 +405,15 @@ VMMR3DECL(int) PDMR3BlkCacheSuspend(PPDMBLKCACHE pBlkCache);
  */
 VMMR3DECL(int) PDMR3BlkCacheResume(PPDMBLKCACHE pBlkCache);
 
+/**
+ * Clears the block cache and removes all entries. The cache waits until all
+ * I/O transfers completed.
+ *
+ * @returns VBox status code.
+ * @param   pBlkCache       The cache instance.
+ */
+VMMR3DECL(int) PDMR3BlkCacheClear(PPDMBLKCACHE pBlkCache);
+
 /** @} */
 
 RT_C_DECLS_END
