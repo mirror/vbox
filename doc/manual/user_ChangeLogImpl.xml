@@ -68,7 +68,7 @@
 
       <listitem>
         <para>Main: fixed incorrect framebuffer information after leaving
-          the fullscreen mode with X11 guests, this lead to a scrambled
+          the full screen mode with X11 guests, this lead to a scrambled
           preview window in the GUI for example</para>
       </listitem>
 
@@ -237,7 +237,7 @@
 
       <listitem>
         <para>3D Support: fixed incorrect rendering and possible crashes when switching
-          to/from fullscreen with enabled 2D acceleration</para>
+          to/from full screen with enabled 2D acceleration</para>
       </listitem>
 
       <listitem>
@@ -351,7 +351,7 @@
       </listitem>
 
       <listitem>
-        <para>Windows Additions: fixed guest hangs when switching back from fullscreen
+        <para>Windows Additions: fixed guest hangs when switching back from full screen
           text mode applications (bug #9636)</para>
       </listitem>
 
@@ -2094,7 +2094,7 @@
       </listitem>
 
       <listitem>
-        <para>GUI: fixed black fullscreen minitoolbar on KDE4 hosts
+        <para>GUI: fixed black full screen minitoolbar on KDE4 hosts
           (Linux hosts only; bug #5449)</para>
       </listitem>
 
@@ -2563,7 +2563,7 @@
 
       <listitem>
         <para>3D support: fixed broken 3D support when switching to
-          fullscreen/seamless modes (bug #7314)</para>
+          full screen / seamless modes (bug #7314)</para>
       </listitem>
 
       <listitem>
@@ -2908,7 +2908,7 @@
       </listitem>
 
       <listitem>
-        <para>GUI: fixed quit dialog when used in seamless or fullscreen mode
+        <para>GUI: fixed quit dialog when used in seamless or full screen mode
           (Mac OS X hosts only; bug #6938)</para>
       </listitem>
 
@@ -2919,7 +2919,7 @@
       </listitem>
 
       <listitem>
-        <para>2D Video acceleration: fixed crashes when leaving the fullscreen mode
+        <para>2D Video acceleration: fixed crashes when leaving the full screen mode
           (bug #6768)</para>
       </listitem>
 
@@ -3996,7 +3996,7 @@
       </listitem>
 
       <listitem>
-        <para>GUI: fixed guest fullscreen mode after reboot (bug #5372)</para>
+        <para>GUI: fixed guest full screen mode after reboot (bug #5372)</para>
       </listitem>
 
       <listitem>
@@ -4232,13 +4232,13 @@
 
       <listitem>
         <para>Mac OS X hosts: dock &amp; menubar don't disappear in
-          fullscreen when the VM is not running on the primary display (bug
+          full screen when the VM is not running on the primary display (bug
           #1762)</para>
       </listitem>
 
       <listitem>
         <para>Mac OS X hosts: added an option for enabling "Auto show Dock &amp;
-          Menubar in fullscreen" (bug #5636)</para>
+          Menubar in full screen" (bug #5636)</para>
       </listitem>
 
       <listitem>
@@ -4518,7 +4518,7 @@
       </listitem>
 
       <listitem>
-        <para>Mac OS X hosts: don't auto show the menu and dock in fullscreen
+        <para>Mac OS X hosts: don't auto show the menu and dock in full screen
           (bug #4866)</para>
       </listitem>
 
@@ -5633,7 +5633,7 @@
       </listitem>
 
       <listitem>
-        <para>GUI: added mini toolbar for fullscreen and seamless mode (Thanks to Huihong Luo)</para>
+        <para>GUI: added mini toolbar for full screen and seamless mode (Thanks to Huihong Luo)</para>
       </listitem>
 
       <listitem>
