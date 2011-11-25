@@ -429,6 +429,10 @@ int Service::paramBufferAssign(PVBOXGUESTCTRPARAMBUFFER pBuf, uint32_t cParms, V
         /** @todo Add check to verify if the HGCM request is the same *type* as the buffered one! */
         for (uint32_t i = 0; i < pBuf->uParmCount; i++)
         {
+            /** @todo r=bird: Should this CHECK the type instead of overriding
+             * it?? What happens if a guest initializes a PTR param as a 32-bit
+             * or 64-bit value with a non-zero value? You'll crash and burn in
+             * the memcpy below! */
             paParms[i].type = pBuf->pParms[i].type;
             switch (paParms[i].type)
             {
@@ -438,6 +442,7 @@ int Service::paramBufferAssign(PVBOXGUESTCTRPARAMBUFFER pBuf, uint32_t cParms, V
 
                 case VBOX_HGCM_SVC_PARM_64BIT:
                     /* Not supported yet. */
+                    /** @todo r=bird: This case needs to fail! */
                     break;
 
                 case VBOX_HGCM_SVC_PARM_PTR:
@@ -457,6 +462,7 @@ int Service::paramBufferAssign(PVBOXGUESTCTRPARAMBUFFER pBuf, uint32_t cParms, V
                     break;
 
                 default:
+                    /** @todo r=bird: This case needs to fail! */
                     break;
             }
         }
@@ -588,7 +594,7 @@ int Service::clientDisconnect(uint32_t u32ClientID, void *pvClient)
  * Assigns a specified host command to a client.
  *
  * @return  IPRT status code.
- * @param   pCmd                    Host comamnd to send.
+ * @param   pCmd                    Host command to send.
  * @param   callHandle              Call handle of the client to send the command to.
  * @param   cParms                  Number of parameters.
  * @param   paParms                 Array of parameters.

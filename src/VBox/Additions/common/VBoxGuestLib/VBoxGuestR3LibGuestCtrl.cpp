@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2010 Oracle Corporation
+ * Copyright (C) 2010-2011 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -108,10 +108,10 @@ VBGLR3DECL(int) VbglR3GuestCtrlWaitForHostMsg(uint32_t u32ClientId, uint32_t *pu
 
     VBoxGuestCtrlHGCMMsgType Msg;
 
-    Msg.hdr.result = VERR_WRONG_ORDER;
+    Msg.hdr.result      = VERR_WRONG_ORDER;
     Msg.hdr.u32ClientID = u32ClientId;
     Msg.hdr.u32Function = GUEST_GET_HOST_MSG; /* Tell the host we want our next command. */
-    Msg.hdr.cParms = 2;                       /* Just peek for the next message! */
+    Msg.hdr.cParms      = 2;                  /* Just peek for the next message! */
 
     VbglHGCMParmUInt32Set(&Msg.msg, 0);
     VbglHGCMParmUInt32Set(&Msg.num_parms, 0);
@@ -140,10 +140,10 @@ VBGLR3DECL(int) VbglR3GuestCtrlCancelPendingWaits(uint32_t u32ClientId)
 {
     VBoxGuestCtrlHGCMMsgCancelPendingWaits Msg;
 
-    Msg.hdr.result = VERR_WRONG_ORDER;
+    Msg.hdr.result      = VERR_WRONG_ORDER;
     Msg.hdr.u32ClientID = u32ClientId;
     Msg.hdr.u32Function = GUEST_CANCEL_PENDING_WAITS;
-    Msg.hdr.cParms = 0;
+    Msg.hdr.cParms      = 0;
 
     int rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_HGCM_CALL(sizeof(Msg)), &Msg, sizeof(Msg));
     if (RT_SUCCESS(rc))
@@ -166,34 +166,35 @@ VBGLR3DECL(int) VbglR3GuestCtrlCancelPendingWaits(uint32_t u32ClientId)
  * @param   uNumParms
  ** @todo Docs!
  */
-VBGLR3DECL(int) VbglR3GuestCtrlExecGetHostCmd(uint32_t  u32ClientId,    uint32_t  uNumParms,
-                                              uint32_t *puContext,
-                                              char     *pszCmd,         uint32_t  cbCmd,
-                                              uint32_t *puFlags,
-                                              char     *pszArgs,        uint32_t  cbArgs,   uint32_t *puNumArgs,
-                                              char     *pszEnv,         uint32_t *pcbEnv,   uint32_t *puNumEnvVars,
-                                              char     *pszUser,        uint32_t  cbUser,
-                                              char     *pszPassword,    uint32_t  cbPassword,
-                                              uint32_t *puTimeLimit)
+VBGLR3DECL(int) VbglR3GuestCtrlExecGetHostCmdExec(uint32_t  u32ClientId,    uint32_t  cParms,
+                                                  uint32_t *puContext,
+                                                  char     *pszCmd,         uint32_t  cbCmd,
+                                                  uint32_t *puFlags,
+                                                  char     *pszArgs,        uint32_t  cbArgs,   uint32_t *pcArgs,
+                                                  char     *pszEnv,         uint32_t *pcbEnv,   uint32_t *pcEnvVars,
+                                                  char     *pszUser,        uint32_t  cbUser,
+                                                  char     *pszPassword,    uint32_t  cbPassword,
+                                                  uint32_t *pcMsTimeLimit)
 {
     AssertPtrReturn(puContext, VERR_INVALID_PARAMETER);
     AssertPtrReturn(pszCmd, VERR_INVALID_PARAMETER);
     AssertPtrReturn(puFlags, VERR_INVALID_PARAMETER);
     AssertPtrReturn(pszArgs, VERR_INVALID_PARAMETER);
-    AssertPtrReturn(puNumArgs, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pcArgs, VERR_INVALID_PARAMETER);
     AssertPtrReturn(pszEnv, VERR_INVALID_PARAMETER);
     AssertPtrReturn(pcbEnv, VERR_INVALID_PARAMETER);
-    AssertPtrReturn(puNumEnvVars, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pcEnvVars, VERR_INVALID_PARAMETER);
     AssertPtrReturn(pszUser, VERR_INVALID_PARAMETER);
     AssertPtrReturn(pszPassword, VERR_INVALID_PARAMETER);
-    AssertPtrReturn(puTimeLimit, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pcMsTimeLimit, VERR_INVALID_PARAMETER);
 
     VBoxGuestCtrlHGCMMsgExecCmd Msg;
 
-    Msg.hdr.result = VERR_WRONG_ORDER;
+    Msg.hdr.result      = VERR_WRONG_ORDER;
     Msg.hdr.u32ClientID = u32ClientId;
     Msg.hdr.u32Function = GUEST_GET_HOST_MSG;
-    Msg.hdr.cParms = uNumParms;
+    Msg.hdr.cParms      = cParms; /** @todo r=bird: This isn't safe/right. The parameter count of this HGCM call
+                                   * is fixed from our point of view. */
 
     VbglHGCMParmUInt32Set(&Msg.context, 0);
     VbglHGCMParmPtrSet(&Msg.cmd, pszCmd, cbCmd);
@@ -219,10 +220,10 @@ VBGLR3DECL(int) VbglR3GuestCtrlExecGetHostCmd(uint32_t  u32ClientId,    uint32_t
         {
             Msg.context.GetUInt32(puContext);
             Msg.flags.GetUInt32(puFlags);
-            Msg.num_args.GetUInt32(puNumArgs);
-            Msg.num_env.GetUInt32(puNumEnvVars);
+            Msg.num_args.GetUInt32(pcArgs);
+            Msg.num_env.GetUInt32(pcEnvVars);
             Msg.cb_env.GetUInt32(pcbEnv);
-            Msg.timeout.GetUInt32(puTimeLimit);
+            Msg.timeout.GetUInt32(pcMsTimeLimit);
         }
     }
     return rc;
@@ -236,10 +237,10 @@ VBGLR3DECL(int) VbglR3GuestCtrlExecGetHostCmd(uint32_t  u32ClientId,    uint32_t
  *
  * @returns VBox status code.
  * @param   u32ClientId     The client id returned by VbglR3GuestCtrlConnect().
- * @param   uNumParms
+ * @param   cParms
  ** @todo Docs!
  */
-VBGLR3DECL(int) VbglR3GuestCtrlExecGetHostCmdOutput(uint32_t  u32ClientId,    uint32_t  uNumParms,
+VBGLR3DECL(int) VbglR3GuestCtrlExecGetHostCmdOutput(uint32_t  u32ClientId,    uint32_t  cParms,
                                                     uint32_t *puContext,      uint32_t *puPID,
                                                     uint32_t *puHandle,       uint32_t *puFlags)
 {
@@ -253,7 +254,7 @@ VBGLR3DECL(int) VbglR3GuestCtrlExecGetHostCmdOutput(uint32_t  u32ClientId,    ui
     Msg.hdr.result = VERR_WRONG_ORDER;
     Msg.hdr.u32ClientID = u32ClientId;
     Msg.hdr.u32Function = GUEST_GET_HOST_MSG;
-    Msg.hdr.cParms = uNumParms;
+    Msg.hdr.cParms = cParms;
 
     VbglHGCMParmUInt32Set(&Msg.context, 0);
     VbglHGCMParmUInt32Set(&Msg.pid, 0);
@@ -288,13 +289,13 @@ VBGLR3DECL(int) VbglR3GuestCtrlExecGetHostCmdOutput(uint32_t  u32ClientId,    ui
  *
  * @returns VBox status code.
  * @param   u32ClientId     The client id returned by VbglR3GuestCtrlConnect().
- * @param   uNumParms
+ * @param   cParms
  ** @todo Docs!
  */
-VBGLR3DECL(int) VbglR3GuestCtrlExecGetHostCmdInput(uint32_t  u32ClientId,    uint32_t   uNumParms,
+VBGLR3DECL(int) VbglR3GuestCtrlExecGetHostCmdInput(uint32_t  u32ClientId,    uint32_t   cParms,
                                                    uint32_t *puContext,      uint32_t  *puPID,
                                                    uint32_t *puFlags,
-                                                   void      *pvData,        uint32_t  cbData,
+                                                   void     *pvData,         uint32_t  cbData,
                                                    uint32_t *pcbSize)
 {
     AssertPtrReturn(puContext, VERR_INVALID_PARAMETER);
@@ -305,10 +306,10 @@ VBGLR3DECL(int) VbglR3GuestCtrlExecGetHostCmdInput(uint32_t  u32ClientId,    uin
 
     VBoxGuestCtrlHGCMMsgExecIn Msg;
 
-    Msg.hdr.result = VERR_WRONG_ORDER;
+    Msg.hdr.result      = VERR_WRONG_ORDER;
     Msg.hdr.u32ClientID = u32ClientId;
     Msg.hdr.u32Function = GUEST_GET_HOST_MSG;
-    Msg.hdr.cParms = uNumParms;
+    Msg.hdr.cParms      = cParms;
 
     VbglHGCMParmUInt32Set(&Msg.context, 0);
     VbglHGCMParmUInt32Set(&Msg.pid, 0);
