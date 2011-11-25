@@ -134,38 +134,36 @@ HRESULT Guest::fileQueryInfoInternal(IN_BSTR aFile,
          * Execute guest process.
          */
         ULONG uPID;
+        GuestCtrlStreamObjects stdOut;
         hr = executeAndWaitForTool(Bstr(VBOXSERVICE_TOOL_STAT).raw(), Bstr("Querying file information").raw(),
                                    ComSafeArrayAsInParam(args),
                                    ComSafeArrayAsInParam(env),
                                    aUsername, aPassword,
+                                   ExecuteProcessFlag_WaitForStdOut,
+                                   &stdOut, NULL,
                                    NULL /* Progress */, &uPID);
         if (SUCCEEDED(hr))
         {
-            GuestCtrlStreamObjects streamObjs;
-            hr = executeStreamParse(uPID, streamObjs);
-            if (SUCCEEDED(hr))
+            int rc = VINF_SUCCESS;
+            const char *pszFsType = stdOut[0].GetString("ftype");
+            if (!pszFsType) /* Attribute missing? */
+                rc = VERR_NOT_FOUND;
+            if (   RT_SUCCESS(rc)
+                && strcmp(pszFsType, "-")) /* Regular file? */
             {
-                int rc = VINF_SUCCESS;
-                const char *pszFsType = streamObjs[0].GetString("ftype");
-                if (!pszFsType) /* Attribute missing? */
-                     rc = VERR_NOT_FOUND;
-                if (   RT_SUCCESS(rc)
-                    && strcmp(pszFsType, "-")) /* Regular file? */
-                {
-                     rc = VERR_FILE_NOT_FOUND;
-                     /* This is not critical for Main, so don't set hr --
-                      * we will take care of rc then. */
-                }
-                if (   RT_SUCCESS(rc)
-                    && aObjInfo) /* Do we want object details? */
-                {
-                    hr = executeStreamQueryFsObjInfo(aFile, streamObjs[0],
-                                                     aObjInfo, enmAddAttribs);
-                }
-
-                if (pRC)
-                    *pRC = rc;
+                rc = VERR_FILE_NOT_FOUND;
+                /* This is not critical for Main, so don't set hr --
+                 * we will take care of rc then. */
             }
+            if (   RT_SUCCESS(rc)
+                && aObjInfo) /* Do we want object details? */
+            {
+                hr = executeStreamQueryFsObjInfo(aFile, stdOut[0],
+                                                 aObjInfo, enmAddAttribs);
+            }
+
+            if (pRC)
+                *pRC = rc;
         }
     }
     catch (std::bad_alloc &)

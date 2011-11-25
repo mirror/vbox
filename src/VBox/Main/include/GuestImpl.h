@@ -152,16 +152,21 @@ public:
     HRESULT executeAndWaitForTool(IN_BSTR aTool, IN_BSTR aDescription,
                                   ComSafeArrayIn(IN_BSTR, aArguments), ComSafeArrayIn(IN_BSTR, aEnvironment),
                                   IN_BSTR aUsername, IN_BSTR aPassword,
+                                  ULONG uFlagsToAdd,
+                                  GuestCtrlStreamObjects *pObjStdOut, GuestCtrlStreamObjects *pObjStdErr,
                                   IProgress **aProgress, ULONG *aPID);
     HRESULT executeProcessInternal(IN_BSTR aCommand, ULONG aFlags,
                                    ComSafeArrayIn(IN_BSTR, aArguments), ComSafeArrayIn(IN_BSTR, aEnvironment),
                                    IN_BSTR aUsername, IN_BSTR aPassword,
                                    ULONG aTimeoutMS, ULONG *aPID, IProgress **aProgress, int *pRC);
+    HRESULT getProcessOutputInternal(ULONG aPID, ULONG aFlags, ULONG aTimeoutMS,
+                                     LONG64 aSize, ComSafeArrayOut(BYTE, aData), int *pRC);
     HRESULT executeProcessResult(const char *pszCommand, const char *pszUser, ULONG ulTimeout, PCALLBACKDATAEXECSTATUS pExecStatus, ULONG *puPID);
     HRESULT executeStreamQueryFsObjInfo(IN_BSTR aObjName,GuestProcessStreamBlock &streamBlock, PRTFSOBJINFO pObjInfo, RTFSOBJATTRADD enmAddAttribs);
-    int     executeStreamDrain(ULONG aPID, GuestProcessStream &stream);
-    int     executeStreamGetNextBlock(ULONG aPID, GuestProcessStream &stream, GuestProcessStreamBlock &streamBlock);
-    HRESULT executeStreamParse(ULONG aPID, GuestCtrlStreamObjects &streamObjects);
+    int     executeStreamDrain(ULONG aPID, ULONG ulFlags, GuestProcessStream &stream);
+    int     executeStreamGetNextBlock(ULONG ulPID, ULONG ulFlags, GuestProcessStream &stream, GuestProcessStreamBlock &streamBlock);
+    int     executeStreamParseNextBlock(ULONG ulPID, ULONG ulFlags, GuestProcessStream &stream, GuestProcessStreamBlock &streamBlock);
+    HRESULT executeStreamParse(ULONG ulPID, ULONG ulFlags, GuestCtrlStreamObjects &streamObjects);
     HRESULT executeWaitForStatusChange(ULONG uPID, ULONG uTimeoutMS, ExecuteProcessStatus_T *pRetStatus, ULONG *puRetExitCode);
     // Internal guest file functions
     HRESULT fileExistsInternal(IN_BSTR aFile, IN_BSTR aUsername, IN_BSTR aPassword, BOOL *aExists);
@@ -228,9 +233,8 @@ private:
     typedef std::map< uint32_t, VBOXGUESTCTRL_PROCESS >::iterator GuestProcessMapIter;
     typedef std::map< uint32_t, VBOXGUESTCTRL_PROCESS >::const_iterator GuestProcessMapIterConst;
 
-    int processAdd(uint32_t u32PID, ExecuteProcessStatus_T enmStatus, uint32_t uExitCode, uint32_t uFlags);
-    int processGetByPID(uint32_t u32PID, PVBOXGUESTCTRL_PROCESS pProcess);
-    int processSetStatus(uint32_t u32PID, ExecuteProcessStatus_T enmStatus, uint32_t uExitCode, uint32_t uFlags);
+    int  processGetStatus(uint32_t u32PID, PVBOXGUESTCTRL_PROCESS pProcess);
+    int  processSetStatus(uint32_t u32PID, ExecuteProcessStatus_T enmStatus, uint32_t uExitCode, uint32_t uFlags);
 
     // Internal guest directory representation.
     typedef struct VBOXGUESTCTRL_DIRECTORY

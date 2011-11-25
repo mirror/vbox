@@ -313,7 +313,8 @@ int VBoxServiceControlHandleCmdStartProc(uint32_t uClientID, uint32_t uNumParms)
         {
             /* Tell the host. */
             rc = VbglR3GuestCtrlExecReportStatus(uClientID, uContextID, 0 /* PID, invalid. */,
-                                                 PROC_STS_ERROR, VERR_MAX_PROCS_REACHED,
+                                                 PROC_STS_ERROR,
+                                                 !fAllowed ? VERR_MAX_PROCS_REACHED : rc,
                                                  NULL /* pvData */, 0 /* cbData */);
         }
     }
@@ -334,7 +335,8 @@ int VBoxServiceControlHandleCmdStartProc(uint32_t uClientID, uint32_t uNumParms)
  * @param   cbBuf                   Size (in bytes) of the pre-allocated buffer.
  * @param   pcbRead                 Pointer to number of bytes read.  Optional.
  */
-int VBoxServiceControlExecGetOutput(uint32_t uPID, uint32_t uHandleId, uint32_t uTimeout,
+int VBoxServiceControlExecGetOutput(uint32_t uPID, uint32_t uCID,
+                                    uint32_t uHandleId, uint32_t uTimeout,
                                     void *pvBuf, uint32_t cbBuf, uint32_t *pcbRead)
 {
     AssertPtrReturn(pvBuf, VERR_INVALID_POINTER);
@@ -344,6 +346,7 @@ int VBoxServiceControlExecGetOutput(uint32_t uPID, uint32_t uHandleId, uint32_t 
     int rc = VINF_SUCCESS;
 
     VBOXSERVICECTRLREQUEST ctrlRequest;
+    ctrlRequest.uCID   = uCID;
     ctrlRequest.cbData = cbBuf;
     ctrlRequest.pvData = (uint8_t*)pvBuf;
 
@@ -388,7 +391,8 @@ int VBoxServiceControlExecGetOutput(uint32_t uPID, uint32_t uHandleId, uint32_t 
  * @param   cbBuf                   Size (in bytes) of the input buffer data.
  * @param   pcbWritten              Pointer to number of bytes written to the process.  Optional.
  */
-int VBoxServiceControlSetInput(uint32_t uPID, bool fPendingClose,
+int VBoxServiceControlSetInput(uint32_t uPID, uint32_t uCID,
+                               bool fPendingClose,
                                void *pvBuf, uint32_t cbBuf,
                                uint32_t *pcbWritten)
 {
@@ -399,6 +403,7 @@ int VBoxServiceControlSetInput(uint32_t uPID, bool fPendingClose,
     int rc = VINF_SUCCESS;
 
     VBOXSERVICECTRLREQUEST ctrlRequest;
+    ctrlRequest.uCID    = uCID;
     ctrlRequest.cbData  = cbBuf;
     ctrlRequest.pvData  = pvBuf;
     ctrlRequest.enmType = fPendingClose
@@ -469,10 +474,10 @@ int VBoxServiceControlHandleCmdSetInput(uint32_t u32ClientId, uint32_t uNumParms
                                uPID, cbSize);
         }
 
-        rc = VBoxServiceControlSetInput(uPID, fPendingClose, pabBuffer,
+        rc = VBoxServiceControlSetInput(uPID, uContextID, fPendingClose, pabBuffer,
                                         cbSize, &cbWritten);
-        VBoxServiceVerbose(4, "Control: [PID %u]: Written input, rc=%Rrc, uFlags=0x%x, fPendingClose=%d, cbSize=%u, cbWritten=%u\n",
-                           uPID, rc, uFlags, fPendingClose, cbSize, cbWritten);
+        VBoxServiceVerbose(4, "Control: [PID %u]: Written input, CID=%u, rc=%Rrc, uFlags=0x%x, fPendingClose=%d, cbSize=%u, cbWritten=%u\n",
+                           uPID, uContextID, rc, uFlags, fPendingClose, cbSize, cbWritten);
         if (RT_SUCCESS(rc))
         {
             if (cbWritten || !cbSize) /* Did we write something or was there anything to write at all? */
@@ -542,13 +547,20 @@ int VBoxServiceControlHandleCmdGetOutput(uint32_t u32ClientId, uint32_t uNumParm
         uint8_t *pBuf = (uint8_t*)RTMemAlloc(_64K);
         if (pBuf)
         {
-            rc = VBoxServiceControlExecGetOutput(uPID, uHandleID, RT_INDEFINITE_WAIT /* Timeout */,
+            rc = VBoxServiceControlExecGetOutput(uPID, uContextID, uHandleID, RT_INDEFINITE_WAIT /* Timeout */,
                                                  pBuf, _64K /* cbSize */, &cbRead);
+
+            /** Note: Don't convert/touch/modify/whatever the output data here! This might be binary
+             *        data which the host needs to work with -- so just pass through all data unfiltered! */
+
             if (RT_SUCCESS(rc))
-                VBoxServiceVerbose(3, "Control: [PID %u]: Got output, CID=%u, cbRead=%u, uHandle=%u, uFlags=%u\n",
+                VBoxServiceVerbose(2, "Control: Got output, PID=%u, CID=%u, cbRead=%u, uHandle=%u, uFlags=%u\n",
                                    uPID, uContextID, cbRead, uHandleID, uFlags);
+            else if (rc == VERR_NOT_FOUND)
+                VBoxServiceVerbose(2, "Control: PID=%u not found, CID=%u, uHandle=%u\n",
+                                   uPID, uContextID, uHandleID, rc);
             else
-                VBoxServiceError("Control: [PID %u]: Failed to retrieve output, CID=%u, uHandle=%u, rc=%Rrc\n",
+                VBoxServiceError("Control: Failed to retrieve output for PID=%u, CID=%u, uHandle=%u, rc=%Rrc\n",
                                  uPID, uContextID, uHandleID, rc);
             /* Note: Since the context ID is unique the request *has* to be completed here,
              *       regardless whether we got data or not! Otherwise the progress object
@@ -597,9 +609,12 @@ static DECLCALLBACK(void) VBoxServiceControlStop(void)
 }
 
 
+/**
+ * Destroys all guest process threads which are still active.
+ */
 static void VBoxServiceControlDestroyThreads(void)
 {
-    VBoxServiceVerbose(3, "Control: Destroying threads ...\n");
+    VBoxServiceVerbose(2, "Control: Destroying threads ...\n");
 
     /* Signal all threads that we want to shutdown. */
     PVBOXSERVICECTRLTHREAD pThread;
@@ -624,6 +639,13 @@ static void VBoxServiceControlDestroyThreads(void)
         pThread = pNext;
     }
 
+#ifdef DEBUG
+        PVBOXSERVICECTRLTHREAD pThreadCur;
+        uint32_t cThreads = 0;
+        RTListForEach(&g_GuestControlThreads, pThreadCur, VBOXSERVICECTRLTHREAD, Node)
+            cThreads++;
+        VBoxServiceVerbose(4, "Control: Guest process threads left=%u\n", cThreads);
+#endif
     AssertMsg(RTListIsEmpty(&g_GuestControlThreads),
               ("Guest process thread list still contains children when it should not\n"));
 
@@ -679,17 +701,16 @@ static int VBoxServiceControlStartAllowed(bool *pbAllowed)
             PVBOXSERVICECTRLTHREAD pThread;
             RTListForEach(&g_GuestControlThreads, pThread, VBOXSERVICECTRLTHREAD, Node)
             {
-    // THREAD LOCKING!!
-                Assert(pThread->fStarted != pThread->fStopped);
-                if (pThread->fStarted)
+                VBOXSERVICECTRLTHREADSTATUS enmStatus = VBoxServiceControlThreadGetStatus(pThread);
+                if (enmStatus == VBOXSERVICECTRLTHREADSTATUS_STARTED)
                     uProcsRunning++;
-                else if (pThread->fStopped)
+                else if (enmStatus == VBOXSERVICECTRLTHREADSTATUS_STOPPED)
                     uProcsStopped++;
                 else
                     AssertMsgFailed(("Control: Guest process neither started nor stopped!?\n"));
             }
 
-            VBoxServiceVerbose(2, "Control: Maximum served guest processes set to %u, running=%u, stopped=%u\n",
+            VBoxServiceVerbose(3, "Control: Maximum served guest processes set to %u, running=%u, stopped=%u\n",
                                g_GuestControlProcsMaxKept, uProcsRunning, uProcsStopped);
 
             int32_t iProcsLeft = (g_GuestControlProcsMaxKept - uProcsRunning - 1);
@@ -713,12 +734,13 @@ static int VBoxServiceControlStartAllowed(bool *pbAllowed)
 
 
 /**
- * Finds a (formerly) started process given by its PID.
+ * Finds a (formerly) started process given by its PID and locks it. Must be unlocked
+ * by the caller with VBoxServiceControlThreadUnlock().
  *
  * @return  PVBOXSERVICECTRLTHREAD      Process structure if found, otherwise NULL.
  * @param   uPID                        PID to search for.
  */
-PVBOXSERVICECTRLTHREAD VBoxServiceControlGetThreadByPID(uint32_t uPID)
+const PVBOXSERVICECTRLTHREAD VBoxServiceControlGetThreadLocked(uint32_t uPID)
 {
     PVBOXSERVICECTRLTHREAD pThread = NULL;
     int rc = RTCritSectEnter(&g_GuestControlThreadsCritSect);
@@ -729,7 +751,9 @@ PVBOXSERVICECTRLTHREAD VBoxServiceControlGetThreadByPID(uint32_t uPID)
         {
             if (pThreadCur->uPID == uPID)
             {
-                pThread = pThreadCur;
+                rc = RTCritSectEnter(&pThreadCur->CritSect);
+                if (RT_SUCCESS(rc))
+                    pThread = pThreadCur;
                 break;
             }
         }
@@ -744,13 +768,71 @@ PVBOXSERVICECTRLTHREAD VBoxServiceControlGetThreadByPID(uint32_t uPID)
 
 
 /**
+ * Unlocks a previously locked guest process thread.
+ *
+ * @param   pThread                 Thread to unlock.
+ */
+void VBoxServiceControlThreadUnlock(const PVBOXSERVICECTRLTHREAD pThread)
+{
+    AssertPtr(pThread);
+
+    int rc = RTCritSectLeave(&pThread->CritSect);
+    AssertRC(rc);
+}
+
+
+/**
+ * Assigns a valid PID to a guest control thread and also checks if there already was
+ * another (stale) guest process which was using that PID before and destroys it.
+ *
+ * @return  IPRT status code.
+ * @param   pThread        Thread to assign PID to.
+ * @param   uPID           PID to assign to the specified guest control execution thread.
+ */
+int VBoxServiceControlAssignPID(PVBOXSERVICECTRLTHREAD pThread, uint32_t uPID)
+{
+    AssertPtrReturn(pThread, VERR_INVALID_POINTER);
+    AssertReturn(uPID, VERR_INVALID_PARAMETER);
+
+    int rc = RTCritSectEnter(&g_GuestControlThreadsCritSect);
+    if (RT_SUCCESS(rc))
+    {
+        /* Search old threads using the desired PID and shut them down completely -- it's
+         * not used anymore. */
+        PVBOXSERVICECTRLTHREAD pThreadCur;
+        RTListForEach(&g_GuestControlThreads, pThreadCur, VBOXSERVICECTRLTHREAD, Node)
+        {
+            if (   pThreadCur->uPID == uPID
+                && pThreadCur       != pThread)
+            {
+                VBoxServiceVerbose(2, "ControlThread: PID %u was used before, shutting down stale exec thread ...\n",
+                                   uPID);
+                rc = VBoxServiceControlThreadSignalShutdown(pThreadCur);
+                if (RT_SUCCESS(rc))
+                    rc = VBoxServiceControlThreadWaitForShutdown(pThreadCur,
+                                                                 30 * 1000 /* Wait 30 seconds max. */);
+            }
+        }
+
+        /* Assign PID to current thread. */
+        pThread->uPID = uPID;
+
+        rc = RTCritSectLeave(&g_GuestControlThreadsCritSect);
+        AssertRC(rc);
+    }
+
+    return rc;
+}
+
+
+/**
  * Removes the specified guest process thread from the global thread
  * list.
  *
  * @return  IPRT status code.
  * @param   pThread             Thread to remove.
  */
-void VBoxServiceControlRemoveThread(PVBOXSERVICECTRLTHREAD pThread)
+void VBoxServiceControlRemoveThread(const PVBOXSERVICECTRLTHREAD pThread)
 {
     if (!pThread)
         return;
@@ -762,8 +844,15 @@ void VBoxServiceControlRemoveThread(PVBOXSERVICECTRLTHREAD pThread)
                            pThread->uPID);
         RTListNodeRemove(&pThread->Node);
 
-        int rc2 = RTCritSectLeave(&g_GuestControlThreadsCritSect);
-        AssertRC(rc2);
+#ifdef DEBUG
+        PVBOXSERVICECTRLTHREAD pThreadCur;
+        uint32_t cThreads = 0;
+        RTListForEach(&g_GuestControlThreads, pThreadCur, VBOXSERVICECTRLTHREAD, Node)
+            cThreads++;
+        VBoxServiceVerbose(4, "Control: Guest process threads left=%u\n", cThreads);
+#endif
+        rc = RTCritSectLeave(&g_GuestControlThreadsCritSect);
+        AssertRC(rc);
     }
 }
 

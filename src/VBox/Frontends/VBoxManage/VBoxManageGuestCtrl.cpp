@@ -569,11 +569,12 @@ static int handleCtrlExecProgram(ComPtr<IGuest> guest, HandlerArg *pArg)
                 break;
 
             case GETOPTDEF_EXEC_WAITFORSTDOUT:
-                fWaitForExit = true;
-                fWaitForStdOut = true;
+                fExecFlags |= ExecuteProcessFlag_WaitForStdOut;
+                fWaitForExit = fWaitForStdOut = true;
                 break;
 
             case GETOPTDEF_EXEC_WAITFORSTDERR:
+                fExecFlags |= ExecuteProcessFlag_WaitForStdErr;
                 fWaitForExit = (fOutputFlags |= ProcessOutputFlag_StdErr) ? true : false;
                 break;
 
@@ -662,6 +663,10 @@ static int handleCtrlExecProgram(ComPtr<IGuest> guest, HandlerArg *pArg)
         if (fCancelable)
             ctrlSignalHandlerInstall();
 
+        vrc = RTStrmSetMode(g_pStdOut, 1 /* Binary mode */, -1 /* Code set, unchanged */);
+        if (RT_FAILURE(vrc))
+            RTMsgError("Unable to set stdout's binary mode, rc=%Rrc\n", vrc);
+
         /* Wait for process to exit ... */
         BOOL fCompleted    = FALSE;
         BOOL fCanceled     = FALSE;
@@ -710,6 +715,10 @@ static int handleCtrlExecProgram(ComPtr<IGuest> guest, HandlerArg *pArg)
                     cbOutputData = aOutputData.size();
                     if (cbOutputData > 0)
                     {
+                        BYTE *pBuf = aOutputData.raw();
+                        AssertPtr(pBuf);
+                        pBuf[cbOutputData - 1] = 0; /* Properly terminate buffer. */
+
                         /** @todo r=bird: Use a VFS I/O stream filter for doing this, it's a
                         *        generic problem and the new VFS APIs will handle it more
                         *        transparently. (requires writing dos2unix/unix2dos filters ofc) */
@@ -720,21 +729,36 @@ static int handleCtrlExecProgram(ComPtr<IGuest> guest, HandlerArg *pArg)
                          * Unix style, as RTStrmWrite does the LF -> CR/LF replacement on
                          * Windows. Otherwise we end up with CR/CR/LF on Windows.
                          */
-                        ULONG cbOutputDataPrint = cbOutputData;
-                        for (BYTE *s = aOutputData.raw(), *d = s;
-                             s - aOutputData.raw() < (ssize_t)cbOutputData;
-                             s++, d++)
+
+                        char *pszBufUTF8;
+                        vrc = RTStrCurrentCPToUtf8(&pszBufUTF8, (const char*)aOutputData.raw());
+                        if (RT_SUCCESS(vrc))
                         {
-                            if (*s == '\r')
+                            cbOutputData = strlen(pszBufUTF8);
+
+                            ULONG cbOutputDataPrint = cbOutputData;
+                            for (char *s = pszBufUTF8, *d = s;
+                                 s - pszBufUTF8 < (ssize_t)cbOutputData;
+                                 s++, d++)
                             {
-                                /* skip over CR, adjust destination */
-                                d--;
-                                cbOutputDataPrint--;
+                                if (*s == '\r')
+                                {
+                                    /* skip over CR, adjust destination */
+                                    d--;
+                                    cbOutputDataPrint--;
+                                }
+                                else if (s != d)
+                                    *d = *s;
                             }
-                            else if (s != d)
-                                *d = *s;
+
+                            vrc = RTStrmWrite(g_pStdOut, pszBufUTF8, cbOutputDataPrint);
+                            if (RT_FAILURE(vrc))
+                                RTMsgError("Unable to write output, rc=%Rrc\n", vrc);
+
+                            RTStrFree(pszBufUTF8);
                         }
-                        RTStrmWrite(g_pStdOut, aOutputData.raw(), cbOutputDataPrint);
+                        else
+                            RTMsgError("Unable to convert output, rc=%Rrc\n", vrc);
                     }
                 }
             }
@@ -2239,7 +2263,7 @@ int handleGuestControl(HandlerArg *pArg)
 {
     AssertPtrReturn(pArg, VERR_INVALID_PARAMETER);
 
-#ifdef DEBUG_andy
+#ifdef DEBUG_andy_disabled
     if (RT_FAILURE(tstTranslatePath()))
         return RTEXITCODE_FAILURE;
 #endif
@@ -2289,7 +2313,7 @@ int handleGuestControl(HandlerArg *pArg)
             rcExit = errorSyntax(USAGE_GUESTCONTROL, "No sub command specified!");
 
         ctrlUninitVM(pArg);
-        return rcExit;
+        return RT_FAILURE(rcExit) ? RTEXITCODE_FAILURE : RTEXITCODE_SUCCESS;
     }
     return RTEXITCODE_FAILURE;
 }
