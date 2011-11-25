@@ -319,7 +319,6 @@ static GLboolean renderspuAtiQuirk_Needed()
     return GL_FALSE;
 }
 
-
 static void renderspuAtiQuirk_ChkApply()
 {
     static GLboolean fChecked = GL_FALSE;
@@ -332,6 +331,17 @@ static void renderspuAtiQuirk_ChkApply()
 
     crInfo("This is an ATI card, taking care of fullscreen..");
 
+    /*
+     * ATI WDDM-based graphics have an issue with rendering fullscreen.
+     * See public tickets #9775 & #9267 .
+     * Namely ATI drivers check whether ogl window is foreground and fullscreen
+     * and if so - do D3DKMTSetDisplayMode for ogl surface,
+     * which prevented any other data from being displayed, no matter what.
+     *
+     * Here we check whether we're using an ATI card and if so, patch the ogl ICD driver's IAT
+     * to replace GetForegroundWindow reference with our renderspuAtiQuirk_GetForegroundWindow,
+     * which always returns NULL.
+     */
     renderspuAtiQuirk_Apply();
 }
 
