@@ -317,6 +317,11 @@ uint32_t GuestProcessStream::GetOffset()
     return m_cbOffset;
 }
 
+uint32_t GuestProcessStream::GetSize()
+{
+    return m_cbSize;
+}
+
 /**
  * Tries to parse the next upcoming pair block within the internal
  * buffer.

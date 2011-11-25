@@ -125,6 +125,8 @@ HRESULT Guest::directoryCreateInternal(IN_BSTR aDirectory,
                                    ComSafeArrayAsInParam(args),
                                    ComSafeArrayAsInParam(env),
                                    aUsername, aPassword,
+                                   ExecuteProcessFlag_None,
+                                   NULL, NULL,
                                    NULL /* Progress */, NULL /* PID */);
     }
     catch (std::bad_alloc &)
@@ -300,6 +302,7 @@ int Guest::directoryGetNextEntry(uint32_t uHandle, GuestProcessStreamBlock &stre
     if (it != mGuestDirectoryMap.end())
     {
         return executeStreamGetNextBlock(it->second.mPID,
+                                         ProcessOutputFlag_None /* StdOut */,
                                          it->second.mStream, streamBlock);
     }
 
@@ -404,11 +407,14 @@ HRESULT Guest::directoryOpenInternal(IN_BSTR aDirectory, IN_BSTR aFilter,
         RTStrFree(pszDirectoryFinal);
 
         ULONG uPID;
-        /** @todo Don't wait for tool to finish! Might take a lot of time! */
+        /* We only start the directory listing and requesting stdout data but don't get its
+         * data here; this is done in sequential IGuest::DirectoryRead calls then. */
         hr = executeAndWaitForTool(Bstr(VBOXSERVICE_TOOL_LS).raw(), Bstr("Opening directory").raw(),
                                    ComSafeArrayAsInParam(args),
                                    ComSafeArrayAsInParam(env),
                                    aUsername, aPassword,
+                                   ExecuteProcessFlag_WaitForStdOut,
+                                   NULL, NULL,
                                    NULL /* Progress */, &uPID);
         if (SUCCEEDED(hr))
         {
@@ -476,40 +482,38 @@ HRESULT Guest::directoryQueryInfoInternal(IN_BSTR aDirectory,
          * Execute guest process.
          */
         ULONG uPID;
+        GuestCtrlStreamObjects stdOut;
         hr = executeAndWaitForTool(Bstr(VBOXSERVICE_TOOL_STAT).raw(), Bstr("Querying directory information").raw(),
                                    ComSafeArrayAsInParam(args),
                                    ComSafeArrayAsInParam(env),
                                    aUsername, aPassword,
+                                   ExecuteProcessFlag_WaitForStdOut,
+                                   &stdOut, NULL /* stdErr */,
                                    NULL /* Progress */, &uPID);
         if (SUCCEEDED(hr))
         {
-            GuestCtrlStreamObjects streamObjs;
-            hr = executeStreamParse(uPID, streamObjs);
-            if (SUCCEEDED(hr))
+            int rc = VINF_SUCCESS;
+
+            Assert(stdOut.size());
+            const char *pszFsType = stdOut[0].GetString("ftype");
+            if (!pszFsType) /* Attribute missing? */
+                 rc = VERR_NOT_FOUND;
+            if (   RT_SUCCESS(rc)
+                && strcmp(pszFsType, "d")) /* Directory? */
             {
-                int rc = VINF_SUCCESS;
-
-                Assert(streamObjs.size());
-                const char *pszFsType = streamObjs[0].GetString("ftype");
-                if (!pszFsType) /* Attribute missing? */
-                     rc = VERR_NOT_FOUND;
-                if (   RT_SUCCESS(rc)
-                    && strcmp(pszFsType, "d")) /* Directory? */
-                {
-                     rc = VERR_FILE_NOT_FOUND;
-                     /* This is not critical for Main, so don't set hr --
-                      * we will take care of rc then. */
-                }
-                if (   RT_SUCCESS(rc)
-                    && aObjInfo) /* Do we want object details? */
-                {
-                    hr = executeStreamQueryFsObjInfo(aDirectory, streamObjs[0],
-                                                     aObjInfo, enmAddAttribs);
-                }
-
-                if (pRC)
-                    *pRC = rc;
+                 rc = VERR_FILE_NOT_FOUND;
+                 /* This is not critical for Main, so don't set hr --
+                  * we will take care of rc then. */
             }
+            if (   RT_SUCCESS(rc)
+                && aObjInfo) /* Do we want object details? */
+            {
+                hr = executeStreamQueryFsObjInfo(aDirectory, stdOut[0],
+                                                 aObjInfo, enmAddAttribs);
+            }
+
+            if (pRC)
+                *pRC = rc;
         }
     }
     catch (std::bad_alloc &)
@@ -539,24 +543,27 @@ STDMETHODIMP Guest::DirectoryRead(ULONG aHandle, IGuestDirEntry **aDirEntry)
         int rc = directoryGetNextEntry(aHandle, streamBlock);
         if (RT_SUCCESS(rc))
         {
-            ComObjPtr <GuestDirEntry> pDirEntry;
-            hr = pDirEntry.createObject();
-            ComAssertComRC(hr);
-
-            Assert(streamBlock.GetCount());
-            hr = pDirEntry->init(this, streamBlock);
-            if (SUCCEEDED(hr))
+            if (streamBlock.GetCount())
             {
-                pDirEntry.queryInterfaceTo(aDirEntry);
+                ComObjPtr <GuestDirEntry> pDirEntry;
+                hr = pDirEntry.createObject();
+                ComAssertComRC(hr);
+
+                Assert(streamBlock.GetCount());
+                hr = pDirEntry->init(this, streamBlock);
+                if (SUCCEEDED(hr))
+                {
+                    pDirEntry.queryInterfaceTo(aDirEntry);
+                }
+                else
+                    hr = setError(VBOX_E_IPRT_ERROR,
+                                  Guest::tr("Failed to init guest directory entry"));
             }
             else
-                hr = setError(VBOX_E_IPRT_ERROR,
-                              Guest::tr("Failed to init guest directory entry"));
-        }
-        else if (rc == VERR_NO_DATA)
-        {
-            /* No more directory entries to read. That's fine. */
-            hr = E_ABORT; /** @todo Find/define a better rc! */
+            {
+                /* No more directory entries to read. That's fine. */
+                hr = E_ABORT; /** @todo Find/define a better rc! */
+            }
         }
         else
             hr = setError(VBOX_E_IPRT_ERROR,

@@ -8437,7 +8437,7 @@
 
   <enum
     name="ExecuteProcessFlag"
-    uuid="286ceb91-5f66-4c96-9845-4483e90e00ae"
+    uuid="1c49b831-b2c7-4a30-97dd-999a2e2cbf90"
     >
     <desc>
       Guest process execution flags.
@@ -8454,10 +8454,16 @@
       <desc>Do not report an error when executed processes are still alive when VBoxService or the guest OS is shutting down.</desc>
     </const>
     <const name="Hidden"                  value="4">
-      <desc>Don't show the started process according to the guest OS guidelines.</desc>
+      <desc>Do not show the started process according to the guest OS guidelines.</desc>
     </const>
     <const name="NoProfile"               value="8">
       <desc>Do not use the user's profile data when exeuting a process. Only available for Windows guests.</desc>
+    </const>
+    <const name="WaitForStdOut"           value="16">
+      <desc>The guest process waits until all data from stdout is read out.</desc>
+    </const>
+    <const name="WaitForStdErr"           value="32">
+      <desc>The guest process waits until all data from stderr is read out.</desc>
     </const>
   </enum>
 

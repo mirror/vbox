@@ -120,6 +120,8 @@ public:
 
     uint32_t GetOffset();
 
+    uint32_t GetSize();
+
     int ParseBlock(GuestProcessStreamBlock &streamBlock);
 
 protected:
