@@ -20,6 +20,7 @@
 # Some constants.
 #
 MY_CAT="kmk_cat"
+MY_CP="kmk_cp"
 MY_MKDIR="kmk_mkdir"
 MY_MV="kmk_mv"
 MY_SED="kmk_sed"
