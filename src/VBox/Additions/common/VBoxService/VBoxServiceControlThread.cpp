@@ -393,7 +393,7 @@ static int VBoxServiceControlThreadHandleOutputEvent(RTPOLLSET hPollSet, uint32_
     {
         char abBuf[_64K];
         size_t cbRead;
-        int rc = RTPipeRead(*phPipeR, abBuf, sizeof(abBuf), &cbRead);
+        rc = RTPipeRead(*phPipeR, abBuf, sizeof(abBuf), &cbRead);
         if (RT_SUCCESS(rc) && cbRead)
         {
 #ifdef DEBUG
@@ -433,107 +433,100 @@ static int VBoxServiceControlThreadHandleRequest(RTPOLLSET hPollSet, uint32_t fP
     AssertPtrReturn(phStdOutR, VERR_INVALID_POINTER);
     AssertPtrReturn(phStdErrR, VERR_INVALID_POINTER);
 
-    /*int rc = RTCritSectEnter(&pThread->CritSect);
-    if (RT_SUCCESS(rc))
-    {*/
-        /* Drain the notification pipe. */
-        uint8_t abBuf[8];
-        size_t cbIgnore;
-        rc = RTPipeRead(pThread->hNotificationPipeR, abBuf, sizeof(abBuf), &cbIgnore);
-        if (RT_FAILURE(rc))
-            VBoxServiceError("ControlThread: Draining IPC notification pipe failed with rc=%Rrc\n", rc);
+    /* Drain the notification pipe. */
+    uint8_t abBuf[8];
+    size_t cbIgnore;
+    int rc = RTPipeRead(pThread->hNotificationPipeR, abBuf, sizeof(abBuf), &cbIgnore);
+    if (RT_FAILURE(rc))
+        VBoxServiceError("ControlThread: Draining IPC notification pipe failed with rc=%Rrc\n", rc);
 
-        int rcReq = VINF_SUCCESS; /* Actual request result. */
+    int rcReq = VINF_SUCCESS; /* Actual request result. */
 
-        PVBOXSERVICECTRLREQUEST pRequest = pThread->pRequest;
-        AssertPtr(pRequest);
+    PVBOXSERVICECTRLREQUEST pRequest = pThread->pRequest;
+    AssertPtr(pRequest);
 
-        switch (pRequest->enmType)
+    switch (pRequest->enmType)
+    {
+        case VBOXSERVICECTRLREQUEST_QUIT: /* Main control asked us to quit. */
         {
-            case VBOXSERVICECTRLREQUEST_QUIT: /* Main control asked us to quit. */
-            {
-                /** @todo Check for some conditions to check to
-                 *        veto quitting. */
-                pThread->fShutdown = true;
-                rcReq = VINF_SUCCESS;
-                break;
-            }
-
-            case VBOXSERVICECTRLREQUEST_STDIN_WRITE:
-                /* Fall through is intentional. */
-            case VBOXSERVICECTRLREQUEST_STDIN_WRITE_EOF:
-            {
-                AssertPtrReturn(pRequest->pvData, VERR_INVALID_POINTER);
-                AssertReturn(pRequest->cbData, VERR_INVALID_PARAMETER);
-
-                size_t cbWritten = 0;
-                if (*phStdInW != NIL_RTPIPE)
-                {
-                    rcReq = RTPipeWrite(*phStdInW,
-                                        pRequest->pvData, pRequest->cbData, &cbWritten);
-                }
-                else
-                    rcReq = VINF_EOF;
-
-                /* If this is the last write we need to close the stdin pipe on our
-                 * end and remove it from the poll set. */
-                if (VBOXSERVICECTRLREQUEST_STDIN_WRITE_EOF == pRequest->enmType)
-                    rc = VBoxServiceControlThreadCloseStdIn(hPollSet, phStdInW);
-
-                /* Reqport back actual data written (if any). */
-                pRequest->cbData = cbWritten;
-                break;
-            }
-
-            case VBOXSERVICECTRLREQUEST_STDOUT_READ:
-                /* Fall through is intentional. */
-            case VBOXSERVICECTRLREQUEST_STDERR_READ:
-            {
-                AssertPtrReturn(pRequest->pvData, VERR_INVALID_POINTER);
-                AssertReturn(pRequest->cbData, VERR_INVALID_PARAMETER);
-
-                PRTPIPE pPipeR = pRequest->enmType == VBOXSERVICECTRLREQUEST_STDERR_READ
-                               ? phStdErrR : phStdOutR;
-                AssertPtr(pPipeR);
-
-                size_t cbRead = 0;
-                if (*pPipeR != NIL_RTPIPE)
-                {
-                    rcReq = RTPipeRead(*pPipeR,
-                                       pRequest->pvData, pRequest->cbData, &cbRead);
-                    if (rcReq == VERR_BROKEN_PIPE)
-                        rcReq = VINF_EOF;
-                }
-                else
-                    rcReq = VINF_EOF;
-
-                /* Report back actual data read (if any). */
-                pRequest->cbData = cbRead;
-                break;
-            }
-
-            default:
-                rcReq = VERR_NOT_IMPLEMENTED;
-                break;
+            /** @todo Check for some conditions to check to
+             *        veto quitting. */
+            pThread->fShutdown = true;
+            rcReq = VINF_SUCCESS;
+            break;
         }
 
-        /* Assign overall result. */
-        pRequest->rc = RT_SUCCESS(rc)
-                     ? rcReq : rc;
+        case VBOXSERVICECTRLREQUEST_STDIN_WRITE:
+            /* Fall through is intentional. */
+        case VBOXSERVICECTRLREQUEST_STDIN_WRITE_EOF:
+        {
+            AssertPtrReturn(pRequest->pvData, VERR_INVALID_POINTER);
+            AssertReturn(pRequest->cbData, VERR_INVALID_PARAMETER);
 
-        VBoxServiceVerbose(2, "ControlThread: [PID %u]: Handled req=%u, CID=%u, rcReq=%Rrc, cbData=%u\n",
-                           pThread->uPID, pRequest->enmType, pRequest->uCID, rcReq, pRequest->cbData);
+            size_t cbWritten = 0;
+            if (*phStdInW != NIL_RTPIPE)
+            {
+                rcReq = RTPipeWrite(*phStdInW,
+                                    pRequest->pvData, pRequest->cbData, &cbWritten);
+            }
+            else
+                rcReq = VINF_EOF;
 
-        /* In any case, regardless of the result, we notify
-         * the main guest control to unblock it. */
-        int rc2 = RTSemEventMultiSignal(pThread->RequestEvent);
-        AssertRC(rc2);
-        /* No access to pRequest here anymore -- could be out of scope
-         * or modified already! */
+            /* If this is the last write we need to close the stdin pipe on our
+             * end and remove it from the poll set. */
+            if (VBOXSERVICECTRLREQUEST_STDIN_WRITE_EOF == pRequest->enmType)
+                rc = VBoxServiceControlThreadCloseStdIn(hPollSet, phStdInW);
 
-        /*rc2 = RTCritSectLeave(&pThread->CritSect);
-        AssertRC(rc2);
-    }*/
+            /* Reqport back actual data written (if any). */
+            pRequest->cbData = cbWritten;
+            break;
+        }
+
+        case VBOXSERVICECTRLREQUEST_STDOUT_READ:
+            /* Fall through is intentional. */
+        case VBOXSERVICECTRLREQUEST_STDERR_READ:
+        {
+            AssertPtrReturn(pRequest->pvData, VERR_INVALID_POINTER);
+            AssertReturn(pRequest->cbData, VERR_INVALID_PARAMETER);
+
+            PRTPIPE pPipeR = pRequest->enmType == VBOXSERVICECTRLREQUEST_STDERR_READ
+                           ? phStdErrR : phStdOutR;
+            AssertPtr(pPipeR);
+
+            size_t cbRead = 0;
+            if (*pPipeR != NIL_RTPIPE)
+            {
+                rcReq = RTPipeRead(*pPipeR,
+                                   pRequest->pvData, pRequest->cbData, &cbRead);
+                if (rcReq == VERR_BROKEN_PIPE)
+                    rcReq = VINF_EOF;
+            }
+            else
+                rcReq = VINF_EOF;
+
+            /* Report back actual data read (if any). */
+            pRequest->cbData = cbRead;
+            break;
+        }
+
+        default:
+            rcReq = VERR_NOT_IMPLEMENTED;
+            break;
+    }
+
+    /* Assign overall result. */
+    pRequest->rc = RT_SUCCESS(rc)
+                 ? rcReq : rc;
+
+    VBoxServiceVerbose(2, "ControlThread: [PID %u]: Handled req=%u, CID=%u, rcReq=%Rrc, cbData=%u\n",
+                       pThread->uPID, pRequest->enmType, pRequest->uCID, rcReq, pRequest->cbData);
+
+    /* In any case, regardless of the result, we notify
+     * the main guest control to unblock it. */
+    int rc2 = RTSemEventMultiSignal(pThread->RequestEvent);
+    AssertRC(rc2);
+    /* No access to pRequest here anymore -- could be out of scope
+     * or modified already! */
 
     return rc;
 }
