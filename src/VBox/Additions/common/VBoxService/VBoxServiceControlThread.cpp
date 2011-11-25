@@ -44,8 +44,7 @@ using namespace guestControl;
 static int vboxServiceControlThreadFree(PVBOXSERVICECTRLTHREAD pThread);
 
 /**
- *  Allocates and gives back a thread data struct which then can be used by the worker thread.
- *  Needs to be freed with VBoxServiceControlExecDestroyThreadData().
+ * Initialies the passed in thread data structure with the parameters given.
  *
  * @return  IPRT status code.
  * @param   pThread                     The thread's handle to allocate the data for.
@@ -62,12 +61,12 @@ static int vboxServiceControlThreadFree(PVBOXSERVICECTRLTHREAD pThread);
  * @param   pszPassword                 Password of specified user name (account).
  * @param   uTimeLimitMS                Time limit (in ms) of the process' life time.
  */
-int VBoxServiceControlExecThreadAlloc(PVBOXSERVICECTRLTHREAD pThread,
-                                      uint32_t u32ContextID,
-                                      const char *pszCmd, uint32_t uFlags,
-                                      const char *pszArgs, uint32_t uNumArgs,
-                                      const char *pszEnv, uint32_t cbEnv, uint32_t uNumEnvVars,
-                                      const char *pszUser, const char *pszPassword, uint32_t uTimeLimitMS)
+static int gstsvcCntlExecThreadInit(PVBOXSERVICECTRLTHREAD pThread,
+                                    uint32_t u32ContextID,
+                                    const char *pszCmd, uint32_t uFlags,
+                                    const char *pszArgs, uint32_t uNumArgs,
+                                    const char *pszEnv, uint32_t cbEnv, uint32_t uNumEnvVars,
+                                    const char *pszUser, const char *pszPassword, uint32_t uTimeLimitMS)
 {
     AssertPtr(pThread);
 
@@ -391,7 +390,12 @@ static int VBoxServiceControlThreadHandleOutputEvent(RTPOLLSET hPollSet, uint32_
     int rc = VINF_SUCCESS;
     if (fPollEvt == RTPOLL_EVT_READ)
     {
-        char abBuf[_64K];
+        /** @todo r=bird: Drop this in favor of using /dev/null
+         * (RTFileOpenBitBucket) instead of pipes. That'll simplify the code,
+         * speed stuff up, avoid trouble is RTPoll is buggy and be
+         * compatible with future wait-for-writeable-stderr/out host
+         * notifications. */
+        char   abBuf[_64K];
         size_t cbRead;
         rc = RTPipeRead(*phPipeR, abBuf, sizeof(abBuf), &cbRead);
         if (RT_SUCCESS(rc) && cbRead)
@@ -443,7 +447,7 @@ static int VBoxServiceControlThreadHandleRequest(RTPOLLSET hPollSet, uint32_t fP
     int rcReq = VINF_SUCCESS; /* Actual request result. */
 
     PVBOXSERVICECTRLREQUEST pRequest = pThread->pRequest;
-    AssertPtr(pRequest);
+    AssertPtr(pRequest); /** @todo r=bird: Print error and return if invalid pointer! */
 
     switch (pRequest->enmType)
     {
@@ -457,7 +461,6 @@ static int VBoxServiceControlThreadHandleRequest(RTPOLLSET hPollSet, uint32_t fP
         }
 
         case VBOXSERVICECTRLREQUEST_STDIN_WRITE:
-            /* Fall through is intentional. */
         case VBOXSERVICECTRLREQUEST_STDIN_WRITE_EOF:
         {
             AssertPtrReturn(pRequest->pvData, VERR_INVALID_POINTER);
@@ -483,7 +486,6 @@ static int VBoxServiceControlThreadHandleRequest(RTPOLLSET hPollSet, uint32_t fP
         }
 
         case VBOXSERVICECTRLREQUEST_STDOUT_READ:
-            /* Fall through is intentional. */
         case VBOXSERVICECTRLREQUEST_STDERR_READ:
         {
             AssertPtrReturn(pRequest->pvData, VERR_INVALID_POINTER);
@@ -863,6 +865,10 @@ static int vboxServiceControlThreadInitPipe(PRTHANDLE ph, PRTPIPE phPipe)
  *                              Always set.
  * @param   phPipe              Where to return the end of the pipe that we
  *                              should service.  Always set.
+ *
+ * @todo r=bird: Open the bitbucket like txsDoExecHlpRedir does when the host
+ *       isn't interested in the guest output.  This is easier to handle
+ *       elsewhere.
  */
 static int VBoxServiceControlThreadSetupPipe(int fd, PRTHANDLE ph, PRTHANDLE *pph, PRTPIPE phPipe)
 {
@@ -1140,12 +1146,12 @@ static int VBoxServiceControlThreadCreateProcess(const char *pszExec, const char
 }
 
 /**
- * The actual worker routine (lopp) for a started guest process.
+ * The actual worker routine (loop) for a started guest process.
  *
  * @return  IPRT status code.
  * @param   PVBOXSERVICECTRLTHREAD         Thread data associated with a started process.
  */
-static DECLCALLBACK(int) VBoxServiceControlThreadProcessWorker(PVBOXSERVICECTRLTHREAD pThread)
+static int VBoxServiceControlThreadProcessWorker(PVBOXSERVICECTRLTHREAD pThread)
 {
     AssertPtrReturn(pThread, VERR_INVALID_POINTER);
     VBoxServiceVerbose(3, "ControlThread: Thread of process \"%s\" started\n", pThread->pszCmd);
@@ -1428,23 +1434,20 @@ int VBoxServiceControlThreadStart(uint32_t uClientID, uint32_t uContextID,
     if (!pThread)
         return VERR_NO_MEMORY;
 
-    int rc = VBoxServiceControlExecThreadAlloc(pThread,
-                                               uContextID,
-                                               pszCmd, uFlags,
-                                               pszArgs, uNumArgs,
-                                               pszEnv, cbEnv, uNumEnvVars,
-                                               pszUser, pszPassword,
-                                               uTimeLimitMS);
+    int rc = gstsvcCntlExecThreadInit(pThread,
+                                      uContextID,
+                                      pszCmd, uFlags,
+                                      pszArgs, uNumArgs,
+                                      pszEnv, cbEnv, uNumEnvVars,
+                                      pszUser, pszPassword,
+                                      uTimeLimitMS);
     if (RT_SUCCESS(rc))
     {
-        static uint32_t uCtrlExecThread = 0;
-        char szThreadName[32];
-        if (!RTStrPrintf(szThreadName, sizeof(szThreadName), "controlexec%ld", uCtrlExecThread++))
-            AssertMsgFailed(("Unable to create unique control exec thread name!\n"));
+        static uint32_t s_uCtrlExecThread = 0;
 
-        rc = RTThreadCreate(&pThread->Thread, VBoxServiceControlThread,
-                            (void *)(PVBOXSERVICECTRLTHREAD*)pThread, 0,
-                            RTTHREADTYPE_DEFAULT, RTTHREADFLAGS_WAITABLE, szThreadName);
+        rc = RTThreadCreateF(&pThread->Thread, VBoxServiceControlThread,
+                             pThread /*pvUser*/, 0 /*cbStack*/,
+                             RTTHREADTYPE_DEFAULT, RTTHREADFLAGS_WAITABLE, "controlexec%u", s_uCtrlExecThread++);
         if (RT_FAILURE(rc))
         {
             VBoxServiceError("ControlThread: RTThreadCreate failed, rc=%Rrc\n, pThread=%p\n",
@@ -1493,7 +1496,7 @@ int VBoxServiceControlThreadPerform(uint32_t uPID, PVBOXSERVICECTRLREQUEST pRequ
     /* Rest in pRequest is optional (based on the request type). */
 
     int rc = VINF_SUCCESS;
-    const PVBOXSERVICECTRLTHREAD pThread = VBoxServiceControlGetThreadLocked(uPID);
+    PVBOXSERVICECTRLTHREAD pThread = VBoxServiceControlGetThreadLocked(uPID);
     if (pThread)
     {
         /* Set request result to some defined state in case

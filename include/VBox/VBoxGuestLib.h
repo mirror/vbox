@@ -548,15 +548,15 @@ VBGLR3DECL(int)     VbglR3GuestCtrlConnect(uint32_t *pu32ClientId);
 VBGLR3DECL(int)     VbglR3GuestCtrlDisconnect(uint32_t u32ClientId);
 VBGLR3DECL(int)     VbglR3GuestCtrlWaitForHostMsg(uint32_t u32ClientId, uint32_t *puMsg, uint32_t *puNumParms);
 VBGLR3DECL(int)     VbglR3GuestCtrlCancelPendingWaits(uint32_t u32ClientId);
-VBGLR3DECL(int)     VbglR3GuestCtrlExecGetHostCmd(uint32_t  u32ClientId,    uint32_t  uNumParms,
-                                                  uint32_t *puContext,
-                                                  char     *pszCmd,         uint32_t  cbCmd,
-                                                  uint32_t *puFlags,
-                                                  char     *pszArgs,        uint32_t  cbArgs,   uint32_t *puNumArgs,
-                                                  char     *pszEnv,         uint32_t *pcbEnv,   uint32_t *puNumEnvVars,
-                                                  char     *pszUser,        uint32_t  cbUser,
-                                                  char     *pszPassword,    uint32_t  cbPassword,
-                                                  uint32_t *puTimeLimit);
+VBGLR3DECL(int)     VbglR3GuestCtrlExecGetHostCmdExec(uint32_t  u32ClientId,    uint32_t  cParms,
+                                                      uint32_t *puContext,
+                                                      char     *pszCmd,         uint32_t  cbCmd,
+                                                      uint32_t *puFlags,
+                                                      char     *pszArgs,        uint32_t  cbArgs,   uint32_t *puNumArgs,
+                                                      char     *pszEnv,         uint32_t *pcbEnv,   uint32_t *puNumEnvVars,
+                                                      char     *pszUser,        uint32_t  cbUser,
+                                                      char     *pszPassword,    uint32_t  cbPassword,
+                                                      uint32_t *puTimeLimit);
 VBGLR3DECL(int)     VbglR3GuestCtrlExecGetHostCmdInput(uint32_t  u32ClientId,    uint32_t   uNumParms,
                                                        uint32_t *puContext,      uint32_t  *puPID,
                                                        uint32_t *puFlags,        void      *pvData,
