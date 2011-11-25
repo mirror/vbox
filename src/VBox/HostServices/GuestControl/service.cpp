@@ -519,8 +519,8 @@ int Service::clientDisconnect(uint32_t u32ClientID, void *pvClient)
             itCall++;
     }
 
-    ClientContextsListIter itContext = mClientContextsList.begin();
-    while (   itContext != mClientContextsList.end()
+    ClientContextsListIter itContextList = mClientContextsList.begin();
+    while (   itContextList != mClientContextsList.end()
            && RT_SUCCESS(rc))
     {
         /*
@@ -528,11 +528,11 @@ int Service::clientDisconnect(uint32_t u32ClientID, void *pvClient)
          * or for all items in case there is no waiting client around
          * anymore.
          */
-        if (   itContext->mClientID == u32ClientID
+        if (   itContextList->mClientID == u32ClientID
             || fAllClientsDisconnected)
         {
-            std::list< uint32_t >::iterator itContext = itContext->mContextList.begin();
-            while (itContext != itContext->mContextList.end())
+            std::list< uint32_t >::iterator itContext = itContextList->mContextList.begin();
+            while (itContext != itContextList->mContextList.end())
             {
                 uint32_t uContextID = (*itContext);
 
@@ -551,10 +551,10 @@ int Service::clientDisconnect(uint32_t u32ClientID, void *pvClient)
 
                 itContext++;
             }
-            itContext = mClientContextsList.erase(itContext);
+            itContextList = mClientContextsList.erase(itContextList);
         }
         else
-            itContext++;
+            itContextList++;
     }
 
     if (fAllClientsDisconnected)
