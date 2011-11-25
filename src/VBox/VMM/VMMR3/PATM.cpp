@@ -5637,7 +5637,7 @@ int patmR3RefreshPatch(PVM pVM, PPATMPATCHREC pPatchRec)
         bool fInserted = RTAvloU32Insert(&pVM->patm.s.PatchLookupTreeHC->PatchTree, &pNewPatchRec->Core);
         Assert(fInserted); NOREF(fInserted);
 
-        LogRel(("PATM: patmR3RefreshPatch: succeeded to refresh patch at %RRv \n", pInstrGC));
+        Log(("PATM: patmR3RefreshPatch: succeeded to refresh patch at %RRv \n", pInstrGC));
         STAM_COUNTER_INC(&pVM->patm.s.StatPatchRefreshSuccess);
 
         /* Used by another patch, so don't remove it! */
