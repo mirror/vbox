@@ -233,6 +233,7 @@ static int VBoxNetAdpLinuxOpen(struct inode *pInode, struct file *pFilp)
 {
     Log(("VBoxNetAdpLinuxOpen: pid=%d/%d %s\n", RTProcSelf(), current->pid, current->comm));
 
+#ifdef VBOX_WITH_HARDENING
     /*
      * Only root is allowed to access the device, enforce it!
      */
@@ -241,6 +242,7 @@ static int VBoxNetAdpLinuxOpen(struct inode *pInode, struct file *pFilp)
         Log(("VBoxNetAdpLinuxOpen: admin privileges required!\n"));
         return -EPERM;
     }
+#endif
 
     return 0;
 }
