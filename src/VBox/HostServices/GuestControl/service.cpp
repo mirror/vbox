@@ -519,8 +519,8 @@ int Service::clientDisconnect(uint32_t u32ClientID, void *pvClient)
             itCall++;
     }
 
-    ClientContextsListIter it = mClientContextsList.begin();
-    while (   it != mClientContextsList.end()
+    ClientContextsListIter itContext = mClientContextsList.begin();
+    while (   itContext != mClientContextsList.end()
            && RT_SUCCESS(rc))
     {
         /*
@@ -528,11 +528,11 @@ int Service::clientDisconnect(uint32_t u32ClientID, void *pvClient)
          * or for all items in case there is no waiting client around
          * anymore.
          */
-        if (   it->mClientID == u32ClientID
+        if (   itContext->mClientID == u32ClientID
             || fAllClientsDisconnected)
         {
-            std::list< uint32_t >::iterator itContext = it->mContextList.begin();
-            while (itContext != it->mContextList.end())
+            std::list< uint32_t >::iterator itContext = itContext->mContextList.begin();
+            while (itContext != itContext->mContextList.end())
             {
                 uint32_t uContextID = (*itContext);
 
@@ -551,10 +551,10 @@ int Service::clientDisconnect(uint32_t u32ClientID, void *pvClient)
 
                 itContext++;
             }
-            it = mClientContextsList.erase(it);
+            itContext = mClientContextsList.erase(itContext);
         }
         else
-            it++;
+            itContext++;
     }
 
     if (fAllClientsDisconnected)
@@ -564,18 +564,18 @@ int Service::clientDisconnect(uint32_t u32ClientID, void *pvClient)
          * host commands need to be notified, because Main is waiting a notification
          * via a (multi stage) progress object.
          */
-        HostCmdListIter it;
-        for (it = mHostCmds.begin(); it != mHostCmds.end(); it++)
+        HostCmdListIter itHostCmd;
+        for (itHostCmd = mHostCmds.begin(); itHostCmd != mHostCmds.end(); itHostCmd++)
         {
-            rc = cancelHostCmd(it->mContextID);
+            rc = cancelHostCmd(itHostCmd->mContextID);
             if (RT_FAILURE(rc))
             {
                 LogFlowFunc(("Cancelling of buffered CID=%u failed with rc=%Rrc\n",
-                             it->mContextID, rc));
+                             itHostCmd->mContextID, rc));
                 /* Keep going. */
             }
 
-            paramBufferFree(&it->mParmBuf);
+            paramBufferFree(&itHostCmd->mParmBuf);
         }
 
         mHostCmds.clear();
