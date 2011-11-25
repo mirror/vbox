@@ -39,6 +39,7 @@ check_udev_rule_generation() {
 
 udev_59_rules=`cat <<'UDEV_END'
 KERNEL=="vboxdrv", NAME="vboxdrv", OWNER="root", GROUP="vboxusers", MODE="0660"
+KERNEL=="vboxnetctl", NAME="vboxnetctl", OWNER="root", GROUP="vboxusers", MODE="0660"
 SUBSYSTEM=="usb_device", ACTION=="add", RUN+="/opt/VirtualBox/VBoxCreateUSBNode.sh $major $minor $attr{bDeviceClass}"
 SUBSYSTEM=="usb", ACTION=="add", ENV{DEVTYPE}=="usb_device", RUN+="/opt/VirtualBox/VBoxCreateUSBNode.sh $major $minor $attr{bDeviceClass}"
 SUBSYSTEM=="usb_device", ACTION=="remove", RUN+="/opt/VirtualBox/VBoxCreateUSBNode.sh --remove $major $minor"
@@ -52,6 +53,7 @@ check_udev_rule_generation OUTPUT "$install_udev_output" \
 
 udev_55_rules=`cat <<'UDEV_END'
 KERNEL=="vboxdrv", NAME="vboxdrv", OWNER="root", GROUP="vboxusers", MODE="0660"
+KERNEL=="vboxnetctl", NAME="vboxnetctl", OWNER="root", GROUP="vboxusers", MODE="0660"
 UDEV_END`
 
 install_udev_output="`generate_udev_rule vboxusers 0660 /opt/VirtualBox "" "" "v 0055"`"
@@ -61,6 +63,7 @@ check_udev_rule_generation OUTPUT "$install_udev_output" \
 
 udev_54_rules=`cat <<'UDEV_END'
 KERNEL="vboxdrv", NAME="vboxdrv", OWNER="root", GROUP="root", MODE="0600"
+KERNEL="vboxnetctl", NAME="vboxnetctl", OWNER="root", GROUP="root", MODE="0600"
 UDEV_END`
 
 install_udev_output="`generate_udev_rule root 0600 /usr/lib/virtualbox "" "" 54`"
