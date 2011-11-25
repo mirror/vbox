@@ -4130,6 +4130,7 @@ static DECLCALLBACK(void) vgaInfoState(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, c
         pHlp->pfnPrintf(pHlp, "vfreq: %d Hz, hfreq: %d.%03d kHz\n",
                         vfreq_hz, hfreq_hz / 1000, hfreq_hz % 1000);
     }
+    pHlp->pfnPrintf(pHlp, "display refresh interval: %u ms\n", s->cMilliesRefreshInterval);
 }
 
 
