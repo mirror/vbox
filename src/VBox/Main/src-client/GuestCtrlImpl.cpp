@@ -1168,11 +1168,11 @@ HRESULT Guest::executeAndWaitForTool(IN_BSTR aTool, IN_BSTR aDescription,
         {
             BOOL fCanceled;
             rc = progressTool->COMGETTER(Canceled)(&fCanceled);
-            ComAssertRC(rc);
+            AssertComRC(rc);
             if (fCanceled)
             {
-                rc = setError(VBOX_E_IPRT_ERROR,
-                              tr("%s was cancelled"), Utf8Str(aDescription));
+                rc = setErrorNoLog(VBOX_E_IPRT_ERROR,
+                                   tr("%s was cancelled"), Utf8Str(aDescription).c_str());
                 break;
             }
 
