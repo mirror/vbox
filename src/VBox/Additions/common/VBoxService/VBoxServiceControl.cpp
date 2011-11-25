@@ -54,7 +54,7 @@ static RTCRITSECT           g_GuestControlThreadsCritSect;
 /*******************************************************************************
 *   Internal Functions                                                         *
 *******************************************************************************/
-/** @todo Shorten "VBoxServiceControl" to "vbgsvcCntl". */
+/** @todo Shorten "VBoxServiceControl" to "gstsvcCntl". */
 static int VBoxServiceControlStartAllowed(bool *pbAllowed);
 static int VBoxServiceControlHandleCmdStartProc(uint32_t u32ClientId, uint32_t uNumParms);
 static int VBoxServiceControlHandleCmdSetInput(uint32_t u32ClientId, uint32_t uNumParms, size_t cbMaxBufSize);
@@ -813,19 +813,23 @@ int VBoxServiceControlAssignPID(PVBOXSERVICECTRLTHREAD pThread, uint32_t uPID)
         /* Search old threads using the desired PID and shut them down completely -- it's
          * not used anymore. */
         PVBOXSERVICECTRLTHREAD pThreadCur;
-        RTListForEach(&g_GuestControlThreads, pThreadCur, VBOXSERVICECTRLTHREAD, Node)
+        bool fTryAgain = false;
+        do
         {
-            if (   pThreadCur->uPID == uPID
-                && pThreadCur       != pThread)
+            RTListForEach(&g_GuestControlThreads, pThreadCur, VBOXSERVICECTRLTHREAD, Node)
             {
-                VBoxServiceVerbose(2, "ControlThread: PID %u was used before, shutting down stale exec thread ...\n",
-                                   uPID);
-                rc = VBoxServiceControlThreadSignalShutdown(pThreadCur);
-                if (RT_SUCCESS(rc))
-                    rc = VBoxServiceControlThreadWaitForShutdown(pThreadCur,
-                                                                 30 * 1000 /* Wait 30 seconds max. */);
+                if (pThreadCur->uPID == uPID)
+                {
+                    Assert(pThreadCur != pThread); /* can't happen */
+                    uint32_t uTriedPID = uPID;
+                    uPID += 391939;
+                    VBoxServiceVerbose(2, "ControlThread: PID %u was used before, trying again with %u ...\n",
+                                       uTriedPID, uPID);
+                    fTryAgain = true;
+                    break;
+                }
             }
-        }
+        } while (fTryAgain);
 
         /* Assign PID to current thread. */
         pThread->uPID = uPID;
