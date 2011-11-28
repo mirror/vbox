@@ -452,8 +452,112 @@ static int ctrlInitVM(HandlerArg *pArg, const char *pszNameOrId, ComPtr<IGuest> 
     return SUCCEEDED(rc) ? VINF_SUCCESS : VERR_GENERAL_FAILURE;
 }
 
+/**
+ * Prints the desired guest output to a stream.
+ *
+ * @return  IPRT status code.
+ * @param   pGuest          Pointer to IGuest interface.
+ * @param   uPID            PID of guest process to get the output from.
+ * @param   fOutputFlags    Output flags of type ProcessOutputFlag.
+ * @param   cMsTimeout      Timeout value (in ms) to wait for output.
+ */
+static int ctrlExecPrintOutput(IGuest *pGuest, ULONG uPID,
+                               PRTSTREAM pStrmOutput, uint32_t fOutputFlags,
+                               uint32_t cMsTimeout)
+{
+    AssertPtrReturn(pGuest, VERR_INVALID_POINTER);
+    AssertReturn(uPID, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pStrmOutput, VERR_INVALID_POINTER);
+
+    SafeArray<BYTE> aOutputData;
+    ULONG cbOutputData = 0;
+
+    int vrc = VINF_SUCCESS;
+    HRESULT rc = pGuest->GetProcessOutput(uPID, fOutputFlags,
+                                          cMsTimeout,
+                                          _64K, ComSafeArrayAsOutParam(aOutputData));
+    if (FAILED(rc))
+    {
+        vrc = ctrlPrintError(pGuest, COM_IIDOF(IGuest));
+        cbOutputData = 0;
+    }
+    else
+    {
+        cbOutputData = aOutputData.size();
+        if (cbOutputData > 0)
+        {
+            BYTE *pBuf = aOutputData.raw();
+            AssertPtr(pBuf);
+            pBuf[cbOutputData - 1] = 0; /* Properly terminate buffer. */
+
+            /** @todo r=bird: Use a VFS I/O stream filter for doing this, it's a
+            *        generic problem and the new VFS APIs will handle it more
+            *        transparently. (requires writing dos2unix/unix2dos filters ofc) */
+
+            /*
+             * If aOutputData is text data from the guest process' stdout or stderr,
+             * it has a platform dependent line ending. So standardize on
+             * Unix style, as RTStrmWrite does the LF -> CR/LF replacement on
+             * Windows. Otherwise we end up with CR/CR/LF on Windows.
+             */
+
+            char *pszBufUTF8;
+            vrc = RTStrCurrentCPToUtf8(&pszBufUTF8, (const char*)aOutputData.raw());
+            if (RT_SUCCESS(vrc))
+            {
+                cbOutputData = strlen(pszBufUTF8);
+
+                ULONG cbOutputDataPrint = cbOutputData;
+                for (char *s = pszBufUTF8, *d = s;
+                     s - pszBufUTF8 < (ssize_t)cbOutputData;
+                     s++, d++)
+                {
+                    if (*s == '\r')
+                    {
+                        /* skip over CR, adjust destination */
+                        d--;
+                        cbOutputDataPrint--;
+                    }
+                    else if (s != d)
+                        *d = *s;
+                }
+
+                vrc = RTStrmWrite(pStrmOutput, pszBufUTF8, cbOutputDataPrint);
+                if (RT_FAILURE(vrc))
+                    RTMsgError("Unable to write output, rc=%Rrc\n", vrc);
+
+                RTStrFree(pszBufUTF8);
+            }
+            else
+                RTMsgError("Unable to convert output, rc=%Rrc\n", vrc);
+        }
+    }
+
+    return vrc;
+}
+
+/**
+ * Returns the remaining time (in ms) based on the start time and a set
+ * timeout value. Returns RT_INDEFINITE_WAIT if no timeout was specified.
+ *
+ * @return  RTMSINTERVAL    Time left (in ms).
+ * @param   u64StartMs      Start time (in ms).
+ * @param   u32TimeoutMs    Timeout value (in ms).
+ */
+inline RTMSINTERVAL ctrlExecGetRemainingTime(uint64_t u64StartMs, uint32_t u32TimeoutMs)
+{
+    if (!u32TimeoutMs) /* If no timeout specified, wait forever. */
+        return RT_INDEFINITE_WAIT;
+
+    uint64_t u64ElapsedMs = RTTimeMilliTS() - u64StartMs;
+    if (u64ElapsedMs >= u32TimeoutMs)
+        return 0;
+
+    return u32TimeoutMs - u64ElapsedMs;
+}
+
 /* <Missing docuemntation> */
-static int handleCtrlExecProgram(ComPtr<IGuest> guest, HandlerArg *pArg)
+static int handleCtrlExecProgram(ComPtr<IGuest> pGuest, HandlerArg *pArg)
 {
     AssertPtrReturn(pArg, VERR_INVALID_PARAMETER);
 
@@ -487,8 +591,7 @@ static int handleCtrlExecProgram(ComPtr<IGuest> guest, HandlerArg *pArg)
     RTGetOptInit(&GetState, pArg->argc, pArg->argv, s_aOptions, RT_ELEMENTS(s_aOptions), 0, 0);
 
     Utf8Str                 Utf8Cmd;
-    uint32_t                fExecFlags = ExecuteProcessFlag_None;
-    uint32_t                fOutputFlags = ProcessOutputFlag_None;
+    uint32_t                fExecFlags      = ExecuteProcessFlag_None;
     com::SafeArray<IN_BSTR> args;
     com::SafeArray<IN_BSTR> env;
     Utf8Str                 Utf8UserName;
@@ -497,7 +600,6 @@ static int handleCtrlExecProgram(ComPtr<IGuest> guest, HandlerArg *pArg)
     OUTPUTTYPE              eOutputType     = OUTPUTTYPE_UNDEFINED;
     bool                    fOutputBinary   = false;
     bool                    fWaitForExit    = false;
-    bool                    fWaitForStdOut  = false;
     bool                    fVerbose        = false;
 
     int                     vrc             = VINF_SUCCESS;
@@ -570,12 +672,12 @@ static int handleCtrlExecProgram(ComPtr<IGuest> guest, HandlerArg *pArg)
 
             case GETOPTDEF_EXEC_WAITFORSTDOUT:
                 fExecFlags |= ExecuteProcessFlag_WaitForStdOut;
-                fWaitForExit = fWaitForStdOut = true;
+                fWaitForExit = true;
                 break;
 
             case GETOPTDEF_EXEC_WAITFORSTDERR:
                 fExecFlags |= ExecuteProcessFlag_WaitForStdErr;
-                fWaitForExit = (fOutputFlags |= ProcessOutputFlag_StdErr) ? true : false;
+                fWaitForExit = true;
                 break;
 
             case VINF_GETOPT_NOT_OPTION:
@@ -621,7 +723,7 @@ static int handleCtrlExecProgram(ComPtr<IGuest> guest, HandlerArg *pArg)
     int rcProc = RTEXITCODE_FAILURE;
     ComPtr<IProgress> progress;
     ULONG uPID = 0;
-    rc = guest->ExecuteProcess(Bstr(Utf8Cmd).raw(),
+    rc = pGuest->ExecuteProcess(Bstr(Utf8Cmd).raw(),
                                fExecFlags,
                                ComSafeArrayAsInParam(args),
                                ComSafeArrayAsInParam(env),
@@ -631,7 +733,7 @@ static int handleCtrlExecProgram(ComPtr<IGuest> guest, HandlerArg *pArg)
                                &uPID,
                                progress.asOutParam());
     if (FAILED(rc))
-        return ctrlPrintError(guest, COM_IIDOF(IGuest));
+        return ctrlPrintError(pGuest, COM_IIDOF(IGuest));
 
     if (fVerbose)
         RTPrintf("Process '%s' (PID: %u) started\n", Utf8Cmd.c_str(), uPID);
@@ -667,110 +769,32 @@ static int handleCtrlExecProgram(ComPtr<IGuest> guest, HandlerArg *pArg)
         if (RT_FAILURE(vrc))
             RTMsgError("Unable to set stdout's binary mode, rc=%Rrc\n", vrc);
 
+        PRTSTREAM pStream = g_pStdOut; /* StdOut by default. */
+        AssertPtr(pStream);
+
         /* Wait for process to exit ... */
         BOOL fCompleted    = FALSE;
         BOOL fCanceled     = FALSE;
         while (SUCCEEDED(progress->COMGETTER(Completed(&fCompleted))))
         {
-            SafeArray<BYTE> aOutputData;
-            ULONG cbOutputData = 0;
-
-            /*
-             * Some data left to output?
-             */
-            if (fOutputFlags || fWaitForStdOut)
+            /* Do we need to output stuff? */
+            uint32_t cMsTimeLeft;
+            if (fExecFlags & ExecuteProcessFlag_WaitForStdOut)
             {
-                /** @todo r=bird: The timeout argument is bogus in several
-                 * ways:
-                 *  1. RT_MAX will evaluate the arguments twice, which may
-                 *     result in different values because RTTimeMilliTS()
-                 *     returns a higher value the 2nd time. Worst case:
-                 *     Imagine when RT_MAX calculates the remaining time
-                 *     out (first expansion) there is say 60 ms left.  Then
-                 *     we're preempted and rescheduled after, say, 120 ms.
-                 *     We call RTTimeMilliTS() again and ends up with a
-                 *     value -60 ms, which translate to a UINT32_MAX - 59
-                 *     ms timeout.
-                 *
-                 *  2. When the period expires, we will wait forever since
-                 *     both 0 and -1 mean indefinite timeout with this API,
-                 *     at least that's one way of reading the main code.
-                 *
-                 *  3. There is a signed/unsigned ambiguity in the
-                 *     RT_MAX expression.  The left hand side is signed
-                 *     integer (0), the right side is unsigned 64-bit. From
-                 *     what I can tell, the compiler will treat this as
-                 *     unsigned 64-bit and never return 0.
-                 */
-                rc = guest->GetProcessOutput(uPID, fOutputFlags,
-                                             RT_MAX(0, cMsTimeout - (RTTimeMilliTS() - u64StartMS)) /* Timeout in ms */,
-                                             _64K, ComSafeArrayAsOutParam(aOutputData));
-                if (FAILED(rc))
-                {
-                    vrc = ctrlPrintError(guest, COM_IIDOF(IGuest));
-                    cbOutputData = 0;
-                }
-                else
-                {
-                    cbOutputData = aOutputData.size();
-                    if (cbOutputData > 0)
-                    {
-                        BYTE *pBuf = aOutputData.raw();
-                        AssertPtr(pBuf);
-                        pBuf[cbOutputData - 1] = 0; /* Properly terminate buffer. */
-
-                        /** @todo r=bird: Use a VFS I/O stream filter for doing this, it's a
-                        *        generic problem and the new VFS APIs will handle it more
-                        *        transparently. (requires writing dos2unix/unix2dos filters ofc) */
-
-                        /*
-                         * If aOutputData is text data from the guest process' stdout or stderr,
-                         * it has a platform dependent line ending. So standardize on
-                         * Unix style, as RTStrmWrite does the LF -> CR/LF replacement on
-                         * Windows. Otherwise we end up with CR/CR/LF on Windows.
-                         */
-
-                        char *pszBufUTF8;
-                        vrc = RTStrCurrentCPToUtf8(&pszBufUTF8, (const char*)aOutputData.raw());
-                        if (RT_SUCCESS(vrc))
-                        {
-                            cbOutputData = strlen(pszBufUTF8);
-
-                            ULONG cbOutputDataPrint = cbOutputData;
-                            for (char *s = pszBufUTF8, *d = s;
-                                 s - pszBufUTF8 < (ssize_t)cbOutputData;
-                                 s++, d++)
-                            {
-                                if (*s == '\r')
-                                {
-                                    /* skip over CR, adjust destination */
-                                    d--;
-                                    cbOutputDataPrint--;
-                                }
-                                else if (s != d)
-                                    *d = *s;
-                            }
-
-                            vrc = RTStrmWrite(g_pStdOut, pszBufUTF8, cbOutputDataPrint);
-                            if (RT_FAILURE(vrc))
-                                RTMsgError("Unable to write output, rc=%Rrc\n", vrc);
-
-                            RTStrFree(pszBufUTF8);
-                        }
-                        else
-                            RTMsgError("Unable to convert output, rc=%Rrc\n", vrc);
-                    }
-                }
+                cMsTimeLeft = ctrlExecGetRemainingTime(u64StartMS, cMsTimeout);
+                if (cMsTimeLeft)
+                    vrc = ctrlExecPrintOutput(pGuest, uPID,
+                                              pStream, ProcessOutputFlag_None /* StdOut */,
+                                              cMsTimeLeft == RT_INDEFINITE_WAIT ? 0 : cMsTimeLeft);
             }
 
-            /* No more output data left? */
-            if (cbOutputData <= 0)
+            if (fExecFlags & ExecuteProcessFlag_WaitForStdErr)
             {
-                /* Only break out from process handling loop if we processed (displayed)
-                 * all output data or if there simply never was output data and the process
-                 * has been marked as complete. */
-                if (fCompleted)
-                    break;
+                cMsTimeLeft = ctrlExecGetRemainingTime(u64StartMS, cMsTimeout);
+                if (cMsTimeLeft)
+                    vrc = ctrlExecPrintOutput(pGuest, uPID,
+                                              pStream, ProcessOutputFlag_StdErr /* StdErr */,
+                                              cMsTimeLeft == RT_INDEFINITE_WAIT ? 0 : cMsTimeLeft);
             }
 
             /* Process async cancelation */
@@ -819,7 +843,7 @@ static int handleCtrlExecProgram(ComPtr<IGuest> guest, HandlerArg *pArg)
             {
                 ExecuteProcessStatus_T retStatus;
                 ULONG uRetExitCode, uRetFlags;
-                rc = guest->GetProcessStatus(uPID, &uRetExitCode, &uRetFlags, &retStatus);
+                rc = pGuest->GetProcessStatus(uPID, &uRetExitCode, &uRetFlags, &retStatus);
                 if (SUCCEEDED(rc) && fVerbose)
                     RTPrintf("Exit code=%u (Status=%u [%s], Flags=%u)\n", uRetExitCode, retStatus, ctrlExecProcessStatusToText(retStatus), uRetFlags);
                 rcProc = ctrlExecProcessStatusToExitCode(retStatus, uRetExitCode);
