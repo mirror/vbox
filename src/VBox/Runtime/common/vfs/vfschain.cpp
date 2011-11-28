@@ -505,9 +505,12 @@ RTDECL(int)     RTVfsChainSpecParse(const char *pszSpec, uint32_t fFlags, RTVFSC
     }
 
     /*
-     * Cleanup and set the error indicator on failure.
+     * Return the chain on success; Cleanup and set the error indicator on
+     * failure.
      */
-    if (RT_FAILURE(rc))
+    if (RT_SUCCESS(rc))
+        *ppSpec = pSpec;
+    else
     {
         if (ppszError)
             *ppszError = pszSrc;
