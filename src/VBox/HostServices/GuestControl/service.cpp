@@ -280,7 +280,7 @@ public:
 private:
     int paramBufferAllocate(PVBOXGUESTCTRPARAMBUFFER pBuf, uint32_t uMsg, uint32_t cParms, VBOXHGCMSVCPARM paParms[]);
     void paramBufferFree(PVBOXGUESTCTRPARAMBUFFER pBuf);
-    int paramBufferAssign(PVBOXGUESTCTRPARAMBUFFER pBuf, uint32_t cParms, VBOXHGCMSVCPARM paParms[]);
+    int paramBufferAssign(VBOXHGCMSVCPARM paDstParms[], uint32_t cDstParms, PVBOXGUESTCTRPARAMBUFFER pSrcBuf);
     int prepareExecute(uint32_t cParms, VBOXHGCMSVCPARM paParms[]);
     int clientConnect(uint32_t u32ClientID, void *pvClient);
     int clientDisconnect(uint32_t u32ClientID, void *pvClient);
@@ -407,63 +407,77 @@ void Service::paramBufferFree(PVBOXGUESTCTRPARAMBUFFER pBuf)
 }
 
 /**
- * Assigns data from a buffered HGCM request to the current HGCM request.
+ * Copies data from a buffered HGCM request to the current HGCM request.
  *
  * @return  IPRT status code.
- * @param   pBuf                    Parameter buffer to assign.
- * @param   cParms                  Number of parameters the HGCM request can handle.
- * @param   paParms                 Array of parameters of HGCM request to fill the data into.
+ * @param   paDstParms              Array of parameters of HGCM request to fill the data into.
+ * @param   cPDstarms               Number of parameters the HGCM request can handle.
+ * @param   pSrcBuf                 Parameter buffer to assign.
  */
-int Service::paramBufferAssign(PVBOXGUESTCTRPARAMBUFFER pBuf, uint32_t cParms, VBOXHGCMSVCPARM paParms[])
+int Service::paramBufferAssign(VBOXHGCMSVCPARM paDstParms[], uint32_t cDstParms, PVBOXGUESTCTRPARAMBUFFER pSrcBuf)
 {
-    AssertPtr(pBuf);
+    AssertPtr(pSrcBuf);
     int rc = VINF_SUCCESS;
-    if (cParms != pBuf->uParmCount)
+    if (cDstParms != pSrcBuf->uParmCount)
     {
-        LogFlowFunc(("Parameter count does not match: %u (host) vs. %u (guest)\n",
-                     pBuf->uParmCount, cParms));
+        LogFlowFunc(("Parameter count does not match (got %u, expected %u)\n",
+                     pSrcBuf->uParmCount, cDstParms));
         rc = VERR_INVALID_PARAMETER;
     }
     else
     {
-        /** @todo Add check to verify if the HGCM request is the same *type* as the buffered one! */
-        for (uint32_t i = 0; i < pBuf->uParmCount; i++)
+        for (uint32_t i = 0; i < pSrcBuf->uParmCount; i++)
         {
-            /** @todo r=bird: Should this CHECK the type instead of overriding
-             * it?? What happens if a guest initializes a PTR param as a 32-bit
-             * or 64-bit value with a non-zero value? You'll crash and burn in
-             * the memcpy below! */
-            paParms[i].type = pBuf->pParms[i].type;
-            switch (paParms[i].type)
+            if (paDstParms[i].type != pSrcBuf->pParms[i].type)
             {
-                case VBOX_HGCM_SVC_PARM_32BIT:
-                    paParms[i].u.uint32 = pBuf->pParms[i].u.uint32;
-                    break;
+                LogFlowFunc(("Parameter %u type mismatch (got %u, expected %u)\n",
+                             i, paDstParms[i].type, pSrcBuf->pParms[i].type));
+                rc = VERR_INVALID_PARAMETER;
+            }
+            else
+            {
+                switch (pSrcBuf->pParms[i].type)
+                {
+                    case VBOX_HGCM_SVC_PARM_32BIT:
+                        paDstParms[i].u.uint32 = pSrcBuf->pParms[i].u.uint32;
+                        break;
 
-                case VBOX_HGCM_SVC_PARM_64BIT:
-                    /* Not supported yet. */
-                    /** @todo r=bird: This case needs to fail! */
-                    break;
-
-                case VBOX_HGCM_SVC_PARM_PTR:
-                    if (paParms[i].u.pointer.size >= pBuf->pParms[i].u.pointer.size)
+                    case VBOX_HGCM_SVC_PARM_PTR:
                     {
-                        /* Only copy buffer if there actually is something to copy. */
-                        if (pBuf->pParms[i].u.pointer.size)
-                        {
-                            AssertPtr(pBuf->pParms[i].u.pointer.addr);
-                            memcpy(paParms[i].u.pointer.addr,
-                                   pBuf->pParms[i].u.pointer.addr,
-                                   pBuf->pParms[i].u.pointer.size);
-                        }
-                    }
-                    else
-                        rc = VERR_BUFFER_OVERFLOW;
-                    break;
+                        if (!pSrcBuf->pParms[i].u.pointer.size)
+                            continue; /* Only copy buffer if there actually is something to copy. */
 
-                default:
-                    /** @todo r=bird: This case needs to fail! */
-                    break;
+                        if (!paDstParms[i].u.pointer.addr)
+                            rc = VERR_INVALID_PARAMETER;
+
+                        if (paDstParms[i].u.pointer.size < pSrcBuf->pParms[i].u.pointer.size)
+                            rc = VERR_BUFFER_OVERFLOW;
+
+                        if (RT_SUCCESS(rc))
+                        {
+                            memcpy(paDstParms[i].u.pointer.addr,
+                                   pSrcBuf->pParms[i].u.pointer.addr,
+                                   pSrcBuf->pParms[i].u.pointer.size);
+                        }
+
+                        break;
+                    }
+
+                    case VBOX_HGCM_SVC_PARM_64BIT:
+                        /* Fall through is intentional. */
+                    default:
+                        LogFlowFunc(("Parameter %u of type %u is not supported yet\n",
+                                     i, pSrcBuf->pParms[i].type));
+                        rc = VERR_NOT_SUPPORTED;
+                        break;
+                }
+            }
+
+            if (RT_FAILURE(rc))
+            {
+                LogFlowFunc(("Parameter %u invalid (rc=%Rrc), refusing\n",
+                             i, rc));
+                break;
             }
         }
     }
@@ -620,7 +634,7 @@ int Service::assignHostCmdToGuest(HostCmd *pCmd, VBOXHGCMCALLHANDLE callHandle, 
     }
     else
     {
-        rc = paramBufferAssign(&pCmd->mParmBuf, cParms, paParms);
+        rc = paramBufferAssign(paParms, cParms, &pCmd->mParmBuf);
     }
 
     LogFlowFunc(("Returned with rc=%Rrc\n", rc));
