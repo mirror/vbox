@@ -775,7 +775,8 @@ static int handleCtrlExecProgram(ComPtr<IGuest> pGuest, HandlerArg *pArg)
         /* Wait for process to exit ... */
         BOOL fCompleted    = FALSE;
         BOOL fCanceled     = FALSE;
-        while (SUCCEEDED(progress->COMGETTER(Completed(&fCompleted))))
+        while (   SUCCEEDED(progress->COMGETTER(Completed(&fCompleted)))
+               && !fCompleted)
         {
             /* Do we need to output stuff? */
             uint32_t cMsTimeLeft;
