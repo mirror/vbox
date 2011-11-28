@@ -204,18 +204,30 @@ int NetIfCreateHostOnlyNetworkInterface(VirtualBox *pVBox,
                         }
                         RTMemFree(pInfo);
                     }
+                    if ((rc = pclose(fp)) != 0)
+                    {
+                        progress->notifyComplete(E_FAIL,
+                                                 COM_IIDOF(IHostNetworkInterface),
+                                                 HostNetworkInterface::getStaticComponentName(),
+                                                 "Failed to execute '"VBOXNETADPCTL_NAME " add' (exit status: %d)", rc);
+                        rc = VERR_INTERNAL_ERROR;
+                    }
                 }
-                if ((rc = pclose(fp)) != 0)
+                else
                 {
+                    /* Failed to add an interface */
+                    rc = VERR_PERMISSION_DENIED;
                     progress->notifyComplete(E_FAIL,
                                              COM_IIDOF(IHostNetworkInterface),
                                              HostNetworkInterface::getStaticComponentName(),
-                                             "Failed to execute '"VBOXNETADPCTL_NAME " add' (exit status: %d)", rc);
-                    rc = VERR_INTERNAL_ERROR;
+                                             "Failed to execute '"VBOXNETADPCTL_NAME " add' (exit status: %d). Check permissions!", rc);
+                    pclose(fp);
                 }
             }
             if (RT_SUCCESS(rc))
                 progress->notifyComplete(rc);
+            else
+                hrc = E_FAIL;
         }
     }
 
