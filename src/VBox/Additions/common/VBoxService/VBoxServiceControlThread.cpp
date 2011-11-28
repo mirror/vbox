@@ -428,7 +428,11 @@ static int VBoxServiceControlThreadHandleRequest(RTPOLLSET hPollSet, uint32_t fP
     int rcReq = VINF_SUCCESS; /* Actual request result. */
 
     PVBOXSERVICECTRLREQUEST pRequest = pThread->pRequest;
-    AssertPtr(pRequest); /** @todo r=bird: Print error and return if invalid pointer! */
+    if (!pRequest)
+    {
+        VBoxServiceError("ControlThread: IPC request is invalid\n");
+        return VERR_INVALID_POINTER;
+    }
 
     switch (pRequest->enmType)
     {
@@ -1290,18 +1294,6 @@ static int VBoxServiceControlThreadProcessWorker(PVBOXSERVICECTRLTHREAD pThread)
                                     if (RT_FAILURE(RTPollSetQueryHandle(hPollSet, VBOXSERVICECTRLPIPEID_STDIN, NULL)))
                                         pThread->pipeStdInW = NIL_RTPIPE;
                                 }
-                                else /* Something went wrong; report error! */
-                                {
-                                    VBoxServiceError("ControlThread: Could not start process '%s' (CID: %u)! Error: %Rrc\n",
-                                                     pThread->pszCmd, pThread->uContextID, rc);
-
-                                    rc2 = VbglR3GuestCtrlExecReportStatus(pThread->uClientID, pThread->uContextID, pThread->uPID,
-                                                                          PROC_STS_ERROR, rc,
-                                                                          NULL /* pvData */, 0 /* cbData */);
-                                    if (RT_FAILURE(rc2))
-                                        VBoxServiceError("ControlThread: Could not report process start error! Error: %Rrc (process error %Rrc)\n",
-                                                         rc2, rc);
-                                }
                             }
                             RTPollSetDestroy(hPollSet);
 
@@ -1327,9 +1319,20 @@ static int VBoxServiceControlThreadProcessWorker(PVBOXSERVICECTRLTHREAD pThread)
 
     if (pThread->uClientID)
     {
+        int rc2;
+        if (RT_FAILURE(rc))
+        {
+            rc2 = VbglR3GuestCtrlExecReportStatus(pThread->uClientID, pThread->uContextID, pThread->uPID,
+                                                  PROC_STS_ERROR, rc,
+                                                  NULL /* pvData */, 0 /* cbData */);
+            if (RT_FAILURE(rc2))
+                VBoxServiceError("ControlThread: Could not report process failure error; rc=%Rrc (process error %Rrc)\n",
+                                 rc2, rc);
+        }
+
         VBoxServiceVerbose(3, "ControlThread: [PID %u]: Cancelling pending waits (client ID=%u)\n",
                            pThread->uPID, pThread->uClientID);
-        int rc2 = VbglR3GuestCtrlCancelPendingWaits(pThread->uClientID);
+        rc2 = VbglR3GuestCtrlCancelPendingWaits(pThread->uClientID);
         if (RT_FAILURE(rc2))
         {
             VBoxServiceError("ControlThread: [PID %u]: Cancelling pending waits failed; rc=%Rrc\n",
