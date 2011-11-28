@@ -36,7 +36,8 @@
 # include <linux/dmar.h>
 # include <linux/intel-iommu.h>
 # include <linux/pci.h>
-# if LINUX_VERSION_CODE < KERNEL_VERSION(3, 1, 0)
+# if LINUX_VERSION_CODE < KERNEL_VERSION(3, 1, 0) && \
+     (LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 41) || LINUX_VERSION_CODE >= KERNEL_VERSION(3, 0, 0))
 #  include <asm/amd_iommu.h>
 # else
 #  include <linux/amd-iommu.h>
