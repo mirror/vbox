@@ -791,6 +791,23 @@ void Console::guestPropertiesVRDPUpdateLogon(uint32_t u32ClientId, const char *p
     return;
 }
 
+void Console::guestPropertiesVRDPUpdateNameChange(uint32_t u32ClientId, const char *pszName)
+{
+    if (!guestPropertiesVRDPEnabled())
+        return;
+
+    char szPropNm[256];
+    Bstr bstrReadOnlyGuest(L"RDONLYGUEST");
+
+    RTStrPrintf(szPropNm, sizeof(szPropNm), "/VirtualBox/HostInfo/VRDP/Client/%u/Name", u32ClientId);
+    Bstr clientName(pszName);
+
+    mMachine->SetGuestProperty(Bstr(szPropNm).raw(),
+                               clientName.raw(),
+                               bstrReadOnlyGuest.raw());
+
+}
+
 void Console::guestPropertiesVRDPUpdateDisconnect(uint32_t u32ClientId)
 {
     if (!guestPropertiesVRDPEnabled())
@@ -800,15 +817,15 @@ void Console::guestPropertiesVRDPUpdateDisconnect(uint32_t u32ClientId)
 
     char szPropNm[256];
     RTStrPrintf(szPropNm, sizeof(szPropNm), "/VirtualBox/HostInfo/VRDP/Client/%u/Name", u32ClientId);
-    mMachine->SetGuestProperty(Bstr(szPropNm).raw(), Bstr("").raw(),
+    mMachine->SetGuestProperty(Bstr(szPropNm).raw(), NULL,
                                bstrReadOnlyGuest.raw());
 
     RTStrPrintf(szPropNm, sizeof(szPropNm), "/VirtualBox/HostInfo/VRDP/Client/%u/User", u32ClientId);
-    mMachine->SetGuestProperty(Bstr(szPropNm).raw(), Bstr("").raw(),
+    mMachine->SetGuestProperty(Bstr(szPropNm).raw(), NULL,
                                bstrReadOnlyGuest.raw());
 
     RTStrPrintf(szPropNm, sizeof(szPropNm), "/VirtualBox/HostInfo/VRDP/Client/%u/Domain", u32ClientId);
-    mMachine->SetGuestProperty(Bstr(szPropNm).raw(), Bstr("").raw(),
+    mMachine->SetGuestProperty(Bstr(szPropNm).raw(), NULL,
                                bstrReadOnlyGuest.raw());
 
     char szClientId[64];
@@ -1068,6 +1085,16 @@ int Console::VRDPClientLogon(uint32_t u32ClientId, const char *pszUser, const ch
     }
 
     return VINF_SUCCESS;
+}
+
+void Console::VRDPClientNameChange(uint32_t u32ClientId, const char *pszName)
+{
+    LogFlowFuncEnter();
+
+    AutoCaller autoCaller(this);
+    AssertComRCReturnVoid(autoCaller.rc());
+
+    guestPropertiesVRDPUpdateNameChange(u32ClientId, pszName);
 }
 
 void Console::VRDPClientConnect(uint32_t u32ClientId)
