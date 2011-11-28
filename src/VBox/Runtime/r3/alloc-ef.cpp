@@ -110,7 +110,7 @@ DECLINLINE(void) rtmemBlockLock(void)
 {
     unsigned c = 0;
     while (!ASMAtomicCmpXchgU32(&g_BlocksLock, 1, 0))
-        RTThreadSleep(((++c) >> 2) & 31);
+        RTThreadSleepNoLog(((++c) >> 2) & 31);
 }
 
 

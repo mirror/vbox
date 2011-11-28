@@ -202,6 +202,22 @@ RTDECL(RTNATIVETHREAD) RTThreadNativeSelf(void);
 RTDECL(int) RTThreadSleep(RTMSINTERVAL cMillies);
 
 /**
+ * Millisecond granular sleep function, no logger calls.
+ *
+ * Same as RTThreadSleep, except it will never call into the IPRT logger.  It
+ * can therefore safely be used in places where the logger is off limits, like
+ * at termination or init time.  The electric fence heap is one consumer of
+ * this API.
+ *
+ * @returns VINF_SUCCESS on success.
+ * @returns VERR_INTERRUPTED if a signal or other asynchronous stuff happened
+ *          which interrupt the peaceful sleep.
+ * @param   cMillies    Number of milliseconds to sleep.
+ *                      0 milliseconds means yielding the timeslice - deprecated!
+ */
+RTDECL(int) RTThreadSleepNoLog(RTMSINTERVAL cMillies);
+
+/**
  * Yields the CPU.
  *
  * @returns true if we yielded.

@@ -1467,6 +1467,7 @@
 # define RTThreadSetName                                RT_MANGLER(RTThreadSetName)
 # define RTThreadSetType                                RT_MANGLER(RTThreadSetType)
 # define RTThreadSleep                                  RT_MANGLER(RTThreadSleep)
+# define RTThreadSleepNoLog                             RT_MANGLER(RTThreadSleepNoLog)
 # define RTThreadStateName                              RT_MANGLER(RTThreadStateName)
 # define RTThreadUnblocked                              RT_MANGLER(RTThreadUnblocked)
 # define RTThreadUserReset                              RT_MANGLER(RTThreadUserReset)

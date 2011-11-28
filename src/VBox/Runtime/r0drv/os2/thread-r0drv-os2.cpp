@@ -59,7 +59,7 @@ RTDECL(RTNATIVETHREAD) RTThreadNativeSelf(void)
 }
 
 
-RTDECL(int) RTThreadSleep(RTMSINTERVAL cMillies)
+static int rtR0ThreadOs2SleepCommon(RTMSINTERVAL cMillies)
 {
     int rc = KernBlock((ULONG)RTThreadSleep,
                        cMillies == RT_INDEFINITE_WAIT ? SEM_INDEFINITE_WAIT : cMillies,
@@ -76,6 +76,18 @@ RTDECL(int) RTThreadSleep(RTMSINTERVAL cMillies)
             AssertMsgFailed(("%d\n", rc));
             return VERR_NO_TRANSLATION;
     }
+}
+
+
+RTDECL(int) RTThreadSleep(RTMSINTERVAL cMillies)
+{
+    return rtR0ThreadOs2SleepCommon(cMillies);
+}
+
+
+RTDECL(int) RTThreadSleepNoBlock(RTMSINTERVAL cMillies)
+{
+    return rtR0ThreadOs2SleepCommon(cMillies);
 }
 
 
