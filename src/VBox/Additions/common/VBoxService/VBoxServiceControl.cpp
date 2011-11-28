@@ -261,10 +261,11 @@ static int VBoxServiceControlHandleCmdStartProc(uint32_t idClient, uint32_t cPar
     RT_ZERO(szPassword);
 #endif
 
-    if (cParms != 11)
-        return VERR_INVALID_PARAMETER;
-
-    int rc = VbglR3GuestCtrlExecGetHostCmdExec(idClient,
+    int rc;
+    bool fStartAllowed = false; /* Flag indicating whether starting a process is allowed or not. */
+    if (cParms == 11)
+    {
+        rc = VbglR3GuestCtrlExecGetHostCmdExec(idClient,
                                                cParms,
                                                &uContextID,
                                                /* Command */
@@ -280,59 +281,66 @@ static int VBoxServiceControlHandleCmdStartProc(uint32_t idClient, uint32_t cPar
                                                szPassword, sizeof(szPassword),
                                                /* Timelimit */
                                                &uTimeLimitMS);
-    if (RT_SUCCESS(rc))
-    {
-#ifdef DEBUG
-        VBoxServiceVerbose(3, "Control: Start process szCmd=%s, uFlags=%u, szArgs=%s, szEnv=%s, szUser=%s, szPW=%s, uTimeout=%u\n",
-                           szCmd, uFlags, cArgs ? szArgs : "<None>", cEnvVars ? szEnv : "<None>", szUser, szPassword, uTimeLimitMS);
-#endif
-        bool fAllowed = false;
-        rc = VBoxServiceControlStartAllowed(&fAllowed);
-        if (RT_FAILURE(rc))
-            VBoxServiceError("Control: Error determining whether process can be started or not, rc=%Rrc\n", rc);
 
-        if (   RT_SUCCESS(rc)
-            && fAllowed)
+        if (RT_SUCCESS(rc))
         {
-            rc = RTCritSectEnter(&g_GuestControlThreadsCritSect);
+    #ifdef DEBUG
+            VBoxServiceVerbose(3, "Control: Start process szCmd=%s, uFlags=%u, szArgs=%s, szEnv=%s, szUser=%s, szPW=%s, uTimeout=%u\n",
+                               szCmd, uFlags, cArgs ? szArgs : "<None>", cEnvVars ? szEnv : "<None>", szUser, szPassword, uTimeLimitMS);
+    #endif
+            rc = VBoxServiceControlStartAllowed(&fStartAllowed);
+            if (RT_FAILURE(rc))
+                VBoxServiceError("Control: Error determining whether process can be started or not, rc=%Rrc\n", rc);
+
             if (RT_SUCCESS(rc))
             {
-                /** @todo Put the following params into a struct! */
-                RTLISTNODE *pThreadNode;
-                rc = VBoxServiceControlThreadStart(idClient, uContextID,
-                                                   szCmd, uFlags, szArgs, cArgs,
-                                                   szEnv, cbEnv, cEnvVars,
-                                                   szUser, szPassword, uTimeLimitMS,
-                                                   &pThreadNode);
-                if (RT_SUCCESS(rc))
+                if (fStartAllowed)
                 {
-                    /* Insert thread node into thread list. */
-                    /*rc =*/ RTListAppend(&g_GuestControlThreads, pThreadNode);
-                }
+                    rc = RTCritSectEnter(&g_GuestControlThreadsCritSect);
+                    if (RT_SUCCESS(rc))
+                    {
+                        /** @todo Put the following params into a struct! */
+                        RTLISTNODE *pThreadNode;
+                        rc = VBoxServiceControlThreadStart(idClient, uContextID,
+                                                           szCmd, uFlags, szArgs, cArgs,
+                                                           szEnv, cbEnv, cEnvVars,
+                                                           szUser, szPassword, uTimeLimitMS,
+                                                           &pThreadNode);
+                        if (RT_SUCCESS(rc))
+                        {
+                            /* Insert thread node into thread list. */
+                            /*rc =*/ RTListAppend(&g_GuestControlThreads, pThreadNode);
+                        }
 
-                int rc2 = RTCritSectLeave(&g_GuestControlThreadsCritSect);
-                if (RT_SUCCESS(rc))
-                    rc = rc2;
+                        int rc2 = RTCritSectLeave(&g_GuestControlThreadsCritSect);
+                        if (RT_SUCCESS(rc))
+                            rc = rc2;
+                    }
+                }
+                else
+                    rc = VERR_MAX_PROCS_REACHED; /* Maximum number of processes reached. */
             }
-/** @todo r=bird: VbglR3GuestCtrlExecReportStatus isn't called for a number
- * of error paths. Both here and in the thread.  I guess that will leave the
- * host waiting, possibly for ever, for a status report that never arrives.
- *
- * There are similar concerns with the termination status report in case the
- * loop exitted with an error status (VBoxServiceControlThreadProcLoop).
- */
-        }
-        else /* Process start is not allowed due to policy settings. */
-        {
-            /* Tell the host. */
-            rc = VbglR3GuestCtrlExecReportStatus(idClient, uContextID, 0 /* PID, invalid. */,
-                                                 PROC_STS_ERROR,
-                                                 !fAllowed ? VERR_MAX_PROCS_REACHED : rc,
-                                                 NULL /* pvData */, 0 /* cbData */);
         }
     }
     else
-        VBoxServiceError("Control: Failed to retrieve exec start command! Error: %Rrc\n", rc);
+        rc = VERR_INVALID_PARAMETER; /* Incorrect number of parameters. */
+
+    /* In case of an error we need to notify the host to not wait forever for our response. */
+    if (RT_FAILURE(rc))
+    {
+        VBoxServiceError("Control: Starting process failed with rc=%Rrc\n", rc);
+
+        int rc2 = VbglR3GuestCtrlExecReportStatus(idClient, uContextID, 0 /* PID, invalid. */,
+                                                  PROC_STS_ERROR, rc,
+                                                  NULL /* pvData */, 0 /* cbData */);
+        if (RT_FAILURE(rc2))
+        {
+            VBoxServiceError("Control: Error sending start process status to host, rc=%Rrc\n", rc2);
+            if (RT_SUCCESS(rc))
+                rc = rc2;
+        }
+    }
+
     return rc;
 }
 
