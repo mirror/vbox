@@ -22,6 +22,7 @@
 #include <iprt/asm.h>
 #include <iprt/assert.h>
 #include <iprt/env.h>
+#include <iprt/file.h>
 #include <iprt/getopt.h>
 #include <iprt/handle.h>
 #include <iprt/mem.h>
@@ -388,33 +389,13 @@ static int VBoxServiceControlThreadHandleOutputEvent(RTPOLLSET hPollSet, uint32_
                                                      PRTPIPE phPipeR, uint32_t idPollHnd)
 {
     int rc = VINF_SUCCESS;
-    if (fPollEvt == RTPOLL_EVT_READ)
-    {
-        /** @todo r=bird: Drop this in favor of using /dev/null
-         * (RTFileOpenBitBucket) instead of pipes. That'll simplify the code,
-         * speed stuff up, avoid trouble is RTPoll is buggy and be
-         * compatible with future wait-for-writeable-stderr/out host
-         * notifications. */
-        char   abBuf[_64K];
-        size_t cbRead;
-        rc = RTPipeRead(*phPipeR, abBuf, sizeof(abBuf), &cbRead);
-        if (RT_SUCCESS(rc) && cbRead)
-        {
-#ifdef DEBUG
-            VBoxServiceVerbose(4, "ControlThread: Drain idPollHnd=%u, abBuf=0x%p, cbRead=%u\n",
-                               idPollHnd, abBuf, cbRead);
-#endif
-            /* Goes to bit bucket ... */
 
-            /* Make sure we go another poll round in case there was too much data
-               for the buffer to hold. */
-            fPollEvt &= RTPOLL_EVT_ERROR;
-        }
-        else if (RT_FAILURE(rc))
-        {
-            fPollEvt |= RTPOLL_EVT_ERROR;
-            AssertMsg(rc == VERR_BROKEN_PIPE, ("%Rrc\n", rc));
-        }
+    if (fPollEvt & RTPOLL_EVT_READ)
+    {
+
+        /* Make sure we go another poll round in case there was too much data
+           for the buffer to hold. */
+        fPollEvt &= RTPOLL_EVT_ERROR;
     }
 
     if (fPollEvt & RTPOLL_EVT_ERROR)
@@ -601,7 +582,7 @@ static int VBoxServiceControlThreadProcLoop(PVBOXSERVICECTRLTHREAD pThread,
          */
         uint32_t idPollHnd;
         uint32_t fPollEvt;
-        rc2 = RTPollNoResume(hPollSet, /*cMsPollCur*/ RT_INDEFINITE_WAIT, &fPollEvt, &idPollHnd);
+        rc2 = RTPollNoResume(hPollSet, cMsPollCur, &fPollEvt, &idPollHnd);
         if (pThread->fShutdown)
             continue;
 
@@ -639,11 +620,7 @@ static int VBoxServiceControlThreadProcLoop(PVBOXSERVICECTRLTHREAD pThread,
             if (RT_UNLIKELY(pThread->fShutdown))
                 break; /* We were asked to shutdown. */
 
-            /* Do we have more to poll for (e.g. is there (still) something in our pollset
-             * like stdout, stderr or stdin)? If we only have our notification pipe left we
-             * need to bail out. */
-            if (RTPollSetGetCount(hPollSet) > 1)
-                continue;
+            continue;
         }
 
         /*
@@ -857,6 +834,7 @@ static int vboxServiceControlThreadInitPipe(PRTHANDLE ph, PRTPIPE phPipe)
  * Sets up the redirection / pipe / nothing for one of the standard handles.
  *
  * @returns IPRT status code.  No client replies made.
+ * @param   pszHowTo            How to set up this standard handle.
  * @param   fd                  Which standard handle it is (0 == stdin, 1 ==
  *                              stdout, 2 == stderr).
  * @param   ph                  The generic handle that @a pph may be set
@@ -864,39 +842,62 @@ static int vboxServiceControlThreadInitPipe(PRTHANDLE ph, PRTPIPE phPipe)
  * @param   pph                 Pointer to the RTProcCreateExec argument.
  *                              Always set.
  * @param   phPipe              Where to return the end of the pipe that we
- *                              should service.  Always set.
- *
- * @todo r=bird: Open the bitbucket like txsDoExecHlpRedir does when the host
- *       isn't interested in the guest output.  This is easier to handle
- *       elsewhere.
+ *                              should service.
  */
-static int VBoxServiceControlThreadSetupPipe(int fd, PRTHANDLE ph, PRTHANDLE *pph, PRTPIPE phPipe)
+static int VBoxServiceControlThreadSetupPipe(const char *pszHowTo, int fd,
+                                             PRTHANDLE ph, PRTHANDLE *pph, PRTPIPE phPipe)
 {
-    AssertPtrReturn(ph, VERR_INVALID_PARAMETER);
-    AssertPtrReturn(pph, VERR_INVALID_PARAMETER);
-    AssertPtrReturn(phPipe, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(ph, VERR_INVALID_POINTER);
+    AssertPtrReturn(ph, VERR_INVALID_POINTER);
+    AssertPtrReturn(pph, VERR_INVALID_POINTER);
 
     int rc;
 
-    /*
-     * Setup a pipe for forwarding to/from the client.
-     * The ph union struct will be filled with a pipe read/write handle
-     * to represent the "other" end to phPipe.
-     */
-    if (fd == 0) /* stdin? */
-    {
-        /* Connect a wrtie pipe specified by phPipe to stdin. */
-        rc = RTPipeCreate(&ph->u.hPipe, phPipe, RTPIPE_C_INHERIT_READ);
-    }
-    else /* stdout or stderr? */
-    {
-        /* Connect a read pipe specified by phPipe to stdout or stderr. */
-        rc = RTPipeCreate(phPipe, &ph->u.hPipe, RTPIPE_C_INHERIT_WRITE);
-    }
-    if (RT_FAILURE(rc))
-        return rc;
     ph->enmType = RTHANDLETYPE_PIPE;
-    *pph = ph;
+    ph->u.hPipe = NIL_RTPIPE;
+    *pph        = NULL;
+    *phPipe     = NIL_RTPIPE;
+
+    if (!strcmp(pszHowTo, "|"))
+    {
+        /*
+         * Setup a pipe for forwarding to/from the client.
+         * The ph union struct will be filled with a pipe read/write handle
+         * to represent the "other" end to phPipe.
+         */
+        if (fd == 0) /* stdin? */
+        {
+            /* Connect a wrtie pipe specified by phPipe to stdin. */
+            rc = RTPipeCreate(&ph->u.hPipe, phPipe, RTPIPE_C_INHERIT_READ);
+        }
+        else /* stdout or stderr? */
+        {
+            /* Connect a read pipe specified by phPipe to stdout or stderr. */
+            rc = RTPipeCreate(phPipe, &ph->u.hPipe, RTPIPE_C_INHERIT_WRITE);
+        }
+
+        if (RT_FAILURE(rc))
+            return rc;
+
+        ph->enmType = RTHANDLETYPE_PIPE;
+        *pph = ph;
+    }
+    else if (!strcmp(pszHowTo, "/dev/null"))
+    {
+        /*
+         * Redirect to/from /dev/null.
+         */
+        RTFILE hFile;
+        rc = RTFileOpenBitBucket(&hFile, fd == 0 ? RTFILE_O_READ : RTFILE_O_WRITE);
+        if (RT_FAILURE(rc))
+            return rc;
+
+        ph->enmType = RTHANDLETYPE_FILE;
+        ph->u.hFile = hFile;
+        *pph = ph;
+    }
+    else /* Add other piping stuff here. */
+        rc = VERR_INVALID_PARAMETER;
 
     return rc;
 }
@@ -1190,19 +1191,26 @@ static int VBoxServiceControlThreadProcessWorker(PVBOXSERVICECTRLTHREAD pThread)
             /** @todo consider supporting: gcc stuff.c >file 2>&1.  */
             RTHANDLE    hStdIn;
             PRTHANDLE   phStdIn;
-            rc = VBoxServiceControlThreadSetupPipe(0 /*STDIN_FILENO*/, &hStdIn, &phStdIn, &pThread->pipeStdInW);
+            rc = VBoxServiceControlThreadSetupPipe("|", 0 /*STDIN_FILENO*/,
+                                                   &hStdIn, &phStdIn, &pThread->pipeStdInW);
             if (RT_SUCCESS(rc))
             {
                 RTHANDLE    hStdOut;
                 PRTHANDLE   phStdOut;
                 RTPIPE      hStdOutR;
-                rc = VBoxServiceControlThreadSetupPipe(1 /*STDOUT_FILENO*/, &hStdOut, &phStdOut, &hStdOutR);
+                rc = VBoxServiceControlThreadSetupPipe(  (pThread->uFlags & EXECUTEPROCESSFLAG_WAIT_STDOUT)
+                                                       ? "|" : "/dev/null",
+                                                       1 /*STDOUT_FILENO*/,
+                                                       &hStdOut, &phStdOut, &hStdOutR);
                 if (RT_SUCCESS(rc))
                 {
                     RTHANDLE    hStdErr;
                     PRTHANDLE   phStdErr;
                     RTPIPE      hStdErrR;
-                    rc = VBoxServiceControlThreadSetupPipe(2 /*STDERR_FILENO*/, &hStdErr, &phStdErr, &hStdErrR);
+                    rc = VBoxServiceControlThreadSetupPipe(  (pThread->uFlags & EXECUTEPROCESSFLAG_WAIT_STDERR)
+                                                           ? "|" : "/dev/null",
+                                                           2 /*STDERR_FILENO*/,
+                                                           &hStdErr, &phStdErr, &hStdErrR);
                     if (RT_SUCCESS(rc))
                     {
                         /*
@@ -1218,28 +1226,10 @@ static int VBoxServiceControlThreadProcessWorker(PVBOXSERVICECTRLTHREAD pThread)
                                 rc = RTPollSetAddPipe(hPollSet, pThread->pipeStdInW, RTPOLL_EVT_ERROR, VBOXSERVICECTRLPIPEID_STDIN);
                             /* Stdout. */
                             if (RT_SUCCESS(rc))
-                            {
-                                uint32_t uFlags = RTPOLL_EVT_ERROR;
-                                if (!(pThread->uFlags & EXECUTEPROCESSFLAG_WAIT_STDOUT))
-                                {
-                                    uFlags |= RTPOLL_EVT_READ;
-                                    VBoxServiceVerbose(3, "ControlThread: Host is not interested in getting stdout for \"%s\", poll flags=0x%x\n",
-                                                        pThread->pszCmd, uFlags);
-                                }
-                                rc = RTPollSetAddPipe(hPollSet, hStdOutR, uFlags, VBOXSERVICECTRLPIPEID_STDOUT);
-                            }
+                                rc = RTPollSetAddPipe(hPollSet, hStdOutR, RTPOLL_EVT_ERROR, VBOXSERVICECTRLPIPEID_STDOUT);
                             /* Stderr. */
                             if (RT_SUCCESS(rc))
-                            {
-                                uint32_t uFlags = RTPOLL_EVT_ERROR;
-                                if (!(pThread->uFlags & EXECUTEPROCESSFLAG_WAIT_STDERR))
-                                {
-                                    uFlags |= RTPOLL_EVT_READ;
-                                    VBoxServiceVerbose(3, "ControlThread: Host is not interested in getting stderr for \"%s\", poll flags=0x%x\n",
-                                                        pThread->pszCmd, uFlags);
-                                }
-                                rc = RTPollSetAddPipe(hPollSet, hStdErrR, uFlags, VBOXSERVICECTRLPIPEID_STDERR);
-                            }
+                                rc = RTPollSetAddPipe(hPollSet, hStdErrR, RTPOLL_EVT_ERROR, VBOXSERVICECTRLPIPEID_STDERR);
                             /* IPC notification pipe. */
                             if (RT_SUCCESS(rc))
                                 rc = RTPipeCreate(&pThread->hNotificationPipeR, &pThread->hNotificationPipeW, 0 /* Flags */);
