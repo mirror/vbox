@@ -398,7 +398,7 @@ HRESULT Host::init(VirtualBox *aParent)
                                                     progress.asOutParam(),
                                                     it->c_str());
         if (RT_FAILURE(r))
-            return E_FAIL;
+            LogRel(("failed to get to create %s, error (0x%x)", it->c_str(), r));
     }
 
 #endif /* defined (RT_OS_LINUX) || defined(RT_OS_DARWIN) || defined(RT_OS_FREEBSD) */
