@@ -421,7 +421,7 @@ int Service::paramBufferAssign(VBOXHGCMSVCPARM paDstParms[], uint32_t cDstParms,
     if (cDstParms != pSrcBuf->uParmCount)
     {
         LogFlowFunc(("Parameter count does not match (got %u, expected %u)\n",
-                     pSrcBuf->uParmCount, cDstParms));
+                     cDstParms, pSrcBuf->uParmCount));
         rc = VERR_INVALID_PARAMETER;
     }
     else
