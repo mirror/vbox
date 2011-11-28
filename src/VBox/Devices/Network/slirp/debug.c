@@ -323,6 +323,8 @@ printNATSocketState(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput,
 {
     uint32_t u32SocketState = (uint32_t)(uintptr_t)pvValue;
     int idxNATState = 0;
+    bool fFirst = true;
+    size_t cbReturn = 0;
     NOREF(cchWidth);
     NOREF(cchPrecision);
     NOREF(fFlags);
@@ -331,10 +333,22 @@ printNATSocketState(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput,
 
     for (idxNATState = 0; idxNATState < RT_ELEMENTS(g_apszSocketStates); ++idxNATState)
     {
-        if (u32SocketState == g_apszSocketStates[idxNATState].u32SocketState)
-            return RTStrFormat(pfnOutput, pvArgOutput, NULL, 0, g_apszSocketStates[idxNATState].pcszSocketStateName);
+        if (u32SocketState & g_apszSocketStates[idxNATState].u32SocketState)
+        {
+            if (fFirst)
+            {
+                cbReturn += RTStrFormat(pfnOutput, pvArgOutput, NULL, 0, g_apszSocketStates[idxNATState].pcszSocketStateName);
+                fFirst = false;
+            }
+            else
+                cbReturn += RTStrFormat(pfnOutput, pvArgOutput, NULL, 0, "|%s", g_apszSocketStates[idxNATState].pcszSocketStateName);
+        }
     }
-    return RTStrFormat(pfnOutput, pvArgOutput, NULL, 0, "[unknown state %RX32]", u32SocketState);
+
+    if (!cbReturn)
+        return RTStrFormat(pfnOutput, pvArgOutput, NULL, 0, "[unknown state %RX32]", u32SocketState);
+
+    return cbReturn;
 }
 
 /**
