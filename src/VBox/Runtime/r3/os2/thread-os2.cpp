@@ -187,6 +187,13 @@ RTDECL(int)   RTThreadSleep(RTMSINTERVAL cMillies)
 }
 
 
+RTDECL(int)   RTThreadSleepNoLog(RTMSINTERVAL cMillies)
+{
+    DosSleep(cMillies);
+    return VINF_SUCCESS;
+}
+
+
 RTDECL(bool) RTThreadYield(void)
 {
     uint64_t u64TS = ASMReadTSC();

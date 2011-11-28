@@ -92,6 +92,37 @@ RTDECL(int) RTThreadSleep(RTMSINTERVAL cMillies)
 }
 
 
+RTDECL(int) RTThreadSleepNoLog(RTMSINTERVAL cMillies)
+{
+    if (!cMillies)
+    {
+        /* pthread_yield() isn't part of SuS, thus this fun. */
+#ifdef RT_OS_DARWIN
+        pthread_yield_np();
+#elif defined(RT_OS_FREEBSD) /* void pthread_yield */
+        pthread_yield();
+#elif defined(RT_OS_SOLARIS)
+        sched_yield();
+#else
+        if (!pthread_yield())
+#endif
+            return VINF_SUCCESS;
+    }
+    else
+    {
+        struct timespec ts;
+        struct timespec tsrem = {0,0};
+
+        ts.tv_nsec = (cMillies % 1000) * 1000000;
+        ts.tv_sec  = cMillies / 1000;
+        if (!nanosleep(&ts, &tsrem))
+            return VINF_SUCCESS;
+    }
+
+    return RTErrConvertFromErrno(errno);
+}
+
+
 RTDECL(bool) RTThreadYield(void)
 {
 #if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)

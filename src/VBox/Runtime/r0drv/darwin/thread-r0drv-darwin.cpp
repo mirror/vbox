@@ -43,13 +43,25 @@ RTDECL(RTNATIVETHREAD) RTThreadNativeSelf(void)
 }
 
 
-RTDECL(int) RTThreadSleep(RTMSINTERVAL cMillies)
+static int rtR0ThreadDarwinSleepCommon(RTMSINTERVAL cMillies)
 {
     RT_ASSERT_PREEMPTIBLE();
     uint64_t u64Deadline;
     clock_interval_to_deadline(cMillies, kMillisecondScale, &u64Deadline);
     clock_delay_until(u64Deadline);
     return VINF_SUCCESS;
+}
+
+
+RTDECL(int) RTThreadSleep(RTMSINTERVAL cMillies)
+{
+    return rtR0ThreadDarwinSleepCommon(cMillies);
+}
+
+
+RTDECL(int) RTThreadSleepNoLog(RTMSINTERVAL cMillies)
+{
+    return rtR0ThreadDarwinSleepCommon(cMillies);
 }
 
 

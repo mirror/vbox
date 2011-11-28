@@ -47,14 +47,14 @@ RTDECL(RTNATIVETHREAD) RTThreadNativeSelf(void)
 }
 
 
-RTDECL(int) RTThreadSleep(RTMSINTERVAL cMillies)
+static int rtR0ThreadSolSleepCommon(RTMSINTERVAL cMillies)
 {
     clock_t cTicks;
     RT_ASSERT_PREEMPTIBLE();
 
     if (!cMillies)
     {
-        RTThreadYield();
+        vbi_yield();
         return VINF_SUCCESS;
     }
 
@@ -65,6 +65,18 @@ RTDECL(int) RTThreadSleep(RTMSINTERVAL cMillies)
 
     delay(cTicks);
     return VINF_SUCCESS;
+}
+
+
+RTDECL(int) RTThreadSleep(RTMSINTERVAL cMillies)
+{
+    return rtR0ThreadSolSleepCommon(cMillies);
+}
+
+
+RTDECL(int) RTThreadSleepNoLog(RTMSINTERVAL cMillies)
+{
+    return rtR0ThreadSolSleepCommon(cMillies);
 }
 
 
