@@ -140,14 +140,25 @@ void vboxClientSetSignalHandlers(void)
  */
 void vboxClientUsage(const char *pcszFileName)
 {
-    RTPrintf("Usage: %s --clipboard|--display|--checkhostversion|--seamless [-d|--nodaemon]\n", pcszFileName);
+    RTPrintf("Usage: %s --clipboard|"
+#ifdef VBOX_WITH_DRAG_AND_DROP
+             "--draganddrop|"
+#endif
+             "--display|"
+# ifdef VBOX_WITH_GUEST_PROPS
+             "--checkhostversion|"
+#endif
+             "--seamless [-d|--nodaemon]\n", pcszFileName);
     RTPrintf("Start the VirtualBox X Window System guest services.\n\n");
     RTPrintf("Options:\n");
     RTPrintf("  --clipboard        start the shared clipboard service\n");
+#ifdef VBOX_WITH_DRAG_AND_DROP
+    RTPrintf("  --draganddrop      start the drag and drop service\n");
+#endif
     RTPrintf("  --display          start the display management service\n");
-# ifdef VBOX_WITH_GUEST_PROPS
+#ifdef VBOX_WITH_GUEST_PROPS
     RTPrintf("  --checkhostversion start the host version notifier service\n");
-# endif
+#endif
     RTPrintf("  --seamless         start the seamless windows service\n");
     RTPrintf("  -d, --nodaemon     continue running as a system service\n");
     RTPrintf("\n");
@@ -218,6 +229,15 @@ int main(int argc, char *argv[])
             else
                 fSuccess = false;
         }
+#ifdef VBOX_WITH_DRAG_AND_DROP
+        else if (!strcmp(argv[i], "--draganddrop"))
+        {
+            if (g_pService == NULL)
+                g_pService = VBoxClient::GetDragAndDropService();
+            else
+                fSuccess = false;
+        }
+#endif /* VBOX_WITH_DRAG_AND_DROP */
         else if (!strcmp(argv[i], "-h") || !strcmp(argv[i], "--help"))
         {
             vboxClientUsage(pszFileName);

@@ -610,6 +610,49 @@ VBGLR3DECL(bool)    VbglR3PageSharingIsEnabled(void);
 VBGLR3DECL(int)     VbglR3PageIsShared(RTGCPTR pPage, bool *pfShared, uint64_t *puPageFlags);
 /** @} */
 
+# ifdef VBOX_WITH_DRAG_AND_DROP
+/** @name Drag and Drop
+ * @{ */
+typedef struct VBGLR3DNDHGCMEVENT
+{
+    uint32_t uType;               /** The event type this struct contains */
+    uint32_t uScreenId;           /** Screen id this request belongs to */
+    char    *pszFormats;          /** Format list (\r\n separated) */
+    uint32_t cbFormats;           /** Size of pszFormats (\0 included) */
+    union
+    {
+        struct
+        {
+            uint32_t uXpos;       /** X position of guest screen */
+            uint32_t uYpos;       /** Y position of guest screen */
+            uint32_t uDefAction;  /** Proposed DnD action */
+            uint32_t uAllActions; /** Allowed DnD actions */
+        }a; /** Values used in init, move and drop event type */
+        struct
+        {
+            void    *pvData;      /** Data request */
+            size_t   cbData;      /** Size of pvData */
+        }b; /** Values used in drop data event type */
+    }u;
+} VBGLR3DNDHGCMEVENT;
+typedef VBGLR3DNDHGCMEVENT *PVBGLR3DNDHGCMEVENT;
+typedef const PVBGLR3DNDHGCMEVENT CPVBGLR3DNDHGCMEVENT;
+VBGLR3DECL(int)     VbglR3DnDInit(void);
+VBGLR3DECL(int)     VbglR3DnDTerm(void);
+
+VBGLR3DECL(int)     VbglR3DnDConnect(uint32_t *pu32ClientId);
+VBGLR3DECL(int)     VbglR3DnDDisconnect(uint32_t u32ClientId);
+
+VBGLR3DECL(int)     VbglR3DnDProcessNextMessage(CPVBGLR3DNDHGCMEVENT pEvent);
+
+VBGLR3DECL(int)     VbglR3DnDHGAcknowledgeOperation(uint32_t uAction);
+VBGLR3DECL(int)     VbglR3DnDHGRequestData(const char* pcszFormat);
+VBGLR3DECL(int)     VbglR3DnDGHAcknowledgePending(uint32_t uDefAction, uint32_t uAllActions, const char* pcszFormat);
+VBGLR3DECL(int)     VbglR3DnDGHSendData(void *pvData, uint32_t cbData);
+VBGLR3DECL(int)     VbglR3DnDGHErrorEvent(int rcOp);
+/** @} */
+# endif /* VBOX_WITH_DRAG_AND_DROP */
+
 #endif /* IN_RING3 */
 /** @} */
 

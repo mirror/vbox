@@ -51,7 +51,8 @@ LIBRARIES.win.amd64 += VBoxGuestR3Lib-x86 VBoxGuestR3LibShared-x86
 # VBoxGuestR0Lib
 #
 VBoxGuestR0Lib_TEMPLATE     = VBOXGUESTR0LIB
-VBoxGuestR0Lib_DEFS         = VBOX_WITH_HGCM
+VBoxGuestR0Lib_DEFS         = VBOX_WITH_HGCM \
+	$(if $(VBOX_WITH_DRAG_AND_DROP),VBOX_WITH_DRAG_AND_DROP,)
 VBoxGuestR0Lib_INCS         = \
 	$(VBoxGuestR0Lib_0_OUTDIR)
 VBoxGuestR0Lib_SOURCES      = \
@@ -68,7 +69,8 @@ VBoxGuestR0Lib_SOURCES      = \
 # VBoxGuestR0LibBase
 #
 VBoxGuestR0LibBase_TEMPLATE = VBOXGUESTR0LIB
-VBoxGuestR0LibBase_DEFS     = VBOX_WITH_HGCM VBGL_VBOXGUEST
+VBoxGuestR0LibBase_DEFS     = VBOX_WITH_HGCM VBGL_VBOXGUEST \
+	$(if $(VBOX_WITH_DRAG_AND_DROP),VBOX_WITH_DRAG_AND_DROP,)
 VBoxGuestR0LibBase_INCS     = $(VBoxGuestR0Lib_INCS)
 VBoxGuestR0LibBase_INCS.win = $(VBoxGuestR0Lib_INCS.win)
 VBoxGuestR0LibBase_SOURCES  = \
@@ -124,6 +126,12 @@ ifdef VBOX_WITH_GUEST_CONTROL
  VBoxGuestR3Lib_SOURCES   += \
  	VBoxGuestR3LibGuestCtrl.cpp
 endif
+ifdef VBOX_WITH_DRAG_AND_DROP
+ VBoxGuestR3Lib_DEFS      += \
+    VBOX_WITH_DRAG_AND_DROP
+ VBoxGuestR3Lib_SOURCES   += \
+ 	VBoxGuestR3LibDragAndDrop.cpp
+endif
 
 VBoxGuestR3LibAdditions.cpp_DEFS = VBOX_SVN_REV=$(VBOX_SVN_REV)
 
@@ -160,7 +168,8 @@ VBoxGuestR3LibXFree86_DEFS     = \
 	VBOX_WITH_HGCM \
 	VBOX_VBGLR3_XFREE86 \
 	RTMEM_NO_WRAP_TO_EF_APIS \
-	$(if $(VBOX_WITH_GUEST_PROPS),VBOX_WITH_GUEST_PROPS,)
+	$(if $(VBOX_WITH_GUEST_PROPS),VBOX_WITH_GUEST_PROPS,) \
+	$(if $(VBOX_WITH_DRAG_AND_DROP),VBOX_WITH_DRAG_AND_DROP,)
 VBoxGuestR3LibXFree86_SOURCES  = \
 	VBoxGuestR3Lib.cpp \
 	VBoxGuestR3LibGR.cpp \

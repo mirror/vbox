@@ -50,6 +50,7 @@ VBoxClient_LIBS = \
 	X11 \
 	Xrandr \
 	Xt
+#	Xtst
 # These are static replacements for gcc-specific parts of libstdc++
 VBoxClient_LIBS += \
 	supc++ \
@@ -68,6 +69,11 @@ ifdef VBOX_X11_SEAMLESS_GUEST
 endif
 ifdef VBOX_WITH_GUEST_PROPS
  VBoxClient_DEFS += VBOX_WITH_GUEST_PROPS
+endif
+ifdef VBOX_WITH_DRAG_AND_DROP
+ VBoxClient_DEFS += VBOX_WITH_DRAG_AND_DROP
+ VBoxClient_SOURCES += \
+	draganddrop.cpp
 endif
 
 ifdef VBOX_X11_SEAMLESS_GUEST
