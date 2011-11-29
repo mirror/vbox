@@ -176,6 +176,11 @@ public:
     ulong width() { return m_width; }
     ulong height() { return m_height; }
 
+    inline int convertGuestXTo(int x) const { return m_scaledSize.isValid() ? qRound((double)m_scaledSize.width() / m_width * x) : x; }
+    inline int convertGuestYTo(int y) const { return m_scaledSize.isValid() ? qRound((double)m_scaledSize.height() / m_height * y) : y; }
+    inline int convertHostXTo(int x) const  { return m_scaledSize.isValid() ? qRound((double)m_width / m_scaledSize.width() * x) : x; }
+    inline int convertHostYTo(int y) const  { return m_scaledSize.isValid() ? qRound((double)m_height / m_scaledSize.height() * y) : y; }
+
     virtual QSize scaledSize() const { return m_scaledSize; }
     virtual void setScaledSize(const QSize &size = QSize()) { m_scaledSize = size; }
 

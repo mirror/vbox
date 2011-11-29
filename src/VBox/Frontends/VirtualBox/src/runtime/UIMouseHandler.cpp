@@ -815,6 +815,19 @@ bool UIMouseHandler::mouseEvent(int iEventType, ulong uScreenId,
             cpnt.setX((int)(cpnt.x() * xRatio));
             cpnt.setY((int)(cpnt.y() * yRatio));
 
+            if (   cpnt.x() < 0
+                || cpnt.x() > iCw - 1
+                || cpnt.y() < 0
+                || cpnt.y() > iCh - 1)
+            {
+                if ((mouseButtons.testFlag(Qt::LeftButton)))
+                {
+                    m_views[uScreenId]->handleGHDnd();
+
+                    return false;
+                }
+            }
+
             /* Bound coordinates: */
             if (cpnt.x() < 0) cpnt.setX(0);
             else if (cpnt.x() > iCw - 1) cpnt.setX(iCw - 1);

@@ -23,6 +23,7 @@
 #include <QTimer>
 #include <QPainter>
 #include <QScrollBar>
+#include <QMainWindow>
 #include <VBox/VBoxVideo.h>
 #include <iprt/asm.h>
 
@@ -44,6 +45,10 @@
 #include "UIMachineViewFullscreen.h"
 #include "UIMachineViewSeamless.h"
 #include "UIMachineViewScale.h"
+
+#ifdef VBOX_WITH_DRAG_AND_DROP
+# include "UIDnDHandler.h"
+#endif
 
 #ifdef Q_WS_X11
 # include <QX11Info>
@@ -459,6 +464,11 @@ void UIMachineView::prepareCommon()
 
     /* Setup focus policy: */
     setFocusPolicy(Qt::WheelFocus);
+
+#ifdef VBOX_WITH_DRAG_AND_DROP
+    /* Enable Drag & Drop. */
+    setAcceptDrops(true);
+#endif /* VBOX_WITH_DRAG_AND_DROP */
 }
 
 void UIMachineView::prepareFilters()
@@ -1091,6 +1101,96 @@ void UIMachineView::paintEvent(QPaintEvent *pPaintEvent)
     }
 }
 
+#ifdef VBOX_WITH_DRAG_AND_DROP
+
+void UIMachineView::dragEnterEvent(QDragEnterEvent *pEvent)
+{
+    /* The guest object to talk to. */
+    CGuest guest = session().GetConsole().GetGuest();
+
+    /* Get mouse-pointer location */
+    const QPoint &cpnt = viewportToContents(pEvent->pos());
+
+    /* Ask the guest for starting a DnD event. */
+    Qt::DropAction result = gDnD->dragHGEnter(guest,
+                                              screenId(),
+                                              frameBuffer()->convertHostXTo(cpnt.x()),
+                                              frameBuffer()->convertHostYTo(cpnt.y()),
+                                              pEvent->proposedAction(),
+                                              pEvent->possibleActions(),
+                                              pEvent->mimeData(), this);
+
+    /* Set the DnD action returned by the guest. */
+    pEvent->setDropAction(result);
+    pEvent->accept();
+}
+
+void UIMachineView::dragMoveEvent(QDragMoveEvent *pEvent)
+{
+    /* The guest object to talk to. */
+    CGuest guest = session().GetConsole().GetGuest();
+
+    /* Get mouse-pointer location */
+    const QPoint &cpnt = viewportToContents(pEvent->pos());
+
+    /* Ask the guest for moving the drop cursor. */
+    Qt::DropAction result = gDnD->dragHGMove(guest,
+                                             screenId(),
+                                             frameBuffer()->convertHostXTo(cpnt.x()),
+                                             frameBuffer()->convertHostYTo(cpnt.y()),
+                                             pEvent->proposedAction(),
+                                             pEvent->possibleActions(),
+                                             pEvent->mimeData(), this);
+
+    /* Set the DnD action returned by the guest. */
+    pEvent->setDropAction(result);
+    pEvent->accept();
+}
+
+void UIMachineView::dragLeaveEvent(QDragLeaveEvent *pEvent)
+{
+    /* The guest object to talk to. */
+    CGuest guest = session().GetConsole().GetGuest();
+
+    /* Ask the guest for stopping this DnD event. */
+    gDnD->dragHGLeave(guest, screenId(), this);
+    pEvent->accept();
+}
+
+void UIMachineView::dropEvent(QDropEvent *pEvent)
+{
+    /* The guest object to talk to. */
+    CGuest guest = session().GetConsole().GetGuest();
+
+    /* Get mouse-pointer location */
+    const QPoint &cpnt = viewportToContents(pEvent->pos());
+
+    /* Ask the guest for dropping data. */
+    Qt::DropAction result = gDnD->dragHGDrop(guest,
+                                             screenId(),
+                                             frameBuffer()->convertHostXTo(cpnt.x()),
+                                             frameBuffer()->convertHostYTo(cpnt.y()),
+                                             pEvent->proposedAction(),
+                                             pEvent->possibleActions(),
+                                             pEvent->mimeData(), this);
+
+    /* Set the DnD action returned by the guest. */
+    pEvent->setDropAction(result);
+    pEvent->accept();
+}
+
+void UIMachineView::handleGHDnd()
+{
+    /* The guest object to talk to. */
+    CGuest guest = session().GetConsole().GetGuest();
+
+    /* Check for a pending DnD event within the guest and if so, handle all the
+     * magic. */
+    gDnD->dragGHPending(session(), screenId(), this);
+}
+
+#endif /* VBOX_WITH_DRAG_AND_DROP */
+
 #if defined(Q_WS_WIN)
 
 bool UIMachineView::winEvent(MSG *pMsg, long* /* piResult */)
@@ -1150,3 +1250,4 @@ bool UIMachineView::x11Event(XEvent *pEvent)
 }
 
 #endif
+

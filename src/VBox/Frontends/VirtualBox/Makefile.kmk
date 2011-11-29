@@ -110,6 +110,7 @@ VirtualBox_DEFS          += \
 	$(if $(VBOX_WITH_UDPTUNNEL),VBOX_WITH_UDPTUNNEL) \
 	$(if $(VBOX_WITH_EXTPACK),VBOX_WITH_EXTPACK) \
 	$(if $(VBOX_WITH_EHCI),VBOX_WITH_EHCI) \
+	$(if $(VBOX_WITH_DRAG_AND_DROP),VBOX_WITH_DRAG_AND_DROP) \
 	$(if $(VBOX_WITH_CRHGSMI),VBOX_WITH_CRHGSMI) \
 	$(if $(VBOX_WITH_VIRTIO),VBOX_WITH_VIRTIO) \
 	$(if $(VBOX_WITH_WDDM),VBOX_WITH_WDDM) \
@@ -557,6 +558,7 @@ VirtualBox_SOURCES.darwin += \
 	src/platform/darwin/DarwinKeyboard.cpp \
 	src/platform/darwin/UICocoaApplication.mm \
 	src/platform/darwin/UICocoaSpecialControls.mm \
+	src/platform/darwin/UICocoaWindowTarget.mm \
 	src/platform/darwin/UIDesktopServices_darwin.cpp \
 	src/platform/darwin/UIDesktopServices_darwin_cocoa.mm \
 	src/platform/darwin/VBoxUtils-darwin-cocoa.mm \
@@ -582,6 +584,13 @@ if defined(VBOX_WITH_VIDEOHWACCEL) || defined(VBOX_GUI_USE_QGL)
 	src/VBoxFBOverlay.cpp \
 	src/VBoxFBQGL.cpp \
 	src/VBoxGLSupportInfo.cpp
+endif
+
+ifdef VBOX_WITH_DRAG_AND_DROP
+ VirtualBox_SOURCES += \
+	src/runtime/UIDnDHandler.cpp
+ VirtualBox_QT_MOCSRCS += \
+	src/runtime/UIDnDHandler.cpp
 endif
 
 # The Qt modules we're using.

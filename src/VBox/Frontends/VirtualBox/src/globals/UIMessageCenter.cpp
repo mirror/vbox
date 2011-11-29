@@ -2879,6 +2879,28 @@ void UIMessageCenter::cannotRemoveSharedFolder(const CConsole &console, const QS
         emit sigCannotRemoveSharedFolder(console, strName, strPath, pParent);
 }
 
+#ifdef VBOX_WITH_DRAG_AND_DROP
+void UIMessageCenter::cannotDropData(const CGuest &guest,
+                                     QWidget *pParent /* = 0 */) const
+{
+    message(pParent ? pParent : mainWindowShown(),
+            Error,
+            tr("Failed to drop data."),
+            formatErrorInfo(guest));
+}
+
+void UIMessageCenter::cannotDropData(const CProgress &progress,
+                                     QWidget *pParent /* = 0 */) const
+{
+    AssertWrapperOk(progress);
+
+    message(pParent ? pParent : mainWindowShown(),
+            Error,
+            tr("Failed to drop data."),
+            formatErrorInfo(progress.GetErrorInfo()));
+}
+#endif /* VBOX_WITH_DRAG_AND_DROP */
+
 void UIMessageCenter::remindAboutWrongColorDepth(ulong uRealBPP, ulong uWantedBPP)
 {
     emit sigRemindAboutWrongColorDepth(uRealBPP, uWantedBPP);

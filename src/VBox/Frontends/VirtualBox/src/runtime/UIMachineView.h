@@ -191,6 +191,15 @@ protected:
     void moveEvent(QMoveEvent *pEvent);
     void paintEvent(QPaintEvent *pEvent);
 
+#ifdef VBOX_WITH_DRAG_AND_DROP
+    void dragEnterEvent(QDragEnterEvent *pEvent);
+    void dragLeaveEvent(QDragLeaveEvent *pEvent);
+    void dragMoveEvent(QDragMoveEvent *pEvent);
+    void dropEvent(QDropEvent *pEvent);
+
+    void handleGHDnd();
+#endif /* VBOX_WITH_DRAG_AND_DROP */
+
     /* Platform specific event processors: */
 #if defined(Q_WS_WIN)
     bool winEvent(MSG *pMsg, long *puResult);
