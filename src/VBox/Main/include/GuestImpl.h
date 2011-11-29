@@ -31,6 +31,10 @@
 using namespace guestControl;
 #endif
 
+#ifdef VBOX_WITH_DRAG_AND_DROP
+class GuestDnD;
+#endif
+
 typedef enum
 {
     GUESTSTATTYPE_CPUUSER     = 0,
@@ -89,6 +93,14 @@ public:
     STDMETHOD(GetAdditionsStatus)(AdditionsRunLevelType_T aLevel, BOOL *aActive);
     STDMETHOD(SetCredentials)(IN_BSTR aUsername, IN_BSTR aPassword,
                               IN_BSTR aDomain, BOOL aAllowInteractiveLogon);
+    STDMETHOD(DragHGEnter)(ULONG uScreenId, ULONG uX, ULONG uY, DragAndDropAction_T defaultAction, ComSafeArrayIn(DragAndDropAction_T, allowedActions), ComSafeArrayIn(IN_BSTR, formats), DragAndDropAction_T *pResultAction);
+    STDMETHOD(DragHGMove)(ULONG uScreenId, ULONG uX, ULONG uY, DragAndDropAction_T defaultAction, ComSafeArrayIn(DragAndDropAction_T, allowedActions), ComSafeArrayIn(IN_BSTR, formats), DragAndDropAction_T *pResultAction);
+    STDMETHOD(DragHGLeave)(ULONG uScreenId);
+    STDMETHOD(DragHGDrop)(ULONG uScreenId, ULONG uX, ULONG uY, DragAndDropAction_T defaultAction, ComSafeArrayIn(DragAndDropAction_T, allowedActions), ComSafeArrayIn(IN_BSTR, formats), BSTR *pstrFormat, DragAndDropAction_T *pResultAction);
+    STDMETHOD(DragHGPutData)(ULONG uScreenId, IN_BSTR strFormat, ComSafeArrayIn(BYTE, data), IProgress **ppProgress);
+    STDMETHOD(DragGHPending)(ULONG uScreenId, ComSafeArrayOut(BSTR, formats), ComSafeArrayOut(DragAndDropAction_T, allowedActions), DragAndDropAction_T *pDefaultAction);
+    STDMETHOD(DragGHDropped)(IN_BSTR strFormat, DragAndDropAction_T action, IProgress **ppProgress);
+    STDMETHOD(DragGHGetData)(ComSafeArrayOut(BYTE, data));
     // Process execution
     STDMETHOD(ExecuteProcess)(IN_BSTR aCommand, ULONG aFlags,
                               ComSafeArrayIn(IN_BSTR, aArguments), ComSafeArrayIn(IN_BSTR, aEnvironment),
@@ -174,7 +186,7 @@ public:
     HRESULT fileQuerySizeInternal(IN_BSTR aFile, IN_BSTR aUsername, IN_BSTR aPassword, LONG64 *aSize);
 
     // Guest control dispatcher.
-    /** Static callback for handling guest notifications. */
+    /** Static callback for handling guest control notifications. */
     static DECLCALLBACK(int) notifyCtrlDispatcher(void *pvExtension, uint32_t u32Function, void *pvParms, uint32_t cbParms);
 
     // Internal tasks.
@@ -182,7 +194,7 @@ public:
     HRESULT taskCopyFileToGuest(GuestTask *aTask);
     HRESULT taskCopyFileFromGuest(GuestTask *aTask);
     HRESULT taskUpdateGuestAdditions(GuestTask *aTask);
-# endif
+#endif
 
 private:
 
@@ -301,6 +313,12 @@ private:
     GuestDirectoryMap mGuestDirectoryMap;
     GuestProcessMap   mGuestProcessMap;
 # endif
+
+#ifdef VBOX_WITH_DRAG_AND_DROP
+    GuestDnD         *m_pGuestDnD;
+    friend class GuestDnD;
+    friend class GuestDnDPrivate;
+#endif
 };
 
 #endif // ____H_GUESTIMPL

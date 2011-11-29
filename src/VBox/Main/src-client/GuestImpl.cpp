@@ -20,6 +20,9 @@
 #include "Global.h"
 #include "ConsoleImpl.h"
 #include "ProgressImpl.h"
+#ifdef VBOX_WITH_DRAG_AND_DROP
+# include "GuestDnDImpl.h"
+#endif
 #include "VMMDev.h"
 
 #include "AutoCaller.h"
@@ -98,6 +101,10 @@ HRESULT Guest::init(Console *aParent)
     mNextContextID = 1000;
 #endif
 
+#ifdef VBOX_WITH_DRAG_AND_DROP
+    m_pGuestDnD = new GuestDnD(this);
+#endif
+
     return S_OK;
 }
 
@@ -110,6 +117,9 @@ void Guest::uninit()
     LogFlowThisFunc(("\n"));
 
 #ifdef VBOX_WITH_GUEST_CONTROL
+    /* r=poetzsch: Not sure if this is really right. Please note that
+     * IGuest::uninit is called twice (which I also consider a bug). So the
+     * test for uninitDone should be always first! */
     /* Scope write lock as much as possible. */
     {
         /*
@@ -141,6 +151,11 @@ void Guest::uninit()
     AutoUninitSpan autoUninitSpan(this);
     if (autoUninitSpan.uninitDone())
         return;
+
+#ifdef VBOX_WITH_DRAG_AND_DROP
+    delete m_pGuestDnD;
+    m_pGuestDnD = NULL;
+#endif
 
     unconst(mParent) = NULL;
 }
@@ -538,6 +553,135 @@ STDMETHODIMP Guest::SetCredentials(IN_BSTR aUserName, IN_BSTR aPassword,
 
     return setError(VBOX_E_VM_ERROR,
                     tr("VMM device is not available (is the VM running?)"));
+}
+
+STDMETHODIMP Guest::DragHGEnter(ULONG uScreenId, ULONG uX, ULONG uY, DragAndDropAction_T defaultAction, ComSafeArrayIn(DragAndDropAction_T, allowedActions), ComSafeArrayIn(IN_BSTR, formats), DragAndDropAction_T *pResultAction)
+{
+    /* Input validation */
+    CheckComArgSafeArrayNotNull(allowedActions);
+    CheckComArgSafeArrayNotNull(formats);
+    CheckComArgOutPointerValid(pResultAction);
+
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+#ifdef VBOX_WITH_DRAG_AND_DROP
+    return m_pGuestDnD->dragHGEnter(uScreenId, uX, uY, defaultAction, ComSafeArrayInArg(allowedActions), ComSafeArrayInArg(formats), pResultAction);
+#else /* VBOX_WITH_DRAG_AND_DROP */
+    ReturnComNotImplemented();
+#endif /* !VBOX_WITH_DRAG_AND_DROP */
+}
+
+STDMETHODIMP Guest::DragHGMove(ULONG uScreenId, ULONG uX, ULONG uY, DragAndDropAction_T defaultAction, ComSafeArrayIn(DragAndDropAction_T, allowedActions), ComSafeArrayIn(IN_BSTR, formats), DragAndDropAction_T *pResultAction)
+{
+    /* Input validation */
+    CheckComArgSafeArrayNotNull(allowedActions);
+    CheckComArgSafeArrayNotNull(formats);
+    CheckComArgOutPointerValid(pResultAction);
+
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+#ifdef VBOX_WITH_DRAG_AND_DROP
+    return m_pGuestDnD->dragHGMove(uScreenId, uX, uY, defaultAction, ComSafeArrayInArg(allowedActions), ComSafeArrayInArg(formats), pResultAction);
+#else /* VBOX_WITH_DRAG_AND_DROP */
+    ReturnComNotImplemented();
+#endif /* !VBOX_WITH_DRAG_AND_DROP */
+}
+
+STDMETHODIMP Guest::DragHGLeave(ULONG uScreenId)
+{
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+#ifdef VBOX_WITH_DRAG_AND_DROP
+    return m_pGuestDnD->dragHGLeave(uScreenId);
+#else /* VBOX_WITH_DRAG_AND_DROP */
+    ReturnComNotImplemented();
+#endif /* !VBOX_WITH_DRAG_AND_DROP */
+}
+
+STDMETHODIMP Guest::DragHGDrop(ULONG uScreenId, ULONG uX, ULONG uY, DragAndDropAction_T defaultAction, ComSafeArrayIn(DragAndDropAction_T, allowedActions), ComSafeArrayIn(IN_BSTR, formats), BSTR *pstrFormat, DragAndDropAction_T *pResultAction)
+{
+    /* Input validation */
+    CheckComArgSafeArrayNotNull(allowedActions);
+    CheckComArgSafeArrayNotNull(formats);
+    CheckComArgOutPointerValid(pstrFormat);
+    CheckComArgOutPointerValid(pResultAction);
+
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+#ifdef VBOX_WITH_DRAG_AND_DROP
+    return m_pGuestDnD->dragHGDrop(uScreenId, uX, uY, defaultAction, ComSafeArrayInArg(allowedActions), ComSafeArrayInArg(formats), pstrFormat, pResultAction);
+#else /* VBOX_WITH_DRAG_AND_DROP */
+    ReturnComNotImplemented();
+#endif /* !VBOX_WITH_DRAG_AND_DROP */
+}
+
+STDMETHODIMP Guest::DragHGPutData(ULONG uScreenId, IN_BSTR bstrFormat, ComSafeArrayIn(BYTE, data), IProgress **ppProgress)
+{
+    /* Input validation */
+    CheckComArgStrNotEmptyOrNull(bstrFormat);
+    CheckComArgSafeArrayNotNull(data);
+    CheckComArgOutPointerValid(ppProgress);
+
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+#ifdef VBOX_WITH_DRAG_AND_DROP
+    return m_pGuestDnD->dragHGPutData(uScreenId, bstrFormat, ComSafeArrayInArg(data), ppProgress);
+#else /* VBOX_WITH_DRAG_AND_DROP */
+    ReturnComNotImplemented();
+#endif /* !VBOX_WITH_DRAG_AND_DROP */
+}
+
+STDMETHODIMP Guest::DragGHPending(ULONG uScreenId, ComSafeArrayOut(BSTR, formats), ComSafeArrayOut(DragAndDropAction_T, allowedActions), DragAndDropAction_T *pDefaultAction)
+{
+    /* Input validation */
+    CheckComArgSafeArrayNotNull(formats);
+    CheckComArgSafeArrayNotNull(allowedActions);
+    CheckComArgOutPointerValid(pDefaultAction);
+
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+#ifdef VBOX_WITH_DRAG_AND_DROP
+    return m_pGuestDnD->dragGHPending(uScreenId, ComSafeArrayOutArg(formats), ComSafeArrayOutArg(allowedActions), pDefaultAction);
+#else /* VBOX_WITH_DRAG_AND_DROP */
+    ReturnComNotImplemented();
+#endif /* !VBOX_WITH_DRAG_AND_DROP */
+}
+
+STDMETHODIMP Guest::DragGHDropped(IN_BSTR bstrFormat, DragAndDropAction_T action, IProgress **ppProgress)
+{
+    /* Input validation */
+    CheckComArgStrNotEmptyOrNull(bstrFormat);
+    CheckComArgOutPointerValid(ppProgress);
+
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+#ifdef VBOX_WITH_DRAG_AND_DROP
+    return m_pGuestDnD->dragGHDropped(bstrFormat, action, ppProgress);
+#else /* VBOX_WITH_DRAG_AND_DROP */
+    ReturnComNotImplemented();
+#endif /* !VBOX_WITH_DRAG_AND_DROP */
+}
+
+STDMETHODIMP Guest::DragGHGetData(ComSafeArrayOut(BYTE, data))
+{
+    /* Input validation */
+    CheckComArgSafeArrayNotNull(data);
+
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+#ifdef VBOX_WITH_DRAG_AND_DROP
+    return m_pGuestDnD->dragGHGetData(ComSafeArrayOutArg(data));
+#else /* VBOX_WITH_DRAG_AND_DROP */
+    ReturnComNotImplemented();
+#endif /* !VBOX_WITH_DRAG_AND_DROP */
 }
 
 // public methods only for internal purposes

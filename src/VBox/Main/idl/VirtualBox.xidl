@@ -8573,6 +8573,31 @@
   </enum>
 
   <enum
+    name="DragAndDropAction"
+    uuid="47f3b162-c107-4fcd-bfa7-54b8135c441e"
+  >
+    <desc>
+      Possible actions within an Drag and Drop operation.
+    </desc>
+
+    <const name="Ignore"               value="0">
+      <desc>Do nothing.</desc>
+    </const>
+
+    <const name="Copy"                 value="1">
+      <desc>Copy the item to the target.</desc>
+    </const>
+
+    <const name="Move"                 value="2">
+      <desc>Move the item to the target.</desc>
+    </const>
+
+    <const name="Link"                 value="3">
+      <desc>Link the item from within the target.</desc>
+    </const>
+  </enum>
+
+  <enum
     name="DirectoryOpenFlag"
     uuid="fc8f6203-0072-4f34-bd08-0b35e50bf071"
     >
@@ -8626,7 +8651,7 @@
 
   <interface
     name="IGuest" extends="$unknown"
-    uuid="ed109b6e-0578-4b17-8ace-52646789f1a0"
+    uuid="1E404590-608E-492C-B00A-90C9EEB6C33F"
     wsmap="managed"
     >
     <desc>
@@ -8787,6 +8812,219 @@
           interactively specify different credentials. This flag might
           not be supported by all versions of the Additions.
         </desc>
+      </param>
+    </method>
+
+    <method name="dragHGEnter">
+      <desc>
+        Informs the guest about a Drag and Drop enter event.
+
+        This is used in Host - Guest direction.
+
+        <result name="VBOX_E_VM_ERROR">
+          VMM device is not available.
+        </result>
+
+      </desc>
+      <param name="screenId" type="unsigned long" dir="in">
+        <desc>The screen id where the Drag and Drop event occured.</desc>
+      </param>
+      <param name="y" type="unsigned long" dir="in">
+        <desc>y-position of the event.</desc>
+      </param>
+      <param name="x" type="unsigned long" dir="in">
+        <desc>x-position of the event.</desc>
+      </param>
+      <param name="defaultAction" type="DragAndDropAction" dir="in">
+        <desc>The default action to use.</desc>
+      </param>
+      <param name="allowedActions" type="DragAndDropAction" dir="in" safearray="yes">
+        <desc>The actions which are allowed.</desc>
+      </param>
+      <param name="formats" type="wstring" dir="in" safearray="yes">
+        <desc>The supported mime types.</desc>
+      </param>
+      <param name="resultAction" type="DragAndDropAction" dir="return">
+        <desc>The resulting action of this event.</desc>
+      </param>
+    </method>
+
+    <method name="dragHGMove">
+      <desc>
+        Informs the guest about a Drag and Drop move event.
+
+        This is used in Host - Guest direction.
+
+        <result name="VBOX_E_VM_ERROR">
+          VMM device is not available.
+        </result>
+
+      </desc>
+      <param name="screenId" type="unsigned long" dir="in">
+        <desc>The screen id where the Drag and Drop event occured.</desc>
+      </param>
+      <param name="x" type="unsigned long" dir="in">
+        <desc>x-position of the event.</desc>
+      </param>
+      <param name="y" type="unsigned long" dir="in">
+        <desc>y-position of the event.</desc>
+      </param>
+      <param name="defaultAction" type="DragAndDropAction" dir="in">
+        <desc>The default action to use.</desc>
+      </param>
+      <param name="allowedActions" type="DragAndDropAction" dir="in" safearray="yes">
+        <desc>The actions which are allowed.</desc>
+      </param>
+      <param name="formats" type="wstring" dir="in" safearray="yes">
+        <desc>The supported mime types.</desc>
+      </param>
+      <param name="resultAction" type="DragAndDropAction" dir="return">
+        <desc>The resulting action of this event.</desc>
+      </param>
+    </method>
+
+    <method name="dragHGLeave">
+      <desc>
+        Informs the guest about a Drag and Drop leave event.
+
+        This is used in Host - Guest direction.
+
+        <result name="VBOX_E_VM_ERROR">
+          VMM device is not available.
+        </result>
+
+      </desc>
+      <param name="screenId" type="unsigned long" dir="in">
+        <desc>The screen id where the Drag and Drop event occured.</desc>
+      </param>
+    </method>
+
+    <method name="dragHGDrop">
+      <desc>
+        Informs the guest about a drop event.
+
+        This is used in Host - Guest direction.
+
+        <result name="VBOX_E_VM_ERROR">
+          VMM device is not available.
+        </result>
+
+      </desc>
+      <param name="screenId" type="unsigned long" dir="in">
+        <desc>The screen id where the Drag and Drop event occured.</desc>
+      </param>
+      <param name="x" type="unsigned long" dir="in">
+        <desc>x-position of the event.</desc>
+      </param>
+      <param name="y" type="unsigned long" dir="in">
+        <desc>y-position of the event.</desc>
+      </param>
+      <param name="defaultAction" type="DragAndDropAction" dir="in">
+        <desc>The default action to use.</desc>
+      </param>
+      <param name="allowedActions" type="DragAndDropAction" dir="in" safearray="yes">
+        <desc>The actions which are allowed.</desc>
+      </param>
+      <param name="formats" type="wstring" dir="in" safearray="yes">
+        <desc>The supported mime types.</desc>
+      </param>
+      <param name="format" type="wstring" dir="out">
+        <desc>The resulting format of this event.</desc>
+      </param>
+      <param name="resultAction" type="DragAndDropAction" dir="return">
+        <desc>The resulting action of this event.</desc>
+      </param>
+    </method>
+
+    <method name="dragHGPutData">
+      <desc>
+        Informs the guest about a drop data event.
+
+        This is used in Host - Guest direction.
+
+        <result name="VBOX_E_VM_ERROR">
+          VMM device is not available.
+        </result>
+
+      </desc>
+      <param name="screenId" type="unsigned long" dir="in">
+        <desc>The screen id where the Drag and Drop event occured.</desc>
+      </param>
+      <param name="format" type="wstring" dir="in">
+        <desc>The mime type the data is in.</desc>
+      </param>
+      <param name="data" type="octet" dir="in" safearray="yes">
+        <desc>The actual data.</desc>
+      </param>
+      <param name="progress" type="IProgress" dir="return">
+        <desc>Progress object to track the operation completion.</desc>
+      </param>
+    </method>
+
+    <method name="dragGHPending">
+      <desc>
+        Ask the guest if there is any Drag and Drop operation pending in the guest.
+
+        If no Drag and Drop operation is pending currently, Ignore is returned.
+
+        This is used in Guest - Host direction.
+
+        <result name="VBOX_E_VM_ERROR">
+          VMM device is not available.
+        </result>
+
+      </desc>
+      <param name="screenId" type="unsigned long" dir="in">
+        <desc>The screen id where the Drag and Drop event occured.</desc>
+      </param>
+      <param name="format" type="wstring" dir="out" safearray="yes">
+        <desc>On return the supported mime types.</desc>
+      </param>
+      <param name="allowedActions" type="DragAndDropAction" dir="out" safearray="yes">
+        <desc>On return the actions which are allowed.</desc>
+      </param>
+      <param name="defaultAction" type="DragAndDropAction" dir="return">
+        <desc>On return the default action to use.</desc>
+      </param>
+    </method>
+
+    <method name="dragGHDropped">
+      <desc>
+        Informs the guest that a drop event occured for a pending Drag and Drop event.
+
+        This is used in Guest - Host direction.
+
+        <result name="VBOX_E_VM_ERROR">
+          VMM device is not available.
+        </result>
+
+      </desc>
+
+      <param name="format" type="wstring" dir="in">
+        <desc>The mime type the data must be in.</desc>
+      </param>
+      <param name="action" type="DragAndDropAction" dir="in">
+        <desc>The action to use.</desc>
+      </param>
+      <param name="progress" type="IProgress" dir="return">
+        <desc>Progress object to track the operation completion.</desc>
+      </param>
+    </method>
+
+    <method name="dragGHGetData">
+      <desc>
+        Fetch the data of a previously Drag and Drop event from the guest.
+
+        This is used in Guest - Host direction.
+
+        <result name="VBOX_E_VM_ERROR">
+          VMM device is not available.
+        </result>
+
+      </desc>
+
+      <param name="data" type="octet" safearray="yes" dir="return">
+        <desc>The actual data.</desc>
       </param>
     </method>
 
