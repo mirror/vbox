@@ -558,7 +558,6 @@ VirtualBox_SOURCES.darwin += \
 	src/platform/darwin/DarwinKeyboard.cpp \
 	src/platform/darwin/UICocoaApplication.mm \
 	src/platform/darwin/UICocoaSpecialControls.mm \
-	src/platform/darwin/UICocoaWindowTarget.mm \
 	src/platform/darwin/UIDesktopServices_darwin.cpp \
 	src/platform/darwin/UIDesktopServices_darwin_cocoa.mm \
 	src/platform/darwin/VBoxUtils-darwin-cocoa.mm \
