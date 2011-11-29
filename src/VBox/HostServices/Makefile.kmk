@@ -39,6 +39,9 @@ endif
 ifdef VBOX_WITH_GUEST_CONTROL
  include $(PATH_SUB_CURRENT)/GuestControl/Makefile.kmk
 endif
+ifdef VBOX_WITH_DRAG_AND_DROP
+ include $(PATH_SUB_CURRENT)/DragAndDrop/Makefile.kmk
+endif
 include $(PATH_SUB_CURRENT)/testcase/Makefile.kmk
 
 include	$(KBUILD_PATH)/subfooter.kmk
