@@ -225,14 +225,10 @@ NS_IMPL_THREADSAFE_ISUPPORTS1_CI(BandwidthControl, IBandwidthControl)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-enum
-{
-    /* Delay before shutting down the VirtualBox server after the last
-     * VirtualBox instance is released, in ms */
-    VBoxSVC_ShutdownDelay = 5000
-};
-
 static bool gAutoShutdown = false;
+/** Delay before shutting down the VirtualBox server after the last
+ * VirtualBox instance is released, in ms */
+static uint32_t gShutdownDelayMs = 5000;
 
 static nsIEventQueue  *gEventQ          = nsnull;
 static PRBool volatile gKeepRunning     = PR_TRUE;
@@ -343,14 +339,14 @@ public:
             if (sTimer != NULL)
             {
                 LogFlowFunc(("Last VirtualBox instance was released.\n"));
-                LogFlowFunc(("Scheduling server shutdown in %d ms...\n",
-                             VBoxSVC_ShutdownDelay));
+                LogFlowFunc(("Scheduling server shutdown in %u ms...\n",
+                             gShutdownDelayMs));
 
                 /* make sure the previous timer (if any) is stopped;
                  * otherwise RTTimerStart() will definitely fail. */
                 RTTimerLRStop(sTimer);
 
-                int vrc = RTTimerLRStart(sTimer, uint64_t(VBoxSVC_ShutdownDelay) * 1000000);
+                int vrc = RTTimerLRStart(sTimer, gShutdownDelayMs * RT_NS_1MS_64);
                 AssertRC(vrc);
                 timerStarted = SUCCEEDED(vrc);
             }
@@ -404,7 +400,7 @@ public:
         /* called on the main thread */
         void *handler()
         {
-            LogFlowFunc(("\n"));
+            LogFlowFuncEnter();
 
             Assert(RTCritSectIsInitialized(&sLock));
 
@@ -431,6 +427,8 @@ public:
                     /* make it leave the event loop */
                     gKeepRunning = PR_FALSE;
                 }
+                else
+                    LogFlowFunc(("No automatic shutdown.\n"));
             }
             else
             {
@@ -442,6 +440,7 @@ public:
 
             RTCritSectLeave(&sLock);
 
+            LogFlowFuncLeave();
             return NULL;
         }
     };
@@ -797,7 +796,8 @@ int main(int argc, char **argv)
         { "--automate",         'a', RTGETOPT_REQ_NOTHING },
         { "--auto-shutdown",    'A', RTGETOPT_REQ_NOTHING },
         { "--daemonize",        'd', RTGETOPT_REQ_NOTHING },
-        { "--pidfile",          'p', RTGETOPT_REQ_STRING  },
+        { "--shutdown-delay",   'D', RTGETOPT_REQ_UINT32 },
+        { "--pidfile",          'p', RTGETOPT_REQ_STRING },
         { "--logfile",          'F', RTGETOPT_REQ_STRING },
         { "--logrotate",        'R', RTGETOPT_REQ_UINT32 },
         { "--logsize",          'S', RTGETOPT_REQ_UINT64 },
@@ -821,33 +821,29 @@ int main(int argc, char **argv)
         switch (vrc)
         {
             case 'a':
-            {
                 /* --automate mode means we are started by XPCOM on
                  * demand. Daemonize ourselves and activate
                  * auto-shutdown. */
                 gAutoShutdown = true;
                 fDaemonize = true;
                 break;
-            }
 
-            /* --auto-shutdown mode means we're already daemonized. */
             case 'A':
-            {
+                /* --auto-shutdown mode means we're already daemonized. */
                 gAutoShutdown = true;
                 break;
-            }
 
             case 'd':
-            {
                 fDaemonize = true;
                 break;
-            }
+
+            case 'D':
+                gShutdownDelayMs = ValueUnion.u32;
+                break;
 
             case 'p':
-            {
                 g_pszPidFile = ValueUnion.psz;
                 break;
-            }
 
             case 'F':
                 pszLogFile = ValueUnion.psz;
@@ -866,16 +862,12 @@ int main(int argc, char **argv)
                 break;
 
             case 'h':
-            {
                 RTPrintf("no help\n");
                 return 1;
-            }
 
             case 'V':
-            {
                 RTPrintf("%sr%s\n", RTBldCfgVersion(), RTBldCfgRevisionStr());
                 return 0;
-            }
 
             default:
                 return RTGetOptPrintError(vrc, &ValueUnion);
