@@ -303,7 +303,7 @@ bool Guest::callbackIsCanceled(uint32_t uContextID)
 {
     AssertReturn(uContextID, true);
 
-    Progress *pProgress = NULL;
+    ComPtr<IProgress> pProgress;
     {
         AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -330,7 +330,7 @@ bool Guest::callbackIsComplete(uint32_t uContextID)
 {
     AssertReturn(uContextID, true);
 
-    Progress *pProgress = NULL;
+    ComPtr<IProgress> pProgress;
     {
         AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -358,7 +358,7 @@ int Guest::callbackMoveForward(uint32_t uContextID, const char *pszMessage)
     AssertReturn(uContextID, VERR_INVALID_PARAMETER);
     AssertPtrReturn(pszMessage, VERR_INVALID_PARAMETER);
 
-    Progress *pProgress = NULL;
+    ComPtr<IProgress> pProgress;
     {
         AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -396,7 +396,7 @@ int Guest::callbackNotifyEx(uint32_t uContextID, int iRC, const char *pszMessage
     LogFlowFunc(("Checking whether callback (CID=%u) needs notification iRC=%Rrc, pszMsg=%s\n",
                  uContextID, iRC, pszMessage ? pszMessage : "<No message given>"));
 
-    Progress *pProgress = NULL;
+    ComObjPtr<Progress> pProgress;
     {
         AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -554,7 +554,7 @@ int Guest::callbackWaitForCompletion(uint32_t uContextID, LONG lStage, LONG lTim
      */
 
     int vrc = VINF_SUCCESS;
-    Progress *pProgress = NULL;
+    ComPtr<IProgress> pProgress;
     {
         AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
