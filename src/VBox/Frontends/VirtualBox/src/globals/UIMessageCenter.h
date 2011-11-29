@@ -425,6 +425,10 @@ public:
                                   const QString &strPath, QWidget *pParent = 0);
     void cannotRemoveSharedFolder(const CConsole &console, const QString &strName,
                                   const QString &strPath, QWidget *pParent = 0);
+#ifdef VBOX_WITH_DRAG_AND_DROP
+    void cannotDropData(const CGuest &guest, QWidget *pParent = 0) const;
+    void cannotDropData(const CProgress &progress, QWidget *pParent = 0) const;
+#endif /* VBOX_WITH_DRAG_AND_DROP */
     void remindAboutWrongColorDepth(ulong uRealBPP, ulong uWantedBPP);
     void remindAboutUnsupportedUSB2(const QString &strExtPackName, QWidget *pParent = 0);
 

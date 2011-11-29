@@ -163,6 +163,8 @@
     <file alias="progress_snapshot_restore_90px.png">images/progress_snapshot_restore_90px.png</file>
     <file alias="progress_snapshot_discard_90px.png">images/progress_snapshot_discard_90px.png</file>
     <file alias="progress_clone_90px.png">images/progress_clone_90px.png</file>
+    <file alias="progress_dnd_gh_90px.png">images/progress_dnd_gh_90px.png</file>
+    <file alias="progress_dnd_hg_90px.png">images/progress_dnd_hg_90px.png</file>
     <file alias="status_check_16px.png">images/status_check_16px.png</file>
     <file alias="status_check_32px.png">images/status_check_32px.png</file>
     <file alias="status_error_16px.png">images/status_error_16px.png</file>
