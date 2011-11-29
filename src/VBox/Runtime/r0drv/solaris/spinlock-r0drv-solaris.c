@@ -82,7 +82,7 @@ RTDECL(int)  RTSpinlockCreate(PRTSPINLOCK pSpinlock)
      * Initialize & return.
      */
     pThis->u32Magic = RTSPINLOCK_MAGIC;
-    mutex_init(&pThis->Mtx, "IPRT Spinlock", MUTEX_SPIN, (void *)ipltospl(DISP_LEVEL));
+    mutex_init(&pThis->Mtx, "IPRT Spinlock", MUTEX_SPIN, (void *)ipltospl(PIL_MAX));
     *pSpinlock = pThis;
     return VINF_SUCCESS;
 }
