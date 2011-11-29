@@ -455,7 +455,7 @@ int handleCloneVM(HandlerArg *a)
 
 int handleStartVM(HandlerArg *a)
 {
-    HRESULT rc;
+    HRESULT rc = S_OK;
     std::list<const char *> VMs;
     Bstr sessionType = "gui";
 
