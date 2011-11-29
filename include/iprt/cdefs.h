@@ -1900,6 +1900,59 @@
 #define _2E             0x2000000000000000ULL
 /** @} */
 
+/** @defgroup grp_rt_cdefs_decimal_grouping   Decimal Constant Grouping Macros
+ * @{ */
+#define RT_D1(g1)                                   g1
+#define RT_D2(g1, g2)                               g1#g2
+#define RT_D3(g1, g2, g3)                           g1#g2#g3
+#define RT_D4(g1, g2, g3, g4)                       g1#g2#g3#g4
+#define RT_D5(g1, g2, g3, g4, g5)                   g1#g2#g3#g4#g5
+#define RT_D6(g1, g2, g3, g4, g5, g6)               g1#g2#g3#g4#g5#g6
+#define RT_D7(g1, g2, g3, g4, g5, g6, g7)           g1#g2#g3#g4#g5#g6#g7
+
+#define RT_D1_U(g1)                                 UINT32_C(g1)
+#define RT_D2_U(g1, g2)                             UINT32_C(g1#g2)
+#define RT_D3_U(g1, g2, g3)                         UINT32_C(g1#g2#g3)
+#define RT_D4_U(g1, g2, g3, g4)                     UINT64_C(g1#g2#g3#g4)
+#define RT_D5_U(g1, g2, g3, g4, g5)                 UINT64_C(g1#g2#g3#g4#g5)
+#define RT_D6_U(g1, g2, g3, g4, g5, g6)             UINT64_C(g1#g2#g3#g4#g5#g6)
+#define RT_D7_U(g1, g2, g3, g4, g5, g6, g7)         UINT64_C(g1#g2#g3#g4#g5#g6#g7)
+
+#define RT_D1_S(g1)                                 INT32_C(g1)
+#define RT_D2_S(g1, g2)                             INT32_C(g1#g2)
+#define RT_D3_S(g1, g2, g3)                         INT32_C(g1#g2#g3)
+#define RT_D4_S(g1, g2, g3, g4)                     INT64_C(g1#g2#g3#g4)
+#define RT_D5_S(g1, g2, g3, g4, g5)                 INT64_C(g1#g2#g3#g4#g5)
+#define RT_D6_S(g1, g2, g3, g4, g5, g6)             INT64_C(g1#g2#g3#g4#g5#g6)
+#define RT_D7_S(g1, g2, g3, g4, g5, g6, g7)         INT64_C(g1#g2#g3#g4#g5#g6#g7)
+
+#define RT_D1_U32(g1)                               UINT32_C(g1)
+#define RT_D2_U32(g1, g2)                           UINT32_C(g1#g2)
+#define RT_D3_U32(g1, g2, g3)                       UINT32_C(g1#g2#g3)
+#define RT_D4_U32(g1, g2, g3, g4)                   UINT32_C(g1#g2#g3#g4)
+
+#define RT_D1_S32(g1)                               INT32_C(g1)
+#define RT_D2_S32(g1, g2)                           INT32_C(g1#g2)
+#define RT_D3_S32(g1, g2, g3)                       INT32_C(g1#g2#g3)
+#define RT_D4_S32(g1, g2, g3, g4)                   INT32_C(g1#g2#g3#g4)
+
+#define RT_D1_U64(g1)                               UINT64_C(g1)
+#define RT_D2_U64(g1, g2)                           UINT64_C(g1#g2)
+#define RT_D3_U64(g1, g2, g3)                       UINT64_C(g1#g2#g3)
+#define RT_D4_U64(g1, g2, g3, g4)                   UINT64_C(g1#g2#g3#g4)
+#define RT_D5_U64(g1, g2, g3, g4, g5)               UINT64_C(g1#g2#g3#g4#g5)
+#define RT_D6_U64(g1, g2, g3, g4, g5, g6)           UINT64_C(g1#g2#g3#g4#g5#g6)
+#define RT_D7_U64(g1, g2, g3, g4, g5, g6, g7)       UINT64_C(g1#g2#g3#g4#g5#g6#g7)
+
+#define RT_D1_S64(g1)                               INT64_C(g1)
+#define RT_D2_S64(g1, g2)                           INT64_C(g1#g2)
+#define RT_D3_S64(g1, g2, g3)                       INT64_C(g1#g2#g3)
+#define RT_D4_S64(g1, g2, g3, g4)                   INT64_C(g1#g2#g3#g4)
+#define RT_D5_S64(g1, g2, g3, g4, g5)               INT64_C(g1#g2#g3#g4#g5)
+#define RT_D6_S64(g1, g2, g3, g4, g5, g6)           INT64_C(g1#g2#g3#g4#g5#g6)
+#define RT_D7_S64(g1, g2, g3, g4, g5, g6, g7)       INT64_C(g1#g2#g3#g4#g5#g6#g7)
+/** @}  */
+
 
 /** @defgroup grp_rt_cdefs_time     Time Constants
  * @{
