@@ -126,6 +126,7 @@ PROGRAMS += \
 	tstRTUuid \
 	tstRTCircBuf \
 	tstRTManifest \
+	tstRTUri \
 	tstVector
 
 PROGRAMS.win += \
@@ -517,6 +518,9 @@ tstRTCircBuf_SOURCES = tstRTCircBuf.cpp
 
 tstRTManifest_TEMPLATE = VBOXR3TSTEXE
 tstRTManifest_SOURCES = tstRTManifest.cpp
+
+tstRTUri_TEMPLATE = VBOXR3TSTEXE
+tstRTUri_SOURCES = tstRTUri.cpp
 
 tstRTCoreDump_TEMPLACE = VBOXR3TSTEXE
 tstRTCoreDump_SOURCES = tstRTCoreDump.cpp

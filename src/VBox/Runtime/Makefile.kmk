@@ -327,6 +327,7 @@ RuntimeR3_SOURCES       = \
 	common/misc/circbuf.cpp \
 	common/misc/thread.cpp \
 	common/misc/term.cpp \
+	common/misc/uri.cpp \
 	common/path/rtPathRootSpecLen.cpp \
 	common/path/rtPathVolumeSpecLen.cpp \
 	common/path/RTPathAbsDup.cpp \
