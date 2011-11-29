@@ -42,6 +42,9 @@ extern Service *GetClipboardService();
 extern Service *GetSeamlessService();
 extern Service *GetDisplayService();
 extern Service *GetHostVersionService();
+#ifdef VBOX_WITH_DRAG_AND_DROP
+extern Service *GetDragAndDropService();
+#endif /* VBOX_WITH_DRAG_AND_DROP */
 
 extern void CleanUp();
 
