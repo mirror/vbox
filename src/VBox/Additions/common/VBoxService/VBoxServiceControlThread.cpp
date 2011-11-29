@@ -321,13 +321,18 @@ VBOXSERVICECTRLTHREADSTATUS VBoxServiceControlThreadGetStatus(const PVBOXSERVICE
  */
 static int VBoxServiceControlThreadCloseStdIn(RTPOLLSET hPollSet, PRTPIPE phStdInW)
 {
+    AssertPtrReturn(phStdInW, VERR_INVALID_POINTER);
+
     int rc = RTPollSetRemove(hPollSet, VBOXSERVICECTRLPIPEID_STDIN);
     if (rc != VERR_POLL_HANDLE_ID_NOT_FOUND)
         AssertRC(rc);
 
-    rc = RTPipeClose(*phStdInW);
-    AssertRC(rc);
-    *phStdInW = NIL_RTPIPE;
+    if (*phStdInW != NIL_RTPIPE)
+    {
+        rc = RTPipeClose(*phStdInW);
+        AssertRC(rc);
+        *phStdInW = NIL_RTPIPE;
+    }
 
     return rc;
 }
@@ -452,7 +457,8 @@ static int VBoxServiceControlThreadHandleRequest(RTPOLLSET hPollSet, uint32_t fP
             AssertReturn(pRequest->cbData, VERR_INVALID_PARAMETER);
 
             size_t cbWritten = 0;
-            if (*phStdInW != NIL_RTPIPE)
+            if (   *phStdInW != NIL_RTPIPE
+                && pRequest->cbData)
             {
                 rcReq = RTPipeWrite(*phStdInW,
                                     pRequest->pvData, pRequest->cbData, &cbWritten);
@@ -465,10 +471,10 @@ static int VBoxServiceControlThreadHandleRequest(RTPOLLSET hPollSet, uint32_t fP
              * we need to close the stdin pipe on our end and remove it from
              * the poll set.
              */
-            if (   pRequest->enmType == VBOXSERVICECTRLREQUEST_STDIN_WRITE_EOF)
+            if (   pRequest->enmType == VBOXSERVICECTRLREQUEST_STDIN_WRITE_EOF
                 && pRequest->cbData  == cbWritten)
             {
-                    rc = VBoxServiceControlThreadCloseStdIn(hPollSet, phStdInW);
+                rc = VBoxServiceControlThreadCloseStdIn(hPollSet, phStdInW);
             }
 
             /* Reqport back actual data written (if any). */
