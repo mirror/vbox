@@ -109,7 +109,11 @@
 /** @def RT_ARCH_SPARC64
  * Indicates that we're compiling for the SPARC V9 architecture (64-bit).
  */
-#if !defined(RT_ARCH_X86) && !defined(RT_ARCH_AMD64) && !defined(RT_ARCH_SPARC) && !defined(RT_ARCH_SPARC64)
+#if !defined(RT_ARCH_X86) \
+ && !defined(RT_ARCH_AMD64) \
+ && !defined(RT_ARCH_SPARC) \
+ && !defined(RT_ARCH_SPARC64) \
+ && !defined(RT_ARCH_ARM)
 # if defined(__amd64__) || defined(__x86_64__) || defined(_M_X64) || defined(__AMD64__)
 #  define RT_ARCH_AMD64
 # elif defined(__i386__) || defined(_M_IX86) || defined(__X86__)
@@ -118,6 +122,8 @@
 #  define RT_ARCH_SPARC64
 # elif defined(__sparc__)
 #  define RT_ARCH_SPARC
+# elif defined(__arm__) || defined(__arm32__)
+#  define RT_ARCH_ARM
 # else /* PORTME: append test for new archs. */
 #  error "Check what predefined macros your compiler uses to indicate architecture."
 # endif
@@ -134,6 +140,14 @@
 # error "Both RT_ARCH_AMD64 and RT_ARCH_SPARC64 cannot be defined at the same time!"
 #elif defined(RT_ARCH_SPARC) && defined(RT_ARCH_SPARC64)
 # error "Both RT_ARCH_SPARC and RT_ARCH_SPARC64 cannot be defined at the same time!"
+#elif defined(RT_ARCH_ARM) && defined(RT_ARCH_AMD64)
+# error "Both RT_ARCH_ARM and RT_ARCH_AMD64 cannot be defined at the same time!"
+#elif defined(RT_ARCH_ARM) && defined(RT_ARCH_X86)
+# error "Both RT_ARCH_ARM and RT_ARCH_X86 cannot be defined at the same time!"
+#elif defined(RT_ARCH_ARM) && defined(RT_ARCH_SPARC64)
+# error "Both RT_ARCH_ARM and RT_ARCH_SPARC64 cannot be defined at the same time!"
+#elif defined(RT_ARCH_ARM) && defined(RT_ARCH_SPARC)
+# error "Both RT_ARCH_ARM and RT_ARCH_SPARC cannot be defined at the same time!"
 #endif
 
 
@@ -146,7 +160,7 @@
  * Indicates that we're compiling for the AMD64 architecture.
  * @deprecated
  */
-#if !defined(__X86__) && !defined(__AMD64__) && !defined(RT_ARCH_SPARC) && !defined(RT_ARCH_SPARC64)
+#if !defined(__X86__) && !defined(__AMD64__) && (defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86))
 # if defined(RT_ARCH_AMD64)
 #  define __AMD64__
 # elif defined(RT_ARCH_X86)
@@ -157,16 +171,16 @@
 #elif defined(__X86__) && defined(__AMD64__)
 # error "Both __X86__ and __AMD64__ cannot be defined at the same time!"
 #elif defined(__X86__) && !defined(RT_ARCH_X86)
-# error "Both __X86__ without RT_ARCH_X86!"
+# error "__X86__ without RT_ARCH_X86!"
 #elif defined(__AMD64__) && !defined(RT_ARCH_AMD64)
-# error "Both __AMD64__ without RT_ARCH_AMD64!"
+# error "__AMD64__ without RT_ARCH_AMD64!"
 #endif
 
 /** @def RT_BIG_ENDIAN
  * Defined if the architecture is big endian.  */
 /** @def RT_LITTLE_ENDIAN
  * Defined if the architecture is little endian.  */
-#if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
+#if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86) || defined(RT_ARCH_ARM)
 # define RT_LITTLE_ENDIAN
 #elif defined(RT_ARCH_SPARC) || defined(RT_ARCH_SPARC64)
 # define RT_BIG_ENDIAN
@@ -2101,6 +2115,10 @@
 #   error "Port me"
 #  endif
 # endif /* !IN_RING3 */
+
+#elif defined(RT_ARCH_ARM)
+/* ASSUMES that at least the last and first 4K are out of bounds. */
+# define RT_VALID_PTR(ptr)      ( (uintptr_t)(ptr) + 0x1000U >= 0x2000U )
 
 #else
 # error "Architecture identifier missing / not implemented."
