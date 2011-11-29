@@ -3130,6 +3130,10 @@ BOOL WINAPI DllMain(HINSTANCE hInstance,
                     VbglR3Term();
                 }
             }
+
+#ifdef VBOXWDDMDISP_DEBUG_VEHANDLER
+            vboxVDbgVEHandlerUnregister();
+#endif
             break;
         }
 
