@@ -193,7 +193,7 @@ DECLHIDDEN(void) rtThreadNativeDetach(void);
 
 
 /* thread.cpp */
-DECLHIDDEN(int)          rtThreadMain(PRTTHREADINT pThread, RTNATIVETHREAD NativeThread, const char *pszThreadName);
+DECLCALLBACK(DECLHIDDEN(int)) rtThreadMain(PRTTHREADINT pThread, RTNATIVETHREAD NativeThread, const char *pszThreadName);
 DECLHIDDEN(uint32_t)     rtThreadRelease(PRTTHREADINT pThread);
 DECLHIDDEN(void)         rtThreadTerminate(PRTTHREADINT pThread, int rc);
 DECLHIDDEN(PRTTHREADINT) rtThreadGetByNative(RTNATIVETHREAD NativeThread);
