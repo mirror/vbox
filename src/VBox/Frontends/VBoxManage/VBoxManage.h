@@ -67,7 +67,7 @@
 #define USAGE_SHAREDFOLDER_ADD      RT_BIT_64(25)
 #define USAGE_SHAREDFOLDER_REMOVE   RT_BIT_64(26)
 #define USAGE_LOADSYMS              RT_BIT_64(29)
-#define USAGE_UNLOADSYMS            RT_BIT_64(30)
+#define USAGE_LOADMAP               RT_BIT_64(30)
 #define USAGE_SETHDUUID             RT_BIT_64(31)
 #define USAGE_CONVERTFROMRAW        RT_BIT_64(32)
 #define USAGE_LISTPARTITIONS        RT_BIT_64(33)

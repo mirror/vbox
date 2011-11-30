@@ -662,7 +662,15 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
      */
     PUVM pUVM = pConsole->mpUVM = VMR3GetUVM(pVM);
     VMR3RetainUVM(pUVM);
-    int vrc = pConsole->configConstructorInner(pVM, &alock);
+    int vrc;
+    try
+    {
+        vrc = pConsole->configConstructorInner(pVM, &alock);
+    }
+    catch (...)
+    {
+        vrc = VERR_UNEXPECTED_EXCEPTION;
+    }
     if (RT_FAILURE(vrc))
     {
         pConsole->mpUVM = NULL;
@@ -1116,9 +1124,11 @@ int Console::configConstructorInner(PVM pVM, AutoWriteLock *pAlock)
             hrc = attachRawPciDevices(pVM, BusMgr, pDevices);                               H();
 #endif
         }
+
         /*
-         * Enable 3 following devices: HPET, SMC, LPC on MacOS X guests or on ICH9 chipset
+         * Enable the following devices: HPET, SMC and LPC on MacOS X guests or on ICH9 chipset
          */
+
         /*
          * High Precision Event Timer (HPET)
          */
@@ -2630,6 +2640,31 @@ int Console::configConstructorInner(PVM pVM, AutoWriteLock *pAlock)
                     InsertConfigNode(pLunL0,   "Config", &pCfg);
                 }
             }
+        }
+
+        /*
+         * Set up the default DBGF search paths if all is cool so far.
+         */
+        {
+            PCFGMNODE pDbgf;
+            InsertConfigNode(pRoot, "DBGF", &pDbgf);
+
+            hrc = pMachine->COMGETTER(SettingsFilePath)(bstr.asOutParam());         H();
+            Utf8Str strSettingsPath(bstr);
+            bstr.setNull();
+            strSettingsPath.stripFilename();
+
+            char szHomeDir[RTPATH_MAX];
+            rc = RTPathUserHome(szHomeDir, sizeof(szHomeDir));
+            if (RT_FAILURE(rc))
+                szHomeDir[0] = '\0';
+
+            Utf8Str strPath;
+            strPath.append(strSettingsPath).append("/debug/;");
+            strPath.append(strSettingsPath).append("/;");
+            strPath.append(szHomeDir).append("/");
+
+            InsertConfigString(pDbgf, "Path", strPath.c_str());
         }
     }
     catch (ConfigError &x)
