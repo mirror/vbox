@@ -167,8 +167,8 @@ public:
                                         ComObjPtr<Progress> pProgress, ComObjPtr<Guest> pGuest);
 
     TaskType taskType;
-    Guest *pGuest;
-    ComObjPtr<Progress> progress;
+    ComObjPtr<Guest> pGuest;
+    ComObjPtr<Progress> pProgress;
     HRESULT rc;
 
     /* Task data. */

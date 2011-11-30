@@ -202,29 +202,31 @@ int Guest::callbackGetUserData(uint32_t uContextID, eVBoxGuestCtrlCallbackType *
 {
     AssertReturn(uContextID, VERR_INVALID_PARAMETER);
     /* pEnmType is optional. */
-    AssertPtrReturn(ppvData, VERR_INVALID_PARAMETER);
+    /* ppvData is optional. */
     /* pcbData is optional. */
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     CallbackMapIterConst it = mCallbackMap.find(uContextID);
-    if (it != mCallbackMap.end())
-    {
-        if (pEnmType)
-            *pEnmType = it->second.mType;
+    if (it == mCallbackMap.end())
+        return VERR_NOT_FOUND;
 
+    if (pEnmType)
+        *pEnmType = it->second.mType;
+
+    if (   ppvData
+        && it->second.cbData)
+    {
         void *pvData = RTMemAlloc(it->second.cbData);
         AssertPtrReturn(pvData, VERR_NO_MEMORY);
         memcpy(pvData, it->second.pvData, it->second.cbData);
         *ppvData = pvData;
-
-        if (pcbData)
-            *pcbData = it->second.cbData;
-
-        return VINF_SUCCESS;
     }
 
-    return VERR_NOT_FOUND;
+    if (pcbData)
+        *pcbData = it->second.cbData;
+
+    return VINF_SUCCESS;
 }
 
 /* Does not do locking! Caller has to take care of it because the caller needs to
@@ -251,7 +253,7 @@ int Guest::callbackInit(PVBOXGUESTCTRL_CALLBACK pCallback, eVBoxGuestCtrlCallbac
     AssertPtrReturn(pCallback, VERR_INVALID_POINTER);
     /* Everything else is optional. */
 
-    int rc = VINF_SUCCESS;
+    int vrc = VINF_SUCCESS;
     switch (enmType)
     {
         case VBOXGUESTCTRLCALLBACKTYPE_EXEC_START:
@@ -278,25 +280,25 @@ int Guest::callbackInit(PVBOXGUESTCTRL_CALLBACK pCallback, eVBoxGuestCtrlCallbac
         {
             PCALLBACKDATAEXECINSTATUS pData = (PCALLBACKDATAEXECINSTATUS)RTMemAlloc(sizeof(CALLBACKDATAEXECINSTATUS));
             AssertPtrReturn(pData, VERR_NO_MEMORY);
-            RT_BZERO(pData, sizeof(PCALLBACKDATAEXECINSTATUS));
-            pCallback->cbData = sizeof(PCALLBACKDATAEXECINSTATUS);
+            RT_BZERO(pData, sizeof(CALLBACKDATAEXECINSTATUS));
+            pCallback->cbData = sizeof(CALLBACKDATAEXECINSTATUS);
             pCallback->pvData = pData;
             break;
         }
 
         default:
-            rc = VERR_INVALID_PARAMETER;
+            vrc = VERR_INVALID_PARAMETER;
             break;
     }
 
-    if (RT_SUCCESS(rc))
+    if (RT_SUCCESS(vrc))
     {
         /* Init/set common stuff. */
         pCallback->mType  = enmType;
         pCallback->pProgress = pProgress;
     }
 
-    return rc;
+    return vrc;
 }
 
 bool Guest::callbackIsCanceled(uint32_t uContextID)
@@ -1516,33 +1518,36 @@ HRESULT Guest::executeStreamParse(ULONG ulPID, ULONG ulFlags, GuestCtrlStreamObj
 HRESULT Guest::executeWaitForStatusChange(ULONG uPID, ULONG uTimeoutMS,
                                           ExecuteProcessStatus_T *pRetStatus, ULONG *puRetExitCode)
 {
-    if (uTimeoutMS == 0)
-        uTimeoutMS = UINT32_MAX;
-
-    uint64_t u64StartMS = RTTimeMilliTS();
-
-    HRESULT hRC;
     ULONG uExitCode, uRetFlags;
     ExecuteProcessStatus_T curStatus;
-    hRC = GetProcessStatus(uPID, &uExitCode, &uRetFlags, &curStatus);
+    HRESULT hRC = GetProcessStatus(uPID, &uExitCode, &uRetFlags, &curStatus);
     if (FAILED(hRC))
         return hRC;
 
-    do
+    /* We only want to wait for started processes. All other statuses
+     * won't be found anyway anymore (see processGetStatus() to know why). */
+    if (curStatus == ExecuteProcessStatus_Started)
     {
-        if (   uTimeoutMS != UINT32_MAX
-            && RTTimeMilliTS() - u64StartMS > uTimeoutMS)
+        uint64_t u64StartMS = RTTimeMilliTS();
+        if (uTimeoutMS == 0)
+            uTimeoutMS = UINT32_MAX;
+
+        do
         {
-            hRC = setError(VBOX_E_IPRT_ERROR,
-                           tr("The process (PID %u) did not change its status within time (%ums)"),
-                           uPID, uTimeoutMS);
-            break;
-        }
-        hRC = GetProcessStatus(uPID, &uExitCode, &uRetFlags, &curStatus);
-        if (FAILED(hRC))
-            break;
-        RTThreadSleep(100);
-    } while(*pRetStatus == curStatus);
+            if (   uTimeoutMS != UINT32_MAX
+                && RTTimeMilliTS() - u64StartMS > uTimeoutMS)
+            {
+                hRC = setError(VBOX_E_IPRT_ERROR,
+                               tr("The process (PID %u) did not change its status within time (%ums)"),
+                               uPID, uTimeoutMS);
+                break;
+            }
+            hRC = GetProcessStatus(uPID, &uExitCode, &uRetFlags, &curStatus);
+            if (FAILED(hRC))
+                break;
+            RTThreadSleep(100);
+        } while(*pRetStatus == curStatus);
+    }
 
     if (SUCCEEDED(hRC))
     {
@@ -1851,7 +1856,7 @@ STDMETHODIMP Guest::SetProcessInput(ULONG aPID, ULONG aFlags, ULONG aTimeoutMS, 
             rc = setError(VBOX_E_IPRT_ERROR,
                           Guest::tr("Cannot inject input to non-existent process (PID %u)"), aPID);
 
-        if (SUCCEEDED(rc))
+        if (RT_SUCCESS(vrc))
         {
             uint32_t uContextID = 0;
 
@@ -1921,6 +1926,8 @@ STDMETHODIMP Guest::SetProcessInput(ULONG aPID, ULONG aFlags, ULONG aTimeoutMS, 
                         LogFlowFunc(("hgcmHostCall numParms=%d\n", i));
                         vrc = pVMMDev->hgcmHostCall("VBoxGuestControlSvc", HOST_EXEC_SET_INPUT,
                                                    i, paParms);
+                        if (RT_FAILURE(vrc))
+                            rc = handleErrorHGCM(vrc);
                     }
                 }
             }
@@ -1929,33 +1936,43 @@ STDMETHODIMP Guest::SetProcessInput(ULONG aPID, ULONG aFlags, ULONG aTimeoutMS, 
             {
                 LogFlowFunc(("Waiting for HGCM callback ...\n"));
 
-                /*
-                 * Wait for the HGCM low level callback until the process
-                 * has been started (or something went wrong). This is necessary to
-                 * get the PID.
-                 */
-
-                PCALLBACKDATAEXECINSTATUS pExecStatusIn = NULL;
-
                  /*
-                 * Wait for the first stage (=0) to complete (that is starting the process).
+                 * Wait for getting back the input response from the guest.
                  */
-                vrc = callbackWaitForCompletion(uContextID, 0 /* Stage */, aTimeoutMS);
+                vrc = callbackWaitForCompletion(uContextID, -1 /* No staging required */, aTimeoutMS);
                 if (RT_SUCCESS(vrc))
                 {
+                    PCALLBACKDATAEXECINSTATUS pExecStatusIn;
                     vrc = callbackGetUserData(uContextID, NULL /* We know the type. */,
                                               (void**)&pExecStatusIn, NULL /* Don't need the size. */);
                     if (RT_SUCCESS(vrc))
                     {
+                        AssertPtr(pExecStatusIn);
                         switch (pExecStatusIn->u32Status)
                         {
                             case INPUT_STS_WRITTEN:
                                 *aBytesWritten = pExecStatusIn->cbProcessed;
                                 break;
 
-                            default:
+                            case INPUT_STS_ERROR:
                                 rc = setError(VBOX_E_IPRT_ERROR,
-                                              tr("Client error %u while processing input data"), pExecStatusIn->u32Status);
+                                              tr("Client reported error %Rrc while processing input data"),
+                                              pExecStatusIn->u32Flags);
+                                break;
+
+                            case INPUT_STS_TERMINATED:
+                                rc = setError(VBOX_E_IPRT_ERROR,
+                                              tr("Client terminated while processing input data"));
+                                break;
+
+                            case INPUT_STS_OVERFLOW:
+                                rc = setError(VBOX_E_IPRT_ERROR,
+                                              tr("Client reported buffer overflow while processing input data"));
+                                break;
+
+                            default:
+                                /*AssertReleaseMsgFailed(("Client reported unknown input error, status=%u, flags=%u\n",
+                                                        pExecStatusIn->u32Status, pExecStatusIn->u32Flags));*/
                                 break;
                         }
 
@@ -1969,13 +1986,6 @@ STDMETHODIMP Guest::SetProcessInput(ULONG aPID, ULONG aFlags, ULONG aTimeoutMS, 
                 }
                 else
                     rc = handleErrorCompletion(vrc);
-            }
-            else
-                rc = handleErrorHGCM(vrc);
-
-            if (SUCCEEDED(rc))
-            {
-                /* Nothing to do here yet. */
             }
 
             /* The callback isn't needed anymore -- just was kept locally. */
