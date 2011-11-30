@@ -25,9 +25,6 @@ VBOX_ROOT_CONFIG_KMK_INCLUDED = 1
 # kBuild stuff
 #
 
-# Experimental
-.SECONDTARGETEXPANSION:
-
 # Modify the build types.
 KBUILD_BLD_TYPES = release profile debug kprofile
 
