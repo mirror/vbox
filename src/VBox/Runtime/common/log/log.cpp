@@ -2887,13 +2887,16 @@ static DECLCALLBACK(size_t) rtLogOutput(void *pv, const char *pachChars, size_t 
  */
 DECLINLINE(char *) rtLogStPNCpyPad(char *pszDst, const char *pszSrc, size_t cchSrcMax, size_t cchMinWidth)
 {
-    size_t cchSrc = strlen(pszSrc);
-    if (cchSrc > cchSrcMax)
-        cchSrc = cchSrcMax;
+    size_t cchSrc = 0;
+    if (pszSrc)
+    {
+        cchSrc = strlen(pszSrc);
+        if (cchSrc > cchSrcMax)
+            cchSrc = cchSrcMax;
 
-    memcpy(pszDst, pszSrc, cchSrc);
-    pszDst += cchSrc;
-
+        memcpy(pszDst, pszSrc, cchSrc);
+        pszDst += cchSrc;
+    }
     do
         *pszDst++ = ' ';
     while (cchSrc++ < cchMinWidth);
