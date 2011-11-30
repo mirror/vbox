@@ -1,0 +1,46 @@
+# $Id$
+## @file
+# Sub-makefile for the Linux host driver helper scripts.
+#
+
+#
+# Copyright (C) 2006-2011 Oracle Corporation
+#
+# This file is part of VirtualBox Open Source Edition (OSE), as
+# available from http://www.virtualbox.org. This file is free software;
+# you can redistribute it and/or modify it under the terms of the GNU
+# General Public License (GPL) as published by the Free Software
+# Foundation, in version 2 as it comes in the "COPYING" file of the
+# VirtualBox OSE distribution. VirtualBox OSE is distributed in the
+# hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
+#
+
+SUB_DEPTH = ../../../..
+include $(KBUILD_PATH)/subheader.kmk
+
+INSTALLS += HostDrivers-scripts
+HostDrivers-scripts_INST        = $(INST_DIST)
+HostDrivers-scripts_SOURCES     = \
+	Makefile=>src/Makefile \
+	$(HostDrivers-scripts_0_OUTDIR)/dkms.conf=>src/dkms.conf
+HostDrivers-scripts_EXEC_SOURCES = \
+	loadall.sh \
+	do_dkms=>src/do_dkms \
+	build_in_tmp=>src/build_in_tmp 
+HostDrivers-scripts_CLEAN       = \
+	$(HostDrivers-scripts_0_OUTDIR)/dkms.conf
+
+$$(HostDrivers-scripts_0_OUTDIR)/dkms.conf: \
+		$(PATH_SUB_CURRENT)/dkms.conf \
+		$(VBOX_VERSION_STAMP) \
+		| $$(dir $$@)
+	$(call MSG_TOOL,Creating,,$@)
+	$(QUIET)$(SED) \
+		-e "s;_VERSION_;${VBOX_VERSION_STRING};g" \
+		-e "s;_OMIT_VBOXNETFLT_;$(if $(VBOX_WITH_NETFLT),,#);g" \
+		-e "s;_OMIT_VBOXNETADP_;$(if $(VBOX_WITH_NETADP),,#);g" \
+		-e "s;_OMIT_VBOXPCI_;$(if $(VBOX_WITH_PCI_PASSTHROUGH),,#);g" \
+		--output $@ $<
+
+include $(KBUILD_PATH)/subfooter.kmk
+
