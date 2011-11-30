@@ -201,8 +201,10 @@ class VBoxVersion
 {
 public:
 
+    VBoxVersion() : m_x(-1), m_y(-1), m_z(-1) {}
+
     VBoxVersion(const QString &strVersion)
-        : m_x(0), m_y(0), m_z(0)
+        : m_x(-1), m_y(-1), m_z(-1)
     {
         QStringList versionStack = strVersion.split('.');
         if (versionStack.size() > 0)
@@ -212,6 +214,10 @@ public:
         if (versionStack.size() > 2)
             m_z = versionStack[2].toInt();
     }
+
+    VBoxVersion& operator=(const VBoxVersion &other) { m_x = other.x(); m_y = other.y(); m_z = other.z(); return *this; }
+
+    bool isValid() const { return m_x != -1 && m_y != -1 && m_z != -1; }
 
     bool equal(const VBoxVersion &other) const { return (m_x == other.m_x) && (m_y == other.m_y) && (m_z == other.m_z); }
     bool operator==(const VBoxVersion &other) const { return equal(other); }

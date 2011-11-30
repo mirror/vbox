@@ -22,6 +22,9 @@
 /* Global includes: */
 #include <QDate>
 
+/* Local includes: */
+#include "VBoxUtils.h"
+
 /* This structure is used to store retranslated reminder values. */
 struct VBoxUpdateDay
 {
@@ -81,6 +84,7 @@ public:
     QString date() const;
     BranchType branchIndex() const;
     QString branchName() const;
+    VBoxVersion version() const;
 
 private:
 
@@ -94,6 +98,7 @@ private:
     PeriodType m_periodIndex;
     QDate m_date;
     BranchType m_branchIndex;
+    VBoxVersion m_version;
 };
 
 #endif // __UIUpdateDefs_h__

@@ -23,6 +23,7 @@
 
 /* Local includes: */
 #include "UIUpdateDefs.h"
+#include "VBoxGlobal.h"
 
 /* static: */
 VBoxUpdateDayList VBoxUpdateData::m_dayList = VBoxUpdateDayList();
@@ -80,12 +81,26 @@ VBoxUpdateData::VBoxUpdateData(PeriodType periodIndex, BranchType branchIndex)
 
 bool VBoxUpdateData::isNoNeedToCheck() const
 {
+    /* Return 'false' if Period == Never: */
     return m_periodIndex == PeriodNever;
 }
 
 bool VBoxUpdateData::isNeedToCheck() const
 {
-    return !isNoNeedToCheck() && QDate::currentDate() >= m_date;
+    /* Return 'false' if Period == Never: */
+    if (isNoNeedToCheck())
+        return false;
+
+    /* Return 'true' if date of next check is today or missed: */
+    if (QDate::currentDate() >= m_date)
+        return true;
+
+    /* Return 'true' if saved version value is NOT valid or NOT equal to current: */
+    if (!version().isValid() || version() != VBoxVersion(vboxGlobal().vboxVersionStringNormalized()))
+        return true;
+
+    /* Return 'false' in all other cases: */
+    return false;
 }
 
 QString VBoxUpdateData::data() const
@@ -122,6 +137,11 @@ QString VBoxUpdateData::branchName() const
     return QString();
 }
 
+VBoxVersion VBoxUpdateData::version() const
+{
+    return m_version;
+}
+
 void VBoxUpdateData::decode()
 {
     /* Parse standard values: */
@@ -155,6 +175,12 @@ void VBoxUpdateData::decode()
             m_branchIndex = branch == "withbetas" ? BranchWithBetas :
                             branch == "allrelease" ? BranchAllRelease : BranchStable;
         }
+
+        /* Parse 'version' value: */
+        if (parser.size() > 3)
+        {
+            m_version = VBoxVersion(parser[3]);
+        }
     }
 }
 
@@ -186,8 +212,11 @@ void VBoxUpdateData::encode()
         QString branchValue = m_branchIndex == BranchWithBetas ? "withbetas" :
                               m_branchIndex == BranchAllRelease ? "allrelease" : "stable";
 
+        /* Encode 'version' value: */
+        QString versionValue = VBoxVersion(vboxGlobal().vboxVersionStringNormalized()).toString();
+
         /* Composite m_strData: */
-        m_strData = QString("%1, %2, %3").arg(remindPeriod, remindDate, branchValue);
+        m_strData = QString("%1, %2, %3, %4").arg(remindPeriod, remindDate, branchValue, versionValue);
     }
 }
 
