@@ -194,6 +194,7 @@ void VBoxNetNAT::init()
     rc = RTReqCreateQueue(&m_pUrgSendQueue);
     AssertReleaseRC(rc);
 
+    g_pNAT->fIsRunning = true;
     rc = RTThreadCreate(&m_ThrNAT, AsyncIoThread, this, 128 * _1K, RTTHREADTYPE_DEFAULT, 0, "NAT");
     rc = RTThreadCreate(&m_ThrSndNAT, natSndThread, this, 128 * _1K, RTTHREADTYPE_DEFAULT, 0, "SndNAT");
     rc = RTThreadCreate(&m_ThrUrgSndNAT, natUrgSndThread, this, 128 * _1K, RTTHREADTYPE_DEFAULT, 0, "UrgSndNAT");
@@ -211,7 +212,7 @@ void VBoxNetNAT::run()
      */
     fIsRunning = true;
     PINTNETRINGBUF  pRingBuf = &m_pIfBuf->Recv;
-    //RTThreadSetType(RTThreadSelf(), RTTHREADTYPE_IO);
+    RTThreadSetType(RTThreadSelf(), RTTHREADTYPE_IO);
     for (;;)
     {
         /*
@@ -223,7 +224,7 @@ void VBoxNetNAT::run()
         WaitReq.pSession = m_pSession;
         WaitReq.hIf = m_hIf;
         WaitReq.cMillies = 2000; /* 2 secs - the sleep is for some reason uninterruptible... */  /** @todo fix interruptability in SrvIntNet! */
-#if 1
+#if 0
         RTReqProcess(m_pSendQueue, 0);
         RTReqProcess(m_pUrgSendQueue, 0);
 #endif
@@ -231,7 +232,10 @@ void VBoxNetNAT::run()
         if (RT_FAILURE(rc))
         {
             if (rc == VERR_TIMEOUT || rc == VERR_INTERRUPTED)
+            {
+                natNotifyNATThread();
                 continue;
+            }
             LogRel(("VBoxNetNAT: VMMR0_DO_INTNET_IF_WAIT returned %Rrc\n", rc));
             return;
         }
@@ -257,14 +261,18 @@ void VBoxNetNAT::run()
                         break;
                     }
                     memcpy(pvSlirpFrame, IntNetHdrGetFramePtr(pHdr, m_pIfBuf), cbFrame);
+#if 0
                     IntNetRingSkipFrame(&m_pIfBuf->Recv);
+#endif
 
                     /* don't wait, we may have to wakeup the NAT thread first */
                     rc = RTReqCallEx(m_pReqQueue, NULL /*ppReq*/, 0 /*cMillies*/, RTREQFLAGS_VOID | RTREQFLAGS_NO_WAIT,
                                      (PFNRT)SendWorker, 2, m, cbFrame);
+                    natNotifyNATThread();
                     AssertReleaseRC(rc);
                 break;
                 case INTNETHDR_TYPE_GSO:
+#if 1
                 {
                     /** @todo pass these unmodified. */
                     PCPDMNETWORKGSO pGso  = IntNetHdrGetGsoContext(pHdr, m_pIfBuf);
@@ -276,50 +284,39 @@ void VBoxNetNAT::run()
                     }
 
                     uint8_t abHdrScratch[256];
-                    uint32_t const cSegs = PDMNetGsoCalcSegmentCount(pGso, cbFrame - sizeof(*pGso));
+                    cbFrame -= sizeof(PDMNETWORKGSO);
+                    uint32_t const cSegs = PDMNetGsoCalcSegmentCount(pGso, cbFrame);
                     for (uint32_t iSeg = 0; iSeg < cSegs; iSeg++)
                     {
                         uint32_t cbSegFrame;
                         void  *pvSegFrame = PDMNetGsoCarveSegmentQD(pGso, (uint8_t *)(pGso + 1), cbFrame, abHdrScratch,
                                                                     iSeg, cSegs, &cbSegFrame);
-                        m = slirp_ext_m_get(g_pNAT->m_pNATState, cbFrame, &pvSlirpFrame, &cbIgnored);
+                        m = slirp_ext_m_get(g_pNAT->m_pNATState, cbSegFrame, &pvSlirpFrame, &cbIgnored);
                         if (!m)
                         {
                             LogRel(("NAT: Can't allocate send buffer cbSegFrame=%u seg=%u/%u\n",
                                     cbSegFrame, iSeg, cSegs));
                             break;
                         }
-                        memcpy(pvSlirpFrame, pvSegFrame, cbFrame);
+                        memcpy(pvSlirpFrame, pvSegFrame, cbSegFrame);
 
                         rc = RTReqCallEx(m_pReqQueue, NULL /*ppReq*/, 0 /*cMillies*/,
                                          RTREQFLAGS_VOID | RTREQFLAGS_NO_WAIT,
                                          (PFNRT)SendWorker, 2, m, cbSegFrame);
                         AssertReleaseRC(rc);
                     }
-                    IntNetRingSkipFrame(&m_pIfBuf->Recv);
                 }
                 break;
+#endif
                 case INTNETHDR_TYPE_PADDING:
-                    IntNetRingSkipFrame(&m_pIfBuf->Recv);
                 break;
                 default:
-                    IntNetRingSkipFrame(&m_pIfBuf->Recv);
                     STAM_REL_COUNTER_INC(&m_pIfBuf->cStatBadFrames);
                 break;
                 }
 
-#ifndef RT_OS_WINDOWS
-                /* kick select() */
-                rc = RTPipeWrite(m_hPipeWrite, "", 1, &cbIgnored);
-                AssertRC(rc);
-#else
-                /* kick WSAWaitForMultipleEvents */
-                rc = WSASetEvent(m_hWakeupEvent);
-                AssertRelease(rc == TRUE);
-#endif
+                IntNetRingSkipFrame(&m_pIfBuf->Recv);
             }
-            natNotifyNATThread();
-
     }
     fIsRunning = false;
 }
@@ -358,20 +355,24 @@ extern "C" int slirp_can_output(void * pvUser)
 
 extern "C" void slirp_urg_output(void *pvUser, struct mbuf *m, const uint8_t *pu8Buf, int cb)
 {
+    LogFlowFunc(("ENTER: m:%p, pu8Buf:%p, cb:%d\n", m, pu8Buf, cb));
     int rc = RTReqCallEx(g_pNAT->m_pUrgSendQueue,  NULL /*ppReq*/, 0 /*cMillies*/, RTREQFLAGS_VOID | RTREQFLAGS_NO_WAIT,
                          (PFNRT)IntNetSendWorker, 4, (uintptr_t)1, (uintptr_t)pu8Buf, (uintptr_t)cb, (uintptr_t)m);
     ASMAtomicIncU32(&g_pNAT->cUrgPkt);
     RTSemEventSignal(g_pNAT->m_EventUrgSend);
     AssertReleaseRC(rc);
+    LogFlowFuncLeave();
 }
 extern "C" void slirp_output(void *pvUser, struct mbuf *m, const uint8_t *pu8Buf, int cb)
 {
+    LogFlowFunc(("ENTER: m:%p, pu8Buf:%p, cb:%d\n", m, pu8Buf, cb));
     AssertRelease(g_pNAT == pvUser);
     int rc = RTReqCallEx(g_pNAT->m_pSendQueue,  NULL /*ppReq*/, 0 /*cMillies*/, RTREQFLAGS_VOID | RTREQFLAGS_NO_WAIT,
                          (PFNRT)IntNetSendWorker, 4, (uintptr_t)0, (uintptr_t)pu8Buf, (uintptr_t)cb, (uintptr_t)m);
     ASMAtomicIncU32(&g_pNAT->cPkt);
     RTSemEventSignal(g_pNAT->m_EventSend);
     AssertReleaseRC(rc);
+    LogFlowFuncLeave();
 }
 
 extern "C" void slirp_output_pending(void *pvUser)
@@ -385,19 +386,22 @@ extern "C" void slirp_output_pending(void *pvUser)
  */
 static void SendWorker(struct mbuf *m, size_t cb)
 {
+    LogFlowFunc(("ENTER: m:%p ,cb:%d\n", m, cb));
     slirp_input(g_pNAT->m_pNATState, m, cb);
+    LogFlowFuncLeave();
 }
 
-static void IntNetSendWorker(bool urg, void *pvFrame, size_t cbFrame, struct mbuf *m)
+static void IntNetSendWorker(bool fUrg, void *pvFrame, size_t cbFrame, struct mbuf *m)
 {
-    Log2(("VBoxNetNAT: going to send some bytes ... \n"));
     VBoxNetNAT         *pThis = g_pNAT;
     INTNETIFSENDREQ     SendReq;
     int rc;
 
-    if (!urg)
+    LogFlowFunc(("ENTER: urg:%RTbool ,pvFrame:%p, cbFrame:%d, m:%p\n", fUrg, pvFrame, cbFrame, m));
+    if (!fUrg)
     {
-        while (ASMAtomicReadU32(&g_pNAT->cUrgPkt) != 0
+        /* non-urgent datagramm sender */
+        while (   ASMAtomicReadU32(&g_pNAT->cUrgPkt) != 0
                || ASMAtomicReadU32(&g_pNAT->cPkt) == 0)
             rc = RTSemEventWait(g_pNAT->m_EventSend, RT_INDEFINITE_WAIT);
     }
@@ -426,10 +430,11 @@ static void IntNetSendWorker(bool urg, void *pvFrame, size_t cbFrame, struct mbu
         SendReq.hIf          = pThis->m_hIf;
         rc = SUPR3CallVMMR0Ex(NIL_RTR0PTR, NIL_VMCPUID, VMMR0_DO_INTNET_IF_SEND, 0, &SendReq.Hdr);
     }
+    AssertRC((rc));
     if (RT_FAILURE(rc))
         Log2(("VBoxNetNAT: Failed to send packet; rc=%Rrc\n", rc));
 
-    if (!urg)
+    if (!fUrg)
     {
         ASMAtomicDecU32(&g_pNAT->cPkt);
     }
@@ -437,8 +442,9 @@ static void IntNetSendWorker(bool urg, void *pvFrame, size_t cbFrame, struct mbu
         if (ASMAtomicDecU32(&g_pNAT->cUrgPkt) == 0)
             RTSemEventSignal(g_pNAT->m_EventSend);
     }
-    natNotifyNATThread();
     slirp_ext_m_free(pThis->m_pNATState, m, (uint8_t *)pvFrame);
+    natNotifyNATThread();
+    LogFlowFuncLeave();
 }
 
 static DECLCALLBACK(int) AsyncIoThread(RTTHREAD pThread, void *pvUser)
