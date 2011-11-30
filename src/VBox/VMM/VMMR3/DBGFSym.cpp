@@ -261,6 +261,8 @@ int dbgfR3SymInit(PVM pVM)
     pVM->dbgf.s.fSymInited = true;
 #endif
 
+    /** @todo symbol search path setup. */
+
     /*
      * Check if there are 'loadsyms' commands in the configuration.
      */
@@ -323,6 +325,62 @@ int dbgfR3SymInit(PVM pVM)
                                    pszFilename, offDelta, pszModule, ModuleAddress, cbModule), rc);
 
             MMR3HeapFree(pszModule);
+            MMR3HeapFree(pszFilename);
+        }
+    }
+
+    /*
+     * Check if there are 'loadmap' commands in the configuration.
+     */
+    pNode = CFGMR3GetChild(CFGMR3GetRoot(pVM), "/DBGF/loadmap/");
+    if (pNode)
+    {
+        /*
+         * Enumerate the commands.
+         */
+        for (PCFGMNODE pCmdNode = CFGMR3GetFirstChild(pNode);
+             pCmdNode;
+             pCmdNode = CFGMR3GetNextChild(pCmdNode))
+        {
+            char szCmdName[128];
+            CFGMR3GetName(pCmdNode, &szCmdName[0], sizeof(szCmdName));
+
+            /* File */
+            char *pszFilename;
+            rc = CFGMR3QueryStringAlloc(pCmdNode, "Filename", &pszFilename);
+            AssertMsgRCReturn(rc, ("rc=%Rrc querying the 'File' attribute of '/DBGF/loadsyms/%s'!\n", rc, szCmdName), rc);
+
+            /* Address. */
+            RTGCPTR GCPtrAddr;
+            rc = CFGMR3QueryGCPtrUDef(pNode, "Address", &GCPtrAddr, 0);
+            AssertMsgRCReturn(rc, ("rc=%Rrc querying the 'Address' attribute of '/DBGF/loadsyms/%s'!\n", rc, szCmdName), rc);
+            DBGFADDRESS ModAddr;
+            DBGFR3AddrFromFlat(pVM, &ModAddr, GCPtrAddr);
+
+            /* Name (optional) */
+            char *pszModName;
+            rc = CFGMR3QueryStringAllocDef(pCmdNode, "Name", &pszModName, NULL);
+            AssertMsgRCReturn(rc, ("rc=%Rrc querying the 'Name' attribute of '/DBGF/loadsyms/%s'!\n", rc, szCmdName), rc);
+
+            /* Subtrahend (optional) */
+            RTGCPTR offSubtrahend;
+            rc = CFGMR3QueryGCPtrDef(pNode, "Subtrahend", &offSubtrahend, 0);
+            AssertMsgRCReturn(rc, ("rc=%Rrc querying the 'Subtrahend' attribute of '/DBGF/loadsyms/%s'!\n", rc, szCmdName), rc);
+
+            /* Segment (optional) */
+            uint32_t iSeg;
+            rc = CFGMR3QueryU32Def(pNode, "Segment", &iSeg, UINT32_MAX);
+            AssertMsgRCReturn(rc, ("rc=%Rrc querying the 'Segment' attribute of '/DBGF/loadsyms/%s'!\n", rc, szCmdName), rc);
+
+            /*
+             * Execute the command.
+             */
+            rc = DBGFR3AsLoadMap(pVM, DBGF_AS_GLOBAL, pszFilename, pszModName, &ModAddr,
+                                 iSeg == UINT32_MAX ? NIL_RTDBGSEGIDX : iSeg, offSubtrahend, 0 /*fFlags*/);
+            AssertMsgRCReturn(rc, ("pszFilename=%s pszModName=%s ModAddr=%RGv offSubtrahend=%#x iSeg=%#x\n",
+                                   pszFilename, pszModName, ModAddr.FlatPtr, offSubtrahend, iSeg), rc);
+
+            MMR3HeapFree(pszModName);
             MMR3HeapFree(pszFilename);
         }
     }

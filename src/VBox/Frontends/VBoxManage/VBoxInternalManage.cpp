@@ -141,16 +141,16 @@ void printUsageInternal(USAGECATEGORY u64Cmd, PRTSTREAM pStrm)
         "         problems. It is completely unsupported and will change in\n"
         "         incompatible ways without warning.\n",
 
-        (u64Cmd & USAGE_LOADSYMS)
-        ? "  loadsyms <vmname>|<uuid> <symfile> [delta] [module] [module address]\n"
-          "      This will instruct DBGF to load the given symbolfile\n"
-          "      during initialization.\n"
+        (u64Cmd & USAGE_LOADMAP)
+        ? "  loadmap <vmname>|<uuid> <symfile> <address> [module] [subtrahend] [segment]\n"
+          "      This will instruct DBGF to load the given map file\n"
+          "      during initialization.  (See also loadmap in the debugger.)\n"
           "\n"
         : "",
-        (u64Cmd & USAGE_UNLOADSYMS)
-        ? "  unloadsyms <vmname>|<uuid> <symfile>\n"
-          "      Removes <symfile> from the list of symbol files that\n"
-          "      should be loaded during DBF initialization.\n"
+        (u64Cmd & USAGE_LOADSYMS)
+        ? "  loadsyms <vmname>|<uuid> <symfile> [delta] [module] [module address]\n"
+          "      This will instruct DBGF to load the given symbol file\n"
+          "      during initialization.\n"
           "\n"
         : "",
         (u64Cmd & USAGE_SETHDUUID)
@@ -505,6 +505,81 @@ static int CmdLoadSyms(int argc, char **argv, ComPtr<IVirtualBox> aVirtualBox, C
         hrc = SetUInt64(machine, "VBoxInternal/DBGF/loadsyms", KeyStr.c_str(), "ModuleAddress", ModuleAddress);
     if (SUCCEEDED(hrc) && argc >= 6)
         hrc = SetUInt64(machine, "VBoxInternal/DBGF/loadsyms", KeyStr.c_str(), "ModuleSize", ModuleSize);
+
+    return FAILED(hrc);
+}
+
+
+/**
+ * Identical to the 'loadmap' command.
+ */
+static int CmdLoadMap(int argc, char **argv, ComPtr<IVirtualBox> aVirtualBox, ComPtr<ISession> aSession)
+{
+    HRESULT rc;
+
+    /*
+     * Get the VM
+     */
+    ComPtr<IMachine> machine;
+    CHECK_ERROR_RET(aVirtualBox, FindMachine(Bstr(argv[0]).raw(),
+                                             machine.asOutParam()), 1);
+
+    /*
+     * Parse the command.
+     */
+    const char *pszFilename;
+    uint64_t    ModuleAddress = UINT64_MAX;
+    const char *pszModule = NULL;
+    uint64_t    offSubtrahend = 0;
+    uint32_t    iSeg = UINT32_MAX;
+
+    /* filename */
+    if (argc < 2)
+        return errorArgument("Missing the filename argument!\n");
+    pszFilename = argv[1];
+
+    /* address */
+    if (argc < 3)
+        return errorArgument("Missing the module address argument!\n");
+    int irc = RTStrToUInt64Ex(argv[2], NULL, 0, &ModuleAddress);
+    if (RT_FAILURE(irc))
+        return errorArgument(argv[0], "Failed to read module address '%s', rc=%Rrc\n", argv[2], rc);
+
+    /* name (optional) */
+    if (argc > 3)
+        pszModule = argv[3];
+
+    /* subtrahend (optional) */
+    if (argc > 4)
+    {
+        irc = RTStrToUInt64Ex(argv[4], NULL, 0, &offSubtrahend);
+        if (RT_FAILURE(irc))
+            return errorArgument(argv[0], "Failed to read subtrahend '%s', rc=%Rrc\n", argv[4], rc);
+    }
+
+    /* segment (optional) */
+    if (argc > 5)
+    {
+        irc = RTStrToUInt32Ex(argv[5], NULL, 0, &iSeg);
+        if (RT_FAILURE(irc))
+            return errorArgument(argv[0], "Failed to read segment number '%s', rc=%Rrc\n", argv[5], rc);
+    }
+
+    /*
+     * Add extra data.
+     */
+    Utf8Str KeyStr;
+    HRESULT hrc = NewUniqueKey(machine, "VBoxInternal/DBGF/loadmap", KeyStr);
+    if (SUCCEEDED(hrc))
+        hrc = SetString(machine, "VBoxInternal/DBGF/loadmap", KeyStr.c_str(), "Filename", pszFilename);
+    if (SUCCEEDED(hrc))
+        hrc = SetUInt64(machine, "VBoxInternal/DBGF/loadmap", KeyStr.c_str(), "Address", ModuleAddress);
+    if (SUCCEEDED(hrc) && pszModule != NULL)
+        hrc = SetString(machine, "VBoxInternal/DBGF/loadmap", KeyStr.c_str(), "Name", pszModule);
+    if (SUCCEEDED(hrc) && offSubtrahend != 0)
+        hrc = SetUInt64(machine, "VBoxInternal/DBGF/loadmap", KeyStr.c_str(), "Subtrahend", offSubtrahend);
+    if (SUCCEEDED(hrc) && iSeg != UINT32_MAX)
+        hrc = SetUInt64(machine, "VBoxInternal/DBGF/loadmap", KeyStr.c_str(), "Segment", iSeg);
 
     return FAILED(hrc);
 }
@@ -2107,6 +2182,8 @@ int handleInternalCommands(HandlerArg *a)
      * The 'string switch' on command name.
      */
     const char *pszCmd = a->argv[0];
+    if (!strcmp(pszCmd, "loadmap"))
+        return CmdLoadMap(a->argc - 1, &a->argv[1], a->virtualBox, a->session);
     if (!strcmp(pszCmd, "loadsyms"))
         return CmdLoadSyms(a->argc - 1, &a->argv[1], a->virtualBox, a->session);
     //if (!strcmp(pszCmd, "unloadsyms"))

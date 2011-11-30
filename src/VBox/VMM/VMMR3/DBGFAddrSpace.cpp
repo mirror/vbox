@@ -685,7 +685,8 @@ static int dbgfR3AsSearchPath(const char *pszFilename, const char *pszPath, PFND
 /**
  * Same as dbgfR3AsSearchEnv, except that the path is taken from the environment.
  *
- * It the environment variable doesn't exist, the current directory is searched instead.
+ * If the environment variable doesn't exist, the current directory is searched
+ * instead.
  *
  * @returns VBox status code.
  * @param   pszFilename     The filename.
@@ -704,6 +705,32 @@ static int dbgfR3AsSearchEnvPath(const char *pszFilename, const char *pszEnvVar,
     }
     else
         rc = dbgfR3AsSearchPath(pszFilename, ".", pfnOpen, pvUser);
+    return rc;
+}
+
+
+/**
+ * Same as dbgfR3AsSearchEnv, except that the path is taken from the DBGF config
+ * (CFGM).
+ *
+ * Nothing is done if the CFGM variable isn't set.
+ *
+ * @returns VBox status code.
+ * @param   pszFilename     The filename.
+ * @param   pszCfgValue     The name of the config variable (under /DBGF/).
+ * @param   pfnOpen         The open callback function.
+ * @param   pvUser          User argument for the callback.
+ */
+static int dbgfR3AsSearchCfgPath(PVM pVM, const char *pszFilename, const char *pszCfgValue, PFNDBGFR3ASSEARCHOPEN pfnOpen, void *pvUser)
+{
+    char *pszPath;
+    int rc = CFGMR3QueryStringAllocDef(CFGMR3GetChild(CFGMR3GetRoot(pVM), "/DBGF"), pszCfgValue, &pszPath, NULL);
+    if (RT_FAILURE(rc))
+        return rc;
+    if (!pszPath)
+        return VERR_FILE_NOT_FOUND;
+    rc = dbgfR3AsSearchPath(pszFilename, pszPath, pfnOpen, pvUser);
+    MMR3HeapFree(pszPath);
     return rc;
 }
 
@@ -761,7 +788,11 @@ VMMR3DECL(int) DBGFR3AsLoadImage(PVM pVM, RTDBGAS hDbgAs, const char *pszFilenam
     Data.uSubtrahend = 0;
     Data.fFlags = 0;
     Data.hMod = NIL_RTDBGMOD;
-    int rc = dbgfR3AsSearchEnvPath(pszFilename, "VBOXDBG_IMAGE_PATH", dbgfR3AsLoadImageOpen, &Data);
+    int rc = dbgfR3AsSearchCfgPath(pVM, pszFilename, "ImagePath", dbgfR3AsLoadImageOpen, &Data);
+    if (RT_FAILURE(rc))
+        rc = dbgfR3AsSearchEnvPath(pszFilename, "VBOXDBG_IMAGE_PATH", dbgfR3AsLoadImageOpen, &Data);
+    if (RT_FAILURE(rc))
+        rc = dbgfR3AsSearchCfgPath(pVM, pszFilename, "Path", dbgfR3AsLoadImageOpen, &Data);
     if (RT_FAILURE(rc))
         rc = dbgfR3AsSearchEnvPath(pszFilename, "VBOXDBG_PATH", dbgfR3AsLoadImageOpen, &Data);
     if (RT_SUCCESS(rc))
@@ -833,7 +864,11 @@ VMMR3DECL(int) DBGFR3AsLoadMap(PVM pVM, RTDBGAS hDbgAs, const char *pszFilename,
     Data.uSubtrahend = uSubtrahend;
     Data.fFlags = 0;
     Data.hMod = NIL_RTDBGMOD;
-    int rc = dbgfR3AsSearchEnvPath(pszFilename, "VBOXDBG_MAP_PATH", dbgfR3AsLoadMapOpen, &Data);
+    int rc = dbgfR3AsSearchCfgPath(pVM, pszFilename, "MapPath", dbgfR3AsLoadMapOpen, &Data);
+    if (RT_FAILURE(rc))
+        rc = dbgfR3AsSearchEnvPath(pszFilename, "VBOXDBG_MAP_PATH", dbgfR3AsLoadMapOpen, &Data);
+    if (RT_FAILURE(rc))
+        rc = dbgfR3AsSearchCfgPath(pVM, pszFilename, "Path", dbgfR3AsLoadMapOpen, &Data);
     if (RT_FAILURE(rc))
         rc = dbgfR3AsSearchEnvPath(pszFilename, "VBOXDBG_PATH", dbgfR3AsLoadMapOpen, &Data);
     if (RT_SUCCESS(rc))
