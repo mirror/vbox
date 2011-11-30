@@ -25,6 +25,9 @@ VBOX_ROOT_CONFIG_KMK_INCLUDED = 1
 # kBuild stuff
 #
 
+# Build with umask 022 (requires kBuild r2556 to work, harmless on earlier).
+$(set-umask 022)
+
 # Modify the build types.
 KBUILD_BLD_TYPES = release profile debug kprofile
 
