@@ -604,11 +604,10 @@ int slirp_init(PNATState *ppData, uint32_t u32NetAddr, uint32_t u32Netmask,
     pData->socket_snd = 64 * _1K;
     tcp_sndspace = 64 * _1K;
     tcp_rcvspace = 64 * _1K;
-    /**
-     * Assignment here has only meaning, to avoid additional noise in release log.
-     * The value's assigned from DrvNAT in function slirp_set_somaxconi by reading value of CFGM key
-     * "VBoxInternal/Devices/<adapter name>/0/LUN#0/Config/SoMaxConnection" or to
-     * default value 10 (xTracker/5983) in case value for the key wasn't found.
+
+    /*
+     * Use the same default here as in DevNAT.cpp (SoMaxConnection CFGM value)
+     * to avoid release log noise.
      */
     pData->soMaxConn = 10;
 
@@ -2168,11 +2167,11 @@ static inline int slirp_arp_cache_update(PNATState pData, uint32_t dst, const ui
     }
     return 1;
 }
+
 /**
  * add entry to the arp cache
  * @note: this is helper function, slirp_arp_cache_update_or_add should be used.
  */
-
 static inline void slirp_arp_cache_add(PNATState pData, uint32_t ip, const uint8_t *ether)
 {
     struct arp_cache_entry *ac = NULL;
