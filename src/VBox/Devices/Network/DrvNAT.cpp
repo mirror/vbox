@@ -1217,7 +1217,7 @@ static DECLCALLBACK(int) drvNATConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uin
     i32AliasMode |= (i32MainAliasMode & 0x1 ? 0x1 : 0);
     i32AliasMode |= (i32MainAliasMode & 0x2 ? 0x40 : 0);
     i32AliasMode |= (i32MainAliasMode & 0x4 ? 0x4 : 0);
-    int i32SoMaxConn = 1;
+    int i32SoMaxConn = 10;
     GET_S32(rc, pThis, pCfg, "SoMaxConnection", i32SoMaxConn);
     /*
      * Query the network port interface.

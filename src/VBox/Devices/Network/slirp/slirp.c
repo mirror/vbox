@@ -604,6 +604,12 @@ int slirp_init(PNATState *ppData, uint32_t u32NetAddr, uint32_t u32Netmask,
     pData->socket_snd = 64 * _1K;
     tcp_sndspace = 64 * _1K;
     tcp_rcvspace = 64 * _1K;
+    /**
+     * Assignment here has only meaning, to avoid additional noise in release log
+     * the value set from DrvNAT in function slirp_set_somaxcon, reading CFGM key
+     * "VBoxInternal/Devices/<adapter name>/0/LUN#0/Config/SoMaxConnection" or setting
+     * default value 10 (xTracker/5983) in case value for the key wasn't found.
+     */
     pData->soMaxConn = 10;
 
 #ifdef RT_OS_WINDOWS
@@ -2011,12 +2017,15 @@ void slirp_set_somaxconn(PNATState pData, int iSoMaxConn)
     LogFlowFunc(("iSoMaxConn:d\n", iSoMaxConn));
     if (iSoMaxConn > SOMAXCONN)
     {
-        LogRel(("New value of somaxconn(%d) bigger than SOMAXCONN(%d)\n", iSoMaxConn, SOMAXCONN));
+        LogRel(("NAT: value of somaxconn(%d) bigger than SOMAXCONN(%d)\n", iSoMaxConn, SOMAXCONN));
         iSoMaxConn = SOMAXCONN;
     }
-    pData->soMaxConn = iSoMaxConn > 0 ? iSoMaxConn : pData->soMaxConn;
-    if (pData->soMaxConn > 1)
-        LogRel(("New value of somaxconn: %d\n", pData->soMaxConn));
+    if (pData->soMaxConn != iSoMaxConn)
+    {
+        LogRel(("NAT: value of somaxconn has been changed from %d to %d\n",
+                pData->soMaxConn, iSoMaxConn));
+        pData->soMaxConn = iSoMaxConn;
+    }
     LogFlowFuncLeave();
 }
 /* don't allow user set less 8kB and more than 1M values */
