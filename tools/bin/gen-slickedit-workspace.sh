@@ -371,19 +371,22 @@ my_generate_usercpp_h()
     if test -d "${HOME}/Library/Application Support/Slickedit"; then
         MY_SLICKDIR_="${HOME}/Library/Application Support/Slickedit"
         MY_USERCPP_H="unxcpp.h"
+        MY_VSLICK_DB="vslick.stu"
     elif test -d "${HOMEDRIVE}${HOMEPATH}/Documents/My SlickEdit Config"; then
         MY_SLICKDIR_="${HOMEDRIVE}${HOMEPATH}/Documents/My SlickEdit Config"
         MY_USERCPP_H="usercpp.h"
+        MY_VSLICK_DB="vslick.sta"
     else
         MY_SLICKDIR_="${HOME}/.slickedit"
         MY_USERCPP_H="unxcpp.h"
+        MY_VSLICK_DB="vslick.stu"
     fi
 
     MY_VER_NUM="0"
     MY_VER="0.0.0"
     for subdir in "${MY_SLICKDIR_}/"*;
     do
-        if test -f "${subdir}/${MY_USERCPP_H}"  -o  -f "${subdir}/vslick.stu"; then
+        if test -f "${subdir}/${MY_USERCPP_H}"  -o  -f "${subdir}/${MY_VSLICK_DB}"; then
             MY_CUR_VER_NUM=0
             MY_CUR_VER=`echo "${subdir}" | ${MY_SED} -e 's,^.*/,,g'`
 
