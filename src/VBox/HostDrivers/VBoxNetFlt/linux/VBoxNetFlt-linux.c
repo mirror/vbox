@@ -28,6 +28,7 @@
 #include <linux/rtnetlink.h>
 #include <linux/miscdevice.h>
 #include <linux/ip.h>
+#include <linux/if_vlan.h>
 
 #include <VBox/log.h>
 #include <VBox/err.h>
@@ -802,6 +803,7 @@ static int vboxNetFltLinuxPacketHandler(struct sk_buff *pBuf,
         /*
          * Get rid of fragmented packets, they cause too much trouble.
          */
+        unsigned int uMacLen = pBuf->mac_len;
         struct sk_buff *pCopy = skb_copy(pBuf, GFP_ATOMIC);
         kfree_skb(pBuf);
         if (!pCopy)
@@ -810,6 +812,22 @@ static int vboxNetFltLinuxPacketHandler(struct sk_buff *pBuf,
             return 0;
         }
         pBuf = pCopy;
+        /* Somehow skb_copy ignores mac_len */
+        pBuf->mac_len = uMacLen;
+# if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 27)
+        /* Restore VLAN tag stripped by host hardware */
+        if (vlan_tx_tag_present(pBuf) && skb_headroom(pBuf) >= VLAN_ETH_HLEN)
+        {
+            uint8_t *pMac = (uint8_t*)skb_mac_header(pBuf);
+            struct vlan_ethhdr *pVHdr = (struct vlan_ethhdr *)(pMac - VLAN_HLEN);
+            memmove(pVHdr, pMac, VLAN_ETH_ALEN * 2);
+            pVHdr->h_vlan_proto = RT_H2N_U16(ETH_P_8021Q);
+            pVHdr->h_vlan_TCI   = RT_H2N_U16(vlan_tx_tag_get(pBuf));
+            pBuf->mac_header   -= VLAN_HLEN;
+            pBuf->mac_len      += VLAN_HLEN;
+        }
+# endif /* LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 27) */
+
 # if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 18)
         Log3(("vboxNetFltLinuxPacketHandler: skb copy len=%u data_len=%u truesize=%u next=%p nr_frags=%u gso_size=%u gso_seqs=%u gso_type=%x frag_list=%p pkt_type=%x\n",
               pBuf->len, pBuf->data_len, pBuf->truesize, pBuf->next, skb_shinfo(pBuf)->nr_frags, skb_shinfo(pBuf)->gso_size, skb_shinfo(pBuf)->gso_segs, skb_shinfo(pBuf)->gso_type, skb_shinfo(pBuf)->frag_list, pBuf->pkt_type));
@@ -1203,9 +1221,9 @@ static int vboxNetFltLinuxForwardSegment(PVBOXNETFLTINS pThis, struct sk_buff *p
             {
                 /*
                  * The packet came from wire, ethernet header was removed by device driver.
-                 * Restore it.
+                 * Restore it using mac_len field. This takes into account VLAN headers too.
                  */
-                skb_push(pBuf, ETH_HLEN);
+                skb_push(pBuf, pBuf->mac_len);
             }
 
             vboxNetFltLinuxSkBufToSG(pThis, pBuf, pSG, cSegs, fSrc, NULL /*pGsoCtx*/);
