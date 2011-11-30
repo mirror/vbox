@@ -605,9 +605,9 @@ int slirp_init(PNATState *ppData, uint32_t u32NetAddr, uint32_t u32Netmask,
     tcp_sndspace = 64 * _1K;
     tcp_rcvspace = 64 * _1K;
     /**
-     * Assignment here has only meaning, to avoid additional noise in release log
-     * the value set from DrvNAT in function slirp_set_somaxcon, reading CFGM key
-     * "VBoxInternal/Devices/<adapter name>/0/LUN#0/Config/SoMaxConnection" or setting
+     * Assignment here has only meaning, to avoid additional noise in release log.
+     * The value's assigned from DrvNAT in function slirp_set_somaxconi by reading value of CFGM key
+     * "VBoxInternal/Devices/<adapter name>/0/LUN#0/Config/SoMaxConnection" or to
      * default value 10 (xTracker/5983) in case value for the key wasn't found.
      */
     pData->soMaxConn = 10;
