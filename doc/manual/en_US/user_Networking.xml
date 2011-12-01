@@ -464,6 +464,11 @@
           interfaces provided by the sky2 driver on the Marvell Yukon II EC
           Ultra Ethernet NIC is known to cause packet losses under certain
           conditions.</para>
+
+          <para>Some adapters strip VLAN tags in hardware. This does not allow
+          to use VLAN trunking between VM and the external network with
+          pre-2.6.27 Linux kernels nor with host operating systems other than
+          Linux.</para>
         </listitem>
 
         <listitem>
