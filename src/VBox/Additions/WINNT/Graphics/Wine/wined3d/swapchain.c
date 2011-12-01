@@ -1235,7 +1235,7 @@ struct wined3d_context *swapchain_create_context_for_thread(IWineD3DSwapChain *i
 #ifdef VBOX_WITH_WDDM
     /* no need to do anything since context gets added to the device context list within the context_create call */
 #else
-    newArray = HeapAlloc(GetProcessHeap(), 0, sizeof(*newArray) * This->num_contexts + 1);
+    newArray = HeapAlloc(GetProcessHeap(), 0, sizeof(*newArray) * (This->num_contexts + 1));
     if(!newArray) {
         ERR("Out of memory when trying to allocate a new context array\n");
         context_destroy(This->device, ctx);
