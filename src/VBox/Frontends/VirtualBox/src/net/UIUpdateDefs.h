@@ -23,7 +23,7 @@
 #include <QDate>
 
 /* Local includes: */
-#include "VBoxUtils.h"
+#include "VBoxVersion.h"
 
 /* This structure is used to store retranslated reminder values. */
 struct VBoxUpdateDay

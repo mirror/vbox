@@ -194,64 +194,6 @@ private:
     QString m_strAuthPassword;
 };
 
-/**
- *  VBoxVersion represents VirtualBox version parser
- */
-class VBoxVersion
-{
-public:
-
-    VBoxVersion() : m_x(-1), m_y(-1), m_z(-1) {}
-
-    VBoxVersion(const QString &strVersion)
-        : m_x(-1), m_y(-1), m_z(-1)
-    {
-        QStringList versionStack = strVersion.split('.');
-        if (versionStack.size() > 0)
-            m_x = versionStack[0].toInt();
-        if (versionStack.size() > 1)
-            m_y = versionStack[1].toInt();
-        if (versionStack.size() > 2)
-            m_z = versionStack[2].toInt();
-    }
-
-    VBoxVersion& operator=(const VBoxVersion &other) { m_x = other.x(); m_y = other.y(); m_z = other.z(); return *this; }
-
-    bool isValid() const { return m_x != -1 && m_y != -1 && m_z != -1; }
-
-    bool equal(const VBoxVersion &other) const { return (m_x == other.m_x) && (m_y == other.m_y) && (m_z == other.m_z); }
-    bool operator==(const VBoxVersion &other) const { return equal(other); }
-    bool operator!=(const VBoxVersion &other) const { return !equal(other); }
-
-    bool operator<(const VBoxVersion &other) const
-    {
-        return (m_x <  other.m_x) ||
-               (m_x == other.m_x && m_y <  other.m_y) ||
-               (m_x == other.m_x && m_y == other.m_y && m_z <  other.m_z);
-    }
-    bool operator>(const VBoxVersion &other) const
-    {
-        return (m_x >  other.m_x) ||
-               (m_x == other.m_x && m_y >  other.m_y) ||
-               (m_x == other.m_x && m_y == other.m_y && m_z >  other.m_z);
-    }
-
-    QString toString() const
-    {
-        return QString("%1.%2.%3").arg(m_x).arg(m_y).arg(m_z);
-    }
-
-    int x() const { return m_x; }
-    int y() const { return m_y; }
-    int z() const { return m_z; }
-
-private:
-
-    int m_x;
-    int m_y;
-    int m_z;
-};
-
 #ifdef Q_WS_MAC
 # include "VBoxUtils-darwin.h"
 #endif /* Q_WS_MAC */
