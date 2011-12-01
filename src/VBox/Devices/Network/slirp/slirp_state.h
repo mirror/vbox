@@ -135,7 +135,7 @@ typedef struct NATState
     int socket_snd;
     int soMaxConn;
 #ifdef VBOX_WITH_SLIRP_MT
-    PRTREQQUEUE pReqQueue;
+    RTREQQUEUE hReqQueue;
 #endif
 #ifdef RT_OS_WINDOWS
     ULONG (WINAPI * pfGetAdaptersAddresses)(ULONG, ULONG, PVOID, PIP_ADAPTER_ADDRESSES, PULONG);
@@ -473,8 +473,8 @@ typedef struct NATState
     do {                                                                \
         PRTREQ pReq;                                                    \
         int rc;                                                         \
-        rc = RTReqCallVoid((data)->pReqQueue, &pReq, 0 /*cMillies*/,    \
-                           (PFNRT)tcp_output 2, data, sotcb);           \
+        rc = RTReqQueueCallVoid((data)->hReqQueue, &pReq, 0 /*cMillies*/, \
+                                (PFNRT)tcp_output 2, data, sotcb);      \
         if (RT_LIKELY(rc == VERR_TIMEOUT))                              \
         {                                                               \
             SOCKET_UNLOCK(so);                                          \
@@ -490,9 +490,9 @@ typedef struct NATState
 # define DO_TCP_INPUT(data, mbuf, size, so)                             \
     do {                                                                \
         int rc;                                                         \
-        rc = RTReqCallEx((data)->pReqQueue, NULL, 0 /*cMillies*/,       \
-                         RTREQFLAGS_VOID | RTREQFLAGS_NO_WAIT,          \
-                         (PFNRT)tcp_input, 4, data, mbuf, size, so);    \
+        rc = RTReqQueueCallEx((data)->hReqQueue, NULL, 0 /*cMillies*/,  \
+                              RTREQFLAGS_VOID | RTREQFLAGS_NO_WAIT,     \
+                              (PFNRT)tcp_input, 4, data, mbuf, size, so); \
         AssertReleaseRC(rc);                                            \
     } while(0)
 
@@ -500,8 +500,8 @@ typedef struct NATState
     do {                                                                \
         PRTREQ pReq;                                                    \
         int rc;                                                         \
-        rc = RTReqCallVoid((data)->pReqQueue, &pReq, 0 /*cMillies*/,    \
-                           (PFNRT)tcp_connect, 2, data, so);            \
+        rc = RTReqQueueCallVoid((data)->hReqQueue, &pReq, 0 /*cMillies*/, \
+                                (PFNRT)tcp_connect, 2, data, so);       \
         if (RT_LIKELY(rc == VERR_TIMEOUT))                              \
         {                                                               \
             SOCKET_UNLOCK(so);                                          \
@@ -518,9 +518,9 @@ typedef struct NATState
     do {                                                                \
         PRTREQ pReq;                                                    \
         int rc;                                                         \
-        rc = RTReqCallVoid((data)->pReqQueue, &pReq, 0 /*cMillies*/,    \
-                           (PFNRT)soread_queue, 4,                      \
-                           data, so, ifclose, &(ret));                  \
+        rc = RTReqQueueCallVoid((data)->hReqQueue, &pReq, 0 /*cMillies*/, \
+                                (PFNRT)soread_queue, 4,                 \
+                                data, so, ifclose, &(ret));             \
         if (RT_LIKELY(rc == VERR_TIMEOUT))                              \
         {                                                               \
             SOCKET_UNLOCK(so);                                          \
@@ -537,8 +537,8 @@ typedef struct NATState
     do {                                                                \
         PRTREQ pReq;                                                    \
         int rc;                                                         \
-        rc = RTReqCall((data)->pReqQueue, &pReq, 0 /*cMillies*/,        \
-                       (PFNRT)sowrite, 2, data, so);                    \
+        rc = RTReqQueueCall((data)->hReqQueue, &pReq, 0 /*cMillies*/,   \
+                            (PFNRT)sowrite, 2, data, so);               \
         if (RT_LIKELY(rc == VERR_TIMEOUT))                              \
         {                                                               \
             SOCKET_UNLOCK(so);                                          \
@@ -555,8 +555,8 @@ typedef struct NATState
     do {                                                                \
         PRTREQ pReq;                                                    \
         int rc;                                                         \
-        rc = RTReqCallVoid((data)->pReqQueue, &pReq, 0 /*cMillies */,   \
-                           (PFNRT)sorecvfrom, 2, data, so);             \
+        rc = RTReqQueueCallVoid((data)->hReqQueue, &pReq, 0 /*cMillies */, \
+                                (PFNRT)sorecvfrom, 2, data, so);        \
         if (RT_LIKELY(rc == VERR_TIMEOUT))                              \
         {                                                               \
             SOCKET_UNLOCK(so);                                          \
@@ -573,8 +573,8 @@ typedef struct NATState
     do {                                                                \
         PRTREQ pReq;                                                    \
         int rc;                                                         \
-        rc = RTReqCallVoid((data)->pReqQueue, &pReq, 0 /* cMillies*/,   \
-                           (PFNRT)udp_detach, 2, data, so);             \
+        rc = RTReqQueueCallVoid((data)->hReqQueue, &pReq, 0 /* cMillies*/, \
+                                (PFNRT)udp_detach, 2, data, so);        \
         if (RT_LIKELY(rc == VERR_TIMEOUT))                              \
         {                                                               \
             SOCKET_UNLOCK(so);                                          \

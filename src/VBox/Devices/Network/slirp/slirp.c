@@ -621,7 +621,7 @@ int slirp_init(PNATState *ppData, uint32_t u32NetAddr, uint32_t u32Netmask,
 #ifdef VBOX_WITH_SLIRP_MT
     QSOCKET_LOCK_CREATE(tcb);
     QSOCKET_LOCK_CREATE(udb);
-    rc = RTReqCreateQueue(&pData->pReqQueue);
+    rc = RTReqQueueCreate(&pData->pReqQueue);
     AssertReleaseRC(rc);
 #endif
 
@@ -1949,7 +1949,7 @@ void slirp_post_sent(PNATState pData, void *pvArg)
 #ifdef VBOX_WITH_SLIRP_MT
 void slirp_process_queue(PNATState pData)
 {
-     RTReqProcess(pData->pReqQueue, RT_INDEFINITE_WAIT);
+     RTReqQueueProcess(pData->pReqQueue, RT_INDEFINITE_WAIT);
 }
 void *slirp_get_queue(PNATState pData)
 {

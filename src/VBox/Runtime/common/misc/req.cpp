@@ -40,6 +40,8 @@
 #include <iprt/log.h>
 #include <iprt/mem.h>
 
+#include "internal/req.h"
+
 
 /*******************************************************************************
 *   Internal Functions                                                         *
@@ -48,73 +50,51 @@ static int  rtReqProcessOne(PRTREQ pReq);
 
 
 
-/**
- * Create a request packet queue
- *
- * @returns iprt status code.
- * @param   ppQueue         Where to store the request queue pointer.
- */
-RTDECL(int) RTReqCreateQueue(PRTREQQUEUE *ppQueue)
+RTDECL(int) RTReqQueueCreate(RTREQQUEUE *phQueue)
 {
-    PRTREQQUEUE pQueue = (PRTREQQUEUE)RTMemAllocZ(sizeof(RTREQQUEUE));
+    PRTREQQUEUEINT pQueue = (PRTREQQUEUEINT)RTMemAllocZ(sizeof(RTREQQUEUEINT));
     if (!pQueue)
         return VERR_NO_MEMORY;
     int rc = RTSemEventCreate(&pQueue->EventSem);
     if (RT_SUCCESS(rc))
     {
-        *ppQueue = pQueue;
+        *phQueue = pQueue;
         return VINF_SUCCESS;
     }
 
     RTMemFree(pQueue);
     return rc;
 }
-RT_EXPORT_SYMBOL(RTReqCreateQueue);
+RT_EXPORT_SYMBOL(RTReqQueueCreate);
 
 
-/**
- * Destroy a request packet queue
- *
- * @returns iprt status code.
- * @param   pQueue          The request queue.
- */
-RTDECL(int) RTReqDestroyQueue(PRTREQQUEUE pQueue)
+RTDECL(int) RTReqQueueDestroy(RTREQQUEUE hQueue)
 {
     /*
      * Check input.
      */
-    if (!pQueue)
+    if (hQueue == NIL_RTREQQUEUE)
         return VINF_SUCCESS;
-    AssertPtr(pQueue);
+    PRTREQQUEUEINT pQueue = hQueue;
+    AssertPtrReturn(pQueue, VERR_INVALID_HANDLE);
+
     RTSemEventDestroy(pQueue->EventSem);
     pQueue->EventSem = NIL_RTSEMEVENT;
     RTMemFree(pQueue);
     return VINF_SUCCESS;
 }
-RT_EXPORT_SYMBOL(RTReqDestroyQueue);
+RT_EXPORT_SYMBOL(RTReqQueueDestroy);
 
 
-/**
- * Process one or more request packets
- *
- * @returns iprt status code.
- * @returns VERR_TIMEOUT if cMillies was reached without the packet being added.
- *
- * @param   pQueue          The request queue.
- * @param   cMillies        Number of milliseconds to wait for a pending request.
- *                          Use RT_INDEFINITE_WAIT to only wait till one is added.
- */
-RTDECL(int) RTReqProcess(PRTREQQUEUE pQueue, RTMSINTERVAL cMillies)
+RTDECL(int) RTReqQueueProcess(RTREQQUEUE hQueue, RTMSINTERVAL cMillies)
 {
-    LogFlow(("RTReqProcess %x\n", pQueue));
+    LogFlow(("RTReqProcess %x\n", hQueue));
+
     /*
      * Check input.
      */
-    if (!pQueue)
-    {
-        AssertFailed();
-        return VERR_INVALID_PARAMETER;
-    }
+    PRTREQQUEUEINT pQueue = hQueue;
+    AssertPtrReturn(pQueue, VERR_INVALID_HANDLE);
 
     /*
      * Process loop.
@@ -151,7 +131,7 @@ RTDECL(int) RTReqProcess(PRTREQQUEUE pQueue, RTMSINTERVAL cMillies)
         while (pReq)
         {
             Assert(pReq->enmState == RTREQSTATE_QUEUED);
-            Assert(pReq->pQueue == pQueue);
+            Assert(pReq->hQueue == pQueue);
             PRTREQ pCur = pReq;
             pReq = pReq->pNext;
             pCur->pNext = pReqs;
@@ -180,176 +160,67 @@ RTDECL(int) RTReqProcess(PRTREQQUEUE pQueue, RTMSINTERVAL cMillies)
     LogFlow(("RTReqProcess: returns %Rrc\n", rc));
     return rc;
 }
-RT_EXPORT_SYMBOL(RTReqProcess);
+RT_EXPORT_SYMBOL(RTReqQueueProcess);
 
-/**
- * Allocate and queue a call request.
- *
- * If it's desired to poll on the completion of the request set cMillies
- * to 0 and use RTReqWait() to check for completion. In the other case
- * use RT_INDEFINITE_WAIT.
- * The returned request packet must be freed using RTReqFree().
- *
- * @returns iprt statuscode.
- *          Will not return VERR_INTERRUPTED.
- * @returns VERR_TIMEOUT if cMillies was reached without the packet being completed.
- *
- * @param   pQueue          The request queue.
- * @param   ppReq           Where to store the pointer to the request.
- *                          This will be NULL or a valid request pointer not matter what happens.
- * @param   cMillies        Number of milliseconds to wait for the request to
- *                          be completed. Use RT_INDEFINITE_WAIT to only
- *                          wait till it's completed.
- * @param   pfnFunction     Pointer to the function to call.
- * @param   cArgs           Number of arguments following in the ellipsis.
- * @param   ...             Function arguments.
- *
- * @remarks See remarks on RTReqCallV.
- */
-RTDECL(int) RTReqCall(PRTREQQUEUE pQueue, PRTREQ *ppReq, RTMSINTERVAL cMillies, PFNRT pfnFunction, unsigned cArgs, ...)
+
+RTDECL(int) RTReqQueueCall(RTREQQUEUE hQueue, PRTREQ *ppReq, RTMSINTERVAL cMillies, PFNRT pfnFunction, unsigned cArgs, ...)
 {
     va_list va;
     va_start(va, cArgs);
-    int rc = RTReqCallV(pQueue, ppReq, cMillies, RTREQFLAGS_IPRT_STATUS, pfnFunction, cArgs, va);
+    int rc = RTReqQueueCallV(hQueue, ppReq, cMillies, RTREQFLAGS_IPRT_STATUS, pfnFunction, cArgs, va);
     va_end(va);
     return rc;
 }
-RT_EXPORT_SYMBOL(RTReqCall);
+RT_EXPORT_SYMBOL(RTReqQueueCall);
 
 
-/**
- * Allocate and queue a call request to a void function.
- *
- * If it's desired to poll on the completion of the request set cMillies
- * to 0 and use RTReqWait() to check for completion. In the other case
- * use RT_INDEFINITE_WAIT.
- * The returned request packet must be freed using RTReqFree().
- *
- * @returns iprt status code.
- *          Will not return VERR_INTERRUPTED.
- * @returns VERR_TIMEOUT if cMillies was reached without the packet being completed.
- *
- * @param   pQueue          The request queue.
- * @param   ppReq           Where to store the pointer to the request.
- *                          This will be NULL or a valid request pointer not matter what happens.
- * @param   cMillies        Number of milliseconds to wait for the request to
- *                          be completed. Use RT_INDEFINITE_WAIT to only
- *                          wait till it's completed.
- * @param   pfnFunction     Pointer to the function to call.
- * @param   cArgs           Number of arguments following in the ellipsis.
- * @param   ...             Function arguments.
- *
- * @remarks See remarks on RTReqCallV.
- */
-RTDECL(int) RTReqCallVoid(PRTREQQUEUE pQueue, PRTREQ *ppReq, RTMSINTERVAL cMillies, PFNRT pfnFunction, unsigned cArgs, ...)
+RTDECL(int) RTReqQueueCallVoid(RTREQQUEUE hQueue, PRTREQ *ppReq, RTMSINTERVAL cMillies, PFNRT pfnFunction, unsigned cArgs, ...)
 {
     va_list va;
     va_start(va, cArgs);
-    int rc = RTReqCallV(pQueue, ppReq, cMillies, RTREQFLAGS_VOID, pfnFunction, cArgs, va);
+    int rc = RTReqQueueCallV(hQueue, ppReq, cMillies, RTREQFLAGS_VOID, pfnFunction, cArgs, va);
     va_end(va);
     return rc;
 }
-RT_EXPORT_SYMBOL(RTReqCallVoid);
+RT_EXPORT_SYMBOL(RTReqQueueCallVoid);
 
 
-/**
- * Allocate and queue a call request to a void function.
- *
- * If it's desired to poll on the completion of the request set cMillies
- * to 0 and use RTReqWait() to check for completion. In the other case
- * use RT_INDEFINITE_WAIT.
- * The returned request packet must be freed using RTReqFree().
- *
- * @returns iprt status code.
- *          Will not return VERR_INTERRUPTED.
- * @returns VERR_TIMEOUT if cMillies was reached without the packet being completed.
- *
- * @param   pQueue          The request queue.
- * @param   ppReq           Where to store the pointer to the request.
- *                          This will be NULL or a valid request pointer not matter what happens, unless fFlags
- *                          contains RTREQFLAGS_NO_WAIT when it will be optional and always NULL.
- * @param   cMillies        Number of milliseconds to wait for the request to
- *                          be completed. Use RT_INDEFINITE_WAIT to only
- *                          wait till it's completed.
- * @param   fFlags          A combination of the RTREQFLAGS values.
- * @param   pfnFunction     Pointer to the function to call.
- * @param   cArgs           Number of arguments following in the ellipsis.
- * @param   ...             Function arguments.
- *
- * @remarks See remarks on RTReqCallV.
- */
-RTDECL(int) RTReqCallEx(PRTREQQUEUE pQueue, PRTREQ *ppReq, RTMSINTERVAL cMillies, unsigned fFlags, PFNRT pfnFunction, unsigned cArgs, ...)
+RTDECL(int) RTReqQueueCallEx(RTREQQUEUE hQueue, PRTREQ *ppReq, RTMSINTERVAL cMillies, unsigned fFlags, PFNRT pfnFunction, unsigned cArgs, ...)
 {
     va_list va;
     va_start(va, cArgs);
-    int rc = RTReqCallV(pQueue, ppReq, cMillies, fFlags, pfnFunction, cArgs, va);
+    int rc = RTReqQueueCallV(hQueue, ppReq, cMillies, fFlags, pfnFunction, cArgs, va);
     va_end(va);
     return rc;
 }
-RT_EXPORT_SYMBOL(RTReqCallEx);
+RT_EXPORT_SYMBOL(RTReqQueueCallEx);
 
 
-/**
- * Allocate and queue a call request.
- *
- * If it's desired to poll on the completion of the request set cMillies
- * to 0 and use RTReqWait() to check for completion. In the other case
- * use RT_INDEFINITE_WAIT.
- * The returned request packet must be freed using RTReqFree().
- *
- * @returns iprt status code.
- *          Will not return VERR_INTERRUPTED.
- * @returns VERR_TIMEOUT if cMillies was reached without the packet being completed.
- *
- * @param   pQueue          The request queue.
- * @param   ppReq           Where to store the pointer to the request.
- *                          This will be NULL or a valid request pointer not matter what happens, unless fFlags
- *                          contains RTREQFLAGS_NO_WAIT when it will be optional and always NULL.
- * @param   cMillies        Number of milliseconds to wait for the request to
- *                          be completed. Use RT_INDEFINITE_WAIT to only
- *                          wait till it's completed.
- * @param   fFlags          A combination of the RTREQFLAGS values.
- * @param   pfnFunction     Pointer to the function to call.
- * @param   cArgs           Number of arguments following in the ellipsis.
- * @param   Args            Variable argument vector.
- *
- * @remarks Caveats:
- *              - Do not pass anything which is larger than an uintptr_t.
- *              - 64-bit integers are larger than uintptr_t on 32-bit hosts.
- *                Pass integers > 32-bit by reference (pointers).
- *              - Don't use NULL since it should be the integer 0 in C++ and may
- *                therefore end up with garbage in the bits 63:32 on 64-bit
- *                hosts because 'int' is 32-bit.
- *                Use (void *)NULL or (uintptr_t)0 instead of NULL.
- */
-RTDECL(int) RTReqCallV(PRTREQQUEUE pQueue, PRTREQ *ppReq, RTMSINTERVAL cMillies, unsigned fFlags, PFNRT pfnFunction, unsigned cArgs, va_list Args)
+RTDECL(int) RTReqQueueCallV(RTREQQUEUE hQueue, PRTREQ *ppReq, RTMSINTERVAL cMillies, unsigned fFlags, PFNRT pfnFunction, unsigned cArgs, va_list Args)
 {
     LogFlow(("RTReqCallV: cMillies=%d fFlags=%#x pfnFunction=%p cArgs=%d\n", cMillies, fFlags, pfnFunction, cArgs));
 
     /*
      * Check input.
      */
-    if (!pfnFunction || !pQueue || (fFlags & ~(RTREQFLAGS_RETURN_MASK | RTREQFLAGS_NO_WAIT)))
-    {
-        AssertFailed();
-        return VERR_INVALID_PARAMETER;
-    }
+    PRTREQQUEUEINT pQueue = hQueue;
+    AssertPtrReturn(pQueue, VERR_INVALID_HANDLE);
+    AssertPtrReturn(pfnFunction, VERR_INVALID_POINTER);
+    AssertReturn(!(fFlags & ~(RTREQFLAGS_RETURN_MASK | RTREQFLAGS_NO_WAIT)), VERR_INVALID_PARAMETER);
+
     if (!(fFlags & RTREQFLAGS_NO_WAIT) || ppReq)
     {
-        Assert(ppReq);
+        AssertPtrReturn(ppReq, VERR_INVALID_POINTER);
         *ppReq = NULL;
     }
+
     PRTREQ pReq = NULL;
-    if (cArgs * sizeof(uintptr_t) > sizeof(pReq->u.Internal.aArgs))
-    {
-        AssertMsgFailed(("cArg=%d\n", cArgs));
-        return VERR_TOO_MUCH_DATA;
-    }
+    AssertMsgReturn(cArgs * sizeof(uintptr_t) <= sizeof(pReq->u.Internal.aArgs), ("cArgs=%u\n", cArgs), VERR_TOO_MUCH_DATA);
 
     /*
      * Allocate request
      */
-    int rc = RTReqAlloc(pQueue, &pReq, RTREQTYPE_INTERNAL);
+    int rc = RTReqQueueAlloc(pQueue, &pReq, RTREQTYPE_INTERNAL);
     if (rc != VINF_SUCCESS)
         return rc;
 
@@ -365,7 +236,7 @@ RTDECL(int) RTReqCallV(PRTREQQUEUE pQueue, PRTREQ *ppReq, RTMSINTERVAL cMillies,
     /*
      * Queue the request and return.
      */
-    rc = RTReqQueue(pReq, cMillies);
+    rc = RTReqSubmit(pReq, cMillies);
     if (   rc != VINF_SUCCESS
         && rc != VERR_TIMEOUT)
     {
@@ -382,7 +253,23 @@ RTDECL(int) RTReqCallV(PRTREQQUEUE pQueue, PRTREQ *ppReq, RTMSINTERVAL cMillies,
     Assert(rc != VERR_INTERRUPTED);
     return rc;
 }
-RT_EXPORT_SYMBOL(RTReqCallV);
+RT_EXPORT_SYMBOL(RTReqQueueCallV);
+
+
+RTDECL(bool) RTReqQueueIsBusy(RTREQQUEUE hQueue)
+{
+    PRTREQQUEUEINT pQueue = hQueue;
+    AssertPtrReturn(pQueue, false);
+
+    if (ASMAtomicReadBool(&pQueue->fBusy))
+        return true;
+    if (ASMAtomicReadPtrT(&pQueue->pReqs, PRTREQ) != NULL)
+        return true;
+    if (ASMAtomicReadBool(&pQueue->fBusy))
+        return true;
+    return false;
+}
+RT_EXPORT_SYMBOL(RTReqQueueIsBusy);
 
 
 /**
@@ -414,7 +301,7 @@ static void vmr3ReqJoinFreeSub(volatile PRTREQ *ppHead, PRTREQ pList)
 /**
  * Joins the list pList with whatever is linked up at *pHead.
  */
-static void vmr3ReqJoinFree(PRTREQQUEUE pQueue, PRTREQ pList)
+static void vmr3ReqJoinFree(PRTREQQUEUEINT pQueue, PRTREQ pList)
 {
     /*
      * Split the list if it's too long.
@@ -438,30 +325,14 @@ static void vmr3ReqJoinFree(PRTREQQUEUE pQueue, PRTREQ pList)
 }
 
 
-/**
- * Allocates a request packet.
- *
- * The caller allocates a request packet, fills in the request data
- * union and queues the request.
- *
- * @returns iprt status code.
- *
- * @param   pQueue          The request queue.
- * @param   ppReq           Where to store the pointer to the allocated packet.
- * @param   enmType         Package type.
- */
-RTDECL(int) RTReqAlloc(PRTREQQUEUE pQueue, PRTREQ *ppReq, RTREQTYPE enmType)
+RTDECL(int) RTReqQueueAlloc(RTREQQUEUE hQueue, PRTREQ *ppReq, RTREQTYPE enmType)
 {
     /*
      * Validate input.
      */
-    if (    enmType < RTREQTYPE_INVALID
-        ||  enmType > RTREQTYPE_MAX)
-    {
-        AssertMsgFailed(("Invalid package type %d valid range %d-%d inclusively.\n",
-                         enmType, RTREQTYPE_INVALID + 1, RTREQTYPE_MAX - 1));
-        return VERR_RT_REQUEST_INVALID_TYPE;
-    }
+    PRTREQQUEUEINT pQueue = hQueue;
+    AssertPtrReturn(pQueue, VERR_INVALID_HANDLE);
+    AssertMsgReturn(enmType > RTREQTYPE_INVALID && enmType < RTREQTYPE_MAX, ("%d\n", enmType), VERR_RT_REQUEST_INVALID_TYPE);
 
     /*
      * Try get a recycled packet.
@@ -525,7 +396,7 @@ RTDECL(int) RTReqAlloc(PRTREQQUEUE pQueue, PRTREQ *ppReq, RTREQTYPE enmType)
              */
             Assert(pReq->enmType == RTREQTYPE_INVALID);
             Assert(pReq->enmState == RTREQSTATE_FREE);
-            Assert(pReq->pQueue == pQueue);
+            Assert(pReq->hQueue == pQueue);
             ASMAtomicXchgSize(&pReq->pNext, NULL);
             pReq->enmState = RTREQSTATE_ALLOCATED;
             pReq->iStatus  = VERR_RT_REQUEST_STATUS_STILL_PENDING;
@@ -560,7 +431,7 @@ RTDECL(int) RTReqAlloc(PRTREQQUEUE pQueue, PRTREQ *ppReq, RTREQTYPE enmType)
      * Initialize the packet and return it.
      */
     pReq->pNext    = NULL;
-    pReq->pQueue   = pQueue;
+    pReq->hQueue   = pQueue;
     pReq->enmState = RTREQSTATE_ALLOCATED;
     pReq->iStatus  = VERR_RT_REQUEST_STATUS_STILL_PENDING;
     pReq->fEventSemClear = true;
@@ -571,17 +442,9 @@ RTDECL(int) RTReqAlloc(PRTREQQUEUE pQueue, PRTREQ *ppReq, RTREQTYPE enmType)
     LogFlow(("RTReqAlloc: returns VINF_SUCCESS *ppReq=%p new\n", pReq));
     return VINF_SUCCESS;
 }
-RT_EXPORT_SYMBOL(RTReqAlloc);
+RT_EXPORT_SYMBOL(RTReqQueueAlloc);
 
 
-/**
- * Free a request packet.
- *
- * @returns iprt status code.
- *
- * @param   pReq            Package to free.
- * @remark  The request packet must be in allocated or completed state!
- */
 RTDECL(int) RTReqFree(PRTREQ pReq)
 {
     /*
@@ -611,7 +474,7 @@ RTDECL(int) RTReqFree(PRTREQ pReq)
     pReq->iStatus  = VERR_RT_REQUEST_STATUS_FREED;
     pReq->enmType  = RTREQTYPE_INVALID;
 
-    PRTREQQUEUE pQueue = pReq->pQueue;
+    PRTREQQUEUEINT pQueue = pReq->hQueue;
     if (pQueue->cReqFree < 128)
     {
         ASMAtomicIncU32(&pQueue->cReqFree);
@@ -633,25 +496,7 @@ RTDECL(int) RTReqFree(PRTREQ pReq)
 RT_EXPORT_SYMBOL(RTReqFree);
 
 
-/**
- * Queue a request.
- *
- * The quest must be allocated using RTReqAlloc() and contain
- * all the required data.
- * If it's desired to poll on the completion of the request set cMillies
- * to 0 and use RTReqWait() to check for completion. In the other case
- * use RT_INDEFINITE_WAIT.
- *
- * @returns iprt status code.
- *          Will not return VERR_INTERRUPTED.
- * @returns VERR_TIMEOUT if cMillies was reached without the packet being completed.
- *
- * @param   pReq            The request to queue.
- * @param   cMillies        Number of milliseconds to wait for the request to
- *                          be completed. Use RT_INDEFINITE_WAIT to only
- *                          wait till it's completed.
- */
-RTDECL(int) RTReqQueue(PRTREQ pReq, RTMSINTERVAL cMillies)
+RTDECL(int) RTReqSubmit(PRTREQ pReq, RTMSINTERVAL cMillies)
 {
     LogFlow(("RTReqQueue: pReq=%p cMillies=%d\n", pReq, cMillies));
     /*
@@ -662,7 +507,7 @@ RTDECL(int) RTReqQueue(PRTREQ pReq, RTMSINTERVAL cMillies)
         AssertMsgFailed(("Invalid state %d\n", pReq->enmState));
         return VERR_RT_REQUEST_STATE;
     }
-    if (   !pReq->pQueue
+    if (   !pReq->hQueue
         ||  pReq->pNext
         ||  !pReq->EventSem)
     {
@@ -681,7 +526,7 @@ RTDECL(int) RTReqQueue(PRTREQ pReq, RTMSINTERVAL cMillies)
     /*
      * Insert it.
      */
-    PRTREQQUEUE pQueue = ((RTREQ volatile *)pReq)->pQueue;                 /* volatile paranoia */
+    PRTREQQUEUEINT pQueue = ((RTREQ volatile *)pReq)->hQueue;              /* volatile paranoia */
     unsigned fFlags = ((RTREQ volatile *)pReq)->fFlags;                    /* volatile paranoia */
     pReq->enmState = RTREQSTATE_QUEUED;
     PRTREQ pNext;
@@ -705,20 +550,9 @@ RTDECL(int) RTReqQueue(PRTREQ pReq, RTMSINTERVAL cMillies)
     LogFlow(("RTReqQueue: returns %Rrc\n", rc));
     return rc;
 }
-RT_EXPORT_SYMBOL(RTReqQueue);
+RT_EXPORT_SYMBOL(RTReqSubmit);
 
 
-/**
- * Wait for a request to be completed.
- *
- * @returns iprt status code.
- *          Will not return VERR_INTERRUPTED.
- * @returns VERR_TIMEOUT if cMillies was reached without the packet being completed.
- *
- * @param   pReq            The request to wait for.
- * @param   cMillies        Number of milliseconds to wait.
- *                          Use RT_INDEFINITE_WAIT to only wait till it's completed.
- */
 RTDECL(int) RTReqWait(PRTREQ pReq, RTMSINTERVAL cMillies)
 {
     LogFlow(("RTReqWait: pReq=%p cMillies=%d\n", pReq, cMillies));
@@ -733,7 +567,7 @@ RTDECL(int) RTReqWait(PRTREQ pReq, RTMSINTERVAL cMillies)
         AssertMsgFailed(("Invalid state %d\n", pReq->enmState));
         return VERR_RT_REQUEST_STATE;
     }
-    if (    !pReq->pQueue
+    if (    !pReq->hQueue
         ||  !pReq->EventSem)
     {
         AssertMsgFailed(("Invalid request package! Anyone cooking their own packages???\n"));
@@ -915,25 +749,3 @@ static int  rtReqProcessOne(PRTREQ pReq)
     return rcRet;
 }
 
-
-/**
- * Checks if the queue is busy or not.
- *
- * The caller is responsible for dealing with any concurrent submitts.
- *
- * @returns true if busy, false if idle.
- * @param   pQueue              The queue.
- */
-RTDECL(bool) RTReqIsBusy(PRTREQQUEUE pQueue)
-{
-    AssertPtrReturn(pQueue, false);
-
-    if (ASMAtomicReadBool(&pQueue->fBusy))
-        return true;
-    if (ASMAtomicReadPtrT(&pQueue->pReqs, PRTREQ) != NULL)
-        return true;
-    if (ASMAtomicReadBool(&pQueue->fBusy))
-        return true;
-    return false;
-}
-RT_EXPORT_SYMBOL(RTReqIsBusy);

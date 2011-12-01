@@ -1,9 +1,9 @@
 /** @file
- * IPRT - Request packets
+ * IPRT - Request Queue & Pool.
  */
 
 /*
- * Copyright (C) 2006-2007 Oracle Corporation
+ * Copyright (C) 2006-2011 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -33,10 +33,25 @@
 
 RT_C_DECLS_BEGIN
 
-/** @defgroup grp_rt_req    RTReq - Request Packet Management
+/** @defgroup grp_rt_req    RTReq - Request Queue & Pool.
  * @ingroup grp_rt
  * @{
  */
+
+/** Request queue handle. */
+typedef struct RTREQQUEUEINT *RTREQQUEUE;
+/** Pointer to a request queue handle. */
+typedef RTREQQUEUE *PRTREQQUEUE;
+/** NIL request queue handle. */
+#define NIL_RTREQQUEUE      ((RTREQQUEUE)0)
+
+/** Request thread pool handle. */
+typedef struct RTREQPOOLINT *RTREQPOOL;
+/** Poiner to a request thread pool handle. */
+typedef RTREQPOOL *PRTREQPOOL;
+/** NIL request pool handle. */
+#define NIL_RTREQPOOL       ((RTREQPOOL)0)
+
 
 /**
  * Request type.
@@ -85,8 +100,6 @@ typedef enum RTREQFLAGS
     RTREQFLAGS_NO_WAIT      = 2
 } RTREQFLAGS;
 
-/** Pointer to a request queue. */
-typedef struct RTREQQUEUE *PRTREQQUEUE;
 
 /**
  * RT Request packet.
@@ -98,7 +111,7 @@ typedef struct RTREQ
     /** Pointer to the next request in the chain. */
     struct RTREQ * volatile pNext;
     /** Pointer to the queue this packet belongs to. */
-    PRTREQQUEUE             pQueue;
+    RTREQQUEUE              hQueue;
     /** Request state. */
     volatile RTREQSTATE     enmState;
     /** iprt status code for the completed request. */
@@ -132,24 +145,6 @@ typedef struct RTREQ
 /** Pointer to an RT request packet. */
 typedef RTREQ *PRTREQ;
 
-/** @todo hide this */
-typedef struct RTREQQUEUE
-{
-    /** Head of the request queue. Atomic. */
-    volatile PRTREQ         pReqs;
-    /** The last index used during alloc/free. */
-    volatile uint32_t       iReqFree;
-    /** Number of free request packets. */
-    volatile uint32_t       cReqFree;
-    /** Array of pointers to lists of free request packets. Atomic. */
-    volatile PRTREQ         apReqFree[9];
-    /** Requester event sem.
-     * The request can use this event semaphore to wait/poll for new requests.
-     */
-    RTSEMEVENT              EventSem;
-    /** Set if busy (pending or processing requests). */
-    bool volatile           fBusy;
-} RTREQQUEUE;
 
 #ifdef IN_RING3
 
@@ -157,19 +152,17 @@ typedef struct RTREQQUEUE
  * Create a request packet queue
  *
  * @returns iprt status code.
- * @param   ppQueue         Where to store the request queue pointer.
+ * @param   phQueue         Where to store the request queue handle.
  */
-RTDECL(int) RTReqCreateQueue(PRTREQQUEUE *ppQueue);
-
+RTDECL(int) RTReqQueueCreate(PRTREQQUEUE phQueue);
 
 /**
  * Destroy a request packet queue
  *
  * @returns iprt status code.
- * @param   pQueue          The request queue.
+ * @param   hQueue          The request queue.
  */
-RTDECL(int) RTReqDestroyQueue(PRTREQQUEUE pQueue);
-
+RTDECL(int) RTReqQueueDestroy(RTREQQUEUE hQueue);
 
 /**
  * Process one or more request packets
@@ -177,12 +170,11 @@ RTDECL(int) RTReqDestroyQueue(PRTREQQUEUE pQueue);
  * @returns iprt status code.
  * @returns VERR_TIMEOUT if cMillies was reached without the packet being added.
  *
- * @param   pQueue          The request queue.
+ * @param   hQueue          The request queue.
  * @param   cMillies        Number of milliseconds to wait for a pending request.
  *                          Use RT_INDEFINITE_WAIT to only wait till one is added.
  */
-RTDECL(int) RTReqProcess(PRTREQQUEUE pQueue, RTMSINTERVAL cMillies);
-
+RTDECL(int) RTReqQueueProcess(RTREQQUEUE hQueue, RTMSINTERVAL cMillies);
 
 /**
  * Allocate and queue a call request.
@@ -196,7 +188,7 @@ RTDECL(int) RTReqProcess(PRTREQQUEUE pQueue, RTMSINTERVAL cMillies);
  *          Will not return VERR_INTERRUPTED.
  * @returns VERR_TIMEOUT if cMillies was reached without the packet being completed.
  *
- * @param   pQueue          The request queue.
+ * @param   hQueue          The request queue.
  * @param   ppReq           Where to store the pointer to the request.
  *                          This will be NULL or a valid request pointer not matter what happens.
  * @param   cMillies        Number of milliseconds to wait for the request to
@@ -206,10 +198,9 @@ RTDECL(int) RTReqProcess(PRTREQQUEUE pQueue, RTMSINTERVAL cMillies);
  * @param   cArgs           Number of arguments following in the ellipsis.
  * @param   ...             Function arguments.
  *
- * @remarks See remarks on RTReqCallV.
+ * @remarks See remarks on RTReqQueueCallV.
  */
-RTDECL(int) RTReqCall(PRTREQQUEUE pQueue, PRTREQ *ppReq, RTMSINTERVAL cMillies, PFNRT pfnFunction, unsigned cArgs, ...);
-
+RTDECL(int) RTReqQueueCall(RTREQQUEUE hQueue, PRTREQ *ppReq, RTMSINTERVAL cMillies, PFNRT pfnFunction, unsigned cArgs, ...);
 
 /**
  * Allocate and queue a call request to a void function.
@@ -223,7 +214,7 @@ RTDECL(int) RTReqCall(PRTREQQUEUE pQueue, PRTREQ *ppReq, RTMSINTERVAL cMillies, 
  *          Will not return VERR_INTERRUPTED.
  * @returns VERR_TIMEOUT if cMillies was reached without the packet being completed.
  *
- * @param   pQueue          The request queue.
+ * @param   hQueue          The request queue.
  * @param   ppReq           Where to store the pointer to the request.
  *                          This will be NULL or a valid request pointer not matter what happens.
  * @param   cMillies        Number of milliseconds to wait for the request to
@@ -233,10 +224,9 @@ RTDECL(int) RTReqCall(PRTREQQUEUE pQueue, PRTREQ *ppReq, RTMSINTERVAL cMillies, 
  * @param   cArgs           Number of arguments following in the ellipsis.
  * @param   ...             Function arguments.
  *
- * @remarks See remarks on RTReqCallV.
+ * @remarks See remarks on RTReqQueueCallV.
  */
-RTDECL(int) RTReqCallVoid(PRTREQQUEUE pQueue, PRTREQ *ppReq, RTMSINTERVAL cMillies, PFNRT pfnFunction, unsigned cArgs, ...);
-
+RTDECL(int) RTReqQueueCallVoid(RTREQQUEUE hQueue, PRTREQ *ppReq, RTMSINTERVAL cMillies, PFNRT pfnFunction, unsigned cArgs, ...);
 
 /**
  * Allocate and queue a call request to a void function.
@@ -250,7 +240,7 @@ RTDECL(int) RTReqCallVoid(PRTREQQUEUE pQueue, PRTREQ *ppReq, RTMSINTERVAL cMilli
  *          Will not return VERR_INTERRUPTED.
  * @returns VERR_TIMEOUT if cMillies was reached without the packet being completed.
  *
- * @param   pQueue          The request queue.
+ * @param   hQueue          The request queue.
  * @param   ppReq           Where to store the pointer to the request.
  *                          This will be NULL or a valid request pointer not matter what happens, unless fFlags
  *                          contains RTREQFLAGS_NO_WAIT when it will be optional and always NULL.
@@ -262,10 +252,9 @@ RTDECL(int) RTReqCallVoid(PRTREQQUEUE pQueue, PRTREQ *ppReq, RTMSINTERVAL cMilli
  * @param   cArgs           Number of arguments following in the ellipsis.
  * @param   ...             Function arguments.
  *
- * @remarks See remarks on RTReqCallV.
+ * @remarks See remarks on RTReqQueueCallV.
  */
-RTDECL(int) RTReqCallEx(PRTREQQUEUE pQueue, PRTREQ *ppReq, RTMSINTERVAL cMillies, unsigned fFlags, PFNRT pfnFunction, unsigned cArgs, ...);
-
+RTDECL(int) RTReqQueueCallEx(RTREQQUEUE hQueue, PRTREQ *ppReq, RTMSINTERVAL cMillies, unsigned fFlags, PFNRT pfnFunction, unsigned cArgs, ...);
 
 /**
  * Allocate and queue a call request.
@@ -279,7 +268,7 @@ RTDECL(int) RTReqCallEx(PRTREQQUEUE pQueue, PRTREQ *ppReq, RTMSINTERVAL cMillies
  *          Will not return VERR_INTERRUPTED.
  * @returns VERR_TIMEOUT if cMillies was reached without the packet being completed.
  *
- * @param   pQueue          The request queue.
+ * @param   hQueue          The request queue.
  * @param   ppReq           Where to store the pointer to the request.
  *                          This will be NULL or a valid request pointer not matter what happens, unless fFlags
  *                          contains RTREQFLAGS_NO_WAIT when it will be optional and always NULL.
@@ -300,8 +289,17 @@ RTDECL(int) RTReqCallEx(PRTREQQUEUE pQueue, PRTREQ *ppReq, RTMSINTERVAL cMillies
  *                hosts because 'int' is 32-bit.
  *                Use (void *)NULL or (uintptr_t)0 instead of NULL.
  */
-RTDECL(int) RTReqCallV(PRTREQQUEUE pQueue, PRTREQ *ppReq, RTMSINTERVAL cMillies, unsigned fFlags, PFNRT pfnFunction, unsigned cArgs, va_list Args);
+RTDECL(int) RTReqQueueCallV(RTREQQUEUE hQueue, PRTREQ *ppReq, RTMSINTERVAL cMillies, unsigned fFlags, PFNRT pfnFunction, unsigned cArgs, va_list Args);
 
+/**
+ * Checks if the queue is busy or not.
+ *
+ * The caller is responsible for dealing with any concurrent submitts.
+ *
+ * @returns true if busy, false if idle.
+ * @param   hQueue              The queue.
+ */
+RTDECL(bool) RTReqQueueIsBusy(RTREQQUEUE hQueue);
 
 /**
  * Allocates a request packet.
@@ -311,11 +309,11 @@ RTDECL(int) RTReqCallV(PRTREQQUEUE pQueue, PRTREQ *ppReq, RTMSINTERVAL cMillies,
  *
  * @returns iprt status code.
  *
- * @param   pQueue          The request queue.
+ * @param   hQueue          The request queue.
  * @param   ppReq           Where to store the pointer to the allocated packet.
  * @param   enmType         Package type.
  */
-RTDECL(int) RTReqAlloc(PRTREQQUEUE pQueue, PRTREQ *ppReq, RTREQTYPE enmType);
+RTDECL(int) RTReqQueueAlloc(RTREQQUEUE hQueue, PRTREQ *ppReq, RTREQTYPE enmType);
 
 
 /**
@@ -332,8 +330,9 @@ RTDECL(int) RTReqFree(PRTREQ pReq);
 /**
  * Queue a request.
  *
- * The quest must be allocated using RTReqAlloc() and contain
- * all the required data.
+ * The quest must be allocated using RTReqQueueAlloc() or RTReqPoolAlloc() and
+ * contain all the required data.
+ *
  * If it's desired to poll on the completion of the request set cMillies
  * to 0 and use RTReqWait() to check for completion. In the other case
  * use RT_INDEFINITE_WAIT.
@@ -347,7 +346,7 @@ RTDECL(int) RTReqFree(PRTREQ pReq);
  *                          be completed. Use RT_INDEFINITE_WAIT to only
  *                          wait till it's completed.
  */
-RTDECL(int) RTReqQueue(PRTREQ pReq, RTMSINTERVAL cMillies);
+RTDECL(int) RTReqSubmit(PRTREQ pReq, RTMSINTERVAL cMillies);
 
 
 /**
@@ -363,15 +362,6 @@ RTDECL(int) RTReqQueue(PRTREQ pReq, RTMSINTERVAL cMillies);
  */
 RTDECL(int) RTReqWait(PRTREQ pReq, RTMSINTERVAL cMillies);
 
-/**
- * Checks if the queue is busy or not.
- *
- * The caller is responsible for dealing with any concurrent submitts.
- *
- * @returns true if busy, false if idle.
- * @param   pQueue              The queue.
- */
-RTDECL(bool) RTReqIsBusy(PRTREQQUEUE pQueue);
 
 #endif /* IN_RING3 */
 
