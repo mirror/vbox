@@ -742,16 +742,16 @@ Function PrepareWRPFile
     nsExec::ExecToLog '"$g_strSystemDir\takeown.exe" /F "$0"'
   AccessControl::SetFileOwner "$0" "(S-1-5-32-545)"
   Pop $1
-  DetailPrint "Setting file owner for '$0': $1"
+  DetailPrint "Setting file owner for $0 returned $1"
   AccessControl::GrantOnFile "$0" "(S-1-5-32-545)" "FullAccess"
   Pop $1
-  DetailPrint "Setting access rights for '$0': $1"
+  DetailPrint "Setting access rights for $0 returned $1"
 
 !if $%VBOX_WITH_GUEST_INSTALL_HELPER% == "1"
   !ifdef WFP_FILE_EXCEPTION
     VBoxGuestInstallHelper::DisableWFP "$0"
     Pop $1 ; Get return value (ignored for now)
-    DetailPrint "Setting WFP exception for '$0': $1"
+    DetailPrint "Setting WFP exception for $0 returned $1"
   !endif
 !endif
 
@@ -825,17 +825,21 @@ Section /o $(VBOX_COMPONENT_D3D) SEC03
   !insertmacro InstallLib DLL NOTSHARED REBOOT_NOTPROTECTED "$%PATH_OUT%\bin\additions\d3d9.dll" "$g_strSystemDir\d3d9.dll" "$TEMP"
 
   !if $%BUILD_TARGET_ARCH% == "amd64"
-    ; Only 64-bit installer: Also copy 32-bit DLLs on 64-bit target arch in
-    ; Wow64 node (32-bit sub system)
+    ; Only 64-bit installer:
+    ; Also copy 32-bit DLLs on 64-bit Windows in SysWOW64 node
     ${EnableX64FSRedirection}
     SetOutPath $SYSDIR
-    DetailPrint "Installing Direct3D support (Wow64) ..."
+    DetailPrint "Installing Direct3D support (SysWOW64: $SYSDIR) ..."
     FILE "$%VBOX_PATH_ADDITIONS_WIN_X86%\libWine.dll"
     FILE "$%VBOX_PATH_ADDITIONS_WIN_X86%\VBoxD3D8.dll"
     FILE "$%VBOX_PATH_ADDITIONS_WIN_X86%\VBoxD3D9.dll"
     FILE "$%VBOX_PATH_ADDITIONS_WIN_X86%\wined3d.dll"
 
+    ;
     ; Update DLL cache
+    ;
+
+    ; Save original DLLs (only if msd3d*.dll does not exist) ...
     SetOutPath "$SYSDIR\dllcache"
     IfFileExists "$SYSDIR\dllcache\msd3d8.dll" +1
       CopyFiles /SILENT "$SYSDIR\dllcache\d3d8.dll" "$SYSDIR\dllcache\msd3d8.dll"
@@ -855,6 +859,10 @@ Section /o $(VBOX_COMPONENT_D3D) SEC03
     ; If exchange above failed, do it on reboot
     !insertmacro InstallLib DLL NOTSHARED REBOOT_NOTPROTECTED "$%VBOX_PATH_ADDITIONS_WIN_X86%\d3d8.dll" "$SYSDIR\dllcache\d3d8.dll" "$TEMP"
     !insertmacro InstallLib DLL NOTSHARED REBOOT_NOTPROTECTED "$%VBOX_PATH_ADDITIONS_WIN_X86%\d3d9.dll" "$SYSDIR\dllcache\d3d9.dll" "$TEMP"
+
+    ;
+    ; Update original DLLs
+    ;
 
     ; Save original DLLs (only if msd3d*.dll does not exist) ...
     SetOutPath $SYSDIR
