@@ -77,7 +77,7 @@ RTDECL(int) RTReqFree(PRTREQ pReq)
      * Make it a free packet and put it into one of the free packet lists.
      */
     pReq->enmState = RTREQSTATE_FREE;
-    pReq->iStatus  = VERR_RT_REQUEST_STATUS_FREED;
+    pReq->iStatusX = VERR_RT_REQUEST_STATUS_FREED;
     pReq->enmType  = RTREQTYPE_INVALID;
 
     PRTREQQUEUEINT pQueue = pReq->uOwner.hQueue;
@@ -212,6 +212,16 @@ RTDECL(int) RTReqWait(PRTREQ pReq, RTMSINTERVAL cMillies)
 RT_EXPORT_SYMBOL(RTReqWait);
 
 
+RTDECL(int) RTReqGetStatus(PRTREQ pReq)
+{
+    AssertPtrReturn(pReq, VERR_INVALID_POINTER);
+    AssertReturn(pReq->u32Magic == RTREQ_MAGIC, VERR_INVALID_POINTER);
+    return pReq->iStatusX;
+}
+RT_EXPORT_SYMBOL(RTReqGetStatus);
+
+
+
 /**
  * Process one request.
  *
@@ -330,7 +340,7 @@ DECLHIDDEN(int) rtReqProcessOne(PRTREQ pReq)
     /*
      * Complete the request.
      */
-    pReq->iStatus  = rcReq;
+    pReq->iStatusX = rcReq;
     pReq->enmState = RTREQSTATE_COMPLETED;
     if (pReq->fFlags & RTREQFLAGS_NO_WAIT)
     {

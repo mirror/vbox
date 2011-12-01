@@ -106,6 +106,7 @@ typedef enum RTREQFLAGS
  *
  * This is used to request an action in the queue handler thread.
  */
+#if defined(IN_RT) || defined(IN_RT_R3) || defined(IN_RT_R0) || defined(IN_RT_RC)
 typedef struct RTREQ
 {
     /** Magic number (RTREQ_MAGIC). */
@@ -115,7 +116,7 @@ typedef struct RTREQ
     /** Set if pool, clear if queue. */
     volatile bool           fPoolOrQueue;
     /** IPRT status code for the completed request. */
-    volatile int32_t        iStatus;
+    volatile int32_t        iStatusX;
     /** Request state. */
     volatile RTREQSTATE     enmState;
 
@@ -154,6 +155,9 @@ typedef struct RTREQ
         } Internal;
     } u;
 } RTREQ;
+#else
+typedef struct RTREQ RTREQ;
+#endif
 /** Pointer to an RT request packet. */
 typedef RTREQ *PRTREQ;
 
@@ -374,6 +378,14 @@ RTDECL(int) RTReqSubmit(PRTREQ pReq, RTMSINTERVAL cMillies);
  */
 RTDECL(int) RTReqWait(PRTREQ pReq, RTMSINTERVAL cMillies);
 
+/**
+ * Get the status of the request.
+ *
+ * @returns Status code in the IPRT tradition.
+ *
+ * @param   pReq            The request.
+ */
+RTDECL(int) RTReqGetStatus(PRTREQ pReq);
 
 #endif /* IN_RING3 */
 
