@@ -55,6 +55,14 @@ static char* gsViewportHackApps[] = {"googleearth.exe", NULL};
 #endif
 
 static int stub_initialized = 0;
+#ifdef WINDOWS
+static CRmutex stub_init_mutex;
+#define STUB_INIT_LOCK() do { crLockMutex(&stub_init_mutex); } while (0)
+#define STUB_INIT_UNLOCK() do { crUnlockMutex(&stub_init_mutex); } while (0)
+#else
+#define STUB_INIT_LOCK() do { } while (0)
+#define STUB_INIT_UNLOCK() do { } while (0)
+#endif
 
 /* NOTE: 'SPUDispatchTable glim' is declared in NULLfuncs.py now */
 /* NOTE: 'SPUDispatchTable stubThreadsafeDispatch' is declared in tsfuncs.c */
@@ -310,12 +318,9 @@ static void hsWalkStubDestroyContexts(unsigned long key, void *data1, void *data
  * This is called when we exit.
  * We call all the SPU's cleanup functions.
  */
-static void stubSPUTearDown(void)
+static void stubSPUTearDownLocked(void)
 {
-    crDebug("stubSPUTearDown");
-    if (!stub_initialized) return;
-
-    stub_initialized = 0;
+    crDebug("stubSPUTearDownLocked");
 
 #ifdef WINDOWS
 # ifndef CR_NEWWINTRACK
@@ -358,6 +363,22 @@ static void stubSPUTearDown(void)
     crFreeHashtable(stub.contextTable, NULL);
 
     crMemset(&stub, 0, sizeof(stub));
+
+}
+
+/**
+ * This is called when we exit.
+ * We call all the SPU's cleanup functions.
+ */
+static void stubSPUTearDown(void)
+{
+    STUB_INIT_LOCK();
+    if (stub_initialized)
+    {
+        stubSPUTearDownLocked();
+        stub_initialized = 0;
+    }
+    STUB_INIT_UNLOCK();
 }
 
 static void stubSPUSafeTearDown(void)
@@ -1100,8 +1121,8 @@ static DECLCALLBACK(int) stubSyncThreadProc(RTTHREAD ThreadSelf, void *pvUser)
  * Do one-time initializations for the faker.
  * Returns TRUE on success, FALSE otherwise.
  */
-bool
-stubInit(void)
+static bool
+stubInitLocked(void)
 {
     /* Here is where we contact the mothership to find out what we're supposed
      * to  be doing.  Networking code in a DLL initializer.  I sure hope this
@@ -1119,9 +1140,6 @@ stubInit(void)
     const char *app_id;
     int i;
     int disable_sync = 0;
-
-    if (stub_initialized)
-        return true;
 
     stubInitVars();
 
@@ -1255,8 +1273,25 @@ raise(SIGINT);*/
     stub.bHaveXFixes = GL_FALSE;
 #endif
 
-    stub_initialized = 1;
     return true;
+}
+
+/**
+ * Do one-time initializations for the faker.
+ * Returns TRUE on success, FALSE otherwise.
+ */
+bool
+stubInit(void)
+{
+    bool bRc = true;
+    /* we need to serialize the initialization, otherwise racing is possible
+     * for XPDM-based d3d when a d3d switcher is testing the gl lib in two or more threads
+     * NOTE: the STUB_INIT_LOCK/UNLOCK is a NOP for non-win currently */
+    STUB_INIT_LOCK();
+    if (!stub_initialized)
+        bRc = stub_initialized = stubInitLocked();
+    STUB_INIT_UNLOCK();
+    return bRc;
 }
 
 /* Sigh -- we can't do initialization at load time, since Windows forbids
@@ -1271,6 +1306,55 @@ raise(SIGINT);*/
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 
+#ifdef DEBUG_misha
+ /* debugging: this is to be able to catch first-chance notifications
+  * for exceptions other than EXCEPTION_BREAKPOINT in kernel debugger */
+# define VDBG_VEHANDLER
+#endif
+
+#ifdef VDBG_VEHANDLER
+static PVOID g_VBoxWDbgVEHandler = NULL;
+LONG WINAPI vboxVDbgVectoredHandler(struct _EXCEPTION_POINTERS *pExceptionInfo)
+{
+    PEXCEPTION_RECORD pExceptionRecord = pExceptionInfo->ExceptionRecord;
+    PCONTEXT pContextRecord = pExceptionInfo->ContextRecord;
+    switch (pExceptionRecord->ExceptionCode)
+    {
+        case EXCEPTION_BREAKPOINT:
+        case EXCEPTION_ACCESS_VIOLATION:
+        case EXCEPTION_STACK_OVERFLOW:
+        case EXCEPTION_ARRAY_BOUNDS_EXCEEDED:
+        case EXCEPTION_FLT_DIVIDE_BY_ZERO:
+        case EXCEPTION_FLT_INVALID_OPERATION:
+        case EXCEPTION_INT_DIVIDE_BY_ZERO:
+        case EXCEPTION_ILLEGAL_INSTRUCTION:
+            CRASSERT(0);
+            break;
+        default:
+            break;
+    }
+    return EXCEPTION_CONTINUE_SEARCH;
+}
+
+void vboxVDbgVEHandlerRegister()
+{
+    CRASSERT(!g_VBoxWDbgVEHandler);
+    g_VBoxWDbgVEHandler = AddVectoredExceptionHandler(1,vboxVDbgVectoredHandler);
+    CRASSERT(g_VBoxWDbgVEHandler);
+}
+
+void vboxVDbgVEHandlerUnregister()
+{
+    ULONG uResult;
+    if (g_VBoxWDbgVEHandler)
+    {
+        uResult = RemoveVectoredExceptionHandler(g_VBoxWDbgVEHandler);
+        CRASSERT(uResult);
+        g_VBoxWDbgVEHandler = NULL;
+    }
+}
+#endif
+
 /* Windows crap */
 BOOL WINAPI DllMain(HINSTANCE hDLLInst, DWORD fdwReason, LPVOID lpvReserved)
 {
@@ -1282,6 +1366,12 @@ BOOL WINAPI DllMain(HINSTANCE hDLLInst, DWORD fdwReason, LPVOID lpvReserved)
     {
         CRNetServer ns;
 
+        crInitMutex(&stub_init_mutex);
+
+#ifdef VDBG_VEHANDLER
+        vboxVDbgVEHandlerRegister();
+#endif
+
         crNetInit(NULL, NULL);
         ns.name = "vboxhgcm://host:0";
         ns.buffer_size = 1024;
@@ -1289,6 +1379,9 @@ BOOL WINAPI DllMain(HINSTANCE hDLLInst, DWORD fdwReason, LPVOID lpvReserved)
         if (!ns.conn)
         {
             crDebug("Failed to connect to host (is guest 3d acceleration enabled?), aborting ICD load.");
+#ifdef VDBG_VEHANDLER
+            vboxVDbgVEHandlerUnregister();
+#endif
             return FALSE;
         }
         else
@@ -1300,6 +1393,11 @@ BOOL WINAPI DllMain(HINSTANCE hDLLInst, DWORD fdwReason, LPVOID lpvReserved)
     case DLL_PROCESS_DETACH:
     {
         stubSPUSafeTearDown();
+
+#ifdef VDBG_VEHANDLER
+        vboxVDbgVEHandlerUnregister();
+#endif
+
         break;
     }
 
