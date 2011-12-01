@@ -733,25 +733,34 @@ exit:
 
 SectionEnd
 
-; Prepares the access rights for replacing a WRP protected file
+; Prepares the access rights for replacing
+; a WRP (Windows Resource Protection) protected file
 Function PrepareWRPFile
 
   Pop $0
 
-  IfFileExists "$g_strSystemDir\takeown.exe" 0 +2
+  IfFileExists "$0" +3 +1
+    LogText "WRP: File $0 does not exist, skipping"
+    Return
+
+  IfFileExists "$g_strSystemDir\takeown.exe" +1 +4
     nsExec::ExecToLog '"$g_strSystemDir\takeown.exe" /F "$0"'
+    Pop $1 ; Ret value
+    LogText "WRP: Taking ownership for $0 returned: $1"
+
   AccessControl::SetFileOwner "$0" "(S-1-5-32-545)"
   Pop $1
-  DetailPrint "Setting file owner for $0 returned $1"
+  DetailPrint "WRP: Setting file owner for $0 returned: $1"
+
   AccessControl::GrantOnFile "$0" "(S-1-5-32-545)" "FullAccess"
   Pop $1
-  DetailPrint "Setting access rights for $0 returned $1"
+  DetailPrint "WRP: Setting access rights for $0 returned: $1"
 
 !if $%VBOX_WITH_GUEST_INSTALL_HELPER% == "1"
   !ifdef WFP_FILE_EXCEPTION
     VBoxGuestInstallHelper::DisableWFP "$0"
     Pop $1 ; Get return value (ignored for now)
-    DetailPrint "Setting WFP exception for $0 returned $1"
+    DetailPrint "WRP: Setting WFP exception for $0 returned: $1"
   !endif
 !endif
 
@@ -784,9 +793,9 @@ Section /o $(VBOX_COMPONENT_D3D) SEC03
 
   ; Update DLL cache
   SetOutPath "$g_strSystemDir\dllcache"
-  IfFileExists "$g_strSystemDir\dllcache\msd3d8.dll" +1
+  IfFileExists "$g_strSystemDir\dllcache\msd3d8.dll" +2
     CopyFiles /SILENT "$g_strSystemDir\dllcache\d3d8.dll" "$g_strSystemDir\dllcache\msd3d8.dll"
-  IfFileExists "$g_strSystemDir\dllcache\msd3d9.dll" +1
+  IfFileExists "$g_strSystemDir\dllcache\msd3d9.dll" +2
     CopyFiles /SILENT "$g_strSystemDir\dllcache\d3d9.dll" "$g_strSystemDir\dllcache\msd3d9.dll"
 
   Push "$g_strSystemDir\dllcache\d3d8.dll"
@@ -805,9 +814,9 @@ Section /o $(VBOX_COMPONENT_D3D) SEC03
 
   ; Save original DLLs (only if msd3d*.dll does not exist) ...
   SetOutPath $g_strSystemDir
-  IfFileExists "$g_strSystemDir\msd3d8.dll" +1
+  IfFileExists "$g_strSystemDir\msd3d8.dll" +2
     CopyFiles /SILENT "$g_strSystemDir\d3d8.dll" "$g_strSystemDir\msd3d8.dll"
-  IfFileExists "$g_strSystemDir\msd3d9.dll" +1
+  IfFileExists "$g_strSystemDir\msd3d9.dll" +2
     CopyFiles /SILENT "$g_strSystemDir\d3d9.dll" "$g_strSystemDir\msd3d9.dll"
 
   Push "$g_strSystemDir\d3d8.dll"
@@ -841,9 +850,9 @@ Section /o $(VBOX_COMPONENT_D3D) SEC03
 
     ; Save original DLLs (only if msd3d*.dll does not exist) ...
     SetOutPath "$SYSDIR\dllcache"
-    IfFileExists "$SYSDIR\dllcache\msd3d8.dll" +1
+    IfFileExists "$SYSDIR\dllcache\msd3d8.dll" +2
       CopyFiles /SILENT "$SYSDIR\dllcache\d3d8.dll" "$SYSDIR\dllcache\msd3d8.dll"
-    IfFileExists "$SYSDIR\dllcache\msd3d9.dll" +1
+    IfFileExists "$SYSDIR\dllcache\msd3d9.dll" +2
       CopyFiles /SILENT "$SYSDIR\dllcache\d3d9.dll" "$SYSDIR\dllcache\msd3d9.dll"
 
     Push "$SYSDIR\dllcache\d3d8.dll"
@@ -866,9 +875,9 @@ Section /o $(VBOX_COMPONENT_D3D) SEC03
 
     ; Save original DLLs (only if msd3d*.dll does not exist) ...
     SetOutPath $SYSDIR
-    IfFileExists "$SYSDIR\msd3d8.dll" +1
+    IfFileExists "$SYSDIR\msd3d8.dll" +2
       CopyFiles /SILENT "$SYSDIR\d3d8.dll" "$SYSDIR\msd3d8.dll"
-    IfFileExists "$SYSDIR\msd3d9.dll" +1
+    IfFileExists "$SYSDIR\msd3d9.dll" +2
       CopyFiles /SILENT "$SYSDIR\d3d9.dll" "$SYSDIR\msd3d9.dll"
 
     Push "$SYSDIR\d3d8.dll"
