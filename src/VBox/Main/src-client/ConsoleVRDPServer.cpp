@@ -855,20 +855,26 @@ DECLCALLBACK(int)  ConsoleVRDPServer::VRDPCallbackQueryProperty(void *pvCallback
             server->mConsole->onVRDEServerInfoChange();
         } break;
 
-        case VRDE_SP_CLIENT_NAME:
+        case VRDE_SP_CLIENT_STATUS:
         {
-            if (cbBuffer < sizeof(VRDECLIENTNAME))
+            if (cbBuffer < sizeof(VRDECLIENTSTATUS))
             {
                 rc = VERR_INVALID_PARAMETER;
                 break;
             }
 
-            size_t cbName = cbBuffer - RT_OFFSETOF(VRDECLIENTNAME, achName);
+            size_t cbStatus = cbBuffer - RT_UOFFSETOF(VRDECLIENTSTATUS, achStatus);
 
-            VRDECLIENTNAME *pClientName = (VRDECLIENTNAME *)pvBuffer;
+            VRDECLIENTSTATUS *pStatus = (VRDECLIENTSTATUS *)pvBuffer;
 
-            size_t cchName = 0;
-            rc = RTStrNLenEx(pClientName->achName, cbName, &cchName);
+            if (cbBuffer < RT_UOFFSETOF(VRDECLIENTSTATUS, achStatus) + pStatus->cbStatus)
+            {
+                rc = VERR_INVALID_PARAMETER;
+                break;
+            }
+
+            size_t cchStatus = 0;
+            rc = RTStrNLenEx(pStatus->achStatus, cbStatus, &cchStatus);
 
             if (RT_FAILURE(rc))
             {
@@ -876,9 +882,9 @@ DECLCALLBACK(int)  ConsoleVRDPServer::VRDPCallbackQueryProperty(void *pvCallback
                 break;
             }
 
-            Log(("VRDE_SP_CLIENT_NAME [%s]\n", pClientName->achName));
+            Log(("VRDE_SP_CLIENT_STATUS [%s]\n", pStatus->achStatus));
 
-            server->mConsole->VRDPClientNameChange(pClientName->u32ClientId, pClientName->achName);
+            server->mConsole->VRDPClientStatusChange(pStatus->u32ClientId, pStatus->achStatus);
 
             rc = VINF_SUCCESS;
 
