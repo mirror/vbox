@@ -320,6 +320,8 @@ RuntimeR3_SOURCES       = \
 	common/misc/message.cpp \
 	common/misc/once.cpp \
 	common/misc/req.cpp \
+	common/misc/reqpool.cpp \
+	common/misc/reqqueue.cpp \
 	common/misc/sanity-c.c \
 	common/misc/sanity-cpp.cpp \
 	common/misc/semspingpong.cpp \
