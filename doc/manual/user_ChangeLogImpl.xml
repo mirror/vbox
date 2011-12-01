@@ -32,6 +32,22 @@
         <para>E1000: 802.1q VLAN support</para>
       </listitem>
 
+      <listitem>
+        <para>GUI: allow taking screenshots of the actual VM window content</para>
+      </listitem>
+
+      <listitem>
+        <para>GUI: allow automatically sorting of the VM list</para>
+      </listitem>
+
+      <listitem>
+        <para>GUI: allow starting of headless VMs from the GUI</para>
+      </listitem>
+
+      <listitem>
+        <para>GUI: allow reset, shutdown and poweroff from the Manager window</para>
+      </listitem>
+
     </itemizedlist>
   </sect1>
 
