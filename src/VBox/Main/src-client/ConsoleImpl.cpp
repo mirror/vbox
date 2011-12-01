@@ -808,6 +808,23 @@ void Console::guestPropertiesVRDPUpdateNameChange(uint32_t u32ClientId, const ch
 
 }
 
+void Console::guestPropertiesVRDPUpdateClientAttach(uint32_t u32ClientId, bool fAttached)
+{
+    if (!guestPropertiesVRDPEnabled())
+        return;
+
+    Bstr bstrReadOnlyGuest(L"RDONLYGUEST");
+
+    char szPropNm[256];
+    RTStrPrintf(szPropNm, sizeof(szPropNm), "/VirtualBox/HostInfo/VRDP/Client/%u/Attach", u32ClientId);
+
+    Bstr bstrValue = fAttached? "1": "0";
+
+    mMachine->SetGuestProperty(Bstr(szPropNm).raw(),
+                               bstrValue.raw(),
+                               bstrReadOnlyGuest.raw());
+}
+
 void Console::guestPropertiesVRDPUpdateDisconnect(uint32_t u32ClientId)
 {
     if (!guestPropertiesVRDPEnabled())
@@ -825,6 +842,10 @@ void Console::guestPropertiesVRDPUpdateDisconnect(uint32_t u32ClientId)
                                bstrReadOnlyGuest.raw());
 
     RTStrPrintf(szPropNm, sizeof(szPropNm), "/VirtualBox/HostInfo/VRDP/Client/%u/Domain", u32ClientId);
+    mMachine->SetGuestProperty(Bstr(szPropNm).raw(), NULL,
+                               bstrReadOnlyGuest.raw());
+
+    RTStrPrintf(szPropNm, sizeof(szPropNm), "/VirtualBox/HostInfo/VRDP/Client/%u/Attach", u32ClientId);
     mMachine->SetGuestProperty(Bstr(szPropNm).raw(), NULL,
                                bstrReadOnlyGuest.raw());
 
@@ -1087,14 +1108,28 @@ int Console::VRDPClientLogon(uint32_t u32ClientId, const char *pszUser, const ch
     return VINF_SUCCESS;
 }
 
-void Console::VRDPClientNameChange(uint32_t u32ClientId, const char *pszName)
+void Console::VRDPClientStatusChange(uint32_t u32ClientId, const char *pszStatus)
 {
     LogFlowFuncEnter();
 
     AutoCaller autoCaller(this);
     AssertComRCReturnVoid(autoCaller.rc());
 
-    guestPropertiesVRDPUpdateNameChange(u32ClientId, pszName);
+    /* Parse the status string. */
+    if (RTStrICmp(pszStatus, "ATTACH") == 0)
+    {
+        guestPropertiesVRDPUpdateClientAttach(u32ClientId, true);
+    }
+    else if (RTStrICmp(pszStatus, "DETACH") == 0)
+    {
+        guestPropertiesVRDPUpdateClientAttach(u32ClientId, false);
+    }
+    else if (RTStrNICmp(pszStatus, "NAME=", strlen("NAME=")) == 0)
+    {
+        guestPropertiesVRDPUpdateNameChange(u32ClientId, pszStatus + strlen("NAME="));
+    }
+
+    LogFlowFuncLeave();
 }
 
 void Console::VRDPClientConnect(uint32_t u32ClientId)

@@ -1149,8 +1149,11 @@ typedef struct _VRDEENTRYPOINTS_3
                                                       * in VRDEEnableConnections to the actually used value.
                                                       * VRDEDestroy must set the port to 0xFFFFFFFF.
                                                       */
-#define VRDE_SP_CLIENT_NAME       (VRDE_SP_BASE + 2) /* UTF8 string. The name of a connected client.
-                                                      * The client can report its name.
+#define VRDE_SP_CLIENT_STATUS     (VRDE_SP_BASE + 2) /* UTF8 string. The change of the generic client status:
+                                                      * "ATTACH"   - the client is attached;
+                                                      * "DETACH"   - the client is detached;
+                                                      * "NAME=..." - the client name changes.
+                                                      * Can be used for other notifications.
                                                       */
 
 #pragma pack(1)
@@ -1161,12 +1164,13 @@ typedef struct _VRDEFEATURE
     char     achInfo[1]; /* UTF8 property input name and output value. */
 } VRDEFEATURE;
 
-/* VRDE_SP_CLIENT_NAME data. */
-typedef struct VRDECLIENTNAME
+/* VRDE_SP_CLIENT_STATUS data. */
+typedef struct VRDECLIENTSTATUS
 {
     uint32_t u32ClientId;
-    char     achName[1]; /* UTF8 name. */
-} VRDECLIENTNAME;
+    uint32_t cbStatus;
+    char     achStatus[1]; /* UTF8 status string. */
+} VRDECLIENTSTATUS;
 
 /* A framebuffer description. */
 typedef struct _VRDEFRAMEBUFFERINFO
