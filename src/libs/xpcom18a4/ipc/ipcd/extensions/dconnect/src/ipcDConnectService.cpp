@@ -3412,8 +3412,8 @@ ipcDConnectService::OnMessageAvailable(PRUint32 aSenderID,
 
   nsAutoMonitor mon(mPendingMon);
   mPendingQ.Append(new DConnectRequest(aSenderID, op, aDataLen));
-  // notify all workers
-  mon.NotifyAll();
+  // notify a worker
+  mon.Notify();
   mon.Exit();
 
   // Yield the cpu so a worker can get a chance to start working without too much fuss.
