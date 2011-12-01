@@ -29,7 +29,83 @@
 
 #include <iprt/types.h>
 
+
 RT_C_DECLS_BEGIN
+
+/**
+ * Request state.
+ */
+typedef enum RTREQSTATE
+{
+    /** The state is invalid. */
+    RTREQSTATE_INVALID = 0,
+    /** The request have been allocated and is in the process of being filed. */
+    RTREQSTATE_ALLOCATED,
+    /** The request is queued by the requester. */
+    RTREQSTATE_QUEUED,
+    /** The request is begin processed. */
+    RTREQSTATE_PROCESSING,
+    /** The request is completed, the requester is begin notified. */
+    RTREQSTATE_COMPLETED,
+    /** The request packet is in the free chain. (The requester */
+    RTREQSTATE_FREE
+} RTREQSTATE;
+
+
+/**
+ * RT Request packet.
+ *
+ * This is used to request an action in the queue handler thread.
+ */
+struct RTREQ
+{
+    /** Magic number (RTREQ_MAGIC). */
+    uint32_t                u32Magic;
+    /** Set if the event semaphore is clear. */
+    volatile bool           fEventSemClear;
+    /** Set if pool, clear if queue. */
+    volatile bool           fPoolOrQueue;
+    /** IPRT status code for the completed request. */
+    volatile int32_t        iStatusX;
+    /** Request state. */
+    volatile RTREQSTATE     enmState;
+
+    /** Pointer to the next request in the chain. */
+    struct RTREQ * volatile pNext;
+
+    union
+    {
+        /** Pointer to the pool this packet belongs to. */
+        RTREQPOOL           hPool;
+        /** Pointer to the queue this packet belongs to. */
+        RTREQQUEUE          hQueue;
+    } uOwner;
+
+    /** Requester event sem.
+     * The request can use this event semaphore to wait/poll for completion
+     * of the request.
+     */
+    RTSEMEVENT              EventSem;
+    /** Flags, RTREQ_FLAGS_*. */
+    uint32_t                fFlags;
+    /** Request type. */
+    RTREQTYPE               enmType;
+    /** Request specific data. */
+    union RTREQ_U
+    {
+        /** RTREQTYPE_INTERNAL. */
+        struct
+        {
+            /** Pointer to the function to be called. */
+            PFNRT               pfn;
+            /** Number of arguments. */
+            uint32_t            cArgs;
+            /** Array of arguments. */
+            uintptr_t           aArgs[64];
+        } Internal;
+    } u;
+};
+
 
 /**
  * Internal queue instance.
