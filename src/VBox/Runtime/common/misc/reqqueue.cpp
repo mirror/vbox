@@ -81,7 +81,7 @@ RTDECL(int) RTReqQueueDestroy(RTREQQUEUE hQueue)
 
     for (unsigned i = 0; i < RT_ELEMENTS(pQueue->apReqFree); i++)
     {
-        PRTREQ pReq = (PRTREQ)ASMAtomicXchgPtr(&pQueue->apReqFree[i], NULL);
+        PRTREQ pReq = (PRTREQ)ASMAtomicXchgPtr((void **)&pQueue->apReqFree[i], NULL);
         while (pReq)
         {
             PRTREQ pNext = pReq->pNext;
@@ -418,7 +418,7 @@ RTDECL(int) RTReqQueueAlloc(RTREQQUEUE hQueue, PRTREQ *ppReq, RTREQTYPE enmType)
             Assert(!pReq->fPoolOrQueue);
             Assert(pReq->uOwner.hQueue == pQueue);
             ASMAtomicWriteNullPtr(&pReq->pNext);
-            pReq->iStatus  = VERR_RT_REQUEST_STATUS_STILL_PENDING;
+            pReq->iStatusX = VERR_RT_REQUEST_STATUS_STILL_PENDING;
             pReq->enmState = RTREQSTATE_ALLOCATED;
             pReq->fFlags   = RTREQFLAGS_IPRT_STATUS;
             pReq->enmType  = enmType;
@@ -453,7 +453,7 @@ RTDECL(int) RTReqQueueAlloc(RTREQQUEUE hQueue, PRTREQ *ppReq, RTREQTYPE enmType)
     pReq->u32Magic      = RTREQ_MAGIC;
     pReq->fEventSemClear= true;
     pReq->fPoolOrQueue  = false;
-    pReq->iStatus       = VERR_RT_REQUEST_STATUS_STILL_PENDING;
+    pReq->iStatusX      = VERR_RT_REQUEST_STATUS_STILL_PENDING;
     pReq->enmState      = RTREQSTATE_ALLOCATED;
     pReq->pNext         = NULL;
     pReq->uOwner.hQueue = pQueue;
