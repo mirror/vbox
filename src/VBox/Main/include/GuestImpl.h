@@ -178,8 +178,9 @@ public:
     int     executeStreamDrain(ULONG aPID, ULONG ulFlags, GuestProcessStream &stream);
     int     executeStreamGetNextBlock(ULONG ulPID, ULONG ulFlags, GuestProcessStream &stream, GuestProcessStreamBlock &streamBlock);
     int     executeStreamParseNextBlock(ULONG ulPID, ULONG ulFlags, GuestProcessStream &stream, GuestProcessStreamBlock &streamBlock);
-    HRESULT executeStreamParse(ULONG ulPID, ULONG ulFlags, GuestCtrlStreamObjects &streamObjects);
-    HRESULT executeWaitForStatusChange(ULONG uPID, ULONG uTimeoutMS, ExecuteProcessStatus_T *pRetStatus, ULONG *puRetExitCode);
+    HRESULT executeStreamParse(ULONG uPID, ULONG ulFlags, GuestCtrlStreamObjects &streamObjects);
+    HRESULT executeWaitForExit(ULONG uPID, ComPtr<IProgress> pProgress, ULONG uTimeoutMS,
+                               ExecuteProcessStatus_T *pRetStatus, ULONG *puRetExitCode);
     // Internal guest file functions
     HRESULT fileExistsInternal(IN_BSTR aFile, IN_BSTR aUsername, IN_BSTR aPassword, BOOL *aExists);
     HRESULT fileQueryInfoInternal(IN_BSTR aFile, IN_BSTR aUsername, IN_BSTR aPassword, PRTFSOBJINFO aObjInfo, RTFSOBJATTRADD enmAddAttribs, int *pRC);
