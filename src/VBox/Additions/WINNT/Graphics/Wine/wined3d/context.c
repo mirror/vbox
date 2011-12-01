@@ -886,7 +886,7 @@ static void context_validate(struct wined3d_context *context
         context->valid = 0;
     }
 
-    if (context->win_handle != context->swapchain->win_handle)
+    if (context->swapchain && context->win_handle != context->swapchain->win_handle)
 #endif
     {
         context_update_window(context
@@ -1944,6 +1944,9 @@ void context_destroy(IWineD3DDeviceImpl *This, struct wined3d_context *context)
     HeapFree(GetProcessHeap(), 0, context->pshader_const_dirty);
     device_context_remove(This, context);
     if (destroy) HeapFree(GetProcessHeap(), 0, context);
+#ifndef VBOX_WITH_WDDM
+    else context->swapchain = NULL;
+#endif
 }
 
 /* GL locking is done by the caller */
