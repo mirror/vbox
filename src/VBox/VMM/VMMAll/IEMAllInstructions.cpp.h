@@ -4098,8 +4098,64 @@ FNIEMOP_STUB(iemOp_pextrw_Gd_Nq_Ib__pextrw_Gd_Udq_Ib);
 FNIEMOP_STUB(iemOp_shufps_Vps_Wps_Ib__shufdp_Vpd_Wpd_Ib);
 /** Opcode 0x0f 0xc7. */
 FNIEMOP_STUB(iemOp_Grp9);
+
+#if 0
+/**
+ * Common 'bswap register' helper.
+ */
+FNIEMOP_DEF_2(iemOpCommonBswapGReg, PCIEMOPUNARYSIZES, pImpl, uint8_t, iReg)
+{
+    IEMOP_HLP_NO_LOCK_PREFIX();
+    switch (pIemCpu->enmEffOpSize)
+    {
+        case IEMMODE_16BIT:
+            IEM_MC_BEGIN(2, 0);
+            IEM_MC_ARG(uint16_t *,  pu16Dst, 0);
+            IEM_MC_ARG(uint32_t *,  pEFlags, 1);
+            IEM_MC_REF_GREG_U16(pu16Dst, iReg);
+            IEM_MC_REF_EFLAGS(pEFlags);
+            IEM_MC_CALL_VOID_AIMPL_2(pImpl->pfnNormalU16, pu16Dst, pEFlags);
+            IEM_MC_ADVANCE_RIP();
+            IEM_MC_END();
+            return VINF_SUCCESS;
+
+        case IEMMODE_32BIT:
+            IEM_MC_BEGIN(2, 0);
+            IEM_MC_ARG(uint32_t *,  pu32Dst, 0);
+            IEM_MC_ARG(uint32_t *,  pEFlags, 1);
+            IEM_MC_REF_GREG_U32(pu32Dst, iReg);
+            IEM_MC_REF_EFLAGS(pEFlags);
+            IEM_MC_CALL_VOID_AIMPL_2(pImpl->pfnNormalU32, pu32Dst, pEFlags);
+            IEM_MC_ADVANCE_RIP();
+            IEM_MC_END();
+            return VINF_SUCCESS;
+
+        case IEMMODE_64BIT:
+            IEM_MC_BEGIN(2, 0);
+            IEM_MC_ARG(uint64_t *,  pu64Dst, 0);
+            IEM_MC_ARG(uint32_t *,  pEFlags, 1);
+            IEM_MC_REF_GREG_U64(pu64Dst, iReg);
+            IEM_MC_REF_EFLAGS(pEFlags);
+            IEM_MC_CALL_VOID_AIMPL_2(pImpl->pfnNormalU64, pu64Dst, pEFlags);
+            IEM_MC_ADVANCE_RIP();
+            IEM_MC_END();
+            return VINF_SUCCESS;
+    }
+    return VINF_SUCCESS;
+}
+
+
 /** Opcode 0x0f 0xc8. */
+FNIEMOP_DEF(iemOp_bswap_rAX_r8)
+{
+    IEMOP_MNEMONIC("bswap rAX/r8");
+    return FNIEMOP_CALL_2(iemOpCommonUnaryGReg, &g_iemAImpl_inc, X86_GREG_xAX | pIemCpu->uRexReg);
+}
+
+
+#else
 FNIEMOP_STUB(iemOp_bswap_rAX_r8);
+#endif
 /** Opcode 0x0f 0xc9. */
 FNIEMOP_STUB(iemOp_bswap_rCX_r9);
 /** Opcode 0x0f 0xca. */
@@ -4114,6 +4170,7 @@ FNIEMOP_STUB(iemOp_bswap_rBP_r13);
 FNIEMOP_STUB(iemOp_bswap_rSI_r14);
 /** Opcode 0x0f 0xcf. */
 FNIEMOP_STUB(iemOp_bswap_rDI_r15);
+
 /** Opcode 0x0f 0xd0. */
 FNIEMOP_STUB(iemOp_addsubpd_Vpd_Wpd__addsubps_Vps_Wps);
 /** Opcode 0x0f 0xd1. */
