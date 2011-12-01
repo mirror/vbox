@@ -110,6 +110,18 @@
 #define RTR0MEMOBJ_MAGIC                UINT32_C(0x19611210)
 /** RTRANDINT::u32Magic. (Alan Moore) */
 #define RTRANDINT_MAGIC                 UINT32_C(0x19531118)
+/** The value of RTREQ::u32Magic. */
+#define RTREQ_MAGIC                     UINT32_C(0xfeed0001) /**< @todo find a value */
+/** The value of RTREQ::u32Magic of a freed request. */
+#define RTREQ_MAGIC_DEAD                (~RTREQ_MAGIC)
+/** The value of RTREQPOOLINT::u32Magic. */
+#define RTREQPOOL_MAGIC                 UINT32_C(0xfeed0002)/**< @todo find a value */
+/** The value of RTREQPOOLINT::u32Magic after destruction. */
+#define RTREQPOOL_MAGIC_DEAD           (~RTREQPOOL_MAGIC)
+/** The value of RTREQQUEUEINT::u32Magic. */
+#define RTREQQUEUE_MAGIC                UINT32_C(0xfeed0003)/**< @todo find a value */
+/** The value of RTREQQUEUEINT::u32Magic after destruction. */
+#define RTREQQUEUE_MAGIC_DEAD           (~RTREQQUEUE_MAGIC)
 /** The value of RTS3::u32Magic. (Edgar Wallace) */
 #define RTS3_MAGIC                      UINT32_C(0x18750401)
 /** The value of RTS3::u32Magic after RTS3Destroy().  */

@@ -108,23 +108,35 @@ typedef enum RTREQFLAGS
  */
 typedef struct RTREQ
 {
-    /** Pointer to the next request in the chain. */
-    struct RTREQ * volatile pNext;
-    /** Pointer to the queue this packet belongs to. */
-    RTREQQUEUE              hQueue;
+    /** Magic number (RTREQ_MAGIC). */
+    uint32_t                u32Magic;
+    /** Set if the event semaphore is clear. */
+    volatile bool           fEventSemClear;
+    /** Set if pool, clear if queue. */
+    volatile bool           fPoolOrQueue;
+    /** IPRT status code for the completed request. */
+    volatile int32_t        iStatus;
     /** Request state. */
     volatile RTREQSTATE     enmState;
-    /** iprt status code for the completed request. */
-    volatile int            iStatus;
+
+    /** Pointer to the next request in the chain. */
+    struct RTREQ * volatile pNext;
+
+    union
+    {
+        /** Pointer to the pool this packet belongs to. */
+        RTREQPOOL           hPool;
+        /** Pointer to the queue this packet belongs to. */
+        RTREQQUEUE          hQueue;
+    } uOwner;
+
     /** Requester event sem.
      * The request can use this event semaphore to wait/poll for completion
      * of the request.
      */
     RTSEMEVENT              EventSem;
-    /** Set if the event semaphore is clear. */
-    volatile bool           fEventSemClear;
     /** Flags, RTREQ_FLAGS_*. */
-    unsigned                fFlags;
+    uint32_t                fFlags;
     /** Request type. */
     RTREQTYPE               enmType;
     /** Request specific data. */
@@ -136,7 +148,7 @@ typedef struct RTREQ
             /** Pointer to the function to be called. */
             PFNRT               pfn;
             /** Number of arguments. */
-            unsigned            cArgs;
+            uint32_t            cArgs;
             /** Array of arguments. */
             uintptr_t           aArgs[64];
         } Internal;
