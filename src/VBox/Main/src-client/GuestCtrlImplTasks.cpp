@@ -69,7 +69,6 @@ DECLCALLBACK(int) GuestTask::taskThread(RTTHREAD /* aThread */, void *pvUser)
     ComObjPtr<Guest> pGuest = task->pGuest;
 
     LogFlowFuncEnter();
-    LogFlowFunc(("Guest %p\n", pGuest));
 
     HRESULT rc = S_OK;
 
@@ -294,9 +293,12 @@ HRESULT Guest::taskCopyFileToGuest(GuestTask *aTask)
                                 }
                             }
                             else
+                            {
                                 rc = GuestTask::setProgressErrorInfo(VBOX_E_IPRT_ERROR, aTask->pProgress,
                                                                      Guest::tr("Seeking file \"%s\" failed; offset = %RU64 (%Rrc)"),
                                                                      aTask->strSource.c_str(), cbTransferedTotal, vrc);
+                                break;
+                            }
                             /* Resize buffer to reflect amount we just have read.
                              * Size 0 is allowed! */
                             aInputData.resize(cbRead);
@@ -359,8 +361,9 @@ HRESULT Guest::taskCopyFileToGuest(GuestTask *aTask)
                              */
                             ExecuteProcessStatus_T retStatus;
                             ULONG uRetExitCode;
-                            rc = pGuest->executeWaitForStatusChange(uPID, 0 /* No timeout. */,
-                                                                    &retStatus, &uRetExitCode);
+
+                            rc = executeWaitForExit(uPID, execProgress, 0 /* No timeout */,
+                                                    &retStatus, &uRetExitCode);
                             if (FAILED(rc))
                             {
                                 rc = GuestTask::setProgressErrorInfo(rc, aTask->pProgress, pGuest);
@@ -371,8 +374,8 @@ HRESULT Guest::taskCopyFileToGuest(GuestTask *aTask)
                                     || retStatus    != ExecuteProcessStatus_TerminatedNormally)
                                 {
                                     rc = GuestTask::setProgressErrorInfo(VBOX_E_IPRT_ERROR, aTask->pProgress,
-                                                                         Guest::tr("Guest reported error %u while copying file \"%s\" to \"%s\""),
-                                                                         uRetExitCode, aTask->strSource.c_str(), aTask->strDest.c_str());
+                                                                         Guest::tr("Guest process reported error %u (status: %u) while copying file \"%s\" to \"%s\""),
+                                                                         uRetExitCode, retStatus, aTask->strSource.c_str(), aTask->strDest.c_str());
                                 }
                             }
                         }
@@ -591,21 +594,24 @@ HRESULT Guest::taskCopyFileFromGuest(GuestTask *aTask)
 
                     RTFileClose(hFileDest);
 
-                    if (   cbTransfered
-                        && (cbTransfered != lFileSize))
-                    {
-                        /*
-                         * Only bitch about an unexpected end of a file when there already
-                         * was data read from that file. If this was the very first read we can
-                         * be (almost) sure that this file is not meant to be read by the specified user.
-                         */
-                        rc = GuestTask::setProgressErrorInfo(VBOX_E_IPRT_ERROR, aTask->pProgress,
-                                                             Guest::tr("Unexpected end of file \"%s\" (%u bytes total, %u bytes transferred)"),
-                                                             aTask->strSource.c_str(), lFileSize, cbTransfered);
-                    }
-
                     if (SUCCEEDED(rc))
-                        aTask->pProgress->notifyComplete(S_OK);
+                    {
+                        if (   cbTransfered
+                            && (cbTransfered != lFileSize))
+                        {
+                            /*
+                             * Only bitch about an unexpected end of a file when there already
+                             * was data read from that file. If this was the very first read we can
+                             * be (almost) sure that this file is not meant to be read by the specified user.
+                             */
+                            rc = GuestTask::setProgressErrorInfo(VBOX_E_IPRT_ERROR, aTask->pProgress,
+                                                                 Guest::tr("Unexpected end of file \"%s\" (%u bytes total, %u bytes transferred)"),
+                                                                 aTask->strSource.c_str(), lFileSize, cbTransfered);
+                        }
+
+                        if (SUCCEEDED(rc))
+                            aTask->pProgress->notifyComplete(S_OK);
+                    }
                 }
             }
         }

@@ -1505,58 +1505,61 @@ HRESULT Guest::executeStreamParse(ULONG ulPID, ULONG ulFlags, GuestCtrlStreamObj
 }
 
 /**
- * Does busy waiting on a formerly started guest process.
+ * Waits for a fomerly started guest process to exit using its progress
+ * object and returns its final status. Returns E_ABORT if guest process
+ * was canceled.
  *
- * @return  HRESULT
+ * @return  IPRT status code.
  * @param   uPID                    PID of guest process to wait for.
- * @param   uTimeoutMS              Waiting timeout (in ms). Specify 0 for an infinite timeout.
- * @param   pRetStatus              Pointer which receives current process status after the change.
- *                                  Optional.
- * @param   puRetExitCode           Pointer which receives the final exit code in case of guest process
- *                                  termination. Optional.
+ * @param   pProgress               Progress object to wait for.
+ * @param   uTimeoutMS              Timeout (in ms) for waiting; use 0 for
+ *                                  an indefinite timeout.
+ * @param   pRetStatus              Pointer where to store the final process
+ *                                  status. Optional.
+ * @param   puRetExitCode           Pointer where to store the final process
+ *                                  exit code. Optional.
  */
-HRESULT Guest::executeWaitForStatusChange(ULONG uPID, ULONG uTimeoutMS,
-                                          ExecuteProcessStatus_T *pRetStatus, ULONG *puRetExitCode)
+HRESULT Guest::executeWaitForExit(ULONG uPID, ComPtr<IProgress> pProgress, ULONG uTimeoutMS,
+                                  ExecuteProcessStatus_T *pRetStatus, ULONG *puRetExitCode)
 {
-    ULONG uExitCode, uRetFlags;
-    ExecuteProcessStatus_T curStatus;
-    HRESULT hRC = GetProcessStatus(uPID, &uExitCode, &uRetFlags, &curStatus);
-    if (FAILED(hRC))
-        return hRC;
+    HRESULT rc = S_OK;
 
-    /* We only want to wait for started processes. All other statuses
-     * won't be found anyway anymore (see processGetStatus() to know why). */
-    if (curStatus == ExecuteProcessStatus_Started)
+    BOOL fCanceled = FALSE;
+    if (   SUCCEEDED(pProgress->COMGETTER(Canceled(&fCanceled)))
+        && fCanceled)
     {
-        uint64_t u64StartMS = RTTimeMilliTS();
-        if (uTimeoutMS == 0)
-            uTimeoutMS = UINT32_MAX;
-
-        do
-        {
-            if (   uTimeoutMS != UINT32_MAX
-                && RTTimeMilliTS() - u64StartMS > uTimeoutMS)
-            {
-                hRC = setError(VBOX_E_IPRT_ERROR,
-                               tr("The process (PID %u) did not change its status within time (%ums)"),
-                               uPID, uTimeoutMS);
-                break;
-            }
-            hRC = GetProcessStatus(uPID, &uExitCode, &uRetFlags, &curStatus);
-            if (FAILED(hRC))
-                break;
-            RTThreadSleep(100);
-        } while(*pRetStatus == curStatus);
+        return E_ABORT;
     }
 
-    if (SUCCEEDED(hRC))
+    BOOL fCompleted = FALSE;
+    if (   SUCCEEDED(pProgress->COMGETTER(Completed(&fCompleted)))
+        && !fCompleted)
     {
+        rc = pProgress->WaitForCompletion(  !uTimeoutMS
+                                          ? -1 /* No timeout */
+                                          : uTimeoutMS);
+        if (FAILED(rc))
+            rc = setError(VBOX_E_IPRT_ERROR,
+                          tr("Waiting for guest process to end failed (%Rhrc)"),
+                          rc);
+    }
+
+    if (SUCCEEDED(rc))
+    {
+        ULONG uExitCode, uRetFlags;
+        ExecuteProcessStatus_T enmStatus;
+        HRESULT hRC = GetProcessStatus(uPID, &uExitCode, &uRetFlags, &enmStatus);
+        if (FAILED(hRC))
+            return hRC;
+
         if (pRetStatus)
-            *pRetStatus = curStatus;
+            *pRetStatus = enmStatus;
         if (puRetExitCode)
             *puRetExitCode = uExitCode;
+        /** @todo Flags? */
     }
-    return hRC;
+
+    return rc;
 }
 
 /**
@@ -2208,9 +2211,6 @@ STDMETHODIMP Guest::GetProcessStatus(ULONG aPID, ULONG *aExitCode, ULONG *aFlags
 #ifndef VBOX_WITH_GUEST_CONTROL
     ReturnComNotImplemented();
 #else  /* VBOX_WITH_GUEST_CONTROL */
-    CheckComArgNotNull(aExitCode);
-    CheckComArgNotNull(aFlags);
-    CheckComArgNotNull(aStatus);
 
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
@@ -2223,9 +2223,12 @@ STDMETHODIMP Guest::GetProcessStatus(ULONG aPID, ULONG *aExitCode, ULONG *aFlags
         int vrc = processGetStatus(aPID, &process);
         if (RT_SUCCESS(vrc))
         {
-            *aExitCode = process.mExitCode;
-            *aFlags = process.mFlags;
-            *aStatus = process.mStatus;
+            if (aExitCode)
+                *aExitCode = process.mExitCode;
+            if (aFlags)
+                *aFlags = process.mFlags;
+            if (aStatus)
+                *aStatus = process.mStatus;
         }
         else
             rc = setError(VBOX_E_IPRT_ERROR,
