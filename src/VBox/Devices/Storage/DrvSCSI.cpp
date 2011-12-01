@@ -90,7 +90,7 @@ typedef struct DRVSCSI
     /** The dedicated I/O thread for the non async approach. */
     PPDMTHREAD              pAsyncIOThread;
     /** Queue for passing the requests to the thread. */
-    PRTREQQUEUE             pQueueRequests;
+    RTREQQUEUE              hQueueRequests;
     /** Request that we've left pending on wakeup or reset. */
     PRTREQ                  pPendingDummyReq;
     /** Indicates whether PDMDrvHlpAsyncNotificationCompleted should be called by
@@ -397,8 +397,8 @@ static DECLCALLBACK(int) drvscsiReqTransferEnqueue(VSCSILUN hVScsiLun,
     else
     {
         /* I/O thread. */
-        rc = RTReqCallEx(pThis->pQueueRequests, NULL, 0, RTREQFLAGS_NO_WAIT,
-                         (PFNRT)drvscsiProcessRequestOne, 2, pThis, hVScsiIoReq);
+        rc = RTReqQueueCallEx(pThis->hQueueRequests, NULL, 0, RTREQFLAGS_NO_WAIT,
+                              (PFNRT)drvscsiProcessRequestOne, 2, pThis, hVScsiIoReq);
     }
 
     return rc;
@@ -485,7 +485,7 @@ static int drvscsiAsyncIOLoop(PPDMDRVINS pDrvIns, PPDMTHREAD pThread)
 
     while (pThread->enmState == PDMTHREADSTATE_RUNNING)
     {
-        rc = RTReqProcess(pThis->pQueueRequests, RT_INDEFINITE_WAIT);
+        rc = RTReqQueueProcess(pThis->hQueueRequests, RT_INDEFINITE_WAIT);
         AssertMsg(rc == VWRN_STATE_CHANGED, ("Left RTReqProcess and error code is not VWRN_STATE_CHANGED rc=%Rrc\n", rc));
     }
 
@@ -518,7 +518,7 @@ static int drvscsiAsyncIOLoopWakeup(PPDMDRVINS pDrvIns, PPDMTHREAD pThread)
     PRTREQ pReq;
     int rc;
 
-    AssertMsgReturn(pThis->pQueueRequests, ("pQueueRequests is NULL\n"), VERR_INVALID_STATE);
+    AssertMsgReturn(pThis->hQueueRequests != NIL_RTREQQUEUE, ("hQueueRequests is NULL\n"), VERR_INVALID_STATE);
 
     if (!drvscsiAsyncIOLoopNoPendingDummy(pThis, 10000 /* 10 sec */))
     {
@@ -526,7 +526,7 @@ static int drvscsiAsyncIOLoopWakeup(PPDMDRVINS pDrvIns, PPDMTHREAD pThread)
         return VERR_TIMEOUT;
     }
 
-    rc = RTReqCall(pThis->pQueueRequests, &pReq, 10000 /* 10 sec. */, (PFNRT)drvscsiAsyncIOLoopWakeupFunc, 1, pThis);
+    rc = RTReqQueueCall(pThis->hQueueRequests, &pReq, 10000 /* 10 sec. */, (PFNRT)drvscsiAsyncIOLoopWakeupFunc, 1, pThis);
     if (RT_SUCCESS(rc))
         RTReqFree(pReq);
     else
@@ -633,20 +633,20 @@ static void drvscsiR3ResetOrSuspendOrPowerOff(PPDMDRVINS pDrvIns, PFNPDMDRVASYNC
 
     if (!pThis->pDrvBlockAsync)
     {
-        if (!pThis->pQueueRequests)
+        if (pThis->hQueueRequests != NIL_RTREQQUEUE)
             return;
 
         ASMAtomicWriteBool(&pThis->fDummySignal, true);
         if (drvscsiAsyncIOLoopNoPendingDummy(pThis, 0 /*ms*/))
         {
-            if (!RTReqIsBusy(pThis->pQueueRequests))
+            if (!RTReqQueueIsBusy(pThis->hQueueRequests))
             {
                 ASMAtomicWriteBool(&pThis->fDummySignal, false);
                 return;
             }
 
             PRTREQ pReq;
-            int rc = RTReqCall(pThis->pQueueRequests, &pReq, 0 /*ms*/, (PFNRT)drvscsiAsyncIOLoopSyncCallback, 1, pThis);
+            int rc = RTReqQueueCall(pThis->hQueueRequests, &pReq, 0 /*ms*/, (PFNRT)drvscsiAsyncIOLoopSyncCallback, 1, pThis);
             if (RT_SUCCESS(rc))
             {
                 ASMAtomicWriteBool(&pThis->fDummySignal, false);
@@ -759,13 +759,14 @@ static DECLCALLBACK(void) drvscsiDestruct(PPDMDRVINS pDrvIns)
     PDRVSCSI pThis = PDMINS_2_DATA(pDrvIns, PDRVSCSI);
     PDMDRV_CHECK_VERSIONS_RETURN_VOID(pDrvIns);
 
-    if (pThis->pQueueRequests)
+    if (pThis->hQueueRequests != NIL_RTREQQUEUE)
     {
         if (!drvscsiAsyncIOLoopNoPendingDummy(pThis, 100 /*ms*/))
             LogRel(("drvscsiDestruct#%u: previous dummy request is still pending\n", pDrvIns->iInstance));
 
-        int rc = RTReqDestroyQueue(pThis->pQueueRequests);
+        int rc = RTReqQueueDestroy(pThis->hQueueRequests);
         AssertMsgRC(rc, ("Failed to destroy queue rc=%Rrc\n", rc));
+        pThis->hQueueRequests = NIL_RTREQQUEUE;
     }
 
     /* Free the VSCSI device and LUN handle. */
@@ -793,27 +794,16 @@ static DECLCALLBACK(int) drvscsiConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, ui
     PDMDRV_CHECK_VERSIONS_RETURN(pDrvIns);
 
     /*
-     * Validate and read configuration.
-     */
-    if (!CFGMR3AreValuesValid(pCfg, "NonRotationalMedium\0"))
-        return PDMDRV_SET_ERROR(pDrvIns, VERR_PDM_DEVINS_UNKNOWN_CFG_VALUES,
-                                N_("SCSI configuration error: unknown option specified"));
-
-    rc = CFGMR3QueryBoolDef(pCfg, "NonRotationalMedium", &pThis->fNonRotational, false);
-    if (RT_FAILURE(rc))
-        return PDMDRV_SET_ERROR(pDrvIns, rc,
-                    N_("SCSI configuration error: failed to read \"NonRotationalMedium\" as boolean"));
-
-    /*
      * Initialize the instance data.
      */
-    pThis->pDrvIns                           = pDrvIns;
-    pThis->ISCSIConnector.pfnSCSIRequestSend = drvscsiRequestSend;
+    pThis->pDrvIns                              = pDrvIns;
+    pThis->ISCSIConnector.pfnSCSIRequestSend    = drvscsiRequestSend;
 
-    pDrvIns->IBase.pfnQueryInterface         = drvscsiQueryInterface;
+    pDrvIns->IBase.pfnQueryInterface            = drvscsiQueryInterface;
 
     pThis->IPort.pfnQueryDeviceLocation         = drvscsiQueryDeviceLocation;
     pThis->IPortAsync.pfnTransferCompleteNotify = drvscsiTransferCompleteNotify;
+    pThis->hQueueRequests                       = NIL_RTREQQUEUE;
 
     /* Query the SCSI port interface above. */
     pThis->pDevScsiPort = PDMIBASE_QUERY_INTERFACE(pDrvIns->pUpBase, PDMISCSIPORT);
@@ -830,6 +820,18 @@ static DECLCALLBACK(int) drvscsiConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, ui
     }
     else
         pThis->pLed = &pThis->Led;
+
+    /*
+     * Validate and read configuration.
+     */
+    if (!CFGMR3AreValuesValid(pCfg, "NonRotationalMedium\0"))
+        return PDMDRV_SET_ERROR(pDrvIns, VERR_PDM_DEVINS_UNKNOWN_CFG_VALUES,
+                                N_("SCSI configuration error: unknown option specified"));
+
+    rc = CFGMR3QueryBoolDef(pCfg, "NonRotationalMedium", &pThis->fNonRotational, false);
+    if (RT_FAILURE(rc))
+        return PDMDRV_SET_ERROR(pDrvIns, rc,
+                    N_("SCSI configuration error: failed to read \"NonRotationalMedium\" as boolean"));
 
     /*
      * Try attach driver below and query it's block interface.
@@ -894,7 +896,7 @@ static DECLCALLBACK(int) drvscsiConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, ui
     if (!pThis->pDrvBlockAsync)
     {
         /* Create request queue. */
-        rc = RTReqCreateQueue(&pThis->pQueueRequests);
+        rc = RTReqQueueCreate(&pThis->hQueueRequests);
         AssertMsgReturn(RT_SUCCESS(rc), ("Failed to create request queue rc=%Rrc\n"), rc);
         /* Create I/O thread. */
         rc = PDMDrvHlpThreadCreate(pDrvIns, &pThis->pAsyncIOThread, pThis, drvscsiAsyncIOLoop,

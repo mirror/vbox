@@ -62,7 +62,7 @@ typedef struct DRVSCSIHOST
     /** The dedicated I/O thread. */
     PPDMTHREAD              pAsyncIOThread;
     /** Queue for passing the requests to the thread. */
-    PRTREQQUEUE             pQueueRequests;
+    RTREQQUEUE              hQueueRequests;
 } DRVSCSIHOST, *PDRVSCSIHOST;
 
 /** Converts a pointer to DRVSCSIHOST::ISCSIConnecotr to a PDRVSCSIHOST. */
@@ -351,7 +351,7 @@ static int drvscsihostAsyncIOLoop(PPDMDRVINS pDrvIns, PPDMTHREAD pThread)
 
     while (pThread->enmState == PDMTHREADSTATE_RUNNING)
     {
-        rc = RTReqProcess(pThis->pQueueRequests, RT_INDEFINITE_WAIT);
+        rc = RTReqQueueProcess(pThis->hQueueRequests, RT_INDEFINITE_WAIT);
         AssertMsg(rc == VWRN_STATE_CHANGED, ("Left RTReqProcess and error code is not VWRN_STATE_CHANGED rc=%Rrc\n", rc));
     }
 
@@ -364,9 +364,9 @@ static int drvscsihostAsyncIOLoopWakeup(PPDMDRVINS pDrvIns, PPDMTHREAD pThread)
     PDRVSCSIHOST pThis = PDMINS_2_DATA(pDrvIns, PDRVSCSIHOST);
     PRTREQ pReq;
 
-    AssertMsgReturn(pThis->pQueueRequests, ("pQueueRequests is NULL\n"), VERR_INVALID_STATE);
+    AssertReturn(pThis->hQueueRequests != NIL_RTREQQUEUE, VERR_INVALID_STATE);
 
-    rc = RTReqCall(pThis->pQueueRequests, &pReq, 10000 /* 10 sec. */, (PFNRT)drvscsihostAsyncIOLoopWakeupFunc, 0);
+    rc = RTReqQueueCall(pThis->hQueueRequests, &pReq, 10000 /* 10 sec. */, (PFNRT)drvscsihostAsyncIOLoopWakeupFunc, 0);
     AssertMsgRC(rc, ("Inserting request into queue failed rc=%Rrc\n"));
 
     return rc;
@@ -381,9 +381,9 @@ static DECLCALLBACK(int) drvscsihostRequestSend(PPDMISCSICONNECTOR pInterface, P
     PDRVSCSIHOST pThis = PDMISCSICONNECTOR_2_DRVSCSIHOST(pInterface);
     PRTREQ pReq;
 
-    AssertMsgReturn(pThis->pQueueRequests, ("pQueueRequests is NULL\n"), VERR_INVALID_STATE);
+    AssertReturn(pThis->hQueueRequests != NIL_RTREQQUEUE, VERR_INVALID_STATE);
 
-    rc = RTReqCallEx(pThis->pQueueRequests, &pReq, 0, RTREQFLAGS_NO_WAIT, (PFNRT)drvscsihostProcessRequestOne, 2, pThis, pSCSIRequest);
+    rc = RTReqQueueCallEx(pThis->hQueueRequests, &pReq, 0, RTREQFLAGS_NO_WAIT, (PFNRT)drvscsihostProcessRequestOne, 2, pThis, pSCSIRequest);
     AssertMsgReturn(RT_SUCCESS(rc), ("Inserting request into queue failed rc=%Rrc\n", rc), rc);
 
     return VINF_SUCCESS;
@@ -428,10 +428,11 @@ static DECLCALLBACK(void) drvscsihostDestruct(PPDMDRVINS pDrvIns)
         pThis->pszDevicePath = NULL;
     }
 
-    if (pThis->pQueueRequests)
+    if (pThis->hQueueRequests != NIL_RTREQQUEUE)
     {
-        int rc = RTReqDestroyQueue(pThis->pQueueRequests);
+        int rc = RTReqQueueDestroy(pThis->hQueueRequests);
         AssertMsgRC(rc, ("Failed to destroy queue rc=%Rrc\n", rc));
+        pThis->hQueueRequests = NIL_RTREQQUEUE;
     }
 
 }
@@ -448,26 +449,28 @@ static DECLCALLBACK(int) drvscsihostConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg
     PDMDRV_CHECK_VERSIONS_RETURN(pDrvIns);
 
     /*
+     * Initialize the instance data first because of the destructor.
+     */
+    pDrvIns->IBase.pfnQueryInterface            = drvscsihostQueryInterface;
+    pThis->ISCSIConnector.pfnSCSIRequestSend    = drvscsihostRequestSend;
+    pThis->pDrvIns                              = pDrvIns;
+    pThis->hDeviceFile                          = NIL_RTFILE;
+    pThis->hQueueRequests                       = NIL_RTREQQUEUE;
+
+    /*
      * Read the configuration.
      */
     if (!CFGMR3AreValuesValid(pCfg, "DevicePath\0"))
         return PDMDRV_SET_ERROR(pDrvIns, VERR_PDM_DRVINS_UNKNOWN_CFG_VALUES,
                                 N_("Invalid configuration for host scsi access driver"));
 
-    /*
-     * Initialize interfaces.
-     */
-    pDrvIns->IBase.pfnQueryInterface                    = drvscsihostQueryInterface;
-    pThis->ISCSIConnector.pfnSCSIRequestSend            = drvscsihostRequestSend;
-    pThis->pDrvIns     = pDrvIns;
-    pThis->hDeviceFile = NIL_RTFILE;
 
     /* Query the SCSI port interface above. */
     pThis->pDevScsiPort = PDMIBASE_QUERY_INTERFACE(pDrvIns->pUpBase, PDMISCSIPORT);
     AssertMsgReturn(pThis->pDevScsiPort, ("Missing SCSI port interface above\n"), VERR_PDM_MISSING_INTERFACE);
 
     /* Create request queue. */
-    int rc = RTReqCreateQueue(&pThis->pQueueRequests);
+    int rc = RTReqQueueCreate(&pThis->hQueueRequests);
     AssertMsgReturn(RT_SUCCESS(rc), ("Failed to create request queue rc=%Rrc\n"), rc);
 
     /* Open the device. */
