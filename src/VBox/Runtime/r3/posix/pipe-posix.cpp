@@ -100,7 +100,7 @@ static int my_pipe_wrapper(int *paFds, int *piNewPipeSyscall)
 {
     if (*piNewPipeSyscall >= 0)
     {
-#if defined(RT_OS_LINUX) && defined(__NR_pipe2)
+#if defined(RT_OS_LINUX) && defined(__NR_pipe2) && defined(O_CLOEXEC)
         long rc = syscall(__NR_pipe2, paFds, O_CLOEXEC);
         if (rc >= 0)
         {
