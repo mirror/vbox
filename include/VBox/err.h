@@ -1521,6 +1521,12 @@
 #define VERR_VD_DISCARD_ALIGNMENT_NOT_MET           (-3277)
 /** The discard operation is not supported for this image. */
 #define VERR_VD_DISCARD_NOT_SUPPORTED               (-3278)
+/** The image is the correct format but is corrupted. */
+#define VERR_VD_IMAGE_CORRUPTED                     (-3279)
+/** Repairing the image is not supported. */
+#define VERR_VD_IMAGE_REPAIR_NOT_SUPPORTED          (-3280)
+/** Repairing the image is not possible because the corruption is to severe. */
+#define VERR_VD_IMAGE_REPAIR_IMPOSSIBLE             (-3281)
 /** @} */
 
 

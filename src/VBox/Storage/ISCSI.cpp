@@ -5573,5 +5573,7 @@ VBOXHDDBACKEND g_ISCSIBackend =
     /* pfnDiscard */
     NULL,
     /* pfnAsyncDiscard */
+    NULL,
+    /* pfnRepair */
     NULL
 };

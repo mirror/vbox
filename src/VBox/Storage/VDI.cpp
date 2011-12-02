@@ -3179,5 +3179,7 @@ VBOXHDDBACKEND g_VDIBackend =
     /* pfnDiscard */
     vdiDiscard,
     /* pfnAsyncDiscard */
-    vdiAsyncDiscard
+    vdiAsyncDiscard,
+    /* pfnRepair */
+    NULL
 };

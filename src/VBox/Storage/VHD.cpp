@@ -3142,5 +3142,7 @@ VBOXHDDBACKEND g_VhdBackend =
     /* pfnDiscard */
     NULL,
     /* pfnAsyncDiscard */
+    NULL,
+    /* pfnRepair */
     NULL
 };

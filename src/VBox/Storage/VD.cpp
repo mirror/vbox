@@ -4980,7 +4980,7 @@ VBOXDDU_DECL(int) VDGetFormat(PVDINTERFACE pVDIfsDisk, PVDINTERFACE pVDIfsImage,
     AssertMsgReturn(VALID_PTR(ppszFormat),
                     ("ppszFormat=%#p\n", ppszFormat),
                     VERR_INVALID_PARAMETER);
-    AssertMsgReturn(VALID_PTR(ppszFormat),
+    AssertMsgReturn(VALID_PTR(penmType),
                     ("penmType=%#p\n", penmType),
                     VERR_INVALID_PARAMETER);
 
@@ -9315,6 +9315,74 @@ VBOXDDU_DECL(int) VDAsyncDiscardRanges(PVBOXHDD pDisk, PCRTRANGE paRanges, unsig
     {
         rc2 = vdThreadFinishWrite(pDisk);
         AssertRC(rc2);
+    }
+
+    LogFlowFunc(("returns %Rrc\n", rc));
+    return rc;
+}
+
+VBOXDDU_DECL(int) VDRepair(PVDINTERFACE pVDIfsDisk, PVDINTERFACE pVDIfsImage,
+                           const char *pszFilename, const char *pszBackend,
+                           uint32_t fFlags)
+{
+    int rc = VERR_NOT_SUPPORTED;
+    PCVBOXHDDBACKEND pBackend = NULL;
+    VDINTERFACEIOINT VDIfIoInt;
+    VDINTERFACEIO    VDIfIoFallback;
+    PVDINTERFACEIO   pInterfaceIo;
+
+    LogFlowFunc(("pszFilename=\"%s\"\n", pszFilename));
+    /* Check arguments. */
+    AssertMsgReturn(VALID_PTR(pszFilename) && *pszFilename,
+                    ("pszFilename=%#p \"%s\"\n", pszFilename, pszFilename),
+                    VERR_INVALID_PARAMETER);
+    AssertMsgReturn(VALID_PTR(pszBackend),
+                    ("pszBackend=%#p\n", pszBackend),
+                    VERR_INVALID_PARAMETER);
+    AssertMsgReturn((fFlags & ~VD_REPAIR_FLAGS_MASK) == 0,
+                    ("fFlags=%#x\n", fFlags),
+                    VERR_INVALID_PARAMETER);
+
+    pInterfaceIo = VDIfIoGet(pVDIfsImage);
+    if (!pInterfaceIo)
+    {
+        /*
+         * Caller doesn't provide an I/O interface, create our own using the
+         * native file API.
+         */
+        vdIfIoFallbackCallbacksSetup(&VDIfIoFallback);
+        pInterfaceIo = &VDIfIoFallback;
+    }
+
+    /* Set up the internal I/O interface. */
+    AssertReturn(!VDIfIoIntGet(pVDIfsImage), VERR_INVALID_PARAMETER);
+    VDIfIoInt.pfnOpen                   = vdIOIntOpenLimited;
+    VDIfIoInt.pfnClose                  = vdIOIntCloseLimited;
+    VDIfIoInt.pfnDelete                 = vdIOIntDeleteLimited;
+    VDIfIoInt.pfnMove                   = vdIOIntMoveLimited;
+    VDIfIoInt.pfnGetFreeSpace           = vdIOIntGetFreeSpaceLimited;
+    VDIfIoInt.pfnGetModificationTime    = vdIOIntGetModificationTimeLimited;
+    VDIfIoInt.pfnGetSize                = vdIOIntGetSizeLimited;
+    VDIfIoInt.pfnSetSize                = vdIOIntSetSizeLimited;
+    VDIfIoInt.pfnReadSync               = vdIOIntReadSyncLimited;
+    VDIfIoInt.pfnWriteSync              = vdIOIntWriteSyncLimited;
+    VDIfIoInt.pfnFlushSync              = vdIOIntFlushSyncLimited;
+    VDIfIoInt.pfnReadUserAsync          = NULL;
+    VDIfIoInt.pfnWriteUserAsync         = NULL;
+    VDIfIoInt.pfnReadMetaAsync          = NULL;
+    VDIfIoInt.pfnWriteMetaAsync         = NULL;
+    VDIfIoInt.pfnFlushAsync             = NULL;
+    rc = VDInterfaceAdd(&VDIfIoInt.Core, "VD_IOINT", VDINTERFACETYPE_IOINT,
+                        pInterfaceIo, sizeof(VDINTERFACEIOINT), &pVDIfsImage);
+    AssertRC(rc);
+
+    rc = vdFindBackend(pszBackend, &pBackend);
+    if (RT_SUCCESS(rc))
+    {
+        if (pBackend->pfnRepair)
+            rc = pBackend->pfnRepair(pszFilename, pVDIfsDisk, pVDIfsImage, fFlags);
+        else
+            rc = VERR_VD_IMAGE_REPAIR_NOT_SUPPORTED;
     }
 
     LogFlowFunc(("returns %Rrc\n", rc));
