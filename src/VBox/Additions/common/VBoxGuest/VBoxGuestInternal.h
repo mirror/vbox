@@ -120,22 +120,28 @@ typedef struct VBOXGUESTDEVEXT
     VMMDevEvents               *pIrqAckEvents;
     /** The physical address of pIrqAckEvents. */
     RTCCPHYS                    PhysIrqAckEvents;
-    /** Wait-for-event list for threads waiting for multiple events. */
-    RTLISTNODE                  WaitList;
+    /** Wait-for-event list for threads waiting for multiple events
+     * (VBOXGUESTWAIT). */
+    RTLISTANCHOR                WaitList;
 #ifdef VBOX_WITH_HGCM
-    /** Wait-for-event list for threads waiting on HGCM async completion.
+    /** Wait-for-event list for threads waiting on HGCM async completion
+     * (VBOXGUESTWAIT).
+     *
      * The entire list is evaluated upon the arrival of an HGCM event, unlike
-     * the other lists which are only evaluated till the first thread has been woken up. */
-    RTLISTNODE                  HGCMWaitList;
+     * the other lists which are only evaluated till the first thread has
+     * been woken up. */
+    RTLISTANCHOR               HGCMWaitList;
 #endif
 #ifdef VBOXGUEST_USE_DEFERRED_WAKE_UP
-    /** List of wait-for-event entries that needs waking up. */
-    RTLISTNODE                  WakeUpList;
+    /** List of wait-for-event entries that needs waking up
+     * (VBOXGUESTWAIT). */
+    RTLISTANCHOR                WakeUpList;
 #endif
-    /** List of wait-for-event entries that has been woken up. */
-    RTLISTNODE                  WokenUpList;
-    /** List of free wait-for-event entries. */
-    RTLISTNODE                  FreeList;
+    /** List of wait-for-event entries that has been woken up
+     * (VBOXGUESTWAIT). */
+    RTLISTANCHOR                WokenUpList;
+    /** List of free wait-for-event entries (VBOXGUESTWAIT). */
+    RTLISTANCHOR                FreeList;
     /** Mask of pending events. */
     uint32_t volatile           f32PendingEvents;
     /** Current VMMDEV_EVENT_MOUSE_POSITION_CHANGED sequence number.

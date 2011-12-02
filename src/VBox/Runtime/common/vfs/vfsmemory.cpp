@@ -104,7 +104,7 @@ typedef struct RTVFSMEMFILE
     /** Pointer to the current file extent. */
     PRTVFSMEMEXTENT     pCurExt;
     /** Linked list of file extents - RTVFSMEMEXTENT. */
-    RTLISTNODE          ExtentHead;
+    RTLISTANCHOR        ExtentHead;
     /** The current extent size.
      * This is slowly grown to RTVFSMEM_MAX_EXTENT_SIZE as the file grows.  */
     uint32_t            cbExtent;

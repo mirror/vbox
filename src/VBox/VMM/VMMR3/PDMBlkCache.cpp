@@ -655,7 +655,7 @@ static void pdmBlkCacheCommit(PPDMBLKCACHE pBlkCache)
     RTSemRWRequestWrite(pBlkCache->SemRWEntries, RT_INDEFINITE_WAIT);
 
     /* The list is moved to a new header to reduce locking overhead. */
-    RTLISTNODE ListDirtyNotCommitted;
+    RTLISTANCHOR ListDirtyNotCommitted;
     RTSPINLOCKTMP Tmp;
 
     RTListInit(&ListDirtyNotCommitted);

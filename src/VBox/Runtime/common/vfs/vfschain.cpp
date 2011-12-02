@@ -55,8 +55,8 @@
 static RTONCE       g_rtVfsChainElementInitOnce;
 /** Critical section protecting g_rtVfsChainElementProviderList. */
 static RTCRITSECT   g_rtVfsChainElementCritSect;
-/** List of VFS chain element providers. */
-static RTLISTNODE   g_rtVfsChainElementProviderList;
+/** List of VFS chain element providers (RTVFSCHAINELEMENTREG). */
+static RTLISTANCHOR g_rtVfsChainElementProviderList;
 
 
 /**

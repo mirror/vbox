@@ -252,11 +252,11 @@ typedef enum VBOXSERVICECTRLTHREADSTATUS
 typedef struct VBOXSERVICEVEPROPCACHE
 {
     /** The client ID for HGCM communication. */
-    uint32_t    uClientID;
+    uint32_t        uClientID;
     /** Head in a list of VBOXSERVICEVEPROPCACHEENTRY nodes. */
-    RTLISTNODE  NodeHead;
+    RTLISTANCHOR    NodeHead;
     /** Critical section for thread-safe use. */
-    RTCRITSECT  CritSect;
+    RTCRITSECT      CritSect;
 } VBOXSERVICEVEPROPCACHE;
 /** Pointer to a guest property cache. */
 typedef VBOXSERVICEVEPROPCACHE *PVBOXSERVICEVEPROPCACHE;

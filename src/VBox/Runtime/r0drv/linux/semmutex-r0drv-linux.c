@@ -73,7 +73,7 @@ typedef struct RTSEMMUTEXINTERNAL
     /** The number of recursions. */
     uint32_t                    cRecursions;
     /** The list of waiting threads. */
-    RTLISTNODE                  WaiterList;
+    RTLISTANCHOR                WaiterList;
     /** The current owner, NULL if none. */
     struct task_struct         *pOwnerTask;
     /** The number of references to this piece of memory.  This is used to

@@ -80,7 +80,7 @@ typedef struct RTSEMEVENTINTERNAL
     /** Set if the event object is signaled. */
     bool volatile       fSignaled;
     /** List of waiting and woken up threads. */
-    RTLISTNODE          WaitList;
+    RTLISTANCHOR        WaitList;
     /** The spinlock protecting us. */
     lck_spin_t         *pSpinlock;
 } RTSEMEVENTINTERNAL, *PRTSEMEVENTINTERNAL;

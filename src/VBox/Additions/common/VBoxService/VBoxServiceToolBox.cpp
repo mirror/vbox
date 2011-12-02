@@ -338,7 +338,7 @@ static RTEXITCODE VBoxServiceToolboxCat(int argc, char **argv)
                       | RTFILE_O_DENY_WRITE;
 
     /* Init directory list. */
-    RTLISTNODE inputList;
+    RTLISTANCHOR inputList;
     RTListInit(&inputList);
 
     while (   (ch = RTGetOpt(&GetState, &ValueUnion))
@@ -644,7 +644,7 @@ static int VBoxServiceToolboxLsHandleDir(const char *pszDir,
         return rc;
     }
 
-    RTLISTNODE dirList;
+    RTLISTANCHOR dirList;
     RTListInit(&dirList);
 
     /* To prevent races we need to read in the directory entries once
@@ -777,7 +777,7 @@ static RTEXITCODE VBoxServiceToolboxLs(int argc, char **argv)
     uint32_t fOutputFlags = VBOXSERVICETOOLBOXOUTPUTFLAG_NONE;
 
     /* Init file list. */
-    RTLISTNODE fileList;
+    RTLISTANCHOR fileList;
     RTListInit(&fileList);
 
     while (   (ch = RTGetOpt(&GetState, &ValueUnion))
@@ -1040,7 +1040,7 @@ static RTEXITCODE VBoxServiceToolboxStat(int argc, char **argv)
     uint32_t fOutputFlags = VBOXSERVICETOOLBOXOUTPUTFLAG_LONG; /* Use long mode by default. */
 
     /* Init file list. */
-    RTLISTNODE fileList;
+    RTLISTANCHOR fileList;
     RTListInit(&fileList);
 
     while (   (ch = RTGetOpt(&GetState, &ValueUnion))

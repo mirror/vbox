@@ -169,7 +169,7 @@ typedef struct VBOXWDDMDISP_DEVICE
     HANDLE hDevice;
     PVBOXWDDMDISP_ADAPTER pAdapter;
     IDirect3DDevice9 *pDevice9If;
-    RTLISTNODE SwapchainList;
+    RTLISTANCHOR SwapchainList;
     UINT u32IfVersion;
     UINT uRtVersion;
     D3DDDI_DEVICECALLBACKS RtCallbacks;
@@ -193,7 +193,7 @@ typedef struct VBOXWDDMDISP_DEVICE
 #endif
 
     /* no lock is needed for this since we're guaranteed the per-device calls are not reentrant */
-    RTLISTNODE DirtyAllocList;
+    RTLISTANCHOR DirtyAllocList;
 
     UINT cRTs;
     struct VBOXWDDMDISP_ALLOCATION * apRTs[1];
