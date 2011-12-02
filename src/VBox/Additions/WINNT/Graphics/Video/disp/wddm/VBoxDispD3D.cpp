@@ -2340,7 +2340,7 @@ static HRESULT vboxWddmSwapchainSwtichOffscreenRt(PVBOXWDDMDISP_DEVICE pDevice, 
         PVBOXWDDMDISP_RENDERTGT pRT = &pSwapchain->aRTs[i];
         if (pRT->pAlloc->enmD3DIfType != VBOXDISP_D3DIFTYPE_SURFACE)
             continue;
-        BOOL fHasSurf = !!pRT->pAlloc->pRc->aAllocations[i].pD3DIf;
+        BOOL fHasSurf = !!pRT->pAlloc->pRc->aAllocations[0].pD3DIf;
         if (!fForceCreate && !fHasSurf)
             continue;
 
