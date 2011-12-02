@@ -1,0 +1,55 @@
+# $Id$
+#
+# Storage: Testcase for discarding data in a disk.
+#
+
+#
+# Copyright (C) 2011 Oracle Corporation
+#
+# This file is part of VirtualBox Open Source Edition (OSE), as
+# available from http://www.virtualbox.org. This file is free software;
+# you can redistribute it and/or modify it under the terms of the GNU
+# General Public License (GPL) as published by the Free Software
+# Foundation, in version 2 as it comes in the "COPYING" file of the
+# VirtualBox OSE distribution. VirtualBox OSE is distributed in the
+# hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
+#
+
+# Init I/O RNG for generating random data for writes
+iorngcreate size=10M mode=manual seed=1234567890
+
+print msg=Testing_VDI
+# Create disk containers, read verification is on.
+createdisk name=disk verify=yes
+# Create the disk.
+create disk=disk mode=base name=tstCompact.vdi type=dynamic backend=VDI size=2G
+# Fill the disk with random data
+io disk=disk async=no mode=seq blocksize=64k off=0-2G size=2G writes=100
+# Read the data to verify it once.
+io disk=disk async=no mode=seq blocksize=64k off=0-2G size=2G writes=0
+close disk=disk mode=single delete=no
+
+open disk=disk name=tstCompact.vdi backend=VDI async=yes discard=yes
+printfilesize disk=disk image=0
+discard async=yes disk=disk ranges=6,0M,512k,1M,512k,2M,512k,3M,512k,4M,512k,5M,512k
+discard async=yes disk=disk ranges=6,6M,512k,7M,512k,8M,512k,9M,512k,10M,512k,11M,512k
+discard async=yes disk=disk ranges=1,512k,512k
+printfilesize disk=disk image=0
+
+print msg=Discard_whole_block
+discard async=yes disk=disk ranges=1,20M,1M
+printfilesize disk=disk image=0
+
+print msg=Split_Discard
+discard async=yes disk=disk ranges=1,21M,512k
+printfilesize disk=disk image=0
+discard async=yes disk=disk ranges=1,22016k,512k
+printfilesize disk=disk image=0
+
+# Cleanup
+close disk=disk mode=single delete=yes
+destroydisk name=disk
+
+# Destroy RNG and pattern
+iorngdestroy
+
