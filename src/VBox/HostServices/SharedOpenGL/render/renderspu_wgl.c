@@ -842,7 +842,9 @@ GLboolean renderspu_SystemCreateWindow( VisualInfo *visual, GLboolean showIt, Wi
 
 GLboolean renderspu_SystemVBoxCreateWindow( VisualInfo *visual, GLboolean showIt, WindowInfo *window )
 {
+#if 0
     HDESK     desktop;
+#endif
     HINSTANCE hinstance;
     WNDCLASS  wc;
     DWORD     window_style;
@@ -1411,5 +1413,5 @@ void renderspu_SystemSwapBuffers( WindowInfo *w, GLint flags )
 
 void renderspu_SystemReparentWindow(WindowInfo *window)
 {
-    SetParent(window->hWnd, render_spu_parent_window_id);
+    SetParent(window->hWnd, (HWND)render_spu_parent_window_id);
 }

@@ -584,12 +584,14 @@ BOOL WINAPI DllMain(HINSTANCE hDLLInst, DWORD fdwReason, LPVOID lpvReserved)
         case DLL_THREAD_ATTACH:
         {
             packspu_VBoxPackAttachThread();
+            crStateOnThreadAttachDetach(GL_TRUE);
             break;
         }
 
         case DLL_THREAD_DETACH:
         {
             packspu_VBoxPackDetachThread();
+            crStateOnThreadAttachDetach(GL_FALSE);
             break;
         }
 
