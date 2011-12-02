@@ -834,11 +834,14 @@ Section /o $(VBOX_COMPONENT_D3D) SEC03
   !insertmacro InstallLib DLL NOTSHARED REBOOT_NOTPROTECTED "$%PATH_OUT%\bin\additions\d3d9.dll" "$g_strSystemDir\d3d9.dll" "$TEMP"
 
   !if $%BUILD_TARGET_ARCH% == "amd64"
+    ; We need a special directory set to SysWOW64 because some
+    ; shell operations don't support file redirection (yet)
+    Var SYSWOW64DIR
+    StrCpy SYSWOW64DIR "$WINDIR\SysWOW64"
     ; Only 64-bit installer:
     ; Also copy 32-bit DLLs on 64-bit Windows in SysWOW64 node
-    ${EnableX64FSRedirection}
-    SetOutPath $SYSDIR
-    DetailPrint "Installing Direct3D support (SysWOW64: $SYSDIR) ..."
+    SetOutPath $SYSWOW64DIR
+    DetailPrint "Installing Direct3D support (SysWOW64: $SYSWOW64DIR) ..."
     FILE "$%VBOX_PATH_ADDITIONS_WIN_X86%\libWine.dll"
     FILE "$%VBOX_PATH_ADDITIONS_WIN_X86%\VBoxD3D8.dll"
     FILE "$%VBOX_PATH_ADDITIONS_WIN_X86%\VBoxD3D9.dll"
@@ -849,52 +852,50 @@ Section /o $(VBOX_COMPONENT_D3D) SEC03
     ;
 
     ; Save original DLLs (only if msd3d*.dll does not exist) ...
-    SetOutPath "$SYSDIR\dllcache"
-    IfFileExists "$SYSDIR\dllcache\msd3d8.dll" +2
-      CopyFiles /SILENT "$SYSDIR\dllcache\d3d8.dll" "$SYSDIR\dllcache\msd3d8.dll"
-    IfFileExists "$SYSDIR\dllcache\msd3d9.dll" +2
-      CopyFiles /SILENT "$SYSDIR\dllcache\d3d9.dll" "$SYSDIR\dllcache\msd3d9.dll"
+    SetOutPath "$SYSWOW64DIR\dllcache"
+    IfFileExists "$SYSWOW64DIR\dllcache\msd3d8.dll" +2
+      CopyFiles /SILENT "$SYSWOW64DIR\dllcache\d3d8.dll" "$SYSWOW64DIR\dllcache\msd3d8.dll"
+    IfFileExists "$SYSWOW64DIR\dllcache\msd3d9.dll" +2
+      CopyFiles /SILENT "$SYSWOW64DIR\dllcache\d3d9.dll" "$SYSWOW64DIR\dllcache\msd3d9.dll"
 
-    Push "$SYSDIR\dllcache\d3d8.dll"
+    Push "$SYSWOW64DIR\dllcache\d3d8.dll"
     Call PrepareWRPFile
 
-    Push "$SYSDIR\dllcache\d3d9.dll"
+    Push "$SYSWOW64DIR\dllcache\d3d9.dll"
     Call PrepareWRPFile
 
     ; Exchange DLLs
-    !insertmacro InstallLib DLL NOTSHARED NOREBOOT_NOTPROTECTED "$%VBOX_PATH_ADDITIONS_WIN_X86%\d3d8.dll" "$SYSDIR\dllcache\d3d8.dll" "$TEMP"
-    !insertmacro InstallLib DLL NOTSHARED NOREBOOT_NOTPROTECTED "$%VBOX_PATH_ADDITIONS_WIN_X86%\d3d9.dll" "$SYSDIR\dllcache\d3d9.dll" "$TEMP"
+    !insertmacro InstallLib DLL NOTSHARED NOREBOOT_NOTPROTECTED "$%VBOX_PATH_ADDITIONS_WIN_X86%\d3d8.dll" "$SYSWOW64DIR\dllcache\d3d8.dll" "$TEMP"
+    !insertmacro InstallLib DLL NOTSHARED NOREBOOT_NOTPROTECTED "$%VBOX_PATH_ADDITIONS_WIN_X86%\d3d9.dll" "$SYSWOW64DIR\dllcache\d3d9.dll" "$TEMP"
 
     ; If exchange above failed, do it on reboot
-    !insertmacro InstallLib DLL NOTSHARED REBOOT_NOTPROTECTED "$%VBOX_PATH_ADDITIONS_WIN_X86%\d3d8.dll" "$SYSDIR\dllcache\d3d8.dll" "$TEMP"
-    !insertmacro InstallLib DLL NOTSHARED REBOOT_NOTPROTECTED "$%VBOX_PATH_ADDITIONS_WIN_X86%\d3d9.dll" "$SYSDIR\dllcache\d3d9.dll" "$TEMP"
+    !insertmacro InstallLib DLL NOTSHARED REBOOT_NOTPROTECTED "$%VBOX_PATH_ADDITIONS_WIN_X86%\d3d8.dll" "$SYSWOW64DIR\dllcache\d3d8.dll" "$TEMP"
+    !insertmacro InstallLib DLL NOTSHARED REBOOT_NOTPROTECTED "$%VBOX_PATH_ADDITIONS_WIN_X86%\d3d9.dll" "$SYSWOW64DIR\dllcache\d3d9.dll" "$TEMP"
 
     ;
     ; Update original DLLs
     ;
 
     ; Save original DLLs (only if msd3d*.dll does not exist) ...
-    SetOutPath $SYSDIR
-    IfFileExists "$SYSDIR\msd3d8.dll" +2
-      CopyFiles /SILENT "$SYSDIR\d3d8.dll" "$SYSDIR\msd3d8.dll"
-    IfFileExists "$SYSDIR\msd3d9.dll" +2
-      CopyFiles /SILENT "$SYSDIR\d3d9.dll" "$SYSDIR\msd3d9.dll"
+    IfFileExists "$SYSWOW64DIR\msd3d8.dll" +2
+      CopyFiles /SILENT "$SYSWOW64DIR\d3d8.dll" "$SYSWOW64DIR\msd3d8.dll"
+    IfFileExists "$SYSWOW64DIR\msd3d9.dll" +2
+      CopyFiles /SILENT "$SYSWOW64DIR\d3d9.dll" "$SYSWOW64DIR\msd3d9.dll"
 
-    Push "$SYSDIR\d3d8.dll"
+    Push "$SYSWOW64DIR\d3d8.dll"
     Call PrepareWRPFile
 
-    Push "$SYSDIR\d3d9.dll"
+    Push "$SYSWOW64DIR\d3d9.dll"
     Call PrepareWRPFile
 
     ; Exchange DLLs
-    !insertmacro InstallLib DLL NOTSHARED NOREBOOT_NOTPROTECTED "$%VBOX_PATH_ADDITIONS_WIN_X86%\d3d8.dll" "$SYSDIR\d3d8.dll" "$TEMP"
-    !insertmacro InstallLib DLL NOTSHARED NOREBOOT_NOTPROTECTED "$%VBOX_PATH_ADDITIONS_WIN_X86%\d3d9.dll" "$SYSDIR\d3d9.dll" "$TEMP"
+    !insertmacro InstallLib DLL NOTSHARED NOREBOOT_NOTPROTECTED "$%VBOX_PATH_ADDITIONS_WIN_X86%\d3d8.dll" "$SYSWOW64DIR\d3d8.dll" "$TEMP"
+    !insertmacro InstallLib DLL NOTSHARED NOREBOOT_NOTPROTECTED "$%VBOX_PATH_ADDITIONS_WIN_X86%\d3d9.dll" "$SYSWOW64DIR\d3d9.dll" "$TEMP"
 
     ; If exchange above failed, do it on reboot
-    !insertmacro InstallLib DLL NOTSHARED REBOOT_NOTPROTECTED "$%VBOX_PATH_ADDITIONS_WIN_X86%\d3d8.dll" "$SYSDIR\d3d8.dll" "$TEMP"
-    !insertmacro InstallLib DLL NOTSHARED REBOOT_NOTPROTECTED "$%VBOX_PATH_ADDITIONS_WIN_X86%\d3d9.dll" "$SYSDIR\d3d9.dll" "$TEMP"
+    !insertmacro InstallLib DLL NOTSHARED REBOOT_NOTPROTECTED "$%VBOX_PATH_ADDITIONS_WIN_X86%\d3d8.dll" "$SYSWOW64DIR\d3d8.dll" "$TEMP"
+    !insertmacro InstallLib DLL NOTSHARED REBOOT_NOTPROTECTED "$%VBOX_PATH_ADDITIONS_WIN_X86%\d3d9.dll" "$SYSWOW64DIR\d3d9.dll" "$TEMP"
 
-    ${DisableX64FSRedirection}
   !endif ; amd64
   Goto done
 
