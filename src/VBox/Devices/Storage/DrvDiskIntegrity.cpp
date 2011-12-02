@@ -488,7 +488,7 @@ static int drvdiskintReadVerify(PDRVDISKINTEGRITY pThis, PCRTSGSEG paSeg, unsign
  * @param   paRanges Array of ranges to discard.
  * @param   cRanges  Number of ranges in the array.
  */
-static int drvdiskintDiscardRecords(PDRVDISKINTEGRITY pThis, PPDMRANGE paRanges, unsigned cRanges)
+static int drvdiskintDiscardRecords(PDRVDISKINTEGRITY pThis, PCRTRANGE paRanges, unsigned cRanges)
 {
     int rc = VINF_SUCCESS;
 
@@ -808,7 +808,7 @@ static DECLCALLBACK(int) drvdiskintStartRead(PPDMIMEDIAASYNC pInterface, uint64_
                                              PCRTSGSEG paSeg, unsigned cSeg,
                                              size_t cbRead, void *pvUser)
 {
-     LogFlow(("%s: uOffset=%#llx paSeg=%#p cSeg=%u cbRead=%d pvUser=%#p\n", __FUNCTION__,
+     LogFlow(("%s: uOffset=%llu paSeg=%#p cSeg=%u cbRead=%d pvUser=%#p\n", __FUNCTION__,
              uOffset, paSeg, cSeg, cbRead, pvUser));
     PDRVDISKINTEGRITY pThis = PDMIMEDIAASYNC_2_DRVDISKINTEGRITY(pInterface);
     PDRVDISKAIOREQ pIoReq = drvdiskintIoReqAlloc(DRVDISKAIOTXDIR_READ, uOffset, paSeg, cSeg, cbRead, pvUser);
@@ -947,7 +947,7 @@ static DECLCALLBACK(int) drvdiskintStartFlush(PPDMIMEDIAASYNC pInterface, void *
 }
 
 /** @copydoc PDMIMEDIAASYNC::pfnStartDiscard */
-static DECLCALLBACK(int) drvdiskintStartDiscard(PPDMIMEDIA pInterface, PPDMRANGE paRanges, unsigned cRanges, void *pvUser)
+static DECLCALLBACK(int) drvdiskintStartDiscard(PPDMIMEDIAASYNC pInterface, PCRTRANGE paRanges, unsigned cRanges, void *pvUser)
 {
     int rc = VINF_SUCCESS;
     VDIOLOGENT hIoLogEntry;
@@ -960,11 +960,11 @@ static DECLCALLBACK(int) drvdiskintStartDiscard(PPDMIMEDIA pInterface, PPDMRANGE
 
     if (pThis->hIoLogger)
     {
-        rc = VDDbgIoLogStartDiscard(pThis->hIoLogger, true, (PVDRANGE)paRanges, cRanges, &hIoLogEntry);
+        rc = VDDbgIoLogStartDiscard(pThis->hIoLogger, true, paRanges, cRanges, &hIoLogEntry);
         AssertRC(rc);
     }
 
-    rc = pThis->pDrvMedia->pfnStartDiscard(pThis->pDrvMedia, paRanges, cRanges, pIoReq);
+    rc = pThis->pDrvMediaAsync->pfnStartDiscard(pThis->pDrvMediaAsync, paRanges, cRanges, pIoReq);
 
     if (rc == VINF_VD_ASYNC_IO_FINISHED)
     {
@@ -1061,7 +1061,7 @@ static DECLCALLBACK(int) drvdiskintGetUuid(PPDMIMEDIA pInterface, PRTUUID pUuid)
 }
 
 /** @copydoc PDMIMEDIA::pfnDiscard */
-static DECLCALLBACK(int) drvdiskintDiscard(PPDMIMEDIA pInterface, PPDMRANGE paRanges, unsigned cRanges)
+static DECLCALLBACK(int) drvdiskintDiscard(PPDMIMEDIA pInterface, PCRTRANGE paRanges, unsigned cRanges)
 {
     int rc = VINF_SUCCESS;
     VDIOLOGENT hIoLogEntry;
@@ -1069,7 +1069,7 @@ static DECLCALLBACK(int) drvdiskintDiscard(PPDMIMEDIA pInterface, PPDMRANGE paRa
 
     if (pThis->hIoLogger)
     {
-        rc = VDDbgIoLogStartDiscard(pThis->hIoLogger, false, (PVDRANGE)paRanges, cRanges, &hIoLogEntry);
+        rc = VDDbgIoLogStartDiscard(pThis->hIoLogger, false, paRanges, cRanges, &hIoLogEntry);
         AssertRC(rc);
     }
 
@@ -1111,7 +1111,7 @@ static DECLCALLBACK(int) drvdiskintAsyncTransferCompleteNotify(PPDMIMEDIAASYNCPO
         else if (pIoReq->enmTxDir == DRVDISKAIOTXDIR_WRITE)
             rc = drvdiskintWriteRecord(pThis, pIoReq->paSeg, pIoReq->cSeg, pIoReq->off, pIoReq->cbTransfer);
         else if (pIoReq->enmTxDir == DRVDISKAIOTXDIR_DISCARD)
-            rc = drvdiskintDiscardRecords(pThis, paRanges, cRanges);
+            rc = drvdiskintDiscardRecords(pThis, pIoReq->paRanges, pIoReq->cRanges);
         else
             AssertMsg(pIoReq->enmTxDir == DRVDISKAIOTXDIR_FLUSH, ("Huh?\n"));
 
