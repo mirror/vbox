@@ -81,6 +81,9 @@ struct RTREQ
         RTREQQUEUE          hQueue;
     } uOwner;
 
+    /** Timestamp take when the request was submitted to a pool.  Not used
+     * for queued request. */
+    uint64_t                uSubmitNanoTs;
     /** Requester event sem.
      * The request can use this event semaphore to wait/poll for completion
      * of the request.
