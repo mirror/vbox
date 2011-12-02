@@ -178,8 +178,8 @@ struct libalias {
 #else
 #define LIBALIAS_LOCK_INIT(l)
 #define LIBALIAS_LOCK_ASSERT(l)
-#define LIBALIAS_LOCK(l)
-#define LIBALIAS_UNLOCK(l)
+#define LIBALIAS_LOCK(l) NOREF((l));
+#define LIBALIAS_UNLOCK(l) NOREF((l))
 #define LIBALIAS_LOCK_DESTROY(l)
 #endif
 
