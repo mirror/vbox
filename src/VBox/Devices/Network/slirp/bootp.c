@@ -400,6 +400,7 @@ static int dhcp_decode_request(PNATState pData, struct bootp_t *bp, struct mbuf 
     /* need to understand which type of request we get */
     req_ip = dhcp_find_option(&bp->bp_vend[0], RFC2132_REQ_ADDR);
     server_ip = dhcp_find_option(&bp->bp_vend[0], RFC2132_SRV_ID);
+
     bc = find_addr(pData, &daddr, bp->bp_hwaddr);
 
     if (server_ip != NULL)
@@ -411,9 +412,14 @@ static int dhcp_decode_request(PNATState pData, struct bootp_t *bp, struct mbuf 
              return -1;
         }
 
+        if (   !req_ip
+            || bp->bp_ciaddr.s_addr != INADDR_ANY)
+        {
+            LogRel(("NAT: Invalid SELECTING request\n"));
+            return -1; /* silently ignored */
+        }
         dhcp_stat = SELECTING;
         Assert((bp->bp_ciaddr.s_addr == INADDR_ANY));
-        Assert((*(uint32_t *)(req_ip + 2) == bc->addr.s_addr)); /*the same address as in offer*/
 #if 0
         /* DSL xid in request differ from offer */
         Assert((bp->bp_xid == bc->xid));
@@ -440,7 +446,25 @@ static int dhcp_decode_request(PNATState pData, struct bootp_t *bp, struct mbuf 
     switch (dhcp_stat)
     {
         case RENEWING:
+            /**
+             *  decoding client messages RFC2131 (4.3.6)
+             *  ------------------------------
+             *  |              |RENEWING     |
+             *  ------------------------------
+             *  |broad/unicast |unicast      |
+             *  |server-ip     |MUST NOT     |
+             *  |requested-ip  |MUST NOT     |
+             *  |ciaddr        |IP address   |
+             *  ------------------------------
+             */
             Assert((server_ip == NULL && req_ip == NULL && bp->bp_ciaddr.s_addr != INADDR_ANY));
+            if (   server_ip
+                || req_ip
+                || bp->bp_ciaddr.s_addr == INADDR_ANY)
+            {
+                LogRel(("NAT: invalid RENEWING dhcp request\n"));
+                return -1; /* silent ignorance */
+            }
             if (bc != NULL)
             {
                 Assert((bc->addr.s_addr == bp->bp_ciaddr.s_addr));
@@ -469,8 +493,27 @@ static int dhcp_decode_request(PNATState pData, struct bootp_t *bp, struct mbuf 
             break;
 
         case INIT_REBOOT:
+            /**
+             *  decoding client messages RFC2131 (4.3.6)
+             *  ------------------------------
+             *  |              |INIT-REBOOT  |
+             *  ------------------------------
+             *  |broad/unicast |broadcast    |
+             *  |server-ip     |MUST NOT     |
+             *  |requested-ip  |MUST         |
+             *  |ciaddr        |zero         |
+             *  ------------------------------
+             *
+             */
             Assert(server_ip == NULL);
             Assert(req_ip != NULL);
+            if (   server_ip
+                || !req_ip
+                || bp->bp_ciaddr.s_addr != INADDR_ANY)
+            {
+                LogRel(("NAT: Invalid INIT-REBOOT dhcp request\n"));
+                return -1; /* silently ignored */
+            }
             ui32 = *(uint32_t *)(req_ip + 2);
             if ((ui32 & RT_H2N_U32(pData->netmask)) != pData->special_addr.s_addr)
             {
@@ -492,6 +535,10 @@ static int dhcp_decode_request(PNATState pData, struct bootp_t *bp, struct mbuf 
 
         case NONE:
             Assert((dhcp_stat != NONE));
+            if (dhcp_stat == REBINDING)
+                LogRel(("NAT: REBINDING state isn't impemented\n"));
+            else if (dhcp_stat == SELECTING)
+                LogRel(("NAT: SELECTING state isn't impemented\n"));
             return -1;
 
         default:
@@ -708,6 +755,11 @@ static void dhcp_decode(PNATState pData, struct bootp_t *bp, const uint8_t *buf,
                 BOOTPClient *bc;
                 bc = bc_alloc_client(pData);
                 Assert(bc);
+                if (!bc)
+                {
+                    LogRel(("NAT: can't allocate bootp client object\n"));
+                    break;
+                }
                 bc->addr.s_addr = req_ip.s_addr;
                 slirp_arp_who_has(pData, bc->addr.s_addr);
                 LogRel(("NAT: %RTnaipv4 has been already registered\n", req_ip));
