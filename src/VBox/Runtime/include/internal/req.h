@@ -106,6 +106,10 @@ struct RTREQ
     } u;
 };
 
+/** Internal request representation. */
+typedef RTREQ       RTREQINT;
+/** Pointer to an internal request representation. */
+typedef RTREQINT   *PRTREQINT;
 
 /**
  * Internal queue instance.
