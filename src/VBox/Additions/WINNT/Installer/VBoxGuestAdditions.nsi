@@ -855,20 +855,11 @@ Section /o $(VBOX_COMPONENT_D3D) SEC03
     IfFileExists "$SYSDIR\dllcache\msd3d9.dll" +2
       CopyFiles /SILENT "$SYSDIR\dllcache\d3d9.dll" "$SYSDIR\dllcache\msd3d9.dll"
 
-FILE "/oname=$SYSDIR\fooWow64_0.dll" "$%VBOX_PATH_ADDITIONS_WIN_X86%\wined3d.dll"
-
     Push "$SYSDIR\dllcache\d3d8.dll"
     Call PrepareWRPFile
 
     Push "$SYSDIR\dllcache\d3d9.dll"
     Call PrepareWRPFile
-
-FILE "/oname=$SYSDIR\fooWow64_1.dll" "$%VBOX_PATH_ADDITIONS_WIN_X86%\wined3d.dll"
-
-; Because of the PrepareWRPFile calls above we need to make sure
-; we enable the FS redirection again.
-${EnableX64FSRedirection}
-FILE "/oname=$SYSDIR\fooWow64_2.dll" "$%VBOX_PATH_ADDITIONS_WIN_X86%\wined3d.dll"
 
     ; Exchange DLLs
     !insertmacro InstallLib DLL NOTSHARED NOREBOOT_NOTPROTECTED "$%VBOX_PATH_ADDITIONS_WIN_X86%\d3d8.dll" "$SYSDIR\dllcache\d3d8.dll" "$TEMP"
@@ -883,6 +874,7 @@ FILE "/oname=$SYSDIR\fooWow64_2.dll" "$%VBOX_PATH_ADDITIONS_WIN_X86%\wined3d.dll
     ;
 
     ; Save original DLLs (only if msd3d*.dll does not exist) ...
+    SetOutPath $SYSDIR
     IfFileExists "$SYSDIR\msd3d8.dll" +2
       CopyFiles /SILENT "$SYSDIR\d3d8.dll" "$SYSDIR\msd3d8.dll"
     IfFileExists "$SYSDIR\msd3d9.dll" +2
