@@ -2335,5 +2335,7 @@ VBOXHDDBACKEND g_DmgBackend =
     /* pfnDiscard */
     NULL,
     /* pfnAsyncDiscard */
+    NULL,
+    /* pfnRepair */
     NULL
 };

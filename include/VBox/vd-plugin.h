@@ -633,6 +633,18 @@ typedef struct VBOXHDDBACKEND
                                                 void   **ppbmAllocationBitmap,
                                                 unsigned fDiscard));
 
+    /**
+     * Try to repair the given image.
+     *
+     * @returns VBox status code.
+     * @param   pszFilename     Name of the image file.
+     * @param   pVDIfsDisk      Pointer to the per-disk VD interface list.
+     * @param   pVDIfsImage     Pointer to the per-image VD interface list.
+     * @param   fFlags          Combination of the VD_REPAIR_* flags.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnRepair, (const char *pszFilename, PVDINTERFACE pVDIfsDisk,
+                                          PVDINTERFACE pVDIfsImage, uint32_t fFlags));
+
 } VBOXHDDBACKEND;
 
 /** Pointer to VD backend. */

@@ -104,6 +104,15 @@ RT_C_DECLS_BEGIN
 #define VD_IMAGE_FLAGS_DEFAULT              (VD_IMAGE_FLAGS_NONE)
 /** @} */
 
+/** @name VD image repair flags
+ * @{
+ */
+/** Don't repair the image but check what needs to be done. */
+#define VD_REPAIR_DRY_RUN                       RT_BIT_32(0)
+
+/** Mask of all valid repair flags. */
+#define VD_REPAIR_FLAGS_MASK                    (VD_REPAIR_DRY_RUN)
+/** @} */
 
 /**
  * Auxiliary type for describing partitions on raw disks. The entries must be
@@ -1168,6 +1177,22 @@ VBOXDDU_DECL(int) VDAsyncFlush(PVBOXHDD pDisk,
 VBOXDDU_DECL(int) VDAsyncDiscardRanges(PVBOXHDD pDisk, PCRTRANGE paRanges, unsigned cRanges,
                                        PFNVDASYNCTRANSFERCOMPLETE pfnComplete,
                                        void *pvUser1, void *pvUser);
+
+/**
+ * Tries to repair a corrupted image.
+ *
+ * @return  VBox status code.
+ * @retval  VERR_VD_IMAGE_REPAIR_NOT_SUPPORTED if the backend does not support repairing the image.
+ * @retval  VERR_VD_IMAGE_REPAIR_IMPOSSIBLE if the corruption is to severe to repair the image.
+ * @param   pVDIfsDisk      Pointer to the per-disk VD interface list.
+ * @param   pVDIfsImage     Pointer to the per-image VD interface list.
+ * @param   pszFilename     Name of the image file to repair.
+ * @param   pszFormat       The backend to use.
+ * @param   fFlags          Combination of the VD_REPAIR_* flags.
+ */
+VBOXDDU_DECL(int) VDRepair(PVDINTERFACE pVDIfsDisk, PVDINTERFACE pVDIfsImage,
+                           const char *pszFilename, const char *pszBackend,
+                           uint32_t fFlags);
 
 RT_C_DECLS_END
 

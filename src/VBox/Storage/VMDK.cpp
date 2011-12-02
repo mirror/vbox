@@ -32,7 +32,6 @@
 #include <iprt/zip.h>
 #include <iprt/asm.h>
 
-
 /*******************************************************************************
 *   Constants And Macros, Structures and Typedefs                              *
 *******************************************************************************/
@@ -5299,6 +5298,9 @@ static int vmdkStreamReadSequential(PVMDKIMAGE pImage, PVMDKEXTENT pExtent,
 {
     int rc;
 
+    LogFlowFunc(("pImage=%#p pExtent=%#p uSector=%llu pvBuf=%#p cbRead=%llu\n",
+                 pImage, pExtent, uSector, pvBuf, cbRead));
+
     /* Do not allow to go back. */
     uint32_t uGrain = uSector / pExtent->cSectorsPerGrain;
     if (uGrain < pExtent->uLastGrainAccess)
@@ -5428,6 +5430,7 @@ static int vmdkStreamReadSequential(PVMDKIMAGE pImage, PVMDKEXTENT pExtent,
     {
         /* The next data block we have is not for this area, so just return
          * that there is no data. */
+        LogFlowFunc(("returns VERR_VD_BLOCK_FREE\n"));
         return VERR_VD_BLOCK_FREE;
     }
 
@@ -5435,6 +5438,7 @@ static int vmdkStreamReadSequential(PVMDKIMAGE pImage, PVMDKEXTENT pExtent,
     memcpy(pvBuf,
            (uint8_t *)pExtent->pvGrain + VMDK_SECTOR2BYTE(uSectorInGrain),
            cbRead);
+    LogFlowFunc(("returns VINF_SUCCESS\n"));
     return VINF_SUCCESS;
 }
 
@@ -7197,5 +7201,7 @@ VBOXHDDBACKEND g_VmdkBackend =
     /* pfnDiscard */
     NULL,
     /* pfnAsyncDiscard */
+    NULL,
+    /* pfnRepair */
     NULL
 };
