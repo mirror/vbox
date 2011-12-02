@@ -28,7 +28,6 @@ static SPUFunctions *feedbackSPUInit( int id, SPU *child, SPU *self,
 		unsigned int context_id,
 		unsigned int num_contexts )
 {
-	CRContext *ctx;
 	(void) context_id;
 	(void) num_contexts;
 
@@ -85,3 +84,34 @@ int SPULoad( char **name, char **super, SPUInitFuncPtr *init,
 	
 	return 1;
 }
+
+#ifdef RT_OS_WINDOWS
+#define WIN32_LEAN_AND_MEAN
+#include <windows.h>
+BOOL WINAPI DllMain(HINSTANCE hDLLInst, DWORD fdwReason, LPVOID lpvReserved)
+{
+    (void) lpvReserved;
+
+    switch (fdwReason)
+    {
+        case DLL_THREAD_ATTACH:
+        {
+            crStateOnThreadAttachDetach(GL_TRUE);
+            break;
+        }
+
+        case DLL_THREAD_DETACH:
+        {
+            crStateOnThreadAttachDetach(GL_FALSE);
+            break;
+        }
+
+        case DLL_PROCESS_ATTACH:
+        case DLL_PROCESS_DETACH:
+        default:
+            break;
+    }
+
+    return TRUE;
+}
+#endif

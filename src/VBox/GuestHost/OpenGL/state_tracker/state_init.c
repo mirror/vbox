@@ -157,6 +157,9 @@ crStateCreateContextId(int i, const CRLimitsState *limits,
     int node = i & 0x1f;
 
     ctx->id = i;
+#ifdef CHROMIUM_THREADSAFE
+    ctx->cRefs = 1;
+#endif
     ctx->flush_func = NULL;
     for (j=0;j<CR_MAX_BITARRAY;j++){
         if (j == node32) {
@@ -257,7 +260,7 @@ crStateCreateContextId(int i, const CRLimitsState *limits,
 }
 
 /*@todo crStateAttribDestroy*/
-static void
+void
 crStateFreeContext(CRContext *ctx)
 {
     crStateClientDestroy( &(ctx->client) );
@@ -306,10 +309,11 @@ void crStateInit(void)
     if (defaultContext) {
         /* Free the default/NULL context.
          * Ensures context bits are reset */
-        crStateFreeContext(defaultContext);
 #ifdef CHROMIUM_THREADSAFE
-        crSetTSD(&__contextTSD, NULL);
+        SetCurrentContext(NULL);
+        CRCONTEXT_RELEASE(defaultContext);
 #else
+        crStateFreeContext(defaultContext);
         __currentContext = NULL;
 #endif
     }
@@ -323,7 +327,7 @@ void crStateInit(void)
     g_availableContexts[0] = 1; /* in use forever */
 
 #ifdef CHROMIUM_THREADSAFE
-    crSetTSD(&__contextTSD, defaultContext);
+    SetCurrentContext(defaultContext);
 #else
     __currentContext = defaultContext;
 #endif
@@ -433,7 +437,7 @@ void crStateDestroyContext( CRContext *ctx )
         if (diff_api.AlphaFunc)
             crStateSwitchContext(current, defaultContext);
 #ifdef CHROMIUM_THREADSAFE
-        crSetTSD(&__contextTSD, defaultContext);
+        SetCurrentContext(defaultContext);
 #else
         __currentContext = defaultContext;
 #endif
@@ -442,7 +446,11 @@ void crStateDestroyContext( CRContext *ctx )
     }
     g_availableContexts[ctx->id] = 0;
 
+#ifdef CHROMIUM_THREADSAFE
+    CRCONTEXT_RELEASE(ctx);
+#else
     crStateFreeContext(ctx);
+#endif
 }
 
 
@@ -466,7 +474,7 @@ void crStateMakeCurrent( CRContext *ctx )
     }
 
 #ifdef CHROMIUM_THREADSAFE
-    crSetTSD(&__contextTSD, ctx);
+    SetCurrentContext(ctx);
 #else
     __currentContext = ctx;
 #endif
@@ -492,7 +500,7 @@ void crStateSetCurrent( CRContext *ctx )
     CRASSERT(ctx);
 
 #ifdef CHROMIUM_THREADSAFE
-    crSetTSD(&__contextTSD, ctx);
+    SetCurrentContext(ctx);
 #else
     __currentContext = ctx;
 #endif
@@ -548,3 +556,11 @@ crStateReadPixels( GLint x, GLint y, GLsizei width, GLsizei height,
     /* This no-op function helps smooth code-gen */
 }
 
+void crStateOnThreadAttachDetach(GLboolean attach)
+{
+    if (attach)
+        return;
+
+    /* release the context ref so that it can be freed */
+    SetCurrentContext(NULL);
+}
