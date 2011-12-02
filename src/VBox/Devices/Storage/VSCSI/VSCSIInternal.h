@@ -160,8 +160,8 @@ typedef struct VSCSIIOREQINT
  */
 typedef struct VSCSIVPDPOOL
 {
-    /** List of registered pages. */
-    RTLISTNODE    ListPages;
+    /** List of registered pages (VSCSIVPDPAGE). */
+    RTLISTANCHOR    ListPages;
 } VSCSIVPDPOOL;
 /** Pointer to the VSCSI VPD page pool. */
 typedef VSCSIVPDPOOL *PVSCSIVPDPOOL;

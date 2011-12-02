@@ -83,7 +83,7 @@ typedef struct RTSEMEVENTINTERNAL
     /** Set if the object is signalled when there are no waiters. */
     bool                fSignaled;
     /** List of waiting and woken up threads. */
-    RTLISTNODE          WaitList;
+    RTLISTANCHOR        WaitList;
     /** The Solaris mutex protecting this structure and pairing up the with the cv. */
     kmutex_t            Mtx;
     /** The Solaris condition variable. */

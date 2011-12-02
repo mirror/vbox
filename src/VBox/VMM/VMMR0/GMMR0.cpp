@@ -493,7 +493,7 @@ typedef struct GMM
     PAVLGCPTRNODECORE   pGlobalSharedModuleTree;
 
     /** The chunk list.  For simplifying the cleanup process. */
-    RTLISTNODE          ChunkList;
+    RTLISTANCHOR        ChunkList;
 
     /** The maximum number of pages we're allowed to allocate.
      * @gcfgm   64-bit GMM/MaxPages Direct.
@@ -594,9 +594,9 @@ typedef GMMR0CHUNKMTXSTATE *PGMMR0CHUNKMTXSTATE;
 static PGMM g_pGMM = NULL;
 
 /** Macro for obtaining and validating the g_pGMM pointer.
- *  
+ *
  * On failure it will return from the invoking function with the specified
- * return value. 
+ * return value.
  *
  * @param   pGMM    The name of the pGMM variable.
  * @param   rc      The return value on failure. Use VERR_GMM_INSTANCE for VBox
@@ -610,9 +610,9 @@ static PGMM g_pGMM = NULL;
     } while (0)
 
 /** Macro for obtaining and validating the g_pGMM pointer, void function
- * variant. 
- *  
- * On failure it will return from the invoking function. 
+ * variant.
+ *
+ * On failure it will return from the invoking function.
  *
  * @param   pGMM    The name of the pGMM variable.
  */

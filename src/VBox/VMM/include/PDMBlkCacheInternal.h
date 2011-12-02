@@ -134,7 +134,7 @@ typedef struct PDMBLKCACHEGLOBAL
     /** Number of endpoints using the cache. */
     uint32_t            cRefs;
     /** List of all users of this cache. */
-    RTLISTNODE          ListUsers;
+    RTLISTANCHOR        ListUsers;
 #ifdef VBOX_WITH_STATISTICS
     /** Hit counter. */
     STAMCOUNTER         cHits;
@@ -191,7 +191,7 @@ typedef struct PDMBLKCACHE
     /** Lock protecting the dirty entries list. */
     RTSPINLOCK                    LockList;
     /** List of dirty but not committed entries for this endpoint. */
-    RTLISTNODE                    ListDirtyNotCommitted;
+    RTLISTANCHOR                  ListDirtyNotCommitted;
     /** Node of the cache user list. */
     RTLISTNODE                    NodeCacheUser;
     /** Block cache type. */

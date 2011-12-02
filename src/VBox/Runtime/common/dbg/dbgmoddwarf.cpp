@@ -368,7 +368,7 @@ typedef struct RTDBGMODDWARF
     RTDWARFABBREV           LookupAbbrev;
 
     /** The list of compilation units (RTDWARFDIE).   */
-    RTLISTNODE              CompileUnitList;
+    RTLISTANCHOR            CompileUnitList;
 } RTDBGMODDWARF;
 /** Pointer to instance data of the DWARF reader. */
 typedef RTDBGMODDWARF *PRTDBGMODDWARF;

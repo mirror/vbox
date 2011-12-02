@@ -162,7 +162,7 @@ typedef struct RTISOFSPATHTABLEENTRY
 typedef struct RTISOFSFILE
 {
     RTFILE file;
-    RTLISTNODE listPaths;
+    RTLISTANCHOR listPaths;
     RTISOFSPRIVOLDESC pvd;
 } RTISOFSFILE, *PRTISOFSFILE;
 #pragma pack()

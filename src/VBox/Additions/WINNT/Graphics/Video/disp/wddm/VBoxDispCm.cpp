@@ -27,7 +27,8 @@ typedef struct VBOXDISPCM_SESSION
 {
     HANDLE hEvent;
     CRITICAL_SECTION CritSect;
-    RTLISTNODE CtxList;
+    /** List of VBOXWDDMDISP_CONTEXT nodes. */
+    RTLISTANCHOR CtxList;
     bool bQueryMp;
 } VBOXDISPCM_SESSION, *PVBOXDISPCM_SESSION;
 
