@@ -76,16 +76,7 @@ int suplibOsInit(PSUPLIBDATA pThis, bool fPreInited)
     /*
      * Try open the BSD device.
      */
-    int hDevice = -1;
-    char szDevice[sizeof(DEVICE_NAME) + 16];
-    for (unsigned iUnit = 0; iUnit < 1024; iUnit++)
-    {
-        errno = 0;
-        snprintf(szDevice, sizeof(szDevice), DEVICE_NAME "%d", iUnit);
-        hDevice = open(szDevice, O_RDWR, 0);
-        if (hDevice >= 0 || errno != EBUSY)
-            break;
-    }
+    int hDevice = open(DEVICE_NAME, O_RDWR, 0);
     if (hDevice < 0)
     {
         int rc;
@@ -97,7 +88,7 @@ int suplibOsInit(PSUPLIBDATA pThis, bool fPreInited)
             case ENOENT:    rc = VERR_VM_DRIVER_NOT_INSTALLED; break;
             default:        rc = VERR_VM_DRIVER_OPEN_ERROR; break;
         }
-        LogRel(("Failed to open \"%s\", errno=%d, rc=%Rrc\n", szDevice, errno, rc));
+        LogRel(("Failed to open \"%s\", errno=%d, rc=%Rrc\n", DEVICE_NAME, errno, rc));
         return rc;
     }
 

@@ -21,7 +21,6 @@ include $(KBUILD_PATH)/subheader.kmk
 INSTALLS += HostDrivers-scripts
 HostDrivers-scripts_INST    = bin/src/
 HostDrivers-scripts_SOURCES = Makefile
-HostDrivers-scripts_EXEC_SOURCES = export_modules
 
 include $(KBUILD_PATH)/subfooter.kmk
 
