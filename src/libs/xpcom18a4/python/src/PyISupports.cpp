@@ -51,6 +51,69 @@
 static PRInt32 cInterfaces=0;
 static PyObject *g_obFuncMakeInterfaceCount = NULL; // XXX - never released!!!
 
+#ifdef VBOX_DEBUG_LIFETIMES
+# include <iprt/log.h>
+# include <iprt/stream.h>
+
+/*static*/ RTLISTNODE        Py_nsISupports::g_List;
+/*static*/ RTONCE            Py_nsISupports::g_Once = RTONCE_INITIALIZER;
+/*static*/ RTCRITSECT        Py_nsISupports::g_CritSect;
+
+/*static*/ DECLCALLBACK(int)
+Py_nsISupports::initOnceCallback(void *pvUser1, void *pvUser2)
+{
+    NOREF(pvUser1); NOREF(pvUser2);
+    RTListInit(&g_List);
+    return RTCritSectInit(&g_CritSect);
+}
+
+/*static*/ void
+Py_nsISupports::dumpList(void)
+{
+    RTOnce(&g_Once, initOnceCallback, NULL, NULL);
+    RTCritSectEnter(&g_CritSect);
+
+    uint32_t i = 0;
+    Py_nsISupports *pCur;
+    RTListForEach(&g_List, pCur, Py_nsISupports, m_ListEntry)
+    {
+	nsISupports *pISup = pCur->m_obj;
+	PyXPCOM_LogWarning("#%u: %p iid=%RTuuid obj=%p", i, pCur, &pCur->m_iid, pISup);
+	i++;
+    }
+
+    RTCritSectLeave(&g_CritSect);
+}
+
+/*static*/ void
+Py_nsISupports::dumpListToStdOut()
+{
+    RTOnce(&g_Once, initOnceCallback, NULL, NULL);
+    RTCritSectEnter(&g_CritSect);
+
+    uint32_t i = 0;
+    Py_nsISupports *pCur;
+    RTListForEach(&g_List, pCur, Py_nsISupports, m_ListEntry)
+    {
+	nsISupports *pISup = pCur->m_obj;
+	RTPrintf("#%u: %p iid=%RTuuid obj=%p\n", i, pCur, &pCur->m_iid, pISup);
+	i++;
+    }
+
+    RTCritSectLeave(&g_CritSect);
+}
+
+PRInt32
+_PyXPCOM_DumpInterfaces(void)
+{
+	Py_nsISupports::dumpListToStdOut();
+	return NS_OK;
+}
+
+#endif /* _DEBUG_LIFETIMES */
+
+
+
 PyObject *PyObject_FromNSInterface( nsISupports *aInterface,
                                     const nsIID &iid,
                                     PRBool bMakeNicePyObject /*= PR_TRUE */)
@@ -74,10 +137,26 @@ Py_nsISupports::Py_nsISupports(nsISupports *punk, const nsIID &iid, PyTypeObject
 	PR_AtomicIncrement(&cInterfaces);
 	PyXPCOM_DLLAddRef();
 	_Py_NewReference(this);
+
+#ifdef VBOX_DEBUG_LIFETIMES
+        RTOnce(&g_Once, initOnceCallback, NULL, NULL);
+        RTCritSectEnter(&g_CritSect);
+	PyXPCOM_LogWarning("Creating   %p: iid=%RTuuid obj=%p", this, &m_iid, punk);
+        RTListAppend(&g_List, &m_ListEntry);
+        RTCritSectLeave(&g_CritSect);
+#endif
 }
 
 Py_nsISupports::~Py_nsISupports()
 {
+#ifdef VBOX_DEBUG_LIFETIMES
+	RTCritSectEnter(&g_CritSect);
+	nsISupports *punk = m_obj;
+	PyXPCOM_LogWarning("Destroying %p: iid=%RTuuid obj=%p", this, &m_iid, punk);
+	RTListNodeRemove(&m_ListEntry);
+	RTCritSectLeave(&g_CritSect);
+#endif
+
 	SafeRelease(this);
 	PR_AtomicDecrement(&cInterfaces);
 	PyXPCOM_DLLRelease();

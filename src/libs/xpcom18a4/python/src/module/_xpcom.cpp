@@ -54,7 +54,7 @@
 #include "nsIConsoleService.h"
 #include "nspr.h" // PR_fprintf
 #ifdef VBOX
-#include "nsEventQueueUtils.h"
+# include "nsEventQueueUtils.h"
 #endif
 
 #ifdef XP_WIN
@@ -318,6 +318,17 @@ PyXPCOMMethod_GetInterfaceCount(PyObject *self, PyObject *args)
 	// alive in your program (possibly in global variables).
 }
 
+#ifdef VBOX_DEBUG_LIFETIMES
+// @pymethod int|pythoncom|_DumpInterfaces|Dumps the interfaces still in existance to standard output
+static PyObject *
+PyXPCOMMethod_DumpInterfaces(PyObject *self, PyObject *args)
+{
+	if (!PyArg_ParseTuple(args, ":_DumpInterfaces"))
+		return NULL;
+	return PyInt_FromLong(_PyXPCOM_DumpInterfaces());
+}
+#endif
+
 // @pymethod int|pythoncom|_GetGatewayCount|Retrieves the number of gateway objects currently in existance
 static PyObject *
 PyXPCOMMethod_GetGatewayCount(PyObject *self, PyObject *args)
@@ -342,6 +353,10 @@ PyXPCOMMethod_NS_ShutdownXPCOM(PyObject *self, PyObject *args)
 	Py_BEGIN_ALLOW_THREADS;
 	nr = NS_ShutdownXPCOM(nsnull);
 	Py_END_ALLOW_THREADS;
+
+#ifdef VBOX_DEBUG_LIFETIME
+	Py_nsISupports::dumpList();
+#endif
 
 	// Dont raise an exception - as we are probably shutting down
 	// and dont really case - just return the status
@@ -660,7 +675,11 @@ static struct PyMethodDef xpcom_methods[]=
         {"AttachThread",  PyXPCOMMethod_AttachThread, 1},
         {"DetachThread",  PyXPCOMMethod_DetachThread, 1},
 #endif
+#ifdef VBOX_DEBUG_LIFETIMES
+	{"_DumpInterfaces", PyXPCOMMethod_DumpInterfaces, 1},
+#endif
 	// These should no longer be used - just use the logging.getLogger('pyxpcom')...
+	/* bird: The above comment refers to LogWarning and LogError. Both now removed. */
 	{ NULL }
 };
 

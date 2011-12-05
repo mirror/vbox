@@ -71,6 +71,8 @@ VBoxPythonBase_DEFS     = \
 	VBOX_PYXPCOM \
 	VBOX_WITH_XPCOM \
 	VBOX_PYXPCOM_VERSIONED
+VBoxPythonBase_DEFS.debug = \
+	VBOX_DEBUG_LIFETIMES
 VBoxPythonBase_INCS     = \
 	src
 VBoxPythonBase_SOURCES  = \
