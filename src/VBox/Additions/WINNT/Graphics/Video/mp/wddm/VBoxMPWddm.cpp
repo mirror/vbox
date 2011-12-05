@@ -3741,7 +3741,6 @@ DxgkDdiEscape(
             case VBOXESC_SCREENLAYOUT:
             {
                 /* set screen layout (unused currently) */
-                Assert(pEscape->PrivateDriverDataSize >= sizeof (VBOXDISPIFESCAPE_SCREENLAYOUT));
                 if (pEscape->PrivateDriverDataSize < sizeof (VBOXDISPIFESCAPE_SCREENLAYOUT))
                 {
                     WARN(("VBOXESC_SCREENLAYOUT: incorrect buffer size (%d) < sizeof (VBOXDISPIFESCAPE_SCREENLAYOUT) (%d)",
