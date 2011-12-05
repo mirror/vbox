@@ -2107,6 +2107,13 @@ NTSTATUS APIENTRY DxgkDdiCreateAllocation(
             return STATUS_INVALID_PARAMETER;
         }
 
+        /* a check to ensure we do not get the allocation size which is too big to overflow the 32bit value */
+        if (VBOXWDDM_TRAILARRAY_MAXELEMENTSU32(VBOXWDDM_RESOURCE, aAllocations) < pRcInfo->cAllocInfos)
+        {
+            WARN(("number of allocations passed too big (%d), max is (%d)", pRcInfo->cAllocInfos, VBOXWDDM_TRAILARRAY_MAXELEMENTSU32(VBOXWDDM_RESOURCE, aAllocations)));
+            return STATUS_INVALID_PARAMETER;
+        }
+
         pResource = (PVBOXWDDM_RESOURCE)vboxWddmMemAllocZero(RT_OFFSETOF(VBOXWDDM_RESOURCE, aAllocations[pRcInfo->cAllocInfos]));
         if (!pResource)
         {

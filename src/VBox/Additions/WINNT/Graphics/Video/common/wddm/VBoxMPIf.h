@@ -875,4 +875,6 @@ DECLINLINE(void) vboxWddmDirtyRegionClear(PVBOXWDDM_DIRTYREGION pInfo)
     pInfo->fFlags = 0;
 }
 
+#define VBOXWDDM_TRAILARRAY_MAXELEMENTSU32(_t, _af) ((uint32_t)(((~(0UL)) - (uint32_t)RT_OFFSETOF(_t, _af[0])) / RT_SIZEOFMEMB(_t, _af[0])))
+
 #endif /* #ifndef ___VBoxMPIf_h___ */
