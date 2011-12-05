@@ -413,6 +413,14 @@ NTSTATUS vboxWddmSwapchainCtxEscape(PVBOXMP_DEVEXT pDevExt, PVBOXWDDM_CONTEXT pC
     do {
         if (pSwapchainInfo->SwapchainInfo.cAllocs)
         {
+            /* ensure we do not overflow the 32bit buffer size value */
+            if (VBOXWDDM_ARRAY_MAXELEMENTSU32(PVBOXWDDM_ALLOCATION) < pSwapchainInfo->SwapchainInfo.cAllocs)
+            {
+                WARN(("number of allocations passed in too big (%d), max is (%d)", pSwapchainInfo->SwapchainInfo.cAllocs, VBOXWDDM_ARRAY_MAXELEMENTSU32(PVBOXWDDM_ALLOCATION)));
+                Status = STATUS_INVALID_PARAMETER;
+                break;
+            }
+
             apAlloc = (PVBOXWDDM_ALLOCATION *)vboxWddmMemAlloc(sizeof (PVBOXWDDM_ALLOCATION) * pSwapchainInfo->SwapchainInfo.cAllocs);
             Assert(apAlloc);
             if (!apAlloc)
