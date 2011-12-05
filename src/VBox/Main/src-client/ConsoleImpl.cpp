@@ -6115,6 +6115,7 @@ HRESULT Console::consoleInitReleaseLog(const ComPtr<IMachine> aMachine)
     if (RT_SUCCESS(vrc))
     {
         RTLogSetGroupLimit(pReleaseLogger, 32768);
+        bool fOldBuffered = RTLogRelSetBuffering(true /*fBuffered*/);
 
         /* some introductory information */
         RTTIMESPEC timeSpec;
@@ -6176,7 +6177,8 @@ HRESULT Console::consoleInitReleaseLog(const ComPtr<IMachine> aMachine)
         RTLogRelSetDefaultInstance(pReleaseLogger);
         hrc = S_OK;
 
-        /* Explicitly flush the log in case of VBOX_RELEASE_LOG=buffered. */
+        /* Restore the buffering setting and xplicitly flush the log. */
+        RTLogRelSetBuffering(fOldBuffered);
         RTLogFlush(pReleaseLogger);
     }
     else
