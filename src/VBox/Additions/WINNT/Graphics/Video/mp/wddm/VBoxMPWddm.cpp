@@ -3742,31 +3742,37 @@ DxgkDdiEscape(
             {
                 /* set screen layout (unused currently) */
                 Assert(pEscape->PrivateDriverDataSize >= sizeof (VBOXDISPIFESCAPE_SCREENLAYOUT));
-                if (pEscape->PrivateDriverDataSize >= sizeof (VBOXDISPIFESCAPE_SCREENLAYOUT))
+                if (pEscape->PrivateDriverDataSize < sizeof (VBOXDISPIFESCAPE_SCREENLAYOUT))
                 {
-                    PVBOXDISPIFESCAPE_SCREENLAYOUT pLo = (PVBOXDISPIFESCAPE_SCREENLAYOUT)pEscapeHdr;
-                    Assert(pLo->ScreenLayout.cScreens <= (UINT)VBoxCommonFromDeviceExt(pDevExt)->cDisplays);
-                    for (UINT i = 0; i < pLo->ScreenLayout.cScreens; ++i)
-                    {
-                        PVBOXSCREENLAYOUT_ELEMENT pEl = &pLo->ScreenLayout.aScreens[i];
-                        Assert(pEl->VidPnSourceId < (UINT)VBoxCommonFromDeviceExt(pDevExt)->cDisplays);
-                        if (pEl->VidPnSourceId < (UINT)VBoxCommonFromDeviceExt(pDevExt)->cDisplays)
-                        {
-                            PVBOXWDDM_SOURCE pSource = &pDevExt->aSources[pEl->VidPnSourceId];
-                            NTSTATUS tmpStatus = vboxWddmGhDisplayUpdateScreenPos(pDevExt, pSource, &pEl->pos);
-                            Assert(tmpStatus == STATUS_SUCCESS);
-                        }
-                    }
-                    Status = STATUS_SUCCESS;
+                    WARN(("VBOXESC_SCREENLAYOUT: incorrect buffer size (%d) < sizeof (VBOXDISPIFESCAPE_SCREENLAYOUT) (%d)",
+                            pEscape->PrivateDriverDataSize, sizeof (VBOXDISPIFESCAPE_SCREENLAYOUT)));
+                    Status = STATUS_INVALID_PARAMETER;
                     break;
                 }
-                else
+
+                PVBOXDISPIFESCAPE_SCREENLAYOUT pLo = (PVBOXDISPIFESCAPE_SCREENLAYOUT)pEscapeHdr;
+                if (pLo->ScreenLayout.cScreens > (UINT)VBoxCommonFromDeviceExt(pDevExt)->cDisplays)
                 {
-                    LOGREL(("VBOXESC_SCREENLAYOUT: incorrect buffer size (%d) < sizeof (VBOXDISPIFESCAPE_SCREENLAYOUT) (%d)",
-                            pEscape->PrivateDriverDataSize, sizeof (VBOXDISPIFESCAPE_SCREENLAYOUT)));
-                    AssertBreakpoint();
+                    WARN(("VBOXESC_SCREENLAYOUT: number of screens too big (%d), should be <= (%d)",
+                            pLo->ScreenLayout.cScreens, VBoxCommonFromDeviceExt(pDevExt)->cDisplays));
                     Status = STATUS_INVALID_PARAMETER;
+                    break;
                 }
+
+                for (UINT i = 0; i < pLo->ScreenLayout.cScreens; ++i)
+                {
+                    PVBOXSCREENLAYOUT_ELEMENT pEl = &pLo->ScreenLayout.aScreens[i];
+                    Assert(pEl->VidPnSourceId < (UINT)VBoxCommonFromDeviceExt(pDevExt)->cDisplays);
+                    if (pEl->VidPnSourceId < (UINT)VBoxCommonFromDeviceExt(pDevExt)->cDisplays)
+                    {
+                        PVBOXWDDM_SOURCE pSource = &pDevExt->aSources[pEl->VidPnSourceId];
+                        NTSTATUS tmpStatus = vboxWddmGhDisplayUpdateScreenPos(pDevExt, pSource, &pEl->pos);
+                        Assert(tmpStatus == STATUS_SUCCESS);
+                    }
+                }
+
+                Status = STATUS_SUCCESS;
+                break;
             }
             case VBOXESC_SWAPCHAININFO:
             {
