@@ -1822,8 +1822,8 @@ private:
   nsRefPtr<DConnectStub> mXcptStub;
 };
 
-NS_IMPL_ADDREF(ExceptionStub)
-NS_IMPL_RELEASE(ExceptionStub)
+NS_IMPL_THREADSAFE_ADDREF(ExceptionStub)
+NS_IMPL_THREADSAFE_RELEASE(ExceptionStub)
 
 NS_IMETHODIMP
 ExceptionStub::QueryInterface(const nsID &aIID, void **aInstancePtr)
