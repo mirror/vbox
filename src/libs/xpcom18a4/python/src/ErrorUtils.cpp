@@ -49,8 +49,9 @@
 #include "nsReadableUtils.h"
 #include <nsIConsoleService.h>
 #ifdef VBOX
-#include <nsIExceptionService.h>
-#include <iprt/err.h>
+# include <nsIExceptionService.h>
+# include <iprt/err.h>
+# include <iprt/string.h>
 #endif
 #include "nspr.h" // PR_fprintf
 
@@ -147,8 +148,12 @@ void LogMessage(const char *methodName, nsACString &text)
 static void VLogF(const char *methodName, const char *fmt, va_list argptr)
 {
 	char buff[512];
+#ifdef VBOX /* Enable the use of VBox formatting types. */
+	RTStrPrintfV(buff, sizeof(buff), fmt, argptr);
+#else
 	// Use safer NS_ functions.
 	PR_vsnprintf(buff, sizeof(buff), fmt, argptr);
+#endif
 
 	LogMessage(methodName, buff);
 }

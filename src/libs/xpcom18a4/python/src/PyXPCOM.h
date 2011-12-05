@@ -65,6 +65,12 @@
 #include "xptcall.h"
 #include "xpt_xdr.h"
 
+#ifdef VBOX_DEBUG_LIFETIMES
+# include <iprt/critsect.h>
+# include <iprt/list.h>
+# include <iprt/once.h>
+#endif
+
 #ifdef HAVE_LONG_LONG
 	// Mozilla also defines this - we undefine it to
 	// prevent a compiler warning.
@@ -76,7 +82,7 @@
 #endif // _POSIX_C_SOURCE
 
 #ifdef VBOX_PYXPCOM
-// unfortunatelly, if SOLARIS is defined Python porting layer 
+// unfortunatelly, if SOLARIS is defined Python porting layer
 // defines gethostname() in invalid fashion what kills compilation
 # ifdef SOLARIS
 #  undef SOLARIS
@@ -222,7 +228,7 @@ PYXPCOM_EXPORT PyObject *PyObject_FromVariant( Py_nsISupports *parent,
 
 // Interfaces - these are the "official" functions
 PYXPCOM_EXPORT PyObject *PyObject_FromNSInterface( nsISupports *aInterface,
-                                                   const nsIID &iid, 
+                                                   const nsIID &iid,
                                                    PRBool bMakeNicePyObject = PR_TRUE);
 
 /*************************************************************************
@@ -241,10 +247,10 @@ typedef Py_nsISupports* (* PyXPCOM_I_CTOR)(nsISupports *, const nsIID &);
 
 class PYXPCOM_EXPORT PyXPCOM_TypeObject : public PyTypeObject {
 public:
-	PyXPCOM_TypeObject( 
-		const char *name, 
-		PyXPCOM_TypeObject *pBaseType, 
-		int typeSize, 
+	PyXPCOM_TypeObject(
+		const char *name,
+		PyXPCOM_TypeObject *pBaseType,
+		int typeSize,
 		struct PyMethodDef* methodList,
 		PyXPCOM_I_CTOR ctor);
 	~PyXPCOM_TypeObject();
@@ -303,8 +309,8 @@ public:
 	// NOTE: There used to be a bAddRef param to this as an internal
 	// optimization, but  since removed.  This function *always* takes a
 	// reference to the nsISupports.
-	static PyObject *PyObjectFromInterface(nsISupports *ps, 
-	                                       const nsIID &iid, 
+	static PyObject *PyObjectFromInterface(nsISupports *ps,
+	                                       const nsIID &iid,
 	                                       PRBool bMakeNicePyObject = PR_TRUE,
 	                                       PRBool bIsInternalCall = PR_FALSE);
 
@@ -327,8 +333,8 @@ public:
 	// Given a Py_nsISupports, return an interface.
 	// Object *must* be Py_nsISupports - there is no
 	// "autowrap", no "None" support, etc
-	static PRBool InterfaceFromPyISupports(PyObject *ob, 
-	                                       const nsIID &iid, 
+	static PRBool InterfaceFromPyISupports(PyObject *ob,
+	                                       const nsIID &iid,
 	                                       nsISupports **ppv);
 
 	static Py_nsISupports *Constructor(nsISupports *pInitObj, const nsIID &iid);
@@ -342,6 +348,10 @@ public:
 	static void SafeRelease(Py_nsISupports *ob);
 	static void RegisterInterface( const nsIID &iid, PyTypeObject *t);
 	static void InitType();
+#ifdef VBOX_DEBUG_LIFETIMES
+	static void dumpList(void);
+	static void dumpListToStdOut(void);
+#endif
 
 	virtual ~Py_nsISupports();
 	virtual PyObject *getattr(const char *name);
@@ -357,32 +367,41 @@ public:
 protected:
 	// ctor is protected - must create objects via
 	// PyObjectFromInterface()
-	Py_nsISupports(nsISupports *p, 
-		            const nsIID &iid, 
+	Py_nsISupports(nsISupports *p,
+		            const nsIID &iid,
 			    PyTypeObject *type);
 
 	// Make a default wrapper for an ISupports (which is an
 	// xpcom.client.Component instance)
 	static PyObject *MakeDefaultWrapper(PyObject *pyis, const nsIID &iid);
 
+#ifdef VBOX_DEBUG_LIFETIMES
+	static DECLCALLBACK(int) initOnceCallback(void *pvUser1, void *pvUser2);
+
+	RTLISTNODE              m_ListEntry; /**< List entry. */
+
+	static RTONCE           g_Once;      /**< Init list and critsect once. */
+	static RTCRITSECT       g_CritSect;  /**< Critsect protecting the list. */
+	static RTLISTANCHOR     g_List;      /**< List of live interfaces.*/
+#endif
 };
 
-// Python/XPCOM IID support 
+// Python/XPCOM IID support
 class PYXPCOM_EXPORT Py_nsIID : public PyObject
 {
 public:
 	Py_nsIID(const nsIID &riid);
 	nsIID m_iid;
 
-	PRBool 
+	PRBool
 	IsEqual(const nsIID &riid) {
 		return m_iid.Equals(riid);
 	}
 
 	PRBool
 	IsEqual(PyObject *ob) {
-		return ob && 
-		       ob->ob_type== &type && 
+		return ob &&
+		       ob->ob_type== &type &&
 		       m_iid.Equals(((Py_nsIID *)ob)->m_iid);
 	}
 
@@ -458,7 +477,7 @@ class PyXPCOM_GatewayWeakReference;
 // to a PyG_Base.  Any other interface, we do now know which vtable we will get.
 // We also allow the underlying PyObject to be extracted
 class nsIInternalPython : public nsISupports {
-public: 
+public:
 	NS_DEFINE_STATIC_IID_ACCESSOR(NS_IINTERNALPYTHON_IID)
 	// Get the underlying Python object with new reference added
 	virtual PyObject *UnwrapPythonObject(void) = 0;
@@ -474,23 +493,23 @@ public:
 	PyObject *UnwrapPythonObject(void);
 
 	// A static "constructor" - the real ctor is protected.
-	static nsresult CreateNew(PyObject *pPyInstance, 
-		                  const nsIID &iid, 
+	static nsresult CreateNew(PyObject *pPyInstance,
+		                  const nsIID &iid,
 				  void **ppResult);
 
-	// A utility to auto-wrap an arbitary Python instance 
+	// A utility to auto-wrap an arbitary Python instance
 	// in a COM gateway.
-	static PRBool AutoWrapPythonInstance(PyObject *ob, 
-		                           const nsIID &iid, 
+	static PRBool AutoWrapPythonInstance(PyObject *ob,
+		                           const nsIID &iid,
 					   nsISupports **ppret);
 
 
 	// A helper that creates objects to be passed for nsISupports
 	// objects.  See extensive comments in PyG_Base.cpp.
-	PyObject *MakeInterfaceParam(nsISupports *pis, 
-	                                     const nsIID *piid, 
+	PyObject *MakeInterfaceParam(nsISupports *pis,
+	                                     const nsIID *piid,
 					     int methodIndex = -1,
-					     const XPTParamDescriptor *d = NULL, 
+					     const XPTParamDescriptor *d = NULL,
 					     int paramIndex = -1);
 
 	// A helper that ensures all casting and vtable offsetting etc
@@ -569,6 +588,9 @@ extern PYXPCOM_EXPORT void AddDefaultGateway(PyObject *instance, nsISupports *ga
 
 extern PYXPCOM_EXPORT PRInt32 _PyXPCOM_GetGatewayCount(void);
 extern PYXPCOM_EXPORT PRInt32 _PyXPCOM_GetInterfaceCount(void);
+#ifdef VBOX_DEBUG_LIFETIMES
+extern PYXPCOM_EXPORT PRInt32 _PyXPCOM_DumpInterfaces(void);
+#endif
 
 
 // Weak Reference class.  This is a true COM object, representing
@@ -577,8 +599,8 @@ extern PYXPCOM_EXPORT PRInt32 _PyXPCOM_GetInterfaceCount(void);
 // When both are alive, each holds a pointer to the other.  When the main
 // object dies due to XPCOM reference counting, it zaps the pointer
 // in its corresponding weak reference object.  Thus, the weak-reference
-// can live beyond the object (possibly with a NULL pointer back to the 
-// "real" object, but as implemented, the weak reference will never be 
+// can live beyond the object (possibly with a NULL pointer back to the
+// "real" object, but as implemented, the weak reference will never be
 // destroyed  before the object
 class PYXPCOM_EXPORT PyXPCOM_GatewayWeakReference : public nsIWeakReference {
 public:
@@ -599,7 +621,7 @@ class PYXPCOM_EXPORT PyXPCOM_GatewayVariantHelper
 public:
 	PyXPCOM_GatewayVariantHelper( PyG_Base *gateway,
 	                              int methodIndex,
-	                              const nsXPTMethodInfo *info, 
+	                              const nsXPTMethodInfo *info,
 	                              nsXPTCMiniVariant* params );
 	~PyXPCOM_GatewayVariantHelper();
 	PyObject *MakePyArgs();
@@ -626,7 +648,7 @@ private:
 
 // Misc converters.
 PyObject *PyObject_FromXPTType( const nsXPTType *d);
-// XPTTypeDescriptor derived from XPTType - latter is automatically processed via PyObject_FromXPTTypeDescriptor XPTTypeDescriptor 
+// XPTTypeDescriptor derived from XPTType - latter is automatically processed via PyObject_FromXPTTypeDescriptor XPTTypeDescriptor
 PyObject *PyObject_FromXPTTypeDescriptor( const XPTTypeDescriptor *d);
 
 PyObject *PyObject_FromXPTParamDescriptor( const XPTParamDescriptor *d);
@@ -654,9 +676,9 @@ void PyXPCOM_DLLRelease();
 // 2 threads may _ever_ call _any_ Python code (including INCREF/DECREF) without
 // first having this thread lock.
 //
-// The second type of lock is a "global framework lock", and used whenever 2 threads 
-// of C code need access to global data.  This is different than the Python 
-// lock - this lock is used when no Python code can ever be called by the 
+// The second type of lock is a "global framework lock", and used whenever 2 threads
+// of C code need access to global data.  This is different than the Python
+// lock - this lock is used when no Python code can ever be called by the
 // threads, but the C code still needs thread-safety.
 
 // We also supply helper classes which make the usage of these locks a one-liner.
@@ -668,7 +690,7 @@ PYXPCOM_EXPORT void PyXPCOM_ReleaseGlobalLock(void);
 // Helper class for the DLL global lock.
 //
 // This class magically waits for PyXPCOM framework global lock, and releases it
-// when finished.  
+// when finished.
 // NEVER new one of these objects - only use on the stack!
 class CEnterLeaveXPCOMFramework {
 public:
@@ -683,7 +705,7 @@ public:
 // Helper class for Enter/Leave Python
 //
 // This class magically waits for the Python global lock, and releases it
-// when finished.  
+// when finished.
 
 // Nested invocations will deadlock, so be careful.
 
@@ -748,7 +770,7 @@ public:
 	// The interpreter state must be cleared
 	// _before_ we release the lock, as some of
 	// the sys. attributes cleared (eg, the current exception)
-	// may need the lock to invoke their destructors - 
+	// may need the lock to invoke their destructors -
 	// specifically, when exc_value is a class instance, and
 	// the exception holds the last reference!
 		if ( created )
