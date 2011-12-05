@@ -2704,11 +2704,11 @@ VMMR3DECL(int) CFGMR3QueryStringAllocDef(PCFGMNODE pNode, const char *pszName, c
  */
 VMMR3DECL(void) CFGMR3Dump(PCFGMNODE pRoot)
 {
-    LogRel(("************************* CFGM dump *************************\n"));
     bool fOldBuffered = RTLogRelSetBuffering(true /*fBuffered*/);
+    LogRel(("************************* CFGM dump *************************\n"));
     cfgmR3Dump(pRoot, 0, DBGFR3InfoLogRelHlp());
-    RTLogRelSetBuffering(fOldBuffered);
     LogRel(("********************* End of CFGM dump **********************\n"));
+    RTLogRelSetBuffering(fOldBuffered);
 }
 
 
