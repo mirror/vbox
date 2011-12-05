@@ -2093,49 +2093,53 @@ NTSTATUS APIENTRY DxgkDdiCreateAllocation(
     {
         Assert(pCreateAllocation->PrivateDriverDataSize == sizeof (VBOXWDDM_RCINFO));
         Assert(pCreateAllocation->pPrivateDriverData);
-        if (pCreateAllocation->PrivateDriverDataSize >= sizeof (VBOXWDDM_RCINFO))
+        if (pCreateAllocation->PrivateDriverDataSize < sizeof (VBOXWDDM_RCINFO))
         {
-            PVBOXWDDM_RCINFO pRcInfo = (PVBOXWDDM_RCINFO)pCreateAllocation->pPrivateDriverData;
+            WARN(("invalid private data size (%d)", pCreateAllocation->PrivateDriverDataSize));
+            return STATUS_INVALID_PARAMETER;
+        }
+
+        PVBOXWDDM_RCINFO pRcInfo = (PVBOXWDDM_RCINFO)pCreateAllocation->pPrivateDriverData;
 //            Assert(pRcInfo->RcDesc.VidPnSourceId < VBoxCommonFromDeviceExt(pDevExt)->cDisplays);
-            Assert(pRcInfo->cAllocInfos == pCreateAllocation->NumAllocations);
-            pResource = (PVBOXWDDM_RESOURCE)vboxWddmMemAllocZero(RT_OFFSETOF(VBOXWDDM_RESOURCE, aAllocations[pRcInfo->cAllocInfos]));
-            Assert(pResource);
-            if (pResource)
-            {
-                pResource->cRefs = 1;
-                pResource->cAllocations = pRcInfo->cAllocInfos;
-                pResource->fFlags = pRcInfo->fFlags;
-                pResource->RcDesc = pRcInfo->RcDesc;
-            }
-            else
-                Status = STATUS_NO_MEMORY;
-        }
-        else
-            Status = STATUS_INVALID_PARAMETER;
-    }
-
-    if (Status == STATUS_SUCCESS)
-    {
-        for (UINT i = 0; i < pCreateAllocation->NumAllocations; ++i)
+        if (pRcInfo->cAllocInfos != pCreateAllocation->NumAllocations)
         {
-            Status = vboxWddmAllocationCreate(pDevExt, pResource, i, &pCreateAllocation->pAllocationInfo[i]);
-            Assert(Status == STATUS_SUCCESS);
-            if (Status != STATUS_SUCCESS)
-            {
-                LOGREL(("ERROR: vboxWddmAllocationCreate error (0x%x)", Status));
-                /* note: i-th allocation is expected to be cleared in a fail handling code above */
-                for (UINT j = 0; j < i; ++j)
-                {
-                    vboxWddmAllocationCleanup(pDevExt, (PVBOXWDDM_ALLOCATION)pCreateAllocation->pAllocationInfo[j].hAllocation);
-                    vboxWddmAllocationRelease((PVBOXWDDM_ALLOCATION)pCreateAllocation->pAllocationInfo[j].hAllocation);
-                }
-            }
+            WARN(("invalid number of allocations passed in, (%d), expected (%d)", pRcInfo->cAllocInfos, pCreateAllocation->NumAllocations));
+            return STATUS_INVALID_PARAMETER;
         }
 
-        pCreateAllocation->hResource = pResource;
-        if (pResource && Status != STATUS_SUCCESS)
-            vboxWddmResourceRelease(pResource);
+        pResource = (PVBOXWDDM_RESOURCE)vboxWddmMemAllocZero(RT_OFFSETOF(VBOXWDDM_RESOURCE, aAllocations[pRcInfo->cAllocInfos]));
+        if (!pResource)
+        {
+            WARN(("vboxWddmMemAllocZero failed for (%d) allocations", pRcInfo->cAllocInfos));
+            return STATUS_NO_MEMORY;
+        }
+
+        pResource->cRefs = 1;
+        pResource->cAllocations = pRcInfo->cAllocInfos;
+        pResource->fFlags = pRcInfo->fFlags;
+        pResource->RcDesc = pRcInfo->RcDesc;
     }
+
+
+    for (UINT i = 0; i < pCreateAllocation->NumAllocations; ++i)
+    {
+        Status = vboxWddmAllocationCreate(pDevExt, pResource, i, &pCreateAllocation->pAllocationInfo[i]);
+        if (Status != STATUS_SUCCESS)
+        {
+            WARN(("vboxWddmAllocationCreate(%d) failed, Status(0x%x)", i, Status));
+            /* note: i-th allocation is expected to be cleared in a fail handling code above */
+            for (UINT j = 0; j < i; ++j)
+            {
+                vboxWddmAllocationCleanup(pDevExt, (PVBOXWDDM_ALLOCATION)pCreateAllocation->pAllocationInfo[j].hAllocation);
+                vboxWddmAllocationRelease((PVBOXWDDM_ALLOCATION)pCreateAllocation->pAllocationInfo[j].hAllocation);
+            }
+        }
+    }
+
+    pCreateAllocation->hResource = pResource;
+    if (pResource && Status != STATUS_SUCCESS)
+        vboxWddmResourceRelease(pResource);
+
     LOGF(("LEAVE, status(0x%x), context(0x%x)", Status, hAdapter));
 
     return Status;
