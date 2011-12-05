@@ -186,7 +186,7 @@ static int VBoxDrvFreeBSDUnload(void)
     Log(("VBoxDrvFreeBSDUnload:\n"));
 
     if (g_cUsers > 0)
-        return EBUSY;
+        return VERR_RESOURCE_BUSY;
 
     /*
      * Reserve what we did in VBoxDrvFreeBSDInit.
