@@ -69,6 +69,8 @@ tstSharedFolderService_SOURCES  = \
     ../service.cpp \
     ../shflhandle.cpp \
     ../vbsf.cpp
+tstSharedFolderService_LDFLAGS.darwin = \
+	-framework Carbon
 tstSharedFolderService_LIBS     = $(LIB_RUNTIME)
 
 tstSharedFolderService-win_TEMPLATE = $(tstSharedFolderService_TEMPLATE)
@@ -77,6 +79,8 @@ tstSharedFolderService-win_DEFS     = \
     RT_OS_WINDOWS
 tstSharedFolderService-win_INCS     = $(tstSharedFolderService_INCS)
 tstSharedFolderService-win_SOURCES  = $(tstSharedFolderService_SOURCES)
+tstSharedFolderService-win_LDFLAGS.darwin = \
+    $(tstSharedFolderService_LDFLAGS.darwin)
 tstSharedFolderService-win_LIBS     = $(tstSharedFolderService_LIBS)
 
 endif # VBOX_WITH_TESTCASES
