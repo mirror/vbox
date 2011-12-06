@@ -857,12 +857,12 @@ static int vbsfOpenFile (SHFLCLIENTDATA *pClient, const char *pszPath, SHFLCREAT
     int rc = vbsfConvertFileOpenFlags(pParms->CreateFlags, pParms->Info.Attr.fMode, pParms->Handle, &fOpen);
     if (RT_SUCCESS(rc))
     {
-        handle  = vbsfAllocFileHandle();
+        handle  = vbsfAllocFileHandle(pClient);
     }
     if (SHFL_HANDLE_NIL != handle)
     {
         rc = VERR_NO_MEMORY;  /* If this fails - rewritten immediately on success. */
-        pHandle = (SHFLFILEHANDLE *)vbsfQueryHandle(handle, SHFL_HF_TYPE_FILE);
+        pHandle = vbsfQueryFileHandle(pClient, handle);
     }
     if (0 != pHandle)
     {
@@ -985,7 +985,7 @@ static int vbsfOpenFile (SHFLCLIENTDATA *pClient, const char *pszPath, SHFLCREAT
         }
         if (SHFL_HANDLE_NIL != handle)
         {
-            vbsfFreeFileHandle (handle);
+            vbsfFreeFileHandle(pClient, handle);
         }
         pParms->Handle = SHFL_HANDLE_NIL;
     }
@@ -1015,14 +1015,15 @@ static int vbsfOpenFile (SHFLCLIENTDATA *pClient, const char *pszPath, SHFLCREAT
  *
  * @note folders are created with fMode = 0777
  */
-static int vbsfOpenDir (const char *pszPath, SHFLCREATEPARMS *pParms)
+static int vbsfOpenDir(SHFLCLIENTDATA *pClient, const char *pszPath,
+                       SHFLCREATEPARMS *pParms)
 {
     LogFlow(("vbsfOpenDir: pszPath = %s, pParms = %p\n", pszPath, pParms));
     Log(("SHFL create flags %08x\n", pParms->CreateFlags));
 
     int rc = VERR_NO_MEMORY;
-    SHFLHANDLE      handle = vbsfAllocDirHandle();
-    SHFLFILEHANDLE *pHandle = (SHFLFILEHANDLE *)vbsfQueryHandle(handle, SHFL_HF_TYPE_DIR);
+    SHFLHANDLE      handle = vbsfAllocDirHandle(pClient);
+    SHFLFILEHANDLE *pHandle = vbsfQueryDirHandle(pClient, handle);
     if (0 != pHandle)
     {
         rc = VINF_SUCCESS;
@@ -1100,7 +1101,7 @@ static int vbsfOpenDir (const char *pszPath, SHFLCREATEPARMS *pParms)
         }
         if (SHFL_HANDLE_NIL != handle)
         {
-            vbsfFreeFileHandle (handle);
+            vbsfFreeFileHandle(pClient, handle);
         }
         pParms->Handle = SHFL_HANDLE_NIL;
     }
@@ -1324,7 +1325,7 @@ int vbsfCreate (SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLSTRING *pPath, uint3
             {
                 if (BIT_FLAG(pParms->CreateFlags, SHFL_CF_DIRECTORY))
                 {
-                    rc = vbsfOpenDir (pszFullPath, pParms);
+                    rc = vbsfOpenDir(pClient, pszFullPath, pParms);
                 }
                 else
                 {
@@ -1363,28 +1364,25 @@ int vbsfClose (SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLHANDLE Handle)
     LogFlow(("vbsfClose: pClient = %p, Handle = %RX64\n",
              pClient, Handle));
 
-    SHFLFILEHANDLE *pHandle = (SHFLFILEHANDLE *)vbsfQueryHandle(Handle, SHFL_HF_TYPE_DIR|SHFL_HF_TYPE_FILE);
-    //Assert(pHandle);
-    if (!pHandle)
-        return VERR_INVALID_HANDLE;
+    uint32_t type = vbsfQueryHandleType(pClient, Handle);
+    Assert((type & ~(SHFL_HF_TYPE_DIR | SHFL_HF_TYPE_FILE)) == 0);
 
-    switch (ShflHandleType (&pHandle->Header))
+    switch (type & (SHFL_HF_TYPE_DIR | SHFL_HF_TYPE_FILE))
     {
         case SHFL_HF_TYPE_DIR:
         {
-            rc = vbsfCloseDir (pHandle);
+            rc = vbsfCloseDir(vbsfQueryDirHandle(pClient, Handle));
             break;
         }
         case SHFL_HF_TYPE_FILE:
         {
-            rc = vbsfCloseFile (pHandle);
+            rc = vbsfCloseFile(vbsfQueryFileHandle(pClient, Handle));
             break;
         }
         default:
-            AssertFailed();
-            break;
+            return VERR_INVALID_HANDLE;
     }
-    vbsfFreeFileHandle(Handle);
+    vbsfFreeFileHandle(pClient, Handle);
 
     Log(("vbsfClose: rc = %Rrc\n", rc));
 
@@ -1405,7 +1403,7 @@ void testRead(RTTEST hTest)
 #endif
 int vbsfRead  (SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLHANDLE Handle, uint64_t offset, uint32_t *pcbBuffer, uint8_t *pBuffer)
 {
-    SHFLFILEHANDLE *pHandle = (SHFLFILEHANDLE *)vbsfQueryHandle(Handle, SHFL_HF_TYPE_FILE);
+    SHFLFILEHANDLE *pHandle = vbsfQueryFileHandle(pClient, Handle);
     size_t count = 0;
     int rc;
 
@@ -1448,7 +1446,7 @@ void testWrite(RTTEST hTest)
 #endif
 int vbsfWrite (SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLHANDLE Handle, uint64_t offset, uint32_t *pcbBuffer, uint8_t *pBuffer)
 {
-    SHFLFILEHANDLE *pHandle = (SHFLFILEHANDLE *)vbsfQueryHandle(Handle, SHFL_HF_TYPE_FILE);
+    SHFLFILEHANDLE *pHandle = vbsfQueryFileHandle(pClient, Handle);
     size_t count = 0;
     int rc;
 
@@ -1498,7 +1496,7 @@ void testFlush(RTTEST hTest)
 #endif
 int vbsfFlush(SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLHANDLE Handle)
 {
-    SHFLFILEHANDLE *pHandle = (SHFLFILEHANDLE *)vbsfQueryHandle(Handle, SHFL_HF_TYPE_FILE);
+    SHFLFILEHANDLE *pHandle = vbsfQueryFileHandle(pClient, Handle);
     int rc = VINF_SUCCESS;
 
     if (pHandle == 0)
@@ -1528,7 +1526,7 @@ void testDirList(RTTEST hTest)
 int vbsfDirList(SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLHANDLE Handle, SHFLSTRING *pPath, uint32_t flags,
                 uint32_t *pcbBuffer, uint8_t *pBuffer, uint32_t *pIndex, uint32_t *pcFiles)
 {
-    SHFLFILEHANDLE *pHandle = (SHFLFILEHANDLE *)vbsfQueryHandle(Handle, SHFL_HF_TYPE_DIR);
+    SHFLFILEHANDLE *pHandle = vbsfQueryDirHandle(pClient, Handle);
     PRTDIRENTRYEX  pDirEntry = 0, pDirEntryOrg;
     uint32_t       cbDirEntry, cbBufferOrg;
     int            rc = VINF_SUCCESS;
@@ -1771,13 +1769,16 @@ int vbsfReadLink(SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLSTRING *pPath, uint
 
 int vbsfQueryFileInfo(SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLHANDLE Handle, uint32_t flags, uint32_t *pcbBuffer, uint8_t *pBuffer)
 {
-    SHFLFILEHANDLE *pHandle = (SHFLFILEHANDLE *)vbsfQueryHandle(Handle, SHFL_HF_TYPE_DIR|SHFL_HF_TYPE_FILE);
+    uint32_t type = vbsfQueryHandleType(pClient, Handle);
     int            rc = VINF_SUCCESS;
     SHFLFSOBJINFO   *pObjInfo = (SHFLFSOBJINFO *)pBuffer;
     RTFSOBJINFO    fileinfo;
 
 
-    if (pHandle == 0 || pcbBuffer == 0 || pObjInfo == 0 || *pcbBuffer < sizeof(SHFLFSOBJINFO))
+    if (   !(type == SHFL_HF_TYPE_DIR || type == SHFL_HF_TYPE_FILE)
+        || pcbBuffer == 0
+        || pObjInfo == 0
+        || *pcbBuffer < sizeof(SHFLFSOBJINFO))
     {
         AssertFailed();
         return VERR_INVALID_PARAMETER;
@@ -1788,12 +1789,14 @@ int vbsfQueryFileInfo(SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLHANDLE Handle,
 
     *pcbBuffer  = 0;
 
-    if (pHandle->Header.u32Flags & SHFL_HF_TYPE_DIR)
+    if (type == SHFL_HF_TYPE_DIR)
     {
+        SHFLFILEHANDLE *pHandle = vbsfQueryDirHandle(pClient, Handle);
         rc = RTDirQueryInfo(pHandle->dir.Handle, &fileinfo, RTFSOBJATTRADD_NOTHING);
     }
     else
     {
+        SHFLFILEHANDLE *pHandle = vbsfQueryFileHandle(pClient, Handle);
         rc = RTFileQueryInfo(pHandle->file.Handle, &fileinfo, RTFSOBJATTRADD_NOTHING);
 #ifdef RT_OS_WINDOWS
         if (RT_SUCCESS(rc) && RTFS_IS_FILE(pObjInfo->Attr.fMode))
@@ -1813,11 +1816,14 @@ int vbsfQueryFileInfo(SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLHANDLE Handle,
 
 static int vbsfSetFileInfo(SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLHANDLE Handle, uint32_t flags, uint32_t *pcbBuffer, uint8_t *pBuffer)
 {
-    SHFLFILEHANDLE *pHandle = (SHFLFILEHANDLE *)vbsfQueryHandle(Handle, SHFL_HF_TYPE_DIR|SHFL_HF_TYPE_FILE);
+    uint32_t type = vbsfQueryHandleType(pClient, Handle);
     int             rc = VINF_SUCCESS;
     SHFLFSOBJINFO  *pSFDEntry;
 
-    if (pHandle == 0 || pcbBuffer == 0 || pBuffer == 0 || *pcbBuffer < sizeof(SHFLFSOBJINFO))
+    if (   !(type == SHFL_HF_TYPE_DIR || type == SHFL_HF_TYPE_FILE)
+        || pcbBuffer == 0
+        || pBuffer == 0
+        || *pcbBuffer < sizeof(SHFLFSOBJINFO))
     {
         AssertFailed();
         return VERR_INVALID_PARAMETER;
@@ -1829,8 +1835,9 @@ static int vbsfSetFileInfo(SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLHANDLE Ha
     Assert(flags == (SHFL_INFO_SET | SHFL_INFO_FILE));
 
     /* Change only the time values that are not zero */
-    if (pHandle->Header.u32Flags & SHFL_HF_TYPE_DIR)
+    if (type == SHFL_HF_TYPE_DIR)
     {
+        SHFLFILEHANDLE *pHandle = vbsfQueryDirHandle(pClient, Handle);
         rc = RTDirSetTimes(pHandle->dir.Handle,
                             (RTTimeSpecGetNano(&pSFDEntry->AccessTime)) ?       &pSFDEntry->AccessTime : NULL,
                             (RTTimeSpecGetNano(&pSFDEntry->ModificationTime)) ? &pSFDEntry->ModificationTime: NULL,
@@ -1840,6 +1847,7 @@ static int vbsfSetFileInfo(SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLHANDLE Ha
     }
     else
     {
+        SHFLFILEHANDLE *pHandle = vbsfQueryFileHandle(pClient, Handle);
         rc = RTFileSetTimes(pHandle->file.Handle,
                             (RTTimeSpecGetNano(&pSFDEntry->AccessTime)) ?       &pSFDEntry->AccessTime : NULL,
                             (RTTimeSpecGetNano(&pSFDEntry->ModificationTime)) ? &pSFDEntry->ModificationTime: NULL,
@@ -1858,8 +1866,9 @@ static int vbsfSetFileInfo(SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLHANDLE Ha
         rc = VINF_SUCCESS;
     }
 
-    if (pHandle->Header.u32Flags & SHFL_HF_TYPE_FILE)
+    if (type == SHFL_HF_TYPE_FILE)
     {
+        SHFLFILEHANDLE *pHandle = vbsfQueryFileHandle(pClient, Handle);
         /* Change file attributes if necessary */
         if (pSFDEntry->Attr.fMode)
         {
@@ -1902,7 +1911,7 @@ static int vbsfSetFileInfo(SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLHANDLE Ha
 
 static int vbsfSetEndOfFile(SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLHANDLE Handle, uint32_t flags, uint32_t *pcbBuffer, uint8_t *pBuffer)
 {
-    SHFLFILEHANDLE *pHandle = (SHFLFILEHANDLE *)vbsfQueryHandle(Handle, SHFL_HF_TYPE_FILE);
+    SHFLFILEHANDLE *pHandle = vbsfQueryFileHandle(pClient, Handle);
     int             rc = VINF_SUCCESS;
     SHFLFSOBJINFO  *pSFDEntry;
 
@@ -2032,9 +2041,10 @@ void testFSInfo(RTTEST hTest)
 #endif
 int vbsfSetFSInfo(SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLHANDLE Handle, uint32_t flags, uint32_t *pcbBuffer, uint8_t *pBuffer)
 {
-    SHFLFILEHANDLE *pHandle = (SHFLFILEHANDLE *)vbsfQueryHandle(Handle, SHFL_HF_TYPE_DIR|SHFL_HF_TYPE_FILE|SHFL_HF_TYPE_VOLUME);
+    uint32_t type =   vbsfQueryHandleType(pClient, Handle)
+                    & (SHFL_HF_TYPE_DIR|SHFL_HF_TYPE_FILE|SHFL_HF_TYPE_VOLUME);
 
-    if (pHandle == 0 || pcbBuffer == 0 || pBuffer == 0)
+    if (type == 0 || pcbBuffer == 0 || pBuffer == 0)
     {
         AssertFailed();
         return VERR_INVALID_PARAMETER;
@@ -2072,7 +2082,7 @@ void testLock(RTTEST hTest)
 #endif
 int vbsfLock(SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLHANDLE Handle, uint64_t offset, uint64_t length, uint32_t flags)
 {
-    SHFLFILEHANDLE *pHandle = (SHFLFILEHANDLE *)vbsfQueryHandle(Handle, SHFL_HF_TYPE_FILE);
+    SHFLFILEHANDLE *pHandle = vbsfQueryFileHandle(pClient, Handle);
     uint32_t        fRTLock = 0;
     int             rc;
 
@@ -2126,7 +2136,7 @@ int vbsfLock(SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLHANDLE Handle, uint64_t
 
 int vbsfUnlock(SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLHANDLE Handle, uint64_t offset, uint64_t length, uint32_t flags)
 {
-    SHFLFILEHANDLE *pHandle = (SHFLFILEHANDLE *)vbsfQueryHandle(Handle, SHFL_HF_TYPE_FILE);
+    SHFLFILEHANDLE *pHandle = vbsfQueryFileHandle(pClient, Handle);
     int             rc;
 
     Assert((flags & SHFL_LOCK_MODE_MASK) == SHFL_LOCK_CANCEL);
@@ -2328,9 +2338,8 @@ int vbsfDisconnect(SHFLCLIENTDATA *pClient)
 {
     for (int i=0;i<SHFLHANDLE_MAX;i++)
     {
-        SHFLFILEHANDLE *pHandle = (SHFLFILEHANDLE *)vbsfQueryHandle(i, SHFL_HF_TYPE_MASK);
-
-        if (pHandle)
+        SHFLHANDLE Handle = (SHFLHANDLE)i;
+        if (vbsfQueryHandleType(pClient, Handle))
         {
             Log(("Open handle %08x\n", i));
             vbsfClose(pClient, SHFL_HANDLE_ROOT /* incorrect, but it's not important */, (SHFLHANDLE)i);
