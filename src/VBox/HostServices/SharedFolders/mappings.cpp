@@ -15,7 +15,6 @@
  */
 
 #ifdef UNITTEST
-# include "teststubs.h"
 # include "testcase/tstSharedFolderService.h"
 #endif
 
@@ -23,6 +22,10 @@
 #include <iprt/alloc.h>
 #include <iprt/assert.h>
 #include <iprt/string.h>
+
+#ifdef UNITTEST
+# include "teststubs.h"
+#endif
 
 /* Shared folders order in the saved state and in the FolderMapping can differ.
  * So a translation array of root handle is needed.

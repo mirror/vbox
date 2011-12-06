@@ -26,7 +26,6 @@
 *   Header Files                                                              *
 ******************************************************************************/
 
-#include "teststubs.h"
 #include "tstSharedFolderService.h"
 #include "vbsf.h"
 
@@ -38,6 +37,7 @@
 #include <iprt/stream.h>
 #include <iprt/test.h>
 
+#include "teststubs.h"
 
 /******************************************************************************
 *   Global Variables                                                          *
@@ -114,7 +114,7 @@ do { \
 
 static PRTDIR testRTDirClosepDir;
 
-RTDECL(int) testRTDirClose(PRTDIR pDir)
+extern int testRTDirClose(PRTDIR pDir)
 {
  /* RTPrintf("%s: pDir=%p\n", __func__, pDir); */
     testRTDirClosepDir = pDir;
@@ -124,7 +124,7 @@ RTDECL(int) testRTDirClose(PRTDIR pDir)
 static char testRTDirCreatePath[256];
 static RTFMODE testRTDirCreateMode;
 
-RTDECL(int) testRTDirCreate(const char *pszPath, RTFMODE fMode)
+extern int testRTDirCreate(const char *pszPath, RTFMODE fMode)
 {
  /* RTPrintf("%s: pszPath=%s, fMode=0x%llx\n", __func__, pszPath,
              LLUIFY(fMode)); */
@@ -135,7 +135,7 @@ RTDECL(int) testRTDirCreate(const char *pszPath, RTFMODE fMode)
 static char testRTDirOpenName[256];
 static PRTDIR testRTDirOpenpDir;
 
-RTDECL(int) testRTDirOpen(PRTDIR *ppDir, const char *pszPath)
+extern int testRTDirOpen(PRTDIR *ppDir, const char *pszPath)
 {
  /* RTPrintf("%s: pszPath=%s\n", __func__, pszPath); */
     ARRAY_FROM_PATH(testRTDirOpenName, pszPath);
@@ -147,7 +147,7 @@ RTDECL(int) testRTDirOpen(PRTDIR *ppDir, const char *pszPath)
 static PRTDIR testRTDirQueryInfoDir;
 static RTTIMESPEC testRTDirQueryInfoATime;
 
-RTDECL(int) testRTDirQueryInfo(PRTDIR pDir, PRTFSOBJINFO pObjInfo,
+extern int testRTDirQueryInfo(PRTDIR pDir, PRTFSOBJINFO pObjInfo,
                                RTFSOBJATTRADD enmAdditionalAttribs)
 {
  /* RTPrintf("%s: pDir=%p, enmAdditionalAttribs=0x%llx\n", __func__, pDir,
@@ -159,11 +159,11 @@ RTDECL(int) testRTDirQueryInfo(PRTDIR pDir, PRTFSOBJINFO pObjInfo,
     return VINF_SUCCESS;
 }
 
-RTDECL(int) testRTDirRemove(const char *pszPath) { RTPrintf("%s\n", __func__); return 0; }
+extern int testRTDirRemove(const char *pszPath) { RTPrintf("%s\n", __func__); return 0; }
 
 static PRTDIR testRTDirReadExDir;
 
-RTDECL(int) testRTDirReadEx(PRTDIR pDir, PRTDIRENTRYEX pDirEntry,
+extern int testRTDirReadEx(PRTDIR pDir, PRTDIRENTRYEX pDirEntry,
                             size_t *pcbDirEntry,
                             RTFSOBJATTRADD enmAdditionalAttribs,
                             uint32_t fFlags)
@@ -198,18 +198,18 @@ RTR3DECL(int) testRTDirSetTimes(PRTDIR pDir, PCRTTIMESPEC pAccessTime,
 
 static RTFILE testRTFileCloseFile;
 
-RTDECL(int)  testRTFileClose(RTFILE File)
+extern int  testRTFileClose(RTFILE File)
 {
  /* RTPrintf("%s: File=%p\n", __func__, File); */
     testRTFileCloseFile = File;
     return 0;
 }
 
-RTDECL(int)  testRTFileDelete(const char *pszFilename) { RTPrintf("%s\n", __func__); return 0; }
+extern int  testRTFileDelete(const char *pszFilename) { RTPrintf("%s\n", __func__); return 0; }
 
 static RTFILE testRTFileFlushFile;
 
-RTDECL(int)  testRTFileFlush(RTFILE File)
+extern int  testRTFileFlush(RTFILE File)
 {
  /* RTPrintf("%s: File=%p\n", __func__, File); */
     testRTFileFlushFile = File;
@@ -221,7 +221,7 @@ static unsigned testRTFileLockfLock;
 static int64_t testRTFileLockOffset;
 static uint64_t testRTFileLockSize;
 
-RTDECL(int)  testRTFileLock(RTFILE hFile, unsigned fLock, int64_t offLock,
+extern int  testRTFileLock(RTFILE hFile, unsigned fLock, int64_t offLock,
                             uint64_t cbLock)
 {
  /* RTPrintf("%s: hFile=%p, fLock=%u, offLock=%lli, cbLock=%llu\n", __func__,
@@ -237,7 +237,7 @@ static char testRTFileOpenName[256];
 static uint64_t testRTFileOpenFlags;
 static RTFILE testRTFileOpenpFile;
 
-RTDECL(int)  testRTFileOpen(PRTFILE pFile, const char *pszFilename,
+extern int  testRTFileOpen(PRTFILE pFile, const char *pszFilename,
                             uint64_t fOpen)
 {
  /* RTPrintf("%s, pszFilename=%s, fOpen=0x%llx\n", __func__, pszFilename,
@@ -253,7 +253,7 @@ static RTFILE testRTFileQueryInfoFile;
 static RTTIMESPEC testRTFileQueryInfoATime;
 static uint32_t testRTFileQueryInfoFMode;
 
-RTDECL(int)  testRTFileQueryInfo(RTFILE hFile, PRTFSOBJINFO pObjInfo, RTFSOBJATTRADD enmAdditionalAttribs)
+extern int  testRTFileQueryInfo(RTFILE hFile, PRTFSOBJINFO pObjInfo, RTFSOBJATTRADD enmAdditionalAttribs)
 {
  /* RTPrintf("%s, hFile=%p, enmAdditionalAttribs=0x%llx\n", __func__,
              hFile, LLUIFY(enmAdditionalAttribs)); */
@@ -268,7 +268,7 @@ RTDECL(int)  testRTFileQueryInfo(RTFILE hFile, PRTFSOBJINFO pObjInfo, RTFSOBJATT
 
 static const char *testRTFileReadData;
 
-RTDECL(int)  testRTFileRead(RTFILE File, void *pvBuf, size_t cbToRead,
+extern int  testRTFileRead(RTFILE File, void *pvBuf, size_t cbToRead,
                             size_t *pcbRead)
 {
  /* RTPrintf("%s : File=%p, cbToRead=%llu\n", __func__, File,
@@ -280,7 +280,7 @@ RTDECL(int)  testRTFileRead(RTFILE File, void *pvBuf, size_t cbToRead,
     return VINF_SUCCESS;
 }
 
-RTDECL(int) testRTFileSeek(RTFILE hFile, int64_t offSeek, unsigned uMethod,
+extern int testRTFileSeek(RTFILE hFile, int64_t offSeek, unsigned uMethod,
                            uint64_t *poffActual)
 {
  /* RTPrintf("%s : hFile=%p, offSeek=%llu, uMethod=%u\n", __func__, hFile,
@@ -292,7 +292,7 @@ RTDECL(int) testRTFileSeek(RTFILE hFile, int64_t offSeek, unsigned uMethod,
 
 static uint64_t testRTFileSetFMode;
 
-RTDECL(int) testRTFileSetMode(RTFILE File, RTFMODE fMode)
+extern int testRTFileSetMode(RTFILE File, RTFMODE fMode)
 {
  /* RTPrintf("%s: fMode=%llu\n", __func__, LLUIFY(fMode)); */
     testRTFileSetFMode = fMode; 
@@ -302,7 +302,7 @@ RTDECL(int) testRTFileSetMode(RTFILE File, RTFMODE fMode)
 static RTFILE testRTFileSetSizeFile;
 static RTFOFF testRTFileSetSizeSize;
 
-RTDECL(int)  testRTFileSetSize(RTFILE File, uint64_t cbSize)
+extern int  testRTFileSetSize(RTFILE File, uint64_t cbSize)
 {
  /* RTPrintf("%s: File=%llu, cbSize=%llu\n", __func__, LLUIFY(File),
              LLUIFY(cbSize)); */
@@ -313,7 +313,7 @@ RTDECL(int)  testRTFileSetSize(RTFILE File, uint64_t cbSize)
 
 static RTTIMESPEC testRTFileSetTimesATime;
 
-RTDECL(int) testRTFileSetTimes(RTFILE File, PCRTTIMESPEC pAccessTime,
+extern int testRTFileSetTimes(RTFILE File, PCRTTIMESPEC pAccessTime,
                                PCRTTIMESPEC pModificationTime,
                                PCRTTIMESPEC pChangeTime,
                                PCRTTIMESPEC pBirthTime)
@@ -336,7 +336,7 @@ static RTFILE testRTFileUnlockFile;
 static int64_t testRTFileUnlockOffset;
 static uint64_t testRTFileUnlockSize;
 
-RTDECL(int)  testRTFileUnlock(RTFILE File, int64_t offLock, uint64_t cbLock)
+extern int  testRTFileUnlock(RTFILE File, int64_t offLock, uint64_t cbLock)
 {
  /* RTPrintf("%s: hFile=%p, ofLock=%lli, cbLock=%llu\n", __func__,
              File, (long long) offLock, LLUIFY(cbLock)); */
@@ -348,7 +348,7 @@ RTDECL(int)  testRTFileUnlock(RTFILE File, int64_t offLock, uint64_t cbLock)
 
 static char testRTFileWriteData[256];
 
-RTDECL(int)  testRTFileWrite(RTFILE File, const void *pvBuf, size_t cbToWrite,
+extern int  testRTFileWrite(RTFILE File, const void *pvBuf, size_t cbToWrite,
                              size_t *pcbWritten)
 {
  /* RTPrintf("%s: File=%p, pvBuf=%.*s, cbToWrite=%llu\n", __func__, File,
@@ -387,8 +387,8 @@ RTR3DECL(int) testRTPathQueryInfoEx(const char *pszPath,
     return VINF_SUCCESS;
 }
 
-RTDECL(int) testRTSymlinkDelete(const char *pszSymlink) { RTPrintf("%s\n", __func__); return 0; }
-RTDECL(int) testRTSymlinkRead(const char *pszSymlink, char *pszTarget,
+extern int testRTSymlinkDelete(const char *pszSymlink) { RTPrintf("%s\n", __func__); return 0; }
+extern int testRTSymlinkRead(const char *pszSymlink, char *pszTarget,
                               size_t cbTarget) { RTPrintf("%s\n", __func__); return 0; }
 
 /******************************************************************************
@@ -475,8 +475,8 @@ static void fillTestShflString(struct TESTSHFLSTRING *pDest,
     
     AssertRelease(  strlen(pcszSource) * 2 + 2 < sizeof(*pDest)
                   - RT_UOFFSETOF(SHFLSTRING, String));
-    pDest->string.u16Size = strlen(pcszSource) * 2 + 2;
-    pDest->string.u16Length = strlen(pcszSource);
+    pDest->string.u16Size = (uint16_t)strlen(pcszSource) * 2 + 2;
+    pDest->string.u16Length = (uint16_t)strlen(pcszSource);
     for (i = 0; i < strlen(pcszSource) + 1; ++i)
         pDest->string.String.ucs2[i] = (uint16_t)pcszSource[i];
 }
@@ -777,7 +777,7 @@ void testReadFileSimple(RTTEST hTest)
     RTTEST_CHECK_RC_OK(hTest, rc);
     testRTFileReadData = pcszReadData;
     rc = readFile(&svcTable, Root, Handle, 0, strlen(pcszReadData) + 1,
-                  &cbRead, acBuf, sizeof(acBuf));
+                  &cbRead, acBuf, (uint32_t)sizeof(acBuf));
     RTTEST_CHECK_RC_OK(hTest, rc);
     RTTEST_CHECK_MSG(hTest,
                      !strncmp(acBuf, pcszReadData, sizeof(acBuf)),
@@ -799,7 +799,7 @@ void testWriteFileSimple(RTTEST hTest)
     const RTFILE hcFile = (RTFILE) 0x10000;
     SHFLHANDLE Handle;
     const char *pcszWrittenData = "Data to write";
-    uint32_t cbToWrite = strlen(pcszWrittenData) + 1;
+    uint32_t cbToWrite = (uint32_t)strlen(pcszWrittenData) + 1;
     uint32_t cbWritten;
     int rc;
 
