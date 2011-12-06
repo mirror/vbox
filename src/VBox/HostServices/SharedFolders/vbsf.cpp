@@ -15,6 +15,11 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+#ifdef UNITTEST
+# include "teststubs.h"
+# include "testcase/tstSharedFolderService.h"
+#endif
+
 #include "mappings.h"
 #include "vbsf.h"
 #include "shflhandle.h"
@@ -1188,6 +1193,20 @@ static int vbsfLookupFile(SHFLCLIENTDATA *pClient, char *pszPath, SHFLCREATEPARM
     return rc;
 }
 
+#ifdef UNITTEST
+/** Unit test the SHFL_FN_CREATE API.  Located here as a form of API
+ * documentation. */
+void testCreate(RTTEST hTest)
+{
+    /* Simple opening of an existing file. */
+    testCreateFileSimple(hTest);
+    /* Simple opening of an existing directory. */
+    testCreateDirSimple(hTest);
+    /* If the number or types of parameters are wrong the API should fail. */
+    testCreateBadParameters(hTest);
+    /* Add tests as required... */
+}
+#endif
 /**
  * Create or open a file or folder.  Perform character set and case
  * conversion on the file name if necessary.
@@ -1324,6 +1343,16 @@ int vbsfCreate (SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLSTRING *pPath, uint3
     return rc;
 }
 
+#ifdef UNITTEST
+/** Unit test the SHFL_FN_CLOSE API.  Located here as a form of API
+ * documentation. */
+void testClose(RTTEST hTest)
+{
+    /* If the API parameters are invalid the API should fail. */
+    testCloseBadParameters(hTest);
+    /* Add tests as required... */
+}
+#endif
 int vbsfClose (SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLHANDLE Handle)
 {
     int rc = VINF_SUCCESS;
@@ -1359,6 +1388,18 @@ int vbsfClose (SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLHANDLE Handle)
     return rc;
 }
 
+#ifdef UNITTEST
+/** Unit test the SHFL_FN_READ API.  Located here as a form of API
+ * documentation. */
+void testRead(RTTEST hTest)
+{
+    /* If the number or types of parameters are wrong the API should fail. */
+    testReadBadParameters(hTest);
+    /* Basic reading from a file. */
+    testReadFileSimple(hTest);
+    /* Add tests as required... */
+}
+#endif
 int vbsfRead  (SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLHANDLE Handle, uint64_t offset, uint32_t *pcbBuffer, uint8_t *pBuffer)
 {
     SHFLFILEHANDLE *pHandle = (SHFLFILEHANDLE *)vbsfQueryHandle(Handle, SHFL_HF_TYPE_FILE);
@@ -1390,6 +1431,18 @@ int vbsfRead  (SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLHANDLE Handle, uint64
     return rc;
 }
 
+#ifdef UNITTEST
+/** Unit test the SHFL_FN_WRITE API.  Located here as a form of API
+ * documentation. */
+void testWrite(RTTEST hTest)
+{
+    /* If the number or types of parameters are wrong the API should fail. */
+    testWriteBadParameters(hTest);
+    /* Simple test of writing to a file. */
+    testWriteFileSimple(hTest);
+    /* Add tests as required... */
+}
+#endif
 int vbsfWrite (SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLHANDLE Handle, uint64_t offset, uint32_t *pcbBuffer, uint8_t *pBuffer)
 {
     SHFLFILEHANDLE *pHandle = (SHFLFILEHANDLE *)vbsfQueryHandle(Handle, SHFL_HF_TYPE_FILE);
@@ -1428,6 +1481,18 @@ int vbsfWrite (SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLHANDLE Handle, uint64
 }
 
 
+#ifdef UNITTEST
+/** Unit test the SHFL_FN_FLUSH API.  Located here as a form of API
+ * documentation. */
+void testFlush(RTTEST hTest)
+{
+    /* If the number or types of parameters are wrong the API should fail. */
+    testFlushBadParameters(hTest);
+    /* Simple opening and flushing of a file. */
+    testFlushFileSimple(hTest);
+    /* Add tests as required... */
+}
+#endif
 int vbsfFlush(SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLHANDLE Handle)
 {
     SHFLFILEHANDLE *pHandle = (SHFLFILEHANDLE *)vbsfQueryHandle(Handle, SHFL_HF_TYPE_FILE);
@@ -1445,6 +1510,18 @@ int vbsfFlush(SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLHANDLE Handle)
     return rc;
 }
 
+#ifdef UNITTEST
+/** Unit test the SHFL_FN_LIST API.  Located here as a form of API
+ * documentation. */
+void testDirList(RTTEST hTest)
+{
+    /* If the number or types of parameters are wrong the API should fail. */
+    testDirListBadParameters(hTest);
+    /* Test listing an empty directory (simple edge case). */
+    testDirListEmpty(hTest);
+    /* Add tests as required... */
+}
+#endif
 int vbsfDirList(SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLHANDLE Handle, SHFLSTRING *pPath, uint32_t flags,
                 uint32_t *pcbBuffer, uint8_t *pBuffer, uint32_t *pIndex, uint32_t *pcFiles)
 {
@@ -1649,6 +1726,16 @@ end:
     return rc;
 }
 
+#ifdef UNITTEST
+/** Unit test the SHFL_FN_READLINK API.  Located here as a form of API
+ * documentation. */
+void testReadLink(RTTEST hTest)
+{
+    /* If the number or types of parameters are wrong the API should fail. */
+    testReadLinkBadParameters(hTest);
+    /* Add tests as required... */
+}
+#endif
 int vbsfReadLink(SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLSTRING *pPath, uint32_t cbPath, uint8_t *pBuffer, uint32_t cbBuffer)
 {
     int rc = VINF_SUCCESS;
@@ -1922,6 +2009,24 @@ int vbsfQueryFSInfo(SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLHANDLE Handle, u
     return VERR_INVALID_PARAMETER;
 }
 
+#ifdef UNITTEST
+/** Unit test the SHFL_FN_INFORMATION API.  Located here as a form of API
+ * documentation. */
+void testFSInfo(RTTEST hTest)
+{
+    /* If the number or types of parameters are wrong the API should fail. */
+    testFSInfoBadParameters(hTest);
+    /* Basic get and set file size test. */
+    testFSInfoQuerySetFMode(hTest);
+    /* Basic get and set dir atime test. */
+    testFSInfoQuerySetDirATime(hTest);
+    /* Basic get and set file atime test. */
+    testFSInfoQuerySetFileATime(hTest);
+    /* Basic set end of file. */
+    testFSInfoQuerySetEndOfFile(hTest);
+    /* Add tests as required... */
+}
+#endif
 int vbsfSetFSInfo(SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLHANDLE Handle, uint32_t flags, uint32_t *pcbBuffer, uint8_t *pBuffer)
 {
     SHFLFILEHANDLE *pHandle = (SHFLFILEHANDLE *)vbsfQueryHandle(Handle, SHFL_HF_TYPE_DIR|SHFL_HF_TYPE_FILE|SHFL_HF_TYPE_VOLUME);
@@ -1950,6 +2055,18 @@ int vbsfSetFSInfo(SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLHANDLE Handle, uin
     return VERR_INVALID_PARAMETER;
 }
 
+#ifdef UNITTEST
+/** Unit test the SHFL_FN_LOCK API.  Located here as a form of API
+ * documentation. */
+void testLock(RTTEST hTest)
+{
+    /* If the number or types of parameters are wrong the API should fail. */
+    testLockBadParameters(hTest);
+    /* Simple file locking and unlocking test. */
+    testLockFileSimple(hTest);
+    /* Add tests as required... */
+}
+#endif
 int vbsfLock(SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLHANDLE Handle, uint64_t offset, uint64_t length, uint32_t flags)
 {
     SHFLFILEHANDLE *pHandle = (SHFLFILEHANDLE *)vbsfQueryHandle(Handle, SHFL_HF_TYPE_FILE);
@@ -2035,6 +2152,16 @@ int vbsfUnlock(SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLHANDLE Handle, uint64
 }
 
 
+#ifdef UNITTEST
+/** Unit test the SHFL_FN_REMOVE API.  Located here as a form of API
+ * documentation. */
+void testRemove(RTTEST hTest)
+{
+    /* If the number or types of parameters are wrong the API should fail. */
+    testRemoveBadParameters(hTest);
+    /* Add tests as required... */
+}
+#endif
 int vbsfRemove(SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLSTRING *pPath, uint32_t cbPath, uint32_t flags)
 {
     int rc = VINF_SUCCESS;
@@ -2083,6 +2210,16 @@ int vbsfRemove(SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLSTRING *pPath, uint32
 }
 
 
+#ifdef UNITTEST
+/** Unit test the SHFL_FN_RENAME API.  Located here as a form of API
+ * documentation. */
+void testRename(RTTEST hTest)
+{
+    /* If the number or types of parameters are wrong the API should fail. */
+    testRenameBadParameters(hTest);
+    /* Add tests as required... */
+}
+#endif
 int vbsfRename(SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLSTRING *pSrc, SHFLSTRING *pDest, uint32_t flags)
 {
     int rc = VINF_SUCCESS;
@@ -2141,6 +2278,16 @@ int vbsfRename(SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLSTRING *pSrc, SHFLSTR
     return rc;
 }
 
+#ifdef UNITTEST
+/** Unit test the SHFL_FN_SYMLINK API.  Located here as a form of API
+ * documentation. */
+void testSymlink(RTTEST hTest)
+{
+    /* If the number or types of parameters are wrong the API should fail. */
+    testSymlinkBadParameters(hTest);
+    /* Add tests as required... */
+}
+#endif
 int vbsfSymlink(SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLSTRING *pNewPath, SHFLSTRING *pOldPath, SHFLFSOBJINFO *pInfo)
 {
     int rc = VINF_SUCCESS;
