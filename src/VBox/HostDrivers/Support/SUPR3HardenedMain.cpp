@@ -57,6 +57,7 @@
                          libcap1 or libcap2 */
 
 #  undef _POSIX_SOURCE
+#  include <linux/types.h> /* sys/capabilities from uek-headers require this */
 #  include <sys/capability.h>
 #  include <sys/prctl.h>
 #  ifndef CAP_TO_MASK
