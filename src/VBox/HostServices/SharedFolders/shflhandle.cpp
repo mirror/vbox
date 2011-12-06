@@ -29,8 +29,9 @@
  */
 typedef struct
 {
-    uint32_t    uFlags;
-    uintptr_t   pvUserData;
+    uint32_t         uFlags;
+    uintptr_t        pvUserData;
+    PSHFLCLIENTDATA  pClient;
 } SHFLINTHANDLE, *PSHFLINTHANDLE;
 
 static SHFLINTHANDLE *pHandles = NULL;
@@ -66,7 +67,8 @@ int vbsfFreeHandleTable()
     return VINF_SUCCESS;
 }
 
-SHFLHANDLE  vbsfAllocHandle(uint32_t uType, uintptr_t pvUserData)
+SHFLHANDLE  vbsfAllocHandle(PSHFLCLIENTDATA pClient, uint32_t uType,
+                            uintptr_t pvUserData)
 {
     SHFLHANDLE handle;
 
@@ -110,6 +112,7 @@ SHFLHANDLE  vbsfAllocHandle(uint32_t uType, uintptr_t pvUserData)
     }
     pHandles[handle].uFlags     = (uType & SHFL_HF_TYPE_MASK) | SHFL_HF_VALID;
     pHandles[handle].pvUserData = pvUserData;
+    pHandles[handle].pClient    = pClient;
 
     lastHandleIndex++;
 
@@ -118,20 +121,26 @@ SHFLHANDLE  vbsfAllocHandle(uint32_t uType, uintptr_t pvUserData)
     return handle;
 }
 
-int vbsfFreeHandle(SHFLHANDLE handle)
+static int vbsfFreeHandle(PSHFLCLIENTDATA pClient, SHFLHANDLE handle)
 {
-    if (handle < SHFLHANDLE_MAX && (pHandles[handle].uFlags & SHFL_HF_VALID))
+    if (   handle < SHFLHANDLE_MAX
+        && (pHandles[handle].uFlags & SHFL_HF_VALID)
+        && pHandles[handle].pClient == pClient)
     {
         pHandles[handle].uFlags     = 0;
         pHandles[handle].pvUserData = 0;
+        pHandles[handle].pClient    = 0;
         return VINF_SUCCESS;
     }
     return VERR_INVALID_HANDLE;
 }
 
-uintptr_t vbsfQueryHandle(SHFLHANDLE handle, uint32_t uType)
+uintptr_t vbsfQueryHandle(PSHFLCLIENTDATA pClient, SHFLHANDLE handle,
+                          uint32_t uType)
 {
-    if (handle < SHFLHANDLE_MAX && (pHandles[handle].uFlags & SHFL_HF_VALID))
+    if (   handle < SHFLHANDLE_MAX
+        && (pHandles[handle].uFlags & SHFL_HF_VALID)
+        && pHandles[handle].pClient == pClient)
     {
         Assert((uType & SHFL_HF_TYPE_MASK) != 0);
 
@@ -141,39 +150,64 @@ uintptr_t vbsfQueryHandle(SHFLHANDLE handle, uint32_t uType)
     return 0;
 }
 
-SHFLHANDLE vbsfAllocDirHandle (void)
+SHFLFILEHANDLE *vbsfQueryFileHandle(PSHFLCLIENTDATA pClient, SHFLHANDLE handle)
+{
+    return (SHFLFILEHANDLE *)vbsfQueryHandle(pClient, handle,
+                                             SHFL_HF_TYPE_FILE);
+}
+
+SHFLFILEHANDLE *vbsfQueryDirHandle(PSHFLCLIENTDATA pClient, SHFLHANDLE handle)
+{
+    return (SHFLFILEHANDLE *)vbsfQueryHandle(pClient, handle,
+                                             SHFL_HF_TYPE_DIR);
+}
+
+uint32_t vbsfQueryHandleType(PSHFLCLIENTDATA pClient, SHFLHANDLE handle)
+{
+    if (   handle < SHFLHANDLE_MAX
+        && (pHandles[handle].uFlags & SHFL_HF_VALID)
+        && pHandles[handle].pClient == pClient)
+        return pHandles[handle].uFlags & SHFL_HF_TYPE_MASK;
+    else
+        return 0;
+}
+
+SHFLHANDLE vbsfAllocDirHandle(PSHFLCLIENTDATA pClient)
 {
     SHFLFILEHANDLE *pHandle = (SHFLFILEHANDLE *)RTMemAllocZ (sizeof (SHFLFILEHANDLE));
 
     if (pHandle)
     {
         pHandle->Header.u32Flags = SHFL_HF_TYPE_DIR;
-        return vbsfAllocHandle(pHandle->Header.u32Flags, (uintptr_t)pHandle);
+        return vbsfAllocHandle(pClient, pHandle->Header.u32Flags,
+                               (uintptr_t)pHandle);
     }
 
     return SHFL_HANDLE_NIL;
 }
 
-SHFLHANDLE vbsfAllocFileHandle (void)
+SHFLHANDLE vbsfAllocFileHandle(PSHFLCLIENTDATA pClient)
 {
     SHFLFILEHANDLE *pHandle = (SHFLFILEHANDLE *)RTMemAllocZ (sizeof (SHFLFILEHANDLE));
 
     if (pHandle)
     {
         pHandle->Header.u32Flags = SHFL_HF_TYPE_FILE;
-        return vbsfAllocHandle(pHandle->Header.u32Flags, (uintptr_t)pHandle);
+        return vbsfAllocHandle(pClient, pHandle->Header.u32Flags,
+                               (uintptr_t)pHandle);
     }
 
     return SHFL_HANDLE_NIL;
 }
 
-void vbsfFreeFileHandle (SHFLHANDLE hHandle)
+void vbsfFreeFileHandle(PSHFLCLIENTDATA pClient, SHFLHANDLE hHandle)
 {
-    SHFLFILEHANDLE *pHandle = (SHFLFILEHANDLE *)vbsfQueryHandle(hHandle, SHFL_HF_TYPE_DIR|SHFL_HF_TYPE_FILE);
+    SHFLFILEHANDLE *pHandle = (SHFLFILEHANDLE *)vbsfQueryHandle(pClient,
+               hHandle, SHFL_HF_TYPE_DIR|SHFL_HF_TYPE_FILE);
 
     if (pHandle)
     {
-        vbsfFreeHandle(hHandle);
+        vbsfFreeHandle(pClient, hHandle);
         RTMemFree (pHandle);
     }
     else

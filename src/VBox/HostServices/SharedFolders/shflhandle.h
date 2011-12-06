@@ -59,15 +59,19 @@ typedef struct _SHFLFILEHANDLE
 } SHFLFILEHANDLE;
 
 
-SHFLHANDLE      vbsfAllocDirHandle (void);
-SHFLHANDLE      vbsfAllocFileHandle (void);
-void            vbsfFreeFileHandle (SHFLHANDLE hHandle);
+SHFLHANDLE      vbsfAllocDirHandle(PSHFLCLIENTDATA pClient);
+SHFLHANDLE      vbsfAllocFileHandle(PSHFLCLIENTDATA pClient);
+void            vbsfFreeFileHandle (PSHFLCLIENTDATA pClient, SHFLHANDLE hHandle);
 
 
 int         vbsfInitHandleTable();
 int         vbsfFreeHandleTable();
-SHFLHANDLE  vbsfAllocHandle(uint32_t uType, uintptr_t pvUserData);
-uintptr_t   vbsfQueryHandle(SHFLHANDLE handle, uint32_t uType);
-int         vbsfFreeHandle(SHFLHANDLE handle);
+SHFLHANDLE  vbsfAllocHandle(PSHFLCLIENTDATA pClient, uint32_t uType,
+                            uintptr_t pvUserData);
+SHFLFILEHANDLE *vbsfQueryFileHandle(PSHFLCLIENTDATA pClient,
+                                    SHFLHANDLE handle);
+SHFLFILEHANDLE *vbsfQueryDirHandle(PSHFLCLIENTDATA pClient, SHFLHANDLE handle);
+uint32_t        vbsfQueryHandleType(PSHFLCLIENTDATA pClient,
+                                    SHFLHANDLE handle);
 
 #endif /* __SHFLHANDLE__H */
