@@ -52,8 +52,10 @@
 # endif
 #endif
 
-#if defined(RT_OS_WINDOWS)
+#if defined(RT_OS_WINDOWS) && 0
 /** @todo remove this legacy and use VBox/log.h and/or iprt/log.h. */
+/* => Done.  The next person who needs logging in Windows guests will have the
+ *    honour of making it work. */
 # ifdef DEBUG
 #  define LOG_ENABLED
 # endif
