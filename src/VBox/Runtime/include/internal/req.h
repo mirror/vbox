@@ -63,12 +63,17 @@ struct RTREQ
     uint32_t                u32Magic;
     /** Set if the event semaphore is clear. */
     volatile bool           fEventSemClear;
+    /** Set if the push back semaphore should be signaled when the request
+     *  is picked up from the queue. */
+    volatile bool           fSignalPushBack;
     /** Set if pool, clear if queue. */
     volatile bool           fPoolOrQueue;
     /** IPRT status code for the completed request. */
     volatile int32_t        iStatusX;
     /** Request state. */
     volatile RTREQSTATE     enmState;
+    /** The reference count. */
+    volatile uint32_t       cRefs;
 
     /** Pointer to the next request in the chain. */
     struct RTREQ * volatile pNext;
@@ -79,6 +84,8 @@ struct RTREQ
         RTREQPOOL           hPool;
         /** Pointer to the queue this packet belongs to. */
         RTREQQUEUE          hQueue;
+        /** Opaque owner access. */
+        void               *pv;
     } uOwner;
 
     /** Timestamp take when the request was submitted to a pool.  Not used
@@ -137,11 +144,22 @@ typedef struct RTREQQUEUEINT
 } RTREQQUEUEINT;
 
 /** Pointer to an internal queue instance. */
-typedef RTREQQUEUEINT *PRTREQQUEUEINT;
+typedef struct RTREQQUEUEINT *PRTREQQUEUEINT;
+/** Pointer to a request thread pool instance. */
+typedef struct RTREQPOOLINT *PRTREQPOOLINT;
 
 
+/* req.cpp */
+DECLHIDDEN(int)  rtReqAlloc(RTREQTYPE enmType, bool fPoolOrQueue, void *pvOwner, PRTREQ *phReq);
+DECLHIDDEN(int)  rtReqReInit(PRTREQINT pReq, RTREQTYPE enmType);
+DECLHIDDEN(void) rtReqFreeIt(PRTREQINT pReq);
+DECLHIDDEN(int)  rtReqProcessOne(PRTREQ pReq);
 
-DECLHIDDEN(int) rtReqProcessOne(PRTREQ pReq);
+/* reqpool.cpp / reqqueue.cpp. */
+DECLHIDDEN(void) rtReqQueueSubmit(PRTREQQUEUEINT pQueue, PRTREQINT pReq);
+DECLHIDDEN(void) rtReqPoolSubmit(PRTREQPOOLINT pPool, PRTREQINT pReq);
+DECLHIDDEN(bool) rtReqQueueRecycle(PRTREQQUEUEINT pQueue, PRTREQINT pReq);
+DECLHIDDEN(bool) rtReqPoolRecycle(PRTREQPOOLINT pPool, PRTREQINT pReq);
 
 RT_C_DECLS_END
 

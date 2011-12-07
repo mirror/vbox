@@ -85,12 +85,7 @@ RTDECL(int) RTReqQueueDestroy(RTREQQUEUE hQueue)
         while (pReq)
         {
             PRTREQ pNext = pReq->pNext;
-
-            pReq->u32Magic = RTREQ_MAGIC_DEAD;
-            RTSemEventDestroy(pReq->EventSem);
-            pReq->EventSem = NIL_RTSEMEVENT;
-            RTMemFree(pReq);
-
+            rtReqFreeIt(pReq);
             pReq = pNext;
         }
     }
@@ -237,7 +232,7 @@ RTDECL(int) RTReqQueueCallV(RTREQQUEUE hQueue, PRTREQ *ppReq, RTMSINTERVAL cMill
     /*
      * Allocate request
      */
-    int rc = RTReqQueueAlloc(pQueue, &pReq, RTREQTYPE_INTERNAL);
+    int rc = RTReqQueueAlloc(pQueue, RTREQTYPE_INTERNAL, &pReq);
     if (rc != VINF_SUCCESS)
         return rc;
 
@@ -257,7 +252,7 @@ RTDECL(int) RTReqQueueCallV(RTREQQUEUE hQueue, PRTREQ *ppReq, RTMSINTERVAL cMill
     if (   rc != VINF_SUCCESS
         && rc != VERR_TIMEOUT)
     {
-        RTReqFree(pReq);
+        RTReqRelease(pReq);
         pReq = NULL;
     }
     if (!(fFlags & RTREQFLAGS_NO_WAIT))
@@ -342,7 +337,7 @@ static void vmr3ReqJoinFree(PRTREQQUEUEINT pQueue, PRTREQ pList)
 }
 
 
-RTDECL(int) RTReqQueueAlloc(RTREQQUEUE hQueue, PRTREQ *ppReq, RTREQTYPE enmType)
+RTDECL(int) RTReqQueueAlloc(RTREQQUEUE hQueue, RTREQTYPE enmType, PRTREQ *phReq)
 {
     /*
      * Validate input.
@@ -354,6 +349,7 @@ RTDECL(int) RTReqQueueAlloc(RTREQQUEUE hQueue, PRTREQ *ppReq, RTREQTYPE enmType)
 
     /*
      * Try get a recycled packet.
+     *
      * While this could all be solved with a single list with a lock, it's a sport
      * of mine to avoid locks.
      */
@@ -361,108 +357,83 @@ RTDECL(int) RTReqQueueAlloc(RTREQQUEUE hQueue, PRTREQ *ppReq, RTREQTYPE enmType)
     while (--cTries >= 0)
     {
         PRTREQ volatile *ppHead = &pQueue->apReqFree[ASMAtomicIncU32(&pQueue->iReqFree) % RT_ELEMENTS(pQueue->apReqFree)];
-#if 0 /* sad, but this won't work safely because the reading of pReq->pNext. */
-        PRTREQ pNext = NULL;
-        PRTREQ pReq = *ppHead;
-        if (    pReq
-            &&  !ASMAtomicCmpXchgPtr(ppHead, (pNext = pReq->pNext), pReq)
-            &&  (pReq = *ppHead)
-            &&  !ASMAtomicCmpXchgPtr(ppHead, (pNext = pReq->pNext), pReq))
-            pReq = NULL;
-        if (pReq)
-        {
-            Assert(pReq->pNext == pNext); NOREF(pReq);
-#else
         PRTREQ pReq = ASMAtomicXchgPtrT(ppHead, NULL, PRTREQ);
         if (pReq)
         {
             PRTREQ pNext = pReq->pNext;
             if (    pNext
                 &&  !ASMAtomicCmpXchgPtr(ppHead, pNext, NULL))
-            {
                 vmr3ReqJoinFree(pQueue, pReq->pNext);
-            }
-#endif
             ASMAtomicDecU32(&pQueue->cReqFree);
 
-            /*
-             * Make sure the event sem is not signaled.
-             */
-            if (!pReq->fEventSemClear)
-            {
-                int rc = RTSemEventWait(pReq->EventSem, 0);
-                if (rc != VINF_SUCCESS && rc != VERR_TIMEOUT)
-                {
-                    /*
-                     * This shall not happen, but if it does we'll just destroy
-                     * the semaphore and create a new one.
-                     */
-                    AssertMsgFailed(("rc=%Rrc from RTSemEventWait(%#x).\n", rc, pReq->EventSem));
-                    RTSemEventDestroy(pReq->EventSem);
-                    rc = RTSemEventCreate(&pReq->EventSem);
-                    AssertRC(rc);
-                    if (rc != VINF_SUCCESS)
-                        return rc;
-                }
-                pReq->fEventSemClear = true;
-            }
-            else
-                Assert(RTSemEventWait(pReq->EventSem, 0) == VERR_TIMEOUT);
-
-            /*
-             * Initialize the packet and return it.
-             */
-            Assert(pReq->u32Magic == RTREQ_MAGIC);
-            Assert(pReq->enmType  == RTREQTYPE_INVALID);
-            Assert(pReq->enmState == RTREQSTATE_FREE);
-            Assert(!pReq->fPoolOrQueue);
             Assert(pReq->uOwner.hQueue == pQueue);
-            ASMAtomicWriteNullPtr(&pReq->pNext);
-            pReq->iStatusX = VERR_RT_REQUEST_STATUS_STILL_PENDING;
-            pReq->enmState = RTREQSTATE_ALLOCATED;
-            pReq->fFlags   = RTREQFLAGS_IPRT_STATUS;
-            pReq->enmType  = enmType;
+            Assert(!pReq->fPoolOrQueue);
 
-            *ppReq = pReq;
-            LogFlow(("RTReqAlloc: returns VINF_SUCCESS *ppReq=%p recycled\n", pReq));
-            return VINF_SUCCESS;
+            int rc = rtReqReInit(pReq, enmType);
+            if (RT_SUCCESS(rc))
+            {
+                *phReq = pReq;
+                LogFlow(("RTReqQueueAlloc: returns VINF_SUCCESS *phReq=%p recycled\n", pReq));
+                return VINF_SUCCESS;
+            }
         }
     }
 
     /*
-     * Ok allocate one.
+     * Ok, allocate a new one.
      */
-    PRTREQ pReq = (PRTREQ)RTMemAllocZ(sizeof(*pReq));
-    if (!pReq)
-        return VERR_NO_MEMORY;
-
-    /*
-     * Create the semaphore.
-     */
-    int rc = RTSemEventCreate(&pReq->EventSem);
-    AssertRC(rc);
-    if (rc != VINF_SUCCESS)
-    {
-        RTMemFree(pReq);
-        return rc;
-    }
-
-    /*
-     * Initialize the packet and return it.
-     */
-    pReq->u32Magic      = RTREQ_MAGIC;
-    pReq->fEventSemClear= true;
-    pReq->fPoolOrQueue  = false;
-    pReq->iStatusX      = VERR_RT_REQUEST_STATUS_STILL_PENDING;
-    pReq->enmState      = RTREQSTATE_ALLOCATED;
-    pReq->pNext         = NULL;
-    pReq->uOwner.hQueue = pQueue;
-    pReq->fFlags        = RTREQFLAGS_IPRT_STATUS;
-    pReq->enmType       = enmType;
-
-    *ppReq = pReq;
-    LogFlow(("RTReqAlloc: returns VINF_SUCCESS *ppReq=%p new\n", pReq));
-    return VINF_SUCCESS;
+    int rc = rtReqAlloc(enmType, false /*fPoolOrQueue*/, pQueue, phReq);
+    LogFlow(("RTReqQueueAlloc: returns %Rrc *phReq=%p\n", rc, *phReq));
+    return rc;
 }
 RT_EXPORT_SYMBOL(RTReqQueueAlloc);
+
+
+/**
+ * Recycles a requst.
+ *
+ * @returns true if recycled, false if it should be freed.
+ * @param   pQueue              The queue.
+ * @param   pReq                The request.
+ */
+DECLHIDDEN(bool) rtReqQueueRecycle(PRTREQQUEUEINT pQueue, PRTREQINT pReq)
+{
+    if (   !pQueue
+        || pQueue->cReqFree >= 128)
+        return false;
+
+    ASMAtomicIncU32(&pQueue->cReqFree);
+    PRTREQ volatile *ppHead = &pQueue->apReqFree[ASMAtomicIncU32(&pQueue->iReqFree) % RT_ELEMENTS(pQueue->apReqFree)];
+    PRTREQ pNext;
+    do
+    {
+        pNext = *ppHead;
+        ASMAtomicWritePtr(&pReq->pNext, pNext);
+    } while (!ASMAtomicCmpXchgPtr(ppHead, pReq, pNext));
+
+    return true;
+}
+
+
+/**
+ * Submits a request to the queue.
+ *
+ * @param   pQueue              The queue.
+ * @param   pReq                The request.
+ */
+DECLHIDDEN(void) rtReqQueueSubmit(PRTREQQUEUEINT pQueue, PRTREQINT pReq)
+{
+    PRTREQ pNext;
+    do
+    {
+        pNext = pQueue->pReqs;
+        pReq->pNext = pNext;
+        ASMAtomicWriteBool(&pQueue->fBusy, true);
+    } while (!ASMAtomicCmpXchgPtr(&pQueue->pReqs, pReq, pNext));
+
+    /*
+     * Notify queue thread.
+     */
+    RTSemEventSignal(pQueue->EventSem);
+}
 
