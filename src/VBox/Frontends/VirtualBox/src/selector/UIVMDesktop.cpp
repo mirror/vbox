@@ -44,10 +44,10 @@
 #include "UIToolBar.h"
 #include "VBoxUtils.h"
 
-/*
- * Todo:
- * - dynamically change size of preview window!
- */
+/* Forward declarations: */
+class UIDetails;
+class UIDetailsBlock;
+class UIDetailsPagePrivate;
 
 //#ifdef Q_WS_MAC
 # define DARWIN_USE_TOOLBAR
@@ -71,26 +71,72 @@ static const int gsRightMargin = 5;
 static const int gsBottomMargin = 5;
 #endif /* !Q_WS_MAC */
 
-class UIEventForBlockUpdate : public QEvent
+class UIEventDetailsPrepareStart : public QEvent
 {
 public:
 
     enum { Type = QEvent::User + 1 };
+    UIEventDetailsPrepareStart() : QEvent((QEvent::Type)Type) {}
+};
 
-    UIEventForBlockUpdate(const QUuid &requestId, int iBlockNumber, bool fNewBlock)
-        : QEvent((QEvent::Type)Type), m_requestId(requestId), m_iBlockNumber(iBlockNumber), m_fNewBlock(fNewBlock)
-    {
-    }
+class UIEventDetailsPrepareBlockStart : public QEvent
+{
+public:
 
-    QUuid requestId() const { return m_requestId; }
+    enum { Type = QEvent::User + 2 };
+    UIEventDetailsPrepareBlockStart(int iBlockNumber) : QEvent((QEvent::Type)Type), m_iBlockNumber(iBlockNumber) {}
     int blockNumber() const { return m_iBlockNumber; }
-    bool newBlock() const { return m_fNewBlock; }
 
 private:
 
-    QUuid m_requestId;
     int m_iBlockNumber;
-    bool m_fNewBlock;
+};
+
+class UIEventDetailsPrepareBlockFinish : public QEvent
+{
+public:
+
+    enum { Type = QEvent::User + 3 };
+    UIEventDetailsPrepareBlockFinish(int iBlockNumber) : QEvent((QEvent::Type)Type), m_iBlockNumber(iBlockNumber) {}
+    int blockNumber() const { return m_iBlockNumber; }
+
+private:
+
+    int m_iBlockNumber;
+};
+
+class UIEventDetailsBlockPrepareStart : public QEvent
+{
+public:
+
+    enum { Type = QEvent::User + 1 };
+    UIEventDetailsBlockPrepareStart() : QEvent((QEvent::Type)Type) {}
+};
+
+class UIEventDetailsBlockPrepareSectionStart : public QEvent
+{
+public:
+
+    enum { Type = QEvent::User + 2 };
+    UIEventDetailsBlockPrepareSectionStart(int iSectionNumber) : QEvent((QEvent::Type)Type), m_iSectionNumber(iSectionNumber) {}
+    int sectionNumber() const { return m_iSectionNumber; }
+
+private:
+
+    int m_iSectionNumber;
+};
+
+class UIEventDetailsBlockPrepareSectionFinish : public QEvent
+{
+public:
+
+    enum { Type = QEvent::User + 3 };
+    UIEventDetailsBlockPrepareSectionFinish(int iSectionNumber) : QEvent((QEvent::Type)Type), m_iSectionNumber(iSectionNumber) {}
+    int sectionNumber() const { return m_iSectionNumber; }
+
+private:
+
+    int m_iSectionNumber;
 };
 
 /* Section types: */
@@ -114,8 +160,65 @@ enum Section
 };
 
 /**
+ *  UIDetails class.
+ *  QWidget container to store UIDetailsBlock(s).
+ */
+class UIDetails : public QWidget
+{
+    Q_OBJECT;
+
+public:
+
+    /* Constructor: */
+    UIDetails(UIDetailsPagePrivate *pDetailsPage);
+
+    /* Operator: */
+    UIDetailsBlock*& operator[](int i) { return m_details[i]; }
+
+    /* Machine list setter: */
+    void setMachines(const QList<CMachine> &machines);
+
+    /* Own wrappers: */
+    UIDetailsPagePrivate* detailsPage() const { return m_pUIDetailsPage; }
+    const QList<Section>& sections() const { return m_sections; }
+    bool accessibility(int iBlockNumber) const { return m_accessibilities[iBlockNumber]; }
+    void setUSBAvailable(bool fAvailable) { m_fUSBAvailable = fAvailable; }
+
+    /* Parent wrappers: */
+    bool sectionOpened(Section section) const;
+    void setSectionOpened(Section section, bool fOpened);
+    QAction* action(Section section) const;
+
+private slots:
+
+    /* Details pane context menu handler: */
+    void sltContextMenuRequested(const QPoint &pos);
+
+    /* Details pane popup  widget toggle handler: */
+    void sltPopupToggled(bool fPopupOpened);
+
+private:
+
+    /* Main event handler: */
+    bool event(QEvent *pEvent);
+
+    /* Block preparation delegate(s): */
+    void createBlock(int iBlockNumber);
+    void layoutBlock(int iBlockNumber);
+
+    /* Variables: */
+    UIDetailsPagePrivate *m_pUIDetailsPage;
+    int m_cBlockCount;
+    QVector<CMachine> m_machines;
+    QVector<bool> m_accessibilities;
+    QList<Section> m_sections;
+    QMap<int, UIDetailsBlock*> m_details;
+    bool m_fUSBAvailable;
+};
+
+/**
  *  UIDetailsBlock class.
- *  QWidget container to store UIPopupBox sections.
+ *  QWidget container to store UIPopupBox(s).
  */
 class UIDetailsBlock : public QWidget
 {
@@ -123,52 +226,29 @@ class UIDetailsBlock : public QWidget
 
 public:
 
-    UIDetailsBlock(QWidget *pParent)
-        : QWidget(pParent)
-    {
-    }
+    /* Constructor: */
+    UIDetailsBlock(UIDetails *pParent, const QList<Section> &sections, int iBlockNumber);
 
-    UIPopupBox*& operator[](Section section)
-    {
-        return m_sections[section];
-    }
+    /* Operator: */
+    UIPopupBox*& operator[](Section section) { return m_block[section]; }
 
-private:
+    /* Machine setter: */
+    void setMachine(const CMachine &machine);
 
-    QMap<Section, UIPopupBox*> m_sections;
-};
-typedef QVector<UIDetailsBlock*> UIDetailsSet;
+    /* Own wrappers: */
+    UIDetails* details() const { return m_pUIDetails; }
 
-/**
- *  UIDescriptionPagePrivate
- */
-class UIDetailsPagePrivate : public QIWithRetranslateUI<QStackedWidget>
-{
-    Q_OBJECT;
-
-public:
-
-    UIDetailsPagePrivate(QWidget *pParent, QAction *pRefreshAction = 0);
-    ~UIDetailsPagePrivate();
-
-    void setMachines(const QList<CMachine> &machines);
-    void setText(const QString &aText);
-    void setErrorText(const QString &aText);
-
-signals:
-
-    void linkClicked(const QString &url);
-
-protected:
-
-    void retranslateUi();
-    bool event(QEvent *pEvent);
+    /* Parent wrappers: */
+    bool accessibility() const;
+    bool sectionOpened(Section section) const;
+    void setUSBAvailable(bool fAvailable);
 
 private slots:
 
+    /* Popup preparation handlers: */
     void sltUpdateGeneral();
-    void sltUpdatePreview();
     void sltUpdateSystem();
+    void sltUpdatePreview();
     void sltUpdateDisplay();
     void sltUpdateStorage();
     void sltUpdateAudio();
@@ -181,46 +261,84 @@ private slots:
     void sltUpdateSharedFolders();
     void sltUpdateDescription();
 
-    void sltContextMenuRequested(const QPoint &pos);
+private:
+
+    /* Main event handler: */
+    bool event(QEvent *pEvent);
+
+    /* Section preparation delegate: */
+    void createSection(int iSectionNumber);
+
+    /* Static stuff: */
+    static QString summarizeGenericProperties(const CNetworkAdapter &adapter);
+
+    /* Variables: */
+    CVirtualBox m_vbox;
+    UIDetails *m_pUIDetails;
+    int m_iBlockNumber;
+    int m_cSectionCount;
+    CMachine m_machine;
+    QList<Section> m_sections;
+    QMap<Section, UIPopupBox*> m_block;
+};
+
+/**
+ *  UIDetailsPagePrivate class.
+ *  QWidget container to store UIDetails.
+ */
+class UIDetailsPagePrivate : public QIWithRetranslateUI<QStackedWidget>
+{
+    Q_OBJECT;
+
+public:
+
+    /* Constructor/destructor: */
+    UIDetailsPagePrivate(QWidget *pParent, QAction *pRefreshAction = 0);
+    ~UIDetailsPagePrivate();
+
+    /* Setters: */
+    void setMachines(const QList<CMachine> &machines);
+    void setText(const QString &aText);
+    void setErrorText(const QString &aText);
+
+    /* Own wrappers: */
+    bool sectionOpened(Section section) const { return m_sectionOpened[section]; }
+    void setSectionOpened(Section section, bool fOpened) { m_sectionOpened[section] = fOpened; }
+    QAction* action(Section section) { return m_actions[section]; }
+
+signals:
+
+    void linkClicked(const QString &url);
+
+protected:
+
+    void retranslateUi();
+
+private slots:
 
     void sltLinkClicked(const QUrl &url) { emit linkClicked(url.toString()); }
 
-    void sltPopupToggled(bool fPopupOpened);
-
 private:
 
-    void prepareDetails();
-    void cleanupDetails();
+    void prepareDetailsPage();
+    void cleanupDetailsPage();
 
     void prepareTextPage();
 
     void prepareErrorPage();
 
-    void prepareSet(bool fNewSet);
-    void prepareBlock(int iBlockNumber, bool fNewBlock);
-    void prepareSection(UIDetailsBlock &block, int iBlockNumber, Section section);
+    void prepareDetails(const QList<CMachine> &machines);
 
     void saveSectionSetting();
 
-    static QString summarizeGenericProperties(const CNetworkAdapter &adapter);
-
-    /* Common variables: */
-    CVirtualBox m_vbox;
-    int m_cMachineCount;
-    QVector<CMachine> m_machines;
-    QVector<bool> m_changeable;
-
     /* Details-view variables: */
+    int m_cMachineCount;
     QScrollArea *m_pScrollArea;
-    QWidget *m_pDetails;
+    UIDetails *m_pDetails;
     QMap<Section, QString> m_sectionSettings;
     QMap<Section, QString> m_sectionNames;
     QMap<Section, bool> m_sectionOpened;
     QMap<Section, QAction*> m_actions;
-    QList<Section> m_sections;
-    UIDetailsSet m_set;
-    bool m_fUSBAvailable;
-    QUuid m_currentRequestId;
 
     /* Free text: */
     QRichTextBrowser *m_pText;
@@ -233,13 +351,1130 @@ private:
     QAction *m_pRefreshAction;
 };
 
+UIDetails::UIDetails(UIDetailsPagePrivate *pDetailsPage)
+    : QWidget(pDetailsPage)
+    , m_pUIDetailsPage(pDetailsPage)
+    , m_cBlockCount(0)
+    , m_fUSBAvailable(true)
+{
+    /* Configure context menu policy: */
+    setContextMenuPolicy(Qt::CustomContextMenu);
+    connect(this, SIGNAL(customContextMenuRequested(const QPoint&)), this, SLOT(sltContextMenuRequested(const QPoint&)));
+
+    /* Create and configure main layout: */
+    QVBoxLayout *pMainLayout = new QVBoxLayout(this);
+    pMainLayout->setContentsMargins(gsLeftMargin, gsTopMargin, gsRightMargin, gsBottomMargin);
+    pMainLayout->addStretch(1);
+}
+
+void UIDetails::setMachines(const QList<CMachine> &machines)
+{
+    /* If details preparing is NOT yet started: */
+    if (m_cBlockCount != machines.size())
+    {
+        /* Get new machine count: */
+        m_cBlockCount = machines.size();
+
+        /* Populate list of available sections: */
+        if (m_cBlockCount == 1)
+        {
+            m_sections << Section_General
+                       << Section_System
+                       << Section_Preview
+                       << Section_Display
+                       << Section_Storage
+                       << Section_Audio
+                       << Section_Network
+                       << Section_Serial
+#ifdef VBOX_WITH_PARALLEL_PORTS
+                       << Section_Parallel
+#endif /* VBOX_WITH_PARALLEL_PORTS */
+                       << Section_USB
+                       << Section_SharedFolders
+                       << Section_Description;
+        }
+        else
+        {
+            m_sections << Section_General
+                       << Section_System
+                       << Section_Preview;
+        }
+    }
+
+    /* Reset variables: */
+    m_machines.clear();
+    m_machines.resize(m_cBlockCount);
+    m_accessibilities.clear();
+    m_accessibilities.resize(m_cBlockCount);
+    m_fUSBAvailable = true;
+
+    /* Fetch passed VMs: */
+    for (int i = 0; i < machines.size(); ++i)
+    {
+        /* Get current VM: */
+        const CMachine &machine = machines[i];
+        /* Assign corresponding vector values: */
+        m_machines[i] = machine;
+        m_accessibilities[i] = machine.isNull() || !machine.GetAccessible() ? false :
+                               machine.GetState() != KMachineState_Stuck &&
+                               machine.GetState() != KMachineState_Saved /* for now! */;
+    }
+
+    /* Start preparing details content (blocks): */
+    QCoreApplication::postEvent(this, new UIEventDetailsPrepareStart);
+}
+
+QAction* UIDetails::action(Section section) const
+{
+    return m_pUIDetailsPage->action(section);
+}
+
+bool UIDetails::sectionOpened(Section section) const
+{
+    return m_pUIDetailsPage->sectionOpened(section);
+}
+
+void UIDetails::setSectionOpened(Section section, bool fOpened)
+{
+    m_pUIDetailsPage->setSectionOpened(section, fOpened);
+}
+
+void UIDetails::sltContextMenuRequested(const QPoint &pos)
+{
+    /* Populate list of allowed actions: */
+    QList<QAction*> actions;
+    for (int i = 0; i < m_sections.size(); ++i)
+        actions << action(m_sections[i]);
+    /* Restrict USB action if USB is NOT available: */
+    if (!m_fUSBAvailable)
+        actions.removeOne(action(Section_USB));
+    /* Popup menu to show/hide sections: */
+    QAction *pReturn = QMenu::exec(actions, mapToGlobal(pos), 0);
+    /* If some action was toggled: */
+    if (pReturn)
+    {
+        /* Get corresponding section type: */
+        Section section = static_cast<Section>(pReturn->data().toInt());
+        /* Enumerate all the available blocks: */
+        for (int i = 0; i < m_cBlockCount; ++i)
+        {
+            /* Get current popup: */
+            UIPopupBox *pPopup = (*m_details[i])[section];
+            /* Show/hide popup if necessary: */
+            if (pReturn->isChecked())
+                pPopup->show();
+            else
+                pPopup->hide();
+        }
+    }
+}
+
+void UIDetails::sltPopupToggled(bool fPopupOpened)
+{
+    /* Get current sender: */
+    UIPopupBox *pSender = sender() && sender()->inherits("UIPopupBox") ? qobject_cast<UIPopupBox*>(sender()) : 0;
+    AssertMsg(pSender, ("Sender should be valid!\n"));
+    /* Get section type: */
+    Section section = static_cast<Section>(pSender->property("section-type").toInt());
+    /* Update the state of corresponding map: */
+    setSectionOpened(section, fPopupOpened);
+    /* Open/Close all the blocks: */
+    for (int i = 0; i < m_cBlockCount; ++i)
+        (*m_details[i])[section]->setOpen(fPopupOpened);
+}
+
+bool UIDetails::event(QEvent *pEvent)
+{
+    /* Handle special events: */
+    switch (pEvent->type())
+    {
+        /* Handle details-prepare-start event: */
+        case UIEventDetailsPrepareStart::Type:
+        {
+            /* Cast and accept event: */
+            UIEventDetailsPrepareStart *pEventDetailsPrepareStart = static_cast<UIEventDetailsPrepareStart*>(pEvent);
+            pEventDetailsPrepareStart->accept();
+            /* Create request for the first block: */
+            QCoreApplication::postEvent(this, new UIEventDetailsPrepareBlockStart(0));
+            /* Finish processing: */
+            return true;
+        }
+        /* Handle details-block-prepare-start event: */
+        case UIEventDetailsPrepareBlockStart::Type:
+        {
+            /* Cast and accept event: */
+            UIEventDetailsPrepareBlockStart *pEventDetailsBlockPrepareStart = static_cast<UIEventDetailsPrepareBlockStart*>(pEvent);
+            pEventDetailsBlockPrepareStart->accept();
+            /* Start preparing block: */
+            createBlock(pEventDetailsBlockPrepareStart->blockNumber());
+            /* Finish processing: */
+            return true;
+        }
+        /* Handle details-block-prepare-finish event: */
+        case UIEventDetailsPrepareBlockFinish::Type:
+        {
+            /* Cast and accept event: */
+            UIEventDetailsPrepareBlockFinish *pEventDetailsBlockPrepareFinish = static_cast<UIEventDetailsPrepareBlockFinish*>(pEvent);
+            pEventDetailsBlockPrepareFinish->accept();
+            /* Finish preparing block: */
+            layoutBlock(pEventDetailsBlockPrepareFinish->blockNumber());
+            /* Create request for the next block if possible: */
+            if (pEventDetailsBlockPrepareFinish->blockNumber() < m_cBlockCount - 1)
+                QCoreApplication::postEvent(this, new UIEventDetailsPrepareBlockStart(pEventDetailsBlockPrepareFinish->blockNumber() + 1));
+            /* Finish processing: */
+            return true;
+        }
+        default:
+            break;
+    }
+    /* Propagate to base-class: */
+    return QWidget::event(pEvent);
+}
+
+void UIDetails::createBlock(int iBlockNumber)
+{
+    /* If block creation is NOT yet started: */
+    if (!m_details.contains(iBlockNumber))
+    {
+        /* Create new block: */
+        m_details[iBlockNumber] = new UIDetailsBlock(this, m_sections, iBlockNumber);
+    }
+
+    /* Assign block with corresponding machine: */
+    m_details[iBlockNumber]->setMachine(m_machines[iBlockNumber]);
+}
+
+void UIDetails::layoutBlock(int iBlockNumber)
+{
+    /* Get current block: */
+    UIDetailsBlock *pBlock = m_details[iBlockNumber];
+
+    /* If block layouting is NOT yet started: */
+    if (!pBlock->layout())
+    {
+        /* Declare variables: */
+        UIDetailsBlock &block = *pBlock;
+
+        /* Layout block content: */
+        QVBoxLayout *pContainerLayout = new QVBoxLayout(pBlock);
+        pContainerLayout->setContentsMargins(0, 0, 0, 0);
+        QHBoxLayout *pt1 = new QHBoxLayout;
+        QVBoxLayout *pt2 = new QVBoxLayout;
+        if (m_sections.contains(Section_General))
+            pt2->addWidget(block[Section_General]);
+        if (m_sections.contains(Section_System))
+            pt2->addWidget(block[Section_System]);
+        pt2->addStretch(1);
+        pt1->addLayout(pt2);
+        QVBoxLayout *pt3 = new QVBoxLayout;
+        if (m_sections.contains(Section_Preview))
+            pt3->addWidget(block[Section_Preview]);
+        pt3->addStretch(1);
+        pt1->addLayout(pt3);
+        pContainerLayout->addLayout(pt1);
+        if (m_sections.contains(Section_Display))
+            pContainerLayout->addWidget(block[Section_Display]);
+        if (m_sections.contains(Section_Storage))
+            pContainerLayout->addWidget(block[Section_Storage]);
+        if (m_sections.contains(Section_Audio))
+            pContainerLayout->addWidget(block[Section_Audio]);
+        if (m_sections.contains(Section_Network))
+            pContainerLayout->addWidget(block[Section_Network]);
+        if (m_sections.contains(Section_Serial))
+            pContainerLayout->addWidget(block[Section_Serial]);
+#ifdef VBOX_WITH_PARALLEL_PORTS
+        if (m_sections.contains(Section_Parallel))
+            pContainerLayout->addWidget(block[Section_Parallel]);
+#endif /* VBOX_WITH_PARALLEL_PORTS */
+        if (m_sections.contains(Section_USB))
+            pContainerLayout->addWidget(block[Section_USB]);
+        if (m_sections.contains(Section_SharedFolders))
+            pContainerLayout->addWidget(block[Section_SharedFolders]);
+        if (m_sections.contains(Section_Description))
+            pContainerLayout->addWidget(block[Section_Description]);
+        QVBoxLayout *pMainLayout = qobject_cast<QVBoxLayout*>(layout());
+        pMainLayout->insertWidget(pMainLayout->count() - 1, pBlock);
+
+        /* Configure block content: */
+        for (int i = 0; i < m_sections.size(); ++i)
+        {
+            /* Assign corresponding action text as section title: */
+            block[m_sections[i]]->setTitle(action(m_sections[i])->text());
+
+            /* If corresponding action is checked: */
+            if (action(m_sections[i])->isChecked())
+            {
+                /* Unhide corresponding section: */
+                block[m_sections[i]]->show();
+            }
+        }
+
+        /* Show block: */
+        block.show();
+
+        /* Layout parent scroll-area: */
+        QEvent layoutEvent(QEvent::LayoutRequest);
+        QCoreApplication::sendEvent(parent(), &layoutEvent);
+    }
+
+    /* Paint block: */
+    pBlock->repaint();
+}
+
+UIDetailsBlock::UIDetailsBlock(UIDetails *pParent, const QList<Section> &sections, int iBlockNumber)
+    : QWidget(pParent)
+    , m_vbox(vboxGlobal().virtualBox())
+    , m_pUIDetails(pParent)
+    , m_iBlockNumber(iBlockNumber)
+    , m_cSectionCount(0)
+    , m_sections(sections)
+{
+}
+
+void UIDetailsBlock::setMachine(const CMachine &machine)
+{
+    /* If block preparing is NOT yet started: */
+    if (m_cSectionCount != m_sections.size())
+    {
+        /* Get new section count: */
+        m_cSectionCount = m_sections.size();
+    }
+
+    /* Set passed VM: */
+    m_machine = machine;
+
+    /* Start preparing details block content (sections): */
+    QCoreApplication::postEvent(this, new UIEventDetailsBlockPrepareStart);
+}
+
+bool UIDetailsBlock::accessibility() const
+{
+    return m_pUIDetails->accessibility(m_iBlockNumber);
+}
+
+bool UIDetailsBlock::sectionOpened(Section section) const
+{
+    return m_pUIDetails->sectionOpened(section);
+}
+
+void UIDetailsBlock::setUSBAvailable(bool fAvailable)
+{
+    m_pUIDetails->setUSBAvailable(fAvailable);
+}
+
+void UIDetailsBlock::sltUpdateGeneral()
+{
+    /* Get current sender: */
+    UIPopupBox *pSender = sender() && sender()->inherits("UIPopupBox") ? qobject_cast<UIPopupBox*>(sender()) : 0;
+    AssertMsg(pSender, ("Sender should be valid!\n"));
+    /* Get corresponding content widget: */
+    QILabel *pLabel = qobject_cast<QILabel*>(m_block[Section_General]->contentWidget());
+    AssertMsg(pLabel, ("Content widget should be valid!"));
+
+    /* Enable link: */
+    m_block[Section_General]->setTitleLinkEnabled(accessibility());
+
+    /* Update if content widget is visible: */
+    if (pSender->isOpen())
+    {
+        if (!m_machine.isNull())
+        {
+            QString item;
+            if (m_machine.GetAccessible())
+            {
+                item = sSectionItemTpl2.arg(tr("Name", "details report"), m_machine.GetName())
+                     + sSectionItemTpl2.arg(tr("OS Type", "details report"), vboxGlobal().vmGuestOSTypeDescription(m_machine.GetOSTypeId()));
+            }
+            else
+            {
+                item = QString(sSectionItemTpl1).arg(tr("Information inaccessible", "details report"));
+            }
+            pLabel->setText(sTableTpl.arg(item));
+        }
+        else
+            pLabel->clear();
+    }
+}
+
+void UIDetailsBlock::sltUpdateSystem()
+{
+    /* Get current sender: */
+    UIPopupBox *pSender = sender() && sender()->inherits("UIPopupBox") ? qobject_cast<UIPopupBox*>(sender()) : 0;
+    AssertMsg(pSender, ("Sender should be valid!\n"));
+    /* Get corresponding content widget: */
+    QILabel *pLabel = qobject_cast<QILabel*>(m_block[Section_System]->contentWidget());
+    AssertMsg(pLabel, ("Content widget should be valid!"));
+
+    /* Enable link: */
+    m_block[Section_System]->setTitleLinkEnabled(accessibility());
+
+    /* Update if content widget is visible: */
+    if (pSender->isOpen())
+    {
+        if (!m_machine.isNull())
+        {
+            QString item;
+            if (m_machine.GetAccessible())
+            {
+                item = sSectionItemTpl2.arg(tr("Base Memory", "details report"), tr("<nobr>%1 MB</nobr>", "details report"))
+                                       .arg(m_machine.GetMemorySize());
+
+                int cCPU = m_machine.GetCPUCount();
+                if (cCPU > 1)
+                    item += sSectionItemTpl2.arg(tr("Processors", "details report"), tr("<nobr>%1</nobr>", "details report"))
+                                            .arg(cCPU);
+
+                int iCPUExecCap = m_machine.GetCPUExecutionCap();
+                if (iCPUExecCap < 100)
+                    item += sSectionItemTpl2.arg(tr("Execution Cap", "details report"), tr("<nobr>%1%</nobr>", "details report"))
+                                            .arg(iCPUExecCap);
+
+                /* Boot order: */
+                QStringList bootOrder;
+                for (ulong i = 1; i <= m_vbox.GetSystemProperties().GetMaxBootPosition(); ++i)
+                {
+                    KDeviceType device = m_machine.GetBootOrder(i);
+                    if (device == KDeviceType_Null)
+                        continue;
+                    bootOrder << vboxGlobal().toString(device);
+                }
+                if (bootOrder.isEmpty())
+                    bootOrder << vboxGlobal().toString(KDeviceType_Null);
+
+                item += sSectionItemTpl2.arg(tr("Boot Order", "details report"), bootOrder.join(", "));
+
+#ifdef VBOX_WITH_FULL_DETAILS_REPORT
+                /* BIOS Settings holder: */
+                const CBIOSSettings &biosSettings = m_machine.GetBIOSSettings();
+                QStringList bios;
+
+                /* ACPI: */
+                if (biosSettings.GetACPIEnabled())
+                    bios << tr("ACPI", "details report");
+
+                /* IO APIC: */
+                if (biosSettings.GetIOAPICEnabled())
+                    bios << tr("IO APIC", "details report");
+
+                if (!bios.isEmpty())
+                    item += sSectionItemTpl2.arg(tr("BIOS", "details report"), bios.join(", "));
+#endif /* VBOX_WITH_FULL_DETAILS_REPORT */
+
+                QStringList accel;
+                if (m_vbox.GetHost().GetProcessorFeature(KProcessorFeature_HWVirtEx))
+                {
+                    /* VT-x/AMD-V: */
+                    if (m_machine.GetHWVirtExProperty(KHWVirtExPropertyType_Enabled))
+                    {
+                        accel << tr("VT-x/AMD-V", "details report");
+
+                        /* Nested Paging (only when hw virt is enabled): */
+                        if (m_machine.GetHWVirtExProperty(KHWVirtExPropertyType_NestedPaging))
+                            accel << tr("Nested Paging", "details report");
+                    }
+                }
+
+                /* PAE/NX: */
+                if (m_machine.GetCPUProperty(KCPUPropertyType_PAE))
+                    accel << tr("PAE/NX", "details report");
+
+                if (!accel.isEmpty())
+                    item += sSectionItemTpl2.arg(tr("Acceleration", "details report"), accel.join(", "));
+            }
+            else
+            {
+                item = QString(sSectionItemTpl1).arg(tr("Information inaccessible", "details report"));
+            }
+            pLabel->setText(sTableTpl.arg(item));
+        }
+        else
+            pLabel->clear();
+    }
+}
+
+void UIDetailsBlock::sltUpdatePreview()
+{
+    /* Get current sender: */
+    UIPopupBox *pSender = sender() && sender()->inherits("UIPopupBox") ? qobject_cast<UIPopupBox*>(sender()) : 0;
+    AssertMsg(pSender, ("Sender should be valid!\n"));
+    /* Get corresponding content widget: */
+    UIVMPreviewWindow *pPreview = qobject_cast<UIVMPreviewWindow*>(m_block[Section_Preview]->contentWidget());
+    AssertMsg(pPreview, ("Content widget should be valid!"));
+
+    /* Update if content widget is visible: */
+    if (pSender->isOpen())
+    {
+        /* Update preview widget: */
+        pPreview->setMachine(m_machine);
+    }
+}
+
+void UIDetailsBlock::sltUpdateDisplay()
+{
+    /* Get current sender: */
+    UIPopupBox *pSender = sender() && sender()->inherits("UIPopupBox") ? qobject_cast<UIPopupBox*>(sender()) : 0;
+    AssertMsg(pSender, ("Sender should be valid!\n"));
+    /* Get corresponding content widget: */
+    QILabel *pLabel = qobject_cast<QILabel*>(m_block[Section_Display]->contentWidget());
+    AssertMsg(pLabel, ("Content widget should be valid!"));
+
+    /* Enable link: */
+    m_block[Section_Display]->setTitleLinkEnabled(accessibility());
+
+    /* Update if content widget is visible: */
+    if (pSender->isOpen())
+    {
+        if (!m_machine.isNull())
+        {
+            /* Video tab: */
+            QString item = QString(sSectionItemTpl2).arg(tr("Video Memory", "details report"), tr("<nobr>%1 MB</nobr>", "details report"))
+                                                    .arg(m_machine.GetVRAMSize());
+
+            int cGuestScreens = m_machine.GetMonitorCount();
+            if (cGuestScreens > 1)
+                item += QString(sSectionItemTpl2).arg(tr("Screens", "details report")).arg(cGuestScreens);
+
+            QStringList accel;
+#ifdef VBOX_WITH_VIDEOHWACCEL
+            if (m_machine.GetAccelerate2DVideoEnabled())
+                accel << tr("2D Video", "details report");
+#endif /* VBOX_WITH_VIDEOHWACCEL */
+            if (m_machine.GetAccelerate3DEnabled())
+                accel << tr("3D", "details report");
+
+            if (!accel.isEmpty())
+                item += sSectionItemTpl2.arg(tr("Acceleration", "details report"), accel.join(", "));
+
+            /* VRDE tab: */
+            CVRDEServer srv = m_machine.GetVRDEServer();
+            if (!srv.isNull())
+            {
+                if (srv.GetEnabled())
+                    item += QString(sSectionItemTpl2).arg(tr("Remote Desktop Server Port", "details report (VRDE Server)"))
+                                                     .arg(srv.GetVRDEProperty("TCP/Ports"));
+                else
+                    item += QString(sSectionItemTpl2).arg(tr("Remote Desktop Server", "details report (VRDE Server)"))
+                                                     .arg(tr("Disabled", "details report (VRDE Server)"));
+            }
+
+            pLabel->setText(sTableTpl.arg(item));
+        }
+        else
+            pLabel->clear();
+    }
+}
+
+void UIDetailsBlock::sltUpdateStorage()
+{
+    /* Get current sender: */
+    UIPopupBox *pSender = sender() && sender()->inherits("UIPopupBox") ? qobject_cast<UIPopupBox*>(sender()) : 0;
+    AssertMsg(pSender, ("Sender should be valid!\n"));
+    /* Get corresponding content widget: */
+    QILabel *pLabel = qobject_cast<QILabel*>(m_block[Section_Storage]->contentWidget());
+    AssertMsg(pLabel, ("Content widget should be valid!"));
+
+    /* Enable link: */
+    m_block[Section_Storage]->setTitleLinkEnabled(accessibility());
+
+    /* Update if content widget is visible: */
+    if (pSender->isOpen())
+    {
+        if (!m_machine.isNull())
+        {
+            QString item;
+            /* Iterate over the all m_machine controllers: */
+            const CStorageControllerVector &controllers = m_machine.GetStorageControllers();
+            for (int i = 0; i < controllers.size(); ++i)
+            {
+                /* Get current controller: */
+                const CStorageController &controller = controllers[i];
+                /* Add controller information: */
+                item += QString(sSectionItemTpl3).arg(controller.GetName());
+
+                /* Populate sorted map with attachments information: */
+                QMap<StorageSlot,QString> attachmentsMap;
+                const CMediumAttachmentVector &attachments = m_machine.GetMediumAttachmentsOfController(controller.GetName());
+                for (int j = 0; j < attachments.size(); ++j)
+                {
+                    /* Get current attachment: */
+                    const CMediumAttachment &attachment = attachments[j];
+                    /* Prepare current storage slot: */
+                    StorageSlot attachmentSlot(controller.GetBus(), attachment.GetPort(), attachment.GetDevice());
+                    /* Append 'device slot name' with 'device type name' for CD/DVD devices only: */
+                    QString strDeviceType = attachment.GetType() == KDeviceType_DVD ? tr("(CD/DVD)") : QString();
+                    if (!strDeviceType.isNull())
+                        strDeviceType.prepend(' ');
+                    /* Prepare current medium object: */
+                    const CMedium &medium = attachment.GetMedium();
+                    /* Prepare information about current medium & attachment: */
+                    QString strAttachmentInfo = !attachment.isOk() ? QString() :
+                                                QString(sSectionItemTpl2)
+                                                .arg(QString("&nbsp;&nbsp;") +
+                                                     vboxGlobal().toString(StorageSlot(controller.GetBus(),
+                                                                                       attachment.GetPort(),
+                                                                                       attachment.GetDevice())) +
+                                                     strDeviceType)
+                                                .arg(vboxGlobal().details(medium, false));
+                    /* Insert that attachment into map: */
+                    if (!strAttachmentInfo.isNull())
+                        attachmentsMap.insert(attachmentSlot, strAttachmentInfo);
+                }
+
+                /* Iterate over the sorted map with attachments information: */
+                QMapIterator<StorageSlot,QString> it(attachmentsMap);
+                while (it.hasNext())
+                {
+                    /* Add controller information: */
+                    it.next();
+                    item += it.value();
+                }
+            }
+
+            if (item.isNull())
+                item = QString(sSectionItemTpl1).arg(tr("Not Attached", "details report (Storage)"));
+
+            pLabel->setText(sTableTpl.arg(item));
+        }
+        else
+            pLabel->clear();
+    }
+}
+
+void UIDetailsBlock::sltUpdateAudio()
+{
+    /* Get current sender: */
+    UIPopupBox *pSender = sender() && sender()->inherits("UIPopupBox") ? qobject_cast<UIPopupBox*>(sender()) : 0;
+    AssertMsg(pSender, ("Sender should be valid!\n"));
+    /* Get corresponding content widget: */
+    QILabel *pLabel = qobject_cast<QILabel*>(m_block[Section_Audio]->contentWidget());
+    AssertMsg(pLabel, ("Content widget should be valid!"));
+
+    /* Enable link: */
+    m_block[Section_Audio]->setTitleLinkEnabled(accessibility());
+
+    /* Update if content widget is visible: */
+    if (pSender->isOpen())
+    {
+        if (!m_machine.isNull())
+        {
+            QString item;
+
+            const CAudioAdapter &audio = m_machine.GetAudioAdapter();
+            if (audio.GetEnabled())
+                item = QString(sSectionItemTpl2).arg(tr("Host Driver", "details report (audio)"),
+                                                     vboxGlobal().toString(audio.GetAudioDriver())) +
+                       QString(sSectionItemTpl2).arg(tr("Controller", "details report (audio)"),
+                                                     vboxGlobal().toString(audio.GetAudioController()));
+            else
+                item = QString(sSectionItemTpl1).arg(tr("Disabled", "details report (audio)"));
+
+            pLabel->setText(sTableTpl.arg(item));
+        }
+        else
+            pLabel->clear();
+    }
+}
+
+void UIDetailsBlock::sltUpdateNetwork()
+{
+    /* Get current sender: */
+    UIPopupBox *pSender = sender() && sender()->inherits("UIPopupBox") ? qobject_cast<UIPopupBox*>(sender()) : 0;
+    AssertMsg(pSender, ("Sender should be valid!\n"));
+    /* Get corresponding content widget: */
+    QILabel *pLabel = qobject_cast<QILabel*>(m_block[Section_Network]->contentWidget());
+    AssertMsg(pLabel, ("Content widget should be valid!"));
+
+    /* Enable link: */
+    m_block[Section_Network]->setTitleLinkEnabled(accessibility());
+
+    /* Update if content widget is visible: */
+    if (pSender->isOpen())
+    {
+        if (!m_machine.isNull())
+        {
+            QString item;
+
+            ulong count = m_vbox.GetSystemProperties().GetMaxNetworkAdapters(KChipsetType_PIIX3);
+            for (ulong slot = 0; slot < count; slot ++)
+            {
+                const CNetworkAdapter &adapter = m_machine.GetNetworkAdapter(slot);
+                if (adapter.GetEnabled())
+                {
+                    KNetworkAttachmentType type = adapter.GetAttachmentType();
+                    QString attType = vboxGlobal().toString(adapter.GetAdapterType())
+                                      .replace(QRegExp("\\s\\(.+\\)"), " (%1)");
+                    /* Don't use the adapter type string for types that have
+                     * an additional symbolic network/interface name field,
+                     * use this name instead: */
+                    if (type == KNetworkAttachmentType_Bridged)
+                        attType = attType.arg(tr("Bridged adapter, %1", "details report (network)").arg(adapter.GetBridgedInterface()));
+                    else if (type == KNetworkAttachmentType_Internal)
+                        attType = attType.arg(tr("Internal network, '%1'", "details report (network)").arg(adapter.GetInternalNetwork()));
+                    else if (type == KNetworkAttachmentType_HostOnly)
+                        attType = attType.arg(tr("Host-only adapter, '%1'", "details report (network)").arg(adapter.GetHostOnlyInterface()));
+                    else if (type == KNetworkAttachmentType_Generic)
+                    {
+                        QString strGenericDriverProperties(summarizeGenericProperties(adapter));
+                        attType = strGenericDriverProperties.isNull() ?
+                                  attType.arg(tr("Generic driver, '%1'", "details report (network)").arg(adapter.GetGenericDriver())) :
+                                  attType.arg(tr("Generic driver, '%1' {&nbsp;%2&nbsp;}", "details report (network)")
+                                              .arg(adapter.GetGenericDriver(), strGenericDriverProperties));
+                    }
+                    else
+                        attType = attType.arg(vboxGlobal().toString(type));
+
+                    item += QString(sSectionItemTpl2).arg(tr("Adapter %1", "details report (network)").arg(adapter.GetSlot() + 1))
+                                                     .arg(attType);
+                }
+            }
+            if (item.isNull())
+                item = QString(sSectionItemTpl1).arg(tr("Disabled", "details report (network)"));
+
+            pLabel->setText(sTableTpl.arg(item));
+        }
+        else
+            pLabel->clear();
+    }
+}
+
+void UIDetailsBlock::sltUpdateSerialPorts()
+{
+    /* Get current sender: */
+    UIPopupBox *pSender = sender() && sender()->inherits("UIPopupBox") ? qobject_cast<UIPopupBox*>(sender()) : 0;
+    AssertMsg(pSender, ("Sender should be valid!\n"));
+    /* Get corresponding content widget: */
+    QILabel *pLabel = qobject_cast<QILabel*>(m_block[Section_Serial]->contentWidget());
+    AssertMsg(pLabel, ("Content widget should be valid!"));
+
+    /* Enable link: */
+    m_block[Section_Serial]->setTitleLinkEnabled(accessibility());
+
+    /* Update if content widget is visible: */
+    if (pSender->isOpen())
+    {
+        if (!m_machine.isNull())
+        {
+            QString item;
+
+            ulong count = m_vbox.GetSystemProperties().GetSerialPortCount();
+            for (ulong slot = 0; slot < count; slot ++)
+            {
+                const CSerialPort &port = m_machine.GetSerialPort(slot);
+                if (port.GetEnabled())
+                {
+                    KPortMode mode = port.GetHostMode();
+                    QString data = vboxGlobal().toCOMPortName(port.GetIRQ(), port.GetIOBase()) + ", ";
+                    if (mode == KPortMode_HostPipe || mode == KPortMode_HostDevice || mode == KPortMode_RawFile)
+                        data += QString("%1 (<nobr>%2</nobr>)").arg(vboxGlobal().toString(mode)).arg(QDir::toNativeSeparators(port.GetPath()));
+                    else
+                        data += vboxGlobal().toString(mode);
+
+                    item += QString(sSectionItemTpl2).arg(tr("Port %1", "details report (serial ports)").arg(port.GetSlot() + 1))
+                                                     .arg(data);
+                }
+            }
+            if (item.isNull())
+                item = QString(sSectionItemTpl1).arg(tr("Disabled", "details report (serial ports)"));
+
+            pLabel->setText(sTableTpl.arg(item));
+        }
+        else
+            pLabel->clear();
+    }
+}
+
+#ifdef VBOX_WITH_PARALLEL_PORTS
+void UIDetailsBlock::sltUpdateParallelPorts()
+{
+    /* Get current sender: */
+    UIPopupBox *pSender = sender() && sender()->inherits("UIPopupBox") ? qobject_cast<UIPopupBox*>(sender()) : 0;
+    AssertMsg(pSender, ("Sender should be valid!\n"));
+    /* Get corresponding content widget: */
+    QILabel *pLabel = qobject_cast<QILabel*>(m_block[Section_Parallel]->contentWidget());
+    AssertMsg(pLabel, ("Content widget should be valid!"));
+
+    /* Enable link: */
+    m_block[Section_Parallel]->setTitleLinkEnabled(accessibility());
+
+    /* Update if content widget is visible: */
+    if (pSender->isOpen())
+    {
+        if (!m_machine.isNull())
+        {
+            QString item;
+
+            ulong count = m_vbox.GetSystemProperties().GetParallelPortCount();
+            for (ulong slot = 0; slot < count; slot ++)
+            {
+                const CParallelPort &port = m_machine.GetParallelPort(slot);
+                if (port.GetEnabled())
+                {
+                    QString data = vboxGlobal().toLPTPortName(port.GetIRQ(), port.GetIOBase()) +
+                                   QString(" (<nobr>%1</nobr>)").arg(QDir::toNativeSeparators(port.GetPath()));
+
+                    item += QString(sSectionItemTpl2).arg(tr("Port %1", "details report (parallel ports)").arg(port.GetSlot() + 1))
+                                                     .arg(data);
+                }
+            }
+            if (item.isNull())
+                item = QString(sSectionItemTpl1).arg(tr("Disabled", "details report (parallel ports)"));
+
+            pLabel->setText(sTableTpl.arg(item));
+        }
+        else
+            pLabel->clear();
+    }
+}
+#endif /* VBOX_WITH_PARALLEL_PORTS */
+
+void UIDetailsBlock::sltUpdateUSB()
+{
+    /* Get current sender: */
+    UIPopupBox *pSender = sender() && sender()->inherits("UIPopupBox") ? qobject_cast<UIPopupBox*>(sender()) : 0;
+    AssertMsg(pSender, ("Sender should be valid!\n"));
+    /* Get corresponding content widget: */
+    QILabel *pLabel = qobject_cast<QILabel*>(m_block[Section_USB]->contentWidget());
+    AssertMsg(pLabel, ("Content widget should be valid!"));
+
+    /* Enable link: */
+    m_block[Section_USB]->setTitleLinkEnabled(accessibility());
+
+    /* Update if content widget is visible: */
+    if (pSender->isOpen())
+    {
+        if (!m_machine.isNull())
+        {
+            QString item;
+
+            const CUSBController &ctl = m_machine.GetUSBController();
+            if (!ctl.isNull() && ctl.GetProxyAvailable())
+            {
+                setUSBAvailable(true);
+                /* The USB controller may be unavailable (i.e. in VirtualBox OSE): */
+                if (ctl.GetEnabled())
+                {
+                    const CUSBDeviceFilterVector &coll = ctl.GetDeviceFilters();
+                    uint active = 0;
+                    for (int i = 0; i < coll.size(); ++i)
+                        if (coll[i].GetActive())
+                            ++active;
+
+                    item = QString(sSectionItemTpl2).arg(tr("Device Filters", "details report (USB)"),
+                                                         tr("%1 (%2 active)", "details report (USB)").arg(coll.size()).arg(active));
+                }
+                else
+                    item = QString(sSectionItemTpl1).arg(tr("Disabled", "details report (USB)"));
+
+                pLabel->setText(sTableTpl.arg(item));
+            }
+            else
+            {
+                setUSBAvailable(false);
+                /* Fully hide when USB is not available: */
+                m_block[Section_USB]->hide();
+            }
+        }
+        else
+            pLabel->clear();
+    }
+}
+
+void UIDetailsBlock::sltUpdateSharedFolders()
+{
+    /* Get current sender: */
+    UIPopupBox *pSender = sender() && sender()->inherits("UIPopupBox") ? qobject_cast<UIPopupBox*>(sender()) : 0;
+    AssertMsg(pSender, ("Sender should be valid!\n"));
+    /* Get corresponding content widget: */
+    QILabel *pLabel = qobject_cast<QILabel*>(m_block[Section_SharedFolders]->contentWidget());
+    AssertMsg(pLabel, ("Content widget should be valid!"));
+
+    /* Enable link: */
+    m_block[Section_SharedFolders]->setTitleLinkEnabled(accessibility());
+
+    /* Update if content widget is visible: */
+    if (pSender->isOpen())
+    {
+        if (!m_machine.isNull())
+        {
+            QString item;
+
+            ulong count = m_machine.GetSharedFolders().size();
+            if (count > 0)
+            {
+                item = QString(sSectionItemTpl2).arg(tr("Shared Folders", "details report (shared folders)")).arg(count);
+            }
+            else
+                item = QString(sSectionItemTpl1).arg(tr("None", "details report (shared folders)"));
+
+            pLabel->setText(sTableTpl.arg(item));
+        }
+        else
+            pLabel->clear();
+    }
+}
+
+void UIDetailsBlock::sltUpdateDescription()
+{
+    /* Get current sender: */
+    UIPopupBox *pSender = sender() && sender()->inherits("UIPopupBox") ? qobject_cast<UIPopupBox*>(sender()) : 0;
+    AssertMsg(pSender, ("Sender should be valid!\n"));
+    /* Get corresponding content widget: */
+    QILabel *pLabel = qobject_cast<QILabel*>(m_block[Section_Description]->contentWidget());
+    AssertMsg(pLabel, ("Content widget should be valid!"));
+
+    /* Enable link: */
+    m_block[Section_Description]->setTitleLinkEnabled(accessibility());
+
+    /* Update if content widget is visible: */
+    if (pSender->isOpen())
+    {
+        if (!m_machine.isNull())
+        {
+            QString item;
+            const QString &strDesc = m_machine.GetDescription();
+            if (!strDesc.isEmpty())
+                item = QString(sSectionItemTpl4).arg(strDesc);
+            else
+                item = QString(sSectionItemTpl1).arg(tr("None", "details report (description)"));
+
+            pLabel->setText(sTableTpl.arg(item));
+        }
+        else
+            pLabel->clear();
+    }
+}
+
+bool UIDetailsBlock::event(QEvent *pEvent)
+{
+    /* Handle special events: */
+    switch (pEvent->type())
+    {
+        /* Handle details-block-prepare-start event: */
+        case UIEventDetailsBlockPrepareStart::Type:
+        {
+            /* Cast and accept event: */
+            UIEventDetailsBlockPrepareStart *pEventDetailsBlockPrepareStart = static_cast<UIEventDetailsBlockPrepareStart*>(pEvent);
+            pEventDetailsBlockPrepareStart->accept();
+            /* Create request for the first section: */
+            QCoreApplication::postEvent(this, new UIEventDetailsBlockPrepareSectionStart(0));
+            /* Finish processing: */
+            return true;
+        }
+        /* Handle details-block-section-prepare-start event: */
+        case UIEventDetailsBlockPrepareSectionStart::Type:
+        {
+            /* Cast and accept event: */
+            UIEventDetailsBlockPrepareSectionStart *pEventDetailsBlockPrepareSectionStart = static_cast<UIEventDetailsBlockPrepareSectionStart*>(pEvent);
+            pEventDetailsBlockPrepareSectionStart->accept();
+            /* Preparing section: */
+            createSection(pEventDetailsBlockPrepareSectionStart->sectionNumber());
+            /* Create request to finish current section: */
+            QCoreApplication::postEvent(this, new UIEventDetailsBlockPrepareSectionFinish(pEventDetailsBlockPrepareSectionStart->sectionNumber()));
+            /* Finish processing: */
+            return true;
+        }
+        /* Handle details-block-section-prepare-finish event: */
+        case UIEventDetailsBlockPrepareSectionFinish::Type:
+        {
+            /* Cast and accept event: */
+            UIEventDetailsBlockPrepareSectionFinish *pEventDetailsBlockPrepareSectionFinish = static_cast<UIEventDetailsBlockPrepareSectionFinish*>(pEvent);
+            pEventDetailsBlockPrepareSectionFinish->accept();
+            if (pEventDetailsBlockPrepareSectionFinish->sectionNumber() < m_sections.size() - 1)
+            {
+                /* Create request for the next section: */
+                QCoreApplication::postEvent(this, new UIEventDetailsBlockPrepareSectionStart(pEventDetailsBlockPrepareSectionFinish->sectionNumber() + 1));
+            }
+            else
+            {
+                /* Create reply for the current block: */
+                QCoreApplication::postEvent(parent(), new UIEventDetailsPrepareBlockFinish(m_iBlockNumber));
+            }
+            /* Finish processing: */
+            return true;
+        }
+        default:
+            break;
+    }
+    /* Propagate to base-class: */
+    return QWidget::event(pEvent);
+}
+
+void UIDetailsBlock::createSection(int iSectionNumber)
+{
+    /* If section creation is NOT yet started: */
+    Section section = m_sections[iSectionNumber];
+    if (!m_block.contains(section))
+    {
+        /* Prepare new section (popup box): */
+        UIPopupBox *pPopup = m_block[section] = new UIPopupBox(this);
+        pPopup->hide();
+        connect(pPopup, SIGNAL(titleClicked(const QString &)), details()->detailsPage(), SIGNAL(linkClicked(const QString &)));
+        connect(pPopup, SIGNAL(toggled(bool)), parent(), SLOT(sltPopupToggled(bool)));
+        pPopup->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
+        pPopup->setProperty("section-type", static_cast<int>(section));
+        if (!m_machine.GetAccessible())
+            pPopup->setWarningIcon(UIIconPool::iconSet(":/state_aborted_16px.png"));
+
+        /* Configure the popup box: */
+        switch (section)
+        {
+            case Section_General:
+            {
+                QILabel *pLabel = new QILabel(pPopup);
+                pLabel->setWordWrap(true);
+                pPopup->setTitleIcon(UIIconPool::iconSet(":/machine_16px.png"));
+                pPopup->setTitleLink("#general");
+                pPopup->setContentWidget(pLabel);
+                connect(pPopup, SIGNAL(sigUpdateContentWidget()), this, SLOT(sltUpdateGeneral()));
+                break;
+            }
+            case Section_System:
+            {
+                QILabel *pLabel = new QILabel(pPopup);
+                pLabel->setWordWrap(true);
+                pPopup->setTitleIcon(UIIconPool::iconSet(":/chipset_16px.png"));
+                pPopup->setTitleLink("#system");
+                pPopup->setContentWidget(pLabel);
+                connect(pPopup, SIGNAL(sigUpdateContentWidget()), this, SLOT(sltUpdateSystem()));
+                break;
+            }
+            case Section_Preview:
+            {
+                UIVMPreviewWindow *pWidget = new UIVMPreviewWindow(pPopup);
+                pPopup->setTitleIcon(UIIconPool::iconSet(":/machine_16px.png"));
+                pPopup->setContentWidget(pWidget);
+                pPopup->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
+                /* Make sure the width is always the same, regardless if the preview is shown or not: */
+                pPopup->setFixedWidth(pPopup->sizeHint().width());
+                pWidget->updateGeometry();
+                connect(pPopup, SIGNAL(sigUpdateContentWidget()), this, SLOT(sltUpdatePreview()));
+                break;
+            }
+            case Section_Display:
+            {
+                QILabel *pLabel = new QILabel(pPopup);
+                pLabel->setWordWrap(true);
+                pPopup->setTitleIcon(UIIconPool::iconSet(":/vrdp_16px.png"));
+                pPopup->setTitleLink("#display");
+                pPopup->setContentWidget(pLabel);
+                connect(pPopup, SIGNAL(sigUpdateContentWidget()), this, SLOT(sltUpdateDisplay()));
+                break;
+            }
+            case Section_Storage:
+            {
+                QILabel *pLabel = new QILabel(pPopup);
+                pLabel->setWordWrap(true);
+                pPopup->setTitleIcon(UIIconPool::iconSet(":/attachment_16px.png"));
+                pPopup->setTitleLink("#storage");
+                pPopup->setContentWidget(pLabel);
+                connect(pPopup, SIGNAL(sigUpdateContentWidget()), this, SLOT(sltUpdateStorage()));
+                break;
+            }
+            case Section_Audio:
+            {
+                QILabel *pLabel = new QILabel(pPopup);
+                pLabel->setWordWrap(true);
+                pPopup->setTitleIcon(UIIconPool::iconSet(":/sound_16px.png"));
+                pPopup->setTitleLink("#audio");
+                pPopup->setContentWidget(pLabel);
+                connect(pPopup, SIGNAL(sigUpdateContentWidget()), this, SLOT(sltUpdateAudio()));
+                break;
+            }
+            case Section_Network:
+            {
+                QILabel *pLabel = new QILabel(pPopup);
+                pLabel->setWordWrap(true);
+                pPopup->setTitleIcon(UIIconPool::iconSet(":/nw_16px.png"));
+                pPopup->setTitleLink("#network");
+                pPopup->setContentWidget(pLabel);
+                connect(pPopup, SIGNAL(sigUpdateContentWidget()), this, SLOT(sltUpdateNetwork()));
+                break;
+            }
+            case Section_Serial:
+            {
+                QILabel *pLabel = new QILabel(pPopup);
+                pLabel->setWordWrap(true);
+                pPopup->setTitleIcon(UIIconPool::iconSet(":/serial_port_16px.png"));
+                pPopup->setTitleLink("#serialPorts");
+                pPopup->setContentWidget(pLabel);
+                connect(pPopup, SIGNAL(sigUpdateContentWidget()), this, SLOT(sltUpdateSerialPorts()));
+                break;
+            }
+#ifdef VBOX_WITH_PARALLEL_PORTS
+            case Section_Parallel:
+            {
+                QILabel *pLabel = new QILabel(pPopup);
+                pLabel->setWordWrap(true);
+                pPopup->setTitleIcon(UIIconPool::iconSet(":/parallel_port_16px.png"));
+                pPopup->setTitleLink("#parallelPorts");
+                pPopup->setContentWidget(pLabel);
+                connect(pPopup, SIGNAL(sigUpdateContentWidget()), this, SLOT(sltUpdateParallelPorts()));
+                break;
+            }
+#endif /* VBOX_WITH_PARALLEL_PORTS */
+            case Section_USB:
+            {
+                QILabel *pLabel = new QILabel(pPopup);
+                pLabel->setWordWrap(true);
+                pPopup->setTitleIcon(UIIconPool::iconSet(":/usb_16px.png"));
+                pPopup->setTitleLink("#usb");
+                pPopup->setContentWidget(pLabel);
+                connect(pPopup, SIGNAL(sigUpdateContentWidget()), this, SLOT(sltUpdateUSB()));
+                break;
+            }
+            case Section_SharedFolders:
+            {
+                QILabel *pLabel = new QILabel(pPopup);
+                pLabel->setWordWrap(true);
+                pPopup->setTitleIcon(UIIconPool::iconSet(":/shared_folder_16px.png"));
+                pPopup->setTitleLink("#sfolders");
+                pPopup->setContentWidget(pLabel);
+                connect(pPopup, SIGNAL(sigUpdateContentWidget()), this, SLOT(sltUpdateSharedFolders()));
+                break;
+            }
+            case Section_Description:
+            {
+                QILabel *pLabel = new QILabel(pPopup);
+                pLabel->setWordWrap(true);
+                pPopup->setTitleIcon(UIIconPool::iconSet(":/description_16px.png"));
+                pPopup->setTitleLink("#general%%mTeDescription");
+                pPopup->setContentWidget(pLabel);
+                connect(pPopup, SIGNAL(sigUpdateContentWidget()), this, SLOT(sltUpdateDescription()));
+                break;
+            }
+            default:
+                break;
+        }
+
+        /* Open/close section if necessary: */
+        pPopup->setOpen(sectionOpened(section));
+    }
+
+    /* Call for update: */
+    m_block[section]->callForUpdateContentWidget();
+}
+
+/* static */
+QString UIDetailsBlock::summarizeGenericProperties(const CNetworkAdapter &adapter)
+{
+    QVector<QString> names;
+    QVector<QString> props;
+    props = adapter.GetProperties(QString(), names);
+    QString strResult;
+    for (int i = 0; i < names.size(); ++i)
+    {
+        strResult += names[i] + "=" + props[i];
+        if (i < names.size() - 1)
+            strResult += ", ";
+    }
+    return strResult;
+}
+
 UIDetailsPagePrivate::UIDetailsPagePrivate(QWidget *pParent, QAction *pRefreshAction /* = 0 */)
     : QIWithRetranslateUI<QStackedWidget>(pParent)
-    , m_vbox(vboxGlobal().virtualBox())
     , m_cMachineCount(0)
     , m_pScrollArea(0)
     , m_pDetails(0)
-    , m_fUSBAvailable(true)
     , m_pText(0)
     , m_pErrBox(0), m_pErrLabel(0), m_pErrText(0)
     , m_pRefreshButton(0), m_pRefreshAction(pRefreshAction)
@@ -251,36 +1486,16 @@ UIDetailsPagePrivate::UIDetailsPagePrivate(QWidget *pParent, QAction *pRefreshAc
 UIDetailsPagePrivate::~UIDetailsPagePrivate()
 {
     /* Cleanup details: */
-    cleanupDetails();
+    cleanupDetailsPage();
 }
 
 void UIDetailsPagePrivate::setMachines(const QList<CMachine> &machines)
 {
-    /* Prepare variables: */
-    bool fCountChanged = machines.size() != m_cMachineCount;
-    m_cMachineCount = machines.size();
-    /* Recreate corresponding vectors: */
-    m_machines.clear();
-    m_machines.resize(m_cMachineCount);
-    m_changeable.clear();
-    m_changeable.resize(m_cMachineCount);
-    /* Fetch passed VMs: */
-    for (int i = 0; i < machines.size(); ++i)
-    {
-        /* Get current VM: */
-        const CMachine &machine = machines[i];
-        /* Assign corresponding vector values: */
-        m_machines[i] = machine;
-        m_changeable[i] = machine.isNull() || !machine.GetAccessible() ? false :
-                          machine.GetState() != KMachineState_Stuck &&
-                          machine.GetState() != KMachineState_Saved /* for now! */;
-    }
-
     /* Prepare machine details page if necessary: */
-    prepareDetails();
+    prepareDetailsPage();
 
-    /* Prepare set of blocks: */
-    prepareSet(fCountChanged /* new set? */);
+    /* Prepare machine details: */
+    prepareDetails(machines);
 
     /* Select corresponding widget: */
     setCurrentIndex(indexOf(m_pScrollArea));
@@ -288,12 +1503,6 @@ void UIDetailsPagePrivate::setMachines(const QList<CMachine> &machines)
 
 void UIDetailsPagePrivate::setText(const QString &aText)
 {
-    /* Clear machine maps: */
-    m_machines.clear();
-    m_machines.resize(0);
-    m_changeable.clear();
-    m_changeable.resize(0);
-
     /* Prepare text page if necessary: */
     prepareTextPage();
 
@@ -306,12 +1515,6 @@ void UIDetailsPagePrivate::setText(const QString &aText)
 
 void UIDetailsPagePrivate::setErrorText(const QString &aText)
 {
-    /* Clear machine maps: */
-    m_machines.clear();
-    m_machines.resize(0);
-    m_changeable.clear();
-    m_changeable.resize(0);
-
     /* Prepare error page if necessary: */
     prepareErrorPage();
 
@@ -369,1047 +1572,31 @@ void UIDetailsPagePrivate::retranslateUi()
     }
 }
 
-bool UIDetailsPagePrivate::event(QEvent *pEvent)
+void UIDetailsPagePrivate::prepareDetails(const QList<CMachine> &machines)
 {
-    /* Handle special cases: */
-    switch (pEvent->type())
+    /* Was machine count changed? */
+    bool fCountChanged = m_cMachineCount != machines.size();
+
+    /* Do we need to recreate details? */
+    if (fCountChanged)
     {
-        case UIEventForBlockUpdate::Type:
-        {
-            /* Cast and accept event: */
-            UIEventForBlockUpdate *pEventForBlockUpdate = static_cast<UIEventForBlockUpdate*>(pEvent);
-            pEventForBlockUpdate->accept();
-            /* Check that request is NOT outdated: */
-            if (pEventForBlockUpdate->requestId() == m_currentRequestId)
-            {
-                /* Process current request: */
-                prepareBlock(pEventForBlockUpdate->blockNumber(), pEventForBlockUpdate->newBlock());
-                /* Create next request: */
-                if (pEventForBlockUpdate->blockNumber() < m_cMachineCount - 1)
-                    QCoreApplication::postEvent(this, new UIEventForBlockUpdate(pEventForBlockUpdate->requestId(),
-                                                                                pEventForBlockUpdate->blockNumber() + 1,
-                                                                                pEventForBlockUpdate->newBlock()));
-            }
-            return true;
-        }
-        default:
-            break;
-    }
-    /* Call to base-class: */
-    return QIWithRetranslateUI<QStackedWidget>::event(pEvent);
-}
+        /* Get new machine count: */
+        m_cMachineCount = machines.size();
 
-void UIDetailsPagePrivate::sltUpdateGeneral()
-{
-    /* Get current sender: */
-    UIPopupBox *pSender = sender() && sender()->inherits("UIPopupBox") ? qobject_cast<UIPopupBox*>(sender()) : 0;
-    AssertMsg(pSender, ("Sender should be valid!\n"));
-    /* Get current block number: */
-    int iBlockNumber = pSender->property("block-number").toInt();
-    /* Get current machine: */
-    CMachine &machine = m_machines[iBlockNumber];
-    AssertMsg(!machine.isNull(), ("Machine should be valid!\n"));
-    /* Get details block: */
-    UIDetailsBlock &block = *m_set[iBlockNumber];
-    /* Get corresponding content widget: */
-    QILabel *pLabel = qobject_cast<QILabel*>(block[Section_General]->contentWidget());
-    AssertMsg(pLabel, ("Content widget should be valid!"));
-
-    /* Enable link: */
-    block[Section_General]->setTitleLinkEnabled(m_changeable[iBlockNumber]);
-
-    /* Update if content widget is visible: */
-    if (pSender->isOpen())
-    {
-        if (!machine.isNull())
-        {
-            QString item;
-            if (machine.GetAccessible())
-            {
-                item = sSectionItemTpl2.arg(tr("Name", "details report"), machine.GetName())
-                     + sSectionItemTpl2.arg(tr("OS Type", "details report"), vboxGlobal().vmGuestOSTypeDescription(machine.GetOSTypeId()));
-            }
-            else
-            {
-                item = QString(sSectionItemTpl1).arg(tr("Information inaccessible", "details report"));
-            }
-            pLabel->setText(sTableTpl.arg(item));
-        }
-        else
-            pLabel->clear();
-    }
-}
-
-void UIDetailsPagePrivate::sltUpdateSystem()
-{
-    /* Get current sender: */
-    UIPopupBox *pSender = sender() && sender()->inherits("UIPopupBox") ? qobject_cast<UIPopupBox*>(sender()) : 0;
-    AssertMsg(pSender, ("Sender should be valid!\n"));
-    /* Get current block number: */
-    int iBlockNumber = pSender->property("block-number").toInt();
-    /* Get current machine: */
-    CMachine &machine = m_machines[iBlockNumber];
-    AssertMsg(!machine.isNull(), ("Machine should be valid!\n"));
-    /* Get details block: */
-    UIDetailsBlock &block = *m_set[iBlockNumber];
-    /* Get corresponding content widget: */
-    QILabel *pLabel = qobject_cast<QILabel*>(block[Section_System]->contentWidget());
-    AssertMsg(pLabel, ("Content widget should be valid!"));
-
-    /* Enable link: */
-    block[Section_System]->setTitleLinkEnabled(m_changeable[iBlockNumber]);
-
-    /* Update if content widget is visible: */
-    if (pSender->isOpen())
-    {
-        if (!machine.isNull())
-        {
-            QString item;
-            if (machine.GetAccessible())
-            {
-                item = sSectionItemTpl2.arg(tr("Base Memory", "details report"), tr("<nobr>%1 MB</nobr>", "details report"))
-                                       .arg(machine.GetMemorySize());
-
-                int cCPU = machine.GetCPUCount();
-                if (cCPU > 1)
-                    item += sSectionItemTpl2.arg(tr("Processors", "details report"), tr("<nobr>%1</nobr>", "details report"))
-                                            .arg(cCPU);
-
-                int iCPUExecCap = machine.GetCPUExecutionCap();
-                if (iCPUExecCap < 100)
-                    item += sSectionItemTpl2.arg(tr("Execution Cap", "details report"), tr("<nobr>%1%</nobr>", "details report"))
-                                            .arg(iCPUExecCap);
-
-                /* Boot order: */
-                QStringList bootOrder;
-                for (ulong i = 1; i <= m_vbox.GetSystemProperties().GetMaxBootPosition(); ++i)
-                {
-                    KDeviceType device = machine.GetBootOrder(i);
-                    if (device == KDeviceType_Null)
-                        continue;
-                    bootOrder << vboxGlobal().toString(device);
-                }
-                if (bootOrder.isEmpty())
-                    bootOrder << vboxGlobal().toString(KDeviceType_Null);
-
-                item += sSectionItemTpl2.arg(tr("Boot Order", "details report"), bootOrder.join(", "));
-
-#ifdef VBOX_WITH_FULL_DETAILS_REPORT
-                /* BIOS Settings holder: */
-                const CBIOSSettings &biosSettings = machine.GetBIOSSettings();
-                QStringList bios;
-
-                /* ACPI: */
-                if (biosSettings.GetACPIEnabled())
-                    bios << tr("ACPI", "details report");
-
-                /* IO APIC: */
-                if (biosSettings.GetIOAPICEnabled())
-                    bios << tr("IO APIC", "details report");
-
-                if (!bios.isEmpty())
-                    item += sSectionItemTpl2.arg(tr("BIOS", "details report"), bios.join(", "));
-#endif /* VBOX_WITH_FULL_DETAILS_REPORT */
-
-                QStringList accel;
-                if (m_vbox.GetHost().GetProcessorFeature(KProcessorFeature_HWVirtEx))
-                {
-                    /* VT-x/AMD-V: */
-                    if (machine.GetHWVirtExProperty(KHWVirtExPropertyType_Enabled))
-                    {
-                        accel << tr("VT-x/AMD-V", "details report");
-
-                        /* Nested Paging (only when hw virt is enabled): */
-                        if (machine.GetHWVirtExProperty(KHWVirtExPropertyType_NestedPaging))
-                            accel << tr("Nested Paging", "details report");
-                    }
-                }
-
-                /* PAE/NX: */
-                if (machine.GetCPUProperty(KCPUPropertyType_PAE))
-                    accel << tr("PAE/NX", "details report");
-
-                if (!accel.isEmpty())
-                    item += sSectionItemTpl2.arg(tr("Acceleration", "details report"), accel.join(", "));
-            }
-            else
-            {
-                item = QString(sSectionItemTpl1).arg(tr("Information inaccessible", "details report"));
-            }
-            pLabel->setText(sTableTpl.arg(item));
-        }
-        else
-            pLabel->clear();
-    }
-}
-
-void UIDetailsPagePrivate::sltUpdatePreview()
-{
-    /* Get current sender: */
-    UIPopupBox *pSender = sender() && sender()->inherits("UIPopupBox") ? qobject_cast<UIPopupBox*>(sender()) : 0;
-    AssertMsg(pSender, ("Sender should be valid!\n"));
-    /* Get current block number: */
-    int iBlockNumber = pSender->property("block-number").toInt();
-    /* Get current machine: */
-    CMachine &machine = m_machines[iBlockNumber];
-    AssertMsg(!machine.isNull(), ("Machine should be valid!\n"));
-    /* Get details block: */
-    UIDetailsBlock &block = *m_set[iBlockNumber];
-    /* Get corresponding content widget: */
-    UIVMPreviewWindow *pPreview = qobject_cast<UIVMPreviewWindow*>(block[Section_Preview]->contentWidget());
-    AssertMsg(pPreview, ("Content widget should be valid!"));
-
-    /* Update if content widget is visible: */
-    if (pSender->isOpen())
-    {
-        /* Update preview widget: */
-        pPreview->setMachine(machine);
-    }
-}
-
-void UIDetailsPagePrivate::sltUpdateDisplay()
-{
-    /* Get current sender: */
-    UIPopupBox *pSender = sender() && sender()->inherits("UIPopupBox") ? qobject_cast<UIPopupBox*>(sender()) : 0;
-    AssertMsg(pSender, ("Sender should be valid!\n"));
-    /* Get current block number: */
-    int iBlockNumber = pSender->property("block-number").toInt();
-    /* Get current machine: */
-    CMachine &machine = m_machines[iBlockNumber];
-    AssertMsg(!machine.isNull(), ("Machine should be valid!\n"));
-    /* Get details block: */
-    UIDetailsBlock &block = *m_set[iBlockNumber];
-    /* Get corresponding content widget: */
-    QILabel *pLabel = qobject_cast<QILabel*>(block[Section_Display]->contentWidget());
-    AssertMsg(pLabel, ("Content widget should be valid!"));
-
-    /* Enable link: */
-    block[Section_Display]->setTitleLinkEnabled(m_changeable[iBlockNumber]);
-
-    /* Update if content widget is visible: */
-    if (pSender->isOpen())
-    {
-        if (!machine.isNull())
-        {
-            /* Video tab: */
-            QString item = QString(sSectionItemTpl2).arg(tr("Video Memory", "details report"), tr("<nobr>%1 MB</nobr>", "details report"))
-                                                    .arg(machine.GetVRAMSize());
-
-            int cGuestScreens = machine.GetMonitorCount();
-            if (cGuestScreens > 1)
-                item += QString(sSectionItemTpl2).arg(tr("Screens", "details report")).arg(cGuestScreens);
-
-            QStringList accel;
-#ifdef VBOX_WITH_VIDEOHWACCEL
-            if (machine.GetAccelerate2DVideoEnabled())
-                accel << tr("2D Video", "details report");
-#endif /* VBOX_WITH_VIDEOHWACCEL */
-            if (machine.GetAccelerate3DEnabled())
-                accel << tr("3D", "details report");
-
-            if (!accel.isEmpty())
-                item += sSectionItemTpl2.arg(tr("Acceleration", "details report"), accel.join(", "));
-
-            /* VRDE tab: */
-            CVRDEServer srv = machine.GetVRDEServer();
-            if (!srv.isNull())
-            {
-                if (srv.GetEnabled())
-                    item += QString(sSectionItemTpl2).arg(tr("Remote Desktop Server Port", "details report (VRDE Server)"))
-                                                     .arg(srv.GetVRDEProperty("TCP/Ports"));
-                else
-                    item += QString(sSectionItemTpl2).arg(tr("Remote Desktop Server", "details report (VRDE Server)"))
-                                                     .arg(tr("Disabled", "details report (VRDE Server)"));
-            }
-
-            pLabel->setText(sTableTpl.arg(item));
-        }
-        else
-            pLabel->clear();
-    }
-}
-
-void UIDetailsPagePrivate::sltUpdateStorage()
-{
-    /* Get current sender: */
-    UIPopupBox *pSender = sender() && sender()->inherits("UIPopupBox") ? qobject_cast<UIPopupBox*>(sender()) : 0;
-    AssertMsg(pSender, ("Sender should be valid!\n"));
-    /* Get current block number: */
-    int iBlockNumber = pSender->property("block-number").toInt();
-    /* Get current machine: */
-    CMachine &machine = m_machines[iBlockNumber];
-    AssertMsg(!machine.isNull(), ("Machine should be valid!\n"));
-    /* Get details block: */
-    UIDetailsBlock &block = *m_set[iBlockNumber];
-    /* Get corresponding content widget: */
-    QILabel *pLabel = qobject_cast<QILabel*>(block[Section_Storage]->contentWidget());
-    AssertMsg(pLabel, ("Content widget should be valid!"));
-
-    /* Enable link: */
-    block[Section_Storage]->setTitleLinkEnabled(m_changeable[iBlockNumber]);
-
-    /* Update if content widget is visible: */
-    if (pSender->isOpen())
-    {
-        if (!machine.isNull())
-        {
-            QString item;
-            /* Iterate over the all machine controllers: */
-            const CStorageControllerVector &controllers = machine.GetStorageControllers();
-            for (int i = 0; i < controllers.size(); ++i)
-            {
-                /* Get current controller: */
-                const CStorageController &controller = controllers[i];
-                /* Add controller information: */
-                item += QString(sSectionItemTpl3).arg(controller.GetName());
-
-                /* Populate sorted map with attachments information: */
-                QMap<StorageSlot,QString> attachmentsMap;
-                const CMediumAttachmentVector &attachments = machine.GetMediumAttachmentsOfController(controller.GetName());
-                for (int j = 0; j < attachments.size(); ++j)
-                {
-                    /* Get current attachment: */
-                    const CMediumAttachment &attachment = attachments[j];
-                    /* Prepare current storage slot: */
-                    StorageSlot attachmentSlot(controller.GetBus(), attachment.GetPort(), attachment.GetDevice());
-                    /* Append 'device slot name' with 'device type name' for CD/DVD devices only: */
-                    QString strDeviceType = attachment.GetType() == KDeviceType_DVD ? tr("(CD/DVD)") : QString();
-                    if (!strDeviceType.isNull())
-                        strDeviceType.prepend(' ');
-                    /* Prepare current medium object: */
-                    const CMedium &medium = attachment.GetMedium();
-                    /* Prepare information about current medium & attachment: */
-                    QString strAttachmentInfo = !attachment.isOk() ? QString() :
-                                                QString(sSectionItemTpl2)
-                                                .arg(QString("&nbsp;&nbsp;") +
-                                                     vboxGlobal().toString(StorageSlot(controller.GetBus(),
-                                                                                       attachment.GetPort(),
-                                                                                       attachment.GetDevice())) +
-                                                     strDeviceType)
-                                                .arg(vboxGlobal().details(medium, false));
-                    /* Insert that attachment into map: */
-                    if (!strAttachmentInfo.isNull())
-                        attachmentsMap.insert(attachmentSlot, strAttachmentInfo);
-                }
-
-                /* Iterate over the sorted map with attachments information: */
-                QMapIterator<StorageSlot,QString> it(attachmentsMap);
-                while (it.hasNext())
-                {
-                    /* Add controller information: */
-                    it.next();
-                    item += it.value();
-                }
-            }
-
-            if (item.isNull())
-                item = QString(sSectionItemTpl1).arg(tr("Not Attached", "details report (Storage)"));
-
-            pLabel->setText(sTableTpl.arg(item));
-        }
-        else
-            pLabel->clear();
-    }
-}
-
-void UIDetailsPagePrivate::sltUpdateAudio()
-{
-    /* Get current sender: */
-    UIPopupBox *pSender = sender() && sender()->inherits("UIPopupBox") ? qobject_cast<UIPopupBox*>(sender()) : 0;
-    AssertMsg(pSender, ("Sender should be valid!\n"));
-    /* Get current block number: */
-    int iBlockNumber = pSender->property("block-number").toInt();
-    /* Get current machine: */
-    CMachine &machine = m_machines[iBlockNumber];
-    AssertMsg(!machine.isNull(), ("Machine should be valid!\n"));
-    /* Get details block: */
-    UIDetailsBlock &block = *m_set[iBlockNumber];
-    /* Get corresponding content widget: */
-    QILabel *pLabel = qobject_cast<QILabel*>(block[Section_Audio]->contentWidget());
-    AssertMsg(pLabel, ("Content widget should be valid!"));
-
-    /* Enable link: */
-    block[Section_Audio]->setTitleLinkEnabled(m_changeable[iBlockNumber]);
-
-    /* Update if content widget is visible: */
-    if (pSender->isOpen())
-    {
-        if (!machine.isNull())
-        {
-            QString item;
-
-            const CAudioAdapter &audio = machine.GetAudioAdapter();
-            if (audio.GetEnabled())
-                item = QString(sSectionItemTpl2).arg(tr("Host Driver", "details report (audio)"),
-                                                     vboxGlobal().toString(audio.GetAudioDriver())) +
-                       QString(sSectionItemTpl2).arg(tr("Controller", "details report (audio)"),
-                                                     vboxGlobal().toString(audio.GetAudioController()));
-            else
-                item = QString(sSectionItemTpl1).arg(tr("Disabled", "details report (audio)"));
-
-            pLabel->setText(sTableTpl.arg(item));
-        }
-        else
-            pLabel->clear();
-    }
-}
-
-void UIDetailsPagePrivate::sltUpdateNetwork()
-{
-    /* Get current sender: */
-    UIPopupBox *pSender = sender() && sender()->inherits("UIPopupBox") ? qobject_cast<UIPopupBox*>(sender()) : 0;
-    AssertMsg(pSender, ("Sender should be valid!\n"));
-    /* Get current block number: */
-    int iBlockNumber = pSender->property("block-number").toInt();
-    /* Get current machine: */
-    CMachine &machine = m_machines[iBlockNumber];
-    AssertMsg(!machine.isNull(), ("Machine should be valid!\n"));
-    /* Get details block: */
-    UIDetailsBlock &block = *m_set[iBlockNumber];
-    /* Get corresponding content widget: */
-    QILabel *pLabel = qobject_cast<QILabel*>(block[Section_Network]->contentWidget());
-    AssertMsg(pLabel, ("Content widget should be valid!"));
-
-    /* Enable link: */
-    block[Section_Network]->setTitleLinkEnabled(m_changeable[iBlockNumber]);
-
-    /* Update if content widget is visible: */
-    if (pSender->isOpen())
-    {
-        if (!machine.isNull())
-        {
-            QString item;
-
-            ulong count = m_vbox.GetSystemProperties().GetMaxNetworkAdapters(KChipsetType_PIIX3);
-            for (ulong slot = 0; slot < count; slot ++)
-            {
-                const CNetworkAdapter &adapter = machine.GetNetworkAdapter(slot);
-                if (adapter.GetEnabled())
-                {
-                    KNetworkAttachmentType type = adapter.GetAttachmentType();
-                    QString attType = vboxGlobal().toString(adapter.GetAdapterType())
-                                      .replace(QRegExp("\\s\\(.+\\)"), " (%1)");
-                    /* Don't use the adapter type string for types that have
-                     * an additional symbolic network/interface name field,
-                     * use this name instead: */
-                    if (type == KNetworkAttachmentType_Bridged)
-                        attType = attType.arg(tr("Bridged adapter, %1", "details report (network)").arg(adapter.GetBridgedInterface()));
-                    else if (type == KNetworkAttachmentType_Internal)
-                        attType = attType.arg(tr("Internal network, '%1'", "details report (network)").arg(adapter.GetInternalNetwork()));
-                    else if (type == KNetworkAttachmentType_HostOnly)
-                        attType = attType.arg(tr("Host-only adapter, '%1'", "details report (network)").arg(adapter.GetHostOnlyInterface()));
-                    else if (type == KNetworkAttachmentType_Generic)
-                    {
-                        QString strGenericDriverProperties(summarizeGenericProperties(adapter));
-                        attType = strGenericDriverProperties.isNull() ?
-                                  attType.arg(tr("Generic driver, '%1'", "details report (network)").arg(adapter.GetGenericDriver())) :
-                                  attType.arg(tr("Generic driver, '%1' {&nbsp;%2&nbsp;}", "details report (network)")
-                                              .arg(adapter.GetGenericDriver(), strGenericDriverProperties));
-                    }
-                    else
-                        attType = attType.arg(vboxGlobal().toString(type));
-
-                    item += QString(sSectionItemTpl2).arg(tr("Adapter %1", "details report (network)").arg(adapter.GetSlot() + 1))
-                                                     .arg(attType);
-                }
-            }
-            if (item.isNull())
-                item = QString(sSectionItemTpl1).arg(tr("Disabled", "details report (network)"));
-
-            pLabel->setText(sTableTpl.arg(item));
-        }
-        else
-            pLabel->clear();
-    }
-}
-
-void UIDetailsPagePrivate::sltUpdateSerialPorts()
-{
-    /* Get current sender: */
-    UIPopupBox *pSender = sender() && sender()->inherits("UIPopupBox") ? qobject_cast<UIPopupBox*>(sender()) : 0;
-    AssertMsg(pSender, ("Sender should be valid!\n"));
-    /* Get current block number: */
-    int iBlockNumber = pSender->property("block-number").toInt();
-    /* Get current machine: */
-    CMachine &machine = m_machines[iBlockNumber];
-    AssertMsg(!machine.isNull(), ("Machine should be valid!\n"));
-    /* Get details block: */
-    UIDetailsBlock &block = *m_set[iBlockNumber];
-    /* Get corresponding content widget: */
-    QILabel *pLabel = qobject_cast<QILabel*>(block[Section_Serial]->contentWidget());
-    AssertMsg(pLabel, ("Content widget should be valid!"));
-
-    /* Enable link: */
-    block[Section_Serial]->setTitleLinkEnabled(m_changeable[iBlockNumber]);
-
-    /* Update if content widget is visible: */
-    if (pSender->isOpen())
-    {
-        if (!machine.isNull())
-        {
-            QString item;
-
-            ulong count = m_vbox.GetSystemProperties().GetSerialPortCount();
-            for (ulong slot = 0; slot < count; slot ++)
-            {
-                const CSerialPort &port = machine.GetSerialPort(slot);
-                if (port.GetEnabled())
-                {
-                    KPortMode mode = port.GetHostMode();
-                    QString data = vboxGlobal().toCOMPortName(port.GetIRQ(), port.GetIOBase()) + ", ";
-                    if (mode == KPortMode_HostPipe || mode == KPortMode_HostDevice || mode == KPortMode_RawFile)
-                        data += QString("%1 (<nobr>%2</nobr>)").arg(vboxGlobal().toString(mode)).arg(QDir::toNativeSeparators(port.GetPath()));
-                    else
-                        data += vboxGlobal().toString(mode);
-
-                    item += QString(sSectionItemTpl2).arg(tr("Port %1", "details report (serial ports)").arg(port.GetSlot() + 1))
-                                                     .arg(data);
-                }
-            }
-            if (item.isNull())
-                item = QString(sSectionItemTpl1).arg(tr("Disabled", "details report (serial ports)"));
-
-            pLabel->setText(sTableTpl.arg(item));
-        }
-        else
-            pLabel->clear();
-    }
-}
-
-#ifdef VBOX_WITH_PARALLEL_PORTS
-void UIDetailsPagePrivate::sltUpdateParallelPorts()
-{
-    /* Get current sender: */
-    UIPopupBox *pSender = sender() && sender()->inherits("UIPopupBox") ? qobject_cast<UIPopupBox*>(sender()) : 0;
-    AssertMsg(pSender, ("Sender should be valid!\n"));
-    /* Get current block number: */
-    int iBlockNumber = pSender->property("block-number").toInt();
-    /* Get current machine: */
-    CMachine &machine = m_machines[iBlockNumber];
-    AssertMsg(!machine.isNull(), ("Machine should be valid!\n"));
-    /* Get details block: */
-    UIDetailsBlock &block = *m_set[iBlockNumber];
-    /* Get corresponding content widget: */
-    QILabel *pLabel = qobject_cast<QILabel*>(block[Section_Parallel]->contentWidget());
-    AssertMsg(pLabel, ("Content widget should be valid!"));
-
-    /* Enable link: */
-    block[Section_Parallel]->setTitleLinkEnabled(m_changeable[iBlockNumber]);
-
-    /* Update if content widget is visible: */
-    if (pSender->isOpen())
-    {
-        if (!machine.isNull())
-        {
-            QString item;
-
-            ulong count = m_vbox.GetSystemProperties().GetParallelPortCount();
-            for (ulong slot = 0; slot < count; slot ++)
-            {
-                const CParallelPort &port = machine.GetParallelPort(slot);
-                if (port.GetEnabled())
-                {
-                    QString data = vboxGlobal().toLPTPortName(port.GetIRQ(), port.GetIOBase()) +
-                                   QString(" (<nobr>%1</nobr>)").arg(QDir::toNativeSeparators(port.GetPath()));
-
-                    item += QString(sSectionItemTpl2).arg(tr("Port %1", "details report (parallel ports)").arg(port.GetSlot() + 1))
-                                                     .arg(data);
-                }
-            }
-            if (item.isNull())
-                item = QString(sSectionItemTpl1).arg(tr("Disabled", "details report (parallel ports)"));
-
-            pLabel->setText(sTableTpl.arg(item));
-        }
-        else
-            pLabel->clear();
-    }
-}
-#endif /* VBOX_WITH_PARALLEL_PORTS */
-
-void UIDetailsPagePrivate::sltUpdateUSB()
-{
-    /* Get current sender: */
-    UIPopupBox *pSender = sender() && sender()->inherits("UIPopupBox") ? qobject_cast<UIPopupBox*>(sender()) : 0;
-    AssertMsg(pSender, ("Sender should be valid!\n"));
-    /* Get current block number: */
-    int iBlockNumber = pSender->property("block-number").toInt();
-    /* Get current machine: */
-    CMachine &machine = m_machines[iBlockNumber];
-    AssertMsg(!machine.isNull(), ("Machine should be valid!\n"));
-    /* Get details block: */
-    UIDetailsBlock &block = *m_set[iBlockNumber];
-    /* Get corresponding content widget: */
-    QILabel *pLabel = qobject_cast<QILabel*>(block[Section_USB]->contentWidget());
-    AssertMsg(pLabel, ("Content widget should be valid!"));
-
-    /* Enable link: */
-    block[Section_USB]->setTitleLinkEnabled(m_changeable[iBlockNumber]);
-
-    /* Update if content widget is visible: */
-    if (pSender->isOpen())
-    {
-        if (!machine.isNull())
-        {
-            QString item;
-
-            const CUSBController &ctl = machine.GetUSBController();
-            if (!ctl.isNull() && ctl.GetProxyAvailable())
-            {
-                m_fUSBAvailable = true;
-                /* The USB controller may be unavailable (i.e. in VirtualBox OSE): */
-                if (ctl.GetEnabled())
-                {
-                    const CUSBDeviceFilterVector &coll = ctl.GetDeviceFilters();
-                    uint active = 0;
-                    for (int i = 0; i < coll.size(); ++i)
-                        if (coll[i].GetActive())
-                            ++active;
-
-                    item = QString(sSectionItemTpl2).arg(tr("Device Filters", "details report (USB)"),
-                                                         tr("%1 (%2 active)", "details report (USB)").arg(coll.size()).arg(active));
-                }
-                else
-                    item = QString(sSectionItemTpl1).arg(tr("Disabled", "details report (USB)"));
-
-                pLabel->setText(sTableTpl.arg(item));
-            }
-            else
-            {
-                m_fUSBAvailable = false;
-                /* Fully hide when USB is not available: */
-                block[Section_USB]->hide();
-            }
-        }
-        else
-            pLabel->clear();
-    }
-}
-
-void UIDetailsPagePrivate::sltUpdateSharedFolders()
-{
-    /* Get current sender: */
-    UIPopupBox *pSender = sender() && sender()->inherits("UIPopupBox") ? qobject_cast<UIPopupBox*>(sender()) : 0;
-    AssertMsg(pSender, ("Sender should be valid!\n"));
-    /* Get current block number: */
-    int iBlockNumber = pSender->property("block-number").toInt();
-    /* Get current machine: */
-    CMachine &machine = m_machines[iBlockNumber];
-    AssertMsg(!machine.isNull(), ("Machine should be valid!\n"));
-    /* Get details block: */
-    UIDetailsBlock &block = *m_set[iBlockNumber];
-    /* Get corresponding content widget: */
-    QILabel *pLabel = qobject_cast<QILabel*>(block[Section_SharedFolders]->contentWidget());
-    AssertMsg(pLabel, ("Content widget should be valid!"));
-
-    /* Enable link: */
-    block[Section_SharedFolders]->setTitleLinkEnabled(m_changeable[iBlockNumber]);
-
-    /* Update if content widget is visible: */
-    if (pSender->isOpen())
-    {
-        if (!machine.isNull())
-        {
-            QString item;
-
-            ulong count = machine.GetSharedFolders().size();
-            if (count > 0)
-            {
-                item = QString(sSectionItemTpl2).arg(tr("Shared Folders", "details report (shared folders)")).arg(count);
-            }
-            else
-                item = QString(sSectionItemTpl1).arg(tr("None", "details report (shared folders)"));
-
-            pLabel->setText(sTableTpl.arg(item));
-        }
-        else
-            pLabel->clear();
-    }
-}
-
-void UIDetailsPagePrivate::sltUpdateDescription()
-{
-    /* Get current sender: */
-    UIPopupBox *pSender = sender() && sender()->inherits("UIPopupBox") ? qobject_cast<UIPopupBox*>(sender()) : 0;
-    AssertMsg(pSender, ("Sender should be valid!\n"));
-    /* Get current block number: */
-    int iBlockNumber = pSender->property("block-number").toInt();
-    /* Get current machine: */
-    CMachine &machine = m_machines[iBlockNumber];
-    AssertMsg(!machine.isNull(), ("Machine should be valid!\n"));
-    /* Get details block: */
-    UIDetailsBlock &block = *m_set[iBlockNumber];
-    /* Get corresponding content widget: */
-    QILabel *pLabel = qobject_cast<QILabel*>(block[Section_Description]->contentWidget());
-    AssertMsg(pLabel, ("Content widget should be valid!"));
-
-    /* Enable link: */
-    block[Section_Description]->setTitleLinkEnabled(m_changeable[iBlockNumber]);
-
-    /* Update if content widget is visible: */
-    if (pSender->isOpen())
-    {
-        if (!machine.isNull())
-        {
-            QString item;
-            const QString &strDesc = machine.GetDescription();
-            if (!strDesc.isEmpty())
-                item = QString(sSectionItemTpl4).arg(strDesc);
-            else
-                item = QString(sSectionItemTpl1).arg(tr("None", "details report (description)"));
-
-            pLabel->setText(sTableTpl.arg(item));
-        }
-        else
-            pLabel->clear();
-    }
-}
-
-void UIDetailsPagePrivate::sltContextMenuRequested(const QPoint &pos)
-{
-    /* Populate list of allowed actions: */
-    QList<QAction*> actions;
-    for (int i = 0; i < m_sections.size(); ++i)
-        actions << m_actions[m_sections[i]];
-    /* Restrict USB action if USB is NOT available: */
-    if (!m_fUSBAvailable)
-        actions.removeOne(m_actions[Section_USB]);
-    /* Popup menu to show/hide sections: */
-    QAction *pReturn = QMenu::exec(actions, m_pDetails->mapToGlobal(pos), 0);
-    /* If some action was toggled: */
-    if (pReturn)
-    {
-        /* Get corresponding section type: */
-        Section section = static_cast<Section>(pReturn->data().toInt());
-        /* Enumerate all the available blocks: */
-        for (int i = 0; i < m_cMachineCount; ++i)
-        {
-            /* Get current popup: */
-            UIPopupBox *pPopup = (*m_set[i])[section];
-            /* Show/hide popup if necessary: */
-            if (pReturn->isChecked())
-                pPopup->show();
-            else
-                pPopup->hide();
-        }
-    }
-}
-
-void UIDetailsPagePrivate::sltPopupToggled(bool fPopupOpened)
-{
-    /* Get current sender: */
-    UIPopupBox *pSender = sender() && sender()->inherits("UIPopupBox") ? qobject_cast<UIPopupBox*>(sender()) : 0;
-    AssertMsg(pSender, ("Sender should be valid!\n"));
-    /* Get section type: */
-    Section section = static_cast<Section>(pSender->property("section-type").toInt());
-    /* Update the state of corresponding map: */
-    m_sectionOpened[section] = fPopupOpened;
-    /* Open/Close all the blocks: */
-    for (int i = 0; i < m_cMachineCount; ++i)
-        (*m_set[i])[section]->setOpen(fPopupOpened);
-}
-
-void UIDetailsPagePrivate::prepareSet(bool fNew)
-{
-    /* Do we need to create new set? */
-    if (fNew)
-    {
-        /* Which sections should be available: */
-        m_sections.clear();
-        if (m_cMachineCount == 1)
-        {
-            m_sections << Section_General
-                       << Section_System
-                       << Section_Preview
-                       << Section_Display
-                       << Section_Storage
-                       << Section_Audio
-                       << Section_Network
-                       << Section_Serial
-    #ifdef VBOX_WITH_PARALLEL_PORTS
-                       << Section_Parallel
-    #endif /* VBOX_WITH_PARALLEL_PORTS */
-                       << Section_USB
-                       << Section_SharedFolders
-                       << Section_Description;
-        }
-        else
-        {
-            m_sections << Section_General
-                       << Section_System
-                       << Section_Preview;
-        }
-
-        /* Recreate details set: */
-        m_set.clear();
-        m_set.resize(m_cMachineCount);
-
-        /* Re-create details widget: */
+        /* Delete current details if exists:*/
         if (m_pDetails)
             delete m_pDetails;
-        m_pDetails = new QWidget(m_pScrollArea);
+
+        /* Create and configure new details: */
+        m_pDetails = new UIDetails(this);
         m_pScrollArea->setWidget(m_pDetails);
-        m_pDetails->setContextMenuPolicy(Qt::CustomContextMenu);
-        connect(m_pDetails, SIGNAL(customContextMenuRequested(const QPoint&)), this, SLOT(sltContextMenuRequested(const QPoint&)));
-        QVBoxLayout *pMainLayout = new QVBoxLayout(m_pDetails);
-        pMainLayout->setContentsMargins(gsLeftMargin, gsTopMargin, gsRightMargin, gsBottomMargin);
-        pMainLayout->addStretch(1);
-
-        /* Generate new set id: */
-        m_currentRequestId = QUuid::createUuid();
     }
 
-    /* Prepare set content (blocks): */
-    QCoreApplication::postEvent(this, new UIEventForBlockUpdate(m_currentRequestId, 0, fNew /* recreate block? */));
+    /* Assign new machine array for the details: */
+    m_pDetails->setMachines(machines);
 }
 
-void UIDetailsPagePrivate::prepareBlock(int iBlockNumber, bool fNew)
-{
-    /* Prepare block pointer: */
-    UIDetailsBlock *pBlock = 0;
-
-    /* Do we need to create new block? */
-    if (fNew)
-    {
-        /* Create new block: */
-        pBlock = m_set[iBlockNumber] = new UIDetailsBlock(m_pDetails);
-        UIDetailsBlock &block = *pBlock;
-
-        /* Prepare block content (sections): */
-        for(int i = 0; i < m_sections.size(); ++i)
-            prepareSection(block, iBlockNumber, m_sections[i]);
-
-        /* Layout block content: */
-        QVBoxLayout *pContainerLayout = new QVBoxLayout(pBlock);
-        pContainerLayout->setContentsMargins(0, 0, 0, 0);
-        QHBoxLayout *pt1 = new QHBoxLayout;
-        QVBoxLayout *pt2 = new QVBoxLayout;
-        if (m_sections.contains(Section_General))
-            pt2->addWidget(block[Section_General]);
-        if (m_sections.contains(Section_System))
-            pt2->addWidget(block[Section_System]);
-        pt2->addStretch(1);
-        pt1->addLayout(pt2);
-        QVBoxLayout *pt3 = new QVBoxLayout;
-        if (m_sections.contains(Section_Preview))
-            pt3->addWidget(block[Section_Preview]);
-        pt3->addStretch(1);
-        pt1->addLayout(pt3);
-        pContainerLayout->addLayout(pt1);
-        if (m_sections.contains(Section_Display))
-            pContainerLayout->addWidget(block[Section_Display]);
-        if (m_sections.contains(Section_Storage))
-            pContainerLayout->addWidget(block[Section_Storage]);
-        if (m_sections.contains(Section_Audio))
-            pContainerLayout->addWidget(block[Section_Audio]);
-        if (m_sections.contains(Section_Network))
-            pContainerLayout->addWidget(block[Section_Network]);
-        if (m_sections.contains(Section_Serial))
-            pContainerLayout->addWidget(block[Section_Serial]);
-    #ifdef VBOX_WITH_PARALLEL_PORTS
-        if (m_sections.contains(Section_Parallel))
-            pContainerLayout->addWidget(block[Section_Parallel]);
-    #endif /* VBOX_WITH_PARALLEL_PORTS */
-        if (m_sections.contains(Section_USB))
-            pContainerLayout->addWidget(block[Section_USB]);
-        if (m_sections.contains(Section_SharedFolders))
-            pContainerLayout->addWidget(block[Section_SharedFolders]);
-        if (m_sections.contains(Section_Description))
-            pContainerLayout->addWidget(block[Section_Description]);
-        QVBoxLayout *pMainLayout = qobject_cast<QVBoxLayout*>(m_pDetails->layout());
-        pMainLayout->insertWidget(pMainLayout->count() - 1, pBlock);
-
-        /* Configure created block: */
-        for (int i = 0; i < m_sections.size(); ++i)
-        {
-            /* Assign corresponding action text as section title: */
-            block[m_sections[i]]->setTitle(m_actions[m_sections[i]]->text());
-
-            /* If corresponding action is checked: */
-            if (m_actions[m_sections[i]]->isChecked())
-            {
-                /* Unhide corresponding section: */
-                block[m_sections[i]]->show();
-            }
-        }
-
-        /* Show block: */
-        block.show();
-
-        /* Send and process layout request for the scroll-area: */
-        QEvent layoutEvent(QEvent::LayoutRequest);
-        QCoreApplication::sendEvent(m_pScrollArea, &layoutEvent);
-    }
-    else
-    {
-        /* Get existing block: */
-        pBlock = m_set[iBlockNumber];
-        UIDetailsBlock &block = *pBlock;
-
-        /* For every section of block: */
-        for (int i = 0; i < m_sections.size(); ++i)
-        {
-            /* Call for update: */
-            block[m_sections[i]]->callForUpdateContentWidget();
-        }
-    }
-
-    /* Paint block: */
-    pBlock->repaint();
-}
-
-void UIDetailsPagePrivate::prepareSection(UIDetailsBlock &block, int iBlockNumber, Section section)
-{
-    /* Prepare new section (popup box): */
-    UIPopupBox *pPopup = block[section] = new UIPopupBox(&block);
-    pPopup->hide();
-    connect(pPopup, SIGNAL(titleClicked(const QString &)), this, SIGNAL(linkClicked(const QString &)));
-    connect(pPopup, SIGNAL(toggled(bool)), this, SLOT(sltPopupToggled(bool)));
-    pPopup->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
-    pPopup->setProperty("block-number", iBlockNumber);
-    pPopup->setProperty("section-type", static_cast<int>(section));
-    if (!m_machines[iBlockNumber].GetAccessible())
-        pPopup->setWarningIcon(UIIconPool::iconSet(":/state_aborted_16px.png"));
-
-    /* Configure the popup box: */
-    switch (section)
-    {
-        case Section_General:
-        {
-            QILabel *pLabel = new QILabel(pPopup);
-            pLabel->setWordWrap(true);
-            pPopup->setTitleIcon(UIIconPool::iconSet(":/machine_16px.png"));
-            pPopup->setTitleLink("#general");
-            pPopup->setContentWidget(pLabel);
-            connect(pPopup, SIGNAL(sigUpdateContentWidget()), this, SLOT(sltUpdateGeneral()));
-            break;
-        }
-        case Section_System:
-        {
-            QILabel *pLabel = new QILabel(pPopup);
-            pLabel->setWordWrap(true);
-            pPopup->setTitleIcon(UIIconPool::iconSet(":/chipset_16px.png"));
-            pPopup->setTitleLink("#system");
-            pPopup->setContentWidget(pLabel);
-            connect(pPopup, SIGNAL(sigUpdateContentWidget()), this, SLOT(sltUpdateSystem()));
-            break;
-        }
-        case Section_Preview:
-        {
-            UIVMPreviewWindow *pWidget = new UIVMPreviewWindow(pPopup);
-            pPopup->setTitleIcon(UIIconPool::iconSet(":/machine_16px.png"));
-            pPopup->setContentWidget(pWidget);
-            pPopup->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
-            /* Make sure the width is always the same, regardless if the preview is shown or not: */
-            pPopup->setFixedWidth(pPopup->sizeHint().width());
-            pWidget->updateGeometry();
-            connect(pPopup, SIGNAL(sigUpdateContentWidget()), this, SLOT(sltUpdatePreview()));
-            break;
-        }
-        case Section_Display:
-        {
-            QILabel *pLabel = new QILabel(pPopup);
-            pLabel->setWordWrap(true);
-            pPopup->setTitleIcon(UIIconPool::iconSet(":/vrdp_16px.png"));
-            pPopup->setTitleLink("#display");
-            pPopup->setContentWidget(pLabel);
-            connect(pPopup, SIGNAL(sigUpdateContentWidget()), this, SLOT(sltUpdateDisplay()));
-            break;
-        }
-        case Section_Storage:
-        {
-            QILabel *pLabel = new QILabel(pPopup);
-            pLabel->setWordWrap(true);
-            pPopup->setTitleIcon(UIIconPool::iconSet(":/attachment_16px.png"));
-            pPopup->setTitleLink("#storage");
-            pPopup->setContentWidget(pLabel);
-            connect(pPopup, SIGNAL(sigUpdateContentWidget()), this, SLOT(sltUpdateStorage()));
-            break;
-        }
-        case Section_Audio:
-        {
-            QILabel *pLabel = new QILabel(pPopup);
-            pLabel->setWordWrap(true);
-            pPopup->setTitleIcon(UIIconPool::iconSet(":/sound_16px.png"));
-            pPopup->setTitleLink("#audio");
-            pPopup->setContentWidget(pLabel);
-            connect(pPopup, SIGNAL(sigUpdateContentWidget()), this, SLOT(sltUpdateAudio()));
-            break;
-        }
-        case Section_Network:
-        {
-            QILabel *pLabel = new QILabel(pPopup);
-            pLabel->setWordWrap(true);
-            pPopup->setTitleIcon(UIIconPool::iconSet(":/nw_16px.png"));
-            pPopup->setTitleLink("#network");
-            pPopup->setContentWidget(pLabel);
-            connect(pPopup, SIGNAL(sigUpdateContentWidget()), this, SLOT(sltUpdateNetwork()));
-            break;
-        }
-        case Section_Serial:
-        {
-            QILabel *pLabel = new QILabel(pPopup);
-            pLabel->setWordWrap(true);
-            pPopup->setTitleIcon(UIIconPool::iconSet(":/serial_port_16px.png"));
-            pPopup->setTitleLink("#serialPorts");
-            pPopup->setContentWidget(pLabel);
-            connect(pPopup, SIGNAL(sigUpdateContentWidget()), this, SLOT(sltUpdateSerialPorts()));
-            break;
-        }
-#ifdef VBOX_WITH_PARALLEL_PORTS
-        case Section_Parallel:
-        {
-            QILabel *pLabel = new QILabel(pPopup);
-            pLabel->setWordWrap(true);
-            pPopup->setTitleIcon(UIIconPool::iconSet(":/parallel_port_16px.png"));
-            pPopup->setTitleLink("#parallelPorts");
-            pPopup->setContentWidget(pLabel);
-            connect(pPopup, SIGNAL(sigUpdateContentWidget()), this, SLOT(sltUpdateParallelPorts()));
-            break;
-        }
-#endif /* VBOX_WITH_PARALLEL_PORTS */
-        case Section_USB:
-        {
-            QILabel *pLabel = new QILabel(pPopup);
-            pLabel->setWordWrap(true);
-            pPopup->setTitleIcon(UIIconPool::iconSet(":/usb_16px.png"));
-            pPopup->setTitleLink("#usb");
-            pPopup->setContentWidget(pLabel);
-            connect(pPopup, SIGNAL(sigUpdateContentWidget()), this, SLOT(sltUpdateUSB()));
-            break;
-        }
-        case Section_SharedFolders:
-        {
-            QILabel *pLabel = new QILabel(pPopup);
-            pLabel->setWordWrap(true);
-            pPopup->setTitleIcon(UIIconPool::iconSet(":/shared_folder_16px.png"));
-            pPopup->setTitleLink("#sfolders");
-            pPopup->setContentWidget(pLabel);
-            connect(pPopup, SIGNAL(sigUpdateContentWidget()), this, SLOT(sltUpdateSharedFolders()));
-            break;
-        }
-        case Section_Description:
-        {
-            QILabel *pLabel = new QILabel(pPopup);
-            pLabel->setWordWrap(true);
-            pPopup->setTitleIcon(UIIconPool::iconSet(":/description_16px.png"));
-            pPopup->setTitleLink("#general%%mTeDescription");
-            pPopup->setContentWidget(pLabel);
-            connect(pPopup, SIGNAL(sigUpdateContentWidget()), this, SLOT(sltUpdateDescription()));
-            break;
-        }
-        default:
-            break;
-    }
-
-    /* Open/close section if necessary: */
-    pPopup->setOpen(m_sectionOpened[section]);
-
-    /* Call for update: */
-    pPopup->callForUpdateContentWidget();
-}
-
-void UIDetailsPagePrivate::prepareDetails()
+void UIDetailsPagePrivate::prepareDetailsPage()
 {
     if (m_pScrollArea)
         return;
@@ -1485,7 +1672,7 @@ void UIDetailsPagePrivate::prepareDetails()
     retranslateUi();
 }
 
-void UIDetailsPagePrivate::cleanupDetails()
+void UIDetailsPagePrivate::cleanupDetailsPage()
 {
     if (!m_pScrollArea)
         return;
@@ -1497,7 +1684,7 @@ void UIDetailsPagePrivate::cleanupDetails()
         Section section = static_cast<Section>(i);
 
         /* Process only existing sections: */
-        if (!m_sections.contains(section))
+        if (!m_pDetails->sections().contains(section))
             continue;
 
         /* Compose section key to save: */
@@ -1574,25 +1761,6 @@ void UIDetailsPagePrivate::prepareErrorPage()
     addWidget(m_pErrBox);
 
     retranslateUi();
-}
-
-/**
- *  Return a text summary of the properties of a generic network adapter
- */
-/* static */
-QString UIDetailsPagePrivate::summarizeGenericProperties(const CNetworkAdapter &adapter)
-{
-    QVector<QString> names;
-    QVector<QString> props;
-    props = adapter.GetProperties(QString(), names);
-    QString strResult;
-    for (int i = 0; i < names.size(); ++i)
-    {
-        strResult += names[i] + "=" + props[i];
-        if (i < names.size() - 1)
-            strResult += ", ";
-    }
-    return strResult;
 }
 
 /**
