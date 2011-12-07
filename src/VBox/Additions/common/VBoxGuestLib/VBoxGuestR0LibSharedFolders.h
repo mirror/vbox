@@ -61,6 +61,9 @@
 # endif
 # include "VBoxGuestLog.h"
 #endif
+#if defined(RT_OS_WINDOWS)
+# include <VBox/log.h>
+#endif
 
 #include <iprt/assert.h>
 #define ASSERTVBSF AssertRelease
