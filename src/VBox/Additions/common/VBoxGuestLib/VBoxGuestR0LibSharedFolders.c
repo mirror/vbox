@@ -105,10 +105,9 @@ DECLVBGL(int) vboxConnect (PVBSFCLIENT pClient)
 DECLVBGL(void) vboxDisconnect (PVBSFCLIENT pClient)
 {
     int rc;
-
-    LogFunc(("u32ClientID=%d\n", pClient->ulClientID));
     VBoxGuestHGCMDisconnectInfo data;
 
+    LogFunc(("u32ClientID=%d\n", pClient->ulClientID));
     if (pClient->handle == NULL)
         return;                 /* not connected */
 
