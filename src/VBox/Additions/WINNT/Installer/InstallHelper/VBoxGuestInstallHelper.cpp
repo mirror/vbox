@@ -22,6 +22,7 @@
 #include <atlconv.h>
 #include <stdlib.h>
 #include <Strsafe.h>
+#include <tchar.h>
 #include "exdll.h"
 
 /* Required structures/defines of VBoxTray. */
@@ -61,7 +62,7 @@ static HRESULT vboxPopString(TCHAR *pszDest, size_t cchDest)
 {
     HRESULT hr = S_OK;
     if (!g_stacktop || !*g_stacktop)
-        hr = ERROR_EMPTY;
+        hr = __HRESULT_FROM_WIN32(ERROR_EMPTY);
     else
     {
         stack_t *pStack = (*g_stacktop);
@@ -82,7 +83,7 @@ static HRESULT vboxPopULong(PULONG pulValue)
 {
     HRESULT hr = S_OK;
     if (!g_stacktop || !*g_stacktop)
-        hr = ERROR_EMPTY;
+        hr = __HRESULT_FROM_WIN32(ERROR_EMPTY);
     else
     {
         stack_t *pStack = (*g_stacktop);
@@ -97,6 +98,22 @@ static HRESULT vboxPopULong(PULONG pulValue)
     return hr;
 }
 
+static void vboxPushResultAsString(HRESULT hr)
+{
+    TCHAR szErr[MAX_PATH + 1];
+    if (FAILED(hr))
+    {
+        if (FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, NULL, hr, 0, szErr, MAX_PATH, NULL))
+            szErr[MAX_PATH] = '\0';
+        else
+            StringCchPrintf(szErr, sizeof(szErr),
+                            "FormatMessage failed! Error = %ld", GetLastError());
+    }
+    else
+        StringCchPrintf(szErr, sizeof(szErr), "0");
+    pushstring(szErr);
+}
+
 static void vboxChar2WCharFree(PWCHAR pwString)
 {
     if (pwString)
@@ -109,7 +126,7 @@ static HRESULT vboxChar2WCharAlloc(const char *pszString, PWCHAR *ppwString)
     int iLen = strlen(pszString) + 2;
     WCHAR *pwString = (WCHAR*)HeapAlloc(GetProcessHeap(), 0, iLen * sizeof(WCHAR));
     if (!pwString)
-        hr = ERROR_NOT_ENOUGH_MEMORY;
+        hr = __HRESULT_FROM_WIN32(ERROR_NOT_ENOUGH_MEMORY);
     else
     {
         if (MultiByteToWideChar(CP_ACP, 0, pszString, -1, pwString, iLen) == 0)
@@ -179,57 +196,6 @@ static HRESULT vboxIPCWriteMessage(HANDLE hPipe, BYTE *pMessage, DWORD cbMessage
 }
 
 /**
- * Shows a balloon message using VBoxTray's notification area in the
- * Windows task bar.
- *
- * @param   hwndParent          Window handle of parent.
- * @param   string_size         Size of variable string.
- * @param   variables           The actual variable string.
- * @param   stacktop            Pointer to a pointer to the current stack.
- */
-VBOXINSTALLHELPER_EXPORT VBoxTrayShowBallonMsg(HWND hwndParent, int string_size,
-                                               TCHAR *variables, stack_t **stacktop)
-{
-    EXDLL_INIT();
-
-    VBOXTRAYIPCHEADER hdr;
-    hdr.ulMsg = VBOXTRAYIPCMSGTYPE_SHOWBALLOONMSG;
-    hdr.cbBody = sizeof(VBOXTRAYIPCMSG_SHOWBALLOONMSG);
-
-    VBOXTRAYIPCMSG_SHOWBALLOONMSG msg;
-    HRESULT hr = vboxPopString(msg.szContent, sizeof(msg.szContent) / sizeof(TCHAR));
-    if (SUCCEEDED(hr))
-        hr = vboxPopString(msg.szTitle, sizeof(msg.szTitle) / sizeof(TCHAR));
-    if (SUCCEEDED(hr))
-        hr = vboxPopULong(&msg.ulType);
-    if (SUCCEEDED(hr))
-        hr = vboxPopULong(&msg.ulShowMS);
-
-    if (SUCCEEDED(hr))
-    {
-        msg.ulFlags = 0;
-
-        HANDLE hPipe = vboxIPCConnect();
-        if (hPipe)
-        {
-            hr = vboxIPCWriteMessage(hPipe, (BYTE*)&hdr, sizeof(VBOXTRAYIPCHEADER));
-            if (SUCCEEDED(hr))
-                hr = vboxIPCWriteMessage(hPipe, (BYTE*)&msg, sizeof(VBOXTRAYIPCMSG_SHOWBALLOONMSG));
-            vboxIPCDisconnect(hPipe);
-        }
-    }
-
-    /* Push simple return value on stack. */
-    SUCCEEDED(hr) ? pushstring("0") : pushstring("1");
-}
-
-BOOL WINAPI DllMain(HANDLE hInst, ULONG uReason, LPVOID lpReserved)
-{
-    g_hInstance = (HINSTANCE)hInst;
-    return TRUE;
-}
-
-/**
  * Disables the Windows File Protection for a specified file
  * using an undocumented SFC API call. Don't try this at home!
  *
@@ -279,17 +245,221 @@ VBOXINSTALLHELPER_EXPORT DisableWFP(HWND hwndParent, int string_size,
             FreeLibrary(hSFC);
     }
 
-    TCHAR szErr[MAX_PATH + 1];
-    if (FAILED(hr))
+    vboxPushResultAsString(hr);
+}
+
+/**
+ * Retrieves a file's architecture (x86 or amd64).
+ * Outputs "x86", "amd64" or an error message (if not found/invalid) on stack.
+ *
+ * @param   hwndParent          Window handle of parent.
+ * @param   string_size         Size of variable string.
+ * @param   variables           The actual variable string.
+ * @param   stacktop            Pointer to a pointer to the current stack.
+ */
+VBOXINSTALLHELPER_EXPORT FileGetArchitecture(HWND hwndParent, int string_size,
+                                             TCHAR *variables, stack_t **stacktop)
+{
+    EXDLL_INIT();
+
+    TCHAR szFile[MAX_PATH + 1];
+    HRESULT hr = vboxPopString(szFile, sizeof(szFile) / sizeof(TCHAR));
+    if (SUCCEEDED(hr))
     {
-        if (FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, NULL, hr, 0, szErr, MAX_PATH, NULL))
-            szErr[MAX_PATH] = '\0';
+        /* See: http://www.microsoft.com/whdc/system/platform/firmware/PECOFF.mspx */
+        FILE *pFh = fopen(szFile, "rb");
+        if (pFh)
+        {
+            /* Assume the file is invalid. */
+            hr = __HRESULT_FROM_WIN32(ERROR_FILE_INVALID);
+
+            BYTE byOffsetPE; /* Absolute offset of PE signature. */
+
+            /* Do some basic validation. */
+            /* Check for "MZ" header (DOS stub). */
+            BYTE byBuf[255];
+            if (   fread(&byBuf, sizeof(BYTE), 2, pFh) == 2
+                && !memcmp(&byBuf, "MZ", 2))
+            {
+                /* Seek to 0x3C to get the PE offset. */
+                if (!fseek(pFh, 60L /*0x3C*/, SEEK_SET))
+                {
+                    /* Read actual offset of PE signature. */
+                    if (fread(&byOffsetPE, sizeof(BYTE), 1, pFh) == 1)
+                    {
+                        /* ... and seek to it. */
+                        if (!fseek(pFh, byOffsetPE, SEEK_SET))
+                        {
+                            /* Validate PE signature. */
+                            if (fread(byBuf, sizeof(BYTE), 4, pFh) == 4)
+                            {
+                                if (!memcmp(byBuf, "PE\0\0", 4))
+                                    hr = S_OK;
+                            }
+                        }
+                    }
+                }
+            }
+
+            /* Validation successful? */
+            if (SUCCEEDED(hr))
+            {
+                BYTE byOffsetCOFF = byOffsetPE + 0x4; /* Skip PE signature. */
+
+                /** @todo When we need to do more stuff here, we probably should
+                 *        mmap the file w/ a struct so that we easily could access
+                 *        all the fixed size stuff. Later. */
+
+                /* Jump to machine type (first entry, 2 bytes):
+                 * Use absolute PE offset retrieved above. */
+                if (!fseek(pFh, byOffsetCOFF, SEEK_SET))
+                {
+                    WORD wMachineType;
+                    if (fread(&wMachineType, 1,
+                              sizeof(wMachineType), pFh) == 2)
+                    {
+                        switch (wMachineType)
+                        {
+                            case 0x14C: /* Intel 86 */
+                                pushstring("x86");
+                                break;
+
+                            case 0x8664: /* AMD64 / x64 */
+                                pushstring("amd64");
+                                break;
+
+                            default:
+                                hr = __HRESULT_FROM_WIN32(ERROR_NOT_SUPPORTED);
+                                break;
+                        }
+                    }
+                    else
+                        hr = __HRESULT_FROM_WIN32(ERROR_FILE_INVALID);
+                }
+                else
+                    hr = __HRESULT_FROM_WIN32(ERROR_FILE_INVALID);
+            }
+
+            fclose(pFh);
+        }
         else
-            StringCchPrintf(szErr, sizeof(szErr),
-                            "FormatMessage failed! Error = %ld", GetLastError());
+            hr = __HRESULT_FROM_WIN32(ERROR_NOT_FOUND);
     }
-    else
-        StringCchPrintf(szErr, sizeof(szErr), "0");
-    pushstring(szErr);
+
+    if (FAILED(hr))
+        vboxPushResultAsString(hr);
+}
+
+/**
+ * Retrieves a file's vendor.
+ * Outputs the vendor's name or an error message (if not found/invalid) on stack.
+ *
+ * @param   hwndParent          Window handle of parent.
+ * @param   string_size         Size of variable string.
+ * @param   variables           The actual variable string.
+ * @param   stacktop            Pointer to a pointer to the current stack.
+ */
+VBOXINSTALLHELPER_EXPORT FileGetVendor(HWND hwndParent, int string_size,
+                                       TCHAR *variables, stack_t **stacktop)
+{
+    EXDLL_INIT();
+
+    TCHAR szFile[MAX_PATH + 1];
+    HRESULT hr = vboxPopString(szFile, sizeof(szFile) / sizeof(TCHAR));
+    if (SUCCEEDED(hr))
+    {
+        DWORD dwInfoSize = GetFileVersionInfoSize(szFile, NULL /* lpdwHandle */);
+        if (dwInfoSize)
+        {
+            void *pFileInfo = GlobalAlloc(GMEM_FIXED, dwInfoSize);
+            if (pFileInfo)
+            {
+                if (GetFileVersionInfo(szFile, 0, dwInfoSize, pFileInfo))
+                {
+                    LPVOID pvInfo;
+                    UINT puInfoLen;
+                    if (VerQueryValue(pFileInfo, _T("\\VarFileInfo\\Translation"),
+                                      &pvInfo, &puInfoLen))
+                    {
+                        WORD wCodePage = LOWORD(*(DWORD*)pvInfo);
+                        WORD wLanguageID = HIWORD(*(DWORD*)pvInfo);
+
+                        TCHAR szQuery[MAX_PATH];
+                        _sntprintf(szQuery, sizeof(szQuery), _T("StringFileInfo\\%04X%04X\\CompanyName"),
+                                   wCodePage,wLanguageID);
+
+                        LPCTSTR pcData;
+                        if (VerQueryValue(pFileInfo, szQuery,(void**)&pcData, &puInfoLen))
+                        {
+                            pushstring(pcData);
+                        }
+                        else
+                            hr = __HRESULT_FROM_WIN32(ERROR_NOT_FOUND);
+                    }
+                    else
+                        hr = __HRESULT_FROM_WIN32(ERROR_NOT_FOUND);
+                }
+                GlobalFree(pFileInfo);
+            }
+            else
+                hr = __HRESULT_FROM_WIN32(ERROR_OUTOFMEMORY);
+        }
+        else
+            hr = __HRESULT_FROM_WIN32(ERROR_NOT_FOUND);
+    }
+
+    if (FAILED(hr))
+        vboxPushResultAsString(hr);
+}
+
+/**
+ * Shows a balloon message using VBoxTray's notification area in the
+ * Windows task bar.
+ *
+ * @param   hwndParent          Window handle of parent.
+ * @param   string_size         Size of variable string.
+ * @param   variables           The actual variable string.
+ * @param   stacktop            Pointer to a pointer to the current stack.
+ */
+VBOXINSTALLHELPER_EXPORT VBoxTrayShowBallonMsg(HWND hwndParent, int string_size,
+                                               TCHAR *variables, stack_t **stacktop)
+{
+    EXDLL_INIT();
+
+    VBOXTRAYIPCHEADER hdr;
+    hdr.ulMsg = VBOXTRAYIPCMSGTYPE_SHOWBALLOONMSG;
+    hdr.cbBody = sizeof(VBOXTRAYIPCMSG_SHOWBALLOONMSG);
+
+    VBOXTRAYIPCMSG_SHOWBALLOONMSG msg;
+    HRESULT hr = vboxPopString(msg.szContent, sizeof(msg.szContent) / sizeof(TCHAR));
+    if (SUCCEEDED(hr))
+        hr = vboxPopString(msg.szTitle, sizeof(msg.szTitle) / sizeof(TCHAR));
+    if (SUCCEEDED(hr))
+        hr = vboxPopULong(&msg.ulType);
+    if (SUCCEEDED(hr))
+        hr = vboxPopULong(&msg.ulShowMS);
+
+    if (SUCCEEDED(hr))
+    {
+        msg.ulFlags = 0;
+
+        HANDLE hPipe = vboxIPCConnect();
+        if (hPipe)
+        {
+            hr = vboxIPCWriteMessage(hPipe, (BYTE*)&hdr, sizeof(VBOXTRAYIPCHEADER));
+            if (SUCCEEDED(hr))
+                hr = vboxIPCWriteMessage(hPipe, (BYTE*)&msg, sizeof(VBOXTRAYIPCMSG_SHOWBALLOONMSG));
+            vboxIPCDisconnect(hPipe);
+        }
+    }
+
+    /* Push simple return value on stack. */
+    SUCCEEDED(hr) ? pushstring("0") : pushstring("1");
+}
+
+BOOL WINAPI DllMain(HANDLE hInst, ULONG uReason, LPVOID lpReserved)
+{
+    g_hInstance = (HINSTANCE)hInst;
+    return TRUE;
 }
 
