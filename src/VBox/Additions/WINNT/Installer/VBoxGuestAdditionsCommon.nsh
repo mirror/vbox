@@ -574,3 +574,174 @@ FunctionEnd
 !insertmacro SetAppMode64 ""
 !insertmacro SetAppMode64 "un."
 
+;
+; Retrieves the vendor ("CompanyName" of FILEINFO structure)
+; of a given file.
+; @return  Stack: Company name, or "" on error/if not found.
+; @param   Stack: File name to retrieve vendor for.
+;
+!macro GetFileVendor un
+Function ${un}GetFileVendor
+
+  ; Preserve values
+  Exch $0 ; Stack: $0 <filename> (Get file name into $0)
+  Push $1
+
+  IfFileExists "$0" found
+  Goto not_found
+
+found:
+
+  VBoxGuestInstallHelper::FileGetVendor "$0"
+  ; Stack: <vendor> $1 $0
+  Pop  $0 ; Get vendor
+  Pop  $1 ; Restore $1
+  Exch $0 ; Restore $0, push vendor on top of stack
+  Goto end
+
+not_found:
+
+  Pop $1
+  Pop $0
+  Push "File not found"
+  Goto end
+
+end:
+
+FunctionEnd
+!macroend
+!insertmacro GetFileVendor ""
+!insertmacro GetFileVendor "un."
+
+;
+; Retrieves the architecture of a given file.
+; @return  Stack: Architecture ("x86", "amd64") or error message.
+; @param   Stack: File name to retrieve architecture for.
+;
+!macro GetFileArchitecture un
+Function ${un}GetFileArchitecture
+
+  ; Preserve values
+  Exch $0 ; Stack: $0 <filename> (Get file name into $0)
+  Push $1
+
+  IfFileExists "$0" found
+  Goto not_found
+
+found:
+
+  VBoxGuestInstallHelper::FileGetArchitecture "$0"
+  ; Stack: <architecture> $1 $0
+  Pop  $0 ; Get architecture string
+  Pop  $1 ; Restore $1
+  Exch $0 ; Restore $0, push vendor on top of stack
+  Goto end
+
+not_found:
+
+  Pop $1
+  Pop $0
+  Push "File not found"
+  Goto end
+
+end:
+
+FunctionEnd
+!macroend
+!insertmacro GetFileArchitecture ""
+!insertmacro GetFileArchitecture "un."
+
+;
+; Verifies a given file by checking its file vendor and target
+; architecture.
+; @return  Stack: "0" if verify, "1" if not, "2" on error / not found.
+; @param   Stack: Architecture ("x86" or "amd64").
+; @param   Stack: Vendor.
+; @param   Stack: File name to verify.
+;
+!macro VerifyFile un
+Function ${un}VerifyFile
+
+  ; Preserve values
+  Exch $0 ; File;         S: old$0 vendor arch
+  Exch    ;               S: vendor old$0 arch
+  Exch $1 ; Vendor;       S: old$1 old$0 arch
+  Exch    ;               S: old$0 old$1 arch
+  Exch 2  ;               S: arch old$1 old$0
+  Exch $2 ; Architecture; S: old$2 old$1 old$0
+  Push $3 ;               S: old$3 old$2 old$1 old$0
+
+MessageBox MB_ICONSTOP "Vendor $1" /SD IDOK
+  IfFileExists "$0" check_vendor
+  Goto not_found
+
+check_vendor:
+
+  Push $0
+  Call ${un}GetFileVendor
+  Pop $3
+MessageBox MB_ICONSTOP "$3 vs. $1" /SD IDOK
+  ${If} $3 == $1
+    Goto check_arch
+  ${EndIf}
+  StrCpy $3 "1" ; Invalid
+  Goto end
+
+check_arch:
+
+  Push $0
+  Call ${un}GetFileArchitecture
+  Pop $3
+MessageBox MB_ICONSTOP "$3 vs. $2" /SD IDOK
+  ${If} $3 == $2
+    StrCpy $3 "0" ; Valid
+  ${Else}
+    StrCpy $3 "1" ; Invalid
+  ${EndIf}
+  Goto end
+
+not_found:
+
+  StrCpy $3 "2" ; Not found
+  Goto end
+
+end:
+MessageBox MB_ICONSTOP "Res: $3" /SD IDOK
+  ; S: old$3 old$2 old$1 old$0
+  Exch $3 ; S: $3 old$2 old$1 old$0
+  Exch    ; S: old$2 $3 old$1
+  Pop $2  ; S: $3 old$1 old$0
+  Exch    ; S: old$1 $3 old$0
+  Pop $1  ; S: $3 old$0
+  Exch    ; S: old$0 $3
+  Pop $0  ; S: $3
+
+FunctionEnd
+!macroend
+!insertmacro VerifyFile ""
+!insertmacro VerifyFile "un."
+
+!macro VerifyFileEx un File Vendor Architecture
+  Push "${Architecture}"
+  Push "${Vendor}"
+  Push "${File}"
+  Call ${un}VerifyFile
+!macroend
+!define VerifyFileEx "!insertmacro VerifyFileEx"
+
+;
+; Validates backed up original Direct3D files.
+; @return  Stack: "0" if files are valid; otherwise "1".
+;
+!macro ValidateFilesDirect3D un
+Function ${un}ValidateD3DFiles
+
+  ; TODO: Here comes the check
+  ${VerifyFileEx} "${un}" "$SYSDIR\foo.dll" "Microsoft Corporation" "x86"
+
+end:
+
+FunctionEnd
+!macroend
+!insertmacro ValidateFilesDirect3D ""
+!insertmacro ValidateFilesDirect3D "un."
