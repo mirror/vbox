@@ -124,7 +124,7 @@ RTDECL(int) RTReqQueueProcess(RTREQQUEUE hQueue, RTMSINTERVAL cMillies);
  * If it's desired to poll on the completion of the request set cMillies
  * to 0 and use RTReqWait() to check for completion. In the other case
  * use RT_INDEFINITE_WAIT.
- * The returned request packet must be freed using RTReqFree().
+ * The returned request packet must be freed using RTReqRelease().
  *
  * @returns iprt statuscode.
  *          Will not return VERR_INTERRUPTED.
@@ -150,7 +150,7 @@ RTDECL(int) RTReqQueueCall(RTREQQUEUE hQueue, PRTREQ *ppReq, RTMSINTERVAL cMilli
  * If it's desired to poll on the completion of the request set cMillies
  * to 0 and use RTReqWait() to check for completion. In the other case
  * use RT_INDEFINITE_WAIT.
- * The returned request packet must be freed using RTReqFree().
+ * The returned request packet must be freed using RTReqRelease().
  *
  * @returns iprt status code.
  *          Will not return VERR_INTERRUPTED.
@@ -176,7 +176,7 @@ RTDECL(int) RTReqQueueCallVoid(RTREQQUEUE hQueue, PRTREQ *ppReq, RTMSINTERVAL cM
  * If it's desired to poll on the completion of the request set cMillies
  * to 0 and use RTReqWait() to check for completion. In the other case
  * use RT_INDEFINITE_WAIT.
- * The returned request packet must be freed using RTReqFree().
+ * The returned request packet must be freed using RTReqRelease().
  *
  * @returns iprt status code.
  *          Will not return VERR_INTERRUPTED.
@@ -204,7 +204,7 @@ RTDECL(int) RTReqQueueCallEx(RTREQQUEUE hQueue, PRTREQ *ppReq, RTMSINTERVAL cMil
  * If it's desired to poll on the completion of the request set cMillies
  * to 0 and use RTReqWait() to check for completion. In the other case
  * use RT_INDEFINITE_WAIT.
- * The returned request packet must be freed using RTReqFree().
+ * The returned request packet must be freed using RTReqRelease().
  *
  * @returns iprt status code.
  *          Will not return VERR_INTERRUPTED.
@@ -252,22 +252,61 @@ RTDECL(bool) RTReqQueueIsBusy(RTREQQUEUE hQueue);
  * @returns iprt status code.
  *
  * @param   hQueue          The request queue.
- * @param   ppReq           Where to store the pointer to the allocated packet.
  * @param   enmType         Package type.
+ * @param   phReq           Where to store the handle to the new request.
  */
-RTDECL(int) RTReqQueueAlloc(RTREQQUEUE hQueue, PRTREQ *ppReq, RTREQTYPE enmType);
+RTDECL(int) RTReqQueueAlloc(RTREQQUEUE hQueue, RTREQTYPE enmType, PRTREQ *phReq);
 
 
 /**
- * Free a request packet.
+ * Retainsa reference to a request thread pool.
+ *
+ * @returns The new reference count, UINT32_MAX on invalid handle (asserted).
+ * @param   hPool           The request thread pool handle.
+ */
+RTDECL(uint32_t) RTReqPoolRetain(RTREQPOOL hPool);
+
+/**
+ * Releases a reference to the request thread pool.
+ *
+ * When the reference count reaches zero, the request will be pooled for reuse.
+ *
+ * @returns The new reference count, UINT32_MAX on invalid handle (asserted).
+ * @param   hPool           The request thread pool handle.
+ */
+RTDECL(uint32_t) RTReqPoolRelease(RTREQPOOL hPool);
+
+/**
+ * Allocates a request packet.
+ *
+ * This is mostly for internal use, please use the convenience methods.
  *
  * @returns iprt status code.
  *
- * @param   pReq            Package to free.
- * @remark  The request packet must be in allocated or completed state!
+ * @param   hPool           The request thread pool handle.
+ * @param   enmType         Package type.
+ * @param   phReq           Where to store the handle to the new request.
  */
-RTDECL(int) RTReqFree(PRTREQ pReq);
+RTDECL(int) RTReqPoolAlloc(RTREQPOOL hPool, RTREQTYPE enmType, PRTREQ *phReq);
 
+
+/**
+ * Retainsa reference to a request.
+ *
+ * @returns The new reference count, UINT32_MAX on invalid handle (asserted).
+ * @param   hReq            The request handle.
+ */
+RTDECL(uint32_t) RTReqRetain(PRTREQ hReq);
+
+/**
+ * Releases a reference to the request.
+ *
+ * When the reference count reaches zero, the request will be pooled for reuse.
+ *
+ * @returns The new reference count, UINT32_MAX on invalid handle (asserted).
+ * @param   hReq            Package to release.
+ */
+RTDECL(uint32_t) RTReqRelease(PRTREQ hReq);
 
 /**
  * Queue a request.

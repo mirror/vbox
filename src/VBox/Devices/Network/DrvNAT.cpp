@@ -646,7 +646,7 @@ static DECLCALLBACK(void) drvNATNetworkUp_NotifyLinkChanged(PPDMINETWORKUP pInte
     }
     else
         AssertRC(rc);
-    RTReqFree(pReq);
+    RTReqRelease(pReq);
 }
 
 static void drvNATNotifyApplyPortForwardCommand(PDRVNAT pThis, bool fRemove,
@@ -695,7 +695,7 @@ DECLCALLBACK(int) drvNATNetworkNatConfig_RedirectRuleCommand(PPDMINETWORKNATCONF
     else
         AssertRC(rc);
 
-    RTReqFree(pReq);
+    RTReqRelease(pReq);
     port_forwarding_done:
     return rc;
 }

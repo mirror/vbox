@@ -481,7 +481,7 @@ typedef struct NATState
             rc = RTReqWait(pReq, RT_INDEFINITE_WAIT);                   \
             AssertReleaseRC(rc);                                        \
             SOCKET_LOCK(so);                                            \
-            RTReqFree(pReq);                                            \
+            RTReqRelease(pReq);                                         \
         }                                                               \
         else                                                            \
             AssertReleaseRC(rc);                                        \
@@ -508,7 +508,7 @@ typedef struct NATState
             rc = RTReqWait(pReq, RT_INDEFINITE_WAIT);                   \
             AssertReleaseRC(rc);                                        \
             SOCKET_LOCK(so);                                            \
-            RTReqFree(pReq);                                            \
+            RTReqRelease(pReq);                                         \
         }                                                               \
         else                                                            \
             AssertReleaseRC(rc);                                        \
@@ -527,7 +527,7 @@ typedef struct NATState
             rc = RTReqWait(pReq, RT_INDEFINITE_WAIT);                   \
             AssertReleaseRC(rc);                                        \
             SOCKET_LOCK(so);                                            \
-            RTReqFree(pReq);                                            \
+            RTReqRelease(pReq);                                         \
         }                                                               \
         else                                                            \
             AssertReleaseRC(rc);                                        \
@@ -545,7 +545,7 @@ typedef struct NATState
             rc = RTReqWait(pReq, RT_INDEFINITE_WAIT);                   \
             SOCKET_LOCK(so);                                            \
             ret = pReq->iStatus;                                        \
-            RTReqFree(pReq);                                            \
+            RTReqRelease(pReq);                                         \
         }                                                               \
         else                                                            \
             AssertReleaseRC(rc);                                        \
@@ -563,7 +563,7 @@ typedef struct NATState
             rc = RTReqWait(pReq, RT_INDEFINITE_WAIT);                   \
             AssertReleaseRC(rc);                                        \
             SOCKET_LOCK(so);                                            \
-            RTReqFree(pReq);                                            \
+            RTReqRelease(pReq);                                         \
         }                                                               \
         else                                                            \
             AssertReleaseRC(rc);                                        \
@@ -581,7 +581,7 @@ typedef struct NATState
             rc = RTReqWait(pReq, RT_INDEFINITE_WAIT);                   \
             AssertReleaseRC(rc);                                        \
             if ((so_next) != &udb) SOCKET_LOCK((so_next));              \
-            RTReqFree(pReq);                                            \
+            RTReqRelease(pReq);                                         \
         }                                                               \
         else                                                            \
             AssertReleaseRC(rc);                                        \

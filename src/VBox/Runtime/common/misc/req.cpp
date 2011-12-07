@@ -49,143 +49,252 @@
 *******************************************************************************/
 
 
-
-RTDECL(int) RTReqFree(PRTREQ pReq)
+/**
+ * Allocate a new request from the heap.
+ *
+ * @returns IPRT status code.
+ * @param   enmType         The reques type.
+ * @param   fPoolOrQueue    The owner type.
+ * @param   pvOwner         The owner.
+ * @param   phReq           Where to return the request handle.
+ */
+DECLHIDDEN(int) rtReqAlloc(RTREQTYPE enmType, bool fPoolOrQueue, void *pvOwner, PRTREQ *phReq)
 {
-    /*
-     * Ignore NULL (all free functions should do this imho).
-     */
-    if (!pReq)
-        return VINF_SUCCESS;
-    AssertPtrReturn(pReq, VERR_INVALID_POINTER);
-    AssertReturn(pReq->u32Magic == RTREQ_MAGIC, VERR_INVALID_PARAMETER);
+    PRTREQ pReq = (PRTREQ)RTMemAllocZ(sizeof(*pReq));
+    if (RT_UNLIKELY(!pReq))
+        return VERR_NO_MEMORY;
 
     /*
-     * Check packet state.
+     * Create the semaphore used for waiting.
      */
-    switch (pReq->enmState)
-    {
-        case RTREQSTATE_ALLOCATED:
-        case RTREQSTATE_COMPLETED:
-            break;
-        default:
-            AssertMsgFailed(("Invalid state %d!\n", pReq->enmState));
-            return VERR_RT_REQUEST_STATE;
-    }
+    int rc = RTSemEventCreate(&pReq->EventSem);
+    AssertRCReturnStmt(rc, RTMemFree(pReq), rc);
 
     /*
-     * Make it a free packet and put it into one of the free packet lists.
+     * Initialize the packet and return it.
      */
-    pReq->enmState = RTREQSTATE_FREE;
-    pReq->iStatusX = VERR_RT_REQUEST_STATUS_FREED;
-    pReq->enmType  = RTREQTYPE_INVALID;
+    pReq->u32Magic          = RTREQ_MAGIC;
+    pReq->fEventSemClear    = true;
+    pReq->fSignalPushBack   = true;
+    pReq->fPoolOrQueue      = fPoolOrQueue;
+    pReq->iStatusX          = VERR_RT_REQUEST_STATUS_STILL_PENDING;
+    pReq->enmState          = RTREQSTATE_ALLOCATED;
+    pReq->pNext             = NULL;
+    pReq->uOwner.pv         = pvOwner;
+    pReq->fFlags            = RTREQFLAGS_IPRT_STATUS;
+    pReq->enmType           = enmType;
+    pReq->cRefs             = 1;
 
-    PRTREQQUEUEINT pQueue = pReq->uOwner.hQueue;
-    if (pQueue->cReqFree < 128)
-    {
-        ASMAtomicIncU32(&pQueue->cReqFree);
-        PRTREQ volatile *ppHead = &pQueue->apReqFree[ASMAtomicIncU32(&pQueue->iReqFree) % RT_ELEMENTS(pQueue->apReqFree)];
-        PRTREQ pNext;
-        do
-        {
-            pNext = *ppHead;
-            ASMAtomicWritePtr(&pReq->pNext, pNext);
-        } while (!ASMAtomicCmpXchgPtr(ppHead, pReq, pNext));
-    }
-    else
-    {
-        RTSemEventDestroy(pReq->EventSem);
-        RTMemFree(pReq);
-    }
+    *phReq = pReq;
     return VINF_SUCCESS;
 }
-RT_EXPORT_SYMBOL(RTReqFree);
 
 
-RTDECL(int) RTReqSubmit(PRTREQ pReq, RTMSINTERVAL cMillies)
+/**
+ * Re-initializes a request when it's being recycled.
+ *
+ * @returns IRPT status code, the request is freed on failure.
+ * @param   pReq                The request.
+ * @param   enmType             The request type.
+ */
+DECLHIDDEN(int) rtReqReInit(PRTREQINT pReq, RTREQTYPE enmType)
 {
-    LogFlow(("RTReqQueue: pReq=%p cMillies=%d\n", pReq, cMillies));
+    Assert(pReq->u32Magic == RTREQ_MAGIC);
+    Assert(pReq->enmType  == RTREQTYPE_INVALID);
+    Assert(pReq->enmState == RTREQSTATE_FREE);
+    Assert(pReq->cRefs    == 0);
+
+    /*
+     * Make sure the event sem is not signaled.
+     */
+    if (!pReq->fEventSemClear)
+    {
+        int rc = RTSemEventWait(pReq->EventSem, 0);
+        if (rc != VINF_SUCCESS && rc != VERR_TIMEOUT)
+        {
+            /*
+             * This shall not happen, but if it does we'll just destroy
+             * the semaphore and create a new one.
+             */
+            AssertMsgFailed(("rc=%Rrc from RTSemEventWait(%#x).\n", rc, pReq->EventSem));
+            RTSemEventDestroy(pReq->EventSem);
+            rc = RTSemEventCreate(&pReq->EventSem);
+            if (RT_FAILURE(rc))
+            {
+                AssertRC(rc);
+                pReq->EventSem = NIL_RTSEMEVENT;
+                rtReqFreeIt(pReq);
+                return rc;
+            }
+        }
+        pReq->fEventSemClear = true;
+    }
+    else
+        Assert(RTSemEventWait(pReq->EventSem, 0) == VERR_TIMEOUT);
+
+    /*
+     * Initialize the packet and return it.
+     */
+    ASMAtomicWriteNullPtr(&pReq->pNext);
+    pReq->iStatusX = VERR_RT_REQUEST_STATUS_STILL_PENDING;
+    pReq->enmState = RTREQSTATE_ALLOCATED;
+    pReq->fFlags   = RTREQFLAGS_IPRT_STATUS;
+    pReq->enmType  = enmType;
+    pReq->cRefs    = 1;
+    return VINF_SUCCESS;
+}
+
+
+RTDECL(uint32_t) RTReqRetain(PRTREQ hReq)
+{
+    PRTREQINT pReq = hReq;
+    AssertPtrReturn(pReq, UINT32_MAX);
+    AssertReturn(pReq->u32Magic == RTREQ_MAGIC, UINT32_MAX);
+
+    return ASMAtomicIncU32(&pReq->cRefs);
+}
+RT_EXPORT_SYMBOL(RTReqRetain);
+
+
+/**
+ * Frees a request.
+ *
+ * @param   pReq                The request.
+ */
+DECLHIDDEN(void) rtReqFreeIt(PRTREQINT pReq)
+{
+    Assert(pReq->u32Magic == RTREQ_MAGIC);
+    Assert(pReq->cRefs == 0);
+
+    pReq->u32Magic     = RTREQ_MAGIC_DEAD;
+    RTSemEventDestroy(pReq->EventSem);
+    pReq->EventSem     = NIL_RTSEMEVENT;
+    RTSemEventMultiDestroy(pReq->hPushBackEvt);
+    pReq->hPushBackEvt = NIL_RTSEMEVENTMULTI;
+    RTMemFree(pReq);
+}
+
+
+RTDECL(uint32_t) RTReqRelease(PRTREQ hReq)
+{
+    /*
+     * Ignore NULL and validate the request.
+     */
+    if (!hReq)
+        return 0;
+    PRTREQINT pReq = hReq;
+    AssertPtrReturn(pReq, UINT32_MAX);
+    AssertReturn(pReq->u32Magic == RTREQ_MAGIC, UINT32_MAX);
+
+    /*
+     * Drop a reference, recycle the request when we reach 0.
+     */
+    uint32_t cRefs = ASMAtomicDecU32(&pReq->cRefs);
+    if (cRefs == 0)
+    {
+        /*
+         * Check packet state.
+         */
+        switch (pReq->enmState)
+        {
+            case RTREQSTATE_ALLOCATED:
+            case RTREQSTATE_COMPLETED:
+                break;
+            default:
+                AssertMsgFailed(("Invalid state %d!\n", pReq->enmState));
+                return 0;
+        }
+
+        /*
+         * Make it a free packet and put it into one of the free packet lists.
+         */
+        pReq->enmState = RTREQSTATE_FREE;
+        pReq->iStatusX = VERR_RT_REQUEST_STATUS_FREED;
+        pReq->enmType  = RTREQTYPE_INVALID;
+
+        bool fRecycled;
+        if (pReq->fPoolOrQueue)
+            fRecycled = rtReqPoolRecycle(pReq->uOwner.hPool, pReq);
+        else
+            fRecycled = rtReqQueueRecycle(pReq->uOwner.hQueue, pReq);
+        if (!fRecycled)
+            rtReqFreeIt(pReq);
+    }
+
+    return cRefs;
+}
+RT_EXPORT_SYMBOL(RTReqRelease);
+
+
+RTDECL(int) RTReqSubmit(PRTREQ hReq, RTMSINTERVAL cMillies)
+{
+    LogFlow(("RTReqQueue: hReq=%p cMillies=%d\n", hReq, cMillies));
+
     /*
      * Verify the supplied package.
      */
-    if (pReq->enmState != RTREQSTATE_ALLOCATED)
-    {
-        AssertMsgFailed(("Invalid state %d\n", pReq->enmState));
-        return VERR_RT_REQUEST_STATE;
-    }
-    if (   !pReq->uOwner.hQueue
-        ||  pReq->pNext
-        ||  !pReq->EventSem)
-    {
-        AssertMsgFailed(("Invalid request package! Anyone cooking their own packages???\n"));
-        return VERR_RT_REQUEST_INVALID_PACKAGE;
-    }
-    if (    pReq->enmType < RTREQTYPE_INVALID
-        || pReq->enmType > RTREQTYPE_MAX)
-    {
-        AssertMsgFailed(("Invalid package type %d valid range %d-%d inclusively. This was verified on alloc too...\n",
-                         pReq->enmType, RTREQTYPE_INVALID + 1, RTREQTYPE_MAX - 1));
-        return VERR_RT_REQUEST_INVALID_TYPE;
-    }
+    PRTREQINT pReq = hReq;
+    AssertPtrReturn(pReq, VERR_INVALID_HANDLE);
+    AssertReturn(pReq->u32Magic == RTREQ_MAGIC, VERR_INVALID_HANDLE);
+    AssertMsgReturn(pReq->enmState == RTREQSTATE_ALLOCATED, ("%d\n", pReq->enmState), VERR_RT_REQUEST_STATE);
+    AssertMsgReturn(pReq->uOwner.hQueue && !pReq->pNext && pReq->EventSem != NIL_RTSEMEVENT,
+                    ("Invalid request package! Anyone cooking their own packages???\n"),
+                    VERR_RT_REQUEST_INVALID_PACKAGE);
+    AssertMsgReturn(pReq->enmType > RTREQTYPE_INVALID && pReq->enmType < RTREQTYPE_MAX,
+                    ("Invalid package type %d valid range %d-%d inclusively. This was verified on alloc too...\n",
+                     pReq->enmType, RTREQTYPE_INVALID + 1, RTREQTYPE_MAX - 1),
+                    VERR_RT_REQUEST_INVALID_TYPE);
 
-    int rc = VINF_SUCCESS;
     /*
-     * Insert it.
+     * Insert it.  Donate the caller's reference if RTREQFLAGS_NO_WAIT is set,
+     * otherwise retain another reference for the queue.
      */
-    PRTREQQUEUEINT pQueue = ((RTREQ volatile *)pReq)->uOwner.hQueue;       /* volatile paranoia */
+    pReq->uSubmitNanoTs = RTTimeNanoTS();
+    pReq->enmState      = RTREQSTATE_QUEUED;
     unsigned fFlags = ((RTREQ volatile *)pReq)->fFlags;                    /* volatile paranoia */
-    pReq->enmState = RTREQSTATE_QUEUED;
-    PRTREQ pNext;
-    do
-    {
-        pNext = pQueue->pReqs;
-        pReq->pNext = pNext;
-        ASMAtomicWriteBool(&pQueue->fBusy, true);
-    } while (!ASMAtomicCmpXchgPtr(&pQueue->pReqs, pReq, pNext));
+    if (!(fFlags & RTREQFLAGS_NO_WAIT))
+        RTReqRetain(pReq);
 
-    /*
-     * Notify queue thread.
-     */
-    RTSemEventSignal(pQueue->EventSem);
+    if (!pReq->fPoolOrQueue)
+        rtReqQueueSubmit(pReq->uOwner.hQueue, pReq);
+    else
+        rtReqPoolSubmit(pReq->uOwner.hPool, pReq);
 
     /*
      * Wait and return.
      */
+    int rc = VINF_SUCCESS;
     if (!(fFlags & RTREQFLAGS_NO_WAIT))
         rc = RTReqWait(pReq, cMillies);
+
     LogFlow(("RTReqQueue: returns %Rrc\n", rc));
     return rc;
 }
 RT_EXPORT_SYMBOL(RTReqSubmit);
 
 
-RTDECL(int) RTReqWait(PRTREQ pReq, RTMSINTERVAL cMillies)
+RTDECL(int) RTReqWait(PRTREQ hReq, RTMSINTERVAL cMillies)
 {
-    LogFlow(("RTReqWait: pReq=%p cMillies=%d\n", pReq, cMillies));
+    LogFlow(("RTReqWait: hReq=%p cMillies=%d\n", hReq, cMillies));
 
     /*
      * Verify the supplied package.
      */
-    if (    pReq->enmState != RTREQSTATE_QUEUED
-        &&  pReq->enmState != RTREQSTATE_PROCESSING
-        &&  pReq->enmState != RTREQSTATE_COMPLETED)
-    {
-        AssertMsgFailed(("Invalid state %d\n", pReq->enmState));
-        return VERR_RT_REQUEST_STATE;
-    }
-    if (    !pReq->uOwner.hQueue
-        ||  !pReq->EventSem)
-    {
-        AssertMsgFailed(("Invalid request package! Anyone cooking their own packages???\n"));
-        return VERR_RT_REQUEST_INVALID_PACKAGE;
-    }
-    if (    pReq->enmType < RTREQTYPE_INVALID
-        ||  pReq->enmType > RTREQTYPE_MAX)
-    {
-        AssertMsgFailed(("Invalid package type %d valid range %d-%d inclusively. This was verified on alloc and queue too...\n",
-                         pReq->enmType, RTREQTYPE_INVALID + 1, RTREQTYPE_MAX - 1));
-        return VERR_RT_REQUEST_INVALID_TYPE;
-    }
+    PRTREQINT pReq = hReq;
+    AssertPtrReturn(pReq, VERR_INVALID_HANDLE);
+    AssertReturn(pReq->u32Magic == RTREQ_MAGIC, VERR_INVALID_HANDLE);
+    AssertMsgReturn(   pReq->enmState != RTREQSTATE_QUEUED
+                    || pReq->enmState != RTREQSTATE_PROCESSING
+                    || pReq->enmState != RTREQSTATE_COMPLETED,
+                    ("Invalid state %d\n", pReq->enmState),
+                    VERR_RT_REQUEST_STATE);
+    AssertMsgReturn(pReq->uOwner.hQueue && pReq->EventSem != NIL_RTSEMEVENT,
+                    ("Invalid request package! Anyone cooking their own packages???\n"),
+                    VERR_RT_REQUEST_INVALID_PACKAGE);
+    AssertMsgReturn(pReq->enmType > RTREQTYPE_INVALID && pReq->enmType < RTREQTYPE_MAX,
+                    ("Invalid package type %d valid range %d-%d inclusively. This was verified on alloc too...\n",
+                     pReq->enmType, RTREQTYPE_INVALID + 1, RTREQTYPE_MAX - 1),
+                    VERR_RT_REQUEST_INVALID_TYPE);
 
     /*
      * Wait on the package.
@@ -207,13 +316,15 @@ RTDECL(int) RTReqWait(PRTREQ pReq, RTMSINTERVAL cMillies)
         rc = VINF_SUCCESS;
     LogFlow(("RTReqWait: returns %Rrc\n", rc));
     Assert(rc != VERR_INTERRUPTED);
+    Assert(pReq->cRefs >= 1);
     return rc;
 }
 RT_EXPORT_SYMBOL(RTReqWait);
 
 
-RTDECL(int) RTReqGetStatus(PRTREQ pReq)
+RTDECL(int) RTReqGetStatus(PRTREQ hReq)
 {
+    PRTREQINT pReq = hReq;
     AssertPtrReturn(pReq, VERR_INVALID_POINTER);
     AssertReturn(pReq->u32Magic == RTREQ_MAGIC, VERR_INVALID_POINTER);
     return pReq->iStatusX;
@@ -229,7 +340,7 @@ RT_EXPORT_SYMBOL(RTReqGetStatus);
  *
  * @param   pReq        Request packet to process.
  */
-DECLHIDDEN(int) rtReqProcessOne(PRTREQ pReq)
+DECLHIDDEN(int) rtReqProcessOne(PRTREQINT pReq)
 {
     LogFlow(("rtReqProcessOne: pReq=%p type=%d fFlags=%#x\n", pReq, pReq->enmType, pReq->fFlags));
 
@@ -338,20 +449,16 @@ DECLHIDDEN(int) rtReqProcessOne(PRTREQ pReq)
     }
 
     /*
-     * Complete the request.
+     * Complete the request and then release our request handle reference.
      */
     pReq->iStatusX = rcReq;
     pReq->enmState = RTREQSTATE_COMPLETED;
     if (pReq->fFlags & RTREQFLAGS_NO_WAIT)
-    {
-        /* Free the packet, nobody is waiting. */
-        LogFlow(("rtReqProcessOne: Completed request %p: rcReq=%Rrc rcRet=%Rrc - freeing it\n",
+        LogFlow(("rtReqProcessOne: Completed request %p: rcReq=%Rrc rcRet=%Rrc (no wait)\n",
                  pReq, rcReq, rcRet));
-        RTReqFree(pReq);
-    }
     else
     {
-        /* Notify the waiter and him free up the packet. */
+        /* Notify the waiting thread. */
         LogFlow(("rtReqProcessOne: Completed request %p: rcReq=%Rrc rcRet=%Rrc - notifying waiting thread\n",
                  pReq, rcReq, rcRet));
         ASMAtomicXchgSize(&pReq->fEventSemClear, false);
@@ -362,6 +469,7 @@ DECLHIDDEN(int) rtReqProcessOne(PRTREQ pReq)
             rcRet = rc2;
         }
     }
+    RTReqRelease(pReq);
     return rcRet;
 }
 
