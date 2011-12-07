@@ -292,6 +292,34 @@ static DECLCALLBACK(int) rtReqPoolThreadProc(RTTHREAD hThreadSelf, void *pvArg)
     return VINF_SUCCESS;
 }
 
+static void rtReqPoolCreateNewWorker(RTREQPOOL pPool)
+{
+    PRTREQPOOLTHREAD pThread = (PRTREQPOOLTHREAD)RTMemAllocZ(sizeof(RTREQPOOLTHREAD));
+    if (!pThread)
+        return;
+
+    pThread->uBirthNanoTs = RTTimeNanoTS();
+    pThread->pPool        = pPool;
+    pThread->idLastCpu    = NIL_RTCPUID;
+    pThread->hThread      = NIL_RTTHREAD;
+    RTListInit(&pThread->IdleNode);
+    RTListAppend(&pPool->WorkerThreads, &pThread->ListNode);
+    pPool->cCurThreads++;
+    pPool->cThreadsCreated++;
+
+    static uint32_t s_idThread = 0;
+    int rc = RTThreadCreateF(&pThread->hThread, rtReqPoolThreadProc, pThread, 0 /*default stack size*/,
+                             pPool->enmThreadType, RTTHREADFLAGS_WAITABLE, "REQPT%02u", ++s_idThread);
+    if (RT_SUCCESS(rc))
+        pPool->uLastThreadCreateNanoTs = pThread->uBirthNanoTs;
+    else
+    {
+        pPool->cCurThreads--;
+        RTListNodeRemove(&pThread->ListNode);
+        RTMemFree(pThread);
+    }
+}
+
 
 DECLHIDDEN(int) rtReqPoolSubmit(PRTREQPOOLINT pPool, PRTREQINT pReq)
 {
@@ -347,48 +375,39 @@ DECLHIDDEN(int) rtReqPoolSubmit(PRTREQPOOLINT pPool, PRTREQINT pReq)
     if (   pPool->cCurThreads > pPool->cThreadsThreshold
         && (RTTimeNanoTS() - pReq->uSubmitNanoTs) / RT_NS_1MS >= pPool->cMsCurPushBack )
     {
-        uint32_t const cMsTimeout = pPool->cMsCurPushBack;
-        pPool->cPushingBack++;
-        RTCritSectLeave(&pPool->CritSect);
+        RTSEMEVENTMULTI hEvt = pReq->hPushBackEvt;
+        if (hEvt == NIL_RTSEMEVENTMULTI)
+        {
+            int rc = RTSemEventMultiCreate(&hEvt);
+            if (RT_SUCCESS(rc))
+                pReq->hPushBackEvt = hEvt;
+            else
+                hEvt = NIL_RTSEMEVENTMULTI;
+        }
+        if (hEvt != NIL_RTSEMEVENTMULTI)
+        {
+            uint32_t const cMsTimeout = pPool->cMsCurPushBack;
+            pPool->cPushingBack++;
+            RTCritSectLeave(&pPool->CritSect);
 
-        /** @todo this is everything but perfect... it makes wake up order
-         *        assumptions. A better solution would be having a lazily
-         *        allocated push back event on each request. */
-        int rc = RTSemEventWait(pPool->hPushBackEvt, cMsTimeout);
+            /** @todo this is everything but perfect... it makes wake up order
+             *        assumptions. A better solution would be having a lazily
+             *        allocated push back event on each request. */
+            int rc = RTSemEventWait(pPool->hPushBackEvt, cMsTimeout);
 
-        RTCritSectEnter(&pPool->CritSect);
-        pPool->cPushingBack--;
+            RTCritSectEnter(&pPool->CritSect);
+            pPool->cPushingBack--;
+            /** @todo check if it's still on the list before going on. */
+        }
     }
 
     /*
-     * Create a new thread for processing the request, or should we wait?
+     * Create a new thread for processing the request.
+     * For simplicity, we don't bother leaving the critical section while doing so.
      */
-    pThread = (PRTREQPOOLTHREAD)RTMemAllocZ(sizeof(RTREQPOOLTHREAD));
-    if (pThread)
-    {
-        pThread->uBirthNanoTs = RTTimeNanoTS();
-        pThread->pPool        = pPool;
-        pThread->idLastCpu    = NIL_RTCPUID;
-        pThread->hThread      = NIL_RTTHREAD;
-        RTListInit(&pThread->IdleNode);
-        RTListAppend(&pPool->WorkerThreads, &pThread->ListNode);
-        pPool->cCurThreads++;
-        pPool->cThreadsCreated++;
+    rtReqPoolCreateNewWorker(pPool);
 
-        static uint32_t s_idThread = 0;
-        int rc = RTThreadCreateF(&pThread->hThread, rtReqPoolThreadProc, pThread, 0 /*default stack size*/,
-                                 pPool->enmThreadType, RTTHREADFLAGS_WAITABLE, "REQPT%02u", ++s_idThread);
-        if (RT_SUCCESS(rc))
-            pPool->uLastThreadCreateNanoTs = pThread->uBirthNanoTs;
-        else
-        {
-            pPool->cCurThreads--;
-            RTListNodeRemove(&pThread->ListNode);
-            RTMemFree(pThread);
-        }
-    }
     RTCritSectLeave(&pPool->CritSect);
-
     return VINF_SUCCESS;
 }
 
