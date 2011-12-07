@@ -1819,6 +1819,7 @@ check_libcap()
   cat > $ODIR.tmp_src.cc << EOF
 #include <cstdio>
 #include <sys/types.h>
+#include <linux/types.h>
 #include <sys/capability.h>
 
 extern "C" int main(void)
