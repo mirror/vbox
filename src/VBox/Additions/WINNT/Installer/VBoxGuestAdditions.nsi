@@ -725,14 +725,18 @@ Function PrepareWRPFile
 
   Pop $0
 
-  IfFileExists "$0" +3 +1
+  ${IfNot} ${FileExists} "$0"
     LogText "WRP: File $0 does not exist, skipping"
     Return
+  ${EndIf}
 
-  IfFileExists "$g_strSystemDir\takeown.exe" +1 +4
+  ${If} ${FileExists} "$g_strSystemDir\takeown.exe"
     nsExec::ExecToLog '"$g_strSystemDir\takeown.exe" /F "$0"'
     Pop $1 ; Ret value
     LogText "WRP: Taking ownership for $0 returned: $1"
+  ${Else}
+    LogText "WRP: Warning: takeown.exe not found, skipping"
+  ${EndIf}
 
   AccessControl::SetFileOwner "$0" "(S-1-5-32-545)"
   Pop $1
@@ -777,33 +781,45 @@ Section /o $(VBOX_COMPONENT_D3D) SEC03
   FILE "$%PATH_OUT%\bin\additions\VBoxD3D9.dll"
   FILE "$%PATH_OUT%\bin\additions\wined3d.dll"
 
+  ;
   ; Update DLL cache
-  SetOutPath "$g_strSystemDir\dllcache"
-  IfFileExists "$g_strSystemDir\dllcache\msd3d8.dll" +2
-    CopyFiles /SILENT "$g_strSystemDir\dllcache\d3d8.dll" "$g_strSystemDir\dllcache\msd3d8.dll"
-  IfFileExists "$g_strSystemDir\dllcache\msd3d9.dll" +2
-    CopyFiles /SILENT "$g_strSystemDir\dllcache\d3d9.dll" "$g_strSystemDir\dllcache\msd3d9.dll"
+  ;
+  ${If} ${FileExists} "$g_strSystemDir\dllcache"
+    SetOutPath "$g_strSystemDir\dllcache"
+    ${IfNot} ${FileExists} "$g_strSystemDir\dllcache\msd3d8.dll"
+      CopyFiles /SILENT "$g_strSystemDir\dllcache\d3d8.dll" "$g_strSystemDir\dllcache\msd3d8.dll"
+    ${EndIf}
+    ${IfNot} ${FileExists} "$g_strSystemDir\dllcache\msd3d9.dll"
+      CopyFiles /SILENT "$g_strSystemDir\dllcache\d3d9.dll" "$g_strSystemDir\dllcache\msd3d9.dll"
+    ${EndIf}
 
-  Push "$g_strSystemDir\dllcache\d3d8.dll"
-  Call PrepareWRPFile
+    Push "$g_strSystemDir\dllcache\d3d8.dll"
+    Call PrepareWRPFile
 
-  Push "$g_strSystemDir\dllcache\d3d9.dll"
-  Call PrepareWRPFile
+    Push "$g_strSystemDir\dllcache\d3d9.dll"
+    Call PrepareWRPFile
 
-  ; Exchange DLLs
-  !insertmacro InstallLib DLL NOTSHARED NOREBOOT_NOTPROTECTED "$%PATH_OUT%\bin\additions\d3d8.dll" "$g_strSystemDir\dllcache\d3d8.dll" "$TEMP"
-  !insertmacro InstallLib DLL NOTSHARED NOREBOOT_NOTPROTECTED "$%PATH_OUT%\bin\additions\d3d9.dll" "$g_strSystemDir\dllcache\d3d9.dll" "$TEMP"
+    ; Exchange DLLs
+    !insertmacro InstallLib DLL NOTSHARED NOREBOOT_NOTPROTECTED "$%PATH_OUT%\bin\additions\d3d8.dll" "$g_strSystemDir\dllcache\d3d8.dll" "$TEMP"
+    !insertmacro InstallLib DLL NOTSHARED NOREBOOT_NOTPROTECTED "$%PATH_OUT%\bin\additions\d3d9.dll" "$g_strSystemDir\dllcache\d3d9.dll" "$TEMP"
 
-  ; If exchange above failed, do it on reboot
-  !insertmacro InstallLib DLL NOTSHARED REBOOT_NOTPROTECTED "$%PATH_OUT%\bin\additions\d3d8.dll" "$g_strSystemDir\dllcache\d3d8.dll" "$TEMP"
-  !insertmacro InstallLib DLL NOTSHARED REBOOT_NOTPROTECTED "$%PATH_OUT%\bin\additions\d3d9.dll" "$g_strSystemDir\dllcache\d3d9.dll" "$TEMP"
+    ; If exchange above failed, do it on reboot
+    !insertmacro InstallLib DLL NOTSHARED REBOOT_NOTPROTECTED "$%PATH_OUT%\bin\additions\d3d8.dll" "$g_strSystemDir\dllcache\d3d8.dll" "$TEMP"
+    !insertmacro InstallLib DLL NOTSHARED REBOOT_NOTPROTECTED "$%PATH_OUT%\bin\additions\d3d9.dll" "$g_strSystemDir\dllcache\d3d9.dll" "$TEMP"
+  ${Else}
+      DetailPrint "DLL cache does not exist, skipping"
+  ${EndIf}
 
+  ;
   ; Save original DLLs (only if msd3d*.dll does not exist) ...
+  ;
   SetOutPath $g_strSystemDir
-  IfFileExists "$g_strSystemDir\msd3d8.dll" +2
+  ${IfNot} ${FileExists} "$g_strSystemDir\msd3d8.dll"
     CopyFiles /SILENT "$g_strSystemDir\d3d8.dll" "$g_strSystemDir\msd3d8.dll"
-  IfFileExists "$g_strSystemDir\msd3d9.dll" +2
+  ${EndIf}
+  ${IfNot} ${FileExists} "$g_strSystemDir\msd3d9.dll"
     CopyFiles /SILENT "$g_strSystemDir\d3d9.dll" "$g_strSystemDir\msd3d9.dll"
+  ${EndIf}
 
   Push "$g_strSystemDir\d3d8.dll"
   Call PrepareWRPFile
@@ -819,7 +835,7 @@ Section /o $(VBOX_COMPONENT_D3D) SEC03
   !insertmacro InstallLib DLL NOTSHARED REBOOT_NOTPROTECTED "$%PATH_OUT%\bin\additions\d3d8.dll" "$g_strSystemDir\d3d8.dll" "$TEMP"
   !insertmacro InstallLib DLL NOTSHARED REBOOT_NOTPROTECTED "$%PATH_OUT%\bin\additions\d3d9.dll" "$g_strSystemDir\d3d9.dll" "$TEMP"
 
-  !if $%BUILD_TARGET_ARCH% == "amd64"
+!if $%BUILD_TARGET_ARCH% == "amd64"
     ; Only 64-bit installer:
     ; Also copy 32-bit DLLs on 64-bit Windows in SysWOW64 node
     SetOutPath $g_strSysWow64
@@ -832,37 +848,43 @@ Section /o $(VBOX_COMPONENT_D3D) SEC03
     ;
     ; Update DLL cache
     ;
+    ${If} ${FileExists} "$g_strSysWow64\dllcache"
+      SetOutPath "$g_strSysWow64\dllcache"
+      ${IfNot} ${FileExists} "$g_strSysWow64\dllcache\msd3d8.dll"
+        CopyFiles /SILENT "$g_strSysWow64\dllcache\d3d8.dll" "$g_strSysWow64\dllcache\msd3d8.dll"
+      ${EndIf}
+      ${IfNot} ${FileExists} "$g_strSysWow64\dllcache\msd3d9.dll"
+        CopyFiles /SILENT "$g_strSysWow64\dllcache\d3d9.dll" "$g_strSysWow64\dllcache\msd3d9.dll"
+      ${EndIf}
 
-    ; Save original DLLs (only if msd3d*.dll does not exist) ...
-    SetOutPath "$g_strSysWow64\dllcache"
-    IfFileExists "$g_strSysWow64\dllcache\msd3d8.dll" +2
-      CopyFiles /SILENT "$g_strSysWow64\dllcache\d3d8.dll" "$g_strSysWow64\dllcache\msd3d8.dll"
-    IfFileExists "$g_strSysWow64\dllcache\msd3d9.dll" +2
-      CopyFiles /SILENT "$g_strSysWow64\dllcache\d3d9.dll" "$g_strSysWow64\dllcache\msd3d9.dll"
+      Push "$g_strSysWow64\dllcache\d3d8.dll"
+      Call PrepareWRPFile
 
-    Push "$g_strSysWow64\dllcache\d3d8.dll"
-    Call PrepareWRPFile
+      Push "$g_strSysWow64\dllcache\d3d9.dll"
+      Call PrepareWRPFile
 
-    Push "$g_strSysWow64\dllcache\d3d9.dll"
-    Call PrepareWRPFile
+      ; Exchange DLLs
+      !insertmacro InstallLib DLL NOTSHARED NOREBOOT_NOTPROTECTED "$%VBOX_PATH_ADDITIONS_WIN_X86%\d3d8.dll" "$g_strSysWow64\dllcache\d3d8.dll" "$TEMP"
+      !insertmacro InstallLib DLL NOTSHARED NOREBOOT_NOTPROTECTED "$%VBOX_PATH_ADDITIONS_WIN_X86%\d3d9.dll" "$g_strSysWow64\dllcache\d3d9.dll" "$TEMP"
 
-    ; Exchange DLLs
-    !insertmacro InstallLib DLL NOTSHARED NOREBOOT_NOTPROTECTED "$%VBOX_PATH_ADDITIONS_WIN_X86%\d3d8.dll" "$g_strSysWow64\dllcache\d3d8.dll" "$TEMP"
-    !insertmacro InstallLib DLL NOTSHARED NOREBOOT_NOTPROTECTED "$%VBOX_PATH_ADDITIONS_WIN_X86%\d3d9.dll" "$g_strSysWow64\dllcache\d3d9.dll" "$TEMP"
-
-    ; If exchange above failed, do it on reboot
-    !insertmacro InstallLib DLL NOTSHARED REBOOT_NOTPROTECTED "$%VBOX_PATH_ADDITIONS_WIN_X86%\d3d8.dll" "$g_strSysWow64\dllcache\d3d8.dll" "$TEMP"
-    !insertmacro InstallLib DLL NOTSHARED REBOOT_NOTPROTECTED "$%VBOX_PATH_ADDITIONS_WIN_X86%\d3d9.dll" "$g_strSysWow64\dllcache\d3d9.dll" "$TEMP"
+      ; If exchange above failed, do it on reboot
+      !insertmacro InstallLib DLL NOTSHARED REBOOT_NOTPROTECTED "$%VBOX_PATH_ADDITIONS_WIN_X86%\d3d8.dll" "$g_strSysWow64\dllcache\d3d8.dll" "$TEMP"
+      !insertmacro InstallLib DLL NOTSHARED REBOOT_NOTPROTECTED "$%VBOX_PATH_ADDITIONS_WIN_X86%\d3d9.dll" "$g_strSysWow64\dllcache\d3d9.dll" "$TEMP"
+    ${Else}
+      DetailPrint "DLL cache does not exist, skipping"
+    ${EndIf}
 
     ;
     ; Update original DLLs
     ;
 
     ; Save original DLLs (only if msd3d*.dll does not exist) ...
-    IfFileExists "$g_strSysWow64\msd3d8.dll" +2
+    ${IfNot} ${FileExists} "$g_strSysWow64\msd3d8.dll"
       CopyFiles /SILENT "$g_strSysWow64\d3d8.dll" "$g_strSysWow64\msd3d8.dll"
-    IfFileExists "$g_strSysWow64\msd3d9.dll" +2
+    ${EndIf}
+    ${IfNot} ${FileExists} "$g_strSysWow64\msd3d9.dll"
       CopyFiles /SILENT "$g_strSysWow64\d3d9.dll" "$g_strSysWow64\msd3d9.dll"
+    ${EndIf}
 
     Push "$g_strSysWow64\d3d8.dll"
     Call PrepareWRPFile
@@ -878,7 +900,7 @@ Section /o $(VBOX_COMPONENT_D3D) SEC03
     !insertmacro InstallLib DLL NOTSHARED REBOOT_NOTPROTECTED "$%VBOX_PATH_ADDITIONS_WIN_X86%\d3d8.dll" "$g_strSysWow64\d3d8.dll" "$TEMP"
     !insertmacro InstallLib DLL NOTSHARED REBOOT_NOTPROTECTED "$%VBOX_PATH_ADDITIONS_WIN_X86%\d3d9.dll" "$g_strSysWow64\d3d9.dll" "$TEMP"
 
-  !endif ; amd64
+!endif ; amd64
   Goto done
 
 error:
