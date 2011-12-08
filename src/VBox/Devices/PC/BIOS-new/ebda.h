@@ -194,6 +194,7 @@ typedef struct {
     void __far  *buffer;            /* Read/write data buffer pointer. */
     uint8_t     dev_id;             /* Device ID; index into devices array. */
     uint16_t    nsect;              /* Number of sectors to be transferred. */
+    uint16_t    sect_sz;            /* Size of a sector in bytes. */
     uint16_t    cylinder;           /* Starting cylinder (CHS only). */
     uint16_t    head;               /* Starting head (CHS only). */
     uint16_t    sector;             /* Starting sector (CHS only). */
@@ -215,7 +216,7 @@ typedef struct {
     uint8_t     hdidmap[BX_MAX_STORAGE_DEVICES];
 
     uint8_t     cdcount;            /* Number of CD-ROMs. */
-    /* Map between (BIOS CD-ROM ID - 0xE0) and ATA channels. */
+    /* Map between (BIOS CD-ROM ID - 0xE0) and ATA/SCSI/AHCI devices. */
     uint8_t     cdidmap[BX_MAX_STORAGE_DEVICES];
 
     /* ATA bus-specific device information. */
@@ -230,7 +231,7 @@ typedef struct {
 #ifdef VBOX_WITH_AHCI
     /* SATA (AHCI) bus-specific device information. */
     ahci_dev_t  ahcidev[BX_MAX_AHCI_DEVICES];
-    uint8_t     ahci_hdcount;       /* Number of SATA disks. */
+    uint8_t     ahci_devcnt;        /* Number of SATA devices. */
     uint16_t    ahci_seg;           /* Segment of AHCI data block. */
 #endif
 
@@ -294,6 +295,13 @@ int __fastcall scsi_write_sectors(bio_dsk_t __far *bios_dsk);
 
 int __fastcall ahci_read_sectors(bio_dsk_t __far *bios_dsk);
 int __fastcall ahci_write_sectors(bio_dsk_t __far *bios_dsk);
+
+
+uint16_t ahci_cmd_packet(uint16_t device_id, uint8_t cmdlen, char __far *cmdbuf,
+                         uint16_t header, uint32_t length, uint8_t inout, char __far *buffer);
+
+uint16_t ata_cmd_packet(uint16_t device, uint8_t cmdlen, char __far *cmdbuf, 
+                        uint16_t header, uint32_t length, uint8_t inout, char __far *buffer);
 
 // @todo: put this elsewhere (and change/eliminate?)
 #define SET_DISK_RET_STATUS(status) write_byte(0x0040, 0x0074, status)

@@ -127,8 +127,7 @@
 #define ATA_CMD_FLUSH_CACHE                  0xE7
 #define ATA_CMD_FORMAT_TRACK                 0x50
 #define ATA_CMD_IDENTIFY_DEVICE              0xEC
-#define ATA_CMD_IDENTIFY_DEVICE_PACKET       0xA1
-#define ATA_CMD_IDENTIFY_PACKET_DEVICE       0xA1
+#define ATA_CMD_IDENTIFY_PACKET              0xA1
 #define ATA_CMD_IDLE1                        0xE3
 #define ATA_CMD_IDLE2                        0x97
 #define ATA_CMD_IDLE_IMMEDIATE1              0xE1
@@ -203,10 +202,4 @@ typedef struct {
 
 #define Int13DPT ((dpt_t *) 0)
 
-
 extern void     ata_reset(uint16_t device);
-extern uint16_t atapi_is_cdrom(uint8_t device);
-extern uint16_t ata_cmd_packet(uint16_t device, uint8_t cmdlen,
-                               char __far *cmdbuf, uint16_t header, 
-                               uint32_t length, uint8_t inout, 
-                               char __far *buffer);

@@ -63,7 +63,13 @@ typedef struct
     /** The command table of one request as defined by chapter 4.2.3 of the Intel AHCI spec.
      *  Must be aligned on 128 byte boundary.
      */
-    uint8_t         abCmd[0x80];
+    uint8_t         abCmd[0x40];
+    /** The ATAPI command region.
+     *  Located 40h bytes after the beginning of the CFIS (Command FIS).
+     */
+    uint8_t         abAcmd[0x20];
+    /** Align the PRDT structure on a 128 byte boundary. */
+    uint8_t         abAlignment2[0x20];
     /** Physical Region Descriptor Table (PRDT) array. In other
      *  words, a scatter/gather descriptor list.
      */
@@ -154,6 +160,8 @@ typedef struct
     AHCI_READ_REG((iobase), AHCI_PORT_REG((port), (reg)), val)
 
 #define ATA_CMD_IDENTIFY_DEVICE     0xEC
+#define ATA_CMD_IDENTIFY_PACKET     0xA1
+#define ATA_CMD_PACKET              0xA0
 #define AHCI_CMD_READ_DMA_EXT       0x25
 #define AHCI_CMD_WRITE_DMA_EXT      0x35
 
@@ -238,7 +246,7 @@ static void ahci_port_cmd_sync(ahci_t __far *ahci, uint8_t val, uint16_t cbData)
     {
         /* Prepare the command header. */
         ahci->aCmdHdr[0] = RT_BIT_32(16) | RT_BIT_32(7) | val;
-        ahci->aCmdHdr[1] = cbData;
+        ahci->aCmdHdr[1] = 0; //cbData;  //@todo: Is this really an input parameter?
         ahci->aCmdHdr[2] = ahci_addr_to_phys(&ahci->abCmd[0]);
 
         /* Enable Command and FIS receive engine. */
@@ -276,6 +284,7 @@ static void ahci_cmd_data(bio_dsk_t __far *bios_dsk, uint8_t cmd)
 {
     ahci_t __far    *ahci  = bios_dsk->ahci_seg :> 0;
     uint16_t        n_sect = bios_dsk->drqp.nsect;
+    uint16_t        sectsz = bios_dsk->drqp.sect_sz;
 
     _fmemset(&ahci->abCmd[0], 0, sizeof(ahci->abCmd));
 
@@ -300,24 +309,24 @@ static void ahci_cmd_data(bio_dsk_t __far *bios_dsk, uint8_t cmd)
 
     /* Lock memory needed for DMA. */
     ahci->edds.num_avail = NUM_EDDS_SG;
-    vds_build_sg_list(&ahci->edds, bios_dsk->drqp.buffer, n_sect * 512);
+    vds_build_sg_list(&ahci->edds, bios_dsk->drqp.buffer, (uint32_t)n_sect * sectsz);
 
     /* Set up the PRDT. */
     ahci->aPrdt[0].phys_addr = ahci->edds.u.sg[0].phys_addr;
     ahci->aPrdt[0].len       = ahci->edds.u.sg[0].size - 1;
 
-    /* Build variable part first of command dword. */
+    /* Build variable part first of command dword (reuses 'cmd'). */
     if (cmd == AHCI_CMD_WRITE_DMA_EXT)
-        cmd = RT_BIT_32(6);
-    else
+        cmd = RT_BIT_32(6);     /* Indicate write to device. */
+    else if (cmd == ATA_CMD_PACKET) {
+        cmd |= RT_BIT_32(5);    /* Indicate ATAPI command. */
+        ahci->abCmd[3] |= 1;    /* DMA transfers. */
+    } else
         cmd = 0;
 
-//    if (fAtapi)
-//        cmd |= RT_BIT_32(5);
+    cmd |= 5;   /* Five DWORDs. */
 
-    cmd |= 5;   /* Five dwords. */
-
-    ahci_port_cmd_sync(ahci, cmd, n_sect * 512);
+    ahci_port_cmd_sync(ahci, cmd, n_sect * sectsz);
 
     /* Unlock the buffer again. */
     vds_free_sg_list(&ahci->edds);
@@ -426,7 +435,11 @@ int ahci_read_sectors(bio_dsk_t __far *bios_dsk)
 
     device_id = bios_dsk->drqp.dev_id - BX_MAX_ATA_DEVICES - BX_MAX_SCSI_DEVICES;
     if (device_id > BX_MAX_AHCI_DEVICES)
-        BX_PANIC("ahci_read_sectors: device_id out of range %d\n", device_id);
+        BX_PANIC("%s: device_id out of range %d\n", __func__, device_id);
+
+    VBOXAHCI_DEBUG("%s: %u sectors @ LBA %lu, device %d, port %d\n", __func__,
+                   bios_dsk->drqp.nsect, bios_dsk->drqp.lba, device_id,
+                   bios_dsk->ahcidev[device_id].port);
 
     ahci_port_init(bios_dsk->ahci_seg :> 0, bios_dsk->ahcidev[device_id].port);
     ahci_cmd_data(bios_dsk, AHCI_CMD_READ_DMA_EXT);
@@ -449,11 +462,69 @@ int ahci_write_sectors(bio_dsk_t __far *bios_dsk)
 
     device_id = bios_dsk->drqp.dev_id - BX_MAX_ATA_DEVICES - BX_MAX_SCSI_DEVICES;
     if (device_id > BX_MAX_AHCI_DEVICES)
-        BX_PANIC("ahci_write_sectors: device_id out of range %d\n", device_id);
+        BX_PANIC("%s: device_id out of range %d\n", __func__, device_id);
+
+    VBOXAHCI_DEBUG("%s: %u sectors @ LBA %lu, device %d, port %d\n", __func__,
+                   bios_dsk->drqp.nsect, bios_dsk->drqp.lba, device_id,
+                   bios_dsk->ahcidev[device_id].port);
 
     ahci_port_init(bios_dsk->ahci_seg :> 0, bios_dsk->ahcidev[device_id].port);
     ahci_cmd_data(bios_dsk, AHCI_CMD_WRITE_DMA_EXT);
     return 0;   //@todo!!
+}
+
+//@todo: move
+#define ATA_DATA_NO      0x00
+#define ATA_DATA_IN      0x01
+#define ATA_DATA_OUT     0x02
+
+uint16_t ahci_cmd_packet(uint16_t device_id, uint8_t cmdlen, char __far *cmdbuf, 
+                         uint16_t header, uint32_t length, uint8_t inout, char __far *buffer)
+{
+    bio_dsk_t __far *bios_dsk = read_word(0x0040, 0x000E) :> &EbdaData->bdisk;
+    ahci_t __far    *ahci     = bios_dsk->ahci_seg :> 0;
+
+    /* Data out is currently not supported. */
+    if (inout == ATA_DATA_OUT) {
+        BX_INFO("%s: DATA_OUT not supported yet\n", __func__);
+        return 1;
+    }
+
+    /* The header length must be even. */
+    if (header & 1) {
+        VBOXAHCI_DEBUG("%s: header must be even (%04x)\n", __func__, header);
+        return 1;
+    }
+
+    /* Convert to AHCI specific device number. */
+    device_id = device_id - BX_MAX_ATA_DEVICES - BX_MAX_SCSI_DEVICES;
+
+    VBOXAHCI_DEBUG("%s: reading %lu bytes, header %u, device %d, port %d\n", __func__,
+                   length, header, device_id, bios_dsk->ahcidev[device_id].port);
+
+    bios_dsk->drqp.lba     = (uint32_t)length << 8;     //@todo: xfer length limit
+    bios_dsk->drqp.buffer  = buffer;
+    bios_dsk->drqp.nsect   = length / 2048;
+    bios_dsk->drqp.sect_sz = 2048;
+
+    ahci_port_init(bios_dsk->ahci_seg :> 0, bios_dsk->ahcidev[device_id].port);
+
+    /* Copy the ATAPI command where the HBA can fetch it. */
+    _fmemcpy(ahci->abAcmd, cmdbuf, cmdlen);
+
+    /* Reset transferred counts. */
+    // @todo: clear in calling code?
+    bios_dsk->drqp.trsfsectors = 0;
+    bios_dsk->drqp.trsfbytes   = 0;
+
+    ahci_cmd_data(bios_dsk, ATA_CMD_PACKET);
+    VBOXAHCI_DEBUG("%s: transferred %lu bytes\n", __func__, ahci->aCmdHdr[1]);
+#ifdef DMA_WORKAROUND
+    rep_movsw(bios_dsk->drqp.buffer, bios_dsk->drqp.buffer, bios_dsk->drqp.nsect * 2048 / 2);
+#endif
+    bios_dsk->drqp.trsfbytes = ahci->aCmdHdr[1];
+    return ahci->aCmdHdr[1] == 0 ? 4 : 0;
+//    return 0;   //@todo!!
 }
 
 static void ahci_port_detect_device(ahci_t __far *ahci, uint8_t u8Port)
@@ -477,13 +548,17 @@ static void ahci_port_detect_device(ahci_t __far *ahci, uint8_t u8Port)
     VBOXAHCI_PORT_READ_REG(ahci->iobase, u8Port, AHCI_REG_PORT_SSTS, val);
     if (ahci_ctrl_extract_bits(val, 0xfL, 0) == 0x3)
     {
-        uint8_t     hdcount, hdcount_ahci, hd_index;
+        uint8_t     abBuffer[0x0200];
+        uint8_t     hdcount, devcount_ahci, hd_index;
+        uint8_t     cdcount;
+        uint8_t     removable;
 
-        hdcount_ahci = bios_dsk->ahci_hdcount;
+        devcount_ahci = bios_dsk->ahci_devcnt;
 
         VBOXAHCI_DEBUG("AHCI: Device detected on port %d\n", u8Port);
 
-        if (hdcount_ahci < BX_MAX_AHCI_DEVICES)
+        //@todo: Merge common HD/CDROM detection code
+        if (devcount_ahci < BX_MAX_AHCI_DEVICES)
         {
             /* Device detected, enable FIS receive. */
             ahci_ctrl_set_bits(ahci->iobase, AHCI_PORT_REG(u8Port, AHCI_REG_PORT_CMD),
@@ -494,23 +569,22 @@ static void ahci_port_detect_device(ahci_t __far *ahci, uint8_t u8Port)
             if (val == 0x101)
             {
                 uint32_t    cSectors;
-                uint8_t     abBuffer[0x0200];
-                uint8_t     fRemovable;
                 uint16_t    cCylinders, cHeads, cSectorsPerTrack;
                 uint8_t     idxCmosChsBase;
 
                 VBOXAHCI_DEBUG("AHCI: Detected hard disk\n");
 
                 /* Identify device. */
-                bios_dsk->drqp.lba    = 0;
-                bios_dsk->drqp.buffer = &abBuffer;
-                bios_dsk->drqp.nsect  = 1;
+                bios_dsk->drqp.lba     = 0;
+                bios_dsk->drqp.buffer  = &abBuffer;
+                bios_dsk->drqp.nsect   = 1;
+                bios_dsk->drqp.sect_sz = 512;
                 ahci_cmd_data(bios_dsk, ATA_CMD_IDENTIFY_DEVICE);
 
-                /* Calculate index into the generic disk table. */
-                hd_index = hdcount_ahci + BX_MAX_ATA_DEVICES + BX_MAX_SCSI_DEVICES;
+                /* Calculate index into the generic device table. */
+                hd_index = devcount_ahci + BX_MAX_ATA_DEVICES + BX_MAX_SCSI_DEVICES;
 
-                fRemovable       = *(abBuffer+0) & 0x80 ? 1 : 0;
+                removable        = *(abBuffer+0) & 0x80 ? 1 : 0;
                 cCylinders       = *(uint16_t *)(abBuffer+(1*2));   // word 1
                 cHeads           = *(uint16_t *)(abBuffer+(3*2));   // word 3
                 cSectorsPerTrack = *(uint16_t *)(abBuffer+(6*2));   // word 6
@@ -522,10 +596,10 @@ static void ahci_port_detect_device(ahci_t __far *ahci, uint8_t u8Port)
 
                 VBOXAHCI_DEBUG("AHCI: %ld sectors\n", cSectors);
 
-                bios_dsk->ahcidev[hdcount_ahci].port = u8Port;
+                bios_dsk->ahcidev[devcount_ahci].port = u8Port;
                 bios_dsk->devices[hd_index].type        = ATA_TYPE_AHCI;
                 bios_dsk->devices[hd_index].device      = ATA_DEVICE_HD;
-                bios_dsk->devices[hd_index].removable   = fRemovable;
+                bios_dsk->devices[hd_index].removable   = removable;
                 bios_dsk->devices[hd_index].lock        = 0;
                 bios_dsk->devices[hd_index].blksize     = 512;
                 bios_dsk->devices[hd_index].translation = ATA_TRANSLATION_LBA;
@@ -536,7 +610,7 @@ static void ahci_port_detect_device(ahci_t __far *ahci, uint8_t u8Port)
                 bios_dsk->devices[hd_index].pchs.spt       = cSectorsPerTrack;
 
                 /* Get logical CHS geometry. */
-                switch (hdcount_ahci)
+                switch (devcount_ahci)
                 {
                     case 0:
                         idxCmosChsBase = 0x40;
@@ -566,33 +640,56 @@ static void ahci_port_detect_device(ahci_t __far *ahci, uint8_t u8Port)
                     cSectorsPerTrack = 0;
                 }
                 VBOXAHCI_DEBUG("AHCI: Dev %d LCHS=%d/%d/%d\n", 
-                               hdcount_ahci, cCylinders, cHeads, cSectorsPerTrack);
+                               devcount_ahci, cCylinders, cHeads, cSectorsPerTrack);
 
                 bios_dsk->devices[hd_index].lchs.heads     = cHeads;
                 bios_dsk->devices[hd_index].lchs.cylinders = cCylinders;
                 bios_dsk->devices[hd_index].lchs.spt       = cSectorsPerTrack;
 
-                /* Store the id of the disk in the ata hdidmap. */
+                /* Store the ID of the disk in the BIOS hdidmap. */
                 hdcount = bios_dsk->hdcount;
-                bios_dsk->hdidmap[hdcount] = hdcount_ahci + BX_MAX_ATA_DEVICES + BX_MAX_SCSI_DEVICES;
+                bios_dsk->hdidmap[hdcount] = devcount_ahci + BX_MAX_ATA_DEVICES + BX_MAX_SCSI_DEVICES;
                 hdcount++;
                 bios_dsk->hdcount = hdcount;
 
                 /* Update hdcount in the BDA. */
                 hdcount = read_byte(0x40, 0x75);
                 hdcount++;
-                write_byte(0x40, 0x75, hdcount);
-                
+                write_byte(0x40, 0x75, hdcount);                
             }
             else if (val == 0xeb140101)
             {
                 VBOXAHCI_DEBUG("AHCI: Detected ATAPI device\n");
+
+                /* Identify packet device. */
+                bios_dsk->drqp.lba     = 0;
+                bios_dsk->drqp.buffer  = &abBuffer;
+                bios_dsk->drqp.nsect   = 1;
+                bios_dsk->drqp.sect_sz = 512;
+                ahci_cmd_data(bios_dsk, ATA_CMD_IDENTIFY_PACKET);
+
+                /* Calculate index into the generic device table. */
+                hd_index = devcount_ahci + BX_MAX_ATA_DEVICES + BX_MAX_SCSI_DEVICES;
+
+                removable = *(abBuffer+0) & 0x80 ? 1 : 0;
+
+                bios_dsk->ahcidev[devcount_ahci].port = u8Port;
+                bios_dsk->devices[hd_index].type      = ATA_TYPE_AHCI;
+                bios_dsk->devices[hd_index].device    = ATA_DEVICE_CDROM;
+                bios_dsk->devices[hd_index].removable = removable;
+                bios_dsk->devices[hd_index].blksize   = 2048;
+
+                /* Store the ID of the device in the BIOS cdidmap. */
+                cdcount = bios_dsk->cdcount;
+                bios_dsk->cdidmap[cdcount] = devcount_ahci + BX_MAX_ATA_DEVICES + BX_MAX_SCSI_DEVICES;
+                cdcount++;
+                bios_dsk->cdcount = cdcount;
             }
             else
                 VBOXAHCI_DEBUG("AHCI: Ignoring unknown device\n");
 
-            hdcount_ahci++;
-            bios_dsk->ahci_hdcount = hdcount_ahci;
+            devcount_ahci++;
+            bios_dsk->ahci_devcnt = devcount_ahci;
         }
         else
             VBOXAHCI_DEBUG("AHCI: Reached maximum device count, skipping\n");
@@ -650,7 +747,7 @@ static int ahci_hba_init(uint16_t io_base)
                    ahci_seg, sizeof(ahci_t), (uint16_t)&EbdaData->bdisk.ahci_seg, sizeof(ebda_data_t));
 
     write_word(ebda_seg, (uint16_t)&EbdaData->bdisk.ahci_seg, ahci_seg);
-    write_byte(ebda_seg, (uint16_t)&EbdaData->bdisk.ahci_hdcount, 0);
+    write_byte(ebda_seg, (uint16_t)&EbdaData->bdisk.ahci_devcnt, 0);
     write_byte(ahci_seg, (uint16_t)&AhciData->cur_port, 0xff);
     write_word(ahci_seg, (uint16_t)&AhciData->iobase, io_base);
 
