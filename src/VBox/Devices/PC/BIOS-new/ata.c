@@ -585,7 +585,7 @@ void BIOSCALL ata_detect(void)
             bios_dsk->drqp.buffer = buffer;
             bios_dsk->drqp.dev_id = device;
 
-            if (ata_cmd_data_in(bios_dsk, ATA_CMD_IDENTIFY_DEVICE_PACKET, 1) != 0)
+            if (ata_cmd_data_in(bios_dsk, ATA_CMD_IDENTIFY_PACKET, 1) != 0)
                 BX_PANIC("ata-detect: Failed to detect ATAPI device\n");
 
             type      = *(buffer+1) & 0x1f;
@@ -1126,26 +1126,4 @@ uint16_t ata_cmd_packet(uint16_t device, uint8_t cmdlen, char __far *cmdbuf,
 
 // ---------------------------------------------------------------------------
 // End of ATA/ATAPI Driver
-// ---------------------------------------------------------------------------
-
-uint16_t atapi_is_cdrom(uint8_t device)
-{
-    bio_dsk_t __far *bios_dsk;
-    
-    bios_dsk = read_word(0x0040, 0x000E) :> &EbdaData->bdisk;
-    
-    if (device >= BX_MAX_ATA_DEVICES)
-        return 0;
-    
-    if (bios_dsk->devices[device].type != ATA_TYPE_ATAPI)
-        return 0;
-    
-    if (bios_dsk->devices[device].device != ATA_DEVICE_CDROM)
-        return 0;
-    
-    return 1;
-}
-
-// ---------------------------------------------------------------------------
-// End of ATA/ATAPI generic functions
 // ---------------------------------------------------------------------------

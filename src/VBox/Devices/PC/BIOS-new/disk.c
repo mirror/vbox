@@ -160,6 +160,7 @@ void BIOSCALL int13_harddisk(disk_regs_t r)
         bios_dsk->drqp.lba      = lba;
         bios_dsk->drqp.buffer   = MK_FP(ES, BX);
         bios_dsk->drqp.nsect    = count;
+        bios_dsk->drqp.sect_sz  = 512;  //@todo: device specific?
         bios_dsk->drqp.cylinder = cylinder;
         bios_dsk->drqp.head     = head;
         bios_dsk->drqp.sector   = sector;
@@ -372,10 +373,11 @@ void BIOSCALL int13_harddisk_ext(disk_regs_t r)
         bios_dsk->drqp.trsfbytes   = 0;
 
         /* Pass request information to low level disk code. */
-        bios_dsk->drqp.lba    = lba;
-        bios_dsk->drqp.buffer = MK_FP(segment, offset);
-        bios_dsk->drqp.nsect  = count;
-        bios_dsk->drqp.sector = 0;      /* Indicate LBA. */
+        bios_dsk->drqp.lba     = lba;
+        bios_dsk->drqp.buffer  = MK_FP(segment, offset);
+        bios_dsk->drqp.nsect   = count;
+        bios_dsk->drqp.sect_sz = 512;   //@todo: device specific?
+        bios_dsk->drqp.sector  = 0;     /* Indicate LBA. */
         
         // Execute the command
         if ( GET_AH() == 0x42 ) {
