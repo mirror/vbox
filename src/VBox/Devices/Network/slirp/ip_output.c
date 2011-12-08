@@ -72,7 +72,7 @@ static const uint8_t broadcast_ethaddr[6] =
 static int rt_lookup_in_cache(PNATState pData, uint32_t dst, uint8_t *ether)
 {
     int rc;
-    LogFlowFunc(("ENTER: dst:%RTnaipv4, ether:%p\n", dst, ether));
+    LogFlowFunc(("ENTER: dst:%RTnaipv4, ether:%RTmac\n", dst, ether));
     if (dst == INADDR_BROADCAST)
     {
         memcpy(ether, broadcast_ethaddr, ETH_ALEN);

@@ -1212,8 +1212,10 @@ soisfconnecting(struct socket *so)
 void
 soisfconnected(struct socket *so)
 {
+    LogFlowFunc(("ENTER: so:%R[natsock]\n", so));
     so->so_state &= ~(SS_ISFCONNECTING|SS_FWDRAIN|SS_NOFDREF);
     so->so_state |= SS_ISFCONNECTED; /* Clobber other states */
+    LogFlowFunc(("LEAVE: so:%R[natsock]\n", so));
 }
 
 void

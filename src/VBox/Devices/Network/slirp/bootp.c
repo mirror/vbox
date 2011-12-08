@@ -83,6 +83,7 @@ static uint8_t *dhcp_find_option(uint8_t *vend, uint8_t tag)
 static BOOTPClient *bc_alloc_client(PNATState pData)
 {
     int i;
+    LogFlowFuncEnter();
     for (i = 0; i < NB_ADDR; i++)
     {
         if (!bootp_clients[i].allocated)
@@ -93,21 +94,25 @@ static BOOTPClient *bc_alloc_client(PNATState pData)
             memset(bc, 0, sizeof(BOOTPClient));
             bc->allocated = 1;
             bc->number = i;
+            LogFlowFunc(("LEAVE: bc:%d\n", bc->number));
             return bc;
         }
     }
+    LogFlowFunc(("LEAVE: NULL\n"));
     return NULL;
 }
 
 static BOOTPClient *get_new_addr(PNATState pData, struct in_addr *paddr)
 {
     BOOTPClient *bc;
+    LogFlowFuncEnter();
     bc = bc_alloc_client(pData);
     if (!bc)
         return NULL;
 
     paddr->s_addr = RT_H2N_U32(RT_N2H_U32(pData->special_addr.s_addr) | (bc->number + START_ADDR));
     bc->addr.s_addr = paddr->s_addr;
+    LogFlowFunc(("LEAVE: paddr:%RTnaipv4, bc:%d\n", paddr->s_addr, bc->number));
     return bc;
 }
 
@@ -177,18 +182,22 @@ static BOOTPClient *find_addr(PNATState pData, struct in_addr *paddr, const uint
 {
     int i;
 
+    LogFlowFunc(("macaddr:%RTmac\n", macaddr));
     for (i = 0; i < NB_ADDR; i++)
     {
-        if (!memcmp(macaddr, bootp_clients[i].macaddr, 6))
+        if (   memcmp(macaddr, bootp_clients[i].macaddr, ETH_ALEN) == 0
+            && bootp_clients[i].allocated != 0)
         {
             BOOTPClient *bc;
 
             bc = &bootp_clients[i];
             bc->allocated = 1;
             paddr->s_addr = RT_H2N_U32(RT_N2H_U32(pData->special_addr.s_addr) | (i + START_ADDR));
+            LogFlowFunc(("LEAVE: paddr:%RTnaipv4 bc:%d\n", paddr->s_addr, bc->number));
             return bc;
         }
     }
+    LogFlowFunc(("LEAVE: NULL\n"));
     return NULL;
 }
 
