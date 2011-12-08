@@ -71,6 +71,21 @@
 /*******************************************************************************
 *   Structures and Typedefs                                                    *
 *******************************************************************************/
+static RTGETOPTDEF g_aGetOptDef[] =
+{
+    { "--pf",           'p',   RTGETOPT_REQ_STRING }
+};
+
+typedef struct NATSEVICEPORTFORWARDRULE
+{
+    char            *pszPortForwardRuleName;
+    struct in_addr  IpV4HostAddr;
+    uint16_t        u16HostPort;
+    struct in_addr  IpV4GuestAddr;
+    uint16_t        u16GuestPort;
+    bool            fUdp;
+    char            *pszStrRaw;
+} NATSEVICEPORTFORWARDRULE, *PNATSEVICEPORTFORWARDRULE;
 
 class VBoxNetNAT : public VBoxNetBaseService
 {
@@ -79,7 +94,8 @@ public:
     virtual ~VBoxNetNAT();
     void usage(void);
     void run(void);
-    void init(void);
+    virtual int init(void);
+    virtual int parseOpt(int rc, const RTGETOPTUNION& getOptVal);
 
 public:
     PNATState m_pNATState;
@@ -106,6 +122,7 @@ public:
     volatile uint32_t       cUrgPkt;
     volatile uint32_t       cPkt;
     bool                    fIsRunning;
+    std::vector<PNATSEVICEPORTFORWARDRULE> m_vecPortForwardRuleFromCmdLine;
 };
 
 
@@ -154,10 +171,13 @@ VBoxNetNAT::VBoxNetNAT()
     m_Ipv4Netmask.u         = RT_H2N_U32_C(0xffffff);
     cPkt = 0;
     cUrgPkt = 0;
+    VBoxNetBaseService::init();
+    for(unsigned int i = 0; i < RT_ELEMENTS(g_aGetOptDef); ++i)
+        m_vecOptionDefs.push_back(&g_aGetOptDef[i]);
 }
 
 VBoxNetNAT::~VBoxNetNAT() { }
-void VBoxNetNAT::init()
+int VBoxNetNAT::init()
 {
     int rc;
 #if 0
@@ -173,7 +193,23 @@ void VBoxNetNAT::init()
     rc = slirp_init(&m_pNATState, RT_H2N_U32_C(RT_BSWAP_U32_C(RT_MAKE_U32_FROM_U8( 10,  0,  2,  0))), m_Ipv4Netmask.u, m_fPassDomain, false, 0x40, 100, this);
     AssertReleaseRC(rc);
 
+    /* Why ? */
     slirp_set_ethaddr_and_activate_port_forwarding(m_pNATState, &m_MacAddress.au8[0], INADDR_ANY);
+#if 0
+    in_addr ipv4HostAddr;
+    in_addr ipv4GuestAddr;
+    ipv4GuestAddr.s_addr = RT_H2N_U32_C(RT_BSWAP_U32_C(RT_MAKE_U32_FROM_U8( 10,  0,  2,  15)));
+    ipv4HostAddr.s_addr = INADDR_ANY;
+    slirp_add_redirect(m_pNATState, false, ipv4HostAddr, 2022, ipv4GuestAddr , 22, NULL);
+#endif
+    std::vector<PNATSEVICEPORTFORWARDRULE>::iterator it;
+    for (it = m_vecPortForwardRuleFromCmdLine.begin(); it != m_vecPortForwardRuleFromCmdLine.end(); ++it)
+    {
+        slirp_add_redirect(m_pNATState, (*it)->fUdp, (*it)->IpV4HostAddr, (*it)->u16HostPort, (*it)->IpV4GuestAddr , (*it)->u16GuestPort, NULL);
+        RTStrFree((*it)->pszStrRaw);
+        RTMemFree((*it));
+    }
+    m_vecPortForwardRuleFromCmdLine.clear();
 #ifndef RT_OS_WINDOWS
     /*
      * Create the control pipe.
@@ -201,6 +237,7 @@ void VBoxNetNAT::init()
     rc = RTSemEventCreate(&m_EventSend);
     rc = RTSemEventCreate(&m_EventUrgSend);
     AssertReleaseRC(rc);
+    return VINF_SUCCESS;
 }
 
 /* Mandatory functions */
@@ -303,6 +340,7 @@ void VBoxNetNAT::run()
                         rc = RTReqQueueCallEx(m_hReqQueue, NULL /*ppReq*/, 0 /*cMillies*/,
                                               RTREQFLAGS_VOID | RTREQFLAGS_NO_WAIT,
                                               (PFNRT)SendWorker, 2, m, cbSegFrame);
+                        natNotifyNATThread();
                         AssertReleaseRC(rc);
                     }
                 }
@@ -325,6 +363,96 @@ void VBoxNetNAT::usage()
 {
 }
 
+int VBoxNetNAT::parseOpt(int rc, const RTGETOPTUNION& Val)
+{
+    switch (rc)
+    {
+        case 'p':
+        {
+#define ITERATE_TO_NEXT_TERM(ch, pRule, strRaw)                            \
+    do {                                                                   \
+        while (*ch != ',')                                                 \
+        {                                                                  \
+            if (*ch == 0)                                                  \
+            {                                                              \
+                if (pRule)                                                 \
+                    RTMemFree(pRule);                                      \
+                if(strRaw)                                                \
+                    RTStrFree(strRaw);                                     \
+                return VERR_INVALID_PARAMETER;                             \
+            }                                                              \
+            ch++;                                                          \
+        }                                                                  \
+        *ch = '\0';                                                        \
+        ch++;                                                              \
+    } while(0)
+            PNATSEVICEPORTFORWARDRULE pRule = (PNATSEVICEPORTFORWARDRULE)RTMemAlloc(sizeof(NATSEVICEPORTFORWARDRULE));
+            if (!pRule)
+                return VERR_NO_MEMORY;
+            char *strName;
+            char *strProto;
+            char *strHostIp;
+            char *strHostPort;
+            char *strGuestIp;
+            char *strGuestPort;
+            char *strRaw = RTStrDup(Val.psz);
+            char *ch = strRaw;
+            if (!strRaw)
+            {
+                RTMemFree(pRule);
+                return VERR_NO_MEMORY;
+            }
+
+            strName = RTStrStrip(ch);
+            ITERATE_TO_NEXT_TERM(ch, pRule, strRaw);
+            strProto = RTStrStrip(ch);
+            ITERATE_TO_NEXT_TERM(ch, pRule, strRaw);
+            strHostIp = RTStrStrip(ch);
+            ITERATE_TO_NEXT_TERM(ch, pRule, strRaw);
+            strHostPort = RTStrStrip(ch);
+            ITERATE_TO_NEXT_TERM(ch, pRule, strRaw);
+            strGuestIp = RTStrStrip(ch);
+            ITERATE_TO_NEXT_TERM(ch, pRule, strRaw);
+            strGuestPort = RTStrStrip(ch);
+            if (RTStrICmp(strProto, "udp") == 0)
+                pRule->fUdp = true;
+            else if (RTStrICmp(strProto, "tcp") == 0)
+                pRule->fUdp = false;
+            else
+            {
+                RTStrFree(strRaw);
+                RTMemFree(pRule);
+                return VERR_INVALID_PARAMETER;
+            }
+            if (    strHostIp == NULL
+                ||  inet_aton(strHostIp, &pRule->IpV4HostAddr) == 0)
+                pRule->IpV4HostAddr.s_addr = INADDR_ANY;
+            if (    strGuestIp == NULL
+                ||  inet_aton(strGuestIp, &pRule->IpV4GuestAddr) == 0)
+            {
+                RTMemFree(pRule);
+                RTMemFree(strRaw);
+                return VERR_INVALID_PARAMETER;
+            }
+            pRule->u16HostPort = RTStrToUInt16(strHostPort);
+            pRule->u16GuestPort = RTStrToUInt16(strGuestPort);
+            if (   !pRule->u16HostPort
+                || !pRule->u16GuestPort)
+            {
+                RTMemFree(pRule);
+                RTMemFree(strRaw);
+                return VERR_INVALID_PARAMETER;
+            }
+            pRule->pszStrRaw = strRaw;
+            m_vecPortForwardRuleFromCmdLine.push_back(pRule);
+            return VINF_SUCCESS;
+#undef ITERATE_TO_NEXT_TERM
+        }
+        default:;
+    }
+    return VERR_NOT_FOUND;
+}
+
 /**
  *  Entry point.
  */
@@ -332,12 +460,12 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
 {
     Log2(("NAT: main\n"));
     g_pNAT = new VBoxNetNAT();
-    Log2(("NAT: parsing command line\n"));
+    Log2(("NAT: initialization\n"));
     int rc = g_pNAT->parseArgs(argc - 1, argv + 1);
     if (!rc)
     {
-        Log2(("NAT: initialization\n"));
         g_pNAT->init();
+        Log2(("NAT: parsing command line\n"));
         Log2(("NAT: try go online\n"));
         g_pNAT->tryGoOnline();
         Log2(("NAT: main loop\n"));
@@ -346,6 +474,7 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
     delete g_pNAT;
     return 0;
 }
+
 
 /** slirp's hooks */
 extern "C" int slirp_can_output(void * pvUser)

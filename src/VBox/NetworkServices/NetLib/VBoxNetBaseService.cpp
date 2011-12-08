@@ -38,6 +38,7 @@
 #include <iprt/stream.h>
 #include <iprt/string.h>
 #include <iprt/time.h>
+#include <iprt/mem.h>
 
 #include <VBox/sup.h>
 #include <VBox/intnet.h>
@@ -51,8 +52,6 @@
 
 #include "VBoxNetLib.h"
 #include "VBoxNetBaseService.h"
-#include "VBoxNetLib.h"
-#include "VBoxNetBaseService.h"
 
 #ifdef RT_OS_WINDOWS /* WinMain */
 # include <Windows.h>
@@ -63,17 +62,18 @@
 /*******************************************************************************
 *   Structures and Typedefs                                                    *
 *******************************************************************************/
+static RTGETOPTDEF g_aGetOptDef[] =
+{
+    { "--name",           'N',   RTGETOPT_REQ_STRING },
+    { "--network",        'n',   RTGETOPT_REQ_STRING },
+    { "--trunk-name",     't',   RTGETOPT_REQ_STRING },
+    { "--trunk-type",     'T',   RTGETOPT_REQ_STRING },
+    { "--mac-address",    'a',   RTGETOPT_REQ_MACADDR },
+    { "--ip-address",     'i',   RTGETOPT_REQ_IPV4ADDR },
+    { "--verbose",        'v',   RTGETOPT_REQ_NOTHING },
+};
 VBoxNetBaseService::VBoxNetBaseService()
 {
-    /* numbers from DrvIntNet */
-    m_cbSendBuf             =  36 * _1K;
-    m_cbRecvBuf             = 218 * _1K;
-    m_hIf                   = INTNET_HANDLE_INVALID;
-    m_pIfBuf                = NULL;
-
-    m_cVerbosity            = 0;
-    m_Name                  = "VBoxNetNAT";
-    m_Network               = "intnet";
 }
 VBoxNetBaseService::~VBoxNetBaseService()
 {
@@ -98,6 +98,22 @@ VBoxNetBaseService::~VBoxNetBaseService()
         m_pSession = NIL_RTR0PTR;
     }
 }
+
+int VBoxNetBaseService::init()
+{
+    /* numbers from DrvIntNet */
+    m_cbSendBuf             =  36 * _1K;
+    m_cbRecvBuf             = 218 * _1K;
+    m_hIf                   = INTNET_HANDLE_INVALID;
+    m_pIfBuf                = NULL;
+
+    m_cVerbosity            = 0;
+    m_Name                  = "VBoxNetNAT";
+    m_Network               = "intnet";
+    for(unsigned int i = 0; i < RT_ELEMENTS(g_aGetOptDef); ++i)
+        m_vecOptionDefs.push_back(&g_aGetOptDef[i]);
+    return VINF_SUCCESS;
+}
 /**
  * Parse the arguments.
  *
@@ -108,19 +124,10 @@ VBoxNetBaseService::~VBoxNetBaseService()
  */
 int VBoxNetBaseService::parseArgs(int argc, char **argv)
 {
-    static const RTGETOPTDEF s_aOptionDefs[] =
-    {
-        { "--name",           'N',   RTGETOPT_REQ_STRING },
-        { "--network",        'n',   RTGETOPT_REQ_STRING },
-        { "--trunk-name",     't',   RTGETOPT_REQ_STRING },
-        { "--trunk-type",     'T',   RTGETOPT_REQ_STRING },
-        { "--mac-address",    'a',   RTGETOPT_REQ_MACADDR },
-        { "--ip-address",     'i',   RTGETOPT_REQ_IPV4ADDR },
-        { "--verbose",        'v',   RTGETOPT_REQ_NOTHING },
-    };
 
     RTGETOPTSTATE State;
-    int rc = RTGetOptInit(&State, argc, argv, &s_aOptionDefs[0], RT_ELEMENTS(s_aOptionDefs), 0, 0 /*fFlags*/);
+    PRTGETOPTDEF paOptionArray = getOptionsPtr();
+    int rc = RTGetOptInit(&State, argc, argv, paOptionArray, m_vecOptionDefs.size(), 0, 0 /*fFlags*/);
     AssertRCReturn(rc, 49);
     Log2(("BaseService: parseArgs enter\n"));
 
@@ -182,18 +189,23 @@ int VBoxNetBaseService::parseArgs(int argc, char **argv)
                          "\n"
                          "Options:\n",
                          RTBldCfgVersion());
-                for (size_t i = 0; i < RT_ELEMENTS(s_aOptionDefs); i++)
-                    RTPrintf("    -%c, %s\n", s_aOptionDefs[i].iShort, s_aOptionDefs[i].pszLong);
+                for (unsigned int i = 0; i < m_vecOptionDefs.size(); i++)
+                    RTPrintf("    -%c, %s\n", m_vecOptionDefs[i]->iShort, m_vecOptionDefs[i]->pszLong);
                 usage(); /* to print Service Specific usage */
                 return 1;
 
             default:
-                rc = RTGetOptPrintError(rc, &Val);
-                RTPrintf("Use --help for more information.\n");
-                return rc;
+                int rc1 = parseOpt(rc, Val);
+                if (RT_FAILURE(rc1))
+                {
+                    rc = RTGetOptPrintError(rc, &Val);
+                    RTPrintf("Use --help for more information.\n");
+                    return rc;
+                }
         }
     }
 
+    RTMemFree(paOptionArray);
     return rc;
 }
 
@@ -342,3 +354,16 @@ void VBoxNetBaseService::debugPrintV(int iMinLevel, bool fMsg, const char *pszFm
 
 }
 
+PRTGETOPTDEF VBoxNetBaseService::getOptionsPtr()
+{
+    PRTGETOPTDEF pOptArray = NULL;
+    pOptArray = (PRTGETOPTDEF)RTMemAlloc(sizeof(RTGETOPTDEF) * m_vecOptionDefs.size());
+    if (!pOptArray)
+        return NULL;
+    for (unsigned int i = 0; i < m_vecOptionDefs.size(); ++i)
+    {
+        PRTGETOPTDEF pOpt = m_vecOptionDefs[i];
+        memcpy(&pOptArray[i], m_vecOptionDefs[i], sizeof(RTGETOPTDEF));
+    }
+    return pOptArray;
+}
