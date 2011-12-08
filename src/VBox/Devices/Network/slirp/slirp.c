@@ -1721,6 +1721,9 @@ static uint32_t find_guest_ip(PNATState pData, const uint8_t *eth_addr)
 static void activate_port_forwarding(PNATState pData, const uint8_t *h_source)
 {
     struct port_forward_rule *rule, *tmp;
+    const uint8_t *pu8EthSource;
+    if (!h_source)
+        pu8EthSource = h_source;
 
     /* check mac here */
     LIST_FOREACH_SAFE(rule, &pData->port_forward_rule_head, list, tmp)
@@ -1740,16 +1743,14 @@ static void activate_port_forwarding(PNATState pData, const uint8_t *h_source)
             continue;
 
 #ifdef VBOX_WITH_NAT_SERVICE
-        if (memcmp(rule->mac_address, h_source, ETH_ALEN) != 0)
-            continue; /*not right mac, @todo: it'd be better do the list port forwarding per mac */
-        guest_addr = find_guest_ip(pData, h_source);
-#else
-#if 0
-        if (memcmp(client_ethaddr, h_source, ETH_ALEN) != 0)
-            continue;
-#endif
-        guest_addr = find_guest_ip(pData, h_source);
-#endif
+        /**
+         * case when guest ip is INADDR_ANY shouldn't appear in NAT service
+         */
+        Assert((rule->guest_addr.s_addr != INADDR_ANY));
+        guest_addr = rule->guest_addr.s_addr;
+#else /* VBOX_WITH_NAT_SERVICE */
+        guest_addr = find_guest_ip(pData, pu8EthSource);
+#endif /* !VBOX_WITH_NAT_SERVICE */
         if (guest_addr == INADDR_ANY)
         {
             /* the address wasn't granted */
@@ -1834,7 +1835,6 @@ int slirp_add_redirect(PNATState pData, int is_udp, struct in_addr host_addr, in
                 struct in_addr guest_addr, int guest_port, const uint8_t *ethaddr)
 {
     struct port_forward_rule *rule = NULL;
-    Assert(ethaddr);
     LIST_FOREACH(rule, &pData->port_forward_rule_head, list)
     {
         if (   rule->proto == (is_udp ? IPPROTO_UDP : IPPROTO_TCP)
@@ -1855,12 +1855,14 @@ int slirp_add_redirect(PNATState pData, int is_udp, struct in_addr host_addr, in
     rule->guest_port = guest_port;
     rule->guest_addr.s_addr = guest_addr.s_addr;
     rule->bind_ip.s_addr = host_addr.s_addr;
-    memcpy(rule->mac_address, ethaddr, ETH_ALEN);
+    if (ethaddr != NULL)
+        memcpy(rule->mac_address, ethaddr, ETH_ALEN);
     /* @todo add mac address */
     LIST_INSERT_HEAD(&pData->port_forward_rule_head, rule, list);
     pData->cRedirectionsStored++;
     /* activate port-forwarding if guest has already got assigned IP */
-    if (memcmp(ethaddr, zerro_ethaddr, ETH_ALEN))
+    if (   ethaddr
+        && memcmp(ethaddr, zerro_ethaddr, ETH_ALEN))
         activate_port_forwarding(pData, ethaddr);
     return 0;
 }
