@@ -557,28 +557,6 @@ Function CheckForInstalledComponents
 
 FunctionEnd
 
-Function Common_CopyFiles
-
-  SetOutPath "$INSTDIR"
-  SetOverwrite on
-
-!ifdef VBOX_WITH_LICENSE_INSTALL_RTF
-  ; Copy license file (if any) into the installation directory
-  FILE "/oname=${LICENSE_FILE_RTF}" "$%VBOX_BRAND_LICENSE_RTF%"
-!endif
-
-  FILE "$%VBOX_PATH_DIFX%\DIFxAPI.dll"
-  FILE "$%PATH_OUT%\bin\additions\VBoxDrvInst.exe"
-
-  FILE "$%PATH_OUT%\bin\additions\VBoxVideo.inf"
-!ifdef VBOX_SIGN_ADDITIONS
-  FILE "$%PATH_OUT%\bin\additions\VBoxVideo.cat"
-!endif
-
-  FILE "iexplore.ico"
-
-FunctionEnd
-
 ; Main Files
 Section $(VBOX_COMPONENT_MAIN) SEC01
 
@@ -613,6 +591,10 @@ Section $(VBOX_COMPONENT_MAIN) SEC01
 !ifdef _DEBUG
   DetailPrint "Debug!"
 !endif
+
+  ;
+  ; Here starts the main dispatcher (based on guest OS)
+  ;
 
   ; Which OS are we using?
 !if $%BUILD_TARGET_ARCH% == "x86"       ; 32-bit
@@ -651,21 +633,24 @@ nt4: ; Windows NT4
   goto success
 !endif
 
-vista: ; Windows Vista / Windows 7 / Windows 8
-
-  ; Copy some common files ...
-  Call Common_CopyFiles
-
-  Call W2K_Main     ; First install stuff from Windows 2000 / XP
-  Call Vista_Main   ; ... and some specific stuff for Vista / Windows 7
-  goto success
-
 w2k: ; Windows 2000 and XP ...
 
   ; Copy some common files ...
   Call Common_CopyFiles
 
   Call W2K_Main
+  goto success
+
+vista: ; Windows Vista / Windows 7 / Windows 8
+
+  ; Check requirments; this function can abort the installation if necessary!
+  Call Vista_CheckForRequirements
+
+  ; Copy some common files ...
+  Call Common_CopyFiles
+
+  Call W2K_Main     ; First install stuff from Windows 2000 / XP
+  Call Vista_Main   ; ... and some specific stuff for Vista / Windows 7
   goto success
 
 notsupported:
@@ -974,6 +959,8 @@ Function .onSelChange
   SectionGetFlags ${SEC03} $0
   ${If} $0 == ${SF_SELECTED}
 
+    StrCpy $g_bWithD3D "true"
+
 !if $%VBOX_WITH_WDDM% == "1"
     ; If we're able to use the WDDM driver just use it instead of the replaced
     ; D3D components below
@@ -994,7 +981,7 @@ Function .onSelChange
 
 d3d_install:
 
-!endif
+!endif ; $%VBOX_WITH_WDDM% == "1"
 
     ${If} $g_bForceInstall != "true"
       ; Do not install on < XP
@@ -1015,23 +1002,18 @@ d3d_install:
       ${EndIf}
     ${EndIf}
 
-    ; Validate D3D files
-    Call ValidateD3DFiles
-    Pop $0
-    ${If} $0 == "1"
-      MessageBox MB_ICONINFORMATION|MB_OK "D3D files invalid!" /SD IDOK
-      Goto d3d_disable
-    ${EndIf}
-
   ${Else} ; D3D unselected again
+
     ${If} $g_strWinVersion != "8" ; On Windows 8 WDDM is mandatory
       StrCpy $g_bWithWDDM "false"
     ${EndIf}
+
   ${EndIf}
   Goto exit
 
 d3d_disable:
 
+  StrCpy $g_bWithD3D "false"
   IntOp $0 $0 & ${SECTION_OFF} ; Unselect section again
   SectionSetFlags ${SEC03} $0
   Goto exit
