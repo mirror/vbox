@@ -73,7 +73,7 @@ uint32_t vds_real_to_lin( void __far *ptr )
  * present or not. This routine either calls VDS to do the work or
  * trivially creates the list if no remapping is needed.
  */
-int vds_build_sg_list( vds_edds __far *edds, void __far *buf, uint16_t len )
+int vds_build_sg_list( vds_edds __far *edds, void __far *buf, uint32_t len )
 {
     int     rc;
 
