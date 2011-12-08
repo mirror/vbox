@@ -87,7 +87,7 @@ typedef struct {
 
 /* Higher level routines for utilizing VDS. */
 
-int vds_build_sg_list( vds_edds __far *edds, void __far *buf, uint16_t len );
+int vds_build_sg_list( vds_edds __far *edds, void __far *buf, uint32_t len );
 int vds_free_sg_list( vds_edds __far *edds );
 
 /* Helper for translating 16:16 real mode addresses to 32-bit linear. */
