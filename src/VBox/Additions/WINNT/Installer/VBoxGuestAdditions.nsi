@@ -1259,6 +1259,10 @@ proceed:
   ; Set system directory
   StrCpy $g_strSystemDir "$SYSDIR"
 
+  ; We need a special directory set to SysWOW64 because some
+  ; shell operations don't support file redirection (yet)
+  StrCpy $g_strSysWow64 "$WINDIR\SysWOW64"
+
   ; Retrieve Windows version we're running on and store it in $g_strWinVersion
   Call un.GetWindowsVer
 

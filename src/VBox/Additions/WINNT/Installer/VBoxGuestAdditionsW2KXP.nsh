@@ -576,7 +576,15 @@ Function ${un}W2K_Uninstall
 
 !if $%VBOX_WITH_CROGL% == "1"
 
-  DetailPrint "Removing 3D graphics support ..."
+  DetailPrint "Removing Direct3D support ..."
+
+  ; Do file validation before we uninstall
+  Call ${un}ValidateD3DFiles
+  Pop $0
+  ${If} $0 == "1" ; D3D files are invalid
+    DetailPrint "Invalid installation of Direct3D support detected; uninstallation skipped"
+    Goto d3d_uninstall_end
+  ${EndIf}
 
   Delete /REBOOTOK "$g_strSystemDir\VBoxOGLarrayspu.dll"
   Delete /REBOOTOK "$g_strSystemDir\VBoxOGLcrutil.dll"
@@ -593,57 +601,64 @@ Function ${un}W2K_Uninstall
   Delete /REBOOTOK "$g_strSystemDir\VBoxD3D9.dll"
   Delete /REBOOTOK "$g_strSystemDir\wined3d.dll"
   ; Update DLL cache
-  IfFileExists "$g_strSystemDir\dllcache\msd3d8.dll" 0 +2
+  ${If} ${FileExists} "$g_strSystemDir\dllcache\msd3d8.dll"
     Delete /REBOOTOK "$g_strSystemDir\dllcache\d3d8.dll"
     Rename /REBOOTOK "$g_strSystemDir\dllcache\msd3d8.dll" "$g_strSystemDir\dllcache\d3d8.dll"
-  IfFileExists "$g_strSystemDir\dllcache\msd3d9.dll" 0 +2
+  ${EndIf}
+  ${If} ${FileExists} "$g_strSystemDir\dllcache\msd3d9.dll"
     Delete /REBOOTOK "$g_strSystemDir\dllcache\d3d9.dll"
     Rename /REBOOTOK "$g_strSystemDir\dllcache\msd3d9.dll" "$g_strSystemDir\dllcache\d3d9.dll"
+  ${EndIf}
   ; Restore original DX DLLs
-  IfFileExists "$g_strSystemDir\msd3d8.dll" 0 +2
+  ${If} ${FileExists} "$g_strSystemDir\msd3d8.dll"
     Delete /REBOOTOK "$g_strSystemDir\d3d8.dll"
     Rename /REBOOTOK "$g_strSystemDir\msd3d8.dll" "$g_strSystemDir\d3d8.dll"
-  IfFileExists "$g_strSystemDir\msd3d9.dll" 0 +2
+  ${EndIf}
+  ${If} ${FileExists} "$g_strSystemDir\msd3d9.dll"
     Delete /REBOOTOK "$g_strSystemDir\d3d9.dll"
     Rename /REBOOTOK "$g_strSystemDir\msd3d9.dll" "$g_strSystemDir\d3d9.dll"
+  ${EndIf}
 
   !if $%BUILD_TARGET_ARCH% == "amd64"
-
     ; Only 64-bit installer: Also remove 32-bit DLLs on 64-bit target arch in Wow64 node
-    ${EnableX64FSRedirection}
-    Delete /REBOOTOK "$SYSDIR\VBoxOGLarrayspu.dll"
-    Delete /REBOOTOK "$SYSDIR\VBoxOGLcrutil.dll"
-    Delete /REBOOTOK "$SYSDIR\VBoxOGLerrorspu.dll"
-    Delete /REBOOTOK "$SYSDIR\VBoxOGLpackspu.dll"
-    Delete /REBOOTOK "$SYSDIR\VBoxOGLpassthroughspu.dll"
-    Delete /REBOOTOK "$SYSDIR\VBoxOGLfeedbackspu.dll"
-    Delete /REBOOTOK "$SYSDIR\VBoxOGL.dll"
+    Delete /REBOOTOK "$g_strSysWow64\VBoxOGLarrayspu.dll"
+    Delete /REBOOTOK "$g_strSysWow64\VBoxOGLcrutil.dll"
+    Delete /REBOOTOK "$g_strSysWow64\VBoxOGLerrorspu.dll"
+    Delete /REBOOTOK "$g_strSysWow64\VBoxOGLpackspu.dll"
+    Delete /REBOOTOK "$g_strSysWow64\VBoxOGLpassthroughspu.dll"
+    Delete /REBOOTOK "$g_strSysWow64\VBoxOGLfeedbackspu.dll"
+    Delete /REBOOTOK "$g_strSysWow64\VBoxOGL.dll"
 
     ; Remove D3D stuff
     ; @todo add a feature flag to only remove if installed explicitly
-    Delete /REBOOTOK "$SYSDIR\libWine.dll"
-    Delete /REBOOTOK "$SYSDIR\VBoxD3D8.dll"
-    Delete /REBOOTOK "$SYSDIR\VBoxD3D9.dll"
-    Delete /REBOOTOK "$SYSDIR\wined3d.dll"
+    Delete /REBOOTOK "$g_strSysWow64\libWine.dll"
+    Delete /REBOOTOK "$g_strSysWow64\VBoxD3D8.dll"
+    Delete /REBOOTOK "$g_strSysWow64\VBoxD3D9.dll"
+    Delete /REBOOTOK "$g_strSysWow64\wined3d.dll"
     ; Update DLL cache
-    IfFileExists "$SYSDIR\dllcache\msd3d8.dll" 0 +2
-      Delete /REBOOTOK "$SYSDIR\dllcache\d3d8.dll"
-      Rename /REBOOTOK "$SYSDIR\dllcache\msd3d8.dll" "$SYSDIR\dllcache\d3d8.dll"
-    IfFileExists "$SYSDIR\dllcache\msd3d9.dll" 0 +2
-      Delete /REBOOTOK "$SYSDIR\dllcache\d3d9.dll"
-      Rename /REBOOTOK "$SYSDIR\dllcache\msd3d9.dll" "$SYSDIR\dllcache\d3d9.dll"
+    ${If} ${FileExists} "$g_strSysWow64\dllcache\msd3d8.dll"
+      Delete /REBOOTOK "$g_strSysWow64\dllcache\d3d8.dll"
+      Rename /REBOOTOK "$g_strSysWow64\dllcache\msd3d8.dll" "$g_strSysWow64\dllcache\d3d8.dll"
+    ${EndIf}
+    ${If} ${FileExists} "$g_strSysWow64\dllcache\msd3d9.dll"
+      Delete /REBOOTOK "$g_strSysWow64\dllcache\d3d9.dll"
+      Rename /REBOOTOK "$g_strSysWow64\dllcache\msd3d9.dll" "$g_strSysWow64\dllcache\d3d9.dll"
+    ${EndIf}
     ; Restore original DX DLLs
-    IfFileExists "$SYSDIR\msd3d8.dll" 0 +2
-      Delete /REBOOTOK "$SYSDIR\d3d8.dll"
-      Rename /REBOOTOK "$SYSDIR\msd3d8.dll" "$SYSDIR\d3d8.dll"
-    IfFileExists "$SYSDIR\msd3d9.dll" 0 +2
-      Delete /REBOOTOK "$SYSDIR\d3d9.dll"
-      Rename /REBOOTOK "$SYSDIR\msd3d9.dll" "$SYSDIR\d3d9.dll"
+    ${If} ${FileExists} "$g_strSysWow64\msd3d8.dll"
+      Delete /REBOOTOK "$g_strSysWow64\d3d8.dll"
+      Rename /REBOOTOK "$g_strSysWow64\msd3d8.dll" "$g_strSysWow64\d3d8.dll"
+    ${EndIf}
+    ${If} ${FileExists} "$g_strSysWow64\msd3d9.dll"
+      Delete /REBOOTOK "$g_strSysWow64\d3d9.dll"
+      Rename /REBOOTOK "$g_strSysWow64\msd3d9.dll" "$g_strSysWow64\d3d9.dll"
+    ${EndIf}
     DeleteRegKey HKLM "SOFTWARE\Wow6432Node\Microsoft\Windows NT\CurrentVersion\OpenGLDrivers\VBoxOGL"
-    ${DisableX64FSRedirection}
   !endif ; amd64
 
   DeleteRegKey HKLM "SOFTWARE\Microsoft\Windows NT\CurrentVersion\OpenGLDrivers\VBoxOGL"
+
+d3d_uninstall_end:
 
 !endif ; VBOX_WITH_CROGL
 
