@@ -2542,9 +2542,9 @@ DECLEXPORT(void) VBOXGLXTAG(glXBindTexImageEXT)(Display *dpy, GLXDrawable draw, 
         {
             XEvent event;
             XNextEvent(context->damageDpy, &event);
-            if (event.type==contextt->damageEventsBase+XDamageNotify)
+            if (event.type==context->damageEventsBase+XDamageNotify)
             {
-                crHashtableWalk(contextt->pGLXPixmapsHash, stubCheckXDamageCB, &event);
+                crHashtableWalk(context->pGLXPixmapsHash, stubCheckXDamageCB, &event);
             }
         }
     }
