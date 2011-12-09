@@ -184,6 +184,7 @@ typedef enum SCSISVCACTIONIN
 #define SCSI_ASC_ILLEGAL_OPCODE                             0x20
 #define SCSI_ASC_LOGICAL_BLOCK_OOR                          0x21
 #define SCSI_ASC_INV_FIELD_IN_CMD_PACKET                    0x24
+#define SCSI_ASC_WRITE_PROTECTED                            0x27
 #define SCSI_ASC_MEDIUM_MAY_HAVE_CHANGED                    0x28
 #define SCSI_ASC_MEDIUM_NOT_PRESENT                         0x3a
 #define SCSI_ASC_SAVING_PARAMETERS_NOT_SUPPORTED            0x39
