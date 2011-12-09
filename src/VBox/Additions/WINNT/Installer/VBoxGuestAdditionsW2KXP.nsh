@@ -582,7 +582,8 @@ Function ${un}W2K_Uninstall
   Call ${un}ValidateD3DFiles
   Pop $0
   ${If} $0 == "1" ; D3D files are invalid
-    DetailPrint "Invalid installation of Direct3D support detected; uninstallation skipped"
+    DetailPrint $(VBOX_UNINST_INVALID_D3D)
+    MessageBox MB_ICONSTOP|MB_OK $(VBOX_UNINST_INVALID_D3D) /SD IDOK
     Goto d3d_uninstall_end
   ${EndIf}
 
