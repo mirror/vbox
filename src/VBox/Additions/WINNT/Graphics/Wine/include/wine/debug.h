@@ -40,14 +40,12 @@
 #include <guiddef.h>
 #endif
 
-#ifdef VBOX_WITH_WDDM
-# ifdef VBOX_WINE_WITH_IPRT
-#  include <iprt/assert.h>
-# else
-#  define AssertBreakpoint() do { } while (0)
-#  define Assert(_expr) do { } while (0)
-#  define RT_BREAKPOINT()
-# endif
+#ifdef VBOX_WINE_WITH_IPRT
+# include <iprt/assert.h>
+#else
+# define AssertBreakpoint() do { } while (0)
+# define Assert(_expr) do { } while (0)
+# define RT_BREAKPOINT()
 #endif
 
 #ifdef __WINE_WINE_TEST_H
@@ -59,6 +57,38 @@ extern "C" {
 #endif
 
 struct _GUID;
+
+#ifdef DEBUG
+# define VBOX_WINE_DEBUG
+#endif
+
+#ifdef VBOX_WINE_DEBUG
+# ifndef VBOX_WINE_DEBUG_DEFINES
+extern DWORD g_VBoxVDbgBreakOnD3DErr;
+# else
+#  ifdef DEBUG_misha
+#   define _ERR_BREAK_DEFAULT 1
+#  else
+#   define _ERR_BREAK_DEFAULT 0
+#  endif
+DWORD g_VBoxVDbgBreakOnD3DErr = _ERR_BREAK_DEFAULT;
+# endif
+
+# define _ERR_BREAK() Assert(0)
+# define _ERR_ASSERT(_e) Assert((_e))
+# define _ERR_CHECK_BREAK(_t) do { \
+        if (g_VBoxVDbgBreakOn##_t) { _ERR_BREAK(); } \
+    } while (0)
+# define _ERR_CHECK_ASSERT(_t, _e) do { \
+        if (g_VBoxVDbgBreakOn##_t) { _ERR_ASSERT(_e); } \
+    } while (0)
+
+# define ERR_D3D() _ERR_CHECK_BREAK(D3DErr)
+# define ASSERT_D3D(_e) _ERR_CHECK_ASSERT(D3DErr, _e)
+#else
+# define ERR_D3D() do {} while (0)
+# define ASSERT_D3D(_e) do {} while (0)
+#endif /* #ifdef VBOX_WINE_DEBUG */
 
 /*
  * Internal definitions (do not use these directly)

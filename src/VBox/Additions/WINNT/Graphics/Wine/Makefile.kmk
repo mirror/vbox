@@ -175,6 +175,12 @@ wined3d_SOURCES.amd64 = vbox/libWineStub/debug.c
 wined3d_LIBS.x86      = \
     $(PATH_STAGE_LIB)/libWine$(VBOX_SUFF_LIB)
 wined3d_SDKS.amd64    = WINDDKWLH
+ifdef VBOX_WINE_WITH_IPRT
+wined3d_LIBS         += \
+							$(VBOX_LIB_IPRT_GUEST_R3) \
+							$(VBOX_LIB_VBGL_R3)
+wined3d_DEFS         += VBOX_WINE_WITH_IPRT
+endif
 
 ifdef VBOX_WITH_WDDM
 DLLS += wined3dwddm
@@ -194,12 +200,12 @@ wined3dwddm_SOURCES.amd64  = $(NO_SUCH_VARIABLE)
 wined3dwddm_SDKS           = WINDDKWLH
 wined3dwddm_SDKS.amd64     = $(NO_SUCH_VARIABLE)
 #VBOX_WINE_WITH_IPRT is used for debugging currently to enable Assert & stuff
-ifdef VBOX_WINE_WITH_IPRT
-wined3dwddm_LIBS          += \
+#ifdef VBOX_WINE_WITH_IPRT
+#wined3dwddm_LIBS          += \
 							$(VBOX_LIB_IPRT_GUEST_R3) \
 							$(VBOX_LIB_VBGL_R3)
-wined3dwddm_DEFS          += VBOX_WINE_WITH_IPRT
-endif
+#wined3dwddm_DEFS          += VBOX_WINE_WITH_IPRT
+#endif
 wined3dwddm_DEFS          += VBOX_WINE_WITH_SINGLE_CONTEXT
 
 DLLS.amd64 += wined3dwddm-x86
@@ -252,6 +258,12 @@ VBoxD3D8_LIBS     = \
     $(PATH_STAGE_LIB)/wined3d$(VBOX_SUFF_LIB)
 VBoxD3D8_SOURCES.amd64 = vbox/libWineStub/debug.c
 VBoxD3D8_SDKS.amd64    = WINDDKWLH
+ifdef VBOX_WINE_WITH_IPRT
+VBoxD3D8_LIBS         += \
+							$(VBOX_LIB_IPRT_GUEST_R3) \
+							$(VBOX_LIB_VBGL_R3)
+VBoxD3D8_DEFS         += VBOX_WINE_WITH_IPRT
+endif
 
 DLLS += VBoxD3D9
 
@@ -299,6 +311,12 @@ VBoxD3D9_LIBS.x86         = \
 VBoxD3D9_LIBS             = \
     $(PATH_STAGE_LIB)/wined3d$(VBOX_SUFF_LIB)
 VBoxD3D9_SDKS.amd64    = WINDDKWLH
+ifdef VBOX_WINE_WITH_IPRT
+VBoxD3D9_LIBS         += \
+							$(VBOX_LIB_IPRT_GUEST_R3) \
+							$(VBOX_LIB_VBGL_R3)
+VBoxD3D9_DEFS         += VBOX_WINE_WITH_IPRT
+endif
 
 ifdef VBOX_WITH_WDDM
 DLLS += VBoxD3D9wddm
@@ -314,16 +332,16 @@ VBoxD3D9wddm_DEFS          += $(subst __i386__,,$(VBoxD3D9_DEFS)) VBOX_WITH_WDDM
 VBoxD3D9wddm_SOURCES        = $(VBoxD3D9_SOURCES) d3d9/d3d9wddm.def vbox/libWineStub/debug.c
 VBoxD3D9wddm_SOURCES.x86    = $(NO_SUCH_VARIABLE)
 VBoxD3D9wddm_SOURCES.amd64  = $(NO_SUCH_VARIABLE)
-VBoxD3D9wddm_LIBS           = $(PATH_STAGE_LIB)/wined3dwddm$(VBOX_SUFF_LIB)
+VBoxD3D9wddm_LIBS           = $(subst $(PATH_STAGE_LIB)/wined3d$(VBOX_SUFF_LIB),$(PATH_STAGE_LIB)/wined3dwddm$(VBOX_SUFF_LIB),$(VBoxD3D9_LIBS)) 
 VBoxD3D9wddm_LIBS.x86       = $(NO_SUCH_VARIABLE)
 VBoxD3D9wddm_SDKS           = WINDDKWLH
 VBoxD3D9wddm_SDKS.amd64     = $(NO_SUCH_VARIABLE)
-ifdef VBOX_WINE_WITH_IPRT
-VBoxD3D9wddm_LIBS          += \
+#ifdef VBOX_WINE_WITH_IPRT
+#VBoxD3D9wddm_LIBS          += \
 							$(VBOX_LIB_IPRT_GUEST_R3) \
 							$(VBOX_LIB_VBGL_R3)
-VBoxD3D9wddm_DEFS          += VBOX_WINE_WITH_IPRT
-endif
+#VBoxD3D9wddm_DEFS          += VBOX_WINE_WITH_IPRT
+#endif
 
 DLLS.amd64 += VBoxD3D9wddm-x86
 VBoxD3D9wddm-x86_EXTENDS      = VBoxD3D9wddm
@@ -347,6 +365,12 @@ d3d8_SOURCES       =  \
     switcher/sw_d3d8.def \
     switcher/d3d8.rc
 d3d8_SDKS.amd64    = WINDDKWLH
+ifdef VBOX_WINE_WITH_IPRT
+d3d8_LIBS         += \
+							$(VBOX_LIB_IPRT_GUEST_R3) \
+							$(VBOX_LIB_VBGL_R3)
+d3d8_DEFS         += VBOX_WINE_WITH_IPRT
+endif
 
 DLLS += d3d9
 d3d9_TEMPLATE      = VBOXGUESTR3NPDLL
@@ -361,6 +385,11 @@ d3d9_SOURCES.x86   =  \
 d3d9_SOURCES.amd64 =  \
     switcher/sw_d3d9xpdm.def
 d3d9_SDKS.amd64    = WINDDKWLH
-
+ifdef VBOX_WINE_WITH_IPRT
+d3d9_LIBS         += \
+							$(VBOX_LIB_IPRT_GUEST_R3) \
+							$(VBOX_LIB_VBGL_R3)
+d3d9_DEFS         += VBOX_WINE_WITH_IPRT
+endif
 
 include $(KBUILD_PATH)/subfooter.kmk

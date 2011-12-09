@@ -33,17 +33,25 @@
 #define DIRECT3D_VERSION  0x0900
 #endif
 
+
+
+#ifndef VBOX_WINE_WITHOUT_LIBWINE
 #include <stdlib.h>
 
 #define COM_NO_WINDOWS_H
 #include <objbase.h>
 
-#ifndef __WINESRC__
+# ifndef __WINESRC__
 # include <windows.h>
+# endif
 #endif
-
 #include <d3d9types.h>
 #include <d3d9caps.h>
+#ifdef VBOX_WINE_WITHOUT_LIBWINE
+# include <d3dhal.h>
+# include <d3dtypes.h>
+# include <d3dcaps.h>
+#endif
 
 /*****************************************************************************
  * Behavior Flags for IDirect3D8::CreateDevice
