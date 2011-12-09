@@ -711,8 +711,8 @@ void BIOSCALL int13_cdrom(uint16_t EHBX, disk_regs_t r)
         if (( GET_AH() == 0x44 ) || ( GET_AH() == 0x47 ))
             goto int13_success;
 
-        BX_INFO("%s: read %u sectors @ LBA %lu to %04X:%04X\n",
-                __func__, count, lba, segment, offset);
+        BX_DEBUG_INT13_CD("%s: read %u sectors @ LBA %lu to %04X:%04X\n",
+                          __func__, count, lba, segment, offset);
 
         _fmemset(&atacmd, 0, 12);
         //@todo: use some sane byte swapping routines here
