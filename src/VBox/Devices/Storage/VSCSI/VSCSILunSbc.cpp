@@ -259,6 +259,9 @@ static int vscsiLunSbcReqProcess(PVSCSILUNINT pVScsiLun, PVSCSIREQINT pVScsiReq)
             aReply[2] = RT_BIT(4); /* Caching supported. */
             aReply[3] = 0; /* Block descriptor length. */
 
+            if (pVScsiLun->fFeatures & VSCSI_LUN_FEATURE_READONLY)
+                aReply[2] |= RT_BIT(7); /* Set write protect bit */
+
             pu8ReplyPos = aReply + 4;
 
             if ((uModePage == 0x08) || (uModePage == 0x3f))
@@ -508,8 +511,13 @@ static int vscsiLunSbcReqProcess(PVSCSILUNINT pVScsiLun, PVSCSIREQINT pVScsiReq)
         else
         {
             /* Enqueue new I/O request */
-            rc = vscsiIoReqTransferEnqueue(pVScsiLun, pVScsiReq, enmTxDir,
-                                           uLbaStart * 512, cSectorTransfer * 512);
+            if (   (   enmTxDir == VSCSIIOREQTXDIR_WRITE
+                    || enmTxDir == VSCSIIOREQTXDIR_FLUSH)
+                && (pVScsiLun->fFeatures & VSCSI_LUN_FEATURE_READONLY))
+                rcReq = vscsiLunReqSenseErrorSet(pVScsiLun, pVScsiReq, SCSI_SENSE_DATA_PROTECT, SCSI_ASC_WRITE_PROTECTED, 0x00);
+            else
+                rc = vscsiIoReqTransferEnqueue(pVScsiLun, pVScsiReq, enmTxDir,
+                                               uLbaStart * 512, cSectorTransfer * 512);
         }
     }
     else if (pVScsiReq->pbCDB[0] ==  SCSI_SYNCHRONIZE_CACHE)
