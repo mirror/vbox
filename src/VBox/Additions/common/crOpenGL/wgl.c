@@ -185,13 +185,15 @@ BOOL WINAPI wglMakeCurrent_prox( HDC hdc, HGLRC hglrc )
 
 HGLRC WINAPI wglGetCurrentContext_prox( void )
 {
-    return (HGLRC) (stub.currentContext ? stub.currentContext->id : 0);
+    ContextInfo *context = stubGetCurrentContext();
+    return (HGLRC) (context ? context->id : 0);
 }
 
 HDC WINAPI wglGetCurrentDC_prox( void )
 {
-    if (stub.currentContext && stub.currentContext->currentDrawable)
-        return (HDC) stub.currentContext->currentDrawable->drawable;
+    ContextInfo *context = stubGetCurrentContext();
+    if (context && context->currentDrawable)
+        return (HDC) context->currentDrawable->drawable;
     else
         return (HDC) NULL;
 }

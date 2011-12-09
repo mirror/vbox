@@ -173,10 +173,10 @@ DECLEXPORT(void) STATE_APIENTRY crStateGLSLDestroy(CRContext *ctx)
     /*@todo: hack to allow crStateFreeGLSLProgram to work correctly, 
       as the current context isn't the one being destroyed*/
 #ifdef CHROMIUM_THREADSAFE
-    CRASSERT(!ctx->cRefs);
-    ++ctx->cRefs; /* <- this is a hack to avoid subsequent SetCurrentContext(g) do recursive Destroy for ctx */
+    CRASSERT(g != ctx);
+    crTSDRefAddRef(ctx); /* <- this is a hack to avoid subsequent SetCurrentContext(g) do recursive Destroy for ctx */
     if (g)
-        CRCONTEXT_ADDREF(g); /* <- ensure the g is not destroyed by the following SetCurrentContext call */
+        crTSDRefAddRef(g); /* <- ensure the g is not destroyed by the following SetCurrentContext call */
     SetCurrentContext(ctx);
 #else
     __currentContext = ctx;
@@ -188,8 +188,8 @@ DECLEXPORT(void) STATE_APIENTRY crStateGLSLDestroy(CRContext *ctx)
 #ifdef CHROMIUM_THREADSAFE
     SetCurrentContext(g);
     if (g)
-        CRCONTEXT_RELEASE(g);
-    --ctx->cRefs; /* <- restore back the cRefs (see above) */
+        crTSDRefRelease(g);
+    crTSDRefRelease(ctx); /* <- restore back the cRefs (see above) */
 #else
     __currentContext = g;
 #endif

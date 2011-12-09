@@ -1042,8 +1042,9 @@ DECLEXPORT(int) VBOXGLXTAG(glXGetConfig)( Display *dpy, XVisualInfo *vis, int at
 
 DECLEXPORT(GLXContext) VBOXGLXTAG(glXGetCurrentContext)( void )
 {
-    if (stub.currentContext)
-        return (GLXContext) stub.currentContext->id;
+    ContextInfo *context = stubGetCurrentContext();
+    if (context)
+        return (GLXContext) context->id;
     else
         return (GLXContext) NULL;
 }
@@ -1181,7 +1182,8 @@ DECLEXPORT(void) VBOXGLXTAG(glXSwapBuffers)( Display *dpy, GLXDrawable drawable 
 #ifndef VBOX_NO_NATIVEGL
 DECLEXPORT(void) VBOXGLXTAG(glXUseXFont)( Font font, int first, int count, int listBase )
 {
-    if (stub.currentContext->type == CHROMIUM)
+    ContextInfo *context = stubGetCurrentContext();
+    if (context->type == CHROMIUM)
     {
         Display *dpy = stub.wsInterface.glXGetCurrentDisplay();
         if (dpy) {
@@ -1200,7 +1202,8 @@ DECLEXPORT(void) VBOXGLXTAG(glXUseXFont)( Font font, int first, int count, int l
 #else /* not 0 */
 DECLEXPORT(void) VBOXGLXTAG(glXUseXFont)( Font font, int first, int count, int listBase )
 {
-    Display *dpy = stub.currentContext->dpy;
+    ContextInfo *context = stubGetCurrentContext();
+    Display *dpy = context->dpy;
     if (dpy) {
         stubUseXFont( dpy, font, first, count, listBase );
     }
@@ -2478,6 +2481,7 @@ Bool checkevents(Display *display, XEvent *event, XPointer arg)
     //crDebug("got type: 0x%x", event->type);
     if (event->type==damage_evb+XDamageNotify)
     {
+        ContextInfo *context = stubGetCurrentContext();
         XDamageNotifyEvent *e = (XDamageNotifyEvent *) event;
         /* we're interested in pixmaps only...and those have e->drawable set to 0 or other strange value for some odd reason 
          * so have to walk glxpixmaps hashtable to find if we have damage event handle assigned to some pixmap
@@ -2485,8 +2489,8 @@ Bool checkevents(Display *display, XEvent *event, XPointer arg)
         /*crDebug("Event: Damage for drawable 0x%x, handle 0x%x (level=%i) [%i,%i,%i,%i]",
                 (unsigned int) e->drawable, (unsigned int) e->damage, (int) e->level,
                 e->area.x, e->area.y, e->area.width, e->area.height);*/
-        CRASSERT(stub.currentContext);
-        crHashtableWalk(stub.currentContext->pGLXPixmapsHash, checkdamageCB, e);
+        CRASSERT(context);
+        crHashtableWalk(context->pGLXPixmapsHash, checkdamageCB, e);
     }
     return False;
 }
@@ -2497,16 +2501,17 @@ DECLEXPORT(void) VBOXGLXTAG(glXBindTexImageEXT)(Display *dpy, GLXDrawable draw, 
 {
     static int cnt=0;
     XImage dummyimg;
+    ContextInfo *context = stubGetCurrentContext();
 
     GLX_Pixmap_t *pGlxPixmap;
 
-    if (!stub.currentContext)
+    if (!context)
     {
         crWarning("glXBindTexImageEXT called without current context");
         return;
     }
 
-    pGlxPixmap = (GLX_Pixmap_t *) crHashtableSearch(stub.currentContext->pGLXPixmapsHash, (unsigned int) draw);
+    pGlxPixmap = (GLX_Pixmap_t *) crHashtableSearch(context->pGLXPixmapsHash, (unsigned int) draw);
     if (!pGlxPixmap)
     {
         pGlxPixmap = (GLX_Pixmap_t *) crHashtableSearch(stub.pGLXPixmapsHash, (unsigned int) draw);
@@ -2515,7 +2520,7 @@ DECLEXPORT(void) VBOXGLXTAG(glXBindTexImageEXT)(Display *dpy, GLXDrawable draw, 
             crDebug("Unknown drawable 0x%x in glXBindTexImageEXT!", (unsigned int) draw);
             return;
         }
-        pGlxPixmap = stubInitGlxPixmap(pGlxPixmap, dpy, draw, stub.currentContext);
+        pGlxPixmap = stubInitGlxPixmap(pGlxPixmap, dpy, draw, context);
         if (!pGlxPixmap)
         {
             crDebug("glXBindTexImageEXT failed to get pGlxPixmap");
@@ -2524,22 +2529,22 @@ DECLEXPORT(void) VBOXGLXTAG(glXBindTexImageEXT)(Display *dpy, GLXDrawable draw, 
     }
 
     /* If there's damage extension, then process incoming events as we need the information right now */
-    if (stub.currentContext->damageDpy)
+    if (context->damageDpy)
     {
         /* Sync connections, note that order of syncs is important here.
          * First make sure client commands are finished, then make sure we get all the damage events back*/
         XLOCK(dpy);
         XSync(dpy, False);
         XUNLOCK(dpy);
-        XSync(stub.currentContext->damageDpy, False);
+        XSync(context->damageDpy, False);
 
-        while (XPending(stub.currentContext->damageDpy))
+        while (XPending(context->damageDpy))
         {
             XEvent event;
-            XNextEvent(stub.currentContext->damageDpy, &event);
-            if (event.type==stub.currentContext->damageEventsBase+XDamageNotify)
+            XNextEvent(context->damageDpy, &event);
+            if (event.type==contextt->damageEventsBase+XDamageNotify)
             {
-                crHashtableWalk(stub.currentContext->pGLXPixmapsHash, stubCheckXDamageCB, &event);
+                crHashtableWalk(contextt->pGLXPixmapsHash, stubCheckXDamageCB, &event);
             }
         }
     }
@@ -2589,7 +2594,7 @@ DECLEXPORT(void) VBOXGLXTAG(glXBindTexImageEXT)(Display *dpy, GLXDrawable draw, 
     else /* Use shm to get pixmap data */
     {
         /* Check if we have damage extension */
-        if (stub.currentContext->damageDpy)
+        if (context->damageDpy)
         {
             if (pGlxPixmap->bPixmapImageDirty)
             {
