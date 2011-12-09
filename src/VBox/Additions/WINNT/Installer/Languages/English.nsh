@@ -41,3 +41,5 @@ LangString VBOX_ERROR_INST_FAILED ${LANG_ENGLISH}        "An error occurred duri
 
 LangString VBOX_UNINST_CONFIRM ${LANG_ENGLISH}           "Do you really want to uninstall $(^Name)?"
 LangString VBOX_UNINST_SUCCESS ${LANG_ENGLISH}           "$(^Name) have been uninstalled."
+LangString VBOX_UNINST_INVALID_D3D ${LANG_ENGLISH}       "Invalid installation of Direct3D support detected; uninstallation skipped."
+

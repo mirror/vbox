@@ -41,3 +41,5 @@ LangString VBOX_ERROR_INST_FAILED ${LANG_GERMAN}        "Es trat ein Fehler währ
 
 LangString VBOX_UNINST_CONFIRM ${LANG_GERMAN}           "Wollen Sie wirklich die $(^Name) deinstallieren?"
 LangString VBOX_UNINST_SUCCESS ${LANG_GERMAN}           "$(^Name) wurden erfolgreich deinstalliert."
+LangString VBOX_UNINST_INVALID_D3D ${LANG_GERMAN}       "Unvollständige oder ungültige Installation der Direct3D-Unterstützung erkannt; Deinstallation wird übersprungen."
+
