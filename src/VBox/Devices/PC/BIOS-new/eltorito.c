@@ -614,15 +614,16 @@ int13_success_noah:
 
 void BIOSCALL int13_cdrom(uint16_t EHBX, disk_regs_t r)
 {
-    uint16_t        ebda_seg=read_word(0x0040,0x000E);
-    uint8_t         device, status, locks;
-    uint8_t         atacmd[12];
-    uint32_t        lba;
-    uint16_t        count, segment, offset, size;
-    bio_dsk_t __far *bios_dsk;
+    uint16_t            ebda_seg = read_word(0x0040,0x000E);
+    uint8_t             device, status, locks;
+    uint8_t             atacmd[12];
+    uint32_t            lba;
+    uint16_t            count, segment, offset, size;
+    bio_dsk_t __far     *bios_dsk;
+    int13ext_t __far    *i13x;
+    dpt_t __far         *dpt;
 
     bios_dsk = ebda_seg :> &EbdaData->bdisk;
-
     
     BX_DEBUG_INT13_CD("%s: AX=%04x BX=%04x CX=%04x DX=%04x ES=%04x\n", __func__, AX, BX, CX, DX, ES);
     
@@ -693,19 +694,22 @@ void BIOSCALL int13_cdrom(uint16_t EHBX, disk_regs_t r)
     case 0x44: // IBM/MS verify sectors
     case 0x47: // IBM/MS extended seek
 
-        count   = read_word(DS, SI+(uint16_t)&Int13Ext->count);
-        segment = read_word(DS, SI+(uint16_t)&Int13Ext->segment);
-        offset  = read_word(DS, SI+(uint16_t)&Int13Ext->offset);
+        /* Load the I13X struct pointer. */
+        i13x = MK_FP(DS, SI);
+
+        count   = i13x->count;
+        segment = i13x->segment;
+        offset  = i13x->offset;
 
         // Can't use 64 bits lba
-        lba = read_dword(DS, SI+(uint16_t)&Int13Ext->lba2);
+        lba = i13x->lba2;
         if (lba != 0L) {
             BX_PANIC("%s: function %02x. Can't use 64bits lba\n", __func__, GET_AH());
             goto int13_fail;
         }
 
         // Get 32 bits lba
-        lba = read_dword(DS, SI+(uint16_t)&Int13Ext->lba1);
+        lba = i13x->lba1;
 
         // If verify or seek
         if (( GET_AH() == 0x44 ) || ( GET_AH() == 0x47 ))
@@ -730,7 +734,7 @@ void BIOSCALL int13_cdrom(uint16_t EHBX, disk_regs_t r)
             status = ata_cmd_packet(device, 12, &atacmd, 0, count*2048L, ATA_DATA_IN, MK_FP(segment,offset));
 
         count = (uint16_t)(bios_dsk->drqp.trsfbytes >> 11);
-        write_word(DS, SI+(uint16_t)&Int13Ext->count, count);
+        i13x->count = count;
 
         if (status != 0) {
             BX_INFO("%s: function %02x, status %02x !\n", __func__, GET_AH(), status);
@@ -807,38 +811,39 @@ int13_cdrom_rme_end:
         goto int13_success;
         break;
 
+    //@todo: Part of this should be merged with analogous code in disk.c
     case 0x48: // IBM/MS get drive parameters
-        size = read_word(DS,SI+(uint16_t)&Int13Ext->size);
+        dpt = DS :> (dpt_t *)SI;
+        size = dpt->size;
 
         // Buffer is too small
-        if(size < 0x1a)
+        if (size < 0x1a)
             goto int13_fail;
 
         // EDD 1.x
-        if(size >= 0x1a) {
+        if (size >= 0x1a) {
             uint16_t   blksize;
 
-            blksize   = bios_dsk->devices[device].blksize;
+            blksize = bios_dsk->devices[device].blksize;
 
-            write_word(DS, SI+(uint16_t)&Int13DPT->size, 0x1a);
-            write_word(DS, SI+(uint16_t)&Int13DPT->infos, 0x74); // removable, media change, lockable, max values
-            write_dword(DS, SI+(uint16_t)&Int13DPT->cylinders, 0xffffffff);
-            write_dword(DS, SI+(uint16_t)&Int13DPT->heads, 0xffffffff);
-            write_dword(DS, SI+(uint16_t)&Int13DPT->spt, 0xffffffff);
-            write_dword(DS, SI+(uint16_t)&Int13DPT->sector_count1, 0xffffffff);  // FIXME should be Bit64
-            write_dword(DS, SI+(uint16_t)&Int13DPT->sector_count2, 0xffffffff);
-            write_word(DS, SI+(uint16_t)&Int13DPT->blksize, blksize);
+            dpt->size      = 0x1a;
+            dpt->infos     = 0x74;  /* Removable, media change, lockable, max values */
+            dpt->cylinders = 0xffffffff;
+            dpt->heads     = 0xffffffff;
+            dpt->spt       = 0xffffffff;
+            dpt->blksize   = blksize;
+            dpt->sector_count1 = 0xffffffff;  // FIXME should be Bit64
+            dpt->sector_count2 = 0xffffffff;
         }
 
         // EDD 2.x
         if(size >= 0x1e) {
-            uint8_t  channel, irq, mode, checksum, i;
-            uint16_t iobase1, iobase2, options;
+            uint8_t     channel, irq, mode, checksum, i;
+            uint16_t    iobase1, iobase2, options;
 
-            write_word(DS, SI+(uint16_t)&Int13DPT->size, 0x1e);
-
-            write_word(DS, SI+(uint16_t)&Int13DPT->dpte_segment, ebda_seg);
-            write_word(DS, SI+(uint16_t)&Int13DPT->dpte_offset, (uint16_t)&EbdaData->bdisk.dpte);
+            dpt->size = 0x1e;
+            dpt->dpte_segment = ebda_seg;
+            dpt->dpte_offset  = (uint16_t)&EbdaData->bdisk.dpte;
 
             // Fill in dpte
             channel = device / 2;
@@ -853,20 +858,20 @@ int13_cdrom_rme_end:
             options |= (1<<6); // atapi device
             options |= (mode==ATA_MODE_PIO32?1:0<<7);
 
-            bios_dsk->dpte.iobase1   = iobase1;
-            bios_dsk->dpte.iobase2   = iobase2;
-            bios_dsk->dpte.prefix    = (0xe | (device % 2))<<4;
-            bios_dsk->dpte.unused    = 0xcb;
-            bios_dsk->dpte.irq       = irq;
-            bios_dsk->dpte.blkcount  = 1 ;
-            bios_dsk->dpte.dma       = 0;
-            bios_dsk->dpte.pio       = 0;
-            bios_dsk->dpte.options   = options;
-            bios_dsk->dpte.reserved  = 0;
-            bios_dsk->dpte.revision  = 0x11;
+            bios_dsk->dpte.iobase1  = iobase1;
+            bios_dsk->dpte.iobase2  = iobase2;
+            bios_dsk->dpte.prefix   = (0xe | (device % 2))<<4;
+            bios_dsk->dpte.unused   = 0xcb;
+            bios_dsk->dpte.irq      = irq;
+            bios_dsk->dpte.blkcount = 1 ;
+            bios_dsk->dpte.dma      = 0;
+            bios_dsk->dpte.pio      = 0;
+            bios_dsk->dpte.options  = options;
+            bios_dsk->dpte.reserved = 0;
+            bios_dsk->dpte.revision = 0x11;
 
             checksum = 0;
-            for (i=0; i<15; i++)
+            for (i = 0; i < 15; ++i)
                 checksum += read_byte(ebda_seg, (uint16_t)&EbdaData->bdisk.dpte + i);
             checksum = -checksum;
             bios_dsk->dpte.checksum = checksum;
@@ -874,51 +879,54 @@ int13_cdrom_rme_end:
 
         // EDD 3.x
         if(size >= 0x42) {
-            uint8_t  channel, iface, checksum, i;
-            uint16_t iobase1;
+            uint8_t     channel, iface, checksum, i;
+            uint16_t    iobase1;
 
             channel = device / 2;
             iface   = bios_dsk->channels[channel].iface;
             iobase1 = bios_dsk->channels[channel].iobase1;
 
-            write_word(DS, SI+(uint16_t)&Int13DPT->size, 0x42);
-            write_word(DS, SI+(uint16_t)&Int13DPT->key, 0xbedd);
-            write_byte(DS, SI+(uint16_t)&Int13DPT->dpi_length, 0x24);
-            write_byte(DS, SI+(uint16_t)&Int13DPT->reserved1, 0);
-            write_word(DS, SI+(uint16_t)&Int13DPT->reserved2, 0);
+            dpt->size       = 0x42;
+            dpt->key        = 0xbedd;
+            dpt->dpi_length = 0x24;
+            dpt->reserved1  = 0;
+            dpt->reserved2  = 0;
 
             if (iface == ATA_IFACE_ISA) {
-                write_byte(DS, SI+(uint16_t)&Int13DPT->host_bus[0], 'I');
-                write_byte(DS, SI+(uint16_t)&Int13DPT->host_bus[1], 'S');
-                write_byte(DS, SI+(uint16_t)&Int13DPT->host_bus[2], 'A');
-                write_byte(DS, SI+(uint16_t)&Int13DPT->host_bus[3], 0);
+                dpt->host_bus[0] = 'I';
+                dpt->host_bus[1] = 'S';
+                dpt->host_bus[2] = 'A';
+                dpt->host_bus[3] = ' ';
             }
             else {
                 // FIXME PCI
             }
-            write_byte(DS, SI+(uint16_t)&Int13DPT->iface_type[0], 'A');
-            write_byte(DS, SI+(uint16_t)&Int13DPT->iface_type[1], 'T');
-            write_byte(DS, SI+(uint16_t)&Int13DPT->iface_type[2], 'A');
-            write_byte(DS, SI+(uint16_t)&Int13DPT->iface_type[3], 0);
+            dpt->iface_type[0] = 'A';
+            dpt->iface_type[1] = 'T';
+            dpt->iface_type[2] = 'A';
+            dpt->iface_type[3] = ' ';
+            dpt->iface_type[4] = ' ';
+            dpt->iface_type[5] = ' ';
+            dpt->iface_type[6] = ' ';
+            dpt->iface_type[7] = ' ';
 
-            if (iface==ATA_IFACE_ISA) {
-                write_word(DS, SI+(uint16_t)&Int13DPT->iface_path[0], iobase1);
-                write_word(DS, SI+(uint16_t)&Int13DPT->iface_path[2], 0);
-                write_dword(DS, SI+(uint16_t)&Int13DPT->iface_path[4], 0L);
+            if (iface == ATA_IFACE_ISA) {
+                ((uint16_t __far *)dpt->iface_path)[0] = iobase1;
+                ((uint16_t __far *)dpt->iface_path)[1] = 0;
+                ((uint32_t __far *)dpt->iface_path)[1] = 0;
             }
             else {
                 // FIXME PCI
             }
-            write_byte(DS, SI+(uint16_t)&Int13DPT->device_path[0], device%2);
-            write_byte(DS, SI+(uint16_t)&Int13DPT->device_path[1], 0);
-            write_word(DS, SI+(uint16_t)&Int13DPT->device_path[2], 0);
-            write_dword(DS, SI+(uint16_t)&Int13DPT->device_path[4], 0L);
+            ((uint16_t __far *)dpt->device_path)[0] = device & 1;
+            ((uint16_t __far *)dpt->device_path)[1] = 0;
+            ((uint32_t __far *)dpt->device_path)[1] = 0;
 
             checksum = 0;
-            for (i=30; i<64; i++)
-                checksum+=read_byte(DS, SI + i);
+            for (i = 30; i < 64; ++i)
+                checksum += ((uint8_t __far *)dpt)[i];
             checksum = -checksum;
-            write_byte(DS, SI+(uint16_t)&Int13DPT->checksum, checksum);
+            dpt->checksum = checksum;
         }
 
         goto int13_success;
