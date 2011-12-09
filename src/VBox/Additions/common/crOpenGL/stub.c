@@ -87,18 +87,22 @@ void APIENTRY crMakeCurrent( GLint window, GLint context )
 
 GLint APIENTRY crGetCurrentContext( void )
 {
+    ContextInfo *context;
     stubInit();
-    if (stub.currentContext)
-      return (GLint) stub.currentContext->id;
+    context = stubGetCurrentContext();
+    if (context)
+      return (GLint) context->id;
     else
       return 0;
 }
 
 GLint APIENTRY crGetCurrentWindow( void )
 {
+    ContextInfo *context;
     stubInit();
-    if (stub.currentContext && stub.currentContext->currentDrawable)
-      return stub.currentContext->currentDrawable->spuWindow;
+    context = stubGetCurrentContext();
+    if (context && context->currentDrawable)
+      return context->currentDrawable->spuWindow;
     else
       return -1;
 }

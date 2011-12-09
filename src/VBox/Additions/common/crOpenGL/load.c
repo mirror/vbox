@@ -67,6 +67,9 @@ static CRmutex stub_init_mutex;
 /* NOTE: 'SPUDispatchTable glim' is declared in NULLfuncs.py now */
 /* NOTE: 'SPUDispatchTable stubThreadsafeDispatch' is declared in tsfuncs.c */
 Stub stub;
+#ifdef CHROMIUM_THREADSAFE
+CRtsd g_stubCurrentContextTSD;
+#endif
 
 
 static void stubInitNativeDispatch( void )
@@ -200,9 +203,11 @@ static void stubCheckWindowsCB(unsigned long key, void *data1, void *data2)
 
 static void stubCheckWindowsState(void)
 {
+    ContextInfo *context = stubGetCurrentContext();
+
     CRASSERT(stub.trackWindowSize || stub.trackWindowPos);
 
-    if (!stub.currentContext)
+    if (!context)
         return;
 
 #if defined(WINDOWS) && defined(VBOX_WITH_WDDM)
@@ -214,8 +219,8 @@ static void stubCheckWindowsState(void)
     crLockMutex(&stub.mutex);
 #endif
 
-    stubCheckWindowState(stub.currentContext->currentDrawable, GL_TRUE);
-    crHashtableWalk(stub.windowTable, stubCheckWindowsCB, stub.currentContext);
+    stubCheckWindowState(context->currentDrawable, GL_TRUE);
+    crHashtableWalk(stub.windowTable, stubCheckWindowsCB, context);
 
 #if defined(CR_NEWWINTRACK) && !defined(WINDOWS)
     crUnlockMutex(&stub.mutex);
@@ -249,10 +254,11 @@ static void SPU_APIENTRY trapViewport(GLint x, GLint y, GLsizei w, GLsizei h)
     }
     else
     {
+        ContextInfo *context = stubGetCurrentContext();
         int winX, winY;
         unsigned int winW, winH;
         WindowInfo *pWindow;
-        pWindow = stub.currentContext->currentDrawable;
+        pWindow = context->currentDrawable;
         stubGetWindowGeometry(pWindow, &winX, &winY, &winW, &winH);
         origViewport(0, 0, winW, winH);
     }
@@ -275,7 +281,8 @@ static void SPU_APIENTRY trapScissor(GLint x, GLint y, GLsizei w, GLsizei h)
     int winX, winY;
     unsigned int winW, winH;
     WindowInfo *pWindow;
-    pWindow = stub.currentContext->currentDrawable;
+    ContextInfo *context = stubGetCurrentContext();
+    pWindow = context->currentDrawable;
     stubGetWindowGeometry(pWindow, &winX, &winY, &winW, &winH);
     origScissor(0, 0, winW, winH);
 }
@@ -537,7 +544,12 @@ static void stubInitVars(void)
 
     stub.freeContextNumber = MAGIC_CONTEXT_BASE;
     stub.contextTable = crAllocHashtable();
-    stub.currentContext = NULL;
+#ifndef RT_OS_WINDOWS
+# ifdef CHROMIUM_THREADSAFE
+    crInitTSD(&g_stubCurrentContextTSD);
+# endif
+#endif
+    stubSetCurrentContext(NULL);
 
     stub.windowTable = crAllocHashtable();
 
@@ -1366,6 +1378,10 @@ BOOL WINAPI DllMain(HINSTANCE hDLLInst, DWORD fdwReason, LPVOID lpvReserved)
     {
         CRNetServer ns;
 
+#ifdef CHROMIUM_THREADSAFE
+        crInitTSD(&g_stubCurrentContextTSD);
+#endif
+
         crInitMutex(&stub_init_mutex);
 
 #ifdef VDBG_VEHANDLER
@@ -1401,27 +1417,30 @@ BOOL WINAPI DllMain(HINSTANCE hDLLInst, DWORD fdwReason, LPVOID lpvReserved)
         break;
     }
 
-#if 0
     case DLL_THREAD_ATTACH:
     {
+#if 0
         if (stub_initialized)
         {
             CRASSERT(stub.spu);
             stub.spu->dispatch_table.VBoxPackAttachThread();
         }
+#endif
         break;
     }
 
     case DLL_THREAD_DETACH:
     {
+        stubSetCurrentContext(NULL);
+#if 0
         if (stub_initialized)
         {
             CRASSERT(stub.spu);
             stub.spu->dispatch_table.VBoxPackDetachThread();
         }
+#endif
         break;
     }
-#endif
 
     default:
         break;

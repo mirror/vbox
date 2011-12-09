@@ -144,6 +144,15 @@ crStateSetSharedContext(CRContext *pCtx)
     gSharedState = pCtx->shared;
 }
 
+#ifdef CHROMIUM_THREADSAFE
+static void
+crStateFreeContext(CRContext *ctx);
+static DECLCALLBACK(void) crStateContextDtor(void *pvCtx)
+{
+    crStateFreeContext((CRContext*)pvCtx);
+}
+#endif
+
 /*
  * Helper for crStateCreateContext, below.
  */
@@ -158,7 +167,7 @@ crStateCreateContextId(int i, const CRLimitsState *limits,
 
     ctx->id = i;
 #ifdef CHROMIUM_THREADSAFE
-    ctx->cRefs = 1;
+    crTSDRefInit(ctx, crStateContextDtor);
 #endif
     ctx->flush_func = NULL;
     for (j=0;j<CR_MAX_BITARRAY;j++){
@@ -260,7 +269,7 @@ crStateCreateContextId(int i, const CRLimitsState *limits,
 }
 
 /*@todo crStateAttribDestroy*/
-void
+static void
 crStateFreeContext(CRContext *ctx)
 {
     crStateClientDestroy( &(ctx->client) );
@@ -311,7 +320,7 @@ void crStateInit(void)
          * Ensures context bits are reset */
 #ifdef CHROMIUM_THREADSAFE
         SetCurrentContext(NULL);
-        CRCONTEXT_RELEASE(defaultContext);
+        crTSDRefRelease(defaultContext);
 #else
         crStateFreeContext(defaultContext);
         __currentContext = NULL;
@@ -447,7 +456,7 @@ void crStateDestroyContext( CRContext *ctx )
     g_availableContexts[ctx->id] = 0;
 
 #ifdef CHROMIUM_THREADSAFE
-    CRCONTEXT_RELEASE(ctx);
+    crTSDRefRelease(ctx);
 #else
     crStateFreeContext(ctx);
 #endif
