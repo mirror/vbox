@@ -126,23 +126,13 @@ struct glsl_shader_prog_link {
     struct ps_compile_args      ps_args;
     UINT                        constant_version;
     const struct wined3d_context *context;
-#ifdef VBOX_WITH_WDDM
     UINT                        inp2Fixup_info;
-#else
-    const struct ps_np2fixup_info *np2Fixup_info;
-#endif
 };
 
-#ifdef VBOX_WITH_WDDM
 #define WINEFIXUPINFO_NOINDEX (~0UL)
 #define WINEFIXUPINFO_GET(_p) get_fixup_info((const IWineD3DPixelShaderImpl*)(_p)->pshader, (_p)->inp2Fixup_info)
 #define WINEFIXUPINFO_ISVALID(_p) ((_p)->inp2Fixup_info != WINEFIXUPINFO_NOINDEX)
 #define WINEFIXUPINFO_INIT(_p) ((_p)->inp2Fixup_info == WINEFIXUPINFO_NOINDEX)
-#else
-#define WINEFIXUPINFO_GET(_p) ((_p)->np2Fixup_info)
-#define WINEFIXUPINFO_ISVALID(_p) (!!(_p)->np2Fixup_info)
-#define WINEFIXUPINFO_INIT(_p) ((_p)->np2Fixup_info == NULL)
-#endif
 
 typedef struct {
     IWineD3DVertexShader         *vshader;
@@ -733,7 +723,6 @@ static void reset_program_constant_version(struct wine_rb_entry *entry, void *co
     WINE_RB_ENTRY_VALUE(entry, struct glsl_shader_prog_link, program_lookup_entry)->constant_version = 0;
 }
 
-#ifdef VBOX_WITH_WDDM
 static const struct ps_np2fixup_info * get_fixup_info(const IWineD3DPixelShaderImpl *shader, UINT inp2fixup_info)
 {
     struct glsl_pshader_private    *shader_data = shader->baseShader.backend_data;
@@ -756,7 +745,6 @@ static const struct ps_np2fixup_info * get_fixup_info(const IWineD3DPixelShaderI
 
     return &shader_data->gl_shaders[inp2fixup_info].np2fixup;
 }
-#endif
 
 /**
  * Loads the texture dimensions for NP2 fixup into the currently set GLSL program.
@@ -4284,11 +4272,7 @@ static GLuint shader_glsl_generate_vshader(const struct wined3d_context *context
 static GLhandleARB find_glsl_pshader(const struct wined3d_context *context,
         struct wined3d_shader_buffer *buffer, IWineD3DPixelShaderImpl *shader,
         const struct ps_compile_args *args,
-#ifdef VBOX_WITH_WDDM
         UINT *inp2fixup_info
-#else
-        const struct ps_np2fixup_info **np2fixup_info
-#endif
         )
 {
     UINT i;
@@ -4317,11 +4301,7 @@ static GLhandleARB find_glsl_pshader(const struct wined3d_context *context,
         if(shader_data->gl_shaders[i].context==context
            && memcmp(&shader_data->gl_shaders[i].args, args, sizeof(*args)) == 0) {
             if(args->np2_fixup) {
-#ifdef VBOX_WITH_WDDM
                 *inp2fixup_info = i;
-#else
-                *np2fixup_info = &shader_data->gl_shaders[i].np2fixup;
-#endif
             }
             return shader_data->gl_shaders[i].prgId;
         }
@@ -4358,11 +4338,7 @@ static GLhandleARB find_glsl_pshader(const struct wined3d_context *context,
 
     shader_buffer_clear(buffer);
     ret = shader_glsl_generate_pshader(context, buffer, shader, args, np2fixup);
-#ifdef VBOX_WITH_WDDM
     *inp2fixup_info = shader_data->num_gl_shaders;
-#else
-    *np2fixup_info = np2fixup;
-#endif
     shader_data->gl_shaders[shader_data->num_gl_shaders++].prgId = ret;
 
     return ret;
@@ -4540,11 +4516,7 @@ static void set_glsl_shader_program(const struct wined3d_context *context,
     {
         GLhandleARB pshader_id = find_glsl_pshader(context, &priv->shader_buffer,
                 (IWineD3DPixelShaderImpl *)pshader, &ps_compile_args,
-#ifdef VBOX_WITH_WDDM
                 &entry->inp2Fixup_info
-#else
-                &entry->np2Fixup_info
-#endif
                 );
         TRACE("Attaching GLSL shader object %u to program %u\n", pshader_id, programId);
         GL_EXTCALL(glAttachObjectARB(programId, pshader_id));
