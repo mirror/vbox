@@ -9033,15 +9033,23 @@ HRESULT Machine::saveHardware(settings::Hardware &data)
         if (FAILED(rc)) throw rc;
 
         /* Network adapters (required) */
+        uint32_t uMaxNICs = RT_MIN(getMaxNetworkAdapters(mHWData->mChipsetType), mNetworkAdapters.size());
         data.llNetworkAdapters.clear();
-        for (ULONG slot = 0; slot < mNetworkAdapters.size(); ++slot)
+        /* Write out only the nominal number of network adapters for this
+         * chipset type. Since Machine::commit() hasn't been called there
+         * may be extra NIC settings in the vector. */
+        for (ULONG slot = 0; slot < uMaxNICs; ++slot)
         {
             settings::NetworkAdapter nic;
             nic.ulSlot = slot;
-            rc = mNetworkAdapters[slot]->saveSettings(nic);
-            if (FAILED(rc)) throw rc;
+            /* paranoia check... must not be NULL, but must not crash either. */
+            if (mNetworkAdapters[slot])
+            {
+                rc = mNetworkAdapters[slot]->saveSettings(nic);
+                if (FAILED(rc)) throw rc;
 
-            data.llNetworkAdapters.push_back(nic);
+                data.llNetworkAdapters.push_back(nic);
+            }
         }
 
         /* Serial ports */
@@ -10421,6 +10429,8 @@ void Machine::commit()
     mUSBController->commit();
     mBandwidthControl->commit();
 
+    /* Keep the original network adapter count until this point, so that
+     * discarding a chipset type change will not lose settings. */
     mNetworkAdapters.resize(Global::getMaxNetworkAdapters(mHWData->mChipsetType));
     for (ULONG slot = 0; slot < mNetworkAdapters.size(); slot++)
         mNetworkAdapters[slot]->commit();
