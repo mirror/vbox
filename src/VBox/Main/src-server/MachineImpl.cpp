@@ -9033,7 +9033,7 @@ HRESULT Machine::saveHardware(settings::Hardware &data)
         if (FAILED(rc)) throw rc;
 
         /* Network adapters (required) */
-        uint32_t uMaxNICs = RT_MIN(getMaxNetworkAdapters(mHWData->mChipsetType), mNetworkAdapters.size());
+        uint32_t uMaxNICs = RT_MIN(Global::getMaxNetworkAdapters(mHWData->mChipsetType), mNetworkAdapters.size());
         data.llNetworkAdapters.clear();
         /* Write out only the nominal number of network adapters for this
          * chipset type. Since Machine::commit() hasn't been called there
