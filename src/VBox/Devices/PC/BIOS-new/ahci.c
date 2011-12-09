@@ -519,10 +519,10 @@ uint16_t ahci_cmd_packet(uint16_t device_id, uint8_t cmdlen, char __far *cmdbuf,
 
     ahci_cmd_data(bios_dsk, ATA_CMD_PACKET);
     VBOXAHCI_DEBUG("%s: transferred %lu bytes\n", __func__, ahci->aCmdHdr[1]);
-#ifdef DMA_WORKAROUND
-    rep_movsw(bios_dsk->drqp.buffer, bios_dsk->drqp.buffer, bios_dsk->drqp.nsect * 2048 / 2);
-#endif
     bios_dsk->drqp.trsfbytes = ahci->aCmdHdr[1];
+#ifdef DMA_WORKAROUND
+    rep_movsw(bios_dsk->drqp.buffer, bios_dsk->drqp.buffer, bios_dsk->drqp.trsfbytes / 2);
+#endif
     return ahci->aCmdHdr[1] == 0 ? 4 : 0;
 //    return 0;   //@todo!!
 }
