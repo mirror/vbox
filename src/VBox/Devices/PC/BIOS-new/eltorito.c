@@ -79,6 +79,20 @@
 #define ES      r.es
 #define FLAGS   r.ra.flags.u.r16.flags
 
+#pragma pack(1)
+
+/* READ_10/WRITE_10 CDB padded to 12 bytes for ATAPI. */
+typedef struct {
+    uint16_t    command;    /* Command. */
+    uint32_t    lba;        /* LBA, MSB first! */
+    uint8_t     pad1;       /* Unused. */
+    uint16_t    nsect;      /* Sector count, MSB first! */
+    uint8_t     pad2[3];    /* Unused. */
+} cdb_atapi;
+
+#pragma pack()
+
+ct_assert(sizeof(cdb_atapi) == 12);
 
 // ---------------------------------------------------------------------------
 // Start of El-Torito boot functions
@@ -220,7 +234,8 @@ uint16_t cdrom_boot(void)
 {
     // @TODO: a macro or a function for getting the EBDA segment
     uint16_t        ebda_seg=read_word(0x0040,0x000E);
-    uint8_t         atacmd[12], buffer[2048];
+    uint8_t         buffer[2048];
+    cdb_atapi       atapicmd;
     uint32_t        lba;
     uint16_t        boot_segment, nbsectors, i, error;
     uint8_t         device;
@@ -240,23 +255,18 @@ uint16_t cdrom_boot(void)
         return 2;
     
     /* Read the Boot Record Volume Descriptor (BRVD). */
-    _fmemset(&atacmd, 0, 12);
-    //@todo: use some sane byte swapping routines here
-    atacmd[0] = 0x28;                       // READ command
-    atacmd[7] = (0x01 & 0xff00) >> 8;       // Sectors
-    atacmd[8] = (0x01 & 0x00ff);            // Sectors
-    atacmd[2] = (0x11 & 0xff000000) >> 24;  // LBA
-    atacmd[3] = (0x11 & 0x00ff0000) >> 16;
-    atacmd[4] = (0x11 & 0x0000ff00) >> 8;
-    atacmd[5] = (0x11 & 0x000000ff);
+    _fmemset(&atapicmd, 0, sizeof(atapicmd));
+    atapicmd.command = 0x28;    // READ 10 command
+    atapicmd.lba     = swap_32(0x11);
+    atapicmd.nsect   = swap_16(0x01);
 
     for (read_try = 0; read_try <= 4; ++read_try)
     {
         //@todo: Use indirect calls instead?
         if (device > BX_MAX_ATA_DEVICES)
-            error = ahci_cmd_packet(device, 12, &atacmd, 0, 2048L, ATA_DATA_IN, &buffer);
+            error = ahci_cmd_packet(device, 12, (char __far *)&atapicmd, 0, 2048L, ATA_DATA_IN, &buffer);
         else
-            error = ata_cmd_packet(device, 12, &atacmd, 0, 2048L, ATA_DATA_IN, &buffer);
+            error = ata_cmd_packet(device, 12, (char __far *)&atapicmd, 0, 2048L, ATA_DATA_IN, &buffer);
         if (!error)
             break;
     }
@@ -281,20 +291,15 @@ uint16_t cdrom_boot(void)
     BX_DEBUG_ELTORITO("BRVD at LBA %lx\n", lba);
 
     /* Now we read the Boot Catalog. */
-    _fmemset(&atacmd,0,12);
-    //@todo: use some sane byte swapping routines here
-    atacmd[0] = 0x28;                       // READ command
-    atacmd[7] = (0x01 & 0xff00) >> 8;       // Sectors
-    atacmd[8] = (0x01 & 0x00ff);            // Sectors
-    atacmd[2] = (lba & 0xff000000) >> 24;   // LBA
-    atacmd[3] = (lba & 0x00ff0000) >> 16;
-    atacmd[4] = (lba & 0x0000ff00) >> 8;
-    atacmd[5] = (lba & 0x000000ff);
+    _fmemset(&atapicmd, 0, sizeof(atapicmd));   //@todo: should be redundant
+    atapicmd.command = 0x28;    // READ 10 command
+    atapicmd.lba     = swap_32(lba);
+    atapicmd.nsect   = swap_16(0x01);
 
     if (device > BX_MAX_ATA_DEVICES)
-        error = ahci_cmd_packet(device, 12, &atacmd, 0, 2048L, ATA_DATA_IN, &buffer);
+        error = ahci_cmd_packet(device, 12, (char __far *)&atapicmd, 0, 2048L, ATA_DATA_IN, &buffer);
     else
-        error = ata_cmd_packet(device, 12, &atacmd, 0, 2048L, ATA_DATA_IN, &buffer);
+        error = ata_cmd_packet(device, 12, (char __far *)&atapicmd, 0, 2048L, ATA_DATA_IN, &buffer);
 
     if (error != 0)
         return 7;
@@ -342,19 +347,15 @@ uint16_t cdrom_boot(void)
     cdemu->ilba = lba;
     
     /* Read the image into memory. */
-    _fmemset(&atacmd, 0, 12);
-    atacmd[0] = 0x28;                               // READ command
-    atacmd[7] = ((1+(nbsectors-1)/4) & 0xff00) >> 8;// Sectors
-    atacmd[8] = ((1+(nbsectors-1)/4) & 0x00ff);     // Sectors
-    atacmd[2] = (lba & 0xff000000) >> 24;           // LBA
-    atacmd[3] = (lba & 0x00ff0000) >> 16;
-    atacmd[4] = (lba & 0x0000ff00) >> 8;
-    atacmd[5] = (lba & 0x000000ff);
+    _fmemset(&atapicmd, 0, sizeof(atapicmd));   //@todo: should be redundant
+    atapicmd.command = 0x28;    // READ 10 command
+    atapicmd.lba     = swap_32(lba);
+    atapicmd.nsect   = swap_16(1 + (nbsectors - 1) / 4);
 
     if (device > BX_MAX_ATA_DEVICES)
-        error = ahci_cmd_packet(device, 12, &atacmd, 0, nbsectors*512L, ATA_DATA_IN, MK_FP(boot_segment,0));
+        error = ahci_cmd_packet(device, 12, (char __far *)&atapicmd, 0, nbsectors*512L, ATA_DATA_IN, MK_FP(boot_segment,0));
     else
-        error = ata_cmd_packet(device, 12, &atacmd, 0, nbsectors*512L, ATA_DATA_IN, MK_FP(boot_segment,0));
+        error = ata_cmd_packet(device, 12, (char __far *)&atapicmd, 0, nbsectors*512L, ATA_DATA_IN, MK_FP(boot_segment,0));
     if (error != 0)
         return 12;
     
@@ -416,7 +417,7 @@ void BIOSCALL int13_cdemu(disk_regs_t r)
     uint16_t        head, sector, cylinder, nbsectors;
     uint32_t        vlba, ilba, slba, elba;
     uint16_t        before, segment, offset;
-    uint8_t         atacmd[12];
+    cdb_atapi       atapicmd;
     cdemu_t __far   *cdemu;
 
     cdemu = ebda_seg :> &EbdaData->cdemu;
@@ -514,21 +515,16 @@ void BIOSCALL int13_cdemu(disk_regs_t r)
         
         // end lba on cd
         elba = (uint32_t)(vlba+nbsectors-1)/4;
-        
-        _fmemset(&atacmd, 0, 12);
-        //@todo: use some sane byte swapping routines here
-        atacmd[0] = 0x28;                                   // READ command
-        atacmd[7] = ((uint16_t)(elba-slba+1) & 0xff00) >> 8;// Sectors
-        atacmd[8] = ((uint16_t)(elba-slba+1) & 0x00ff);     // Sectors
-        atacmd[2] = (ilba+slba & 0xff000000) >> 24;         // LBA
-        atacmd[3] = (ilba+slba & 0x00ff0000) >> 16;
-        atacmd[4] = (ilba+slba & 0x0000ff00) >> 8;
-        atacmd[5] = (ilba+slba & 0x000000ff);
+
+        _fmemset(&atapicmd, 0, sizeof(atapicmd));
+        atapicmd.command = 0x28;    // READ 10 command
+        atapicmd.lba     = swap_32(ilba + slba);
+        atapicmd.nsect   = swap_16(elba - slba + 1);
 
         if (device > BX_MAX_ATA_DEVICES)
-            status = ahci_cmd_packet(device, 12, &atacmd, before*512, nbsectors*512L, ATA_DATA_IN, MK_FP(segment,offset));
+            status = ahci_cmd_packet(device, 12, (char __far *)&atapicmd, before*512, nbsectors*512L, ATA_DATA_IN, MK_FP(segment,offset));
         else
-            status = ata_cmd_packet(device, 12, &atacmd, before*512, nbsectors*512L, ATA_DATA_IN, MK_FP(segment,offset));
+            status = ata_cmd_packet(device, 12, (char __far *)&atapicmd, before*512, nbsectors*512L, ATA_DATA_IN, MK_FP(segment,offset));
 
         if (status != 0) {
             BX_INFO("%s: function %02x, error %02x !\n", __func__, GET_AH(), status);
@@ -616,7 +612,7 @@ void BIOSCALL int13_cdrom(uint16_t EHBX, disk_regs_t r)
 {
     uint16_t            ebda_seg = read_word(0x0040,0x000E);
     uint8_t             device, status, locks;
-    uint8_t             atacmd[12];
+    cdb_atapi           atapicmd;
     uint32_t            lba;
     uint16_t            count, segment, offset, size;
     bio_dsk_t __far     *bios_dsk;
@@ -718,20 +714,15 @@ void BIOSCALL int13_cdrom(uint16_t EHBX, disk_regs_t r)
         BX_DEBUG_INT13_CD("%s: read %u sectors @ LBA %lu to %04X:%04X\n",
                           __func__, count, lba, segment, offset);
 
-        _fmemset(&atacmd, 0, 12);
-        //@todo: use some sane byte swapping routines here
-        atacmd[0] = 0x28;                     // READ command
-        atacmd[7] = (count & 0xff00) >> 8;    // Sectors
-        atacmd[8] = (count & 0x00ff);         // Sectors
-        atacmd[2] = (lba & 0xff000000) >> 24; // LBA
-        atacmd[3] = (lba & 0x00ff0000) >> 16;
-        atacmd[4] = (lba & 0x0000ff00) >> 8;
-        atacmd[5] = (lba & 0x000000ff);
+        _fmemset(&atapicmd, 0, sizeof(atapicmd));
+        atapicmd.command = 0x28;    // READ 10 command
+        atapicmd.lba     = swap_32(lba);
+        atapicmd.nsect   = swap_16(count);
 
         if (device > BX_MAX_ATA_DEVICES)
-            status = ahci_cmd_packet(device, 12, &atacmd, 0, count*2048L, ATA_DATA_IN, MK_FP(segment,offset));
+            status = ahci_cmd_packet(device, 12, (char __far *)&atapicmd, 0, count*2048L, ATA_DATA_IN, MK_FP(segment,offset));
         else
-            status = ata_cmd_packet(device, 12, &atacmd, 0, count*2048L, ATA_DATA_IN, MK_FP(segment,offset));
+            status = ata_cmd_packet(device, 12, (char __far *)&atapicmd, 0, count*2048L, ATA_DATA_IN, MK_FP(segment,offset));
 
         count = (uint16_t)(bios_dsk->drqp.trsfbytes >> 11);
         i13x->count = count;
