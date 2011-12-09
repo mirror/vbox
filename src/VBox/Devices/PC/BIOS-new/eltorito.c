@@ -253,7 +253,7 @@ uint16_t cdrom_boot(void)
     /* Fail if not found. */
     if (device >= BX_MAX_STORAGE_DEVICES)
         return 2;
-    
+
     /* Read the Boot Record Volume Descriptor (BRVD). */
     _fmemset(&atapicmd, 0, sizeof(atapicmd));
     atapicmd.command = 0x28;    // READ 10 command
@@ -287,7 +287,7 @@ uint16_t cdrom_boot(void)
 
     //@todo: this swaps the LBA back and forth for no good reason??!
     // ok, now we calculate the Boot catalog address
-    lba = buffer[0x4A]*0x1000000UL + buffer[0x49]*0x10000UL + buffer[0x48]*0x100UL + buffer[0x47];
+    lba = *((uint32_t *)&buffer[0x47]);
     BX_DEBUG_ELTORITO("BRVD at LBA %lx\n", lba);
 
     /* Now we read the Boot Catalog. */
@@ -303,7 +303,9 @@ uint16_t cdrom_boot(void)
 
     if (error != 0)
         return 7;
-    
+
+    //@todo: Define a struct for the Boot Catalog, the hardcoded offsets are so dumb...
+
     /* Check if the Boot Catalog looks valid. */
     if (buffer[0x00] != 0x01)
         return 8;   // Header
@@ -313,12 +315,11 @@ uint16_t cdrom_boot(void)
         return 10;  // key 1
     if (buffer[0x1F] != 0xAA)
         return 10;  // key 2
-    
+
     // Initial/Default Entry
     if (buffer[0x20] != 0x88)
         return 11; // Bootable
 
-    BX_DEBUG_ELTORITO("Emulate drive %x\n", buffer[0x21]);
     cdemu->media = buffer[0x21];
     if (buffer[0x21] == 0) {
         // FIXME ElTorito Hardcoded. cdrom is hardcoded as device 0xE0.
@@ -329,24 +330,27 @@ uint16_t cdrom_boot(void)
         cdemu->emulated_drive = 0x00;
     else
         cdemu->emulated_drive = 0x80;
-    
-    cdemu->controller_index = device/2;
-    cdemu->device_spec      = device%2;
-    
-    boot_segment=buffer[0x23]*0x100+buffer[0x22];
-    if(boot_segment==0x0000)boot_segment=0x07C0;
-    
+
+    cdemu->controller_index = device / 2;
+    cdemu->device_spec      = device % 2;
+
+    boot_segment  = *((uint16_t *)&buffer[0x22]);
+    if (boot_segment == 0)
+        boot_segment = 0x07C0;
+
     cdemu->load_segment   = boot_segment;
     cdemu->buffer_segment = 0x0000;
-    
-    nbsectors=buffer[0x27]*0x100+buffer[0x26];
+
+    nbsectors = ((uint16_t *)buffer)[0x26 / 2];
     cdemu->sector_count = nbsectors;
 
-    //@todo: pointless swapping of the LBA value?
-    lba=buffer[0x2B]*0x1000000UL+buffer[0x2A]*0x10000UL+buffer[0x29]*0x100UL+buffer[0x28];
+    lba = *((uint32_t *)&buffer[0x28]);
     cdemu->ilba = lba;
-    
-    /* Read the image into memory. */
+
+    BX_DEBUG_ELTORITO("Emulate drive %02x, type %02x, LBA %lu\n", 
+                      cdemu->emulated_drive, cdemu->media, cdemu->ilba);
+
+    /* Read the disk image's boot sector into memory. */
     _fmemset(&atapicmd, 0, sizeof(atapicmd));   //@todo: should be redundant
     atapicmd.command = 0x28;    // READ 10 command
     atapicmd.lba     = swap_32(lba);
@@ -358,31 +362,35 @@ uint16_t cdrom_boot(void)
         error = ata_cmd_packet(device, 12, (char __far *)&atapicmd, 0, nbsectors*512L, ATA_DATA_IN, MK_FP(boot_segment,0));
     if (error != 0)
         return 12;
-    
-    // Remember the media type
+
+    BX_DEBUG_ELTORITO("Emulate drive %02x, type %02x, LBA %lu\n", 
+                      cdemu->emulated_drive, cdemu->media, cdemu->ilba);
+    /* Set up emulated drive geometry based on the media type. */
     switch (cdemu->media) {
-    case 0x01:  // 1.2M floppy
+    case 0x01:  /* 1.2M floppy */
         cdemu->vdevice.spt       = 15;
         cdemu->vdevice.cylinders = 80;
         cdemu->vdevice.heads     = 2;
         break;
-    case 0x02:  // 1.44M floppy
+    case 0x02:  /* 1.44M floppy */
         cdemu->vdevice.spt       = 18;
         cdemu->vdevice.cylinders = 80;
         cdemu->vdevice.heads     = 2;
         break;
-    case 0x03:  // 2.88M floppy
+    case 0x03:  /* 2.88M floppy */
         cdemu->vdevice.spt       = 36;
         cdemu->vdevice.cylinders = 80;
         cdemu->vdevice.heads     = 2;
         break;
-    case 0x04:  // Harddrive
+    case 0x04:  /* Hard disk */
         cdemu->vdevice.spt       = read_byte(boot_segment,446+6)&0x3f;
         cdemu->vdevice.cylinders = (read_byte(boot_segment,446+6)<<2) + read_byte(boot_segment,446+7) + 1;
         cdemu->vdevice.heads     = read_byte(boot_segment,446+5) + 1;
         break;
     }
-    
+    BX_DEBUG_ELTORITO("VCHS=%u/%u/%u\n", cdemu->vdevice.cylinders,
+                      cdemu->vdevice.heads, cdemu->vdevice.spt);
+
     if (cdemu->media != 0) {
         /* Increase BIOS installed number of drives (floppy or fixed). */
         if (cdemu->emulated_drive == 0x00)
@@ -390,12 +398,11 @@ uint16_t cdrom_boot(void)
         else
             write_byte(ebda_seg,(uint16_t)&EbdaData->bdisk.hdcount, read_byte(ebda_seg, (uint16_t)&EbdaData->bdisk.hdcount) + 1);
     }
-    
-    
+
     // everything is ok, so from now on, the emulation is active
-    if (cdemu->media !=0 )
+    if (cdemu->media != 0)
         cdemu->active = 0x01;
-    
+
     // return the boot drive + no error
     return (cdemu->emulated_drive*0x100)+0;
 }
