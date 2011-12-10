@@ -99,6 +99,7 @@
 #define USAGE_EXTPACK               RT_BIT_64(55)
 #define USAGE_BANDWIDTHCONTROL      RT_BIT_64(56)
 #define USAGE_GUESTSTATS            RT_BIT_64(57)
+#define USAGE_REPAIRHD              RT_BIT_64(58)
 #define USAGE_ALL                   (~(uint64_t)0)
 /** @} */
 

@@ -217,6 +217,13 @@ void printUsageInternal(USAGECATEGORY u64Cmd, PRTSTREAM pStrm)
           "       converts hard disk images between formats\n"
           "\n"
         : "",
+        (u64Cmd & USAGE_REPAIRHD)
+        ? "  repairhd [-dry-run]\n"
+          "           [-format VDI|VMDK|VHD|...]\n"
+          "           <filename>\n"
+          "       Tries to repair corrupted disk images\n"
+          "\n"
+        : "",
 #ifdef RT_OS_WINDOWS
         (u64Cmd & USAGE_MODINSTALL)
         ? "  modinstall\n"
@@ -594,7 +601,8 @@ static DECLCALLBACK(void) handleVDError(void *pvUser, int rc, RT_SRC_POS_DECL, c
 static int handleVDMessage(void *pvUser, const char *pszFormat, va_list va)
 {
     NOREF(pvUser);
-    return RTPrintfV(pszFormat, va);
+    RTPrintfV(pszFormat, va);
+    return RTPrintf("\n");
 }
 
 static int CmdSetHDUUID(int argc, char **argv, ComPtr<IVirtualBox> aVirtualBox, ComPtr<ISession> aSession)
@@ -1920,6 +1928,87 @@ static int CmdConvertHardDisk(int argc, char **argv, ComPtr<IVirtualBox> aVirtua
 }
 
 /**
+ * Tries to repair a corrupted hard disk image.
+ *
+ * @returns VBox status code
+ */
+static int CmdRepairHardDisk(int argc, char **argv, ComPtr<IVirtualBox> aVirtualBox, ComPtr<ISession> aSession)
+{
+    Utf8Str image;
+    Utf8Str format;
+    int vrc;
+    bool fDryRun = false;
+    PVBOXHDD pDisk = NULL;
+
+    /* Parse the arguments. */
+    for (int i = 0; i < argc; i++)
+    {
+        if (strcmp(argv[i], "-dry-run") == 0)
+        {
+            fDryRun = true;
+        }
+        else if (strcmp(argv[i], "-format") == 0)
+        {
+            if (argc <= i + 1)
+            {
+                return errorArgument("Missing argument to '%s'", argv[i]);
+            }
+            i++;
+            format = argv[i];
+        }
+        else if (image.isEmpty())
+        {
+            image = argv[i];
+        }
+        else
+        {
+            return errorSyntax(USAGE_REPAIRHD, "Invalid parameter '%s'", argv[i]);
+        }
+    }
+
+    if (image.isEmpty())
+        return errorSyntax(USAGE_REPAIRHD, "Mandatory input image parameter missing");
+
+    PVDINTERFACE     pVDIfs = NULL;
+    VDINTERFACEERROR vdInterfaceError;
+    vdInterfaceError.pfnError     = handleVDError;
+    vdInterfaceError.pfnMessage   = handleVDMessage;
+
+    vrc = VDInterfaceAdd(&vdInterfaceError.Core, "VBoxManage_IError", VDINTERFACETYPE_ERROR,
+                         NULL, sizeof(VDINTERFACEERROR), &pVDIfs);
+    AssertRC(vrc);
+
+    do
+    {
+        /* Try to determine input image format */
+        if (format.isEmpty())
+        {
+            char *pszFormat = NULL;
+            VDTYPE enmSrcType = VDTYPE_INVALID;
+
+            vrc = VDGetFormat(NULL /* pVDIfsDisk */, NULL /* pVDIfsImage */,
+                              image.c_str(), &pszFormat, &enmSrcType);
+            if (RT_FAILURE(vrc) && (vrc != VERR_VD_IMAGE_CORRUPTED))
+            {
+                RTMsgError("No file format specified and autodetect failed - please specify format: %Rrc", vrc);
+                break;
+            }
+            format = pszFormat;
+            RTStrFree(pszFormat);
+        }
+
+        uint32_t fFlags = 0;
+        if (fDryRun)
+            fFlags |= VD_REPAIR_DRY_RUN;
+
+        vrc = VDRepair(pVDIfs, NULL, image.c_str(), format.c_str(), fFlags);
+    }
+    while (0);
+
+    return RT_SUCCESS(vrc) ? 0 : 1;
+}
+
+/**
  * Unloads the necessary driver.
  *
  * @returns VBox status code
@@ -2212,6 +2301,8 @@ int handleInternalCommands(HandlerArg *a)
         return CmdGeneratePasswordHash(a->argc - 1, &a->argv[1], a->virtualBox, a->session);
     if (!strcmp(pszCmd, "gueststats"))
         return CmdGuestStats(a->argc - 1, &a->argv[1], a->virtualBox, a->session);
+    if (!strcmp(pszCmd, "repairhd"))
+        return CmdRepairHardDisk(a->argc - 1, &a->argv[1], a->virtualBox, a->session);
 
     /* default: */
     return errorSyntax(USAGE_ALL, "Invalid command '%s'", a->argv[0]);
