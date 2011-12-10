@@ -3040,6 +3040,346 @@ static int vhdResize(void *pBackendData, uint64_t cbSize,
     return rc;
 }
 
+/** @copydoc VBOXHDDBACKEND::pfnRepair */
+static DECLCALLBACK(int) vhdRepair(const char *pszFilename, PVDINTERFACE pVDIfsDisk,
+                                   PVDINTERFACE pVDIfsImage, uint32_t fFlags)
+{
+    LogFlowFunc(("pszFilename=\"%s\" pVDIfsDisk=%#p pVDIfsImage=%#p\n", pszFilename, pVDIfsDisk, pVDIfsImage));
+    int rc;
+    PVDINTERFACEERROR pIfError;
+    PVDINTERFACEIOINT pIfIo;
+    PVDIOSTORAGE pStorage;
+    uint64_t cbFile;
+    VHDFooter vhdFooter;
+    VHDDynamicDiskHeader dynamicDiskHeader;
+    uint32_t *paBat = NULL;
+    uint32_t *pu32BlockBitmap = NULL;
+
+    pIfIo = VDIfIoIntGet(pVDIfsImage);
+    AssertPtrReturn(pIfIo, VERR_INVALID_PARAMETER);
+
+    pIfError = VDIfErrorGet(pVDIfsDisk);
+
+    do
+    {
+        uint64_t offDynamicDiskHeader = 0;
+        uint64_t offBat = 0;
+        uint64_t offFooter = 0;
+        uint32_t cBatEntries = 0;
+        bool fDynamic = false;
+        bool fRepairFooter = false;
+        bool fRepairBat = false;
+        bool fRepairDynHeader = false;
+
+        rc = vdIfIoIntFileOpen(pIfIo, pszFilename,
+                               VDOpenFlagsToFileOpenFlags(  fFlags & VD_REPAIR_DRY_RUN
+                                                          ? VD_OPEN_FLAGS_READONLY
+                                                          : 0,
+                                                          false /* fCreate */),
+                               &pStorage);
+        if (RT_FAILURE(rc))
+        {
+            rc = vdIfError(pIfError, rc, RT_SRC_POS, "Failed to open image \"%s\"", pszFilename);
+            break;
+        }
+
+        rc = vdIfIoIntFileGetSize(pIfIo, pStorage, &cbFile);
+        if (RT_FAILURE(rc))
+        {
+            rc = vdIfError(pIfError, rc, RT_SRC_POS, "Failed to query image size");
+            break;
+        }
+
+        if (cbFile < sizeof(VHDFooter))
+        {
+            rc = vdIfError(pIfError, VERR_VD_INVALID_SIZE, RT_SRC_POS,
+                           "Image must be at least %u bytes (got %llu)",
+                           sizeof(VHDFooter), cbFile);
+            break;
+        }
+
+        rc = vdIfIoIntFileReadSync(pIfIo, pStorage, cbFile - sizeof(VHDFooter),
+                                   &vhdFooter, sizeof(VHDFooter), NULL);
+        if (RT_FAILURE(rc))
+        {
+            rc = vdIfError(pIfError, rc, RT_SRC_POS, "Failed to read footer of image");
+            break;
+        }
+
+        if (memcmp(vhdFooter.Cookie, VHD_FOOTER_COOKIE, VHD_FOOTER_COOKIE_SIZE) != 0)
+        {
+            /* Dynamic images have a backup at the beginning of the image. */
+            rc = vdIfIoIntFileReadSync(pIfIo, pStorage, 0,
+                                       &vhdFooter, sizeof(VHDFooter), NULL);
+            if (RT_FAILURE(rc))
+            {
+                rc = vdIfError(pIfError, rc, RT_SRC_POS, "Failed to read header of image");
+                break;
+            }
+
+            /*
+             * Check for the header, if this fails the image is either completely corrupted
+             * and impossible to repair or in another format.
+             */
+            if (memcmp(vhdFooter.Cookie, VHD_FOOTER_COOKIE, VHD_FOOTER_COOKIE_SIZE) != 0)
+            {
+                rc = vdIfError(pIfError, VERR_VD_IMAGE_REPAIR_IMPOSSIBLE, RT_SRC_POS,
+                               "No valid VHD structures found");
+                break;
+            }
+            else
+                vdIfErrorMessage(pIfError, "Missing footer structure, using backup");
+
+            /* Remember to fix the footer structure. */
+            fRepairFooter = true;
+        }
+
+        offFooter = cbFile - sizeof(VHDFooter);
+
+        /* Verify that checksums match. */
+        uint32_t u32ChkSumOld = RT_BE2H_U32(vhdFooter.Checksum);
+        vhdFooter.Checksum = 0;
+        uint32_t u32ChkSum = vhdChecksum(&vhdFooter, sizeof(VHDFooter));
+
+        vhdFooter.Checksum = RT_H2BE_U32(u32ChkSum);
+
+        if (u32ChkSumOld != u32ChkSum)
+        {
+            vdIfErrorMessage(pIfError, "Checksum is invalid (should be %u got %u), repairing",
+                             u32ChkSum, u32ChkSumOld);
+            fRepairFooter = true;
+            break;
+        }
+
+        switch (RT_BE2H_U32(vhdFooter.DiskType))
+        {
+            case VHD_FOOTER_DISK_TYPE_FIXED:
+                fDynamic = false;
+                break;
+            case VHD_FOOTER_DISK_TYPE_DYNAMIC:
+                fDynamic = true;
+                break;
+            case VHD_FOOTER_DISK_TYPE_DIFFERENCING:
+                fDynamic = true;
+                break;
+            default:
+            {
+                rc = vdIfError(pIfError, VERR_VD_IMAGE_REPAIR_IMPOSSIBLE, RT_SRC_POS,
+                               "VHD image type %u is not supported",
+                               RT_BE2H_U32(vhdFooter.DiskType));
+                break;
+            }
+        }
+
+        /* Load and check dynamic disk header if required. */
+        if (fDynamic)
+        {
+            size_t cbBlock;
+
+            offDynamicDiskHeader = RT_BE2H_U64(vhdFooter.DataOffset);
+            if (offDynamicDiskHeader + sizeof(VHDDynamicDiskHeader) > cbFile)
+            {
+                rc = vdIfError(pIfError, VERR_VD_IMAGE_REPAIR_IMPOSSIBLE, RT_SRC_POS,
+                               "VHD image type is not supported");
+                break;
+            }
+
+            rc = vdIfIoIntFileReadSync(pIfIo, pStorage, offDynamicDiskHeader,
+                                       &dynamicDiskHeader, sizeof(VHDDynamicDiskHeader), NULL);
+            if (RT_FAILURE(rc))
+            {
+                rc = vdIfError(pIfError, VERR_VD_IMAGE_REPAIR_IMPOSSIBLE, RT_SRC_POS,
+                               "Failed to read dynamic disk header (at %llu), %Rrc",
+                               offDynamicDiskHeader, rc);
+                break;
+            }
+
+            /* Verify that checksums match. */
+            u32ChkSumOld = RT_BE2H_U32(dynamicDiskHeader.Checksum);
+            dynamicDiskHeader.Checksum = 0;
+            u32ChkSum = vhdChecksum(&dynamicDiskHeader, sizeof(VHDDynamicDiskHeader));
+
+            dynamicDiskHeader.Checksum = RT_H2BE_U32(u32ChkSum);
+
+            if (u32ChkSumOld != u32ChkSum)
+            {
+                vdIfErrorMessage(pIfError, "Checksum of dynamic disk header is invalid (should be %u got %u), repairing",
+                                 u32ChkSum, u32ChkSumOld);
+                fRepairDynHeader = true;
+                break;
+            }
+
+            /* Read the block allocation table and fix any inconsistencies. */
+            offBat = RT_BE2H_U64(dynamicDiskHeader.TableOffset);
+            cBatEntries = RT_BE2H_U32(dynamicDiskHeader.MaxTableEntries);
+            cbBlock = RT_BE2H_U32(dynamicDiskHeader.BlockSize);
+            cbBlock += cbBlock / VHD_SECTOR_SIZE / 8;
+
+            if (offBat + cBatEntries * sizeof(uint32_t) > cbFile)
+            {
+                rc = vdIfError(pIfError, VERR_VD_IMAGE_REPAIR_IMPOSSIBLE, RT_SRC_POS,
+                               "Block allocation table is not inside the image");
+                break;
+            }
+
+            paBat = (uint32_t *)RTMemAllocZ(cBatEntries * sizeof(uint32_t));
+            if (!paBat)
+            {
+                rc = vdIfError(pIfError, VERR_VD_IMAGE_REPAIR_IMPOSSIBLE, RT_SRC_POS,
+                               "Could not allocate memory for the block allocation table (%u bytes)",
+                               cBatEntries * sizeof(uint32_t));
+                break;
+            }
+
+            rc = vdIfIoIntFileReadSync(pIfIo, pStorage, offBat, paBat,
+                                       cBatEntries * sizeof(uint32_t), NULL);
+            if (RT_FAILURE(rc))
+            {
+                rc = vdIfError(pIfError, VERR_VD_IMAGE_REPAIR_IMPOSSIBLE, RT_SRC_POS,
+                               "Could not read block allocation table (at %llu), %Rrc",
+                               offBat, rc);
+                break;
+            }
+
+            pu32BlockBitmap = (uint32_t *)RTMemAllocZ(RT_ALIGN_Z(cBatEntries, 4));
+            if (!pu32BlockBitmap)
+            {
+                rc = vdIfError(pIfError, VERR_NO_MEMORY, RT_SRC_POS,
+                               "Failed to allocate memory for block bitmap");
+                break;
+            }
+
+            uint32_t idxMinBlock = UINT32_C(0xffffffff);
+            for (uint32_t i = 0; i < cBatEntries; i++)
+            {
+                paBat[i] = RT_BE2H_U32(paBat[i]);
+                if (paBat[i] < idxMinBlock)
+                    idxMinBlock = paBat[i];
+            }
+
+            vdIfErrorMessage(pIfError, "First data block at sector %u", idxMinBlock);
+
+            for (uint32_t i = 0; i < cBatEntries; i++)
+            {
+                if (paBat[i] != UINT32_C(0xffffffff))
+                {
+                    uint64_t offBlock =(uint64_t)paBat[i] * VHD_SECTOR_SIZE;
+
+                    /*
+                     * Check that the offsets are valid (inside of the image) and
+                     * that there are no double references.
+                     */
+                    if (offBlock + cbBlock > cbFile)
+                    {
+                        vdIfErrorMessage(pIfError, "Entry %u points to invalid offset %llu, clearing",
+                                         i, offBlock);
+                        paBat[i] = 0;
+                        fRepairBat = true;
+                    }
+                    else if (offBlock + cbBlock > offFooter)
+                    {
+                        vdIfErrorMessage(pIfError, "Entry %u intersects with footer, aligning footer",
+                                         i);
+                        offFooter = offBlock + cbBlock;
+                        fRepairBat = true;
+                    }
+
+                    if (ASMBitTestAndSet(pu32BlockBitmap, (paBat[i] - idxMinBlock) / (cbBlock / VHD_SECTOR_SIZE)))
+                    {
+                        vdIfErrorMessage(pIfError, "Entry %u points to an already referenced data block, clearing",
+                                         i);
+                        paBat[i] = 0;
+                        fRepairBat = true;
+                    }
+                }
+            }
+        }
+
+        /* Write repaired structures now. */
+        if (!(fRepairBat || fRepairDynHeader || fRepairFooter))
+            vdIfErrorMessage(pIfError, "VHD image is in a consistent state, no repair required");
+        else if (!(fFlags & VD_REPAIR_DRY_RUN))
+        {
+            if (fRepairBat)
+            {
+                for (uint32_t i = 0; i < cBatEntries; i++)
+                    paBat[i] = RT_H2BE_U32(paBat[i]);
+
+                vdIfErrorMessage(pIfError, "Writing repaired block allocation table...");
+
+                rc = vdIfIoIntFileWriteSync(pIfIo, pStorage, offBat, paBat,
+                                            cBatEntries * sizeof(uint32_t), NULL);
+                if (RT_FAILURE(rc))
+                {
+                    rc = vdIfError(pIfError, VERR_VD_IMAGE_REPAIR_IMPOSSIBLE, RT_SRC_POS,
+                                   "Could not write repaired block allocation table (at %llu), %Rrc",
+                                   offBat, rc);
+                    break;
+                }
+            }
+
+            if (fRepairDynHeader)
+            {
+                Assert(fDynamic);
+
+                vdIfErrorMessage(pIfError, "Writing repaired dynamic disk header...");
+                rc = vdIfIoIntFileWriteSync(pIfIo, pStorage, offDynamicDiskHeader, &dynamicDiskHeader,
+                                            sizeof(VHDDynamicDiskHeader), NULL);
+                if (RT_FAILURE(rc))
+                {
+                    rc = vdIfError(pIfError, VERR_VD_IMAGE_REPAIR_IMPOSSIBLE, RT_SRC_POS,
+                                   "Could not write repaired dynamic disk header (at %llu), %Rrc",
+                                   offDynamicDiskHeader, rc);
+                    break;
+                }
+            }
+
+            if (fRepairFooter)
+            {
+                vdIfErrorMessage(pIfError, "Writing repaired Footer...");
+
+                if (fDynamic)
+                {
+                    /* Write backup at image beginning. */
+                    rc = vdIfIoIntFileWriteSync(pIfIo, pStorage, 0, &vhdFooter,
+                                                sizeof(VHDFooter), NULL);
+                    if (RT_FAILURE(rc))
+                    {
+                        rc = vdIfError(pIfError, VERR_VD_IMAGE_REPAIR_IMPOSSIBLE, RT_SRC_POS,
+                                       "Could not write repaired backup footer (at %llu), %Rrc",
+                                       0, rc);
+                        break;
+                    }
+                }
+
+                rc = vdIfIoIntFileWriteSync(pIfIo, pStorage, offFooter, &vhdFooter,
+                                            sizeof(VHDFooter), NULL);
+                if (RT_FAILURE(rc))
+                {
+                    rc = vdIfError(pIfError, VERR_VD_IMAGE_REPAIR_IMPOSSIBLE, RT_SRC_POS,
+                                   "Could not write repaired footer (at %llu), %Rrc",
+                                   cbFile - sizeof(VHDFooter), rc);
+                    break;
+                }
+            }
+
+            vdIfErrorMessage(pIfError, "Corrupted VHD image repaired successfully");
+        }
+    } while(0);
+
+    if (paBat)
+        RTMemFree(paBat);
+
+    if (pu32BlockBitmap)
+        RTMemFree(pu32BlockBitmap);
+
+    if (pStorage)
+        vdIfIoIntFileClose(pIfIo, pStorage);
+
+    LogFlowFunc(("returns %Rrc\n", rc));
+    return rc;
+}
+
 
 VBOXHDDBACKEND g_VhdBackend =
 {
@@ -3144,5 +3484,5 @@ VBOXHDDBACKEND g_VhdBackend =
     /* pfnAsyncDiscard */
     NULL,
     /* pfnRepair */
-    NULL
+    vhdRepair
 };
