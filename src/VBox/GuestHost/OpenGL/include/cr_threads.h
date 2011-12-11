@@ -112,7 +112,7 @@ typedef enum {
 } CRTSDREFDATA_STATE;
 
 #define CRTSDREFDATA \
-    volatile uint32_t cTsdRefs; \
+    volatile int32_t cTsdRefs; \
     uint32_t enmTsdRefState; \
     PFNCRTSDREFDTOR pfnTsdRefDtor; \
 
