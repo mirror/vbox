@@ -6842,41 +6842,61 @@ static DECLCALLBACK(bool) ahciNotifyQueueConsumer(PPDMDEVINS pDevIns, PPDMQUEUEI
                             AssertMsgFailed(("%s: Failed to process command %Rrc\n", __FUNCTION__, rc));
                     }
 
-                    if (enmTxDir == AHCITXDIR_FLUSH)
+                    if (pAhciPortTaskState->cbSGBuffers < pAhciPortTaskState->cbTransfer)
                     {
-                        rc = pAhciPort->pDrvBlockAsync->pfnStartFlush(pAhciPort->pDrvBlockAsync,
-                                                                      pAhciPortTaskState);
-                    }
-                    else if (enmTxDir == AHCITXDIR_TRIM)
-                    {
-                        rc = ahciTrimRangesCreate(pAhciPort, pAhciPortTaskState);
-                        if (RT_SUCCESS(rc))
-                        {
-                            pAhciPort->Led.Asserted.s.fWriting = pAhciPort->Led.Actual.s.fWriting = 1;
-                            rc = pAhciPort->pDrvBlockAsync->pfnStartDiscard(pAhciPort->pDrvBlockAsync, pAhciPortTaskState->paRanges,
-                                                                            pAhciPortTaskState->cRanges, pAhciPortTaskState);
-                        }
-                    }
-                    else if (enmTxDir == AHCITXDIR_READ)
-                    {
-                        pAhciPort->Led.Asserted.s.fReading = pAhciPort->Led.Actual.s.fReading = 1;
-                        rc = pAhciPort->pDrvBlockAsync->pfnStartRead(pAhciPort->pDrvBlockAsync, pAhciPortTaskState->uOffset,
-                                                                     pAhciPortTaskState->pSGListHead, pAhciPortTaskState->cSGListUsed,
-                                                                     pAhciPortTaskState->cbTransfer,
-                                                                     pAhciPortTaskState);
+                        /*
+                         * The guest tried to transfer more data than there is space in the buffer.
+                         * Terminate task and set the overflow bit.
+                         */
+                        ASMAtomicCmpXchgSize(&pAhciPortTaskState->enmTxState, AHCITXSTATE_FREE, AHCITXSTATE_ACTIVE, fXchg);
+                        AssertMsg(fXchg, ("Task is not active\n"));
+
+                        /* Add the task to the cache. */
+                        pAhciPort->aCachedTasks[pAhciPortTaskState->uTag] = pAhciPortTaskState;
+
+                        /* Notify the guest. */
+                        ASMAtomicOrU32(&pAhciPort->regIS, AHCI_PORT_IS_OFS);
+                        if (pAhciPort->regIE & AHCI_PORT_IE_OFE)
+                            ahciHbaSetInterrupt(pAhciPort->CTX_SUFF(pAhci), pAhciPort->iLUN, VERR_IGNORED);
                     }
                     else
                     {
-                        pAhciPort->Led.Asserted.s.fWriting = pAhciPort->Led.Actual.s.fWriting = 1;
-                        rc = pAhciPort->pDrvBlockAsync->pfnStartWrite(pAhciPort->pDrvBlockAsync, pAhciPortTaskState->uOffset,
-                                                                      pAhciPortTaskState->pSGListHead, pAhciPortTaskState->cSGListUsed,
-                                                                      pAhciPortTaskState->cbTransfer,
-                                                                      pAhciPortTaskState);
+                        if (enmTxDir == AHCITXDIR_FLUSH)
+                        {
+                            rc = pAhciPort->pDrvBlockAsync->pfnStartFlush(pAhciPort->pDrvBlockAsync,
+                                                                          pAhciPortTaskState);
+                        }
+                        else if (enmTxDir == AHCITXDIR_TRIM)
+                        {
+                            rc = ahciTrimRangesCreate(pAhciPort, pAhciPortTaskState);
+                            if (RT_SUCCESS(rc))
+                            {
+                                pAhciPort->Led.Asserted.s.fWriting = pAhciPort->Led.Actual.s.fWriting = 1;
+                                rc = pAhciPort->pDrvBlockAsync->pfnStartDiscard(pAhciPort->pDrvBlockAsync, pAhciPortTaskState->paRanges,
+                                                                                pAhciPortTaskState->cRanges, pAhciPortTaskState);
+                            }
+                        }
+                        else if (enmTxDir == AHCITXDIR_READ)
+                        {
+                            pAhciPort->Led.Asserted.s.fReading = pAhciPort->Led.Actual.s.fReading = 1;
+                            rc = pAhciPort->pDrvBlockAsync->pfnStartRead(pAhciPort->pDrvBlockAsync, pAhciPortTaskState->uOffset,
+                                                                         pAhciPortTaskState->pSGListHead, pAhciPortTaskState->cSGListUsed,
+                                                                         pAhciPortTaskState->cbTransfer,
+                                                                         pAhciPortTaskState);
+                        }
+                        else
+                        {
+                            pAhciPort->Led.Asserted.s.fWriting = pAhciPort->Led.Actual.s.fWriting = 1;
+                            rc = pAhciPort->pDrvBlockAsync->pfnStartWrite(pAhciPort->pDrvBlockAsync, pAhciPortTaskState->uOffset,
+                                                                          pAhciPortTaskState->pSGListHead, pAhciPortTaskState->cSGListUsed,
+                                                                          pAhciPortTaskState->cbTransfer,
+                                                                          pAhciPortTaskState);
+                        }
+                        if (rc == VINF_VD_ASYNC_IO_FINISHED)
+                            rc = ahciTransferComplete(pAhciPort, pAhciPortTaskState, VINF_SUCCESS);
+                        else if (RT_FAILURE(rc) && rc != VERR_VD_ASYNC_IO_IN_PROGRESS)
+                            rc = ahciTransferComplete(pAhciPort, pAhciPortTaskState, rc);
                     }
-                    if (rc == VINF_VD_ASYNC_IO_FINISHED)
-                        rc = ahciTransferComplete(pAhciPort, pAhciPortTaskState, VINF_SUCCESS);
-                    else if (RT_FAILURE(rc) && rc != VERR_VD_ASYNC_IO_IN_PROGRESS)
-                        rc = ahciTransferComplete(pAhciPort, pAhciPortTaskState, rc);
                 }
                 else
                 {
@@ -7109,8 +7129,8 @@ static DECLCALLBACK(int) ahciAsyncIOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
                 }
                 else if (enmTxDir != AHCITXDIR_NONE)
                 {
-                    uint64_t uOffset;
-                    size_t cbTransfer;
+                    uint64_t uOffset = 0;
+                    size_t cbTransfer = 0;
                     PRTSGSEG pSegCurr;
                     PAHCIPORTTASKSTATESGENTRY pSGInfoCurr;
 
@@ -7118,110 +7138,127 @@ static DECLCALLBACK(int) ahciAsyncIOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
                     if (RT_FAILURE(rc))
                         AssertMsgFailed(("%s: Failed to get number of list elments %Rrc\n", __FUNCTION__, rc));
 
-                    STAM_REL_COUNTER_INC(&pAhciPort->StatDMA);
-
-                    /* Initialize all values. */
-                    uOffset     = pAhciPortTaskState->uOffset;
-                    cbTransfer  = pAhciPortTaskState->cbTransfer;
-                    pSegCurr    = &pAhciPortTaskState->pSGListHead[0];
-                    pSGInfoCurr = pAhciPortTaskState->paSGEntries;
-
-                    STAM_PROFILE_START(&pAhciPort->StatProfileReadWrite, b);
-
-                    while (cbTransfer)
+                    if (pAhciPortTaskState->cbSGBuffers < pAhciPortTaskState->cbTransfer)
                     {
-                        size_t cbProcess = (cbTransfer < pSegCurr->cbSeg) ? cbTransfer : pSegCurr->cbSeg;
+                        /*
+                         * The guest tried to transfer more data than there is space in the buffer.
+                         * Terminate task and set the overflow bit.
+                         */
+                        int rc2 = ahciScatterGatherListDestroy(pAhciPort, pAhciPortTaskState);
+                        AssertMsgRC(rc2, ("Destroying task list failed rc=%Rrc\n", rc2));
 
-                        AssertMsg(!(pSegCurr->cbSeg % 512), ("Buffer is not sector aligned cbSeg=%d\n", pSegCurr->cbSeg));
-                        AssertMsg(!(uOffset % 512), ("Offset is not sector aligned %llu\n", uOffset));
-                        AssertMsg(!(cbProcess % 512), ("Number of bytes to process is not sector aligned %lu\n", cbProcess));
-
-                        if (enmTxDir == AHCITXDIR_READ)
-                        {
-                            pAhciPort->Led.Asserted.s.fReading = pAhciPort->Led.Actual.s.fReading = 1;
-                            rc = pAhciPort->pDrvBlock->pfnRead(pAhciPort->pDrvBlock, uOffset,
-                                                               pSegCurr->pvSeg, cbProcess);
-                            pAhciPort->Led.Actual.s.fReading = 0;
-                            if (RT_FAILURE(rc))
-                                break;
-
-                            STAM_REL_COUNTER_ADD(&pAhciPort->StatBytesRead, cbProcess);
-                        }
-                        else
-                        {
-                            pAhciPort->Led.Asserted.s.fWriting = pAhciPort->Led.Actual.s.fWriting = 1;
-                            rc = pAhciPort->pDrvBlock->pfnWrite(pAhciPort->pDrvBlock, uOffset,
-                                                                pSegCurr->pvSeg, cbProcess);
-                            pAhciPort->Led.Actual.s.fWriting = 0;
-                            if (RT_FAILURE(rc))
-                                break;
-
-                            STAM_REL_COUNTER_ADD(&pAhciPort->StatBytesWritten, cbProcess);
-                        }
-
-                        /* Go to the next entry. */
-                        uOffset    += cbProcess;
-                        cbTransfer -= cbProcess;
-                        pSegCurr++;
-                        pSGInfoCurr++;
+                       /* Notify the guest. */
+                        ASMAtomicOrU32(&pAhciPort->regIS, AHCI_PORT_IS_OFS);
+                        if (pAhciPort->regIE & AHCI_PORT_IE_OFE)
+                            ahciHbaSetInterrupt(pAhciPort->CTX_SUFF(pAhci), pAhciPort->iLUN, VERR_IGNORED);
                     }
-
-                    STAM_PROFILE_STOP(&pAhciPort->StatProfileReadWrite, b);
-
-                    /* Log the error. */
-                    if (   RT_FAILURE(rc)
-                        && pAhciPort->cErrors++ < MAX_LOG_REL_ERRORS)
+                    else
                     {
-                        LogRel(("AHCI#%u: %s at offset %llu (%u bytes left) returned rc=%Rrc\n",
-                                pAhciPort->iLUN,
-                                enmTxDir == AHCITXDIR_READ
-                                ? "Read"
-                                : "Write",
-                                uOffset, cbTransfer, rc));
-                    }
+                        STAM_REL_COUNTER_INC(&pAhciPort->StatDMA);
 
-                    /* Cleanup. */
-                    int rc2 = ahciScatterGatherListDestroy(pAhciPort, pAhciPortTaskState);
-                    if (RT_FAILURE(rc2))
-                        AssertMsgFailed(("Destroying task list failed rc=%Rrc\n", rc));
+                        /* Initialize all values. */
+                        uOffset     = pAhciPortTaskState->uOffset;
+                        cbTransfer  = pAhciPortTaskState->cbTransfer;
+                        pSegCurr    = &pAhciPortTaskState->pSGListHead[0];
+                        pSGInfoCurr = pAhciPortTaskState->paSGEntries;
 
-                    if (RT_LIKELY(!pAhciPort->fPortReset))
-                    {
-                        pAhciPortTaskState->cmdHdr.u32PRDBC = pAhciPortTaskState->cbTransfer - cbTransfer;
-                        if (RT_FAILURE(rc))
+                        STAM_PROFILE_START(&pAhciPort->StatProfileReadWrite, b);
+
+                        while (cbTransfer)
                         {
-                            if (!ahciIsRedoSetWarning(pAhciPort, rc))
+                            size_t cbProcess = (cbTransfer < pSegCurr->cbSeg) ? cbTransfer : pSegCurr->cbSeg;
+
+                            AssertMsg(!(pSegCurr->cbSeg % 512), ("Buffer is not sector aligned cbSeg=%d\n", pSegCurr->cbSeg));
+                            AssertMsg(!(uOffset % 512), ("Offset is not sector aligned %llu\n", uOffset));
+                            AssertMsg(!(cbProcess % 512), ("Number of bytes to process is not sector aligned %lu\n", cbProcess));
+
+                            if (enmTxDir == AHCITXDIR_READ)
                             {
-                                pAhciPortTaskState->uATARegError = ID_ERR;
-                                pAhciPortTaskState->uATARegStatus = ATA_STAT_READY | ATA_STAT_ERR;
+                                pAhciPort->Led.Asserted.s.fReading = pAhciPort->Led.Actual.s.fReading = 1;
+                                rc = pAhciPort->pDrvBlock->pfnRead(pAhciPort->pDrvBlock, uOffset,
+                                                                   pSegCurr->pvSeg, cbProcess);
+                                pAhciPort->Led.Actual.s.fReading = 0;
+                                if (RT_FAILURE(rc))
+                                    break;
+
+                                STAM_REL_COUNTER_ADD(&pAhciPort->StatBytesRead, cbProcess);
                             }
                             else
                             {
-                                /* Add the task to the mask again. */
-                                ASMAtomicOrU32(&pAhciPort->u32TasksNew, (1 << pAhciPortTaskState->uTag));
+                                pAhciPort->Led.Asserted.s.fWriting = pAhciPort->Led.Actual.s.fWriting = 1;
+                                rc = pAhciPort->pDrvBlock->pfnWrite(pAhciPort->pDrvBlock, uOffset,
+                                                                    pSegCurr->pvSeg, cbProcess);
+                                pAhciPort->Led.Actual.s.fWriting = 0;
+                                if (RT_FAILURE(rc))
+                                    break;
+
+                                STAM_REL_COUNTER_ADD(&pAhciPort->StatBytesWritten, cbProcess);
                             }
-                        }
-                        else
-                        {
-                            pAhciPortTaskState->uATARegError = 0;
-                            pAhciPortTaskState->uATARegStatus = ATA_STAT_READY | ATA_STAT_SEEK;
+
+                            /* Go to the next entry. */
+                            uOffset    += cbProcess;
+                            cbTransfer -= cbProcess;
+                            pSegCurr++;
+                            pSGInfoCurr++;
                         }
 
-                        if (!pAhciPort->fRedo)
-                        {
-                            /* Write updated command header into memory of the guest. */
-                            PDMDevHlpPhysWrite(pAhciPort->CTX_SUFF(pDevIns), pAhciPortTaskState->GCPhysCmdHdrAddr,
-                                               &pAhciPortTaskState->cmdHdr, sizeof(CmdHdr));
+                        STAM_PROFILE_STOP(&pAhciPort->StatProfileReadWrite, b);
 
-                            if (pAhciPortTaskState->fQueued)
-                                ASMAtomicOrU32(&pAhciPort->u32QueuedTasksFinished, (1 << pAhciPortTaskState->uTag));
+                        /* Log the error. */
+                        if (   RT_FAILURE(rc)
+                            && pAhciPort->cErrors++ < MAX_LOG_REL_ERRORS)
+                        {
+                            LogRel(("AHCI#%u: %s at offset %llu (%u bytes left) returned rc=%Rrc\n",
+                                    pAhciPort->iLUN,
+                                    enmTxDir == AHCITXDIR_READ
+                                    ? "Read"
+                                    : "Write",
+                                    uOffset, cbTransfer, rc));
+                        }
+
+                        /* Cleanup. */
+                        int rc2 = ahciScatterGatherListDestroy(pAhciPort, pAhciPortTaskState);
+                        if (RT_FAILURE(rc2))
+                            AssertMsgFailed(("Destroying task list failed rc=%Rrc\n", rc));
+
+                        if (RT_LIKELY(!pAhciPort->fPortReset))
+                        {
+                            pAhciPortTaskState->cmdHdr.u32PRDBC = pAhciPortTaskState->cbTransfer - cbTransfer;
+                            if (RT_FAILURE(rc))
+                            {
+                                if (!ahciIsRedoSetWarning(pAhciPort, rc))
+                                {
+                                    pAhciPortTaskState->uATARegError = ID_ERR;
+                                    pAhciPortTaskState->uATARegStatus = ATA_STAT_READY | ATA_STAT_ERR;
+                                }
+                                else
+                                {
+                                    /* Add the task to the mask again. */
+                                    ASMAtomicOrU32(&pAhciPort->u32TasksNew, (1 << pAhciPortTaskState->uTag));
+                                }
+                            }
                             else
                             {
-                                /* Task is not queued send D2H FIS */
-                                ahciSendD2HFis(pAhciPort, pAhciPortTaskState, &pAhciPortTaskState->cmdFis[0], true);
+                                pAhciPortTaskState->uATARegError = 0;
+                                pAhciPortTaskState->uATARegStatus = ATA_STAT_READY | ATA_STAT_SEEK;
                             }
 
-                            uIORequestsProcessed++;
+                            if (!pAhciPort->fRedo)
+                            {
+                                /* Write updated command header into memory of the guest. */
+                                PDMDevHlpPhysWrite(pAhciPort->CTX_SUFF(pDevIns), pAhciPortTaskState->GCPhysCmdHdrAddr,
+                                                   &pAhciPortTaskState->cmdHdr, sizeof(CmdHdr));
+
+                                if (pAhciPortTaskState->fQueued)
+                                    ASMAtomicOrU32(&pAhciPort->u32QueuedTasksFinished, (1 << pAhciPortTaskState->uTag));
+                                else
+                                {
+                                    /* Task is not queued send D2H FIS */
+                                    ahciSendD2HFis(pAhciPort, pAhciPortTaskState, &pAhciPortTaskState->cmdFis[0], true);
+                                }
+
+                                uIORequestsProcessed++;
+                            }
                         }
                     }
                 }
