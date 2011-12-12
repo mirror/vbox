@@ -81,33 +81,60 @@ typedef struct COPYCONTEXT
 /**
  * An entry for a source element, including an optional DOS-like wildcard (*,?).
  */
-typedef struct SOURCEFILEENTRY
+class SOURCEFILEENTRY
 {
-    SOURCEFILEENTRY(const char *pszSource, const char *pszFilter)
-                    : mSource(pszSource),
-                      mFilter(pszFilter) {}
-    SOURCEFILEENTRY(const char *pszSource)
-                    : mSource(pszSource)
-    {
-        if (   !RTFileExists(pszSource)
-            && !RTDirExists(pszSource))
+    public:
+
+        SOURCEFILEENTRY(const char *pszSource, const char *pszFilter)
+                        : mSource(pszSource),
+                          mFilter(pszFilter) {}
+
+        SOURCEFILEENTRY(const char *pszSource)
+                        : mSource(pszSource)
         {
-            /* No file and no directory -- maybe a filter? */
-            char *pszFilename = RTPathFilename(pszSource);
-            if (   pszFilename
-                && strpbrk(pszFilename, "*?"))
-            {
-                /* Yep, get the actual filter part. */
-                mFilter = RTPathFilename(pszSource);
-                /* Remove the filter from actual sourcec directory name. */
-                RTPathStripFilename(mSource.mutableRaw());
-                mSource.jolt();
-            }
+            Parse(pszSource);
         }
-    }
-    Utf8Str mSource;
-    Utf8Str mFilter;
-} SOURCEFILEENTRY, *PSOURCEFILEENTRY;
+
+        const char* GetSource() const
+        {
+            return mSource.c_str();
+        }
+
+        const char* GetFilter() const
+        {
+            return mFilter.c_str();
+        }
+
+    private:
+
+        int Parse(const char *pszPath)
+        {
+            AssertPtrReturn(pszPath, VERR_INVALID_POINTER);
+
+            if (   !RTFileExists(pszPath)
+                && !RTDirExists(pszPath))
+            {
+                /* No file and no directory -- maybe a filter? */
+                char *pszFilename = RTPathFilename(pszPath);
+                if (   pszFilename
+                    && strpbrk(pszFilename, "*?"))
+                {
+                    /* Yep, get the actual filter part. */
+                    mFilter = RTPathFilename(pszPath);
+                    /* Remove the filter from actual sourcec directory name. */
+                    RTPathStripFilename(mSource.mutableRaw());
+                    mSource.jolt();
+                }
+            }
+
+            return VINF_SUCCESS; /* @todo */
+        }
+
+    private:
+
+        Utf8Str mSource;
+        Utf8Str mFilter;
+};
 typedef std::vector<SOURCEFILEENTRY> SOURCEVEC, *PSOURCEVEC;
 
 /**
@@ -196,6 +223,8 @@ enum OUTPUTTYPE
     OUTPUTTYPE_DOS2UNIX  = 10,
     OUTPUTTYPE_UNIX2DOS  = 20
 };
+
+static int ctrlCopyDirExists(PCOPYCONTEXT pContext, bool bGuest, const char *pszDir, bool *fExists);
 
 #endif /* VBOX_ONLY_DOCS */
 
@@ -961,16 +990,47 @@ static int ctrlCopyTranslatePath(const char *pszSourceRoot, const char *pszSourc
     char szTranslated[RTPATH_MAX];
     size_t srcOff = strlen(pszSourceRoot);
     AssertReturn(srcOff, VERR_INVALID_PARAMETER);
-    int rc = RTPathJoin(szTranslated, sizeof(szTranslated),
-                        pszDest, &pszSource[srcOff]);
+
+    char *pszDestPath = RTStrDup(pszDest);
+    AssertPtrReturn(pszDestPath, VERR_NO_MEMORY);
+
+    int rc;
+    if (!RTPathFilename(pszDestPath))
+    {
+        rc = RTPathJoin(szTranslated, sizeof(szTranslated),
+                        pszDestPath, &pszSource[srcOff]);
+    }
+    else
+    {
+        char *pszDestFileName = RTStrDup(RTPathFilename(pszDestPath));
+        if (pszDestFileName)
+        {
+            RTPathStripFilename(pszDestPath);
+            rc = RTPathJoin(szTranslated, sizeof(szTranslated),
+                            pszDestPath, pszDestFileName);
+            RTStrFree(pszDestFileName);
+        }
+        else
+            rc = VERR_NO_MEMORY;
+    }
+    RTStrFree(pszDestPath);
+
     if (RT_SUCCESS(rc))
+    {
         *ppszTranslated = RTStrDup(szTranslated);
+#ifdef DEBUG
+        RTPrintf("Root: %s, Source: %s, Dest: %s, Translated: %s\n",
+                 pszSourceRoot, pszSource, pszDest, *ppszTranslated);
+#endif
+    }
     return rc;
 }
 
 #ifdef DEBUG_andy
 static int tstTranslatePath()
 {
+    RTAssertSetMayPanic(false /* Do not freak out, please. */);
+
     static struct
     {
         const char *pszSourceRoot;
@@ -982,15 +1042,20 @@ static int tstTranslatePath()
     {
         /* Invalid stuff. */
         { NULL, NULL, NULL, NULL, VERR_INVALID_POINTER },
+#ifdef RT_OS_WINDOWS
         /* Windows paths. */
         { "c:\\foo", "c:\\foo\\bar.txt", "c:\\test", "c:\\test\\bar.txt", VINF_SUCCESS },
-        { "c:\\foo", "c:\\foo\\baz\\bar.txt", "c:\\test", "c:\\test\\baz\\bar.txt", VINF_SUCCESS }
-        /* UNIX-like paths. */
+        { "c:\\foo", "c:\\foo\\baz\\bar.txt", "c:\\test", "c:\\test\\baz\\bar.txt", VINF_SUCCESS },
+#else /* RT_OS_WINDOWS */
+        { "/home/test/foo", "/home/test/foo/bar.txt", "/opt/test", "/opt/test/bar.txt", VINF_SUCCESS },
+        { "/home/test/foo", "/home/test/foo/baz/bar.txt", "/opt/test", "/opt/test/baz/bar.txt", VINF_SUCCESS },
+#endif /* !RT_OS_WINDOWS */
         /* Mixed paths*/
         /** @todo */
+        { NULL }
     };
 
-    int iTest = 0;
+    size_t iTest = 0;
     for (iTest; iTest < RT_ELEMENTS(aTests); iTest++)
     {
         RTPrintf("=> Test %d\n", iTest);
@@ -1036,6 +1101,14 @@ static int ctrlCopyDirCreate(PCOPYCONTEXT pContext, const char *pszDir)
     AssertPtrReturn(pContext, VERR_INVALID_POINTER);
     AssertPtrReturn(pszDir, VERR_INVALID_POINTER);
 
+    bool fDirExists;
+    if (ctrlCopyDirExists(pContext, pContext->fHostToGuest, pszDir, &fDirExists))
+    {
+        if (pContext->fVerbose)
+            RTPrintf("Directory \"%s\" already exists\n", pszDir);
+        return VINF_SUCCESS;
+    }
+
     if (pContext->fVerbose)
         RTPrintf("Creating directory \"%s\" ...\n", pszDir);
 
@@ -1047,7 +1120,7 @@ static int ctrlCopyDirCreate(PCOPYCONTEXT pContext, const char *pszDir)
     {
         HRESULT hrc = pContext->pGuest->DirectoryCreate(Bstr(pszDir).raw(),
                                                         Bstr(pContext->pszUsername).raw(), Bstr(pContext->pszPassword).raw(),
-                                                        700, DirectoryCreateFlag_Parents);
+                                                        0700, DirectoryCreateFlag_Parents);
         if (FAILED(hrc))
             rc = ctrlPrintError(pContext->pGuest, COM_IIDOF(IGuest));
     }
@@ -1285,7 +1358,7 @@ static int ctrlCopyDirToGuest(PCOPYCONTEXT pContext,
         rc = RTPathAppend(szCurDir, sizeof(szCurDir), pszSubDir);
 
     if (pContext->fVerbose)
-        RTPrintf("Processing directory: %s\n", szCurDir);
+        RTPrintf("Processing host directory: %s\n", szCurDir);
 
     /* Flag indicating whether the current directory was created on the
      * target or not. */
@@ -1454,7 +1527,7 @@ static int ctrlCopyDirToHost(PCOPYCONTEXT pContext,
         return rc;
 
     if (pContext->fVerbose)
-        RTPrintf("Processing directory: %s\n", szCurDir);
+        RTPrintf("Processing guest directory: %s\n", szCurDir);
 
     /* Flag indicating whether the current directory was created on the
      * target or not. */
@@ -1760,8 +1833,8 @@ static int handleCtrlCopyTo(ComPtr<IGuest> guest, HandlerArg *pArg,
             case VINF_GETOPT_NOT_OPTION:
             {
                 /* Last argument and no destination specified with
-                 * --target-directory yet? Then use the current argument
-                 * as destination. */
+                 * --target-directory yet? Then use the current
+                 * (= last) argument as destination. */
                 if (   pArg->argc == GetState.iNext
                     && Utf8Dest.isEmpty())
                 {
@@ -1819,13 +1892,20 @@ static int handleCtrlCopyTo(ComPtr<IGuest> guest, HandlerArg *pArg,
 
     /* If the destination is a path, (try to) create it. */
     const char *pszDest = Utf8Dest.c_str();
-    AssertPtr(pszDest);
-    size_t lenDest = strlen(pszDest);
-    if (   lenDest
-         ||pszDest[lenDest - 1] == '/'
-        || pszDest[lenDest - 1] == '\\')
+    if (!RTPathFilename(pszDest))
     {
         vrc = ctrlCopyDirCreate(pContext, pszDest);
+    }
+    else
+    {
+        /* We assume we got a file name as destination -- so strip
+         * the actual file name and make sure the appropriate
+         * directories get created. */
+        char *pszDestDir = RTStrDup(pszDest);
+        AssertPtr(pszDestDir);
+        RTPathStripFilename(pszDestDir);
+        vrc = ctrlCopyDirCreate(pContext, pszDestDir);
+        RTStrFree(pszDestDir);
     }
 
     if (RT_SUCCESS(vrc))
@@ -1836,9 +1916,9 @@ static int handleCtrlCopyTo(ComPtr<IGuest> guest, HandlerArg *pArg,
          */
         for (unsigned long s = 0; s < vecSources.size(); s++)
         {
-            char *pszSource = RTStrDup(vecSources[s].mSource.c_str());
+            char *pszSource = RTStrDup(vecSources[s].GetSource());
             AssertPtrBreakStmt(pszSource, vrc = VERR_NO_MEMORY);
-            const char *pszFilter = vecSources[s].mFilter.c_str();
+            const char *pszFilter = vecSources[s].GetFilter();
             if (!strlen(pszFilter))
                 pszFilter = NULL; /* If empty filter then there's no filter :-) */
 
@@ -1854,19 +1934,19 @@ static int handleCtrlCopyTo(ComPtr<IGuest> guest, HandlerArg *pArg,
                 RTPrintf("Source: %s\n", pszSource);
 
             /** @todo Files with filter?? */
-            bool fIsFile = false;
-            bool fExists;
+            bool fSourceIsFile = false;
+            bool fSourceExists;
 
             size_t cchSource = strlen(pszSource);
             if (   cchSource > 1
                 && RTPATH_IS_SLASH(pszSource[cchSource - 1]))
             {
                 if (pszFilter) /* Directory with filter (so use source root w/o the actual filter). */
-                    vrc = ctrlCopyDirExistsOnSource(pContext, pszSourceRoot, &fExists);
+                    vrc = ctrlCopyDirExistsOnSource(pContext, pszSourceRoot, &fSourceExists);
                 else /* Regular directory without filter. */
-                    vrc = ctrlCopyDirExistsOnSource(pContext, pszSource, &fExists);
+                    vrc = ctrlCopyDirExistsOnSource(pContext, pszSource, &fSourceExists);
 
-                if (fExists)
+                if (fSourceExists)
                 {
                     /* Strip trailing slash from our source element so that other functions
                      * can use this stuff properly (like RTPathStartsWith). */
@@ -1875,18 +1955,18 @@ static int handleCtrlCopyTo(ComPtr<IGuest> guest, HandlerArg *pArg,
             }
             else
             {
-                vrc = ctrlCopyFileExistsOnSource(pContext, pszSource, &fExists);
+                vrc = ctrlCopyFileExistsOnSource(pContext, pszSource, &fSourceExists);
                 if (   RT_SUCCESS(vrc)
-                    && fExists)
+                    && fSourceExists)
                 {
-                    fIsFile = true;
+                    fSourceIsFile = true;
                 }
             }
 
             if (   RT_SUCCESS(vrc)
-                && fExists)
+                && fSourceExists)
             {
-                if (fIsFile)
+                if (fSourceIsFile)
                 {
                     /* Single file. */
                     char *pszDestFile;
@@ -1913,7 +1993,7 @@ static int handleCtrlCopyTo(ComPtr<IGuest> guest, HandlerArg *pArg,
             ctrlCopyFreeSourceRoot(pszSourceRoot);
 
             if (   RT_SUCCESS(vrc)
-                && !fExists)
+                && !fSourceExists)
             {
                 RTMsgError("Warning: Source \"%s\" does not exist, skipping!\n",
                            pszSource);
