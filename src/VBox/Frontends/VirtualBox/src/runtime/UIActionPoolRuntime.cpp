@@ -457,6 +457,7 @@ public:
     MenuOpticalDevicesAction(QObject *pParent)
         : UIMenuAction(pParent, ":/cd_16px.png", ":/cd_disabled_16px.png")
     {
+        qobject_cast<UIMenuInterface*>(menu())->setShowToolTips(true);
         retranslateUi();
     }
 
@@ -477,6 +478,7 @@ public:
     MenuFloppyDevicesAction(QObject *pParent)
         : UIMenuAction(pParent, ":/fd_16px.png", ":/fd_disabled_16px.png")
     {
+        qobject_cast<UIMenuInterface*>(menu())->setShowToolTips(true);
         retranslateUi();
     }
 
