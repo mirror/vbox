@@ -145,22 +145,27 @@ HRESULT Guest::fileQueryInfoInternal(IN_BSTR aFile,
         if (SUCCEEDED(hr))
         {
             int rc = VINF_SUCCESS;
-            const char *pszFsType = stdOut[0].GetString("ftype");
-            if (!pszFsType) /* Attribute missing? */
+            if (stdOut.size())
+            {
+                const char *pszFsType = stdOut[0].GetString("ftype");
+                if (!pszFsType) /* Attribute missing? */
+                    rc = VERR_NOT_FOUND;
+                if (   RT_SUCCESS(rc)
+                    && strcmp(pszFsType, "-")) /* Regular file? */
+                {
+                    rc = VERR_FILE_NOT_FOUND;
+                    /* This is not critical for Main, so don't set hr --
+                     * we will take care of rc then. */
+                }
+                if (   RT_SUCCESS(rc)
+                    && aObjInfo) /* Do we want object details? */
+                {
+                    hr = executeStreamQueryFsObjInfo(aFile, stdOut[0],
+                                                     aObjInfo, enmAddAttribs);
+                }
+            }
+            else
                 rc = VERR_NOT_FOUND;
-            if (   RT_SUCCESS(rc)
-                && strcmp(pszFsType, "-")) /* Regular file? */
-            {
-                rc = VERR_FILE_NOT_FOUND;
-                /* This is not critical for Main, so don't set hr --
-                 * we will take care of rc then. */
-            }
-            if (   RT_SUCCESS(rc)
-                && aObjInfo) /* Do we want object details? */
-            {
-                hr = executeStreamQueryFsObjInfo(aFile, stdOut[0],
-                                                 aObjInfo, enmAddAttribs);
-            }
 
             if (pRC)
                 *pRC = rc;
