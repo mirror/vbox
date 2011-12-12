@@ -58,8 +58,7 @@
 #  define BX_DEBUG_INT13_CD(...)
 #endif
 
-//@todo: call this something else? ET_BOOT?
-#if DEBUG_ELTORITO
+#if DEBUG_CD_BOOT
 #  define BX_DEBUG_ELTORITO(...)    BX_DEBUG(__VA_ARGS__)
 #else
 #  define BX_DEBUG_ELTORITO(...)
@@ -233,16 +232,18 @@ static const char eltorito[]="EL TORITO SPECIFICATION";
 uint16_t cdrom_boot(void)
 {
     // @TODO: a macro or a function for getting the EBDA segment
-    uint16_t        ebda_seg=read_word(0x0040,0x000E);
-    uint8_t         buffer[2048];
-    cdb_atapi       atapicmd;
-    uint32_t        lba;
-    uint16_t        boot_segment, nbsectors, i, error;
-    uint8_t         device;
-    uint8_t         read_try;
-    cdemu_t __far   *cdemu;
+    uint16_t            ebda_seg=read_word(0x0040,0x000E);
+    uint8_t             buffer[2048];
+    cdb_atapi           atapicmd;
+    uint32_t            lba;
+    uint16_t            boot_segment, nbsectors, i, error;
+    uint8_t             device;
+    uint8_t             read_try;
+    cdemu_t __far       *cdemu;
+    bio_dsk_t __far     *bios_dsk;
 
-    cdemu = ebda_seg :> &EbdaData->cdemu;
+    cdemu    = ebda_seg :> &EbdaData->cdemu;
+    bios_dsk = ebda_seg :> &EbdaData->bdisk;
 
     /* Find the first CD-ROM. */
     for (device = 0; device < BX_MAX_STORAGE_DEVICES; ++device) {
@@ -258,7 +259,10 @@ uint16_t cdrom_boot(void)
     _fmemset(&atapicmd, 0, sizeof(atapicmd));
     atapicmd.command = 0x28;    // READ 10 command
     atapicmd.lba     = swap_32(0x11);
-    atapicmd.nsect   = swap_16(0x01);
+    atapicmd.nsect   = swap_16(1);
+
+    bios_dsk->drqp.nsect   = 1;
+    bios_dsk->drqp.sect_sz = 2048;
 
     for (read_try = 0; read_try <= 4; ++read_try)
     {
@@ -285,16 +289,19 @@ uint16_t cdrom_boot(void)
         if (buffer[7+i] != eltorito[i])
             return 6;
 
-    //@todo: this swaps the LBA back and forth for no good reason??!
     // ok, now we calculate the Boot catalog address
     lba = *((uint32_t *)&buffer[0x47]);
     BX_DEBUG_ELTORITO("BRVD at LBA %lx\n", lba);
 
     /* Now we read the Boot Catalog. */
-    _fmemset(&atapicmd, 0, sizeof(atapicmd));   //@todo: should be redundant
     atapicmd.command = 0x28;    // READ 10 command
     atapicmd.lba     = swap_32(lba);
-    atapicmd.nsect   = swap_16(0x01);
+    atapicmd.nsect   = swap_16(1);
+
+#if 0   // Not necessary as long as previous values are reused
+    bios_dsk->drqp.nsect   = 1;
+    bios_dsk->drqp.sect_sz = 512;
+#endif
 
     if (device > BX_MAX_ATA_DEVICES)
         error = ahci_cmd_packet(device, 12, (char __far *)&atapicmd, 0, 2048L, ATA_DATA_IN, &buffer);
@@ -351,10 +358,12 @@ uint16_t cdrom_boot(void)
                       cdemu->emulated_drive, cdemu->media, cdemu->ilba);
 
     /* Read the disk image's boot sector into memory. */
-    _fmemset(&atapicmd, 0, sizeof(atapicmd));   //@todo: should be redundant
     atapicmd.command = 0x28;    // READ 10 command
     atapicmd.lba     = swap_32(lba);
     atapicmd.nsect   = swap_16(1 + (nbsectors - 1) / 4);
+
+    bios_dsk->drqp.nsect   = 1 + (nbsectors - 1) / 4;
+    bios_dsk->drqp.sect_sz = 512;
 
     if (device > BX_MAX_ATA_DEVICES)
         error = ahci_cmd_packet(device, 12, (char __far *)&atapicmd, 0, nbsectors*512L, ATA_DATA_IN, MK_FP(boot_segment,0));
@@ -418,16 +427,18 @@ uint16_t cdrom_boot(void)
 void BIOSCALL int13_cdemu(disk_regs_t r)
 {
     // @TODO: a macro or a function for getting the EBDA segment
-    uint16_t        ebda_seg=read_word(0x0040,0x000E);
-    uint8_t         device, status;
-    uint16_t        vheads, vspt, vcylinders;
-    uint16_t        head, sector, cylinder, nbsectors;
-    uint32_t        vlba, ilba, slba, elba;
-    uint16_t        before, segment, offset;
-    cdb_atapi       atapicmd;
-    cdemu_t __far   *cdemu;
+    uint16_t            ebda_seg=read_word(0x0040,0x000E);
+    uint8_t             device, status;
+    uint16_t            vheads, vspt, vcylinders;
+    uint16_t            head, sector, cylinder, nbsectors;
+    uint32_t            vlba, ilba, slba, elba;
+    uint16_t            before, segment, offset;
+    cdb_atapi           atapicmd;
+    cdemu_t __far       *cdemu;
+    bio_dsk_t __far     *bios_dsk;
 
-    cdemu = ebda_seg :> &EbdaData->cdemu;
+    cdemu    = ebda_seg :> &EbdaData->cdemu;
+    bios_dsk = ebda_seg :> &EbdaData->bdisk;
 
     BX_DEBUG_INT13_ET("%s: AX=%04x BX=%04x CX=%04x DX=%04x ES=%04x\n", __func__, AX, BX, CX, DX, ES);
 
@@ -527,6 +538,9 @@ void BIOSCALL int13_cdemu(disk_regs_t r)
         atapicmd.command = 0x28;    // READ 10 command
         atapicmd.lba     = swap_32(ilba + slba);
         atapicmd.nsect   = swap_16(elba - slba + 1);
+
+        bios_dsk->drqp.nsect   = elba - slba + 1;
+        bios_dsk->drqp.sect_sz = 512;
 
         if (device > BX_MAX_ATA_DEVICES)
             status = ahci_cmd_packet(device, 12, (char __far *)&atapicmd, before*512, nbsectors*512L, ATA_DATA_IN, MK_FP(segment,offset));
@@ -725,6 +739,9 @@ void BIOSCALL int13_cdrom(uint16_t EHBX, disk_regs_t r)
         atapicmd.command = 0x28;    // READ 10 command
         atapicmd.lba     = swap_32(lba);
         atapicmd.nsect   = swap_16(count);
+
+        bios_dsk->drqp.nsect   = count;
+        bios_dsk->drqp.sect_sz = 2048;
 
         if (device > BX_MAX_ATA_DEVICES)
             status = ahci_cmd_packet(device, 12, (char __far *)&atapicmd, 0, count*2048L, ATA_DATA_IN, MK_FP(segment,offset));

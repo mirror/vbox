@@ -25,12 +25,10 @@
 #include "pciutil.h"
 #include "vds.h"
 
-#define VBOX_AHCI_DEBUG         0
-
-#if VBOX_AHCI_DEBUG
-# define VBOXAHCI_DEBUG(...)        BX_INFO(__VA_ARGS__)
+#if DEBUG_AHCI
+# define DBG_AHCI(...)        BX_INFO(__VA_ARGS__)
 #else
-# define VBOXAHCI_DEBUG(...)
+# define DBG_AHCI(...)
 #endif
 
 /* Number of S/G table entries in EDDS. */
@@ -257,7 +255,7 @@ static void ahci_port_cmd_sync(ahci_t __far *ahci, uint8_t val, uint16_t cbData)
         VBOXAHCI_PORT_WRITE_REG(io_base, port, AHCI_REG_PORT_CI, 0x1);
 
         /* Wait for a D2H FIS. */
-        VBOXAHCI_DEBUG("AHCI: Waiting for D2H FIS\n");
+        DBG_AHCI("AHCI: Waiting for D2H FIS\n");
         while (ahci_ctrl_is_bit_set(io_base, AHCI_PORT_REG(port, AHCI_REG_PORT_IS),
                                     AHCI_REG_PORT_IS_DHRS) == 0)
         {
@@ -274,7 +272,7 @@ static void ahci_port_cmd_sync(ahci_t __far *ahci, uint8_t val, uint16_t cbData)
         /** @todo: Examine status. */
     }
     else
-        VBOXAHCI_DEBUG("AHCI: Invalid port given\n");
+        DBG_AHCI("AHCI: Invalid port given\n");
 }
 
 /**
@@ -352,7 +350,7 @@ static void ahci_port_deinit_current(ahci_t __far *ahci)
         while (ahci_ctrl_is_bit_set(io_base, AHCI_PORT_REG(port, AHCI_REG_PORT_CMD),
                                     AHCI_REG_PORT_CMD_FRE | AHCI_REG_PORT_CMD_ST | AHCI_REG_PORT_CMD_FR | AHCI_REG_PORT_CMD_CR) == 1)
         {
-            VBOXAHCI_DEBUG("AHCI: Waiting for the port to idle\n");
+            DBG_AHCI("AHCI: Waiting for the port to idle\n");
         }
 
         /*
@@ -393,7 +391,7 @@ static void ahci_port_init(ahci_t __far *ahci, uint8_t u8Port)
     while (ahci_ctrl_is_bit_set(ahci->iobase, AHCI_PORT_REG(u8Port, AHCI_REG_PORT_CMD),
                                 AHCI_REG_PORT_CMD_FRE | AHCI_REG_PORT_CMD_ST | AHCI_REG_PORT_CMD_FR | AHCI_REG_PORT_CMD_CR) == 1)
     {
-        VBOXAHCI_DEBUG("AHCI: Waiting for the port to idle\n");
+        DBG_AHCI("AHCI: Waiting for the port to idle\n");
     }
 
     /*
@@ -405,11 +403,12 @@ static void ahci_port_init(ahci_t __far *ahci, uint8_t u8Port)
     _fmemset(&ahci->abCmd[0], 0, sizeof(ahci->abCmd));
     _fmemset(&ahci->abFisRecv[0], 0, sizeof(ahci->abFisRecv));
 
-    VBOXAHCI_DEBUG("AHCI: FIS receive area %lx from %x:%x\n", ahci_addr_to_phys(&ahci->abFisRecv), FP_SEG(ahci), &AhciData->abFisRecv);
+    DBG_AHCI("AHCI: FIS receive area %lx from %x:%x\n",
+             ahci_addr_to_phys(&ahci->abFisRecv), FP_SEG(ahci), &AhciData->abFisRecv);
     VBOXAHCI_PORT_WRITE_REG(ahci->iobase, u8Port, AHCI_REG_PORT_FB, ahci_addr_to_phys(&ahci->abFisRecv));
     VBOXAHCI_PORT_WRITE_REG(ahci->iobase, u8Port, AHCI_REG_PORT_FBU, 0);
 
-    VBOXAHCI_DEBUG("AHCI: CMD list area %lx\n", ahci_addr_to_phys(&ahci->aCmdHdr));
+    DBG_AHCI("AHCI: CMD list area %lx\n", ahci_addr_to_phys(&ahci->aCmdHdr));
     VBOXAHCI_PORT_WRITE_REG(ahci->iobase, u8Port, AHCI_REG_PORT_CLB, ahci_addr_to_phys(&ahci->aCmdHdr));
     VBOXAHCI_PORT_WRITE_REG(ahci->iobase, u8Port, AHCI_REG_PORT_CLBU, 0);
 
@@ -437,9 +436,9 @@ int ahci_read_sectors(bio_dsk_t __far *bios_dsk)
     if (device_id > BX_MAX_AHCI_DEVICES)
         BX_PANIC("%s: device_id out of range %d\n", __func__, device_id);
 
-    VBOXAHCI_DEBUG("%s: %u sectors @ LBA %lu, device %d, port %d\n", __func__,
-                   bios_dsk->drqp.nsect, bios_dsk->drqp.lba, device_id,
-                   bios_dsk->ahcidev[device_id].port);
+    DBG_AHCI("%s: %u sectors @ LBA %lu, device %d, port %d\n", __func__,
+             bios_dsk->drqp.nsect, bios_dsk->drqp.lba, device_id,
+             bios_dsk->ahcidev[device_id].port);
 
     ahci_port_init(bios_dsk->ahci_seg :> 0, bios_dsk->ahcidev[device_id].port);
     ahci_cmd_data(bios_dsk, AHCI_CMD_READ_DMA_EXT);
@@ -464,9 +463,9 @@ int ahci_write_sectors(bio_dsk_t __far *bios_dsk)
     if (device_id > BX_MAX_AHCI_DEVICES)
         BX_PANIC("%s: device_id out of range %d\n", __func__, device_id);
 
-    VBOXAHCI_DEBUG("%s: %u sectors @ LBA %lu, device %d, port %d\n", __func__,
-                   bios_dsk->drqp.nsect, bios_dsk->drqp.lba, device_id,
-                   bios_dsk->ahcidev[device_id].port);
+    DBG_AHCI("%s: %u sectors @ LBA %lu, device %d, port %d\n", __func__,
+             bios_dsk->drqp.nsect, bios_dsk->drqp.lba, device_id,
+             bios_dsk->ahcidev[device_id].port);
 
     ahci_port_init(bios_dsk->ahci_seg :> 0, bios_dsk->ahcidev[device_id].port);
     ahci_cmd_data(bios_dsk, AHCI_CMD_WRITE_DMA_EXT);
@@ -492,20 +491,22 @@ uint16_t ahci_cmd_packet(uint16_t device_id, uint8_t cmdlen, char __far *cmdbuf,
 
     /* The header length must be even. */
     if (header & 1) {
-        VBOXAHCI_DEBUG("%s: header must be even (%04x)\n", __func__, header);
+        DBG_AHCI("%s: header must be even (%04x)\n", __func__, header);
         return 1;
     }
 
     /* Convert to AHCI specific device number. */
     device_id = device_id - BX_MAX_ATA_DEVICES - BX_MAX_SCSI_DEVICES;
 
-    VBOXAHCI_DEBUG("%s: reading %lu bytes, header %u, device %d, port %d\n", __func__,
-                   length, header, device_id, bios_dsk->ahcidev[device_id].port);
+    DBG_AHCI("%s: reading %lu bytes, header %u, device %d, port %d\n", __func__,
+             length, header, device_id, bios_dsk->ahcidev[device_id].port);
+    DBG_AHCI("%s: reading %u %u-byte sectors\n", __func__,
+             bios_dsk->drqp.nsect, bios_dsk->drqp.sect_sz);
 
     bios_dsk->drqp.lba     = (uint32_t)length << 8;     //@todo: xfer length limit
     bios_dsk->drqp.buffer  = buffer;
-    bios_dsk->drqp.nsect   = length / 2048;
-    bios_dsk->drqp.sect_sz = 2048;
+//    bios_dsk->drqp.nsect   = length / 2048;
+//    bios_dsk->drqp.sect_sz = 2048;
 
     ahci_port_init(bios_dsk->ahci_seg :> 0, bios_dsk->ahcidev[device_id].port);
 
@@ -518,7 +519,7 @@ uint16_t ahci_cmd_packet(uint16_t device_id, uint8_t cmdlen, char __far *cmdbuf,
     bios_dsk->drqp.trsfbytes   = 0;
 
     ahci_cmd_data(bios_dsk, ATA_CMD_PACKET);
-    VBOXAHCI_DEBUG("%s: transferred %lu bytes\n", __func__, ahci->aCmdHdr[1]);
+    DBG_AHCI("%s: transferred %lu bytes\n", __func__, ahci->aCmdHdr[1]);
     bios_dsk->drqp.trsfbytes = ahci->aCmdHdr[1];
 #ifdef DMA_WORKAROUND
     rep_movsw(bios_dsk->drqp.buffer, bios_dsk->drqp.buffer, bios_dsk->drqp.trsfbytes / 2);
@@ -555,7 +556,7 @@ static void ahci_port_detect_device(ahci_t __far *ahci, uint8_t u8Port)
 
         devcount_ahci = bios_dsk->ahci_devcnt;
 
-        VBOXAHCI_DEBUG("AHCI: Device detected on port %d\n", u8Port);
+        DBG_AHCI("AHCI: Device detected on port %d\n", u8Port);
 
         //@todo: Merge common HD/CDROM detection code
         if (devcount_ahci < BX_MAX_AHCI_DEVICES)
@@ -572,7 +573,7 @@ static void ahci_port_detect_device(ahci_t __far *ahci, uint8_t u8Port)
                 uint16_t    cCylinders, cHeads, cSectorsPerTrack;
                 uint8_t     idxCmosChsBase;
 
-                VBOXAHCI_DEBUG("AHCI: Detected hard disk\n");
+                DBG_AHCI("AHCI: Detected hard disk\n");
 
                 /* Identify device. */
                 bios_dsk->drqp.lba     = 0;
@@ -594,7 +595,7 @@ static void ahci_port_detect_device(ahci_t __far *ahci, uint8_t u8Port)
                 if (cSectors == 268435455)
                     cSectors = *(uint16_t *)(abBuffer+(100*2)); // words 100 to 103 (someday)
 
-                VBOXAHCI_DEBUG("AHCI: %ld sectors\n", cSectors);
+                DBG_AHCI("AHCI: %ld sectors\n", cSectors);
 
                 bios_dsk->ahcidev[devcount_ahci].port = u8Port;
                 bios_dsk->devices[hd_index].type        = ATA_TYPE_AHCI;
@@ -639,8 +640,8 @@ static void ahci_port_detect_device(ahci_t __far *ahci, uint8_t u8Port)
                     cHeads = 0;
                     cSectorsPerTrack = 0;
                 }
-                VBOXAHCI_DEBUG("AHCI: Dev %d LCHS=%d/%d/%d\n", 
-                               devcount_ahci, cCylinders, cHeads, cSectorsPerTrack);
+                DBG_AHCI("AHCI: Dev %d LCHS=%d/%d/%d\n", 
+                         devcount_ahci, cCylinders, cHeads, cSectorsPerTrack);
 
                 bios_dsk->devices[hd_index].lchs.heads     = cHeads;
                 bios_dsk->devices[hd_index].lchs.cylinders = cCylinders;
@@ -659,7 +660,7 @@ static void ahci_port_detect_device(ahci_t __far *ahci, uint8_t u8Port)
             }
             else if (val == 0xeb140101)
             {
-                VBOXAHCI_DEBUG("AHCI: Detected ATAPI device\n");
+                DBG_AHCI("AHCI: Detected ATAPI device\n");
 
                 /* Identify packet device. */
                 bios_dsk->drqp.lba     = 0;
@@ -686,13 +687,13 @@ static void ahci_port_detect_device(ahci_t __far *ahci, uint8_t u8Port)
                 bios_dsk->cdcount = cdcount;
             }
             else
-                VBOXAHCI_DEBUG("AHCI: Ignoring unknown device\n");
+                DBG_AHCI("AHCI: Ignoring unknown device\n");
 
             devcount_ahci++;
             bios_dsk->ahci_devcnt = devcount_ahci;
         }
         else
-            VBOXAHCI_DEBUG("AHCI: Reached maximum device count, skipping\n");
+            DBG_AHCI("AHCI: Reached maximum device count, skipping\n");
     }
 }
 
@@ -706,7 +707,7 @@ static uint16_t ahci_mem_alloc(void)
 
     base_mem_kb = read_word(0x00, 0x0413);
 
-    VBOXAHCI_DEBUG("AHCI: %dK of base mem\n", base_mem_kb);
+    DBG_AHCI("AHCI: %dK of base mem\n", base_mem_kb);
 
     if (base_mem_kb == 0)
         return 0;
@@ -732,19 +733,19 @@ static int ahci_hba_init(uint16_t io_base)
     ebda_seg = read_word(0x0040, 0x000E);
 
     AHCI_READ_REG(io_base, AHCI_REG_VS, val);
-    VBOXAHCI_DEBUG("AHCI: Controller has version: 0x%x (major) 0x%x (minor)\n",
-                   ahci_ctrl_extract_bits(val, 0xffff0000, 16),
-                   ahci_ctrl_extract_bits(val, 0x0000ffff,  0));
+    DBG_AHCI("AHCI: Controller version: 0x%x (major) 0x%x (minor)\n",
+             ahci_ctrl_extract_bits(val, 0xffff0000, 16),
+             ahci_ctrl_extract_bits(val, 0x0000ffff,  0));
 
     /* Allocate 1K of base memory. */
     ahci_seg = ahci_mem_alloc();
     if (ahci_seg == 0)
     {
-        VBOXAHCI_DEBUG("AHCI: Could not allocate 1K of memory, can't boot from controller\n");
+        DBG_AHCI("AHCI: Could not allocate 1K of memory, can't boot from controller\n");
         return 0;
     }
-    VBOXAHCI_DEBUG("AHCI: ahci_seg=%04x, size=%04x, pointer at EBDA:%04x (EBDA size=%04x)\n", 
-                   ahci_seg, sizeof(ahci_t), (uint16_t)&EbdaData->bdisk.ahci_seg, sizeof(ebda_data_t));
+    DBG_AHCI("AHCI: ahci_seg=%04x, size=%04x, pointer at EBDA:%04x (EBDA size=%04x)\n", 
+             ahci_seg, sizeof(ahci_t), (uint16_t)&EbdaData->bdisk.ahci_seg, sizeof(ebda_data_t));
 
     write_word(ebda_seg, (uint16_t)&EbdaData->bdisk.ahci_seg, ahci_seg);
     write_byte(ebda_seg, (uint16_t)&EbdaData->bdisk.ahci_devcnt, 0);
@@ -761,7 +762,7 @@ static int ahci_hba_init(uint16_t io_base)
     AHCI_READ_REG(io_base, AHCI_REG_CAP, val);
     cPorts = ahci_ctrl_extract_bits(val, 0x1f, 0) + 1; /* Extract number of ports.*/
 
-    VBOXAHCI_DEBUG("AHCI: HBA has %u ports\n", cPorts);
+    DBG_AHCI("AHCI: HBA has %u ports\n", cPorts);
 
     /* Go through the ports. */
     i = 0;
@@ -769,7 +770,7 @@ static int ahci_hba_init(uint16_t io_base)
     {
         if (ahci_ctrl_is_bit_set(io_base, AHCI_REG_PI, RT_BIT_32(i)) != 0)
         {
-            VBOXAHCI_DEBUG("AHCI: Port %u is present\n", i);
+            DBG_AHCI("AHCI: Port %u is present\n", i);
             ahci_port_detect_device(ahci_seg :> 0, i);
             cPorts--;
             if (cPorts == 0)
@@ -797,7 +798,7 @@ void BIOSCALL ahci_init(void)
         u8Bus = (busdevfn & 0xff00) >> 8;
         u8DevFn = busdevfn & 0x00ff;
 
-        VBOXAHCI_DEBUG("AHCI HBA at Bus %u DevFn 0x%x (raw 0x%x)\n", u8Bus, u8DevFn, busdevfn);
+        DBG_AHCI("AHCI HBA at Bus %u DevFn 0x%x (raw 0x%x)\n", u8Bus, u8DevFn, busdevfn);
 
         /* Examine the capability list and search for the Serial ATA Capability Register. */
         u8PciCapOff = pci_read_config_byte(u8Bus, u8DevFn, PCI_CONFIG_CAP);
@@ -806,7 +807,7 @@ void BIOSCALL ahci_init(void)
         {
             uint8_t     u8PciCapId = pci_read_config_byte(u8Bus, u8DevFn, u8PciCapOff);
 
-            VBOXAHCI_DEBUG("Capability ID 0x%x at 0x%x\n", u8PciCapId, u8PciCapOff);
+            DBG_AHCI("Capability ID 0x%x at 0x%x\n", u8PciCapId, u8PciCapOff);
 
             if (u8PciCapId == PCI_CAP_ID_SATACR)
                 break;
@@ -819,7 +820,7 @@ void BIOSCALL ahci_init(void)
         {
             uint8_t     u8Rev;
 
-            VBOXAHCI_DEBUG("AHCI HBA with SATA Capability register at 0x%x\n", u8PciCapOff);
+            DBG_AHCI("AHCI HBA with SATA Capability register at 0x%x\n", u8PciCapOff);
 
             /* Advance to the stuff behind the id and next capability pointer. */
             u8PciCapOff += 2;
@@ -832,7 +833,7 @@ void BIOSCALL ahci_init(void)
                 uint16_t    u16Off = 0x00;
                 uint16_t    u16BarOff = pci_read_config_word(u8Bus, u8DevFn, u8PciCapOff + 2);
 
-                VBOXAHCI_DEBUG("SATACR1: 0x%x\n", u16BarOff);
+                DBG_AHCI("SATACR1: 0x%x\n", u16BarOff);
 
                 switch (u16BarOff & 0xf)
                 {
@@ -857,7 +858,7 @@ void BIOSCALL ahci_init(void)
                     case 0x0f:
                     default:
                         /* Reserved or unsupported. */
-                        VBOXAHCI_DEBUG("BAR 0x%x unsupported\n", u16BarOff & 0xf);
+                        DBG_AHCI("BAR 0x%x unsupported\n", u16BarOff & 0xf);
                 }
 
                 /* Get the offset inside the BAR from bits 4:15. */
@@ -867,26 +868,26 @@ void BIOSCALL ahci_init(void)
                 {
                     uint32_t    u32Bar = pci_read_config_dword(u8Bus, u8DevFn, u8Bar);
 
-                    VBOXAHCI_DEBUG("BAR at 0x%x : 0x%x\n", u8Bar, u32Bar);
+                    DBG_AHCI("BAR at 0x%x : 0x%x\n", u8Bar, u32Bar);
 
                     if ((u32Bar & 0x01) != 0)
                     {
                         int         rc;
                         uint16_t    u16AhciIoBase = (u32Bar & 0xfff0) + u16Off;
 
-                        VBOXAHCI_DEBUG("I/O base: 0x%x\n", u16AhciIoBase);
+                        DBG_AHCI("I/O base: 0x%x\n", u16AhciIoBase);
                         rc = ahci_hba_init(u16AhciIoBase);
                     }
                     else
-                        VBOXAHCI_DEBUG("BAR is MMIO\n");
+                        DBG_AHCI("BAR is MMIO\n");
                 }
             }
             else
-                VBOXAHCI_DEBUG("Invalid revision 0x%x\n", u8Rev);
+                DBG_AHCI("Invalid revision 0x%x\n", u8Rev);
         }
         else
-            VBOXAHCI_DEBUG("AHCI HBA with no usable Index/Data register pair!\n");
+            DBG_AHCI("AHCI HBA with no usable Index/Data register pair!\n");
     }
     else
-        VBOXAHCI_DEBUG("No AHCI HBA!\n");
+        DBG_AHCI("No AHCI HBA!\n");
 }

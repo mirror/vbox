@@ -51,6 +51,8 @@
 #define BX_APM              1
 
 #define DEBUG_ATA       0
+#define DEBUG_AHCI      0
+#define DEBUG_CD_BOOT   0
 #define DEBUG_ELTORITO  0
 #define DEBUG_INT13_HD  0
 #define DEBUG_INT13_FL  0
