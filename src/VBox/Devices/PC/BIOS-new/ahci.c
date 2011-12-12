@@ -119,7 +119,6 @@ typedef struct
 #define AHCI_REG_PORT_FBU  0x0c
 #define AHCI_REG_PORT_IS   0x10
 # define AHCI_REG_PORT_IS_DHRS RT_BIT_32(0)
-# define AHCI_REG_PORT_IS_TFES RT_BIT_32(30)
 #define AHCI_REG_PORT_IE   0x14
 #define AHCI_REG_PORT_CMD  0x18
 # define AHCI_REG_PORT_CMD_ST  RT_BIT_32(0)
@@ -258,7 +257,7 @@ static void ahci_port_cmd_sync(ahci_t __far *ahci, uint8_t val, uint16_t cbData)
         /* Wait for a D2H FIS. */
         DBG_AHCI("AHCI: Waiting for D2H FIS\n");
         while (ahci_ctrl_is_bit_set(io_base, AHCI_PORT_REG(port, AHCI_REG_PORT_IS),
-                                    AHCI_REG_PORT_IS_DHRS | AHCI_REG_PORT_IS_TFES) == 0)
+                                    AHCI_REG_PORT_IS_DHRS) == 0)
         {
             // This is where we'd need some kind of a yield functionality...
         }
@@ -506,7 +505,7 @@ uint16_t ahci_cmd_packet(uint16_t device_id, uint8_t cmdlen, char __far *cmdbuf,
 
     bios_dsk->drqp.lba     = (uint32_t)length << 8;     //@todo: xfer length limit
     bios_dsk->drqp.buffer  = buffer;
-    bios_dsk->drqp.nsect   = length / bios_dsk->drqp.sect_sz;
+//    bios_dsk->drqp.nsect   = length / 2048;
 //    bios_dsk->drqp.sect_sz = 2048;
 
     ahci_port_init(bios_dsk->ahci_seg :> 0, bios_dsk->ahcidev[device_id].port);
