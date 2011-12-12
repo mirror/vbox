@@ -1145,6 +1145,8 @@ void UIMachineLogic::sltPrepareStorageMenu()
                         pChooseRecentMediumAction->setChecked(!currentMedium.isNull() && strRecentMediumLocation == strCurrentLocation);
                         pChooseRecentMediumAction->setData(QVariant::fromValue(RecentMediumTarget(controller.GetName(), attachment.GetPort(),
                                                                                                   attachment.GetDevice(), strRecentMediumLocation, mediumType)));
+                        pChooseRecentMediumAction->setToolTip(strRecentMediumLocation);
+
                     }
                 }
             }
