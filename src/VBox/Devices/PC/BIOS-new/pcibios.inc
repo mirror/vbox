@@ -366,7 +366,7 @@ pci_init_io_loop1:
 		cmp	ax, 0FFFFh
 		jz	next_pci_dev
 
-;;ifndef VBOX ; This currently breaks restoring a previously saved state. */
+ifndef VBOX ; This currently breaks restoring a previously saved state. */
 		mov	dl, 4	; disable i/o and memory space access
 		call	pcibios_init_sel_reg
 		mov	dx, PCI_CFG2
@@ -421,7 +421,7 @@ next_pci_base:
 
 		mov	byte ptr[bp-8], al
 		jmp	pci_init_io_loop2
-;;endif ; !VBOX
+endif ; !VBOX
 
 enable_iomem_space:
 		mov	dl, 4 ;; enable i/o and memory space access if available
