@@ -119,6 +119,7 @@ typedef struct
 #define AHCI_REG_PORT_FBU  0x0c
 #define AHCI_REG_PORT_IS   0x10
 # define AHCI_REG_PORT_IS_DHRS RT_BIT_32(0)
+# define AHCI_REG_PORT_IS_TFES RT_BIT_32(30)
 #define AHCI_REG_PORT_IE   0x14
 #define AHCI_REG_PORT_CMD  0x18
 # define AHCI_REG_PORT_CMD_ST  RT_BIT_32(0)
@@ -257,7 +258,7 @@ static void ahci_port_cmd_sync(ahci_t __far *ahci, uint8_t val, uint16_t cbData)
         /* Wait for a D2H FIS. */
         DBG_AHCI("AHCI: Waiting for D2H FIS\n");
         while (ahci_ctrl_is_bit_set(io_base, AHCI_PORT_REG(port, AHCI_REG_PORT_IS),
-                                    AHCI_REG_PORT_IS_DHRS) == 0)
+                                    AHCI_REG_PORT_IS_DHRS | AHCI_REG_PORT_IS_TFES) == 0)
         {
             // This is where we'd need some kind of a yield functionality...
         }
