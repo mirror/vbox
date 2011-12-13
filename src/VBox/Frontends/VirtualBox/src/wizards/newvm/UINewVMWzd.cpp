@@ -672,8 +672,6 @@ void UINewVMWzdPage5::retranslateUi()
     .arg(tr("OS Type", "summary"), type)
     .arg(tr("Base Memory", "summary"), ram, VBoxGlobal::tr("MB", "size suffix MBytes=1024KBytes"))
     ;
-    /* Feat summary to 3 lines */
-    setSummaryFieldLinesNumber(m_pSummaryText, 3);
 
     /* Add hard-disk info */
     if (!field("hardDiskId").toString().isNull())
@@ -681,8 +679,6 @@ void UINewVMWzdPage5::retranslateUi()
         summary += QString(
             "<tr><td><nobr>%8: </nobr></td><td><nobr>%9</nobr></td></tr>")
             .arg(tr("Start-up Disk", "summary"), field("hardDiskName").toString());
-        /* Extend summary to 4 lines */
-        setSummaryFieldLinesNumber(m_pSummaryText, 4);
     }
 
     m_pSummaryText->setText("<table cellspacing=0 cellpadding=0>" + summary + "</table>");
@@ -700,6 +696,8 @@ void UINewVMWzdPage5::initializePage()
     /* Fill and translate */
     retranslateUi();
 
+    /* Update summary geometry: */
+    m_pSummaryText->updateGeometry();
     /* Summary should have focus initially */
     m_pSummaryText->setFocus();
 }

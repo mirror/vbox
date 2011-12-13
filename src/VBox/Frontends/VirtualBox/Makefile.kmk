@@ -256,6 +256,7 @@ VirtualBox_QT_MOCHDRS = \
 	src/extensions/QITabWidget.h \
 	src/extensions/QITableView.h \
 	src/extensions/QIToolButton.h \
+	src/extensions/QITextEdit.h \
 	src/extensions/QITreeView.h \
 	src/extensions/QITreeWidget.h \
 	src/extensions/QIWidgetValidator.h \
@@ -417,6 +418,7 @@ VirtualBox_SOURCES = \
 	src/extensions/QIStateIndicator.cpp \
 	src/extensions/QIStatusBar.cpp \
 	src/extensions/QITableView.cpp \
+	src/extensions/QITextEdit.cpp \
 	src/extensions/QITreeView.cpp \
 	src/extensions/QITreeWidget.cpp \
 	src/extensions/QIWidgetValidator.cpp \
