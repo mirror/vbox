@@ -995,9 +995,6 @@ void UINewHDWizardPageSummary::retranslateUi()
     .arg(UINewHDWizard::tr("Location", "summary"), strMediumPath)
     .arg(UINewHDWizard::tr("Size", "summary"), sizeFormatted, sizeUnformatted);
 
-    /* Feat summary to 4 lines: */
-    setSummaryFieldLinesNumber(m_pSummaryText, 4);
-
     m_pSummaryText->setText("<table cellspacing=0 cellpadding=0>" + strSummary + "</table>");
 }
 
@@ -1006,6 +1003,8 @@ void UINewHDWizardPageSummary::initializePage()
     /* Retranslate page: */
     retranslateUi();
 
+    /* Update summary geometry: */
+    m_pSummaryText->updateGeometry();
     /* Summary should have focus initially: */
     m_pSummaryText->setFocus();
 }

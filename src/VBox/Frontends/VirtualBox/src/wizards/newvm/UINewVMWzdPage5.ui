@@ -3,7 +3,7 @@
  <comment>
  VBox frontends: Qt4 GUI ("VirtualBox"):
 
-     Copyright (C) 2009 Oracle Corporation
+     Copyright (C) 2009-2011 Oracle Corporation
 
      This file is part of VirtualBox Open Source Edition (OSE), as
      available from http://www.virtualbox.org. This file is free software;
@@ -50,9 +50,9 @@
     </widget>
    </item>
    <item>
-    <widget class="QTextEdit" name="m_pSummaryText">
+    <widget class="QITextEdit" name="m_pSummaryText">
      <property name="sizePolicy">
-      <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+      <sizepolicy hsizetype="Expanding" vsizetype="Minimum">
        <horstretch>0</horstretch>
        <verstretch>0</verstretch>
       </sizepolicy>
@@ -89,6 +89,11 @@
    <class>QILabel</class>
    <extends>QLabel</extends>
    <header>QILabel.h</header>
+  </customwidget>
+  <customwidget>
+   <class>QITextEdit</class>
+   <extends>QTextEdit</extends>
+   <header>QITextEdit.h</header>
   </customwidget>
  </customwidgets>
  <resources/>

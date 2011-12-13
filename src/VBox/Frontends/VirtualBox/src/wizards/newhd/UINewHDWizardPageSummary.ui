@@ -41,9 +41,9 @@
     </widget>
    </item>
    <item>
-    <widget class="QTextEdit" name="m_pSummaryText">
+    <widget class="QITextEdit" name="m_pSummaryText">
      <property name="sizePolicy">
-      <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+      <sizepolicy hsizetype="Expanding" vsizetype="Minimum">
        <horstretch>0</horstretch>
        <verstretch>0</verstretch>
       </sizepolicy>
@@ -86,6 +86,11 @@
    <class>QILabel</class>
    <extends>QLabel</extends>
    <header>QILabel.h</header>
+  </customwidget>
+  <customwidget>
+   <class>QITextEdit</class>
+   <extends>QTextEdit</extends>
+   <header>QITextEdit.h</header>
   </customwidget>
  </customwidgets>
  <resources/>
