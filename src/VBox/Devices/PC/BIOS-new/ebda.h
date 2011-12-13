@@ -200,6 +200,8 @@ typedef struct {
     uint16_t    sector;             /* Starting sector (CHS only). */
     uint16_t    trsfsectors;        /* Actual sectors transferred. */
     uint32_t    trsfbytes;          /* Actual bytes transferred. */
+    uint16_t    skip_b;             /* Bytes to skip before transfer. */
+    uint16_t    skip_a;             /* Bytes to skip after transfer. */
 } disk_req_t;
 
 /* All BIOS disk information. Disk-related code in the BIOS should not need

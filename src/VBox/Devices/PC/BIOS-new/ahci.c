@@ -82,6 +82,10 @@ typedef struct
     uint16_t        iobase;
     /** Current port which uses the memory to communicate with the controller. */
     uint8_t         cur_port;
+    /** Current PRD index (for pre/post skip). */
+    uint8_t         cur_prd;
+    /** Physical address of the sink buffer (for pre/post skip). */
+    uint32_t        sink_buf_phys;
     /** VDS EDDS DMA buffer descriptor structure. */
     vds_edds        edds;
     vds_sg          edds_more_sg[NUM_EDDS_SG - 1];
@@ -234,7 +238,7 @@ static uint32_t ahci_addr_to_phys(void __far *ptr)
 /**
  * Issues a command to the SATA controller and waits for completion.
  */
-static void ahci_port_cmd_sync(ahci_t __far *ahci, uint8_t val, uint16_t cbData)
+static void ahci_port_cmd_sync(ahci_t __far *ahci, uint8_t val)
 {
     uint16_t        io_base;
     uint8_t         port;
@@ -245,8 +249,8 @@ static void ahci_port_cmd_sync(ahci_t __far *ahci, uint8_t val, uint16_t cbData)
     if (port != 0xff)
     {
         /* Prepare the command header. */
-        ahci->aCmdHdr[0] = RT_BIT_32(16) | RT_BIT_32(7) | val;
-        ahci->aCmdHdr[1] = 0; //cbData;  //@todo: Is this really an input parameter?
+        ahci->aCmdHdr[0] = ((uint32_t)ahci->cur_prd << 16) | RT_BIT_32(7) | val;
+        ahci->aCmdHdr[1] = 0;
         ahci->aCmdHdr[2] = ahci_addr_to_phys(&ahci->abCmd[0]);
 
         /* Enable Command and FIS receive engine. */
@@ -285,6 +289,7 @@ static void ahci_cmd_data(bio_dsk_t __far *bios_dsk, uint8_t cmd)
     ahci_t __far    *ahci  = bios_dsk->ahci_seg :> 0;
     uint16_t        n_sect = bios_dsk->drqp.nsect;
     uint16_t        sectsz = bios_dsk->drqp.sect_sz;
+    uint16_t        prdt_idx;
 
     _fmemset(&ahci->abCmd[0], 0, sizeof(ahci->abCmd));
 
@@ -309,13 +314,26 @@ static void ahci_cmd_data(bio_dsk_t __far *bios_dsk, uint8_t cmd)
 
     /* Lock memory needed for DMA. */
     ahci->edds.num_avail = NUM_EDDS_SG;
+    DBG_AHCI("AHCI: S/G list for %lu bytes (skip %u)\n", 
+             (uint32_t)n_sect * sectsz, bios_dsk->drqp.skip_a);
     vds_build_sg_list(&ahci->edds, bios_dsk->drqp.buffer, (uint32_t)n_sect * sectsz);
 
-    /* Set up the PRDT. */
-    ahci->aPrdt[0].phys_addr = ahci->edds.u.sg[0].phys_addr;
-    ahci->aPrdt[0].len       = ahci->edds.u.sg[0].size - 1;
+    prdt_idx = ahci->cur_prd;
 
-    /* Build variable part first of command dword (reuses 'cmd'). */
+    /* Set up the PRDT. */
+    ahci->aPrdt[prdt_idx].len       = ahci->edds.u.sg[prdt_idx].size - 1;
+    ahci->aPrdt[prdt_idx].phys_addr = ahci->edds.u.sg[prdt_idx].phys_addr;
+    ++prdt_idx;
+
+    if (bios_dsk->drqp.skip_a) {
+        ahci->aPrdt[prdt_idx].len       = bios_dsk->drqp.skip_a - 1;
+        ahci->aPrdt[prdt_idx].phys_addr = ahci->sink_buf_phys;
+        ++prdt_idx;
+    }
+
+    ahci->cur_prd = prdt_idx;
+
+    /* Build variable part of first command DWORD (reuses 'cmd'). */
     if (cmd == AHCI_CMD_WRITE_DMA_EXT)
         cmd = RT_BIT_32(6);     /* Indicate a write to device. */
     else if (cmd == ATA_CMD_PACKET) {
@@ -326,7 +344,7 @@ static void ahci_cmd_data(bio_dsk_t __far *bios_dsk, uint8_t cmd)
 
     cmd |= 5;   /* Five DWORDs. */
 
-    ahci_port_cmd_sync(ahci, cmd, n_sect * sectsz);
+    ahci_port_cmd_sync(ahci, cmd);
 
     /* Unlock the buffer again. */
     vds_free_sg_list(&ahci->edds);
@@ -421,6 +439,7 @@ static void ahci_port_init(ahci_t __far *ahci, uint8_t u8Port)
     VBOXAHCI_PORT_WRITE_REG(ahci->iobase, u8Port, AHCI_REG_PORT_SERR, 0xffffffff);
 
     ahci->cur_port = u8Port;
+    ahci->cur_prd  = 0;
 }
 
 /**
@@ -480,7 +499,7 @@ int ahci_write_sectors(bio_dsk_t __far *bios_dsk)
 #define ATA_DATA_OUT     0x02
 
 uint16_t ahci_cmd_packet(uint16_t device_id, uint8_t cmdlen, char __far *cmdbuf, 
-                         uint16_t header, uint32_t length, uint8_t inout, char __far *buffer)
+                         uint16_t skip_b, uint32_t length, uint8_t inout, char __far *buffer)
 {
     bio_dsk_t __far *bios_dsk = read_word(0x0040, 0x000E) :> &EbdaData->bdisk;
     ahci_t __far    *ahci     = bios_dsk->ahci_seg :> 0;
@@ -491,17 +510,18 @@ uint16_t ahci_cmd_packet(uint16_t device_id, uint8_t cmdlen, char __far *cmdbuf,
         return 1;
     }
 
-    /* The header length must be even. */
-    if (header & 1) {
-        DBG_AHCI("%s: header must be even (%04x)\n", __func__, header);
+    /* The skip length must be even. */
+    if (skip_b & 1) {
+        DBG_AHCI("%s: skip must be even (%04x)\n", __func__, skip_b);
         return 1;
     }
 
     /* Convert to AHCI specific device number. */
     device_id = device_id - BX_MAX_ATA_DEVICES - BX_MAX_SCSI_DEVICES;
 
-    DBG_AHCI("%s: reading %lu bytes, header %u, device %d, port %d\n", __func__,
-             length, header, device_id, bios_dsk->ahcidev[device_id].port);
+    DBG_AHCI("%s: reading %lu bytes, skip %u/%u, device %d, port %d\n", __func__,
+             length, bios_dsk->drqp.skip_b, bios_dsk->drqp.skip_a, 
+             device_id, bios_dsk->ahcidev[device_id].port);
     DBG_AHCI("%s: reading %u %u-byte sectors\n", __func__,
              bios_dsk->drqp.nsect, bios_dsk->drqp.sect_sz);
 
@@ -519,6 +539,13 @@ uint16_t ahci_cmd_packet(uint16_t device_id, uint8_t cmdlen, char __far *cmdbuf,
     // @todo: clear in calling code?
     bios_dsk->drqp.trsfsectors = 0;
     bios_dsk->drqp.trsfbytes   = 0;
+
+    /* Set up a PRD entry to throw away the beginning of the transfer. */
+    if (bios_dsk->drqp.skip_b) {
+        ahci->aPrdt[0].len       = bios_dsk->drqp.skip_b - 1;
+        ahci->aPrdt[0].phys_addr = ahci->sink_buf_phys;
+        ahci->cur_prd++;
+    }
 
     ahci_cmd_data(bios_dsk, ATA_CMD_PACKET);
     DBG_AHCI("%s: transferred %lu bytes\n", __func__, ahci->aCmdHdr[1]);
@@ -759,6 +786,11 @@ static int ahci_hba_init(uint16_t io_base)
     ahci = ahci_seg :> 0;
     ahci->cur_port = 0xff;
     ahci->iobase   = io_base;
+
+    /* Physical address of memory used for throwing away ATAPI data when reading 512-byte
+     * blocks from 2048-byte CD sectors.
+     */
+    ahci->sink_buf_phys = 0xCC000;  //@todo: find some better place!
 
     /* Reset the controller. */
     ahci_ctrl_set_bits(io_base, AHCI_REG_GHC, AHCI_GHC_HR);

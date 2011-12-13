@@ -365,10 +365,15 @@ uint16_t cdrom_boot(void)
     bios_dsk->drqp.nsect   = 1 + (nbsectors - 1) / 4;
     bios_dsk->drqp.sect_sz = 512;
 
+    bios_dsk->drqp.skip_a = 2048 - nbsectors * 512L % 2048;
+
     if (device > BX_MAX_ATA_DEVICES)
         error = ahci_cmd_packet(device, 12, (char __far *)&atapicmd, 0, nbsectors*512L, ATA_DATA_IN, MK_FP(boot_segment,0));
     else
         error = ata_cmd_packet(device, 12, (char __far *)&atapicmd, 0, nbsectors*512L, ATA_DATA_IN, MK_FP(boot_segment,0));
+
+    bios_dsk->drqp.skip_a = 0;
+
     if (error != 0)
         return 12;
 
@@ -528,11 +533,11 @@ void BIOSCALL int13_cdemu(disk_regs_t r)
         SET_AL(nbsectors);
         
         // start lba on cd
-        slba  = (uint32_t)vlba/4;
-        before= (uint32_t)vlba%4;
+        slba   = (uint32_t)vlba / 4;
+        before = (uint32_t)vlba % 4;
         
         // end lba on cd
-        elba = (uint32_t)(vlba+nbsectors-1)/4;
+        elba = (uint32_t)(vlba + nbsectors - 1) / 4;
 
         _fmemset(&atapicmd, 0, sizeof(atapicmd));
         atapicmd.command = 0x28;    // READ 10 command
@@ -542,10 +547,16 @@ void BIOSCALL int13_cdemu(disk_regs_t r)
         bios_dsk->drqp.nsect   = elba - slba + 1;
         bios_dsk->drqp.sect_sz = 512;
 
+        bios_dsk->drqp.skip_b = before * 512;
+        bios_dsk->drqp.skip_a = 2048 - nbsectors * 512L % 2048 - bios_dsk->drqp.skip_b;
+
         if (device > BX_MAX_ATA_DEVICES)
             status = ahci_cmd_packet(device, 12, (char __far *)&atapicmd, before*512, nbsectors*512L, ATA_DATA_IN, MK_FP(segment,offset));
         else
             status = ata_cmd_packet(device, 12, (char __far *)&atapicmd, before*512, nbsectors*512L, ATA_DATA_IN, MK_FP(segment,offset));
+
+        bios_dsk->drqp.skip_b = 0;
+        bios_dsk->drqp.skip_a = 0;
 
         if (status != 0) {
             BX_INFO("%s: function %02x, error %02x !\n", __func__, GET_AH(), status);
