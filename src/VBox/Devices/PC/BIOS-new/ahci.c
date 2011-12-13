@@ -87,7 +87,8 @@ typedef struct
     vds_sg          edds_more_sg[NUM_EDDS_SG - 1];
 } ahci_t;
 
-#define AhciData ((ahci_t *) 0)
+/* The AHCI specific data must fit into 1KB (statically allocated). */
+ct_assert(sizeof(ahci_t) <= 1024);
 
 /** PCI configuration fields. */
 #define PCI_CONFIG_CAP                  0x34
@@ -316,7 +317,7 @@ static void ahci_cmd_data(bio_dsk_t __far *bios_dsk, uint8_t cmd)
 
     /* Build variable part first of command dword (reuses 'cmd'). */
     if (cmd == AHCI_CMD_WRITE_DMA_EXT)
-        cmd = RT_BIT_32(6);     /* Indicate write to device. */
+        cmd = RT_BIT_32(6);     /* Indicate a write to device. */
     else if (cmd == ATA_CMD_PACKET) {
         cmd |= RT_BIT_32(5);    /* Indicate ATAPI command. */
         ahci->abCmd[3] |= 1;    /* DMA transfers. */
@@ -405,7 +406,7 @@ static void ahci_port_init(ahci_t __far *ahci, uint8_t u8Port)
     _fmemset(&ahci->abFisRecv[0], 0, sizeof(ahci->abFisRecv));
 
     DBG_AHCI("AHCI: FIS receive area %lx from %x:%x\n",
-             ahci_addr_to_phys(&ahci->abFisRecv), FP_SEG(ahci), &AhciData->abFisRecv);
+             ahci_addr_to_phys(&ahci->abFisRecv), FP_SEG(ahci->abFisRecv), FP_OFF(ahci->abFisRecv));
     VBOXAHCI_PORT_WRITE_REG(ahci->iobase, u8Port, AHCI_REG_PORT_FB, ahci_addr_to_phys(&ahci->abFisRecv));
     VBOXAHCI_PORT_WRITE_REG(ahci->iobase, u8Port, AHCI_REG_PORT_FBU, 0);
 
@@ -726,12 +727,16 @@ static uint16_t ahci_mem_alloc(void)
  */
 static int ahci_hba_init(uint16_t io_base)
 {
-    uint8_t     i, cPorts;
-    uint32_t    val;
-    uint16_t    ebda_seg;
-    uint16_t    ahci_seg;
+    uint8_t             i, cPorts;
+    uint32_t            val;
+    uint16_t            ebda_seg;
+    uint16_t            ahci_seg;
+    bio_dsk_t __far     *bios_dsk;
+    ahci_t __far        *ahci;
+    
 
     ebda_seg = read_word(0x0040, 0x000E);
+    bios_dsk = ebda_seg :> &EbdaData->bdisk;
 
     AHCI_READ_REG(io_base, AHCI_REG_VS, val);
     DBG_AHCI("AHCI: Controller version: 0x%x (major) 0x%x (minor)\n",
@@ -748,10 +753,12 @@ static int ahci_hba_init(uint16_t io_base)
     DBG_AHCI("AHCI: ahci_seg=%04x, size=%04x, pointer at EBDA:%04x (EBDA size=%04x)\n", 
              ahci_seg, sizeof(ahci_t), (uint16_t)&EbdaData->bdisk.ahci_seg, sizeof(ebda_data_t));
 
-    write_word(ebda_seg, (uint16_t)&EbdaData->bdisk.ahci_seg, ahci_seg);
-    write_byte(ebda_seg, (uint16_t)&EbdaData->bdisk.ahci_devcnt, 0);
-    write_byte(ahci_seg, (uint16_t)&AhciData->cur_port, 0xff);
-    write_word(ahci_seg, (uint16_t)&AhciData->iobase, io_base);
+    bios_dsk->ahci_seg    = ahci_seg;
+    bios_dsk->ahci_devcnt = 0;
+
+    ahci = ahci_seg :> 0;
+    ahci->cur_port = 0xff;
+    ahci->iobase   = io_base;
 
     /* Reset the controller. */
     ahci_ctrl_set_bits(io_base, AHCI_REG_GHC, AHCI_GHC_HR);
