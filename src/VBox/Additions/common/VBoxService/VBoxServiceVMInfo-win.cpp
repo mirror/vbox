@@ -563,9 +563,14 @@ int VBoxServiceVMInfoWinWriteUsers(char **ppszUserList, uint32_t *pcUsersInList)
                 VBOXSERVICEVMINFOUSER UserInfo;
                 if (VBoxServiceVMInfoWinIsLoggedIn(&UserInfo, &paSessions[i]))
                 {
+                    VBoxServiceVerbose(4, "VMInfo/Users: Handling user=%ls, domain=%ls, package=%ls\n",
+                                       pUserInfo[i].wszUser, pUserInfo[i].wszLogonDomain, pUserInfo[i].wszAuthenticationPackage);
+
+                    /* Retrieve assigned processes of current session. */
                     uint32_t cSessionProcs = VBoxServiceVMInfoWinSessionHasProcesses(&paSessions[i], paProcs, cProcs);
-                    if (!cSessionProcs)
-                        continue;
+                    /* Don't return here when current session does not have assigned processes
+                     * anymore -- in that case we have to search through the unique users list below
+                     * and see if got a stale user/session entry. */
 
                     bool fFoundUser = false;
                     for (ULONG i = 0; i < cUniqueUsers; i++)
@@ -605,7 +610,7 @@ int VBoxServiceVMInfoWinWriteUsers(char **ppszUserList, uint32_t *pcUsersInList)
                 }
             }
 
-            VBoxServiceVerbose(3, "VMInfo/Users: Found %u unique logged-in user(s) with processes\n",
+            VBoxServiceVerbose(3, "VMInfo/Users: Found %u unique logged-in user(s)\n",
                                cUniqueUsers);
 
             *pcUsersInList = 0;
