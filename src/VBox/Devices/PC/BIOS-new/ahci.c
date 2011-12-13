@@ -321,8 +321,8 @@ static void ahci_cmd_data(bio_dsk_t __far *bios_dsk, uint8_t cmd)
     prdt_idx = ahci->cur_prd;
 
     /* Set up the PRDT. */
-    ahci->aPrdt[prdt_idx].len       = ahci->edds.u.sg[prdt_idx].size - 1;
-    ahci->aPrdt[prdt_idx].phys_addr = ahci->edds.u.sg[prdt_idx].phys_addr;
+    ahci->aPrdt[prdt_idx].len       = ahci->edds.u.sg[0].size - 1;
+    ahci->aPrdt[prdt_idx].phys_addr = ahci->edds.u.sg[0].phys_addr;
     ++prdt_idx;
 
     if (bios_dsk->drqp.skip_a) {
