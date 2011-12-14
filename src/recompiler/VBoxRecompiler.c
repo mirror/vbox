@@ -370,10 +370,10 @@ REMR3DECL(int) REMR3Init(PVM pVM)
     STAM_REG(pVM, &gStatCompilationQEmu,    STAMTYPE_PROFILE, "/PROF/REM/Compile",    STAMUNIT_TICKS_PER_CALL, "Profiling QEmu compilation.");
     STAM_REG(pVM, &gStatRunCodeQEmu,        STAMTYPE_PROFILE, "/PROF/REM/Runcode",    STAMUNIT_TICKS_PER_CALL, "Profiling QEmu code execution.");
     STAM_REG(pVM, &gStatTotalTimeQEmu,      STAMTYPE_PROFILE, "/PROF/REM/Emulate",    STAMUNIT_TICKS_PER_CALL, "Profiling code emulation.");
-    STAM_REG(pVM, &gStatTimers,             STAMTYPE_PROFILE, "/PROF/REM/Timers",     STAMUNIT_TICKS_PER_CALL, "Profiling timer scheduling.");
-    STAM_REG(pVM, &gStatTBLookup,           STAMTYPE_PROFILE, "/PROF/REM/TBLookup",   STAMUNIT_TICKS_PER_CALL, "Profiling timer scheduling.");
-    STAM_REG(pVM, &gStatIRQ,                STAMTYPE_PROFILE, "/PROF/REM/IRQ",        STAMUNIT_TICKS_PER_CALL, "Profiling timer scheduling.");
-    STAM_REG(pVM, &gStatRawCheck,           STAMTYPE_PROFILE, "/PROF/REM/RawCheck",   STAMUNIT_TICKS_PER_CALL, "Profiling timer scheduling.");
+    STAM_REG(pVM, &gStatTimers,             STAMTYPE_PROFILE, "/PROF/REM/Timers",     STAMUNIT_TICKS_PER_CALL, "Profiling timer queue processing.");
+    STAM_REG(pVM, &gStatTBLookup,           STAMTYPE_PROFILE, "/PROF/REM/TBLookup",   STAMUNIT_TICKS_PER_CALL, "Profiling translation block lookup.");
+    STAM_REG(pVM, &gStatIRQ,                STAMTYPE_PROFILE, "/PROF/REM/IRQ",        STAMUNIT_TICKS_PER_CALL, "Profiling IRQ delivery.");
+    STAM_REG(pVM, &gStatRawCheck,           STAMTYPE_PROFILE, "/PROF/REM/RawCheck",   STAMUNIT_TICKS_PER_CALL, "Profiling remR3CanExecuteRaw calls.");
     STAM_REG(pVM, &gStatMemRead,            STAMTYPE_PROFILE, "/PROF/REM/MemRead",    STAMUNIT_TICKS_PER_CALL, "Profiling memory access.");
     STAM_REG(pVM, &gStatMemWrite,           STAMTYPE_PROFILE, "/PROF/REM/MemWrite",   STAMUNIT_TICKS_PER_CALL, "Profiling memory access.");
     STAM_REG(pVM, &gStatHCVirt2GCPhys,      STAMTYPE_PROFILE, "/PROF/REM/HCVirt2GCPhys", STAMUNIT_TICKS_PER_CALL, "Profiling memory conversion.");
