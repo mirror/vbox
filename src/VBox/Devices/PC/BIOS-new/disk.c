@@ -348,7 +348,10 @@ void BIOSCALL int13_harddisk_ext(disk_regs_t r)
         count   = i13_ext->count;
         segment = i13_ext->segment;
         offset  = i13_ext->offset;
-        
+
+        BX_DEBUG_INT13_HD("%s: %d sectors from lba %u @ %04x:%04x\n", __func__, 
+                          count, i13_ext->lba1, segment, offset);
+
         // Can't use 64 bits lba
         lba = i13_ext->lba2;
         if (lba != 0L) {
@@ -378,6 +381,7 @@ void BIOSCALL int13_harddisk_ext(disk_regs_t r)
         bios_dsk->drqp.nsect   = count;
         bios_dsk->drqp.sect_sz = 512;   //@todo: device specific?
         bios_dsk->drqp.sector  = 0;     /* Indicate LBA. */
+        bios_dsk->drqp.dev_id  = device;
         
         // Execute the command
         if ( GET_AH() == 0x42 ) {

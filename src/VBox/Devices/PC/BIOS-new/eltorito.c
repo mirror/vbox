@@ -507,7 +507,10 @@ void BIOSCALL int13_cdemu(disk_regs_t r)
         nbsectors = GET_AL();
         segment   = ES;
         offset    = BX;
-        
+
+        BX_DEBUG_INT13_ET("%s: read to %04x:%04x @ VCHS %u/%u/%u (%u sectors)\n", __func__,
+                          ES, BX, cylinder, head, sector, nbsectors);
+
         // no sector to read ?
         if(nbsectors==0)
             goto int13_success;
