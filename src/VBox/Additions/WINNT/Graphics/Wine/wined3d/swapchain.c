@@ -138,13 +138,14 @@ static void WINAPI IWineD3DSwapChainImpl_Destroy(IWineD3DSwapChain *iface)
         HeapFree(GetProcessHeap(), 0, This->backBuffer);
         This->backBuffer = NULL;
     }
-#ifndef VBOX_WITH_WDDM
+#if 0
     for (i = 0; i < This->num_contexts; ++i)
     {
         context_destroy(This->device, This->context[i]);
     }
 #else
 
+#ifdef VBOX_WITH_WDDM
     if (This->presentRt)
     {
         IWineD3DSurfaceImpl *old = (IWineD3DSurfaceImpl*)This->presentRt;
@@ -152,6 +153,8 @@ static void WINAPI IWineD3DSwapChainImpl_Destroy(IWineD3DSwapChain *iface)
         IWineD3DSurface_Release(This->presentRt);
         This->presentRt = NULL;
     }
+#endif
+
     IWineD3DDevice_RemoveSwapChain((IWineD3DDevice*)This->device, (IWineD3DSwapChain*)This);
     if (!This->device->NumberOfSwapChains)
 #endif
@@ -478,7 +481,11 @@ static HRESULT WINAPI IWineD3DSwapChainImpl_Present(IWineD3DSwapChain *iface, CO
      */
     pwglSwapLayerBuffers(context->currentSwapchain->hDC, WGL_SWAP_MAIN_PLANE);
 #else
+# ifdef VBOX_WINE_WITH_SINGLE_SWAPCHAIN_CONTEXT
+    pwglSwapLayerBuffers(context->hdc, WGL_SWAP_MAIN_PLANE);
+# else
     SwapBuffers(context->hdc); /* TODO: cycle through the swapchain buffers */
+# endif
 #endif
 
     TRACE("SwapBuffers called, Starting new frame\n");

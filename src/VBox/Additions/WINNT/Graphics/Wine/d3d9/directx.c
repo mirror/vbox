@@ -433,6 +433,8 @@ static HRESULT WINAPI IDirect3D9Impl_GetDeviceCaps(LPDIRECT3D9EX iface, UINT Ada
 
     /* fixup caps  */
 #ifdef VBOX_WITH_WDDM
+    /* needed for Windows Media Player to work properly */
+    pCaps->Caps |= D3DCAPS_READ_SCANLINE;
     pCaps->Caps2 |= 0x00080000 /*D3DCAPS2_CANRENDERWINDOWED*/;
     pCaps->Caps2 |= D3DCAPS2_CANSHARERESOURCE;
     pCaps->DevCaps |= D3DDEVCAPS_FLOATTLVERTEX /* <- must be set according to the docs */
@@ -480,9 +482,6 @@ static HRESULT WINAPI IDirect3D9Impl_GetDeviceCaps(LPDIRECT3D9EX iface, UINT Ada
         ERR_D3D();
     }
 #endif
-
-    /* needed for Windows Media Player to work properly */
-    pCaps->Caps |= D3DCAPS_READ_SCANLINE;
 
     TRACE("(%p) returning %p\n", This, pCaps);
 

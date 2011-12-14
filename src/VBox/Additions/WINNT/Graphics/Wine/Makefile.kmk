@@ -128,13 +128,12 @@ wined3d_DEFS         = __WINESRC__ WINE_UNICODE_API="" _REENTRANT WINE_NOWINSOCK
     BIN_TO_DLLDIR=\"\" \
     LIB_TO_DATADIR=\"\" \
     BIN_TO_DATADIR=\"\"
-wined3d_DEFS.x86     = __i386__
 if "$(KBUILD_TYPE)" != "debug" || defined(VBOX_WINE_NO_DEBUG_MSGS)
  wined3d_DEFS        += WINE_NO_DEBUG_MSGS
 endif
-wined3d_DEFS.amd64   += VBOX_WINE_WITHOUT_LIBWINE
-wined3d_INCS.x86     := $(PATH_SUB_CURRENT)/include
-wined3d_INCS.amd64   := vbox/libWineStub/include
+wined3d_DEFS         += VBOX_WINE_WITH_SINGLE_SWAPCHAIN_CONTEXT
+wined3d_DEFS         += VBOX_WINE_WITHOUT_LIBWINE
+wined3d_INCS         := vbox/libWineStub/include
 wined3d_SOURCES      := \
     wined3d/arb_program_shader.c \
     wined3d/ati_fragment_shader.c \
@@ -170,11 +169,10 @@ wined3d_SOURCES      := \
     wined3d/volume.c \
     wined3d/volumetexture.c \
     wined3d/wined3d_main.c \
+    wined3d/vboxext.c \
+    vbox/libWineStub/debug.c \
     wined3d/wined3d.def
-wined3d_SOURCES.amd64 = vbox/libWineStub/debug.c
-wined3d_LIBS.x86      = \
-    $(PATH_STAGE_LIB)/libWine$(VBOX_SUFF_LIB)
-wined3d_SDKS.amd64    = WINDDKWLH
+wined3d_SDKS          = WINDDKWLH
 ifdef VBOX_WINE_WITH_IPRT
 wined3d_LIBS         += \
 							$(VBOX_LIB_IPRT_GUEST_R3) \
@@ -190,23 +188,9 @@ if defined(VBOX_SIGNING_MODE) && defined(VBOX_WITH_WDDM)
  wined3dwddm_DEBUG_INSTTYPE.win = both
 endif
 wined3dwddm_INCS           = vbox/libWineStub/include
-wined3dwddm_INCS.x86       = $(NO_SUCH_VARIABLE)
-wined3dwddm_LIBS.x86       = $(NO_SUCH_VARIABLE)
-wined3dwddm_DEFS           = $(subst __i386__,,$(wined3d_DEFS)) VBOX_WITH_WDDM VBOX_WINE_WITHOUT_LIBWINE
-wined3dwddm_DEFS.x86       = $(NO_SUCH_VARIABLE)
-wined3dwddm_SOURCES        = $(subst wined3d.def,wined3dwddm.def,$(wined3d_SOURCES)) vbox/libWineStub/debug.c wined3d/vboxext.c vbox/VBoxDbgGl.c
-wined3dwddm_SOURCES.x86    = $(NO_SUCH_VARIABLE)
-wined3dwddm_SOURCES.amd64  = $(NO_SUCH_VARIABLE)
-wined3dwddm_SDKS           = WINDDKWLH
-wined3dwddm_SDKS.amd64     = $(NO_SUCH_VARIABLE)
-#VBOX_WINE_WITH_IPRT is used for debugging currently to enable Assert & stuff
-#ifdef VBOX_WINE_WITH_IPRT
-#wined3dwddm_LIBS          += \
-							$(VBOX_LIB_IPRT_GUEST_R3) \
-							$(VBOX_LIB_VBGL_R3)
-#wined3dwddm_DEFS          += VBOX_WINE_WITH_IPRT
-#endif
-wined3dwddm_DEFS          += VBOX_WINE_WITH_SINGLE_CONTEXT
+wined3dwddm_DEFS           = $(subst VBOX_WINE_WITH_SINGLE_SWAPCHAIN_CONTEXT,,$(wined3d_DEFS))
+wined3dwddm_DEFS          += VBOX_WITH_WDDM VBOX_WINE_WITH_SINGLE_CONTEXT
+wined3dwddm_SOURCES        = $(subst wined3d.def,wined3dwddm.def,$(wined3d_SOURCES)) vbox/VBoxDbgGl.c
 
 DLLS.amd64 += wined3dwddm-x86
 wined3dwddm-x86_EXTENDS    = wined3dwddm
@@ -229,14 +213,12 @@ VBoxD3D8_DEFS         = __WINESRC__ WINE_UNICODE_API="" _REENTRANT WINE_NOWINSOC
     BIN_TO_DLLDIR=\"\" \
     LIB_TO_DATADIR=\"\" \
     BIN_TO_DATADIR=\"\"
-VBoxD3D8_DEFS.x86 = __i386__
 if "$(KBUILD_TYPE)" != "debug" || defined(VBOX_WINE_NO_DEBUG_MSGS)
  VBoxD3D8_DEFS       += WINE_NO_DEBUG_MSGS
 endif
-VBoxD3D8_DEFS.amd64   += VBOX_WINE_WITHOUT_LIBWINE
-VBoxD3D8_INCS.x86     := $(PATH_SUB_CURRENT)/include
-VBoxD3D8_INCS.amd64   := vbox/libWineStub/include
-VBoxD3D8_SOURCES      := \
+VBoxD3D8_DEFS        += VBOX_WINE_WITHOUT_LIBWINE
+VBoxD3D8_INCS        := vbox/libWineStub/include
+VBoxD3D8_SOURCES     := \
     d3d8/cubetexture.c \
     d3d8/d3d8_main.c \
     d3d8/device.c \
@@ -251,13 +233,11 @@ VBoxD3D8_SOURCES      := \
     d3d8/vertexshader.c \
     d3d8/volume.c \
     d3d8/volumetexture.c \
+    vbox/libWineStub/debug.c \
     d3d8/d3d8.def
-VBoxD3D8_LIBS.x86 = \
-    $(PATH_STAGE_LIB)/libWine$(VBOX_SUFF_LIB)
-VBoxD3D8_LIBS     = \
+VBoxD3D8_LIBS         = \
     $(PATH_STAGE_LIB)/wined3d$(VBOX_SUFF_LIB)
-VBoxD3D8_SOURCES.amd64 = vbox/libWineStub/debug.c
-VBoxD3D8_SDKS.amd64    = WINDDKWLH
+VBoxD3D8_SDKS         = WINDDKWLH
 ifdef VBOX_WINE_WITH_IPRT
 VBoxD3D8_LIBS         += \
 							$(VBOX_LIB_IPRT_GUEST_R3) \
@@ -276,13 +256,11 @@ VBoxD3D9_DEFS         = __WINESRC__ WINE_UNICODE_API="" _REENTRANT WINE_NOWINSOC
     BIN_TO_DLLDIR=\"\" \
     LIB_TO_DATADIR=\"\" \
     BIN_TO_DATADIR=\"\"
-VBoxD3D9_DEFS.x86 = __i386__
 if "$(KBUILD_TYPE)" != "debug" || defined(VBOX_WINE_NO_DEBUG_MSGS)
- VBoxD3D9_DEFS       += WINE_NO_DEBUG_MSGS
+ VBoxD3D9_DEFS        += WINE_NO_DEBUG_MSGS
 endif
-VBoxD3D9_DEFS.amd64   += VBOX_WINE_WITHOUT_LIBWINE
-VBoxD3D9_INCS.x86     := $(PATH_SUB_CURRENT)/include
-VBoxD3D9_INCS.amd64   := vbox/libWineStub/include
+VBoxD3D9_DEFS         += VBOX_WINE_WITHOUT_LIBWINE
+VBoxD3D9_INCS         := vbox/libWineStub/include
 VBoxD3D9_SOURCES      := \
     d3d9/cubetexture.c \
     d3d9/d3d9_main.c \
@@ -299,18 +277,12 @@ VBoxD3D9_SOURCES      := \
     d3d9/vertexdeclaration.c \
     d3d9/vertexshader.c \
     d3d9/volume.c \
-    d3d9/volumetexture.c
-
-VBoxD3D9_SOURCES.x86      = \
-	d3d9/d3d9.def
-VBoxD3D9_SOURCES.amd64    = \
-	vbox/libWineStub/debug.c \
-	d3d9/d3d9xpdm.def
-VBoxD3D9_LIBS.x86         = \
-    $(PATH_STAGE_LIB)/libWine$(VBOX_SUFF_LIB)
+    d3d9/volumetexture.c \
+    vbox/libWineStub/debug.c \
+    d3d9/d3d9xpdm.def
 VBoxD3D9_LIBS             = \
     $(PATH_STAGE_LIB)/wined3d$(VBOX_SUFF_LIB)
-VBoxD3D9_SDKS.amd64    = WINDDKWLH
+VBoxD3D9_SDKS             = WINDDKWLH
 ifdef VBOX_WINE_WITH_IPRT
 VBoxD3D9_LIBS         += \
 							$(VBOX_LIB_IPRT_GUEST_R3) \
@@ -326,16 +298,9 @@ if defined(VBOX_SIGNING_MODE) && defined(VBOX_WITH_WDDM)
  VBoxD3D9wddm_DEBUG_INSTTYPE = both
 endif
 VBoxD3D9wddm_INCS           = vbox/libWineStub/include
-VBoxD3D9wddm_INCS.x86       = $(NO_SUCH_VARIABLE)
-VBoxD3D9wddm_DEFS.x86       = $(NO_SUCH_VARIABLE)
-VBoxD3D9wddm_DEFS          += $(subst __i386__,,$(VBoxD3D9_DEFS)) VBOX_WITH_WDDM VBOX_WINE_WITHOUT_LIBWINE IN_VBOXWINEEX
-VBoxD3D9wddm_SOURCES        = $(VBoxD3D9_SOURCES) d3d9/d3d9wddm.def vbox/libWineStub/debug.c
-VBoxD3D9wddm_SOURCES.x86    = $(NO_SUCH_VARIABLE)
-VBoxD3D9wddm_SOURCES.amd64  = $(NO_SUCH_VARIABLE)
+VBoxD3D9wddm_DEFS          += $(VBoxD3D9_DEFS) VBOX_WITH_WDDM VBOX_WINE_WITHOUT_LIBWINE IN_VBOXWINEEX
+VBoxD3D9wddm_SOURCES        = $(subst d3d9xpdm.def,d3d9wddm.def,$(VBoxD3D9_SOURCES))
 VBoxD3D9wddm_LIBS           = $(subst $(PATH_STAGE_LIB)/wined3d$(VBOX_SUFF_LIB),$(PATH_STAGE_LIB)/wined3dwddm$(VBOX_SUFF_LIB),$(VBoxD3D9_LIBS)) 
-VBoxD3D9wddm_LIBS.x86       = $(NO_SUCH_VARIABLE)
-VBoxD3D9wddm_SDKS           = WINDDKWLH
-VBoxD3D9wddm_SDKS.amd64     = $(NO_SUCH_VARIABLE)
 #ifdef VBOX_WINE_WITH_IPRT
 #VBoxD3D9wddm_LIBS          += \
 							$(VBOX_LIB_IPRT_GUEST_R3) \

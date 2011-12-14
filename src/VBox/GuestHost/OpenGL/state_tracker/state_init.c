@@ -10,6 +10,7 @@
 #include "cr_spu.h"
 
 #ifdef CHROMIUM_THREADSAFE
+static bool __isContextTLSInited = false;
 CRtsd __contextTSD;
 #else
 CRContext *__currentContext = NULL;
@@ -167,7 +168,7 @@ crStateCreateContextId(int i, const CRLimitsState *limits,
 
     ctx->id = i;
 #ifdef CHROMIUM_THREADSAFE
-    crTSDRefInit(ctx, crStateContextDtor);
+    VBoxTlsRefInit(ctx, crStateContextDtor);
 #endif
     ctx->flush_func = NULL;
     for (j=0;j<CR_MAX_BITARRAY;j++){
@@ -290,6 +291,15 @@ crStateFreeContext(CRContext *ctx)
     crFree( ctx );
 }
 
+#ifdef CHROMIUM_THREADSAFE
+# ifndef RT_OS_WINDOWS
+static DECLCALLBACK(void) crStateThreadTlsDtor(void *pvValue)
+{
+    CRContext *pCtx = (CRContext*)pvValue;
+    VBoxTlsRefRelease(pCtx);
+}
+# endif
+#endif
 
 /*
  * Allocate the state (dirty) bits data structures.
@@ -315,12 +325,26 @@ void crStateInit(void)
     for (i=0;i<CR_MAX_CONTEXTS;i++)
         g_availableContexts[i] = 0;
 
+#ifdef CHROMIUM_THREADSAFE
+    if (!__isContextTLSInited)
+    {
+# ifndef RT_OS_WINDOWS
+        /* tls destructor is implemented for all platforms except windows*/
+        crInitTSDF(&__contextTSD, crStateThreadTlsDtor);
+# else
+        /* windows should do cleanup via DllMain THREAD_DETACH notification */
+        crInitTSD(&__contextTSD);
+# endif
+        __isContextTLSInited = 1;
+    }
+#endif
+
     if (defaultContext) {
         /* Free the default/NULL context.
          * Ensures context bits are reset */
 #ifdef CHROMIUM_THREADSAFE
         SetCurrentContext(NULL);
-        crTSDRefRelease(defaultContext);
+        VBoxTlsRefRelease(defaultContext);
 #else
         crStateFreeContext(defaultContext);
         __currentContext = NULL;
@@ -354,6 +378,7 @@ void crStateDestroy(void)
 
 #ifdef CHROMIUM_THREADSAFE
     crFreeTSD(&__contextTSD);
+    __isContextTLSInited = 0;
 #endif
 }
 
@@ -456,7 +481,7 @@ void crStateDestroyContext( CRContext *ctx )
     g_availableContexts[ctx->id] = 0;
 
 #ifdef CHROMIUM_THREADSAFE
-    crTSDRefRelease(ctx);
+    VBoxTlsRefRelease(ctx);
 #else
     crStateFreeContext(ctx);
 #endif

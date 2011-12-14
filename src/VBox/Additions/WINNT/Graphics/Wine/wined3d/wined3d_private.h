@@ -50,10 +50,6 @@
 #endif
 #include "wine/debug.h"
 #include "wine/unicode.h"
-#ifdef VBOX_WITH_WDDM
-# include "vboxext.h"
-#endif
-
 
 #ifndef VBOX_WINE_WITHOUT_LIBWINE
 #include "objbase.h"
@@ -63,8 +59,17 @@
 #include "wine/list.h"
 #include "wine/rbtree.h"
 
+#include "vboxext.h"
+
 #ifdef VBOX_WITH_WDDM
 # include "vboxsharedrc.h"
+#endif
+
+#if defined(VBOX_WINE_WITH_SINGLE_CONTEXT) || defined(VBOX_WINE_WITH_SINGLE_SWAPCHAIN_CONTEXT)
+# define VBoxTlsRefGetImpl(_tls) (TlsGetValue((DWORD)(_tls)))
+# define VBoxTlsRefSetImpl(_tls, _val) (TlsSetValue((DWORD)(_tls), (_val)))
+# define VBoxTlsRefAssertImpl Assert
+# include <VBox/VBoxVideo3D.h>
 #endif
 
 /* Driver quirks */
@@ -1120,7 +1125,9 @@ struct wined3d_context
     WORD fog_enabled : 1;
     WORD num_untracked_materials : 2;   /* Max value 2 */
     WORD current : 1;
+#if !defined(VBOX_WINE_WITH_SINGLE_CONTEXT) && !defined(VBOX_WINE_WITH_SINGLE_SWAPCHAIN_CONTEXT)
     WORD destroyed : 1;
+#endif
     WORD valid : 1;
     BYTE texShaderBumpMap;              /* MAX_TEXTURES, 8 */
     BYTE lastWasPow2Texture;            /* MAX_TEXTURES, 8 */
@@ -1141,6 +1148,11 @@ struct wined3d_context
     HWND                    win_handle;
     HDC                     hdc;
 #endif
+
+#if defined(VBOX_WINE_WITH_SINGLE_CONTEXT) || defined(VBOX_WINE_WITH_SINGLE_SWAPCHAIN_CONTEXT)
+    VBOXTLSREFDATA
+#endif
+
     int pixel_format;
     GLint                   aux_buffers;
 
@@ -1287,7 +1299,9 @@ BOOL context_set_current(struct wined3d_context *ctx) DECLSPEC_HIDDEN;
 void context_set_draw_buffer(struct wined3d_context *context, GLenum buffer) DECLSPEC_HIDDEN;
 void context_set_tls_idx(DWORD idx) DECLSPEC_HIDDEN;
 void context_surface_update(struct wined3d_context *context, IWineD3DSurfaceImpl *surface) DECLSPEC_HIDDEN;
-
+#if defined(VBOX_WINE_WITH_SINGLE_CONTEXT) || defined(VBOX_WINE_WITH_SINGLE_SWAPCHAIN_CONTEXT)
+void context_clear_on_thread_detach();
+#endif
 /* Macros for doing basic GPU detection based on opengl capabilities */
 #define WINE_D3D6_CAPABLE(gl_info) (gl_info->supported[ARB_MULTITEXTURE])
 #define WINE_D3D7_CAPABLE(gl_info) (gl_info->supported[ARB_TEXTURE_COMPRESSION] && gl_info->supported[ARB_TEXTURE_CUBE_MAP] && gl_info->supported[ARB_TEXTURE_ENV_DOT3])

@@ -2207,9 +2207,7 @@ static BOOL IWineD3DImpl_FillGLCaps(struct wined3d_adapter *adapter)
 
     gl_info->supported[WINED3D_GL_EXT_NONE] = TRUE;
 
-#ifdef VBOX_WITH_WDDM
     gl_info->supported[VBOX_SHARED_CONTEXTS] = TRUE;
-#endif
 
     while (*GL_Extensions)
     {
@@ -2911,7 +2909,7 @@ static HRESULT WINAPI IWineD3DImpl_GetAdapterDisplayModeEx(IWineD3D *iface,
             pMode->ScanLineOrdering = WINED3DSCANLINEORDERING_PROGRESSIVE;
             if (DevModeW.dmFields&DM_DISPLAYFLAGS)
             {
-#if defined(RT_ARCH_AMD64) && !defined(VBOX_WITH_WDDM)
+#if 0 //defined(RT_ARCH_AMD64) && !defined(VBOX_WITH_WDDM)
 # ifndef DM_INTERLACED
 #  define DM_INTERLACED 0x00000002
 # endif
@@ -2930,7 +2928,7 @@ static HRESULT WINAPI IWineD3DImpl_GetAdapterDisplayModeEx(IWineD3D *iface,
             *pRotation = WINED3DDISPLAYROTATION_IDENTITY;
             if (DevModeW.dmFields&DM_DISPLAYORIENTATION)
             {
-#if defined(RT_ARCH_AMD64) && !defined(VBOX_WITH_WDDM)
+#if 0 //defined(RT_ARCH_AMD64) && !defined(VBOX_WITH_WDDM)
                 switch (DevModeW.dmDisplayOrientation)
 #else
                 switch (DevModeW.u.s2.dmDisplayOrientation)
@@ -2949,7 +2947,7 @@ static HRESULT WINAPI IWineD3DImpl_GetAdapterDisplayModeEx(IWineD3D *iface,
                         *pRotation = WINED3DDISPLAYROTATION_270;
                         break;
                     default:
-#if defined(RT_ARCH_AMD64) && !defined(VBOX_WITH_WDDM)
+#if 0 //defined(RT_ARCH_AMD64) && !defined(VBOX_WITH_WDDM)
                         WARN("Unexpected display orientation %#x", DevModeW.dmDisplayOrientation);
 #else
                         WARN("Unexpected display orientation %#x", DevModeW.u.s2.dmDisplayOrientation);
@@ -5204,7 +5202,7 @@ static BOOL InitAdapters(IWineD3DImpl *This)
     if(!mod_gl) {
 #ifdef USE_WIN32_OPENGL
 #define USE_GL_FUNC(pfn) pfn = (void*)GetProcAddress(mod_gl, #pfn);
-#ifdef VBOX_WITH_WDDM
+#if defined(VBOX_WITH_WDDM) || defined(VBOX_WINE_WITH_SINGLE_SWAPCHAIN_CONTEXT)
         BOOL (APIENTRY *pDrvValidateVersion)(DWORD) DECLSPEC_HIDDEN;
 #ifdef VBOX_WDDM_WOW64
         mod_gl = LoadLibraryA("VBoxOGL-x86.dll");
@@ -5218,7 +5216,7 @@ static BOOL InitAdapters(IWineD3DImpl *This)
             ERR("Can't load opengl32.dll!\n");
             goto nogl_adapter;
         }
-#ifdef VBOX_WITH_WDDM
+#if defined(VBOX_WITH_WDDM) || defined(VBOX_WINE_WITH_SINGLE_SWAPCHAIN_CONTEXT)
         /* init properly */
         pDrvValidateVersion = (void*)GetProcAddress(mod_gl, "DrvValidateVersion");
         if(!pDrvValidateVersion) {

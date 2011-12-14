@@ -40,6 +40,8 @@
 #include "wine/port.h"
 #include "wined3d_private.h"
 
+#include <float.h>
+
 WINE_DEFAULT_DEBUG_CHANNEL(d3d_surface);
 
 /* See also float_16_to_32() in wined3d_private.h */

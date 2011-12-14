@@ -8,9 +8,6 @@
 #define STATE_H
 
 #include "cr_glstate.h"
-#ifdef CHROMIUM_THREADSAFE
-#include "cr_threads.h"
-#endif
 
 typedef struct _crCheckIDHWID {
     GLuint id, hwid;
@@ -22,13 +19,15 @@ extern CRStateBits *__currentBits;
 #define GetCurrentBits() __currentBits
 
 #ifdef CHROMIUM_THREADSAFE
+#include <cr_threads.h>
+
 extern CRtsd __contextTSD;
-#define GetCurrentContext() crTSDRefGetCurrent(CRContext, &__contextTSD)
+#define GetCurrentContext() VBoxTlsRefGetCurrent(CRContext, &__contextTSD)
 
 /* NOTE: below SetCurrentContext stuff is supposed to be used only internally!!
  * it is placed here only to simplify things since some code besides state_init.c
  * (i.e. state_glsl.c) is using it */
-#define SetCurrentContext(_ctx) crTSDRefSetCurrent(CRContext, &__contextTSD, _ctx)
+#define SetCurrentContext(_ctx) VBoxTlsRefSetCurrent(CRContext, &__contextTSD, _ctx)
 #else
 extern CRContext *__currentContext;
 #define GetCurrentContext() __currentContext

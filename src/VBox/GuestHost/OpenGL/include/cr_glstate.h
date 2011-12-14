@@ -46,7 +46,7 @@ typedef struct CRContext CRContext;
 #include "spu_dispatch_table.h"
 
 #ifdef CHROMIUM_THREADSAFE
-#include "cr_threads.h"
+# include <cr_threads.h>
 #endif
 
 #include <iprt/cdefs.h>
@@ -132,7 +132,7 @@ struct CRContext {
      * 3. Thread1 -> Destroy(ctx1);
      * => Thread2 still refers to destroyed ctx1
      * */
-    CRTSDREFDATA
+    VBOXTLSREFDATA
 #endif
 
     CRbitvalue bitid[CR_MAX_BITARRAY];
