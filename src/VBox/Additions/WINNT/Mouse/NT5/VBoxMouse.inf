@@ -17,18 +17,17 @@
 Signature="$Windows NT$"
 ClassGuid={4D36E96F-E325-11CE-BFC1-08002BE10318}
 Class=Mouse
-DriverPackageType=ClassFilter
 ;edit-DriverVer=08/26/2008,2.00.0000
 ;cat CatalogFile=VBoxMouse.cat
 
 [SourceDisksNames]
-1 = %VBoxMouse.MediaDesc%
+1 = %VBoxMouse.MediaDesc%,,,
 
 [SourceDisksFiles]
-VBoxMouse.sys = 1
+VBoxMouse.sys = 1,,
 
 [DestinationDirs]
-DefaultDestDir = 12	; DIRID_DRIVERS
+DefaultDestDir = 12 ; DIRID_DRIVERS
 
 [DefaultInstall]
 CopyFiles = @VBoxMouse.sys
@@ -59,12 +58,14 @@ StartType      = %SERVICE_DEMAND_START%
 ErrorControl   = %SERVICE_ERROR_IGNORE%
 ServiceBinary  = %12%\VBoxMouse.sys
 
+[ClassInstall32]
+; This should fix the error 0xe0000101 (The required section was not found in the INF).
 
 [Strings]
-VBoxMouse.Desc          = "VirtualBox Guest Mouse Filter"
-VBoxMouse.SvcDesc       = "VirtualBox Guest Mouse Service"
-VBoxMouse.MediaDesc     = "VirtualBox Guest Mouse Driver Installation Media"
-ORACLE                  = "Oracle Corporation"
+VBoxMouse.Desc        = "VirtualBox Guest Mouse Filter"
+VBoxMouse.SvcDesc     = "VirtualBox Guest Mouse Service"
+VBoxMouse.MediaDesc   = "VirtualBox Guest Mouse Driver Installation Media"
+ORACLE                = "Oracle Corporation"
 
 ; Useful constants
 SERVICE_KERNEL_DRIVER = 1
