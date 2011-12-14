@@ -47,7 +47,7 @@
 
 
 
-RTDECL(int) RTDirCreate(const char *pszPath, RTFMODE fMode)
+RTDECL(int) RTDirCreate(const char *pszPath, RTFMODE fMode, uint32_t fCreate)
 {
     /*
      * Validate the file mode.

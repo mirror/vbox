@@ -99,7 +99,7 @@ RTDECL(int) RTDirCreateTemp(char *pszTemplate)
         unsigned j = cXes;
         while (j-- > 0)
             pszX[j] = s_sz[RTRandU32Ex(0, RT_ELEMENTS(s_sz) - 2)];
-        int rc = RTDirCreate(pszTemplate, 0700);
+        int rc = RTDirCreate(pszTemplate, 0700, 0);
         if (RT_SUCCESS(rc))
             return rc;
         if (rc != VERR_ALREADY_EXISTS)

@@ -883,7 +883,7 @@ int main(int argc, char *argv[])
 
     if (!RTDirExists("tmp"))
     {
-        rc = RTDirCreate("tmp", RTFS_UNIX_IRWXU);
+        rc = RTDirCreate("tmp", RTFS_UNIX_IRWXU, 0);
         if (RT_FAILURE(rc))
         {
             RTPrintf("tstVD: Failed to create 'tmp' directory! rc=%Rrc\n", rc);

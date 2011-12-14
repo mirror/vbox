@@ -50,8 +50,8 @@ static void test1Worker(RTTEST hTest, const char *pszBaseDir,
 
     /* Create it.*/
     RTTESTI_CHECK_RC_OK_RETV(RTPathJoin(szPath1, sizeof(szPath1), pszBaseDir, "tstRTSymlink-link-1"));
-    RTSymlinkDelete(szPath1); /* clean up previous run */
-    RTTESTI_CHECK_RC_RETV(RTSymlinkCreate(szPath1, pszTarget, RTSYMLINKTYPE_FILE), VINF_SUCCESS);
+    RTSymlinkDelete(szPath1, 0); /* clean up previous run */
+    RTTESTI_CHECK_RC_RETV(RTSymlinkCreate(szPath1, pszTarget, RTSYMLINKTYPE_FILE, 0), VINF_SUCCESS);
 
     /* Check the predicate functions. */
     RTTESTI_CHECK(RTSymlinkExists(szPath1));
@@ -60,17 +60,17 @@ static void test1Worker(RTTEST hTest, const char *pszBaseDir,
     /* Read it. */
     memset(szPath2, 0xff, sizeof(szPath2));
     szPath2[sizeof(szPath2) - 1] = '\0';
-    RTTESTI_CHECK_RC(RTSymlinkRead(szPath1, szPath2, sizeof(szPath2)), VINF_SUCCESS);
+    RTTESTI_CHECK_RC(RTSymlinkRead(szPath1, szPath2, sizeof(szPath2), 0), VINF_SUCCESS);
     RTTESTI_CHECK_MSG(strcmp(szPath2, pszTarget) == 0, ("got=\"%s\" expected=\"%s\"", szPath2, pszTarget));
 
     memset(szPath2, 0xff, sizeof(szPath2));
     szPath2[sizeof(szPath2) - 1] = '\0';
-    RTTESTI_CHECK_RC(RTSymlinkRead(szPath1, szPath2, cchTarget + 1), VINF_SUCCESS);
+    RTTESTI_CHECK_RC(RTSymlinkRead(szPath1, szPath2, cchTarget + 1, 0), VINF_SUCCESS);
     RTTESTI_CHECK_MSG(strcmp(szPath2, pszTarget) == 0, ("got=\"%s\" expected=\"%s\"", szPath2, pszTarget));
 
     memset(szPath2, 0xff, sizeof(szPath2));
     szPath2[sizeof(szPath2) - 1] = '\0';
-    RTTESTI_CHECK_RC(RTSymlinkRead(szPath1, szPath2, cchTarget), VERR_BUFFER_OVERFLOW);
+    RTTESTI_CHECK_RC(RTSymlinkRead(szPath1, szPath2, cchTarget, 0), VERR_BUFFER_OVERFLOW);
     RTTESTI_CHECK_MSG(   strncmp(szPath2, pszTarget, cchTarget - 1) == 0
                       && szPath2[cchTarget - 1] == '\0',
                       ("got=\"%s\" expected=\"%.*s\"", szPath2, cchTarget - 1, pszTarget));
@@ -108,8 +108,8 @@ static void test1Worker(RTTEST hTest, const char *pszBaseDir,
     }
 
     /* Finally, the removal of the symlink. */
-    RTTESTI_CHECK_RC(RTSymlinkDelete(szPath1), VINF_SUCCESS);
-    RTTESTI_CHECK_RC(RTSymlinkDelete(szPath1), VERR_FILE_NOT_FOUND);
+    RTTESTI_CHECK_RC(RTSymlinkDelete(szPath1, 0), VINF_SUCCESS);
+    RTTESTI_CHECK_RC(RTSymlinkDelete(szPath1, 0), VERR_FILE_NOT_FOUND);
 }
 
 
@@ -143,8 +143,8 @@ static void test1(RTTEST hTest, const char *pszBaseDir)
     RTTESTI_CHECK(!RTSymlinkIsDangling("/some/non-existing/directory/name/iprt"));
     RTTESTI_CHECK(!RTSymlinkIsDangling("/some/non-existing/directory/name/iprt/"));
 
-    RTTESTI_CHECK_RC(RTSymlinkRead(szExecFile, szPath1, sizeof(szPath1)), VERR_NOT_SYMLINK);
-    RTTESTI_CHECK_RC(RTSymlinkRead(szExecDir,  szPath1, sizeof(szPath1)), VERR_NOT_SYMLINK);
+    RTTESTI_CHECK_RC(RTSymlinkRead(szExecFile, szPath1, sizeof(szPath1), 0), VERR_NOT_SYMLINK);
+    RTTESTI_CHECK_RC(RTSymlinkRead(szExecDir,  szPath1, sizeof(szPath1), 0), VERR_NOT_SYMLINK);
 
     /*
      * Do some symlinking.  ASSUME they are supported on the test file system.

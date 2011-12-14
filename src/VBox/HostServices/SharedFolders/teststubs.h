@@ -29,7 +29,7 @@
 #define RTDirClose           testRTDirClose
 extern int testRTDirClose(PRTDIR pDir);
 #define RTDirCreate          testRTDirCreate
-extern int testRTDirCreate(const char *pszPath, RTFMODE fMode);
+extern int testRTDirCreate(const char *pszPath, RTFMODE fMode, uint32_t fCreate);
 #define RTDirOpen            testRTDirOpen
 extern int testRTDirOpen(PRTDIR *ppDir, const char *pszPath);
 #define RTDirQueryInfo       testRTDirQueryInfo
@@ -75,8 +75,8 @@ extern int testRTFsQuerySizes(const char *pszFsPath, RTFOFF *pcbTotal, RTFOFF *p
 #define RTPathQueryInfoEx    testRTPathQueryInfoEx
 extern int testRTPathQueryInfoEx(const char *pszPath, PRTFSOBJINFO pObjInfo, RTFSOBJATTRADD enmAdditionalAttribs, uint32_t fFlags);
 #define RTSymlinkDelete      testRTSymlinkDelete
-extern int testRTSymlinkDelete(const char *pszSymlink);
+extern int testRTSymlinkDelete(const char *pszSymlink, uint32_t fDelete);
 #define RTSymlinkRead        testRTSymlinkRead
-extern int testRTSymlinkRead(const char *pszSymlink, char *pszTarget, size_t cbTarget);
+extern int testRTSymlinkRead(const char *pszSymlink, char *pszTarget, size_t cbTarget, uint32_t fRead);
 
 #endif /* __VBSF_TEST_STUBS__H */

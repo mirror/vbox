@@ -891,6 +891,8 @@ RTR3DECL(int) RTPathGetOwner(const char *pszPath, uint32_t *pUid, uint32_t *pGid
 #define RTPATHRENAME_FLAGS_NO_REPLACE   UINT32_C(0)
 /** This will replace attempt any target which isn't a directory. */
 #define RTPATHRENAME_FLAGS_REPLACE      RT_BIT(0)
+/** Don't allow symbolic links as part of the path. */
+#define RTPATHRENAME_FLAGS_NO_SYMLINKS  RT_BIT(1)
 /** @} */
 
 /**
@@ -905,6 +907,21 @@ RTR3DECL(int) RTPathGetOwner(const char *pszPath, uint32_t *pUid, uint32_t *pGid
  * @param   fRename     Rename flags, RTPATHRENAME_FLAGS_*.
  */
 RTR3DECL(int) RTPathRename(const char *pszSrc,  const char *pszDst, unsigned fRename);
+
+/** @name RTPathUnlink flags.
+ * @{ */
+/** Don't allow symbolic links as part of the path. */
+#define RTPATHUNLINK_FLAGS_NO_SYMLINKS  RT_BIT(0)
+/** @} */
+
+/**
+ * Removes the last component of the path.
+ *
+ * @returns IPRT status code.
+ * @param   pszPath     The path.
+ * @param   fUnlink     Unlink flags, RTPATHUNLINK_FLAGS_*.
+ */
+RTR3DECL(int) RTPathUnlink(const char *pszPath, uint32_t fUnlink);
 
 #endif /* IN_RING3 */
 

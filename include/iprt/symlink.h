@@ -85,6 +85,12 @@ typedef enum RTSYMLINKTYPE
     RTSYMLINKTYPE_32BIT_HACK = 0x7fffffff
 } RTSYMLINKTYPE;
 
+/** @name RTSymlinkCreate flags.
+ * @{ */
+/** Don't allow symbolic links as part of the path. */
+#define RTSYMLINKCREATE_FLAGS_NO_SYMLINKS  RT_BIT(0)
+/** @} */
+
 /**
  * Creates a symbolic link (@a pszSymlink) targeting @a pszTarget.
  *
@@ -98,8 +104,16 @@ typedef enum RTSYMLINKTYPE
  *                          RTSYMLINKTYPE_UNKNOWN is used, the API will try
  *                          make a guess and may attempt query information
  *                          about @a pszTarget in the process.
+ * @param   fCreate         Create flags, RTSYMLINKCREATE_FLAGS_*.
  */
-RTDECL(int) RTSymlinkCreate(const char *pszSymlink, const char *pszTarget, RTSYMLINKTYPE enmType);
+RTDECL(int) RTSymlinkCreate(const char *pszSymlink, const char *pszTarget,
+                            RTSYMLINKTYPE enmType, uint32_t fCreate);
+
+/** @name RTSymlinkDelete flags.
+ * @{ */
+/** Don't allow symbolic links as part of the path. */
+#define RTSYMLINKDELETE_FLAGS_NO_SYMLINKS  RT_BIT(0)
+/** @} */
 
 /**
  * Deletes the specified symbolic link.
@@ -111,8 +125,15 @@ RTDECL(int) RTSymlinkCreate(const char *pszSymlink, const char *pszTarget, RTSYM
  * @retval  VERR_NOT_SYMLINK if @a pszSymlink does not specify a symbolic link.
  *
  * @param   pszSymlink      The symbolic link that should be removed.
+ * @param   fDelete         Delete flags, RTSYMLINKDELETE_FLAGS_*.
  */
-RTDECL(int) RTSymlinkDelete(const char *pszSymlink);
+RTDECL(int) RTSymlinkDelete(const char *pszSymlink, uint32_t fDelete);
+
+/** @name RTSymlinkRead  flags.
+ * @{ */
+/** Don't allow symbolic links as part of the path. */
+#define RTSYMLINKREAD_FLAGS_NO_SYMLINKS  RT_BIT(0)
+/** @} */
 
 /**
  * Read the symlink target.
@@ -126,8 +147,9 @@ RTDECL(int) RTSymlinkDelete(const char *pszSymlink);
  * @param   pszSymlink      The symbolic link that should be read.
  * @param   pszTarget       The target buffer.
  * @param   cbTarget        The size of the target buffer.
+ * @param   fRead           Read flags, RTSYMLINKREAD_FLAGS_*.
  */
-RTDECL(int) RTSymlinkRead(const char *pszSymlink, char *pszTarget, size_t cbTarget);
+RTDECL(int) RTSymlinkRead(const char *pszSymlink, char *pszTarget, size_t cbTarget, uint32_t fRead);
 
 /**
  * Read the symlink target into an API allocated buffer.

@@ -160,7 +160,7 @@ static int VBoxServiceCpuHotPlugProbePath(void)
                 char *pszPathTmp = RTPathJoinA(pszPath, pPathComponent->pcszName);
                 if (pszPathTmp)
                 {
-                    rc = RTDirOpenFiltered(&pDirCurr, pszPathTmp, RTDIRFILTER_WINNT);
+                    rc = RTDirOpenFiltered(&pDirCurr, pszPathTmp, RTDIRFILTER_WINNT, 0);
                     RTStrFree(pszPathTmp);
                 }
                 else
@@ -247,7 +247,7 @@ static int VBoxServiceCpuHotPlugGetACPIDevicePath(char **ppszPath, uint32_t idCp
         }
 
         /* Open the directory */
-        rc = RTDirOpenFiltered(&pAcpiCpuPathLvl->pDir, pszPath, RTDIRFILTER_WINNT);
+        rc = RTDirOpenFiltered(&pAcpiCpuPathLvl->pDir, pszPath, RTDIRFILTER_WINNT, 0);
         if (RT_SUCCESS(rc))
         {
             RTStrFree(pszPath);
@@ -318,7 +318,7 @@ static int VBoxServiceCpuHotPlugGetACPIDevicePath(char **ppszPath, uint32_t idCp
                         VBoxServiceVerbose(3, "New path %s\n", pszPathDir);
 
                         /* Open the directory */
-                        rc = RTDirOpenFiltered(&pAcpiCpuPathLvl->pDir, pszPathDir, RTDIRFILTER_WINNT);
+                        rc = RTDirOpenFiltered(&pAcpiCpuPathLvl->pDir, pszPathDir, RTDIRFILTER_WINNT, 0);
                         if (RT_FAILURE(rc))
                             break;
                     }

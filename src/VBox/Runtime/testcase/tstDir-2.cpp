@@ -41,7 +41,7 @@ int main(int argc, char **argv)
     {
         /* open */
         PRTDIR pDir;
-        int rc = RTDirOpenFiltered(&pDir, argv[i], RTDIRFILTER_WINNT);
+        int rc = RTDirOpenFiltered(&pDir, argv[i], RTDIRFILTER_WINNT, 0);
         if (RT_SUCCESS(rc))
         {
             for (;;)

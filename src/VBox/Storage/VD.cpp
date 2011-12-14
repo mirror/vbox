@@ -3162,7 +3162,7 @@ static int vdLoadDynamicBackends()
     PRTDIRENTRYEX pPluginDirEntry = NULL;
     size_t cbPluginDirEntry = sizeof(RTDIRENTRYEX);
     /* The plugins are in the same directory as the other shared libs. */
-    rc = RTDirOpenFiltered(&pPluginDir, pszPluginFilter, RTDIRFILTER_WINNT);
+    rc = RTDirOpenFiltered(&pPluginDir, pszPluginFilter, RTDIRFILTER_WINNT, 0);
     if (RT_FAILURE(rc))
     {
         /* On Windows the above immediately signals that there are no
@@ -3286,7 +3286,7 @@ static int vdLoadDynamicCacheBackends()
     PRTDIRENTRYEX pPluginDirEntry = NULL;
     size_t cbPluginDirEntry = sizeof(RTDIRENTRYEX);
     /* The plugins are in the same directory as the other shared libs. */
-    rc = RTDirOpenFiltered(&pPluginDir, pszPluginFilter, RTDIRFILTER_WINNT);
+    rc = RTDirOpenFiltered(&pPluginDir, pszPluginFilter, RTDIRFILTER_WINNT, 0);
     if (RT_FAILURE(rc))
     {
         /* On Windows the above immediately signals that there are no

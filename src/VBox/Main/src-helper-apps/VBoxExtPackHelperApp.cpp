@@ -355,7 +355,7 @@ static RTEXITCODE UnpackExtPackDir(const char *pszDstDirName, RTVFSOBJ hVfsObj)
         return RTMsgErrorExit(RTEXITCODE_FAILURE, "RTVfsObjQueryInfo failed on '%s': %Rrc", pszDstDirName, rc);
     ObjInfo.Attr.fMode &= ~(RTFS_UNIX_IWOTH | RTFS_UNIX_IWGRP);
 
-    rc = RTDirCreate(pszDstDirName, ObjInfo.Attr.fMode);
+    rc = RTDirCreate(pszDstDirName, ObjInfo.Attr.fMode, 0);
     if (RT_FAILURE(rc))
         return RTMsgErrorExit(RTEXITCODE_FAILURE, "Failed to create directory '%s': %Rrc", pszDstDirName, rc);
 
@@ -702,7 +702,7 @@ static RTEXITCODE DoInstall2(const char *pszBaseDir, const char *pszCertDir, con
      * Create the temporary directory and prepare the extension pack within it.
      * If all checks out correctly, rename it to the final directory.
      */
-    RTDirCreate(pszBaseDir, 0755);
+    RTDirCreate(pszBaseDir, 0755, 0);
 #ifndef RT_OS_WINDOWS
     /*
      * Because of umask, we have to apply the mode again.
@@ -713,7 +713,7 @@ static RTEXITCODE DoInstall2(const char *pszBaseDir, const char *pszCertDir, con
 #else
     /** @todo Ownership tricks on windows? */
 #endif
-    rc = RTDirCreate(szTmpPath, 0700);
+    rc = RTDirCreate(szTmpPath, 0700, 0);
     if (RT_FAILURE(rc))
         return RTMsgErrorExit(RTEXITCODE_FAILURE, "Failed to create temporary directory: %Rrc ('%s')", rc, szTmpPath);
 

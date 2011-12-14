@@ -908,6 +908,7 @@
 # define RTPathStripTrailingSlash                       RT_MANGLER(RTPathStripTrailingSlash)
 # define RTPathTemp                                     RT_MANGLER(RTPathTemp)
 # define RTPathTraverseList                             RT_MANGLER(RTPathTraverseList)
+# define RTPathUnlink                                   RT_MANGLER(RTPathUnlink)
 # define RTPathUserDocuments                            RT_MANGLER(RTPathUserDocuments)
 # define RTPathUserHome                                 RT_MANGLER(RTPathUserHome)
 # define RTPipeClose                                    RT_MANGLER(RTPipeClose)
