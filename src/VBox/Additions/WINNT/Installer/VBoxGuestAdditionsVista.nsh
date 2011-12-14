@@ -26,17 +26,15 @@ Function Vista_CheckForRequirements
     goto success
   ${EndIf}
 
-  ${If} $g_bWithD3D == "true"
-    ; Validate D3D files
-    Call ValidateD3DFiles
-    Pop $0
-    ${If} $0 == "1" ; D3D files are invalid
-      ${If} $g_bWithWDDM == "true"
-        MessageBox MB_ICONSTOP|MB_OK $(VBOX_COMPONENT_D3D_INVALID_WDDM) /SD IDOK
-        goto failure
-      ${Else}
-        MessageBox MB_ICONSTOP|MB_OKCANCEL $(VBOX_COMPONENT_D3D_INVALID_XPDM) /SD IDCANCEL IDCANCEL failure
-      ${EndIf}
+  ; Validate D3D files, regardless whether D3D support is selected or not
+  Call ValidateD3DFiles
+  Pop $0
+  ${If} $0 == "1" ; D3D files are invalid
+    ${If} $g_bWithWDDM == "true"
+    MessageBox MB_ICONSTOP|MB_OK $(VBOX_COMPONENT_D3D_INVALID_WDDM) /SD IDOK
+    goto failure
+    ${Else}
+    MessageBox MB_ICONSTOP|MB_OKCANCEL $(VBOX_COMPONENT_D3D_INVALID_XPDM) /SD IDCANCEL IDCANCEL failure
     ${EndIf}
   ${EndIf}
 
