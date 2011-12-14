@@ -252,14 +252,12 @@ static int vbsfBuildFullPath(SHFLCLIENTDATA *pClient, SHFLROOT root, PSHFLSTRING
                              bool fWildCard = false, bool fPreserveLastComponent = false)
 {
     int rc = VINF_SUCCESS;
-
     char *pszFullPath = NULL;
+    size_t cbRoot;
+    const char *pszRoot = vbsfMappingsQueryHostRoot(root);
 
-    /* Query UCS2 root prefix for the path, cbRoot is the length in bytes including trailing (RTUTF16)0. */
-    uint32_t cbRoot = 0;
-    PCRTUTF16 pwszRoot = vbsfMappingsQueryHostRoot(root, &cbRoot);
-
-    if (!pwszRoot || cbRoot == 0)
+    if (   !pszRoot
+        || !(cbRoot = strlen(pszRoot)))
     {
         Log(("vbsfBuildFullPath: invalid root!\n"));
         return VERR_INVALID_PARAMETER;
@@ -267,24 +265,13 @@ static int vbsfBuildFullPath(SHFLCLIENTDATA *pClient, SHFLROOT root, PSHFLSTRING
 
     if (BIT_FLAG(pClient->fu32Flags, SHFL_CF_UTF8))
     {
-        char *utf8Root;
-
         /* Verify that the path is under the root directory. */
         rc = vbsfPathCheck((const char *)&pPath->String.utf8[0], pPath->u16Length);
 
         if (RT_SUCCESS(rc))
         {
-            rc = RTUtf16ToUtf8(pwszRoot, &utf8Root);
-        }
-
-        if (RT_SUCCESS(rc))
-        {
-            size_t cbUtf8Root, cbUtf8FullPath;
-            char *utf8FullPath;
-
-            cbUtf8Root = strlen(utf8Root);
-            cbUtf8FullPath = cbUtf8Root + 1 + pPath->u16Length + 1;
-            utf8FullPath = (char *) RTMemAllocZ(cbUtf8FullPath);
+            size_t cbUtf8FullPath = cbRoot + 1 + pPath->u16Length + 1;
+            char *utf8FullPath = (char *) RTMemAllocZ(cbUtf8FullPath);
 
             if (!utf8FullPath)
             {
@@ -294,20 +281,15 @@ static int vbsfBuildFullPath(SHFLCLIENTDATA *pClient, SHFLROOT root, PSHFLSTRING
             }
             else
             {
-                memcpy(utf8FullPath, utf8Root, cbUtf8Root);
-                memcpy(utf8FullPath + cbUtf8Root + 1,
-                       &pPath->String.utf8[0],
-                       pPath->u16Length);
-
-                utf8FullPath[cbUtf8Root] = '/';
+                memcpy(utf8FullPath, pszRoot, cbRoot);
+                utf8FullPath[cbRoot] = '/';
+                memcpy(utf8FullPath + cbRoot + 1, &pPath->String.utf8[0], pPath->u16Length);
                 utf8FullPath[cbUtf8FullPath - 1] = 0;
                 pszFullPath = utf8FullPath;
 
                 if (pcbFullPathRoot)
-                    *pcbFullPathRoot = (uint32_t)cbUtf8Root; /* Must index the path delimiter.  */
+                    *pcbFullPathRoot = (uint32_t)cbRoot; /* Must index the path delimiter. */
             }
-
-            RTStrFree(utf8Root);
         }
         else
         {
@@ -336,7 +318,8 @@ static int vbsfBuildFullPath(SHFLCLIENTDATA *pClient, SHFLROOT root, PSHFLSTRING
             return rc;
         }
 
-        ::CFStringAppendCharacters(inStr, (UniChar*)pPathParameter->String.ucs2, pPathParameter->u16Length / sizeof(pPathParameter->String.ucs2[0]));
+        ::CFStringAppendCharacters(inStr, (UniChar*)pPathParameter->String.ucs2,
+                                   pPathParameter->u16Length / sizeof(pPathParameter->String.ucs2[0]));
         ::CFStringNormalize(inStr, kCFStringNormalizationFormD);
         ucs2Length = ::CFStringGetLength(inStr);
 
@@ -350,73 +333,58 @@ static int vbsfBuildFullPath(SHFLCLIENTDATA *pClient, SHFLROOT root, PSHFLSTRING
         CFRelease(inStr);
 #endif
         /* Client sends us UCS2, so convert it to UTF8. */
-        Log(("Root %ls path %.*ls\n", pwszRoot, pPath->u16Length/sizeof(pPath->String.ucs2[0]), pPath->String.ucs2));
+        Log(("Root %s path %.*ls\n", pszRoot, pPath->u16Length/sizeof(pPath->String.ucs2[0]), pPath->String.ucs2));
 
-        /* Allocate buffer that will be able to contain
-         * the root prefix and the pPath converted to UTF8.
-         * Expect a 2 bytes UCS2 to be converted to 8 bytes UTF8
-         * in worst case.
+        /* Allocate buffer that will be able to contain the root prefix and
+         * the pPath converted to UTF8. Expect a 2 bytes UCS2 to be converted
+         * to 8 bytes UTF8 in the worst case.
          */
-        uint32_t cbFullPath = (cbRoot/sizeof(RTUTF16) + ShflStringLength(pPath)) * 4;
-
+        uint32_t cbFullPath = (cbRoot + ShflStringLength(pPath)) * 4;
         pszFullPath = (char *)RTMemAllocZ(cbFullPath);
-
         if (!pszFullPath)
         {
             rc = VERR_NO_MEMORY;
         }
         else
         {
-            uint32_t cb = cbFullPath;
-
-            rc = RTUtf16ToUtf8Ex(pwszRoot, RTSTR_MAX, &pszFullPath, cb, NULL);
-            if (RT_FAILURE(rc))
+            memcpy(pszFullPath, pszRoot, cbRoot + 1);
+            char *pszDst = pszFullPath;
+            size_t cbDst = strlen(pszDst);
+            size_t cb    = cbFullPath;
+            if (pszDst[cbDst - 1] != RTPATH_DELIMITER)
             {
-                AssertFailed();
-#ifdef RT_OS_DARWIN
-                RTMemFree(pPath);
-                pPath = pPathParameter;
-#endif
-                return rc;
-            }
-
-            char *dst = pszFullPath;
-
-            cbRoot = (uint32_t)strlen(dst);
-            if (dst[cbRoot - 1] != RTPATH_DELIMITER)
-            {
-                dst[cbRoot] = RTPATH_DELIMITER;
-                cbRoot++;
+                pszDst[cbDst] = RTPATH_DELIMITER;
+                cbDst++;
             }
 
             if (pcbFullPathRoot)
-                *pcbFullPathRoot = cbRoot - 1; /* Must index the path delimiter.  */
+                *pcbFullPathRoot = cbDst - 1; /* Must index the path delimiter.  */
 
-            dst   += cbRoot;
-            cb    -= cbRoot;
+            pszDst += cbDst;
+            cb     -= cbDst;
 
             if (pPath->u16Length)
             {
                 /* Convert and copy components. */
-                PRTUTF16 src = &pPath->String.ucs2[0];
+                PRTUTF16 pwszSrc = &pPath->String.ucs2[0];
 
                 /* Correct path delimiters */
                 if (pClient->PathDelimiter != RTPATH_DELIMITER)
                 {
-                    LogFlow(("Correct path delimiter in %ls\n", src));
-                    while (*src)
+                    LogFlow(("Correct path delimiter in %ls\n", pwszSrc));
+                    while (*pwszSrc)
                     {
-                        if (*src == pClient->PathDelimiter)
-                            *src = RTPATH_DELIMITER;
-                        src++;
+                        if (*pwszSrc == pClient->PathDelimiter)
+                            *pwszSrc = RTPATH_DELIMITER;
+                        pwszSrc++;
                     }
-                    src = &pPath->String.ucs2[0];
-                    LogFlow(("Corrected string %ls\n", src));
+                    pwszSrc = &pPath->String.ucs2[0];
+                    LogFlow(("Corrected string %ls\n", pwszSrc));
                 }
-                if (*src == RTPATH_DELIMITER)
-                    src++;  /* we already appended a delimiter to the first part */
+                if (*pwszSrc == RTPATH_DELIMITER)
+                    pwszSrc++;  /* we already appended a delimiter to the first part */
 
-                rc = RTUtf16ToUtf8Ex(src, RTSTR_MAX, &dst, cb, NULL);
+                rc = RTUtf16ToUtf8Ex(pwszSrc, RTSTR_MAX, &pszDst, cb, NULL);
                 if (RT_FAILURE(rc))
                 {
                     AssertFailed();
@@ -427,11 +395,10 @@ static int vbsfBuildFullPath(SHFLCLIENTDATA *pClient, SHFLROOT root, PSHFLSTRING
                     return rc;
                 }
 
-                uint32_t l = (uint32_t)strlen(dst);
+                cbDst = (uint32_t)strlen(pszDst);
 
                 /* Verify that the path is under the root directory. */
-                rc = vbsfPathCheck(dst, l);
-
+                rc = vbsfPathCheck(pszDst, cbDst);
                 if (RT_FAILURE(rc))
                 {
 #ifdef RT_OS_DARWIN
@@ -441,14 +408,14 @@ static int vbsfBuildFullPath(SHFLCLIENTDATA *pClient, SHFLROOT root, PSHFLSTRING
                     return rc;
                 }
 
-                cb -= l;
-                dst += l;
+                cb     -= cbDst;
+                pszDst += cbDst;
 
                 Assert(cb > 0);
             }
 
             /* Nul terminate the string */
-            *dst = 0;
+            *pszDst = 0;
         }
 #ifdef RT_OS_DARWIN
         RTMemFree(pPath);
@@ -468,34 +435,34 @@ static int vbsfBuildFullPath(SHFLCLIENTDATA *pClient, SHFLROOT root, PSHFLSTRING
             if (fWildCard || fPreserveLastComponent)
             {
                 /* strip off the last path component, that has to be preserved: contains the wildcard(s) or a 'rename' target. */
-                uint32_t len = (uint32_t)strlen(pszFullPath);
-                char    *src = pszFullPath + len - 1;
+                size_t cb = strlen(pszFullPath);
+                char *pszSrc = pszFullPath + cb - 1;
 
-                while(src > pszFullPath)
+                while (pszSrc > pszFullPath)
                 {
-                    if (*src == RTPATH_DELIMITER)
+                    if (*pszSrc == RTPATH_DELIMITER)
                         break;
-                    src--;
+                    pszSrc--;
                 }
-                if (*src == RTPATH_DELIMITER)
+                if (*pszSrc == RTPATH_DELIMITER)
                 {
                     bool fHaveWildcards = false;
-                    char *temp = src;
+                    char *psz = pszSrc;
 
-                    while(*temp)
+                    while (*psz)
                     {
-                        char uc = *temp;
-                        if (uc == '*' || uc == '?' || uc == '>' || uc == '<' || uc == '"')
+                        char ch = *psz;
+                        if (ch == '*' || ch == '?' || ch == '>' || ch == '<' || ch == '"')
                         {
                             fHaveWildcards = true;
                             break;
                         }
-                        temp++;
+                        psz++;
                     }
 
                     if (fHaveWildcards || fPreserveLastComponent)
                     {
-                        pszLastComponent = src;
+                        pszLastComponent = pszSrc;
                         *pszLastComponent = 0;
                     }
                 }
@@ -505,57 +472,57 @@ static int vbsfBuildFullPath(SHFLCLIENTDATA *pClient, SHFLROOT root, PSHFLSTRING
             rc = RTPathQueryInfoEx(pszFullPath, &info, RTFSOBJATTRADD_NOTHING, SHFL_RT_LINK(pClient));
             if (rc == VERR_FILE_NOT_FOUND || rc == VERR_PATH_NOT_FOUND)
             {
-                uint32_t len = (uint32_t)strlen(pszFullPath);
-                char    *src = pszFullPath + len - 1;
+                size_t cb = strlen(pszFullPath);
+                char   *pszSrc = pszFullPath + cb - 1;
 
                 Log(("Handle case insensitive guest fs on top of host case sensitive fs for %s\n", pszFullPath));
 
                 /* Find partial path that's valid */
-                while(src > pszFullPath)
+                while (pszSrc > pszFullPath)
                 {
-                    if (*src == RTPATH_DELIMITER)
+                    if (*pszSrc == RTPATH_DELIMITER)
                     {
-                        *src = 0;
+                        *pszSrc = 0;
                         rc = RTPathQueryInfoEx(pszFullPath, &info, RTFSOBJATTRADD_NOTHING, SHFL_RT_LINK(pClient));
-                        *src = RTPATH_DELIMITER;
+                        *pszSrc = RTPATH_DELIMITER;
                         if (rc == VINF_SUCCESS)
                         {
 #ifdef DEBUG
-                            *src = 0;
+                            *pszSrc = 0;
                             Log(("Found valid partial path %s\n", pszFullPath));
-                            *src = RTPATH_DELIMITER;
+                            *pszSrc = RTPATH_DELIMITER;
 #endif
                             break;
                         }
                     }
 
-                    src--;
+                    pszSrc--;
                 }
-                Assert(*src == RTPATH_DELIMITER && RT_SUCCESS(rc));
-                if (    *src == RTPATH_DELIMITER
+                Assert(*pszSrc == RTPATH_DELIMITER && RT_SUCCESS(rc));
+                if (    *pszSrc == RTPATH_DELIMITER
                     &&  RT_SUCCESS(rc))
                 {
-                    src++;
+                    pszSrc++;
                     for (;;)
                     {
-                        char *end = src;
+                        char *pszEnd = pszSrc;
                         bool fEndOfString = true;
 
-                        while(*end)
+                        while (*pszEnd)
                         {
-                            if (*end == RTPATH_DELIMITER)
+                            if (*pszEnd == RTPATH_DELIMITER)
                                 break;
-                            end++;
+                            pszEnd++;
                         }
 
-                        if (*end == RTPATH_DELIMITER)
+                        if (*pszEnd == RTPATH_DELIMITER)
                         {
                             fEndOfString = false;
-                            *end = 0;
-                            rc = RTPathQueryInfoEx(src, &info, RTFSOBJATTRADD_NOTHING, SHFL_RT_LINK(pClient));
+                            *pszEnd = 0;
+                            rc = RTPathQueryInfoEx(pszSrc, &info, RTFSOBJATTRADD_NOTHING, SHFL_RT_LINK(pClient));
                             Assert(rc == VINF_SUCCESS || rc == VERR_FILE_NOT_FOUND || rc == VERR_PATH_NOT_FOUND);
                         }
-                        else if (end == src)
+                        else if (pszEnd == pszSrc)
                             rc = VINF_SUCCESS;  /* trailing delimiter */
                         else
                             rc = VERR_FILE_NOT_FOUND;
@@ -563,11 +530,11 @@ static int vbsfBuildFullPath(SHFLCLIENTDATA *pClient, SHFLROOT root, PSHFLSTRING
                         if (rc == VERR_FILE_NOT_FOUND || rc == VERR_PATH_NOT_FOUND)
                         {
                             /* path component is invalid; try to correct the casing */
-                            rc = vbsfCorrectCasing(pClient, pszFullPath, src);
+                            rc = vbsfCorrectCasing(pClient, pszFullPath, pszSrc);
                             if (RT_FAILURE(rc))
                             {
                                 if (!fEndOfString)
-                                    *end = RTPATH_DELIMITER; /* restore the original full path */
+                                    *pszEnd = RTPATH_DELIMITER; /* restore the original full path */
                                 break;
                             }
                         }
@@ -575,8 +542,8 @@ static int vbsfBuildFullPath(SHFLCLIENTDATA *pClient, SHFLROOT root, PSHFLSTRING
                         if (fEndOfString)
                             break;
 
-                        *end = RTPATH_DELIMITER;
-                        src = end + 1;
+                        *pszEnd = RTPATH_DELIMITER;
+                        pszSrc = pszEnd + 1;
                     }
                     if (RT_FAILURE(rc))
                         Log(("Unable to find suitable component rc=%d\n", rc));
@@ -1592,7 +1559,7 @@ int vbsfDirList(SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLHANDLE Handle, SHFLS
         DirHandle = pHandle->dir.SearchHandle;
     }
 
-    while(cbBufferOrg)
+    while (cbBufferOrg)
     {
         size_t cbDirEntrySize = cbDirEntry;
         uint32_t cbNeeded;

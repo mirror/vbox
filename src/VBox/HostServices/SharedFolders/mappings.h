@@ -22,7 +22,7 @@
 
 typedef struct
 {
-    PSHFLSTRING pFolderName;
+    char        *pszFolderName;
     PSHFLSTRING pMapName;
     uint32_t    cMappings;
     bool        fValid;
@@ -48,7 +48,7 @@ int vbsfMappingsQueryWritable(PSHFLCLIENTDATA pClient, SHFLROOT root, bool *fWri
 int vbsfMapFolder(PSHFLCLIENTDATA pClient, PSHFLSTRING pszMapName, RTUTF16 delimiter, bool fCaseSensitive, SHFLROOT *pRoot);
 int vbsfUnmapFolder(PSHFLCLIENTDATA pClient, SHFLROOT root);
 
-PCRTUTF16 vbsfMappingsQueryHostRoot(SHFLROOT root, uint32_t *pcbRoot);
+const char* vbsfMappingsQueryHostRoot(SHFLROOT root);
 bool vbsfIsGuestMappingCaseSensitive(SHFLROOT root);
 bool vbsfIsHostMappingCaseSensitive(SHFLROOT root);
 
