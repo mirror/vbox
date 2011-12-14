@@ -562,6 +562,8 @@ DECLHIDDEN(bool) rtReqPoolRecycle(PRTREQPOOLINT pPool, PRTREQINT pReq)
     return false;
 }
 
+#if 0 /* later */
+
 typedef enum RTREQPOOLCFGVAR
 {
     RTREQPOOLCFGVAR_INVALID = 0,
@@ -595,6 +597,7 @@ RTDECL(uint64_t) RTReqPoolGetStat(RTREQPOOL hPool, RTREQPOOLSTAT enmStat)
     return UINT64_MAX;
 }
 
+#endif /* later */
 
 RTDECL(uint32_t) RTReqPoolRetain(RTREQPOOL hPool)
 {
