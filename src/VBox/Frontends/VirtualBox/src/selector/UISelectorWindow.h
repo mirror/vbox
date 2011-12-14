@@ -157,7 +157,7 @@ private:
     void saveSettings();
 
     /* Static helping stuff: */
-    static bool isActionEnabled(int iActionIndex, UIVMItem *pItem);
+    static bool isActionEnabled(int iActionIndex, UIVMItem *pItem, const QList<UIVMItem*> &items);
 
     /* Central splitter window: */
     QISplitter *m_pSplitter;

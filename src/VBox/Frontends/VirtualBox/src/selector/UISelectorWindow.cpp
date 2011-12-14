@@ -418,7 +418,7 @@ void UISelectorWindow::sltShowRemoveMachineDialog()
         for (int i = 0; i < machines.size(); ++i)
         {
             /* Check if current item could be removed: */
-            if (!isActionEnabled(UIActionIndexSelector_Simple_Machine_RemoveDialog, items[i]))
+            if (!isActionEnabled(UIActionIndexSelector_Simple_Machine_RemoveDialog, items[i], items))
                 continue;
 
             /* Get iterated VM: */
@@ -467,7 +467,7 @@ void UISelectorWindow::sltPerformStartOrShowAction()
     for (int i = 0; i < items.size(); ++i)
     {
         /* Check if current item could be started/showed: */
-        if (!isActionEnabled(UIActionIndexSelector_State_Machine_StartOrShow, items[i]))
+        if (!isActionEnabled(UIActionIndexSelector_State_Machine_StartOrShow, items[i], items))
             continue;
 
         /* Get iterated VM: */
@@ -520,7 +520,7 @@ void UISelectorWindow::sltPerformPauseResumeAction(bool fPause)
         KMachineState state = pItem->machineState();
 
         /* Check if current item could be paused/resumed: */
-        if (!isActionEnabled(UIActionIndexSelector_Toggle_Machine_PauseAndResume, pItem))
+        if (!isActionEnabled(UIActionIndexSelector_Toggle_Machine_PauseAndResume, pItem, items))
             continue;
 
         /* Check if current item already paused: */
@@ -579,7 +579,7 @@ void UISelectorWindow::sltPerformResetAction()
         UIVMItem *pItem = items[i];
 
         /* Check if current item could be reseted: */
-        if (!isActionEnabled(UIActionIndexSelector_Simple_Machine_Reset, pItem))
+        if (!isActionEnabled(UIActionIndexSelector_Simple_Machine_Reset, pItem, items))
             continue;
 
         /* Open a session to modify VM state: */
@@ -617,7 +617,7 @@ void UISelectorWindow::sltPerformACPIShutdownAction()
         UIVMItem *pItem = items[i];
 
         /* Check if current item could be shutdowned: */
-        if (!isActionEnabled(UIActionIndexSelector_Simple_Machine_Close_ACPIShutdown, pItem))
+        if (!isActionEnabled(UIActionIndexSelector_Simple_Machine_Close_ACPIShutdown, pItem, items))
             continue;
 
         /* Open a session to modify VM state: */
@@ -655,7 +655,7 @@ void UISelectorWindow::sltPerformPowerOffAction()
         UIVMItem *pItem = items[i];
 
         /* Check if current item could be powered off: */
-        if (!isActionEnabled(UIActionIndexSelector_Simple_Machine_Close_PowerOff, pItem))
+        if (!isActionEnabled(UIActionIndexSelector_Simple_Machine_Close_PowerOff, pItem, items))
             continue;
 
         /* Open a session to modify VM state: */
@@ -689,7 +689,7 @@ void UISelectorWindow::sltPerformRefreshAction()
         UIVMItem *pItem = items[i];
 
         /* Check if current item could be refreshed: */
-        if (!isActionEnabled(UIActionIndexSelector_Simple_Machine_Refresh, pItem))
+        if (!isActionEnabled(UIActionIndexSelector_Simple_Machine_Refresh, pItem, items))
             continue;
 
         /* Refresh currently selected VM item: */
@@ -710,7 +710,7 @@ void UISelectorWindow::sltShowLogDialog()
         UIVMItem *pItem = items[i];
 
         /* Check if log could be show for the current item: */
-        if (!isActionEnabled(UIActionIndexSelector_Simple_Machine_LogDialog, pItem))
+        if (!isActionEnabled(UIActionIndexSelector_Simple_Machine_LogDialog, pItem, items))
             continue;
 
         /* Show VM Log Viewer: */
@@ -731,7 +731,7 @@ void UISelectorWindow::sltShowMachineInFileManager()
         UIVMItem *pItem = items[i];
 
         /* Check if that item could be shown in file-browser: */
-        if (!isActionEnabled(UIActionIndexSelector_Simple_Machine_ShowInFileManager, pItem))
+        if (!isActionEnabled(UIActionIndexSelector_Simple_Machine_ShowInFileManager, pItem, items))
             continue;
 
         /* Show VM in filebrowser: */
@@ -752,7 +752,7 @@ void UISelectorWindow::sltPerformCreateShortcutAction()
         UIVMItem *pItem = items[i];
 
         /* Check if shortcuts could be created for this item: */
-        if (!isActionEnabled(UIActionIndexSelector_Simple_Machine_CreateShortcut, pItem))
+        if (!isActionEnabled(UIActionIndexSelector_Simple_Machine_CreateShortcut, pItem, items))
             continue;
 
         /* Create shortcut for this VM: */
@@ -780,18 +780,22 @@ void UISelectorWindow::sltMachineMenuAboutToShow()
 {
     /* Get current item: */
     UIVMItem *pItem = m_pVMListView->currentItem();
+    /* Get selected items: */
+    QList<UIVMItem*> items = m_pVMListView->currentItems();
     AssertMsgReturnVoid(pItem, ("Current item should be selected!\n"));
 
-    m_pMachineCloseMenuAction->setEnabled(isActionEnabled(UIActionIndexSelector_Menu_Machine_Close, pItem));
+    m_pMachineCloseMenuAction->setEnabled(isActionEnabled(UIActionIndexSelector_Menu_Machine_Close, pItem, items));
 }
 
 void UISelectorWindow::sltMachineCloseMenuAboutToShow()
 {
     /* Get current item: */
     UIVMItem *pItem = m_pVMListView->currentItem();
+    /* Get selected items: */
+    QList<UIVMItem*> items = m_pVMListView->currentItems();
     AssertMsgReturnVoid(pItem, ("Current item should be selected!\n"));
 
-    m_pACPIShutdownAction->setEnabled(isActionEnabled(UIActionIndexSelector_Simple_Machine_Close_ACPIShutdown, pItem));
+    m_pACPIShutdownAction->setEnabled(isActionEnabled(UIActionIndexSelector_Simple_Machine_Close_ACPIShutdown, pItem, items));
 }
 
 void UISelectorWindow::sltMachineContextMenuHovered(QAction *pAction)
@@ -848,20 +852,20 @@ void UISelectorWindow::sltCurrentVMItemChanged(bool fRefreshDetails, bool fRefre
     QList<UIVMItem*> items = m_pVMListView->currentItems();
 
     /* Enable/disable actions: */
-    m_pSettingsDialogAction->setEnabled(isActionEnabled(UIActionIndexSelector_Simple_Machine_SettingsDialog, pItem));
-    m_pCloneWizardAction->setEnabled(isActionEnabled(UIActionIndexSelector_Simple_Machine_CloneWizard, pItem));
-    m_pRemoveDialogAction->setEnabled(isActionEnabled(UIActionIndexSelector_Simple_Machine_RemoveDialog, pItem));
-    m_pStartOrShowAction->setEnabled(isActionEnabled(UIActionIndexSelector_State_Machine_StartOrShow, pItem));
-    m_pDiscardAction->setEnabled(isActionEnabled(UIActionIndexSelector_Simple_Machine_Discard, pItem));
-    m_pPauseAndResumeAction->setEnabled(isActionEnabled(UIActionIndexSelector_Toggle_Machine_PauseAndResume, pItem));
-    m_pResetAction->setEnabled(isActionEnabled(UIActionIndexSelector_Simple_Machine_Reset, pItem));
-    m_pACPIShutdownAction->setEnabled(isActionEnabled(UIActionIndexSelector_Simple_Machine_Close_ACPIShutdown, pItem));
-    m_pPowerOffAction->setEnabled(isActionEnabled(UIActionIndexSelector_Simple_Machine_Close_PowerOff, pItem));
-    m_pRefreshAction->setEnabled(isActionEnabled(UIActionIndexSelector_Simple_Machine_Refresh, pItem));
-    m_pLogDialogAction->setEnabled(isActionEnabled(UIActionIndexSelector_Simple_Machine_LogDialog, pItem));
-    m_pShowInFileManagerAction->setEnabled(isActionEnabled(UIActionIndexSelector_Simple_Machine_ShowInFileManager, pItem));
-    m_pCreateShortcutAction->setEnabled(isActionEnabled(UIActionIndexSelector_Simple_Machine_CreateShortcut, pItem));
-    m_pSortAction->setEnabled(isActionEnabled(UIActionIndexSelector_Simple_Machine_Sort, pItem));
+    m_pSettingsDialogAction->setEnabled(isActionEnabled(UIActionIndexSelector_Simple_Machine_SettingsDialog, pItem, items));
+    m_pCloneWizardAction->setEnabled(isActionEnabled(UIActionIndexSelector_Simple_Machine_CloneWizard, pItem, items));
+    m_pRemoveDialogAction->setEnabled(isActionEnabled(UIActionIndexSelector_Simple_Machine_RemoveDialog, pItem, items));
+    m_pStartOrShowAction->setEnabled(isActionEnabled(UIActionIndexSelector_State_Machine_StartOrShow, pItem, items));
+    m_pDiscardAction->setEnabled(isActionEnabled(UIActionIndexSelector_Simple_Machine_Discard, pItem, items));
+    m_pPauseAndResumeAction->setEnabled(isActionEnabled(UIActionIndexSelector_Toggle_Machine_PauseAndResume, pItem, items));
+    m_pResetAction->setEnabled(isActionEnabled(UIActionIndexSelector_Simple_Machine_Reset, pItem, items));
+    m_pACPIShutdownAction->setEnabled(isActionEnabled(UIActionIndexSelector_Simple_Machine_Close_ACPIShutdown, pItem, items));
+    m_pPowerOffAction->setEnabled(isActionEnabled(UIActionIndexSelector_Simple_Machine_Close_PowerOff, pItem, items));
+    m_pRefreshAction->setEnabled(isActionEnabled(UIActionIndexSelector_Simple_Machine_Refresh, pItem, items));
+    m_pLogDialogAction->setEnabled(isActionEnabled(UIActionIndexSelector_Simple_Machine_LogDialog, pItem, items));
+    m_pShowInFileManagerAction->setEnabled(isActionEnabled(UIActionIndexSelector_Simple_Machine_ShowInFileManager, pItem, items));
+    m_pCreateShortcutAction->setEnabled(isActionEnabled(UIActionIndexSelector_Simple_Machine_CreateShortcut, pItem, items));
+    m_pSortAction->setEnabled(isActionEnabled(UIActionIndexSelector_Simple_Machine_Sort, pItem, items));
 
     /* If currently selected VM item is accessible: */
     if (pItem && pItem->accessible())
@@ -1799,24 +1803,26 @@ void UISelectorWindow::saveSettings()
     }
 }
 
-bool UISelectorWindow::isActionEnabled(int iActionIndex, UIVMItem *pItem)
+bool UISelectorWindow::isActionEnabled(int iActionIndex, UIVMItem *pItem, const QList<UIVMItem*> &items)
 {
     switch (iActionIndex)
     {
         case UIActionIndexSelector_Simple_Machine_SettingsDialog:
         {
-            /* Check that item is present and accessible
+            /* Check that there is only one item, its accessible
              * and machine is not in 'stuck' or 'saved' state.
              * Modifying VM settings in 'saved' state will be available later. */
-            return pItem && pItem->accessible() &&
+            return items.size() == 1 &&
+                   pItem && pItem->accessible() &&
                    pItem->machineState() != KMachineState_Stuck &&
                    pItem->machineState() != KMachineState_Saved;
         }
         case UIActionIndexSelector_Simple_Machine_CloneWizard:
         {
-            /* Check that item is present and accessible
+            /* Check that there is only one item, its accessible
              * and session state is unlocked. */
-            return pItem && pItem->accessible() &&
+            return items.size() == 1 &&
+                   pItem && pItem->accessible() &&
                    pItem->sessionState() == KSessionState_Unlocked;
         }
         case UIActionIndexSelector_Simple_Machine_RemoveDialog:
@@ -1846,9 +1852,10 @@ bool UISelectorWindow::isActionEnabled(int iActionIndex, UIVMItem *pItem)
         }
         case UIActionIndexSelector_Simple_Machine_Discard:
         {
-            /* Check that item present and accessible
+            /* Check that there is only one item, its accessible
              * and machine is in 'saved' state and session state is unlocked. */
-            return pItem && pItem->accessible() &&
+            return items.size() == 1 &&
+                   pItem && pItem->accessible() &&
                    pItem->machineState() == KMachineState_Saved &&
                    pItem->sessionState() == KSessionState_Unlocked;
         }
@@ -1883,7 +1890,7 @@ bool UISelectorWindow::isActionEnabled(int iActionIndex, UIVMItem *pItem)
         case UIActionIndexSelector_Simple_Machine_Close_ACPIShutdown:
         {
             /* Check that 'Machine/Close' menu is enabled: */
-            if (!isActionEnabled(UIActionIndexSelector_Menu_Machine_Close, pItem))
+            if (!isActionEnabled(UIActionIndexSelector_Menu_Machine_Close, pItem, items))
                 return false;
 
             /* Check if we are entered ACPI mode already.
@@ -1905,7 +1912,7 @@ bool UISelectorWindow::isActionEnabled(int iActionIndex, UIVMItem *pItem)
         case UIActionIndexSelector_Simple_Machine_Close_PowerOff:
         {
             /* The same as 'Machine/Close' menu is enabled: */
-            return isActionEnabled(UIActionIndexSelector_Menu_Machine_Close, pItem);
+            return isActionEnabled(UIActionIndexSelector_Menu_Machine_Close, pItem, items);
         }
         case UIActionIndexSelector_Simple_Machine_Refresh:
         {
