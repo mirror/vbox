@@ -140,19 +140,19 @@ ct_assert(sizeof(ahci_t) <= 1024);
 #define AHCI_REG_PORT_CI   0x38
 
 /** Returns the absolute register offset from a given port and port register. */
-#define AHCI_PORT_REG(port, reg)    ((uint32_t)(AHCI_HBA_SIZE + (port) * AHCI_PORT_SIZE + (reg)))
+#define AHCI_PORT_REG(port, reg)    (AHCI_HBA_SIZE + (port) * AHCI_PORT_SIZE + (reg))
 
 #define AHCI_REG_IDX   0
 #define AHCI_REG_DATA  4
 
 /** Writes the given value to a AHCI register. */
-#define AHCI_WRITE_REG(iobase, reg, val)                \
-    outpd((iobase) + AHCI_REG_IDX, (uint32_t)(reg));    \
-    outpd((iobase) + AHCI_REG_DATA, (uint32_t)(val))
+#define AHCI_WRITE_REG(iobase, reg, val)    \
+    outpd((iobase) + AHCI_REG_IDX, reg);    \
+    outpd((iobase) + AHCI_REG_DATA, val)
 
 /** Reads from a AHCI register. */
-#define AHCI_READ_REG(iobase, reg, val)                 \
-    outpd((iobase) + AHCI_REG_IDX, (uint32_t)(reg));    \
+#define AHCI_READ_REG(iobase, reg, val)     \
+    outpd((iobase) + AHCI_REG_IDX, reg);    \
     (val) = inpd((iobase) + AHCI_REG_DATA)
 
 /** Writes to the given port register. */
@@ -223,7 +223,7 @@ void high_bits_restore(ahci_t __far *ahci)
 /**
  * Sets a given set of bits in a register.
  */
-static void ahci_ctrl_set_bits(uint16_t iobase, uint32_t reg, uint32_t mask)
+static void ahci_ctrl_set_bits(uint16_t iobase, uint16_t reg, uint32_t mask)
 {
     outpd(iobase + AHCI_REG_IDX, reg);
     outpd(iobase + AHCI_REG_DATA, inpd(iobase + AHCI_REG_DATA) | mask);
@@ -232,7 +232,7 @@ static void ahci_ctrl_set_bits(uint16_t iobase, uint32_t reg, uint32_t mask)
 /**
  * Clears a given set of bits in a register.
  */
-static void ahci_ctrl_clear_bits(uint16_t iobase, uint32_t reg, uint32_t mask)
+static void ahci_ctrl_clear_bits(uint16_t iobase, uint16_t reg, uint32_t mask)
 {
     outpd(iobase + AHCI_REG_IDX, reg);
     outpd(iobase + AHCI_REG_DATA, inpd(iobase + AHCI_REG_DATA) & ~mask);
@@ -242,7 +242,7 @@ static void ahci_ctrl_clear_bits(uint16_t iobase, uint32_t reg, uint32_t mask)
  * Returns whether at least one of the bits in the given mask is set
  * for a register.
  */
-static uint8_t ahci_ctrl_is_bit_set(uint16_t iobase, uint32_t reg, uint32_t mask)
+static uint8_t ahci_ctrl_is_bit_set(uint16_t iobase, uint16_t reg, uint32_t mask)
 {
     outpd(iobase + AHCI_REG_IDX, reg);
     return (inpd(iobase + AHCI_REG_DATA) & mask) != 0;
