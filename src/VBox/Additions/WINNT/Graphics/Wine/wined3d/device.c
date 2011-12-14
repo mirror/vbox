@@ -6921,37 +6921,6 @@ static HRESULT WINAPI IWineD3DDeviceImpl_GetSurfaceFromDC(IWineD3DDevice *iface,
     return WINED3DERR_INVALIDCALL;
 }
 
-#ifdef VBOX_WITH_WDDM
-static HRESULT WINAPI IWineD3DDeviceImpl_Flush(IWineD3DDevice *iface)
-{
-    IWineD3DDeviceImpl *This = (IWineD3DDeviceImpl *) iface;
-    struct wined3d_context *context;
-    int i;
-
-    /* first call swapchain flush to ensure all swapchain-pending data gets flushed */
-    for (i = 0; i < This->NumberOfSwapChains; ++i)
-    {
-        IWineD3DSwapChain *pSwapchain = This->swapchains[i];
-        IWineD3DSwapChain_Flush(pSwapchain);
-    }
-
-    for (i = 0; i < This->numContexts; ++i)
-    {
-        context = This->contexts[i];
-        if (context_acquire_context(context, NULL, CTXUSAGE_RESOURCELOAD, TRUE))
-        {
-            Assert(context->valid);
-            wglFlush();
-            context_release(context);
-        }
-        else
-        {
-            WARN("Invalid context, skipping flush.\n");
-        }
-    }
-    return WINED3D_OK;
-}
-
 static HRESULT WINAPI IWineD3DDeviceImpl_AddSwapChain(IWineD3DDevice *iface, IWineD3DSwapChain *swapchain)
 {
     IWineD3DDeviceImpl *This = (IWineD3DDeviceImpl *) iface;
@@ -7006,6 +6975,37 @@ static HRESULT WINAPI IWineD3DDeviceImpl_RemoveSwapChain(IWineD3DDevice *iface, 
         while (This->numContexts)
         {
             context_destroy(This, This->contexts[0]);
+        }
+    }
+    return WINED3D_OK;
+}
+
+#ifdef VBOX_WITH_WDDM
+static HRESULT WINAPI IWineD3DDeviceImpl_Flush(IWineD3DDevice *iface)
+{
+    IWineD3DDeviceImpl *This = (IWineD3DDeviceImpl *) iface;
+    struct wined3d_context *context;
+    int i;
+
+    /* first call swapchain flush to ensure all swapchain-pending data gets flushed */
+    for (i = 0; i < This->NumberOfSwapChains; ++i)
+    {
+        IWineD3DSwapChain *pSwapchain = This->swapchains[i];
+        IWineD3DSwapChain_Flush(pSwapchain);
+    }
+
+    for (i = 0; i < This->numContexts; ++i)
+    {
+        context = This->contexts[i];
+        if (context_acquire_context(context, NULL, CTXUSAGE_RESOURCELOAD, TRUE))
+        {
+            Assert(context->valid);
+            wglFlush();
+            context_release(context);
+        }
+        else
+        {
+            WARN("Invalid context, skipping flush.\n");
         }
     }
     return WINED3D_OK;
@@ -7164,11 +7164,12 @@ static const IWineD3DDeviceVtbl IWineD3DDevice_Vtbl =
     IWineD3DDeviceImpl_GetSurfaceFromDC,
     IWineD3DDeviceImpl_AcquireFocusWindow,
     IWineD3DDeviceImpl_ReleaseFocusWindow,
+    /* VBox extensions */
+    IWineD3DDeviceImpl_AddSwapChain,
+    IWineD3DDeviceImpl_RemoveSwapChain,
 #ifdef VBOX_WITH_WDDM
     /* VBox WDDM extensions */
     IWineD3DDeviceImpl_Flush,
-    IWineD3DDeviceImpl_AddSwapChain,
-    IWineD3DDeviceImpl_RemoveSwapChain,
 #endif
 };
 

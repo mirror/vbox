@@ -26,9 +26,6 @@
 # include <sys/types.h>
 # include <unistd.h>
 #endif
-#ifdef CHROMIUM_THREADSAFE
-#include "cr_threads.h"
-#endif
 
 #ifdef VBOX_WITH_WDDM
 #include <d3d9types.h>
@@ -68,6 +65,7 @@ static CRmutex stub_init_mutex;
 /* NOTE: 'SPUDispatchTable stubThreadsafeDispatch' is declared in tsfuncs.c */
 Stub stub;
 #ifdef CHROMIUM_THREADSAFE
+static bool g_stubIsCurrentContextTSDInited;
 CRtsd g_stubCurrentContextTSD;
 #endif
 
@@ -510,6 +508,16 @@ static void stubSignalHandler(int signo)
     exit(0);  /* this causes stubExitHandler() to be called */
 }
 
+#ifndef RT_OS_WINDOWS
+# ifdef CHROMIUM_THREADSAFE
+static DECLCALLBACK(void) stubThreadTlsDtor(void *pvValue)
+{
+    ContextInfo *pCtx = (ContextInfo*)pvValue;
+    VBoxTlsRefRelease(pCtx);
+}
+# endif
+#endif
+
 
 /**
  * Init variables in the stub structure, install signal handler.
@@ -546,7 +554,11 @@ static void stubInitVars(void)
     stub.contextTable = crAllocHashtable();
 #ifndef RT_OS_WINDOWS
 # ifdef CHROMIUM_THREADSAFE
-    crInitTSD(&g_stubCurrentContextTSD);
+    if (!g_stubIsCurrentContextTSDInited)
+    {
+        crInitTSDF(&g_stubCurrentContextTSD, stubThreadTlsDtor);
+        g_stubIsCurrentContextTSDInited = true;
+    }
 # endif
 #endif
     stubSetCurrentContext(NULL);
@@ -1410,10 +1422,13 @@ BOOL WINAPI DllMain(HINSTANCE hDLLInst, DWORD fdwReason, LPVOID lpvReserved)
     {
         stubSPUSafeTearDown();
 
+#ifdef CHROMIUM_THREADSAFE
+        crFreeTSD(&g_stubCurrentContextTSD);
+#endif
+
 #ifdef VDBG_VEHANDLER
         vboxVDbgVEHandlerUnregister();
 #endif
-
         break;
     }
 

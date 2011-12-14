@@ -14,6 +14,7 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 #include "config.h"
+#include "wine/port.h"
 #include "wined3d_private.h"
 #include "vboxext.h"
 
@@ -22,13 +23,19 @@ WINE_DEFAULT_DEBUG_CHANNEL(d3d_vbox);
 typedef DECLCALLBACK(void) FNVBOXEXTWORKERCB(void *pvUser);
 typedef FNVBOXEXTWORKERCB *PFNVBOXEXTWORKERCB;
 
-HRESULT VBoxExtDwSubmitProc(PFNVBOXEXTWORKERCB pfnCb, void *pvCb);
+HRESULT VBoxExtDwSubmitProcSync(PFNVBOXEXTWORKERCB pfnCb, void *pvCb);
+HRESULT VBoxExtDwSubmitProcAsync(PFNVBOXEXTWORKERCB pfnCb, void *pvCb);
 
 /*******************************/
-#if defined(VBOX_WDDM_WOW64)
+#ifdef VBOX_WITH_WDDM
+# if defined(VBOX_WDDM_WOW64)
 # define VBOXEXT_WINE_MODULE_NAME "wined3dwddm-x86.dll"
-#else
+# else
 # define VBOXEXT_WINE_MODULE_NAME "wined3dwddm.dll"
+# endif
+#else
+/* both 32bit and 64bit versions of xpdm wine libs are named identically */
+# define VBOXEXT_WINE_MODULE_NAME "wined3d.dll"
 #endif
 
 typedef struct VBOXEXT_WORKER
@@ -60,7 +67,8 @@ typedef struct VBOXEXT_GLOBAL
 
 static VBOXEXT_GLOBAL g_VBoxExtGlobal;
 
-#define WM_VBOXEXT_CALLPROC (WM_APP+1)
+#define WM_VBOXEXT_CALLPROC  (WM_APP+1)
+#define WM_VBOXEXT_INIT_QUIT (WM_APP+2)
 
 typedef struct VBOXEXT_CALLPROC
 {
@@ -102,6 +110,12 @@ static DWORD WINAPI vboxExtWorkerThread(void *pvUser)
                 VBOXEXT_CALLPROC* pData = (VBOXEXT_CALLPROC*)Msg.lParam;
                 pData->pfnCb(pData->pvCb);
                 SetEvent(pWorker->hEvent);
+                break;
+            }
+            case WM_VBOXEXT_INIT_QUIT:
+            case WM_CLOSE:
+            {
+                PostQuitMessage(0);
                 break;
             }
             default:
@@ -164,7 +178,7 @@ HRESULT VBoxExtWorkerCreate(PVBOXEXT_WORKER pWorker)
 
 HRESULT VBoxExtWorkerDestroy(PVBOXEXT_WORKER pWorker)
 {
-    BOOL bResult = PostThreadMessage(pWorker->idThread, WM_QUIT, 0, 0);
+    BOOL bResult = PostThreadMessage(pWorker->idThread, WM_VBOXEXT_INIT_QUIT, 0, 0);
     DWORD dwErr;
     if (!bResult)
     {
@@ -190,7 +204,7 @@ HRESULT VBoxExtWorkerDestroy(PVBOXEXT_WORKER pWorker)
     return S_OK;
 }
 
-static HRESULT vboxExtWorkerSubmit(VBOXEXT_WORKER *pWorker, UINT Msg, LPARAM lParam)
+static HRESULT vboxExtWorkerSubmit(VBOXEXT_WORKER *pWorker, UINT Msg, LPARAM lParam, BOOL fSync)
 {
     HRESULT hr = E_FAIL;
     BOOL bResult;
@@ -200,15 +214,20 @@ static HRESULT vboxExtWorkerSubmit(VBOXEXT_WORKER *pWorker, UINT Msg, LPARAM lPa
     bResult = PostThreadMessage(pWorker->idThread, Msg, 0, lParam);
     if (bResult)
     {
-        DWORD dwErr = WaitForSingleObject(pWorker->hEvent, INFINITE);
-        if (dwErr == WAIT_OBJECT_0)
+        if (fSync)
         {
-            hr = S_OK;
+            DWORD dwErr = WaitForSingleObject(pWorker->hEvent, INFINITE);
+            if (dwErr == WAIT_OBJECT_0)
+            {
+                hr = S_OK;
+            }
+            else
+            {
+                ERR("WaitForSingleObject returned (%d)", dwErr);
+            }
         }
         else
-        {
-            ERR("WaitForSingleObject returned (%d)", dwErr);
-        }
+            hr = S_OK;
     }
     else
     {
@@ -220,13 +239,44 @@ static HRESULT vboxExtWorkerSubmit(VBOXEXT_WORKER *pWorker, UINT Msg, LPARAM lPa
     return hr;
 }
 
-HRESULT VBoxExtWorkerSubmitProc(PVBOXEXT_WORKER pWorker, PFNVBOXEXTWORKERCB pfnCb, void *pvCb)
+HRESULT VBoxExtWorkerSubmitProcSync(PVBOXEXT_WORKER pWorker, PFNVBOXEXTWORKERCB pfnCb, void *pvCb)
 {
     VBOXEXT_CALLPROC Ctx;
     Ctx.pfnCb = pfnCb;
     Ctx.pvCb = pvCb;
-    return vboxExtWorkerSubmit(pWorker, WM_VBOXEXT_CALLPROC, (LPARAM)&Ctx);
+    return vboxExtWorkerSubmit(pWorker, WM_VBOXEXT_CALLPROC, (LPARAM)&Ctx, TRUE);
 }
+
+static DECLCALLBACK(void) vboxExtWorkerSubmitProcAsyncWorker(void *pvUser)
+{
+    PVBOXEXT_CALLPROC pCallInfo = (PVBOXEXT_CALLPROC)pvUser;
+    pCallInfo[1].pfnCb(pCallInfo[1].pvCb);
+    HeapFree(GetProcessHeap(), 0, pCallInfo);
+}
+
+HRESULT VBoxExtWorkerSubmitProcAsync(PVBOXEXT_WORKER pWorker, PFNVBOXEXTWORKERCB pfnCb, void *pvCb)
+{
+    HRESULT hr;
+    PVBOXEXT_CALLPROC pCallInfo = HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, sizeof (VBOXEXT_CALLPROC) * 2);
+    if (!pCallInfo)
+    {
+        ERR("HeapAlloc failed\n");
+        return E_OUTOFMEMORY;
+    }
+    pCallInfo[0].pfnCb = vboxExtWorkerSubmitProcAsyncWorker;
+    pCallInfo[0].pvCb = pCallInfo;
+    pCallInfo[1].pfnCb = pfnCb;
+    pCallInfo[1].pvCb = pvCb;
+    hr = vboxExtWorkerSubmit(pWorker, WM_VBOXEXT_CALLPROC, (LPARAM)pCallInfo, FALSE);
+    if (FAILED(hr))
+    {
+        ERR("vboxExtWorkerSubmit failed, hr 0x%x\n", hr);
+        HeapFree(GetProcessHeap(), 0, pCallInfo);
+        return hr;
+    }
+    return S_OK;
+}
+
 
 static HRESULT vboxExtInit()
 {
@@ -294,11 +344,18 @@ HRESULT VBoxExtCheckTerm()
     return S_OK;
 }
 
-HRESULT VBoxExtDwSubmitProc(PFNVBOXEXTWORKERCB pfnCb, void *pvCb)
+HRESULT VBoxExtDwSubmitProcSync(PFNVBOXEXTWORKERCB pfnCb, void *pvCb)
 {
-    return VBoxExtWorkerSubmitProc(&g_VBoxExtGlobal.Worker, pfnCb, pvCb);
+    return VBoxExtWorkerSubmitProcSync(&g_VBoxExtGlobal.Worker, pfnCb, pvCb);
 }
 
+HRESULT VBoxExtDwSubmitProcAsync(PFNVBOXEXTWORKERCB pfnCb, void *pvCb)
+{
+    return VBoxExtWorkerSubmitProcAsync(&g_VBoxExtGlobal.Worker, pfnCb, pvCb);
+}
+
+#if defined(VBOX_WINE_WITH_SINGLE_CONTEXT) || defined(VBOX_WINE_WITH_SINGLE_SWAPCHAIN_CONTEXT)
+# ifndef VBOX_WITH_WDDM
 typedef struct VBOXEXT_GETDC_CB
 {
     HWND hWnd;
@@ -323,50 +380,64 @@ static DECLCALLBACK(void) vboxExtReleaseDCWorker(void *pvUser)
     PVBOXEXT_RELEASEDC_CB pData = (PVBOXEXT_RELEASEDC_CB)pvUser;
     pData->ret = ReleaseDC(pData->hWnd, pData->hDC);
 }
-#if 0
+
 HDC VBoxExtGetDC(HWND hWnd)
 {
-#ifdef VBOX_WINE_WITH_SINGLE_CONTEXT
     HRESULT hr;
     VBOXEXT_GETDC_CB Data = {0};
     Data.hWnd = hWnd;
     Data.hDC = NULL;
 
-    hr = VBoxExtDwSubmitProc(vboxExtGetDCWorker, &Data);
+    hr = VBoxExtDwSubmitProcSync(vboxExtGetDCWorker, &Data);
     if (FAILED(hr))
     {
-        ERR("VBoxExtDwSubmitProc feiled, hr (0x%x)\n", hr);
+        ERR("VBoxExtDwSubmitProcSync feiled, hr (0x%x)\n", hr);
         return NULL;
     }
 
     return Data.hDC;
-#else
-    return GetDC(hWnd);
-#endif
 }
 
 int VBoxExtReleaseDC(HWND hWnd, HDC hDC)
 {
-#ifdef VBOX_WINE_WITH_SINGLE_CONTEXT
     HRESULT hr;
     VBOXEXT_RELEASEDC_CB Data = {0};
     Data.hWnd = hWnd;
     Data.hDC = hDC;
     Data.ret = 0;
 
-    hr = VBoxExtDwSubmitProc(vboxExtReleaseDCWorker, &Data);
+    hr = VBoxExtDwSubmitProcSync(vboxExtReleaseDCWorker, &Data);
     if (FAILED(hr))
     {
-        ERR("VBoxExtDwSubmitProc feiled, hr (0x%x)\n", hr);
+        ERR("VBoxExtDwSubmitProcSync feiled, hr (0x%x)\n", hr);
         return -1;
     }
 
     return Data.ret;
-#else
-    return ReleaseDC(hWnd, hDC);
-#endif
 }
-#endif
+# endif /* #ifndef VBOX_WITH_WDDM */
+
+static DECLCALLBACK(void) vboxExtReleaseContextWorker(void *pvUser)
+{
+    struct wined3d_context *context = (struct wined3d_context *)pvUser;
+    wined3d_mutex_lock();
+    VBoxTlsRefRelease(context);
+    wined3d_mutex_unlock();
+}
+
+void VBoxExtReleaseContextAsync(struct wined3d_context *context)
+{
+    HRESULT hr;
+
+    hr = VBoxExtDwSubmitProcAsync(vboxExtReleaseContextWorker, context);
+    if (FAILED(hr))
+    {
+        ERR("VBoxExtDwSubmitProcAsync feiled, hr (0x%x)\n", hr);
+        return;
+    }
+}
+
+#endif /* #if defined(VBOX_WINE_WITH_SINGLE_CONTEXT) || defined(VBOX_WINE_WITH_SINGLE_SWAPCHAIN_CONTEXT) */
 
 /* window creation API */
 static LRESULT CALLBACK vboxExtWndProc(HWND hwnd,
@@ -506,7 +577,7 @@ HRESULT VBoxExtWndDestroy(HWND hWnd, HDC hDC)
     Info.hr = E_FAIL;
     Info.hWnd = hWnd;
     Info.hDC = hDC;
-    hr = VBoxExtDwSubmitProc(vboxExtWndDestroyWorker, &Info);
+    hr = VBoxExtDwSubmitProcSync(vboxExtWndDestroyWorker, &Info);
     Assert(hr == S_OK);
     if (hr == S_OK)
     {
@@ -523,7 +594,7 @@ HRESULT VBoxExtWndCreate(DWORD width, DWORD height, HWND *phWnd, HDC *phDC)
     Info.hr = E_FAIL;
     Info.width = width;
     Info.height = height;
-    hr = VBoxExtDwSubmitProc(vboxExtWndCreateWorker, &Info);
+    hr = VBoxExtDwSubmitProcSync(vboxExtWndCreateWorker, &Info);
     Assert(hr == S_OK);
     if (hr == S_OK)
     {

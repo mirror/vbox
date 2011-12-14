@@ -95,22 +95,18 @@ IWineD3D * WINAPI WineDirect3DCreate(UINT version, IUnknown *parent)
     IWineD3DImpl *object;
     HRESULT hr;
 
-#ifdef VBOX_WITH_WDDM
     hr = VBoxExtCheckInit();
     if (FAILED(hr))
     {
         ERR("VBoxExtCheckInit failed, hr (0x%x)\n", hr);
         return NULL;
     }
-#endif
 
     object = HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, sizeof(*object));
     if (!object)
     {
         ERR("Failed to allocate wined3d object memory.\n");
-#ifdef VBOX_WITH_WDDM
         VBoxExtCheckTerm();
-#endif
         return NULL;
     }
 
@@ -150,17 +146,15 @@ static void CDECL wined3d_do_nothing(void)
 {
 }
 
-#ifdef VBOX_WITH_WDDM
-void WINAPI wined3d_mutex_init(void)
+static void WINAPI wined3d_mutex_init(void)
 {
     InitializeCriticalSection(&wined3d_cs);
 }
 
-void WINAPI wined3d_mutex_term(void)
+static void WINAPI wined3d_mutex_term(void)
 {
     DeleteCriticalSection(&wined3d_cs);
 }
-#endif
 
 static BOOL wined3d_dll_init(HINSTANCE hInstDLL)
 {
@@ -173,18 +167,15 @@ static BOOL wined3d_dll_init(HINSTANCE hInstDLL)
     DWORD len, tmpvalue;
     WNDCLASSA wc;
 
-#ifdef VBOX_WITH_WDDM
     wined3d_mutex_init();
-#endif
 
     wined3d_context_tls_idx = TlsAlloc();
     if (wined3d_context_tls_idx == TLS_OUT_OF_INDEXES)
     {
         DWORD err = GetLastError();
         ERR("Failed to allocate context TLS index, err %#x.\n", err);
-#ifdef VBOX_WITH_WDDM
+
         wined3d_mutex_term();
-#endif
         return FALSE;
     }
     context_set_tls_idx(wined3d_context_tls_idx);
@@ -211,9 +202,9 @@ static BOOL wined3d_dll_init(HINSTANCE hInstDLL)
             DWORD err = GetLastError();
             ERR("Failed to free context TLS index, err %#x.\n", err);
         }
-#ifdef VBOX_WITH_WDDM
+
         wined3d_mutex_term();
-#endif
+
         return FALSE;
     }
 
@@ -412,9 +403,7 @@ static BOOL wined3d_dll_destroy(HINSTANCE hInstDLL)
     HeapFree(GetProcessHeap(), 0, wined3d_settings.logo);
     UnregisterClassA(WINED3D_OPENGL_WINDOW_CLASS_NAME, hInstDLL);
 
-#ifdef VBOX_WITH_WDDM
     wined3d_mutex_term();
-#endif
 
     return TRUE;
 }
@@ -543,10 +532,14 @@ BOOL WINAPI DllMain(HINSTANCE hInstDLL, DWORD fdwReason, LPVOID lpv)
 
         case DLL_THREAD_DETACH:
         {
+#if defined(VBOX_WINE_WITH_SINGLE_CONTEXT) || defined(VBOX_WINE_WITH_SINGLE_SWAPCHAIN_CONTEXT)
+            context_clear_on_thread_detach();
+#else
             if (!context_set_current(NULL))
             {
                 ERR("Failed to clear current context.\n");
             }
+#endif
             return TRUE;
         }
 

@@ -396,7 +396,7 @@ stubNewContext( const char *dpyName, GLint visBits, ContextType type,
     context->dpyName[MAX_DPY_NAME-1] = 0;
 
 #ifdef CHROMIUM_THREADSAFE
-    crTSDRefInit(context, stubContextDtor);
+    VBoxTlsRefInit(context, stubContextDtor);
 #endif
 
 #if defined(GLX) || defined(DARWIN)
@@ -1191,7 +1191,7 @@ stubDestroyContext( unsigned long contextId )
         stubSetCurrentContext(NULL);
     }
 
-    crTSDRefRelease(context);
+    VBoxTlsRefRelease(context);
 #else
     stubDestroyContextLocked(context);
 

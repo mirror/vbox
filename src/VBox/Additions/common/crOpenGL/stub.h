@@ -55,6 +55,9 @@
 # error CHROMIUM_THREADSAFE have to be defined
 #endif
 
+#ifdef CHROMIUM_THREADSAFE
+# include <cr_threads.h>
+#endif
 /*#define VBOX_TEST_MEGOO*/
 
 #if 0 && defined(CR_NEWWINTRACK) && !defined(WINDOWS)
@@ -112,7 +115,7 @@ struct context_info_t
     WindowInfo *currentDrawable;
 
 #ifdef CHROMIUM_THREADSAFE
-    CRTSDREFDATA
+    VBOXTLSREFDATA
 #endif
 
 #ifdef WINDOWS
@@ -264,16 +267,8 @@ typedef struct {
 } Stub;
 
 #ifdef CHROMIUM_THREADSAFE
-# define stubGetCurrentContext() crTSDRefGetCurrent(ContextInfo, &g_stubCurrentContextTSD)
-# define stubSetCurrentContext(_ctx) crTSDRefSetCurrent(ContextInfo, &g_stubCurrentContextTSD, _ctx)
-#else
-# define stubGetCurrentContext() (stub.currentContext)
-# define stubSetCurrentContext(_ctx) do { stub.currentContext = (_ctx); } while (0)
-#endif
-
-extern Stub stub;
-/* we place the __currentContextTSD outside the Stub data because Stub data is inited by the client's call,
- * while we need __currentContextTSD the __currentContextTSD to be valid at any time to be able to handle
+/* we place the g_stubCurrentContextTLS outside the Stub data because Stub data is inited by the client's call,
+ * while we need g_stubCurrentContextTLS the g_stubCurrentContextTLS to be valid at any time to be able to handle
  * THREAD_DETACH cleanup on windows.
  * Note that we can not do
  *  STUB_INIT_LOCK();
@@ -283,9 +278,17 @@ extern Stub stub;
  * but since we use GetModuleFileName in crGetProcName called from stubInitLocked, the lock order might be the oposite.
  * Note that GetModuleFileName acquires the loader lock.
  * */
-#ifdef CHROMIUM_THREADSAFE
 extern CRtsd g_stubCurrentContextTSD;
+
+# define stubGetCurrentContext() VBoxTlsRefGetCurrent(ContextInfo, &g_stubCurrentContextTSD)
+# define stubSetCurrentContext(_ctx) VBoxTlsRefSetCurrent(ContextInfo, &g_stubCurrentContextTSD, _ctx)
+#else
+# define stubGetCurrentContext() (stub.currentContext)
+# define stubSetCurrentContext(_ctx) do { stub.currentContext = (_ctx); } while (0)
 #endif
+
+extern Stub stub;
+
 extern DECLEXPORT(SPUDispatchTable) glim;
 extern SPUDispatchTable stubThreadsafeDispatch;
 extern DECLEXPORT(SPUDispatchTable) stubNULLDispatch;
