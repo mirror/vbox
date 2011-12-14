@@ -115,7 +115,7 @@ static int rtDirRemoveRecursiveSub(char *pszBuf, size_t cchDir, PRTDIRENTRY pDir
                 }
 
                 //case RTDIRENTRYTYPE_SYMLINK:
-                //    rc = RTSymlinkDelete(pszBuf);
+                //    rc = RTSymlinkDelete(pszBuf, 0);
                 //    break;
 
                 default:

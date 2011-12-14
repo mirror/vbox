@@ -50,14 +50,21 @@ RT_C_DECLS_BEGIN
  */
 RTDECL(bool) RTDirExists(const char *pszPath);
 
+/** @name RTDirCreate  flags.
+ * @{ */
+/** Don't allow symbolic links as part of the path. */
+#define RTDIRCREATE_FLAGS_NO_SYMLINKS  RT_BIT(0)
+/** @} */
+
 /**
  * Creates a directory.
  *
  * @returns iprt status code.
  * @param   pszPath     Path to the directory to create.
  * @param   fMode       The mode of the new directory.
+ * @param   fCreate     Create flags, RTDIRCREATE_FLAGS_*.
  */
-RTDECL(int) RTDirCreate(const char *pszPath, RTFMODE fMode);
+RTDECL(int) RTDirCreate(const char *pszPath, RTFMODE fMode, uint32_t fCreate);
 
 /**
  * Creates a directory including all parent directories in the path
@@ -294,6 +301,12 @@ typedef RTDIRENTRYEX *PRTDIRENTRYEX;
  */
 RTDECL(int) RTDirOpen(PRTDIR *ppDir, const char *pszPath);
 
+/** @name RTDirOpenFiltered  flags.
+ * @{ */
+/** Don't allow symbolic links as part of the path. */
+#define RTDIROPENFILTERED_FLAGS_NO_SYMLINKS  RT_BIT(0)
+/** @} */
+
 /**
  * Opens a directory filtering the entries using dos style wildcards.
  *
@@ -302,8 +315,9 @@ RTDECL(int) RTDirOpen(PRTDIR *ppDir, const char *pszPath);
  * @param   pszPath     Path to the directory to search, this must include wildcards.
  * @param   enmFilter   The kind of filter to apply. Setting this to RTDIRFILTER_NONE makes
  *                      this function behave like RTDirOpen.
+ * @param   fOpen       Open flags, RTDIROPENFILTERED_FLAGS_*.
  */
-RTDECL(int) RTDirOpenFiltered(PRTDIR *ppDir, const char *pszPath, RTDIRFILTER enmFilter);
+RTDECL(int) RTDirOpenFiltered(PRTDIR *ppDir, const char *pszPath, RTDIRFILTER enmFilter, uint32_t fOpen);
 
 /**
  * Closes a directory.

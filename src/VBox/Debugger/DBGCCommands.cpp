@@ -1874,7 +1874,7 @@ void dbgcPlugInAutoLoad(PDBGC pDbgc)
     strcat(szPath, pszSuff);
 
     PRTDIR pDir;
-    rc = RTDirOpenFiltered(&pDir, szPath, RTDIRFILTER_WINNT);
+    rc = RTDirOpenFiltered(&pDir, szPath, RTDIRFILTER_WINNT, 0);
     if (RT_SUCCESS(rc))
     {
         /*

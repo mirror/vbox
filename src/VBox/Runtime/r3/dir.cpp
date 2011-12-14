@@ -103,7 +103,7 @@ RTDECL(int) RTDirCreateFullPath(const char *pszPath, RTFMODE fMode)
          * ASSUME that RTDirCreate will return VERR_ALREADY_EXISTS and not VERR_ACCESS_DENIED in those cases
          * where the directory exists but we don't have write access to the parent directory.
          */
-        rc = RTDirCreate(szAbsPath, fMode);
+        rc = RTDirCreate(szAbsPath, fMode, 0);
         if (rc == VERR_ALREADY_EXISTS)
             rc = VINF_SUCCESS;
         if (!psz)
@@ -673,7 +673,7 @@ RTDECL(int) RTDirOpen(PRTDIR *ppDir, const char *pszPath)
 }
 
 
-RTDECL(int) RTDirOpenFiltered(PRTDIR *ppDir, const char *pszPath, RTDIRFILTER enmFilter)
+RTDECL(int) RTDirOpenFiltered(PRTDIR *ppDir, const char *pszPath, RTDIRFILTER enmFilter, uint32_t fOpen)
 {
     /*
      * Validate input.

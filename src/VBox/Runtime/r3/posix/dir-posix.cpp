@@ -77,7 +77,7 @@ RTDECL(bool) RTDirExists(const char *pszPath)
 }
 
 
-RTDECL(int) RTDirCreate(const char *pszPath, RTFMODE fMode)
+RTDECL(int) RTDirCreate(const char *pszPath, RTFMODE fMode, uint32_t fCreate)
 {
     int rc;
     fMode = rtFsModeNormalize(fMode, pszPath, 0);

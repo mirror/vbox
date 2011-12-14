@@ -116,7 +116,7 @@ RTDECL(bool) RTSymlinkIsDangling(const char *pszSymlink)
 }
 
 
-RTDECL(int) RTSymlinkCreate(const char *pszSymlink, const char *pszTarget, RTSYMLINKTYPE enmType)
+RTDECL(int) RTSymlinkCreate(const char *pszSymlink, const char *pszTarget, RTSYMLINKTYPE enmType, uint32_t fCreate)
 {
     /*
      * Validate the input.
@@ -144,8 +144,8 @@ RTDECL(int) RTSymlinkCreate(const char *pszSymlink, const char *pszTarget, RTSYM
     }
     if (!s_pfnCreateSymbolicLinkW)
     {
-        LogFlow(("RTSymlinkCreate(%p={%s}, %p={%s}, %d): returns VERR_NOT_SUPPORTED - Windows API not found\n",
-                 pszSymlink, pszSymlink, pszTarget, pszTarget, enmType));
+        LogFlow(("RTSymlinkCreate(%p={%s}, %p={%s}, %d, %#x): returns VERR_NOT_SUPPORTED - Windows API not found\n",
+                 pszSymlink, pszSymlink, pszTarget, pszTarget, enmType, fCreate));
         return VERR_NOT_SUPPORTED;
     }
 
@@ -215,12 +215,12 @@ RTDECL(int) RTSymlinkCreate(const char *pszSymlink, const char *pszTarget, RTSYM
         RTUtf16Free(pwszNativeSymlink);
     }
 
-    LogFlow(("RTSymlinkCreate(%p={%s}, %p={%s}, %d): returns %Rrc\n", pszSymlink, pszSymlink, pszTarget, pszTarget, enmType, rc));
+    LogFlow(("RTSymlinkCreate(%p={%s}, %p={%s}, %d, %#x): returns %Rrc\n", pszSymlink, pszSymlink, pszTarget, pszTarget, enmType, fCreate, rc));
     return rc;
 }
 
 
-RTDECL(int) RTSymlinkDelete(const char *pszSymlink)
+RTDECL(int) RTSymlinkDelete(const char *pszSymlink, uint32_t fDelete)
 {
     /*
      * Convert the path.
@@ -258,12 +258,12 @@ RTDECL(int) RTSymlinkDelete(const char *pszSymlink)
         RTUtf16Free(pwszNativeSymlink);
     }
 
-    LogFlow(("RTSymlinkDelete(%p={%s}): returns %Rrc\n", pszSymlink, pszSymlink, rc));
+    LogFlow(("RTSymlinkDelete(%p={%s}, %#x): returns %Rrc\n", pszSymlink, pszSymlink, fDelete, rc));
     return rc;
 }
 
 
-RTDECL(int) RTSymlinkRead(const char *pszSymlink, char *pszTarget, size_t cbTarget)
+RTDECL(int) RTSymlinkRead(const char *pszSymlink, char *pszTarget, size_t cbTarget, uint32_t fRead)
 {
     char *pszMyTarget;
     int rc = RTSymlinkReadA(pszSymlink, &pszMyTarget);

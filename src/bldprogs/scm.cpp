@@ -3817,7 +3817,7 @@ static int scmProcessDirTreeRecursion(char *pszBuf, size_t cchDir, PRTDIRENTRY p
      * Try open and read the directory.
      */
     PRTDIR pDir;
-    rc = RTDirOpenFiltered(&pDir, pszBuf, RTDIRFILTER_NONE);
+    rc = RTDirOpenFiltered(&pDir, pszBuf, RTDIRFILTER_NONE, 0);
     if (RT_FAILURE(rc))
     {
         RTMsgError("Failed to enumerate directory '%s': %Rrc", pszBuf, rc);

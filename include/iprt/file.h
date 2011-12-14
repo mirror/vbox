@@ -212,6 +212,9 @@ RTDECL(int) RTFileQuerySize(const char *pszPath, uint64_t *pcbFile);
  */
 #define RTFILE_O_NO_CACHE               UINT32_C(0x00080000)
 
+/** Don't allow symbolic links as part of the path. */
+#define RTFILE_O_NO_SYMLINKS            UINT32_C(0x20000000)
+
 /** Unix file mode mask for use when creating files. */
 #define RTFILE_O_CREATE_MODE_MASK       UINT32_C(0x1ff00000)
 /** The number of bits to shift to get the file mode mask.
@@ -219,14 +222,13 @@ RTDECL(int) RTFileQuerySize(const char *pszPath, uint64_t *pcbFile);
  */
 #define RTFILE_O_CREATE_MODE_SHIFT      20
 
-                                      /*UINT32_C(0x20000000),
-                                        UINT32_C(0x40000000)
-                                    and UINT32_C(0x80000000) are unused atm. */
+                                      /* UINT32_C(0x40000000)
+                                     and UINT32_C(0x80000000) are unused atm. */
 
 /** Mask of all valid flags.
  * @remark  This doesn't validate the access mode properly.
  */
-#define RTFILE_O_VALID_MASK             UINT32_C(0x1ffffff7)
+#define RTFILE_O_VALID_MASK             UINT32_C(0x3ffffff7)
 
 /** @} */
 
@@ -561,7 +563,9 @@ RTDECL(int) RTFileRename(const char *pszSrc, const char *pszDst, unsigned fRenam
 /** @name RTFileMove flags (bit masks).
  * @{ */
 /** Replace destination file if present. */
-#define RTFILEMOVE_FLAGS_REPLACE    0x1
+#define RTFILEMOVE_FLAGS_REPLACE      0x1
+/** Don't allow symbolic links as part of the path. */
+#define RTFILEMOVE_FLAGS_NO_SYMLINKS  0x2
 /** @} */
 
 /**

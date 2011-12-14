@@ -124,7 +124,7 @@ extern int testRTDirClose(PRTDIR pDir)
 static char testRTDirCreatePath[256];
 static RTFMODE testRTDirCreateMode;
 
-extern int testRTDirCreate(const char *pszPath, RTFMODE fMode)
+extern int testRTDirCreate(const char *pszPath, RTFMODE fMode, uint32_t fCreate)
 {
  /* RTPrintf("%s: pszPath=%s, fMode=0x%llx\n", __PRETTY_FUNCTION__, pszPath,
              LLUIFY(fMode)); */
@@ -388,9 +388,11 @@ extern int testRTPathQueryInfoEx(const char *pszPath,
     return VINF_SUCCESS;
 }
 
-extern int testRTSymlinkDelete(const char *pszSymlink) { RTPrintf("%s\n", __PRETTY_FUNCTION__); return 0; }
+extern int testRTSymlinkDelete(const char *pszSymlink, uint32_t fDelete) 
+{ RTPrintf("%s\n", __PRETTY_FUNCTION__); return 0; }
 extern int testRTSymlinkRead(const char *pszSymlink, char *pszTarget,
-                              size_t cbTarget) { RTPrintf("%s\n", __PRETTY_FUNCTION__); return 0; }
+                              size_t cbTarget, uint32_t fRead)
+{ RTPrintf("%s\n", __PRETTY_FUNCTION__); return 0; }
 
 /******************************************************************************
 *   Tests                                                                     *

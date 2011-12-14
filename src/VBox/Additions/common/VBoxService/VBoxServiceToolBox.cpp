@@ -988,7 +988,7 @@ static RTEXITCODE VBoxServiceToolboxMkDir(int argc, char **argv)
                      * twice). */
                     rc = RTDirCreateFullPath(ValueUnion.psz, fDirMode);
                 else
-                    rc = RTDirCreate(ValueUnion.psz, fDirMode);
+                    rc = RTDirCreate(ValueUnion.psz, fDirMode, 0);
                 if (RT_FAILURE(rc))
                     return RTMsgErrorExit(RTEXITCODE_FAILURE, "Could not create directory '%s': %Rra\n",
                                           ValueUnion.psz, rc);

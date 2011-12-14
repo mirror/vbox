@@ -522,6 +522,12 @@ RTR3DECL(int) RTPathRename(const char *pszSrc, const char *pszDst, unsigned fRen
 }
 
 
+RTR3DECL(int) RTPathUnlink(const char *pszPath, uint32_t fUnlink)
+{
+    return VERR_NOT_IMPLEMENTED;
+}
+
+
 RTDECL(bool) RTPathExists(const char *pszPath)
 {
     return RTPathExistsEx(pszPath, RTPATH_F_FOLLOW_LINK);
