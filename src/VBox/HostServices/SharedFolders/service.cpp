@@ -27,7 +27,8 @@
 #include <VBox/vmm/ssm.h>
 #include <VBox/vmm/pdmifs.h>
 
-#define SHFL_SSM_VERSION        2
+#define SHFL_SSM_VERSION_FOLDERNAME_UTF16   2
+#define SHFL_SSM_VERSION                    3
 
 
 /* Shared Folders Host Service.
@@ -145,11 +146,11 @@ static DECLCALLBACK(int) svcSaveState(void *, uint32_t u32ClientID, void *pvClie
         {
             uint32_t len;
 
-            len = ShflStringSizeOfBuffer(pFolderMapping->pFolderName);
+            len = strlen(pFolderMapping->pszFolderName);
             rc = SSMR3PutU32(pSSM, len);
             AssertRCReturn(rc, rc);
 
-            rc = SSMR3PutMem(pSSM, pFolderMapping->pFolderName, len);
+            rc = SSMR3PutStrZ(pSSM, pFolderMapping->pszFolderName);
             AssertRCReturn(rc, rc);
 
             len = ShflStringSizeOfBuffer(pFolderMapping->pMapName);
@@ -183,7 +184,8 @@ static DECLCALLBACK(int) svcLoadState(void *, uint32_t u32ClientID, void *pvClie
     int rc = SSMR3GetU32(pSSM, &version);
     AssertRCReturn(rc, rc);
 
-    if (version != SHFL_SSM_VERSION)
+    if (   version > SHFL_SSM_VERSION
+        || version < SHFL_SSM_VERSION_FOLDERNAME_UTF16)
         return VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION;
 
     rc = SSMR3GetU32(pSSM, &nrMappings);
@@ -218,7 +220,7 @@ static DECLCALLBACK(int) svcLoadState(void *, uint32_t u32ClientID, void *pvClie
         if (mapping.fValid)
         {
             uint32_t cbFolderName;
-            PSHFLSTRING pFolderName;
+            char *pszFolderName;
 
             uint32_t cbMapName;
             PSHFLSTRING pMapName;
@@ -227,11 +229,27 @@ static DECLCALLBACK(int) svcLoadState(void *, uint32_t u32ClientID, void *pvClie
             rc = SSMR3GetU32(pSSM, &cbFolderName);
             AssertRCReturn(rc, rc);
 
-            pFolderName = (PSHFLSTRING)RTMemAlloc(cbFolderName);
-            AssertReturn(pFolderName != NULL, VERR_NO_MEMORY);
+            if (version == SHFL_SSM_VERSION_FOLDERNAME_UTF16)
+            {
+                PSHFLSTRING pFolderName = (PSHFLSTRING)RTMemAlloc(cbFolderName);
+                AssertReturn(pFolderName != NULL, VERR_NO_MEMORY);
 
-            rc = SSMR3GetMem(pSSM, pFolderName, cbFolderName);
-            AssertRCReturn(rc, rc);
+                rc = SSMR3GetMem(pSSM, pFolderName, cbFolderName);
+                AssertRCReturn(rc, rc);
+
+                rc = RTUtf16ToUtf8(pFolderName->String.ucs2, &pszFolderName);
+                RTMemFree(pFolderName);
+                AssertRCReturn(rc, rc);
+            }
+            else
+            {
+                pszFolderName = (char*)RTStrAlloc(cbFolderName);
+                AssertReturn(pszFolderName, VERR_NO_MEMORY);
+
+                rc = SSMR3GetStrZ(pSSM, mapping.pszFolderName, cbFolderName);
+                AssertRCReturn(rc, rc);
+                mapping.pszFolderName = pszFolderName;
+            }
 
             /* Load the map name. */
             rc = SSMR3GetU32(pSSM, &cbMapName);
@@ -249,14 +267,14 @@ static DECLCALLBACK(int) svcLoadState(void *, uint32_t u32ClientID, void *pvClie
             rc = SSMR3GetBool(pSSM, &mapping.fGuestCaseSensitive);
             AssertRCReturn(rc, rc);
 
-            mapping.pFolderName = pFolderName;
+            mapping.pszFolderName = pszFolderName;
             mapping.pMapName = pMapName;
 
             /* 'i' is the root handle of the saved mapping. */
             rc = vbsfMappingLoaded (&mapping, i);
 
             RTMemFree(pMapName);
-            RTMemFree(pFolderName);
+            RTStrFree(pszFolderName);
 
             AssertRCReturn(rc, rc);
         }
