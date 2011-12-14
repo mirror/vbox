@@ -15,8 +15,6 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-//@todo!!!! save/restore high bits of EAX/ECX and whatever else may be needed.
-
 #include <stdint.h>
 #include <string.h>
 #include "biosint.h"
@@ -86,6 +84,8 @@ typedef struct
     uint8_t         cur_prd;
     /** Physical address of the sink buffer (for pre/post skip). */
     uint32_t        sink_buf_phys;
+    /** Saved high bits of EAX. */
+    uint16_t        saved_eax_hi;
     /** VDS EDDS DMA buffer descriptor structure. */
     vds_edds        edds;
     vds_sg          edds_more_sg[NUM_EDDS_SG - 1];
@@ -180,6 +180,7 @@ uint32_t inpd(uint16_t port);
     "xchg   ax, dx"     \
     parm [dx] value [dx ax] modify nomemory;
 
+/* Warning: Destroys high bits of EAX. */
 void outpd(uint16_t port, uint32_t val);
 #pragma aux outpd =     \
     ".386"              \
@@ -189,6 +190,35 @@ void outpd(uint16_t port, uint32_t val);
     "out    dx, eax"    \
     parm [dx] [cx ax] modify nomemory;
 
+
+/* Machinery to save/restore high bits of EAX. 32-bit port I/O needs to use
+ * EAX, but saving/restoring EAX around each port access would be inefficient.
+ * Instead, each externally callable routine must save the high bits before
+ * modifying them and restore the high bits before exiting.
+ */
+
+/* Note: Reading high EAX bits destroys them - *must* be restored later. */
+uint16_t eax_hi_rd(void);
+#pragma aux eax_hi_rd = \
+    ".386"              \
+    "shr    eax, 16"    \
+    value [ax] modify nomemory;
+
+void eax_hi_wr(uint16_t);
+#pragma aux eax_hi_wr = \
+    ".386"              \
+    "shl    eax, 16"    \
+    parm [ax] modify nomemory;
+
+void high_bits_save(ahci_t __far *ahci)
+{
+    ahci->saved_eax_hi = eax_hi_rd();
+}
+
+void high_bits_restore(ahci_t __far *ahci)
+{
+    eax_hi_wr(ahci->saved_eax_hi);
+}
 
 /**
  * Sets a given set of bits in a register.
@@ -333,6 +363,13 @@ static void ahci_cmd_data(bio_dsk_t __far *bios_dsk, uint8_t cmd)
 
     ahci->cur_prd = prdt_idx;
 
+#ifdef DEBUG_AHCI
+    for (prdt_idx = 0; prdt_idx < ahci->cur_prd; ++prdt_idx) {
+        DBG_AHCI("S/G entry %u: %5lu bytes @ %08lX\n", prdt_idx,
+                 ahci->aPrdt[prdt_idx].len + 1, ahci->aPrdt[prdt_idx].phys_addr);
+    }
+#endif
+
     /* Build variable part of first command DWORD (reuses 'cmd'). */
     if (cmd == AHCI_CMD_WRITE_DMA_EXT)
         cmd = RT_BIT_32(6);     /* Indicate a write to device. */
@@ -461,11 +498,13 @@ int ahci_read_sectors(bio_dsk_t __far *bios_dsk)
              bios_dsk->drqp.nsect, bios_dsk->drqp.lba, device_id,
              bios_dsk->ahcidev[device_id].port);
 
+    high_bits_save(bios_dsk->ahci_seg :> 0);
     ahci_port_init(bios_dsk->ahci_seg :> 0, bios_dsk->ahcidev[device_id].port);
     ahci_cmd_data(bios_dsk, AHCI_CMD_READ_DMA_EXT);
 #ifdef DMA_WORKAROUND
     rep_movsw(bios_dsk->drqp.buffer, bios_dsk->drqp.buffer, bios_dsk->drqp.nsect * 512 / 2);
 #endif
+    high_bits_restore(bios_dsk->ahci_seg :> 0);
     return 0;   //@todo!!
 }
 
@@ -488,8 +527,10 @@ int ahci_write_sectors(bio_dsk_t __far *bios_dsk)
              bios_dsk->drqp.nsect, bios_dsk->drqp.lba, device_id,
              bios_dsk->ahcidev[device_id].port);
 
+    high_bits_save(bios_dsk->ahci_seg :> 0);
     ahci_port_init(bios_dsk->ahci_seg :> 0, bios_dsk->ahcidev[device_id].port);
     ahci_cmd_data(bios_dsk, AHCI_CMD_WRITE_DMA_EXT);
+    high_bits_restore(bios_dsk->ahci_seg :> 0);
     return 0;   //@todo!!
 }
 
@@ -502,7 +543,7 @@ uint16_t ahci_cmd_packet(uint16_t device_id, uint8_t cmdlen, char __far *cmdbuf,
                          uint16_t skip_b, uint32_t length, uint8_t inout, char __far *buffer)
 {
     bio_dsk_t __far *bios_dsk = read_word(0x0040, 0x000E) :> &EbdaData->bdisk;
-    ahci_t __far    *ahci     = bios_dsk->ahci_seg :> 0;
+    ahci_t __far    *ahci;
 
     /* Data out is currently not supported. */
     if (inout == ATA_DATA_OUT) {
@@ -530,6 +571,9 @@ uint16_t ahci_cmd_packet(uint16_t device_id, uint8_t cmdlen, char __far *cmdbuf,
     bios_dsk->drqp.nsect   = length / bios_dsk->drqp.sect_sz;
 //    bios_dsk->drqp.sect_sz = 2048;
 
+    ahci = bios_dsk->ahci_seg :> 0;
+    high_bits_save(ahci);
+
     ahci_port_init(bios_dsk->ahci_seg :> 0, bios_dsk->ahcidev[device_id].port);
 
     /* Copy the ATAPI command where the HBA can fetch it. */
@@ -553,6 +597,8 @@ uint16_t ahci_cmd_packet(uint16_t device_id, uint8_t cmdlen, char __far *cmdbuf,
 #ifdef DMA_WORKAROUND
     rep_movsw(bios_dsk->drqp.buffer, bios_dsk->drqp.buffer, bios_dsk->drqp.trsfbytes / 2);
 #endif
+    high_bits_restore(ahci);
+
     return ahci->aCmdHdr[1] == 0 ? 4 : 0;
 //    return 0;   //@todo!!
 }
