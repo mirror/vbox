@@ -111,6 +111,10 @@ typedef struct RTREQPOOLINT
     /** The number of milliseconds a thread needs to be idle before it is
      * considered for retirement. */
     uint32_t                cMsMinIdle;
+    /** cMsMinIdle in nano seconds. */
+    uint64_t                cNsMinIdle;
+    /** The idle thread sleep interval in milliseconds. */
+    uint32_t                cMsIdleSleep;
     /** The max number of milliseconds to push back a submitter before creating
      * a new worker thread once the threshold has been reached. */
     uint32_t                cMsMaxPushBack;
@@ -122,7 +126,7 @@ typedef struct RTREQPOOLINT
     /** @}  */
 
     /** Signaled by terminating worker threads. */
-    RTSEMEVENT              hThreadTermEvt;
+    RTSEMEVENTMULTI         hThreadTermEvt;
 
     /** Destruction indicator.  The worker threads checks in their loop. */
     bool volatile           fDestructing;
@@ -165,6 +169,30 @@ typedef struct RTREQPOOLINT
 } RTREQPOOLINT;
 
 
+/**
+ * Used by exiting thread and the pool destruction code to cancel unexpected
+ * requests.
+ *
+ * @param   pReq                The request.
+ */
+static void rtReqPoolCancelReq(PRTREQINT pReq)
+{
+    pReq->uOwner.hPool = NIL_RTREQPOOL; /* force free */
+    pReq->enmState     = RTREQSTATE_COMPLETED;
+    ASMAtomicWriteS32(&pReq->iStatusX, VERR_CANCELLED);
+    if (pReq->hPushBackEvt != NIL_RTSEMEVENTMULTI)
+        RTSemEventMultiSignal(pReq->hPushBackEvt);
+    RTSemEventSignal(pReq->EventSem);
+
+    RTReqRelease(pReq);
+}
+
+
+/**
+ * Recalculate the max pushback interval when adding or removing worker threads.
+ *
+ * @param   pPool               The pool. cMsCurPushBack will be changed.
+ */
 static void rtReqPoolRecalcPushBack(PRTREQPOOLINT pPool)
 {
     uint32_t const cMsRange = pPool->cMsMaxPushBack - pPool->cMsMinPushBack;
@@ -179,6 +207,56 @@ static void rtReqPoolRecalcPushBack(PRTREQPOOLINT pPool)
     cMsCurPushBack += pPool->cMsMinPushBack;
 
     pPool->cMsCurPushBack = cMsCurPushBack;
+}
+
+
+
+/**
+ * Performs thread exit.
+ *
+ * @returns Thread termination status code (VINF_SUCCESS).
+ * @param   pPool               The pool.
+ * @param   pThread             The thread.
+ * @param   fLocked             Whether we are inside the critical section
+ *                              already.
+ */
+static int rtReqPoolThreadExit(PRTREQPOOLINT pPool, PRTREQPOOLTHREAD pThread, bool fLocked)
+{
+    if (!fLocked)
+        RTCritSectEnter(&pPool->CritSect);
+
+    /* Get out of the idle list. */
+    if (!RTListIsEmpty(&pThread->IdleNode))
+    {
+        RTListNodeRemove(&pThread->IdleNode);
+        Assert(pPool->cIdleThreads > 0);
+        ASMAtomicDecU32(&pPool->cIdleThreads);
+    }
+
+    /* Get out of the thread list. */
+    RTListNodeRemove(&pThread->ListNode);
+    Assert(pPool->cCurThreads > 0);
+    pPool->cCurThreads--;
+    rtReqPoolRecalcPushBack(pPool);
+
+    /* This shouldn't happen... */
+    PRTREQINT pReq = pThread->pTodoReq;
+    if (pReq)
+    {
+        AssertFailed();
+        pThread->pTodoReq = NULL;
+        rtReqPoolCancelReq(pReq);
+    }
+
+    /* If we're the last thread terminating, ping the destruction thread before
+       we leave the critical section. */
+    if (   RTListIsEmpty(&pPool->WorkerThreads)
+        && pPool->hThreadTermEvt != NIL_RTSEMEVENT)
+        RTSemEventMultiSignal(pPool->hThreadTermEvt);
+
+    RTCritSectLeave(&pPool->CritSect);
+
+    return VINF_SUCCESS;
 }
 
 
@@ -209,96 +287,101 @@ static void rtReqPoolThreadProcessRequest(PRTREQPOOLTHREAD pThread, PRTREQINT pR
 
 
 
+/**
+ * The Worker Thread Procedure.
+ *
+ * @returns VINF_SUCCESS.
+ * @param   hThreadSelf         The thread handle (unused).
+ * @param   pvArg               Pointer to the thread data.
+ */
 static DECLCALLBACK(int) rtReqPoolThreadProc(RTTHREAD hThreadSelf, void *pvArg)
 {
     PRTREQPOOLTHREAD    pThread = (PRTREQPOOLTHREAD)pvArg;
     PRTREQPOOLINT       pPool   = pThread->pPool;
 
-/** @todo rework this... */
-
     /*
      * The work loop.
      */
-    uint64_t            cPrevReqProcessed = 0;
-    while (pPool->fDestructing)
+    uint64_t cPrevReqProcessed = UINT64_MAX;
+    while (!pPool->fDestructing)
     {
         /*
-         * Pending work?
+         * Process pending work.
          */
+
+        /* Check if anything is scheduled directly to us. */
         PRTREQINT pReq = ASMAtomicXchgPtrT(&pThread->pTodoReq, NULL, PRTREQINT);
         if (pReq)
-            rtReqPoolThreadProcessRequest(pThread, pReq);
-        else
         {
-            ASMAtomicIncU32(&pPool->cIdleThreads);
-            RTCritSectEnter(&pPool->CritSect);
-
-            /* Recheck the todo request pointer after entering the critsect. */
-            pReq = ASMAtomicXchgPtrT(&pThread->pTodoReq, NULL, PRTREQINT);
-            if (!pReq)
-            {
-                /* Any pending requests in the queue? */
-                pReq = pPool->pPendingRequests;
-                if (pReq)
-                {
-                    pPool->pPendingRequests = pReq->pNext;
-                    if (pReq->pNext == NULL)
-                        pPool->ppPendingRequests = &pPool->pPendingRequests;
-                }
-            }
-
-            if (pReq)
-            {
-                /*
-                 * Un-idle ourselves and process the request.
-                 */
-                if (!RTListIsEmpty(&pThread->IdleNode))
-                {
-                    RTListNodeRemove(&pThread->IdleNode);
-                    RTListInit(&pThread->IdleNode);
-                }
-                ASMAtomicDecU32(&pPool->cIdleThreads);
-                RTCritSectLeave(&pPool->CritSect);
-
-                rtReqPoolThreadProcessRequest(pThread, pReq);
-            }
-            else
-            {
-                /*
-                 * Nothing to do, go idle.
-                 */
-                if (cPrevReqProcessed != pThread->cReqProcessed)
-                {
-                    pThread->cReqProcessed = cPrevReqProcessed;
-                    pThread->uIdleNanoTs   = RTTimeNanoTS();
-                }
-
-                if (RTListIsEmpty(&pThread->IdleNode))
-                    RTListPrepend(&pPool->IdleThreads, &pThread->IdleNode);
-                RTThreadUserReset(hThreadSelf);
-
-                RTCritSectLeave(&pPool->CritSect);
-
-                RTThreadUserWait(hThreadSelf, 0);
-
-
-
-            }
+            Assert(RTListIsEmpty(&pThread->IdleNode)); /* Must not be in the idle list. */
+            rtReqPoolThreadProcessRequest(pThread, pReq);
+            continue;
         }
+
+        ASMAtomicIncU32(&pPool->cIdleThreads);
+        RTCritSectEnter(&pPool->CritSect);
+
+        /* Recheck the todo request pointer after entering the critsect. */
+        pReq = ASMAtomicXchgPtrT(&pThread->pTodoReq, NULL, PRTREQINT);
+        if (pReq)
+        {
+            Assert(RTListIsEmpty(&pThread->IdleNode)); /* Must not be in the idle list. */
+            RTCritSectLeave(&pPool->CritSect);
+
+            rtReqPoolThreadProcessRequest(pThread, pReq);
+            continue;
+        }
+
+        /* Any pending requests in the queue? */
+        pReq = pPool->pPendingRequests;
+        if (pReq)
+        {
+            pPool->pPendingRequests = pReq->pNext;
+            if (pReq->pNext == NULL)
+                pPool->ppPendingRequests = &pPool->pPendingRequests;
+
+            /* Un-idle ourselves and process the request. */
+            if (!RTListIsEmpty(&pThread->IdleNode))
+            {
+                RTListNodeRemove(&pThread->IdleNode);
+                RTListInit(&pThread->IdleNode);
+                ASMAtomicDecU32(&pPool->cIdleThreads);
+            }
+            ASMAtomicDecU32(&pPool->cIdleThreads);
+            RTCritSectLeave(&pPool->CritSect);
+
+            rtReqPoolThreadProcessRequest(pThread, pReq);
+            continue;
+        }
+
+        /*
+         * Nothing to do, go idle.
+         */
+        if (cPrevReqProcessed != pThread->cReqProcessed)
+        {
+            pThread->cReqProcessed = cPrevReqProcessed;
+            pThread->uIdleNanoTs   = RTTimeNanoTS();
+        }
+        else if (pPool->cCurThreads > pPool->cMinThreads)
+        {
+            uint64_t cNsIdle = RTTimeNanoTS() - pThread->uIdleNanoTs;
+            if (cNsIdle >= pPool->cNsMinIdle)
+                return rtReqPoolThreadExit(pPool, pThread, true /*fLocked*/);
+        }
+
+        if (RTListIsEmpty(&pThread->IdleNode))
+            RTListPrepend(&pPool->IdleThreads, &pThread->IdleNode);
+        else
+            ASMAtomicDecU32(&pPool->cIdleThreads);
+        RTThreadUserReset(hThreadSelf);
+        uint32_t const cMsSleep = pPool->cMsIdleSleep;
+
+        RTCritSectLeave(&pPool->CritSect);
+
+        RTThreadUserWait(hThreadSelf, cMsSleep);
     }
 
-    /*
-     * Clean up on the way out.
-     */
-    RTCritSectEnter(&pPool->CritSect);
-
-    /** @todo ....  */
-
-    rtReqPoolRecalcPushBack(pPool);
-
-    RTCritSectLeave(&pPool->CritSect);
-
-    return VINF_SUCCESS;
+    return rtReqPoolThreadExit(pPool, pThread, false /*fLocked*/);
 }
 
 
@@ -479,6 +562,39 @@ DECLHIDDEN(bool) rtReqPoolRecycle(PRTREQPOOLINT pPool, PRTREQINT pReq)
     return false;
 }
 
+typedef enum RTREQPOOLCFGVAR
+{
+    RTREQPOOLCFGVAR_INVALID = 0,
+    RTREQPOOLCFGVAR_END,
+    RTREQPOOLCFGVAR_32BIT_HACK = 0x7fffffff
+} RTREQPOOLCFGVAR;
+
+
+RTDECL(int) RTReqPoolSetCfgVar(RTREQPOOL hPool, RTREQPOOLCFGVAR enmVar, uint64_t uValue)
+{
+    return VERR_NOT_SUPPORTED;
+}
+
+
+RTDECL(int) RTReqPoolQueryCfgVar(RTREQPOOL hPool, RTREQPOOLCFGVAR enmVar, uint64_t *puValue)
+{
+    return VERR_NOT_SUPPORTED;
+}
+
+
+typedef enum RTREQPOOLSTAT
+{
+    RTREQPOOLSTAT_INVALID = 0,
+    RTREQPOOLSTAT_END,
+    RTREQPOOLSTAT_32BIT_HACK = 0x7fffffff
+} RTREQPOOLSTAT;
+
+
+RTDECL(uint64_t) RTReqPoolGetStat(RTREQPOOL hPool, RTREQPOOLSTAT enmStat)
+{
+    return UINT64_MAX;
+}
+
 
 RTDECL(uint32_t) RTReqPoolRetain(RTREQPOOL hPool)
 {
@@ -511,12 +627,16 @@ RTDECL(uint32_t) RTReqPoolRelease(RTREQPOOL hPool)
         AssertReturn(ASMAtomicCmpXchgU32(&pPool->u32Magic, RTREQPOOL_MAGIC_DEAD, RTREQPOOL_MAGIC), UINT32_MAX);
 
         RTCritSectEnter(&pPool->CritSect);
+#ifdef RT_STRICT
+        RTTHREAD const hSelf = RTThreadSelf();
+#endif
 
         /* Indicate to the worker threads that we're shutting down. */
         ASMAtomicWriteBool(&pPool->fDestructing, true);
         PRTREQPOOLTHREAD pThread;
         RTListForEach(&pPool->WorkerThreads, pThread, RTREQPOOLTHREAD, ListNode)
         {
+            Assert(pThread->hThread != hSelf);
             RTThreadUserSignal(pThread->hThread);
         }
 
@@ -526,15 +646,7 @@ RTDECL(uint32_t) RTReqPoolRelease(RTREQPOOL hPool)
         {
             PRTREQINT pReq = pPool->pPendingRequests;
             pPool->pPendingRequests = pReq->pNext;
-
-            pReq->enmState = RTREQSTATE_COMPLETED;
-            ASMAtomicWriteS32(&pReq->iStatusX, VERR_CANCELLED);
-            if (pReq->hPushBackEvt != NIL_RTSEMEVENTMULTI)
-                RTSemEventMultiSignal(pReq->hPushBackEvt);
-            RTSemEventSignal(pReq->EventSem);
-
-            pReq->uOwner.hPool = NULL;
-            RTReqRelease(pReq);
+            rtReqPoolCancelReq(pReq);
         }
         pPool->ppPendingRequests = NULL;
 
@@ -542,7 +654,7 @@ RTDECL(uint32_t) RTReqPoolRelease(RTREQPOOL hPool)
         while (!RTListIsEmpty(&pPool->WorkerThreads))
         {
             RTCritSectLeave(&pPool->CritSect);
-            RTSemEventWait(pPool->hThreadTermEvt, RT_MS_1MIN);
+            RTSemEventMultiWait(pPool->hThreadTermEvt, RT_MS_1MIN);
             RTCritSectEnter(&pPool->CritSect);
             /** @todo should we wait forever here? */
         }
