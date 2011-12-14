@@ -5,8 +5,8 @@
 - DOS (including 6.22/7.1) does not need INT 15h or INT 1Ah. Most other
   operating systems require INT 15h to detect installed memory.
 
-- OS/2 (WSeB/MCP/ACP) appears to be one of the very few operating systems
-  which use the El Torito floppy emulation.
+- OS/2 (WSeB/MCP/ACP) and Windows 98 SE are some of the very few operating
+  systems which use the El Torito floppy emulation.
 
 - MS-DOS 6.2/V is a rare user of the INT 15h keyboard intercept routines.
 
@@ -36,6 +36,9 @@
 - Some really old OSes (Xenix circa 1986-7) do not understand the EBDA idea
   and clear the memory. For those, the FDPT must be in the BIOS ROM area, or
   the OS will destroy it (even when it's at 0:300 in the IVT).
+
+- Windows 98 SE boot CD uses 32-bit registers in real mode and will fail in
+  mysterious ways if BIOS trashes high bits of EAX (and likely others).
 
 
  Notes on BIOS implementation
