@@ -121,7 +121,7 @@ static UINT     WINAPI  IDirect3D9Impl_GetAdapterCount(LPDIRECT3D9EX iface) {
     hr = IWineD3D_GetAdapterCount(This->WineD3D);
     wined3d_mutex_unlock();
 
-    ASSERT_D3D(hr == S_OK);
+    ASSERT_D3D(hr == 1);
 
     return hr;
 }
