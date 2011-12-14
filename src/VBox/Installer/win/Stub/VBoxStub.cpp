@@ -474,7 +474,7 @@ int WINAPI WinMain(HINSTANCE  hInstance,
         }
         if (!RTDirExists(szExtractPath))
         {
-            vrc = RTDirCreate(szExtractPath, 0700);
+            vrc = RTDirCreate(szExtractPath, 0700, 0);
             AssertMsgRCBreak(vrc, ("Could not create temp directory!\n"));
         }
 
