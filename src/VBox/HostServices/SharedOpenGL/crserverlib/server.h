@@ -19,10 +19,17 @@
 # include <VBox/VBoxVideo.h>
 
 extern uint8_t* g_pvVRamBase;
+extern uint32_t g_cbVRam;
 extern HCRHGSMICMDCOMPLETION g_hCrHgsmiCompletion;
 extern PFNCRHGSMICMDCOMPLETION g_pfnCrHgsmiCompletion;
 
 #define VBOXCRHGSMI_PTR(_off, _t) ((_t*)(g_pvVRamBase + (_off)))
+#define VBOXCRHGSMI_PTR_SAFE(_off, _cb, _t) ((_t*)crServerCrHgsmiPtrGet(_off, _cb))
+
+DECLINLINE(void*) crServerCrHgsmiPtrGet(VBOXVIDEOOFFSET offBuffer, uint32_t cbBuffer)
+{
+    return ((offBuffer) + (cbBuffer) <= g_cbVRam ? VBOXCRHGSMI_PTR(offBuffer, void) : NULL);
+}
 
 DECLINLINE(void) crServerCrHgsmiCmdComplete(struct VBOXVDMACMD_CHROMIUM_CMD *pCmd, int cmdProcessingRc)
 {

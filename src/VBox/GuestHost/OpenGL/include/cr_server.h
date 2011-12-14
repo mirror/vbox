@@ -314,8 +314,8 @@ extern DECLEXPORT(int32_t) crVBoxServerOutputRedirectSet(const CROutputRedirect 
  *
  * NOTE: it is ALWAYS responsibility of the crVBoxServerCrHgsmiCmd to complete the command!
  * */
-extern DECLEXPORT(int32_t) crVBoxServerCrHgsmiCmd(struct VBOXVDMACMD_CHROMIUM_CMD *pCmd);
-extern DECLEXPORT(int32_t) crVBoxServerCrHgsmiCtl(struct VBOXVDMACMD_CHROMIUM_CTL *pCtl);
+extern DECLEXPORT(int32_t) crVBoxServerCrHgsmiCmd(struct VBOXVDMACMD_CHROMIUM_CMD *pCmd, uint32_t cbCmd);
+extern DECLEXPORT(int32_t) crVBoxServerCrHgsmiCtl(struct VBOXVDMACMD_CHROMIUM_CTL *pCtl, uint32_t cbCtl);
 #endif
 
 #ifdef __cplusplus

@@ -1134,6 +1134,8 @@ DECLINLINE(uint8_t *) VBoxSHGSMIBufferData (const VBOXSHGSMIHEADER* pHeader)
     return (uint8_t *)pHeader + sizeof (VBOXSHGSMIHEADER);
 }
 
+#define VBoxSHGSMIBufferHeaderSize() (sizeof (VBOXSHGSMIHEADER))
+
 DECLINLINE(PVBOXSHGSMIHEADER) VBoxSHGSMIBufferHeader (const void *pvData)
 {
     return (PVBOXSHGSMIHEADER)((uint8_t *)pvData - sizeof (VBOXSHGSMIHEADER));
@@ -1267,6 +1269,7 @@ typedef struct VBOXVDMACMD
 #define VBOXVDMACMD_SIZE_FROMBODYSIZE(_s) (VBOXVDMACMD_HEADER_SIZE() + (_s))
 #define VBOXVDMACMD_SIZE(_t) (VBOXVDMACMD_SIZE_FROMBODYSIZE(sizeof (_t)))
 #define VBOXVDMACMD_BODY(_pCmd, _t) ( (_t*)(((uint8_t*)(_pCmd)) + VBOXVDMACMD_HEADER_SIZE()) )
+#define VBOXVDMACMD_BODY_SIZE(_s) ( (_s) - VBOXVDMACMD_HEADER_SIZE() )
 #define VBOXVDMACMD_FROM_BODY(_pCmd) ( (VBOXVDMACMD*)(((uint8_t*)(_pCmd)) - VBOXVDMACMD_HEADER_SIZE()) )
 #define VBOXVDMACMD_BODY_FIELD_OFFSET(_ot, _t, _f) ( (_ot)(uintptr_t)( VBOXVDMACMD_BODY(0, uint8_t) + RT_OFFSETOF(_t, _f) ) )
 
@@ -1402,9 +1405,10 @@ typedef struct VBOXVDMACMD_CHROMIUM_CTL_CRHGSMI_SETUP
     VBOXVDMACMD_CHROMIUM_CTL Hdr;
     union
     {
-        void *pvRamBase;
+        void *pvVRamBase;
         uint64_t uAlignment;
     };
+    uint64_t cbVRam;
 } VBOXVDMACMD_CHROMIUM_CTL_CRHGSMI_SETUP, *PVBOXVDMACMD_CHROMIUM_CTL_CRHGSMI_SETUP;
 
 typedef struct PDMIDISPLAYVBVACALLBACKS *HCRHGSMICMDCOMPLETION;

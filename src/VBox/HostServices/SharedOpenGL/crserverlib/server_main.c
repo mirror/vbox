@@ -32,6 +32,7 @@
 #ifdef VBOX_WITH_CRHGSMI
 # include <VBox/HostServices/VBoxCrOpenGLSvc.h>
 uint8_t* g_pvVRamBase = NULL;
+uint32_t g_cbVRam = 0;
 HCRHGSMICMDCOMPLETION g_hCrHgsmiCompletion = NULL;
 PFNCRHGSMICMDCOMPLETION g_pfnCrHgsmiCompletion = NULL;
 #endif
@@ -1352,11 +1353,12 @@ DECLEXPORT(int32_t) crVBoxServerOutputRedirectSet(const CROutputRedirect *pCallb
  *
  * NOTE: it is ALWAYS responsibility of the crVBoxServerCrHgsmiCmd to complete the command!
  * */
-int32_t crVBoxServerCrHgsmiCmd(struct VBOXVDMACMD_CHROMIUM_CMD *pCmd)
+int32_t crVBoxServerCrHgsmiCmd(struct VBOXVDMACMD_CHROMIUM_CMD *pCmd, uint32_t cbCmd)
 {
     int32_t rc;
     uint32_t cBuffers = pCmd->cBuffers;
     uint32_t cParams;
+    uint32_t cbHdr;
     CRVBOXHGSMIHDR *pHdr;
     uint32_t u32Function;
     uint32_t u32ClientID;
@@ -1364,21 +1366,36 @@ int32_t crVBoxServerCrHgsmiCmd(struct VBOXVDMACMD_CHROMIUM_CMD *pCmd)
 
     if (!g_pvVRamBase)
     {
-        CRASSERT(0);
+        crWarning("g_pvVRamBase is not initialized");
         crServerCrHgsmiCmdComplete(pCmd, VERR_INVALID_STATE);
         return VINF_SUCCESS;
     }
 
     if (!cBuffers)
     {
-        CRASSERT(0);
+        crWarning("zero buffers passed in!");
         crServerCrHgsmiCmdComplete(pCmd, VERR_INVALID_PARAMETER);
         return VINF_SUCCESS;
     }
 
     cParams = cBuffers-1;
 
-    pHdr = VBOXCRHGSMI_PTR(pCmd->aBuffers[0].offBuffer, CRVBOXHGSMIHDR);
+    cbHdr = pCmd->aBuffers[0].cbBuffer;
+    pHdr = VBOXCRHGSMI_PTR_SAFE(pCmd->aBuffers[0].offBuffer, cbHdr, CRVBOXHGSMIHDR);
+    if (!pHdr)
+    {
+        crWarning("invalid header buffer!");
+        crServerCrHgsmiCmdComplete(pCmd, VERR_INVALID_PARAMETER);
+        return VINF_SUCCESS;
+    }
+
+    if (cbHdr < sizeof (*pHdr))
+    {
+        crWarning("invalid header buffer size!");
+        crServerCrHgsmiCmdComplete(pCmd, VERR_INVALID_PARAMETER);
+        return VINF_SUCCESS;
+    }
+
     u32Function = pHdr->u32Function;
     u32ClientID = pHdr->u32ClientID;
 
@@ -1394,11 +1411,23 @@ int32_t crVBoxServerCrHgsmiCmd(struct VBOXVDMACMD_CHROMIUM_CMD *pCmd)
                 CRVBOXHGSMIWRITE* pFnCmd = (CRVBOXHGSMIWRITE*)pHdr;
                 VBOXVDMACMD_CHROMIUM_BUFFER *pBuf = &pCmd->aBuffers[1];
                 /* Fetch parameters. */
-                uint8_t *pBuffer  = VBOXCRHGSMI_PTR(pBuf->offBuffer, uint8_t);
                 uint32_t cbBuffer = pBuf->cbBuffer;
+                uint8_t *pBuffer  = VBOXCRHGSMI_PTR_SAFE(pBuf->offBuffer, cbBuffer, uint8_t);
 
-                CRASSERT(pBuffer);
+                if (cbHdr < sizeof (*pFnCmd))
+                {
+                    crWarning("invalid write cmd buffer size!");
+                    rc = VERR_INVALID_PARAMETER;
+                    break;
+                }
+
                 CRASSERT(cbBuffer);
+                if (!pBuffer)
+                {
+                    crWarning("invalid buffer data received from guest!");
+                    rc = VERR_INVALID_PARAMETER;
+                    break;
+                }
 
                 rc = crVBoxServerClientGet(u32ClientID, &pClient);
                 if (RT_FAILURE(rc))
@@ -1437,11 +1466,23 @@ int32_t crVBoxServerCrHgsmiCmd(struct VBOXVDMACMD_CHROMIUM_CMD *pCmd)
                 /* Fetch parameters. */
                 uint32_t u32InjectClientID = pFnCmd->u32ClientID;
                 VBOXVDMACMD_CHROMIUM_BUFFER *pBuf = &pCmd->aBuffers[1];
-                uint8_t *pBuffer  = VBOXCRHGSMI_PTR(pBuf->offBuffer, uint8_t);
                 uint32_t cbBuffer = pBuf->cbBuffer;
+                uint8_t *pBuffer  = VBOXCRHGSMI_PTR_SAFE(pBuf->offBuffer, cbBuffer, uint8_t);
 
-                CRASSERT(pBuffer);
+                if (cbHdr < sizeof (*pFnCmd))
+                {
+                    crWarning("invalid inject cmd buffer size!");
+                    rc = VERR_INVALID_PARAMETER;
+                    break;
+                }
+
                 CRASSERT(cbBuffer);
+                if (!pBuffer)
+                {
+                    crWarning("invalid buffer data received from guest!");
+                    rc = VERR_INVALID_PARAMETER;
+                    break;
+                }
 
                 rc = crVBoxServerClientGet(u32InjectClientID, &pClient);
                 if (RT_FAILURE(rc))
@@ -1476,8 +1517,23 @@ int32_t crVBoxServerCrHgsmiCmd(struct VBOXVDMACMD_CHROMIUM_CMD *pCmd)
                 CRVBOXHGSMIREAD *pFnCmd = (CRVBOXHGSMIREAD*)pHdr;
                 VBOXVDMACMD_CHROMIUM_BUFFER *pBuf = &pCmd->aBuffers[1];
                 /* Fetch parameters. */
-                uint8_t *pBuffer  = VBOXCRHGSMI_PTR(pBuf->offBuffer, uint8_t);
                 uint32_t cbBuffer = pBuf->cbBuffer;
+                uint8_t *pBuffer  = VBOXCRHGSMI_PTR_SAFE(pBuf->offBuffer, cbBuffer, uint8_t);
+
+                if (cbHdr < sizeof (*pFnCmd))
+                {
+                    crWarning("invalid read cmd buffer size!");
+                    rc = VERR_INVALID_PARAMETER;
+                    break;
+                }
+
+
+                if (!pBuffer)
+                {
+                    crWarning("invalid buffer data received from guest!");
+                    rc = VERR_INVALID_PARAMETER;
+                    break;
+                }
 
                 rc = crVBoxServerClientGet(u32ClientID, &pClient);
                 if (RT_FAILURE(rc))
@@ -1517,15 +1573,35 @@ int32_t crVBoxServerCrHgsmiCmd(struct VBOXVDMACMD_CHROMIUM_CMD *pCmd)
                 VBOXVDMACMD_CHROMIUM_BUFFER *pWbBuf = &pCmd->aBuffers[2];
 
                 /* Fetch parameters. */
-                uint8_t *pBuffer  = VBOXCRHGSMI_PTR(pBuf->offBuffer, uint8_t);
                 uint32_t cbBuffer = pBuf->cbBuffer;
+                uint8_t *pBuffer  = VBOXCRHGSMI_PTR_SAFE(pBuf->offBuffer, cbBuffer, uint8_t);
 
-                uint8_t *pWriteback  = VBOXCRHGSMI_PTR(pWbBuf->offBuffer, uint8_t);
                 uint32_t cbWriteback = pWbBuf->cbBuffer;
+                uint8_t *pWriteback  = VBOXCRHGSMI_PTR_SAFE(pWbBuf->offBuffer, cbWriteback, uint8_t);
 
-                CRASSERT(pBuffer);
+                if (cbHdr < sizeof (*pFnCmd))
+                {
+                    crWarning("invalid write_read cmd buffer size!");
+                    rc = VERR_INVALID_PARAMETER;
+                    break;
+                }
+
+
                 CRASSERT(cbBuffer);
+                if (!pBuffer)
+                {
+                    crWarning("invalid write buffer data received from guest!");
+                    rc = VERR_INVALID_PARAMETER;
+                    break;
+                }
 
+                CRASSERT(cbWriteback);
+                if (!pWriteback)
+                {
+                    crWarning("invalid writeback buffer data received from guest!");
+                    rc = VERR_INVALID_PARAMETER;
+                    break;
+                }
                 rc = crVBoxServerClientGet(u32ClientID, &pClient);
                 if (RT_FAILURE(rc))
                 {
@@ -1581,7 +1657,7 @@ int32_t crVBoxServerCrHgsmiCmd(struct VBOXVDMACMD_CHROMIUM_CMD *pCmd)
     return rc;
 }
 
-int32_t crVBoxServerCrHgsmiCtl(struct VBOXVDMACMD_CHROMIUM_CTL *pCtl)
+int32_t crVBoxServerCrHgsmiCtl(struct VBOXVDMACMD_CHROMIUM_CTL *pCtl, uint32_t cbCtl)
 {
     int rc = VINF_SUCCESS;
 
@@ -1590,7 +1666,8 @@ int32_t crVBoxServerCrHgsmiCtl(struct VBOXVDMACMD_CHROMIUM_CTL *pCtl)
         case VBOXVDMACMD_CHROMIUM_CTL_TYPE_CRHGSMI_SETUP:
         {
             PVBOXVDMACMD_CHROMIUM_CTL_CRHGSMI_SETUP pSetup = (PVBOXVDMACMD_CHROMIUM_CTL_CRHGSMI_SETUP)pCtl;
-            g_pvVRamBase = (uint8_t*)pSetup->pvRamBase;
+            g_pvVRamBase = (uint8_t*)pSetup->pvVRamBase;
+            g_cbVRam = pSetup->cbVRam;
             rc = VINF_SUCCESS;
             break;
         }
