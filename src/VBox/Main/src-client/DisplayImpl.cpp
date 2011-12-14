@@ -3496,13 +3496,13 @@ void Display::handleCrHgsmiControlCompletion(int32_t result, uint32_t u32Functio
     mpDrv->pVBVACallbacks->pfnCrHgsmiControlCompleteAsync(mpDrv->pVBVACallbacks, (PVBOXVDMACMD_CHROMIUM_CTL)pParam->u.pointer.addr, result);
 }
 
-void Display::handleCrHgsmiCommandProcess(PPDMIDISPLAYCONNECTOR pInterface, PVBOXVDMACMD_CHROMIUM_CMD pCmd)
+void Display::handleCrHgsmiCommandProcess(PPDMIDISPLAYCONNECTOR pInterface, PVBOXVDMACMD_CHROMIUM_CMD pCmd, uint32_t cbCmd)
 {
     int rc = VERR_INVALID_FUNCTION;
     VBOXHGCMSVCPARM parm;
     parm.type = VBOX_HGCM_SVC_PARM_PTR;
     parm.u.pointer.addr = pCmd;
-    parm.u.pointer.size = 0;
+    parm.u.pointer.size = cbCmd;
 
     if (mhCrOglSvc)
     {
@@ -3524,13 +3524,13 @@ void Display::handleCrHgsmiCommandProcess(PPDMIDISPLAYCONNECTOR pInterface, PVBO
     handleCrHgsmiCommandCompletion(rc, SHCRGL_HOST_FN_CRHGSMI_CMD, &parm);
 }
 
-void Display::handleCrHgsmiControlProcess(PPDMIDISPLAYCONNECTOR pInterface, PVBOXVDMACMD_CHROMIUM_CTL pCtl)
+void Display::handleCrHgsmiControlProcess(PPDMIDISPLAYCONNECTOR pInterface, PVBOXVDMACMD_CHROMIUM_CTL pCtl, uint32_t cbCtl)
 {
     int rc = VERR_INVALID_FUNCTION;
     VBOXHGCMSVCPARM parm;
     parm.type = VBOX_HGCM_SVC_PARM_PTR;
     parm.u.pointer.addr = pCtl;
-    parm.u.pointer.size = 0;
+    parm.u.pointer.size = cbCtl;
 
     if (mhCrOglSvc)
     {
@@ -3551,18 +3551,18 @@ void Display::handleCrHgsmiControlProcess(PPDMIDISPLAYCONNECTOR pInterface, PVBO
 }
 
 
-DECLCALLBACK(void) Display::displayCrHgsmiCommandProcess(PPDMIDISPLAYCONNECTOR pInterface, PVBOXVDMACMD_CHROMIUM_CMD pCmd)
+DECLCALLBACK(void) Display::displayCrHgsmiCommandProcess(PPDMIDISPLAYCONNECTOR pInterface, PVBOXVDMACMD_CHROMIUM_CMD pCmd, uint32_t cbCmd)
 {
     PDRVMAINDISPLAY pDrv = PDMIDISPLAYCONNECTOR_2_MAINDISPLAY(pInterface);
 
-    pDrv->pDisplay->handleCrHgsmiCommandProcess(pInterface, pCmd);
+    pDrv->pDisplay->handleCrHgsmiCommandProcess(pInterface, pCmd, cbCmd);
 }
 
-DECLCALLBACK(void) Display::displayCrHgsmiControlProcess(PPDMIDISPLAYCONNECTOR pInterface, PVBOXVDMACMD_CHROMIUM_CTL pCmd)
+DECLCALLBACK(void) Display::displayCrHgsmiControlProcess(PPDMIDISPLAYCONNECTOR pInterface, PVBOXVDMACMD_CHROMIUM_CTL pCmd, uint32_t cbCmd)
 {
     PDRVMAINDISPLAY pDrv = PDMIDISPLAYCONNECTOR_2_MAINDISPLAY(pInterface);
 
-    pDrv->pDisplay->handleCrHgsmiControlProcess(pInterface, pCmd);
+    pDrv->pDisplay->handleCrHgsmiControlProcess(pInterface, pCmd, cbCmd);
 }
 
 DECLCALLBACK(void) Display::displayCrHgsmiCommandCompletion(int32_t result, uint32_t u32Function, PVBOXHGCMSVCPARM pParam, void *pvContext)

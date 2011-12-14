@@ -938,7 +938,7 @@ static DECLCALLBACK(int) svcHostCall (void *, uint32_t u32Function, uint32_t cPa
             Assert(cParms == 1 && paParms[0].type == VBOX_HGCM_SVC_PARM_PTR);
             if (cParms == 1 && paParms[0].type == VBOX_HGCM_SVC_PARM_PTR)
             {
-                rc = crVBoxServerCrHgsmiCmd((PVBOXVDMACMD_CHROMIUM_CMD)paParms[0].u.pointer.addr);
+                rc = crVBoxServerCrHgsmiCmd((PVBOXVDMACMD_CHROMIUM_CMD)paParms[0].u.pointer.addr, paParms[0].u.pointer.size);
                 if (VERR_NOT_SUPPORTED == rc)
                 {
                     svcClientVersionUnsupported(0, 0);
@@ -951,7 +951,7 @@ static DECLCALLBACK(int) svcHostCall (void *, uint32_t u32Function, uint32_t cPa
         {
             Assert(cParms == 1 && paParms[0].type == VBOX_HGCM_SVC_PARM_PTR);
             if (cParms == 1 && paParms[0].type == VBOX_HGCM_SVC_PARM_PTR)
-                rc = crVBoxServerCrHgsmiCtl((PVBOXVDMACMD_CHROMIUM_CTL)paParms[0].u.pointer.addr);
+                rc = crVBoxServerCrHgsmiCtl((PVBOXVDMACMD_CHROMIUM_CTL)paParms[0].u.pointer.addr, paParms[0].u.pointer.size);
             else
                 rc = VERR_INVALID_PARAMETER;
         } break;
