@@ -76,7 +76,7 @@ VBoxDispDrvGetDirectDrawInfo(DHPDEV dhpdev, DD_HALINFO *pHalInfo, DWORD *pdwNumH
     if (!pvmList && !pdwFourCC) /* first call */
     {
         rc = VBoxDispVHWAInitHostInfo1(pDev);
-        VBOX_WARNRC(rc);
+        VBOX_WARNRC_NOBP(rc);
     }
 
     if (pDev->vhwa.bEnabled)
