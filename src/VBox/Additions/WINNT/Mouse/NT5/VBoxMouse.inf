@@ -31,7 +31,8 @@ VBoxMouse.sys = 1
 DefaultDestDir = 12	; DIRID_DRIVERS
 
 [DefaultInstall]
-%VBoxMouse.Desc% = VBoxMouse_Install
+CopyFiles = @VBoxMouse.sys
+AddReg = VBoxMouse_AddReg
 
 [Manufacturer]
 ;x86   %ORACLE%=VBoxMouse
