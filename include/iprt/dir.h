@@ -304,7 +304,7 @@ RTDECL(int) RTDirOpen(PRTDIR *ppDir, const char *pszPath);
 /** @name RTDirOpenFiltered  flags.
  * @{ */
 /** Don't allow symbolic links as part of the path. */
-#define RTDIROPENFILTERED_FLAGS_NO_SYMLINKS  RT_BIT(0)
+#define RTDIROPEN_FLAGS_NO_SYMLINKS  RT_BIT(0)
 /** @} */
 
 /**
