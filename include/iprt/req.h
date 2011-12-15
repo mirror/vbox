@@ -86,6 +86,8 @@ typedef enum RTREQFLAGS
 typedef struct RTREQ RTREQ;
 /** Pointer to an RT request packet. */
 typedef RTREQ *PRTREQ;
+/** Nil request handle. */
+#define NIL_RTREQ           ((PRTREQ)0)
 
 
 #ifdef IN_RING3
@@ -259,6 +261,34 @@ RTDECL(int) RTReqQueueAlloc(RTREQQUEUE hQueue, RTREQTYPE enmType, PRTREQ *phReq)
 
 
 /**
+ * Creates a request thread pool.
+ *
+ * The core configuration is given as parameters, finer pool tuning can be
+ * achieved via RTReqPoolSetCfgVar.
+ *
+ * @returns IPRT status code.
+ * @param   cMaxThreads                 The maximum number of worker threads.
+ *                                      UINT32_MAX is an alias for the highest
+ *                                      allowed thread count.
+ * @param   cMsMinIdle                  The number of milliseconds a worker
+ *                                      thread needs to be idle before it is
+ *                                      considered for shutdown. The value
+ *                                      RT_INDEFINITE_WAIT disables automatic
+ *                                      idle thread shutdown.
+ * @param   cThreadsPushBackThreshold   At which worker thread count the push
+ *                                      back should kick in.
+ * @param   cMsMaxPushBack              The max number of milliseconds to push
+ *                                      back a submitter.  UINT32_MAX is an
+ *                                      alias for the highest allowed push back.
+ * @param   pszName                     The pool name. Keep it short as it is
+ *                                      used for naming worker threads.
+ * @param   phPool                      Where to return the pool handle.
+ */
+RTDECL(int) RTReqPoolCreate(uint32_t cMaxThreads, RTMSINTERVAL cMsMinIdle,
+                            uint32_t cThreadsPushBackThreshold, uint32_t cMsMaxPushBack,
+                            const char *pszName, PRTREQPOOL phPool);
+
+/**
  * Retainsa reference to a request thread pool.
  *
  * @returns The new reference count, UINT32_MAX on invalid handle (asserted).
@@ -329,12 +359,11 @@ RTDECL(int) RTReqPoolSetCfgVar(RTREQPOOL hPool, RTREQPOOLCFGVAR enmVar, uint64_t
 /**
  * Gets a config variable for a request thread pool.
  *
- * @returns IPRT status code.
+ * @returns The value, UINT64_MAX on invalid parameters.
  * @param   hPool           The pool handle.
  * @param   enmVar          The variable to query.
- * @param   puValue         Where to return the value.
  */
-RTDECL(int) RTReqPoolQueryCfgVar(RTREQPOOL hPool, RTREQPOOLCFGVAR enmVar, uint64_t *puValue);
+RTDECL(uint64_t) RTReqPoolGetCfgVar(RTREQPOOL hPool, RTREQPOOLCFGVAR enmVar);
 
 /**
  * Request thread pool statistics value names.
@@ -394,6 +423,15 @@ RTDECL(uint64_t) RTReqPoolGetStat(RTREQPOOL hPool, RTREQPOOLSTAT enmStat);
  * @param   phReq           Where to store the handle to the new request.
  */
 RTDECL(int) RTReqPoolAlloc(RTREQPOOL hPool, RTREQTYPE enmType, PRTREQ *phReq);
+
+RTDECL(int) RTReqPoolCallEx( RTREQPOOL hPool, RTMSINTERVAL cMillies, PRTREQ *phReq, uint32_t fFlags, PFNRT pfnFunction, unsigned cArgs, ...);
+RTDECL(int) RTReqPoolCallExV(RTREQPOOL hPool, RTMSINTERVAL cMillies, PRTREQ *phReq, uint32_t fFlags, PFNRT pfnFunction, unsigned cArgs, va_list va);
+
+RTDECL(int) RTReqPoolCallWait(RTREQPOOL hPool, PFNRT pfnFunction, unsigned cArgs, ...);
+RTDECL(int) RTReqPoolCallNoWait(RTREQPOOL hPool, PFNRT pfnFunction, unsigned cArgs, ...);
+
+RTDECL(int) RTReqPoolCallVoidWait(RTREQPOOL hPool, PFNRT pfnFunction, unsigned cArgs, ...);
+RTDECL(int) RTReqPoolCallVoidNoWait(RTREQPOOL hPool, PFNRT pfnFunction, unsigned cArgs, ...);
 
 
 /**

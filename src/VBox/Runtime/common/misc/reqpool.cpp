@@ -107,6 +107,8 @@ typedef struct RTREQPOOLINT
 {
     /** Magic value (RTREQPOOL_MAGIC). */
     uint32_t                u32Magic;
+    /** The request pool name. */
+    char                    szName[12];
 
     /** @name Config
      * @{  */
@@ -617,6 +619,96 @@ DECLHIDDEN(bool) rtReqPoolRecycle(PRTREQPOOLINT pPool, PRTREQINT pReq)
 }
 
 
+RTDECL(int) RTReqPoolCreate(uint32_t cMaxThreads, RTMSINTERVAL cMsMinIdle,
+                            uint32_t cThreadsPushBackThreshold, uint32_t cMsMaxPushBack,
+                            const char *pszName, PRTREQPOOL phPool)
+{
+    /*
+     * Validate and massage the config.
+     */
+    if (cMaxThreads == UINT32_MAX)
+        cMaxThreads = RTREQPOOL_MAX_THREADS;
+    AssertMsgReturn(cMaxThreads > 0 && cMaxThreads <= RTREQPOOL_MAX_THREADS, ("%u\n", cMaxThreads), VERR_OUT_OF_RANGE);
+    uint32_t const cMinThreads = cMaxThreads > 2 ? 2 : cMaxThreads - 1;
+
+    if (cThreadsPushBackThreshold == 0)
+        cThreadsPushBackThreshold = cMinThreads;
+    else if (cThreadsPushBackThreshold == UINT32_MAX)
+        cThreadsPushBackThreshold = cMaxThreads;
+    AssertMsgReturn(cThreadsPushBackThreshold <= cMaxThreads, ("%u/%u\n", cThreadsPushBackThreshold, cMaxThreads), VERR_OUT_OF_RANGE);
+
+    if (cMsMaxPushBack == UINT32_MAX)
+        cMsMaxPushBack = RTREQPOOL_PUSH_BACK_MAX_MS;
+    AssertMsgReturn(cMsMaxPushBack <= RTREQPOOL_PUSH_BACK_MAX_MS, ("%llu\n",  cMsMaxPushBack), VERR_OUT_OF_RANGE);
+    uint32_t const cMsMinPushBack = cMsMaxPushBack >= 200 ? 100 : cMsMaxPushBack / 2;
+
+    AssertPtrReturn(pszName, VERR_INVALID_POINTER);
+    size_t cchName = strlen(pszName);
+    AssertReturn(cchName > 0, VERR_INVALID_PARAMETER);
+    Assert(cchName <= 10);
+
+    AssertPtrReturn(phPool, VERR_INVALID_POINTER);
+
+    /*
+     * Create and initialize the pool.
+     */
+    PRTREQPOOLINT pPool = (PRTREQPOOLINT)RTMemAlloc(sizeof(*pPool));
+    if (!pPool)
+        return VERR_NO_MEMORY;
+
+    pPool->u32Magic         = RTREQPOOL_MAGIC;
+    RTStrCopy(pPool->szName, sizeof(pPool->szName), pszName);
+
+    pPool->enmThreadType        = RTTHREADTYPE_DEFAULT;
+    pPool->cMaxThreads          = cMaxThreads;
+    pPool->cMinThreads          = cMinThreads;
+    pPool->cMsMinIdle           = cMsMinIdle == RT_INDEFINITE_WAIT || cMsMinIdle >= UINT32_MAX ? UINT32_MAX : cMsMinIdle;
+    pPool->cNsMinIdle           = pPool->cMsMinIdle == UINT32_MAX ? UINT64_MAX         : cMsMinIdle * RT_NS_1MS_64;
+    pPool->cMsIdleSleep         = pPool->cMsMinIdle == UINT32_MAX ? RT_INDEFINITE_WAIT : RT_MAX(RT_MS_1SEC, pPool->cMsMinIdle);
+    pPool->cThreadsPushBackThreshold = cThreadsPushBackThreshold;
+    pPool->cMsMaxPushBack       = cMsMaxPushBack;
+    pPool->cMsMinPushBack       = cMsMinPushBack;
+    pPool->cMaxFreeRequests     = cMaxThreads * 2;
+    pPool->hThreadTermEvt       = NIL_RTSEMEVENTMULTI;
+    pPool->fDestructing         = false;
+    pPool->cMsCurPushBack       = 0;
+    pPool->cCurThreads          = 0;
+    pPool->cThreadsCreated      = 0;
+    pPool->uLastThreadCreateNanoTs = 0;
+    RTListInit(&pPool->WorkerThreads);
+    pPool->cReqProcessed        = 0;
+    pPool->cNsTotalReqProcessing= 0;
+    pPool->cNsTotalReqQueued    = 0;
+    pPool->cRefs                = 1;
+    pPool->cIdleThreads         = 0;
+    RTListInit(&pPool->IdleThreads);
+    pPool->pPendingRequests     = NULL;
+    pPool->ppPendingRequests    = &pPool->pPendingRequests;
+    pPool->cCurPendingRequests  = 0;
+    pPool->cCurActiveRequests   = 0;
+    pPool->cReqSubmitted        = 0;
+    pPool->pFreeRequests        = NULL;
+    pPool->cCurFreeRequests     = NULL;
+
+    int rc = RTSemEventMultiCreate(&pPool->hThreadTermEvt);
+    if (RT_SUCCESS(rc))
+    {
+        rc = RTCritSectInit(&pPool->CritSect);
+        if (RT_SUCCESS(rc))
+        {
+            *phPool = pPool;
+            return VINF_SUCCESS;
+        }
+
+        RTSemEventMultiDestroy(pPool->hThreadTermEvt);
+    }
+    pPool->u32Magic = RTREQPOOL_MAGIC_DEAD;
+    RTMemFree(pPool);
+    return rc;
+}
+
+
+
 RTDECL(int) RTReqPoolSetCfgVar(RTREQPOOL hPool, RTREQPOOLCFGVAR enmVar, uint64_t uValue)
 {
     PRTREQPOOLINT pPool = hPool;
@@ -705,7 +797,10 @@ RTDECL(int) RTReqPoolSetCfgVar(RTREQPOOL hPool, RTREQPOOLCFGVAR enmVar, uint64_t
             break;
 
         case RTREQPOOLCFGVAR_PUSH_BACK_MIN_MS:
-            AssertMsgBreakStmt(uValue <= RTREQPOOL_PUSH_BACK_MAX_MS,  ("%llu\n",  uValue), rc = VERR_OUT_OF_RANGE);
+            if (uValue == UINT32_MAX || uValue == UINT64_MAX)
+                uValue = RTREQPOOL_PUSH_BACK_MAX_MS;
+            else
+                AssertMsgBreakStmt(uValue <= RTREQPOOL_PUSH_BACK_MAX_MS,  ("%llu\n",  uValue), rc = VERR_OUT_OF_RANGE);
             pPool->cMsMinPushBack = (uint32_t)uValue;
             if (pPool->cMsMaxPushBack < pPool->cMsMinPushBack)
                 pPool->cMsMaxPushBack = pPool->cMsMinPushBack;
@@ -713,7 +808,10 @@ RTDECL(int) RTReqPoolSetCfgVar(RTREQPOOL hPool, RTREQPOOLCFGVAR enmVar, uint64_t
             break;
 
         case RTREQPOOLCFGVAR_PUSH_BACK_MAX_MS:
-            AssertMsgBreakStmt(uValue <= RTREQPOOL_PUSH_BACK_MAX_MS,  ("%llu\n",  uValue), rc = VERR_OUT_OF_RANGE);
+            if (uValue == UINT32_MAX || uValue == UINT64_MAX)
+                uValue = RTREQPOOL_PUSH_BACK_MAX_MS;
+            else
+                AssertMsgBreakStmt(uValue <= RTREQPOOL_PUSH_BACK_MAX_MS,  ("%llu\n",  uValue), rc = VERR_OUT_OF_RANGE);
             pPool->cMsMaxPushBack = (uint32_t)uValue;
             if (pPool->cMsMinPushBack < pPool->cMsMaxPushBack)
                 pPool->cMsMinPushBack = pPool->cMsMaxPushBack;
@@ -765,66 +863,65 @@ RTDECL(int) RTReqPoolSetCfgVar(RTREQPOOL hPool, RTREQPOOLCFGVAR enmVar, uint64_t
 RT_EXPORT_SYMBOL(RTReqPoolSetCfgVar);
 
 
-RTDECL(int) RTReqPoolQueryCfgVar(RTREQPOOL hPool, RTREQPOOLCFGVAR enmVar, uint64_t *puValue)
+RTDECL(uint64_t) RTReqPoolGetCfgVar(RTREQPOOL hPool, RTREQPOOLCFGVAR enmVar)
 {
     PRTREQPOOLINT pPool = hPool;
-    AssertPtrReturn(pPool, VERR_INVALID_HANDLE);
-    AssertReturn(pPool->u32Magic == RTREQPOOL_MAGIC, VERR_INVALID_HANDLE);
-    AssertReturn(enmVar > RTREQPOOLCFGVAR_INVALID && enmVar < RTREQPOOLCFGVAR_END, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pPool, UINT64_MAX);
+    AssertReturn(pPool->u32Magic == RTREQPOOL_MAGIC, UINT64_MAX);
+    AssertReturn(enmVar > RTREQPOOLCFGVAR_INVALID && enmVar < RTREQPOOLCFGVAR_END, UINT64_MAX);
 
     RTCritSectEnter(&pPool->CritSect);
 
-    int rc = VINF_SUCCESS;
+    uint64_t u64;
     switch (enmVar)
     {
         case RTREQPOOLCFGVAR_THREAD_TYPE:
-            *puValue = pPool->enmThreadType;
+            u64 = pPool->enmThreadType;
             break;
 
         case RTREQPOOLCFGVAR_MIN_THREADS:
-            *puValue = pPool->cMinThreads;
+            u64 = pPool->cMinThreads;
             break;
 
         case RTREQPOOLCFGVAR_MAX_THREADS:
-            *puValue = pPool->cMaxThreads;
+            u64 = pPool->cMaxThreads;
             break;
 
         case RTREQPOOLCFGVAR_MS_MIN_IDLE:
-            *puValue = pPool->cMsMinIdle;
+            u64 = pPool->cMsMinIdle;
             break;
 
         case RTREQPOOLCFGVAR_MS_IDLE_SLEEP:
-            *puValue = pPool->cMsIdleSleep;
+            u64 = pPool->cMsIdleSleep;
             break;
 
         case RTREQPOOLCFGVAR_PUSH_BACK_THRESHOLD:
-            *puValue = pPool->cThreadsPushBackThreshold;
+            u64 = pPool->cThreadsPushBackThreshold;
             break;
 
         case RTREQPOOLCFGVAR_PUSH_BACK_MIN_MS:
-            *puValue = pPool->cMsMinPushBack;
+            u64 = pPool->cMsMinPushBack;
             break;
 
         case RTREQPOOLCFGVAR_PUSH_BACK_MAX_MS:
-            *puValue = pPool->cMsMaxPushBack;
+            u64 = pPool->cMsMaxPushBack;
             break;
 
         case RTREQPOOLCFGVAR_MAX_FREE_REQUESTS:
-            *puValue = pPool->cMaxFreeRequests;
+            u64 = pPool->cMaxFreeRequests;
             break;
 
         default:
             AssertFailed();
-            rc = VERR_IPE_NOT_REACHED_DEFAULT_CASE;
-            *puValue = UINT64_MAX;
+            u64 = UINT64_MAX;
             break;
     }
 
     RTCritSectLeave(&pPool->CritSect);
 
-    return rc;
+    return u64;
 }
-RT_EXPORT_SYMBOL(RTReqPoolQueryCfgVar);
+RT_EXPORT_SYMBOL(RTReqGetQueryCfgVar);
 
 
 RTDECL(uint64_t) RTReqPoolGetStat(RTREQPOOL hPool, RTREQPOOLSTAT enmStat)
@@ -938,7 +1035,9 @@ RTDECL(uint32_t) RTReqPoolRelease(RTREQPOOL hPool)
             rtReqFreeIt(pReq);
         }
 
-        /* Finally, free the handle. */
+        /* Finally, free the critical section and pool instance. */
+        RTCritSectLeave(&pPool->CritSect);
+        RTCritSectDelete(&pPool->CritSect);
         RTMemFree(pPool);
     }
 
@@ -990,4 +1089,123 @@ RTDECL(int) RTReqPoolAlloc(RTREQPOOL hPool, RTREQTYPE enmType, PRTREQ *phReq)
     return VINF_SUCCESS;
 }
 RT_EXPORT_SYMBOL(RTReqPoolAlloc);
+
+
+RTDECL(int) RTReqPoolCallEx( RTREQPOOL hPool, RTMSINTERVAL cMillies, PRTREQ *phReq, uint32_t fFlags, PFNRT pfnFunction, unsigned cArgs, ...)
+{
+    va_list va;
+    va_start(va, cArgs);
+    int rc = RTReqPoolCallExV(hPool, cMillies, phReq, fFlags, pfnFunction, cArgs, va);
+    va_end(va);
+    return rc;
+}
+RT_EXPORT_SYMBOL(RTReqPoolCallEx);
+
+
+RTDECL(int) RTReqPoolCallExV(RTREQPOOL hPool, RTMSINTERVAL cMillies, PRTREQ *phReq, uint32_t fFlags, PFNRT pfnFunction, unsigned cArgs, va_list va)
+{
+    /*
+     * Check input.
+     */
+    AssertPtrReturn(pfnFunction, VERR_INVALID_POINTER);
+    AssertMsgReturn(!((uint32_t)fFlags & ~(uint32_t)(RTREQFLAGS_NO_WAIT | RTREQFLAGS_RETURN_MASK)), ("%#x\n", (uint32_t)fFlags), VERR_INVALID_PARAMETER);
+    if (!(fFlags & RTREQFLAGS_NO_WAIT))
+    {
+        AssertPtrReturn(phReq, VERR_INVALID_POINTER);
+        *phReq = NIL_RTREQ;
+    }
+
+    PRTREQINT pReq = NULL;
+    AssertMsgReturn(cArgs * sizeof(uintptr_t) <= sizeof(pReq->u.Internal.aArgs), ("cArgs=%u\n", cArgs), VERR_TOO_MUCH_DATA);
+
+    /*
+     * Allocate and initialize the request.
+     */
+    int rc = RTReqPoolAlloc(hPool, RTREQTYPE_INTERNAL, &pReq);
+    if (RT_FAILURE(rc))
+        return rc;
+    pReq->fFlags           = fFlags;
+    pReq->u.Internal.pfn   = pfnFunction;
+    pReq->u.Internal.cArgs = cArgs;
+    for (unsigned iArg = 0; iArg < cArgs; iArg++)
+        pReq->u.Internal.aArgs[iArg] = va_arg(va, uintptr_t);
+
+    /*
+     * Submit the request.
+     */
+    rc = RTReqSubmit(pReq, cMillies);
+    if (   rc != VINF_SUCCESS
+        && rc != VERR_TIMEOUT)
+    {
+        Assert(rc != VERR_INTERRUPTED);
+        RTReqRelease(pReq);
+        pReq = NULL;
+    }
+
+    if (!(fFlags & RTREQFLAGS_NO_WAIT))
+    {
+        *phReq = pReq;
+        LogFlow(("RTReqPoolCallExV: returns %Rrc *phReq=%p\n", rc, pReq));
+    }
+    else
+        LogFlow(("RTReqPoolCallExV: returns %Rrc\n", rc));
+    return rc;
+}
+RT_EXPORT_SYMBOL(RTReqPoolCallExV);
+
+
+RTDECL(int) RTReqPoolCallWait(RTREQPOOL hPool, PFNRT pfnFunction, unsigned cArgs, ...)
+{
+    PRTREQINT pReq;
+    va_list   va;
+    va_start(va, cArgs);
+    int rc = RTReqPoolCallExV(hPool, RT_INDEFINITE_WAIT, &pReq, RTREQFLAGS_IPRT_STATUS,
+                              pfnFunction, cArgs, va);
+    va_end(va);
+    if (RT_SUCCESS(rc))
+        rc = pReq->iStatusX;
+    RTReqRelease(pReq);
+    return rc;
+}
+RT_EXPORT_SYMBOL(RTReqPoolCallWait);
+
+
+RTDECL(int) RTReqPoolCallNoWait(RTREQPOOL hPool, PFNRT pfnFunction, unsigned cArgs, ...)
+{
+    va_list   va;
+    va_start(va, cArgs);
+    int rc = RTReqPoolCallExV(hPool, 0, NULL, RTREQFLAGS_IPRT_STATUS | RTREQFLAGS_NO_WAIT,
+                              pfnFunction, cArgs, va);
+    va_end(va);
+    return rc;
+}
+RT_EXPORT_SYMBOL(RTReqPoolCallNoWait);
+
+
+RTDECL(int) RTReqPoolCallVoidWait(RTREQPOOL hPool, PFNRT pfnFunction, unsigned cArgs, ...)
+{
+    PRTREQINT pReq;
+    va_list   va;
+    va_start(va, cArgs);
+    int rc = RTReqPoolCallExV(hPool, RT_INDEFINITE_WAIT, &pReq, RTREQFLAGS_VOID,
+                              pfnFunction, cArgs, va);
+    va_end(va);
+    if (RT_SUCCESS(rc))
+        rc = pReq->iStatusX;
+    RTReqRelease(pReq);
+    return rc;
+}
+RT_EXPORT_SYMBOL(RTReqPoolCallVoidWait);
+
+
+RTDECL(int) RTReqPoolCallVoidNoWait(RTREQPOOL hPool, PFNRT pfnFunction, unsigned cArgs, ...)
+{
+    va_list   va;
+    va_start(va, cArgs);
+    int rc = RTReqPoolCallExV(hPool, 0, NULL, RTREQFLAGS_VOID | RTREQFLAGS_NO_WAIT,
+                              pfnFunction, cArgs, va);
+    va_end(va);
+    return rc;
+}
+RT_EXPORT_SYMBOL(RTReqPoolCallVoidNoWait);
 
