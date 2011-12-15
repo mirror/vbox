@@ -128,6 +128,6 @@ DECLINLINE(bool) rtDirValidHandle(PRTDIR pDir)
  *                      Find-first style systems can use this to setup the
  *                      wildcard expression.
  */
-int rtDirNativeOpen(PRTDIR pDir, char *pszPathBuf, uint32_t fOpen);
+int rtDirNativeOpen(PRTDIR pDir, char *pszPathBuf);
 
 #endif

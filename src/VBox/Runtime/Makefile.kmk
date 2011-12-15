@@ -614,7 +614,6 @@ RuntimeR3_SOURCES.linux = \
 	r3/posix/RTTimeNow-posix.cpp \
 	r3/posix/RTTimeSet-posix.cpp \
 	r3/posix/rtmempage-exec-mmap-heap-posix.cpp \
-	r3/posix/rtPathOpenPathFh.cpp \
 	r3/posix/dir-posix.cpp \
 	r3/posix/env-posix.cpp \
 	r3/posix/errvars-posix.cpp \
@@ -1173,7 +1172,6 @@ RuntimeGuestR3Mini_SOURCES.linux = \
 	r3/posix/RTPathUserHome-posix.cpp \
 	r3/posix/env-posix.cpp \
 	r3/posix/fileio-posix.cpp \
-	r3/posix/rtPathOpenPathFh.cpp \
 	r3/posix/fileio2-posix.cpp \
 	r3/posix/path-posix.cpp \
 	r3/posix/path2-posix.cpp \
