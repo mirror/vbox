@@ -47,6 +47,17 @@
 
 
 /*******************************************************************************
+*   Defined Constants And Macros                                               *
+*******************************************************************************/
+/** The max number of worker threads. */
+#define RTREQPOOL_MAX_THREADS           UINT32_C(16384)
+/** The max number of milliseconds to push back. */
+#define RTREQPOOL_PUSH_BACK_MAX_MS      RT_MS_1MIN
+/** The max number of free requests to keep around. */
+#define RTREQPOOL_MAX_FREE_REQUESTS     (RTREQPOOL_MAX_THREADS * 2U)
+
+
+/*******************************************************************************
 *   Structures and Typedefs                                                    *
 *******************************************************************************/
 typedef struct RTREQPOOLTHREAD
@@ -103,9 +114,6 @@ typedef struct RTREQPOOLINT
     RTTHREADTYPE            enmThreadType;
     /** The maximum number of worker threads. */
     uint32_t                cMaxThreads;
-    /** The number of threads which should be spawned before throttling kicks
-     * in. */
-    uint32_t                cThreadsThreshold;
     /** The minimum number of worker threads. */
     uint32_t                cMinThreads;
     /** The number of milliseconds a thread needs to be idle before it is
@@ -114,7 +122,10 @@ typedef struct RTREQPOOLINT
     /** cMsMinIdle in nano seconds. */
     uint64_t                cNsMinIdle;
     /** The idle thread sleep interval in milliseconds. */
-    uint32_t                cMsIdleSleep;
+    RTMSINTERVAL            cMsIdleSleep;
+    /** The number of threads which should be spawned before throttling kicks
+     * in. */
+    uint32_t                cThreadsPushBackThreshold;
     /** The max number of milliseconds to push back a submitter before creating
      * a new worker thread once the threshold has been reached. */
     uint32_t                cMsMaxPushBack;
@@ -143,6 +154,14 @@ typedef struct RTREQPOOLINT
     /** Linked list of worker threads. */
     RTLISTANCHOR            WorkerThreads;
 
+    /** The number of requests processed and counted in the time totals. */
+    uint64_t                cReqProcessed;
+    /** Total time the requests processed by this thread took to process. */
+    uint64_t                cNsTotalReqProcessing;
+    /** Total time the requests processed by this thread had to wait in
+     * the queue before being scheduled. */
+    uint64_t                cNsTotalReqQueued;
+
     /** Reference counter. */
     uint32_t volatile       cRefs;
     /** The number of idle thread or threads in the process of becoming
@@ -156,6 +175,12 @@ typedef struct RTREQPOOLINT
     PRTREQINT               pPendingRequests;
     /** Where to insert the next request. */
     PRTREQINT              *ppPendingRequests;
+    /** The number of requests currently pending. */
+    uint32_t                cCurPendingRequests;
+    /** The number of requests currently being executed. */
+    uint32_t volatile       cCurActiveRequests;
+    /** The number of requests submitted. */
+    uint64_t                cReqSubmitted;
 
     /** Head of the request recycling LIFO. */
     PRTREQINT               pFreeRequests;
@@ -196,8 +221,8 @@ static void rtReqPoolCancelReq(PRTREQINT pReq)
 static void rtReqPoolRecalcPushBack(PRTREQPOOLINT pPool)
 {
     uint32_t const cMsRange = pPool->cMsMaxPushBack - pPool->cMsMinPushBack;
-    uint32_t const cSteps   = pPool->cMaxThreads - pPool->cThreadsThreshold;
-    uint32_t const iStep    = pPool->cCurThreads - pPool->cThreadsThreshold;
+    uint32_t const cSteps   = pPool->cMaxThreads - pPool->cThreadsPushBackThreshold;
+    uint32_t const iStep    = pPool->cCurThreads - pPool->cThreadsPushBackThreshold;
 
     uint32_t cMsCurPushBack;
     if ((cMsRange >> 2) >= cSteps)
@@ -261,7 +286,14 @@ static int rtReqPoolThreadExit(PRTREQPOOLINT pPool, PRTREQPOOLTHREAD pThread, bo
 
 
 
-static void rtReqPoolThreadProcessRequest(PRTREQPOOLTHREAD pThread, PRTREQINT pReq)
+/**
+ * Process one request.
+ *
+ * @param   pPool               The pool.
+ * @param   pThread             The worker thread.
+ * @param   pReq                The request to process.
+ */
+static void rtReqPoolThreadProcessRequest(PRTREQPOOLINT pPool, PRTREQPOOLTHREAD pThread, PRTREQINT pReq)
 {
     /*
      * Update thread state.
@@ -269,16 +301,19 @@ static void rtReqPoolThreadProcessRequest(PRTREQPOOLTHREAD pThread, PRTREQINT pR
     pThread->uProcessingNanoTs  = RTTimeNanoTS();
     pThread->uPendingNanoTs     = pReq->uSubmitNanoTs;
     pThread->pPendingReq        = pReq;
+    ASMAtomicIncU32(&pPool->cCurActiveRequests);
     Assert(pReq->u32Magic == RTREQ_MAGIC);
 
     /*
      * Do the actual processing.
      */
-    /** @todo  */
+    rtReqProcessOne(pReq);
 
     /*
      * Update thread statistics and state.
      */
+    ASMAtomicDecU32(&pPool->cCurActiveRequests);
+    pThread->pPendingReq    = NULL;
     uint64_t const uNsTsEnd = RTTimeNanoTS();
     pThread->cNsTotalReqProcessing += uNsTsEnd - pThread->uProcessingNanoTs;
     pThread->cNsTotalReqQueued     += uNsTsEnd - pThread->uPendingNanoTs;
@@ -302,7 +337,10 @@ static DECLCALLBACK(int) rtReqPoolThreadProc(RTTHREAD hThreadSelf, void *pvArg)
     /*
      * The work loop.
      */
-    uint64_t cPrevReqProcessed = UINT64_MAX;
+    uint64_t cReqPrevProcessedIdle     = UINT64_MAX;
+    uint64_t cReqPrevProcessedStat     = 0;
+    uint64_t cNsPrevTotalReqProcessing = 0;
+    uint64_t cNsPrevTotalReqQueued     = 0;
     while (!pPool->fDestructing)
     {
         /*
@@ -314,12 +352,23 @@ static DECLCALLBACK(int) rtReqPoolThreadProc(RTTHREAD hThreadSelf, void *pvArg)
         if (pReq)
         {
             Assert(RTListIsEmpty(&pThread->IdleNode)); /* Must not be in the idle list. */
-            rtReqPoolThreadProcessRequest(pThread, pReq);
+            rtReqPoolThreadProcessRequest(pPool, pThread, pReq);
             continue;
         }
 
         ASMAtomicIncU32(&pPool->cIdleThreads);
         RTCritSectEnter(&pPool->CritSect);
+
+        /* Update the global statistics. */
+        if (cReqPrevProcessedStat != pThread->cReqProcessed)
+        {
+            pPool->cReqProcessed          = pThread->cReqProcessed         - cReqPrevProcessedStat;
+            cReqPrevProcessedStat         = pThread->cReqProcessed;
+            pPool->cNsTotalReqProcessing += pThread->cNsTotalReqProcessing - cNsPrevTotalReqProcessing;
+            cNsPrevTotalReqProcessing     = pThread->cNsTotalReqProcessing;
+            pPool->cNsTotalReqQueued     += pThread->cNsTotalReqQueued     - cNsPrevTotalReqQueued;
+            cNsPrevTotalReqQueued         = pThread->cNsTotalReqQueued;
+        }
 
         /* Recheck the todo request pointer after entering the critsect. */
         pReq = ASMAtomicXchgPtrT(&pThread->pTodoReq, NULL, PRTREQINT);
@@ -328,7 +377,7 @@ static DECLCALLBACK(int) rtReqPoolThreadProc(RTTHREAD hThreadSelf, void *pvArg)
             Assert(RTListIsEmpty(&pThread->IdleNode)); /* Must not be in the idle list. */
             RTCritSectLeave(&pPool->CritSect);
 
-            rtReqPoolThreadProcessRequest(pThread, pReq);
+            rtReqPoolThreadProcessRequest(pPool, pThread, pReq);
             continue;
         }
 
@@ -339,6 +388,8 @@ static DECLCALLBACK(int) rtReqPoolThreadProc(RTTHREAD hThreadSelf, void *pvArg)
             pPool->pPendingRequests = pReq->pNext;
             if (pReq->pNext == NULL)
                 pPool->ppPendingRequests = &pPool->pPendingRequests;
+            Assert(pPool->cCurPendingRequests > 0);
+            pPool->cCurPendingRequests--;
 
             /* Un-idle ourselves and process the request. */
             if (!RTListIsEmpty(&pThread->IdleNode))
@@ -350,17 +401,17 @@ static DECLCALLBACK(int) rtReqPoolThreadProc(RTTHREAD hThreadSelf, void *pvArg)
             ASMAtomicDecU32(&pPool->cIdleThreads);
             RTCritSectLeave(&pPool->CritSect);
 
-            rtReqPoolThreadProcessRequest(pThread, pReq);
+            rtReqPoolThreadProcessRequest(pPool, pThread, pReq);
             continue;
         }
 
         /*
          * Nothing to do, go idle.
          */
-        if (cPrevReqProcessed != pThread->cReqProcessed)
+        if (cReqPrevProcessedIdle != pThread->cReqProcessed)
         {
-            pThread->cReqProcessed = cPrevReqProcessed;
-            pThread->uIdleNanoTs   = RTTimeNanoTS();
+            cReqPrevProcessedIdle = pThread->cReqProcessed;
+            pThread->uIdleNanoTs  = RTTimeNanoTS();
         }
         else if (pPool->cCurThreads > pPool->cMinThreads)
         {
@@ -474,13 +525,15 @@ DECLHIDDEN(void) rtReqPoolSubmit(PRTREQPOOLINT pPool, PRTREQINT pReq)
 {
     RTCritSectEnter(&pPool->CritSect);
 
+    pPool->cReqSubmitted++;
+
     /*
      * Try schedule the request to a thread that's currently idle.
      */
     PRTREQPOOLTHREAD pThread = RTListGetFirst(&pPool->IdleThreads, RTREQPOOLTHREAD, IdleNode);
     if (pThread)
     {
-        /** @todo CPU affinity... */
+        /** @todo CPU affinity??? */
         ASMAtomicWritePtr(&pThread->pTodoReq, pReq);
 
         RTListNodeRemove(&pThread->IdleNode);
@@ -500,6 +553,7 @@ DECLHIDDEN(void) rtReqPoolSubmit(PRTREQPOOLINT pPool, PRTREQINT pReq)
     pReq->pNext = NULL;
     *pPool->ppPendingRequests = pReq;
     pPool->ppPendingRequests  = (PRTREQINT*)&pReq->pNext;
+    pPool->cCurPendingRequests++;
 
     /*
      * If there is an incoming worker thread already or we've reached the
@@ -515,7 +569,7 @@ DECLHIDDEN(void) rtReqPoolSubmit(PRTREQPOOLINT pPool, PRTREQINT pReq)
     /*
      * Push back before creating a new worker thread.
      */
-    if (   pPool->cCurThreads > pPool->cThreadsThreshold
+    if (   pPool->cCurThreads > pPool->cThreadsPushBackThreshold
         && (RTTimeNanoTS() - pReq->uSubmitNanoTs) / RT_NS_1MS >= pPool->cMsCurPushBack )
     {
         int rc = rtReqPoolPushBack(pPool, pReq);
@@ -562,42 +616,253 @@ DECLHIDDEN(bool) rtReqPoolRecycle(PRTREQPOOLINT pPool, PRTREQINT pReq)
     return false;
 }
 
-#if 0 /* later */
-
-typedef enum RTREQPOOLCFGVAR
-{
-    RTREQPOOLCFGVAR_INVALID = 0,
-    RTREQPOOLCFGVAR_END,
-    RTREQPOOLCFGVAR_32BIT_HACK = 0x7fffffff
-} RTREQPOOLCFGVAR;
-
 
 RTDECL(int) RTReqPoolSetCfgVar(RTREQPOOL hPool, RTREQPOOLCFGVAR enmVar, uint64_t uValue)
 {
-    return VERR_NOT_SUPPORTED;
+    PRTREQPOOLINT pPool = hPool;
+    AssertPtrReturn(pPool, VERR_INVALID_HANDLE);
+    AssertReturn(pPool->u32Magic == RTREQPOOL_MAGIC, VERR_INVALID_HANDLE);
+    AssertReturn(enmVar > RTREQPOOLCFGVAR_INVALID && enmVar < RTREQPOOLCFGVAR_END, VERR_INVALID_PARAMETER);
+
+    RTCritSectEnter(&pPool->CritSect);
+
+    bool fWakeUpIdleThreads = false;
+    int  rc                 = VINF_SUCCESS;
+    switch (enmVar)
+    {
+        case RTREQPOOLCFGVAR_THREAD_TYPE:
+            AssertMsgBreakStmt(uValue > (uint64_t)RTTHREADTYPE_INVALID && uValue < (uint64_t)RTTHREADTYPE_END,
+                               ("%llu\n",  uValue), rc = VERR_OUT_OF_RANGE);
+
+            pPool->enmThreadType = (RTTHREADTYPE)uValue;
+            break;
+
+        case RTREQPOOLCFGVAR_MIN_THREADS:
+            AssertMsgBreakStmt(uValue <= RTREQPOOL_MAX_THREADS,  ("%llu\n",  uValue), rc = VERR_OUT_OF_RANGE);
+            fWakeUpIdleThreads = pPool->cMinThreads > (uint32_t)uValue;
+            pPool->cMinThreads = (uint32_t)uValue;
+            if (pPool->cMinThreads > pPool->cMaxThreads)
+                pPool->cMaxThreads = pPool->cMinThreads;
+            if (   pPool->cThreadsPushBackThreshold < pPool->cMinThreads
+                || pPool->cThreadsPushBackThreshold > pPool->cMaxThreads)
+                pPool->cThreadsPushBackThreshold = pPool->cMinThreads + (pPool->cMaxThreads - pPool->cMinThreads) / 2;
+            rtReqPoolRecalcPushBack(pPool);
+            break;
+
+        case RTREQPOOLCFGVAR_MAX_THREADS:
+            AssertMsgBreakStmt(uValue <= RTREQPOOL_MAX_THREADS && uValue >= 1,  ("%llu\n",  uValue), rc = VERR_OUT_OF_RANGE);
+            pPool->cMaxThreads = (uint32_t)uValue;
+            if (pPool->cMaxThreads < pPool->cMinThreads)
+            {
+                pPool->cMinThreads = pPool->cMaxThreads;
+                fWakeUpIdleThreads = true;
+            }
+            if (pPool->cMaxThreads < pPool->cThreadsPushBackThreshold)
+                pPool->cThreadsPushBackThreshold = pPool->cMinThreads + (pPool->cMaxThreads - pPool->cMinThreads) / 2;
+            rtReqPoolRecalcPushBack(pPool);
+            break;
+
+        case RTREQPOOLCFGVAR_MS_MIN_IDLE:
+            AssertMsgBreakStmt(uValue < UINT32_MAX || uValue == RT_INDEFINITE_WAIT,  ("%llu\n",  uValue), rc = VERR_OUT_OF_RANGE);
+            if (uValue < UINT32_MAX && uValue != RT_INDEFINITE_WAIT)
+            {
+                fWakeUpIdleThreads = pPool->cMsMinIdle != (uint32_t)uValue;
+                pPool->cMsMinIdle = (uint32_t)uValue;
+                pPool->cNsMinIdle = pPool->cMsMinIdle * RT_NS_1MS_64;
+                if (pPool->cMsIdleSleep > pPool->cMsMinIdle)
+                    pPool->cMsIdleSleep = RT_MAX(RT_MS_1SEC, pPool->cMsMinIdle);
+            }
+            else
+            {
+                pPool->cMsMinIdle   = UINT32_MAX;
+                pPool->cNsMinIdle   = UINT64_MAX;
+                pPool->cMsIdleSleep = RT_INDEFINITE_WAIT;
+            }
+            break;
+
+        case RTREQPOOLCFGVAR_MS_IDLE_SLEEP:
+            AssertMsgBreakStmt(uValue <= RT_INDEFINITE_WAIT,  ("%llu\n",  uValue), rc = VERR_OUT_OF_RANGE);
+            fWakeUpIdleThreads = pPool->cMsMinIdle > (RTMSINTERVAL)uValue;
+            pPool->cMsIdleSleep = (RTMSINTERVAL)uValue;
+            if (pPool->cMsIdleSleep == RT_INDEFINITE_WAIT)
+            {
+                pPool->cMsMinIdle = UINT32_MAX;
+                pPool->cNsMinIdle = UINT64_MAX;
+            }
+            break;
+
+        case RTREQPOOLCFGVAR_PUSH_BACK_THRESHOLD:
+            if (uValue == UINT64_MAX)
+                pPool->cThreadsPushBackThreshold = pPool->cMaxThreads;
+            else if (uValue == 0)
+                pPool->cThreadsPushBackThreshold = pPool->cMinThreads;
+            else
+            {
+                AssertMsgBreakStmt(uValue <= pPool->cMaxThreads,  ("%llu\n",  uValue), rc = VERR_OUT_OF_RANGE);
+                AssertMsgBreakStmt(uValue >= pPool->cMinThreads,  ("%llu\n",  uValue), rc = VERR_OUT_OF_RANGE);
+                pPool->cThreadsPushBackThreshold = (uint32_t)uValue;
+            }
+            break;
+
+        case RTREQPOOLCFGVAR_PUSH_BACK_MIN_MS:
+            AssertMsgBreakStmt(uValue <= RTREQPOOL_PUSH_BACK_MAX_MS,  ("%llu\n",  uValue), rc = VERR_OUT_OF_RANGE);
+            pPool->cMsMinPushBack = (uint32_t)uValue;
+            if (pPool->cMsMaxPushBack < pPool->cMsMinPushBack)
+                pPool->cMsMaxPushBack = pPool->cMsMinPushBack;
+            rtReqPoolRecalcPushBack(pPool);
+            break;
+
+        case RTREQPOOLCFGVAR_PUSH_BACK_MAX_MS:
+            AssertMsgBreakStmt(uValue <= RTREQPOOL_PUSH_BACK_MAX_MS,  ("%llu\n",  uValue), rc = VERR_OUT_OF_RANGE);
+            pPool->cMsMaxPushBack = (uint32_t)uValue;
+            if (pPool->cMsMinPushBack < pPool->cMsMaxPushBack)
+                pPool->cMsMinPushBack = pPool->cMsMaxPushBack;
+            rtReqPoolRecalcPushBack(pPool);
+            break;
+
+        case RTREQPOOLCFGVAR_MAX_FREE_REQUESTS:
+            if (uValue == UINT64_MAX)
+            {
+                pPool->cMaxFreeRequests = pPool->cMaxThreads * 2;
+                if (pPool->cMaxFreeRequests < 16)
+                    pPool->cMaxFreeRequests = 16;
+            }
+            else
+            {
+                AssertMsgBreakStmt(uValue <= RTREQPOOL_MAX_FREE_REQUESTS,  ("%llu\n",  uValue), rc = VERR_OUT_OF_RANGE);
+                pPool->cMaxFreeRequests = (uint32_t)uValue;
+            }
+
+            while (pPool->cCurFreeRequests > pPool->cMaxFreeRequests)
+            {
+                PRTREQINT pReq = pPool->pFreeRequests;
+                pPool->pFreeRequests = pReq->pNext;
+                ASMAtomicDecU32(&pPool->cCurFreeRequests);
+                rtReqFreeIt(pReq);
+            }
+            break;
+
+        default:
+            AssertFailed();
+            rc = VERR_IPE_NOT_REACHED_DEFAULT_CASE;
+    }
+
+    /* Wake up all idle threads if required. */
+    if (fWakeUpIdleThreads)
+    {
+        Assert(rc == VINF_SUCCESS);
+        PRTREQPOOLTHREAD pThread;
+        RTListForEach(&pPool->WorkerThreads, pThread, RTREQPOOLTHREAD, ListNode)
+        {
+            RTThreadUserSignal(pThread->hThread);
+        }
+    }
+
+    RTCritSectLeave(&pPool->CritSect);
+
+    return rc;
 }
+RT_EXPORT_SYMBOL(RTReqPoolSetCfgVar);
 
 
 RTDECL(int) RTReqPoolQueryCfgVar(RTREQPOOL hPool, RTREQPOOLCFGVAR enmVar, uint64_t *puValue)
 {
-    return VERR_NOT_SUPPORTED;
+    PRTREQPOOLINT pPool = hPool;
+    AssertPtrReturn(pPool, VERR_INVALID_HANDLE);
+    AssertReturn(pPool->u32Magic == RTREQPOOL_MAGIC, VERR_INVALID_HANDLE);
+    AssertReturn(enmVar > RTREQPOOLCFGVAR_INVALID && enmVar < RTREQPOOLCFGVAR_END, VERR_INVALID_PARAMETER);
+
+    RTCritSectEnter(&pPool->CritSect);
+
+    int rc = VINF_SUCCESS;
+    switch (enmVar)
+    {
+        case RTREQPOOLCFGVAR_THREAD_TYPE:
+            *puValue = pPool->enmThreadType;
+            break;
+
+        case RTREQPOOLCFGVAR_MIN_THREADS:
+            *puValue = pPool->cMinThreads;
+            break;
+
+        case RTREQPOOLCFGVAR_MAX_THREADS:
+            *puValue = pPool->cMaxThreads;
+            break;
+
+        case RTREQPOOLCFGVAR_MS_MIN_IDLE:
+            *puValue = pPool->cMsMinIdle;
+            break;
+
+        case RTREQPOOLCFGVAR_MS_IDLE_SLEEP:
+            *puValue = pPool->cMsIdleSleep;
+            break;
+
+        case RTREQPOOLCFGVAR_PUSH_BACK_THRESHOLD:
+            *puValue = pPool->cThreadsPushBackThreshold;
+            break;
+
+        case RTREQPOOLCFGVAR_PUSH_BACK_MIN_MS:
+            *puValue = pPool->cMsMinPushBack;
+            break;
+
+        case RTREQPOOLCFGVAR_PUSH_BACK_MAX_MS:
+            *puValue = pPool->cMsMaxPushBack;
+            break;
+
+        case RTREQPOOLCFGVAR_MAX_FREE_REQUESTS:
+            *puValue = pPool->cMaxFreeRequests;
+            break;
+
+        default:
+            AssertFailed();
+            rc = VERR_IPE_NOT_REACHED_DEFAULT_CASE;
+            *puValue = UINT64_MAX;
+            break;
+    }
+
+    RTCritSectLeave(&pPool->CritSect);
+
+    return rc;
 }
-
-
-typedef enum RTREQPOOLSTAT
-{
-    RTREQPOOLSTAT_INVALID = 0,
-    RTREQPOOLSTAT_END,
-    RTREQPOOLSTAT_32BIT_HACK = 0x7fffffff
-} RTREQPOOLSTAT;
+RT_EXPORT_SYMBOL(RTReqPoolQueryCfgVar);
 
 
 RTDECL(uint64_t) RTReqPoolGetStat(RTREQPOOL hPool, RTREQPOOLSTAT enmStat)
 {
-    return UINT64_MAX;
-}
+    PRTREQPOOLINT pPool = hPool;
+    AssertPtrReturn(pPool, UINT64_MAX);
+    AssertReturn(pPool->u32Magic == RTREQPOOL_MAGIC, UINT64_MAX);
+    AssertReturn(enmStat > RTREQPOOLSTAT_INVALID && enmStat < RTREQPOOLSTAT_END, UINT64_MAX);
 
-#endif /* later */
+    RTCritSectEnter(&pPool->CritSect);
+
+    uint64_t         u64;
+    PRTREQPOOLTHREAD pThread;
+    switch (enmStat)
+    {
+        case RTREQPOOLSTAT_THREADS:                     u64 = pPool->cCurThreads; break;
+        case RTREQPOOLSTAT_THREADS_CREATED:             u64 = pPool->cThreadsCreated; break;
+        case RTREQPOOLSTAT_REQUESTS_PROCESSED:          u64 = pPool->cReqProcessed; break;
+        case RTREQPOOLSTAT_REQUESTS_SUBMITTED:          u64 = pPool->cReqSubmitted; break;
+        case RTREQPOOLSTAT_REQUESTS_PENDING:            u64 = pPool->cCurPendingRequests; break;
+        case RTREQPOOLSTAT_REQUESTS_ACTIVE:             u64 = pPool->cCurActiveRequests; break;
+        case RTREQPOOLSTAT_REQUESTS_FREE:               u64 = pPool->cCurFreeRequests; break;
+        case RTREQPOOLSTAT_NS_TOTAL_REQ_PROCESSING:     u64 = pPool->cNsTotalReqProcessing; break;
+        case RTREQPOOLSTAT_NS_TOTAL_REQ_QUEUED:         u64 = pPool->cNsTotalReqQueued; break;
+        case RTREQPOOLSTAT_NS_AVERAGE_REQ_PROCESSING:   u64 = pPool->cNsTotalReqProcessing / RT_MAX(pPool->cReqProcessed, 1); break;
+        case RTREQPOOLSTAT_NS_AVERAGE_REQ_QUEUED:       u64 = pPool->cNsTotalReqQueued / RT_MAX(pPool->cReqProcessed, 1); break;
+        default:
+            AssertFailed();
+            u64 = UINT64_MAX;
+            break;
+    }
+
+    RTCritSectLeave(&pPool->CritSect);
+
+    return u64;
+}
+RT_EXPORT_SYMBOL(RTReqPoolGetStat);
+
 
 RTDECL(uint32_t) RTReqPoolRetain(RTREQPOOL hPool)
 {
@@ -652,6 +917,7 @@ RTDECL(uint32_t) RTReqPoolRelease(RTREQPOOL hPool)
             rtReqPoolCancelReq(pReq);
         }
         pPool->ppPendingRequests = NULL;
+        pPool->cCurPendingRequests = 0;
 
         /* Wait for the workers to shut down. */
         while (!RTListIsEmpty(&pPool->WorkerThreads))
