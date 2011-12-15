@@ -47,7 +47,7 @@ DECLHIDDEN(size_t)  rtPathRootSpecLen(const char *pszPath);
 DECLHIDDEN(size_t)  rtPathVolumeSpecLen(const char *pszPath);
 DECLHIDDEN(int)     rtPathPosixRename(const char *pszSrc, const char *pszDst, unsigned fRename, RTFMODE fFileType);
 DECLHIDDEN(int)     rtPathWin32MoveRename(const char *pszSrc, const char *pszDst, uint32_t fFlags, RTFMODE fFileType);
-
+DECLHIDDEN(int)     rtPathOpenPathNoFollowFh(const char *pszPath, int *fh, const char **ppszName);
 
 /**
  * Converts a path from IPRT to native representation.

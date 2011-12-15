@@ -243,10 +243,10 @@ static DECLCALLBACK(int) svcLoadState(void *, uint32_t u32ClientID, void *pvClie
             }
             else
             {
-                pszFolderName = (char*)RTStrAlloc(cbFolderName);
+                pszFolderName = (char*)RTStrAlloc(cbFolderName + 1);
                 AssertReturn(pszFolderName, VERR_NO_MEMORY);
 
-                rc = SSMR3GetStrZ(pSSM, mapping.pszFolderName, cbFolderName);
+                rc = SSMR3GetStrZ(pSSM, pszFolderName, cbFolderName + 1);
                 AssertRCReturn(rc, rc);
                 mapping.pszFolderName = pszFolderName;
             }
