@@ -836,8 +836,7 @@ RTDECL(uint64_t) RTReqPoolGetStat(RTREQPOOL hPool, RTREQPOOLSTAT enmStat)
 
     RTCritSectEnter(&pPool->CritSect);
 
-    uint64_t         u64;
-    PRTREQPOOLTHREAD pThread;
+    uint64_t u64;
     switch (enmStat)
     {
         case RTREQPOOLSTAT_THREADS:                     u64 = pPool->cCurThreads; break;
