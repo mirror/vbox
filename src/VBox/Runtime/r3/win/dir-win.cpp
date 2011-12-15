@@ -129,7 +129,7 @@ RTDECL(int) RTDirFlush(const char *pszPath)
 }
 
 
-int rtDirNativeOpen(PRTDIR pDir, char *pszPathBuf, uint32_t fOpen)
+int rtDirNativeOpen(PRTDIR pDir, char *pszPathBuf)
 {
     /*
      * Setup the search expression.
