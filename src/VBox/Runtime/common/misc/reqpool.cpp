@@ -688,7 +688,7 @@ RTDECL(int) RTReqPoolCreate(uint32_t cMaxThreads, RTMSINTERVAL cMsMinIdle,
     pPool->cCurActiveRequests   = 0;
     pPool->cReqSubmitted        = 0;
     pPool->pFreeRequests        = NULL;
-    pPool->cCurFreeRequests     = NULL;
+    pPool->cCurFreeRequests     = 0;
 
     int rc = RTSemEventMultiCreate(&pPool->hThreadTermEvt);
     if (RT_SUCCESS(rc))
