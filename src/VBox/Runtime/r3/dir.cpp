@@ -516,8 +516,9 @@ static PFNRTDIRFILTER rtDirFilterWinNtInit(PRTDIR pDir)
  * @param   pszPath     The specified path.
  * @param   pszFilter   Pointer to where the filter start in the path. NULL if no filter.
  * @param   enmFilter   The type of filter to apply.
+ * @param   fOpen       Open flags, RTDIROPENFILTERED_FLAGS_*.
  */
-static int rtDirOpenCommon(PRTDIR *ppDir, const char *pszPath, const char *pszFilter, RTDIRFILTER enmFilter)
+static int rtDirOpenCommon(PRTDIR *ppDir, const char *pszPath, const char *pszFilter, RTDIRFILTER enmFilter, uint32_t fOpen)
 {
     /*
      * Expand the path.
@@ -645,7 +646,7 @@ static int rtDirOpenCommon(PRTDIR *ppDir, const char *pszPath, const char *pszFi
     /*
      * Hand it over to the native part.
      */
-    rc = rtDirNativeOpen(pDir, szRealPath);
+    rc = rtDirNativeOpen(pDir, szRealPath, fOpen);
     if (RT_SUCCESS(rc))
         *ppDir = pDir;
     else
@@ -667,7 +668,7 @@ RTDECL(int) RTDirOpen(PRTDIR *ppDir, const char *pszPath)
     /*
      * Take common cause with RTDirOpenFiltered().
      */
-    int rc = rtDirOpenCommon(ppDir, pszPath, NULL,  RTDIRFILTER_NONE);
+    int rc = rtDirOpenCommon(ppDir, pszPath, NULL,  RTDIRFILTER_NONE, 0);
     LogFlow(("RTDirOpen(%p:{%p}, %p:{%s}): return %Rrc\n", ppDir, *ppDir, pszPath, pszPath, rc));
     return rc;
 }
@@ -710,7 +711,7 @@ RTDECL(int) RTDirOpenFiltered(PRTDIR *ppDir, const char *pszPath, RTDIRFILTER en
      * Call worker common with RTDirOpen which will verify the path, allocate
      * and initialize the handle, and finally call the backend.
      */
-    int rc = rtDirOpenCommon(ppDir, pszPath, pszFilter, enmFilter);
+    int rc = rtDirOpenCommon(ppDir, pszPath, pszFilter, enmFilter, fOpen);
 
     LogFlow(("RTDirOpenFiltered(%p:{%p}, %p:{%s}, %d): return %Rrc\n",
              ppDir, *ppDir, pszPath, pszPath, enmFilter, rc));

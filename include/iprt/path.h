@@ -126,14 +126,16 @@ RT_C_DECLS_BEGIN
 #define RTPATH_F_ON_LINK          RT_BIT_32(0)
 /** Last component: Follow if link. */
 #define RTPATH_F_FOLLOW_LINK      RT_BIT_32(1)
+/** Don't allow symbolic links as part of the path. */
+#define RTPATH_F_NO_SYMLINKS      RT_BIT_32(2)
 /** @} */
 
 
 /** Validates a flags parameter containing RTPATH_F_*.
  * @remarks The parameters will be referenced multiple times. */
 #define RTPATH_F_IS_VALID(fFlags, fIgnore) \
-    (    ((fFlags) & ~(uint32_t)(fIgnore)) == RTPATH_F_ON_LINK \
-      || ((fFlags) & ~(uint32_t)(fIgnore)) == RTPATH_F_FOLLOW_LINK )
+    (    ((fFlags) & ~(uint32_t)(fIgnore | RTPATH_F_NO_SYMLINKS)) == RTPATH_F_ON_LINK \
+      || ((fFlags) & ~(uint32_t)(fIgnore | RTPATH_F_NO_SYMLINKS)) == RTPATH_F_FOLLOW_LINK )
 
 
 /**
