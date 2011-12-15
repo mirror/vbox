@@ -2179,8 +2179,10 @@ int vbsfRemove(SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLSTRING *pPath, uint32
         {
             if (flags & SHFL_REMOVE_SYMLINK)
                 rc = RTSymlinkDelete(pszFullPath, RTSYMLINKDELETE_FLAGS_NO_SYMLINKS);
+            else if (flags & SHFL_REMOVE_FILE)
+                rc = RTFileDelete(pszFullPath);
             else
-                rc = RTPathUnlink(pszFullPath, RTPATHUNLINK_FLAGS_NO_SYMLINKS);
+                rc = RTDirRemove(pszFullPath);
         }
 
 #ifndef DEBUG_dmik
