@@ -277,6 +277,112 @@ RTDECL(uint32_t) RTReqPoolRetain(RTREQPOOL hPool);
 RTDECL(uint32_t) RTReqPoolRelease(RTREQPOOL hPool);
 
 /**
+ * Request thread pool configuration variable.
+ */
+typedef enum RTREQPOOLCFGVAR
+{
+    /** Invalid zero value. */
+    RTREQPOOLCFGVAR_INVALID = 0,
+    /** The desired RTTHREADTYPE of the worker threads. */
+    RTREQPOOLCFGVAR_THREAD_TYPE,
+    /** The minimum number of threads to keep handy once spawned. */
+    RTREQPOOLCFGVAR_MIN_THREADS,
+    /** The maximum number of thread to start. */
+    RTREQPOOLCFGVAR_MAX_THREADS,
+    /** The minimum number of milliseconds a worker thread needs to be idle
+     * before we consider shutting it down.  The other shutdown criteria
+     * being set by RTREQPOOLCFGVAR_MIN_THREADS.  The value
+     * RT_INDEFINITE_WAIT can be used to disable shutting down idle threads. */
+    RTREQPOOLCFGVAR_MS_MIN_IDLE,
+    /** The sleep period, in milliseoncds, to employ when idling. The value
+     * RT_INDEFINITE_WAIT can be used to disable shutting down idle threads. */
+    RTREQPOOLCFGVAR_MS_IDLE_SLEEP,
+    /** The number of threads at which to start pushing back. The value
+     *  UINT64_MAX is an alias for the current upper thread count limit, i.e.
+     *  disabling push back.  The value 0 (zero) is an alias for the current
+     *  lower thread count, a good value to start pushing back at.  The value
+     *  must otherwise be within  */
+    RTREQPOOLCFGVAR_PUSH_BACK_THRESHOLD,
+    /** The minimum push back time in milliseconds. */
+    RTREQPOOLCFGVAR_PUSH_BACK_MIN_MS,
+    /** The maximum push back time in milliseconds. */
+    RTREQPOOLCFGVAR_PUSH_BACK_MAX_MS,
+    /** The maximum number of free requests to keep handy for recycling. */
+    RTREQPOOLCFGVAR_MAX_FREE_REQUESTS,
+    /** The end of the range of valid config variables. */
+    RTREQPOOLCFGVAR_END,
+    /** Blow the type up to 32-bits. */
+    RTREQPOOLCFGVAR_32BIT_HACK = 0x7fffffff
+} RTREQPOOLCFGVAR;
+
+
+/**
+ * Sets a config variable for a request thread pool.
+ *
+ * @returns IPRT status code.
+ * @param   hPool           The pool handle.
+ * @param   enmVar          The variable to set.
+ * @param   uValue          The new value.
+ */
+RTDECL(int) RTReqPoolSetCfgVar(RTREQPOOL hPool, RTREQPOOLCFGVAR enmVar, uint64_t uValue);
+
+/**
+ * Gets a config variable for a request thread pool.
+ *
+ * @returns IPRT status code.
+ * @param   hPool           The pool handle.
+ * @param   enmVar          The variable to query.
+ * @param   puValue         Where to return the value.
+ */
+RTDECL(int) RTReqPoolQueryCfgVar(RTREQPOOL hPool, RTREQPOOLCFGVAR enmVar, uint64_t *puValue);
+
+/**
+ * Request thread pool statistics value names.
+ */
+typedef enum RTREQPOOLSTAT
+{
+    /** The invalid zero value, as per tradition. */
+    RTREQPOOLSTAT_INVALID = 0,
+    /** The current number of worker threads. */
+    RTREQPOOLSTAT_THREADS,
+    /** The number of threads that have been created. */
+    RTREQPOOLSTAT_THREADS_CREATED,
+    /** The total number of requests that have been processed. */
+    RTREQPOOLSTAT_REQUESTS_PROCESSED,
+    /** The total number of requests that have been submitted. */
+    RTREQPOOLSTAT_REQUESTS_SUBMITTED,
+    /** the current number of pending (waiting) requests. */
+    RTREQPOOLSTAT_REQUESTS_PENDING,
+    /** The current number of active (executing) requests. */
+    RTREQPOOLSTAT_REQUESTS_ACTIVE,
+    /** The current number of free (recycled) requests. */
+    RTREQPOOLSTAT_REQUESTS_FREE,
+    /** Total time the requests took to process. */
+    RTREQPOOLSTAT_NS_TOTAL_REQ_PROCESSING,
+    /** Total time the requests had to wait in the queue before being
+     * scheduled. */
+    RTREQPOOLSTAT_NS_TOTAL_REQ_QUEUED,
+    /** Average time the requests took to process. */
+    RTREQPOOLSTAT_NS_AVERAGE_REQ_PROCESSING,
+    /** Average time the requests had to wait in the queue before being
+     * scheduled. */
+    RTREQPOOLSTAT_NS_AVERAGE_REQ_QUEUED,
+    /** The end of the valid statistics value names. */
+    RTREQPOOLSTAT_END,
+    /** Blow the type up to 32-bit. */
+    RTREQPOOLSTAT_32BIT_HACK = 0x7fffffff
+} RTREQPOOLSTAT;
+
+/**
+ * Read a statistics value from the request thread pool.
+ *
+ * @returns The value, UINT64_MAX if an invalid parameter was given.
+ * @param   hPool           The request thread pool handle.
+ * @param   enmStat         The statistics value to get.
+ */
+RTDECL(uint64_t) RTReqPoolGetStat(RTREQPOOL hPool, RTREQPOOLSTAT enmStat);
+
+/**
  * Allocates a request packet.
  *
  * This is mostly for internal use, please use the convenience methods.
