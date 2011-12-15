@@ -786,74 +786,74 @@
       <para>Extracting d3d8 and d3d9.dll from Windows XP installation CD
       </para>
 
-      <itemizedlist>
+      <orderedlist>
         <listitem>
-          1. Download and install the latest version of 7-Zip File Manager <ulink
-          url="http//www.7-zip.org">http//www.7-zip.org</ulink>
+          <para>Download and install the latest version of 7-Zip File Manager <ulink
+          url="http//www.7-zip.org">http//www.7-zip.org</ulink></para>
         </listitem>
 
         <listitem>
-          2. Browse into installation CD for example E:\i386 (or AMD64 for 64bit version)
+          <para>Browse into installation CD for example E:\i386 (or AMD64 for 64bit version)</para>
         </listitem>
 
         <listitem>
-          3. Locate file d3d8.dl_ and d3d9.dl_, double click on it and Extract d3d8.dll and d3d9.dll
+          <para>Locate file d3d8.dl_ and d3d9.dl_, double click on it and Extract d3d8.dll and d3d9.dll</para>
         </listitem>
 
         <listitem>
-          4. Reboot Windows in Safe mode
+          <para>Reboot Windows in Safe mode</para>
         </listitem>
 
         <listitem>
-          5. Copy extracted d3d8.dll and d3d9.dll to C:\Windows\system32 and C:\Windows\system32\dllcache
+          <para>Copy extracted d3d8.dll and d3d9.dll to C:\Windows\system32 and C:\Windows\system32\dllcache</para>
         </listitem>
 
         <listitem>
-          6. Reboot
+          <para>Reboot</para>
         </listitem>
-      </itemizedlist>
+      </orderedlist>
 
       <para>Extracting d3d8 and d3d9.dll from Windows XP Service pack </para>
 
-      <itemizedlist>
+      <orderedlist>
         <listitem>
-          1, 3-6 Same as installation CD
+          <para>1, 3-6 Same as installation CD</para>
         </listitem>
         <listitem>
-          2. Use 'Open inside' to open WindowsXP-KB936929-SP3-x86.exe as archive and browse i386 directory.
+          <para>Use 'Open inside' to open WindowsXP-KB936929-SP3-x86.exe as archive and browse i386 directory.</para>
         </listitem>
-      </itemizedlist>
+      </orderedlist>
 
       <para>Extracting d3d8 and d3d9.dll from Vista/Windows7 installation CD or Service Pack iso</para>
 
-      <itemizedlist>
+      <orderedlist>
         <listitem>
-          1. Download and install the latest version of 7-Zip File Manager <ulink
-          url="http//www.7-zip.org">http//www.7-zip.org</ulink>
+          <para>Download and install the latest version of 7-Zip File Manager <ulink
+          url="http//www.7-zip.org">http//www.7-zip.org</ulink></para>
         </listitem>
 
         <listitem>
-          2. Browse into installation CD for example E:\sources
+          <para>Browse into installation CD for example E:\sources</para>
         </listitem>
 
         <listitem>
-          3. Locate file install.wim and double click it. After 7-Zip utility opens the file, you'll get a few numbered folders. Each numeric subfolder represents a different version of Windows (Starter, Home Basic, and so on)
+          <para>Locate file install.wim and double click it. After 7-Zip utility opens the file, you'll get a few numbered folders. Each numeric subfolder represents a different version of Windows (Starter, Home Basic, and so on)</para>
         </listitem>
 
         <listitem>
-          4. After entering into the one of the numeric folders, browse into Windows\System32 (or C:\Windows\SysWOW64 for 64 bit version) directory locate d3d8.dll and d3d9.dll and extract
+          <para>After entering into the one of the numeric folders, browse into Windows\System32 (or C:\Windows\SysWOW64 for 64 bit version) directory locate d3d8.dll and d3d9.dll and extract</para>
         </listitem>
 
         <listitem>
-          5. Copy extracted d3d8.dll and d3d9.dll to C:\Windows\system32 or C:\Windows\SysWOW64 (files from system32 should go to system32, from SysWOW64 to SysWOW64)
+          <para>Copy extracted d3d8.dll and d3d9.dll to C:\Windows\system32 or C:\Windows\SysWOW64 (files from system32 should go to system32, from SysWOW64 to SysWOW64)</para>
         </listitem>
 
         <listitem>
-          6. Reboot
+          <para>Reboot</para>
         </listitem>
-      </itemizedlist>
-
+      </orderedlist>
     </sect2>
+
   </sect1>
 
   <sect1>
