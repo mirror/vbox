@@ -181,13 +181,18 @@ end:
     return rc;
 }
 
+/**
+ * Do a simple path check given by pUtf8Path. Verify that the path is within
+ * the root directory of the mapping. Count '..' and other path components
+ * and check that we do not go over the root.
+ *
+ * @remarks This function assumes that the path will be appended to the root
+ * directory of the shared folder mapping. Keep that in mind when checking
+ * absolute pathes!
+ */
 static int vbsfPathCheck(const char *pUtf8Path, size_t cbPath)
 {
     int rc = VINF_SUCCESS;
-
-    /* The pUtf8Path is what the guest sent. Verify that the path is within the root.
-     * Count '..' and other path components and check that we do not go over the root.
-     */
 
     size_t i = 0;
     int cComponents = 0; /* How many normal path components. */
@@ -264,7 +269,6 @@ static int vbsfBuildFullPath(SHFLCLIENTDATA *pClient, SHFLROOT root, PSHFLSTRING
     {
         /* Verify that the path is under the root directory. */
         rc = vbsfPathCheck((const char *)&pPath->String.utf8[0], pPath->u16Length);
-
         if (RT_SUCCESS(rc))
         {
             size_t cbUtf8FullPath = cbRoot + 1 + pPath->u16Length + 1;
@@ -484,7 +488,7 @@ static int vbsfBuildFullPath(SHFLCLIENTDATA *pClient, SHFLROOT root, PSHFLSTRING
                         *pszSrc = 0;
                         rc = RTPathQueryInfoEx(pszFullPath, &info, RTFSOBJATTRADD_NOTHING, RTPATH_F_ON_LINK);
                         *pszSrc = RTPATH_DELIMITER;
-                        if (rc == VINF_SUCCESS)
+                        if (RT_SUCCESS(rc))
                         {
 #ifdef DEBUG
                             *pszSrc = 0;
@@ -1221,7 +1225,6 @@ int vbsfCreate(SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLSTRING *pPath, uint32
     uint32_t cbFullPathRoot = 0;
 
     rc = vbsfBuildFullPath(pClient, root, pPath, cbPath, &pszFullPath, &cbFullPathRoot);
-
     if (RT_SUCCESS(rc))
     {
         /* Reset return value in case client forgot to do so.
@@ -2278,15 +2281,22 @@ int vbsfSymlink(SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLSTRING *pNewPath, SH
     int rc = VINF_SUCCESS;
 
     char *pszFullNewPath = NULL;
-    char *pszOldPath = NULL;
+    const char *pszOldPath = (const char *)pOldPath->String.utf8;
 
     /* XXX: no support for UCS2 at the moment. */
     if (!BIT_FLAG(pClient->fu32Flags, SHFL_CF_UTF8))
         return VERR_NOT_IMPLEMENTED;
 
+    /* don't allow absolute targets */
+    if (RTPathStartsWithRoot(pszOldPath))
+        return VERR_INVALID_NAME;
+    
+    /* Force relative pathes to be inside the shared folder. Don't allow the target to go up */
+    rc = vbsfPathCheck(pszOldPath, pOldPath->u16Length);
+    AssertRCReturn(rc, rc);
+
     rc = vbsfBuildFullPath(pClient, root, pNewPath, pNewPath->u16Size, &pszFullNewPath, NULL);
-    if (rc != VINF_SUCCESS)
-        return rc;
+    AssertRCReturn(rc, rc);
 
     rc = RTSymlinkCreate(pszFullNewPath, (const char *)pOldPath->String.utf8,
                          RTSYMLINKTYPE_UNKNOWN, RTSYMLINKCREATE_FLAGS_NO_SYMLINKS);
