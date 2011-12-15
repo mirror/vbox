@@ -339,7 +339,12 @@ static void stubSPUTearDownLocked(void)
 
     //delete all created contexts
     stubMakeCurrent( NULL, NULL);
+
+    /* the lock order is windowTable->contextTable (see wglMakeCurrent_prox, glXMakeCurrent)
+     * this is why we need to take a windowTable lock since we will later do stub.windowTable access & locking */
+    crHashtableLock(stub.windowTable);
     crHashtableWalk(stub.contextTable, hsWalkStubDestroyContexts, NULL);
+    crHashtableUnlock(stub.windowTable);
 
     /* shutdown, now trap any calls to a NULL dispatcher */
     crSPUCopyDispatchTable(&glim, &stubNULLDispatch);

@@ -345,9 +345,11 @@ stubDestroyContextLocked( ContextInfo *context )
 #ifdef CHROMIUM_THREADSAFE
 static DECLCALLBACK(void) stubContextDtor(void*pvContext)
 {
+    crHashtableLock(stub.windowTable);
     crHashtableLock(stub.contextTable);
     stubDestroyContextLocked((ContextInfo*)pvContext);
     crHashtableUnlock(stub.contextTable);
+    crHashtableUnlock(stub.windowTable);
 }
 #endif
 
@@ -1180,6 +1182,9 @@ stubDestroyContext( unsigned long contextId )
         return;
     }
 
+    /* the lock order is windowTable->contextTable (see wglMakeCurrent_prox, glXMakeCurrent)
+     * this is why we need to take a windowTable lock since we will later do stub.windowTable access & locking */
+    crHashtableLock(stub.windowTable);
     crHashtableLock(stub.contextTable);
 
     context = (ContextInfo *) crHashtableSearch(stub.contextTable, contextId);
@@ -1200,6 +1205,7 @@ stubDestroyContext( unsigned long contextId )
     }
 #endif
     crHashtableUnlock(stub.contextTable);
+    crHashtableUnlock(stub.windowTable);
 }
 
 void
