@@ -124,6 +124,16 @@ GLint APIENTRY crWindowCreate( const char *dpyName, GLint visBits )
     return stubNewWindow( dpyName, visBits );
 }
 
+static void stubWindowCleanupForContextsCB(unsigned long key, void *data1, void *data2)
+{
+    ContextInfo *context = (ContextInfo *) data1;
+
+    CRASSERT(context);
+
+    if (context->currentDrawable == data2)
+        context->currentDrawable = NULL;
+}
+
 void APIENTRY crWindowDestroy( GLint window )
 {
     WindowInfo *winInfo = (WindowInfo *)
@@ -152,6 +162,9 @@ void APIENTRY crWindowDestroy( GLint window )
 # endif
 #endif
         crForcedFlush();
+
+        crHashtableWalk(stub.contextTable, stubWindowCleanupForContextsCB, winInfo);
+
         crHashtableDelete(stub.windowTable, window, crFree);
 
         crHashtableUnlock(stub.windowTable);
