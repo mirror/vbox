@@ -173,20 +173,19 @@ wined3d_SOURCES      := \
     vbox/libWineStub/debug.c \
     wined3d/wined3d.def
 wined3d_SDKS          = WINDDKWLH
-ifdef VBOX_WINE_WITH_IPRT
+# wined3d now using iprt/asm.h, which includes iprt/assert.h, so iprt is required
 wined3d_LIBS         += \
 							$(VBOX_LIB_IPRT_GUEST_R3) \
 							$(VBOX_LIB_VBGL_R3)
 wined3d_DEFS         += VBOX_WINE_WITH_IPRT
-endif
 
 ifdef VBOX_WITH_WDDM
 DLLS += wined3dwddm
 wined3dwddm_EXTENDS        = wined3d
-if defined(VBOX_SIGNING_MODE) && defined(VBOX_WITH_WDDM)
- wined3dwddm_INSTTYPE.win  = none
- wined3dwddm_DEBUG_INSTTYPE.win = both
-endif
+ if defined(VBOX_SIGNING_MODE) && defined(VBOX_WITH_WDDM)
+  wined3dwddm_INSTTYPE.win  = none
+  wined3dwddm_DEBUG_INSTTYPE.win = both
+ endif
 wined3dwddm_INCS           = vbox/libWineStub/include
 wined3dwddm_DEFS           = $(subst VBOX_WINE_WITH_SINGLE_SWAPCHAIN_CONTEXT,,$(wined3d_DEFS))
 wined3dwddm_DEFS          += VBOX_WITH_WDDM VBOX_WINE_WITH_SINGLE_CONTEXT
@@ -195,13 +194,13 @@ wined3dwddm_SOURCES        = $(subst wined3d.def,wined3dwddm.def,$(wined3d_SOURC
 DLLS.amd64 += wined3dwddm-x86
 wined3dwddm-x86_EXTENDS    = wined3dwddm
 wined3dwddm-x86_BLD_TRG_ARCH = x86
-ifdef VBOX_WINE_WITH_IPRT
+# wined3d now using iprt/asm.h, which includes iprt/assert.h, so iprt is required
 wined3dwddm-x86_LIBS = \
 						$(VBOX_LIB_IPRT_GUEST_R3_X86) \
 						$(VBOX_LIB_VBGL_R3_X86)
-endif
+
 wined3dwddm-x86_DEFS       = $(wined3dwddm_DEFS) VBOX_WDDM_WOW64
-endif
+endif # ifdef VBOX_WITH_WDDM
 
 DLLS += VBoxD3D8
 VBoxD3D8_TEMPLATE     = VBOXGUESTR3NPDLL
@@ -293,32 +292,26 @@ endif
 ifdef VBOX_WITH_WDDM
 DLLS += VBoxD3D9wddm
 VBoxD3D9wddm_EXTENDS        = VBoxD3D9
-if defined(VBOX_SIGNING_MODE) && defined(VBOX_WITH_WDDM)
- VBoxD3D9wddm_INSTTYPE  = none
- VBoxD3D9wddm_DEBUG_INSTTYPE = both
-endif
+ if defined(VBOX_SIGNING_MODE) && defined(VBOX_WITH_WDDM)
+  VBoxD3D9wddm_INSTTYPE  = none
+  VBoxD3D9wddm_DEBUG_INSTTYPE = both
+ endif
 VBoxD3D9wddm_INCS           = vbox/libWineStub/include
 VBoxD3D9wddm_DEFS          += $(VBoxD3D9_DEFS) VBOX_WITH_WDDM VBOX_WINE_WITHOUT_LIBWINE IN_VBOXWINEEX
 VBoxD3D9wddm_SOURCES        = $(subst d3d9xpdm.def,d3d9wddm.def,$(VBoxD3D9_SOURCES))
 VBoxD3D9wddm_LIBS           = $(subst $(PATH_STAGE_LIB)/wined3d$(VBOX_SUFF_LIB),$(PATH_STAGE_LIB)/wined3dwddm$(VBOX_SUFF_LIB),$(VBoxD3D9_LIBS)) 
-#ifdef VBOX_WINE_WITH_IPRT
-#VBoxD3D9wddm_LIBS          += \
-							$(VBOX_LIB_IPRT_GUEST_R3) \
-							$(VBOX_LIB_VBGL_R3)
-#VBoxD3D9wddm_DEFS          += VBOX_WINE_WITH_IPRT
-#endif
 
 DLLS.amd64 += VBoxD3D9wddm-x86
 VBoxD3D9wddm-x86_EXTENDS      = VBoxD3D9wddm
 VBoxD3D9wddm-x86_BLD_TRG_ARCH = x86
 VBoxD3D9wddm-x86_LIBS         = $(PATH_STAGE_LIB)/wined3dwddm-x86$(VBOX_SUFF_LIB)
 VBoxD3D9wddm-x86_DEFS         = $(VBoxD3D9wddm_DEFS) VBOX_WDDM_WOW64
-ifdef VBOX_WINE_WITH_IPRT
+ ifdef VBOX_WINE_WITH_IPRT
 VBoxD3D9wddm-x86_LIBS        += \
 						$(VBOX_LIB_IPRT_GUEST_R3_X86) \
 						$(VBOX_LIB_VBGL_R3_X86)
-endif
-endif
+ endif
+endif # ifdef VBOX_WITH_WDDM
 
 DLLS += d3d8
 d3d8_TEMPLATE      = VBOXGUESTR3NPDLL
