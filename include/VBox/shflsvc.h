@@ -115,9 +115,10 @@
 #define SHFL_FN_ADD_MAPPING         (1)
 /** Remove shared folder mapping. */
 #define SHFL_FN_REMOVE_MAPPING      (2)
-/** Set the led status light address */
+/** Set the led status light address. */
 #define SHFL_FN_SET_STATUS_LED      (3)
-
+/** Allow the guest to create symbolic links (as of VBox 4.0) */
+#define SHFL_FN_ALLOW_SYMLINKS_CREATE (4)
 /** @} */
 
 /** Root handle for a mapping. Root handles are unique.
@@ -1337,14 +1338,11 @@ typedef struct _VBoxSFSymlink
  * Host call, no guest structure is used.
  */
 
+#define SHFL_ADD_MAPPING_F_WRITABLE         (RT_BIT_32(0))
+#define SHFL_ADD_MAPPING_F_AUTOMOUNT        (RT_BIT_32(1))
+#define SHFL_ADD_MAPPING_F_CREATE_SYMLINKS  (RT_BIT_32(2))
+
 #define SHFL_CPARMS_ADD_MAPPING  (3)
-
-/**
- * SHFL_FN_ADD_MAPPING, with auto-mount flag.
- * Host call, no guest structure is used.
- */
-
-#define SHFL_CPARMS_ADD_MAPPING2 (4)
 
 /**
  * SHFL_FN_REMOVE_MAPPING
