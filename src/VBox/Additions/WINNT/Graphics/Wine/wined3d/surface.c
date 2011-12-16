@@ -3681,6 +3681,9 @@ static HRESULT IWineD3DSurfaceImpl_BltOverride(IWineD3DSurfaceImpl *This, const 
     IWineD3DSwapChainImpl *srcSwapchain = NULL, *dstSwapchain = NULL;
     IWineD3DSurfaceImpl *Src = (IWineD3DSurfaceImpl *) SrcSurface;
     RECT dst_rect, src_rect;
+#ifdef VBOX_WITH_WDDM
+    BOOL fNoRtInvolved = FALSE;
+#endif
 
     TRACE("(%p)->(%p,%p,%p,%08x,%p)\n", This, DestRect, SrcSurface, SrcRect, Flags, DDBltFx);
 
@@ -3704,7 +3707,11 @@ static HRESULT IWineD3DSurfaceImpl_BltOverride(IWineD3DSurfaceImpl *This, const 
     if(!dstSwapchain && !srcSwapchain &&
         SrcSurface != myDevice->render_targets[0] && This != (IWineD3DSurfaceImpl *) myDevice->render_targets[0]) {
         TRACE("No surface is render target, not using hardware blit. Src = %p, dst = %p\n", Src, This);
+#ifdef VBOX_WITH_WDDM
+        fNoRtInvolved = TRUE;
+#else
         return WINED3DERR_INVALIDCALL;
+#endif
     }
 
     /* No destination color keying supported */
@@ -3831,7 +3838,11 @@ static HRESULT IWineD3DSurfaceImpl_BltOverride(IWineD3DSurfaceImpl *This, const 
         return WINED3DERR_INVALIDCALL;
     }
 
-    if((srcSwapchain || SrcSurface == myDevice->render_targets[0]) && !dstSwapchain) {
+    if(
+#ifdef VBOX_WITH_WDDM
+            fNoRtInvolved ||
+#endif
+            ((srcSwapchain || SrcSurface == myDevice->render_targets[0]) && !dstSwapchain)) {
         /* Blit from render target to texture */
         BOOL stretchx;
 
@@ -4337,9 +4348,12 @@ static HRESULT WINAPI IWineD3DSurfaceImpl_Blt(IWineD3DSurface *iface, const RECT
         }
     }
 
+#ifndef VBOX_WITH_WDDM
     /* Special cases for RenderTargets */
     if( (This->resource.usage & WINED3DUSAGE_RENDERTARGET) ||
-        ( Src && (Src->resource.usage & WINED3DUSAGE_RENDERTARGET) )) {
+        ( Src && (Src->resource.usage & WINED3DUSAGE_RENDERTARGET) ))
+#endif
+    {
         if(IWineD3DSurfaceImpl_BltOverride(This, DestRect, SrcSurface, SrcRect, Flags, DDBltFx, Filter) == WINED3D_OK)
         {
             hr = WINED3D_OK;
