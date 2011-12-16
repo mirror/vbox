@@ -126,7 +126,8 @@ RT_C_DECLS_BEGIN
 #define RTPATH_F_ON_LINK          RT_BIT_32(0)
 /** Last component: Follow if link. */
 #define RTPATH_F_FOLLOW_LINK      RT_BIT_32(1)
-/** Don't allow symbolic links as part of the path. */
+/** Don't allow symbolic links as part of the path.
+ * @remarks this flag is currently not implemented and will be ignored. */
 #define RTPATH_F_NO_SYMLINKS      RT_BIT_32(2)
 /** @} */
 
@@ -893,7 +894,8 @@ RTR3DECL(int) RTPathGetOwner(const char *pszPath, uint32_t *pUid, uint32_t *pGid
 #define RTPATHRENAME_FLAGS_NO_REPLACE   UINT32_C(0)
 /** This will replace attempt any target which isn't a directory. */
 #define RTPATHRENAME_FLAGS_REPLACE      RT_BIT(0)
-/** Don't allow symbolic links as part of the path. */
+/** Don't allow symbolic links as part of the path.
+ * @remarks this flag is currently not implemented and will be ignored. */
 #define RTPATHRENAME_FLAGS_NO_SYMLINKS  RT_BIT(1)
 /** @} */
 
@@ -912,7 +914,8 @@ RTR3DECL(int) RTPathRename(const char *pszSrc,  const char *pszDst, unsigned fRe
 
 /** @name RTPathUnlink flags.
  * @{ */
-/** Don't allow symbolic links as part of the path. */
+/** Don't allow symbolic links as part of the path.
+ * @remarks this flag is currently not implemented and will be ignored. */
 #define RTPATHUNLINK_FLAGS_NO_SYMLINKS  RT_BIT(0)
 /** @} */
 

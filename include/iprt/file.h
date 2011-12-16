@@ -212,7 +212,8 @@ RTDECL(int) RTFileQuerySize(const char *pszPath, uint64_t *pcbFile);
  */
 #define RTFILE_O_NO_CACHE               UINT32_C(0x00080000)
 
-/** Don't allow symbolic links as part of the path. */
+/** Don't allow symbolic links as part of the path.
+ * @remarks this flag is currently not implemented and will be ignored. */
 #define RTFILE_O_NO_SYMLINKS            UINT32_C(0x20000000)
 
 /** Unix file mode mask for use when creating files. */
@@ -564,7 +565,8 @@ RTDECL(int) RTFileRename(const char *pszSrc, const char *pszDst, unsigned fRenam
  * @{ */
 /** Replace destination file if present. */
 #define RTFILEMOVE_FLAGS_REPLACE      0x1
-/** Don't allow symbolic links as part of the path. */
+/** Don't allow symbolic links as part of the path.
+ * @remarks this flag is currently not implemented and will be ignored. */
 #define RTFILEMOVE_FLAGS_NO_SYMLINKS  0x2
 /** @} */
 

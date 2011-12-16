@@ -87,7 +87,8 @@ typedef enum RTSYMLINKTYPE
 
 /** @name RTSymlinkCreate flags.
  * @{ */
-/** Don't allow symbolic links as part of the path. */
+/** Don't allow symbolic links as part of the path.
+ * @remarks this flag is currently not implemented and will be ignored. */
 #define RTSYMLINKCREATE_FLAGS_NO_SYMLINKS  RT_BIT(0)
 /** @} */
 
@@ -98,7 +99,7 @@ typedef enum RTSYMLINKTYPE
  *
  * @param   pszSymlink      The name of the symbolic link.
  * @param   pszTarget       The path to the symbolic link target.  This is
- *                          relative to @a pszSymlink.
+ *                          relative to @a pszSymlink or an absolute path.
  * @param   enmType         The symbolic link type.  For Windows compatability
  *                          it is very important to set this correctly.  When
  *                          RTSYMLINKTYPE_UNKNOWN is used, the API will try
@@ -111,7 +112,8 @@ RTDECL(int) RTSymlinkCreate(const char *pszSymlink, const char *pszTarget,
 
 /** @name RTSymlinkDelete flags.
  * @{ */
-/** Don't allow symbolic links as part of the path. */
+/** Don't allow symbolic links as part of the path.
+ * @remarks this flag is currently not implemented and will be ignored. */
 #define RTSYMLINKDELETE_FLAGS_NO_SYMLINKS  RT_BIT(0)
 /** @} */
 
@@ -131,7 +133,8 @@ RTDECL(int) RTSymlinkDelete(const char *pszSymlink, uint32_t fDelete);
 
 /** @name RTSymlinkRead  flags.
  * @{ */
-/** Don't allow symbolic links as part of the path. */
+/** Don't allow symbolic links as part of the path.
+ * @remarks this flag is currently not implemented and will be ignored. */
 #define RTSYMLINKREAD_FLAGS_NO_SYMLINKS  RT_BIT(0)
 /** @} */
 
