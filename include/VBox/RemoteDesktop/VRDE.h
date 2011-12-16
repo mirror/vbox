@@ -327,15 +327,15 @@ typedef struct _VRDE_USB_REQ_REAP_URB_PARM
 #define VRDE_USB_XFER_STALL (1)
 #define VRDE_USB_XFER_DNR   (2)
 #define VRDE_USB_XFER_CRC   (3)
-/* VRDE_USB_VERSION_2: New error codes. */
-#define VRDE_USB_XFER_BS    (4)
-#define VRDE_USB_XFER_DTM   (5)
-#define VRDE_USB_XFER_PCF   (6)
-#define VRDE_USB_XFER_UPID  (7)
-#define VRDE_USB_XFER_DO    (8)
-#define VRDE_USB_XFER_DU    (9)
-#define VRDE_USB_XFER_BO    (10)
-#define VRDE_USB_XFER_BU    (11)
+/* VRDE_USB_VERSION_2: New error codes. OHCI Completion Codes. */
+#define VRDE_USB_XFER_BS    (4)  /* BitStuffing */
+#define VRDE_USB_XFER_DTM   (5)  /* DataToggleMismatch */
+#define VRDE_USB_XFER_PCF   (6)  /* PIDCheckFailure */
+#define VRDE_USB_XFER_UPID  (7)  /* UnexpectedPID */
+#define VRDE_USB_XFER_DO    (8)  /* DataOverrun */
+#define VRDE_USB_XFER_DU    (9)  /* DataUnderrun */
+#define VRDE_USB_XFER_BO    (10) /* BufferOverrun */
+#define VRDE_USB_XFER_BU    (11) /* BufferUnderrun */
 #define VRDE_USB_XFER_ERR   (12) /* VBox protocol error. */
 
 #define VRDE_USB_REAP_FLAG_CONTINUED (0x0)
