@@ -52,7 +52,8 @@ RTDECL(bool) RTDirExists(const char *pszPath);
 
 /** @name RTDirCreate  flags.
  * @{ */
-/** Don't allow symbolic links as part of the path. */
+/** Don't allow symbolic links as part of the path.
+ * @remarks this flag is currently not implemented and will be ignored. */
 #define RTDIRCREATE_FLAGS_NO_SYMLINKS  RT_BIT(0)
 /** @} */
 
@@ -303,7 +304,8 @@ RTDECL(int) RTDirOpen(PRTDIR *ppDir, const char *pszPath);
 
 /** @name RTDirOpenFiltered  flags.
  * @{ */
-/** Don't allow symbolic links as part of the path. */
+/** Don't allow symbolic links as part of the path.
+ * @remarks this flag is currently not implemented and will be ignored. */
 #define RTDIROPEN_FLAGS_NO_SYMLINKS  RT_BIT(0)
 /** @} */
 
