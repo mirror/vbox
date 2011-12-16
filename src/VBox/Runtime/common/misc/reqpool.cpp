@@ -364,7 +364,7 @@ static DECLCALLBACK(int) rtReqPoolThreadProc(RTTHREAD hThreadSelf, void *pvArg)
         /* Update the global statistics. */
         if (cReqPrevProcessedStat != pThread->cReqProcessed)
         {
-            pPool->cReqProcessed          = pThread->cReqProcessed         - cReqPrevProcessedStat;
+            pPool->cReqProcessed         += pThread->cReqProcessed         - cReqPrevProcessedStat;
             cReqPrevProcessedStat         = pThread->cReqProcessed;
             pPool->cNsTotalReqProcessing += pThread->cNsTotalReqProcessing - cNsPrevTotalReqProcessing;
             cNsPrevTotalReqProcessing     = pThread->cNsTotalReqProcessing;
