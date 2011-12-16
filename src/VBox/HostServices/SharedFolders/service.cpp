@@ -1258,7 +1258,9 @@ static DECLCALLBACK(void) svcCall (void *, VBOXHGCMCALLHANDLE callHandle, uint32
 }
 
 /*
- * We differentiate between a function handler for the guest and one for the host. The guest is not allowed to add or remove mappings for obvious security reasons.
+ * We differentiate between a function handler for the guest (svcCall) and one
+ * for the host. The guest is not allowed to add or remove mappings for obvious
+ * security reasons.
  */
 static DECLCALLBACK(int) svcHostCall (void *, uint32_t u32Function, uint32_t cParms, VBOXHGCMSVCPARM paParms[])
 {
@@ -1282,24 +1284,16 @@ static DECLCALLBACK(int) svcHostCall (void *, uint32_t u32Function, uint32_t cPa
     {
         Log(("SharedFolders host service: svcCall: SHFL_FN_ADD_MAPPING\n"));
         LogRel(("SharedFolders host service: adding host mapping\n"));
-        LogRel(("    Host path '%ls', map name '%ls', %s\n",
-                ((SHFLSTRING *)paParms[0].u.pointer.addr)->String.ucs2,
-                ((SHFLSTRING *)paParms[1].u.pointer.addr)->String.ucs2,
-                paParms[2].u.uint32 ? "writable" : "read-only"));
-
         /* Verify parameter count and types. */
         if (   (cParms != SHFL_CPARMS_ADD_MAPPING)
-            && (cParms != SHFL_CPARMS_ADD_MAPPING2) /* With auto-mount flag. */
            )
         {
             rc = VERR_INVALID_PARAMETER;
         }
         else if (   paParms[0].type != VBOX_HGCM_SVC_PARM_PTR     /* host folder name */
                  || paParms[1].type != VBOX_HGCM_SVC_PARM_PTR     /* guest map name */
-                 || paParms[2].type != VBOX_HGCM_SVC_PARM_32BIT   /* fWritable */
-                 /* With auto-mount flag? */
-                 || (   cParms == SHFL_CPARMS_ADD_MAPPING2
-                     && paParms[3].type != VBOX_HGCM_SVC_PARM_32BIT))
+                 || paParms[2].type != VBOX_HGCM_SVC_PARM_32BIT   /* fFlags */
+                )
         {
             rc = VERR_INVALID_PARAMETER;
         }
@@ -1308,12 +1302,7 @@ static DECLCALLBACK(int) svcHostCall (void *, uint32_t u32Function, uint32_t cPa
             /* Fetch parameters. */
             SHFLSTRING *pFolderName = (SHFLSTRING *)paParms[0].u.pointer.addr;
             SHFLSTRING *pMapName    = (SHFLSTRING *)paParms[1].u.pointer.addr;
-            uint32_t fWritable      = paParms[2].u.uint32;
-            uint32_t fAutoMount     = 0; /* Disabled by default. */
-
-            /* Handle auto-mount flag if present. */
-            if (cParms == SHFL_CPARMS_ADD_MAPPING2)
-                fAutoMount = paParms[3].u.uint32;
+            uint32_t fFlags         = paParms[2].u.uint32;
 
             /* Verify parameters values. */
             if (    !ShflStringIsValid(pFolderName, paParms[0].u.pointer.size)
@@ -1324,8 +1313,18 @@ static DECLCALLBACK(int) svcHostCall (void *, uint32_t u32Function, uint32_t cPa
             }
             else
             {
+                LogRel(("    Host path '%ls', map name '%ls', %s, automount=%s, create_symlinks=%s\n",
+                        ((SHFLSTRING *)paParms[0].u.pointer.addr)->String.ucs2,
+                        ((SHFLSTRING *)paParms[1].u.pointer.addr)->String.ucs2,
+                        RT_BOOL(fFlags & SHFL_ADD_MAPPING_F_WRITABLE) ? "writable" : "read-only",
+                        RT_BOOL(fFlags & SHFL_ADD_MAPPING_F_AUTOMOUNT) ? "true" : "false",
+                        RT_BOOL(fFlags & SHFL_ADD_MAPPING_F_CREATE_SYMLINKS) ? "true" : "false"));
+
                 /* Execute the function. */
-                rc = vbsfMappingsAdd(pFolderName, pMapName, fWritable, fAutoMount);
+                rc = vbsfMappingsAdd(pFolderName, pMapName,
+                                     RT_BOOL(fFlags & SHFL_ADD_MAPPING_F_WRITABLE),
+                                     RT_BOOL(fFlags & SHFL_ADD_MAPPING_F_AUTOMOUNT),
+                                     RT_BOOL(fFlags & SHFL_ADD_MAPPING_F_CREATE_SYMLINKS));
                 if (RT_SUCCESS(rc))
                 {
                     /* Update parameters.*/
