@@ -2286,10 +2286,6 @@ int vbsfSymlink(SHFLCLIENTDATA *pClient, SHFLROOT root, SHFLSTRING *pNewPath, SH
     if (!BIT_FLAG(pClient->fu32Flags, SHFL_CF_UTF8))
         return VERR_NOT_IMPLEMENTED;
 
-    /* don't allow absolute targets */
-    if (RTPathStartsWithRoot(pszOldPath))
-        return VERR_INVALID_NAME;
-
     bool fSymlinksCreate;
     rc = vbsfMappingsQuerySymlinksCreate(pClient, root, &fSymlinksCreate);
     AssertRCReturn(rc, rc);
