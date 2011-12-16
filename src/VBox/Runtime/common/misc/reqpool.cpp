@@ -318,7 +318,7 @@ static void rtReqPoolThreadProcessRequest(PRTREQPOOLINT pPool, PRTREQPOOLTHREAD 
     pThread->pPendingReq    = NULL;
     uint64_t const uNsTsEnd = RTTimeNanoTS();
     pThread->cNsTotalReqProcessing += uNsTsEnd - pThread->uProcessingNanoTs;
-    pThread->cNsTotalReqQueued     += uNsTsEnd - pThread->uPendingNanoTs;
+    pThread->cNsTotalReqQueued     += pThread->uProcessingNanoTs - pThread->uPendingNanoTs;
     pThread->cReqProcessed++;
 }
 
