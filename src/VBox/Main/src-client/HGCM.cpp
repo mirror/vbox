@@ -790,9 +790,9 @@ int HGCMService::instanceCreate (const char *pszServiceLibrary, const char *pszS
 
     /* The maximum length of the thread name, allowed by the RT is 15. */
     char szThreadName[16];
-    if (strncmp (pszServiceName, "VBoxShared", 10))
+    if (!strncmp (pszServiceName, "VBoxShared", 10))
         RTStrPrintf (szThreadName, sizeof (szThreadName), "Sh%s", pszServiceName + 10);
-    else if (strncmp (pszServiceName, "VBox", 4))
+    else if (!strncmp (pszServiceName, "VBox", 4))
         RTStrCopy (szThreadName, sizeof (szThreadName), pszServiceName + 4);
     else
         RTStrCopy (szThreadName, sizeof (szThreadName), pszServiceName);
