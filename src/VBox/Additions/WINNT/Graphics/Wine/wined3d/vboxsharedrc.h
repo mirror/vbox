@@ -51,12 +51,5 @@
 #define VBOXSHRC_IS_LOCKED(_o) ( \
         !!((_o)->resource.sharerc_locks) \
         )
-#ifdef VBOX_WINE_WITH_IPRT
-# include <iprt/assert.h>
-#else
-# define AssertBreakpoint() do { } while (0)
-# define Assert(_expr) do { } while (0)
-#endif
-
 
 #endif /* #ifndef ___vboxsharedrc_h___ */

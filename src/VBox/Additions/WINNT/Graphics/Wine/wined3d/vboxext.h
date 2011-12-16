@@ -19,7 +19,6 @@
 #ifdef VBOX_WINE_WITHOUT_LIBWINE
 # include <windows.h>
 #endif
-#include <iprt/cdefs.h>
 
 HRESULT VBoxExtCheckInit();
 HRESULT VBoxExtCheckTerm();

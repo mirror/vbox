@@ -30,8 +30,18 @@
 #ifndef __WINE_WINE_DEBUG_H
 #define __WINE_WINE_DEBUG_H
 
-#if defined(VBOX_WITH_WDDM) || defined(VBOX_WINE_WITHOUT_LIBWINE)
-# error "unexpected include!!"
+#if defined(VBOX_WITH_WDDM) || defined(VBOX_WINE_WITH_IPRT)
+# error "Unexpected include! VBOX_WITH_WDDM or VBOX_WINE_WITH_IPRT are defined!"
+#endif
+
+#ifdef VBOX_WINE_WITH_IPRT
+# include <iprt/assert.h>
+#else
+# define AssertBreakpoint() do { } while (0)
+# define Assert(_expr) do { } while (0)
+# ifdef DEBUG_misha
+#  include <iprt/cdefs.h>
+# endif
 #endif
 
 #include <stdarg.h>
@@ -40,13 +50,7 @@
 #include <guiddef.h>
 #endif
 
-#ifdef VBOX_WINE_WITH_IPRT
-# include <iprt/assert.h>
-#else
-# define AssertBreakpoint() do { } while (0)
-# define Assert(_expr) do { } while (0)
-# define RT_BREAKPOINT()
-#endif
+#include <iprt/assert.h>
 
 #ifdef __WINE_WINE_TEST_H
 #error This file should not be used in Wine tests
