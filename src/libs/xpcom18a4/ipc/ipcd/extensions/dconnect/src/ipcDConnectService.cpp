@@ -59,10 +59,12 @@
 # include <iprt/mem.h>
 #endif /* VBOX */
 
-#if defined(DCONNECT_MULTITHREADED) && !defined(DCONNECT_WITH_IPRT_REQ_POOL)
+#if defined(DCONNECT_MULTITHREADED)
 
+#if !defined(DCONNECT_WITH_IPRT_REQ_POOL)
 #include "nsIThread.h"
 #include "nsIRunnable.h"
+#endif
 
 #if defined(DEBUG) && !defined(DCONNECT_STATS)
 #define DCONNECT_STATS
@@ -3081,7 +3083,6 @@ ipcDConnectService::Init()
     return NS_ERROR_FAILURE;
   }
 
-  /// @todo check where this is used.
   mDisconnected = PR_FALSE;
 
 # else
@@ -3136,7 +3137,18 @@ ipcDConnectService::Shutdown()
 # if defined(DCONNECT_WITH_IPRT_REQ_POOL)
 
 #  if defined(DCONNECT_STATS)
-  /// @todo print pool stats.
+  fprintf(stderr, "ipcDConnectService Stats\n");
+  fprintf(stderr,
+          " => number of worker threads:  %llu (created %llu)\n"
+          " => requests processed:        %llu\n"
+          " => avg requests process time: %llu ns\n"
+          " => avg requests waiting time: %llu ns\n",
+          RTReqPoolGetStat(mhReqPool, RTREQPOOLSTAT_THREADS),
+          RTReqPoolGetStat(mhReqPool, RTREQPOOLSTAT_THREADS_CREATED),
+          RTReqPoolGetStat(mhReqPool, RTREQPOOLSTAT_REQUESTS_PROCESSED),
+          RTReqPoolGetStat(mhReqPool, RTREQPOOLSTAT_NS_AVERAGE_REQ_PROCESSING),
+          RTReqPoolGetStat(mhReqPool, RTREQPOOLSTAT_NS_AVERAGE_REQ_QUEUED)
+          );
 #  endif
 
   RTReqPoolRelease(mhReqPool);
