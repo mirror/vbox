@@ -962,17 +962,77 @@ STDMETHODIMP MachineDebugger::InjectNMI()
 
 STDMETHODIMP MachineDebugger::ModifyLogFlags(IN_BSTR a_bstrSettings)
 {
-    ReturnComNotImplemented();
+    CheckComArgStrNotEmptyOrNull(a_bstrSettings);
+    Utf8Str strSettings(a_bstrSettings);
+
+    LogFlowThisFunc(("a_bstrSettings=%s\n", strSettings.c_str()));
+    AutoCaller autoCaller(this);
+    HRESULT hrc = autoCaller.rc();
+    if (SUCCEEDED(hrc))
+    {
+        AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+        Console::SafeVMPtr ptrVM(mParent);
+        hrc = ptrVM.rc();
+        if (SUCCEEDED(hrc))
+        {
+            int vrc = DBGFR3LogModifyFlags(ptrVM, strSettings.c_str());
+            if (RT_SUCCESS(vrc))
+                hrc = S_OK;
+            else
+                hrc = setError(E_FAIL, tr("DBGFR3LogModifyFlags failed with %Rrc"), vrc);
+        }
+    }
+    return hrc;
 }
 
 STDMETHODIMP MachineDebugger::ModifyLogGroups(IN_BSTR a_bstrSettings)
 {
-    ReturnComNotImplemented();
+    CheckComArgStrNotEmptyOrNull(a_bstrSettings);
+    Utf8Str strSettings(a_bstrSettings);
+
+    LogFlowThisFunc(("a_bstrSettings=%s\n", strSettings.c_str()));
+    AutoCaller autoCaller(this);
+    HRESULT hrc = autoCaller.rc();
+    if (SUCCEEDED(hrc))
+    {
+        AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+        Console::SafeVMPtr ptrVM(mParent);
+        hrc = ptrVM.rc();
+        if (SUCCEEDED(hrc))
+        {
+            int vrc = DBGFR3LogModifyGroups(ptrVM, strSettings.c_str());
+            if (RT_SUCCESS(vrc))
+                hrc = S_OK;
+            else
+                hrc = setError(E_FAIL, tr("DBGFR3LogModifyGroups failed with %Rrc"), vrc);
+        }
+    }
+    return hrc;
 }
 
 STDMETHODIMP MachineDebugger::ModifyLogDestinations(IN_BSTR a_bstrSettings)
 {
-    ReturnComNotImplemented();
+    CheckComArgStrNotEmptyOrNull(a_bstrSettings);
+    Utf8Str strSettings(a_bstrSettings);
+
+    LogFlowThisFunc(("a_bstrSettings=%s\n", strSettings.c_str()));
+    AutoCaller autoCaller(this);
+    HRESULT hrc = autoCaller.rc();
+    if (SUCCEEDED(hrc))
+    {
+        AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+        Console::SafeVMPtr ptrVM(mParent);
+        hrc = ptrVM.rc();
+        if (SUCCEEDED(hrc))
+        {
+            int vrc = DBGFR3LogModifyDestinations(ptrVM, strSettings.c_str());
+            if (RT_SUCCESS(vrc))
+                hrc = S_OK;
+            else
+                hrc = setError(E_FAIL, tr("DBGFR3LogModifyDestinations failed with %Rrc"), vrc);
+        }
+    }
+    return hrc;
 }
 
 STDMETHODIMP MachineDebugger::ReadPhysicalMemory(LONG64 a_Address, ULONG a_cbRead, ComSafeArrayOut(BYTE, a_abData))

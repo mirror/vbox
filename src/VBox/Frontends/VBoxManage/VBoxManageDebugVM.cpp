@@ -151,6 +151,79 @@ static RTEXITCODE handleDebugVM_InjectNMI(HandlerArg *a, IMachineDebugger *pDebu
 }
 
 /**
+ * Handles the log sub-command.
+ *
+ * @returns Suitable exit code.
+ * @param   pArgs               The handler arguments.
+ * @param   pDebugger           Pointer to the debugger interface.
+ * @param   pszSubCmd           The sub command.
+ */
+static RTEXITCODE handleDebugVM_LogXXXX(HandlerArg *pArgs, IMachineDebugger *pDebugger, const char *pszSubCmd)
+{
+    /*
+     * Parse arguments.
+     */
+    bool                        fRelease = false;
+    com::Utf8Str                strSettings;
+
+    RTGETOPTSTATE               GetState;
+    RTGETOPTUNION               ValueUnion;
+    static const RTGETOPTDEF    s_aOptions[] =
+    {
+        { "--release",      'r', RTGETOPT_REQ_NOTHING },
+    };
+    int rc = RTGetOptInit(&GetState, pArgs->argc, pArgs->argv, s_aOptions, RT_ELEMENTS(s_aOptions), 2, 0 /*fFlags*/);
+    AssertRCReturn(rc, RTEXITCODE_FAILURE);
+
+    while ((rc = RTGetOpt(&GetState, &ValueUnion)) != 0)
+    {
+        switch (rc)
+        {
+            case 'r':
+                fRelease = true;
+                break;
+
+            case 'd':
+                fRelease = false;
+                break;
+
+            case VINF_GETOPT_NOT_OPTION:
+                if (strSettings.length() == 0)
+                    strSettings = ValueUnion.psz;
+                else
+                {
+                    strSettings.append(' ');
+                    strSettings.append(ValueUnion.psz);
+                }
+                break;
+
+            default:
+                return errorGetOpt(USAGE_DEBUGVM, rc, &ValueUnion);
+        }
+    }
+
+    if (fRelease)
+    {
+        com::Utf8Str strTmp(strSettings);
+        strSettings = "release: ";
+        strSettings.append(strTmp);
+    }
+
+    com::Bstr bstrSettings(strSettings);
+    if (!strcmp(pszSubCmd, "log"))
+        CHECK_ERROR2_RET(pDebugger, ModifyLogGroups(bstrSettings.raw()), RTEXITCODE_FAILURE);
+    else if (!strcmp(pszSubCmd, "logdest"))
+        CHECK_ERROR2_RET(pDebugger, ModifyLogDestinations(bstrSettings.raw()), RTEXITCODE_FAILURE);
+    else if (!strcmp(pszSubCmd, "logflags"))
+        CHECK_ERROR2_RET(pDebugger, ModifyLogFlags(bstrSettings.raw()), RTEXITCODE_FAILURE);
+    else
+        AssertFailedReturn(RTEXITCODE_FAILURE);
+
+    return RTEXITCODE_SUCCESS;
+}
+
+
+/**
  * Handles the inject sub-command.
  *
  * @returns Suitable exit code.
@@ -441,6 +514,12 @@ int handleDebugVM(HandlerArg *pArgs)
                 rcExit = handleDebugVM_Info(pArgs, ptrDebugger);
             else if (!strcmp(pszSubCmd, "injectnmi"))
                 rcExit = handleDebugVM_InjectNMI(pArgs, ptrDebugger);
+            else if (!strcmp(pszSubCmd, "log"))
+                rcExit = handleDebugVM_LogXXXX(pArgs, ptrDebugger, pszSubCmd);
+            else if (!strcmp(pszSubCmd, "logdest"))
+                rcExit = handleDebugVM_LogXXXX(pArgs, ptrDebugger, pszSubCmd);
+            else if (!strcmp(pszSubCmd, "logflags"))
+                rcExit = handleDebugVM_LogXXXX(pArgs, ptrDebugger, pszSubCmd);
             else if (!strcmp(pszSubCmd, "osdetect"))
                 rcExit = handleDebugVM_OSDetect(pArgs, ptrDebugger);
             else if (!strcmp(pszSubCmd, "osinfo"))

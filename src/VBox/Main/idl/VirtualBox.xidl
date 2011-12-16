@@ -9157,7 +9157,7 @@
       <desc>
         Retrieves status, exit code and the exit reason of a formerly started
         guest process. If a guest process exited or got terminated this function
-        returns its final status and removes this process from the list of 
+        returns its final status and removes this process from the list of
         known guest processes for further retrieval.
 
         <result name="VBOX_E_IPRT_ERROR">
@@ -13256,37 +13256,37 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
     <method name="modifyLogGroups">
       <desc>
-        Modifies the group settings of the debug logger.
-
-        This feature is not implemented in the 4.0.0 release but may show up
-        in a dot release.
+        Modifies the group settings of the debug or release logger.
       </desc>
       <param name="settings" type="wstring" dir="in">
-        <desc>The group settings string. See iprt/log.h for details.</desc>
+        <desc>
+          The group settings string. See iprt/log.h for details. To target the
+          release logger, prefix the string with "release:".
+        </desc>
       </param>
     </method>
 
     <method name="modifyLogFlags">
       <desc>
-        Modifies the debug logger flags.
-
-        This feature is not implemented in the 4.0.0 release but may show up
-        in a dot release.
+        Modifies the debug or release logger flags.
       </desc>
       <param name="settings" type="wstring" dir="in">
-        <desc>The flags settings string. See iprt/log.h for details.</desc>
+        <desc>
+          The flags settings string. See iprt/log.h for details. To target the
+          release logger, prefix the string with "release:".
+        </desc>
       </param>
     </method>
 
     <method name="modifyLogDestinations">
       <desc>
-        Modifies the debug logger destinations.
-
-        This feature is not implemented in the 4.0.0 release but may show up
-        in a dot release.
+        Modifies the debug or release logger destinations.
       </desc>
       <param name="settings" type="wstring" dir="in">
-        <desc>The destination settings string. See iprt/log.h for details.</desc>
+        <desc>
+          The destination settings string. See iprt/log.h for details. To target the
+          release logger, prefix the string with "release:".
+        </desc>
       </param>
     </method>
 
