@@ -7216,7 +7216,7 @@ HRESULT Console::createSharedFolder(const Utf8Str &strName, const SharedFolderDa
     size_t cbString;
 
     Bstr value;
-    HRESULT hrc = mMachine->GetExtraData(BstrFmt("VBoxInternal/SharedFoldersEnableSymlinksCreate/%s",
+    HRESULT hrc = mMachine->GetExtraData(BstrFmt("VBoxInternal2/SharedFoldersEnableSymlinksCreate/%s",
                                                  strName.c_str()).raw(),
                                          value.asOutParam());
     bool fSymlinksCreate = hrc == S_OK && value == "1";
