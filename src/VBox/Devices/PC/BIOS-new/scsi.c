@@ -333,12 +333,12 @@ void scsi_enumerate_attached_devices(uint16_t io_base)
 
                 bios_dsk->scsidev[hdcount_scsi].io_base   = io_base;
                 bios_dsk->scsidev[hdcount_scsi].target_id = i;
-                bios_dsk->devices[hd_index].type        = ATA_TYPE_SCSI;
-                bios_dsk->devices[hd_index].device      = ATA_DEVICE_HD;
+                bios_dsk->devices[hd_index].type        = DSK_TYPE_SCSI;
+                bios_dsk->devices[hd_index].device      = DSK_DEVICE_HD;
                 bios_dsk->devices[hd_index].removable   = 0;
                 bios_dsk->devices[hd_index].lock        = 0;
                 bios_dsk->devices[hd_index].blksize     = sector_size;
-                bios_dsk->devices[hd_index].translation = ATA_TRANSLATION_LBA;
+                bios_dsk->devices[hd_index].translation = GEO_TRANSLATION_LBA;
 
                 /* Write LCHS values. */
                 bios_dsk->devices[hd_index].lchs.heads = heads;

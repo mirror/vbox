@@ -71,22 +71,32 @@
 
 #define BX_MAX_STORAGE_DEVICES (BX_MAX_ATA_DEVICES + BX_MAX_SCSI_DEVICES + BX_MAX_AHCI_DEVICES)
 
-/* Generic storage device types. Bit of a misnomer! */
-#define ATA_TYPE_NONE       0x00
-#define ATA_TYPE_UNKNOWN    0x01
-#define ATA_TYPE_ATA        0x02
-#define ATA_TYPE_ATAPI      0x03
-#define ATA_TYPE_SCSI       0x04 // SCSI disk
-#define ATA_TYPE_AHCI       0x05 // SATA disk
+/* Generic storage device types. These depend on the controller type and
+ * determine which device access routines should be called.
+ */
+enum dsk_type_enm {
+    DSK_TYPE_NONE,      /* Unknown device. */
+    DSK_TYPE_UNKNOWN,   /* Unknown ATA device. */
+    DSK_TYPE_ATA,       /* ATA disk. */
+    DSK_TYPE_ATAPI,     /* ATAPI device. */
+    DSK_TYPE_SCSI,      /* SCSI disk. */
+    DSK_TYPE_AHCI,      /* SATA disk via AHCI. */
+    DSKTYP_CNT          /* Number of disk types. */
+};
 
-#define ATA_DEVICE_NONE     0x00
-#define ATA_DEVICE_HD       0xFF
-#define ATA_DEVICE_CDROM    0x05
+/* Disk device types. */
+//@todo: Do we really need these?
+#define DSK_DEVICE_NONE     0x00    /* No device attached. */
+#define DSK_DEVICE_HD       0xFF    /* Device is a hard disk. */
+#define DSK_DEVICE_CDROM    0x05    /* Device is a CD-ROM. */
 
-#define ATA_TRANSLATION_NONE  0
-#define ATA_TRANSLATION_LBA   1
-#define ATA_TRANSLATION_LARGE 2
-#define ATA_TRANSLATION_RECHS 3
+/* Geometry translation modes. */
+enum geo_xlat_enm {
+    GEO_TRANSLATION_NONE,   /* No geometry translation. */
+    GEO_TRANSLATION_LBA,    /* LBA translation. */
+    GEO_TRANSLATION_LARGE,  /* Large CHS translation. */
+    GEO_TRANSLATION_RECHS
+};
 
 #if 1 //BX_USE_ATADRV
 
@@ -204,6 +214,12 @@ typedef struct {
     uint16_t    skip_a;             /* Bytes to skip after transfer. */
 } disk_req_t;
 
+uint16_t ahci_cmd_packet(uint16_t device_id, uint8_t cmdlen, char __far *cmdbuf,
+                         uint16_t header, uint32_t length, uint8_t inout, char __far *buffer);
+
+uint16_t ata_cmd_packet(uint16_t device, uint8_t cmdlen, char __far *cmdbuf, 
+                        uint16_t header, uint32_t length, uint8_t inout, char __far *buffer);
+
 /* All BIOS disk information. Disk-related code in the BIOS should not need
  * anything outside of this structure.
  */
@@ -297,13 +313,6 @@ int __fastcall scsi_write_sectors(bio_dsk_t __far *bios_dsk);
 
 int __fastcall ahci_read_sectors(bio_dsk_t __far *bios_dsk);
 int __fastcall ahci_write_sectors(bio_dsk_t __far *bios_dsk);
-
-
-uint16_t ahci_cmd_packet(uint16_t device_id, uint8_t cmdlen, char __far *cmdbuf,
-                         uint16_t header, uint32_t length, uint8_t inout, char __far *buffer);
-
-uint16_t ata_cmd_packet(uint16_t device, uint8_t cmdlen, char __far *cmdbuf, 
-                        uint16_t header, uint32_t length, uint8_t inout, char __far *buffer);
 
 // @todo: put this elsewhere (and change/eliminate?)
 #define SET_DISK_RET_STATUS(status) write_byte(0x0040, 0x0074, status)
