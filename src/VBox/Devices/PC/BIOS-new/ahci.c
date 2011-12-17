@@ -673,12 +673,12 @@ static void ahci_port_detect_device(ahci_t __far *ahci, uint8_t u8Port)
                 DBG_AHCI("AHCI: %ld sectors\n", cSectors);
 
                 bios_dsk->ahcidev[devcount_ahci].port = u8Port;
-                bios_dsk->devices[hd_index].type        = ATA_TYPE_AHCI;
-                bios_dsk->devices[hd_index].device      = ATA_DEVICE_HD;
+                bios_dsk->devices[hd_index].type        = DSK_TYPE_AHCI;
+                bios_dsk->devices[hd_index].device      = DSK_DEVICE_HD;
                 bios_dsk->devices[hd_index].removable   = removable;
                 bios_dsk->devices[hd_index].lock        = 0;
                 bios_dsk->devices[hd_index].blksize     = 512;
-                bios_dsk->devices[hd_index].translation = ATA_TRANSLATION_LBA;
+                bios_dsk->devices[hd_index].translation = GEO_TRANSLATION_LBA;
                 bios_dsk->devices[hd_index].sectors     = cSectors;
 
                 bios_dsk->devices[hd_index].pchs.heads     = cHeads;
@@ -703,7 +703,7 @@ static void ahci_port_detect_device(ahci_t __far *ahci, uint8_t u8Port)
                     default:
                         idxCmosChsBase = 0;
                 }
-                if (idxCmosChsBase != 0)
+                if (idxCmosChsBase && inb_cmos(idxCmosChsBase+7))
                 {
                     cCylinders = inb_cmos(idxCmosChsBase) + (inb_cmos(idxCmosChsBase+1) << 8);
                     cHeads = inb_cmos(idxCmosChsBase+2);
@@ -711,9 +711,11 @@ static void ahci_port_detect_device(ahci_t __far *ahci, uint8_t u8Port)
                 }
                 else
                 {
+#if 0   // LCHS equals PCHS?
                     cCylinders = 0;
                     cHeads = 0;
                     cSectorsPerTrack = 0;
+#endif
                 }
                 DBG_AHCI("AHCI: Dev %d LCHS=%d/%d/%d\n", 
                          devcount_ahci, cCylinders, cHeads, cSectorsPerTrack);
@@ -750,8 +752,8 @@ static void ahci_port_detect_device(ahci_t __far *ahci, uint8_t u8Port)
                 removable = *(abBuffer+0) & 0x80 ? 1 : 0;
 
                 bios_dsk->ahcidev[devcount_ahci].port = u8Port;
-                bios_dsk->devices[hd_index].type      = ATA_TYPE_AHCI;
-                bios_dsk->devices[hd_index].device    = ATA_DEVICE_CDROM;
+                bios_dsk->devices[hd_index].type      = DSK_TYPE_AHCI;
+                bios_dsk->devices[hd_index].device    = DSK_DEVICE_CDROM;
                 bios_dsk->devices[hd_index].removable = removable;
                 bios_dsk->devices[hd_index].blksize   = 2048;
 

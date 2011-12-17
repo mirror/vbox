@@ -212,10 +212,10 @@ static uint16_t device_is_cdrom(uint8_t device)
     if (device >= BX_MAX_STORAGE_DEVICES)
         return 0;
     
-//    if (bios_dsk->devices[device].type != ATA_TYPE_ATAPI)
+//    if (bios_dsk->devices[device].type != DSK_TYPE_ATAPI)
 //        return 0;
     
-    if (bios_dsk->devices[device].device != ATA_DEVICE_CDROM)
+    if (bios_dsk->devices[device].device != DSK_DEVICE_CDROM)
         return 0;
     
     return 1;

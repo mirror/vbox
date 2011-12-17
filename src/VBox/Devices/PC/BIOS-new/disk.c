@@ -52,6 +52,33 @@
 #  define BX_DEBUG_INT13_HD(...)
 #endif
 
+/* Generic disk read/write routine signature. */
+typedef __fastcall (* dsk_rw_func)(bio_dsk_t __far *bios_dsk);
+
+/* Controller specific disk access routines. Declared as a union to reduce
+ * the need for conditionals when choosing between read/write functions.
+ * Note that we get away with using near pointers, which is nice.
+ */
+typedef union {
+    struct {
+        dsk_rw_func     read;
+        dsk_rw_func     write;
+    } s;
+    dsk_rw_func a[2];
+} dsk_acc_t;
+
+/* Pointers to HW specific disk access routines. */
+dsk_acc_t   dskacc[DSKTYP_CNT] = {
+    [DSK_TYPE_ATA]  = { ata_read_sectors,  ata_write_sectors },
+#ifdef VBOX_WITH_AHCI
+    [DSK_TYPE_AHCI] = { ahci_read_sectors, ahci_write_sectors },
+#endif
+#ifdef VBOX_WITH_SCSI
+    [DSK_TYPE_SCSI] = { scsi_read_sectors, scsi_write_sectors },
+#endif
+};
+
+
 //@todo: put in a header
 #define AX      r.gr.u.r16.ax
 #define BX      r.gr.u.r16.bx
@@ -166,32 +193,7 @@ void BIOSCALL int13_harddisk(disk_regs_t r)
         bios_dsk->drqp.sector   = sector;
         bios_dsk->drqp.dev_id   = device;
 
-        if ( GET_AH() == 0x02 )
-        {
-#ifdef VBOX_WITH_AHCI
-            if (VBOX_IS_AHCI_DEVICE(device))
-                status = ahci_read_sectors(bios_dsk);
-            else
-#endif
-#ifdef VBOX_WITH_SCSI
-            if (VBOX_IS_SCSI_DEVICE(device))
-                status = scsi_read_sectors(bios_dsk);
-            else
-#endif
-                status = ata_read_sectors(bios_dsk);
-        } else {
-#ifdef VBOX_WITH_AHCI
-            if (VBOX_IS_AHCI_DEVICE(device))
-                status = ahci_write_sectors(bios_dsk);
-            else
-#endif
-#ifdef VBOX_WITH_SCSI
-            if (VBOX_IS_SCSI_DEVICE(device))
-                status = scsi_write_sectors(bios_dsk);
-            else
-#endif
-                status = ata_write_sectors(bios_dsk);
-        }
+        status = dskacc[bios_dsk->devices[device].type].a[GET_AH() - 0x02](bios_dsk);
 
         // Set nb of sector transferred
         SET_AL(bios_dsk->drqp.trsfsectors);
@@ -304,6 +306,7 @@ void BIOSCALL int13_harddisk_ext(disk_regs_t r)
     uint16_t            npc, nph, npspt;
     uint16_t            size, count;
     uint8_t             device, status;
+    uint8_t             type;
     bio_dsk_t __far     *bios_dsk;
     int13ext_t __far    *i13_ext;
     dpt_t __far         *dpt;
@@ -362,12 +365,13 @@ void BIOSCALL int13_harddisk_ext(disk_regs_t r)
         // Get 32 bits lba and check
         lba = i13_ext->lba1;
 
+        type = bios_dsk->devices[device].type;
         if (lba >= bios_dsk->devices[device].sectors) {
               BX_INFO("%s: function %02x. LBA out of range\n", __func__, GET_AH());
               goto int13x_fail;
         }
 
-        // If verify or seek
+        /* Don't bother with seek or verify. */
         if (( GET_AH() == 0x44 ) || ( GET_AH() == 0x47 ))
             goto int13x_success;
 
@@ -383,34 +387,9 @@ void BIOSCALL int13_harddisk_ext(disk_regs_t r)
         bios_dsk->drqp.sector  = 0;     /* Indicate LBA. */
         bios_dsk->drqp.dev_id  = device;
         
-        // Execute the command
-        if ( GET_AH() == 0x42 ) {
-#ifdef VBOX_WITH_AHCI
-            if (VBOX_IS_AHCI_DEVICE(device))
-                status = ahci_read_sectors(bios_dsk);
-            else
-#endif
-#ifdef VBOX_WITH_SCSI
-            if (VBOX_IS_SCSI_DEVICE(device))
-                status = scsi_read_sectors(bios_dsk);
-            else
-#endif
-                status = ata_read_sectors(bios_dsk);
-        } else {
-#ifdef VBOX_WITH_AHCI
-            if (VBOX_IS_AHCI_DEVICE(device))
-                status = ahci_write_sectors(bios_dsk);
-            else 
-#endif
-#ifdef VBOX_WITH_SCSI
-            if (VBOX_IS_SCSI_DEVICE(device))
-                status = scsi_write_sectors(bios_dsk);
-            else 
-#endif
-                status = ata_write_sectors(bios_dsk);
-        }
-
-        count = bios_dsk->drqp.trsfsectors;
+        /* Execute the read or write command. */
+        status = dskacc[type].a[GET_AH() - 0x42](bios_dsk);
+        count  = bios_dsk->drqp.trsfsectors;
         i13_ext->count = count;
         
         if (status != 0) {
@@ -477,11 +456,11 @@ void BIOSCALL int13_harddisk_ext(disk_regs_t r)
             mode    = bios_dsk->devices[device].mode;
             translation = bios_dsk->devices[device].translation;
             
-            options  = (translation == ATA_TRANSLATION_NONE ? 0 : 1 << 3);  // chs translation
+            options  = (translation == GEO_TRANSLATION_NONE ? 0 : 1 << 3);  // chs translation
             options |= (1 << 4);    // lba translation
             options |= (mode == ATA_MODE_PIO32 ? 1 : 0 << 7);
-            options |= (translation==ATA_TRANSLATION_LBA ? 1 : 0 << 9);
-            options |= (translation==ATA_TRANSLATION_RECHS ? 3 : 0 << 9);
+            options |= (translation == GEO_TRANSLATION_LBA ? 1 : 0 << 9);
+            options |= (translation == GEO_TRANSLATION_RECHS ? 3 : 0 << 9);
             
             bios_dsk->dpte.iobase1  = iobase1;
             bios_dsk->dpte.iobase2  = iobase2;

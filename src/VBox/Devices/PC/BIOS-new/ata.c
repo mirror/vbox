@@ -95,13 +95,13 @@ void BIOSCALL ata_init(void)
     
     // Devices info init.
     for (device=0; device<BX_MAX_ATA_DEVICES; device++) {
-        bios_dsk->devices[device].type        = ATA_TYPE_NONE;
-        bios_dsk->devices[device].device      = ATA_DEVICE_NONE;
+        bios_dsk->devices[device].type        = DSK_TYPE_NONE;
+        bios_dsk->devices[device].device      = DSK_DEVICE_NONE;
         bios_dsk->devices[device].removable   = 0;
         bios_dsk->devices[device].lock        = 0;
         bios_dsk->devices[device].mode        = ATA_MODE_NONE;
         bios_dsk->devices[device].blksize     = 0x200;
-        bios_dsk->devices[device].translation = ATA_TRANSLATION_NONE;
+        bios_dsk->devices[device].translation = GEO_TRANSLATION_NONE;
         bios_dsk->devices[device].lchs.heads     = 0;
         bios_dsk->devices[device].lchs.cylinders = 0;
         bios_dsk->devices[device].lchs.spt       = 0;
@@ -158,7 +158,7 @@ void   ata_reset(uint16_t device)
     // 8.2.1 (f) -- clear SRST
     outb(iobase2+ATA_CB_DC, ATA_CB_DC_HD15 | ATA_CB_DC_NIEN);
 
-    if (bios_dsk->devices[device].type != ATA_TYPE_NONE) {
+    if (bios_dsk->devices[device].type != DSK_TYPE_NONE) {
         // 8.2.1 (g) -- check for sc==sn==0x01
         // select device
         outb(iobase1+ATA_CB_DH, slave?ATA_CB_DH_DEV1:ATA_CB_DH_DEV0);
@@ -428,7 +428,7 @@ void BIOSCALL ata_detect(void)
         sn = inb(iobase1+ATA_CB_SN);
 
         if ( (sc == 0x55) && (sn == 0xaa) ) {
-            bios_dsk->devices[device].type = ATA_TYPE_UNKNOWN;
+            bios_dsk->devices[device].type = DSK_TYPE_UNKNOWN;
 
             // reset the channel
             ata_reset(device);
@@ -443,11 +443,11 @@ void BIOSCALL ata_detect(void)
                 st = inb(iobase1+ATA_CB_STAT);
 
                 if ((cl==0x14) && (ch==0xeb)) {
-                    bios_dsk->devices[device].type = ATA_TYPE_ATAPI;
+                    bios_dsk->devices[device].type = DSK_TYPE_ATAPI;
                 } else if ((cl==0x00) && (ch==0x00) && (st!=0x00)) {
-                    bios_dsk->devices[device].type = ATA_TYPE_ATA;
+                    bios_dsk->devices[device].type = DSK_TYPE_ATA;
                 } else if ((cl==0xff) && (ch==0xff)) {
-                    bios_dsk->devices[device].type = ATA_TYPE_NONE;
+                    bios_dsk->devices[device].type = DSK_TYPE_NONE;
                 }
             }
         }
@@ -458,7 +458,7 @@ void BIOSCALL ata_detect(void)
         type = bios_dsk->devices[device].type;
 
         // Now we send a IDENTIFY command to ATA device
-        if (type == ATA_TYPE_ATA) {
+        if (type == DSK_TYPE_ATA) {
             uint32_t    sectors;
             uint16_t    cylinders, heads, spt, blksize;
             uint16_t    lcylinders, lheads, lspt;
@@ -466,7 +466,7 @@ void BIOSCALL ata_detect(void)
             uint8_t     removable, mode;
 
             //Temporary values to do the transfer
-            bios_dsk->devices[device].device = ATA_DEVICE_HD;
+            bios_dsk->devices[device].device = DSK_DEVICE_HD;
             bios_dsk->devices[device].mode   = ATA_MODE_PIO16;
             bios_dsk->drqp.buffer = buffer;
             bios_dsk->drqp.dev_id = device;
@@ -530,7 +530,7 @@ void BIOSCALL ata_detect(void)
             BX_INFO("ata%d-%d: PCHS=%u/%d/%d LCHS=%u/%u/%u\n", channel, slave,
                     cylinders,heads, spt, lcylinders, lheads, lspt);
 
-            bios_dsk->devices[device].device         = ATA_DEVICE_HD;
+            bios_dsk->devices[device].device         = DSK_DEVICE_HD;
             bios_dsk->devices[device].removable      = removable;
             bios_dsk->devices[device].mode           = mode;
             bios_dsk->devices[device].blksize        = blksize;
@@ -575,12 +575,12 @@ void BIOSCALL ata_detect(void)
         }
 
         // Now we send an IDENTIFY command to ATAPI device
-        if (type == ATA_TYPE_ATAPI) {
+        if (type == DSK_TYPE_ATAPI) {
             uint8_t     type, removable, mode;
             uint16_t    blksize;
 
             // Temporary values to do the transfer
-            bios_dsk->devices[device].device = ATA_DEVICE_CDROM;
+            bios_dsk->devices[device].device = DSK_DEVICE_CDROM;
             bios_dsk->devices[device].mode   = ATA_MODE_PIO16;
             bios_dsk->drqp.buffer = buffer;
             bios_dsk->drqp.dev_id = device;
@@ -610,10 +610,10 @@ void BIOSCALL ata_detect(void)
             int         i;
 
             switch (type) {
-            case ATA_TYPE_ATA:
+            case DSK_TYPE_ATA:
                 sizeinmb = bios_dsk->devices[device].sectors;
                 sizeinmb >>= 11;
-            case ATA_TYPE_ATAPI:
+            case DSK_TYPE_ATAPI:
                 // Read ATA/ATAPI version
                 ataversion = ((uint16_t)(*(buffer+161))<<8) | *(buffer+160);
                 for (version = 15; version > 0; version--) {
@@ -643,24 +643,24 @@ void BIOSCALL ata_detect(void)
 #else /* !VBOX */
             switch (type) {
             int c;
-            case ATA_TYPE_ATA:
+            case DSK_TYPE_ATA:
                 printf("ata%d %s: ", channel, slave ? " slave" : "master");
                 i=0;
                 while(c=*(model+i++))
                     printf("%c", c);
                 printf(" ATA-%d Hard-Disk (%lu MBytes)\n", version, sizeinmb);
                 break;
-            case ATA_TYPE_ATAPI:
+            case DSK_TYPE_ATAPI:
                 printf("ata%d %s: ", channel, slave ? " slave" : "master");
                 i=0;
                 while(c=*(model+i++))
                     printf("%c", c);
-                if (bios_dsk->devices[device].device == ATA_DEVICE_CDROM)
+                if (bios_dsk->devices[device].device == DSK_DEVICE_CDROM)
                     printf(" ATAPI-%d CD-ROM/DVD-ROM\n", version);
                 else
                     printf(" ATAPI-%d Device\n", version);
                 break;
-            case ATA_TYPE_UNKNOWN:
+            case DSK_TYPE_UNKNOWN:
                 printf("ata%d %s: Unknown device\n", channel , slave ? " slave" : "master");
                 break;
             }
