@@ -80,7 +80,8 @@ enum eProcessStatus
  * Note: Has to match Main's ExecuteProcessFlag_* flags!
  */
 #define EXECUTEPROCESSFLAG_NONE             0x0
-#define EXECUTEPROCESSFLAG_WAIT_START       RT_BIT(1)
+#define EXECUTEPROCESSFLAG_WAIT_START       RT_BIT(0)
+#define EXECUTEPROCESSFLAG_IGNORE_ORPHANED  RT_BIT(1)
 #define EXECUTEPROCESSFLAG_HIDDEN           RT_BIT(2)
 #define EXECUTEPROCESSFLAG_NO_PROFILE       RT_BIT(3)
 #define EXECUTEPROCESSFLAG_WAIT_STDOUT      RT_BIT(4)
