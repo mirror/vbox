@@ -66,7 +66,7 @@ RTDECL(int)  RTSemFastMutexCreate(PRTSEMFASTMUTEX phFastMtx)
     if (pThis)
     {
         pThis->u32Magic = RTSEMFASTMUTEX_MAGIC;
-        sx_init(&pThis->SxLock, "IPRT Fast Mutex Semaphore");
+        sx_init_flags(&pThis->SxLock, "IPRT Fast Mutex Semaphore", SX_DUPOK);
 
         *phFastMtx = pThis;
         return VINF_SUCCESS;
