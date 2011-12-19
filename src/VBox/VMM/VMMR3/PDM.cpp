@@ -1872,9 +1872,9 @@ DECLINLINE(bool) pdmR3PowerOffDrv(PPDMDRVINS pDrvIns, PPDMNOTIFYASYNCSTATS pAsyn
             }
             else if (pDrvIns->Internal.s.pfnAsyncNotify(pDrvIns))
             {
-                pDrvIns->Internal.s.pfnAsyncNotify = false;
                 LogFlow(("PDMR3PowerOff: Async notification completed - driver '%s'/%d on LUN#%d of device '%s'/%d\n",
                          pDrvIns->pReg->szName, pDrvIns->iInstance, iLun, pszDevName, iDevInstance));
+                pDrvIns->Internal.s.pfnAsyncNotify = NULL;
             }
 
             cNsElapsed = RTTimeNanoTS() - cNsElapsed;
