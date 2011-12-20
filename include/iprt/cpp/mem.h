@@ -29,6 +29,7 @@
 #include <iprt/cpp/autores.h>
 #include <iprt/assert.h>
 #include <iprt/mem.h>
+#include <iprt/string.h> /* for memset */
 
 /** @defgroup grp_rt_cpp_autores_mem   C++ Memory Resource Management
  * @ingroup grp_rt_cpp_autores
