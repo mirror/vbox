@@ -1115,32 +1115,137 @@ static int CmdCreateRawVMDK(int argc, char **argv, ComPtr<IVirtualBox> aVirtualB
     }
     else
     {
+        /*
+         * Could be raw image, remember error code and try to get the size first
+         * before failing.
+         */
         vrc = RTErrConvertFromWin32(GetLastError());
-        RTMsgError("Cannot get the geometry of the raw disk '%s': %Rrc", rawdisk.c_str(), vrc);
-        goto out;
+        if (RT_FAILURE(RTFileGetSize(hRawFile, &cbSize)))
+        {
+            RTMsgError("Cannot get the geometry of the raw disk '%s': %Rrc", rawdisk.c_str(), vrc);
+            goto out;
+        }
+        else
+            vrc = VINF_SUCCESS;
     }
 #elif defined(RT_OS_LINUX)
     struct stat DevStat;
-    if (!fstat(RTFileToNative(hRawFile), &DevStat) && S_ISBLK(DevStat.st_mode))
+    if(!fstat(RTFileToNative(hRawFile), &DevStat))
     {
+        if (S_ISBLK(DevStat.st_mode))
+        {
 #ifdef BLKGETSIZE64
-        /* BLKGETSIZE64 is broken up to 2.4.17 and in many 2.5.x. In 2.6.0
-         * it works without problems. */
-        struct utsname utsname;
-        if (    uname(&utsname) == 0
-            &&  (   (strncmp(utsname.release, "2.5.", 4) == 0 && atoi(&utsname.release[4]) >= 18)
-                 || (strncmp(utsname.release, "2.", 2) == 0 && atoi(&utsname.release[2]) >= 6)))
-        {
-            uint64_t cbBlk;
-            if (!ioctl(RTFileToNative(hRawFile), BLKGETSIZE64, &cbBlk))
-                cbSize = cbBlk;
-        }
+            /* BLKGETSIZE64 is broken up to 2.4.17 and in many 2.5.x. In 2.6.0
+             * it works without problems. */
+            struct utsname utsname;
+            if (    uname(&utsname) == 0
+                &&  (   (strncmp(utsname.release, "2.5.", 4) == 0 && atoi(&utsname.release[4]) >= 18)
+                     || (strncmp(utsname.release, "2.", 2) == 0 && atoi(&utsname.release[2]) >= 6)))
+            {
+                uint64_t cbBlk;
+                if (!ioctl(RTFileToNative(hRawFile), BLKGETSIZE64, &cbBlk))
+                    cbSize = cbBlk;
+            }
 #endif /* BLKGETSIZE64 */
-        if (!cbSize)
+            if (!cbSize)
+            {
+                long cBlocks;
+                if (!ioctl(RTFileToNative(hRawFile), BLKGETSIZE, &cBlocks))
+                    cbSize = (uint64_t)cBlocks << 9;
+                else
+                {
+                    vrc = RTErrConvertFromErrno(errno);
+                    RTMsgError("Cannot get the size of the raw disk '%s': %Rrc", rawdisk.c_str(), vrc);
+                    goto out;
+                }
+            }
+        }
+        else if (S_ISREG(DevStat.st_mode))
         {
-            long cBlocks;
-            if (!ioctl(RTFileToNative(hRawFile), BLKGETSIZE, &cBlocks))
-                cbSize = (uint64_t)cBlocks << 9;
+            vrc = RTFileGetSize(hRawFile, &cbSize);
+            if (RT_FAILURE(vrc))
+            {
+                RTMsgError("Failed to get size of file '%s': %Rrc", rawdisk.c_str(), vrc);
+                goto out;
+            }
+            else if (fRelative)
+            {
+                RTMsgError("The -relative parameter is invalid for raw images");
+                vrc = VERR_INVALID_PARAMETER;
+                goto out;
+            }
+        }
+        else
+        {
+            RTMsgError("File '%s' is no block device", rawdisk.c_str());
+            vrc = VERR_INVALID_PARAMETER;
+            goto out;
+        }
+    }
+    else
+    {
+        vrc = RTErrConvertFromErrno(errno);
+        RTMsgError("Failed to get file informtation for raw disk '%s': %Rrc",
+                   rawdisk.c_str(), vrc);
+    }
+#elif defined(RT_OS_DARWIN)
+    struct stat DevStat;
+    if (!fstat(RTFileToNative(hRawFile), &DevStat))
+    {
+        if (S_ISBLK(DevStat.st_mode))
+        {
+            uint64_t cBlocks;
+            uint32_t cbBlock;
+            if (!ioctl(RTFileToNative(hRawFile), DKIOCGETBLOCKCOUNT, &cBlocks))
+            {
+                if (!ioctl(RTFileToNative(hRawFile), DKIOCGETBLOCKSIZE, &cbBlock))
+                    cbSize = cBlocks * cbBlock;
+                else
+                {
+                    RTMsgError("Cannot get the block size for file '%s': %Rrc", rawdisk.c_str(), vrc);
+                    vrc = RTErrConvertFromErrno(errno);
+                    goto out;
+                }
+            }
+            else
+            {
+                vrc = RTErrConvertFromErrno(errno);
+                RTMsgError("Cannot get the block count for file '%s': %Rrc", rawdisk.c_str(), vrc);
+                goto out;
+            }
+        }
+        else if (S_ISREG(DevStat.st_mode))
+        {
+            fRelative = false; /* Must be false for raw image files. */
+            vrc = RTFileGetSize(hRawFile, &cbSize);
+            if (RT_FAILURE(vrc))
+            {
+                RTMsgError("Failed to get size of file '%s': %Rrc", rawdisk.c_str(), vrc);
+                goto out;
+            }
+        }
+        else
+        {
+            RTMsgError("File '%s' is neither block device nor regular file", rawdisk.c_str());
+            vrc = VERR_INVALID_PARAMETER;
+            goto out;
+        }
+    }
+    else
+    {
+        vrc = RTErrConvertFromErrno(errno);
+        RTMsgError("Failed to get file informtation for raw disk '%s': %Rrc",
+                   rawdisk.c_str(), vrc);
+    }
+#elif defined(RT_OS_SOLARIS)
+    struct stat DevStat;
+    if (!fstat(RTFileToNative(hRawFile), &DevStat))
+    {
+        if (S_ISBLK(DevStat.st_mode) || S_ISCHR(DevStat.st_mode))
+        {
+            struct dk_minfo mediainfo;
+            if (!ioctl(RTFileToNative(hRawFile), DKIOCGMEDIAINFO, &mediainfo))
+                cbSize = mediainfo.dki_capacity * mediainfo.dki_lbsize;
             else
             {
                 vrc = RTErrConvertFromErrno(errno);
@@ -1148,85 +1253,66 @@ static int CmdCreateRawVMDK(int argc, char **argv, ComPtr<IVirtualBox> aVirtualB
                 goto out;
             }
         }
-    }
-    else
-    {
-        RTMsgError("File '%s' is no block device", rawdisk.c_str());
-        vrc = VERR_INVALID_PARAMETER;
-        goto out;
-    }
-#elif defined(RT_OS_DARWIN)
-    struct stat DevStat;
-    if (!fstat(RTFileToNative(hRawFile), &DevStat) && S_ISBLK(DevStat.st_mode))
-    {
-        uint64_t cBlocks;
-        uint32_t cbBlock;
-        if (!ioctl(RTFileToNative(hRawFile), DKIOCGETBLOCKCOUNT, &cBlocks))
+        else if (S_ISREG(DevStat.st_mode))
         {
-            if (!ioctl(RTFileToNative(hRawFile), DKIOCGETBLOCKSIZE, &cbBlock))
-                cbSize = cBlocks * cbBlock;
-            else
+            vrc = RTFileGetSize(hRawFile, &cbSize);
+            if (RT_FAILURE(vrc))
             {
-                RTMsgError("Cannot get the block size for file '%s': %Rrc", rawdisk.c_str(), vrc);
-                vrc = RTErrConvertFromErrno(errno);
+                RTMsgError("Failed to get size of file '%s': %Rrc", rawdisk.c_str(), vrc);
                 goto out;
             }
         }
         else
         {
-            vrc = RTErrConvertFromErrno(errno);
-            RTMsgError("Cannot get the block count for file '%s': %Rrc", rawdisk.c_str(), vrc);
+            RTMsgError("File '%s' is no block or char device", rawdisk.c_str());
+            vrc = VERR_INVALID_PARAMETER;
             goto out;
         }
     }
     else
     {
-        RTMsgError("File '%s' is no block device", rawdisk.c_str());
-        vrc = VERR_INVALID_PARAMETER;
-        goto out;
-    }
-#elif defined(RT_OS_SOLARIS)
-    struct stat DevStat;
-    if (!fstat(RTFileToNative(hRawFile), &DevStat) && (   S_ISBLK(DevStat.st_mode)
-                                      || S_ISCHR(DevStat.st_mode)))
-    {
-        struct dk_minfo mediainfo;
-        if (!ioctl(RTFileToNative(hRawFile), DKIOCGMEDIAINFO, &mediainfo))
-            cbSize = mediainfo.dki_capacity * mediainfo.dki_lbsize;
-        else
-        {
-            vrc = RTErrConvertFromErrno(errno);
-            RTMsgError("Cannot get the size of the raw disk '%s': %Rrc", rawdisk.c_str(), vrc);
-            goto out;
-        }
-    }
-    else
-    {
-        RTMsgError("File '%s' is no block or char device", rawdisk.c_str());
-        vrc = VERR_INVALID_PARAMETER;
-        goto out;
+        vrc = RTErrConvertFromErrno(errno);
+        RTMsgError("Failed to get file informtation for raw disk '%s': %Rrc",
+                   rawdisk.c_str(), vrc);
     }
 #elif defined(RT_OS_FREEBSD)
     struct stat DevStat;
-    if (!fstat(RTFileToNative(hRawFile), &DevStat) && S_ISCHR(DevStat.st_mode))
+    if (!fstat(RTFileToNative(hRawFile), &DevStat))
     {
-        off_t cbMedia = 0;
-        if (!ioctl(RTFileToNative(hRawFile), DIOCGMEDIASIZE, &cbMedia))
+        if (S_ISCHR(DevStat.st_mode))
         {
-            cbSize = cbMedia;
+            off_t cbMedia = 0;
+            if (!ioctl(RTFileToNative(hRawFile), DIOCGMEDIASIZE, &cbMedia))
+                cbSize = cbMedia;
+            else
+            {
+                vrc = RTErrConvertFromErrno(errno);
+                RTMsgError("Cannot get the block count for file '%s': %Rrc", rawdisk.c_str(), vrc);
+                goto out;
+            }
+        }
+        else if (S_ISREG(DevStat.st_mode))
+        {
+            if (fRelative)
+            {
+                RTMsgError("The -relative parameter is invalid for raw images");
+                vrc = VERR_INVALID_PARAMETER;
+                goto out;
+            }
+            cbSize = DevStat.st_size;
         }
         else
         {
-            vrc = RTErrConvertFromErrno(errno);
-            RTMsgError("Cannot get the block count for file '%s': %Rrc", rawdisk.c_str(), vrc);
+            RTMsgError("File '%s' is neither character device nor regular file", rawdisk.c_str());
+            vrc = VERR_INVALID_PARAMETER;
             goto out;
         }
     }
     else
     {
-        RTMsgError("File '%s' is no character device", rawdisk.c_str());
-        vrc = VERR_INVALID_PARAMETER;
-        goto out;
+        vrc = RTErrConvertFromErrno(errno);
+        RTMsgError("Failed to get file informtation for raw disk '%s': %Rrc",
+                   rawdisk.c_str(), vrc);
     }
 #else /* all unrecognized OSes */
     /* Hopefully this works on all other hosts. If it doesn't, it'll just fail
