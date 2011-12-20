@@ -216,6 +216,8 @@ static HRESULT listExtensionPacks(const ComPtr<IVirtualBox> &rptrVirtualBox)
         CHECK_ERROR2_STMT(extPacks[i], COMGETTER(Version)(bstrVersion.asOutParam()),    hrc = hrcCheck; bstrVersion.setNull());
         ULONG   uRevision;
         CHECK_ERROR2_STMT(extPacks[i], COMGETTER(Revision)(&uRevision),                 hrc = hrcCheck; uRevision = 0);
+        Bstr    bstrEdition;
+        CHECK_ERROR2_STMT(extPacks[i], COMGETTER(Edition)(bstrEdition.asOutParam()),    hrc = hrcCheck; bstrEdition.setNull());
         Bstr    bstrVrdeModule;
         CHECK_ERROR2_STMT(extPacks[i], COMGETTER(VRDEModule)(bstrVrdeModule.asOutParam()),hrc=hrcCheck; bstrVrdeModule.setNull());
         BOOL    fUsable;
@@ -229,6 +231,7 @@ static HRESULT listExtensionPacks(const ComPtr<IVirtualBox> &rptrVirtualBox)
         RTPrintf("Pack no.%2zu:   %ls\n"
                  "Version:      %ls\n"
                  "Revision:     %u\n"
+                 "Edition:      %ls\n"
                  "Description:  %ls\n"
                  "VRDE Module:  %ls\n"
                  "Usable:       %RTbool\n"
@@ -236,6 +239,7 @@ static HRESULT listExtensionPacks(const ComPtr<IVirtualBox> &rptrVirtualBox)
                  i, bstrName.raw(),
                  bstrVersion.raw(),
                  uRevision,
+                 bstrEdition.raw(),
                  bstrDesc.raw(),
                  bstrVrdeModule.raw(),
                  fUsable != FALSE,
