@@ -1,8 +1,6 @@
 /* $Id$ */
 /** @file
- *
- * VBox frontends: Qt4 GUI ("VirtualBox"):
- * UIUpdateManager class implementation
+ * VBox Qt GUI - UIUpdateManager class implementation.
  */
 
 /*
@@ -271,20 +269,28 @@ private slots:
 
         /* Get VirtualBox version: */
         QString strVBoxVersion(vboxGlobal().vboxVersionStringNormalized());
+        QByteArray abVBoxVersion = strVBoxVersion.toUtf8();
         VBoxVersion vboxVersion(strVBoxVersion);
+
         /* Get extension pack version: */
-        QString strExtPackVersion(extPack.GetVersion().remove(VBOX_BUILD_PUBLISHER));
-        QStringList strExtPackVersionParts = strExtPackVersion.split(QRegExp("[-_]"), QString::SkipEmptyParts);
-        VBoxVersion extPackVersion(strExtPackVersionParts[0]);
-        /* Check if extension pack version less than required: */
-        if ((vboxVersion.z() % 2 != 0) /* Skip unstable VBox version */ ||
-            !(extPackVersion < vboxVersion) /* Ext Pack version more or equal to VBox version */)
+        QString strExtPackVersion(extPack.GetVersion());
+        QByteArray abExtPackVersion = strExtPackVersion.toUtf8();
+
+        /* Skip the check in unstable VBox version and if the extension pack
+           is equal to or newer than VBox.
+
+           Note! Use RTStrVersionCompare for the comparison here as it takes
+                 the beta/alpha/preview/whatever tags into consideration when
+                 comparing versions. */
+        if (   vboxVersion.z() % 2 != 0
+            || RTStrVersionCompare(abExtPackVersion.constData(), abVBoxVersion.constData()) >= 0)
         {
             emit sigStepComplete();
             return;
         }
 
-        if (strExtPackVersion.contains("ENTERPRISE"))
+        QString strExtPackEdition(extPack.GetEdition());
+        if (strExtPackEdition.contains("ENTERPRISE"))
         {
             /* Inform the user that he should update the extension pack: */
             msgCenter().requestUserDownloadExtensionPack(UI_ExtPackName, strExtPackVersion, strVBoxVersion);
@@ -292,14 +298,12 @@ private slots:
             emit sigStepComplete();
             return;
         }
-        else
+
+        /* Ask the user about extension pack downloading: */
+        if (!msgCenter().proposeDownloadExtensionPack(UI_ExtPackName, strExtPackVersion))
         {
-            /* Ask the user about extension pack downloading: */
-            if (!msgCenter().proposeDownloadExtensionPack(UI_ExtPackName, strExtPackVersion))
-            {
-                emit sigStepComplete();
-                return;
-            }
+            emit sigStepComplete();
+            return;
         }
 
         /* Create and configure the Extension Pack downloader: */
