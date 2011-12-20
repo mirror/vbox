@@ -85,13 +85,9 @@ HRESULT Guest::fileExistsInternal(IN_BSTR aFile, IN_BSTR aUsername, IN_BSTR aPas
                 *aExists = FALSE;
                 break;
 
-            case VERR_NOT_FOUND:
-                hr = setError(VBOX_E_IPRT_ERROR,
-                              Guest::tr("Unable to query file existence"));
-                break;
-
             default:
-                AssertReleaseMsgFailed(("fileExistsInternal: Unknown return value (%Rrc)\n", rc));
+                hr = setError(VBOX_E_IPRT_ERROR,
+                              Guest::tr("Unable to query file existence (%Rrc)"), rc);
                 break;
         }
     }
@@ -160,12 +156,12 @@ HRESULT Guest::fileQueryInfoInternal(IN_BSTR aFile,
                 if (   RT_SUCCESS(rc)
                     && aObjInfo) /* Do we want object details? */
                 {
-                    hr = executeStreamQueryFsObjInfo(aFile, stdOut[0],
+                    rc = executeStreamQueryFsObjInfo(aFile, stdOut[0],
                                                      aObjInfo, enmAddAttribs);
                 }
             }
             else
-                rc = VERR_NOT_FOUND;
+                rc = VERR_NO_DATA;
 
             if (pRC)
                 *pRC = rc;
@@ -222,21 +218,18 @@ HRESULT Guest::fileQuerySizeInternal(IN_BSTR aFile, IN_BSTR aUsername, IN_BSTR a
                 break;
 
             case VERR_FILE_NOT_FOUND:
-                rc = setError(VBOX_E_IPRT_ERROR,
+                hr = setError(VBOX_E_IPRT_ERROR,
                               Guest::tr("File not found"));
                 break;
 
-            case VERR_NOT_FOUND:
-                rc = setError(VBOX_E_IPRT_ERROR,
-                              Guest::tr("Unable to query file size"));
-                break;
-
             default:
-                AssertReleaseMsgFailed(("fileExistsInternal: Unknown return value (%Rrc)\n", rc));
+                hr = setError(VBOX_E_IPRT_ERROR,
+                              Guest::tr("Unable to query file size (%Rrc)"), rc);
                 break;
         }
     }
-    return rc;
+
+    return hr;
 }
 #endif /* VBOX_WITH_GUEST_CONTROL */
 

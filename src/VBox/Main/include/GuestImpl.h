@@ -174,7 +174,7 @@ public:
     HRESULT getProcessOutputInternal(ULONG aPID, ULONG aFlags, ULONG aTimeoutMS,
                                      LONG64 aSize, ComSafeArrayOut(BYTE, aData), int *pRC);
     HRESULT executeProcessResult(const char *pszCommand, const char *pszUser, ULONG ulTimeout, PCALLBACKDATAEXECSTATUS pExecStatus, ULONG *puPID);
-    HRESULT executeStreamQueryFsObjInfo(IN_BSTR aObjName,GuestProcessStreamBlock &streamBlock, PRTFSOBJINFO pObjInfo, RTFSOBJATTRADD enmAddAttribs);
+    int     executeStreamQueryFsObjInfo(IN_BSTR aObjName,GuestProcessStreamBlock &streamBlock, PRTFSOBJINFO pObjInfo, RTFSOBJATTRADD enmAddAttribs);
     int     executeStreamDrain(ULONG aPID, ULONG ulFlags, GuestProcessStream &stream);
     int     executeStreamGetNextBlock(ULONG ulPID, ULONG ulFlags, GuestProcessStream &stream, GuestProcessStreamBlock &streamBlock);
     int     executeStreamParseNextBlock(ULONG ulPID, ULONG ulFlags, GuestProcessStream &stream, GuestProcessStreamBlock &streamBlock);
