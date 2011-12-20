@@ -404,6 +404,54 @@ static RTEXITCODE handleDebugVM_SetRegisters(HandlerArg *pArgs, IMachineDebugger
 }
 
 /**
+ * Handles the show sub-command.
+ *
+ * @returns Suitable exit code.
+ * @param   pArgs               The handler arguments.
+ * @param   pDebugger           Pointer to the debugger interface.
+ */
+static RTEXITCODE handleDebugVM_Show(HandlerArg *pArgs, IMachineDebugger *pDebugger)
+{
+    if (pArgs->argc != 3)
+        return errorSyntax(USAGE_DEBUGVM, "The show sub-command takes exactly one argument");
+
+    const char *pszWhat = pArgs->argv[2];
+    if (   !strcmp(pszWhat, "log-settings")
+        || !strcmp(pszWhat, "logdbg-settings"))
+    {
+        com::Bstr bstrFlags;
+        CHECK_ERROR2_RET(pDebugger, COMGETTER(LogDbgFlags)(bstrFlags.asOutParam()), RTEXITCODE_FAILURE);
+        com::Bstr bstrGroups;
+        CHECK_ERROR2_RET(pDebugger, COMGETTER(LogDbgGroups)(bstrGroups.asOutParam()), RTEXITCODE_FAILURE);
+        com::Bstr bstrDestinations;
+        CHECK_ERROR2_RET(pDebugger, COMGETTER(LogDbgDestinations)(bstrDestinations.asOutParam()), RTEXITCODE_FAILURE);
+        RTPrintf("Debug log settings:\n");
+        RTPrintf("        VBOX_LOG=%ls\n"
+                 "  VBOX_LOG_FLAGS=%ls\n"
+                 "   VBOX_LOG_DEST=%ls\n"
+                 , bstrGroups.raw(), bstrFlags.raw(), bstrDestinations.raw());
+    }
+    else if (!strcmp(pszWhat, "logrel-settings"))
+    {
+        com::Bstr bstrFlags;
+        CHECK_ERROR2_RET(pDebugger, COMGETTER(LogRelFlags)(bstrFlags.asOutParam()), RTEXITCODE_FAILURE);
+        com::Bstr bstrGroups;
+        CHECK_ERROR2_RET(pDebugger, COMGETTER(LogRelGroups)(bstrGroups.asOutParam()), RTEXITCODE_FAILURE);
+        com::Bstr bstrDestinations;
+        CHECK_ERROR2_RET(pDebugger, COMGETTER(LogRelDestinations)(bstrDestinations.asOutParam()), RTEXITCODE_FAILURE);
+        RTPrintf("Release log settings:\n");
+        RTPrintf("        VBOX_RELEASE_LOG=%ls\n"
+                 "  VBOX_RELEASE_LOG_FLAGS=%ls\n"
+                 "   VBOX_RELEASE_LOG_DEST=%ls\n"
+                 , bstrGroups.raw(), bstrFlags.raw(), bstrDestinations.raw());
+    }
+    else
+        return errorSyntax(USAGE_DEBUGVM, "The show sub-command has no idea what '%s' might be", pszWhat);
+
+    return RTEXITCODE_SUCCESS;
+}
+
+/**
  * Handles the statistics sub-command.
  *
  * @returns Suitable exit code.
@@ -526,6 +574,8 @@ int handleDebugVM(HandlerArg *pArgs)
                 rcExit = handleDebugVM_OSInfo(pArgs, ptrDebugger);
             else if (!strcmp(pszSubCmd, "setregisters"))
                 rcExit = handleDebugVM_SetRegisters(pArgs, ptrDebugger);
+            else if (!strcmp(pszSubCmd, "show"))
+                rcExit = handleDebugVM_Show(pArgs, ptrDebugger);
             else if (!strcmp(pszSubCmd, "statistics"))
                 rcExit = handleDebugVM_Statistics(pArgs, ptrDebugger);
             else
