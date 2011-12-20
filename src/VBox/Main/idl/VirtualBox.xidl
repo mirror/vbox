@@ -15986,7 +15986,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <interface
     name="IExtPackBase" extends="$unknown"
-    uuid="5ffb0b64-0ad6-467d-af62-1157e7dc3c99"
+    uuid="f79b75d8-2890-4f34-ffff-ffffa144e82c"
     wsmap="suppress"
     >
     <desc>
@@ -16001,14 +16001,23 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     </attribute>
     <attribute name="version" type="wstring" readonly="yes">
       <desc>
-        The extension pack version string.  This is on the same form as
-        other VirtualBox version strings, i.e.: "1.2.3", "1.2.3_BETA1",
-        "1.2.3-OSE", "1.2.3r45678", "1.2.3r45678-OSE", "1.2.3_BETA1-r45678"
-        or "1.2.3_BETA1-r45678-OSE"
+        The extension pack version string.  This is restricted to the dotted
+	version number and a build indicator.  No tree revision or tag will be
+	included in the string as those things are available as separate
+	properties.  Examples: "1.2.3", "1.2.3_BETA1" and "1.2.3_RC2".
       </desc>
     </attribute>
     <attribute name="revision" type="unsigned long" readonly="yes">
       <desc>The extension pack internal revision number.</desc>
+    </attribute>
+    <attribute name="edition" type="wstring" readonly="yes">
+      <desc>
+	Edition indicator.  This is usually empty.
+
+	Can for instance be used to help distinguishing between two editions
+	of the same extension pack where only the license, service contract or
+	something differs.
+      </desc>
     </attribute>
     <attribute name="VRDEModule" type="wstring" readonly="yes">
       <desc>The name of the VRDE module if the extension pack sports one.</desc>
