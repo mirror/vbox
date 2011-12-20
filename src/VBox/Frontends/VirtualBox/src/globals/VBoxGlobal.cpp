@@ -1,8 +1,6 @@
 /* $Id$ */
 /** @file
- *
- * VBox frontends: Qt GUI ("VirtualBox"):
- * VBoxGlobal class implementation
+ * VBox Qt GUI - VBoxGlobal class implementation.
  */
 
 /*
@@ -382,6 +380,8 @@ QString VBoxGlobal::vboxVersionString() const
 
 QString VBoxGlobal::vboxVersionStringNormalized() const
 {
+    /** @todo IVirtualBox should expose a publisher-free version string! This
+     *        doesn't work in any sane+portable manner.  */
     return vboxVersionString().remove(VBOX_BUILD_PUBLISHER);
 }
 

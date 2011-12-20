@@ -1,7 +1,5 @@
 /** @file
- *
- * VBox frontends: Qt4 GUI ("VirtualBox"):
- * Update routine related declarations
+ * VBox Qt GUI - Update routine related declarations.
  */
 
 /*
@@ -16,8 +14,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef __UIUpdateDefs_h__
-#define __UIUpdateDefs_h__
+#ifndef ___UIUpdateDefs_h___
+#define ___UIUpdateDefs_h___
 
 /* Global includes: */
 #include <QDate>
@@ -101,4 +99,4 @@ private:
     VBoxVersion m_version;
 };
 
-#endif // __UIUpdateDefs_h__
+#endif // !___UIUpdateDefs_h___
