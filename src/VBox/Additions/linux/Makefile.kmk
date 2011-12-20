@@ -44,7 +44,7 @@ VBOX_LNX_ADD_INST_KMOD_DIR        := $(VBOX_LNX_ADD_INST_OUT_DIR)src/
 VBOX_LNX_ADD_INST_KMOD_DIR_MOD    := $(VBOX_LNX_ADD_INST_OUT_DIR)src/vboxguest-$(VBOX_VERSION_STRING)/
 VBOX_LNX_ADD_INST_INIT_DIR        := $(VBOX_LNX_ADD_INST_OUT_DIR)init/
 
-VBOX_LNX_ADD_INST_DIRS            := \
+VBOX_LNX_ADD_ARCH_INST_DIRS       := \
 	$(VBOX_LNX_ADD_INST_OUT_DIR) \
 	$(VBOX_LNX_ADD_INST_BIN_DIR) \
 	$(VBOX_LNX_ADD_INST_SBIN_DIR) \
@@ -94,9 +94,10 @@ else
 	$(VBOX_LNX_ADD_ARCHIVE.amd64)
 endif
 BLDDIRS     += \
-	$(VBOX_LNX_ADD_INST_DIRS) \
+	$(VBOX_LNX_ADD_ARCH_INST_DIRS) \
 	$(VBOX_LNX_ADD_DBG_DIRS) \
 	$(VBOX_LNX_ADD_INST_STAGE_DIR)
+
 # Use VBOX_WITHOUT_LINUX_GUEST_PACKAGE to skip building the .run installer.
 # This will only take effect if you also use VBOX_WITHOUT_ADDITIONS_ISO.
 PACKING     += \
@@ -413,7 +414,7 @@ $(VBOX_LNX_ADD_ARCHIVE.$(KBUILD_TARGET_ARCH)): \
 	$(call MSG_L1,Packing $@)
 	$(QUIET)$(RM) -f -- $(wildcard $(dir $@)VBoxGuestAdditions-*r*.tar.bz2)
 	$(QUIET)$(MKDIR) -p $(@D)
-	$(QUIET)$(CHMOD) 0755 $(VBOX_LNX_ADD_INST_DIRS)
+	$(QUIET)$(CHMOD) 0755 $(VBOX_LNX_ADD_ARCH_INST_DIRS)
 ifdef VBOX_USE_PBZIP2
  	$(QUIET)tar --dereference --owner 0 --group 0 -cRf $(patsubst %.bz2,%,$@) \
  		-C $(VBOX_LNX_ADD_INST_OUT_DIR) \
