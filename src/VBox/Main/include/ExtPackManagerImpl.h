@@ -54,6 +54,7 @@ public:
     STDMETHOD(COMGETTER(Description))(BSTR *a_pbstrDescription);
     STDMETHOD(COMGETTER(Version))(BSTR *a_pbstrVersion);
     STDMETHOD(COMGETTER(Revision))(ULONG *a_puRevision);
+    STDMETHOD(COMGETTER(Edition))(BSTR *a_pbstrEdition);
     STDMETHOD(COMGETTER(VRDEModule))(BSTR *a_pbstrVrdeModule);
     STDMETHOD(COMGETTER(PlugIns))(ComSafeArrayOut(IExtPackPlugIn *, a_paPlugIns));
     STDMETHOD(COMGETTER(Usable))(BOOL *a_pfUsable);
@@ -117,6 +118,7 @@ public:
     STDMETHOD(COMGETTER(Description))(BSTR *a_pbstrDescription);
     STDMETHOD(COMGETTER(Version))(BSTR *a_pbstrVersion);
     STDMETHOD(COMGETTER(Revision))(ULONG *a_puRevision);
+    STDMETHOD(COMGETTER(Edition))(BSTR *a_pbstrEdition);
     STDMETHOD(COMGETTER(VRDEModule))(BSTR *a_pbstrVrdeModule);
     STDMETHOD(COMGETTER(PlugIns))(ComSafeArrayOut(IExtPackPlugIn *, a_paPlugIns));
     STDMETHOD(COMGETTER(Usable))(BOOL *a_pfUsable);

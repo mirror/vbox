@@ -112,14 +112,14 @@ typedef VBOXEXTPACKDESC const *PCVBOXEXTPACKDESC;
 
 
 void                VBoxExtPackInitDesc(PVBOXEXTPACKDESC a_pExtPackDesc);
-RTCString   *VBoxExtPackLoadDesc(const char *a_pszDir, PVBOXEXTPACKDESC a_pExtPackDesc, PRTFSOBJINFO a_pObjInfo);
-RTCString   *VBoxExtPackLoadDescFromVfsFile(RTVFSFILE hVfsFile, PVBOXEXTPACKDESC a_pExtPackDesc, PRTFSOBJINFO a_pObjInfo);
-RTCString   *VBoxExtPackExtractNameFromTarballPath(const char *pszTarball);
+RTCString          *VBoxExtPackLoadDesc(const char *a_pszDir, PVBOXEXTPACKDESC a_pExtPackDesc, PRTFSOBJINFO a_pObjInfo);
+RTCString          *VBoxExtPackLoadDescFromVfsFile(RTVFSFILE hVfsFile, PVBOXEXTPACKDESC a_pExtPackDesc, PRTFSOBJINFO a_pObjInfo);
+RTCString          *VBoxExtPackExtractNameFromTarballPath(const char *pszTarball);
 void                VBoxExtPackFreeDesc(PVBOXEXTPACKDESC a_pExtPackDesc);
 bool                VBoxExtPackIsValidName(const char *pszName);
 bool                VBoxExtPackIsValidMangledName(const char *pszMangledName, size_t cchMax = RTSTR_MAX);
-RTCString   *VBoxExtPackMangleName(const char *pszName);
-RTCString   *VBoxExtPackUnmangleName(const char *pszMangledName, size_t cbMax);
+RTCString          *VBoxExtPackMangleName(const char *pszName);
+RTCString          *VBoxExtPackUnmangleName(const char *pszMangledName, size_t cbMax);
 int                 VBoxExtPackCalcDir(char *pszExtPackDir, size_t cbExtPackDir, const char *pszParentDir, const char *pszName);
 bool                VBoxExtPackIsValidVersionString(const char *pszVersion);
 bool                VBoxExtPackIsValidEditionString(const char *pszEdition);
