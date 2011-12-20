@@ -446,19 +446,128 @@ STDMETHODIMP MachineDebugger::COMSETTER(LogEnabled) (BOOL aEnabled)
     return S_OK;
 }
 
-STDMETHODIMP MachineDebugger::COMGETTER(LogFlags)(BSTR *a_pbstrSettings)
+HRESULT MachineDebugger::logStringProps(PRTLOGGER pLogger, PFNLOGGETSTR pfnLogGetStr,
+                                        const char *pszLogGetStr, BSTR *a_pbstrSettings)
 {
-    ReturnComNotImplemented();
+    /* Make sure the VM is powered up. */
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+    Console::SafeVMPtr ptrVM(mParent);
+    HRESULT hrc = ptrVM.rc();
+    if (FAILED(hrc))
+        return hrc;
+
+    /* Make sure we've got a logger. */
+    if (!pLogger)
+    {
+        Bstr bstrEmpty;
+        bstrEmpty.cloneTo(a_pbstrSettings);
+        return S_OK;
+    }
+
+    /* Do the job. */
+    size_t cbBuf = _1K;
+    for (;;)
+    {
+        char *pszBuf = (char *)RTMemTmpAlloc(cbBuf);
+        AssertReturn(pszBuf, E_OUTOFMEMORY);
+
+        int rc = pfnLogGetStr(pLogger, pszBuf, cbBuf);
+        if (RT_SUCCESS(rc))
+        {
+            try
+            {
+                Bstr bstrRet(pszBuf);
+                bstrRet.detachTo(a_pbstrSettings);
+                hrc = S_OK;
+            }
+            catch (std::bad_alloc)
+            {
+                hrc = E_OUTOFMEMORY;
+            }
+            RTMemTmpFree(pszBuf);
+            return hrc;
+        }
+        RTMemTmpFree(pszBuf);
+        AssertReturn(rc == VERR_BUFFER_OVERFLOW, setError(VBOX_E_IPRT_ERROR, tr("%s returned %Rrc"), pszLogGetStr, rc));
+
+        /* try again with a bigger buffer. */
+        cbBuf *= 2;
+        AssertReturn(cbBuf <= _256K, setError(E_FAIL, tr("%s returns too much data"), pszLogGetStr));
+    }
 }
 
-STDMETHODIMP MachineDebugger::COMGETTER(LogGroups)(BSTR *a_pbstrSettings)
+
+STDMETHODIMP MachineDebugger::COMGETTER(LogDbgFlags)(BSTR *a_pbstrSettings)
 {
-    ReturnComNotImplemented();
+    CheckComArgOutPointerValid(a_pbstrSettings);
+
+    AutoCaller autoCaller(this);
+    HRESULT hrc = autoCaller.rc();
+    if (SUCCEEDED(hrc))
+        hrc = logStringProps(RTLogGetDefaultInstance(), RTLogGetFlags, "RTGetFlags", a_pbstrSettings);
+
+    return hrc;
 }
 
-STDMETHODIMP MachineDebugger::COMGETTER(LogDestinations)(BSTR *a_pbstrSettings)
+STDMETHODIMP MachineDebugger::COMGETTER(LogDbgGroups)(BSTR *a_pbstrSettings)
 {
-    ReturnComNotImplemented();
+    CheckComArgOutPointerValid(a_pbstrSettings);
+
+    AutoCaller autoCaller(this);
+    HRESULT hrc = autoCaller.rc();
+    if (SUCCEEDED(hrc))
+        hrc = logStringProps(RTLogGetDefaultInstance(), RTLogGetGroupSettings, "RTLogGetGroupSettings", a_pbstrSettings);
+
+    return hrc;
+}
+
+STDMETHODIMP MachineDebugger::COMGETTER(LogDbgDestinations)(BSTR *a_pbstrSettings)
+{
+    CheckComArgOutPointerValid(a_pbstrSettings);
+
+    AutoCaller autoCaller(this);
+    HRESULT hrc = autoCaller.rc();
+    if (SUCCEEDED(hrc))
+        hrc = logStringProps(RTLogRelDefaultInstance(), RTLogGetDestinations, "RTLogGetDestinations", a_pbstrSettings);
+
+    return hrc;
+}
+
+
+STDMETHODIMP MachineDebugger::COMGETTER(LogRelFlags)(BSTR *a_pbstrSettings)
+{
+    CheckComArgOutPointerValid(a_pbstrSettings);
+
+    AutoCaller autoCaller(this);
+    HRESULT hrc = autoCaller.rc();
+    if (SUCCEEDED(hrc))
+        hrc = logStringProps(RTLogRelDefaultInstance(), RTLogGetFlags, "RTGetFlags", a_pbstrSettings);
+
+    return hrc;
+}
+
+STDMETHODIMP MachineDebugger::COMGETTER(LogRelGroups)(BSTR *a_pbstrSettings)
+{
+    CheckComArgOutPointerValid(a_pbstrSettings);
+
+    AutoCaller autoCaller(this);
+    HRESULT hrc = autoCaller.rc();
+    if (SUCCEEDED(hrc))
+        hrc = logStringProps(RTLogRelDefaultInstance(), RTLogGetGroupSettings, "RTLogGetGroupSettings", a_pbstrSettings);
+
+    return hrc;
+}
+
+STDMETHODIMP MachineDebugger::COMGETTER(LogRelDestinations)(BSTR *a_pbstrSettings)
+{
+    CheckComArgOutPointerValid(a_pbstrSettings);
+
+    AutoCaller autoCaller(this);
+    HRESULT hrc = autoCaller.rc();
+    if (SUCCEEDED(hrc))
+        hrc = logStringProps(RTLogRelDefaultInstance(), RTLogGetDestinations, "RTLogGetDestinations", a_pbstrSettings);
+
+    return hrc;
 }
 
 /**

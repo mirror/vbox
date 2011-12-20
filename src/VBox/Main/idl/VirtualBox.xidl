@@ -13184,7 +13184,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <interface
     name="IMachineDebugger" extends="$unknown"
-    uuid="1bfd2fa9-0d91-44d3-9515-368dcbb3eb4d"
+    uuid="a9abbb7c-d678-43b2-bed2-19ec0e32303d"
     wsmap="suppress"
     >
     <method name="dumpGuestCore">
@@ -13540,16 +13540,28 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       <desc>Switch for enabling and disabling the debug logger.</desc>
     </attribute>
 
-    <attribute name="logFlags" type="wstring" readonly="yes">
+    <attribute name="logDbgFlags" type="wstring" readonly="yes">
       <desc>The debug logger flags.</desc>
     </attribute>
 
-    <attribute name="logGroups" type="wstring" readonly="yes">
+    <attribute name="logDbgGroups" type="wstring" readonly="yes">
       <desc>The debug logger's group settings.</desc>
     </attribute>
 
-    <attribute name="logDestinations" type="wstring" readonly="yes">
+    <attribute name="logDbgDestinations" type="wstring" readonly="yes">
       <desc>The debug logger's destination settings.</desc>
+    </attribute>
+
+    <attribute name="logRelFlags" type="wstring" readonly="yes">
+      <desc>The release logger flags.</desc>
+    </attribute>
+
+    <attribute name="logRelGroups" type="wstring" readonly="yes">
+      <desc>The release logger's group settings.</desc>
+    </attribute>
+
+    <attribute name="logRelDestinations" type="wstring" readonly="yes">
+      <desc>The relase logger's destination settings.</desc>
     </attribute>
 
     <attribute name="HWVirtExEnabled" type="boolean" readonly="yes">

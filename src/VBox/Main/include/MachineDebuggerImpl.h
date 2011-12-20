@@ -21,6 +21,7 @@
 #define ____H_MACHINEDEBUGGER
 
 #include "VirtualBoxBase.h"
+#include <iprt/log.h>
 
 class Console;
 
@@ -62,9 +63,12 @@ public:
     STDMETHOD(COMSETTER(CSAMEnabled)) (BOOL aEnable);
     STDMETHOD(COMGETTER(LogEnabled)) (BOOL *aEnabled);
     STDMETHOD(COMSETTER(LogEnabled)) (BOOL aEnable);
-    STDMETHOD(COMGETTER(LogFlags)) (BSTR *a_pbstrSettings);
-    STDMETHOD(COMGETTER(LogGroups)) (BSTR *a_pbstrSettings);
-    STDMETHOD(COMGETTER(LogDestinations)) (BSTR *a_pbstrSettings);
+    STDMETHOD(COMGETTER(LogDbgFlags)) (BSTR *a_pbstrSettings);
+    STDMETHOD(COMGETTER(LogDbgGroups)) (BSTR *a_pbstrSettings);
+    STDMETHOD(COMGETTER(LogDbgDestinations)) (BSTR *a_pbstrSettings);
+    STDMETHOD(COMGETTER(LogRelFlags)) (BSTR *a_pbstrSettings);
+    STDMETHOD(COMGETTER(LogRelGroups)) (BSTR *a_pbstrSettings);
+    STDMETHOD(COMGETTER(LogRelDestinations)) (BSTR *a_pbstrSettings);
     STDMETHOD(COMGETTER(HWVirtExEnabled)) (BOOL *aEnabled);
     STDMETHOD(COMGETTER(HWVirtExNestedPagingEnabled)) (BOOL *aEnabled);
     STDMETHOD(COMGETTER(HWVirtExVPIDEnabled)) (BOOL *aEnabled);
@@ -104,6 +108,12 @@ public:
 private:
     // private methods
     bool queueSettings() const;
+
+    /** RTLogGetFlags, RTLogGetGroupSettings and RTLogGetDestinations function. */
+    typedef DECLCALLBACK(int) FNLOGGETSTR(PRTLOGGER, char *, size_t);
+    /** Function pointer.  */
+    typedef FNLOGGETSTR *PFNLOGGETSTR;
+    HRESULT logStringProps(PRTLOGGER pLogger, PFNLOGGETSTR pfnLogGetStr, const char *pszLogGetStr, BSTR *a_bstrSettings);
 
     Console * const mParent;
     // flags whether settings have been queued because
