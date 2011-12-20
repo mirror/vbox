@@ -1304,22 +1304,16 @@ HRESULT Guest::executeProcessResult(const char *pszCommand, const char *pszUser,
  * @param   pObjInfo
  * @param   enmAddAttribs
  */
-HRESULT Guest::executeStreamQueryFsObjInfo(IN_BSTR aObjName,
-                                           GuestProcessStreamBlock &streamBlock,
-                                           PRTFSOBJINFO pObjInfo,
-                                           RTFSOBJATTRADD enmAddAttribs)
+int Guest::executeStreamQueryFsObjInfo(IN_BSTR aObjName,
+                                       GuestProcessStreamBlock &streamBlock,
+                                       PRTFSOBJINFO pObjInfo,
+                                       RTFSOBJATTRADD enmAddAttribs)
 {
-    HRESULT rc = S_OK;
     Utf8Str Utf8ObjName(aObjName);
-
     int64_t iVal;
-    int vrc = streamBlock.GetInt64Ex("st_size", &iVal);
-    if (RT_SUCCESS(vrc))
+    int rc = streamBlock.GetInt64Ex("st_size", &iVal);
+    if (RT_SUCCESS(rc))
         pObjInfo->cbObject = iVal;
-    else
-        rc = setError(VBOX_E_IPRT_ERROR,
-                      tr("Unable to retrieve size for \"%s\" (%Rrc)"),
-                      Utf8ObjName.c_str(), vrc);
     /** @todo Add more stuff! */
     return rc;
 }
@@ -2177,7 +2171,7 @@ HRESULT Guest::getProcessOutputInternal(ULONG aPID, ULONG aFlags, ULONG aTimeout
                     else
                     {
                         rc = setErrorNoLog(VBOX_E_IPRT_ERROR,
-                                           tr("Unable to retrieve process output data"));
+                                           tr("Unable to retrieve process output data (%Rrc)"), vrc);
                     }
                 }
                 else

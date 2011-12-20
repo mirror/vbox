@@ -281,17 +281,11 @@ static int VBoxServiceControlHandleCmdStartProc(uint32_t idClient, uint32_t cPar
                                                szPassword, sizeof(szPassword),
                                                /* Timelimit */
                                                &uTimeLimitMS);
-
         if (RT_SUCCESS(rc))
         {
-    #ifdef DEBUG
-            VBoxServiceVerbose(3, "Control: Start process szCmd=%s, uFlags=%u, szArgs=%s, szEnv=%s, szUser=%s, szPW=%s, uTimeout=%u\n",
-                               szCmd, uFlags, cArgs ? szArgs : "<None>", cEnvVars ? szEnv : "<None>", szUser, szPassword, uTimeLimitMS);
-    #endif
+            VBoxServiceVerbose(3, "Control: Request to start process szCmd=%s, uFlags=0x%x, szArgs=%s, szEnv=%s, szUser=%s, uTimeout=%u\n",
+                               szCmd, uFlags, cArgs ? szArgs : "<None>", cEnvVars ? szEnv : "<None>", szUser, uTimeLimitMS);
             rc = VBoxServiceControlStartAllowed(&fStartAllowed);
-            if (RT_FAILURE(rc))
-                VBoxServiceError("Control: Error determining whether process can be started or not, rc=%Rrc\n", rc);
-
             if (RT_SUCCESS(rc))
             {
                 if (fStartAllowed)

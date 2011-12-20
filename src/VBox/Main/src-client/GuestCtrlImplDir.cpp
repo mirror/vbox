@@ -253,13 +253,9 @@ HRESULT Guest::directoryExistsInternal(IN_BSTR aDirectory, IN_BSTR aUsername, IN
                 *aExists = FALSE;
                 break;
 
-            case VERR_NOT_FOUND:
-                rc = setError(VBOX_E_IPRT_ERROR,
-                              Guest::tr("Unable to query directory existence"));
-                break;
-
             default:
-                AssertReleaseMsgFailed(("directoryExistsInternal: Unknown return value (%Rrc)\n", rc));
+                hr = setError(VBOX_E_IPRT_ERROR,
+                              Guest::tr("Unable to query directory existence (%Rrc)"), rc);
                 break;
         }
     }
@@ -508,12 +504,12 @@ HRESULT Guest::directoryQueryInfoInternal(IN_BSTR aDirectory,
                 if (   RT_SUCCESS(rc)
                     && aObjInfo) /* Do we want object details? */
                 {
-                    hr = executeStreamQueryFsObjInfo(aDirectory, stdOut[0],
+                    rc = executeStreamQueryFsObjInfo(aDirectory, stdOut[0],
                                                      aObjInfo, enmAddAttribs);
                 }
             }
             else
-                rc = VERR_NOT_FOUND;
+                rc = VERR_NO_DATA;
 
             if (pRC)
                 *pRC = rc;
