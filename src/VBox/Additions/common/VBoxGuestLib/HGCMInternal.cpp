@@ -40,6 +40,7 @@
 #include <iprt/thread.h>
 #include <iprt/time.h>
 
+#define LOG_GROUP LOG_GROUP_HGCM
 
 /*******************************************************************************
 *   Defined Constants And Macros                                               *
