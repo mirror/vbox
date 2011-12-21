@@ -1252,7 +1252,7 @@ efi-build: $(VBOX_VERSION_HEADER)
 efi-packing:
 
 #
-# Generate VirtualBox-OSE-x.x.x.tar.bz2 (OSE) tarballs for distribution
+# Generate VirtualBox-x.x.x.tar.bz2 (OSE) tarballs for distribution
 # - includes kBuild
 # - must be executed on an OSE checkout
 #
@@ -1260,9 +1260,9 @@ efi-packing:
 # the path where to store the tarball
 TARBALLPATH ?= $(abspath $(PATH_ROOT)/..)
 # the root directory inside the tarball
-TARBALLROOT ?= VirtualBox-$(VBOX_VERSION_STRING)
+TARBALLROOT ?= VirtualBox-$(VBOX_VERSION_STRING_RAW)
 # the name of the tarball file
-TARBALLNAME ?= VirtualBox-$(VBOX_VERSION_STRING).tar.bz2
+TARBALLNAME ?= VirtualBox-$(VBOX_VERSION_STRING_RAW).tar.bz2
 snapshot-ose:
 	@$(call MSG_L1,Creating tarball $(TARBALLPATH)/$(TARBALLNAME))
 	@if [ -r "$(PATH_ROOT)/src/VBox/RDP/server/server.cpp" ]; then \
