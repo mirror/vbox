@@ -549,8 +549,16 @@ Function CheckForInstalledComponents
   ; regardless whether the user used "/with_autologon" or not
   ReadRegStr $0 HKLM "SOFTWARE\Microsoft\Windows NT\CurrentVersion\WinLogon" "GinaDLL"
   ${If} $0 == "VBoxGINA.dll"
-    DetailPrint "Found already installed auto-logon support ..."
     StrCpy $g_bWithAutoLogon "true"
+  ${EndIf}
+  
+  ReadRegStr $0 HKLM "SOFTWARE\Microsoft\Windows\CurrentVersion\Authentication\Credential Providers\{275D3BCC-22BB-4948-A7F6-3A3054EBA92B}" ""
+  ${If} $0 == "VBoxCredProv.dll"
+    StrCpy $g_bWithAutoLogon "true"  
+  ${EndIf}
+  
+  ${If} $g_bWithAutoLogon == "true"
+    DetailPrint "Found already installed auto-logon support ..."
   ${EndIf}
 
   Pop $0
