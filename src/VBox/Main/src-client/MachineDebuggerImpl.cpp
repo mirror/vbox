@@ -528,7 +528,7 @@ STDMETHODIMP MachineDebugger::COMGETTER(LogDbgDestinations)(BSTR *a_pbstrSetting
     AutoCaller autoCaller(this);
     HRESULT hrc = autoCaller.rc();
     if (SUCCEEDED(hrc))
-        hrc = logStringProps(RTLogRelDefaultInstance(), RTLogGetDestinations, "RTLogGetDestinations", a_pbstrSettings);
+        hrc = logStringProps(RTLogGetDefaultInstance(), RTLogGetDestinations, "RTLogGetDestinations", a_pbstrSettings);
 
     return hrc;
 }
