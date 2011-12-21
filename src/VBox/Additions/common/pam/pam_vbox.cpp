@@ -41,6 +41,7 @@
 #include <stdlib.h>
 
 #include <iprt/assert.h>
+#include <iprt/buildconfig.h>
 #include <iprt/env.h>
 #include <iprt/initterm.h>
 #include <iprt/mem.h>
@@ -225,6 +226,9 @@ static int pam_vbox_init(pam_handle_t *hPAM)
      * the current logon module won't work anymore (or just restart).
      * This could result in not able to log into the system anymore. */
     RTAssertSetMayPanic(false);
+
+    pam_vbox_log(hPAM, "pam_vbox: %sr%s, running on %s\n",
+                 RTBldCfgVersion(), RTBldCfgRevisionStr(), RTBldCfgTargetArch());
 
     int rc = RTR3InitDll(0);
     if (RT_FAILURE(rc))
