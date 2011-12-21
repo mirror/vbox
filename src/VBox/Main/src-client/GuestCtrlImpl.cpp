@@ -2245,9 +2245,11 @@ STDMETHODIMP Guest::CopyFromGuest(IN_BSTR aSource, IN_BSTR aDest,
 #else /* VBOX_WITH_GUEST_CONTROL */
     CheckComArgStrNotEmptyOrNull(aSource);
     CheckComArgStrNotEmptyOrNull(aDest);
-    CheckComArgStrNotEmptyOrNull(aUsername);
-    CheckComArgStrNotEmptyOrNull(aPassword);
     CheckComArgOutPointerValid(aProgress);
+
+    /* Do not allow anonymous executions (with system rights). */
+    if (RT_UNLIKELY((aUsername) == NULL || *(aUsername) == '\0'))
+        return setError(E_INVALIDARG, tr("No user name specified"));
 
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
@@ -2320,9 +2322,11 @@ STDMETHODIMP Guest::CopyToGuest(IN_BSTR aSource, IN_BSTR aDest,
 #else /* VBOX_WITH_GUEST_CONTROL */
     CheckComArgStrNotEmptyOrNull(aSource);
     CheckComArgStrNotEmptyOrNull(aDest);
-    CheckComArgStrNotEmptyOrNull(aUsername);
-    CheckComArgStrNotEmptyOrNull(aPassword);
     CheckComArgOutPointerValid(aProgress);
+
+    /* Do not allow anonymous executions (with system rights). */
+    if (RT_UNLIKELY((aUsername) == NULL || *(aUsername) == '\0'))
+        return setError(E_INVALIDARG, tr("No user name specified"));
 
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
