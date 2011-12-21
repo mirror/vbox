@@ -2532,13 +2532,13 @@ Value: 2006.01.01</screen>
     VM name or a VM UUID, as with the other VBoxManage commands):<itemizedlist>
         <listitem>
           <para><computeroutput>execute</computeroutput>, which allows for
-          executing a program/script (process) which is already installed and
+          executing a program/script (process) which already is installed and
           runnable on the guest. This command only works while a VM is up and
           running and has the following syntax:</para>
 
           <screen>VBoxManage guestcontrol &lt;vmname&gt;|&lt;uuid&gt; exec[ute]
             --image &lt;path to program&gt;
-            --username &lt;name&gt; --password &lt;password&gt;
+            --username &lt;name&gt; [--password &lt;password&gt;]
             [--dos2unix]
             [--environment "&lt;NAME&gt;=&lt;VALUE&gt; [&lt;NAME&gt;=&lt;VALUE&gt;]"]
             [--timeout &lt;msec&gt;] [--unix2dos] [--verbose]
@@ -2697,6 +2697,16 @@ Value: 2006.01.01</screen>
           the double backslashes in the second example are only required on
           Unix hosts.</para>
 
+          <para><note>
+            <para>For certain commands a user name of an existing user account on the guest
+            must be specified; anonymous executions are not supported for security reasons. An
+            user account password, however, is optional and depends on the guest's OS security
+            policy or rules. If no password is specified for a given user name, an empty password
+            will be used. On certain OSes like Windows the security policy may needs to be adjusted
+            in order to allow user accounts with an empty password set. Also, global domain rules might
+            apply and therefore cannot be changed.</para>
+          </note></para>
+
           <para>Starting at VirtualBox 4.1.2 guest process execution by default is limited
           to serve up to 5 guest processes at a time. If a new guest process gets started
           which would exceed this limit, the oldest not running guest process will be discarded
@@ -2719,7 +2729,7 @@ Value: 2006.01.01</screen>
 
           <screen>VBoxManage guestcontrol &lt;vmname&gt;|&lt;uuid&gt; copyto|cp
             &lt;source on host&gt; &lt;destination on guest&gt;
-            --username &lt;name&gt; --password &lt;password&gt;
+            --username &lt;name&gt; [--password &lt;password&gt;]
             [--dryrun] [--follow] [--recursive] [--verbose]</screen>
 
           <para>where the parameters mean: <glosslist>
