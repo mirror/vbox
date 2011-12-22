@@ -220,12 +220,6 @@ STDMETHODIMP HostNetworkInterface::COMGETTER(IPAddress) (BSTR *aIPAddress)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    if (m.IPAddress == 0)
-    {
-        getDefaultIPv4Address(mInterfaceName).detachTo(aIPAddress);
-        return S_OK;
-    }
-
     in_addr tmp;
 #if defined(RT_OS_WINDOWS)
     tmp.S_un.S_addr = m.IPAddress;
@@ -254,12 +248,6 @@ STDMETHODIMP HostNetworkInterface::COMGETTER(NetworkMask) (BSTR *aNetworkMask)
 
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
-
-    if (m.networkMask == 0)
-    {
-        Bstr(VBOXNET_IPV4MASK_DEFAULT).detachTo(aNetworkMask);
-        return S_OK;
-    }
 
     in_addr tmp;
 #if defined(RT_OS_WINDOWS)
