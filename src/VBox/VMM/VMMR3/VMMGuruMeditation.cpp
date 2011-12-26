@@ -166,6 +166,8 @@ static void vmmR3FatalDumpInfoHlpInit(PVMMR3FATALDUMPINFOHLP pHlp)
         pHlp->pRelLogger->fFlags &= ~(RTLOGFLAGS_BUFFERED | RTLOGFLAGS_DISABLED);
     }
 
+    /** @todo don't create a debug logger in release builds if we already
+     *        have a release logger! */
     if (pHlp->pLogger)
     {
         pHlp->fLoggerFlags     = pHlp->pLogger->fFlags;
