@@ -1094,7 +1094,7 @@ static int pdmacFileEpRead(PPDMASYNCCOMPLETIONTASK pTask,
     LogFlowFunc(("pTask=%#p pEndpoint=%#p off=%RTfoff paSegments=%#p cSegments=%zu cbRead=%zu\n",
                  pTask, pEndpoint, off, paSegments, cSegments, cbRead));
 
-    if (RT_UNLIKELY(off + cbRead > pEpFile->cbFile))
+    if (RT_UNLIKELY((uint64_t)off + cbRead > pEpFile->cbFile))
         return VERR_EOF;
 
     STAM_PROFILE_ADV_START(&pEpFile->StatRead, Read);
