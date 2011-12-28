@@ -146,33 +146,37 @@ static DECLCALLBACK(void) vmmR3FatalDumpInfoHlp_pfnPrintfV(PCDBGFINFOHLP pHlp, c
  */
 static void vmmR3FatalDumpInfoHlpInit(PVMMR3FATALDUMPINFOHLP pHlp)
 {
-    memset(pHlp, 0, sizeof(*pHlp));
+    RT_BZERO(pHlp, sizeof(*pHlp));
 
-    pHlp->Core.pfnPrintf = vmmR3FatalDumpInfoHlp_pfnPrintf;
+    pHlp->Core.pfnPrintf  = vmmR3FatalDumpInfoHlp_pfnPrintf;
     pHlp->Core.pfnPrintfV = vmmR3FatalDumpInfoHlp_pfnPrintfV;
 
     /*
      * The loggers.
      */
-    pHlp->pRelLogger = RTLogRelDefaultInstance();
-#ifndef LOG_ENABLED
-    if (!pHlp->pRelLogger)
-#endif
+    pHlp->pRelLogger  = RTLogRelDefaultInstance();
+#ifdef LOG_ENABLED
+    pHlp->pLogger     = RTLogDefaultInstance();
+#else
+    if (pHlp->pRelLogger)
+        pHlp->pLogger = RTLogGetDefaultInstance();
+    else
         pHlp->pLogger = RTLogDefaultInstance();
+#endif
 
     if (pHlp->pRelLogger)
     {
         pHlp->fRelLoggerFlags = pHlp->pRelLogger->fFlags;
-        pHlp->pRelLogger->fFlags &= ~(RTLOGFLAGS_BUFFERED | RTLOGFLAGS_DISABLED);
+        pHlp->pRelLogger->fFlags &= ~RTLOGFLAGS_DISABLED;
+        pHlp->pRelLogger->fFlags |= RTLOGFLAGS_BUFFERED;
     }
 
-    /** @todo don't create a debug logger in release builds if we already
-     *        have a release logger! */
     if (pHlp->pLogger)
     {
         pHlp->fLoggerFlags     = pHlp->pLogger->fFlags;
         pHlp->fLoggerDestFlags = pHlp->pLogger->fDestFlags;
-        pHlp->pLogger->fFlags     &= ~(RTLOGFLAGS_BUFFERED | RTLOGFLAGS_DISABLED);
+        pHlp->pLogger->fFlags     &= ~RTLOGFLAGS_DISABLED;
+        pHlp->pLogger->fFlags     |= RTLOGFLAGS_BUFFERED;
 #ifndef DEBUG_sandervl
         pHlp->pLogger->fDestFlags |= RTLOGDEST_DEBUGGER;
 #endif
@@ -182,7 +186,7 @@ static void vmmR3FatalDumpInfoHlpInit(PVMMR3FATALDUMPINFOHLP pHlp)
      * Check if we need write to stderr.
      */
     pHlp->fStdErr = (!pHlp->pRelLogger || !(pHlp->pRelLogger->fDestFlags & (RTLOGDEST_STDOUT | RTLOGDEST_STDERR)))
-                 && (!pHlp->pLogger || !(pHlp->pLogger->fDestFlags & (RTLOGDEST_STDOUT | RTLOGDEST_STDERR)));
+                 && (!pHlp->pLogger    || !(pHlp->pLogger->fDestFlags    & (RTLOGDEST_STDOUT | RTLOGDEST_STDERR)));
 #ifdef DEBUG_sandervl
     pHlp->fStdErr = false; /* takes too long to display here */
 #endif
