@@ -1011,31 +1011,32 @@ int main()
     /* VMMDev/VBoxDev.cpp */
 
     /* Parallel/DevParallel.cpp */
-    GEN_CHECK_SIZE(ParallelState);
-    GEN_CHECK_OFF(ParallelState, pDevInsR3);
-    GEN_CHECK_OFF(ParallelState, pDevInsR0);
-    GEN_CHECK_OFF(ParallelState, pDevInsRC);
-    GEN_CHECK_OFF(ParallelState, IBase);
-    GEN_CHECK_OFF(ParallelState, IHostParallelPort);
-    GEN_CHECK_OFF(ParallelState, pDrvHostParallelConnector);
-    GEN_CHECK_OFF(ParallelState, ReceiveSem);
-    GEN_CHECK_OFF(ParallelState, reg_data);
-    GEN_CHECK_OFF(ParallelState, reg_status);
-    GEN_CHECK_OFF(ParallelState, reg_control);
-    GEN_CHECK_OFF(ParallelState, reg_epp_addr);
-    GEN_CHECK_OFF(ParallelState, reg_epp_data);
-    GEN_CHECK_OFF(ParallelState, reg_ecp_ecr);
-    GEN_CHECK_OFF(ParallelState, reg_ecp_base_plus_400h);
-    GEN_CHECK_OFF(ParallelState, reg_ecp_config_b);
-    GEN_CHECK_OFF(ParallelState, ecp_fifo);
-    GEN_CHECK_OFF(ParallelState, ecp_fifo[1]);
-    GEN_CHECK_OFF(ParallelState, act_fifo_pos_write);
-    GEN_CHECK_OFF(ParallelState, act_fifo_pos_read);
-    GEN_CHECK_OFF(ParallelState, irq);
-    GEN_CHECK_OFF(ParallelState, epp_timeout);
-    GEN_CHECK_OFF(ParallelState, fGCEnabled);
-    GEN_CHECK_OFF(ParallelState, fR0Enabled);
-    GEN_CHECK_OFF(ParallelState, base);
+    GEN_CHECK_SIZE(PARALLELPORT);
+    GEN_CHECK_OFF(PARALLELPORT, pDevInsR3);
+    GEN_CHECK_OFF(PARALLELPORT, pDevInsR0);
+    GEN_CHECK_OFF(PARALLELPORT, pDevInsRC);
+    GEN_CHECK_OFF(PARALLELPORT, IBase);
+    GEN_CHECK_OFF(PARALLELPORT, IHostParallelPort);
+    GEN_CHECK_OFF(PARALLELPORT, pDrvHostParallelConnector);
+    GEN_CHECK_OFF(PARALLELPORT, fGCEnabled);
+    GEN_CHECK_OFF(PARALLELPORT, fR0Enabled);
+    GEN_CHECK_OFF(PARALLELPORT, fEppTimeout);
+    GEN_CHECK_OFF(PARALLELPORT, IOBase);
+    GEN_CHECK_OFF(PARALLELPORT, iIrq);
+    GEN_CHECK_OFF(PARALLELPORT, regData);
+    GEN_CHECK_OFF(PARALLELPORT, regStatus);
+    GEN_CHECK_OFF(PARALLELPORT, regControl);
+    GEN_CHECK_OFF(PARALLELPORT, regEppAddr);
+    GEN_CHECK_OFF(PARALLELPORT, regEppData);
+#if 0
+    GEN_CHECK_OFF(PARALLELPORT, reg_ecp_ecr);
+    GEN_CHECK_OFF(PARALLELPORT, reg_ecp_base_plus_400h);
+    GEN_CHECK_OFF(PARALLELPORT, reg_ecp_config_b);
+    GEN_CHECK_OFF(PARALLELPORT, ecp_fifo);
+    GEN_CHECK_OFF(PARALLELPORT, ecp_fifo[1]);
+    GEN_CHECK_OFF(PARALLELPORT, act_fifo_pos_write);
+    GEN_CHECK_OFF(PARALLELPORT, act_fifo_pos_read);
+#endif
 
     /* Serial/DevSerial.cpp */
     GEN_CHECK_SIZE(SerialState);
