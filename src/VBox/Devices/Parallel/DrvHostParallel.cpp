@@ -71,11 +71,56 @@ typedef struct DRVHOSTPARALLEL
     RTPIPE                        hWakeupPipeR;
     /** Wakeup pipe write end. */
     RTPIPE                        hWakeupPipeW;
+    /** Current mode the parallel port is in. */
+    PDMPARALLELPORTMODE           enmModeCur;
 } DRVHOSTPARALLEL, *PDRVHOSTPARALLEL;
 
 /** Converts a pointer to DRVHOSTPARALLEL::IHostDeviceConnector to a PDRHOSTPARALLEL. */
 #define PDMIHOSTPARALLELCONNECTOR_2_DRVHOSTPARALLEL(pInterface) ( (PDRVHOSTPARALLEL)((uintptr_t)pInterface - RT_OFFSETOF(DRVHOSTPARALLEL, IHostParallelConnector)) )
 
+/**
+ * Changes the current mode of the host parallel port.
+ *
+ * @returns VBox status code.
+ * @param   pThis    The host parallel port instance data.
+ * @param   enmMode  The mode to change the port to.
+ */
+static int drvHostParallelSetMode(PDRVHOSTPARALLEL pThis, PDMPARALLELPORTMODE enmMode)
+{
+    int iMode = 0;
+    int rc = VINF_SUCCESS;
+    int rcLnx;
+
+    LogFlow(("%s: mode=%d\n", __FUNCTION__, enmMode));
+
+    if (pThis->enmModeCur != enmMode)
+    {
+        switch (enmMode)
+        {
+            case PDM_PARALLEL_PORT_MODE_SPP:
+                iMode = IEEE1284_MODE_COMPAT;
+                break;
+            case PDM_PARALLEL_PORT_MODE_EPP_DATA:
+                iMode = IEEE1284_MODE_EPP | IEEE1284_DATA;
+                break;
+            case PDM_PARALLEL_PORT_MODE_EPP_ADDR:
+                iMode = IEEE1284_MODE_EPP | IEEE1284_ADDR;
+                break;
+            case PDM_PARALLEL_PORT_MODE_ECP:
+            case PDM_PARALLEL_PORT_MODE_INVALID:
+            default:
+                return VERR_NOT_SUPPORTED;
+        }
+
+        rcLnx = ioctl(RTFileToNative(pThis->hFileDevice), PPSETMODE, &iMode);
+        if (RT_UNLIKELY(rcLnx < 0))
+            rc = RTErrConvertFromErrno(errno);
+        else
+            pThis->enmModeCur = enmMode;
+    }
+
+    return rc;
+}
 
 /* -=-=-=-=- IBase -=-=-=-=- */
 
@@ -95,88 +140,129 @@ static DECLCALLBACK(void *) drvHostParallelQueryInterface(PPDMIBASE pInterface, 
 /* -=-=-=-=- IHostDeviceConnector -=-=-=-=- */
 
 /** @copydoc PDMICHARCONNECTOR::pfnWrite */
-static DECLCALLBACK(int) drvHostParallelWrite(PPDMIHOSTPARALLELCONNECTOR pInterface, const void *pvBuf, size_t *cbWrite)
+static DECLCALLBACK(int) drvHostParallelWrite(PPDMIHOSTPARALLELCONNECTOR pInterface, const void *pvBuf, size_t cbWrite, PDMPARALLELPORTMODE enmMode)
 {
     PDRVHOSTPARALLEL pThis = PDMIHOSTPARALLELCONNECTOR_2_DRVHOSTPARALLEL(pInterface);
-    const unsigned char *pBuffer = (const unsigned char *)pvBuf;
+    int rc = VINF_SUCCESS;
+    int rcLnx = 0;
 
-    LogFlow(("%s: pvBuf=%#p cbWrite=%d\n", __FUNCTION__, pvBuf, *cbWrite));
+    LogFlow(("%s: pvBuf=%#p cbWrite=%d\n", __FUNCTION__, pvBuf, cbWrite));
 
-    ioctl(RTFileToNative(pThis->hFileDevice), PPWDATA, pBuffer);
-    *cbWrite = 1;
+    rc = drvHostParallelSetMode(pThis, enmMode);
+    if (RT_FAILURE(rc))
+        return rc;
 
-    return VINF_SUCCESS;
+    if (enmMode == PDM_PARALLEL_PORT_MODE_SPP)
+    {
+        /* Set the data lines directly. */
+        rcLnx = ioctl(RTFileToNative(pThis->hFileDevice), PPWDATA, pvBuf);
+    }
+    else
+    {
+        /* Use write interface. */
+        rcLnx = write(RTFileToNative(pThis->hFileDevice), pvBuf, cbWrite);
+    }
+    if (RT_UNLIKELY(rcLnx < 0))
+        rc = RTErrConvertFromErrno(errno);
+
+    return rc;
 }
 
-static DECLCALLBACK(int) drvHostParallelRead(PPDMIHOSTPARALLELCONNECTOR pInterface, void *pvBuf, size_t *cbRead)
+static DECLCALLBACK(int) drvHostParallelRead(PPDMIHOSTPARALLELCONNECTOR pInterface, void *pvBuf, size_t cbRead, PDMPARALLELPORTMODE enmMode)
 {
     PDRVHOSTPARALLEL pThis = PDMIHOSTPARALLELCONNECTOR_2_DRVHOSTPARALLEL(pInterface);
-    unsigned char *pBuffer = (unsigned char *)pvBuf;
+    int rc = VINF_SUCCESS;
+    int rcLnx = 0;
 
     LogFlow(("%s: pvBuf=%#p cbRead=%d\n", __FUNCTION__, pvBuf, cbRead));
 
-    ioctl(RTFileToNative(pThis->hFileDevice), PPRDATA, pBuffer);
-    *cbRead = 1;
+    rc = drvHostParallelSetMode(pThis, enmMode);
+    if (RT_FAILURE(rc))
+        return rc;
 
-    return VINF_SUCCESS;
+    if (enmMode == PDM_PARALLEL_PORT_MODE_SPP)
+    {
+        /* Set the data lines directly. */
+        rcLnx = ioctl(RTFileToNative(pThis->hFileDevice), PPWDATA, pvBuf);
+    }
+    else
+    {
+        /* Use write interface. */
+        rcLnx = read(RTFileToNative(pThis->hFileDevice), pvBuf, cbRead);
+    }
+    if (RT_UNLIKELY(rcLnx < 0))
+        rc = RTErrConvertFromErrno(errno);
+
+    return rc;
 }
 
-static DECLCALLBACK(int) drvHostParallelSetMode(PPDMIHOSTPARALLELCONNECTOR pInterface, PDMPARALLELPORTMODE enmMode)
+static DECLCALLBACK(int) drvHostParallelSetPortDirection(PPDMIHOSTPARALLELCONNECTOR pInterface, bool fForward)
 {
     PDRVHOSTPARALLEL pThis = PDMIHOSTPARALLELCONNECTOR_2_DRVHOSTPARALLEL(pInterface);
-    int ppdev_mode;
+    int rc = VINF_SUCCESS;
+    int rcLnx = 0;
+    int iMode = 0;
 
-    LogFlow(("%s: mode=%d\n", __FUNCTION__, enmMode));
+    if (!fForward)
+        iMode = 1;
 
-    switch (enmMode) {
-        case PDM_PARALLEL_PORT_MODE_COMPAT:
-            ppdev_mode = IEEE1284_MODE_COMPAT;
-            break;
-        case PDM_PARALLEL_PORT_MODE_EPP:
-            ppdev_mode = IEEE1284_MODE_EPP;
-            break;
-        case PDM_PARALLEL_PORT_MODE_ECP:
-            //ppdev_mode = IEEE1284_MODE_ECP;
-            break;
-    }
+    rcLnx = ioctl(RTFileToNative(pThis->hFileDevice), PPDATADIR, &iMode);
+    if (RT_UNLIKELY(rcLnx < 0))
+        rc = RTErrConvertFromErrno(errno);
 
-    ioctl(RTFileToNative(pThis->hFileDevice), PPSETMODE, &ppdev_mode);
-
-    return VINF_SUCCESS;
+    return rc;
 }
 
 static DECLCALLBACK(int) drvHostParallelWriteControl(PPDMIHOSTPARALLELCONNECTOR pInterface, uint8_t fReg)
 {
     PDRVHOSTPARALLEL pThis = PDMIHOSTPARALLELCONNECTOR_2_DRVHOSTPARALLEL(pInterface);
+    int rc = VINF_SUCCESS;
+    int rcLnx = 0;
 
     LogFlow(("%s: fReg=%d\n", __FUNCTION__, fReg));
-    ioctl(RTFileToNative(pThis->hFileDevice), PPWCONTROL, &fReg);
+    rcLnx = ioctl(RTFileToNative(pThis->hFileDevice), PPWCONTROL, &fReg);
+    if (RT_UNLIKELY(rcLnx < 0))
+        rc = RTErrConvertFromErrno(errno);
 
-    return VINF_SUCCESS;
+    return rc;
 }
 
 static DECLCALLBACK(int) drvHostParallelReadControl(PPDMIHOSTPARALLELCONNECTOR pInterface, uint8_t *pfReg)
 {
     PDRVHOSTPARALLEL pThis = PDMIHOSTPARALLELCONNECTOR_2_DRVHOSTPARALLEL(pInterface);
-
+    int rc = VINF_SUCCESS;
+    int rcLnx = 0;
     uint8_t fReg = 0;
-    ioctl(RTFileToNative(pThis->hFileDevice), PPRCONTROL, &fReg);
-    LogFlow(("%s: fReg=%d\n", __FUNCTION__, fReg));
-    *pfReg = fReg;
 
-    return VINF_SUCCESS;
+    rcLnx = ioctl(RTFileToNative(pThis->hFileDevice), PPRCONTROL, &fReg);
+    if (RT_UNLIKELY(rcLnx < 0))
+        rc = RTErrConvertFromErrno(errno);
+    else
+    {
+        LogFlow(("%s: fReg=%d\n", __FUNCTION__, fReg));
+        *pfReg = fReg;
+    }
+
+    return rc;
 }
 
 static DECLCALLBACK(int) drvHostParallelReadStatus(PPDMIHOSTPARALLELCONNECTOR pInterface, uint8_t *pfReg)
 {
     PDRVHOSTPARALLEL pThis = PDMIHOSTPARALLELCONNECTOR_2_DRVHOSTPARALLEL(pInterface);
-
+    int rc = VINF_SUCCESS;
+    int rcLnx = 0;
     uint8_t fReg = 0;
-    ioctl(RTFileToNative(pThis->hFileDevice), PPRSTATUS, &fReg);
-    LogFlow(("%s: fReg=%d\n", __FUNCTION__, fReg));
-    *pfReg = fReg;
 
-    return VINF_SUCCESS;
+    rcLnx = ioctl(RTFileToNative(pThis->hFileDevice), PPRSTATUS, &fReg);
+    if (RT_UNLIKELY(rcLnx < 0))
+        rc = RTErrConvertFromErrno(errno);
+    else
+    {
+        LogFlow(("%s: fReg=%d\n", __FUNCTION__, fReg));
+        *pfReg = fReg;
+    }
+
+    return rc;
 }
 
 static DECLCALLBACK(int) drvHostParallelMonitorThread(PPDMDRVINS pDrvIns, PPDMTHREAD pThread)
@@ -294,14 +380,14 @@ static DECLCALLBACK(int) drvHostParallelConstruct(PPDMDRVINS pDrvIns, PCFGMNODE 
     pThis->hWakeupPipeW = NIL_RTPIPE;
 
     /* IBase. */
-    pDrvIns->IBase.pfnQueryInterface               = drvHostParallelQueryInterface;
+    pDrvIns->IBase.pfnQueryInterface                  = drvHostParallelQueryInterface;
     /* IHostParallelConnector. */
-    pThis->IHostParallelConnector.pfnWrite         = drvHostParallelWrite;
-    pThis->IHostParallelConnector.pfnRead          = drvHostParallelRead;
-    pThis->IHostParallelConnector.pfnSetMode       = drvHostParallelSetMode;
-    pThis->IHostParallelConnector.pfnWriteControl  = drvHostParallelWriteControl;
-    pThis->IHostParallelConnector.pfnReadControl   = drvHostParallelReadControl;
-    pThis->IHostParallelConnector.pfnReadStatus    = drvHostParallelReadStatus;
+    pThis->IHostParallelConnector.pfnWrite            = drvHostParallelWrite;
+    pThis->IHostParallelConnector.pfnRead             = drvHostParallelRead;
+    pThis->IHostParallelConnector.pfnSetPortDirection = drvHostParallelSetPortDirection;
+    pThis->IHostParallelConnector.pfnWriteControl     = drvHostParallelWriteControl;
+    pThis->IHostParallelConnector.pfnReadControl      = drvHostParallelReadControl;
+    pThis->IHostParallelConnector.pfnReadStatus       = drvHostParallelReadStatus;
 
     /*
      * Validate the config.
@@ -360,8 +446,16 @@ static DECLCALLBACK(int) drvHostParallelConstruct(PPDMDRVINS pDrvIns, PCFGMNODE 
     /*
      * Create wakeup pipe.
      */
-    rc = RTPipeCreate(&pThis->hWakeupPipeR, &pThis->hWakeupPipeR, 0 /*fFlags*/);
+    rc = RTPipeCreate(&pThis->hWakeupPipeR, &pThis->hWakeupPipeW, 0 /*fFlags*/);
     AssertRCReturn(rc, rc);
+
+    /*
+     * Start in SPP mode.
+     */
+    pThis->enmModeCur = PDM_PARALLEL_PORT_MODE_INVALID;
+    rc = drvHostParallelSetMode(pThis, PDM_PARALLEL_PORT_MODE_SPP);
+    if (RT_FAILURE(rc))
+        return PDMDrvHlpVMSetError(pDrvIns, rc, RT_SRC_POS, N_("HostParallel#%d cannot change mode of parallel mode to SPP"), pDrvIns->iInstance);
 
     /*
      * Start waiting for interrupts.
@@ -370,6 +464,7 @@ static DECLCALLBACK(int) drvHostParallelConstruct(PPDMDRVINS pDrvIns, PCFGMNODE 
                                RTTHREADTYPE_IO, "ParMon");
     if (RT_FAILURE(rc))
         return PDMDrvHlpVMSetError(pDrvIns, rc, RT_SRC_POS, N_("HostParallel#%d cannot create monitor thread"), pDrvIns->iInstance);
+
 
     return VINF_SUCCESS;
 }

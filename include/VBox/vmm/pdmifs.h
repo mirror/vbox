@@ -1767,9 +1767,18 @@ typedef struct PDMISTREAM
 /** Mode of the parallel port */
 typedef enum PDMPARALLELPORTMODE
 {
-    PDM_PARALLEL_PORT_MODE_COMPAT,
-    PDM_PARALLEL_PORT_MODE_EPP,
-    PDM_PARALLEL_PORT_MODE_ECP
+    /** First invalid mode. */
+    PDM_PARALLEL_PORT_MODE_INVALID = 0,
+    /** SPP (Compatibility mode). */
+    PDM_PARALLEL_PORT_MODE_SPP,
+    /** EPP Data mode. */
+    PDM_PARALLEL_PORT_MODE_EPP_DATA,
+    /** EPP Address mode. */
+    PDM_PARALLEL_PORT_MODE_EPP_ADDR,
+    /** ECP mode (not implemented yet). */
+    PDM_PARALLEL_PORT_MODE_ECP,
+    /** 32bit hack. */
+    PDM_PARALLEL_PORT_MODE_32BIT_HACK = 0x7fffffff
 } PDMPARALLELPORTMODE;
 
 /** Pointer to a host parallel port interface. */
@@ -1781,17 +1790,6 @@ typedef struct PDMIHOSTPARALLELPORT *PPDMIHOSTPARALLELPORT;
 typedef struct PDMIHOSTPARALLELPORT
 {
     /**
-     * Deliver data read to the device/driver.
-     *
-     * @returns VBox status code.
-     * @param   pInterface      Pointer to the interface structure containing the called function pointer.
-     * @param   pvBuf           Where the read bits are stored.
-     * @param   pcbRead         Number of bytes available for reading/having been read.
-     * @thread  Any thread.
-     */
-    DECLR3CALLBACKMEMBER(int, pfnNotifyRead,(PPDMIHOSTPARALLELPORT pInterface, const void *pvBuf, size_t *pcbRead));
-
-    /**
      * Notify device/driver that an interrupt has occurred.
      *
      * @returns VBox status code.
@@ -1801,7 +1799,7 @@ typedef struct PDMIHOSTPARALLELPORT
     DECLR3CALLBACKMEMBER(int, pfnNotifyInterrupt,(PPDMIHOSTPARALLELPORT pInterface));
 } PDMIHOSTPARALLELPORT;
 /** PDMIHOSTPARALLELPORT interface ID. */
-#define PDMIHOSTPARALLELPORT_IID                "ac13e437-cd30-47ac-a271-6120571f3a22"
+#define PDMIHOSTPARALLELPORT_IID                "f24b8668-e7f6-4eaa-a14c-4aa2a5f7048e"
 
 
 
@@ -1819,10 +1817,12 @@ typedef struct PDMIHOSTPARALLELCONNECTOR
      * @returns VBox status code.
      * @param   pInterface      Pointer to the interface structure containing the called function pointer.
      * @param   pvBuf           Where to store the write bits.
-     * @param   pcbWrite        Number of bytes to write/bytes actually written.
+     * @param   cbWrite         Number of bytes to write.
+     * @param   enmMode         Mode to write the data.
      * @thread  Any thread.
      */
-    DECLR3CALLBACKMEMBER(int, pfnWrite,(PPDMIHOSTPARALLELCONNECTOR pInterface, const void *pvBuf, size_t *pcbWrite));
+    DECLR3CALLBACKMEMBER(int, pfnWrite,(PPDMIHOSTPARALLELCONNECTOR pInterface, const void *pvBuf,
+                                        size_t cbWrite, PDMPARALLELPORTMODE enmMode));
 
     /**
      * Read bits.
@@ -1830,10 +1830,22 @@ typedef struct PDMIHOSTPARALLELCONNECTOR
      * @returns VBox status code.
      * @param   pInterface      Pointer to the interface structure containing the called function pointer.
      * @param   pvBuf           Where to store the read bits.
-     * @param   pcbRead         Number of bytes to read/bytes actually read.
+     * @param   cbRead          Number of bytes to read.
+     * @param   enmMode         Mode to read the data.
      * @thread  Any thread.
      */
-    DECLR3CALLBACKMEMBER(int, pfnRead,(PPDMIHOSTPARALLELCONNECTOR pInterface, void *pvBuf, size_t *pcbRead));
+    DECLR3CALLBACKMEMBER(int, pfnRead,(PPDMIHOSTPARALLELCONNECTOR pInterface, void *pvBuf,
+                                       size_t cbRead, PDMPARALLELPORTMODE enmMode));
+
+    /**
+     * Set data direction of the port (forward/reverse).
+     *
+     * @returns VBox status code.
+     * @param   pInterface      Pointer to the interface structure containing the called function pointer.
+     * @param   fForward        Flag whether to indicate whether the port is operated in forward or reverse mode.
+     * @thread  Any thread.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnSetPortDirection,(PPDMIHOSTPARALLELCONNECTOR pInterface, bool fForward));
 
     /**
      * Write control register bits.
@@ -1865,18 +1877,9 @@ typedef struct PDMIHOSTPARALLELCONNECTOR
      */
     DECLR3CALLBACKMEMBER(int, pfnReadStatus,(PPDMIHOSTPARALLELCONNECTOR pInterface, uint8_t *pfReg));
 
-    /**
-     * Set mode of the host parallel port.
-     *
-     * @returns VBox status code.
-     * @param   pInterface      Pointer to the interface structure containing the called function pointer.
-     * @param   enmMode         The mode of the host parallel port.
-     * @thread  Any thread.
-     */
-    DECLR3CALLBACKMEMBER(int, pfnSetMode,(PPDMIHOSTPARALLELCONNECTOR pInterface, PDMPARALLELPORTMODE enmMode));
 } PDMIHOSTPARALLELCONNECTOR;
 /** PDMIHOSTPARALLELCONNECTOR interface ID. */
-#define PDMIHOSTPARALLELCONNECTOR_IID           "a03567ca-b29e-4a1b-b2f3-a12435fa2982"
+#define PDMIHOSTPARALLELCONNECTOR_IID           "7c532602-7438-4fbc-9265-349d9f0415f9"
 
 
 /** ACPI power source identifier */
