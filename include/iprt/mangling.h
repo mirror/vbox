@@ -915,6 +915,7 @@
 # define RTPipeCreate                                   RT_MANGLER(RTPipeCreate)
 # define RTPipeFlush                                    RT_MANGLER(RTPipeFlush)
 # define RTPipeFromNative                               RT_MANGLER(RTPipeFromNative)
+# define RTPipeQueryReadable                            RT_MANGLER(RTPipeQueryReadable)
 # define RTPipeRead                                     RT_MANGLER(RTPipeRead)
 # define RTPipeReadBlocking                             RT_MANGLER(RTPipeReadBlocking)
 # define RTPipeSelectOne                                RT_MANGLER(RTPipeSelectOne)

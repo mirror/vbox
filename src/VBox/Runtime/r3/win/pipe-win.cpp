@@ -1147,6 +1147,29 @@ RTDECL(int) RTPipeSelectOne(RTPIPE hPipe, RTMSINTERVAL cMillies)
 }
 
 
+RTDECL(int) RTPipeQueryReadable(RTPIPE hPipe, size_t *pcbReadable)
+{
+    RTPIPEINTERNAL *pThis = hPipe;
+    AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
+    AssertReturn(pThis->u32Magic == RTPIPE_MAGIC, VERR_INVALID_HANDLE);
+    AssertReturn(pThis->fRead, VERR_PIPE_NOT_READ);
+    AssertPtrReturn(pcbReadable, VERR_INVALID_POINTER);
+
+    int rc = RTCritSectEnter(&pThis->CritSect);
+    if (RT_FAILURE(rc))
+        return rc;
+
+    DWORD cbAvailable = 0;
+    if (PeekNamedPipe(pThis->hPipe, NULL, 0, NULL, &cbAvailable, NULL)
+        *pcbReadable = cbAvailable;
+    else
+        rc = RTErrConvertFromWin32(GetLastError());
+
+    RTCritSectLeave(&pThis->CritSect);
+    return rc;
+}
+
+
 /**
  * Internal RTPollSetAdd helper that returns the handle that should be added to
  * the pollset.

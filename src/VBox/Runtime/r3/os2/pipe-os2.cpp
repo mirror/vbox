@@ -94,3 +94,9 @@ RTDECL(int) RTPipeSelectOne(RTPIPE hPipe, RTMSINTERVAL cMillies)
     return VERR_NOT_IMPLEMENTED;
 }
 
+
+RTDECL(int) RTPipeQueryReadable(RTPIPE hPipe, size_t *pcbReadable)
+{
+    return VERR_NOT_IMPLEMENTED;
+}
+

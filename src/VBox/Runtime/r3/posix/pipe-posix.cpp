@@ -43,6 +43,7 @@
 #include <fcntl.h>
 #include <limits.h>
 #include <unistd.h>
+#include <sys/ioctl.h>
 #include <sys/poll.h>
 #include <sys/stat.h>
 #include <signal.h>
@@ -635,5 +636,31 @@ RTDECL(int) RTPipeSelectOne(RTPIPE hPipe, RTMSINTERVAL cMillies)
     if (rc == -1)
         return RTErrConvertFromErrno(errno);
     return rc > 0 ? VINF_SUCCESS : VERR_TIMEOUT;
+}
+
+
+RTDECL(int) RTPipeQueryReadable(RTPIPE hPipe, size_t *pcbReadable)
+{
+    RTPIPEINTERNAL *pThis = hPipe;
+    AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
+    AssertReturn(pThis->u32Magic == RTPIPE_MAGIC, VERR_INVALID_HANDLE);
+    AssertReturn(pThis->fRead, VERR_PIPE_NOT_READ);
+    AssertPtrReturn(pcbReadable, VERR_INVALID_POINTER);
+
+    int cb = 0;
+    int rc = ioctl(pThis->fd, FIONREAD, &cb);
+    if (rc != -1)
+    {
+        AssertStmt(cb >= 0, cb = 0);
+        *pcbReadable = cb;
+        return VINF_SUCCESS;
+    }
+
+    rc = errno;
+    if (rc == ENOTTY)
+        rc = VERR_NOT_SUPPORTED;
+    else
+        rc = RTErrConvertFromErrno(rc);
+    return rc;
 }
 
