@@ -136,9 +136,6 @@
  *      - @ref pg_main_events
  *      - @ref pg_vrdb_usb
  *  - IPRT - Runtime Library for hiding host OS differences.
- *      - @ref pg_rtlog
- *      - @ref pg_rt_thread
- *      - @ref pg_rtfileaio_linux
  *  - Testsuite:
  *      - @ref pg_testsuite_guideline
  *
