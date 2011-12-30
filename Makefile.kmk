@@ -502,7 +502,15 @@ VBOX_CORE_DOXYFILE_INPUT_DIRS = \
 	src/VBox/HostServices/SharedClipboard \
 	src/VBox/HostServices/SharedFolders \
 	src/VBox/HostServices/SharedOpenGL \
+	src/VBox/HostServices/SharedOpenGL/crserver \
+	src/VBox/HostServices/SharedOpenGL/crserverlib \
+	src/VBox/HostServices/SharedOpenGL/render \
+	src/VBox/HostServices/SharedOpenGL/unpacker \
 	src/VBox/HostServices/auth \
+	src/VBox/HostServices/auth/directoryservice \
+	src/VBox/HostServices/auth/pam \
+	src/VBox/HostServices/auth/simple \
+	src/VBox/HostServices/auth/winlogon \
 	src/VBox/HostDrivers/Support \
 	src/VBox/HostDrivers/Support/darwin \
 	src/VBox/HostDrivers/Support/freebsd \
@@ -546,14 +554,100 @@ VBOX_CORE_DOXYFILE_INPUT_DIRS = \
 	src/VBox/HostDrivers/VBoxUSB/win/Monitor/win64 \
 	src/VBox/HostDrivers/VBoxUSB/win/usbd \
 	src/VBox/Additions \
+	src/VBox/Additions/WINNT \
+	src/VBox/Additions/WINNT/Graphics \
+	src/VBox/Additions/WINNT/Graphics/Video \
+	src/VBox/Additions/WINNT/Graphics/Video/common \
+	src/VBox/Additions/WINNT/Graphics/Video/common/wddm \
+	src/VBox/Additions/WINNT/Graphics/Video/common/xpdm \
+	src/VBox/Additions/WINNT/Graphics/Video/disp \
+	src/VBox/Additions/WINNT/Graphics/Video/disp/common \
+	src/VBox/Additions/WINNT/Graphics/Video/disp/wddm \
+	src/VBox/Additions/WINNT/Graphics/Video/disp/wddm/dbg \
+	src/VBox/Additions/WINNT/Graphics/Video/disp/xpdm \
+	src/VBox/Additions/WINNT/Graphics/Video/mp \
+	src/VBox/Additions/WINNT/Graphics/Video/mp/common \
+	src/VBox/Additions/WINNT/Graphics/Video/mp/wddm \
+	src/VBox/Additions/WINNT/Graphics/Video/mp/xpdm \
+	src/VBox/Additions/WINNT/Graphics/Wine \
+	src/VBox/Additions/WINNT/Graphics/Wine/d3d8 \
+	src/VBox/Additions/WINNT/Graphics/Wine/d3d9 \
+	src/VBox/Additions/WINNT/Graphics/Wine/libWine \
+	src/VBox/Additions/WINNT/Graphics/Wine/switcher \
+	src/VBox/Additions/WINNT/Graphics/Wine/vbox \
+	src/VBox/Additions/WINNT/Graphics/Wine/vbox/libWineStub \
+	src/VBox/Additions/WINNT/Graphics/Wine/vbox/libWineStub/include \
+	src/VBox/Additions/WINNT/Graphics/Wine/vbox/libWineStub/include/backup \
+	src/VBox/Additions/WINNT/Graphics/Wine/vbox/libWineStub/include/wine \
+	src/VBox/Additions/WINNT/Graphics/Wine/wined3d \
+	src/VBox/Additions/WINNT/Installer \
+	src/VBox/Additions/WINNT/Installer/ISO \
+	src/VBox/Additions/WINNT/Installer/InstallHelper \
+	src/VBox/Additions/WINNT/Installer/Languages \
+	src/VBox/Additions/WINNT/Installer/Loader \
+	src/VBox/Additions/WINNT/Mouse \
+	src/VBox/Additions/WINNT/Mouse/NT5 \
+	src/VBox/Additions/WINNT/Mouse/common \
+	src/VBox/Additions/WINNT/SharedFolders \
+	src/VBox/Additions/WINNT/SharedFolders/redirector \
+	src/VBox/Additions/WINNT/SharedFolders/redirector/dll \
+	src/VBox/Additions/WINNT/SharedFolders/redirector/sys \
+	src/VBox/Additions/WINNT/SharedFolders/redirector/sys/rdbss \
+	src/VBox/Additions/WINNT/VBoxCredProv \
+	src/VBox/Additions/WINNT/VBoxGINA \
+	src/VBox/Additions/WINNT/VBoxHook \
+	src/VBox/Additions/WINNT/VBoxTray \
+	src/VBox/Additions/WINNT/VBoxUSB \
+	src/VBox/Additions/WINNT/i8042prt \
+	src/VBox/Additions/WINNT/i8042prt/i386 \
+	src/VBox/Additions/WINNT/i8042prt/include \
+	src/VBox/Additions/WINNT/include \
 	src/VBox/Additions/common \
+	src/VBox/Additions/common/VBoxControl \
 	src/VBox/Additions/common/VBoxGuest \
+	src/VBox/Additions/common/VBoxGuest/freebsd \
+	src/VBox/Additions/common/VBoxGuest/linux \
+	src/VBox/Additions/common/VBoxGuest/win \
 	src/VBox/Additions/common/VBoxGuestLib \
 	src/VBox/Additions/common/VBoxService \
-	src/VBox/Additions/common/VBoxControl \
 	src/VBox/Additions/common/VBoxVideo \
 	src/VBox/Additions/common/crOpenGL \
+	src/VBox/Additions/common/crOpenGL/array \
+	src/VBox/Additions/common/crOpenGL/feedback \
+	src/VBox/Additions/common/crOpenGL/pack \
+	src/VBox/Additions/common/crOpenGL/passthrough \
 	src/VBox/Additions/common/pam \
+	src/VBox/Additions/darwin \
+	src/VBox/Additions/freebsd \
+	src/VBox/Additions/freebsd/Installer \
+	src/VBox/Additions/freebsd/drm \
+	src/VBox/Additions/freebsd/vboxvfs \
+	src/VBox/Additions/linux \
+	src/VBox/Additions/linux/drm \
+	src/VBox/Additions/linux/installer \
+	src/VBox/Additions/linux/selinux-fedora \
+	src/VBox/Additions/linux/sharedfolders \
+	src/VBox/Additions/os2 \
+	src/VBox/Additions/os2/VBoxGradd \
+	src/VBox/Additions/os2/VBoxGradd/graddlib \
+	src/VBox/Additions/os2/VBoxGrext \
+	src/VBox/Additions/os2/VBoxMouse \
+	src/VBox/Additions/os2/VBoxSF \
+	src/VBox/Additions/solaris \
+	src/VBox/Additions/solaris/DRM \
+	src/VBox/Additions/solaris/DRM/include \
+	src/VBox/Additions/solaris/Installer \
+	src/VBox/Additions/solaris/SharedFolders \
+	src/VBox/Additions/solaris/SharedFolders/solaris10 \
+	src/VBox/Additions/solaris/SharedFolders/solaris10/sys \
+	src/VBox/Additions/solaris/Virtio \
+	src/VBox/Additions/x11 \
+	src/VBox/Additions/x11/Installer \
+	src/VBox/Additions/x11/VBoxClient \
+	src/VBox/Additions/x11/vboxmouse \
+	src/VBox/Additions/x11/vboxmouse/xorg70 \
+	src/VBox/Additions/x11/vboxmouse/xorg71 \
+	src/VBox/Additions/x11/vboxvideo \
 	src/VBox/NetworkServices \
 	src/VBox/NetworkServices/DHCP \
 	src/VBox/NetworkServices/NAT \
