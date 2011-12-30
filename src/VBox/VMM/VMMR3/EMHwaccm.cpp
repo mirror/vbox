@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2009 Oracle Corporation
+ * Copyright (C) 2006-2011 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -13,22 +13,6 @@
  * Foundation, in version 2 as it comes in the "COPYING" file of the
  * VirtualBox OSE distribution. VirtualBox OSE is distributed in the
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
- */
-
-/** @page pg_em         EM - The Execution Monitor / Manager
- *
- * The Execution Monitor/Manager is responsible for running the VM, scheduling
- * the right kind of execution (Raw-mode, Hardware Assisted, Recompiled or
- * Interpreted), and keeping the CPU states in sync. The function
- * EMR3ExecuteVM() is the 'main-loop' of the VM, while each of the execution
- * modes has different inner loops (emR3RawExecute, emR3HwAccExecute, and
- * emR3RemExecute).
- *
- * The interpreted execution is only used to avoid switching between
- * raw-mode/hwaccm and the recompiler when fielding virtualization traps/faults.
- * The interpretation is thus implemented as part of EM.
- *
- * @see grp_em
  */
 
 /*******************************************************************************

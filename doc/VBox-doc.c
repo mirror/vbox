@@ -28,15 +28,22 @@
  *      - @ref pg_cpum
  *      - CSAM - Guest OS Code Scanning and Analyis Manager.
  *      - @ref pg_dbgf
- *          - DBGC - Debugger Console.
+ *          - @ref pg_dbgf_addr_space
+ *          - @ref pg_dbgf_vmcore
+ *          - @ref pg_dbgf_module
+ *          - @ref pg_dbgc
  *          - VBoxDbg - Debugger GUI (Qt).
  *      - DIS - Disassembler.
  *      - @ref pg_em
  *      - HWACCM - Intel/AMD VM Hardware Support Manager.
  *      - REM - Recompiled Execution Monitor.
+ *          - @ref pg_vboxrem_amd64
+ *      - @ref pg_iem
  *      - @ref pg_gmm
  *          - @ref pg_mm
  *          - @ref pg_pgm
+ *              - @ref pg_pgm_phys
+ *              - @ref pg_pgm_pool
  *          - @ref pg_selm
  *      - @ref pg_iom
  *      - PATM - Dynamic Guest OS Patching Manager.
@@ -47,10 +54,14 @@
  *          - Critical Section API.
  *          - Queue API.
  *          - Thread API.
+ *          - @ref pg_pdm_block_cache
  *      - @ref pg_ssm
  *      - @ref pg_stam
  *      - @ref pg_tm
  *      - @ref pg_trpm
+ *      - VMM docs:
+ *          - @ref pg_vmm_guideline
+ *          - @ref pg_raw
  *  - Pluggable Components (via PDM).
  *      - DevPCArch - PC Architecture Device (chipset, legacy ++).
  *      - DevPCBios - Basic Input Output System.
@@ -74,7 +85,7 @@
  *          - DrvTAP - Host Interface Networking Driver.
  *      - Storage:
  *          - DevATA - ATA ((E)IDE) Device Emulation.
- *          - DevAHCI - Serial ATA / AHCI Device Emulation.
+ *          - @ref pg_dev_ahci
  *          - DevFDC - Floppy Controller Device Emulation.
  *          - DrvBlock - Intermediate block driver.
  *          - DrvHostBase - Common code for the host drivers.
@@ -86,15 +97,50 @@
  *          - DrvVD - Intermediate Virtual Drive (Media) driver.
  *          - DrvVDI - VirtualBox Drive Image Container Driver.
  *          - DrvVmdk - VMDK Drive Image Container Driver.
+ *      - USB:
+ *          - @ref pg_dev_ohci
+ *          - @ref pg_dev_ehci
+ *          - @ref pg_dev_vusb
+ *          - @ref pg_dev_vusb_old
  *  - Host Drivers.
  *      - SUPDRV - The Support driver (aka VBoxDrv).
- *      - VBoxUSB - The USB support driver.
- *      - VBoxTAP - The Host Interface Networking driver.
+ *          - @ref pg_sup
  *      - @ref pg_netflt
+ *      - @ref pg_netadp
+ *      - VBoxUSB - The USB support driver.
+ *      - @ref pg_netflt
+ *      - @ref pg_rawpci
  *  - Host Services.
- *      - Shared Clipboard.
- *      - 3D
- *  - Main API.
+ *      - @ref pg_hostclip Shared Clipboard.
+ *      - Shared Folders.
+ *      - Shared OpenGL. See PDF. (TODO: translate PDF to doxygen)
+ *          - @ref pg_opengl_cocoa
+ *      - @ref pg_svc_guest_properties
+ *      - @ref pg_svc_guest_control
+ *  - Guest Additions.
+ *      - VBoxGuest.
+ *          - @ref pg_guest_lib
+ *      - VBoxService.
+ *          - @ref pg_vboxervice_timesync
+ *          - ...
+ *      - VBoxControl.
+ *      - VBoxVideo.
+ *      - crOpenGL.
+ *      - VBoxClient / VBoxTray.
+ *      - pam.
+ *      - ...
+ *  - Network Services:
+ *      - @ref pg_net_dhcp
+ *      - @ref pg_net_nat
+ *  - @ref pg_main
+ *      - @ref pg_main_events
+ *      - @ref pg_vrdb_usb
+ *  - IPRT - Runtime Library for hiding host OS differences.
+ *      - @ref pg_rtlog
+ *      - @ref pg_rt_thread
+ *      - @ref pg_rtfileaio_linux
+ *  - Testsuite:
+ *      - @ref pg_testsuite_guideline
  *
  * @todo Make links to the components.
  */
