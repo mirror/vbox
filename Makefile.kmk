@@ -554,6 +554,10 @@ VBOX_CORE_DOXYFILE_INPUT_DIRS = \
 	src/VBox/Additions/common/VBoxVideo \
 	src/VBox/Additions/common/crOpenGL \
 	src/VBox/Additions/common/pam \
+	src/VBox/NetworkServices \
+	src/VBox/NetworkServices/DHCP \
+	src/VBox/NetworkServices/NAT \
+	src/VBox/NetworkServices/NetLib \
 	src/VBox/Storage
 
 # These must come first in order to make things look nice.

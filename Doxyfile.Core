@@ -442,7 +442,21 @@ PREDEFINED             =  \
     DOXYGEN_RUNNING \
     RT_C_DECLS_END \
     RT_C_DECLS_BEGIN \
-    VBOX
+    VBOX \
+    AssertCompileNS(expr) \
+    AssertCompile(expr) \
+    AssertCompileSize(type, size) \
+    AssertCompileSizeAlignment(type, align) \
+    AssertCompileMemberAlignment(type, member, align) \
+    AssertCompileMemberOffset(type, member, off) \
+    AssertCompile2MemberOffsets(type, member1, member2) \
+    AssertCompileAdjacentMembers(type, member1, member2) \
+    AssertCompileMembersAtSameOffset(type1, member1, type2, member2) \
+    AssertCompileMemberSize(type, member, size) \
+    AssertCompileMemberSizeAlignment(type, member, align) \
+    AssertCompileMembersSameSize(type1, member1, type2, member2) \
+    AssertCompileMembersSameSizeAndOffset(type1, member1, type2, member2)
+
 # context hacks.
 PREDEFINED            += RCPTRTYPE(RCType)=RCType
 PREDEFINED            += R3PTRTYPE(R3Type)=R3Type
