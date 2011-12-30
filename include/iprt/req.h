@@ -424,13 +424,104 @@ RTDECL(uint64_t) RTReqPoolGetStat(RTREQPOOL hPool, RTREQPOOLSTAT enmStat);
  */
 RTDECL(int) RTReqPoolAlloc(RTREQPOOL hPool, RTREQTYPE enmType, PRTREQ *phReq);
 
+/**
+ * Call a function on a worker thread.
+ *
+ * @returns IPRT status code.
+ * @param   hPool           The request thread pool handle.
+ * @param   cMillies        The number of milliseconds to wait for the request
+ *                          to be processed.
+ * @param   phReq           Where to return the request. Can be NULL if the
+ *                          RTREQFLAGS_NO_WAIT flag is used.
+ * @param   fFlags          A combination of RTREQFLAGS values.
+ * @param   pfnFunction     The function to be called.  Must be declared by a
+ *                          DECL macro because of calling conventions.
+ * @param   cArgs           The number of arguments in the ellipsis.
+ * @param   ...             Arguments.
+ *
+ * @remarks The function better avoid taking uint64_t and structs as part of the
+ *          arguments (use pointers to these instead).  In general anything
+ *          that's larger than an uintptr_t is problematic.
+ */
 RTDECL(int) RTReqPoolCallEx( RTREQPOOL hPool, RTMSINTERVAL cMillies, PRTREQ *phReq, uint32_t fFlags, PFNRT pfnFunction, unsigned cArgs, ...);
+
+
+/**
+ * Call a function on a worker thread.
+ *
+ * @returns IPRT status code.
+ * @param   hPool           The request thread pool handle.
+ * @param   cMillies        The number of milliseconds to wait for the request
+ *                          to be processed.
+ * @param   phReq           Where to return the request. Can be NULL if the
+ *                          RTREQFLAGS_NO_WAIT flag is used.
+ * @param   fFlags          A combination of RTREQFLAGS values.
+ * @param   pfnFunction     The function to be called.  Must be declared by a
+ *                          DECL macro because of calling conventions.
+ * @param   cArgs           The number of arguments in the variable argument
+ *                          list.
+ * @param   va              Arguments.
+ * @remarks See remarks on RTReqPoolCallEx.
+ */
 RTDECL(int) RTReqPoolCallExV(RTREQPOOL hPool, RTMSINTERVAL cMillies, PRTREQ *phReq, uint32_t fFlags, PFNRT pfnFunction, unsigned cArgs, va_list va);
 
+/**
+ * Call a function on a worker thread, wait for it to return.
+ *
+ * @returns IPRT status code returned by @a pfnFunction or request pool error.
+ * @param   hPool           The request thread pool handle.
+ * @param   pfnFunction     The function to be called.  Must be declared by a
+ *                          DECL macro because of calling conventions.  The
+ *                          function must return an int value compatible with
+ *                          the IPRT status code convention.
+ * @param   cArgs           The number of arguments in the elipsis.
+ * @param   ...             Arguments.
+ * @remarks See remarks on RTReqPoolCallEx.
+ */
 RTDECL(int) RTReqPoolCallWait(RTREQPOOL hPool, PFNRT pfnFunction, unsigned cArgs, ...);
+
+/**
+ * Call a function on a worker thread, don't wait for it to return.
+ *
+ * @returns IPRT status code.
+ * @param   hPool           The request thread pool handle.
+ * @param   pfnFunction     The function to be called.  Must be declared by a
+ *                          DECL macro because of calling conventions.  The
+ *                          function should return an int value compatible with
+ *                          the IPRT status code convention, thought it's not
+ *                          all that important as it's thrown away.
+ * @param   cArgs           The number of arguments in the elipsis.
+ * @param   ...             Arguments.
+ * @remarks See remarks on RTReqPoolCallEx.
+ */
 RTDECL(int) RTReqPoolCallNoWait(RTREQPOOL hPool, PFNRT pfnFunction, unsigned cArgs, ...);
 
+/**
+ * Call a void function on a worker thread.
+ *
+ * @returns IPRT status code.
+ * @param   hPool           The request thread pool handle.
+ * @param   pfnFunction     The function to be called.  Must be declared by a
+ *                          DECL macro because of calling conventions.  The
+ *                          function is taken to return void.
+ * @param   cArgs           The number of arguments in the elipsis.
+ * @param   ...             Arguments.
+ * @remarks See remarks on RTReqPoolCallEx.
+ */
 RTDECL(int) RTReqPoolCallVoidWait(RTREQPOOL hPool, PFNRT pfnFunction, unsigned cArgs, ...);
+
+/**
+ * Call a void function on a worker thread, don't wait for it to return.
+ *
+ * @returns IPRT status code.
+ * @param   hPool           The request thread pool handle.
+ * @param   pfnFunction     The function to be called.  Must be declared by a
+ *                          DECL macro because of calling conventions.  The
+ *                          function is taken to return void.
+ * @param   cArgs           The number of arguments in the elipsis.
+ * @param   ...             Arguments.
+ * @remarks See remarks on RTReqPoolCallEx.
+ */
 RTDECL(int) RTReqPoolCallVoidNoWait(RTREQPOOL hPool, PFNRT pfnFunction, unsigned cArgs, ...);
 
 
