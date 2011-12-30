@@ -496,10 +496,13 @@ VBOX_CORE_DOXYFILE_INPUT_DIRS = \
 	src/VBox/Main/src-server/win \
 	src/VBox/Main/src-server/xpcom \
 	src/VBox/HostServices \
+	src/VBox/HostServices/DragAndDrop \
+	src/VBox/HostServices/GuestControl \
+	src/VBox/HostServices/GuestProperties \
 	src/VBox/HostServices/SharedClipboard \
 	src/VBox/HostServices/SharedFolders \
-	src/VBox/HostServices/SharedInfoServices \
 	src/VBox/HostServices/SharedOpenGL \
+	src/VBox/HostServices/auth \
 	src/VBox/HostDrivers/Support \
 	src/VBox/HostDrivers/Support/darwin \
 	src/VBox/HostDrivers/Support/freebsd \
@@ -523,6 +526,11 @@ VBOX_CORE_DOXYFILE_INPUT_DIRS = \
 	src/VBox/HostDrivers/VBoxNetAdp/linux \
 	src/VBox/HostDrivers/VBoxNetAdp/solaris \
 	src/VBox/HostDrivers/VBoxNetAdp/win \
+	src/VBox/HostDrivers/VBoxPci \
+	src/VBox/HostDrivers/VBoxPci/darwin \
+	src/VBox/HostDrivers/VBoxPci/linux \
+	src/VBox/HostDrivers/VBoxPci/solaris \
+	src/VBox/HostDrivers/VBoxPci/win \
 	src/VBox/HostDrivers/VBoxUSB \
 	src/VBox/HostDrivers/VBoxUSB/darwin \
 	src/VBox/HostDrivers/VBoxUSB/os2 \
@@ -537,6 +545,15 @@ VBOX_CORE_DOXYFILE_INPUT_DIRS = \
 	src/VBox/HostDrivers/VBoxUSB/win/Monitor/win32 \
 	src/VBox/HostDrivers/VBoxUSB/win/Monitor/win64 \
 	src/VBox/HostDrivers/VBoxUSB/win/usbd \
+	src/VBox/Additions \
+	src/VBox/Additions/common \
+	src/VBox/Additions/common/VBoxGuest \
+	src/VBox/Additions/common/VBoxGuestLib \
+	src/VBox/Additions/common/VBoxService \
+	src/VBox/Additions/common/VBoxControl \
+	src/VBox/Additions/common/VBoxVideo \
+	src/VBox/Additions/common/crOpenGL \
+	src/VBox/Additions/common/pam \
 	src/VBox/Storage
 
 # These must come first in order to make things look nice.
