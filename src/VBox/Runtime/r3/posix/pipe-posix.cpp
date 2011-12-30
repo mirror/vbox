@@ -50,6 +50,9 @@
 #ifdef RT_OS_LINUX
 # include <sys/syscall.h>
 #endif
+#ifdef RT_OS_SOLARIS
+# include <sys/filio.h>
+#endif
 
 
 /*******************************************************************************
