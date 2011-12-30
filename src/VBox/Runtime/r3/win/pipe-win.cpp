@@ -1160,7 +1160,7 @@ RTDECL(int) RTPipeQueryReadable(RTPIPE hPipe, size_t *pcbReadable)
         return rc;
 
     DWORD cbAvailable = 0;
-    if (PeekNamedPipe(pThis->hPipe, NULL, 0, NULL, &cbAvailable, NULL)
+    if (PeekNamedPipe(pThis->hPipe, NULL, 0, NULL, &cbAvailable, NULL))
         *pcbReadable = cbAvailable;
     else
         rc = RTErrConvertFromWin32(GetLastError());
