@@ -1073,6 +1073,10 @@ RT_C_DECLS_END
 #define VERR_PIPE_NOT_CONNECTED             (-305)
 /** More data available in pipe. */
 #define VERR_MORE_DATA                      (-306)
+/** Expected read pipe, got a write pipe instead. */
+#define VERR_PIPE_NOT_READ                  (-307)
+/** Expected write pipe, got a read pipe instead. */
+#define VERR_PIPE_NOT_WRITE                 (-308)
 /** @} */
 
 

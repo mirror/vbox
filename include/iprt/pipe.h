@@ -205,6 +205,19 @@ RTDECL(int) RTPipeFlush(RTPIPE hPipe);
  */
 RTDECL(int) RTPipeSelectOne(RTPIPE hPipe, RTMSINTERVAL cMillies);
 
+/**
+ * Queries the number of bytes immediately available for reading.
+ *
+ * @returns IPRT status code.
+ * @retval  VERR_NOT_SUPPORTED if not supported by the OS.  The caller shall
+ *          handle this case.
+ *
+ * @param   hPipe           The IPRT read pipe handle.
+ * @param   pcbReadable     Where to return the number of bytes that is ready
+ *                          to be read.
+ */
+RTDECL(int) RTPipeQueryReadable(RTPIPE hPipe, size_t *pcbReadable);
+
 /** @} */
 
 RT_C_DECLS_END
