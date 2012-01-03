@@ -576,8 +576,8 @@ HRESULT Guest::taskCopyFileFromGuest(GuestTask *aTask)
                                     break;
                                 }
 
+                                Assert(cbToRead >= aOutputData.size());
                                 cbToRead -= aOutputData.size();
-                                Assert(cbToRead >= 0);
                                 cbTransfered += aOutputData.size();
 
                                 aTask->pProgress->SetCurrentOperationProgress(cbTransfered / (lFileSize / 100.0));
