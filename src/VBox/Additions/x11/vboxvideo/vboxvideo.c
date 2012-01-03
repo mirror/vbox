@@ -208,6 +208,7 @@ static const char *vgahwSymbols[] = {
     "vgaHWGetIndex",
     "vgaHWRestore",
     "vgaHWSave",
+    "vgaHWSetStdFuncs",
     NULL
 };
 #endif /* !XORG_7X */
@@ -849,6 +850,7 @@ VBOXPreInit(ScrnInfoPtr pScrn, int flags)
     if (!vgaHWGetHWRec(pScrn))
         return FALSE;
     /* Must be called before any VGA registers are saved or restored */
+    vgaHWSetStdFuncs(VGAHWPTR(pScrn));
     vgaHWGetIOBase(VGAHWPTR(pScrn));
 
     /* Colour weight - we always call this, since we are always in
