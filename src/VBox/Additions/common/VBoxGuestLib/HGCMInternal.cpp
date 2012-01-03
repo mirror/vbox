@@ -30,6 +30,8 @@
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
+#define LOG_GROUP LOG_GROUP_HGCM
+
 #include "VBGLInternal.h"
 #include <iprt/alloca.h>
 #include <iprt/asm.h>
@@ -39,8 +41,6 @@
 #include <iprt/string.h>
 #include <iprt/thread.h>
 #include <iprt/time.h>
-
-#define LOG_GROUP LOG_GROUP_HGCM
 
 /*******************************************************************************
 *   Defined Constants And Macros                                               *
