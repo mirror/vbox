@@ -429,6 +429,9 @@ static int sf_reg_release(struct inode *inode, struct file *file)
     BUG_ON(!sf_g);
     BUG_ON(!sf_r);
 
+    /* See the smbfs source (file.c). mmap in particular can cause data to be
+     * written to the file after it is closed, which we can't cope with. */
+    filemap_write_and_wait(inode->i_mapping);
     rc = vboxCallClose(&client_handle, &sf_g->map, sf_r->handle);
     if (RT_FAILURE(rc))
         LogFunc(("vboxCallClose failed rc=%Rrc\n", rc));
