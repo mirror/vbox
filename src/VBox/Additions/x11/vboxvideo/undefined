@@ -127,6 +127,7 @@ vgaHWGetIndex
 vgaHWGetIOBase
 vgaHWRestore
 vgaHWSave
+vgaHWSetStdFuncs
 write
 xf86AddDriver
 xf86ConfigPciEntity
