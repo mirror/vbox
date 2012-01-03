@@ -743,6 +743,96 @@ static int rtR0MemObjLinuxAllocPhysSub(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJTYP
 }
 
 
+/**
+ * Translates a kernel virtual address to a linux page structure by walking the
+ * page tables.
+ *
+ * @note    We do assume that the page tables will not change as we are walking
+ *          them.  This assumption is rather forced by the fact that I could not
+ *          immediately see any way of preventing this from happening.  So, we
+ *          take some extra care when accessing them.
+ *
+ *          Because of this, we don't want to use this function on memory where
+ *          attribute changes to nearby pages is likely to cause large pages to
+ *          be used or split up. So, don't use this for the linear mapping of
+ *          physical memory.
+ *
+ * @returns Pointer to the page structur or NULL if it could not be found.
+ * @param   pv      The kernel virtual address.
+ */
+static struct page *rtR0MemObjLinuxVirtToPage(void *pv)
+{
+    unsigned long   ulAddr = (unsigned long)pv;
+    unsigned long   pfn;
+    struct page    *pPage;
+    pte_t          *pEntry;
+    union
+    {
+        pgd_t       Global;
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 11)
+        pud_t       Upper;
+#endif
+        pmd_t       Middle;
+        pte_t       Entry;
+    } u;
+
+    /* Should this happen in a situation this code will be called in?  And if
+     * so, can it change under our feet?  See also
+     * "Documentation/vm/active_mm.txt" in the kernel sources. */
+    if (RT_UNLIKELY(!current->active_mm))
+        return NULL;
+    u.Global = *pgd_offset(current->active_mm, ulAddr);
+    if (RT_UNLIKELY(pgd_none(u.Global)))
+        return NULL;
+
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 11)
+    u.Upper = *pud_offset(&u.Global, ulAddr);
+    if (RT_UNLIKELY(pud_none(u.Upper)))
+        return NULL;
+# if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 25)
+    if (pud_large(u.Upper))
+    {
+        pPage = pud_page(u.Upper);
+        AssertReturn(pPage, NULL);
+        pfn  = page_to_pfn(pPage);      /* doing the safe way... */
+        pfn += (ulAddr >> PAGE_SHIFT) & ((UINT32_C(1) << (PUD_SHIFT - PAGE_SHIFT)) - 1);
+        return pfn_to_page(pfn);
+    }
+# endif
+
+    u.Middle = *pmd_offset(&u.Upper, ulAddr);
+#else  /* < 2.6.11 */
+    u.Middle = *pmd_offset(&u.Global, ulAddr);
+#endif /* < 2.6.11 */
+    if (RT_UNLIKELY(pmd_none(u.Middle)))
+        return NULL;
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
+    if (pmd_large(u.Middle))
+    {
+        pPage = pmd_page(u.Middle);
+        AssertReturn(pPage, NULL);
+        pfn  = page_to_pfn(pPage);      /* doing the safe way... */
+        pfn += (ulAddr >> PAGE_SHIFT) & ((UINT32_C(1) << (PMD_SHIFT - PAGE_SHIFT)) - 1);
+        return pfn_to_page(pfn);
+    }
+#endif
+
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 5, 5)
+    pEntry = pte_offset_map(&u.Middle, ulAddr);
+#else
+    pEntry = pte_offset(&u.Middle, ulAddr);
+#endif
+    if (RT_UNLIKELY(!pEntry))
+        return NULL;
+    u.Entry = *pEntry;
+    pte_unmap(pEntry);
+
+    if (RT_UNLIKELY(!pte_present(u.Entry)))
+        return NULL;
+    return pte_page(u.Entry);
+}
+
+
 DECLHIDDEN(int) rtR0MemObjNativeAllocPhys(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, RTHCPHYS PhysHighest, size_t uAlignment)
 {
     return rtR0MemObjLinuxAllocPhysSub(ppMem, RTR0MEMOBJTYPE_PHYS, cb, uAlignment, PhysHighest);
@@ -886,38 +976,23 @@ DECLHIDDEN(int) rtR0MemObjNativeLockKernel(PPRTR0MEMOBJINTERNAL ppMem, void *pv,
     size_t          iPage;
     NOREF(fAccess);
 
-    /*
-     * Classify the memory and check that we can deal with it.
-     */
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
-    fLinearMapping = virt_addr_valid(pvLast) && virt_addr_valid(pv);
-#elif LINUX_VERSION_CODE >= KERNEL_VERSION(2, 4, 0)
-    fLinearMapping = VALID_PAGE(virt_to_page(pvLast)) && VALID_PAGE(virt_to_page(pv));
-#else
-# error "not supported"
-#endif
-    /*
-     * kmap()'ed memory. Only relevant for 32-bit Linux kernels with HIGHMEM
-     * enabled. Unfortunately there is no easy way to retrieve the page object
-     * for such temporarily mapped memory, virt_to_page() does not work here.
-     * There is even no function to check if a virtual address is inside the
-     * kmap() area or not :-( kmap_atomic_to_page() looks promising but the test
-     * 'if (vaddr < FIXADDR_START)' if wrong -- the kmap() area is located
-     * below the fixmap area. vmalloc_to_page() would work but is only allowed
-     * for vmalloc'ed memory.
-     */
-#ifdef CONFIG_HIGHMEM
-    if (pv < PKMAP_BASE + LAST_PKMAP*PAGE_SIZE && pvLast >= PKMAP_BASE)
+    if (   !RTR0MemKernelIsValidAddr(pv)
+        || !RTR0MemKernelIsValidAddr(pv + cb))
         return VERR_INVALID_PARAMETER;
+
+    /*
+     * The lower part of the kernel memory has a linear mapping between
+     * physical and virtual addresses. So we take a short cut here.  This is
+     * assumed to be the cleanest way to handle those addresses (and the code
+     * is well tested, though the test for determining it is not very nice).
+     * If we ever decide it isn't we can still remove it.
+     */
+#if 0
+    fLinearMapping = (unsigned long)pvLast < VMALLOC_START;
+#else
+    fLinearMapping = (unsigned long)pv     >= (unsigned long)__va(0)
+                  && (unsigned long)pvLast <  (unsigned long)high_memory;
 #endif
-    if (!fLinearMapping)
-    {
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 4, 19)
-        if (   !RTR0MemKernelIsValidAddr(pv)
-            || !RTR0MemKernelIsValidAddr(pv + cb))
-#endif
-            return VERR_INVALID_PARAMETER;
-    }
 
     /*
      * Allocate the memory object.
@@ -928,17 +1003,16 @@ DECLHIDDEN(int) rtR0MemObjNativeLockKernel(PPRTR0MEMOBJINTERNAL ppMem, void *pv,
 
     /*
      * Gather the pages.
-     * We ASSUME all kernel pages are non-swappable.
+     * We ASSUME all kernel pages are non-swappable and non-movable.
      */
     rc     = VINF_SUCCESS;
     pbPage = (uint8_t *)pvLast;
     iPage  = cPages;
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 4, 19)
     if (!fLinearMapping)
     {
         while (iPage-- > 0)
         {
-            struct page *pPage = vmalloc_to_page(pbPage);
+            struct page *pPage = rtR0MemObjLinuxVirtToPage(pbPage);
             if (RT_UNLIKELY(!pPage))
             {
                 rc = VERR_LOCK_FAILED;
@@ -949,7 +1023,6 @@ DECLHIDDEN(int) rtR0MemObjNativeLockKernel(PPRTR0MEMOBJINTERNAL ppMem, void *pv,
         }
     }
     else
-#endif
     {
         while (iPage-- > 0)
         {
