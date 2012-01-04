@@ -817,7 +817,8 @@ static struct page *rtR0MemObjLinuxVirtToPage(void *pv)
     }
 #endif
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 5, 5)
+/* As usual, RHEL 3 had pte_offset_map earlier. */
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 5, 5) || defined(pte_offset_map)
     pEntry = pte_offset_map(&u.Middle, ulAddr);
 #else
     pEntry = pte_offset(&u.Middle, ulAddr);
