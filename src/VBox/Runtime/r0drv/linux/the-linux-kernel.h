@@ -84,7 +84,6 @@
 #endif
 #include <linux/mm.h>
 #include <linux/pagemap.h>
-#include <asm/pgtable.h>
 #include <linux/slab.h>
 #include <linux/time.h>
 #include <linux/sched.h>
