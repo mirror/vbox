@@ -2164,6 +2164,20 @@ REMR3DECL(int)  REMR3State(PVM pVM, PVMCPU pVCpu)
         pVM->rem.s.Env.hflags &= ~(HF_LMA_MASK | HF_CS64_MASK);
 #endif
 
+    /* Update the inhibit IRQ mask. */
+    pVM->rem.s.Env.hflags &= ~HF_INHIBIT_IRQ_MASK;
+    if (VMCPU_FF_ISSET(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS))
+    {
+        RTGCPTR InhibitPC = EMGetInhibitInterruptsPC(pVCpu);
+        if (InhibitPC == pCtx->rip)
+            pVM->rem.s.Env.hflags |= HF_INHIBIT_IRQ_MASK;
+        else
+        {
+            Log(("Clearing VMCPU_FF_INHIBIT_INTERRUPTS at %RGv - successor %RGv (REM#1)\n", (RTGCPTR)pCtx->rip, InhibitPC));
+            VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS);
+        }
+    }
+
     /*
      * Sync the A20 gate.
      */
@@ -2708,6 +2722,19 @@ REMR3DECL(int) REMR3StateBack(PVM pVM, PVMCPU pVCpu)
     pCtx->msrSFMASK        = pVM->rem.s.Env.fmask;
     pCtx->msrKERNELGSBASE  = pVM->rem.s.Env.kernelgsbase;
 #endif
+
+    /* Inhibit interrupt flag. */
+    if (pVM->rem.s.Env.hflags & HF_INHIBIT_IRQ_MASK)
+    {
+        Log(("Settings VMCPU_FF_INHIBIT_INTERRUPTS at %RGv (REM)\n", (RTGCPTR)pCtx->rip));
+        EMSetInhibitInterruptsPC(pVCpu, pCtx->rip);
+        VMCPU_FF_SET(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS);
+    }
+    else if (VMCPU_FF_ISSET(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS))
+    {
+        Log(("Clearing VMCPU_FF_INHIBIT_INTERRUPTS at %RGv - successor %RGv (REM#2)\n", (RTGCPTR)pCtx->rip, EMGetInhibitInterruptsPC(pVCpu)));
+        VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS);
+    }
 
     remR3TrapClear(pVM);
 
