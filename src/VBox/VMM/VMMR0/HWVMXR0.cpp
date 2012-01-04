@@ -755,8 +755,10 @@ static int hmR0VmxInjectEvent(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, uint32_t int
     else
     {
         LogFlow(("INJ-EI: %x at %RGv\n", iGate, (RTGCPTR)pCtx->rip));
-        Assert(VMX_EXIT_INTERRUPTION_INFO_TYPE(intInfo) == VMX_EXIT_INTERRUPTION_INFO_TYPE_SW || !VMCPU_FF_ISSET(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS));
-        Assert(VMX_EXIT_INTERRUPTION_INFO_TYPE(intInfo) == VMX_EXIT_INTERRUPTION_INFO_TYPE_SW || pCtx->eflags.u32 & X86_EFL_IF);
+        Assert(   VMX_EXIT_INTERRUPTION_INFO_TYPE(intInfo) == VMX_EXIT_INTERRUPTION_INFO_TYPE_SW
+               || !VMCPU_FF_ISSET(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS));
+        Assert(   VMX_EXIT_INTERRUPTION_INFO_TYPE(intInfo) == VMX_EXIT_INTERRUPTION_INFO_TYPE_SW
+               || pCtx->eflags.u32 & X86_EFL_IF);
     }
 #endif
 
