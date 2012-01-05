@@ -141,9 +141,9 @@ Py_nsISupports::Py_nsISupports(nsISupports *punk, const nsIID &iid, PyTypeObject
 #ifdef VBOX_DEBUG_LIFETIMES
         RTOnce(&g_Once, initOnceCallback, NULL, NULL);
         RTCritSectEnter(&g_CritSect);
-	PyXPCOM_LogWarning("Creating   %p: iid=%RTuuid obj=%p", this, &m_iid, punk);
         RTListAppend(&g_List, &m_ListEntry);
         RTCritSectLeave(&g_CritSect);
+	PyXPCOM_LogWarning("Creating   %p: iid=%RTuuid obj=%p", this, &m_iid, punk);
 #endif
 }
 
@@ -152,9 +152,9 @@ Py_nsISupports::~Py_nsISupports()
 #ifdef VBOX_DEBUG_LIFETIMES
 	RTCritSectEnter(&g_CritSect);
 	nsISupports *punk = m_obj;
-	PyXPCOM_LogWarning("Destroying %p: iid=%RTuuid obj=%p", this, &m_iid, punk);
 	RTListNodeRemove(&m_ListEntry);
 	RTCritSectLeave(&g_CritSect);
+	PyXPCOM_LogWarning("Destroying %p: iid=%RTuuid obj=%p", this, &m_iid, punk);
 #endif
 
 	SafeRelease(this);
