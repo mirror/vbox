@@ -112,7 +112,7 @@ static struct drm_driver driver =
         .poll = drm_poll,
         .fasync = drm_fasync,
     },
-#if LINUX_VERSION_CODE < KERNEL_VERSION (2, 6, 39)
+#if LINUX_VERSION_CODE < KERNEL_VERSION (2, 6, 39) && !defined(DRM_RHEL61)
     .pci_driver =
     {
         .name = DRIVER_NAME,
@@ -127,7 +127,7 @@ static struct drm_driver driver =
     .patchlevel = DRIVER_PATCHLEVEL,
 };
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION (2, 6, 39)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION (2, 6, 39) && !defined(DRM_RHEL61)
 static struct pci_driver pci_driver =
 {
     .name = DRIVER_NAME,
@@ -137,7 +137,7 @@ static struct pci_driver pci_driver =
 
 static int __init vboxvideo_init(void)
 {
-#if LINUX_VERSION_CODE < KERNEL_VERSION (2, 6, 39)
+#if LINUX_VERSION_CODE < KERNEL_VERSION (2, 6, 39) && !defined(DRM_RHEL61)
     return drm_init(&driver);
 #else
     return drm_pci_init(&driver, &pci_driver);
@@ -146,7 +146,7 @@ static int __init vboxvideo_init(void)
 
 static void __exit vboxvideo_exit(void)
 {
-#if LINUX_VERSION_CODE < KERNEL_VERSION (2, 6, 39)
+#if LINUX_VERSION_CODE < KERNEL_VERSION (2, 6, 39) && !defined(DRM_RHEL61)
     drm_exit(&driver);
 #else
     drm_pci_exit(&driver, &pci_driver);
