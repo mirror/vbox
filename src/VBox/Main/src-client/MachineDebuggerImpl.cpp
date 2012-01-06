@@ -85,7 +85,7 @@ HRESULT MachineDebugger::init (Console *aParent)
 
     unconst(mParent) = aParent;
 
-    mSinglestepQueued = ~0;
+    mSingleStepQueued = ~0;
     mRecompileUserQueued = ~0;
     mRecompileSupervisorQueued = ~0;
     mPatmEnabledQueued = ~0;
@@ -124,39 +124,57 @@ void MachineDebugger::uninit()
  * Returns the current singlestepping flag.
  *
  * @returns COM status code
- * @param   aEnabled address of result variable
+ * @param   a_fEnabled      Where to store the result.
  */
-STDMETHODIMP MachineDebugger::COMGETTER(Singlestep) (BOOL *aEnabled)
+STDMETHODIMP MachineDebugger::COMGETTER(SingleStep)(BOOL *a_fEnabled)
 {
-    CheckComArgOutPointerValid(aEnabled);
+    CheckComArgOutPointerValid(a_fEnabled);
 
     AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
-
-    /** @todo */
-    ReturnComNotImplemented();
+    HRESULT hrc = autoCaller.rc();
+    if (SUCCEEDED(hrc))
+    {
+        AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+        Console::SafeVMPtr ptrVM(mParent);
+        hrc = ptrVM.rc();
+        if (SUCCEEDED(hrc))
+        {
+            /** @todo */
+            ReturnComNotImplemented();
+        }
+    }
+    return hrc;
 }
 
 /**
  * Sets the singlestepping flag.
  *
  * @returns COM status code
- * @param aEnable new singlestepping flag
+ * @param   a_fEnable       The new state.
  */
-STDMETHODIMP MachineDebugger::COMSETTER(Singlestep) (BOOL aEnable)
+STDMETHODIMP MachineDebugger::COMSETTER(SingleStep)(BOOL a_fEnable)
 {
     AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
-
-    /** @todo */
-    ReturnComNotImplemented();
+    HRESULT hrc = autoCaller.rc();
+    if (SUCCEEDED(hrc))
+    {
+        AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+        Console::SafeVMPtr ptrVM(mParent);
+        hrc = ptrVM.rc();
+        if (SUCCEEDED(hrc))
+        {
+            /** @todo */
+            ReturnComNotImplemented();
+        }
+    }
+    return hrc;
 }
 
 /**
  * Returns the current recompile user mode code flag.
  *
  * @returns COM status code
- * @param   aEnabled address of result variable
+ * @param   a_fEnabled address of result variable
  */
 STDMETHODIMP MachineDebugger::COMGETTER(RecompileUser) (BOOL *aEnabled)
 {
@@ -751,25 +769,25 @@ STDMETHODIMP MachineDebugger::COMGETTER(PAEEnabled) (BOOL *aEnabled)
  * Returns the current virtual time rate.
  *
  * @returns COM status code.
- * @param   aPct     Where to store the rate.
+ * @param   a_puPct      Where to store the rate.
  */
-STDMETHODIMP MachineDebugger::COMGETTER(VirtualTimeRate) (ULONG *aPct)
+STDMETHODIMP MachineDebugger::COMGETTER(VirtualTimeRate)(ULONG *a_puPct)
 {
-    CheckComArgOutPointerValid(aPct);
+    CheckComArgOutPointerValid(a_puPct);
 
     AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+    HRESULT hrc = autoCaller.rc();
+    if (SUCCEEDED(hrc))
+    {
+        AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+        Console::SafeVMPtr ptrVM(mParent);
+        hrc = ptrVM.rc();
+        if (SUCCEEDED(hrc))
+            *a_puPct = TMGetWarpDrive(ptrVM.raw());
+    }
 
-    Console::SafeVMPtrQuiet pVM (mParent);
-
-    if (pVM.isOk())
-        *aPct = TMGetWarpDrive (pVM);
-    else
-        *aPct = 100;
-
-    return S_OK;
+    return hrc;
 }
 
 /**
@@ -778,64 +796,66 @@ STDMETHODIMP MachineDebugger::COMGETTER(VirtualTimeRate) (ULONG *aPct)
  * @returns COM status code.
  * @param   aPct     Where to store the rate.
  */
-STDMETHODIMP MachineDebugger::COMSETTER(VirtualTimeRate) (ULONG aPct)
+STDMETHODIMP MachineDebugger::COMSETTER(VirtualTimeRate)(ULONG a_uPct)
 {
-    if (aPct < 2 || aPct > 20000)
-        return E_INVALIDARG;
+    if (a_uPct < 2 || a_uPct > 20000)
+        return setError(E_INVALIDARG, tr("%u is out of range [2..20000]"), a_uPct);
 
     AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
-
-    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-
-    if (queueSettings())
+    HRESULT hrc = autoCaller.rc();
+    if (SUCCEEDED(hrc))
     {
-        // queue the request
-        mVirtualTimeRateQueued = aPct;
-        return S_OK;
+        AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+        if (queueSettings())
+            mVirtualTimeRateQueued = a_uPct;
+        else
+        {
+            Console::SafeVMPtr ptrVM(mParent);
+            hrc = ptrVM.rc();
+            if (SUCCEEDED(hrc))
+            {
+                int vrc = TMR3SetWarpDrive(ptrVM.raw(), a_uPct);
+                if (RT_FAILURE(vrc))
+                    hrc = setError(VBOX_E_VM_ERROR, tr("TMR3SetWarpDrive(, %u) failed with rc=%Rrc"), a_uPct, vrc);
+            }
+        }
     }
 
-    Console::SafeVMPtr pVM(mParent);
-    if (FAILED(pVM.rc())) return pVM.rc();
-
-    int vrc = TMR3SetWarpDrive (pVM, aPct);
-    if (RT_FAILURE(vrc))
-    {
-        /** @todo handle error code. */
-    }
-
-    return S_OK;
+    return hrc;
 }
 
 /**
  * Hack for getting the VM handle.
+ *
  * This is only temporary (promise) while prototyping the debugger.
  *
  * @returns COM status code
- * @param   aVm      Where to store the vm handle.
- *                  Since there is no uintptr_t in COM, we're using the max integer.
- *                  (No, ULONG is not pointer sized!)
+ * @param   a_u64Vm     Where to store the vm handle. Since there is no
+ *                      uintptr_t in COM, we're using the max integer.
+ *                      (No, ULONG is not pointer sized!)
  */
-STDMETHODIMP MachineDebugger::COMGETTER(VM) (LONG64 *aVm)
+STDMETHODIMP MachineDebugger::COMGETTER(VM)(LONG64 *a_u64Vm)
 {
-    CheckComArgOutPointerValid(aVm);
+    CheckComArgOutPointerValid(a_u64Vm);
 
     AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+    HRESULT hrc = autoCaller.rc();
+    if (SUCCEEDED(hrc))
+    {
+        AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+        Console::SafeVMPtr ptrVM(mParent);
+        hrc = ptrVM.rc();
+        if (SUCCEEDED(hrc))
+            *a_u64Vm = (intptr_t)ptrVM.raw();
 
-    Console::SafeVMPtr pVM(mParent);
-    if (FAILED(pVM.rc())) return pVM.rc();
+        /*
+         * Note! pVM protection provided by SafeVMPtr is no long effective
+         *       after we return from this method.
+         */
+    }
 
-    *aVm = (intptr_t)pVM.raw();
-
-    /*
-     *  Note: pVM protection provided by SafeVMPtr is no more effective
-     *  after we return from this method.
-     */
-
-    return S_OK;
+    return hrc;
 }
 
 // IMachineDebugger methods
@@ -1447,39 +1467,39 @@ STDMETHODIMP MachineDebugger::GetStats (IN_BSTR aPattern, BOOL aWithDescriptions
 void MachineDebugger::flushQueuedSettings()
 {
     mFlushMode = true;
-    if (mSinglestepQueued != ~0)
+    if (mSingleStepQueued != ~0)
     {
-        COMSETTER(Singlestep) (mSinglestepQueued);
-        mSinglestepQueued = ~0;
+        COMSETTER(SingleStep)(mSingleStepQueued);
+        mSingleStepQueued = ~0;
     }
     if (mRecompileUserQueued != ~0)
     {
-        COMSETTER(RecompileUser) (mRecompileUserQueued);
+        COMSETTER(RecompileUser)(mRecompileUserQueued);
         mRecompileUserQueued = ~0;
     }
     if (mRecompileSupervisorQueued != ~0)
     {
-        COMSETTER(RecompileSupervisor) (mRecompileSupervisorQueued);
+        COMSETTER(RecompileSupervisor)(mRecompileSupervisorQueued);
         mRecompileSupervisorQueued = ~0;
     }
     if (mPatmEnabledQueued != ~0)
     {
-        COMSETTER(PATMEnabled) (mPatmEnabledQueued);
+        COMSETTER(PATMEnabled)(mPatmEnabledQueued);
         mPatmEnabledQueued = ~0;
     }
     if (mCsamEnabledQueued != ~0)
     {
-        COMSETTER(CSAMEnabled) (mCsamEnabledQueued);
+        COMSETTER(CSAMEnabled)(mCsamEnabledQueued);
         mCsamEnabledQueued = ~0;
     }
     if (mLogEnabledQueued != ~0)
     {
-        COMSETTER(LogEnabled) (mLogEnabledQueued);
+        COMSETTER(LogEnabled)(mLogEnabledQueued);
         mLogEnabledQueued = ~0;
     }
     if (mVirtualTimeRateQueued != ~(uint32_t)0)
     {
-        COMSETTER(VirtualTimeRate) (mVirtualTimeRateQueued);
+        COMSETTER(VirtualTimeRate)(mVirtualTimeRateQueued);
         mVirtualTimeRateQueued = ~0;
     }
     mFlushMode = false;
@@ -1494,7 +1514,7 @@ bool MachineDebugger::queueSettings() const
     {
         // check if the machine is running
         MachineState_T machineState;
-        mParent->COMGETTER(State) (&machineState);
+        mParent->COMGETTER(State)(&machineState);
         switch (machineState)
         {
             // queue the request

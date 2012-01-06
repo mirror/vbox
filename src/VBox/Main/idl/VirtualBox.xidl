@@ -13516,8 +13516,8 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </param>
     </method>
 
-    <attribute name="singlestep" type="boolean">
-      <desc>Switch for enabling singlestepping.</desc>
+    <attribute name="singleStep" type="boolean">
+      <desc>Switch for enabling single-stepping.</desc>
     </attribute>
 
     <attribute name="recompileUser" type="boolean">
