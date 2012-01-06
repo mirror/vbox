@@ -1057,7 +1057,7 @@ STDMETHODIMP EventSource::FireEvent(IEvent * aEvent,
             // keep listener record reference, in case someone will remove it while in callback
             RecordHolder<ListenerRecord> record(*it);
 
-            /**
+            /*
              * We pass lock here to allow modifying ops on EventSource inside callback
              * in active mode. Note that we expect list iterator stability as 'alock'
              * could be temporary released when calling event handler.
@@ -1068,7 +1068,7 @@ STDMETHODIMP EventSource::FireEvent(IEvent * aEvent,
              * listener was unregistered due to not picking up its event.
              * This overlaps with XPCOM specific use of E_ABORT to signal
              * death of an active listener, but that's irrelevant here. */
-            if (FAILED_DEAD_INTERFACE(cbRc) || (cbRc == E_ABORT))
+            if (FAILED_DEAD_INTERFACE(cbRc) || cbRc == E_ABORT)
             {
                 Listeners::iterator lit = m->mListeners.find(record.obj()->mListener);
                 if (lit != m->mListeners.end())
