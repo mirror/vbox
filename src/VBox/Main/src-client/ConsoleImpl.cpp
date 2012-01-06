@@ -698,7 +698,9 @@ void Console::uninit()
     // we don't perform uninit() as it's possible that some pending event refers to this source
     unconst(mEventSource).setNull();
 
+#ifdef CONSOLE_WITH_EVENT_CACHE
     mCallbackData.clear();
+#endif
 
     LogFlowThisFuncLeave();
 }
@@ -5699,6 +5701,9 @@ void Console::onMousePointerShapeChange(bool fVisible, bool fAlpha,
     AutoCaller autoCaller(this);
     AssertComRCReturnVoid(autoCaller.rc());
 
+#ifndef CONSOLE_WITH_EVENT_CACHE
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+#else
     /* We need a write lock because we alter the cached callback data */
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -5720,6 +5725,7 @@ void Console::onMousePointerShapeChange(bool fVisible, bool fAlpha,
     else
         mCallbackData.mpsc.shape.resize(0);
     mCallbackData.mpsc.valid = true;
+#endif
 
     fireMousePointerShapeChangedEvent(mEventSource, fVisible, fAlpha, xHot, yHot, width, height, ComSafeArrayInArg(pShape));
 
@@ -5739,6 +5745,9 @@ void Console::onMouseCapabilityChange(BOOL supportsAbsolute, BOOL supportsRelati
     AutoCaller autoCaller(this);
     AssertComRCReturnVoid(autoCaller.rc());
 
+#ifndef CONSOLE_WITH_EVENT_CACHE
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+#else
     /* We need a write lock because we alter the cached callback data */
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -5747,6 +5756,7 @@ void Console::onMouseCapabilityChange(BOOL supportsAbsolute, BOOL supportsRelati
     mCallbackData.mcc.supportsRelative = supportsRelative;
     mCallbackData.mcc.needsHostCursor = needsHostCursor;
     mCallbackData.mcc.valid = true;
+#endif
 
     fireMouseCapabilityChangedEvent(mEventSource, supportsAbsolute, supportsRelative, needsHostCursor);
 }
@@ -5799,6 +5809,9 @@ void Console::onKeyboardLedsChange(bool fNumLock, bool fCapsLock, bool fScrollLo
     AutoCaller autoCaller(this);
     AssertComRCReturnVoid(autoCaller.rc());
 
+#ifndef CONSOLE_WITH_EVENT_CACHE
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+#else
     /* We need a write lock because we alter the cached callback data */
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -5807,6 +5820,7 @@ void Console::onKeyboardLedsChange(bool fNumLock, bool fCapsLock, bool fScrollLo
     mCallbackData.klc.capsLock = fCapsLock;
     mCallbackData.klc.scrollLock = fScrollLock;
     mCallbackData.klc.valid = true;
+#endif
 
     fireKeyboardLedsChangedEvent(mEventSource, fNumLock, fCapsLock, fScrollLock);
 }
@@ -6924,8 +6938,10 @@ HRESULT Console::powerDown(IProgress *aProgress /*= NULL*/)
     else
         mVMDestroying = false;
 
+#ifdef CONSOLE_WITH_EVENT_CACHE
     if (SUCCEEDED(rc))
         mCallbackData.clear();
+#endif
 
     LogFlowThisFuncLeave();
     return rc;
