@@ -540,6 +540,7 @@ RuntimeR3_SOURCES.win = \
 	generic/uuid-generic.cpp \
 	generic/RTProcDaemonize-generic.cpp \
 	generic/RTProcIsRunningByName-generic.cpp \
+	generic/RTSystemShutdown-generic.cpp \
 	generic/RTThreadGetNativeState-generic.cpp \
 	nt/RTErrConvertFromNtStatus.cpp \
 	r3/posix/env-posix.cpp \
@@ -589,6 +590,7 @@ RuntimeR3_SOURCES.linux = \
 	generic/RTProcDaemonize-generic.cpp \
  	generic/RTSemEventMultiWait-2-ex-generic.cpp \
  	generic/RTSemEventMultiWaitNoResume-2-ex-generic.cpp \
+	generic/RTSystemShutdown-generic.cpp \
 	generic/RTTimeLocalNow-generic.cpp \
 	generic/RTTimerCreate-generic.cpp \
 	generic/RTThreadSetAffinityToCpu-generic.cpp \
@@ -672,6 +674,7 @@ RuntimeR3_SOURCES.os2   = \
 	generic/RTRandAdvCreateSystemFaster-generic.cpp \
 	generic/RTRandAdvCreateSystemTruer-generic.cpp \
 	generic/RTSystemQueryDmiString-generic.cpp \
+	generic/RTSystemShutdown-generic.cpp \
 	generic/RTTimeLocalNow-generic.cpp \
 	generic/RTTimerCreate-generic.cpp \
 	generic/RTThreadSetAffinityToCpu-generic.cpp \
@@ -746,6 +749,7 @@ RuntimeR3_SOURCES.darwin = \
  	generic/RTSemEventMultiWait-2-ex-generic.cpp \
  	generic/RTSemEventMultiWaitNoResume-2-ex-generic.cpp \
 	generic/semrw-$(if-expr defined(VBOX_WITH_LOCKLESS_SEMRW),lockless-,)generic.cpp \
+	generic/RTSystemShutdown-generic.cpp \
 	generic/timer-generic.cpp \
 	generic/utf16locale-generic.cpp \
 	generic/uuid-generic.cpp\
@@ -802,6 +806,7 @@ RuntimeR3_SOURCES.freebsd = \
  	generic/RTSemEventMultiWait-2-ex-generic.cpp \
  	generic/RTSemEventMultiWaitNoResume-2-ex-generic.cpp \
 	generic/RTSystemQueryDmiString-generic.cpp \
+	generic/RTSystemShutdown-generic.cpp \
 	generic/RTThreadGetAffinity-stub-generic.cpp \
 	generic/RTThreadSetAffinity-stub-generic.cpp \
 	generic/RTThreadSetAffinityToCpu-generic.cpp \
@@ -868,6 +873,7 @@ RuntimeR3_SOURCES.solaris = \
 	generic/RTProcIsRunningByName-generic.cpp \
  	generic/RTSemEventMultiWait-2-ex-generic.cpp \
  	generic/RTSemEventMultiWaitNoResume-2-ex-generic.cpp \
+	generic/RTSystemShutdown-generic.cpp \
 	generic/RTThreadSetAffinityToCpu-generic.cpp \
 	generic/RTTimeLocalNow-generic.cpp \
 	generic/RTTimerCreate-generic.cpp \
@@ -956,6 +962,7 @@ RuntimeR3L4_SOURCES = \
 	generic/RTProcDaemonize-generic.cpp \
 	generic/RTSystemQueryOSInfo-generic.cpp \
 	generic/RTSystemQueryDmiString-generic.cpp \
+	generic/RTSystemShutdown-generic.cpp \
 	generic/RTThreadGetAffinity-stub-generic.cpp \
 	generic/RTThreadSetAffinity-stub-generic.cpp \
 	generic/RTThreadSetAffinityToCpu-generic.cpp \

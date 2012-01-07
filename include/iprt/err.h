@@ -1684,6 +1684,12 @@ RT_C_DECLS_END
 #define VERR_LOG_REVISION_MISMATCH                  (-22300)
 /** @} */
 
+/** @name Logger status codes
+ * @{ */
+/** Power off is not supported by the hardware or the OS. */
+#define VERR_SYS_CANNOT_POWER_OFF                   (-22400)
+/** @} */
+
 /* SED-END */
 
 /** @} */
