@@ -513,16 +513,12 @@ PyObject *LogConsoleMessage(PyObject *self, PyObject *args)
 #  include <VBox/com/EventQueue.h>
 #  include <iprt/err.h>
 
-static PyObject*
+static PyObject *
 PyXPCOMMethod_WaitForEvents(PyObject *self, PyObject *args)
 {
-    PRInt32 aTimeout;
-
-    if (!PyArg_ParseTuple(args, "i", &aTimeout))
-    {
-        PyErr_SetString(PyExc_TypeError, "the timeout argument is not an integer");
+    long lTimeout;
+    if (!PyArg_ParseTuple(args, "l", &lTimeout))
         return NULL;
-    }
 
     int rc;
     com::EventQueue* aEventQ = com::EventQueue::getMainEventQueue();
@@ -534,7 +530,12 @@ PyXPCOMMethod_WaitForEvents(PyObject *self, PyObject *args)
     }
 
     Py_BEGIN_ALLOW_THREADS
-    rc = aEventQ->processEventQueue(aTimeout < 0 ? RT_INDEFINITE_WAIT : (uint32_t)aTimeout);
+
+    RTMSINTERVAL cMsTimeout = (RTMSINTERVAL)lTimeout;
+    if (lTimeout < 0 || (long)cMsTimeout != lTimeout)
+        cMsTimeout = RT_INDEFINITE_WAIT;
+    rc = aEventQ->processEventQueue(cMsTimeout);
+
     Py_END_ALLOW_THREADS
     if (RT_SUCCESS(rc))
         return PyInt_FromLong(0);
