@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2011 Oracle Corporation
+ * Copyright (C) 2006-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -1852,12 +1852,14 @@ STDMETHODIMP Console::COMGETTER(EventSource)(IEventSource ** aEventSource)
     CheckComArgOutPointerValid(aEventSource);
 
     AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+    HRESULT hrc = autoCaller.rc();
+    if (SUCCEEDED(hrc))
+    {
+        // no need to lock - lifetime constant
+        mEventSource.queryInterfaceTo(aEventSource);
+    }
 
-    // no need to lock - lifetime constant
-    mEventSource.queryInterfaceTo(aEventSource);
-
-    return S_OK;
+    return hrc;
 }
 
 STDMETHODIMP Console::COMGETTER(AttachedPciDevices)(ComSafeArrayOut(IPciDeviceAttachment *, aAttachments))
@@ -3099,7 +3101,8 @@ Console::CreateSharedFolder(IN_BSTR aName, IN_BSTR aHostPath, BOOL aWritable, BO
 
     m_mapSharedFolders.insert(std::make_pair(aName, pSharedFolder));
 
-    /* notify console callbacks after the folder is added to the list */
+    /* Notify console callbacks after the folder is added to the list. */
+    alock.release();
     fireSharedFolderChangedEvent(mEventSource, Scope_Session);
 
     LogFlowThisFunc(("Leaving for '%ls' -> '%ls'\n", aName, aHostPath));
@@ -3164,7 +3167,8 @@ STDMETHODIMP Console::RemoveSharedFolder(IN_BSTR aName)
 
     m_mapSharedFolders.erase(strName);
 
-    /* notify console callbacks after the folder is removed to the list */
+    /* Notify console callbacks after the folder is removed from the list. */
+    alock.release();
     fireSharedFolderChangedEvent(mEventSource, Scope_Session);
 
     LogFlowThisFunc(("Leaving for '%ls'\n", aName));
@@ -4351,7 +4355,10 @@ HRESULT Console::onNetworkAdapterChange(INetworkAdapter *aNetworkAdapter, BOOL c
 
     /* notify console callbacks on success */
     if (SUCCEEDED(rc))
+    {
+        alock.release(); /** @todo 101% safe? */
         fireNetworkAdapterChangedEvent(mEventSource, aNetworkAdapter);
+    }
 
     LogFlowThisFunc(("Leaving rc=%#x\n", rc));
     return rc;
@@ -4638,8 +4645,6 @@ DECLCALLBACK(int) Console::changeNetworkAttachment(Console *pThis,
 
 /**
  * Called by IInternalSessionControl::OnSerialPortChange().
- *
- * @note Locks this object for writing.
  */
 HRESULT Console::onSerialPortChange(ISerialPort *aSerialPort)
 {
@@ -4648,30 +4653,14 @@ HRESULT Console::onSerialPortChange(ISerialPort *aSerialPort)
     AutoCaller autoCaller(this);
     AssertComRCReturnRC(autoCaller.rc());
 
-    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+    fireSerialPortChangedEvent(mEventSource, aSerialPort);
 
-    HRESULT rc = S_OK;
-
-    /* don't trigger serial port change if the VM isn't running */
-    SafeVMPtrQuiet ptrVM(this);
-    if (ptrVM.isOk())
-    {
-        /* nothing to do so far */
-        ptrVM.release();
-    }
-
-    /* notify console callbacks on success */
-    if (SUCCEEDED(rc))
-        fireSerialPortChangedEvent(mEventSource, aSerialPort);
-
-    LogFlowThisFunc(("Leaving rc=%#x\n", rc));
-    return rc;
+    LogFlowThisFunc(("Leaving rc=%#x\n", S_OK));
+    return S_OK;
 }
 
 /**
  * Called by IInternalSessionControl::OnParallelPortChange().
- *
- * @note Locks this object for writing.
  */
 HRESULT Console::onParallelPortChange(IParallelPort *aParallelPort)
 {
@@ -4680,30 +4669,14 @@ HRESULT Console::onParallelPortChange(IParallelPort *aParallelPort)
     AutoCaller autoCaller(this);
     AssertComRCReturnRC(autoCaller.rc());
 
-    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+    fireParallelPortChangedEvent(mEventSource, aParallelPort);
 
-    HRESULT rc = S_OK;
-
-    /* don't trigger parallel port change if the VM isn't running */
-    SafeVMPtrQuiet ptrVM(this);
-    if (ptrVM.isOk())
-    {
-        /* nothing to do so far */
-        ptrVM.release();
-    }
-
-    /* notify console callbacks on success */
-    if (SUCCEEDED(rc))
-        fireParallelPortChangedEvent(mEventSource, aParallelPort);
-
-    LogFlowThisFunc(("Leaving rc=%#x\n", rc));
-    return rc;
+    LogFlowThisFunc(("Leaving rc=%#x\n", S_OK));
+    return S_OK;
 }
 
 /**
  * Called by IInternalSessionControl::OnStorageControllerChange().
- *
- * @note Locks this object for writing.
  */
 HRESULT Console::onStorageControllerChange()
 {
@@ -4712,24 +4685,10 @@ HRESULT Console::onStorageControllerChange()
     AutoCaller autoCaller(this);
     AssertComRCReturnRC(autoCaller.rc());
 
-    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+    fireStorageControllerChangedEvent(mEventSource);
 
-    HRESULT rc = S_OK;
-
-    /* don't trigger storage controller change if the VM isn't running */
-    SafeVMPtrQuiet ptrVM(this);
-    if (ptrVM.isOk())
-    {
-        /* nothing to do so far */
-        ptrVM.release();
-    }
-
-    /* notify console callbacks on success */
-    if (SUCCEEDED(rc))
-        fireStorageControllerChangedEvent(mEventSource);
-
-    LogFlowThisFunc(("Leaving rc=%#x\n", rc));
-    return rc;
+    LogFlowThisFunc(("Leaving rc=%#x\n", S_OK));
+    return S_OK;
 }
 
 /**
@@ -4758,7 +4717,10 @@ HRESULT Console::onMediumChange(IMediumAttachment *aMediumAttachment, BOOL aForc
 
     /* notify console callbacks on success */
     if (SUCCEEDED(rc))
+    {
+        alock.release(); /** @todo 101% safe? */
         fireMediumChangedEvent(mEventSource, aMediumAttachment);
+    }
 
     LogFlowThisFunc(("Leaving rc=%#x\n", rc));
     return rc;
@@ -4832,7 +4794,10 @@ HRESULT Console::onCPUExecutionCapChange(ULONG aExecutionCap)
 
     /* notify console callbacks on success */
     if (SUCCEEDED(rc))
+    {
+        alock.release();
         fireCPUExecutionCapChangedEvent(mEventSource, aExecutionCap);
+    }
 
     LogFlowThisFunc(("Leaving rc=%#x\n", rc));
     return rc;
@@ -4892,20 +4857,18 @@ HRESULT Console::onVRDEServerChange(BOOL aRestart)
 
     /* notify console callbacks on success */
     if (SUCCEEDED(rc))
+    {
+        alock.release();
         fireVRDEServerChangedEvent(mEventSource);
+    }
 
     return rc;
 }
 
-/**
- * @note Locks this object for reading.
- */
 void Console::onVRDEServerInfoChange()
 {
     AutoCaller autoCaller(this);
     AssertComRCReturnVoid(autoCaller.rc());
-
-    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     fireVRDEServerInfoChangedEvent(mEventSource);
 }
@@ -4913,8 +4876,6 @@ void Console::onVRDEServerInfoChange()
 
 /**
  * Called by IInternalSessionControl::OnUSBControllerChange().
- *
- * @note Locks this object for writing.
  */
 HRESULT Console::onUSBControllerChange()
 {
@@ -4923,30 +4884,9 @@ HRESULT Console::onUSBControllerChange()
     AutoCaller autoCaller(this);
     AssertComRCReturnRC(autoCaller.rc());
 
-    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+    fireUSBControllerChangedEvent(mEventSource);
 
-    HRESULT rc = S_OK;
-
-    /* don't trigger USB controller change if the VM isn't running */
-    SafeVMPtrQuiet ptrVM(this);
-    if (ptrVM.isOk())
-    {
-        /// @todo implement one day.
-        // Anyway, if we want to query the machine's USB Controller we need
-        // to cache it to mUSBController in #init() (similar to mDVDDrive).
-        //
-        // bird: While the VM supports hot-plugging, I doubt any guest can
-        // handle it at this time... :-)
-
-        /* nothing to do so far */
-        ptrVM.release();
-    }
-
-    /* notify console callbacks on success */
-    if (SUCCEEDED(rc))
-        fireUSBControllerChangedEvent(mEventSource);
-
-    return rc;
+    return S_OK;
 }
 
 /**
@@ -4968,6 +4908,7 @@ HRESULT Console::onSharedFolderChange(BOOL aGlobal)
     /* notify console callbacks on success */
     if (SUCCEEDED(rc))
     {
+        alock.release();
         fireSharedFolderChangedEvent(mEventSource, aGlobal ? (Scope_T)Scope_Global : (Scope_T)Scope_Machine);
     }
 
@@ -5178,7 +5119,10 @@ HRESULT Console::onBandwidthGroupChange(IBandwidthGroup *aBandwidthGroup)
 
     /* notify console callbacks on success */
     if (SUCCEEDED(rc))
+    {
+        alock.release();
         fireBandwidthGroupChangedEvent(mEventSource, aBandwidthGroup);
+    }
 
     LogFlowThisFunc(("Leaving rc=%#x\n", rc));
     return rc;
@@ -5213,7 +5157,10 @@ HRESULT Console::onStorageDeviceChange(IMediumAttachment *aMediumAttachment, BOO
 
     /* notify console callbacks on success */
     if (SUCCEEDED(rc))
+    {
+        alock.release(); /** @todo 101% safe? */
         fireStorageDeviceChangedEvent(mEventSource, aMediumAttachment, aRemove);
+    }
 
     LogFlowThisFunc(("Leaving rc=%#x\n", rc));
     return rc;
@@ -5684,9 +5631,11 @@ HRESULT Console::updateMachineState(MachineState_T aMachineState)
     return setMachineStateLocally(aMachineState);
 }
 
+#ifdef CONSOLE_WITH_EVENT_CACHE
 /**
  * @note Locks this object for writing.
  */
+#endif
 void Console::onMousePointerShapeChange(bool fVisible, bool fAlpha,
                                         uint32_t xHot, uint32_t yHot,
                                         uint32_t width, uint32_t height,
@@ -5701,30 +5650,30 @@ void Console::onMousePointerShapeChange(bool fVisible, bool fAlpha,
     AutoCaller autoCaller(this);
     AssertComRCReturnVoid(autoCaller.rc());
 
-#ifndef CONSOLE_WITH_EVENT_CACHE
-    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-#else
-    /* We need a write lock because we alter the cached callback data */
-    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+#ifdef CONSOLE_WITH_EVENT_CACHE
+    {
+        /* We need a write lock because we alter the cached callback data */
+        AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    /* Save the callback arguments */
-    mCallbackData.mpsc.visible = fVisible;
-    mCallbackData.mpsc.alpha = fAlpha;
-    mCallbackData.mpsc.xHot = xHot;
-    mCallbackData.mpsc.yHot = yHot;
-    mCallbackData.mpsc.width = width;
-    mCallbackData.mpsc.height = height;
+        /* Save the callback arguments */
+        mCallbackData.mpsc.visible = fVisible;
+        mCallbackData.mpsc.alpha = fAlpha;
+        mCallbackData.mpsc.xHot = xHot;
+        mCallbackData.mpsc.yHot = yHot;
+        mCallbackData.mpsc.width = width;
+        mCallbackData.mpsc.height = height;
 
-    /* start with not valid */
-    bool wasValid = mCallbackData.mpsc.valid;
-    mCallbackData.mpsc.valid = false;
+        /* start with not valid */
+        bool wasValid = mCallbackData.mpsc.valid;
+        mCallbackData.mpsc.valid = false;
 
-    com::SafeArray<BYTE> aShape(ComSafeArrayInArg(pShape));
-    if (aShape.size() != 0)
-        mCallbackData.mpsc.shape.initFrom(aShape);
-    else
-        mCallbackData.mpsc.shape.resize(0);
-    mCallbackData.mpsc.valid = true;
+        com::SafeArray<BYTE> aShape(ComSafeArrayInArg(pShape));
+        if (aShape.size() != 0)
+            mCallbackData.mpsc.shape.initFrom(aShape);
+        else
+            mCallbackData.mpsc.shape.resize(0);
+        mCallbackData.mpsc.valid = true;
+    }
 #endif
 
     fireMousePointerShapeChangedEvent(mEventSource, fVisible, fAlpha, xHot, yHot, width, height, ComSafeArrayInArg(pShape));
@@ -5734,9 +5683,11 @@ void Console::onMousePointerShapeChange(bool fVisible, bool fAlpha,
 #endif
 }
 
+#ifdef CONSOLE_WITH_EVENT_CACHE
 /**
  * @note Locks this object for writing.
  */
+#endif
 void Console::onMouseCapabilityChange(BOOL supportsAbsolute, BOOL supportsRelative, BOOL needsHostCursor)
 {
     LogFlowThisFunc(("supportsAbsolute=%d supportsRelative=%d needsHostCursor=%d\n",
@@ -5745,114 +5696,96 @@ void Console::onMouseCapabilityChange(BOOL supportsAbsolute, BOOL supportsRelati
     AutoCaller autoCaller(this);
     AssertComRCReturnVoid(autoCaller.rc());
 
-#ifndef CONSOLE_WITH_EVENT_CACHE
-    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-#else
-    /* We need a write lock because we alter the cached callback data */
-    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+#ifdef CONSOLE_WITH_EVENT_CACHE
+    {
+        /* We need a write lock because we alter the cached callback data */
+        AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    /* save the callback arguments */
-    mCallbackData.mcc.supportsAbsolute = supportsAbsolute;
-    mCallbackData.mcc.supportsRelative = supportsRelative;
-    mCallbackData.mcc.needsHostCursor = needsHostCursor;
-    mCallbackData.mcc.valid = true;
+        /* save the callback arguments */
+        mCallbackData.mcc.supportsAbsolute = supportsAbsolute;
+        mCallbackData.mcc.supportsRelative = supportsRelative;
+        mCallbackData.mcc.needsHostCursor = needsHostCursor;
+        mCallbackData.mcc.valid = true;
+    }
 #endif
 
     fireMouseCapabilityChangedEvent(mEventSource, supportsAbsolute, supportsRelative, needsHostCursor);
 }
 
-/**
- * @note Locks this object for reading.
- */
 void Console::onStateChange(MachineState_T machineState)
 {
     AutoCaller autoCaller(this);
     AssertComRCReturnVoid(autoCaller.rc());
 
-    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
     fireStateChangedEvent(mEventSource, machineState);
 }
 
-/**
- * @note Locks this object for reading.
- */
 void Console::onAdditionsStateChange()
 {
     AutoCaller autoCaller(this);
     AssertComRCReturnVoid(autoCaller.rc());
 
-    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
     fireAdditionsStateChangedEvent(mEventSource);
 }
 
 /**
- * @note Locks this object for reading.
- *       This notification only is for reporting an incompatible
- *       Guest Additions interface, *not* the Guest Additions version!
+ * @remarks This notification only is for reporting an incompatible
+ *          Guest Additions interface, *not* the Guest Additions version!
  *
- *       The user will be notified inside the guest if new Guest
- *       Additions are available (via VBoxTray/VBoxClient).
+ *          The user will be notified inside the guest if new Guest
+ *          Additions are available (via VBoxTray/VBoxClient).
  */
 void Console::onAdditionsOutdated()
 {
     AutoCaller autoCaller(this);
     AssertComRCReturnVoid(autoCaller.rc());
 
-    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+    /** @todo implement this */
 }
 
+#ifdef CONSOLE_WITH_EVENT_CACHE
 /**
  * @note Locks this object for writing.
  */
+#endif
 void Console::onKeyboardLedsChange(bool fNumLock, bool fCapsLock, bool fScrollLock)
 {
     AutoCaller autoCaller(this);
     AssertComRCReturnVoid(autoCaller.rc());
 
-#ifndef CONSOLE_WITH_EVENT_CACHE
-    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-#else
-    /* We need a write lock because we alter the cached callback data */
-    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+#ifdef CONSOLE_WITH_EVENT_CACHE
+    {
+        /* We need a write lock because we alter the cached callback data */
+        AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    /* save the callback arguments */
-    mCallbackData.klc.numLock = fNumLock;
-    mCallbackData.klc.capsLock = fCapsLock;
-    mCallbackData.klc.scrollLock = fScrollLock;
-    mCallbackData.klc.valid = true;
+        /* save the callback arguments */
+        mCallbackData.klc.numLock = fNumLock;
+        mCallbackData.klc.capsLock = fCapsLock;
+        mCallbackData.klc.scrollLock = fScrollLock;
+        mCallbackData.klc.valid = true;
+    }
 #endif
 
     fireKeyboardLedsChangedEvent(mEventSource, fNumLock, fCapsLock, fScrollLock);
 }
 
-/**
- * @note Locks this object for reading.
- */
 void Console::onUSBDeviceStateChange(IUSBDevice *aDevice, bool aAttached,
                                      IVirtualBoxErrorInfo *aError)
 {
     AutoCaller autoCaller(this);
     AssertComRCReturnVoid(autoCaller.rc());
 
-    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
     fireUSBDeviceStateChangedEvent(mEventSource, aDevice, aAttached, aError);
 }
 
-/**
- * @note Locks this object for reading.
- */
 void Console::onRuntimeError(BOOL aFatal, IN_BSTR aErrorID, IN_BSTR aMessage)
 {
     AutoCaller autoCaller(this);
     AssertComRCReturnVoid(autoCaller.rc());
 
-    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
     fireRuntimeErrorEvent(mEventSource, aFatal, aErrorID, aMessage);
 }
 
-/**
- * @note Locks this object for reading.
- */
 HRESULT Console::onShowWindow(BOOL aCheck, BOOL *aCanShow, LONG64 *aWinId)
 {
     AssertReturn(aCanShow, E_POINTER);
@@ -5864,9 +5797,7 @@ HRESULT Console::onShowWindow(BOOL aCheck, BOOL *aCanShow, LONG64 *aWinId)
     AutoCaller autoCaller(this);
     AssertComRCReturnRC(autoCaller.rc());
 
-    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
     VBoxEventDesc evDesc;
-
     if (aCheck)
     {
         evDesc.init(mEventSource, VBoxEventType_OnCanShowWindow);
@@ -5886,7 +5817,7 @@ HRESULT Console::onShowWindow(BOOL aCheck, BOOL *aCanShow, LONG64 *aWinId)
             }
             else
             {
-                Assert(FALSE);
+                AssertFailed();
                 *aCanShow = TRUE;
             }
         }
@@ -5903,15 +5834,15 @@ HRESULT Console::onShowWindow(BOOL aCheck, BOOL *aCanShow, LONG64 *aWinId)
             ComPtr<IEvent> pEvent;
             evDesc.getEvent(pEvent.asOutParam());
             ComPtr<IShowWindowEvent> pShowEvent = pEvent;
-            LONG64 aEvWinId = 0;
             if (pShowEvent)
             {
-                pShowEvent->COMGETTER(WinId)(&aEvWinId);
-                if ((aEvWinId != 0) && (*aWinId == 0))
-                    *aWinId = aEvWinId;
+                LONG64 iEvWinId = 0;
+                pShowEvent->COMGETTER(WinId)(&iEvWinId);
+                if (iEvWinId != 0 && *aWinId == 0)
+                    *aWinId = iEvWinId;
             }
             else
-                Assert(FALSE);
+                AssertFailed();
         }
     }
 
