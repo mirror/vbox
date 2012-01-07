@@ -528,10 +528,10 @@ PyXPCOMMethod_WaitForEvents(PyObject *self, PyObject *args)
     com::EventQueue* aEventQ = com::EventQueue::getMainEventQueue();
     NS_WARN_IF_FALSE(aEventQ != nsnull, "Null main event queue");
     if (!aEventQ)
-	{
+    {
         PyErr_SetString(PyExc_TypeError, "the main event queue is NULL");
         return NULL;
-	}
+    }
 
     Py_BEGIN_ALLOW_THREADS
     rc = aEventQ->processEventQueue(aTimeout < 0 ? RT_INDEFINITE_WAIT : (uint32_t)aTimeout);
@@ -544,10 +544,10 @@ PyXPCOMMethod_WaitForEvents(PyObject *self, PyObject *args)
         return PyInt_FromLong(1);
 
     if (rc == VERR_INVALID_CONTEXT)
-	{
+    {
         PyErr_SetString(PyExc_Exception, "wrong thread, use the main thread");
-		return NULL;
-	}
+        return NULL;
+    }
 
     return PyInt_FromLong(2);
 }
