@@ -1488,8 +1488,8 @@ VMMR3DECL(int) PDMR3AsyncCompletionBwMgrSetMaxForFile(PVM pVM, const char *pcszB
          * Set the new value for the start and max value to let the manager pick up
          * the new limit immediately.
          */
-        ASMAtomicXchgU32(&pBwMgr->cbTransferPerSecMax, cbMaxNew);
-        ASMAtomicXchgU32(&pBwMgr->cbTransferPerSecStart, cbMaxNew);
+        ASMAtomicWriteU32(&pBwMgr->cbTransferPerSecMax, cbMaxNew);
+        ASMAtomicWriteU32(&pBwMgr->cbTransferPerSecStart, cbMaxNew);
     }
     else
         rc = VERR_NOT_FOUND;
