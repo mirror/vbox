@@ -173,8 +173,13 @@ private:
  * STDMETHODIMP Component::Foo()
  * {
  *     AutoCaller autoCaller(this);
- *     if (FAILED(autoCaller.rc())) return autoCaller.rc();
- *     ...
+ *     HRESULT hrc = autoCaller.rc();
+ *     if (SUCCEEDED(hrc))
+ *     {
+ *         ...
+ *     }
+ *     return hrc;
+ * }
  * </code>
  *
  * Using this class is equivalent to using the AutoCallerBase template with
@@ -198,8 +203,12 @@ typedef AutoCallerBase<false> AutoCaller;
  * STDMETHODIMP Component::Bar()
  * {
  *     AutoLimitedCaller autoCaller(this);
- *     if (FAILED(autoCaller.rc())) return autoCaller.rc();
- *     ...
+ *     HRESULT hrc = autoCaller.rc();
+ *     if (SUCCEEDED(hrc))
+ *     {
+ *         ...
+ *     }
+ *     return hrc;
  * </code>
  *
  * Using this class is equivalent to using the AutoCallerBase template with
@@ -243,8 +252,8 @@ typedef AutoCallerBase<true> AutoLimitedCaller;
  * <code>
  * HRESULT Component::init()
  * {
- *     AutoInitSpan autoInitSpan (this);
- *     AssertReturn (autoInitSpan.isOk(), E_FAIL);
+ *     AutoInitSpan autoInitSpan(this);
+ *     AssertReturn(autoInitSpan.isOk(), E_FAIL);
  *     ...
  *     if (FAILED(rc))
  *         return rc;
