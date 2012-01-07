@@ -429,7 +429,7 @@ public:
 
 class EventMapList
 {
-    EventMapRecord* mHead;
+    EventMapRecord *mHead;
     uint32_t        mSize;
 public:
     EventMapList()
@@ -439,12 +439,12 @@ public:
     {}
     ~EventMapList()
     {
-        EventMapRecord* aCur = mHead;
-        while (aCur)
+        EventMapRecord *pCur = mHead;
+        while (pCur)
         {
-            EventMapRecord* aNext = aCur->mNext;
-            aCur->release();
-            aCur = aNext;
+            EventMapRecord *pNext = pCur->mNext;
+            pCur->release();
+            pCur = pNext;
         }
     }
 
@@ -453,13 +453,13 @@ public:
      * that iterators doesn't see newly added listeners, and iteration
      * will always complete.
      */
-    void add(ListenerRecord* aRec)
+    void add(ListenerRecord *aRec)
     {
-        EventMapRecord* aNew = new EventMapRecord(aRec);
-        aNew->mNext = mHead;
+        EventMapRecord *pNew = new EventMapRecord(aRec);
+        pNew->mNext = mHead;
         if (mHead)
-            mHead->mPrev = aNew;
-        mHead = aNew;
+            mHead->mPrev = pNew;
+        mHead = pNew;
         mSize++;
     }
 
@@ -468,21 +468,21 @@ public:
      * all consumers release it too. This helps to keep list stable
      * enough for iterators to allow long and probably intrusive callbacks.
      */
-    void remove(ListenerRecord* aRec)
+    void remove(ListenerRecord *aRec)
     {
-        EventMapRecord* aCur = mHead;
-        while (aCur)
+        EventMapRecord *pCur = mHead;
+        while (pCur)
         {
-            EventMapRecord* aNext = aCur->mNext;
-            if (aCur->ref() == aRec)
+            EventMapRecord* aNext = pCur->mNext;
+            if (pCur->ref() == aRec)
             {
-                if (aCur == mHead)
+                if (pCur == mHead)
                     mHead = aNext;
-                aCur->kill();
+                pCur->kill();
                 mSize--;
                 // break?
             }
-            aCur = aNext;
+            pCur = aNext;
         }
     }
 
@@ -493,62 +493,62 @@ public:
 
     struct iterator
     {
-      EventMapRecord* mCur;
+        EventMapRecord *mCur;
 
-      iterator()
-      : mCur(0)
-      {}
+        iterator()
+            : mCur(0)
+        {}
 
-      explicit
-      iterator(EventMapRecord* aCur)
-      : mCur(aCur)
-      {
-          // Prevent element removal, till we're at it
-          if (mCur)
-              mCur->addRef();
-      }
+        explicit
+        iterator(EventMapRecord *aCur)
+            : mCur(aCur)
+        {
+            // Prevent element removal, till we're at it
+            if (mCur)
+                mCur->addRef();
+        }
 
-      ~iterator()
-      {
-          if (mCur)
-              mCur->release();
-      }
+        ~iterator()
+        {
+            if (mCur)
+                mCur->release();
+        }
 
-      ListenerRecord*
-      operator*() const
-      {
-          return mCur->ref();
-      }
+        ListenerRecord *
+        operator*() const
+        {
+            return mCur->ref();
+        }
 
-      EventMapList::iterator&
-      operator++()
-      {
-          EventMapRecord* aPrev = mCur;
-          do {
-              mCur = mCur->mNext;
-          } while (mCur && !mCur->mAlive);
+        EventMapList::iterator &
+        operator++()
+        {
+            EventMapRecord *pPrev = mCur;
+            do {
+                mCur = mCur->mNext;
+            } while (mCur && !mCur->mAlive);
 
-          // now we can safely release previous element
-          aPrev->release();
+            // now we can safely release previous element
+            pPrev->release();
 
-          // And grab the new current
-          if (mCur)
-              mCur->addRef();
+            // And grab the new current
+            if (mCur)
+                mCur->addRef();
 
-          return *this;
-      }
+            return *this;
+        }
 
-      bool
-      operator==(const EventMapList::iterator& aOther) const
-      {
-          return mCur == aOther.mCur;
-      }
+        bool
+        operator==(const EventMapList::iterator& aOther) const
+        {
+            return mCur == aOther.mCur;
+        }
 
-      bool
-      operator!=(const EventMapList::iterator& aOther) const
-      {
-          return mCur != aOther.mCur;
-      }
+        bool
+        operator!=(const EventMapList::iterator& aOther) const
+        {
+            return mCur != aOther.mCur;
+        }
     };
 
     iterator begin()
@@ -802,7 +802,7 @@ HRESULT ListenerRecord::process(IEvent*                     aEvent,
         if (mListener)
         {
             aAlock.release();
-            rc =  mListener->HandleEvent(aEvent);
+            rc = mListener->HandleEvent(aEvent);
 #ifdef RT_OS_WINDOWS
             Assert(rc != RPC_E_WRONG_THREAD);
 #endif
@@ -812,8 +812,7 @@ HRESULT ListenerRecord::process(IEvent*                     aEvent,
             eventProcessed(aEvent, pit);
         return rc;
     }
-    else
-        return enqueue(aEvent);
+    return enqueue(aEvent);
 }
 
 
@@ -1031,7 +1030,7 @@ STDMETHODIMP EventSource::FireEvent(IEvent * aEvent,
         hrc = aEvent->COMGETTER(Type)(&evType);
         AssertComRCReturn(hrc, hrc);
 
-        EventMapList& listeners = m->mEvMap[(int)evType-FirstEvent];
+        EventMapList &listeners = m->mEvMap[(int)evType - FirstEvent];
 
         /* Anyone interested in this event? */
         uint32_t cListeners = listeners.size();
@@ -1050,8 +1049,9 @@ STDMETHODIMP EventSource::FireEvent(IEvent * aEvent,
             // pending events lookup
             pit = m->mPendingMap.find(aEvent);
         }
-        for(EventMapList::iterator it = listeners.begin();
-            it != listeners.end(); ++it)
+        for (EventMapList::iterator it = listeners.begin();
+             it != listeners.end();
+             ++it)
         {
             HRESULT cbRc;
             // keep listener record reference, in case someone will remove it while in callback
