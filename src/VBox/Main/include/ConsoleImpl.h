@@ -693,6 +693,9 @@ private:
     const ComObjPtr<Display> mDisplay;
     const ComObjPtr<MachineDebugger> mDebugger;
     const ComObjPtr<VRDEServerInfo> mVRDEServerInfo;
+    /** This can safely be used without holding any locks.
+     * An AutoCaller suffices to prevent it being destroy while in use and
+     * internally there is a lock providing the necessary serialization. */
     const ComObjPtr<EventSource> mEventSource;
 #ifdef VBOX_WITH_EXTPACK
     const ComObjPtr<ExtPackManager> mptrExtPackManager;
