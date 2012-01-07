@@ -13,7 +13,7 @@
         rather trivial container classes for their read-only attributes.
         Further extension to other interfaces is possible and anticipated.
 
-     Copyright (C) 2010 Oracle Corporation
+     Copyright (C) 2010-2012 Oracle Corporation
 
      This file is part of VirtualBox Open Source Edition (OSE), as
      available from http://www.virtualbox.org. This file is free software;
@@ -37,24 +37,24 @@
 
 <xsl:template name="fileheader">
   <xsl:param name="name" />
-  <xsl:text>/**
- *  Copyright (C) 2010 Oracle Corporation
- *
- *  This file is part of VirtualBox Open Source Edition (OSE), as
- *  available from http://www.virtualbox.org. This file is free software;
- *  you can redistribute it and/or modify it under the terms of the GNU
- *  General Public License (GPL) as published by the Free Software
- *  Foundation, in version 2 as it comes in the "COPYING" file of the
- *  VirtualBox OSE distribution. VirtualBox OSE is distributed in the
- *  hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
- *
-</xsl:text>
-  <xsl:value-of select="concat(' * ',$name)"/>
-<xsl:text>
- *
+  <xsl:text>/** @file </xsl:text>
+  <xsl:value-of select="$name"/>
+  <xsl:text>
  * DO NOT EDIT! This is a generated file.
  * Generated from: src/VBox/Main/idl/VirtualBox.xidl (VirtualBox's interface definitions in XML)
- * Generator: src/VBox/Main/idl/autogen.xsl
+ * Generator: src/VBox/Main/idl/comimpl.xsl
+ */
+
+/*
+ * Copyright (C) 2010-2012 Oracle Corporation
+ *
+ * This file is part of VirtualBox Open Source Edition (OSE), as
+ * available from http://www.virtualbox.org. This file is free software;
+ * you can redistribute it and/or modify it under the terms of the GNU
+ * General Public License (GPL) as published by the Free Software
+ * Foundation, in version 2 as it comes in the "COPYING" file of the
+ * VirtualBox OSE distribution. VirtualBox OSE is distributed in the
+ * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
 </xsl:text>
@@ -742,7 +742,7 @@ HRESULT VBoxEventDesc::reinit(VBoxEventType_T aType, ...)
   <xsl:variable name="extends">
     <xsl:value-of select="//interface[@name=$name]/@extends" />
   </xsl:variable>
-  
+
   <xsl:choose>
     <xsl:when test="$extends='IEvent'">
     </xsl:when>
@@ -770,7 +770,7 @@ HRESULT VBoxEventDesc::reinit(VBoxEventType_T aType, ...)
         <xsl:with-param name="dir" select="'in'" />
         <xsl:with-param name="mod" select="@mod" />
       </xsl:call-template>
-    </xsl:variable>      
+    </xsl:variable>
     <xsl:value-of select="concat(', ',$aTypeName)"/>
   </xsl:for-each>
 </xsl:template>
@@ -840,13 +840,13 @@ HRESULT VBoxEventDesc::reinit(VBoxEventType_T aType, ...)
     </xsl:call-template>
     <xsl:value-of select="       ')&#10;{&#10;'"/>
 
-    <xsl:value-of select="       '   VBoxEventDesc evDesc;&#10;'"/>
-    <xsl:value-of select="concat('   evDesc.init(aSource, VBoxEventType_',$evid)"/>
+    <xsl:value-of select="       '    VBoxEventDesc evDesc;&#10;'"/>
+    <xsl:value-of select="concat('    evDesc.init(aSource, VBoxEventType_',$evid)"/>
     <xsl:call-template name="genFactParams">
       <xsl:with-param name="name" select="$ifname" />
     </xsl:call-template>
     <xsl:value-of select="');&#10;'"/>
-    <xsl:value-of select="       '   evDesc.fire(/* do not wait for delivery */ 0);&#10;'"/>
+    <xsl:value-of select="       '    evDesc.fire(/* do not wait for delivery */ 0);&#10;'"/>
     <xsl:value-of select="       '}&#10;'"/>
   </xsl:for-each>
 </xsl:template>
