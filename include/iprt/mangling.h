@@ -1342,6 +1342,7 @@
 # define RTSystemQueryDmiString                         RT_MANGLER(RTSystemQueryDmiString)
 # define RTSystemQueryOSInfo                            RT_MANGLER(RTSystemQueryOSInfo)
 # define RTSystemQueryTotalRam                          RT_MANGLER(RTSystemQueryTotalRam)
+# define RTSystemShutdown                               RT_MANGLER(RTSystemShutdown)
 # define RTTarClose                                     RT_MANGLER(RTTarClose)
 # define RTTarCreate                                    RT_MANGLER(RTTarCreate)
 # define RTTarCurrentFile                               RT_MANGLER(RTTarCurrentFile)
