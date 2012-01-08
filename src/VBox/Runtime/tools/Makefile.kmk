@@ -50,6 +50,11 @@ ifndef VBOX_ONLY_EXTPACKS_USE_IMPLIBS
  RTGzip_TEMPLATE = VBOXR3TSTEXE
  RTGzip_SOURCES = RTGzip.cpp
 
+ # RTShutdown - similar (but not identical) to a typical unix shutdown command.
+ PROGRAMS += RTShutdown
+ RTShutdown_TEMPLATE = VBOXR3TSTEXE
+ RTShutdown_SOURCES = RTShutdown.cpp
+
  # RTTar - our tar clone (for testing the tar/gzip/gunzip streaming code)
  PROGRAMS += RTTar
  RTTar_TEMPLATE = VBOXR3TSTEXE
