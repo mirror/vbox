@@ -540,14 +540,14 @@ RuntimeR3_SOURCES.win = \
 	generic/uuid-generic.cpp \
 	generic/RTProcDaemonize-generic.cpp \
 	generic/RTProcIsRunningByName-generic.cpp \
-	generic/RTSystemShutdown-generic.cpp \
 	generic/RTThreadGetNativeState-generic.cpp \
 	nt/RTErrConvertFromNtStatus.cpp \
 	r3/posix/env-posix.cpp \
 	r3/win/RTHandleGetStandard-win.cpp \
 	r3/win/RTSystemQueryOSInfo-win.cpp \
+	r3/win/RTSystemShutdown-win.cpp \
 	r3/win/RTSystemQueryDmiString-win.cpp \
-        r3/win/RTSystemQueryTotalRam-win.cpp \
+	r3/win/RTSystemQueryTotalRam-win.cpp \
 	r3/win/alloc-win.cpp \
 	r3/win/dir-win.cpp \
 	r3/win/errvars-win.cpp \
