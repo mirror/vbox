@@ -35,8 +35,8 @@
 #include <iprt/err.h>
 #include <iprt/string.h>
 
-
 #include <Windows.h>
+
 
 RTDECL(int) RTSystemShutdown(RTMSINTERVAL cMsDelay, uint32_t fFlags, const char *pszLogMsg)
 {
