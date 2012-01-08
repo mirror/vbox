@@ -1688,6 +1688,8 @@ RT_C_DECLS_END
  * @{ */
 /** Power off is not supported by the hardware or the OS. */
 #define VERR_SYS_CANNOT_POWER_OFF                   (-22400)
+/** Shutdown failed. */
+#define VERR_SYS_SHUTDOWN_FAILED                    (-22401)
 /** @} */
 
 /* SED-END */
