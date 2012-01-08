@@ -3508,8 +3508,8 @@ static void ProcessKey(SDL_KeyboardEvent *ev)
                 case SDLK_F8:
                     {
                         BOOL singlestepEnabled;
-                        gpMachineDebugger->COMGETTER(Singlestep)(&singlestepEnabled);
-                        gpMachineDebugger->COMSETTER(Singlestep)(!singlestepEnabled);
+                        gpMachineDebugger->COMGETTER(SingleStep)(&singlestepEnabled);
+                        gpMachineDebugger->COMSETTER(SingleStep)(!singlestepEnabled);
                         break;
                     }
                 default:
@@ -4110,7 +4110,7 @@ static void UpdateTitlebar(TitlebarMode mode, uint32_t u32User)
                 gpMachineDebugger->COMGETTER(PATMEnabled)(&patmEnabled);
                 gpMachineDebugger->COMGETTER(CSAMEnabled)(&csamEnabled);
                 gpMachineDebugger->COMGETTER(LogEnabled)(&logEnabled);
-                gpMachineDebugger->COMGETTER(Singlestep)(&singlestepEnabled);
+                gpMachineDebugger->COMGETTER(SingleStep)(&singlestepEnabled);
                 gpMachineDebugger->COMGETTER(HWVirtExEnabled)(&hwVirtEnabled);
                 gpMachineDebugger->COMGETTER(VirtualTimeRate)(&virtualTimeRate);
                 RTStrPrintf(szTitle + strlen(szTitle), sizeof(szTitle) - strlen(szTitle),
