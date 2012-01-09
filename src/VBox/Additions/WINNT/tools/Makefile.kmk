@@ -1,0 +1,33 @@
+# $Id$
+## @file
+# Sub-Makefile for the Windows NT Additions Tools.
+#
+
+# Copyright (C) 2012 Oracle Corporation
+#
+# This file is part of VirtualBox Open Source Edition (OSE), as
+# available from http://www.virtualbox.org. This file is free software;
+# you can redistribute it and/or modify it under the terms of the GNU
+# General Public License (GPL) as published by the Free Software
+# Foundation, in version 2 as it comes in the "COPYING" file of the
+# VirtualBox OSE distribution. VirtualBox OSE is distributed in the
+# hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
+#
+
+SUB_DEPTH = ../../../../..
+include $(KBUILD_PATH)/subheader.kmk
+
+PROGRAMS += VBoxCertUtil
+
+VBoxCertUtil_TEMPLATE = VBOXGUESTR3EXE
+VBoxCertUtil_SOURCES = VBoxCertUtil.cpp
+VBoxCertUtil_LIBS = \
+    $(VBOX_LIB_IPRT_GUEST_R3) \
+    $(VBOX_LIB_VBGL_R3) \
+    crypt32.lib
+
+include $(KBUILD_PATH)/subfooter.kmk
+
+
+
+
