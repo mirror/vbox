@@ -460,6 +460,13 @@ VMMR3DECL(int) PGMR3PoolGrow(PVM pVM)
     PPGMPOOL pPool = pVM->pgm.s.pPoolR3;
     AssertReturn(pPool->cCurPages < pPool->cMaxPages, VERR_PGM_POOL_MAXED_OUT_ALREADY);
 
+    /* With 32-bit guests and no EPT, the CR3 limits the root pages to low
+       (below 4 GB) memory. */
+    /** @todo change the pool to handle ROOT page allocations specially when
+     *        required. */
+    bool fCanUseHighMemory = HWACCMIsNestedPagingActive(pVM)
+                          && HWACCMGetShwPagingMode(pVM) == PGMMODE_EPT;
+
     pgmLock(pVM);
 
     /*
@@ -467,17 +474,19 @@ VMMR3DECL(int) PGMR3PoolGrow(PVM pVM)
      */
     uint32_t cPages = pPool->cMaxPages - pPool->cCurPages;
     cPages = RT_MIN(PGMPOOL_CFG_MAX_GROW, cPages);
-    LogFlow(("PGMR3PoolGrow: Growing the pool by %d (%#x) pages.\n", cPages, cPages));
+    LogFlow(("PGMR3PoolGrow: Growing the pool by %d (%#x) pages. fCanUseHighMemory=%RTbool\n", cPages, cPages, fCanUseHighMemory));
 
     for (unsigned i = pPool->cCurPages; cPages-- > 0; i++)
     {
         PPGMPOOLPAGE pPage = &pPool->aPages[i];
 
-        /* Allocate all pages in low (below 4 GB) memory as 32 bits guests need a page table root in low memory. */
-        pPage->pvPageR3 = MMR3PageAllocLow(pVM);
+        if (fCanUseHighMemory)
+            pPage->pvPageR3 = MMR3PageAlloc(pVM);
+        else
+            pPage->pvPageR3 = MMR3PageAllocLow(pVM);
         if (!pPage->pvPageR3)
         {
-            Log(("We're out of memory!! i=%d\n", i));
+            Log(("We're out of memory!! i=%d fCanUseHighMemory=%RTbool\n", i, fCanUseHighMemory));
             pgmUnlock(pVM);
             return i ? VINF_SUCCESS : VERR_NO_PAGE_MEMORY;
         }
