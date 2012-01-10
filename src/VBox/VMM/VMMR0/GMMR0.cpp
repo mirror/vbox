@@ -2504,7 +2504,7 @@ static int gmmR0AllocatePagesNew(PGMM pGMM, PGVM pGVM, uint32_t cPages, PGMMPAGE
                 while (iPage < cPages && RT_SUCCESS(rc));
 
                 /* If the host is out of memory, take whatever we can get. */
-                if (   rc == VERR_NO_MEMORY
+                if (   (rc == VERR_NO_MEMORY || rc == VERR_NO_PHYS_MEMORY)
                     && pGMM->PrivateX.cFreePages + pGMM->Shared.cFreePages >= cPages - iPage)
                 {
                     iPage = gmmR0AllocatePagesIndiscriminately(&pGMM->PrivateX, pGVM, iPage, cPages, paPages);

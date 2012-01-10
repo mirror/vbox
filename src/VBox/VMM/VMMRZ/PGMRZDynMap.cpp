@@ -1061,6 +1061,8 @@ static int pgmR0DynMapAddSeg(PPGMRZDYNMAP pThis, uint32_t cPages)
         AssertRC(rc2);
         pSeg->hMemObj = NIL_RTR0MEMOBJ;
     }
+    else if (rc == VERR_NO_PAGE_MEMORY || rc == VERR_NO_PHYS_MEMORY)
+        rc = VERR_NO_MEMORY;
     RTMemFree(pSeg);
 
     /* Don't bother resizing the arrays, but free them if we're the only user. */

@@ -4343,8 +4343,9 @@ VMMR3DECL(int) PGMR3PhysAllocateHandyPages(PVM pVM)
                     "     Ballooned pages: %RX64\n", cAllocPages, cMaxPages, cBalloonPages));
         }
 
-        if (    rc != VERR_NO_MEMORY
-            &&  rc != VERR_LOCK_FAILED)
+        if (   rc != VERR_NO_MEMORY
+            && rc != VERR_NO_PHYS_MEMORY
+            && rc != VERR_LOCK_FAILED)
         {
             for (uint32_t i = 0; i < RT_ELEMENTS(pVM->pgm.s.aHandyPages); i++)
             {
@@ -4372,6 +4373,7 @@ VMMR3DECL(int) PGMR3PhysAllocateHandyPages(PVM pVM)
         VM_FF_SET(pVM, VM_FF_PGM_NEED_HANDY_PAGES);
         VM_FF_SET(pVM, VM_FF_PGM_NO_MEMORY);
         if (    rc == VERR_NO_MEMORY
+            ||  rc == VERR_NO_PHYS_MEMORY
             ||  rc == VERR_LOCK_FAILED)
             rc = VINF_EM_NO_MEMORY;
     }
