@@ -179,9 +179,10 @@ static pgprot_t rtR0MemObjLinuxConvertProt(unsigned fProt, bool fKernel)
  *                      Only valid if fContiguous == true, ignored otherwise.
  * @param   fFlagsLnx   The page allocation flags (GPFs).
  * @param   fContiguous Whether the allocation must be contiguous.
+ * @param   rcNoMem     What to return when we're out of pages.
  */
 static int rtR0MemObjLinuxAllocPages(PRTR0MEMOBJLNX *ppMemLnx, RTR0MEMOBJTYPE enmType, size_t cb,
-                                     size_t uAlignment, unsigned fFlagsLnx, bool fContiguous)
+                                     size_t uAlignment, unsigned fFlagsLnx, bool fContiguous, int rcNoMem)
 {
     size_t          iPage;
     size_t const    cPages = cb >> PAGE_SHIFT;
@@ -230,7 +231,7 @@ static int rtR0MemObjLinuxAllocPages(PRTR0MEMOBJLNX *ppMemLnx, RTR0MEMOBJTYPE en
         else if (fContiguous)
         {
             rtR0MemObjDelete(&pMemLnx->Core);
-            return VERR_NO_MEMORY;
+            return rcNoMem;
         }
     }
 
@@ -244,7 +245,7 @@ static int rtR0MemObjLinuxAllocPages(PRTR0MEMOBJLNX *ppMemLnx, RTR0MEMOBJTYPE en
                 while (iPage-- > 0)
                     __free_page(pMemLnx->apPages[iPage]);
                 rtR0MemObjDelete(&pMemLnx->Core);
-                return VERR_NO_MEMORY;
+                return rcNoMem;
             }
         }
     }
@@ -255,7 +256,7 @@ static int rtR0MemObjLinuxAllocPages(PRTR0MEMOBJLNX *ppMemLnx, RTR0MEMOBJTYPE en
     if (!paPages)
     {
         rtR0MemObjDelete(&pMemLnx->Core);
-        return VERR_NO_MEMORY;
+        return rcNoMem;
     }
     for (iPage = 0; iPage < cPages; iPage++)
     {
@@ -294,7 +295,7 @@ static int rtR0MemObjLinuxAllocPages(PRTR0MEMOBJLNX *ppMemLnx, RTR0MEMOBJTYPE en
             printk("rtR0MemObjLinuxAllocPages(cb=0x%lx, uAlignment=0x%lx): alloc_pages(..., %d) returned physical memory at 0x%lx!\n",
                     (unsigned long)cb, (unsigned long)uAlignment, rtR0MemObjLinuxOrder(cPages), (unsigned long)page_to_phys(pMemLnx->apPages[0]));
             rtR0MemObjLinuxFreePages(pMemLnx);
-            return VERR_NO_MEMORY;
+            return rcNoMem;
         }
     }
 
@@ -540,9 +541,11 @@ DECLHIDDEN(int) rtR0MemObjNativeAllocPage(PPRTR0MEMOBJINTERNAL ppMem, size_t cb,
     int rc;
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 4, 22)
-    rc = rtR0MemObjLinuxAllocPages(&pMemLnx, RTR0MEMOBJTYPE_PAGE, cb, PAGE_SIZE, GFP_HIGHUSER, false /* non-contiguous */);
+    rc = rtR0MemObjLinuxAllocPages(&pMemLnx, RTR0MEMOBJTYPE_PAGE, cb, PAGE_SIZE, GFP_HIGHUSER,
+                                   false /* non-contiguous */, VERR_NO_MEMORY);
 #else
-    rc = rtR0MemObjLinuxAllocPages(&pMemLnx, RTR0MEMOBJTYPE_PAGE, cb, PAGE_SIZE, GFP_USER, false /* non-contiguous */);
+    rc = rtR0MemObjLinuxAllocPages(&pMemLnx, RTR0MEMOBJTYPE_PAGE, cb, PAGE_SIZE, GFP_USER,
+                                   false /* non-contiguous */, VERR_NO_MEMORY);
 #endif
     if (RT_SUCCESS(rc))
     {
@@ -569,17 +572,20 @@ DECLHIDDEN(int) rtR0MemObjNativeAllocLow(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, 
     /* Try to avoid GFP_DMA. GFM_DMA32 was introduced with Linux 2.6.15. */
 #if (defined(RT_ARCH_AMD64) || defined(CONFIG_X86_PAE)) && defined(GFP_DMA32)
     /* ZONE_DMA32: 0-4GB */
-    rc = rtR0MemObjLinuxAllocPages(&pMemLnx, RTR0MEMOBJTYPE_LOW, cb, PAGE_SIZE, GFP_DMA32, false /* non-contiguous */);
+    rc = rtR0MemObjLinuxAllocPages(&pMemLnx, RTR0MEMOBJTYPE_LOW, cb, PAGE_SIZE, GFP_DMA32,
+                                   false /* non-contiguous */, VERR_NO_LOW_MEMORY);
     if (RT_FAILURE(rc))
 #endif
 #ifdef RT_ARCH_AMD64
         /* ZONE_DMA: 0-16MB */
-        rc = rtR0MemObjLinuxAllocPages(&pMemLnx, RTR0MEMOBJTYPE_LOW, cb, PAGE_SIZE, GFP_DMA, false /* non-contiguous */);
+        rc = rtR0MemObjLinuxAllocPages(&pMemLnx, RTR0MEMOBJTYPE_LOW, cb, PAGE_SIZE, GFP_DMA,
+                                       false /* non-contiguous */, VERR_NO_LOW_MEMORY);
 #else
 # ifdef CONFIG_X86_PAE
 # endif
         /* ZONE_NORMAL: 0-896MB */
-        rc = rtR0MemObjLinuxAllocPages(&pMemLnx, RTR0MEMOBJTYPE_LOW, cb, PAGE_SIZE, GFP_USER, false /* non-contiguous */);
+        rc = rtR0MemObjLinuxAllocPages(&pMemLnx, RTR0MEMOBJTYPE_LOW, cb, PAGE_SIZE, GFP_USER,
+                                       false /* non-contiguous */, VERR_NO_LOW_MEMORY);
 #endif
     if (RT_SUCCESS(rc))
     {
@@ -605,15 +611,18 @@ DECLHIDDEN(int) rtR0MemObjNativeAllocCont(PPRTR0MEMOBJINTERNAL ppMem, size_t cb,
 
 #if (defined(RT_ARCH_AMD64) || defined(CONFIG_X86_PAE)) && defined(GFP_DMA32)
     /* ZONE_DMA32: 0-4GB */
-    rc = rtR0MemObjLinuxAllocPages(&pMemLnx, RTR0MEMOBJTYPE_CONT, cb, PAGE_SIZE, GFP_DMA32, true /* contiguous */);
+    rc = rtR0MemObjLinuxAllocPages(&pMemLnx, RTR0MEMOBJTYPE_CONT, cb, PAGE_SIZE, GFP_DMA32,
+                                   true /* contiguous */, VERR_NO_CONT_MEMORY);
     if (RT_FAILURE(rc))
 #endif
 #ifdef RT_ARCH_AMD64
         /* ZONE_DMA: 0-16MB */
-        rc = rtR0MemObjLinuxAllocPages(&pMemLnx, RTR0MEMOBJTYPE_CONT, cb, PAGE_SIZE, GFP_DMA, true /* contiguous */);
+        rc = rtR0MemObjLinuxAllocPages(&pMemLnx, RTR0MEMOBJTYPE_CONT, cb, PAGE_SIZE, GFP_DMA,
+                                       true /* contiguous */, VERR_NO_CONT_MEMORY);
 #else
         /* ZONE_NORMAL (32-bit hosts): 0-896MB */
-        rc = rtR0MemObjLinuxAllocPages(&pMemLnx, RTR0MEMOBJTYPE_CONT, cb, PAGE_SIZE, GFP_USER, true /* contiguous */);
+        rc = rtR0MemObjLinuxAllocPages(&pMemLnx, RTR0MEMOBJTYPE_CONT, cb, PAGE_SIZE, GFP_USER,
+                                       true /* contiguous */, VERR_NO_CONT_MEMORY);
 #endif
     if (RT_SUCCESS(rc))
     {
@@ -657,7 +666,8 @@ static int rtR0MemObjLinuxAllocPhysSub2(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJTY
     int rc;
 
     rc = rtR0MemObjLinuxAllocPages(&pMemLnx, enmType, cb, uAlignment, fGfp,
-                                   enmType == RTR0MEMOBJTYPE_PHYS /* contiguous / non-contiguous */);
+                                   enmType == RTR0MEMOBJTYPE_PHYS /* contiguous / non-contiguous */,
+                                   VERR_NO_PHYS_MEMORY);
     if (RT_FAILURE(rc))
         return rc;
 

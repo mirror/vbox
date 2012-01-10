@@ -166,7 +166,8 @@ DECLHIDDEN(int) rtR0MemObjNativeAllocLow(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, 
         KernVMFree(pMemOs2->Core.pv);
     }
     rtR0MemObjDelete(&pMemOs2->Core);
-    return RTErrConvertFromOS2(rc);
+    rc = RTErrConvertFromOS2(rc);
+    return rc == VERR_NO_MEMORY ? VERR_NO_LOW_MEMORY : rc;
 }
 
 
