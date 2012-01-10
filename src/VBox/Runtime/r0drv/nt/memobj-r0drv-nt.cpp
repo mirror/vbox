@@ -272,7 +272,7 @@ DECLHIDDEN(int) rtR0MemObjNativeAllocLow(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, 
         while (iPage-- > 0)
             if (rtR0MemObjNativeGetPagePhysAddr(*ppMem, iPage) >= _4G)
             {
-                rc = VERR_NO_MEMORY;
+                rc = VERR_NO_LOW_MEMORY;
                 break;
             }
         if (RT_SUCCESS(rc))

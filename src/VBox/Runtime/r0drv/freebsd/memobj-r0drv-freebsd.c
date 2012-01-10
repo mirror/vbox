@@ -44,6 +44,7 @@
 #include <iprt/process.h>
 #include "internal/memobj.h"
 
+
 /*******************************************************************************
 *   Structures and Typedefs                                                    *
 *******************************************************************************/
@@ -60,6 +61,7 @@ typedef struct RTR0MEMOBJFREEBSD
 
 
 MALLOC_DEFINE(M_IPRTMOBJ, "iprtmobj", "IPRT - R0MemObj");
+
 
 /**
  * Gets the virtual memory map the specified object is mapped into.
@@ -111,13 +113,11 @@ DECLHIDDEN(int) rtR0MemObjNativeFree(RTR0MEMOBJ pMem)
         case RTR0MEMOBJTYPE_PAGE:
         case RTR0MEMOBJTYPE_LOW:
         case RTR0MEMOBJTYPE_CONT:
-        {
             rc = vm_map_remove(kernel_map,
                                 (vm_offset_t)pMemFreeBSD->Core.pv,
                                 (vm_offset_t)pMemFreeBSD->Core.pv + pMemFreeBSD->Core.cb);
             AssertMsg(rc == KERN_SUCCESS, ("%#x", rc));
             break;
-        }
 
         case RTR0MEMOBJTYPE_LOCK:
         {
@@ -222,15 +222,14 @@ static vm_page_t rtR0MemObjFreeBSDContigPhysAllocHelper(vm_object_t pObject, vm_
 
 static int rtR0MemObjFreeBSDPhysAllocHelper(vm_object_t pObject, u_long cPages,
                                             vm_paddr_t VmPhysAddrHigh, u_long uAlignment,
-                                            bool fContiguous, bool fWire)
+                                            bool fContiguous, bool fWire, int rcNoMem)
 {
     if (fContiguous)
     {
         if (rtR0MemObjFreeBSDContigPhysAllocHelper(pObject, 0, cPages, VmPhysAddrHigh,
                                                    uAlignment, fWire) != NULL)
             return VINF_SUCCESS;
-        else
-            return VERR_NO_MEMORY;
+        return rcNoMem;
     }
 
     for (vm_pindex_t iPage = 0; iPage < cPages; iPage++)
@@ -251,14 +250,14 @@ static int rtR0MemObjFreeBSDPhysAllocHelper(vm_object_t pObject, u_long cPages,
                 vm_page_unlock_queues();
             }
             VM_OBJECT_UNLOCK(pObject);
-            return VERR_NO_MEMORY;
+            return rcNoMem;
         }
     }
     return VINF_SUCCESS;
 }
 
 static int rtR0MemObjFreeBSDAllocHelper(PRTR0MEMOBJFREEBSD pMemFreeBSD, bool fExecutable,
-                                        vm_paddr_t VmPhysAddrHigh, bool fContiguous)
+                                        vm_paddr_t VmPhysAddrHigh, bool fContiguous, int rcNoMem)
 {
     int rc;
     size_t cPages = atop(pMemFreeBSD->Core.cb);
@@ -274,8 +273,10 @@ static int rtR0MemObjFreeBSDAllocHelper(PRTR0MEMOBJFREEBSD pMemFreeBSD, bool fEx
     if (rc == KERN_SUCCESS)
     {
         rc = rtR0MemObjFreeBSDPhysAllocHelper(pMemFreeBSD->pObject, cPages,
-                                              VmPhysAddrHigh, PAGE_SIZE, fContiguous, false);
-        if (RT_SUCCESS(rc)) {
+                                              VmPhysAddrHigh, PAGE_SIZE, fContiguous,
+                                              false, rcNoMem);
+        if (RT_SUCCESS(rc))
+        {
             vm_map_wire(kernel_map, MapAddress, MapAddress + pMemFreeBSD->Core.cb,
                         VM_MAP_WIRE_SYSTEM | VM_MAP_WIRE_NOHOLES);
 
@@ -286,7 +287,7 @@ static int rtR0MemObjFreeBSDAllocHelper(PRTR0MEMOBJFREEBSD pMemFreeBSD, bool fEx
 
         vm_map_remove(kernel_map, MapAddress, MapAddress + pMemFreeBSD->Core.cb);
     }
-    rc = VERR_NO_MEMORY; /** @todo fix translation (borrow from darwin) */
+    rc = rcNoMem; /** @todo fix translation (borrow from darwin) */
 
     vm_object_deallocate(pMemFreeBSD->pObject);
     rtR0MemObjDelete(&pMemFreeBSD->Core);
@@ -299,7 +300,7 @@ DECLHIDDEN(int) rtR0MemObjNativeAllocPage(PPRTR0MEMOBJINTERNAL ppMem, size_t cb,
     if (!pMemFreeBSD)
         return VERR_NO_MEMORY;
 
-    int rc = rtR0MemObjFreeBSDAllocHelper(pMemFreeBSD, fExecutable, ~(vm_paddr_t)0, false);
+    int rc = rtR0MemObjFreeBSDAllocHelper(pMemFreeBSD, fExecutable, ~(vm_paddr_t)0, false, VERR_NO_MEMORY);
     if (RT_FAILURE(rc))
     {
         rtR0MemObjDelete(&pMemFreeBSD->Core);
@@ -318,7 +319,7 @@ DECLHIDDEN(int) rtR0MemObjNativeAllocLow(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, 
     if (!pMemFreeBSD)
         return VERR_NO_MEMORY;
 
-    int rc = rtR0MemObjFreeBSDAllocHelper(pMemFreeBSD, fExecutable, _4G, false);
+    int rc = rtR0MemObjFreeBSDAllocHelper(pMemFreeBSD, fExecutable, _4G, false, VERR_NO_LOW_MEMORY);
     if (RT_FAILURE(rc))
     {
         rtR0MemObjDelete(&pMemFreeBSD->Core);
@@ -337,7 +338,7 @@ DECLHIDDEN(int) rtR0MemObjNativeAllocCont(PPRTR0MEMOBJINTERNAL ppMem, size_t cb,
     if (!pMemFreeBSD)
         return VERR_NO_MEMORY;
 
-    int rc = rtR0MemObjFreeBSDAllocHelper(pMemFreeBSD, fExecutable, _4G, true);
+    int rc = rtR0MemObjFreeBSDAllocHelper(pMemFreeBSD, fExecutable, _4G, true, VERR_NO_CONT_MEMORY);
     if (RT_FAILURE(rc))
     {
         rtR0MemObjDelete(&pMemFreeBSD->Core);
@@ -353,7 +354,7 @@ DECLHIDDEN(int) rtR0MemObjNativeAllocCont(PPRTR0MEMOBJINTERNAL ppMem, size_t cb,
 static int rtR0MemObjFreeBSDAllocPhysPages(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJTYPE enmType,
                                            size_t cb,
                                            RTHCPHYS PhysHighest, size_t uAlignment,
-                                           bool fContiguous)
+                                           bool fContiguous, int rcNoMem)
 {
     uint32_t   cPages = atop(cb);
     vm_paddr_t VmPhysAddrHigh;
@@ -372,13 +373,8 @@ static int rtR0MemObjFreeBSDAllocPhysPages(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOB
         VmPhysAddrHigh = ~(vm_paddr_t)0;
 
     int rc = rtR0MemObjFreeBSDPhysAllocHelper(pMemFreeBSD->pObject, cPages, VmPhysAddrHigh,
-                                              uAlignment, fContiguous, true);
-
-    if (RT_FAILURE(rc)) {
-        vm_object_deallocate(pMemFreeBSD->pObject);
-        rtR0MemObjDelete(&pMemFreeBSD->Core);
-    }
-    else
+                                              uAlignment, fContiguous, true, rcNoMem);
+    if (RT_SUCCESS(rc))
     {
         if (fContiguous)
         {
@@ -391,6 +387,11 @@ static int rtR0MemObjFreeBSDAllocPhysPages(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOB
 
         *ppMem = &pMemFreeBSD->Core;
     }
+    else
+    {
+        vm_object_deallocate(pMemFreeBSD->pObject);
+        rtR0MemObjDelete(&pMemFreeBSD->Core);
+    }
 
     return rc;
 }
@@ -398,13 +399,13 @@ static int rtR0MemObjFreeBSDAllocPhysPages(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOB
 
 DECLHIDDEN(int) rtR0MemObjNativeAllocPhys(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, RTHCPHYS PhysHighest, size_t uAlignment)
 {
-    return rtR0MemObjFreeBSDAllocPhysPages(ppMem, RTR0MEMOBJTYPE_PHYS, cb, PhysHighest, uAlignment, true);
+    return rtR0MemObjFreeBSDAllocPhysPages(ppMem, RTR0MEMOBJTYPE_PHYS, cb, PhysHighest, uAlignment, true, VERR_NO_MEMORY);
 }
 
 
 DECLHIDDEN(int) rtR0MemObjNativeAllocPhysNC(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, RTHCPHYS PhysHighest)
 {
-    return rtR0MemObjFreeBSDAllocPhysPages(ppMem, RTR0MEMOBJTYPE_PHYS_NC, cb, PhysHighest, PAGE_SIZE, false);
+    return rtR0MemObjFreeBSDAllocPhysPages(ppMem, RTR0MEMOBJTYPE_PHYS_NC, cb, PhysHighest, PAGE_SIZE, false, VERR_NO_PHYS_MEMORY);
 }
 
 
@@ -496,7 +497,7 @@ static int rtR0MemObjNativeReserveInMap(PPRTR0MEMOBJINTERNAL ppMem, void *pvFixe
     /*
      * The pvFixed address range must be within the VM space when specified.
      */
-    if (pvFixed != (void *)-1
+    if (   pvFixed != (void *)-1
         && (    (vm_offset_t)pvFixed      < vm_map_min(pMap)
             ||  (vm_offset_t)pvFixed + cb > vm_map_max(pMap)))
         return VERR_INVALID_PARAMETER;
