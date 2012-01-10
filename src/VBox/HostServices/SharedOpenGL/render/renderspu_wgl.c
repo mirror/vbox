@@ -205,14 +205,20 @@ static int renderspuAtiQuirk_GetICDDriverList(char *pBuf, DWORD cbBuf, DWORD *pc
         for (i = 0; i < RT_ELEMENTS(aValueNames); ++i)
         {
             DWORD cbCur = cbBufRemain;
+            DWORD type;
             lRc = RegQueryValueExA(hSubkey, aValueNames[i], NULL, /* reserved*/
-                    REG_MULTI_SZ,
+                    &type,
                     (PBYTE)pBufPos, &cbCur);
             /* exclude second null termination */
             --cbCur;
 
             if (ERROR_MORE_DATA == lRc)
             {
+                if (REG_MULTI_SZ != type)
+                {
+                    crWarning("unexpected data type! %d", type);
+                    continue;
+                }
                 rc = VERR_BUFFER_OVERFLOW;
                 pBufPos = NULL;
                 cbBufRemain = 0;
@@ -223,6 +229,12 @@ static int renderspuAtiQuirk_GetICDDriverList(char *pBuf, DWORD cbBuf, DWORD *pc
             if (ERROR_SUCCESS != lRc)
             {
                 crWarning("RegGetValueA failed, %d", lRc);
+                continue;
+            }
+
+            if (REG_MULTI_SZ != type)
+            {
+                crWarning("unexpected data type! %d", type);
                 continue;
             }
 
@@ -274,7 +286,7 @@ static int renderspuAtiQuirk_ApplyForModule(LPCSTR pszAtiDll)
     }
 
     crDebug("renderspuAtiQuirk_ApplyForModule SUCCEEDED!");
-    crInfo("ATI Fullscreen qwirk for SUCCEEDED!");
+    crInfo("ATI Fullscreen qwirk SUCCEEDED!");
 
     return VINF_SUCCESS;
 }
@@ -307,6 +319,7 @@ static int renderspuAtiQuirk_Apply()
 
     crDebug("renderspuAtiQuirk_Apply..");
 
+    Assert(0);
     rc = renderspuAtiQuirk_GetICDDriverList(aBuf, sizeof (aBuf), &cbResult);
     if (RT_FAILURE(rc))
     {
