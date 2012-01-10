@@ -319,7 +319,6 @@ static int renderspuAtiQuirk_Apply()
 
     crDebug("renderspuAtiQuirk_Apply..");
 
-    Assert(0);
     rc = renderspuAtiQuirk_GetICDDriverList(aBuf, sizeof (aBuf), &cbResult);
     if (RT_FAILURE(rc))
     {
