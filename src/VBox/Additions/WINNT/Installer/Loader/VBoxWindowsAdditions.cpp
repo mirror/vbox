@@ -228,7 +228,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
                               NULL /*pProcessAttributes*/,
                               NULL /*pThreadAttributes*/,
                               TRUE /*fInheritHandles*/,
-                              0 /*dwCreationFlags*/,
+                              0    /*dwCreationFlags*/,
                               NULL /*pEnvironment*/,
                               NULL /*pCurrentDirectory*/,
                               &StartupInfo,
