@@ -27,10 +27,6 @@
 # define PAM_DEBUG
 #endif
 
-#ifdef RT_OS_SOLARIS
-# include <security/pam_appl.h>
-#endif
-#include <security/pam_modules.h>
 #include <security/pam_appl.h>
 #ifdef RT_OS_LINUX
 # include <security/_pam_macros.h>
@@ -463,11 +459,15 @@ static int pam_vbox_read_prop(pam_handle_t *hPAM, uint32_t uClientID,
                                pszKey);
                 rc = VERR_INVALID_PARAMETER;
             }
+
+            if (RT_SUCCESS(rc))
+                pam_vbox_log(hPAM, "pam_vbox_read_prop: read key \"%s\"=\"%s\"\n",
+                             pszKey, pszValue);
         }
     }
 
-    pam_vbox_log(hPAM, "pam_vbox_read_prop: read key \"%s\"=\"%s\" with rc=%Rrc\n",
-                 pszKey, pszValue, rc);
+    pam_vbox_log(hPAM, "pam_vbox_read_prop: read key \"%s\" with rc=%Rrc\n",
+                 pszKey, rc);
     return rc;
 }
 
@@ -529,7 +529,6 @@ static int pam_vbox_wait_prop(pam_handle_t *hPAM, uint32_t uClientID,
     return rc;
 }
 #endif
-
 
 /**
  * Thread function waiting for credentials to arrive.
