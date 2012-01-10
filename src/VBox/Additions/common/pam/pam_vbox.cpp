@@ -688,8 +688,7 @@ DECLEXPORT(int) pam_sm_authenticate(pam_handle_t *hPAM, int iFlags,
                                     int argc, const char **argv)
 {
     /* Parse arguments. */
-    int i;
-    for (i = 0; i < argc; i++)
+    for (int i = 0; i < argc; i++)
     {
         if (!RTStrICmp(argv[i], "debug"))
             g_verbosity = 1;
@@ -826,22 +825,22 @@ DECLEXPORT(int) pam_sm_authenticate(pam_handle_t *hPAM, int iFlags,
     return PAM_SUCCESS;
 }
 
-
-DECLEXPORT(int) pam_sm_setcred(pam_handle_t *hPAM, int iFlags, int argc, const char **argv)
+RTDECL(int) pam_sm_setcred(pam_handle_t *hPAM, int iFlags, int argc, const char **argv)
 {
-    pam_vbox_log(hPAM, "pam_vbox_setcred called\n");
+    pam_vbox_log(hPAM, "pam_vbox_setcred called, iFlags=0x%x\n", iFlags);
+    for (int i = 0; i < argc; i++)
+        pam_vbox_log(hPAM, "pam_vbox_setcred: argv[0] = %s\n", argv[i]);
     return PAM_SUCCESS;
 }
 
-
-DECLEXPORT(int) pam_sm_acct_mgmt(pam_handle_t *hPAM, int iFlags, int argc, const char **argv)
+RTDECL(int) pam_sm_acct_mgmt(pam_handle_t *hPAM, int iFlags, int argc, const char **argv)
 {
     pam_vbox_log(hPAM, "pam_vbox_acct_mgmt called\n");
     return PAM_SUCCESS;
 }
 
 
-DECLEXPORT(int) pam_sm_open_session(pam_handle_t *hPAM, int iFlags, int argc, const char **argv)
+RTDECL(int) pam_sm_open_session(pam_handle_t *hPAM, int iFlags, int argc, const char **argv)
 {
     pam_vbox_log(hPAM, "pam_vbox_open_session called\n");
     RTPrintf("This session was provided by VirtualBox Guest Additions. Have a lot of fun!\n");
@@ -849,20 +848,20 @@ DECLEXPORT(int) pam_sm_open_session(pam_handle_t *hPAM, int iFlags, int argc, co
 }
 
 
-DECLEXPORT(int) pam_sm_close_session(pam_handle_t *hPAM, int iFlags, int argc, const char **argv)
+RTDECL(int) pam_sm_close_session(pam_handle_t *hPAM, int iFlags, int argc, const char **argv)
 {
     pam_vbox_log(hPAM, "pam_vbox_close_session called\n");
     return PAM_SUCCESS;
 }
 
-DECLEXPORT(int) pam_sm_chauthtok(pam_handle_t *hPAM, int iFlags, int argc, const char **argv)
+RTDECL(int) pam_sm_chauthtok(pam_handle_t *hPAM, int iFlags, int argc, const char **argv)
 {
     pam_vbox_log(hPAM, "pam_vbox_sm_chauthtok called\n");
     return PAM_SUCCESS;
 }
 
 #ifdef DEBUG
-DECLEXPORT(void) RTAssertMsg1Weak(const char *pszExpr, unsigned uLine, const char *pszFile, const char *pszFunction)
+RTDECL(void) RTAssertMsg1Weak(const char *pszExpr, unsigned uLine, const char *pszFile, const char *pszFunction)
 {
     pam_vbox_log(g_pam_handle,
                  "\n!!Assertion Failed!!\n"
