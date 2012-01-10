@@ -4943,6 +4943,7 @@ static int pgmPoolMakeMoreFreePages(PPGMPOOL pPool, PGMPOOLKIND enmKind, uint16_
  * @retval  VINF_SUCCESS if a NEW page was allocated.
  * @retval  VINF_PGM_CACHED_PAGE if a CACHED page was returned.
  * @retval  VERR_PGM_POOL_FLUSHED if the pool was flushed.
+ *
  * @param   pVM         The VM handle.
  * @param   GCPhys      The GC physical address of the page we're gonna shadow.
  *                      For 4MB and 2MB PD entries, it's the first address the

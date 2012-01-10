@@ -178,7 +178,8 @@ PGM_SHW_DECL(int, Enter)(PVMCPU pVCpu, bool fIs64BitsPagingMode)
 #if PGM_SHW_TYPE == PGM_TYPE_NESTED || PGM_SHW_TYPE == PGM_TYPE_EPT
 
 # if PGM_SHW_TYPE == PGM_TYPE_NESTED && HC_ARCH_BITS == 32
-    /* Must distinguish between 32 and 64 bits guest paging modes as we'll use a different shadow paging root/mode in both cases. */
+    /* Must distinguish between 32 and 64 bits guest paging modes as we'll use
+       a different shadow paging root/mode in both cases. */
     RTGCPHYS     GCPhysCR3 = (fIs64BitsPagingMode) ? RT_BIT_64(63) : RT_BIT_64(62);
 # else
     RTGCPHYS     GCPhysCR3 = RT_BIT_64(63); NOREF(fIs64BitsPagingMode);
