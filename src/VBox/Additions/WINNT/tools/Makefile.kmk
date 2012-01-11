@@ -28,6 +28,3 @@ VBoxCertUtil_LIBS = \
 
 include $(KBUILD_PATH)/subfooter.kmk
 
-
-
-
