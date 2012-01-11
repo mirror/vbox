@@ -6,12 +6,23 @@
 #include <Windows.h>
 #include <Wincrypt.h>
 
+#include <iprt/buildconfig.h>
 #include <iprt/err.h>
 #include <iprt/file.h>
+#include <iprt/getopt.h>
 #include <iprt/initterm.h>
 #include <iprt/message.h>
 #include <iprt/stream.h>
 #include <iprt/string.h>
+#include <iprt/time.h>
+
+
+/*******************************************************************************
+*   Global Variables                                                           *
+*******************************************************************************/
+/** The verbosity level. */
+static unsigned  g_cVerbosityLevel = 1;
+
 
 static const char *errorToString(DWORD dwErr)
 {
@@ -72,13 +83,18 @@ static const char *errorToString(DWORD dwErr)
         MY_CASE(CRYPT_E_OSS_ERROR);
         default:
         {
+            PCRTCOMERRMSG pWinComMsg = RTErrCOMGet(dwErr);
+            if (pWinComMsg)
+                return pWinComMsg->pszDefine;
+
             static char s_szErr[32];
-            RTStrPrintf(s_szErr, sizeof(s_szErr), "#x (%d)", dwErr, dwErr);
+            RTStrPrintf(s_szErr, sizeof(s_szErr), "%#x (%d)", dwErr, dwErr);
             return s_szErr;
         }
     }
 }
 
+#if 0 /* hacking */
 static RTEXITCODE addToStore(const char *pszFilename, PCRTUTF16 pwszStore)
 {
     /*
@@ -136,7 +152,7 @@ static RTEXITCODE addToStore(const char *pszFilename, PCRTUTF16 pwszStore)
             CertCloseStore(hDstStore, CERT_CLOSE_STORE_CHECK_FLAG);
         }
         else
-            RTMsgError("CertOpenStoreW returned %s", errorToString(GetLastError()));
+            RTMsgError("CertOpenStore returned %s", errorToString(GetLastError()));
         CertFreeCertificateContext(pCertCtx);
     }
     else
@@ -153,6 +169,315 @@ static RTEXITCODE addToStore(const char *pszFilename, PCRTUTF16 pwszStore)
 
 #endif
 }
+#endif /* hacking */
+
+
+/**
+ * Reads a certificate from a file, returning a context or a the handle to a
+ * temporary memory store.
+ *
+ * @returns true on success, false on failure (error message written).
+ * @param   pszCertFile         The name of the file containing the
+ *                              certificates.
+ * @param   ppOutCtx            Where to return the certificate context.
+ * @param   phSrcStore          Where to return the handle to the temporary
+ *                              memory store.
+ */
+static bool readCertFile(const char *pszCertFile, PCCERT_CONTEXT *ppOutCtx, HCERTSTORE *phSrcStore)
+{
+    *ppOutCtx   = NULL;
+    *phSrcStore = NULL;
+
+    bool    fRc = false;
+    void   *pvFile;
+    size_t  cbFile;
+    int rc = RTFileReadAll(pszCertFile, &pvFile, &cbFile);
+    if (RT_SUCCESS(rc))
+    {
+        *ppOutCtx = CertCreateCertificateContext(X509_ASN_ENCODING | PKCS_7_ASN_ENCODING,
+                                                 (PBYTE)pvFile, (DWORD)cbFile);
+        if (*ppOutCtx)
+            rc = true;
+        else
+        {
+            /** @todo figure out if it's some other format... */
+            RTMsgError("CertCreateCertificateContext returned %s parsing the content of '%s'",
+                       errorToString(GetLastError()), pszCertFile);
+        }
+    }
+    else
+        RTMsgError("RTFileReadAll failed on '%s': %Rrc", pszCertFile, rc);
+    RTFileReadAllFree(pvFile, cbFile);
+    return fRc;
+}
+
+
+/**
+ * Opens a certificate store.
+ *
+ * @returns true on success, false on failure (error message written).
+ * @param   dwDst           The destination, like
+ *                          CERT_SYSTEM_STORE_LOCAL_MACHINE or
+ *                          ERT_SYSTEM_STORE_CURRENT_USER.
+ * @param   pszStoreNm      The store name.
+ */
+static HCERTSTORE openCertStore(DWORD dwDst, const char *pszStoreNm)
+{
+    HCERTSTORE hStore = NULL;
+    PRTUTF16   pwszStoreNm;
+    int rc = RTStrToUtf16(pszStoreNm, &pwszStoreNm);
+    if (RT_SUCCESS(rc))
+    {
+        if (g_cVerbosityLevel > 1)
+            RTMsgInfo("Opening store %#x:'%s'", dwDst, pszStoreNm);
+
+        hStore = CertOpenStore(CERT_STORE_PROV_SYSTEM_W,
+                               PKCS_7_ASN_ENCODING | X509_ASN_ENCODING,
+                               NULL /* hCryptProv = default */,
+                               dwDst | CERT_STORE_OPEN_EXISTING_FLAG,
+                               pwszStoreNm);
+        if (hStore == NULL)
+            RTMsgError("CertOpenStore failed opening %#x:'%s': %s",
+                       dwDst, pszStoreNm, errorToString(GetLastError()));
+
+        RTUtf16Free(pwszStoreNm);
+    }
+    return hStore;
+}
+
+
+/**
+ * Adds a certificate to a store.
+ *
+ * @returns true on success, false on failure (error message written).
+ * @param   dwDst           The destination, like
+ *                          CERT_SYSTEM_STORE_LOCAL_MACHINE or
+ *                          ERT_SYSTEM_STORE_CURRENT_USER.
+ * @param   pszStoreNm      The store name.
+ * @param   pszCertFile     The file containing the certificate to add.
+ * @param   dwDisposition   The disposition towards existing certificates when
+ *                          adding it.  CERT_STORE_ADD_NEW is a safe one.
+ */
+static bool addCertToStore(DWORD dwDst, const char *pszStoreNm, const char *pszCertFile, DWORD dwDisposition)
+{
+    /*
+     * Read the certificate file first.
+     */
+    PCCERT_CONTEXT  pSrcCtx   = NULL;
+    HCERTSTORE      hSrcStore = NULL;
+    if (!readCertFile(pszCertFile, &pSrcCtx, &hSrcStore))
+        return false;
+
+    /*
+     * Open the destination store.
+     */
+    bool fRc = false;
+    HCERTSTORE hDstStore = openCertStore(dwDst, pszStoreNm);
+    if (hDstStore)
+    {
+        if (pSrcCtx)
+        {
+            if (g_cVerbosityLevel > 1)
+                RTMsgInfo("Adding '%s' to %#x:'%s'... (disp %d)", pszCertFile, dwDst, pszStoreNm, dwDisposition);
+
+            if (CertAddCertificateContextToStore(hDstStore, pSrcCtx, dwDisposition, NULL))
+                fRc = true;
+            else
+                RTMsgError("CertAddCertificateContextToStore returned %s", errorToString(GetLastError()));
+        }
+        else
+        {
+            RTMsgError("Path not implemented at line %d\n",  __LINE__);
+        }
+
+        CertCloseStore(hDstStore, CERT_CLOSE_STORE_CHECK_FLAG);
+    }
+    if (pSrcCtx)
+        CertFreeCertificateContext(pSrcCtx);
+    if (hSrcStore)
+        CertCloseStore(hSrcStore, CERT_CLOSE_STORE_CHECK_FLAG);
+    return fRc;
+}
+
+/**
+ * Worker for cmdDisplayAll.
+ */
+static BOOL WINAPI displaySystemStoreCallback(const void *pvSystemStore, DWORD dwFlags, PCERT_SYSTEM_STORE_INFO pStoreInfo,
+                                              void *pvReserved, void *pvArg)
+{
+    if (g_cVerbosityLevel > 1)
+        RTPrintf("    pvSystemStore=%p dwFlags=%#x pStoreInfo=%p pvReserved=%p\n", pvSystemStore, dwFlags, pStoreInfo, pvReserved);
+    LPCWSTR pwszStoreNm = NULL;
+    if (dwFlags & CERT_SYSTEM_STORE_RELOCATE_FLAG)
+    {
+        const CERT_SYSTEM_STORE_RELOCATE_PARA *pRelPara = (const CERT_SYSTEM_STORE_RELOCATE_PARA *)pvSystemStore;
+        pwszStoreNm = pRelPara->pwszSystemStore;
+        RTPrintf("    %#010x '%ls' hKeyBase=%p\n", dwFlags, pwszStoreNm, pRelPara->hKeyBase);
+    }
+    else
+    {
+        pwszStoreNm = (LPCWSTR)pvSystemStore;
+        RTPrintf("    %#010x '%ls'\n", dwFlags, pwszStoreNm);
+    }
+
+    /*
+     * Open the store and list the certificates within.
+     */
+    DWORD      dwDst  = (dwFlags & CERT_SYSTEM_STORE_LOCATION_MASK);
+    HCERTSTORE hStore = CertOpenStore(CERT_STORE_PROV_SYSTEM_W,
+                                      PKCS_7_ASN_ENCODING | X509_ASN_ENCODING,
+                                      NULL /* hCryptProv = default */,
+                                      dwDst | CERT_STORE_OPEN_EXISTING_FLAG,
+                                      pwszStoreNm);
+    if (hStore)
+    {
+        PCCERT_CONTEXT pCertCtx = NULL;
+        while ((pCertCtx = CertEnumCertificatesInStore(hStore, pCertCtx)) != NULL)
+        {
+            if (g_cVerbosityLevel > 1)
+                RTPrintf("        pCertCtx=%p dwCertEncodingType=%#x cbCertEncoded=%#x pCertInfo=%p\n",
+                         pCertCtx, pCertCtx->dwCertEncodingType, pCertCtx->cbCertEncoded, pCertCtx->pCertInfo);
+            WCHAR wszName[1024];
+            if (CertGetNameStringW(pCertCtx, CERT_NAME_SIMPLE_DISPLAY_TYPE, 0 /*dwFlags*/, NULL /*pvTypePara*/,
+                                   wszName, sizeof(wszName)))
+            {
+                RTPrintf("        '%ls'\n", wszName);
+                if (pCertCtx->pCertInfo)
+                {
+                    RTTIMESPEC TmpTS;
+                    char  szNotBefore[80];
+                    RTTimeSpecToString(RTTimeSpecSetNtFileTime(&TmpTS, &pCertCtx->pCertInfo->NotBefore),
+                                       szNotBefore, sizeof(szNotBefore));
+                    char  szNotAfter[80];
+                    RTTimeSpecToString(RTTimeSpecSetNtFileTime(&TmpTS, &pCertCtx->pCertInfo->NotAfter),
+                                       szNotAfter, sizeof(szNotAfter));
+
+                    RTPrintf("            NotBefore='%s'\n", szNotBefore);
+                    RTPrintf("            NotAfter ='%s'\n", szNotAfter);
+                    if (pCertCtx->pCertInfo->Issuer.cbData)
+                    {
+                        if (CertGetNameStringW(pCertCtx, CERT_NAME_SIMPLE_DISPLAY_TYPE, CERT_NAME_ISSUER_FLAG, NULL /*pvTypePara*/,
+                                               wszName, sizeof(wszName)))
+                            RTPrintf("            Issuer='%ls'\n", wszName);
+                        else
+                            RTMsgError("CertGetNameStringW(Issuer) failed: %s\n", errorToString(GetLastError()));
+                    }
+                }
+            }
+            else
+                RTMsgError("CertGetNameStringW(Subject) failed: %s\n", errorToString(GetLastError()));
+
+        }
+
+        CertCloseStore(hStore, CERT_CLOSE_STORE_CHECK_FLAG);
+    }
+    else
+        RTMsgError("CertOpenStore failed opening %#x:'%ls': %s\n", dwDst, pwszStoreNm, errorToString(GetLastError()));
+
+    return TRUE;
+}
+
+/**
+ * Worker for cmdDisplayAll.
+ */
+static BOOL WINAPI displaySystemStoreLocation(LPCWSTR pwszStoreLocation, DWORD dwFlags, void *pvReserved, void *pvArg)
+{
+    NOREF(pvReserved); NOREF(pvArg);
+    RTPrintf("System store location: %#010x '%ls'\n", dwFlags, pwszStoreLocation);
+    if (!CertEnumSystemStore(dwFlags, NULL, NULL /*pvArg*/, displaySystemStoreCallback))
+        RTMsgError("CertEnumSystemStore failed on %#x:'%ls': %s\n",
+                   dwFlags, pwszStoreLocation, errorToString(GetLastError()));
+
+    return TRUE;
+}
+
+/**
+ * Handler for the 'display-all' command.
+ */
+static RTEXITCODE cmdDisplayAll(int argc, char **argv)
+{
+    if (argc != 1)
+        return RTMsgErrorExit(RTEXITCODE_SYNTAX, "the display-all command takes no arguments\n");
+
+    if (!CertEnumSystemStoreLocation(0, NULL /*pvArg*/, displaySystemStoreLocation))
+        return RTMsgErrorExit(RTEXITCODE_SYNTAX, "CertEnumSystemStoreLocation failed: %s\n", errorToString(GetLastError()));
+
+    return RTEXITCODE_SUCCESS;
+}
+
+/**
+ * Handler for the 'add-trusted-publisher' command.
+ */
+static RTEXITCODE cmdAddTrustedPublisher(int argc, char **argv)
+{
+    /*
+     * Parse arguments.
+     */
+    static const RTGETOPTDEF s_aOptions[] =
+    {
+        { "--root",     'r',    RTGETOPT_REQ_STRING },
+    };
+
+    const char *pszRootCert    = NULL;
+    const char *pszTrustedCert = NULL;
+
+    int             rc;
+    RTGETOPTUNION   ValueUnion;
+    RTGETOPTSTATE   GetState;
+    RTGetOptInit(&GetState, argc, argv, s_aOptions, RT_ELEMENTS(s_aOptions), 1, 0);
+    while ((rc = RTGetOpt(&GetState, &ValueUnion)))
+    {
+        switch (rc)
+        {
+            case 'h':
+                RTPrintf("Usage: VBoxCertUtil add-trusted-publisher [--root <root-cert>] <trusted-cert>\n");
+                break;
+
+            case 'V':
+                RTPrintf("%sr%d\n", RTBldCfgVersion(), RTBldCfgRevision());
+                return RTEXITCODE_SUCCESS;
+
+            case 'r':
+                if (pszRootCert)
+                    return RTMsgErrorExit(RTEXITCODE_SUCCESS,
+                                          "You've already specified '%s' as root certificate.",
+                                          pszRootCert);
+                pszRootCert = ValueUnion.psz;
+                break;
+
+            case VINF_GETOPT_NOT_OPTION:
+                if (pszTrustedCert)
+                    return RTMsgErrorExit(RTEXITCODE_SUCCESS,
+                                          "You've already specified '%s' as trusted certificate.",
+                                          pszRootCert);
+                pszTrustedCert = ValueUnion.psz;
+                break;
+
+            default:
+                return RTGetOptPrintError(rc, &ValueUnion);
+        }
+    }
+    if (!pszTrustedCert)
+        return RTMsgErrorExit(RTEXITCODE_SUCCESS, "No trusted certificate specified.");
+
+    /*
+     * Do the job.
+     */
+    if (   pszRootCert
+        && !addCertToStore(CERT_SYSTEM_STORE_LOCAL_MACHINE, "Root", pszRootCert, CERT_STORE_ADD_NEW))
+        return RTEXITCODE_FAILURE;
+    if (!addCertToStore(CERT_SYSTEM_STORE_LOCAL_MACHINE, "TrustedPublisher", pszTrustedCert, CERT_STORE_ADD_NEW))
+        return RTEXITCODE_FAILURE;
+
+    if (g_cVerbosityLevel > 0)
+    {
+        if (pszRootCert)
+            RTMsgInfo("Successfully added '%s' as root and '%s' as trusted publisher", pszRootCert, pszTrustedCert);
+        else
+            RTMsgInfo("Successfully added '%s' as trusted publisher", pszTrustedCert);
+    }
+    return RTEXITCODE_SUCCESS;
+}
 
 
 int main(int argc, char **argv)
@@ -161,10 +486,60 @@ int main(int argc, char **argv)
     if (RT_FAILURE(rc))
         return RTMsgInitFailure(rc);
 
+    /*
+     * Parse arguments up to the command and pass it on to the command handlers.
+     */
+    typedef enum
+    {
+        VCUACTION_ADD_TRUSTED_PUBLISHER = 1000,
+        VCUACTION_DISPLAY_ALL,
+        VCUACTION_END
+    } VCUACTION;
 
-    RTEXITCODE rcExit;
+    static const RTGETOPTDEF s_aOptions[] =
+    {
+        { "--verbose",              'v',                                RTGETOPT_REQ_NOTHING },
+        { "--quiet",                'q',                                RTGETOPT_REQ_NOTHING },
+        { "add-trusted-publisher",  VCUACTION_ADD_TRUSTED_PUBLISHER,    RTGETOPT_REQ_NOTHING },
+        { "display-all",            VCUACTION_DISPLAY_ALL,              RTGETOPT_REQ_NOTHING },
+    };
 
-    rcExit = addToStore("my", L"my");
+    RTGETOPTUNION   ValueUnion;
+    RTGETOPTSTATE   GetState;
+    RTGetOptInit(&GetState, argc, argv, s_aOptions, RT_ELEMENTS(s_aOptions), 1, 0);
+    while ((rc = RTGetOpt(&GetState, &ValueUnion)))
+    {
+        switch (rc)
+        {
+            case 'v':
+                g_cVerbosityLevel++;
+                break;
 
-    return rcExit;
+            case 'q':
+                if (g_cVerbosityLevel > 0)
+                    g_cVerbosityLevel--;
+                break;
+
+            case 'h':
+                RTPrintf("Usage: TODO\n");
+                break;
+
+            case 'V':
+                RTPrintf("%sr%d\n", RTBldCfgVersion(), RTBldCfgRevision());
+                return RTEXITCODE_SUCCESS;
+
+            case VCUACTION_ADD_TRUSTED_PUBLISHER:
+                return cmdAddTrustedPublisher(argc - GetState.iNext + 1, argv + GetState.iNext - 1);
+
+            case VCUACTION_DISPLAY_ALL:
+                return cmdDisplayAll(argc - GetState.iNext + 1, argv + GetState.iNext - 1);
+
+            default:
+                return RTGetOptPrintError(rc, &ValueUnion);
+        }
+    }
+
+    RTMsgError("Missing command...\n");
+    return RTEXITCODE_SYNTAX;
 }
+
