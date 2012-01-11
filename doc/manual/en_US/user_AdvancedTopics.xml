@@ -1661,89 +1661,196 @@ VBoxManage setextradata "VM name" VBoxInternal2/CoreDumpLive 1</screen>At
   <sect1 id="guitweaks">
     <title>Locking down the VirtualBox manager GUI</title>
 
-    <para>There are several advanced customization settings for locking down
-    the VirtualBox manager, that is, removing some features that the user
-    should not see.<screen>VBoxManage setextradata global GUI/Customizations OPTION[,OPTION...]</screen></para>
+    <sect2>
+      <title>GUI customization</title>
+  
+      <para>There are several advanced customization settings for locking down
+      the VirtualBox manager, that is, removing some features that the user
+      should not see.</para>
 
-    <para>where <computeroutput>OPTION</computeroutput> is one of the
-    following keywords:<glosslist>
-        <glossentry>
-          <glossterm><computeroutput>noSelector</computeroutput></glossterm>
+      <para><screen>VBoxManage setextradata global GUI/Customizations OPTION[,OPTION...]</screen></para>
 
-          <glossdef>
-            <para>Don't allow to start the VirtualBox manager. Trying to do so
-            will show a window containing a proper error message.</para>
-          </glossdef>
-        </glossentry>
+      <para>where <computeroutput>OPTION</computeroutput> is one of the
+      following keywords:<glosslist>
+          <glossentry>
+            <glossterm><computeroutput>noSelector</computeroutput></glossterm>
 
-        <glossentry>
-          <glossterm><computeroutput>noMenuBar</computeroutput></glossterm>
+            <glossdef>
+              <para>Don't allow to start the VirtualBox manager. Trying to do so
+              will show a window containing a proper error message.</para>
+            </glossdef>
+          </glossentry>
 
-          <glossdef>
-            <para>VM windows will not contain a menu bar.</para>
-          </glossdef>
-        </glossentry>
+          <glossentry>
+            <glossterm><computeroutput>noMenuBar</computeroutput></glossterm>
 
-        <glossentry>
-          <glossterm><computeroutput>noStatusBar</computeroutput></glossterm>
+            <glossdef>
+              <para>VM windows will not contain a menu bar.</para>
+            </glossdef>
+          </glossentry>
 
-          <glossdef>
-            <para>VM windows will not contain a status bar.</para>
-          </glossdef>
-        </glossentry>
-      </glosslist></para>
+          <glossentry>
+            <glossterm><computeroutput>noStatusBar</computeroutput></glossterm>
 
-    <para>To disable any GUI customization do <screen>VBoxManage setextradata global GUI/Customizations</screen></para>
+            <glossdef>
+              <para>VM windows will not contain a status bar.</para>
+            </glossdef>
+          </glossentry>
+        </glosslist></para>
 
-    <para>To disable all host key combinations, open the preferences and
-    change the host key to <emphasis>None</emphasis>. This might be useful
-    when using VirtualBox in a kiosk mode.</para>
+        <para>To disable any GUI customization do <screen>VBoxManage setextradata global GUI/Customizations</screen></para>
+      </sect2>
 
-    <para>Furthermore, you can disallow certain actions when terminating a VM.
-    To disallow specific actions, type:</para>
+      <sect2>
+        <title>Host Key customization</title>
 
-    <para><screen>VBoxManage setextradata "VM name" GUI/RestrictedCloseActions OPTION[,OPTION...]</screen></para>
+        <para>To disable all host key combinations, open the preferences and
+          change the host key to <emphasis>None</emphasis>. This might be useful
+          when using VirtualBox in a kiosk mode.</para>
 
-    <para>where <computeroutput>OPTION</computeroutput> is one of the
-    following keywords:<glosslist>
-        <glossentry>
-          <glossterm><computeroutput>SaveState</computeroutput></glossterm>
+        <para>To redefine or disable certain host key actions, use the following command:</para>
 
-          <glossdef>
-            <para>Don't allow the user to save the VM state when terminating
-            the VM.</para>
-          </glossdef>
-        </glossentry>
+        <screen>VBoxManage setextradata global GUI/Input/MachineShortcuts "FullscreenMode=F,...."</screen>
 
-        <glossentry>
-          <glossterm><computeroutput>Shutdown</computeroutput></glossterm>
+        <para>The following list shows the possible host key actions together with their default
+          host key shortcut. Setting an action to <emphasis>None</emphasis> will disable
+          that host key action.</para>
+        <table>
+          <title>ignoreme</title>
+          <tgroup cols="3">
+            <tbody>
+              <row>
+                <entry><emphasis role="bold">Action</emphasis></entry>
+                <entry><emphasis role="bold">Default Host Key</emphasis></entry>
+                <entry><emphasis role="bold">Action</emphasis></entry>
+              </row>
+              <row>
+                <entry>SettingsDialog</entry>
+                <entry>S</entry>
+                <entry>open the VM settings dialog</entry>
+              </row>
+              <row>
+                <entry>TakeSnapshot</entry>
+                <entry>S</entry>
+                <entry>take a snapshot</entry>
+              </row>
+              <row>
+                <entry>InformationsDialog</entry>
+                <entry>N</entry>
+                <entry>show the VM information dialog</entry>
+              </row>
+              <row>
+                <entry>MouseIntegration</entry>
+                <entry>I</entry>
+                <entry>toggle mouse integration</entry>
+              </row>
+              <row>
+                <entry>TypeCAD</entry>
+                <entry>Del</entry>
+                <entry>inject Ctrl+Alt+Del</entry>
+              </row>
+              <row>
+                <entry>TypeCABS</entry>
+                <entry>Backspace</entry>
+                <entry>inject Ctrl+Alt+Backspace</entry>
+              </row>
+              <row>
+                <entry>Pause</entry>
+                <entry>P</entry>
+                <entry>Pause the VM</entry>
+              </row>
+              <row>
+                <entry>Reset</entry>
+                <entry>R</entry>
+                <entry>(hard) reset the guest</entry>
+              </row>
+              <row>
+                <entry>Shutdown</entry>
+                <entry>H</entry>
+                <entry>press the ACPI power button</entry>
+              </row>
+              <row>
+                <entry>Close</entry>
+                <entry>Q</entry>
+                <entry>show the VM close dialog</entry>
+              </row>
+              <row>
+                <entry>FullscreenMode</entry>
+                <entry>F</entry>
+                <entry>switch the VM into fullscreen</entry>
+              </row>
+              <row>
+                <entry>SeamlessMode</entry>
+                <entry>L</entry>
+                <entry>switch the VM into seamless mode</entry>
+              </row>
+              <row>
+                <entry>ScaleMode</entry>
+                <entry>C</entry>
+                <entry>switch the VM into scale mode</entry>
+              </row>
+              <row>
+                <entry>PopupMenu</entry>
+                <entry>Home</entry>
+                <entry>show popup menu in fullscreen / seamless mode</entry>
+              </row>
+            </tbody>
+          </tgroup>
+        </table>
 
-          <glossdef>
-            <para>Don't allow the user to shutdown the VM by sending the ACPI
-            power-off event to the guest.</para>
-          </glossdef>
-        </glossentry>
+        <para>To disable the fullscreen mode as well as the seamless mode, use the following command:
+          <screen>VBoxManage setextradata global GUI/Input/MachineShortcuts "FullscreenMode=None,SeamlessMode=None"</screen>
+        </para>
+      
+      </sect2>
+      <sect2>
+        <title>Action when terminating the VM</title>
+        
+        <para>You can disallow certain actions when terminating a VM. To disallow specific actions, type:</para>
 
-        <glossentry>
-          <glossterm><computeroutput>PowerOff</computeroutput></glossterm>
+        <para><screen>VBoxManage setextradata "VM name" GUI/RestrictedCloseActions OPTION[,OPTION...]</screen></para>
 
-          <glossdef>
-            <para>Don't allow the user to power off the VM.</para>
-          </glossdef>
-        </glossentry>
+        <para>where <computeroutput>OPTION</computeroutput> is one of the
+          following keywords:<glosslist>
+          <glossentry>
+            <glossterm><computeroutput>SaveState</computeroutput></glossterm>
 
-        <glossentry>
-          <glossterm><computeroutput>Restore</computeroutput></glossterm>
+            <glossdef>
+              <para>Don't allow the user to save the VM state when terminating
+              the VM.</para>
+            </glossdef>
+          </glossentry>
 
-          <glossdef>
-            <para>Don't allow the user to return to the last snapshot when
-            powering off the VM.</para>
-          </glossdef>
-        </glossentry>
-      </glosslist></para>
+          <glossentry>
+            <glossterm><computeroutput>Shutdown</computeroutput></glossterm>
 
-    <para>Any combination of the above is allowed. If all options are
-    specified, the VM cannot be shut down at all.</para>
+            <glossdef>
+              <para>Don't allow the user to shutdown the VM by sending the ACPI
+              power-off event to the guest.</para>
+            </glossdef>
+          </glossentry>
+
+          <glossentry>
+            <glossterm><computeroutput>PowerOff</computeroutput></glossterm>
+
+            <glossdef>
+              <para>Don't allow the user to power off the VM.</para>
+            </glossdef>
+          </glossentry>
+
+          <glossentry>
+            <glossterm><computeroutput>Restore</computeroutput></glossterm>
+
+            <glossdef>
+              <para>Don't allow the user to return to the last snapshot when
+                powering off the VM.</para>
+            </glossdef>
+          </glossentry>
+        </glosslist></para>
+
+      <para>Any combination of the above is allowed. If all options are
+        specified, the VM cannot be shut down at all.</para>
+    </sect2>
   </sect1>
 
   <sect1 id="vboxwebsrv-daemon">
