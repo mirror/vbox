@@ -69,6 +69,13 @@ if test "x${PKG_INSTALL_ROOT:=/}" != "x/"; then
     REMOTE_INST=1
 fi
 
+# nothing to check for non-global zones
+currentzone=`zonename`
+if test "$currentzone" != "global"; then
+    exit 0
+fi
+
+
 infoprint "Checking package dependencies..."
 
 PKG_MISSING_IPS=""
