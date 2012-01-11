@@ -493,6 +493,8 @@ setup()
     MODULE_SRC="$INSTALL_DIR/src/vboxguest-$INSTALL_VER"
     BUILDINTMP="$MODULE_SRC/build_in_tmp"
     DODKMS="$MODULE_SRC/do_dkms"
+    chcon -t bin_t "$BUILDINTMP" > /dev/null 2>&1
+    chcon -t bin_t "$DODKMS"     > /dev/null 2>&1
 
     setup_modules
     mod_succ="$?"
