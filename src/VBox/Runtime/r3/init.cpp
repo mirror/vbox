@@ -33,6 +33,7 @@
 
 #ifdef RT_OS_WINDOWS
 # include <process.h>
+# include <Windows.h>
 #else
 # include <unistd.h>
 # ifndef RT_OS_OS2
@@ -323,6 +324,15 @@ static int rtR3InitBody(uint32_t fFlags, int cArgs, char ***papszArgs, const cha
     g_ProcessSelf = _getpid(); /* crappy ansi compiler */
 #else
     g_ProcessSelf = getpid();
+#endif
+
+    /*
+     * Disable error popups.
+     */
+#ifdef RT_OS_WINDOWS
+    SetErrorMode(GetErrorMode() | SEM_FAILCRITICALERRORS);
+#elif defined(RT_OS_OS2)
+# error "FIXME"
 #endif
 
 #if !defined(IN_GUEST) && !defined(RT_NO_GIP)
