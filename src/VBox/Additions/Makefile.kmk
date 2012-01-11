@@ -248,6 +248,11 @@ ifdef VBOX_WITH_ADDITIONS_ISO.win.amd64
  VBOX_PATH_ADDITIONS.win.amd64 = $(PATH_OUT_BASE)/win.amd64/$(KBUILD_TYPE)/bin/additions
  GUESTADDITIONS_FILESPEC.win.amd64 = \
 	VBoxWindowsAdditions-amd64.exe=$(VBOX_PATH_ADDITIONS.win.amd64)/VBoxWindowsAdditions-amd64.exe
+ ifndef VBOX_WITH_ADDITIONS_ISO.win.x86
+  GUESTADDITIONS_FILESPEC.win.amd64 += \
+	cert/oracle-vbox.cer=$(VBOX_PATH_ADDITIONS_SRC)/WINNT/tools/oracle-vbox.cer \
+	cert/VBoxCertUtil.exe=$(VBOX_PATH_ADDITIONS.win.amd64)/VBoxCertUtil.exe
+ endif
 endif
 
 ifdef VBOX_WITH_ADDITIONS_ISO.win.x86
@@ -257,7 +262,9 @@ ifdef VBOX_WITH_ADDITIONS_ISO.win.x86
 	VBoxWindowsAdditions.exe=$(VBOX_PATH_ADDITIONS.win.x86)/VBoxWindowsAdditions.exe \
 	AUTORUN.INF=$(VBOX_PATH_ADDITIONS_SRC)/WINNT/Installer/ISO/AUTORUN.INF \
 	32Bit/Readme.txt=$(VBOX_PATH_ADDITIONS_SRC)/WINNT/Installer/ISO/ReadmeDrivers.txt \
-	64Bit/Readme.txt=$(VBOX_PATH_ADDITIONS_SRC)/WINNT/Installer/ISO/ReadmeDrivers.txt
+	64Bit/Readme.txt=$(VBOX_PATH_ADDITIONS_SRC)/WINNT/Installer/ISO/ReadmeDrivers.txt \
+	cert/oracle-vbox.cer=$(VBOX_PATH_ADDITIONS_SRC)/WINNT/tools/oracle-vbox.cer \
+	cert/VBoxCertUtil.exe=$(VBOX_PATH_ADDITIONS.win.x86)/VBoxCertUtil.exe
 endif # win.x86
 
 ifdef VBOX_WITH_ADDITIONS_ISO.darwin.x86
