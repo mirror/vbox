@@ -330,7 +330,8 @@ static int rtR3InitBody(uint32_t fFlags, int cArgs, char ***papszArgs, const cha
      * Disable error popups.
      */
 #ifdef RT_OS_WINDOWS
-    SetErrorMode(SEM_FAILCRITICALERRORS | SEM_NOOPENFILEERRORBOX);
+    UINT fOldErrMode = SetErrorMode(SEM_FAILCRITICALERRORS | SEM_NOOPENFILEERRORBOX);
+    SetErrorMode(SEM_FAILCRITICALERRORS | SEM_NOOPENFILEERRORBOX | fOldErrMode);
 #elif defined(RT_OS_OS2)
 # error "FIXME"
 #endif
