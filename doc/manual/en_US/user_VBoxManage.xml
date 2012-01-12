@@ -2699,7 +2699,7 @@ Value: 2006.01.01</screen>
 
           <para><note>
             <para>For certain commands a user name of an existing user account on the guest
-            must be specified; anonymous executions are not supported for security reasons. An
+            must be specified; anonymous executions are not supported for security reasons. A
             user account password, however, is optional and depends on the guest's OS security
             policy or rules. If no password is specified for a given user name, an empty password
             will be used. On certain OSes like Windows the security policy may needs to be adjusted
