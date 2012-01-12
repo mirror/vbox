@@ -141,6 +141,9 @@ int VBoxCredPoller::credentialsRetrieve(void)
              m_pszPw ? m_pszPw : "<empty>",
              m_pszDomain ? m_pszDomain : "NULL"));
 
+        /* Let the release log know that we got something. */
+        LogRel(("VBoxCredProv: Credentials from host retrieved\n"));
+
         AssertPtr(m_pProv);
         m_pProv->OnCredentialsProvided();
     }
