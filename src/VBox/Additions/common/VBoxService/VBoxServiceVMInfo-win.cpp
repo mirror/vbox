@@ -29,6 +29,7 @@
 #include <Ntsecapi.h>       /* Needed for process security information. */
 
 #include <iprt/assert.h>
+#include <iprt/ldr.h>
 #include <iprt/mem.h>
 #include <iprt/thread.h>
 #include <iprt/string.h>
@@ -71,14 +72,104 @@ typedef struct
 /*******************************************************************************
 *   Prototypes
 *******************************************************************************/
-uint32_t VBoxServiceVMInfoWinSessionHasProcesses(PLUID pSession, VBOXSERVICEVMINFOPROC const *paProcs, DWORD cProcs);
+uint32_t VBoxServiceVMInfoWinSessionHasProcesses(PLUID pSession, PVBOXSERVICEVMINFOPROC const paProcs, DWORD cProcs);
 bool VBoxServiceVMInfoWinIsLoggedIn(PVBOXSERVICEVMINFOUSER a_pUserInfo, PLUID a_pSession);
 int  VBoxServiceVMInfoWinProcessesEnumerate(PVBOXSERVICEVMINFOPROC *ppProc, DWORD *pdwCount);
 void VBoxServiceVMInfoWinProcessesFree(PVBOXSERVICEVMINFOPROC paProcs);
 
+typedef BOOL WINAPI FNQUERYFULLPROCESSIMAGENAME(HANDLE,  DWORD, LPTSTR, PDWORD);
+typedef FNQUERYFULLPROCESSIMAGENAME *PFNQUERYFULLPROCESSIMAGENAME;
 
 
 #ifndef TARGET_NT4
+
+/**
+ * Retrieves the module name of a given process.
+ *
+ * @return  IPRT status code.
+ * @param   pProc
+ * @param   pszBuf
+ * @param   cbBuf
+ */
+static int VBoxServiceVMInfoWinProcessesGetModuleName(PVBOXSERVICEVMINFOPROC const pProc,
+                                                      TCHAR *pszName, size_t cbName)
+{
+    AssertPtrReturn(pProc, VERR_INVALID_POINTER);
+    AssertPtrReturn(pszName, VERR_INVALID_POINTER);
+    AssertReturn(cbName, VERR_INVALID_PARAMETER);
+
+    OSVERSIONINFOEX OSInfoEx;
+    RT_ZERO(OSInfoEx);
+    OSInfoEx.dwOSVersionInfoSize = sizeof(OSVERSIONINFOEX);
+    if (   !GetVersionEx((LPOSVERSIONINFO) &OSInfoEx)
+        || OSInfoEx.dwPlatformId != VER_PLATFORM_WIN32_NT)
+    {
+        /* Platform other than NT (e.g. Win9x) not supported. */
+        return VERR_NOT_SUPPORTED;
+    }
+
+    int rc = VINF_SUCCESS;
+
+    DWORD dwFlags = PROCESS_QUERY_INFORMATION | PROCESS_VM_READ;
+    if (OSInfoEx.dwMajorVersion >= 6 /* Vista or later */)
+        dwFlags = 0x1000; /* = PROCESS_QUERY_LIMITED_INFORMATION; less privileges needed. */
+
+    HANDLE h = OpenProcess(dwFlags, FALSE, pProc->id);
+    if (h == NULL)
+    {
+        DWORD dwErr = GetLastError();
+        if (g_cVerbosity)
+            VBoxServiceError("VMInfo/Users: Unable to open process with PID=%ld, error=%ld",
+                             pProc->id, dwErr);
+        rc = RTErrConvertFromWin32(dwErr);
+    }
+    else
+    {
+        /* Since GetModuleFileNameEx has trouble with cross-bitness stuff (32-bit apps cannot query 64-bit
+           apps and vice verse) we have to use a different code path for Vista and up. */
+
+        /* Note: For 2000 + NT4 we might just use GetModuleFileName() instead. */
+        if (OSInfoEx.dwMajorVersion >= 6 /* Vista or later */)
+        {
+            /* Loading the module and getting the symbol for each and every process is expensive
+             * -- since this function (at the moment) only is used for debugging purposes it's okay. */
+            RTLDRMOD hMod;
+            rc = RTLdrLoad("kernel32.dll", &hMod);
+            if (RT_SUCCESS(rc))
+            {
+                PFNQUERYFULLPROCESSIMAGENAME pfnQueryFullProcessImageName;
+                rc = RTLdrGetSymbol(hMod, "QueryFullProcessImageNameA", (void **)&pfnQueryFullProcessImageName);
+                if (RT_SUCCESS(rc))
+                {
+                    DWORD dwLen = sizeof(pszName);
+                    if (!pfnQueryFullProcessImageName(h, 0 /*PROCESS_NAME_NATIVE*/, pszName, &dwLen))
+                        rc = VERR_ACCESS_DENIED;
+                }
+
+                RTLdrClose(hMod);
+            }
+        }
+        else
+        {
+            if (!GetModuleFileNameEx(h, NULL /* Get main executable */, pszName, cbName / sizeof(TCHAR)))
+                rc = VERR_ACCESS_DENIED;
+        }
+
+        if (VERR_ACCESS_DENIED == rc)
+        {
+            DWORD dwErr = GetLastError();
+            if (g_cVerbosity)
+                VBoxServiceError("VMInfo/Users: Unable to retrieve module name for PID=%ld, error=%ld",
+                                 pProc->id, dwErr);
+            rc = RTErrConvertFromWin32(dwErr);
+        }
+
+        CloseHandle(h);
+    }
+
+    return rc;
+}
+
 
 /**
  * Fills in more data for a process.
@@ -90,10 +181,16 @@ void VBoxServiceVMInfoWinProcessesFree(PVBOXSERVICEVMINFOPROC paProcs);
 static int VBoxServiceVMInfoWinProcessesGetTokenInfo(PVBOXSERVICEVMINFOPROC pProc,
                                                      TOKEN_INFORMATION_CLASS tkClass)
 {
-    AssertPtr(pProc);
+    AssertPtrReturn(pProc, VERR_INVALID_POINTER);
     HANDLE h = OpenProcess(PROCESS_QUERY_INFORMATION, FALSE, pProc->id);
     if (h == NULL)
-        return RTErrConvertFromWin32(GetLastError());
+    {
+        DWORD dwErr = GetLastError();
+        if (g_cVerbosity)
+            VBoxServiceError("VMInfo/Users: Unable to open process with PID=%ld, error=%ld",
+                             pProc->id, dwErr);
+        return RTErrConvertFromWin32(dwErr);
+    }
 
      int    rc = VERR_NO_MEMORY;
      HANDLE hToken;
@@ -144,7 +241,13 @@ static int VBoxServiceVMInfoWinProcessesGetTokenInfo(PVBOXSERVICEVMINFOPROC pPro
          CloseHandle(hToken);
     }
     else
-        rc = RTErrConvertFromWin32(GetLastError());
+    {
+        DWORD dwErr = GetLastError();
+        if (g_cVerbosity)
+            VBoxServiceError("VMInfo/Users: Unable to query process token for PID=%ld, error=%ld\n",
+                             pProc->id, dwErr);
+        rc = RTErrConvertFromWin32(dwErr);
+    }
     CloseHandle(h);
     return rc;
 }
@@ -170,23 +273,23 @@ int VBoxServiceVMInfoWinProcessesEnumerate(PVBOXSERVICEVMINFOPROC *ppaProcs, PDW
      * or we think something is screwed up.
      */
     DWORD   cProcesses  = 64;
-    PDWORD  paPids      = NULL;
+    PDWORD  paPID       = NULL;
     int     rc          = VINF_SUCCESS;
     do
     {
         /* Allocate / grow the buffer first. */
         cProcesses *= 2;
-        void *pvNew = RTMemRealloc(paPids, cProcesses * sizeof(DWORD));
+        void *pvNew = RTMemRealloc(paPID, cProcesses * sizeof(DWORD));
         if (!pvNew)
         {
             rc = VERR_NO_MEMORY;
             break;
         }
-        paPids = (PDWORD)pvNew;
+        paPID = (PDWORD)pvNew;
 
         /* Query the processes. Not the cbRet == buffer size means there could be more work to be done. */
         DWORD cbRet;
-        if (!EnumProcesses(paPids, cProcesses * sizeof(DWORD), &cbRet))
+        if (!EnumProcesses(paPID, cProcesses * sizeof(DWORD), &cbRet))
         {
             rc = RTErrConvertFromWin32(GetLastError());
             break;
@@ -196,7 +299,7 @@ int VBoxServiceVMInfoWinProcessesEnumerate(PVBOXSERVICEVMINFOPROC *ppaProcs, PDW
             cProcesses = cbRet / sizeof(DWORD);
             break;
         }
-    } while (cProcesses <= 32768); /* Should be enough; see: http://blogs.technet.com/markrussinovich/archive/2009/07/08/3261309.aspx */
+    } while (cProcesses <= _32K); /* Should be enough; see: http://blogs.technet.com/markrussinovich/archive/2009/07/08/3261309.aspx */
     if (RT_SUCCESS(rc))
     {
         /*
@@ -209,7 +312,7 @@ int VBoxServiceVMInfoWinProcessesEnumerate(PVBOXSERVICEVMINFOPROC *ppaProcs, PDW
         {
             for (DWORD i = 0; i < cProcesses; i++)
             {
-                paProcs[i].id = paPids[i];
+                paProcs[i].id = paPID[i];
                 rc = VBoxServiceVMInfoWinProcessesGetTokenInfo(&paProcs[i], TokenStatistics);
                 if (RT_FAILURE(rc))
                 {
@@ -232,7 +335,7 @@ int VBoxServiceVMInfoWinProcessesEnumerate(PVBOXSERVICEVMINFOPROC *ppaProcs, PDW
             rc = VERR_NO_MEMORY;
     }
 
-    RTMemFree(paPids);
+    RTMemFree(paPID);
     return rc;
 }
 
@@ -255,7 +358,7 @@ void VBoxServiceVMInfoWinProcessesFree(PVBOXSERVICEVMINFOPROC paProcs)
  * @param   paProcs         The process snapshot.
  * @param   cProcs          The number of processes in the snaphot.
  */
-uint32_t VBoxServiceVMInfoWinSessionHasProcesses(PLUID pSession, VBOXSERVICEVMINFOPROC const *paProcs, DWORD cProcs)
+uint32_t VBoxServiceVMInfoWinSessionHasProcesses(PLUID pSession, PVBOXSERVICEVMINFOPROC const paProcs, DWORD cProcs)
 {
     if (!pSession)
     {
@@ -286,12 +389,18 @@ uint32_t VBoxServiceVMInfoWinSessionHasProcesses(PLUID pSession, VBOXSERVICEVMIN
             && paProcs[i].luid.LowPart  == pSessionData->LogonId.LowPart)
         {
             cNumProcs++;
-            if (g_cVerbosity < 4) /* We want a bit more info on high verbosity. */
+            if (!g_cVerbosity) /* We want a bit more info on higher verbosity. */
                 break;
+
+            TCHAR szModule[_1K];
+            int rc2 = VBoxServiceVMInfoWinProcessesGetModuleName(&paProcs[i], szModule, sizeof(szModule));
+            if (RT_SUCCESS(rc2))
+                VBoxServiceVerbose(4, "VMInfo/Users: PID=%ld: %s\n",
+                                   paProcs[i].id, szModule);
         }
     }
 
-    if (g_cVerbosity >= 4)
+    if (g_cVerbosity)
         VBoxServiceVerbose(3, "VMInfo/Users: Session %u has %u processes\n",
                            pSessionData->Session, cNumProcs);
     else
