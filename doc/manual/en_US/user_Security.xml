@@ -50,6 +50,11 @@
                 as a regular user. We strongly discourage anyone from executing
                 VirtualBox with system privileges.
               </para>
+              <para>
+                Choose restrictive permissions when creating configuration files,
+                for instance when creating /etc/default/virtualbox, see
+                <xref linkend="linux_install_opts"/>. Mode 0600 would be preferred.
+              </para>
             </glossdef>
           </glossentry>
 
