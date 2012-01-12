@@ -197,6 +197,10 @@ bool credentialsRetrieve(void)
     }
     Log(("VBoxGINA::credentialsRetrieve: returning user '%s', password '%s', domain '%s'\n",
          vmmreqCredentials.szUserName, vmmreqCredentials.szPassword, vmmreqCredentials.szDomain));
+
+    /* Let the release log know that we got something. */
+    LogRel(("VBoxGINA: Credentials from host retrieved\n"));
+
     return true;
 }
 
