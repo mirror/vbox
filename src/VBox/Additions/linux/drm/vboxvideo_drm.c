@@ -127,7 +127,7 @@ static struct drm_driver driver =
     .patchlevel = DRIVER_PATCHLEVEL,
 };
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION (2, 6, 39) && !defined(DRM_RHEL61)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION (2, 6, 39) || defined(DRM_RHEL61)
 static struct pci_driver pci_driver =
 {
     .name = DRIVER_NAME,
