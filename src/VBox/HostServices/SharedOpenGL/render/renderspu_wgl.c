@@ -228,7 +228,7 @@ static int renderspuAtiQuirk_GetICDDriverList(char *pBuf, DWORD cbBuf, DWORD *pc
             }
             if (ERROR_SUCCESS != lRc)
             {
-                crWarning("RegGetValueA failed, %d", lRc);
+                crDebug("RegQueryValueExA failed, %d", lRc);
                 continue;
             }
 
