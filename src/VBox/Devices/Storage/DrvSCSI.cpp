@@ -140,6 +140,10 @@ static int drvscsiProcessRequestOne(PDRVSCSI pThis, VSCSIIOREQ hVScsiIoReq)
         case VSCSIIOREQTXDIR_FLUSH:
         {
             rc = pThis->pDrvBlock->pfnFlush(pThis->pDrvBlock);
+            if (   RT_FAILURE(rc)
+                && pThis->cErrors++ < MAX_LOG_REL_ERRORS)
+                LogRel(("SCSI#%u: Flush returned rc=%Rrc\n",
+                        pThis->pDrvIns->iInstance, rc));
             break;
         }
         case VSCSIIOREQTXDIR_READ:
@@ -189,6 +193,16 @@ static int drvscsiProcessRequestOne(PDRVSCSI pThis, VSCSIIOREQ hVScsiIoReq)
                 cSeg--;
             }
 
+            if (   RT_FAILURE(rc)
+                && pThis->cErrors++ < MAX_LOG_REL_ERRORS)
+                LogRel(("SCSI#%u: %s at offset %llu (%u bytes left) returned rc=%Rrc\n",
+                        pThis->pDrvIns->iInstance,
+                        enmTxDir == VSCSIIOREQTXDIR_READ
+                        ? "Read"
+                        : "Write",
+                        uOffset,
+                        cbTransfer, rc));
+
             break;
         }
         case VSCSIIOREQTXDIR_UNMAP:
@@ -202,6 +216,12 @@ static int drvscsiProcessRequestOne(PDRVSCSI pThis, VSCSIIOREQ hVScsiIoReq)
             pThis->pLed->Asserted.s.fWriting = pThis->pLed->Actual.s.fWriting = 1;
             rc = pThis->pDrvBlock->pfnDiscard(pThis->pDrvBlock, paRanges, cRanges);
             pThis->pLed->Actual.s.fWriting = 0;
+
+            if (   RT_FAILURE(rc)
+                && pThis->cErrors++ < MAX_LOG_REL_ERRORS)
+                LogRel(("SCSI#%u: Unmap returned rc=%Rrc\n",
+                        pThis->pDrvIns->iInstance, rc));
+
             break;
         }
         default:
@@ -246,28 +266,33 @@ static int drvscsiTransferCompleteNotify(PPDMIBLOCKASYNCPORT pInterface, void *p
     else
     {
         pThis->cErrors++;
-        if (   pThis->cErrors < MAX_LOG_REL_ERRORS
-            && enmTxDir == VSCSIIOREQTXDIR_FLUSH)
-            LogRel(("SCSI#%u: Flush returned rc=%Rrc\n",
-                    pThis->pDrvIns->iInstance, rc));
-        else
+        if (pThis->cErrors < MAX_LOG_REL_ERRORS)
         {
-            uint64_t  uOffset    = 0;
-            size_t    cbTransfer = 0;
-            size_t    cbSeg      = 0;
-            PCRTSGSEG paSeg      = NULL;
-            unsigned  cSeg       = 0;
+            if (enmTxDir == VSCSIIOREQTXDIR_FLUSH)
+                LogRel(("SCSI#%u: Flush returned rc=%Rrc\n",
+                        pThis->pDrvIns->iInstance, rc));
+            else if (enmTxDir == VSCSIIOREQTXDIR_UNMAP)
+                LogRel(("SCSI#%u: Unmap returned rc=%Rrc\n",
+                        pThis->pDrvIns->iInstance, rc));
+            else
+            {
+                uint64_t  uOffset    = 0;
+                size_t    cbTransfer = 0;
+                size_t    cbSeg      = 0;
+                PCRTSGSEG paSeg      = NULL;
+                unsigned  cSeg       = 0;
 
-            VSCSIIoReqParamsGet(hVScsiIoReq, &uOffset, &cbTransfer,
-                                &cSeg, &cbSeg, &paSeg);
+                VSCSIIoReqParamsGet(hVScsiIoReq, &uOffset, &cbTransfer,
+                                    &cSeg, &cbSeg, &paSeg);
 
-            LogRel(("SCSI#%u: %s at offset %llu (%u bytes left) returned rc=%Rrc\n",
-                    pThis->pDrvIns->iInstance,
-                    enmTxDir == VSCSIIOREQTXDIR_READ
-                    ? "Read"
-                    : "Write",
-                    uOffset,
-                    cbTransfer, rc));
+                LogRel(("SCSI#%u: %s at offset %llu (%u bytes left) returned rc=%Rrc\n",
+                        pThis->pDrvIns->iInstance,
+                        enmTxDir == VSCSIIOREQTXDIR_READ
+                        ? "Read"
+                        : "Write",
+                        uOffset,
+                        cbTransfer, rc));
+            }
         }
 
         VSCSIIoReqCompleted(hVScsiIoReq, rc, drvscsiIsRedoPossible(rc));
