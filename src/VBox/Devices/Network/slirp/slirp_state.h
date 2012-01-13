@@ -65,6 +65,16 @@ struct dns_domain_entry
 };
 LIST_HEAD(dns_domain_list_head, dns_domain_entry);
 
+#ifdef VBOX_WITH_DNSMAPPING_IN_HOSTRESOLVER
+typedef struct DNSMAPPINGENTRY
+{
+    char        *pszCName;
+    uint32_t    u32IpAddress;
+    LIST_ENTRY(DNSMAPPINGENTRY) MapList;
+} DNSMAPPINGENTRY, *PDNSMAPPINGENTRY;
+typedef LIST_HEAD(DNSMAPPINGLISTHEAD, DNSMAPPINGENTRY) DNSMAPPINGLISTHEAD;
+#endif
+
 struct dns_entry
 {
     struct in_addr de_addr;
@@ -296,6 +306,9 @@ typedef struct NATState
     struct sockaddr_in *pInSockAddrHomeAddress;
     /* size of pInSockAddrHomeAddress in elements */
     int cInHomeAddressSize;
+#endif
+#ifdef VBOX_WITH_DNSMAPPING_IN_HOSTRESOLVER
+    DNSMAPPINGLISTHEAD DNSMapHead;
 #endif
 } NATState;
 
