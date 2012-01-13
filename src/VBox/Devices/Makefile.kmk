@@ -882,14 +882,13 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
  	Network/slirp/libalias/alias_nbt.c \
  	Network/slirp/libalias/alias_util.c
 
- # some day will be deleted
-
  Drivers_SOURCES += $(VBOX_SLIRP_SOURCES)
  define def_vbox_slirp_cflags
    $(file)_DEFS += \
        $(if $(VBOX_WITH_SLIRP_BSD_SBUF),VBOX_WITH_SLIRP_BSD_SBUF,) \
        $(if $(VBOX_WITH_SLIRP_MEMORY_CHECK),RTMEM_WRAP_TO_EF_APIS,) \
        $(if $(VBOX_WITH_DEBUG_NAT_SOCKETS),VBOX_WITH_DEBUG_NAT_SOCKETS,)	\
+       $(if $(VBOX_WITH_DNSMAPPING_IN_HOSTRESOLVER),VBOX_WITH_DNSMAPPING_IN_HOSTRESOLVER,)	\
        $(if $(VBOX_WITH_SLIRP_MT),VBOX_WITH_SLIRP_MT,)
   $(file)_INCS += $(1)/slirp/bsd/sys
   $(file)_INCS += $(1)/slirp/bsd/sys/sys
