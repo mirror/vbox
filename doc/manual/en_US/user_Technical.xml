@@ -461,7 +461,7 @@
       </listitem>
 
       <listitem>
-        <para>DBGF (Debug Facility), a built-in VM debuger.</para>
+        <para>DBGF (Debug Facility), a built-in VM debugger.</para>
       </listitem>
 
       <listitem>
@@ -511,7 +511,7 @@
     <para>Unfortunately, the x86 platform was never designed to be
     virtualized. Detecting situations in which VirtualBox needs to take
     control over the guest code that is executing, as described above, is
-    difficult. There are two ways in which to achive this:<itemizedlist>
+    difficult. There are two ways in which to achieve this:<itemizedlist>
         <listitem>
           <para>Since 2006, Intel and AMD processors have had support for
           so-called <emphasis role="bold">"hardware
