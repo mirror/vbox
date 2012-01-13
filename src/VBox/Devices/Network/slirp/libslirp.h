@@ -147,6 +147,10 @@ unsigned int slirp_get_timeout_ms(PNATState pData);
 int slirp_get_nsock(PNATState pData);
 # endif
 
+#ifdef VBOX_WITH_DNSMAPPING_IN_HOSTRESOLVER
+void  slirp_add_host_resolver_mapping(PNATState pData, const char *pszHostName, uint32_t u32HostIP);
+#endif
+
 #ifdef __cplusplus
 }
 #endif
