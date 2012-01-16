@@ -483,11 +483,12 @@
           restrictions of the Solaris networking subsystem. These issues would
           be addressed in a future release of Solaris 11.</para>
 
-          <para>Starting with VirtualBox 4.1 on Solaris 11 hosts it is
-          possible to use Solaris' Crossbow Virtual Network Interface (VNICs)
-          directly with VirtualBox without any additional configuration other
-          than it must be exclusive for every guest. With VirtualBox 2.0.4 and
-          above, VNICs can be used but with the following caveats:</para>
+          <para>Starting with VirtualBox 4.1, on Solaris 11 hosts (build 159
+          and above), it is possible to use Solaris' Crossbow Virtual Network
+          Interfaces (VNICs) directly with VirtualBox without any additional
+          configuration other than each VNIC must be exclusive for every guest
+          network interface. With VirtualBox 2.0.4 and above, VNICs can be
+          used but with the following caveats:</para>
 
           <itemizedlist>
             <listitem>
@@ -504,8 +505,9 @@
 
           <para>When using VLAN interfaces with VirtualBox, they must be named
           according to the PPA-hack naming scheme (e.g. "e1000g513001"), as
-          otherwise the guest may receive packets in an unexpected
-          format.</para>
+          otherwise the guest may receive packets in an unexpected format.
+          VirtualBox versions prior to 2.0.4 do not support Solaris
+          VNICs.</para>
         </listitem>
       </itemizedlist></para>
   </sect1>
@@ -699,11 +701,11 @@
     Internal network case.</para>
 
     <para><note>
-        On Unix-based hosts (e.g. Linux, Solaris, Mac OS X) it is not possible to bind to ports below 1024 from applications that are not run by 
+         On Unix-based hosts (e.g. Linux, Solaris, Mac OS X) it is not possible to bind to ports below 1024 from applications that are not run by 
 
         <computeroutput>root</computeroutput>
 
-        . As a result, if you try to configure such a source UDP port, the VM will refuse to start.
+         . As a result, if you try to configure such a source UDP port, the VM will refuse to start. 
       </note></para>
   </sect1>
 
