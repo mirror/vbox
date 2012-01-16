@@ -300,24 +300,23 @@ static int dhcp_do_ack_offer(PNATState pData, struct mbuf *m, BOOTPClient *bc, i
     {
         uint32_t addr = RT_H2N_U32(RT_N2H_U32(pData->special_addr.s_addr) | CTL_DNS);
         FILL_BOOTP_EXT(q, RFC1533_DNS, 4, &addr);
-        goto skip_dns_servers;
     }
-
-    if (!TAILQ_EMPTY(&pData->pDnsList))
+    else
     {
-        de = TAILQ_LAST(&pData->pDnsList, dns_list_head);
-        q_dns_header = q;
-        FILL_BOOTP_EXT(q, RFC1533_DNS, 4, &de->de_addr.s_addr);
-    }
+        if (!TAILQ_EMPTY(&pData->pDnsList))
+        {
+            de = TAILQ_LAST(&pData->pDnsList, dns_list_head);
+            q_dns_header = q;
+            FILL_BOOTP_EXT(q, RFC1533_DNS, 4, &de->de_addr.s_addr);
+        }
 
-    TAILQ_FOREACH_REVERSE(de, &pData->pDnsList, dns_list_head, de_list)
-    {
-        if (TAILQ_LAST(&pData->pDnsList, dns_list_head) == de)
-            continue; /* first value with head we've ingected before */
-        FILL_BOOTP_APP(q_dns_header, q, RFC1533_DNS, 4, &de->de_addr.s_addr);
+        TAILQ_FOREACH_REVERSE(de, &pData->pDnsList, dns_list_head, de_list)
+        {
+            if (TAILQ_LAST(&pData->pDnsList, dns_list_head) == de)
+                continue; /* first value with head we've ingected before */
+            FILL_BOOTP_APP(q_dns_header, q, RFC1533_DNS, 4, &de->de_addr.s_addr);
+        }
     }
-
-skip_dns_servers:
     if (pData->fPassDomain && !pData->fUseHostResolver)
     {
         LIST_FOREACH(dd, &pData->pDomainList, dd_list)
