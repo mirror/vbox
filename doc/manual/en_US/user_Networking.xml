@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE chapter PUBLIC "-//OASIS//DTD DocBook XML V4.4//EN"
-  "http://www.oasis-open.org/docbook/xml/4.4/docbookx.dtd">
+"http://www.oasis-open.org/docbook/xml/4.4/docbookx.dtd">
 <chapter id="networkingdetails">
   <title>Virtual networking</title>
 
@@ -64,10 +64,10 @@
     for some guest operating system types that no longer ship with drivers for
     the PCNet card, such as Windows Vista.</para>
 
-    <para>The Intel PRO/1000 MT Desktop type works with Windows Vista and later
-    versions. The T Server variant of the Intel PRO/1000 card is recognized by
-    Windows XP guests without additional driver installation. The MT Server
-    variant facilitates OVF imports from other platforms.</para>
+    <para>The Intel PRO/1000 MT Desktop type works with Windows Vista and
+    later versions. The T Server variant of the Intel PRO/1000 card is
+    recognized by Windows XP guests without additional driver installation.
+    The MT Server variant facilitates OVF imports from other platforms.</para>
 
     <para>The <emphasis role="bold">"Paravirtualized network adapter
     (virtio-net)"</emphasis> is special. If you select this, then VirtualBox
@@ -183,33 +183,37 @@
           <glossterm>Generic networking</glossterm>
 
           <glossdef>
-            <para>Rarely used modes share the same generic network
-            interface, by allowing the user to select a driver which can
-            be included with VirtualBox or be distributed in an extension
-            pack.</para>
+            <para>Rarely used modes share the same generic network interface,
+            by allowing the user to select a driver which can be included with
+            VirtualBox or be distributed in an extension pack.</para>
+
             <para>At the moment there are potentially two available
             sub-modes:</para>
-            <para>
-              <glosslist>
+
+            <para><glosslist>
                 <glossentry>
                   <glossterm>UDP Tunnel</glossterm>
+
                   <glossdef>
-                    <para>This can be used to interconnect virtual machines running on
-                      different hosts directly, easily and transparently, over existing
-                      network infrastructure.</para>
+                    <para>This can be used to interconnect virtual machines
+                    running on different hosts directly, easily and
+                    transparently, over existing network
+                    infrastructure.</para>
                   </glossdef>
                 </glossentry>
+
                 <glossentry>
-                  <glossterm>VDE (Virtual Distributed Ethernet) networking</glossterm>
+                  <glossterm>VDE (Virtual Distributed Ethernet)
+                  networking</glossterm>
+
                   <glossdef>
-                    <para>This option can be used to connect to a Virtual Distributed
-                      Ethernet switch on a Linux or a FreeBSD host. At the moment this
-                      needs compiling VirtualBox from sources, as the Oracle packages
-                      do not include it.</para>
+                    <para>This option can be used to connect to a Virtual
+                    Distributed Ethernet switch on a Linux or a FreeBSD host.
+                    At the moment this needs compiling VirtualBox from
+                    sources, as the Oracle packages do not include it.</para>
                   </glossdef>
                 </glossentry>
-              </glosslist>
-            </para>
+              </glosslist></para>
           </glossdef>
         </glossentry>
       </glosslist></para>
@@ -231,7 +235,8 @@
     case, is the VirtualBox networking engine, which maps traffic from and to
     the virtual machine transparently. In VirtualBox this router is placed
     between each virtual machine and the host. This separation maximizes
-    security since by default virtual machines cannot talk to each other.</para>
+    security since by default virtual machines cannot talk to each
+    other.</para>
 
     <para>The disadvantage of NAT mode is that, much like a private network
     behind a router, the virtual machine is invisible and unreachable from the
@@ -478,9 +483,11 @@
           restrictions of the Solaris networking subsystem. These issues would
           be addressed in a future release of Solaris 11.</para>
 
-          <para>With VirtualBox 2.0.4 and above, it is possible to use
-          Crossbow Virtual Network Interfaces (VNICs) with bridged networking,
-          but with the following caveats:</para>
+          <para>Starting with VirtualBox 4.1 on Solaris 11 hosts it is
+          possible to use Solaris' Crossbow Virtual Network Interface (VNICs)
+          directly with VirtualBox without any additional configuration other
+          than it must be exclusive for every guest. With VirtualBox 2.0.4 and
+          above, VNICs can be used but with the following caveats:</para>
 
           <itemizedlist>
             <listitem>
@@ -508,17 +515,18 @@
 
     <para>Internal Networking is similar to bridged networking in that the VM
     can directly communicate with the outside world. However, the "outside
-    world" is limited to other VMs on the same host which connect to the same internal
-    network.</para>
+    world" is limited to other VMs on the same host which connect to the same
+    internal network.</para>
 
     <para>Even though technically, everything that can be done using internal
     networking can also be done using bridged networking, there are security
-    advantages with internal networking. In bridged networking mode, all traffic
-    goes through a physical interface of the host system. It is therefore possible
-    to attach a packet sniffer (such as Wireshark) to the host interface and log
-    all traffic that goes over it. If, for any reason, you prefer two or more VMs
-    on the same machine to communicate privately, hiding their data from both
-    the host system and the user, bridged networking therefore is not an option.</para>
+    advantages with internal networking. In bridged networking mode, all
+    traffic goes through a physical interface of the host system. It is
+    therefore possible to attach a packet sniffer (such as Wireshark) to the
+    host interface and log all traffic that goes over it. If, for any reason,
+    you prefer two or more VMs on the same machine to communicate privately,
+    hiding their data from both the host system and the user, bridged
+    networking therefore is not an option.</para>
 
     <para>Internal networks are created automatically as needed, i.e. there is
     no central configuration. Every internal network is identified simply by
@@ -633,13 +641,11 @@
     <title>UDP Tunnel networking</title>
 
     <para>This networking mode allows to interconnect virtual machines running
-    on different hosts.
-    </para>
+    on different hosts.</para>
 
     <para>Technically this is done by encapsulating Ethernet frames sent or
     received by the guest network card into UDP/IP datagrams, and sending them
-    over any network available to the host.
-    </para>
+    over any network available to the host.</para>
 
     <para>UDP Tunnel mode has three parameters:<glosslist>
         <glossentry>
@@ -656,7 +662,8 @@
           <glossterm>Destination address</glossterm>
 
           <glossdef>
-            <para>IP address of the target host of the transmitted data.</para>
+            <para>IP address of the target host of the transmitted
+            data.</para>
           </glossdef>
         </glossentry>
 
@@ -672,42 +679,45 @@
     <para>When interconnecting two virtual machines on two different hosts,
     their IP addresses must be swapped. On single host, source and destination
     UDP ports must be swapped.</para>
+
     <para>In the following example host 1 uses the IP address 10.0.0.1 and
     host 2 uses IP address 10.0.0.2. Configuration via command-line:<screen>        VBoxManage modifyvm "VM 01 on host 1" --nic&lt;x&gt; generic
         VBoxManage modifyvm "VM 01 on host 1" --nicgenericdrv&lt;x&gt; UDPTunnel
         VBoxManage modifyvm "VM 01 on host 1" --nicproperty&lt;x&gt; dest=10.0.0.2
         VBoxManage modifyvm "VM 01 on host 1" --nicproperty&lt;x&gt; sport=10001
         VBoxManage modifyvm "VM 01 on host 1" --nicproperty&lt;x&gt; dport=10002</screen>
-      and <screen>        VBoxManage modifyvm "VM 02 on host 2" --nic&lt;y&gt; generic
+    and <screen>        VBoxManage modifyvm "VM 02 on host 2" --nic&lt;y&gt; generic
         VBoxManage modifyvm "VM 02 on host 2" --nicgenericdrv&lt;y&gt; UDPTunnel
         VBoxManage modifyvm "VM 02 on host 2" --nicproperty&lt;y&gt; dest=10.0.0.1
         VBoxManage modifyvm "VM 02 on host 2" --nicproperty&lt;y&gt; sport=10002
-        VBoxManage modifyvm "VM 02 on host 2" --nicproperty&lt;y&gt; dport=10001</screen>
-    </para>
+        VBoxManage modifyvm "VM 02 on host 2" --nicproperty&lt;y&gt; dport=10001</screen></para>
 
     <para>Of course, you can always interconnect two virtual machines on the
-    same host, by setting the destination address parameter to 127.0.0.1
-    on both. It will act similarly to "Internal network" in this case, however
+    same host, by setting the destination address parameter to 127.0.0.1 on
+    both. It will act similarly to "Internal network" in this case, however
     the host can see the network traffic which it could not in the normal
     Internal network case.</para>
 
-    <para><note>On Unix-based hosts (e.g. Linux, Solaris, Mac OS X) it is
-      not possible to bind to ports below 1024 from applications that are not
-      run by <computeroutput>root</computeroutput>. As a result, if you try to
-      configure such a source UDP port, the VM will refuse to start.</note></para>
+    <para><note>
+        On Unix-based hosts (e.g. Linux, Solaris, Mac OS X) it is not possible to bind to ports below 1024 from applications that are not run by 
+
+        <computeroutput>root</computeroutput>
+
+        . As a result, if you try to configure such a source UDP port, the VM will refuse to start.
+      </note></para>
   </sect1>
 
   <sect1 id="network_vde">
     <title>VDE networking</title>
 
-
-    <para>Virtual Distributed Ethernet (VDE<footnote><para>VDE is a project
-      developed by Renzo Davoli, Associate Professor at the University of
-      Bologna, Italy.</para></footnote>) is a flexible, virtual network
-    infrastructure system, spanning across multiple hosts in a secure way.
-    It allows for L2/L3 switching, including spanning-tree protocol, VLANs,
-    and WAN emulation. It is an optional part of VirtualBox which is only
-    included in the source code.</para>
+    <para>Virtual Distributed Ethernet (VDE<footnote>
+        <para>VDE is a project developed by Renzo Davoli, Associate Professor
+        at the University of Bologna, Italy.</para>
+      </footnote>) is a flexible, virtual network infrastructure system,
+    spanning across multiple hosts in a secure way. It allows for L2/L3
+    switching, including spanning-tree protocol, VLANs, and WAN emulation. It
+    is an optional part of VirtualBox which is only included in the source
+    code.</para>
 
     <para>The basic building blocks of the infrastructure are VDE switches,
     VDE plugs and VDE wires which inter-connect the switches.</para>
@@ -728,38 +738,32 @@
 
     <para><orderedlist>
         <listitem>
-          <para>Create a VDE switch:
-          <screen>vde_switch -s /tmp/switch1</screen>
-          </para>
+          <para>Create a VDE switch: <screen>vde_switch -s /tmp/switch1</screen></para>
         </listitem>
+
         <listitem>
-          <para>Configuration via command-line:
-          <screen>VBoxManage modifyvm "VM name" --nic&lt;x&gt; generic</screen>
+          <para>Configuration via command-line: <screen>VBoxManage modifyvm "VM name" --nic&lt;x&gt; generic</screen>
           <screen>VBoxManage modifyvm "VM name" --nicgenericdrv&lt;x&gt; VDE</screen>
-          To connect to automatically allocated switch port, use:
-          <screen>VBoxManage modifyvm "VM name" --nicproperty&lt;x&gt; network=/tmp/switch1</screen>
-          To connect to specific switch port &lt;n&gt;, use:
-          <screen>VBoxManage modifyvm "VM name" --nicproperty&lt;x&gt; network=/tmp/switch1[&lt;n&gt;]</screen>
-          The latter option can be useful for VLANs.
-          </para>
+          To connect to automatically allocated switch port, use: <screen>VBoxManage modifyvm "VM name" --nicproperty&lt;x&gt; network=/tmp/switch1</screen>
+          To connect to specific switch port &lt;n&gt;, use: <screen>VBoxManage modifyvm "VM name" --nicproperty&lt;x&gt; network=/tmp/switch1[&lt;n&gt;]</screen>
+          The latter option can be useful for VLANs.</para>
         </listitem>
+
         <listitem>
-          <para>Optionally map between VDE switch port and VLAN: (from switch CLI)
-          <screen>vde$ vlan/create &lt;VLAN&gt;</screen>
-          <screen>vde$ port/setvlan &lt;port&gt; &lt;VLAN&gt;</screen>
-          </para>
+          <para>Optionally map between VDE switch port and VLAN: (from switch
+          CLI) <screen>vde$ vlan/create &lt;VLAN&gt;</screen> <screen>vde$ port/setvlan &lt;port&gt; &lt;VLAN&gt;</screen></para>
         </listitem>
       </orderedlist></para>
 
     <para>VDE is available on Linux and FreeBSD hosts only. It is only
-      available if the VDE software and the VDE plugin library from the
-      VirtualSquare project are installed on the host system<footnote>
-        <para>For Linux hosts, the shared library libvdeplug.so must be available
-        in the search path for shared libraries</para></footnote>. For more
-      information on setting up VDE networks, please see the documentation
-      accompanying the software.<footnote>
-    <para><ulink
-      url="http://wiki.virtualsquare.org/wiki/index.php/VDE_Basic_Networking">http://wiki.virtualsquare.org/wiki/index.php/VDE_Basic_Networking</ulink>.</para>
-    </footnote></para>
+    available if the VDE software and the VDE plugin library from the
+    VirtualSquare project are installed on the host system<footnote>
+        <para>For Linux hosts, the shared library libvdeplug.so must be
+        available in the search path for shared libraries</para>
+      </footnote>. For more information on setting up VDE networks, please see
+    the documentation accompanying the software.<footnote>
+        <para><ulink
+        url="http://wiki.virtualsquare.org/wiki/index.php/VDE_Basic_Networking">http://wiki.virtualsquare.org/wiki/index.php/VDE_Basic_Networking</ulink>.</para>
+      </footnote></para>
   </sect1>
 </chapter>
