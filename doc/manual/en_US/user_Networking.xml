@@ -505,9 +505,8 @@
 
           <para>When using VLAN interfaces with VirtualBox, they must be named
           according to the PPA-hack naming scheme (e.g. "e1000g513001"), as
-          otherwise the guest may receive packets in an unexpected format.
-          VirtualBox versions prior to 2.0.4 do not support Solaris
-          VNICs.</para>
+          otherwise the guest may receive packets in an unexpected
+          format.</para>
         </listitem>
       </itemizedlist></para>
   </sect1>
