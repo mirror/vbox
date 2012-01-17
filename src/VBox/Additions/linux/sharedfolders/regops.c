@@ -429,11 +429,16 @@ static int sf_reg_release(struct inode *inode, struct file *file)
     BUG_ON(!sf_g);
     BUG_ON(!sf_r);
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 6)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 4, 25)
     /* See the smbfs source (file.c). mmap in particular can cause data to be
-     * written to the file after it is closed, which we can't cope with. */
-    filemap_write_and_wait(inode->i_mapping);
-#endif
+     * written to the file after it is closed, which we can't cope with.  We
+     * copy and paste the body of filemap_write_and_wait() here as it was not
+     * defined before 2.6.6 and not exported until quite a bit later. */
+    /* filemap_write_and_wait(inode->i_mapping); */
+    if (   inode->i_mapping->nrpages
+        && filemap_fdatawrite(inode->i_mapping) != -EIO)
+        filemap_fdatawait(inode->i_mapping);
+ #endif
     rc = vboxCallClose(&client_handle, &sf_g->map, sf_r->handle);
     if (RT_FAILURE(rc))
         LogFunc(("vboxCallClose failed rc=%Rrc\n", rc));
