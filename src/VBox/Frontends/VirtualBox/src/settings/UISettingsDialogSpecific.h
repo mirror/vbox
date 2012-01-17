@@ -36,6 +36,7 @@ public:
         GLSettingsPage_Input,
         GLSettingsPage_Update,
         GLSettingsPage_Language,
+        GLSettingsPage_Display,
         GLSettingsPage_USB,
         GLSettingsPage_Network,
         GLSettingsPage_Extension,

@@ -316,6 +316,7 @@ VirtualBox_QT_MOCHDRS = \
 	src/settings/global/UIGlobalSettingsGeneral.h \
 	src/settings/global/UIGlobalSettingsInput.h \
 	src/settings/global/UIGlobalSettingsLanguage.h \
+	src/settings/global/UIGlobalSettingsDisplay.h \
 	src/settings/global/UIGlobalSettingsNetwork.h \
 	src/settings/global/UIGlobalSettingsNetworkDetails.h \
 	src/settings/global/UIGlobalSettingsProxy.h \
@@ -492,6 +493,7 @@ VirtualBox_SOURCES = \
 	src/settings/global/UIGlobalSettingsGeneral.cpp \
 	src/settings/global/UIGlobalSettingsInput.cpp \
 	src/settings/global/UIGlobalSettingsLanguage.cpp \
+	src/settings/global/UIGlobalSettingsDisplay.cpp \
 	src/settings/global/UIGlobalSettingsNetwork.cpp \
 	src/settings/global/UIGlobalSettingsNetworkDetails.cpp \
 	src/settings/global/UIGlobalSettingsProxy.cpp \
