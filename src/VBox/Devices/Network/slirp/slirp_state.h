@@ -3,7 +3,7 @@
  */
 
 /*
- * Copyright (C) 2006-2010 Oracle Corporation
+ * Copyright (C) 2006-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -68,14 +68,16 @@ LIST_HEAD(dns_domain_list_head, dns_domain_entry);
 #ifdef VBOX_WITH_DNSMAPPING_IN_HOSTRESOLVER
 typedef struct DNSMAPPINGENTRY
 {
-    /*
-     * host name to map
-     * Note: if pszCName isn't null pszPattern won't be used (see alias_dns.c for details)
+    /** host name to map.
+     * @note If pszCName isn't null pszPattern won't be used (see alias_dns.c for
+     *       details).
      */
     char        *pszCName;
-    /* pattern of hostnames to map to specifaied IP */
+    /** Pattern (simple) of hostnames to map to the specified IP. */
     char        *pszPattern;
+    /** The IP Address. */
     uint32_t    u32IpAddress;
+    /** List entry.  */
     LIST_ENTRY(DNSMAPPINGENTRY) MapList;
 } DNSMAPPINGENTRY, *PDNSMAPPINGENTRY;
 typedef LIST_HEAD(DNSMAPPINGLISTHEAD, DNSMAPPINGENTRY) DNSMAPPINGLISTHEAD;
