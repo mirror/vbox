@@ -392,14 +392,12 @@ setup()
             vboxvideo_src=vboxvideo_drv_71.so
             vboxmouse_src=vboxmouse_drv_71.so
             automouse=""
-            newmouse=""
             ;;
         6.9.* | 7.0.* )
             xserver_version="X.Org 6.9/7.0"
             vboxvideo_src=vboxvideo_drv_70.so
             vboxmouse_src=vboxmouse_drv_70.so
             automouse=""
-            newmouse=""
             ;;
         6.7* | 6.8.* | 4.2.* | 4.3.* )
             # Assume X.Org post-fork or XFree86

@@ -62,7 +62,7 @@ endif
 DLLS += vboxmouse_drv_70
 vboxmouse_drv_70_TEMPLATE = VBOXGUESTR3XORGMOD
 vboxmouse_drv_70_DEFS = \
-	XFree86Server IN_MODULE XFree86Module XFree86LOADER XINPUT XORG_7X IN_XF86_MODULE
+	XFree86Server IN_MODULE XFree86Module XFree86LOADER XINPUT XORG_7X IN_XF86_MODULE DONT_DEFINE_WRAPPERS NO_ANSIC
 ifeq ($(KBUILD_TARGET),solaris) # don't use .solaris or anything here.
  vboxmouse_drv_70_DEFS += _XPG6 __EXTENSIONS__
 endif
@@ -72,9 +72,7 @@ vboxmouse_drv_70_INCS := \
 	$(VBOX_PATH_X11_XORG_7_0)/xorg \
 	$(PATH_SUB_CURRENT)
 vboxmouse_drv_70_SOURCES = \
-	xorg70/mouse.c \
-	xorg70/pnp.c \
-	VBoxUtils.c
+	vboxmouse_15.c
 
 
 #
@@ -82,16 +80,14 @@ vboxmouse_drv_70_SOURCES = \
 #
 DLLS += vboxmouse_drv_71
 vboxmouse_drv_71_TEMPLATE = VBOXGUESTR3XORGMOD
-vboxmouse_drv_71_DEFS := $(vboxmouse_drv_70_DEFS)
+vboxmouse_drv_71_DEFS := $(vboxmouse_drv_70_DEFS) NO_ANSIC
 vboxmouse_drv_71_INCS := \
 	$(VBOX_PATH_X11_XORG_7_1) \
 	$(VBOX_PATH_X11_XORG_7_1)/X11 \
 	$(VBOX_PATH_X11_XORG_7_1)/xorg \
 	$(PATH_SUB_CURRENT)
 vboxmouse_drv_71_SOURCES = \
-	xorg71/mouse.c \
-	xorg71/pnp.c \
-	VBoxUtils.c
+	vboxmouse_15.c
 
 
 #
@@ -261,7 +257,7 @@ $$(vboxmouse_drv_0_OUTDIR)/tstvboxmouse68.run: $$(vboxmouse_drv_1_STAGE_TARGET)
 $$(vboxmouse_drv_70_0_OUTDIR)/tstvboxmouse70.run: $$(vboxmouse_drv_70_1_STAGE_TARGET)
 	$(QUIET)$(call MSG_L1,Checking for unresolved symbols in $<)
 	$(QUIET)/bin/sh $(PATH_ROOT)/src/bldprogs/checkUndefined.sh  $(KBUILD_TARGET) \
-	    $(vboxmouse_drv_70_1_STAGE_TARGET) $(VBOXMOUSE_SRC_PATH)/undefined_70
+	    $(vboxmouse_drv_70_1_STAGE_TARGET) $(VBOXMOUSE_SRC_PATH)/undefined_15
 	$(QUIET)$(APPEND) -t "$@" "done"
 
      TESTING += $(vboxmouse_drv_71_0_OUTDIR)/tstvboxmouse71.run
@@ -269,7 +265,7 @@ $$(vboxmouse_drv_70_0_OUTDIR)/tstvboxmouse70.run: $$(vboxmouse_drv_70_1_STAGE_TA
 $$(vboxmouse_drv_71_0_OUTDIR)/tstvboxmouse71.run: $$(vboxmouse_drv_71_1_STAGE_TARGET)
 	$(QUIET)$(call MSG_L1,Checking for unresolved symbols in $<)
 	$(QUIET)/bin/sh $(PATH_ROOT)/src/bldprogs/checkUndefined.sh $(KBUILD_TARGET)  \
-	    $(vboxmouse_drv_71_1_STAGE_TARGET) $(VBOXMOUSE_SRC_PATH)/undefined_71
+	    $(vboxmouse_drv_71_1_STAGE_TARGET) $(VBOXMOUSE_SRC_PATH)/undefined_15
 	$(QUIET)$(APPEND) -t "$@" "done"
 
      TESTING += $(vboxmouse_drv_13_0_OUTDIR)/tstvboxmouse13.run
