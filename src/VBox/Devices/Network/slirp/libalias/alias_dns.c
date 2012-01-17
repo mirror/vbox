@@ -420,6 +420,9 @@ static void alterHostentWithDataFromDNSMap(PNATState pData, struct hostent *pHos
                     return;
                 }
                 LIST_INSERT_HEAD(&pData->DNSMapHead, pDnsMapping, MapList);
+                LogRel(("NAT: user-defined mapping %s: %RTnaipv4 is registered\n",
+                        pDnsMapping->pszCName ? pDnsMapping->pszCName : pDnsMapping->pszPattern,
+                        pDnsMapping->u32IpAddress));
             }
         }
         if (fMatch)
