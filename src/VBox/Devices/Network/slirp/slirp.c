@@ -2190,6 +2190,9 @@ void  slirp_add_host_resolver_mapping(PNATState pData, const char *pszHostName, 
             return;
         }
         LIST_INSERT_HEAD(&pData->DNSMapHead, pDnsMapping, MapList);
+        LogRel(("NAT: user-defined mapping %s: %RTnaipv4 is registered\n",
+                pDnsMapping->pszCName ? pDnsMapping->pszCName : pDnsMapping->pszPattern,
+                pDnsMapping->u32IpAddress));
     }
     LogFlowFuncLeave();
 }
