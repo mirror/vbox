@@ -376,6 +376,14 @@ dns_alias_handler(PNATState pData, int type)
 }
 
 #ifdef VBOX_WITH_DNSMAPPING_IN_HOSTRESOLVER
+static bool isDnsMappingEntryMatchOrEqual2Str(const PDNSMAPPINGENTRY pDNSMapingEntry, const char *pcszString)
+{
+    return (    (   pDNSMapingEntry->pszCName
+                 && !strcmp(pDNSMapingEntry->pszCName, pcszString))
+            || (   pDNSMapingEntry->pszPattern
+                && RTStrSimplePatternMatch(pDNSMapingEntry->pszPattern, pcszString)));
+}
+
 static void alterHostentWithDataFromDNSMap(PNATState pData, struct hostent *pHostent)
 {
     PDNSMAPPINGENTRY pDNSMapingEntry = NULL;
@@ -383,7 +391,7 @@ static void alterHostentWithDataFromDNSMap(PNATState pData, struct hostent *pHos
     LIST_FOREACH(pDNSMapingEntry, &pData->DNSMapHead, MapList)
     {
         char **pszAlias = NULL;
-        if (!strcmp(pDNSMapingEntry->pszCName, pHostent->h_name))
+        if (isDnsMappingEntryMatchOrEqual2Str(pDNSMapingEntry, pHostent->h_name))
         {
             fMatch = true;
             break;
@@ -391,7 +399,7 @@ static void alterHostentWithDataFromDNSMap(PNATState pData, struct hostent *pHos
 
         for (pszAlias = pHostent->h_aliases; *pszAlias && !fMatch; pszAlias++)
         {
-            if (!strcmp(pDNSMapingEntry->pszCName, *pszAlias))
+            if (isDnsMappingEntryMatchOrEqual2Str(pDNSMapingEntry, *pszAlias))
             {
 
                 PDNSMAPPINGENTRY pDnsMapping = RTMemAllocZ(sizeof(DNSMAPPINGENTRY));

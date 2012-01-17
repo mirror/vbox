@@ -2158,12 +2158,16 @@ void slirp_arp_who_has(PNATState pData, uint32_t dst)
     LogFlowFuncLeave();
 }
 #ifdef VBOX_WITH_DNSMAPPING_IN_HOSTRESOLVER
-void  slirp_add_host_resolver_mapping(PNATState pData, const char *pszHostName, uint32_t u32HostIP)
+void  slirp_add_host_resolver_mapping(PNATState pData, const char *pszHostName, const char *pszHostNamePattern, uint32_t u32HostIP)
 {
-    LogFlowFunc(("ENTER: pszHostName:%s, u32HostIP:%RTnaipv4\n", pszHostName, u32HostIP));
-    if (   pszHostName
-        || u32HostIP != INADDR_ANY
-        || u32HostIP != INADDR_BROADCAST)
+    LogFlowFunc(("ENTER: pszHostName:%s, pszHostNamePattern:%s u32HostIP:%RTnaipv4\n",
+                pszHostName ? pszHostName : "(null)",
+                pszHostNamePattern ? pszHostNamePattern : "(null)",
+                u32HostIP));
+    if (   (   pszHostName
+            || pszHostNamePattern)
+        && u32HostIP != INADDR_ANY
+        && u32HostIP != INADDR_BROADCAST)
     {
         PDNSMAPPINGENTRY pDnsMapping = RTMemAllocZ(sizeof(DNSMAPPINGENTRY));
         if (!pDnsMapping)
@@ -2173,10 +2177,14 @@ void  slirp_add_host_resolver_mapping(PNATState pData, const char *pszHostName, 
             return;
         }
         pDnsMapping->u32IpAddress = u32HostIP;
-        pDnsMapping->pszCName = RTStrDup(pszHostName);
-        if (!pDnsMapping->pszCName)
+        if (pszHostName)
+            pDnsMapping->pszCName = RTStrDup(pszHostName);
+        else if (pszHostNamePattern)
+            pDnsMapping->pszPattern = RTStrDup(pszHostNamePattern);
+        if (   !pDnsMapping->pszCName
+            && !pDnsMapping->pszPattern)
         {
-            LogFunc(("Can't allocate enough room for %s\n", pszHostName));
+            LogFunc(("Can't allocate enough room for %s\n", pszHostName ? pszHostName : pszHostNamePattern));
             RTMemFree(pDnsMapping);
             LogFlowFuncLeave();
             return;
