@@ -936,7 +936,9 @@ postinstall()
                             warnprint "VirtualBox installers incorrectly overwrote. Now the contents"
                             warnprint "of /etc/netmasks and /etc/inet/netmasks differ, therefore "
                             warnprint "VirtualBox will not attempt to overwrite /etc/netmasks as a"
-                            warnprint "symlink to /etc/inet/netmasks. Please resolve this manually."
+                            warnprint "symlink to /etc/inet/netmasks. Please resolve this manually"
+                            warnprint "by updating /etc/inet/netmasks and creating /etc/netmasks as a"
+                            warnprint "symlink to /etc/inet/netmasks"
                         fi
                     fi
                 else
