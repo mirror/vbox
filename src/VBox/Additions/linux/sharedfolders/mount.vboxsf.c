@@ -465,6 +465,8 @@ main (int argc, char **argv)
         flags |= MS_NOEXEC;
     if (opts.nodev)
         flags |= MS_NODEV;
+    if (opts.remount)
+        flags |= MS_REMOUNT;
 
     mntinf.uid   = opts.uid;
     mntinf.gid   = opts.gid;
