@@ -414,8 +414,43 @@ static int sf_statfs(struct dentry *dentry, STRUCT_STATFS *stat)
 
 static int sf_remount_fs(struct super_block *sb, int *flags, char *data)
 {
-    TRACE();
-    return -ENOSYS;
+    struct sf_glob_info *sf_g;
+    struct vbsf_mount_info_new *info;
+    struct sf_inode_info *sf_i;
+    struct inode *iroot;
+    SHFLFSOBJINFO fsinfo;
+    int err;
+
+    printk(KERN_DEBUG "ENTER: sf_remount_fs\n");
+    sf_g = GET_GLOB_INFO(sb);
+    BUG_ON(!sf_g);
+    BUG_ON(data[0] != 0);
+    info = (struct vbsf_mount_info_new *)data;
+    BUG_ON(   info->signature[0] != VBSF_MOUNT_SIGNATURE_BYTE_0
+           || info->signature[1] != VBSF_MOUNT_SIGNATURE_BYTE_1
+           || info->signature[2] != VBSF_MOUNT_SIGNATURE_BYTE_2);
+
+    sf_g->uid = info->uid;
+    sf_g->gid = info->gid;
+    sf_g->ttl = info->ttl;
+    sf_g->dmode = info->dmode;
+    sf_g->fmode = info->fmode;
+    sf_g->dmask = info->dmask;
+    sf_g->fmask = info->fmask;
+
+    iroot = ilookup(sb, 0);
+    if (!iroot)
+    {
+        printk(KERN_DEBUG "can't find root inode\n");
+        return -ENOSYS;
+    }
+    sf_i = GET_INODE_INFO(iroot);
+    err = sf_stat(__func__, sf_g, sf_i->path, &fsinfo, 0);
+    BUG_ON(err != 0);
+    sf_init_inode(sf_g, iroot, &fsinfo);
+    /*unlock_new_inode(iroot);*/
+    printk(KERN_DEBUG "LEAVE: sf_remount_fs\n");
+    return 0;
 }
 
 static struct super_operations sf_super_ops =
