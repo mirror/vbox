@@ -29,11 +29,12 @@
 
 #define DNS_CONTROL_PORT_NUMBER 53
 /* see RFC 1035(4.1.1) */
+#pragma pack(1)
 union dnsmsg_header
 {
     struct
     {
-        unsigned id:16;
+        uint16_t id;
         unsigned rd:1;
         unsigned tc:1;
         unsigned aa:1;
@@ -47,8 +48,9 @@ union dnsmsg_header
         uint16_t nscount;
         uint16_t arcount;
     } X;
-    uint16_t raw[6];
+    uint16_t raw[5];
 };
+#pragma pack()
 AssertCompileSize(union dnsmsg_header, 12);
 
 struct dns_meta_data
@@ -98,10 +100,10 @@ fingerprint(struct libalias *la, struct ip *pIp, struct alias_data *ah)
 static void doanswer(union dnsmsg_header *pHdr, struct dns_meta_data *pReqMeta, char *pszQname, struct ip *pIp, struct hostent *pHostent)
 {
     int i;
-
+    LogFlowFunc(("ENTER: pszQname:%s\n", pszQname));
+    pHdr->X.qr = 1; /* response */
     if (!pHostent)
     {
-        pHdr->X.qr = 1; /* response */
         pHdr->X.aa = 1;
         pHdr->X.rd = 1;
         pHdr->X.rcode = 3;
@@ -188,6 +190,7 @@ static void doanswer(union dnsmsg_header *pHdr, struct dns_meta_data *pReqMeta, 
         /* don't forget update m_len */
         pIp->ip_len = htons(packet_len);
     }
+    LogFlowFuncLeave();
 }
 
 static int
@@ -203,13 +206,18 @@ protohandler(struct libalias *la, struct ip *pIp, struct alias_data *ah)
 
     struct udphdr *udp = NULL;
     union dnsmsg_header *pHdr = NULL;
+    LogFlowFuncEnter();
     NOREF(la);
     NOREF(ah);
     udp = (struct udphdr *)ip_next(pIp);
     pHdr = (union dnsmsg_header *)udp_next(udp);
 
     if (pHdr->X.qr == 1)
+    {
+        LogFlowFunc(("pHdr(X.qr:%d, raw:%RX16)\n", pHdr->X.qr, pHdr->raw));
+        LogFlowFuncLeave();
         return 0; /* this is respose */
+    }
 
     memset(pszCname, 0, sizeof(pszCname));
     qw_qname = (char *)&pHdr[1];
@@ -222,6 +230,7 @@ protohandler(struct libalias *la, struct ip *pIp, struct alias_data *ah)
             LogRel(("NAT:alias_dns: multiple quieries isn't supported\n"));
             fMultiWarn = true;
         }
+        LogFlowFuncLeave();
         return 1;
     }
 
@@ -262,6 +271,7 @@ protohandler(struct libalias *la, struct ip *pIp, struct alias_data *ah)
     udp->uh_ulen = ntohs(htons(pIp->ip_len) - (pIp->ip_hl << 2));
     pIp->ip_sum = 0;
     pIp->ip_sum = LibAliasInternetChecksum(la, (uint16_t *)pIp, pIp->ip_hl << 2);
+    LogFlowFuncLeave();
     return 0;
 }
 
@@ -393,7 +403,10 @@ static void alterHostentWithDataFromDNSMap(PNATState pData, struct hostent *pHos
         {
             if (!strcmp(pDNSMapingEntry->pszCName, *pszAlias))
             {
-
+                /*
+                 * we need add mappings for real host name, instead of using alias.
+                 * DNS server doesn't return alias list on real name request.
+                 */
                 PDNSMAPPINGENTRY pDnsMapping = RTMemAllocZ(sizeof(DNSMAPPINGENTRY));
                 fMatch = true;
                 if (!pDnsMapping)
