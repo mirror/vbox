@@ -223,6 +223,16 @@ get_sysinfo()
     BIN_PKG=`which pkg 2> /dev/null`
     if test -x "$BIN_PKG"; then
         PKGFMRI=`$BIN_PKG $BASEDIR_PKGOPT contents -H -t set -a name=pkg.fmri -o pkg.fmri pkg:/system/kernel 2> /dev/null`
+        if test -z "$PKGFMRI"; then
+            # Perhaps this is old pkg without '-a' option and/or system/kernel is missing and it's part of 'entire'
+            # Try fallback.
+            PKGFMRI=`$BIN_PKG $BASEDIR_PKGOPT contents -H -t set -o pkg.fmri entire | head -1 2> /dev/null`
+            if test -z "$PKGFMRI"; then
+                # Perhaps entire is conflicting. Try using opensolaris/entire.
+                # Last fallback try.
+                PKGFMRI=`$BIN_PKG $BASEDIR_PKGOPT contents -H -t set -o pkg.fmri opensolaris.org/entire | head -1 2> /dev/null`
+            fi
+        fi
         if test ! -z "$PKGFMRI"; then
             # The format is "pkg://solaris/system/kernel@0.5.11,5.11-0.161:20110315T070332Z"
             #            or "pkg://solaris/system/kernel@0.5.11,5.11-0.175.0.0.0.1.0:20111012T032837Z"
