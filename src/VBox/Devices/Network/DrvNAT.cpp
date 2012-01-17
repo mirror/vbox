@@ -1015,15 +1015,35 @@ static int drvNATConstructDNSMappings(unsigned iInstance, PDRVNAT pThis, PCFGMNO
     LogFlowFunc(("ENTER: iInstance:%d\n", iInstance));
     for (PCFGMNODE pNode = CFGMR3GetFirstChild(pMappingsCfg); pNode; pNode = CFGMR3GetNextChild(pNode))
     {
-        if (!CFGMR3AreValuesValid(pNode, "HostName\0HostIP\0"))
+        if (!CFGMR3AreValuesValid(pNode, "HostName\0HostNamePattern\0HostIP\0"))
             return PDMDRV_SET_ERROR(pThis->pDrvIns, VERR_PDM_DRVINS_UNKNOWN_CFG_VALUES,
                                     N_("Unknown configuration in dns mapping"));
-        char szHostName[255];
-        RT_ZERO(szHostName);
-        GET_STRING(rc, pThis, pNode, "HostName", szHostName[0], sizeof(szHostName));
+        char szHostNameOrPattern[255];
+        /* fMatch = false used for equal matching, and true if regex is used */
+        bool fMatch = false;
+        RT_ZERO(szHostNameOrPattern);
+        GET_STRING(rc, pThis, pNode, "HostName", szHostNameOrPattern[0], sizeof(szHostNameOrPattern));
+        if (rc == VERR_CFGM_VALUE_NOT_FOUND)
+        {
+            GET_STRING(rc, pThis, pNode, "HostNamePattern", szHostNameOrPattern[0], sizeof(szHostNameOrPattern));
+            if (rc == VERR_CFGM_VALUE_NOT_FOUND)
+            {
+                char szNodeName[225];
+                RT_ZERO(szNodeName);
+                CFGMR3GetName(pNode, szNodeName, sizeof(szNodeName));
+                LogRel(("NAT: Neither 'HostName' nor 'HostNamePattern' is specified for mapping %s\n", szNodeName));
+                continue;
+            }
+            fMatch = true;
+        }
         struct in_addr HostIP;
         GETIP_DEF(rc, pThis, pNode, HostIP, INADDR_ANY);
-        slirp_add_host_resolver_mapping(pThis->pNATState, szHostName, HostIP.s_addr);
+        if (rc == VERR_CFGM_VALUE_NOT_FOUND)
+        {
+            LogRel(("NAT: DNS mapping %s is ignored (address not pointed)\n", szHostNameOrPattern));
+            continue;
+        }
+        slirp_add_host_resolver_mapping(pThis->pNATState, fMatch ? NULL : szHostNameOrPattern, fMatch ? szHostNameOrPattern : NULL, HostIP.s_addr);
     }
     LogFlowFunc(("LEAVE: %Rrc\n", rc));
     return rc;
