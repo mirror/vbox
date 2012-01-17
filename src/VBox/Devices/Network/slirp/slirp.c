@@ -2006,7 +2006,7 @@ void slirp_set_dhcp_dns_proxy(PNATState pData, bool fDNSProxy)
         Log2(("NAT: DNS proxy switched %s\n", (fDNSProxy ? "on" : "off")));
         pData->fUseDnsProxy = fDNSProxy;
     }
-    else
+    else if (fDNSProxy)
         LogRel(("NAT: Host Resolver conflicts with DNS proxy, the last one was forcely ignored\n"));
 }
 
