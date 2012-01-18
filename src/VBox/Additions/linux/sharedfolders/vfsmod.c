@@ -414,6 +414,7 @@ static int sf_statfs(struct dentry *dentry, STRUCT_STATFS *stat)
 
 static int sf_remount_fs(struct super_block *sb, int *flags, char *data)
 {
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 4, 23)
     struct sf_glob_info *sf_g;
     struct vbsf_mount_info_new *info;
     struct sf_inode_info *sf_i;
@@ -451,6 +452,9 @@ static int sf_remount_fs(struct super_block *sb, int *flags, char *data)
     /*unlock_new_inode(iroot);*/
     printk(KERN_DEBUG "LEAVE: sf_remount_fs\n");
     return 0;
+#else
+    return -ENOSYS;
+#endif
 }
 
 static struct super_operations sf_super_ops =
