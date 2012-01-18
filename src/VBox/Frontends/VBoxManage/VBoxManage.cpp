@@ -99,6 +99,12 @@ HRESULT showProgress(ComPtr<IProgress> progress)
         return hrc;
     }
 
+    /*
+     * Note: Outputting the progress info to stderr (g_pStdErr) is intentional
+     *       to not get intermixed with other (raw) stdout data which might get
+     *       written in the meanwhile.
+     */
+
     if (!g_fDetailedProgress)
     {
         RTStrmPrintf(g_pStdErr, "0%%...");
