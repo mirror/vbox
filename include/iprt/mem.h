@@ -717,7 +717,7 @@ RTDECL(void *) RTMemEfDupEx(const void *pvSrc, size_t cbSrc, size_t cbExtra, con
 #if defined(RTMEM_WRAP_SOME_NEW_AND_DELETE_TO_EF) && !defined(RTMEM_NO_WRAP_SOME_NEW_AND_DELETE_TO_EF)
 # if defined(RT_EXCEPTIONS_ENABLED)
 #  define RTMEMEF_NEW_AND_DELETE_OPERATORS() \
-        void *operator new(size_t cb) throw(std::bad_alloc) \
+        void *operator new(size_t cb) RT_THROW(std::bad_alloc) \
         { \
             void *pv = RTMemEfAlloc(cb, RTMEM_TAG, RT_SRC_POS); \
             if (RT_UNLIKELY(!pv)) \
@@ -729,7 +729,7 @@ RTDECL(void *) RTMemEfDupEx(const void *pvSrc, size_t cbSrc, size_t cbExtra, con
             NOREF(nothrow_constant); \
             return RTMemEfAlloc(cb, RTMEM_TAG, RT_SRC_POS); \
         } \
-        void *operator new[](size_t cb) throw(std::bad_alloc) \
+        void *operator new[](size_t cb) RT_THROW(std::bad_alloc) \
         { \
             void *pv = RTMemEfAlloc(cb, RTMEM_TAG, RT_SRC_POS); \
             if (RT_UNLIKELY(!pv)) \
