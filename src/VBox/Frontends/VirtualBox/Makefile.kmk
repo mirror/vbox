@@ -77,7 +77,7 @@ ifndef VBOX_WITH_HARDENING      # For the launch trick we need different inode n
 endif
 VirtualBox_SDKS.win = WINPSDK DXSDK
 if1of ($(KBUILD_TARGET), freebsd linux netbsd openbsd os2) # X11 + os2 ## @todo solaris
-# VirtualBox_SDKS += LIBSDL
+ VirtualBox_SDKS += LIBSDL
 endif
 
 VirtualBox_DEFS           =
@@ -87,7 +87,7 @@ ifndef VBOX_WITH_COCOA_QT
 VirtualBox_DEFS.darwin.x86= USE_HID_FOR_MODIFIERS
 endif
 VirtualBox_DEFS.freebsd   = VBOX_GUI_USE_QIMAGE VBOX_GUI_USE_SDL
-VirtualBox_DEFS.linux     = VBOX_GUI_USE_QIMAGE
+VirtualBox_DEFS.linux     = VBOX_GUI_USE_QIMAGE VBOX_GUI_USE_SDL
 VirtualBox_DEFS.netbsd    = VBOX_GUI_USE_QIMAGE VBOX_GUI_USE_SDL
 VirtualBox_DEFS.openbsd   = VBOX_GUI_USE_QIMAGE VBOX_GUI_USE_SDL
 VirtualBox_DEFS.solaris   = VBOX_GUI_USE_QIMAGE #VBOX_GUI_USE_SDL
