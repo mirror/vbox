@@ -273,7 +273,6 @@ static DECLCALLBACK(int)  rtUdpServerThread(RTTHREAD ThreadSelf, void *pvServer)
  */
 RTR3DECL(int) RTUdpServerCreateEx(const char *pszAddress, uint32_t uPort, PPRTUDPSERVER ppServer)
 {
-    int rc;
 
     /*
      * Validate input.
@@ -281,39 +280,13 @@ RTR3DECL(int) RTUdpServerCreateEx(const char *pszAddress, uint32_t uPort, PPRTUD
     AssertReturn(uPort > 0, VERR_INVALID_PARAMETER);
     AssertPtrReturn(ppServer, VERR_INVALID_PARAMETER);
 
-#ifdef RT_OS_WINDOWS
     /*
-     * Initialize WinSock and check version.
+     * Resolve the address.
      */
-    WORD    wVersionRequested = MAKEWORD(1, 1);
-    WSADATA wsaData;
-    rc = WSAStartup(wVersionRequested, &wsaData);
-    if (wsaData.wVersion != wVersionRequested)
-    {
-        AssertMsgFailed(("Wrong winsock version\n"));
-        return VERR_NOT_SUPPORTED;
-    }
-#endif
-
-    /*
-     * Get host listening address.
-     */
-    struct hostent *pHostEnt = NULL;
-    if (pszAddress != NULL && *pszAddress)
-    {
-        pHostEnt = gethostbyname(pszAddress);
-        if (!pHostEnt)
-        {
-            struct in_addr InAddr;
-            InAddr.s_addr = inet_addr(pszAddress);
-            pHostEnt = gethostbyaddr((char *)&InAddr, 4, AF_INET);
-            if (!pHostEnt)
-            {
-                rc = rtSocketResolverError();
-                return rc;
-            }
-        }
-    }
+    RTNETADDR LocalAddr;
+    int rc = RTSocketParseInetAddress(pszAddress, uPort, &LocalAddr);
+    if (RT_FAILURE(rc))
+        return rc;
 
     /*
      * Setting up socket.
@@ -331,22 +304,9 @@ RTR3DECL(int) RTUdpServerCreateEx(const char *pszAddress, uint32_t uPort, PPRTUD
         if (!rtSocketSetOpt(Sock, SOL_SOCKET, SO_REUSEADDR, &fFlag, sizeof(fFlag)))
         {
             /*
-             * Set socket family, address and port.
-             */
-            struct sockaddr_in LocalAddr;
-            RT_ZERO(LocalAddr);
-            LocalAddr.sin_family = AF_INET;
-            LocalAddr.sin_port = htons(uPort);
-            /* if address not specified, use INADDR_ANY. */
-            if (!pHostEnt)
-                LocalAddr.sin_addr.s_addr = INADDR_ANY;
-            else
-                LocalAddr.sin_addr = *((struct in_addr *)pHostEnt->h_addr);
-
-            /*
              * Bind a name to the socket.
              */
-            rc = rtSocketBind(Sock, (struct sockaddr *)&LocalAddr, sizeof(LocalAddr));
+            rc = rtSocketBind(Sock, &LocalAddr);
             if (RT_SUCCESS(rc))
             {
                 /*
