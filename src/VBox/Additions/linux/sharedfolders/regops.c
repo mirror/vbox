@@ -438,7 +438,7 @@ static int sf_reg_release(struct inode *inode, struct file *file)
     if (   inode->i_mapping->nrpages
         && filemap_fdatawrite(inode->i_mapping) != -EIO)
         filemap_fdatawait(inode->i_mapping);
- #endif
+#endif
     rc = vboxCallClose(&client_handle, &sf_g->map, sf_r->handle);
     if (RT_FAILURE(rc))
         LogFunc(("vboxCallClose failed rc=%Rrc\n", rc));
