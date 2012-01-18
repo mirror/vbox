@@ -149,6 +149,8 @@ public:
     void setMainWindow (QWidget *aMainWindow) { mMainWindow = aMainWindow; }
     QWidget *mainWindow() const { return mMainWindow; }
 
+    bool is3DAvailable();
+
 #ifdef VBOX_GUI_WITH_PIDFILE
     void createPidfile();
     void deletePidfile();
@@ -859,6 +861,8 @@ private:
 
     QString mVerString;
     QString mBrandingConfig;
+    
+    int m3DAvailable;
 
     QList <QString> mFamilyIDs;
     QList <QList <CGuestOSType> > mTypes;
