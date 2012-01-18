@@ -1018,7 +1018,7 @@ static int ctrlCopyTranslatePath(const char *pszSourceRoot, const char *pszSourc
     if (RT_SUCCESS(rc))
     {
         *ppszTranslated = RTStrDup(szTranslated);
-#ifdef DEBUG
+#if 0
         RTPrintf("Root: %s, Source: %s, Dest: %s, Translated: %s\n",
                  pszSourceRoot, pszSource, pszDest, *ppszTranslated);
 #endif
@@ -1318,8 +1318,11 @@ static int ctrlCopyFileToDest(PCOPYCONTEXT pContext, const char *pszFileSource,
         vrc = ctrlPrintError(pContext->pGuest, COM_IIDOF(IGuest));
     else
     {
-        rc = showProgress(progress);
-        CHECK_PROGRESS_ERROR(progress, ("File copy failed"));
+        if (pContext->fVerbose)
+        {
+            rc = showProgress(progress);
+            CHECK_PROGRESS_ERROR(progress, ("File copy failed"));
+        }
         if (FAILED(rc))
             vrc = ctrlPrintError(pContext->pGuest, COM_IIDOF(IGuest));
     }
@@ -1556,6 +1559,8 @@ static int ctrlCopyDirToHost(PCOPYCONTEXT pContext,
             {
                 case GuestDirEntryType_Directory:
                 {
+                    Assert(!strName.isEmpty());
+
                     /* Skip "." and ".." entries. */
                     if (   !strName.compare(Bstr("."))
                         || !strName.compare(Bstr("..")))
@@ -1602,6 +1607,8 @@ static int ctrlCopyDirToHost(PCOPYCONTEXT pContext,
 
                 case GuestDirEntryType_File:
                 {
+                    Assert(!strName.isEmpty());
+
                     Utf8Str strFile(strName);
                     if (   pszFilter
                         && !RTStrSimplePatternMatch(pszFilter, strFile.c_str()))
@@ -1649,6 +1656,8 @@ static int ctrlCopyDirToHost(PCOPYCONTEXT pContext,
                 }
 
                 default:
+                    RTPrintf("Warning: Directory entry of type %ld not handled, skipping ...\n",
+                             enmType);
                     break;
             }
 
@@ -1656,10 +1665,25 @@ static int ctrlCopyDirToHost(PCOPYCONTEXT pContext,
                 break;
         }
 
-        if (FAILED(hr))
+        if (RT_UNLIKELY(FAILED(hr)))
         {
-            if (hr != E_ABORT)
-                rc = ctrlPrintError(pContext->pGuest, COM_IIDOF(IGuest));
+            switch (hr)
+            {
+                case E_ABORT: /* No more directory entries left to process. */
+                    break;
+
+                case VBOX_E_FILE_ERROR: /* Current entry cannot be accessed to
+                                           to missing rights. */
+                {
+                    RTPrintf("Warning: Cannot access \"%s\", skipping ...\n",
+                             szCurDir);
+                    break;
+                }
+
+                default:
+                    rc = ctrlPrintError(pContext->pGuest, COM_IIDOF(IGuest));
+                    break;
+            }
         }
 
         HRESULT hr2 = pContext->pGuest->DirectoryClose(uDirHandle);
@@ -2344,8 +2368,11 @@ static int handleCtrlUpdateAdditions(ComPtr<IGuest> guest, HandlerArg *pArg)
             vrc = ctrlPrintError(guest, COM_IIDOF(IGuest));
         else
         {
-            rc = showProgress(progress);
-            CHECK_PROGRESS_ERROR(progress, ("Guest additions update failed"));
+            if (fVerbose)
+            {
+                rc = showProgress(progress);
+                CHECK_PROGRESS_ERROR(progress, ("Guest additions update failed"));
+            }
             if (FAILED(rc))
                 vrc = ctrlPrintError(guest, COM_IIDOF(IGuest));
             else if (   SUCCEEDED(rc)
