@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2011 Oracle Corporation
+ * Copyright (C) 2006-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -86,6 +86,8 @@ typedef struct VDIO
     void               *pBackendData;
     /** Disk this image is part of */
     PVBOXHDD            pDisk;
+    /** Flag whether to ignore flush requests. */
+    bool                fIgnoreFlush;
 } VDIO, *PVDIO;
 
 /**
@@ -3943,9 +3945,14 @@ static int vdIOIntReadSync(void *pvUser, PVDIOSTORAGE pIoStorage,
 
 static int vdIOIntFlushSync(void *pvUser, PVDIOSTORAGE pIoStorage)
 {
+    int rc = VINF_SUCCESS;
     PVDIO pVDIo = (PVDIO)pvUser;
-    return pVDIo->pInterfaceIo->pfnFlushSync(pVDIo->pInterfaceIo->Core.pvUser,
-                                             pIoStorage->pStorage);
+
+    if (!pVDIo->fIgnoreFlush)
+        rc = pVDIo->pInterfaceIo->pfnFlushSync(pVDIo->pInterfaceIo->Core.pvUser,
+                                               pIoStorage->pStorage);
+
+    return rc;
 }
 
 static int vdIOIntReadUserAsync(void *pvUser, PVDIOSTORAGE pIoStorage,
@@ -4322,6 +4329,9 @@ static int vdIOIntFlushAsync(void *pvUser, PVDIOSTORAGE pIoStorage,
 
     LogFlowFunc(("pvUser=%#p pIoStorage=%#p pIoCtx=%#p\n",
                  pvUser, pIoStorage, pIoCtx));
+
+    if (pVDIo->fIgnoreFlush)
+        return VINF_SUCCESS;
 
     /* Allocate a new meta transfer. */
     pMetaXfer = vdMetaXferAlloc(pIoStorage, 0, 0);
@@ -5220,9 +5230,9 @@ VBOXDDU_DECL(int) VDOpen(PVBOXHDD pDisk, const char *pszBackend,
                             &pImage->VDIo, sizeof(VDINTERFACEIOINT), &pImage->pVDIfsImage);
         AssertRC(rc);
 
-        pImage->uOpenFlags = uOpenFlags & (VD_OPEN_FLAGS_HONOR_SAME | VD_OPEN_FLAGS_DISCARD);
+        pImage->uOpenFlags = uOpenFlags & (VD_OPEN_FLAGS_HONOR_SAME | VD_OPEN_FLAGS_DISCARD | VD_OPEN_FLAGS_IGNORE_FLUSH);
         rc = pImage->Backend->pfnOpen(pImage->pszFilename,
-                                      uOpenFlags & ~VD_OPEN_FLAGS_HONOR_SAME,
+                                      uOpenFlags & ~(VD_OPEN_FLAGS_HONOR_SAME | VD_OPEN_FLAGS_IGNORE_FLUSH),
                                       pDisk->pVDIfsDisk,
                                       pImage->pVDIfsImage,
                                       pDisk->enmType,
@@ -5257,6 +5267,7 @@ VBOXDDU_DECL(int) VDOpen(PVBOXHDD pDisk, const char *pszBackend,
         fLockWrite = true;
 
         pImage->VDIo.pBackendData = pImage->pBackendData;
+        pImage->VDIo.fIgnoreFlush = (uOpenFlags & VD_OPEN_FLAGS_IGNORE_FLUSH) != 0;
 
         /* Check image type. As the image itself has only partial knowledge
          * whether it's a base image or not, this info is derived here. The
@@ -5748,6 +5759,7 @@ VBOXDDU_DECL(int) VDCreateBase(PVBOXHDD pDisk, const char *pszBackend,
         if (RT_SUCCESS(rc))
         {
             pImage->VDIo.pBackendData = pImage->pBackendData;
+            pImage->VDIo.fIgnoreFlush = (uOpenFlags & VD_OPEN_FLAGS_IGNORE_FLUSH) != 0;
             pImage->uImageFlags = uImageFlags;
 
             /* Force sane optimization settings. It's not worth avoiding writes
@@ -6024,6 +6036,7 @@ VBOXDDU_DECL(int) VDCreateDiff(PVBOXHDD pDisk, const char *pszBackend,
         if (RT_SUCCESS(rc))
         {
             pImage->VDIo.pBackendData = pImage->pBackendData;
+            pImage->VDIo.fIgnoreFlush = (uOpenFlags & VD_OPEN_FLAGS_IGNORE_FLUSH) != 0;
             pImage->uImageFlags = uImageFlags;
 
             /* Lock disk for writing, as we modify pDisk information below. */
@@ -6275,6 +6288,7 @@ VBOXDDU_DECL(int) VDCreateCache(PVBOXHDD pDisk, const char *pszBackend,
             fLockWrite = true;
 
             pCache->VDIo.pBackendData = pCache->pBackendData;
+            pCache->VDIo.fIgnoreFlush = (uOpenFlags & VD_OPEN_FLAGS_IGNORE_FLUSH) != 0;
 
             /* Re-check state, as the lock wasn't held and another image
              * creation call could have been done by another thread. */

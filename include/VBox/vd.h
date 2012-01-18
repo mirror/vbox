@@ -192,8 +192,14 @@ typedef struct VBOXHDDRAW
  * is set. VDOpen fails with VERR_VD_DISCARD_NOT_SUPPORTED if discarding is not
  * supported. */
 #define VD_OPEN_FLAGS_DISCARD       RT_BIT(7)
+/** Ignore all flush requests to workaround certain filesystems which are slow
+ * when writing a lot of cached data to the medium.
+ * Use with extreme care as a host crash can result in completely corrupted and
+ * unusable images.
+ */
+#define VD_OPEN_FLAGS_IGNORE_FLUSH  RT_BIT(8)
 /** Mask of valid flags. */
-#define VD_OPEN_FLAGS_MASK          (VD_OPEN_FLAGS_NORMAL | VD_OPEN_FLAGS_READONLY | VD_OPEN_FLAGS_HONOR_ZEROES | VD_OPEN_FLAGS_HONOR_SAME | VD_OPEN_FLAGS_INFO | VD_OPEN_FLAGS_ASYNC_IO | VD_OPEN_FLAGS_SHAREABLE | VD_OPEN_FLAGS_SEQUENTIAL | VD_OPEN_FLAGS_DISCARD)
+#define VD_OPEN_FLAGS_MASK          (VD_OPEN_FLAGS_NORMAL | VD_OPEN_FLAGS_READONLY | VD_OPEN_FLAGS_HONOR_ZEROES | VD_OPEN_FLAGS_HONOR_SAME | VD_OPEN_FLAGS_INFO | VD_OPEN_FLAGS_ASYNC_IO | VD_OPEN_FLAGS_SHAREABLE | VD_OPEN_FLAGS_SEQUENTIAL | VD_OPEN_FLAGS_DISCARD | VD_OPEN_FLAGS_IGNORE_FLUSH)
 /** @}*/
 
 /**
