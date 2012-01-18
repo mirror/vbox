@@ -391,10 +391,18 @@ RTR3DECL(int)  RTErrConvertFromWin32(unsigned uNativeCode)
         //case WSAVERNOTSUPPORTED      (WSABASEERR+92)
         //case WSANOTINITIALISED       (WSABASEERR+93)
 
-        //case WSAHOST_NOT_FOUND       (WSABASEERR+1001)
-        //case WSATRY_AGAIN            (WSABASEERR+1002)
-        //case WSANO_RECOVERY          (WSABASEERR+1003)
-        //case WSANO_DATA              (WSABASEERR+1004)
+#ifdef WSAHOST_NOT_FOUND
+        case WSAHOST_NOT_FOUND:     return VERR_NET_HOST_NOT_FOUND;
+#endif
+#ifdef WSATRY_AGAIN
+        case WSATRY_AGAIN:          return VERR_TRY_AGAIN;
+#endif
+#ifndef WSANO_RECOVERY
+        case WSANO_RECOVERY:        return VERR_IO_GEN_FAILURE;
+#endif
+#ifdef WSANO_DATA
+        case WSANO_DATA:            return VERR_NET_ADDRESS_NOT_AVAILABLE;
+#endif
 
 
 #ifndef ERROR_NOT_A_REPARSE_POINT

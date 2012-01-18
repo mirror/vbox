@@ -1275,6 +1275,9 @@ RTR3DECL(int) RTProcWaitNoResume(RTPROCESS Process, unsigned fFlags, PRTPROCSTAT
 
 RTR3DECL(int) RTProcTerminate(RTPROCESS Process)
 {
+    if (Process == NIL_RTPROCESS)
+        return VINF_SUCCESS;
+
     int rc = RTOnce(&g_rtProcWinInitOnce, rtProcWinInitOnce, NULL, NULL);
     AssertRCReturn(rc, rc);
 

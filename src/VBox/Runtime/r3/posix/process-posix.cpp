@@ -130,6 +130,9 @@ RTR3DECL(int)   RTProcWaitNoResume(RTPROCESS Process, unsigned fFlags, PRTPROCST
 
 RTR3DECL(int) RTProcTerminate(RTPROCESS Process)
 {
+    if (Process == NIL_RTPROCESS)
+        return VINF_SUCCESS;
+
     if (!kill(Process, SIGKILL))
         return VINF_SUCCESS;
     return RTErrConvertFromErrno(errno);

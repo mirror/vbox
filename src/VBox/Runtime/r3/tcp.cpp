@@ -50,6 +50,7 @@
 #include <iprt/asm.h>
 #include <iprt/assert.h>
 #include <iprt/err.h>
+#include <iprt/log.h>
 #include <iprt/mempool.h>
 #include <iprt/mem.h>
 #include <iprt/string.h>
@@ -302,47 +303,19 @@ static DECLCALLBACK(int)  rtTcpServerThread(RTTHREAD ThreadSelf, void *pvServer)
  */
 RTR3DECL(int) RTTcpServerCreateEx(const char *pszAddress, uint32_t uPort, PPRTTCPSERVER ppServer)
 {
-    int rc;
-
     /*
      * Validate input.
      */
     AssertReturn(uPort > 0, VERR_INVALID_PARAMETER);
     AssertPtrReturn(ppServer, VERR_INVALID_PARAMETER);
 
-#ifdef RT_OS_WINDOWS
     /*
-     * Initialize WinSock and check version.
+     * Resolve the address.
      */
-    WORD    wVersionRequested = MAKEWORD(1, 1);
-    WSADATA wsaData;
-    rc = WSAStartup(wVersionRequested, &wsaData);
-    if (wsaData.wVersion != wVersionRequested)
-    {
-        AssertMsgFailed(("Wrong winsock version\n"));
-        return VERR_NOT_SUPPORTED;
-    }
-#endif
-
-    /*
-     * Get host listening address.
-     */
-    struct hostent *pHostEnt = NULL;
-    if (pszAddress != NULL && *pszAddress)
-    {
-        pHostEnt = gethostbyname(pszAddress);
-        if (!pHostEnt)
-        {
-            struct in_addr InAddr;
-            InAddr.s_addr = inet_addr(pszAddress);
-            pHostEnt = gethostbyaddr((char *)&InAddr, 4, AF_INET);
-            if (!pHostEnt)
-            {
-                rc = rtSocketResolverError();
-                return rc;
-            }
-        }
-    }
+    RTNETADDR LocalAddr;
+    int rc = RTSocketParseInetAddress(pszAddress, uPort, &LocalAddr);
+    if (RT_FAILURE(rc))
+        return rc;
 
     /*
      * Setting up socket.
@@ -359,23 +332,11 @@ RTR3DECL(int) RTTcpServerCreateEx(const char *pszAddress, uint32_t uPort, PPRTTC
         int fFlag = 1;
         if (!rtSocketSetOpt(WaitSock, SOL_SOCKET, SO_REUSEADDR, &fFlag, sizeof(fFlag)))
         {
-            /*
-             * Set socket family, address and port.
-             */
-            struct sockaddr_in LocalAddr;
-            RT_ZERO(LocalAddr);
-            LocalAddr.sin_family = AF_INET;
-            LocalAddr.sin_port = htons(uPort);
-            /* if address not specified, use INADDR_ANY. */
-            if (!pHostEnt)
-                LocalAddr.sin_addr.s_addr = INADDR_ANY;
-            else
-                LocalAddr.sin_addr = *((struct in_addr *)pHostEnt->h_addr);
 
             /*
              * Bind a name to a socket and set it listening for connections.
              */
-            rc = rtSocketBind(WaitSock, (struct sockaddr *)&LocalAddr, sizeof(LocalAddr));
+            rc = rtSocketBind(WaitSock, &LocalAddr);
             if (RT_SUCCESS(rc))
                 rc = rtSocketListen(WaitSock, RTTCP_SERVER_BACKLOG);
             if (RT_SUCCESS(rc))
@@ -844,61 +805,33 @@ RTR3DECL(int) RTTcpServerDestroy(PRTTCPSERVER pServer)
 
 RTR3DECL(int) RTTcpClientConnect(const char *pszAddress, uint32_t uPort, PRTSOCKET pSock)
 {
-    int rc;
-
     /*
      * Validate input.
      */
     AssertReturn(uPort > 0, VERR_INVALID_PARAMETER);
     AssertPtrReturn(pszAddress, VERR_INVALID_POINTER);
 
-#ifdef RT_OS_WINDOWS
-    /*
-     * Initialize WinSock and check version.
-     */
-    WORD    wVersionRequested = MAKEWORD(1, 1);
-    WSADATA wsaData;
-    rc = WSAStartup(wVersionRequested, &wsaData);
-    if (wsaData.wVersion != wVersionRequested)
-    {
-        AssertMsgFailed(("Wrong winsock version\n"));
-        return VERR_NOT_SUPPORTED;
-    }
-#endif
-
     /*
      * Resolve the address.
      */
-    struct hostent *pHostEnt = NULL;
-    pHostEnt = gethostbyname(pszAddress);
-    if (!pHostEnt)
-    {
-        struct in_addr InAddr;
-        InAddr.s_addr = inet_addr(pszAddress);
-        pHostEnt = gethostbyaddr((char *)&InAddr, 4, AF_INET);
-        if (!pHostEnt)
-        {
-            rc = rtSocketResolverError();
-            AssertMsgFailed(("Could not resolve '%s', rc=%Rrc\n", pszAddress, rc));
-            return rc;
-        }
-    }
+    RTNETADDR Addr;
+    int rc = RTSocketParseInetAddress(pszAddress, uPort, &Addr);
+    if (RT_FAILURE(rc))
+        return rc;
 
     /*
      * Create the socket and connect.
      */
     RTSOCKET Sock;
+Log(("Calling rtSocketCreate\n"));
     rc = rtSocketCreate(&Sock, PF_INET, SOCK_STREAM, 0);
     if (RT_SUCCESS(rc))
     {
         RTSocketSetInheritance(Sock, false /*fInheritable*/);
 
-        struct sockaddr_in InAddr;
-        RT_ZERO(InAddr);
-        InAddr.sin_family = AF_INET;
-        InAddr.sin_port = htons(uPort);
-        InAddr.sin_addr = *((struct in_addr *)pHostEnt->h_addr);
-        rc = rtSocketConnect(Sock, (struct sockaddr *)&InAddr, sizeof(InAddr));
+Log(("Calling rtSocketConnect\n"));
+        rc = rtSocketConnect(Sock, &Addr);
+Log(("rtSocketConnect returned\n"));
         if (RT_SUCCESS(rc))
         {
             *pSock = Sock;
