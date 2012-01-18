@@ -602,7 +602,7 @@ static bool rtSocketIsIPv4Numerical(const char *pszAddress, PRTNETADDRIPV4 pAddr
     {
         uint8_t u8;
         int rc = RTStrToUInt8Ex(psz, &psz, 0, &u8);
-        if (rc != VINF_SUCCESS)
+        if (rc != VINF_SUCCESS && rc != VWRN_TRAILING_CHARS)
             return false;
         if (*psz != (i < 3 ? '.' : '\0'))
             return false;
@@ -648,6 +648,7 @@ RTDECL(int) RTSocketParseInetAddress(const char *pszAddress, unsigned uPort, PRT
     RTNETADDRIPV4 IPv4Quad;
     if (rtSocketIsIPv4Numerical(pszAddress, &IPv4Quad))
     {
+        Log3(("rtSocketIsIPv4Numerical: %#x (%RTnaipv4)\n", pszAddress, IPv4Quad.u, IPv4Quad));
         RT_ZERO(*pAddr);
         pAddr->enmType      = RTNETADDRTYPE_IPV4;
         pAddr->uPort        = uPort;
@@ -670,6 +671,7 @@ RTDECL(int) RTSocketParseInetAddress(const char *pszAddress, unsigned uPort, PRT
         pAddr->enmType      = RTNETADDRTYPE_IPV4;
         pAddr->uPort        = uPort;
         pAddr->uAddr.IPv4.u = ((struct in_addr *)pHostEnt->h_addr)->s_addr;
+        Log3(("gethostbyname: %s -> %#x (%RTnaipv4)\n", pszAddress, pAddr->uAddr.IPv4.u, pAddr->uAddr.IPv4));
     }
     else
         return VERR_NET_ADDRESS_FAMILY_NOT_SUPPORTED;
@@ -1566,7 +1568,6 @@ int rtSocketConnect(RTSOCKET hSocket, PCRTNETADDR pAddr)
     int rc = rtSocketAddrFromNetAddr(pAddr, &u, sizeof(u), &cbAddr);
     if (RT_SUCCESS(rc))
     {
-Log(("Calling connect()...\n%.*Rhxs\n", cbAddr, &u));
         if (connect(pThis->hNative, &u.Addr, cbAddr) != 0)
             rc = rtSocketError();
     }
