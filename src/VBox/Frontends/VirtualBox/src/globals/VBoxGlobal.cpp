@@ -18,6 +18,7 @@
 #include "VBoxGlobal.h"
 #include <VBox/vd.h>
 #include <VBox/version.h>
+#include <stdio.h>
 
 #include "VBoxUtils.h"
 #include "VBoxDefs.h"
@@ -280,7 +281,8 @@ VBoxGlobal::VBoxGlobal()
     , mDisableCsam(false)
     , mRecompileSupervisor(false)
     , mRecompileUser(false)
-    , mVerString ("1.0")
+    , mVerString("1.0")
+    , m3DAvailable(-1)
 {
 }
 
@@ -388,6 +390,13 @@ QString VBoxGlobal::vboxVersionStringNormalized() const
 bool VBoxGlobal::isBeta() const
 {
     return mVBox.GetVersion().contains("BETA", Qt::CaseInsensitive);
+}
+
+bool VBoxGlobal::is3DAvailable()
+{
+    if (m3DAvailable < 0)
+        m3DAvailable = virtualBox().GetHost().GetAcceleration3DAvailable();
+    return m3DAvailable;
 }
 
 /**
@@ -1711,7 +1720,7 @@ QString VBoxGlobal::detailsReport (const CMachine &aMachine, bool aWithLinks)
             ++rows;
         }
 
-        QString acc3d = aMachine.GetAccelerate3DEnabled()
+        QString acc3d = is3DAvailable() && aMachine.GetAccelerate3DEnabled()
             ? tr ("Enabled", "details report (3D Acceleration)")
             : tr ("Disabled", "details report (3D Acceleration)");
 

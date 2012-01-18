@@ -522,7 +522,13 @@ void UIMachineSettingsDisplay::polishPage()
     mSlMonitors->setEnabled(isMachineOffline());
     mLeMonitors->setEnabled(isMachineOffline());
     mLbOptions->setEnabled(isMachineOffline());
-    mCb3D->setEnabled(isMachineOffline() && vboxGlobal().virtualBox().GetHost().GetAcceleration3DAvailable());
+    if (vboxGlobal().is3DAvailable())
+        mCb3D->setEnabled(isMachineOffline());
+    else
+    {
+        mCb3D->setEnabled(false);
+        mCb3D->setChecked(false);
+    }
 #ifdef VBOX_WITH_VIDEOHWACCEL
     mCb2DVideo->setEnabled(isMachineOffline() && VBoxGlobal::isAcceleration2DVideoAvailable());
 #endif /* VBOX_WITH_VIDEOHWACCEL */
