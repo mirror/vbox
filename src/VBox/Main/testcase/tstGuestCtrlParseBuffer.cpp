@@ -29,6 +29,7 @@ using namespace com;
 #define LOG_INSTANCE NULL
 #include <VBox/log.h>
 
+#include <iprt/env.h>
 #include <iprt/test.h>
 #include <iprt/stream.h>
 
@@ -55,7 +56,7 @@ static struct
     uint32_t    uOffsetAfter;
     uint32_t    uMapElements;
     int         iResult;
-} aTests[] =
+} aTestBlock[] =
 {
     /*
      * Single object parsing.
@@ -63,7 +64,6 @@ static struct
      * separated by a single "\0". If this termination is missing it will be assumed
      * that we need to collect more data to do a successful parsing.
      */
-
     /* Invalid stuff. */
     { NULL,                             0,                                                 0,  0,                                         0, VERR_INVALID_POINTER },
     { NULL,                             512,                                               0,  0,                                         0, VERR_INVALID_POINTER },
@@ -108,7 +108,7 @@ static struct
     uint32_t    uNumBlocks;
     /** Overall result when done parsing. */
     int         iResult;
-} aTests2[] =
+} aTestStream[] =
 {
     /* No blocks. */
     { "\0\0\0\0",                                      sizeof("\0\0\0\0"),                                0, VERR_NO_DATA },
@@ -119,6 +119,46 @@ static struct
     { "b1=b1\0b2=b2\0\0\0",                            sizeof("b1=b1\0b2=b2\0\0\0"),                      1, VERR_NO_DATA }
 };
 
+int manualTest()
+{
+    int rc;
+    static struct
+    {
+        const char *pbData;
+        size_t      cbData;
+        uint32_t    uOffsetStart;
+        uint32_t    uOffsetAfter;
+        uint32_t    uMapElements;
+        int         iResult;
+    } aTest[] =
+    {
+        { "test5=test5\0t51=t51",           sizeof("test5=test5\0t51=t51"),                            0,  sizeof("test5=test5\0") - 1,                   1, VERR_MORE_DATA },
+        { "\0\0test5=test5\0t51=t51",       sizeof("\0\0test5=test5\0t51=t51"),                        0,  sizeof("\0\0test5=test5\0") - 1,               1, VERR_MORE_DATA },
+    };
+
+    int iTest = 0;
+    for (iTest; iTest < RT_ELEMENTS(aTest); iTest++)
+    {
+        RTTestIPrintf(RTTESTLVL_DEBUG, "Manual test #%d\n", iTest);
+
+        GuestProcessStream stream;
+        rc = stream.AddData((BYTE*)aTest[iTest].pbData, aTest[iTest].cbData);
+
+        for (;;)
+        {
+            GuestProcessStreamBlock block;
+            rc = stream.ParseBlock(block);
+            RTTestIPrintf(RTTESTLVL_DEBUG, "\tReturned with rc=%Rrc, numItems=%ld\n",
+                          rc, block.GetCount());
+
+            if (block.GetCount())
+                break;
+        }
+    }
+
+    return rc;
+}
+
 int main()
 {
     RTTEST hTest;
@@ -128,12 +168,16 @@ int main()
     RTTestBanner(hTest);
 
     RTTestIPrintf(RTTESTLVL_DEBUG, "Initializing COM...\n");
-    rc = com::Initialize();
-    if (FAILED(rc))
+    HRESULT hrc = com::Initialize();
+    if (FAILED(hrc))
     {
-        RTPrintf("ERROR: failed to initialize COM!\n");
-        return rc;
+        RTTestFailed(hTest, "Failed to initialize COM (%Rhrc)!\n", hrc);
+        return RTEXITCODE_FAILURE;
     }
+
+#ifdef DEBUG_andy
+    rc = manualTest();
+#endif
 
     RTTestIPrintf(RTTESTLVL_INFO, "Doing basic tests ...\n");
 
@@ -146,26 +190,30 @@ int main()
 
     RTTestIPrintf(RTTESTLVL_INFO, "Doing line tests ...\n");
 
+    /* Don't let the assertions trigger here
+     * -- we rely on the return values in the test(s) below. */
+    RTAssertSetQuiet(true);
+
     unsigned iTest = 0;
-    for (iTest; iTest < RT_ELEMENTS(aTests); iTest++)
+    for (iTest; iTest < RT_ELEMENTS(aTestBlock); iTest++)
     {
         RTTestIPrintf(RTTESTLVL_DEBUG, "=> Test #%u\n", iTest);
 
         GuestProcessStream stream;
-        int iResult = stream.AddData((BYTE*)aTests[iTest].pbData, aTests[iTest].cbData);
+        int iResult = stream.AddData((BYTE*)aTestBlock[iTest].pbData, aTestBlock[iTest].cbData);
         if (RT_SUCCESS(iResult))
         {
             GuestProcessStreamBlock curBlock;
             iResult = stream.ParseBlock(curBlock);
-            if (iResult != aTests[iTest].iResult)
+            if (iResult != aTestBlock[iTest].iResult)
             {
                 RTTestFailed(hTest, "\tReturned %Rrc, expected %Rrc",
-                             iResult, aTests[iTest].iResult);
+                             iResult, aTestBlock[iTest].iResult);
             }
-            else if (stream.GetOffset() != aTests[iTest].uOffsetAfter)
+            else if (stream.GetOffset() != aTestBlock[iTest].uOffsetAfter)
             {
                 RTTestFailed(hTest, "\tOffset %u wrong, expected %u",
-                             stream.GetOffset(), aTests[iTest].uOffsetAfter);
+                             stream.GetOffset(), aTestBlock[iTest].uOffsetAfter);
             }
             else if (iResult == VERR_MORE_DATA)
             {
@@ -175,22 +223,26 @@ int main()
             if (  (   RT_SUCCESS(iResult)
                    || iResult == VERR_MORE_DATA))
             {
-                if (curBlock.GetCount() != aTests[iTest].uMapElements)
+                if (curBlock.GetCount() != aTestBlock[iTest].uMapElements)
                 {
                     RTTestFailed(hTest, "\tMap has %u elements, expected %u",
-                                 curBlock.GetCount(), aTests[iTest].uMapElements);
+                                 curBlock.GetCount(), aTestBlock[iTest].uMapElements);
                 }
             }
 
             /* There is remaining data left in the buffer (which needs to be merged
              * with a following buffer) -- print it. */
             uint32_t uOffset = stream.GetOffset();
-            size_t uToWrite = aTests[iTest].cbData - uOffset;
+            size_t uToWrite = aTestBlock[iTest].cbData - uOffset;
             if (uToWrite)
             {
-                const char *pszRemaining = aTests[iTest].pbData;
+                const char *pszRemaining = aTestBlock[iTest].pbData;
                 RTTestIPrintf(RTTESTLVL_DEBUG, "\tRemaining (%u):\n", uToWrite);
-                RTStrmWriteEx(g_pStdOut, &aTests[iTest].pbData[uOffset], uToWrite - 1, NULL);
+
+                /* How to properly get the current RTTESTLVL (aka IPRT_TEST_MAX_LEVEL) here?
+                 * Hack alert: Using RTEnvGet for now. */
+                if (!RTStrICmp(RTEnvGet("IPRT_TEST_MAX_LEVEL"), "debug"))
+                    RTStrmWriteEx(g_pStdOut, &aTestBlock[iTest].pbData[uOffset], uToWrite - 1, NULL);
             }
         }
     }
@@ -198,12 +250,12 @@ int main()
     RTTestIPrintf(RTTESTLVL_INFO, "Doing block tests ...\n");
 
     iTest = 0;
-    for (iTest; iTest < RT_ELEMENTS(aTests2); iTest++)
+    for (iTest; iTest < RT_ELEMENTS(aTestStream); iTest++)
     {
         RTTestIPrintf(RTTESTLVL_DEBUG, "=> Block test #%u\n", iTest);
 
         GuestProcessStream stream;
-        int iResult = stream.AddData((BYTE*)aTests2[iTest].pbData, aTests2[iTest].cbData);
+        int iResult = stream.AddData((BYTE*)aTestStream[iTest].pbData, aTestStream[iTest].cbData);
         if (RT_SUCCESS(iResult))
         {
             uint32_t uNumBlocks = 0;
@@ -223,15 +275,15 @@ int main()
                     break;
             } while (RT_SUCCESS(iResult));
 
-            if (iResult != aTests2[iTest].iResult)
+            if (iResult != aTestStream[iTest].iResult)
             {
                 RTTestFailed(hTest, "\tReturned %Rrc, expected %Rrc",
-                             iResult, aTests2[iTest].iResult);
+                             iResult, aTestStream[iTest].iResult);
             }
-            else if (uNumBlocks != aTests2[iTest].uNumBlocks)
+            else if (uNumBlocks != aTestStream[iTest].uNumBlocks)
             {
                 RTTestFailed(hTest, "\tReturned %u blocks, expected %u\n",
-                             uNumBlocks, aTests2[iTest].uNumBlocks);
+                             uNumBlocks, aTestStream[iTest].uNumBlocks);
             }
         }
         else
