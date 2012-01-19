@@ -87,7 +87,12 @@ vboxvideo_drv_SOURCES = \
 	$(PATH_ROOT)/src/VBox/GuestHost/HGSMI/HGSMICommon.cpp \
 	$(PATH_ROOT)/src/VBox/Runtime/common/alloc/heapsimple.cpp \
 	$(PATH_ROOT)/src/VBox/Runtime/common/alloc/heapoffset.cpp
-
+ # Any global symbols in the driver object files will be added to XFree86's
+ # symbol table, which can cause problems if we e.g. define a symbol in two
+ # modules.
+ vboxvideo_drv_POST_CMDS = \
+	objcopy --keep-global-symbol vboxvideoModuleData $(out) $(out)-objcopy$$(NLTAB) \
+	$(MV) -f $(out)-objcopy $(out)
 
 #
 # vboxvideo_drv_70

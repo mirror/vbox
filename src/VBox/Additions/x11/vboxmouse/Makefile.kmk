@@ -50,9 +50,13 @@ if1of ($(KBUILD_TARGET), linux)
 	$(VBOX_PATH_X11_XFREE_4_3)/programs/Xserver/include \
 	$(PATH_SUB_CURRENT)
  vboxmouse_drv_SOURCES = \
-	mouse.c \
-	pnp.c \
-	VBoxUtils_68.c
+	vboxmouse_15.c
+ # Any global symbols in the driver object files will be added to XFree86's
+ # symbol table, which can cause problems if we e.g. define a symbol in two
+ # modules.
+ vboxmouse_drv_POST_CMDS = \
+	objcopy --keep-global-symbol vboxmouseModuleData $(out) $(out)-objcopy$$(NLTAB) \
+	$(MV) -f $(out)-objcopy $(out)
 endif
 
 
@@ -248,7 +252,7 @@ ifdef VBOX_WITH_TESTCASES
 $$(vboxmouse_drv_0_OUTDIR)/tstvboxmouse68.run: $$(vboxmouse_drv_1_STAGE_TARGET)
 	$(QUIET)$(call MSG_L1,Checking for unresolved symbols in $<)
 	$(QUIET)/bin/sh $(PATH_ROOT)/src/bldprogs/checkUndefined.sh $(KBUILD_TARGET) \
-	    "$(vboxmouse_drv_1_STAGE_TARGET)" "$(VBOXMOUSE_SRC_PATH)/undefined_68" --static
+	    "$(vboxmouse_drv_1_STAGE_TARGET)" "$(VBOXMOUSE_SRC_PATH)/undefined_15" --static
 	$(QUIET)$(APPEND) -t "$@" "done"
      endif
 

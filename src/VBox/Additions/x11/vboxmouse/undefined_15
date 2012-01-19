@@ -1,9 +1,12 @@
+ErrorF
 GetMotionHistory
 GetMotionHistorySize
 InitButtonClassDeviceStruct
 InitPointerDeviceStruct
 InitPtrFeedbackClassDeviceStruct
 InitValuatorClassDeviceStruct
+VErrorF
+Xalloc
 _Jv_RegisterClasses
 ___errno
 __cxa_finalize
@@ -94,7 +97,6 @@ write
 xf86AddEnabledDevice
 xf86AddInputDriver
 xf86AllocateInput
-xf86CheckStrOption
 xf86CollectInputOptions
 xf86DeleteInput
 xf86InitValuatorAxisStruct
@@ -106,3 +108,8 @@ xf86ProcessCommonOptions
 xf86RemoveEnabledDevice
 xf86ScaleAxis
 xf86SetIntOption
+xf86SetStrOption
+xf86errno
+xf86isspace
+xf86strtoul
+xf86vsnprintf
