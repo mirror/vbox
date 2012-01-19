@@ -117,7 +117,10 @@ RTDECL(int) RTSocketSetInheritance(RTSOCKET hSocket, bool fInheritable);
  * Parse Internet style addresses, getting a generic IPRT network address.
  *
  * @returns IPRT status code
- * @param   pszAddress      Name or IP address.
+ * @param   pszAddress      Name or IP address.  NULL or empty string (no
+ *                          spaces) is taken to mean INADDR_ANY, which is
+ *                          meaningful when binding a server socket for
+ *                          instance.
  * @param   uPort           Port number (host byte order).
  * @param   pAddr           Where to return the generic IPRT network address.
  */
