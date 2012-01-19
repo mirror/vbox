@@ -200,7 +200,6 @@ SOLARIS_ADD_XORG_DRIVERS = \
 
 SOLARIS_ADD_COMMON_BINS = \
 	vboxguest.sh \
-	x11config.pl \
 	x11config15sol.pl \
 	x11restore.pl \
 	VBox.sh \
@@ -273,7 +272,6 @@ $(PATH_STAGE_BIN)/additions/$(PKGFILENAME): \
 		$(VBOX_PATH_SOLARIS_ADDITION_INSTALLER)/vboxservice.xml \
 		$(VBOX_PATH_SOLARIS_ADDITION_INSTALLER)/VBox.sh \
 		$(VBOX_PATH_X11_ADDITION_INSTALLER)/98vboxadd-xclient \
-		$(VBOX_PATH_X11_ADDITION_INSTALLER)/x11config.pl \
 		$(VBOX_PATH_X11_ADDITION_INSTALLER)/x11config15sol.pl \
 		$(VBOX_PATH_X11_ADDITION_INSTALLER)/x11restore.pl \
 		$(VBOX_PATH_X11_ADDITION_INSTALLER)/solaris_xorg.conf \

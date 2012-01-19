@@ -153,7 +153,7 @@ if test ! -z "$xorgbin"; then
 
     case "$xorgversion" in
         1.3.* )
-            vboxmouse_src="vboxmouse_drv_71.so"
+            vboxmouse_src="vboxmouse_drv_13.so"
             vboxvideo_src="vboxvideo_drv_13.so"
             ;;
         1.4.* )
@@ -294,14 +294,9 @@ if test ! -z "$xorgbin"; then
                 /usr/sbin/removef $PKGINST $vboxadditions_path/$xorgconf_unfit 1>/dev/null
                 rm -f $vboxadditions_path/$xorgconf_unfit
             fi
-            case "$xorgversion" in
-                7.1.* | 7.2.* | 6.9.* | 7.0.* | 1.3.* )
-                    $vboxadditions_path/x11config.pl
-                    ;;
-                1.4.* | 1.5.* | 1.6.* | 1.7.* | 1.8.* | 1.9.* | 1.10.*)
-                    $vboxadditions_path/x11config15sol.pl
-                    ;;
-            esac
+
+            # Adjust xorg.conf with mouse and video driver sections
+            $vboxadditions_path/x11config15sol.pl
         fi
     fi
 
