@@ -24,6 +24,7 @@
 #include <VBox/vmm/selm.h>
 #include <VBox/vmm/iom.h>
 #include <VBox/vmm/dbgf.h>
+#include <VBox/vmm/dbgftrace.h>
 #include <VBox/vmm/tm.h>
 #include <VBox/vmm/pdmapi.h>
 #include "HWACCMInternal.h"
@@ -1596,6 +1597,11 @@ ResumeExecution:
         }
     }
 
+#ifdef DBGFTRACE_ENABLED /** @todo DTrace */
+    RTTraceBufAddMsgF(pVM->CTX_SUFF(hTraceBuf), "vmexit %08x at %04:%08RX64 %RX64 %RX64 %RX64",
+                      exitCode, pCtx->cs, pCtx->rip,
+                      pVMCB->ctrl.u64ExitInfo1, pVMCB->ctrl.u64ExitInfo2, pVMCB->ctrl.ExitIntInfo.au64[0]);
+#endif
     STAM_PROFILE_ADV_STOP_START(&pVCpu->hwaccm.s.StatExit1, &pVCpu->hwaccm.s.StatExit2, x);
 
     /* Deal with the reason of the VM-exit. */
