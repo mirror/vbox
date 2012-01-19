@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2011 Oracle Corporation
+ * Copyright (C) 2006-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -864,6 +864,21 @@ void Guest::setAdditionsStatus(VBoxGuestFacilityType enmFacility, VBoxGuestFacil
     }
     else /* Should never happen! */
         AssertMsgFailed(("Invalid facility status/run level detected! uCurFacility=%d\n", uCurFacility));
+
+    /** @todo Above is wrong. The runlevel has to be recalculated from the
+     *        facilities.  A user can stop VBoxService before logging out.
+     *        The runlevel should then drop to System, not Userland.
+     *
+     * Also, if given enmFacility = VBoxGuestFacilityType_Unknown, we'll be
+     * bosting the runlevel to Desktop (0 - 1 = UINT32_MAX; UINT32_MAX >=
+     * VBoxGuestFacilityType_VBoxTrayClient). */
+
+    /** @todo VBoxGuest (the driver) should track VMMDevReq_ReportGuestStatus
+     * calls per session and automatically send VBoxGuestFacilityStatus_Failed
+     * for the facilites that does not have the status
+     * VBoxGuestFacilityStatus_Terminated, VBoxGuestFacilityStatus_Failed or
+     * VBoxGuestFacilityStatus_Inactive.  Not doing so means this
+     * information is not reliable. */
 
     /*
      * Set a specific facility status.
