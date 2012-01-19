@@ -291,7 +291,9 @@ setup()
     automouse="--autoMouse"
     # We need to tell our xorg.conf hacking script whether /dev/psaux exists
     nopsaux="--nopsaux"
-    test -c /dev/psaux && nopsaux=""
+    case "`uname -r`" in 2.4.*)
+        test -c /dev/psaux && nopsaux="";;
+    esac
     # The video driver to install for X.Org 6.9+
     vboxvideo_src=
     # The mouse driver to install for X.Org 6.9+
@@ -406,7 +408,6 @@ setup()
             vboxvideo_src=vboxvideo_drv.o
             vboxmouse_src=vboxmouse_drv.o
             automouse=""
-            newmouse=""
             ;;
         * )
             echo "Warning: unknown version of the X Window System installed.  Not installing"

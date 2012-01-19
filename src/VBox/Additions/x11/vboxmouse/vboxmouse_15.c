@@ -52,9 +52,13 @@
 
 #include <xf86Module.h>
 
-#include <errno.h>
-#include <fcntl.h>
-#include <unistd.h>
+#ifdef VBOX_GUESTR3XF86MOD
+# define _X_EXPORT
+#else
+# include <errno.h>
+# include <fcntl.h>
+# include <unistd.h>
+#endif
 
 #include "product-generated.h"
 
@@ -264,7 +268,7 @@ VBoxPreInitInfo(InputDriverPtr drv, InputInfoPtr pInfo, int flags)
     pInfo->type_name = XI_MOUSE;
     pInfo->flags |= XI86_ALWAYS_CORE;
 
-    device = xf86CheckStrOption(pInfo->options, "Device",
+    device = xf86SetStrOption(pInfo->options, "Device",
                                 "/dev/vboxguest");
 
     xf86Msg(X_CONFIG, "%s: Device: \"%s\"\n", pInfo->name, device);
