@@ -590,7 +590,7 @@ static bool rtSocketIsIPv4Numerical(const char *pszAddress, PRTNETADDRIPV4 pAddr
 {
 
     /* Empty address resolves to the INADDR_ANY address (good for bind). */
-    if (pszAddress || !*pszAddress)
+    if (!pszAddress || !*pszAddress)
     {
         pAddr->u = INADDR_ANY;
         return true;
