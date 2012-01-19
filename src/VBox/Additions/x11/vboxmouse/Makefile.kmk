@@ -50,7 +50,7 @@ if1of ($(KBUILD_TARGET), linux)
 	$(VBOX_PATH_X11_XFREE_4_3)/programs/Xserver/include \
 	$(PATH_SUB_CURRENT)
  vboxmouse_drv_SOURCES = \
-	vboxmouse_15.c
+	vboxmouse.c
  # Any global symbols in the driver object files will be added to XFree86's
  # symbol table, which can cause problems if we e.g. define a symbol in two
  # modules.
@@ -76,7 +76,7 @@ vboxmouse_drv_70_INCS := \
 	$(VBOX_PATH_X11_XORG_7_0)/xorg \
 	$(PATH_SUB_CURRENT)
 vboxmouse_drv_70_SOURCES = \
-	vboxmouse_15.c
+	vboxmouse.c
 
 
 #
@@ -91,7 +91,7 @@ vboxmouse_drv_71_INCS := \
 	$(VBOX_PATH_X11_XORG_7_1)/xorg \
 	$(PATH_SUB_CURRENT)
 vboxmouse_drv_71_SOURCES = \
-	vboxmouse_15.c
+	vboxmouse.c
 
 
 #
@@ -106,7 +106,7 @@ vboxmouse_drv_13_INCS := \
 	$(VBOX_PATH_X11_ROOT)/xorg-server-1.3.0.0 \
 	$(PATH_SUB_CURRENT)
 vboxmouse_drv_13_SOURCES = \
-	vboxmouse_15.c
+	vboxmouse.c
 
 
 #
@@ -120,7 +120,7 @@ vboxmouse_drv_14_INCS := \
 	$(VBOX_PATH_X11_XORG_1_4)/xorg \
 	$(PATH_SUB_CURRENT)
 vboxmouse_drv_14_SOURCES = \
-	vboxmouse_15.c
+	vboxmouse.c
 
 
 #
@@ -135,7 +135,7 @@ vboxmouse_drv_15_INCS := \
 	$(VBOX_PATH_X11_ROOT)/xorg-server-1.5.3 \
 	$(PATH_SUB_CURRENT)
 vboxmouse_drv_15_SOURCES = \
-	vboxmouse_15.c
+	vboxmouse.c
 
 
 #
@@ -151,7 +151,7 @@ vboxmouse_drv_16_INCS := \
 	$(VBOX_PATH_X11_ROOT)/xorg-server-1.6.0-local \
 	$(PATH_SUB_CURRENT)
 vboxmouse_drv_16_SOURCES = \
-	vboxmouse_15.c
+	vboxmouse.c
 
 
 ifneq ($(KBUILD_TARGET), linux)
@@ -173,7 +173,7 @@ vboxmouse_drv_17_INCS := \
 	$(VBOX_PATH_X11_ROOT)/xproto-7.0.18 \
 	$(PATH_SUB_CURRENT)
 vboxmouse_drv_17_SOURCES = \
-	vboxmouse_15.c
+	vboxmouse.c
 
 
 #
@@ -193,7 +193,7 @@ vboxmouse_drv_18_INCS := \
 	$(VBOX_PATH_X11_ROOT)/xproto-7.0.18 \
 	$(PATH_SUB_CURRENT)
 vboxmouse_drv_18_SOURCES = \
-	vboxmouse_15.c
+	vboxmouse.c
 
 
 #
@@ -213,7 +213,7 @@ vboxmouse_drv_19_INCS := \
 	$(VBOX_PATH_X11_ROOT)/xproto-7.0.18 \
 	$(PATH_SUB_CURRENT)
 vboxmouse_drv_19_SOURCES = \
-	vboxmouse_15.c
+	vboxmouse.c
 
 
 #
@@ -233,7 +233,7 @@ vboxmouse_drv_110_INCS := \
 	$(VBOX_PATH_X11_ROOT)/xproto-7.0.18 \
 	$(PATH_SUB_CURRENT)
 vboxmouse_drv_110_SOURCES = \
-	vboxmouse_15.c
+	vboxmouse.c
 
 endif # neq ($(KBUILD_TARGET),linux)
 
@@ -252,7 +252,7 @@ ifdef VBOX_WITH_TESTCASES
 $$(vboxmouse_drv_0_OUTDIR)/tstvboxmouse68.run: $$(vboxmouse_drv_1_STAGE_TARGET)
 	$(QUIET)$(call MSG_L1,Checking for unresolved symbols in $<)
 	$(QUIET)/bin/sh $(PATH_ROOT)/src/bldprogs/checkUndefined.sh $(KBUILD_TARGET) \
-	    "$(vboxmouse_drv_1_STAGE_TARGET)" "$(VBOXMOUSE_SRC_PATH)/undefined_15" --static
+	    "$(vboxmouse_drv_1_STAGE_TARGET)" "$(VBOXMOUSE_SRC_PATH)/undefined" --static
 	$(QUIET)$(APPEND) -t "$@" "done"
      endif
 
@@ -261,7 +261,7 @@ $$(vboxmouse_drv_0_OUTDIR)/tstvboxmouse68.run: $$(vboxmouse_drv_1_STAGE_TARGET)
 $$(vboxmouse_drv_70_0_OUTDIR)/tstvboxmouse70.run: $$(vboxmouse_drv_70_1_STAGE_TARGET)
 	$(QUIET)$(call MSG_L1,Checking for unresolved symbols in $<)
 	$(QUIET)/bin/sh $(PATH_ROOT)/src/bldprogs/checkUndefined.sh  $(KBUILD_TARGET) \
-	    $(vboxmouse_drv_70_1_STAGE_TARGET) $(VBOXMOUSE_SRC_PATH)/undefined_15
+	    $(vboxmouse_drv_70_1_STAGE_TARGET) $(VBOXMOUSE_SRC_PATH)/undefined
 	$(QUIET)$(APPEND) -t "$@" "done"
 
      TESTING += $(vboxmouse_drv_71_0_OUTDIR)/tstvboxmouse71.run
@@ -269,7 +269,7 @@ $$(vboxmouse_drv_70_0_OUTDIR)/tstvboxmouse70.run: $$(vboxmouse_drv_70_1_STAGE_TA
 $$(vboxmouse_drv_71_0_OUTDIR)/tstvboxmouse71.run: $$(vboxmouse_drv_71_1_STAGE_TARGET)
 	$(QUIET)$(call MSG_L1,Checking for unresolved symbols in $<)
 	$(QUIET)/bin/sh $(PATH_ROOT)/src/bldprogs/checkUndefined.sh $(KBUILD_TARGET)  \
-	    $(vboxmouse_drv_71_1_STAGE_TARGET) $(VBOXMOUSE_SRC_PATH)/undefined_15
+	    $(vboxmouse_drv_71_1_STAGE_TARGET) $(VBOXMOUSE_SRC_PATH)/undefined
 	$(QUIET)$(APPEND) -t "$@" "done"
 
      TESTING += $(vboxmouse_drv_13_0_OUTDIR)/tstvboxmouse13.run
@@ -277,7 +277,7 @@ $$(vboxmouse_drv_71_0_OUTDIR)/tstvboxmouse71.run: $$(vboxmouse_drv_71_1_STAGE_TA
 $$(vboxmouse_drv_13_0_OUTDIR)/tstvboxmouse13.run: $$(vboxmouse_drv_13_1_STAGE_TARGET)
 	$(QUIET)$(call MSG_L1,Checking for unresolved symbols in $<)
 	$(QUIET)/bin/sh $(PATH_ROOT)/src/bldprogs/checkUndefined.sh $(KBUILD_TARGET) \
-	    $(vboxmouse_drv_13_1_STAGE_TARGET) $(VBOXMOUSE_SRC_PATH)/undefined_15
+	    $(vboxmouse_drv_13_1_STAGE_TARGET) $(VBOXMOUSE_SRC_PATH)/undefined
 	$(QUIET)$(APPEND) -t "$@" "done"
 
      TESTING += $(vboxmouse_drv_14_0_OUTDIR)/tstvboxmouse14.run
@@ -285,7 +285,7 @@ $$(vboxmouse_drv_13_0_OUTDIR)/tstvboxmouse13.run: $$(vboxmouse_drv_13_1_STAGE_TA
 $$(vboxmouse_drv_14_0_OUTDIR)/tstvboxmouse14.run: $$(vboxmouse_drv_14_1_STAGE_TARGET)
 	$(QUIET)$(call MSG_L1,Checking for unresolved symbols in $<)
 	$(QUIET)/bin/sh $(PATH_ROOT)/src/bldprogs/checkUndefined.sh $(KBUILD_TARGET) \
-	    $(vboxmouse_drv_14_1_STAGE_TARGET) $(VBOXMOUSE_SRC_PATH)/undefined_15
+	    $(vboxmouse_drv_14_1_STAGE_TARGET) $(VBOXMOUSE_SRC_PATH)/undefined
 	$(QUIET)$(APPEND) -t "$@" "done"
 
      TESTING += $(vboxmouse_drv_15_0_OUTDIR)/tstvboxmouse15.run
@@ -293,7 +293,7 @@ $$(vboxmouse_drv_14_0_OUTDIR)/tstvboxmouse14.run: $$(vboxmouse_drv_14_1_STAGE_TA
 $$(vboxmouse_drv_15_0_OUTDIR)/tstvboxmouse15.run: $$(vboxmouse_drv_15_1_STAGE_TARGET)
 	$(QUIET)$(call MSG_L1,Checking for unresolved symbols in $<)
 	$(QUIET)/bin/sh $(PATH_ROOT)/src/bldprogs/checkUndefined.sh $(KBUILD_TARGET)  \
-	    $(vboxmouse_drv_15_1_STAGE_TARGET) $(VBOXMOUSE_SRC_PATH)/undefined_15
+	    $(vboxmouse_drv_15_1_STAGE_TARGET) $(VBOXMOUSE_SRC_PATH)/undefined
 	$(QUIET)$(APPEND) -t "$@" "done"
 
      TESTING += $(vboxmouse_drv_16_0_OUTDIR)/tstvboxmouse16.run
@@ -301,7 +301,7 @@ $$(vboxmouse_drv_15_0_OUTDIR)/tstvboxmouse15.run: $$(vboxmouse_drv_15_1_STAGE_TA
 $$(vboxmouse_drv_16_0_OUTDIR)/tstvboxmouse16.run: $$(vboxmouse_drv_16_1_STAGE_TARGET)
 	$(QUIET)$(call MSG_L1,Checking for unresolved symbols in $<)
 	$(QUIET)/bin/sh $(PATH_ROOT)/src/bldprogs/checkUndefined.sh $(KBUILD_TARGET)  \
-	    $(vboxmouse_drv_16_1_STAGE_TARGET) $(VBOXMOUSE_SRC_PATH)/undefined_15
+	    $(vboxmouse_drv_16_1_STAGE_TARGET) $(VBOXMOUSE_SRC_PATH)/undefined
 	$(QUIET)$(APPEND) -t "$@" "done"
 
 ifneq ($(KBUILD_TARGET), linux)
@@ -311,7 +311,7 @@ ifneq ($(KBUILD_TARGET), linux)
 $$(vboxmouse_drv_17_0_OUTDIR)/tstvboxmouse17.run: $$(vboxmouse_drv_17_1_STAGE_TARGET)
 	$(QUIET)$(call MSG_L1,Checking for unresolved symbols in $<)
 	$(QUIET)/bin/sh $(PATH_ROOT)/src/bldprogs/checkUndefined.sh $(KBUILD_TARGET)  \
-	    $(vboxmouse_drv_17_1_STAGE_TARGET) $(VBOXMOUSE_SRC_PATH)/undefined_15
+	    $(vboxmouse_drv_17_1_STAGE_TARGET) $(VBOXMOUSE_SRC_PATH)/undefined
 	$(QUIET)$(APPEND) -t "$@" "done"
 
      TESTING += $(vboxmouse_drv_18_0_OUTDIR)/tstvboxmouse18.run
@@ -319,7 +319,7 @@ $$(vboxmouse_drv_17_0_OUTDIR)/tstvboxmouse17.run: $$(vboxmouse_drv_17_1_STAGE_TA
 $$(vboxmouse_drv_18_0_OUTDIR)/tstvboxmouse18.run: $$(vboxmouse_drv_18_1_STAGE_TARGET)
 	$(QUIET)$(call MSG_L1,Checking for unresolved symbols in $<)
 	$(QUIET)/bin/sh $(PATH_ROOT)/src/bldprogs/checkUndefined.sh $(KBUILD_TARGET)  \
-	    $(vboxmouse_drv_18_1_STAGE_TARGET) $(VBOXMOUSE_SRC_PATH)/undefined_15
+	    $(vboxmouse_drv_18_1_STAGE_TARGET) $(VBOXMOUSE_SRC_PATH)/undefined
 	$(QUIET)$(APPEND) -t "$@" "done"
 
      TESTING += $(vboxmouse_drv_19_0_OUTDIR)/tstvboxmouse19.run
@@ -327,7 +327,7 @@ $$(vboxmouse_drv_18_0_OUTDIR)/tstvboxmouse18.run: $$(vboxmouse_drv_18_1_STAGE_TA
 $$(vboxmouse_drv_19_0_OUTDIR)/tstvboxmouse19.run: $$(vboxmouse_drv_19_1_STAGE_TARGET)
 	$(QUIET)$(call MSG_L1,Checking for unresolved symbols in $<)
 	$(QUIET)/bin/sh $(PATH_ROOT)/src/bldprogs/checkUndefined.sh $(KBUILD_TARGET)  \
-	    $(vboxmouse_drv_19_1_STAGE_TARGET) $(VBOXMOUSE_SRC_PATH)/undefined_15
+	    $(vboxmouse_drv_19_1_STAGE_TARGET) $(VBOXMOUSE_SRC_PATH)/undefined
 	$(QUIET)$(APPEND) -t "$@" "done"
 
      TESTING += $(vboxmouse_drv_110_0_OUTDIR)/tstvboxmouse110.run
@@ -335,7 +335,7 @@ $$(vboxmouse_drv_19_0_OUTDIR)/tstvboxmouse19.run: $$(vboxmouse_drv_19_1_STAGE_TA
 $$(vboxmouse_drv_110_0_OUTDIR)/tstvboxmouse110.run: $$(vboxmouse_drv_110_1_STAGE_TARGET)
 	$(QUIET)$(call MSG_L1,Checking for unresolved symbols in $<)
 	$(QUIET)/bin/sh $(PATH_ROOT)/src/bldprogs/checkUndefined.sh $(KBUILD_TARGET)  \
-	    $(vboxmouse_drv_110_1_STAGE_TARGET) $(VBOXMOUSE_SRC_PATH)/undefined_15
+	    $(vboxmouse_drv_110_1_STAGE_TARGET) $(VBOXMOUSE_SRC_PATH)/undefined
 	$(QUIET)$(APPEND) -t "$@" "done"
 
 endif # neq ($(KBUILD_TARGET),linux)
