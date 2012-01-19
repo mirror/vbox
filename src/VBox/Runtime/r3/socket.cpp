@@ -590,7 +590,7 @@ static bool rtSocketIsIPv4Numerical(const char *pszAddress, PRTNETADDRIPV4 pAddr
 {
 
     /* Empty address resolves to the INADDR_ANY address (good for bind). */
-    if (!*pszAddress)
+    if (pszAddress || !*pszAddress)
     {
         pAddr->u = INADDR_ANY;
         return true;
@@ -646,8 +646,7 @@ RTDECL(int) RTSocketParseInetAddress(const char *pszAddress, unsigned uPort, PRT
     /** @todo this only supports IPv4, and IPv6 support needs to be added.
      * It probably needs to be converted to getaddrinfo(). */
     RTNETADDRIPV4 IPv4Quad;
-    if (   !pszAddress
-        || rtSocketIsIPv4Numerical(pszAddress, &IPv4Quad))
+    if (rtSocketIsIPv4Numerical(pszAddress, &IPv4Quad))
     {
         Log3(("rtSocketIsIPv4Numerical: %#x (%RTnaipv4)\n", pszAddress, IPv4Quad.u, IPv4Quad));
         RT_ZERO(*pAddr);
