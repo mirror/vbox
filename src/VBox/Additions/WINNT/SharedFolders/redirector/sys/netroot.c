@@ -175,7 +175,7 @@ NTSTATUS VBoxMRxCreateVNetRoot (IN PMRX_CREATENETROOT_CONTEXT pCreateNetRootCont
     PMRX_SRV_CALL pSrvCall = pNetRoot->pSrvCall;
 
     BOOLEAN fTreeConnectOpen = TRUE; // RxContext->Create.ThisIsATreeConnectOpen;
-    BOOLEAN fInitializeNetRoot;
+    BOOLEAN fInitializeNetRoot = FALSE;
 
     Log(("VBOXSF: VBoxMRxCreateVNetRoot: pNetRoot = %p, fTreeConnectOpen = %d\n", pNetRoot, pRxContext->Create.ThisIsATreeConnectOpen));
 
