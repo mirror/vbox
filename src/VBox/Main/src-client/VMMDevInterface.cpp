@@ -231,7 +231,7 @@ DECLCALLBACK(void) vmmdevUpdateGuestInfo(PPDMIVMMDEVCONNECTOR pInterface, const 
          * or driver unload.
          */
         guest->setAdditionsInfo(Bstr(), guestInfo->osType); /* Clear interface version + OS type. */
-        guest->setAdditionsInfo2(Bstr(), Bstr(), Bstr()); /* Clear Guest Additions version. */
+        guest->setAdditionsInfo2("", "", 0); /* Clear Guest Additions version. */
         guest->setAdditionsStatus(VBoxGuestFacilityType_All,
                                   VBoxGuestFacilityStatus_Inactive,
                                   0); /* Flags; not used. */
@@ -244,34 +244,33 @@ DECLCALLBACK(void) vmmdevUpdateGuestInfo(PPDMIVMMDEVCONNECTOR pInterface, const 
  * Called whenever the Additions issue a guest version report request or the VM is reset.
  *
  * @param   pInterface          Pointer to this interface.
- * @param   guestInfo           Pointer to Guest Additions information structure.
+ * @param   pGuestInfo          Pointer to Guest Additions information
+ *                              structure.
  * @thread  The emulation thread.
  */
-DECLCALLBACK(void) vmmdevUpdateGuestInfo2(PPDMIVMMDEVCONNECTOR pInterface, const VBoxGuestInfo2 *guestInfo)
+DECLCALLBACK(void) vmmdevUpdateGuestInfo2(PPDMIVMMDEVCONNECTOR pInterface, const VBoxGuestInfo2 *pGuestInfo)
 {
     PDRVMAINVMMDEV pDrv = PDMIVMMDEVCONNECTOR_2_MAINVMMDEV(pInterface);
-
-    Assert(guestInfo);
-    if (!guestInfo)
-        return;
+    AssertPtr(pGuestInfo);
 
     /* Store that information in IGuest. */
-    Guest* guest = pDrv->pVMMDev->getParent()->getGuest();
-    Assert(guest);
-    if (!guest)
+    Guest *pGuest = pDrv->pVMMDev->getParent()->getGuest();
+    Assert(pGuest);
+    if (!pGuest)
         return;
 
-    if (   guestInfo->additionsMajor    != 0
-        && guestInfo->additionsRevision != 0)
+    if (   pGuestInfo->additionsMajor    != 0
+        && pGuestInfo->additionsRevision != 0)
     {
-        char version[32];
-        RTStrPrintf(version, sizeof(version), "%d.%d.%dr%ld", guestInfo->additionsMajor,
-                                                              guestInfo->additionsMinor,
-                                                              guestInfo->additionsBuild,
-                                                              guestInfo->additionsRevision);
-        char revision[16];
-        RTStrPrintf(revision, sizeof(revision), "%ld", guestInfo->additionsRevision);
-        guest->setAdditionsInfo2(Bstr(version), Bstr(guestInfo->szName), Bstr(revision));
+        /** @todo r=bird: See comments on space before 'r' in setAdditionsInfo2! */
+        char szVersion[32];
+        RTStrPrintf(szVersion, sizeof(szVersion), "%d.%d.%dr%ld",
+                    pGuestInfo->additionsMajor,
+                    pGuestInfo->additionsMinor,
+                    pGuestInfo->additionsBuild,
+                    pGuestInfo->additionsRevision);
+
+        pGuest->setAdditionsInfo2(szVersion, pGuestInfo->szName, pGuestInfo->additionsRevision);
 
         /*
          * No need to tell the console interface about the update;
