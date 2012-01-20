@@ -159,8 +159,7 @@ static int handleSetGuestProperty(HandlerArg *a)
         a->session->COMGETTER(Machine)(machine.asOutParam());
 
         if (!pszValue && !pszFlags)
-            CHECK_ERROR(machine, SetGuestPropertyValue(Bstr(pszName).raw(),
-                                                       Bstr().raw()));
+            CHECK_ERROR(machine, DeleteGuestProperty(Bstr(pszName).raw()));
         else if (!pszFlags)
             CHECK_ERROR(machine, SetGuestPropertyValue(Bstr(pszName).raw(),
                                                        Bstr(pszValue).raw()));

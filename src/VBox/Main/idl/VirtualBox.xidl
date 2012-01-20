@@ -5885,6 +5885,22 @@
       </param>
     </method>
 
+    <method name="deleteGuestProperty" const="yes">
+      <desc>
+        Deletes an entry from the machine's guest property store.
+
+        <result name="VBOX_E_INVALID_VM_STATE">
+          Machine session is not open.
+        </result>
+
+      </desc>
+      <param name="name" type="wstring" dir="in">
+        <desc>
+          The name of the property to delete.
+        </desc>
+      </param>
+    </method>
+
     <method name="enumerateGuestProperties" const="yes">
       <desc>
         Return a list of the guest properties matching a set of patterns along
