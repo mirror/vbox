@@ -495,58 +495,44 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
          */
         case VMMDevReq_ReportGuestInfo:
         {
-            if (pRequestHeader->size != sizeof(VMMDevReportGuestInfo))
+            AssertMsgBreakStmt(pRequestHeader->size == sizeof(VMMDevReportGuestInfo), ("%u\n", pRequestHeader->size),
+                               pRequestHeader->rc = VERR_INVALID_PARAMETER);
+            VBoxGuestInfo *pGuestInfo = &((VMMDevReportGuestInfo*)pRequestHeader)->guestInfo;
+
+            if (memcmp(&pThis->guestInfo, pGuestInfo, sizeof(*pGuestInfo)) != 0)
             {
-                AssertMsgFailed(("VMMDev guest information structure has an invalid size!\n"));
-                pRequestHeader->rc = VERR_INVALID_PARAMETER;
+                /* make a copy of supplied information */
+                pThis->guestInfo = *pGuestInfo;
+
+                /* Check additions version */
+                pThis->fu32AdditionsOk = VBOX_GUEST_INTERFACE_VERSION_OK(pThis->guestInfo.interfaceVersion);
+
+                LogRel(("Guest Additions information report: Interface = 0x%08X osType = 0x%08X\n",
+                        pThis->guestInfo.interfaceVersion,
+                        pThis->guestInfo.osType));
+                pThis->pDrv->pfnUpdateGuestInfo(pThis->pDrv, &pThis->guestInfo);
             }
+
+            if (pThis->fu32AdditionsOk)
+                pRequestHeader->rc = VINF_SUCCESS;
             else
-            {
-                VBoxGuestInfo *guestInfo = &((VMMDevReportGuestInfo*)pRequestHeader)->guestInfo;
-
-                if (memcmp (&pThis->guestInfo, guestInfo, sizeof(*guestInfo)) != 0)
-                {
-                    /* make a copy of supplied information */
-                    pThis->guestInfo = *guestInfo;
-
-                    /* Check additions version */
-                    pThis->fu32AdditionsOk = VBOX_GUEST_INTERFACE_VERSION_OK(pThis->guestInfo.interfaceVersion);
-
-                    LogRel(("Guest Additions information report: Interface = 0x%08X osType = 0x%08X\n",
-                            pThis->guestInfo.interfaceVersion,
-                            pThis->guestInfo.osType));
-                    pThis->pDrv->pfnUpdateGuestInfo(pThis->pDrv, &pThis->guestInfo);
-                }
-
-                if (pThis->fu32AdditionsOk)
-                {
-                    pRequestHeader->rc = VINF_SUCCESS;
-                }
-                else
-                {
-                    pRequestHeader->rc = VERR_VERSION_MISMATCH;
-                }
-            }
+                pRequestHeader->rc = VERR_VERSION_MISMATCH;
             break;
         }
 
         case VMMDevReq_ReportGuestInfo2:
         {
-            if (pRequestHeader->size != sizeof(VMMDevReportGuestInfo2))
-            {
-                AssertMsgFailed(("VMMDev guest information 2 structure has an invalid size!\n"));
-                pRequestHeader->rc = VERR_INVALID_PARAMETER;
-            }
-            else
-            {
-                VBoxGuestInfo2 *pGuestInfo2 = &((VMMDevReportGuestInfo2*)pRequestHeader)->guestInfo;
-                AssertPtr(pGuestInfo2);
-                LogRel(("Guest Additions information report: Version %d.%d.%d r%d '%.*s'\n",
-                        pGuestInfo2->additionsMajor, pGuestInfo2->additionsMinor, pGuestInfo2->additionsBuild,
-                        pGuestInfo2->additionsRevision, sizeof(pGuestInfo2->szName), pGuestInfo2->szName));
-                pThis->pDrv->pfnUpdateGuestInfo2(pThis->pDrv, pGuestInfo2);
-                pRequestHeader->rc = VINF_SUCCESS;
-            }
+            AssertMsgBreakStmt(pRequestHeader->size == sizeof(VMMDevReportGuestInfo2), ("%u\n", pRequestHeader->size),
+                               pRequestHeader->rc = VERR_INVALID_PARAMETER);
+            VBoxGuestInfo2 *pGuestInfo2 = &((VMMDevReportGuestInfo2 *)pRequestHeader)->guestInfo;
+            LogRel(("Guest Additions information report: Version %d.%d.%d r%d '%.*s'\n",
+                    pGuestInfo2->additionsMajor, pGuestInfo2->additionsMinor, pGuestInfo2->additionsBuild,
+                    pGuestInfo2->additionsRevision, sizeof(pGuestInfo2->szName), pGuestInfo2->szName));
+            AssertBreakStmt(memchr(pGuestInfo2->szName, '\0', sizeof(pGuestInfo2->szName)) != NULL,
+                            pRequestHeader->rc = VERR_INVALID_PARAMETER);
+
+            pThis->pDrv->pfnUpdateGuestInfo2(pThis->pDrv, pGuestInfo2);
+            pRequestHeader->rc = VINF_SUCCESS;
             break;
         }
 
