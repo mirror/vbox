@@ -672,7 +672,15 @@ typedef struct VBoxGuestInfo2
     uint32_t additionsRevision;
     /** Feature mask, currently unused. */
     uint32_t additionsFeatures;
-    /** Some additional information, for example 'Beta 1' or something like that. */
+    /** The intentional meaning of this field was:
+     * Some additional information, for example 'Beta 1' or something like that.
+     *
+     * The way it was implemented was implemented: VBOX_VERSION_STRING.
+     *
+     * This means the first three members are duplicated in this field (if the guest
+     * build config is sane). So, the user must check this and chop it off before
+     * usage.  There is, because of the Main code's blind trust in the field's
+     * content, no way back. */
     char     szName[128];
 } VBoxGuestInfo2;
 AssertCompileSize(VBoxGuestInfo2, 144);
