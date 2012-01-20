@@ -230,7 +230,7 @@ void SERVER_DISPATCH_APIENTRY
 crServerDispatchMakeCurrent( GLint window, GLint nativeWindow, GLint context )
 {
     CRMuralInfo *mural, *oldMural;
-    CRContext *ctx;
+    CRContext *ctx, *oldCtx;
 
     if (context >= 0 && window >= 0) {
         mural = (CRMuralInfo *) crHashtableSearch(cr_server.muralTable, window);
@@ -266,6 +266,13 @@ crServerDispatchMakeCurrent( GLint window, GLint nativeWindow, GLint context )
         mural = NULL;
         return;
     }
+
+    /* Ubuntu 11.04 hosts misbehave if context window switch is
+     * done with non-default framebuffer object settings.
+     * crStateSwichPrepare & crStateSwichPostprocess are supposed to work around this problem
+     * crStateSwichPrepare restores the FBO state to its default values before the context window switch,
+     * while crStateSwichPostprocess restores it back to the original values */
+    oldCtx = crStateSwichPrepare(ctx);
 
     /*
     crDebug("**** %s client %d  curCtx=%d curWin=%d", __func__,
@@ -324,6 +331,8 @@ crServerDispatchMakeCurrent( GLint window, GLint nativeWindow, GLint context )
 
     /* This used to be earlier, after crStateUpdateColorBits() call */
     crStateMakeCurrent( ctx );
+
+    crStateSwichPostprocess(oldCtx);
 
     if (oldMural != mural && crServerSupportRedirMuralFBO())
     {

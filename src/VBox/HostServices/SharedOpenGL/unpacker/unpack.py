@@ -226,6 +226,10 @@ void crUnpack( const void *data, const void *opcodes,
 
     for (i = 0 ; i < num_opcodes ; i++)
     {
+    
+        CRDBGPTR_CHECKZ(writeback_ptr);
+        CRDBGPTR_CHECKZ(return_ptr);
+    
         /*crDebug(\"Unpacking opcode \%d\", *unpack_opcodes);*/
         switch( *unpack_opcodes )
         {"""
@@ -262,6 +266,10 @@ print """
                 crError( "Unknown opcode: %d", *unpack_opcodes );
                 break;
         }
+        
+        CRDBGPTR_CHECKZ(writeback_ptr);
+        CRDBGPTR_CHECKZ(return_ptr);
+        
         unpack_opcodes--;
     }
 }"""

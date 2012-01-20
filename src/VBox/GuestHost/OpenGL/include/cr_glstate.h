@@ -206,6 +206,9 @@ DECLEXPORT(void) crStateSetCurrent(CRContext *ctx);
 DECLEXPORT(CRContext *) crStateGetCurrent(void);
 DECLEXPORT(void) crStateDestroyContext(CRContext *ctx);
 
+CRContext * crStateSwichPrepare(CRContext *toCtx);
+void crStateSwichPostprocess(CRContext *fromCtx);
+
 DECLEXPORT(void) crStateFlushFunc( CRStateFlushFunc ff );
 DECLEXPORT(void) crStateFlushArg( void *arg );
 DECLEXPORT(void) crStateDiffAPI( SPUDispatchTable *api );
