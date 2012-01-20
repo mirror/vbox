@@ -3192,16 +3192,6 @@ static HRESULT vboxWddmGetD3D9Caps(PVBOXWDDMDISP_ADAPTER pAdapter, D3DCAPS9 *pCa
         return hr;
     }
 
-#if 0
-    pCaps->RasterCaps |= D3DPRASTERCAPS_FOGRANGE;
-    pCaps->MaxTextureWidth = 8192; // 4096
-    pCaps->MaxTextureHeight = 8192; // 4096
-    pCaps->MaxVolumeExtent = 2048; // 512
-    pCaps->MaxTextureAspectRatio = 8192; // 4096
-    pCaps->MaxUserClipPlanes = 8; // 6
-    pCaps->MaxPointSize = 63.000000; // 64.000000
-#endif
-
     vboxDispDumpD3DCAPS9(pCaps);
 
     return S_OK;
