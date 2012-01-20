@@ -884,6 +884,26 @@ static void quirk_fullsize_blit(struct wined3d_gl_info *gl_info)
     gl_info->quirks |= WINED3D_QUIRK_FULLSIZE_BLIT;
 }
 
+#ifdef VBOX_WITH_WDDM
+static BOOL match_mesa_nvidia(const struct wined3d_gl_info *gl_info, const char *gl_renderer,
+        enum wined3d_gl_vendor gl_vendor, enum wined3d_pci_vendor card_vendor, enum wined3d_pci_device device)
+{
+    if (card_vendor != HW_VENDOR_NVIDIA) return FALSE;
+    if (gl_vendor != GL_VENDOR_MESA) return FALSE;
+    return TRUE;
+}
+
+static void quirk_no_shader_3(struct wined3d_gl_info *gl_info)
+{
+    int vs_selected_mode, ps_selected_mode;
+    select_shader_mode(gl_info, &ps_selected_mode, &vs_selected_mode);
+    if (vs_selected_mode != SHADER_GLSL && ps_selected_mode != SHADER_GLSL)
+        return;
+
+    gl_info->limits.arb_ps_instructions = 512;
+}
+#endif
+
 struct driver_quirk
 {
     BOOL (*match)(const struct wined3d_gl_info *gl_info, const char *gl_renderer,
@@ -973,6 +993,13 @@ static const struct driver_quirk quirk_table[] =
         quirk_fullsize_blit,
         "Fullsize blit"
     },
+#ifdef VBOX_WITH_WDDM
+    {
+            match_mesa_nvidia,
+            quirk_no_shader_3,
+            "disable shader 3 support"
+    },
+#endif
 };
 
 /* Certain applications (Steam) complain if we report an outdated driver version. In general,
@@ -1942,7 +1969,12 @@ static enum wined3d_pci_device select_card_nvidia_mesa(const struct wined3d_gl_i
         const char *gl_renderer, unsigned int *vidmem)
 {
     FIXME_(d3d_caps)("Card selection not handled for Mesa Nouveau driver\n");
+#ifndef VBOX_WITH_WDDM
     if (WINE_D3D9_CAPABLE(gl_info)) return CARD_NVIDIA_GEFORCEFX_5600;
+#else
+    /* tmp work around to disable quirk_no_np2 quirk for mesa drivers */
+    if (WINE_D3D9_CAPABLE(gl_info)) return CARD_NVIDIA_GEFORCE_6200;
+#endif
     if (WINE_D3D8_CAPABLE(gl_info)) return CARD_NVIDIA_GEFORCE3;
     if (WINE_D3D7_CAPABLE(gl_info)) return CARD_NVIDIA_GEFORCE;
     if (WINE_D3D6_CAPABLE(gl_info)) return CARD_NVIDIA_RIVA_TNT;
@@ -2055,7 +2087,13 @@ static enum wined3d_pci_device wined3d_guess_card(const struct wined3d_gl_info *
      * for Nvidia was because the hardware and drivers they make are of good quality. This makes
      * them a good generic choice. */
     *card_vendor = HW_VENDOR_NVIDIA;
+#ifndef VBOX_WITH_WDDM
     if (WINE_D3D9_CAPABLE(gl_info)) return CARD_NVIDIA_GEFORCEFX_5600;
+#else
+    /* tmp work around to disable quirk_no_np2 quirk for not-recognized drivers */
+    if (WINE_D3D9_CAPABLE(gl_info)) return CARD_NVIDIA_GEFORCE_6200;
+#endif
+
     if (WINE_D3D8_CAPABLE(gl_info)) return CARD_NVIDIA_GEFORCE3;
     if (WINE_D3D7_CAPABLE(gl_info)) return CARD_NVIDIA_GEFORCE;
     if (WINE_D3D6_CAPABLE(gl_info)) return CARD_NVIDIA_RIVA_TNT;

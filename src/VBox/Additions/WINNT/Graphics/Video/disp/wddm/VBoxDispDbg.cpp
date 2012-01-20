@@ -59,6 +59,9 @@ DWORD g_VBoxVDbgFDumpFlush = VBOXWDDMDISP_DEBUG_DUMP_DEFAULT;
 DWORD g_VBoxVDbgFDumpShared = VBOXWDDMDISP_DEBUG_DUMP_DEFAULT;
 DWORD g_VBoxVDbgFDumpLock = VBOXWDDMDISP_DEBUG_DUMP_DEFAULT;
 DWORD g_VBoxVDbgFDumpUnlock = VBOXWDDMDISP_DEBUG_DUMP_DEFAULT;
+DWORD g_VBoxVDbgFDumpPresentEnter = VBOXWDDMDISP_DEBUG_DUMP_DEFAULT;
+DWORD g_VBoxVDbgFDumpPresentLeave = VBOXWDDMDISP_DEBUG_DUMP_DEFAULT;
+DWORD g_VBoxVDbgFDumpScSync = VBOXWDDMDISP_DEBUG_DUMP_DEFAULT;
 
 DWORD g_VBoxVDbgFBreakShared = VBOXWDDMDISP_DEBUG_DUMP_DEFAULT;
 DWORD g_VBoxVDbgFBreakDdi = 0;
@@ -66,6 +69,7 @@ DWORD g_VBoxVDbgFBreakDdi = 0;
 DWORD g_VBoxVDbgFCheckSysMemSync = 0;
 DWORD g_VBoxVDbgFCheckBlt = 0;
 DWORD g_VBoxVDbgFCheckTexBlt = 0;
+DWORD g_VBoxVDbgFCheckScSync = 0;
 
 DWORD g_VBoxVDbgFSkipCheckTexBltDwmWndUpdate = 1;
 
@@ -79,6 +83,14 @@ char g_VBoxVDbgModuleName[MAX_PATH];
 LONG g_VBoxVDbgFIsDwm = -1;
 
 DWORD g_VBoxVDbgPid = 0;
+
+DWORD g_VBoxVDbgCfgMaxDirectRts = 0;
+DWORD g_VBoxVDbgCfgForceDummyDevCreate = 0;
+
+PVBOXWDDMDISP_DEVICE g_VBoxVDbgInternalDevice = NULL;
+PVBOXWDDMDISP_RESOURCE g_VBoxVDbgInternalRc = NULL;
+
+DWORD g_VBoxVDbgCfgCreateSwapchainOnDdiOnce = 0;
 
 void vboxDispLogDbgPrintF(char * szString, ...)
 {
@@ -231,6 +243,37 @@ VOID vboxVDbgDoDumpSurf(const char * pPrefix, IDirect3DSurface9 *pSurf, const ch
 {
     vboxVDbgDoDumpSurfRect(pPrefix, pSurf, NULL, pSuffix, true);
 }
+
+VOID vboxVDbgDoDumpBb(const char * pPrefix, IDirect3DSwapChain9 *pSwapchainIf, const char * pSuffix)
+{
+    IDirect3DSurface9 *pBb = NULL;
+    HRESULT hr = pSwapchainIf->GetBackBuffer(0, D3DBACKBUFFER_TYPE_MONO, &pBb);
+    Assert(hr == S_OK);
+    if (FAILED(hr))
+    {
+        return;
+    }
+
+    Assert(pBb);
+    vboxVDbgDoDumpSurf(pPrefix, pBb, pSuffix);
+    pBb->Release();
+}
+
+VOID vboxVDbgDoDumpFb(const char * pPrefix, IDirect3DSwapChain9 *pSwapchainIf, const char * pSuffix)
+{
+    IDirect3DSurface9 *pBb = NULL;
+    HRESULT hr = pSwapchainIf->GetBackBuffer(-1, D3DBACKBUFFER_TYPE_MONO, &pBb);
+    Assert(hr == S_OK);
+    if (FAILED(hr))
+    {
+        return;
+    }
+
+    Assert(pBb);
+    vboxVDbgDoDumpSurf(pPrefix, pBb, pSuffix);
+    pBb->Release();
+}
+
 
 #define VBOXVDBG_STRCASE(_t) \
         case _t: return #_t;

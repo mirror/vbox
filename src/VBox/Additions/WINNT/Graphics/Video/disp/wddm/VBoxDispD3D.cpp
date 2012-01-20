@@ -107,7 +107,8 @@ static VBoxDispProfileFpsCounter g_VBoxDispFpsDDI(64);
  * NOP in release */
 #define VBOXDISP_DDI_PROLOGUE() \
     VBOXVDBG_BREAK_DDI(); \
-    VBOXDISPPROFILE_FUNCTION_DDI_PROLOGUE();
+    VBOXDISPPROFILE_FUNCTION_DDI_PROLOGUE(); \
+    VBOXVDBG_CREATE_CHECK_SWAPCHAIN();
 
 #ifdef VBOXDISPMP_TEST
 HRESULT vboxDispMpTstStart();
@@ -2196,8 +2197,8 @@ static HRESULT vboxWddmSwapchainRtSynch(PVBOXWDDMDISP_DEVICE pDevice, PVBOXWDDMD
                     /* @todo: we can not generally update the render target directly, implement */
                     Assert(iBb != (~0));
 #endif
-                    hr = pDevice->pDevice9If->StretchRect(pD3D9OldSurf, NULL, pD3D9Surf, NULL, D3DTEXF_NONE);
-                    Assert(hr == S_OK);
+                    VBOXVDBG_CHECK_SWAPCHAIN_SYNC(hr = pDevice->pDevice9If->StretchRect(pD3D9OldSurf, NULL, pD3D9Surf, NULL, D3DTEXF_NONE); Assert(hr == S_OK),
+                            pAlloc, pD3D9OldSurf, NULL, pAlloc, pD3D9Surf, NULL);
                 }
             }
 
@@ -2255,7 +2256,9 @@ static HRESULT vboxWddmSwapchainRtSynch(PVBOXWDDMDISP_DEVICE pDevice, PVBOXWDDMD
             VBOXVDBG_DUMP_SYNC_RT(pD3D9Bb);
             pSwapchain->bRTFbCopyUpToDate = TRUE;
 # ifndef VBOX_WINE_WITH_FAST_INTERSWAPCHAIN_BLT
-            tmpHr = pDevice->pDevice9If->StretchRect(pD3D9Bb, NULL, (IDirect3DSurface9*)vboxWddmSwapchainGetBb(pSwapchain)->pAlloc->pD3DIf, NULL, D3DTEXF_NONE);
+            VBOXVDBG_CHECK_SWAPCHAIN_SYNC(tmpHr = pDevice->pDevice9If->StretchRect(pD3D9Bb, NULL, (IDirect3DSurface9*)vboxWddmSwapchainGetBb(pSwapchain)->pAlloc->pD3DIf, NULL, D3DTEXF_NONE); Assert(tmpHr == S_OK),
+                    pAlloc, pD3D9Bb, NULL, pAlloc, (IDirect3DSurface9*)vboxWddmSwapchainGetBb(pSwapchain)->pAlloc->pD3DIf, NULL);
+
             if (FAILED(tmpHr))
             {
                 WARN(("StretchRect failed, hr (0x%x)", tmpHr));
@@ -2340,7 +2343,10 @@ static HRESULT vboxWddmSwapchainSwtichOffscreenRt(PVBOXWDDMDISP_DEVICE pDevice, 
         PVBOXWDDMDISP_RENDERTGT pRT = &pSwapchain->aRTs[i];
         if (pRT->pAlloc->enmD3DIfType != VBOXDISP_D3DIFTYPE_SURFACE)
             continue;
-        BOOL fHasSurf = !!pRT->pAlloc->pRc->aAllocations[0].pD3DIf;
+        BOOL fHasSurf = pRT->pAlloc->enmD3DIfType == VBOXDISP_D3DIFTYPE_SURFACE ?
+                !!pRT->pAlloc->pRc->aAllocations[i].pD3DIf
+                :
+                !!pRT->pAlloc->pRc->aAllocations[0].pD3DIf;
         if (!fForceCreate && !fHasSurf)
             continue;
 
@@ -2394,8 +2400,8 @@ static HRESULT vboxWddmSwapchainSwtichOffscreenRt(PVBOXWDDMDISP_DEVICE pDevice, 
         {
             if (pD3D9OldSurf != pD3D9OldFb)
             {
-                hr = pDevice9If->StretchRect(pD3D9OldSurf, NULL, pD3D9NewSurf, NULL, D3DTEXF_NONE);
-                Assert(hr == S_OK);
+                VBOXVDBG_CHECK_SWAPCHAIN_SYNC(hr = pDevice9If->StretchRect(pD3D9OldSurf, NULL, pD3D9NewSurf, NULL, D3DTEXF_NONE); Assert(hr == S_OK),
+                        pRT->pAlloc, pD3D9OldSurf, NULL, pRT->pAlloc, pD3D9NewSurf, NULL);
             }
             else
             {
@@ -2409,6 +2415,8 @@ static HRESULT vboxWddmSwapchainSwtichOffscreenRt(PVBOXWDDMDISP_DEVICE pDevice, 
                 pD3D9OldSurf->Release();
             break;
         }
+
+        Assert(pRT->pAlloc->enmD3DIfType == VBOXDISP_D3DIFTYPE_SURFACE);
 
         if (pRT->pAlloc->pD3DIf)
             pRT->pAlloc->pD3DIf->Release();
@@ -2886,6 +2894,9 @@ static HRESULT vboxWddmSwapchainRtSurfGet(PVBOXWDDMDISP_DEVICE pDevice, PVBOXWDD
 static HRESULT vboxWddmSwapchainPresentPerform(PVBOXWDDMDISP_DEVICE pDevice, PVBOXWDDMDISP_SWAPCHAIN pSwapchain)
 {
     HRESULT hr;
+
+    VBOXVDBG_DUMP_PRESENT_ENTER(pDevice, pSwapchain);
+
     if (!pSwapchain->fFlags.bRtReportingPresent)
     {
         hr = pSwapchain->pSwapChainIf->Present(NULL, NULL, NULL, NULL, 0);
@@ -2907,6 +2918,8 @@ static HRESULT vboxWddmSwapchainPresentPerform(PVBOXWDDMDISP_DEVICE pDevice, PVB
         if (FAILED(hr))
             return hr;
     }
+
+    VBOXVDBG_DUMP_PRESENT_LEAVE(pDevice, pSwapchain);
 
     pSwapchain->bRTFbCopyUpToDate = FALSE;
     vboxWddmSwapchainFlip(pSwapchain);
@@ -3043,6 +3056,11 @@ DECLINLINE(IDirect3DDevice9*) vboxWddmD3DDeviceGet(PVBOXWDDMDISP_DEVICE pDevice)
 {
     if (pDevice->pDevice9If)
         return pDevice->pDevice9If;
+
+#ifdef VBOXWDDMDISP_DEBUG
+    g_VBoxVDbgInternalDevice = pDevice;
+#endif
+
     HRESULT hr = vboxWddmD3DDeviceCreateDummy(pDevice);
     Assert(hr == S_OK);
     Assert(pDevice->pDevice9If);
@@ -3173,6 +3191,16 @@ static HRESULT vboxWddmGetD3D9Caps(PVBOXWDDMDISP_ADAPTER pAdapter, D3DCAPS9 *pCa
         WARN(("GetDeviceCaps failed hr(0x%x)",hr));
         return hr;
     }
+
+#if 0
+    pCaps->RasterCaps |= D3DPRASTERCAPS_FOGRANGE;
+    pCaps->MaxTextureWidth = 8192; // 4096
+    pCaps->MaxTextureHeight = 8192; // 4096
+    pCaps->MaxVolumeExtent = 2048; // 512
+    pCaps->MaxTextureAspectRatio = 8192; // 4096
+    pCaps->MaxUserClipPlanes = 8; // 6
+    pCaps->MaxPointSize = 63.000000; // 64.000000
+#endif
 
     vboxDispDumpD3DCAPS9(pCaps);
 
@@ -5337,6 +5365,16 @@ static HRESULT APIENTRY vboxWddmDDevCreateResource(HANDLE hDevice, D3DDDIARG_CRE
             HWND hWnd = NULL;
             bIssueCreateResource = true;
             Assert(pResource->SurfCount);
+
+#ifdef VBOXWDDMDISP_DEBUG
+            if (g_VBoxVDbgCfgForceDummyDevCreate)
+            {
+                VBOXDISP_D3DEV(pDevice);
+                Assert(!RTListIsEmpty(&pDevice->SwapchainList));
+                g_VBoxVDbgInternalRc = pRc;
+            }
+#endif
+
             if (RTListIsEmpty(&pDevice->SwapchainList))
             {
                 bCreateSwapchain = true;
@@ -5545,6 +5583,10 @@ static HRESULT APIENTRY vboxWddmDDevCreateResource(HANDLE hDevice, D3DDDIARG_CRE
                     PVBOXWDDMDISP_SWAPCHAIN pSwapchain;
                     hr = vboxWddmSwapchainCreateIfForRc(pDevice, pRc, &pSwapchain);
                     Assert(hr == S_OK);
+                }
+                else
+                {
+                    VBOXVDBG_CREATE_CHECK_SWAPCHAIN();
                 }
             }
 
@@ -7322,6 +7364,21 @@ HRESULT APIENTRY OpenAdapter(__inout D3DDDIARG_OPENADAPTER*  pOpenData)
     VBOXDISP_DDI_PROLOGUE();
 
     vboxVDbgPrint(("==> "__FUNCTION__"\n"));
+
+#ifdef DEBUG_misha
+    DWORD dwVersion = 0;
+    DWORD dwMajorVersion = 0;
+    DWORD dwMinorVersion = 0;
+    dwVersion = GetVersion();
+    dwMajorVersion = (DWORD)(LOBYTE(LOWORD(dwVersion)));
+    dwMinorVersion = (DWORD)(HIBYTE(LOWORD(dwVersion)));
+
+    if (dwMajorVersion == 6 && dwMinorVersion <= 1 && VBOXVDBG_IS_DWM())
+    {
+        exit(0);
+        return E_FAIL;
+    }
+#endif
 
 //    vboxDispLock();
 
