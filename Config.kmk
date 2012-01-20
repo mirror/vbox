@@ -2733,14 +2733,11 @@ ifdef VBOX_WITH_RAW_MODE
   TEMPLATE_VBoxRcExe_LDFLAGS.strict = -g
   TEMPLATE_VBoxRcExe_LDFLAGS.release = -g
   if1of ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH), freebsd.amd64)
-   # The FreeBSD port of gcc isn't picking up -m32 where it should. the .o order below isn't
-   # quite right (target source comes first), if it stops working we'll have to write a linker tool.
+   # The FreeBSD port of gcc isn't picking up -m32 where it should.
    TEMPLATE_VBoxRcExe_DEFS.$(KBUILD_TARGET)    = $(TEMPLATE_VBoxRc_DEFS.$(KBUILD_TARGET))    IPRT_DONT_USE_SYSTEM_STDINT_H
-   TEMPLATE_VBoxRcExe_LDFLAGS.$(KBUILD_TARGET) = $(TEMPLATE_VBoxRc_LDFLAGS.$(KBUILD_TARGET)) -nostdlib -v
-   TEMPLATE_VBoxRcExe_SOURCES.$(KBUILD_TARGET) = /usr/lib32/crtend.o /usr/lib32/crtn.o
-   TEMPLATE_VBoxRcExe_SOURCES                  =	/usr/lib32/crt1.o /usr/lib32/crti.o /usr/lib32/crtbegin.o
+   TEMPLATE_VBoxRcExe_LDFLAGS.$(KBUILD_TARGET) = /usr/lib32/crt1.o /usr/lib32/crti.o /usr/lib32/crtbegin.o $(TEMPLATE_VBoxRc_LDFLAGS.$(KBUILD_TARGET)) -nostdlib -v
    TEMPLATE_VBoxRcExe_LIBPATH.$(KBUILD_TARGET) = /usr/lib32
-   TEMPLATE_VBoxRcExe_LIBS.$(KBUILD_TARGET)    = /usr/lib32/libc.so
+   TEMPLATE_VBoxRcExe_LIBS.$(KBUILD_TARGET)    = /usr/lib32/crtend.o /usr/lib32/crtn.o /usr/lib32/libc.so
   endif
  endif
 
