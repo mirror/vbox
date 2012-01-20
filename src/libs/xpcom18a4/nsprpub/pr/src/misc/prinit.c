@@ -680,7 +680,7 @@ PR_IMPLEMENT(PRFileDesc *) PR_GetInheritedFD(
 
     ptr = envVar;
     while (1) {
-        if ((ptr[len] == ':') && (strncmp(ptr, name, len) == 0)) {
+        if ((strncmp(ptr, name, len) == 0) && (ptr[len] == ':')) {
             ptr += len + 1;
             PR_sscanf(ptr, "%d:0x%lx", &fileType, &osfd);
             switch ((PRDescType)fileType) {
