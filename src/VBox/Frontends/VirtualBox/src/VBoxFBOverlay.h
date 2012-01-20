@@ -40,6 +40,10 @@
 # define VBOXVHWA_PROFILE_FPS
 #endif
 
+#ifdef VBOXVHWA_PROFILE_FPS
+# include <iprt/stream.h>
+#endif
+
 #ifdef DEBUG
 class VBoxVHWADbgTimer
 {
@@ -1564,7 +1568,7 @@ public:
             double fps = mFPSCounter.fps();
             if(!(mFPSCounter.frames() % 31))
             {
-                printf("fps: %f\n", fps);
+                RTPrintf("fps: %f\n", fps);
             }
             mbNewFrame = false;
         }

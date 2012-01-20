@@ -18,7 +18,7 @@
 #ifndef __VBoxFBOverlayCommon_h__
 #define __VBoxFBOverlayCommon_h__
 
-#if defined(DEBUG_misha)
+#if 0 //defined(DEBUG_misha)
 DECLINLINE(VOID) vboxDbgPrintF(LPCSTR szString, ...)
 {
     char szBuffer[4096] = {0};
