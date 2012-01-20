@@ -203,9 +203,10 @@ STDMETHODIMP Guest::COMGETTER(AdditionsVersion) (BSTR *aAdditionsVersion)
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     HRESULT hr = S_OK;
-    if (   mData.mAdditionsVersion.isEmpty()
-        /* Only try alternative way if GA are active! */
-        && mData.mAdditionsRunLevel > AdditionsRunLevelType_None)
+    if (   !mData.mAdditionsVersion.isEmpty()
+        || !mData.mAdditionsRunLevel > AdditionsRunLevelType_None)
+        mData.mAdditionsVersion.cloneTo(aAdditionsVersion);
+    else
     {
         /*
          * If we got back an empty string from GetAdditionsVersion() we either
@@ -238,6 +239,8 @@ STDMETHODIMP Guest::COMGETTER(AdditionsVersion) (BSTR *aAdditionsVersion)
                     addRevision = addTemp;
                 }
 
+                /** @todo r=bird: See comment about the space before 'r' in
+                 *        setAdditionsInfo2. */
                 Bstr additionsVersion = BstrFmt("%ls r%ls",
                                                 addVersion.raw(), addRevision.raw());
                 additionsVersion.cloneTo(aAdditionsVersion);
@@ -253,8 +256,6 @@ STDMETHODIMP Guest::COMGETTER(AdditionsVersion) (BSTR *aAdditionsVersion)
             /** @todo r=bird: hr is still indicating failure! */
         }
     }
-    else
-        mData.mAdditionsVersion.cloneTo(aAdditionsVersion);
 
     return hr;
 }
@@ -760,24 +761,32 @@ void Guest::setAdditionsInfo(Bstr aInterfaceVersion, VBOXOSTYPE aOsType)
  * Sets the Guest Additions version information details.
  * Gets called by vmmdevUpdateGuestInfo2.
  *
- * @param aAdditionsVersion
- * @param aVersionName
+ * @param   a_pszVersion            The GuestInfo2 numbers turned into
+ * @param   a_pszVersionName        This turns out to be the version string +
+ *                                  beta/alpha/whatever suffix, duplicating info
+ *                                  passed in @a a_pszVersion.
+ * @param   a_uRevision             The SVN revision number.
  */
-void Guest::setAdditionsInfo2(Bstr aAdditionsVersion, Bstr aVersionName, Bstr aRevision)
+void Guest::setAdditionsInfo2(const char *a_pszVersion, const char *a_pszVersionName, uint32_t a_uRevision)
 {
     AutoCaller autoCaller(this);
     AssertComRCReturnVoid(autoCaller.rc());
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    if (!aVersionName.isEmpty())
+    /** @todo r=bird: WHY is this code returning "1.2.3 r45678" in one case and
+     *        "1.2.3r45678" in the else?  Why aren't we doing it the same way as
+     *        IVirtualBox? One version attribute and one revision attribute, no
+     *        abigiuos spaces! */
+    if (*a_pszVersionName != '\0')
         /*
          * aVersionName could be "x.y.z_BETA1_FOOBAR", so append revision manually to
          * become "x.y.z_BETA1_FOOBAR r12345".
          */
-        mData.mAdditionsVersion = BstrFmt("%ls r%ls", aVersionName.raw(), aRevision.raw());
+        mData.mAdditionsVersion = BstrFmt("%s r%u", a_pszVersionName, a_uRevision);
     else /* aAdditionsVersion is in x.y.zr12345 format. */
-        mData.mAdditionsVersion = aAdditionsVersion;
+        mData.mAdditionsVersion = Bstr(a_pszVersion);
+    //mData.mAdditionsRevision = a_uRevision;
 }
 
 bool Guest::facilityIsActive(VBoxGuestFacilityType enmFacility)

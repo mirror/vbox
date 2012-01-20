@@ -132,7 +132,7 @@ public:
 
     // Public methods that are not in IDL (only called internally).
     void setAdditionsInfo(Bstr aInterfaceVersion, VBOXOSTYPE aOsType);
-    void setAdditionsInfo2(Bstr aAdditionsVersion, Bstr aVersionName, Bstr aRevision);
+    void setAdditionsInfo2(const char *a_pszVersion, const char *a_pszVersionName, uint32_t a_uRevision);
     bool facilityIsActive(VBoxGuestFacilityType enmFacility);
     HRESULT facilityUpdate(VBoxGuestFacilityType enmFacility, VBoxGuestFacilityStatus enmStatus);
     void setAdditionsStatus(VBoxGuestFacilityType enmFacility, VBoxGuestFacilityStatus enmStatus, ULONG aFlags);
@@ -292,6 +292,7 @@ private:
         FacilityMap             mFacilityMap;
         AdditionsRunLevelType_T mAdditionsRunLevel;
         Bstr                    mAdditionsVersion;
+        //ULONG                   mAdditionsRevision;
         Bstr                    mInterfaceVersion;
     };
 
