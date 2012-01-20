@@ -5291,7 +5291,7 @@ HRESULT Machine::setGuestPropertyToService(IN_BSTR aName, IN_BSTR aValue,
             }
         if (found && SUCCEEDED(rc))
         {
-            if (*aValue)
+            if (aValue)
             {
                 RTTIMESPEC time;
                 property.strValue = aValue;
@@ -5301,7 +5301,7 @@ HRESULT Machine::setGuestPropertyToService(IN_BSTR aName, IN_BSTR aValue,
                 mHWData->mGuestProperties.push_back(property);
             }
         }
-        else if (SUCCEEDED(rc) && *aValue)
+        else if (SUCCEEDED(rc) && aValue)
         {
             RTTIMESPEC time;
             setModified(IsModified_MachineData);
@@ -5395,6 +5395,11 @@ STDMETHODIMP Machine::SetGuestProperty(IN_BSTR aName, IN_BSTR aValue,
 STDMETHODIMP Machine::SetGuestPropertyValue(IN_BSTR aName, IN_BSTR aValue)
 {
     return SetGuestProperty(aName, aValue, NULL);
+}
+
+STDMETHODIMP Machine::DeleteGuestProperty(IN_BSTR aName)
+{
+    return SetGuestProperty(aName, NULL, NULL);
 }
 
 #ifdef VBOX_WITH_GUEST_PROPS
