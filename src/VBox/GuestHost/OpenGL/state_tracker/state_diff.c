@@ -344,3 +344,26 @@ void crStateSwitchContext( CRContext *from, CRContext *to )
     crStateApplyFBImage(to);
 #endif
 }
+
+CRContext * crStateSwichPrepare(CRContext *toCtx)
+{
+    CRContext *fromCtx = GetCurrentContext();
+
+#ifdef CR_EXT_framebuffer_object
+    if (fromCtx)
+        crStateFramebufferObjectDisableHW(fromCtx);
+#endif
+
+    return fromCtx;
+}
+
+void crStateSwichPostprocess(CRContext *fromCtx)
+{
+    CRContext *toCtx = GetCurrentContext();;
+    if (!fromCtx || !toCtx)
+        return;
+
+#ifdef CR_EXT_framebuffer_object
+    crStateFramebufferObjectReenableHW(fromCtx, toCtx);
+#endif
+}

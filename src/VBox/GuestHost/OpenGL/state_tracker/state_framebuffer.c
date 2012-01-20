@@ -747,11 +747,59 @@ crStateFramebufferObjectSwitch(CRContext *from, CRContext *to)
     }
 }
 
+
+DECLEXPORT(void) STATE_APIENTRY
+crStateFramebufferObjectDisableHW(CRContext *ctx)
+{
+    if (ctx->framebufferobject.drawFB)
+        diff_api.BindFramebufferEXT(GL_DRAW_FRAMEBUFFER, 0);
+
+    if (ctx->framebufferobject.readFB)
+        diff_api.BindFramebufferEXT(GL_READ_FRAMEBUFFER, 0);
+
+    if (ctx->framebufferobject.drawFB)
+        diff_api.DrawBuffer(GL_BACK);
+    if (ctx->framebufferobject.readFB)
+        diff_api.ReadBuffer(GL_BACK);
+
+    if (ctx->framebufferobject.renderbuffer)
+        diff_api.BindRenderbufferEXT(GL_RENDERBUFFER_EXT, 0);
+}
+
+DECLEXPORT(void) STATE_APIENTRY
+crStateFramebufferObjectReenableHW(CRContext *fromCtx, CRContext *toCtx)
+{
+    GLboolean fAdjustDrawReadBuffers = GL_FALSE;
+
+    if (fromCtx->framebufferobject.drawFB
+            && fromCtx->framebufferobject.drawFB == toCtx->framebufferobject.drawFB)
+    {
+        diff_api.BindFramebufferEXT(GL_DRAW_FRAMEBUFFER, toCtx->framebufferobject.drawFB->hwid);
+        fAdjustDrawReadBuffers = GL_TRUE;
+    }
+
+    if (fromCtx->framebufferobject.readFB
+            && fromCtx->framebufferobject.readFB == toCtx->framebufferobject.readFB)
+    {
+        diff_api.BindFramebufferEXT(GL_READ_FRAMEBUFFER, toCtx->framebufferobject.readFB->hwid);
+        fAdjustDrawReadBuffers = GL_TRUE;
+    }
+
+    if (fAdjustDrawReadBuffers)
+    {
+        diff_api.DrawBuffer(toCtx->framebufferobject.drawFB?toCtx->framebufferobject.drawFB->drawbuffer[0]:toCtx->buffer.drawBuffer);
+        diff_api.ReadBuffer(toCtx->framebufferobject.readFB?toCtx->framebufferobject.readFB->readbuffer:toCtx->buffer.readBuffer);
+    }
+}
+
+
 DECLEXPORT(GLuint) STATE_APIENTRY crStateGetFramebufferHWID(GLuint id)
 {
     CRContext *g = GetCurrentContext();
     CRFramebufferObject *pFBO = (CRFramebufferObject*) crHashtableSearch(g->shared->fbTable, id);
-
+#ifdef DEBUG_misha
+    crDebug("FB id(%d) hw(%d)", id, pFBO ? pFBO->hwid : 0);
+#endif
     return pFBO ? pFBO->hwid : 0;
 }
 
