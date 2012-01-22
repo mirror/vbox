@@ -85,6 +85,19 @@ int vboxvideo_driver_load(struct drm_device * dev, unsigned long flags)
     return 0;
 #endif
 }
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3,3,0)
+/* since linux-3.3.0-rc1 drm_driver::fops is pointer */
+static struct file_operations driver_fops =
+{
+        .owner = THIS_MODULE,
+        .open = drm_open,
+        .release = drm_release,
+        .unlocked_ioctl = drm_ioctl,
+        .mmap = drm_mmap,
+        .poll = drm_poll,
+        .fasync = drm_fasync,
+};
+#endif
 
 static struct drm_driver driver =
 {
@@ -96,6 +109,7 @@ static struct drm_driver driver =
     .get_map_ofs = drm_core_get_map_ofs,
     .get_reg_ofs = drm_core_get_reg_ofs,
 #endif
+# if LINUX_VERSION_CODE < KERNEL_VERSION(3,3,0)
     .fops =
     {
         .owner = THIS_MODULE,
@@ -112,6 +126,9 @@ static struct drm_driver driver =
         .poll = drm_poll,
         .fasync = drm_fasync,
     },
+#else /* LINUX_VERSION_CODE > KERNEL_VERSION(3,3,0) */
+    .fops = NULL,
+#endif
 #if LINUX_VERSION_CODE < KERNEL_VERSION (2, 6, 39) && !defined(DRM_RHEL61)
     .pci_driver =
     {
