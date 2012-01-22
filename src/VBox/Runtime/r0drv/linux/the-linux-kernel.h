@@ -64,6 +64,9 @@
 #  define KBUILD_STR(s) #s
 # endif
 #endif
+# if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 3, 0)
+#  include <linux/kconfig.h> /* for macro IS_ENABLED */
+# endif
 #include <linux/string.h>
 #include <linux/spinlock.h>
 #include <linux/slab.h>
