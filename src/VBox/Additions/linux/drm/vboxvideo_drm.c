@@ -126,7 +126,7 @@ static struct drm_driver driver =
         .poll = drm_poll,
         .fasync = drm_fasync,
     },
-#else /* LINUX_VERSION_CODE > KERNEL_VERSION(3,3,0) */
+#else /* LINUX_VERSION_CODE >= KERNEL_VERSION(3,3,0) */
     .fops = &driver_fops,
 #endif
 #if LINUX_VERSION_CODE < KERNEL_VERSION (2, 6, 39) && !defined(DRM_RHEL61)
