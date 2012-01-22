@@ -58,8 +58,15 @@
 #include "ATAController.h"
 #include "VBoxDD.h"
 
-#define AHCI_MAX_NR_PORTS_IMPL 30
-#define AHCI_NR_COMMAND_SLOTS 32
+/** Maximum number of ports available.
+ * Spec defines 32 but we have one allocated for command completion coalescing
+ * and another for a reserved future feature.
+ */
+#define AHCI_MAX_NR_PORTS_IMPL  30
+/** Maximum number of command slots available. */
+#define AHCI_NR_COMMAND_SLOTS   32
+
+#define AHCI_MAX_ALLOC_TOO_MUCH 20
 
 /** The current saved state version. */
 #define AHCI_SAVED_STATE_VERSION                5
@@ -285,6 +292,12 @@ typedef struct AHCIREQ
     uint8_t                    uATARegStatus;
     /** Flags for this task. */
     uint32_t                   fFlags;
+    /** Additional memory allocation for this task. */
+    void                      *pvAlloc;
+    /** Siize of the allocation. */
+    size_t                     cbAlloc;
+    /** Number of times we had too much memory allocated for the request. */
+    unsigned                   cAllocTooMuch;
     /** Data dependent on the transfer direction. */
     union
     {
@@ -5139,6 +5152,47 @@ DECLINLINE(uint8_t) ahciGetTagQueued(uint8_t *pCmdFis)
 }
 
 /**
+ * Allocates memory for the given request using already allocated memory if possible.
+ *
+ * @returns Pointer to the memory or NULL on failure
+ * @param   pAhciReq    The request to allocate memory for.
+ * @param   cb          The amount of memory to allocate.
+ */
+static void *ahciReqMemAlloc(PAHCIREQ pAhciReq, size_t cb)
+{
+    if (pAhciReq->cbAlloc > cb)
+    {
+        pAhciReq->cAllocTooMuch++;
+    }
+    else if (pAhciReq->cbAlloc < cb)
+    {
+        if (pAhciReq->cbAlloc)
+            RTMemPageFree(pAhciReq->pvAlloc, pAhciReq->cbAlloc);
+
+        pAhciReq->pvAlloc = RTMemPageAlloc(RT_ALIGN_Z(cb, _4K));
+        pAhciReq->cAllocTooMuch = 0;
+    }
+
+    return pAhciReq->pvAlloc;
+}
+
+/**
+ * Frees memory allocated for the given request.
+ *
+ * @returns nothing.
+ * @param   pAhciReq    The request.
+ */
+static void ahciReqMemFree(PAHCIREQ pAhciReq)
+{
+    if (pAhciReq->cAllocTooMuch >= AHCI_MAX_ALLOC_TOO_MUCH)
+    {
+        RTMemPageFree(pAhciReq->pvAlloc, pAhciReq->cbAlloc);
+        pAhciReq->cbAlloc = 0;
+        pAhciReq->cAllocTooMuch = 0;
+    }
+}
+
+/**
  * Copies a data buffer into the S/G buffer set up by the guest.
  *
  * @returns Amount of bytes copied to the PRDTL.
@@ -5257,7 +5311,7 @@ static int ahciIoBufAllocate(PPDMDEVINS pDevIns, PAHCIREQ pAhciReq, size_t cbTra
               || pAhciReq->enmTxDir == AHCITXDIR_WRITE,
               ("Allocating I/O memory for a non I/O request is not allowed\n"));
 
-    pAhciReq->u.Io.DataSeg.pvSeg = RTMemAllocZ(cbTransfer);
+    pAhciReq->u.Io.DataSeg.pvSeg = ahciReqMemAlloc(pAhciReq, cbTransfer);
     if (!pAhciReq->u.Io.DataSeg.pvSeg)
         return VERR_NO_MEMORY;
 
@@ -5299,7 +5353,7 @@ static void ahciIoBufFree(PPDMDEVINS pDevIns, PAHCIREQ pAhciReq,
                             pAhciReq->u.Io.DataSeg.cbSeg);
     }
 
-    RTMemFree(pAhciReq->u.Io.DataSeg.pvSeg);
+    ahciReqMemFree(pAhciReq);
     pAhciReq->u.Io.DataSeg.pvSeg = NULL;
     pAhciReq->u.Io.DataSeg.cbSeg = 0;
 }
