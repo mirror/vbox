@@ -2571,10 +2571,13 @@ if1of ($(KBUILD_TARGET), linux)
    else
     kernelpath := $(VBOX_LINUX_SRC)
    endif
+   #
+   # Since linux-3.3.0-rc1 arch/x86/include moved to arch/x86/include/generated
    VBOX_LINUX_INCS  += $(kernelpath)/include/asm-i386/mach-default \
                        $(kernelpath)/include/asm-x86/mach-default \
                        $(kernelpath)/arch/x86/include \
                        $(kernelpath)/arch/x86/include/asm/mach-default \
+                       $(kernelpath)/arch/x86/include/generated \
                        $(kernelpath)/include
   endif
  endif
