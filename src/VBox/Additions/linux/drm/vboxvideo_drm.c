@@ -127,7 +127,7 @@ static struct drm_driver driver =
         .fasync = drm_fasync,
     },
 #else /* LINUX_VERSION_CODE > KERNEL_VERSION(3,3,0) */
-    .fops = NULL,
+    .fops = &driver_fops,
 #endif
 #if LINUX_VERSION_CODE < KERNEL_VERSION (2, 6, 39) && !defined(DRM_RHEL61)
     .pci_driver =
