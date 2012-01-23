@@ -1319,10 +1319,10 @@ static int ctrlCopyFileToDest(PCOPYCONTEXT pContext, const char *pszFileSource,
     else
     {
         if (pContext->fVerbose)
-        {
             rc = showProgress(progress);
-            CHECK_PROGRESS_ERROR(progress, ("File copy failed"));
-        }
+        else
+            rc = progress->WaitForCompletion(-1 /* No timeout */);
+        CHECK_PROGRESS_ERROR(progress, ("File copy failed"));
         if (FAILED(rc))
             vrc = ctrlPrintError(pContext->pGuest, COM_IIDOF(IGuest));
     }
@@ -2369,10 +2369,10 @@ static int handleCtrlUpdateAdditions(ComPtr<IGuest> guest, HandlerArg *pArg)
         else
         {
             if (fVerbose)
-            {
                 rc = showProgress(progress);
-                CHECK_PROGRESS_ERROR(progress, ("Guest additions update failed"));
-            }
+            else
+                rc = progress->WaitForCompletion(-1 /* No timeout */);
+            CHECK_PROGRESS_ERROR(progress, ("Guest additions update failed"));
             if (FAILED(rc))
                 vrc = ctrlPrintError(guest, COM_IIDOF(IGuest));
             else if (   SUCCEEDED(rc)
@@ -2446,7 +2446,7 @@ int handleGuestControl(HandlerArg *pArg)
             rcExit = errorSyntax(USAGE_GUESTCONTROL, "No sub command specified!");
 
         ctrlUninitVM(pArg);
-        return RT_FAILURE(rcExit) ? RTEXITCODE_FAILURE : RTEXITCODE_SUCCESS;
+        return rcExit;
     }
     return RTEXITCODE_FAILURE;
 }

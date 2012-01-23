@@ -297,6 +297,9 @@ int Guest::directoryGetNextEntry(uint32_t uHandle, GuestProcessStreamBlock &stre
     GuestDirectoryMapIter it = mGuestDirectoryMap.find(uHandle);
     if (it != mGuestDirectoryMap.end())
     {
+#ifdef DEBUG
+        it->second.mStream.Dump("/tmp/stream.txt");
+#endif
         return executeStreamGetNextBlock(it->second.mPID,
                                          ProcessOutputFlag_None /* StdOut */,
                                          it->second.mStream, streamBlock);
@@ -548,15 +551,18 @@ STDMETHODIMP Guest::DirectoryRead(ULONG aHandle, IGuestDirEntry **aDirEntry)
                 hr = pDirEntry.createObject();
                 ComAssertComRC(hr);
 
-                Assert(streamBlock.GetCount());
                 hr = pDirEntry->init(this, streamBlock);
                 if (SUCCEEDED(hr))
                 {
                     pDirEntry.queryInterfaceTo(aDirEntry);
                 }
                 else
-                    hr = setError(VBOX_E_IPRT_ERROR,
-                                  Guest::tr("Failed to init guest directory entry"));
+                {
+#ifdef DEBUG
+                    streamBlock.Dump();
+#endif
+                    hr = VBOX_E_FILE_ERROR;
+                }
             }
             else
             {

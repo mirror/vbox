@@ -162,6 +162,8 @@ typedef enum VBOXSERVICECTRLREQUESTTYPE
  */
 typedef struct VBOXSERVICECTRLREQUEST
 {
+    /** Event semaphore to serialize access. */
+    RTSEMEVENTMULTI            Event;
     /** The request type to handle. */
     VBOXSERVICECTRLREQUESTTYPE enmType;
     /** Payload size; on input, this contains the (maximum) amount
@@ -171,7 +173,7 @@ typedef struct VBOXSERVICECTRLREQUEST
     /** Payload data; a pre-allocated data buffer for input/output. */
     void                      *pvData;
     /** The context ID which is required to complete the
-     *  request. */
+     *  request. Not used at the moment. */
     uint32_t                   uCID;
     /** The overall result of the operation. */
     int                        rc;
@@ -188,7 +190,8 @@ typedef struct VBOXSERVICECTRLTHREAD
     RTLISTNODE                      Node;
     /** The worker thread. */
     RTTHREAD                        Thread;
-    /** Shutdown indicator. */
+    /** Shutdown indicator; will be set when the thread
+      * needs (or is asked) to shutdown. */
     bool volatile                   fShutdown;
     /** Indicator set by the service thread exiting. */
     bool volatile                   fStopped;
@@ -217,7 +220,6 @@ typedef struct VBOXSERVICECTRLTHREAD
     /** Overall time limit (in ms) that the guest process
      *  is allowed to run. 0 for indefinite time. */
     uint32_t                        uTimeLimitMS;
-    RTSEMEVENTMULTI                 RequestEvent;
     /** Pointer to the current IPC request being
      *  processed. */
     PVBOXSERVICECTRLREQUEST         pRequest;
@@ -232,17 +234,6 @@ typedef struct VBOXSERVICECTRLTHREAD
 } VBOXSERVICECTRLTHREAD;
 /** Pointer to thread data. */
 typedef VBOXSERVICECTRLTHREAD *PVBOXSERVICECTRLTHREAD;
-
-/**
- * Request types to perform on a started guest process.
- */
-typedef enum VBOXSERVICECTRLTHREADSTATUS
-{
-    /** Unknown status. Do not use / should not happen. */
-    VBOXSERVICECTRLTHREADSTATUS_UNKNOWN          = 0,
-    VBOXSERVICECTRLTHREADSTATUS_STARTED          = 100,
-    VBOXSERVICECTRLTHREADSTATUS_STOPPED          = 200
-} VBOXSERVICECTRLTHREADSTATUS;
 #endif /* VBOX_WITH_GUEST_CONTROL */
 #ifdef VBOX_WITH_GUEST_PROPS
 
@@ -344,13 +335,21 @@ extern void         VBoxServiceControlThreadUnlock(const PVBOXSERVICECTRLTHREAD 
 extern int          VBoxServiceControlAssignPID(PVBOXSERVICECTRLTHREAD pThread, uint32_t uPID);
 extern void         VBoxServiceControlRemoveThread(const PVBOXSERVICECTRLTHREAD pThread);
 /* Guest process functions. */
-extern VBOXSERVICECTRLTHREADSTATUS VBoxServiceControlThreadGetStatus(const PVBOXSERVICECTRLTHREAD pThread);
+extern bool         VBoxServiceControlThreadActive(const PVBOXSERVICECTRLTHREAD pThread);
 extern int          VBoxServiceControlThreadStart(uint32_t uClientID, uint32_t uContext,
                                                   const char *pszCmd, uint32_t uFlags,
                                                   const char *pszArgs, uint32_t uNumArgs,
                                                   const char *pszEnv, uint32_t cbEnv, uint32_t uNumEnvVars,
                                                   const char *pszUser, const char *pszPassword, uint32_t uTimeLimitMS,
                                                   PRTLISTNODE *ppNode);
+extern int          VBoxServiceControlThreadRequestAlloc(PVBOXSERVICECTRLREQUEST   *ppReq,
+                                                         VBOXSERVICECTRLREQUESTTYPE enmType);
+extern int          VBoxServiceControlThreadRequestAllocEx(PVBOXSERVICECTRLREQUEST    *ppReq,
+                                                           VBOXSERVICECTRLREQUESTTYPE  enmType,
+                                                           void*                       pbData,
+                                                           size_t                      cbData,
+                                                           uint32_t                    uCID);
+extern void         VBoxServiceControlThreadRequestFree(PVBOXSERVICECTRLREQUEST pReq);
 extern int          VBoxServiceControlThreadPerform(uint32_t uPID, PVBOXSERVICECTRLREQUEST pRequest);
 extern int          VBoxServiceControlThreadSignalShutdown(const PVBOXSERVICECTRLTHREAD pThread);
 extern int          VBoxServiceControlThreadWaitForShutdown(const PVBOXSERVICECTRLTHREAD pThread, RTMSINTERVAL msTimeout);

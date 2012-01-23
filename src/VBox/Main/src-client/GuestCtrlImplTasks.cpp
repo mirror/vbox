@@ -251,7 +251,7 @@ HRESULT Guest::taskCopyFileToGuest(GuestTask *aTask)
                                                            ComSafeArrayAsInParam(env),
                                                            Bstr(aTask->strUserName).raw(),
                                                            Bstr(aTask->strPassword).raw(),
-                                                           ExecuteProcessFlag_None,
+                                                           ExecuteProcessFlag_WaitForProcessStartOnly,
                                                            NULL, NULL,
                                                            execProgress.asOutParam(), &uPID);
                         if (FAILED(rc))
@@ -533,7 +533,8 @@ HRESULT Guest::taskCopyFileFromGuest(GuestTask *aTask)
                                                    ComSafeArrayAsInParam(env),
                                                    Bstr(aTask->strUserName).raw(),
                                                    Bstr(aTask->strPassword).raw(),
-                                                   ExecuteProcessFlag_WaitForStdOut,
+                                                     ExecuteProcessFlag_WaitForProcessStartOnly
+                                                   | ExecuteProcessFlag_WaitForStdOut,
                                                    NULL, NULL,
                                                    execProgress.asOutParam(), &uPID);
                 if (FAILED(rc))
@@ -556,10 +557,10 @@ HRESULT Guest::taskCopyFileFromGuest(GuestTask *aTask)
                 {
                     size_t cbToRead = lFileSize;
                     size_t cbTransfered = 0;
-                    SafeArray<BYTE> aOutputData(_64K);
                     while (   SUCCEEDED(execProgress->COMGETTER(Completed(&fCompleted)))
                            && !fCompleted)
                     {
+                        SafeArray<BYTE> aOutputData;
                         rc = pGuest->GetProcessOutput(uPID, ProcessOutputFlag_None /* StdOut */,
                                                       0 /* No timeout. */,
                                                       _64K, ComSafeArrayAsOutParam(aOutputData));
