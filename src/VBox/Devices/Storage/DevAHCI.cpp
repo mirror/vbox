@@ -5169,8 +5169,11 @@ static void *ahciReqMemAlloc(PAHCIREQ pAhciReq, size_t cb)
         if (pAhciReq->cbAlloc)
             RTMemPageFree(pAhciReq->pvAlloc, pAhciReq->cbAlloc);
 
-        pAhciReq->pvAlloc = RTMemPageAlloc(RT_ALIGN_Z(cb, _4K));
+        pAhciReq->cbAlloc = RT_ALIGN_Z(cb, _4K);
+        pAhciReq->pvAlloc = RTMemPageAlloc(pAhciReq->cbAlloc);
         pAhciReq->cAllocTooMuch = 0;
+        if (RT_UNLIKELY(!pAhciReq->pvAlloc))
+            pAhciReq->cbAlloc = 0;
     }
 
     return pAhciReq->pvAlloc;
