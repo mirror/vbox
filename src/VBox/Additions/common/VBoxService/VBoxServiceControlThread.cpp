@@ -996,7 +996,7 @@ int VBoxServiceControlThreadRequestAlloc(PVBOXSERVICECTRLREQUEST *ppReq,
                                          VBOXSERVICECTRLREQUESTTYPE enmType)
 {
     return VBoxServiceControlThreadRequestAllocEx(ppReq, enmType,
-                                                  0 /* cbData */, NULL /* pvData */,
+                                                  NULL /* pvData */, 0 /* cbData */,
                                                   0 /* ContextID */);
 }
 
@@ -1531,9 +1531,9 @@ static int VBoxServiceControlThreadProcessWorker(PVBOXSERVICECTRLTHREAD pThread)
                                         pThread->hNotificationPipeW = NIL_RTPIPE;
                                     }
                                     if (RT_FAILURE(RTPollSetQueryHandle(hPollSet, VBOXSERVICECTRLPIPEID_STDERR, NULL)))
-                                        hStdErrR = NIL_RTPIPE;
+                                        pipeStdErrR = NIL_RTPIPE;
                                     if (RT_FAILURE(RTPollSetQueryHandle(hPollSet, VBOXSERVICECTRLPIPEID_STDOUT, NULL)))
-                                        hStdOutR = NIL_RTPIPE;
+                                        pipeStdOutR = NIL_RTPIPE;
                                     if (RT_FAILURE(RTPollSetQueryHandle(hPollSet, VBOXSERVICECTRLPIPEID_STDIN, NULL)))
                                         pThread->pipeStdInW = NIL_RTPIPE;
                                 }
