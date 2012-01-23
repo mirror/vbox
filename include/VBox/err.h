@@ -1378,6 +1378,8 @@
 #define VERR_PDM_BAD_PCI_CONFIG                     (-2887)
 /** Internal processing error # in the PDM device code. */
 #define VERR_PDM_DEV_IPE_1                          (-2888)
+/** Misconfigured driver chain transformation. */
+#define VERR_PDM_MISCONFIGURED_DRV_TRANSFORMATION   (-2889)
 /** @} */
 
 
