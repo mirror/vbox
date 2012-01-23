@@ -521,6 +521,7 @@ static bool rtProcFindProcessByName(const char * const *papszNames, PSID pSID, P
                             dwErr = GetLastError();
                     }
                 }
+                RTLdrClose(hPSAPI);
             }
         }
         RTLdrClose(hKernel32);
@@ -937,7 +938,18 @@ static int rtProcCreateAsUserHlp(PRTUTF16 pwszUser, PRTUTF16 pwszPassword, PRTUT
                                     dwErr = rc;
 
                                 if (!(fFlags & RTPROC_FLAGS_NO_PROFILE))
-                                    pfnUnloadUserProfile(*phToken, profileInfo.hProfile);
+                                {
+                                    fRc = pfnUnloadUserProfile(*phToken, profileInfo.hProfile);
+                                    if (!fRc)
+                                    {
+                                        /* In case there were some handles left open, we want to know about
+                                         * that -- can be tricky to debug later! */
+                                        DWORD dwErr2 = GetLastError();
+                                        AssertMsgFailed(("Unloading user profile failed with error %ld", dwErr2));
+                                        if (dwErr == NO_ERROR)
+                                            dwErr = dwErr2;
+                                    }
+                                }
                             }
                         }
                     }
