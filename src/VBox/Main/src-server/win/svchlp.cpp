@@ -1,6 +1,5 @@
 /** @file
- *
- *  Definition of SVC Helper Process control routines.
+ * Definition of SVC Helper Process control routines.
  */
 
 /*
