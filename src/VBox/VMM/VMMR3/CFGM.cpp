@@ -1202,6 +1202,122 @@ VMMR3DECL(PCFGMNODE) CFGMR3CreateTree(PVM pVM)
 
 
 /**
+ * Duplicates a CFGM sub-tree or a full tree.
+ *
+ * @returns Pointer to the root node.  NULL if we run out of memory or the
+ *          input parameter is NULL.
+ * @param   pRoot       The root of the tree to duplicate.
+ */
+VMMR3DECL(PCFGMNODE) CFGMR3DuplicateSubTree(PCFGMNODE pRoot)
+{
+    AssertPtrReturn(pRoot, NULL);
+
+    /*
+     * Create a new tree.
+     */
+    PCFGMNODE pNewRoot = CFGMR3CreateTree(pRoot->pVM);
+    if (!pNewRoot)
+        return pNewRoot;
+
+    /*
+     * Duplicate the content.
+     */
+    int         rc      = VINF_SUCCESS;
+    PCFGMNODE   pSrcCur = pRoot;
+    PCFGMNODE   pDstCur = pNewRoot;
+    for (;;)
+    {
+        if (   !pDstCur->pFirstChild
+            && !pDstCur->pFirstLeaf)
+        {
+            /*
+             * Values first.
+             */
+            /** @todo this isn't the most efficient way to do it. */
+            for (PCFGMLEAF pLeaf = pSrcCur->pFirstLeaf; pLeaf && RT_SUCCESS(rc); pLeaf = pLeaf->pNext)
+            {
+                switch (pLeaf->enmType)
+                {
+                    case CFGMVALUETYPE_INTEGER:
+                        rc = CFGMR3InsertInteger(pDstCur, pLeaf->szName, pLeaf->Value.Integer.u64);
+                        break;
+
+                    case CFGMVALUETYPE_BYTES:
+                        rc = CFGMR3InsertBytes(pDstCur, pLeaf->szName, pLeaf->Value.Bytes.pau8, pLeaf->Value.Bytes.cb);
+                        break;
+
+                    case CFGMVALUETYPE_STRING:
+                        rc = CFGMR3InsertStringN(pDstCur, pLeaf->szName, pLeaf->Value.String.psz, pLeaf->Value.String.cb - 1);
+                        break;
+
+                    default:
+                        rc = VERR_CFGM_IPE_1;
+                        AssertMsgFailed(("Invalid value type %d\n", pLeaf->enmType));
+                        break;
+                }
+            }
+
+            /*
+             * Insert immediate child nodes.
+             */
+            /** @todo this isn't the most efficient way to do it. */
+            for (PCFGMNODE pChild = pSrcCur->pFirstChild; pChild && RT_SUCCESS(rc); pChild = pChild->pNext)
+                rc = CFGMR3InsertNode(pDstCur, pChild->szName, NULL);
+
+            AssertLogRelRCBreak(rc);
+        }
+
+        /*
+         * Deep copy of the children.
+         */
+        if (pSrcCur->pFirstChild)
+        {
+            Assert(pDstCur->pFirstChild && !strcmp(pDstCur->pFirstChild->szName, pSrcCur->pFirstChild->szName));
+            pSrcCur = pSrcCur->pFirstChild;
+            pDstCur = pDstCur->pFirstChild;
+        }
+        /*
+         * If it's the root node, we're done.
+         */
+        else if (pSrcCur == pRoot)
+            break;
+        else
+        {
+            /*
+             * Upon reaching the end of a sibling list, we must ascend and
+             * resume the sibiling walk on an previous level.
+             */
+            if (!pSrcCur->pNext)
+            {
+                do
+                {
+                    pSrcCur = pSrcCur->pParent;
+                    pDstCur = pDstCur->pParent;
+                } while (!pSrcCur->pNext && pSrcCur != pRoot);
+                if (pSrcCur == pRoot)
+                    break;
+            }
+
+            /*
+             * Next sibling.
+             */
+            Assert(pDstCur->pNext && !strcmp(pDstCur->pNext->szName, pSrcCur->pNext->szName));
+            pSrcCur = pSrcCur->pNext;
+            pDstCur = pDstCur->pNext;
+        }
+    }
+
+    if (RT_FAILURE(rc))
+    {
+        CFGMR3RemoveNode(pNewRoot);
+        return NULL;
+    }
+
+    return pNewRoot;
+}
+
+
+/**
  * Insert subtree.
  *
  * This function inserts (no duplication) a tree created by CFGMR3CreateTree()
@@ -1227,7 +1343,6 @@ VMMR3DECL(int) CFGMR3InsertSubTree(PCFGMNODE pNode, const char *pszName, PCFGMNO
     AssertPtrReturn(pSubTree, VERR_INVALID_POINTER);
     AssertReturn(!pSubTree->pParent, VERR_INVALID_PARAMETER);
     AssertReturn(pSubTree->pVM, VERR_INVALID_PARAMETER);
-    AssertReturn(pSubTree->pParent != pSubTree->pVM->cfgm.s.pRoot, VERR_INVALID_PARAMETER);
     Assert(!pSubTree->pNext);
     Assert(!pSubTree->pPrev);
 
@@ -1253,6 +1368,56 @@ VMMR3DECL(int) CFGMR3InsertSubTree(PCFGMNODE pNode, const char *pszName, PCFGMNO
         MMR3HeapFree(pSubTree);
     }
     return rc;
+}
+
+
+/**
+ * Replaces a (sub-)tree with new one.
+ *
+ * This function removes the exiting (sub-)tree, completely freeing it in the
+ * process, and inserts (no duplication) the specified tree.  The tree can
+ * either be created by CFGMR3CreateTree or CFGMR3DuplicateSubTree.
+ *
+ * @returns VBox status code.
+ * @param   pRoot       The sub-tree to replace.  This node will remain valid
+ *                      after the call.
+ * @param   pNewRoot    The tree to replace @a pRoot with.  This not will
+ *                      become invalid after a successful call.
+ */
+VMMR3DECL(int) CFGMR3ReplaceSubTree(PCFGMNODE pRoot, PCFGMNODE pNewRoot)
+{
+    /*
+     * Validate input.
+     */
+    AssertPtrReturn(pRoot, VERR_INVALID_POINTER);
+    AssertPtrReturn(pNewRoot, VERR_INVALID_POINTER);
+    AssertReturn(!pNewRoot->pParent, VERR_INVALID_PARAMETER);
+    AssertReturn(pNewRoot->pVM, VERR_INVALID_PARAMETER);
+    AssertReturn(pNewRoot->pVM == pRoot->pVM, VERR_INVALID_PARAMETER);
+    AssertReturn(!pNewRoot->pNext, VERR_INVALID_PARAMETER);
+    AssertReturn(!pNewRoot->pPrev, VERR_INVALID_PARAMETER);
+
+    /*
+     * Free the current properties fo pRoot.
+     */
+    while (pRoot->pFirstChild)
+        CFGMR3RemoveNode(pRoot->pFirstChild);
+
+    while (pRoot->pFirstLeaf)
+        cfgmR3RemoveLeaf(pRoot, pRoot->pFirstLeaf);
+
+    /*
+     * Copy all the properties from the new root to the current one.
+     */
+    pRoot->pFirstLeaf       = pNewRoot->pFirstLeaf;
+    pRoot->pFirstChild      = pNewRoot->pFirstChild;
+
+    pNewRoot->pFirstLeaf    = NULL;
+    pNewRoot->pFirstChild   = NULL;
+    pNewRoot->pVM           = NULL;
+    MMR3HeapFree(pNewRoot);
+
+    return VINF_SUCCESS;
 }
 
 
