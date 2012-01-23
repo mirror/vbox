@@ -156,7 +156,7 @@ static void tstRTCreateProcEx5(const char *pszUser, const char *pszPassword)
                                          NULL, NULL, "non-existing-user", "wrong-password", &hProc), VERR_AUTHENTICATION_FAILURE);
     /* Test for invalid application. */
     RTTESTI_CHECK_RC_RETV(RTProcCreateEx("non-existing-app", apszArgs, RTENV_DEFAULT, 0 /*fFlags*/, NULL,
-                                         NULL, NULL, NULL, NULL, &hProc), VERR_PATH_NOT_FOUND);
+                                         NULL, NULL, NULL, NULL, &hProc), VERR_FILE_NOT_FOUND);
     /* Test a (hopefully) valid user/password logon (given by parameters of this function). */
     RTTESTI_CHECK_RC_RETV(RTProcCreateEx(g_szExecName, apszArgs, RTENV_DEFAULT, 0 /*fFlags*/, NULL,
                                          NULL, NULL, pszUser, pszPassword, &hProc), VINF_SUCCESS);
