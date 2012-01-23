@@ -143,6 +143,10 @@ HRESULT Guest::fileQueryInfoInternal(IN_BSTR aFile,
             int rc = VINF_SUCCESS;
             if (stdOut.size())
             {
+#if 0
+                /* Dump the parsed stream contents to Log(). */
+                stdOut[0].Dump();
+#endif
                 const char *pszFsType = stdOut[0].GetString("ftype");
                 if (!pszFsType) /* Attribute missing? */
                     rc = VERR_NOT_FOUND;

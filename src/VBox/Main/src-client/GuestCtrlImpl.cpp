@@ -1139,9 +1139,7 @@ HRESULT Guest::executeAndWaitForTool(IN_BSTR aTool, IN_BSTR aDescription,
 {
     ComPtr<IProgress> progressTool;
     ULONG uPID;
-
-    ULONG uFlags =   ExecuteProcessFlag_Hidden
-                   | ExecuteProcessFlag_WaitForProcessStartOnly;
+    ULONG uFlags = ExecuteProcessFlag_Hidden;
     if (uFlagsToAdd)
         uFlags |= uFlagsToAdd;
 
@@ -1379,11 +1377,20 @@ int Guest::executeStreamGetNextBlock(ULONG ulPID,
 {
     AssertReturn(!streamBlock.GetCount(), VERR_INVALID_PARAMETER);
 
-    bool fDrainStream = true;
+    LogFlowFunc(("Getting next stream block of PID=%u, Flags=%u; cbStrmSize=%u, cbStrmOff=%u\n",
+                 ulPID, ulFlags, stream.GetSize(), stream.GetOffset()));
+
     int rc;
+
+    uint32_t cPairs = 0;
+    bool fDrainStream = true;
+
     do
     {
         rc = stream.ParseBlock(streamBlock);
+        LogFlowFunc(("Parsing block rc=%Rrc, strmBlockCnt=%ld\n",
+                     rc, streamBlock.GetCount()));
+
         if (RT_FAILURE(rc)) /* More data needed or empty buffer? */
         {
             if (fDrainStream)
@@ -1394,6 +1401,8 @@ int Guest::executeStreamGetNextBlock(ULONG ulPID,
                                                       _64K, ComSafeArrayAsOutParam(aData), &rc);
                 if (SUCCEEDED(hr))
                 {
+                    LogFlowFunc(("Got %ld bytes of additional data\n", aData.size()));
+
                     if (aData.size())
                     {
                         rc = stream.AddData(aData.raw(), aData.size());
@@ -1401,10 +1410,15 @@ int Guest::executeStreamGetNextBlock(ULONG ulPID,
                             break;
                     }
 
+                    /* Reset found pairs to not break out too early and let all the new
+                     * data to be parsed as well. */
+                    cPairs = 0;
                     continue; /* Try one more time. */
                 }
                 else
                 {
+                    LogFlowFunc(("Getting output returned hr=%Rhrc\n", hr));
+
                     /* No more output to drain from stream. */
                     if (rc == VERR_NOT_FOUND)
                     {
@@ -1425,9 +1439,13 @@ int Guest::executeStreamGetNextBlock(ULONG ulPID,
                 break;
             }
         }
+        else
+            cPairs = streamBlock.GetCount();
     }
-    while (!streamBlock.GetCount());
+    while (!cPairs);
 
+    LogFlowFunc(("Returned with strmBlockCnt=%ld, cPairs=%ld, rc=%Rrc\n",
+                 streamBlock.GetCount(), cPairs, rc));
     return rc;
 }
 

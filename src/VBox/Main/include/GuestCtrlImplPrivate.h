@@ -36,25 +36,25 @@ class Guest;
 class Progress;
 
 /** Structure representing the "value" side of a "key=value" pair. */
-class VBOXGUESTCTRL_STREAMVALUE
+class GuestProcessStreamValue
 {
 public:
 
-    VBOXGUESTCTRL_STREAMVALUE() { }
-    VBOXGUESTCTRL_STREAMVALUE(const char *pszValue)
+    GuestProcessStreamValue() { }
+    GuestProcessStreamValue(const char *pszValue)
         : mValue(pszValue) {}
 
-    VBOXGUESTCTRL_STREAMVALUE(const VBOXGUESTCTRL_STREAMVALUE& aThat)
+    GuestProcessStreamValue(const GuestProcessStreamValue& aThat)
            : mValue(aThat.mValue) {}
 
     Utf8Str mValue;
 };
 
 /** Map containing "key=value" pairs of a guest process stream. */
-typedef std::pair< Utf8Str, VBOXGUESTCTRL_STREAMVALUE > GuestCtrlStreamPair;
-typedef std::map < Utf8Str, VBOXGUESTCTRL_STREAMVALUE > GuestCtrlStreamPairMap;
-typedef std::map < Utf8Str, VBOXGUESTCTRL_STREAMVALUE >::iterator GuestCtrlStreamPairMapIter;
-typedef std::map < Utf8Str, VBOXGUESTCTRL_STREAMVALUE >::const_iterator GuestCtrlStreamPairMapIterConst;
+typedef std::pair< Utf8Str, GuestProcessStreamValue > GuestCtrlStreamPair;
+typedef std::map < Utf8Str, GuestProcessStreamValue > GuestCtrlStreamPairMap;
+typedef std::map < Utf8Str, GuestProcessStreamValue >::iterator GuestCtrlStreamPairMapIter;
+typedef std::map < Utf8Str, GuestProcessStreamValue >::const_iterator GuestCtrlStreamPairMapIterConst;
 
 /**
  * Class representing a block of stream pairs (key=value). Each block in a raw guest
@@ -74,6 +74,10 @@ public:
 public:
 
     void Clear();
+
+#ifdef DEBUG
+    void Dump();
+#endif
 
     int GetInt64Ex(const char *pszKey, int64_t *piVal);
 
@@ -117,6 +121,10 @@ public:
     int AddData(const BYTE *pbData, size_t cbData);
 
     void Destroy();
+
+#ifdef DEBUG
+    void Dump(const char *pszFile);
+#endif
 
     uint32_t GetOffset();
 

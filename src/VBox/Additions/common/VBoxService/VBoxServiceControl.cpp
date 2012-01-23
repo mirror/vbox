@@ -186,7 +186,7 @@ DECLCALLBACK(int) VBoxServiceControlWorker(bool volatile *pfShutdown)
             rc = VINF_SUCCESS; /* Try to get "real" message in next block below. */
         }
         else if (RT_FAILURE(rc))
-            VBoxServiceVerbose(3, "Control: Getting host message failed with %Rrc\n", rc); /* VERR_GEN_IO_FAILURE seems to be normal if ran  into timeout. */
+            VBoxServiceVerbose(3, "Control: Getting host message failed with %Rrc\n", rc); /* VERR_GEN_IO_FAILURE seems to be normal if ran into timeout. */
         if (RT_SUCCESS(rc))
         {
             VBoxServiceVerbose(3, "Control: Msg=%u (%u parms) retrieved\n", uMsg, cParms);
@@ -359,21 +359,16 @@ int VBoxServiceControlExecGetOutput(uint32_t uPID, uint32_t uCID,
     /* pcbRead is optional. */
 
     int rc = VINF_SUCCESS;
-
-    VBOXSERVICECTRLREQUEST ctrlRequest;
-    ctrlRequest.uCID   = uCID;
-    ctrlRequest.cbData = cbBuf;
-    ctrlRequest.pvData = (uint8_t*)pvBuf;
-
+    VBOXSERVICECTRLREQUESTTYPE reqType;
     switch (uHandleId)
     {
         case OUTPUT_HANDLE_ID_STDERR:
-            ctrlRequest.enmType = VBOXSERVICECTRLREQUEST_STDERR_READ;
+            reqType = VBOXSERVICECTRLREQUEST_STDERR_READ;
             break;
 
         case OUTPUT_HANDLE_ID_STDOUT:
         case OUTPUT_HANDLE_ID_STDOUT_DEPRECATED:
-            ctrlRequest.enmType = VBOXSERVICECTRLREQUEST_STDOUT_READ;
+            reqType = VBOXSERVICECTRLREQUEST_STDOUT_READ;
             break;
 
         default:
@@ -381,16 +376,22 @@ int VBoxServiceControlExecGetOutput(uint32_t uPID, uint32_t uCID,
             break;
     }
 
-    if (RT_SUCCESS(rc))
-        rc = VBoxServiceControlThreadPerform(uPID, &ctrlRequest);
-
+    PVBOXSERVICECTRLREQUEST pRequest;
     if (RT_SUCCESS(rc))
     {
-        if (pcbRead)
-            *pcbRead = ctrlRequest.cbData;
+        rc = VBoxServiceControlThreadRequestAllocEx(&pRequest, reqType,
+                                                    pvBuf, cbBuf, uCID);
+        if (RT_SUCCESS(rc))
+            rc = VBoxServiceControlThreadPerform(uPID, pRequest);
+
+        if (RT_SUCCESS(rc))
+        {
+            if (pcbRead)
+                *pcbRead = pRequest->cbData;
+        }
+
+        VBoxServiceControlThreadRequestFree(pRequest);
     }
-    else /* Something went wrong, nothing read. */
-        *pcbRead = 0;
 
     return rc;
 }
@@ -415,21 +416,22 @@ int VBoxServiceControlSetInput(uint32_t uPID, uint32_t uCID,
     AssertReturn(cbBuf, VERR_INVALID_PARAMETER);
     /* pcbWritten is optional. */
 
-    int rc = VINF_SUCCESS;
-
-    VBOXSERVICECTRLREQUEST ctrlRequest;
-    ctrlRequest.uCID    = uCID;
-    ctrlRequest.cbData  = cbBuf;
-    ctrlRequest.pvData  = pvBuf;
-    ctrlRequest.enmType = fPendingClose
-                        ? VBOXSERVICECTRLREQUEST_STDIN_WRITE_EOF : VBOXSERVICECTRLREQUEST_STDIN_WRITE;
-    if (RT_SUCCESS(rc))
-        rc = VBoxServiceControlThreadPerform(uPID, &ctrlRequest);
-
+    PVBOXSERVICECTRLREQUEST pRequest;
+    int rc = VBoxServiceControlThreadRequestAllocEx(&pRequest,
+                                                      fPendingClose
+                                                    ? VBOXSERVICECTRLREQUEST_STDIN_WRITE_EOF
+                                                    : VBOXSERVICECTRLREQUEST_STDIN_WRITE,
+                                                    pvBuf, cbBuf, uCID);
     if (RT_SUCCESS(rc))
     {
-        if (pcbWritten)
-            *pcbWritten = ctrlRequest.cbData;
+        rc = VBoxServiceControlThreadPerform(uPID, pRequest);
+        if (RT_SUCCESS(rc))
+        {
+            if (pcbWritten)
+                *pcbWritten = pRequest->cbData;
+        }
+
+        VBoxServiceControlThreadRequestFree(pRequest);
     }
 
     return rc;
@@ -558,29 +560,21 @@ static int VBoxServiceControlHandleCmdGetOutput(uint32_t idClient, uint32_t cPar
                                                  &uContextID, &uPID, &uHandleID, &uFlags);
     if (RT_SUCCESS(rc))
     {
-        uint32_t cbRead = 0;
         uint8_t *pBuf = (uint8_t*)RTMemAlloc(_64K);
         if (pBuf)
         {
+            uint32_t cbRead = 0;
             rc = VBoxServiceControlExecGetOutput(uPID, uContextID, uHandleID, RT_INDEFINITE_WAIT /* Timeout */,
                                                  pBuf, _64K /* cbSize */, &cbRead);
+            VBoxServiceVerbose(3, "Control: Got output returned with rc=%Rrc (PID=%u, CID=%u, cbRead=%u, uHandle=%u, uFlags=%u)\n",
+                               rc, uPID, uContextID, cbRead, uHandleID, uFlags);
 
             /** Note: Don't convert/touch/modify/whatever the output data here! This might be binary
              *        data which the host needs to work with -- so just pass through all data unfiltered! */
 
-            if (RT_SUCCESS(rc))
-                VBoxServiceVerbose(2, "Control: Got output, PID=%u, CID=%u, cbRead=%u, uHandle=%u, uFlags=%u\n",
-                                   uPID, uContextID, cbRead, uHandleID, uFlags);
-            else if (rc == VERR_NOT_FOUND)
-                VBoxServiceVerbose(2, "Control: PID=%u not found, CID=%u, uHandle=%u\n",
-                                   uPID, uContextID, uHandleID, rc);
-            else
-                VBoxServiceError("Control: Failed to retrieve output for PID=%u, CID=%u, uHandle=%u, rc=%Rrc\n",
-                                 uPID, uContextID, uHandleID, rc);
             /* Note: Since the context ID is unique the request *has* to be completed here,
              *       regardless whether we got data or not! Otherwise the progress object
              *       on the host never will get completed! */
-            /* cbRead now contains actual size. */
             int rc2 = VbglR3GuestCtrlExecSendOut(idClient, uContextID, uPID, uHandleID, uFlags,
                                                  pBuf, cbRead);
             if (RT_SUCCESS(rc))
@@ -655,11 +649,11 @@ static void VBoxServiceControlDestroyThreads(void)
     }
 
 #ifdef DEBUG
-        PVBOXSERVICECTRLTHREAD pThreadCur;
-        uint32_t cThreads = 0;
-        RTListForEach(&g_GuestControlThreads, pThreadCur, VBOXSERVICECTRLTHREAD, Node)
-            cThreads++;
-        VBoxServiceVerbose(4, "Control: Guest process threads left=%u\n", cThreads);
+    PVBOXSERVICECTRLTHREAD pThreadCur;
+    uint32_t cThreads = 0;
+    RTListForEach(&g_GuestControlThreads, pThreadCur, VBOXSERVICECTRLTHREAD, Node)
+        cThreads++;
+    VBoxServiceVerbose(4, "Control: Guest process threads left=%u\n", cThreads);
 #endif
     AssertMsg(RTListIsEmpty(&g_GuestControlThreads),
               ("Guest process thread list still contains children when it should not\n"));
@@ -716,13 +710,9 @@ static int VBoxServiceControlStartAllowed(bool *pbAllowed)
             PVBOXSERVICECTRLTHREAD pThread;
             RTListForEach(&g_GuestControlThreads, pThread, VBOXSERVICECTRLTHREAD, Node)
             {
-                VBOXSERVICECTRLTHREADSTATUS enmStatus = VBoxServiceControlThreadGetStatus(pThread);
-                if (enmStatus == VBOXSERVICECTRLTHREADSTATUS_STARTED)
-                    uProcsRunning++;
-                else if (enmStatus == VBOXSERVICECTRLTHREADSTATUS_STOPPED)
-                    uProcsStopped++;
-                else
-                    AssertMsgFailed(("Control: Guest process neither started nor stopped!?\n"));
+                  VBoxServiceControlThreadActive(pThread)
+                ? uProcsRunning++
+                : uProcsStopped++;
             }
 
             VBoxServiceVerbose(3, "Control: Maximum served guest processes set to %u, running=%u, stopped=%u\n",

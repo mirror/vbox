@@ -39,6 +39,9 @@
 #include <iprt/asm.h>
 #include <iprt/buildconfig.h>
 #include <iprt/initterm.h>
+#ifdef DEBUG
+# include <iprt/memtracker.h>
+#endif
 #include <iprt/message.h>
 #include <iprt/path.h>
 #include <iprt/semaphore.h>
@@ -934,6 +937,7 @@ int main(int argc, char **argv)
 
 #ifdef DEBUG
     RTCritSectDelete(&g_csLog);
+    //RTMemTrackerDumpAllToStdOut();
 #endif
     return rcExit;
 }
