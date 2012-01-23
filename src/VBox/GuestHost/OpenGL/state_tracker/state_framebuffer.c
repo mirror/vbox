@@ -790,6 +790,12 @@ crStateFramebufferObjectReenableHW(CRContext *fromCtx, CRContext *toCtx)
         diff_api.DrawBuffer(toCtx->framebufferobject.drawFB?toCtx->framebufferobject.drawFB->drawbuffer[0]:toCtx->buffer.drawBuffer);
         diff_api.ReadBuffer(toCtx->framebufferobject.readFB?toCtx->framebufferobject.readFB->readbuffer:toCtx->buffer.readBuffer);
     }
+
+    if (fromCtx->framebufferobject.renderbuffer
+            && fromCtx->framebufferobject.renderbuffer==toCtx->framebufferobject.renderbuffer)
+    {
+        diff_api.BindRenderbufferEXT(GL_RENDERBUFFER_EXT, toCtx->framebufferobject.renderbuffer->hwid);
+    }
 }
 
 
