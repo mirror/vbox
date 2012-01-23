@@ -1123,6 +1123,8 @@ extern const PDMPCIRAWHLPR3 g_pdmR3DevPciRawHlp;
 *   Internal Functions                                                         *
 *******************************************************************************/
 #ifdef IN_RING3
+bool        pdmR3IsValidName(const char *pszName);
+
 int         pdmR3CritSectInitStats(PVM pVM);
 void        pdmR3CritSectRelocate(PVM pVM);
 int         pdmR3CritSectInitDevice(PVM pVM, PPDMDEVINS pDevIns, PPDMCRITSECT pCritSect, RT_SRC_POS_DECL, const char *pszNameFmt, va_list va);
@@ -1192,3 +1194,4 @@ void        pdmUnlock(PVM pVM);
 RT_C_DECLS_END
 
 #endif
+
