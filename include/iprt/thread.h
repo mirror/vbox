@@ -243,9 +243,9 @@ typedef FNRTTHREAD *PFNRTTHREAD;
  */
 typedef enum RTTHREADFLAGS
 {
-    /**
-     * This flag is used to keep the thread structure around so it can
-     * be waited on after termination.
+    /** This flag is used to keep the thread structure around so it can
+     * be waited on after termination.  @sa RTThreadWait and
+     * RTThreadWaitNoResume.  Not required for RTThreadUserWait and friends!
      */
     RTTHREADFLAGS_WAITABLE = RT_BIT(0),
     /** The bit number corresponding to the RTTHREADFLAGS_WAITABLE mask. */
