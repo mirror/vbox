@@ -526,7 +526,7 @@ static struct file_system_type vboxsf_fs_type =
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
 static int follow_symlinks = 0;
-module_param(follow_symlinks, bool, 0);
+module_param(follow_symlinks, int, 0);
 MODULE_PARM_DESC(follow_symlinks, "Let host resolve symlinks rather than showing them");
 #endif
 

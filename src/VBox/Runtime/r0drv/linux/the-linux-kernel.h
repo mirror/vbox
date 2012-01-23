@@ -317,6 +317,10 @@ DECLINLINE(unsigned long) msecs_to_jiffies(unsigned int cMillies)
  */
 #undef bool
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 3, 0)
+typedef int umode_t
+#endif
+
 /*
  * There are post-2.6.24 kernels (confusingly with unchanged version number)
  * which eliminate macros which were marked as deprecated.
