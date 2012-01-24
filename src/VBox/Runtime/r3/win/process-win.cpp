@@ -767,7 +767,7 @@ static int rtProcCreateAsUserHlp(PRTUTF16 pwszUser, PRTUTF16 pwszPassword, PRTUT
      * Did the API call above fail because we're running on a too old OS (NT4) or
      * we're running as a Windows service?
      */
-    if (   RT_FAILURE(rc)
+    if (   RT_FAILURE(rc) /** @todo r=bird: you don't set rc when pfnCreateProcesswithLogonW fails... Using too many variables to control flow is confusing. */
         || (fFlags & RTPROC_FLAGS_SERVICE))
     {
         /*
@@ -934,21 +934,18 @@ static int rtProcCreateAsUserHlp(PRTUTF16 pwszUser, PRTUTF16 pwszPassword, PRTUT
                                         dwErr = GetLastError(); /* CreateProcessAsUserW() failed. */
                                     rtProcEnvironmentDestroy(pwszzBlock);
                                 }
-                                else
-                                    dwErr = rc;
 
                                 if (!(fFlags & RTPROC_FLAGS_NO_PROFILE))
                                 {
                                     fRc = pfnUnloadUserProfile(*phToken, profileInfo.hProfile);
+#ifdef RT_STRICT
                                     if (!fRc)
                                     {
-                                        /* In case there were some handles left open, we want to know about
-                                         * that -- can be tricky to debug later! */
                                         DWORD dwErr2 = GetLastError();
-                                        AssertMsgFailed(("Unloading user profile failed with error %u (%#x)", dwErr2, dwErr2));
-                                        if (dwErr == NO_ERROR)
-                                            dwErr = dwErr2;
+                                        AssertMsgFailed(("Unloading user profile failed with error %u (%#x) - Are all handles closed? (dwErr=%u)",
+                                                         dwErr2, dwErr2, dwErr));
                                     }
+#endif
                                 }
                             }
                         }
