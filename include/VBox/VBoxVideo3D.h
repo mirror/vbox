@@ -59,8 +59,28 @@ typedef enum {
 
 #define VBOXTLSREFDATA \
     volatile int32_t cTlsRefs; \
-    uint32_t enmTlsRefState; \
+    VBOXTLSREFDATA_STATE enmTlsRefState; \
     PFNVBOXTLSREFDTOR pfnTlsRefDtor; \
+
+struct VBOXTLSREFDATA_DUMMY
+{
+    VBOXTLSREFDATA
+};
+
+#define VBOXTLSREFDATA_OFFSET(_t) RT_OFFSETOF(_t, cTlsRefs)
+#define VBOXTLSREFDATA_SIZE() (sizeof (struct VBOXTLSREFDATA_DUMMY))
+#define VBOXTLSREFDATA_COPY(_pDst, _pSrc) do { \
+        (_pDst)->cTlsRefs = (_pSrc)->cTlsRefs; \
+        (_pDst)->enmTlsRefState = (_pSrc)->enmTlsRefState; \
+        (_pDst)->pfnTlsRefDtor = (_pSrc)->pfnTlsRefDtor; \
+    } while (0)
+
+#define VBOXTLSREFDATA_EQUAL(_pDst, _pSrc) ( \
+           (_pDst)->cTlsRefs == (_pSrc)->cTlsRefs \
+        && (_pDst)->enmTlsRefState == (_pSrc)->enmTlsRefState \
+        && (_pDst)->pfnTlsRefDtor == (_pSrc)->pfnTlsRefDtor \
+    )
+
 
 #define VBoxTlsRefInit(_p, _pfnDtor) do { \
         (_p)->cTlsRefs = 1; \
@@ -84,7 +104,7 @@ typedef enum {
         } \
     } while (0)
 
-#define VBoxTlsRefReleaseMarkDestroy(_p) do { \
+#define VBoxTlsRefMarkDestroy(_p) do { \
         (_p)->enmTlsRefState = VBOXTLSREFDATA_STATE_TOBE_DESTROYED; \
     } while (0)
 
