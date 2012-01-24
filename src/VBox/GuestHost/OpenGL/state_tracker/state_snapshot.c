@@ -1018,7 +1018,27 @@ int32_t crStateSaveContext(CRContext *pContext, PSSMHANDLE pSSM)
     pContext->buffer.storedWidth = pContext->buffer.width;
     pContext->buffer.storedHeight = pContext->buffer.height;
 
-    rc = SSMR3PutMem(pSSM, pContext, sizeof(*pContext));
+    CRASSERT(VBoxTlsRefIsFunctional(pContext));
+
+    /* do not increment the saved state version due to VBOXTLSREFDATA addition to CRContext */
+    rc = SSMR3PutMem(pSSM, pContext, VBOXTLSREFDATA_OFFSET(CRContext));
+    AssertRCReturn(rc, rc);
+
+    /* now store bitid & neg_bitid */
+    rc = SSMR3PutMem(pSSM, pContext->bitid, sizeof (pContext->bitid) + sizeof (pContext->neg_bitid));
+    AssertRCReturn(rc, rc);
+
+    /* the pre-VBOXTLSREFDATA CRContext structure might have additional allignment bits before the CRContext::shared */
+    ui32 = VBOXTLSREFDATA_OFFSET(CRContext) + sizeof (pContext->bitid) + sizeof (pContext->neg_bitid);
+    ui32 &= (sizeof (void*) - 1);
+    if (ui32)
+    {
+        void* pTmp = NULL;
+        rc = SSMR3PutMem(pSSM, &pTmp, ui32);
+        AssertRCReturn(rc, rc);
+    }
+
+    rc = SSMR3PutMem(pSSM, &pContext->shared, sizeof (CRContext) - RT_OFFSETOF(CRContext, shared));
     AssertRCReturn(rc, rc);
 
     if (crHashtableNumElements(pContext->shared->dlistTable)>0)
@@ -1378,6 +1398,10 @@ static void crStateFindSharedCB(unsigned long key, void *data1, void *data2)
 #define SLC_COPYPTR(ptr) pTmpContext->ptr = pContext->ptr
 #define SLC_ASSSERT_NULL_PTR(ptr) CRASSERT(!pContext->ptr)
 
+AssertCompile(VBOXTLSREFDATA_SIZE() <= CR_MAX_BITARRAY);
+AssertCompile(VBOXTLSREFDATA_STATE_INITIALIZED != 0);
+AssertCompile(RT_OFFSETOF(CRContext, shared) >= VBOXTLSREFDATA_OFFSET(CRContext) + VBOXTLSREFDATA_SIZE() + RT_SIZEOFMEMB(CRContext, bitid) + RT_SIZEOFMEMB(CRContext, neg_bitid));
+
 int32_t crStateLoadContext(CRContext *pContext, CRHashTable * pCtxTable, PSSMHANDLE pSSM)
 {
     CRContext* pTmpContext;
@@ -1385,6 +1409,12 @@ int32_t crStateLoadContext(CRContext *pContext, CRHashTable * pCtxTable, PSSMHAN
     uint32_t uiNumElems, ui, k;
     unsigned long key;
     GLboolean bLoadShared = GL_TRUE;
+    union {
+        CRbitvalue bitid[CR_MAX_BITARRAY];
+        struct {
+            VBOXTLSREFDATA
+        } tlsRef;
+    } bitid;
 
     CRASSERT(pContext && pSSM);
 
@@ -1393,7 +1423,56 @@ int32_t crStateLoadContext(CRContext *pContext, CRHashTable * pCtxTable, PSSMHAN
     if (!pTmpContext)
         return VERR_NO_MEMORY;
 
-    rc = SSMR3GetMem(pSSM, pTmpContext, sizeof(*pTmpContext));
+    CRASSERT(VBoxTlsRefIsFunctional(pContext));
+
+    /* do not increment the saved state version due to VBOXTLSREFDATA addition to CRContext */
+    rc = SSMR3GetMem(pSSM, pTmpContext, VBOXTLSREFDATA_OFFSET(CRContext));
+    AssertRCReturn(rc, rc);
+
+    /* VBox 4.1.8 had a bug that VBOXTLSREFDATA was also stored in the snapshot,
+     * thus the saved state data format was changed w/o changing the saved state version.
+     * here we determine whether the saved state contains VBOXTLSREFDATA, and if so, treat it accordingly */
+    rc = SSMR3GetMem(pSSM, &bitid, sizeof (bitid));
+    AssertRCReturn(rc, rc);
+
+    /* the bitid array has one bit set only. this is why if bitid.tlsRef has both cTlsRefs
+     * and enmTlsRefState non-zero - this is definitely NOT a bit id and is a VBOXTLSREFDATA */
+    if (bitid.tlsRef.enmTlsRefState == VBOXTLSREFDATA_STATE_INITIALIZED
+            && bitid.tlsRef.cTlsRefs)
+    {
+        /* VBOXTLSREFDATA is stored, skip it */
+        crMemcpy(&pTmpContext->bitid, ((uint8_t*)&bitid) + VBOXTLSREFDATA_SIZE(), sizeof (bitid) - VBOXTLSREFDATA_SIZE());
+        rc = SSMR3GetMem(pSSM, ((uint8_t*)&pTmpContext->bitid) + VBOXTLSREFDATA_SIZE(), sizeof (pTmpContext->bitid) + sizeof (pTmpContext->neg_bitid) - VBOXTLSREFDATA_SIZE());
+        AssertRCReturn(rc, rc);
+
+        ui = VBOXTLSREFDATA_OFFSET(CRContext) + VBOXTLSREFDATA_SIZE() + sizeof (pTmpContext->bitid) + sizeof (pTmpContext->neg_bitid);
+        ui = RT_OFFSETOF(CRContext, shared) - ui;
+    }
+    else
+    {
+        /* VBOXTLSREFDATA is NOT stored */
+        crMemcpy(&pTmpContext->bitid, &bitid, sizeof (bitid));
+        rc = SSMR3GetMem(pSSM, &pTmpContext->neg_bitid, sizeof (pTmpContext->neg_bitid));
+        AssertRCReturn(rc, rc);
+
+        /* the pre-VBOXTLSREFDATA CRContext structure might have additional allignment bits before the CRContext::shared */
+        ui = VBOXTLSREFDATA_OFFSET(CRContext) + sizeof (pTmpContext->bitid) + sizeof (pTmpContext->neg_bitid);
+
+        ui &= (sizeof (void*) - 1);
+    }
+
+    if (ui)
+    {
+        void* pTmp = NULL;
+        rc = SSMR3GetMem(pSSM, &pTmp, ui);
+        AssertRCReturn(rc, rc);
+    }
+
+    /* we will later do crMemcpy from entire pTmpContext to pContext,
+     * for simplicity store the VBOXTLSREFDATA from the pContext to pTmpContext */
+    VBOXTLSREFDATA_COPY(pTmpContext, pContext);
+
+    rc = SSMR3GetMem(pSSM, &pTmpContext->shared, sizeof (CRContext) - RT_OFFSETOF(CRContext, shared));
     AssertRCReturn(rc, rc);
 
     /* Deal with shared state */
@@ -1566,6 +1645,7 @@ int32_t crStateLoadContext(CRContext *pContext, CRHashTable * pCtxTable, PSSMHAN
 
     /* Have to preserve original context id */
     CRASSERT(pTmpContext->id == pContext->id);
+    CRASSERT(VBOXTLSREFDATA_EQUAL(pContext, pTmpContext));
     /* Copy ordinary state to real context */
     crMemcpy(pContext, pTmpContext, sizeof(*pTmpContext));
     crFree(pTmpContext);
