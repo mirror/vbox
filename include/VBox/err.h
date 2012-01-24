@@ -1380,6 +1380,9 @@
 #define VERR_PDM_DEV_IPE_1                          (-2888)
 /** Misconfigured driver chain transformation. */
 #define VERR_PDM_MISCONFIGURED_DRV_TRANSFORMATION   (-2889)
+/** The driver is already removed, not more transformations possible (at
+ *  present). */
+#define VERR_PDM_CANNOT_TRANSFORM_REMOVED_DRIVER    (-2890)
 /** @} */
 
 
