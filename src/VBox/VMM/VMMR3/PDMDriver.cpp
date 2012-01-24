@@ -403,12 +403,24 @@ static int pdmR3DrvMaybeTransformChain(PVM pVM, PPDMDRVINS pDrvAbove, PPDMLUN pL
     AssertMsgRCReturn(rc,  ("Query for string value of \"Driver\" -> %Rrc\n", rc),
                       rc == VERR_CFGM_VALUE_NOT_FOUND ? VERR_PDM_CFG_MISSING_DRIVER_NAME : rc);
 
+    uint64_t    uInjectTransformationAbove = 0;
+    if (pDrvAbove)
+    {
+        rc = CFGMR3QueryIntegerDef(CFGMR3GetParent(*ppNode), "InjectTransformationPtr", &uInjectTransformationAbove, 0);
+        AssertLogRelRCReturn(rc, rc);
+    }
+
 
     /*
      * Enumerate possible driver chain transformations.
      */
+    unsigned cTransformations = 0;
     for (; pCurTrans != NULL; pCurTrans = CFGMR3GetNextChild(pCurTrans))
     {
+        char szCurTransNm[256];
+        rc = CFGMR3GetName(pCurTrans, szCurTransNm, sizeof(szCurTransNm));
+        AssertLogRelRCReturn(rc, rc);
+
         /* Match against the driver multi pattern. */
         char *pszMultiPat;
         rc = CFGMR3QueryStringAllocDef(pCurTrans, "Driver", &pszMultiPat, "*");
@@ -435,14 +447,19 @@ static int pdmR3DrvMaybeTransformChain(PVM pVM, PPDMDRVINS pDrvAbove, PPDMLUN pL
             continue;
 
         /* Match against the above-driver multi pattern. */
-        /** @todo add some config to avoid infinie application of an
-         * AboveDriver transformation. */
-        rc = CFGMR3QueryStringAllocDef(pCurTrans, "AboveDriver", &pszMultiPat, "*");
-        AssertLogRelRCReturn(rc, rc);
-        fMatch = RTStrSimplePatternMultiMatch(pszMultiPat, RTSTR_MAX, pszThisDrv, RTSTR_MAX, NULL);
-        MMR3HeapFree(pszMultiPat);
-        if (!fMatch)
-            continue;
+        rc = CFGMR3QueryStringAlloc(pCurTrans, "AboveDriver", &pszMultiPat);
+        if (rc == VERR_CFGM_VALUE_NOT_FOUND)
+            rc = VINF_SUCCESS;
+        else
+        {
+            AssertLogRelRCReturn(rc, rc);
+            fMatch = RTStrSimplePatternMultiMatch(pszMultiPat, RTSTR_MAX, pszThisDrv, RTSTR_MAX, NULL);
+            MMR3HeapFree(pszMultiPat);
+            if (!fMatch)
+                continue;
+            if (uInjectTransformationAbove == (uintptr_t)pCurTrans)
+                continue;
+        }
 
         /*
          * We've got a match! Now, what are we supposed to do?
@@ -450,18 +467,22 @@ static int pdmR3DrvMaybeTransformChain(PVM pVM, PPDMDRVINS pDrvAbove, PPDMLUN pL
         char szAction[16];
         rc = CFGMR3QueryStringDef(pCurTrans, "Action", szAction, sizeof(szAction), "inject");
         AssertLogRelRCReturn(rc, rc);
-        AssertLogRelMsgFailedReturn(("Action='%s', valid values are 'inject', 'replace' and 'remove'.\n",  szAction),
-                                    VERR_PDM_MISCONFIGURED_DRV_TRANSFORMATION);
-
         AssertLogRelMsgReturn(   !strcmp(szAction, "inject")
+                              || !strcmp(szAction, "mergeconfig")
+                              || !strcmp(szAction, "remove")
+                              || !strcmp(szAction, "removetree")
                               || !strcmp(szAction, "replace")
-                              || !strcmp(szAction, "remove"),
-                              ("Action='%s', valid values are 'inject', 'replace' and 'remove'.\n",  szAction),
+                              || !strcmp(szAction, "replacetree")
+                              ,
+                              ("Action='%s', valid values are 'inject', 'mergeconfig', 'replace', 'replacetree', 'remove', 'removetree'.\n", szAction),
                               VERR_PDM_MISCONFIGURED_DRV_TRANSFORMATION);
+        LogRel(("Applying '%s' to '%s'::[%s]...'%s': %s\n", szCurTransNm, pszDevice, szLun, pszThisDrv, szAction));
+        CFGMR3Dump(*ppNode);
+        CFGMR3Dump(pCurTrans);
 
         /* Get the attached driver to inject. */
         PCFGMNODE pTransAttDrv = NULL;
-        if (!strcmp(szAction, "inject") || !strcmp(szAction, "replace"))
+        if (!strcmp(szAction, "inject") || !strcmp(szAction, "replace") || !strcmp(szAction, "replacetree"))
         {
             pTransAttDrv = CFGMR3GetChild(pCurTrans, "AttachedDriver");
             AssertLogRelMsgReturn(pTransAttDrv,
@@ -473,13 +494,19 @@ static int pdmR3DrvMaybeTransformChain(PVM pVM, PPDMDRVINS pDrvAbove, PPDMLUN pL
         /*
          * Remove the node.
          */
-        if (!strcmp(szAction, "remove"))
+        if (!strcmp(szAction, "remove") || !strcmp(szAction, "removetree"))
         {
             PCFGMNODE pBelowThis = CFGMR3GetChild(*ppNode, "AttachedDriver");
-            if (pBelowThis)
+            if (!pBelowThis || !strcmp(szAction, "removetree"))
             {
-                PCFGMNODE pBelowThisCopy = CFGMR3DuplicateSubTree(pBelowThis);
-                AssertLogRelReturn(pBelowThisCopy, VERR_NO_MEMORY);
+                CFGMR3RemoveNode(*ppNode);
+                *ppNode = NULL;
+            }
+            else
+            {
+                PCFGMNODE pBelowThisCopy;
+                rc = CFGMR3DuplicateSubTree(pBelowThis, &pBelowThisCopy);
+                AssertLogRelRCReturn(rc, rc);
 
                 rc = CFGMR3ReplaceSubTree(*ppNode, pBelowThisCopy);
                 if (RT_FAILURE(rc))
@@ -488,28 +515,24 @@ static int pdmR3DrvMaybeTransformChain(PVM pVM, PPDMDRVINS pDrvAbove, PPDMLUN pL
                     AssertLogRelReturn(("rc=%Rrc\n", rc), rc);
                 }
             }
-            else
-            {
-                CFGMR3RemoveNode(*ppNode);
-                *ppNode = NULL;
-            }
         }
         /*
          * Replace the driver about to be instantiated.
          */
-        else if (!strcmp(szAction, "replace"))
+        else if (!strcmp(szAction, "replace") || !strcmp(szAction, "replacetree"))
         {
-            PCFGMNODE pTransCopy = CFGMR3DuplicateSubTree(pTransAttDrv);
-            AssertLogRelBreakStmt(pTransCopy, rc = VERR_NO_MEMORY);
-            rc = VERR_PDM_MISCONFIGURED_DRV_TRANSFORMATION;
+            PCFGMNODE pTransCopy;
+            rc = CFGMR3DuplicateSubTree(pTransAttDrv, &pTransCopy);
+            AssertLogRelRCReturn(rc, rc);
 
             PCFGMNODE pBelowThis = CFGMR3GetChild(*ppNode, "AttachedDriver");
-            if (!pBelowThis)
+            if (!pBelowThis || !strcmp(szAction, "replacetree"))
                 rc = VINF_SUCCESS;
             else
             {
-                PCFGMNODE pBelowThisCopy = CFGMR3DuplicateSubTree(pBelowThis);
-                if (pBelowThisCopy)
+                PCFGMNODE pBelowThisCopy;
+                rc = CFGMR3DuplicateSubTree(pBelowThis, &pBelowThisCopy);
+                if (RT_SUCCESS(rc))
                 {
                     rc = CFGMR3InsertSubTree(pTransCopy, "AttachedDriver", pBelowThisCopy, NULL);
                     AssertLogRelRC(rc);
@@ -527,27 +550,65 @@ static int pdmR3DrvMaybeTransformChain(PVM pVM, PPDMDRVINS pDrvAbove, PPDMLUN pL
          */
         else if (!strcmp(szAction, "inject"))
         {
-            PCFGMNODE pTransCopy = CFGMR3DuplicateSubTree(pTransAttDrv);
-            AssertLogRelBreakStmt(pTransCopy, rc = VERR_NO_MEMORY);
-            rc = VERR_PDM_MISCONFIGURED_DRV_TRANSFORMATION;
+            PCFGMNODE pTransCopy;
+            rc = CFGMR3DuplicateSubTree(pTransAttDrv, &pTransCopy);
+            AssertLogRelRCReturn(rc, rc);
 
-            PCFGMNODE pThisCopy = CFGMR3DuplicateSubTree(*ppNode);
-            if (pThisCopy)
+            PCFGMNODE pThisCopy;
+            rc = CFGMR3DuplicateSubTree(*ppNode, &pThisCopy);
+            if (RT_SUCCESS(rc))
             {
                 rc = CFGMR3InsertSubTree(pTransCopy, "AttachedDriver", pThisCopy, NULL);
-                AssertLogRelRC(rc);
-                if (RT_FAILURE(rc))
+                if (RT_SUCCESS(rc))
+                {
+                    rc = CFGMR3InsertInteger(pTransCopy, "InjectTransformationPtr", (uintptr_t)pCurTrans);
+                    AssertLogRelRC(rc);
+                    rc = CFGMR3InsertString(pTransCopy, "InjectTransformationNm", szCurTransNm);
+                    AssertLogRelRC(rc);
+                    if (RT_SUCCESS(rc))
+                        rc = CFGMR3ReplaceSubTree(*ppNode, pTransCopy);
+                }
+                else
+                {
+                    AssertLogRelRC(rc);
                     CFGMR3RemoveNode(pThisCopy);
+                }
             }
-            if (RT_SUCCESS(rc))
-                rc = CFGMR3ReplaceSubTree(*ppNode, pTransCopy);
             if (RT_FAILURE(rc))
                 CFGMR3RemoveNode(pTransCopy);
         }
+        /*
+         * Merge the Config node of the transformation with the one of the
+         * current driver.
+         */
+        else if (!strcmp(szAction, "mergeconfig"))
+        {
+            PCFGMNODE pTransConfig = CFGMR3GetChild(pCurTrans, "Config");
+            AssertLogRelReturn(pTransConfig, VERR_PDM_MISCONFIGURED_DRV_TRANSFORMATION);
+
+            PCFGMNODE pDrvConfig = CFGMR3GetChild(*ppNode, "Config");
+            if (*ppNode)
+                CFGMR3InsertNode(*ppNode, "Config", &pDrvConfig);
+            AssertLogRelReturn(pDrvConfig, VERR_PDM_CANNOT_TRANSFORM_REMOVED_DRIVER);
+
+            rc = CFGMR3CopyTree(pDrvConfig, pTransConfig, CFGM_COPY_FLAGS_REPLACE_VALUES);
+            AssertLogRelRCReturn(rc, rc);
+        }
         else
             AssertFailed();
-        break;
+
+        cTransformations++;
+        if (*ppNode)
+            CFGMR3Dump(*ppNode);
+        else
+            LogRel(("The transformation removed the driver.\n"));
     }
+
+    /*
+     * Note what happened in the release log.
+     */
+    if (cTransformations > 0)
+        LogRel(("Transformations done. Applied %u driver transformations.\n", cTransformations));
 
     return rc;
 }
@@ -571,6 +632,10 @@ static int pdmR3DrvMaybeTransformChain(PVM pVM, PPDMDRVINS pDrvAbove, PPDMLUN pL
  *
  * @remarks Recursive calls to this function is normal as the drivers will
  *          attach to anything below them during the pfnContruct call.
+ *
+ * @todo    Need to extend this interface a bit so that the driver
+ *          transformation feature can attach drivers to unconfigured LUNs and
+ *          at the end of chains.
  */
 int pdmR3DrvInstantiate(PVM pVM, PCFGMNODE pNode, PPDMIBASE pBaseInterface, PPDMDRVINS pDrvAbove,
                         PPDMLUN pLun, PPDMIBASE *ppBaseInterface)
@@ -586,6 +651,8 @@ int pdmR3DrvInstantiate(PVM pVM, PCFGMNODE pNode, PPDMIBASE pBaseInterface, PPDM
     int rc = pdmR3DrvMaybeTransformChain(pVM, pDrvAbove, pLun, &pNode);
     if (RT_FAILURE(rc))
         return rc;
+    if (!pNode)
+        return VERR_PDM_NO_ATTACHED_DRIVER;
 
     /*
      * Find the driver.
