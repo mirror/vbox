@@ -1184,7 +1184,8 @@ typedef struct PDMIMEDIAPORT
 typedef struct PDMIMEDIA *PPDMIMEDIA;
 /**
  * Media interface (up).
- * Makes up the foundation for PDMIBLOCK and PDMIBLOCKBIOS.  No interface pair.
+ * Makes up the foundation for PDMIBLOCK and PDMIBLOCKBIOS.
+ * Pairs with PDMIMEDIAPORT.
  */
 typedef struct PDMIMEDIA
 {
