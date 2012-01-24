@@ -381,7 +381,7 @@ static bool isDnsMappingEntryMatchOrEqual2Str(const PDNSMAPPINGENTRY pDNSMapingE
     return (    (   pDNSMapingEntry->pszCName
                  && !strcmp(pDNSMapingEntry->pszCName, pcszString))
             || (   pDNSMapingEntry->pszPattern
-                && RTStrSimplePatternMatch(pDNSMapingEntry->pszPattern, pcszString)));
+                && RTStrSimplePatternMultiMatch(pDNSMapingEntry->pszPattern, RTSTR_MAX, pcszString, RTSTR_MAX, NULL)));
 }
 
 static void alterHostentWithDataFromDNSMap(PNATState pData, struct hostent *pHostent)
