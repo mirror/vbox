@@ -486,6 +486,8 @@ send:
         m->m_data += if_maxlinkhdr;
         m->m_pkthdr.header = mtod(m, void *);
         m->m_len = hdrlen;
+        /* fill template from socket structure */
+        tcp_template(tp);
     }
 
     ti = mtod(m, struct tcpiphdr *);
