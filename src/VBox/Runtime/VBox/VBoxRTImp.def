@@ -637,6 +637,7 @@ EXPORTS
     RTLogSetBuffering
     RTLogSetCustomPrefixCallback
     RTLogSetDefaultInstance
+    RTLogSetGroupLimit
     RTLogWriteCom
     RTLogWriteDebugger
     RTLogWriteStdErr
