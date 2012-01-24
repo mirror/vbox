@@ -370,9 +370,9 @@
 
           <listitem>
             <para><computeroutput>--verbose</computeroutput> (or
-            <computeroutput>-v</computeroutput>): Normally, the webservice
+            <computeroutput>-v</computeroutput>): Normally, the web service
             outputs only brief messages to the console each time a request is
-            served. With this option, the webservice prints much more detailed
+            served. With this option, the web service prints much more detailed
             data about every request and the COM methods that those requests
             are mapped to internally, which can be useful for debugging client
             programs.</para>
@@ -382,10 +382,10 @@
             <para><computeroutput>--logfile</computeroutput> (or
             <computeroutput>-F</computeroutput>)
             <computeroutput>&lt;file&gt;</computeroutput>: If this is
-            specified, the webservice not only prints its output to the
+            specified, the web service not only prints its output to the
             console, but also writes it to the specified file. The file is
             created if it does not exist; if it does exist, new output is
-            appended to it. This is useful if you run the webservice
+            appended to it. This is useful if you run the web service
             unattended and need to debug problems after they have
             occurred.</para>
           </listitem>
@@ -433,7 +433,7 @@
         VBoxAuth module that ships with VirtualBox. This module uses PAM on
         Linux hosts to authenticate users. Any valid username/password
         combination is accepted, it does not have to be the username and
-        password of the user running the webservice daemon. Unless
+        password of the user running the web service daemon. Unless
         <computeroutput>vboxwebsrv</computeroutput> runs as root, PAM
         authentication can fail, because sometimes the file
         <computeroutput>/etc/shadow</computeroutput>, which is used by PAM, is
@@ -463,7 +463,7 @@ svccfg -s svc:/application/virtualbox/webservice:default setprop config/user=roo
         with:<screen>svcprop -p config svc:/application/virtualbox/webservice:default</screen></para>
 
         <para>When everything is configured correctly you can start the
-        VirtualBox webservice with the following command:<screen>svcadm enable svc:/application/virtualbox/webservice:default</screen></para>
+        VirtualBox web service with the following command:<screen>svcadm enable svc:/application/virtualbox/webservice:default</screen></para>
 
         <para>For more information about SMF, please refer to the Solaris
         documentation.</para>
@@ -676,7 +676,7 @@ svccfg -s svc:/application/virtualbox/webservice:default setprop config/user=roo
           <xref linkend="IManagedObjectRef__release"
           xreflabel="IManagedObjectRef::release()" /> method explicitly, which
           frees appropriate managed reference, as is required by the raw
-          webservice; see <xref linkend="managed-object-references" /> for
+          web service; see <xref linkend="managed-object-references" /> for
           details. This limitation may be reconsidered in a future version of
           the VirtualBox SDK.</para>
         </sect3>
@@ -724,14 +724,14 @@ svccfg -s svc:/application/virtualbox/webservice:default setprop config/user=roo
         able to control a VirtualBox instance. The shell is written using the
         API layer, thereby hiding different implementation details, so it is
         actually an example of code share among XPCOM, MSCOM and web services.
-        If you are interested in how to interact with the webservices layer
+        If you are interested in how to interact with the web services layer
         directly, have a look at
         <computeroutput>install/vboxapi/__init__.py</computeroutput> which
         contains the glue layer for all target platforms (i.e. XPCOM, MSCOM
         and web services).</para>
 
         <para>To start the shell, perform the following commands: <screen>/opt/VirtualBox/vboxwebsrv -t 0
-            # start webservice with object autocollection disabled
+            # start web service with object autocollection disabled
 export VBOX_PROGRAM_PATH=/opt/VirtualBox
             # your VirtualBox installation directory
 export VBOX_SDK_PATH=/home/youruser/vbox-sdk
@@ -744,7 +744,7 @@ export VBOX_SDK_PATH=/home/youruser/vbox-sdk
         only difference is how it interacts with the invocation layer. You can
         use the <computeroutput>connect</computeroutput> shell command to
         connect to remote VirtualBox servers; in this case you can skip
-        starting the local webserver.</para>
+        starting the local web server.</para>
       </sect2>
 
       <sect2>
@@ -1405,7 +1405,7 @@ string result = service.SayHello("Peter");  // invoke remote procedure</screen>a
         <para>In this layer, the class
         <computeroutput>VirtualBoxManager</computeroutput> hides most
         platform-specific details. It can be used to access both the local
-        (COM) and the webservice-based API. The following code can be used by
+        (COM) and the web service based API. The following code can be used by
         an application to use the glue layer.</para>
 
         <screen># This code assumes vboxapi.py from VirtualBox distribution
@@ -1417,7 +1417,7 @@ from vboxapi import VirtualBoxManager
 virtualBoxManager = VirtualBoxManager(None, None)
 
 # Alternatively, one can be more verbose, and initialize
-# glue with webservice backend, and provide authentication
+# glue with web service backend, and provide authentication
 # information
 virtualBoxManager = VirtualBoxManager("WEBSERVICE",
                                       {'url':'http://myhost.com::18083/',
@@ -4168,7 +4168,7 @@ AuthResult AUTHCALL AuthEntry(
           parameters now use empty strings to signal a null value. For in
           parameters both the old NULL and empty string is allowed. This
           change was necessary to support more client bindings, especially
-          using the webservice API. Many of them either have no special NULL
+          using the web service API. Many of them either have no special NULL
           value or have trouble dealing with it correctly in the respective
           library code.</para>
         </listitem>
