@@ -1412,6 +1412,17 @@ VMMR3DECL(int) CFGMR3ReplaceSubTree(PCFGMNODE pRoot, PCFGMNODE pNewRoot)
 }
 
 
+/**
+ * Copies all values and keys from one tree onto another.
+ *
+ * The flags control what happens to keys and values with the same name
+ * existing in both source and destination.
+ *
+ * @returns VBox status code.
+ * @param   pDstTree            The destination tree.
+ * @param   pSrcTree            The source tree.
+ * @param   fFlags              Copy flags, see CFGM_COPY_FLAGS_XXX.
+ */
 VMMR3DECL(int) CFGMR3CopyTree(PCFGMNODE pDstTree, PCFGMNODE pSrcTree, uint32_t fFlags)
 {
     /*
@@ -1419,7 +1430,7 @@ VMMR3DECL(int) CFGMR3CopyTree(PCFGMNODE pDstTree, PCFGMNODE pSrcTree, uint32_t f
      */
     AssertPtrReturn(pSrcTree, VERR_INVALID_POINTER);
     AssertPtrReturn(pDstTree, VERR_INVALID_POINTER);
-    AssertReturn(pDstTree != pDstTree, VERR_INVALID_PARAMETER);
+    AssertReturn(pDstTree != pSrcTree, VERR_INVALID_PARAMETER);
     AssertReturn(!(fFlags & ~(CFGM_COPY_FLAGS_VALUE_DISP_MASK | CFGM_COPY_FLAGS_KEY_DISP_MASK)), VERR_INVALID_PARAMETER);
     AssertReturn(   (fFlags & CFGM_COPY_FLAGS_VALUE_DISP_MASK) != CFGM_COPY_FLAGS_RESERVED_VALUE_DISP_0
                  && (fFlags & CFGM_COPY_FLAGS_VALUE_DISP_MASK) != CFGM_COPY_FLAGS_RESERVED_VALUE_DISP_1,
