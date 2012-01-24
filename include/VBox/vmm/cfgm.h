@@ -88,7 +88,7 @@ VMMR3DECL(int)          CFGMR3Term(PVM pVM);
 VMMR3DECL(PCFGMNODE)    CFGMR3CreateTree(PVM pVM);
 VMMR3DECL(int)          CFGMR3ConstructDefaultTree(PVM pVM);
 VMMR3DECL(void)         CFGMR3Dump(PCFGMNODE pRoot);
-VMMR3DECL(PCFGMNODE)    CFGMR3DuplicateSubTree(PCFGMNODE pRoot);
+VMMR3DECL(int)          CFGMR3DuplicateSubTree(PCFGMNODE pRoot, PCFGMNODE *ppCopy);
 VMMR3DECL(int)          CFGMR3ReplaceSubTree(PCFGMNODE pRoot, PCFGMNODE pNewRoot);
 VMMR3DECL(int)          CFGMR3InsertSubTree(PCFGMNODE pNode, const char *pszName, PCFGMNODE pSubTree, PCFGMNODE *ppChild);
 VMMR3DECL(int)          CFGMR3InsertNode(PCFGMNODE pNode, const char *pszName, PCFGMNODE *ppChild);
@@ -103,7 +103,34 @@ VMMR3DECL(int)          CFGMR3InsertStringF(PCFGMNODE pNode, const char *pszName
 VMMR3DECL(int)          CFGMR3InsertStringFV(PCFGMNODE pNode, const char *pszName, const char *pszFormat, va_list va);
 VMMR3DECL(int)          CFGMR3InsertStringW(PCFGMNODE pNode, const char *pszName, PCRTUTF16 pwszValue);
 VMMR3DECL(int)          CFGMR3InsertBytes(PCFGMNODE pNode, const char *pszName, const void *pvBytes, size_t cbBytes);
+VMMR3DECL(int)          CFGMR3InsertValue(PCFGMNODE pNode, PCFGMLEAF pValue);
 VMMR3DECL(int)          CFGMR3RemoveValue(PCFGMNODE pNode, const char *pszName);
+
+/** @name CFGMR3CopyTree flags.
+ * @{ */
+/** Reserved value disposition \#0.  */
+#define CFGM_COPY_FLAGS_RESERVED_VALUE_DISP_0   UINT32_C(0x00000000)
+/** Reserved value disposition \#1.  */
+#define CFGM_COPY_FLAGS_RESERVED_VALUE_DISP_1   UINT32_C(0x00000001)
+/** Replace exiting values.  */
+#define CFGM_COPY_FLAGS_REPLACE_VALUES          UINT32_C(0x00000002)
+/** Ignore exiting values.  */
+#define CFGM_COPY_FLAGS_IGNORE_EXISTING_VALUES  UINT32_C(0x00000003)
+/** Value disposition mask.  */
+#define CFGM_COPY_FLAGS_VALUE_DISP_MASK         UINT32_C(0x00000003)
+
+/** Replace exiting keys.  */
+#define CFGM_COPY_FLAGS_RESERVED_KEY_DISP       UINT32_C(0x00000000)
+/** Replace exiting keys.  */
+#define CFGM_COPY_FLAGS_MERGE_KEYS              UINT32_C(0x00000010)
+/** Replace exiting keys.  */
+#define CFGM_COPY_FLAGS_REPLACE_KEYS            UINT32_C(0x00000020)
+/** Ignore existing keys.  */
+#define CFGM_COPY_FLAGS_IGNORE_EXISTING_KEYS    UINT32_C(0x00000030)
+/** Key disposition.  */
+#define CFGM_COPY_FLAGS_KEY_DISP_MASK           UINT32_C(0x00000030)
+/** @} */
+VMMR3DECL(int)          CFGMR3CopyTree(PCFGMNODE pDstTree, PCFGMNODE pSrcTree, uint32_t fFlags);
 
 VMMR3DECL(int)          CFGMR3QueryType(        PCFGMNODE pNode, const char *pszName, PCFGMVALUETYPE penmType);
 VMMR3DECL(int)          CFGMR3QuerySize(        PCFGMNODE pNode, const char *pszName, size_t *pcb);
