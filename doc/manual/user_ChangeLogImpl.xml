@@ -799,7 +799,7 @@
       </listitem>
 
       <listitem>
-        <para>Webservice: fixed timeout handling with HTTP 1.1 keepalive, and
+        <para>Web service: fixed timeout handling with HTTP 1.1 keepalive, and
           be more robust when connections fail</para>
       </listitem>
 
@@ -1569,7 +1569,7 @@
       </listitem>
 
       <listitem>
-        <para>Webservice: use own log file, with log rotation to limit size</para>
+        <para>Web service: use own log file, with log rotation to limit size</para>
       </listitem>
 
     </itemizedlist>
@@ -1910,7 +1910,7 @@
       </listitem>
 
       <listitem>
-        <para>Webservice: now listens to localhost by default as documented
+        <para>Web service: now listens to localhost by default as documented
           (bug #6067)</para>
       </listitem>
 
@@ -3303,7 +3303,7 @@
       </listitem>
 
       <listitem>
-        <para>Webservice: fixed a rare crash when calling IGuest methods from the webservice</para>
+        <para>Web service: fixed a rare crash when calling IGuest methods from the web service</para>
       </listitem>
 
       <listitem>
@@ -3716,7 +3716,7 @@
       </listitem>
 
       <listitem>
-        <para>webservice: more structs and array fixes in PHP bindings</para>
+        <para>Web service: more structs and array fixes in PHP bindings</para>
       </listitem>
 
       <listitem>
@@ -3887,11 +3887,11 @@
       </listitem>
 
       <listitem>
-        <para>webservice: vboxwebsrv is now multithreaded</para>
+        <para>Web service: vboxwebsrv is now multithreaded</para>
       </listitem>
 
        <listitem>
-        <para>webservice: fixed handling of structs and arrays in PHP bindings</para>
+        <para>Web service: fixed handling of structs and arrays in PHP bindings</para>
       </listitem>
 
       <listitem>
@@ -5085,7 +5085,7 @@
 
       <listitem>
         <para>Python WS: fixed issue with certain enumerations constants having
-          wrong values in Python webservices bindings</para>
+          wrong values in Python web services bindings</para>
       </listitem>
 
       <listitem>
@@ -5136,7 +5136,7 @@
       </listitem>
 
       <listitem>
-        <para>Webservice: fixed a severe memory leak, at least on platforms using XPCOM</para>
+        <para>Web service: fixed a severe memory leak, at least on platforms using XPCOM</para>
       </listitem>
 
       <listitem>
