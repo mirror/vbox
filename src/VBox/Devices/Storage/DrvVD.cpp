@@ -62,14 +62,6 @@ extern bool DevINIPConfigured(void);
 #define PDMIMEDIA_2_VBOXDISK(pInterface) \
     ( (PVBOXDISK)((uintptr_t)pInterface - RT_OFFSETOF(VBOXDISK, IMedia)) )
 
-/** Converts a pointer to PDMDRVINS::IBase to a PPDMDRVINS. */
-#define PDMIBASE_2_DRVINS(pInterface) \
-    ( (PPDMDRVINS)((uintptr_t)pInterface - RT_OFFSETOF(PDMDRVINS, IBase)) )
-
-/** Converts a pointer to PDMDRVINS::IBase to a PVBOXDISK. */
-#define PDMIBASE_2_VBOXDISK(pInterface) \
-    ( PDMINS_2_DATA(PDMIBASE_2_DRVINS(pInterface), PVBOXDISK) )
-
 /** Converts a pointer to VBOXDISK::IMediaAsync to a PVBOXDISK. */
 #define PDMIMEDIAASYNC_2_VBOXDISK(pInterface) \
     ( (PVBOXDISK)((uintptr_t)pInterface - RT_OFFSETOF(VBOXDISK, IMediaAsync)) )
@@ -1872,7 +1864,7 @@ static int drvvdBlkCacheXferEnqueueDiscard(PPDMDRVINS pDrvIns, PCRTRANGE paRange
  */
 static DECLCALLBACK(void *) drvvdQueryInterface(PPDMIBASE pInterface, const char *pszIID)
 {
-    PPDMDRVINS  pDrvIns = PDMIBASE_2_DRVINS(pInterface);
+    PPDMDRVINS  pDrvIns = PDMIBASE_2_PDMDRV(pInterface);
     PVBOXDISK   pThis   = PDMINS_2_DATA(pDrvIns, PVBOXDISK);
 
     PDMIBASE_RETURN_INTERFACE(pszIID, PDMIBASE, &pDrvIns->IBase);

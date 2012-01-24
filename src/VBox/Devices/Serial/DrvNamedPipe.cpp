@@ -51,9 +51,6 @@
 /** Converts a pointer to DRVNAMEDPIPE::IMedia to a PDRVNAMEDPIPE. */
 #define PDMISTREAM_2_DRVNAMEDPIPE(pInterface) ( (PDRVNAMEDPIPE)((uintptr_t)pInterface - RT_OFFSETOF(DRVNAMEDPIPE, IStream)) )
 
-/** Converts a pointer to PDMDRVINS::IBase to a PPDMDRVINS. */
-#define PDMIBASE_2_DRVINS(pInterface)   ( (PPDMDRVINS)((uintptr_t)pInterface - RT_OFFSETOF(PDMDRVINS, IBase)) )
-
 
 /*******************************************************************************
 *   Structures and Typedefs                                                    *
@@ -285,7 +282,7 @@ static DECLCALLBACK(int) drvNamedPipeWrite(PPDMISTREAM pInterface, const void *p
  */
 static DECLCALLBACK(void *) drvNamedPipeQueryInterface(PPDMIBASE pInterface, const char *pszIID)
 {
-    PPDMDRVINS      pDrvIns = PDMIBASE_2_DRVINS(pInterface);
+    PPDMDRVINS      pDrvIns = PDMIBASE_2_PDMDRV(pInterface);
     PDRVNAMEDPIPE   pThis   = PDMINS_2_DATA(pDrvIns, PDRVNAMEDPIPE);
     PDMIBASE_RETURN_INTERFACE(pszIID, PDMIBASE, &pDrvIns->IBase);
     PDMIBASE_RETURN_INTERFACE(pszIID, PDMISTREAM, &pThis->IStream);

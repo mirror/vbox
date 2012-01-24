@@ -34,13 +34,6 @@
 /** Converts a pointer to MEDIAISO::IMedia to a PRDVMEDIAISO. */
 #define PDMIMEDIA_2_DRVMEDIAISO(pInterface) ( (PDRVMEDIAISO)((uintptr_t)pInterface - RT_OFFSETOF(DRVMEDIAISO, IMedia)) )
 
-/** Converts a pointer to PDMDRVINS::IBase to a PPDMDRVINS. */
-#define PDMIBASE_2_DRVINS(pInterface)   ( (PPDMDRVINS)((uintptr_t)pInterface - RT_OFFSETOF(PDMDRVINS, IBase)) )
-
-/** Converts a pointer to PDMDRVINS::IBase to a PVBOXHDD. */
-#define PDMIBASE_2_DRVMEDIAISO(pInterface)  ( PDMINS_2_DATA(PDMIBASE_2_DRVINS(pInterface), PDRVMEDIAISO) )
-
-
 
 /*******************************************************************************
 *   Structures and Typedefs                                                    *
@@ -180,7 +173,7 @@ static DECLCALLBACK(bool) drvMediaISOIsReadOnly(PPDMIMEDIA pInterface)
  */
 static DECLCALLBACK(void *) drvMediaISOQueryInterface(PPDMIBASE pInterface, const char *pszIID)
 {
-    PPDMDRVINS pDrvIns = PDMIBASE_2_DRVINS(pInterface);
+    PPDMDRVINS pDrvIns = PDMIBASE_2_PDMDRV(pInterface);
     PDRVMEDIAISO pThis = PDMINS_2_DATA(pDrvIns, PDRVMEDIAISO);
     PDMIBASE_RETURN_INTERFACE(pszIID, PDMIBASE, &pDrvIns->IBase);
     PDMIBASE_RETURN_INTERFACE(pszIID, PDMIMEDIA, &pThis->IMedia);
