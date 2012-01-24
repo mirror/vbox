@@ -591,7 +591,7 @@ static int pdmR3DrvMaybeTransformChain(PVM pVM, PPDMDRVINS pDrvAbove, PPDMLUN pL
                 CFGMR3InsertNode(*ppNode, "Config", &pDrvConfig);
             AssertLogRelReturn(pDrvConfig, VERR_PDM_CANNOT_TRANSFORM_REMOVED_DRIVER);
 
-            rc = CFGMR3CopyTree(pDrvConfig, pTransConfig, CFGM_COPY_FLAGS_REPLACE_VALUES);
+            rc = CFGMR3CopyTree(pDrvConfig, pTransConfig, CFGM_COPY_FLAGS_REPLACE_VALUES | CFGM_COPY_FLAGS_MERGE_KEYS);
             AssertLogRelRCReturn(rc, rc);
         }
         else
