@@ -1862,7 +1862,8 @@ VBoxManage setextradata "VM name" VBoxInternal2/CoreDumpLive 1</screen>At
     Development Kit (SDK); please see <xref linkend="VirtualBoxAPI" />. As the
     client base using this interface is growing, we added start scripts for
     the various operation systems we support. The following describes how to
-    use them. <itemizedlist>
+    use them. Please be aware that the web service is never started automatically
+    as a result of a standard installation.<itemizedlist>
         <listitem>
           <para>On Mac OS X, launchd is used. An example configuration file
           can be found in
@@ -1875,6 +1876,75 @@ VBoxManage setextradata "VM name" VBoxInternal2/CoreDumpLive 1</screen>At
           For additional information on how launchd services could be
           configured see <literal><ulink
           url="http://developer.apple.com/mac/library/documentation/MacOSX/Conceptual/BPSystemStartup/BPSystemStartup.html">http://developer.apple.com/mac/library/documentation/MacOSX/Conceptual/BPSystemStartup/BPSystemStartup.html</ulink></literal>.</para>
+        </listitem>
+        <listitem>
+          <para>On Linux, the web service can be automatically started during
+            host boot by adding appropriate parameters to the file /etc/default/virtualbox.
+            There is one mandatory parameter, VBOXWEB_USER which must be set to
+            the user which will later start the VMs.
+            <table>
+              <title>ignored</title>
+              <tgroup cols="2">
+                <tbody>
+                  <row>
+                    <entry><emphasis role="bold">Parameter</emphasis></entry>
+                    <entry><emphasis role="bold">Description</emphasis></entry>
+                    <entry><emphasis role="bold">Default</emphasis></entry>
+                  </row>
+                  <row>
+                    <entry>VBOXWEB_HOST</entry>
+                    <entry>The host to bind the web service to</entry>
+                    <entry>localhost</entry>
+                  </row>
+                  <row>
+                    <entry>VBOXWEB_PORT</entry>
+                    <entry>The port to bind the web service to</entry>
+                    <entry>18083</entry>
+                  </row>
+                  <row>
+                    <entry>VBOXWEB_TIMEOUT</entry>
+                    <entry>Session timeout in seconds; 0 disables timeouts</entry>
+                    <entry>300</entry>
+                  </row>
+                  <row>
+                    <entry>VBOXWEB_ CHECK_INTERVAL</entry>
+                    <entry>Frequency of timeout checks in seconds</entry>
+                    <entry>5</entry>
+                  </row>
+                  <row>
+                    <entry>VBOXWEB_THREADS</entry>
+                    <entry>Maximum number of worker threads to run in parallel</entry>
+                    <entry>100</entry>
+                  </row>
+                  <row>
+                    <entry>VBOXWEB_KEEPALIVE</entry>
+                    <entry>Maximum number of requests before a socket will be closed</entry>
+                    <entry>100</entry>
+                  </row>
+                  <row>
+                    <entry>VBOXWEB_LOGFILE</entry>
+                    <entry>Name of file to write log to</entry>
+                    <entry><emphasis>no file</emphasis></entry>
+                  </row>
+                  <row>
+                    <entry>VBOXWEB_ROTATE</entry>
+                    <entry>Number of log files; 0 disables log rotation</entry>
+                    <entry>10</entry>
+                  </row>
+                  <row>
+                    <entry>VBOXWEB_LOGSIZE</entry>
+                    <entry>Maximum size of a log file in bytes to trigger rotation</entry>
+                    <entry>1MB</entry>
+                  </row>
+                  <row>
+                    <entry>VBOXWEB_LOGINTERVAL</entry>
+                    <entry>Maximum time interval in seconds to trigger log rotation</entry>
+                    <entry>1 day</entry>
+                  </row>
+                </tbody>
+              </tgroup>
+            </table>
+          </para>
         </listitem>
       </itemizedlist></para>
   </sect1>
