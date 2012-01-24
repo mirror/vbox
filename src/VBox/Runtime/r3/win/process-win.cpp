@@ -342,7 +342,7 @@ static int rtProcGetProcessHandle(DWORD dwPID, PSID pSID, PHANDLE phToken)
                 && dwSize > 0)
             {
                 PTOKEN_USER pTokenUser = (PTOKEN_USER)RTMemAlloc(dwSize);
-                AssertPtrReturn(pTokenUser, VERR_NO_MEMORY);
+                AssertPtrReturn(pTokenUser, VERR_NO_MEMORY); /** @todo r=bird: Leaking handles when we're out of memory...  */
                 RT_ZERO(*pTokenUser);
                 if (   GetTokenInformation(hTokenProc,
                                            TokenUser,
@@ -395,14 +395,14 @@ static int rtProcGetProcessHandle(DWORD dwPID, PSID pSID, PHANDLE phToken)
  *
  * @returns Success indicator.
  * @param   papszNames      The process candidates, in prioritized order.
- * @param   pSID            The secure identifier of the user.
+ * @param   pSid            The secure identifier of the user.
  * @param   phToken         Where to return the token handle - duplicate,
  *                          caller closes it on success.
  */
-static bool rtProcFindProcessByName(const char * const *papszNames, PSID pSID, PHANDLE phToken)
+static bool rtProcFindProcessByName(const char * const *papszNames, PSID pSid, PHANDLE phToken)
 {
     AssertPtr(papszNames);
-    AssertPtr(pSID);
+    AssertPtr(pSid);
     AssertPtr(phToken);
 
     DWORD dwErr = NO_ERROR;
@@ -440,7 +440,7 @@ static bool rtProcFindProcessByName(const char * const *papszNames, PSID pSID, P
                                 do
                                 {
                                     if (   _stricmp(procEntry.szExeFile, papszNames[i]) == 0
-                                        && RT_SUCCESS(rtProcGetProcessHandle(procEntry.th32ProcessID, pSID, phToken)))
+                                        && RT_SUCCESS(rtProcGetProcessHandle(procEntry.th32ProcessID, pSid, phToken)))
                                     {
                                         fFound = true;
                                         break;
@@ -505,7 +505,7 @@ static bool rtProcFindProcessByName(const char * const *papszNames, PSID pSID, P
                                         if (pszProcName)
                                         {
                                             if (   _stricmp(pszProcName, papszNames[i]) == 0
-                                                && RT_SUCCESS(rtProcGetProcessHandle(adwPIDs[dwIdx], pSID, phToken)))
+                                                && RT_SUCCESS(rtProcGetProcessHandle(adwPIDs[dwIdx], pSid, phToken)))
                                             {
                                                 fFound = true;
                                             }
@@ -755,7 +755,7 @@ static int rtProcCreateAsUserHlp(PRTUTF16 pwszUser, PRTUTF16 pwszPassword, PRTUT
                                                      pStartupInfo,
                                                      pProcInfo);
                     if (!fRc)
-                        dwErr = GetLastError();
+                        rc = rtProcMapErrorCodes(GetLastError());
                     rtProcEnvironmentDestroy(pwszzBlock);
                 }
             }
@@ -767,7 +767,7 @@ static int rtProcCreateAsUserHlp(PRTUTF16 pwszUser, PRTUTF16 pwszPassword, PRTUT
      * Did the API call above fail because we're running on a too old OS (NT4) or
      * we're running as a Windows service?
      */
-    if (   RT_FAILURE(rc) /** @todo r=bird: you don't set rc when pfnCreateProcesswithLogonW fails... Using too many variables to control flow is confusing. */
+    if (   RT_FAILURE(rc)
         || (fFlags & RTPROC_FLAGS_SERVICE))
     {
         /*
@@ -806,44 +806,43 @@ static int rtProcCreateAsUserHlp(PRTUTF16 pwszUser, PRTUTF16 pwszPassword, PRTUT
 
             if (fFlags & RTPROC_FLAGS_SERVICE)
             {
-                DWORD cbName = 0; /* Must be zero to query size! */
-                DWORD cbDomain = 0;
+                DWORD cbSid = 0; /* Must be zero to query size! */
+                DWORD cchDomain = 0;
                 SID_NAME_USE sidNameUse = SidTypeUser;
                 fRc = LookupAccountNameW(NULL,
                                          pwszUser,
                                          NULL,
-                                         &cbName,
+                                         &cbSid,
                                          NULL,
-                                         &cbDomain,
+                                         &cchDomain,
                                          &sidNameUse);
                 if (!fRc)
                     dwErr = GetLastError();
                 if (   !fRc
                     && dwErr == ERROR_INSUFFICIENT_BUFFER
-                    && cbName > 0)
+                    && cbSid > 0)
                 {
                     dwErr = NO_ERROR;
 
-                    PSID pSID = (PSID)RTMemAlloc(cbName * sizeof(wchar_t));
-                    AssertPtrReturn(pSID, VERR_NO_MEMORY);
+                    PSID pSid = (PSID)RTMemAlloc(cbSid * sizeof(wchar_t)); /** @todo r=bird: What's the relationship between wchar_t and PSID? */
+                    AssertPtrReturn(pSid, VERR_NO_MEMORY); /** @todo r=bird: Leaking token handles when we're out of memory...  */
 
-                    /** @todo No way to allocate a PRTUTF16 directly? */
                     PRTUTF16 pwszDomain = NULL;
-                    if (cbDomain > 0)
+                    if (cchDomain > 0)
                     {
-                        pwszDomain = (PRTUTF16)RTMemAlloc(cbDomain * sizeof(RTUTF16));
-                        AssertPtrReturn(pwszDomain, VERR_NO_MEMORY);
+                        pwszDomain = (PRTUTF16)RTMemAlloc(cchDomain * sizeof(RTUTF16));
+                        AssertPtrReturn(pwszDomain, VERR_NO_MEMORY); /** @todo r=bird: Leaking token handles when we're out of memory...  */
                     }
 
                     /* Note: Also supports FQDNs! */
                     if (   LookupAccountNameW(NULL,            /* lpSystemName */
                                               pwszUser,
-                                              pSID,
-                                              &cbName,
+                                              pSid,
+                                              &cbSid,
                                               pwszDomain,
-                                              &cbDomain,
+                                              &cchDomain,
                                               &sidNameUse)
-                        && IsValidSid(pSID))
+                        && IsValidSid(pSid))
                     {
                         /* Array of process names we want to look for. */
                         static const char * const s_papszProcNames[] =
@@ -854,13 +853,12 @@ static int rtProcCreateAsUserHlp(PRTUTF16 pwszUser, PRTUTF16 pwszPassword, PRTUT
                             { "explorer.exe" },
                             NULL
                         };
-                        fFound = rtProcFindProcessByName(s_papszProcNames, pSID, &hTokenUserDesktop);
+                        fFound = rtProcFindProcessByName(s_papszProcNames, pSid, &hTokenUserDesktop);
                     }
                     else
                         dwErr = GetLastError(); /* LookupAccountNameW() failed. */
                     RTMemFree(pSID);
-                    if (pwszDomain != NULL)
-                        RTUtf16Free(pwszDomain);
+                    RTMemFree(pwszDomain);
                 }
             }
             else /* !RTPROC_FLAGS_SERVICE */
@@ -896,7 +894,7 @@ static int rtProcCreateAsUserHlp(PRTUTF16 pwszUser, PRTUTF16 pwszPassword, PRTUT
                             PROFILEINFOW profileInfo;
                             if (!(fFlags & RTPROC_FLAGS_NO_PROFILE))
                             {
-                                ZeroMemory(&profileInfo, sizeof(profileInfo));
+                                RT_ZERO(profileInfo);
                                 profileInfo.dwSize = sizeof(profileInfo);
                                 profileInfo.lpUserName = pwszUser;
                                 profileInfo.dwFlags = PI_NOUI; /* Prevents the display of profile error messages. */
