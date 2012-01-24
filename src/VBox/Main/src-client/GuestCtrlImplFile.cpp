@@ -148,8 +148,8 @@ HRESULT Guest::fileQueryInfoInternal(IN_BSTR aFile,
                 stdOut[0].Dump();
 #endif
                 const char *pszFsType = stdOut[0].GetString("ftype");
-                if (!pszFsType) /* Attribute missing? */
-                    rc = VERR_NOT_FOUND;
+                if (!pszFsType) /* Was an object found at all? */
+                    rc = VERR_FILE_NOT_FOUND;
                 if (   RT_SUCCESS(rc)
                     && strcmp(pszFsType, "-")) /* Regular file? */
                 {
