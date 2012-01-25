@@ -682,7 +682,7 @@ static int pam_vbox_wait_for_creds(pam_handle_t *hPAM, uint32_t uClientID, uint3
     RTTHREAD threadWait;
     int rc = RTThreadCreate(&threadWait, pam_vbox_wait_thread,
                             (void *)&threadData, 0,
-                            RTTHREADTYPE_DEFAULT, NULL /* Non-waitable */, "pam_vbox");
+                            RTTHREADTYPE_DEFAULT, 0 /* Flags */, "pam_vbox");
     if (RT_SUCCESS(rc))
     {
         pam_vbox_log(hPAM, "pam_vbox_wait_for_creds: Waiting for credentials (%dms) ...\n", uTimeoutMS);
