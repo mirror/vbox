@@ -2606,13 +2606,17 @@ ifeq ($(KBUILD_TARGET),solaris)
   # We cannot compile additions on Solaris 10, due kernel interface deps
   VBOX_WITHOUT_ADDITIONS := 1
   VBOX_WITH_ADDITIONS =
- else
-  ## @todo r=bird: Why eval, and why export? Actually, since this isn't used anywhere, why not
-  # VBOX_WITH_SOLARIS_OSS := $(if-expr $(shell uname -v | cut -f2 -d'_')) >= 115,1,)
-  $(eval export VBOX_SOLARIS_SNV_VERSION := $(shell uname -v | cut -f2 -d'_'))
+ else ifeq ($(VBOX_SOLARIS_VERSION),511)
+  # uname -v can report "snv_XYZ" or "11.X"
+  VBOX_SOLARIS_11_VERSION = $(shell uname -v | sed 's/snv_//' | cut -f1 -d'.')
+  ifeq ($(VBOX_SOLARIS_11_VERSION),11)
+   VBOX_SOLARIS_11_VERSION = $(shell pkg contents -H -t set -o pkg.fmri entire | head -1 | sed 's/^.*\@//;s/\:.*//;s/.*,//' | cut -f2 -d'-' | cut -f2 -d'.')
+  endif
 
   # OSS audio support for Solaris
- VBOX_WITH_SOLARIS_OSS := $(if-expr $(VBOX_SOLARIS_SNV_VERSION) >= 115,1,)
+ VBOX_WITH_SOLARIS_OSS := $(if-expr $(VBOX_SOLARIS_11_VERSION) >= 115,1,)
+ else
+  $(error Unsupported Solaris host version $(VBOX_SOLARIS_VERSION))
  endif
 endif
 
