@@ -857,7 +857,7 @@ static int rtProcCreateAsUserHlp(PRTUTF16 pwszUser, PRTUTF16 pwszPassword, PRTUT
                     }
                     else
                         dwErr = GetLastError(); /* LookupAccountNameW() failed. */
-                    RTMemFree(pSID);
+                    RTMemFree(pSid);
                     RTMemFree(pwszDomain);
                 }
             }
