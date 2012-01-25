@@ -45,7 +45,7 @@ static int no_run_out (HWVoiceOut *hw)
     int live, decr, samples;
     int64_t now;
     int64_t ticks;
-    int64_t bytes;
+    int64_t ticks_per_second;
 
     live = audio_pcm_hw_get_live_out (&no->hw);
     if (!live) {
@@ -54,9 +54,10 @@ static int no_run_out (HWVoiceOut *hw)
 
     now = audio_get_clock ();
     ticks = now - no->old_ticks;
-    bytes = (ticks * hw->info.bytes_per_second) / audio_get_ticks_per_sec ();
-    bytes = audio_MIN (bytes, INT_MAX);
-    samples = bytes >> hw->info.shift;
+
+    ticks_per_second = audio_get_ticks_per_sec ();
+    /* Minimize the rounding error: samples = int((ticks * freq) / ticks_per_second + 0.5). */
+    samples = (2 * ticks * hw->info.freq + ticks_per_second) / ticks_per_second / 2;
 
     no->old_ticks = now;
     decr = audio_MIN (live, samples);
