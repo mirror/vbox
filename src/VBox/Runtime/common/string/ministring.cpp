@@ -201,13 +201,16 @@ RTCString &RTCString::appendCodePoint(RTUNICP uc)
 
 size_t RTCString::find(const char *pcszFind, size_t pos /*= 0*/) const
 {
-    const char *pszThis, *p;
-
-    if (    ((pszThis = c_str()))
-         && (pos < length())
-         && ((p = strstr(pszThis + pos, pcszFind)))
-       )
-        return p - pszThis;
+    if (pos < length())
+    {
+        const char *pszThis = c_str();
+        if (pszThis)
+        {
+            const char *pszHit = strstr(pszThis, pcszFind);
+            if (pszHit)
+                return pszHit - pszThis;
+        }
+    }
 
     return npos;
 }
