@@ -558,7 +558,14 @@ public:
         return online ? mOnlineSnapshotIcon : mOfflineSnapshotIcon;
     }
 
-    static bool hasAllowedExtension(const QString &strExt, const QStringList &extList) { for(int i = 0; i < extList.size(); ++i) if (strExt.endsWith(extList.at(i), Qt::CaseInsensitive)) return true; return false;}
+    static bool hasAllowedExtension(const QString &strExt, const QStringList &extList)
+    {
+        for (int i = 0; i < extList.size(); ++i)
+            if (strExt.endsWith(extList.at(i), Qt::CaseInsensitive))
+                return true;
+        return false;
+    }
+
     QIcon icon(QFileIconProvider::IconType type) { return m_globalIconProvider.icon(type); }
     QIcon icon(const QFileInfo &info) { return m_globalIconProvider.icon(info); }
 
@@ -861,7 +868,7 @@ private:
 
     QString mVerString;
     QString mBrandingConfig;
-    
+
     int m3DAvailable;
 
     QList <QString> mFamilyIDs;
