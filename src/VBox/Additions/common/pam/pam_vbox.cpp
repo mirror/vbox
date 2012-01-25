@@ -54,7 +54,14 @@
   using namespace guestProp;
 #endif
 
-#define VBOX_MODULE_NAME "pam_vbox"
+#define VBOX_MODULE_NAME                    "pam_vbox"
+
+#define VBOX_PAM_FLAG_SILENT                "PAM_SILENT"
+#define VBOX_PAM_FLAG_DISALLOW_NULL_AUTHTOK "PAM_DISALLOW_NULL_AUTHTOK"
+#define VBOX_PAM_FLAG_ESTABLISH_CRED        "PAM_ESTABLISH_CRED"
+#define VBOX_PAM_FLAG_DELETE_CRED           "PAM_DELETE_CRED"
+#define VBOX_PAM_FLAG_REINITIALIZE_CRED     "PAM_REINITIALIZE_CRED"
+#define VBOX_PAM_FLAG_REFRESH_CRED          "PAM_REFRESH_CRED"
 
 RT_C_DECLS_BEGIN
 RTDECL(int) pam_sm_authenticate(pam_handle_t *hPAM, int iFlags, int argc, const char **argv);
@@ -675,7 +682,7 @@ static int pam_vbox_wait_for_creds(pam_handle_t *hPAM, uint32_t uClientID, uint3
     RTTHREAD threadWait;
     int rc = RTThreadCreate(&threadWait, pam_vbox_wait_thread,
                             (void *)&threadData, 0,
-                            RTTHREADTYPE_DEFAULT, RTTHREADFLAGS_WAITABLE, "pam_vbox");
+                            RTTHREADTYPE_DEFAULT, NULL /* Non-waitable */, "pam_vbox");
     if (RT_SUCCESS(rc))
     {
         pam_vbox_log(hPAM, "pam_vbox_wait_for_creds: Waiting for credentials (%dms) ...\n", uTimeoutMS);
@@ -702,7 +709,7 @@ DECLEXPORT(int) pam_sm_authenticate(pam_handle_t *hPAM, int iFlags,
         if (!RTStrICmp(argv[i], "debug"))
             g_verbosity = 1;
         else
-            pam_vbox_error(hPAM, "pam_sm_authenticate: unknown command line argument \"%s\"\n", argv[i]);
+            pam_vbox_error(hPAM, "pam_vbox_authenticate: unknown command line argument \"%s\"\n", argv[i]);
     }
     pam_vbox_log(hPAM, "pam_vbox_authenticate called\n");
 
@@ -736,7 +743,7 @@ DECLEXPORT(int) pam_sm_authenticate(pam_handle_t *hPAM, int iFlags,
                 uTimeoutMS = RTStrToUInt32(szVal);
                 if (!uTimeoutMS)
                 {
-                    pam_vbox_error(hPAM, "pam_sm_authenticate: invalid waiting timeout value specified, defaulting to infinite timeout\n");
+                    pam_vbox_error(hPAM, "pam_vbox_authenticate: invalid waiting timeout value specified, defaulting to infinite timeout\n");
                     uTimeoutMS = RT_INDEFINITE_WAIT;
                 }
                 else
@@ -754,7 +761,7 @@ DECLEXPORT(int) pam_sm_authenticate(pam_handle_t *hPAM, int iFlags,
             rc2 = vbox_set_msg(hPAM, 0 /* Info message */,
                                pszWaitMsg ? pszWaitMsg : "Waiting for credentials ...");
             if (RT_FAILURE(rc2)) /* Not critical. */
-                pam_vbox_error(hPAM, "pam_sm_authenticate: error setting waiting information message, rc=%Rrc\n", rc2);
+                pam_vbox_error(hPAM, "pam_vbox_authenticate: error setting waiting information message, rc=%Rrc\n", rc2);
 
             if (RT_SUCCESS(rc))
             {
@@ -764,16 +771,9 @@ DECLEXPORT(int) pam_sm_authenticate(pam_handle_t *hPAM, int iFlags,
                 if (rc == VERR_NOT_FOUND)
                 {
                     rc = pam_vbox_wait_for_creds(hPAM, uClientId, uTimeoutMS);
-                    if (RT_SUCCESS(rc))
+                    if (rc == VERR_TIMEOUT)
                     {
-                        /* Waiting for credentials succeeded, try getting those ... */
-                        rc = pam_vbox_check_creds(hPAM);
-                        if (RT_FAILURE(rc))
-                            pam_vbox_error(hPAM, "pam_sm_authenticate: no credentials given, even when waited for it, rc=%Rrc\n", rc);
-                    }
-                    else if (rc == VERR_TIMEOUT)
-                    {
-                        pam_vbox_log(hPAM, "pam_sm_authenticate: no credentials given within time\n");
+                        pam_vbox_log(hPAM, "pam_vbox_authenticate: no credentials given within time\n");
 
                         rc2 = pam_vbox_read_prop(hPAM, uClientId,
                                                  "/VirtualBox/GuestAdd/PAM/CredsMsgWaitTimeout",
@@ -787,7 +787,7 @@ DECLEXPORT(int) pam_sm_authenticate(pam_handle_t *hPAM, int iFlags,
                     }
                     else if (rc == VERR_CANCELLED)
                     {
-                        pam_vbox_log(hPAM, "pam_sm_authenticate: waiting aborted\n");
+                        pam_vbox_log(hPAM, "pam_vbox_authenticate: waiting aborted\n");
 
                         rc2 = pam_vbox_read_prop(hPAM, uClientId,
                                                  "/VirtualBox/GuestAdd/PAM/CredsMsgWaitAbort",
