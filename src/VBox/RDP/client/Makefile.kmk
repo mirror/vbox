@@ -57,9 +57,11 @@ ifdef VBOX_WITH_LINUX_COMPILER_H
  rdesktop-vrdp_DEFS.linux += VBOX_WITH_LINUX_COMPILER_H
 endif
 # @todo once rdp proxy is available on Solaris, add WITH_RDPUSB=1
+# snv_166+ dirent.h: defines dd_fd only if __USE_LEGACY_PROTOTYPES__ is defined, otherwise uses d_fd, let's just 
+# define __USE_LEGACY_PROTOTYPES__ until our buildbox is updated sufficiently
 rdesktop-vrdp_DEFS.solaris = \
 	HAVE_SYS_FILIO_H=1 RDPSND_SUN=1 HAVE_ICONV_H=1 ICONV_CONST=const STAT_STATVFS64=1 _FILE_OFFSET_BITS=64 \
-	DIR_FD_MEMBER_NAME=dd_fd HAVE_SYS_VFS_H=1 HAVE_SYS_STATFS_H=1
+	DIR_FD_MEMBER_NAME=dd_fd __USE_LEGACY_PROTOTYPES__ HAVE_SYS_VFS_H=1 HAVE_SYS_STATFS_H=1
 rdesktop-vrdp_DEFS.freebsd = \
 	RDPSND_OSS=1 HAVE_ICONV_H=1 ICONV_CONST=const HAVE_SYS_STATVFS_H=1 _FILE_OFFSET_BITS=64 HAVE_DIRFD=1
 
