@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2010-2011 Oracle Corporation
+ * Copyright (C) 2010-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -33,6 +33,7 @@
 #include <iprt/param.h>
 #include <iprt/path.h>
 #include <iprt/process.h>
+#include <iprt/sha.h>
 #include <iprt/string.h>
 #include <iprt/stream.h>
 #include <iprt/vfs.h>
@@ -253,7 +254,7 @@ static RTEXITCODE CommonUninstallWorker(const char *pszExtPackDir)
 static RTEXITCODE OpenTarFss(RTFILE hTarballFile, PRTVFSFSSTREAM phTarFss)
 {
     char szError[8192];
-    int rc = VBoxExtPackOpenTarFss(hTarballFile, szError, sizeof(szError), phTarFss);
+    int rc = VBoxExtPackOpenTarFss(hTarballFile, szError, sizeof(szError), phTarFss, NULL);
     if (RT_FAILURE(rc))
     {
         Assert(szError[0]);
@@ -596,19 +597,21 @@ static RTEXITCODE UnpackExtPack(RTFILE hTarballFile, const char *pszDirDst, RTMA
  * @param   pszExtPackName      The name of the extension pack name.
  * @param   pszTarball          The name of the tarball in case we have to
  *                              complain about something.
+ * @param   pszTarballDigest    The SHA-256 digest of the tarball.
  * @param   phValidManifest     Where to return the handle to fully validated
  *                              the manifest for the extension pack.  This
  *                              includes all files.
  */
 static RTEXITCODE ValidateExtPackTarball(RTFILE hTarballFile, const char *pszExtPackName, const char *pszTarball,
-                                         PRTMANIFEST phValidManifest)
+                                         const char *pszTarballDigest, PRTMANIFEST phValidManifest)
 {
     *phValidManifest = NIL_RTMANIFEST;
     RTMsgInfo("Validating extension pack '%s' ('%s')...", pszTarball, pszExtPackName);
+    Assert(pszTarballDigest && *pszTarballDigest);
 
     char szError[8192];
-    int rc = VBoxExtPackValidateTarball(hTarballFile, pszExtPackName, pszTarball,
-                                        szError, sizeof(szError), phValidManifest, NULL /*phXmlFile*/);
+    int rc = VBoxExtPackValidateTarball(hTarballFile, pszExtPackName, pszTarball, pszTarballDigest,
+                                        szError, sizeof(szError), phValidManifest, NULL /*phXmlFile*/, NULL /*pStrDigest*/);
     if (RT_FAILURE(rc))
     {
         Assert(szError[0]);
@@ -626,6 +629,8 @@ static RTEXITCODE ValidateExtPackTarball(RTFILE hTarballFile, const char *pszExt
  * @param   pszBaseDir          The base directory.
  * @param   pszCertDir          The certificat directory.
  * @param   pszTarball          The tarball name.
+ * @param   pszTarballDigest    The SHA-256 digest of the tarball.  Empty string
+ *                              if no digest available.
  * @param   hTarballFile        The handle to open the @a pszTarball file.
  * @param   hTarballFileOpt     The tarball file handle (optional).
  * @param   pszName             The extension pack name.
@@ -633,7 +638,7 @@ static RTEXITCODE ValidateExtPackTarball(RTFILE hTarballFile, const char *pszExt
  * @param   fReplace            Whether to replace any existing ext pack.
  */
 static RTEXITCODE DoInstall2(const char *pszBaseDir, const char *pszCertDir, const char *pszTarball,
-                             RTFILE hTarballFile, RTFILE hTarballFileOpt,
+                             const char *pszTarballDigest, RTFILE hTarballFile, RTFILE hTarballFileOpt,
                              const char *pszName, const char *pszMangledName, bool fReplace)
 {
     /*
@@ -718,7 +723,7 @@ static RTEXITCODE DoInstall2(const char *pszBaseDir, const char *pszCertDir, con
         return RTMsgErrorExit(RTEXITCODE_FAILURE, "Failed to create temporary directory: %Rrc ('%s')", rc, szTmpPath);
 
     RTMANIFEST hValidManifest = NIL_RTMANIFEST;
-    RTEXITCODE rcExit = ValidateExtPackTarball(hTarballFile, pszName, pszTarball, &hValidManifest);
+    RTEXITCODE rcExit = ValidateExtPackTarball(hTarballFile, pszName, pszTarball, pszTarballDigest, &hValidManifest);
     if (rcExit == RTEXITCODE_SUCCESS)
         rcExit = UnpackExtPack(hTarballFile, szTmpPath, hValidManifest, pszTarball);
     if (rcExit == RTEXITCODE_SUCCESS)
@@ -782,19 +787,21 @@ static RTEXITCODE DoInstall(int argc, char **argv)
         { "--name",         'n',   RTGETOPT_REQ_STRING  },
         { "--tarball",      't',   RTGETOPT_REQ_STRING  },
         { "--tarball-fd",   'd',   RTGETOPT_REQ_UINT64  },
-        { "--replace",      'r',   RTGETOPT_REQ_NOTHING }
+        { "--replace",      'r',   RTGETOPT_REQ_NOTHING },
+        { "--sha-256",      's',   RTGETOPT_REQ_STRING  }
     };
     RTGETOPTSTATE   GetState;
     int rc = RTGetOptInit(&GetState, argc, argv, s_aOptions, RT_ELEMENTS(s_aOptions), 0, 0 /*fFlags*/);
     if (RT_FAILURE(rc))
         return RTMsgErrorExit(RTEXITCODE_FAILURE, "RTGetOptInit failed: %Rrc\n", rc);
 
-    const char     *pszBaseDir      = NULL;
-    const char     *pszCertDir      = NULL;
-    const char     *pszName         = NULL;
-    const char     *pszTarball      = NULL;
-    RTFILE          hTarballFileOpt = NIL_RTFILE;
-    bool            fReplace        = false;
+    const char     *pszBaseDir          = NULL;
+    const char     *pszCertDir          = NULL;
+    const char     *pszName             = NULL;
+    const char     *pszTarball          = NULL;
+    const char     *pszTarballDigest    = NULL;
+    RTFILE          hTarballFileOpt     = NIL_RTFILE;
+    bool            fReplace            = false;
     RTGETOPTUNION   ValueUnion;
     int             ch;
     while ((ch = RTGetOpt(&GetState, &ValueUnion)))
@@ -848,6 +855,19 @@ static RTEXITCODE DoInstall(int argc, char **argv)
                 fReplace = true;
                 break;
 
+            case 's':
+            {
+                if (pszTarballDigest)
+                    return RTMsgErrorExit(RTEXITCODE_SYNTAX, "Too many --sha-256 options");
+                pszTarballDigest = ValueUnion.psz;
+
+                uint8_t abDigest[RTSHA256_HASH_SIZE];
+                rc = RTSha256FromString(pszTarballDigest, abDigest);
+                if (RT_FAILURE(rc))
+                    return RTMsgErrorExit(RTEXITCODE_SYNTAX, "Bad SHA-256 string: %Rrc", rc);
+                break;
+            }
+
             case 'h':
             case 'V':
                 return DoStandardOption(ch);
@@ -864,6 +884,8 @@ static RTEXITCODE DoInstall(int argc, char **argv)
         return RTMsgErrorExit(RTEXITCODE_SYNTAX, "Missing --cert-dir option");
     if (!pszTarball)
         return RTMsgErrorExit(RTEXITCODE_SYNTAX, "Missing --tarball option");
+    if (!pszTarballDigest)
+        return RTMsgErrorExit(RTEXITCODE_SYNTAX, "Missing --sha-256 option");
 
     /*
      * Ok, down to business.
@@ -877,7 +899,7 @@ static RTEXITCODE DoInstall(int argc, char **argv)
     rc = RTFileOpen(&hTarballFile, pszTarball, RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_WRITE);
     if (RT_SUCCESS(rc))
     {
-        rcExit = DoInstall2(pszBaseDir, pszCertDir, pszTarball, hTarballFile, hTarballFileOpt,
+        rcExit = DoInstall2(pszBaseDir, pszCertDir, pszTarball, pszTarballDigest, hTarballFile, hTarballFileOpt,
                             pszName, pstrMangledName->c_str(), fReplace);
         RTFileClose(hTarballFile);
     }

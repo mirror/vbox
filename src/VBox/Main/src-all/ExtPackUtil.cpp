@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2010-2011 Oracle Corporation
+ * Copyright (C) 2010-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -27,6 +27,7 @@
 #include <iprt/manifest.h>
 #include <iprt/param.h>
 #include <iprt/path.h>
+#include <iprt/sha.h>
 #include <iprt/string.h>
 #include <iprt/vfs.h>
 #include <iprt/tar.h>
@@ -786,6 +787,79 @@ static int vboxExtPackVerifyManifestAndSignature(RTMANIFEST hOurManifest, RTVFSF
 
 
 /**
+ * Verifies the file digest (if specified) and returns the SHA-256 of the file.
+ *
+ * @returns
+ * @param   hFileManifest       Manifest containing a SHA-256 digest of the file
+ *                              that was calculated as the file was processed.
+ * @param   pszFileDigest       SHA-256 digest of the file.
+ * @param   pStrDigest          Where to return the SHA-256 digest. Optional.
+ * @param   pszError            Where to write an error message on failure.
+ * @param   cbError             The size of the @a pszError buffer.
+ */
+static int vboxExtPackVerifyFileDigest(RTMANIFEST hFileManifest, const char *pszFileDigest,
+                                       RTCString *pStrDigest, char *pszError, size_t cbError)
+{
+    /*
+     * Extract the SHA-256 entry for the extpack file.
+     */
+    char szCalculatedDigest[RTSHA256_DIGEST_LEN + 1];
+    int rc = RTManifestEntryQueryAttr(hFileManifest, "extpack", NULL /*no name*/, RTMANIFEST_ATTR_SHA256,
+                                      szCalculatedDigest, sizeof(szCalculatedDigest), NULL);
+    if (RT_SUCCESS(rc))
+    {
+        /*
+         * Convert the two strings to binary form before comparing.
+         * We convert the calculated hash even if we don't have anything to
+         * compare with, just to validate it.
+         */
+        uint8_t abCalculatedHash[RTSHA256_HASH_SIZE];
+        rc = RTSha256FromString(szCalculatedDigest, abCalculatedHash);
+        if (RT_SUCCESS(rc))
+        {
+            if (   pszFileDigest
+                && *pszFileDigest != '\0')
+            {
+                uint8_t abFileHash[RTSHA256_HASH_SIZE];
+                rc = RTSha256FromString(pszFileDigest, abFileHash);
+                if (RT_SUCCESS(rc))
+                {
+                    if (memcmp(abFileHash, abCalculatedHash, sizeof(abFileHash)))
+                    {
+                        vboxExtPackSetError(pszError, cbError, "The extension pack file has changed (SHA-256 mismatch)");
+                        rc = VERR_NOT_EQUAL;
+                    }
+                }
+                else
+                    vboxExtPackSetError(pszError, cbError, "Bad SHA-256 '%s': %Rrc", szCalculatedDigest, rc);
+            }
+
+            /*
+             * Set the output hash on success.
+             */
+            if (pStrDigest && RT_SUCCESS(rc))
+            {
+                try
+                {
+                    *pStrDigest = szCalculatedDigest;
+                }
+                catch (std::bad_alloc)
+                {
+                    rc = VERR_NO_MEMORY;
+                }
+            }
+        }
+        else
+            vboxExtPackSetError(pszError, cbError, "Bad SHA-256 '%s': %Rrc", szCalculatedDigest, rc);
+    }
+    else
+        vboxExtPackSetError(pszError, cbError, "RTManifestEntryGetAttr: %Rrc", rc);
+    return rc;
+}
+
+
+
+/**
  * Validates a standard file.
  *
  * Generally all files are
@@ -1043,8 +1117,12 @@ int VBoxExtPackValidateMember(const char *pszName, RTVFSOBJTYPE enmType, RTVFSOB
  * @param   pszError            Where to store an error message on failure.
  * @param   cbError             The size of the buffer @a pszError points to.
  * @param   phTarFss            Where to return the filesystem stream handle.
+ * @param   phFileManifest      Where to return a manifest where the tarball is
+ *                              gettting hashed.  The entry will be called
+ *                              "extpack" and be ready when the file system
+ *                              stream is at an end.  Optional.
  */
-int VBoxExtPackOpenTarFss(RTFILE hTarballFile, char *pszError, size_t cbError, PRTVFSFSSTREAM phTarFss)
+int VBoxExtPackOpenTarFss(RTFILE hTarballFile, char *pszError, size_t cbError, PRTVFSFSSTREAM phTarFss, PRTMANIFEST phFileManifest)
 {
     Assert(cbError > 0);
     *pszError = '\0';
@@ -1063,24 +1141,47 @@ int VBoxExtPackOpenTarFss(RTFILE hTarballFile, char *pszError, size_t cbError, P
     if (RT_FAILURE(rc))
         return vboxExtPackReturnError(rc, pszError, cbError, "RTVfsIoStrmFromRTFile failed: %Rrc", rc);
 
-    RTVFSIOSTREAM hGunzipIos;
-    rc = RTZipGzipDecompressIoStream(hTarballIos, 0 /*fFlags*/, &hGunzipIos);
+    RTMANIFEST hFileManifest = NIL_RTMANIFEST;
+    rc = RTManifestCreate(0 /*fFlags*/, &hFileManifest);
     if (RT_SUCCESS(rc))
     {
-        RTVFSFSSTREAM hTarFss;
-        rc = RTZipTarFsStreamFromIoStream(hGunzipIos, 0 /*fFlags*/, &hTarFss);
+        RTVFSIOSTREAM hPtIos;
+        rc = RTManifestEntryAddPassthruIoStream(hFileManifest, hTarballIos, "extpack", RTMANIFEST_ATTR_SHA256, true /*read*/, &hPtIos);
         if (RT_SUCCESS(rc))
         {
-            RTVfsIoStrmRelease(hGunzipIos);
-            RTVfsIoStrmRelease(hTarballIos);
-            *phTarFss = hTarFss;
-            return VINF_SUCCESS;
+            RTVFSIOSTREAM hGunzipIos;
+            rc = RTZipGzipDecompressIoStream(hPtIos, 0 /*fFlags*/, &hGunzipIos);
+            if (RT_SUCCESS(rc))
+            {
+                RTVFSFSSTREAM hTarFss;
+                rc = RTZipTarFsStreamFromIoStream(hGunzipIos, 0 /*fFlags*/, &hTarFss);
+                if (RT_SUCCESS(rc))
+                {
+                    RTVfsIoStrmRelease(hPtIos);
+                    RTVfsIoStrmRelease(hGunzipIos);
+                    RTVfsIoStrmRelease(hTarballIos);
+                    *phTarFss = hTarFss;
+                    if (phFileManifest)
+                        *phFileManifest = hFileManifest;
+                    else
+                        RTManifestRelease(hFileManifest);
+                    return VINF_SUCCESS;
+                }
+
+                vboxExtPackSetError(pszError, cbError, "RTZipTarFsStreamFromIoStream failed: %Rrc", rc);
+                RTVfsIoStrmRelease(hGunzipIos);
+            }
+            else
+                vboxExtPackSetError(pszError, cbError, "RTZipGzipDecompressIoStream failed: %Rrc", rc);
+            RTVfsIoStrmRelease(hPtIos);
         }
-        vboxExtPackSetError(pszError, cbError, "RTZipTarFsStreamFromIoStream failed: %Rrc", rc);
-        RTVfsIoStrmRelease(hGunzipIos);
+        else
+            vboxExtPackSetError(pszError, cbError, "RTManifestEntryAddPassthruIoStream failed: %Rrc", rc);
+        RTManifestRelease(hFileManifest);
     }
     else
-        vboxExtPackSetError(pszError, cbError, "RTZipGzipDecompressIoStream failed: %Rrc", rc);
+        vboxExtPackSetError(pszError, cbError, "RTManifestCreate failed: %Rrc", rc);
+
     RTVfsIoStrmRelease(hTarballIos);
     return rc;
 }
@@ -1101,6 +1202,8 @@ int VBoxExtPackOpenTarFss(RTFILE hTarballFile, char *pszError, size_t cbError, P
  *                              the name is not fixed.
  * @param   pszTarball          The name of the tarball in case we have to
  *                              complain about something.
+ * @param   pszTarballDigest    The SHA-256 digest of the tarball.  Empty string
+ *                              if no digest available.
  * @param   pszError            Where to store an error message on failure.
  * @param   cbError             The size of the buffer @a pszError points to.
  * @param   phValidManifest     Where to optionally return the handle to fully
@@ -1108,11 +1211,13 @@ int VBoxExtPackOpenTarFss(RTFILE hTarballFile, char *pszError, size_t cbError, P
  *                              This includes all files.
  * @param   phXmlFile           Where to optionally return the memorized XML
  *                              file.
- *
- * @todo    This function is a bit too long and should be split up if possible.
+ * @param   pStrDigest          Where to return the digest of the file.
+ *                              Optional.
  */
-int VBoxExtPackValidateTarball(RTFILE hTarballFile, const char *pszExtPackName, const char *pszTarball,
-                               char *pszError, size_t cbError, PRTMANIFEST phValidManifest, PRTVFSFILE phXmlFile)
+int VBoxExtPackValidateTarball(RTFILE hTarballFile, const char *pszExtPackName,
+                               const char *pszTarball, const char *pszTarballDigest,
+                               char *pszError, size_t cbError,
+                               PRTMANIFEST phValidManifest, PRTVFSFILE phXmlFile, RTCString *pStrDigest)
 {
     /*
      * Clear return values.
@@ -1128,8 +1233,9 @@ int VBoxExtPackValidateTarball(RTFILE hTarballFile, const char *pszExtPackName, 
     /*
      * Open the tar.gz filesystem stream and set up an manifest in-memory file.
      */
-    RTVFSFSSTREAM hTarFss;
-    int rc = VBoxExtPackOpenTarFss(hTarballFile, pszError, cbError, &hTarFss);
+    RTMANIFEST      hFileManifest;
+    RTVFSFSSTREAM   hTarFss;
+    int rc = VBoxExtPackOpenTarFss(hTarballFile, pszError, cbError, &hTarFss, &hFileManifest);
     if (RT_FAILURE(rc))
         return rc;
 
@@ -1140,9 +1246,9 @@ int VBoxExtPackValidateTarball(RTFILE hTarballFile, const char *pszExtPackName, 
         /*
          * Process the tarball (would be nice to move this to a function).
          */
-        RTVFSFILE hXmlFile      = NIL_RTVFSFILE;
-        RTVFSFILE hManifestFile = NIL_RTVFSFILE;
-        RTVFSFILE hSignatureFile= NIL_RTVFSFILE;
+        RTVFSFILE hXmlFile       = NIL_RTVFSFILE;
+        RTVFSFILE hManifestFile  = NIL_RTVFSFILE;
+        RTVFSFILE hSignatureFile = NIL_RTVFSFILE;
         for (;;)
         {
             /*
@@ -1209,6 +1315,16 @@ int VBoxExtPackValidateTarball(RTFILE hTarballFile, const char *pszExtPackName, 
         }
 
         /*
+         * Check the integrity of the tarball file.
+         */
+        if (RT_SUCCESS(rc))
+        {
+            RTVfsFsStrmRelease(hTarFss);
+            hTarFss = NIL_RTVFSFSSTREAM;
+            rc = vboxExtPackVerifyFileDigest(hFileManifest, pszTarballDigest, pStrDigest, pszError, cbError);
+        }
+
+        /*
          * If we've successfully processed the tarball, verify that the
          * mandatory files are present.
          */
@@ -1262,6 +1378,7 @@ int VBoxExtPackValidateTarball(RTFILE hTarballFile, const char *pszExtPackName, 
     else
         vboxExtPackSetError(pszError, cbError, "RTManifestCreate failed: %Rrc", rc);
     RTVfsFsStrmRelease(hTarFss);
+    RTManifestRelease(hFileManifest);
 
     return rc;
 }

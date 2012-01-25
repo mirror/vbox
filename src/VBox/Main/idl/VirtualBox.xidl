@@ -16213,7 +16213,8 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         installation.
       </desc>
       <param name="path" type="wstring" dir="in">
-        <desc>The path of the extension pack tarball.</desc>
+        <desc>The path of the extension pack tarball.  This can optionally be
+        followed by a "::SHA-256=hex-digit" of the tarball. </desc>
       </param>
       <param name="file" type="IExtPackFile" dir="return">
         <desc>The interface of the extension pack file object.</desc>

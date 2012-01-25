@@ -50,7 +50,7 @@ public:
     /* Constructor: */
     UIGlobalSettingsExtension();
 
-    static void doInstallation(QString const &strFilePath, QWidget *pParent, QString *pstrExtPackName);
+    static void doInstallation(QString const &strFilePath, QString const &strDigest, QWidget *pParent, QString *pstrExtPackName);
 
 protected:
 
