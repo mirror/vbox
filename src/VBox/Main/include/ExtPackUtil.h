@@ -126,9 +126,11 @@ bool                VBoxExtPackIsValidEditionString(const char *pszEdition);
 bool                VBoxExtPackIsValidModuleString(const char *pszModule);
 
 int                 VBoxExtPackValidateMember(const char *pszName, RTVFSOBJTYPE enmType, RTVFSOBJ hVfsObj, char *pszError, size_t cbError);
-int                 VBoxExtPackOpenTarFss(RTFILE hTarballFile, char *pszError, size_t cbError, PRTVFSFSSTREAM phTarFss);
-int                 VBoxExtPackValidateTarball(RTFILE hTarballFile, const char *pszExtPackName, const char *pszTarball,
-                                               char *pszError, size_t cbError, PRTMANIFEST phValidManifest, PRTVFSFILE phXmlFile);
+int                 VBoxExtPackOpenTarFss(RTFILE hTarballFile, char *pszError, size_t cbError, PRTVFSFSSTREAM phTarFss, PRTMANIFEST phFileManifest);
+int                 VBoxExtPackValidateTarball(RTFILE hTarballFile, const char *pszExtPackName,
+                                               const char *pszTarball, const char *pszTarballDigest,
+                                               char *pszError, size_t cbError,
+                                               PRTMANIFEST phValidManifest, PRTVFSFILE phXmlFile, RTCString *pStrDigest);
 
 
 #endif

@@ -113,16 +113,26 @@ UIGlobalSettingsExtension::UIGlobalSettingsExtension()
  * This code is shared by UIGlobalSettingsExtension::sltInstallPackage and UISelectorWindow::sltOpenUrls.
  *
  * @param   strFilePath     The path to the tarball.
+ * @param   strDigest       The digest of the file (SHA-256). Empty string if no
+ *                          digest was performed.
  * @param   pParent         The parent widget.
  * @param   pstrExtPackName Where to return the extension pack name. Optional.
  */
-/*static*/ void UIGlobalSettingsExtension::doInstallation(QString const &strFilePath, QWidget *pParent, QString *pstrExtPackName)
+/*static*/ void UIGlobalSettingsExtension::doInstallation(QString const &strFilePath, QString const &strDigest,
+                                                          QWidget *pParent, QString *pstrExtPackName)
 {
     /*
      * Open the extpack tarball via IExtPackManager.
      */
     CExtPackManager manager = vboxGlobal().virtualBox().GetExtensionPackManager();
-    CExtPackFile extPackFile = manager.OpenExtPackFile(strFilePath);
+    CExtPackFile extPackFile;
+    if (strDigest.isEmpty())
+        extPackFile = manager.OpenExtPackFile(strFilePath);
+    else
+    {
+        QString strFileAndHash = QString("%1::SHA-256=%2").arg(strFilePath).arg(strDigest);
+        extPackFile = manager.OpenExtPackFile(strFileAndHash);
+    }
     if (!manager.isOk())
     {
         msgCenter().cannotOpenExtPack(strFilePath, manager, pParent);
@@ -334,7 +344,7 @@ void UIGlobalSettingsExtension::sltInstallPackage()
     if (!strFilePath.isEmpty())
     {
         QString strExtPackName;
-        doInstallation(strFilePath, this, &strExtPackName);
+        doInstallation(strFilePath, QString(), this, &strExtPackName);
 
         /*
          * Since we might be reinstalling an existing package, we have to

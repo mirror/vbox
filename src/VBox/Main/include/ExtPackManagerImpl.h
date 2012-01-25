@@ -43,7 +43,7 @@ public:
 
     HRESULT     FinalConstruct();
     void        FinalRelease();
-    HRESULT     initWithFile(const char *a_pszFile, class ExtPackManager *a_pExtPackMgr, VirtualBox *a_pVirtualBox);
+    HRESULT     initWithFile(const char *a_pszFile, const char *a_pszDigest, class ExtPackManager *a_pExtPackMgr, VirtualBox *a_pVirtualBox);
     void        uninit();
     RTMEMEF_NEW_AND_DELETE_OPERATORS();
     /** @}  */
