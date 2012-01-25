@@ -968,3 +968,41 @@ RTDECL(int8_t) RTStrToInt8(const char *pszValue)
 }
 RT_EXPORT_SYMBOL(RTStrToInt8);
 
+
+RTDECL(int) RTStrConvertHexBytes(char const *pszHex, void *pv, size_t cb, uint32_t fFlags)
+{
+    AssertPtrReturn(pszHex, VERR_INVALID_POINTER);
+    AssertReturn(!fFlags, VERR_INVALID_PARAMETER);
+
+    size_t      cbDst   = cb;
+    uint8_t    *pbDst   = (uint8_t *)pv;
+    const char *pszSrc  = pszHex;
+    for (;;)
+    {
+        /* Pick the next two digit from the string. */
+        char ch = *pszSrc++;
+        unsigned char uchDigit1 = g_auchDigits[(unsigned char)ch];
+        if (uchDigit1 >= 16)
+        {
+            if (!ch)
+                return cbDst == 0 ? VINF_SUCCESS : VERR_BUFFER_UNDERFLOW;
+
+            while (ch == ' ' || ch == '\t')
+                ch = *pszSrc++;
+            return ch ? VWRN_TRAILING_CHARS : VWRN_TRAILING_SPACES;
+        }
+
+        ch = *pszSrc++;
+        unsigned char uchDigit2 = g_auchDigits[(unsigned char)ch];
+        if (uchDigit2 >= 16)
+            return VERR_UNEVEN_INPUT;
+
+        /* Add the byte to the output buffer. */
+        if (!cbDst)
+            return VERR_BUFFER_OVERFLOW;
+        cbDst--;
+        *pbDst++ = (uchDigit1 << 4) | uchDigit2;
+    }
+}
+RT_EXPORT_SYMBOL(RTStrConvertHexBytes);
+

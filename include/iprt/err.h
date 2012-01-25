@@ -865,6 +865,12 @@ RT_C_DECLS_END
 #define VERR_MISSING                        (-99)
 /** An unexpected (/unknown) exception was caught. */
 #define VERR_UNEXPECTED_EXCEPTION           (-22400)
+/** Buffer underflow. */
+#define VERR_BUFFER_UNDERFLOW               (-22401)
+/** Buffer underflow. */
+#define VINF_BUFFER_UNDERFLOW               22401
+/** Uneven input.  */
+#define VERR_UNEVEN_INPUT                   (-22402)
 /** @} */
 
 
@@ -1558,6 +1564,12 @@ RT_C_DECLS_END
 #define VERR_MANIFEST_DIGEST_MISMATCH           (-902)
 /** The file list doesn't match to the content of the manifest file. */
 #define VERR_MANIFEST_FILE_MISMATCH             (-903)
+/** The specified attribute (name) was not found in the manifest.  */
+#define VERR_MANIFEST_ATTR_NOT_FOUND            (-904)
+/** The attribute type did not match. */
+#define VERR_MANIFEST_ATTR_TYPE_MISMATCH        (-905)
+/** No attribute of the specified types was found. */
+#define VERR_MANIFEST_ATTR_TYPE_NOT_FOUND        (-906)
 /** @} */
 
 /** @name RTTar status codes
