@@ -698,6 +698,7 @@ static int rtProcWinCreateEnvFromToken(HANDLE hToken, RTENV hEnv, PRTUTF16 *ppws
 
     /* If we don't have the Userenv-API for whatever reason or something with the
      * native environment block failed, try to return at least our own environment block. */
+    /** @todo this probably isn't a great idea if CreateEnvironmentBlock fails. */
     if (RT_FAILURE(rc))
         rc = RTEnvQueryUtf16Block(hEnv, ppwszBlock);
     return rc;
@@ -744,255 +745,272 @@ static void rtProcWinDestoryEnv(PRTUTF16 ppwszBlock)
 }
 
 
-static int rtProcWinCreateAsUser(PRTUTF16 pwszUser, PRTUTF16 pwszPassword, PRTUTF16 pwszExec, PRTUTF16 pwszCmdLine,
-                                 RTENV hEnv, DWORD dwCreationFlags,
-                                 STARTUPINFOW *pStartupInfo, PROCESS_INFORMATION *pProcInfo, uint32_t fFlags)
+/**
+ * Method \#2.
+ */
+static int rtProcWinCreateAsUser2(PRTUTF16 pwszUser, PRTUTF16 pwszPassword, PRTUTF16 pwszExec, PRTUTF16 pwszCmdLine,
+                                  RTENV hEnv, DWORD dwCreationFlags,
+                                  STARTUPINFOW *pStartupInfo, PROCESS_INFORMATION *pProcInfo, uint32_t fFlags)
 {
-    int rc = VINF_SUCCESS;
-    BOOL fRc = FALSE;
-    DWORD dwErr = NO_ERROR;
-
     /*
-     * If we run as a service CreateProcessWithLogon will fail,
-     * so don't even try it (because of Local System context).
+     * So if we want to start a process from a service (RTPROC_FLAGS_SERVICE),
+     * we have to do the following:
+     * - Check the credentials supplied and get the user SID.
+     * - If valid get the correct Explorer/VBoxTray instance corresponding to that
+     *   user. This of course is only possible if that user is logged in (over
+     *   physical console or terminal services).
+     * - If we found the user's Explorer/VBoxTray app, use and modify the token to
+     *   use it in order to allow the newly started process to access the user's
+     *   desktop. If there's no Explorer/VBoxTray app we cannot display the started
+     *   process (but run it without UI).
+     *
+     * The following restrictions apply:
+     * - A process only can show its UI when the user the process should run
+     *   under is logged in (has a desktop).
+     * - We do not want to display a process of user A run on the desktop
+     *   of user B on multi session systems.
+     *
+     * The following rights are needed in order to use LogonUserW and
+     * CreateProcessAsUserW, so the local policy has to be modified to:
+     *  - SE_TCB_NAME = Act as part of the operating system
+     *  - SE_ASSIGNPRIMARYTOKEN_NAME = Create/replace a token object
+     *  - SE_INCREASE_QUOTA_NAME
+     *
+     * We may fail here with ERROR_PRIVILEGE_NOT_HELD.
      */
-    if (!(fFlags & RTPROC_FLAGS_SERVICE))
+    DWORD dwErr = NO_ERROR;
+    PHANDLE phToken = NULL;
+    HANDLE hTokenLogon = INVALID_HANDLE_VALUE;
+    int rc = rtProcWinUserLogon(pwszUser, pwszPassword, NULL /* Domain */, &hTokenLogon);
+    if (RT_SUCCESS(rc))
     {
-        RTLDRMOD hAdvAPI32;
-        rc = RTLdrLoad("Advapi32.dll", &hAdvAPI32);
-        if (RT_SUCCESS(rc))
+        DWORD fRc;
+        bool fFound = false;
+        HANDLE hTokenUserDesktop = INVALID_HANDLE_VALUE;
+
+        if (fFlags & RTPROC_FLAGS_SERVICE)
+        {
+            DWORD cbSid = 0; /* Must be zero to query size! */
+            DWORD cchDomain = 0;
+            SID_NAME_USE sidNameUse = SidTypeUser;
+            fRc = LookupAccountNameW(NULL,
+                                     pwszUser,
+                                     NULL,
+                                     &cbSid,
+                                     NULL,
+                                     &cchDomain,
+                                     &sidNameUse);
+            if (!fRc)
+                dwErr = GetLastError();
+            if (   !fRc
+                && dwErr == ERROR_INSUFFICIENT_BUFFER
+                && cbSid > 0)
+            {
+                dwErr = NO_ERROR;
+
+                PSID pSid = (PSID)RTMemAlloc(cbSid * sizeof(wchar_t)); /** @todo r=bird: What's the relationship between wchar_t and PSID? */
+                AssertPtrReturn(pSid, VERR_NO_MEMORY); /** @todo r=bird: Leaking token handles when we're out of memory...  */
+
+                PRTUTF16 pwszDomain = NULL;
+                if (cchDomain > 0)
+                {
+                    pwszDomain = (PRTUTF16)RTMemAlloc(cchDomain * sizeof(RTUTF16));
+                    AssertPtrReturn(pwszDomain, VERR_NO_MEMORY); /** @todo r=bird: Leaking token handles when we're out of memory...  */
+                }
+
+                /* Note: Also supports FQDNs! */
+                if (   LookupAccountNameW(NULL,            /* lpSystemName */
+                                          pwszUser,
+                                          pSid,
+                                          &cbSid,
+                                          pwszDomain,
+                                          &cchDomain,
+                                          &sidNameUse)
+                    && IsValidSid(pSid))
+                {
+                    /* Array of process names we want to look for. */
+                    static const char * const s_papszProcNames[] =
+                    {
+#ifdef VBOX                 /* The explorer entry is a fallback in case GA aren't installed. */
+                        { "VBoxTray.exe" },
+#endif
+                        { "explorer.exe" },
+                        NULL
+                    };
+                    fFound = rtProcWinFindTokenByProcess(s_papszProcNames, pSid, &hTokenUserDesktop);
+                }
+                else
+                    dwErr = GetLastError(); /* LookupAccountNameW() failed. */
+                RTMemFree(pSid);
+                RTMemFree(pwszDomain);
+            }
+        }
+        else /* !RTPROC_FLAGS_SERVICE */
+        {
+            /* Nothing to do here right now. */
+        }
+
+        /** @todo Hmm, this function already is too big! We need to split
+         *        it up into several small parts. */
+
+        /* If we got an error due to account lookup/loading above, don't
+         * continue here. */
+        if (dwErr == NO_ERROR)
         {
             /*
-             * This may fail on too old (NT4) platforms or if the calling process
-             * is running on a SYSTEM account (like a service, ERROR_ACCESS_DENIED) on newer
-             * platforms (however, this works on W2K!).
+             * If we didn't find a matching VBoxTray, just use the token we got
+             * above from LogonUserW(). This enables us to at least run processes with
+             * desktop interaction without UI.
              */
-            PFNCREATEPROCESSWITHLOGON pfnCreateProcessWithLogonW;
-            rc = RTLdrGetSymbol(hAdvAPI32, "CreateProcessWithLogonW", (void **)&pfnCreateProcessWithLogonW);
+            phToken = fFound ? &hTokenUserDesktop : &hTokenLogon;
+            RTLDRMOD hUserenv;
+            int rc = RTLdrLoad("Userenv.dll", &hUserenv);
             if (RT_SUCCESS(rc))
             {
-                PRTUTF16 pwszzBlock;
-                rc = rtProcWinCreateEnvFromAccount(pwszUser, pwszPassword, NULL /* Domain */,
-                                                   hEnv, &pwszzBlock);
+                PFNLOADUSERPROFILEW pfnLoadUserProfileW;
+                rc = RTLdrGetSymbol(hUserenv, "LoadUserProfileW", (void**)&pfnLoadUserProfileW);
                 if (RT_SUCCESS(rc))
                 {
-                    fRc = pfnCreateProcessWithLogonW(pwszUser,
-                                                     NULL,                       /* lpDomain*/
-                                                     pwszPassword,
-                                                     1 /*LOGON_WITH_PROFILE*/,   /* dwLogonFlags */
-                                                     pwszExec,
-                                                     pwszCmdLine,
-                                                     dwCreationFlags,
-                                                     pwszzBlock,
-                                                     NULL,                       /* pCurrentDirectory */
-                                                     pStartupInfo,
-                                                     pProcInfo);
-                    if (!fRc)
-                        rc = rtProcWinMapErrorCodes(GetLastError());
-                    rtProcWinDestoryEnv(pwszzBlock);
-                }
-            }
-            RTLdrClose(hAdvAPI32);
-        }
-    }
-
-    /*
-     * Did the API call above fail because we're running on a too old OS (NT4) or
-     * we're running as a Windows service?
-     */
-    if (   RT_FAILURE(rc)
-        || (fFlags & RTPROC_FLAGS_SERVICE))
-    {
-        /*
-         * So if we want to start a process from a service (RTPROC_FLAGS_SERVICE),
-         * we have to do the following:
-         * - Check the credentials supplied and get the user SID.
-         * - If valid get the correct Explorer/VBoxTray instance corresponding to that
-         *   user. This of course is only possible if that user is logged in (over
-         *   physical console or terminal services).
-         * - If we found the user's Explorer/VBoxTray app, use and modify the token to
-         *   use it in order to allow the newly started process to access the user's
-         *   desktop. If there's no Explorer/VBoxTray app we cannot display the started
-         *   process (but run it without UI).
-         *
-         * The following restrictions apply:
-         * - A process only can show its UI when the user the process should run
-         *   under is logged in (has a desktop).
-         * - We do not want to display a process of user A run on the desktop
-         *   of user B on multi session systems.
-         *
-         * The following rights are needed in order to use LogonUserW and
-         * CreateProcessAsUserW, so the local policy has to be modified to:
-         *  - SE_TCB_NAME = Act as part of the operating system
-         *  - SE_ASSIGNPRIMARYTOKEN_NAME = Create/replace a token object
-         *  - SE_INCREASE_QUOTA_NAME
-         *
-         * We may fail here with ERROR_PRIVILEGE_NOT_HELD.
-         */
-        PHANDLE phToken = NULL;
-        HANDLE hTokenLogon = INVALID_HANDLE_VALUE;
-        rc = rtProcWinUserLogon(pwszUser, pwszPassword, NULL /* Domain */, &hTokenLogon);
-        if (RT_SUCCESS(rc))
-        {
-            bool fFound = false;
-            HANDLE hTokenUserDesktop = INVALID_HANDLE_VALUE;
-
-            if (fFlags & RTPROC_FLAGS_SERVICE)
-            {
-                DWORD cbSid = 0; /* Must be zero to query size! */
-                DWORD cchDomain = 0;
-                SID_NAME_USE sidNameUse = SidTypeUser;
-                fRc = LookupAccountNameW(NULL,
-                                         pwszUser,
-                                         NULL,
-                                         &cbSid,
-                                         NULL,
-                                         &cchDomain,
-                                         &sidNameUse);
-                if (!fRc)
-                    dwErr = GetLastError();
-                if (   !fRc
-                    && dwErr == ERROR_INSUFFICIENT_BUFFER
-                    && cbSid > 0)
-                {
-                    dwErr = NO_ERROR;
-
-                    PSID pSid = (PSID)RTMemAlloc(cbSid * sizeof(wchar_t)); /** @todo r=bird: What's the relationship between wchar_t and PSID? */
-                    AssertPtrReturn(pSid, VERR_NO_MEMORY); /** @todo r=bird: Leaking token handles when we're out of memory...  */
-
-                    PRTUTF16 pwszDomain = NULL;
-                    if (cchDomain > 0)
-                    {
-                        pwszDomain = (PRTUTF16)RTMemAlloc(cchDomain * sizeof(RTUTF16));
-                        AssertPtrReturn(pwszDomain, VERR_NO_MEMORY); /** @todo r=bird: Leaking token handles when we're out of memory...  */
-                    }
-
-                    /* Note: Also supports FQDNs! */
-                    if (   LookupAccountNameW(NULL,            /* lpSystemName */
-                                              pwszUser,
-                                              pSid,
-                                              &cbSid,
-                                              pwszDomain,
-                                              &cchDomain,
-                                              &sidNameUse)
-                        && IsValidSid(pSid))
-                    {
-                        /* Array of process names we want to look for. */
-                        static const char * const s_papszProcNames[] =
-                        {
-#ifdef VBOX                 /* The explorer entry is a fallback in case GA aren't installed. */
-                            { "VBoxTray.exe" },
-#endif
-                            { "explorer.exe" },
-                            NULL
-                        };
-                        fFound = rtProcWinFindTokenByProcess(s_papszProcNames, pSid, &hTokenUserDesktop);
-                    }
-                    else
-                        dwErr = GetLastError(); /* LookupAccountNameW() failed. */
-                    RTMemFree(pSid);
-                    RTMemFree(pwszDomain);
-                }
-            }
-            else /* !RTPROC_FLAGS_SERVICE */
-            {
-                /* Nothing to do here right now. */
-            }
-
-            /** @todo Hmm, this function already is too big! We need to split
-             *        it up into several small parts. */
-
-            /* If we got an error due to account lookup/loading above, don't
-             * continue here. */
-            if (dwErr == NO_ERROR)
-            {
-                /*
-                 * If we didn't find a matching VBoxTray, just use the token we got
-                 * above from LogonUserW(). This enables us to at least run processes with
-                 * desktop interaction without UI.
-                 */
-                phToken = fFound ? &hTokenUserDesktop : &hTokenLogon;
-                RTLDRMOD hUserenv;
-                int rc = RTLdrLoad("Userenv.dll", &hUserenv);
-                if (RT_SUCCESS(rc))
-                {
-                    PFNLOADUSERPROFILEW pfnLoadUserProfileW;
-                    rc = RTLdrGetSymbol(hUserenv, "LoadUserProfileW", (void**)&pfnLoadUserProfileW);
+                    PFNUNLOADUSERPROFILE pfnUnloadUserProfile;
+                    rc = RTLdrGetSymbol(hUserenv, "UnloadUserProfile", (void**)&pfnUnloadUserProfile);
                     if (RT_SUCCESS(rc))
                     {
-                        PFNUNLOADUSERPROFILE pfnUnloadUserProfile;
-                        rc = RTLdrGetSymbol(hUserenv, "UnloadUserProfile", (void**)&pfnUnloadUserProfile);
-                        if (RT_SUCCESS(rc))
+                        PROFILEINFOW profileInfo;
+                        if (!(fFlags & RTPROC_FLAGS_NO_PROFILE))
                         {
-                            PROFILEINFOW profileInfo;
-                            if (!(fFlags & RTPROC_FLAGS_NO_PROFILE))
-                            {
-                                RT_ZERO(profileInfo);
-                                profileInfo.dwSize = sizeof(profileInfo);
-                                profileInfo.lpUserName = pwszUser;
-                                profileInfo.dwFlags = PI_NOUI; /* Prevents the display of profile error messages. */
+                            RT_ZERO(profileInfo);
+                            profileInfo.dwSize = sizeof(profileInfo);
+                            profileInfo.lpUserName = pwszUser;
+                            profileInfo.dwFlags = PI_NOUI; /* Prevents the display of profile error messages. */
 
-                                if (!pfnLoadUserProfileW(*phToken, &profileInfo))
-                                    dwErr = GetLastError();
+                            if (!pfnLoadUserProfileW(*phToken, &profileInfo))
+                                dwErr = GetLastError();
+                        }
+
+                        if (dwErr == NO_ERROR)
+                        {
+                            PRTUTF16 pwszzBlock;
+                            rc = rtProcWinCreateEnvFromToken(*phToken, hEnv, &pwszzBlock);
+                            if (RT_SUCCESS(rc))
+                            {
+                                /*
+                                 * Useful KB articles:
+                                 *      http://support.microsoft.com/kb/165194/
+                                 *      http://support.microsoft.com/kb/184802/
+                                 *      http://support.microsoft.com/kb/327618/
+                                 */
+                                fRc = CreateProcessAsUserW(*phToken,
+                                                           pwszExec,
+                                                           pwszCmdLine,
+                                                           NULL,         /* pProcessAttributes */
+                                                           NULL,         /* pThreadAttributes */
+                                                           TRUE,         /* fInheritHandles */
+                                                           dwCreationFlags,
+                                                           pwszzBlock,
+                                                           NULL,         /* pCurrentDirectory */
+                                                           pStartupInfo,
+                                                           pProcInfo);
+                                if (fRc)
+                                    dwErr = NO_ERROR;
+                                else
+                                    dwErr = GetLastError(); /* CreateProcessAsUserW() failed. */
+                                rtProcWinDestoryEnv(pwszzBlock);
                             }
 
-                            if (dwErr == NO_ERROR)
+                            if (!(fFlags & RTPROC_FLAGS_NO_PROFILE))
                             {
-                                PRTUTF16 pwszzBlock;
-                                rc = rtProcWinCreateEnvFromToken(*phToken, hEnv, &pwszzBlock);
-                                if (RT_SUCCESS(rc))
-                                {
-                                    /*
-                                     * Useful KB articles:
-                                     *      http://support.microsoft.com/kb/165194/
-                                     *      http://support.microsoft.com/kb/184802/
-                                     *      http://support.microsoft.com/kb/327618/
-                                     */
-                                    fRc = CreateProcessAsUserW(*phToken,
-                                                               pwszExec,
-                                                               pwszCmdLine,
-                                                               NULL,         /* pProcessAttributes */
-                                                               NULL,         /* pThreadAttributes */
-                                                               TRUE,         /* fInheritHandles */
-                                                               dwCreationFlags,
-                                                               pwszzBlock,
-                                                               NULL,         /* pCurrentDirectory */
-                                                               pStartupInfo,
-                                                               pProcInfo);
-                                    if (fRc)
-                                        dwErr = NO_ERROR;
-                                    else
-                                        dwErr = GetLastError(); /* CreateProcessAsUserW() failed. */
-                                    rtProcWinDestoryEnv(pwszzBlock);
-                                }
-
-                                if (!(fFlags & RTPROC_FLAGS_NO_PROFILE))
-                                {
-                                    fRc = pfnUnloadUserProfile(*phToken, profileInfo.hProfile);
+                                fRc = pfnUnloadUserProfile(*phToken, profileInfo.hProfile);
 #ifdef RT_STRICT
-                                    if (!fRc)
-                                    {
-                                        DWORD dwErr2 = GetLastError();
-                                        AssertMsgFailed(("Unloading user profile failed with error %u (%#x) - Are all handles closed? (dwErr=%u)",
-                                                         dwErr2, dwErr2, dwErr));
-                                    }
-#endif
+                                if (!fRc)
+                                {
+                                    DWORD dwErr2 = GetLastError();
+                                    AssertMsgFailed(("Unloading user profile failed with error %u (%#x) - Are all handles closed? (dwErr=%u)",
+                                                     dwErr2, dwErr2, dwErr));
                                 }
+#endif
                             }
                         }
                     }
-                    RTLdrClose(hUserenv);
-                } /* Userenv.dll found/loaded? */
-            } /* Account lookup succeeded? */
-            if (hTokenUserDesktop != INVALID_HANDLE_VALUE)
-                CloseHandle(hTokenUserDesktop);
-            rtProcWinUserLogoff(hTokenLogon);
-        }
+                }
+                RTLdrClose(hUserenv);
+            } /* Userenv.dll found/loaded? */
+        } /* Account lookup succeeded? */
+        if (hTokenUserDesktop != INVALID_HANDLE_VALUE)
+            CloseHandle(hTokenUserDesktop);
+        rtProcWinUserLogoff(hTokenLogon);
     }
 
     if (   RT_SUCCESS(rc)
         && dwErr != NO_ERROR)
         rc = rtProcWinMapErrorCodes(dwErr);
+    return rc;
+}
+
+
+/**
+ * Method \#1.
+ *
+ * This may fail on too old (NT4) platforms or if the calling process
+ * is running on a SYSTEM account (like a service, ERROR_ACCESS_DENIED) on newer
+ * platforms (however, this works on W2K!).
+ */
+static int rtProcWinCreateAsUser1(PRTUTF16 pwszUser, PRTUTF16 pwszPassword, PRTUTF16 pwszExec, PRTUTF16 pwszCmdLine,
+                                  RTENV hEnv, DWORD dwCreationFlags,
+                                  STARTUPINFOW *pStartupInfo, PROCESS_INFORMATION *pProcInfo, uint32_t fFlags)
+{
+    RTLDRMOD hAdvAPI32;
+    int rc = RTLdrLoad("Advapi32.dll", &hAdvAPI32);
+    if (RT_SUCCESS(rc))
+    {
+        PFNCREATEPROCESSWITHLOGON pfnCreateProcessWithLogonW;
+        rc = RTLdrGetSymbol(hAdvAPI32, "CreateProcessWithLogonW", (void **)&pfnCreateProcessWithLogonW);
+        if (RT_SUCCESS(rc))
+        {
+            PRTUTF16 pwszzBlock;
+            rc = rtProcWinCreateEnvFromAccount(pwszUser, pwszPassword, NULL /* Domain */,
+                                               hEnv, &pwszzBlock);
+            if (RT_SUCCESS(rc))
+            {
+                BOOL fRc = pfnCreateProcessWithLogonW(pwszUser,
+                                                      NULL,                       /* lpDomain*/
+                                                      pwszPassword,
+                                                      1 /*LOGON_WITH_PROFILE*/,   /* dwLogonFlags */
+                                                      pwszExec,
+                                                      pwszCmdLine,
+                                                      dwCreationFlags,
+                                                      pwszzBlock,
+                                                      NULL,                       /* pCurrentDirectory */
+                                                      pStartupInfo,
+                                                      pProcInfo);
+                if (!fRc)
+                    rc = rtProcWinMapErrorCodes(GetLastError());
+                rtProcWinDestoryEnv(pwszzBlock);
+            }
+        }
+        RTLdrClose(hAdvAPI32);
+    }
+    return rc;
+}
+
+
+static int rtProcWinCreateAsUser(PRTUTF16 pwszUser, PRTUTF16 pwszPassword, PRTUTF16 pwszExec, PRTUTF16 pwszCmdLine,
+                                 RTENV hEnv, DWORD dwCreationFlags,
+                                 STARTUPINFOW *pStartupInfo, PROCESS_INFORMATION *pProcInfo, uint32_t fFlags)
+{
+    /*
+     * If we run as a service CreateProcessWithLogon will fail,
+     * so don't even try it (because of Local System context).
+     */
+    int rc = VERR_TRY_AGAIN;
+    if (!(fFlags & RTPROC_FLAGS_SERVICE))
+        rc = rtProcWinCreateAsUser1(pwszUser, pwszPassword, pwszExec, pwszCmdLine, hEnv, dwCreationFlags, pStartupInfo, pProcInfo, fFlags);
+
+    /*
+     * Did the API call above fail because we're running on a too old OS (NT4) or
+     * we're running as a Windows service?
+     */
+    if (RT_FAILURE(rc))
+        rc = rtProcWinCreateAsUser2(pwszUser, pwszPassword, pwszExec, pwszCmdLine, hEnv, dwCreationFlags, pStartupInfo, pProcInfo, fFlags);
 
     return rc;
 }
