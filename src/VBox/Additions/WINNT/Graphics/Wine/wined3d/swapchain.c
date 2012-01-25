@@ -138,12 +138,12 @@ static void WINAPI IWineD3DSwapChainImpl_Destroy(IWineD3DSwapChain *iface)
         HeapFree(GetProcessHeap(), 0, This->backBuffer);
         This->backBuffer = NULL;
     }
-#if 0
+#ifndef VBOX_WINE_WITH_SINGLE_CONTEXT
     for (i = 0; i < This->num_contexts; ++i)
     {
         context_destroy(This->device, This->context[i]);
     }
-#else
+#endif
 
 #ifdef VBOX_WITH_WDDM
     if (This->presentRt)
@@ -157,7 +157,6 @@ static void WINAPI IWineD3DSwapChainImpl_Destroy(IWineD3DSwapChain *iface)
 
     IWineD3DDevice_RemoveSwapChain((IWineD3DDevice*)This->device, (IWineD3DSwapChain*)This);
     if (!This->device->NumberOfSwapChains)
-#endif
     {
         /* Restore the screen resolution if we rendered in fullscreen
          * This will restore the screen resolution to what it was before creating the swapchain. In case of d3d8 and d3d9

@@ -1081,6 +1081,14 @@ void context_set_tls_idx(DWORD idx)
 static struct wined3d_context *context_get_current_ex(DWORD adjustTid)
 {
     struct wined3d_context *ctx = vboxGetCurrentContext();
+    if (ctx && !VBoxTlsRefIsFunctional(ctx))
+    {
+        /* this is a destroyed context left in the tls of the current thread */
+        /* 1. this releases the context and clears the tls */
+        vboxSetCurrentContext(NULL);
+        /* return there is no context current */
+        return NULL;
+    }
     if (!adjustTid)
         return ctx;
     if (!ctx || ctx->tid == adjustTid)
@@ -1504,7 +1512,6 @@ struct IWineD3DDeviceImpl *context_get_device(const struct wined3d_context *cont
 static DECLCALLBACK(void) context_tls_dtor(void* pvCtx)
 {
     struct wined3d_context * context = (struct wined3d_context *)pvCtx;
-    context_destroy_gl_resources(context);
     HeapFree(GetProcessHeap(), 0, context);
 }
 #endif
@@ -1992,17 +1999,23 @@ void context_destroy(IWineD3DDeviceImpl *This, struct wined3d_context *context)
         context->destroyed = 1;
         destroy = FALSE;
     }
+#else
+    context_destroy_gl_resources(context);
 #endif
 
     HeapFree(GetProcessHeap(), 0, context->vshader_const_dirty);
     HeapFree(GetProcessHeap(), 0, context->pshader_const_dirty);
     device_context_remove(This, context);
-#ifndef VBOX_WITH_WDDM
-    context->swapchain = NULL;
-#endif
 #if !defined(VBOX_WINE_WITH_SINGLE_CONTEXT) && !defined(VBOX_WINE_WITH_SINGLE_SWAPCHAIN_CONTEXT)
     if (destroy) HeapFree(GetProcessHeap(), 0, context);
 #else
+# ifndef VBOX_WITH_WDDM
+    context->swapchain = NULL;
+#else
+    context->currentSwapchain = NULL;
+    context->device = NULL;
+# endif
+    VBoxTlsRefMarkDestroy(context);
     VBoxTlsRefRelease(context);
 #endif
 }
