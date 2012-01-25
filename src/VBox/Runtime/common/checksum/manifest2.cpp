@@ -126,7 +126,7 @@ typedef struct RTMANIFESTWRITESTDATTR
 
 
 /**
- * Argument package used by RTManifestEqualsEx to pass it's arguments to the
+ * Argument package used by RTManifestEqualsEx to pass its arguments to the
  * enumeration callback functions.
  */
 typedef struct RTMANIFESTEQUALS
@@ -164,6 +164,20 @@ typedef struct RTMANIFESTEQUALS
 } RTMANIFESTEQUALS;
 /** Pointer to an RTManifestEqualEx argument packet. */
 typedef RTMANIFESTEQUALS *PRTMANIFESTEQUALS;
+
+/**
+ * Argument package used by rtMainfestQueryAttrWorker to pass its search
+ * criteria to rtMainfestQueryAttrEnumCallback and get a result back.
+ */
+typedef struct RTMANIFESTQUERYATTRARGS
+{
+    /** The attribute types we're hunting for. */
+    uint32_t        fType;
+    /** What we've found. */
+    PRTMANIFESTATTR pAttr;
+} RTMANIFESTQUERYATTRARGS;
+/** Pointer to a rtMainfestQueryAttrEnumCallback argument packet. */
+typedef RTMANIFESTQUERYATTRARGS *PRTMANIFESTQUERYATTRARGS;
 
 
 /**
@@ -753,6 +767,102 @@ RTDECL(int) RTManifestUnsetAttr(RTMANIFEST hManifest, const char *pszAttr)
 
 
 /**
+ * Callback employed by rtManifestQueryAttrWorker to search by attribute type.
+ *
+ * @returns VINF_SUCCESS or VINF_CALLBACK_RETURN.
+ * @param   pStr                The attribute string node.
+ * @param   pvUser              The argument package.
+ */
+static DECLCALLBACK(int) rtMainfestQueryAttrEnumCallback(PRTSTRSPACECORE pStr, void *pvUser)
+{
+    PRTMANIFESTATTR             pAttr = (PRTMANIFESTATTR)pStr;
+    PRTMANIFESTQUERYATTRARGS    pArgs = (PRTMANIFESTQUERYATTRARGS)pvUser;
+
+    if (pAttr->fType & pArgs->fType)
+    {
+        pArgs->pAttr = pAttr;
+        return VINF_CALLBACK_RETURN;
+    }
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Worker common to RTManifestQueryAttr and RTManifestEntryQueryAttr.
+ *
+ * @returns IPRT status code.
+ * @param   pEntry              The entry.
+ * @param   pszAttr             The attribute name.  If NULL, it will be
+ *                              selected by @a fType alone.
+ * @param   fType               The attribute types the entry should match. Pass
+ *                              Pass RTMANIFEST_ATTR_ANY match any.  If more
+ *                              than one is given, the first matching one is
+ *                              returned.
+ * @param   pszValue            Where to return value.
+ * @param   cbValue             The size of the buffer @a pszValue points to.
+ * @param   pfType              Where to return the attribute type value.
+ */
+static int rtManifestQueryAttrWorker(PRTMANIFESTENTRY pEntry, const char *pszAttr, uint32_t fType,
+                                     char *pszValue, size_t cbValue, uint32_t *pfType)
+{
+    /*
+     * Find the requested attribute.
+     */
+    PRTMANIFESTATTR pAttr;
+    if (pszAttr)
+    {
+        /* By name. */
+        pAttr = (PRTMANIFESTATTR)RTStrSpaceGet(&pEntry->Attributes, pszAttr);
+        if (!pAttr)
+            return VERR_MANIFEST_ATTR_NOT_FOUND;
+        if (!(pAttr->fType & fType))
+            return VERR_MANIFEST_ATTR_TYPE_MISMATCH;
+    }
+    else
+    {
+        /* By type. */
+        RTMANIFESTQUERYATTRARGS Args;
+        Args.fType = fType;
+        Args.pAttr = NULL;
+        int rc = RTStrSpaceEnumerate(&pEntry->Attributes, rtMainfestQueryAttrEnumCallback, &Args);
+        AssertRCReturn(rc, rc);
+        pAttr = Args.pAttr;
+        if (!pAttr)
+            return VERR_MANIFEST_ATTR_TYPE_NOT_FOUND;
+    }
+
+    /*
+     * Set the return values.
+     */
+    if (cbValue || pszValue)
+    {
+        size_t cbNeeded = strlen(pAttr->pszValue) + 1;
+        if (cbNeeded > cbValue)
+            return VERR_BUFFER_OVERFLOW;
+        memcpy(pszValue, pAttr->pszValue, cbNeeded);
+    }
+
+    if (pfType)
+        *pfType = pAttr->fType;
+
+    return VINF_SUCCESS;
+}
+
+
+RTDECL(int) RTManifestQueryAttr(RTMANIFEST hManifest, const char *pszAttr, uint32_t fType,
+                                char *pszValue, size_t cbValue, uint32_t *pfType)
+{
+    RTMANIFESTINT *pThis = hManifest;
+    AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
+    AssertReturn(pThis->u32Magic == RTMANIFEST_MAGIC, VERR_INVALID_HANDLE);
+    AssertPtrNull(pszAttr);
+    AssertPtr(pszValue);
+
+    return rtManifestQueryAttrWorker(&pThis->SelfEntry, pszAttr, fType, pszValue, cbValue, pfType);
+}
+
+
+/**
  * Validates the name entry.
  *
  * @returns IPRT status code.
@@ -941,6 +1051,32 @@ RTDECL(int) RTManifestEntryUnsetAttr(RTMANIFEST hManifest, const char *pszEntry,
     rc = rtManifestGetEntry(pThis, pszEntry, fNeedNormalization, cchEntry, &pEntry);
     if (RT_SUCCESS(rc))
         rc = rtManifestUnsetAttrWorker(pEntry, pszAttr);
+    return rc;
+}
+
+
+RTDECL(int) RTManifestEntryQueryAttr(RTMANIFEST hManifest, const char *pszEntry, const char *pszAttr, uint32_t fType,
+                                     char *pszValue, size_t cbValue, uint32_t *pfType)
+{
+    RTMANIFESTINT *pThis = hManifest;
+    AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
+    AssertReturn(pThis->u32Magic == RTMANIFEST_MAGIC, VERR_INVALID_HANDLE);
+    AssertPtr(pszEntry);
+    AssertPtrNull(pszAttr);
+    AssertPtr(pszValue);
+
+    /*
+     * Look up the entry.
+     */
+    bool    fNeedNormalization;
+    size_t  cchEntry;
+    int rc = rtManifestValidateNameEntry(pszEntry, &fNeedNormalization, &cchEntry);
+    AssertRCReturn(rc, rc);
+
+    PRTMANIFESTENTRY pEntry;
+    rc = rtManifestGetEntry(pThis, pszEntry, fNeedNormalization, cchEntry, &pEntry);
+    if (RT_SUCCESS(rc))
+        rc = rtManifestQueryAttrWorker(pEntry, pszAttr, fType, pszValue, cbValue, pfType);
     return rc;
 }
 

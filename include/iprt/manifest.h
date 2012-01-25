@@ -53,6 +53,8 @@ RT_C_DECLS_BEGIN
 #define RTMANIFEST_ATTR_SHA512      RT_BIT_32(4)
 /** The end of the valid values. */
 #define RTMANIFEST_ATTR_END         RT_BIT_32(5)
+/** Wildcard for use in queries. */
+#define RTMANIFEST_ATTR_ANY         UINT32_C(0xffffffff)
 /** @} */
 
 
@@ -161,6 +163,31 @@ RTDECL(int) RTManifestSetAttr(RTMANIFEST hManifest, const char *pszAttr, const c
 RTDECL(int) RTManifestUnsetAttr(RTMANIFEST hManifest, const char *pszAttr);
 
 /**
+ * Query a manifest entry attribute.
+ *
+ * @returns IPRT status code.
+ * @retval  VERR_BUFFER_OVERFLOW if the value buffer is too small. The @a
+ *          pszValue buffer will not be modified.
+ * @retval  VERR_MANIFEST_ATTR_NOT_FOUND
+ * @retval  VERR_MANIFEST_ATTR_TYPE_NOT_FOUND
+ * @retval  VERR_MANIFEST_ATTR_TYPE_MISMATCH
+ *
+ * @param   hManifest           The manifest handle.
+ * @param   pszEntry            The entry name.
+ * @param   pszAttr             The attribute name.  If NULL, it will be
+ *                              selected by @a fType alone.
+ * @param   fType               The attribute types the entry should match. Pass
+ *                              Pass RTMANIFEST_ATTR_ANY match any.  If more
+ *                              than one is given, the first matching one is
+ *                              returned.
+ * @param   pszValue            Where to return value.
+ * @param   cbValue             The size of the buffer @a pszValue points to.
+ * @param   pfType              Where to return the attribute type value.
+ */
+RTDECL(int) RTManifestQueryAttr(RTMANIFEST hManifest, const char *pszAttr, uint32_t fType,
+                                char *pszValue, size_t cbValue, uint32_t *pfType);
+
+/**
  * Sets an attribute of a manifest entry.
  *
  * @returns IPRT status code.
@@ -189,6 +216,32 @@ RTDECL(int) RTManifestEntrySetAttr(RTMANIFEST hManifest, const char *pszEntry, c
  * @param   pszAttr             The attribute name.
  */
 RTDECL(int) RTManifestEntryUnsetAttr(RTMANIFEST hManifest, const char *pszEntry, const char *pszAttr);
+
+/**
+ * Query a manifest entry attribute.
+ *
+ * @returns IPRT status code.
+ * @retval  VERR_BUFFER_OVERFLOW if the value buffer is too small. The @a
+ *          pszValue buffer will not be modified.
+ * @retval  VERR_NOT_FOUND if the entry was not found.
+ * @retval  VERR_MANIFEST_ATTR_NOT_FOUND
+ * @retval  VERR_MANIFEST_ATTR_TYPE_NOT_FOUND
+ * @retval  VERR_MANIFEST_ATTR_TYPE_MISMATCH
+ *
+ * @param   hManifest           The manifest handle.
+ * @param   pszEntry            The entry name.
+ * @param   pszAttr             The attribute name.  If NULL, it will be
+ *                              selected by @a fType alone.
+ * @param   fType               The attribute types the entry should match. Pass
+ *                              Pass RTMANIFEST_ATTR_ANY match any.  If more
+ *                              than one is given, the first matching one is
+ *                              returned.
+ * @param   pszValue            Where to return value.
+ * @param   cbValue             The size of the buffer @a pszValue points to.
+ * @param   pfType              Where to return the attribute type value.
+ */
+RTDECL(int) RTManifestEntryQueryAttr(RTMANIFEST hManifest, const char *pszEntry, const char *pszAttr, uint32_t fType,
+                                     char *pszValue, size_t cbValue, uint32_t *pfType);
 
 /**
  * Adds a new entry to a manifest.

@@ -367,7 +367,6 @@ RuntimeR3_SOURCES       = \
 	common/string/RTStrCatP.cpp \
 	common/string/RTStrCatPEx.cpp \
 	common/string/RTStrCmp.cpp \
-	common/string/RTStrConvertHexBytes.cpp \
 	common/string/RTStrCopy.cpp \
 	common/string/RTStrCopyEx.cpp \
 	common/string/RTStrCopyP.cpp \
