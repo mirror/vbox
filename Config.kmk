@@ -2615,8 +2615,6 @@ ifeq ($(KBUILD_TARGET),solaris)
 
   # OSS audio support for Solaris
  VBOX_WITH_SOLARIS_OSS := $(if-expr $(VBOX_SOLARIS_11_VERSION) >= 115,1,)
- else
-  $(error Unsupported Solaris host version $(VBOX_SOLARIS_VERSION))
  endif
 endif
 
