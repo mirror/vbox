@@ -1363,7 +1363,7 @@ static void vboxWddmLockUnlockMemSynch(PVBOXWDDMDISP_ALLOCATION pAlloc, D3DLOCKE
         uint8_t *pvSrc, *pvDst;
         uint32_t srcPitch, dstPitch;
         uint8_t * pvAllocMemStart = (uint8_t *)pAlloc->pvMem;
-        uint32_t offAllocMemStart = vboxWddmCalcOffXYrd(pRect->top, pRect->left, pAlloc->SurfDesc.pitch, pAlloc->SurfDesc.format);
+        uint32_t offAllocMemStart = vboxWddmCalcOffXYrd(pRect->left, pRect->top, pAlloc->SurfDesc.pitch, pAlloc->SurfDesc.format);
         pvAllocMemStart += offAllocMemStart;
 
         if (bToLockInfo)
