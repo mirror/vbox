@@ -566,8 +566,8 @@ static int VBoxServiceControlHandleCmdGetOutput(uint32_t idClient, uint32_t cPar
             uint32_t cbRead = 0;
             rc = VBoxServiceControlExecGetOutput(uPID, uContextID, uHandleID, RT_INDEFINITE_WAIT /* Timeout */,
                                                  pBuf, _64K /* cbSize */, &cbRead);
-            VBoxServiceVerbose(3, "Control: Got output returned with rc=%Rrc (PID=%u, CID=%u, cbRead=%u, uHandle=%u, uFlags=%u)\n",
-                               rc, uPID, uContextID, cbRead, uHandleID, uFlags);
+            VBoxServiceVerbose(3, "Control: [PID %u]: Got output, rc=%Rrc, CID=%u, cbRead=%u, uHandle=%u, uFlags=%u\n",
+                               uPID, rc, uContextID, cbRead, uHandleID, uFlags);
 
             /** Note: Don't convert/touch/modify/whatever the output data here! This might be binary
              *        data which the host needs to work with -- so just pass through all data unfiltered! */
@@ -579,6 +579,9 @@ static int VBoxServiceControlHandleCmdGetOutput(uint32_t idClient, uint32_t cPar
                                                  pBuf, cbRead);
             if (RT_SUCCESS(rc))
                 rc = rc2;
+            else if (rc == VERR_NOT_FOUND) /* It's not critical if guest process (PID) is not found. */
+                rc = VINF_SUCCESS;
+
             RTMemFree(pBuf);
         }
         else
