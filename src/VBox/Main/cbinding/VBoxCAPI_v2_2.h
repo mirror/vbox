@@ -14,12 +14,12 @@
  *      xpcom/include/nsprpub/prtypes.h
  *      xpcom/include/xpcom/nsISupportsBase.h
  *
- * These files were originally triple-licensed (MPL/GPL2/LGPL2.1). Sun
+ * These files were originally triple-licensed (MPL/GPL2/LGPL2.1). Oracle
  * elects to distribute this derived work under the LGPL2.1 only.
  */
 
 /*
- * Copyright (C) 2008-2009 Oracle Corporation
+ * Copyright (C) 2008-2012 Oracle Corporation
  *
  * This file is part of a free software library; you can redistribute
  * it and/or modify it under the terms of the GNU Lesser General

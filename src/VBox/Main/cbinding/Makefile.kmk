@@ -4,7 +4,7 @@
 #
 
 #
-# Copyright (C) 2009 Oracle Corporation
+# Copyright (C) 2009-2012 Oracle Corporation
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;
@@ -47,9 +47,12 @@ XpComCHeaders_SOURCES = \
 	VBoxCAPI_v2_2.h \
 	VBoxCAPI_v3_0.h \
 	VBoxCAPI_v3_1.h \
-	$(XpComCHeaders_0_OUTDIR)/VBoxCAPI_v3_2.h
+	VBoxCAPI_v3_2.h \
+	VBoxCAPI_v4_0.h \
+	VBoxCAPI_v4_1.h \
+	$(XpComCHeaders_0_OUTDIR)/VBoxCAPI_v$(VBOX_API_VERSION).h
 
-$$(XpComCHeaders_0_OUTDIR)/VBoxCAPI_v3_2.h: \
+$$(XpComCHeaders_0_OUTDIR)/VBoxCAPI_v$(VBOX_API_VERSION).h: \
 		$(PATH_SUB_CURRENT)/xpcidl.xsl \
 		$(VBOX_XIDL_FILE) \
 		| $$(dir $$@)
@@ -69,7 +72,7 @@ if !defined(VBOX_ONLY_SDK) && defined(VBOX_WITH_XPCOM)
  VBoxXPCOMC_SOURCES = \
  	VBoxXPCOMC.cpp
  VBoxXPCOMC_INTERMEDIATES = \
- 	$(VBOX_PATH_SDK)/bindings/xpcom/include/VBoxCAPI_v3_2.h
+ 	$(VBOX_PATH_SDK)/bindings/xpcom/include/VBoxCAPI_v$(VBOX_API_VERSION).h
  endif
 
  #
@@ -81,7 +84,7 @@ if !defined(VBOX_ONLY_SDK) && defined(VBOX_WITH_XPCOM)
  VBoxXPCOMCGlue_SOURCES = \
  	VBoxXPCOMCGlue.c
  VBoxXPCOMCGlue_INTERMEDIATES = \
- 	$(VBOX_PATH_SDK)/bindings/xpcom/include/VBoxCAPI_v3_2.h
+ 	$(VBOX_PATH_SDK)/bindings/xpcom/include/VBoxCAPI_v$(VBOX_API_VERSION).h
 
  if defined(VBOX_WITH_TESTCASES) && "$(KBUILD_TARGET)" != "darwin"
   #
@@ -93,7 +96,7 @@ if !defined(VBOX_ONLY_SDK) && defined(VBOX_WITH_XPCOM)
   tstXPCOMCGlue_INCS = \
   	$(VBOX_PATH_SDK)/bindings/xpcom/include
   tstXPCOMCGlue_INTERMEDIATES = \
-  	$(VBOX_PATH_SDK)/bindings/xpcom/include/VBoxCAPI_v3_2.h
+  	$(VBOX_PATH_SDK)/bindings/xpcom/include/VBoxCAPI_v$(VBOX_API_VERSION).h
   tstXPCOMCGlue_SOURCES = \
   	tstXPCOMCGlue.c
   tstXPCOMCGlue_LIBS = \
@@ -108,7 +111,7 @@ if !defined(VBOX_ONLY_SDK) && defined(VBOX_WITH_XPCOM)
    tstXPCOMCCall_INCS = \
    	$(VBOX_PATH_SDK)/bindings/xpcom/include
    tstXPCOMCCall_INTERMEDIATES = \
-   	$(VBOX_PATH_SDK)/bindings/xpcom/include/VBoxCAPI_v3_2.h
+   	$(VBOX_PATH_SDK)/bindings/xpcom/include/VBoxCAPI_v$(VBOX_API_VERSION).h
    tstXPCOMCCall_SOURCES = \
    	tstXPCOMCCall.c
    tstXPCOMCCall_LIBS = \
