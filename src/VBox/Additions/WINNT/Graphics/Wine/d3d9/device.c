@@ -1398,7 +1398,7 @@ static HRESULT  WINAPI  IDirect3DDevice9Impl_GetDepthStencilSurface(LPDIRECT3DDE
     }
     wined3d_mutex_unlock();
 
-    ASSERT_D3D(hr == S_OK);
+    ASSERT_D3D(hr == S_OK || hr == WINED3DERR_NOTFOUND);
     return hr;
 }
 
