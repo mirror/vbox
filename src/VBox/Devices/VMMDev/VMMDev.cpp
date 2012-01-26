@@ -34,6 +34,7 @@
 #include <VBox/err.h>
 #include <VBox/vmm/vm.h> /* for VM_IS_EMT */
 #include <VBox/dbg.h>
+#include <VBox/version.h>
 
 #include <iprt/asm.h>
 #include <iprt/asm-amd64-x86.h>
@@ -85,10 +86,12 @@
            && RT_LOWORD(additionsVersion) >  RT_LOWORD(VMMDEV_VERSION) ) )
 
 /** The saved state version. */
-#define VMMDEV_SAVED_STATE_VERSION          13
+#define VMMDEV_SAVED_STATE_VERSION                          14
+/** The saved state version which is missing the guestInfo2 bits. */
+#define VMMDEV_SAVED_STATE_VERSION_MISSING_GUEST_INFO_2     13
 /** The saved state version used by VirtualBox 3.0.
  *  This doesn't have the config part. */
-#define VMMDEV_SAVED_STATE_VERSION_VBOX_30  11
+#define VMMDEV_SAVED_STATE_VERSION_VBOX_30                  11
 
 
 #ifndef VBOX_DEVICE_STRUCT_TESTCASE
@@ -387,6 +390,150 @@ static DECLCALLBACK(int) vmmdevTimesyncBackdoorRead(PPDMDEVINS pDevIns, void *pv
 }
 #endif /* TIMESYNC_BACKDOOR */
 
+/**
+ * Validates a publisher tag.
+ *
+ * @returns true / false.
+ * @param   pszTag              Tag to validate.
+ */
+static bool vmmdevReqIsValidPublisherTag(const char *pszTag)
+{
+    /* Note! This character set is also found in Config.kmk. */
+    static char const s_szValidChars[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789abcdefghijklmnopqrstuvwxyz()[]{}+-.,";
+
+    while (*pszTag != '\0')
+    {
+        if (!strchr(s_szValidChars, *pszTag))
+            return false;
+        pszTag++;
+    }
+    return true;
+}
+
+
+/**
+ * Validates a build tag.
+ *
+ * @returns true / false.
+ * @param   pszTag              Tag to validate.
+ */
+static bool vmmdevReqIsValidBuildTag(const char *pszTag)
+{
+    int cchPrefix;
+    if (!strncmp(pszTag, "RC", 2))
+        cchPrefix = 2;
+    else if (!strncmp(pszTag, "BETA", 4))
+        cchPrefix = 4;
+    else if (!strncmp(pszTag, "ALPHA", 5))
+        cchPrefix = 5;
+    else
+        return false;
+
+    if (pszTag[cchPrefix] == '\0')
+        return true;
+
+    uint8_t u8;
+    int rc = RTStrToUInt8Full(&pszTag[cchPrefix], 10, &u8);
+    return rc == VINF_SUCCESS;
+}
+
+/**
+ * Handles VMMDevReq_ReportGuestInfo2.
+ *
+ * @returns VBox status code that the guest should see.
+ * @param   pThis           The VMMDev instance data.
+ * @param   pRequestHeader  The header of the request to handle.
+ */
+static int vmmdevReqHandler_ReportGuestInfo2(VMMDevState *pThis, VMMDevRequestHeader *pRequestHeader)
+{
+    AssertMsgReturn(pRequestHeader->size == sizeof(VMMDevReportGuestInfo2), ("%u\n", pRequestHeader->size), VERR_INVALID_PARAMETER);
+    VBoxGuestInfo2 const *pInfo2 = &((VMMDevReportGuestInfo2 *)pRequestHeader)->guestInfo;
+
+    LogRel(("Guest Additions information report: Version %d.%d.%d r%d '%.*s'\n",
+            pInfo2->additionsMajor, pInfo2->additionsMinor, pInfo2->additionsBuild,
+            pInfo2->additionsRevision, sizeof(pInfo2->szName), pInfo2->szName));
+
+    /* The interface was introduced in 3.2 and will definitely not be
+       backported beyond 3.0 (bird). */
+    AssertMsgReturn(pInfo2->additionsMajor >= 3,
+                    ("%u.%u.%u\n", pInfo2->additionsMajor, pInfo2->additionsMinor, pInfo2->additionsBuild),
+                    VERR_INVALID_PARAMETER);
+
+    /* The version must fit in a full version compression. */
+    uint32_t uFullVersion = VBOX_FULL_VERSION_MAKE(pInfo2->additionsMajor, pInfo2->additionsMinor, pInfo2->additionsBuild);
+    AssertMsgReturn(   VBOX_FULL_VERSION_GET_MAJOR(uFullVersion) == pInfo2->additionsMajor
+                    && VBOX_FULL_VERSION_GET_MINOR(uFullVersion) == pInfo2->additionsMinor
+                    && VBOX_FULL_VERSION_GET_BUILD(uFullVersion) == pInfo2->additionsBuild,
+                    ("%u.%u.%u\n", pInfo2->additionsMajor, pInfo2->additionsMinor, pInfo2->additionsBuild),
+                    VERR_OUT_OF_RANGE);
+
+    /*
+     * Validate the name.
+     * Be less strict towards older additions (< v4.1.50).
+     */
+    AssertCompile(sizeof(pThis->guestInfo2.szName) == sizeof(pInfo2->szName));
+    AssertReturn(memchr(pInfo2->szName, '\0', sizeof(pInfo2->szName)) != NULL, VERR_INVALID_PARAMETER);
+    const char *pszName = pInfo2->szName;
+
+    /* The version number which shouldn't be there. */
+    char        szTmp[sizeof(pInfo2->szName)];
+    size_t      cchStart = RTStrPrintf(szTmp, sizeof(szTmp), "%u.%u.%u", pInfo2->additionsMajor, pInfo2->additionsMinor, pInfo2->additionsBuild);
+    AssertMsgReturn(!strncmp(pszName, szTmp, cchStart), ("%s != %s\n", pszName, szTmp), VERR_INVALID_PARAMETER);
+    pszName += cchStart;
+
+    /* Now we can either have nothing or a build tag or/and a publisher tag. */
+    if (*pszName != '\0')
+    {
+        const char *pszRelaxedName = "";
+        bool const fStrict = pInfo2->additionsMajor > 4
+                          || (pInfo2->additionsMajor == 4 && pInfo2->additionsMinor > 1)
+                          || (pInfo2->additionsMajor == 4 && pInfo2->additionsMinor == 1 && pInfo2->additionsBuild >= 50);
+        bool fOk = false;
+        if (*pszName == '_')
+        {
+            pszName++;
+            strcpy(szTmp, pszName);
+            char *pszTag2 = strchr(szTmp, '_');
+            if (!pszTag2)
+            {
+                fOk = vmmdevReqIsValidBuildTag(szTmp)
+                   || vmmdevReqIsValidPublisherTag(szTmp);
+            }
+            else
+            {
+                *pszTag2++ = '\0';
+                fOk = vmmdevReqIsValidBuildTag(szTmp);
+                if (fOk)
+                {
+                    fOk = vmmdevReqIsValidPublisherTag(pszTag2);
+                    if (!fOk)
+                        pszRelaxedName = szTmp;
+                }
+            }
+        }
+
+        if (!fOk)
+        {
+            AssertLogRelMsgReturn(!fStrict, ("%s", pszName), VERR_INVALID_PARAMETER);
+
+            /* non-strict mode, just zap the extra stuff. */
+            LogRel(("ReportGuestInfo2: Ignoring unparsable version name bits: '%s' -> '%s'.\n", pszName, pszRelaxedName));
+            pszName = pszRelaxedName;
+        }
+    }
+
+    /*
+     * Save the info and tell Main or whoever is listening.
+     */
+    pThis->guestInfo2.uFullVersion  = uFullVersion;
+    pThis->guestInfo2.uRevision     = pInfo2->additionsRevision;
+    pThis->guestInfo2.fFeatures     = pInfo2->additionsFeatures;
+    strcpy(pThis->guestInfo2.szName, pszName);
+
+    pThis->pDrv->pfnUpdateGuestInfo2(pThis->pDrv, uFullVersion, pszName, pInfo2->additionsRevision, pInfo2->additionsFeatures);
+
+    return VINF_SUCCESS;
+}
 
 /**
  * Port I/O Handler for the generic request interface
@@ -522,17 +669,7 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
 
         case VMMDevReq_ReportGuestInfo2:
         {
-            AssertMsgBreakStmt(pRequestHeader->size == sizeof(VMMDevReportGuestInfo2), ("%u\n", pRequestHeader->size),
-                               pRequestHeader->rc = VERR_INVALID_PARAMETER);
-            VBoxGuestInfo2 *pGuestInfo2 = &((VMMDevReportGuestInfo2 *)pRequestHeader)->guestInfo;
-            LogRel(("Guest Additions information report: Version %d.%d.%d r%d '%.*s'\n",
-                    pGuestInfo2->additionsMajor, pGuestInfo2->additionsMinor, pGuestInfo2->additionsBuild,
-                    pGuestInfo2->additionsRevision, sizeof(pGuestInfo2->szName), pGuestInfo2->szName));
-            AssertBreakStmt(memchr(pGuestInfo2->szName, '\0', sizeof(pGuestInfo2->szName)) != NULL,
-                            pRequestHeader->rc = VERR_INVALID_PARAMETER);
-
-            pThis->pDrv->pfnUpdateGuestInfo2(pThis->pDrv, pGuestInfo2);
-            pRequestHeader->rc = VINF_SUCCESS;
+            pRequestHeader->rc = vmmdevReqHandler_ReportGuestInfo2(pThis, pRequestHeader);
             break;
         }
 
@@ -597,6 +734,8 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
             }
             else
             {
+                /** @todo r=bird: VMMDev (or GuestImpl.cpp) needs to remember this stuff and
+                 *        tell Main after a state restore! */
                 VBoxGuestStatus *guestStatus = &((VMMDevReportGuestStatus*)pRequestHeader)->guestStatus;
                 pThis->pDrv->pfnUpdateGuestStatus(pThis->pDrv, guestStatus);
 
@@ -2562,7 +2701,7 @@ static DECLCALLBACK(int) vmmdevSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
     /* The following is not strictly necessary as PGM restores MMIO2, keeping it for historical reasons. */
     SSMR3PutMem(pSSM, &pThis->pVMMDevRAMR3->V, sizeof(pThis->pVMMDevRAMR3->V));
 
-    SSMR3PutMem(pSSM, &pThis->guestInfo, sizeof (pThis->guestInfo));
+    SSMR3PutMem(pSSM, &pThis->guestInfo, sizeof(pThis->guestInfo));
     SSMR3PutU32(pSSM, pThis->fu32AdditionsOk);
     SSMR3PutU32(pSSM, pThis->u32VideoAccelEnabled);
     SSMR3PutBool(pSSM, pThis->displayChangeData.fGuestSentChangeEventAck);
@@ -2574,6 +2713,11 @@ static DECLCALLBACK(int) vmmdevSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 #endif /* VBOX_WITH_HGCM */
 
     SSMR3PutU32(pSSM, pThis->fHostCursorRequested);
+
+    SSMR3PutU32(pSSM, pThis->guestInfo2.uFullVersion);
+    SSMR3PutU32(pSSM, pThis->guestInfo2.uRevision);
+    SSMR3PutU32(pSSM, pThis->guestInfo2.fFeatures);
+    SSMR3PutStrZ(pSSM, pThis->guestInfo2.szName);
 
     return VINF_SUCCESS;
 }
@@ -2658,6 +2802,15 @@ static DECLCALLBACK(int) vmmdevLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uin
         rc = SSMR3GetU32(pSSM, &pThis->fHostCursorRequested);
     AssertRCReturn(rc, rc);
 
+    if (uVersion > VMMDEV_SAVED_STATE_VERSION_MISSING_GUEST_INFO_2)
+    {
+        SSMR3GetU32(pSSM, &pThis->guestInfo2.uFullVersion);
+        SSMR3GetU32(pSSM, &pThis->guestInfo2.uRevision);
+        SSMR3GetU32(pSSM, &pThis->guestInfo2.fFeatures);
+        rc = SSMR3GetStrZ(pSSM, &pThis->guestInfo2.szName[0], sizeof(pThis->guestInfo2.szName));
+        AssertRCReturn(rc, rc);
+    }
+
     /*
      * On a resume, we send the capabilities changed message so
      * that listeners can sync their state again
@@ -2679,7 +2832,7 @@ static DECLCALLBACK(int) vmmdevLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uin
     if (    pThis->u32VideoAccelEnabled
         &&  pThis->pDrv)
     {
-        pThis->pDrv->pfnVideoAccelEnable (pThis->pDrv, !!pThis->u32VideoAccelEnabled, &pThis->pVMMDevRAMR3->vbvaMemory);
+        pThis->pDrv->pfnVideoAccelEnable(pThis->pDrv, !!pThis->u32VideoAccelEnabled, &pThis->pVMMDevRAMR3->vbvaMemory);
     }
 
     if (pThis->fu32AdditionsOk)
@@ -2688,8 +2841,12 @@ static DECLCALLBACK(int) vmmdevLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uin
                 pThis->guestInfo.interfaceVersion,
                 pThis->guestInfo.osType));
         if (pThis->pDrv)
+        {
+            if (pThis->guestInfo2.uFullVersion)
+                pThis->pDrv->pfnUpdateGuestInfo2(pThis->pDrv, pThis->guestInfo2.uFullVersion, pThis->guestInfo2.szName,
+                                                 pThis->guestInfo2.uRevision, pThis->guestInfo2.fFeatures);
             pThis->pDrv->pfnUpdateGuestInfo(pThis->pDrv, &pThis->guestInfo);
-/** @todo Missing pfnUpdateGuestInfo2 */
+        }
     }
     if (pThis->pDrv)
         pThis->pDrv->pfnUpdateGuestCapabilities(pThis->pDrv, pThis->guestCaps);

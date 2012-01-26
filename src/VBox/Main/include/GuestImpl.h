@@ -81,7 +81,8 @@ public:
     // IGuest properties
     STDMETHOD(COMGETTER(OSTypeId)) (BSTR *aOSTypeId);
     STDMETHOD(COMGETTER(AdditionsRunLevel)) (AdditionsRunLevelType_T *aRunLevel);
-    STDMETHOD(COMGETTER(AdditionsVersion)) (BSTR *aAdditionsVersion);
+    STDMETHOD(COMGETTER(AdditionsVersion))(BSTR *a_pbstrAdditionsVersion);
+    STDMETHOD(COMGETTER(AdditionsRevision))(ULONG *a_puAdditionsRevision);
     STDMETHOD(COMGETTER(Facilities)) (ComSafeArrayOut(IAdditionsFacility*, aFacilities));
     STDMETHOD(COMGETTER(MemoryBalloonSize)) (ULONG *aMemoryBalloonSize);
     STDMETHOD(COMSETTER(MemoryBalloonSize)) (ULONG aMemoryBalloonSize);
@@ -132,7 +133,7 @@ public:
 
     // Public methods that are not in IDL (only called internally).
     void setAdditionsInfo(Bstr aInterfaceVersion, VBOXOSTYPE aOsType);
-    void setAdditionsInfo2(const char *a_pszVersion, const char *a_pszVersionName, uint32_t a_uRevision);
+    void setAdditionsInfo2(uint32_t a_uFullVersion, const char *a_pszName, uint32_t a_uRevision, uint32_t a_fFeatures);
     bool facilityIsActive(VBoxGuestFacilityType enmFacility);
     HRESULT facilityUpdate(VBoxGuestFacilityType enmFacility, VBoxGuestFacilityStatus enmStatus);
     void setAdditionsStatus(VBoxGuestFacilityType enmFacility, VBoxGuestFacilityStatus enmStatus, ULONG aFlags);
@@ -286,13 +287,17 @@ private:
 
     struct Data
     {
-        Data() : mAdditionsRunLevel (AdditionsRunLevelType_None) {}
+        Data() : mAdditionsRunLevel(AdditionsRunLevelType_None)
+            , mAdditionsVersionFull(0), mAdditionsRevision(0), mAdditionsFeatures(0)
+        { }
 
         Bstr                    mOSTypeId;
         FacilityMap             mFacilityMap;
         AdditionsRunLevelType_T mAdditionsRunLevel;
-        Bstr                    mAdditionsVersion;
-        //ULONG                   mAdditionsRevision;
+        uint32_t                mAdditionsVersionFull;
+        Bstr                    mAdditionsVersionNew;
+        uint32_t                mAdditionsRevision;
+        uint32_t                mAdditionsFeatures;
         Bstr                    mInterfaceVersion;
     };
 

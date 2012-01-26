@@ -35,6 +35,7 @@
 #endif
 #include <iprt/cpp/utils.h>
 #include <VBox/vmm/pgm.h>
+#include <VBox/version.h>
 
 // defines
 /////////////////////////////////////////////////////////////////////////////
@@ -163,22 +164,26 @@ void Guest::uninit()
 // IGuest properties
 /////////////////////////////////////////////////////////////////////////////
 
-STDMETHODIMP Guest::COMGETTER(OSTypeId)(BSTR *aOSTypeId)
+STDMETHODIMP Guest::COMGETTER(OSTypeId)(BSTR *a_pbstrOSTypeId)
 {
-    CheckComArgOutPointerValid(aOSTypeId);
+    CheckComArgOutPointerValid(a_pbstrOSTypeId);
 
     AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
-
-    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-
-    /* Redirect the call to IMachine if no additions are installed. */
-    if (mData.mAdditionsVersion.isEmpty())
-        return mParent->machine()->COMGETTER(OSTypeId)(aOSTypeId);
-
-    mData.mOSTypeId.cloneTo(aOSTypeId);
-
-    return S_OK;
+    HRESULT hrc = autoCaller.rc();
+    if (SUCCEEDED(hrc))
+    {
+        AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+        if (!mData.mInterfaceVersion.isEmpty())
+            mData.mOSTypeId.cloneTo(a_pbstrOSTypeId);
+        else
+        {
+            /* Redirect the call to IMachine if no additions are installed. */
+            ComPtr<IMachine> ptrMachine(mParent->machine());
+            alock.release();
+            hrc = ptrMachine->COMGETTER(OSTypeId)(a_pbstrOSTypeId);
+        }
+    }
+    return hrc;
 }
 
 STDMETHODIMP Guest::COMGETTER(AdditionsRunLevel) (AdditionsRunLevelType_T *aRunLevel)
@@ -193,71 +198,93 @@ STDMETHODIMP Guest::COMGETTER(AdditionsRunLevel) (AdditionsRunLevelType_T *aRunL
     return S_OK;
 }
 
-STDMETHODIMP Guest::COMGETTER(AdditionsVersion) (BSTR *aAdditionsVersion)
+STDMETHODIMP Guest::COMGETTER(AdditionsVersion)(BSTR *a_pbstrAdditionsVersion)
 {
-    CheckComArgOutPointerValid(aAdditionsVersion);
+    CheckComArgOutPointerValid(a_pbstrAdditionsVersion);
 
     AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
-
-    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-
-    HRESULT hr = S_OK;
-    if (   !mData.mAdditionsVersion.isEmpty()
-        || !mData.mAdditionsRunLevel > AdditionsRunLevelType_None)
-        mData.mAdditionsVersion.cloneTo(aAdditionsVersion);
-    else
+    HRESULT hrc = autoCaller.rc();
+    if (SUCCEEDED(hrc))
     {
-        /*
-         * If we got back an empty string from GetAdditionsVersion() we either
-         * really don't have the Guest Additions version yet or the guest is running
-         * older Guest Additions (< 3.2.0) which don't provide VMMDevReq_ReportGuestInfo2,
-         * so get the version + revision from the (hopefully) provided guest properties
-         * instead.
-         */
-        Bstr addVersion;
-        LONG64 u64Timestamp;
-        Bstr flags;
-        hr = mParent->machine()->GetGuestProperty(Bstr("/VirtualBox/GuestAdd/Version").raw(),
-                                                  addVersion.asOutParam(), &u64Timestamp, flags.asOutParam());
-        if (hr == S_OK)
-        {
-            Bstr addRevision;
-            hr = mParent->machine()->GetGuestProperty(Bstr("/VirtualBox/GuestAdd/Revision").raw(),
-                                                      addRevision.asOutParam(), &u64Timestamp, flags.asOutParam());
-            if (   hr == S_OK
-                && !addVersion.isEmpty()
-                && !addRevision.isEmpty())
-            {
-                /* Some Guest Additions versions had interchanged version + revision values,
-                 * so check if the version value at least has a dot to identify it and change
-                 * both values to reflect the right content. */
-                if (!Utf8Str(addVersion).contains("."))
-                {
-                    Bstr addTemp = addVersion;
-                    addVersion = addRevision;
-                    addRevision = addTemp;
-                }
+        AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-                /** @todo r=bird: See comment about the space before 'r' in
-                 *        setAdditionsInfo2. */
-                Bstr additionsVersion = BstrFmt("%ls r%ls",
-                                                addVersion.raw(), addRevision.raw());
-                additionsVersion.cloneTo(aAdditionsVersion);
-            }
-            /** @todo r=bird: else: Should not return failure! */
-        }
+        /*
+         * Return the ReportGuestInfo2 version info if available.
+         */
+        if (   !mData.mAdditionsVersionNew.isEmpty()
+            || mData.mAdditionsRunLevel <= AdditionsRunLevelType_None)
+            mData.mAdditionsVersionNew.cloneTo(a_pbstrAdditionsVersion);
         else
         {
-            /* If getting the version + revision above fails or they simply aren't there
-             * because of *really* old Guest Additions we only can report the interface
-             * version to at least have something. */
-            mData.mInterfaceVersion.cloneTo(aAdditionsVersion);
-            /** @todo r=bird: hr is still indicating failure! */
+            /*
+             * If we're running older guest additions (< 3.2.0) try get it from
+             * the guest properties.
+             */
+            ComPtr<IMachine> ptrMachine = mParent->machine();
+            alock.release(); /* No need to hold this during the IPC fun. */
+
+            Bstr bstr;
+            hrc = ptrMachine->GetGuestPropertyValue(Bstr("/VirtualBox/GuestAdd/Version").raw(), bstr.asOutParam());
+            if (SUCCEEDED(hrc))
+                bstr.detachTo(a_pbstrAdditionsVersion);
+            else
+            {
+                /* Returning 1.4 is better than nothing. */
+                alock.acquire();
+                mData.mInterfaceVersion.cloneTo(a_pbstrAdditionsVersion);
+                hrc = S_OK;
+            }
         }
     }
+    return hrc;
+}
 
-    return hr;
+STDMETHODIMP Guest::COMGETTER(AdditionsRevision)(ULONG *a_puAdditionsRevision)
+{
+    CheckComArgOutPointerValid(a_puAdditionsRevision);
+
+    AutoCaller autoCaller(this);
+    HRESULT hrc = autoCaller.rc();
+    if (SUCCEEDED(hrc))
+    {
+        AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+        /*
+         * Return the ReportGuestInfo2 version info if available.
+         */
+        if (   !mData.mAdditionsVersionNew.isEmpty()
+            || mData.mAdditionsRunLevel <= AdditionsRunLevelType_None)
+            *a_puAdditionsRevision = mData.mAdditionsRevision;
+        else
+        {
+            /*
+             * If we're running older guest additions (< 3.2.0) try get it from
+             * the guest properties.
+             */
+            ComPtr<IMachine> ptrMachine = mParent->machine();
+            alock.release(); /* No need to hold this during the IPC fun. */
+
+            Bstr bstr;
+            hrc = ptrMachine->GetGuestPropertyValue(Bstr("/VirtualBox/GuestAdd/Revision").raw(), bstr.asOutParam());
+            if (SUCCEEDED(hrc))
+            {
+                Utf8Str str(bstr);
+                uint32_t uRevision;
+                int vrc = RTStrToUInt32Full(str.c_str(), 0, &uRevision);
+                if (vrc == VINF_SUCCESS)
+                    *a_puAdditionsRevision = uRevision;
+                else
+                    hrc = VBOX_E_IPRT_ERROR;
+            }
+            if (FAILED(hrc))
+            {
+                /* Return 0 if we don't know. */
+                *a_puAdditionsRevision = 0;
+                hrc = 0;
+            }
+        }
+    }
+    return hrc;
 }
 
 STDMETHODIMP Guest::COMGETTER(Facilities)(ComSafeArrayOut(IAdditionsFacility*, aFacilities))
@@ -724,7 +751,7 @@ void Guest::setAdditionsInfo(Bstr aInterfaceVersion, VBOXOSTYPE aOsType)
      * So only mark the Additions as being active (run level = system) when we
      * don't have the Additions version set.
      */
-    if (mData.mAdditionsVersion.isEmpty())
+    if (mData.mAdditionsVersionNew.isEmpty())
     {
         if (aInterfaceVersion.isEmpty())
             mData.mAdditionsRunLevel = AdditionsRunLevelType_None;
@@ -759,34 +786,49 @@ void Guest::setAdditionsInfo(Bstr aInterfaceVersion, VBOXOSTYPE aOsType)
 
 /**
  * Sets the Guest Additions version information details.
- * Gets called by vmmdevUpdateGuestInfo2.
  *
- * @param   a_pszVersion            The GuestInfo2 numbers turned into
- * @param   a_pszVersionName        This turns out to be the version string +
- *                                  beta/alpha/whatever suffix, duplicating info
- *                                  passed in @a a_pszVersion.
- * @param   a_uRevision             The SVN revision number.
+ * Gets called by vmmdevUpdateGuestInfo2 and vmmdevUpdateGuestInfo (to clear the
+ * state).
+ *
+ * @param   a_uFullVersion          VBoxGuestInfo2::additionsMajor,
+ *                                  VBoxGuestInfo2::additionsMinor and
+ *                                  VBoxGuestInfo2::additionsBuild combined into
+ *                                  one value by VBOX_FULL_VERSION_MAKE.
+ *
+ *                                  When this is 0, it's vmmdevUpdateGuestInfo
+ *                                  calling to reset the state.
+ *
+ * @param   a_pszName               Build type tag and/or publisher tag, empty
+ *                                  string if neiter of those are present.
+ * @param   a_uRevision             See VBoxGuestInfo2::additionsRevision.
+ * @param   a_fFeatures             See VBoxGuestInfo2::additionsFeatures.
  */
-void Guest::setAdditionsInfo2(const char *a_pszVersion, const char *a_pszVersionName, uint32_t a_uRevision)
+void Guest::setAdditionsInfo2(uint32_t a_uFullVersion, const char *a_pszName, uint32_t a_uRevision, uint32_t a_fFeatures)
 {
     AutoCaller autoCaller(this);
     AssertComRCReturnVoid(autoCaller.rc());
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    /** @todo r=bird: WHY is this code returning "1.2.3 r45678" in one case and
-     *        "1.2.3r45678" in the else?  Why aren't we doing it the same way as
-     *        IVirtualBox? One version attribute and one revision attribute, no
-     *        abigiuos spaces! */
-    if (*a_pszVersionName != '\0')
-        /*
-         * aVersionName could be "x.y.z_BETA1_FOOBAR", so append revision manually to
-         * become "x.y.z_BETA1_FOOBAR r12345".
-         */
-        mData.mAdditionsVersion = BstrFmt("%s r%u", a_pszVersionName, a_uRevision);
-    else /* aAdditionsVersion is in x.y.zr12345 format. */
-        mData.mAdditionsVersion = Bstr(a_pszVersion);
-    //mData.mAdditionsRevision = a_uRevision;
+    if (a_uFullVersion)
+    {
+        mData.mAdditionsVersionNew  = BstrFmt(*a_pszName ? "%u.%u.%u_%s" : "%u.%u.%u",
+                                              VBOX_FULL_VERSION_GET_MAJOR(a_uFullVersion),
+                                              VBOX_FULL_VERSION_GET_MINOR(a_uFullVersion),
+                                              VBOX_FULL_VERSION_GET_BUILD(a_uFullVersion),
+                                              a_pszName);
+        mData.mAdditionsVersionFull = a_uFullVersion;
+        mData.mAdditionsRevision    = a_uRevision;
+        mData.mAdditionsFeatures    = a_fFeatures;
+    }
+    else
+    {
+        Assert(!a_fFeatures && !a_uRevision && !*a_pszName);
+        mData.mAdditionsVersionNew.setNull();
+        mData.mAdditionsVersionFull = 0;
+        mData.mAdditionsRevision    = 0;
+        mData.mAdditionsFeatures    = 0;
+    }
 }
 
 bool Guest::facilityIsActive(VBoxGuestFacilityType enmFacility)

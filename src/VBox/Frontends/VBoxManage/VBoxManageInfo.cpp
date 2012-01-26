@@ -2192,10 +2192,15 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> virtualBox,
             if (   SUCCEEDED(rc)
                 && !guestString.isEmpty())
             {
+                ULONG uRevision;
+                rc = guest->COMGETTER(AdditionsRevision)(&uRevision);
+                if (FAILED(rc))
+                    uRevision = 0;
+
                 if (details == VMINFO_MACHINEREADABLE)
-                    RTPrintf("GuestAdditionsVersion=\"%ls\"\n", guestString.raw());
+                    RTPrintf("GuestAdditionsVersion=\"%ls r%u\"\n", guestString.raw(), uRevision);
                 else
-                    RTPrintf("Additions version:                   %ls\n\n", guestString.raw());
+                    RTPrintf("Additions version:                   %ls r%u\n\n", guestString.raw(), uRevision);
             }
 
             if (details != VMINFO_MACHINEREADABLE)
