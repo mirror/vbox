@@ -229,6 +229,8 @@ struct VBOXHDD
     RTMEMCACHE             hMemCacheIoTask;
     /** Critical section protecting the disk against concurrent access. */
     RTCRITSECT             CritSect;
+    /** Head of queued I/O contexts - LIFO order. */
+    volatile PVDIOCTX      pIoCtxHead;
     /** Flag whether the disk is currently locked by growing write or a flush
      * request. Other flush or growing write requests need to wait until
      * the current one completes.
@@ -290,6 +292,8 @@ typedef FNVDIOCTXTRANSFER *PFNVDIOCTXTRANSFER;
  */
 typedef struct VDIOCTX
 {
+    /** Pointer to the next I/O context. */
+    struct VDIOCTX * volatile    pIoCtxNext;
     /** Disk this is request is for. */
     PVBOXHDD                     pDisk;
     /** Return code. */
@@ -1422,6 +1426,7 @@ DECLINLINE(PVDIOCTX) vdIoCtxDiscardAlloc(PVBOXHDD pDisk, PCRTRANGE paRanges,
     pIoCtx = (PVDIOCTX)RTMemCacheAlloc(pDisk->hMemCacheIoCtx);
     if (RT_LIKELY(pIoCtx))
     {
+        pIoCtx->pIoCtxNext                = NULL;
         pIoCtx->pDisk                     = pDisk;
         pIoCtx->enmTxDir                  = VDIOCTXTXDIR_DISCARD;
         pIoCtx->cDataTransfersPending     = 0;
@@ -1596,14 +1601,20 @@ static size_t vdIoCtxSet(PVDIOCTX pIoCtx, uint8_t ch, size_t cbData)
     return RTSgBufSet(&pIoCtx->Req.Io.SgBuf, ch, cbData);
 }
 
-static int vdIoCtxProcess(PVDIOCTX pIoCtx)
+/**
+ * Process the I/O context, core method which assumes that the critsect is acquired
+ * by the calling thread.
+ *
+ * @returns VBox status code.
+ * @param   pIoCtx    I/O context to process.
+ */
+static int vdIoCtxProcessLocked(PVDIOCTX pIoCtx)
 {
     int rc = VINF_SUCCESS;
-    PVBOXHDD pDisk = pIoCtx->pDisk;
+
+    VD_THREAD_IS_CRITSECT_OWNER(pIoCtx->pDisk);
 
     LogFlowFunc(("pIoCtx=%#p\n", pIoCtx));
-
-    RTCritSectEnter(&pDisk->CritSect);
 
     if (   !pIoCtx->cMetaTransfersPending
         && !pIoCtx->cDataTransfersPending
@@ -1675,11 +1686,191 @@ static int vdIoCtxProcess(PVDIOCTX pIoCtx)
     }
 
 out:
-    RTCritSectLeave(&pDisk->CritSect);
-
     LogFlowFunc(("pIoCtx=%#p rc=%Rrc cDataTransfersPending=%u cMetaTransfersPending=%u fComplete=%RTbool\n",
                  pIoCtx, rc, pIoCtx->cDataTransfersPending, pIoCtx->cMetaTransfersPending,
                  pIoCtx->fComplete));
+
+    return rc;
+}
+
+/**
+ * Processes the list of waiting I/O contexts.
+ *
+ * @returns VBox status code.
+ * @param   pDisk    The disk structure.
+ * @param   pIoCtxRc An I/O context handle which waits on the list. When processed
+ *                   The status code is returned. NULL if there is no I/O context
+ *                   to return the status code for.
+ */
+static int vdDiskProcessWaitingIoCtx(PVBOXHDD pDisk, PVDIOCTX pIoCtxRc)
+{
+    int rc = VINF_SUCCESS;
+
+    LogFlowFunc(("pDisk=%#p pIoCtxRc=%#p\n", pDisk, pIoCtxRc));
+
+    VD_THREAD_IS_CRITSECT_OWNER(pDisk);
+
+    /* Get the waiting list and process it in FIFO order. */
+    PVDIOCTX pIoCtxHead = ASMAtomicXchgPtrT(&pDisk->pIoCtxHead, NULL, PVDIOCTX);
+
+    /* Reverse it. */
+    PVDIOCTX pCur = pIoCtxHead;
+    pIoCtxHead = NULL;
+    while (pCur)
+    {
+        PVDIOCTX pInsert = pCur;
+        pCur = pCur->pIoCtxNext;
+        pInsert->pIoCtxNext = pIoCtxHead;
+        pIoCtxHead = pInsert;
+    }
+
+    /* Process now. */
+    pCur = pIoCtxHead;
+    while (pCur)
+    {
+        int rcTmp;
+        PVDIOCTX pTmp = pCur;
+
+        pCur = pCur->pIoCtxNext;
+        pTmp->pIoCtxNext = NULL;
+
+        rcTmp = vdIoCtxProcessLocked(pTmp);
+        if (pTmp == pIoCtxRc)
+        {
+            /* The given I/O context was processed, pass the return code to the caller. */
+            rc = rcTmp;
+        }
+        else if (   rcTmp == VINF_VD_ASYNC_IO_FINISHED
+                 && ASMAtomicCmpXchgBool(&pTmp->fComplete, true, false))
+        {
+            LogFlowFunc(("Waiting I/O context completed pTmp=%#p\n", pTmp));
+            vdThreadFinishWrite(pDisk);
+            pTmp->Type.Root.pfnComplete(pTmp->Type.Root.pvUser1,
+                                        pTmp->Type.Root.pvUser2,
+                                        pTmp->rcReq);
+            vdIoCtxFree(pDisk, pTmp);
+        }
+    }
+
+    LogFlowFunc(("returns rc=%Rrc\n", rc));
+    return rc;
+}
+
+/**
+ * Leaves the critical section of the disk processing waiting I/O contexts.
+ *
+ * @returns VBox status code.
+ * @param   pDisk    The disk to unlock.
+ * @param   pIoCtxRc An I/O context handle which waits on the list. When processed
+ *                   The status code is returned. NULL if there is no I/O context
+ *                   to return the status code for.
+ */
+static int vdDiskCritSectLeave(PVBOXHDD pDisk, PVDIOCTX pIoCtxRc)
+{
+    int rc = VINF_SUCCESS;
+
+    LogFlowFunc(("pDisk=%#p pIoCtxRc=%#p\n", pDisk, pIoCtxRc));
+
+    VD_THREAD_IS_CRITSECT_OWNER(pDisk);
+
+    rc = vdDiskProcessWaitingIoCtx(pDisk, pIoCtxRc);
+    RTCritSectLeave(&pDisk->CritSect);
+
+    /*
+     * We have to check for new waiting contexts here. It is possible that
+     * another thread has queued another one while process waiting contexts
+     * and because we still held the lock it was appended to the waiting list.
+     *
+     * @note Don't overwrite rc here because this might result in loosing
+     *       the status code of the given I/O context.
+     */
+    while (ASMAtomicReadPtrT(&pDisk->pIoCtxHead, PVDIOCTX) != NULL)
+    {
+        int rc2 = RTCritSectTryEnter(&pDisk->CritSect);
+
+        if (RT_SUCCESS(rc2))
+        {
+            /*
+             * Don't pass status codes for any I/O context here. The context must hae been
+             * in the first run.
+             */
+            vdDiskProcessWaitingIoCtx(pDisk, NULL);
+            RTCritSectLeave(&pDisk->CritSect);
+        }
+        else
+        {
+            /*
+             * Another thread is holding the lock already and will process the list
+             * whewn leaving the lock, nothing left to do for us.
+             */
+            Assert(rc2 == VERR_SEM_BUSY);
+            break;
+        }
+    }
+
+    LogFlowFunc(("returns rc=%Rrc\n", rc));
+    return rc;
+}
+
+/**
+ * Processes the I/O context trying to lock the criticial section.
+ * The context is deferred if the critical section is busy.
+ *
+ * @returns VBox status code.
+ * @param   pIoCtx    The I/O context to process.
+ */
+static int vdIoCtxProcessTryLockDefer(PVDIOCTX pIoCtx)
+{
+    int rc = VINF_SUCCESS;
+    PVBOXHDD pDisk = pIoCtx->pDisk;
+
+    LogFlowFunc(("pIoCtx=%#p\n", pIoCtx));
+
+    /* Put it on the waiting list first. */
+    PVDIOCTX pNext = ASMAtomicUoReadPtrT(&pDisk->pIoCtxHead, PVDIOCTX);
+    PVDIOCTX pHeadOld;
+    pIoCtx->pIoCtxNext = pNext;
+    while (!ASMAtomicCmpXchgExPtr(&pDisk->pIoCtxHead, pIoCtx, pNext, &pHeadOld))
+    {
+        pNext = pHeadOld;
+        Assert(pNext != pIoCtx);
+        pIoCtx->pIoCtxNext = pNext;
+        ASMNopPause();
+    }
+
+    rc = RTCritSectTryEnter(&pDisk->CritSect);
+    if (RT_SUCCESS(rc))
+    {
+        /* Leave it again, the context will be processed just before leaving the lock. */
+        LogFlowFunc(("Successfully acquired the critical section\n"));
+        rc = vdDiskCritSectLeave(pDisk, pIoCtx);
+    }
+    else
+    {
+        AssertMsg(rc == VERR_SEM_BUSY, ("Invalid return code %Rrc\n", rc));
+        LogFlowFunc(("Critical section is busy\n"));
+        rc = VERR_VD_ASYNC_IO_IN_PROGRESS;
+    }
+
+    return rc;
+}
+
+/**
+ * Wrapper for vdIoCtxProcessLocked() which acquires the lock before.
+ *
+ * @returns VBox status code.
+ * @param   pIoCtx    I/O context to process.
+ */
+static int vdIoCtxProcess(PVDIOCTX pIoCtx)
+{
+    int rc = VINF_SUCCESS;
+    PVBOXHDD pDisk = pIoCtx->pDisk;
+
+    LogFlowFunc(("pIoCtx=%#p\n", pIoCtx));
+
+    RTCritSectEnter(&pDisk->CritSect);
+    rc = vdIoCtxProcessLocked(pIoCtx);
+    vdDiskCritSectLeave(pDisk, NULL);
 
     return rc;
 }
@@ -1735,7 +1926,7 @@ static void vdIoCtxUnlockDisk(PVBOXHDD pDisk, PVDIOCTX pIoCtx, bool fProcessDefe
             RTLISTNODE ListTmp;
 
             RTListMove(&ListTmp, &pDisk->ListWriteLocked);
-            RTCritSectLeave(&pDisk->CritSect);
+            vdDiskCritSectLeave(pDisk, NULL);
 
             /* Process the list. */
             do
@@ -1768,7 +1959,7 @@ static void vdIoCtxUnlockDisk(PVBOXHDD pDisk, PVDIOCTX pIoCtx, bool fProcessDefe
             } while (!RTListIsEmpty(&ListTmp));
         }
         else
-            RTCritSectLeave(&pDisk->CritSect);
+            vdDiskCritSectLeave(pDisk, NULL);
     }
 
     LogFlowFunc(("returns\n"));
@@ -3708,7 +3899,7 @@ static int vdUserXferCompleted(PVDIOSTORAGE pIoStorage, PVDIOCTX pIoCtx,
     else if (rc == VERR_VD_ASYNC_IO_IN_PROGRESS)
         rc = VINF_SUCCESS;
 
-    RTCritSectLeave(&pDisk->CritSect);
+    vdDiskCritSectLeave(pDisk, NULL);
 
     return rc;
 }
@@ -3793,7 +3984,7 @@ static int vdMetaXferCompleted(PVDIOSTORAGE pIoStorage, PFNVDXFERCOMPLETED pfnCo
     else if (fFlush)
         RTMemFree(pMetaXfer);
 
-    RTCritSectLeave(&pDisk->CritSect);
+    vdDiskCritSectLeave(pDisk, NULL);
 
     return VINF_SUCCESS;
 }
@@ -4467,8 +4658,7 @@ static void vdIOIntIoCtxCompleted(void *pvUser, PVDIOCTX pIoCtx, int rcReq,
 
     vdIoCtxContinue(pIoCtx, rcReq);
 
-    rc = RTCritSectLeave(&pDisk->CritSect);
-    AssertRC(rc);
+    vdDiskCritSectLeave(pDisk, NULL);
 }
 
 /**
@@ -9130,7 +9320,7 @@ VBOXDDU_DECL(int) VDAsyncRead(PVBOXHDD pDisk, uint64_t uOffset, size_t cbRead,
             break;
         }
 
-        rc = vdIoCtxProcess(pIoCtx);
+        rc = vdIoCtxProcessTryLockDefer(pIoCtx);
         if (rc == VINF_VD_ASYNC_IO_FINISHED)
         {
             if (ASMAtomicCmpXchgBool(&pIoCtx->fComplete, true, false))
@@ -9201,7 +9391,7 @@ VBOXDDU_DECL(int) VDAsyncWrite(PVBOXHDD pDisk, uint64_t uOffset, size_t cbWrite,
             break;
         }
 
-        rc = vdIoCtxProcess(pIoCtx);
+        rc = vdIoCtxProcessTryLockDefer(pIoCtx);
         if (rc == VINF_VD_ASYNC_IO_FINISHED)
         {
             if (ASMAtomicCmpXchgBool(&pIoCtx->fComplete, true, false))
@@ -9257,7 +9447,7 @@ VBOXDDU_DECL(int) VDAsyncFlush(PVBOXHDD pDisk, PFNVDASYNCTRANSFERCOMPLETE pfnCom
             break;
         }
 
-        rc = vdIoCtxProcess(pIoCtx);
+        rc = vdIoCtxProcessTryLockDefer(pIoCtx);
         if (rc == VINF_VD_ASYNC_IO_FINISHED)
         {
             if (ASMAtomicCmpXchgBool(&pIoCtx->fComplete, true, false))
@@ -9312,7 +9502,7 @@ VBOXDDU_DECL(int) VDAsyncDiscardRanges(PVBOXHDD pDisk, PCRTRANGE paRanges, unsig
             break;
         }
 
-        rc = vdIoCtxProcess(pIoCtx);
+        rc = vdIoCtxProcessTryLockDefer(pIoCtx);
         if (rc == VINF_VD_ASYNC_IO_FINISHED)
         {
             if (ASMAtomicCmpXchgBool(&pIoCtx->fComplete, true, false))
