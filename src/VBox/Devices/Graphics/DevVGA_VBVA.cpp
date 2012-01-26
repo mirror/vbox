@@ -172,11 +172,11 @@ static bool vbvaFetchCmd (VBVAPARTIALRECORD *pPartialRecord, VBVABUFFER *pVBVA, 
         return true;
     }
 
-    VBVARECORD *pRecord = &pVBVA->aRecords[indexRecordFirst];
+    uint32_t cbRecordCurrent = ASMAtomicReadU32(&pVBVA->aRecords[indexRecordFirst].cbRecord);
 
-    LOGVBVABUFFER(("cbRecord = 0x%08X\n", pRecord->cbRecord));
+    LOGVBVABUFFER(("cbRecord = 0x%08X, pPartialRecord->cb = 0x%08X\n", cbRecordCurrent, pPartialRecord->cb));
 
-    uint32_t cbRecord = pRecord->cbRecord & ~VBVA_F_RECORD_PARTIAL;
+    uint32_t cbRecord = cbRecordCurrent & ~VBVA_F_RECORD_PARTIAL;
 
     if (pPartialRecord->cb)
     {
@@ -184,7 +184,7 @@ static bool vbvaFetchCmd (VBVAPARTIALRECORD *pPartialRecord, VBVABUFFER *pVBVA, 
         Assert (pPartialRecord->pu8);
 
         LOGVBVABUFFER(("continue partial record cb = %d cbRecord 0x%08X, first = %d, free = %d\n",
-                      pPartialRecord->cb, pRecord->cbRecord, indexRecordFirst, indexRecordFree));
+                      pPartialRecord->cb, cbRecordCurrent, indexRecordFirst, indexRecordFree));
 
         if (cbRecord > pPartialRecord->cb)
         {
@@ -195,7 +195,7 @@ static bool vbvaFetchCmd (VBVAPARTIALRECORD *pPartialRecord, VBVABUFFER *pVBVA, 
             }
         }
 
-        if (!(pRecord->cbRecord & VBVA_F_RECORD_PARTIAL))
+        if (!(cbRecordCurrent & VBVA_F_RECORD_PARTIAL))
         {
             /* The record is completed by guest. Return it to the caller. */
             *ppHdr = (VBVACMDHDR *)pPartialRecord->pu8;
@@ -215,7 +215,7 @@ static bool vbvaFetchCmd (VBVAPARTIALRECORD *pPartialRecord, VBVABUFFER *pVBVA, 
     }
 
     /* A new record need to be processed. */
-    if (pRecord->cbRecord & VBVA_F_RECORD_PARTIAL)
+    if (cbRecordCurrent & VBVA_F_RECORD_PARTIAL)
     {
         /* Current record is being written by guest. '=' is important here,
          * because the guest will do a FLUSH at this condition.
@@ -231,7 +231,7 @@ static bool vbvaFetchCmd (VBVAPARTIALRECORD *pPartialRecord, VBVABUFFER *pVBVA, 
             }
 
             LOGVBVABUFFER(("started partial record cb = 0x%08X cbRecord 0x%08X, first = %d, free = %d\n",
-                          pPartialRecord->cb, pRecord->cbRecord, indexRecordFirst, indexRecordFree));
+                          pPartialRecord->cb, cbRecordCurrent, indexRecordFirst, indexRecordFree));
         }
 
         return true;
@@ -467,7 +467,7 @@ static int vbvaResize (PVGASTATE pVGAState, VBVAVIEW *pView, const VBVAINFOSCREE
     return rc;
 }
 
-static int vbvaEnable (unsigned uScreenId, PVGASTATE pVGAState, VBVACONTEXT *pCtx, VBVABUFFER *pVBVA, uint32_t u32Offset)
+static int vbvaEnable (unsigned uScreenId, PVGASTATE pVGAState, VBVACONTEXT *pCtx, VBVABUFFER *pVBVA, uint32_t u32Offset, bool fRestored)
 {
     /* @todo old code did a UpdateDisplayAll at this place. */
 
@@ -491,8 +491,17 @@ static int vbvaEnable (unsigned uScreenId, PVGASTATE pVGAState, VBVACONTEXT *pCt
         LogFlowFunc(("u32HostEvents 0x%08X, u32SupportedOrders 0x%08X\n",
                      pVBVA->hostFlags.u32HostEvents, pVBVA->hostFlags.u32SupportedOrders));
 
-        pCtx->aViews[uScreenId].partialRecord.pu8 = NULL;
-        pCtx->aViews[uScreenId].partialRecord.cb = 0;
+        if (!fRestored)
+        {
+            /* @todo Actually this function must not touch the partialRecord structure at all,
+             * because initially it is a zero and when VBVA is disabled this should be set to zero.
+             * But I'm not sure that no code depends on zeroing partialRecord here.
+             * So for now (a quick fix for 4.1) just do not do this if the VM was restored,
+             * when partialRecord might be loaded already from the saved state.
+             */
+            pCtx->aViews[uScreenId].partialRecord.pu8 = NULL;
+            pCtx->aViews[uScreenId].partialRecord.cb = 0;
+        }
 
         pCtx->aViews[uScreenId].pVBVA = pVBVA;
         pCtx->aViews[uScreenId].u32VBVAOffset = u32Offset;
@@ -1599,7 +1608,7 @@ int vboxVBVALoadStateDone (PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 
             if (pView->pVBVA)
             {
-                vbvaEnable (iView, pVGAState, pCtx, pView->pVBVA, pView->u32VBVAOffset);
+                vbvaEnable (iView, pVGAState, pCtx, pView->pVBVA, pView->u32VBVAOffset, true /* fRestored */);
                 vbvaResize (pVGAState, pView, &pView->screen);
             }
         }
@@ -1891,7 +1900,7 @@ static DECLCALLBACK(int) vbvaChannelHandler (void *pvHandler, uint16_t u16Channe
                     /* Process any pending orders and empty the VBVA ring buffer. */
                     vbvaFlush (pVGAState, pCtx);
 
-                    rc = vbvaEnable (uScreenId, pVGAState, pCtx, pVBVA, u32Offset);
+                    rc = vbvaEnable (uScreenId, pVGAState, pCtx, pVBVA, u32Offset, false /* fRestored */);
                 }
                 else
                 {
