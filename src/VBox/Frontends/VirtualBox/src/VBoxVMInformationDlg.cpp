@@ -451,6 +451,7 @@ void VBoxVMInformationDlg::refreshStatistics()
     /* Runtime Information */
     {
         CConsole console = mSession.GetConsole();
+
         ULONG width = 0;
         ULONG height = 0;
         ULONG bpp = 0;
@@ -460,20 +461,31 @@ void VBoxVMInformationDlg::refreshStatistics()
             .arg (height);
         if (bpp)
             resolution += QString ("x%1").arg (bpp);
-        QString virtualization = console.GetDebugger().GetHWVirtExEnabled() ?
+
+        CMachineDebugger debugger = console.GetDebugger();
+        QString virtualization = debugger.GetHWVirtExEnabled() ?
             VBoxGlobal::tr ("Enabled", "details report (VT-x/AMD-V)") :
             VBoxGlobal::tr ("Disabled", "details report (VT-x/AMD-V)");
-        QString nested = console.GetDebugger().GetHWVirtExNestedPagingEnabled() ?
+        QString nested = debugger.GetHWVirtExNestedPagingEnabled() ?
             VBoxGlobal::tr ("Enabled", "details report (Nested Paging)") :
             VBoxGlobal::tr ("Disabled", "details report (Nested Paging)");
-        QString addVersionStr = console.GetGuest().GetAdditionsVersion();
+
+        CGuest guest = console.GetGuest();
+        QString addVersionStr = guest.GetAdditionsVersion();
         if (addVersionStr.isEmpty())
-            addVersionStr = tr ("Not Detected", "guest additions");
-        QString osType = console.GetGuest().GetOSTypeId();
+            addVersionStr = tr("Not Detected", "guest additions");
+        else
+        {
+            ULONG revision = guest.GetAdditionsRevision();
+            if (revision != 0)
+                addVersionStr += QString(" r%1").arg(revision);
+        }
+        QString osType = guest.GetOSTypeId();
         if (osType.isEmpty())
             osType = tr ("Not Detected", "guest os type");
         else
             osType = vboxGlobal().vmGuestOSTypeDescription (osType);
+
         int vrdePort = console.GetVRDEServerInfo().GetPort();
         QString vrdeInfo = (vrdePort == 0 || vrdePort == -1)?
             tr ("Not Available", "details report (VRDE server port)") :

@@ -1414,6 +1414,11 @@
         A string representing the version number of the product. The
         format is 3 integer numbers divided by dots (e.g. 1.0.1). The
         last number represents the build number and will frequently change.
+
+        This may be followed by a _ALPHA[0-9]*, _BETA[0-9]* or _RC[0-9]* tag
+        in prerelease builds.  Non-Oracle builds may (/shall) also have a
+        publisher tag, at the end.  The publisher tag starts with an underscore
+        just like the prerelease build type tag.
       </desc>
     </attribute>
 
@@ -8667,7 +8672,7 @@
 
   <interface
     name="IGuest" extends="$unknown"
-    uuid="1E404590-608E-492C-B00A-90C9EEB6C33F"
+    uuid="88696240-7411-4fe6-bb5e-ef56fb8a61f3"
     wsmap="managed"
     >
     <desc>
@@ -8702,9 +8707,16 @@
 
     <attribute name="additionsVersion" type="wstring" readonly="yes">
       <desc>
-        Version of the Guest Additions including the revision (3 decimal numbers
-        separated by dots + revision number) installed on the guest or empty
-        when the Additions are not installed.
+        Version of the Guest Additions in the same format as
+        <link to="IVirtualBox::version"/>.
+      </desc>
+    </attribute>
+
+    <attribute name="additionsRevision" type="unsigned long" readonly="yes">
+      <desc>
+        The internal build revision number of the additions.
+
+        See also <link to="IVirtualBox::revision"/>.
       </desc>
     </attribute>
 
@@ -16030,9 +16042,12 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     <attribute name="version" type="wstring" readonly="yes">
       <desc>
         The extension pack version string.  This is restricted to the dotted
-	version number and a build indicator.  No tree revision or tag will be
-	included in the string as those things are available as separate
-	properties.  Examples: "1.2.3", "1.2.3_BETA1" and "1.2.3_RC2".
+	version number and optionally a build indicator.  No tree revision or
+        tag will be included in the string as those things are available as
+        separate properties.  An optional publisher tag may be present like for
+        <link to="IVirtualBox::version"/>.
+
+        Examples: "1.2.3", "1.2.3_BETA1" and "1.2.3_RC2".
       </desc>
     </attribute>
     <attribute name="revision" type="unsigned long" readonly="yes">

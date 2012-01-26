@@ -197,28 +197,27 @@ VBOX_VERSION_BUILD = 51
 # major, minor and build revision (as it is now) -- also will be used for host/guest version
 # comparison.
 VBOX_VERSION_STRING_RAW = $(VBOX_VERSION_MAJOR).$(VBOX_VERSION_MINOR).$(VBOX_VERSION_BUILD)
+# This can be overridden in LocalConfig.kmk or elsewhere.
+# For the convension, see checks near the end of Config.kmk.
+VBOX_BUILD_PUBLISHER =
 # Full version string (may include more than just x.y.z, but no spaces or other problematic chars).
 # Note! The BETA[n],ALPHA[n],RC[n] indicators should be inserted before the
 #       publisher so that RTStrVersionCompare have a chance of comparing
 #       prerelease from different publishers correctly.
-VBOX_BUILD_PUBLISHER =
-if $(int-gt $(length $(VBOX_BUILD_PUBLISHER)),10)
-  $(error VBOX_BUILD_PUBLISHER must not be longer than 10 characters!)
-endif
 VBOX_VERSION_STRING = $(VBOX_VERSION_STRING_RAW)$(VBOX_BUILD_PUBLISHER)
-# Force the additions.sh script to get an exact additions build when we're doing the release.
 
+# Force the additions.sh script to get an exact additions build when we're doing the release.
 ifeq ($(int-mod $(VBOX_VERSION_BUILD),2),0)
- export VBOX_ADDITIONS_SH_MODE = release
+ export VBOX_ADDITIONS_SH_MODE     = release
  export VBOX_DOCUMENTATION_SH_MODE = release
- export VBOX_EFI_SH_MODE = release
- export VBOX_EXTPACKS_SH_MODE = release
+ export VBOX_EFI_SH_MODE           = release
+ export VBOX_EXTPACKS_SH_MODE      = release
 endif
 
 # Some info on the vendor
-VBOX_VENDOR = Oracle Corporation
+VBOX_VENDOR       = Oracle Corporation
 VBOX_VENDOR_SHORT = Oracle
-VBOX_PRODUCT = Oracle VM VirtualBox
+VBOX_PRODUCT      = Oracle VM VirtualBox
 # Not all could be done automatically. Here is a list of known places which
 # have to be updated manually, please keep this up to date:
 #	src/VBox/Devices/PC/PXE/client/uinit.asm
@@ -4751,6 +4750,62 @@ else
  VBOX_LIB_VBGL_R3_SHARED_X86     = $(VBOX_PATH_ADDITIONS_LIB)/VBoxGuestR3LibShared-x86$(VBOX_SUFF_LIB)
 endif
 
+
+#
+# Check the publisher and version string.
+#
+# We are being very strict because the version string is visible in various
+# APIs and logs and must be machine readable.
+#
+VBOX_VERSION_COMP_VALID_CHAR_SET = ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789abcdefghijklmnopqrstuvwxyz()[]{}+-.,
+ifneq ($(VBOX_BUILD_PUBLISHER),)
+ if $(length $(VBOX_BUILD_PUBLISHER)) > 10
+  $(error VBOX_BUILD_PUBLISHER must not be longer than 10 characters!)
+ endif
+ if "$(substr $(VBOX_BUILD_PUBLISHER), 1, 1)" != "_"
+  $(error VBOX_BUILD_PUBLISHER must start with an underscore!)
+ endif
+ if "$(translate $(substr $(VBOX_BUILD_PUBLISHER),2),$(VBOX_VERSION_COMP_VALID_CHAR_SET),)" != ""
+  $(error VBOX_BUILD_PUBLISHER='$(VBOX_BUILD_PUBLISHER)' contains bad characters! Valid set is:$(NLTAB)$(VBOX_VERSION_COMP_VALID_CHAR_SET))
+ endif
+endif
+
+if $(words $(VBOX_VERSION_STRING)) != 1
+ $(error VBOX_VERSION_STRING='$(VBOX_VERSION_STRING)' contains spaces or is empty.)
+endif
+if "$(subst __,-,$(VBOX_VERSION_STRING))" != "$(VBOX_VERSION_STRING)"
+ $(error VBOX_VERSION_STRING='$(VBOX_VERSION_STRING)' contains double underscores.)
+endif
+
+VBOX_VER_TMP1 := $(subst _,$(SP),$(VBOX_VERSION_STRING))
+
+if $(words $(VBOX_VER_TMP1)) > 3
+ $(error VBOX_VERSION_STRING='$(VBOX_VERSION_STRING)' contains too many parts (underscores), max 3!)
+endif
+if "$(translate $(word 1,$(VBOX_VER_TMP1)),0123456789,)" != ".."
+ $(error The x.y.z part of VBOX_VERSION_STRING='$(VBOX_VERSION_STRING)' is malformed: '$(word 1,$(VBOX_VER_TMP1))')
+endif
+if "$(word 1,$(VBOX_VER_TMP1))" != "$(VBOX_VERSION_STRING_RAW)"
+ $(error VBOX_VERSION_STRING='$(VBOX_VERSION_STRING)' does not start with VBOX_VERSION_STRING_RAW='$(VBOX_VERSION_STRING_RAW)')
+endif
+
+if $(words $(VBOX_VER_TMP1)) == 3 || ($(words $(VBOX_VER_TMP1)) == 2 && "$(VBOX_BUILD_PUBLISHER)" == "")
+ if      "$(substr $(word 2,$(VBOX_VER_TMP1)),1,4)" == "BETA"
+  VBOX_VER_TMP2 = 5
+ else if "$(substr $(word 2,$(VBOX_VER_TMP1)),1,5)" == "ALPHA"
+  VBOX_VER_TMP2 = 6
+ else if "$(substr $(word 2,$(VBOX_VER_TMP1)),1,2)" == "RC"
+  VBOX_VER_TMP2 = 3
+ else
+  $(error VBOX_VERSION_STRING='$(VBOX_VERSION_STRING)' uses an unknown build type: '$(word 2,$(VBOX_VER_TMP1))')
+ endif
+ if "$(translate $(substr $(word 2,$(VBOX_VER_TMP1)),$(VBOX_VER_TMP2)),0123456789)" != ""
+  $(error VBOX_VERSION_STRING='$(VBOX_VERSION_STRING)' uses an unknown build type: '$(word 2,$(VBOX_VER_TMP1))')
+ endif
+endif
+
+VBOX_VER_TMP1 :=
+VBOX_VER_TMP2 :=
 
 
 #

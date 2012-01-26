@@ -2240,13 +2240,26 @@ typedef struct PDMIVMMDEVCONNECTOR
 
     /**
      * Reports the detailed Guest Additions version.
-     * Called whenever the Additions issue a guest version report request or the VM is reset.
      *
      * @param   pInterface          Pointer to this interface.
-     * @param   guestInfo           Pointer to Guest Additions information structure.
+     * @param   uFullVersion        The guest additions version as a full version.
+     *                              Use VBOX_FULL_VERSION_GET_MAJOR,
+     *                              VBOX_FULL_VERSION_GET_MINOR and
+     *                              VBOX_FULL_VERSION_GET_BUILD to access it.
+     *                              (This will not be zero, so turn down the
+     *                              paranoia level a notch.)
+     * @param   pszName             Pointer to the sanitized version name.  This can
+     *                              be empty, but will not be NULL.  If not empty,
+     *                              it will contain a build type tag and/or a
+     *                              publisher tag.  If both, then they are separated
+     *                              by an underscore (VBOX_VERSION_STRING fashion).
+     * @param   uRevision           The SVN revision.  Can be 0.
+     * @param   fFeatures           Feature mask, currently none are defined.
+     *
      * @thread  The emulation thread.
      */
-    DECLR3CALLBACKMEMBER(void, pfnUpdateGuestInfo2,(PPDMIVMMDEVCONNECTOR pInterface, const struct VBoxGuestInfo2 *pGuestInfo));
+    DECLR3CALLBACKMEMBER(void, pfnUpdateGuestInfo2,(PPDMIVMMDEVCONNECTOR pInterface, uint32_t uFullVersion,
+                                                    const char *pszName, uint32_t uRevision, uint32_t fFeatures));
 
     /**
      * Update the guest additions capabilities.

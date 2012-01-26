@@ -187,7 +187,9 @@ DECLCALLBACK(void) vmmdevUpdateGuestStatus(PPDMIVMMDEVCONNECTOR pInterface, cons
 
 /**
  * Reports Guest Additions API and OS version.
- * Called whenever the Additions issue a guest version report request or the VM is reset.
+ *
+ * Called whenever the Additions issue a guest version report request or the VM
+ * is reset.
  *
  * @param   pInterface          Pointer to this interface.
  * @param   guestInfo           Pointer to guest information structure.
@@ -231,7 +233,9 @@ DECLCALLBACK(void) vmmdevUpdateGuestInfo(PPDMIVMMDEVCONNECTOR pInterface, const 
          * or driver unload.
          */
         guest->setAdditionsInfo(Bstr(), guestInfo->osType); /* Clear interface version + OS type. */
-        guest->setAdditionsInfo2("", "", 0); /* Clear Guest Additions version. */
+        /** @todo Would be better if GuestImpl.cpp did all this in the above method call
+         *        while holding down the. */
+        guest->setAdditionsInfo2(0, "", 0,  0); /* Clear Guest Additions version. */
         guest->setAdditionsStatus(VBoxGuestFacilityType_All,
                                   VBoxGuestFacilityStatus_Inactive,
                                   0); /* Flags; not used. */
@@ -240,18 +244,14 @@ DECLCALLBACK(void) vmmdevUpdateGuestInfo(PPDMIVMMDEVCONNECTOR pInterface, const 
 }
 
 /**
- * Reports the detailed Guest Additions version.
- * Called whenever the Additions issue a guest version report request or the VM is reset.
- *
- * @param   pInterface          Pointer to this interface.
- * @param   pGuestInfo          Pointer to Guest Additions information
- *                              structure.
- * @thread  The emulation thread.
+ * @interface_method_impl{PDMIVMMDEVCONNECTOR,pfnUpdateGuestInfo2}
  */
-DECLCALLBACK(void) vmmdevUpdateGuestInfo2(PPDMIVMMDEVCONNECTOR pInterface, const VBoxGuestInfo2 *pGuestInfo)
+DECLCALLBACK(void) vmmdevUpdateGuestInfo2(PPDMIVMMDEVCONNECTOR pInterface, uint32_t uFullVersion,
+                                          const char *pszName, uint32_t uRevision, uint32_t fFeatures)
 {
     PDRVMAINVMMDEV pDrv = PDMIVMMDEVCONNECTOR_2_MAINVMMDEV(pInterface);
-    AssertPtr(pGuestInfo);
+    AssertPtr(pszName);
+    Assert(uFullVersion);
 
     /* Store that information in IGuest. */
     Guest *pGuest = pDrv->pVMMDev->getParent()->getGuest();
@@ -259,25 +259,14 @@ DECLCALLBACK(void) vmmdevUpdateGuestInfo2(PPDMIVMMDEVCONNECTOR pInterface, const
     if (!pGuest)
         return;
 
-    if (   pGuestInfo->additionsMajor    != 0
-        && pGuestInfo->additionsRevision != 0)
-    {
-        /** @todo r=bird: See comments on space before 'r' in setAdditionsInfo2! */
-        char szVersion[32];
-        RTStrPrintf(szVersion, sizeof(szVersion), "%d.%d.%dr%ld",
-                    pGuestInfo->additionsMajor,
-                    pGuestInfo->additionsMinor,
-                    pGuestInfo->additionsBuild,
-                    pGuestInfo->additionsRevision);
+    /* Just pass it on... */
+    pGuest->setAdditionsInfo2(uFullVersion, pszName, uRevision, fFeatures);
 
-        pGuest->setAdditionsInfo2(szVersion, pGuestInfo->szName, pGuestInfo->additionsRevision);
-
-        /*
-         * No need to tell the console interface about the update;
-         * vmmdevUpdateGuestInfo takes care of that when called as the
-         * last event in the chain.
-         */
-    }
+    /*
+     * No need to tell the console interface about the update;
+     * vmmdevUpdateGuestInfo takes care of that when called as the
+     * last event in the chain.
+     */
 }
 
 /**
