@@ -157,21 +157,12 @@ int VMMDev::SetCredentialsJudgementResult(uint32_t u32Flags)
 
 
 /**
- * Reports Guest Additions status.
- * Called whenever the Additions issue a guest status report request or the VM is reset.
- *
- * @param   pInterface          Pointer to this interface.
- * @param   guestInfo           Pointer to guest information structure
- * @thread  The emulation thread.
+ * @interface_method_impl{PDMIVMMDEVCONNECTOR,pfnUpdateGuestStatus}
  */
-DECLCALLBACK(void) vmmdevUpdateGuestStatus(PPDMIVMMDEVCONNECTOR pInterface, const VBoxGuestStatus *guestStatus)
+DECLCALLBACK(void) vmmdevUpdateGuestStatus(PPDMIVMMDEVCONNECTOR pInterface, uint32_t uFacility, uint16_t uStatus,
+                                           uint32_t fFlags, PCRTTIMESPEC pTimeSpecTS)
 {
     PDRVMAINVMMDEV pDrv = PDMIVMMDEVCONNECTOR_2_MAINVMMDEV(pInterface);
-
-    Assert(guestStatus);
-    if (!guestStatus)
-        return;
-
     Console *pConsole = pDrv->pVMMDev->getParent();
 
     /* Store that information in IGuest */
@@ -180,7 +171,7 @@ DECLCALLBACK(void) vmmdevUpdateGuestStatus(PPDMIVMMDEVCONNECTOR pInterface, cons
     if (!guest)
         return;
 
-    guest->setAdditionsStatus(guestStatus->facility, guestStatus->status, guestStatus->flags);
+    guest->setAdditionsStatus((VBoxGuestFacilityType)uFacility, (VBoxGuestFacilityStatus)uStatus, fFlags, pTimeSpecTS);
     pConsole->onAdditionsStateChange();
 }
 
@@ -236,9 +227,9 @@ DECLCALLBACK(void) vmmdevUpdateGuestInfo(PPDMIVMMDEVCONNECTOR pInterface, const 
         /** @todo Would be better if GuestImpl.cpp did all this in the above method call
          *        while holding down the. */
         guest->setAdditionsInfo2(0, "", 0,  0); /* Clear Guest Additions version. */
-        guest->setAdditionsStatus(VBoxGuestFacilityType_All,
-                                  VBoxGuestFacilityStatus_Inactive,
-                                  0); /* Flags; not used. */
+        RTTIMESPEC TimeSpecTS;
+        RTTimeNow(&TimeSpecTS);
+        guest->setAdditionsStatus(VBoxGuestFacilityType_All, VBoxGuestFacilityStatus_Inactive, 0 /*fFlags*/, &TimeSpecTS);
         pConsole->onAdditionsStateChange();
     }
 }

@@ -40,7 +40,8 @@ public:
     DECLARE_EMPTY_CTOR_DTOR(AdditionsFacility)
 
     // public initializer/uninitializer for internal purposes only
-    HRESULT init(Guest *aParent, AdditionsFacilityType_T enmFacility, AdditionsFacilityStatus_T enmStatus);
+    HRESULT init(Guest *a_pParent, AdditionsFacilityType_T a_enmFacility, AdditionsFacilityStatus_T a_enmStatus,
+                 uint32_t a_fFlags, PCRTTIMESPEC a_pTimeSpecTS);
     void uninit();
 
     HRESULT FinalConstruct();
@@ -64,7 +65,7 @@ public:
         /** The facilitie's class. */
         AdditionsFacilityClass_T mClass;
     };
-    static const FacilityInfo sFacilityInfo[8];
+    static const FacilityInfo s_aFacilityInfo[8];
 
     // public internal methods
     static const AdditionsFacility::FacilityInfo &typeToInfo(AdditionsFacilityType_T aType);
@@ -73,7 +74,7 @@ public:
     Bstr getName() const;
     AdditionsFacilityStatus_T getStatus() const;
     AdditionsFacilityType_T getType() const;
-    HRESULT update(AdditionsFacilityStatus_T aStatus, RTTIMESPEC aTimestamp);
+    void update(AdditionsFacilityStatus_T a_enmStatus, uint32_t a_fFlags, PCRTTIMESPEC a_pTimeSpecTS);
 
 private:
     struct Data

@@ -2219,14 +2219,20 @@ typedef struct PDMIVMMDEVCONNECTOR *PPDMIVMMDEVCONNECTOR;
 typedef struct PDMIVMMDEVCONNECTOR
 {
     /**
-     * Reports the guest status.
-     * Called whenever the Additions issue a guest status report request.
+     * Update guest facility status.
+     *
+     * Called in response to VMMDevReq_ReportGuestStatus, reset or state restore.
      *
      * @param   pInterface          Pointer to this interface.
-     * @param   pGuestStatus        Pointer to guest information structure
+     * @param   uFacility           The facility.
+     * @param   uStatus             The status.
+     * @param   fFlags              Flags assoicated with the update. Currently
+     *                              reserved and should be ignored.
+     * @param   pTimeSpecTS         Pointer to the timestamp of this report.
      * @thread  The emulation thread.
      */
-    DECLR3CALLBACKMEMBER(void, pfnUpdateGuestStatus,(PPDMIVMMDEVCONNECTOR pInterface, const struct VBoxGuestStatus *pGuestStatus));
+    DECLR3CALLBACKMEMBER(void, pfnUpdateGuestStatus,(PPDMIVMMDEVCONNECTOR pInterface, uint32_t uFacility, uint16_t uStatus,
+                                                     uint32_t fFlags, PCRTTIMESPEC pTimeSpecTS));
 
     /**
      * Reports the guest API and OS version.

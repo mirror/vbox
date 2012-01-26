@@ -719,6 +719,11 @@ typedef RTMSINTERVAL       *PRTMSINTERVAL;
 /** Pointer to a const millisecond interval. */
 typedef const RTMSINTERVAL *PCRTMSINTERVAL;
 
+/** Pointer to a time spec structure. */
+typedef struct RTTIMESPEC  *PRTTIMESPEC;
+/** Pointer to a const time spec structure. */
+typedef const struct RTTIMESPEC *PCRTTIMESPEC;
+
 /**
  * Generic pointer union.
  */

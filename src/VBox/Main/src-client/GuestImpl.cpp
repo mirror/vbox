@@ -289,7 +289,7 @@ STDMETHODIMP Guest::COMGETTER(AdditionsRevision)(ULONG *a_puAdditionsRevision)
 
 STDMETHODIMP Guest::COMGETTER(Facilities)(ComSafeArrayOut(IAdditionsFacility*, aFacilities))
 {
-    CheckComArgOutPointerValid(aFacilities);
+    CheckComArgOutSafeArrayPointerValid(aFacilities);
 
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
@@ -725,10 +725,14 @@ STDMETHODIMP Guest::DragGHGetData(ComSafeArrayOut(BYTE, data))
  */
 void Guest::setAdditionsInfo(Bstr aInterfaceVersion, VBOXOSTYPE aOsType)
 {
+    RTTIMESPEC TimeSpecTS;
+    RTTimeNow(&TimeSpecTS);
+
     AutoCaller autoCaller(this);
     AssertComRCReturnVoid(autoCaller.rc());
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
 
     /*
      * Note: The Guest Additions API (interface) version is deprecated
@@ -764,7 +768,7 @@ void Guest::setAdditionsInfo(Bstr aInterfaceVersion, VBOXOSTYPE aOsType)
              * "graphics" (feature) facility to active as soon as we got the Guest Additions
              * interface version.
              */
-            facilityUpdate(VBoxGuestFacilityType_Graphics, VBoxGuestFacilityStatus_Active);
+            facilityUpdate(VBoxGuestFacilityType_Graphics, VBoxGuestFacilityStatus_Active,  0 /*fFlags*/, &TimeSpecTS);
         }
     }
 
@@ -773,8 +777,21 @@ void Guest::setAdditionsInfo(Bstr aInterfaceVersion, VBOXOSTYPE aOsType)
      * so enable it by default. Newer Additions will not enable this here
      * and use the setSupportedFeatures function instead.
      */
-    facilityUpdate(VBoxGuestFacilityType_Graphics, facilityIsActive(VBoxGuestFacilityType_VBoxGuestDriver) ?
-                   VBoxGuestFacilityStatus_Active : VBoxGuestFacilityStatus_Inactive);
+    /** @todo r=bird: I don't get the above comment nor the code below...
+     * One talks about capability bits, the one always does something to a facility.
+     * Then there is the comment below it all, which is placed like it addresses the
+     * mOSTypeId, but talks about something which doesn't remotely like mOSTypeId...
+     *
+     * Andy, could you please try clarify and make the comments shorter and more
+     * coherent! Also, explain why this is important and what depends on it.
+     *
+     * PS. There is the VMMDEV_GUEST_SUPPORTS_GRAPHICS capability* report... It
+     * should come in pretty quickly after this update, normally.
+     */
+    facilityUpdate(VBoxGuestFacilityType_Graphics,
+                   facilityIsActive(VBoxGuestFacilityType_VBoxGuestDriver)
+                   ? VBoxGuestFacilityStatus_Active : VBoxGuestFacilityStatus_Inactive,
+                   0 /*fFlags*/, &TimeSpecTS); /** @todo the timestamp isn't gonna be right here on saved state restore. */
 
     /*
      * Note! There is a race going on between setting mAdditionsRunLevel and
@@ -843,111 +860,83 @@ bool Guest::facilityIsActive(VBoxGuestFacilityType enmFacility)
     return false;
 }
 
-HRESULT Guest::facilityUpdate(VBoxGuestFacilityType enmFacility, VBoxGuestFacilityStatus enmStatus)
+void Guest::facilityUpdate(VBoxGuestFacilityType a_enmFacility, VBoxGuestFacilityStatus a_enmStatus,
+                           uint32_t a_fFlags, PCRTTIMESPEC a_pTimeSpecTS)
 {
-    ComAssertRet(enmFacility < INT32_MAX, E_INVALIDARG);
+    AssertReturnVoid(   a_enmFacility < VBoxGuestFacilityType_All
+                     && a_enmFacility > VBoxGuestFacilityType_Unknown);
 
-    HRESULT rc;
-    RTTIMESPEC tsNow;
-    RTTimeNow(&tsNow);
-
-    FacilityMapIter it = mData.mFacilityMap.find((AdditionsFacilityType_T)enmFacility);
+    FacilityMapIter it = mData.mFacilityMap.find((AdditionsFacilityType_T)a_enmFacility);
     if (it != mData.mFacilityMap.end())
     {
         AdditionsFacility *pFac = it->second;
-        rc = pFac->update((AdditionsFacilityStatus_T)enmStatus, tsNow);
+        pFac->update((AdditionsFacilityStatus_T)a_enmStatus, a_fFlags, a_pTimeSpecTS);
     }
     else
     {
-        ComObjPtr<AdditionsFacility> pFacility;
-        pFacility.createObject();
-        ComAssert(!pFacility.isNull());
-        rc = pFacility->init(this,
-                             (AdditionsFacilityType_T)enmFacility,
-                             (AdditionsFacilityStatus_T)enmStatus);
-        if (SUCCEEDED(rc))
-            mData.mFacilityMap.insert(std::make_pair((AdditionsFacilityType_T)enmFacility, pFacility));
-    }
+        if (mData.mFacilityMap.size() > 64)
+        {
+            /* The easy way out for now. We could automatically destroy
+               inactive facilities like VMMDev does if we like... */
+            AssertFailedReturnVoid();
+        }
 
-    LogFlowFunc(("Returned with rc=%Rrc\n"));
-    return rc;
+        ComObjPtr<AdditionsFacility> ptrFac;
+        ptrFac.createObject();
+        AssertReturnVoid(!ptrFac.isNull());
+
+        HRESULT hrc = ptrFac->init(this, (AdditionsFacilityType_T)a_enmFacility, (AdditionsFacilityStatus_T)a_enmStatus,
+                                   a_fFlags, a_pTimeSpecTS);
+        if (SUCCEEDED(hrc))
+            mData.mFacilityMap.insert(std::make_pair((AdditionsFacilityType_T)a_enmFacility, ptrFac));
+    }
 }
 
 /**
  * Sets the status of a certain Guest Additions facility.
- * Gets called by vmmdevUpdateGuestStatus.
  *
- * @param enmFacility   Facility to set the status for.
- * @param enmStatus     Actual status to set.
- * @param aFlags
+ * Gets called by vmmdevUpdateGuestStatus, which just passes the report along.
+ *
+ * @param   a_pInterface        Pointer to this interface.
+ * @param   a_enmFacility       The facility.
+ * @param   a_enmStatus         The status.
+ * @param   a_fFlags            Flags assoicated with the update. Currently
+ *                              reserved and should be ignored.
+ * @param   a_pTimeSpecTS       Pointer to the timestamp of this report.
+ * @sa      PDMIVMMDEVCONNECTOR::pfnUpdateGuestStatus, vmmdevUpdateGuestStatus
+ * @thread  The emulation thread.
  */
-void Guest::setAdditionsStatus(VBoxGuestFacilityType enmFacility, VBoxGuestFacilityStatus enmStatus, ULONG aFlags)
+void Guest::setAdditionsStatus(VBoxGuestFacilityType a_enmFacility, VBoxGuestFacilityStatus a_enmStatus,
+                               uint32_t a_fFlags, PCRTTIMESPEC a_pTimeSpecTS)
 {
+    Assert(   a_enmFacility > VBoxGuestFacilityType_Unknown
+           && a_enmFacility <= VBoxGuestFacilityType_All); /* Paranoia, VMMDev checks for this. */
+
     AutoCaller autoCaller(this);
     AssertComRCReturnVoid(autoCaller.rc());
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     /*
-     * Set overall additions run level.
-     */
-
-    /* First check for disabled status. */
-    uint32_t uCurFacility = enmFacility + (enmStatus == VBoxGuestFacilityStatus_Active ? 0 : -1);
-    if (   enmFacility < VBoxGuestFacilityType_VBoxGuestDriver
-        || (   enmFacility == VBoxGuestFacilityType_All
-            && enmStatus   == VBoxGuestFacilityStatus_Inactive)
-       )
-    {
-        mData.mAdditionsRunLevel = AdditionsRunLevelType_None;
-    }
-    else if (uCurFacility >= VBoxGuestFacilityType_VBoxTrayClient)
-    {
-        mData.mAdditionsRunLevel = AdditionsRunLevelType_Desktop;
-    }
-    else if (uCurFacility >= VBoxGuestFacilityType_VBoxService)
-    {
-        mData.mAdditionsRunLevel = AdditionsRunLevelType_Userland;
-    }
-    else if (uCurFacility >= VBoxGuestFacilityType_VBoxGuestDriver)
-    {
-        mData.mAdditionsRunLevel = AdditionsRunLevelType_System;
-    }
-    else /* Should never happen! */
-        AssertMsgFailed(("Invalid facility status/run level detected! uCurFacility=%d\n", uCurFacility));
-
-    /** @todo Above is wrong. The runlevel has to be recalculated from the
-     *        facilities.  A user can stop VBoxService before logging out.
-     *        The runlevel should then drop to System, not Userland.
-     *
-     * Also, if given enmFacility = VBoxGuestFacilityType_Unknown, we'll be
-     * bosting the runlevel to Desktop (0 - 1 = UINT32_MAX; UINT32_MAX >=
-     * VBoxGuestFacilityType_VBoxTrayClient). */
-
-    /** @todo VBoxGuest (the driver) should track VMMDevReq_ReportGuestStatus
-     * calls per session and automatically send VBoxGuestFacilityStatus_Failed
-     * for the facilites that does not have the status
-     * VBoxGuestFacilityStatus_Terminated, VBoxGuestFacilityStatus_Failed or
-     * VBoxGuestFacilityStatus_Inactive.  Not doing so means this
-     * information is not reliable. */
-
-    /*
      * Set a specific facility status.
      */
-    if (enmFacility > VBoxGuestFacilityType_Unknown)
-    {
-        if (enmFacility == VBoxGuestFacilityType_All)
-        {
-            FacilityMapIter it = mData.mFacilityMap.begin();
-            while (it != mData.mFacilityMap.end())
-            {
-                facilityUpdate((VBoxGuestFacilityType)it->first, enmStatus);
-                it++;
-            }
-        }
-        else /* Update one facility only. */
-            facilityUpdate(enmFacility, enmStatus);
-    }
+    if (a_enmFacility == VBoxGuestFacilityType_All)
+        for (FacilityMapIter it = mData.mFacilityMap.begin(); it != mData.mFacilityMap.end(); ++it)
+            facilityUpdate((VBoxGuestFacilityType)it->first, a_enmStatus, a_fFlags, a_pTimeSpecTS);
+    else /* Update one facility only. */
+        facilityUpdate(a_enmFacility, a_enmStatus, a_fFlags, a_pTimeSpecTS);
+
+    /*
+     * Recalc the runlevel.
+     */
+    if (facilityIsActive(VBoxGuestFacilityType_VBoxTrayClient))
+        mData.mAdditionsRunLevel = AdditionsRunLevelType_Desktop;
+    else if (facilityIsActive(VBoxGuestFacilityType_VBoxService))
+        mData.mAdditionsRunLevel = AdditionsRunLevelType_Userland;
+    else if (facilityIsActive(VBoxGuestFacilityType_VBoxGuestDriver))
+        mData.mAdditionsRunLevel = AdditionsRunLevelType_System;
+    else
+        mData.mAdditionsRunLevel = AdditionsRunLevelType_None;
 }
 
 /**
@@ -962,10 +951,18 @@ void Guest::setSupportedFeatures(uint32_t aCaps)
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    facilityUpdate(VBoxGuestFacilityType_Seamless, aCaps & VMMDEV_GUEST_SUPPORTS_SEAMLESS ?
-                   VBoxGuestFacilityStatus_Active : VBoxGuestFacilityStatus_Inactive);
+    /** @todo A nit: The timestamp is wrong on saved state restore. Would be better
+     *  to move the graphics and seamless capability -> facility translation to
+     *  VMMDev so this could be saved.  */
+    RTTIMESPEC TimeSpecTS;
+    RTTimeNow(&TimeSpecTS);
+
+    facilityUpdate(VBoxGuestFacilityType_Seamless,
+                   aCaps & VMMDEV_GUEST_SUPPORTS_SEAMLESS ? VBoxGuestFacilityStatus_Active : VBoxGuestFacilityStatus_Inactive,
+                   0 /*fFlags*/, &TimeSpecTS);
     /** @todo Add VMMDEV_GUEST_SUPPORTS_GUEST_HOST_WINDOW_MAPPING */
-    facilityUpdate(VBoxGuestFacilityType_Graphics, aCaps & VMMDEV_GUEST_SUPPORTS_GRAPHICS ?
-                   VBoxGuestFacilityStatus_Active : VBoxGuestFacilityStatus_Inactive);
+    facilityUpdate(VBoxGuestFacilityType_Graphics,
+                   aCaps & VMMDEV_GUEST_SUPPORTS_GRAPHICS ? VBoxGuestFacilityStatus_Active : VBoxGuestFacilityStatus_Inactive,
+                   0 /*fFlags*/, &TimeSpecTS);
 }
 /* vi: set tabstop=4 shiftwidth=4 expandtab: */
