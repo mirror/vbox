@@ -892,6 +892,7 @@ struct nsIEventQueue {
 #define VBOX_E_XML_ERROR 0x80BB000A
 #define VBOX_E_INVALID_SESSION_STATE 0x80BB000B
 #define VBOX_E_OBJECT_IN_USE 0x80BB000C
+#define VBOX_E_DONT_CALL_AGAIN 0x80BB000D
 
 
 struct IVirtualBoxErrorInfo;
@@ -942,6 +943,7 @@ struct IManagedObjectRef;
 struct IWebsessionManager;
 struct IPerformanceMetric;
 struct IPerformanceCollector;
+struct INATEngine;
 
 typedef struct IVirtualBoxErrorInfo IVirtualBoxErrorInfo;
 typedef struct ILocalOwner ILocalOwner;
@@ -991,6 +993,7 @@ typedef struct IManagedObjectRef IManagedObjectRef;
 typedef struct IWebsessionManager IWebsessionManager;
 typedef struct IPerformanceMetric IPerformanceMetric;
 typedef struct IPerformanceCollector IPerformanceCollector;
+typedef struct INATEngine INATEngine;
 
 /* Start of enum SettingsVersion Declaration */
 #define SETTINGSVERSION_IID_STR "52bd6f5f-1adb-4493-975d-581a9c4b803f"
@@ -1012,7 +1015,8 @@ enum SettingsVersion
     SettingsVersion_v1_7 = 9,
     SettingsVersion_v1_8 = 10,
     SettingsVersion_v1_9 = 11,
-    SettingsVersion_Future = 12
+    SettingsVersion_v1_10 = 12,
+    SettingsVersion_Future = 13
 };
 /* End of enum SettingsVersion Declaration */
 
@@ -1032,10 +1036,10 @@ enum AccessMode
 
 
 /* Start of enum MachineState Declaration */
-#define MACHINESTATE_IID_STR "36518cf6-cdf0-4d0d-ad2a-5ee9c60c7494"
+#define MACHINESTATE_IID_STR "e998d075-543a-41fc-8aa9-5ca3e92393fd"
 #define MACHINESTATE_IID { \
-    0x36518cf6, 0xcdf0, 0x4d0d, \
-    { 0xad, 0x2a, 0x5e, 0xe9, 0xc6, 0x0c, 0x74, 0x94 } \
+    0xe998d075, 0x543a, 0x41fc, \
+    { 0x8a, 0xa9, 0x5c, 0xa3, 0xe9, 0x23, 0x93, 0xfd } \
 }
 enum MachineState
 {
@@ -1055,13 +1059,15 @@ enum MachineState
     MachineState_Restoring = 13,
     MachineState_TeleportingPausedVM = 14,
     MachineState_TeleportingIn = 15,
-    MachineState_RestoringSnapshot = 16,
-    MachineState_DeletingSnapshot = 17,
-    MachineState_SettingUp = 18,
+    MachineState_DeletingSnapshotOnline = 16,
+    MachineState_DeletingSnapshotPaused = 17,
+    MachineState_RestoringSnapshot = 18,
+    MachineState_DeletingSnapshot = 19,
+    MachineState_SettingUp = 20,
     MachineState_FirstOnline = 5,
-    MachineState_LastOnline = 13,
+    MachineState_LastOnline = 17,
     MachineState_FirstTransient = 8,
-    MachineState_LastTransient = 18
+    MachineState_LastTransient = 20
 };
 /* End of enum MachineState Declaration */
 
@@ -1083,19 +1089,19 @@ enum SessionState
 /* End of enum SessionState Declaration */
 
 
-/* Start of enum CpuPropertyType Declaration */
-#define CPUPROPERTYTYPE_IID_STR "af7bb668-eeb1-4404-b77f-a114b30c92d6"
+/* Start of enum CPUPropertyType Declaration */
+#define CPUPROPERTYTYPE_IID_STR "24d356a6-2f45-4abd-b977-1cbe9c4701f5"
 #define CPUPROPERTYTYPE_IID { \
-    0xaf7bb668, 0xeeb1, 0x4404, \
-    { 0xb7, 0x7f, 0xa1, 0x14, 0xb3, 0x0c, 0x92, 0xd6 } \
+    0x24d356a6, 0x2f45, 0x4abd, \
+    { 0xb9, 0x77, 0x1c, 0xbe, 0x9c, 0x47, 0x01, 0xf5 } \
 }
-enum CpuPropertyType
+enum CPUPropertyType
 {
-    CpuPropertyType_Null = 0,
-    CpuPropertyType_PAE = 1,
-    CpuPropertyType_Synthetic = 2
+    CPUPropertyType_Null = 0,
+    CPUPropertyType_PAE = 1,
+    CPUPropertyType_Synthetic = 2
 };
-/* End of enum CpuPropertyType Declaration */
+/* End of enum CPUPropertyType Declaration */
 
 
 /* Start of enum HWVirtExPropertyType Declaration */
@@ -1110,7 +1116,9 @@ enum HWVirtExPropertyType
     HWVirtExPropertyType_Enabled = 1,
     HWVirtExPropertyType_Exclusive = 2,
     HWVirtExPropertyType_VPID = 3,
-    HWVirtExPropertyType_NestedPaging = 4
+    HWVirtExPropertyType_NestedPaging = 4,
+    HWVirtExPropertyType_LargePages = 5,
+    HWVirtExPropertyType_Force = 6
 };
 /* End of enum HWVirtExPropertyType Declaration */
 
@@ -1197,36 +1205,6 @@ enum Scope
 /* End of enum Scope Declaration */
 
 
-/* Start of enum GuestStatisticType Declaration */
-#define GUESTSTATISTICTYPE_IID_STR "aa7c1d71-aafe-47a8-9608-27d2d337cf55"
-#define GUESTSTATISTICTYPE_IID { \
-    0xaa7c1d71, 0xaafe, 0x47a8, \
-    { 0x96, 0x08, 0x27, 0xd2, 0xd3, 0x37, 0xcf, 0x55 } \
-}
-enum GuestStatisticType
-{
-    GuestStatisticType_CPULoad_Idle = 0,
-    GuestStatisticType_CPULoad_Kernel = 1,
-    GuestStatisticType_CPULoad_User = 2,
-    GuestStatisticType_Threads = 3,
-    GuestStatisticType_Processes = 4,
-    GuestStatisticType_Handles = 5,
-    GuestStatisticType_MemoryLoad = 6,
-    GuestStatisticType_PhysMemTotal = 7,
-    GuestStatisticType_PhysMemAvailable = 8,
-    GuestStatisticType_PhysMemBalloon = 9,
-    GuestStatisticType_MemCommitTotal = 10,
-    GuestStatisticType_MemKernelTotal = 11,
-    GuestStatisticType_MemKernelPaged = 12,
-    GuestStatisticType_MemKernelNonpaged = 13,
-    GuestStatisticType_MemSystemCache = 14,
-    GuestStatisticType_PageFileSize = 15,
-    GuestStatisticType_SampleNumber = 16,
-    GuestStatisticType_MaxVal = 17
-};
-/* End of enum GuestStatisticType Declaration */
-
-
 /* Start of enum BIOSBootMenuMode Declaration */
 #define BIOSBOOTMENUMODE_IID_STR "ae4fb9f7-29d2-45b4-b2c7-d579603135d5"
 #define BIOSBOOTMENUMODE_IID { \
@@ -1275,6 +1253,39 @@ enum FirmwareType
 /* End of enum FirmwareType Declaration */
 
 
+/* Start of enum PointingHidType Declaration */
+#define POINTINGHIDTYPE_IID_STR "0d3c17a2-821a-4b2e-ae41-890c6c60aa97"
+#define POINTINGHIDTYPE_IID { \
+    0x0d3c17a2, 0x821a, 0x4b2e, \
+    { 0xae, 0x41, 0x89, 0x0c, 0x6c, 0x60, 0xaa, 0x97 } \
+}
+enum PointingHidType
+{
+    PointingHidType_None = 1,
+    PointingHidType_PS2Mouse = 2,
+    PointingHidType_USBMouse = 3,
+    PointingHidType_USBTablet = 4,
+    PointingHidType_ComboMouse = 5
+};
+/* End of enum PointingHidType Declaration */
+
+
+/* Start of enum KeyboardHidType Declaration */
+#define KEYBOARDHIDTYPE_IID_STR "5a5b0996-3a3e-44bb-9019-56979812cbcc"
+#define KEYBOARDHIDTYPE_IID { \
+    0x5a5b0996, 0x3a3e, 0x44bb, \
+    { 0x90, 0x19, 0x56, 0x97, 0x98, 0x12, 0xcb, 0xcc } \
+}
+enum KeyboardHidType
+{
+    KeyboardHidType_None = 1,
+    KeyboardHidType_PS2Keyboard = 2,
+    KeyboardHidType_USBKeyboard = 3,
+    KeyboardHidType_ComboKeyboard = 4
+};
+/* End of enum KeyboardHidType Declaration */
+
+
 /* Start of enum VFSType Declaration */
 #define VFSTYPE_IID_STR "813999ba-b949-48a8-9230-aadc6285e2f2"
 #define VFSTYPE_IID { \
@@ -1313,10 +1324,10 @@ enum VFSFileType
 
 
 /* Start of enum VirtualSystemDescriptionType Declaration */
-#define VIRTUALSYSTEMDESCRIPTIONTYPE_IID_STR "aacc58de-5b45-4f82-ae2e-dd9a824fc3b5"
+#define VIRTUALSYSTEMDESCRIPTIONTYPE_IID_STR "c0f8f135-3a1d-417d-afa6-b38b95a91f90"
 #define VIRTUALSYSTEMDESCRIPTIONTYPE_IID { \
-    0xaacc58de, 0x5b45, 0x4f82, \
-    { 0xae, 0x2e, 0xdd, 0x9a, 0x82, 0x4f, 0xc3, 0xb5 } \
+    0xc0f8f135, 0x3a1d, 0x417d, \
+    { 0xaf, 0xa6, 0xb3, 0x8b, 0x95, 0xa9, 0x1f, 0x90 } \
 }
 enum VirtualSystemDescriptionType
 {
@@ -1336,12 +1347,13 @@ enum VirtualSystemDescriptionType
     VirtualSystemDescriptionType_HardDiskControllerIDE = 14,
     VirtualSystemDescriptionType_HardDiskControllerSATA = 15,
     VirtualSystemDescriptionType_HardDiskControllerSCSI = 16,
-    VirtualSystemDescriptionType_HardDiskImage = 17,
-    VirtualSystemDescriptionType_Floppy = 18,
-    VirtualSystemDescriptionType_CDROM = 19,
-    VirtualSystemDescriptionType_NetworkAdapter = 20,
-    VirtualSystemDescriptionType_USBController = 21,
-    VirtualSystemDescriptionType_SoundCard = 22
+    VirtualSystemDescriptionType_HardDiskControllerSAS = 17,
+    VirtualSystemDescriptionType_HardDiskImage = 18,
+    VirtualSystemDescriptionType_Floppy = 19,
+    VirtualSystemDescriptionType_CDROM = 20,
+    VirtualSystemDescriptionType_NetworkAdapter = 21,
+    VirtualSystemDescriptionType_USBController = 22,
+    VirtualSystemDescriptionType_SoundCard = 23
 };
 /* End of enum VirtualSystemDescriptionType Declaration */
 
@@ -1427,16 +1439,17 @@ enum MediumState
 
 
 /* Start of enum MediumType Declaration */
-#define MEDIUMTYPE_IID_STR "11f6f7a5-0327-409a-9d42-7db6a0cec578"
+#define MEDIUMTYPE_IID_STR "46bf1fd4-ad86-4ded-8c49-28bd2d148e5a"
 #define MEDIUMTYPE_IID { \
-    0x11f6f7a5, 0x0327, 0x409a, \
-    { 0x9d, 0x42, 0x7d, 0xb6, 0xa0, 0xce, 0xc5, 0x78 } \
+    0x46bf1fd4, 0xad86, 0x4ded, \
+    { 0x8c, 0x49, 0x28, 0xbd, 0x2d, 0x14, 0x8e, 0x5a } \
 }
 enum MediumType
 {
     MediumType_Normal = 0,
     MediumType_Immutable = 1,
-    MediumType_Writethrough = 2
+    MediumType_Writethrough = 2,
+    MediumType_Shareable = 3
 };
 /* End of enum MediumType Declaration */
 
@@ -1558,7 +1571,8 @@ enum NetworkAttachmentType
     NetworkAttachmentType_NAT = 1,
     NetworkAttachmentType_Bridged = 2,
     NetworkAttachmentType_Internal = 3,
-    NetworkAttachmentType_HostOnly = 4
+    NetworkAttachmentType_HostOnly = 4,
+    NetworkAttachmentType_VDE = 5
 };
 /* End of enum NetworkAttachmentType Declaration */
 
@@ -1693,7 +1707,8 @@ enum StorageBus
     StorageBus_IDE = 1,
     StorageBus_SATA = 2,
     StorageBus_SCSI = 3,
-    StorageBus_Floppy = 4
+    StorageBus_Floppy = 4,
+    StorageBus_SAS = 5
 };
 /* End of enum StorageBus Declaration */
 
@@ -1713,9 +1728,39 @@ enum StorageControllerType
     StorageControllerType_PIIX3 = 4,
     StorageControllerType_PIIX4 = 5,
     StorageControllerType_ICH6 = 6,
-    StorageControllerType_I82078 = 7
+    StorageControllerType_I82078 = 7,
+    StorageControllerType_LsiLogicSas = 8
 };
 /* End of enum StorageControllerType Declaration */
+
+
+/* Start of enum NATAliasMode Declaration */
+#define NATALIASMODE_IID_STR "67772168-50d9-11df-9669-7fb714ee4fa1"
+#define NATALIASMODE_IID { \
+    0x67772168, 0x50d9, 0x11df, \
+    { 0x96, 0x69, 0x7f, 0xb7, 0x14, 0xee, 0x4f, 0xa1 } \
+}
+enum NATAliasMode
+{
+    NATAliasMode_AliasLog = 0x1,
+    NATAliasMode_AliasProxyOnly = 0x02,
+    NATAliasMode_AliasUseSamePorts = 0x04
+};
+/* End of enum NATAliasMode Declaration */
+
+
+/* Start of enum NATProtocol Declaration */
+#define NATPROTOCOL_IID_STR "e90164be-eb03-11de-94af-fff9b1c1b19f"
+#define NATPROTOCOL_IID { \
+    0xe90164be, 0xeb03, 0x11de, \
+    { 0x94, 0xaf, 0xff, 0xf9, 0xb1, 0xc1, 0xb1, 0x9f } \
+}
+enum NATProtocol
+{
+    NATProtocol_UDP = 0,
+    NATProtocol_TCP = 1
+};
+/* End of enum NATProtocol Declaration */
 
 
 /* Start of struct IVirtualBoxErrorInfo Declaration */
@@ -1772,10 +1817,10 @@ struct ILocalOwner
 
 
 /* Start of struct IVirtualBoxCallback Declaration */
-#define IVIRTUALBOXCALLBACK_IID_STR "9a65adf2-3ee6-406b-bca2-2b1fa05f0d0b"
+#define IVIRTUALBOXCALLBACK_IID_STR "7f6a65b6-ad5d-4a67-8872-0b11cb7ea95c"
 #define IVIRTUALBOXCALLBACK_IID { \
-    0x9a65adf2, 0x3ee6, 0x406b, \
-    { 0xbc, 0xa2, 0x2b, 0x1f, 0xa0, 0x5f, 0x0d, 0x0b } \
+    0x7f6a65b6, 0xad5d, 0x4a67, \
+    { 0x88, 0x72, 0x0b, 0x11, 0xcb, 0x7e, 0xa9, 0x5c } \
 }
 struct IVirtualBoxCallback_vtbl
 {
@@ -1833,7 +1878,7 @@ struct IVirtualBoxCallback_vtbl
         PRUnichar * snapshotId
     );
 
-    nsresult (*OnSnapshotDiscarded)(
+    nsresult (*OnSnapshotDeleted)(
         IVirtualBoxCallback *pThis,
         PRUnichar * machineId,
         PRUnichar * snapshotId
@@ -1912,10 +1957,10 @@ struct IDHCPServer
 
 
 /* Start of struct IVirtualBox Declaration */
-#define IVIRTUALBOX_IID_STR "2158464a-f706-414b-a8c4-fb589dfc6b62"
+#define IVIRTUALBOX_IID_STR "3f36e024-7fed-4f20-a02c-9158a82b44e6"
 #define IVIRTUALBOX_IID { \
-    0x2158464a, 0xf706, 0x414b, \
-    { 0xa8, 0xc4, 0xfb, 0x58, 0x9d, 0xfc, 0x6b, 0x62 } \
+    0x3f36e024, 0x7fed, 0x4f20, \
+    { 0xa0, 0x2c, 0x91, 0x58, 0xa8, 0x2b, 0x44, 0xe6 } \
 }
 struct IVirtualBox_vtbl
 {
@@ -1959,6 +2004,7 @@ struct IVirtualBox_vtbl
         PRUnichar * osTypeId,
         PRUnichar * baseFolder,
         PRUnichar * id,
+        PRBool override,
         IMachine * * machine
     );
 
@@ -2378,10 +2424,10 @@ struct IVirtualSystemDescription
 
 
 /* Start of struct IInternalMachineControl Declaration */
-#define IINTERNALMACHINECONTROL_IID_STR "35d8d838-d066-447d-927a-fd93afdbec90"
+#define IINTERNALMACHINECONTROL_IID_STR "26604a54-8628-491b-a0ea-e1392a16d13b"
 #define IINTERNALMACHINECONTROL_IID { \
-    0x35d8d838, 0xd066, 0x447d, \
-    { 0x92, 0x7a, 0xfd, 0x93, 0xaf, 0xdb, 0xec, 0x90 } \
+    0x26604a54, 0x8628, 0x491b, \
+    { 0xa0, 0xea, 0xe1, 0x39, 0x2a, 0x16, 0xd1, 0x3b } \
 }
 struct IInternalMachineControl_vtbl
 {
@@ -2400,6 +2446,16 @@ struct IInternalMachineControl_vtbl
     nsresult (*GetIPCId)(
         IInternalMachineControl *pThis,
         PRUnichar * * id
+    );
+
+    nsresult (*BeginPowerUp)(
+        IInternalMachineControl *pThis,
+        IProgress * progress
+    );
+
+    nsresult (*EndPowerUp)(
+        IInternalMachineControl *pThis,
+        PRInt32 result
     );
 
     nsresult (*RunUSBDeviceFilters)(
@@ -2472,6 +2528,17 @@ struct IInternalMachineControl_vtbl
         IProgress * * progress
     );
 
+    nsresult (*FinishOnlineMergeMedium)(
+        IInternalMachineControl *pThis,
+        IMediumAttachment * mediumAttachment,
+        IMedium * source,
+        IMedium * target,
+        PRBool mergeForward,
+        IMedium * parentForTarget,
+        PRUint32 childrenToReparentSize,
+        IMedium ** childrenToReparent
+    );
+
     nsresult (*RestoreSnapshot)(
         IInternalMachineControl *pThis,
         IConsole * initiator,
@@ -2490,18 +2557,6 @@ struct IInternalMachineControl_vtbl
         PRUint64* timestamp,
         PRUint32 *flagsSize,
         PRUnichar *** flags
-    );
-
-    nsresult (*PushGuestProperties)(
-        IInternalMachineControl *pThis,
-        PRUint32 nameSize,
-        PRUnichar ** name,
-        PRUint32 valueSize,
-        PRUnichar ** value,
-        PRUint32 timestampSize,
-        PRUint64* timestamp,
-        PRUint32 flagsSize,
-        PRUnichar ** flags
     );
 
     nsresult (*PushGuestProperty)(
@@ -2572,10 +2627,10 @@ struct IBIOSSettings
 
 
 /* Start of struct IMachine Declaration */
-#define IMACHINE_IID_STR "99404f50-dd10-40d3-889b-dd2f79f1e95e"
+#define IMACHINE_IID_STR "6d9212cb-a5c0-48b7-bbc1-3fa2ba2ee6d2"
 #define IMACHINE_IID { \
-    0x99404f50, 0xdd10, 0x40d3, \
-    { 0x88, 0x9b, 0xdd, 0x2f, 0x79, 0xf1, 0xe9, 0x5e } \
+    0x6d9212cb, 0xa5c0, 0x48b7, \
+    { 0xbb, 0xc1, 0x3f, 0xa2, 0xba, 0x2e, 0xe6, 0xd2 } \
 }
 struct IMachine_vtbl
 {
@@ -2607,14 +2662,17 @@ struct IMachine_vtbl
     nsresult (*GetCPUCount)(IMachine *pThis, PRUint32 *CPUCount);
     nsresult (*SetCPUCount)(IMachine *pThis, PRUint32 CPUCount);
 
+    nsresult (*GetCPUHotPlugEnabled)(IMachine *pThis, PRBool *CPUHotPlugEnabled);
+    nsresult (*SetCPUHotPlugEnabled)(IMachine *pThis, PRBool CPUHotPlugEnabled);
+
     nsresult (*GetMemorySize)(IMachine *pThis, PRUint32 *memorySize);
     nsresult (*SetMemorySize)(IMachine *pThis, PRUint32 memorySize);
 
     nsresult (*GetMemoryBalloonSize)(IMachine *pThis, PRUint32 *memoryBalloonSize);
     nsresult (*SetMemoryBalloonSize)(IMachine *pThis, PRUint32 memoryBalloonSize);
 
-    nsresult (*GetStatisticsUpdateInterval)(IMachine *pThis, PRUint32 *statisticsUpdateInterval);
-    nsresult (*SetStatisticsUpdateInterval)(IMachine *pThis, PRUint32 statisticsUpdateInterval);
+    nsresult (*GetPageFusionEnabled)(IMachine *pThis, PRBool *PageFusionEnabled);
+    nsresult (*SetPageFusionEnabled)(IMachine *pThis, PRBool PageFusionEnabled);
 
     nsresult (*GetVRAMSize)(IMachine *pThis, PRUint32 *VRAMSize);
     nsresult (*SetVRAMSize)(IMachine *pThis, PRUint32 VRAMSize);
@@ -2632,6 +2690,15 @@ struct IMachine_vtbl
 
     nsresult (*GetFirmwareType)(IMachine *pThis, PRUint32 *firmwareType);
     nsresult (*SetFirmwareType)(IMachine *pThis, PRUint32 firmwareType);
+
+    nsresult (*GetPointingHidType)(IMachine *pThis, PRUint32 *pointingHidType);
+    nsresult (*SetPointingHidType)(IMachine *pThis, PRUint32 pointingHidType);
+
+    nsresult (*GetKeyboardHidType)(IMachine *pThis, PRUint32 *keyboardHidType);
+    nsresult (*SetKeyboardHidType)(IMachine *pThis, PRUint32 keyboardHidType);
+
+    nsresult (*GetHpetEnabled)(IMachine *pThis, PRBool *hpetEnabled);
+    nsresult (*SetHpetEnabled)(IMachine *pThis, PRBool hpetEnabled);
 
     nsresult (*GetSnapshotFolder)(IMachine *pThis, PRUnichar * *snapshotFolder);
     nsresult (*SetSnapshotFolder)(IMachine *pThis, PRUnichar * snapshotFolder);
@@ -2689,6 +2756,18 @@ struct IMachine_vtbl
 
     nsresult (*GetTeleporterPassword)(IMachine *pThis, PRUnichar * *teleporterPassword);
     nsresult (*SetTeleporterPassword)(IMachine *pThis, PRUnichar * teleporterPassword);
+
+    nsresult (*GetRTCUseUTC)(IMachine *pThis, PRBool *RTCUseUTC);
+    nsresult (*SetRTCUseUTC)(IMachine *pThis, PRBool RTCUseUTC);
+
+    nsresult (*GetIoCacheEnabled)(IMachine *pThis, PRBool *ioCacheEnabled);
+    nsresult (*SetIoCacheEnabled)(IMachine *pThis, PRBool ioCacheEnabled);
+
+    nsresult (*GetIoCacheSize)(IMachine *pThis, PRUint32 *ioCacheSize);
+    nsresult (*SetIoCacheSize)(IMachine *pThis, PRUint32 ioCacheSize);
+
+    nsresult (*GetIoBandwidthMax)(IMachine *pThis, PRUint32 *ioBandwidthMax);
+    nsresult (*SetIoBandwidthMax)(IMachine *pThis, PRUint32 ioBandwidthMax);
 
     nsresult (*SetBootOrder)(
         IMachine *pThis,
@@ -2818,19 +2897,19 @@ struct IMachine_vtbl
         PRUnichar * value
     );
 
-    nsresult (*GetCpuProperty)(
+    nsresult (*GetCPUProperty)(
         IMachine *pThis,
         PRUint32 property,
         PRBool * value
     );
 
-    nsresult (*SetCpuProperty)(
+    nsresult (*SetCPUProperty)(
         IMachine *pThis,
         PRUint32 property,
         PRBool value
     );
 
-    nsresult (*GetCpuIdLeaf)(
+    nsresult (*GetCPUIDLeaf)(
         IMachine *pThis,
         PRUint32 id,
         PRUint32 * valEax,
@@ -2839,7 +2918,7 @@ struct IMachine_vtbl
         PRUint32 * valEdx
     );
 
-    nsresult (*SetCpuIdLeaf)(
+    nsresult (*SetCPUIDLeaf)(
         IMachine *pThis,
         PRUint32 id,
         PRUint32 valEax,
@@ -2848,12 +2927,12 @@ struct IMachine_vtbl
         PRUint32 valEdx
     );
 
-    nsresult (*RemoveCpuIdLeaf)(
+    nsresult (*RemoveCPUIDLeaf)(
         IMachine *pThis,
         PRUint32 id
     );
 
-    nsresult (*RemoveAllCpuIdLeafs)(IMachine *pThis );
+    nsresult (*RemoveAllCPUIDLeaves)(IMachine *pThis );
 
     nsresult (*GetHWVirtExProperty)(
         IMachine *pThis,
@@ -2966,6 +3045,7 @@ struct IMachine_vtbl
 
     nsresult (*QuerySavedThumbnailSize)(
         IMachine *pThis,
+        PRUint32 screenId,
         PRUint32 * size,
         PRUint32 * width,
         PRUint32 * height
@@ -2973,6 +3053,7 @@ struct IMachine_vtbl
 
     nsresult (*ReadSavedThumbnailToArray)(
         IMachine *pThis,
+        PRUint32 screenId,
         PRBool BGR,
         PRUint32 * width,
         PRUint32 * height,
@@ -2982,6 +3063,7 @@ struct IMachine_vtbl
 
     nsresult (*QuerySavedScreenshotPNGSize)(
         IMachine *pThis,
+        PRUint32 screenId,
         PRUint32 * size,
         PRUint32 * width,
         PRUint32 * height
@@ -2989,8 +3071,40 @@ struct IMachine_vtbl
 
     nsresult (*ReadSavedScreenshotPNGToArray)(
         IMachine *pThis,
+        PRUint32 screenId,
         PRUint32 * width,
         PRUint32 * height,
+        PRUint32 *dataSize,
+        PRUint8** data
+    );
+
+    nsresult (*HotPlugCPU)(
+        IMachine *pThis,
+        PRUint32 cpu
+    );
+
+    nsresult (*HotUnplugCPU)(
+        IMachine *pThis,
+        PRUint32 cpu
+    );
+
+    nsresult (*GetCPUStatus)(
+        IMachine *pThis,
+        PRUint32 cpu,
+        PRBool * attached
+    );
+
+    nsresult (*QueryLogFilename)(
+        IMachine *pThis,
+        PRUint32 idx,
+        PRUnichar * * filename
+    );
+
+    nsresult (*ReadLog)(
+        IMachine *pThis,
+        PRUint32 idx,
+        PRUint64 offset,
+        PRUint64 size,
         PRUint32 *dataSize,
         PRUint8** data
     );
@@ -3005,10 +3119,10 @@ struct IMachine
 
 
 /* Start of struct IConsoleCallback Declaration */
-#define ICONSOLECALLBACK_IID_STR "d6239535-bda2-4ef7-83f4-f4722e4a3b2c"
+#define ICONSOLECALLBACK_IID_STR "60703f8d-81e4-4b45-a147-dcfd07692b19"
 #define ICONSOLECALLBACK_IID { \
-    0xd6239535, 0xbda2, 0x4ef7, \
-    { 0x83, 0xf4, 0xf4, 0x72, 0x2e, 0x4a, 0x3b, 0x2c } \
+    0x60703f8d, 0x81e4, 0x4b45, \
+    { 0xa1, 0x47, 0xdc, 0xfd, 0x07, 0x69, 0x2b, 0x19 } \
 }
 struct IConsoleCallback_vtbl
 {
@@ -3022,12 +3136,14 @@ struct IConsoleCallback_vtbl
         PRUint32 yHot,
         PRUint32 width,
         PRUint32 height,
-        PRUint8 * shape
+        PRUint32 shapeSize,
+        PRUint8* shape
     );
 
     nsresult (*OnMouseCapabilityChange)(
         IConsoleCallback *pThis,
         PRBool supportsAbsolute,
+        PRBool supportsRelative,
         PRBool needsHostCursor
     );
 
@@ -3065,6 +3181,12 @@ struct IConsoleCallback_vtbl
     nsresult (*OnMediumChange)(
         IConsoleCallback *pThis,
         IMediumAttachment * mediumAttachment
+    );
+
+    nsresult (*OnCPUChange)(
+        IConsoleCallback *pThis,
+        PRUint32 cpu,
+        PRBool add
     );
 
     nsresult (*OnVRDPServerChange)(IConsoleCallback *pThis );
@@ -3392,10 +3514,10 @@ struct IHostNetworkInterface
 
 
 /* Start of struct IHost Declaration */
-#define IHOST_IID_STR "e380cbfc-ae65-4fa6-899e-45ded6b3132a"
+#define IHOST_IID_STR "35b004f4-7806-4009-bfa8-d1308adba7e5"
 #define IHOST_IID { \
-    0xe380cbfc, 0xae65, 0x4fa6, \
-    { 0x89, 0x9e, 0x45, 0xde, 0xd6, 0xb3, 0x13, 0x2a } \
+    0x35b004f4, 0x7806, 0x4009, \
+    { 0xbf, 0xa8, 0xd1, 0x30, 0x8a, 0xdb, 0xa7, 0xe5 } \
 }
 struct IHost_vtbl
 {
@@ -3414,6 +3536,8 @@ struct IHost_vtbl
     nsresult (*GetProcessorCount)(IHost *pThis, PRUint32 *processorCount);
 
     nsresult (*GetProcessorOnlineCount)(IHost *pThis, PRUint32 *processorOnlineCount);
+
+    nsresult (*GetProcessorCoreCount)(IHost *pThis, PRUint32 *processorCoreCount);
 
     nsresult (*GetMemorySize)(IHost *pThis, PRUint32 *memorySize);
 
@@ -3445,7 +3569,7 @@ struct IHost_vtbl
         PRUnichar * * description
     );
 
-    nsresult (*GetProcessorCpuIdLeaf)(
+    nsresult (*GetProcessorCPUIDLeaf)(
         IHost *pThis,
         PRUint32 cpuId,
         PRUint32 leaf,
@@ -3538,10 +3662,10 @@ struct IHost
 
 
 /* Start of struct ISystemProperties Declaration */
-#define ISYSTEMPROPERTIES_IID_STR "8030645c-8fef-4320-bb7b-c829f00069dc"
+#define ISYSTEMPROPERTIES_IID_STR "07c3ffd8-8f59-49cc-b608-53a332e85cc3"
 #define ISYSTEMPROPERTIES_IID { \
-    0x8030645c, 0x8fef, 0x4320, \
-    { 0xbb, 0x7b, 0xc8, 0x29, 0xf0, 0x00, 0x69, 0xdc } \
+    0x07c3ffd8, 0x8f59, 0x49cc, \
+    { 0xb6, 0x08, 0x53, 0xa3, 0x32, 0xe8, 0x5c, 0xc3 } \
 }
 struct ISystemProperties_vtbl
 {
@@ -3558,6 +3682,8 @@ struct ISystemProperties_vtbl
     nsresult (*GetMinGuestCPUCount)(ISystemProperties *pThis, PRUint32 *minGuestCPUCount);
 
     nsresult (*GetMaxGuestCPUCount)(ISystemProperties *pThis, PRUint32 *maxGuestCPUCount);
+
+    nsresult (*GetMaxGuestMonitors)(ISystemProperties *pThis, PRUint32 *maxGuestMonitors);
 
     nsresult (*GetMaxVDISize)(ISystemProperties *pThis, PRUint64 *maxVDISize);
 
@@ -3579,6 +3705,18 @@ struct ISystemProperties_vtbl
 
     nsresult (*GetDefaultHardDiskFormat)(ISystemProperties *pThis, PRUnichar * *defaultHardDiskFormat);
     nsresult (*SetDefaultHardDiskFormat)(ISystemProperties *pThis, PRUnichar * defaultHardDiskFormat);
+
+    nsresult (*GetFreeDiskSpaceWarning)(ISystemProperties *pThis, PRUint64 *freeDiskSpaceWarning);
+    nsresult (*SetFreeDiskSpaceWarning)(ISystemProperties *pThis, PRUint64 freeDiskSpaceWarning);
+
+    nsresult (*GetFreeDiskSpacePercentWarning)(ISystemProperties *pThis, PRUint32 *freeDiskSpacePercentWarning);
+    nsresult (*SetFreeDiskSpacePercentWarning)(ISystemProperties *pThis, PRUint32 freeDiskSpacePercentWarning);
+
+    nsresult (*GetFreeDiskSpaceError)(ISystemProperties *pThis, PRUint64 *freeDiskSpaceError);
+    nsresult (*SetFreeDiskSpaceError)(ISystemProperties *pThis, PRUint64 freeDiskSpaceError);
+
+    nsresult (*GetFreeDiskSpacePercentError)(ISystemProperties *pThis, PRUint32 *freeDiskSpacePercentError);
+    nsresult (*SetFreeDiskSpacePercentError)(ISystemProperties *pThis, PRUint32 freeDiskSpacePercentError);
 
     nsresult (*GetRemoteDisplayAuthLibrary)(ISystemProperties *pThis, PRUnichar * *remoteDisplayAuthLibrary);
     nsresult (*SetRemoteDisplayAuthLibrary)(ISystemProperties *pThis, PRUnichar * remoteDisplayAuthLibrary);
@@ -3632,10 +3770,10 @@ struct ISystemProperties
 
 
 /* Start of struct IGuestOSType Declaration */
-#define IGUESTOSTYPE_IID_STR "cfe9e64c-4430-435b-9e7c-e3d8e417bd58"
+#define IGUESTOSTYPE_IID_STR "e3f6727e-a09b-41ea-a824-864a176472f3"
 #define IGUESTOSTYPE_IID { \
-    0xcfe9e64c, 0x4430, 0x435b, \
-    { 0x9e, 0x7c, 0xe3, 0xd8, 0xe4, 0x17, 0xbd, 0x58 } \
+    0xe3f6727e, 0xa09b, 0x41ea, \
+    { 0xa8, 0x24, 0x86, 0x4a, 0x17, 0x64, 0x72, 0xf3 } \
 }
 struct IGuestOSType_vtbl
 {
@@ -3663,6 +3801,26 @@ struct IGuestOSType_vtbl
 
     nsresult (*GetAdapterType)(IGuestOSType *pThis, PRUint32 *adapterType);
 
+    nsresult (*GetRecommendedPae)(IGuestOSType *pThis, PRBool *recommendedPae);
+
+    nsresult (*GetRecommendedDvdStorageController)(IGuestOSType *pThis, PRUint32 *recommendedDvdStorageController);
+
+    nsresult (*GetRecommendedDvdStorageBus)(IGuestOSType *pThis, PRUint32 *recommendedDvdStorageBus);
+
+    nsresult (*GetRecommendedHdStorageController)(IGuestOSType *pThis, PRUint32 *recommendedHdStorageController);
+
+    nsresult (*GetRecommendedHdStorageBus)(IGuestOSType *pThis, PRUint32 *recommendedHdStorageBus);
+
+    nsresult (*GetRecommendedFirmware)(IGuestOSType *pThis, PRUint32 *recommendedFirmware);
+
+    nsresult (*GetRecommendedUsbHid)(IGuestOSType *pThis, PRBool *recommendedUsbHid);
+
+    nsresult (*GetRecommendedHpet)(IGuestOSType *pThis, PRBool *recommendedHpet);
+
+    nsresult (*GetRecommendedUsbTablet)(IGuestOSType *pThis, PRBool *recommendedUsbTablet);
+
+    nsresult (*GetRecommendedRtcUseUtc)(IGuestOSType *pThis, PRBool *recommendedRtcUseUtc);
+
 };
 
 struct IGuestOSType
@@ -3673,10 +3831,10 @@ struct IGuestOSType
 
 
 /* Start of struct IGuest Declaration */
-#define IGUEST_IID_STR "d8556fca-81bc-12af-fca3-365528fa38ca"
+#define IGUEST_IID_STR "d915dff1-ed38-495a-91f1-ab6c53932468"
 #define IGUEST_IID { \
-    0xd8556fca, 0x81bc, 0x12af, \
-    { 0xfc, 0xa3, 0x36, 0x55, 0x28, 0xfa, 0x38, 0xca } \
+    0xd915dff1, 0xed38, 0x495a, \
+    { 0x91, 0xf1, 0xab, 0x6c, 0x53, 0x93, 0x24, 0x68 } \
 }
 struct IGuest_vtbl
 {
@@ -3695,8 +3853,28 @@ struct IGuest_vtbl
     nsresult (*GetMemoryBalloonSize)(IGuest *pThis, PRUint32 *memoryBalloonSize);
     nsresult (*SetMemoryBalloonSize)(IGuest *pThis, PRUint32 memoryBalloonSize);
 
+    nsresult (*GetPageFusionEnabled)(IGuest *pThis, PRBool *pageFusionEnabled);
+    nsresult (*SetPageFusionEnabled)(IGuest *pThis, PRBool pageFusionEnabled);
+
     nsresult (*GetStatisticsUpdateInterval)(IGuest *pThis, PRUint32 *statisticsUpdateInterval);
     nsresult (*SetStatisticsUpdateInterval)(IGuest *pThis, PRUint32 statisticsUpdateInterval);
+
+    nsresult (*InternalGetStatistics)(
+        IGuest *pThis,
+        PRUint32 * cpuUser,
+        PRUint32 * cpuKernel,
+        PRUint32 * cpuIdle,
+        PRUint32 * memTotal,
+        PRUint32 * memFree,
+        PRUint32 * memBalloon,
+        PRUint32 * memShared,
+        PRUint32 * memCache,
+        PRUint32 * pagedTotal,
+        PRUint32 * memAllocTotal,
+        PRUint32 * memFreeTotal,
+        PRUint32 * memBalloonTotal,
+        PRUint32 * memSharedTotal
+    );
 
     nsresult (*SetCredentials)(
         IGuest *pThis,
@@ -3706,11 +3884,37 @@ struct IGuest_vtbl
         PRBool allowInteractiveLogon
     );
 
-    nsresult (*GetStatistic)(
+    nsresult (*ExecuteProcess)(
         IGuest *pThis,
-        PRUint32 cpuId,
-        PRUint32 statistic,
-        PRUint32 * statVal
+        PRUnichar * execName,
+        PRUint32 flags,
+        PRUint32 argumentsSize,
+        PRUnichar ** arguments,
+        PRUint32 environmentSize,
+        PRUnichar ** environment,
+        PRUnichar * userName,
+        PRUnichar * password,
+        PRUint32 timeoutMS,
+        PRUint32 * pid,
+        IProgress * * progress
+    );
+
+    nsresult (*GetProcessOutput)(
+        IGuest *pThis,
+        PRUint32 pid,
+        PRUint32 flags,
+        PRUint32 timeoutMS,
+        PRUint64 size,
+        PRUint32 *dataSize,
+        PRUint8** data
+    );
+
+    nsresult (*GetProcessStatus)(
+        IGuest *pThis,
+        PRUint32 pid,
+        PRUint32 * exitcode,
+        PRUint32 * flags,
+        PRUint32 * reason
     );
 
 };
@@ -3865,10 +4069,10 @@ struct IMediumAttachment
 
 
 /* Start of struct IMedium Declaration */
-#define IMEDIUM_IID_STR "aa8167ba-df72-4738-b740-9b84377ba9f1"
+#define IMEDIUM_IID_STR "1d578f43-5ef1-4415-b556-7592d3ccdc8f"
 #define IMEDIUM_IID { \
-    0xaa8167ba, 0xdf72, 0x4738, \
-    { 0xb7, 0x40, 0x9b, 0x84, 0x37, 0x7b, 0xa9, 0xf1 } \
+    0x1d578f43, 0x5ef1, 0x4415, \
+    { 0xb5, 0x56, 0x75, 0x92, 0xd3, 0xcc, 0xdc, 0x8f } \
 }
 struct IMedium_vtbl
 {
@@ -3893,6 +4097,8 @@ struct IMedium_vtbl
     nsresult (*GetSize)(IMedium *pThis, PRUint64 *size);
 
     nsresult (*GetFormat)(IMedium *pThis, PRUnichar * *format);
+
+    nsresult (*GetMediumFormat)(IMedium *pThis, IMediumFormat * *mediumFormat);
 
     nsresult (*GetType)(IMedium *pThis, PRUint32 *type);
     nsresult (*SetType)(IMedium *pThis, PRUint32 type);
@@ -3998,7 +4204,7 @@ struct IMedium_vtbl
 
     nsresult (*MergeTo)(
         IMedium *pThis,
-        PRUnichar * targetId,
+        IMedium * target,
         IProgress * * progress
     );
 
@@ -4120,6 +4326,10 @@ struct IMouse_vtbl
     struct nsISupports_vtbl nsisupports;
 
     nsresult (*GetAbsoluteSupported)(IMouse *pThis, PRBool *absoluteSupported);
+
+    nsresult (*GetRelativeSupported)(IMouse *pThis, PRBool *relativeSupported);
+
+    nsresult (*GetNeedsHostCursor)(IMouse *pThis, PRBool *needsHostCursor);
 
     nsresult (*PutMouseEvent)(
         IMouse *pThis,
@@ -4273,20 +4483,22 @@ struct IFramebufferOverlay
 
 
 /* Start of struct IDisplay Declaration */
-#define IDISPLAY_IID_STR "e2a38ebc-d854-4a3e-bc2e-fdf5ac4a0000"
+#define IDISPLAY_IID_STR "1fa79e39-0cc9-4ab3-9df3-ed3e96b42496"
 #define IDISPLAY_IID { \
-    0xe2a38ebc, 0xd854, 0x4a3e, \
-    { 0xbc, 0x2e, 0xfd, 0xf5, 0xac, 0x4a, 0x00, 0x00 } \
+    0x1fa79e39, 0x0cc9, 0x4ab3, \
+    { 0x9d, 0xf3, 0xed, 0x3e, 0x96, 0xb4, 0x24, 0x96 } \
 }
 struct IDisplay_vtbl
 {
     struct nsISupports_vtbl nsisupports;
 
-    nsresult (*GetWidth)(IDisplay *pThis, PRUint32 *width);
-
-    nsresult (*GetHeight)(IDisplay *pThis, PRUint32 *height);
-
-    nsresult (*GetBitsPerPixel)(IDisplay *pThis, PRUint32 *bitsPerPixel);
+    nsresult (*GetScreenResolution)(
+        IDisplay *pThis,
+        PRUint32 screenId,
+        PRUint32 * width,
+        PRUint32 * height,
+        PRUint32 * bitsPerPixel
+    );
 
     nsresult (*SetFramebuffer)(
         IDisplay *pThis,
@@ -4317,13 +4529,15 @@ struct IDisplay_vtbl
 
     nsresult (*TakeScreenShot)(
         IDisplay *pThis,
+        PRUint32 screenId,
         PRUint8 * address,
         PRUint32 width,
         PRUint32 height
     );
 
-    nsresult (*TakeScreenShotSlow)(
+    nsresult (*TakeScreenShotToArray)(
         IDisplay *pThis,
+        PRUint32 screenId,
         PRUint32 width,
         PRUint32 height,
         PRUint32 *screenDataSize,
@@ -4332,6 +4546,7 @@ struct IDisplay_vtbl
 
     nsresult (*DrawToScreen)(
         IDisplay *pThis,
+        PRUint32 screenId,
         PRUint8 * address,
         PRUint32 x,
         PRUint32 y,
@@ -4345,8 +4560,6 @@ struct IDisplay_vtbl
         IDisplay *pThis,
         PRUint32 screenId
     );
-
-    nsresult (*UpdateCompleted)(IDisplay *pThis );
 
     nsresult (*CompleteVHWACommand)(
         IDisplay *pThis,
@@ -4363,10 +4576,10 @@ struct IDisplay
 
 
 /* Start of struct INetworkAdapter Declaration */
-#define INETWORKADAPTER_IID_STR "65607a27-2b73-4d43-b4cc-0ba2c817fbde"
+#define INETWORKADAPTER_IID_STR "5bdb9df8-a5e1-4322-a139-b7a4a734c790"
 #define INETWORKADAPTER_IID { \
-    0x65607a27, 0x2b73, 0x4d43, \
-    { 0xb4, 0xcc, 0x0b, 0xa2, 0xc8, 0x17, 0xfb, 0xde } \
+    0x5bdb9df8, 0xa5e1, 0x4322, \
+    { 0xa1, 0x39, 0xb7, 0xa4, 0xa7, 0x34, 0xc7, 0x90 } \
 }
 struct INetworkAdapter_vtbl
 {
@@ -4394,6 +4607,9 @@ struct INetworkAdapter_vtbl
     nsresult (*GetNATNetwork)(INetworkAdapter *pThis, PRUnichar * *NATNetwork);
     nsresult (*SetNATNetwork)(INetworkAdapter *pThis, PRUnichar * NATNetwork);
 
+    nsresult (*GetVDENetwork)(INetworkAdapter *pThis, PRUnichar * *VDENetwork);
+    nsresult (*SetVDENetwork)(INetworkAdapter *pThis, PRUnichar * VDENetwork);
+
     nsresult (*GetCableConnected)(INetworkAdapter *pThis, PRBool *cableConnected);
     nsresult (*SetCableConnected)(INetworkAdapter *pThis, PRBool cableConnected);
 
@@ -4406,6 +4622,11 @@ struct INetworkAdapter_vtbl
     nsresult (*GetTraceFile)(INetworkAdapter *pThis, PRUnichar * *traceFile);
     nsresult (*SetTraceFile)(INetworkAdapter *pThis, PRUnichar * traceFile);
 
+    nsresult (*GetNatDriver)(INetworkAdapter *pThis, INATEngine * *natDriver);
+
+    nsresult (*GetBootPriority)(INetworkAdapter *pThis, PRUint32 *bootPriority);
+    nsresult (*SetBootPriority)(INetworkAdapter *pThis, PRUint32 bootPriority);
+
     nsresult (*AttachToNAT)(INetworkAdapter *pThis );
 
     nsresult (*AttachToBridgedInterface)(INetworkAdapter *pThis );
@@ -4413,6 +4634,8 @@ struct INetworkAdapter_vtbl
     nsresult (*AttachToInternalNetwork)(INetworkAdapter *pThis );
 
     nsresult (*AttachToHostOnlyInterface)(INetworkAdapter *pThis );
+
+    nsresult (*AttachToVDE)(INetworkAdapter *pThis );
 
     nsresult (*Detach)(INetworkAdapter *pThis );
 
@@ -4567,10 +4790,10 @@ struct IMachineDebugger
 
 
 /* Start of struct IUSBController Declaration */
-#define IUSBCONTROLLER_IID_STR "238540fa-4b73-435a-a38e-4e1d9eab5c17"
+#define IUSBCONTROLLER_IID_STR "6fdcccc5-abd3-4fec-9387-2ad3914fc4a8"
 #define IUSBCONTROLLER_IID { \
-    0x238540fa, 0x4b73, 0x435a, \
-    { 0xa3, 0x8e, 0x4e, 0x1d, 0x9e, 0xab, 0x5c, 0x17 } \
+    0x6fdcccc5, 0xabd3, 0x4fec, \
+    { 0x93, 0x87, 0x2a, 0xd3, 0x91, 0x4f, 0xc4, 0xa8 } \
 }
 struct IUSBController_vtbl
 {
@@ -4581,6 +4804,8 @@ struct IUSBController_vtbl
 
     nsresult (*GetEnabledEhci)(IUSBController *pThis, PRBool *enabledEhci);
     nsresult (*SetEnabledEhci)(IUSBController *pThis, PRBool enabledEhci);
+
+    nsresult (*GetProxyAvailable)(IUSBController *pThis, PRBool *proxyAvailable);
 
     nsresult (*GetUSBStandard)(IUSBController *pThis, PRUint16 *USBStandard);
 
@@ -4780,10 +5005,10 @@ struct IAudioAdapter
 
 
 /* Start of struct IVRDPServer Declaration */
-#define IVRDPSERVER_IID_STR "72e671bc-1712-4052-ad6b-e45e76d9d3e4"
+#define IVRDPSERVER_IID_STR "7aeeb530-0b08-41fe-835d-9be9ec1dbe5c"
 #define IVRDPSERVER_IID { \
-    0x72e671bc, 0x1712, 0x4052, \
-    { 0xad, 0x6b, 0xe4, 0x5e, 0x76, 0xd9, 0xd3, 0xe4 } \
+    0x7aeeb530, 0x0b08, 0x41fe, \
+    { 0x83, 0x5d, 0x9b, 0xe9, 0xec, 0x1d, 0xbe, 0x5c } \
 }
 struct IVRDPServer_vtbl
 {
@@ -4809,6 +5034,12 @@ struct IVRDPServer_vtbl
 
     nsresult (*GetReuseSingleConnection)(IVRDPServer *pThis, PRBool *reuseSingleConnection);
     nsresult (*SetReuseSingleConnection)(IVRDPServer *pThis, PRBool reuseSingleConnection);
+
+    nsresult (*GetVideoChannel)(IVRDPServer *pThis, PRBool *videoChannel);
+    nsresult (*SetVideoChannel)(IVRDPServer *pThis, PRBool videoChannel);
+
+    nsresult (*GetVideoChannelQuality)(IVRDPServer *pThis, PRUint32 *videoChannelQuality);
+    nsresult (*SetVideoChannelQuality)(IVRDPServer *pThis, PRUint32 videoChannelQuality);
 
 };
 
@@ -4849,10 +5080,10 @@ struct ISharedFolder
 
 
 /* Start of struct IInternalSessionControl Declaration */
-#define IINTERNALSESSIONCONTROL_IID_STR "f9aac6d0-41b3-46b7-bea4-6370b4036de6"
+#define IINTERNALSESSIONCONTROL_IID_STR "ab161f72-e4b3-44e6-a919-2256474bda66"
 #define IINTERNALSESSIONCONTROL_IID { \
-    0xf9aac6d0, 0x41b3, 0x46b7, \
-    { 0xbe, 0xa4, 0x63, 0x70, 0xb4, 0x03, 0x6d, 0xe6 } \
+    0xab161f72, 0xe4b3, 0x44e6, \
+    { 0xa9, 0x19, 0x22, 0x56, 0x47, 0x4b, 0xda, 0x66 } \
 }
 struct IInternalSessionControl_vtbl
 {
@@ -4910,7 +5141,16 @@ struct IInternalSessionControl_vtbl
         PRBool force
     );
 
-    nsresult (*OnVRDPServerChange)(IInternalSessionControl *pThis );
+    nsresult (*OnCPUChange)(
+        IInternalSessionControl *pThis,
+        PRUint32 cpu,
+        PRBool add
+    );
+
+    nsresult (*OnVRDPServerChange)(
+        IInternalSessionControl *pThis,
+        PRBool restart
+    );
 
     nsresult (*OnUSBControllerChange)(IInternalSessionControl *pThis );
 
@@ -4963,6 +5203,20 @@ struct IInternalSessionControl_vtbl
         PRUnichar *** flags
     );
 
+    nsresult (*OnlineMergeMedium)(
+        IInternalSessionControl *pThis,
+        IMediumAttachment * mediumAttachment,
+        PRUint32 sourceIdx,
+        PRUint32 targetIdx,
+        IMedium * source,
+        IMedium * target,
+        PRBool mergeForward,
+        IMedium * parentForTarget,
+        PRUint32 childrenToReparentSize,
+        IMedium ** childrenToReparent,
+        IProgress * progress
+    );
+
 };
 
 struct IInternalSessionControl
@@ -5002,10 +5256,10 @@ struct ISession
 
 
 /* Start of struct IStorageController Declaration */
-#define ISTORAGECONTROLLER_IID_STR "6bf8335b-d14a-44a5-9b45-ddc49ce7d5b2"
+#define ISTORAGECONTROLLER_IID_STR "fd93adc0-bbaa-4256-9e6e-00e29f9151c9"
 #define ISTORAGECONTROLLER_IID { \
-    0x6bf8335b, 0xd14a, 0x44a5, \
-    { 0x9b, 0x45, 0xdd, 0xc4, 0x9c, 0xe7, 0xd5, 0xb2 } \
+    0xfd93adc0, 0xbbaa, 0x4256, \
+    { 0x9e, 0x6e, 0x00, 0xe2, 0x9f, 0x91, 0x51, 0xc9 } \
 }
 struct IStorageController_vtbl
 {
@@ -5029,6 +5283,9 @@ struct IStorageController_vtbl
 
     nsresult (*GetControllerType)(IStorageController *pThis, PRUint32 *controllerType);
     nsresult (*SetControllerType)(IStorageController *pThis, PRUint32 controllerType);
+
+    nsresult (*GetUseHostIOCache)(IStorageController *pThis, PRBool *useHostIOCache);
+    nsresult (*SetUseHostIOCache)(IStorageController *pThis, PRBool useHostIOCache);
 
     nsresult (*GetIDEEmulationPort)(
         IStorageController *pThis,
@@ -5171,6 +5428,87 @@ struct IPerformanceCollector
     struct IPerformanceCollector_vtbl *vtbl;
 };
 /* End of struct IPerformanceCollector Declaration */
+
+
+/* Start of struct INATEngine Declaration */
+#define INATENGINE_IID_STR "4b286616-eb03-11de-b0fb-1701eca42246"
+#define INATENGINE_IID { \
+    0x4b286616, 0xeb03, 0x11de, \
+    { 0xb0, 0xfb, 0x17, 0x01, 0xec, 0xa4, 0x22, 0x46 } \
+}
+struct INATEngine_vtbl
+{
+    struct nsISupports_vtbl nsisupports;
+
+    nsresult (*GetNetwork)(INATEngine *pThis, PRUnichar * *network);
+    nsresult (*SetNetwork)(INATEngine *pThis, PRUnichar * network);
+
+    nsresult (*GetHostIP)(INATEngine *pThis, PRUnichar * *hostIP);
+    nsresult (*SetHostIP)(INATEngine *pThis, PRUnichar * hostIP);
+
+    nsresult (*GetTftpPrefix)(INATEngine *pThis, PRUnichar * *tftpPrefix);
+    nsresult (*SetTftpPrefix)(INATEngine *pThis, PRUnichar * tftpPrefix);
+
+    nsresult (*GetTftpBootFile)(INATEngine *pThis, PRUnichar * *tftpBootFile);
+    nsresult (*SetTftpBootFile)(INATEngine *pThis, PRUnichar * tftpBootFile);
+
+    nsresult (*GetTftpNextServer)(INATEngine *pThis, PRUnichar * *tftpNextServer);
+    nsresult (*SetTftpNextServer)(INATEngine *pThis, PRUnichar * tftpNextServer);
+
+    nsresult (*GetAliasMode)(INATEngine *pThis, PRUint32 *aliasMode);
+    nsresult (*SetAliasMode)(INATEngine *pThis, PRUint32 aliasMode);
+
+    nsresult (*GetDnsPassDomain)(INATEngine *pThis, PRBool *dnsPassDomain);
+    nsresult (*SetDnsPassDomain)(INATEngine *pThis, PRBool dnsPassDomain);
+
+    nsresult (*GetDnsProxy)(INATEngine *pThis, PRBool *dnsProxy);
+    nsresult (*SetDnsProxy)(INATEngine *pThis, PRBool dnsProxy);
+
+    nsresult (*GetDnsUseHostResolver)(INATEngine *pThis, PRBool *dnsUseHostResolver);
+    nsresult (*SetDnsUseHostResolver)(INATEngine *pThis, PRBool dnsUseHostResolver);
+
+    nsresult (*GetRedirects)(INATEngine *pThis, PRUint32 *redirectsSize, PRUnichar * **redirects);
+
+    nsresult (*SetNetworkSettings)(
+        INATEngine *pThis,
+        PRUint32 mtu,
+        PRUint32 sockSnd,
+        PRUint32 sockRcv,
+        PRUint32 TcpWndSnd,
+        PRUint32 TcpWndRcv
+    );
+
+    nsresult (*GetNetworkSettings)(
+        INATEngine *pThis,
+        PRUint32 * mtu,
+        PRUint32 * sockSnd,
+        PRUint32 * sockRcv,
+        PRUint32 * TcpWndSnd,
+        PRUint32 * TcpWndRcv
+    );
+
+    nsresult (*AddRedirect)(
+        INATEngine *pThis,
+        PRUnichar * name,
+        PRUint32 proto,
+        PRUnichar * hostIp,
+        PRUint16 hostPort,
+        PRUnichar * guestIp,
+        PRUint16 guestPort
+    );
+
+    nsresult (*RemoveRedirect)(
+        INATEngine *pThis,
+        PRUnichar * name
+    );
+
+};
+
+struct INATEngine
+{
+    struct INATEngine_vtbl *vtbl;
+};
+/* End of struct INATEngine Declaration */
 
 
 
