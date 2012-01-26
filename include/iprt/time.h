@@ -53,10 +53,6 @@ typedef struct RTTIMESPEC
      * using inline helpers! */
     int64_t     i64NanosecondsRelativeToUnixEpoch;
 } RTTIMESPEC;
-/** Pointer to a time spec structure. */
-typedef RTTIMESPEC *PRTTIMESPEC;
-/** Pointer to a const time spec structure. */
-typedef const RTTIMESPEC *PCRTTIMESPEC;
 
 
 /** @name RTTIMESPEC methods

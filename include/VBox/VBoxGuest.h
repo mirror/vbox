@@ -182,8 +182,12 @@ typedef const VBGLBIGREQ *PCVBGLBIGREQ;
 # define VBOXGUEST_IOCTL_CODE_FAST_(Function)       _IO(  'V', (Function))
 # define VBOXGUEST_IOCTL_STRIP_SIZE(Code)           IOCBASECMD(Code)
 
-#else
-/* PORTME */
+#else /* BSD Like */
+  /* Automatic buffering, size limited to 4KB on *BSD and 8KB on Darwin - commands the limit, 4KB. */
+# include <sys/ioccom.h>
+# define VBOXGUEST_IOCTL_CODE_(Function, Size)      _IOC(IOC_INOUT, 'V', (Function) | VBOXGUEST_IOCTL_FLAG, (Size))
+# define VBOXGUEST_IOCTL_CODE_FAST_(Function)       _IO('V', (Function) | VBOXGUEST_IOCTL_FLAG)
+# define VBOXGUEST_IOCTL_STRIP_SIZE(uIOCtl)         ( (uIOCtl) & ~_IOC(0,0,0,IOCPARM_MASK) )
 #endif
 
 #define VBOXGUEST_IOCTL_CODE(Function, Size)        VBOXGUEST_IOCTL_CODE_((Function) | VBOXGUEST_IOCTL_FLAG, Size)

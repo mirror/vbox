@@ -86,12 +86,14 @@
            && RT_LOWORD(additionsVersion) >  RT_LOWORD(VMMDEV_VERSION) ) )
 
 /** The saved state version. */
-#define VMMDEV_SAVED_STATE_VERSION                          14
+#define VMMDEV_SAVED_STATE_VERSION                              15
+/** The saved state version which is missing the guest facility statuses. */
+#define VMMDEV_SAVED_STATE_VERSION_MISSING_FACILITY_STATUSES    14
 /** The saved state version which is missing the guestInfo2 bits. */
-#define VMMDEV_SAVED_STATE_VERSION_MISSING_GUEST_INFO_2     13
+#define VMMDEV_SAVED_STATE_VERSION_MISSING_GUEST_INFO_2         13
 /** The saved state version used by VirtualBox 3.0.
  *  This doesn't have the config part. */
-#define VMMDEV_SAVED_STATE_VERSION_VBOX_30                  11
+#define VMMDEV_SAVED_STATE_VERSION_VBOX_30                      11
 
 
 #ifndef VBOX_DEVICE_STRUCT_TESTCASE
@@ -536,6 +538,154 @@ static int vmmdevReqHandler_ReportGuestInfo2(VMMDevState *pThis, VMMDevRequestHe
 }
 
 /**
+ * Allocates a new facility status entry, initializing it to inactive.
+ *
+ * @returns Pointer to a facility status entry on success, NULL on failure
+ *          (table full).
+ * @param   pThis           The VMMDev instance data.
+ * @param   uFacility       The facility type code - VBoxGuestFacilityType.
+ * @param   fFixed          This is set when allocating the standard entries
+ *                          from the constructor.
+ * @param   pTimeSpecNow    Optionally giving the entry timestamp to use (ctor).
+ */
+static PVMMDEVFACILITYSTATUSENTRY
+vmmdevAllocFacilityStatusEntry(VMMDevState *pThis, uint32_t uFacility, bool fFixed, PCRTTIMESPEC pTimeSpecNow)
+{
+    /* If full, expunge one inactive entry. */
+    if (pThis->cFacilityStatuses == RT_ELEMENTS(pThis->aFacilityStatuses))
+    {
+        uint32_t i = pThis->cFacilityStatuses;
+        while (i-- > 0)
+        {
+            if (   pThis->aFacilityStatuses[i].uStatus == VBoxGuestFacilityStatus_Inactive
+                && !pThis->aFacilityStatuses[i].fFixed)
+            {
+                pThis->cFacilityStatuses--;
+                int cToMove = pThis->cFacilityStatuses - i;
+                if (cToMove)
+                    memmove(&pThis->aFacilityStatuses[i], &pThis->aFacilityStatuses[i + 1],
+                            cToMove * sizeof(pThis->aFacilityStatuses[i]));
+                RT_ZERO(pThis->aFacilityStatuses[pThis->cFacilityStatuses]);
+                break;
+            }
+        }
+
+        if (pThis->cFacilityStatuses == RT_ELEMENTS(pThis->aFacilityStatuses))
+            return NULL;
+    }
+
+    /* Find location in array (it's sorted). */
+    uint32_t i = pThis->cFacilityStatuses;
+    while (i-- > 0)
+        if (pThis->aFacilityStatuses[i].uFacility < uFacility)
+            break;
+    i++;
+
+    /* Move. */
+    int cToMove = pThis->cFacilityStatuses - i;
+    if (cToMove > 0)
+        memmove(&pThis->aFacilityStatuses[i + 1], &pThis->aFacilityStatuses[i],
+                cToMove * sizeof(pThis->aFacilityStatuses[i]));
+    pThis->cFacilityStatuses++;
+
+    /* Initialize. */
+    pThis->aFacilityStatuses[i].uFacility   = uFacility;
+    pThis->aFacilityStatuses[i].uStatus     = VBoxGuestFacilityStatus_Inactive;
+    pThis->aFacilityStatuses[i].fFixed      = fFixed;
+    pThis->aFacilityStatuses[i].fPadding    = 0;
+    pThis->aFacilityStatuses[i].fFlags      = 0;
+    pThis->aFacilityStatuses[i].uPadding    = 0;
+    if (pTimeSpecNow)
+        pThis->aFacilityStatuses[i].TimeSpecTS = *pTimeSpecNow;
+    else
+        RTTimeSpecSetNano(&pThis->aFacilityStatuses[i].TimeSpecTS, 0);
+
+    return &pThis->aFacilityStatuses[i];
+
+}
+
+/**
+ * Gets a facility status entry, allocating a new one if not already present.
+ *
+ * @returns Pointer to a facility status entry on success, NULL on failure
+ *          (table full).
+ * @param   pThis           The VMMDev instance data.
+ * @param   uFacility       The facility type code - VBoxGuestFacilityType.
+ */
+static PVMMDEVFACILITYSTATUSENTRY vmmdevGetFacilityStatusEntry(VMMDevState *pThis, uint32_t uFacility)
+{
+    /** @todo change to binary search. */
+    uint32_t i = pThis->cFacilityStatuses;
+    while (i-- > 0)
+    {
+        if (pThis->aFacilityStatuses[i].uFacility == uFacility)
+            return &pThis->aFacilityStatuses[i];
+        if (pThis->aFacilityStatuses[i].uFacility < uFacility)
+            break;
+    }
+    return vmmdevAllocFacilityStatusEntry(pThis, uFacility, false /*fFixed*/, NULL);
+}
+
+/**
+ * Handles VMMDevReq_ReportGuestStatus.
+ *
+ * @returns VBox status code that the guest should see.
+ * @param   pThis           The VMMDev instance data.
+ * @param   pRequestHeader  The header of the request to handle.
+ */
+static int vmmdevReqHandler_ReportGuestStatus(VMMDevState *pThis, VMMDevRequestHeader *pRequestHeader)
+{
+    /*
+     * Validate input.
+     */
+    AssertMsgReturn(pRequestHeader->size == sizeof(VMMDevReportGuestStatus), ("%u\n", pRequestHeader->size), VERR_INVALID_PARAMETER);
+    VBoxGuestStatus *pStatus = &((VMMDevReportGuestStatus *)pRequestHeader)->guestStatus;
+    AssertMsgReturn(   pStatus->facility > VBoxGuestFacilityType_Unknown
+                    && pStatus->facility <= VBoxGuestFacilityType_All,
+                    ("%d\n", pStatus->facility),
+                    VERR_INVALID_PARAMETER);
+    AssertMsgReturn(pStatus->status == (VBoxGuestFacilityStatus)(uint16_t)pStatus->status,
+                    ("%#x (%u)\n", pStatus->status, pStatus->status),
+                    VERR_OUT_OF_RANGE);
+
+    /*
+     * Do the update.
+     */
+    RTTIMESPEC Now;
+    RTTimeNow(&Now);
+    if (pStatus->facility == VBoxGuestFacilityType_All)
+    {
+        uint32_t i = pThis->cFacilityStatuses;
+        while (i-- > 0)
+        {
+            pThis->aFacilityStatuses[i].TimeSpecTS = Now;
+            pThis->aFacilityStatuses[i].uStatus    = (uint16_t)pStatus->status;
+            pThis->aFacilityStatuses[i].fFlags     = pStatus->flags;
+        }
+    }
+    else
+    {
+        PVMMDEVFACILITYSTATUSENTRY pEntry = vmmdevGetFacilityStatusEntry(pThis, pStatus->facility);
+        if (!pEntry)
+        {
+            static int g_cLogEntries = 0;
+            if (g_cLogEntries++ < 10)
+                LogRel(("VMM: Facility table is full - facility=%u status=%u.\n", pStatus->facility, pStatus->status));
+            return VERR_OUT_OF_RESOURCES;
+        }
+
+        pEntry->TimeSpecTS = Now;
+        pEntry->uStatus    = (uint16_t)pStatus->status;
+        pEntry->fFlags     = pStatus->flags;
+    }
+
+    if (pThis->pDrv)
+        pThis->pDrv->pfnUpdateGuestStatus(pThis->pDrv, pStatus->facility, pStatus->status, pStatus->flags, &Now);
+
+    return VINF_SUCCESS;
+}
+
+/**
  * Port I/O Handler for the generic request interface
  * @see FNIOMIOPORTOUT for details.
  *
@@ -726,23 +876,8 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
         }
 
         case VMMDevReq_ReportGuestStatus:
-        {
-            if (pRequestHeader->size != sizeof(VMMDevReportGuestStatus))
-            {
-                AssertMsgFailed(("VMMDev guest status structure has an invalid size!\n"));
-                pRequestHeader->rc = VERR_INVALID_PARAMETER;
-            }
-            else
-            {
-                /** @todo r=bird: VMMDev (or GuestImpl.cpp) needs to remember this stuff and
-                 *        tell Main after a state restore! */
-                VBoxGuestStatus *guestStatus = &((VMMDevReportGuestStatus*)pRequestHeader)->guestStatus;
-                pThis->pDrv->pfnUpdateGuestStatus(pThis->pDrv, guestStatus);
-
-                pRequestHeader->rc = VINF_SUCCESS;
-            }
+            pRequestHeader->rc = vmmdevReqHandler_ReportGuestStatus(pThis, pRequestHeader);
             break;
-        }
 
         /* Report guest capabilities */
         case VMMDevReq_ReportGuestCapabilities:
@@ -2718,6 +2853,14 @@ static DECLCALLBACK(int) vmmdevSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
     SSMR3PutU32(pSSM, pThis->guestInfo2.uRevision);
     SSMR3PutU32(pSSM, pThis->guestInfo2.fFeatures);
     SSMR3PutStrZ(pSSM, pThis->guestInfo2.szName);
+    SSMR3PutU32(pSSM, pThis->cFacilityStatuses);
+    for (uint32_t i = 0; i < pThis->cFacilityStatuses; i++)
+    {
+        SSMR3PutU32(pSSM, pThis->aFacilityStatuses[i].uFacility);
+        SSMR3PutU32(pSSM, pThis->aFacilityStatuses[i].fFlags);
+        SSMR3PutU16(pSSM, pThis->aFacilityStatuses[i].uStatus);
+        SSMR3PutS64(pSSM, RTTimeSpecGetNano(&pThis->aFacilityStatuses[i].TimeSpecTS));
+    }
 
     return VINF_SUCCESS;
 }
@@ -2811,6 +2954,35 @@ static DECLCALLBACK(int) vmmdevLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uin
         AssertRCReturn(rc, rc);
     }
 
+    if (uVersion > VMMDEV_SAVED_STATE_VERSION_MISSING_FACILITY_STATUSES)
+    {
+        uint32_t cFacilityStatuses;
+        rc = SSMR3GetU32(pSSM, &cFacilityStatuses);
+        AssertRCReturn(rc, rc);
+
+        for (uint32_t i = 0; i < cFacilityStatuses; i++)
+        {
+            uint32_t uFacility, fFlags;
+            uint16_t uStatus;
+            int64_t  iTimeStampNano;
+
+            SSMR3GetU32(pSSM, &uFacility);
+            SSMR3GetU32(pSSM, &fFlags);
+            SSMR3GetU16(pSSM, &uStatus);
+            rc = SSMR3GetS64(pSSM, &iTimeStampNano);
+            AssertRCReturn(rc, rc);
+
+            PVMMDEVFACILITYSTATUSENTRY pEntry = vmmdevGetFacilityStatusEntry(pThis, uFacility);
+            AssertLogRelMsgReturn(pEntry,
+                                  ("VMMDev: Ran out of entries restoring the guest facility statuses. Saved state has %u.\n", cFacilityStatuses),
+                                  VERR_OUT_OF_RESOURCES);
+            pEntry->uStatus = uStatus;
+            pEntry->fFlags  = fFlags;
+            RTTimeSpecSetNano(&pEntry->TimeSpecTS, iTimeStampNano);
+        }
+    }
+
+
     /*
      * On a resume, we send the capabilities changed message so
      * that listeners can sync their state again
@@ -2847,6 +3019,15 @@ static DECLCALLBACK(int) vmmdevLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uin
                                                  pThis->guestInfo2.uRevision, pThis->guestInfo2.fFeatures);
             pThis->pDrv->pfnUpdateGuestInfo(pThis->pDrv, &pThis->guestInfo);
         }
+
+        for (uint32_t i = 0; i < pThis->cFacilityStatuses; i++) /* ascending order! */
+            if (   pThis->aFacilityStatuses[i].uStatus != VBoxGuestFacilityStatus_Inactive
+                || !pThis->aFacilityStatuses[i].fFixed)
+                pThis->pDrv->pfnUpdateGuestStatus(pThis->pDrv,
+                                                  pThis->aFacilityStatuses[i].uFacility,
+                                                  pThis->aFacilityStatuses[i].uStatus,
+                                                  pThis->aFacilityStatuses[i].fFlags,
+                                                  &pThis->aFacilityStatuses[i].TimeSpecTS);
     }
     if (pThis->pDrv)
         pThis->pDrv->pfnUpdateGuestCapabilities(pThis->pDrv, pThis->guestCaps);
@@ -2937,6 +3118,18 @@ static DECLCALLBACK(void) vmmdevReset(PPDMDEVINS pDevIns)
              pThis->fu32AdditionsOk, pThis->guestInfo.interfaceVersion, pThis->guestInfo.osType));
     pThis->fu32AdditionsOk = false;
     memset (&pThis->guestInfo, 0, sizeof (pThis->guestInfo));
+    RT_ZERO(pThis->guestInfo2);
+
+    /* Clear facilities. No need to tell Main as it will get a
+       pfnUpdateGuestInfo callback. */
+    RTTIMESPEC TimeStampNow;
+    RTTimeNow(&TimeStampNow);
+    uint32_t iFacility = pThis->cFacilityStatuses;
+    while (iFacility-- > 0)
+    {
+        pThis->aFacilityStatuses[iFacility].uStatus    = VBoxGuestFacilityStatus_Inactive;
+        pThis->aFacilityStatuses[iFacility].TimeSpecTS = TimeStampNow;
+    }
 
     /* clear pending display change request. */
     for (unsigned i = 0; i < RT_ELEMENTS(pThis->displayChangeData.aRequests); i++)
@@ -3055,6 +3248,15 @@ static DECLCALLBACK(int) vmmdevConstruct(PPDMDEVINS pDevIns, int iInstance, PCFG
     PCIDevSetHeaderType(&pThis->dev, 0x00);
     /* interrupt on pin 0 */
     PCIDevSetInterruptPin(&pThis->dev, 0x01);
+
+    RTTIMESPEC TimeStampNow;
+    RTTimeNow(&TimeStampNow);
+    vmmdevAllocFacilityStatusEntry(pThis, VBoxGuestFacilityType_VBoxGuestDriver, true /*fFixed*/, &TimeStampNow);
+    vmmdevAllocFacilityStatusEntry(pThis, VBoxGuestFacilityType_VBoxService,     true /*fFixed*/, &TimeStampNow);
+    vmmdevAllocFacilityStatusEntry(pThis, VBoxGuestFacilityType_VBoxTrayClient,  true /*fFixed*/, &TimeStampNow);
+    vmmdevAllocFacilityStatusEntry(pThis, VBoxGuestFacilityType_Seamless,        true /*fFixed*/, &TimeStampNow);
+    vmmdevAllocFacilityStatusEntry(pThis, VBoxGuestFacilityType_Graphics,        true /*fFixed*/, &TimeStampNow);
+    Assert(pThis->cFacilityStatuses == 5);
 
     /*
      * Interfaces

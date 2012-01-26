@@ -1412,6 +1412,156 @@ static int VBoxGuestCommonIOCtl_CancelAllWaitEvents(PVBOXGUESTDEVEXT pDevExt, PV
     return VINF_SUCCESS;
 }
 
+/**
+ * Checks if the VMM request is allowed in the context of the given session.
+ *
+ * @returns VINF_SUCCESS or VERR_PERMISSION_DENIED.
+ * @param   pSession            The calling session.
+ * @param   enmType             The request type.
+ * @param   pReqHdr             The request.
+ */
+static int VBoxGuestCheckIfVMMReqAllowed(PVBOXGUESTSESSION pSession, VMMDevRequestType enmType,
+                                         VMMDevRequestHeader const *pReqHdr)
+{
+    /*
+     * Categorize the request being made.
+     */
+    /** @todo This need quite some more work! */
+    enum
+    {
+        kLevel_Invalid, kLevel_NoOne, kLevel_OnlyVBoxGuest, kLevel_OnlyKernel, kLevel_TrustedUsers, kLevel_AllUsers
+    } enmRequired;
+    switch (enmType)
+    {
+        /*
+         * Deny access to anything we don't know or provide specialized I/O controls for.
+         */
+#ifdef VBOX_WITH_HGCM
+        case VMMDevReq_HGCMConnect:
+        case VMMDevReq_HGCMDisconnect:
+# ifdef VBOX_WITH_64_BITS_GUESTS
+        case VMMDevReq_HGCMCall32:
+        case VMMDevReq_HGCMCall64:
+# else
+        case VMMDevReq_HGCMCall:
+# endif /* VBOX_WITH_64_BITS_GUESTS */
+        case VMMDevReq_HGCMCancel:
+        case VMMDevReq_HGCMCancel2:
+#endif /* VBOX_WITH_HGCM */
+        default:
+            enmRequired = kLevel_NoOne;
+            break;
+
+        /*
+         * There are a few things only this driver can do (and it doesn't use
+         * the VMMRequst I/O control route anyway, but whatever).
+         */
+        case VMMDevReq_ReportGuestInfo:
+        case VMMDevReq_ReportGuestInfo2:
+        case VMMDevReq_GetHypervisorInfo:
+        case VMMDevReq_SetHypervisorInfo:
+        case VMMDevReq_RegisterPatchMemory:
+        case VMMDevReq_DeregisterPatchMemory:
+        case VMMDevReq_GetMemBalloonChangeRequest:
+            enmRequired = kLevel_OnlyVBoxGuest;
+            break;
+
+        /*
+         * Trusted users apps only.
+         */
+        case VMMDevReq_QueryCredentials:
+        case VMMDevReq_ReportCredentialsJudgement:
+        case VMMDevReq_RegisterSharedModule:
+        case VMMDevReq_UnregisterSharedModule:
+        case VMMDevReq_WriteCoreDump:
+        case VMMDevReq_GetCpuHotPlugRequest:
+        case VMMDevReq_SetCpuHotPlugStatus:
+        case VMMDevReq_CheckSharedModules:
+        case VMMDevReq_GetPageSharingStatus:
+        case VMMDevReq_DebugIsPageShared:
+        case VMMDevReq_ReportGuestStats:
+        case VMMDevReq_GetStatisticsChangeRequest:
+        case VMMDevReq_ChangeMemBalloon:
+            enmRequired = kLevel_TrustedUsers;
+            break;
+
+        /*
+         * Anyone.
+         */
+        case VMMDevReq_GetMouseStatus:
+        case VMMDevReq_SetMouseStatus:
+        case VMMDevReq_SetPointerShape:
+        case VMMDevReq_GetHostVersion:
+        case VMMDevReq_Idle:
+        case VMMDevReq_GetHostTime:
+        case VMMDevReq_SetPowerStatus:
+        case VMMDevReq_AcknowledgeEvents:
+        case VMMDevReq_CtlGuestFilterMask:
+        case VMMDevReq_ReportGuestStatus:
+        case VMMDevReq_GetDisplayChangeRequest:
+        case VMMDevReq_VideoModeSupported:
+        case VMMDevReq_GetHeightReduction:
+        case VMMDevReq_GetDisplayChangeRequest2:
+        case VMMDevReq_SetGuestCapabilities:
+        case VMMDevReq_VideoModeSupported2:
+        case VMMDevReq_VideoAccelEnable:
+        case VMMDevReq_VideoAccelFlush:
+        case VMMDevReq_VideoSetVisibleRegion:
+        case VMMDevReq_GetSeamlessChangeRequest:
+        case VMMDevReq_GetVRDPChangeRequest:
+        case VMMDevReq_LogString:
+        case VMMDevReq_GetSessionId:
+            enmRequired = kLevel_AllUsers;
+            break;
+
+        /*
+         * Depends on the request parameters...
+         */
+        /** @todo this have to be changed into an I/O control and the facilities
+         *        tracked in the session so they can automatically be failed when the
+         *        session terminates without reporting the new status.
+         *
+         *  The information presented by IGuest is not reliable without this! */
+        case VMMDevReq_ReportGuestCapabilities:
+            switch (((VMMDevReportGuestStatus const *)pReqHdr)->guestStatus.facility)
+            {
+                case VBoxGuestFacilityType_All:
+                case VBoxGuestFacilityType_VBoxGuestDriver:
+                    enmRequired = kLevel_OnlyVBoxGuest;
+                    break;
+                case VBoxGuestFacilityType_VBoxService:
+                    enmRequired = kLevel_TrustedUsers;
+                    break;
+                case VBoxGuestFacilityType_VBoxTrayClient:
+                case VBoxGuestFacilityType_Seamless:
+                case VBoxGuestFacilityType_Graphics:
+                default:
+                    enmRequired = kLevel_AllUsers;
+                    break;
+            }
+            break;
+    }
+
+    /*
+     * Check against the session.
+     */
+    switch (enmRequired)
+    {
+        default:
+        case kLevel_NoOne:
+            break;
+        case kLevel_OnlyVBoxGuest:
+        case kLevel_OnlyKernel:
+            if (pSession->R0Process == NIL_RTR0PROCESS)
+                return VINF_SUCCESS;
+            break;
+        case kLevel_TrustedUsers:
+        case kLevel_AllUsers:
+            return VINF_SUCCESS;
+    }
+
+    return VERR_PERMISSION_DENIED;
+}
 
 static int VBoxGuestCommonIOCtl_VMMRequest(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTSESSION pSession,
                                            VMMDevRequestHeader *pReqHdr, size_t cbData, size_t *pcbDataReturned)
@@ -1445,6 +1595,13 @@ static int VBoxGuestCommonIOCtl_VMMRequest(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTS
     {
         Log(("VBoxGuestCommonIOCtl: VMMREQUEST: invalid header: size %#x, expected >= %#x (hdr); type=%#x; rc=%Rrc!!\n",
              cbData, cbReq, enmType, rc));
+        return rc;
+    }
+
+    rc = VBoxGuestCheckIfVMMReqAllowed(pSession, enmType, pReqHdr);
+    if (RT_FAILURE(rc))
+    {
+        Log(("VBoxGuestCommonIOCtl: VMMREQUEST: Operation not allowed! type=%#x rc=%Rrc\n", enmType, rc));
         return rc;
     }
 
