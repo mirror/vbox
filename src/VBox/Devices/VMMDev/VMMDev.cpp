@@ -532,7 +532,8 @@ static int vmmdevReqHandler_ReportGuestInfo2(VMMDevState *pThis, VMMDevRequestHe
     pThis->guestInfo2.fFeatures     = pInfo2->additionsFeatures;
     strcpy(pThis->guestInfo2.szName, pszName);
 
-    pThis->pDrv->pfnUpdateGuestInfo2(pThis->pDrv, uFullVersion, pszName, pInfo2->additionsRevision, pInfo2->additionsFeatures);
+    if (pThis->pDrv && pThis->pDrv->pfnUpdateGuestInfo2)
+        pThis->pDrv->pfnUpdateGuestInfo2(pThis->pDrv, uFullVersion, pszName, pInfo2->additionsRevision, pInfo2->additionsFeatures);
 
     return VINF_SUCCESS;
 }
@@ -679,7 +680,7 @@ static int vmmdevReqHandler_ReportGuestStatus(VMMDevState *pThis, VMMDevRequestH
         pEntry->fFlags     = pStatus->flags;
     }
 
-    if (pThis->pDrv)
+    if (pThis->pDrv && pThis->pDrv->pfnUpdateGuestStatus)
         pThis->pDrv->pfnUpdateGuestStatus(pThis->pDrv, pStatus->facility, pStatus->status, pStatus->flags, &Now);
 
     return VINF_SUCCESS;
@@ -807,7 +808,8 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
                 LogRel(("Guest Additions information report: Interface = 0x%08X osType = 0x%08X\n",
                         pThis->guestInfo.interfaceVersion,
                         pThis->guestInfo.osType));
-                pThis->pDrv->pfnUpdateGuestInfo(pThis->pDrv, &pThis->guestInfo);
+                if (pThis->pDrv && pThis->pDrv->pfnUpdateGuestInfo)
+                    pThis->pDrv->pfnUpdateGuestInfo(pThis->pDrv, &pThis->guestInfo);
             }
 
             if (pThis->fu32AdditionsOk)
@@ -909,7 +911,8 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
                             guestCaps->caps & VMMDEV_GUEST_SUPPORTS_GUEST_HOST_WINDOW_MAPPING ? "yes" : "no",
                             guestCaps->caps & VMMDEV_GUEST_SUPPORTS_GRAPHICS ? "yes" : "no"));
 
-                    pThis->pDrv->pfnUpdateGuestCapabilities(pThis->pDrv, guestCaps->caps);
+                    if (pThis->pDrv && pThis->pDrv->pfnUpdateGuestCapabilities)
+                        pThis->pDrv->pfnUpdateGuestCapabilities(pThis->pDrv, guestCaps->caps);
                 }
                 pRequestHeader->rc = VINF_SUCCESS;
             }
@@ -940,7 +943,8 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
                         pThis->guestCaps & VMMDEV_GUEST_SUPPORTS_GUEST_HOST_WINDOW_MAPPING ? "yes" : "no",
                         pThis->guestCaps & VMMDEV_GUEST_SUPPORTS_GRAPHICS ? "yes" : "no"));
 
-                pThis->pDrv->pfnUpdateGuestCapabilities(pThis->pDrv, pThis->guestCaps);
+                if (pThis->pDrv && pThis->pDrv->pfnUpdateGuestCapabilities)
+                    pThis->pDrv->pfnUpdateGuestCapabilities(pThis->pDrv, pThis->guestCaps);
                 pRequestHeader->rc = VINF_SUCCESS;
             }
             break;
@@ -3014,22 +3018,26 @@ static DECLCALLBACK(int) vmmdevLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uin
                 pThis->guestInfo.osType));
         if (pThis->pDrv)
         {
-            if (pThis->guestInfo2.uFullVersion)
+            if (pThis->guestInfo2.uFullVersion && pThis->pDrv->pfnUpdateGuestInfo2)
                 pThis->pDrv->pfnUpdateGuestInfo2(pThis->pDrv, pThis->guestInfo2.uFullVersion, pThis->guestInfo2.szName,
                                                  pThis->guestInfo2.uRevision, pThis->guestInfo2.fFeatures);
-            pThis->pDrv->pfnUpdateGuestInfo(pThis->pDrv, &pThis->guestInfo);
-        }
+            if (pThis->pDrv->pfnUpdateGuestInfo)
+                pThis->pDrv->pfnUpdateGuestInfo(pThis->pDrv, &pThis->guestInfo);
 
-        for (uint32_t i = 0; i < pThis->cFacilityStatuses; i++) /* ascending order! */
-            if (   pThis->aFacilityStatuses[i].uStatus != VBoxGuestFacilityStatus_Inactive
-                || !pThis->aFacilityStatuses[i].fFixed)
-                pThis->pDrv->pfnUpdateGuestStatus(pThis->pDrv,
-                                                  pThis->aFacilityStatuses[i].uFacility,
-                                                  pThis->aFacilityStatuses[i].uStatus,
-                                                  pThis->aFacilityStatuses[i].fFlags,
-                                                  &pThis->aFacilityStatuses[i].TimeSpecTS);
+            if (pThis->pDrv->pfnUpdateGuestStatus)
+            {
+                for (uint32_t i = 0; i < pThis->cFacilityStatuses; i++) /* ascending order! */
+                    if (   pThis->aFacilityStatuses[i].uStatus != VBoxGuestFacilityStatus_Inactive
+                        || !pThis->aFacilityStatuses[i].fFixed)
+                        pThis->pDrv->pfnUpdateGuestStatus(pThis->pDrv,
+                                                          pThis->aFacilityStatuses[i].uFacility,
+                                                          pThis->aFacilityStatuses[i].uStatus,
+                                                          pThis->aFacilityStatuses[i].fFlags,
+                                                          &pThis->aFacilityStatuses[i].TimeSpecTS);
+            }
+        }
     }
-    if (pThis->pDrv)
+    if (pThis->pDrv && pThis->pDrv->pfnUpdateGuestCapabilities)
         pThis->pDrv->pfnUpdateGuestCapabilities(pThis->pDrv, pThis->guestCaps);
 
     return VINF_SUCCESS;
@@ -3175,9 +3183,9 @@ static DECLCALLBACK(void) vmmdevReset(PPDMDEVINS pDevIns)
     /*
      * Call the update functions as required.
      */
-    if (fVersionChanged)
+    if (fVersionChanged && pThis->pDrv && pThis->pDrv->pfnUpdateGuestInfo)
         pThis->pDrv->pfnUpdateGuestInfo(pThis->pDrv, &pThis->guestInfo);
-    if (fCapsChanged)
+    if (fCapsChanged    && pThis->pDrv && pThis->pDrv->pfnUpdateGuestCapabilities)
         pThis->pDrv->pfnUpdateGuestCapabilities(pThis->pDrv, pThis->guestCaps);
 
     /* Generate a unique session id for this VM; it will be changed for each start, reset or restore.
