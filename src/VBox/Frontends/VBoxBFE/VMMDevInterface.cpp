@@ -104,14 +104,10 @@ PPDMIVMMDEVPORT VMMDev::getVMMDevPort()
 
 
 /**
- * Reports Guest Additions status.
- * Called whenever the Additions issue a guest status report request or the VM is reset.
- *
- * @param   pInterface          Pointer to this interface.
- * @param   guestInfo           Pointer to guest information structure
- * @thread  The emulation thread.
+ * @interface_method_impl{PDMIVMMDEVCONNECTOR,pfnUpdateGuestStatus}
  */
-DECLCALLBACK(void) VMMDev::UpdateGuestStatus(PPDMIVMMDEVCONNECTOR pInterface, const VBoxGuestStatus *guestStatus)
+DECLCALLBACK(void) VMMDev::UpdateGuestStatus(PPDMIVMMDEVCONNECTOR pInterface, PPDMIVMMDEVCONNECTOR pInterface, uint32_t uFacility, uint16_t uStatus,
+                                             uint32_t fFlags, PCRTTIMESPEC pTimeSpecTS)
 {
     return;
 }
