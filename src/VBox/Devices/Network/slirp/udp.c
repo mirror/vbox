@@ -178,6 +178,7 @@ udp_input(PNATState pData, register struct mbuf *m, int iphlen)
         goto done_free_mbuf;
     }
 
+    LogFunc(("uh src: %RTnaipv4:%d, dst: %RTnaipv4:%d\n", ip->ip_src, RT_H2N_U16_C(uh->uh_sport), ip->ip_dst, RT_H2N_U16_C(uh->uh_dport)));
     if (   pData->fUseHostResolver
         && uh->uh_dport == RT_H2N_U16_C(53)
         && CTL_CHECK(RT_N2H_U32(ip->ip_dst.s_addr), CTL_DNS))
@@ -244,7 +245,7 @@ udp_input(PNATState pData, register struct mbuf *m, int iphlen)
             Log2(("NAT: IP(id: %hd) failed to create socket\n", ip->ip_id));
             goto bad_free_mbuf;
         }
-        if (udp_attach(pData, so, 0) <= 0)
+        if (udp_attach(pData, so) <= 0)
         {
             Log2(("NAT: IP(id: %hd) udp_attach errno = %d (%s)\n",
                         ip->ip_id, errno, strerror(errno)));
@@ -446,7 +447,7 @@ int udp_output(PNATState pData, struct socket *so, struct mbuf *m,
 }
 
 int
-udp_attach(PNATState pData, struct socket *so, int service_port)
+udp_attach(PNATState pData, struct socket *so)
 {
     struct sockaddr_in *addr;
     struct sockaddr sa_addr;
@@ -467,7 +468,6 @@ udp_attach(PNATState pData, struct socket *so, int service_port)
     addr->sin_len = sizeof(struct sockaddr_in);
 #endif
     addr->sin_family = AF_INET;
-    addr->sin_port = service_port;
     addr->sin_addr.s_addr = pData->bindIP.s_addr;
     fd_nonblock(so->s);
     if (bind(so->s, &sa_addr, sizeof(struct sockaddr_in)) < 0)

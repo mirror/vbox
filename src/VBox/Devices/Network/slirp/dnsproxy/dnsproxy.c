@@ -126,7 +126,7 @@ timeout(PNATState pData, struct socket *so, void *arg)
             LogRel(("NAT: can't create DNS socket\n"));
             return;
         }
-        if(udp_attach(pData, so1, 0) == -1)
+        if(udp_attach(pData, so1) == -1)
         {
             LogRel(("NAT: can't attach udp socket\n"));
             sofree(pData, so1);

@@ -124,7 +124,7 @@ struct mbuf;
 void udp_init (PNATState);
 void udp_input (PNATState, register struct mbuf *, int);
 int udp_output (PNATState, struct socket *, struct mbuf *, struct sockaddr_in *);
-int udp_attach (PNATState, struct socket *, int service_port);
+int udp_attach (PNATState, struct socket *);
 void udp_detach (PNATState, struct socket *);
 u_int8_t udp_tos (struct socket *);
 void udp_emu (PNATState, struct socket *, struct mbuf *);
