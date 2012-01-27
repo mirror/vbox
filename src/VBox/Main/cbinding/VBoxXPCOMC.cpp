@@ -24,7 +24,7 @@
 #include <iprt/env.h>
 #include <VBox/log.h>
 
-#include "VBoxCAPI_v3_2.h"
+#include "VBoxCAPI.h"
 #include "VBox/com/com.h"
 #include "VBox/version.h"
 

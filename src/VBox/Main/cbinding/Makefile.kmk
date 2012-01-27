@@ -50,7 +50,7 @@ XpComCHeaders_SOURCES = \
 	VBoxCAPI_v3_2.h \
 	VBoxCAPI_v4_0.h \
 	VBoxCAPI_v4_1.h \
-	$(XpComCHeaders_0_OUTDIR)/VBoxCAPI_v$(VBOX_API_VERSION).h
+	$(XpComCHeaders_0_OUTDIR)/VBoxCAPI.h=>VBoxCAPI_v$(VBOX_API_VERSION).h
 
 $$(XpComCHeaders_0_OUTDIR)/VBoxXPCOMCGlue.h: \
 		$(PATH_SUB_CURRENT)/VBoxXPCOMCGlue.h.in \
@@ -61,7 +61,7 @@ $$(XpComCHeaders_0_OUTDIR)/VBoxXPCOMCGlue.h: \
 		-e 's/@VBOX_API_VERSION@/$(VBOX_API_VERSION)/' \
 		<  $< >  $@
 
-$$(XpComCHeaders_0_OUTDIR)/VBoxCAPI_v$(VBOX_API_VERSION).h: \
+$$(XpComCHeaders_0_OUTDIR)/VBoxCAPI.h: \
 		$(PATH_SUB_CURRENT)/xpcidl.xsl \
 		$(VBOX_XIDL_FILE) \
 		| $$(dir $$@)
@@ -80,8 +80,10 @@ if !defined(VBOX_ONLY_SDK) && defined(VBOX_WITH_XPCOM)
  VBoxXPCOMC_DEFS = IN_VBOXXPCOMC
  VBoxXPCOMC_SOURCES = \
  	VBoxXPCOMC.cpp
+ VBoxXPCOMC_INCS = \
+  	$(XpComCHeaders_0_OUTDIR)
  VBoxXPCOMC_INTERMEDIATES = \
- 	$(VBOX_PATH_SDK)/bindings/xpcom/include/VBoxCAPI_v$(VBOX_API_VERSION).h
+ 	$(XpComCHeaders_0_OUTDIR)/VBoxCAPI.h
  endif
 
  #
@@ -92,11 +94,10 @@ if !defined(VBOX_ONLY_SDK) && defined(VBOX_WITH_XPCOM)
  VBoxXPCOMCGlue_DEFS = IN_VBOXXPCOMC
  VBoxXPCOMCGlue_SOURCES = \
  	VBoxXPCOMCGlue.c
- VBoxXPCOMCGlue_DEPS = \
- 	$(VBOX_PATH_SDK)/bindings/xpcom/cbinding/VBoxXPCOMCGlue.h
  VBoxXPCOMCGlue_INCS = \
   	$(VBOX_PATH_SDK)/bindings/xpcom/cbinding
  VBoxXPCOMCGlue_INTERMEDIATES = \
+ 	$(VBOX_PATH_SDK)/bindings/xpcom/cbinding/VBoxXPCOMCGlue.h \
  	$(VBOX_PATH_SDK)/bindings/xpcom/include/VBoxCAPI_v$(VBOX_API_VERSION).h
 
  if defined(VBOX_WITH_TESTCASES) && "$(KBUILD_TARGET)" != "darwin"
@@ -110,11 +111,10 @@ if !defined(VBOX_ONLY_SDK) && defined(VBOX_WITH_XPCOM)
   	$(VBOX_PATH_SDK)/bindings/xpcom/include \
   	$(VBOX_PATH_SDK)/bindings/xpcom/cbinding
   tstXPCOMCGlue_INTERMEDIATES = \
+ 	$(VBOX_PATH_SDK)/bindings/xpcom/cbinding/VBoxXPCOMCGlue.h \
   	$(VBOX_PATH_SDK)/bindings/xpcom/include/VBoxCAPI_v$(VBOX_API_VERSION).h
   tstXPCOMCGlue_SOURCES = \
   	tstXPCOMCGlue.c
-  tstXPCOMCGlue_DEPS = \
- 	$(VBOX_PATH_SDK)/bindings/xpcom/cbinding/VBoxXPCOMCGlue.h
   tstXPCOMCGlue_LIBS = \
   	$(VBoxXPCOMCGlue_1_TARGET)
 
