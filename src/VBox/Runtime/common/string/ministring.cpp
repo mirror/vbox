@@ -7,7 +7,7 @@
  */
 
 /*
- * Copyright (C) 2007-2011 Oracle Corporation
+ * Copyright (C) 2007-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -206,7 +206,7 @@ size_t RTCString::find(const char *pcszFind, size_t pos /*= 0*/) const
         const char *pszThis = c_str();
         if (pszThis)
         {
-            const char *pszHit = strstr(pszThis, pcszFind);
+            const char *pszHit = strstr(pszThis + pos, pcszFind);
             if (pszHit)
                 return pszHit - pszThis;
         }
