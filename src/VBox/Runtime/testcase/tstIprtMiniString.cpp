@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2010 Oracle Corporation
+ * Copyright (C) 2006-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -67,6 +67,11 @@ static void test1(RTTEST hTest)
     do { \
         if (!(Str).equals(szExpect)) \
             RTTestIFailed("line %u: expected \"%s\" got \"%s\"", __LINE__, szExpect, (Str).c_str()); \
+    } while (0)
+#define CHECK_EQUAL_I(iRes, iExpect) \
+    do { \
+        if (iRes != iExpect) \
+            RTTestIFailed("line %u: expected \"%zd\" got \"%zd\"", __LINE__, iExpect, iRes); \
     } while (0)
 
     RTCString empty;
@@ -254,6 +259,14 @@ static void test1(RTTEST hTest)
     /* and check cooperation with find() */
     size_t pos = strTest.find("ß");
     CHECK_EQUAL(strTest.substr(pos), "ßäbcdef");
+
+    /* check find() */
+    CHECK_EQUAL_I(strTest.find("f"), 5);
+    CHECK_EQUAL_I(strTest.find("f", 0), 5);
+    CHECK_EQUAL_I(strTest.find("f", 3), 5);
+    CHECK_EQUAL_I(strTest.find("f", 6), 14);
+    CHECK_EQUAL_I(strTest.find("f", 9), 14);
+    CHECK_EQUAL_I(strTest.substr(pos).find("d"), 6);
 
     /* split */
     RTCList<RTCString> spList1 = RTCString("##abcdef##abcdef####abcdef##").split("##", RTCString::RemoveEmptyParts);
