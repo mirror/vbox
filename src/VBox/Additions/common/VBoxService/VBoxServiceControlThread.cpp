@@ -89,8 +89,9 @@ static int gstsvcCntlExecThreadInit(PVBOXSERVICECTRLTHREAD pThread,
     if (RT_FAILURE(rc))
         return rc;
 
-    pThread->uPID = 0; /* Don't have a PID yet. */
-    pThread->uFlags = uFlags;
+    pThread->uPID         = 0;          /* Don't have a PID yet. */
+    pThread->pRequest     = NULL;       /* No request assigned yet. */
+    pThread->uFlags       = uFlags;
     pThread->uTimeLimitMS = (   uTimeLimitMS == UINT32_MAX
                              || uTimeLimitMS == 0)
                           ? RT_INDEFINITE_WAIT : uTimeLimitMS;
