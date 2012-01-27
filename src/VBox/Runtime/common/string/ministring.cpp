@@ -215,15 +215,42 @@ size_t RTCString::find(const char *pcszFind, size_t pos /*= 0*/) const
     return npos;
 }
 
-void RTCString::findReplace(char cFind, char cReplace)
+void RTCString::findReplace(char chFind, char chReplace)
 {
+    Assert((unsigned int)chFind    < 128U);
+    Assert((unsigned int)chReplace < 128U);
+
     for (size_t i = 0; i < length(); ++i)
     {
         char *p = &m_psz[i];
-        if (*p == cFind)
-            *p = cReplace;
+        if (*p == chFind)
+            *p = chReplace;
     }
 }
+
+size_t RTCString::count(char ch) const
+{
+    Assert((unsigned int)ch < 128U);
+
+    size_t      c   = 0;
+    const char *psz = m_psz;
+    char        chCur;
+    while ((chCur = *psz++) != '\0')
+        if (chCur == ch)
+            c++;
+    return c;
+}
+
+#if 0  /** @todo implement these when needed. */
+size_t RTCString::count(const char *psz, CaseSensitivity cs = CaseSensitive) const
+{
+}
+
+size_t RTCString::count(const RTCString *pStr, CaseSensitivity cs = CaseSensitive) const
+{
+
+}
+#endif
 
 RTCString RTCString::substrCP(size_t pos /*= 0*/, size_t n /*= npos*/) const
 {

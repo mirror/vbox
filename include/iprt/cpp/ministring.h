@@ -687,10 +687,36 @@ public:
      * In order not to produce invalid UTF-8, the characters must be ASCII
      * values less than 128; this is not verified.
      *
-     * @param cFind Character to replace. Must be ASCII < 128.
-     * @param cReplace Character to replace cFind with. Must be ASCII < 128.
+     * @param   chFind      Character to replace. Must be ASCII < 128.
+     * @param   chReplace   Character to replace cFind with. Must be ASCII < 128.
      */
-    void findReplace(char cFind, char cReplace);
+    void findReplace(char chFind, char chReplace);
+
+    /**
+     * Count the occurences of the specified character in the string.
+     *
+     * @param   ch          What to search for. Must be ASCII < 128.
+     * @remarks QString::count
+     */
+    size_t count(char ch) const;
+
+    /**
+     * Count the occurences of the specified sub-string in the string.
+     *
+     * @param   psz         What to search for.
+     * @param   cs          Case sensitivity selector.
+     * @remarks QString::count
+     */
+    size_t count(const char *psz, CaseSensitivity cs = CaseSensitive) const;
+
+    /**
+     * Count the occurences of the specified sub-string in the string.
+     *
+     * @param   pStr        What to search for.
+     * @param   cs          Case sensitivity selector.
+     * @remarks QString::count
+     */
+    size_t count(const RTCString *pStr, CaseSensitivity cs = CaseSensitive) const;
 
     /**
      * Returns a substring of "this" as a new Utf8Str.
