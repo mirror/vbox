@@ -313,6 +313,14 @@ extern DWORD g_VBoxVDbgPid;
             PVBOXWDDMDISP_ALLOCATION pRtVar = (_pDevice)->apRTs[i]; \
             if (pRtVar->pRc->RcDesc.fFlags.SharedResource) { *(_pIsShared) = TRUE; break; } \
         } \
+        if (!*(_pIsShared)) { \
+            for (UINT i = 0, iSampler = 0; iSampler < (_pDevice)->cSamplerTextures; ++i) { \
+                Assert(i < RT_ELEMENTS((_pDevice)->aSamplerTextures)); \
+                if (!(_pDevice)->aSamplerTextures[i]) continue; \
+                *(_pIsShared) = TRUE; break; \
+                ++iSampler; \
+            } \
+        } \
     } while (0)
 
 #define VBOXVDBG_IS_DUMP_SHARED_ALLOWED_DEV(_pDevice, _pIsAllowed) do { \
@@ -320,6 +328,14 @@ extern DWORD g_VBoxVDbgPid;
         if (*(_pIsAllowed)) \
         { \
             *(_pIsAllowed) = VBOXVDBG_IS_DUMP_ALLOWED(Shared); \
+        } \
+    } while (0)
+
+#define VBOXVDBG_IS_BREAK_SHARED_ALLOWED_DEV(_pDevice, _pIsAllowed) do { \
+        VBOXVDBG_DEV_CHECK_SHARED(_pDevice, _pIsAllowed); \
+        if (*(_pIsAllowed)) \
+        { \
+            *(_pIsAllowed) = VBOXVDBG_IS_BREAK_ALLOWED(Shared); \
         } \
     } while (0)
 
@@ -341,6 +357,15 @@ extern DWORD g_VBoxVDbgPid;
         { \
             vboxVDbgDoDumpRt("<=="__FUNCTION__": RenderTarget Dump\n", (_pDevice), "\n"); \
         }\
+    } while (0)
+
+#define VBOXVDBG_BREAK_SHARED_DEV(_pDevice)  do { \
+        BOOL fBreakShaded = FALSE; \
+        VBOXVDBG_IS_BREAK_SHARED_ALLOWED_DEV(_pDevice, &fBreakShaded); \
+        if (fBreakShaded) { \
+            vboxVDbgPrint((__FUNCTION__"== Break on shared access\n")); \
+            AssertFailed(); \
+        } \
     } while (0)
 
 #define VBOXVDBG_DUMP_SETTEXTURE(_pRc) do { \
@@ -566,6 +591,7 @@ extern DWORD g_VBoxVDbgPid;
 #define VBOXVDBG_DUMP_PRESENT_ENTER(_pDevice, _pSwapchain) do { } while (0)
 #define VBOXVDBG_DUMP_PRESENT_LEAVE(_pDevice, _pSwapchain) do { } while (0)
 #define VBOXVDBG_BREAK_SHARED(_pRc) do { } while (0)
+#define VBOXVDBG_BREAK_SHARED_DEV(_pDevice) do { } while (0)
 #define VBOXVDBG_BREAK_DDI() do { } while (0)
 #define VBOXVDBG_CHECK_SMSYNC(_pRc) do { } while (0)
 #define VBOXVDBG_CHECK_BLT(_opBlt, _pSrcAlloc, _pSrcSurf, _pSrcRect, _pDstAlloc, _pDstSurf, _pDstRect) do { _opBlt; } while (0)

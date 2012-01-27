@@ -3579,9 +3579,55 @@ static HRESULT APIENTRY vboxWddmDDevSetTexture(HANDLE hDevice, UINT Stage, HANDL
         {
             Assert(0);
         }
+
+#ifdef VBOXWDDMDISP_DEBUG
+        Assert(pDevice->cSamplerTextures < RT_ELEMENTS(pDevice->aSamplerTextures));
+        int idx = VBOXWDDMDISP_SAMPLER_IDX(Stage);
+        if (idx >= 0)
+        {
+            Assert(idx < RT_ELEMENTS(pDevice->aSamplerTextures));
+#ifdef DEBUG_misha
+            if (VBOXWDDMDISP_SAMPLER_IDX_IS_SPECIAL(Stage))
+            {
+                WARN(("non-zero special sampler index not tested!\n"));
+            }
+#endif
+            if (!pDevice->aSamplerTextures[idx])
+            {
+                ++pDevice->cSamplerTextures;
+            }
+            Assert(pDevice->cSamplerTextures < RT_ELEMENTS(pDevice->aSamplerTextures));
+            pDevice->aSamplerTextures[idx] = pRc;
+        }
+        else
+        {
+            WARN(("incorrect dampler index1! (%d)\n", Stage));
+        }
+#endif
     }
     else
+    {
         pD3DIfTex = NULL;
+#ifdef VBOXWDDMDISP_DEBUG
+        Assert(pDevice->cSamplerTextures < RT_ELEMENTS(pDevice->aSamplerTextures));
+        int idx = VBOXWDDMDISP_SAMPLER_IDX(Stage);
+        if (idx >= 0)
+        {
+            Assert(idx < RT_ELEMENTS(pDevice->aSamplerTextures));
+            if (pDevice->aSamplerTextures[idx])
+            {
+                Assert(pDevice->cSamplerTextures);
+                --pDevice->cSamplerTextures;
+            }
+            Assert(pDevice->cSamplerTextures < RT_ELEMENTS(pDevice->aSamplerTextures));
+            pDevice->aSamplerTextures[idx] = NULL;
+        }
+        else
+        {
+            WARN(("incorrect dampler index2! (%d)\n", Stage));
+        }
+#endif
+    }
 
     HRESULT hr = pDevice9If->SetTexture(Stage, pD3DIfTex);
     Assert(hr == S_OK);
@@ -3702,6 +3748,8 @@ static HRESULT APIENTRY vboxWddmDDevDrawPrimitive(HANDLE hDevice, CONST D3DDDIAR
     Assert(!pFlagBuffer);
     HRESULT hr = S_OK;
 
+    VBOXVDBG_BREAK_SHARED_DEV(pDevice);
+
     VBOXVDBG_DUMP_DRAWPRIM_ENTER(pDevice);
 
     if (!pDevice->cStreamSources)
@@ -3775,6 +3823,9 @@ static HRESULT APIENTRY vboxWddmDDevDrawIndexedPrimitive(HANDLE hDevice, CONST D
     VBOXDISPCRHGSMI_SCOPE_SET_DEV(pDevice);
 
     IDirect3DDevice9 * pDevice9If = VBOXDISP_D3DEV(pDevice);
+
+    VBOXVDBG_BREAK_SHARED_DEV(pDevice);
+
     VBOXVDBG_DUMP_DRAWPRIM_ENTER(pDevice);
 
 #ifdef DEBUG
@@ -3883,6 +3934,8 @@ static HRESULT APIENTRY vboxWddmDDevDrawPrimitive2(HANDLE hDevice, CONST D3DDDIA
 
     hr = pDevice9If->DrawPrimitive(pData->PrimitiveType, pData->FirstVertexOffset, pData->PrimitiveCount);
 #else
+    VBOXVDBG_BREAK_SHARED_DEV(pDevice);
+
     VBOXVDBG_DUMP_DRAWPRIM_ENTER(pDevice);
 
 #ifdef DEBUG
@@ -6084,6 +6137,10 @@ static HRESULT APIENTRY vboxWddmDDevBlt(HANDLE hDevice, CONST D3DDDIARG_BLT* pDa
     IDirect3DSurface9 *pSrcSurfIf = NULL;
     IDirect3DSurface9 *pDstSurfIf = NULL;
     Assert(!pDstSwapchain || vboxWddmSwapchainGetFb(pDstSwapchain)->pAlloc != pDstAlloc || vboxWddmSwapchainNumRTs(pDstSwapchain) == 1);
+
+    VBOXVDBG_BREAK_SHARED(pSrcRc);
+    VBOXVDBG_BREAK_SHARED(pDstRc);
+
     hr = vboxWddmSurfGet(pDstRc, pData->DstSubResourceIndex, &pDstSurfIf);
     Assert(hr == S_OK);
     if (hr == S_OK)
@@ -7355,7 +7412,7 @@ HRESULT APIENTRY OpenAdapter(__inout D3DDDIARG_OPENADAPTER*  pOpenData)
 
     vboxVDbgPrint(("==> "__FUNCTION__"\n"));
 
-#ifdef DEBUG_misha
+#if 0 //def DEBUG_misha
     DWORD dwVersion = 0;
     DWORD dwMajorVersion = 0;
     DWORD dwMinorVersion = 0;

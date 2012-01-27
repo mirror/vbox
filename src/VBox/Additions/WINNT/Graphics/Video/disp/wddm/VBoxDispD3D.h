@@ -30,6 +30,13 @@
 
 #define VBOXWDDMDISP_MAX_VERTEX_STREAMS 16
 #define VBOXWDDMDISP_MAX_SWAPCHAIN_SIZE 16
+#ifdef VBOXWDDMDISP_DEBUG
+# define VBOXWDDMDISP_MAX_TEX_SAMPLERS 16
+# define VBOXWDDMDISP_TOTAL_SAMPLERS VBOXWDDMDISP_MAX_TEX_SAMPLERS + 5
+# define VBOXWDDMDISP_SAMPLER_IDX_IS_SPECIAL(_i) ((_i) >= D3DDMAPSAMPLER && (_i) <= D3DVERTEXTEXTURESAMPLER3)
+# define VBOXWDDMDISP_SAMPLER_IDX_SPECIAL(_i) (VBOXWDDMDISP_SAMPLER_IDX_IS_SPECIAL(_i) ? (int)((_i) - D3DDMAPSAMPLER + VBOXWDDMDISP_MAX_TEX_SAMPLERS) : (int)-1)
+# define VBOXWDDMDISP_SAMPLER_IDX(_i) (((_i) < VBOXWDDMDISP_MAX_TEX_SAMPLERS) ? (int)(_i) : VBOXWDDMDISP_SAMPLER_IDX_SPECIAL(_i))
+#endif
 /* maximum number of direct render targets to be used before
  * switching to offscreen rendering */
 #ifdef VBOXWDDMDISP_DEBUG
@@ -194,6 +201,11 @@ typedef struct VBOXWDDMDISP_DEVICE
 
     /* no lock is needed for this since we're guaranteed the per-device calls are not reentrant */
     RTLISTANCHOR DirtyAllocList;
+
+#ifdef VBOXWDDMDISP_DEBUG
+    UINT cSamplerTextures;
+    struct VBOXWDDMDISP_RESOURCE *aSamplerTextures[VBOXWDDMDISP_TOTAL_SAMPLERS];
+#endif
 
     UINT cRTs;
     struct VBOXWDDMDISP_ALLOCATION * apRTs[1];
