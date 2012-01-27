@@ -218,13 +218,24 @@ STDMETHODIMP Guest::COMGETTER(AdditionsVersion)(BSTR *a_pbstrAdditionsVersion)
         {
             /*
              * If we're running older guest additions (< 3.2.0) try get it from
-             * the guest properties.
+             * the guest properties.  Detected switched around Version and
+             * Revision in early 3.1.x releases (see r57115).
              */
             ComPtr<IMachine> ptrMachine = mParent->machine();
             alock.release(); /* No need to hold this during the IPC fun. */
 
             Bstr bstr;
             hrc = ptrMachine->GetGuestPropertyValue(Bstr("/VirtualBox/GuestAdd/Version").raw(), bstr.asOutParam());
+            if (SUCCEEDED(hrc))
+            {
+                Utf8Str str(bstr);
+                if (str.count('.') == 0)
+                    hrc = ptrMachine->GetGuestPropertyValue(Bstr("/VirtualBox/GuestAdd/Revision").raw(), bstr.asOutParam());
+                str = bstr;
+                if (str.count('.') != 2)
+                    hrc = E_FAIL;
+            }
+
             if (SUCCEEDED(hrc))
                 bstr.detachTo(a_pbstrAdditionsVersion);
             else
@@ -259,7 +270,8 @@ STDMETHODIMP Guest::COMGETTER(AdditionsRevision)(ULONG *a_puAdditionsRevision)
         {
             /*
              * If we're running older guest additions (< 3.2.0) try get it from
-             * the guest properties.
+             * the guest properties. Detected switched around Version and
+             * Revision in early 3.1.x releases (see r57115).
              */
             ComPtr<IMachine> ptrMachine = mParent->machine();
             alock.release(); /* No need to hold this during the IPC fun. */
@@ -271,6 +283,15 @@ STDMETHODIMP Guest::COMGETTER(AdditionsRevision)(ULONG *a_puAdditionsRevision)
                 Utf8Str str(bstr);
                 uint32_t uRevision;
                 int vrc = RTStrToUInt32Full(str.c_str(), 0, &uRevision);
+                if (vrc != VINF_SUCCESS && str.count('.') == 2)
+                {
+                    hrc = ptrMachine->GetGuestPropertyValue(Bstr("/VirtualBox/GuestAdd/Version").raw(), bstr.asOutParam());
+                    if (SUCCEEDED(hrc))
+                    {
+                        str = bstr;
+                        vrc = RTStrToUInt32Full(str.c_str(), 0, &uRevision);
+                    }
+                }
                 if (vrc == VINF_SUCCESS)
                     *a_puAdditionsRevision = uRevision;
                 else
@@ -280,7 +301,7 @@ STDMETHODIMP Guest::COMGETTER(AdditionsRevision)(ULONG *a_puAdditionsRevision)
             {
                 /* Return 0 if we don't know. */
                 *a_puAdditionsRevision = 0;
-                hrc = 0;
+                hrc = S_OK;
             }
         }
     }
