@@ -472,6 +472,18 @@ static const IWineD3DTextureVtbl IWineD3DTexture_Vtbl =
     IWineD3DTextureImpl_AddDirtyRect
 };
 
+void texture_state_init(IWineD3DTexture *iface, struct gl_texture *gl_tex)
+{
+    basetexture_state_init((IWineD3DBaseTexture*)iface, gl_tex);
+    if(IWineD3DBaseTexture_IsCondNP2(iface)) {
+        gl_tex->states[WINED3DTEXSTA_ADDRESSU]      = WINED3DTADDRESS_CLAMP;
+        gl_tex->states[WINED3DTEXSTA_ADDRESSV]      = WINED3DTADDRESS_CLAMP;
+        gl_tex->states[WINED3DTEXSTA_MAGFILTER]     = WINED3DTEXF_POINT;
+        gl_tex->states[WINED3DTEXSTA_MINFILTER]     = WINED3DTEXF_POINT;
+        gl_tex->states[WINED3DTEXSTA_MIPFILTER]     = WINED3DTEXF_NONE;
+    }
+}
+
 HRESULT texture_init(IWineD3DTextureImpl *texture, UINT width, UINT height, UINT levels,
         IWineD3DDeviceImpl *device, DWORD usage, WINED3DFORMAT format, WINED3DPOOL pool,
         IUnknown *parent, const struct wined3d_parent_ops *parent_ops
@@ -686,6 +698,26 @@ HRESULT texture_init(IWineD3DTextureImpl *texture, UINT width, UINT height, UINT
             Assert((GLuint)(*shared_handle) == ((IWineD3DSurfaceImpl*)texture->surfaces[i])->texture_name);
         }
 #endif
+
+        if (!VBOXSHRC_IS_SHARED_OPENED(texture))
+        {
+            struct wined3d_context * context;
+
+            Assert(!device->isInDraw);
+
+            /* flush to ensure the texture is allocated before it is used by another
+             * process opening it */
+            context = context_acquire(device, NULL, CTXUSAGE_RESOURCELOAD);
+            if (context->valid)
+            {
+                wglFlush();
+            }
+            else
+            {
+                ERR("invalid context!");
+            }
+            context_release(context);
+        }
     }
     else
     {
