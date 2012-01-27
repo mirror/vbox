@@ -531,8 +531,25 @@ HRESULT surface_init(IWineD3DSurfaceImpl *surface, WINED3DSURFTYPE surface_type,
         surface_shrc_unlock(surface);
         if (!VBOXSHRC_IS_SHARED_OPENED(surface))
         {
+            struct wined3d_context * context;
+
             Assert(!(*shared_handle));
             *shared_handle = VBOXSHRC_GET_SHAREHANDLE(surface);
+
+            Assert(!device->isInDraw);
+
+            /* flush to ensure the texture is allocated before it is used by another
+             * process opening it */
+            context = context_acquire(device, NULL, CTXUSAGE_RESOURCELOAD);
+            if (context->valid)
+            {
+                wglFlush();
+            }
+            else
+            {
+                ERR("invalid context!");
+            }
+            context_release(context);
         }
         else
         {
@@ -989,6 +1006,14 @@ static void surface_allocate_surface(IWineD3DSurfaceImpl *This, const struct win
     const BYTE *mem = NULL;
     GLenum internal;
 
+#ifdef VBOX_WITH_WDDM
+    if (VBOXSHRC_IS_SHARED_OPENED(This))
+    {
+        ERR("trying to allocate shared openned resource!!, ignoring..\n");
+        return;
+    }
+#endif
+
     if (srgb)
     {
         internal = format_desc->glGammaInternal;
@@ -1034,21 +1059,16 @@ static void surface_allocate_surface(IWineD3DSurfaceImpl *This, const struct win
         }
     }
 
-#ifdef VBOX_WITH_WDDM
-    if (!VBOXSHRC_IS_SHARED_OPENED(This))
-#endif
+    if (format_desc->Flags & WINED3DFMT_FLAG_COMPRESSED && mem)
     {
-        if (format_desc->Flags & WINED3DFMT_FLAG_COMPRESSED && mem)
-        {
-            GL_EXTCALL(glCompressedTexImage2DARB(This->texture_target, This->texture_level,
-                    internal, width, height, 0, This->resource.size, mem));
-        }
-        else
-        {
-            glTexImage2D(This->texture_target, This->texture_level,
-                    internal, width, height, 0, format_desc->glFormat, format_desc->glType, mem);
-            checkGLcall("glTexImage2D");
-        }
+        GL_EXTCALL(glCompressedTexImage2DARB(This->texture_target, This->texture_level,
+                internal, width, height, 0, This->resource.size, mem));
+    }
+    else
+    {
+        glTexImage2D(This->texture_target, This->texture_level,
+                internal, width, height, 0, format_desc->glFormat, format_desc->glType, mem);
+        checkGLcall("glTexImage2D");
     }
 
     if(enable_client_storage) {
@@ -1802,14 +1822,28 @@ void surface_setup_location_onopen(IWineD3DSurfaceImpl *This)
 {
     IWineD3DDeviceImpl *device = This->resource.device;
     const struct wined3d_gl_info *gl_info = &device->adapter->gl_info;
-    struct wined3d_context * context = NULL;
-    if (!device->isInDraw) context = context_acquire(device, NULL, CTXUSAGE_RESOURCELOAD);
+    DWORD alloc_flag = SFLAG_ALLOCATED;
+    CONVERT_TYPES convert;
+    struct wined3d_format_desc desc;
+    IWineD3DBaseTexture *baseTexture = NULL;
 
-    surface_prepare_texture(This, gl_info, FALSE);
-    /* no need to bind it here */
-//    surface_bind_and_dirtify(This, FALSE);
+    d3dfmt_get_conv(This, TRUE, TRUE, &desc, &convert);
+    if(convert != NO_CONVERSION) This->Flags |= SFLAG_CONVERTED;
+    else This->Flags &= ~SFLAG_CONVERTED;
 
-    if (context) context_release(context);
+    if (IWineD3DSurface_GetContainer((IWineD3DSurface*)This, &IID_IWineD3DBaseTexture, (void **)&baseTexture) == WINED3D_OK) {
+        IWineD3DTextureImpl* pTex = (IWineD3DTextureImpl*)baseTexture;
+        if (!pTex->baseTexture.texture_rgb.name)
+        {
+            pTex->baseTexture.texture_rgb.name = (GLuint)VBOXSHRC_GET_SHAREHANDLE(pTex);
+            /* @todo: this is not entirely correct: need to share this state among all instances of the given shared resource */
+            texture_state_init((IWineD3DTexture*)baseTexture, &pTex->baseTexture.texture_rgb);
+        }
+        IWineD3DBaseTexture_Release(baseTexture);
+    }
+    This->Flags |= alloc_flag;
+
+    This->texture_name = (GLuint)VBOXSHRC_GET_SHAREHANDLE(This);
 
     IWineD3DSurface_ModifyLocation((IWineD3DSurface*)This, SFLAG_INTEXTURE, TRUE);
 }
@@ -2855,12 +2889,28 @@ static void WINAPI IWineD3DSurfaceImpl_BindTexture(IWineD3DSurface *iface, BOOL 
 #ifdef VBOX_WITH_WDDM
                 if (VBOXSHRC_IS_SHARED_OPENED(This))
                 {
+                    ERR("should not be here!");
                     *name = (GLuint)VBOXSHRC_GET_SHAREHANDLE(This);
                 }
                 else
 #endif
                 {
                     glGenTextures(1, name);
+                    checkGLcall("glGenTextures");
+                    TRACE("Surface %p given name %d\n", This, *name);
+
+                    glBindTexture(This->texture_target, *name);
+                    checkGLcall("glBindTexture");
+                    glTexParameteri(This->texture_target, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+                    checkGLcall("glTexParameteri(dimension, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE)");
+                    glTexParameteri(This->texture_target, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+                    checkGLcall("glTexParameteri(dimension, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE)");
+                    glTexParameteri(This->texture_target, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+                    checkGLcall("glTexParameteri(dimension, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE)");
+                    glTexParameteri(This->texture_target, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+                    checkGLcall("glTexParameteri(dimension, GL_TEXTURE_MIN_FILTER, GL_NEAREST)");
+                    glTexParameteri(This->texture_target, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+                    checkGLcall("glTexParameteri(dimension, GL_TEXTURE_MAG_FILTER, GL_NEAREST)");
 #ifdef VBOX_WITH_WDDM
                     if (VBOXSHRC_IS_SHARED(This))
                     {
@@ -2868,21 +2918,6 @@ static void WINAPI IWineD3DSurfaceImpl_BindTexture(IWineD3DSurface *iface, BOOL 
                     }
 #endif
                 }
-                checkGLcall("glGenTextures");
-                TRACE("Surface %p given name %d\n", This, *name);
-
-                glBindTexture(This->texture_target, *name);
-                checkGLcall("glBindTexture");
-                glTexParameteri(This->texture_target, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-                checkGLcall("glTexParameteri(dimension, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE)");
-                glTexParameteri(This->texture_target, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-                checkGLcall("glTexParameteri(dimension, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE)");
-                glTexParameteri(This->texture_target, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-                checkGLcall("glTexParameteri(dimension, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE)");
-                glTexParameteri(This->texture_target, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-                checkGLcall("glTexParameteri(dimension, GL_TEXTURE_MIN_FILTER, GL_NEAREST)");
-                glTexParameteri(This->texture_target, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-                checkGLcall("glTexParameteri(dimension, GL_TEXTURE_MAG_FILTER, GL_NEAREST)");
             }
             /* This is where we should be reducing the amount of GLMemoryUsed */
         } else if (*name) {
@@ -3305,13 +3340,7 @@ static inline BOOL fb_copy_to_texture_direct(IWineD3DSurfaceImpl *This, IWineD3D
         return FALSE;
     }
 
-    context = context_acquire(myDevice, SrcSurface,
-#ifdef VBOX_WITH_WDDM
-            CTXUSAGE_BLIT_LIGHT
-#else
-            CTXUSAGE_BLIT
-#endif
-            );
+    context = context_acquire(myDevice, SrcSurface, CTXUSAGE_BLIT);
 
     surface_internal_preload((IWineD3DSurface *) This, SRGB_RGB);
     ENTER_GL();

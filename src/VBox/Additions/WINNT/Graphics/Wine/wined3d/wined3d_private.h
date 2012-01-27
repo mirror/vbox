@@ -1265,7 +1265,6 @@ typedef enum ContextUsage {
     CTXUSAGE_DRAWPRIM           = 2,    /* OpenGL states are set up for blitting DirectDraw surfaces */
     CTXUSAGE_BLIT               = 3,    /* OpenGL states are set up 3D drawing */
     CTXUSAGE_CLEAR              = 4,    /* Drawable and states are set up for clearing */
-    CTXUSAGE_BLIT_LIGHT         = 5,    /* OpenGL states are set up 3D drawing */
 } ContextUsage;
 
 struct wined3d_context *context_acquire(IWineD3DDeviceImpl *This,
@@ -1986,6 +1985,7 @@ void basetexture_apply_state_changes(IWineD3DBaseTexture *iface,
         const DWORD textureStates[WINED3D_HIGHEST_TEXTURE_STATE + 1],
         const DWORD samplerStates[WINED3D_HIGHEST_SAMPLER_STATE + 1],
         const struct wined3d_gl_info *gl_info) DECLSPEC_HIDDEN;
+void basetexture_state_init(IWineD3DBaseTexture *iface, struct gl_texture *gl_tex);
 HRESULT basetexture_bind(IWineD3DBaseTexture *iface, BOOL srgb, BOOL *set_surface_desc) DECLSPEC_HIDDEN;
 void basetexture_cleanup(IWineD3DBaseTexture *iface) DECLSPEC_HIDDEN;
 void basetexture_generate_mipmaps(IWineD3DBaseTexture *iface) DECLSPEC_HIDDEN;
@@ -2024,6 +2024,7 @@ typedef struct IWineD3DTextureImpl
 
 } IWineD3DTextureImpl;
 
+void texture_state_init(IWineD3DTexture *iface, struct gl_texture *gl_tex);
 HRESULT texture_init(IWineD3DTextureImpl *texture, UINT width, UINT height, UINT levels,
         IWineD3DDeviceImpl *device, DWORD usage, WINED3DFORMAT format, WINED3DPOOL pool,
         IUnknown *parent, const struct wined3d_parent_ops *parent_ops
