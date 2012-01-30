@@ -45,8 +45,10 @@ static uint32_t             g_GuestControlSvcClientID = 0;
  *  information to the host. Default is 25 processes. If 0 is specified,
  *  the maximum number of processes is unlimited. */
 static uint32_t             g_GuestControlProcsMaxKept = 25;
-/** List of guest control threads (VBOXSERVICECTRLTHREAD). */
-static RTLISTANCHOR         g_GuestControlThreads;
+/** List of active guest control threads (VBOXSERVICECTRLTHREAD). */
+static RTLISTANCHOR         g_GuestControlThreadsActive;
+/** List of inactive guest control threads (VBOXSERVICECTRLTHREAD). */
+static RTLISTANCHOR         g_GuestControlThreadsInactive;
 /** Critical section protecting g_GuestControlExecThreads. */
 static RTCRITSECT           g_GuestControlThreadsCritSect;
 
@@ -55,6 +57,7 @@ static RTCRITSECT           g_GuestControlThreadsCritSect;
 *   Internal Functions                                                         *
 *******************************************************************************/
 /** @todo Shorten "VBoxServiceControl" to "gstsvcCntl". */
+static int VBoxServiceControlReapThreads(void);
 static int VBoxServiceControlStartAllowed(bool *pbAllowed);
 static int VBoxServiceControlHandleCmdStartProc(uint32_t u32ClientId, uint32_t uNumParms);
 static int VBoxServiceControlHandleCmdSetInput(uint32_t u32ClientId, uint32_t uNumParms, size_t cbMaxBufSize);
@@ -134,8 +137,11 @@ static DECLCALLBACK(int) VBoxServiceControlInit(void)
     {
         VBoxServiceVerbose(3, "Control: Service client ID: %#x\n", g_GuestControlSvcClientID);
 
-        /* Init thread list. */
-        RTListInit(&g_GuestControlThreads);
+        /* Init thread lists. */
+        RTListInit(&g_GuestControlThreadsActive);
+        RTListInit(&g_GuestControlThreadsInactive);
+
+        /* Init critical section for protecting the thread lists. */
         rc = RTCritSectInit(&g_GuestControlThreadsCritSect);
         AssertRC(rc);
     }
@@ -236,80 +242,55 @@ DECLCALLBACK(int) VBoxServiceControlWorker(bool volatile *pfShutdown)
  * Handles starting processes on the guest.
  *
  * @returns IPRT status code.
- * @param   idClient        The HGCM client session ID.
+ * @param   uClientID       The HGCM client session ID.
  * @param   cParms          The number of parameters the host is offering.
  */
-static int VBoxServiceControlHandleCmdStartProc(uint32_t idClient, uint32_t cParms)
+static int VBoxServiceControlHandleCmdStartProc(uint32_t uClientID, uint32_t cParms)
 {
-    uint32_t    uContextID;
-    char        szCmd[_1K];
-    uint32_t    uFlags;
-    char        szArgs[_1K];
-    uint32_t    cArgs;
-    char        szEnv[_64K];
-    uint32_t    cbEnv = sizeof(szEnv);
-    uint32_t    cEnvVars;
-    char        szUser[128];
-    char        szPassword[128];
-    uint32_t    uTimeLimitMS;
-
-#if 0 /* for valgrind */
-    RT_ZERO(szCmd);
-    RT_ZERO(szArgs);
-    RT_ZERO(szEnv);
-    RT_ZERO(szUser);
-    RT_ZERO(szPassword);
-#endif
+    uint32_t uContextID = 0;
 
     int rc;
     bool fStartAllowed = false; /* Flag indicating whether starting a process is allowed or not. */
     if (cParms == 11)
     {
-        rc = VbglR3GuestCtrlExecGetHostCmdExec(idClient,
+        VBOXSERVICECTRLPROCESS proc;
+        RT_ZERO(proc);
+
+        rc = VbglR3GuestCtrlExecGetHostCmdExec(uClientID,
                                                cParms,
                                                &uContextID,
                                                /* Command */
-                                               szCmd,      sizeof(szCmd),
+                                               proc.szCmd,      sizeof(proc.szCmd),
                                                /* Flags */
-                                               &uFlags,
+                                               &proc.uFlags,
                                                /* Arguments */
-                                               szArgs,     sizeof(szArgs), &cArgs,
+                                               proc.szArgs,     sizeof(proc.szArgs), &proc.uNumArgs,
                                                /* Environment */
-                                               szEnv, &cbEnv, &cEnvVars,
+                                               proc.szEnv, &proc.cbEnv, &proc.uNumEnvVars,
                                                /* Credentials */
-                                               szUser,     sizeof(szUser),
-                                               szPassword, sizeof(szPassword),
+                                               proc.szUser,     sizeof(proc.szUser),
+                                               proc.szPassword, sizeof(proc.szPassword),
                                                /* Timelimit */
-                                               &uTimeLimitMS);
+                                               &proc.uTimeLimitMS);
         if (RT_SUCCESS(rc))
         {
             VBoxServiceVerbose(3, "Control: Request to start process szCmd=%s, uFlags=0x%x, szArgs=%s, szEnv=%s, szUser=%s, uTimeout=%u\n",
-                               szCmd, uFlags, cArgs ? szArgs : "<None>", cEnvVars ? szEnv : "<None>", szUser, uTimeLimitMS);
+                               proc.szCmd, proc.uFlags,
+                               proc.uNumArgs ? proc.szArgs : "<None>",
+                               proc.uNumEnvVars ? proc.szEnv : "<None>",
+                               proc.szUser, proc.uTimeLimitMS);
+
+            rc = VBoxServiceControlReapThreads();
+            if (RT_FAILURE(rc))
+                VBoxServiceError("Control: Reaping stopped processes failed with rc=%Rrc\n", rc);
+            /* Keep going. */
+
             rc = VBoxServiceControlStartAllowed(&fStartAllowed);
             if (RT_SUCCESS(rc))
             {
                 if (fStartAllowed)
                 {
-                    rc = RTCritSectEnter(&g_GuestControlThreadsCritSect);
-                    if (RT_SUCCESS(rc))
-                    {
-                        /** @todo Put the following params into a struct! */
-                        PRTLISTNODE pThreadNode;
-                        rc = VBoxServiceControlThreadStart(idClient, uContextID,
-                                                           szCmd, uFlags, szArgs, cArgs,
-                                                           szEnv, cbEnv, cEnvVars,
-                                                           szUser, szPassword, uTimeLimitMS,
-                                                           &pThreadNode);
-                        if (RT_SUCCESS(rc))
-                        {
-                            /* Insert thread node into thread list. */
-                            /*rc =*/ RTListAppend(&g_GuestControlThreads, pThreadNode);
-                        }
-
-                        int rc2 = RTCritSectLeave(&g_GuestControlThreadsCritSect);
-                        if (RT_SUCCESS(rc))
-                            rc = rc2;
-                    }
+                    rc = VBoxServiceControlThreadStart(uContextID, &proc);
                 }
                 else
                     rc = VERR_MAX_PROCS_REACHED; /* Maximum number of processes reached. */
@@ -324,7 +305,7 @@ static int VBoxServiceControlHandleCmdStartProc(uint32_t idClient, uint32_t cPar
     {
         VBoxServiceError("Control: Starting process failed with rc=%Rrc\n", rc);
 
-        int rc2 = VbglR3GuestCtrlExecReportStatus(idClient, uContextID, 0 /* PID, invalid. */,
+        int rc2 = VbglR3GuestCtrlExecReportStatus(uClientID, uContextID, 0 /* PID, invalid. */,
                                                   PROC_STS_ERROR, rc,
                                                   NULL /* pvData */, 0 /* cbData */);
         if (RT_FAILURE(rc2))
@@ -398,6 +379,67 @@ int VBoxServiceControlExecGetOutput(uint32_t uPID, uint32_t uCID,
 
 
 /**
+ * Sets the specified guest thread to a certain list.
+ *
+ * @return  IPRT status code.
+ * @param   enmList                 List to move thread to.
+ * @param   pThread                 Thread to set inactive.
+ */
+int VBoxServiceControlListSet(VBOXSERVICECTRLTHREADLISTTYPE enmList,
+                              PVBOXSERVICECTRLTHREAD pThread)
+{
+    AssertReturn(enmList > VBOXSERVICECTRLTHREADLIST_UNKNOWN, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pThread, VERR_INVALID_POINTER);
+
+    int rc = RTCritSectEnter(&g_GuestControlThreadsCritSect);
+    if (RT_SUCCESS(rc))
+    {
+        VBoxServiceVerbose(3, "Control: Setting thread (PID %u) inactive\n",
+                           pThread->uPID);
+
+        PRTLISTANCHOR pAnchor = NULL;
+        switch (enmList)
+        {
+            case VBOXSERVICECTRLTHREADLIST_STOPPED:
+                pAnchor = &g_GuestControlThreadsInactive;
+                break;
+
+            case VBOXSERVICECTRLTHREADLIST_RUNNING:
+                pAnchor = &g_GuestControlThreadsActive;
+                break;
+
+            default:
+                AssertMsgFailed(("Unknown list type: %u", enmList));
+                break;
+        }
+
+        if (!pAnchor)
+            rc = VERR_INVALID_PARAMETER;
+
+        if (RT_SUCCESS(rc))
+        {
+            if (pThread->pAnchor != NULL)
+            {
+                /* If thread was assigned to a list before,
+                 * remove the thread from the old list first. */
+                /* rc = */ RTListNodeRemove(&pThread->Node);
+            }
+
+            /* Add thread to desired list. */
+            /* rc = */ RTListAppend(pAnchor, &pThread->Node);
+            pThread->pAnchor = pAnchor;
+        }
+
+        int rc2 = RTCritSectLeave(&g_GuestControlThreadsCritSect);
+        if (RT_SUCCESS(rc))
+            rc = rc2;
+    }
+
+    return VINF_SUCCESS;
+}
+
+
+/**
  * Injects input to a specified running process.
  *
  * @return  IPRT status code.
@@ -412,8 +454,8 @@ int VBoxServiceControlSetInput(uint32_t uPID, uint32_t uCID,
                                void *pvBuf, uint32_t cbBuf,
                                uint32_t *pcbWritten)
 {
-    AssertPtrReturn(pvBuf, VERR_INVALID_PARAMETER);
-    AssertReturn(cbBuf, VERR_INVALID_PARAMETER);
+    /* pvBuf is optional. */
+    /* cbBuf is optional. */
     /* pcbWritten is optional. */
 
     PVBOXSERVICECTRLREQUEST pRequest;
@@ -473,7 +515,7 @@ static int VBoxServiceControlHandleCmdSetInput(uint32_t idClient, uint32_t cParm
         VBoxServiceError("Control: [PID %u]: Failed to retrieve exec input command! Error: %Rrc\n",
                          uPID, rc);
     }
-    else if (cbSize >  cbMaxBufSize)
+    else if (cbSize > cbMaxBufSize)
     {
         VBoxServiceError("Control: [PID %u]: Too much input received! cbSize=%u, cbMaxBufSize=%u\n",
                          uPID, cbSize, cbMaxBufSize);
@@ -622,26 +664,76 @@ static DECLCALLBACK(void) VBoxServiceControlStop(void)
 
 
 /**
+ * Reaps all inactive guest process threads.
+ *
+ * @return  IPRT status code.
+ */
+static int VBoxServiceControlReapThreads(void)
+{
+    int rc = RTCritSectEnter(&g_GuestControlThreadsCritSect);
+    if (RT_SUCCESS(rc))
+    {
+        PVBOXSERVICECTRLTHREAD pThread =
+            RTListGetFirst(&g_GuestControlThreadsInactive, VBOXSERVICECTRLTHREAD, Node);
+        while (pThread)
+        {
+            PVBOXSERVICECTRLTHREAD pNext = RTListNodeGetNext(&pThread->Node, VBOXSERVICECTRLTHREAD, Node);
+            bool fLast = RTListNodeIsLast(&g_GuestControlThreadsInactive, &pThread->Node);
+
+            int rc2 = VBoxServiceControlThreadWait(pThread, 30 * 1000 /* 30 seconds max. */);
+            if (RT_SUCCESS(rc2))
+            {
+                RTListNodeRemove(&pThread->Node);
+
+                rc2 = VBoxServiceControlThreadFree(pThread);
+                if (RT_FAILURE(rc2))
+                {
+                    VBoxServiceError("Control: Stopping guest process thread failed with rc=%Rrc\n", rc2);
+                    if (RT_SUCCESS(rc)) /* Keep original failure. */
+                        rc = rc2;
+                }
+            }
+            else
+                VBoxServiceError("Control: Waiting on guest process thread failed with rc=%Rrc\n", rc2);
+            /* Keep going. */
+
+            if (fLast)
+                break;
+
+            pThread = pNext;
+        }
+
+        int rc2 = RTCritSectLeave(&g_GuestControlThreadsCritSect);
+        if (RT_SUCCESS(rc))
+            rc = rc2;
+    }
+
+    VBoxServiceVerbose(4, "Control: Reaping threads returned with rc=%Rrc\n", rc);
+    return rc;
+}
+
+
+/**
  * Destroys all guest process threads which are still active.
  */
-static void VBoxServiceControlDestroyThreads(void)
+static void VBoxServiceControlShutdown(void)
 {
-    VBoxServiceVerbose(2, "Control: Destroying threads ...\n");
+    VBoxServiceVerbose(2, "Control: Shutting down ...\n");
 
-    /* Signal all threads that we want to shutdown. */
+    /* Signal all threads in the active list that we want to shutdown. */
     PVBOXSERVICECTRLTHREAD pThread;
-    RTListForEach(&g_GuestControlThreads, pThread, VBOXSERVICECTRLTHREAD, Node)
-        VBoxServiceControlThreadSignalShutdown(pThread);
+    RTListForEach(&g_GuestControlThreadsActive, pThread, VBOXSERVICECTRLTHREAD, Node)
+        VBoxServiceControlThreadStop(pThread);
 
-    /* Wait for threads to shutdown and destroy thread list. */
-    pThread = RTListGetFirst(&g_GuestControlThreads, VBOXSERVICECTRLTHREAD, Node);
+    /* Wait for all active threads to shutdown and destroy the active thread list. */
+    pThread = RTListGetFirst(&g_GuestControlThreadsActive, VBOXSERVICECTRLTHREAD, Node);
     while (pThread)
     {
         PVBOXSERVICECTRLTHREAD pNext = RTListNodeGetNext(&pThread->Node, VBOXSERVICECTRLTHREAD, Node);
-        bool fLast = RTListNodeIsLast(&g_GuestControlThreads, &pThread->Node);
+        bool fLast = RTListNodeIsLast(&g_GuestControlThreadsActive, &pThread->Node);
 
-        int rc2 = VBoxServiceControlThreadWaitForShutdown(pThread,
-                                                          30 * 1000 /* Wait 30 seconds max. */);
+        int rc2 = VBoxServiceControlThreadWait(pThread,
+                                               30 * 1000 /* Wait 30 seconds max. */);
         if (RT_FAILURE(rc2))
             VBoxServiceError("Control: Guest process thread failed to stop; rc=%Rrc\n", rc2);
 
@@ -651,18 +743,19 @@ static void VBoxServiceControlDestroyThreads(void)
         pThread = pNext;
     }
 
-#ifdef DEBUG
-    PVBOXSERVICECTRLTHREAD pThreadCur;
-    uint32_t cThreads = 0;
-    RTListForEach(&g_GuestControlThreads, pThreadCur, VBOXSERVICECTRLTHREAD, Node)
-        cThreads++;
-    VBoxServiceVerbose(4, "Control: Guest process threads left=%u\n", cThreads);
-#endif
-    AssertMsg(RTListIsEmpty(&g_GuestControlThreads),
-              ("Guest process thread list still contains children when it should not\n"));
+    int rc2 = VBoxServiceControlReapThreads();
+    if (RT_FAILURE(rc2))
+        VBoxServiceError("Control: Reaping inactive threads failed with rc=%Rrc\n", rc2);
+
+    AssertMsg(RTListIsEmpty(&g_GuestControlThreadsActive),
+              ("Guest process active thread list still contains entries when it should not\n"));
+    AssertMsg(RTListIsEmpty(&g_GuestControlThreadsInactive),
+              ("Guest process inactive thread list still contains entries when it should not\n"));
 
     /* Destroy critical section. */
     RTCritSectDelete(&g_GuestControlThreadsCritSect);
+
+    VBoxServiceVerbose(2, "Control: Shutting down complete\n");
 }
 
 
@@ -671,7 +764,7 @@ static DECLCALLBACK(void) VBoxServiceControlTerm(void)
 {
     VBoxServiceVerbose(3, "Control: Terminating ...\n");
 
-    VBoxServiceControlDestroyThreads();
+    VBoxServiceControlShutdown();
 
     VBoxServiceVerbose(3, "Control: Disconnecting client ID=%u ...\n",
                        g_GuestControlSvcClientID);
@@ -709,17 +802,12 @@ static int VBoxServiceControlStartAllowed(bool *pbAllowed)
         if (g_GuestControlProcsMaxKept) /* If we allow unlimited processes (=0), take a shortcut. */
         {
             uint32_t uProcsRunning = 0;
-            uint32_t uProcsStopped = 0;
             PVBOXSERVICECTRLTHREAD pThread;
-            RTListForEach(&g_GuestControlThreads, pThread, VBOXSERVICECTRLTHREAD, Node)
-            {
-                  VBoxServiceControlThreadActive(pThread)
-                ? uProcsRunning++
-                : uProcsStopped++;
-            }
+            RTListForEach(&g_GuestControlThreadsActive, pThread, VBOXSERVICECTRLTHREAD, Node)
+                uProcsRunning++;
 
-            VBoxServiceVerbose(3, "Control: Maximum served guest processes set to %u, running=%u, stopped=%u\n",
-                               g_GuestControlProcsMaxKept, uProcsRunning, uProcsStopped);
+            VBoxServiceVerbose(3, "Control: Maximum served guest processes set to %u, running=%u\n",
+                               g_GuestControlProcsMaxKept, uProcsRunning);
 
             int32_t iProcsLeft = (g_GuestControlProcsMaxKept - uProcsRunning - 1);
             if (iProcsLeft < 0)
@@ -748,14 +836,14 @@ static int VBoxServiceControlStartAllowed(bool *pbAllowed)
  * @return  PVBOXSERVICECTRLTHREAD      Process structure if found, otherwise NULL.
  * @param   uPID                        PID to search for.
  */
-PVBOXSERVICECTRLTHREAD VBoxServiceControlGetThreadLocked(uint32_t uPID)
+PVBOXSERVICECTRLTHREAD VBoxServiceControlLockThread(uint32_t uPID)
 {
     PVBOXSERVICECTRLTHREAD pThread = NULL;
     int rc = RTCritSectEnter(&g_GuestControlThreadsCritSect);
     if (RT_SUCCESS(rc))
     {
         PVBOXSERVICECTRLTHREAD pThreadCur;
-        RTListForEach(&g_GuestControlThreads, pThreadCur, VBOXSERVICECTRLTHREAD, Node)
+        RTListForEach(&g_GuestControlThreadsActive, pThreadCur, VBOXSERVICECTRLTHREAD, Node)
         {
             if (pThreadCur->uPID == uPID)
             {
@@ -780,7 +868,7 @@ PVBOXSERVICECTRLTHREAD VBoxServiceControlGetThreadLocked(uint32_t uPID)
  *
  * @param   pThread                 Thread to unlock.
  */
-void VBoxServiceControlThreadUnlock(const PVBOXSERVICECTRLTHREAD pThread)
+void VBoxServiceControlUnlockThread(const PVBOXSERVICECTRLTHREAD pThread)
 {
     AssertPtr(pThread);
 
@@ -811,7 +899,7 @@ int VBoxServiceControlAssignPID(PVBOXSERVICECTRLTHREAD pThread, uint32_t uPID)
         bool fTryAgain = false;
         do
         {
-            RTListForEach(&g_GuestControlThreads, pThreadCur, VBOXSERVICECTRLTHREAD, Node)
+            RTListForEach(&g_GuestControlThreadsActive, pThreadCur, VBOXSERVICECTRLTHREAD, Node)
             {
                 if (pThreadCur->uPID == uPID)
                 {
@@ -834,38 +922,6 @@ int VBoxServiceControlAssignPID(PVBOXSERVICECTRLTHREAD pThread, uint32_t uPID)
     }
 
     return rc;
-}
-
-
-/**
- * Removes the specified guest process thread from the global thread
- * list.
- *
- * @return  IPRT status code.
- * @param   pThread             Thread to remove.
- */
-void VBoxServiceControlRemoveThread(const PVBOXSERVICECTRLTHREAD pThread)
-{
-    if (!pThread)
-        return;
-
-    int rc = RTCritSectEnter(&g_GuestControlThreadsCritSect);
-    if (RT_SUCCESS(rc))
-    {
-        VBoxServiceVerbose(4, "Control: Removing thread (PID: %u) from thread list\n",
-                           pThread->uPID);
-        RTListNodeRemove(&pThread->Node);
-
-#ifdef DEBUG
-        PVBOXSERVICECTRLTHREAD pThreadCur;
-        uint32_t cThreads = 0;
-        RTListForEach(&g_GuestControlThreads, pThreadCur, VBOXSERVICECTRLTHREAD, Node)
-            cThreads++;
-        VBoxServiceVerbose(4, "Control: Guest process threads left=%u\n", cThreads);
-#endif
-        rc = RTCritSectLeave(&g_GuestControlThreadsCritSect);
-        AssertRC(rc);
-    }
 }
 
 
