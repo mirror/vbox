@@ -2471,7 +2471,7 @@ static int PGM_BTH_NAME(CheckDirtyPageFault)(PVMCPU pVCpu, uint32_t uErr, PSHWPD
                     {
                         if (PGM_PAGE_HAS_ACTIVE_HANDLERS(pPage))
                         {
-                            AssertMsgFailed(("%R[pgmpage] - we don't set PGM_PTFLAGS_TRACK_DIRTY for these pages\n", pPage));
+                            //AssertMsgFailed(("%R[pgmpage] - we don't set PGM_PTFLAGS_TRACK_DIRTY for these pages\n", pPage));
                             Assert(!PGM_PAGE_HAS_ACTIVE_ALL_HANDLERS(pPage));
                             /* Assuming write handlers here as the PTE is present (otherwise we wouldn't be here). */
                             SHW_PTE_SET_RO(PteDst);
