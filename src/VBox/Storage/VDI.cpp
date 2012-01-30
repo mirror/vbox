@@ -1508,6 +1508,8 @@ static int vdiWrite(void *pBackendData, uint64_t uOffset, const void *pvBuf,
                 if (ASMBitFirstSet((volatile void *)pvBuf, (uint32_t)cbToWrite * 8) == -1)
                 {
                     pImage->paBlocks[uBlock] = VDI_IMAGE_BLOCK_ZERO;
+                    *pcbPreRead = 0;
+                    *pcbPostRead = 0;
                     break;
                 }
             }
