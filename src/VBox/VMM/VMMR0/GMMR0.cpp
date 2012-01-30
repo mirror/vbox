@@ -4826,7 +4826,8 @@ DECLCALLBACK(int) gmmR0CheckSharedModule(PAVLGCPTRNODECORE pNode, void *pvUser)
         &&  pGlobalModule)
     {
         Log(("gmmR0CheckSharedModule: check %s %s base=%RGv size=%x collision=%d\n", pGlobalModule->szName, pGlobalModule->szVersion, pGlobalModule->Core.Key, pGlobalModule->cbModule, pLocalModule->fCollision));
-        pInfo->rc = PGMR0SharedModuleCheck(pInfo->pGVM->pVM, pInfo->pGVM, pInfo->idCpu, pGlobalModule, pLocalModule->cRegions, pLocalModule->aRegions);
+        pInfo->rc = PGMR0SharedModuleCheck(pInfo->pGVM->pVM, pInfo->pGVM, pInfo->idCpu, pGlobalModule,
+                                           pLocalModule->cRegions, pLocalModule->aRegions);
         if (RT_FAILURE(pInfo->rc))
             return 1;   /* stop enumeration. */
     }
