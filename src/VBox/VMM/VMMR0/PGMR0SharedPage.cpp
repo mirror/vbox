@@ -43,7 +43,8 @@
  * @param   cRegions    Number of regions
  * @param   pRegions    Region array
  */
-VMMR0DECL(int) PGMR0SharedModuleCheck(PVM pVM, PGVM pGVM, VMCPUID idCpu, PGMMSHAREDMODULE pModule, uint32_t cRegions, PGMMSHAREDREGIONDESC pRegions)
+VMMR0DECL(int) PGMR0SharedModuleCheck(PVM pVM, PGVM pGVM, VMCPUID idCpu, PGMMSHAREDMODULE pModule,
+                                      uint32_t cRegions, PGMMSHAREDREGIONDESC pRegions)
 {
     int                rc = VINF_SUCCESS;
     GMMSHAREDPAGEDESC  PageDesc;
