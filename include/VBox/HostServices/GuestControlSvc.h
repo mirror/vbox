@@ -95,6 +95,15 @@ enum eProcessStatus
 #define OUTPUT_HANDLE_ID_STDOUT             1
 #define OUTPUT_HANDLE_ID_STDERR             2
 
+/**
+ * Defines for guest process array lengths.
+ */
+#define GUESTPROCESS_MAX_CMD_LEN            _1K
+#define GUESTPROCESS_MAX_ARGS_LEN           _1K
+#define GUESTPROCESS_MAX_ENV_LEN            _64K
+#define GUESTPROCESS_MAX_USER_LEN           128
+#define GUESTPROCESS_MAX_PASSWORD_LEN       128
+
 /** @name Internal tools built into VBoxService which are used in order to
  *        accomplish tasks host<->guest.
  * @{

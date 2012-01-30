@@ -42,7 +42,6 @@
 using namespace guestControl;
 
 /* Internal functions. */
-static int vboxServiceControlThreadFree(PVBOXSERVICECTRLTHREAD pThread);
 static int vboxServiceControlThreadRequestCancel(PVBOXSERVICECTRLREQUEST pThread);
 
 /**
@@ -51,28 +50,17 @@ static int vboxServiceControlThreadRequestCancel(PVBOXSERVICECTRLREQUEST pThread
  * @return  IPRT status code.
  * @param   pThread                     The thread's handle to allocate the data for.
  * @param   u32ContextID                The context ID bound to this request / command.
- * @param   pszCmd                      Full qualified path of process to start (without arguments).
- * @param   uFlags                      Process execution flags.
- * @param   pszArgs                     String of arguments to pass to the process to start.
- * @param   uNumArgs                    Number of arguments specified in pszArgs.
- * @param   pszEnv                      String of environment variables ("FOO=BAR") to pass to the process
- *                                      to start.
- * @param   cbEnv                       Size (in bytes) of environment variables.
- * @param   uNumEnvVars                 Number of environment variables specified in pszEnv.
- * @param   pszUser                     User name (account) to start the process under.
- * @param   pszPassword                 Password of specified user name (account).
- * @param   uTimeLimitMS                Time limit (in ms) of the process' life time.
+ @ @param   pProcess                    Process information.
  */
 static int gstsvcCntlExecThreadInit(PVBOXSERVICECTRLTHREAD pThread,
-                                    uint32_t u32ContextID,
-                                    const char *pszCmd, uint32_t uFlags,
-                                    const char *pszArgs, uint32_t uNumArgs,
-                                    const char *pszEnv, uint32_t cbEnv, uint32_t uNumEnvVars,
-                                    const char *pszUser, const char *pszPassword, uint32_t uTimeLimitMS)
+                                    PVBOXSERVICECTRLPROCESS pProcess,
+                                    uint32_t u32ContextID)
 {
     AssertPtrReturn(pThread, VERR_INVALID_POINTER);
+    AssertPtrReturn(pProcess, VERR_INVALID_POINTER);
 
     /* General stuff. */
+    pThread->pAnchor    = NULL;
     pThread->Node.pPrev = NULL;
     pThread->Node.pNext = NULL;
 
@@ -91,35 +79,35 @@ static int gstsvcCntlExecThreadInit(PVBOXSERVICECTRLTHREAD pThread,
 
     pThread->uPID         = 0;          /* Don't have a PID yet. */
     pThread->pRequest     = NULL;       /* No request assigned yet. */
-    pThread->uFlags       = uFlags;
-    pThread->uTimeLimitMS = (   uTimeLimitMS == UINT32_MAX
-                             || uTimeLimitMS == 0)
-                          ? RT_INDEFINITE_WAIT : uTimeLimitMS;
+    pThread->uFlags       = pProcess->uFlags;
+    pThread->uTimeLimitMS = (   pProcess->uTimeLimitMS == UINT32_MAX
+                             || pProcess->uTimeLimitMS == 0)
+                          ? RT_INDEFINITE_WAIT : pProcess->uTimeLimitMS;
 
     /* Prepare argument list. */
     pThread->uNumArgs = 0; /* Initialize in case of RTGetOptArgvFromString() is failing ... */
     rc = RTGetOptArgvFromString(&pThread->papszArgs, (int*)&pThread->uNumArgs,
-                                (uNumArgs > 0) ? pszArgs : "", NULL);
+                                (pProcess->uNumArgs > 0) ? pProcess->szArgs : "", NULL);
     /* Did we get the same result? */
-    Assert(uNumArgs == pThread->uNumArgs);
+    Assert(pProcess->uNumArgs == pThread->uNumArgs);
 
     if (RT_SUCCESS(rc))
     {
         /* Prepare environment list. */
         pThread->uNumEnvVars = 0;
-        if (uNumEnvVars)
+        if (pProcess->uNumEnvVars)
         {
-            pThread->papszEnv = (char **)RTMemAlloc(uNumEnvVars * sizeof(char*));
+            pThread->papszEnv = (char **)RTMemAlloc(pProcess->uNumEnvVars * sizeof(char*));
             AssertPtr(pThread->papszEnv);
-            pThread->uNumEnvVars = uNumEnvVars;
+            pThread->uNumEnvVars = pProcess->uNumEnvVars;
 
-            const char *pszCur = pszEnv;
+            const char *pszCur = pProcess->szEnv;
             uint32_t i = 0;
             uint32_t cbLen = 0;
-            while (cbLen < cbEnv)
+            while (cbLen < pProcess->cbEnv)
             {
                 /* sanity check */
-                if (i >= uNumEnvVars)
+                if (i >= pProcess->uNumEnvVars)
                 {
                     rc = VERR_INVALID_PARAMETER;
                     break;
@@ -137,18 +125,18 @@ static int gstsvcCntlExecThreadInit(PVBOXSERVICECTRLTHREAD pThread,
         }
 
         /* The actual command to execute. */
-        pThread->pszCmd      = RTStrDup(pszCmd);
+        pThread->pszCmd      = RTStrDup(pProcess->szCmd);
         AssertPtr(pThread->pszCmd);
 
         /* User management. */
-        pThread->pszUser     = RTStrDup(pszUser);
+        pThread->pszUser     = RTStrDup(pProcess->szUser);
         AssertPtr(pThread->pszUser);
-        pThread->pszPassword = RTStrDup(pszPassword);
+        pThread->pszPassword = RTStrDup(pProcess->szPassword);
         AssertPtr(pThread->pszPassword);
     }
 
     if (RT_FAILURE(rc)) /* Clean up on failure. */
-        vboxServiceControlThreadFree(pThread);
+        VBoxServiceControlThreadFree(pThread);
     return rc;
 }
 
@@ -159,19 +147,14 @@ static int gstsvcCntlExecThreadInit(PVBOXSERVICECTRLTHREAD pThread,
  * @return  IPRT status code.
  * @param   pThread                 Thread to shut down.
  */
-static int vboxServiceControlThreadFree(PVBOXSERVICECTRLTHREAD pThread)
+int VBoxServiceControlThreadFree(PVBOXSERVICECTRLTHREAD pThread)
 {
     AssertPtrReturn(pThread, VERR_INVALID_POINTER);
 
-    VBoxServiceVerbose(3, "ControlThread: [PID %u]: Freeing thread data ...\n",
+    VBoxServiceVerbose(3, "ControlThread: [PID %u]: Freeing ...\n",
                        pThread->uPID);
 
-    int rc = vboxServiceControlThreadRequestCancel(pThread->pRequest);
-    if (RT_FAILURE(rc))
-        VBoxServiceError("ControlThread: [PID %u]: Signalling request event failed, rc=%Rrc\n",
-                     pThread->uPID, rc);
-
-    rc = RTCritSectEnter(&pThread->CritSect);
+    int rc = RTCritSectEnter(&pThread->CritSect);
     if (RT_SUCCESS(rc))
     {
         if (pThread->uNumEnvVars)
@@ -188,9 +171,6 @@ static int vboxServiceControlThreadFree(PVBOXSERVICECTRLTHREAD pThread)
 
         VBoxServiceVerbose(3, "ControlThread: [PID %u]: Setting stopped state\n",
                            pThread->uPID);
-
-        /* Set stopped status. */
-        ASMAtomicXchgBool(&pThread->fStopped, true);
 
         rc = RTCritSectLeave(&pThread->CritSect);
         AssertRC(rc);
@@ -219,18 +199,23 @@ static int vboxServiceControlThreadFree(PVBOXSERVICECTRLTHREAD pThread)
  * @return  IPRT status code.
  * @param   pThread             Thread to shut down.
  */
-int VBoxServiceControlThreadSignalShutdown(const PVBOXSERVICECTRLTHREAD pThread)
+int VBoxServiceControlThreadStop(const PVBOXSERVICECTRLTHREAD pThread)
 {
     AssertPtrReturn(pThread, VERR_INVALID_POINTER);
 
-    VBoxServiceVerbose(3, "ControlThread: [PID %u]: Signalling shutdown ...\n",
+    VBoxServiceVerbose(3, "ControlThread: [PID %u]: Stopping ...\n",
                        pThread->uPID);
+
+    int rc = vboxServiceControlThreadRequestCancel(pThread->pRequest);
+    if (RT_FAILURE(rc))
+        VBoxServiceError("ControlThread: [PID %u]: Signalling request event failed, rc=%Rrc\n",
+                         pThread->uPID, rc);
 
     /* Do *not* set pThread->fShutdown or other stuff here!
      * The guest thread loop will do that as soon as it processes the quit message. */
 
     PVBOXSERVICECTRLREQUEST pRequest;
-    int rc = VBoxServiceControlThreadRequestAlloc(&pRequest, VBOXSERVICECTRLREQUEST_QUIT);
+    rc = VBoxServiceControlThreadRequestAlloc(&pRequest, VBOXSERVICECTRLREQUEST_QUIT);
     if (RT_SUCCESS(rc))
     {
         rc = VBoxServiceControlThreadPerform(pThread->uPID, pRequest);
@@ -251,13 +236,13 @@ int VBoxServiceControlThreadSignalShutdown(const PVBOXSERVICECTRLTHREAD pThread)
  * @param   pThread             Thread to wait shutting down for.
  * @param   RTMSINTERVAL        Timeout in ms to wait for shutdown.
  */
-int VBoxServiceControlThreadWaitForShutdown(const PVBOXSERVICECTRLTHREAD pThread,
-                                            RTMSINTERVAL msTimeout)
+int VBoxServiceControlThreadWait(const PVBOXSERVICECTRLTHREAD pThread,
+                                 RTMSINTERVAL msTimeout)
 {
     AssertPtrReturn(pThread, VERR_INVALID_POINTER);
     int rc = VINF_SUCCESS;
     if (   pThread->Thread != NIL_RTTHREAD
-        && !ASMAtomicReadBool(&pThread->fStopped)) /* Only shutdown threads which aren't yet. */
+        && ASMAtomicReadBool(&pThread->fStarted))
     {
         VBoxServiceVerbose(2, "ControlThread: [PID %u]: Waiting for shutdown ...\n",
                            pThread->uPID);
@@ -281,39 +266,6 @@ int VBoxServiceControlThreadWaitForShutdown(const PVBOXSERVICECTRLTHREAD pThread
         }
     }
     return rc;
-}
-
-
-/**
- * Returns whether a guest process thread still is up and running.
- *
- * @return  true if thread is running, false if not.
- * @param   pThread             Thread to determine current status for.
- */
-bool VBoxServiceControlThreadActive(const PVBOXSERVICECTRLTHREAD pThread)
-{
-    AssertPtrReturn(pThread, false);
-
-    int rc = RTCritSectEnter(&pThread->CritSect);
-    if (RT_SUCCESS(rc))
-    {
-        /* We only are interested whether the thread really is alive
-         * and kicking or not, meaning:
-         * - thread was started
-         * - thread is able to serve IPC messages
-         *
-         * Even if the fShutdown flag is set this means the thread should be
-         * considered as being running (destruction phase).
-         */
-        bool fRunning = !pThread->fStopped;
-
-        rc = RTCritSectLeave(&pThread->CritSect);
-        AssertRC(rc);
-
-        return fRunning;
-    }
-
-    return false;
 }
 
 
@@ -508,18 +460,18 @@ static int VBoxServiceControlThreadHandleRequest(RTPOLLSET hPollSet, uint32_t fP
         case VBOXSERVICECTRLREQUEST_STDIN_WRITE:
         case VBOXSERVICECTRLREQUEST_STDIN_WRITE_EOF:
         {
-            AssertPtrReturn(pRequest->pvData, VERR_INVALID_POINTER);
-            AssertReturn(pRequest->cbData, VERR_INVALID_PARAMETER);
-
             size_t cbWritten = 0;
-            if (   *phStdInW != NIL_RTPIPE
-                && pRequest->cbData)
+            if (pRequest->cbData)
             {
-                rcReq = RTPipeWrite(*phStdInW,
-                                    pRequest->pvData, pRequest->cbData, &cbWritten);
+                AssertPtrReturn(pRequest->pvData, VERR_INVALID_POINTER);
+                if (*phStdInW != NIL_RTPIPE)
+                {
+                    rcReq = RTPipeWrite(*phStdInW,
+                                        pRequest->pvData, pRequest->cbData, &cbWritten);
+                }
+                else
+                    rcReq = VINF_EOF;
             }
-            else
-                rcReq = VINF_EOF;
 
             /*
              * If this is the last write + we have really have written all data
@@ -1017,7 +969,7 @@ static int vboxServiceControlThreadRequestCancel(PVBOXSERVICECTRLREQUEST pReq)
     if (!pReq) /* Silently skip non-initialized requests. */
         return VINF_SUCCESS;
 
-    VBoxServiceVerbose(4, "ControlThread: Cancelling request 0x%p\n", pReq);
+    VBoxServiceVerbose(4, "ControlThread: Cancelling request=0x%p\n", pReq);
 
     return RTSemEventMultiSignal(pReq->Event);
 }
@@ -1033,7 +985,7 @@ void VBoxServiceControlThreadRequestFree(PVBOXSERVICECTRLREQUEST pReq)
 {
     AssertPtrReturnVoid(pReq);
 
-    VBoxServiceVerbose(4, "ControlThread: Freeing request 0x%p (event 0x%p)\n",
+    VBoxServiceVerbose(4, "ControlThread: Freeing request=0x%p (event=%RTsem)\n",
                        pReq, &pReq->Event);
 
     int rc = RTSemEventMultiDestroy(pReq->Event);
@@ -1400,7 +1352,10 @@ static int VBoxServiceControlThreadProcessWorker(PVBOXSERVICECTRLTHREAD pThread)
     AssertPtrReturn(pThread, VERR_INVALID_POINTER);
     VBoxServiceVerbose(3, "ControlThread: Thread of process \"%s\" started\n", pThread->pszCmd);
 
-    int rc = VbglR3GuestCtrlConnect(&pThread->uClientID);
+    int rc = VBoxServiceControlListSet(VBOXSERVICECTRLTHREADLIST_RUNNING, pThread);
+    AssertRC(rc);
+
+    rc = VbglR3GuestCtrlConnect(&pThread->uClientID);
     if (RT_FAILURE(rc))
     {
         VBoxServiceError("ControlThread: Thread failed to connect to the guest control service, aborted! Error: %Rrc\n", rc);
@@ -1520,6 +1475,7 @@ static int VBoxServiceControlThreadProcessWorker(PVBOXSERVICECTRLTHREAD pThread)
                                     rc = VBoxServiceControlThreadProcLoop(pThread,
                                                                           hProcess, pThread->uTimeLimitMS, hPollSet,
                                                                           &pThread->pipeStdInW, &pipeStdOutR, &pipeStdErrR);
+
                                     /*
                                      * The handles that are no longer in the set have
                                      * been closed by the above call in order to prevent
@@ -1566,9 +1522,12 @@ static int VBoxServiceControlThreadProcessWorker(PVBOXSERVICECTRLTHREAD pThread)
         RTEnvDestroy(hEnv);
     }
 
+    /* Move thread to stopped thread list. */
+    int rc2 = VBoxServiceControlListSet(VBOXSERVICECTRLTHREADLIST_STOPPED, pThread);
+    AssertRC(rc2);
+
     if (pThread->uClientID)
     {
-        int rc2;
         if (RT_FAILURE(rc))
         {
             rc2 = VbglR3GuestCtrlExecReportStatus(pThread->uClientID, pThread->uContextID, pThread->uPID,
@@ -1600,6 +1559,8 @@ static int VBoxServiceControlThreadProcessWorker(PVBOXSERVICECTRLTHREAD pThread)
     VBoxServiceVerbose(3, "ControlThread: [PID %u]: Thread of process \"%s\" ended with rc=%Rrc\n",
                        pThread->uPID, pThread->pszCmd, rc);
 
+    /* Update started/stopped status. */
+    ASMAtomicXchgBool(&pThread->fStopped, true);
     ASMAtomicXchgBool(&pThread->fStarted, false);
 
     /*
@@ -1608,16 +1569,6 @@ static int VBoxServiceControlThreadProcessWorker(PVBOXSERVICECTRLTHREAD pThread)
      */
     if (RT_FAILURE(rc) && !fSignalled)
         RTThreadUserSignal(RTThreadSelf());
-
-    /*
-     * Remove thread from global thread list. After this it's safe to shutdown
-     * and deallocate this thread.
-     */
-    VBoxServiceControlRemoveThread(pThread);
-
-    int rc2 = vboxServiceControlThreadFree(pThread);
-    if (RT_SUCCESS(rc))
-        rc = rc2;
 
     return rc;
 }
@@ -1644,32 +1595,13 @@ static DECLCALLBACK(int) VBoxServiceControlThread(RTTHREAD ThreadSelf, void *pvU
  * so that this function will not block the overall program execution.
  *
  * @return  IPRT status code.
- * @param   uClientID                   Client ID for accessing host service.
  * @param   uContextID                  Context ID to associate the process to start with.
- * @param   pszCmd                      Full qualified path of process to start (without arguments).
- * @param   uFlags                      Process execution flags.
- * @param   pszArgs                     String of arguments to pass to the process to start.
- * @param   uNumArgs                    Number of arguments specified in pszArgs.
- * @param   pszEnv                      String of environment variables ("FOO=BAR") to pass to the process
- *                                      to start.
- * @param   cbEnv                       Size (in bytes) of environment variables.
- * @param   uNumEnvVars                 Number of environment variables specified in pszEnv.
- * @param   pszUser                     User name (account) to start the process under.
- * @param   pszPassword                 Password of specified user name (account).
- * @param   uTimeLimitMS                Time limit (in ms) of the process' life time.
- * @param   ppNode                      The thread's list node to insert into the global thread list
- *                                      on success.
- *
- ** @todo Put (all?) these parameters into a struct!
+ * @param   pProcess                    Process info.
  */
-int VBoxServiceControlThreadStart(uint32_t uClientID, uint32_t uContextID,
-                                  const char *pszCmd, uint32_t uFlags,
-                                  const char *pszArgs, uint32_t uNumArgs,
-                                  const char *pszEnv, uint32_t cbEnv, uint32_t uNumEnvVars,
-                                  const char *pszUser, const char *pszPassword, uint32_t uTimeLimitMS,
-                                  PRTLISTNODE *ppNode)
+int VBoxServiceControlThreadStart(uint32_t uContextID,
+                                  PVBOXSERVICECTRLPROCESS pProcess)
 {
-    AssertPtrReturn(ppNode, VERR_INVALID_POINTER);
+    AssertPtrReturn(pProcess, VERR_INVALID_POINTER);
 
     /*
      * Allocate new thread data and assign it to our thread list.
@@ -1678,13 +1610,7 @@ int VBoxServiceControlThreadStart(uint32_t uClientID, uint32_t uContextID,
     if (!pThread)
         return VERR_NO_MEMORY;
 
-    int rc = gstsvcCntlExecThreadInit(pThread,
-                                      uContextID,
-                                      pszCmd, uFlags,
-                                      pszArgs, uNumArgs,
-                                      pszEnv, cbEnv, uNumEnvVars,
-                                      pszUser, pszPassword,
-                                      uTimeLimitMS);
+    int rc = gstsvcCntlExecThreadInit(pThread, pProcess, uContextID);
     if (RT_SUCCESS(rc))
     {
         static uint32_t s_uCtrlExecThread = 0;
@@ -1692,7 +1618,7 @@ int VBoxServiceControlThreadStart(uint32_t uClientID, uint32_t uContextID,
             s_uCtrlExecThread = 0; /* Wrap around to not let IPRT freak out. */
         rc = RTThreadCreateF(&pThread->Thread, VBoxServiceControlThread,
                              pThread /*pvUser*/, 0 /*cbStack*/,
-                             RTTHREADTYPE_DEFAULT, 0 /* Flags */, "gctl%u", s_uCtrlExecThread);
+                             RTTHREADTYPE_DEFAULT, RTTHREADFLAGS_WAITABLE, "gctl%u", s_uCtrlExecThread);
         if (RT_FAILURE(rc))
         {
             VBoxServiceError("ControlThread: RTThreadCreate failed, rc=%Rrc\n, pThread=%p\n",
@@ -1703,18 +1629,17 @@ int VBoxServiceControlThreadStart(uint32_t uClientID, uint32_t uContextID,
             VBoxServiceVerbose(4, "ControlThread: Waiting for thread to initialize ...\n");
 
             /* Wait for the thread to initialize. */
-            RTThreadUserWait(pThread->Thread, 60 * 1000 /* 60 seconds max. */);
-            if (ASMAtomicReadBool(&pThread->fShutdown))
+            rc = RTThreadUserWait(pThread->Thread, 60 * 1000 /* 60 seconds max. */);
+            AssertRC(rc);
+            if (   ASMAtomicReadBool(&pThread->fShutdown)
+                || RT_FAILURE(rc))
             {
-                VBoxServiceError("ControlThread: Thread for process \"%s\" failed to start!\n", pszCmd);
-                rc = VERR_GENERAL_FAILURE;
+                VBoxServiceError("ControlThread: Thread for process \"%s\" failed to start, rc=%Rrc\n",
+                                 pProcess->szCmd, rc);
             }
             else
             {
-                pThread->fStarted = true;
-
-                /* Return the thread's node. */
-                *ppNode = &pThread->Node;
+                ASMAtomicXchgBool(&pThread->fStarted, true);
             }
         }
     }
@@ -1741,7 +1666,7 @@ int VBoxServiceControlThreadPerform(uint32_t uPID, PVBOXSERVICECTRLREQUEST pRequ
     /* Rest in pRequest is optional (based on the request type). */
 
     int rc = VINF_SUCCESS;
-    PVBOXSERVICECTRLTHREAD pThread = VBoxServiceControlGetThreadLocked(uPID);
+    PVBOXSERVICECTRLTHREAD pThread = VBoxServiceControlLockThread(uPID);
     if (pThread)
     {
         if (ASMAtomicReadBool(&pThread->fShutdown))
@@ -1772,7 +1697,7 @@ int VBoxServiceControlThreadPerform(uint32_t uPID, PVBOXSERVICECTRLREQUEST pRequ
             }
         }
 
-        VBoxServiceControlThreadUnlock(pThread);
+        VBoxServiceControlUnlockThread(pThread);
     }
     else /* PID not found! */
         rc = VERR_NOT_FOUND;

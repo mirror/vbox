@@ -28,6 +28,7 @@
 #include <iprt/critsect.h>
 
 #include <VBox/VBoxGuestLib.h>
+#include <VBox/HostServices/GuestControlSvc.h>
 
 /**
  * A service descriptor.
@@ -155,6 +156,25 @@ typedef enum VBOXSERVICECTRLREQUESTTYPE
 } VBOXSERVICECTRLREQUESTTYPE;
 
 /**
+ * Thread list types.
+ */
+typedef enum VBOXSERVICECTRLTHREADLISTTYPE
+{
+    /** Unknown list -- uncool to use. */
+    VBOXSERVICECTRLTHREADLIST_UNKNOWN       = 0,
+    /** Stopped list: Here all guest threads end up
+     *  when they reached the stopped state and can
+     *  be shut down / free'd safely. */
+    VBOXSERVICECTRLTHREADLIST_STOPPED       = 1,
+    /**
+     * Started list: Here all threads are registered
+     * when they're up and running (that is, accepting
+     * commands).
+     */
+    VBOXSERVICECTRLTHREADLIST_RUNNING       = 2
+} VBOXSERVICECTRLTHREADLISTTYPE;
+
+/**
  * Structure to perform a request on a started guest
  * process. Needed for letting the main guest control thread
  * to communicate (and wait) for a certain operation which
@@ -182,10 +202,45 @@ typedef struct VBOXSERVICECTRLREQUEST
 typedef VBOXSERVICECTRLREQUEST *PVBOXSERVICECTRLREQUEST;
 
 /**
+ * Structure holding information for starting a guest
+ * process.
+ */
+typedef struct VBOXSERVICECTRLPROCESS
+{
+    /** Full qualified path of process to start (without arguments). */
+    char szCmd[GUESTPROCESS_MAX_CMD_LEN];
+    /** Process execution flags. @sa */
+    uint32_t uFlags;
+    /** Command line arguments. */
+    char szArgs[GUESTPROCESS_MAX_ARGS_LEN];
+    /** Number of arguments specified in pszArgs. */
+    uint32_t uNumArgs;
+    /** String of environment variables ("FOO=BAR") to pass to the process
+      * to start. */
+    char szEnv[GUESTPROCESS_MAX_ENV_LEN];
+    /** Size (in bytes) of environment variables block. */
+    uint32_t cbEnv;
+    /** Number of environment variables specified in pszEnv. */
+    uint32_t uNumEnvVars;
+    /** User name (account) to start the process under. */
+    char szUser[GUESTPROCESS_MAX_USER_LEN];
+    /** Password of specified user name (account). */
+    char szPassword[GUESTPROCESS_MAX_PASSWORD_LEN];
+    /** Time limit (in ms) of the process' life time. */
+    uint32_t uTimeLimitMS;
+} VBOXSERVICECTRLPROCESS;
+/** Pointer to a guest process block. */
+typedef VBOXSERVICECTRLPROCESS *PVBOXSERVICECTRLPROCESS;
+
+/**
  * Structure for holding data for one (started) guest process.
  */
 typedef struct VBOXSERVICECTRLTHREAD
 {
+    /** Pointer to list archor of following
+     *  list node.
+     *  @todo Would be nice to have a RTListGetAnchor(). */
+    PRTLISTANCHOR                   pAnchor;
     /** Node. */
     RTLISTNODE                      Node;
     /** The worker thread. */
@@ -329,30 +384,29 @@ extern int          VBoxServiceWinGetComponentVersions(uint32_t uiClientID);
 #endif /* RT_OS_WINDOWS */
 
 #ifdef VBOX_WITH_GUEST_CONTROL
-/* Guest control functions. */
-extern PVBOXSERVICECTRLTHREAD VBoxServiceControlGetThreadLocked(uint32_t uPID);
-extern void         VBoxServiceControlThreadUnlock(const PVBOXSERVICECTRLTHREAD pThread);
-extern int          VBoxServiceControlAssignPID(PVBOXSERVICECTRLTHREAD pThread, uint32_t uPID);
-extern void         VBoxServiceControlRemoveThread(const PVBOXSERVICECTRLTHREAD pThread);
-/* Guest process functions. */
-extern bool         VBoxServiceControlThreadActive(const PVBOXSERVICECTRLTHREAD pThread);
-extern int          VBoxServiceControlThreadStart(uint32_t uClientID, uint32_t uContext,
-                                                  const char *pszCmd, uint32_t uFlags,
-                                                  const char *pszArgs, uint32_t uNumArgs,
-                                                  const char *pszEnv, uint32_t cbEnv, uint32_t uNumEnvVars,
-                                                  const char *pszUser, const char *pszPassword, uint32_t uTimeLimitMS,
-                                                  PRTLISTNODE *ppNode);
-extern int          VBoxServiceControlThreadRequestAlloc(PVBOXSERVICECTRLREQUEST   *ppReq,
-                                                         VBOXSERVICECTRLREQUESTTYPE enmType);
-extern int          VBoxServiceControlThreadRequestAllocEx(PVBOXSERVICECTRLREQUEST    *ppReq,
-                                                           VBOXSERVICECTRLREQUESTTYPE  enmType,
-                                                           void*                       pbData,
-                                                           size_t                      cbData,
-                                                           uint32_t                    uCID);
-extern void         VBoxServiceControlThreadRequestFree(PVBOXSERVICECTRLREQUEST pReq);
-extern int          VBoxServiceControlThreadPerform(uint32_t uPID, PVBOXSERVICECTRLREQUEST pRequest);
-extern int          VBoxServiceControlThreadSignalShutdown(const PVBOXSERVICECTRLTHREAD pThread);
-extern int          VBoxServiceControlThreadWaitForShutdown(const PVBOXSERVICECTRLTHREAD pThread, RTMSINTERVAL msTimeout);
+/* Guest control main thread functions. */
+extern int                      VBoxServiceControlAssignPID(PVBOXSERVICECTRLTHREAD pThread, uint32_t uPID);
+extern int                      VBoxServiceControlListSet(VBOXSERVICECTRLTHREADLISTTYPE enmList,
+                                                          PVBOXSERVICECTRLTHREAD pThread);
+extern PVBOXSERVICECTRLTHREAD   VBoxServiceControlLockThread(uint32_t uPID);
+extern void                     VBoxServiceControlUnlockThread(const PVBOXSERVICECTRLTHREAD pThread);
+extern int                      VBoxServiceControlSetInactive(PVBOXSERVICECTRLTHREAD pThread);
+/* Per-thread guest process functions. */
+extern int                      VBoxServiceControlThreadStart(uint32_t uContext,
+                                                              PVBOXSERVICECTRLPROCESS pProcess);
+extern int                      VBoxServiceControlThreadPerform(uint32_t uPID, PVBOXSERVICECTRLREQUEST pRequest);
+extern int                      VBoxServiceControlThreadStop(const PVBOXSERVICECTRLTHREAD pThread);
+extern int                      VBoxServiceControlThreadWait(const PVBOXSERVICECTRLTHREAD pThread, RTMSINTERVAL msTimeout);
+extern int                      VBoxServiceControlThreadFree(PVBOXSERVICECTRLTHREAD pThread);
+/* Request handling. */
+extern int                      VBoxServiceControlThreadRequestAlloc(PVBOXSERVICECTRLREQUEST   *ppReq,
+                                                                     VBOXSERVICECTRLREQUESTTYPE enmType);
+extern int                      VBoxServiceControlThreadRequestAllocEx(PVBOXSERVICECTRLREQUEST    *ppReq,
+                                                                       VBOXSERVICECTRLREQUESTTYPE  enmType,
+                                                                       void*                       pbData,
+                                                                       size_t                      cbData,
+                                                                       uint32_t                    uCID);
+extern void                     VBoxServiceControlThreadRequestFree(PVBOXSERVICECTRLREQUEST pReq);
 #endif /* VBOX_WITH_GUEST_CONTROL */
 
 #ifdef VBOXSERVICE_MANAGEMENT
