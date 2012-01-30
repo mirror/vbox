@@ -249,7 +249,7 @@ HRESULT Guest::directoryExistsInternal(IN_BSTR aDirectory, IN_BSTR aUsername, IN
                 *aExists = TRUE;
                 break;
 
-            case VERR_FILE_NOT_FOUND:
+            case VERR_PATH_NOT_FOUND:
                 *aExists = FALSE;
                 break;
 
@@ -496,11 +496,11 @@ HRESULT Guest::directoryQueryInfoInternal(IN_BSTR aDirectory,
             {
                 const char *pszFsType = stdOut[0].GetString("ftype");
                 if (!pszFsType) /* Attribute missing? */
-                     rc = VERR_NOT_FOUND;
+                     rc = VERR_PATH_NOT_FOUND;
                 if (   RT_SUCCESS(rc)
                     && strcmp(pszFsType, "d")) /* Directory? */
                 {
-                     rc = VERR_FILE_NOT_FOUND;
+                     rc = VERR_PATH_NOT_FOUND;
                      /* This is not critical for Main, so don't set hr --
                       * we will take care of rc then. */
                 }

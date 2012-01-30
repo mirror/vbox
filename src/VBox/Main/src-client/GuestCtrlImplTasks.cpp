@@ -262,42 +262,43 @@ HRESULT Guest::taskCopyFileToGuest(GuestTask *aTask)
                     {
                         BOOL fCompleted = FALSE;
                         BOOL fCanceled = FALSE;
-
-                        size_t cbToRead = cbSize;
                         uint64_t cbTransferedTotal = 0;
-
-                        size_t cbRead;
 
                         SafeArray<BYTE> aInputData(_64K);
                         while (   SUCCEEDED(execProgress->COMGETTER(Completed(&fCompleted)))
                                && !fCompleted)
                         {
-                            /** @todo Not very efficient, but works for now. */
-                            vrc = RTFileSeek(fileSource, cbTransferedTotal,
-                                             RTFILE_SEEK_BEGIN, NULL /* poffActual */);
-                            if (RT_SUCCESS(vrc))
+                            size_t cbToRead = cbSize;
+                            size_t cbRead = 0;
+                            if (cbSize) /* If we have nothing to read, take a shortcut. */
                             {
-                                vrc = RTFileRead(fileSource, (uint8_t*)aInputData.raw(),
-                                                 RT_MIN(cbToRead, _64K), &cbRead);
-                                /*
-                                 * Some other error occured? There might be a chance that RTFileRead
-                                 * could not resolve/map the native error code to an IPRT code, so just
-                                 * print a generic error.
-                                 */
-                                if (RT_FAILURE(vrc))
+                                /** @todo Not very efficient, but works for now. */
+                                vrc = RTFileSeek(fileSource, cbTransferedTotal,
+                                                 RTFILE_SEEK_BEGIN, NULL /* poffActual */);
+                                if (RT_SUCCESS(vrc))
+                                {
+                                    vrc = RTFileRead(fileSource, (uint8_t*)aInputData.raw(),
+                                                     RT_MIN(cbToRead, _64K), &cbRead);
+                                    /*
+                                     * Some other error occured? There might be a chance that RTFileRead
+                                     * could not resolve/map the native error code to an IPRT code, so just
+                                     * print a generic error.
+                                     */
+                                    if (RT_FAILURE(vrc))
+                                    {
+                                        rc = GuestTask::setProgressErrorInfo(VBOX_E_IPRT_ERROR, aTask->pProgress,
+                                                                             Guest::tr("Could not read from file \"%s\" (%Rrc)"),
+                                                                             aTask->strSource.c_str(), vrc);
+                                        break;
+                                    }
+                                }
+                                else
                                 {
                                     rc = GuestTask::setProgressErrorInfo(VBOX_E_IPRT_ERROR, aTask->pProgress,
-                                                                         Guest::tr("Could not read from file \"%s\" (%Rrc)"),
-                                                                         aTask->strSource.c_str(), vrc);
+                                                                         Guest::tr("Seeking file \"%s\" failed; offset = %RU64 (%Rrc)"),
+                                                                         aTask->strSource.c_str(), cbTransferedTotal, vrc);
                                     break;
                                 }
-                            }
-                            else
-                            {
-                                rc = GuestTask::setProgressErrorInfo(VBOX_E_IPRT_ERROR, aTask->pProgress,
-                                                                     Guest::tr("Seeking file \"%s\" failed; offset = %RU64 (%Rrc)"),
-                                                                     aTask->strSource.c_str(), cbTransferedTotal, vrc);
-                                break;
                             }
                             /* Resize buffer to reflect amount we just have read.
                              * Size 0 is allowed! */
@@ -316,7 +317,7 @@ HRESULT Guest::taskCopyFileToGuest(GuestTask *aTask)
                                 uFlags |= ProcessInputFlag_EndOfFile;
                             }
 
-                            ULONG uBytesWritten;
+                            ULONG uBytesWritten = 0;
                             rc = pGuest->SetProcessInput(uPID, uFlags,
                                                          0 /* Infinite timeout */,
                                                          ComSafeArrayAsInParam(aInputData), &uBytesWritten);
