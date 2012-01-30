@@ -354,6 +354,24 @@ RTDECL(int) RTTimerLRStart(RTTIMERLR hTimerLR, uint64_t u64First);
  */
 RTDECL(int) RTTimerLRStop(RTTIMERLR hTimerLR);
 
+/**
+ * Changes the interval of a low resolution timer.
+ *
+ * If the timer is active, the next tick will occure immediately just like with
+ * RTTimerLRStart() when u64First parameter is zero.
+ *
+ * @returns IPRT status code.
+ * @retval  VERR_INVALID_HANDLE if pTimer isn't valid.
+ * @retval  VERR_NOT_SUPPORTED if not supported.
+ *
+ * @param   hTimerLR            The low resolution timer to update.
+ * @param   u64NanoInterval     The interval between timer ticks specified in
+ *                              nanoseconds.  This is rounded to the fit the
+ *                              system timer granularity.
+ * @remarks Callable from the timer callback.
+ */
+RTDECL(int) RTTimerLRChangeInterval(RTTIMERLR hTimerLR, uint64_t u64NanoInterval);
+
 /** @} */
 
 RT_C_DECLS_END
