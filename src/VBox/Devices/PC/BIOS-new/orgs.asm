@@ -1722,7 +1722,7 @@ int08_floppy_off:
 		inc	eax
 
 		;; compare eax to one day's worth of ticks (at 18.2 Hz)
-		cmp	eax, 1700B0h
+		cmp	eax, 1800B0h
 		jb	int08_store_ticks
 		;; there has been a midnight rollover
 		xor	eax, eax
