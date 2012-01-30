@@ -235,6 +235,43 @@ RTDECL(int) RTTimerLRStop(RTTIMERLR hTimerLR)
 }
 RT_EXPORT_SYMBOL(RTTimerLRStop);
 
+RTDECL(int) RTTimerLRChangeInterval(RTTIMERLR hTimerLR, uint64_t u64NanoInterval)
+{
+    PRTTIMERLRINT pThis = hTimerLR;
+    AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
+    AssertReturn(pThis->u32Magic == RTTIMERLR_MAGIC, VERR_INVALID_HANDLE);
+    AssertReturn(!pThis->fDestroyed, VERR_INVALID_HANDLE);
+
+    if (u64NanoInterval && u64NanoInterval < 100*1000*1000)
+        return VERR_INVALID_PARAMETER;
+
+#if 0
+    if (!pThis->fSuspended)
+    {
+        int rc = RTTimerLRStop(hTimerLR);
+        if (RT_FAILURE(rc))
+            return rc;
+
+        ASMAtomicWriteU64(&pThis->u64NanoInterval, u64NanoInterval);
+
+        rc = RTTimerLRStart(hTimerLR, 0);
+        if (RT_FAILURE(rc))
+            return rc;
+    }
+    else
+#endif
+    {
+        uint64_t u64Now = RTTimeNanoTS();
+        ASMAtomicWriteU64(&pThis->iTick, 0);
+        ASMAtomicWriteU64(&pThis->u64StartTS, u64Now);
+        ASMAtomicWriteU64(&pThis->u64NextTS, u64Now);
+        ASMAtomicWriteU64(&pThis->u64NanoInterval, u64NanoInterval);
+        int rc = RTSemEventSignal(pThis->hEvent);
+    }
+
+    return VINF_SUCCESS;
+}
+RT_EXPORT_SYMBOL(RTTimerLRChangeInterval);
 
 static DECLCALLBACK(int) rtTimerLRThread(RTTHREAD hThreadSelf, void *pvUser)
 {

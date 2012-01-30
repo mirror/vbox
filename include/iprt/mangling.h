@@ -1542,6 +1542,7 @@
 # define RTTimerLRDestroy                               RT_MANGLER(RTTimerLRDestroy)
 # define RTTimerLRStart                                 RT_MANGLER(RTTimerLRStart)
 # define RTTimerLRStop                                  RT_MANGLER(RTTimerLRStop)
+# define RTTimerLRChangeInterval                        RT_MANGLER(RTTimerLRChangeInterval)
 # define RTTimerReleaseSystemGranularity                RT_MANGLER(RTTimerReleaseSystemGranularity) /* r0drv */
 # define RTTimerRequestSystemGranularity                RT_MANGLER(RTTimerRequestSystemGranularity) /* r0drv */
 # define RTTimerStart                                   RT_MANGLER(RTTimerStart)

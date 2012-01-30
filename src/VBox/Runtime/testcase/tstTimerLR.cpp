@@ -205,6 +205,88 @@ int main()
     }
 
     /*
+     * Test changing the interval dynamically
+     */
+    RTPrintf("\n"
+             "tstTimer: Testing dynamic changes of timer interval...\n");
+    do
+    {
+        RTTIMERLR hTimerLR;
+        rc = RTTimerLRCreateEx(&hTimerLR, aTests[0].uMilliesInterval * (uint64_t)1000000, 0, TimerLRCallback, NULL);
+        if (RT_FAILURE(rc))
+        {
+            RTPrintf("RTTimerLRCreateEX(,%u*1M,,,) -> %d\n", aTests[i].uMilliesInterval, rc);
+            cErrors++;
+            continue;
+        }
+
+        for (i = 0; i < RT_ELEMENTS(aTests); i++)
+        {
+            RTPrintf("\n"
+                     "tstTimer: TESTING - %d ms interval, %d ms wait, expects %d-%d ticks.\n",
+                     aTests[i].uMilliesInterval, aTests[i].uMilliesWait, aTests[i].cLower, aTests[i].cUpper);
+
+            gcTicks = 0;
+            gu64Max = 0;
+            gu64Min = UINT64_MAX;
+            gu64Prev = 0;
+            /*
+             * Start the timer an actively wait for it for the period requested.
+             */
+            uTSBegin = RTTimeNanoTS();
+            if (i == 0)
+            {
+                rc = RTTimerLRStart(hTimerLR, 0);
+                if (RT_FAILURE(rc))
+                {
+                    RTPrintf("tstTimer: FAILURE - RTTimerLRStart() -> %Rrc\n", rc);
+                    cErrors++;
+                }
+            }
+            else
+            {
+                rc = RTTimerLRChangeInterval(hTimerLR, aTests[i].uMilliesInterval * (uint64_t)1000000);
+                if (RT_FAILURE(rc))
+                {
+                    RTPrintf("tstTimer: FAILURE - RTTimerLRChangeInterval() -> %d gcTicks=%d\n", rc, gcTicks);
+                    cErrors++;
+                }
+            }
+
+            while (RTTimeNanoTS() - uTSBegin < (uint64_t)aTests[i].uMilliesWait * 1000000)
+                /* nothing */;
+
+            uint64_t uTSEnd = RTTimeNanoTS();
+            uTSDiff = uTSEnd - uTSBegin;
+            RTPrintf("uTS=%RI64 (%RU64 - %RU64)\n", uTSDiff, uTSBegin, uTSEnd);
+
+            /*
+             * Check the number of ticks.
+             */
+            if (gcTicks < aTests[i].cLower)
+            {
+                RTPrintf("tstTimer: FAILURE - Too few ticks gcTicks=%d (expected %d-%d)\n", gcTicks, aTests[i].cUpper, aTests[i].cLower);
+                cErrors++;
+            }
+            else if (gcTicks > aTests[i].cUpper)
+            {
+                RTPrintf("tstTimer: FAILURE - Too many ticks gcTicks=%d (expected %d-%d)\n", gcTicks, aTests[i].cUpper, aTests[i].cLower);
+                cErrors++;
+            }
+            else
+                RTPrintf("tstTimer: OK      - gcTicks=%d\n",  gcTicks);
+            // RTPrintf(" min=%RU64 max=%RU64\n", gu64Min, gu64Max);
+        }
+        /* don't stop it, destroy it because there are potential races in destroying an active timer. */
+        rc = RTTimerLRDestroy(hTimerLR);
+        if (RT_FAILURE(rc))
+        {
+            RTPrintf("tstTimer: FAILURE - RTTimerLRDestroy() -> %d gcTicks=%d\n", rc, gcTicks);
+            cErrors++;
+        }
+    } while (0);
+
+    /*
      * Test multiple timers running at once.
      */
     /** @todo multiple LR timer testcase. */
