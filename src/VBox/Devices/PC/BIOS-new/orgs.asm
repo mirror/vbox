@@ -882,7 +882,7 @@ endif
 		mov	ds, ax
 		mov	al, ds:[496h]	; mf2_state |= 0x02
 		or	al, 2		; TODO: why not RMW?
-		mov	ds:[496], al
+		mov	ds:[496h], al
 		jmp	int09_done
 
 int09_check_pause:
