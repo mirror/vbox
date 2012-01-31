@@ -281,6 +281,115 @@ typedef GMMPAGEDESC *PGMMPAGEDESC;
 #endif
 
 
+/**
+ * The allocation sizes.
+ */
+typedef struct GMMVMSIZES
+{
+    /** The number of pages of base memory.
+     * This is the sum of RAM, ROMs and handy pages. */
+    uint64_t        cBasePages;
+    /** The number of pages for the shadow pool. (Can be squeezed for memory.) */
+    uint32_t        cShadowPages;
+    /** The number of pages for fixed allocations like MMIO2 and the hyper heap. */
+    uint32_t        cFixedPages;
+} GMMVMSIZES;
+/** Pointer to a GMMVMSIZES. */
+typedef GMMVMSIZES *PGMMVMSIZES;
+
+
+/**
+ * GMM VM statistics.
+ */
+typedef struct GMMVMSTATS
+{
+    /** The reservations. */
+    GMMVMSIZES          Reserved;
+    /** The actual allocations.
+     * This includes both private and shared page allocations. */
+    GMMVMSIZES          Allocated;
+
+    /** The current number of private pages. */
+    uint64_t            cPrivatePages;
+    /** The current number of shared pages. */
+    uint64_t            cSharedPages;
+    /** The current number of ballooned pages. */
+    uint64_t            cBalloonedPages;
+    /** The max number of pages that can be ballooned. */
+    uint64_t            cMaxBalloonedPages;
+    /** The number of pages we've currently requested the guest to give us.
+     * This is 0 if no pages currently requested. */
+    uint64_t            cReqBalloonedPages;
+    /** The number of pages the guest has given us in response to the request.
+     * This is not reset on request completed and may be used in later decisions. */
+    uint64_t            cReqActuallyBalloonedPages;
+    /** The number of pages we've currently requested the guest to take back. */
+    uint64_t            cReqDeflatePages;
+
+    /** The current over-commitment policy. */
+    GMMOCPOLICY         enmPolicy;
+    /** The VM priority for arbitrating VMs in low and out of memory situation.
+     * Like which VMs to start squeezing first. */
+    GMMPRIORITY         enmPriority;
+    /** Whether ballooning is enabled or not. */
+    bool                fBallooningEnabled;
+    /** Whether shared paging is enabled or not. */
+    bool                fSharedPagingEnabled;
+    /** Whether the VM is allowed to allocate memory or not.
+     * This is used when the reservation update request fails or when the VM has
+     * been told to suspend/save/die in an out-of-memory case. */
+    bool                fMayAllocate;
+
+    /** Explicit alignment. */
+    bool                afReserved[5];
+} GMMVMSTATS;
+
+
+/**
+ * The GMM statistics.
+ */
+typedef struct GMMSTATS
+{
+    /** The maximum number of pages we're allowed to allocate
+     * (GMM::cMaxPages). */
+    uint64_t            cMaxPages;
+    /** The number of pages that has been reserved (GMM::cReservedPages). */
+    uint64_t            cReservedPages;
+    /** The number of pages that we have over-committed in reservations
+     * (GMM::cOverCommittedPages). */
+    uint64_t            cOverCommittedPages;
+    /** The number of actually allocated (committed if you like) pages
+     * (GMM::cAllocatedPages). */
+    uint64_t            cAllocatedPages;
+    /** The number of pages that are shared. A subset of cAllocatedPages.
+     * (GMM::cSharedPages) */
+    uint64_t            cSharedPages;
+    /** The number of pages that are actually shared between VMs.
+     * (GMM:cDuplicatePages) */
+    uint64_t            cDuplicatePages;
+    /** The number of pages that are shared that has been left behind by
+     * VMs not doing proper cleanups (GMM::cLeftBehindSharedPages). */
+    uint64_t            cLeftBehindSharedPages;
+    /** The number of current ballooned pages (GMM::cBalloonedPages). */
+    uint64_t            cBalloonedPages;
+    /** The number of allocation chunks (GMM::cChunks). */
+    uint32_t            cChunks;
+    /** The number of freed chunks ever (GMM::cFreedChunks). */
+    uint32_t            cFreedChunks;
+    /** The number of shareable modules (GMM:cShareableModules). */
+    uint64_t            cShareableModules;
+    /** Space reserved for later. */
+    uint64_t            au64Reserved[2];
+
+    /** Statistics for the specified VM. (Zero filled if not requested.) */
+    GMMVMSTATS          VMStats;
+} GMMSTATS;
+/** Pointer to the GMM statistics. */
+typedef GMMSTATS *PGMMSTATS;
+/** Const pointer to the GMM statistics. */
+typedef const GMMSTATS *PCGMMSTATS;
+
+
 GMMR0DECL(int)  GMMR0Init(void);
 GMMR0DECL(void) GMMR0Term(void);
 GMMR0DECL(void) GMMR0InitPerVMData(PGVM pGVM);
@@ -303,6 +412,8 @@ GMMR0DECL(int)  GMMR0CheckSharedModules(PVM pVM, PVMCPU pVCpu);
 GMMR0DECL(int)  GMMR0ResetSharedModules(PVM pVM, VMCPUID idCpu);
 GMMR0DECL(int)  GMMR0CheckSharedModulesStart(PVM pVM);
 GMMR0DECL(int)  GMMR0CheckSharedModulesEnd(PVM pVM);
+GMMR0DECL(int)  GMMR0QueryStatistics(PGMMSTATS pStats, PSUPDRVSESSION pSession);
+GMMR0DECL(int)  GMMR0ResetStatistics(PCGMMSTATS pStats, PSUPDRVSESSION pSession);
 
 /**
  * Request buffer for GMMR0InitialReservationReq / VMMR0_DO_GMM_INITIAL_RESERVATION.
@@ -604,6 +715,49 @@ typedef GMMFINDDUPLICATEPAGEREQ *PGMMFINDDUPLICATEPAGEREQ;
 
 GMMR0DECL(int) GMMR0FindDuplicatePageReq(PVM pVM, PGMMFINDDUPLICATEPAGEREQ pReq);
 #endif /* VBOX_STRICT && HC_ARCH_BITS == 64 */
+
+
+/**
+ * Request buffer for GMMR0QueryStatisticsReq / VMMR0_DO_GMM_QUERY_STATISTICS.
+ * @see GMMR0QueryStatistics.
+ */
+typedef struct GMMQUERYSTATISTICSSREQ
+{
+    /** The header. */
+    SUPVMMR0REQHDR  Hdr;
+    /** The support driver session. */
+    PSUPDRVSESSION  pSession;
+    /** The statistics. */
+    GMMSTATS        Stats;
+} GMMQUERYSTATISTICSSREQ;
+/** Pointer to a GMMR0QueryStatisticsReq / VMMR0_DO_GMM_QUERY_STATISTICS
+ *  request buffer. */
+typedef GMMQUERYSTATISTICSSREQ *PGMMQUERYSTATISTICSSREQ;
+
+GMMR0DECL(int)      GMMR0QueryStatisticsReq(PVM pVM, PGMMQUERYSTATISTICSSREQ pReq);
+
+
+/**
+ * Request buffer for GMMR0ResetStatisticsReq / VMMR0_DO_GMM_RESET_STATISTICS.
+ * @see GMMR0ResetStatistics.
+ */
+typedef struct GMMRESETSTATISTICSSREQ
+{
+    /** The header. */
+    SUPVMMR0REQHDR  Hdr;
+    /** The support driver session. */
+    PSUPDRVSESSION  pSession;
+    /** The statistics to reset.
+     * Any non-zero entry will be reset (if permitted). */
+    GMMSTATS        Stats;
+} GMMRESETSTATISTICSSREQ;
+/** Pointer to a GMMR0ResetStatisticsReq / VMMR0_DO_GMM_RESET_STATISTICS
+ *  request buffer. */
+typedef GMMRESETSTATISTICSSREQ *PGMMRESETSTATISTICSSREQ;
+
+GMMR0DECL(int)      GMMR0ResetStatisticsReq(PVM pVM, PGMMRESETSTATISTICSSREQ pReq);
+
+
 
 #ifdef IN_RING3
 /** @defgroup grp_gmm_r3    The Global Memory Manager Ring-3 API Wrappers
