@@ -5491,7 +5491,9 @@ xmlSchemaAddParticle(xmlSchemaParserCtxtPtr ctxt,
         return (NULL);
 
 #ifdef DEBUG
+#ifndef VBOX
     fprintf(stderr, "Adding particle component\n");
+#endif /* !VBOX */
 #endif
     ret = (xmlSchemaParticlePtr)
 	xmlMalloc(sizeof(xmlSchemaParticle));
