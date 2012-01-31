@@ -716,89 +716,6 @@ EOF
 
 
 #
-# Check for libxslt, needed by VBoxSettings. For now we depend on 1.1.15,
-# as Solaris right now has no newer version and it definitely works.
-# 1.1.17 is available on Ubuntu Edgy which fulfils the minimal libxml2
-# requirement (2.6.26).
-#
-check_libxslt()
-{
-  if [ -z "$BUILD_LIBXSLT" ]; then
-    test_header libxslt
-    if which_wrapper pkg-config > /dev/null; then
-      libxslt_ver=`pkg-config libxslt --modversion 2>> $LOG`
-      if [ $? -ne 0 ]; then
-        log_failure "libxslt not found"
-        fail
-      else
-        FLGXSLT=`pkg-config libxslt --cflags`
-        INCXSLT=`strip_I "$FLGXSLT"`
-        LIBXSLT=`pkg-config libxslt --libs`
-        cat > $ODIR.tmp_src.cc << EOF
-#include <cstdio>
-#include <libxslt/xsltconfig.h>
-extern "C" int main(void)
-{
-  printf("found version %s", LIBXSLT_DOTTED_VERSION);
-#if LIBXSLT_VERSION >= 10117
-  printf(", OK.\n");
-  return 0;
-#else
-  printf(", expected version 1.1.17 or higher\n");
-  return 1;
-#endif
-}
-EOF
-        [ -n "$INCXSLT" ] && I_INCXSLT=`prefix_I "$INCXSLT"`
-        if test_compile "$LIBXSLT $LIBPTHREAD $I_INCXSLT" xslt xslt; then
-          if test_execute; then
-            cnf_append "SDK_VBOX_LIBXSLT_INCS" "$INCXSLT"
-            cnf_append "SDK_VBOX_LIBXSLT_LIBS" "`strip_l "$LIBXSLT"`"
-          fi
-        fi
-      fi
-    elif which_wrapper xslt-config; then
-      libxslt_ver=`xslt-config --version`
-      if [ $? -ne 0 ]; then
-        log_failure "xslt-config not working"
-        fail
-      else
-        log_success "found version $libxslt_ver"
-        FLGXSLT=`xslt-config --cflags`
-        INCXSLT=`strip_I "$FLGXSLT"`
-        LIBXSLT=`xslt-config --libs`
-        cat > $ODIR.tmp_src.cc << EOF
-#include <cstdio>
-#include <libxslt/xsltconfig.h>
-extern "C" int main(void)
-{
-  printf("found version %s", LIBXSLT_DOTTED_VERSION);
-#if LIBXSLT_VERSION >= 10117
-  printf(", OK.\n");
-  return 0;
-#else
-  printf(", expected version 1.1.17 or higher\n");
-  return 1;
-#endif
-}
-EOF
-        [ -n "$INCXSLT" ] && I_INCXSLT=`prefix_I "$INCXSLT"`
-        if test_compile "$LIBXSLT $LIBPTHREAD $I_INCXSLT" xslt xslt; then
-          if test_execute; then
-            cnf_append "SDK_VBOX_LIBXSLT_INCS" "$INCXSLT"
-            cnf_append "SDK_VBOX_LIBXSLT_LIBS" "`strip_l "$LIBXSLT"`"
-          fi
-        fi
-      fi
-    else
-      log_failure "neither pkg-config nor xslt-config found"
-      fail
-    fi
-  fi
-}
-
-
-#
 # Check for libIDL, needed by xpcom
 #
 check_libidl()
@@ -2187,7 +2104,6 @@ cat << EOF
   --disable-udptunnel      disable UDP tunnel networking
   --disable-hardening      don't be strict about /dev/vboxdrv access
   --build-libxml2          build libxml2 from sources
-  --build-libxslt          build libxslt from sources
 EOF
 [ $OSE -eq 0 ] && cat << EOF
   --build-libssl           build openssl from sources
@@ -2378,9 +2294,6 @@ for option in $*; do
     --build-libxml2)
       BUILD_LIBXML2=1
       ;;
-    --build-libxslt)
-      BUILD_LIBXSLT=1
-      ;;
     --build-libssl)
       BUILD_LIBSSL=1
       ;;
@@ -2551,7 +2464,6 @@ check_gcc
 # the libraries
 [ "$OS" != "darwin"  ] && check_pthread
 check_libxml2
-[ $WITH_XPCOM  -eq 1 ] && check_libxslt
 [ $WITH_LIBIDL -eq 1 ] && check_libidl
 check_ssl
 check_curl

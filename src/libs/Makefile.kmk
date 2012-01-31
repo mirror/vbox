@@ -68,10 +68,6 @@ if defined(VBOX_WITH_MAIN) \
   include $(PATH_SUB_CURRENT)/xpcom18a4/Makefile.kmk
  endif
 
- ifeq ($(SDK_VBOX_LIBXSLT_INCS),$(PATH_ROOT)/src/libs/libxslt-1.1.22)
-  include $(PATH_SUB_CURRENT)/libxslt-1.1.22/Makefile.kmk
- endif
-
  # FFmpeg for test videos.
  if defined(VBOX_WITH_FFMPEG) && !defined(VBOX_OSE) && !defined(VBOX_ONLY_DOCS) && !defined(VBOX_WITH_SDK)
   if1of ($(KBUILD_TARGET), darwin linux solaris)
