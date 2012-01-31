@@ -473,7 +473,7 @@ void BIOSCALL int09_function(uint16_t ES, uint16_t DI, uint16_t SI, uint16_t BP,
         break;
     
     case 0x53: /* Del press */
-        if ((shift_flags & 0x0f) == 0x0c)
+        if ((shift_flags & 0x0c) == 0x0c)
             jmp_post();
         /* fall through */
     
