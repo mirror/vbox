@@ -616,13 +616,13 @@ GMMR0DECL(int) GMMR0RegisterSharedModuleReq(PVM pVM, VMCPUID idCpu, PGMMREGISTER
 typedef struct GMMSHAREDREGIONDESC
 {
     /** Region base address. */
-    RTGCPTR64           GCRegionAddr;
+    RTGCPTR64                   GCRegionAddr;
     /** Region size. */
-    uint32_t            cbRegion;
+    uint32_t                    cbRegion;
     /** Alignment. */
-    uint32_t            u32Alignment;
-    /** Pointer to physical page id array. */
-    uint32_t           *paHCPhysPageID;
+    uint32_t                    u32Alignment;
+    /** Pointer to physical GMM page ID array. */
+    uint32_t                   *paidPages;
 } GMMSHAREDREGIONDESC;
 /** Pointer to a GMMSHAREDREGIONDESC. */
 typedef GMMSHAREDREGIONDESC *PGMMSHAREDREGIONDESC;
@@ -663,14 +663,15 @@ typedef struct GMMSHAREDPAGEDESC
     /** GC Physical address (in) */
     RTGCPHYS                    GCPhys;
     /** GMM page id. (in/out) */
-    uint32_t                    uHCPhysPageId;
+    uint32_t                    idPage;
     /** Align at 8 byte boundary. */
     uint32_t                    uAlignment;
 } GMMSHAREDPAGEDESC;
 /** Pointer to a GMMSHAREDPAGEDESC. */
 typedef GMMSHAREDPAGEDESC *PGMMSHAREDPAGEDESC;
 
-GMMR0DECL(int) GMMR0SharedModuleCheckPage(PGVM pGVM, PGMMSHAREDMODULE pModule, unsigned idxRegion, unsigned idxPage, PGMMSHAREDPAGEDESC pPageDesc);
+GMMR0DECL(int) GMMR0SharedModuleCheckPage(PGVM pGVM, PGMMSHAREDMODULE pModule, unsigned idxRegion, unsigned idxPage,
+                                          PGMMSHAREDPAGEDESC pPageDesc);
 
 /**
  * Request buffer for GMMR0UnregisterSharedModuleReq / VMMR0_DO_GMM_UNREGISTER_SHARED_MODULE.
