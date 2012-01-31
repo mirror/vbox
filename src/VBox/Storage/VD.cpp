@@ -5081,6 +5081,7 @@ VBOXDDU_DECL(int) VDCreate(PVDINTERFACE pVDIfsDisk, VDTYPE enmType, PVBOXHDD *pp
             pDisk->pInterfaceThreadSync = NULL;
             pDisk->fLocked = false;
             pDisk->pIoCtxLockOwner = NULL;
+            pDisk->pIoCtxHead      = NULL;
             RTListInit(&pDisk->ListWriteLocked);
 
             /* Create the I/O ctx cache */
