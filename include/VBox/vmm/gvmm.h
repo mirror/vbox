@@ -126,7 +126,7 @@ typedef struct GVMMSTATSHOSTCPU
 typedef GVMMSTATSHOSTCPU *PGVMMSTATSHOSTCPU;
 
 /**
- * The GMM statistics.
+ * The GVMM statistics.
  */
 typedef struct GVMMSTATS
 {

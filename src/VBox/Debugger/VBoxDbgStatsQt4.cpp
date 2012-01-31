@@ -125,6 +125,8 @@ typedef struct DBGGUISTATSNODE
         uint32_t            u32;
         /** STAMTYPE_U64 & STAMTYPE_U64_RESET. */
         uint64_t            u64;
+        /** STAMTYPE_BOOL and STAMTYPE_BOOL_RESET. */
+        bool                f;
         /** STAMTYPE_CALLBACK. */
         QString            *pStr;
     } Data;
@@ -1086,6 +1088,11 @@ VBoxDbgStatsModel::initNode(PDBGGUISTATSNODE pNode, STAMTYPE enmType, void *pvSa
             pNode->Data.u64 = *(uint64_t *)pvSample;
             break;
 
+        case STAMTYPE_BOOL:
+        case STAMTYPE_BOOL_RESET:
+            pNode->Data.f = *(bool *)pvSample;
+            break;
+
         default:
             AssertMsgFailed(("%d\n", enmType));
             break;
@@ -1254,6 +1261,21 @@ VBoxDbgStatsModel::updateNode(PDBGGUISTATSNODE pNode, STAMTYPE enmType, void *pv
                 }
                 break;
             }
+
+            case STAMTYPE_BOOL:
+            case STAMTYPE_BOOL_RESET:
+            {
+                bool fPrev = pNode->Data.f;
+                pNode->Data.f = *(bool *)pvSample;
+                iDelta = pNode->Data.f - fPrev;
+                if (iDelta || pNode->i64Delta)
+                {
+                    pNode->i64Delta = iDelta;
+                    pNode->enmState = kDbgGuiStatsNodeState_kRefresh;
+                }
+                break;
+            }
+
             default:
                 AssertMsgFailed(("%d\n", enmType));
                 break;
@@ -1474,9 +1496,11 @@ VBoxDbgStatsModel::updateCallbackHandleOutOfOrder(const char *pszName)
             for (;;)
             {
                 int32_t i = iStart + (iLast + 1 - iStart) / 2;
-                int iDiff = memcmp(pszSubName, pNode->papChildren[i]->pszName, cchSubName);
+                int iDiff;
+                size_t const cchCompare = RT_MIN(pNode->papChildren[i]->cchName, cchSubName);
+                iDiff = memcmp(pszSubName, pNode->papChildren[i]->pszName, cchCompare);
                 if (!iDiff)
-                    iDiff = '\0' - pNode->papChildren[i]->pszName[cchSubName];
+                    iDiff = cchSubName == cchCompare ? 0 : cchSubName > cchCompare ? 1 : -1;
                 if (iDiff > 0)
                 {
                     iStart = i + 1;
@@ -2151,6 +2175,10 @@ VBoxDbgStatsModel::strValueTimes(PCDBGGUISTATSNODE pNode)
         case STAMTYPE_X64_RESET:
             return formatHexNumber(sz, pNode->Data.u64, 16);
 
+        case STAMTYPE_BOOL:
+        case STAMTYPE_BOOL_RESET:
+            return pNode->Data.f ? "true" : "false";
+
         default:
             AssertMsgFailed(("%d\n", pNode->enmType));
         case STAMTYPE_INVALID:
@@ -2262,6 +2290,8 @@ VBoxDbgStatsModel::strDeltaValue(PCDBGGUISTATSNODE pNode)
         case STAMTYPE_U64_RESET:
         case STAMTYPE_X64:
         case STAMTYPE_X64_RESET:
+        case STAMTYPE_BOOL:
+        case STAMTYPE_BOOL_RESET:
             return formatNumberSigned(sz, pNode->i64Delta);
         default:
             return "";
@@ -2422,6 +2452,11 @@ VBoxDbgStatsModel::stringifyNodeNoRecursion(PDBGGUISTATSNODE a_pNode, QString &a
         case STAMTYPE_X64:
         case STAMTYPE_X64_RESET:
             RTStrPrintf(szBuf, sizeof(szBuf), "%8llx %s", a_pNode->Data.u64, STAMR3GetUnit(a_pNode->enmUnit));
+            break;
+
+        case STAMTYPE_BOOL:
+        case STAMTYPE_BOOL_RESET:
+            RTStrPrintf(szBuf, sizeof(szBuf), "%s %s", a_pNode->Data.f ? "true    " : "false   ", STAMR3GetUnit(a_pNode->enmUnit));
             break;
 
         default:

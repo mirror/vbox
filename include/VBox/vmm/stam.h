@@ -152,6 +152,10 @@ typedef enum STAMTYPE
     STAMTYPE_X64,
     /** Generic hexadecimal unsigned 64-bit value. Reset to 0. */
     STAMTYPE_X64_RESET,
+    /** Generic boolean value. Not reset. */
+    STAMTYPE_BOOL,
+    /** Generic boolean value. Reset to false. */
+    STAMTYPE_BOOL_RESET,
     /** The end (exclusive). */
     STAMTYPE_END
 } STAMTYPE;

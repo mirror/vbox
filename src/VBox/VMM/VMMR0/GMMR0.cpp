@@ -491,6 +491,8 @@ typedef struct GMM
     /** Shared module tree (global). */
     /** @todo separate trees for distinctly different guest OSes. */
     PAVLGCPTRNODECORE   pGlobalSharedModuleTree;
+    /** Sharable modules (count of nodes in pGlobalSharedModuleTree). */
+    uint32_t            cShareableModules;
 
     /** The chunk list.  For simplifying the cleanup process. */
     RTLISTANCHOR        ChunkList;
@@ -873,9 +875,9 @@ GMMR0DECL(void) GMMR0InitPerVMData(PGVM pGVM)
 {
     AssertCompile(RT_SIZEOFMEMB(GVM,gmm.s) <= RT_SIZEOFMEMB(GVM,gmm.padding));
 
-    pGVM->gmm.s.enmPolicy = GMMOCPOLICY_INVALID;
-    pGVM->gmm.s.enmPriority = GMMPRIORITY_INVALID;
-    pGVM->gmm.s.fMayAllocate = false;
+    pGVM->gmm.s.Stats.enmPolicy = GMMOCPOLICY_INVALID;
+    pGVM->gmm.s.Stats.enmPriority = GMMPRIORITY_INVALID;
+    pGVM->gmm.s.Stats.fMayAllocate = false;
 }
 
 
@@ -1152,8 +1154,8 @@ GMMR0DECL(void) GMMR0CleanupVM(PGVM pGVM)
      * The policy is 'INVALID' until the initial reservation
      * request has been serviced.
      */
-    if (    pGVM->gmm.s.enmPolicy > GMMOCPOLICY_INVALID
-        &&  pGVM->gmm.s.enmPolicy < GMMOCPOLICY_END)
+    if (    pGVM->gmm.s.Stats.enmPolicy > GMMOCPOLICY_INVALID
+        &&  pGVM->gmm.s.Stats.enmPolicy < GMMOCPOLICY_END)
     {
         /*
          * If it's the last VM around, we can skip walking all the chunk looking
@@ -1170,7 +1172,7 @@ GMMR0DECL(void) GMMR0CleanupVM(PGVM pGVM)
          * and leftover mappings.  (This'll only catch private pages,
          * shared pages will be 'left behind'.)
          */
-        uint64_t    cPrivatePages = pGVM->gmm.s.cPrivatePages; /* save */
+        uint64_t    cPrivatePages = pGVM->gmm.s.Stats.cPrivatePages; /* save */
 
         unsigned    iCountDown = 64;
         bool        fRedoFromStart;
@@ -1200,8 +1202,8 @@ GMMR0DECL(void) GMMR0CleanupVM(PGVM pGVM)
             }
         } while (fRedoFromStart);
 
-        if (pGVM->gmm.s.cPrivatePages)
-            SUPR0Printf("GMMR0CleanupVM: hGVM=%#x has %#x private pages that cannot be found!\n", pGVM->hSelf, pGVM->gmm.s.cPrivatePages);
+        if (pGVM->gmm.s.Stats.cPrivatePages)
+            SUPR0Printf("GMMR0CleanupVM: hGVM=%#x has %#x private pages that cannot be found!\n", pGVM->hSelf, pGVM->gmm.s.Stats.cPrivatePages);
 
         pGMM->cAllocatedPages -= cPrivatePages;
 
@@ -1250,26 +1252,26 @@ GMMR0DECL(void) GMMR0CleanupVM(PGVM pGVM)
         /*
          * Account for shared pages that weren't freed.
          */
-        if (pGVM->gmm.s.cSharedPages)
+        if (pGVM->gmm.s.Stats.cSharedPages)
         {
-            Assert(pGMM->cSharedPages >= pGVM->gmm.s.cSharedPages);
-            SUPR0Printf("GMMR0CleanupVM: hGVM=%#x left %#x shared pages behind!\n", pGVM->hSelf, pGVM->gmm.s.cSharedPages);
-            pGMM->cLeftBehindSharedPages += pGVM->gmm.s.cSharedPages;
+            Assert(pGMM->cSharedPages >= pGVM->gmm.s.Stats.cSharedPages);
+            SUPR0Printf("GMMR0CleanupVM: hGVM=%#x left %#x shared pages behind!\n", pGVM->hSelf, pGVM->gmm.s.Stats.cSharedPages);
+            pGMM->cLeftBehindSharedPages += pGVM->gmm.s.Stats.cSharedPages;
         }
 
         /*
          * Clean up balloon statistics in case the VM process crashed.
          */
-        Assert(pGMM->cBalloonedPages >= pGVM->gmm.s.cBalloonedPages);
-        pGMM->cBalloonedPages -= pGVM->gmm.s.cBalloonedPages;
+        Assert(pGMM->cBalloonedPages >= pGVM->gmm.s.Stats.cBalloonedPages);
+        pGMM->cBalloonedPages -= pGVM->gmm.s.Stats.cBalloonedPages;
 
         /*
          * Update the over-commitment management statistics.
          */
-        pGMM->cReservedPages -= pGVM->gmm.s.Reserved.cBasePages
-                              + pGVM->gmm.s.Reserved.cFixedPages
-                              + pGVM->gmm.s.Reserved.cShadowPages;
-        switch (pGVM->gmm.s.enmPolicy)
+        pGMM->cReservedPages -= pGVM->gmm.s.Stats.Reserved.cBasePages
+                              + pGVM->gmm.s.Stats.Reserved.cFixedPages
+                              + pGVM->gmm.s.Stats.Reserved.cShadowPages;
+        switch (pGVM->gmm.s.Stats.enmPolicy)
         {
             case GMMOCPOLICY_NO_OC:
                 break;
@@ -1280,9 +1282,9 @@ GMMR0DECL(void) GMMR0CleanupVM(PGVM pGVM)
     }
 
     /* zap the GVM data. */
-    pGVM->gmm.s.enmPolicy = GMMOCPOLICY_INVALID;
-    pGVM->gmm.s.enmPriority = GMMPRIORITY_INVALID;
-    pGVM->gmm.s.fMayAllocate = false;
+    pGVM->gmm.s.Stats.enmPolicy    = GMMOCPOLICY_INVALID;
+    pGVM->gmm.s.Stats.enmPriority  = GMMPRIORITY_INVALID;
+    pGVM->gmm.s.Stats.fMayAllocate = false;
 
     GMM_CHECK_SANITY_UPON_LEAVING(pGMM);
     gmmR0MutexRelease(pGMM);
@@ -1338,7 +1340,7 @@ static bool gmmR0CleanupVMScanChunk(PGMM pGMM, PGVM pGVM, PGMMCHUNK pChunk)
                     pChunk->iFreeHead = iPage;
                     pChunk->cPrivate--;
                     pChunk->cFree++;
-                    pGVM->gmm.s.cPrivatePages--;
+                    pGVM->gmm.s.Stats.cPrivatePages--;
                     cFree++;
                 }
                 else
@@ -1476,9 +1478,9 @@ GMMR0DECL(int) GMMR0InitialReservation(PVM pVM, VMCPUID idCpu, uint64_t cBasePag
     gmmR0MutexAcquire(pGMM);
     if (GMM_CHECK_SANITY_UPON_ENTERING(pGMM))
     {
-        if (    !pGVM->gmm.s.Reserved.cBasePages
-            &&  !pGVM->gmm.s.Reserved.cFixedPages
-            &&  !pGVM->gmm.s.Reserved.cShadowPages)
+        if (    !pGVM->gmm.s.Stats.Reserved.cBasePages
+            &&  !pGVM->gmm.s.Stats.Reserved.cFixedPages
+            &&  !pGVM->gmm.s.Stats.Reserved.cShadowPages)
         {
             /*
              * Check if we can accommodate this.
@@ -1489,12 +1491,12 @@ GMMR0DECL(int) GMMR0InitialReservation(PVM pVM, VMCPUID idCpu, uint64_t cBasePag
                 /*
                  * Update the records.
                  */
-                pGVM->gmm.s.Reserved.cBasePages = cBasePages;
-                pGVM->gmm.s.Reserved.cFixedPages = cFixedPages;
-                pGVM->gmm.s.Reserved.cShadowPages = cShadowPages;
-                pGVM->gmm.s.enmPolicy = enmPolicy;
-                pGVM->gmm.s.enmPriority = enmPriority;
-                pGVM->gmm.s.fMayAllocate = true;
+                pGVM->gmm.s.Stats.Reserved.cBasePages   = cBasePages;
+                pGVM->gmm.s.Stats.Reserved.cFixedPages  = cFixedPages;
+                pGVM->gmm.s.Stats.Reserved.cShadowPages = cShadowPages;
+                pGVM->gmm.s.Stats.enmPolicy             = enmPolicy;
+                pGVM->gmm.s.Stats.enmPriority           = enmPriority;
+                pGVM->gmm.s.Stats.fMayAllocate          = true;
 
                 pGMM->cReservedPages += cBasePages + cFixedPages + cShadowPages;
                 pGMM->cRegisteredVMs++;
@@ -1571,9 +1573,9 @@ GMMR0DECL(int) GMMR0UpdateReservation(PVM pVM, VMCPUID idCpu, uint64_t cBasePage
     gmmR0MutexAcquire(pGMM);
     if (GMM_CHECK_SANITY_UPON_ENTERING(pGMM))
     {
-        if (    pGVM->gmm.s.Reserved.cBasePages
-            &&  pGVM->gmm.s.Reserved.cFixedPages
-            &&  pGVM->gmm.s.Reserved.cShadowPages)
+        if (    pGVM->gmm.s.Stats.Reserved.cBasePages
+            &&  pGVM->gmm.s.Stats.Reserved.cFixedPages
+            &&  pGVM->gmm.s.Stats.Reserved.cShadowPages)
         {
             /*
              * Check if we can accommodate this.
@@ -1584,14 +1586,14 @@ GMMR0DECL(int) GMMR0UpdateReservation(PVM pVM, VMCPUID idCpu, uint64_t cBasePage
                 /*
                  * Update the records.
                  */
-                pGMM->cReservedPages -= pGVM->gmm.s.Reserved.cBasePages
-                                      + pGVM->gmm.s.Reserved.cFixedPages
-                                      + pGVM->gmm.s.Reserved.cShadowPages;
+                pGMM->cReservedPages -= pGVM->gmm.s.Stats.Reserved.cBasePages
+                                      + pGVM->gmm.s.Stats.Reserved.cFixedPages
+                                      + pGVM->gmm.s.Stats.Reserved.cShadowPages;
                 pGMM->cReservedPages += cBasePages + cFixedPages + cShadowPages;
 
-                pGVM->gmm.s.Reserved.cBasePages = cBasePages;
-                pGVM->gmm.s.Reserved.cFixedPages = cFixedPages;
-                pGVM->gmm.s.Reserved.cShadowPages = cShadowPages;
+                pGVM->gmm.s.Stats.Reserved.cBasePages   = cBasePages;
+                pGVM->gmm.s.Stats.Reserved.cFixedPages  = cFixedPages;
+                pGVM->gmm.s.Stats.Reserved.cShadowPages = cShadowPages;
             }
         }
         else
@@ -2338,12 +2340,12 @@ static bool gmmR0ShouldAllocatePagesInOtherChunks(PGVM pGVM)
     /*
      * Don't allocate a new chunk if we're
      */
-    uint64_t cPgReserved  = pGVM->gmm.s.Reserved.cBasePages
-                          + pGVM->gmm.s.Reserved.cFixedPages
-                          - pGVM->gmm.s.cBalloonedPages
+    uint64_t cPgReserved  = pGVM->gmm.s.Stats.Reserved.cBasePages
+                          + pGVM->gmm.s.Stats.Reserved.cFixedPages
+                          - pGVM->gmm.s.Stats.cBalloonedPages
                           /** @todo what about shared pages? */;
-    uint64_t cPgAllocated = pGVM->gmm.s.Allocated.cBasePages
-                          + pGVM->gmm.s.Allocated.cFixedPages;
+    uint64_t cPgAllocated = pGVM->gmm.s.Stats.Allocated.cBasePages
+                          + pGVM->gmm.s.Stats.Allocated.cFixedPages;
     uint64_t cPgDelta = cPgReserved - cPgAllocated;
     if (cPgDelta < GMM_CHUNK_NUM_PAGES * 4)
         return true;
@@ -2393,27 +2395,28 @@ static int gmmR0AllocatePagesNew(PGMM pGMM, PGVM pGVM, uint32_t cPages, PGMMPAGE
     switch (enmAccount)
     {
         case GMMACCOUNT_BASE:
-            if (RT_UNLIKELY(  pGVM->gmm.s.Allocated.cBasePages + pGVM->gmm.s.cBalloonedPages + cPages
-                            > pGVM->gmm.s.Reserved.cBasePages))
+            if (RT_UNLIKELY(  pGVM->gmm.s.Stats.Allocated.cBasePages + pGVM->gmm.s.Stats.cBalloonedPages + cPages
+                            > pGVM->gmm.s.Stats.Reserved.cBasePages))
             {
                 Log(("gmmR0AllocatePages:Base: Reserved=%#llx Allocated+Ballooned+Requested=%#llx+%#llx+%#x!\n",
-                     pGVM->gmm.s.Reserved.cBasePages, pGVM->gmm.s.Allocated.cBasePages, pGVM->gmm.s.cBalloonedPages, cPages));
+                     pGVM->gmm.s.Stats.Reserved.cBasePages, pGVM->gmm.s.Stats.Allocated.cBasePages,
+                     pGVM->gmm.s.Stats.cBalloonedPages, cPages));
                 return VERR_GMM_HIT_VM_ACCOUNT_LIMIT;
             }
             break;
         case GMMACCOUNT_SHADOW:
-            if (RT_UNLIKELY(pGVM->gmm.s.Allocated.cShadowPages + cPages > pGVM->gmm.s.Reserved.cShadowPages))
+            if (RT_UNLIKELY(pGVM->gmm.s.Stats.Allocated.cShadowPages + cPages > pGVM->gmm.s.Stats.Reserved.cShadowPages))
             {
                 Log(("gmmR0AllocatePages:Shadow: Reserved=%#x Allocated+Requested=%#x+%#x!\n",
-                     pGVM->gmm.s.Reserved.cShadowPages, pGVM->gmm.s.Allocated.cShadowPages, cPages));
+                     pGVM->gmm.s.Stats.Reserved.cShadowPages, pGVM->gmm.s.Stats.Allocated.cShadowPages, cPages));
                 return VERR_GMM_HIT_VM_ACCOUNT_LIMIT;
             }
             break;
         case GMMACCOUNT_FIXED:
-            if (RT_UNLIKELY(pGVM->gmm.s.Allocated.cFixedPages + cPages > pGVM->gmm.s.Reserved.cFixedPages))
+            if (RT_UNLIKELY(pGVM->gmm.s.Stats.Allocated.cFixedPages + cPages > pGVM->gmm.s.Stats.Reserved.cFixedPages))
             {
                 Log(("gmmR0AllocatePages:Fixed: Reserved=%#x Allocated+Requested=%#x+%#x!\n",
-                     pGVM->gmm.s.Reserved.cFixedPages, pGVM->gmm.s.Allocated.cFixedPages, cPages));
+                     pGVM->gmm.s.Stats.Reserved.cFixedPages, pGVM->gmm.s.Stats.Allocated.cFixedPages, cPages));
                 return VERR_GMM_HIT_VM_ACCOUNT_LIMIT;
             }
             break;
@@ -2439,13 +2442,13 @@ static int gmmR0AllocatePagesNew(PGMM pGMM, PGVM pGVM, uint32_t cPages, PGMMPAGE
      */
     switch (enmAccount)
     {
-        case GMMACCOUNT_BASE:   pGVM->gmm.s.Allocated.cBasePages   += cPages; break;
-        case GMMACCOUNT_SHADOW: pGVM->gmm.s.Allocated.cShadowPages += cPages; break;
-        case GMMACCOUNT_FIXED:  pGVM->gmm.s.Allocated.cFixedPages  += cPages; break;
+        case GMMACCOUNT_BASE:   pGVM->gmm.s.Stats.Allocated.cBasePages   += cPages; break;
+        case GMMACCOUNT_SHADOW: pGVM->gmm.s.Stats.Allocated.cShadowPages += cPages; break;
+        case GMMACCOUNT_FIXED:  pGVM->gmm.s.Stats.Allocated.cFixedPages  += cPages; break;
         default:                AssertMsgFailedReturn(("enmAccount=%d\n", enmAccount), VERR_IPE_NOT_REACHED_DEFAULT_CASE);
     }
-    pGVM->gmm.s.cPrivatePages += cPages;
-    pGMM->cAllocatedPages     += cPages;
+    pGVM->gmm.s.Stats.cPrivatePages += cPages;
+    pGMM->cAllocatedPages           += cPages;
 
     /*
      * Part two of it's-easy-in-legacy-memory-mode.
@@ -2524,13 +2527,13 @@ static int gmmR0AllocatePagesNew(PGMM pGMM, PGVM pGVM, uint32_t cPages, PGMMPAGE
     if (RT_FAILURE(rc))
     {
         /* Update the statistics. */
-        pGVM->gmm.s.cPrivatePages -= cPages;
-        pGMM->cAllocatedPages     -= cPages - iPage;
+        pGVM->gmm.s.Stats.cPrivatePages -= cPages;
+        pGMM->cAllocatedPages           -= cPages - iPage;
         switch (enmAccount)
         {
-            case GMMACCOUNT_BASE:   pGVM->gmm.s.Allocated.cBasePages   -= cPages; break;
-            case GMMACCOUNT_SHADOW: pGVM->gmm.s.Allocated.cShadowPages -= cPages; break;
-            case GMMACCOUNT_FIXED:  pGVM->gmm.s.Allocated.cFixedPages  -= cPages; break;
+            case GMMACCOUNT_BASE:   pGVM->gmm.s.Stats.Allocated.cBasePages   -= cPages; break;
+            case GMMACCOUNT_SHADOW: pGVM->gmm.s.Stats.Allocated.cShadowPages -= cPages; break;
+            case GMMACCOUNT_FIXED:  pGVM->gmm.s.Stats.Allocated.cFixedPages  -= cPages; break;
             default:                AssertMsgFailedReturn(("enmAccount=%d\n", enmAccount), VERR_IPE_NOT_REACHED_DEFAULT_CASE);
         }
 
@@ -2642,9 +2645,9 @@ GMMR0DECL(int) GMMR0AllocateHandyPages(PVM pVM, VMCPUID idCpu, uint32_t cPagesTo
     if (GMM_CHECK_SANITY_UPON_ENTERING(pGMM))
     {
         /* No allocations before the initial reservation has been made! */
-        if (RT_LIKELY(    pGVM->gmm.s.Reserved.cBasePages
-                      &&  pGVM->gmm.s.Reserved.cFixedPages
-                      &&  pGVM->gmm.s.Reserved.cShadowPages))
+        if (RT_LIKELY(    pGVM->gmm.s.Stats.Reserved.cBasePages
+                      &&  pGVM->gmm.s.Stats.Reserved.cFixedPages
+                      &&  pGVM->gmm.s.Stats.Reserved.cShadowPages))
         {
             /*
              * Perform the updates.
@@ -2703,12 +2706,12 @@ GMMR0DECL(int) GMMR0AllocateHandyPages(PVM pVM, VMCPUID idCpu, uint32_t cPagesTo
                         {
                             AssertCompile(NIL_RTHCPHYS > GMM_GCPHYS_LAST && GMM_GCPHYS_UNSHAREABLE > GMM_GCPHYS_LAST);
                             Assert(pPage->Shared.cRefs);
-                            Assert(pGVM->gmm.s.cSharedPages);
-                            Assert(pGVM->gmm.s.Allocated.cBasePages);
+                            Assert(pGVM->gmm.s.Stats.cSharedPages);
+                            Assert(pGVM->gmm.s.Stats.Allocated.cBasePages);
 
                             Log(("GMMR0AllocateHandyPages: free shared page %x cRefs=%d\n", paPages[iPage].idSharedPage, pPage->Shared.cRefs));
-                            pGVM->gmm.s.cSharedPages--;
-                            pGVM->gmm.s.Allocated.cBasePages--;
+                            pGVM->gmm.s.Stats.cSharedPages--;
+                            pGVM->gmm.s.Stats.Allocated.cBasePages--;
                             if (!--pPage->Shared.cRefs)
                                 gmmR0FreeSharedPage(pGMM, pGVM, paPages[iPage].idSharedPage, pPage);
                             else
@@ -2824,9 +2827,9 @@ GMMR0DECL(int) GMMR0AllocatePages(PVM pVM, VMCPUID idCpu, uint32_t cPages, PGMMP
     {
 
         /* No allocations before the initial reservation has been made! */
-        if (RT_LIKELY(    pGVM->gmm.s.Reserved.cBasePages
-                      &&  pGVM->gmm.s.Reserved.cFixedPages
-                      &&  pGVM->gmm.s.Reserved.cShadowPages))
+        if (RT_LIKELY(    pGVM->gmm.s.Stats.Reserved.cBasePages
+                      &&  pGVM->gmm.s.Stats.Reserved.cFixedPages
+                      &&  pGVM->gmm.s.Stats.Reserved.cShadowPages))
             rc = gmmR0AllocatePagesNew(pGMM, pGVM, cPages, paPages, enmAccount);
         else
             rc = VERR_WRONG_ORDER;
@@ -2912,11 +2915,11 @@ GMMR0DECL(int)  GMMR0AllocateLargePage(PVM pVM, VMCPUID idCpu, uint32_t cbPage, 
     if (GMM_CHECK_SANITY_UPON_ENTERING(pGMM))
     {
         const unsigned cPages = (GMM_CHUNK_SIZE >> PAGE_SHIFT);
-        if (RT_UNLIKELY(  pGVM->gmm.s.Allocated.cBasePages + pGVM->gmm.s.cBalloonedPages + cPages
-                        > pGVM->gmm.s.Reserved.cBasePages))
+        if (RT_UNLIKELY(  pGVM->gmm.s.Stats.Allocated.cBasePages + pGVM->gmm.s.Stats.cBalloonedPages + cPages
+                        > pGVM->gmm.s.Stats.Reserved.cBasePages))
         {
             Log(("GMMR0AllocateLargePage: Reserved=%#llx Allocated+Requested=%#llx+%#x!\n",
-                 pGVM->gmm.s.Reserved.cBasePages, pGVM->gmm.s.Allocated.cBasePages, cPages));
+                 pGVM->gmm.s.Stats.Reserved.cBasePages, pGVM->gmm.s.Stats.Allocated.cBasePages, cPages));
             gmmR0MutexRelease(pGMM);
             return VERR_GMM_HIT_VM_ACCOUNT_LIMIT;
         }
@@ -2958,9 +2961,9 @@ GMMR0DECL(int)  GMMR0AllocateLargePage(PVM pVM, VMCPUID idCpu, uint32_t cbPage, 
                     gmmR0AllocatePage(pChunk, pGVM->hSelf, &PageDesc);
 
                 /* Update accounting. */
-                pGVM->gmm.s.Allocated.cBasePages += cPages;
-                pGVM->gmm.s.cPrivatePages        += cPages;
-                pGMM->cAllocatedPages            += cPages;
+                pGVM->gmm.s.Stats.Allocated.cBasePages += cPages;
+                pGVM->gmm.s.Stats.cPrivatePages        += cPages;
+                pGMM->cAllocatedPages                  += cPages;
 
                 gmmR0LinkChunk(pChunk, pSet);
                 gmmR0MutexRelease(pGMM);
@@ -3011,9 +3014,9 @@ GMMR0DECL(int)  GMMR0FreeLargePage(PVM pVM, VMCPUID idCpu, uint32_t idPage)
     {
         const unsigned cPages = (GMM_CHUNK_SIZE >> PAGE_SHIFT);
 
-        if (RT_UNLIKELY(pGVM->gmm.s.Allocated.cBasePages < cPages))
+        if (RT_UNLIKELY(pGVM->gmm.s.Stats.Allocated.cBasePages < cPages))
         {
-            Log(("GMMR0FreeLargePage: allocated=%#llx cPages=%#x!\n", pGVM->gmm.s.Allocated.cBasePages, cPages));
+            Log(("GMMR0FreeLargePage: allocated=%#llx cPages=%#x!\n", pGVM->gmm.s.Stats.Allocated.cBasePages, cPages));
             gmmR0MutexRelease(pGMM);
             return VERR_GMM_ATTEMPT_TO_FREE_TOO_MUCH;
         }
@@ -3031,9 +3034,9 @@ GMMR0DECL(int)  GMMR0FreeLargePage(PVM pVM, VMCPUID idCpu, uint32_t idPage)
             gmmR0FreeChunk(pGMM, NULL, pChunk, false /*fRelaxedSem*/); /** @todo this can be relaxed too! */
 
             /* Update accounting. */
-            pGVM->gmm.s.Allocated.cBasePages -= cPages;
-            pGVM->gmm.s.cPrivatePages        -= cPages;
-            pGMM->cAllocatedPages            -= cPages;
+            pGVM->gmm.s.Stats.Allocated.cBasePages -= cPages;
+            pGVM->gmm.s.Stats.cPrivatePages        -= cPages;
+            pGMM->cAllocatedPages                  -= cPages;
         }
         else
             rc = VERR_GMM_PAGE_NOT_FOUND;
@@ -3292,23 +3295,23 @@ static int gmmR0FreePages(PGMM pGMM, PGVM pGVM, uint32_t cPages, PGMMFREEPAGEDES
     switch (enmAccount)
     {
         case GMMACCOUNT_BASE:
-            if (RT_UNLIKELY(pGVM->gmm.s.Allocated.cBasePages < cPages))
+            if (RT_UNLIKELY(pGVM->gmm.s.Stats.Allocated.cBasePages < cPages))
             {
-                Log(("gmmR0FreePages: allocated=%#llx cPages=%#x!\n", pGVM->gmm.s.Allocated.cBasePages, cPages));
+                Log(("gmmR0FreePages: allocated=%#llx cPages=%#x!\n", pGVM->gmm.s.Stats.Allocated.cBasePages, cPages));
                 return VERR_GMM_ATTEMPT_TO_FREE_TOO_MUCH;
             }
             break;
         case GMMACCOUNT_SHADOW:
-            if (RT_UNLIKELY(pGVM->gmm.s.Allocated.cShadowPages < cPages))
+            if (RT_UNLIKELY(pGVM->gmm.s.Stats.Allocated.cShadowPages < cPages))
             {
-                Log(("gmmR0FreePages: allocated=%#llx cPages=%#x!\n", pGVM->gmm.s.Allocated.cShadowPages, cPages));
+                Log(("gmmR0FreePages: allocated=%#llx cPages=%#x!\n", pGVM->gmm.s.Stats.Allocated.cShadowPages, cPages));
                 return VERR_GMM_ATTEMPT_TO_FREE_TOO_MUCH;
             }
             break;
         case GMMACCOUNT_FIXED:
-            if (RT_UNLIKELY(pGVM->gmm.s.Allocated.cFixedPages < cPages))
+            if (RT_UNLIKELY(pGVM->gmm.s.Stats.Allocated.cFixedPages < cPages))
             {
-                Log(("gmmR0FreePages: allocated=%#llx cPages=%#x!\n", pGVM->gmm.s.Allocated.cFixedPages, cPages));
+                Log(("gmmR0FreePages: allocated=%#llx cPages=%#x!\n", pGVM->gmm.s.Stats.Allocated.cFixedPages, cPages));
                 return VERR_GMM_ATTEMPT_TO_FREE_TOO_MUCH;
             }
             break;
@@ -3334,8 +3337,8 @@ static int gmmR0FreePages(PGMM pGMM, PGVM pGVM, uint32_t cPages, PGMMFREEPAGEDES
             {
                 if (RT_LIKELY(pPage->Private.hGVM == pGVM->hSelf))
                 {
-                    Assert(pGVM->gmm.s.cPrivatePages);
-                    pGVM->gmm.s.cPrivatePages--;
+                    Assert(pGVM->gmm.s.Stats.cPrivatePages);
+                    pGVM->gmm.s.Stats.cPrivatePages--;
                     gmmR0FreePrivatePage(pGMM, pGVM, idPage, pPage);
                 }
                 else
@@ -3348,8 +3351,8 @@ static int gmmR0FreePages(PGMM pGMM, PGVM pGVM, uint32_t cPages, PGMMFREEPAGEDES
             }
             else if (RT_LIKELY(GMM_PAGE_IS_SHARED(pPage)))
             {
-                Assert(pGVM->gmm.s.cSharedPages);
-                pGVM->gmm.s.cSharedPages--;
+                Assert(pGVM->gmm.s.Stats.cSharedPages);
+                pGVM->gmm.s.Stats.cSharedPages--;
                 Assert(pPage->Shared.cRefs);
                 if (!--pPage->Shared.cRefs)
                     gmmR0FreeSharedPage(pGMM, pGVM, idPage, pPage);
@@ -3380,9 +3383,9 @@ static int gmmR0FreePages(PGMM pGMM, PGVM pGVM, uint32_t cPages, PGMMFREEPAGEDES
      */
     switch (enmAccount)
     {
-        case GMMACCOUNT_BASE:   pGVM->gmm.s.Allocated.cBasePages   -= iPage; break;
-        case GMMACCOUNT_SHADOW: pGVM->gmm.s.Allocated.cShadowPages -= iPage; break;
-        case GMMACCOUNT_FIXED:  pGVM->gmm.s.Allocated.cFixedPages  -= iPage; break;
+        case GMMACCOUNT_BASE:   pGVM->gmm.s.Stats.Allocated.cBasePages   -= iPage; break;
+        case GMMACCOUNT_SHADOW: pGVM->gmm.s.Stats.Allocated.cShadowPages -= iPage; break;
+        case GMMACCOUNT_FIXED:  pGVM->gmm.s.Stats.Allocated.cFixedPages  -= iPage; break;
         default:
             AssertMsgFailedReturn(("enmAccount=%d\n", enmAccount), VERR_IPE_NOT_REACHED_DEFAULT_CASE);
     }
@@ -3526,33 +3529,36 @@ GMMR0DECL(int) GMMR0BalloonedPages(PVM pVM, VMCPUID idCpu, GMMBALLOONACTION enmA
         {
             case GMMBALLOONACTION_INFLATE:
             {
-                if (RT_LIKELY(pGVM->gmm.s.Allocated.cBasePages + pGVM->gmm.s.cBalloonedPages + cBalloonedPages <= pGVM->gmm.s.Reserved.cBasePages))
+                if (RT_LIKELY(pGVM->gmm.s.Stats.Allocated.cBasePages + pGVM->gmm.s.Stats.cBalloonedPages + cBalloonedPages
+                              <= pGVM->gmm.s.Stats.Reserved.cBasePages))
                 {
                     /*
                      * Record the ballooned memory.
                      */
                     pGMM->cBalloonedPages += cBalloonedPages;
-                    if (pGVM->gmm.s.cReqBalloonedPages)
+                    if (pGVM->gmm.s.Stats.cReqBalloonedPages)
                     {
                         /* Codepath never taken. Might be interesting in the future to request ballooned memory from guests in low memory conditions.. */
                         AssertFailed();
 
-                        pGVM->gmm.s.cBalloonedPages += cBalloonedPages;
-                        pGVM->gmm.s.cReqActuallyBalloonedPages += cBalloonedPages;
-                        Log(("GMMR0BalloonedPages: +%#x - Global=%#llx / VM: Total=%#llx Req=%#llx Actual=%#llx (pending)\n", cBalloonedPages,
-                             pGMM->cBalloonedPages, pGVM->gmm.s.cBalloonedPages, pGVM->gmm.s.cReqBalloonedPages, pGVM->gmm.s.cReqActuallyBalloonedPages));
+                        pGVM->gmm.s.Stats.cBalloonedPages            += cBalloonedPages;
+                        pGVM->gmm.s.Stats.cReqActuallyBalloonedPages += cBalloonedPages;
+                        Log(("GMMR0BalloonedPages: +%#x - Global=%#llx / VM: Total=%#llx Req=%#llx Actual=%#llx (pending)\n",
+                             cBalloonedPages, pGMM->cBalloonedPages, pGVM->gmm.s.Stats.cBalloonedPages,
+                             pGVM->gmm.s.Stats.cReqBalloonedPages, pGVM->gmm.s.Stats.cReqActuallyBalloonedPages));
                     }
                     else
                     {
-                        pGVM->gmm.s.cBalloonedPages += cBalloonedPages;
+                        pGVM->gmm.s.Stats.cBalloonedPages += cBalloonedPages;
                         Log(("GMMR0BalloonedPages: +%#x - Global=%#llx / VM: Total=%#llx (user)\n",
-                             cBalloonedPages, pGMM->cBalloonedPages, pGVM->gmm.s.cBalloonedPages));
+                             cBalloonedPages, pGMM->cBalloonedPages, pGVM->gmm.s.Stats.cBalloonedPages));
                     }
                 }
                 else
                 {
                     Log(("GMMR0BalloonedPages: cBasePages=%#llx Total=%#llx cBalloonedPages=%#llx Reserved=%#llx\n",
-                         pGVM->gmm.s.Allocated.cBasePages, pGVM->gmm.s.cBalloonedPages, cBalloonedPages, pGVM->gmm.s.Reserved.cBasePages));
+                         pGVM->gmm.s.Stats.Allocated.cBasePages, pGVM->gmm.s.Stats.cBalloonedPages, cBalloonedPages,
+                         pGVM->gmm.s.Stats.Reserved.cBasePages));
                     rc = VERR_GMM_ATTEMPT_TO_FREE_TOO_MUCH;
                 }
                 break;
@@ -3561,32 +3567,32 @@ GMMR0DECL(int) GMMR0BalloonedPages(PVM pVM, VMCPUID idCpu, GMMBALLOONACTION enmA
             case GMMBALLOONACTION_DEFLATE:
             {
                 /* Deflate. */
-                if (pGVM->gmm.s.cBalloonedPages >= cBalloonedPages)
+                if (pGVM->gmm.s.Stats.cBalloonedPages >= cBalloonedPages)
                 {
                     /*
                      * Record the ballooned memory.
                      */
                     Assert(pGMM->cBalloonedPages >= cBalloonedPages);
-                    pGMM->cBalloonedPages       -= cBalloonedPages;
-                    pGVM->gmm.s.cBalloonedPages -= cBalloonedPages;
-                    if (pGVM->gmm.s.cReqDeflatePages)
+                    pGMM->cBalloonedPages             -= cBalloonedPages;
+                    pGVM->gmm.s.Stats.cBalloonedPages -= cBalloonedPages;
+                    if (pGVM->gmm.s.Stats.cReqDeflatePages)
                     {
                         AssertFailed(); /* This is path is for later. */
                         Log(("GMMR0BalloonedPages: -%#x - Global=%#llx / VM: Total=%#llx Req=%#llx\n",
-                             cBalloonedPages, pGMM->cBalloonedPages, pGVM->gmm.s.cBalloonedPages, pGVM->gmm.s.cReqDeflatePages));
+                             cBalloonedPages, pGMM->cBalloonedPages, pGVM->gmm.s.Stats.cBalloonedPages, pGVM->gmm.s.Stats.cReqDeflatePages));
 
                         /*
                          * Anything we need to do here now when the request has been completed?
                          */
-                        pGVM->gmm.s.cReqDeflatePages = 0;
+                        pGVM->gmm.s.Stats.cReqDeflatePages = 0;
                     }
                     else
                         Log(("GMMR0BalloonedPages: -%#x - Global=%#llx / VM: Total=%#llx (user)\n",
-                             cBalloonedPages, pGMM->cBalloonedPages, pGVM->gmm.s.cBalloonedPages));
+                             cBalloonedPages, pGMM->cBalloonedPages, pGVM->gmm.s.Stats.cBalloonedPages));
                 }
                 else
                 {
-                    Log(("GMMR0BalloonedPages: Total=%#llx cBalloonedPages=%#llx\n", pGVM->gmm.s.cBalloonedPages, cBalloonedPages));
+                    Log(("GMMR0BalloonedPages: Total=%#llx cBalloonedPages=%#llx\n", pGVM->gmm.s.Stats.cBalloonedPages, cBalloonedPages));
                     rc = VERR_GMM_ATTEMPT_TO_DEFLATE_TOO_MUCH;
                 }
                 break;
@@ -3595,10 +3601,10 @@ GMMR0DECL(int) GMMR0BalloonedPages(PVM pVM, VMCPUID idCpu, GMMBALLOONACTION enmA
             case GMMBALLOONACTION_RESET:
             {
                 /* Reset to an empty balloon. */
-                Assert(pGMM->cBalloonedPages >= pGVM->gmm.s.cBalloonedPages);
+                Assert(pGMM->cBalloonedPages >= pGVM->gmm.s.Stats.cBalloonedPages);
 
-                pGMM->cBalloonedPages       -= pGVM->gmm.s.cBalloonedPages;
-                pGVM->gmm.s.cBalloonedPages  = 0;
+                pGMM->cBalloonedPages             -= pGVM->gmm.s.Stats.cBalloonedPages;
+                pGVM->gmm.s.Stats.cBalloonedPages  = 0;
                 break;
             }
 
@@ -3707,9 +3713,9 @@ GMMR0DECL(int)  GMMR0QueryMemoryStatsReq(PVM pVM, VMCPUID idCpu, PGMMMEMSTATSREQ
     gmmR0MutexAcquire(pGMM);
     if (GMM_CHECK_SANITY_UPON_ENTERING(pGMM))
     {
-        pReq->cAllocPages     = pGVM->gmm.s.Allocated.cBasePages;
-        pReq->cBalloonedPages = pGVM->gmm.s.cBalloonedPages;
-        pReq->cMaxPages       = pGVM->gmm.s.Reserved.cBasePages;
+        pReq->cAllocPages     = pGVM->gmm.s.Stats.Allocated.cBasePages;
+        pReq->cBalloonedPages = pGVM->gmm.s.Stats.cBalloonedPages;
+        pReq->cMaxPages       = pGVM->gmm.s.Stats.Reserved.cBasePages;
         pReq->cFreePages      = pReq->cMaxPages - pReq->cAllocPages;
     }
     else
@@ -4290,6 +4296,7 @@ GMMR0DECL(int) GMMR0RegisterSharedModule(PVM pVM, VMCPUID idCpu, VBOXOSFAMILY en
 
             bool fInsert = RTAvlGCPtrInsert(&pGMM->pGlobalSharedModuleTree, &pGlobalModule->Core);
             Assert(fInsert); NOREF(fInsert);
+            pGMM->cShareableModules++;
 
             Log(("GMMR0RegisterSharedModule: new global module %s\n", pszModuleName));
         }
@@ -4427,6 +4434,7 @@ GMMR0DECL(int) GMMR0UnregisterSharedModule(PVM pVM, VMCPUID idCpu, char *pszModu
 
                         /* Remove from the tree and free memory. */
                         RTAvlGCPtrRemove(&pGMM->pGlobalSharedModuleTree, pRec->Core.Key);
+                        pGMM->cShareableModules--;
                         RTMemFree(pRec);
                     }
                 }
@@ -4495,8 +4503,8 @@ DECLINLINE(void) gmmR0UseSharedPage(PGMM pGMM, PGVM pGVM, PGMMPAGE pPage)
     pGMM->cDuplicatePages++;
 
     pPage->Shared.cRefs++;
-    pGVM->gmm.s.cSharedPages++;
-    pGVM->gmm.s.Allocated.cBasePages++;
+    pGVM->gmm.s.Stats.cSharedPages++;
+    pGVM->gmm.s.Stats.Allocated.cBasePages++;
 }
 
 
@@ -4521,8 +4529,8 @@ DECLINLINE(void) gmmR0ConvertToSharedPage(PGMM pGMM, PGVM pGVM, RTHCPHYS HCPhys,
 
     pGMM->cSharedPages++;
 
-    pGVM->gmm.s.cSharedPages++;
-    pGVM->gmm.s.cPrivatePages--;
+    pGVM->gmm.s.Stats.cSharedPages++;
+    pGVM->gmm.s.Stats.cPrivatePages--;
 
     /* Modify the page structure. */
     pPage->Shared.pfn     = (uint32_t)(uint64_t)(HCPhys >> PAGE_SHIFT);
@@ -4732,6 +4740,7 @@ static DECLCALLBACK(int) gmmR0CleanupSharedModule(PAVLGCPTRNODECORE pNode, void 
             PGMM pGMM;
             GMM_GET_VALID_INSTANCE(pGMM, VERR_GMM_INSTANCE);
             RTAvlGCPtrRemove(&pGMM->pGlobalSharedModuleTree, pRec->Core.Key);
+            pGMM->cShareableModules--;
             RTMemFree(pRec);
         }
     }
@@ -5063,4 +5072,129 @@ GMMR0DECL(int) GMMR0FindDuplicatePageReq(PVM pVM, PGMMFINDDUPLICATEPAGEREQ pReq)
 }
 
 #endif /* VBOX_STRICT && HC_ARCH_BITS == 64 */
+
+
+/**
+ * Retrieves the GMM statistics visible to the caller.
+ *
+ * @returns VBox status code.
+ *
+ * @param   pStats      Where to put the statistics.
+ * @param   pSession    The current session.
+ * @param   pVM         The VM to obtain statistics for. Optional.
+ */
+GMMR0DECL(int) GMMR0QueryStatistics(PGMMSTATS pStats, PSUPDRVSESSION pSession, PVM pVM)
+{
+    LogFlow(("GVMMR0QueryStatistics: pStats=%p pSession=%p pVM=%p\n", pStats, pSession, pVM));
+
+    /*
+     * Validate input.
+     */
+    AssertPtrReturn(pSession, VERR_INVALID_POINTER);
+    AssertPtrReturn(pStats, VERR_INVALID_POINTER);
+    pStats->cMaxPages = 0; /* (crash before taking the mutex...) */
+
+    PGMM pGMM;
+    GMM_GET_VALID_INSTANCE(pGMM, VERR_GMM_INSTANCE);
+
+    /*
+     * Resolve the VM handle, if not NULL, and lock the GMM.
+     */
+    int rc;
+    PGVM pGVM;
+    if (pVM)
+    {
+        rc = GVMMR0ByVM(pVM, &pGVM);
+        if (RT_FAILURE(rc))
+            return rc;
+    }
+    else
+        pGVM = NULL;
+
+    rc = gmmR0MutexAcquire(pGMM);
+    if (RT_FAILURE(rc))
+        return rc;
+
+    /*
+     * Copy out the GMM statistics.
+     */
+    pStats->cMaxPages                   = pGMM->cMaxPages;
+    pStats->cReservedPages              = pGMM->cReservedPages;
+    pStats->cOverCommittedPages         = pGMM->cOverCommittedPages;
+    pStats->cAllocatedPages             = pGMM->cAllocatedPages;
+    pStats->cSharedPages                = pGMM->cSharedPages;
+    pStats->cDuplicatePages             = pGMM->cDuplicatePages;
+    pStats->cLeftBehindSharedPages      = pGMM->cLeftBehindSharedPages;
+    pStats->cBalloonedPages             = pGMM->cBalloonedPages;
+    pStats->cChunks                     = pGMM->cChunks;
+    pStats->cFreedChunks                = pGMM->cFreedChunks;
+    pStats->cShareableModules           = pGMM->cShareableModules;
+    RT_ZERO(pStats->au64Reserved);
+
+    /*
+     * Copy out the VM statistics.
+     */
+    if (pGVM)
+        pStats->VMStats = pGVM->gmm.s.Stats;
+    else
+        RT_ZERO(pStats->VMStats);
+
+    gmmR0MutexRelease(pGMM);
+    return rc;
+}
+
+
+/**
+ * VMMR0 request wrapper for GMMR0QueryStatistics.
+ *
+ * @returns see GMMR0QueryStatistics.
+ * @param   pVM             Pointer to the shared VM structure. Optional.
+ * @param   pReq            The request packet.
+ */
+GMMR0DECL(int) GMMR0QueryStatisticsReq(PVM pVM, PGMMQUERYSTATISTICSSREQ pReq)
+{
+    /*
+     * Validate input and pass it on.
+     */
+    AssertPtrReturn(pReq, VERR_INVALID_POINTER);
+    AssertMsgReturn(pReq->Hdr.cbReq == sizeof(*pReq), ("%#x != %#x\n", pReq->Hdr.cbReq, sizeof(*pReq)), VERR_INVALID_PARAMETER);
+
+    return GMMR0QueryStatistics(&pReq->Stats, pReq->pSession, pVM);
+}
+
+
+/**
+ * Resets the specified GMM statistics.
+ *
+ * @returns VBox status code.
+ *
+ * @param   pStats      Which statistics to reset, that is, non-zero fields
+ *                      indicates which to reset.
+ * @param   pSession    The current session.
+ * @param   pVM         The VM to reset statistics for. Optional.
+ */
+GMMR0DECL(int) GMMR0ResetStatistics(PCGMMSTATS pStats, PSUPDRVSESSION pSession, PVM pVM)
+{
+    /* Currently nothing we can reset at the moment. */
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * VMMR0 request wrapper for GMMR0ResetStatistics.
+ *
+ * @returns see GMMR0ResetStatistics.
+ * @param   pVM             Pointer to the shared VM structure. Optional.
+ * @param   pReq            The request packet.
+ */
+GMMR0DECL(int) GMMR0ResetStatisticsReq(PVM pVM, PGMMRESETSTATISTICSSREQ pReq)
+{
+    /*
+     * Validate input and pass it on.
+     */
+    AssertPtrReturn(pReq, VERR_INVALID_POINTER);
+    AssertMsgReturn(pReq->Hdr.cbReq == sizeof(*pReq), ("%#x != %#x\n", pReq->Hdr.cbReq, sizeof(*pReq)), VERR_INVALID_PARAMETER);
+
+    return GMMR0ResetStatistics(&pReq->Stats, pReq->pSession, pVM);
+}
 

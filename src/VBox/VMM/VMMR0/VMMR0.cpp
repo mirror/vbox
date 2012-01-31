@@ -1098,12 +1098,20 @@ static int vmmR0EntryExWorker(PVM pVM, VMCPUID idCpu, VMMR0OPERATION enmOperatio
 
 #if defined(VBOX_STRICT) && HC_ARCH_BITS == 64
         case VMMR0_DO_GMM_FIND_DUPLICATE_PAGE:
-        {
             if (u64Arg)
                 return VERR_INVALID_PARAMETER;
             return GMMR0FindDuplicatePageReq(pVM, (PGMMFINDDUPLICATEPAGEREQ)pReqHdr);
-        }
 #endif
+
+        case VMMR0_DO_GMM_QUERY_STATISTICS:
+            if (u64Arg)
+                return VERR_INVALID_PARAMETER;
+            return GMMR0QueryStatisticsReq(pVM, (PGMMQUERYSTATISTICSSREQ)pReqHdr);
+
+        case VMMR0_DO_GMM_RESET_STATISTICS:
+            if (u64Arg)
+                return VERR_INVALID_PARAMETER;
+            return GMMR0ResetStatisticsReq(pVM, (PGMMRESETSTATISTICSSREQ)pReqHdr);
 
         /*
          * A quick GCFGM mock-up.
