@@ -297,6 +297,8 @@ struct _xmlParserCtxt {
      */
     xmlError          lastError;
     xmlParserMode     parseMode;    /* the parser mode */
+    unsigned long    nbentities;    /* number of entities references */
+    unsigned long  sizeentities;    /* size of parsed entities */
 };
 
 /**

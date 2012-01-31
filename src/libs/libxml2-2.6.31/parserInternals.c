@@ -1399,7 +1399,8 @@ xmlNewEntityInputStream(xmlParserCtxtPtr ctxt, xmlEntityPtr entity) {
     if (input == NULL) {
 	return(NULL);
     }
-    input->filename = (char *) entity->URI;
+    if (entity->URI != NULL)
+	input->filename = (char *) xmlStrdup((xmlChar *) entity->URI);
     input->base = entity->content;
     input->cur = entity->content;
     input->length = entity->length;
@@ -1669,6 +1670,7 @@ xmlInitParserCtxt(xmlParserCtxtPtr ctxt)
     ctxt->depth = 0;
     ctxt->charset = XML_CHAR_ENCODING_UTF8;
     ctxt->catalogs = NULL;
+    ctxt->nbentities = 0;
     xmlInitNodeInfoSeq(&ctxt->node_seq);
     return(0);
 }

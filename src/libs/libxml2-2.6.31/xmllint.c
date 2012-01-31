@@ -2834,7 +2834,7 @@ static void usage(const char *name) {
     printf("\t--recover : output what was parsable on broken XML documents\n");
     printf("\t--noent : substitute entity references by their value\n");
     printf("\t--noout : don't output the result tree\n");
-    printf("\t--path 'paths': provide a set of paths for resources\n");
+    printf("\t--path 'paths' : provide a set of paths for resources\n");
     printf("\t--load-trace : print trace of all external entites loaded\n");
     printf("\t--nonet : refuse to fetch DTDs or entities over network\n");
     printf("\t--nocompact : do not generate compact text nodes\n");
@@ -2884,7 +2884,7 @@ static void usage(const char *name) {
     printf("\t--catalogs : use SGML catalogs from $SGML_CATALOG_FILES\n");
     printf("\t             otherwise XML Catalogs starting from \n");
     printf("\t         %s are activated by default\n", XML_XML_DEFAULT_CATALOG);
-    printf("\t--nocatalogs: deactivate all catalogs\n");
+    printf("\t--nocatalogs : deactivate all catalogs\n");
 #endif
     printf("\t--auto : generate a small doc on the fly\n");
 #ifdef LIBXML_XINCLUDE_ENABLED
@@ -2909,9 +2909,9 @@ static void usage(const char *name) {
     printf("\t--schematron schema : do validation against a schematron\n");
 #endif
 #ifdef LIBXML_SAX1_ENABLED
-    printf("\t--sax1: use the old SAX1 interfaces for processing\n");
+    printf("\t--sax1 : use the old SAX1 interfaces for processing\n");
 #endif
-    printf("\t--sax: do not build a tree but work just at the SAX level\n");
+    printf("\t--sax : do not build a tree but work just at the SAX level\n");
 
     printf("\nLibxml project home page: http://xmlsoft.org/\n");
     printf("To report bugs or get some help check: http://xmlsoft.org/bugs.html\n");

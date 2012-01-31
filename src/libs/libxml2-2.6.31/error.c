@@ -45,7 +45,7 @@ void XMLCDECL xmlGenericErrorDefaultFunc	(void *ctx ATTRIBUTE_UNUSED,
 	if (chars > -1)						\
 	    size += chars + 1;					\
 	else							\
-	    size += 100;					\
+	    break;						\
 	if ((larger = (char *) xmlRealloc(str, size)) == NULL) {\
 	    break;						\
 	}							\
