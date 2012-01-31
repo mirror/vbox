@@ -496,8 +496,7 @@
         64-bit) are supported with the restrictions listed in <xref
         linkend="KnownIssues" />:<itemizedlist>
             <listitem>
-              <para>Solaris 11 (Nevada build 86 and higher,
-              OpenSolaris 2008.05 and higher, Solaris 11 Express)</para>
+              <para>Solaris 11 including Solaris 11 Express</para>
             </listitem>
 
             <listitem>

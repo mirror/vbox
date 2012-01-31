@@ -786,15 +786,6 @@
         <listitem>
           <para>Solaris 10 (u5 and higher);</para>
         </listitem>
-
-        <listitem>
-          <para>Solaris Nevada/SXDE/SXCE (build 82 and higher);</para>
-        </listitem>
-
-        <listitem>
-          <para>OpenSolaris (Developer Preview 2 and higher; this includes
-          OpenSolaris 2008.05, 2008.11 and 2009.06);</para>
-        </listitem>
       </itemizedlist>
 
       <para>Other distributions may work if they are based on comparable

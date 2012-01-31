@@ -84,7 +84,8 @@
         </glossentry>
 
         <glossentry>
-          <glossterm>Solaris 10, OpenSolaris</glossterm>
+          <glossterm>Solaris 10 (u6 and higher), Solaris 11 (including Solaris
+          11 Express)</glossterm>
 
           <glossdef>
             <para>Fully supported (32 bits and 64 bits). Guest Additions are
