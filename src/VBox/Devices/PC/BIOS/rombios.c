@@ -5360,7 +5360,7 @@ int09_function(DI, SI, BP, SP, BX, DX, CX, AX)
 
 #ifdef VBOX
     case 0x53: /* Del press */
-      if ((shift_flags & 0x0f) == 0x0c)
+      if ((shift_flags & 0x0c) == 0x0c)
       {
 ASM_START
         /* Ctrl+Alt+Del => Reboot */
