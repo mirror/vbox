@@ -144,7 +144,7 @@ PRBool xptiManifest::Write(xptiInterfaceInfoManager* aMgr,
     // All exits via "goto out;" from here on...
     if(NS_FAILED(tempFile->
                  OpenNSPRFileDesc(PR_WRONLY | PR_CREATE_FILE | PR_TRUNCATE,
-                                  0666, &fd)) || !fd)
+                                  0600, &fd)) || !fd)
     {
         goto out;
     }

@@ -109,7 +109,7 @@ void nsFileSpecHelpers::Canonify(nsSimpleCharString& ioPath, PRBool inMakeDirs)
         return;
     if (inMakeDirs)
     {
-        const mode_t mode = 0755;
+        const mode_t mode = 0700;
         nsFileSpecHelpers::MakeAllDirectories((const char*)ioPath, mode);
     }
 
