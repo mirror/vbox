@@ -109,16 +109,21 @@ RT_C_DECLS_END
 #    include <linux/autoconf.h>
 #   endif
 #  endif
-#  if LINUX_VERSION_CODE < KERNEL_VERSION(3,3,0) \
-    || !defined(__cplusplus) \
-    || !defined(CONFIG_ARCH_SUPPORTS_OPTIMIZED_INLINING) \
-    || !defined(CONFIG_OPTIMIZE_INLINING)
-   /* compiler-gcc.h redefines inline macrodefenitions when CONFIG_ARCH_SUPPORTS_OPTIMIZED_INLINING and CONFIG_OPTIMIZED_INLINING
-    * are defined appeding __attribute__((no_instrument_function)) which isn't supported by g++. inline used in linux/posix_types.h that
-    * why we need include linux/type.h after compiler-gcc.h
-    */
-#  include <linux/types.h>
+#  include <linux/compiler.h>
+#  if defined(__cplusplus)
+    /*
+     * Starting with 3.3, <linux/compiler-gcc.h> appends 'notrace' (which
+     * expands to __attribute__((no_instrument_function))) to inline,
+     * __inline and __inline__. Revert that.
+     */
+#   undef inline
+#   define inline inline
+#   undef __inline__
+#   define __inline__ __inline__
+#   undef __inline
+#   define __inline __inline
 #  endif
+#  include <linux/types.h>
 #  include <linux/stddef.h>
 #  undef uintptr_t
 #  ifdef __GNUC__
@@ -132,31 +137,6 @@ RT_C_DECLS_END
 #    undef __inline__
 #    define __inline__ __inline__
 #   endif
-#  if LINUX_VERSION_CODE >= KERNEL_VERSION(3,3,0) \
-    && defined(__cplusplus) \
-    && defined(CONFIG_ARCH_SUPPORTS_OPTIMIZED_INLINING) \
-    && defined(CONFIG_OPTIMIZE_INLINING)
-    /*
-     * <linux/compiler-gcc.h> does when CONFIG_OPTIMIZE_INLINING and CONFIG_ARCH_SUPPORTS_OPTIMIZED_INLINING
-     * are defined and affects VBox c++ sources,
-     *
-     * define inline            inline          notrace
-     * define __inline__        __inline__      notrace
-     * define __inline          __inline        notrace
-     *
-     * upper in <linux/compiler-gcc.h>
-     * #define notrace __attribute__((no_instrument_function))
-     */
-#   undef inline
-#   define inline inline
-#   undef __inline__
-#   define __inline__ __inline__
-#   undef __inline
-#  define __inline __inline
-#  undef __always_inline
-#  define __always_inline __attribute__((always_inline))
-#  include <linux/types.h>
-#  endif /* KERNEL_VERSION(3.3.0)< */
 #  endif
 #  undef false
 #  undef true
