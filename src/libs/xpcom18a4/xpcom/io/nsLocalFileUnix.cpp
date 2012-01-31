@@ -589,7 +589,7 @@ nsLocalFile::GetNativeTargetPathName(nsIFile *newParent,
 
         if (!targetExists) {
             // XXX create the new directory with some permissions
-            rv = newParent->Create(DIRECTORY_TYPE, 0755);
+            rv = newParent->Create(DIRECTORY_TYPE, 0700);
             if (NS_FAILED(rv))
                 return rv;
         } else {

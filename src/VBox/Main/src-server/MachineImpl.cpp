@@ -8636,7 +8636,7 @@ HRESULT Machine::prepareSaveSettings(bool *pfNeedsGlobalSaveSettings)
         path.stripFilename();
         if (!RTDirExists(path.c_str()))
         {
-            vrc = RTDirCreateFullPath(path.c_str(), 0777);
+            vrc = RTDirCreateFullPath(path.c_str(), 0700);
             if (RT_FAILURE(vrc))
             {
                 return setError(E_FAIL,

@@ -1420,7 +1420,7 @@ nsComponentManagerImpl::WritePersistentRegistry()
     localFile->SetNativeLeafName(leafName);
 
     PRFileDesc* fd = nsnull;
-    nsresult rv = localFile->OpenNSPRFileDesc(PR_WRONLY | PR_CREATE_FILE | PR_TRUNCATE, 0666, &fd);
+    nsresult rv = localFile->OpenNSPRFileDesc(PR_WRONLY | PR_CREATE_FILE | PR_TRUNCATE, 0600, &fd);
     if (NS_FAILED(rv))
         return rv;
 

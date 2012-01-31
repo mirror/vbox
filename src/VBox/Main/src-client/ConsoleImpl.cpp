@@ -2661,7 +2661,7 @@ STDMETHODIMP Console::SaveState(IProgress **aProgress)
             dir.stripFilename();
             if (!RTDirExists(dir.c_str()))
             {
-                int vrc = RTDirCreateFullPath(dir.c_str(), 0777);
+                int vrc = RTDirCreateFullPath(dir.c_str(), 0700);
                 if (RT_FAILURE(vrc))
                 {
                     rc = setError(VBOX_E_FILE_ERROR,
@@ -6004,7 +6004,7 @@ HRESULT Console::consoleInitReleaseLog(const ComPtr<IMachine> aMachine)
     /* make sure the Logs folder exists */
     Assert(logDir.length());
     if (!RTDirExists(logDir.c_str()))
-        RTDirCreateFullPath(logDir.c_str(), 0777);
+        RTDirCreateFullPath(logDir.c_str(), 0700);
 
     Utf8Str logFile = Utf8StrFmt("%s%cVBox.log",
                                  logDir.c_str(), RTPATH_DELIMITER);
@@ -6496,7 +6496,7 @@ HRESULT Console::powerUp(IProgress **aProgress, bool aPaused)
                 /*
                  * Try create the directory.
                  */
-                vrc = RTDirCreateFullPath(pszDumpDir, 0777);
+                vrc = RTDirCreateFullPath(pszDumpDir, 0700);
                 if (RT_FAILURE(vrc))
                     throw setError(E_FAIL, "Failed to setup CoreDumper. Couldn't create dump directory '%s' (%Rrc)\n", pszDumpDir, vrc);
             }

@@ -85,7 +85,7 @@ xptiAutoLog::xptiAutoLog(xptiInterfaceInfoManager* mgr,
         if(NS_SUCCEEDED(logfile->
                     OpenNSPRFileDesc(PR_WRONLY | PR_CREATE_FILE | PR_APPEND |
                                              (append ? 0 : PR_TRUNCATE),
-                                             0666, &fd)) && fd)
+                                             0600, &fd)) && fd)
         {
 #ifdef DEBUG
             m_DEBUG_FileDesc = fd;
