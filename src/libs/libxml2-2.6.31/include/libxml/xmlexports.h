@@ -43,7 +43,7 @@
 /**
  * XMLCDECL:
  *
- * Macro which declares the calling convention for exported functions that 
+ * Macro which declares the calling convention for exported functions that
  * use '...'.
  */
 #define XMLCDECL
@@ -146,6 +146,16 @@
   #define XMLCALL __cdecl
   #define XMLCDECL __cdecl
 #endif
+
+/* bird/VirtualBox: Visibility attributes - start  */
+#if defined(VBOX_HAVE_VISIBILITY_HIDDEN) && !defined(LIBXML_STATIC) && defined(IN_LIBXML)
+  #undef XMLPUBFUN
+  #undef XMLPUBVAR
+  #define XMLPUBFUN __attribute__((visibility("default")))
+  #define XMLPUBVAR __attribute__((visibility("default"))) extern
+#endif
+/* bird/VirtualBox: Visibility attributes - end  */
+
 
 /* Compatibility */
 #if !defined(LIBXML_DLL_IMPORT)

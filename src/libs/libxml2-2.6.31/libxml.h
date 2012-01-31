@@ -23,6 +23,9 @@
 
 #if defined(macintosh)
 #include "config-mac.h"
+#elif defined(_WIN32)
+#include <win32config.h>
+#include <libxml/xmlversion.h>
 #elif defined(_WIN32_WCE)
 /*
  * Windows CE compatibility definitions and functions
@@ -30,6 +33,9 @@
  * At least I tested it with WinCE 5.0 for Emulator and WinCE 4.2/SH4 target
  */
 #include <win32config.h>
+#include <libxml/xmlversion.h>
+#elif defined(VBOX)
+#include <vboxconfig.h>
 #include <libxml/xmlversion.h>
 #else
 #include "config.h"
