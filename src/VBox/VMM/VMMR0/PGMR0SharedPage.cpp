@@ -80,15 +80,15 @@ VMMR0DECL(int) PGMR0SharedModuleCheck(PVM pVM, PGVM pGVM, VMCPUID idCpu, PGMMSHA
                 if (    pPage
                     &&  PGM_PAGE_GET_STATE(pPage) == PGM_PAGE_STATE_ALLOCATED)
                 {
-                    PageDesc.uHCPhysPageId = PGM_PAGE_GET_PAGEID(pPage);
-                    PageDesc.HCPhys        = PGM_PAGE_GET_HCPHYS(pPage);
-                    PageDesc.GCPhys        = GCPhys;
+                    PageDesc.idPage = PGM_PAGE_GET_PAGEID(pPage);
+                    PageDesc.HCPhys = PGM_PAGE_GET_HCPHYS(pPage);
+                    PageDesc.GCPhys = GCPhys;
 
                     rc = GMMR0SharedModuleCheckPage(pGVM, pModule, idxRegion, idxPage, &PageDesc);
                     if (rc == VINF_SUCCESS)
                     {
                         /* Any change for this page? */
-                        if (PageDesc.uHCPhysPageId != NIL_GMM_PAGEID)
+                        if (PageDesc.idPage != NIL_GMM_PAGEID)
                         {
                             Assert(PGM_PAGE_GET_STATE(pPage) == PGM_PAGE_STATE_ALLOCATED);
 
@@ -105,7 +105,7 @@ VMMR0DECL(int) PGMR0SharedModuleCheck(PVM pVM, PGVM pGVM, VMCPUID idCpu, PGMMSHA
 
                                 /* Update the physical address and page id now. */
                                 PGM_PAGE_SET_HCPHYS(pVM, pPage, PageDesc.HCPhys);
-                                PGM_PAGE_SET_PAGEID(pVM, pPage, PageDesc.uHCPhysPageId);
+                                PGM_PAGE_SET_PAGEID(pVM, pPage, PageDesc.idPage);
 
                                 /* Invalidate page map TLB entry for this page too. */
                                 pgmPhysInvalidatePageMapTLBEntry(pVM, PageDesc.GCPhys);
