@@ -80,6 +80,95 @@
 #include <zlib.h>
 #endif
 
+static void
+xmlFatalErr(xmlParserCtxtPtr ctxt, xmlParserErrors error, const char *info);
+
+/************************************************************************
+ *									*
+ *	Arbitrary limits set in the parser.				*
+ *									*
+ ************************************************************************/
+
+#define XML_PARSER_BIG_ENTITY 1000
+#define XML_PARSER_LOT_ENTITY 5000
+
+/*
+ * XML_PARSER_NON_LINEAR is the threshold where the ratio of parsed entity
+ *    replacement over the size in byte of the input indicates that you have
+ *    and eponential behaviour. A value of 10 correspond to at least 3 entity
+ *    replacement per byte of input.
+ */
+#define XML_PARSER_NON_LINEAR 10
+
+/*
+ * xmlParserEntityCheck
+ *
+ * Function to check non-linear entity expansion behaviour
+ * This is here to detect and stop exponential linear entity expansion
+ * This is not a limitation of the parser but a safety
+ * boundary feature.
+ */
+static int
+xmlParserEntityCheck(xmlParserCtxtPtr ctxt, unsigned long size,
+                     xmlEntityPtr ent)
+{
+    unsigned long consumed = 0;
+
+    if (ctxt == NULL)
+        return (0);
+    if (ctxt->lastError.code == XML_ERR_ENTITY_LOOP)
+        return (1);
+    if (size != 0) {
+        /*
+         * Do the check based on the replacement size of the entity
+         */
+        if (size < XML_PARSER_BIG_ENTITY)
+	    return(0);
+
+        /*
+         * A limit on the amount of text data reasonably used
+         */
+        if (ctxt->input != NULL) {
+            consumed = ctxt->input->consumed +
+                (ctxt->input->cur - ctxt->input->base);
+        }
+        consumed += ctxt->sizeentities;
+
+        if ((size < XML_PARSER_NON_LINEAR * consumed) &&
+	    (ctxt->nbentities * 3 < XML_PARSER_NON_LINEAR * consumed))
+            return (0);
+    } else if (ent != NULL) {
+        /*
+         * use the number of parsed entities in the replacement
+         */
+        size = ent->owner;
+
+        /*
+         * The amount of data parsed counting entities size only once
+         */
+        if (ctxt->input != NULL) {
+            consumed = ctxt->input->consumed +
+                (ctxt->input->cur - ctxt->input->base);
+        }
+        consumed += ctxt->sizeentities;
+
+        /*
+         * Check the density of entities for the amount of data
+	 * knowing an entity reference will take at least 3 bytes
+         */
+        if (size * 3 < consumed * XML_PARSER_NON_LINEAR)
+            return (0);
+    } else {
+        /*
+         * strange we got no data for checking just return
+         */
+        return (0);
+    }
+
+    xmlFatalErr(ctxt, XML_ERR_ENTITY_LOOP, NULL);
+    return (1);
+}
+
 /**
  * xmlParserMaxDepth:
  *
@@ -2178,13 +2267,14 @@ xmlParserHandlePEReference(xmlParserCtxtPtr ctxt) {
 /*
  * Macro used to grow the current buffer.
  */
-#define growBuffer(buffer) {						\
-    xmlChar *tmp;							\
-    buffer##_size *= 2;							\
-    tmp = (xmlChar *)							\
-    		xmlRealloc(buffer, buffer##_size * sizeof(xmlChar));	\
-    if (tmp == NULL) goto mem_error;					\
-    buffer = tmp;							\
+#define growBuffer(buffer, n) {                                         \
+    xmlChar *tmp;                                                       \
+    buffer##_size *= 2;                                                 \
+    buffer##_size += n;                                                 \
+    tmp = (xmlChar *)                                                   \
+                xmlRealloc(buffer, buffer##_size * sizeof(xmlChar));    \
+    if (tmp == NULL) goto mem_error;                                    \
+    buffer = tmp;                                                       \
 }
 
 /**
@@ -2252,7 +2342,7 @@ xmlStringLenDecodeEntities(xmlParserCtxtPtr ctxt, const xmlChar *str, int len,
 		COPY_BUF(0,buffer,nbchars,val);
 	    }
 	    if (nbchars > buffer_size - XML_PARSER_BUFFER_SIZE) {
-	        growBuffer(buffer);
+	        growBuffer(buffer, XML_PARSER_BUFFER_SIZE);
 	    }
 	} else if ((c == '&') && (what & XML_SUBSTITUTE_REF)) {
 	    if (xmlParserDebugEntities)
@@ -2260,12 +2350,16 @@ xmlStringLenDecodeEntities(xmlParserCtxtPtr ctxt, const xmlChar *str, int len,
 			"String decoding Entity Reference: %.30s\n",
 			str);
 	    ent = xmlParseStringEntityRef(ctxt, &str);
+	    if (ctxt->lastError.code == XML_ERR_ENTITY_LOOP)
+	        goto int_error;
+	    if (ent != NULL)
+	        ctxt->nbentities += ent->owner;
 	    if ((ent != NULL) &&
 		(ent->etype == XML_INTERNAL_PREDEFINED_ENTITY)) {
 		if (ent->content != NULL) {
 		    COPY_BUF(0,buffer,nbchars,ent->content[0]);
 		    if (nbchars > buffer_size - XML_PARSER_BUFFER_SIZE) {
-			growBuffer(buffer);
+			growBuffer(buffer, XML_PARSER_BUFFER_SIZE);
 		    }
 		} else {
 		    xmlFatalErrMsg(ctxt, XML_ERR_INTERNAL_ERROR,
@@ -2284,7 +2378,11 @@ xmlStringLenDecodeEntities(xmlParserCtxtPtr ctxt, const xmlChar *str, int len,
 			buffer[nbchars++] = *current++;
 			if (nbchars >
 		            buffer_size - XML_PARSER_BUFFER_SIZE) {
-			    growBuffer(buffer);
+			    if (xmlParserEntityCheck(ctxt, nbchars, ent)) {
+			        xmlFree(rep);
+			        goto int_error;
+			    }
+			    growBuffer(buffer, XML_PARSER_BUFFER_SIZE);
 			}
 		    }
 		    xmlFree(rep);
@@ -2295,7 +2393,7 @@ xmlStringLenDecodeEntities(xmlParserCtxtPtr ctxt, const xmlChar *str, int len,
 
 		buffer[nbchars++] = '&';
 		if (nbchars > buffer_size - i - XML_PARSER_BUFFER_SIZE) {
-		    growBuffer(buffer);
+		    growBuffer(buffer, i + XML_PARSER_BUFFER_SIZE);
 		}
 		for (;i > 0;i--)
 		    buffer[nbchars++] = *cur++;
@@ -2306,6 +2404,10 @@ xmlStringLenDecodeEntities(xmlParserCtxtPtr ctxt, const xmlChar *str, int len,
 		xmlGenericError(xmlGenericErrorContext,
 			"String decoding PE Reference: %.30s\n", str);
 	    ent = xmlParseStringPEReference(ctxt, &str);
+	    if (ctxt->lastError.code == XML_ERR_ENTITY_LOOP)
+	        goto int_error;
+	    if (ent != NULL)
+	        ctxt->nbentities += ent->owner;
 	    if (ent != NULL) {
 		xmlChar *rep;
 
@@ -2319,7 +2421,11 @@ xmlStringLenDecodeEntities(xmlParserCtxtPtr ctxt, const xmlChar *str, int len,
 			buffer[nbchars++] = *current++;
 			if (nbchars >
 		            buffer_size - XML_PARSER_BUFFER_SIZE) {
-			    growBuffer(buffer);
+			    if (xmlParserEntityCheck(ctxt, nbchars, ent)) {
+			        xmlFree(rep);
+			        goto int_error;
+			    }
+			    growBuffer(buffer, XML_PARSER_BUFFER_SIZE);
 			}
 		    }
 		    xmlFree(rep);
@@ -2329,7 +2435,7 @@ xmlStringLenDecodeEntities(xmlParserCtxtPtr ctxt, const xmlChar *str, int len,
 	    COPY_BUF(l,buffer,nbchars,c);
 	    str += l;
 	    if (nbchars > buffer_size - XML_PARSER_BUFFER_SIZE) {
-	      growBuffer(buffer);
+	      growBuffer(buffer, XML_PARSER_BUFFER_SIZE);
 	    }
 	}
 	if (str < last)
@@ -2342,6 +2448,9 @@ xmlStringLenDecodeEntities(xmlParserCtxtPtr ctxt, const xmlChar *str, int len,
 
 mem_error:
     xmlErrMemory(ctxt, NULL);
+int_error:
+    if (buffer != NULL)
+        xmlFree(buffer);
     return(NULL);
 }
 
@@ -3126,7 +3235,7 @@ xmlParseAttValueComplex(xmlParserCtxtPtr ctxt, int *attlen, int normalize) {
 		if (val == '&') {
 		    if (ctxt->replaceEntities) {
 			if (len > buf_size - 10) {
-			    growBuffer(buf);
+			    growBuffer(buf, 10);
 			}
 			buf[len++] = '&';
 		    } else {
@@ -3135,7 +3244,7 @@ xmlParseAttValueComplex(xmlParserCtxtPtr ctxt, int *attlen, int normalize) {
 			 * called by the attribute() function in SAX.c
 			 */
 			if (len > buf_size - 10) {
-			    growBuffer(buf);
+			    growBuffer(buf, 10);
 			}
 			buf[len++] = '&';
 			buf[len++] = '#';
@@ -3145,16 +3254,19 @@ xmlParseAttValueComplex(xmlParserCtxtPtr ctxt, int *attlen, int normalize) {
 		    }
 		} else {
 		    if (len > buf_size - 10) {
-			growBuffer(buf);
+			growBuffer(buf, 10);
 		    }
 		    len += xmlCopyChar(0, &buf[len], val);
 		}
 	    } else {
 		ent = xmlParseEntityRef(ctxt);
+		ctxt->nbentities++;
+		if (ent != NULL)
+		    ctxt->nbentities += ent->owner;
 		if ((ent != NULL) &&
 		    (ent->etype == XML_INTERNAL_PREDEFINED_ENTITY)) {
 		    if (len > buf_size - 10) {
-			growBuffer(buf);
+			growBuffer(buf, 10);
 		    }
 		    if ((ctxt->replaceEntities == 0) &&
 		        (ent->content[0] == '&')) {
@@ -3179,14 +3291,14 @@ xmlParseAttValueComplex(xmlParserCtxtPtr ctxt, int *attlen, int normalize) {
 			    while (*current != 0) { /* non input consuming */
 				buf[len++] = *current++;
 				if (len > buf_size - 10) {
-				    growBuffer(buf);
+				    growBuffer(buf, 10);
 				}
 			    }
 			    xmlFree(rep);
 			}
 		    } else {
 			if (len > buf_size - 10) {
-			    growBuffer(buf);
+			    growBuffer(buf, 10);
 			}
 			if (ent->content != NULL)
 			    buf[len++] = ent->content[0];
@@ -3212,8 +3324,8 @@ xmlParseAttValueComplex(xmlParserCtxtPtr ctxt, int *attlen, int normalize) {
 		     * Just output the reference
 		     */
 		    buf[len++] = '&';
-		    if (len > buf_size - i - 10) {
-			growBuffer(buf);
+		    while (len > buf_size - i - 10) {
+			growBuffer(buf, i + 10);
 		    }
 		    for (;i > 0;i--)
 			buf[len++] = *cur++;
@@ -3226,7 +3338,7 @@ xmlParseAttValueComplex(xmlParserCtxtPtr ctxt, int *attlen, int normalize) {
 		    if ((!normalize) || (!in_space)) {
 			COPY_BUF(l,buf,len,0x20);
 			if (len > buf_size - 10) {
-			    growBuffer(buf);
+			    growBuffer(buf, 10);
 			}
 		    }
 		    in_space = 1;
@@ -3235,7 +3347,7 @@ xmlParseAttValueComplex(xmlParserCtxtPtr ctxt, int *attlen, int normalize) {
 	        in_space = 0;
 		COPY_BUF(l,buf,len,c);
 		if (len > buf_size - 10) {
-		    growBuffer(buf);
+		    growBuffer(buf, 10);
 		}
 	    }
 	    NEXTL(l);
@@ -4250,7 +4362,8 @@ xmlParsePI(xmlParserCtxtPtr ctxt) {
 		    (ctxt->sax->processingInstruction != NULL))
 		    ctxt->sax->processingInstruction(ctxt->userData,
 		                                     target, NULL);
-		ctxt->instate = state;
+		if (ctxt->instate != XML_PARSER_EOF)
+		    ctxt->instate = state;
 		return;
 	    }
 	    buf = (xmlChar *) xmlMallocAtomic(size * sizeof(xmlChar));
@@ -4330,7 +4443,8 @@ xmlParsePI(xmlParserCtxtPtr ctxt) {
 	} else {
 	    xmlFatalErr(ctxt, XML_ERR_PI_NOT_STARTED, NULL);
 	}
-	ctxt->instate = state;
+	if (ctxt->instate != XML_PARSER_EOF)
+	    ctxt->instate = state;
     }
 }
 
@@ -4433,6 +4547,7 @@ xmlParseEntityDecl(xmlParserCtxtPtr ctxt) {
     int isParameter = 0;
     xmlChar *orig = NULL;
     int skipped;
+    unsigned long oldnbent = ctxt->nbentities;
     
     /* GROW; done in the caller */
     if (CMP8(CUR_PTR, '<', '!', 'E', 'N', 'T', 'I', 'T', 'Y')) {
@@ -4642,6 +4757,11 @@ xmlParseEntityDecl(xmlParserCtxtPtr ctxt) {
 		}
 	    }
             if (cur != NULL) {
+	        if ((cur->owner != 0) || (cur->children == NULL)) {
+		    cur->owner = ctxt->nbentities - oldnbent;
+		    if (cur->owner ==  0)
+		        cur->owner = 1;
+		}
 	        if (cur->orig != NULL)
 		    xmlFree(orig);
 		else
@@ -4752,10 +4872,14 @@ xmlParseNotationType(xmlParserCtxtPtr ctxt) {
 	if (name == NULL) {
 	    xmlFatalErrMsg(ctxt, XML_ERR_NAME_REQUIRED,
 			   "Name expected in NOTATION declaration\n");
-	    return(ret);
+            xmlFreeEnumeration(ret);
+	    return(NULL);
 	}
 	cur = xmlCreateEnumeration(name);
-	if (cur == NULL) return(ret);
+	if (cur == NULL) {
+            xmlFreeEnumeration(ret);
+            return(NULL);
+        }
 	if (last == NULL) ret = last = cur;
 	else {
 	    last->next = cur;
@@ -4765,9 +4889,8 @@ xmlParseNotationType(xmlParserCtxtPtr ctxt) {
     } while (RAW == '|');
     if (RAW != ')') {
 	xmlFatalErr(ctxt, XML_ERR_NOTATION_NOT_FINISHED, NULL);
-	if ((last != NULL) && (last != ret))
-	    xmlFreeEnumeration(last);
-	return(ret);
+        xmlFreeEnumeration(ret);
+	return(NULL);
     }
     NEXT;
     return(ret);
@@ -4808,7 +4931,10 @@ xmlParseEnumerationType(xmlParserCtxtPtr ctxt) {
 	}
 	cur = xmlCreateEnumeration(name);
 	xmlFree(name);
-	if (cur == NULL) return(ret);
+	if (cur == NULL) {
+            xmlFreeEnumeration(ret);
+            return(NULL);
+        }
 	if (last == NULL) ret = last = cur;
 	else {
 	    last->next = cur;
@@ -5206,6 +5332,12 @@ xmlParseElementChildrenContentDecl (xmlParserCtxtPtr ctxt, int inputchk) {
     const xmlChar *elem;
     xmlChar type = 0;
 
+    if (ctxt->depth > 128) {
+        xmlFatalErrMsgInt(ctxt, XML_ERR_ELEMCONTENT_NOT_FINISHED,
+                "xmlParseElementChildrenContentDecl : depth %d too deep\n",
+                          ctxt->depth);
+	return(NULL);
+    }
     SKIP_BLANKS;
     GROW;
     if (RAW == '(') {
@@ -5214,7 +5346,9 @@ xmlParseElementChildrenContentDecl (xmlParserCtxtPtr ctxt, int inputchk) {
         /* Recurse on first child */
 	NEXT;
 	SKIP_BLANKS;
+        ctxt->depth++;
         cur = ret = xmlParseElementChildrenContentDecl(ctxt, inputid);
+        ctxt->depth--;
 	SKIP_BLANKS;
 	GROW;
     } else {
@@ -5344,7 +5478,9 @@ xmlParseElementChildrenContentDecl (xmlParserCtxtPtr ctxt, int inputchk) {
 	    /* Recurse on second child */
 	    NEXT;
 	    SKIP_BLANKS;
+            ctxt->depth++;
 	    last = xmlParseElementChildrenContentDecl(ctxt, inputid);
+            ctxt->depth--;
 	    SKIP_BLANKS;
 	} else {
 	    elem = xmlParseName(ctxt);
@@ -6071,7 +6207,8 @@ xmlParseReference(xmlParserCtxtPtr ctxt) {
 			    (ent->children == NULL)) {
 			    ent->children = list;
 			    ent->last = list;
-			    ent->owner = 1;
+			    if (ent->owner == 0)
+				ent->owner = 1;
 			    list->parent = (xmlNodePtr) ent;
 			} else {
 			    xmlFreeNodeList(list);
@@ -6080,6 +6217,7 @@ xmlParseReference(xmlParserCtxtPtr ctxt) {
 			xmlFreeNodeList(list);
 		    }
 		} else {
+		    unsigned long oldnbent = ctxt->nbentities;
 		    /*
 		     * 4.3.2: An internal general parsed entity is well-formed
 		     * if its replacement text matches the production labeled
@@ -6102,6 +6240,7 @@ xmlParseReference(xmlParserCtxtPtr ctxt) {
 			ret = xmlParseBalancedChunkMemoryInternal(ctxt,
 					   value, user_data, &list);
 			ctxt->depth--;
+
 		    } else if (ent->etype ==
 			       XML_EXTERNAL_GENERAL_PARSED_ENTITY) {
 			ctxt->depth++;
@@ -6113,6 +6252,24 @@ xmlParseReference(xmlParserCtxtPtr ctxt) {
 			ret = XML_ERR_ENTITY_PE_INTERNAL;
 			xmlErrMsgStr(ctxt, XML_ERR_INTERNAL_ERROR,
 				     "invalid entity type found\n", NULL);
+		    }
+		    /*
+		     * Store the number of entities needing parsing for entity
+		     * content and do checkings
+		     */
+		    if ((ent->owner != 0) || (ent->children == NULL)) {
+			ent->owner = ctxt->nbentities - oldnbent;
+			if (ent->owner == 0)
+			    ent->owner = 1;
+		    }
+		    if (ret == XML_ERR_ENTITY_LOOP) {
+			xmlFatalErr(ctxt, XML_ERR_ENTITY_LOOP, NULL);
+			xmlFreeNodeList(list);
+			return;
+		    }
+		    if (xmlParserEntityCheck(ctxt, 0, ent)) {
+			xmlFreeNodeList(list);
+			return;
 		    }
 		    if (ret == XML_ERR_ENTITY_LOOP) {
 			xmlFatalErr(ctxt, XML_ERR_ENTITY_LOOP, NULL);
@@ -6132,7 +6289,8 @@ xmlParseReference(xmlParserCtxtPtr ctxt) {
 				    (ctxt->parseMode == XML_PARSE_READER)) {
 				    list->parent = (xmlNodePtr) ent;
 				    list = NULL;
-				    ent->owner = 1;
+				    if (ent->owner == 0)
+					ent->owner = 1;
 				} else {
 				    ent->owner = 0;
 				    while (list != NULL) {
@@ -6149,7 +6307,8 @@ xmlParseReference(xmlParserCtxtPtr ctxt) {
 #endif /* LIBXML_LEGACY_ENABLED */
 				}
 			    } else {
-				ent->owner = 1;
+			        if (ent->owner == 0)
+				    ent->owner = 1;
 				while (list != NULL) {
 				    list->parent = (xmlNodePtr) ent;
 				    if (list->next == NULL)
@@ -6168,6 +6327,8 @@ xmlParseReference(xmlParserCtxtPtr ctxt) {
 		    } else if (list != NULL) {
 			xmlFreeNodeList(list);
 			list = NULL;
+		    } else if (ent->owner != 1) {
+			ctxt->nbentities += ent->owner;
 		    }
 		}
 		ent->checked = 1;
@@ -6326,7 +6487,8 @@ xmlParseReference(xmlParserCtxtPtr ctxt) {
 				break;
 			    cur = next;
 			}
-			ent->owner = 1;
+			if (ent->owner == 0)
+			    ent->owner = 1;
 #ifdef LIBXML_LEGACY_ENABLED
 			if (ent->etype == XML_EXTERNAL_GENERAL_PARSED_ENTITY)			      
 			  xmlAddEntityReference(ent, firstChild, nw);
@@ -6415,6 +6577,11 @@ xmlParseEntityRef(xmlParserCtxtPtr ctxt) {
 	} else {
 	    if (RAW == ';') {
 	        NEXT;
+		/*
+		 * Increase the number of entity references parsed
+		 */
+		ctxt->nbentities++;
+
 		/*
 		 * Ask first SAX for entity resolution, otherwise try the
 		 * predefined set.
@@ -6587,6 +6754,10 @@ xmlParseStringEntityRef(xmlParserCtxtPtr ctxt, const xmlChar ** str) {
 	    if (*ptr == ';') {
 	        ptr++;
 		/*
+		 * Increase the number of entity references parsed
+		 */
+		ctxt->nbentities++;
+		/*
 		 * Ask first SAX for entity resolution, otherwise try the
 		 * predefined set.
 		 */
@@ -6748,6 +6919,11 @@ xmlParsePEReference(xmlParserCtxtPtr ctxt)
         } else {
             if (RAW == ';') {
                 NEXT;
+		/*
+		 * Increase the number of entity references parsed
+		 */
+		ctxt->nbentities++;
+
                 if ((ctxt->sax != NULL) &&
                     (ctxt->sax->getParameterEntity != NULL))
                     entity = ctxt->sax->getParameterEntity(ctxt->userData,
@@ -6878,6 +7054,11 @@ xmlParseStringPEReference(xmlParserCtxtPtr ctxt, const xmlChar **str) {
 	    if (cur == ';') {
 		ptr++;
 		cur = *ptr;
+		/*
+		 * Increase the number of entity references parsed
+		 */
+		ctxt->nbentities++;
+
 		if ((ctxt->sax != NULL) &&
 		    (ctxt->sax->getParameterEntity != NULL))
 		    entity = ctxt->sax->getParameterEntity(ctxt->userData,
@@ -8609,6 +8790,8 @@ xmlParseElement(xmlParserCtxtPtr ctxt) {
     else
 	name = xmlParseStartTag(ctxt);
 #endif /* LIBXML_SAX1_ENABLED */
+    if (ctxt->instate == XML_PARSER_EOF)
+	return;
     if (name == NULL) {
 	spacePop(ctxt);
         return;
@@ -9931,6 +10114,8 @@ xmlParseTryOrFinish(xmlParserCtxtPtr ctxt, int terminate) {
 		else
 		    name = xmlParseStartTag(ctxt);
 #endif /* LIBXML_SAX1_ENABLED */
+		if (ctxt->instate == XML_PARSER_EOF)
+		    goto done;
 		if (name == NULL) {
 		    spacePop(ctxt);
 		    ctxt->instate = XML_PARSER_EOF;
@@ -10117,7 +10302,9 @@ xmlParseTryOrFinish(xmlParserCtxtPtr ctxt, int terminate) {
 		  else
 		    xmlParseEndTag1(ctxt, 0);
 #endif /* LIBXML_SAX1_ENABLED */
-		if (ctxt->nameNr == 0) {
+		if (ctxt->instate == XML_PARSER_EOF) {
+		    /* Nothing */
+		} else if (ctxt->nameNr == 0) {
 		    ctxt->instate = XML_PARSER_EPILOG;
 		} else {
 		    ctxt->instate = XML_PARSER_CONTENT;
@@ -11537,11 +11724,31 @@ xmlParseExternalEntityPrivate(xmlDocPtr doc, xmlParserCtxtPtr oldctxt,
 	}
 	ret = XML_ERR_OK;
     }
+
+    /*
+     * Record in the parent context the number of entities replacement
+     * done when parsing that reference.
+     */
+    oldctxt->nbentities += ctxt->nbentities;
+    /*
+     * Also record the size of the entity parsed
+     */
+    if (ctxt->input != NULL) {
+	oldctxt->sizeentities += ctxt->input->consumed;
+	oldctxt->sizeentities += (ctxt->input->cur - ctxt->input->base);
+    }
+    /*
+     * And record the last error if any
+     */
+    if (ctxt->lastError.code != XML_ERR_OK)
+        xmlCopyError(&ctxt->lastError, &oldctxt->lastError);
+
     if (sax != NULL) 
 	ctxt->sax = oldsax;
     oldctxt->node_seq.maximum = ctxt->node_seq.maximum;
     oldctxt->node_seq.length = ctxt->node_seq.length;
     oldctxt->node_seq.buffer = ctxt->node_seq.buffer;
+    oldctxt->nbentities += ctxt->nbentities;
     ctxt->node_seq.maximum = 0;
     ctxt->node_seq.length = 0;
     ctxt->node_seq.buffer = NULL;
@@ -11766,6 +11973,17 @@ xmlParseBalancedChunkMemoryInternal(xmlParserCtxtPtr oldctxt,
         ctxt->myDoc->last = last;
     }
 	
+    /*
+     * Record in the parent context the number of entities replacement
+     * done when parsing that reference.
+     */
+    oldctxt->nbentities += ctxt->nbentities;
+    /*
+     * Also record the last error if any
+     */
+    if (ctxt->lastError.code != XML_ERR_OK)
+        xmlCopyError(&ctxt->lastError, &oldctxt->lastError);
+
     ctxt->sax = oldsax;
     ctxt->dict = NULL;
     ctxt->attsDefault = NULL;
@@ -13077,6 +13295,8 @@ xmlCtxtReset(xmlParserCtxtPtr ctxt)
     ctxt->depth = 0;
     ctxt->charset = XML_CHAR_ENCODING_UTF8;
     ctxt->catalogs = NULL;
+    ctxt->nbentities = 0;
+    ctxt->sizeentities = 0;
     xmlInitNodeInfoSeq(&ctxt->node_seq);
 
     if (ctxt->attsDefault != NULL) {

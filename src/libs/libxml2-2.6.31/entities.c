@@ -102,7 +102,7 @@ xmlFreeEntity(xmlEntityPtr entity)
         dict = entity->doc->dict;
 
 
-    if ((entity->children) && (entity->owner == 1) &&
+    if ((entity->children) && (entity->owner != 0) &&
         (entity == (xmlEntityPtr) entity->children->parent))
         xmlFreeNodeList(entity->children);
     if (dict != NULL) {

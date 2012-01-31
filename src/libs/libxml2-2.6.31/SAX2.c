@@ -11,6 +11,7 @@
 #include "libxml.h"
 #include <stdlib.h>
 #include <string.h>
+#include <limits.h>
 #include <libxml/xmlmemory.h>
 #include <libxml/tree.h>
 #include <libxml/parser.h>
@@ -2442,6 +2443,11 @@ xmlSAX2Characters(void *ctx, const xmlChar *ch, int len)
 	    } else if ((ctxt->nodemem == ctxt->nodelen + 1) &&
 	               (xmlDictOwns(ctxt->dict, lastChild->content))) {
 		lastChild->content = xmlStrdup(lastChild->content);
+	    }
+	    if (ctxt->nodelen > UINT_MAX - len ||
+	        ctxt->nodemem + len > UINT_MAX / 2) {
+	            xmlSAX2ErrMemory(ctxt, "xmlSAX2Characters overflow prevented");
+	            return;
 	    }
 	    if (ctxt->nodelen + len >= ctxt->nodemem) {
 		xmlChar *newbuf;
