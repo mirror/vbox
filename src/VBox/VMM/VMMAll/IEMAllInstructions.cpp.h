@@ -2724,7 +2724,6 @@ FNIEMOP_DEF(iemOp_cpuid)
 FNIEMOP_DEF_1(iemOpCommonBit_Ev_Gv, PCIEMOPBINSIZES, pImpl)
 {
     uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
-    IEMOP_HLP_NO_LOCK_PREFIX();
     IEMOP_VERIFICATION_UNDEFINED_EFLAGS(X86_EFL_OF | X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF);
 
     if ((bRm & X86_MODRM_MOD_MASK) == (3 << X86_MODRM_MOD_SHIFT))
@@ -2896,7 +2895,7 @@ FNIEMOP_DEF_1(iemOpCommonBit_Ev_Gv, PCIEMOPBINSIZES, pImpl)
 /** Opcode 0x0f 0xa3. */
 FNIEMOP_DEF(iemOp_bt_Ev_Gv)
 {
-    IEMOP_MNEMONIC("bt  Gv,Mp");
+    IEMOP_MNEMONIC("bt  Gv,Gv");
     return FNIEMOP_CALL_1(iemOpCommonBit_Ev_Gv, &g_iemAImpl_bt);
 }
 
@@ -3232,7 +3231,7 @@ FNIEMOP_STUB(iemOp_rsm);
 /** Opcode 0x0f 0xab. */
 FNIEMOP_DEF(iemOp_bts_Ev_Gv)
 {
-    IEMOP_MNEMONIC("bts Gv,Mp");
+    IEMOP_MNEMONIC("bts Ev,Gv");
     return FNIEMOP_CALL_1(iemOpCommonBit_Ev_Gv, &g_iemAImpl_bts);
 }
 
@@ -3345,7 +3344,7 @@ FNIEMOP_DEF(iemOp_lss_Gv_Mp)
 /** Opcode 0x0f 0xb3. */
 FNIEMOP_DEF(iemOp_btr_Ev_Gv)
 {
-    IEMOP_MNEMONIC("btr Gv,Mp");
+    IEMOP_MNEMONIC("btr Ev,Gv");
     return FNIEMOP_CALL_1(iemOpCommonBit_Ev_Gv, &g_iemAImpl_btr);
 }
 
@@ -3696,7 +3695,7 @@ FNIEMOP_DEF(iemOp_Grp8)
 /** Opcode 0x0f 0xbb. */
 FNIEMOP_DEF(iemOp_btc_Ev_Gv)
 {
-    IEMOP_MNEMONIC("btc Gv,Mp");
+    IEMOP_MNEMONIC("btc Ev,Gv");
     return FNIEMOP_CALL_1(iemOpCommonBit_Ev_Gv, &g_iemAImpl_btc);
 }
 
