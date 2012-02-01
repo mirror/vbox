@@ -5076,6 +5076,9 @@ ASM_END
     case 0x0A: /* GET KEYBOARD ID */
       count = 2;
       kbd_code = 0x0;
+ASM_START
+      cli // avoid racing the interrupt handler
+ASM_END
       outb(0x60, 0xf2);
       /* Wait for data */
       max=0xffff;
