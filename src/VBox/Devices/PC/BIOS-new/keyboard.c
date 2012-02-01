@@ -659,15 +659,19 @@ void BIOSCALL int16_function(volatile kbd_regs_t r)
     case 0x0A: /* GET KEYBOARD ID */
         count = 2;
         kbd_code = 0x0;
+        //@todo: Might be better to just mask the KB interrupt
+        int_disable();
         outb(0x60, 0xf2);
         /* Wait for data */
         max=0xffff;
-        while ( ((inb(0x64) & 0x01) == 0) && (--max>0) ) outb(0x80, 0x00);
+        while ( ((inb(0x64) & 0x01) == 0) && (--max>0) )
+            inb(0x80);
         if (max>0x0) {
             if ((inb(0x60) == 0xfa)) {
                 do {
                     max=0xffff;
-                    while ( ((inb(0x64) & 0x01) == 0) && (--max>0) ) outb(0x80, 0x00);
+                    while ( ((inb(0x64) & 0x01) == 0) && (--max>0) )
+                        inb(0x80);
                     if (max>0x0) {
                         kbd_code >>= 8;
                         kbd_code |= (inb(0x60) << 8);
