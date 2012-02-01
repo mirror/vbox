@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBoxBalloonCtrl - VirtualBox Ballooning Control Service.
+ * VBoxWatchdog.cpp - VirtualBox Watchdog.
  */
 
 /*
@@ -69,8 +69,8 @@ bool                 g_fVerbose    = false;
 ComPtr<IVirtualBox>  g_pVirtualBox = NULL;
 ComPtr<ISession>     g_pSession    = NULL;
 
-/** The critical section for keep our stuff in sync. */
-static RTCRITSECT    g_MapCritSect;
+/** The critical section for the machines map. */
+static RTCRITSECT    g_csMachines;
 
 /** Set by the signal handler. */
 static volatile bool g_fCanceled = false;
@@ -142,7 +142,7 @@ static bool machineIsRunning(MachineState_T enmState);
 static bool machineHandled(const Bstr &strUuid);
 static int machineAdd(const Bstr &strUuid);
 static int machineRemove(const Bstr &strUuid);
-static int machineUpdate(const Bstr &strUuid, MachineState_T enmState);
+//static int machineUpdate(const Bstr &strUuid, MachineState_T enmState);
 static HRESULT watchdogSetup();
 static void watchdogTeardown();
 
@@ -191,7 +191,7 @@ class VirtualBoxEventListener
 
                     if (SUCCEEDED(hr))
                     {
-                        int rc = RTCritSectEnter(&g_MapCritSect);
+                        int rc = RTCritSectEnter(&g_csMachines);
                         if (RT_SUCCESS(rc))
                         {
                             for (unsigned j = 0; j < RT_ELEMENTS(g_aModules); j++)
@@ -211,12 +211,11 @@ class VirtualBoxEventListener
                                 rc = machineAdd(uuid);
                             else if (!fRegistered)
                                  rc = machineRemove(uuid);
-
-                            int rc2 = RTCritSectLeave(&g_MapCritSect);
+                            #endif
+                            int rc2 = RTCritSectLeave(&g_csMachines);
                             if (RT_SUCCESS(rc))
                                 rc = rc2;
                             AssertRC(rc);
-                            #endif
                         }
                     }
                     break;
@@ -236,7 +235,7 @@ class VirtualBoxEventListener
 
                     if (SUCCEEDED(hr))
                     {
-                        int rc = RTCritSectEnter(&g_MapCritSect);
+                        int rc = RTCritSectEnter(&g_csMachines);
                         if (RT_SUCCESS(rc))
                         {
                             for (unsigned j = 0; j < RT_ELEMENTS(g_aModules); j++)
@@ -251,7 +250,7 @@ class VirtualBoxEventListener
                                 }
 
                             //rc = machineUpdate(uuid, machineState);
-                            int rc2 = RTCritSectLeave(&g_MapCritSect);
+                            int rc2 = RTCritSectLeave(&g_csMachines);
                             if (RT_SUCCESS(rc))
                                 rc = rc2;
                             AssertRC(rc);
@@ -481,13 +480,19 @@ static int machineAdd(const Bstr &strUuid)
         Assert(it == g_mapVM.end());
 
         /* Register all module payloads. */
-        /* TODO */
+        for (unsigned j = 0; j < RT_ELEMENTS(g_aModules); j++)
+        {
+            if (g_aModules[j].pDesc->pszOptions)
+                RTPrintf("%s", g_aModules[j].pDesc->pszOptions);
+        }
 
         g_mapVM.insert(std::make_pair(strUuid, m));
 
         serviceLogVerbose(("Added machine \"%ls\"\n", strUuid.raw()));
 
     } while (0);
+
+    /** @todo Add std exception handling! */
 
     return SUCCEEDED(rc) ? VINF_SUCCESS : VERR_COM_IPRT_ERROR; /* @todo Find a better error! */
 }
@@ -523,6 +528,7 @@ static int machineRemove(const Bstr &strUuid)
     return rc;
 }
 
+#if 0
 /**
  * Updates a specified machine according to its current machine state.
  * That currently also could mean that a machine gets removed if it doesn't
@@ -582,12 +588,13 @@ static int machineUpdate(const Bstr &strUuid, MachineState_T enmState)
 
     return rc;
 }
+#endif
 
 static void vmListDestroy()
 {
     serviceLogVerbose(("Destroying VM list ...\n"));
 
-    int rc = RTCritSectEnter(&g_MapCritSect);
+    int rc = RTCritSectEnter(&g_csMachines);
     if (RT_SUCCESS(rc))
     {
         mapVMIter it = g_mapVM.begin();
@@ -602,7 +609,7 @@ static void vmListDestroy()
 
         g_mapVM.clear();
 
-        rc = RTCritSectLeave(&g_MapCritSect);
+        rc = RTCritSectLeave(&g_csMachines);
     }
     AssertRC(rc);
 }
@@ -611,7 +618,7 @@ static int vmListBuild()
 {
     serviceLogVerbose(("Building VM list ...\n"));
 
-    int rc = RTCritSectEnter(&g_MapCritSect);
+    int rc = RTCritSectEnter(&g_csMachines);
     if (RT_SUCCESS(rc))
     {
         /*
@@ -655,7 +662,7 @@ static int vmListBuild()
                 serviceLogVerbose(("No machines to add found at the moment!\n"));
         }
 
-        int rc2 = RTCritSectLeave(&g_MapCritSect);
+        int rc2 = RTCritSectLeave(&g_csMachines);
         if (RT_SUCCESS(rc))
             rc = rc2;
     }
@@ -755,7 +762,7 @@ static RTEXITCODE watchdogMain(HandlerArg *a)
         /* Initialize global weak references. */
         g_pEventQ = com::EventQueue::getMainEventQueue();
 
-        RTCritSectInit(&g_MapCritSect);
+        RTCritSectInit(&g_csMachines);
 
         /*
          * Install signal handlers.
@@ -847,7 +854,7 @@ static RTEXITCODE watchdogMain(HandlerArg *a)
         vrc = watchdogShutdownModules();
         AssertRC(vrc);
 
-        RTCritSectDelete(&g_MapCritSect);
+        RTCritSectDelete(&g_csMachines);
 
         if (RT_FAILURE(vrc))
             rc = VBOX_E_IPRT_ERROR;
@@ -884,7 +891,7 @@ static void logHeaderFooter(PRTLOGGER pLoggerRelease, RTLOGPHASE enmPhase, PFNRT
         case RTLOGPHASE_BEGIN:
         {
             pfnLog(pLoggerRelease,
-                   "VirtualBox Ballooning Control Service %s r%u %s (%s %s) release log\n"
+                   "VirtualBox Watchdog %s r%u %s (%s %s) release log\n"
 #ifdef VBOX_BLEEDING_EDGE
                    "EXPERIMENTAL build " VBOX_BLEEDING_EDGE "\n"
 #endif
@@ -938,6 +945,13 @@ static void logHeaderFooter(PRTLOGGER pLoggerRelease, RTLOGPHASE enmPhase, PFNRT
     }
 }
 
+static void displayHeader()
+{
+    RTStrmPrintf(g_pStdErr, VBOX_PRODUCT " Watchdog " VBOX_VERSION_STRING "\n"
+                 "(C) " VBOX_C_YEAR " " VBOX_VENDOR "\n"
+                 "All rights reserved.\n\n");
+}
+
 /**
  * Displays the help.
  *
@@ -947,7 +961,9 @@ static void displayHelp(const char *pszImage)
 {
     AssertPtrReturnVoid(pszImage);
 
-    RTStrmPrintf(g_pStdErr, "\nUsage: %s [options]\n\nSupported options (default values in brackets):\n",
+    displayHeader();
+
+    RTStrmPrintf(g_pStdErr, "Usage: %s [options]\n\nSupported options (default values in brackets):\n",
                  pszImage);
     for (unsigned i = 0;
          i < RT_ELEMENTS(g_aOptions);
@@ -998,9 +1014,11 @@ static void displayHelp(const char *pszImage)
         RTStrmPrintf(g_pStdErr, "%-23s%s\n", str.c_str(), pcszDescr);
     }
 
-    RTStrmPrintf(g_pStdErr, "Module options:\n");
-
-    /** @todo Add module options here. */
+    for (unsigned j = 0; j < RT_ELEMENTS(g_aModules); j++)
+    {
+        if (g_aModules[j].pDesc->pszOptions)
+            RTPrintf("%s", g_aModules[j].pDesc->pszOptions);
+    }
 
     /** @todo Change VBOXBALLOONCTRL_RELEASE_LOG to WATCHDOG*. */
     RTStrmPrintf(g_pStdErr, "\nUse environment variable VBOXBALLOONCTRL_RELEASE_LOG for logging options.\n");
@@ -1075,10 +1093,6 @@ int main(int argc, char *argv[])
     if (RT_FAILURE(rc))
         return RTMsgInitFailure(rc);
 
-    RTPrintf(VBOX_PRODUCT " Watchdog " VBOX_VERSION_STRING "\n"
-             "(C) " VBOX_C_YEAR " " VBOX_VENDOR "\n"
-             "All rights reserved.\n\n");
-
     /*
      * Parse the global options
     */
@@ -1139,12 +1153,13 @@ int main(int argc, char *argv[])
                 if (!fFound)
                 {
                     rc = watchdogLazyPreInit();
-                    if (rc != RTEXITCODE_SUCCESS)
-                        return rc;
+                    if (RT_SUCCESS(rc))
+                        return RTEXITCODE_FAILURE;
 
                     for (unsigned j = 0; !fFound && j < RT_ELEMENTS(g_aModules); j++)
                     {
-                        rc = g_aModules[j].pDesc->pfnOption(&ValueUnion, c);
+                        rc = g_aModules[j].pDesc->pfnOption(1 /* Current value only. */,
+                                                            &argv[GetState.iNext - 1]);
                         fFound = rc == 0;
                         if (fFound)
                             break;
@@ -1158,6 +1173,9 @@ int main(int argc, char *argv[])
             }
         }
     }
+
+    /** @todo Add "--quiet/-q" option to not show the header. */
+    displayHeader();
 
     /* create release logger */
     PRTLOGGER pLoggerRelease;
