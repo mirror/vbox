@@ -4,7 +4,7 @@
 #
 
 #
-# Copyright (C) 2006-2011 Oracle Corporation
+# Copyright (C) 2006-2012 Oracle Corporation
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;
@@ -273,6 +273,7 @@ VirtualBox_QT_MOCHDRS = \
 	src/net/UIDownloaderUserManual.h \
 	src/net/UINetworkManager.h \
 	src/net/UIUpdateManager.h \
+	src/net/UINetworkCustomer.h \
 	src/runtime/UIActionPoolRuntime.h \
 	src/runtime/UIConsoleEventHandler.h \
 	src/runtime/UIIndicatorsPool.h \
@@ -368,6 +369,7 @@ VirtualBox_QT_MOCSRCS = \
 	src/extensions/QISplitter.cpp \
 	src/globals/UIActionPool.cpp \
 	src/globals/UIExtraDataEventHandler.cpp \
+	src/net/UINetworkManager.cpp \
 	src/net/UIUpdateManager.cpp \
 	src/runtime/UIActionPoolRuntime.cpp \
 	src/runtime/UIIndicatorsPool.cpp \
@@ -441,6 +443,7 @@ VirtualBox_SOURCES = \
 	src/net/UINetworkManager.cpp \
 	src/net/UIUpdateDefs.cpp \
 	src/net/UIUpdateManager.cpp \
+	src/net/UINetworkCustomer.cpp \
 	src/runtime/UIActionPoolRuntime.cpp \
 	src/runtime/UIConsoleEventHandler.cpp \
 	src/runtime/UIFrameBuffer.cpp \

@@ -43,6 +43,7 @@ enum UIActionIndex
     UIActionIndex_Simple_Help,
     UIActionIndex_Simple_Web,
     UIActionIndex_Simple_ResetWarnings,
+    UIActionIndex_Simple_NetworkAccessManager,
 #ifdef VBOX_WITH_REGISTRATION
     UIActionIndex_Simple_Register,
 #endif /* VBOX_WITH_REGISTRATION */

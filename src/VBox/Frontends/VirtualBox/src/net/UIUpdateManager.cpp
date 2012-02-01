@@ -27,6 +27,7 @@
 #include "UIUpdateDefs.h"
 #include "UIUpdateManager.h"
 #include "UINetworkManager.h"
+#include "UINetworkCustomer.h"
 #include "VBoxGlobal.h"
 #include "UIMessageCenter.h"
 #include "VBoxUtils.h"
@@ -38,9 +39,14 @@
 using namespace VBoxGlobalDefs;
 
 /* Interface representing update step: */
-class UIUpdateStep : public QObject
+class UIUpdateStep : public UINetworkCustomer
 {
     Q_OBJECT;
+
+signals:
+
+    /* Completion-signal of the step: */
+    void sigStepComplete();
 
 public:
 
@@ -51,21 +57,33 @@ public:
         connect(this, SIGNAL(sigStepComplete()), this, SLOT(deleteLater()), Qt::QueuedConnection);
     }
 
-signals:
-
-    /* Completion-signal of the step: */
-    void sigStepComplete();
-
 protected slots:
 
     /* Starting-slot of the step: */
     virtual void sltStartStep() = 0;
+
+protected:
+
+    /* Network pregress handler dummy: */
+    void processNetworkReplyProgress(qint64, qint64) {}
+    /* Network reply canceled handler dummy: */
+    void processNetworkReplyCanceled(QNetworkReply*) {}
+    /* Network reply canceled handler dummy: */
+    void processNetworkReplyFinished(QNetworkReply*) {}
 };
 
 /* Queue for processing update steps: */
 class UIUpdateQueue : public QObject
 {
     Q_OBJECT;
+
+signals:
+
+    /* Starting-signal of the queue: */
+    void sigStartQueue();
+
+    /* Completion-signal of the queue: */
+    void sigQueueFinished();
 
 public:
 
@@ -107,14 +125,6 @@ public:
         emit sigStartQueue();
     }
 
-signals:
-
-    /* Starting-signal of the queue: */
-    void sigStartQueue();
-
-    /* Completion-signal of the queue: */
-    void sigQueueFinished();
-
 private:
 
     /* Guarded pointer to the last passed-step: */
@@ -138,7 +148,12 @@ public:
 private slots:
 
     /* Startup slot: */
-    void sltStartStep()
+    void sltStartStep() { prepareNetworkRequest(); }
+
+private:
+
+    /* Prepare network request: */
+    void prepareNetworkRequest()
     {
         /* Calculate the count of checks left: */
         int cCount = 1;
@@ -172,58 +187,49 @@ private slots:
         url.addQueryItem("branch", VBoxUpdateData(vboxGlobal().virtualBox().GetExtraData(VBoxDefs::GUI_UpdateDate)).branchName());
         QString strUserAgent(QString("VirtualBox %1 <%2>").arg(vboxGlobal().virtualBox().GetVersion()).arg(vboxGlobal().platformInfo()));
 
-        /* Setup GET request: */
+        /* Send GET request: */
         QNetworkRequest request;
         request.setUrl(url);
         request.setRawHeader("User-Agent", strUserAgent.toAscii());
-        QNetworkReply *pReply = gNetworkManager->get(request);
-        connect(pReply, SIGNAL(finished()), this, SLOT(sltHandleCheckReply()));
+        createNetworkRequest(request, UINetworkRequestType_GET, tr("Checking for a new VirtualBox version..."));
     }
 
-    /* Finishing slot: */
-    void sltHandleCheckReply()
+    /* Handle network reply canceled: */
+    void processNetworkReplyCanceled(QNetworkReply* /* pReply */)
     {
-        /* Get corresponding network reply object: */
-        QNetworkReply *pReply = qobject_cast<QNetworkReply*>(sender());
-        /* And ask it for suicide: */
-        pReply->deleteLater();
+        /* Notify about step completion: */
+        emit sigStepComplete();
+    }
 
-        /* Handle normal result: */
-        if (pReply->error() == QNetworkReply::NoError)
+    /* Handle network reply: */
+    void processNetworkReplyFinished(QNetworkReply *pReply)
+    {
+        /* Deserialize incoming data: */
+        QString strResponseData(pReply->readAll());
+
+        /* Newer version of necessary package found: */
+        if (strResponseData.indexOf(QRegExp("^\\d+\\.\\d+\\.\\d+ \\S+$")) == 0)
         {
-            /* Deserialize incoming data: */
-            QString strResponseData(pReply->readAll());
-
-            /* Newer version of necessary package found: */
-            if (strResponseData.indexOf(QRegExp("^\\d+\\.\\d+\\.\\d+ \\S+$")) == 0)
-            {
-                QStringList response = strResponseData.split(" ", QString::SkipEmptyParts);
-                msgCenter().showUpdateSuccess(vboxGlobal().mainWindow(), response[0], response[1]);
-            }
-            /* No newer version of necessary package found: */
-            else
-            {
-                if (m_fForceCall)
-                    msgCenter().showUpdateNotFound(vboxGlobal().mainWindow());
-            }
-
-            /* Save left count of checks: */
-            int cCount = 1;
-            QString strCount = vboxGlobal().virtualBox().GetExtraData(VBoxDefs::GUI_UpdateCheckCount);
-            if (!strCount.isEmpty())
-            {
-                bool ok = false;
-                int c = strCount.toLongLong(&ok);
-                if (ok) cCount = c;
-            }
-            vboxGlobal().virtualBox().SetExtraData(VBoxDefs::GUI_UpdateCheckCount, QString("%1").arg((qulonglong)cCount + 1));
+            QStringList response = strResponseData.split(" ", QString::SkipEmptyParts);
+            msgCenter().showUpdateSuccess(response[0], response[1]);
         }
-        /* Handle errors: */
+        /* No newer version of necessary package found: */
         else
         {
             if (m_fForceCall)
-                msgCenter().showUpdateFailure(vboxGlobal().mainWindow(), pReply->errorString());
+                msgCenter().showUpdateNotFound();
         }
+
+        /* Save left count of checks: */
+        int cCount = 1;
+        QString strCount = vboxGlobal().virtualBox().GetExtraData(VBoxDefs::GUI_UpdateCheckCount);
+        if (!strCount.isEmpty())
+        {
+            bool ok = false;
+            int c = strCount.toLongLong(&ok);
+            if (ok) cCount = c;
+        }
+        vboxGlobal().virtualBox().SetExtraData(VBoxDefs::GUI_UpdateCheckCount, QString("%1").arg((qulonglong)cCount + 1));
 
         /* Notify about step completion: */
         emit sigStepComplete();
@@ -308,10 +314,9 @@ private slots:
 
         /* Create and configure the Extension Pack downloader: */
         UIDownloaderExtensionPack *pDl = UIDownloaderExtensionPack::create();
-        pDl->setParentWidget(msgCenter().mainWindowShown());
         /* After downloading finished => propose to install the Extension Pack: */
-        connect(pDl, SIGNAL(sigNotifyAboutExtensionPackDownloaded(const QString &, const QString &, QString)),
-                this, SLOT(sltHandleDownloadedExtensionPack(const QString &, const QString &, QString)));
+        connect(pDl, SIGNAL(sigDownloadFinished(const QString&, const QString&, QString)),
+                this, SLOT(sltHandleDownloadedExtensionPack(const QString&, const QString&, QString)));
         /* Also, destroyed downloader is a signal to finish the step: */
         connect(pDl, SIGNAL(destroyed(QObject*)), this, SIGNAL(sigStepComplete()));
         /* Start downloading: */
@@ -360,6 +365,7 @@ void UIUpdateManager::sltForceCheck()
 
 UIUpdateManager::UIUpdateManager()
     : m_pQueue(new UIUpdateQueue(this))
+    , m_fIsRunning(false)
     , m_uTime(1 /* day */ * 24 /* hours */ * 60 /* minutes */ * 60 /* seconds */ * 1000 /* ms */)
 {
     /* Prepare instance: */
@@ -385,6 +391,16 @@ UIUpdateManager::~UIUpdateManager()
 
 void UIUpdateManager::sltCheckIfUpdateIsNecessary(bool fForceCall /* = false */)
 {
+    /* If already running => just open Network Access Manager GUI: */
+    if (m_fIsRunning)
+    {
+        gNetworkManager->show();
+        return;
+    }
+
+    /* Set as running: */
+    m_fIsRunning = true;
+
     /* Load/decode curent update data: */
     VBoxUpdateData currentData(vboxGlobal().virtualBox().GetExtraData(VBoxDefs::GUI_UpdateDate));
 
@@ -413,6 +429,9 @@ void UIUpdateManager::sltHandleUpdateFinishing()
     /* Ask updater to check for the next time: */
     QTimer::singleShot(m_uTime, this, SLOT(sltCheckIfUpdateIsNecessary()));
 #endif /* VBOX_WITH_UPDATE_REQUEST */
+
+    /* Set as not running: */
+    m_fIsRunning = false;
 }
 
 #include "UIUpdateManager.moc"

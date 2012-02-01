@@ -36,7 +36,10 @@
 #include "VBoxGlobal.h"
 #include "UISelectorWindow.h"
 #include "UIProgressDialog.h"
-#include "UIDownloaderUserManual.h"
+#include "UINetworkManager.h"
+#ifdef VBOX_OSE
+# include "UIDownloaderUserManual.h"
+#endif /* VBOX_OSE */
 #include "UIMachine.h"
 #include "VBoxAboutDlg.h"
 #include "UIHotKeyEditor.h"
@@ -428,6 +431,24 @@ QWidget* UIMessageCenter::mainMachineWindowShown() const
         return vboxGlobal().vmWindow(); /* return that window */
 
     return 0;
+}
+
+/**
+ *  Returns network access manager window if visible
+ *  and window returned by mainWindowShown() otherwise.
+ */
+QWidget* UIMessageCenter::networkManagerOrMainWindowShown() const
+{
+    return gNetworkManager->window()->isVisible() ? gNetworkManager->window() : mainWindowShown();
+}
+
+/**
+ *  Returns network access manager window if visible
+ *  and window returned by mainMachineWindowShown() otherwise.
+ */
+QWidget* UIMessageCenter::networkManagerOrMainMachineWindowShown() const
+{
+    return gNetworkManager->window()->isVisible() ? gNetworkManager->window() : mainMachineWindowShown();
 }
 
 bool UIMessageCenter::askForOverridingFile(const QString& strPath, QWidget *pParent /* = NULL */)
@@ -1702,27 +1723,14 @@ void UIMessageCenter::remindAboutGuestAdditionsAreNotActive(QWidget *pParent)
              "remindAboutGuestAdditionsAreNotActive");
 }
 
-int UIMessageCenter::cannotFindGuestAdditions(const QString &strSrc1,
-                                              const QString &strSrc2)
+bool UIMessageCenter::cannotFindGuestAdditions(const QString &strSrc1, const QString &strSrc2)
 {
-    return message(mainMachineWindowShown(), Question,
+    return messageYesNo(mainMachineWindowShown(), Question,
                     tr("<p>Could not find the VirtualBox Guest Additions "
                        "CD image file <nobr><b>%1</b></nobr> or "
                        "<nobr><b>%2</b>.</nobr></p><p>Do you wish to "
                        "download this CD image from the Internet?</p>")
-                        .arg(strSrc1).arg(strSrc2),
-                    0, /* pcszAutoConfirmId */
-                    QIMessageBox::Yes | QIMessageBox::Default,
-                    QIMessageBox::No | QIMessageBox::Escape);
-}
-
-void UIMessageCenter::cannotDownloadGuestAdditions(const QString &strUrl,
-                                                   const QString &strReason)
-{
-    message(mainMachineWindowShown(), Error,
-             tr("<p>Failed to download the VirtualBox Guest Additions CD "
-                "image from <nobr><a href=\"%1\">%2</a>.</nobr></p><p>%3</p>")
-                 .arg(strUrl).arg(strUrl).arg(strReason));
+                       .arg(strSrc1).arg(strSrc2));
 }
 
 void UIMessageCenter::cannotMountGuestAdditions(const QString &strMachineName)
@@ -1738,33 +1746,32 @@ void UIMessageCenter::cannotMountGuestAdditions(const QString &strMachineName)
 bool UIMessageCenter::confirmDownloadAdditions(const QString &strUrl, qulonglong uSize)
 {
     QLocale loc(VBoxGlobal::languageId());
-    return messageOkCancel(mainMachineWindowShown(), Question,
-        tr("<p>Are you sure you want to download the VirtualBox "
-           "Guest Additions CD image from "
-           "<nobr><a href=\"%1\">%2</a></nobr> "
-           "(size %3 bytes)?</p>").arg(strUrl).arg(strUrl).arg(loc.toString(uSize)),
-        0, /* pcszAutoConfirmId */
-        tr("Download", "additions"));
+    return messageOkCancel(networkManagerOrMainMachineWindowShown(), Question,
+                           tr("<p>Are you sure you want to download the VirtualBox "
+                              "Guest Additions CD image from "
+                              "<nobr><a href=\"%1\">%2</a></nobr> "
+                              "(size %3 bytes)?</p>").arg(strUrl).arg(strUrl).arg(loc.toString(uSize)),
+                           0, /* pcszAutoConfirmId */
+                           tr("Download", "additions"));
 }
 
-bool UIMessageCenter::confirmMountAdditions(const QString &strUrl,
-                                            const QString &strSrc)
+bool UIMessageCenter::confirmMountAdditions(const QString &strUrl, const QString &strSrc)
 {
-    return messageOkCancel(mainMachineWindowShown(), Question,
-        tr("<p>The VirtualBox Guest Additions CD image has been "
-           "successfully downloaded from "
-           "<nobr><a href=\"%1\">%2</a></nobr> "
-           "and saved locally as <nobr><b>%3</b>.</nobr></p>"
-           "<p>Do you wish to register this CD image and mount it "
-           "on the virtual CD/DVD drive?</p>")
-            .arg(strUrl).arg(strUrl).arg(strSrc),
-        0, /* pcszAutoConfirmId */
-        tr("Mount", "additions"));
+    return messageOkCancel(networkManagerOrMainMachineWindowShown(), Question,
+                           tr("<p>The VirtualBox Guest Additions CD image has been "
+                              "successfully downloaded from "
+                              "<nobr><a href=\"%1\">%2</a></nobr> "
+                              "and saved locally as <nobr><b>%3</b>.</nobr></p>"
+                              "<p>Do you wish to register this CD image and mount it "
+                              "on the virtual CD/DVD drive?</p>")
+                               .arg(strUrl).arg(strUrl).arg(strSrc),
+                           0, /* pcszAutoConfirmId */
+                           tr("Mount", "additions"));
 }
 
 void UIMessageCenter::warnAboutAdditionsCantBeSaved(const QString &strTarget)
 {
-    message(mainWindowShown(), Error,
+    message(networkManagerOrMainMachineWindowShown(), Error,
             tr("<p>Failed to save the downloaded file as <nobr><b>%1</b>.</nobr></p>")
                .arg(QDir::toNativeSeparators(strTarget)));
 }
@@ -1783,7 +1790,7 @@ bool UIMessageCenter::askAboutUserManualDownload(const QString &strMissedLocatio
 bool UIMessageCenter::confirmUserManualDownload(const QString &strURL, qulonglong uSize)
 {
     QLocale loc(VBoxGlobal::languageId());
-    return messageOkCancel(mainWindowShown(), Question,
+    return messageOkCancel(networkManagerOrMainWindowShown(), Question,
                            tr("<p>Are you sure you want to download the VirtualBox "
                               "User Manual from "
                               "<nobr><a href=\"%1\">%2</a></nobr> "
@@ -1792,17 +1799,9 @@ bool UIMessageCenter::confirmUserManualDownload(const QString &strURL, qulonglon
                            tr("Download", "additions"));
 }
 
-void UIMessageCenter::warnAboutUserManualCantBeDownloaded(const QString &strURL, const QString &strReason)
-{
-    message(mainWindowShown(), Error,
-            tr("<p>Failed to download the VirtualBox User Manual "
-               "from <nobr><a href=\"%1\">%2</a>.</nobr></p><p>%3</p>")
-               .arg(strURL).arg(strURL).arg(strReason));
-}
-
 void UIMessageCenter::warnAboutUserManualDownloaded(const QString &strURL, const QString &strTarget)
 {
-    message(mainWindowShown(), Warning,
+    message(networkManagerOrMainWindowShown(), Warning,
             tr("<p>The VirtualBox User Manual has been "
                "successfully downloaded from "
                "<nobr><a href=\"%1\">%2</a></nobr> "
@@ -1812,7 +1811,7 @@ void UIMessageCenter::warnAboutUserManualDownloaded(const QString &strURL, const
 
 void UIMessageCenter::warnAboutUserManualCantBeSaved(const QString &strURL, const QString &strTarget)
 {
-    message(mainWindowShown(), Error,
+    message(networkManagerOrMainWindowShown(), Error,
             tr("<p>The VirtualBox User Manual has been "
                "successfully downloaded from "
                "<nobr><a href=\"%1\">%2</a></nobr> "
@@ -1823,7 +1822,8 @@ void UIMessageCenter::warnAboutUserManualCantBeSaved(const QString &strURL, cons
 
 bool UIMessageCenter::proposeDownloadExtensionPack(const QString &strExtPackName, const QString &strExtPackVersion)
 {
-    return messageOkCancel(mainWindowShown(), Question,
+    return messageOkCancel(mainWindowShown(),
+                           Question,
                            tr("<p>You have an old version (%1) of the <b><nobr>%2</nobr></b> installed.</p>"
                               "<p>Do you wish to download latest one from the Internet?</p>")
                               .arg(strExtPackVersion).arg(strExtPackName),
@@ -1847,7 +1847,7 @@ bool UIMessageCenter::requestUserDownloadExtensionPack(const QString &strExtPack
 bool UIMessageCenter::confirmDownloadExtensionPack(const QString &strExtPackName, const QString &strURL, qulonglong uSize)
 {
     QLocale loc(VBoxGlobal::languageId());
-    return messageOkCancel(mainWindowShown(), Question,
+    return messageOkCancel(networkManagerOrMainWindowShown(), Question,
                            tr("<p>Are you sure you want to download the <b><nobr>%1</nobr></b> "
                               "from <nobr><a href=\"%2\">%2</a></nobr> (size %3 bytes)?</p>")
                               .arg(strExtPackName, strURL, loc.toString(uSize)),
@@ -1857,7 +1857,7 @@ bool UIMessageCenter::confirmDownloadExtensionPack(const QString &strExtPackName
 
 bool UIMessageCenter::proposeInstallExtentionPack(const QString &strExtPackName, const QString &strFrom, const QString &strTo)
 {
-    return messageOkCancel(mainWindowShown(), Question,
+    return messageOkCancel(networkManagerOrMainWindowShown(), Question,
                            tr("<p>The <b><nobr>%1</nobr></b> has been "
                               "successfully downloaded from <nobr><a href=\"%2\">%2</a></nobr> "
                               "and saved locally as <nobr><b>%3</b>.</nobr></p>"
@@ -1869,20 +1869,12 @@ bool UIMessageCenter::proposeInstallExtentionPack(const QString &strExtPackName,
 
 void UIMessageCenter::warnAboutExtentionPackCantBeSaved(const QString &strExtPackName, const QString &strFrom, const QString &strTo)
 {
-    message(mainWindowShown(), Error,
+    message(networkManagerOrMainWindowShown(), Error,
             tr("<p>The <b><nobr>%1</nobr></b> has been "
                "successfully downloaded from <nobr><a href=\"%2\">%2</a></nobr> "
                "but can't be saved locally as <nobr><b>%3</b>.</nobr></p>"
                "<p>Please choose another location for that file.</p>")
                .arg(strExtPackName, strFrom, strTo));
-}
-
-void UIMessageCenter::cannotDownloadExtensionPack(const QString &strExtPackName, const QString &strFrom, const QString &strError)
-{
-    message(mainWindowShown(), Error,
-            tr("<p>Failed to download the <b><nobr>%1</nobr></b> "
-               "from <nobr><a href=\"%2\">%2</a>.</nobr></p><p>%3</p>")
-               .arg(strExtPackName, strFrom, strError));
 }
 
 void UIMessageCenter::cannotConnectRegister(QWidget *pParent,
@@ -1925,31 +1917,30 @@ void UIMessageCenter::showRegisterResult(QWidget *pParent,
     }
 }
 
-void UIMessageCenter::showUpdateSuccess(QWidget *pParent,
-                                        const QString &strVersion,
-                                        const QString &strLink)
+void UIMessageCenter::showUpdateSuccess(const QString &strVersion, const QString &strLink)
 {
-    message(pParent, Info,
+    message(networkManagerOrMainWindowShown(), Info,
             tr("<p>A new version of VirtualBox has been released! Version <b>%1</b> is available at <a href=\"http://www.virtualbox.org/\">virtualbox.org</a>.</p>"
                "<p>You can download this version using the link:</p>"
                "<p><a href=%2>%3</a></p>")
             .arg(strVersion, strLink, strLink));
 }
 
-void UIMessageCenter::showUpdateFailure(QWidget *pParent,
-                                        const QString &strReason)
+void UIMessageCenter::showUpdateNotFound()
 {
-    message(pParent, Error,
-            tr("<p>Unable to obtain the new version information "
-               "due to the following error:</p><p><b>%1</b></p>")
-            .arg(strReason));
+    message(networkManagerOrMainWindowShown(), Info,
+            tr("You are already running the most recent version of VirtualBox."));
 }
 
-void UIMessageCenter::showUpdateNotFound(QWidget *pParent)
+bool UIMessageCenter::askAboutCancelAllNetworkRequest(QWidget *pParent)
 {
-    message(pParent, Info,
-            tr("You are already running the most recent version of VirtualBox."
-               ""));
+    return messageOkCancel(pParent, Question, tr("Do you wish to cancel all current network requests?"));
+}
+
+bool UIMessageCenter::askAboutCancelOrLeaveAllNetworkRequest(QWidget *pParent)
+{
+    return messageYesNo(pParent, Question, tr("Do you wish to cancel all current network requests or leave them at the background?"),
+                        0 /* auto-confirm id */, tr("Cancel All"), tr("Leave At Background"));
 }
 
 /**
@@ -2961,20 +2952,23 @@ void UIMessageCenter::sltShowHelpHelpDialog()
     QString strUserManualFileName1 = vboxGlobal().helpFile();
     QString strShortFileName = QFileInfo(strUserManualFileName1).fileName();
     QString strUserManualFileName2 = QDir(vboxGlobal().virtualBox().GetHomeFolder()).absoluteFilePath(strShortFileName);
+    /* Show if user manual already present: */
     if (QFile::exists(strUserManualFileName1))
         sltShowUserManual(strUserManualFileName1);
     else if (QFile::exists(strUserManualFileName2))
         sltShowUserManual(strUserManualFileName2);
-    else if (!UIDownloaderUserManual::current() && askAboutUserManualDownload(strUserManualFileName1))
+    /* If downloader is running already: */
+    else if (UIDownloaderUserManual::current())
     {
-        /* Create and configure the User Manual downloader: */
+        /* Just show network access manager: */
+        gNetworkManager->show();
+    }
+    /* Else propose to download user manual: */
+    else if (askAboutUserManualDownload(strUserManualFileName1))
+    {
+        /* Create User Manual downloader: */
         UIDownloaderUserManual *pDl = UIDownloaderUserManual::create();
-        CVirtualBox vbox = vboxGlobal().virtualBox();
-        pDl->addSource(QString("http://download.virtualbox.org/virtualbox/%1/").arg(vboxGlobal().vboxVersionStringNormalized()) + strShortFileName);
-        pDl->addSource(QString("http://download.virtualbox.org/virtualbox/") + strShortFileName);
-        pDl->setTarget(strUserManualFileName2);
-        pDl->setParentWidget(mainWindowShown());
-        /* After downloading finished => show the User Manual: */
+        /* After downloading finished => show User Manual: */
         connect(pDl, SIGNAL(sigDownloadFinished(const QString&)), this, SLOT(sltShowUserManual(const QString&)));
         /* Start downloading: */
         pDl->start();

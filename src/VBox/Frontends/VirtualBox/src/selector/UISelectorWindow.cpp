@@ -1185,6 +1185,7 @@ void UISelectorWindow::sltMediumEnumFinished(const VBoxMediaList &list)
     while (0);
 }
 
+#if 0
 void UISelectorWindow::sltEmbedDownloader(UIDownloadType downloaderType)
 {
     switch (downloaderType)
@@ -1205,6 +1206,7 @@ void UISelectorWindow::sltEmbedDownloader(UIDownloadType downloaderType)
             break;
     }
 }
+#endif
 
 void UISelectorWindow::retranslateUi()
 {
@@ -1476,6 +1478,8 @@ void UISelectorWindow::prepareMenuHelp(QMenu *pMenu)
     m_pResetWarningsAction = gActionPool->action(UIActionIndex_Simple_ResetWarnings);
     pMenu->addAction(m_pResetWarningsAction);
     pMenu->addSeparator();
+    m_pNetworkAccessManager = gActionPool->action(UIActionIndex_Simple_NetworkAccessManager);
+    pMenu->addAction(m_pNetworkAccessManager);
 #ifdef VBOX_WITH_REGISTRATION
     m_pRegisterAction = gActionPool->action(UIActionIndex_Simple_Register);
     pMenu->addAction(m_pRegisterAction);
@@ -1603,8 +1607,10 @@ void UISelectorWindow::prepareConnections()
     connect(&vboxGlobal(), SIGNAL(mediumEnumStarted()), this, SLOT(sltMediumEnumerationStarted()));
     connect(&vboxGlobal(), SIGNAL(mediumEnumFinished(const VBoxMediaList &)), this, SLOT(sltMediumEnumFinished(const VBoxMediaList &)));
 
+#if 0
     /* Network manager connections: */
     connect(gNetworkManager, SIGNAL(sigDownloaderCreated(UIDownloadType)), this, SLOT(sltEmbedDownloader(UIDownloadType)));
+#endif
 
     /* Menu-bar connections: */
     connect(menuBar(), SIGNAL(customContextMenuRequested(const QPoint&)), this, SLOT(sltShowSelectorContextMenu(const QPoint&)));
@@ -1642,6 +1648,7 @@ void UISelectorWindow::prepareConnections()
     connect(m_pHelpAction, SIGNAL(triggered()), &msgCenter(), SLOT(sltShowHelpHelpDialog()));
     connect(m_pWebAction, SIGNAL(triggered()), &msgCenter(), SLOT(sltShowHelpWebDialog()));
     connect(m_pResetWarningsAction, SIGNAL(triggered()), &msgCenter(), SLOT(sltResetSuppressedMessages()));
+    connect(m_pNetworkAccessManager, SIGNAL(triggered()), gNetworkManager, SLOT(show()));
 #ifdef VBOX_WITH_REGISTRATION
     connect(m_pRegisterAction, SIGNAL(triggered()), &vboxGlobal(), SLOT(showRegistrationDialog()));
     connect(gEDataEvents, SIGNAL(sigCanShowRegistrationDlg(bool)), m_pRegisterAction, SLOT(setEnabled(bool)));

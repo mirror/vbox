@@ -156,6 +156,8 @@ public:
 
     QWidget* mainWindowShown() const;
     QWidget* mainMachineWindowShown() const;
+    QWidget* networkManagerOrMainWindowShown() const;
+    QWidget* networkManagerOrMainMachineWindowShown() const;
 
     bool askForOverridingFile(const QString& strPath, QWidget *pParent  = NULL);
     bool askForOverridingFiles(const QVector<QString>& strPaths, QWidget *pParent = NULL);
@@ -296,8 +298,7 @@ public:
                                const CVirtualBoxErrorInfo &error);
 
     void remindAboutGuestAdditionsAreNotActive(QWidget *pParent);
-    int cannotFindGuestAdditions(const QString &strSrc1, const QString &strSrc2);
-    void cannotDownloadGuestAdditions(const QString &strUrl, const QString &strReason);
+    bool cannotFindGuestAdditions(const QString &strSrc1, const QString &strSrc2);
     void cannotMountGuestAdditions(const QString &strMachineName);
     bool confirmDownloadAdditions(const QString &strUrl, qulonglong uSize);
     bool confirmMountAdditions(const QString &strUrl, const QString &strSrc);
@@ -305,7 +306,6 @@ public:
 
     bool askAboutUserManualDownload(const QString &strMissedLocation);
     bool confirmUserManualDownload(const QString &strURL, qulonglong uSize);
-    void warnAboutUserManualCantBeDownloaded(const QString &strURL, const QString &strReason);
     void warnAboutUserManualDownloaded(const QString &strURL, const QString &strTarget);
     void warnAboutUserManualCantBeSaved(const QString &strURL, const QString &strTarget);
 
@@ -314,7 +314,6 @@ public:
     bool confirmDownloadExtensionPack(const QString &strExtPackName, const QString &strURL, qulonglong uSize);
     bool proposeInstallExtentionPack(const QString &strExtPackName, const QString &strFrom, const QString &strTo);
     void warnAboutExtentionPackCantBeSaved(const QString &strExtPackName, const QString &strFrom, const QString &strTo);
-    void cannotDownloadExtensionPack(const QString &strExtPackName, const QString &strFrom, const QString &strError);
 
     void cannotConnectRegister(QWidget *pParent,
                                const QString &strUrl,
@@ -322,12 +321,11 @@ public:
     void showRegisterResult(QWidget *pParent,
                             const QString &strResult);
 
-    void showUpdateSuccess(QWidget *pParent,
-                           const QString &strVersion,
-                           const QString &strLink);
-    void showUpdateFailure(QWidget *pParent,
-                           const QString &strReason);
-    void showUpdateNotFound(QWidget *pParent);
+    void showUpdateSuccess(const QString &strVersion, const QString &strLink);
+    void showUpdateNotFound();
+
+    bool askAboutCancelAllNetworkRequest(QWidget *pParent);
+    bool askAboutCancelOrLeaveAllNetworkRequest(QWidget *pParent);
 
     bool confirmInputCapture(bool *pfAutoConfirmed = NULL);
     void remindAboutAutoCapture();

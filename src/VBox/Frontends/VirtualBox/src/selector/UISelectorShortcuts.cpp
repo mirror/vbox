@@ -49,6 +49,7 @@ UISelectorShortcuts::UISelectorShortcuts()
     m_Shortcuts[HelpShortcut]                = UIKeySequence("Help",                QKeySequence::HelpContents);
     m_Shortcuts[WebShortcut]                 = UIKeySequence("Web");
     m_Shortcuts[ResetWarningsShortcut]       = UIKeySequence("ResetWarnings");
+    m_Shortcuts[NetworkAccessManager]        = UIKeySequence("NetworkAccessManager");
 #ifdef VBOX_WITH_REGISTRATION
     m_Shortcuts[RegisterShortcut]            = UIKeySequence("Register");
 #endif /* VBOX_WITH_REGISTRATION */

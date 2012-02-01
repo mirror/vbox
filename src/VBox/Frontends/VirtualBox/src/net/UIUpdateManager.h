@@ -62,6 +62,7 @@ private:
     /* Variables: */
     static UIUpdateManager* m_pInstance;
     UIUpdateQueue *m_pQueue;
+    bool m_fIsRunning;
     quint64 m_uTime;
 };
 #define gUpdateManager UIUpdateManager::instance()

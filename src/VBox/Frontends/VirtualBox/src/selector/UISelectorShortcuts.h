@@ -51,6 +51,7 @@ public:
         HelpShortcut,
         WebShortcut,
         ResetWarningsShortcut,
+        NetworkAccessManager,
 #ifdef VBOX_WITH_REGISTRATION
         RegisterShortcut,
 #endif /* VBOX_WITH_REGISTRATION */

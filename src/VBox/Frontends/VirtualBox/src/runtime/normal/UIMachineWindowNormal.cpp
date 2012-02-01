@@ -169,6 +169,7 @@ void UIMachineWindowNormal::sltTryClose()
     UIMachineWindow::sltTryClose();
 }
 
+#if 0
 void UIMachineWindowNormal::sltEmbedDownloader(UIDownloadType downloaderType)
 {
     switch (downloaderType)
@@ -195,6 +196,7 @@ void UIMachineWindowNormal::sltEmbedDownloader(UIDownloadType downloaderType)
             break;
     }
 }
+#endif
 
 void UIMachineWindowNormal::sltUpdateIndicators()
 {
@@ -444,6 +446,7 @@ void UIMachineWindowNormal::prepareStatusBar()
     /* Add to statusbar: */
     statusBar()->addPermanentWidget(pIndicatorBox, 0);
 
+#if 0
     /* Add the additions downloader progress bar to the status bar,
      * if a download is actually running: */
     tryToEmbedDownloaderForAdditions();
@@ -455,6 +458,7 @@ void UIMachineWindowNormal::prepareStatusBar()
     /* Add the extension pack progress bar to the status bar,
      * if a download is actually running: */
     tryToEmbedDownloaderForExtensionPack();
+#endif
 
     /* Create & start timer to update LEDs: */
     m_pIdleTimer = new QTimer(this);
@@ -472,8 +476,10 @@ void UIMachineWindowNormal::prepareConnections()
     /* Setup global settings change updater: */
     connect(&vboxGlobal().settings(), SIGNAL(propertyChanged(const char *, const char *)),
             this, SLOT(sltProcessGlobalSettingChange(const char *, const char *)));
+#if 0
     /* Setup network manager listener: */
     connect(gNetworkManager, SIGNAL(sigDownloaderCreated(UIDownloadType)), this, SLOT(sltEmbedDownloader(UIDownloadType)));
+#endif
 }
 
 void UIMachineWindowNormal::prepareMachineView()

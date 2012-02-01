@@ -2,11 +2,11 @@
 /** @file
  *
  * VBox frontends: Qt GUI ("VirtualBox"):
- * UIDownloader for extension pack
+ * UIDownloaderExtensionPack class implementation
  */
 
 /*
- * Copyright (C) 2011 Oracle Corporation
+ * Copyright (C) 2011-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -18,66 +18,56 @@
  */
 
 /* Global includes: */
+#include <QNetworkReply>
 #include <QDir>
 #include <QFile>
-#include <QNetworkReply>
 #include <iprt/sha.h>
 
 /* Local includes: */
 #include "UIDownloaderExtensionPack.h"
+#include "QIFileDialog.h"
 #include "VBoxGlobal.h"
 #include "UIMessageCenter.h"
-#include "QIFileDialog.h"
 #include "VBoxDefs.h"
 
 /* Using declarations: */
 using namespace VBoxGlobalDefs;
 
-/* UIMiniProgressWidget stuff: */
-UIMiniProgressWidgetExtension::UIMiniProgressWidgetExtension(const QString &strSource, QWidget *pParent /* = 0 */)
-    : QIWithRetranslateUI<UIMiniProgressWidget>(pParent)
-{
-    sltSetSource(strSource);
-    retranslateUi();
-}
+/* Static stuff: */
+UIDownloaderExtensionPack* UIDownloaderExtensionPack::m_spInstance = 0;
 
-void UIMiniProgressWidgetExtension::retranslateUi()
-{
-    setCancelButtonToolTip(tr("Cancel the <nobr><b>%1</b></nobr> download").arg(UI_ExtPackName));
-    setProgressBarToolTip(tr("Downloading the <nobr><b>%1</b></nobr> from <nobr><b>%2</b>...</nobr>")
-                             .arg(UI_ExtPackName, source()));
-}
-
-/* UIDownloaderExtensionPack stuff: */
-UIDownloaderExtensionPack* UIDownloaderExtensionPack::m_pInstance = 0;
-
-/* static */
 UIDownloaderExtensionPack* UIDownloaderExtensionPack::create()
 {
-    if (!m_pInstance)
-        m_pInstance = new UIDownloaderExtensionPack;
-    return m_pInstance;
+    if (!m_spInstance)
+        m_spInstance = new UIDownloaderExtensionPack;
+    return m_spInstance;
 }
 
-/* static */
 UIDownloaderExtensionPack* UIDownloaderExtensionPack::current()
 {
-    return m_pInstance;
+    return m_spInstance;
 }
 
+/* Starting routine: */
 void UIDownloaderExtensionPack::start()
 {
     /* Call for base-class: */
     UIDownloader::start();
+#if 0
     /* Notify about downloading started: */
-    emit sigDownloadingStarted(UIDownloadType_ExtensionPack);
+    notifyDownloaderCreated(UIDownloadType_ExtensionPack);
+#endif
 }
 
+/* Constructor: */
 UIDownloaderExtensionPack::UIDownloaderExtensionPack()
 {
     /* Prepare instance: */
-    if (!m_pInstance)
-        m_pInstance = this;
+    if (!m_spInstance)
+        m_spInstance = this;
+
+    /* Set description: */
+    setDescription(tr("VirtualBox Extension Pack"));
 
     /* Prepare source/target: */
     QString strExtPackUnderscoredName(QString(UI_ExtPackName).replace(' ', '_'));
@@ -95,30 +85,26 @@ UIDownloaderExtensionPack::UIDownloaderExtensionPack()
     setTarget(strTarget);
 }
 
+/* Destructor: */
 UIDownloaderExtensionPack::~UIDownloaderExtensionPack()
 {
     /* Cleanup instance: */
-    if (m_pInstance == this)
-        m_pInstance = 0;
+    if (m_spInstance == this)
+        m_spInstance = 0;
 }
 
-UIMiniProgressWidget* UIDownloaderExtensionPack::createProgressWidgetFor(QWidget *pParent) const
-{
-    return new UIMiniProgressWidgetExtension(source(), pParent);
-}
-
+/* Virtual stuff reimplementations: */
 bool UIDownloaderExtensionPack::askForDownloadingConfirmation(QNetworkReply *pReply)
 {
-    return msgCenter().confirmDownloadExtensionPack(UI_ExtPackName, source(), pReply->header(QNetworkRequest::ContentLengthHeader).toInt());
+    return msgCenter().confirmDownloadExtensionPack(UI_ExtPackName, source().toString(), pReply->header(QNetworkRequest::ContentLengthHeader).toInt());
 }
 
 void UIDownloaderExtensionPack::handleDownloadedObject(QNetworkReply *pReply)
 {
     /* Read received data into buffer: */
     QByteArray receivedData(pReply->readAll());
-
     /* Serialize the incoming buffer into the file: */
-    for (;;)
+    while (true)
     {
         /* Try to open file for writing: */
         QFile file(target());
@@ -128,7 +114,7 @@ void UIDownloaderExtensionPack::handleDownloadedObject(QNetworkReply *pReply)
             file.write(receivedData);
             file.close();
 
-            /* Calc the SHA-256 on the bytes, creating a string. */
+            /* Calc the SHA-256 on the bytes, creating a string: */
             uint8_t abHash[RTSHA256_HASH_SIZE];
             RTSha256(receivedData.constData(), receivedData.length(), abHash);
             char szDigest[RTSHA256_DIGEST_LEN + 1];
@@ -140,15 +126,16 @@ void UIDownloaderExtensionPack::handleDownloadedObject(QNetworkReply *pReply)
             }
 
             /* Notify listener about extension pack was downloaded: */
-            emit sigNotifyAboutExtensionPackDownloaded(source(), target(), &szDigest[0]);
+            emit sigDownloadFinished(source().toString(), target(), &szDigest[0]);
             break;
         }
 
-        /* Warn the user about extension pack was downloaded but was NOT saved, explain it: */
-        msgCenter().warnAboutExtentionPackCantBeSaved(UI_ExtPackName, source(), QDir::toNativeSeparators(target()));
+        /* Warn the user about extension pack was downloaded but was NOT saved: */
+        msgCenter().warnAboutExtentionPackCantBeSaved(UI_ExtPackName, source().toString(), QDir::toNativeSeparators(target()));
 
         /* Ask the user for another location for the extension pack file: */
-        QString strTarget = QIFileDialog::getExistingDirectory(QFileInfo(target()).absolutePath(), parentWidget(),
+        QString strTarget = QIFileDialog::getExistingDirectory(QFileInfo(target()).absolutePath(),
+                                                               msgCenter().networkManagerOrMainWindowShown(),
                                                                tr("Select folder to save %1 to").arg(UI_ExtPackName), true);
 
         /* Check if user had really set a new target: */
@@ -159,8 +146,10 @@ void UIDownloaderExtensionPack::handleDownloadedObject(QNetworkReply *pReply)
     }
 }
 
-void UIDownloaderExtensionPack::warnAboutNetworkError(const QString &strError)
+#if 0
+UIMiniProgressWidget* UIDownloaderExtensionPack::createProgressWidgetFor(QWidget *pParent) const
 {
-    return msgCenter().cannotDownloadExtensionPack(UI_ExtPackName, source(), strError);
+    return new UIMiniProgressWidgetExtension(source(), pParent);
 }
+#endif
 
