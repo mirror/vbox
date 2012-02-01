@@ -157,7 +157,6 @@ class UIMiniCancelButton: public QIWithRetranslateUI<QIToolButton>
 
 public:
     UIMiniCancelButton(QWidget *pParent = 0);
-    void removeBorder();
 
 protected:
     void retranslateUi() {};

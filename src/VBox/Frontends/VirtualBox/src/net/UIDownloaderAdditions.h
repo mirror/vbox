@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2006-2011 Oracle Corporation
+ * Copyright (C) 2006-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -20,15 +20,23 @@
 #define __UIDownloaderAdditions_h__
 
 /* Local includes: */
-#include "QIWithRetranslateUI.h"
 #include "UIDownloader.h"
 
+#if 0
+/* Local includes: */
+# include "QIWithRetranslateUI.h"
+
+/**
+ * The UIMiniProgressWidgetAdditions class is UIMiniProgressWidget class re-implementation
+ * which embeds into the dialog's status-bar and reflects background http downloading.
+ */
 class UIMiniProgressWidgetAdditions : public QIWithRetranslateUI<UIMiniProgressWidget>
 {
     Q_OBJECT;
 
 public:
 
+    /* Constructor: */
     UIMiniProgressWidgetAdditions(const QString &strSource, QWidget *pParent = 0)
         : QIWithRetranslateUI<UIMiniProgressWidget>(pParent)
     {
@@ -38,6 +46,7 @@ public:
 
 protected:
 
+    /* Translating stuff: */
     void retranslateUi()
     {
         setCancelButtonToolTip(tr("Cancel the VirtualBox Guest Additions CD image download"));
@@ -45,40 +54,45 @@ protected:
                                 .arg(source()));
     }
 };
+#endif
 
+/**
+ * The UIDownloaderAdditions class is UIDownloader class extension
+ * which allows background http downloading.
+ */
 class UIDownloaderAdditions : public UIDownloader
 {
     Q_OBJECT;
 
+signals:
+
+    /* Notifies listeners about file was downloaded: */
+    void sigDownloadFinished(const QString &strFile);
+
 public:
 
+    /* Static stuff: */
     static UIDownloaderAdditions* create();
     static UIDownloaderAdditions* current();
 
-    void setAction(QAction *pAction);
-    QAction *action() const;
-
+    /* Starting routine: */
     void start();
-
-signals:
-
-    void sigDownloadFinished(const QString &strFile);
 
 private:
 
+    /* Constructor/destructor: */
     UIDownloaderAdditions();
     ~UIDownloaderAdditions();
 
-    UIMiniProgressWidget* createProgressWidgetFor(QWidget *pParent) const;
+    /* Virtual stuff reimplementations: */
     bool askForDownloadingConfirmation(QNetworkReply *pReply);
     void handleDownloadedObject(QNetworkReply *pReply);
-    void warnAboutNetworkError(const QString &strError);
+#if 0
+    UIMiniProgressWidget* createProgressWidgetFor(QWidget *pParent) const;
+#endif
 
-    /* Private member variables: */
-    static UIDownloaderAdditions *m_pInstance;
-
-    /* Action to be blocked: */
-    QPointer<QAction> m_pAction;
+    /* Static instance variable: */
+    static UIDownloaderAdditions *m_spInstance;
 };
 
 #endif // __UIDownloaderAdditions_h__

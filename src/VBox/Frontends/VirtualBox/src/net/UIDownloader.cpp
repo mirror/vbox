@@ -6,7 +6,7 @@
  */
 
 /*
- * Copyright (C) 2006-2011 Oracle Corporation
+ * Copyright (C) 2006-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -18,16 +18,20 @@
  */
 
 /* Global includes: */
-#include <QProgressBar>
 #include <QNetworkReply>
 
 /* Local includes: */
 #include "UIDownloader.h"
-#include "UINetworkManager.h"
 #include "VBoxGlobal.h"
 #include "UIMessageCenter.h"
-#include "UISpecialControls.h"
 #include "VBoxUtils.h"
+
+#if 0
+/* Global includes: */
+#include <QProgressBar>
+
+/* Local includes: */
+#include "UISpecialControls.h"
 
 /* UIMiniProgressWidget stuff: */
 UIMiniProgressWidget::UIMiniProgressWidget(QWidget *pParent /* = 0 */)
@@ -97,7 +101,135 @@ void UIMiniProgressWidget::sltSetProgress(qint64 cDone, qint64 cTotal)
     m_pProgressBar->setMaximum(cTotal);
     m_pProgressBar->setValue(cDone);
 }
+#endif
 
+/* Starting routine: */
+void UIDownloader::start()
+{
+    startDelayedAcknowledging();
+}
+
+/* Acknowledging start: */
+void UIDownloader::sltStartAcknowledging()
+{
+    /* Set state to acknowledging: */
+    m_state = UIDownloaderState_Acknowledging;
+
+    /* Send HEAD requests: */
+    QList<QNetworkRequest> requests;
+    for (int i = 0; i < m_sources.size(); ++i)
+        requests << QNetworkRequest(m_sources[i]);
+
+    /* Create network request set: */
+    createNetworkRequest(requests, UINetworkRequestType_HEAD, tr("Looking for %1...").arg(m_strDescription));
+}
+
+/* Downloading start: */
+void UIDownloader::sltStartDownloading()
+{
+    /* Set state to acknowledging: */
+    m_state = UIDownloaderState_Downloading;
+
+    /* Send GET request: */
+    QNetworkRequest request(m_source);
+
+    /* Create network request: */
+    createNetworkRequest(request, UINetworkRequestType_GET, tr("Downloading %1...").arg(m_strDescription));
+}
+
+#if 0
+/* Cancel-button stuff: */
+void UIDownloader::sltCancel()
+{
+    /* Delete downloader: */
+    deleteLater();
+}
+#endif
+
+/* Constructor: */
+UIDownloader::UIDownloader()
+{
+    /* Choose initial state: */
+    m_state = UIDownloaderState_Null;
+
+    /* Connect listeners: */
+    connect(this, SIGNAL(sigToStartAcknowledging()), this, SLOT(sltStartAcknowledging()), Qt::QueuedConnection);
+    connect(this, SIGNAL(sigToStartDownloading()), this, SLOT(sltStartDownloading()), Qt::QueuedConnection);
+}
+
+/* Network-reply progress handler: */
+void UIDownloader::processNetworkReplyProgress(qint64 iReceived, qint64 iTotal)
+{
+    /* Unused variables: */
+    Q_UNUSED(iReceived);
+    Q_UNUSED(iTotal);
+
+#if 0
+    emit sigDownloadProgress(iReceived, iTotal);
+#endif
+}
+
+/* Network-reply canceled handler: */
+void UIDownloader::processNetworkReplyCanceled(QNetworkReply *pNetworkReply)
+{
+    /* Unused variables: */
+    Q_UNUSED(pNetworkReply);
+
+    /* Delete downloader: */
+    deleteLater();
+}
+
+/* Network-reply finished handler: */
+void UIDownloader::processNetworkReplyFinished(QNetworkReply *pNetworkReply)
+{
+    /* Process reply: */
+    switch (m_state)
+    {
+        case UIDownloaderState_Acknowledging:
+        {
+            handleAcknowledgingResult(pNetworkReply);
+            break;
+        }
+        case UIDownloaderState_Downloading:
+        {
+            handleDownloadingResult(pNetworkReply);
+            break;
+        }
+        default:
+            break;
+    }
+}
+
+/* Handle acknowledging result: */
+void UIDownloader::handleAcknowledgingResult(QNetworkReply *pNetworkReply)
+{
+    /* Get the final source: */
+    m_source = pNetworkReply->url();
+
+    /* Ask for downloading: */
+    if (askForDownloadingConfirmation(pNetworkReply))
+    {
+        /* Start downloading: */
+        startDelayedDownloading();
+    }
+    else
+    {
+        /* Delete downloader: */
+        deleteLater();
+    }
+}
+
+/* Handle downloading result: */
+void UIDownloader::handleDownloadingResult(QNetworkReply *pNetworkReply)
+{
+    /* Handle downloaded object: */
+    handleDownloadedObject(pNetworkReply);
+
+    /* Delete downloader: */
+    deleteLater();
+}
+
+#if 0
 /* UIDownloader stuff: */
 UIMiniProgressWidget* UIDownloader::progressWidget(QWidget *pParent) const
 {
@@ -116,122 +248,5 @@ UIMiniProgressWidget* UIDownloader::progressWidget(QWidget *pParent) const
     /* Return widget: */
     return pWidget;
 }
-
-void UIDownloader::start()
-{
-    startDelayedAcknowledging();
-}
-
-UIDownloader::UIDownloader()
-{
-    connect(this, SIGNAL(sigToStartAcknowledging()), this, SLOT(sltStartAcknowledging()), Qt::QueuedConnection);
-    connect(this, SIGNAL(sigToStartDownloading()), this, SLOT(sltStartDownloading()), Qt::QueuedConnection);
-    connect(this, SIGNAL(sigDownloadingStarted(UIDownloadType)), gNetworkManager, SIGNAL(sigDownloaderCreated(UIDownloadType)));
-}
-
-/* Start acknowledging: */
-void UIDownloader::sltStartAcknowledging()
-{
-    /* Setup HEAD request: */
-    QNetworkRequest request;
-    request.setUrl(m_source);
-    QNetworkReply *pReply = gNetworkManager->head(request);
-    connect(pReply, SIGNAL(finished()), this, SLOT(sltFinishAcknowledging()));
-}
-
-/* Finish acknowledging: */
-void UIDownloader::sltFinishAcknowledging()
-{
-    /* Get corresponding network reply object: */
-    QNetworkReply *pReply = qobject_cast<QNetworkReply*>(sender());
-    /* And ask it for suicide: */
-    pReply->deleteLater();
-
-    /* Handle normal reply: */
-    if (pReply->error() == QNetworkReply::NoError)
-        handleAcknowledgingResult(pReply);
-    /* Handle errors: */
-    else
-        handleError(pReply);
-}
-
-/* Handle acknowledging result: */
-void UIDownloader::handleAcknowledgingResult(QNetworkReply *pReply)
-{
-    /* Check if redirection required: */
-    QUrl redirect = pReply->attribute(QNetworkRequest::RedirectionTargetAttribute).toUrl();
-    if (redirect.isValid())
-    {
-        /* Set new source: */
-        UIDownloader::setSource(redirect.toString());
-        /* Start redirecting: */
-        startDelayedAcknowledging();
-        return;
-    }
-
-    /* Ask for downloading confirmation: */
-    if (askForDownloadingConfirmation(pReply))
-    {
-        /* Start downloading: */
-        startDelayedDownloading();
-        return;
-    }
-
-    /* Delete downloader: */
-    deleteLater();
-}
-
-/* Start downloading: */
-void UIDownloader::sltStartDownloading()
-{
-    /* Setup GET request: */
-    QNetworkRequest request;
-    request.setUrl(m_source);
-    QNetworkReply *pReply = gNetworkManager->get(request);
-    connect(pReply, SIGNAL(downloadProgress(qint64, qint64)), this, SIGNAL(sigDownloadProgress(qint64, qint64)));
-    connect(pReply, SIGNAL(finished()), this, SLOT(sltFinishDownloading()));
-}
-
-/* Finish downloading: */
-void UIDownloader::sltFinishDownloading()
-{
-    /* Get corresponding network reply object: */
-    QNetworkReply *pReply = qobject_cast<QNetworkReply*>(sender());
-    /* And ask it for suicide: */
-    pReply->deleteLater();
-
-    /* Handle normal reply: */
-    if (pReply->error() == QNetworkReply::NoError)
-        handleDownloadingResult(pReply);
-    /* Handle errors: */
-    else
-        handleError(pReply);
-}
-
-/* Handle downloading result: */
-void UIDownloader::handleDownloadingResult(QNetworkReply *pReply)
-{
-    /* Handle downloaded object: */
-    handleDownloadedObject(pReply);
-
-    /* Delete downloader: */
-    deleteLater();
-}
-
-/* Handle simple errors: */
-void UIDownloader::handleError(QNetworkReply *pReply)
-{
-    /* Show error message: */
-    warnAboutNetworkError(pReply->errorString());
-
-    /* Delete downloader: */
-    deleteLater();
-}
-
-/* Cancel-button stuff: */
-void UIDownloader::sltCancel()
-{
-    /* Delete downloader: */
-    deleteLater();
-}
+#endif
 

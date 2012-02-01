@@ -127,11 +127,6 @@ UIMiniCancelButton::UIMiniCancelButton(QWidget *pParent /* = 0 */)
     setIcon(UIIconPool::defaultIcon(UIIconPool::DialogCancelIcon));
 }
 
-void UIMiniCancelButton::removeBorder()
-{
-    setStyleSheet("QToolButton { border: 0px }");
-}
-
 /********************************************************************************
  *
  * A help button for the other OS's.

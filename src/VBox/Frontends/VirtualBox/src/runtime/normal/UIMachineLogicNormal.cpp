@@ -78,18 +78,6 @@ void UIMachineLogicNormal::initialize()
     /* Prepare normal machine window: */
     prepareMachineWindows();
 
-    /* If there is an Additions download running, update the parent window information. */
-    if (UIDownloaderAdditions *pDl = UIDownloaderAdditions::current())
-        pDl->setParentWidget(mainMachineWindow()->machineWindow());
-
-    /* If there is an User Manual download running, update the parent window information. */
-    if (UIDownloaderUserManual *pDl = UIDownloaderUserManual::current())
-        pDl->setParentWidget(mainMachineWindow()->machineWindow());
-
-    /* If there is an Extension Pack download running, update the parent window information. */
-    if (UIDownloaderExtensionPack *pDl = UIDownloaderExtensionPack::current())
-        pDl->setParentWidget(mainMachineWindow()->machineWindow());
-
 #ifdef Q_WS_MAC
     /* Prepare dock: */
     prepareDock();

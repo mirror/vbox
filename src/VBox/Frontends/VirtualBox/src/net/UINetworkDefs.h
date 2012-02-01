@@ -19,6 +19,14 @@
 #ifndef __UINetworkDefs_h__
 #define __UINetworkDefs_h__
 
+/* Network request types: */
+enum UINetworkRequestType
+{
+    UINetworkRequestType_HEAD,
+    UINetworkRequestType_GET
+};
+
+#if 0
 /* Download types: */
 enum UIDownloadType
 {
@@ -27,5 +35,6 @@ enum UIDownloadType
     UIDownloadType_ExtensionPack,
     UIDownloadType_Max
 };
+#endif
 
 #endif // __UINetworkDefs_h__

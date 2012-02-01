@@ -305,6 +305,36 @@ protected:
     }
 };
 
+class ShowNetworkAccessManagerAction : public UISimpleAction
+{
+    Q_OBJECT;
+
+public:
+
+    ShowNetworkAccessManagerAction(QObject *pParent)
+        : UISimpleAction(pParent, ":/nw_16px.png", ":/nw_disabled_16px.png")
+    {
+        switch (gActionPool->type())
+        {
+            case UIActionPoolType_Selector:
+                setShortcut(gSS->keySequence(UISelectorShortcuts::NetworkAccessManager));
+                break;
+            case UIActionPoolType_Runtime:
+                setShortcut(gMS->keySequence(UIMachineShortcuts::NetworkAccessManager));
+                break;
+        }
+        retranslateUi();
+    }
+
+protected:
+
+    void retranslateUi()
+    {
+        setText(vboxGlobal().insertKeyToActionText(QApplication::translate("UIMessageCenter", "Network Access Manager..."), gMS->shortcut(UIMachineShortcuts::NetworkAccessManager)));
+        setStatusTip(QApplication::translate("UIMessageCenter", "Show Network Access Manager"));
+    }
+};
+
 #ifdef VBOX_WITH_REGISTRATION
 class PerformRegisterAction : public UISimpleAction
 {
@@ -478,6 +508,7 @@ void UIActionPool::createActions()
     m_pool[UIActionIndex_Simple_Help] = new ShowHelpAction(this);
     m_pool[UIActionIndex_Simple_Web] = new ShowWebAction(this);
     m_pool[UIActionIndex_Simple_ResetWarnings] = new PerformResetWarningsAction(this);
+    m_pool[UIActionIndex_Simple_NetworkAccessManager] = new ShowNetworkAccessManagerAction(this);
 #ifdef VBOX_WITH_REGISTRATION
     m_pool[UIActionIndex_Simple_Register] = new PerformRegisterAction(this);
 #endif /* VBOX_WITH_REGISTRATION */
@@ -502,6 +533,9 @@ void UIActionPool::createMenus()
     if (m_pool[UIActionIndex_Simple_ResetWarnings])
         delete m_pool[UIActionIndex_Simple_ResetWarnings];
     m_pool[UIActionIndex_Simple_ResetWarnings] = new PerformResetWarningsAction(this);
+    if (m_pool[UIActionIndex_Simple_NetworkAccessManager])
+        delete m_pool[UIActionIndex_Simple_NetworkAccessManager];
+    m_pool[UIActionIndex_Simple_NetworkAccessManager] = new ShowNetworkAccessManagerAction(this);
 #ifdef VBOX_WITH_REGISTRATION
     if (m_pool[UIActionIndex_Simple_Register])
         delete m_pool[UIActionIndex_Simple_Register]

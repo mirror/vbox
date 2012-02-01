@@ -21,6 +21,7 @@
 #include "COMDefs.h"
 #include "QIFileDialog.h"
 #include "UIActionPoolRuntime.h"
+#include "UINetworkManager.h"
 #include "UIDownloaderAdditions.h"
 #include "UIIconPool.h"
 #include "UIKeyboardHandler.h"
@@ -1499,21 +1500,19 @@ void UIMachineLogic::sltInstallGuestAdditions()
             return uisession()->sltInstallGuestAdditionsFrom(path);
     }
 
-    /* Download the required image */
-    int result = msgCenter().cannotFindGuestAdditions(QDir::toNativeSeparators(strSrc1), QDir::toNativeSeparators(strSrc2));
-    if (result == QIMessageBox::Yes)
+    /* If downloader is running already: */
+    if (UIDownloaderAdditions::current())
     {
-        /* Create and configure the Additions downloader: */
+        /* Just show network access manager: */
+        gNetworkManager->show();
+    }
+    /* Else propose to download additions: */
+    else if (msgCenter().cannotFindGuestAdditions(QDir::toNativeSeparators(strSrc1), QDir::toNativeSeparators(strSrc2)))
+    {
+        /* Create Additions downloader: */
         UIDownloaderAdditions *pDl = UIDownloaderAdditions::create();
-        const QString &source = QString("http://download.virtualbox.org/virtualbox/%1/").arg(vboxGlobal().vboxVersionStringNormalized()) + name;
-        const QString &target = QDir(vboxGlobal().virtualBox().GetHomeFolder()).absoluteFilePath(name);
-        pDl->setSource(source);
-        pDl->setTarget(target);
-        pDl->setAction(gActionPool->action(UIActionIndexRuntime_Simple_InstallGuestTools));
-        pDl->setParentWidget(mainMachineWindow()->machineWindow());
         /* After downloading finished => propose to install the Additions: */
-        connect(pDl, SIGNAL(sigDownloadFinished(const QString&)),
-                uisession(), SLOT(sltInstallGuestAdditionsFrom(const QString&)));
+        connect(pDl, SIGNAL(sigDownloadFinished(const QString&)), uisession(), SLOT(sltInstallGuestAdditionsFrom(const QString&)));
         /* Start downloading: */
         pDl->start();
     }
@@ -1703,7 +1702,7 @@ bool UIMachineLogic::dbgCreated()
         rc = pfnGuiCreate(pISession, &m_pDbgGui, &m_pDbgGuiVT);
         if (RT_SUCCESS(rc))
         {
-            if (   DBGGUIVT_ARE_VERSIONS_COMPATIBLE(m_pDbgGuiVT->u32Version, DBGGUIVT_VERSION) 
+            if (   DBGGUIVT_ARE_VERSIONS_COMPATIBLE(m_pDbgGuiVT->u32Version, DBGGUIVT_VERSION)
                 || m_pDbgGuiVT->u32EndVersion == m_pDbgGuiVT->u32Version)
             {
                 m_pDbgGuiVT->pfnSetParent(m_pDbgGui, defaultMachineWindow()->machineWindow());

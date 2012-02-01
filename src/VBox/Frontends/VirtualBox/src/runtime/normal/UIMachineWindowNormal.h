@@ -63,8 +63,10 @@ private slots:
     /* Close window reimplementation: */
     void sltTryClose();
 
+#if 0
     /* Network manager handler: */
     void sltEmbedDownloader(UIDownloadType downloaderType);
+#endif
 
 private:
 
@@ -105,10 +107,12 @@ private:
     bool isMaximizedChecked();
     void updateIndicatorState(QIStateIndicator *pIndicator, KDeviceType deviceType);
 
+#if 0
     /* Network manager helpers: */
     void tryToEmbedDownloaderForAdditions() { sltEmbedDownloader(UIDownloadType_Additions); }
     void tryToEmbedDownloaderForUserManual() { sltEmbedDownloader(UIDownloadType_UserManual); }
     void tryToEmbedDownloaderForExtensionPack() { sltEmbedDownloader(UIDownloadType_ExtensionPack); }
+#endif
 
     /* Indicators pool: */
     UIIndicatorsPool *m_pIndicatorsPool;

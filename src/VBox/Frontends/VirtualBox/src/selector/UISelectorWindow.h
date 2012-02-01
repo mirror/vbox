@@ -127,8 +127,10 @@ private slots:
     void sltMediumEnumerationStarted();
     void sltMediumEnumFinished(const VBoxMediaList &mediumList);
 
+#if 0
     /* Downloading handler: */
     void sltEmbedDownloader(UIDownloadType downloaderType);
+#endif
 
 private:
 
@@ -214,6 +216,7 @@ private:
     UIActionInterface *m_pHelpAction;
     UIActionInterface *m_pWebAction;
     UIActionInterface *m_pResetWarningsAction;
+    UIActionInterface *m_pNetworkAccessManager;
 #ifdef VBOX_WITH_REGISTRATION
     UIActionInterface *m_pRegisterAction;
 #endif /* VBOX_WITH_REGISTRATION */
