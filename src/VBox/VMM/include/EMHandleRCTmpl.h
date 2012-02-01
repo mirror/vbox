@@ -319,6 +319,8 @@ int emR3HwaccmHandleRC(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, int rc)
         case VERR_VMM_RING0_ASSERTION:
         case VERR_VMM_HYPER_CR3_MISMATCH:
         case VERR_VMM_RING3_CALL_DISABLED:
+        case VERR_IEM_INSTR_NOT_IMPLEMENTED:
+        case VERR_IEM_ASPECT_NOT_IMPLEMENTED:
             break;
 
 #ifdef EMHANDLERC_WITH_HWACCM
