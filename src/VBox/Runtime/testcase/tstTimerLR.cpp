@@ -215,7 +215,7 @@ int main()
         rc = RTTimerLRCreateEx(&hTimerLR, aTests[0].uMilliesInterval * (uint64_t)1000000, 0, TimerLRCallback, NULL);
         if (RT_FAILURE(rc))
         {
-            RTPrintf("RTTimerLRCreateEX(,%u*1M,,,) -> %d\n", aTests[i].uMilliesInterval, rc);
+            RTPrintf("RTTimerLRCreateEX(,%u*1M,,,) -> %d\n", aTests[0].uMilliesInterval, rc);
             cErrors++;
             continue;
         }
