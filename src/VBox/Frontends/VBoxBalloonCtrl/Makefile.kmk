@@ -4,7 +4,7 @@
 #
 
 #
-# Copyright (C) 2011 Oracle Corporation
+# Copyright (C) 2011-2012 Oracle Corporation
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;
@@ -24,6 +24,9 @@ PROGRAMS += VBoxBalloonCtrl
 	VBOX_BUILD_TARGET=\"$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)\"
  VBoxBalloonCtrl_DEFS.win   = _WIN32_WINNT=0x0500
  VBoxBalloonCtrl_SOURCES    = \
-	VBoxBalloonCtrl.cpp
+	VBoxWatchdog.cpp      \
+	VBoxWatchdogUtils.cpp \
+	VBoxModAPIMonitor.cpp \
+	VBoxModBallooning.cpp
 
 include $(KBUILD_PATH)/subfooter.kmk
