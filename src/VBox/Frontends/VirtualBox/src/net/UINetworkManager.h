@@ -111,6 +111,7 @@ private:
     QString m_strDescription;
     UINetworkCustomer *m_pCustomer;
     QPointer<QNetworkReply> m_pReply;
+    bool m_fRunning;
 };
 
 /* QNetworkAccessManager class reimplementation providing
