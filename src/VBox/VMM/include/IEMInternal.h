@@ -324,6 +324,10 @@ typedef IEMCPU *PIEMCPU;
 #define IEM_ACCESS_STACK_R              (IEM_ACCESS_TYPE_READ  | IEM_ACCESS_WHAT_STACK)
 /** Stack read+write alias. */
 #define IEM_ACCESS_STACK_RW             (IEM_ACCESS_TYPE_READ  | IEM_ACCESS_TYPE_WRITE | IEM_ACCESS_WHAT_STACK)
+/** Read system table alias. */
+#define IEM_ACCESS_SYS_R                (IEM_ACCESS_TYPE_READ  | IEM_ACCESS_WHAT_SYS)
+/** Read+write system table alias. */
+#define IEM_ACCESS_SYS_RW               (IEM_ACCESS_TYPE_READ  | IEM_ACCESS_TYPE_WRITE | IEM_ACCESS_WHAT_SYS)
 /** @} */
 
 /** @name Prefix constants (IEMCPU::fPrefixes)

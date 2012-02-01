@@ -1990,6 +1990,18 @@
 /** @} */
 
 
+/** @name IEM Status Codes
+ * @{ */
+/** The instruction is not yet implemented by IEM. */
+#define VERR_IEM_INSTR_NOT_IMPLEMENTED              (-5300)
+/** This particular aspect of the instruction is not yet implemented by IEM. */
+#define VERR_IEM_ASPECT_NOT_IMPLEMENTED             (-5391)
+/** Internal processing error \#1 in the IEM code.. */
+#define VERR_IEM_IPE_1                              (-5392)
+/** Internal processing error \#2 in the IEM code.. */
+#define VERR_IEM_IPE_2                              (-5393)
+/** @} */
+
 
 /** @name VBox Extension Pack Status Codes
  * @{

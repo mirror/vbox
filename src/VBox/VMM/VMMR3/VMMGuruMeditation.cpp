@@ -595,6 +595,14 @@ VMMR3DECL(void) VMMR3FatalDump(PVM pVM, PVMCPU pVCpu, int rcErr)
             break;
         }
 
+        case VERR_IEM_INSTR_NOT_IMPLEMENTED:
+        case VERR_IEM_ASPECT_NOT_IMPLEMENTED:
+        {
+            DBGFR3Info(pVM, "cpumguest", NULL, pHlp);
+            DBGFR3Info(pVM, "cpumguestinstr", NULL, pHlp);
+            break;
+        }
+
         default:
         {
             break;
