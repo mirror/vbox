@@ -28,6 +28,7 @@
 #endif /* !VBOX_ONLY_DOCS */
 
 #include <map>
+#include <vector>
 
 using namespace com;
 
@@ -68,26 +69,16 @@ typedef std::map<const char*, VBOXWATCHDOG_MODULE_PAYLOAD> mapPayload;
 typedef std::map<const char*, VBOXWATCHDOG_MODULE_PAYLOAD>::iterator mapPayloadIter;
 typedef std::map<const char*, VBOXWATCHDOG_MODULE_PAYLOAD>::const_iterator mapPayloadIterConst;
 
-/** A machine group entry.
- *  Currently contains on the name of the group. */
-typedef struct VBOXWATCHDOG_MACHINE_GROUP
-{
-    Bstr name;
-} VBOXWATCHDOG_MACHINE_GROUP;
-typedef std::map<Bstr, VBOXWATCHDOG_MACHINE_GROUP> mapGroup;
-typedef std::map<Bstr, VBOXWATCHDOG_MACHINE_GROUP>::iterator mapGroupIter;
-typedef std::map<Bstr, VBOXWATCHDOG_MACHINE_GROUP>::const_iterator mapGroupIterConst;
+struct VBOXWATCHDOG_VM_GROUP;
 
-/** A machine's internal entry. */
+/** A machine's internal entry.
+ *  Primary key is the machine's UUID. */
 typedef struct VBOXWATCHDOG_MACHINE
 {
     ComPtr<IMachine> machine;
 #ifndef VBOX_WATCHDOG_GLOBAL_PERFCOL
     ComPtr<IPerformanceCollector> collector;
 #endif
-    /** Map containing the group(s) assigned to
-     *  this machine. */
-    mapGroup group;
     /** Map containing the individual
      *  module payloads. */
     mapPayload payload;
@@ -96,6 +87,17 @@ typedef std::map<Bstr, VBOXWATCHDOG_MACHINE> mapVM;
 typedef std::map<Bstr, VBOXWATCHDOG_MACHINE>::iterator mapVMIter;
 typedef std::map<Bstr, VBOXWATCHDOG_MACHINE>::const_iterator mapVMIterConst;
 
+/** A VM group entry. Note that a machine can belong
+ *  to more than one group. */
+typedef struct VBOXWATCHDOG_VM_GROUP
+{
+    /** UUIDs of machines belonging to this group. */
+    std::vector<Bstr> machine;
+} VBOXWATCHDOG_VM_GROUP;
+typedef std::map<Bstr, VBOXWATCHDOG_VM_GROUP> mapGroup;
+typedef std::map<Bstr, VBOXWATCHDOG_VM_GROUP>::iterator mapGroupIter;
+typedef std::map<Bstr, VBOXWATCHDOG_VM_GROUP>::const_iterator mapGroupIterConst;
+
 /**
  * A module descriptor.
  */
@@ -103,6 +105,12 @@ typedef struct
 {
     /** The short module name. */
     const char *pszName;
+    /** A comma-separated list of modules this module
+     *  depends on. Might be NULL if no dependencies. */
+    const char *pszDepends;
+    /** Priority (lower is higher, 0 is invalid) of
+     *  module execution. */
+    uint32_t    uPriority;
     /** The longer module name. */
     const char *pszDescription;
     /** The usage options stuff for the --help screen. */
@@ -117,14 +125,13 @@ typedef struct
     DECLCALLBACKMEMBER(int, pfnPreInit)(void);
 
     /**
-     * Tries to parse the given command line option.
+     * Tries to parse the given command line options.
      *
      * @returns 0 if we parsed, -1 if it didn't and anything else means exit.
-     * @param   pOpt        Pointer to a value union containing the current
-     *                      command line value to parse.
-     * @param   iShort      Short version of current commad line value.
+     * @param   argc        Argument count.
+     * @param   argv        Arguments.
      */
-    DECLCALLBACKMEMBER(int, pfnOption)(PCRTGETOPTUNION pOpt, int iShort);
+    DECLCALLBACKMEMBER(int, pfnOption)(int argc, char **argv);
 
     /**
      * Called before parsing arguments.
@@ -197,7 +204,6 @@ extern void serviceLog(const char *pszFormat, ...);
 
 extern int getMetric(PVBOXWATCHDOG_MACHINE pMachine, const Bstr& strName, LONG *pulData);
 void* getPayload(PVBOXWATCHDOG_MACHINE pMachine, const char *pszModule);
-int getArgUInt32(int argc, char **argv, const char *psz, int *pi, uint32_t *pu32, uint32_t u32Min, uint32_t u32Max);
 
 RT_C_DECLS_END
 

@@ -63,13 +63,26 @@ using namespace com;
 /**
  * The module's RTGetOpt-IDs for the command line.
  */
-enum GETOPTDEF_BALLOONCTRL
+static enum GETOPTDEF_BALLOONCTRL
 {
     GETOPTDEF_BALLOONCTRL_BALLOOINC = 1000,
     GETOPTDEF_BALLOONCTRL_BALLOONDEC,
     GETOPTDEF_BALLOONCTRL_BALLOONLOWERLIMIT,
     GETOPTDEF_BALLOONCTRL_BALLOONMAX,
-    GETOPTDEF_BALLOONCTRL_TIMEOUTMS
+    GETOPTDEF_BALLOONCTRL_TIMEOUTMS,
+    GETOPTDEF_BALLOONCTRL_GROUPS
+};
+
+/**
+ * The module's command line arguments.
+ */
+static const RTGETOPTDEF g_aBalloonOpts[] = {
+    { "--balloon-dec",            GETOPTDEF_BALLOONCTRL_BALLOONDEC,        RTGETOPT_REQ_UINT32 },
+    { "--balloon-groups",         GETOPTDEF_BALLOONCTRL_GROUPS,            RTGETOPT_REQ_STRING },
+    { "--balloon-inc",            GETOPTDEF_BALLOONCTRL_BALLOOINC,         RTGETOPT_REQ_UINT32 },
+    { "--balloon-interval",       GETOPTDEF_BALLOONCTRL_TIMEOUTMS,         RTGETOPT_REQ_UINT32 },
+    { "--balloon-lower-limit",    GETOPTDEF_BALLOONCTRL_BALLOONLOWERLIMIT, RTGETOPT_REQ_UINT32 },
+    { "--balloon-max",            GETOPTDEF_BALLOONCTRL_BALLOONMAX,        RTGETOPT_REQ_UINT32 }
 };
 
 static unsigned long g_ulMemoryBalloonTimeoutMS = 30 * 1000; /* Default is 30 seconds timeout. */
@@ -145,6 +158,7 @@ static unsigned long balloonGetMaxSize(const ComPtr<IMachine> &rptrMachine)
      *  - command line parameter ("--balloon-max")
      *  Legacy (VBoxBalloonCtrl):
      *  - per-VM parameter ("VBoxInternal/Guest/BalloonSizeMax")
+     *  Global:
      *  - global parameter ("VBoxInternal/Guest/BalloonSizeMax")
      *  New:
      *  - per-VM parameter ("VBoxInternal2/Watchdog/BalloonCtrl/BalloonSizeMax")
@@ -187,7 +201,7 @@ static unsigned long balloonGetMaxSize(const ComPtr<IMachine> &rptrMachine)
  * Determines whether ballooning is required to the specified machine.
  *
  * @return  bool                    True if ballooning is required, false if not.
- * @param   strUuid                 UUID of the specified machine.
+ * @param   pMachine                Machine to determine ballooning for.
  */
 static bool balloonIsRequired(PVBOXWATCHDOG_MACHINE pMachine)
 {
@@ -296,46 +310,63 @@ static DECLCALLBACK(int) VBoxModBallooningPreInit(void)
     return rc;
 }
 
-static DECLCALLBACK(int) VBoxModBallooningOption(PCRTGETOPTUNION pOpt, int iShort)
+static DECLCALLBACK(int) VBoxModBallooningOption(int argc, char **argv)
 {
-    AssertPtrReturn(pOpt, -1);
+    if (!argc) /* Take a shortcut. */
+        return -1;
 
-    int rc = 0;
-    switch (iShort)
+    AssertPtrReturn(argv, VERR_INVALID_PARAMETER);
+
+    RTGETOPTSTATE GetState;
+    int rc = RTGetOptInit(&GetState, argc, argv,
+                          g_aBalloonOpts, RT_ELEMENTS(g_aBalloonOpts),
+                          0 /* First */, 0 /*fFlags*/);
+    if (RT_FAILURE(rc))
+        return rc;
+
+    rc = 0; /* Set default parsing result to valid. */
+
+    int c;
+    RTGETOPTUNION ValueUnion;
+    while ((c = RTGetOpt(&GetState, &ValueUnion)))
     {
-         case GETOPTDEF_BALLOONCTRL_BALLOOINC:
-            g_ulMemoryBalloonIncrementMB = pOpt->u32;
-            break;
+        switch (c)
+        {
+            case GETOPTDEF_BALLOONCTRL_BALLOONDEC:
+                g_ulMemoryBalloonDecrementMB = ValueUnion.u32;
+                break;
 
-        case GETOPTDEF_BALLOONCTRL_BALLOONDEC:
-            g_ulMemoryBalloonDecrementMB = pOpt->u32;
-            break;
+            case GETOPTDEF_BALLOONCTRL_BALLOOINC:
+                g_ulMemoryBalloonIncrementMB = ValueUnion.u32;
+                break;
 
-        case GETOPTDEF_BALLOONCTRL_BALLOONLOWERLIMIT:
-            g_ulMemoryBalloonLowerLimitMB = pOpt->u32;
-            break;
+            case GETOPTDEF_BALLOONCTRL_GROUPS:
+                /** @todo Add ballooning groups cmd line arg. */
+                break;
 
-        case GETOPTDEF_BALLOONCTRL_BALLOONMAX:
-            g_ulMemoryBalloonMaxMB = pOpt->u32;
-            break;
+            case GETOPTDEF_BALLOONCTRL_BALLOONLOWERLIMIT:
+                g_ulMemoryBalloonLowerLimitMB = ValueUnion.u32;
+                break;
 
-        /** @todo Add (legacy) "--inverval" setting! */
-        /** @todo This option is a common moudle option! Put
-         *        this into a utility function! */
-        case GETOPTDEF_BALLOONCTRL_TIMEOUTMS:
-            g_ulMemoryBalloonTimeoutMS = pOpt->u32;
-            if (g_ulMemoryBalloonTimeoutMS < 500)
-                g_ulMemoryBalloonTimeoutMS = 500;
-            break;
+            case GETOPTDEF_BALLOONCTRL_BALLOONMAX:
+                g_ulMemoryBalloonMaxMB = ValueUnion.u32;
+                break;
 
-        default:
-            rc = -1; /* We don't handle this option, skip. */
-            break;
+            /** @todo Add (legacy) "--inverval" setting! */
+            /** @todo This option is a common moudle option! Put
+             *        this into a utility function! */
+            case GETOPTDEF_BALLOONCTRL_TIMEOUTMS:
+                g_ulMemoryBalloonTimeoutMS = ValueUnion.u32;
+                if (g_ulMemoryBalloonTimeoutMS < 500)
+                    g_ulMemoryBalloonTimeoutMS = 500;
+                break;
+
+            default:
+                rc = -1; /* We don't handle this option, skip. */
+                break;
+        }
     }
 
-    /* (Legacy) note. */
-    RTStrmPrintf(g_pStdErr, "\n"
-                            "Set \"VBoxInternal/Guest/BalloonSizeMax\" for a per-VM maximum ballooning size.\n");
     return rc;
 }
 
@@ -420,25 +451,35 @@ VBOXMODULE g_ModBallooning =
     VBOX_MOD_BALLOONING_NAME,
     /* pszDescription. */
     "Memory Ballooning Control",
+    /* pszDepends. */
+    NULL,
+    /* uPriority. */
+    0 /* Not used */,
     /* pszUsage. */
-    "              [--balloon-interval <ms>] [--balloon-inc <MB>]\n"
-    "              [--balloon-dec <MB>] [--balloon-lower-limit <MB>]"
+    "              [--balloon-dec <MB>] [--balloon-inc <MB>]\n"
+    "              [--balloon-interval <ms>] [--balloon-lower-limit <MB>]\n"
     "              [--balloon-max <MB>]",
     /* pszOptions. */
-    "    --balloon-interval      Sets the check interval in ms (30 seconds).\n"
-    "    --balloon-inc           Sets the ballooning increment in MB (256 MB).\n"
-    "    --balloon-dec           Sets the ballooning decrement in MB (128 MB).\n"
-    "    --balloon-lower-limit   Sets the ballooning lower limit in MB (64 MB).\n"
-    "    --balloon-max           Sets the balloon maximum limit in MB (0 MB).\n"
-    "                            Specifying \"0\" means disabled ballooning.\n",
-    /* methods */
+    "--balloon-dec          Sets the ballooning decrement in MB (128 MB).\n"
+    "--balloon-groups       Sets the VM groups for ballooning (All).\n"
+    "--balloon-inc          Sets the ballooning increment in MB (256 MB).\n"
+    "--balloon-interval     Sets the check interval in ms (30 seconds).\n"
+    "--balloon-lower-limit  Sets the ballooning lower limit in MB (64 MB).\n"
+    "--balloon-max          Sets the balloon maximum limit in MB (0 MB).\n"
+    "                       Specifying \"0\" means disabled ballooning.\n"
+#if 1
+    /* (Legacy) note. */
+    "Set \"VBoxInternal/Guest/BalloonSizeMax\" for a per-VM maximum ballooning size.\n"
+#endif
+    ,
+    /* methods. */
     VBoxModBallooningPreInit,
     VBoxModBallooningOption,
     VBoxModBallooningInit,
     VBoxModBallooningMain,
     VBoxModBallooningStop,
     VBoxModBallooningTerm,
-    /* callbacks */
+    /* callbacks. */
     VBoxModBallooningOnMachineRegistered,
     VBoxModBallooningOnMachineUnregistered,
     VBoxModBallooningOnMachineStateChanged,
