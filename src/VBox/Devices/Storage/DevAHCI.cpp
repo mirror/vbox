@@ -5382,7 +5382,8 @@ static bool ahciCancelActiveTasks(PAHCIPort pAhciPort)
             if (fXchg)
             {
                 /* Task is active and was canceled. */
-                AssertMsg(pAhciPort->cTasksActive > 0, ("Task was canceled but none is active\n"));
+                AssertReleaseMsg(ASMAtomicReadU32(&pAhciPort->cTasksActive) > 0,
+                                 ("Task was canceled but none is active\n"));
                 ASMAtomicDecU32(&pAhciPort->cTasksActive);
 
                 /*
@@ -5399,6 +5400,7 @@ static bool ahciCancelActiveTasks(PAHCIPort pAhciPort)
         }
     }
 
+    AssertRelease(!ASMAtomicReadU32(&pAhciPort->cTasksActive));
     return true; /* always true for now because tasks don't use guest memory as the buffer which makes canceling a task impossible. */
 }
 
@@ -5695,6 +5697,8 @@ static int ahciTransferComplete(PAHCIPort pAhciPort, PAHCIREQ pAhciReq, int rcRe
 
         /* Add the task to the cache. */
         ASMAtomicWritePtr(&pAhciPort->aCachedTasks[pAhciReq->uTag], pAhciReq);
+        AssertReleaseMsg(ASMAtomicReadU32(&pAhciPort->cTasksActive) > 0 ,
+                         ("Inconsistent request counter\n"));
         ASMAtomicDecU32(&pAhciPort->cTasksActive);
 
         if (!fRedo)
@@ -6248,6 +6252,8 @@ static DECLCALLBACK(bool) ahciNotifyQueueConsumer(PPDMDEVINS pDevIns, PPDMQUEUEI
             }
             else
             {
+                AssertReleaseMsg(ASMAtomicReadU32(&pAhciPort->cTasksActive) < AHCI_NR_COMMAND_SLOTS,
+                                 ("There are more than 32 requests active"));
                 ASMAtomicIncU32(&pAhciPort->cTasksActive);
 
                 enmTxDir = ahciProcessCmd(pAhciPort, pAhciReq, pAhciReq->cmdFis);
@@ -6432,6 +6438,8 @@ static DECLCALLBACK(int) ahciAsyncIOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
             }
             else
             {
+                AssertReleaseMsg(ASMAtomicReadU32(&pAhciPort->cTasksActive) < AHCI_NR_COMMAND_SLOTS,
+                                 ("There are more than 32 requests active"));
                 ASMAtomicIncU32(&pAhciPort->cTasksActive);
                 enmTxDir = ahciProcessCmd(pAhciPort, pAhciReq, &pAhciReq->cmdFis[0]);
                 pAhciReq->enmTxDir = enmTxDir;
@@ -6444,7 +6452,7 @@ static DECLCALLBACK(int) ahciAsyncIOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
                     if (RT_SUCCESS(rc))
                     {
                         pAhciPort->Led.Asserted.s.fWriting = pAhciPort->Led.Actual.s.fWriting = 1;
-                        rc = pAhciPort->pDrvBlock->pfnDiscard(pAhciPort->pDrvBlock, 
+                        rc = pAhciPort->pDrvBlock->pfnDiscard(pAhciPort->pDrvBlock,
                                                               pAhciReq->u.Trim.paRanges,
                                                               pAhciReq->u.Trim.cRanges);
                         pAhciPort->Led.Actual.s.fWriting = 0;
