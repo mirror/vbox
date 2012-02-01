@@ -419,6 +419,7 @@ UINetworkRequest::UINetworkRequest(UINetworkManager *pNetworkManager,
     , m_type(type)
     , m_strDescription(strDescription)
     , m_pCustomer(pCustomer)
+    , m_fRunning(false)
 {
     /* Initialize: */
     initialize();
@@ -437,6 +438,7 @@ UINetworkRequest::UINetworkRequest(UINetworkManager *pNetworkManager,
     , m_type(type)
     , m_strDescription(strDescription)
     , m_pCustomer(pCustomer)
+    , m_fRunning(false)
 {
     /* Initialize: */
     initialize();
@@ -464,6 +466,9 @@ void UINetworkRequest::sltHandleNetworkReplyProgress(qint64 iReceived, qint64 iT
 /* Network-reply finish handler: */
 void UINetworkRequest::sltHandleNetworkReplyFinish()
 {
+    /* Set as non-running: */
+    m_fRunning = false;
+
     /* Get sender network reply: */
     QNetworkReply *pNetworkReply = static_cast<QNetworkReply*>(sender());
 
@@ -590,6 +595,9 @@ void UINetworkRequest::prepareNetworkReply()
     connect(m_pReply, SIGNAL(downloadProgress(qint64, qint64)), this, SLOT(sltHandleNetworkReplyProgress(qint64, qint64)));
     connect(m_pReply, SIGNAL(finished()), this, SLOT(sltHandleNetworkReplyFinish()));
 
+    /* Set as running: */
+    m_fRunning = true;
+
     /* Notify UINetworkRequestWidget: */
     emit sigStarted();
 }
@@ -610,9 +618,9 @@ void UINetworkRequest::abortNetworkReply()
     /* Abort network-reply if present: */
     if (m_pReply)
     {
-        if (m_pReply->isRunning())
+        if (m_fRunning)
             m_pReply->abort();
-        else if (m_pReply->isFinished())
+        else
             emit sigCanceled(m_uuid);
     }
 }
