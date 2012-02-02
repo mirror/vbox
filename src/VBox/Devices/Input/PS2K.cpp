@@ -117,7 +117,7 @@
         uint32_t    cUsed;          \
         uint32_t    cSize;          \
         uint8_t     abQueue[size];  \
-     } ##name
+     } name
 
 /* Internal keyboard queue sizes. The input queue doesn't need to be 
  * extra huge and the command queue only needs to handle a few bytes.
