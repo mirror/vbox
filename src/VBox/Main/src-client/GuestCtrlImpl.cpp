@@ -730,18 +730,19 @@ int Guest::notifyCtrlExecStatus(uint32_t                u32Function,
         {
             switch (pData->u32Status)
             {
-                /* Interprete u32Flags as the guest process' exit code. */
+                /* Just reach through flags. */
                 case PROC_STS_TES:
                 case PROC_STS_TOK:
                     vrc = processSetStatus(pData->u32PID,
                                            (ExecuteProcessStatus_T)pData->u32Status,
-                                           pData->u32Flags /* Exit code. */, 0 /* Flags. */);
+                                           0 /* Exit code. */, pData->u32Flags);
                     break;
-                /* Just reach through flags. */
+                /* Interprete u32Flags as the guest process' exit code. */
                 default:
                     vrc = processSetStatus(pData->u32PID,
                                            (ExecuteProcessStatus_T)pData->u32Status,
-                                           0 /* Exit code. */, pData->u32Flags);
+                                           pData->u32Flags /* Exit code. */, 0 /* Flags. */);
+
                     break;
             }
         }
