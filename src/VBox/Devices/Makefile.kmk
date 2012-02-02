@@ -281,6 +281,7 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
 
  DevicesR3_SOURCES       = \
  	Input/DevPS2.cpp \
+ 	Input/PS2K.cpp \
  	Input/UsbKbd.cpp \
  	Input/UsbMouse.cpp \
  	Bus/DevPCI.cpp \
@@ -559,6 +560,7 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
  	Bus/MsixCommon.cpp \
   	Graphics/DevVGA.cpp \
   	Input/DevPS2.cpp \
+ 	Input/PS2K.cpp \
   	PC/DevACPI.cpp \
   	PC/DevPit-i8254.cpp \
   	PC/DevPIC.cpp \
@@ -662,6 +664,7 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
  	Bus/MsixCommon.cpp \
  	Graphics/DevVGA.cpp \
  	Input/DevPS2.cpp \
+ 	Input/PS2K.cpp \
  	PC/DevACPI.cpp \
  	PC/DevPit-i8254.cpp \
  	PC/DevPIC.cpp \
