@@ -63,15 +63,15 @@ IEM_CIMPL_DEF_1(RT_CONCAT4(iemCImpl_repe_cmps_op,OP_SIZE,_addr,ADDR_SIZE), uint8
     /*
      * Setup.
      */
-    ADDR_TYPE       uCounterReg = pCtx->ADDR_rCX;
+    ADDR_TYPE       uCounterReg  = pCtx->ADDR_rCX;
     if (uCounterReg == 0)
     {
         iemRegAddToRip(pIemCpu, cbInstr);
         return VINF_SUCCESS;
     }
 
-    PCCPUMSELREGHID pSrc1Hid = iemSRegGetHid(pIemCpu, iEffSeg);
-    VBOXSTRICTRC rcStrict = iemMemSegCheckReadAccessEx(pIemCpu, pSrc1Hid, iEffSeg);
+    PCCPUMSELREGHID pSrc1Hid     = iemSRegGetHid(pIemCpu, iEffSeg);
+    VBOXSTRICTRC    rcStrict     = iemMemSegCheckReadAccessEx(pIemCpu, pSrc1Hid, iEffSeg);
     if (rcStrict != VINF_SUCCESS)
         return rcStrict;
 
@@ -79,10 +79,10 @@ IEM_CIMPL_DEF_1(RT_CONCAT4(iemCImpl_repe_cmps_op,OP_SIZE,_addr,ADDR_SIZE), uint8
     if (rcStrict != VINF_SUCCESS)
         return rcStrict;
 
-    int8_t const    cbIncr      = pCtx->eflags.Bits.u1DF ? -(OP_SIZE / 8) : (OP_SIZE / 8);
+    int8_t const    cbIncr       = pCtx->eflags.Bits.u1DF ? -(OP_SIZE / 8) : (OP_SIZE / 8);
     ADDR_TYPE       uSrc1AddrReg = pCtx->ADDR_rSI;
     ADDR_TYPE       uSrc2AddrReg = pCtx->ADDR_rDI;
-    uint32_t        uEFlags     = pCtx->eflags.u;
+    uint32_t        uEFlags      = pCtx->eflags.u;
 
     /*
      * The loop.
@@ -103,7 +103,7 @@ IEM_CIMPL_DEF_1(RT_CONCAT4(iemCImpl_repe_cmps_op,OP_SIZE,_addr,ADDR_SIZE), uint8
         if (cLeftSrc1Page > uCounterReg)
             cLeftSrc1Page = uCounterReg;
         uint32_t    cLeftSrc2Page = (PAGE_SIZE - (uVirtSrc2Addr & PAGE_OFFSET_MASK)) / (OP_SIZE / 8);
-        uint32_t    cLeftPage = RT_MIN(cLeftSrc1Page, cLeftSrc2Page);
+        uint32_t    cLeftPage     = RT_MIN(cLeftSrc1Page, cLeftSrc2Page);
 
         if (   cLeftPage > 0 /* can be null if unaligned, do one fallback round. */
             && cbIncr > 0    /** @todo Implement reverse direction string ops. */
@@ -118,12 +118,12 @@ IEM_CIMPL_DEF_1(RT_CONCAT4(iemCImpl_repe_cmps_op,OP_SIZE,_addr,ADDR_SIZE), uint8
             RTGCPHYS GCPhysSrc1Mem;
             rcStrict = iemMemPageTranslateAndCheckAccess(pIemCpu, uVirtSrc1Addr, IEM_ACCESS_DATA_R, &GCPhysSrc1Mem);
             if (rcStrict != VINF_SUCCESS)
-                break;
+                return rcStrict;
 
             RTGCPHYS GCPhysSrc2Mem;
             rcStrict = iemMemPageTranslateAndCheckAccess(pIemCpu, uVirtSrc2Addr, IEM_ACCESS_DATA_R, &GCPhysSrc2Mem);
             if (rcStrict != VINF_SUCCESS)
-                break;
+                return rcStrict;
 
             /*
              * If we can map the page without trouble, do a block processing
@@ -143,27 +143,36 @@ IEM_CIMPL_DEF_1(RT_CONCAT4(iemCImpl_repe_cmps_op,OP_SIZE,_addr,ADDR_SIZE), uint8
                         RT_CONCAT(iemAImpl_cmp_u,OP_SIZE)((OP_TYPE *)&puSrc1Mem[cLeftPage-1], puSrc2Mem[cLeftPage-1], &uEFlags);
                         uSrc1AddrReg += cLeftPage * cbIncr;
                         uSrc2AddrReg += cLeftPage * cbIncr;
-                        uCounterReg -= cLeftPage;
+                        uCounterReg  -= cLeftPage;
                     }
                     else
                     {
                         /* Some mismatch, compare each item (and keep volatile
                            memory in mind). */
+                        uint32_t off = 0;
                         do
                         {
-                            RT_CONCAT(iemAImpl_cmp_u,OP_SIZE)((OP_TYPE *)puSrc1Mem, *puSrc2Mem, &uEFlags);
-                            uSrc1AddrReg += cbIncr;
-                            uSrc2AddrReg += cbIncr;
-                            uCounterReg--;
-                            puSrc1Mem++;
-                            puSrc2Mem++;
-                            cLeftPage--;
-                        } while (   (int32_t)cLeftPage > 0
+                            RT_CONCAT(iemAImpl_cmp_u,OP_SIZE)((OP_TYPE *)&puSrc1Mem[off], puSrc2Mem[off], &uEFlags);
+                            off++;
+                        } while (   off < cLeftPage
                                  && (uEFlags & X86_EFL_ZF));
+                        uSrc1AddrReg += cbIncr * off;
+                        uSrc2AddrReg += cbIncr * off;
+                        uCounterReg  -= off;
                     }
+
+                    /* Update the registers before looping. */
+                    pCtx->ADDR_rCX = uCounterReg;
+                    pCtx->ADDR_rSI = uSrc1AddrReg;
+                    pCtx->ADDR_rDI = uSrc2AddrReg;
+                    pCtx->eflags.u = uEFlags;
+
+                    iemMemPageUnmap(pIemCpu, GCPhysSrc1Mem, IEM_ACCESS_DATA_R, puSrc1Mem);
+                    iemMemPageUnmap(pIemCpu, GCPhysSrc2Mem, IEM_ACCESS_DATA_R, puSrc2Mem);
                     continue;
                 }
             }
+            iemMemPageUnmap(pIemCpu, GCPhysSrc2Mem, IEM_ACCESS_DATA_R, puSrc2Mem);
         }
 
         /*
@@ -176,35 +185,28 @@ IEM_CIMPL_DEF_1(RT_CONCAT4(iemCImpl_repe_cmps_op,OP_SIZE,_addr,ADDR_SIZE), uint8
             OP_TYPE uValue1;
             rcStrict = RT_CONCAT(iemMemFetchDataU,OP_SIZE)(pIemCpu, &uValue1, iEffSeg, uSrc1AddrReg);
             if (rcStrict != VINF_SUCCESS)
-                break;
+                return rcStrict;
             OP_TYPE uValue2;
             rcStrict = RT_CONCAT(iemMemFetchDataU,OP_SIZE)(pIemCpu, &uValue2, X86_SREG_ES, uSrc2AddrReg);
             if (rcStrict != VINF_SUCCESS)
-                break;
+                return rcStrict;
             RT_CONCAT(iemAImpl_cmp_u,OP_SIZE)(&uValue1, uValue2, &uEFlags);
 
-            uSrc1AddrReg += cbIncr;
-            uSrc2AddrReg += cbIncr;
-            uCounterReg--;
+            pCtx->ADDR_rSI = uSrc1AddrReg += cbIncr;
+            pCtx->ADDR_rDI = uSrc2AddrReg += cbIncr;
+            pCtx->ADDR_rCX = --uCounterReg;
+            pCtx->eflags.u = uEFlags;
             cLeftPage--;
         } while (   (int32_t)cLeftPage > 0
                  && (uEFlags & X86_EFL_ZF));
-        if (rcStrict != VINF_SUCCESS)
-            break;
     } while (   uCounterReg != 0
              && (uEFlags & X86_EFL_ZF));
 
     /*
-     * Update the registers.
+     * Done.
      */
-    pCtx->ADDR_rCX = uCounterReg;
-    pCtx->ADDR_rSI = uSrc1AddrReg;
-    pCtx->ADDR_rDI = uSrc2AddrReg;
-    pCtx->eflags.u = uEFlags;
-    if (rcStrict == VINF_SUCCESS)
-        iemRegAddToRip(pIemCpu, cbInstr);
-
-    return rcStrict;
+    iemRegAddToRip(pIemCpu, cbInstr);
+    return VINF_SUCCESS;
 }
 
 
@@ -273,12 +275,12 @@ IEM_CIMPL_DEF_1(RT_CONCAT4(iemCImpl_repne_cmps_op,OP_SIZE,_addr,ADDR_SIZE), uint
             RTGCPHYS GCPhysSrc1Mem;
             rcStrict = iemMemPageTranslateAndCheckAccess(pIemCpu, uVirtSrc1Addr, IEM_ACCESS_DATA_R, &GCPhysSrc1Mem);
             if (rcStrict != VINF_SUCCESS)
-                break;
+                return rcStrict;
 
             RTGCPHYS GCPhysSrc2Mem;
             rcStrict = iemMemPageTranslateAndCheckAccess(pIemCpu, uVirtSrc2Addr, IEM_ACCESS_DATA_R, &GCPhysSrc2Mem);
             if (rcStrict != VINF_SUCCESS)
-                break;
+                return rcStrict;
 
             /*
              * If we can map the page without trouble, do a block processing
@@ -294,30 +296,39 @@ IEM_CIMPL_DEF_1(RT_CONCAT4(iemCImpl_repne_cmps_op,OP_SIZE,_addr,ADDR_SIZE), uint
                 {
                     if (memcmp(puSrc2Mem, puSrc1Mem, cLeftPage * (OP_SIZE / 8)))
                     {
-                        /* All matches, only compare the last itme to get the right eflags. */
+                        /* All matches, only compare the last item to get the right eflags. */
                         RT_CONCAT(iemAImpl_cmp_u,OP_SIZE)((OP_TYPE *)&puSrc1Mem[cLeftPage-1], puSrc2Mem[cLeftPage-1], &uEFlags);
                         uSrc1AddrReg += cLeftPage * cbIncr;
                         uSrc2AddrReg += cLeftPage * cbIncr;
-                        uCounterReg -= cLeftPage;
+                        uCounterReg  -= cLeftPage;
                     }
                     else
                     {
                         /* Some mismatch, compare each item (and keep volatile
                            memory in mind). */
+                        uint32_t off = 0;
                         do
                         {
-                            RT_CONCAT(iemAImpl_cmp_u,OP_SIZE)((OP_TYPE *)puSrc1Mem, *puSrc2Mem, &uEFlags);
-                            uSrc1AddrReg += cbIncr;
-                            uSrc2AddrReg += cbIncr;
-                            uCounterReg--;
-                            puSrc1Mem++;
-                            puSrc2Mem++;
-                            cLeftPage--;
-                        } while (   (int32_t)cLeftPage > 0
+                            RT_CONCAT(iemAImpl_cmp_u,OP_SIZE)((OP_TYPE *)&puSrc1Mem[off], puSrc2Mem[off], &uEFlags);
+                            off++;
+                        } while (   off < cLeftPage
                                  && !(uEFlags & X86_EFL_ZF));
+                        uSrc1AddrReg += cbIncr * off;
+                        uSrc2AddrReg += cbIncr * off;
+                        uCounterReg  -= off;
                     }
+
+                    /* Update the registers before looping. */
+                    pCtx->ADDR_rCX = uCounterReg;
+                    pCtx->ADDR_rSI = uSrc1AddrReg;
+                    pCtx->ADDR_rDI = uSrc2AddrReg;
+                    pCtx->eflags.u = uEFlags;
+
+                    iemMemPageUnmap(pIemCpu, GCPhysSrc1Mem, IEM_ACCESS_DATA_R, puSrc1Mem);
+                    iemMemPageUnmap(pIemCpu, GCPhysSrc2Mem, IEM_ACCESS_DATA_R, puSrc2Mem);
                     continue;
                 }
+                iemMemPageUnmap(pIemCpu, GCPhysSrc2Mem, IEM_ACCESS_DATA_R, puSrc2Mem);
             }
         }
 
@@ -331,35 +342,28 @@ IEM_CIMPL_DEF_1(RT_CONCAT4(iemCImpl_repne_cmps_op,OP_SIZE,_addr,ADDR_SIZE), uint
             OP_TYPE uValue1;
             rcStrict = RT_CONCAT(iemMemFetchDataU,OP_SIZE)(pIemCpu, &uValue1, iEffSeg, uSrc1AddrReg);
             if (rcStrict != VINF_SUCCESS)
-                break;
+                return rcStrict;
             OP_TYPE uValue2;
             rcStrict = RT_CONCAT(iemMemFetchDataU,OP_SIZE)(pIemCpu, &uValue2, X86_SREG_ES, uSrc2AddrReg);
             if (rcStrict != VINF_SUCCESS)
-                break;
+                return rcStrict;
             RT_CONCAT(iemAImpl_cmp_u,OP_SIZE)(&uValue1, uValue2, &uEFlags);
 
-            uSrc1AddrReg += cbIncr;
-            uSrc2AddrReg += cbIncr;
-            uCounterReg--;
+            pCtx->ADDR_rSI = uSrc1AddrReg += cbIncr;
+            pCtx->ADDR_rDI = uSrc2AddrReg += cbIncr;
+            pCtx->ADDR_rCX = --uCounterReg;
+            pCtx->eflags.u = uEFlags;
             cLeftPage--;
         } while (   (int32_t)cLeftPage > 0
                  && !(uEFlags & X86_EFL_ZF));
-        if (rcStrict != VINF_SUCCESS)
-            break;
     } while (   uCounterReg != 0
              && !(uEFlags & X86_EFL_ZF));
 
     /*
-     * Update the registers.
+     * Done.
      */
-    pCtx->ADDR_rCX = uCounterReg;
-    pCtx->ADDR_rSI = uSrc1AddrReg;
-    pCtx->ADDR_rDI = uSrc2AddrReg;
-    pCtx->eflags.u = uEFlags;
-    if (rcStrict == VINF_SUCCESS)
-        iemRegAddToRip(pIemCpu, cbInstr);
-
-    return rcStrict;
+    iemRegAddToRip(pIemCpu, cbInstr);
+    return VINF_SUCCESS;
 }
 
 
@@ -416,7 +420,7 @@ IEM_CIMPL_DEF_0(RT_CONCAT4(iemCImpl_repe_scas_,OP_rAX,_m,ADDR_SIZE))
             RTGCPHYS GCPhysMem;
             rcStrict = iemMemPageTranslateAndCheckAccess(pIemCpu, uVirtAddr, IEM_ACCESS_DATA_R, &GCPhysMem);
             if (rcStrict != VINF_SUCCESS)
-                break;
+                return rcStrict;
 
             /*
              * If we can map the page without trouble, do a block processing
@@ -438,9 +442,11 @@ IEM_CIMPL_DEF_0(RT_CONCAT4(iemCImpl_repe_scas_,OP_rAX,_m,ADDR_SIZE))
 
                 /* Update the regs. */
                 RT_CONCAT(iemAImpl_cmp_u,OP_SIZE)((OP_TYPE *)&uValueReg, uTmpValue, &uEFlags);
-                uCounterReg -= i;
-                uAddrReg    += i * cbIncr;
+                pCtx->ADDR_rCX = uCounterReg -= i;
+                pCtx->ADDR_rDI = uAddrReg    += i * cbIncr;
+                pCtx->eflags.u = uEFlags;
                 Assert(!(uEFlags & X86_EFL_ZF) == (i < cLeftPage));
+                iemMemPageUnmap(pIemCpu, GCPhysMem, IEM_ACCESS_DATA_R, puMem);
                 if (fQuit)
                     break;
 
@@ -465,29 +471,23 @@ IEM_CIMPL_DEF_0(RT_CONCAT4(iemCImpl_repe_scas_,OP_rAX,_m,ADDR_SIZE))
             OP_TYPE uTmpValue;
             rcStrict = RT_CONCAT(iemMemFetchDataU,OP_SIZE)(pIemCpu, &uTmpValue, X86_SREG_ES, uAddrReg);
             if (rcStrict != VINF_SUCCESS)
-                break;
+                return rcStrict;
             RT_CONCAT(iemAImpl_cmp_u,OP_SIZE)((OP_TYPE *)&uValueReg, uTmpValue, &uEFlags);
 
-            uAddrReg += cbIncr;
-            uCounterReg--;
+            pCtx->ADDR_rDI = uAddrReg += cbIncr;
+            pCtx->ADDR_rCX = --uCounterReg;
+            pCtx->eflags.u = uEFlags;
             cLeftPage--;
         } while (   (int32_t)cLeftPage > 0
                  && (uEFlags & X86_EFL_ZF));
-        if (rcStrict != VINF_SUCCESS)
-            break;
     } while (   uCounterReg != 0
              && (uEFlags & X86_EFL_ZF));
 
     /*
-     * Update the registers.
+     * Done.
      */
-    pCtx->ADDR_rCX = uCounterReg;
-    pCtx->ADDR_rDI = uAddrReg;
-    pCtx->eflags.u = uEFlags;
-    if (rcStrict == VINF_SUCCESS)
-        iemRegAddToRip(pIemCpu, cbInstr);
-
-    return rcStrict;
+    iemRegAddToRip(pIemCpu, cbInstr);
+    return VINF_SUCCESS;
 }
 
 
@@ -544,7 +544,7 @@ IEM_CIMPL_DEF_0(RT_CONCAT4(iemCImpl_repne_scas_,OP_rAX,_m,ADDR_SIZE))
             RTGCPHYS GCPhysMem;
             rcStrict = iemMemPageTranslateAndCheckAccess(pIemCpu, uVirtAddr, IEM_ACCESS_DATA_R, &GCPhysMem);
             if (rcStrict != VINF_SUCCESS)
-                break;
+                return rcStrict;
 
             /*
              * If we can map the page without trouble, do a block processing
@@ -566,9 +566,11 @@ IEM_CIMPL_DEF_0(RT_CONCAT4(iemCImpl_repne_scas_,OP_rAX,_m,ADDR_SIZE))
 
                 /* Update the regs. */
                 RT_CONCAT(iemAImpl_cmp_u,OP_SIZE)((OP_TYPE *)&uValueReg, uTmpValue, &uEFlags);
-                uCounterReg -= i;
-                uAddrReg    += i * cbIncr;
+                pCtx->ADDR_rCX = uCounterReg -= i;
+                pCtx->ADDR_rDI = uAddrReg    += i * cbIncr;
+                pCtx->eflags.u = uEFlags;
                 Assert((!(uEFlags & X86_EFL_ZF) != (i < cLeftPage)) || (i == cLeftPage));
+                iemMemPageUnmap(pIemCpu, GCPhysMem, IEM_ACCESS_DATA_R, puMem);
                 if (fQuit)
                     break;
 
@@ -593,29 +595,23 @@ IEM_CIMPL_DEF_0(RT_CONCAT4(iemCImpl_repne_scas_,OP_rAX,_m,ADDR_SIZE))
             OP_TYPE uTmpValue;
             rcStrict = RT_CONCAT(iemMemFetchDataU,OP_SIZE)(pIemCpu, &uTmpValue, X86_SREG_ES, uAddrReg);
             if (rcStrict != VINF_SUCCESS)
-                break;
+                return rcStrict;
             RT_CONCAT(iemAImpl_cmp_u,OP_SIZE)((OP_TYPE *)&uValueReg, uTmpValue, &uEFlags);
 
-            uAddrReg += cbIncr;
-            uCounterReg--;
+            pCtx->ADDR_rDI = uAddrReg += cbIncr;
+            pCtx->ADDR_rCX = --uCounterReg;
+            pCtx->eflags.u = uEFlags;
             cLeftPage--;
         } while (   (int32_t)cLeftPage > 0
                  && !(uEFlags & X86_EFL_ZF));
-        if (rcStrict != VINF_SUCCESS)
-            break;
     } while (   uCounterReg != 0
              && !(uEFlags & X86_EFL_ZF));
 
     /*
-     * Update the registers.
+     * Done.
      */
-    pCtx->ADDR_rCX = uCounterReg;
-    pCtx->ADDR_rDI = uAddrReg;
-    pCtx->eflags.u = uEFlags;
-    if (rcStrict == VINF_SUCCESS)
-        iemRegAddToRip(pIemCpu, cbInstr);
-
-    return rcStrict;
+    iemRegAddToRip(pIemCpu, cbInstr);
+    return VINF_SUCCESS;
 }
 
 
@@ -685,12 +681,12 @@ IEM_CIMPL_DEF_1(RT_CONCAT4(iemCImpl_rep_movs_op,OP_SIZE,_addr,ADDR_SIZE), uint8_
             RTGCPHYS GCPhysSrcMem;
             rcStrict = iemMemPageTranslateAndCheckAccess(pIemCpu, uVirtSrcAddr, IEM_ACCESS_DATA_R, &GCPhysSrcMem);
             if (rcStrict != VINF_SUCCESS)
-                break;
+                return rcStrict;
 
             RTGCPHYS GCPhysDstMem;
             rcStrict = iemMemPageTranslateAndCheckAccess(pIemCpu, uVirtDstAddr, IEM_ACCESS_DATA_W, &GCPhysDstMem);
             if (rcStrict != VINF_SUCCESS)
-                break;
+                return rcStrict;
 
             /*
              * If we can map the page without trouble, do a block processing
@@ -708,11 +704,15 @@ IEM_CIMPL_DEF_1(RT_CONCAT4(iemCImpl_rep_movs_op,OP_SIZE,_addr,ADDR_SIZE), uint8_
                     memcpy(puDstMem, puSrcMem, cLeftPage * (OP_SIZE / 8));
 
                     /* Update the registers. */
-                    uSrcAddrReg += cLeftPage * cbIncr;
-                    uDstAddrReg += cLeftPage * cbIncr;
-                    uCounterReg -= cLeftPage;
+                    pCtx->ADDR_rSI = uSrcAddrReg += cLeftPage * cbIncr;
+                    pCtx->ADDR_rDI = uDstAddrReg += cLeftPage * cbIncr;
+                    pCtx->ADDR_rCX = uCounterReg -= cLeftPage;
+
+                    iemMemPageUnmap(pIemCpu, GCPhysSrcMem, IEM_ACCESS_DATA_R, puSrcMem);
+                    iemMemPageUnmap(pIemCpu, GCPhysDstMem, IEM_ACCESS_DATA_W, puDstMem);
                     continue;
                 }
+                iemMemPageUnmap(pIemCpu, GCPhysDstMem, IEM_ACCESS_DATA_W, puDstMem);
             }
         }
 
@@ -726,30 +726,23 @@ IEM_CIMPL_DEF_1(RT_CONCAT4(iemCImpl_rep_movs_op,OP_SIZE,_addr,ADDR_SIZE), uint8_
             OP_TYPE uValue;
             rcStrict = RT_CONCAT(iemMemFetchDataU,OP_SIZE)(pIemCpu, &uValue, iEffSeg, uSrcAddrReg);
             if (rcStrict != VINF_SUCCESS)
-                break;
+                return rcStrict;
             rcStrict = RT_CONCAT(iemMemStoreDataU,OP_SIZE)(pIemCpu, X86_SREG_ES, uDstAddrReg, uValue);
             if (rcStrict != VINF_SUCCESS)
-                break;
+                return rcStrict;
 
-            uSrcAddrReg += cbIncr;
-            uDstAddrReg += cbIncr;
-            uCounterReg--;
+            pCtx->ADDR_rSI = uSrcAddrReg += cbIncr;
+            pCtx->ADDR_rDI = uDstAddrReg += cbIncr;
+            pCtx->ADDR_rCX = --uCounterReg;
             cLeftPage--;
         } while ((int32_t)cLeftPage > 0);
-        if (rcStrict != VINF_SUCCESS)
-            break;
     } while (uCounterReg != 0);
 
     /*
-     * Update the registers.
+     * Done.
      */
-    pCtx->ADDR_rCX = uCounterReg;
-    pCtx->ADDR_rDI = uDstAddrReg;
-    pCtx->ADDR_rSI = uSrcAddrReg;
-    if (rcStrict == VINF_SUCCESS)
-        iemRegAddToRip(pIemCpu, cbInstr);
-
-    return rcStrict;
+    iemRegAddToRip(pIemCpu, cbInstr);
+    return VINF_SUCCESS;
 }
 
 
@@ -805,7 +798,7 @@ IEM_CIMPL_DEF_0(RT_CONCAT4(iemCImpl_stos_,OP_rAX,_m,ADDR_SIZE))
             RTGCPHYS GCPhysMem;
             rcStrict = iemMemPageTranslateAndCheckAccess(pIemCpu, uVirtAddr, IEM_ACCESS_DATA_W, &GCPhysMem);
             if (rcStrict != VINF_SUCCESS)
-                break;
+                return rcStrict;
 
             /*
              * If we can map the page without trouble, do a block processing
@@ -816,8 +809,8 @@ IEM_CIMPL_DEF_0(RT_CONCAT4(iemCImpl_stos_,OP_rAX,_m,ADDR_SIZE))
             if (rcStrict == VINF_SUCCESS)
             {
                 /* Update the regs first so we can loop on cLeftPage. */
-                uCounterReg -= cLeftPage;
-                uAddrReg    += cLeftPage * cbIncr;
+                pCtx->ADDR_rCX = uCounterReg -= cLeftPage;
+                pCtx->ADDR_rDI = uAddrReg    += cLeftPage * cbIncr;
 
                 /* Do the memsetting. */
 #if OP_SIZE == 8
@@ -828,6 +821,8 @@ IEM_CIMPL_DEF_0(RT_CONCAT4(iemCImpl_stos_,OP_rAX,_m,ADDR_SIZE))
                 while (cLeftPage-- > 0)
                     *puMem++ = uValue;
 #endif
+
+                iemMemPageUnmap(pIemCpu, GCPhysMem, IEM_ACCESS_DATA_W, puMem);
 
                 /* If unaligned, we drop thru and do the page crossing access
                    below. Otherwise, do the next page. */
@@ -848,24 +843,18 @@ IEM_CIMPL_DEF_0(RT_CONCAT4(iemCImpl_stos_,OP_rAX,_m,ADDR_SIZE))
         {
             rcStrict = RT_CONCAT(iemMemStoreDataU,OP_SIZE)(pIemCpu, X86_SREG_ES, uAddrReg, uValue);
             if (rcStrict != VINF_SUCCESS)
-                break;
-            uAddrReg += cbIncr;
-            uCounterReg--;
+                return rcStrict;
+            pCtx->ADDR_rDI = uAddrReg += cbIncr;
+            pCtx->ADDR_rCX = --uCounterReg;
             cLeftPage--;
         } while ((int32_t)cLeftPage > 0);
-        if (rcStrict != VINF_SUCCESS)
-            break;
     } while (uCounterReg != 0);
 
     /*
-     * Update the registers.
+     * Done.
      */
-    pCtx->ADDR_rCX = uCounterReg;
-    pCtx->ADDR_rDI = uAddrReg;
-    if (rcStrict == VINF_SUCCESS)
-        iemRegAddToRip(pIemCpu, cbInstr);
-
-    return rcStrict;
+    iemRegAddToRip(pIemCpu, cbInstr);
+    return VINF_SUCCESS;
 }
 
 
@@ -892,7 +881,6 @@ IEM_CIMPL_DEF_1(RT_CONCAT4(iemCImpl_lods_,OP_rAX,_m,ADDR_SIZE), int8_t, iEffSeg)
         return rcStrict;
 
     int8_t const    cbIncr      = pCtx->eflags.Bits.u1DF ? -(OP_SIZE / 8) : (OP_SIZE / 8);
-    OP_TYPE         uValueReg   = pCtx->OP_rAX;
     ADDR_TYPE       uAddrReg    = pCtx->ADDR_rSI;
 
     /*
@@ -922,7 +910,7 @@ IEM_CIMPL_DEF_1(RT_CONCAT4(iemCImpl_lods_,OP_rAX,_m,ADDR_SIZE), int8_t, iEffSeg)
             RTGCPHYS GCPhysMem;
             rcStrict = iemMemPageTranslateAndCheckAccess(pIemCpu, uVirtAddr, IEM_ACCESS_DATA_R, &GCPhysMem);
             if (rcStrict != VINF_SUCCESS)
-                break;
+                return rcStrict;
 
             /*
              * If we can map the page without trouble, we can get away with
@@ -933,11 +921,14 @@ IEM_CIMPL_DEF_1(RT_CONCAT4(iemCImpl_lods_,OP_rAX,_m,ADDR_SIZE), int8_t, iEffSeg)
             if (rcStrict == VINF_SUCCESS)
             {
                 /* Only get the last byte, the rest doesn't matter in direct access mode. */
-                uValueReg = puMem[cLeftPage - 1];
-
-                /* Update the regs. */
-                uCounterReg -= cLeftPage;
-                uAddrReg    += cLeftPage * cbIncr;
+#if OP_SIZE == 32
+                pCtx->rax      = puMem[cLeftPage - 1];
+#else
+                pCtx->OP_rAX   = puMem[cLeftPage - 1];
+#endif
+                pCtx->ADDR_rCX = uCounterReg -= cLeftPage;
+                pCtx->ADDR_rSI = uAddrReg    += cLeftPage * cbIncr;
+                iemMemPageUnmap(pIemCpu, GCPhysMem, IEM_ACCESS_DATA_R, puMem);
 
                 /* If unaligned, we drop thru and do the page crossing access
                    below. Otherwise, do the next page. */
@@ -959,10 +950,14 @@ IEM_CIMPL_DEF_1(RT_CONCAT4(iemCImpl_lods_,OP_rAX,_m,ADDR_SIZE), int8_t, iEffSeg)
             OP_TYPE uTmpValue;
             rcStrict = RT_CONCAT(iemMemFetchDataU,OP_SIZE)(pIemCpu, &uTmpValue, iEffSeg, uAddrReg);
             if (rcStrict != VINF_SUCCESS)
-                break;
-            uValueReg = uTmpValue;
-            uAddrReg += cbIncr;
-            uCounterReg--;
+                return rcStrict;
+#if OP_SIZE == 32
+            pCtx->rax      = uTmpValue;
+#else
+            pCtx->OP_rAX   = uTmpValue;
+#endif
+            pCtx->ADDR_rSI = uAddrReg += cbIncr;
+            pCtx->ADDR_rCX = --uCounterReg;
             cLeftPage--;
         } while ((int32_t)cLeftPage > 0);
         if (rcStrict != VINF_SUCCESS)
@@ -970,19 +965,10 @@ IEM_CIMPL_DEF_1(RT_CONCAT4(iemCImpl_lods_,OP_rAX,_m,ADDR_SIZE), int8_t, iEffSeg)
     } while (uCounterReg != 0);
 
     /*
-     * Update the registers.
+     * Done.
      */
-    pCtx->ADDR_rCX = uCounterReg;
-    pCtx->ADDR_rDI = uAddrReg;
-#if OP_SIZE == 32
-    pCtx->rax     = uValueReg;
-#else
-    pCtx->OP_rAX  = uValueReg;
-#endif
-    if (rcStrict == VINF_SUCCESS)
-        iemRegAddToRip(pIemCpu, cbInstr);
-
-    return rcStrict;
+    iemRegAddToRip(pIemCpu, cbInstr);
+    return VINF_SUCCESS;
 }
 
 
@@ -1032,7 +1018,7 @@ IEM_CIMPL_DEF_0(RT_CONCAT4(iemCImpl_ins_op,OP_SIZE,_addr,ADDR_SIZE))
            cause misbehavior if the instruction is re-interpreted or smth. So,
            we fail with an internal error here instead. */
         else
-            AssertLogRelFailedReturn(VERR_INTERNAL_ERROR_3);
+            AssertLogRelFailedReturn(VERR_IEM_IPE_1);
     }
     return rcStrict;
 }
@@ -1095,7 +1081,7 @@ IEM_CIMPL_DEF_0(RT_CONCAT4(iemCImpl_rep_ins_op,OP_SIZE,_addr,ADDR_SIZE))
             RTGCPHYS GCPhysMem;
             rcStrict = iemMemPageTranslateAndCheckAccess(pIemCpu, uVirtAddr, IEM_ACCESS_DATA_W, &GCPhysMem);
             if (rcStrict != VINF_SUCCESS)
-                break;
+                return rcStrict;
 
             /*
              * If we can map the page without trouble, we would've liked to use
@@ -1110,27 +1096,31 @@ IEM_CIMPL_DEF_0(RT_CONCAT4(iemCImpl_rep_ins_op,OP_SIZE,_addr,ADDR_SIZE))
             rcStrict = iemMemPageMap(pIemCpu, GCPhysMem, IEM_ACCESS_DATA_W, (void **)&puMem);
             if (rcStrict == VINF_SUCCESS)
             {
-                while (cLeftPage-- > 0)
+                uint32_t off = 0;
+                while (off < cLeftPage)
                 {
                     uint32_t u32Value;
                     if (!IEM_VERIFICATION_ENABLED(pIemCpu))
                         rcStrict = IOMIOPortRead(pVM, u16Port, &u32Value, OP_SIZE / 8);
                     else
                         rcStrict = iemVerifyFakeIOPortRead(pIemCpu, u16Port, &u32Value, OP_SIZE / 8);
-                    if (!IOM_SUCCESS(rcStrict))
-                        break;
-                    *puMem++     = (OP_TYPE)u32Value;
-                    uAddrReg    += cbIncr;
-                    uCounterReg -= 1;
-
+                    if (IOM_SUCCESS(rcStrict))
+                    {
+                        puMem[off]     = (OP_TYPE)u32Value;
+                        pCtx->ADDR_rDI = uAddrReg += cbIncr;
+                        pCtx->ADDR_rCX = --uCounterReg;
+                    }
                     if (rcStrict != VINF_SUCCESS)
                     {
                         /** @todo massage rc */
-                        break;
+                        if (uCounterReg == 0)
+                            iemRegAddToRip(pIemCpu, cbInstr);
+                        iemMemPageUnmap(pIemCpu, GCPhysMem, IEM_ACCESS_DATA_W, puMem);
+                        return rcStrict;
                     }
+                    off++;
                 }
-                if (rcStrict != VINF_SUCCESS)
-                    break;
+                iemMemPageUnmap(pIemCpu, GCPhysMem, IEM_ACCESS_DATA_W, puMem);
 
                 /* If unaligned, we drop thru and do the page crossing access
                    below. Otherwise, do the next page. */
@@ -1157,7 +1147,7 @@ IEM_CIMPL_DEF_0(RT_CONCAT4(iemCImpl_rep_ins_op,OP_SIZE,_addr,ADDR_SIZE))
             OP_TYPE *puMem;
             rcStrict = iemMemMap(pIemCpu, (void **)&puMem, OP_SIZE / 8, X86_SREG_ES, uAddrReg, IEM_ACCESS_DATA_W);
             if (rcStrict != VINF_SUCCESS)
-                break;
+                return rcStrict;
 
             uint32_t u32Value;
             if (!IEM_VERIFICATION_ENABLED(pIemCpu))
@@ -1165,33 +1155,31 @@ IEM_CIMPL_DEF_0(RT_CONCAT4(iemCImpl_rep_ins_op,OP_SIZE,_addr,ADDR_SIZE))
             else
                 rcStrict = iemVerifyFakeIOPortRead(pIemCpu, u16Port, &u32Value, OP_SIZE / 8);
             if (!IOM_SUCCESS(rcStrict))
-                break;
+                return rcStrict;
 
+            *puMem = u32Value;
             VBOXSTRICTRC rcStrict2 = iemMemCommitAndUnmap(pIemCpu, puMem, IEM_ACCESS_DATA_W);
-            AssertLogRelBreakStmt(rcStrict2 == VINF_SUCCESS, rcStrict = VERR_INTERNAL_ERROR_3); /* See non-rep version. */
+            AssertLogRelReturn(rcStrict2 == VINF_SUCCESS, VERR_IEM_IPE_1); /* See non-rep version. */
 
-            uAddrReg += cbIncr;
-            uCounterReg--;
+            pCtx->ADDR_rDI = uAddrReg += cbIncr;
+            pCtx->ADDR_rCX = --uCounterReg;
+
             cLeftPage--;
             if (rcStrict != VINF_SUCCESS)
             {
                 /** @todo massage IOM status codes! */
-                break;
+                if (uCounterReg == 0)
+                    iemRegAddToRip(pIemCpu, cbInstr);
+                return rcStrict;
             }
         } while ((int32_t)cLeftPage > 0);
-        if (rcStrict != VINF_SUCCESS)
-            break;
     } while (uCounterReg != 0);
 
     /*
-     * Update the registers.
+     * Done.
      */
-    pCtx->ADDR_rCX = uCounterReg;
-    pCtx->ADDR_rDI = uAddrReg;
-    if (rcStrict == VINF_SUCCESS)
-        iemRegAddToRip(pIemCpu, cbInstr);
-
-    return rcStrict;
+    iemRegAddToRip(pIemCpu, cbInstr);
+    return VINF_SUCCESS;
 }
 
 
@@ -1293,7 +1281,7 @@ IEM_CIMPL_DEF_1(RT_CONCAT4(iemCImpl_rep_outs_op,OP_SIZE,_addr,ADDR_SIZE), uint8_
             RTGCPHYS GCPhysMem;
             rcStrict = iemMemPageTranslateAndCheckAccess(pIemCpu, uVirtAddr, IEM_ACCESS_DATA_R, &GCPhysMem);
             if (rcStrict != VINF_SUCCESS)
-                break;
+                return rcStrict;
 
             /*
              * If we can map the page without trouble, we would've liked to use
@@ -1308,26 +1296,30 @@ IEM_CIMPL_DEF_1(RT_CONCAT4(iemCImpl_rep_outs_op,OP_SIZE,_addr,ADDR_SIZE), uint8_
             rcStrict = iemMemPageMap(pIemCpu, GCPhysMem, IEM_ACCESS_DATA_R, (void **)&puMem);
             if (rcStrict == VINF_SUCCESS)
             {
-                while (cLeftPage-- > 0)
+                uint32_t off = 0;
+                while (off < cLeftPage)
                 {
                     uint32_t u32Value = *puMem++;
                     if (!IEM_VERIFICATION_ENABLED(pIemCpu))
                         rcStrict = IOMIOPortWrite(pVM, u16Port, u32Value, OP_SIZE / 8);
                     else
                         rcStrict = iemVerifyFakeIOPortWrite(pIemCpu, u16Port, u32Value, OP_SIZE / 8);
-                    if (!IOM_SUCCESS(rcStrict))
-                        break;
-                    uAddrReg    += cbIncr;
-                    uCounterReg -= 1;
-
+                    if (IOM_SUCCESS(rcStrict))
+                    {
+                        pCtx->ADDR_rSI = uAddrReg += cbIncr;
+                        pCtx->ADDR_rCX = --uCounterReg;
+                    }
                     if (rcStrict != VINF_SUCCESS)
                     {
                         /** @todo massage IOM rc */
-                        break;
+                        if (uCounterReg == 0)
+                            iemRegAddToRip(pIemCpu, cbInstr);
+                        iemMemPageUnmap(pIemCpu, GCPhysMem, IEM_ACCESS_DATA_R, puMem);
+                        return rcStrict;
                     }
+                    off++;
                 }
-                if (rcStrict != VINF_SUCCESS)
-                    break;
+                iemMemPageUnmap(pIemCpu, GCPhysMem, IEM_ACCESS_DATA_R, puMem);
 
                 /* If unaligned, we drop thru and do the page crossing access
                    below. Otherwise, do the next page. */
@@ -1354,37 +1346,33 @@ IEM_CIMPL_DEF_1(RT_CONCAT4(iemCImpl_rep_outs_op,OP_SIZE,_addr,ADDR_SIZE), uint8_
             OP_TYPE uValue;
             rcStrict = RT_CONCAT(iemMemFetchDataU,OP_SIZE)(pIemCpu, &uValue, iEffSeg, uAddrReg);
             if (rcStrict != VINF_SUCCESS)
-                break;
+                return rcStrict;
 
             if (!IEM_VERIFICATION_ENABLED(pIemCpu))
                 rcStrict = IOMIOPortWrite(pVM, u16Port, uValue, OP_SIZE / 8);
             else
                 rcStrict = iemVerifyFakeIOPortWrite(pIemCpu, u16Port, uValue, OP_SIZE / 8);
-            if (!IOM_SUCCESS(rcStrict))
-                break;
-
-            uAddrReg += cbIncr;
-            uCounterReg--;
-            cLeftPage--;
+            if (IOM_SUCCESS(rcStrict))
+            {
+                pCtx->ADDR_rSI = uAddrReg += cbIncr;
+                pCtx->ADDR_rCX = --uCounterReg;
+                cLeftPage--;
+            }
             if (rcStrict != VINF_SUCCESS)
             {
                 /** @todo massage IOM status codes! */
-                break;
+                if (uCounterReg == 0)
+                    iemRegAddToRip(pIemCpu, cbInstr);
+                return rcStrict;
             }
         } while ((int32_t)cLeftPage > 0);
-        if (rcStrict != VINF_SUCCESS)
-            break;
     } while (uCounterReg != 0);
 
     /*
-     * Update the registers.
+     * Done.
      */
-    pCtx->ADDR_rCX = uCounterReg;
-    pCtx->ADDR_rSI = uAddrReg;
-    if (rcStrict == VINF_SUCCESS)
-        iemRegAddToRip(pIemCpu, cbInstr);
-
-    return rcStrict;
+    iemRegAddToRip(pIemCpu, cbInstr);
+    return VINF_SUCCESS;
 }
 
 #endif /* OP_SIZE != 64-bit */
