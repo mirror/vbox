@@ -108,9 +108,13 @@ typedef struct STAMUSERPERVM
     /** The number of registered host CPU leaves. */
     uint32_t                cRegisteredHostCpus;
 
+    /** Explicit alignment padding. */
+    uint32_t                uAlignment;
     /** The copy of the GMM statistics. */
     GMMSTATS                GMMStats;
 } STAMUSERPERVM;
+AssertCompileMemberAlignment(STAMUSERPERVM, GMMStats, 8);
+
 /** Pointer to the STAM data kept in the UVM. */
 typedef STAMUSERPERVM *PSTAMUSERPERVM;
 
