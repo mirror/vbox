@@ -140,7 +140,8 @@ typedef enum {
 typedef enum {
     KBD_TMS_IDLE    = 0,    /* No typematic key active. */
     KBD_TMS_DELAY   = 1,    /* In the initial delay period. */
-    KBD_TMS_REPEAT  = 2     /* Key repeating at set rate. */
+    KBD_TMS_REPEAT  = 2,    /* Key repeating at set rate. */
+    KBD_TMS_32BIT_HACK = 0x7fffffff
 } tmatic_state_t;
 
 
