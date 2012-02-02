@@ -38,7 +38,7 @@ UIMachineSettingsSystem::UIMachineSettingsSystem()
 
     /* Setup constants */
     CSystemProperties properties = vboxGlobal().virtualBox().GetSystemProperties();
-    uint hostCPUs = vboxGlobal().virtualBox().GetHost().GetProcessorCount();
+    uint hostCPUs = vboxGlobal().host().GetProcessorCount();
     mMinGuestCPU = properties.GetMinGuestCPUCount();
     mMaxGuestCPU = RT_MIN (2 * hostCPUs, properties.GetMaxGuestCPUCount());
     mMinGuestCPUExecCap = 1;
@@ -226,8 +226,8 @@ void UIMachineSettingsSystem::loadToCacheFrom(QVariant &data)
         }
     }
     /* Gather other system data: */
-    systemData.m_fPFHwVirtExSupported = vboxGlobal().virtualBox().GetHost().GetProcessorFeature(KProcessorFeature_HWVirtEx);
-    systemData.m_fPFPAESupported = vboxGlobal().virtualBox().GetHost().GetProcessorFeature(KProcessorFeature_PAE);
+    systemData.m_fPFHwVirtExSupported = vboxGlobal().host().GetProcessorFeature(KProcessorFeature_HWVirtEx);
+    systemData.m_fPFPAESupported = vboxGlobal().host().GetProcessorFeature(KProcessorFeature_PAE);
     systemData.m_fIoApicEnabled = m_machine.GetBIOSSettings().GetIOAPICEnabled();
     systemData.m_fEFIEnabled = m_machine.GetFirmwareType() >= KFirmwareType_EFI && m_machine.GetFirmwareType() <= KFirmwareType_EFIDUAL;
     systemData.m_fUTCEnabled = m_machine.GetRTCUseUTC();
@@ -386,7 +386,7 @@ void UIMachineSettingsSystem::setValidator (QIWidgetValidator *aVal)
 
 bool UIMachineSettingsSystem::revalidate (QString &aWarning, QString & /* aTitle */)
 {
-    ulong fullSize = vboxGlobal().virtualBox().GetHost().GetMemorySize();
+    ulong fullSize = vboxGlobal().host().GetMemorySize();
     if (mSlMemory->value() > (int)mSlMemory->maxRAMAlw())
     {
         aWarning = tr (
@@ -409,7 +409,7 @@ bool UIMachineSettingsSystem::revalidate (QString &aWarning, QString & /* aTitle
     }
 
     /* VCPU amount test */
-    int totalCPUs = vboxGlobal().virtualBox().GetHost().GetProcessorOnlineCount();
+    int totalCPUs = vboxGlobal().host().GetProcessorOnlineCount();
     if (mSlCPU->value() > 2 * totalCPUs)
     {
         aWarning = tr (

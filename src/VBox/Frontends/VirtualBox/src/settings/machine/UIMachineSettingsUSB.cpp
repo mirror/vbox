@@ -154,7 +154,7 @@ void UIMachineSettingsUSB::loadToCacheFrom(QVariant &data)
         case UISettingsPageType_Global:
         {
             /* For each USB filter: */
-            const CHostUSBDeviceFilterVector &filters = vboxGlobal().virtualBox().GetHost().GetUSBDeviceFilters();
+            const CHostUSBDeviceFilterVector &filters = vboxGlobal().host().GetUSBDeviceFilters();
             for (int iFilterIndex = 0; iFilterIndex < filters.size(); ++iFilterIndex)
             {
                 /* Prepare USB filter data: */
@@ -349,7 +349,7 @@ void UIMachineSettingsUSB::saveFromCacheTo(QVariant &data)
                 if (isMachineInValidMode())
                 {
                     /* Get host: */
-                    CHost host = vboxGlobal().virtualBox().GetHost();
+                    CHost host = vboxGlobal().host();
                     /* For each USB filter data set: */
                     for (int iFilterIndex = 0; iFilterIndex < m_cache.childCount(); ++iFilterIndex)
                     {

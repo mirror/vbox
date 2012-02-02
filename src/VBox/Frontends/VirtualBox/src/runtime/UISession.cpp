@@ -269,7 +269,7 @@ void UISession::powerUp()
     {
         bool fShouldWeClose;
 
-        bool fVTxAMDVSupported = vboxGlobal().virtualBox().GetHost().GetProcessorFeature(KProcessorFeature_HWVirtEx);
+        bool fVTxAMDVSupported = vboxGlobal().host().GetProcessorFeature(KProcessorFeature_HWVirtEx);
 
         QApplication::processEvents();
         setPause(true);

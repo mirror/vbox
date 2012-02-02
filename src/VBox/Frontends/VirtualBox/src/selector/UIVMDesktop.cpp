@@ -274,6 +274,7 @@ private:
 
     /* Variables: */
     CVirtualBox m_vbox;
+    CHost m_host;
     UIDetails *m_pUIDetails;
     int m_iBlockNumber;
     int m_cSectionCount;
@@ -624,6 +625,7 @@ void UIDetails::layoutBlock(int iBlockNumber)
 UIDetailsBlock::UIDetailsBlock(UIDetails *pParent, const QList<Section> &sections, int iBlockNumber)
     : QWidget(pParent)
     , m_vbox(vboxGlobal().virtualBox())
+    , m_host(vboxGlobal().host())
     , m_pUIDetails(pParent)
     , m_iBlockNumber(iBlockNumber)
     , m_cSectionCount(0)

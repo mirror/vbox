@@ -63,7 +63,7 @@ uint VBoxGuestRAMSlider::maxRAM() const
 
 void VBoxGuestRAMSlider::init()
 {
-    ulong fullSize = vboxGlobal().virtualBox().GetHost().GetMemorySize();
+    ulong fullSize = vboxGlobal().host().GetMemorySize();
     CSystemProperties sys = vboxGlobal().virtualBox().GetSystemProperties();
     mMinRAM = sys.GetMinGuestRAM();
     mMaxRAM = RT_MIN (RT_ALIGN (fullSize, _1G / _1M), sys.GetMaxGuestRAM());

@@ -134,6 +134,7 @@ public:
     bool isBeta() const;
 
     CVirtualBox virtualBox() const { return mVBox; }
+    CHost host() const { return mHost; }
 
     VBoxGlobalSettings &settings() { return gset; }
     bool setSettings (VBoxGlobalSettings &gs);
@@ -149,7 +150,7 @@ public:
     void setMainWindow (QWidget *aMainWindow) { mMainWindow = aMainWindow; }
     QWidget *mainWindow() const { return mMainWindow; }
 
-    bool is3DAvailable();
+    bool is3DAvailable() const { return m3DAvailable; }
 
 #ifdef VBOX_GUI_WITH_PIDFILE
     void createPidfile();
@@ -805,6 +806,7 @@ private:
     bool mValid;
 
     CVirtualBox mVBox;
+    CHost mHost;
 
     VBoxGlobalSettings gset;
 

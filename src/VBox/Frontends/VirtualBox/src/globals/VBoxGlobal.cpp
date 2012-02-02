@@ -18,7 +18,7 @@
 #include "VBoxGlobal.h"
 #include <VBox/vd.h>
 #include <VBox/version.h>
-#include <stdio.h>
+#include <iprt/stream.h>
 
 #include "VBoxUtils.h"
 #include "VBoxDefs.h"
@@ -282,7 +282,7 @@ VBoxGlobal::VBoxGlobal()
     , mRecompileSupervisor(false)
     , mRecompileUser(false)
     , mVerString("1.0")
-    , m3DAvailable(-1)
+    , m3DAvailable(false)
 {
 }
 
@@ -390,13 +390,6 @@ QString VBoxGlobal::vboxVersionStringNormalized() const
 bool VBoxGlobal::isBeta() const
 {
     return mVBox.GetVersion().contains("BETA", Qt::CaseInsensitive);
-}
-
-bool VBoxGlobal::is3DAvailable()
-{
-    if (m3DAvailable < 0)
-        m3DAvailable = virtualBox().GetHost().GetAcceleration3DAvailable();
-    return m3DAvailable;
 }
 
 /**
@@ -1665,7 +1658,7 @@ QString VBoxGlobal::detailsReport (const CMachine &aMachine, bool aWithLinks)
             : tr ("Disabled", "details report (Nested Paging)");
 
         /* VT-x/AMD-V availability: */
-        bool fVTxAMDVSupported = virtualBox().GetHost().GetProcessorFeature(KProcessorFeature_HWVirtEx);
+        bool fVTxAMDVSupported = host().GetProcessorFeature(KProcessorFeature_HWVirtEx);
 
         if (fVTxAMDVSupported)
             iRowCount += 2; /* VT-x/AMD-V items. */
@@ -2412,9 +2405,9 @@ void VBoxGlobal::startEnumeratingMedia()
     mMediaList.clear();
     addNullMediumToList (mMediaList, mMediaList.end());
     addHardDisksToList (mVBox.GetHardDisks(), mMediaList, mMediaList.end());
-    addMediumsToList (mVBox.GetHost().GetDVDDrives(), mMediaList, mMediaList.end(), VBoxDefs::MediumType_DVD);
+    addMediumsToList (mHost.GetDVDDrives(), mMediaList, mMediaList.end(), VBoxDefs::MediumType_DVD);
     addMediumsToList (mVBox.GetDVDImages(), mMediaList, mMediaList.end(), VBoxDefs::MediumType_DVD);
-    addMediumsToList (mVBox.GetHost().GetFloppyDrives(), mMediaList, mMediaList.end(), VBoxDefs::MediumType_Floppy);
+    addMediumsToList (mHost.GetFloppyDrives(), mMediaList, mMediaList.end(), VBoxDefs::MediumType_Floppy);
     addMediumsToList (mVBox.GetFloppyImages(), mMediaList, mMediaList.end(), VBoxDefs::MediumType_Floppy);
 
     /* enumeration thread class */
@@ -4799,6 +4792,8 @@ void VBoxGlobal::init()
         msgCenter().cannotCreateVirtualBox (mVBox);
         return;
     }
+    mHost = virtualBox().GetHost();
+    m3DAvailable = mHost.GetAcceleration3DAvailable();
 
     /* create default non-null global settings */
     gset = VBoxGlobalSettings (false);
@@ -5457,7 +5452,7 @@ void VBoxUSBMenu::processAboutToShow()
     clear();
     mUSBDevicesMap.clear();
 
-    CHost host = vboxGlobal().virtualBox().GetHost();
+    CHost host = vboxGlobal().host();
 
     bool isUSBEmpty = host.GetUSBDevices().size() == 0;
     if (isUSBEmpty)

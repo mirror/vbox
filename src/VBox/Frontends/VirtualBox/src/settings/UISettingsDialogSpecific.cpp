@@ -532,7 +532,7 @@ bool UISettingsDialogGlobal::isPageAvailable(int iPageId)
         {
 #ifdef ENABLE_GLOBAL_USB
             /* Get the host object: */
-            CHost host = vboxGlobal().virtualBox().GetHost();
+            CHost host = vboxGlobal().host();
             /* Show the host error message if any: */
             if (!host.isReallyOk())
                 msgCenter().cannotAccessUSB(host);
