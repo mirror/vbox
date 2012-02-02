@@ -1028,10 +1028,6 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
    Drivers_SOURCES += Audio/ossaudio.c
    Drivers_DEFS += VBOX_WITH_SOLARIS_OSS
   endif
-  ifdef VBOX_WITH_CROSSBOW
-   Drivers_SOURCES += Network/solaris/vbox-libdlpi.cpp
-   Drivers_DEFS += VBOX_WITH_CROSSBOW
-  endif
   ifdef VBOX_WITH_SUID_WRAPPER
    Drivers_DEFS += VBOX_WITH_SUID_WRAPPER
   endif

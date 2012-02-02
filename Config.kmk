@@ -418,8 +418,6 @@ VBOX_WITH_EFI = 1
 VBOX_WITH_EFIFW_PACKING = 1
 # Use kStuff for MACH-O and LX binary loading.
 IPRT_WITH_KSTUFF = 1
-# Enable Crossbow support for Solaris TAP driver.
-VBOX_WITH_CROSSBOW = 1
 # Enable setuid wrapper for Solaris host DVD.
 #VBOX_WITH_SUID_WRAPPER = 1
 # Enable the virtual SATA/AHCI controller
@@ -2583,7 +2581,6 @@ ifeq ($(KBUILD_TARGET),solaris)
  ifeq ($(VBOX_SOLARIS_VERSION),510)
   DEFS.solaris += RT_OS_SOLARIS_10
   # Solaris 10 does not include crossbow.
-  VBOX_WITH_CROSSBOW =
   VBOX_SOLARIS_10 = 1
   # We cannot compile additions on Solaris 10, due kernel interface deps
   VBOX_WITHOUT_ADDITIONS := 1
