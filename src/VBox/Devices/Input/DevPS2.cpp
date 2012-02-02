@@ -229,15 +229,13 @@ typedef struct KBDState {
     /** Pointer to the device instance. */
     PPDMDEVINSR0                pDevInsR0;
 
-#if HC_ARCH_BITS == 32
-    uint32_t                    Alignment0;
-#endif
-    /** Keyboard state (implemented in separate PS2K module). */
-    PS2K                        Kbd;
     /** Critical section protecting the state. */
     PDMCRITSECT                 CritSect;
 
-#ifdef HC_ARCH_BITS //OLD_KBD
+    /** Keyboard state (implemented in separate PS2K module). */
+    PS2K                        Kbd;
+
+#if 1 //OLD_KBD
     /**
      * Keyboard port - LUN#0.
      *
