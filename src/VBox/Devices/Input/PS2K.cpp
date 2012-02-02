@@ -184,6 +184,9 @@ typedef struct PS2K
     unsigned            uTypematicDelay;
     /** Typematic repeat period in milliseconds. */
     unsigned            uTypematicRepeat;
+#if HC_ARCH_BITS == 32
+    uin32_t             Alignment0;
+#endif
     /** Critical section protecting the state. */
     PDMCRITSECT         KbdCritSect;
     /** Command delay timer - RC Ptr. */
@@ -200,7 +203,7 @@ typedef struct PS2K
     PTMTIMERR0          pKbdTypematicTimerR0;
 
     scan_state_t        XlatState;      //@todo: temporary
-    uint32_t            Alignment0;
+    uint32_t            Alignment1;
 
     /**
      * Keyboard port - LUN#0.
