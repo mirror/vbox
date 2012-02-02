@@ -38,9 +38,6 @@
 #ifdef RT_OS_SOLARIS
 # include <iprt/process.h>
 # include <iprt/env.h>
-# ifdef VBOX_WITH_CROSSBOW
-#  include <iprt/mem.h>
-# endif
 #endif
 
 #include <sys/ioctl.h>
@@ -60,9 +57,6 @@
 # include <fcntl.h>
 # include <stdlib.h>
 # include <stdio.h>
-# ifdef VBOX_WITH_CROSSBOW
-#  include "solaris/vbox-libdlpi.h"
-# endif
 #else
 # include <sys/fcntl.h>
 #endif
@@ -97,15 +91,8 @@ typedef struct DRVTAP
     /** The configured TAP device name. */
     char                   *pszDeviceName;
 #ifdef RT_OS_SOLARIS
-# ifdef VBOX_WITH_CROSSBOW
-    /** Crossbow: MAC address of the device. */
-    RTMAC                   MacAddress;
-    /** Crossbow: Handle of the NIC. */
-    dlpi_handle_t           pDeviceHandle;
-# else
     /** IP device file handle (/dev/udp). */
     int                     iIPFileDes;
-# endif
     /** Whether device name is obtained from setup application. */
     bool                    fStatic;
 #endif
@@ -156,12 +143,7 @@ typedef struct DRVTAP
 *   Internal Functions                                                         *
 *******************************************************************************/
 #ifdef RT_OS_SOLARIS
-# ifdef VBOX_WITH_CROSSBOW
-static int              SolarisOpenVNIC(PDRVTAP pThis);
-static int              SolarisDLPIErr2VBoxErr(int rc);
-# else
 static int              SolarisTAPAttach(PDRVTAP pThis);
-# endif
 #endif
 
 
@@ -390,16 +372,10 @@ static DECLCALLBACK(int) drvTAPAsyncIoThread(PPDMDRVINS pDrvIns, PPDMTHREAD pThr
              */
             char achBuf[16384];
             size_t cbRead = 0;
-#ifdef VBOX_WITH_CROSSBOW
-            cbRead = sizeof(achBuf);
-            rc = g_pfnLibDlpiRecv(pThis->pDeviceHandle, NULL, NULL, achBuf, &cbRead, -1, NULL);
-            rc = RT_LIKELY(rc == DLPI_SUCCESS) ? VINF_SUCCESS : SolarisDLPIErr2VBoxErr(rc);
-#else
             /** @note At least on Linux we will never receive more than one network packet
              *        after poll() returned successfully. I don't know why but a second
              *        RTFileRead() operation will return with VERR_TRY_AGAIN in any case. */
             rc = RTFileRead(pThis->hFileDevice, achBuf, sizeof(achBuf), &cbRead);
-#endif
             if (RT_SUCCESS(rc))
             {
                 /*
@@ -514,26 +490,8 @@ static int drvTAPSetupApplication(PDRVTAP pThis)
 {
     char szCommand[4096];
 
-#ifdef VBOX_WITH_CROSSBOW
-    /* Convert MAC address bytes to string (required by Solaris' dladm). */
-    char *pszHex = "0123456789abcdef";
-    uint8_t *pMacAddr8 = pThis->MacAddress.au8;
-    char szMacAddress[3 * sizeof(RTMAC)];
-    for (unsigned int i = 0; i < sizeof(RTMAC); i++)
-    {
-        szMacAddress[3 * i] = pszHex[((*pMacAddr8 >> 4) & 0x0f)];
-        szMacAddress[3 * i + 1] = pszHex[(*pMacAddr8 & 0x0f)];
-        szMacAddress[3 * i + 2] = ':';
-        *pMacAddr8++;
-    }
-    szMacAddress[sizeof(szMacAddress) - 1] =  0;
-
-    RTStrPrintf(szCommand, sizeof(szCommand), "%s %s %s", pThis->pszSetupApplication,
-            szMacAddress, pThis->fStatic ? pThis->pszDeviceName : "");
-#else
     RTStrPrintf(szCommand, sizeof(szCommand), "%s %s", pThis->pszSetupApplication,
             pThis->fStatic ? pThis->pszDeviceName : "");
-#endif
 
     /* Pipe open the setup application. */
     Log2(("Starting TAP setup application: %s\n", szCommand));
@@ -622,121 +580,6 @@ static int drvTAPTerminateApplication(PDRVTAP pThis)
 
 
 #ifdef RT_OS_SOLARIS
-# ifdef VBOX_WITH_CROSSBOW
-/**
- * Crossbow: Open & configure the virtual NIC.
- *
- * @returns VBox error code.
- * @param   pThis           The instance data.
- */
-static int SolarisOpenVNIC(PDRVTAP pThis)
-{
-    /*
-     * Open & bind the NIC using the datalink provider routine.
-     */
-    int rc = g_pfnLibDlpiOpen(pThis->pszDeviceName, &pThis->pDeviceHandle, DLPI_RAW);
-    if (rc != DLPI_SUCCESS)
-        return PDMDrvHlpVMSetError(pThis->pDrvIns, VERR_HOSTIF_INIT_FAILED, RT_SRC_POS,
-                           N_("Failed to open VNIC \"%s\" in raw mode"), pThis->pszDeviceName);
-
-    dlpi_info_t vnicInfo;
-    rc = g_pfnLibDlpiInfo(pThis->pDeviceHandle, &vnicInfo, 0);
-    if (rc == DLPI_SUCCESS)
-    {
-        if (vnicInfo.di_mactype == DL_ETHER)
-        {
-            rc = g_pfnLibDlpiBind(pThis->pDeviceHandle, DLPI_ANY_SAP, NULL);
-            if (rc == DLPI_SUCCESS)
-            {
-                rc = g_pfnLibDlpiSetPhysAddr(pThis->pDeviceHandle, DL_CURR_PHYS_ADDR, &pThis->MacAddress, ETHERADDRL);
-                if (rc == DLPI_SUCCESS)
-                {
-                    rc = g_pfnLibDlpiPromiscon(pThis->pDeviceHandle, DL_PROMISC_SAP);
-                    if (rc == DLPI_SUCCESS)
-                    {
-                        /* Need to use DL_PROMIS_PHYS (not multicast) as we cannot be sure what the guest needs. */
-                        rc = g_pfnLibDlpiPromiscon(pThis->pDeviceHandle, DL_PROMISC_PHYS);
-                        if (rc == DLPI_SUCCESS)
-                        {
-                            int fd = g_pfnLibDlpiFd(pThis->pDeviceHandle);
-                            if (pThis->FileDevice >= 0)
-                            {
-                                rc = RTFileFromNative(&pThis->hFileDevice, fd);
-                                if (RT_SUCCESS(rc))
-                                {
-                                    Log(("SolarisOpenVNIC: %s -> %RTfile\n", pThis->pszDeviceName, pThis->hFileDevice));
-                                    return VINF_SUCCESS;
-                                }
-                            }
-                            else
-                                rc = PDMDrvHlpVMSetError(pThis->pDrvIns, VERR_HOSTIF_INIT_FAILED, RT_SRC_POS,
-                                                         N_("Failed to obtain file descriptor for VNIC"));
-                        }
-                        else
-                            rc = PDMDrvHlpVMSetError(pThis->pDrvIns, VERR_HOSTIF_INIT_FAILED, RT_SRC_POS,
-                                                     N_("Failed to set appropriate promiscuous mode"));
-                    }
-                    else
-                        rc = PDMDrvHlpVMSetError(pThis->pDrvIns, VERR_HOSTIF_INIT_FAILED, RT_SRC_POS,
-                                                 N_("Failed to activate promiscuous mode for VNIC"));
-                }
-                else
-                    rc = PDMDrvHlpVMSetError(pThis->pDrvIns, VERR_HOSTIF_INIT_FAILED, RT_SRC_POS,
-                                             N_("Failed to set physical address for VNIC"));
-            }
-            else
-                rc = PDMDrvHlpVMSetError(pThis->pDrvIns, VERR_HOSTIF_INIT_FAILED, RT_SRC_POS,
-                                         N_("Failed to bind VNIC"));
-        }
-        else
-            rc = PDMDrvHlpVMSetError(pThis->pDrvIns, VERR_HOSTIF_INIT_FAILED, RT_SRC_POS,
-                                         N_("VNIC type is not ethernet"));
-    }
-    else
-        rc = PDMDrvHlpVMSetError(pThis->pDrvIns, VERR_HOSTIF_INIT_FAILED, RT_SRC_POS,
-                                         N_("Failed to obtain VNIC info"));
-    g_pfnLibDlpiClose(pThis->pDeviceHandle);
-    return rc;
-}
-
-
-/**
- * Crossbow: Converts a Solaris DLPI error code to a VBox error code.
- *
- * @returns corresponding VBox error code.
- * @param   rc  DLPI error code (DLPI_* defines).
- */
-static int SolarisDLPIErr2VBoxErr(int rc)
-{
-    switch (rc)
-    {
-        case DLPI_SUCCESS:          return VINF_SUCCESS;
-        case DLPI_EINVAL:           return VERR_INVALID_PARAMETER;
-        case DLPI_ELINKNAMEINVAL:   return VERR_INVALID_NAME;
-        case DLPI_EINHANDLE:        return VERR_INVALID_HANDLE;
-        case DLPI_ETIMEDOUT:        return VERR_TIMEOUT;
-        case DLPI_FAILURE:          return VERR_GENERAL_FAILURE;
-
-        case DLPI_EVERNOTSUP:
-        case DLPI_EMODENOTSUP:
-        case DLPI_ERAWNOTSUP:
-        /* case DLPI_ENOTENOTSUP: */
-        case DLPI_EUNAVAILSAP:      return VERR_NOT_SUPPORTED;
-
-        /*  Define VBox error codes for these, if really needed. */
-        case DLPI_ENOLINK:
-        case DLPI_EBADLINK:
-        /* case DLPI_ENOTEIDINVAL: */
-        case DLPI_EBADMSG:
-        case DLPI_ENOTSTYLE2:       return VERR_GENERAL_FAILURE;
-    }
-
-    AssertMsgFailed(("SolarisDLPIErr2VBoxErr: Unhandled error %d\n", rc));
-    return VERR_UNRESOLVED_ERROR;
-}
-
-# else  /* VBOX_WITH_CROSSBOW */
-
 /** From net/if_tun.h, installed by Universal TUN/TAP driver */
 # define TUNNEWPPA                   (('T'<<16) | 0x0001)
 /** Whether to enable ARP for TAP. */
@@ -896,7 +739,6 @@ static DECLCALLBACK(int) SolarisTAPAttach(PDRVTAP pThis)
     return VINF_SUCCESS;
 }
 
-# endif /* VBOX_WITH_CROSSBOW */
 #endif  /* RT_OS_SOLARIS */
 
 /* -=-=-=-=- PDMIBASE -=-=-=-=- */
@@ -947,14 +789,6 @@ static DECLCALLBACK(void) drvTAPDestruct(PPDMDRVINS pDrvIns)
         AssertRC(rc);
         pThis->hFileDevice = NIL_RTFILE;
     }
-
-# ifndef VBOX_WITH_CROSSBOW
-    if (pThis->iIPFileDes != -1)
-    {
-        close(pThis->iIPFileDes);
-        pThis->iIPFileDes = -1;
-    }
-# endif
 
     /*
      * Call TerminateApplication after closing the device otherwise
@@ -1013,11 +847,7 @@ static DECLCALLBACK(int) drvTAPConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uin
     pThis->hFileDevice                  = NIL_RTFILE;
     pThis->pszDeviceName                = NULL;
 #ifdef RT_OS_SOLARIS
-# ifdef VBOX_WITH_CROSSBOW
-    pThis->pDeviceHandle                = NULL;
-# else
     pThis->iIPFileDes                   = -1;
-# endif
     pThis->fStatic                      = true;
 #endif
     pThis->pszSetupApplication          = NULL;
@@ -1092,12 +922,6 @@ static DECLCALLBACK(int) drvTAPConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uin
     else if (rc != VERR_CFGM_VALUE_NOT_FOUND)
         return PDMDRV_SET_ERROR(pDrvIns, rc, N_("Configuration error: failed to query \"TAPTerminateApplication\""));
 
-# ifdef VBOX_WITH_CROSSBOW
-    rc = CFGMR3QueryBytes(pCfg, "MAC", &pThis->MacAddress, sizeof(pThis->MacAddress));
-    if (RT_FAILURE(rc))
-        return PDMDRV_SET_ERROR(pDrvIns, rc, N_("Configuration error: Failed to query \"MAC\""));
-# endif
-
     rc = CFGMR3QueryStringAlloc(pCfg, "Device", &pThis->pszDeviceName);
     if (RT_FAILURE(rc))
         pThis->fStatic = false;
@@ -1114,16 +938,7 @@ static DECLCALLBACK(int) drvTAPConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uin
     /*
      * Do the setup.
      */
-# ifdef VBOX_WITH_CROSSBOW
-    if (!VBoxLibDlpiFound())
-    {
-        return PDMDrvHlpVMSetError(pDrvIns, VERR_HOSTIF_INIT_FAILED, RT_SRC_POS,
-                                       N_("Failed to load library %s required for host interface networking."), LIB_DLPI);
-    }
-    rc = SolarisOpenVNIC(pThis);
-# else
     rc = SolarisTAPAttach(pThis);
-# endif
     if (RT_FAILURE(rc))
         return rc;
 
