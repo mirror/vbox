@@ -199,6 +199,7 @@ typedef struct PS2K
     PTMTIMERR0          pKbdTypematicTimerR0;
 
     scan_state_t        XlatState;      //@todo: temporary
+    uint32_t            Alignment0;
 
     /**
      * Keyboard port - LUN#0.
