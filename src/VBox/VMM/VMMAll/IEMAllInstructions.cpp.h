@@ -1109,7 +1109,14 @@ FNIEMOP_DEF(iemOp_rdtsc)
 
 
 /** Opcode 0x0f 0x33. */
-FNIEMOP_STUB(iemOp_rdmsr);
+FNIEMOP_DEF(iemOp_rdmsr)
+{
+    IEMOP_MNEMONIC("rdmsr");
+    IEMOP_HLP_NO_LOCK_PREFIX();
+    return IEM_MC_DEFER_TO_CIMPL_0(iemCImpl_rdmsr);
+}
+
+
 /** Opcode 0x0f 0x34. */
 FNIEMOP_STUB(iemOp_rdpmc);
 /** Opcode 0x0f 0x34. */
@@ -3258,7 +3265,7 @@ FNIEMOP_DEF(iemOp_shrd_Ev_Gv_CL)
 
 
 /** Opcode 0x0f 0xae. */
-FNIEMOP_STUB(iemOp_Grp15);
+FNIEMOP_STUB(iemOp_Grp15); /** @todo next up: fxrstor */
 
 
 /** Opcode 0x0f 0xaf. */

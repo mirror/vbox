@@ -2877,7 +2877,6 @@ IEM_CIMPL_DEF_1(iemCImpl_invlpg, uint8_t, GCPtrPage)
 }
 
 
-
 /**
  * Implements RDTSC.
  */
@@ -2907,6 +2906,40 @@ IEM_CIMPL_DEF_0(iemCImpl_rdtsc)
 #ifdef IEM_VERIFICATION_MODE
     pIemCpu->fIgnoreRaxRdx = true;
 #endif
+
+    iemRegAddToRip(pIemCpu, cbInstr);
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Implements RDMSR.
+ */
+IEM_CIMPL_DEF_0(iemCImpl_rdmsr)
+{
+    PCPUMCTX pCtx = pIemCpu->CTX_SUFF(pCtx);
+
+    /*
+     * Check preconditions.
+     */
+    if (!IEM_IS_INTEL_CPUID_FEATURE_PRESENT_EDX(X86_CPUID_FEATURE_EDX_MSR))
+        return iemRaiseUndefinedOpcode(pIemCpu);
+    if (pIemCpu->uCpl != 0)
+        return iemRaiseGeneralProtectionFault0(pIemCpu);
+
+    /*
+     * Do the job.
+     */
+    RTUINT64U uValue;
+    int rc = CPUMQueryGuestMsr(IEMCPU_TO_VMCPU(pIemCpu), pCtx->ecx, &uValue.u);
+    if (rc != VINF_SUCCESS)
+    {
+        AssertMsgReturn(rc == VERR_CPUM_RAISE_GP_0, ("%Rrc\n", rc), VERR_IPE_UNEXPECTED_STATUS);
+        return iemRaiseGeneralProtectionFault0(pIemCpu);
+    }
+
+    pCtx->rax = uValue.au32[0];
+    pCtx->rdx = uValue.au32[1];
 
     iemRegAddToRip(pIemCpu, cbInstr);
     return VINF_SUCCESS;
