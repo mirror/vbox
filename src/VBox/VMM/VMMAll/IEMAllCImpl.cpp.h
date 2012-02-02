@@ -39,7 +39,7 @@ DECLINLINE(VBOXSTRICTRC) iemHlpCheckPortIOPermission(PIEMCPU pIemCpu, PCCPUMCTX 
             ||  pCtx->eflags.Bits.u1VM) )
     {
         NOREF(u16Port); NOREF(cbOperand); /** @todo I/O port permission bitmap check */
-        AssertFailedReturn(VERR_NOT_IMPLEMENTED);
+        AssertFailedReturn(VERR_IEM_ASPECT_NOT_IMPLEMENTED);
     }
     return VINF_SUCCESS;
 }
@@ -920,7 +920,7 @@ IEM_CIMPL_DEF_3(iemCImpl_FarJmp, uint16_t, uSel, uint32_t, offSeg, IEMMODE, enmE
             case AMD64_SEL_TYPE_SYS_INT_GATE:
             case AMD64_SEL_TYPE_SYS_TRAP_GATE:
                 /* Call various functions to do the work. */
-                AssertFailedReturn(VERR_NOT_IMPLEMENTED);
+                AssertFailedReturn(VERR_IEM_ASPECT_NOT_IMPLEMENTED);
             default:
                 Log(("jmpf %04x:%08x -> wrong sys selector (64-bit): %d\n", uSel, offSeg, Desc.Legacy.Gen.u4Type));
                 return iemRaiseGeneralProtectionFaultBySelector(pIemCpu, uSel);
@@ -939,12 +939,12 @@ IEM_CIMPL_DEF_3(iemCImpl_FarJmp, uint16_t, uSel, uint32_t, offSeg, IEMMODE, enmE
         case X86_SEL_TYPE_SYS_386_INT_GATE:
         case X86_SEL_TYPE_SYS_386_TRAP_GATE:
             /* Call various functions to do the work. */
-            AssertFailedReturn(VERR_NOT_IMPLEMENTED);
+            AssertFailedReturn(VERR_IEM_ASPECT_NOT_IMPLEMENTED);
 
         case X86_SEL_TYPE_SYS_286_TSS_BUSY:
         case X86_SEL_TYPE_SYS_386_TSS_BUSY:
             /* Call various functions to do the work. */
-            AssertFailedReturn(VERR_NOT_IMPLEMENTED);
+            AssertFailedReturn(VERR_IEM_ASPECT_NOT_IMPLEMENTED);
 
         default:
             Log(("jmpf %04x:%08x -> wrong sys selector (32-bit): %d\n", uSel, offSeg, Desc.Legacy.Gen.u4Type));
@@ -1014,7 +1014,7 @@ IEM_CIMPL_DEF_3(iemCImpl_callf, uint16_t, uSel, uint64_t, offSeg, IEMMODE, enmOp
         return VINF_SUCCESS;
     }
 
-    AssertFailedReturn(VERR_NOT_IMPLEMENTED);
+    AssertFailedReturn(VERR_IEM_ASPECT_NOT_IMPLEMENTED);
 }
 
 
@@ -1078,7 +1078,7 @@ IEM_CIMPL_DEF_2(iemCImpl_retf, IEMMODE, enmEffOpSize, uint16_t, cbPop)
     }
 
     AssertFailed();
-    return VERR_NOT_IMPLEMENTED;
+    return VERR_IEM_ASPECT_NOT_IMPLEMENTED;
 }
 
 
@@ -1348,7 +1348,7 @@ IEM_CIMPL_DEF_1(iemCImpl_iret_prot, IEMMODE, enmEffOpSize)
      */
     if (pCtx->eflags.Bits.u1NT)
     {
-        AssertFailedReturn(VERR_NOT_IMPLEMENTED);
+        AssertFailedReturn(VERR_IEM_ASPECT_NOT_IMPLEMENTED);
     }
     /*
      * Normal return.
@@ -1395,7 +1395,7 @@ IEM_CIMPL_DEF_1(iemCImpl_iret_prot, IEMMODE, enmEffOpSize)
             && pIemCpu->uCpl == 0)
         {
             /* V8086 mode! */
-            AssertFailedReturn(VERR_NOT_IMPLEMENTED);
+            AssertFailedReturn(VERR_IEM_ASPECT_NOT_IMPLEMENTED);
         }
         else
         {
@@ -1653,7 +1653,7 @@ IEM_CIMPL_DEF_1(iemCImpl_iret_long, IEMMODE, enmEffOpSize)
     //uint64_t        uNewRsp;
 
     NOREF(pIemCpu); NOREF(cbInstr); NOREF(enmEffOpSize);
-    return VERR_NOT_IMPLEMENTED;
+    return VERR_IEM_ASPECT_NOT_IMPLEMENTED;
 }
 
 
@@ -2327,7 +2327,7 @@ IEM_CIMPL_DEF_2(iemCImpl_mov_Rd_Cd, uint8_t, iGReg, uint8_t, iCrReg)
         case 4: crX = pCtx->cr4; break;
         case 8:
             if (!IEM_VERIFICATION_ENABLED(pIemCpu))
-                AssertFailedReturn(VERR_NOT_IMPLEMENTED); /** @todo implement CR8 reading and writing. */
+                AssertFailedReturn(VERR_IEM_ASPECT_NOT_IMPLEMENTED); /** @todo implement CR8 reading and writing. */
             else
                 crX = 0xff;
             break;
@@ -2610,7 +2610,7 @@ IEM_CIMPL_DEF_2(iemCImpl_load_CrX, uint8_t, iCrReg, uint64_t, uNewCrX)
          */
         case 8:
             if (!IEM_VERIFICATION_ENABLED(pIemCpu))
-                AssertFailedReturn(VERR_NOT_IMPLEMENTED); /** @todo implement CR8 reading and writing. */
+                AssertFailedReturn(VERR_IEM_ASPECT_NOT_IMPLEMENTED); /** @todo implement CR8 reading and writing. */
             else
                 rcStrict = VINF_SUCCESS;
             break;
@@ -2984,7 +2984,7 @@ IEM_CIMPL_DEF_2(iemCImpl_out, uint16_t, u16Port, uint8_t, cbReg)
             ||  pCtx->eflags.Bits.u1VM) )
     {
         /** @todo I/O port permission bitmap check */
-        AssertFailedReturn(VERR_NOT_IMPLEMENTED);
+        AssertFailedReturn(VERR_IEM_ASPECT_NOT_IMPLEMENTED);
     }
 
     /*

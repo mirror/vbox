@@ -1885,7 +1885,7 @@ iemRaiseXcptOrIntInProtMode(PIEMCPU     pIemCpu,
         uint32_t cbLimitSS = X86DESC_LIMIT(DescSS.Legacy);
         if (DescSS.Legacy.Gen.u1Granularity)
             cbLimitSS = (cbLimitSS << PAGE_SHIFT) | PAGE_OFFSET_MASK;
-        AssertReturn(!(DescSS.Legacy.Gen.u4Type & X86_SEL_TYPE_DOWN), VERR_NOT_IMPLEMENTED);
+        AssertReturn(!(DescSS.Legacy.Gen.u4Type & X86_SEL_TYPE_DOWN), VERR_IEM_ASPECT_NOT_IMPLEMENTED);
 
         uint8_t const cbStackFrame = fFlags & IEM_XCPT_FLAGS_ERR ? 24 : 20;
         if (   uNewEsp - 1 > cbLimitSS
@@ -2031,7 +2031,7 @@ iemRaiseXcptOrIntInV8086Mode(PIEMCPU     pIemCpu,
 {
     NOREF(pIemCpu); NOREF(pCtx); NOREF(cbInstr); NOREF(u8Vector); NOREF(fFlags); NOREF(uErr); NOREF(uCr2);
     AssertMsgFailed(("V8086 exception / interrupt dispatching\n"));
-    return VERR_NOT_IMPLEMENTED;
+    return VERR_IEM_ASPECT_NOT_IMPLEMENTED;
 }
 
 
@@ -2059,7 +2059,7 @@ iemRaiseXcptOrIntInLongMode(PIEMCPU     pIemCpu,
 {
     NOREF(pIemCpu); NOREF(pCtx); NOREF(cbInstr); NOREF(u8Vector); NOREF(fFlags); NOREF(uErr); NOREF(uCr2);
     AssertMsgFailed(("long mode exception / interrupt dispatching\n"));
-    return VERR_NOT_IMPLEMENTED;
+    return VERR_IEM_ASPECT_NOT_IMPLEMENTED;
 }
 
 
@@ -2534,7 +2534,7 @@ static void iemOpStubMsg2(PIEMCPU pIemCpu)
         RTAssertMsg1(NULL, __LINE__, __FILE__, __FUNCTION__); \
         iemOpStubMsg2(pIemCpu); \
         RTAssertPanic(); \
-        return VERR_NOT_IMPLEMENTED; \
+        return VERR_IEM_INSTR_NOT_IMPLEMENTED; \
     } \
     typedef int ignore_semicolon
 
@@ -2546,7 +2546,7 @@ static void iemOpStubMsg2(PIEMCPU pIemCpu)
         iemOpStubMsg2(pIemCpu); \
         RTAssertPanic(); \
         NOREF(a_Name0); \
-        return VERR_NOT_IMPLEMENTED; \
+        return VERR_IEM_INSTR_NOT_IMPLEMENTED; \
     } \
     typedef int ignore_semicolon
 
@@ -3343,7 +3343,7 @@ static VBOXSTRICTRC iemMemApplySegment(PIEMCPU pIemCpu, uint32_t fAccess, uint8_
                 {
                     /** @todo implement expand down segments. */
                     AssertFailed(/** @todo implement this */);
-                    return VERR_NOT_IMPLEMENTED;
+                    return VERR_IEM_ASPECT_NOT_IMPLEMENTED;
                 }
             }
             else
