@@ -205,7 +205,7 @@ typedef struct KBDState {
     int32_t scan_enabled;
     int32_t translate;
     int32_t scancode_set;   /* 1=XT, 2=AT, 3=PS/2 */
-    xlat_state_t    xlat_state;
+    int32_t xlat_state;
     /* mouse state */
     int32_t mouse_write_cmd;
     uint8_t mouse_status;
