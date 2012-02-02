@@ -185,7 +185,7 @@ typedef struct PS2K
     /** Typematic repeat period in milliseconds. */
     unsigned            uTypematicRepeat;
 #if HC_ARCH_BITS == 32
-    uin32_t             Alignment0;
+    uint32_t            Alignment0;
 #endif
     /** Critical section protecting the state. */
     PDMCRITSECT         KbdCritSect;
