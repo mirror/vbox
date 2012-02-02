@@ -4102,49 +4102,45 @@ FNIEMOP_STUB(iemOp_shufps_Vps_Wps_Ib__shufdp_Vpd_Wpd_Ib);
 /** Opcode 0x0f 0xc7. */
 FNIEMOP_STUB(iemOp_Grp9);
 
-#if 0
+
 /**
  * Common 'bswap register' helper.
  */
-FNIEMOP_DEF_2(iemOpCommonBswapGReg, PCIEMOPUNARYSIZES, pImpl, uint8_t, iReg)
+FNIEMOP_DEF_1(iemOpCommonBswapGReg, uint8_t, iReg)
 {
     IEMOP_HLP_NO_LOCK_PREFIX();
     switch (pIemCpu->enmEffOpSize)
     {
         case IEMMODE_16BIT:
-            IEM_MC_BEGIN(2, 0);
-            IEM_MC_ARG(uint16_t *,  pu16Dst, 0);
-            IEM_MC_ARG(uint32_t *,  pEFlags, 1);
-            IEM_MC_REF_GREG_U16(pu16Dst, iReg);
-            IEM_MC_REF_EFLAGS(pEFlags);
-            IEM_MC_CALL_VOID_AIMPL_2(pImpl->pfnNormalU16, pu16Dst, pEFlags);
+            IEM_MC_BEGIN(1, 0);
+            IEM_MC_ARG(uint32_t *,  pu32Dst, 0);
+            IEM_MC_REF_GREG_U32(pu32Dst, iReg);     /* Don't clear the high dword! */
+            IEM_MC_CALL_VOID_AIMPL_1(iemAImpl_bswap_u16, pu32Dst);
             IEM_MC_ADVANCE_RIP();
             IEM_MC_END();
             return VINF_SUCCESS;
 
         case IEMMODE_32BIT:
-            IEM_MC_BEGIN(2, 0);
+            IEM_MC_BEGIN(1, 0);
             IEM_MC_ARG(uint32_t *,  pu32Dst, 0);
-            IEM_MC_ARG(uint32_t *,  pEFlags, 1);
             IEM_MC_REF_GREG_U32(pu32Dst, iReg);
-            IEM_MC_REF_EFLAGS(pEFlags);
-            IEM_MC_CALL_VOID_AIMPL_2(pImpl->pfnNormalU32, pu32Dst, pEFlags);
+            IEM_MC_CLEAR_HIGH_GREG_U64_BY_REF(pu32Dst);
+            IEM_MC_CALL_VOID_AIMPL_1(iemAImpl_bswap_u32, pu32Dst);
             IEM_MC_ADVANCE_RIP();
             IEM_MC_END();
             return VINF_SUCCESS;
 
         case IEMMODE_64BIT:
-            IEM_MC_BEGIN(2, 0);
+            IEM_MC_BEGIN(1, 0);
             IEM_MC_ARG(uint64_t *,  pu64Dst, 0);
-            IEM_MC_ARG(uint32_t *,  pEFlags, 1);
             IEM_MC_REF_GREG_U64(pu64Dst, iReg);
-            IEM_MC_REF_EFLAGS(pEFlags);
-            IEM_MC_CALL_VOID_AIMPL_2(pImpl->pfnNormalU64, pu64Dst, pEFlags);
+            IEM_MC_CALL_VOID_AIMPL_1(iemAImpl_bswap_u64, pu64Dst);
             IEM_MC_ADVANCE_RIP();
             IEM_MC_END();
             return VINF_SUCCESS;
+
+        IEM_NOT_REACHED_DEFAULT_CASE_RET();
     }
-    return VINF_SUCCESS;
 }
 
 
@@ -4152,27 +4148,66 @@ FNIEMOP_DEF_2(iemOpCommonBswapGReg, PCIEMOPUNARYSIZES, pImpl, uint8_t, iReg)
 FNIEMOP_DEF(iemOp_bswap_rAX_r8)
 {
     IEMOP_MNEMONIC("bswap rAX/r8");
-    return FNIEMOP_CALL_2(iemOpCommonUnaryGReg, &g_iemAImpl_inc, X86_GREG_xAX | pIemCpu->uRexReg);
+    return FNIEMOP_CALL_1(iemOpCommonBswapGReg, X86_GREG_xAX | pIemCpu->uRexReg);
 }
 
 
-#else
-FNIEMOP_STUB(iemOp_bswap_rAX_r8);
-#endif
 /** Opcode 0x0f 0xc9. */
-FNIEMOP_STUB(iemOp_bswap_rCX_r9);
+FNIEMOP_DEF(iemOp_bswap_rCX_r9)
+{
+    IEMOP_MNEMONIC("bswap rCX/r9");
+    return FNIEMOP_CALL_1(iemOpCommonBswapGReg, X86_GREG_xCX | pIemCpu->uRexReg);
+}
+
+
 /** Opcode 0x0f 0xca. */
-FNIEMOP_STUB(iemOp_bswap_rDX_r10);
+FNIEMOP_DEF(iemOp_bswap_rDX_r10)
+{
+    IEMOP_MNEMONIC("bswap rDX/r9");
+    return FNIEMOP_CALL_1(iemOpCommonBswapGReg, X86_GREG_xDX | pIemCpu->uRexReg);
+}
+
+
 /** Opcode 0x0f 0xcb. */
-FNIEMOP_STUB(iemOp_bswap_rBX_r11);
+FNIEMOP_DEF(iemOp_bswap_rBX_r11)
+{
+    IEMOP_MNEMONIC("bswap rBX/r9");
+    return FNIEMOP_CALL_1(iemOpCommonBswapGReg, X86_GREG_xBX | pIemCpu->uRexReg);
+}
+
+
 /** Opcode 0x0f 0xcc. */
-FNIEMOP_STUB(iemOp_bswap_rSP_r12);
+FNIEMOP_DEF(iemOp_bswap_rSP_r12)
+{
+    IEMOP_MNEMONIC("bswap rSP/r12");
+    return FNIEMOP_CALL_1(iemOpCommonBswapGReg, X86_GREG_xSP | pIemCpu->uRexReg);
+}
+
+
 /** Opcode 0x0f 0xcd. */
-FNIEMOP_STUB(iemOp_bswap_rBP_r13);
+FNIEMOP_DEF(iemOp_bswap_rBP_r13)
+{
+    IEMOP_MNEMONIC("bswap rBP/r13");
+    return FNIEMOP_CALL_1(iemOpCommonBswapGReg, X86_GREG_xBP | pIemCpu->uRexReg);
+}
+
+
 /** Opcode 0x0f 0xce. */
-FNIEMOP_STUB(iemOp_bswap_rSI_r14);
+FNIEMOP_DEF(iemOp_bswap_rSI_r14)
+{
+    IEMOP_MNEMONIC("bswap rSI/r14");
+    return FNIEMOP_CALL_1(iemOpCommonBswapGReg, X86_GREG_xSI | pIemCpu->uRexReg);
+}
+
+
 /** Opcode 0x0f 0xcf. */
-FNIEMOP_STUB(iemOp_bswap_rDI_r15);
+FNIEMOP_DEF(iemOp_bswap_rDI_r15)
+{
+    IEMOP_MNEMONIC("bswap rDI/r15");
+    return FNIEMOP_CALL_1(iemOpCommonBswapGReg, X86_GREG_xDI | pIemCpu->uRexReg);
+}
+
+
 
 /** Opcode 0x0f 0xd0. */
 FNIEMOP_STUB(iemOp_addsubpd_Vpd_Wpd__addsubps_Vps_Wps);
