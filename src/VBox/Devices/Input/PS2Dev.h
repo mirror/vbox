@@ -21,7 +21,7 @@
 #define PS2K_STRUCT_FILLER  768
 
 /* Hide the internal structure. */
-#ifndef IN_PS2K
+#if !(defined(IN_PS2K) || defined(VBOX_DEVICE_STRUCT_TESTCASE))
 typedef struct PS2K {
     uint8_t     abFiller[PS2K_STRUCT_FILLER];
 } PS2K;

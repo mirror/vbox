@@ -154,7 +154,7 @@ DEF_PS2Q_TYPE(GeneriQ, 1);
 typedef struct PS2K
 {
     /** Pointer to parent device (keyboard controller). */
-    void                *pParent;
+    R3PTRTYPE(void *)     pParent;
     /** Set if keyboard is enabled ('scans' for input). */
     bool                fScanning;
     /** Set NumLock is on. */
@@ -221,6 +221,8 @@ typedef struct PS2K
 } PS2K, *PPS2K;
 
 AssertCompile(PS2K_STRUCT_FILLER >= sizeof(PS2K));
+
+#ifndef VBOX_DEVICE_STRUCT_TESTCASE
 
 /* Key type flags. */
 #define KF_E0        0x01    /* E0 prefix. */
@@ -1479,3 +1481,5 @@ int32_t XlateAT2PC(int32_t state, uint8_t scanIn, uint8_t *pScanOut)
     *pScanOut = scan_out;
     return state;
 }
+
+#endif /* !VBOX_DEVICE_STRUCT_TESTCASE */

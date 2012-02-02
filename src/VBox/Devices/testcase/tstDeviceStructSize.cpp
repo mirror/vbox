@@ -34,6 +34,8 @@
 #include "../Graphics/DevVGA.cpp"
 #undef LOG_GROUP
 #include "../Input/DevPS2.cpp"
+#undef LOG_GROUP
+#include "../Input/PS2K.cpp"
 #ifdef VBOX_WITH_E1000
 # undef LOG_GROUP
 # include "../Network/DevE1000.cpp"
@@ -297,6 +299,7 @@ int main()
     CHECK_MEMBER_ALIGNMENT(IOAPICState, StatMMIOReadGC, 8);
 #endif
     CHECK_MEMBER_ALIGNMENT(KBDState, CritSect, 8);
+    CHECK_MEMBER_ALIGNMENT(PS2K, KbdCritSect, 8);
     CHECK_MEMBER_ALIGNMENT(LSILOGISCSI, ReplyPostQueueCritSect, 8);
     CHECK_MEMBER_ALIGNMENT(LSILOGISCSI, ReplyFreeQueueCritSect, 8);
 #ifdef VBOX_WITH_USB

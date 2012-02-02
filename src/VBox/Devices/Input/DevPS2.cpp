@@ -235,9 +235,13 @@ typedef struct KBDState {
     PDMCRITSECT                 CritSect;
 
     /** Keyboard state (implemented in separate PS2K module). */
+#ifdef VBOX_DEVICE_STRUCT_TESTCASE
+    uint8_t                     KbdFiller[PS2K_STRUCT_FILLER];
+#else
     PS2K                        Kbd;
+#endif
 
-#if 1 //OLD_KBD
+#if OLD_KBD
     /**
      * Keyboard port - LUN#0.
      *
