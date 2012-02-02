@@ -330,8 +330,8 @@ protected:
 
     void retranslateUi()
     {
-        setText(vboxGlobal().insertKeyToActionText(QApplication::translate("UIMessageCenter", "Network Access Manager..."), gMS->shortcut(UIMachineShortcuts::NetworkAccessManager)));
-        setStatusTip(QApplication::translate("UIMessageCenter", "Show Network Access Manager"));
+        setText(vboxGlobal().insertKeyToActionText(QApplication::translate("UIMessageCenter", "Network Operations Manager..."), gMS->shortcut(UIMachineShortcuts::NetworkAccessManager)));
+        setStatusTip(QApplication::translate("UIMessageCenter", "Show Network Operations Manager"));
     }
 };
 
