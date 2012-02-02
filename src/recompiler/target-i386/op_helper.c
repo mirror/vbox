@@ -5966,6 +5966,7 @@ static inline void helper_fstt_raw(CPU86_LDouble f, uint8_t *ptr)
     *(uint16_t *)(ptr +  8) = tmp.l.upper;
     *(uint16_t *)(ptr + 10) = 0;
     *(uint32_t *)(ptr + 12) = 0;
+    AssertCompile(sizeof(long double) > 8);
 #else
 # error "Busted FPU saving/restoring!"
     *(CPU86_LDouble *)ptr = f;
