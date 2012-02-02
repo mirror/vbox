@@ -624,7 +624,7 @@ FNIEMOP_DEF(iemOp_Grp6)
 FNIEMOP_DEF_1(iemOp_Grp7_sgdt, uint8_t, bRm)
 {
     NOREF(pIemCpu); NOREF(bRm);
-    AssertFailedReturn(VERR_NOT_IMPLEMENTED);
+    AssertFailedReturn(VERR_IEM_INSTR_NOT_IMPLEMENTED);
 }
 
 
@@ -664,7 +664,7 @@ FNIEMOP_DEF(iemOp_Grp7_vmxoff)
 FNIEMOP_DEF_1(iemOp_Grp7_sidt, uint8_t, bRm)
 {
     NOREF(pIemCpu); NOREF(bRm);
-    AssertFailedReturn(VERR_NOT_IMPLEMENTED);
+    AssertFailedReturn(VERR_IEM_INSTR_NOT_IMPLEMENTED);
 }
 
 
@@ -672,7 +672,7 @@ FNIEMOP_DEF_1(iemOp_Grp7_sidt, uint8_t, bRm)
 FNIEMOP_DEF(iemOp_Grp7_monitor)
 {
     NOREF(pIemCpu);
-    AssertFailedReturn(VERR_NOT_IMPLEMENTED);
+    AssertFailedReturn(VERR_IEM_INSTR_NOT_IMPLEMENTED);
 }
 
 
@@ -680,7 +680,7 @@ FNIEMOP_DEF(iemOp_Grp7_monitor)
 FNIEMOP_DEF(iemOp_Grp7_mwait)
 {
     NOREF(pIemCpu);
-    AssertFailedReturn(VERR_NOT_IMPLEMENTED);
+    AssertFailedReturn(VERR_IEM_INSTR_NOT_IMPLEMENTED);
 }
 
 
@@ -837,7 +837,7 @@ FNIEMOP_DEF_1(iemOp_Grp7_invlpg, uint8_t, bRm)
 FNIEMOP_DEF(iemOp_Grp7_swapgs)
 {
     NOREF(pIemCpu);
-    AssertFailedReturn(VERR_NOT_IMPLEMENTED);
+    AssertFailedReturn(VERR_IEM_INSTR_NOT_IMPLEMENTED);
 }
 
 
@@ -845,7 +845,7 @@ FNIEMOP_DEF(iemOp_Grp7_swapgs)
 FNIEMOP_DEF(iemOp_Grp7_rdtscp)
 {
     NOREF(pIemCpu);
-    AssertFailedReturn(VERR_NOT_IMPLEMENTED);
+    AssertFailedReturn(VERR_IEM_INSTR_NOT_IMPLEMENTED);
 }
 
 
@@ -7654,7 +7654,7 @@ FNIEMOP_DEF(iemOp_pop_Ev)
     return rcStrict;
 
 #else
-    return VERR_NOT_IMPLEMENTED;
+    return VERR_IEM_IPE_2;
 #endif
 }
 
@@ -10103,10 +10103,10 @@ FNIEMOP_DEF(iemOp_EscF3)
     {
         switch (bRm & 0xf8)
         {
-            case 0xc0: AssertFailedReturn(VERR_NOT_IMPLEMENTED); // fcmovnb
-            case 0xc8: AssertFailedReturn(VERR_NOT_IMPLEMENTED); // fcmovne
-            case 0xd0: AssertFailedReturn(VERR_NOT_IMPLEMENTED); // fcmovnbe
-            case 0xd8: AssertFailedReturn(VERR_NOT_IMPLEMENTED); // fcmovnu
+            case 0xc0: AssertFailedReturn(VERR_IEM_INSTR_NOT_IMPLEMENTED); // fcmovnb
+            case 0xc8: AssertFailedReturn(VERR_IEM_INSTR_NOT_IMPLEMENTED); // fcmovne
+            case 0xd0: AssertFailedReturn(VERR_IEM_INSTR_NOT_IMPLEMENTED); // fcmovnbe
+            case 0xd8: AssertFailedReturn(VERR_IEM_INSTR_NOT_IMPLEMENTED); // fcmovnu
             case 0xe0:
                 IEMOP_HLP_NO_LOCK_PREFIX();
                 switch (bRm)
@@ -10120,8 +10120,8 @@ FNIEMOP_DEF(iemOp_EscF3)
                     default:    return IEMOP_RAISE_INVALID_OPCODE();
                 }
                 break;
-            case 0xe8: AssertFailedReturn(VERR_NOT_IMPLEMENTED); // fucomi
-            case 0xf0: AssertFailedReturn(VERR_NOT_IMPLEMENTED); // fcomi
+            case 0xe8: AssertFailedReturn(VERR_IEM_INSTR_NOT_IMPLEMENTED); // fucomi
+            case 0xf0: AssertFailedReturn(VERR_IEM_INSTR_NOT_IMPLEMENTED); // fcomi
             case 0xf8: return IEMOP_RAISE_INVALID_OPCODE();
             IEM_NOT_REACHED_DEFAULT_CASE_RET();
         }
@@ -10159,8 +10159,8 @@ FNIEMOP_DEF(iemOp_EscF6)
     {
         switch (bRm & 0xf8)
         {
-            case 0xc0: AssertFailedReturn(VERR_NOT_IMPLEMENTED); // fiaddp
-            case 0xc8: AssertFailedReturn(VERR_NOT_IMPLEMENTED); // fimulp
+            case 0xc0: AssertFailedReturn(VERR_IEM_INSTR_NOT_IMPLEMENTED); // fiaddp
+            case 0xc8: AssertFailedReturn(VERR_IEM_INSTR_NOT_IMPLEMENTED); // fimulp
             case 0xd0: return IEMOP_RAISE_INVALID_OPCODE();
             case 0xd8:
                 switch (bRm)
@@ -10168,10 +10168,10 @@ FNIEMOP_DEF(iemOp_EscF6)
                     case 0xd9:  return FNIEMOP_CALL(iemOp_fcompp);
                     default:    return IEMOP_RAISE_INVALID_OPCODE();
                 }
-            case 0xe0: AssertFailedReturn(VERR_NOT_IMPLEMENTED); // fsubrp
-            case 0xe8: AssertFailedReturn(VERR_NOT_IMPLEMENTED); // fsubp
-            case 0xf0: AssertFailedReturn(VERR_NOT_IMPLEMENTED); // fdivrp
-            case 0xf8: AssertFailedReturn(VERR_NOT_IMPLEMENTED); // fdivp
+            case 0xe0: AssertFailedReturn(VERR_IEM_INSTR_NOT_IMPLEMENTED); // fsubrp
+            case 0xe8: AssertFailedReturn(VERR_IEM_INSTR_NOT_IMPLEMENTED); // fsubp
+            case 0xf0: AssertFailedReturn(VERR_IEM_INSTR_NOT_IMPLEMENTED); // fdivrp
+            case 0xf8: AssertFailedReturn(VERR_IEM_INSTR_NOT_IMPLEMENTED); // fdivp
             IEM_NOT_REACHED_DEFAULT_CASE_RET();
         }
     }
@@ -10191,7 +10191,7 @@ FNIEMOP_DEF(iemOp_EscF6)
             IEM_NOT_REACHED_DEFAULT_CASE_RET();
         }
 #endif
-        AssertFailedReturn(VERR_NOT_IMPLEMENTED);
+        AssertFailedReturn(VERR_IEM_INSTR_NOT_IMPLEMENTED);
     }
 }
 
@@ -10231,15 +10231,15 @@ FNIEMOP_DEF(iemOp_EscF7)
                     case 0xe0: return FNIEMOP_CALL(iemOp_fnstsw_ax);
                     default:   return IEMOP_RAISE_INVALID_OPCODE();
                 }
-            case 0xe8: AssertFailedReturn(VERR_NOT_IMPLEMENTED); // fucomip
-            case 0xf0: AssertFailedReturn(VERR_NOT_IMPLEMENTED); // fcomip
+            case 0xe8: AssertFailedReturn(VERR_IEM_INSTR_NOT_IMPLEMENTED); // fucomip
+            case 0xf0: AssertFailedReturn(VERR_IEM_INSTR_NOT_IMPLEMENTED); // fcomip
             case 0xf8: return IEMOP_RAISE_INVALID_OPCODE();
             IEM_NOT_REACHED_DEFAULT_CASE_RET();
         }
     }
     else
     {
-        AssertFailedReturn(VERR_NOT_IMPLEMENTED);
+        AssertFailedReturn(VERR_IEM_INSTR_NOT_IMPLEMENTED);
     }
 }
 
@@ -11455,7 +11455,7 @@ FNIEMOP_DEF_1(iemOp_Grp5_callf_Ep, uint8_t, bRm)
     {
         /** @todo How the heck does a 'callf eax' work? Probably just have to
          *        search the docs... */
-        AssertFailedReturn(VERR_NOT_IMPLEMENTED);
+        AssertFailedReturn(VERR_IEM_ASPECT_NOT_IMPLEMENTED);
     }
 
     /* Far pointer loaded from memory. */
@@ -11604,7 +11604,7 @@ FNIEMOP_DEF_1(iemOp_Grp5_jmpf_Ep, uint8_t, bRm)
     {
         /** @todo How the heck does a 'callf eax' work? Probably just have to
          *        search the docs... */
-        AssertFailedReturn(VERR_NOT_IMPLEMENTED);
+        AssertFailedReturn(VERR_IEM_ASPECT_NOT_IMPLEMENTED);
     }
 
     /* Far pointer loaded from memory. */
@@ -11703,8 +11703,9 @@ FNIEMOP_DEF_1(iemOp_Grp5_push_Ev, uint8_t, bRm)
             IEM_MC_ADVANCE_RIP();
             IEM_MC_END();
             return VINF_SUCCESS;
+
+        IEM_NOT_REACHED_DEFAULT_CASE_RET();
     }
-    AssertFailedReturn(VERR_NOT_IMPLEMENTED);
 }
 
 
