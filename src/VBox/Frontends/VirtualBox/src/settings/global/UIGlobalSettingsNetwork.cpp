@@ -251,7 +251,7 @@ void UIGlobalSettingsNetwork::loadToCacheFrom(QVariant &data)
     UISettingsPageGlobal::fetchData(data);
 
     /* Load to cache: */
-    const CHostNetworkInterfaceVector &interfaces = vboxGlobal().virtualBox().GetHost().GetNetworkInterfaces();
+    const CHostNetworkInterfaceVector &interfaces = vboxGlobal().host().GetNetworkInterfaces();
     for (int iNetworkIndex = 0; iNetworkIndex < interfaces.size(); ++iNetworkIndex)
     {
         const CHostNetworkInterface &iface = interfaces[iNetworkIndex];
@@ -304,7 +304,7 @@ void UIGlobalSettingsNetwork::saveFromCacheTo(QVariant &data)
 
     /* Prepare useful variables: */
     CVirtualBox vbox = vboxGlobal().virtualBox();
-    CHost host = vbox.GetHost();
+    CHost host = vboxGlobal().host();
 
     /* Update all the host-only interfaces: */
     for (int iNetworkIndex = 0; iNetworkIndex < m_cache.m_items.size(); ++iNetworkIndex)
@@ -410,7 +410,7 @@ void UIGlobalSettingsNetwork::sltAddInterface()
 {
     /* Prepare useful variables: */
     CVirtualBox vbox = vboxGlobal().virtualBox();
-    CHost host = vbox.GetHost();
+    CHost host = vboxGlobal().host();
 
     /* Create new host-only interface: */
     CHostNetworkInterface iface;
@@ -456,7 +456,7 @@ void UIGlobalSettingsNetwork::sltDelInterface()
 
     /* Prepare useful variables: */
     CVirtualBox vbox = vboxGlobal().virtualBox();
-    CHost host = vbox.GetHost();
+    CHost host = vboxGlobal().host();
 
     /* Find corresponding interface: */
     const CHostNetworkInterface &iface = host.FindHostNetworkInterfaceByName(strInterfaceName);

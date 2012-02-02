@@ -53,7 +53,7 @@ VBoxOSTypeSelectorWidget::VBoxOSTypeSelectorWidget (QWidget *aParent)
     mPxTypeIcon->setFixedSize (32, 32);
 
     /* Check if host supports (AMD-V or VT-x) and long mode */
-    CHost host = vboxGlobal().virtualBox().GetHost();
+    CHost host = vboxGlobal().host();
     m_fSupportsHWVirtEx = host.GetProcessorFeature(KProcessorFeature_HWVirtEx);
     m_fSupportsLongMode = host.GetProcessorFeature(KProcessorFeature_LongMode);
 
