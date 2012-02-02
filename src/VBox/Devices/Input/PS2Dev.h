@@ -48,7 +48,8 @@ PS2K *GetPS2KFromDevIns(PPDMDEVINS pDevIns);
 typedef enum {
     XS_IDLE,    /**< Starting state. */
     XS_BREAK,   /**< F0 break byte was received. */
-    XS_HIBIT    /**< Break code still active. */
+    XS_HIBIT,   /**< Break code still active. */
+    XS_32BIT_HACK = 0x7fffffff
 } xlat_state_t;
 
 xlat_state_t XlateAT2PC(xlat_state_t state, uint8_t scanIn, uint8_t *pScanOut);
