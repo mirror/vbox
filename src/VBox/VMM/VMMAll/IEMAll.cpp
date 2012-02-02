@@ -1880,7 +1880,8 @@ iemRaiseXcptOrIntInProtMode(PIEMCPU     pIemCpu,
 
         if (fFlags & IEM_XCPT_FLAGS_ERR)
             *uStackFrame.pu32++ = uErr;
-        uStackFrame.pu32[0] = pCtx->eip;
+        uStackFrame.pu32[0] = (fFlags & (IEM_XCPT_FLAGS_T_SOFT_INT | IEM_XCPT_FLAGS_BP_INSTR)) == IEM_XCPT_FLAGS_T_SOFT_INT
+                            ? pCtx->eip + cbInstr : pCtx->eip;
         uStackFrame.pu32[1] = (pCtx->cs & ~X86_SEL_RPL) | pIemCpu->uCpl;
         uStackFrame.pu32[2] = pCtx->eflags.u;
         uStackFrame.pu32[3] = pCtx->esp;
@@ -1934,7 +1935,8 @@ iemRaiseXcptOrIntInProtMode(PIEMCPU     pIemCpu,
 
         if (fFlags & IEM_XCPT_FLAGS_ERR)
             *uStackFrame.pu32++ = uErr;
-        uStackFrame.pu32[0] = pCtx->eip;
+        uStackFrame.pu32[0] = (fFlags & (IEM_XCPT_FLAGS_T_SOFT_INT | IEM_XCPT_FLAGS_BP_INSTR)) == IEM_XCPT_FLAGS_T_SOFT_INT
+                            ? pCtx->eip + cbInstr : pCtx->eip;
         uStackFrame.pu32[1] = (pCtx->cs & ~X86_SEL_RPL) | pIemCpu->uCpl;
         uStackFrame.pu32[2] = pCtx->eflags.u;
         rcStrict = iemMemCommitAndUnmap(pIemCpu, pvStackFrame, IEM_ACCESS_STACK_W); /* don't use the commit here */
@@ -4835,7 +4837,7 @@ static VBOXSTRICTRC iemMemMarkSelDescAccessed(PIEMCPU pIemCpu, uint16_t uSel)
         }
     }
 
-    return iemMemCommitAndUnmap(pIemCpu, (void *)pu32, IEM_ACCESS_DATA_RW);
+    return iemMemCommitAndUnmap(pIemCpu, (void *)pu32, IEM_ACCESS_SYS_RW);
 }
 
 /** @} */
