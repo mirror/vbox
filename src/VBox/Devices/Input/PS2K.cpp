@@ -1436,7 +1436,7 @@ static uint8_t aAT2PC[128] = {
  *
  * @return xlat_state_t New state of the translator.
  */
-xlat_state_t XlateAT2PC(xlat_state_t state, uint8_t scanIn, uint8_t *pScanOut)
+int32_t XlateAT2PC(int32_t state, uint8_t scanIn, uint8_t *pScanOut)
 {
     uint8_t     scan_in;
     uint8_t     scan_out;
