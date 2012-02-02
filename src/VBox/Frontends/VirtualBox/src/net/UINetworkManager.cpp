@@ -126,13 +126,13 @@ private slots:
         const QString &strTitle = m_pNetworkRequest->description();
 
         /* Set popup title (default if missed): */
-        setTitle(strTitle.isEmpty() ? UINetworkManager::tr("Network Request") : strTitle);
+        setTitle(strTitle.isEmpty() ? UINetworkManager::tr("Network Operation") : strTitle);
 
         /* Translate retry button: */
-        m_pRetryButton->setStatusTip(UINetworkManager::tr("Repeat network request..."));
+        m_pRetryButton->setStatusTip(UINetworkManager::tr("Restart network operation"));
 
         /* Translate cancel button: */
-        m_pCancelButton->setStatusTip(UINetworkManager::tr("Cancel network request..."));
+        m_pCancelButton->setStatusTip(UINetworkManager::tr("Cancel network operation"));
     }
 
     /* Updates current network-request progess: */
@@ -345,14 +345,14 @@ private:
     void retranslateUi()
     {
         /* Set window caption: */
-        setWindowTitle(UINetworkManager::tr("Network Access Manager"));
+        setWindowTitle(UINetworkManager::tr("Network Operations Manager"));
 
         /* Set description-label text: */
-        m_pLabel->setText(UINetworkManager::tr("There are no network activities currently..."));
+        m_pLabel->setText(UINetworkManager::tr("There are no active network operations."));
 
         /* Set buttons-box text: */
         m_pButtonBox->button(QDialogButtonBox::Cancel)->setText(UINetworkManager::tr("&Cancel All"));
-        m_pButtonBox->button(QDialogButtonBox::Cancel)->setStatusTip(UINetworkManager::tr("Cancel all current network requests..."));
+        m_pButtonBox->button(QDialogButtonBox::Cancel)->setStatusTip(UINetworkManager::tr("Cancel all active network operations"));
     }
 
     /* Overloaded show-event: */
