@@ -5001,11 +5001,12 @@ static VBOXSTRICTRC iemMemMarkSelDescAccessed(PIEMCPU pIemCpu, uint16_t uSel)
 #define IEM_MC_STORE_GREG_U32_CONST                     IEM_MC_STORE_GREG_U32
 #define IEM_MC_STORE_GREG_U64_CONST                     IEM_MC_STORE_GREG_U64
 #define IEM_MC_CLEAR_HIGH_GREG_U64(a_iGReg)             *(uint64_t *)iemGRegRef(pIemCpu, (a_iGReg)) &= UINT32_MAX
+#define IEM_MC_CLEAR_HIGH_GREG_U64_BY_REF(a_pu32Dst)    do { (a_pu32Dst)[1] = 0; } while (0)
 
 #define IEM_MC_REF_GREG_U8(a_pu8Dst, a_iGReg)           (a_pu8Dst) = iemGRegRefU8(pIemCpu, (a_iGReg))
 #define IEM_MC_REF_GREG_U16(a_pu16Dst, a_iGReg)         (a_pu16Dst) = (uint16_t *)iemGRegRef(pIemCpu, (a_iGReg))
-/** @todo User of IEM_MC_REF_GREG_U32 needs to clear the high bits on
- *        commit. */
+/** @todo User of IEM_MC_REF_GREG_U32 needs to clear the high bits on commit.
+ *        Use IEM_MC_CLEAR_HIGH_GREG_U64_BY_REF! */
 #define IEM_MC_REF_GREG_U32(a_pu32Dst, a_iGReg)         (a_pu32Dst) = (uint32_t *)iemGRegRef(pIemCpu, (a_iGReg))
 #define IEM_MC_REF_GREG_U64(a_pu64Dst, a_iGReg)         (a_pu64Dst) = (uint64_t *)iemGRegRef(pIemCpu, (a_iGReg))
 #define IEM_MC_REF_EFLAGS(a_pEFlags)                    (a_pEFlags) = &(pIemCpu)->CTX_SUFF(pCtx)->eflags.u
@@ -5238,6 +5239,7 @@ static VBOXSTRICTRC iemMemMarkSelDescAccessed(PIEMCPU pIemCpu, uint16_t uSel)
 #define IEM_MC_CALC_RM_EFF_ADDR(a_GCPtrEff, bRm) \
     IEM_MC_RETURN_ON_FAILURE(iemOpHlpCalcRmEffAddr(pIemCpu, (bRm), &(a_GCPtrEff)))
 
+#define IEM_MC_CALL_VOID_AIMPL_1(a_pfn, a0)               (a_pfn)((a0))
 #define IEM_MC_CALL_VOID_AIMPL_2(a_pfn, a0, a1)           (a_pfn)((a0), (a1))
 #define IEM_MC_CALL_VOID_AIMPL_3(a_pfn, a0, a1, a2)       (a_pfn)((a0), (a1), (a2))
 #define IEM_MC_CALL_VOID_AIMPL_4(a_pfn, a0, a1, a2, a3)   (a_pfn)((a0), (a1), (a2), (a3))
@@ -5999,7 +6001,7 @@ static VBOXSTRICTRC iemVerifyFakeIOPortRead(PIEMCPU pIemCpu, RTIOPORT Port, uint
         *pIemCpu->ppIemEvtRecNext = pEvtRec;
     }
     pIemCpu->cIOReads++;
-    *pu32Value = 0xffffffff;
+    *pu32Value = 0xcccccccc;
     return VINF_SUCCESS;
 }
 

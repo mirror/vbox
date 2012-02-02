@@ -670,6 +670,13 @@ FNIEMAIMPLMULDIVU64 iemAImpl_mul_u64, iemAImpl_imul_u64;
 FNIEMAIMPLMULDIVU64 iemAImpl_div_u64, iemAImpl_idiv_u64;
 /** @} */
 
+/** @name Byte Swap.
+ * @{  */
+IEM_DECL_IMPL_TYPE(void, iemAImpl_bswap_u16,(uint32_t *pu32Dst)); /* Yes, 32-bit register access. */
+IEM_DECL_IMPL_TYPE(void, iemAImpl_bswap_u32,(uint32_t *pu32Dst));
+IEM_DECL_IMPL_TYPE(void, iemAImpl_bswap_u64,(uint64_t *pu64Dst));
+/** @}  */
+
 
 /** @name Function tables.
  * @{
