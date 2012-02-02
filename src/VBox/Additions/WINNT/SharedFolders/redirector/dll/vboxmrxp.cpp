@@ -462,7 +462,7 @@ NPCancelConnection (LPWSTR lpName, BOOL fForce)
             Status = SendToMiniRdr(IOCTL_MRX_VBOX_GETCONN, LocalName, sizeof(LocalName), (PVOID)RemoteName, &CopyBytes);
             if (Status == WN_SUCCESS && CopyBytes > 0)
             {
-                RemoteName[CopyBytes] = L'\0';
+                RemoteName[CopyBytes / sizeof(WCHAR)] = L'\0';
 
                 if (lstrlen (DD_MRX_VBOX_FS_DEVICE_NAME_U) + 2 + lstrlen (LocalName) + lstrlen (RemoteName) + 1 > sizeof (ConnectionName) / sizeof (WCHAR))
                 {
