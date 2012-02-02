@@ -6372,7 +6372,8 @@ static void iemExecVerificationModeCheck(PIEMCPU pIemCpu)
         CHECK_FIELD(dr[2]);
         CHECK_FIELD(dr[3]);
         CHECK_FIELD(dr[6]);
-        CHECK_FIELD(dr[7]);
+        if ((pOrgCtx->dr[7] & ~X86_DR7_MB1_MASK) != (pDebugCtx->dr[7] & ~X86_DR7_MB1_MASK)) /* REM 'mov drX,greg' bug.*/
+            CHECK_FIELD(dr[7]);
         CHECK_FIELD(gdtr.cbGdt);
         CHECK_FIELD(gdtr.pGdt);
         CHECK_FIELD(idtr.cbIdt);
