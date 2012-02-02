@@ -651,11 +651,20 @@ static VBOXSTRICTRC iemInitDecoderAndPrefetchOpcodes(PIEMCPU pIemCpu)
     uint64_t    fFlags;
     int rc = PGMGstGetPage(IEMCPU_TO_VMCPU(pIemCpu), GCPtrPC, &fFlags, &GCPhys);
     if (RT_FAILURE(rc))
+    {
+        Log(("iemInitDecoderAndPrefetchOpcodes: %RGv - rc=%Rrc\n", GCPtrPC, rc));
         return iemRaisePageFault(pIemCpu, GCPtrPC, IEM_ACCESS_INSTRUCTION, rc);
-    if ((fFlags & X86_PTE_US) && pIemCpu->uCpl == 2)
+    }
+    if (!(fFlags & X86_PTE_US) && pIemCpu->uCpl == 3)
+    {
+        Log(("iemInitDecoderAndPrefetchOpcodes: %RGv - supervisor page\n", GCPtrPC));
         return iemRaisePageFault(pIemCpu, GCPtrPC, IEM_ACCESS_INSTRUCTION, VERR_ACCESS_DENIED);
+    }
     if ((fFlags & X86_PTE_PAE_NX) && (pCtx->msrEFER & MSR_K6_EFER_NXE))
+    {
+        Log(("iemInitDecoderAndPrefetchOpcodes: %RGv - NX\n", GCPtrPC));
         return iemRaisePageFault(pIemCpu, GCPtrPC, IEM_ACCESS_INSTRUCTION, VERR_ACCESS_DENIED);
+    }
     GCPhys |= GCPtrPC & PAGE_OFFSET_MASK;
     /** @todo Check reserved bits and such stuff. PGM is better at doing
      *        that, so do it when implementing the guest virtual address
@@ -693,7 +702,10 @@ static VBOXSTRICTRC iemInitDecoderAndPrefetchOpcodes(PIEMCPU pIemCpu)
     else
         rc = PGMPhysSimpleReadGCPhys(IEMCPU_TO_VM(pIemCpu), pIemCpu->abOpcode, GCPhys, cbToTryRead);
     if (rc != VINF_SUCCESS)
+    {
+        Log(("iemInitDecoderAndPrefetchOpcodes: %RGv - read error - rc=%Rrc\n", GCPtrPC, rc));
         return rc;
+    }
     pIemCpu->cbOpcode = cbToTryRead;
 
     return VINF_SUCCESS;
@@ -745,11 +757,20 @@ static VBOXSTRICTRC iemOpcodeFetchMoreBytes(PIEMCPU pIemCpu, size_t cbMin)
     uint64_t    fFlags;
     int rc = PGMGstGetPage(IEMCPU_TO_VMCPU(pIemCpu), GCPtrNext, &fFlags, &GCPhys);
     if (RT_FAILURE(rc))
+    {
+        Log(("iemOpcodeFetchMoreBytes: %RGv - rc=%Rrc\n", GCPtrNext, rc));
         return iemRaisePageFault(pIemCpu, GCPtrNext, IEM_ACCESS_INSTRUCTION, rc);
-    if ((fFlags & X86_PTE_US) && pIemCpu->uCpl == 2)
+    }
+    if (!(fFlags & X86_PTE_US) && pIemCpu->uCpl == 3)
+    {
+        Log(("iemOpcodeFetchMoreBytes: %RGv - supervisor page\n", GCPtrNext));
         return iemRaisePageFault(pIemCpu, GCPtrNext, IEM_ACCESS_INSTRUCTION, VERR_ACCESS_DENIED);
+    }
     if ((fFlags & X86_PTE_PAE_NX) && (pCtx->msrEFER & MSR_K6_EFER_NXE))
+    {
+        Log(("iemOpcodeFetchMoreBytes: %RGv - NX\n", GCPtrNext));
         return iemRaisePageFault(pIemCpu, GCPtrNext, IEM_ACCESS_INSTRUCTION, VERR_ACCESS_DENIED);
+    }
     GCPhys |= GCPtrNext & PAGE_OFFSET_MASK;
     //Log(("GCPtrNext=%RGv GCPhys=%RGp cbOpcodes=%#x\n",  GCPtrNext,  GCPhys,  pIemCpu->cbOpcode));
     /** @todo Check reserved bits and such stuff. PGM is better at doing
@@ -770,7 +791,10 @@ static VBOXSTRICTRC iemOpcodeFetchMoreBytes(PIEMCPU pIemCpu, size_t cbMin)
     else
         rc = PGMPhysSimpleReadGCPhys(IEMCPU_TO_VM(pIemCpu), &pIemCpu->abOpcode[pIemCpu->cbOpcode], GCPhys, cbToTryRead);
     if (rc != VINF_SUCCESS)
+    {
+        Log(("iemOpcodeFetchMoreBytes: %RGv - read error - rc=%Rrc\n", GCPtrNext, rc));
         return rc;
+    }
     pIemCpu->cbOpcode += cbToTryRead;
     //Log(("%.*Rhxs\n", pIemCpu->cbOpcode, pIemCpu->abOpcode));
 
@@ -1707,6 +1731,9 @@ iemRaiseXcptOrIntInProtMode(PIEMCPU     pIemCpu,
                                               pCtx->idtr.pIdt + UINT32_C(8) * u8Vector);
     if (RT_UNLIKELY(rcStrict != VINF_SUCCESS))
         return rcStrict;
+    Log4(("iemRaiseXcptOrIntInProtMode: vec=%#x P=%u DPL=%u DT=%u:%u A=%u %04x:%04x%04x\n",
+          u8Vector, Idte.Gate.u1Present, Idte.Gate.u2Dpl, Idte.Gate.u1DescType, Idte.Gate.u4Type,
+          Idte.Gate.u4ParmCount, Idte.Gate.u16Sel, Idte.Gate.u16OffsetHigh, Idte.Gate.u16OffsetLow));
 
     /*
      * Check the descriptor type, DPL and such.
@@ -1783,7 +1810,10 @@ iemRaiseXcptOrIntInProtMode(PIEMCPU     pIemCpu,
     IEMSELDESC DescCS;
     rcStrict = iemMemFetchSelDesc(pIemCpu, &DescCS, NewCS);
     if (rcStrict != VINF_SUCCESS)
+    {
+        Log(("RaiseXcptOrIntInProtMode %#x - CS=%#x - rc=%Rrc\n", u8Vector, NewCS, VBOXSTRICTRC_VAL(rcStrict)));
         return rcStrict;
+    }
 
     /* Must be a code segment. */
     if (!DescCS.Legacy.Gen.u1DescType)
@@ -2313,7 +2343,10 @@ DECL_NO_INLINE(static, VBOXSTRICTRC) iemRaisePageFault(PIEMCPU pIemCpu, RTGCPTR 
             && (pIemCpu->CTX_SUFF(pCtx)->msrEFER & MSR_K6_EFER_NXE) ) )
         uErr |= X86_TRAP_PF_ID;
 
-    if (fAccess & IEM_ACCESS_TYPE_WRITE)
+    /* Note! RW access callers reporting a WRITE protection fault, will clear
+             the READ flag before calling.  So, read-modify-write accesses (RW)
+             can safely be reported as READ faults. */
+    if ((fAccess & (IEM_ACCESS_TYPE_WRITE | IEM_ACCESS_TYPE_READ)) == IEM_ACCESS_TYPE_WRITE)
         uErr |= X86_TRAP_PF_RW;
 
     return iemRaiseXcptOrInt(pIemCpu, 0, X86_XCPT_PF, IEM_XCPT_FLAGS_T_CPU_XCPT | IEM_XCPT_FLAGS_ERR | IEM_XCPT_FLAGS_CR2,
@@ -3371,6 +3404,7 @@ static VBOXSTRICTRC iemMemPageTranslateAndCheckAccess(PIEMCPU pIemCpu, RTGCPTR G
     if (RT_FAILURE(rc))
     {
         /** @todo Check unassigned memory in unpaged mode. */
+        /** @todo Reserved bits in page tables. Requires new PGM interface. */
         *pGCPhysMem = NIL_RTGCPHYS;
         return iemRaisePageFault(pIemCpu, GCPtrMem, fAccess, rc);
     }
@@ -3387,7 +3421,7 @@ static VBOXSTRICTRC iemMemPageTranslateAndCheckAccess(PIEMCPU pIemCpu, RTGCPTR G
         {
             Log(("iemMemPageTranslateAndCheckAccess: GCPtrMem=%RGv - read-only page\n", GCPtrMem));
             *pGCPhysMem = NIL_RTGCPHYS;
-            return iemRaisePageFault(pIemCpu, GCPtrMem, fAccess, VERR_ACCESS_DENIED);
+            return iemRaisePageFault(pIemCpu, GCPtrMem, fAccess & ~IEM_ACCESS_TYPE_READ, VERR_ACCESS_DENIED);
         }
 
         /* Kernel memory accessed by userland? */
@@ -3407,7 +3441,8 @@ static VBOXSTRICTRC iemMemPageTranslateAndCheckAccess(PIEMCPU pIemCpu, RTGCPTR G
         {
             Log(("iemMemPageTranslateAndCheckAccess: GCPtrMem=%RGv - NX\n", GCPtrMem));
             *pGCPhysMem = NIL_RTGCPHYS;
-            return iemRaisePageFault(pIemCpu, GCPtrMem, fAccess, VERR_ACCESS_DENIED);
+            return iemRaisePageFault(pIemCpu, GCPtrMem, fAccess & ~(IEM_ACCESS_TYPE_READ | IEM_ACCESS_TYPE_WRITE),
+                                     VERR_ACCESS_DENIED);
         }
     }
 
@@ -3444,6 +3479,25 @@ static int iemMemPageMap(PIEMCPU pIemCpu, RTGCPHYS GCPhysMem, uint32_t fAccess, 
                                   GCPhysMem,
                                   RT_BOOL(fAccess & IEM_ACCESS_TYPE_WRITE),
                                   ppvMem);
+}
+
+
+/**
+ * Unmap a page previously mapped by iemMemPageMap.
+ *
+ * This is currently a dummy function.
+ *
+ * @param   pIemCpu             The IEM per CPU data.
+ * @param   GCPhysMem           The physical address.
+ * @param   fAccess             The intended access.
+ * @param   pvMem               What iemMemPageMap returned.
+ */
+DECLINLINE(void) iemMemPageUnmap(PIEMCPU pIemCpu, RTGCPHYS GCPhysMem, uint32_t fAccess, const void *pvMem)
+{
+    NOREF(pIemCpu);
+    NOREF(GCPhysMem);
+    NOREF(fAccess);
+    NOREF(pvMem);
 }
 
 
@@ -6507,7 +6561,12 @@ VMMDECL(VBOXSTRICTRC) IEMExecOne(PVMCPU pVCpu)
      */
     VBOXSTRICTRC rcStrict = iemInitDecoderAndPrefetchOpcodes(pIemCpu);
     if (rcStrict != VINF_SUCCESS)
+    {
+#if defined(IEM_VERIFICATION_MODE) && defined(IN_RING3)
+        iemExecVerificationModeCheck(pIemCpu);
+#endif
         return rcStrict;
+    }
 
     uint8_t b; IEM_OPCODE_GET_NEXT_U8(&b);
     rcStrict = FNIEMOP_CALL(g_apfnOneByteMap[b]);
@@ -6534,10 +6593,10 @@ VMMDECL(VBOXSTRICTRC) IEMExecOne(PVMCPU pVCpu)
         EMSetInhibitInterruptsPC(pVCpu, UINT64_C(0x7777555533331111));
     }
 
+#if defined(IEM_VERIFICATION_MODE) && defined(IN_RING3)
     /*
      * Assert some sanity.
      */
-#if defined(IEM_VERIFICATION_MODE) && defined(IN_RING3)
     iemExecVerificationModeCheck(pIemCpu);
 #endif
     return rcStrict;

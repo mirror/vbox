@@ -2854,6 +2854,31 @@ IEM_CIMPL_DEF_2(iemCImpl_mov_Dd_Rd, uint8_t, iDrReg, uint8_t, iGReg)
 
 
 /**
+ * Implements 'INVLPG m'.
+ *
+ * @param   GCPtrPage       The effective address of the page to invalidate.
+ * @remarks Updates the RIP.
+ */
+IEM_CIMPL_DEF_1(iemCImpl_invlpg, uint8_t, GCPtrPage)
+{
+    /* ring-0 only. */
+    if (pIemCpu->uCpl != 0)
+        return iemRaiseGeneralProtectionFault0(pIemCpu);
+    Assert(!pIemCpu->CTX_SUFF(pCtx)->eflags.Bits.u1VM);
+
+    int rc = PGMInvalidatePage(IEMCPU_TO_VMCPU(pIemCpu), GCPtrPage);
+    iemRegAddToRip(pIemCpu, cbInstr);
+
+    if (   rc == VINF_SUCCESS
+        || rc == VINF_PGM_SYNC_CR3)
+        return VINF_SUCCESS;
+    Log(("PGMInvalidatePage(%RGv) -> %Rrc\n", rc));
+    return rc;
+}
+
+
+
+/**
  * Implements RDTSC.
  */
 IEM_CIMPL_DEF_0(iemCImpl_rdtsc)
