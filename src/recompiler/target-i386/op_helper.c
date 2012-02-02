@@ -5946,12 +5946,30 @@ int get_ss_esp_from_tss_raw(CPUX86State *env1, uint32_t *ss_ptr,
 
 static inline CPU86_LDouble helper_fldt_raw(uint8_t *ptr)
 {
+#ifdef USE_X86LDOUBLE
+    CPU86_LDoubleU tmp;
+    tmp.l.lower = *(uint64_t const *)ptr;
+    tmp.l.upper = *(uint16_t const *)(ptr + 8);
+    return tmp.d;
+#else
+# error "Busted FPU saving/restoring!"
     return *(CPU86_LDouble *)ptr;
+#endif
 }
 
 static inline void helper_fstt_raw(CPU86_LDouble f, uint8_t *ptr)
 {
+#ifdef USE_X86LDOUBLE
+    CPU86_LDoubleU tmp;
+    tmp.d = f;
+    *(uint64_t *)(ptr +  0) = tmp.l.lower;
+    *(uint16_t *)(ptr +  8) = tmp.l.upper;
+    *(uint16_t *)(ptr + 10) = 0;
+    *(uint32_t *)(ptr + 12) = 0;
+#else
+# error "Busted FPU saving/restoring!"
     *(CPU86_LDouble *)ptr = f;
+#endif
 }
 
 #undef stw
