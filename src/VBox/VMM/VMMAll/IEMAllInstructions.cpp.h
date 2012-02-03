@@ -3265,58 +3265,7 @@ FNIEMOP_DEF(iemOp_shrd_Ev_Gv_CL)
 
 
 /** Opcode 0x0f 0xae. */
-FNIEMOP_DEF(iemOp_Grp15)
-{
-    uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
-    IEMOP_HLP_NO_LOCK_PREFIX(); /** @todo should probably not be raised until we've fetched all the opcode bytes? */
-    if ((bRm & X86_MODRM_MOD_MASK) != (3 << X86_MODRM_MOD_SHIFT))
-    {
-        ////
-    }
-    else
-    {
-
-        if (pIemCpu->offOpcode == 2 || )
-        {
-        }
-        pIemCpu->
-        switch (pIemCpu->fPrefixes & (IEM_OP_PRF_REPZ | IEM_OP_PRF_REPNZ | IEM_OP_PRF_SIZE_OP))
-        {
-            case IEM_OP_PRF_SIZE_OP:
-
-
-            case IEM_OP_PRF_REPZ:
-        }
-    }
-
-
-
-    if ((bRm & X86_MODRM_REG_MASK) != (0 << X86_MODRM_REG_SHIFT)) /* only mov Eb,Ib in this group. */
-        return IEMOP_RAISE_INVALID_LOCK_PREFIX();
-    IEMOP_MNEMONIC("mov Eb,Ib");
-
-    if ((bRm & X86_MODRM_MOD_MASK) == (3 << X86_MODRM_MOD_SHIFT))
-    {
-        /* register access */
-        uint8_t u8Imm; IEM_OPCODE_GET_NEXT_U8(&u8Imm);
-        IEM_MC_BEGIN(0, 0);
-        IEM_MC_STORE_GREG_U8((bRm & X86_MODRM_RM_MASK) | pIemCpu->uRexB, u8Imm);
-        IEM_MC_ADVANCE_RIP();
-        IEM_MC_END();
-    }
-    else
-    {
-        /* memory access. */
-        IEM_MC_BEGIN(0, 1);
-        IEM_MC_LOCAL(RTGCPTR, GCPtrEffDst);
-        IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffDst, bRm);
-        uint8_t u8Imm; IEM_OPCODE_GET_NEXT_U8(&u8Imm);
-        IEM_MC_STORE_MEM_U8(pIemCpu->iEffSeg, GCPtrEffDst, u8Imm);
-        IEM_MC_ADVANCE_RIP();
-        IEM_MC_END();
-    }
-    return VINF_SUCCESS;
-}
+FNIEMOP_STUB(iemOp_Grp15); /** @todo next up: fxrstor */
 
 
 /** Opcode 0x0f 0xaf. */
