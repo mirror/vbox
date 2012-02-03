@@ -361,7 +361,10 @@ RTDECL(int) RTFileAioCtxSubmit(RTFILEAIOCTX hAioCtx, PRTFILEAIOREQ pahReqs, size
                                    &pReqInt->Overlapped);
         }
         else
+        {
+            fSucceeded = false;
             AssertMsgFailed(("Invalid transfer direction\n"));
+        }
 
         if (RT_UNLIKELY(!fSucceeded && GetLastError() != ERROR_IO_PENDING))
         {
