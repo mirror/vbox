@@ -42,7 +42,7 @@
 # endif
 #endif
 
-#include <VBox/VBoxHDD.h>
+#include <VBox/vd.h>
 #include <VBox/log.h>
 #include <VBox/err.h>
 #include <iprt/critsect.h>
@@ -519,7 +519,8 @@ static int vboxfuseFlatImageCreate(const char *pszPath, const char *pszImage, PV
      * Try open the image file (without holding any locks).
      */
     char *pszFormat;
-    rc = VDGetFormat(NULL /* pVDIIfsDisk */, pszImage, &pszFormat);
+    VDTYPE enmType;
+    rc = VDGetFormat(NULL /* pVDIIfsDisk */, NULL /* pVDIIfsImage*/, pszImage, &pszFormat, &enmType);
     if (RT_FAILURE(rc))
     {
         LogRel(("VDGetFormat(%s,) failed, rc=%Rrc\n", pszImage, rc));
@@ -527,7 +528,7 @@ static int vboxfuseFlatImageCreate(const char *pszPath, const char *pszImage, PV
     }
 
     PVBOXHDD pDisk = NULL;
-    rc = VDCreate(NULL /* pVDIIfsDisk */, &pDisk);
+    rc = VDCreate(NULL /* pVDIIfsDisk */, enmType, &pDisk);
     if (RT_SUCCESS(rc))
     {
         rc = VDOpen(pDisk, pszFormat, pszImage, 0, NULL /* pVDIfsImage */);
