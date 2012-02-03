@@ -390,7 +390,7 @@ static xmlNodePtr rtS3FindNode(xmlNodePtr pNode, const char *pszName)
 
 static int rtS3ReadXmlFromMemory(PRTS3TMPMEMCHUNK pChunk, const char* pszRootElement, xmlDocPtr *ppDoc, xmlNodePtr *ppCur)
 {
-    *ppDoc = xmlReadMemory(pChunk->pszMem, (int)pChunk->cSize, "", "ISO-8859-1", XML_PARSE_NOBLANKS);
+    *ppDoc = xmlReadMemory(pChunk->pszMem, (int)pChunk->cSize, "", "ISO-8859-1", XML_PARSE_NOBLANKS | XML_PARSE_NONET);
     if (*ppDoc == NULL)
         return VERR_PARSE_ERROR;
 
