@@ -763,7 +763,7 @@ void UIDetailsBlock::sltUpdateSystem()
 #endif /* VBOX_WITH_FULL_DETAILS_REPORT */
 
                 QStringList accel;
-                if (m_vbox.GetHost().GetProcessorFeature(KProcessorFeature_HWVirtEx))
+                if (m_host.GetProcessorFeature(KProcessorFeature_HWVirtEx))
                 {
                     /* VT-x/AMD-V: */
                     if (m_machine.GetHWVirtExProperty(KHWVirtExPropertyType_Enabled))
