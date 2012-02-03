@@ -66,6 +66,7 @@ RT_C_DECLS_END
 *******************************************************************************/
 DECLASM(int32_t) x861_Test1(void);
 DECLASM(int32_t) x861_Test2(void);
+DECLASM(int32_t) x861_Test3(void);
 
 
 
@@ -158,6 +159,7 @@ static void sigHandler(int iSig, siginfo_t *pSigInfo, void *pvSigCtx)
 
 #endif
 
+
 int main()
 {
     /*
@@ -197,15 +199,23 @@ int main()
         /*
          * Do the testing.
          */
-        RTTestSub(hTest, "part 1");
-        int32_t rc = x861_Test1();
+        int32_t rc;
+#if 1
+        RTTestSub(hTest, "Misc 1");
+        rc = x861_Test1();
         if (rc != 0)
             RTTestFailed(hTest, "x861_Test1 -> %d", rc);
 
-        RTTestSub(hTest, "part 2");
+        RTTestSub(hTest, "Prefixes and groups");
         rc = x861_Test2();
         if (rc != 0)
             RTTestFailed(hTest, "x861_Test2 -> %d", rc);
+
+#endif
+        RTTestSub(hTest, "fxsave / fxrstor and #PFs");
+        rc = x861_Test3();
+        if (rc != 0)
+            RTTestFailed(hTest, "x861_Test3 -> %d", rc);
     }
 
     return RTTestSummaryAndDestroy(hTest);

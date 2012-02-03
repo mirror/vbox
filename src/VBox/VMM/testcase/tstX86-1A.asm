@@ -53,9 +53,11 @@ GLOBALNAME g_aTrapInfo
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;   Defined Constants And Macros                                              ;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-%define X86_XCPT_UD 6
-%define X86_XCPT_GP 13
-%define X86_XCPT_PF 14
+%define X86_XCPT_UD     6
+%define X86_XCPT_GP     13
+%define X86_XCPT_PF     14
+
+%define PAGE_SIZE       0x1000
 
 ;; Reference a global variable
 %ifdef RT_ARCH_AMD64
@@ -74,7 +76,7 @@ GLOBALNAME g_aTrapInfo
         %2
 %%trap_end:
         mov     eax, __LINE__
-        jmp     .failed
+        jmp     .return
 BEGINDATA
 %%trapinfo: istruc TRAPINFO
         at TRAPINFO.uTrapPC,    RTCCPTR_DEF     %%trap
@@ -929,10 +931,6 @@ BEGINPROC   x861_Test2
 .return:
         SAVE_ALL_EPILOGUE
         ret
-.failed2:
-        mov     eax, -1
-.failed:
-        jmp     .return
 
 .check_xmm0_zero_and_mm0_nz:
         sub     xSP, 20h
@@ -1003,6 +1001,153 @@ BEGINPROC   x861_Test2
 
 
 ENDPROC     x861_Test2
+
+
+;;
+; Tests how much fxsave and fxrstor actually accesses of their 512 memory
+; operand.
+;
+BEGINPROC   x861_Test3
+        SAVE_ALL_PROLOGUE
+
+        call    x861_LoadUniqueRegValuesSSE
+        mov     xDI, REF_GLOBAL(g_pbEfExecPage)
+
+        ; Check testcase preconditions.
+        fxsave  [xDI]
+        fxrstor [xDI]
+
+        add     xDI, PAGE_SIZE - 512
+        mov     xSI, xDI
+        fxsave  [xDI]
+        fxrstor [xDI]
+
+        ; 464:511 are available to software use.  Check that they are left
+        ; untouched by fxsave.
+        mov     eax, 0aabbccddh
+        mov     ecx, 512 / 4
+        cld
+        rep stosd
+        mov     xDI, xSI
+        fxsave  [xDI]
+
+        mov     ebx, 512
+.chech_software_area_loop:
+        cmp     [xDI + xBX - 4], eax
+        jne     .chech_software_area_done
+        sub     ebx, 4
+        jmp     .chech_software_area_loop
+.chech_software_area_done:
+        cmp     ebx, 464
+        mov     eax, __LINE__
+        ja      .return
+
+        ; Check that a save + restore + save cycle yield the same results.
+        mov     xBX, REF_GLOBAL(g_pbEfExecPage)
+        mov     xDI, xBX
+        mov     eax, 066778899h
+        mov     ecx, 512 * 2 / 4
+        cld
+        rep stosd
+        fxsave  [xBX]
+
+        call    x861_ClearRegistersSSE
+        mov     xBX, REF_GLOBAL(g_pbEfExecPage)
+        fxrstor [xBX]
+
+        fxsave  [xBX + 512]
+        mov     xSI, xBX
+        lea     xDI, [xBX + 512]
+        mov     ecx, 512
+        cld
+        repe cmpsb
+        mov     eax, __LINE__
+        jnz     .return
+
+
+        ; 464:511 are available to software use.  Let see how carefully access
+        ; to the full 512 bytes are checked...
+        call    x861_LoadUniqueRegValuesSSE
+        mov     xDI, REF_GLOBAL(g_pbEfExecPage)
+        add     xDI, PAGE_SIZE - 512
+        ShouldTrap X86_XCPT_PF, fxsave  [xDI + 16]
+        ShouldTrap X86_XCPT_PF, fxsave  [xDI + 32]
+        ShouldTrap X86_XCPT_PF, fxsave  [xDI + 48]
+        ShouldTrap X86_XCPT_PF, fxsave  [xDI + 64]
+        ShouldTrap X86_XCPT_PF, fxsave  [xDI + 80]
+        ShouldTrap X86_XCPT_PF, fxsave  [xDI + 96]
+        ShouldTrap X86_XCPT_PF, fxsave  [xDI + 128]
+        ShouldTrap X86_XCPT_PF, fxsave  [xDI + 144]
+        ShouldTrap X86_XCPT_PF, fxsave  [xDI + 160]
+        ShouldTrap X86_XCPT_PF, fxsave  [xDI + 176]
+        ShouldTrap X86_XCPT_PF, fxsave  [xDI + 192]
+        ShouldTrap X86_XCPT_PF, fxsave  [xDI + 208]
+        ShouldTrap X86_XCPT_PF, fxsave  [xDI + 224]
+        ShouldTrap X86_XCPT_PF, fxsave  [xDI + 240]
+        ShouldTrap X86_XCPT_PF, fxsave  [xDI + 256]
+        ShouldTrap X86_XCPT_PF, fxsave  [xDI + 384]
+        ShouldTrap X86_XCPT_PF, fxsave  [xDI + 432]
+        ShouldTrap X86_XCPT_PF, fxsave  [xDI + 496]
+
+        ShouldTrap X86_XCPT_PF, fxrstor [xDI + 16]
+        ShouldTrap X86_XCPT_PF, fxrstor [xDI + 32]
+        ShouldTrap X86_XCPT_PF, fxrstor [xDI + 48]
+        ShouldTrap X86_XCPT_PF, fxrstor [xDI + 64]
+        ShouldTrap X86_XCPT_PF, fxrstor [xDI + 80]
+        ShouldTrap X86_XCPT_PF, fxrstor [xDI + 96]
+        ShouldTrap X86_XCPT_PF, fxrstor [xDI + 128]
+        ShouldTrap X86_XCPT_PF, fxrstor [xDI + 144]
+        ShouldTrap X86_XCPT_PF, fxrstor [xDI + 160]
+        ShouldTrap X86_XCPT_PF, fxrstor [xDI + 176]
+        ShouldTrap X86_XCPT_PF, fxrstor [xDI + 192]
+        ShouldTrap X86_XCPT_PF, fxrstor [xDI + 208]
+        ShouldTrap X86_XCPT_PF, fxrstor [xDI + 224]
+        ShouldTrap X86_XCPT_PF, fxrstor [xDI + 240]
+        ShouldTrap X86_XCPT_PF, fxrstor [xDI + 256]
+        ShouldTrap X86_XCPT_PF, fxrstor [xDI + 384]
+        ShouldTrap X86_XCPT_PF, fxrstor [xDI + 432]
+        ShouldTrap X86_XCPT_PF, fxrstor [xDI + 496]
+
+        ; Unaligned accesses will cause #GP(0). This takes precedence over #PF.
+        ShouldTrap X86_XCPT_GP, fxsave  [xDI + 1]
+        ShouldTrap X86_XCPT_GP, fxsave  [xDI + 2]
+        ShouldTrap X86_XCPT_GP, fxsave  [xDI + 3]
+        ShouldTrap X86_XCPT_GP, fxsave  [xDI + 4]
+        ShouldTrap X86_XCPT_GP, fxsave  [xDI + 5]
+        ShouldTrap X86_XCPT_GP, fxsave  [xDI + 6]
+        ShouldTrap X86_XCPT_GP, fxsave  [xDI + 7]
+        ShouldTrap X86_XCPT_GP, fxsave  [xDI + 8]
+        ShouldTrap X86_XCPT_GP, fxsave  [xDI + 9]
+        ShouldTrap X86_XCPT_GP, fxsave  [xDI + 10]
+        ShouldTrap X86_XCPT_GP, fxsave  [xDI + 11]
+        ShouldTrap X86_XCPT_GP, fxsave  [xDI + 12]
+        ShouldTrap X86_XCPT_GP, fxsave  [xDI + 13]
+        ShouldTrap X86_XCPT_GP, fxsave  [xDI + 14]
+        ShouldTrap X86_XCPT_GP, fxsave  [xDI + 15]
+
+        ShouldTrap X86_XCPT_GP, fxrstor [xDI + 1]
+        ShouldTrap X86_XCPT_GP, fxrstor [xDI + 2]
+        ShouldTrap X86_XCPT_GP, fxrstor [xDI + 3]
+        ShouldTrap X86_XCPT_GP, fxrstor [xDI + 4]
+        ShouldTrap X86_XCPT_GP, fxrstor [xDI + 5]
+        ShouldTrap X86_XCPT_GP, fxrstor [xDI + 6]
+        ShouldTrap X86_XCPT_GP, fxrstor [xDI + 7]
+        ShouldTrap X86_XCPT_GP, fxrstor [xDI + 8]
+        ShouldTrap X86_XCPT_GP, fxrstor [xDI + 9]
+        ShouldTrap X86_XCPT_GP, fxrstor [xDI + 10]
+        ShouldTrap X86_XCPT_GP, fxrstor [xDI + 11]
+        ShouldTrap X86_XCPT_GP, fxrstor [xDI + 12]
+        ShouldTrap X86_XCPT_GP, fxrstor [xDI + 13]
+        ShouldTrap X86_XCPT_GP, fxrstor [xDI + 14]
+        ShouldTrap X86_XCPT_GP, fxrstor [xDI + 15]
+
+
+.success:
+        xor     eax, eax
+.return:
+        SAVE_ALL_EPILOGUE
+        ret
+ENDPROC     x861_Test3
 
 
 ;;

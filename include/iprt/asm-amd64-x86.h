@@ -474,7 +474,7 @@ DECLINLINE(void) ASMCpuId(uint32_t uOperator, void *pvEAX, void *pvEBX, void *pv
                             "=b" (uRBX),
                             "=c" (uRCX),
                             "=d" (uRDX)
-             : "0" (uOperator));
+             : "0" (uOperator), "2" (0));
     *(uint32_t *)pvEAX = (uint32_t)uRAX;
     *(uint32_t *)pvEBX = (uint32_t)uRBX;
     *(uint32_t *)pvECX = (uint32_t)uRCX;
@@ -487,7 +487,7 @@ DECLINLINE(void) ASMCpuId(uint32_t uOperator, void *pvEAX, void *pvEBX, void *pv
                            "=r" (*(uint32_t *)pvEBX),
                            "=c" (*(uint32_t *)pvECX),
                            "=d" (*(uint32_t *)pvEDX)
-                         : "0" (uOperator));
+                         : "0" (uOperator), "2" (0));
 #  endif
 
 # elif RT_INLINE_ASM_USES_INTRIN
