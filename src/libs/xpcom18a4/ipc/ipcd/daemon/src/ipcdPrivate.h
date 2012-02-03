@@ -44,7 +44,7 @@ class ipcClient;
 // upper limit on the number of active connections
 // XXX may want to make this more dynamic
 //
-#define IPC_MAX_CLIENTS 1500
+#define IPC_MAX_CLIENTS 10000
 
 //
 // array of connected clients
