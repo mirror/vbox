@@ -332,26 +332,26 @@ typedef IEMCPU *PIEMCPU;
 
 /** @name Prefix constants (IEMCPU::fPrefixes)
  * @{ */
-#define IEM_OP_PRF_SEG_CS               RT_BIT_32(0)
-#define IEM_OP_PRF_SEG_SS               RT_BIT_32(1)
-#define IEM_OP_PRF_SEG_DS               RT_BIT_32(2)
-#define IEM_OP_PRF_SEG_ES               RT_BIT_32(3)
-#define IEM_OP_PRF_SEG_FS               RT_BIT_32(4)
-#define IEM_OP_PRF_SEG_GS               RT_BIT_32(5)
+#define IEM_OP_PRF_SEG_CS               RT_BIT_32(0)  /**< CS segment prefix (0x2e). */
+#define IEM_OP_PRF_SEG_SS               RT_BIT_32(1)  /**< SS segment prefix (0x36). */
+#define IEM_OP_PRF_SEG_DS               RT_BIT_32(2)  /**< DS segment prefix (0x3e). */
+#define IEM_OP_PRF_SEG_ES               RT_BIT_32(3)  /**< ES segment prefix (0x26). */
+#define IEM_OP_PRF_SEG_FS               RT_BIT_32(4)  /**< FS segment prefix (0x64). */
+#define IEM_OP_PRF_SEG_GS               RT_BIT_32(5)  /**< GS segment prefix (0x65). */
 #define IEM_OP_PRF_SEG_MASK             UINT32_C(0x3f)
 
-#define IEM_OP_PRF_SIZE_OP              RT_BIT_32(8)
-#define IEM_OP_PRF_SIZE_REX_W           RT_BIT_32(9)
-#define IEM_OP_PRF_SIZE_ADDR            RT_BIT_32(10)
+#define IEM_OP_PRF_SIZE_OP              RT_BIT_32(8)  /**< Operand size prefix (0x66). */
+#define IEM_OP_PRF_SIZE_REX_W           RT_BIT_32(9)  /**< REX.W prefix (0x48-0x4f). */
+#define IEM_OP_PRF_SIZE_ADDR            RT_BIT_32(10) /**< Address size prefix (0x67). */
 
-#define IEM_OP_PRF_LOCK                 RT_BIT_32(16)
-#define IEM_OP_PRF_REPNZ                RT_BIT_32(17)
-#define IEM_OP_PRF_REPZ                 RT_BIT_32(18)
+#define IEM_OP_PRF_LOCK                 RT_BIT_32(16) /**< Lock prefix (0xf0). */
+#define IEM_OP_PRF_REPNZ                RT_BIT_32(17) /**< Repeat-not-zero prefix (0xf2). */
+#define IEM_OP_PRF_REPZ                 RT_BIT_32(18) /**< Repeat-if-zero prefix (0xf3). */
 
-#define IEM_OP_PRF_REX                  RT_BIT_32(24)
-#define IEM_OP_PRF_REX_R                RT_BIT_32(25)
-#define IEM_OP_PRF_REX_B                RT_BIT_32(26)
-#define IEM_OP_PRF_REX_X                RT_BIT_32(27)
+#define IEM_OP_PRF_REX                  RT_BIT_32(24) /**< Any REX prefix (0x40-0x4f). */
+#define IEM_OP_PRF_REX_R                RT_BIT_32(25) /**< REX.R prefix (0x44,0x45,0x46,0x47,0x4c,0x4d,0x4e,0x4f). */
+#define IEM_OP_PRF_REX_B                RT_BIT_32(26) /**< REX.B prefix (0x41,0x43,0x45,0x47,0x49,0x4b,0x4d,0x4f). */
+#define IEM_OP_PRF_REX_X                RT_BIT_32(27) /**< REX.X prefix (0x42,0x43,0x46,0x47,0x4a,0x4b,0x4e,0x4f). */
 /** @} */
 
 /**

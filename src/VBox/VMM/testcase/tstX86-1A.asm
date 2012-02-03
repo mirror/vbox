@@ -87,6 +87,56 @@ BEGINCODE
 %endmacro
 
 
+;;
+; Function prologue saving all registers except EAX.
+;
+%macro SAVE_ALL_PROLOGUE 0
+        push    xBP
+        mov     xBP, xSP
+        pushf
+        push    xBX
+        push    xCX
+        push    xDX
+        push    xSI
+        push    xDI
+%ifdef RT_ARCH_AMD64
+        push    r8
+        push    r9
+        push    r10
+        push    r11
+        push    r12
+        push    r13
+        push    r14
+        push    r15
+%endif
+%endmacro
+
+
+;;
+; Function epilogue restoring all regisers except EAX.
+;
+%macro SAVE_ALL_EPILOGUE 0
+%ifdef RT_ARCH_AMD64
+        pop     r15
+        pop     r14
+        pop     r13
+        pop     r12
+        pop     r11
+        pop     r10
+        pop     r9
+        pop     r8
+%endif
+        pop     xDI
+        pop     xSI
+        pop     xDX
+        pop     xCX
+        pop     xBX
+        popf
+        leave
+%endmacro
+
+
+
 
 BEGINCODE
 
@@ -143,6 +193,106 @@ x861_ClearRegisters:
 %endif
         ret
 ; x861_ClearRegisters
+
+
+;;
+; Loads all general, MMX and SSE registers except xBP and xSP with unique values.
+;
+x861_LoadUniqueRegValuesSSE:
+        movq    mm0, [._mm0]
+        movq    mm1, [._mm1]
+        movq    mm2, [._mm2]
+        movq    mm3, [._mm3]
+        movq    mm4, [._mm4]
+        movq    mm5, [._mm5]
+        movq    mm6, [._mm6]
+        movq    mm7, [._mm7]
+        movdqu  xmm0, [._xmm0]
+        movdqu  xmm1, [._xmm1]
+        movdqu  xmm2, [._xmm2]
+        movdqu  xmm3, [._xmm3]
+        movdqu  xmm4, [._xmm4]
+        movdqu  xmm5, [._xmm5]
+        movdqu  xmm6, [._xmm6]
+        movdqu  xmm7, [._xmm7]
+%ifdef RT_ARCH_AMD64
+        movdqu  xmm8,  [._xmm8]
+        movdqu  xmm9,  [._xmm9]
+        movdqu  xmm10, [._xmm10]
+        movdqu  xmm11, [._xmm11]
+        movdqu  xmm12, [._xmm12]
+        movdqu  xmm13, [._xmm13]
+        movdqu  xmm14, [._xmm14]
+        movdqu  xmm15, [._xmm15]
+%endif
+        call    x861_LoadUniqueRegValues
+        ret
+._mm0:   times 8  db 040h
+._mm1:   times 8  db 041h
+._mm2:   times 8  db 042h
+._mm3:   times 8  db 043h
+._mm4:   times 8  db 044h
+._mm5:   times 8  db 045h
+._mm6:   times 8  db 046h
+._mm7:   times 8  db 047h
+._xmm0:  times 16 db 080h
+._xmm1:  times 16 db 081h
+._xmm2:  times 16 db 082h
+._xmm3:  times 16 db 083h
+._xmm4:  times 16 db 084h
+._xmm5:  times 16 db 085h
+._xmm6:  times 16 db 086h
+._xmm7:  times 16 db 087h
+%ifdef RT_ARCH_AMD64
+._xmm8:  times 16 db 088h
+._xmm9:  times 16 db 089h
+._xmm10: times 16 db 08ah
+._xmm11: times 16 db 08bh
+._xmm12: times 16 db 08ch
+._xmm13: times 16 db 08dh
+._xmm14: times 16 db 08eh
+._xmm15: times 16 db 08fh
+%endif
+; end x861_LoadUniqueRegValuesSSE
+
+
+;;
+; Clears all general, MMX and SSE registers except xBP and xSP.
+;
+x861_ClearRegistersSSE:
+        call    x861_ClearRegisters
+        movq    mm0,   [.zero]
+        movq    mm1,   [.zero]
+        movq    mm2,   [.zero]
+        movq    mm3,   [.zero]
+        movq    mm4,   [.zero]
+        movq    mm5,   [.zero]
+        movq    mm6,   [.zero]
+        movq    mm7,   [.zero]
+        movdqu  xmm0,  [.zero]
+        movdqu  xmm1,  [.zero]
+        movdqu  xmm2,  [.zero]
+        movdqu  xmm3,  [.zero]
+        movdqu  xmm4,  [.zero]
+        movdqu  xmm5,  [.zero]
+        movdqu  xmm6,  [.zero]
+        movdqu  xmm7,  [.zero]
+%ifdef RT_ARCH_AMD64
+        movdqu  xmm8,  [.zero]
+        movdqu  xmm9,  [.zero]
+        movdqu  xmm10, [.zero]
+        movdqu  xmm11, [.zero]
+        movdqu  xmm12, [.zero]
+        movdqu  xmm13, [.zero]
+        movdqu  xmm14, [.zero]
+        movdqu  xmm15, [.zero]
+%endif
+        call    x861_LoadUniqueRegValues
+        ret
+
+        ret
+.zero   times 16 db 000h
+; x861_ClearRegistersSSE
 
 
 BEGINPROC x861_Test1
@@ -573,6 +723,286 @@ BEGINPROC x861_Test1
 .failed:
         jmp     .return
 ENDPROC   x861_Test1
+
+
+
+;;
+; Tests the effect of prefix order in group 14.
+;
+BEGINPROC   x861_Test2
+        SAVE_ALL_PROLOGUE
+
+        ; Check testcase preconditions.
+        call    x861_LoadUniqueRegValuesSSE
+        mov     eax, __LINE__
+        db       00Fh, 073h, 0D0h, 080h  ;    psrlq   mm0, 128
+        call    .check_mm0_zero_and_xmm0_nz
+
+        call    x861_LoadUniqueRegValuesSSE
+        mov     eax, __LINE__
+        db 066h, 00Fh, 073h, 0D0h, 080h  ;    psrlq   xmm0, 128
+        call    .check_xmm0_zero_and_mm0_nz
+
+
+        ;
+        ; Real test - Inject other prefixes before the 066h and see what
+        ;             happens.
+        ;
+
+        ; General checks that order does not matter, etc.
+        call    x861_LoadUniqueRegValuesSSE
+        mov     eax, __LINE__
+        db 026h, 066h, 00Fh, 073h, 0D0h, 080h
+        call    .check_xmm0_zero_and_mm0_nz
+
+        call    x861_LoadUniqueRegValuesSSE
+        mov     eax, __LINE__
+        db 066h, 026h, 00Fh, 073h, 0D0h, 080h
+        call    .check_xmm0_zero_and_mm0_nz
+
+        call    x861_LoadUniqueRegValuesSSE
+        mov     eax, __LINE__
+        db 066h, 067h, 00Fh, 073h, 0D0h, 080h
+        call    .check_xmm0_zero_and_mm0_nz
+
+        call    x861_LoadUniqueRegValuesSSE
+        mov     eax, __LINE__
+        db 067h, 066h, 00Fh, 073h, 0D0h, 080h
+        call    .check_xmm0_zero_and_mm0_nz
+
+        call    x861_LoadUniqueRegValuesSSE
+        mov     eax, __LINE__
+        db 067h, 066h, 065h, 00Fh, 073h, 0D0h, 080h
+        call    .check_xmm0_zero_and_mm0_nz
+
+%ifdef RT_ARCH_AMD64
+        call    x861_LoadUniqueRegValuesSSE
+        mov     eax, __LINE__
+        db 048h, 066h, 00Fh, 073h, 0D0h, 080h ; REX.W
+        call    .check_xmm0_zero_and_mm0_nz
+
+        call    x861_LoadUniqueRegValuesSSE
+        mov     eax, __LINE__
+        db 044h, 066h, 00Fh, 073h, 0D0h, 080h ; REX.R
+        call    .check_xmm0_zero_and_mm0_nz
+
+        call    x861_LoadUniqueRegValuesSSE
+        mov     eax, __LINE__
+        db 042h, 066h, 00Fh, 073h, 0D0h, 080h ; REX.X
+        call    .check_xmm0_zero_and_mm0_nz
+
+        ; Actually for REX, order does matter if the prefix is used.
+        call    x861_LoadUniqueRegValuesSSE
+        mov     eax, __LINE__
+        db 041h, 066h, 00Fh, 073h, 0D0h, 080h ; REX.B
+        call    .check_xmm0_zero_and_mm0_nz
+
+        call    x861_LoadUniqueRegValuesSSE
+        mov     eax, __LINE__
+        db 066h, 041h, 00Fh, 073h, 0D0h, 080h ; REX.B
+        call    .check_xmm8_zero_and_xmm0_nz
+%endif
+
+        ; Check all ignored prefixes (repeates some of the above).
+        call    x861_LoadUniqueRegValuesSSE
+        mov     eax, __LINE__
+        db 066h, 026h, 00Fh, 073h, 0D0h, 080h ; es
+        call    .check_xmm0_zero_and_mm0_nz
+
+        call    x861_LoadUniqueRegValuesSSE
+        mov     eax, __LINE__
+        db 066h, 065h, 00Fh, 073h, 0D0h, 080h ; gs
+        call    .check_xmm0_zero_and_mm0_nz
+
+        call    x861_LoadUniqueRegValuesSSE
+        mov     eax, __LINE__
+        db 066h, 064h, 00Fh, 073h, 0D0h, 080h ; fs
+        call    .check_xmm0_zero_and_mm0_nz
+
+        call    x861_LoadUniqueRegValuesSSE
+        mov     eax, __LINE__
+        db 066h, 02eh, 00Fh, 073h, 0D0h, 080h ; cs
+        call    .check_xmm0_zero_and_mm0_nz
+
+        call    x861_LoadUniqueRegValuesSSE
+        mov     eax, __LINE__
+        db 066h, 036h, 00Fh, 073h, 0D0h, 080h ; ss
+        call    .check_xmm0_zero_and_mm0_nz
+
+        call    x861_LoadUniqueRegValuesSSE
+        mov     eax, __LINE__
+        db 066h, 03eh, 00Fh, 073h, 0D0h, 080h ; ds
+        call    .check_xmm0_zero_and_mm0_nz
+
+        call    x861_LoadUniqueRegValuesSSE
+        mov     eax, __LINE__
+        db 066h, 067h, 00Fh, 073h, 0D0h, 080h ; addr size
+        call    .check_xmm0_zero_and_mm0_nz
+
+%ifdef RT_ARCH_AMD64
+        call    x861_LoadUniqueRegValuesSSE
+        mov     eax, __LINE__
+        db 066h, 048h, 00Fh, 073h, 0D0h, 080h ; REX.W
+        call    .check_xmm0_zero_and_mm0_nz
+
+        call    x861_LoadUniqueRegValuesSSE
+        mov     eax, __LINE__
+        db 066h, 044h, 00Fh, 073h, 0D0h, 080h ; REX.R
+        call    .check_xmm0_zero_and_mm0_nz
+
+        call    x861_LoadUniqueRegValuesSSE
+        mov     eax, __LINE__
+        db 066h, 042h, 00Fh, 073h, 0D0h, 080h ; REX.X
+        call    .check_xmm0_zero_and_mm0_nz
+
+        call    x861_LoadUniqueRegValuesSSE
+        mov     eax, __LINE__
+        db 066h, 041h, 00Fh, 073h, 0D0h, 080h ; REX.B - has actual effect on the instruction.
+        call    .check_xmm8_zero_and_xmm0_nz
+%endif
+
+        ; Repeated prefix until we hit the max opcode limit.
+        call    x861_LoadUniqueRegValuesSSE
+        mov     eax, __LINE__
+        db 066h, 066h, 00Fh, 073h, 0D0h, 080h
+        call    .check_xmm0_zero_and_mm0_nz
+
+        call    x861_LoadUniqueRegValuesSSE
+        mov     eax, __LINE__
+        db 066h, 066h, 066h, 00Fh, 073h, 0D0h, 080h
+        call    .check_xmm0_zero_and_mm0_nz
+
+        call    x861_LoadUniqueRegValuesSSE
+        mov     eax, __LINE__
+        db 066h, 066h, 066h, 066h, 066h, 066h, 066h, 066h, 00Fh, 073h, 0D0h, 080h
+        call    .check_xmm0_zero_and_mm0_nz
+
+        call    x861_LoadUniqueRegValuesSSE
+        mov     eax, __LINE__
+        db 066h, 066h, 066h, 066h, 066h, 066h, 066h, 066h, 066h, 066h, 066h, 00Fh, 073h, 0D0h, 080h
+        call    .check_xmm0_zero_and_mm0_nz
+
+        ShouldTrap X86_XCPT_GP, db 066h, 066h, 066h, 066h, 066h, 066h, 066h, 066h, 066h, 066h, 066h, 066h, 00Fh, 073h, 0D0h, 080h
+
+%ifdef RT_ARCH_AMD64
+        ; Repeated REX is parsed, but only the last byte matters.
+        call    x861_LoadUniqueRegValuesSSE
+        mov     eax, __LINE__
+        db 066h, 041h, 048h, 00Fh, 073h, 0D0h, 080h ; REX.B, REX.W
+        call    .check_xmm0_zero_and_mm0_nz
+
+        call    x861_LoadUniqueRegValuesSSE
+        mov     eax, __LINE__
+        db 066h, 048h, 041h, 00Fh, 073h, 0D0h, 080h ; REX.B, REX.W
+        call    .check_xmm8_zero_and_xmm0_nz
+
+        call    x861_LoadUniqueRegValuesSSE
+        mov     eax, __LINE__
+        db 066h, 048h, 044h, 042h, 048h, 044h, 042h, 048h, 044h, 042h, 041h, 00Fh, 073h, 0D0h, 080h
+        call    .check_xmm8_zero_and_xmm0_nz
+
+        call    x861_LoadUniqueRegValuesSSE
+        mov     eax, __LINE__
+        db 066h, 041h, 041h, 041h, 041h, 041h, 041h, 041h, 041h, 041h, 04eh, 00Fh, 073h, 0D0h, 080h
+        call    .check_xmm0_zero_and_mm0_nz
+%endif
+
+        ; Undefined sequences with prefixes that counts.
+        ShouldTrap X86_XCPT_UD, db 0f0h, 066h, 00Fh, 073h, 0D0h, 080h ; LOCK
+        ShouldTrap X86_XCPT_UD, db 0f2h, 066h, 00Fh, 073h, 0D0h, 080h ; REPNZ
+        ShouldTrap X86_XCPT_UD, db 0f3h, 066h, 00Fh, 073h, 0D0h, 080h ; REPZ
+        ShouldTrap X86_XCPT_UD, db 066h, 0f2h, 00Fh, 073h, 0D0h, 080h
+        ShouldTrap X86_XCPT_UD, db 066h, 0f3h, 00Fh, 073h, 0D0h, 080h
+        ShouldTrap X86_XCPT_UD, db 066h, 0f3h, 0f2h, 00Fh, 073h, 0D0h, 080h
+        ShouldTrap X86_XCPT_UD, db 066h, 0f2h, 0f3h, 00Fh, 073h, 0D0h, 080h
+        ShouldTrap X86_XCPT_UD, db 0f2h, 066h, 0f3h, 00Fh, 073h, 0D0h, 080h
+        ShouldTrap X86_XCPT_UD, db 0f3h, 066h, 0f2h, 00Fh, 073h, 0D0h, 080h
+        ShouldTrap X86_XCPT_UD, db 0f3h, 0f2h, 066h, 00Fh, 073h, 0D0h, 080h
+        ShouldTrap X86_XCPT_UD, db 0f2h, 0f3h, 066h, 00Fh, 073h, 0D0h, 080h
+        ShouldTrap X86_XCPT_UD, db 0f0h, 0f2h, 066h, 0f3h, 00Fh, 073h, 0D0h, 080h
+        ShouldTrap X86_XCPT_UD, db 0f0h, 0f3h, 066h, 0f2h, 00Fh, 073h, 0D0h, 080h
+        ShouldTrap X86_XCPT_UD, db 0f0h, 0f3h, 0f2h, 066h, 00Fh, 073h, 0D0h, 080h
+        ShouldTrap X86_XCPT_UD, db 0f0h, 0f2h, 0f3h, 066h, 00Fh, 073h, 0D0h, 080h
+
+.success:
+        xor     eax, eax
+.return:
+        SAVE_ALL_EPILOGUE
+        ret
+.failed2:
+        mov     eax, -1
+.failed:
+        jmp     .return
+
+.check_xmm0_zero_and_mm0_nz:
+        sub     xSP, 20h
+        movdqu  [xSP], xmm0
+        cmp     dword [xSP], 0
+        jne     .failed3
+        cmp     dword [xSP + 4], 0
+        jne     .failed3
+        cmp     dword [xSP + 8], 0
+        jne     .failed3
+        cmp     dword [xSP + 12], 0
+        jne     .failed3
+        movq    [xSP], mm0
+        cmp     dword [xSP], 0
+        je      .failed3
+        cmp     dword [xSP + 4], 0
+        je      .failed3
+        add     xSP, 20h
+        ret
+
+.check_mm0_zero_and_xmm0_nz:
+        sub     xSP, 20h
+        movq    [xSP], mm0
+        cmp     dword [xSP], 0
+        jne     .failed3
+        cmp     dword [xSP + 4], 0
+        jne     .failed3
+        movdqu  [xSP], xmm0
+        cmp     dword [xSP], 0
+        je      .failed3
+        cmp     dword [xSP + 4], 0
+        je      .failed3
+        cmp     dword [xSP + 8], 0
+        je      .failed3
+        cmp     dword [xSP + 12], 0
+        je      .failed3
+        add     xSP, 20h
+        ret
+
+%ifdef RT_ARCH_AMD64
+.check_xmm8_zero_and_xmm0_nz:
+        sub     xSP, 20h
+        movdqu  [xSP], xmm8
+        cmp     dword [xSP], 0
+        jne     .failed3
+        cmp     dword [xSP + 4], 0
+        jne     .failed3
+        cmp     dword [xSP + 8], 0
+        jne     .failed3
+        cmp     dword [xSP + 12], 0
+        jne     .failed3
+        movdqu  [xSP], xmm0
+        cmp     dword [xSP], 0
+        je      .failed3
+        cmp     dword [xSP + 4], 0
+        je      .failed3
+        cmp     dword [xSP + 8], 0
+        je      .failed3
+        cmp     dword [xSP + 12], 0
+        je      .failed3
+        add     xSP, 20h
+        ret
+%endif
+
+.failed3:
+        add     xSP, 20h + xS
+        jmp     .return
+
+
+ENDPROC     x861_Test2
 
 
 ;;

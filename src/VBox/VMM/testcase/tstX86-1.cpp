@@ -65,6 +65,7 @@ RT_C_DECLS_END
 *   Internal Functions                                                         *
 *******************************************************************************/
 DECLASM(int32_t) x861_Test1(void);
+DECLASM(int32_t) x861_Test2(void);
 
 
 
@@ -200,6 +201,11 @@ int main()
         int32_t rc = x861_Test1();
         if (rc != 0)
             RTTestFailed(hTest, "x861_Test1 -> %d", rc);
+
+        RTTestSub(hTest, "part 2");
+        rc = x861_Test2();
+        if (rc != 0)
+            RTTestFailed(hTest, "x861_Test2 -> %d", rc);
     }
 
     return RTTestSummaryAndDestroy(hTest);
