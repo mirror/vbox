@@ -854,7 +854,7 @@ static void stubSyncTrUpdateWindowCB(unsigned long key, void *data1, void *data2
         stub.spu->dispatch_table.WindowShow(pWindow->spuWindow, pWindow->mapped);
     }
 
-    if (pRegions->pRegions->fFlags.bSetVisibleRects || pRegions->pRegions->fFlags.bSetViewRect)
+    if (pRegions->pRegions->fFlags.bAddVisibleRects || pRegions->pRegions->fFlags.bSetViewRect)
     {
         /* ensure data integrity */
         Assert(!pRegions->pRegions->fFlags.bAddHiddenRects);
@@ -896,7 +896,7 @@ static void stubSyncTrUpdateWindowCB(unsigned long key, void *data1, void *data2
             }
         }
 
-        if (pRegions->pRegions->fFlags.bSetVisibleRects)
+        if (pRegions->pRegions->fFlags.bAddVisibleRects)
         {
             hNewRgn = stubMakeRegionFromRects(pRegions->pRegions, pRegions->pRegions->fFlags.bSetViewRect ? 1 : 0);
         }
@@ -914,7 +914,7 @@ static void stubSyncTrUpdateWindowCB(unsigned long key, void *data1, void *data2
 
     if (hNewRgn!=INVALID_HANDLE_VALUE)
     {
-        if (pRegions->pRegions->fFlags.bSetVisibleRects)
+        if (pRegions->pRegions->fFlags.bAddVisibleRects)
         {
             HRGN hEmptyRgn = CreateRectRgn(0, 0, 0, 0);
 
@@ -954,7 +954,7 @@ static void stubSyncTrUpdateWindowCB(unsigned long key, void *data1, void *data2
         }
         else
         {
-            if (pRegions->pRegions->fFlags.bSetVisibleRects)
+            if (pRegions->pRegions->fFlags.bAddVisibleRects)
             {
                 pWindow->hVisibleRegion = hNewRgn;
                 stubDispatchVisibleRegions(pWindow);

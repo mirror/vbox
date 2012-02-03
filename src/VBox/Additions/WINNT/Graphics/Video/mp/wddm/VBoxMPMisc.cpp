@@ -180,7 +180,7 @@ PVOID vboxWddmHTableIterRemoveCur(PVBOXWDDM_HTABLE_ITERATOR pIter)
     return NULL;
 }
 
-PVBOXWDDM_SWAPCHAIN vboxWddmSwapchainCreate()
+PVBOXWDDM_SWAPCHAIN vboxWddmSwapchainCreate(UINT w, UINT h)
 {
     PVBOXWDDM_SWAPCHAIN pSwapchain = (PVBOXWDDM_SWAPCHAIN)vboxWddmMemAllocZero(sizeof (VBOXWDDM_SWAPCHAIN));
     Assert(pSwapchain);
@@ -189,6 +189,11 @@ PVBOXWDDM_SWAPCHAIN vboxWddmSwapchainCreate()
         InitializeListHead(&pSwapchain->AllocList);
         pSwapchain->enmState = VBOXWDDM_OBJSTATE_TYPE_INITIALIZED;
         pSwapchain->cRefs = 1;
+        /* init to some invalid value so that the pos get submitted */
+        pSwapchain->Pos.x = pSwapchain->Pos.y = VBOXWDDM_INVALID_COORD;
+        pSwapchain->width = w;
+        pSwapchain->height = h;
+        VBoxWddmVrListInit(&pSwapchain->VisibleRegions);
     }
     return pSwapchain;
 }
@@ -219,6 +224,7 @@ DECLINLINE(VOID) vboxWddmSwapchainRelease(PVBOXWDDM_SWAPCHAIN pSwapchain)
     Assert(cRefs < UINT32_MAX/2);
     if (!cRefs)
     {
+        VBoxWddmVrListClear(&pSwapchain->VisibleRegions);
         vboxWddmMemFree(pSwapchain);
     }
 }
@@ -341,11 +347,7 @@ static VOID vboxWddmSwapchainCtxRemoveLocked(PVBOXMP_DEVEXT pDevExt, PVBOXWDDM_C
     Assert(pTst == pSwapchain);
     RemoveEntryList(&pSwapchain->DevExtListEntry);
     pSwapchain->hSwapchainKm = NULL;
-    if (pSwapchain->pLastReportedRects)
-    {
-        vboxVideoCmCmdRelease(pSwapchain->pLastReportedRects);
-        pSwapchain->pLastReportedRects = NULL;
-    }
+    VBoxWddmVrListClear(&pSwapchain->VisibleRegions);
     vboxWddmSwapchainRelease(pSwapchain);
 }
 
@@ -470,7 +472,7 @@ NTSTATUS vboxWddmSwapchainCtxEscape(PVBOXMP_DEVEXT pDevExt, PVBOXWDDM_CONTEXT pC
         }
         else if (pSwapchainInfo->SwapchainInfo.cAllocs)
         {
-            pSwapchain = vboxWddmSwapchainCreate();
+            pSwapchain = vboxWddmSwapchainCreate(apAlloc[0]->SurfDesc.width, apAlloc[0]->SurfDesc.height);
             if (!pSwapchain)
             {
                 Status = STATUS_NO_MEMORY;
@@ -489,11 +491,8 @@ NTSTATUS vboxWddmSwapchainCtxEscape(PVBOXMP_DEVEXT pDevExt, PVBOXWDDM_CONTEXT pC
 
         /* do not zero up the view rect since it may still be valid */
 //        memset(&pSwapchain->ViewRect, 0, sizeof (pSwapchain->ViewRect));
-        if (pSwapchain->pLastReportedRects)
-        {
-            vboxVideoCmCmdRelease(pSwapchain->pLastReportedRects);
-            pSwapchain->pLastReportedRects = NULL;
-        }
+        /* @todo: do we really need to zero this up here ? */
+        VBoxWddmVrListClear(&pSwapchain->VisibleRegions);
 
         vboxWddmSwapchainAllocRemoveAll(pDevExt, pSwapchain);
 
@@ -1642,3 +1641,743 @@ BOOLEAN vboxShRcTreeRemove(PVBOXMP_DEVEXT pDevExt, PVBOXWDDM_ALLOCATION pAlloc)
     return !!pRetAlloc;
 }
 #endif
+
+
+/* visible rects */
+typedef struct VBOXWDDMVR_REG
+{
+    LIST_ENTRY ListEntry;
+    RECT Rect;
+} VBOXWDDMVR_REG, *PVBOXWDDMVR_REG;
+
+#define PVBOXWDDMVR_REG_FROM_ENTRY(_pEntry) ((PVBOXWDDMVR_REG)(((uint8_t*)(_pEntry)) - RT_OFFSETOF(VBOXWDDMVR_REG, ListEntry)))
+
+static LOOKASIDE_LIST_EX g_VBoxWddmVrLookasideList;
+
+static PVBOXWDDMVR_REG vboxWddmVrRegCreate()
+{
+    PVBOXWDDMVR_REG pReg = (PVBOXWDDMVR_REG)ExAllocateFromLookasideListEx(&g_VBoxWddmVrLookasideList);
+    if (!pReg)
+    {
+        WARN(("ExAllocateFromLookasideListEx failed!"));
+    }
+    return pReg;
+}
+
+static void vboxWddmVrRegTerm(PVBOXWDDMVR_REG pReg)
+{
+    ExFreeToLookasideListEx(&g_VBoxWddmVrLookasideList, pReg);
+}
+
+void VBoxWddmVrListClear(PVBOXWDDMVR_LIST pList)
+{
+    PLIST_ENTRY pNext;
+    for (PLIST_ENTRY pEntry = pList->ListHead.Flink; pEntry != &pList->ListHead; pEntry = pNext)
+    {
+        pNext = pEntry->Flink;
+        PVBOXWDDMVR_REG pReg = PVBOXWDDMVR_REG_FROM_ENTRY(pEntry);
+        vboxWddmVrRegTerm(pReg);
+    }
+    VBoxWddmVrListInit(pList);
+}
+
+#define VBOXWDDMVR_MEMTAG 'vDBV'
+
+NTSTATUS VBoxWddmVrInit()
+{
+    NTSTATUS Status = ExInitializeLookasideListEx(&g_VBoxWddmVrLookasideList,
+                            NULL, /* PALLOCATE_FUNCTION_EX Allocate */
+                            NULL, /* PFREE_FUNCTION_EX Free */
+                            NonPagedPool,
+                            EX_LOOKASIDE_LIST_EX_FLAGS_FAIL_NO_RAISE, /* ULONG Flags */
+                            sizeof (VBOXWDDMVR_REG),
+                            VBOXWDDMVR_MEMTAG,
+                            0 /* USHORT Depth - reserved, must be null */
+                            );
+    if (!NT_SUCCESS(Status))
+    {
+        WARN(("ExInitializeLookasideListEx failed, Status (0x%x)", Status));
+        return Status;
+    }
+    return STATUS_SUCCESS;
+}
+
+void VBoxWddmVrTerm()
+{
+    ExDeleteLookasideListEx(&g_VBoxWddmVrLookasideList);
+}
+
+typedef DECLCALLBACK(int) FNVBOXWDDMVR_CB_COMPARATOR(const PVBOXWDDMVR_REG pReg1, const PVBOXWDDMVR_REG pReg2);
+typedef FNVBOXWDDMVR_CB_COMPARATOR *PFNVBOXWDDMVR_CB_COMPARATOR;
+
+static DECLCALLBACK(int) vboxWddmVrRegNonintersectedComparator(const RECT* pRect1, const RECT* pRect2)
+{
+    Assert(!vboxWddmRectIsIntersect(pRect1, pRect2));
+    if (pRect1->top != pRect2->top)
+        return pRect1->top - pRect2->top;
+    return pRect1->left - pRect2->left;
+}
+
+#ifdef DEBUG_misha
+static void vboxWddmVrDbgListDoVerify(PVBOXWDDMVR_LIST pList)
+{
+    PLIST_ENTRY pEntry1 = pList->ListHead.Flink;
+
+    for (PLIST_ENTRY pEntry1 = pList->ListHead.Flink; pEntry1 != &pList->ListHead; pEntry1 = pEntry1->Flink)
+    {
+        PVBOXWDDMVR_REG pReg1 = PVBOXWDDMVR_REG_FROM_ENTRY(pEntry1);
+        for (PLIST_ENTRY pEntry2 = pEntry1->Flink; pEntry2 != &pList->ListHead; pEntry2 = pEntry2->Flink)
+        {
+            PVBOXWDDMVR_REG pReg2 = PVBOXWDDMVR_REG_FROM_ENTRY(pEntry2);
+            Assert(vboxWddmVrRegNonintersectedComparator(&pReg1->Rect, &pReg2->Rect) < 0);
+        }
+    }
+}
+
+#define vboxWddmVrDbgListVerify vboxWddmVrDbgListDoVerify
+#else
+#define vboxWddmVrDbgListVerify(_p) do {} while (0)
+#endif
+
+static NTSTATUS vboxWddmVrListUniteIntersection(PVBOXWDDMVR_LIST pList, PVBOXWDDMVR_LIST pIntersection);
+
+#define VBOXWDDMVR_INVALID_COORD (~0UL)
+
+DECLINLINE(void) vboxWddmVrListRegAdd(PVBOXWDDMVR_LIST pList, PVBOXWDDMVR_REG pReg, PLIST_ENTRY pPlace, BOOLEAN fAfter)
+{
+    if (fAfter)
+        InsertHeadList(pPlace, &pReg->ListEntry);
+    else
+        InsertTailList(pPlace, &pReg->ListEntry);
+    ++pList->cEntries;
+    vboxWddmVrDbgListVerify(pList);
+}
+
+DECLINLINE(void) vboxWddmVrListRegRemove(PVBOXWDDMVR_LIST pList, PVBOXWDDMVR_REG pReg)
+{
+    RemoveEntryList(&pReg->ListEntry);
+    --pList->cEntries;
+}
+
+static void vboxWddmVrListRegAddOrder(PVBOXWDDMVR_LIST pList, PLIST_ENTRY pMemberEntry, PVBOXWDDMVR_REG pReg)
+{
+    do
+    {
+        if (pMemberEntry != &pList->ListHead)
+        {
+            PVBOXWDDMVR_REG pMemberReg = PVBOXWDDMVR_REG_FROM_ENTRY(pMemberEntry);
+            if (vboxWddmVrRegNonintersectedComparator(&pMemberReg->Rect, &pReg->Rect) < 0)
+            {
+                pMemberEntry = pMemberEntry->Flink;
+                continue;
+            }
+        }
+        vboxWddmVrListRegAdd(pList, pReg, pMemberEntry, FALSE);
+        break;
+    } while (1);
+}
+
+static void vboxWddmVrListAddNonintersected(PVBOXWDDMVR_LIST pList1, PVBOXWDDMVR_LIST pList2)
+{
+    PLIST_ENTRY pEntry1 = pList1->ListHead.Flink;
+
+    for (PLIST_ENTRY pEntry2 = pList2->ListHead.Flink; pEntry2 != &pList2->ListHead; pEntry2 = pList2->ListHead.Flink)
+    {
+        PVBOXWDDMVR_REG pReg2 = PVBOXWDDMVR_REG_FROM_ENTRY(pEntry2);
+        do {
+            if (pEntry1 != &pList1->ListHead)
+            {
+                PVBOXWDDMVR_REG pReg1 = PVBOXWDDMVR_REG_FROM_ENTRY(pEntry1);
+                if (vboxWddmVrRegNonintersectedComparator(&pReg1->Rect, &pReg2->Rect) < 0)
+                {
+                    pEntry1 = pEntry1->Flink;
+                    continue;
+                }
+            }
+            vboxWddmVrListRegRemove(pList2, pReg2);
+            vboxWddmVrListRegAdd(pList1, pReg2, pEntry1, FALSE);
+            break;
+        } while (1);
+    }
+
+    Assert(VBoxWddmVrListIsEmpty(pList2));
+}
+
+static NTSTATUS vboxWddmVrListRegIntersectSubstNoJoin(PVBOXWDDMVR_LIST pList1, PVBOXWDDMVR_REG pReg1, const RECT * pRect2)
+{
+    UINT topLim = VBOXWDDMVR_INVALID_COORD;
+    UINT bottomLim = VBOXWDDMVR_INVALID_COORD;
+    LIST_ENTRY List;
+    PVBOXWDDMVR_REG pBottomReg = NULL;
+#ifdef DEBUG_misha
+    RECT tmpRect = pReg1->Rect;
+    vboxWddmVrDbgListVerify(pList1);
+#endif
+
+    InitializeListHead(&List);
+
+    Assert(vboxWddmRectIsIntersect(&pReg1->Rect, pRect2));
+
+    if (pReg1->Rect.top < pRect2->top)
+    {
+        Assert(pRect2->top < pReg1->Rect.bottom);
+        PVBOXWDDMVR_REG pRegResult = vboxWddmVrRegCreate();
+        pRegResult->Rect.top = pReg1->Rect.top;
+        pRegResult->Rect.left = pReg1->Rect.left;
+        pRegResult->Rect.bottom = pRect2->top;
+        pRegResult->Rect.right = pReg1->Rect.right;
+        topLim = pRect2->top;
+        InsertTailList(&List, &pRegResult->ListEntry);
+    }
+
+    if (pReg1->Rect.bottom > pRect2->bottom)
+    {
+        Assert(pRect2->bottom > pReg1->Rect.top);
+        PVBOXWDDMVR_REG pRegResult = vboxWddmVrRegCreate();
+        pRegResult->Rect.top = pRect2->bottom;
+        pRegResult->Rect.left = pReg1->Rect.left;
+        pRegResult->Rect.bottom = pReg1->Rect.bottom;
+        pRegResult->Rect.right = pReg1->Rect.right;
+        bottomLim = pRect2->bottom;
+        pBottomReg = pRegResult;
+    }
+
+    if (pReg1->Rect.left < pRect2->left)
+    {
+        Assert(pRect2->left < pReg1->Rect.right);
+        PVBOXWDDMVR_REG pRegResult = vboxWddmVrRegCreate();
+        pRegResult->Rect.top = topLim == VBOXWDDMVR_INVALID_COORD ? pReg1->Rect.top : topLim;
+        pRegResult->Rect.left = pReg1->Rect.left;
+        pRegResult->Rect.bottom = bottomLim == VBOXWDDMVR_INVALID_COORD ? pReg1->Rect.bottom : bottomLim;
+        pRegResult->Rect.right = pRect2->left;
+        InsertTailList(&List, &pRegResult->ListEntry);
+    }
+
+    if (pReg1->Rect.right > pRect2->right)
+    {
+        Assert(pRect2->right > pReg1->Rect.left);
+        PVBOXWDDMVR_REG pRegResult = vboxWddmVrRegCreate();
+        pRegResult->Rect.top = topLim == VBOXWDDMVR_INVALID_COORD ? pReg1->Rect.top : topLim;
+        pRegResult->Rect.left = pRect2->right;
+        pRegResult->Rect.bottom = bottomLim == VBOXWDDMVR_INVALID_COORD ? pReg1->Rect.bottom : bottomLim;
+        pRegResult->Rect.right = pReg1->Rect.right;
+        InsertTailList(&List, &pRegResult->ListEntry);
+    }
+
+    if (pBottomReg)
+        InsertTailList(&List, &pBottomReg->ListEntry);
+
+    PLIST_ENTRY pMemberEntry = pReg1->ListEntry.Flink;
+    vboxWddmVrListRegRemove(pList1, pReg1);
+    vboxWddmVrRegTerm(pReg1);
+
+    if (IsListEmpty(&List))
+        return STATUS_SUCCESS; /* the region is covered by the pRect2 */
+
+    PLIST_ENTRY pEntry = List.Flink, pNext;
+    for (; pEntry != &List; pEntry = pNext)
+    {
+        pNext = pEntry->Flink;
+        PVBOXWDDMVR_REG pReg = PVBOXWDDMVR_REG_FROM_ENTRY(pEntry);
+
+        vboxWddmVrListRegAddOrder(pList1, pMemberEntry, pReg);
+        pMemberEntry = pEntry->Flink; /* the following elements should go after the given pEntry since they are ordered already */
+    }
+    return STATUS_SUCCESS;
+}
+
+typedef DECLCALLBACK(PLIST_ENTRY) FNVBOXWDDMVR_CB_INTERSECTED_VISITOR(PVBOXWDDMVR_LIST pList1, PVBOXWDDMVR_REG pReg1, const RECT * pRect2, void *pvContext, PLIST_ENTRY *ppNext);
+typedef FNVBOXWDDMVR_CB_INTERSECTED_VISITOR *PFNVBOXWDDMVR_CB_INTERSECTED_VISITOR;
+
+static void vboxWddmVrListVisitIntersected(PVBOXWDDMVR_LIST pList1, UINT cRects, const RECT *aRects, BOOLEAN fRectsNonintersectedOrdered, PFNVBOXWDDMVR_CB_INTERSECTED_VISITOR pfnVisitor, void* pvVisitor)
+{
+    PLIST_ENTRY pEntry1 = pList1->ListHead.Flink;
+    PLIST_ENTRY pNext1;
+    UINT iFirst2 = 0;
+
+    for (; pEntry1 != &pList1->ListHead; pEntry1 = pNext1)
+    {
+        pNext1 = pEntry1->Flink;
+        PVBOXWDDMVR_REG pReg1 = PVBOXWDDMVR_REG_FROM_ENTRY(pEntry1);
+        for (UINT i = iFirst2; i < cRects; ++i)
+        {
+            const RECT *pRect2 = &aRects[i];
+            if (pReg1->Rect.bottom <= pRect2->top)
+            {
+                if (fRectsNonintersectedOrdered)
+                    break; /* the forthcomming rects won't intersect as well since they have at least not bigget top */
+                else
+                    continue; /* no assumptions, just continue */
+            }
+            else if (pRect2->bottom <= pReg1->Rect.top)
+            {
+                if (fRectsNonintersectedOrdered)
+                {
+                    iFirst2 = i + 1; /* the previous rects including this one have top < pRect2->bottom,
+                                      * while the forhtcoming pRegs will have top >= pReg1->Rect.top
+                                      * so we can start with the next rect next time */
+                }
+                continue;
+            }
+            /* y coords intersect */
+            else if (pReg1->Rect.right <= pRect2->left)
+                continue;
+            else if (pRect2->right <= pReg1->Rect.left)
+                continue;
+            /* x coords intersect */
+
+            /* the visitor can modify the list 1, apply necessary adjustments after it */
+            PLIST_ENTRY pEntry1 = pfnVisitor (pList1, pReg1, pRect2, pvVisitor, &pNext1);
+            if (pEntry1 == &pList1->ListHead)
+                break;
+        }
+    }
+}
+
+
+static void vboxWddmVrListJoinRectsHV(PVBOXWDDMVR_LIST pList, BOOLEAN fHorizontal)
+{
+    PLIST_ENTRY pNext1, pNext2;
+
+    for (PLIST_ENTRY pEntry1 = pList->ListHead.Flink; pEntry1 != &pList->ListHead; pEntry1 = pNext1)
+    {
+        PVBOXWDDMVR_REG pReg1 = PVBOXWDDMVR_REG_FROM_ENTRY(pEntry1);
+        pNext1 = pEntry1->Flink;
+        for (PLIST_ENTRY pEntry2 = pEntry1->Flink; pEntry2 != &pList->ListHead; pEntry2 = pNext2)
+        {
+            PVBOXWDDMVR_REG pReg2 = PVBOXWDDMVR_REG_FROM_ENTRY(pEntry2);
+            pNext2 = pEntry2->Flink;
+            if (fHorizontal)
+            {
+                if (pReg1->Rect.top == pReg2->Rect.top)
+                {
+                    if (pReg1->Rect.right == pReg2->Rect.left)
+                    {
+                        /* join rectangles */
+                        vboxWddmVrListRegRemove(pList, pReg2);
+                        if (pReg1->Rect.bottom > pReg2->Rect.bottom)
+                        {
+                            LONG oldRight1 = pReg1->Rect.right;
+                            LONG oldBottom1 = pReg1->Rect.bottom;
+                            pReg1->Rect.right = pReg2->Rect.right;
+                            pReg1->Rect.bottom = pReg2->Rect.bottom;
+
+                            vboxWddmVrDbgListVerify(pList);
+
+                            pReg2->Rect.left = pReg1->Rect.left;
+                            pReg2->Rect.top = pReg1->Rect.bottom;
+                            pReg2->Rect.right = oldRight1;
+                            pReg2->Rect.bottom = oldBottom1;
+                            vboxWddmVrListRegAddOrder(pList, pReg1->ListEntry.Flink, pReg2);
+                            /* restart the pNext1 & pNext2 since regs are splitted into smaller ones in y dimension
+                             * and thus can match one of the previous rects */
+                            pNext1 = pList->ListHead.Flink;
+                            break;
+                        }
+                        else if (pReg1->Rect.bottom < pReg2->Rect.bottom)
+                        {
+                            pReg1->Rect.right = pReg2->Rect.right;
+                            vboxWddmVrDbgListVerify(pList);
+                            pReg2->Rect.top = pReg1->Rect.bottom;
+                            vboxWddmVrListRegAddOrder(pList, pReg1->ListEntry.Flink, pReg2);
+                            /* restart the pNext1 & pNext2 since regs are splitted into smaller ones in y dimension
+                             * and thus can match one of the previous rects */
+                            pNext1 = pList->ListHead.Flink;
+                            break;
+                        }
+                        else
+                        {
+                            pReg1->Rect.right = pReg2->Rect.right;
+                            vboxWddmVrDbgListVerify(pList);
+                            /* reset the pNext1 since it could be the pReg2 being destroyed */
+                            pNext1 = pEntry1->Flink;
+                            /* pNext2 stays the same since it is pReg2->ListEntry.pNext, which is kept intact */
+                            vboxWddmVrRegTerm(pReg2);
+                        }
+                    }
+                    continue;
+                }
+                else if (pReg1->Rect.bottom == pReg2->Rect.bottom)
+                {
+                    Assert(pReg1->Rect.top < pReg2->Rect.top); /* <- since pReg1 > pReg2 && pReg1->Rect.top != pReg2->Rect.top*/
+                    if (pReg1->Rect.right == pReg2->Rect.left)
+                    {
+                        /* join rectangles */
+                        vboxWddmVrListRegRemove(pList, pReg2);
+
+                        pReg1->Rect.bottom = pReg2->Rect.top;
+                        vboxWddmVrDbgListVerify(pList);
+                        pReg2->Rect.left = pReg1->Rect.left;
+
+                        vboxWddmVrListRegAddOrder(pList, pReg2->ListEntry.Flink, pReg2);
+
+                        /* restart the pNext1 & pNext2 since regs are splitted into smaller ones in y dimension
+                         * and thus can match one of the previous rects */
+                        pNext1 = pList->ListHead.Flink;
+                        break;
+                    }
+                    else if (pReg1->Rect.left == pReg2->Rect.right)
+                    {
+                        /* join rectangles */
+                        vboxWddmVrListRegRemove(pList, pReg2);
+
+                        pReg1->Rect.bottom = pReg2->Rect.top;
+                        vboxWddmVrDbgListVerify(pList);
+                        pReg2->Rect.right = pReg1->Rect.right;
+
+                        vboxWddmVrListRegAddOrder(pList, pReg2->ListEntry.Flink, pReg2);
+
+                        /* restart the pNext1 & pNext2 since regs are splitted into smaller ones in y dimension
+                         * and thus can match one of the previous rects */
+                        pNext1 = pList->ListHead.Flink;
+                        break;
+                    }
+                    continue;
+                }
+            }
+            else
+            {
+                if (pReg1->Rect.bottom == pReg2->Rect.top)
+                {
+                    if (pReg1->Rect.left == pReg2->Rect.left)
+                    {
+                        if (pReg1->Rect.right == pReg2->Rect.right)
+                        {
+                            /* join rects */
+                            vboxWddmVrListRegRemove(pList, pReg2);
+
+                            pReg1->Rect.bottom = pReg2->Rect.bottom;
+                            vboxWddmVrDbgListVerify(pList);
+
+                            /* reset the pNext1 since it could be the pReg2 being destroyed */
+                            pNext1 = pEntry1->Flink;
+                            /* pNext2 stays the same since it is pReg2->ListEntry.pNext, which is kept intact */
+                            vboxWddmVrRegTerm(pReg2);
+                            continue;
+                        }
+                        /* no more to be done for for pReg1 */
+                        break;
+                    }
+                    else if (pReg1->Rect.right > pReg2->Rect.left)
+                    {
+                        /* no more to be done for for pReg1 */
+                        break;
+                    }
+
+                    continue;
+                }
+                else if (pReg1->Rect.bottom < pReg2->Rect.top)
+                {
+                    /* no more to be done for for pReg1 */
+                    break;
+                }
+            }
+        }
+    }
+}
+
+static void vboxWddmVrListJoinRects(PVBOXWDDMVR_LIST pList)
+{
+    vboxWddmVrListJoinRectsHV(pList, TRUE);
+    vboxWddmVrListJoinRectsHV(pList, FALSE);
+}
+
+typedef struct VBOXWDDMVR_CBDATA_SUBST
+{
+    NTSTATUS Status;
+    BOOLEAN fChanged;
+} VBOXWDDMVR_CBDATA_SUBST, *PVBOXWDDMVR_CBDATA_SUBST;
+
+static DECLCALLBACK(PLIST_ENTRY) vboxWddmVrListSubstNoJoinCb(PVBOXWDDMVR_LIST pList, PVBOXWDDMVR_REG pReg1, const RECT *pRect2, void *pvContext, PLIST_ENTRY *ppNext)
+{
+    PVBOXWDDMVR_CBDATA_SUBST pData = (PVBOXWDDMVR_CBDATA_SUBST)pvContext;
+    /* store the prev to get the new Flink out of it*/
+    PLIST_ENTRY pPrev = pReg1->ListEntry.Blink;
+    pData->fChanged = TRUE;
+
+    Assert(vboxWddmRectIsIntersect(&pReg1->Rect, pRect2));
+
+    /* NOTE: the pReg1 will be invalid after the vboxWddmVrListRegIntersectSubstNoJoin call!!! */
+    NTSTATUS Status = vboxWddmVrListRegIntersectSubstNoJoin(pList, pReg1, pRect2);
+    if (NT_SUCCESS(Status))
+    {
+        *ppNext = pPrev->Flink;
+        return &pList->ListHead;
+    }
+    WARN(("vboxWddmVrListRegIntersectSubstNoJoin failed!"));
+    Assert(!NT_SUCCESS(Status));
+    pData->Status = Status;
+    *ppNext = &pList->ListHead;
+    return &pList->ListHead;
+}
+
+static NTSTATUS vboxWddmVrListSubstNoJoin(PVBOXWDDMVR_LIST pList, UINT cRects, const PRECT aRects, BOOLEAN fRectsNonintersectedOrdered, BOOLEAN *pfChanged)
+{
+    if (VBoxWddmVrListIsEmpty(pList))
+        return STATUS_SUCCESS;
+
+    VBOXWDDMVR_CBDATA_SUBST Data;
+    Data.Status = STATUS_SUCCESS;
+    Data.fChanged = FALSE;
+
+    *pfChanged = FALSE;
+
+    vboxWddmVrListVisitIntersected(pList, cRects, aRects, fRectsNonintersectedOrdered, vboxWddmVrListSubstNoJoinCb, &Data);
+    if (!NT_SUCCESS(Data.Status))
+    {
+        WARN(("vboxWddmVrListVisitIntersected failed!"));
+        return Data.Status;
+    }
+
+    *pfChanged = Data.fChanged;
+    return STATUS_SUCCESS;
+}
+
+#if 0
+static const PRECT vboxWddmVrRectsOrder(UINT cRects, const PRECT aRects)
+{
+#ifdef DEBUG
+    {
+        for (UINT i = 0; i < cRects; ++i)
+        {
+            RECT *pRectI = &aRects[i];
+            for (UINT j = i + 1; j < cRects; ++j)
+            {
+                RECT *pRectJ = &aRects[j];
+                Assert(!vboxWddmRectIsIntersect(pRectI, pRectJ));
+            }
+        }
+    }
+#endif
+
+    RECT * pRects = (RECT *)aRects;
+    /* check if rects are ordered already */
+    for (UINT i = 0; i < cRects - 1; ++i)
+    {
+        RECT *pRect1 = &pRects[i];
+        RECT *pRect2 = &pRects[i+1];
+        if (vboxWddmVrRegNonintersectedComparator(pRect1, pRect2) < 0)
+            continue;
+
+        WARN(("rects are unoreded!"));
+
+        if (pRects == aRects)
+        {
+            pRects = (RECT *)vboxWddmMemAlloc(sizeof (RECT) * cRects);
+            if (!pRects)
+            {
+                WARN(("vboxWddmMemAlloc failed!"));
+                return NULL;
+            }
+
+            memcpy(pRects, aRects, sizeof (RECT) * cRects);
+        }
+
+        Assert(pRects != aRects);
+
+        int j = (int)i - 1;
+        do {
+            RECT Tmp = *pRect1;
+            *pRect1 = *pRect2;
+            *pRect2 = Tmp;
+
+            if (j < 0)
+                break;
+
+            if (vboxWddmVrRegNonintersectedComparator(pRect1, pRect1-1) > 0)
+                break;
+
+            pRect2 = pRect1--;
+            --j;
+        } while (1);
+    }
+
+    return pRects;
+}
+#endif
+
+void VBoxWddmVrListTranslate(PVBOXWDDMVR_LIST pList, LONG x, LONG y)
+{
+    for (PLIST_ENTRY pEntry1 = pList->ListHead.Flink; pEntry1 != &pList->ListHead; pEntry1 = pEntry1->Flink)
+    {
+        PVBOXWDDMVR_REG pReg1 = PVBOXWDDMVR_REG_FROM_ENTRY(pEntry1);
+        vboxWddmRectTranslate(&pReg1->Rect, x, y);
+    }
+}
+
+NTSTATUS VBoxWddmVrListRectsSubst(PVBOXWDDMVR_LIST pList, UINT cRects, const PRECT aRects, BOOLEAN *pfChanged)
+{
+#if 0
+    const PRECT pRects = vboxWddmVrRectsOrder(cRects, aRects);
+    if (!pRects)
+    {
+        WARN(("vboxWddmVrRectsOrder failed!"));
+        return STATUS_NO_MEMORY;
+    }
+#endif
+
+    NTSTATUS Status = vboxWddmVrListSubstNoJoin(pList, cRects, aRects,
+            FALSE, /* rects can be of any type, i.e. can intersect and can NOT be ordered */
+            pfChanged);
+    if (!NT_SUCCESS(Status))
+    {
+        WARN(("vboxWddmVrListSubstNoJoin failed!"));
+        goto done;
+    }
+
+    if (!*pfChanged)
+        goto done;
+
+    vboxWddmVrListJoinRects(pList);
+
+done:
+#if 0
+    if (pRects != aRects)
+        vboxWddmMemFree(pRects);
+#endif
+    return Status;
+}
+
+NTSTATUS VBoxWddmVrListRectsAdd(PVBOXWDDMVR_LIST pList, UINT cRects, const PRECT aRects, BOOLEAN *pfChanged)
+{
+    UINT cCovered = 0;
+
+#if 0
+#ifdef DEBUG
+    {
+        for (UINT i = 0; i < cRects; ++i)
+        {
+            RECT *pRectI = &aRects[i];
+            for (UINT j = i + 1; j < cRects; ++j)
+            {
+                RECT *pRectJ = &aRects[j];
+                Assert(!vboxWddmRectIsIntersect(pRectI, pRectJ));
+            }
+        }
+    }
+#endif
+#endif
+
+    /* early sort out the case when there are no new rects */
+    for (UINT i = 0; i < cRects; ++i)
+    {
+        for (PLIST_ENTRY pEntry1 = pList->ListHead.Flink; pEntry1 != &pList->ListHead; pEntry1 = pEntry1->Flink)
+        {
+            PVBOXWDDMVR_REG pReg1 = PVBOXWDDMVR_REG_FROM_ENTRY(pEntry1);
+            if (vboxWddmRectIsCoveres(&pReg1->Rect, &aRects[i]))
+            {
+                cCovered++;
+                break;
+            }
+        }
+    }
+
+    if (cCovered == cRects)
+    {
+        *pfChanged = FALSE;
+        return STATUS_SUCCESS;
+    }
+
+    /* rects are not covered, need to go the slow way */
+
+    VBOXWDDMVR_LIST DiffList;
+    VBoxWddmVrListInit(&DiffList);
+    PRECT pListRects = NULL;
+    UINT cAllocatedRects = 0;
+    BOOLEAN fNeedRectreate = TRUE;
+    BOOLEAN fChanged = FALSE;
+    NTSTATUS Status = STATUS_SUCCESS;
+
+    for (UINT i = 0; i < cRects; ++i)
+    {
+        PVBOXWDDMVR_REG pReg = vboxWddmVrRegCreate();
+        if (!pReg)
+        {
+            WARN(("vboxWddmVrRegCreate failed!"));
+            Status = STATUS_NO_MEMORY;
+            break;
+        }
+        pReg->Rect = aRects[i];
+
+        UINT cListRects = VBoxWddmVrListRectsCount(pList);
+        if (!cListRects)
+        {
+            vboxWddmVrListRegAdd(pList, pReg, &pList->ListHead, FALSE);
+            fChanged = TRUE;
+            continue;
+        }
+        else
+        {
+            Assert(VBoxWddmVrListIsEmpty(&DiffList));
+            vboxWddmVrListRegAdd(&DiffList, pReg, &DiffList.ListHead, FALSE);
+        }
+
+        if (cAllocatedRects < cListRects)
+        {
+            cAllocatedRects = cListRects + cRects;
+            Assert(fNeedRectreate);
+            if (pListRects)
+                vboxWddmMemFree(pListRects);
+            pListRects = (PRECT)vboxWddmMemAlloc(sizeof (RECT) * cAllocatedRects);
+            if (!pListRects)
+            {
+                WARN(("vboxWddmMemAllocZero failed!"));
+                Status = STATUS_NO_MEMORY;
+                break;
+            }
+        }
+
+
+        if (fNeedRectreate)
+        {
+            Status = VBoxWddmVrListRectsGet(pList, cListRects, pListRects);
+            Assert(Status == STATUS_SUCCESS);
+            fNeedRectreate = FALSE;
+        }
+
+        BOOLEAN fDummyChanged = FALSE;
+        Status = vboxWddmVrListSubstNoJoin(&DiffList, cListRects, pListRects, TRUE, &fDummyChanged);
+        if (!NT_SUCCESS(Status))
+        {
+            WARN(("vboxWddmVrListSubstNoJoin failed!"));
+            Status = STATUS_NO_MEMORY;
+            break;
+        }
+
+        if (!VBoxWddmVrListIsEmpty(&DiffList))
+        {
+            vboxWddmVrListAddNonintersected(pList, &DiffList);
+            fNeedRectreate = TRUE;
+            fChanged = TRUE;
+        }
+
+        Assert(VBoxWddmVrListIsEmpty(&DiffList));
+    }
+
+    if (pListRects)
+        vboxWddmMemFree(pListRects);
+
+    Assert(VBoxWddmVrListIsEmpty(&DiffList) || Status != STATUS_SUCCESS);
+    VBoxWddmVrListClear(&DiffList);
+
+    if (fChanged)
+        vboxWddmVrListJoinRects(pList);
+
+    *pfChanged = fChanged;
+
+    return STATUS_SUCCESS;
+}
+
+NTSTATUS VBoxWddmVrListRectsGet(PVBOXWDDMVR_LIST pList, UINT cRects, PRECT aRects)
+{
+    if (cRects < VBoxWddmVrListRectsCount(pList))
+        return STATUS_BUFFER_TOO_SMALL;
+
+    UINT i = 0;
+    for (PLIST_ENTRY pEntry1 = pList->ListHead.Flink; pEntry1 != &pList->ListHead; pEntry1 = pEntry1->Flink, ++i)
+    {
+        PVBOXWDDMVR_REG pReg1 = PVBOXWDDMVR_REG_FROM_ENTRY(pEntry1);
+        aRects[i] = pReg1->Rect;
+    }
+    return STATUS_SUCCESS;
+}

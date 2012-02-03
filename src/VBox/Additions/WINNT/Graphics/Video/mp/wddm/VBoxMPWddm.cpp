@@ -1143,18 +1143,18 @@ BOOLEAN DxgkDdiInterruptRoutine(
     BOOLEAN bNeedDpc = FALSE;
     if (VBoxCommonFromDeviceExt(pDevExt)->hostCtx.pfHostFlags) /* If HGSMI is enabled at all. */
     {
-        VBOXSHGSMILIST CtlList;
+        VBOXVTLIST CtlList;
 #ifdef VBOX_WITH_VDMA
-        VBOXSHGSMILIST DmaCmdList;
+        VBOXVTLIST DmaCmdList;
 #endif
-        vboxSHGSMIListInit(&CtlList);
+        vboxVtListInit(&CtlList);
 #ifdef VBOX_WITH_VDMA
-        vboxSHGSMIListInit(&DmaCmdList);
+        vboxVtListInit(&DmaCmdList);
 #endif
 
 #ifdef VBOX_WITH_VIDEOHWACCEL
-        VBOXSHGSMILIST VhwaCmdList;
-        vboxSHGSMIListInit(&VhwaCmdList);
+        VBOXVTLIST VhwaCmdList;
+        vboxVtListInit(&VhwaCmdList);
 #endif
 
         uint32_t flags = VBoxCommonFromDeviceExt(pDevExt)->hostCtx.pfHostFlags->u32HostFlags;
@@ -1169,7 +1169,7 @@ BOOLEAN DxgkDdiInterruptRoutine(
                 if (offCmd != HGSMIOFFSET_VOID)
                 {
                     VBOXWDDM_HGSMICMD_TYPE enmType = vboxWddmHgsmiGetCmdTypeFromOffset(pDevExt, offCmd);
-                    PVBOXSHGSMILIST pList;
+                    PVBOXVTLIST pList;
                     HGSMIHEAP * pHeap = NULL;
                     switch (enmType)
                     {
@@ -1230,21 +1230,21 @@ BOOLEAN DxgkDdiInterruptRoutine(
             flags = VBoxCommonFromDeviceExt(pDevExt)->hostCtx.pfHostFlags->u32HostFlags;
         } while (1);
 
-        if (!vboxSHGSMIListIsEmpty(&CtlList))
+        if (!vboxVtListIsEmpty(&CtlList))
         {
-            vboxSHGSMIListCat(&pDevExt->CtlList, &CtlList);
+            vboxVtListCat(&pDevExt->CtlList, &CtlList);
             bNeedDpc = TRUE;
         }
 #ifdef VBOX_WITH_VDMA
-        if (!vboxSHGSMIListIsEmpty(&DmaCmdList))
+        if (!vboxVtListIsEmpty(&DmaCmdList))
         {
-            vboxSHGSMIListCat(&pDevExt->DmaCmdList, &DmaCmdList);
+            vboxVtListCat(&pDevExt->DmaCmdList, &DmaCmdList);
             bNeedDpc = TRUE;
         }
 #endif
-        if (!vboxSHGSMIListIsEmpty(&VhwaCmdList))
+        if (!vboxVtListIsEmpty(&VhwaCmdList))
         {
-            vboxSHGSMIListCat(&pDevExt->VhwaCmdList, &VhwaCmdList);
+            vboxVtListCat(&pDevExt->VhwaCmdList, &VhwaCmdList);
             bNeedDpc = TRUE;
         }
 
@@ -1284,12 +1284,12 @@ BOOLEAN DxgkDdiInterruptRoutine(
 
 typedef struct VBOXWDDM_DPCDATA
 {
-    VBOXSHGSMILIST CtlList;
+    VBOXVTLIST CtlList;
 #ifdef VBOX_WITH_VDMA
-    VBOXSHGSMILIST DmaCmdList;
+    VBOXVTLIST DmaCmdList;
 #endif
 #ifdef VBOX_WITH_VIDEOHWACCEL
-    VBOXSHGSMILIST VhwaCmdList;
+    VBOXVTLIST VhwaCmdList;
 #endif
     LIST_ENTRY CompletedDdiCmdQueue;
     BOOL bNotifyDpc;
@@ -1305,12 +1305,12 @@ BOOLEAN vboxWddmGetDPCDataCallback(PVOID Context)
 {
     PVBOXWDDM_GETDPCDATA_CONTEXT pdc = (PVBOXWDDM_GETDPCDATA_CONTEXT)Context;
 
-    vboxSHGSMIListDetach2List(&pdc->pDevExt->CtlList, &pdc->data.CtlList);
+    vboxVtListDetach2List(&pdc->pDevExt->CtlList, &pdc->data.CtlList);
 #ifdef VBOX_WITH_VDMA
-    vboxSHGSMIListDetach2List(&pdc->pDevExt->DmaCmdList, &pdc->data.DmaCmdList);
+    vboxVtListDetach2List(&pdc->pDevExt->DmaCmdList, &pdc->data.DmaCmdList);
 #endif
 #ifdef VBOX_WITH_VIDEOHWACCEL
-    vboxSHGSMIListDetach2List(&pdc->pDevExt->VhwaCmdList, &pdc->data.VhwaCmdList);
+    vboxVtListDetach2List(&pdc->pDevExt->VhwaCmdList, &pdc->data.VhwaCmdList);
 #endif
     vboxVdmaDdiCmdGetCompletedListIsr(pdc->pDevExt, &pdc->data.CompletedDdiCmdQueue);
 
@@ -1346,20 +1346,20 @@ VOID DxgkDdiDpcRoutine(
     if (context.data.bNotifyDpc)
         pDevExt->u.primary.DxgkInterface.DxgkCbNotifyDpc(pDevExt->u.primary.DxgkInterface.DeviceHandle);
 
-    if (!vboxSHGSMIListIsEmpty(&context.data.CtlList))
+    if (!vboxVtListIsEmpty(&context.data.CtlList))
     {
         int rc = VBoxSHGSMICommandPostprocessCompletion (&VBoxCommonFromDeviceExt(pDevExt)->guestCtx.heapCtx, &context.data.CtlList);
         AssertRC(rc);
     }
 #ifdef VBOX_WITH_VDMA
-    if (!vboxSHGSMIListIsEmpty(&context.data.DmaCmdList))
+    if (!vboxVtListIsEmpty(&context.data.DmaCmdList))
     {
         int rc = VBoxSHGSMICommandPostprocessCompletion (&pDevExt->u.primary.Vdma.CmdHeap, &context.data.DmaCmdList);
         AssertRC(rc);
     }
 #endif
 #ifdef VBOX_WITH_VIDEOHWACCEL
-    if (!vboxSHGSMIListIsEmpty(&context.data.VhwaCmdList))
+    if (!vboxVtListIsEmpty(&context.data.VhwaCmdList))
     {
         vboxVhwaCompletionListProcess(pDevExt, &context.data.VhwaCmdList);
     }
@@ -1512,6 +1512,8 @@ VOID DxgkDdiUnload(
     LOGF((": unloading"));
 
     vboxVDbgBreakFv();
+
+    VBoxWddmVrTerm();
 
     PRTLOGGER pLogger = RTLogRelSetDefaultInstance(NULL);
     if (pLogger)
@@ -5775,6 +5777,13 @@ DriverEntry(
 #endif
 
     LOGREL(("Built %s %s", __DATE__, __TIME__));
+
+    NTSTATUS Status = VBoxWddmVrInit();
+    if (!NT_SUCCESS(Status))
+    {
+        WARN(("VBoxWddmVrInit failed!"));
+        return Status;
+    }
 
     DRIVER_INITIALIZATION_DATA DriverInitializationData = {'\0'};
 

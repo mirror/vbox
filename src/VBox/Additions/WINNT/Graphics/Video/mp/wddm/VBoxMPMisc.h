@@ -19,6 +19,8 @@
 #ifndef ___VBoxMPMisc_h__
 #define ___VBoxMPMisc_h__
 
+#include "../../common/VBoxVideoTools.h"
+
 DECLINLINE(void) vboxVideoLeDetach(LIST_ENTRY *pList, LIST_ENTRY *pDstList)
 {
     if (IsListEmpty(pList))
@@ -160,5 +162,39 @@ BOOLEAN vboxShRcTreePut(PVBOXMP_DEVEXT pDevExt, PVBOXWDDM_ALLOCATION pAlloc);
 PVBOXWDDM_ALLOCATION vboxShRcTreeGet(PVBOXMP_DEVEXT pDevExt, HANDLE hSharedRc);
 BOOLEAN vboxShRcTreeRemove(PVBOXMP_DEVEXT pDevExt, PVBOXWDDM_ALLOCATION pAlloc);
 #endif
+
+/* visible rects */
+typedef struct VBOXWDDMVR_LIST
+{
+    LIST_ENTRY ListHead;
+    UINT cEntries;
+} VBOXWDDMVR_LIST, *PVBOXWDDMVR_LIST;
+
+DECLINLINE(UINT) VBoxWddmVrListRectsCount(PVBOXWDDMVR_LIST pList)
+{
+    return pList->cEntries;
+}
+
+DECLINLINE(BOOLEAN) VBoxWddmVrListIsEmpty(PVBOXWDDMVR_LIST pList)
+{
+    return !VBoxWddmVrListRectsCount(pList);
+}
+
+DECLINLINE(void) VBoxWddmVrListInit(PVBOXWDDMVR_LIST pList)
+{
+    InitializeListHead(&pList->ListHead);
+    pList->cEntries = 0;
+}
+
+void VBoxWddmVrListClear(PVBOXWDDMVR_LIST pList);
+
+void VBoxWddmVrListTranslate(PVBOXWDDMVR_LIST pList, LONG x, LONG y);
+
+NTSTATUS VBoxWddmVrListRectsAdd(PVBOXWDDMVR_LIST pList, UINT cRects, const PRECT aRects, BOOLEAN *pfChanged);
+NTSTATUS VBoxWddmVrListRectsSubst(PVBOXWDDMVR_LIST pList, UINT cRects, const PRECT aRects, BOOLEAN *pfChanged);
+NTSTATUS VBoxWddmVrListRectsGet(PVBOXWDDMVR_LIST pList, UINT cRects, PRECT aRects);
+
+NTSTATUS VBoxWddmVrInit();
+void VBoxWddmVrTerm();
 
 #endif /* #ifndef ___VBoxMPMisc_h__ */

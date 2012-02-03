@@ -98,10 +98,10 @@ typedef struct _VBOXMP_DEVEXT
 
    VBOXWDDM_GLOBAL_POINTER_INFO PointerInfo;
 
-   VBOXSHGSMILIST CtlList;
-   VBOXSHGSMILIST DmaCmdList;
+   VBOXVTLIST CtlList;
+   VBOXVTLIST DmaCmdList;
 #ifdef VBOX_WITH_VIDEOHWACCEL
-   VBOXSHGSMILIST VhwaCmdList;
+   VBOXVTLIST VhwaCmdList;
 #endif
    BOOL bNotifyDxDpc;
 
