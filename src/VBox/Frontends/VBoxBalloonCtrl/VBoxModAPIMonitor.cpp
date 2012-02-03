@@ -59,22 +59,30 @@
 
 using namespace com;
 
-#define VBOX_MOD_APIMONITOR_NAME "apimonitor"
+#define VBOX_MOD_APIMON_NAME "apimon"
 
 /**
  * The module's RTGetOpt-IDs for the command line.
  */
-enum GETOPTDEF_APIMONITOR
+enum GETOPTDEF_APIMON
 {
-    GETOPTDEF_APIMONITOR_GROUPS = 1000,
+    GETOPTDEF_APIMON_ISLN_RESPONSE = 1000,
+    GETOPTDEF_APIMON_ISLN_TIMEOUT,
+    GETOPTDEF_APIMON_GROUPS
 };
 
 /**
  * The module's command line arguments.
  */
 static const RTGETOPTDEF g_aAPIMonitorOpts[] = {
-    { "--apimonitor-groups",         GETOPTDEF_APIMONITOR_GROUPS,         RTGETOPT_REQ_STRING }
+    { "--apimon-isln-response",  GETOPTDEF_APIMON_ISLN_RESPONSE,  RTGETOPT_REQ_STRING },
+    { "--apimon-isln-timeout",   GETOPTDEF_APIMON_ISLN_TIMEOUT,   RTGETOPT_REQ_UINT32 },
+    { "--apimon-groups",         GETOPTDEF_APIMON_GROUPS,         RTGETOPT_REQ_STRING }
 };
+
+static unsigned long g_ulAPIMonIslnTimeoutMS = 0;
+static Bstr g_strAPIMonGroups;
+static Bstr g_strAPIMonIslnCmdResp;
 
 /* Callbacks. */
 static DECLCALLBACK(int) VBoxModAPIMonitorPreInit(void)
@@ -104,7 +112,16 @@ static DECLCALLBACK(int) VBoxModAPIMonitorOption(int argc, char **argv)
     {
         switch (c)
         {
-            case GETOPTDEF_APIMONITOR_GROUPS:
+            case GETOPTDEF_APIMON_ISLN_RESPONSE:
+                break;
+
+            case GETOPTDEF_APIMON_ISLN_TIMEOUT:
+                g_ulAPIMonIslnTimeoutMS = ValueUnion.u32;
+                if (g_ulAPIMonIslnTimeoutMS < 1000)
+                    g_ulAPIMonIslnTimeoutMS = 1000;
+                break;
+
+            case GETOPTDEF_APIMON_GROUPS:
                 break;
 
             default:
@@ -118,7 +135,41 @@ static DECLCALLBACK(int) VBoxModAPIMonitorOption(int argc, char **argv)
 
 static DECLCALLBACK(int) VBoxModAPIMonitorInit(void)
 {
-    return VINF_SUCCESS; /* Nothing to do here right now. */
+    HRESULT rc = S_OK;
+
+    do
+    {
+        Bstr bstrValue;
+
+        /* Host isolation timeout (in ms). */
+        if (!g_ulAPIMonIslnTimeoutMS) /* Not set by command line? */
+        {
+            CHECK_ERROR_BREAK(g_pVirtualBox, GetExtraData(Bstr("VBoxInternal2/Watchdog/APIMonitor/IsolationTimeout").raw(),
+                                                          bstrValue.asOutParam()));
+            g_ulAPIMonIslnTimeoutMS = Utf8Str(bstrValue).toUInt32();
+        }
+        if (!g_ulAPIMonIslnTimeoutMS)
+        {
+             /* Default is 30 seconds timeout. */
+            g_ulAPIMonIslnTimeoutMS = 30 * 1000;
+        }
+
+        /* VM groups to watch for. */
+        if (g_strAPIMonGroups.isEmpty()) /* Not set by command line? */
+        {
+            CHECK_ERROR_BREAK(g_pVirtualBox, GetExtraData(Bstr("VBoxInternal2/Watchdog/APIMonitor/Groups").raw(),
+                                                          g_strAPIMonGroups.asOutParam()));
+        }
+
+        /* Host isolation command response. */
+        if (g_strAPIMonIslnCmdResp.isEmpty()) /* Not set by command line? */
+        {
+            CHECK_ERROR_BREAK(g_pVirtualBox, GetExtraData(Bstr("VBoxInternal2/Watchdog/APIMonitor/IsolationResponse").raw(),
+                                                          g_strAPIMonIslnCmdResp.asOutParam()));
+        }
+    } while (0);
+
+    return SUCCEEDED(rc) ? VINF_SUCCESS : VERR_COM_IPRT_ERROR; /* @todo Find a better rc! */
 }
 
 static DECLCALLBACK(int) VBoxModAPIMonitorMain(void)
@@ -162,7 +213,7 @@ static DECLCALLBACK(int) VBoxModAPIMonitorOnServiceStateChanged(bool fAvailable)
 VBOXMODULE g_ModAPIMonitor =
 {
     /* pszName. */
-    VBOX_MOD_APIMONITOR_NAME,
+    VBOX_MOD_APIMON_NAME,
     /* pszDescription. */
     "API monitor for host isolation detection",
     /* pszDepends. */
@@ -170,10 +221,12 @@ VBOXMODULE g_ModAPIMonitor =
     /* uPriority. */
     0 /* Not used */,
     /* pszUsage. */
-    " [--apimonitor-groups <string>]\n"
-    ,
+    " [--apimon-isln-response=<cmd>] [--apimon-isln-timeout=<ms>]\n"
+    " [--apimon-groups=<string>]\n",
     /* pszOptions. */
-    "--apimonitor-groups    Sets the VM groups for monitoring (none).\n",
+    "--apimon-isln-response   Sets the isolation response (shutdown VM).\n"
+    "--apimon-isln-timeout    Sets the isolation timeout in ms (none).\n"
+    "--apimon-groups          Sets the VM groups for monitoring (none).\n",
     /* methods. */
     VBoxModAPIMonitorPreInit,
     VBoxModAPIMonitorOption,
