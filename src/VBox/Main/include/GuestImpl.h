@@ -247,7 +247,7 @@ private:
     typedef std::map< uint32_t, VBOXGUESTCTRL_PROCESS >::iterator GuestProcessMapIter;
     typedef std::map< uint32_t, VBOXGUESTCTRL_PROCESS >::const_iterator GuestProcessMapIterConst;
 
-    int  processGetStatus(uint32_t u32PID, PVBOXGUESTCTRL_PROCESS pProcess);
+    int  processGetStatus(uint32_t u32PID, PVBOXGUESTCTRL_PROCESS pProcess, bool fRemove);
     int  processSetStatus(uint32_t u32PID, ExecuteProcessStatus_T enmStatus, uint32_t uExitCode, uint32_t uFlags);
 
     // Internal guest directory representation.

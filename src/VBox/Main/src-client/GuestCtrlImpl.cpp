@@ -993,10 +993,14 @@ int Guest::notifyCtrlClientDisconnected(uint32_t                        u32Funct
  * after the process was marked as exited/terminated.
  *
  * @return  IPRT status code.
- * @param   u32PID
- * @param   pProcess
+ * @param   u32PID                  PID of process to get status for.
+ * @param   pProcess                Where to store the process information.
+ * @param   fRemove                 Flag indicating whether to remove the
+ *                                  process from the map when process marked a
+ *                                  exited/terminated.
  */
-int Guest::processGetStatus(uint32_t u32PID, PVBOXGUESTCTRL_PROCESS pProcess)
+int Guest::processGetStatus(uint32_t u32PID, PVBOXGUESTCTRL_PROCESS pProcess,
+                            bool fRemove)
 {
     AssertReturn(u32PID, VERR_INVALID_PARAMETER);
 
@@ -1014,8 +1018,11 @@ int Guest::processGetStatus(uint32_t u32PID, PVBOXGUESTCTRL_PROCESS pProcess)
 
         /* If the is marked as stopped/terminated
          * remove it from the map. */
-        if (it->second.mStatus != ExecuteProcessStatus_Started)
+        if (   fRemove
+            && it->second.mStatus != ExecuteProcessStatus_Started)
+        {
             mGuestProcessMap.erase(it);
+        }
 
         return VINF_SUCCESS;
     }
@@ -1860,7 +1867,7 @@ STDMETHODIMP Guest::SetProcessInput(ULONG aPID, ULONG aFlags, ULONG aTimeoutMS, 
     try
     {
         VBOXGUESTCTRL_PROCESS process;
-        int vrc = processGetStatus(aPID, &process);
+        int vrc = processGetStatus(aPID, &process, false /* Don't remove */);
         if (RT_SUCCESS(vrc))
         {
             /* PID exists; check if process is still running. */
@@ -2064,7 +2071,7 @@ HRESULT Guest::getProcessOutputInternal(ULONG aPID, ULONG aFlags, ULONG aTimeout
     try
     {
         VBOXGUESTCTRL_PROCESS proc;
-        int vrc = processGetStatus(aPID, &proc);
+        int vrc = processGetStatus(aPID, &proc, false /* Don't remove */);
         if (RT_FAILURE(vrc))
         {
             rc = setError(VBOX_E_IPRT_ERROR,
@@ -2233,7 +2240,8 @@ STDMETHODIMP Guest::GetProcessStatus(ULONG aPID, ULONG *aExitCode, ULONG *aFlags
     try
     {
         VBOXGUESTCTRL_PROCESS process;
-        int vrc = processGetStatus(aPID, &process);
+        int vrc = processGetStatus(aPID, &process,
+                                   true /* Remove when terminated */);
         if (RT_SUCCESS(vrc))
         {
             if (aExitCode)
