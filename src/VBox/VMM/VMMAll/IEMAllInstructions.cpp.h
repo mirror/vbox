@@ -3265,6 +3265,9 @@ FNIEMOP_DEF(iemOp_shrd_Ev_Gv_CL)
 
 
 /** Opcode 0x0f 0xae. */
+#if 1
+FNIEMOP_STUB(iemOp_Grp15); /** @todo next up: fxrstor */
+#else
 FNIEMOP_DEF(iemOp_Grp15)
 {
     uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
@@ -3317,6 +3320,7 @@ FNIEMOP_DEF(iemOp_Grp15)
     }
     return VINF_SUCCESS;
 }
+#endif
 
 
 /** Opcode 0x0f 0xaf. */
