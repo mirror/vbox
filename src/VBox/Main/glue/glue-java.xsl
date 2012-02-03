@@ -1410,26 +1410,7 @@
      <xsl:when test="//interface[@name=$idltype] or $idltype='$unknown'">
       <xsl:choose>
         <xsl:when test="@safearray='yes'">
-          <xsl:choose>
-            <xsl:when test="$idltype='boolean'">
-                <xsl:value-of select="concat('Helper.unwrapBoolean(',$value,')')"/>
-            </xsl:when>
-            <xsl:when test="($idltype='long') or ($idltype='unsigned long') or ($idltype='integer')">
-                <xsl:value-of select="concat('Helper.unwrapInteger(',$value,')')"/>
-            </xsl:when>
-            <xsl:when test="($idltype='short') or ($idltype='unsigned short')">
-                <xsl:value-of select="concat('Helper.unwrapUShort(',$value,')')"/>
-            </xsl:when>
-            <xsl:when test="($idltype='unsigned long long') or ($idltype='long long')">
-                <xsl:value-of select="concat('Helper.unwrapULong(',$value,')')"/>
-            </xsl:when>
-            <xsl:when test="($idltype='wstring') or ($idltype='uuid')">
-                <xsl:value-of select="concat('Helper.unwrapStr(',$value,')')"/>
-            </xsl:when>
-            <xsl:otherwise>
-                <xsl:value-of select="concat('((', $value, ' == null) ? null :', $value, '.getWrapped())')" />
-            </xsl:otherwise>
-          </xsl:choose>
+          <xsl:value-of select="concat('Helper.unwrap(',$value,')')"/>
         </xsl:when>
         <xsl:otherwise>
           <xsl:value-of select="concat('((', $value, ' == null) ? null :', $value, '.getWrapped())')" />
