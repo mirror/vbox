@@ -55,7 +55,7 @@ static DECLCALLBACK(int) vboxDispMpTstThreadProc(RTTHREAD ThreadSelf, void *pvUs
         {
             vboxVDbgPrint(("\n>>>\n"));
             HWND hWnd = Regions.hWnd;
-            if (Regions.pRegions->fFlags.bSetVisibleRects)
+            if (Regions.pRegions->fFlags.bAddVisibleRects)
             {
                 uint32_t iVisibleRects = 0;
                 uint32_t cVisibleRects = Regions.pRegions->RectsInfo.cRects;

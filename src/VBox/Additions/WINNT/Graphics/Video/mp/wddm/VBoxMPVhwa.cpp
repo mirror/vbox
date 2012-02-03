@@ -188,9 +188,9 @@ static DECLCALLBACK(void) vboxVhwaCompletionFreeCmd(PVBOXMP_DEVEXT pDevExt, VBOX
     vboxVhwaCommandFree(pDevExt, pCmd);
 }
 
-void vboxVhwaCompletionListProcess(PVBOXMP_DEVEXT pDevExt, VBOXSHGSMILIST *pList)
+void vboxVhwaCompletionListProcess(PVBOXMP_DEVEXT pDevExt, VBOXVTLIST *pList)
 {
-    PVBOXSHGSMILIST_ENTRY pNext, pCur;
+    PVBOXVTLIST_ENTRY pNext, pCur;
     for (pCur = pList->pFirst; pCur; pCur = pNext)
     {
         /* need to save next since the command may be released in a pfnCallback and thus its data might be invalid */

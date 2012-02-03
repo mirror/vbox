@@ -194,17 +194,22 @@ typedef enum
     VBOXWDDM_OBJSTATE_TYPE_INITIALIZED,
     VBOXWDDM_OBJSTATE_TYPE_TERMINATED
 } VBOXWDDM_OBJSTATE_TYPE;
+
+#define VBOXWDDM_INVALID_COORD ((LONG)((~0UL) >> 1))
+
 typedef struct VBOXWDDM_SWAPCHAIN
 {
     LIST_ENTRY DevExtListEntry;
     LIST_ENTRY AllocList;
     struct VBOXWDDM_CONTEXT *pContext;
-    RECT ViewRect;
     VBOXWDDM_OBJSTATE_TYPE enmState;
     volatile uint32_t cRefs;
     VBOXDISP_UMHANDLE hSwapchainUm;
     VBOXDISP_KMHANDLE hSwapchainKm;
-    PVBOXVIDEOCM_CMD_RECTS_INTERNAL pLastReportedRects;
+    POINT Pos;
+    UINT width;
+    UINT height;
+    VBOXWDDMVR_LIST VisibleRegions;
 }VBOXWDDM_SWAPCHAIN, *PVBOXWDDM_SWAPCHAIN;
 
 typedef struct VBOXWDDM_CONTEXT

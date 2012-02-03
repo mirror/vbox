@@ -26,6 +26,7 @@
 #endif
 #include "common/VBoxMPUtils.h"
 #include "common/VBoxMPDevExt.h"
+#include "../../common/VBoxVideoTools.h"
 
 //#define VBOXWDDM_DEBUG_VIDPN
 

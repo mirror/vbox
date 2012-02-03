@@ -182,10 +182,10 @@ void VBoxSHGSMICommandFree (struct _HGSMIHEAP * pHeap, void *pvBuffer)
 //    return VINF_SUCCESS;
 //}
 
-#define VBOXSHGSMI_CMD2LISTENTRY(_pCmd) ((PVBOXSHGSMILIST_ENTRY)&(_pCmd)->pvNext)
+#define VBOXSHGSMI_CMD2LISTENTRY(_pCmd) ((PVBOXVTLIST_ENTRY)&(_pCmd)->pvNext)
 #define VBOXSHGSMI_LISTENTRY2CMD(_pEntry) ( (PVBOXSHGSMIHEADER)((uint8_t *)(_pEntry) - RT_OFFSETOF(VBOXSHGSMIHEADER, pvNext)) )
 
-int VBoxSHGSMICommandProcessCompletion (struct _HGSMIHEAP * pHeap, VBOXSHGSMIHEADER* pCur, bool bIrq, PVBOXSHGSMILIST pPostProcessList)
+int VBoxSHGSMICommandProcessCompletion (struct _HGSMIHEAP * pHeap, VBOXSHGSMIHEADER* pCur, bool bIrq, PVBOXVTLIST pPostProcessList)
 {
     int rc = VINF_SUCCESS;
 
@@ -221,16 +221,16 @@ int VBoxSHGSMICommandProcessCompletion (struct _HGSMIHEAP * pHeap, VBOXSHGSMIHEA
             pfnCallback(pHeap, VBoxSHGSMIBufferData(pCur), pvCallback);
         }
         else
-            vboxSHGSMIListPut(pPostProcessList, VBOXSHGSMI_CMD2LISTENTRY(pCur), VBOXSHGSMI_CMD2LISTENTRY(pCur));
+            vboxVtListPut(pPostProcessList, VBOXSHGSMI_CMD2LISTENTRY(pCur), VBOXSHGSMI_CMD2LISTENTRY(pCur));
     } while (0);
 
 
     return rc;
 }
 
-int VBoxSHGSMICommandPostprocessCompletion (struct _HGSMIHEAP * pHeap, PVBOXSHGSMILIST pPostProcessList)
+int VBoxSHGSMICommandPostprocessCompletion (struct _HGSMIHEAP * pHeap, PVBOXVTLIST pPostProcessList)
 {
-    PVBOXSHGSMILIST_ENTRY pNext, pCur;
+    PVBOXVTLIST_ENTRY pNext, pCur;
     for (pCur = pPostProcessList->pFirst; pCur; pCur = pNext)
     {
         /* need to save next since the command may be released in a pfnCallback and thus its data might be invalid */

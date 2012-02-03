@@ -29,6 +29,7 @@
 
 #include <VBox/VBoxVideo.h>
 #include "../../../../include/VBoxDisplay.h"
+#include "../VBoxVideoTools.h"
 #include <VBox/VBoxUhgsmi.h>
 
 /* One would increase this whenever definitions in this file are changed */
@@ -221,16 +222,6 @@ typedef struct VBOXWDDM_OVERLAY_DESC
     UINT SrcColorKeyHigh;
 } VBOXWDDM_OVERLAY_DESC, *PVBOXWDDM_OVERLAY_DESC;
 
-/* the dirty rect info is valid */
-#define VBOXWDDM_DIRTYREGION_F_VALID      0x00000001
-#define VBOXWDDM_DIRTYREGION_F_RECT_VALID 0x00000002
-
-typedef struct VBOXWDDM_DIRTYREGION
-{
-    uint32_t fFlags; /* <-- see VBOXWDDM_DIRTYREGION_F_xxx flags above */
-    RECT Rect;
-} VBOXWDDM_DIRTYREGION, *PVBOXWDDM_DIRTYREGION;
-
 typedef struct VBOXWDDM_OVERLAY_INFO
 {
     VBOXWDDM_OVERLAY_DESC OverlayDesc;
@@ -279,8 +270,8 @@ typedef struct VBOXWDDM_RECTS_FLAFS
             /* used only in conjunction with bSetVisibleRects.
              * if set - VBOXWDDM_RECTS_INFO::aRects[0] contains view rectangle */
             UINT bSetViewRect : 1;
-            /* sets visible regions */
-            UINT bSetVisibleRects : 1;
+            /* adds visible regions */
+            UINT bAddVisibleRects : 1;
             /* adds hidden regions */
             UINT bAddHiddenRects : 1;
             /* hide entire window */
@@ -736,143 +727,6 @@ DECLINLINE(UINT) vboxWddmCalcOffXYrd(UINT x, UINT y, UINT pitch, D3DDDIFORMAT en
         offY = vboxWddmCalcSize(pitch, y, enmFormat);
 
     return offY + vboxWddmCalcOffXrd(x, enmFormat);
-}
-
-DECLINLINE(void) vboxWddmRectUnite(RECT *pR, const RECT *pR2Unite)
-{
-    pR->left = RT_MIN(pR->left, pR2Unite->left);
-    pR->top = RT_MIN(pR->top, pR2Unite->top);
-    pR->right = RT_MAX(pR->right, pR2Unite->right);
-    pR->bottom = RT_MAX(pR->bottom, pR2Unite->bottom);
-}
-
-DECLINLINE(bool) vboxWddmRectIntersection(const RECT *a, const RECT *b, RECT *rect)
-{
-    Assert(a);
-    Assert(b);
-    Assert(rect);
-    rect->left = RT_MAX(a->left, b->left);
-    rect->right = RT_MIN(a->right, b->right);
-    rect->top = RT_MAX(a->top, b->top);
-    rect->bottom = RT_MIN(a->bottom, b->bottom);
-    return (rect->right>rect->left) && (rect->bottom>rect->top);
-}
-
-DECLINLINE(bool) vboxWddmRectIsEqual(const RECT *pRect1, const RECT *pRect2)
-{
-    Assert(pRect1);
-    Assert(pRect2);
-    if (pRect1->left != pRect2->left)
-        return false;
-    if (pRect1->top != pRect2->top)
-        return false;
-    if (pRect1->right != pRect2->right)
-        return false;
-    if (pRect1->bottom != pRect2->bottom)
-        return false;
-    return true;
-}
-
-DECLINLINE(bool) vboxWddmRectIsCoveres(const RECT *pRect, const RECT *pCovered)
-{
-    Assert(pRect);
-    Assert(pCovered);
-    if (pRect->left > pCovered->left)
-        return false;
-    if (pRect->top > pCovered->top)
-        return false;
-    if (pRect->right < pCovered->right)
-        return false;
-    if (pRect->bottom < pCovered->bottom)
-        return false;
-    return true;
-}
-
-DECLINLINE(bool) vboxWddmRectIsEmpty(const RECT * pRect)
-{
-    return pRect->left == pRect->right-1 && pRect->top == pRect->bottom-1;
-}
-
-DECLINLINE(bool) vboxWddmRectIsIntersect(const RECT * pRect1, const RECT * pRect2)
-{
-    return !((pRect1->left < pRect2->left && pRect1->right < pRect2->left)
-            || (pRect2->left < pRect1->left && pRect2->right < pRect1->left)
-            || (pRect1->top < pRect2->top && pRect1->bottom < pRect2->top)
-            || (pRect2->top < pRect1->top && pRect2->bottom < pRect1->top));
-}
-
-DECLINLINE(void) vboxWddmRectUnited(RECT * pDst, const RECT * pRect1, const RECT * pRect2)
-{
-    pDst->left = RT_MIN(pRect1->left, pRect2->left);
-    pDst->top = RT_MIN(pRect1->top, pRect2->top);
-    pDst->right = RT_MAX(pRect1->right, pRect2->right);
-    pDst->bottom = RT_MAX(pRect1->bottom, pRect2->bottom);
-}
-
-DECLINLINE(void) vboxWddmRectTranslate(RECT * pRect, int x, int y)
-{
-    pRect->left   += x;
-    pRect->top    += y;
-    pRect->right  += x;
-    pRect->bottom += y;
-}
-
-DECLINLINE(void) vboxWddmRectMove(RECT * pRect, int x, int y)
-{
-    LONG w = pRect->right - pRect->left;
-    LONG h = pRect->bottom - pRect->top;
-    pRect->left   = x;
-    pRect->top    = y;
-    pRect->right  = w + x;
-    pRect->bottom = h + y;
-}
-
-DECLINLINE(void) vboxWddmRectTranslated(RECT *pDst, const RECT * pRect, int x, int y)
-{
-    *pDst = *pRect;
-    vboxWddmRectTranslate(pDst, x, y);
-}
-
-DECLINLINE(void) vboxWddmRectMoved(RECT *pDst, const RECT * pRect, int x, int y)
-{
-    *pDst = *pRect;
-    vboxWddmRectMove(pDst, x, y);
-}
-
-DECLINLINE(void) vboxWddmDirtyRegionAddRect(PVBOXWDDM_DIRTYREGION pInfo, const RECT *pRect)
-{
-    if (!(pInfo->fFlags & VBOXWDDM_DIRTYREGION_F_VALID))
-    {
-        pInfo->fFlags = VBOXWDDM_DIRTYREGION_F_VALID;
-        if (pRect)
-        {
-            pInfo->fFlags |= VBOXWDDM_DIRTYREGION_F_RECT_VALID;
-            pInfo->Rect = *pRect;
-        }
-    }
-    else if (!!(pInfo->fFlags & VBOXWDDM_DIRTYREGION_F_RECT_VALID))
-    {
-        if (pRect)
-            vboxWddmRectUnite(&pInfo->Rect, pRect);
-        else
-            pInfo->fFlags &= ~VBOXWDDM_DIRTYREGION_F_RECT_VALID;
-    }
-}
-
-DECLINLINE(void) vboxWddmDirtyRegionUnite(PVBOXWDDM_DIRTYREGION pInfo, const PVBOXWDDM_DIRTYREGION pInfo2)
-{
-    if (pInfo2->fFlags & VBOXWDDM_DIRTYREGION_F_VALID)
-    {
-        if (pInfo2->fFlags & VBOXWDDM_DIRTYREGION_F_RECT_VALID)
-            vboxWddmDirtyRegionAddRect(pInfo, &pInfo2->Rect);
-        else
-            vboxWddmDirtyRegionAddRect(pInfo, NULL);
-    }
-}
-
-DECLINLINE(void) vboxWddmDirtyRegionClear(PVBOXWDDM_DIRTYREGION pInfo)
-{
-    pInfo->fFlags = 0;
 }
 
 #define VBOXWDDM_ARRAY_MAXELEMENTSU32(_t) ((uint32_t)((UINT32_MAX) / sizeof (_t)))
