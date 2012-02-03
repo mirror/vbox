@@ -53,7 +53,7 @@ int getMetric(PVBOXWATCHDOG_MACHINE pMachine, const Bstr& strName, LONG *pulData
 
     /* Query current memory free. */
     strName.cloneTo(&metricNames[0]);
-#ifdef VBOX_BALLOONCTRL_GLOBAL_PERFCOL
+#ifdef VBOX_WATCHDOG_GLOBAL_PERFCOL
     Assert(!g_pPerfCollector.isNull());
     HRESULT hrc = g_pPerfCollector->QueryMetricsData(
 #else
@@ -111,7 +111,64 @@ void* getPayload(PVBOXWATCHDOG_MACHINE pMachine, const char *pszModule)
     mapPayloadIter it = pMachine->payload.find(pszModule);
     if (it == pMachine->payload.end())
         return NULL;
-    Assert(it->second.cbPayload);
-    return it->second.pvPayload;
+    Assert(it->second.cbData);
+    return it->second.pvData;
+}
+
+int payloadAlloc(PVBOXWATCHDOG_MACHINE pMachine, const char *pszModule,
+                 size_t cbSize, void **ppszPayload)
+{
+    AssertPtrReturn(pMachine, VERR_INVALID_POINTER);
+    AssertPtrReturn(pszModule, VERR_INVALID_POINTER);
+    AssertReturn(cbSize, VERR_INVALID_PARAMETER);
+
+    void *pvData = RTMemAlloc(cbSize);
+    AssertPtrReturn(pvData, VERR_NO_MEMORY);
+
+    mapPayloadIter it = pMachine->payload.find(pszModule);
+    AssertReturn(it == pMachine->payload.end(), VERR_INVALID_PARAMETER);
+
+    VBOXWATCHDOG_MODULE_PAYLOAD p;
+    p.pvData = pvData;
+    p.cbData = cbSize;
+
+    if (ppszPayload)
+        *ppszPayload = p.pvData;
+
+    pMachine->payload.insert(std::make_pair(pszModule, p));
+
+    return VINF_SUCCESS;
+}
+
+void payloadFree(PVBOXWATCHDOG_MACHINE pMachine, const char *pszModule)
+{
+    AssertPtrReturnVoid(pMachine);
+    AssertPtrReturnVoid(pszModule);
+
+    mapPayloadIter it = pMachine->payload.find(pszModule);
+    if (it != pMachine->payload.end())
+    {
+        RTMemFree(it->second.pvData);
+        pMachine->payload.erase(it);
+    }
+}
+
+PVBOXWATCHDOG_MACHINE getMachine(const Bstr& strUuid)
+{
+    mapVMIter it = g_mapVM.find(strUuid);
+    if (it != g_mapVM.end())
+        return &it->second;
+    return NULL;
+}
+
+MachineState_T getMachineState(const PVBOXWATCHDOG_MACHINE pMachine)
+{
+    AssertPtrReturn(pMachine, MachineState_Null);
+    MachineState_T machineState;
+    Assert(!pMachine->machine.isNull());
+    HRESULT rc = pMachine->machine->COMGETTER(State)(&machineState);
+    if (SUCCEEDED(rc))
+        return machineState;
+    return MachineState_Null;
 }
 

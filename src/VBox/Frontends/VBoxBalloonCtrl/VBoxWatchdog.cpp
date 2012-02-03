@@ -65,9 +65,13 @@ using namespace com;
 #define VBOX_WATCHDOG_GLOBAL_PERFCOL
 
 /** External globals. */
-bool                 g_fVerbose    = false;
-ComPtr<IVirtualBox>  g_pVirtualBox = NULL;
-ComPtr<ISession>     g_pSession    = NULL;
+bool                                g_fVerbose    = false;
+ComPtr<IVirtualBox>                 g_pVirtualBox = NULL;
+ComPtr<ISession>                    g_pSession    = NULL;
+mapVM                               g_mapVM;
+# ifdef VBOX_WATCHDOG_GLOBAL_PERFCOL
+ComPtr<IPerformanceCollector>       g_pPerfCollector = NULL;
+# endif
 
 /** The critical section for the machines map. */
 static RTCRITSECT    g_csMachines;
@@ -98,7 +102,8 @@ static struct
     bool            fEnabled;
 } g_aModules[] =
 {
-    { &g_ModBallooning, false /* Pre-inited */, true /* Enabled */ }
+    { &g_ModBallooning, false /* Pre-inited */, true /* Enabled */ },
+    { &g_ModAPIMonitor, false /* Pre-inited */, true /* Enabled */ }
 };
 
 /**
@@ -118,7 +123,7 @@ static const RTGETOPTDEF g_aOptions[] = {
     { "--loginterval",          'I',                                       RTGETOPT_REQ_UINT32 }
 };
 
-static unsigned long g_ulTimeoutMS = 30 * 1000; /* Default is 30 seconds timeout. */
+static unsigned long g_ulTimeoutMS = 500; /* Default is 500ms timeout. */
 static unsigned long g_ulMemoryBalloonIncrementMB = 256;
 static unsigned long g_ulMemoryBalloonDecrementMB = 128;
 /** Global balloon limit is 0, so disabled. Can be overridden by a per-VM
@@ -131,20 +136,14 @@ static ComPtr<IVirtualBoxClient> g_pVirtualBoxClient = NULL;
 static ComPtr<IEventSource> g_pEventSource = NULL;
 static ComPtr<IEventSource> g_pEventSourceClient = NULL;
 static ComPtr<IEventListener> g_pVBoxEventListener = NULL;
-# ifdef VBOX_WATCHDOG_GLOBAL_PERFCOL
-static ComPtr<IPerformanceCollector> g_pPerfCollector = NULL;
-# endif
 static EventQueue *g_pEventQ = NULL;
-static mapVM g_mapVM;
 
 /* Prototypes. */
-static bool machineIsRunning(MachineState_T enmState);
-static bool machineHandled(const Bstr &strUuid);
 static int machineAdd(const Bstr &strUuid);
 static int machineRemove(const Bstr &strUuid);
 //static int machineUpdate(const Bstr &strUuid, MachineState_T enmState);
 static HRESULT watchdogSetup();
-static void watchdogTeardown();
+static void watchdogShutdown();
 
 #ifdef RT_OS_WINDOWS
 /* Required for ATL. */
@@ -194,24 +193,9 @@ class VirtualBoxEventListener
                         int rc = RTCritSectEnter(&g_csMachines);
                         if (RT_SUCCESS(rc))
                         {
-                            for (unsigned j = 0; j < RT_ELEMENTS(g_aModules); j++)
-                                if (g_aModules[j].fEnabled)
-                                {
-                                    int rc2 = fRegistered
-                                            ? g_aModules[j].pDesc->pfnOnMachineRegistered(uuid)
-                                            : g_aModules[j].pDesc->pfnOnMachineUnregistered(uuid);
-                                    if (RT_FAILURE(rc2))
-                                        serviceLog("Module '%s' reported an error: %Rrc\n",
-                                                   g_aModules[j].pDesc->pszName, rc);
-                                    /* Keep going. */
-                                }
-
-                            #if 0
-                            if (fRegistered && machineHandled(uuid))
-                                rc = machineAdd(uuid);
-                            else if (!fRegistered)
-                                 rc = machineRemove(uuid);
-                            #endif
+                            rc = fRegistered
+                               ? machineAdd(uuid)
+                               : machineRemove(uuid);
                             int rc2 = RTCritSectLeave(&g_csMachines);
                             if (RT_SUCCESS(rc))
                                 rc = rc2;
@@ -249,7 +233,6 @@ class VirtualBoxEventListener
                                     /* Keep going. */
                                 }
 
-                            //rc = machineUpdate(uuid, machineState);
                             int rc2 = RTCritSectLeave(&g_csMachines);
                             if (RT_SUCCESS(rc))
                                 rc = rc2;
@@ -281,7 +264,7 @@ class VirtualBoxEventListener
                     if (!fAvailable)
                     {
                         serviceLog("VBoxSVC became unavailable\n");
-                        watchdogTeardown();
+                        watchdogShutdown();
                     }
                     else
                     {
@@ -351,67 +334,6 @@ static void signalHandlerUninstall()
 }
 
 /**
- * Indicates whether a VM is up and running (regardless of its running
- * state, could be paused as well).
- *
- * @return  bool            Flag indicating whether the VM is running or not.
- * @param   enmState        The VM's machine state to judge whether it's running or not.
- */
-static bool machineIsRunning(MachineState_T enmState)
-{
-    switch (enmState)
-    {
-        case MachineState_Running:
-#if 0
-        /* Not required for ballooning. */
-        case MachineState_Teleporting:
-        case MachineState_LiveSnapshotting:
-        case MachineState_Paused:
-        case MachineState_TeleportingPausedVM:
-#endif
-            return true;
-        default:
-            break;
-    }
-    return false;
-}
-
-/**
- * Determines whether the specified machine needs to be handled
- * by this service.
- *
- * @return  bool                    True if the machine needs handling, false if not.
- * @param   strUuid                 UUID of the specified machine.
- */
-static bool machineHandled(const Bstr &strUuid)
-{
-    bool fHandled = false;
-
-    do
-    {
-        HRESULT rc;
-
-        ComPtr <IMachine> machine;
-        CHECK_ERROR_BREAK(g_pVirtualBox, FindMachine(strUuid.raw(), machine.asOutParam()));
-
-        MachineState_T machineState;
-        CHECK_ERROR_BREAK(machine, COMGETTER(State)(&machineState));
-
-    #if 0
-        if (   balloonGetMaxSize(machine)
-            && machineIsRunning(machineState))
-        {
-            serviceLogVerbose(("Handling machine \"%ls\"\n", strUuid.raw()));
-            fHandled = true;
-        }
-    #endif
-    }
-    while (0);
-
-    return fHandled;
-}
-
-/**
  * Adds a specified machine to the list (map) of handled machines.
  * Does not do locking -- needs to be done by caller!
  *
@@ -430,71 +352,69 @@ static int machineAdd(const Bstr &strUuid)
         MachineState_T machineState;
         CHECK_ERROR_BREAK(machine, COMGETTER(State)(&machineState));
 
-    #if 0
-        if (   !balloonGetMaxSize(machine)
-            || !machineIsRunning(machineState))
-        {
-            /* This machine does not need to be added, just skip it! */
-            break;
-        }
-    #endif
-
         VBOXWATCHDOG_MACHINE m;
         m.machine = machine;
-
-////// TODO: Put this in module!
-
-        /*
-         * Setup metrics.
-         */
-        com::SafeArray<BSTR> metricNames(1);
-        com::SafeIfaceArray<IUnknown> metricObjects(1);
-        com::SafeIfaceArray<IPerformanceMetric> metricAffected;
-
-        Bstr strMetricNames(L"Guest/RAM/Usage");
-        strMetricNames.cloneTo(&metricNames[0]);
-
-        m.machine.queryInterfaceTo(&metricObjects[0]);
-
-#ifdef VBOX_WATCHDOG_GLOBAL_PERFCOL
-        CHECK_ERROR_BREAK(g_pPerfCollector, SetupMetrics(ComSafeArrayAsInParam(metricNames),
-                                                         ComSafeArrayAsInParam(metricObjects),
-                                                         5 /* 5 seconds */,
-                                                         1 /* One sample is enough */,
-                                                         ComSafeArrayAsOutParam(metricAffected)));
-#else
-        CHECK_ERROR_BREAK(g_pVirtualBox, COMGETTER(PerformanceCollector)(m.collector.asOutParam()));
-        CHECK_ERROR_BREAK(m.collector, SetupMetrics(ComSafeArrayAsInParam(metricNames),
-                                                    ComSafeArrayAsInParam(metricObjects),
-                                                    5 /* 5 seconds */,
-                                                    1 /* One sample is enough */,
-                                                    ComSafeArrayAsOutParam(metricAffected)));
-#endif
-
-///////////////// TODO END
 
         /*
          * Add machine to map.
          */
         mapVMIter it = g_mapVM.find(strUuid);
         Assert(it == g_mapVM.end());
-
-        /* Register all module payloads. */
-        for (unsigned j = 0; j < RT_ELEMENTS(g_aModules); j++)
-        {
-            if (g_aModules[j].pDesc->pszOptions)
-                RTPrintf("%s", g_aModules[j].pDesc->pszOptions);
-        }
-
         g_mapVM.insert(std::make_pair(strUuid, m));
 
         serviceLogVerbose(("Added machine \"%ls\"\n", strUuid.raw()));
+
+        /* Let all modules know. */
+        for (unsigned j = 0; j < RT_ELEMENTS(g_aModules); j++)
+            if (g_aModules[j].fEnabled)
+            {
+                int rc2 = g_aModules[j].pDesc->pfnOnMachineRegistered(strUuid);
+                if (RT_FAILURE(rc2))
+                    serviceLog("OnMachineRegistered: Module '%s' reported an error: %Rrc\n",
+                               g_aModules[j].pDesc->pszName, rc);
+                /* Keep going. */
+            }
 
     } while (0);
 
     /** @todo Add std exception handling! */
 
     return SUCCEEDED(rc) ? VINF_SUCCESS : VERR_COM_IPRT_ERROR; /* @todo Find a better error! */
+}
+
+static int machineDestroy(const Bstr &strUuid)
+{
+    AssertReturn(!strUuid.isEmpty(), VERR_INVALID_PARAMETER);
+    int rc = VINF_SUCCESS;
+
+    /* Let all modules know. */
+    for (unsigned j = 0; j < RT_ELEMENTS(g_aModules); j++)
+        if (g_aModules[j].fEnabled)
+        {
+            int rc2 = g_aModules[j].pDesc->pfnOnMachineUnregistered(strUuid);
+            if (RT_FAILURE(rc2))
+                serviceLog("OnMachineUnregistered: Module '%s' reported an error: %Rrc\n",
+                           g_aModules[j].pDesc->pszName, rc);
+            /* Keep going. */
+        }
+
+    mapVMIter it = g_mapVM.find(strUuid);
+    Assert(it != g_mapVM.end());
+
+#ifndef VBOX_WATCHDOG_GLOBAL_PERFCOL
+    it->second.collector.setNull();
+#endif
+    it->second.machine.setNull();
+
+    /* Must log before erasing the iterator because of the UUID ref! */
+    serviceLogVerbose(("Removing machine \"%ls\"\n", strUuid.raw()));
+
+    /*
+     * Remove machine from map.
+     */
+    g_mapVM.erase(it);
+
+    return rc;
 }
 
 /**
@@ -506,18 +426,20 @@ static int machineAdd(const Bstr &strUuid)
  */
 static int machineRemove(const Bstr &strUuid)
 {
+    AssertReturn(!strUuid.isEmpty(), VERR_INVALID_PARAMETER);
     int rc = VINF_SUCCESS;
 
     mapVMIter it = g_mapVM.find(strUuid);
     if (it != g_mapVM.end())
     {
-        /* Must log before erasing the iterator because of the UUID ref! */
-        serviceLogVerbose(("Removing machine \"%ls\"\n", strUuid.raw()));
+        int rc2 = machineDestroy(strUuid);
+        if (RT_FAILURE(rc))
+        {
+            serviceLog(("Machine \"%ls\" failed to destroy, rc=%Rc\n"));
+            if (RT_SUCCESS(rc))
+                rc = rc2;
+        }
 
-        /*
-         * Remove machine from map.
-         */
-        g_mapVM.erase(it);
     }
     else
     {
@@ -527,68 +449,6 @@ static int machineRemove(const Bstr &strUuid)
 
     return rc;
 }
-
-#if 0
-/**
- * Updates a specified machine according to its current machine state.
- * That currently also could mean that a machine gets removed if it doesn't
- * fit in our criteria anymore or a machine gets added if we need to handle
- * it now (and didn't before).
- * Does not do locking -- needs to be done by caller!
- *
- * @return  IPRT status code.
- * @param   strUuid                 UUID of the specified machine.
- * @param   enmState                The machine's current state.
- */
-static int machineUpdate(const Bstr &strUuid, MachineState_T enmState)
-{
-    int rc = VINF_SUCCESS;
-
-    mapVMIter it = g_mapVM.find(strUuid);
-    if (it == g_mapVM.end())
-    {
-        if (machineHandled(strUuid))
-        {
-            rc  = machineAdd(strUuid);
-            if (RT_SUCCESS(rc))
-                it = g_mapVM.find(strUuid);
-        }
-        else
-        {
-            serviceLogVerbose(("Machine \"%ls\" (state: %u) does not need to be updated\n",
-                               strUuid.raw(), enmState));
-        }
-    }
-
-    if (it != g_mapVM.end())
-    {
-        /*
-         * Ballooning stuff - start.
-         */
-#if 0
-        /* Our actual ballooning criteria. */
-        if (   !balloonIsRequired(&it->second)
-            || !machineIsRunning(enmState))
-        {
-            /* Current machine is not suited for ballooning anymore -
-             * remove it from our map. */
-            rc = machineRemove(strUuid);
-        }
-        else
-        {
-            rc = balloonUpdate(strUuid, &it->second);
-            AssertRC(rc);
-        }
-#endif
-    }
-
-    /*
-     * Ballooning stuff - end.
-     */
-
-    return rc;
-}
-#endif
 
 static void vmListDestroy()
 {
@@ -600,11 +460,8 @@ static void vmListDestroy()
         mapVMIter it = g_mapVM.begin();
         while (it != g_mapVM.end())
         {
-#ifndef VBOX_WATCHDOG_GLOBAL_PERFCOL
-            it->second.collector.setNull();
-#endif
-            it->second.machine.setNull();
-            it++;
+            machineDestroy(it->first);
+            it = g_mapVM.begin();
         }
 
         g_mapVM.clear();
@@ -762,8 +619,6 @@ static RTEXITCODE watchdogMain(HandlerArg *a)
         /* Initialize global weak references. */
         g_pEventQ = com::EventQueue::getMainEventQueue();
 
-        RTCritSectInit(&g_csMachines);
-
         /*
          * Install signal handlers.
          */
@@ -805,22 +660,25 @@ static RTEXITCODE watchdogMain(HandlerArg *a)
             /*
              * Do the actual work.
              */
-            /*
-            vrc = balloonCtrlCheck();
-            if (RT_FAILURE(vrc))
+
+            int rc = RTCritSectEnter(&g_csMachines);
+            if (RT_SUCCESS(rc))
             {
-                serviceLog("Error while doing ballooning control; rc=%Rrc\n", vrc);
-                break;
-            }*/
-            for (unsigned j = 0; j < RT_ELEMENTS(g_aModules); j++)
-                if (g_aModules[j].fEnabled)
-                {
-                    int rc2 = g_aModules[j].pDesc->pfnMain();
-                    if (RT_FAILURE(rc2))
-                        serviceLog("Module '%s' reported an error: %Rrc\n",
-                                   g_aModules[j].pDesc->pszName, rc);
-                    /* Keep going. */
-                }
+                for (unsigned j = 0; j < RT_ELEMENTS(g_aModules); j++)
+                    if (g_aModules[j].fEnabled)
+                    {
+                        int rc2 = g_aModules[j].pDesc->pfnMain();
+                        if (RT_FAILURE(rc2))
+                            serviceLog("Module '%s' reported an error: %Rrc\n",
+                                       g_aModules[j].pDesc->pszName, rc);
+                        /* Keep going. */
+                    }
+
+                int rc2 = RTCritSectLeave(&g_csMachines);
+                if (RT_SUCCESS(rc))
+                    rc = rc2;
+                AssertRC(rc);
+            }
 
             /*
              * Process pending events, then wait for new ones. Note, this
@@ -853,8 +711,6 @@ static RTEXITCODE watchdogMain(HandlerArg *a)
 
         vrc = watchdogShutdownModules();
         AssertRC(vrc);
-
-        RTCritSectDelete(&g_csMachines);
 
         if (RT_FAILURE(vrc))
             rc = VBOX_E_IPRT_ERROR;
@@ -963,8 +819,18 @@ static void displayHelp(const char *pszImage)
 
     displayHeader();
 
-    RTStrmPrintf(g_pStdErr, "Usage: %s [options]\n\nSupported options (default values in brackets):\n",
-                 pszImage);
+    RTStrmPrintf(g_pStdErr,
+                 "Usage:\n"
+                 " %s [-v|--verbose] [-h|-?|--help] [-P|--pidfile]\n"
+                 " [-F|--logfile=<file>] [-R|--logrotate=<num>] [-S|--logsize=<bytes>]\n"
+                 " [-I|--loginterval=<seconds>]\n", pszImage);
+    for (unsigned j = 0; j < RT_ELEMENTS(g_aModules); j++)
+        if (g_aModules[j].pDesc->pszUsage)
+            RTStrmPrintf(g_pStdErr, "%s\n", g_aModules[j].pDesc->pszUsage);
+
+    RTStrmPrintf(g_pStdErr, "\n"
+                 "Options:\n");
+
     for (unsigned i = 0;
          i < RT_ELEMENTS(g_aOptions);
          ++i)
@@ -1031,7 +897,7 @@ static void displayHelp(const char *pszImage)
  */
 static HRESULT watchdogSetup()
 {
-    serviceLogVerbose(("Creating local objects ...\n"));
+    serviceLogVerbose(("Setting up ...\n"));
 
     HRESULT rc = g_pVirtualBoxClient->COMGETTER(VirtualBox)(g_pVirtualBox.asOutParam());
     if (FAILED(rc))
@@ -1054,10 +920,17 @@ static HRESULT watchdogSetup()
         CHECK_ERROR_BREAK(g_pVirtualBox, COMGETTER(PerformanceCollector)(g_pPerfCollector.asOutParam()));
 #endif
 
+        int vrc = RTCritSectInit(&g_csMachines);
+        if (RT_FAILURE(vrc))
+        {
+            rc = VBOX_E_IPRT_ERROR;
+            break;
+        }
+
         /*
          * Build up initial VM list.
          */
-        int vrc = vmListBuild();
+        vrc = vmListBuild();
         if (RT_FAILURE(vrc))
         {
             rc = VBOX_E_IPRT_ERROR;
@@ -1069,11 +942,14 @@ static HRESULT watchdogSetup()
     return rc;
 }
 
-static void watchdogTeardown()
+static void watchdogShutdown()
 {
-    serviceLogVerbose(("Deleting local objects ...\n"));
+    serviceLogVerbose(("Shutting down ...\n"));
 
     vmListDestroy();
+
+    int rc = RTCritSectDelete(&g_csMachines);
+    AssertRC(rc);
 
 #ifdef VBOX_WATCHDOG_GLOBAL_PERFCOL
     g_pPerfCollector.setNull();
@@ -1275,7 +1151,7 @@ int main(int argc, char *argv[])
 
     EventQueue::getMainEventQueue()->processEventQueue(0);
 
-    watchdogTeardown();
+    watchdogShutdown();
 
     g_pVirtualBoxClient.setNull();
 
