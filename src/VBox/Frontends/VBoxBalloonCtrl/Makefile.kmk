@@ -21,7 +21,7 @@ include $(KBUILD_PATH)/subheader.kmk
 PROGRAMS += VBoxBalloonCtrl
  VBoxBalloonCtrl_TEMPLATE   = VBOXMAINCLIENTEXE
  VBoxBalloonCtrl_DEFS      += \
-	VBOX_BUILD_TARGET=\"$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)\"
+	VBOX_WATCHDOG_GLOBAL_PERFCOL VBOX_BUILD_TARGET=\"$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)\"
  VBoxBalloonCtrl_DEFS.win   = _WIN32_WINNT=0x0500
  VBoxBalloonCtrl_SOURCES    = \
 	VBoxWatchdog.cpp      \

@@ -20,6 +20,7 @@
 
 #ifndef VBOX_ONLY_DOCS
 #include <VBox/com/com.h>
+#include <VBox/com/assert.h>
 #include <VBox/com/string.h>
 #include <VBox/com/VirtualBox.h>
 
@@ -54,9 +55,9 @@ typedef struct VBOXWATCHDOG_MODULE_PAYLOAD
 {
     /* Pointer to allocated payload. Can be NULL if
      * a module doesn't have an own payload. */
-    void *pvPayload;
+    void *pvData;
     /* Size of payload (in bytes). */
-    size_t cbPayload;
+    size_t cbData;
     /** @todo Add mutex for locking + getPayloadLocked(). */
 } VBOXWATCHDOG_MODULE_PAYLOAD, *PVBOXWATCHDOG_MODULE_PAYLOAD;
 
@@ -194,16 +195,25 @@ typedef VBOXMODULE const *PCVBOXMODULE;
 RT_C_DECLS_BEGIN
 
 extern bool g_fVerbose;
-extern ComPtr<IVirtualBox> g_pVirtualBox;
-extern ComPtr<ISession> g_pSession;
+extern ComPtr<IVirtualBox>              g_pVirtualBox;
+extern ComPtr<ISession>                 g_pSession;
+extern mapVM                            g_mapVM;
+# ifdef VBOX_WATCHDOG_GLOBAL_PERFCOL
+extern ComPtr<IPerformanceCollector>    g_pPerfCollector;
+# endif
 
 extern VBOXMODULE g_ModBallooning;
+extern VBOXMODULE g_ModAPIMonitor;
 
 extern void serviceLog(const char *pszFormat, ...);
 #define serviceLogVerbose(a) if (g_fVerbose) { serviceLog a; }
 
 extern int getMetric(PVBOXWATCHDOG_MACHINE pMachine, const Bstr& strName, LONG *pulData);
 void* getPayload(PVBOXWATCHDOG_MACHINE pMachine, const char *pszModule);
+int payloadAlloc(PVBOXWATCHDOG_MACHINE pMachine, const char *pszModule, size_t cbSize, void **ppszPayload);
+void payloadFree(PVBOXWATCHDOG_MACHINE pMachine, const char *pszModule);
+PVBOXWATCHDOG_MACHINE getMachine(const Bstr& strUuid);
+MachineState_T getMachineState(const PVBOXWATCHDOG_MACHINE pMachine);
 
 RT_C_DECLS_END
 

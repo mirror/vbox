@@ -198,6 +198,32 @@ static unsigned long balloonGetMaxSize(const ComPtr<IMachine> &rptrMachine)
 }
 
 /**
+ * Indicates whether ballooning on the specified machine state is
+ * possible -- this only is true if the machine is up and running.
+ *
+ * @return  bool            Flag indicating whether the VM is running or not.
+ * @param   enmState        The VM's machine state to judge whether it's running or not.
+ */
+static bool balloonIsPossible(MachineState_T enmState)
+{
+    switch (enmState)
+    {
+        case MachineState_Running:
+#if 0
+        /* Not required for ballooning. */
+        case MachineState_Teleporting:
+        case MachineState_LiveSnapshotting:
+        case MachineState_Paused:
+        case MachineState_TeleportingPausedVM:
+#endif
+            return true;
+        default:
+            break;
+    }
+    return false;
+}
+
+/**
  * Determines whether ballooning is required to the specified machine.
  *
  * @return  bool                    True if ballooning is required, false if not.
@@ -207,8 +233,6 @@ static bool balloonIsRequired(PVBOXWATCHDOG_MACHINE pMachine)
 {
     AssertPtrReturn(pMachine, false);
 
-    /** @todo Add grouping! */
-
     /* Only do ballooning if we have a maximum balloon size set. */
     PVBOXWATCHDOG_BALLOONCTRL_PAYLOAD pData = (PVBOXWATCHDOG_BALLOONCTRL_PAYLOAD)
                                               getPayload(pMachine, VBOX_MOD_BALLOONING_NAME);
@@ -216,7 +240,56 @@ static bool balloonIsRequired(PVBOXWATCHDOG_MACHINE pMachine)
     pData->ulBalloonSizeMax = pMachine->machine.isNull()
                               ? 0 : balloonGetMaxSize(pMachine->machine);
 
+    /** @todo Add grouping as a criteria! */
+
     return pData->ulBalloonSizeMax ? true : false;
+}
+
+int balloonMachineSetup(const Bstr& strUuid)
+{
+    int vrc = VINF_SUCCESS;
+
+    do
+    {
+        PVBOXWATCHDOG_MACHINE pMachine = getMachine(strUuid);
+        AssertPtrBreakStmt(pMachine, vrc=VERR_INVALID_PARAMETER);
+
+        ComPtr<IMachine> m = pMachine->machine;
+
+        /*
+         * Setup metrics required for ballooning.
+         */
+        com::SafeArray<BSTR> metricNames(1);
+        com::SafeIfaceArray<IUnknown> metricObjects(1);
+        com::SafeIfaceArray<IPerformanceMetric> metricAffected;
+
+        Bstr strMetricNames(L"Guest/RAM/Usage");
+        strMetricNames.cloneTo(&metricNames[0]);
+
+        HRESULT rc = m.queryInterfaceTo(&metricObjects[0]);
+
+#ifdef VBOX_WATCHDOG_GLOBAL_PERFCOL
+        CHECK_ERROR_BREAK(g_pPerfCollector, SetupMetrics(ComSafeArrayAsInParam(metricNames),
+                                                         ComSafeArrayAsInParam(metricObjects),
+                                                         5 /* 5 seconds */,
+                                                         1 /* One sample is enough */,
+                                                         ComSafeArrayAsOutParam(metricAffected)));
+#else
+        ComPtr<IPerformanceCollector> coll = pMachine->collector;
+
+        CHECK_ERROR_BREAK(g_pVirtualBox, COMGETTER(PerformanceCollector)(coll.asOutParam()));
+        CHECK_ERROR_BREAK(coll, SetupMetrics(ComSafeArrayAsInParam(metricNames),
+                                             ComSafeArrayAsInParam(metricObjects),
+                                             5 /* 5 seconds */,
+                                             1 /* One sample is enough */,
+                                             ComSafeArrayAsOutParam(metricAffected)));
+#endif
+        if (FAILED(rc))
+            vrc = VERR_COM_IPRT_ERROR; /* @todo Find better rc! */
+
+    } while (0);
+
+    return vrc;
 }
 
 /**
@@ -227,7 +300,7 @@ static bool balloonIsRequired(PVBOXWATCHDOG_MACHINE pMachine)
  * @param   strUuid                 UUID of the specified machine.
  * @param   pMachine                Pointer to the machine's internal structure.
  */
-static int balloonUpdate(const Bstr &strUuid, PVBOXWATCHDOG_MACHINE pMachine)
+static int balloonMachineUpdate(const Bstr &strUuid, PVBOXWATCHDOG_MACHINE pMachine)
 {
     AssertPtrReturn(pMachine, VERR_INVALID_POINTER);
 
@@ -303,11 +376,10 @@ static int balloonUpdate(const Bstr &strUuid, PVBOXWATCHDOG_MACHINE pMachine)
     return vrc;
 }
 
+/* Callbacks. */
 static DECLCALLBACK(int) VBoxModBallooningPreInit(void)
 {
-    int rc = -1;
-    /* Not yet implemented. */
-    return rc;
+    return VINF_SUCCESS;
 }
 
 static DECLCALLBACK(int) VBoxModBallooningOption(int argc, char **argv)
@@ -372,9 +444,7 @@ static DECLCALLBACK(int) VBoxModBallooningOption(int argc, char **argv)
 
 static DECLCALLBACK(int) VBoxModBallooningInit(void)
 {
-    int rc = -1;
-    /* Not yet implemented. */
-    return rc;
+    return VINF_SUCCESS; /* Nothing to do here right now. */
 }
 
 static DECLCALLBACK(int) VBoxModBallooningMain(void)
@@ -384,37 +454,35 @@ static DECLCALLBACK(int) VBoxModBallooningMain(void)
     if (uLast == uNow)
         return VINF_SUCCESS;
     uLast = uNow;
-#if 0
-    int rc = RTCritSectEnter(&g_MapCritSect);
-    if (RT_SUCCESS(rc))
-    {
-        mapVMIter it = g_mapVM.begin();
-        while (it != g_mapVM.end())
-        {
-            MachineState_T machineState;
-            HRESULT hrc = it->second.machine->COMGETTER(State)(&machineState);
-            if (SUCCEEDED(hrc))
-            {
-                rc = machineUpdate(it->first /* UUID */, machineState);
-                if (RT_FAILURE(rc))
-                    break;
-            }
-            it++;
-        }
 
-        int rc2 = RTCritSectLeave(&g_MapCritSect);
-        if (RT_SUCCESS(rc))
-            rc = rc2;
+    int rc = VINF_SUCCESS;
+
+    /** @todo Provide API for enumerating/working w/ machines inside a module! */
+    mapVMIter it = g_mapVM.begin();
+    while (it != g_mapVM.end())
+    {
+        MachineState_T state = getMachineState(&it->second);
+
+        /* Our actual ballooning criteria. */
+        if (   balloonIsPossible(state)
+            && balloonIsRequired(&it->second))
+        {
+            rc = balloonMachineUpdate(it->first /* UUID */,
+                                      &it->second /* Machine */);
+            AssertRC(rc);
+        }
+        if (RT_FAILURE(rc))
+            break;
+
+        it++;
     }
 
     return rc;
-#endif
-    return 0;
 }
 
 static DECLCALLBACK(int) VBoxModBallooningStop(void)
 {
-    return 0;
+    return VINF_SUCCESS;
 }
 
 static DECLCALLBACK(void) VBoxModBallooningTerm(void)
@@ -423,23 +491,40 @@ static DECLCALLBACK(void) VBoxModBallooningTerm(void)
 
 static DECLCALLBACK(int) VBoxModBallooningOnMachineRegistered(const Bstr &strUuid)
 {
-    return 0;
+    PVBOXWATCHDOG_MACHINE pMachine = getMachine(strUuid);
+    AssertPtrReturn(pMachine, VERR_INVALID_PARAMETER);
+
+    PVBOXWATCHDOG_BALLOONCTRL_PAYLOAD pData;
+    int rc = payloadAlloc(pMachine, VBOX_MOD_BALLOONING_NAME,
+                          sizeof(VBOXWATCHDOG_BALLOONCTRL_PAYLOAD), (void**)&pData);
+    if (RT_SUCCESS(rc))
+        rc = balloonMachineUpdate(strUuid, pMachine);
+
+    return rc;
 }
 
 static DECLCALLBACK(int) VBoxModBallooningOnMachineUnregistered(const Bstr &strUuid)
 {
-    return 0;
+    PVBOXWATCHDOG_MACHINE pMachine = getMachine(strUuid);
+    AssertPtrReturn(pMachine, VERR_INVALID_PARAMETER);
+
+    payloadFree(pMachine, VBOX_MOD_BALLOONING_NAME);
+
+    return VINF_SUCCESS;
 }
 
 static DECLCALLBACK(int) VBoxModBallooningOnMachineStateChanged(const Bstr &strUuid,
                                                                 MachineState_T enmState)
 {
-    return 0;
+    PVBOXWATCHDOG_MACHINE pMachine = getMachine(strUuid);
+    AssertPtrReturn(pMachine, VERR_INVALID_PARAMETER);
+
+    return balloonMachineUpdate(strUuid, pMachine);
 }
 
 static DECLCALLBACK(int) VBoxModBallooningOnServiceStateChanged(bool fAvailable)
 {
-    return 0;
+    return VINF_SUCCESS;
 }
 
 /**
@@ -456,12 +541,12 @@ VBOXMODULE g_ModBallooning =
     /* uPriority. */
     0 /* Not used */,
     /* pszUsage. */
-    "              [--balloon-dec <MB>] [--balloon-inc <MB>]\n"
-    "              [--balloon-interval <ms>] [--balloon-lower-limit <MB>]\n"
-    "              [--balloon-max <MB>]",
+    " [--balloon-dec <MB>] [--balloon-groups <string>] [--balloon-inc <MB>]\n"
+    " [--balloon-interval <ms>] [--balloon-lower-limit <MB>]\n"
+    " [--balloon-max <MB>]\n",
     /* pszOptions. */
     "--balloon-dec          Sets the ballooning decrement in MB (128 MB).\n"
-    "--balloon-groups       Sets the VM groups for ballooning (All).\n"
+    "--balloon-groups       Sets the VM groups for ballooning (all).\n"
     "--balloon-inc          Sets the ballooning increment in MB (256 MB).\n"
     "--balloon-interval     Sets the check interval in ms (30 seconds).\n"
     "--balloon-lower-limit  Sets the ballooning lower limit in MB (64 MB).\n"
