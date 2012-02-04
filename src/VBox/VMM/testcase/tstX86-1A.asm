@@ -4,7 +4,7 @@
 ;
 
 ;
-; Copyright (C) 2011 Oracle Corporation
+; Copyright (C) 2011-2012 Oracle Corporation
 ;
 ; This file is part of VirtualBox Open Source Edition (OSE), as
 ; available from http://www.virtualbox.org. This file is free software;
@@ -1009,7 +1009,7 @@ ENDPROC     x861_Test2
 ;
 BEGINPROC   x861_Test3
         SAVE_ALL_PROLOGUE
-
+%if 0
         call    x861_LoadUniqueRegValuesSSE
         mov     xDI, REF_GLOBAL(g_pbEfExecPage)
 
@@ -1140,6 +1140,30 @@ BEGINPROC   x861_Test3
         ShouldTrap X86_XCPT_GP, fxrstor [xDI + 13]
         ShouldTrap X86_XCPT_GP, fxrstor [xDI + 14]
         ShouldTrap X86_XCPT_GP, fxrstor [xDI + 15]
+%endif
+
+        ; Lets check what a FP in fxsave changes ... nothing on intel.
+        mov     ebx, 16
+.fxsave_pf_effect_loop:
+        mov     xDI, REF_GLOBAL(g_pbEfExecPage)
+        add     xDI, PAGE_SIZE - 512 * 2
+        mov     xSI, xDI
+        mov     eax, 066778899h
+        mov     ecx, 512 * 2 / 4
+        cld
+        rep stosd
+
+        ShouldTrap X86_XCPT_PF, fxsave  [xSI + PAGE_SIZE - 512 + xBX]
+
+        mov     ecx, 512 / 4
+        lea     xDI, [xSI + 512]
+        repz cmpsd
+        mov     eax, ebx
+        jnz     .return
+
+        add     ebx, 16
+        cmp     ebx, 512
+        jb      .fxsave_pf_effect_loop
 
 
 .success:
