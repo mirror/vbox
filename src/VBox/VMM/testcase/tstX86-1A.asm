@@ -1009,7 +1009,6 @@ ENDPROC     x861_Test2
 ;
 BEGINPROC   x861_Test3
         SAVE_ALL_PROLOGUE
-%if 0
         call    x861_LoadUniqueRegValuesSSE
         mov     xDI, REF_GLOBAL(g_pbEfExecPage)
 
@@ -1140,7 +1139,6 @@ BEGINPROC   x861_Test3
         ShouldTrap X86_XCPT_GP, fxrstor [xDI + 13]
         ShouldTrap X86_XCPT_GP, fxrstor [xDI + 14]
         ShouldTrap X86_XCPT_GP, fxrstor [xDI + 15]
-%endif
 
         ; Lets check what a FP in fxsave changes ... nothing on intel.
         mov     ebx, 16
@@ -1157,14 +1155,59 @@ BEGINPROC   x861_Test3
 
         mov     ecx, 512 / 4
         lea     xDI, [xSI + 512]
+        cld
         repz cmpsd
-        mov     eax, ebx
+        lea     xAX, [xBX + 20000]
         jnz     .return
 
         add     ebx, 16
         cmp     ebx, 512
-        jb      .fxsave_pf_effect_loop
+        jbe     .fxsave_pf_effect_loop
 
+        ; Lets check that a FP in fxrstor does not have any effect on the FPU or SSE state.
+        mov     xDI, REF_GLOBAL(g_pbEfExecPage)
+        mov     ecx, PAGE_SIZE / 4
+        mov     eax, 0ffaa33cch
+        cld
+        rep stosd
+
+        call    x861_LoadUniqueRegValuesSSE
+        mov     xDI, REF_GLOBAL(g_pbEfExecPage)
+        fxsave  [xDI]
+
+        call    x861_ClearRegistersSSE
+        mov     xDI, REF_GLOBAL(g_pbEfExecPage)
+        fxsave  [xDI + 512]
+
+        mov     ebx, 16
+.fxrstor_pf_effect_loop:
+        mov     xDI, REF_GLOBAL(g_pbEfExecPage)
+        mov     xSI, xDI
+        lea     xDI, [xDI + PAGE_SIZE - 512 + xBX]
+        mov     ecx, 512
+        sub     ecx, ebx
+        cld
+        rep movsb                       ; copy unique state to end of page.
+
+        push    xBX
+        call    x861_ClearRegistersSSE
+        pop     xBX
+        mov     xDI, REF_GLOBAL(g_pbEfExecPage)
+        ShouldTrap X86_XCPT_PF, fxrstor  [xDI + PAGE_SIZE - 512 + xBX] ; try load unique state
+
+        mov     xDI, REF_GLOBAL(g_pbEfExecPage)
+        lea     xSI, [xDI + 512]        ; point it to the clean state, which is what we expect.
+        lea     xDI, [xDI + 1024]
+        fxsave  [xDI]                   ; save whatever the fpu state currently is.
+        mov     ecx, 512 / 4
+        cld
+        repe cmpsd
+        lea     xAX, [xBX + 40000]
+        jnz     .return                 ; it shouldn't be modified by faulting fxrstor, i.e. a clean state.
+
+        add     ebx, 16
+        cmp     ebx, 512
+        jb      .fxrstor_pf_effect_loop
 
 .success:
         xor     eax, eax
