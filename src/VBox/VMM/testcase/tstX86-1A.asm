@@ -1207,7 +1207,7 @@ BEGINPROC   x861_Test3
 
         add     ebx, 16
         cmp     ebx, 512
-        jb      .fxrstor_pf_effect_loop
+        jbe     .fxrstor_pf_effect_loop
 
 .success:
         xor     eax, eax

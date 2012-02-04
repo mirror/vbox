@@ -24,6 +24,7 @@
 #include <iprt/mem.h>
 #include <iprt/err.h>
 #include <iprt/assert.h>
+#include <iprt/x86.h>
 
 #ifdef RT_OS_WINDOWS
 # include <Windows.h>
@@ -97,44 +98,54 @@ static void sigHandler(int iSig, siginfo_t *pSigInfo, void *pvSigCtx)
     uintptr_t  *puSP    = (uintptr_t *)&pCtx->uc_mcontext->__ss.__rsp;
     uintptr_t   uTrapNo = pCtx->uc_mcontext->__es.__trapno;
     uintptr_t   uErr    = pCtx->uc_mcontext->__es.__err;
+    uintptr_t   uCr2    = pCtx->uc_mcontext->__es.__faultvaddr;
 
 # elif defined(RT_ARCH_AMD64) && defined(RT_OS_FREEBSD)
     uintptr_t  *puPC    = (uintptr_t *)&pCtx->uc_mcontext.mc_rip;
     uintptr_t  *puSP    = (uintptr_t *)&pCtx->uc_mcontext.mc_rsp;
     uintptr_t   uTrapNo = ~(uintptr_t)0;
     uintptr_t   uErr    = ~(uintptr_t)0;
+    uintptr_t   uCr2    = ~(uintptr_t)0;
 
 # elif defined(RT_ARCH_AMD64)
     uintptr_t  *puPC    = (uintptr_t *)&pCtx->uc_mcontext.gregs[REG_RIP];
     uintptr_t  *puSP    = (uintptr_t *)&pCtx->uc_mcontext.gregs[REG_RSP];
     uintptr_t   uTrapNo = pCtx->uc_mcontext.gregs[REG_TRAPNO];
     uintptr_t   uErr    = pCtx->uc_mcontext.gregs[REG_ERR];
+    uintptr_t   uCr2    = pCtx->uc_mcontext.gregs[REG_CR2];
 
 # elif defined(RT_ARCH_X86) && defined(RT_OS_DARWIN)
     uintptr_t  *puPC    = (uintptr_t *)&pCtx->uc_mcontext->__ss.__eip;
     uintptr_t  *puSP    = (uintptr_t *)&pCtx->uc_mcontext->__ss.__esp;
     uintptr_t   uTrapNo = pCtx->uc_mcontext->__es.__trapno;
     uintptr_t   uErr    = pCtx->uc_mcontext->__es.__err;
+    uintptr_t   uCr2    = pCtx->uc_mcontext->__es.__faultvaddr;
 
 # elif defined(RT_ARCH_X86) && defined(RT_OS_FREEBSD)
     uintptr_t  *puPC    = (uintptr_t *)&pCtx->uc_mcontext.mc_eip;
     uintptr_t  *puSP    = (uintptr_t *)&pCtx->uc_mcontext.mc_esp;
     uintptr_t   uTrapNo = ~(uintptr_t)0;
     uintptr_t   uErr    = ~(uintptr_t)0;
+    uintptr_t   uCr2    = ~(uintptr_t)0;
 
 # elif defined(RT_ARCH_X86)
     uintptr_t  *puPC    = (uintptr_t *)&pCtx->uc_mcontext.gregs[REG_EIP];
     uintptr_t  *puSP    = (uintptr_t *)&pCtx->uc_mcontext.gregs[REG_ESP];
     uintptr_t   uTrapNo = pCtx->uc_mcontext.gregs[REG_TRAPNO];
     uintptr_t   uErr    = pCtx->uc_mcontext.gregs[REG_ERR];
+    uintptr_t   uCr2    = pCtx->uc_mcontext.gregs[REG_CR2];
 
 # else
     uintptr_t  *puPC    = NULL;
     uintptr_t  *puSP    = NULL;
     uintptr_t   uTrapNo = ~(uintptr_t)0;
     uintptr_t   uErr    = ~(uintptr_t)0;
+    uintptr_t   uCr2    = ~(uintptr_t)0;
 # endif
-    RTAssertMsg2("tstX86-1: Trap #%#04x err=%#06x at %p\n", uTrapNo, uErr, *puPC);
+    if (uTrapNo == X86_XCPT_PF)
+        RTAssertMsg2("tstX86-1: Trap #%#04x err=%#06x at %p / %p\n", uTrapNo, uErr, *puPC, uCr2);
+    else
+        RTAssertMsg2("tstX86-1: Trap #%#04x err=%#06x at %p\n", uTrapNo, uErr, *puPC);
 
     PCTRAPINFO pTrapInfo = findTrapInfo(*puPC, *puSP);
     if (pTrapInfo)
