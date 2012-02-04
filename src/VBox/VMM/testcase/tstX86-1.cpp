@@ -133,7 +133,11 @@ static void sigHandler(int iSig, siginfo_t *pSigInfo, void *pvSigCtx)
     uintptr_t  *puSP    = (uintptr_t *)&pCtx->uc_mcontext.gregs[REG_ESP];
     uintptr_t   uTrapNo = pCtx->uc_mcontext.gregs[REG_TRAPNO];
     uintptr_t   uErr    = pCtx->uc_mcontext.gregs[REG_ERR];
+#  ifdef REG_CR2 /** @todo ... */
     uintptr_t   uCr2    = pCtx->uc_mcontext.gregs[REG_CR2];
+#  else
+    uintptr_t   uCr2    = ~(uintptr_t)0;
+#  endif
 
 # else
     uintptr_t  *puPC    = NULL;
