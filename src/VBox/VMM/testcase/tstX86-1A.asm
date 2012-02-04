@@ -1,6 +1,6 @@
 ; $Id$
 ;; @file
-; X86 instruction set testcase #1.
+; X86 instruction set exploration/testcase #1.
 ;
 
 ;
