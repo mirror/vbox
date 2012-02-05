@@ -3263,32 +3263,107 @@ FNIEMOP_DEF(iemOp_shrd_Ev_Gv_CL)
     return FNIEMOP_CALL_1(iemOpCommonShldShrd_CL, &g_iemAImpl_shrd);
 }
 
+/** Opcode 0x0f 0xae mem/0. */
+FNIEMOP_STUB_1(iemOp_Grp15_fxsave,   uint8_t, bRm);
+
+/** Opcode 0x0f 0xae mem/1. */
+FNIEMOP_STUB_1(iemOp_Grp15_fxrstor,  uint8_t, bRm);
+
+/** Opcode 0x0f 0xae mem/2. */
+FNIEMOP_STUB_1(iemOp_Grp15_ldmxcsr,  uint8_t, bRm);
+
+/** Opcode 0x0f 0xae mem/3. */
+FNIEMOP_STUB_1(iemOp_Grp15_stmxcsr,  uint8_t, bRm);
+
+/** Opcode 0x0f 0xae mem/4. */
+FNIEMOP_STUB_1(iemOp_Grp15_xsave,    uint8_t, bRm);
+
+/** Opcode 0x0f 0xae mem/5. */
+FNIEMOP_STUB_1(iemOp_Grp15_xrstor,   uint8_t, bRm);
+
+/** Opcode 0x0f 0xae mem/6. */
+FNIEMOP_STUB_1(iemOp_Grp15_xsaveopt, uint8_t, bRm);
+
+/** Opcode 0x0f 0xae mem/7. */
+FNIEMOP_STUB_1(iemOp_Grp15_clflush,  uint8_t, bRm);
+
+/** Opcode 0x0f 0xae 11b/5. */
+FNIEMOP_STUB_1(iemOp_Grp15_lfence,   uint8_t, bRm);
+
+/** Opcode 0x0f 0xae 11b/6. */
+FNIEMOP_STUB_1(iemOp_Grp15_mfence,   uint8_t, bRm);
+
+/** Opcode 0x0f 0xae 11b/7. */
+FNIEMOP_STUB_1(iemOp_Grp15_sfence,   uint8_t, bRm);
+
+/** Opcode 0xf3 0x0f 0xae 11b/0. */
+FNIEMOP_STUB_1(iemOp_Grp15_rdfsbase, uint8_t, bRm);
+
+/** Opcode 0xf3 0x0f 0xae 11b/1. */
+FNIEMOP_STUB_1(iemOp_Grp15_rdgsbase, uint8_t, bRm);
+
+/** Opcode 0xf3 0x0f 0xae 11b/2. */
+FNIEMOP_STUB_1(iemOp_Grp15_wrfsbase, uint8_t, bRm);
+
+/** Opcode 0xf3 0x0f 0xae 11b/3. */
+FNIEMOP_STUB_1(iemOp_Grp15_wrgsbase, uint8_t, bRm);
+
 
 /** Opcode 0x0f 0xae. */
-#if 1
-FNIEMOP_STUB(iemOp_Grp15); /** @todo next up: fxrstor */
-#else
 FNIEMOP_DEF(iemOp_Grp15)
 {
     uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
-    IEMOP_HLP_NO_LOCK_PREFIX(); /** @todo should probably not be raised until we've fetched all the opcode bytes? */
     if ((bRm & X86_MODRM_MOD_MASK) != (3 << X86_MODRM_MOD_SHIFT))
     {
-        ////
+        switch ((bRm >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK)
+        {
+            case 0: return FNIEMOP_CALL_1(iemOp_Grp15_fxsave,  bRm);
+            case 1: return FNIEMOP_CALL_1(iemOp_Grp15_fxrstor, bRm);
+            case 2: return FNIEMOP_CALL_1(iemOp_Grp15_ldmxcsr, bRm);
+            case 3: return FNIEMOP_CALL_1(iemOp_Grp15_stmxcsr, bRm);
+            case 4: return FNIEMOP_CALL_1(iemOp_Grp15_xsave,   bRm);
+            case 5: return FNIEMOP_CALL_1(iemOp_Grp15_xrstor,  bRm);
+            case 6: return FNIEMOP_CALL_1(iemOp_Grp15_xsaveopt,bRm);
+            case 7: return FNIEMOP_CALL_1(iemOp_Grp15_clflush, bRm);
+            IEM_NOT_REACHED_DEFAULT_CASE_RET();
+        }
     }
     else
     {
-
-        if (pIemCpu->offOpcode == 2 || )
+        switch (pIemCpu->fPrefixes & (IEM_OP_PRF_REPZ | IEM_OP_PRF_REPNZ | IEM_OP_PRF_SIZE_OP | IEM_OP_PRF_LOCK))
         {
-        }
-        pIemCpu->
-        switch (pIemCpu->fPrefixes & (IEM_OP_PRF_REPZ | IEM_OP_PRF_REPNZ | IEM_OP_PRF_SIZE_OP))
-        {
-            case IEM_OP_PRF_SIZE_OP:
-
+            case 0:
+                switch ((bRm >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK)
+                {
+                    case 0: return IEMOP_RAISE_INVALID_OPCODE();
+                    case 1: return IEMOP_RAISE_INVALID_OPCODE();
+                    case 2: return IEMOP_RAISE_INVALID_OPCODE();
+                    case 3: return IEMOP_RAISE_INVALID_OPCODE();
+                    case 4: return IEMOP_RAISE_INVALID_OPCODE();
+                    case 5: return FNIEMOP_CALL_1(iemOp_Grp15_lfence, bRm);
+                    case 6: return FNIEMOP_CALL_1(iemOp_Grp15_mfence, bRm);
+                    case 7: return FNIEMOP_CALL_1(iemOp_Grp15_sfence, bRm);
+                    IEM_NOT_REACHED_DEFAULT_CASE_RET();
+                }
+                break;
 
             case IEM_OP_PRF_REPZ:
+                switch ((bRm >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK)
+                {
+                    case 0: return FNIEMOP_CALL_1(iemOp_Grp15_rdfsbase, bRm);
+                    case 1: return FNIEMOP_CALL_1(iemOp_Grp15_rdgsbase, bRm);
+                    case 2: return FNIEMOP_CALL_1(iemOp_Grp15_wrfsbase, bRm);
+                    case 3: return FNIEMOP_CALL_1(iemOp_Grp15_wrgsbase, bRm);
+                    case 4: return IEMOP_RAISE_INVALID_OPCODE();
+                    case 5: return IEMOP_RAISE_INVALID_OPCODE();
+                    case 6: return IEMOP_RAISE_INVALID_OPCODE();
+                    case 7: return IEMOP_RAISE_INVALID_OPCODE();
+                    IEM_NOT_REACHED_DEFAULT_CASE_RET();
+                }
+                break;
+
+            default:
+                IEMOP_RAISE_INVALID_OPCODE();
         }
     }
 
@@ -3320,7 +3395,6 @@ FNIEMOP_DEF(iemOp_Grp15)
     }
     return VINF_SUCCESS;
 }
-#endif
 
 
 /** Opcode 0x0f 0xaf. */
