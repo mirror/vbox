@@ -209,6 +209,17 @@ typedef IEMSELDESC *PIEMSELDESC;
 #define IEM_IS_AMD_CPUID_FEATURE_PRESENT_ECX(a_fEcx)    iemRegIsAmdCpuIdFeaturePresent(pIemCpu, 0, (a_fEcx))
 
 /**
+ * Tests if an AMD CPUID feature (extended) is marked present - EDX.
+ */
+#define IEM_IS_AMD_CPUID_FEATURE_PRESENT_EDX(a_fEdx)    iemRegIsAmdCpuIdFeaturePresent(pIemCpu, (a_fEdx), 0)
+
+/**
+ * Tests if at least on of the specified AMD CPUID features (extended) are
+ * marked present.
+ */
+#define IEM_IS_AMD_CPUID_FEATURES_ANY_PRESENT(a_fEdx, a_fEcx)   iemRegIsAmdCpuIdFeaturePresent(pIemCpu, (a_fEdx), (a_fEcx))
+
+/**
  * Checks if a intel CPUID feature is present.
  */
 #define IEM_IS_INTEL_CPUID_FEATURE_PRESENT_EDX(a_fEdx)  \
