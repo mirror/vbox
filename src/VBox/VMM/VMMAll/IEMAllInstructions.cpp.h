@@ -941,8 +941,49 @@ FNIEMOP_STUB(iemOp_invd);
 FNIEMOP_STUB(iemOp_wbinvd);
 /** Opcode 0x0f 0x0b. */
 FNIEMOP_STUB(iemOp_ud2);
+
 /** Opcode 0x0f 0x0d. */
-FNIEMOP_STUB(iemOp_nop_Ev_prefetch);
+FNIEMOP_DEF(iemOp_nop_Ev_GrpP)
+{
+    /* AMD prefetch group, Intel implements this as NOP Ev (and so do we). */
+    if (!IEM_IS_AMD_CPUID_FEATURES_ANY_PRESENT(X86_CPUID_AMD_FEATURE_EDX_LONG_MODE | X86_CPUID_AMD_FEATURE_EDX_3DNOW,
+                                               X86_CPUID_AMD_FEATURE_ECX_3DNOWPRF))
+    {
+        IEMOP_MNEMONIC("GrpP");
+        return IEMOP_RAISE_INVALID_OPCODE();
+    }
+
+    uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
+    if ((bRm & X86_MODRM_MOD_MASK) == (3 << X86_MODRM_MOD_SHIFT))
+    {
+        IEMOP_MNEMONIC("GrpP");
+        return IEMOP_RAISE_INVALID_OPCODE();
+    }
+
+    IEMOP_HLP_NO_LOCK_PREFIX();
+    switch ((bRm >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK)
+    {
+        case 2: /* Aliased to /0 for the time being. */
+        case 4: /* Aliased to /0 for the time being. */
+        case 5: /* Aliased to /0 for the time being. */
+        case 6: /* Aliased to /0 for the time being. */
+        case 7: /* Aliased to /0 for the time being. */
+        case 0: IEMOP_MNEMONIC("prefetch"); break;
+        case 1: IEMOP_MNEMONIC("prefetchw "); break;
+        case 3: IEMOP_MNEMONIC("prefetchw"); break;
+        IEM_NOT_REACHED_DEFAULT_CASE_RET();
+    }
+
+    IEM_MC_BEGIN(0, 1);
+    IEM_MC_LOCAL(RTGCPTR,  GCPtrEffSrc);
+    IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm);
+    /* Currently a NOP. */
+    IEM_MC_ADVANCE_RIP();
+    IEM_MC_END();
+    return VINF_SUCCESS;
+}
+
+
 /** Opcode 0x0f 0x0e. */
 FNIEMOP_STUB(iemOp_femms);
 /** Opcode 0x0f 0x0f. */
@@ -963,8 +1004,63 @@ FNIEMOP_STUB(iemOp_unpckhps_Vps_Wq__unpckhpd_Vpd_Wq);
 FNIEMOP_STUB(iemOp_movhps_Vq_Mq__movlhps_Vq_Uq__movhpd_Vq_Mq__movshdup_Vq_Wq);
 /** Opcode 0x0f 0x17. */
 FNIEMOP_STUB(iemOp_movhps_Mq_Vq__movhpd_Mq_Vq);
+
+
 /** Opcode 0x0f 0x18. */
-FNIEMOP_STUB(iemOp_prefetch_Grp16);
+FNIEMOP_DEF(iemOp_prefetch_Grp16)
+{
+    uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
+    if ((bRm & X86_MODRM_MOD_MASK) != (3 << X86_MODRM_MOD_SHIFT))
+    {
+        IEMOP_HLP_NO_LOCK_PREFIX();
+        switch ((bRm >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK)
+        {
+            case 4: /* Aliased to /0 for the time being according to AMD. */
+            case 5: /* Aliased to /0 for the time being according to AMD. */
+            case 6: /* Aliased to /0 for the time being according to AMD. */
+            case 7: /* Aliased to /0 for the time being according to AMD. */
+            case 0: IEMOP_MNEMONIC("prefetchNTA m8"); break;
+            case 1: IEMOP_MNEMONIC("prefetchT0  m8"); break;
+            case 2: IEMOP_MNEMONIC("prefetchT1  m8"); break;
+            case 3: IEMOP_MNEMONIC("prefetchT2  m8"); break;
+            IEM_NOT_REACHED_DEFAULT_CASE_RET();
+        }
+
+        IEM_MC_BEGIN(0, 1);
+        IEM_MC_LOCAL(RTGCPTR,  GCPtrEffSrc);
+        IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm);
+        /* Currently a NOP. */
+        IEM_MC_ADVANCE_RIP();
+        IEM_MC_END();
+        return VINF_SUCCESS;
+    }
+
+    return IEMOP_RAISE_INVALID_OPCODE();
+}
+
+
+/** Opcode 0x0f 0x19..0x1f. */
+FNIEMOP_DEF(iemOp_nop_Ev)
+{
+    IEMOP_HLP_NO_LOCK_PREFIX();
+    uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
+    if ((bRm & X86_MODRM_MOD_MASK) == (3 << X86_MODRM_MOD_SHIFT))
+    {
+        IEM_MC_BEGIN(0, 0);
+        IEM_MC_ADVANCE_RIP();
+        IEM_MC_END();
+    }
+    else
+    {
+        IEM_MC_BEGIN(0, 1);
+        IEM_MC_LOCAL(RTGCPTR, GCPtrEffSrc);
+        IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm);
+        /* Currently a NOP. */
+        IEM_MC_ADVANCE_RIP();
+        IEM_MC_END();
+    }
+    return VINF_SUCCESS;
+}
 
 
 /** Opcode 0x0f 0x20. */
@@ -3363,37 +3459,9 @@ FNIEMOP_DEF(iemOp_Grp15)
                 break;
 
             default:
-                IEMOP_RAISE_INVALID_OPCODE();
+                return IEMOP_RAISE_INVALID_OPCODE();
         }
     }
-
-
-
-    if ((bRm & X86_MODRM_REG_MASK) != (0 << X86_MODRM_REG_SHIFT)) /* only mov Eb,Ib in this group. */
-        return IEMOP_RAISE_INVALID_LOCK_PREFIX();
-    IEMOP_MNEMONIC("mov Eb,Ib");
-
-    if ((bRm & X86_MODRM_MOD_MASK) == (3 << X86_MODRM_MOD_SHIFT))
-    {
-        /* register access */
-        uint8_t u8Imm; IEM_OPCODE_GET_NEXT_U8(&u8Imm);
-        IEM_MC_BEGIN(0, 0);
-        IEM_MC_STORE_GREG_U8((bRm & X86_MODRM_RM_MASK) | pIemCpu->uRexB, u8Imm);
-        IEM_MC_ADVANCE_RIP();
-        IEM_MC_END();
-    }
-    else
-    {
-        /* memory access. */
-        IEM_MC_BEGIN(0, 1);
-        IEM_MC_LOCAL(RTGCPTR, GCPtrEffDst);
-        IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffDst, bRm);
-        uint8_t u8Imm; IEM_OPCODE_GET_NEXT_U8(&u8Imm);
-        IEM_MC_STORE_MEM_U8(pIemCpu->iEffSeg, GCPtrEffDst, u8Imm);
-        IEM_MC_ADVANCE_RIP();
-        IEM_MC_END();
-    }
-    return VINF_SUCCESS;
 }
 
 
@@ -4446,7 +4514,7 @@ const PFNIEMOP g_apfnTwoByteMap[256] =
     /* 0x00 */  iemOp_Grp6,             iemOp_Grp7,             iemOp_lar_Gv_Ew,        iemOp_lsl_Gv_Ew,
     /* 0x04 */  iemOp_Invalid,          iemOp_syscall,          iemOp_clts,             iemOp_sysret,
     /* 0x08 */  iemOp_invd,             iemOp_wbinvd,           iemOp_Invalid,          iemOp_ud2,
-    /* 0x0c */  iemOp_Invalid,          iemOp_nop_Ev_prefetch,  iemOp_femms,            iemOp_3Dnow,
+    /* 0x0c */  iemOp_Invalid,          iemOp_nop_Ev_GrpP,      iemOp_femms,            iemOp_3Dnow,
     /* 0x10 */  iemOp_movups_Vps_Wps__movupd_Vpd_Wpd__movss_Vss_Wss__movsd_Vsd_Wsd,
     /* 0x11 */  iemOp_movups_Wps_Vps__movupd_Wpd_Vpd__movss_Wss_Vss__movsd_Vsd_Wsd,
     /* 0x12 */  iemOp_movlps_Vq_Mq__movhlps_Vq_Uq__movlpd_Vq_Mq__movsldup_Vq_Wq__movddup_Vq_Wq,
@@ -4455,8 +4523,8 @@ const PFNIEMOP g_apfnTwoByteMap[256] =
     /* 0x15 */  iemOp_unpckhps_Vps_Wq__unpckhpd_Vpd_Wq,
     /* 0x16 */  iemOp_movhps_Vq_Mq__movlhps_Vq_Uq__movhpd_Vq_Mq__movshdup_Vq_Wq,
     /* 0x17 */  iemOp_movhps_Mq_Vq__movhpd_Mq_Vq,
-    /* 0x18 */  iemOp_prefetch_Grp16,   iemOp_Invalid,          iemOp_Invalid,          iemOp_Invalid,
-    /* 0x1c */  iemOp_Invalid,          iemOp_Invalid,          iemOp_Invalid,          iemOp_Invalid,
+    /* 0x18 */  iemOp_prefetch_Grp16,   iemOp_nop_Ev,           iemOp_nop_Ev,           iemOp_nop_Ev,
+    /* 0x1c */  iemOp_nop_Ev,           iemOp_nop_Ev,           iemOp_nop_Ev,           iemOp_nop_Ev,
     /* 0x20 */  iemOp_mov_Rd_Cd,        iemOp_mov_Rd_Dd,        iemOp_mov_Cd_Rd,        iemOp_mov_Dd_Rd,
     /* 0x24 */  iemOp_mov_Rd_Td,        iemOp_Invalid,          iemOp_mov_Td_Rd,        iemOp_Invalid,
     /* 0x28 */  iemOp_movaps_Vps_Wps__movapd_Vpd_Wpd,
