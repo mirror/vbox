@@ -666,8 +666,6 @@ static RTEXITCODE watchdogMain(HandlerArg *a)
 
     do
     {
-        int vrc = VINF_SUCCESS;
-
         /* Initialize global weak references. */
         g_pEventQ = com::EventQueue::getMainEventQueue();
 
@@ -703,8 +701,8 @@ static RTEXITCODE watchdogMain(HandlerArg *a)
         /*
          * Set up modules.
          */
-        rc = watchdogStartModules();
-        if (FAILED(rc))
+        int vrc = watchdogStartModules();
+        if (RT_FAILURE(vrc))
             break;
 
         for (;;)
@@ -713,8 +711,8 @@ static RTEXITCODE watchdogMain(HandlerArg *a)
              * Do the actual work.
              */
 
-            rc = RTCritSectEnter(&g_csMachines);
-            if (RT_SUCCESS(rc))
+            vrc = RTCritSectEnter(&g_csMachines);
+            if (RT_SUCCESS(vrc))
             {
                 for (unsigned j = 0; j < RT_ELEMENTS(g_aModules); j++)
                     if (g_aModules[j].fEnabled)
@@ -727,9 +725,9 @@ static RTEXITCODE watchdogMain(HandlerArg *a)
                     }
 
                 int rc2 = RTCritSectLeave(&g_csMachines);
-                if (RT_SUCCESS(rc))
-                    rc = rc2;
-                AssertRC(rc);
+                if (RT_SUCCESS(vrc))
+                    vrc = rc2;
+                AssertRC(vrc);
             }
 
             /*
