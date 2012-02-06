@@ -28,7 +28,6 @@
 
 #include <VBox/vmm/gvmm.h>
 #include <VBox/sup.h>
-#include <VBox/VMMDev.h> /* for VMMDEVSHAREDREGIONDESC */
 #include <VBox/param.h>
 #include <iprt/avl.h>
 
@@ -325,6 +324,8 @@ typedef struct GMMVMSTATS
     uint64_t            cReqActuallyBalloonedPages;
     /** The number of pages we've currently requested the guest to take back. */
     uint64_t            cReqDeflatePages;
+    /** The number of shareable module tracked by this VM. */
+    uint32_t            cShareableModules;
 
     /** The current over-commitment policy. */
     GMMOCPOLICY         enmPolicy;
@@ -339,9 +340,10 @@ typedef struct GMMVMSTATS
      * This is used when the reservation update request fails or when the VM has
      * been told to suspend/save/die in an out-of-memory case. */
     bool                fMayAllocate;
-
     /** Explicit alignment. */
-    bool                afReserved[5];
+    bool                afReserved[1];
+
+
 } GMMVMSTATS;
 
 
@@ -405,7 +407,9 @@ GMMR0DECL(int)  GMMR0FreeLargePage(PVM pVM, VMCPUID idCpu, uint32_t idPage);
 GMMR0DECL(int)  GMMR0BalloonedPages(PVM pVM, VMCPUID idCpu, GMMBALLOONACTION enmAction, uint32_t cBalloonedPages);
 GMMR0DECL(int)  GMMR0MapUnmapChunk(PVM pVM, uint32_t idChunkMap, uint32_t idChunkUnmap, PRTR3PTR ppvR3);
 GMMR0DECL(int)  GMMR0SeedChunk(PVM pVM, VMCPUID idCpu, RTR3PTR pvR3);
-GMMR0DECL(int)  GMMR0RegisterSharedModule(PVM pVM, VMCPUID idCpu, VBOXOSFAMILY enmGuestOS, char *pszModuleName, char *pszVersion, RTGCPTR GCBaseAddr, uint32_t cbModule, unsigned cRegions, VMMDEVSHAREDREGIONDESC *pRegions);
+GMMR0DECL(int)  GMMR0RegisterSharedModule(PVM pVM, VMCPUID idCpu, VBOXOSFAMILY enmGuestOS, char *pszModuleName, char *pszVersion,
+                                          RTGCPTR GCBaseAddr,  uint32_t cbModule, uint32_t cRegions,
+                                          struct VMMDEVSHAREDREGIONDESC *pRegions);
 GMMR0DECL(int)  GMMR0UnregisterSharedModule(PVM pVM, VMCPUID idCpu, char *pszModuleName, char *pszVersion, RTGCPTR GCBaseAddr, uint32_t cbModule);
 GMMR0DECL(int)  GMMR0UnregisterAllSharedModules(PVM pVM, VMCPUID idCpu);
 GMMR0DECL(int)  GMMR0CheckSharedModules(PVM pVM, PVMCPU pVCpu);
@@ -633,7 +637,7 @@ typedef GMMSHAREDREGIONDESC *PGMMSHAREDREGIONDESC;
  */
 typedef struct GMMSHAREDMODULE
 {
-    /* Tree node. */
+    /** Tree node. */
     AVLGCPTRNODECORE            Core;
     /** Shared module size. */
     uint32_t                    cbModule;

@@ -4176,7 +4176,7 @@ DECLCALLBACK(int) gmmR0CheckForIdenticalModule(PAVLGCPTRNODECORE pNode, void *pv
  */
 GMMR0DECL(int) GMMR0RegisterSharedModule(PVM pVM, VMCPUID idCpu, VBOXOSFAMILY enmGuestOS, char *pszModuleName,
                                          char *pszVersion, RTGCPTR GCBaseAddr, uint32_t cbModule,
-                                         unsigned cRegions, VMMDEVSHAREDREGIONDESC *pRegions)
+                                         uint32_t cRegions, VMMDEVSHAREDREGIONDESC *pRegions)
 {
 #ifdef VBOX_WITH_PAGE_SHARING
     /*
@@ -4188,6 +4188,9 @@ GMMR0DECL(int) GMMR0RegisterSharedModule(PVM pVM, VMCPUID idCpu, VBOXOSFAMILY en
     int rc = GVMMR0ByVMAndEMT(pVM, idCpu, &pGVM);
     if (RT_FAILURE(rc))
         return rc;
+
+    AssertPtrReturn(pszModuleName, VERR_INVALID_POINTER);
+    AssertPtrReturn(pszVersion, VERR_INVALID_POINTER);
 
     Log(("GMMR0RegisterSharedModule %s %s base %RGv size %x\n", pszModuleName, pszVersion, GCBaseAddr, cbModule));
 
@@ -4224,6 +4227,7 @@ GMMR0DECL(int) GMMR0RegisterSharedModule(PVM pVM, VMCPUID idCpu, VBOXOSFAMILY en
 
             bool fInsert = RTAvlGCPtrInsert(&pGVM->gmm.s.pSharedModuleTree, &pRecVM->Core);
             Assert(fInsert); NOREF(fInsert);
+            pGVM->gmm.s.Stats.cShareableModules++;
 
             Log(("GMMR0RegisterSharedModule: new local module %s\n", pszModuleName));
             fNewModule = true;
@@ -4236,7 +4240,9 @@ GMMR0DECL(int) GMMR0RegisterSharedModule(PVM pVM, VMCPUID idCpu, VBOXOSFAMILY en
         if (    !pGlobalModule
             &&  enmGuestOS == VBOXOSFAMILY_Windows64)
         {
-            /* Two identical copies of e.g. Win7 x64 will typically not have a similar virtual address space layout for dlls or kernel modules.
+            /*
+             * Two identical copies of e.g. Win7 x64 will typically not have a
+             * similar virtual address space layout for dlls or kernel modules.
              * Try to find identical binaries based on name and version.
              */
             GMMFINDMODULEBYNAME Info;
@@ -4306,6 +4312,11 @@ GMMR0DECL(int) GMMR0RegisterSharedModule(PVM pVM, VMCPUID idCpu, VBOXOSFAMILY en
 
             /* Make sure the name and version are identical. */
             /** @todo replace with RTStrNCmp */
+/** @todo need to check region count or it will blow up in
+ *  GMMR0SharedModuleCheckPage / PGMR0SharedModuleCheck.
+ *
+ *  More interstingly though, is why we don't do the W7/64 thing for ALL
+ *  modules and just dispense with the address collision. */
             if (    !strcmp(pGlobalModule->szName, pszModuleName)
                 &&  !strcmp(pGlobalModule->szVersion, pszVersion))
             {
@@ -4450,6 +4461,7 @@ GMMR0DECL(int) GMMR0UnregisterSharedModule(PVM pVM, VMCPUID idCpu, char *pszModu
 
             /* Remove from the tree and free memory. */
             RTAvlGCPtrRemove(&pGVM->gmm.s.pSharedModuleTree, GCBaseAddr);
+            pGVM->gmm.s.Stats.cShareableModules--;
             RTMemFree(pRecVM);
         }
         else
@@ -4769,6 +4781,7 @@ static void gmmR0SharedModuleCleanup(PGMM pGMM, PGVM pGVM)
     GMM_CHECK_SANITY_UPON_ENTERING(pGMM);
 
     RTAvlGCPtrDestroy(&pGVM->gmm.s.pSharedModuleTree, gmmR0CleanupSharedModule, pGVM);
+    pGVM->gmm.s.Stats.cShareableModules = 0;
 
     gmmR0MutexRelease(pGMM);
 }
@@ -4803,6 +4816,7 @@ GMMR0DECL(int) GMMR0ResetSharedModules(PVM pVM, VMCPUID idCpu)
     {
         Log(("GMMR0ResetSharedModules\n"));
         RTAvlGCPtrDestroy(&pGVM->gmm.s.pSharedModuleTree, gmmR0CleanupSharedModule, pGVM);
+        pGVM->gmm.s.Stats.cShareableModules = 0;
 
         rc = VINF_SUCCESS;
         GMM_CHECK_SANITY_UPON_LEAVING(pGMM);
@@ -4830,7 +4844,7 @@ typedef struct
 /**
  * Tree enumeration callback for checking a shared module.
  */
-DECLCALLBACK(int) gmmR0CheckSharedModule(PAVLGCPTRNODECORE pNode, void *pvUser)
+static DECLCALLBACK(int) gmmR0CheckSharedModule(PAVLGCPTRNODECORE pNode, void *pvUser)
 {
     PGMMCHECKSHAREDMODULEINFO   pInfo = (PGMMCHECKSHAREDMODULEINFO)pvUser;
     PGMMSHAREDMODULEPERVM       pLocalModule = (PGMMSHAREDMODULEPERVM)pNode;
@@ -4843,9 +4857,9 @@ DECLCALLBACK(int) gmmR0CheckSharedModule(PAVLGCPTRNODECORE pNode, void *pvUser)
         pInfo->rc = PGMR0SharedModuleCheck(pInfo->pGVM->pVM, pInfo->pGVM, pInfo->idCpu, pGlobalModule,
                                            pLocalModule->cRegions, pLocalModule->aRegions);
         if (RT_FAILURE(pInfo->rc))
-            return 1;   /* stop enumeration. */
+            return VINF_CALLBACK_RETURN;
     }
-    return 0;
+    return VINF_SUCCESS;
 }
 
 #endif /* VBOX_WITH_PAGE_SHARING */
