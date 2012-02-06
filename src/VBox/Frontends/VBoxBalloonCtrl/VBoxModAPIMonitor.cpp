@@ -33,7 +33,7 @@ using namespace com;
 /**
  * The module's RTGetOpt-IDs for the command line.
  */
-static enum GETOPTDEF_APIMON
+enum GETOPTDEF_APIMON
 {
     GETOPTDEF_APIMON_ISLN_RESPONSE = 3000,
     GETOPTDEF_APIMON_ISLN_TIMEOUT,

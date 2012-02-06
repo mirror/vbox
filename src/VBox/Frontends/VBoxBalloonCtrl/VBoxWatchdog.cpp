@@ -105,7 +105,7 @@ static struct
     { &g_ModAPIMonitor, false /* Pre-inited */, true /* Enabled */ }
 };
 
-static enum GETOPTDEF_WATCHDOG
+enum GETOPTDEF_WATCHDOG
 {
     GETOPTDEF_WATCHDOG_DRYRUN = 1000
 };
