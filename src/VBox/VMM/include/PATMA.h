@@ -180,7 +180,7 @@ extern PATCHASMRECORD PATMClearInhibitIRQContIF0Record;
 
 extern PATCHASMRECORD PATMMovFromSSRecord;
 
-extern uint32_t       PATMInterruptFlag;
+extern const uint32_t PATMInterruptFlag;
 
 RT_C_DECLS_END
 
