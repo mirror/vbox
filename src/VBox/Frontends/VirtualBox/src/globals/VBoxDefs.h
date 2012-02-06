@@ -130,6 +130,7 @@ struct VBoxDefs
     static const char* GUI_RestrictedCloseActions;
     static const char* GUI_CloseActionHook;
     static const char* GUI_SuppressMessages;
+    static const char* GUI_InvertMessageOption;
     static const char* GUI_PermanentSharedFoldersAtRuntime;
     static const char* GUI_LanguageId;
     static const char* GUI_PreviewUpdate;
