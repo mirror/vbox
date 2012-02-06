@@ -53,6 +53,7 @@
 #include <iprt/time.h>
 
 
+#include <algorithm>
 #include <string>
 #include <signal.h>
 
@@ -60,15 +61,13 @@
 
 using namespace com;
 
-/* When defined, use a global performance collector instead
- * of a per-machine based one. */
-#define VBOX_WATCHDOG_GLOBAL_PERFCOL
-
 /** External globals. */
+bool                                g_fDryrun     = false;
 bool                                g_fVerbose    = false;
 ComPtr<IVirtualBox>                 g_pVirtualBox = NULL;
 ComPtr<ISession>                    g_pSession    = NULL;
 mapVM                               g_mapVM;
+mapGroup                            g_mapGroup;
 # ifdef VBOX_WATCHDOG_GLOBAL_PERFCOL
 ComPtr<IPerformanceCollector>       g_pPerfCollector = NULL;
 # endif
@@ -106,6 +105,11 @@ static struct
     { &g_ModAPIMonitor, false /* Pre-inited */, true /* Enabled */ }
 };
 
+static enum GETOPTDEF_WATCHDOG
+{
+    GETOPTDEF_WATCHDOG_DRYRUN = 1000
+};
+
 /**
  * Command line arguments.
  */
@@ -114,6 +118,7 @@ static const RTGETOPTDEF g_aOptions[] = {
     { "--background",           'b',                                       RTGETOPT_REQ_NOTHING },
 #endif
     /** For displayHelp(). */
+    { "--dryrun",               GETOPTDEF_WATCHDOG_DRYRUN,                 RTGETOPT_REQ_NOTHING },
     { "--help",                 'h',                                       RTGETOPT_REQ_NOTHING },
     { "--verbose",              'v',                                       RTGETOPT_REQ_NOTHING },
     { "--pidfile",              'P',                                       RTGETOPT_REQ_STRING },
@@ -123,25 +128,16 @@ static const RTGETOPTDEF g_aOptions[] = {
     { "--loginterval",          'I',                                       RTGETOPT_REQ_UINT32 }
 };
 
-static unsigned long g_ulTimeoutMS = 500; /* Default is 500ms timeout. */
-static unsigned long g_ulMemoryBalloonIncrementMB = 256;
-static unsigned long g_ulMemoryBalloonDecrementMB = 128;
-/** Global balloon limit is 0, so disabled. Can be overridden by a per-VM
- *  "VBoxInternal/Guest/BalloonSizeMax" value. */
-static unsigned long g_ulMemoryBalloonMaxMB = 0;
-static unsigned long g_ulLowerMemoryLimitMB = 64;
-
 /** Global static objects. */
 static ComPtr<IVirtualBoxClient> g_pVirtualBoxClient = NULL;
-static ComPtr<IEventSource> g_pEventSource = NULL;
-static ComPtr<IEventSource> g_pEventSourceClient = NULL;
-static ComPtr<IEventListener> g_pVBoxEventListener = NULL;
-static EventQueue *g_pEventQ = NULL;
+static ComPtr<IEventSource>      g_pEventSource = NULL;
+static ComPtr<IEventSource>      g_pEventSourceClient = NULL;
+static ComPtr<IEventListener>    g_pVBoxEventListener = NULL;
+static EventQueue               *g_pEventQ = NULL;
 
 /* Prototypes. */
 static int machineAdd(const Bstr &strUuid);
 static int machineRemove(const Bstr &strUuid);
-//static int machineUpdate(const Bstr &strUuid, MachineState_T enmState);
 static HRESULT watchdogSetup();
 static void watchdogShutdown();
 
@@ -344,27 +340,63 @@ static int machineAdd(const Bstr &strUuid)
 {
     HRESULT rc;
 
+    /** @todo Add exception handling! */
+
     do
     {
         ComPtr <IMachine> machine;
         CHECK_ERROR_BREAK(g_pVirtualBox, FindMachine(strUuid.raw(), machine.asOutParam()));
+        Assert(!machine.isNull());
 
-        MachineState_T machineState;
-        CHECK_ERROR_BREAK(machine, COMGETTER(State)(&machineState));
-
-        VBOXWATCHDOG_MACHINE m;
-        m.machine = machine;
+        Bstr strGroup;
+        CHECK_ERROR_BREAK(machine, GetExtraData(Bstr("VBoxInternal2/VMGroup").raw(),
+                                                strGroup.asOutParam()));
 
         /*
          * Add machine to map.
          */
+        VBOXWATCHDOG_MACHINE m;
+        m.machine = machine;
+        m.group = strGroup;
+
         mapVMIter it = g_mapVM.find(strUuid);
         Assert(it == g_mapVM.end());
         g_mapVM.insert(std::make_pair(strUuid, m));
-
         serviceLogVerbose(("Added machine \"%ls\"\n", strUuid.raw()));
 
-        /* Let all modules know. */
+        /*
+         * Get the machine's VM group(s).
+         */
+        if (!strGroup.isEmpty())
+        {
+            serviceLogVerbose(("Machine \"%ls\" is in VM group \"%ls\"\n",
+                               strUuid.raw(), strGroup.raw()));
+
+            /** @todo Support more than one group! */
+            /* Add machine to group(s). */
+            mapGroupIter itGroup = g_mapGroup.find(strGroup);
+            if (itGroup == g_mapGroup.end())
+            {
+                vecGroupMembers vecMembers;
+                vecMembers.push_back(strUuid);
+                g_mapGroup.insert(std::make_pair(strGroup, vecMembers));
+
+                itGroup = g_mapGroup.find(strGroup);
+                Assert(itGroup != g_mapGroup.end());
+            }
+            else
+                itGroup->second.push_back(strUuid);
+            serviceLogVerbose(("Group \"%ls\" now has %ld machine(s)\n",
+                               strGroup.raw(), itGroup->second.size()));
+        }
+        else
+            serviceLogVerbose(("Machine \"%ls\" has no VM group assigned\n",
+                               strUuid.raw()));
+
+        /*
+         * Let all modules know. Typically all modules would register
+         * their per-machine payload here.
+         */
         for (unsigned j = 0; j < RT_ELEMENTS(g_aModules); j++)
             if (g_aModules[j].fEnabled)
             {
@@ -398,21 +430,42 @@ static int machineDestroy(const Bstr &strUuid)
             /* Keep going. */
         }
 
-    mapVMIter it = g_mapVM.find(strUuid);
-    Assert(it != g_mapVM.end());
-
-#ifndef VBOX_WATCHDOG_GLOBAL_PERFCOL
-    it->second.collector.setNull();
-#endif
-    it->second.machine.setNull();
-
     /* Must log before erasing the iterator because of the UUID ref! */
     serviceLogVerbose(("Removing machine \"%ls\"\n", strUuid.raw()));
+
+    mapVMIter itVM = g_mapVM.find(strUuid);
+    Assert(itVM != g_mapVM.end());
+
+    /* Remove machine from group(s). */
+    /** @todo Add support for multiple groups! */
+    Bstr strGroup = itVM->second.group;
+    if (!strGroup.isEmpty())
+    {
+        mapGroupIter itGroup = g_mapGroup.find(strGroup);
+        Assert(itGroup != g_mapGroup.end());
+
+        vecGroupMembers vecMembers = itGroup->second;
+        vecGroupMembersIter itMember = std::find(vecMembers.begin(),
+                                                 vecMembers.end(),
+                                                 strUuid);
+        Assert(itMember != vecMembers.end());
+        vecMembers.erase(itMember);
+
+        serviceLogVerbose(("Group \"%ls\" has %ld machines left\n",
+                           itGroup->first, vecMembers.size()));
+        if (!vecMembers.size())
+            g_mapGroup.erase(itGroup);
+    }
+
+#ifndef VBOX_WATCHDOG_GLOBAL_PERFCOL
+    itVM->second.collector.setNull();
+#endif
+    itVM->second.machine.setNull();
 
     /*
      * Remove machine from map.
      */
-    g_mapVM.erase(it);
+    g_mapVM.erase(itVM);
 
     return rc;
 }
@@ -439,7 +492,6 @@ static int machineRemove(const Bstr &strUuid)
             if (RT_SUCCESS(rc))
                 rc = rc2;
         }
-
     }
     else
     {
@@ -670,7 +722,7 @@ static RTEXITCODE watchdogMain(HandlerArg *a)
                         int rc2 = g_aModules[j].pDesc->pfnMain();
                         if (RT_FAILURE(rc2))
                             serviceLog("Module '%s' reported an error: %Rrc\n",
-                                       g_aModules[j].pDesc->pszName, rc);
+                                       g_aModules[j].pDesc->pszName, rc2);
                         /* Keep going. */
                     }
 
@@ -684,7 +736,7 @@ static RTEXITCODE watchdogMain(HandlerArg *a)
              * Process pending events, then wait for new ones. Note, this
              * processes NULL events signalling event loop termination.
              */
-            g_pEventQ->processEventQueue(g_ulTimeoutMS / 10);
+            g_pEventQ->processEventQueue(500 / 10);
 
             if (g_fCanceled)
             {
@@ -847,6 +899,10 @@ static void displayHelp(const char *pszImage)
 
         switch (g_aOptions[i].iShort)
         {
+            case GETOPTDEF_WATCHDOG_DRYRUN:
+                pcszDescr = "Dryrun mode -- do not perform any actions.";
+                break;
+
             case 'h':
                 pcszDescr = "Print this help message and exit.";
                 break;
@@ -983,6 +1039,10 @@ int main(int argc, char *argv[])
     {
         switch (c)
         {
+            case GETOPTDEF_WATCHDOG_DRYRUN:
+                g_fDryrun = true;
+                break;
+
             case 'h':
                 displayHelp(argv[0]);
                 return 0;
@@ -1029,7 +1089,7 @@ int main(int argc, char *argv[])
                 if (!fFound)
                 {
                     rc = watchdogLazyPreInit();
-                    if (RT_SUCCESS(rc))
+                    if (RT_FAILURE(rc))
                         return RTEXITCODE_FAILURE;
 
                     for (unsigned j = 0; !fFound && j < RT_ELEMENTS(g_aModules); j++)
@@ -1141,6 +1201,9 @@ int main(int argc, char *argv[])
             com::GluePrintErrorInfo(info);
         return RTEXITCODE_FAILURE;
     }
+
+    if (g_fDryrun)
+        serviceLog("Running in dryrun mode\n");
 
     hrc = watchdogSetup();
     if (FAILED(hrc))

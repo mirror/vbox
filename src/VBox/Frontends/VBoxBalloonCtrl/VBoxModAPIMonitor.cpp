@@ -21,39 +21,8 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #ifndef VBOX_ONLY_DOCS
-# include <VBox/com/com.h>
-# include <VBox/com/string.h>
-# include <VBox/com/Guid.h>
-# include <VBox/com/array.h>
-# include <VBox/com/ErrorInfo.h>
 # include <VBox/com/errorprint.h>
-
-# include <VBox/com/EventQueue.h>
-# include <VBox/com/listeners.h>
-# include <VBox/com/VirtualBox.h>
 #endif /* !VBOX_ONLY_DOCS */
-
-#include <VBox/err.h>
-#include <VBox/log.h>
-#include <VBox/version.h>
-
-#include <package-generated.h>
-
-#include <iprt/asm.h>
-#include <iprt/buildconfig.h>
-#include <iprt/critsect.h>
-#include <iprt/getopt.h>
-#include <iprt/initterm.h>
-#include <iprt/path.h>
-#include <iprt/process.h>
-#include <iprt/semaphore.h>
-#include <iprt/stream.h>
-#include <iprt/string.h>
-#include <iprt/system.h>
-
-#include <map>
-#include <string>
-#include <signal.h>
 
 #include "VBoxWatchdogInternal.h"
 
@@ -64,9 +33,9 @@ using namespace com;
 /**
  * The module's RTGetOpt-IDs for the command line.
  */
-enum GETOPTDEF_APIMON
+static enum GETOPTDEF_APIMON
 {
-    GETOPTDEF_APIMON_ISLN_RESPONSE = 1000,
+    GETOPTDEF_APIMON_ISLN_RESPONSE = 3000,
     GETOPTDEF_APIMON_ISLN_TIMEOUT,
     GETOPTDEF_APIMON_GROUPS
 };
@@ -80,9 +49,95 @@ static const RTGETOPTDEF g_aAPIMonitorOpts[] = {
     { "--apimon-groups",         GETOPTDEF_APIMON_GROUPS,         RTGETOPT_REQ_STRING }
 };
 
-static unsigned long g_ulAPIMonIslnTimeoutMS = 0;
-static Bstr g_strAPIMonGroups;
-static Bstr g_strAPIMonIslnCmdResp;
+static enum APIMON_RESPONSE
+{
+    /** Unknown / unhandled response. */
+    APIMON_RESPONSE_UNKNOWN    = 0,
+    /** Tries to shut down all running VMs in
+     *  a gentle manner. */
+    APIMON_RESPONSE_SHUTDOWN   = 200
+};
+
+static Bstr                         g_strAPIMonGroups;
+
+static APIMON_RESPONSE              g_enmAPIMonIslnResp     = APIMON_RESPONSE_UNKNOWN;
+static unsigned long                g_ulAPIMonIslnTimeoutMS = 0;
+static Bstr                         g_strAPIMonIslnLastBeat;
+static uint64_t                     g_uAPIMonIslnLastBeatMS = 0;
+
+int apimonResponseToEnum(const char *pszResponse, APIMON_RESPONSE *pResp)
+{
+    AssertPtrReturn(pszResponse, VERR_INVALID_POINTER);
+    AssertPtrReturn(pResp, VERR_INVALID_POINTER);
+
+    int rc = VINF_SUCCESS;
+    if (   !RTStrICmp(pszResponse, "shutdown")
+        || !RTStrICmp(pszResponse, "poweroff"))
+    {
+        *pResp = APIMON_RESPONSE_SHUTDOWN;
+    }
+    else
+        *pResp = APIMON_RESPONSE_UNKNOWN;
+
+    return (*pResp > APIMON_RESPONSE_UNKNOWN ? VINF_SUCCESS : VERR_INVALID_PARAMETER);
+}
+
+int apimonMachineControl(const Bstr &strUuid, PVBOXWATCHDOG_MACHINE pMachine,
+                         APIMON_RESPONSE enmResp)
+{
+    /** @todo Add other commands (with enmResp) here. */
+    AssertPtrReturn(pMachine, VERR_INVALID_PARAMETER);
+
+    serviceLog("Shutting down machine \"%ls\"\n", strUuid.raw());
+
+    /* Open a session for the VM. */
+    HRESULT rc;
+    CHECK_ERROR_RET(pMachine->machine, LockMachine(g_pSession, LockType_Shared), VERR_ACCESS_DENIED);
+    do
+    {
+        /* get the associated console */
+        ComPtr<IConsole> console;
+        CHECK_ERROR_BREAK(g_pSession, COMGETTER(Console)(console.asOutParam()));
+
+        if (!g_fDryrun)
+        {
+            ComPtr<IProgress> progress;
+            CHECK_ERROR_BREAK(console, PowerDown(progress.asOutParam()));
+            if (g_fVerbose)
+            {
+                serviceLogVerbose(("Waiting for shutting down machine \"%ls\" ...\n",
+                                   strUuid.raw()));
+                progress->WaitForCompletion(-1);
+            }
+        }
+    } while (0);
+
+    /* Unlock the machine again. */
+    g_pSession->UnlockMachine();
+
+    return SUCCEEDED(rc) ? VINF_SUCCESS : VERR_COM_IPRT_ERROR;
+}
+
+int apimonTrigger(APIMON_RESPONSE enmResp)
+{
+    int rc = VINF_SUCCESS;
+
+    /** @todo Add proper grouping support! */
+    bool fAllGroups = g_strAPIMonGroups.isEmpty();
+    mapVMIter it = g_mapVM.begin();
+    while (it != g_mapVM.end())
+    {
+        if (   !it->second.group.compare(g_strAPIMonGroups, Bstr::CaseInsensitive)
+            || fAllGroups)
+        {
+            rc = apimonMachineControl(it->first /* Uuid */,
+                                       &it->second, enmResp);
+        }
+        it++;
+    }
+
+    return rc;
+}
 
 /* Callbacks. */
 static DECLCALLBACK(int) VBoxModAPIMonitorPreInit(void)
@@ -113,6 +168,9 @@ static DECLCALLBACK(int) VBoxModAPIMonitorOption(int argc, char **argv)
         switch (c)
         {
             case GETOPTDEF_APIMON_ISLN_RESPONSE:
+                rc = apimonResponseToEnum(ValueUnion.psz, &g_enmAPIMonIslnResp);
+                if (RT_FAILURE(rc))
+                    rc = -1; /* Option unknown. */
                 break;
 
             case GETOPTDEF_APIMON_ISLN_TIMEOUT:
@@ -122,6 +180,7 @@ static DECLCALLBACK(int) VBoxModAPIMonitorOption(int argc, char **argv)
                 break;
 
             case GETOPTDEF_APIMON_GROUPS:
+                g_strAPIMonGroups = ValueUnion.psz;
                 break;
 
             default:
@@ -139,42 +198,106 @@ static DECLCALLBACK(int) VBoxModAPIMonitorInit(void)
 
     do
     {
-        Bstr bstrValue;
+        Bstr strValue;
 
         /* Host isolation timeout (in ms). */
         if (!g_ulAPIMonIslnTimeoutMS) /* Not set by command line? */
         {
-            CHECK_ERROR_BREAK(g_pVirtualBox, GetExtraData(Bstr("VBoxInternal2/Watchdog/APIMonitor/IsolationTimeout").raw(),
-                                                          bstrValue.asOutParam()));
-            g_ulAPIMonIslnTimeoutMS = Utf8Str(bstrValue).toUInt32();
+            CHECK_ERROR_BREAK(g_pVirtualBox, GetExtraData(Bstr("Watchdog/APIMonitor/IsolationTimeout").raw(),
+                                                          strValue.asOutParam()));
+            if (!strValue.isEmpty())
+                g_ulAPIMonIslnTimeoutMS = Utf8Str(strValue).toUInt32();
         }
-        if (!g_ulAPIMonIslnTimeoutMS)
+        if (!g_ulAPIMonIslnTimeoutMS) /* Still not set? Use a default. */
         {
-             /* Default is 30 seconds timeout. */
+            serviceLogVerbose(("API monitor isolation timeout not given, defaulting to 30s\n"));
+
+            /* Default is 30 seconds timeout. */
             g_ulAPIMonIslnTimeoutMS = 30 * 1000;
         }
 
         /* VM groups to watch for. */
         if (g_strAPIMonGroups.isEmpty()) /* Not set by command line? */
         {
-            CHECK_ERROR_BREAK(g_pVirtualBox, GetExtraData(Bstr("VBoxInternal2/Watchdog/APIMonitor/Groups").raw(),
+            CHECK_ERROR_BREAK(g_pVirtualBox, GetExtraData(Bstr("Watchdog/APIMonitor/Groups").raw(),
                                                           g_strAPIMonGroups.asOutParam()));
         }
 
         /* Host isolation command response. */
-        if (g_strAPIMonIslnCmdResp.isEmpty()) /* Not set by command line? */
+        if (g_enmAPIMonIslnResp == APIMON_RESPONSE_UNKNOWN) /* Not set by command line? */
         {
-            CHECK_ERROR_BREAK(g_pVirtualBox, GetExtraData(Bstr("VBoxInternal2/Watchdog/APIMonitor/IsolationResponse").raw(),
-                                                          g_strAPIMonIslnCmdResp.asOutParam()));
+            CHECK_ERROR_BREAK(g_pVirtualBox, GetExtraData(Bstr("Watchdog/APIMonitor/IsolationResponse").raw(),
+                                                          strValue.asOutParam()));
+            if (!strValue.isEmpty())
+            {
+                int rc2 = apimonResponseToEnum(Utf8Str(strValue).c_str(), &g_enmAPIMonIslnResp);
+                if (RT_FAILURE(rc2))
+                {
+                    serviceLog("Warning: API monitor response string invalid (%ls), default to shutdown\n",
+                               strValue.raw());
+                    g_enmAPIMonIslnResp = APIMON_RESPONSE_SHUTDOWN;
+                }
+            }
+            else
+                g_enmAPIMonIslnResp = APIMON_RESPONSE_SHUTDOWN;
         }
     } while (0);
+
+    if (SUCCEEDED(rc))
+    {
+        g_uAPIMonIslnLastBeatMS = 0;
+    }
 
     return SUCCEEDED(rc) ? VINF_SUCCESS : VERR_COM_IPRT_ERROR; /* @todo Find a better rc! */
 }
 
 static DECLCALLBACK(int) VBoxModAPIMonitorMain(void)
 {
-    return VINF_SUCCESS; /* Nothing to do here right now. */
+    static uint64_t uLastRun = 0;
+    uint64_t uNow = RTTimeProgramMilliTS();
+    uint64_t uDelta = uNow - uLastRun;
+    if (uDelta < 1000)
+        return VINF_SUCCESS;
+    uLastRun = uNow;
+
+    int vrc = VINF_SUCCESS;
+    HRESULT rc;
+
+    serviceLogVerbose(("Checking for API heartbeat (%RU64ms) ...\n",
+                       g_ulAPIMonIslnTimeoutMS));
+
+    do
+    {
+        Bstr strHeartbeat;
+        CHECK_ERROR_BREAK(g_pVirtualBox, GetExtraData(Bstr("Watchdog/APIMonitor/Heartbeat").raw(),
+                                                      strHeartbeat.asOutParam()));
+        if (   SUCCEEDED(rc)
+            && !strHeartbeat.isEmpty()
+            && g_strAPIMonIslnLastBeat.compare(strHeartbeat, Bstr::CaseSensitive))
+        {
+            serviceLogVerbose(("API heartbeat received, resetting timeout\n"));
+
+            g_uAPIMonIslnLastBeatMS = 0;
+            g_strAPIMonIslnLastBeat = strHeartbeat;
+        }
+        else
+        {
+            g_uAPIMonIslnLastBeatMS += uDelta;
+            if (g_uAPIMonIslnLastBeatMS > g_ulAPIMonIslnTimeoutMS)
+            {
+                serviceLogVerbose(("No API heartbeat within time received (%RU64ms)\n",
+                                   g_ulAPIMonIslnTimeoutMS));
+
+                vrc = apimonTrigger(g_enmAPIMonIslnResp);
+                g_uAPIMonIslnLastBeatMS = 0;
+            }
+        }
+    } while (0);
+
+    if (FAILED(rc))
+        vrc = VERR_COM_IPRT_ERROR;
+
+    return vrc;
 }
 
 static DECLCALLBACK(int) VBoxModAPIMonitorStop(void)
@@ -204,6 +327,8 @@ static DECLCALLBACK(int) VBoxModAPIMonitorOnMachineStateChanged(const Bstr &strU
 
 static DECLCALLBACK(int) VBoxModAPIMonitorOnServiceStateChanged(bool fAvailable)
 {
+    if (!fAvailable)
+        apimonTrigger(g_enmAPIMonIslnResp);
     return VINF_SUCCESS;
 }
 
@@ -224,9 +349,9 @@ VBOXMODULE g_ModAPIMonitor =
     " [--apimon-isln-response=<cmd>] [--apimon-isln-timeout=<ms>]\n"
     " [--apimon-groups=<string>]\n",
     /* pszOptions. */
-    "--apimon-isln-response   Sets the isolation response (shutdown VM).\n"
-    "--apimon-isln-timeout    Sets the isolation timeout in ms (none).\n"
-    "--apimon-groups          Sets the VM groups for monitoring (none).\n",
+    "--apimon-isln-response Sets the isolation response (shutdown VM).\n"
+    "--apimon-isln-timeout  Sets the isolation timeout in ms (30s).\n"
+    "--apimon-groups        Sets the VM groups for monitoring (none).\n",
     /* methods. */
     VBoxModAPIMonitorPreInit,
     VBoxModAPIMonitorOption,

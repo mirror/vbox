@@ -20,39 +20,8 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #ifndef VBOX_ONLY_DOCS
-# include <VBox/com/com.h>
-# include <VBox/com/string.h>
-# include <VBox/com/Guid.h>
-# include <VBox/com/array.h>
-# include <VBox/com/ErrorInfo.h>
 # include <VBox/com/errorprint.h>
-
-# include <VBox/com/EventQueue.h>
-# include <VBox/com/listeners.h>
-# include <VBox/com/VirtualBox.h>
 #endif /* !VBOX_ONLY_DOCS */
-
-#include <VBox/err.h>
-#include <VBox/log.h>
-#include <VBox/version.h>
-
-#include <package-generated.h>
-
-#include <iprt/asm.h>
-#include <iprt/buildconfig.h>
-#include <iprt/critsect.h>
-#include <iprt/getopt.h>
-#include <iprt/initterm.h>
-#include <iprt/path.h>
-#include <iprt/process.h>
-#include <iprt/semaphore.h>
-#include <iprt/stream.h>
-#include <iprt/string.h>
-#include <iprt/system.h>
-
-#include <map>
-#include <string>
-#include <signal.h>
 
 #include "VBoxWatchdogInternal.h"
 
@@ -63,9 +32,9 @@ using namespace com;
 /**
  * The module's RTGetOpt-IDs for the command line.
  */
-enum GETOPTDEF_BALLOONCTRL
+static enum GETOPTDEF_BALLOONCTRL
 {
-    GETOPTDEF_BALLOONCTRL_BALLOOINC = 1000,
+    GETOPTDEF_BALLOONCTRL_BALLOOINC = 2000,
     GETOPTDEF_BALLOONCTRL_BALLOONDEC,
     GETOPTDEF_BALLOONCTRL_BALLOONLOWERLIMIT,
     GETOPTDEF_BALLOONCTRL_BALLOONMAX,
@@ -348,26 +317,29 @@ static int balloonMachineUpdate(const Bstr &strUuid, PVBOXWATCHDOG_MACHINE pMach
 
             HRESULT rc;
 
-            /* Open a session for the VM. */
-            CHECK_ERROR(pMachine->machine, LockMachine(g_pSession, LockType_Shared));
-
-            do
+            if (!g_fDryrun)
             {
-                /* Get the associated console. */
-                ComPtr<IConsole> console;
-                CHECK_ERROR_BREAK(g_pSession, COMGETTER(Console)(console.asOutParam()));
+                /* Open a session for the VM. */
+                CHECK_ERROR(pMachine->machine, LockMachine(g_pSession, LockType_Shared));
 
-                ComPtr <IGuest> guest;
-                rc = console->COMGETTER(Guest)(guest.asOutParam());
-                if (SUCCEEDED(rc))
-                    CHECK_ERROR_BREAK(guest, COMSETTER(MemoryBalloonSize)(lBalloonCur));
-                else
-                    serviceLog("Error: Unable to set new balloon size %ld for machine \"%ls\", rc=%Rhrc",
-                               lBalloonCur, strUuid.raw(), rc);
-            } while (0);
+                do
+                {
+                    /* Get the associated console. */
+                    ComPtr<IConsole> console;
+                    CHECK_ERROR_BREAK(g_pSession, COMGETTER(Console)(console.asOutParam()));
 
-            /* Unlock the machine again. */
-            g_pSession->UnlockMachine();
+                    ComPtr <IGuest> guest;
+                    rc = console->COMGETTER(Guest)(guest.asOutParam());
+                    if (SUCCEEDED(rc))
+                        CHECK_ERROR_BREAK(guest, COMSETTER(MemoryBalloonSize)(lBalloonCur));
+                    else
+                        serviceLog("Error: Unable to set new balloon size %ld for machine \"%ls\", rc=%Rhrc",
+                                   lBalloonCur, strUuid.raw(), rc);
+                } while (0);
+
+                /* Unlock the machine again. */
+                g_pSession->UnlockMachine();
+            }
         }
     }
     else
