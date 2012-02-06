@@ -29,6 +29,8 @@
 #include <VBox/vmm/gvmm.h>
 #include <VBox/sup.h>
 #include <VBox/param.h>
+#include <VBox/ostypes.h>
+#include <VBox/VMMDev.h>
 #include <iprt/avl.h>
 
 
