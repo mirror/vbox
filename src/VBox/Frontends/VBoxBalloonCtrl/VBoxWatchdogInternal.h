@@ -19,13 +19,16 @@
 #define ___H_VBOXWATCHDOG
 
 #ifndef VBOX_ONLY_DOCS
-#include <VBox/com/com.h>
-#include <VBox/com/assert.h>
-#include <VBox/com/string.h>
-#include <VBox/com/VirtualBox.h>
+# include <iprt/getopt.h>
+# include <iprt/time.h>
 
-#include <iprt/getopt.h>
-#include <iprt/time.h>
+# include <VBox/err.h>
+# include <VBox/com/com.h>
+# include <VBox/com/string.h>
+# include <VBox/com/Guid.h>
+# include <VBox/com/array.h>
+# include <VBox/com/ErrorInfo.h>
+# include <VBox/com/VirtualBox.h>
 #endif /* !VBOX_ONLY_DOCS */
 
 #include <map>
@@ -80,6 +83,8 @@ typedef struct VBOXWATCHDOG_MACHINE
 #ifndef VBOX_WATCHDOG_GLOBAL_PERFCOL
     ComPtr<IPerformanceCollector> collector;
 #endif
+    /** The machine's VM group(s). */
+    Bstr group;
     /** Map containing the individual
      *  module payloads. */
     mapPayload payload;
@@ -88,16 +93,15 @@ typedef std::map<Bstr, VBOXWATCHDOG_MACHINE> mapVM;
 typedef std::map<Bstr, VBOXWATCHDOG_MACHINE>::iterator mapVMIter;
 typedef std::map<Bstr, VBOXWATCHDOG_MACHINE>::const_iterator mapVMIterConst;
 
-/** A VM group entry. Note that a machine can belong
- *  to more than one group. */
-typedef struct VBOXWATCHDOG_VM_GROUP
-{
-    /** UUIDs of machines belonging to this group. */
-    std::vector<Bstr> machine;
-} VBOXWATCHDOG_VM_GROUP;
-typedef std::map<Bstr, VBOXWATCHDOG_VM_GROUP> mapGroup;
-typedef std::map<Bstr, VBOXWATCHDOG_VM_GROUP>::iterator mapGroupIter;
-typedef std::map<Bstr, VBOXWATCHDOG_VM_GROUP>::const_iterator mapGroupIterConst;
+/** Members of a VM group; currently only represented by the machine's UUID. */
+typedef std::vector<Bstr> vecGroupMembers;
+typedef std::vector<Bstr>::iterator vecGroupMembersIter;
+typedef std::vector<Bstr>::const_iterator vecGroupMembersIterConst;
+
+/** A VM group. Can contain none, one or more group members. */
+typedef std::map<Bstr, vecGroupMembers> mapGroup;
+typedef std::map<Bstr, vecGroupMembers>::iterator mapGroupIter;
+typedef std::map<Bstr, vecGroupMembers>::const_iterator mapGroupIterConst;
 
 /**
  * A module descriptor.
@@ -194,10 +198,12 @@ typedef VBOXMODULE const *PCVBOXMODULE;
 
 RT_C_DECLS_BEGIN
 
-extern bool g_fVerbose;
+extern bool                             g_fDryrun;
+extern bool                             g_fVerbose;
 extern ComPtr<IVirtualBox>              g_pVirtualBox;
 extern ComPtr<ISession>                 g_pSession;
 extern mapVM                            g_mapVM;
+extern mapGroup                         g_mapGroup;
 # ifdef VBOX_WATCHDOG_GLOBAL_PERFCOL
 extern ComPtr<IPerformanceCollector>    g_pPerfCollector;
 # endif
