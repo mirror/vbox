@@ -1026,7 +1026,7 @@ int UIMessageCenter::askAboutSnapshotRestoring(const QString &strSnapshotName, b
                                 "if you do not do this the current state will be permanently lost. Do you wish to proceed?</p>")
                                 .arg(strSnapshotName),
                              tr("Create a snapshot of the current machine state"),
-                             true /* choose option by default */,
+                             !vboxGlobal().virtualBox().GetExtraDataStringList(VBoxDefs::GUI_InvertMessageOption).contains("askAboutSnapshotRestoring"),
                              QString::null /* details */,
                              QIMessageBox::Ok, QIMessageBox::Cancel, 0 /* 3rd button */,
                              tr("Restore"), tr("Cancel"), QString::null /* 3rd button text */) :

@@ -50,6 +50,7 @@ const char* VBoxDefs::GUI_LastCloseAction = "GUI/LastCloseAction";
 const char* VBoxDefs::GUI_RestrictedCloseActions = "GUI/RestrictedCloseActions";
 const char* VBoxDefs::GUI_CloseActionHook = "GUI/CloseActionHook";
 const char* VBoxDefs::GUI_SuppressMessages = "GUI/SuppressMessages";
+const char* VBoxDefs::GUI_InvertMessageOption = "GUI/InvertMessageOption";
 const char* VBoxDefs::GUI_PermanentSharedFoldersAtRuntime = "GUI/PermanentSharedFoldersAtRuntime";
 const char* VBoxDefs::GUI_LanguageId = "GUI/LanguageID";
 const char* VBoxDefs::GUI_PreviewUpdate = "GUI/PreviewUpdate";
