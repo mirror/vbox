@@ -4192,6 +4192,7 @@ GMMR0DECL(int) GMMR0RegisterSharedModule(PVM pVM, VMCPUID idCpu, VBOXOSFAMILY en
     AssertPtrReturn(pszModuleName, VERR_INVALID_POINTER);
     AssertPtrReturn(pszVersion, VERR_INVALID_POINTER);
 
+
     Log(("GMMR0RegisterSharedModule %s %s base %RGv size %x\n", pszModuleName, pszVersion, GCBaseAddr, cbModule));
 
     /*
