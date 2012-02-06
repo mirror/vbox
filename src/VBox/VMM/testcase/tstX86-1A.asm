@@ -201,31 +201,31 @@ x861_ClearRegisters:
 ; Loads all general, MMX and SSE registers except xBP and xSP with unique values.
 ;
 x861_LoadUniqueRegValuesSSE:
-        movq    mm0, [._mm0]
-        movq    mm1, [._mm1]
-        movq    mm2, [._mm2]
-        movq    mm3, [._mm3]
-        movq    mm4, [._mm4]
-        movq    mm5, [._mm5]
-        movq    mm6, [._mm6]
-        movq    mm7, [._mm7]
-        movdqu  xmm0, [._xmm0]
-        movdqu  xmm1, [._xmm1]
-        movdqu  xmm2, [._xmm2]
-        movdqu  xmm3, [._xmm3]
-        movdqu  xmm4, [._xmm4]
-        movdqu  xmm5, [._xmm5]
-        movdqu  xmm6, [._xmm6]
-        movdqu  xmm7, [._xmm7]
+        movq    mm0, REF_GLOBAL(._mm0)
+        movq    mm1, REF_GLOBAL(._mm1)
+        movq    mm2, REF_GLOBAL(._mm2)
+        movq    mm3, REF_GLOBAL(._mm3)
+        movq    mm4, REF_GLOBAL(._mm4)
+        movq    mm5, REF_GLOBAL(._mm5)
+        movq    mm6, REF_GLOBAL(._mm6)
+        movq    mm7, REF_GLOBAL(._mm7)
+        movdqu  xmm0, REF_GLOBAL(._xmm0)
+        movdqu  xmm1, REF_GLOBAL(._xmm1)
+        movdqu  xmm2, REF_GLOBAL(._xmm2)
+        movdqu  xmm3, REF_GLOBAL(._xmm3)
+        movdqu  xmm4, REF_GLOBAL(._xmm4)
+        movdqu  xmm5, REF_GLOBAL(._xmm5)
+        movdqu  xmm6, REF_GLOBAL(._xmm6)
+        movdqu  xmm7, REF_GLOBAL(._xmm7)
 %ifdef RT_ARCH_AMD64
-        movdqu  xmm8,  [._xmm8]
-        movdqu  xmm9,  [._xmm9]
-        movdqu  xmm10, [._xmm10]
-        movdqu  xmm11, [._xmm11]
-        movdqu  xmm12, [._xmm12]
-        movdqu  xmm13, [._xmm13]
-        movdqu  xmm14, [._xmm14]
-        movdqu  xmm15, [._xmm15]
+        movdqu  xmm8,  REF_GLOBAL(._xmm8)
+        movdqu  xmm9,  REF_GLOBAL(._xmm9)
+        movdqu  xmm10, REF_GLOBAL(._xmm10)
+        movdqu  xmm11, REF_GLOBAL(._xmm11)
+        movdqu  xmm12, REF_GLOBAL(._xmm12)
+        movdqu  xmm13, REF_GLOBAL(._xmm13)
+        movdqu  xmm14, REF_GLOBAL(._xmm14)
+        movdqu  xmm15, REF_GLOBAL(._xmm15)
 %endif
         call    x861_LoadUniqueRegValues
         ret
@@ -263,31 +263,31 @@ x861_LoadUniqueRegValuesSSE:
 ;
 x861_ClearRegistersSSE:
         call    x861_ClearRegisters
-        movq    mm0,   [.zero]
-        movq    mm1,   [.zero]
-        movq    mm2,   [.zero]
-        movq    mm3,   [.zero]
-        movq    mm4,   [.zero]
-        movq    mm5,   [.zero]
-        movq    mm6,   [.zero]
-        movq    mm7,   [.zero]
-        movdqu  xmm0,  [.zero]
-        movdqu  xmm1,  [.zero]
-        movdqu  xmm2,  [.zero]
-        movdqu  xmm3,  [.zero]
-        movdqu  xmm4,  [.zero]
-        movdqu  xmm5,  [.zero]
-        movdqu  xmm6,  [.zero]
-        movdqu  xmm7,  [.zero]
+        movq    mm0,   REF_GLOBAL(.zero)
+        movq    mm1,   REF_GLOBAL(.zero)
+        movq    mm2,   REF_GLOBAL(.zero)
+        movq    mm3,   REF_GLOBAL(.zero)
+        movq    mm4,   REF_GLOBAL(.zero)
+        movq    mm5,   REF_GLOBAL(.zero)
+        movq    mm6,   REF_GLOBAL(.zero)
+        movq    mm7,   REF_GLOBAL(.zero)
+        movdqu  xmm0,  REF_GLOBAL(.zero)
+        movdqu  xmm1,  REF_GLOBAL(.zero)
+        movdqu  xmm2,  REF_GLOBAL(.zero)
+        movdqu  xmm3,  REF_GLOBAL(.zero)
+        movdqu  xmm4,  REF_GLOBAL(.zero)
+        movdqu  xmm5,  REF_GLOBAL(.zero)
+        movdqu  xmm6,  REF_GLOBAL(.zero)
+        movdqu  xmm7,  REF_GLOBAL(.zero)
 %ifdef RT_ARCH_AMD64
-        movdqu  xmm8,  [.zero]
-        movdqu  xmm9,  [.zero]
-        movdqu  xmm10, [.zero]
-        movdqu  xmm11, [.zero]
-        movdqu  xmm12, [.zero]
-        movdqu  xmm13, [.zero]
-        movdqu  xmm14, [.zero]
-        movdqu  xmm15, [.zero]
+        movdqu  xmm8,  REF_GLOBAL(.zero)
+        movdqu  xmm9,  REF_GLOBAL(.zero)
+        movdqu  xmm10, REF_GLOBAL(.zero)
+        movdqu  xmm11, REF_GLOBAL(.zero)
+        movdqu  xmm12, REF_GLOBAL(.zero)
+        movdqu  xmm13, REF_GLOBAL(.zero)
+        movdqu  xmm14, REF_GLOBAL(.zero)
+        movdqu  xmm15, REF_GLOBAL(.zero)
 %endif
         call    x861_LoadUniqueRegValues
         ret
