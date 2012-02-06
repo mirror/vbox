@@ -1261,7 +1261,7 @@ int UIMessageCenter::confirmMachineDeletion(const QList<CMachine> &machines)
         }
 
         /* Compose VM name list: */
-        strVMNames += QString(strVMNames.isEmpty() ? "<b>%1</b>" : "<br><b>%1</b>").arg(strMachineName);
+        strVMNames += QString(strVMNames.isEmpty() ? "<b>%1</b>" : ", <b>%1</b>").arg(strMachineName);
     }
 
     /* Prepare message text: */
