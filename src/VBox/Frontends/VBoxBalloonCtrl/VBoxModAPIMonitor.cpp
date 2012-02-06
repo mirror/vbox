@@ -49,7 +49,7 @@ static const RTGETOPTDEF g_aAPIMonitorOpts[] = {
     { "--apimon-groups",         GETOPTDEF_APIMON_GROUPS,         RTGETOPT_REQ_STRING }
 };
 
-static enum APIMON_RESPONSE
+enum APIMON_RESPONSE
 {
     /** Unknown / unhandled response. */
     APIMON_RESPONSE_UNKNOWN    = 0,
