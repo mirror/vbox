@@ -69,6 +69,7 @@ DECLASM(int32_t) x861_Test1(void);
 DECLASM(int32_t) x861_Test2(void);
 DECLASM(int32_t) x861_Test3(void);
 DECLASM(int32_t) x861_Test4(void);
+DECLASM(int32_t) x861_Test5(void);
 
 
 
@@ -216,7 +217,7 @@ int main()
          * Do the testing.
          */
         int32_t rc;
-#if 1
+#if 0
         RTTestSub(hTest, "Misc 1");
         rc = x861_Test1();
         if (rc != 0)
@@ -231,11 +232,15 @@ int main()
         rc = x861_Test3();
         if (rc != 0)
             RTTestFailed(hTest, "x861_Test3 -> %d", rc);
-#endif
         RTTestSub(hTest, "Multibyte NOPs");
         rc = x861_Test4();
         if (rc != 0)
             RTTestFailed(hTest, "x861_Test4 -> %d", rc);
+        RTTestSub(hTest, "Odd floating point encodings");
+#endif
+        rc = x861_Test5();
+        if (rc != 0)
+            RTTestFailed(hTest, "x861_Test5 -> %d", rc);
     }
 
     return RTTestSummaryAndDestroy(hTest);

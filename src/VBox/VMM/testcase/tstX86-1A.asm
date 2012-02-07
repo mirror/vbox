@@ -1276,6 +1276,63 @@ BEGINPROC   x861_Test4
         ret
 ENDPROC     x861_Test4
 
+
+
+;;
+; Tests some odd floating point instruction encodings.
+;
+BEGINPROC   x861_Test5
+        SAVE_ALL_PROLOGUE
+
+        ; standard stuff...
+        fld dword [.r32V1]
+        fld qword [.r64V1]
+        fld tword [.r80V1]
+
+        ShouldTrap X86_XCPT_UD, db 0d9h, 008h
+        ShouldTrap X86_XCPT_UD, db 0d9h, 009h
+        ShouldTrap X86_XCPT_UD, db 0d9h, 00ah
+        ShouldTrap X86_XCPT_UD, db 0d9h, 00bh
+        ShouldTrap X86_XCPT_UD, db 0d9h, 00ch
+        ShouldTrap X86_XCPT_UD, db 0d9h, 00dh
+        ShouldTrap X86_XCPT_UD, db 0d9h, 00eh
+        ShouldTrap X86_XCPT_UD, db 0d9h, 00fh
+
+        ShouldTrap X86_XCPT_UD, db 0d9h, 0d1h
+        ShouldTrap X86_XCPT_UD, db 0d9h, 0d2h
+        ShouldTrap X86_XCPT_UD, db 0d9h, 0d3h
+        ShouldTrap X86_XCPT_UD, db 0d9h, 0d4h
+        ShouldTrap X86_XCPT_UD, db 0d9h, 0d5h
+        ShouldTrap X86_XCPT_UD, db 0d9h, 0d6h
+        ShouldTrap X86_XCPT_UD, db 0d9h, 0d7h
+        db 0d9h, 0d8h ; fnop?
+        db 0d9h, 0d9h ; fnop?
+        db 0d9h, 0dah ; fnop?
+        db 0d9h, 0dbh ; fnop?
+        db 0d9h, 0dch ; fnop?
+        db 0d9h, 0ddh ; fnop?
+        db 0d9h, 0deh ; fnop?
+        db 0d9h, 0dfh ; fnop?
+        ShouldTrap X86_XCPT_UD, db 0d9h, 0e2h
+        ShouldTrap X86_XCPT_UD, db 0d9h, 0e3h
+        ShouldTrap X86_XCPT_UD, db 0d9h, 0e6h
+        ShouldTrap X86_XCPT_UD, db 0d9h, 0e7h
+        ShouldTrap X86_XCPT_UD, db 0d9h, 0efh
+
+
+.success:
+        xor     eax, eax
+.return:
+        SAVE_ALL_EPILOGUE
+        ret
+
+.r32V1: dd 3.2
+.r64V1: dq 6.4
+.r80V1: dt 8.0
+
+ENDPROC     x861_Test5
+
+
 ;;
 ; Terminate the trap info array with a NIL entry.
 BEGINDATA
