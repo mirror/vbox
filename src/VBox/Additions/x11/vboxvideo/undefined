@@ -18,6 +18,8 @@ ShadowFBInit2
 XNFcalloc
 XNFstrdup
 Xalloc
+_ITM_registerTMCloneTable
+_ITM_deregisterTMCloneTable
 _Jv_RegisterClasses
 ___errno
 __cxa_finalize

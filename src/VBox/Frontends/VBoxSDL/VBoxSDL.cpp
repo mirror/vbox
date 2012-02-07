@@ -817,7 +817,7 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
     char *hdaFile   = NULL;
     char *cdromFile = NULL;
     char *fdaFile   = NULL;
-    const char *portVRDP = NULL;
+    const char *pszPortVRDP = NULL;
     bool fDiscardState = false;
 #ifdef VBOX_SECURELABEL
     BOOL fSecureLabel = false;
@@ -1162,14 +1162,14 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
                  || !strcmp(argv[curArg], "-vrdp"))
         {
             // start with the standard VRDP port
-            portVRDP = "0";
+            pszPortVRDP = "0";
 
             // is there another argument
             if (argc > (curArg + 1))
             {
                 curArg++;
-                portVRDP = argv[curArg];
-                LogFlow(("Using non standard VRDP port %s\n", portVRDP));
+                pszPortVRDP = argv[curArg];
+                LogFlow(("Using non standard VRDP port %s\n", pszPortVRDP));
             }
         }
         else if (   !strcmp(argv[curArg], "--discardstate")
@@ -1911,16 +1911,16 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
         pConsoleListener->getWrapped()->ignorePowerOffEvents(true);
     }
 
-    if (portVRDP)
+    if (pszPortVRDP)
     {
         rc = gpMachine->COMGETTER(VRDEServer)(gpVRDEServer.asOutParam());
         AssertMsg((rc == S_OK) && gpVRDEServer, ("Could not get VRDP Server! rc = 0x%x\n", rc));
         if (gpVRDEServer)
         {
             // has a non standard VRDP port been requested?
-            if (portVRDP > 0)
+            if (strcmp(pszPortVRDP, "0"))
             {
-                rc = gpVRDEServer->SetVRDEProperty(Bstr("TCP/Ports").raw(), Bstr(portVRDP).raw());
+                rc = gpVRDEServer->SetVRDEProperty(Bstr("TCP/Ports").raw(), Bstr(pszPortVRDP).raw());
                 if (rc != S_OK)
                 {
                     RTPrintf("Error: could not set VRDP port! rc = 0x%x\n", rc);

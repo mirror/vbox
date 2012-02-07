@@ -641,14 +641,14 @@ public:
     {
         clear();
         mIface = that.mIface;
-        addref(ptr());
+        this->addref(ptr());
     }
 
     CInterface (I *aIface)
     {
         clear();
         setPtr (aIface);
-        addref (aIface);
+        this->addref (aIface);
     }
 
     virtual ~CInterface()
@@ -701,13 +701,13 @@ public:
 #endif
         /* be aware of self assignment */
         I* amIface = ptr();
-        addref (aIface);
-        release (amIface);
+        this->addref (aIface);
+        this->release (amIface);
         if (aIface)
         {
             amIface = NULL;
             B::mRC = aIface->QueryInterface (COM_IIDOF (I), (void **) &amIface);
-            release (aIface);
+            this->release (aIface);
             setPtr(amIface);
         }
         else
@@ -724,8 +724,8 @@ public:
         Assert(!mDead);
 #endif
         /* be aware of self assignment */
-        addref (aIface);
-        release (ptr());
+        this->addref (aIface);
+        this->release (ptr());
         setPtr(aIface);
         B::mRC = S_OK;
     };
@@ -736,7 +736,7 @@ public:
 #ifdef DEBUG
        Assert(!mDead);
 #endif
-       release (ptr());
+       this->release (ptr());
        setPtr(NULL);
     }
 
