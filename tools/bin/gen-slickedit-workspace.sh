@@ -809,10 +809,11 @@ my_generate_project "Devices"       "src/VBox/Devices"                      --be
 my_generate_project "DIS"           "src/VBox/Disassembler"                 --begin-incs "include" "src/VBox/Disassembler"                  --end-includes "src/VBox/Disassembler" "include/VBox/dis*.h"
 
 # src/VBox/Frontends
-my_generate_project "FE-VBoxManage" "src/VBox/Frontends/VBoxManage"         --begin-incs "include" "src/VBox/Frontends/VBoxManage"          --end-includes "src/VBox/Frontends/VBoxManage"
-my_generate_project "FE-VBoxHeadless" "src/VBox/Frontends/VBoxHeadless"     --begin-incs "include" "src/VBox/Frontends/VBoxHeadless"        --end-includes "src/VBox/Frontends/VBoxHeadless"
-my_generate_project "FE-VBoxSDL"    "src/VBox/Frontends/VBoxSDL"            --begin-incs "include" "src/VBox/Frontends/VBoxSDL"             --end-includes "src/VBox/Frontends/VBoxSDL"
-my_generate_project "FE-VBoxShell"  "src/VBox/Frontends/VBoxShell"          --begin-incs "include" "src/VBox/Frontends/VBoxShell"           --end-includes "src/VBox/Frontends/VBoxShell"
+my_generate_project "FE-VBoxBalloonCtrl" "src/VBox/Frontends/VBoxBalloonCtrl" --begin-incs "include" "src/VBox/Frontends/VBoxBalloonCtrl"     --end-includes "src/VBox/Frontends/VBoxBalloonCtrl"
+my_generate_project "FE-VBoxManage"      "src/VBox/Frontends/VBoxManage"      --begin-incs "include" "src/VBox/Frontends/VBoxManage"          --end-includes "src/VBox/Frontends/VBoxManage"
+my_generate_project "FE-VBoxHeadless"    "src/VBox/Frontends/VBoxHeadless"    --begin-incs "include" "src/VBox/Frontends/VBoxHeadless"        --end-includes "src/VBox/Frontends/VBoxHeadless"
+my_generate_project "FE-VBoxSDL"         "src/VBox/Frontends/VBoxSDL"         --begin-incs "include" "src/VBox/Frontends/VBoxSDL"             --end-includes "src/VBox/Frontends/VBoxSDL"
+my_generate_project "FE-VBoxShell"       "src/VBox/Frontends/VBoxShell"       --begin-incs "include" "src/VBox/Frontends/VBoxShell"           --end-includes "src/VBox/Frontends/VBoxShell"
 # noise - my_generate_project "FE-VBoxBFE"      "src/VBox/Frontends/VBoxBFE"      --begin-incs "include" "src/VBox/Frontends/VBoxBFE"            --end-includes "src/VBox/Frontends/VBoxBFE"
 FE_VBOX_WRAPPERS=""
 for d in ${MY_OUT_DIRS};
@@ -878,7 +879,7 @@ my_generate_project "adpctl"        "src/apps/adpctl"                       --be
 my_generate_project "bldprogs"      "src/bldprogs"                          --begin-incs "include"                                          --end-includes "src/bldprogs"
 
 # A few things from src/lib
-my_generate_project "zlib"          "src/libs/zlib-1.2.1"                   --begin-incs "include"                                          --end-includes "src/libs/zlib-1.2.1/*.c" "src/libs/zlib-1.2.1/*.h"
+my_generate_project "zlib"          "src/libs/zlib-1.2.6"                   --begin-incs "include"                                          --end-includes "src/libs/zlib-1.2.6/*.c" "src/libs/zlib-1.2.6/*.h"
 my_generate_project "liblzf"        "src/libs/liblzf-3.4"                   --begin-incs "include"                                          --end-includes "src/libs/liblzf-3.4"
 my_generate_project "libpng"        "src/libs/libpng-1.2.8"                 --begin-incs "include"                                          --end-includes "src/libs/libpng-1.2.8/*.c" "src/libs/libpng-1.2.8/*.h"
 my_generate_project "openssl"       "src/libs/openssl-0.9.8t"               --begin-incs "include" "src/libs/openssl-0.9.8t/crypto"         --end-includes "src/libs/openssl-0.9.8t"
