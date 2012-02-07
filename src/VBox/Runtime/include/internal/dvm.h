@@ -199,6 +199,24 @@ typedef struct RTDVMFMTOPS
     DECLCALLBACKMEMBER(uint64_t, pfnVolumeGetFlags)(RTDVMVOLUMEFMT hVolFmt);
 
     /**
+     * Returns whether the supplied range is at least partially intersecting
+     * with the given volume.
+     *
+     * @returns whether the range intersects with the volume.
+     * @param   hVolFmt         The format specific volume handle.
+     * @param   offStart        Start offset of the range.
+     * @param   cbRange         Size of the range to check in bytes.
+     * @param   poffVol         Where to store the offset of the range from the
+     *                          start of the volume if true is returned.
+     * @param   pcbIntersect    Where to store the number of bytes intersecting
+     *                          with the range if true is returned.
+     */
+    DECLCALLBACKMEMBER(bool, pfnVolumeIsRangeIntersecting)(RTDVMVOLUMEFMT hVolFmt,
+                                                           uint64_t offStart, size_t cbRange,
+                                                           uint64_t *poffVol,
+                                                           size_t *pcbIntersect);
+
+    /**
      * Read data from the given volume.
      *
      * @returns IPRT status code.
@@ -225,6 +243,9 @@ typedef struct RTDVMFMTOPS
 typedef RTDVMFMTOPS *PRTDVMFMTOPS;
 /** Pointer to a const DVM ops table. */
 typedef const RTDVMFMTOPS *PCRTDVMFMTOPS;
+
+/** Checks whether a range is intersecting. */
+#define RTDVM_RANGE_IS_INTERSECTING(start, size, off) ( (start) <= (off) && ((start) + (size)) > (off) )
 
 /** Converts a LBA number to the byte offset. */
 #define RTDVM_LBA2BYTE(lba, disk) ((lba) * (disk)->cbSector)
