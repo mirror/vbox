@@ -1341,6 +1341,21 @@ VBoxManage setextradata "VM name"
     obtained with <screen>dmidecode -t1</screen></para>
   </sect1>
 
+  <sect1 id="changeacpicust">
+    <title>Configuring the custom ACPI table</title>
+
+    <para>VirtualBox can be configured to present an custom ACPI table to
+    the guest. Use the following command to configure this:</para>
+
+    <screen>VBoxManage setextradata "VM name"
+      "VBoxInternal/Devices/acpi/0/Config/CustomTable" "/path/to/table.bin"</screen>
+
+    <para>Configuring a custom ACPI table can prevent Windows
+      Vista and Windows 7 from asking for a new product key. On Linux hosts,
+      one of the host tables can be read from
+    <filename>/sys/firmware/acpi/tables/</filename>.</para>
+  </sect1>
+
   <sect1>
     <title>Fine-tuning timers and time synchronization</title>
 

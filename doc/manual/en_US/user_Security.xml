@@ -332,6 +332,11 @@
           calls are transferred via SOAP XML) are not encrypted, but use plain
           HTTP. This is a potential security risk! For details about the web
           service, please see <xref linkend="VirtualBoxAPI" />.</para>
+          <para>The web services are not started by default. Please refer to
+          <xref linkend="vboxwebsrv-daemon"/> to find out how to start this
+          service. It has to be started as a regular user and only the VMs
+          of that user can be controled. By default, the service binds to
+          localhost preventing any remote connection.</para>
         </listitem>
         
         <listitem>
