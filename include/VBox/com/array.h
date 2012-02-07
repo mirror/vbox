@@ -1101,7 +1101,7 @@ protected:
                     /* Truncation takes place, uninit exceeding elements and
                      * shrink the size. */
                     for (size_t i = aNewSize; i < m.size; ++ i)
-                        this->Uninit(m.arr[i]);
+                        SafeArray::Uninit(m.arr[i]);
 
                     m.size = aNewSize;
                 }
@@ -1120,7 +1120,7 @@ protected:
                 /* Truncation takes place, uninit exceeding elements and
                  * shrink the size. */
                 for (size_t i = aNewSize; i < m.size; ++ i)
-                    this->Uninit(m.arr[i]);
+                    SafeArray::Uninit(m.arr[i]);
 
                 m.size = aNewSize;
             }
