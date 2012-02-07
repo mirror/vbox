@@ -56,6 +56,10 @@
 #define RTFILEAIOCTX_MAGIC_DEAD         UINT32_C(0x19370315)
 /** The value of RTFILEAIOREQINT::u32Magic. (Stephen Edwin King)  */
 #define RTFILEAIOREQ_MAGIC              UINT32_C(0x19470921)
+/** The value of RTFILESYSTEMINT::u32Magic. (John Scalzi) */
+#define RTFILESYSTEM_MAGIC              UINT32_C(0x19690510)
+/** The value of RTFILESYSTEMINT::u32Magic after close. */
+#define RTFILESYSTEM_MAGIC_DEAD         (~RTFILESYSTEM_MAGIC)
 /** The value of RTENVINTERNAL::u32Magic. (Rumiko Takahashi) */
 #define RTENV_MAGIC                     UINT32_C(0x19571010)
 /** The value of RTERRVARS::ai32Vars[0]. (Ryuichi Sakamoto) */
