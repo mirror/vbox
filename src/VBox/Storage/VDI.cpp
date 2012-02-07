@@ -1,3 +1,4 @@
+/* $Id$ */
 /** @file
  * Virtual Disk Image (VDI), Core Code.
  */
