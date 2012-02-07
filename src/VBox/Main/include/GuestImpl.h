@@ -218,6 +218,7 @@ private:
 
     int callbackAdd(const PVBOXGUESTCTRL_CALLBACK pCallbackData, uint32_t *puContextID);
     void callbackDestroy(uint32_t uContextID);
+    void callbackRemove(uint32_t uContextID);
     bool callbackExists(uint32_t uContextID);
     void callbackFreeUserData(void *pvData);
     int callbackGetUserData(uint32_t uContextID, eVBoxGuestCtrlCallbackType *pEnmType, void **ppvData, size_t *pcbData);
