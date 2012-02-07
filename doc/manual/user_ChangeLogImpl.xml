@@ -9,12 +9,12 @@
     <itemizedlist>
 
       <listitem>
-        <para>dummy</para>
+        <para>Support for up to 36 network cards, in combination with an
+          ICH9 chipset configuration (bug #8805)</para>
       </listitem>
 
       <listitem>
-        <para>Support for up to 36 network cards, in combination with an
-          ICH9 chipset configuration (bug #8805)</para>
+        <para>GUI: network operations manager</para>
       </listitem>
 
     </itemizedlist>
