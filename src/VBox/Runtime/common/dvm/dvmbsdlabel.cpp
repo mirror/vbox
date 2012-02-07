@@ -465,6 +465,24 @@ DECLCALLBACK(uint64_t) rtDvmFmtBsdLblVolumeGetFlags(RTDVMVOLUMEFMT hVolFmt)
     return 0;
 }
 
+DECLCALLBACK(bool) rtDvmFmtBsdLblVolumeIsRangeIntersecting(RTDVMVOLUMEFMT hVolFmt,
+                                                           uint64_t offStart, size_t cbRange,
+                                                           uint64_t *poffVol,
+                                                           size_t *pcbIntersect)
+{
+    bool fIntersect = false;
+    PRTDVMVOLUMEFMTINTERNAL pVol = hVolFmt;
+
+    if (RTDVM_RANGE_IS_INTERSECTING(pVol->offStart, pVol->cbVolume, offStart))
+    {
+        fIntersect    = true;
+        *poffVol      = offStart - pVol->offStart;
+        *pcbIntersect = RT_MIN(cbRange, pVol->offStart + pVol->cbVolume - offStart);
+    }
+
+    return fIntersect;
+}
+
 DECLCALLBACK(int) rtDvmFmtBsdLblVolumeRead(RTDVMVOLUMEFMT hVolFmt, uint64_t off, void *pvBuf, size_t cbRead)
 {
     PRTDVMVOLUMEFMTINTERNAL pVol = hVolFmt;
@@ -511,6 +529,8 @@ DECLHIDDEN(RTDVMFMTOPS) g_rtDvmFmtBsdLbl =
     rtDvmFmtBsdLblVolumeGetType,
     /* pfnVolumeGetFlags */
     rtDvmFmtBsdLblVolumeGetFlags,
+    /* pfnVolumeIsRangeIntersecting */
+    rtDvmFmtBsdLblVolumeIsRangeIntersecting,
     /* pfnVolumeRead */
     rtDvmFmtBsdLblVolumeRead,
     /* pfnVolumeWrite */

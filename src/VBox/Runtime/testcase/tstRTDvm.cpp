@@ -91,7 +91,7 @@ static int tstRTDvmVolume(RTTEST hTest, PTSTRTDVMDISK pDisk, uint64_t cb, unsign
 
     RTTestSubF(hTest, "Create DVM");
     RTDVM hVolMgr;
-    rc = RTDvmCreate(&hVolMgr, dvmDiskRead, dvmDiskWrite, cb, 512, pDisk);
+    rc = RTDvmCreate(&hVolMgr, dvmDiskRead, dvmDiskWrite, cb, 512, 0, pDisk);
     if (RT_FAILURE(rc))
     {
         RTTestIFailed("RTDvmCreate -> %Rrc", rc);
