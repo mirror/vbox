@@ -2508,7 +2508,7 @@ static int vdiCompact(void *pBackendData, unsigned uPercentStart,
                 }
                 else if (pfnParentRead)
                 {
-                    rc = pfnParentRead(pvParent, i * cbBlock, pvBuf, cbBlock);
+                    rc = pfnParentRead(pvParent, (uint64_t)i * cbBlock, pvBuf, cbBlock);
                     if (RT_FAILURE(rc))
                         break;
                     if (!memcmp(pvTmp, pvBuf, cbBlock))
