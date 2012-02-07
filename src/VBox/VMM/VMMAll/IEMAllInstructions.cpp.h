@@ -3359,11 +3359,42 @@ FNIEMOP_DEF(iemOp_shrd_Ev_Gv_CL)
     return FNIEMOP_CALL_1(iemOpCommonShldShrd_CL, &g_iemAImpl_shrd);
 }
 
+
 /** Opcode 0x0f 0xae mem/0. */
-FNIEMOP_STUB_1(iemOp_Grp15_fxsave,   uint8_t, bRm);
+FNIEMOP_DEF_1(iemOp_Grp15_fxsave,   uint8_t, bRm)
+{
+    IEMOP_MNEMONIC("fxsave m512");
+    IEMOP_HLP_NO_LOCK_PREFIX();
+    if (!IEM_IS_INTEL_CPUID_FEATURE_PRESENT_EDX(X86_CPUID_FEATURE_EDX_FXSR))
+        return IEMOP_RAISE_INVALID_LOCK_PREFIX();
+
+    IEM_MC_BEGIN(2, 1);
+    IEM_MC_ARG(RTGCPTR,         GCPtrEff,                                0);
+    IEM_MC_ARG_CONST(IEMMODE,   enmEffOpSize,/*=*/pIemCpu->enmEffOpSize, 1);
+    IEM_MC_CALC_RM_EFF_ADDR(GCPtrEff, bRm);
+    IEM_MC_CALL_CIMPL_2(iemCImpl_fxsave, GCPtrEff, enmEffOpSize);
+    IEM_MC_END();
+    return VINF_SUCCESS;
+}
+
 
 /** Opcode 0x0f 0xae mem/1. */
-FNIEMOP_STUB_1(iemOp_Grp15_fxrstor,  uint8_t, bRm);
+FNIEMOP_DEF_1(iemOp_Grp15_fxrstor,  uint8_t, bRm)
+{
+    IEMOP_MNEMONIC("fxrstor m512");
+    IEMOP_HLP_NO_LOCK_PREFIX();
+    if (!IEM_IS_INTEL_CPUID_FEATURE_PRESENT_EDX(X86_CPUID_FEATURE_EDX_FXSR))
+        return IEMOP_RAISE_INVALID_LOCK_PREFIX();
+
+    IEM_MC_BEGIN(2, 1);
+    IEM_MC_ARG(RTGCPTR,         GCPtrEff,                                0);
+    IEM_MC_ARG_CONST(IEMMODE,   enmEffOpSize,/*=*/pIemCpu->enmEffOpSize, 1);
+    IEM_MC_CALC_RM_EFF_ADDR(GCPtrEff, bRm);
+    IEM_MC_CALL_CIMPL_2(iemCImpl_fxrstor, GCPtrEff, enmEffOpSize);
+    IEM_MC_END();
+    return VINF_SUCCESS;
+}
+
 
 /** Opcode 0x0f 0xae mem/2. */
 FNIEMOP_STUB_1(iemOp_Grp15_ldmxcsr,  uint8_t, bRm);
