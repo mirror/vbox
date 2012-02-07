@@ -115,7 +115,9 @@ int Guest::callbackAdd(const PVBOXGUESTCTRL_CALLBACK pCallback, uint32_t *puCont
     AssertPtrReturn(pCallback, VERR_INVALID_PARAMETER);
     /* puContextID is optional. */
 
-    int rc;
+    int rc = VERR_NOT_FOUND;
+
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     /* Create a new context ID and assign it. */
     uint32_t uNewContextID = 0;
@@ -138,8 +140,6 @@ int Guest::callbackAdd(const PVBOXGUESTCTRL_CALLBACK pCallback, uint32_t *puCont
 
     if (RT_SUCCESS(rc))
     {
-        AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-
         /* Add callback with new context ID to our callback map. */
         mCallbackMap[uNewContextID] = *pCallback;
         Assert(mCallbackMap.size());
@@ -153,6 +153,8 @@ int Guest::callbackAdd(const PVBOXGUESTCTRL_CALLBACK pCallback, uint32_t *puCont
 }
 
 /**
+ * Destroys the formerly allocated callback data. The callback then
+ * needs to get removed from the callback map via callbackRemove().
  * Does not do locking!
  *
  * @param   uContextID
@@ -172,10 +174,20 @@ void Guest::callbackDestroy(uint32_t uContextID)
             callbackFreeUserData(it->second.pvData);
             it->second.cbData = 0;
         }
-
-        /* Remove callback context (not used anymore). */
-        mCallbackMap.erase(it);
     }
+}
+
+/**
+ * Removes a callback from the callback map.
+ * Does not do locking!
+ *
+ * @param   uContextID
+ */
+void Guest::callbackRemove(uint32_t uContextID)
+{
+    callbackDestroy(uContextID);
+
+    mCallbackMap.erase(uContextID);
 }
 
 bool Guest::callbackExists(uint32_t uContextID)
@@ -1707,16 +1719,6 @@ HRESULT Guest::executeProcessInternal(IN_BSTR aCommand, ULONG aFlags,
                     VBOXGUESTCTRL_CALLBACK callback;
                     vrc = callbackInit(&callback, VBOXGUESTCTRLCALLBACKTYPE_EXEC_START, pProgress);
                     if (RT_SUCCESS(vrc))
-                    {
-                        /* Allocate and assign payload. */
-                        callback.cbData = sizeof(CALLBACKDATAEXECSTATUS);
-                        PCALLBACKDATAEXECSTATUS pData = (PCALLBACKDATAEXECSTATUS)RTMemAlloc(callback.cbData);
-                        AssertReturn(pData, E_OUTOFMEMORY);
-                        RT_BZERO(pData, callback.cbData);
-                        callback.pvData = pData;
-                    }
-
-                    if (RT_SUCCESS(vrc))
                         vrc = callbackAdd(&callback, &uContextID);
 
                     if (RT_SUCCESS(vrc))
@@ -2011,8 +2013,12 @@ STDMETHODIMP Guest::SetProcessInput(ULONG aPID, ULONG aFlags, ULONG aTimeoutMS, 
                     rc = handleErrorCompletion(vrc);
             }
 
-            /* The callback isn't needed anymore -- just was kept locally. */
-            callbackDestroy(uContextID);
+            {
+                AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+                /* The callback isn't needed anymore -- just was kept locally. */
+                callbackRemove(uContextID);
+            }
 
             /* Cleanup. */
             if (!pProgress.isNull())
@@ -2206,8 +2212,12 @@ HRESULT Guest::getProcessOutputInternal(ULONG aPID, ULONG aFlags, ULONG aTimeout
             else
                 rc = handleErrorHGCM(vrc);
 
-            /* The callback isn't needed anymore -- just was kept locally. */
-            callbackDestroy(uContextID);
+            {
+                AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+                /* The callback isn't needed anymore -- just was kept locally. */
+                callbackRemove(uContextID);
+            }
 
             /* Cleanup. */
             if (!pProgress.isNull())
