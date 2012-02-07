@@ -2407,6 +2407,8 @@ static int vdiCompact(void *pBackendData, unsigned uPercentStart,
     void *pvUser = NULL;
     PVDINTERFACEPROGRESS pIfProgress = VDIfProgressGet(pVDIfsOperation);
 
+    PVDINTERFACEQUERYRANGEUSE pIfQueryRangeUse = VDIfQueryRangeUseGet(pVDIfsOperation);
+
     do {
         AssertBreakStmt(pImage, rc = VERR_INVALID_PARAMETER);
 
@@ -2519,6 +2521,28 @@ static int vdiCompact(void *pBackendData, unsigned uPercentStart,
                         /* Adjust progress info, one block to be relocated. */
                         cBlocksToMove++;
                     }
+                }
+            }
+
+            /* Check if the range is in use if the block is still allocated. */
+            ptrBlock = pImage->paBlocks[i];
+            if (   IS_VDI_IMAGE_BLOCK_ALLOCATED(ptrBlock)
+                && pIfQueryRangeUse)
+            {
+                bool fUsed = true;
+
+                rc = vdIfQueryRangeUse(pIfQueryRangeUse, (uint64_t)i * cbBlock, cbBlock, &fUsed);
+                if (RT_FAILURE(rc))
+                    break;
+                if (!fUsed)
+                {
+                    pImage->paBlocks[i] = VDI_IMAGE_BLOCK_ZERO;
+                    rc = vdiUpdateBlockInfo(pImage, i);
+                    if (RT_FAILURE(rc))
+                        break;
+                    paBlocks2[ptrBlock] = VDI_IMAGE_BLOCK_FREE;
+                    /* Adjust progress info, one block to be relocated. */
+                    cBlocksToMove++;
                 }
             }
 
