@@ -76,6 +76,19 @@ typedef enum RTDVMVOLTYPE
     RTDVMVOLTYPE_32BIT_HACK = 0x7fffffff
 } RTDVMVOLTYPE;
 
+/** @defgroup grp_dvm_flags     Flags used by RTDvmCreate.
+ * @{ */
+/** DVM flags - Blocks are always marked as unused if the volume has
+ *              no block status callback set.
+ *              The default is to mark them as used. */
+#define DVM_FLAGS_NO_STATUS_CALLBACK_MARK_AS_UNUSED    RT_BIT_32(0)
+/** DVM flags - Space which is unused in the map will be marked as used
+ *              when calling RTDvmMapQueryBlockStatus(). */
+#define DVM_FLAGS_UNUSED_SPACE_MARK_AS_USED            RT_BIT_32(1)
+/** Mask of all valid flags. */
+#define DVM_FLAGS_MASK (DVM_FLAGS_NO_STATUS_CALLBACK_MARK_AS_UNUSED | DVM_FLAGS_UNUSED_SPACE_MARK_AS_USED)
+/** @}  */
+
 
 /** @defgroup grp_dvm_vol_flags     Volume flags used by DVMVolumeGetFlags.
  * @{ */
@@ -126,6 +139,20 @@ typedef DECLCALLBACK(int) FNDVMWRITE(void *pvUser, uint64_t off, const void *pvB
 typedef FNDVMWRITE *PFNDVMWRITE;
 
 /**
+ * Callback for querying the block allocation status of a volume.
+ *
+ * @returns IPRT status code.
+ * @param   pvUser         Opaque user data passed when setting the callback.
+ * @param   off            Offset relative to the start of the volume.
+ * @param   cb             Range to check in bytes.
+ * @param   pfAllocated    Where to store the allocation status on success.
+ */
+typedef DECLCALLBACK(int) FNDVMVOLUMEQUERYBLOCKSTATUS(void *pvUser, uint64_t off,
+                                                      uint64_t cb, bool *pfAllocated);
+/** Pointer to a query block allocation status callback. */
+typedef FNDVMVOLUMEQUERYBLOCKSTATUS *PFNDVMVOLUMEQUERYBLOCKSTATUS;
+
+/**
  * Create a new volume manager.
  *
  * @returns IPRT status.
@@ -137,11 +164,13 @@ typedef FNDVMWRITE *PFNDVMWRITE;
  *                      disk/container/whatever.
  * @param   cbDisk      Size of the underlying disk in bytes.
  * @param   cbSector    Size of one sector in bytes.
+ * @param   fFlags      Combination of RTDVM_FLAGS_*
  * @param   pvUser      Opaque user data passed to the callbacks.
  */
 RTDECL(int) RTDvmCreate(PRTDVM phVolMgr, PFNDVMREAD pfnRead,
                         PFNDVMWRITE pfnWrite, uint64_t cbDisk,
-                        uint64_t cbSector, void *pvUser);
+                        uint64_t cbSector, uint32_t fFlags,
+                        void *pvUser);
 
 /**
  * Retain a given volume manager.
@@ -224,6 +253,20 @@ RTDECL(int) RTDvmMapQueryFirstVolume(RTDVM hVolMgr, PRTDVMVOLUME phVol);
 RTDECL(int) RTDvmMapQueryNextVolume(RTDVM hVolMgr, RTDVMVOLUME hVol, PRTDVMVOLUME phVolNext);
 
 /**
+ * Returns whether the given block on the disk is in use.
+ *
+ * @returns IPRT status code.
+ * @param   hVolMgr         The volume manager handler.
+ * @param   off             The start offset to check for.
+ * @param   cb              The range in bytes to check.
+ * @param   pfAllocated     Where to store the status on success.
+ *
+ * @remark This method will return true even if a part of the range is not in use.
+ */
+RTDECL(int) RTDvmMapQueryBlockStatus(RTDVM hVolMgr, uint64_t off, uint64_t cb,
+                                     bool *pfAllocated);
+
+/**
  * Retains a valid volume handle.
  *
  * @returns New reference count on success, UINT32_MAX on failure.
@@ -238,6 +281,20 @@ RTDECL(uint32_t) RTDvmVolumeRetain(RTDVMVOLUME hVol);
  * @param   hVol            The volume to release.
  */
 RTDECL(uint32_t) RTDvmVolumeRelease(RTDVMVOLUME hVol);
+
+/**
+ * Sets the callback to query the block allocation status for a volume.
+ * This overwrites any other callback set previously.
+ *
+ * @returns nothing.
+ * @param   hVol                   The volume handle.
+ * @param   pfnQueryBlockStatus    The callback to set. Can be NULL to disable
+ *                                 a previous callback.
+ * @param   pvUser                 Opaque user data passed in the callback.
+ */
+RTDECL(void) RTDvmVolumeSetQueryBlockStatusCallback(RTDVMVOLUME hVol,
+                                                    PFNDVMVOLUMEQUERYBLOCKSTATUS pfnQueryBlockStatus,
+                                                    void *pvUser);
 
 /**
  * Get the size of a volume in bytes.

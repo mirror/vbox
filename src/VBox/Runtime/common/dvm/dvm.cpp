@@ -35,6 +35,7 @@
 #include <iprt/err.h>
 #include <iprt/asm.h>
 #include <iprt/string.h>
+#include <iprt/list.h>
 #include "internal/dvm.h"
 
 /*******************************************************************************
@@ -54,8 +55,12 @@ typedef struct RTDVMINTERNAL
     PCRTDVMFMTOPS     pDvmFmtOps;
     /** The format specific volume manager data. */
     RTDVMFMT          hVolMgrFmt;
+    /** Flags passed on manager creation. */
+    uint32_t          fFlags;
     /** Reference counter. */
     uint32_t volatile cRefs;
+    /** List of recognised volumes (RTDVMVOLUMEINTERNAL). */
+    RTLISTANCHOR      VolumeList;
 } RTDVMINTERNAL;
 /** Pointer to an internal volume manager. */
 typedef RTDVMINTERNAL *PRTDVMINTERNAL;
@@ -66,13 +71,19 @@ typedef RTDVMINTERNAL *PRTDVMINTERNAL;
 typedef struct RTDVMVOLUMEINTERNAL
 {
     /** The DVM volume magic (RTDVMVOLUME_MAGIC). */
-    uint32_t          u32Magic;
+    uint32_t                      u32Magic;
+    /** Node for the volume list. */
+    RTLISTNODE                    VolumeNode;
     /** Pointer to the owning volume manager. */
-    PRTDVMINTERNAL    pVolMgr;
+    PRTDVMINTERNAL                pVolMgr;
     /** Format specific volume data. */
-    RTDVMVOLUMEFMT    hVolFmt;
+    RTDVMVOLUMEFMT                hVolFmt;
+    /** Set block status.callback */
+    PFNDVMVOLUMEQUERYBLOCKSTATUS  pfnQueryBlockStatus;
+    /** Opaque user data. */
+    void                         *pvUser;
     /** Reference counter. */
-    uint32_t volatile cRefs;
+    uint32_t volatile             cRefs;
 } RTDVMVOLUMEINTERNAL;
 /** Pointer to an internal volume. */
 typedef RTDVMVOLUMEINTERNAL *PRTDVMVOLUMEINTERNAL;
@@ -117,12 +128,69 @@ static const char * g_apcszDvmVolTypes[] =
     "Solaris"
 };
 
+/**
+ * Creates a new volume.
+ *
+ * @returns IPRT status code.
+ * @param   pThis    The DVM map instance.
+ * @param   hVolFmt  The format specific volume handle.
+ * @param   phVol    Where to store the generic volume handle on success.
+ */
+static int rtDvmVolumeCreate(PRTDVMINTERNAL pThis, RTDVMVOLUMEFMT hVolFmt,
+                             PRTDVMVOLUME phVol)
+{
+    int rc = VINF_SUCCESS;
+    PRTDVMVOLUMEINTERNAL pVol = NULL;
+
+    pVol = (PRTDVMVOLUMEINTERNAL)RTMemAllocZ(sizeof(RTDVMVOLUMEINTERNAL));
+    if (VALID_PTR(pVol))
+    {
+        pVol->u32Magic = RTDVMVOLUME_MAGIC;
+        pVol->cRefs    = 0;
+        pVol->pVolMgr  = pThis;
+        pVol->hVolFmt  = hVolFmt;
+
+        *phVol = pVol;
+    }
+    else
+        rc = VERR_NO_MEMORY;
+
+    return rc;
+}
+
+/**
+ * Destroys a volume handle.
+ *
+ * @param   pThis               The volume to destroy.
+ */
+static void rtDvmVolumeDestroy(PRTDVMVOLUMEINTERNAL pThis)
+{
+    PRTDVMINTERNAL pVolMgr = pThis->pVolMgr;
+
+    AssertPtr(pVolMgr);
+
+    /* Close the volume. */
+    pVolMgr->pDvmFmtOps->pfnVolumeClose(pThis->hVolFmt);
+
+    pThis->u32Magic = RTDVMVOLUME_MAGIC_DEAD;
+    pThis->pVolMgr  = NULL;
+    pThis->hVolFmt  = NIL_RTDVMVOLUMEFMT;
+    RTMemFree(pThis);
+
+    /* Release the reference of the volume manager. */
+    RTDvmRelease(pVolMgr);
+}
+
 RTDECL(int) RTDvmCreate(PRTDVM phVolMgr, PFNDVMREAD pfnRead,
                         PFNDVMWRITE pfnWrite, uint64_t cbDisk,
-                        uint64_t cbSector, void *pvUser)
+                        uint64_t cbSector, uint32_t fFlags, void *pvUser)
 {
     int rc = VINF_SUCCESS;
     PRTDVMINTERNAL pThis;
+
+    AssertMsgReturn(!(fFlags & ~DVM_FLAGS_MASK),
+                    ("Invalid flags given %#x\n", fFlags),
+                    VERR_INVALID_PARAMETER);
 
     pThis = (PRTDVMINTERNAL)RTMemAllocZ(sizeof(RTDVMINTERNAL));
     if (VALID_PTR(pThis))
@@ -135,7 +203,9 @@ RTDECL(int) RTDvmCreate(PRTDVM phVolMgr, PFNDVMREAD pfnRead,
         pThis->DvmDisk.pfnWrite = pfnWrite;
         pThis->pDvmFmtOps       = NULL;
         pThis->hVolMgrFmt       = NIL_RTDVMFMT;
+        pThis->fFlags           = fFlags;
         pThis->cRefs            = 1;
+        RTListInit(&pThis->VolumeList);
         *phVolMgr = pThis;
     }
     else
@@ -231,7 +301,61 @@ RTDECL(int) RTDvmMapOpen(RTDVM hVolMgr)
             /* Open the format. */
             rc = pDvmFmtOpsMatch->pfnOpen(&pThis->DvmDisk, &pThis->hVolMgrFmt);
             if (RT_SUCCESS(rc))
+            {
+                uint32_t cVols;
+
                 pThis->pDvmFmtOps = pDvmFmtOpsMatch;
+
+                cVols = pThis->pDvmFmtOps->pfnGetValidVolumes(pThis->hVolMgrFmt);
+
+                /* Construct volume list. */
+                if (cVols)
+                {
+                    PRTDVMVOLUMEINTERNAL pVol = NULL;
+                    RTDVMVOLUMEFMT hVolFmt = NIL_RTDVMVOLUMEFMT;
+
+                    rc = pThis->pDvmFmtOps->pfnQueryFirstVolume(pThis->hVolMgrFmt, &hVolFmt);
+                    if (RT_SUCCESS(rc))
+                    {
+                        rc = rtDvmVolumeCreate(pThis, hVolFmt, &pVol);
+                        if (RT_FAILURE(rc))
+                            pThis->pDvmFmtOps->pfnVolumeClose(hVolFmt);
+                    }
+
+                    if (RT_SUCCESS(rc))
+                    {
+                        cVols--;
+                        RTListAppend(&pThis->VolumeList, &pVol->VolumeNode);
+
+                        while (   cVols > 0
+                               && RT_SUCCESS(rc))
+                        {
+                            rc = pThis->pDvmFmtOps->pfnQueryNextVolume(pThis->hVolMgrFmt, pVol->hVolFmt, &hVolFmt);
+                            if (RT_SUCCESS(rc))
+                            {
+                                rc = rtDvmVolumeCreate(pThis, hVolFmt, &pVol);
+                                if (RT_FAILURE(rc))
+                                    pThis->pDvmFmtOps->pfnVolumeClose(hVolFmt);
+                                else
+                                    RTListAppend(&pThis->VolumeList, &pVol->VolumeNode);
+                                cVols--;
+                            }
+                        }
+                    }
+
+                    if (RT_FAILURE(rc))
+                    {
+                        PRTDVMVOLUMEINTERNAL pItNext, pIt;
+
+                        /* Remove all entries. */
+                        RTListForEachSafe(&pThis->VolumeList, pIt, pItNext, RTDVMVOLUMEINTERNAL, VolumeNode)
+                        {
+                            RTListNodeRemove(&pIt->VolumeNode);
+                            rtDvmVolumeDestroy(pIt);
+                        }
+                    }
+                }
+            }
         }
         else
             rc = VERR_NOT_SUPPORTED;
@@ -242,7 +366,7 @@ RTDECL(int) RTDvmMapOpen(RTDVM hVolMgr)
 
 RTDECL(int) RTDvmMapInitialize(RTDVM hVolMgr, const char *pszFmt)
 {
-    int rc = VINF_SUCCESS;
+    int rc = VERR_NOT_SUPPORTED;
     PRTDVMINTERNAL pThis = hVolMgr;
     AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
     AssertPtrReturn(pszFmt, VERR_INVALID_POINTER);
@@ -296,46 +420,21 @@ RTDECL(uint32_t) RTDvmMapGetMaxVolumes(RTDVM hVolMgr)
     return pThis->pDvmFmtOps->pfnGetMaxVolumes(pThis->hVolMgrFmt);
 }
 
-static int rtDvmVolumeCreate(PRTDVMINTERNAL pThis, RTDVMVOLUMEFMT hVolFmt,
-                             PRTDVMVOLUME phVol)
-{
-    int rc = VINF_SUCCESS;
-    PRTDVMVOLUMEINTERNAL pVol = NULL;
-
-    pVol = (PRTDVMVOLUMEINTERNAL)RTMemAllocZ(sizeof(RTDVMVOLUMEINTERNAL));
-    if (VALID_PTR(pVol))
-    {
-        pVol->u32Magic = RTDVMVOLUME_MAGIC;
-        pVol->cRefs    = 1;
-        pVol->pVolMgr  = pThis;
-        pVol->hVolFmt  = hVolFmt;
-
-        /* Reference the volume manager. */
-        RTDvmRetain(pThis);
-        *phVol = pVol;
-    }
-    else
-        rc = VERR_NO_MEMORY;
-
-    return rc;
-}
-
 RTDECL(int) RTDvmMapQueryFirstVolume(RTDVM hVolMgr, PRTDVMVOLUME phVol)
 {
-    int rc = VINF_SUCCESS;
+    int rc = VERR_DVM_MAP_EMPTY;
     PRTDVMINTERNAL pThis = hVolMgr;
     AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
     AssertReturn(pThis->u32Magic == RTDVM_MAGIC, VERR_INVALID_HANDLE);
     AssertReturn(pThis->hVolMgrFmt != NIL_RTDVMFMT, VERR_INVALID_HANDLE);
     AssertPtrReturn(phVol, VERR_INVALID_POINTER);
 
-    RTDVMVOLUMEFMT hVolFmt = NIL_RTDVMVOLUMEFMT;
-    rc = pThis->pDvmFmtOps->pfnQueryFirstVolume(pThis->hVolMgrFmt, &hVolFmt);
-    if (RT_SUCCESS(rc))
+    PRTDVMVOLUMEINTERNAL pVol = RTListGetFirst(&pThis->VolumeList, RTDVMVOLUMEINTERNAL, VolumeNode);
+    if (pVol)
     {
-        rc = rtDvmVolumeCreate(pThis, hVolFmt, phVol);
-        if (RT_FAILURE(rc))
-            pThis->pDvmFmtOps->pfnVolumeClose(hVolFmt);
+        rc = VINF_SUCCESS;
+        RTDvmVolumeRetain(pVol);
+        *phVol = pVol;
     }
 
     return rc;
@@ -343,7 +442,7 @@ RTDECL(int) RTDvmMapQueryFirstVolume(RTDVM hVolMgr, PRTDVMVOLUME phVol)
 
 RTDECL(int) RTDvmMapQueryNextVolume(RTDVM hVolMgr, RTDVMVOLUME hVol, PRTDVMVOLUME phVolNext)
 {
-    int rc = VINF_SUCCESS;
+    int rc = VERR_DVM_MAP_NO_VOLUME;
     PRTDVMINTERNAL       pThis = hVolMgr;
     PRTDVMVOLUMEINTERNAL pVol = hVol;
     AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
@@ -353,14 +452,84 @@ RTDECL(int) RTDvmMapQueryNextVolume(RTDVM hVolMgr, RTDVMVOLUME hVol, PRTDVMVOLUM
     AssertReturn(pVol->u32Magic == RTDVMVOLUME_MAGIC, VERR_INVALID_HANDLE);
     AssertPtrReturn(phVolNext, VERR_INVALID_POINTER);
 
-    RTDVMVOLUMEFMT hVolFmtNext = NIL_RTDVMVOLUMEFMT;
-    rc = pThis->pDvmFmtOps->pfnQueryNextVolume(pThis->hVolMgrFmt, pVol->hVolFmt, &hVolFmtNext);
-    if (RT_SUCCESS(rc))
+    PRTDVMVOLUMEINTERNAL pVolNext = RTListGetNext(&pThis->VolumeList, pVol,
+                                                  RTDVMVOLUMEINTERNAL, VolumeNode);
+    if (pVolNext)
     {
-        rc = rtDvmVolumeCreate(pThis, hVolFmtNext, phVolNext);
-        if (RT_FAILURE(rc))
-            pThis->pDvmFmtOps->pfnVolumeClose(hVolFmtNext);
+        rc = VINF_SUCCESS;
+        RTDvmVolumeRetain(pVolNext);
+        *phVolNext = pVolNext;
     }
+
+    return rc;
+}
+
+RTDECL(int) RTDvmMapQueryBlockStatus(RTDVM hVolMgr, uint64_t off, uint64_t cb,
+                                     bool *pfAllocated)
+{
+    int rc = VINF_SUCCESS;
+    bool fAllocated = false;
+    PRTDVMINTERNAL       pThis = hVolMgr;
+    AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
+    AssertPtrReturn(pfAllocated, VERR_INVALID_POINTER);
+    AssertReturn(pThis->u32Magic == RTDVM_MAGIC, VERR_INVALID_HANDLE);
+    AssertReturn(pThis->hVolMgrFmt != NIL_RTDVMFMT, VERR_INVALID_HANDLE);
+    AssertReturn(off + cb <= pThis->DvmDisk.cbDisk * pThis->DvmDisk.cbSector,
+                 VERR_INVALID_PARAMETER);
+
+    while (   cb > 0
+           && !fAllocated)
+    {
+        PRTDVMVOLUMEINTERNAL pVol;
+        bool fVolFound = false;
+        size_t cbIntersect;
+        uint64_t offVol;
+
+        /*
+         * Search through all volumes. It is not possible to
+         * get all start sectors and sizes of all volumes here
+         * because volumes can be scattered around the disk for certain formats.
+         * Linux LVM is one example, extents of logical volumes don't need to be
+         * contigous on the medium.
+         */
+        RTListForEach(&pThis->VolumeList, pVol, RTDVMVOLUMEINTERNAL, VolumeNode)
+        {
+            bool fIntersect = pThis->pDvmFmtOps->pfnVolumeIsRangeIntersecting(pVol->hVolFmt, off,
+                                                                              cb, &offVol,
+                                                                              &cbIntersect);
+            if (fIntersect)
+            {
+                fVolFound = true;
+                if (pVol->pfnQueryBlockStatus)
+                {
+                    bool fVolAllocated = true;
+
+                    rc = pVol->pfnQueryBlockStatus(pVol->pvUser, offVol, cbIntersect,
+                                                   &fVolAllocated);
+                    if (RT_FAILURE(rc))
+                        break;
+                }
+                else if (!(pThis->fFlags & DVM_FLAGS_NO_STATUS_CALLBACK_MARK_AS_UNUSED))
+                    fAllocated = true;
+                /* else, flag is set, continue. */
+
+                cb  -= cbIntersect;
+                off += cbIntersect;
+                break;
+            }
+        }
+
+        if (!fVolFound)
+        {
+            if (pThis->fFlags & DVM_FLAGS_UNUSED_SPACE_MARK_AS_USED)
+                fAllocated = true;
+
+            cb  -= pThis->DvmDisk.cbSector;
+            off += pThis->DvmDisk.cbSector;
+        }
+    }
+
+    *pfAllocated = fAllocated;
 
     return rc;
 }
@@ -372,31 +541,10 @@ RTDECL(uint32_t) RTDvmVolumeRetain(RTDVMVOLUME hVol)
     AssertReturn(pThis->u32Magic == RTDVMVOLUME_MAGIC, UINT32_MAX);
 
     uint32_t cRefs = ASMAtomicIncU32(&pThis->cRefs);
-    AssertMsg(cRefs > 1 && cRefs < _1M, ("%#x %p\n", cRefs, pThis));
+    AssertMsg(cRefs >= 1 && cRefs < _1M, ("%#x %p\n", cRefs, pThis));
+    if (cRefs == 1)
+        RTDvmRetain(pThis->pVolMgr);
     return cRefs;
-}
-
-/**
- * Destroys a volume handle.
- *
- * @param   pThis               The volume to destroy.
- */
-static void rtDvmVolumeDestroy(PRTDVMVOLUMEINTERNAL pThis)
-{
-    PRTDVMINTERNAL pVolMgr = pThis->pVolMgr;
-
-    AssertPtr(pVolMgr);
-
-    /* Close the volume. */
-    pVolMgr->pDvmFmtOps->pfnVolumeClose(pThis->hVolFmt);
-
-    pThis->u32Magic = RTDVMVOLUME_MAGIC_DEAD;
-    pThis->pVolMgr  = NULL;
-    pThis->hVolFmt  = NIL_RTDVMVOLUMEFMT;
-    RTMemFree(pThis);
-
-    /* Release the reference of the volume manager. */
-    RTDvmRelease(pVolMgr);
 }
 
 RTDECL(uint32_t) RTDvmVolumeRelease(RTDVMVOLUME hVol)
@@ -410,8 +558,24 @@ RTDECL(uint32_t) RTDvmVolumeRelease(RTDVMVOLUME hVol)
     uint32_t cRefs = ASMAtomicDecU32(&pThis->cRefs);
     AssertMsg(cRefs < _1M, ("%#x %p\n", cRefs, pThis));
     if (cRefs == 0)
-        rtDvmVolumeDestroy(pThis);
+    {
+        /* Release the volume manager. */
+        pThis->pfnQueryBlockStatus = NULL;
+        RTDvmRelease(pThis->pVolMgr);
+    }
     return cRefs;
+}
+
+RTDECL(void) RTDvmVolumeSetQueryBlockStatusCallback(RTDVMVOLUME hVol,
+                                                    PFNDVMVOLUMEQUERYBLOCKSTATUS pfnQueryBlockStatus,
+                                                    void *pvUser)
+{
+    PRTDVMVOLUMEINTERNAL pThis = hVol;
+    AssertPtrReturnVoid(pThis);
+    AssertReturnVoid(pThis->u32Magic == RTDVMVOLUME_MAGIC);
+
+    pThis->pfnQueryBlockStatus = pfnQueryBlockStatus;
+    pThis->pvUser = pvUser;
 }
 
 RTDECL(uint64_t) RTDvmVolumeGetSize(RTDVMVOLUME hVol)
