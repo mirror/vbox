@@ -21,7 +21,12 @@
 /** @def VBOX_DMI_TABLE_BASE */
 #define VBOX_DMI_TABLE_BASE         0xe1000
 #define VBOX_DMI_TABLE_VER          0x25
-#define VBOX_DMI_TABLE_ENTR         8
+
+/** define VBOX_DMI_TABLE_ENTR
+ *
+ * This is the number of DMI structures.
+ */
+#define VBOX_DMI_TABLE_ENTR         9
 
 /** def VBOX_DMI_TABLE_SIZE
  *
@@ -30,7 +35,7 @@
  * the size should be at least 16-byte aligned for a proper alignment of
  * the MPS table.
  */
-#define VBOX_DMI_TABLE_SIZE         496
+#define VBOX_DMI_TABLE_SIZE         512
 
 
 /** @def VBOX_LANBOOT_SEG

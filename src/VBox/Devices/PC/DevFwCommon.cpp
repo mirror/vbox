@@ -45,8 +45,10 @@
 
 /*
  * Default DMI data (legacy).
- * Don't change this information otherwise Windows guests will demand re-activation!
+ * Don't change this information otherwise Windows guests might demand re-activation!
  */
+
+/* type 0 -- DMI BIOS information */
 static const int32_t s_iDefDmiBIOSReleaseMajor  = 0;
 static const int32_t s_iDefDmiBIOSReleaseMinor  = 0;
 static const int32_t s_iDefDmiBIOSFirmwareMajor = 0;
@@ -54,16 +56,27 @@ static const int32_t s_iDefDmiBIOSFirmwareMinor = 0;
 static const char   *s_szDefDmiBIOSVendor       = "innotek GmbH";
 static const char   *s_szDefDmiBIOSVersion      = "VirtualBox";
 static const char   *s_szDefDmiBIOSReleaseDate  = "12/01/2006";
+/* type 1 -- DMI system information */
 static const char   *s_szDefDmiSystemVendor     = "innotek GmbH";
 static const char   *s_szDefDmiSystemProduct    = "VirtualBox";
 static const char   *s_szDefDmiSystemVersion    = "1.2";
 static const char   *s_szDefDmiSystemSerial     = "0";
 static const char   *s_szDefDmiSystemSKU        = "";
 static const char   *s_szDefDmiSystemFamily     = "Virtual Machine";
-static const char   *s_szDefDmiChassisVendor    = "Sun Microsystems, Inc.";
+/* type 2 -- DMI board information */
+static const char   *s_szDefDmiBoardVendor      = "Oracle Corporation";
+static const char   *s_szDefDmiBoardProduct     = "VirtualBox";
+static const char   *s_szDefDmiBoardVersion     = "1.2";
+static const char   *s_szDefDmiBoardSerial      = "0";
+static const char   *s_szDefDmiBoardAssetTag    = "";
+static const char   *s_szDefDmiBoardLocInChass  = "";
+static const int32_t s_iDefDmiBoardBoardType    = 0x0A; /* Motherboard */
+/* type 3 -- DMI chassis information */
+static const char   *s_szDefDmiChassisVendor    = "Oracle Corporation";
 static const char   *s_szDefDmiChassisVersion   = "";
 static const char   *s_szDefDmiChassisSerial    = "";
 static const char   *s_szDefDmiChassisAssetTag  = "";
+/* type 4 -- DMI processor information */
 static const char   *s_szDefDmiProcManufacturer = "GenuineIntel";
 static const char   *s_szDefDmiProcVersion      = "Pentium(R) III";
 
@@ -153,7 +166,7 @@ typedef struct DMIBOARDINF
     uint8_t         u8SerialNumber;
     uint8_t         u8AssetTag;
     uint8_t         u8FeatureFlags;
-    uint8_t         u8LocationInChassis;
+    uint8_t         u8LocationInChass;
     uint16_t        u16ChassisHandle;
     uint8_t         u8BoardType;
     uint8_t         u8cObjectHandles;
@@ -652,6 +665,32 @@ int FwCommonPlantDMITable(PPDMDEVINS pDevIns, uint8_t *pTable, unsigned cbMax, P
         READCFGSTR(pSystemInf->u8Family, DmiSystemFamily);
         TERM_STRUCT;
 
+        /**********************************
+         * DMI board information (Type 2) *
+         **********************************/
+        PDMIBOARDINF pBoardInf       = (PDMIBOARDINF)pszStr;
+        CHECKSIZE(sizeof(*pBoardInf));
+        pszStr                       = (char *)(pBoardInf + 1);
+        iStrNr                       = 1;
+        int iDmiBoardBoardType;
+        pBoardInf->header.u8Type     = 2; /* Board Information */
+        pBoardInf->header.u8Length   = sizeof(*pBoardInf);
+        pBoardInf->header.u16Handle  = 0x0008;
+        READCFGSTR(pBoardInf->u8Manufacturer, DmiBoardVendor);
+        READCFGSTR(pBoardInf->u8Product,      DmiBoardProduct);
+        READCFGSTR(pBoardInf->u8Version,      DmiBoardVersion);
+        READCFGSTR(pBoardInf->u8SerialNumber, DmiBoardSerial);
+        READCFGSTR(pBoardInf->u8AssetTag,     DmiBoardAssetTag);
+        pBoardInf->u8FeatureFlags    = RT_BIT(0) /* hosting board, e.g. motherboard */
+                                     ;
+        READCFGSTR(pBoardInf->u8LocationInChass, DmiBoardLocInChass);
+        pBoardInf->u16ChassisHandle  = 0x0003; /* see type 3 */
+        READCFGINT(iDmiBoardBoardType, DmiBoardBoardType);
+        pBoardInf->u8BoardType = iDmiBoardBoardType;
+        pBoardInf->u8cObjectHandles  = 0;
+
+        TERM_STRUCT;
+
         /********************************************
          * DMI System Enclosure or Chassis (Type 3) *
          ********************************************/
@@ -896,7 +935,7 @@ void FwCommonPlantSmbiosAndDmiHdrs(PPDMDEVINS pDevIns)
 
     PDMDevHlpPhysWrite(pDevIns, 0xfe300, &aBiosHeaders, sizeof(aBiosHeaders));
 }
-AssertCompile(VBOX_DMI_TABLE_ENTR == 8);
+AssertCompile(VBOX_DMI_TABLE_ENTR == 9);
 
 /**
  * Construct the MPS table for implanting as a ROM page.
