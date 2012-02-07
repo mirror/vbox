@@ -1707,6 +1707,12 @@ RT_C_DECLS_END
 #define VERR_SYS_SHUTDOWN_FAILED                    (-22402)
 /** @} */
 
+/** @name Filesystem status codes
+ * @{ */
+/** Filesystem can't be opened because it is corrupt. */
+#define VERR_FILESYSTEM_CORRUPT                     (-22500)
+/** @} */
+
 /* SED-END */
 
 /** @} */
