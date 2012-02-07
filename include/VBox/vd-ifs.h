@@ -65,6 +65,8 @@ typedef enum VDINTERFACETYPE
     /** Interface for I/O between the generic VBoxHDD code and the backend. Per-image (internal).
      * This interface is completely internal and must not be used elsewhere. */
     VDINTERFACETYPE_IOINT,
+    /** Interface to query the use of block ranges on the disk. Per-operation. */
+    VDINTERFACETYPE_QUERYRANGEUSE,
     /** invalid interface. */
     VDINTERFACETYPE_INVALID
 } VDINTERFACETYPE;
@@ -1235,6 +1237,51 @@ DECLINLINE(PVDINTERFACETHREADSYNC) VDIfThreadSyncGet(PVDINTERFACE pVDIfs)
                     ("Not a thread synchronization interface"), NULL);
 
     return (PVDINTERFACETHREADSYNC)pIf;
+}
+
+/**
+ * Interface to query usage of disk ranges.
+ *
+ * Per-operation interface. Optional.
+ */
+typedef struct VDINTERFACEQUERYRANGEUSE
+{
+    /**
+     * Common interface header.
+     */
+    VDINTERFACE    Core;
+
+    /**
+     * Query use of a disk range.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnQueryRangeUse, (void *pvUser, uint64_t off, uint64_t cb,
+                                                 bool *pfUsed));
+
+} VDINTERFACEQUERYRANGEUSE, *PVDINTERFACEQUERYRANGEUSE;
+
+/**
+ * Get query range use interface from interface list.
+ *
+ * @return Pointer to the first thread synchronization interface in the list.
+ * @param  pVDIfs    Pointer to the interface list.
+ */
+DECLINLINE(PVDINTERFACEQUERYRANGEUSE) VDIfQueryRangeUseGet(PVDINTERFACE pVDIfs)
+{
+    PVDINTERFACE pIf = VDInterfaceGet(pVDIfs, VDINTERFACETYPE_QUERYRANGEUSE);
+
+    /* Check that the interface descriptor is a progress interface. */
+    AssertMsgReturn(   !pIf
+                    || (   (pIf->enmInterface == VDINTERFACETYPE_QUERYRANGEUSE)
+                        && (pIf->cbSize == sizeof(VDINTERFACEQUERYRANGEUSE))),
+                    ("Not a query range use interface"), NULL);
+
+    return (PVDINTERFACEQUERYRANGEUSE)pIf;
+}
+
+DECLINLINE(int) vdIfQueryRangeUse(PVDINTERFACEQUERYRANGEUSE pIfQueryRangeUse, uint64_t off, uint64_t cb,
+                                  bool *pfUsed)
+{
+    return pIfQueryRangeUse->pfnQueryRangeUse(pIfQueryRangeUse->Core.pvUser, off, cb, pfUsed);
 }
 
 RT_C_DECLS_END
