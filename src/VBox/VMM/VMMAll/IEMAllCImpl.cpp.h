@@ -3299,5 +3299,44 @@ IEM_CIMPL_DEF_1(iemCImpl_finit, bool, fCheckXcpts)
 }
 
 
+/**
+ * Implements 'FXSAVE'.
+ *
+ * @param   GCPtrEff        The address of the image.
+ * @param   enmEffOpSize    The operand size (only REX.W really matters).
+ */
+IEM_CIMPL_DEF_2(iemCImpl_fxsave, RTGCPTR, GCPtrEff, IEMMODE, enmEffOpSize)
+{
+    PCPUMCTX pCtx = pIemCpu->CTX_SUFF(pCtx);
+
+    if (pCtx->cr0 & (X86_CR0_TS | X86_CR0_EM))
+        return iemRaiseDeviceNotAvailable(pIemCpu);
+    if (GCPtrEff & 15) /** @todo \#AC */
+        return iemRaiseGeneralProtectionFault0(pIemCpu);
+
+
+    return VERR_IEM_INSTR_NOT_IMPLEMENTED;
+}
+
+
+/**
+ * Implements 'FXRSTOR'.
+ *
+ * @param   GCPtrEff        The address of the image.
+ * @param   enmEffOpSize    The operand size (only REX.W really matters).
+ */
+IEM_CIMPL_DEF_2(iemCImpl_fxrstor, RTGCPTR, GCPtrEff, IEMMODE, enmEffOpSize)
+{
+    PCPUMCTX pCtx = pIemCpu->CTX_SUFF(pCtx);
+
+    if (pCtx->cr0 & (X86_CR0_TS | X86_CR0_EM))
+        return iemRaiseDeviceNotAvailable(pIemCpu);
+    if (GCPtrEff & 15) /** @todo \#AC */
+        return iemRaiseGeneralProtectionFault0(pIemCpu);
+
+
+    return VERR_IEM_INSTR_NOT_IMPLEMENTED;
+}
+
 /** @} */
 
