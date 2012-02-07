@@ -265,7 +265,7 @@ typedef struct IEMCPU
      * This runs in parallel to aMemMappings and aMemBbMappings. */
     struct
     {
-        uint8_t             ab[64];
+        uint8_t             ab[512];
     } aBounceBuffers[3];
 
 #ifdef IEM_VERIFICATION_MODE

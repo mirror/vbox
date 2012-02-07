@@ -568,6 +568,7 @@ static VBOXSTRICTRC     iemRaiseSelectorBounds(PIEMCPU pIemCpu, uint32_t iSegReg
 static VBOXSTRICTRC     iemRaiseSelectorBoundsBySelector(PIEMCPU pIemCpu, RTSEL Sel);
 static VBOXSTRICTRC     iemRaiseSelectorInvalidAccess(PIEMCPU pIemCpu, uint32_t iSegReg, uint32_t fAccess);
 static VBOXSTRICTRC     iemRaisePageFault(PIEMCPU pIemCpu, RTGCPTR GCPtrWhere, uint32_t fAccess, int rc);
+static VBOXSTRICTRC     iemRaiseAlignmentCheckException(PIEMCPU pIemCpu);
 static VBOXSTRICTRC     iemMemMap(PIEMCPU pIemCpu, void **ppvMem, size_t cbMem, uint8_t iSegReg, RTGCPTR GCPtrMem, uint32_t fAccess);
 static VBOXSTRICTRC     iemMemCommitAndUnmap(PIEMCPU pIemCpu, void *pvMem, uint32_t fAccess);
 static VBOXSTRICTRC     iemMemFetchDataU32(PIEMCPU pIemCpu, uint32_t *pu32Dst, uint8_t iSegReg, RTGCPTR GCPtrMem);
@@ -2365,10 +2366,17 @@ DECL_NO_INLINE(static, VBOXSTRICTRC) iemRaisePageFault(PIEMCPU pIemCpu, RTGCPTR 
 }
 
 
-/** \#MF(n) - 10.  */
+/** \#MF(0) - 10.  */
 DECL_NO_INLINE(static, VBOXSTRICTRC) iemRaiseMathFault(PIEMCPU pIemCpu)
 {
     return iemRaiseXcptOrInt(pIemCpu, 0, X86_XCPT_MF, IEM_XCPT_FLAGS_T_CPU_XCPT, 0, 0);
+}
+
+
+/** \#AC(0) - 11.  */
+DECL_NO_INLINE(static, VBOXSTRICTRC) iemRaiseAlignmentCheckException(PIEMCPU pIemCpu)
+{
+    return iemRaiseXcptOrInt(pIemCpu, 0, X86_XCPT_AC, IEM_XCPT_FLAGS_T_CPU_XCPT, 0, 0);
 }
 
 
@@ -3858,8 +3866,8 @@ static VBOXSTRICTRC iemMemBounceBufferMapPhys(PIEMCPU pIemCpu, unsigned iMemMap,
  * @param   ppvMem              Where to return the pointer to the mapped
  *                              memory.
  * @param   cbMem               The number of bytes to map.  This is usually 1,
- *                              2, 4, 6, 8, 12, 16 or 32.  When used by string
- *                              operations it can be up to a page.
+ *                              2, 4, 6, 8, 12, 16, 32 or 512.  When used by
+ *                              string operations it can be up to a page.
  * @param   iSegReg             The index of the segment register to use for
  *                              this access.  The base and limits are checked.
  *                              Use UINT8_MAX to indicate that no segmentation
@@ -3876,7 +3884,7 @@ static VBOXSTRICTRC iemMemMap(PIEMCPU pIemCpu, void **ppvMem, size_t cbMem, uint
     /*
      * Check the input and figure out which mapping entry to use.
      */
-    Assert(cbMem <= 32);
+    Assert(cbMem <= 32 || cbMem == 512);
     Assert(~(fAccess & ~(IEM_ACCESS_TYPE_MASK | IEM_ACCESS_WHAT_MASK)));
 
     unsigned iMemMap = pIemCpu->iNextMapping;

@@ -3302,20 +3302,97 @@ IEM_CIMPL_DEF_1(iemCImpl_finit, bool, fCheckXcpts)
 /**
  * Implements 'FXSAVE'.
  *
+ * @param   iEffSeg         The effective segment.
  * @param   GCPtrEff        The address of the image.
  * @param   enmEffOpSize    The operand size (only REX.W really matters).
  */
-IEM_CIMPL_DEF_2(iemCImpl_fxsave, RTGCPTR, GCPtrEff, IEMMODE, enmEffOpSize)
+IEM_CIMPL_DEF_3(iemCImpl_fxsave, uint8_t, iEffSeg, RTGCPTR, GCPtrEff, IEMMODE, enmEffOpSize)
 {
     PCPUMCTX pCtx = pIemCpu->CTX_SUFF(pCtx);
 
+    /*
+     * Raise exceptions.
+     */
+    if (pCtx->cr0 & X86_CR0_EM)
+        return iemRaiseUndefinedOpcode(pIemCpu);
     if (pCtx->cr0 & (X86_CR0_TS | X86_CR0_EM))
         return iemRaiseDeviceNotAvailable(pIemCpu);
-    if (GCPtrEff & 15) /** @todo \#AC */
+    if (GCPtrEff & 15)
+    {
+        /** @todo CPU/VM detection possible! \#AC might not be signal for
+         * all/any misalignment sizes, intel says its an implementation detail. */
+        if (   (pCtx->cr0 & X86_CR0_AM)
+            && pCtx->eflags.Bits.u1AC
+            && pIemCpu->uCpl == 3)
+            return iemRaiseAlignmentCheckException(pIemCpu);
         return iemRaiseGeneralProtectionFault0(pIemCpu);
+    }
+    AssertReturn(iemFRegIsFxSaveFormat(pIemCpu), VERR_IEM_IPE_2);
 
+    /*
+     * Access the memory.
+     */
+    void *pvMem512;
+    VBOXSTRICTRC rcStrict = iemMemMap(pIemCpu, &pvMem512, 512, iEffSeg, GCPtrEff, IEM_ACCESS_DATA_W);
+    if (rcStrict != VINF_SUCCESS)
+        return rcStrict;
+    PX86FXSTATE pDst = (PX86FXSTATE)pvMem512;
 
-    return VERR_IEM_INSTR_NOT_IMPLEMENTED;
+    /*
+     * Store the registers.
+     */
+    /** @todo CPU/VM detection possible! If CR4.OSFXSR=0 MXCSR it's
+     * implementation specific whether MXCSR and XMM0-XMM7 are saved. */
+
+    /* common for all formats */
+    pDst->FCW           = pCtx->fpu.FCW;
+    pDst->FSW           = pCtx->fpu.FSW;
+    pDst->FTW           = pCtx->fpu.FTW & UINT16_C(0xff);
+    pDst->FOP           = pCtx->fpu.FOP;
+    pDst->MXCSR         = pCtx->fpu.MXCSR;
+    pDst->MXCSR_MASK    = pCtx->fpu.MXCSR_MASK;
+    for (uint32_t i = 0; i < RT_ELEMENTS(pDst->aRegs); i++)
+    {
+        /** @todo Testcase: What actually happens to the 6 reserved bytes? I'm clearing
+         *        them for now... */
+        pDst->aRegs[i].au32[0] = pCtx->fpu.aRegs[i].au32[0];
+        pDst->aRegs[i].au32[1] = pCtx->fpu.aRegs[i].au32[1];
+        pDst->aRegs[i].au32[2] = pCtx->fpu.aRegs[i].au32[2] & UINT32_C(0xffff);
+        pDst->aRegs[i].au32[3] = 0;
+    }
+
+    /* FPU IP, CS, DP and DS. */
+    /** @todo FPU IP, CS, DP and DS cannot be implemented correctly without extra
+     * state information. :-/
+     * Storing zeros now to prevent any potential leakage of host info. */
+    pDst->FPUIP  = 0;
+    pDst->CS     = 0;
+    pDst->Rsrvd1 = 0;
+    pDst->FPUDP  = 0;
+    pDst->DS     = 0;
+    pDst->Rsrvd2 = 0;
+
+    /* XMM registers. */
+    if (   !(pCtx->msrEFER & MSR_K6_EFER_FFXSR)
+        || pIemCpu->enmCpuMode != IEMMODE_64BIT
+        || pIemCpu->uCpl != 0)
+    {
+        uint32_t cXmmRegs = enmEffOpSize == IEMMODE_64BIT ? 16 : 8;
+        for (uint32_t i = 0; i < cXmmRegs; i++)
+            pDst->aXMM[i] = pCtx->fpu.aXMM[i];
+        /** @todo Testcase: What happens to the reserved XMM registers? Untouched,
+         *        right? */
+    }
+
+    /*
+     * Commit the memory.
+     */
+    rcStrict = iemMemCommitAndUnmap(pIemCpu, pvMem512, IEM_ACCESS_DATA_W);
+    if (rcStrict != VINF_SUCCESS)
+        return rcStrict;
+
+    iemRegAddToRip(pIemCpu, cbInstr);
+    return VINF_SUCCESS;
 }
 
 
@@ -3325,17 +3402,109 @@ IEM_CIMPL_DEF_2(iemCImpl_fxsave, RTGCPTR, GCPtrEff, IEMMODE, enmEffOpSize)
  * @param   GCPtrEff        The address of the image.
  * @param   enmEffOpSize    The operand size (only REX.W really matters).
  */
-IEM_CIMPL_DEF_2(iemCImpl_fxrstor, RTGCPTR, GCPtrEff, IEMMODE, enmEffOpSize)
+IEM_CIMPL_DEF_3(iemCImpl_fxrstor, uint8_t, iEffSeg, RTGCPTR, GCPtrEff, IEMMODE, enmEffOpSize)
 {
     PCPUMCTX pCtx = pIemCpu->CTX_SUFF(pCtx);
 
+    /*
+     * Raise exceptions.
+     */
+    if (pCtx->cr0 & X86_CR0_EM)
+        return iemRaiseUndefinedOpcode(pIemCpu);
     if (pCtx->cr0 & (X86_CR0_TS | X86_CR0_EM))
         return iemRaiseDeviceNotAvailable(pIemCpu);
-    if (GCPtrEff & 15) /** @todo \#AC */
+    if (GCPtrEff & 15)
+    {
+        /** @todo CPU/VM detection possible! \#AC might not be signal for
+         * all/any misalignment sizes, intel says its an implementation detail. */
+        if (   (pCtx->cr0 & X86_CR0_AM)
+            && pCtx->eflags.Bits.u1AC
+            && pIemCpu->uCpl == 3)
+            return iemRaiseAlignmentCheckException(pIemCpu);
         return iemRaiseGeneralProtectionFault0(pIemCpu);
+    }
+    AssertReturn(iemFRegIsFxSaveFormat(pIemCpu), VERR_IEM_IPE_2);
 
+    /*
+     * Access the memory.
+     */
+    void *pvMem512;
+    VBOXSTRICTRC rcStrict = iemMemMap(pIemCpu, &pvMem512, 512, iEffSeg, GCPtrEff, IEM_ACCESS_DATA_R);
+    if (rcStrict != VINF_SUCCESS)
+        return rcStrict;
+    PCX86FXSTATE pSrc = (PCX86FXSTATE)pvMem512;
 
-    return VERR_IEM_INSTR_NOT_IMPLEMENTED;
+    /*
+     * Check the state for stuff which will GP(0).
+     */
+    uint32_t const fMXCSR      = pSrc->MXCSR;
+    uint32_t const fMXCSR_MASK = pCtx->fpu.MXCSR_MASK ? pCtx->fpu.MXCSR_MASK : UINT32_C(0xffbf);
+    if (fMXCSR & ~fMXCSR_MASK)
+    {
+        Log(("fxrstor: MXCSR=%#x (MXCSR_MASK=%#x) -> #GP(0)\n", fMXCSR, fMXCSR_MASK));
+        return iemRaiseGeneralProtectionFault0(pIemCpu);
+    }
+
+    /*
+     * Load the registers.
+     */
+    /** @todo CPU/VM detection possible! If CR4.OSFXSR=0 MXCSR it's
+     * implementation specific whether MXCSR and XMM0-XMM7 are restored. */
+
+    /* common for all formats */
+    pCtx->fpu.FCW       = pSrc->FCW;
+    pCtx->fpu.FSW       = pSrc->FSW;
+    pCtx->fpu.FTW       = pSrc->FTW & UINT16_C(0xff);
+    pCtx->fpu.FOP       = pSrc->FOP;
+    pCtx->fpu.MXCSR     = fMXCSR;
+    /* (MXCSR_MASK is read-only) */
+    for (uint32_t i = 0; i < RT_ELEMENTS(pSrc->aRegs); i++)
+    {
+        pCtx->fpu.aRegs[i].au32[0] = pSrc->aRegs[i].au32[0];
+        pCtx->fpu.aRegs[i].au32[1] = pSrc->aRegs[i].au32[1];
+        pCtx->fpu.aRegs[i].au32[2] = pSrc->aRegs[i].au32[2] & UINT32_C(0xffff);
+        pCtx->fpu.aRegs[i].au32[3] = 0;
+    }
+
+    /* FPU IP, CS, DP and DS. */
+    if (pIemCpu->enmCpuMode == IEMMODE_64BIT)
+    {
+        pCtx->fpu.FPUIP  = pSrc->FPUIP;
+        pCtx->fpu.CS     = pSrc->CS;
+        pCtx->fpu.Rsrvd1 = pSrc->Rsrvd1;
+        pCtx->fpu.FPUDP  = pSrc->FPUDP;
+        pCtx->fpu.DS     = pSrc->DS;
+        pCtx->fpu.Rsrvd2 = pSrc->Rsrvd2;
+    }
+    else
+    {
+        pCtx->fpu.FPUIP  = pSrc->FPUIP;
+        pCtx->fpu.CS     = pSrc->CS;
+        pCtx->fpu.Rsrvd1 = 0;
+        pCtx->fpu.FPUDP  = pSrc->FPUDP;
+        pCtx->fpu.DS     = pSrc->DS;
+        pCtx->fpu.Rsrvd2 = 0;
+    }
+
+    /* XMM registers. */
+    if (   !(pCtx->msrEFER & MSR_K6_EFER_FFXSR)
+        || pIemCpu->enmCpuMode != IEMMODE_64BIT
+        || pIemCpu->uCpl != 0)
+    {
+        uint32_t cXmmRegs = enmEffOpSize == IEMMODE_64BIT ? 16 : 8;
+        for (uint32_t i = 0; i < cXmmRegs; i++)
+            pCtx->fpu.aXMM[i] = pSrc->aXMM[i];
+    }
+
+    /*
+     * Commit the memory.
+     */
+    rcStrict = iemMemCommitAndUnmap(pIemCpu, pvMem512, IEM_ACCESS_DATA_R);
+    if (rcStrict != VINF_SUCCESS)
+        return rcStrict;
+
+    iemRegAddToRip(pIemCpu, cbInstr);
+    return VINF_SUCCESS;
 }
 
 /** @} */
