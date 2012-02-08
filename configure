@@ -92,7 +92,6 @@ WITH_VDE=0
 WITH_VNC=0
 WITH_DOCS=1
 BUILD_LIBXML2=
-BUILD_LIBXSLT=
 BUILD_LIBCURL=
 BUILD_LIBSSL=
 PASSIVE_MESA=0
@@ -2160,11 +2159,11 @@ if [ "$OS" = "darwin" ]; then
   WITH_PULSE=0
   WITH_DBUS=0
   WITH_KMODS=0
-  BUILD_LIBXSLT=1
   BUILD_LIBXML2=1
   [ $OSE -eq 1 ] || BUILD_LIBCURL=1
-  [ $OSE -eq 1 ] || BUILD_LIBSSL=1
 fi
+
+[ $OSE -eq 1 ] || BUILD_LIBSSL=1
 
 
 # scan command line options
