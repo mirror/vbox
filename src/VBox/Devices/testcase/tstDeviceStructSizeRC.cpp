@@ -343,11 +343,6 @@ int main()
 #endif
 
     /* Input/pckbd.c */
-    GEN_CHECK_SIZE(KBDQueue);
-    GEN_CHECK_OFF(KBDQueue, data);
-    GEN_CHECK_OFF(KBDQueue, rptr);
-    GEN_CHECK_OFF(KBDQueue, wptr);
-    GEN_CHECK_OFF(KBDQueue, count);
     GEN_CHECK_SIZE(MouseCmdQueue);
     GEN_CHECK_OFF(MouseCmdQueue, data);
     GEN_CHECK_OFF(MouseCmdQueue, rptr);
@@ -359,7 +354,6 @@ int main()
     GEN_CHECK_OFF(MouseEventQueue, wptr);
     GEN_CHECK_OFF(MouseEventQueue, count);
     GEN_CHECK_SIZE(KBDState);
-    GEN_CHECK_OFF(KBDState, queue);
     GEN_CHECK_OFF(KBDState, mouse_command_queue);
     GEN_CHECK_OFF(KBDState, mouse_event_queue);
     GEN_CHECK_OFF(KBDState, write_cmd);
@@ -381,6 +375,13 @@ int main()
     GEN_CHECK_OFF(KBDState, pDevInsR0);
     GEN_CHECK_OFF(KBDState, pDevInsRC);
     GEN_CHECK_OFF(KBDState, CritSect);
+    GEN_CHECK_SIZE(KbdKeyQ);
+    GEN_CHECK_OFF(KbdCmdQ, rpos);
+    GEN_CHECK_OFF(KbdCmdQ, wpos);
+    GEN_CHECK_OFF(KbdCmdQ, cUsed);
+    GEN_CHECK_OFF(KbdCmdQ, cSize);
+    GEN_CHECK_OFF(KbdCmdQ, abQueue);
+    GEN_CHECK_SIZE(KbdCmdQ);
     GEN_CHECK_OFF(PS2K, fScanning);
     GEN_CHECK_OFF(PS2K, fNumLockOn);
     GEN_CHECK_OFF(PS2K, u8ScanSet);
