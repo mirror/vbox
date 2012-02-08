@@ -33,6 +33,15 @@ RT_C_DECLS_BEGIN
  */
 
 
+/** Finish and move to types.h */
+typedef union
+{
+    uint32_t u32;
+} RTFLOAT32U;
+typedef RTFLOAT32U *PRTFLOAT32U;
+typedef RTFLOAT32U const *PCRTFLOAT32U;
+
+
 /**
  * Operand or addressing mode.
  */
