@@ -3111,6 +3111,55 @@ RTDECL(int) RTStrSpaceEnumerate(PRTSTRSPACE pStrSpace, PFNRTSTRSPACECALLBACK pfn
 /** @} */
 
 
+/** @defgroup rt_str_hash       Sting hashing
+ * @ingroup grp_rt_str
+ * @{ */
+
+/**
+ * Hashes the given string using algorithm \#1.
+ *
+ * @returns String hash.
+ * @param   pszString       The string to hash.
+ */
+RTDECL(uint32_t)    RTStrHash1(const char *pszString);
+
+/**
+ * Hashes the given string using algorithm \#1.
+ *
+ * @returns String hash.
+ * @param   pszString       The string to hash.
+ * @param   cchString       The max length to hash. Hashing will stop if the
+ *                          terminator character is encountered first. Passing
+ *                          RTSTR_MAX is fine.
+ */
+RTDECL(uint32_t)    RTStrHash1N(const char *pszString, size_t cchString);
+
+/**
+ * Hashes the given strings as if they were concatenated using algorithm \#1.
+ *
+ * @returns String hash.
+ * @param   cPairs          The number of string / length pairs in the
+ *                          ellipsis.
+ * @param   ...             List of string (const char *) and length
+ *                          (size_t) pairs.  Passing RTSTR_MAX as the size is
+ *                          fine.
+ */
+RTDECL(uint32_t)    RTStrHash1ExN(size_t cPairs, ...);
+
+/**
+ * Hashes the given strings as if they were concatenated using algorithm \#1.
+ *
+ * @returns String hash.
+ * @param   cPairs          The number of string / length pairs in the @a va.
+ * @param   va              List of string (const char *) and length
+ *                          (size_t) pairs.  Passing RTSTR_MAX as the size is
+ *                          fine.
+ */
+RTDECL(uint32_t)    RTStrHash1ExNV(size_t cPairs, va_list va);
+
+/** @}  */
+
+
 /** @defgroup rt_str_utf16      UTF-16 String Manipulation
  * @ingroup grp_rt_str
  * @{

@@ -385,6 +385,7 @@ RuntimeR3_SOURCES       = \
 	common/string/strformatnum.cpp \
 	common/string/strformatrt.cpp \
 	common/string/strformattype.cpp \
+	common/string/strhash1.cpp \
 	common/string/stringalloc.cpp \
 	common/string/strprintf.cpp \
 	common/string/strspace.cpp \
@@ -1493,6 +1494,7 @@ RuntimeR0_SOURCES       = \
 	common/misc/sanity-cpp.cpp \
 	common/misc/term.cpp \
  	common/path/RTPathFilename.cpp \
+	common/string/strhash1.cpp \
 	common/string/strncmp.cpp \
 	common/string/strpbrk.cpp \
 	common/string/RTStrCat.cpp \
@@ -1658,6 +1660,7 @@ RuntimeR0Drv_SOURCES    = \
 	common/string/strformatnum.cpp \
 	common/string/strformatrt.cpp \
 	common/string/strformattype.cpp \
+	common/string/strhash1.cpp \
 	common/string/strprintf.cpp \
 	common/string/strtonum.cpp \
 	common/string/stringalloc.cpp \
