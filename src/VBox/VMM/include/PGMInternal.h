@@ -3307,29 +3307,31 @@ typedef struct PGM
 
     /** @name Release Statistics
      * @{ */
-    uint32_t                        cAllPages;          /**< The total number of pages. (Should be Private + Shared + Zero + Pure MMIO.) */
-    uint32_t                        cPrivatePages;      /**< The number of private pages. */
-    uint32_t                        cSharedPages;       /**< The number of shared pages. */
-    uint32_t                        cReusedSharedPages; /**< The number of reused shared pages. */
-    uint32_t                        cZeroPages;         /**< The number of zero backed pages. */
-    uint32_t                        cPureMmioPages;     /**< The number of pure MMIO pages. */
-    uint32_t                        cMonitoredPages;    /**< The number of write monitored pages. */
-    uint32_t                        cWrittenToPages;    /**< The number of previously write monitored pages. */
-    uint32_t                        cWriteLockedPages;  /**< The number of write locked pages. */
-    uint32_t                        cReadLockedPages;   /**< The number of read locked pages. */
-    uint32_t                        cBalloonedPages;    /**< The number of ballooned pages. */
-    uint32_t                        cMappedChunks;      /**< Number of times we mapped a chunk. */
-    uint32_t                        cUnmappedChunks;    /**< Number of times we unmapped a chunk. */
-    uint32_t                        cLargePages;        /**< The number of large pages. */
-    uint32_t                        cLargePagesDisabled;/**< The number of disabled large pages. */
+    uint32_t                        cAllPages;              /**< The total number of pages. (Should be Private + Shared + Zero + Pure MMIO.) */
+    uint32_t                        cPrivatePages;          /**< The number of private pages. */
+    uint32_t                        cSharedPages;           /**< The number of shared pages. */
+    uint32_t                        cReusedSharedPages;     /**< The number of reused shared pages. */
+    uint32_t                        cZeroPages;             /**< The number of zero backed pages. */
+    uint32_t                        cPureMmioPages;         /**< The number of pure MMIO pages. */
+    uint32_t                        cMonitoredPages;        /**< The number of write monitored pages. */
+    uint32_t                        cWrittenToPages;        /**< The number of previously write monitored pages. */
+    uint32_t                        cWriteLockedPages;      /**< The number of write locked pages. */
+    uint32_t                        cReadLockedPages;       /**< The number of read locked pages. */
+    uint32_t                        cBalloonedPages;        /**< The number of ballooned pages. */
+    uint32_t                        cMappedChunks;          /**< Number of times we mapped a chunk. */
+    uint32_t                        cUnmappedChunks;        /**< Number of times we unmapped a chunk. */
+    uint32_t                        cLargePages;            /**< The number of large pages. */
+    uint32_t                        cLargePagesDisabled;    /**< The number of disabled large pages. */
 /*    uint32_t                        aAlignment4[1]; */
 
     /** The number of times we were forced to change the hypervisor region location. */
     STAMCOUNTER                     cRelocations;
 
-    STAMCOUNTER                     StatLargePageReused;                /**< The number of large pages we've reused.*/
-    STAMCOUNTER                     StatLargePageRefused;               /**< The number of times we couldn't use a large page.*/
-    STAMCOUNTER                     StatLargePageRecheck;               /**< The number of times we rechecked a disabled large page.*/
+    STAMCOUNTER                     StatLargePageReused;    /**< The number of large pages we've reused.*/
+    STAMCOUNTER                     StatLargePageRefused;   /**< The number of times we couldn't use a large page.*/
+    STAMCOUNTER                     StatLargePageRecheck;   /**< The number of times we rechecked a disabled large page.*/
+
+    STAMPROFILE                     StatShModCheck;         /**< Profiles shared module checks. */
     /** @} */
 
 #ifdef VBOX_WITH_STATISTICS

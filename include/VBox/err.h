@@ -499,14 +499,8 @@
 #define VERR_PGM_INVALID_LARGE_PAGE_RANGE       (-1645)
 /** Don't mess around with ballooned pages. */
 #define VERR_PGM_PHYS_PAGE_BALLOONED            (-1646)
-/** Shared module already registered. */
-#define VINF_PGM_SHARED_MODULE_ALREADY_REGISTERED   (1647)
-/** Shared module not found. */
-#define VERR_PGM_SHARED_MODULE_NOT_FOUND        (-1648)
-/** Shared module different from previously registered module. */
-#define VINF_PGM_SHARED_MODULE_COLLISION        (1649)
-/** Inconsistent local and global registration records. */
-#define VERR_PGM_SHARED_MODULE_REGISTRATION_INCONSISTENCY (-1650)
+
+
 /** pgmPhysPageMapCommon encountered PGMPAGETYPE_MMIO2_ALIAS_MMIO. */
 #define VERR_PGM_MAP_MMIO2_ALIAS_MMIO           (-1651)
 /** Guest mappings are disabled. */
@@ -1718,6 +1712,28 @@
 #define VERR_GMM_ALLOC_PAGES_IPE                    (-3820)
 /** Invalid page count given to GMMR3FreePagesPerform.  */
 #define VERR_GMM_ACTUAL_PAGES_IPE                   (-3821)
+/** The shared module name is too long. */
+#define VERR_GMM_MODULE_NAME_TOO_LONG               (-3822)
+/** The shared module version string is too long. */
+#define VERR_GMM_MODULE_VERSION_TOO_LONG            (-3823)
+/** The shared module has too many regions. */
+#define VERR_GMM_TOO_MANY_REGIONS                   (-3824)
+/** The guest has reported too many modules. */
+#define VERR_GMM_TOO_MANY_PER_VM_MODULES            (-3825)
+/** The guest has reported too many modules. */
+#define VERR_GMM_TOO_MANY_GLOBAL_MODULES            (-3826)
+/** The shared module is already registered. */
+#define VINF_GMM_SHARED_MODULE_ALREADY_REGISTERED   (3827)
+/** The shared module clashed address wise with a previously registered
+ * module. */
+#define VERR_GMM_SHARED_MODULE_ADDRESS_CLASH        (-3828)
+/** The shared module was not found. */
+#define VERR_GMM_SHARED_MODULE_NOT_FOUND            (-3829)
+/** The size of the shared module was out of range. */
+#define VERR_GMM_BAD_SHARED_MODULE_SIZE             (-3830)
+/** The size of the one or more regions in the shared module was out of
+ * range. */
+#define VERR_GMM_SHARED_MODULE_BAD_REGIONS_SIZE     (-3831)
 /** @} */
 
 

@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2011 Oracle Corporation
+ * Copyright (C) 2006-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -686,13 +686,122 @@ static int vmmdevReqHandler_ReportGuestStatus(VMMDevState *pThis, VMMDevRequestH
     return VINF_SUCCESS;
 }
 
+#ifdef VBOX_WITH_PAGE_SHARING
+
+/**
+ * Handles VMMDevReq_RegisterSharedModule.
+ *
+ * @returns VBox status code that the guest should see.
+ * @param   pDevIns         The VMMDev device instance.
+ * @param   pReq            Pointer to the request.
+ */
+static int vmmdevReqHandler_RegisterSharedModule(PPDMDEVINS pDevIns, VMMDevSharedModuleRegistrationRequest *pReq)
+{
+    /*
+     * Basic input validation (more done by GMM).
+     */
+    AssertMsgReturn(pReq->header.size >= sizeof(VMMDevSharedModuleRegistrationRequest),
+                    ("%u\n", pReq->header.size), VERR_INVALID_PARAMETER);
+    AssertMsgReturn(pReq->header.size == RT_UOFFSETOF(VMMDevSharedModuleRegistrationRequest, aRegions[pReq->cRegions]),
+                    ("%u cRegions=%u\n", pReq->header.size, pReq->cRegions), VERR_INVALID_PARAMETER);
+
+    AssertReturn(memchr(pReq->szName, '\0', sizeof(pReq->szName)), VERR_INVALID_PARAMETER);
+    AssertReturn(memchr(pReq->szVersion, '\0', sizeof(pReq->szVersion)), VERR_INVALID_PARAMETER);
+
+    /*
+     * Forward the request to the VMM.
+     */
+    return PGMR3SharedModuleRegister(PDMDevHlpGetVM(pDevIns), pReq->enmGuestOS, pReq->szName, pReq->szVersion,
+                                     pReq->GCBaseAddr, pReq->cbModule, pReq->cRegions, pReq->aRegions);
+}
+
+/**
+ * Handles VMMDevReq_UnregisterSharedModule.
+ *
+ * @returns VBox status code that the guest should see.
+ * @param   pDevIns         The VMMDev device instance.
+ * @param   pReq            Pointer to the request.
+ */
+static int vmmdevReqHandler_UnregisterSharedModule(PPDMDEVINS pDevIns, VMMDevSharedModuleUnregistrationRequest *pReq)
+{
+    /*
+     * Basic input validation.
+     */
+    AssertMsgReturn(pReq->header.size == sizeof(VMMDevSharedModuleUnregistrationRequest),
+                    ("%u\n", pReq->header.size), VERR_INVALID_PARAMETER);
+
+    AssertReturn(memchr(pReq->szName, '\0', sizeof(pReq->szName)), VERR_INVALID_PARAMETER);
+    AssertReturn(memchr(pReq->szVersion, '\0', sizeof(pReq->szVersion)), VERR_INVALID_PARAMETER);
+
+    /*
+     * Forward the request to the VMM.
+     */
+    return PGMR3SharedModuleUnregister(PDMDevHlpGetVM(pDevIns), pReq->szName, pReq->szVersion,
+                                       pReq->GCBaseAddr, pReq->cbModule);
+}
+
+/**
+ * Handles VMMDevReq_CheckSharedModules.
+ *
+ * @returns VBox status code that the guest should see.
+ * @param   pDevIns         The VMMDev device instance.
+ * @param   pReq            Pointer to the request.
+ */
+static int vmmdevReqHandler_CheckSharedModules(PPDMDEVINS pDevIns, VMMDevSharedModuleCheckRequest *pReq)
+{
+    AssertMsgReturn(pReq->header.size == sizeof(VMMDevSharedModuleCheckRequest),
+                    ("%u\n", pReq->header.size), VERR_INVALID_PARAMETER);
+    return PGMR3SharedModuleCheckAll(PDMDevHlpGetVM(pDevIns));
+}
+
+/**
+ * Handles VMMDevReq_GetPageSharingStatus.
+ *
+ * @returns VBox status code that the guest should see.
+ * @param   pThis           The VMMDev instance data.
+ * @param   pReq            Pointer to the request.
+ */
+static int vmmdevReqHandler_GetPageSharingStatus(VMMDevState *pThis, VMMDevPageSharingStatusRequest *pReq)
+{
+    AssertMsgReturn(pReq->header.size == sizeof(VMMDevPageSharingStatusRequest),
+                    ("%u\n", pReq->header.size), VERR_INVALID_PARAMETER);
+
+    pReq->fEnabled = false;
+    int rc = pThis->pDrv->pfnIsPageFusionEnabled(pThis->pDrv, &pReq->fEnabled);
+    if (RT_FAILURE(rc))
+        pReq->fEnabled = false;
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Handles VMMDevReq_DebugIsPageShared.
+ *
+ * @returns VBox status code that the guest should see.
+ * @param   pDevIns         The VMMDev device instance.
+ * @param   pReq            Pointer to the request.
+ */
+static int vmmdevReqHandler_DebugIsPageShared(PPDMDEVINS pDevIns, VMMDevPageIsSharedRequest *pReq)
+{
+    AssertMsgReturn(pReq->header.size == sizeof(VMMDevPageIsSharedRequest),
+                    ("%u\n", pReq->header.size), VERR_INVALID_PARAMETER);
+
+#ifdef DEBUG
+    return PGMR3SharedModuleGetPageState(PDMDevHlpGetVM(pDevIns), pReq->GCPtrPage, &pReq->fShared, &pReq->uPageFlags);
+#else
+    return VERR_NOT_IMPLEMENTED;
+#endif
+}
+
+#endif /* VBOX_WITH_PAGE_SHARING */
+
 /**
  * Port I/O Handler for the generic request interface
  * @see FNIOMIOPORTOUT for details.
  *
- * @todo Too long, suggest doing the request copying here and moving the
- *       switch into a different function (or better case -> functions), and
- *       looing the gotos.
+ * @todo This function is too long!!  All new request SHALL be implemented as
+ *       functions called from the switch!  When making changes, please move the
+ *       relevant cases into functions.
  */
 static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb)
 {
@@ -2161,87 +2270,30 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
 
 #ifdef VBOX_WITH_PAGE_SHARING
         case VMMDevReq_RegisterSharedModule:
-        {
-            VMMDevSharedModuleRegistrationRequest *pReqModule = (VMMDevSharedModuleRegistrationRequest *)pRequestHeader;
-
-            if (    pRequestHeader->size < sizeof(VMMDevSharedModuleRegistrationRequest)
-                ||  pRequestHeader->size != RT_UOFFSETOF(VMMDevSharedModuleRegistrationRequest, aRegions[pReqModule->cRegions]))
-            {
-                pRequestHeader->rc = VERR_INVALID_PARAMETER;
-            }
-            else
-            {
-                pRequestHeader->rc = PGMR3SharedModuleRegister(PDMDevHlpGetVM(pDevIns), pReqModule->enmGuestOS, pReqModule->szName, pReqModule->szVersion,
-                                                               pReqModule->GCBaseAddr, pReqModule->cbModule,
-                                                               pReqModule->cRegions, pReqModule->aRegions);
-            }
+            pRequestHeader->rc = vmmdevReqHandler_RegisterSharedModule(pDevIns,
+                                     (VMMDevSharedModuleRegistrationRequest *)pRequestHeader);
             break;
-        }
 
         case VMMDevReq_UnregisterSharedModule:
-        {
-            VMMDevSharedModuleUnregistrationRequest *pReqModule = (VMMDevSharedModuleUnregistrationRequest *)pRequestHeader;
-
-            if (pRequestHeader->size != sizeof(VMMDevSharedModuleUnregistrationRequest))
-            {
-                pRequestHeader->rc = VERR_INVALID_PARAMETER;
-            }
-            else
-            {
-                pRequestHeader->rc = PGMR3SharedModuleUnregister(PDMDevHlpGetVM(pDevIns), pReqModule->szName, pReqModule->szVersion,
-                                                                 pReqModule->GCBaseAddr, pReqModule->cbModule);
-            }
+            pRequestHeader->rc = vmmdevReqHandler_UnregisterSharedModule(pDevIns,
+                                     (VMMDevSharedModuleUnregistrationRequest *)pRequestHeader);
             break;
-        }
 
         case VMMDevReq_CheckSharedModules:
-        {
-            VMMDevSharedModuleCheckRequest *pReqModule = (VMMDevSharedModuleCheckRequest *)pRequestHeader;
-
-            if (pRequestHeader->size != sizeof(VMMDevSharedModuleCheckRequest))
-                pRequestHeader->rc = VERR_INVALID_PARAMETER;
-            else
-                pRequestHeader->rc = PGMR3SharedModuleCheckAll(PDMDevHlpGetVM(pDevIns));
+            pRequestHeader->rc = vmmdevReqHandler_CheckSharedModules(pDevIns,
+                                     (VMMDevSharedModuleCheckRequest *)pRequestHeader);
             break;
-        }
 
         case VMMDevReq_GetPageSharingStatus:
-        {
-            VMMDevPageSharingStatusRequest *pReqStatus = (VMMDevPageSharingStatusRequest *)pRequestHeader;
-
-            if (pRequestHeader->size != sizeof(VMMDevPageSharingStatusRequest))
-            {
-                pRequestHeader->rc = VERR_INVALID_PARAMETER;
-            }
-            else
-            {
-                pReqStatus->fEnabled = false;
-                pThis->pDrv->pfnIsPageFusionEnabled(pThis->pDrv, &pReqStatus->fEnabled);
-                pRequestHeader->rc = VINF_SUCCESS;
-            }
+            pRequestHeader->rc = vmmdevReqHandler_GetPageSharingStatus(pThis,
+                                     (VMMDevPageSharingStatusRequest *)pRequestHeader);
             break;
-        }
 
         case VMMDevReq_DebugIsPageShared:
-        {
-# ifdef DEBUG
-            VMMDevPageIsSharedRequest *pReq = (VMMDevPageIsSharedRequest *)pRequestHeader;
-
-            if (pRequestHeader->size != sizeof(VMMDevPageIsSharedRequest))
-            {
-                pRequestHeader->rc = VERR_INVALID_PARAMETER;
-            }
-            else
-            {
-                pRequestHeader->rc = PGMR3SharedModuleGetPageState(PDMDevHlpGetVM(pDevIns), pReq->GCPtrPage, &pReq->fShared, &pReq->uPageFlags);
-            }
-# else
-            pRequestHeader->rc = VERR_NOT_IMPLEMENTED;
-# endif
+            pRequestHeader->rc = vmmdevReqHandler_DebugIsPageShared(pDevIns, (VMMDevPageIsSharedRequest *)pRequestHeader);
             break;
-        }
 
-#endif
+#endif /* VBOX_WITH_PAGE_SHARING */
 
 #ifdef DEBUG
         case VMMDevReq_LogString:
