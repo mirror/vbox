@@ -54,26 +54,7 @@
     </widget>
    </item>
    <item>
-    <widget class="QITextEdit" name="m_pSummaryText">
-     <property name="sizePolicy">
-      <sizepolicy hsizetype="Expanding" vsizetype="Minimum">
-       <horstretch>0</horstretch>
-       <verstretch>0</verstretch>
-      </sizepolicy>
-     </property>
-     <property name="minimumSize">
-      <size>
-       <width>300</width>
-       <height>0</height>
-      </size>
-     </property>
-     <property name="frameShape">
-      <enum>QFrame::NoFrame</enum>
-     </property>
-     <property name="readOnly">
-      <bool>true</bool>
-     </property>
-    </widget>
+    <widget class="QIRichTextLabel" name="m_pSummaryText"/>
    </item>
    <item>
     <widget class="QILabel" name="m_pPage3Text2Var1">
@@ -117,9 +98,9 @@
    <header>QILabel.h</header>
   </customwidget>
   <customwidget>
-   <class>QITextEdit</class>
-   <extends>QTextEdit</extends>
-   <header>QITextEdit.h</header>
+   <class>QIRichTextLabel</class>
+   <extends>QWidget</extends>
+   <header>QIRichTextLabel.h</header>
   </customwidget>
  </customwidgets>
  <resources/>
