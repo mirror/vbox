@@ -52,17 +52,18 @@ foreach ($machines as $machine)
     {
         $session = $websessionManager->getSessionObject($virtualbox->handle);
         $uuid = $machine->id;
-        $virtualbox->openExistingSession($session, $uuid);
+        $machine->lockMachine($session->handle, "Shared");
         try
         {
             $console = $session->console;
             $display = $console->display;
-            $screenWidth = $display->width;
-            $screenHeight = $display->height;
-            $imageraw = $display->takeScreenShotSlow($screenWidth, $screenHeight);
-            $session->close();
-            $filename = './screenshot.png';
-            echo "Saving screenshot of " . $machine->name . " (${screenWidth}x${screenHeight}) to $filename\n";
+            list($screenWidth, $screenHeight, $screenBpp) = $display->getScreenResolution(0 /* First screen */);             
+
+            array($imageraw) = $display->takeScreenShotToArray(0 /* First screen */, $screenWidth, $screenHeight);
+            echo "Screenshot size: " . sizeof($imageraw) . "\n";
+            
+            $filename = 'screenshot.png';
+            echo "Saving screenshot of " . $machine->name . " (${screenWidth}x${screenHeight}, ${screenBpp}BPP) to $filename\n";
             $image = imagecreatetruecolor($screenWidth, $screenHeight);
 
             for ($height = 0; $height < $screenHeight; $height++)
@@ -71,9 +72,9 @@ foreach ($machines as $machine)
                 {
                     $start = ($height*$screenWidth + $width)*4;
                     $red = $imageraw[$start];
-                    $green = $imageraw[$start+1];
-                    $blue = $imageraw[$start+2];
-                    //$alpha = $imageraw[$start+3];
+                    $green = $imageraw[($start+1)];
+                    $blue = $imageraw[($start+2)];
+                    //$alpha = $image[$start+3];
 
                     $colour = imagecolorallocate($image, $red, $green, $blue);
 
@@ -85,10 +86,14 @@ foreach ($machines as $machine)
         }
         catch (Exception $ex)
         {
-            // Ensure we close the VM Session if we hit a error, ensure we don't have a aborted VM
             echo $ex->getMessage();
-            $session->close();
         }
+        
+        $session->unlockMachine();
+        
+        $machine->releaseRemote();
+        $session->releaseRemote();
+        
         break;
     }
 }
