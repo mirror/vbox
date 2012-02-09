@@ -654,7 +654,11 @@ RTR3DECL(int)   RTProcDaemonizeUsingFork(bool fNoChDir, bool fNoClose, const cha
     /* First fork, to become independent process. */
     pid_t pid = fork();
     if (pid == -1)
+    {
+        if (fdPidfile != -1)
+            close(fdPidfile);
         return RTErrConvertFromErrno(errno);
+    }
     if (pid != 0)
     {
         /* Parent exits, no longer necessary. The child gets reparented
@@ -672,7 +676,11 @@ RTR3DECL(int)   RTProcDaemonizeUsingFork(bool fNoChDir, bool fNoClose, const cha
     if (rcSigAct != -1)
         sigaction(SIGHUP, &OldSigAct, NULL);
     if (newpgid == -1)
+    {
+        if (fdPidfile != -1)
+            close(fdPidfile);
         return RTErrConvertFromErrno(SavedErrno);
+    }
 
     if (!fNoClose)
     {
@@ -704,7 +712,11 @@ RTR3DECL(int)   RTProcDaemonizeUsingFork(bool fNoChDir, bool fNoClose, const cha
     /* Second fork to lose session leader status. */
     pid = fork();
     if (pid == -1)
+    {
+        if (fdPidfile != -1)
+            close(fdPidfile);
         return RTErrConvertFromErrno(errno);
+    }
 
     if (pid != 0)
     {
@@ -718,6 +730,9 @@ RTR3DECL(int)   RTProcDaemonizeUsingFork(bool fNoChDir, bool fNoClose, const cha
         }
         exit(0);
     }
+
+    if (fdPidfile != -1)
+        close(fdPidfile);
 
     return VINF_SUCCESS;
 }
