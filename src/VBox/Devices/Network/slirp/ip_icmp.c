@@ -633,14 +633,8 @@ void icmp_error(PNATState pData, struct mbuf *msrc, u_char type, u_char code, in
         goto end_error;
 
     ip = mtod(msrc, struct ip *);
-#if DEBUG
-    {
-        char bufa[20], bufb[20];
-        strcpy(bufa, inet_ntoa(ip->ip_src));
-        strcpy(bufb, inet_ntoa(ip->ip_dst));
-        Log2((" %.16s to %.16s\n", bufa, bufb));
-    }
-#endif
+    LogFunc(("msrc: %RTnaipv4 -> %RTnaipv4\n", ip->ip_src, ip->ip_dst));
+
     if (   ip->ip_off & IP_OFFMASK
         && type != ICMP_SOURCEQUENCH)
         goto end_error;    /* Only reply to fragment 0 */
