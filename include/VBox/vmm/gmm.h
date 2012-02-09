@@ -411,7 +411,7 @@ GMMR0DECL(int)  GMMR0MapUnmapChunk(PVM pVM, uint32_t idChunkMap, uint32_t idChun
 GMMR0DECL(int)  GMMR0SeedChunk(PVM pVM, VMCPUID idCpu, RTR3PTR pvR3);
 GMMR0DECL(int)  GMMR0RegisterSharedModule(PVM pVM, VMCPUID idCpu, VBOXOSFAMILY enmGuestOS, char *pszModuleName, char *pszVersion,
                                           RTGCPTR GCBaseAddr,  uint32_t cbModule, uint32_t cRegions,
-                                          struct VMMDEVSHAREDREGIONDESC *pRegions);
+                                          struct VMMDEVSHAREDREGIONDESC const *paRegions);
 GMMR0DECL(int)  GMMR0UnregisterSharedModule(PVM pVM, VMCPUID idCpu, char *pszModuleName, char *pszVersion, RTGCPTR GCBaseAddr, uint32_t cbModule);
 GMMR0DECL(int)  GMMR0UnregisterAllSharedModules(PVM pVM, VMCPUID idCpu);
 GMMR0DECL(int)  GMMR0CheckSharedModules(PVM pVM, PVMCPU pVCpu);
@@ -581,9 +581,9 @@ typedef GMMFREELARGEPAGEREQ *PGMMFREELARGEPAGEREQ;
 
 GMMR0DECL(int) GMMR0FreeLargePageReq(PVM pVM, VMCPUID idCpu, PGMMFREELARGEPAGEREQ pReq);
 
-/** Maximum length of the shared module name string. */
+/** Maximum length of the shared module name string, terminator included. */
 #define GMM_SHARED_MODULE_MAX_NAME_STRING       128
-/** Maximum length of the shared module version string. */
+/** Maximum length of the shared module version string, terminator included. */
 #define GMM_SHARED_MODULE_MAX_VERSION_STRING    16
 
 /**
@@ -621,12 +621,11 @@ GMMR0DECL(int) GMMR0RegisterSharedModuleReq(PVM pVM, VMCPUID idCpu, PGMMREGISTER
  */
 typedef struct GMMSHAREDREGIONDESC
 {
-    /** Region base address. */
-    RTGCPTR64                   GCRegionAddr;
-    /** Region size. */
-    uint32_t                    cbRegion;
-    /** Alignment. */
-    uint32_t                    u32Alignment;
+    /** The page offset where the region starts. */
+    uint32_t                    off;
+    /** Region size - adjusted by the region offset and rounded up to a
+     * page. */
+    uint32_t                    cb;
     /** Pointer to physical GMM page ID array. */
     uint32_t                   *paidPages;
 } GMMSHAREDREGIONDESC;
@@ -639,8 +638,8 @@ typedef GMMSHAREDREGIONDESC *PGMMSHAREDREGIONDESC;
  */
 typedef struct GMMSHAREDMODULE
 {
-    /** Tree node. */
-    AVLGCPTRNODECORE            Core;
+    /** Tree node (keyed by a hash of name & version). */
+    AVLLU32NODECORE             Core;
     /** Shared module size. */
     uint32_t                    cbModule;
     /** Number of included region descriptors */
@@ -676,7 +675,7 @@ typedef struct GMMSHAREDPAGEDESC
 /** Pointer to a GMMSHAREDPAGEDESC. */
 typedef GMMSHAREDPAGEDESC *PGMMSHAREDPAGEDESC;
 
-GMMR0DECL(int) GMMR0SharedModuleCheckPage(PGVM pGVM, PGMMSHAREDMODULE pModule, unsigned idxRegion, unsigned idxPage,
+GMMR0DECL(int) GMMR0SharedModuleCheckPage(PGVM pGVM, PGMMSHAREDMODULE pModule, uint32_t idxRegion, uint32_t idxPage,
                                           PGMMSHAREDPAGEDESC pPageDesc);
 
 /**

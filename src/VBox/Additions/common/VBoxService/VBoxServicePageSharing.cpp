@@ -241,17 +241,10 @@ void VBoxServicePageSharingRegisterModule(PKNOWN_MODULE pModule, bool fValidateM
         idxRegion++;
     }
     VBoxServiceVerbose(3, "VBoxServicePageSharingRegisterModule: VbglR3RegisterSharedModule %s %s base=%p size=%x cregions=%d\n", pModule->Info.szModule, pModule->szFileVersion, pModule->Info.modBaseAddr, pModule->Info.modBaseSize, idxRegion);
-#ifdef RT_ARCH_X86
-    int rc = VbglR3RegisterSharedModule(pModule->Info.szModule, pModule->szFileVersion, (RTGCPTR32)pModule->Info.modBaseAddr,
+    int rc = VbglR3RegisterSharedModule(pModule->Info.szModule, pModule->szFileVersion, (uintptr_t)pModule->Info.modBaseAddr,
                                         pModule->Info.modBaseSize, idxRegion, aRegions);
-#else
-    int rc = VbglR3RegisterSharedModule(pModule->Info.szModule, pModule->szFileVersion, (RTGCPTR64)pModule->Info.modBaseAddr,
-                                        pModule->Info.modBaseSize, idxRegion, aRegions);
-#endif
-
-//    AssertRC(rc);
     if (RT_FAILURE(rc))
-        VBoxServiceVerbose(3, "VBoxServicePageSharingRegisterModule: VbglR3RegisterSharedModule failed with %d\n", rc);
+        VBoxServiceVerbose(3, "VBoxServicePageSharingRegisterModule: VbglR3RegisterSharedModule failed with %Rrc\n", rc);
 
 end:
     RTMemFree(pVersionInfo);
@@ -292,7 +285,7 @@ void VBoxServicePageSharingInspectModules(DWORD dwProcessId, PAVLPVNODECORE *ppN
     bRet = Module32First(hSnapshot, &ModuleInfo);
     do
     {
-        /** todo when changing this make sure VBoxService.exe is excluded! */
+        /** @todo when changing this make sure VBoxService.exe is excluded! */
         char *pszDot = strrchr(ModuleInfo.szModule, '.');
         if (    pszDot
             &&  (pszDot[1] == 'e' || pszDot[1] == 'E'))
@@ -504,14 +497,11 @@ static DECLCALLBACK(int) VBoxServicePageSharingEmptyTreeCallback(PAVLPVNODECORE 
     VBoxServiceVerbose(3, "VBoxServicePageSharingEmptyTreeCallback %s %s\n", pModule->Info.szModule, pModule->szFileVersion);
 
     /* Dereference module in the hypervisor. */
-    if (    !pfUnregister
-        ||  *pfUnregister == true)
+    if (   !pfUnregister
+        || *pfUnregister)
     {
-    #ifdef RT_ARCH_X86
-        int rc = VbglR3UnregisterSharedModule(pModule->Info.szModule, pModule->szFileVersion, (RTGCPTR32)pModule->Info.modBaseAddr, pModule->Info.modBaseSize);
-    #else
-        int rc = VbglR3UnregisterSharedModule(pModule->Info.szModule, pModule->szFileVersion, (RTGCPTR64)pModule->Info.modBaseAddr, pModule->Info.modBaseSize);
-    #endif
+        int rc = VbglR3UnregisterSharedModule(pModule->Info.szModule, pModule->szFileVersion,
+                                              (uintptr_t)pModule->Info.modBaseAddr, pModule->Info.modBaseSize);
         AssertRC(rc);
     }
 

@@ -488,9 +488,9 @@ typedef struct GMM
     /** The shared free set. */
     GMMCHUNKFREESET     Shared;
 
-    /** Shared module tree (global). */
-    /** @todo separate trees for distinctly different guest OSes. */
-    PAVLGCPTRNODECORE   pGlobalSharedModuleTree;
+    /** Shared module tree (global).
+     * @todo separate trees for distinctly different guest OSes. */
+    PAVLLU32NODECORE    pGlobalSharedModuleTree;
     /** Sharable modules (count of nodes in pGlobalSharedModuleTree). */
     uint32_t            cShareableModules;
 
@@ -587,6 +587,42 @@ typedef GMMR0CHUNKMTXSTATE *PGMMR0CHUNKMTXSTATE;
 #define GMMR0CHUNK_MTX_DROP_GIANT       UINT32_C(3)
 #define GMMR0CHUNK_MTX_END              UINT32_C(4)
 /** @} */
+
+
+/** The maximum number of shared modules per-vm. */
+#define GMM_MAX_SHARED_PER_VM_MODULES   2048
+/** The maximum number of shared modules GMM is allowed to track. */
+#define GMM_MAX_SHARED_GLOBAL_MODULES   16834
+
+
+/**
+ * Argument packet for gmmR0SharedModuleCleanup.
+ */
+typedef struct GMMR0SHMODPERVMDTORARGS
+{
+    PGVM    pGVM;
+    PGMM    pGMM;
+} GMMR0SHMODPERVMDTORARGS;
+
+/**
+ * Argument packet for gmmR0CheckSharedModule.
+ */
+typedef struct GMMCHECKSHAREDMODULEINFO
+{
+    PGVM                    pGVM;
+    VMCPUID                 idCpu;
+} GMMCHECKSHAREDMODULEINFO;
+
+/**
+ * Argument packet for gmmR0FindDupPageInChunk by GMMR0FindDuplicatePage.
+ */
+typedef struct GMMFINDDUPPAGEINFO
+{
+    PGVM                    pGVM;
+    PGMM                    pGMM;
+    uint8_t                *pSourcePage;
+    bool                    fFoundDuplicate;
+} GMMFINDDUPPAGEINFO;
 
 
 /*******************************************************************************
@@ -4130,38 +4166,216 @@ GMMR0DECL(int) GMMR0SeedChunk(PVM pVM, VMCPUID idCpu, RTR3PTR pvR3)
     return rc;
 }
 
-
-typedef struct
-{
-    PAVLGCPTRNODECORE    pNode;
-    char                *pszModuleName;
-    char                *pszVersion;
-    VBOXOSFAMILY         enmGuestOS;
-} GMMFINDMODULEBYNAME, *PGMMFINDMODULEBYNAME;
+#ifdef VBOX_WITH_PAGE_SHARING
 
 /**
- * Tree enumeration callback for finding identical modules by name and version
+ * Calculates the module hash value.
+ *
+ * @returns Hash value.
+ * @param   pszModuleName   The module name.
+ * @param   pszVersion      The module version string.
  */
-DECLCALLBACK(int) gmmR0CheckForIdenticalModule(PAVLGCPTRNODECORE pNode, void *pvUser)
+static uint32_t gmmR0ShModCalcHash(const char *pszModuleName, const char *pszVersion)
 {
-    PGMMFINDMODULEBYNAME pInfo = (PGMMFINDMODULEBYNAME)pvUser;
-    PGMMSHAREDMODULE     pModule = (PGMMSHAREDMODULE)pNode;
-
-    if (    pInfo
-        &&  pInfo->enmGuestOS == pModule->enmGuestOS
-        /** @todo replace with RTStrNCmp */
-        &&  !strcmp(pModule->szName, pInfo->pszModuleName)
-        &&  !strcmp(pModule->szVersion, pInfo->pszVersion))
-    {
-        pInfo->pNode = pNode;
-        return 1;   /* stop search */
-    }
-    return 0;
+    return RTStrHash1ExN(3, pszModuleName, RTSTR_MAX, "::", (size_t)2, pszVersion, RTSTR_MAX);
 }
 
 
 /**
- * Registers a new shared module for the VM
+ * Finds a global module.
+ *
+ * @returns Pointer to the global module on success, NULL if not found.
+ * @param   pGMM            The GMM instance data.
+ * @param   uHash           The hash as calculated by gmmR0ShModCalcHash.
+ * @param   cbModule        The module size.
+ * @param   enmGuestOS      The guest OS type.
+ * @param   pszModuleName   The module name.
+ * @param   pszVersion      The module version.
+ */
+static PGMMSHAREDMODULE gmmR0ShModFindGlobal(PGMM pGMM, uint32_t uHash, uint32_t cbModule, VBOXOSFAMILY enmGuestOS,
+                                             uint32_t cRegions, const char *pszModuleName, const char *pszVersion,
+                                             struct VMMDEVSHAREDREGIONDESC const *paRegions)
+{
+    for (PGMMSHAREDMODULE pGblMod = (PGMMSHAREDMODULE)RTAvllU32Get(&pGMM->pGlobalSharedModuleTree, uHash);
+         pGblMod;
+         pGblMod = (PGMMSHAREDMODULE)pGblMod->Core.pList)
+    {
+        if (pGblMod->cbModule   != cbModule)
+            continue;
+        if (pGblMod->enmGuestOS != enmGuestOS)
+            continue;
+        if (pGblMod->cRegions   != cRegions)
+            continue;
+        if (strcmp(pGblMod->szName, pszModuleName))
+            continue;
+        if (strcmp(pGblMod->szVersion, pszVersion))
+            continue;
+
+        uint32_t i;
+        for (i = 0; i < cRegions; i++)
+        {
+            uint32_t off = paRegions[i].GCRegionAddr & PAGE_OFFSET_MASK;
+            if (pGblMod->aRegions[i].off != off)
+                break;
+
+            uint32_t cb  = RT_ALIGN_32(paRegions[i].cbRegion + off, PAGE_SIZE);
+            if (pGblMod->aRegions[i].cb != cb)
+                break;
+        }
+
+        if (i == cRegions)
+            return pGblMod;
+    }
+
+    return NULL;
+}
+
+
+/**
+ * Creates a new global module.
+ *
+ * @returns VBox status code.
+ * @param   pGMM            The GMM instance data.
+ * @param   uHash           The hash as calculated by gmmR0ShModCalcHash.
+ * @param   cbModule        The module size.
+ * @param   enmGuestOS      The guest OS type.
+ * @param   cRegions        The number of regions.
+ * @param   pszModuleName   The module name.
+ * @param   pszVersion      The module version.
+ * @param   paRegions       The region descriptions.
+ * @param   ppGblMod        Where to return the new module on success.
+ */
+static int gmmR0ShModNewGlobal(PGMM pGMM, uint32_t uHash, uint32_t cbModule, VBOXOSFAMILY enmGuestOS,
+                               uint32_t cRegions, const char *pszModuleName, const char *pszVersion,
+                               struct VMMDEVSHAREDREGIONDESC const *paRegions, PGMMSHAREDMODULE *ppGblMod)
+{
+    Log(("gmmR0ShModNewGlobal: %s %s size %#x os %u rgn %u\n", pszModuleName, pszVersion, cbModule, cRegions));
+    if (pGMM->cShareableModules >= GMM_MAX_SHARED_GLOBAL_MODULES)
+    {
+        Log(("gmmR0ShModNewGlobal: Too many modules\n"));
+        return VERR_GMM_TOO_MANY_GLOBAL_MODULES;
+    }
+
+    PGMMSHAREDMODULE pGblMod = (PGMMSHAREDMODULE)RTMemAllocZ(RT_OFFSETOF(GMMSHAREDMODULE, aRegions[cRegions]));
+    if (!pGblMod)
+    {
+        Log(("gmmR0ShModNewGlobal: No memory\n"));
+        return VERR_NO_MEMORY;
+    }
+
+    pGblMod->Core.Key   = uHash;
+    pGblMod->cbModule   = cbModule;
+    pGblMod->cRegions   = cRegions;
+    pGblMod->cUsers     = 1;
+    pGblMod->enmGuestOS = enmGuestOS;
+    strcpy(pGblMod->szName, pszModuleName);
+    strcpy(pGblMod->szVersion, pszVersion);
+
+    for (uint32_t i = 0; i < cRegions; i++)
+    {
+        Log(("gmmR0ShModNewGlobal: rgn[%u]=%RGvLB%#x\n", i, paRegions[i].GCRegionAddr, paRegions[i].cbRegion));
+        pGblMod->aRegions[i].off        = paRegions[i].GCRegionAddr & PAGE_OFFSET_MASK;
+        pGblMod->aRegions[i].cb         = paRegions[i].cbRegion + pGblMod->aRegions[i].off;
+        pGblMod->aRegions[i].cb         = RT_ALIGN_32(pGblMod->aRegions[i].cb, PAGE_SIZE);
+        pGblMod->aRegions[i].paidPages  = NULL; /* allocated when needed. */
+    }
+
+    bool fInsert = RTAvllU32Insert(&pGMM->pGlobalSharedModuleTree, &pGblMod->Core);
+    Assert(fInsert); NOREF(fInsert);
+    pGMM->cShareableModules++;
+
+    *ppGblMod = pGblMod;
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Deletes a global module which is no longer referenced by anyone.
+ *
+ * @param   pGMM                The GMM instance data.
+ * @param   pGblMod             The module to delete.
+ */
+static void gmmR0ShModDeleteGlobal(PGMM pGMM, PGMMSHAREDMODULE pGblMod)
+{
+    Assert(pGblMod->cUsers == 0);
+    Assert(pGMM->cShareableModules > 0 && pGMM->cShareableModules <= GMM_MAX_SHARED_GLOBAL_MODULES);
+
+    void *pvTest = RTAvllU32RemoveNode(&pGMM->pGlobalSharedModuleTree, &pGblMod->Core);
+    Assert(pvTest == pGblMod); NOREF(pvTest);
+    pGMM->cShareableModules--;
+
+    uint32_t i = pGblMod->cRegions;
+    while (i-- > 0)
+    {
+        if (pGblMod->aRegions[i].paidPages)
+        {
+            /* We don't doing anything to the pages as they are handled by the
+               copy-on-write mechanism in PGM. */
+            RTMemFree(pGblMod->aRegions[i].paidPages);
+            pGblMod->aRegions[i].paidPages = NULL;
+        }
+    }
+    RTMemFree(pGblMod);
+}
+
+
+static int gmmR0ShModNewPerVM(PGVM pGVM, RTGCPTR GCBaseAddr, uint32_t cRegions, const VMMDEVSHAREDREGIONDESC *paRegions,
+                              PGMMSHAREDMODULEPERVM *ppRecVM)
+{
+    if (pGVM->gmm.s.Stats.cShareableModules >= GMM_MAX_SHARED_PER_VM_MODULES)
+        return VERR_GMM_TOO_MANY_PER_VM_MODULES;
+
+    PGMMSHAREDMODULEPERVM pRecVM;
+    pRecVM = (PGMMSHAREDMODULEPERVM)RTMemAllocZ(RT_OFFSETOF(GMMSHAREDMODULEPERVM, aRegionsGCPtrs[cRegions]));
+    if (!pRecVM)
+        return VERR_NO_MEMORY;
+
+    pRecVM->Core.Key = GCBaseAddr;
+    for (uint32_t i = 0; i < cRegions; i++)
+        pRecVM->aRegionsGCPtrs[i] = paRegions[i].GCRegionAddr;
+
+    bool fInsert = RTAvlGCPtrInsert(&pGVM->gmm.s.pSharedModuleTree, &pRecVM->Core);
+    Assert(fInsert); NOREF(fInsert);
+    pGVM->gmm.s.Stats.cShareableModules++;
+
+    *ppRecVM = pRecVM;
+    return VINF_SUCCESS;
+}
+
+
+static void gmmR0ShModDeletePerVM(PGMM pGMM, PGVM pGVM, PGMMSHAREDMODULEPERVM pRecVM, bool fRemove)
+{
+    /*
+     * Free the per-VM module.
+     */
+    PGMMSHAREDMODULE pGblMod = pRecVM->pGlobalModule;
+    pRecVM->pGlobalModule    = NULL;
+
+    if (fRemove)
+    {
+        void *pvTest = RTAvlGCPtrRemove(&pGVM->gmm.s.pSharedModuleTree, pRecVM->Core.Key);
+        Assert(pvTest == &pRecVM->Core);
+    }
+
+    RTMemFree(pRecVM);
+
+    /*
+     * Release the global module.
+     * (In the registration bailout case, it might not be.)
+     */
+    if (pGblMod)
+    {
+        Assert(pGblMod->cUsers > 0);
+        pGblMod->cUsers--;
+        if (pGblMod->cUsers == 0)
+            gmmR0ShModDeleteGlobal(pGMM, pGblMod);
+    }
+}
+
+#endif /* VBOX_WITH_PAGE_SHARING */
+
+/**
+ * Registers a new shared module for the VM.
  *
  * @returns VBox status code.
  * @param   pVM                 VM handle
@@ -4169,18 +4383,21 @@ DECLCALLBACK(int) gmmR0CheckForIdenticalModule(PAVLGCPTRNODECORE pNode, void *pv
  * @param   enmGuestOS          Guest OS type
  * @param   pszModuleName       Module name
  * @param   pszVersion          Module version
- * @param   GCBaseAddr          Module base address
+ * @param   GCPtrModBase        Module base address
  * @param   cbModule            Module size
  * @param   cRegions            Number of shared region descriptors
- * @param   pRegions            Shared region(s)
+ * @param   paRegions           Shared region(s)
  */
 GMMR0DECL(int) GMMR0RegisterSharedModule(PVM pVM, VMCPUID idCpu, VBOXOSFAMILY enmGuestOS, char *pszModuleName,
-                                         char *pszVersion, RTGCPTR GCBaseAddr, uint32_t cbModule,
-                                         uint32_t cRegions, VMMDEVSHAREDREGIONDESC *pRegions)
+                                         char *pszVersion, RTGCPTR GCPtrModBase, uint32_t cbModule,
+                                         uint32_t cRegions, struct VMMDEVSHAREDREGIONDESC const *paRegions)
 {
 #ifdef VBOX_WITH_PAGE_SHARING
     /*
      * Validate input and get the basics.
+     *
+     * Note! Turns out the module size does necessarily match the size of the
+     *       regions. (iTunes on XP)
      */
     PGMM pGMM;
     GMM_GET_VALID_INSTANCE(pGMM, VERR_GMM_INSTANCE);
@@ -4189,11 +4406,33 @@ GMMR0DECL(int) GMMR0RegisterSharedModule(PVM pVM, VMCPUID idCpu, VBOXOSFAMILY en
     if (RT_FAILURE(rc))
         return rc;
 
+    if (RT_UNLIKELY(cRegions > VMMDEVSHAREDREGIONDESC_MAX))
+        return VERR_GMM_TOO_MANY_REGIONS;
+
+    if (RT_UNLIKELY(cbModule == 0 || cbModule > _1G))
+        return VERR_GMM_BAD_SHARED_MODULE_SIZE;
+
+    uint32_t cbTotal = 0;
+    for (uint32_t i = 0; i < cRegions; i++)
+    {
+        if (RT_UNLIKELY(paRegions[i].cbRegion == 0 || paRegions[i].cbRegion > _1G))
+            return VERR_GMM_SHARED_MODULE_BAD_REGIONS_SIZE;
+
+        cbTotal += paRegions[i].cbRegion;
+        if (RT_UNLIKELY(cbTotal > _1G))
+            return VERR_GMM_SHARED_MODULE_BAD_REGIONS_SIZE;
+    }
+
     AssertPtrReturn(pszModuleName, VERR_INVALID_POINTER);
+    if (RT_UNLIKELY(!memchr(pszModuleName, '\0', GMM_SHARED_MODULE_MAX_NAME_STRING)))
+        return VERR_GMM_MODULE_NAME_TOO_LONG;
+
     AssertPtrReturn(pszVersion, VERR_INVALID_POINTER);
+    if (RT_UNLIKELY(!memchr(pszVersion, '\0', GMM_SHARED_MODULE_MAX_VERSION_STRING)))
+        return VERR_GMM_MODULE_NAME_TOO_LONG;
 
-
-    Log(("GMMR0RegisterSharedModule %s %s base %RGv size %x\n", pszModuleName, pszVersion, GCBaseAddr, cbModule));
+    uint32_t const uHash = gmmR0ShModCalcHash(pszModuleName, pszVersion);
+    Log(("GMMR0RegisterSharedModule %s %s base %RGv size %x hash %x\n", pszModuleName, pszVersion, GCPtrModBase, cbModule, uHash));
 
     /*
      * Take the semaphore and do some more validations.
@@ -4201,158 +4440,82 @@ GMMR0DECL(int) GMMR0RegisterSharedModule(PVM pVM, VMCPUID idCpu, VBOXOSFAMILY en
     gmmR0MutexAcquire(pGMM);
     if (GMM_CHECK_SANITY_UPON_ENTERING(pGMM))
     {
-        bool fNewModule = false;
-
-        /* Check if this module is already locally registered. */
-        PGMMSHAREDMODULEPERVM pRecVM = (PGMMSHAREDMODULEPERVM)RTAvlGCPtrGet(&pGVM->gmm.s.pSharedModuleTree, GCBaseAddr);
-        if (!pRecVM)
+        /*
+         * Check if this module is already locally registered and register
+         * it if it isn't.  The base address is a unique module identifier
+         * locally.
+         */
+        PGMMSHAREDMODULEPERVM pRecVM = (PGMMSHAREDMODULEPERVM)RTAvlGCPtrGet(&pGVM->gmm.s.pSharedModuleTree, GCPtrModBase);
+        bool fNewModule = pRecVM == NULL;
+        if (fNewModule)
         {
-            pRecVM = (PGMMSHAREDMODULEPERVM)RTMemAllocZ(RT_OFFSETOF(GMMSHAREDMODULEPERVM, aRegions[cRegions]));
-            if (!pRecVM)
+            rc = gmmR0ShModNewPerVM(pGVM, GCPtrModBase, cRegions, paRegions, &pRecVM);
+            if (RT_SUCCESS(rc))
             {
-                AssertFailed();
-                rc = VERR_NO_MEMORY;
-                goto end;
+                /*
+                 * Find a matching global module, register a new one if needed.
+                 */
+                PGMMSHAREDMODULE pGblMod = gmmR0ShModFindGlobal(pGMM, uHash, cbModule, enmGuestOS, cRegions,
+                                                                pszModuleName, pszVersion, paRegions);
+                if (!pGblMod)
+                {
+                    Assert(fNewModule);
+                    rc = gmmR0ShModNewGlobal(pGMM, uHash, cbModule, enmGuestOS, cRegions,
+                                             pszModuleName, pszVersion, paRegions, &pGblMod);
+                    if (RT_SUCCESS(rc))
+                    {
+                        pRecVM->pGlobalModule = pGblMod; /* (One referenced returned by gmmR0ShModNewGlobal.) */
+                        Log(("GMMR0RegisterSharedModule: new module %s %s\n", pszModuleName, pszVersion));
+                    }
+                    else
+                        gmmR0ShModDeletePerVM(pGMM, pGVM, pRecVM, true /*fRemove*/);
+                }
+                else
+                {
+                    Assert(pGblMod->cUsers > 0 && pGblMod->cUsers < UINT32_MAX / 2);
+                    pGblMod->cUsers++;
+                    pRecVM->pGlobalModule = pGblMod;
+
+                    Log(("GMMR0RegisterSharedModule: new per vm module %s %s, gbl users %d\n", pszModuleName, pszVersion, pGblMod->cUsers));
+                }
             }
-            pRecVM->Core.Key = GCBaseAddr;
-            pRecVM->cRegions = cRegions;
-
-            /* Save the region data as they can differ between VMs (address space scrambling or simply different loading order) */
-            for (unsigned i = 0; i < cRegions; i++)
-            {
-                pRecVM->aRegions[i].GCRegionAddr    = pRegions[i].GCRegionAddr;
-                pRecVM->aRegions[i].cbRegion        = RT_ALIGN_T(pRegions[i].cbRegion, PAGE_SIZE, uint32_t);
-                pRecVM->aRegions[i].u32Alignment    = 0;
-                pRecVM->aRegions[i].paidPages       = NULL; /* unused */
-            }
-
-            bool fInsert = RTAvlGCPtrInsert(&pGVM->gmm.s.pSharedModuleTree, &pRecVM->Core);
-            Assert(fInsert); NOREF(fInsert);
-            pGVM->gmm.s.Stats.cShareableModules++;
-
-            Log(("GMMR0RegisterSharedModule: new local module %s\n", pszModuleName));
-            fNewModule = true;
         }
         else
-            rc = VINF_PGM_SHARED_MODULE_ALREADY_REGISTERED;
-
-        /* Check if this module is already globally registered. */
-        PGMMSHAREDMODULE pGlobalModule = (PGMMSHAREDMODULE)RTAvlGCPtrGet(&pGMM->pGlobalSharedModuleTree, GCBaseAddr);
-        if (    !pGlobalModule
-            &&  enmGuestOS == VBOXOSFAMILY_Windows64)
         {
             /*
-             * Two identical copies of e.g. Win7 x64 will typically not have a
-             * similar virtual address space layout for dlls or kernel modules.
-             * Try to find identical binaries based on name and version.
+             * Attempt to re-register an existing module.
              */
-            GMMFINDMODULEBYNAME Info;
-
-            Info.pNode         = NULL;
-            Info.pszVersion    = pszVersion;
-            Info.pszModuleName = pszModuleName;
-            Info.enmGuestOS    = enmGuestOS;
-
-            Log(("Try to find identical module %s\n", pszModuleName));
-            int ret = RTAvlGCPtrDoWithAll(&pGMM->pGlobalSharedModuleTree, true /* fFromLeft */, gmmR0CheckForIdenticalModule, &Info);
-            if (ret == 1)
+            PGMMSHAREDMODULE pGblMod = gmmR0ShModFindGlobal(pGMM, uHash, cbModule, enmGuestOS, cRegions,
+                                                            pszModuleName, pszVersion, paRegions);
+            if (pRecVM->pGlobalModule == pGblMod)
             {
-                Assert(Info.pNode);
-                pGlobalModule = (PGMMSHAREDMODULE)Info.pNode;
-                Log(("Found identical module at %RGv\n", pGlobalModule->Core.Key));
-            }
-        }
-
-        if (!pGlobalModule)
-        {
-            Assert(fNewModule);
-            Assert(!pRecVM->fCollision);
-
-            pGlobalModule = (PGMMSHAREDMODULE)RTMemAllocZ(RT_OFFSETOF(GMMSHAREDMODULE, aRegions[cRegions]));
-            if (!pGlobalModule)
-            {
-                AssertFailed();
-                rc = VERR_NO_MEMORY;
-                goto end;
-            }
-
-            pGlobalModule->Core.Key = GCBaseAddr;
-            pGlobalModule->cbModule = cbModule;
-            /* Input limit already safe; no need to check again. */
-            /** @todo replace with RTStrCopy */
-            strcpy(pGlobalModule->szName, pszModuleName);
-            strcpy(pGlobalModule->szVersion, pszVersion);
-
-            pGlobalModule->enmGuestOS = enmGuestOS;
-            pGlobalModule->cRegions   = cRegions;
-
-            for (unsigned i = 0; i < cRegions; i++)
-            {
-                Log(("New region %d base=%RGv size %x\n", i, pRegions[i].GCRegionAddr, pRegions[i].cbRegion));
-                pGlobalModule->aRegions[i].GCRegionAddr = pRegions[i].GCRegionAddr;
-                pGlobalModule->aRegions[i].cbRegion     = RT_ALIGN_T(pRegions[i].cbRegion, PAGE_SIZE, uint32_t);
-                pGlobalModule->aRegions[i].u32Alignment = 0;
-                pGlobalModule->aRegions[i].paidPages    = NULL; /* uninitialized. */
-            }
-
-            /* Save reference. */
-            pRecVM->pGlobalModule = pGlobalModule;
-            pRecVM->fCollision    = false;
-            pGlobalModule->cUsers++;
-            rc = VINF_SUCCESS;
-
-            bool fInsert = RTAvlGCPtrInsert(&pGMM->pGlobalSharedModuleTree, &pGlobalModule->Core);
-            Assert(fInsert); NOREF(fInsert);
-            pGMM->cShareableModules++;
-
-            Log(("GMMR0RegisterSharedModule: new global module %s\n", pszModuleName));
-        }
-        else
-        {
-            Assert(pGlobalModule->cUsers > 0);
-
-            /* Make sure the name and version are identical. */
-            /** @todo replace with RTStrNCmp */
-/** @todo need to check region count or it will blow up in
- *  GMMR0SharedModuleCheckPage / PGMR0SharedModuleCheck.
- *
- *  More interstingly though, is why we don't do the W7/64 thing for ALL
- *  modules and just dispense with the address collision. */
-            if (    !strcmp(pGlobalModule->szName, pszModuleName)
-                &&  !strcmp(pGlobalModule->szVersion, pszVersion))
-            {
-                /* Save reference. */
-                pRecVM->pGlobalModule = pGlobalModule;
-                if (    fNewModule
-                    ||  pRecVM->fCollision == true) /* colliding module unregistered and new one registered since the last check */
-                {
-                    pGlobalModule->cUsers++;
-                    Log(("GMMR0RegisterSharedModule: using existing module %s cUser=%d!\n", pszModuleName, pGlobalModule->cUsers));
-                }
-                pRecVM->fCollision    = false;
-                rc = VINF_SUCCESS;
+                Log(("GMMR0RegisterSharedModule: already registered %s %s, gbl users %d\n", pszModuleName, pszVersion, pGblMod->cUsers));
+                rc = VINF_GMM_SHARED_MODULE_ALREADY_REGISTERED;
             }
             else
             {
-                Log(("GMMR0RegisterSharedModule: module %s collision!\n", pszModuleName));
-                pRecVM->fCollision = true;
-                rc = VINF_PGM_SHARED_MODULE_COLLISION;
-                goto end;
+                /** @todo may have to unregister+register when this happens in case it's caused
+                 * by VBoxService crashing and being restarted... */
+                Log(("GMMR0RegisterSharedModule: Address clash!\n"
+                     "  incoming at %RGvLB%#x %s %s rgns %u\n"
+                     "  existing at %RGvLB%#x %s %s rgns %u\n",
+                     GCPtrModBase, cbModule, pszModuleName, pszVersion, cRegions,
+                     pRecVM->Core.Key, pRecVM->pGlobalModule->cbModule, pRecVM->pGlobalModule->szName,
+                     pRecVM->pGlobalModule->szVersion, pRecVM->pGlobalModule->cRegions));
+                rc = VERR_GMM_SHARED_MODULE_ADDRESS_CLASH;
             }
         }
-
         GMM_CHECK_SANITY_UPON_LEAVING(pGMM);
     }
     else
         rc = VERR_GMM_IS_NOT_SANE;
 
-end:
     gmmR0MutexRelease(pGMM);
     return rc;
 #else
 
     NOREF(pVM); NOREF(idCpu); NOREF(enmGuestOS); NOREF(pszModuleName); NOREF(pszVersion);
-    NOREF(GCBaseAddr); NOREF(cbModule); NOREF(cRegions); NOREF(pRegions);
+    NOREF(GCPtrModBase); NOREF(cbModule); NOREF(cRegions); NOREF(paRegions);
     return VERR_NOT_IMPLEMENTED;
 #endif
 }
@@ -4376,7 +4539,8 @@ GMMR0DECL(int)  GMMR0RegisterSharedModuleReq(PVM pVM, VMCPUID idCpu, PGMMREGISTE
     AssertMsgReturn(pReq->Hdr.cbReq >= sizeof(*pReq) && pReq->Hdr.cbReq == RT_UOFFSETOF(GMMREGISTERSHAREDMODULEREQ, aRegions[pReq->cRegions]), ("%#x != %#x\n", pReq->Hdr.cbReq, sizeof(*pReq)), VERR_INVALID_PARAMETER);
 
     /* Pass back return code in the request packet to preserve informational codes. (VMMR3CallR0 chokes on them) */
-    pReq->rc = GMMR0RegisterSharedModule(pVM, idCpu, pReq->enmGuestOS, pReq->szName, pReq->szVersion, pReq->GCBaseAddr, pReq->cbModule, pReq->cRegions, pReq->aRegions);
+    pReq->rc = GMMR0RegisterSharedModule(pVM, idCpu, pReq->enmGuestOS, pReq->szName, pReq->szVersion,
+                                         pReq->GCBaseAddr, pReq->cbModule, pReq->cRegions, pReq->aRegions);
     return VINF_SUCCESS;
 }
 
@@ -4389,11 +4553,11 @@ GMMR0DECL(int)  GMMR0RegisterSharedModuleReq(PVM pVM, VMCPUID idCpu, PGMMREGISTE
  * @param   idCpu               VCPU id
  * @param   pszModuleName       Module name
  * @param   pszVersion          Module version
- * @param   GCBaseAddr          Module base address
+ * @param   GCPtrModBase        Module base address
  * @param   cbModule            Module size
  */
 GMMR0DECL(int) GMMR0UnregisterSharedModule(PVM pVM, VMCPUID idCpu, char *pszModuleName, char *pszVersion,
-                                           RTGCPTR GCBaseAddr, uint32_t cbModule)
+                                           RTGCPTR GCPtrModBase, uint32_t cbModule)
 {
 #ifdef VBOX_WITH_PAGE_SHARING
     /*
@@ -4406,7 +4570,14 @@ GMMR0DECL(int) GMMR0UnregisterSharedModule(PVM pVM, VMCPUID idCpu, char *pszModu
     if (RT_FAILURE(rc))
         return rc;
 
-    Log(("GMMR0UnregisterSharedModule %s %s base=%RGv size %x\n", pszModuleName, pszVersion, GCBaseAddr, cbModule));
+    AssertPtrReturn(pszModuleName, VERR_INVALID_POINTER);
+    AssertPtrReturn(pszVersion, VERR_INVALID_POINTER);
+    if (RT_UNLIKELY(!memchr(pszModuleName, '\0', GMM_SHARED_MODULE_MAX_NAME_STRING)))
+        return VERR_GMM_MODULE_NAME_TOO_LONG;
+    if (RT_UNLIKELY(!memchr(pszVersion, '\0', GMM_SHARED_MODULE_MAX_VERSION_STRING)))
+        return VERR_GMM_MODULE_NAME_TOO_LONG;
+
+    Log(("GMMR0UnregisterSharedModule %s %s base=%RGv size %x\n", pszModuleName, pszVersion, GCPtrModBase, cbModule));
 
     /*
      * Take the semaphore and do some more validations.
@@ -4414,59 +4585,19 @@ GMMR0DECL(int) GMMR0UnregisterSharedModule(PVM pVM, VMCPUID idCpu, char *pszModu
     gmmR0MutexAcquire(pGMM);
     if (GMM_CHECK_SANITY_UPON_ENTERING(pGMM))
     {
-        PGMMSHAREDMODULEPERVM pRecVM = (PGMMSHAREDMODULEPERVM)RTAvlGCPtrGet(&pGVM->gmm.s.pSharedModuleTree, GCBaseAddr);
+        /*
+         * Locate and remove the specified module.
+         */
+        PGMMSHAREDMODULEPERVM pRecVM = (PGMMSHAREDMODULEPERVM)RTAvlGCPtrGet(&pGVM->gmm.s.pSharedModuleTree, GCPtrModBase);
         if (pRecVM)
         {
-            /* Remove reference to global shared module. */
-            if (!pRecVM->fCollision)
-            {
-                PGMMSHAREDMODULE pRec = pRecVM->pGlobalModule;
-                Assert(pRec);
-
-                if (pRec)   /* paranoia */
-                {
-                    Assert(pRec->cUsers);
-                    pRec->cUsers--;
-                    if (pRec->cUsers == 0)
-                    {
-                        /* Free the ranges, but leave the pages intact as there
-                           might still be references; they will be cleared by
-                           the COW mechanism. */
-                        for (uint32_t i = 0; i < pRec->cRegions; i++)
-                        {
-                            RTMemFree(pRec->aRegions[i].paidPages);
-                            pRec->aRegions[i].paidPages = NULL;
-                        }
-
-                        Assert(pRec->Core.Key == GCBaseAddr || pRec->enmGuestOS == VBOXOSFAMILY_Windows64);
-                        Assert(pRec->cRegions == pRecVM->cRegions);
-#ifdef VBOX_STRICT
-                        for (uint32_t i = 0; i < pRecVM->cRegions; i++)
-                        {
-                            Assert(pRecVM->aRegions[i].GCRegionAddr == pRec->aRegions[i].GCRegionAddr);
-                            Assert(pRecVM->aRegions[i].cbRegion == pRec->aRegions[i].cbRegion);
-                        }
-#endif
-
-                        /* Remove from the tree and free memory. */
-                        RTAvlGCPtrRemove(&pGMM->pGlobalSharedModuleTree, pRec->Core.Key);
-                        pGMM->cShareableModules--;
-                        RTMemFree(pRec);
-                    }
-                }
-                else
-                    rc = VERR_PGM_SHARED_MODULE_REGISTRATION_INCONSISTENCY;
-            }
-            else
-                Assert(!pRecVM->pGlobalModule);
-
-            /* Remove from the tree and free memory. */
-            RTAvlGCPtrRemove(&pGVM->gmm.s.pSharedModuleTree, GCBaseAddr);
-            pGVM->gmm.s.Stats.cShareableModules--;
-            RTMemFree(pRecVM);
+            /** @todo Do we need to do more validations here, like that the
+             *        name + version + cbModule matches? */
+            Assert(pRecVM->pGlobalModule);
+            gmmR0ShModDeletePerVM(pGMM, pGVM, pRecVM, true /*fRemove*/);
         }
         else
-            rc = VERR_PGM_SHARED_MODULE_NOT_FOUND;
+            rc = VERR_GMM_SHARED_MODULE_NOT_FOUND;
 
         GMM_CHECK_SANITY_UPON_LEAVING(pGMM);
     }
@@ -4477,7 +4608,7 @@ GMMR0DECL(int) GMMR0UnregisterSharedModule(PVM pVM, VMCPUID idCpu, char *pszModu
     return rc;
 #else
 
-    NOREF(pVM); NOREF(idCpu); NOREF(pszModuleName); NOREF(pszVersion); NOREF(GCBaseAddr); NOREF(cbModule);
+    NOREF(pVM); NOREF(idCpu); NOREF(pszModuleName); NOREF(pszVersion); NOREF(GCPtrModBase); NOREF(cbModule);
     return VERR_NOT_IMPLEMENTED;
 #endif
 }
@@ -4596,18 +4727,18 @@ static int gmmR0SharedModuleCheckPageFirstTime(PGMM pGMM, PGVM pGVM, PGMMSHAREDM
  * @param   idxPage             Page index
  * @param   paPageDesc          Page descriptor
  */
-GMMR0DECL(int) GMMR0SharedModuleCheckPage(PGVM pGVM, PGMMSHAREDMODULE pModule, unsigned idxRegion, unsigned idxPage,
+GMMR0DECL(int) GMMR0SharedModuleCheckPage(PGVM pGVM, PGMMSHAREDMODULE pModule, uint32_t idxRegion, uint32_t idxPage,
                                           PGMMSHAREDPAGEDESC pPageDesc)
 {
-    int rc;
-    PGMM pGMM;
+    int     rc;
+    PGMM    pGMM;
     GMM_GET_VALID_INSTANCE(pGMM, VERR_GMM_INSTANCE);
 
     AssertMsgReturn(idxRegion < pModule->cRegions,
                     ("idxRegion=%#x cRegions=%#x %s %s\n", idxRegion, pModule->cRegions, pModule->szName, pModule->szVersion),
                     VERR_INVALID_PARAMETER);
 
-    unsigned const cPages = pModule->aRegions[idxRegion].cbRegion >> PAGE_SHIFT;
+    uint32_t const cPages = pModule->aRegions[idxRegion].cb >> PAGE_SHIFT;
     AssertMsgReturn(idxPage < cPages,
                     ("idxRegion=%#x cRegions=%#x %s %s\n", idxRegion, pModule->cRegions, pModule->szName, pModule->szVersion),
                     VERR_INVALID_PARAMETER);
@@ -4625,7 +4756,8 @@ GMMR0DECL(int) GMMR0SharedModuleCheckPage(PGVM pGVM, PGMMSHAREDMODULE pModule, u
         AssertReturn(pGlobalRegion->paidPages, VERR_NO_MEMORY);
 
         /* Invalidate all descriptors. */
-        for (unsigned i = 0; i < cPages; i++)
+        uint32_t i = cPages;
+        while (i-- > 0)
             pGlobalRegion->paidPages[i] = NIL_GMM_PAGEID;
     }
 
@@ -4729,41 +4861,16 @@ GMMR0DECL(int) GMMR0SharedModuleCheckPage(PGVM pGVM, PGMMSHAREDMODULE pModule, u
  * RTAvlGCPtrDestroy callback.
  *
  * @returns 0 or VERR_GMM_INSTANCE.
- * @param   pNode   The node to destroy.
- * @param   pvGVM   The GVM handle.
+ * @param   pNode       The node to destroy.
+ * @param   pvArgs      Pointer to an argument packet.
  */
-static DECLCALLBACK(int) gmmR0CleanupSharedModule(PAVLGCPTRNODECORE pNode, void *pvGVM)
+static DECLCALLBACK(int) gmmR0CleanupSharedModule(PAVLGCPTRNODECORE pNode, void *pvArgs)
 {
-    PGMMSHAREDMODULEPERVM pRecVM = (PGMMSHAREDMODULEPERVM)pNode;
-    NOREF(pvGVM);
-
-    Assert(pRecVM->pGlobalModule || pRecVM->fCollision);
-    if (pRecVM->pGlobalModule)
-    {
-        PGMMSHAREDMODULE pRec = pRecVM->pGlobalModule;
-        AssertPtr(pRec);
-        Assert(pRec->cUsers);
-
-        Log(("gmmR0CleanupSharedModule: %s %s cUsers=%d\n", pRec->szName, pRec->szVersion, pRec->cUsers));
-        pRec->cUsers--;
-        if (pRec->cUsers == 0)
-        {
-            for (uint32_t i = 0; i < pRec->cRegions; i++)
-            {
-                RTMemFree(pRec->aRegions[i].paidPages);
-                pRec->aRegions[i].paidPages = NULL;
-            }
-
-            /* Remove from the tree and free memory. */
-            PGMM pGMM;
-            GMM_GET_VALID_INSTANCE(pGMM, VERR_GMM_INSTANCE);
-            RTAvlGCPtrRemove(&pGMM->pGlobalSharedModuleTree, pRec->Core.Key);
-            pGMM->cShareableModules--;
-            RTMemFree(pRec);
-        }
-    }
-    RTMemFree(pRecVM);
-    return 0;
+    gmmR0ShModDeletePerVM(((GMMR0SHMODPERVMDTORARGS *)pvArgs)->pGMM,
+                          ((GMMR0SHMODPERVMDTORARGS *)pvArgs)->pGVM,
+                          (PGMMSHAREDMODULEPERVM)pNode,
+                          false /*fRemove*/);
+    return VINF_SUCCESS;
 }
 
 
@@ -4781,7 +4888,12 @@ static void gmmR0SharedModuleCleanup(PGMM pGMM, PGVM pGVM)
     gmmR0MutexAcquire(pGMM);
     GMM_CHECK_SANITY_UPON_ENTERING(pGMM);
 
-    RTAvlGCPtrDestroy(&pGVM->gmm.s.pSharedModuleTree, gmmR0CleanupSharedModule, pGVM);
+    GMMR0SHMODPERVMDTORARGS Args;
+    Args.pGVM = pGVM;
+    Args.pGMM = pGMM;
+    RTAvlGCPtrDestroy(&pGVM->gmm.s.pSharedModuleTree, gmmR0CleanupSharedModule, &Args);
+
+    Assert(pGVM->gmm.s.Stats.cShareableModules == 0);
     pGVM->gmm.s.Stats.cShareableModules = 0;
 
     gmmR0MutexRelease(pGMM);
@@ -4816,7 +4928,10 @@ GMMR0DECL(int) GMMR0ResetSharedModules(PVM pVM, VMCPUID idCpu)
     if (GMM_CHECK_SANITY_UPON_ENTERING(pGMM))
     {
         Log(("GMMR0ResetSharedModules\n"));
-        RTAvlGCPtrDestroy(&pGVM->gmm.s.pSharedModuleTree, gmmR0CleanupSharedModule, pGVM);
+        GMMR0SHMODPERVMDTORARGS Args;
+        Args.pGVM = pGVM;
+        Args.pGMM = pGMM;
+        RTAvlGCPtrDestroy(&pGVM->gmm.s.pSharedModuleTree, gmmR0CleanupSharedModule, &Args);
         pGVM->gmm.s.Stats.cShareableModules = 0;
 
         rc = VINF_SUCCESS;
@@ -4835,31 +4950,21 @@ GMMR0DECL(int) GMMR0ResetSharedModules(PVM pVM, VMCPUID idCpu)
 
 #ifdef VBOX_WITH_PAGE_SHARING
 
-typedef struct
-{
-    PGVM                    pGVM;
-    VMCPUID                 idCpu;
-    int                     rc;
-} GMMCHECKSHAREDMODULEINFO, *PGMMCHECKSHAREDMODULEINFO;
-
 /**
  * Tree enumeration callback for checking a shared module.
  */
 static DECLCALLBACK(int) gmmR0CheckSharedModule(PAVLGCPTRNODECORE pNode, void *pvUser)
 {
-    PGMMCHECKSHAREDMODULEINFO   pInfo = (PGMMCHECKSHAREDMODULEINFO)pvUser;
-    PGMMSHAREDMODULEPERVM       pLocalModule = (PGMMSHAREDMODULEPERVM)pNode;
-    PGMMSHAREDMODULE            pGlobalModule = pLocalModule->pGlobalModule;
+    GMMCHECKSHAREDMODULEINFO   *pArgs   = (GMMCHECKSHAREDMODULEINFO*)pvUser;
+    PGMMSHAREDMODULEPERVM       pRecVM  = (PGMMSHAREDMODULEPERVM)pNode;
+    PGMMSHAREDMODULE            pGblMod = pRecVM->pGlobalModule;
 
-    if (    !pLocalModule->fCollision
-        &&  pGlobalModule)
-    {
-        Log(("gmmR0CheckSharedModule: check %s %s base=%RGv size=%x collision=%d\n", pGlobalModule->szName, pGlobalModule->szVersion, pGlobalModule->Core.Key, pGlobalModule->cbModule, pLocalModule->fCollision));
-        pInfo->rc = PGMR0SharedModuleCheck(pInfo->pGVM->pVM, pInfo->pGVM, pInfo->idCpu, pGlobalModule,
-                                           pLocalModule->cRegions, pLocalModule->aRegions);
-        if (RT_FAILURE(pInfo->rc))
-            return VINF_CALLBACK_RETURN;
-    }
+    Log(("gmmR0CheckSharedModule: check %s %s base=%RGv size=%x\n",
+         pGblMod->szName, pGblMod->szVersion, pGblMod->Core.Key, pGblMod->cbModule));
+
+    int rc = PGMR0SharedModuleCheck(pArgs->pGVM->pVM, pArgs->pGVM, pArgs->idCpu, pGblMod, pRecVM->aRegionsGCPtrs);
+    if (RT_FAILURE(rc))
+        return rc;
     return VINF_SUCCESS;
 }
 
@@ -4913,7 +5018,7 @@ GMMR0DECL(int) GMMR0CheckSharedModulesEnd(PVM pVM)
 #endif /* DEBUG_sandervl */
 
 /**
- * Check all shared modules for the specified VM
+ * Check all shared modules for the specified VM.
  *
  * @returns VBox status code.
  * @param   pVM                 VM handle
@@ -4940,19 +5045,17 @@ GMMR0DECL(int) GMMR0CheckSharedModules(PVM pVM, PVMCPU pVCpu)
 # endif
     if (GMM_CHECK_SANITY_UPON_ENTERING(pGMM))
     {
-        GMMCHECKSHAREDMODULEINFO Info;
-
+        /*
+         * Walk the tree, checking each module.
+         */
         Log(("GMMR0CheckSharedModules\n"));
-        Info.pGVM     = pGVM;
-        Info.idCpu    = pVCpu->idCpu;
-        Info.rc       = VINF_SUCCESS;
 
-        RTAvlGCPtrDoWithAll(&pGVM->gmm.s.pSharedModuleTree, true /* fFromLeft */, gmmR0CheckSharedModule, &Info);
-
-        rc = Info.rc;
+        GMMCHECKSHAREDMODULEINFO Args;
+        Args.pGVM     = pGVM;
+        Args.idCpu    = pVCpu->idCpu;
+        rc = RTAvlGCPtrDoWithAll(&pGVM->gmm.s.pSharedModuleTree, true /* fFromLeft */, gmmR0CheckSharedModule, &Args);
 
         Log(("GMMR0CheckSharedModules done!\n"));
-
         GMM_CHECK_SANITY_UPON_LEAVING(pGMM);
     }
     else
@@ -4970,27 +5073,19 @@ GMMR0DECL(int) GMMR0CheckSharedModules(PVM pVM, PVMCPU pVCpu)
 
 #if defined(VBOX_STRICT) && HC_ARCH_BITS == 64
 
-typedef struct
-{
-    PGVM                    pGVM;
-    PGMM                    pGMM;
-    uint8_t                *pSourcePage;
-    bool                    fFoundDuplicate;
-} GMMFINDDUPPAGEINFO, *PGMMFINDDUPPAGEINFO;
-
 /**
  * RTAvlU32DoWithAll callback.
  *
  * @returns 0
- * @param   pNode   The node to search.
- * @param   pvInfo  Pointer to the input parameters
+ * @param   pNode       The node to search.
+ * @param   pvUser      Pointer to the input argument packet.
  */
-static DECLCALLBACK(int) gmmR0FindDupPageInChunk(PAVLU32NODECORE pNode, void *pvInfo)
+static DECLCALLBACK(int) gmmR0FindDupPageInChunk(PAVLU32NODECORE pNode, void *pvUser)
 {
     PGMMCHUNK           pChunk = (PGMMCHUNK)pNode;
-    PGMMFINDDUPPAGEINFO pInfo  = (PGMMFINDDUPPAGEINFO)pvInfo;
-    PGVM                pGVM   = pInfo->pGVM;
-    PGMM                pGMM   = pInfo->pGMM;
+    GMMFINDDUPPAGEINFO *pArgs  = (GMMFINDDUPPAGEINFO *)pvUser;
+    PGVM                pGVM   = pArgs->pGVM;
+    PGMM                pGMM   = pArgs->pGMM;
     uint8_t            *pbChunk;
 
     /* Only take chunks not mapped into this VM process; not entirely correct. */
@@ -5009,9 +5104,9 @@ static DECLCALLBACK(int) gmmR0FindDupPageInChunk(PAVLU32NODECORE pNode, void *pv
                 {
                     uint8_t *pbDestPage = pbChunk + (iPage  << PAGE_SHIFT);
 
-                    if (!memcmp(pInfo->pSourcePage, pbDestPage, PAGE_SIZE))
+                    if (!memcmp(pArgs->pSourcePage, pbDestPage, PAGE_SIZE))
                     {
-                        pInfo->fFoundDuplicate = true;
+                        pArgs->fFoundDuplicate = true;
                         break;
                     }
                 }
@@ -5019,7 +5114,7 @@ static DECLCALLBACK(int) gmmR0FindDupPageInChunk(PAVLU32NODECORE pNode, void *pv
             gmmR0UnmapChunk(pGMM, pGVM, pChunk, false /*fRelaxedSem*/);
         }
     }
-    return pInfo->fFoundDuplicate; /* (stops search if true) */
+    return pArgs->fFoundDuplicate; /* (stops search if true) */
 }
 
 
@@ -5063,14 +5158,14 @@ GMMR0DECL(int) GMMR0FindDuplicatePageReq(PVM pVM, PGMMFINDDUPLICATEPAGEREQ pReq)
                 PGMMPAGE pPage = gmmR0GetPage(pGMM, pReq->idPage);
                 if (pPage)
                 {
-                    GMMFINDDUPPAGEINFO Info;
-                    Info.pGVM            = pGVM;
-                    Info.pGMM            = pGMM;
-                    Info.pSourcePage     = pbSourcePage;
-                    Info.fFoundDuplicate = false;
-                    RTAvlU32DoWithAll(&pGMM->pChunks, true /* fFromLeft */, gmmR0FindDupPageInChunk, &Info);
+                    GMMFINDDUPPAGEINFO Args;
+                    Args.pGVM            = pGVM;
+                    Args.pGMM            = pGMM;
+                    Args.pSourcePage     = pbSourcePage;
+                    Args.fFoundDuplicate = false;
+                    RTAvlU32DoWithAll(&pGMM->pChunks, true /* fFromLeft */, gmmR0FindDupPageInChunk, &Args);
 
-                    pReq->fDuplicate = Info.fFoundDuplicate;
+                    pReq->fDuplicate = Args.fFoundDuplicate;
                 }
                 else
                 {

@@ -1666,6 +1666,8 @@ static int pgmR3InitStats(PVM pVM)
     STAM_REL_REG(pVM, &pPGM->StatLargePageRefused,               STAMTYPE_COUNTER, "/PGM/LargePage/Refused",             STAMUNIT_OCCURENCES, "The number of times we couldn't use a large page.");
     STAM_REL_REG(pVM, &pPGM->StatLargePageRecheck,               STAMTYPE_COUNTER, "/PGM/LargePage/Recheck",             STAMUNIT_OCCURENCES, "The number of times we've rechecked a disabled large page.");
 
+    STAM_REL_REG(pVM, &pPGM->StatShModCheck,                     STAMTYPE_PROFILE, "/PGM/ShMod/Check",                   STAMUNIT_TICKS_PER_CALL, "Profiles the shared module checking.");
+
     /* Live save */
     STAM_REL_REG_USED(pVM, &pPGM->LiveSave.fActive,              STAMTYPE_U8,      "/PGM/LiveSave/fActive",              STAMUNIT_COUNT,     "Active or not.");
     STAM_REL_REG_USED(pVM, &pPGM->LiveSave.cIgnoredPages,        STAMTYPE_U32,     "/PGM/LiveSave/cIgnoredPages",        STAMUNIT_COUNT,     "The number of ignored pages in the RAM ranges (i.e. MMIO, MMIO2 and ROM).");
