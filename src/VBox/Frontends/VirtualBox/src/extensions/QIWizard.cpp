@@ -30,7 +30,9 @@
 /* System includes */
 #include <math.h>
 
-QIWizard::QIWizard(QWidget *pParent) : QIWithRetranslateUI<QWizard>(pParent)
+QIWizard::QIWizard(QWidget *pParent)
+    : QIWithRetranslateUI<QWizard>(pParent)
+    , m_iMinimumContentWidth(0)
 {
 #ifdef Q_WS_MAC
     /* I'm really not sure why there shouldn't be any default button on Mac OS
@@ -52,6 +54,7 @@ void QIWizard::resizeToGoldenRatio()
     int iGoldRatioWidth = (int)sqrt(1.61 * width() * height());
     int iNewLabelWidth = iGoldRatioWidth - iLabelDelta;
     resizeAccordingLabelWidth(iNewLabelWidth);
+    m_iMinimumContentWidth = iNewLabelWidth;
 }
 
 void QIWizard::assignWatermark(const QString &strWatermark)
@@ -181,14 +184,6 @@ void QIWizardPage::setMinimumSizeHint(const QSize &minimumSizeHint)
     m_MinimumSizeHint = minimumSizeHint;
 }
 
-void QIWizardPage::setSummaryFieldLinesNumber(QTextEdit *pSummaryField, int iNumber)
-{
-    /* Set the minimum height for the <pSummaryField> to <iNumber> lines of text including text margins */
-    int lineHeight = pSummaryField->fontMetrics().height();
-    int textMargin = 4; /* QTextDocument::documentMargin() returns '4' but available only since Qt 4.5 */
-    pSummaryField->setFixedHeight(lineHeight * iNumber + textMargin * 2);
-}
-
 QString QIWizardPage::standardHelpText() const
 {
     return tr("Use the <b>%1</b> button to go to the next page of the wizard and the "
@@ -214,5 +209,10 @@ void QIWizardPage::endProcessing()
 {
     if (isFinalPage())
         wizard()->button(QWizard::FinishButton)->setEnabled(true);
+}
+
+QIWizard* QIWizardPage::wizard() const
+{
+    return qobject_cast<QIWizard*>(QWizardPage::wizard());
 }
 

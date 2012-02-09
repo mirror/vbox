@@ -36,6 +36,8 @@ public:
 
     QIWizard(QWidget *pParent);
 
+    int minimumContentWidth() const { return m_iMinimumContentWidth; }
+
 protected:
 
     void resizeToGoldenRatio();
@@ -47,6 +49,8 @@ protected:
 private:
 
     void resizeAccordingLabelWidth(int iLabelWidth);
+
+    int m_iMinimumContentWidth;
 };
 
 class QIWizardPage : public QIWithRetranslateUI<QWizardPage>
@@ -64,12 +68,12 @@ public:
 
 protected:
 
-    static void setSummaryFieldLinesNumber(QTextEdit *pSummaryField, int iNumber);
-
     QString standardHelpText() const;
 
     void startProcessing();
     void endProcessing();
+
+    QIWizard* wizard() const;
 
 private:
 

@@ -241,11 +241,6 @@ UIFirstRunWzdPage3::UIFirstRunWzdPage3()
 
     /* Register 'machine' field */
     registerField("machine", this, "machine");
-
-    /* Disable the background painting of the summary widget */
-    m_pSummaryText->viewport()->setAutoFillBackground(false);
-    /* Make the summary field read-only */
-    m_pSummaryText->setReadOnly(true);
 }
 
 void UIFirstRunWzdPage3::init()
@@ -285,6 +280,7 @@ void UIFirstRunWzdPage3::retranslateUi()
     .arg(tr("Source", "summary"), source)
     ;
 
+    m_pSummaryText->setMinimumTextWidth(wizard()->minimumContentWidth());
     m_pSummaryText->setText("<table cellspacing=0 cellpadding=0>" + summary + "</table>");
 }
 
@@ -293,8 +289,6 @@ void UIFirstRunWzdPage3::initializePage()
     /* Fill and translate */
     retranslateUi();
 
-    /* Update summary geometry: */
-    m_pSummaryText->updateGeometry();
     /* Summary should initially have focus */
     m_pSummaryText->setFocus();
 }
