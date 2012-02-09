@@ -46,7 +46,7 @@ public:
         int rc;
 # ifdef VBOX_WITH_DBUS
         DBusConnection *conn;
-        DBusMessage* msg;
+        DBusMessage* msg = NULL;
         conn = dbus_bus_get (DBUS_BUS_SESSON, NULL);
         if (conn == NULL)
         {
@@ -64,8 +64,8 @@ public:
                 LogRel(("Could not create D-BUS message!\n"));
                 rc = VERR_INVALID_HANDLE;
             }
-        else
-        rc = VINF_SUCCESS;
+            else
+                rc = VINF_SUCCESS;
         }
         if (RT_SUCCESS(rc))
         {
@@ -115,7 +115,7 @@ public:
                 dbus_message_unref(reply);
             }
             if (dbus_error_is_set(&err))
-            dbus_error_free(&err);
+                dbus_error_free(&err);
         }
         if (msg != NULL)
             dbus_message_unref(msg);
