@@ -75,6 +75,7 @@ DECLINLINE(uint32_t) sdbmN(const char *str, size_t cchMax, size_t *pcch)
     return hash;
 }
 
+
 /**
  * Incremental hashing.
  */
@@ -87,6 +88,20 @@ DECLINLINE(uint32_t) sdbmInc(const char *str, uint32_t hash)
         hash = c + (hash << 6) + (hash << 16) - hash;
 
     return hash;
+}
+
+/**
+ * Incremental hashing with length limitation.
+ */
+DECLINLINE(uint32_t) sdbmIncN(const char *psz, size_t cchMax, uint32_t uHash)
+{
+    uint8_t *pu8 = (uint8_t *)psz;
+    int      c;
+
+    while ((c = *pu8++) && cchMax-- > 0)
+        uHash = c + (uHash << 6) + (uHash << 16) - uHash;
+
+    return uHash;
 }
 
 
