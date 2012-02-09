@@ -51,7 +51,8 @@ void vboxClipboardDestroy (void)
   * @param   pClient Structure containing context information about the guest system
   * @returns RT status code
   */
-int vboxClipboardConnect (VBOXCLIPBOARDCLIENTDATA * /* pClient */)
+int vboxClipboardConnect (VBOXCLIPBOARDCLIENTDATA * /* pClient */,
+                          bool /* fHeadless */)
 {
     LogFlowFunc(("called, returning VINF_SUCCESS.\n"));
     return VINF_SUCCESS;
