@@ -2113,6 +2113,9 @@ HRESULT Guest::getProcessOutputInternal(ULONG aPID, ULONG aFlags, ULONG aTimeout
             if (aFlags & ProcessOutputFlag_StdErr)
                 uHandleID = OUTPUT_HANDLE_ID_STDERR;
 
+            /** @todo Use a buffer for next iteration if returned data is too big
+             *        for current read.
+             *        aSize is bogus -- will be ignored atm! */
             VBOXGUESTCTRL_CALLBACK callback;
             vrc = callbackInit(&callback, VBOXGUESTCTRLCALLBACKTYPE_EXEC_OUTPUT, pProgress);
             if (RT_SUCCESS(vrc))
@@ -2181,18 +2184,26 @@ HRESULT Guest::getProcessOutputInternal(ULONG aPID, ULONG aFlags, ULONG aTimeout
 
                         if (pExecOut->cbData)
                         {
+                            bool fResize;
+
                             /* Do we need to resize the array? */
                             if (pExecOut->cbData > aSize)
-                                outputData.resize(pExecOut->cbData);
+                            {
+                                fResize = outputData.resize(pExecOut->cbData);
+                                Assert(fResize);
+                            }
 
                             /* Fill output in supplied out buffer. */
+                            Assert(outputData.size() >= pExecOut->cbData);
                             memcpy(outputData.raw(), pExecOut->pvData, pExecOut->cbData);
-                            outputData.resize(pExecOut->cbData); /* Shrink to fit actual buffer size. */
+                            fResize = outputData.resize(pExecOut->cbData); /* Shrink to fit actual buffer size. */
+                            Assert(fResize);
                         }
                         else
                         {
                             /* No data within specified timeout available. */
-                            outputData.resize(0);
+                            bool fResize = outputData.resize(0);
+                            Assert(fResize);
                         }
 
                         /* Detach output buffer to output argument. */
