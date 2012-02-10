@@ -3247,6 +3247,51 @@ static bool iemRegIsAmdCpuIdFeaturePresent(PIEMCPU pIemCpu, uint32_t fEdx, uint3
 /** @}  */
 
 
+/** @name   FPU access and helpers.
+ *
+ * @{
+ */
+
+
+/**
+ * Hook for preparing to use the host FPU.
+ *
+ * This is necessary in ring-0 and raw-mode context.
+ *
+ * @param   pIemCpu             The IEM per CPU data.
+ */
+DECLINLINE(void) iemFpuPrepareUsage(PIEMCPU pIemCpu)
+{
+#ifdef IN_RING3
+    NOREF(pIemCpu);
+#else
+# error "Implement me"
+#endif
+}
+
+
+/**
+ * Pushes a FPU result onto the FPU stack after inspecting the resulting
+ * statuses.
+ *
+ * @param   pIemCpu             The IEM per CPU data.
+ * @param   pResult             The FPU operation result to push.
+ */
+static void iemFpuPushResult(PIEMCPU pIemCpu, PIEMFPURESULT pResult)
+{
+    PCPUMCTX pCtx = pIemCpu->CTX_SUFF(pCtx);
+
+    if (pResult->u16FSW & (1))
+    {
+        /** @todo continue here later... */
+    }
+
+}
+
+
+/** @}  */
+
+
 /** @name   Memory access.
  *
  * @{
@@ -4974,7 +5019,8 @@ static VBOXSTRICTRC iemMemMarkSelDescAccessed(PIEMCPU pIemCpu, uint16_t uSel)
 #define IEM_MC_LOCAL_CONST(a_Type, a_Name, a_Value)     a_Type const a_Name = (a_Value)
 #define IEM_MC_REF_LOCAL(a_pRefArg, a_Local)            (a_pRefArg) = &(a_Local)
 #define IEM_MC_ARG(a_Type, a_Name, a_iArg)              a_Type a_Name
-#define IEM_MC_ARG_CONST(a_Type, a_Name, a_Value, a_iArg)   a_Type const a_Name = (a_Value)
+#define IEM_MC_ARG_CONST(a_Type, a_Name, a_Value, a_iArg)       a_Type const a_Name = (a_Value)
+#define IEM_MC_ARG_LOCAL_REF(a_Type, a_Name, a_Local, a_iArg)   a_Type const a_Name = &(a_Local)
 #define IEM_MC_ARG_LOCAL_EFLAGS(a_pName, a_Name, a_iArg) \
     uint32_t a_Name; \
     uint32_t *a_pName = &a_Name
@@ -5370,6 +5416,24 @@ static VBOXSTRICTRC iemMemMarkSelDescAccessed(PIEMCPU pIemCpu, uint16_t uSel)
  * @param   a2              The third extra argument.
  */
 #define IEM_MC_DEFER_TO_CIMPL_3(a_pfnCImpl, a0, a1, a2) (a_pfnCImpl)(pIemCpu, pIemCpu->offOpcode, a0, a1, a2)
+
+/**
+ * Calls a FPU assembly implementation taking two visible arguments.
+ *
+ * This shall be used without any IEM_MC_BEGIN or IEM_END macro surrounding it.
+ *
+ * @param   a_pfnAImpl      Pointer to the assembly FPU routine.
+ * @param   a0              The first extra argument.
+ * @param   a1              The second extra argument.
+ */
+#define IEM_MC_CALL_FPU_AIMPL_2(a_pfnAImpl, a0, a1) \
+    do { \
+        iemFpuPrepareUsage(pIemCpu); \
+        a_pfnAImpl(&pIemCpu->CTX_SUFF(pCtx)->fpu, (a0), (a1)); \
+    } while (0)
+/** Pushes FPU result onto the stack. */
+#define IEM_MC_PUSH_FPU_RESULT(a_FpuData) iemFpuPushResult(pIemCpu, &a_FpuData)
+
 
 #define IEM_MC_IF_EFL_BIT_SET(a_fBit)                   if (pIemCpu->CTX_SUFF(pCtx)->eflags.u & (a_fBit)) {
 #define IEM_MC_IF_EFL_BIT_NOT_SET(a_fBit)               if (!(pIemCpu->CTX_SUFF(pCtx)->eflags.u & (a_fBit))) {

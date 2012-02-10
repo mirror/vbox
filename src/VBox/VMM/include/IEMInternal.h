@@ -69,6 +69,22 @@ typedef enum IEMMODEX
 AssertCompileSize(IEMMODEX, 4);
 
 
+/**
+ * A FPU result.
+ */
+typedef struct IEMFPURESULT
+{
+    /** The output value. */
+    RTFLOAT80U      r80Result;
+    /** The output status. */
+    uint16_t        u16FSW;
+} IEMFPURESULT;
+/** Pointer to a FPU result. */
+typedef IEMFPURESULT *PIEMFPURESULT;
+/** Pointer to a const FPU result. */
+typedef IEMFPURESULT const *PCIEMFPURESULT;
+
+
 #ifdef IEM_VERIFICATION_MODE
 
 /**
@@ -685,6 +701,14 @@ IEM_DECL_IMPL_TYPE(void, iemAImpl_bswap_u16,(uint32_t *pu32Dst)); /* Yes, 32-bit
 IEM_DECL_IMPL_TYPE(void, iemAImpl_bswap_u32,(uint32_t *pu32Dst));
 IEM_DECL_IMPL_TYPE(void, iemAImpl_bswap_u64,(uint64_t *pu64Dst));
 /** @}  */
+
+
+/** @name FPU operations taking a 32-bit float argument
+ * @{ */
+typedef IEM_DECL_IMPL_TYPE(void, FNIEMAIMPLFPUR32,(PCX86FXSTATE pFpuState, PIEMFPURESULT pFpuRes, RTFLOAT32U r32Val));
+typedef FNIEMAIMPLFPUR32  *PFNIEMAIMPLFPUR32;
+FNIEMAIMPLFPUR32 iemAImpl_fpu_r32_to_r80;
+/** @} */
 
 
 /** @name Function tables.
