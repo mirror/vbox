@@ -839,6 +839,100 @@ void TstRTStrPurgeEncoding(RTTEST hTest)
 
 
 /**
+ * Check string sanitising.
+ */
+void TstRTStrPurgeComplementSet(RTTEST hTest)
+{
+    RTTestSub(hTest, "RTStrPurgeComplementSet");
+    RTUNICP aCpSet[] = { '1', '2', '3', '4', '5', 'w', 'r', 'f', 't', 'e',
+                         '\0' };
+    struct
+    {
+        const char *pcszIn;
+        const char *pcszOut;
+        PCRTUNICP   pcCpSet;
+        char        chReplacement;
+        ssize_t     cExpected;
+    }
+    aTests[] =
+    {
+        { "1234werttrew4321", "1234werttrew4321", aCpSet, '_', 0 },
+        { "123654wert\xc2\xa2trew\xe2\x82\xac""4321",
+          "123_54wert__trew___4321", aCpSet, '_', 3 },
+        { "hjhj8766", "????????", aCpSet, '?', 8 },
+        { "123\xf0\xa4\xad\xa2""4", "123____4", aCpSet, '_', 1 },
+        { "\xff", "\xff", aCpSet, '_', -1 }
+    };
+    enum { MAX_IN_STRING = 256 };
+
+    for (unsigned i = 0; i < RT_ELEMENTS(aTests); ++i)
+    {
+        char szCopy[MAX_IN_STRING];
+        ssize_t cReplacements;
+        AssertRC(RTStrCopy(szCopy, RT_ELEMENTS(szCopy), aTests[i].pcszIn));
+        cReplacements = RTStrPurgeComplementSet(szCopy, aTests[i].pcCpSet,
+                                                aTests[i].chReplacement);
+        if (cReplacements != aTests[i].cExpected)
+            RTTestFailed(hTest, "#%u: expected %lld, actual %lld\n", i,
+                         (long long) aTests[i].cExpected,
+                         (long long) cReplacements);
+        if (strcmp(aTests[i].pcszOut, szCopy))
+            RTTestFailed(hTest, "#%u: expected %s, actual %s\n", i,
+                         aTests[i].pcszOut, szCopy);
+    }
+}
+
+
+/**
+ * Check string sanitising.
+ */
+void TstRTUtf16PurgeComplementSet(RTTEST hTest)
+{
+    RTTestSub(hTest, "RTUtf16PurgeComplementSet");
+    RTUNICP aCpSet[] = { '1', '2', '3', '4', '5', 'w', 'r', 'f', 't', 'e',
+                         '\0' };
+    struct
+    {
+        const char *pcszIn;
+        const char *pcszOut;
+        PCRTUNICP   pcCpSet;
+        char        chReplacement;
+        ssize_t     cExpected;
+    }
+    aTests[] =
+    {
+        { "1234werttrew4321", "1234werttrew4321", aCpSet, '_', 0 },
+        { "123654wert\xc2\xa2trew\xe2\x82\xac""4321",
+          "123_54wert_trew_4321", aCpSet, '_', 3 },
+        { "hjhj8766", "????????", aCpSet, '?', 8 },
+        { "123\xf0\xa4\xad\xa2""4", "123__4", aCpSet, '_', 1 }
+        /* No test for invalid encoding. */
+    };
+    enum { MAX_IN_STRING = 256 };
+
+    for (unsigned i = 0; i < RT_ELEMENTS(aTests); ++i)
+    {
+        RTUTF16 wszInCopy[MAX_IN_STRING],  *pwszInCopy  = wszInCopy;
+        RTUTF16 wszOutCopy[MAX_IN_STRING], *pwszOutCopy = wszOutCopy;
+        ssize_t cReplacements;
+        AssertRC(RTStrToUtf16Ex(aTests[i].pcszIn, RTSTR_MAX, &pwszInCopy,
+                                RT_ELEMENTS(wszInCopy), NULL));
+        AssertRC(RTStrToUtf16Ex(aTests[i].pcszOut, RTSTR_MAX, &pwszOutCopy,
+                                RT_ELEMENTS(wszOutCopy), NULL));
+        cReplacements = RTUtf16PurgeComplementSet(wszInCopy, aTests[i].pcCpSet,
+                                                  aTests[i].chReplacement);
+        if (cReplacements != aTests[i].cExpected)
+            RTTestFailed(hTest, "#%u: expected %lld, actual %lld\n", i,
+                         (long long) aTests[i].cExpected,
+                         (long long) cReplacements);
+        if (RTUtf16Cmp(wszInCopy, wszOutCopy))
+            RTTestFailed(hTest, "#%u: expected %ls, actual %ls\n", i,
+                         wszOutCopy, wszInCopy);
+    }
+}
+
+
+/**
  * Benchmark stuff.
  */
 void Benchmarks(RTTEST hTest)
@@ -1402,6 +1496,8 @@ int main()
     test3(hTest);
     TstRTStrXCmp(hTest);
     TstRTStrPurgeEncoding(hTest);
+    TstRTStrPurgeComplementSet(hTest);
+    TstRTUtf16PurgeComplementSet(hTest);
     testStrEnd(hTest);
     testStrStr(hTest);
     testUtf8Latin1(hTest);
