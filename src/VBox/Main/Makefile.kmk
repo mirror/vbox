@@ -285,6 +285,7 @@ VBoxSVC_SOURCES = \
 	src-all/DisplayUtils.cpp \
 	src-all/EventImpl.cpp \
 	src-all/Global.cpp \
+	src-all/HashedPw.cpp \
 	src-all/Logging.cpp \
 	src-all/PciDeviceAttachmentImpl.cpp \
 	src-all/ProgressImpl.cpp \
@@ -637,6 +638,7 @@ VBoxC_SOURCES = \
 	src-all/DisplayUtils.cpp \
 	src-all/EventImpl.cpp \
 	src-all/Global.cpp \
+	src-all/HashedPw.cpp \
 	src-all/Logging.cpp \
 	src-all/PciDeviceAttachmentImpl.cpp \
 	src-all/ProgressImpl.cpp \

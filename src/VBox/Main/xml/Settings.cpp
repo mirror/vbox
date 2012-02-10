@@ -51,7 +51,7 @@
  */
 
 /*
- * Copyright (C) 2007-2011 Oracle Corporation
+ * Copyright (C) 2007-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -76,6 +76,7 @@
 #include "SchemaDefs.h"
 
 #include "Logging.h"
+#include "HashedPw.h"
 
 using namespace com;
 using namespace settings;
@@ -3142,6 +3143,22 @@ void MachineConfigFile::readDVDAndFloppies_pre1_9(const xml::ElementNode &elmHar
 }
 
 /**
+ * Called for reading the <Teleporter> element under <Machine>.
+ */
+void MachineConfigFile::readTeleporter(const xml::ElementNode *pElmTeleporter,
+                                       MachineUserData *pUserData)
+{
+    pElmTeleporter->getAttributeValue("enabled", pUserData->fTeleporterEnabled);
+    pElmTeleporter->getAttributeValue("port", pUserData->uTeleporterPort);
+    pElmTeleporter->getAttributeValue("address", pUserData->strTeleporterAddress);
+    pElmTeleporter->getAttributeValue("password", pUserData->strTeleporterPassword);
+
+    if (   pUserData->strTeleporterPassword.isNotEmpty()
+        && !VBoxIsPasswordHashed(&pUserData->strTeleporterPassword))
+        VBoxHashPassword(&pUserData->strTeleporterPassword);
+}
+
+/**
  * Called initially for the <Snapshot> element under <Machine>, if present,
  * to store the snapshot's data into the given Snapshot structure (which is
  * then the one in the Machine struct). This might then recurse if
@@ -3340,12 +3357,7 @@ void MachineConfigFile::readMachine(const xml::ElementNode &elmMachine)
             else if (pelmMachineChild->nameEquals("Description"))
                 machineUserData.strDescription = pelmMachineChild->getValue();
             else if (pelmMachineChild->nameEquals("Teleporter"))
-            {
-                pelmMachineChild->getAttributeValue("enabled", machineUserData.fTeleporterEnabled);
-                pelmMachineChild->getAttributeValue("port", machineUserData.uTeleporterPort);
-                pelmMachineChild->getAttributeValue("address", machineUserData.strTeleporterAddress);
-                pelmMachineChild->getAttributeValue("password", machineUserData.strTeleporterPassword);
-            }
+                readTeleporter(pelmMachineChild, &machineUserData);
             else if (pelmMachineChild->nameEquals("FaultTolerance"))
             {
                 Utf8Str strFaultToleranceSate;
