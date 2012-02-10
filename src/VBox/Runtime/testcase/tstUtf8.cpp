@@ -895,18 +895,20 @@ void TstRTUtf16PurgeComplementSet(RTTEST hTest)
     {
         const char *pcszIn;
         const char *pcszOut;
+        size_t      cwc;  /* Zero means the strings are Utf-8. */
         PCRTUNICP   pcCpSet;
         char        chReplacement;
         ssize_t     cExpected;
     }
     aTests[] =
     {
-        { "1234werttrew4321", "1234werttrew4321", aCpSet, '_', 0 },
+        { "1234werttrew4321", "1234werttrew4321", 0, aCpSet, '_', 0 },
         { "123654wert\xc2\xa2trew\xe2\x82\xac""4321",
-          "123_54wert_trew_4321", aCpSet, '_', 3 },
-        { "hjhj8766", "????????", aCpSet, '?', 8 },
-        { "123\xf0\xa4\xad\xa2""4", "123__4", aCpSet, '_', 1 }
-        /* No test for invalid encoding. */
+          "123_54wert_trew_4321", 0, aCpSet, '_', 3 },
+        { "hjhj8766", "????????", 0, aCpSet, '?', 8 },
+        { "123\xf0\xa4\xad\xa2""4", "123__4", 0, aCpSet, '_', 1 },
+        { "\xff\xff\0", "\xff\xff\0", 2, aCpSet, '_', -1 },
+        { "\xff\xff\0", "\xff\xff\0", 2, aCpSet, '_', -1 }
     };
     enum { MAX_IN_STRING = 256 };
 
@@ -915,10 +917,19 @@ void TstRTUtf16PurgeComplementSet(RTTEST hTest)
         RTUTF16 wszInCopy[MAX_IN_STRING],  *pwszInCopy  = wszInCopy;
         RTUTF16 wszOutCopy[MAX_IN_STRING], *pwszOutCopy = wszOutCopy;
         ssize_t cReplacements;
-        AssertRC(RTStrToUtf16Ex(aTests[i].pcszIn, RTSTR_MAX, &pwszInCopy,
-                                RT_ELEMENTS(wszInCopy), NULL));
-        AssertRC(RTStrToUtf16Ex(aTests[i].pcszOut, RTSTR_MAX, &pwszOutCopy,
-                                RT_ELEMENTS(wszOutCopy), NULL));
+        if (!aTests[i].cwc)
+        {
+            AssertRC(RTStrToUtf16Ex(aTests[i].pcszIn, RTSTR_MAX, &pwszInCopy,
+                                    RT_ELEMENTS(wszInCopy), NULL));
+            AssertRC(RTStrToUtf16Ex(aTests[i].pcszOut, RTSTR_MAX, &pwszOutCopy,
+                                    RT_ELEMENTS(wszOutCopy), NULL));
+        }
+        else
+        {
+            Assert(aTests[i].cwc <= RT_ELEMENTS(wszInCopy));
+            memcpy(wszInCopy, aTests[i].pcszIn, aTests[i].cwc * 2);
+            memcpy(wszOutCopy, aTests[i].pcszOut, aTests[i].cwc * 2);
+        }
         cReplacements = RTUtf16PurgeComplementSet(wszInCopy, aTests[i].pcCpSet,
                                                   aTests[i].chReplacement);
         if (cReplacements != aTests[i].cExpected)
