@@ -705,6 +705,21 @@ RTDECL(bool) RTStrIsValidEncoding(const char *psz);
 RTDECL(size_t) RTStrPurgeEncoding(char *psz);
 
 /**
+ * Sanitise a (valid) UTF-8 string by replacing all characters outside a white
+ * list in-place by an ASCII replacement character.  Multi-byte characters will
+ * be replaced byte by byte.
+ *
+ * @returns The number of code points replaced, or a negative value if the
+ *          string is not correctly encoded.  In this case the string will not
+ *          be changed.
+ * @param   psz            The string to sanitise.
+ * @param   puszValidSet   A zero-terminated array of the Unicode code points
+ *                         in the white list.
+ * @param   chReplacement  The ASCII replacement character.
+ */
+RTDECL(ssize_t) RTStrPurgeComplementSet(char *psz, PCRTUNICP puszValidSet, char chReplacement);
+
+/**
  * Gets the number of code points the string is made up of, excluding
  * the terminator.
  *
@@ -3302,6 +3317,21 @@ RTDECL(PRTUTF16) RTUtf16ToLower(PRTUTF16 pwsz);
  * @param   pwsz        The string to fold.
  */
 RTDECL(PRTUTF16) RTUtf16ToUpper(PRTUTF16 pwsz);
+
+/**
+ * Sanitise a (valid) UTF-16 string by replacing all characters outside a white
+ * list in-place by an ASCII replacement character.  Multi-byte characters will
+ * be replaced byte by byte.
+ *
+ * @returns The number of code points replaced, or a negative value if the
+ *          string is not correctly encoded.  In this case the string will not
+ *          be changed.
+ * @param   pwsz           The string to sanitise.
+ * @param   puszValidSet   A zero-terminated array of the Unicode code points
+ *                         in the white list.
+ * @param   chReplacement  The ASCII replacement character.
+ */
+RTDECL(ssize_t) RTUtf16PurgeComplementSet(PRTUTF16 pwsz, PCRTUNICP puszValidSet, char chReplacement);
 
 /**
  * Translate a UTF-16 string into a UTF-8 allocating the result buffer (default

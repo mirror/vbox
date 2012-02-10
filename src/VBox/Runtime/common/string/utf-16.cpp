@@ -249,6 +249,36 @@ RTDECL(PRTUTF16) RTUtf16ToUpper(PRTUTF16 pwsz)
 RT_EXPORT_SYMBOL(RTUtf16ToUpper);
 
 
+ssize_t RTUtf16PurgeComplementSet(PRTUTF16 pwsz, PCRTUNICP puszValidSet, char chReplacement)
+{
+    size_t cReplacements = 0;
+    AssertReturn(chReplacement && (unsigned)chReplacement < 128, -1);
+    /* Validate the encoding. */
+    if (RT_FAILURE(RTUtf16CalcUtf8LenEx(pwsz, RTSTR_MAX, NULL)))
+        return -1;
+    for (;;)
+    {
+        RTUNICP Cp;
+        PCRTUNICP pCp;
+        PRTUTF16 pwszOld = pwsz;
+        RTUtf16GetCpEx((PCRTUTF16 *)&pwsz, &Cp);
+        if (!Cp)
+            break;
+        for (pCp = puszValidSet; ; ++pCp)
+            if (!*pCp || *pCp == Cp)
+                break;
+        if (!*pCp)
+        {
+            for (; pwszOld != pwsz; ++pwszOld)
+                *pwszOld = chReplacement;
+            ++cReplacements;
+        }
+    }
+    return cReplacements;
+}
+RT_EXPORT_SYMBOL(RTUtf16PurgeComplementSet);
+
+
 /**
  * Validate the UTF-16 encoding and calculates the length of an UTF-8 encoding.
  *

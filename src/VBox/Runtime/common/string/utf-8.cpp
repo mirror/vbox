@@ -351,6 +351,35 @@ RTDECL(size_t) RTStrPurgeEncoding(char *psz)
 RT_EXPORT_SYMBOL(RTStrPurgeEncoding);
 
 
+ssize_t RTStrPurgeComplementSet(char *psz, PCRTUNICP puszValidSet, char chReplacement)
+{
+    size_t cReplacements = 0;
+    AssertReturn(chReplacement && (unsigned)chReplacement < 128, -1);
+    if (RT_FAILURE(RTStrValidateEncoding(psz)))
+        return -1;
+    for (;;)
+    {
+        RTUNICP Cp;
+        PCRTUNICP pCp;
+        char *pszOld = psz;
+        RTStrGetCpEx((const char **)&psz, &Cp);
+        if (!Cp)
+            break;
+        for (pCp = puszValidSet; ; ++pCp)
+            if (!*pCp || *pCp == Cp)
+                break;
+        if (!*pCp)
+        {
+            for (; pszOld != psz; ++pszOld)
+                *pszOld = chReplacement;
+            ++cReplacements;
+        }
+    }
+    return cReplacements;
+}
+RT_EXPORT_SYMBOL(RTStrPurgeComplementSet);
+
+
 RTDECL(int) RTStrToUni(const char *pszString, PRTUNICP *ppaCps)
 {
     /*
