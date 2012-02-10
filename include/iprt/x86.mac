@@ -473,6 +473,22 @@
 %define X86_FSW_TOP_GET(a_uFsw) (((a_uFsw) >> X86_FSW_TOP_SHIFT) & X86_FSW_TOP_SMASK)
 %define X86_FSW_C3          RT_BIT(14)
 %define X86_FSW_B           RT_BIT(15)
+%define X86_FCW_IM          RT_BIT(0)
+%define X86_FCW_DM          RT_BIT(1)
+%define X86_FCW_ZM          RT_BIT(2)
+%define X86_FCW_OM          RT_BIT(3)
+%define X86_FCW_UM          RT_BIT(4)
+%define X86_FCW_PM          RT_BIT(5)
+%define X86_FCW_PC_MASK     0x0300
+%define X86_FCW_PC_24       0x0000
+%define X86_FCW_PC_RSVD     0x0100
+%define X86_FCW_PC_53       0x0200
+%define X86_FCW_PC_64       0x0300
+%define X86_FCW_RC_MASK     0x0c00
+%define X86_FCW_RC_NEAREST  0x0000
+%define X86_FCW_RC_DOWN     0x0400
+%define X86_FCW_RC_UP       0x0800
+%define X86_FCW_RC_ZERO     0x0c00
 %if HC_ARCH_BITS == 64
 %else
 %endif

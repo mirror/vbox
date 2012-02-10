@@ -98,6 +98,81 @@ BEGINCODE
 
 
 ;;
+; Macro for recording a FPU instruction trapping on a following fwait.
+;
+; Uses stack.
+;
+; @param        1       The status flags that are expected to be set afterwards.
+; @param        2       C0..C3 to mask out in case undefined.
+; @param        3+      The instruction which should trap.
+; @uses         eax
+;
+%macro FpuShouldTrap 3+
+        fnclex
+        %3
+%%trap:
+        fwait
+%%trap_end:
+        mov     eax, __LINE__
+        jmp     .return
+BEGINDATA
+%%trapinfo: istruc TRAPINFO
+        at TRAPINFO.uTrapPC,    RTCCPTR_DEF     %%trap
+        at TRAPINFO.uResumePC,  RTCCPTR_DEF     %%resume
+        at TRAPINFO.u8TrapNo,   db              X86_XCPT_MF
+        at TRAPINFO.cbInstr,    db              (%%trap_end - %%trap)
+iend
+BEGINCODE
+%%resume:
+        FpuCheckFSW ((%1) | X86_FSW_B | X86_FSW_ES), %2
+        fnclex
+%endmacro
+
+;;
+; Macro for recording a FPU instruction trapping on a following fwait.
+;
+; Uses stack.
+;
+; @param        1       The status flags that are expected to be set afterwards.
+; @param        2       C0..C3 to mask out in case undefined.
+; @uses         eax
+;
+%macro FpuCheckFSW 2
+%%resume:
+        fnstsw  ax
+        and     eax, ~X86_FSW_TOP_MASK & ~(%2)
+        cmp     eax, (%1)
+        je      %%ok
+        int3
+        lea     eax, [eax + __LINE__ * 100000]
+        jmp     .return
+%%ok:
+        fnstsw  ax
+%endmacro
+
+
+;;
+; Checks that ST0 has a certain value
+;
+; @uses tword at [xSP]
+;
+%macro CheckSt0Value 3
+        fstp    tword [xSP]
+        fld     tword [xSP]
+        cmp     dword [xSP], %1
+        je      %%ok1
+%%bad:
+        mov     eax, __LINE__
+        jmp     .return
+%%ok1:
+        cmp     dword [xSP + 4], %2
+        jne     %%bad
+        cmp     word  [xSP + 8], %3
+        jne     %%bad
+%endmacro
+
+
+;;
 ; Function prologue saving all registers except EAX.
 ;
 %macro SAVE_ALL_PROLOGUE 0
@@ -1337,45 +1412,105 @@ ENDPROC     x861_Test5
 ;;
 ; Tests some floating point exceptions and such.
 ;
+;
+;
 BEGINPROC   x861_Test6
         SAVE_ALL_PROLOGUE
-        sub     xSP, 1024
+        sub     xSP, 2048
 
-        ; stack overflow
+        ; Load some pointers.
+        lea     xSI, REF(.r32V1)
+        mov     xDI, REF_GLOBAL(g_pbEfExecPage)
+        add     xDI, PAGE_SIZE          ; invalid page.
+
+        ;
+        ; Check denormal numbers.
+        ; Turns out the number is loaded onto the stack even if an exception is triggered.
+        ;
         fninit
-        ;mov     dword [xSP], 037fh
-        mov     dword [xSP], 0300h
+        mov     dword [xSP], X86_FCW_PC_64 | X86_FCW_RC_NEAREST
         fldcw   [xSP]
-        fld dword REF(.r32V1)
-        fld dword REF(.r32V1)
-        fld dword REF(.r32V1)
-        fld dword REF(.r32V1)
-        fld dword REF(.r32V1)
-        fld dword REF(.r32V1)
-        fld dword REF(.r32V1)
-        fld dword REF(.r32V1)
+        FpuShouldTrap  X86_FSW_DE, 0, fld dword REF(.r32D0)
+        CheckSt0Value 0x00000000, 0x80000000, 0x3f7f
+
+        mov     dword [xSP], X86_FCW_PC_64 | X86_FCW_RC_NEAREST | X86_FCW_DM
+        fldcw   [xSP]
+        fld     dword REF(.r32D0)
+        fwait
+        FpuCheckFSW X86_FSW_DE, 0
+        CheckSt0Value 0x00000000, 0x80000000, 0x3f7f
+
+        ;
+        ; stack overflow
+        ;
+        fninit
+        mov     dword [xSP], X86_FCW_PC_64 | X86_FCW_RC_NEAREST
+        fldcw   [xSP]
+        fld     qword REF(.r64V1)
+        fld     dword [xSI]
+        fld     dword [xSI]
+        fld     dword [xSI]
+        fld     dword [xSI]
+        fld     dword [xSI]
+        fld     dword [xSI]
+        fld     tword REF(.r80V1)
         fwait
 
-        fld dword REF(.r32V1)
-        ShouldTrap X86_XCPT_MF, fwait
-        fnstenv [xSP]
-        and     word [xSP + 4], ~07fh
-        fldenv  [xSP]
+        FpuShouldTrap  X86_FSW_IE | X86_FSW_SF | X86_FSW_C1, X86_FSW_C0 | X86_FSW_C2 | X86_FSW_C3, \
+                fld     dword [xSI]
+        CheckSt0Value 0x00000000, 0x80000000, 0x4002
 
-        fld dword REF(.r32V1)
-        ShouldTrap X86_XCPT_MF, fwait
+        FpuShouldTrap  X86_FSW_IE | X86_FSW_SF | X86_FSW_C1, X86_FSW_C0 | X86_FSW_C2 | X86_FSW_C3, \
+                fld     dword [xSI]
+        CheckSt0Value 0x00000000, 0x80000000, 0x4002
+
+        ; stack overflow vs #PF.
+        ShouldTrap X86_XCPT_PF, fld     dword [xDI]
+        fwait
+
+        ; stack overflow vs denormal number
+        FpuShouldTrap  X86_FSW_IE | X86_FSW_SF | X86_FSW_C1, X86_FSW_C0 | X86_FSW_C2 | X86_FSW_C3, \
+                fld     dword [xSI]
+        CheckSt0Value 0x00000000, 0x80000000, 0x4002
+
+        ;
+        ; Mask the overflow exception. We should get QNaN now regardless of
+        ; what we try to push (provided the memory is valid).
+        ;
+        mov     dword [xSP], X86_FCW_PC_64 | X86_FCW_RC_NEAREST | X86_FCW_IM
+        fldcw   [xSP]
+
+        fld     dword [xSI]
+        FpuCheckFSW X86_FSW_IE | X86_FSW_SF | X86_FSW_C1, X86_FSW_C0 | X86_FSW_C2 | X86_FSW_C3
+        fnclex
+        CheckSt0Value 0x00000000, 0xc0000000, 0xffff
+
+        fld     qword REF(.r64V1)
+        FpuCheckFSW X86_FSW_IE | X86_FSW_SF | X86_FSW_C1, X86_FSW_C0 | X86_FSW_C2 | X86_FSW_C3
+        fnclex
+        CheckSt0Value 0x00000000, 0xc0000000, 0xffff
+
+        ; This is includes denormal values.
+        fld     dword REF(.r32D0)
+        fwait
+        FpuCheckFSW X86_FSW_IE | X86_FSW_SF | X86_FSW_C1, X86_FSW_C0 | X86_FSW_C2 | X86_FSW_C3
+        CheckSt0Value 0x00000000, 0xc0000000, 0xffff
+        fnclex
 
 
 .success:
         xor     eax, eax
 .return:
-        add     xSP, 1024
+        add     xSP, 2048
         SAVE_ALL_EPILOGUE
         ret
 
 .r32V1: dd 3.2
 .r64V1: dq 6.4
 .r80V1: dt 8.0
+
+; Denormal numbers.
+.r32D0: dd 0200000h
 
 ENDPROC     x861_Test6
 

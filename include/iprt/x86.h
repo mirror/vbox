@@ -2102,6 +2102,43 @@ typedef const X86FXSTATE *PCX86FXSTATE;
 /** @} */
 
 
+/** @name FPU control word flags.
+ * @{ */
+/** Exception Mask: Invalid operation.  */
+#define X86_FCW_IM          RT_BIT(0)
+/** Exception Mask: Denormalized operand.  */
+#define X86_FCW_DM          RT_BIT(1)
+/** Exception Mask: Zero divide.  */
+#define X86_FCW_ZM          RT_BIT(2)
+/** Exception Mask: Overflow.  */
+#define X86_FCW_OM          RT_BIT(3)
+/** Exception Mask: Underflow.  */
+#define X86_FCW_UM          RT_BIT(4)
+/** Exception Mask: Precision.  */
+#define X86_FCW_PM          RT_BIT(5)
+/** Precision control mask. */
+#define X86_FCW_PC_MASK     UINT16_C(0x0300)
+/** Precision control: 24-bit. */
+#define X86_FCW_PC_24       UINT16_C(0x0000)
+/** Precision control: Reserved. */
+#define X86_FCW_PC_RSVD     UINT16_C(0x0100)
+/** Precision control: 53-bit. */
+#define X86_FCW_PC_53       UINT16_C(0x0200)
+/** Precision control: 64-bit. */
+#define X86_FCW_PC_64       UINT16_C(0x0300)
+/** Rounding control mask. */
+#define X86_FCW_RC_MASK     UINT16_C(0x0c00)
+/** Rounding control: To nearest. */
+#define X86_FCW_RC_NEAREST  UINT16_C(0x0000)
+/** Rounding control: Down. */
+#define X86_FCW_RC_DOWN     UINT16_C(0x0400)
+/** Rounding control: Up. */
+#define X86_FCW_RC_UP       UINT16_C(0x0800)
+/** Rounding control: Towards zero. */
+#define X86_FCW_RC_ZERO     UINT16_C(0x0c00)
+/** @} */
+
+
 /** @name Selector Descriptor
  * @{
  */
