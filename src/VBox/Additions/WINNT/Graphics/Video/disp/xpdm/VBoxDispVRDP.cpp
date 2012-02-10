@@ -46,7 +46,7 @@ typedef struct _VRDPBRUSH
    } u;
 } VRDPBRUSH;
 
-#if 0
+#if 1
 #define dumpPCO(a, b) do {} while (0)
 #else
 static void dumpPCO(RECTL *prclTrg, CLIPOBJ *pco)
