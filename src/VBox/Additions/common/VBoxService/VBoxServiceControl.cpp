@@ -1014,10 +1014,12 @@ VBOXSERVICE g_Control =
     "              [--control-procs-mem-std[in|out|err] <KB>]"
     ,
     /* pszOptions. */
+#ifdef DEBUG
     "    --control-dump-stderr   Dumps all guest proccesses stderr data to the\n"
     "                            temporary directory.\n"
     "    --control-dump-stdout   Dumps all guest proccesses stdout data to the\n"
     "                            temporary directory.\n"
+#endif
     "    --control-interval      Specifies the interval at which to check for\n"
     "                            new control commands. The default is 1000 ms.\n"
     "    --control-procs-max-kept\n"
