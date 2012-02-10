@@ -351,7 +351,7 @@ RTDECL(size_t) RTStrPurgeEncoding(char *psz)
 RT_EXPORT_SYMBOL(RTStrPurgeEncoding);
 
 
-ssize_t RTStrPurgeComplementSet(char *psz, PCRTUNICP puszValidSet, char chReplacement)
+RTDECL(ssize_t) RTStrPurgeComplementSet(char *psz, PCRTUNICP puszValidSet, char chReplacement)
 {
     size_t cReplacements = 0;
     AssertReturn(chReplacement && (unsigned)chReplacement < 128, -1);

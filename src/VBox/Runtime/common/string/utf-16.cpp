@@ -249,7 +249,7 @@ RTDECL(PRTUTF16) RTUtf16ToUpper(PRTUTF16 pwsz)
 RT_EXPORT_SYMBOL(RTUtf16ToUpper);
 
 
-ssize_t RTUtf16PurgeComplementSet(PRTUTF16 pwsz, PCRTUNICP puszValidSet, char chReplacement)
+RTDECL(ssize_t) RTUtf16PurgeComplementSet(PRTUTF16 pwsz, PCRTUNICP puszValidSet, char chReplacement)
 {
     size_t cReplacements = 0;
     AssertReturn(chReplacement && (unsigned)chReplacement < 128, -1);
