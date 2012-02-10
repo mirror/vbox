@@ -4168,6 +4168,9 @@
         The password to check for on the target teleporter. This is just a
         very basic measure to prevent simple hacks and operators accidentally
         beaming a virtual machine to the wrong place.
+
+        Note that you SET a plain text password while reading back a HASHED
+        password.  Setting a hashed password is currently not supported.
       </desc>
     </attribute>
 
