@@ -222,6 +222,12 @@ IEMOPSHIFTDBLSIZES g_iemAImpl_shrd;
     AssertCompile((a_iArg) < cArgs); \
     a_Type const a_Name = (a_Value); \
     NOREF(a_Name)
+#define IEM_MC_ARG_LOCAL_REF(a_Type, a_Name, a_Local, a_iArg) \
+    RT_CONCAT(iArgCheck_, a_iArg) = 1; NOREF(RT_CONCAT(iArgCheck_,a_iArg)); \
+    int RT_CONCAT3(iArgCheck_,a_iArg,a_Name); NOREF(RT_CONCAT3(iArgCheck_,a_iArg,a_Name)); \
+    AssertCompile((a_iArg) < cArgs); \
+    a_Type const a_Name = &(a_Local); \
+    NOREF(a_Name)
 #define IEM_MC_ARG_LOCAL_EFLAGS(a_pName, a_Name, a_iArg) \
     RT_CONCAT(iArgCheck_, a_iArg) = 1; NOREF(RT_CONCAT(iArgCheck_,a_iArg)); \
     int RT_CONCAT3(iArgCheck_,a_iArg,a_Name); NOREF(RT_CONCAT3(iArgCheck_,a_iArg,a_Name)); \
@@ -346,6 +352,10 @@ IEMOPSHIFTDBLSIZES g_iemAImpl_shrd;
 #define IEM_MC_FETCH_MEM_U64_DISP(a_u64Dst, a_iSeg, a_GCPtrMem, a_offDisp) \
     do { CHK_GCPTR(a_GCPtrMem); CHK_CONST(uint8_t, a_offDisp); CHK_TYPE(uint64_t, a_u64Dst); } while (0)
 
+#define IEM_MC_FETCH_MEM_R32(a_r32Dst, a_iSeg, a_GCPtrMem)              do { CHK_GCPTR(a_GCPtrMem); CHK_TYPE(RTFLOAT32U, a_r32Dst);} while (0)
+#define IEM_MC_FETCH_MEM_R64(a_r64Dst, a_iSeg, a_GCPtrMem)              do { CHK_GCPTR(a_GCPtrMem); CHK_TYPE(RTFLOAT64U, a_r64Dst);} while (0)
+#define IEM_MC_FETCH_MEM_R80(a_r80Dst, a_iSeg, a_GCPtrMem)              do { CHK_GCPTR(a_GCPtrMem); CHK_TYPE(RTFLOAT80U, a_r80Dst);} while (0)
+
 #define IEM_MC_FETCH_MEM_U8_ZX_U16(a_u16Dst, a_iSeg, a_GCPtrMem)        do { CHK_GCPTR(a_GCPtrMem); } while (0)
 #define IEM_MC_FETCH_MEM_U8_ZX_U32(a_u32Dst, a_iSeg, a_GCPtrMem)        do { CHK_GCPTR(a_GCPtrMem); } while (0)
 #define IEM_MC_FETCH_MEM_U8_ZX_U64(a_u64Dst, a_iSeg, a_GCPtrMem)        do { CHK_GCPTR(a_GCPtrMem); } while (0)
@@ -388,6 +398,9 @@ IEMOPSHIFTDBLSIZES g_iemAImpl_shrd;
 #define IEM_MC_DEFER_TO_CIMPL_1(a_pfnCImpl, a0)                         (VINF_SUCCESS)
 #define IEM_MC_DEFER_TO_CIMPL_2(a_pfnCImpl, a0, a1)                     (VINF_SUCCESS)
 #define IEM_MC_DEFER_TO_CIMPL_3(a_pfnCImpl, a0, a1, a2)                 (VINF_SUCCESS)
+
+#define IEM_MC_CALL_FPU_AIMPL_2(a_pfnAImpl, a0, a1)                     do { } while (0)
+#define IEM_MC_PUSH_FPU_RESULT(a_FpuData)                               do { } while (0)
 
 #define IEM_MC_IF_EFL_BIT_SET(a_fBit)                                   if (g_fRandom) {
 #define IEM_MC_IF_EFL_BIT_NOT_SET(a_fBit)                               if (g_fRandom) {

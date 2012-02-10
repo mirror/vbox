@@ -10389,26 +10389,24 @@ FNIEMOP_DEF_1(iemOp_fld_m32r, uint8_t, bRm)
 {
     IEMOP_MNEMONIC("fld m32r");
     IEMOP_HLP_NO_LOCK_PREFIX();
-#if 0
 
-    IEM_MC_BEGIN(3, 2);
-    IEM_MC_LOCAL(RTFLOAT32U,    r32Tmp);
-    IEM_MC_LOCAL(RTGCPTR,       GCPtrEffSrc);
+    IEM_MC_BEGIN(2, 2);
+    IEM_MC_LOCAL(RTGCPTR,               GCPtrEffSrc);
+    IEM_MC_LOCAL(IEMFPURESULT,          FpuRes);
+    IEM_MC_ARG_LOCAL_REF(PIEMFPURESULT, pFpuRes,    FpuRes, 0);
+    IEM_MC_ARG(RTFLOAT32U,              r32Val,             1);
 
     IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm);
-    IEM_MC_FETCH_MEM_R32(r32Tmp, pIemCpu->iEffSeg, GCPtrEffSrc);
-
-
     IEM_MC_MAYBE_RAISE_DEVICE_NOT_AVAILABLE();
     IEM_MC_MAYBE_RAISE_FPU_XCPT();
+    IEM_MC_FETCH_MEM_R32(r32Val, pIemCpu->iEffSeg, GCPtrEffSrc);
+//    IEM_MC_CALL_FPU_AIMPL_2(iemAImpl_fpu_r32_to_r80, pFpuRes, r32Val);
 
-
+    IEM_MC_PUSH_FPU_RESULT(FpuRes);
     IEM_MC_ADVANCE_RIP();
+
     IEM_MC_END();
     return VINF_SUCCESS;
-#else
-    AssertFailedReturn(VERR_NOT_IMPLEMENTED);
-#endif
 }
 
 
