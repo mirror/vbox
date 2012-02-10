@@ -782,7 +782,7 @@ void TstRTStrXCmp(RTTEST hTest)
 
 
 /**
- * Check case insensitivity.
+ * Check UTF-8 encoding purging.
  */
 void TstRTStrPurgeEncoding(RTTEST hTest)
 {
