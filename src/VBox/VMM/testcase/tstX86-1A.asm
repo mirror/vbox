@@ -143,7 +143,7 @@ BEGINCODE
         and     eax, ~X86_FSW_TOP_MASK & ~(%2)
         cmp     eax, (%1)
         je      %%ok
-        int3
+        ;int3
         lea     eax, [eax + __LINE__ * 100000]
         jmp     .return
 %%ok:
@@ -1495,6 +1495,33 @@ BEGINPROC   x861_Test6
         fwait
         FpuCheckFSW X86_FSW_IE | X86_FSW_SF | X86_FSW_C1, X86_FSW_C0 | X86_FSW_C2 | X86_FSW_C3
         CheckSt0Value 0x00000000, 0xc0000000, 0xffff
+        fnclex
+
+        ;
+        ; #PF vs previous stack overflow. I.e. whether pending FPU exception
+        ; is checked before fetching memory operands.
+        ;
+        mov     dword [xSP], X86_FCW_PC_64 | X86_FCW_RC_NEAREST
+        fldcw   [xSP]
+        fld     qword REF(.r64V1)
+        ShouldTrap X86_XCPT_MF, fld     dword [xDI]
+        fnclex
+
+        ;
+        ; What happens when we unmask an exception and fwait?
+        ;
+        mov     dword [xSP], X86_FCW_PC_64 | X86_FCW_RC_NEAREST | X86_FCW_IM
+        fldcw   [xSP]
+        fld     dword [xSI]
+        fwait
+        FpuCheckFSW X86_FSW_IE | X86_FSW_SF | X86_FSW_C1, X86_FSW_C0 | X86_FSW_C2 | X86_FSW_C3
+        mov     dword [xSP], X86_FCW_PC_64 | X86_FCW_RC_NEAREST
+        fldcw   [xSP]
+        FpuCheckFSW X86_FSW_ES | X86_FSW_B | X86_FSW_IE | X86_FSW_SF | X86_FSW_C1, X86_FSW_C0 | X86_FSW_C2 | X86_FSW_C3
+
+        ShouldTrap X86_XCPT_MF, fwait
+        ShouldTrap X86_XCPT_MF, fwait
+        ShouldTrap X86_XCPT_MF, fwait
         fnclex
 
 
