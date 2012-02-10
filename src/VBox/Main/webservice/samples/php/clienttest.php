@@ -99,3 +99,6 @@ foreach ($machines as $machine)
 }
 
 $websessionManager->logoff($virtualbox->handle);
+
+?>
+
