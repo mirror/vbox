@@ -61,7 +61,7 @@ void HostNetworkInterface::FinalRelease()
  * @param   aInterfaceName name of the network interface
  * @param   aGuid GUID of the host network interface
  */
-HRESULT HostNetworkInterface::init(Bstr aInterfaceName, Guid aGuid, HostNetworkInterfaceType_T ifType)
+HRESULT HostNetworkInterface::init(Bstr aInterfaceName, Bstr aShortName, Guid aGuid, HostNetworkInterfaceType_T ifType)
 {
     LogFlowThisFunc(("aInterfaceName={%ls}, aGuid={%s}\n",
                       aInterfaceName.raw(), aGuid.toString().c_str()));
@@ -74,6 +74,7 @@ HRESULT HostNetworkInterface::init(Bstr aInterfaceName, Guid aGuid, HostNetworkI
     AssertReturn(autoInitSpan.isOk(), E_FAIL);
 
     unconst(mInterfaceName) = aInterfaceName;
+    unconst(mNetworkName) = composeNetworkName(aShortName);
     unconst(mGuid) = aGuid;
     mIfType = ifType;
 
@@ -110,6 +111,10 @@ HRESULT HostNetworkInterface::updateConfig ()
     return rc == VERR_NOT_IMPLEMENTED ? E_NOTIMPL : E_FAIL;
 }
 
+Bstr HostNetworkInterface::composeNetworkName(const Utf8Str aShortName)
+{
+    return Utf8Str("HostInterfaceNetworking-").append(aShortName);
+}
 /**
  * Initializes the host object.
  *
@@ -132,6 +137,10 @@ HRESULT HostNetworkInterface::init (Bstr aInterfaceName, HostNetworkInterfaceTyp
 
     unconst(mInterfaceName) = aInterfaceName;
     unconst(mGuid) = pIf->Uuid;
+    if (pIf->szShortName[0])
+        unconst(mNetworkName) = composeNetworkName(pIf->szShortName);
+    else 
+        unconst(mNetworkName) = composeNetworkName(aInterfaceName);
     mIfType = ifType;
 
     m.realIPAddress = m.IPAddress = pIf->IPAddress.u;
@@ -388,13 +397,12 @@ STDMETHODIMP HostNetworkInterface::COMGETTER(InterfaceType) (HostNetworkInterfac
 
 STDMETHODIMP HostNetworkInterface::COMGETTER(NetworkName) (BSTR *aNetworkName)
 {
+    CheckComArgOutPointerValid(aNetworkName);
+
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    Utf8Str utf8Name("HostInterfaceNetworking-");
-    utf8Name.append(Utf8Str(mInterfaceName)) ;
-    Bstr netName(utf8Name);
-    netName.detachTo(aNetworkName);
+    mNetworkName.cloneTo(aNetworkName);
 
     return S_OK;
 }

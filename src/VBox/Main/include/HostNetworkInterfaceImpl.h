@@ -51,7 +51,7 @@ public:
     void FinalRelease();
 
     // public initializer/uninitializer for internal purposes only
-    HRESULT init (Bstr interfaceName, Guid guid, HostNetworkInterfaceType_T ifType);
+    HRESULT init (Bstr interfaceName, Bstr shortName, Guid guid, HostNetworkInterfaceType_T ifType);
 #ifdef VBOX_WITH_HOSTNETIF_API
     HRESULT init (Bstr aInterfaceName, HostNetworkInterfaceType_T ifType, struct NETIFINFO *pIfs);
     HRESULT updateConfig ();
@@ -80,8 +80,11 @@ public:
     HRESULT setVirtualBox(VirtualBox *pVBox);
 
 private:
+    Bstr composeNetworkName(const Utf8Str szShortName);
+
     const Bstr mInterfaceName;
     const Guid mGuid;
+    const Bstr mNetworkName;
     HostNetworkInterfaceType_T mIfType;
 
     VirtualBox * const  mVBox;
