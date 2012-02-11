@@ -77,8 +77,9 @@ typedef struct IEMFPURESULT
     /** The output value. */
     RTFLOAT80U      r80Result;
     /** The output status. */
-    uint16_t        u16FSW;
+    uint16_t        FSW;
 } IEMFPURESULT;
+AssertCompileMemberOffset(IEMFPURESULT, FSW, 10);
 /** Pointer to a FPU result. */
 typedef IEMFPURESULT *PIEMFPURESULT;
 /** Pointer to a const FPU result. */

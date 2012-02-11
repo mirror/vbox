@@ -3271,6 +3271,19 @@ DECLINLINE(void) iemFpuPrepareUsage(PIEMCPU pIemCpu)
 
 
 /**
+ * Stores a QNaN value into a FPU register.
+ *
+ * @param   pReg                Pointer to the register.
+ */
+DECLINLINE(void) iemFpuStoreQNan(PRTFLOAT80U pReg)
+{
+    pReg->au32[0] = UINT32_C(0x00000000);
+    pReg->au32[1] = UINT32_C(0xc0000000);
+    pReg->au16[4] = UINT16_C(0xffff);
+}
+
+
+/**
  * Pushes a FPU result onto the FPU stack after inspecting the resulting
  * statuses.
  *
@@ -3281,11 +3294,47 @@ static void iemFpuPushResult(PIEMCPU pIemCpu, PIEMFPURESULT pResult)
 {
     PCPUMCTX pCtx = pIemCpu->CTX_SUFF(pCtx);
 
-    if (pResult->u16FSW & (1))
+    uint16_t iNewTop = (X86_FSW_TOP_GET(pCtx->fpu.FSW) + 7) & X86_FSW_TOP_SMASK;
+    if (!(RT_BIT(iNewTop) & pCtx->fpu.FTW))
     {
-        /** @todo continue here later... */
+        /* No stack error. */
+        uint16_t fXcpts = (pResult->FSW   & (X86_FSW_IE | X86_FSW_DE | X86_FSW_ZE | X86_FSW_OE | X86_FSW_UE | X86_FSW_PE))
+                        & ~(pCtx->fpu.FCW & (X86_FCW_IM | X86_FCW_DM | X86_FCW_ZM | X86_FCW_OM | X86_FCW_UM | X86_FCW_PM));
+        if (!fXcpts)
+        {
+            /* No unmasked exceptions, just store the result. */
+            pCtx->fpu.FSW &= X86_FSW_TOP_MASK | X86_FSW_C0 | X86_FSW_C1 | X86_FSW_C2 | X86_FSW_C3;
+            pCtx->fpu.FSW |= (iNewTop << X86_FSW_TOP_SHIFT) | (pResult->FSW & ~(X86_FSW_TOP_MASK | X86_FSW_B | X86_FSW_ES));
+            pCtx->fpu.FTW |= RT_BIT(iNewTop);
+            pCtx->fpu.aRegs[7].r80 = pResult->r80Result;
+        }
+        else
+        {
+            AssertFailed();
+        }
+
+    }
+    else if (pCtx->fpu.FCW & X86_FCW_IM)
+    {
+        /* Masked stack overflow. */
+        pCtx->fpu.FSW &= X86_FSW_TOP_MASK | X86_FSW_C0 | X86_FSW_C1 | X86_FSW_C2 | X86_FSW_C3;
+        pCtx->fpu.FSW |= (iNewTop << X86_FSW_TOP_SHIFT) | X86_FSW_C1 | X86_FSW_IE | X86_FSW_SF;
+        pCtx->fpu.FTW |= RT_BIT(iNewTop);
+        iemFpuStoreQNan(&pCtx->fpu.aRegs[7].r80);
+    }
+    else
+    {
+        /* Stack overflow exception. */
+        pCtx->fpu.FSW &= X86_FSW_C0 | X86_FSW_C1 | X86_FSW_C2 | X86_FSW_C3;
+        pCtx->fpu.FSW |= X86_FSW_C1 | X86_FSW_IE | X86_FSW_SF | X86_FSW_ES | X86_FSW_B;
+        return;
     }
 
+    /* This is stupid, but we must now rotate the registers since they stored
+       in stack order. A complete waste of time! */
+    RTFLOAT80U r80Tmp = pCtx->fpu.aRegs[7].r80;
+    memmove(&pCtx->fpu.aRegs[1], &pCtx->fpu.aRegs[0], sizeof(pCtx->fpu.aRegs[0]) * 7);
+    pCtx->fpu.aRegs[0].r80 = r80Tmp;
 }
 
 
@@ -5868,14 +5917,14 @@ static void iemExecVerificationModeSetup(PIEMCPU pIemCpu)
              || pOrgCtx->rip == 0x901d9810
             )
 #endif
-#if 0 /* Auto enable; DSL. */
+#if 1 /* Auto enable DSL - FPU stuff. */
         &&  pOrgCtx->cs  == 0x10
-        &&  (   pOrgCtx->rip == 0x00100fc7
-             || pOrgCtx->rip == 0x00100ffc
-             || pOrgCtx->rip == 0x00100ffe
+        &&  (   pOrgCtx->rip == 0xc02ec07f
+             || pOrgCtx->rip == 0xc02ec082
+             || pOrgCtx->rip == 0xc02ec0c9
             )
 #endif
-#if 1
+#if 0
        && pOrgCtx->rip == 0x9022bb3a
 #endif
 #if 0
@@ -6637,12 +6686,14 @@ VMMDECL(VBOXSTRICTRC) IEMExecOne(PVMCPU pVCpu)
               " eax=%08x ebx=%08x ecx=%08x edx=%08x esi=%08x edi=%08x\n"
               " eip=%08x esp=%08x ebp=%08x iopl=%d\n"
               " cs=%04x ss=%04x ds=%04x es=%04x fs=%04x gs=%04x efl=%08x\n"
+              " fsw=%04x fcw=%04x ftw=%02x mxcsr=%04x/%04x\n"
               " %s\n"
               ,
               pCtx->eax, pCtx->ebx, pCtx->ecx, pCtx->edx, pCtx->esi, pCtx->edi,
               pCtx->eip, pCtx->esp, pCtx->ebp, pCtx->eflags.Bits.u2IOPL,
               (RTSEL)pCtx->cs, (RTSEL)pCtx->ss, (RTSEL)pCtx->ds, (RTSEL)pCtx->es,
               (RTSEL)pCtx->fs, (RTSEL)pCtx->gs, pCtx->eflags.u,
+              pCtx->fpu.FSW, pCtx->fpu.FCW, pCtx->fpu.FTW, pCtx->fpu.MXCSR, pCtx->fpu.MXCSR_MASK,
               szInstr));
 
         if (LogIs3Enabled())
