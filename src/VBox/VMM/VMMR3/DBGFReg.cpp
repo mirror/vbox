@@ -1867,7 +1867,7 @@ DECLINLINE(ssize_t) dbgfR3RegFormatValueInt(char *pszTmp, size_t cbTmp, PCDBGFRE
         case DBGFREGVALTYPE_U128:
             return RTStrFormatU128(pszTmp, cbTmp, &pValue->u128, uBase, cchWidth, cchPrecision, fFlags);
         case DBGFREGVALTYPE_R80:
-            return RTStrFormatR80u2(pszTmp, cbTmp, &pValue->r80, cchWidth, cchPrecision, fFlags);
+            return RTStrFormatR80u2(pszTmp, cbTmp, &pValue->r80Ex, cchWidth, cchPrecision, fFlags);
         case DBGFREGVALTYPE_DTR:
         {
             ssize_t cch = RTStrFormatU64(pszTmp, cbTmp, pValue->dtr.u64Base,
