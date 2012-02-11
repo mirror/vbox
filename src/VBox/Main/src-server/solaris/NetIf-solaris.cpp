@@ -201,6 +201,7 @@ static void vboxSolarisAddHostIface(char *pszIface, int Instance, void *pvHostNe
     Uuid.Gen.au8Node[5] = Info.MACAddress.au8[5];
     Info.Uuid = Uuid;
     Info.enmMediumType = NETIF_T_ETHERNET;
+    strncpy(Info.szShortName, szNICInstance, sizeof(Info.szShortName) - 1);
 
     HostNetworkInterfaceType_T enmType;
     if (strncmp("vboxnet", szNICInstance, 7))
