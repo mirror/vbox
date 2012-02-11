@@ -316,7 +316,7 @@ static HRESULT netIfNetworkInterfaceHelperClient(SVCHlpClient *aClient,
 
                         /* initialize the object returned to the caller by
                          * CreateHostOnlyNetworkInterface() */
-                        rc = d->iface->init(Bstr(name), guid, HostNetworkInterfaceType_HostOnly);
+                        rc = d->iface->init(Bstr(name), Bstr(name), guid, HostNetworkInterfaceType_HostOnly);
                         if (SUCCEEDED(rc))
                         {
                             rc = d->iface->setVirtualBox(d->vBox);
