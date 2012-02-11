@@ -1276,3 +1276,87 @@ BEGINPROC_FASTCALL iemAImpl_bswap_u64, 4
 %endif
 ENDPROC iemAImpl_bswap_u64
 
+
+;;
+; The state saved by FXSAVE.
+; @todo move to x86.mac.
+;
+struc X86FXSTATE
+    .FCW            resw 1
+    .FSW            resw 1
+    .FTW            resw 1
+    .FOP            resw 1
+    .FPUIP          resd 1
+    .CS             resw 1
+    .Rsrvd1         resw 1
+    .FPUDP          resd 1
+    .DS             resw 1
+    .Rsrvd2         resw 1
+    .MXCSR          resd 1
+    .MXCSR_MASK     resd 1
+    .r0             resd 4
+    .r1             resd 4
+    .r2             resd 4
+    .r3             resd 4
+    .r4             resd 4
+    .r5             resd 4
+    .r6             resd 4
+    .r7             resd 4
+    .xmm0           resd 4
+    .xmm1           resd 4
+    .xmm2           resd 4
+    .xmm3           resd 4
+    .xmm4           resd 4
+    .xmm5           resd 4
+    .xmm6           resd 4
+    .xmm7           resd 4
+    .xmm8           resd 4
+    .xmm9           resd 4
+    .xmm10          resd 4
+    .xmm11          resd 4
+    .xmm12          resd 4
+    .xmm13          resd 4
+    .xmm14          resd 4
+    .xmm15          resd 4
+    .au32RsrvdRest  resd 24
+endstruc
+
+%macro FPU_SAFE_INIT 1
+        fninit
+        movzx   T0, word [%1 + X86FXSTATE.FCW]
+        or      T0, X86_FCW_MASK_ALL
+        mov     [xSP], T0
+        fldcw   [xSP]
+%endmacro
+
+;;
+; Need to move this as well somewhere better?
+;
+struc IEMFPURESULT
+    .r80Result  resw 5
+    .FSW        resw 1
+endstruc
+
+
+;;
+; Converts a 32-bit floating point value to a 80-bit one (fpu register).
+;
+; @param    A0      FPU context (fxsave).
+; @param    A1      Pointer to a IEMFPURESULT for the output.
+; @param    A2      The 32-bit floating point value to convert.
+;
+BEGINPROC_FASTCALL iemAImpl_fpu_r32_to_r80, 12
+        PROLOGUE_3_ARGS
+        sub     xSP, 20h
+
+        FPU_SAFE_INIT A0
+        mov     [xSP], A2
+        fld     dword [xSP]
+
+        fnstsw  word  [A1 + IEMFPURESULT.FSW]
+        fstp    tword [A1 + IEMFPURESULT.r80Result]
+
+        add     xSP, 20h
+        EPILOGUE_3_ARGS 0
+ENDPROC iemAImpl_fpu_r32_to_r80
+
