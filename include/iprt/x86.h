@@ -1970,7 +1970,9 @@ typedef struct X86FPUSTATE
         /** FPU view - todo. */
         X86FPUMMX   fpu;
         /** Extended precision floating point view. */
-        RTFLOAT80U2 r80;
+        RTFLOAT80U  r80;
+        /** Extended precision floating point view v2. */
+        RTFLOAT80U2 r80Ex;
         /** 8-bit view. */
         uint8_t     au8[16];
         /** 16-bit view. */
@@ -2026,7 +2028,9 @@ typedef struct X86FXSTATE
         /** FPU view - todo. */
         X86FPUMMX   fpu;
         /** Extended precision floating point view. */
-        RTFLOAT80U2 r80;
+        RTFLOAT80U  r80;
+        /** Extended precision floating point view v2 */
+        RTFLOAT80U2 r80Ex;
         /** 8-bit view. */
         uint8_t     au8[16];
         /** 16-bit view. */
@@ -2116,6 +2120,8 @@ typedef const X86FXSTATE *PCX86FXSTATE;
 #define X86_FCW_UM          RT_BIT(4)
 /** Exception Mask: Precision.  */
 #define X86_FCW_PM          RT_BIT(5)
+/** Mask all exceptions.  */
+#define X86_FCW_MASK_ALL    UINT16_C(0x007f)
 /** Precision control mask. */
 #define X86_FCW_PC_MASK     UINT16_C(0x0300)
 /** Precision control: 24-bit. */

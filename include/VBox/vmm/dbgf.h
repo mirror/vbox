@@ -1277,7 +1277,8 @@ typedef union DBGFREGVAL
     uint32_t    u32;            /**< The 32-bit view. */
     uint64_t    u64;            /**< The 64-bit view. */
     RTUINT128U  u128;           /**< The 128-bit view. */
-    RTFLOAT80U2 r80;            /**< The 80-bit floating point view. */
+    RTFLOAT80U  r80;            /**< The 80-bit floating point view. */
+    RTFLOAT80U2 r80Ex;          /**< The 80-bit floating point view v2. */
     /** GDTR or LDTR (DBGFREGVALTYPE_DTR). */
     struct
     {

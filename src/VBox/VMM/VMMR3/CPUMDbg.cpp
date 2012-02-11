@@ -313,7 +313,7 @@ static DECLCALLBACK(int) cpumR3RegGstSet_crX(void *pvUser, PCDBGFREGDESC pDesc, 
             fMask    = pfMask->u32;
             fMaskMax = UINT32_MAX;
             break;
-        default:                    
+        default:
             AssertFailedReturn(VERR_IPE_NOT_REACHED_DEFAULT_CASE);
     }
     if (fMask != fMaskMax)
@@ -393,7 +393,7 @@ static DECLCALLBACK(int) cpumR3RegGstSet_drX(void *pvUser, PCDBGFREGDESC pDesc, 
             fMask    = pfMask->u32;
             fMaskMax = UINT32_MAX;
             break;
-        default:                    
+        default:
             AssertFailedReturn(VERR_IPE_NOT_REACHED_DEFAULT_CASE);
     }
     if (fMask != fMaskMax)
@@ -472,7 +472,7 @@ static DECLCALLBACK(int) cpumR3RegGstSet_msr(void *pvUser, PCDBGFREGDESC pDesc, 
             fMask    = pfMask->u16;
             fMaskMax = UINT16_MAX;
             break;
-        default:                    
+        default:
             AssertFailedReturn(VERR_IPE_NOT_REACHED_DEFAULT_CASE);
     }
     if (fMask != fMaskMax)
@@ -506,7 +506,7 @@ static DECLCALLBACK(int) cpumR3RegGstGet_stN(void *pvUser, PCDBGFREGDESC pDesc, 
         unsigned iReg = (pVCpu->cpum.s.Guest.fpu.FSW >> 11) & 7;
         iReg += pDesc->offRegister;
         iReg &= 7;
-        pValue->r80 = pVCpu->cpum.s.Guest.fpu.aRegs[iReg].r80;
+        pValue->r80Ex = pVCpu->cpum.s.Guest.fpu.aRegs[iReg].r80Ex;
     }
     else
     {
@@ -516,7 +516,7 @@ static DECLCALLBACK(int) cpumR3RegGstGet_stN(void *pvUser, PCDBGFREGDESC pDesc, 
         iReg += pDesc->offRegister;
         iReg &= 7;
 
-        pValue->r80 = pOldFpu->regs[iReg].r80;
+        pValue->r80Ex = pOldFpu->regs[iReg].r80Ex;
     }
 
     return VINF_SUCCESS;
@@ -670,7 +670,7 @@ static DECLCALLBACK(int) cpumR3RegHyperGet_stN(void *pvUser, PCDBGFREGDESC pDesc
         unsigned iReg = (pVCpu->cpum.s.Guest.fpu.FSW >> 11) & 7;
         iReg += pDesc->offRegister;
         iReg &= 7;
-        pValue->r80 = pVCpu->cpum.s.Guest.fpu.aRegs[iReg].r80;
+        pValue->r80Ex = pVCpu->cpum.s.Guest.fpu.aRegs[iReg].r80Ex;
     }
     else
     {
@@ -680,7 +680,7 @@ static DECLCALLBACK(int) cpumR3RegHyperGet_stN(void *pvUser, PCDBGFREGDESC pDesc
         iReg += pDesc->offRegister;
         iReg &= 7;
 
-        pValue->r80 = pOldFpu->regs[iReg].r80;
+        pValue->r80Ex = pOldFpu->regs[iReg].r80Ex;
     }
 
     return VINF_SUCCESS;

@@ -479,6 +479,7 @@
 %define X86_FCW_OM          RT_BIT(3)
 %define X86_FCW_UM          RT_BIT(4)
 %define X86_FCW_PM          RT_BIT(5)
+%define X86_FCW_MASK_ALL    0x007f
 %define X86_FCW_PC_MASK     0x0300
 %define X86_FCW_PC_24       0x0000
 %define X86_FCW_PC_RSVD     0x0100
