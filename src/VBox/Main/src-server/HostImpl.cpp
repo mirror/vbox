@@ -537,7 +537,7 @@ static int vboxNetWinAddComponent(std::list< ComObjPtr<HostNetworkInterface> > *
             ComObjPtr<HostNetworkInterface> iface;
             iface.createObject();
             /* remove the curly bracket at the end */
-            if (SUCCEEDED(iface->init (name, Guid (IfGuid), HostNetworkInterfaceType_Bridged)))
+            if (SUCCEEDED(iface->init (name, name, Guid (IfGuid), HostNetworkInterfaceType_Bridged)))
             {
 //                iface->setVirtualBox(m->pParent);
                 pPist->push_back(iface);
