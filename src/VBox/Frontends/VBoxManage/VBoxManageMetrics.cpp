@@ -41,6 +41,20 @@ using namespace com;
 ///////////////////////////////////////////////////////////////////////////////
 
 
+static bool isLastSlash(const char *str)
+{
+    char c;
+    while ((c = *str++))
+    {
+        if (c == ',')
+            break;
+        if (c == '/')
+            return false;
+    }
+
+    return true;
+}
+
 static char *toBaseMetricNames(const char *metricList)
 {
     char *newList = (char*)RTMemAlloc(strlen(metricList) + 1);
@@ -53,7 +67,7 @@ static char *toBaseMetricNames(const char *metricList)
         while ((c = *src++))
             if (c == ':')
                 fSkip = true;
-            else if (c == '/' && ++cSlashes == 2)
+            else if (c == '/' && ++cSlashes >= 2 && isLastSlash(src))
                 fSkip = true;
             else if (c == ',')
             {
