@@ -243,11 +243,15 @@ typedef struct IEMCPU
     uint8_t                 cbOpcode;
     /** The opcode bytes. */
     uint8_t                 abOpcode[15];
+    /** Offset into abOpcodes where the FPU instruction starts.
+     * Only set by the FPU escape opcodes (0xd8-0xdf) and used later on when the
+     * instruction result is committed. */
+    uint8_t                 offFpuOpcode;
 
     /** @}*/
 
     /** Alignment padding for aMemMappings. */
-    uint8_t                 abAlignment2[5];
+    uint8_t                 abAlignment2[4];
 
     /** The number of active guest memory mappings. */
     uint8_t                 cActiveMappings;
