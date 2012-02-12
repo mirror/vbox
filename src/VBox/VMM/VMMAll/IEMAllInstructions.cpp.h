@@ -10254,26 +10254,406 @@ FNIEMOP_DEF(iemOp_xlat)
 }
 
 
+/** Opcode 0xd8 11/0. */
+FNIEMOP_STUB_1(iemOp_fadd_stN,   uint8_t, bRm);
+
+/** Opcode 0xd8 11/1. */
+FNIEMOP_STUB_1(iemOp_fmul_stN,   uint8_t, bRm);
+
+/** Opcode 0xd8 11/2. */
+FNIEMOP_STUB_1(iemOp_fcom_stN,   uint8_t, bRm);
+
+/** Opcode 0xd8 11/3. */
+FNIEMOP_STUB_1(iemOp_fcomp_stN,  uint8_t, bRm);
+
+/** Opcode 0xd8 11/4. */
+FNIEMOP_STUB_1(iemOp_fsub_stN,   uint8_t, bRm);
+
+/** Opcode 0xd8 11/5. */
+FNIEMOP_STUB_1(iemOp_fsubr_stN,  uint8_t, bRm);
+
+/** Opcode 0xd8 11/6. */
+FNIEMOP_STUB_1(iemOp_fdiv_stN,   uint8_t, bRm);
+
+/** Opcode 0xd8 11/7. */
+FNIEMOP_STUB_1(iemOp_fdivr_stN,  uint8_t, bRm);
+
+/** Opcode 0xd8 !11/0. */
+FNIEMOP_STUB_1(iemOp_fadd_m32r,  uint8_t, bRm);
+
+/** Opcode 0xd8 !11/1. */
+FNIEMOP_STUB_1(iemOp_fmul_m32r,  uint8_t, bRm);
+
+/** Opcode 0xd8 !11/2. */
+FNIEMOP_STUB_1(iemOp_fcom_m32r,  uint8_t, bRm);
+
+/** Opcode 0xd8 !11/3. */
+FNIEMOP_STUB_1(iemOp_fcomp_m32r, uint8_t, bRm);
+
+/** Opcode 0xd8 !11/4. */
+FNIEMOP_STUB_1(iemOp_fsub_m32r,  uint8_t, bRm);
+
+/** Opcode 0xd8 !11/5. */
+FNIEMOP_STUB_1(iemOp_fsubr_m32r, uint8_t, bRm);
+
+/** Opcode 0xd8 !11/6. */
+FNIEMOP_STUB_1(iemOp_fdiv_m32r,  uint8_t, bRm);
+
+/** Opcode 0xd8 !11/7. */
+FNIEMOP_STUB_1(iemOp_fdivr_m32r, uint8_t, bRm);
+
 /** Opcode 0xd8. */
-FNIEMOP_STUB(iemOp_EscF0);
+FNIEMOP_DEF(iemOp_EscF0)
+{
+    pIemCpu->offFpuOpcode = pIemCpu->offOpcode - 1;
+    uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
+
+    if ((bRm & X86_MODRM_MOD_MASK) == (3 << X86_MODRM_MOD_SHIFT))
+    {
+        switch ((bRm >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK)
+        {
+            case 0: return FNIEMOP_CALL_1(iemOp_fadd_stN,  bRm);
+            case 1: return FNIEMOP_CALL_1(iemOp_fmul_stN,  bRm);
+            case 2: return FNIEMOP_CALL_1(iemOp_fcom_stN,  bRm);
+            case 3: return FNIEMOP_CALL_1(iemOp_fcomp_stN, bRm);
+            case 4: return FNIEMOP_CALL_1(iemOp_fsub_stN,  bRm);
+            case 5: return FNIEMOP_CALL_1(iemOp_fsubr_stN, bRm);
+            case 6: return FNIEMOP_CALL_1(iemOp_fdiv_stN,  bRm);
+            case 7: return FNIEMOP_CALL_1(iemOp_fdivr_stN, bRm);
+            IEM_NOT_REACHED_DEFAULT_CASE_RET();
+        }
+    }
+    else
+    {
+        switch ((bRm >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK)
+        {
+            case 0: return FNIEMOP_CALL_1(iemOp_fadd_m32r,  bRm);
+            case 1: return FNIEMOP_CALL_1(iemOp_fmul_m32r,  bRm);
+            case 2: return FNIEMOP_CALL_1(iemOp_fcom_m32r,  bRm);
+            case 3: return FNIEMOP_CALL_1(iemOp_fcomp_m32r, bRm);
+            case 4: return FNIEMOP_CALL_1(iemOp_fsub_m32r,  bRm);
+            case 5: return FNIEMOP_CALL_1(iemOp_fsubr_m32r, bRm);
+            case 6: return FNIEMOP_CALL_1(iemOp_fdiv_m32r,  bRm);
+            case 7: return FNIEMOP_CALL_1(iemOp_fdivr_m32r, bRm);
+            IEM_NOT_REACHED_DEFAULT_CASE_RET();
+        }
+    }
+}
+
+
+/** Opcode 0xd9 /0 mem32real */
+FNIEMOP_DEF_1(iemOp_fld_m32r, uint8_t, bRm)
+{
+    IEMOP_MNEMONIC("fld m32r");
+    IEMOP_HLP_NO_LOCK_PREFIX();
+
+    IEM_MC_BEGIN(2, 2);
+    IEM_MC_LOCAL(RTGCPTR,               GCPtrEffSrc);
+    IEM_MC_LOCAL(IEMFPURESULT,          FpuRes);
+    IEM_MC_ARG_LOCAL_REF(PIEMFPURESULT, pFpuRes,    FpuRes, 0);
+    IEM_MC_ARG(RTFLOAT32U,              r32Val,             1);
+
+    IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm);
+    IEM_MC_MAYBE_RAISE_DEVICE_NOT_AVAILABLE();
+    IEM_MC_MAYBE_RAISE_FPU_XCPT();
+    IEM_MC_FETCH_MEM_R32(r32Val, pIemCpu->iEffSeg, GCPtrEffSrc);
+    IEM_MC_CALL_FPU_AIMPL_2(iemAImpl_fpu_r32_to_r80, pFpuRes, r32Val);
+
+    IEM_MC_PUSH_FPU_RESULT(FpuRes);
+    IEM_MC_ADVANCE_RIP();
+
+    IEM_MC_END();
+    return VINF_SUCCESS;
+}
+
+
+/** Opcode 0xd9 /0 stN */
+FNIEMOP_STUB_1(iemOp_fld_stN, uint8_t, bRm);
+
+/** Opcode 0xd9 /2 mem32real */
+FNIEMOP_STUB_1(iemOp_fst_m32r, uint8_t, bRm);
+
+/** Opcode 0xd9 /3 stN */
+FNIEMOP_STUB_1(iemOp_fxch_stN, uint8_t, bRm);
+
+/** Opcode 0xd9 /3 */
+FNIEMOP_STUB_1(iemOp_fstp_m32r, uint8_t, bRm);
+
+/** Opcode 0xd9 /4 */
+FNIEMOP_STUB_1(iemOp_fldenv, uint8_t, bRm);
+
+/** Opcode 0xd9 /5 */
+FNIEMOP_STUB_1(iemOp_fldcw, uint8_t, bRm);
+
+/** Opcode 0xd9 /6 */
+FNIEMOP_STUB_1(iemOp_fstenv, uint8_t, bRm);
+
+/** Opcode 0xd9 /7 */
+FNIEMOP_STUB_1(iemOp_fstcw, uint8_t, bRm);
+
+/** Opcode 0xd9 0xc9, 0xd9 0xd8-0xdf.  */
+FNIEMOP_STUB(iemOp_fnop);
+
+/** Opcode 0xd9 0xe0. */
+FNIEMOP_STUB(iemOp_fchs);
+
+/** Opcode 0xd9 0xe1. */
+FNIEMOP_STUB(iemOp_fabs);
+
+/** Opcode 0xd9 0xe4. */
+FNIEMOP_STUB(iemOp_ftst);
+
+/** Opcode 0xd9 0xe5. */
+FNIEMOP_STUB(iemOp_fxam);
+
+/** Opcode 0xd9 0xe8. */
+FNIEMOP_STUB(iemOp_fld1);
+
+/** Opcode 0xd9 0xe9. */
+FNIEMOP_STUB(iemOp_fldl2t);
+
+/** Opcode 0xd9 0xea. */
+FNIEMOP_STUB(iemOp_fldl2e);
+
+/** Opcode 0xd9 0xeb. */
+FNIEMOP_STUB(iemOp_fldpi);
+
+/** Opcode 0xd9 0xec. */
+FNIEMOP_STUB(iemOp_fldlg2);
+
+/** Opcode 0xd9 0xed. */
+FNIEMOP_STUB(iemOp_fldln2);
+
+/** Opcode 0xd9 0xee. */
+FNIEMOP_STUB(iemOp_fldz);
+
+/** Opcode 0xd9 0xf0. */
+FNIEMOP_STUB(iemOp_f2xm1);
+
+/** Opcode 0xd9 0xf1. */
+FNIEMOP_STUB(iemOp_fylx2);
+
+/** Opcode 0xd9 0xf2. */
+FNIEMOP_STUB(iemOp_fptan);
+
+/** Opcode 0xd9 0xf3. */
+FNIEMOP_STUB(iemOp_fpatan);
+
+/** Opcode 0xd9 0xf4. */
+FNIEMOP_STUB(iemOp_fxtract);
+
+/** Opcode 0xd9 0xf5. */
+FNIEMOP_STUB(iemOp_fprem1);
+
+/** Opcode 0xd9 0xf6. */
+FNIEMOP_STUB(iemOp_fdecstp);
+
+/** Opcode 0xd9 0xf7. */
+FNIEMOP_STUB(iemOp_fincstp);
+
+/** Opcode 0xd9 0xf8. */
+FNIEMOP_STUB(iemOp_fprem);
+
+/** Opcode 0xd9 0xf9. */
+FNIEMOP_STUB(iemOp_fyl2xp1);
+
+/** Opcode 0xd9 0xfa. */
+FNIEMOP_STUB(iemOp_fsqrt);
+
+/** Opcode 0xd9 0xfb. */
+FNIEMOP_STUB(iemOp_fsincos);
+
+/** Opcode 0xd9 0xfc. */
+FNIEMOP_STUB(iemOp_frndint);
+
+/** Opcode 0xd9 0xfd. */
+FNIEMOP_STUB(iemOp_fscale);
+
+/** Opcode 0xd9 0xfe. */
+FNIEMOP_STUB(iemOp_fsin);
+
+/** Opcode 0xd9 0xff. */
+FNIEMOP_STUB(iemOp_fcos);
+
+
+/** Used by iemOp_EscF1. */
+static const PFNIEMOP g_apfnEscF1_E0toFF[32] =
+{
+    /* 0xe0 */  iemOp_fchs,
+    /* 0xe1 */  iemOp_fabs,
+    /* 0xe2 */  iemOp_Invalid,
+    /* 0xe3 */  iemOp_Invalid,
+    /* 0xe4 */  iemOp_ftst,
+    /* 0xe5 */  iemOp_fxam,
+    /* 0xe6 */  iemOp_Invalid,
+    /* 0xe7 */  iemOp_Invalid,
+    /* 0xe8 */  iemOp_fld1,
+    /* 0xe9 */  iemOp_fldl2t,
+    /* 0xea */  iemOp_fldl2e,
+    /* 0xeb */  iemOp_fldpi,
+    /* 0xec */  iemOp_fldlg2,
+    /* 0xed */  iemOp_fldln2,
+    /* 0xee */  iemOp_fldz,
+    /* 0xef */  iemOp_Invalid,
+    /* 0xf0 */  iemOp_f2xm1,
+    /* 0xf1 */  iemOp_fylx2,
+    /* 0xf2 */  iemOp_fptan,
+    /* 0xf3 */  iemOp_fpatan,
+    /* 0xf4 */  iemOp_fxtract,
+    /* 0xf5 */  iemOp_fprem1,
+    /* 0xf6 */  iemOp_fdecstp,
+    /* 0xf7 */  iemOp_fincstp,
+    /* 0xf8 */  iemOp_fprem,
+    /* 0xf9 */  iemOp_fyl2xp1,
+    /* 0xfa */  iemOp_fsqrt,
+    /* 0xfb */  iemOp_fsincos,
+    /* 0xfc */  iemOp_frndint,
+    /* 0xfd */  iemOp_fscale,
+    /* 0xfe */  iemOp_fsin,
+    /* 0xff */  iemOp_fcos
+};
+
+
 /** Opcode 0xd9. */
-FNIEMOP_STUB(iemOp_EscF1);
+FNIEMOP_DEF(iemOp_EscF1)
+{
+    pIemCpu->offFpuOpcode = pIemCpu->offOpcode - 1;
+    uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
+    if ((bRm & X86_MODRM_MOD_MASK) == (3 << X86_MODRM_MOD_SHIFT))
+    {
+        switch ((bRm >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK)
+        {
+            case 0: return FNIEMOP_CALL_1(iemOp_fld_stN, bRm);
+            case 1: return FNIEMOP_CALL_1(iemOp_fxch_stN, bRm);
+            case 2:
+                if (bRm == 0xc9)
+                    return FNIEMOP_CALL(iemOp_fnop);
+                return IEMOP_RAISE_INVALID_OPCODE();
+            case 3:
+                return FNIEMOP_CALL(iemOp_fnop); /* AMD says reserved; tests on intel indicates FNOP. */
+            case 4:
+            case 5:
+            case 6:
+            case 7:
+                return FNIEMOP_CALL(g_apfnEscF1_E0toFF[(bRm & (X86_MODRM_REG_MASK |X86_MODRM_RM_MASK)) - 0xe0]);
+            IEM_NOT_REACHED_DEFAULT_CASE_RET();
+        }
+    }
+    else
+    {
+        switch ((bRm >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK)
+        {
+            case 0: return FNIEMOP_CALL_1(iemOp_fld_m32r,  bRm);
+            case 1: return IEMOP_RAISE_INVALID_OPCODE();
+            case 2: return FNIEMOP_CALL_1(iemOp_fst_m32r,  bRm);
+            case 3: return FNIEMOP_CALL_1(iemOp_fstp_m32r, bRm);
+            case 4: return FNIEMOP_CALL_1(iemOp_fldenv,    bRm);
+            case 5: return FNIEMOP_CALL_1(iemOp_fldcw,     bRm);
+            case 6: return FNIEMOP_CALL_1(iemOp_fstenv,    bRm);
+            case 7: return FNIEMOP_CALL_1(iemOp_fstcw,     bRm);
+            IEM_NOT_REACHED_DEFAULT_CASE_RET();
+        }
+    }
+}
+
+
+/** Opcode 0xda 11/0. */
+FNIEMOP_STUB_1(iemOp_fcmovb_stN,  uint8_t, bRm);
+/** Opcode 0xda 11/1. */
+FNIEMOP_STUB_1(iemOp_fcmove_stN,  uint8_t, bRm);
+/** Opcode 0xda 11/2. */
+FNIEMOP_STUB_1(iemOp_fcmovbe_stN, uint8_t, bRm);
+/** Opcode 0xda 11/3. */
+FNIEMOP_STUB_1(iemOp_fcmovu_stN,  uint8_t, bRm);
+/** Opcode 0xda 0xe9. */
+FNIEMOP_STUB(iemOp_fucompp);
+/** Opcode 0xda !11/0. */
+FNIEMOP_STUB_1(iemOp_fiadd_m32i,  uint8_t, bRm);
+/** Opcode 0xda !11/1. */
+FNIEMOP_STUB_1(iemOp_fimul_m32i,  uint8_t, bRm);
+/** Opcode 0xda !11/2. */
+FNIEMOP_STUB_1(iemOp_ficom_m32i,  uint8_t, bRm);
+/** Opcode 0xda !11/3. */
+FNIEMOP_STUB_1(iemOp_ficomp_m32i, uint8_t, bRm);
+/** Opcode 0xda !11/4. */
+FNIEMOP_STUB_1(iemOp_fisub_m32i,  uint8_t, bRm);
+/** Opcode 0xda !11/5. */
+FNIEMOP_STUB_1(iemOp_fisubr_m32i, uint8_t, bRm);
+/** Opcode 0xda !11/6. */
+FNIEMOP_STUB_1(iemOp_fidiv_m32i,  uint8_t, bRm);
+/** Opcode 0xda !11/7. */
+FNIEMOP_STUB_1(iemOp_fidivr_m32i, uint8_t, bRm);
+
 /** Opcode 0xda. */
-FNIEMOP_STUB(iemOp_EscF2);
+FNIEMOP_DEF(iemOp_EscF2)
+{
+    pIemCpu->offFpuOpcode = pIemCpu->offOpcode - 1;
+    uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
+    if ((bRm & X86_MODRM_MOD_MASK) == (3 << X86_MODRM_MOD_SHIFT))
+    {
+        switch ((bRm >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK)
+        {
+            case 0: return FNIEMOP_CALL_1(iemOp_fcmovb_stN, bRm);
+            case 1: return FNIEMOP_CALL_1(iemOp_fcmove_stN, bRm);
+            case 2: return FNIEMOP_CALL_1(iemOp_fcmovbe_stN, bRm);
+            case 3: return FNIEMOP_CALL_1(iemOp_fcmovu_stN, bRm);
+            case 4: return IEMOP_RAISE_INVALID_OPCODE();
+            case 5:
+                if (bRm == 0xe9)
+                    return FNIEMOP_CALL(iemOp_fucompp);
+                return IEMOP_RAISE_INVALID_OPCODE();
+            case 6: return IEMOP_RAISE_INVALID_OPCODE();
+            case 7: return IEMOP_RAISE_INVALID_OPCODE();
+            IEM_NOT_REACHED_DEFAULT_CASE_RET();
+        }
+    }
+    else
+    {
+        switch ((bRm >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK)
+        {
+            case 0: return FNIEMOP_CALL_1(iemOp_fiadd_m32i,  bRm);
+            case 1: return FNIEMOP_CALL_1(iemOp_fimul_m32i,  bRm);
+            case 2: return FNIEMOP_CALL_1(iemOp_ficom_m32i,  bRm);
+            case 3: return FNIEMOP_CALL_1(iemOp_ficomp_m32i, bRm);
+            case 4: return FNIEMOP_CALL_1(iemOp_fisub_m32i,  bRm);
+            case 5: return FNIEMOP_CALL_1(iemOp_fisubr_m32i, bRm);
+            case 6: return FNIEMOP_CALL_1(iemOp_fidiv_m32i,  bRm);
+            case 7: return FNIEMOP_CALL_1(iemOp_fidivr_m32i, bRm);
+            IEM_NOT_REACHED_DEFAULT_CASE_RET();
+        }
+    }
+}
 
 
-/** Opcode 0xdb /0. */
-FNIEMOP_STUB_1(iemOp_fild_dw, uint8_t, bRm);
-/** Opcode 0xdb /1. */
-FNIEMOP_STUB_1(iemOp_fisttp_dw, uint8_t, bRm);
-/** Opcode 0xdb /2. */
-FNIEMOP_STUB_1(iemOp_fist_dw, uint8_t, bRm);
-/** Opcode 0xdb /3. */
-FNIEMOP_STUB_1(iemOp_fistp_dw, uint8_t, bRm);
-/** Opcode 0xdb /5. */
-FNIEMOP_STUB_1(iemOp_fld_xr, uint8_t, bRm);
-/** Opcode 0xdb /7. */
-FNIEMOP_STUB_1(iemOp_fstp_xr, uint8_t, bRm);
+/** Opcode 0xdb !11/0. */
+FNIEMOP_STUB_1(iemOp_fild_m32i, uint8_t, bRm);
+
+/** Opcode 0xdb !11/1. */
+FNIEMOP_STUB_1(iemOp_fisttp_m32i, uint8_t, bRm);
+
+/** Opcode 0xdb !11/2. */
+FNIEMOP_STUB_1(iemOp_fist_m32i, uint8_t, bRm);
+
+/** Opcode 0xdb !11/3. */
+FNIEMOP_STUB_1(iemOp_fistp_m32i, uint8_t, bRm);
+
+/** Opcode 0xdb !11/5. */
+FNIEMOP_STUB_1(iemOp_fld_r80, uint8_t, bRm);
+
+/** Opcode 0xdb !11/7. */
+FNIEMOP_STUB_1(iemOp_fstp_r80, uint8_t, bRm);
+
+/** Opcode 0xdb 11/0. */
+FNIEMOP_STUB_1(iemOp_fcmovnb,  uint8_t, bRm);
+
+/** Opcode 0xdb 11/1. */
+FNIEMOP_STUB_1(iemOp_fcmovne,  uint8_t, bRm);
+
+/** Opcode 0xdb 11/2. */
+FNIEMOP_STUB_1(iemOp_fcmovnbe, uint8_t, bRm);
+
+/** Opcode 0xdb 11/3. */
+FNIEMOP_STUB_1(iemOp_fcmovnnu, uint8_t, bRm);
 
 
 /** Opcode 0xdb 0xe0. */
@@ -10325,26 +10705,38 @@ FNIEMOP_DEF(iemOp_fnsetpm)
 FNIEMOP_DEF(iemOp_frstpm)
 {
     IEMOP_MNEMONIC("frstpm (80287XL/ign)"); /* reset pm, back to real mode. */
+#if 0 /* #UDs on newer CPUs */
     IEM_MC_BEGIN(0,0);
     IEM_MC_ADVANCE_RIP();
     IEM_MC_END();
     return VINF_SUCCESS;
+#else
+    return IEMOP_RAISE_INVALID_OPCODE();
+#endif
 }
+
+
+/** Opcode 0xdb 11/5. */
+FNIEMOP_STUB_1(iemOp_fucomi, uint8_t, bRm);
+
+/** Opcode 0xdb 11/6. */
+FNIEMOP_STUB_1(iemOp_fcomi,  uint8_t, bRm);
 
 
 /** Opcode 0xdb. */
 FNIEMOP_DEF(iemOp_EscF3)
 {
+    pIemCpu->offFpuOpcode = pIemCpu->offOpcode - 1;
     uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
     if ((bRm & X86_MODRM_MOD_MASK) == (3 << X86_MODRM_MOD_SHIFT))
     {
-        switch (bRm & 0xf8)
+        switch ((bRm >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK)
         {
-            case 0xc0: AssertFailedReturn(VERR_IEM_INSTR_NOT_IMPLEMENTED); // fcmovnb
-            case 0xc8: AssertFailedReturn(VERR_IEM_INSTR_NOT_IMPLEMENTED); // fcmovne
-            case 0xd0: AssertFailedReturn(VERR_IEM_INSTR_NOT_IMPLEMENTED); // fcmovnbe
-            case 0xd8: AssertFailedReturn(VERR_IEM_INSTR_NOT_IMPLEMENTED); // fcmovnu
-            case 0xe0:
+            case 0: FNIEMOP_CALL_1(iemOp_fcmovnb,  bRm);
+            case 1: FNIEMOP_CALL_1(iemOp_fcmovne,  bRm);
+            case 2: FNIEMOP_CALL_1(iemOp_fcmovnbe, bRm);
+            case 3: FNIEMOP_CALL_1(iemOp_fcmovnnu, bRm);
+            case 4:
                 IEMOP_HLP_NO_LOCK_PREFIX();
                 switch (bRm)
                 {
@@ -10354,12 +10746,14 @@ FNIEMOP_DEF(iemOp_EscF3)
                     case 0xe3:  return FNIEMOP_CALL(iemOp_fninit);
                     case 0xe4:  return FNIEMOP_CALL(iemOp_fnsetpm);
                     case 0xe5:  return FNIEMOP_CALL(iemOp_frstpm);
-                    default:    return IEMOP_RAISE_INVALID_OPCODE();
+                    case 0xe6:  return IEMOP_RAISE_INVALID_OPCODE();
+                    case 0xe7:  return IEMOP_RAISE_INVALID_OPCODE();
+                    IEM_NOT_REACHED_DEFAULT_CASE_RET();
                 }
                 break;
-            case 0xe8: AssertFailedReturn(VERR_IEM_INSTR_NOT_IMPLEMENTED); // fucomi
-            case 0xf0: AssertFailedReturn(VERR_IEM_INSTR_NOT_IMPLEMENTED); // fcomi
-            case 0xf8: return IEMOP_RAISE_INVALID_OPCODE();
+            case 5: return FNIEMOP_CALL_1(iemOp_fucomi, bRm);
+            case 6: return FNIEMOP_CALL_1(iemOp_fcomi,  bRm);
+            case 7: return IEMOP_RAISE_INVALID_OPCODE();
             IEM_NOT_REACHED_DEFAULT_CASE_RET();
         }
     }
@@ -10367,14 +10761,14 @@ FNIEMOP_DEF(iemOp_EscF3)
     {
         switch ((bRm >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK)
         {
-            case 0: return FNIEMOP_CALL_1(iemOp_fild_dw,  bRm);
-            case 1: return FNIEMOP_CALL_1(iemOp_fisttp_dw,bRm);
-            case 2: return FNIEMOP_CALL_1(iemOp_fist_dw,  bRm);
-            case 3: return FNIEMOP_CALL_1(iemOp_fistp_dw, bRm);
+            case 0: return FNIEMOP_CALL_1(iemOp_fild_m32i,  bRm);
+            case 1: return FNIEMOP_CALL_1(iemOp_fisttp_m32i,bRm);
+            case 2: return FNIEMOP_CALL_1(iemOp_fist_m32i,  bRm);
+            case 3: return FNIEMOP_CALL_1(iemOp_fistp_m32i, bRm);
             case 4: return IEMOP_RAISE_INVALID_OPCODE();
-            case 5: return FNIEMOP_CALL_1(iemOp_fld_xr,   bRm);
+            case 5: return FNIEMOP_CALL_1(iemOp_fld_r80,   bRm);
             case 6: return IEMOP_RAISE_INVALID_OPCODE();
-            case 7: return FNIEMOP_CALL_1(iemOp_fstp_xr,  bRm);
+            case 7: return FNIEMOP_CALL_1(iemOp_fstp_r80,  bRm);
             IEM_NOT_REACHED_DEFAULT_CASE_RET();
         }
     }
@@ -10384,181 +10778,41 @@ FNIEMOP_DEF(iemOp_EscF3)
 FNIEMOP_STUB(iemOp_EscF4);
 
 
-/** Opcode 0xdd /0 mem32real */
-FNIEMOP_DEF_1(iemOp_fld_m32r, uint8_t, bRm)
-{
-    IEMOP_MNEMONIC("fld m32r");
-    IEMOP_HLP_NO_LOCK_PREFIX();
+/** Opcode 0xdd !11/0. */
+FNIEMOP_STUB_1(iemOp_fld_m64r,    uint8_t, bRm);
 
-    IEM_MC_BEGIN(2, 2);
-    IEM_MC_LOCAL(RTGCPTR,               GCPtrEffSrc);
-    IEM_MC_LOCAL(IEMFPURESULT,          FpuRes);
-    IEM_MC_ARG_LOCAL_REF(PIEMFPURESULT, pFpuRes,    FpuRes, 0);
-    IEM_MC_ARG(RTFLOAT32U,              r32Val,             1);
+/** Opcode 0xdd !11/0. */
+FNIEMOP_STUB_1(iemOp_fisttp_m64i, uint8_t, bRm);
 
-#ifdef LOG_ENABLED
-Log(("r32Val=%#x\n", r32Val.u32));
-#endif
-    IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm);
-    IEM_MC_MAYBE_RAISE_DEVICE_NOT_AVAILABLE();
-    IEM_MC_MAYBE_RAISE_FPU_XCPT();
-    IEM_MC_FETCH_MEM_R32(r32Val, pIemCpu->iEffSeg, GCPtrEffSrc);
-    IEM_MC_CALL_FPU_AIMPL_2(iemAImpl_fpu_r32_to_r80, pFpuRes, r32Val);
+/** Opcode 0xdd !11/0. */
+FNIEMOP_STUB_1(iemOp_fst_m64r,    uint8_t, bRm);
 
-    IEM_MC_PUSH_FPU_RESULT(FpuRes);
-    IEM_MC_ADVANCE_RIP();
+/** Opcode 0xdd !11/0. */
+FNIEMOP_STUB_1(iemOp_fstp_m64r,   uint8_t, bRm);
 
-    IEM_MC_END();
-    return VINF_SUCCESS;
-}
+/** Opcode 0xdd !11/0. */
+FNIEMOP_STUB_1(iemOp_frstor,      uint8_t, bRm);
 
+/** Opcode 0xdd !11/0. */
+FNIEMOP_STUB_1(iemOp_fnsave,      uint8_t, bRm);
 
-/** Opcode 0xdd /0 stN */
-FNIEMOP_STUB_1(iemOp_fld_stN, uint8_t, bRm);
+/** Opcode 0xdd !11/0. */
+FNIEMOP_STUB_1(iemOp_fnstsw,      uint8_t, bRm);
 
-/** Opcode 0xdd /2 mem32real */
-FNIEMOP_STUB_1(iemOp_fst_m32r, uint8_t, bRm);
+/** Opcode 0xdd 11/0. */
+FNIEMOP_STUB_1(iemOp_ffree_stN,  uint8_t, bRm);
 
-/** Opcode 0xdd /0 stN */
-FNIEMOP_STUB_1(iemOp_fxch_stN, uint8_t, bRm);
+/** Opcode 0xdd 11/1. */
+FNIEMOP_STUB_1(iemOp_fst_stN,    uint8_t, bRm);
 
-/** Opcode 0xdd /3 */
-FNIEMOP_STUB_1(iemOp_fstp_m32r, uint8_t, bRm);
+/** Opcode 0xdd 11/2. */
+FNIEMOP_STUB_1(iemOp_fstp_stN,   uint8_t, bRm);
 
-/** Opcode 0xdd /4 */
-FNIEMOP_STUB_1(iemOp_fldenv, uint8_t, bRm);
+/** Opcode 0xdd 11/3. */
+FNIEMOP_STUB_1(iemOp_fucom_stN,  uint8_t, bRm);
 
-/** Opcode 0xdd /5 */
-FNIEMOP_STUB_1(iemOp_fldcw, uint8_t, bRm);
-
-/** Opcode 0xdd /6 */
-FNIEMOP_STUB_1(iemOp_fstenv, uint8_t, bRm);
-
-/** Opcode 0xdd /7 */
-FNIEMOP_STUB_1(iemOp_fstcw, uint8_t, bRm);
-
-/** Opcode 0xdd 0xc9, 0xdd 0xd8-0xdf.  */
-FNIEMOP_STUB(iemOp_fnop);
-
-/** Opcode 0xdd 0xe0. */
-FNIEMOP_STUB(iemOp_fchs);
-
-/** Opcode 0xdd 0xe1. */
-FNIEMOP_STUB(iemOp_fabs);
-
-/** Opcode 0xdd 0xe4. */
-FNIEMOP_STUB(iemOp_ftst);
-
-/** Opcode 0xdd 0xe5. */
-FNIEMOP_STUB(iemOp_fxam);
-
-/** Opcode 0xdd 0xe8. */
-FNIEMOP_STUB(iemOp_fld1);
-
-/** Opcode 0xdd 0xe9. */
-FNIEMOP_STUB(iemOp_fldl2t);
-
-/** Opcode 0xdd 0xea. */
-FNIEMOP_STUB(iemOp_fldl2e);
-
-/** Opcode 0xdd 0xeb. */
-FNIEMOP_STUB(iemOp_fldpi);
-
-/** Opcode 0xdd 0xec. */
-FNIEMOP_STUB(iemOp_fldlg2);
-
-/** Opcode 0xdd 0xed. */
-FNIEMOP_STUB(iemOp_fldln2);
-
-/** Opcode 0xdd 0xee. */
-FNIEMOP_STUB(iemOp_fldz);
-
-/** Opcode 0xdd 0xf0. */
-FNIEMOP_STUB(iemOp_f2xm1);
-
-/** Opcode 0xdd 0xf1. */
-FNIEMOP_STUB(iemOp_fylx2);
-
-/** Opcode 0xdd 0xf2. */
-FNIEMOP_STUB(iemOp_fptan);
-
-/** Opcode 0xdd 0xf3. */
-FNIEMOP_STUB(iemOp_fpatan);
-
-/** Opcode 0xdd 0xf4. */
-FNIEMOP_STUB(iemOp_fxtract);
-
-/** Opcode 0xdd 0xf5. */
-FNIEMOP_STUB(iemOp_fprem1);
-
-/** Opcode 0xdd 0xf6. */
-FNIEMOP_STUB(iemOp_fdecstp);
-
-/** Opcode 0xdd 0xf7. */
-FNIEMOP_STUB(iemOp_fincstp);
-
-/** Opcode 0xdd 0xf8. */
-FNIEMOP_STUB(iemOp_fprem);
-
-/** Opcode 0xdd 0xf9. */
-FNIEMOP_STUB(iemOp_fyl2xp1);
-
-/** Opcode 0xdd 0xfa. */
-FNIEMOP_STUB(iemOp_fsqrt);
-
-/** Opcode 0xdd 0xfb. */
-FNIEMOP_STUB(iemOp_fsincos);
-
-/** Opcode 0xdd 0xfc. */
-FNIEMOP_STUB(iemOp_frndint);
-
-/** Opcode 0xdd 0xfd. */
-FNIEMOP_STUB(iemOp_fscale);
-
-/** Opcode 0xdd 0xfe. */
-FNIEMOP_STUB(iemOp_fsin);
-
-/** Opcode 0xdd 0xff. */
-FNIEMOP_STUB(iemOp_fcos);
-
-
-/** Used by iemOp_EscF5. */
-static const PFNIEMOP g_apfnEscF5_E0toFF[32] =
-{
-    /* 0xe0 */  iemOp_fchs,
-    /* 0xe1 */  iemOp_fabs,
-    /* 0xe2 */  iemOp_Invalid,
-    /* 0xe3 */  iemOp_Invalid,
-    /* 0xe4 */  iemOp_ftst,
-    /* 0xe5 */  iemOp_fxam,
-    /* 0xe6 */  iemOp_Invalid,
-    /* 0xe7 */  iemOp_Invalid,
-    /* 0xe8 */  iemOp_fld1,
-    /* 0xe9 */  iemOp_fldl2t,
-    /* 0xea */  iemOp_fldl2e,
-    /* 0xeb */  iemOp_fldpi,
-    /* 0xec */  iemOp_fldlg2,
-    /* 0xed */  iemOp_fldln2,
-    /* 0xee */  iemOp_fldz,
-    /* 0xef */  iemOp_Invalid,
-    /* 0xf0 */  iemOp_f2xm1,
-    /* 0xf1 */  iemOp_fylx2,
-    /* 0xf2 */  iemOp_fptan,
-    /* 0xf3 */  iemOp_fpatan,
-    /* 0xf4 */  iemOp_fxtract,
-    /* 0xf5 */  iemOp_fprem1,
-    /* 0xf6 */  iemOp_fdecstp,
-    /* 0xf7 */  iemOp_fincstp,
-    /* 0xf8 */  iemOp_fprem,
-    /* 0xf9 */  iemOp_fyl2xp1,
-    /* 0xfa */  iemOp_fsqrt,
-    /* 0xfb */  iemOp_fsincos,
-    /* 0xfc */  iemOp_frndint,
-    /* 0xfd */  iemOp_fscale,
-    /* 0xfe */  iemOp_fsin,
-    /* 0xff */  iemOp_fcos
-};
-
+/** Opcode 0xdd 11/4. */
+FNIEMOP_STUB_1(iemOp_fucomp_stN, uint8_t, bRm);
 
 /** Opcode 0xdd. */
 FNIEMOP_DEF(iemOp_EscF5)
@@ -10568,34 +10822,29 @@ FNIEMOP_DEF(iemOp_EscF5)
     {
         switch ((bRm >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK)
         {
-            case 0:
-                return FNIEMOP_CALL_1(iemOp_fld_stN, bRm);
-            case 1:
-                return FNIEMOP_CALL_1(iemOp_fxch_stN, bRm);
-            case 2:
-                if (bRm == 0xc9)
-                    return FNIEMOP_CALL(iemOp_fnop);
-                return IEMOP_RAISE_INVALID_OPCODE();
-            case 3:
-                return FNIEMOP_CALL(iemOp_fnop); /* AMD says reserved; tests on intel indicates FNOP. */
-            case 4: case 5: case 6: case 7:
-                return FNIEMOP_CALL(g_apfnEscF5_E0toFF[(bRm & (X86_MODRM_REG_MASK |X86_MODRM_RM_MASK)) - 0xe0]);
+            case 0: return FNIEMOP_CALL_1(iemOp_ffree_stN, bRm);
+            case 1: return FNIEMOP_CALL(  iemOp_fnop);
+            case 2: return FNIEMOP_CALL_1(iemOp_fst_stN, bRm);
+            case 3: return FNIEMOP_CALL_1(iemOp_fstp_stN, bRm);
+            case 4: return FNIEMOP_CALL_1(iemOp_fucom_stN, bRm);
+            case 5: return FNIEMOP_CALL_1(iemOp_fucomp_stN, bRm);
+            case 6: return IEMOP_RAISE_INVALID_OPCODE();
+            case 7: return IEMOP_RAISE_INVALID_OPCODE();
             IEM_NOT_REACHED_DEFAULT_CASE_RET();
         }
-
     }
     else
     {
         switch ((bRm >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK)
         {
-            case 0: return FNIEMOP_CALL_1(iemOp_fld_m32r,  bRm);
-            case 1: return IEMOP_RAISE_INVALID_OPCODE(); /** @todo Check if 0xdd /1 is a valid instruction which does/did something. */
-            case 2: return FNIEMOP_CALL_1(iemOp_fst_m32r,  bRm);
-            case 3: return FNIEMOP_CALL_1(iemOp_fstp_m32r, bRm);
-            case 4: return FNIEMOP_CALL_1(iemOp_fldenv,    bRm);
-            case 5: return FNIEMOP_CALL_1(iemOp_fldcw,     bRm);
-            case 6: return FNIEMOP_CALL_1(iemOp_fstenv,    bRm);
-            case 7: return FNIEMOP_CALL_1(iemOp_fstcw,     bRm);
+            case 0: return FNIEMOP_CALL_1(iemOp_fld_m64r,    bRm);
+            case 1: return FNIEMOP_CALL_1(iemOp_fisttp_m64i, bRm);
+            case 2: return FNIEMOP_CALL_1(iemOp_fst_m64r,    bRm);
+            case 3: return FNIEMOP_CALL_1(iemOp_fstp_m64r,   bRm);
+            case 4: return FNIEMOP_CALL_1(iemOp_frstor,      bRm);
+            case 5: return IEMOP_RAISE_INVALID_OPCODE();
+            case 6: return FNIEMOP_CALL_1(iemOp_fnsave,      bRm);
+            case 7: return FNIEMOP_CALL_1(iemOp_fnstsw,      bRm);
             IEM_NOT_REACHED_DEFAULT_CASE_RET();
         }
     }

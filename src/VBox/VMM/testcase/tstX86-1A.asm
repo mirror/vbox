@@ -1365,6 +1365,7 @@ BEGINPROC   x861_Test5
         fld qword REF(.r64V1)
         fld tword REF(.r80V1)
 
+        ; the 0xd9 block
         ShouldTrap X86_XCPT_UD, db 0d9h, 008h
         ShouldTrap X86_XCPT_UD, db 0d9h, 009h
         ShouldTrap X86_XCPT_UD, db 0d9h, 00ah
@@ -1394,6 +1395,89 @@ BEGINPROC   x861_Test5
         ShouldTrap X86_XCPT_UD, db 0d9h, 0e6h
         ShouldTrap X86_XCPT_UD, db 0d9h, 0e7h
         ShouldTrap X86_XCPT_UD, db 0d9h, 0efh
+        ShouldTrap X86_XCPT_UD, db 0d9h, 008h
+        ShouldTrap X86_XCPT_UD, db 0d9h, 00fh
+
+        ; the 0xda block
+        ShouldTrap X86_XCPT_UD, db 0dah, 0e0h
+        ShouldTrap X86_XCPT_UD, db 0dah, 0e1h
+        ShouldTrap X86_XCPT_UD, db 0dah, 0e2h
+        ShouldTrap X86_XCPT_UD, db 0dah, 0e3h
+        ShouldTrap X86_XCPT_UD, db 0dah, 0e4h
+        ShouldTrap X86_XCPT_UD, db 0dah, 0e5h
+        ShouldTrap X86_XCPT_UD, db 0dah, 0e6h
+        ShouldTrap X86_XCPT_UD, db 0dah, 0e7h
+        ShouldTrap X86_XCPT_UD, db 0dah, 0e8h
+        ShouldTrap X86_XCPT_UD, db 0dah, 0eah
+        ShouldTrap X86_XCPT_UD, db 0dah, 0ebh
+        ShouldTrap X86_XCPT_UD, db 0dah, 0ech
+        ShouldTrap X86_XCPT_UD, db 0dah, 0edh
+        ShouldTrap X86_XCPT_UD, db 0dah, 0eeh
+        ShouldTrap X86_XCPT_UD, db 0dah, 0efh
+        ShouldTrap X86_XCPT_UD, db 0dah, 0f0h
+        ShouldTrap X86_XCPT_UD, db 0dah, 0f1h
+        ShouldTrap X86_XCPT_UD, db 0dah, 0f2h
+        ShouldTrap X86_XCPT_UD, db 0dah, 0f3h
+        ShouldTrap X86_XCPT_UD, db 0dah, 0f4h
+        ShouldTrap X86_XCPT_UD, db 0dah, 0f5h
+        ShouldTrap X86_XCPT_UD, db 0dah, 0f6h
+        ShouldTrap X86_XCPT_UD, db 0dah, 0f7h
+        ShouldTrap X86_XCPT_UD, db 0dah, 0f8h
+        ShouldTrap X86_XCPT_UD, db 0dah, 0f9h
+        ShouldTrap X86_XCPT_UD, db 0dah, 0fah
+        ShouldTrap X86_XCPT_UD, db 0dah, 0fbh
+        ShouldTrap X86_XCPT_UD, db 0dah, 0fch
+        ShouldTrap X86_XCPT_UD, db 0dah, 0fdh
+        ShouldTrap X86_XCPT_UD, db 0dah, 0feh
+        ShouldTrap X86_XCPT_UD, db 0dah, 0ffh
+
+        ; the 0xdb block
+        db 0dbh, 0e0h ; fneni
+        db 0dbh, 0e1h ; fndisi
+        db 0dbh, 0e4h ; fnsetpm
+        ShouldTrap X86_XCPT_UD, db 0dbh, 0e5h
+        ShouldTrap X86_XCPT_UD, db 0dbh, 0e6h
+        ShouldTrap X86_XCPT_UD, db 0dbh, 0e7h
+        ShouldTrap X86_XCPT_UD, db 0dbh, 0f8h
+        ShouldTrap X86_XCPT_UD, db 0dbh, 0f9h
+        ShouldTrap X86_XCPT_UD, db 0dbh, 0fah
+        ShouldTrap X86_XCPT_UD, db 0dbh, 0fbh
+        ShouldTrap X86_XCPT_UD, db 0dbh, 0fch
+        ShouldTrap X86_XCPT_UD, db 0dbh, 0fdh
+        ShouldTrap X86_XCPT_UD, db 0dbh, 0feh
+        ShouldTrap X86_XCPT_UD, db 0dbh, 0ffh
+        ShouldTrap X86_XCPT_UD, db 0dbh, 020h
+        ShouldTrap X86_XCPT_UD, db 0dbh, 023h
+        ShouldTrap X86_XCPT_UD, db 0dbh, 030h
+        ShouldTrap X86_XCPT_UD, db 0dbh, 032h
+
+        ; the 0xdd block
+        db 0ddh, 0c0h ; fnop?
+        db 0ddh, 0c1h ; fnop?
+        db 0ddh, 0c2h ; fnop?
+        db 0ddh, 0c3h ; fnop?
+        db 0ddh, 0c4h ; fnop?
+        db 0ddh, 0c5h ; fnop?
+        db 0ddh, 0c6h ; fnop?
+        db 0ddh, 0c7h ; fnop?
+        ShouldTrap X86_XCPT_UD, db 0ddh, 0f0h
+        ShouldTrap X86_XCPT_UD, db 0ddh, 0f1h
+        ShouldTrap X86_XCPT_UD, db 0ddh, 0f2h
+        ShouldTrap X86_XCPT_UD, db 0ddh, 0f3h
+        ShouldTrap X86_XCPT_UD, db 0ddh, 0f4h
+        ShouldTrap X86_XCPT_UD, db 0ddh, 0f5h
+        ShouldTrap X86_XCPT_UD, db 0ddh, 0f6h
+        ShouldTrap X86_XCPT_UD, db 0ddh, 0f7h
+        ShouldTrap X86_XCPT_UD, db 0ddh, 0f8h
+        ShouldTrap X86_XCPT_UD, db 0ddh, 0f9h
+        ShouldTrap X86_XCPT_UD, db 0ddh, 0fah
+        ShouldTrap X86_XCPT_UD, db 0ddh, 0fbh
+        ShouldTrap X86_XCPT_UD, db 0ddh, 0fch
+        ShouldTrap X86_XCPT_UD, db 0ddh, 0fdh
+        ShouldTrap X86_XCPT_UD, db 0ddh, 0feh
+        ShouldTrap X86_XCPT_UD, db 0ddh, 0ffh
+        ShouldTrap X86_XCPT_UD, db 0ddh, 028h
+        ShouldTrap X86_XCPT_UD, db 0ddh, 02fh
 
 
 .success:

@@ -238,12 +238,12 @@ int main()
         rc = x861_Test4();
         if (rc != 0)
             RTTestFailed(hTest, "x861_Test4 -> %d", rc);
+#endif
 
         RTTestSub(hTest, "Odd floating point encodings");
         rc = x861_Test5();
         if (rc != 0)
             RTTestFailed(hTest, "x861_Test5 -> %d", rc);
-#endif
 
         RTTestSub(hTest, "Floating point exceptions ++");
         rc = x861_Test6();
