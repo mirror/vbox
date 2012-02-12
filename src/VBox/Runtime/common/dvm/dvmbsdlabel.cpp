@@ -373,7 +373,7 @@ static int rtDvmFmtBsdLblVolumeCreate(PRTDVMFMTINTERNAL pThis, PBsdLabelPartitio
         pVol->pVolMgr            = pThis;
         pVol->idxEntry           = idx;
         pVol->pBsdPartitionEntry = pBsdPartitionEntry;
-        pVol->offStart           = pBsdPartitionEntry->offSectorStart * pThis->DiskLabel.cbSector;
+        pVol->offStart           = (uint64_t)pBsdPartitionEntry->offSectorStart * pThis->DiskLabel.cbSector;
         pVol->cbVolume           = pBsdPartitionEntry->cSectors * pThis->DiskLabel.cbSector;
 
         *phVolFmt = pVol;
