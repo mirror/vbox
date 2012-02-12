@@ -126,6 +126,32 @@ CollectorGuest::~CollectorGuest()
     // Assert(!cEnabled); why?
 }
 
+int CollectorGuest::enableVMMStats(bool mCollectVMMStats)
+{
+    HRESULT ret = S_OK;
+
+    if (mGuest)
+    {
+        /* @todo: replace this with a direct call to mGuest in trunk! */
+        AutoCaller autoCaller(mMachine);
+        if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+        ComPtr<IInternalSessionControl> directControl;
+
+        ret = mMachine->getDirectControl(&directControl);
+        if (ret != S_OK)
+            return ret;
+
+        /* enable statistics collection; this is a remote call (!) */
+        ret = directControl->EnableVMMStatistics(mCollectVMMStats);
+        LogAleksey(("{%p} " LOG_FN_FMT ": %sable VMM stats (%s)\n",
+                    this, __PRETTY_FUNCTION__, mCollectVMMStats?"En":"Dis",
+                    SUCCEEDED(ret)?"success":"failed"));
+    }
+
+    return ret;
+}
+
 int CollectorGuest::enable()
 {
     mEnabled = true;
@@ -175,28 +201,37 @@ int CollectorGuest::disable()
     return S_OK;
 }
 
-int CollectorGuest::updateStats()
+void CollectorGuest::updateStats(ULONG aValidStats, ULONG aCpuUser,
+                                 ULONG aCpuKernel, ULONG aCpuIdle,
+                                 ULONG aMemTotal, ULONG aMemFree,
+                                 ULONG aMemBalloon, ULONG aMemShared,
+                                 ULONG aMemCache, ULONG aPageTotal,
+                                 ULONG aAllocVMM, ULONG aFreeVMM,
+                                 ULONG aBalloonedVMM, ULONG aSharedVMM)
 {
-    if (mGuest)
+    if ((aValidStats & GUESTSTATS_CPULOAD) == GUESTSTATS_CPULOAD)
     {
-        HRESULT rc;
-        rc = mGuest->InternalGetStatistics(&mCpuUser, &mCpuKernel, &mCpuIdle,
-                                           &mMemTotal, &mMemFree, &mMemBalloon, &mMemShared, &mMemCache,
-                                           &mPageTotal, &mAllocVMM, &mFreeVMM, &mBalloonedVMM, &mSharedVMM);
-        if (SUCCEEDED(rc))
-        {
-            mValid = true;
-        }
-        LogAleksey(("{%p} " LOG_FN_FMT ": mValid=%s mCpuUser=%u mCpuKernel=%u mCpuIdle=%u\n"
-                    "mMemTotal=%u mMemFree=%u mMemBalloon=%u mMemShared=%u mMemCache=%u\n"
-                    "mPageTotal=%u mAllocVMM=%u mFreeVMM=%u mBalloonedVMM=%u mSharedVMM=%u\n",
-                    this, __PRETTY_FUNCTION__, mValid?"y":"n",
-                    mCpuUser, mCpuKernel, mCpuIdle,
-                    mMemTotal, mMemFree, mMemBalloon, mMemShared, mMemCache,
-                    mPageTotal, mAllocVMM, mFreeVMM, mBalloonedVMM, mSharedVMM));
+        mCpuUser   = aCpuUser;
+        mCpuKernel = aCpuKernel,
+        mCpuIdle   = aCpuIdle;
     }
-
-    return S_OK;
+    if ((aValidStats & GUESTSTATS_RAMUSAGE) == GUESTSTATS_RAMUSAGE)
+    {
+        mMemTotal   = aMemTotal;
+        mMemFree    = aMemFree;
+        mMemBalloon = aMemBalloon;
+        mMemShared  = aMemShared;
+        mMemCache   = aMemCache;
+        mPageTotal  = aPageTotal;
+    }
+    if ((aValidStats & GUESTSTATS_VMMRAM) == GUESTSTATS_VMMRAM)
+    {
+        mAllocVMM     = aAllocVMM;
+        mFreeVMM      = aFreeVMM;
+        mBalloonedVMM = aBalloonedVMM;
+        mSharedVMM    = aSharedVMM;
+    }
+    mValid = aValidStats;
 }
 
 void CollectorGuestManager::preCollect(CollectorHints& hints, uint64_t /* iTick */)
@@ -223,12 +258,17 @@ void CollectorGuestManager::preCollect(CollectorHints& hints, uint64_t /* iTick 
             if ((*it)->isEnabled())
             {
                 /* Already enabled, collect the data */
-                (*it)->updateStats();
+                /*
+                 * Actually the data will be pushed by Guest object, so
+                 * we don't need to do anything here.
+                 */
+                //(*it)->updateStats();
             }
             else
             {
                 (*it)->invalidateStats();
                 (*it)->enable();
+                (*it)->enableVMMStats(*it == mVMMStatsProvider);
             }
         }
         else
@@ -276,12 +316,18 @@ void CollectorGuestManager::unregisterGuest(CollectorGuest* pGuest)
             {
                 /* Found the guest already collecting stats, elect it */
                 mVMMStatsProvider = *it;
+                mVMMStatsProvider->enableVMMStats(true);
                 break;
             }
             else if (!mVMMStatsProvider)
             {
                 /* If nobody collects stats, take the first registered */
                 mVMMStatsProvider = *it;
+                /*
+                 * No need to notify the guest at this point as it will be
+                 * done in CollectorGuestManager::preCollect when it gets
+                 * enabled.
+                 */
             }
         }
     }
@@ -447,8 +493,8 @@ void HostRamVmm::collect()
     {
         LogAleksey(("{%p} " LOG_FN_FMT ": provider=%p enabled=%s valid=%s...\n",
                     this, __PRETTY_FUNCTION__, provider, provider->isEnabled()?"y":"n",
-                    provider->isValid()?"y":"n"));
-        if (provider->isValid())
+                    provider->isValid(GUESTSTATS_VMMRAM)?"y":"n"));
+        if (provider->isValid(GUESTSTATS_VMMRAM))
         {
             /* Provider is ready, get updated stats */
             mAllocCurrent     = provider->getAllocVMM();
@@ -562,7 +608,7 @@ void GuestCpuLoad::preCollect(CollectorHints& hints, uint64_t /* iTick */)
 
 void GuestCpuLoad::collect()
 {
-    if (mCGuest->isValid())
+    if (mCGuest->isValid(GUESTSTATS_CPULOAD))
     {
         mUser->put((ULONG)(PM_CPU_LOAD_MULTIPLIER * mCGuest->getCpuUser()) / 100);
         mKernel->put((ULONG)(PM_CPU_LOAD_MULTIPLIER * mCGuest->getCpuKernel()) / 100);
@@ -590,7 +636,7 @@ void GuestRamUsage::preCollect(CollectorHints& hints,  uint64_t /* iTick */)
 
 void GuestRamUsage::collect()
 {
-    if (mCGuest->isValid())
+    if (mCGuest->isValid(GUESTSTATS_RAMUSAGE))
     {
         mTotal->put(mCGuest->getMemTotal());
         mFree->put(mCGuest->getMemFree());

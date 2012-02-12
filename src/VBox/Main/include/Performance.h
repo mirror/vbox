@@ -139,6 +139,38 @@ namespace pm
     };
 
     /* Guest Collector Classes  *********************************/
+    /*
+     * WARNING! The bits in the following masks must correspond to parameters
+     * of CollectorGuest::updateStats().
+     */
+    typedef enum
+    {
+        GUESTSTATMASK_NONE       = 0x00000000,
+        GUESTSTATMASK_CPUUSER    = 0x00000001,
+        GUESTSTATMASK_CPUKERNEL  = 0x00000002,
+        GUESTSTATMASK_CPUIDLE    = 0x00000004,
+        GUESTSTATMASK_MEMTOTAL   = 0x00000008,
+        GUESTSTATMASK_MEMFREE    = 0x00000010,
+        GUESTSTATMASK_MEMBALLOON = 0x00000020,
+        GUESTSTATMASK_MEMSHARED  = 0x00000040,
+        GUESTSTATMASK_MEMCACHE   = 0x00000080,
+        GUESTSTATMASK_PAGETOTAL  = 0x00000100,
+        GUESTSTATMASK_ALLOCVMM   = 0x00000200,
+        GUESTSTATMASK_FREEVMM    = 0x00000400,
+        GUESTSTATMASK_BALOONVMM  = 0x00000800,
+        GUESTSTATMASK_SHAREDVMM  = 0x00001000
+    } GUESTSTATMASK;
+
+    const ULONG GUESTSTATS_CPULOAD = 
+        GUESTSTATMASK_CPUUSER|GUESTSTATMASK_CPUKERNEL|GUESTSTATMASK_CPUIDLE;
+    const ULONG GUESTSTATS_RAMUSAGE =
+        GUESTSTATMASK_MEMTOTAL|GUESTSTATMASK_MEMFREE|GUESTSTATMASK_MEMBALLOON|
+        GUESTSTATMASK_MEMSHARED|GUESTSTATMASK_MEMCACHE|
+        GUESTSTATMASK_PAGETOTAL;
+    const ULONG GUESTSTATS_VMMRAM =
+        GUESTSTATMASK_ALLOCVMM|GUESTSTATMASK_FREEVMM|
+        GUESTSTATMASK_BALOONVMM|GUESTSTATMASK_SHAREDVMM;
+
     class CollectorGuest
     {
     public:
@@ -147,12 +179,19 @@ namespace pm
 
         bool isUnregistered()   { return mUnregistered; };
         bool isEnabled()        { return mEnabled; };
-        bool isValid()          { return mValid; };
-        void invalidateStats()  { mValid = false; };
+        bool isValid(ULONG mask){ return (mValid & mask) == mask; };
+        void invalidateStats()  { mValid = 0; };
         void unregister()       { mUnregistered = true; };
-        int updateStats();
+        void updateStats(ULONG aValidStats, ULONG aCpuUser,
+                         ULONG aCpuKernel, ULONG aCpuIdle,
+                         ULONG aMemTotal, ULONG aMemFree,
+                         ULONG aMemBalloon, ULONG aMemShared,
+                         ULONG aMemCache, ULONG aPageTotal,
+                         ULONG aAllocVMM, ULONG aFreeVMM,
+                         ULONG aBalloonedVMM, ULONG aSharedVMM);
         int enable();
         int disable();
+        int enableVMMStats(bool mCollectVMMStats);
 
         RTPROCESS getProcess()  { return mProcess; };
         ULONG getCpuUser()      { return mCpuUser; };
@@ -172,7 +211,7 @@ namespace pm
     private:
         bool                 mUnregistered;
         bool                 mEnabled;
-        bool                 mValid;
+        ULONG                mValid;
         Machine             *mMachine;
         RTPROCESS            mProcess;
         ComPtr<IConsole>     mConsole;

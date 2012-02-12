@@ -197,6 +197,7 @@ public:
     HRESULT taskCopyFileFromGuest(GuestTask *aTask);
     HRESULT taskUpdateGuestAdditions(GuestTask *aTask);
 #endif
+    void enableVMMStatistics(BOOL aEnable) { mCollectVMMStats = aEnable; };
 
 private:
 
@@ -305,6 +306,8 @@ private:
     ULONG mMemoryBalloonSize;
     ULONG mStatUpdateInterval;
     ULONG mCurrentGuestStat[GUESTSTATTYPE_MAX];
+    ULONG mGuestValidStats;
+    BOOL  mCollectVMMStats;
     BOOL  mfPageFusionEnabled;
 
     Console *mParent;
@@ -327,7 +330,12 @@ private:
     friend class GuestDnD;
     friend class GuestDnDPrivate;
 #endif
+    static void staticUpdateStats(RTTIMERLR hTimerLR, void *pvUser, uint64_t iTick);
+    void updateStats(uint64_t iTick);
+    RTTIMERLR         mStatTimer;
+    uint32_t          mMagic;
 };
+#define GUEST_MAGIC 0xCEED2006u
 
 #endif // ____H_GUESTIMPL
 /* vi: set tabstop=4 shiftwidth=4 expandtab: */

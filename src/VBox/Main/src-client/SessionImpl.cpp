@@ -835,6 +835,13 @@ STDMETHODIMP Session::OnlineMergeMedium(IMediumAttachment *aMediumAttachment,
                                        aProgress);
 }
 
+STDMETHODIMP Session::EnableVMMStatistics(BOOL aEnable)
+{
+    AutoCaller autoCaller(this);
+    AssertComRCReturn(autoCaller.rc(), autoCaller.rc());
+
+    mConsole->enableVMMStatistics(aEnable);
+}
 
 // private methods
 ///////////////////////////////////////////////////////////////////////////////

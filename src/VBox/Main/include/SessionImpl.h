@@ -112,6 +112,7 @@ public:
                                  BOOL aMergeForward, IMedium *aParentForTarget,
                                  ComSafeArrayIn(IMedium *, aChildrenToReparent),
                                  IProgress *aProgress);
+    STDMETHOD(EnableVMMStatistics)(BOOL aEnable);
 
 private:
 
