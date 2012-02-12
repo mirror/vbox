@@ -3420,6 +3420,57 @@
         </desc>
       </param>
     </method>
+
+    <method name="reportGuestStatistics">
+      <desc>
+        Passes collected guest statistics to VBoxSVC.
+      </desc>
+      <param name="validStats" type="unsigned long" dir="in">
+        <desc>
+          Mask defining which parameters are valid. For example: 0x11 means
+          that cpuIdle and XXX are valid. Other parameters should be ignored.
+        </desc>
+      </param>
+      <param name="cpuUser" type="unsigned long" dir="in">
+        <desc>Percentage of processor time spent in user mode as seen by the guest.</desc>
+      </param>
+      <param name="cpuKernel" type="unsigned long" dir="in">
+        <desc>Percentage of processor time spent in kernel mode as seen by the guest.</desc>
+      </param>
+      <param name="cpuIdle" type="unsigned long" dir="in">
+        <desc>Percentage of processor time spent idling as seen by the guest.</desc>
+      </param>
+      <param name="memTotal" type="unsigned long" dir="in">
+        <desc>Total amount of physical guest RAM.</desc>
+      </param>
+      <param name="memFree" type="unsigned long" dir="in">
+        <desc>Free amount of physical guest RAM.</desc>
+      </param>
+      <param name="memBalloon" type="unsigned long" dir="in">
+        <desc>Amount of ballooned physical guest RAM.</desc>
+      </param>
+      <param name="memShared" type="unsigned long" dir="in">
+        <desc>Amount of shared physical guest RAM.</desc>
+      </param>
+      <param name="memCache" type="unsigned long" dir="in">
+        <desc>Total amount of guest (disk) cache memory.</desc>
+      </param>
+      <param name="pagedTotal" type="unsigned long" dir="in">
+        <desc>Total amount of space in the page file.</desc>
+      </param>
+      <param name="memAllocTotal" type="unsigned long" dir="in">
+        <desc>Total amount of memory allocated by the hypervisor.</desc>
+      </param>
+      <param name="memFreeTotal" type="unsigned long" dir="in">
+        <desc>Total amount of free memory available in the hypervisor.</desc>
+      </param>
+      <param name="memBalloonTotal" type="unsigned long" dir="in">
+        <desc>Total amount of memory ballooned by the hypervisor.</desc>
+      </param>
+      <param name="memSharedTotal" type="unsigned long" dir="in">
+        <desc>Total amount of shared memory in the hypervisor.</desc>
+      </param>
+    </method>
   </interface>
 
   <interface
@@ -14995,6 +15046,23 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         <desc>
           Progress object for this operation.
         </desc>
+      </param>
+    </method>
+
+    <method name="enableVMMStatistics">
+      <desc>
+        Enables or disables collection of VMM RAM statistics.
+
+        <result name="VBOX_E_INVALID_VM_STATE">
+          Machine session is not open.
+        </result>
+        <result name="VBOX_E_INVALID_OBJECT_STATE">
+          Session type is not direct.
+        </result>
+
+      </desc>
+      <param name="enable" type="boolean" dir="in">
+        <desc>True enables statistics collection.</desc>
       </param>
     </method>
 

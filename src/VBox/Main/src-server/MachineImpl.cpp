@@ -11288,6 +11288,26 @@ RWLockHandle *SessionMachine::lockHandle() const
 ////////////////////////////////////////////////////////////////////////////////
 
 /**
+ *  Passes collected guest statistics to performance collector object
+ */
+STDMETHODIMP SessionMachine::ReportGuestStatistics(ULONG aValidStats, ULONG aCpuUser,
+                                                   ULONG aCpuKernel, ULONG aCpuIdle,
+                                                   ULONG aMemTotal, ULONG aMemFree,
+                                                   ULONG aMemBalloon, ULONG aMemShared,
+                                                   ULONG aMemCache, ULONG aPageTotal,
+                                                   ULONG aAllocVMM, ULONG aFreeVMM,
+                                                   ULONG aBalloonedVMM, ULONG aSharedVMM)
+{
+    if (mCollectorGuest)
+        mCollectorGuest->updateStats(aValidStats, aCpuUser, aCpuKernel, aCpuIdle,
+                                     aMemTotal, aMemFree, aMemBalloon, aMemShared,
+                                     aMemCache, aPageTotal, aAllocVMM, aFreeVMM,
+                                     aBalloonedVMM, aSharedVMM);
+
+    return S_OK;
+}
+
+/**
  *  @note Locks this object for writing.
  */
 STDMETHODIMP SessionMachine::SetRemoveSavedStateFile(BOOL aRemove)

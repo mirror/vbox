@@ -27,6 +27,7 @@
 
 #include "AutoCaller.h"
 #include "Logging.h"
+#include "Performance.h"
 
 #include <VBox/VMMDev.h>
 #ifdef VBOX_WITH_GUEST_CONTROL
@@ -34,6 +35,7 @@
 # include <VBox/com/ErrorInfo.h>
 #endif
 #include <iprt/cpp/utils.h>
+#include <iprt/timer.h>
 #include <VBox/vmm/pgm.h>
 #include <VBox/version.h>
 
@@ -92,10 +94,18 @@ HRESULT Guest::init(Console *aParent)
         mfPageFusionEnabled = false;                /* Default is no page fusion*/
 
     mStatUpdateInterval = 0;                    /* Default is not to report guest statistics at all */
+    mCollectVMMStats = false;
 
     /* Clear statistics. */
     for (unsigned i = 0 ; i < GUESTSTATTYPE_MAX; i++)
         mCurrentGuestStat[i] = 0;
+    mGuestValidStats = pm::GUESTSTATMASK_NONE;
+
+    mMagic = GUEST_MAGIC;
+    int vrc = RTTimerLRCreate (&mStatTimer, 1000 /* ms */,
+                               &Guest::staticUpdateStats, this);
+    AssertMsgRC (vrc, ("Failed to create guest statistics "
+                       "update timer(%Rra)\n", vrc));
 
 #ifdef VBOX_WITH_GUEST_CONTROL
     /* Init the context ID counter at 1000. */
@@ -150,12 +160,110 @@ void Guest::uninit()
     }
 #endif
 
+    /* Destroy stat update timer */
+    int vrc = RTTimerLRDestroy (mStatTimer);
+    AssertMsgRC (vrc, ("Failed to create guest statistics "
+                       "update timer(%Rra)\n", vrc));
+    mStatTimer = NULL;
+    mMagic     = 0;
+
 #ifdef VBOX_WITH_DRAG_AND_DROP
     delete m_pGuestDnD;
     m_pGuestDnD = NULL;
 #endif
 
     unconst(mParent) = NULL;
+}
+
+/* static */
+void Guest::staticUpdateStats(RTTIMERLR hTimerLR, void *pvUser, uint64_t iTick)
+{
+    AssertReturnVoid (pvUser != NULL);
+    Guest *guest = static_cast <Guest *> (pvUser);
+    Assert(guest->mMagic == GUEST_MAGIC);
+    if (guest->mMagic == GUEST_MAGIC)
+        guest->updateStats(iTick);
+
+    NOREF (hTimerLR);
+}
+
+void Guest::updateStats(uint64_t iTick)
+{
+    uint64_t uFreeTotal, uAllocTotal, uBalloonedTotal, uSharedTotal;
+    uint64_t uTotalMem, uPrivateMem, uSharedMem, uZeroMem;
+
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    ULONG aGuestStats[GUESTSTATTYPE_MAX];
+    ULONG validStats = mGuestValidStats;
+    /* Check if we have anything to report */
+    if (validStats)
+    {
+        mGuestValidStats = pm::GUESTSTATMASK_NONE;
+        memcpy(aGuestStats, mCurrentGuestStat, sizeof(aGuestStats));
+    }
+    alock.release();
+    /*
+     * Calling SessionMachine may take time as the object resides in VBoxSVC
+     * process. This is why we took a snapshot of currently collected stats
+     * and released the lock.
+     */
+    uFreeTotal      = 0;
+    uAllocTotal     = 0; 
+    uBalloonedTotal = 0; 
+    uSharedTotal    = 0;
+    uTotalMem       = 0;
+    uPrivateMem     = 0;
+    uSharedMem      = 0;
+    uZeroMem        = 0;
+
+    Console::SafeVMPtr pVM (mParent);
+    if (pVM.isOk())
+    {
+        int rc;
+
+        /*
+         * There is no point in collecting VM shared memory if other memory
+         * statistics are not available yet. Or is it?
+         */
+        if (validStats)
+        {
+            /* Query the missing per-VM memory statistics. */
+            rc = PGMR3QueryMemoryStats(pVM.raw(), &uTotalMem, &uPrivateMem, &uSharedMem, &uZeroMem);
+            if (rc == VINF_SUCCESS)
+            {
+                validStats |= pm::GUESTSTATMASK_MEMSHARED;
+            }
+        }
+
+        if (mCollectVMMStats)
+        {
+            rc = PGMR3QueryGlobalMemoryStats(pVM.raw(), &uAllocTotal, &uFreeTotal, &uBalloonedTotal, &uSharedTotal);
+            AssertRC(rc);
+            if (rc == VINF_SUCCESS)
+            {
+                validStats |= pm::GUESTSTATMASK_ALLOCVMM|pm::GUESTSTATMASK_FREEVMM|
+                    pm::GUESTSTATMASK_BALOONVMM|pm::GUESTSTATMASK_SHAREDVMM;
+            }
+        }
+
+    }
+
+    mParent->reportGuestStatistics(validStats,
+                                   aGuestStats[GUESTSTATTYPE_CPUUSER],
+                                   aGuestStats[GUESTSTATTYPE_CPUKERNEL], 
+                                   aGuestStats[GUESTSTATTYPE_CPUIDLE],
+                                   /* Convert the units for RAM usage stats: page (4K) -> 1KB units */
+                                   mCurrentGuestStat[GUESTSTATTYPE_MEMTOTAL] * (_4K/_1K),
+                                   mCurrentGuestStat[GUESTSTATTYPE_MEMFREE] * (_4K/_1K),
+                                   mCurrentGuestStat[GUESTSTATTYPE_MEMBALLOON] * (_4K/_1K),
+                                   (ULONG)(uSharedMem / _1K), /* bytes -> KB */
+                                   mCurrentGuestStat[GUESTSTATTYPE_MEMCACHE] * (_4K/_1K),
+                                   mCurrentGuestStat[GUESTSTATTYPE_PAGETOTAL] * (_4K/_1K),
+                                   (ULONG)(uAllocTotal / _1K), /* bytes -> KB */
+                                   (ULONG)(uFreeTotal / _1K),
+                                   (ULONG)(uBalloonedTotal / _1K),
+                                   (ULONG)(uSharedTotal / _1K));
 }
 
 // IGuest properties
@@ -393,6 +501,17 @@ STDMETHODIMP Guest::COMSETTER(StatisticsUpdateInterval)(ULONG aUpdateInterval)
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
+    if (mStatUpdateInterval)
+        if (aUpdateInterval == 0)
+            RTTimerLRStop(mStatTimer);
+        else
+            RTTimerLRChangeInterval(mStatTimer, aUpdateInterval);
+    else
+        if (aUpdateInterval != 0)
+        {
+            RTTimerLRChangeInterval(mStatTimer, aUpdateInterval);
+            RTTimerLRStart(mStatTimer, 0);
+        }
     mStatUpdateInterval = aUpdateInterval;
     /* forward the information to the VMM device */
     VMMDev *pVMMDev = mParent->getVMMDev();
@@ -489,6 +608,18 @@ STDMETHODIMP Guest::InternalGetStatistics(ULONG *aCpuUser, ULONG *aCpuKernel, UL
 
 HRESULT Guest::setStatistic(ULONG aCpuId, GUESTSTATTYPE enmType, ULONG aVal)
 {
+    static ULONG indexToPerfMask[] =
+    {
+        pm::GUESTSTATMASK_CPUUSER,
+        pm::GUESTSTATMASK_CPUKERNEL,
+        pm::GUESTSTATMASK_CPUIDLE,
+        pm::GUESTSTATMASK_MEMTOTAL,
+        pm::GUESTSTATMASK_MEMFREE,
+        pm::GUESTSTATMASK_MEMBALLOON,
+        pm::GUESTSTATMASK_MEMCACHE,
+        pm::GUESTSTATMASK_PAGETOTAL,
+        pm::GUESTSTATMASK_NONE
+    };
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
@@ -498,6 +629,7 @@ HRESULT Guest::setStatistic(ULONG aCpuId, GUESTSTATTYPE enmType, ULONG aVal)
         return E_INVALIDARG;
 
     mCurrentGuestStat[enmType] = aVal;
+    mGuestValidStats |= indexToPerfMask[enmType];
     return S_OK;
 }
 

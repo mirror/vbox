@@ -5606,6 +5606,15 @@ HRESULT Console::onlineMergeMedium(IMediumAttachment *aMediumAttachment,
 
 
 /**
+ * Merely passes the call to Guest::enableVMMStatistics().
+ */
+void Console::enableVMMStatistics(BOOL aEnable)
+{
+    if (mGuest)
+        mGuest->enableVMMStatistics(aEnable);
+}
+
+/**
  * Gets called by Session::UpdateMachineState()
  * (IInternalSessionControl::updateMachineState()).
  *
