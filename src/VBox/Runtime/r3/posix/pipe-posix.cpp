@@ -635,7 +635,7 @@ RTDECL(int) RTPipeSelectOne(RTPIPE hPipe, RTMSINTERVAL cMillies)
     else
         timeout = cMillies;
 
-    int rc = poll(&PollFd, 1, 0);
+    int rc = poll(&PollFd, 1, timeout);
     if (rc == -1)
         return RTErrConvertFromErrno(errno);
     return rc > 0 ? VINF_SUCCESS : VERR_TIMEOUT;
