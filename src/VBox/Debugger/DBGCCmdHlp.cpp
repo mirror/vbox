@@ -761,7 +761,7 @@ static DECLCALLBACK(int) dbgcHlpVarToNumber(PDBGCCMDHLP pCmdHlp, PCDBGCVAR pVar,
             break;
         case DBGCVAR_TYPE_NUMBER:
             u64Number = (uintptr_t)pVar->u.u64Number;
-            return VINF_SUCCESS;
+            break;
         case DBGCVAR_TYPE_GC_FAR:
             u64Number = (uintptr_t)pVar->u.GCFar.off;
             break;
