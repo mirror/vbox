@@ -4698,8 +4698,8 @@
         <translation>請選擇新的虛擬磁碟檔案應配置所使用的或應建立完全配置。</translation>
     </message>
     <message>
-        <source>&lt;p&gt;A &lt;b&gt;dynamically allocated&lt;/b&gt; virtual disk file will only use space on your physical hard disk as it fills up, although it will not shrink again automatically when space on it is freed.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;&lt;b&gt;動態配置&lt;/b&gt;虛擬磁碟檔案只使用您實體硬碟的空間作為填滿，但有可用空間時不會再次自動收縮。&lt;/p&gt;</translation>
+        <source>&lt;p&gt;A &lt;b&gt;dynamically allocated&lt;/b&gt; virtual disk file will only use space on your physical hard disk as it fills up (up to a &lt;b&gt;fixed maximum size&lt;/b&gt;), although it will not shrink again automatically when space on it is freed.&lt;/p&gt;</source>
+        <translation type="unfinished">&lt;p&gt;&lt;b&gt;動態配置&lt;/b&gt;虛擬磁碟檔案只使用您實體硬碟的空間作為填滿，但有可用空間時不會再次自動收縮。&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;A &lt;b&gt;fixed size&lt;/b&gt; virtual disk file may take longer to create on some systems but is often faster to use.&lt;/p&gt;</source>

@@ -6281,8 +6281,8 @@ p, li { white-space: pre-wrap; }
         <translation>가상 디스크 파일을 사용할 때 확장할 지, 미리 지정한 크기로 만들지 선택하십시오.</translation>
     </message>
     <message>
-        <source>&lt;p&gt;A &lt;b&gt;dynamically allocated&lt;/b&gt; virtual disk file will only use space on your physical hard disk as it fills up, although it will not shrink again automatically when space on it is freed.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;&lt;b&gt;동적 할당&lt;/b&gt; 가상 디스크는 가상 디스크를 사용할 때 파일 크기가 커지지만, 사용량이 줄어들어도 작아지지는 않습니다.&lt;/p&gt;</translation>
+        <source>&lt;p&gt;A &lt;b&gt;dynamically allocated&lt;/b&gt; virtual disk file will only use space on your physical hard disk as it fills up (up to a &lt;b&gt;fixed maximum size&lt;/b&gt;), although it will not shrink again automatically when space on it is freed.&lt;/p&gt;</source>
+        <translation type="unfinished">&lt;p&gt;&lt;b&gt;동적 할당&lt;/b&gt; 가상 디스크는 가상 디스크를 사용할 때 파일 크기가 커지지만, 사용량이 줄어들어도 작아지지는 않습니다.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;A &lt;b&gt;fixed size&lt;/b&gt; virtual disk file may take longer to create on some systems but is often faster to use.&lt;/p&gt;</source>

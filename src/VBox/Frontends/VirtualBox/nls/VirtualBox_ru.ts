@@ -6398,8 +6398,8 @@ p, li { white-space: pre-wrap; }
         <translation>Пожалуйста уточните, должен ли новый виртуальный диск подстраивать свой размер под размер своего содержимого или быть создан сразу заданного размера.</translation>
     </message>
     <message>
-        <source>&lt;p&gt;A &lt;b&gt;dynamically allocated&lt;/b&gt; virtual disk file will only use space on your physical hard disk as it fills up, although it will not shrink again automatically when space on it is freed.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Файл &lt;b&gt;динамического&lt;/b&gt; виртуального диска будет занимать необходимое место на Вашем физическом носителе информации лишь по мере заполнения, однако учтите, что он не сможет уменьшиться в размере если место, занятое его содержимым, освободится.&lt;/p&gt;</translation>
+        <source>&lt;p&gt;A &lt;b&gt;dynamically allocated&lt;/b&gt; virtual disk file will only use space on your physical hard disk as it fills up (up to a &lt;b&gt;fixed maximum size&lt;/b&gt;), although it will not shrink again automatically when space on it is freed.&lt;/p&gt;</source>
+        <translation type="unfinished">&lt;p&gt;Файл &lt;b&gt;динамического&lt;/b&gt; виртуального диска будет занимать необходимое место на Вашем физическом носителе информации лишь по мере заполнения, однако учтите, что он не сможет уменьшиться в размере если место, занятое его содержимым, освободится.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;A &lt;b&gt;fixed size&lt;/b&gt; virtual disk file may take longer to create on some systems but is often faster to use.&lt;/p&gt;</source>

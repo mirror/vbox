@@ -6839,8 +6839,8 @@ demorar bastante tempo, dependendo do tamanho escolhido e da velocidade de seu d
         <translation>Escolha se o arquivo de disco virtual deverá ser alocado à medida em que for sendo utilizado ou se já deverá ser criado com o tamanho máximo.</translation>
     </message>
     <message>
-        <source>&lt;p&gt;A &lt;b&gt;dynamically allocated&lt;/b&gt; virtual disk file will only use space on your physical hard disk as it fills up, although it will not shrink again automatically when space on it is freed.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Um arquivo de disco virtual &lt;b&gt;dinamicamente alocado&lt;/b&gt; irá utilizar espaço em seu disco rígido físico à medida em que for sendo utilizado, mas não irá encolher caso seja liberado espaço nele.&lt;/p&gt;</translation>
+        <source>&lt;p&gt;A &lt;b&gt;dynamically allocated&lt;/b&gt; virtual disk file will only use space on your physical hard disk as it fills up (up to a &lt;b&gt;fixed maximum size&lt;/b&gt;), although it will not shrink again automatically when space on it is freed.&lt;/p&gt;</source>
+        <translation type="unfinished">&lt;p&gt;Um arquivo de disco virtual &lt;b&gt;dinamicamente alocado&lt;/b&gt; irá utilizar espaço em seu disco rígido físico à medida em que for sendo utilizado, mas não irá encolher caso seja liberado espaço nele.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;A &lt;b&gt;fixed size&lt;/b&gt; virtual disk file may take longer to create on some systems but is often faster to use.&lt;/p&gt;</source>
