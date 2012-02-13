@@ -401,6 +401,7 @@ IEMOPSHIFTDBLSIZES g_iemAImpl_shrd;
 
 #define IEM_MC_CALL_FPU_AIMPL_2(a_pfnAImpl, a0, a1)                     do { } while (0)
 #define IEM_MC_PUSH_FPU_RESULT(a_FpuData)                               do { } while (0)
+#define IEM_MC_PUSH_FPU_RESULT_MEM_OP(a_FpuData, a_iEffSeg, a_GCPtrEff) do { } while (0)
 
 #define IEM_MC_IF_EFL_BIT_SET(a_fBit)                                   if (g_fRandom) {
 #define IEM_MC_IF_EFL_BIT_NOT_SET(a_fBit)                               if (g_fRandom) {

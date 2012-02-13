@@ -715,6 +715,13 @@ typedef FNIEMAIMPLFPUR32  *PFNIEMAIMPLFPUR32;
 FNIEMAIMPLFPUR32 iemAImpl_fpu_r32_to_r80;
 /** @} */
 
+/** @name FPU operations taking a 64-bit float argument
+ * @{ */
+typedef IEM_DECL_IMPL_TYPE(void, FNIEMAIMPLFPUR64,(PCX86FXSTATE pFpuState, PIEMFPURESULT pFpuRes, PCRTFLOAT64U pr64Val));
+typedef FNIEMAIMPLFPUR64  *PFNIEMAIMPLFPUR64;
+FNIEMAIMPLFPUR64 iemAImpl_fpu_r64_to_r80;
+/** @} */
+
 
 /** @name Function tables.
  * @{
