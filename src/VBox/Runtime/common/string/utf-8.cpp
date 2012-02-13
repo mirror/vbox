@@ -355,14 +355,13 @@ RTDECL(ssize_t) RTStrPurgeComplementSet(char *psz, PCRTUNICP puszValidSet, char 
 {
     size_t cReplacements = 0;
     AssertReturn(chReplacement && (unsigned)chReplacement < 128, -1);
-    if (RT_FAILURE(RTStrValidateEncoding(psz)))
-        return -1;
     for (;;)
     {
         RTUNICP Cp;
         PCRTUNICP pCp;
         char *pszOld = psz;
-        RTStrGetCpEx((const char **)&psz, &Cp);
+        if (RT_FAILURE(RTStrGetCpEx((const char **)&psz, &Cp)))
+            return -1;
         if (!Cp)
             break;
         for (pCp = puszValidSet; ; ++pCp)
