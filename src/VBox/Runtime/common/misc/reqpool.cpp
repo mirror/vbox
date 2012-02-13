@@ -1085,7 +1085,7 @@ RTDECL(int) RTReqPoolAlloc(RTREQPOOL hPool, RTREQTYPE enmType, PRTREQ *phReq)
      */
     int rc = rtReqAlloc(enmType, true /*fPoolOrQueue*/, pPool, phReq);
     LogFlow(("RTReqPoolAlloc: returns %Rrc *phReq=%p\n", rc, *phReq));
-    return VINF_SUCCESS;
+    return rc;
 }
 RT_EXPORT_SYMBOL(RTReqPoolAlloc);
 
