@@ -1551,23 +1551,18 @@ BEGINPROC   x861_Test5
 ;FpuNopEncoding db 0dch, 0d8h
 ;int3
 ;db 0dch, 0d0h
-        fld dword REF(.r32V2)
-        fld dword REF(.r32V2)
+;        fld dword REF(.r32V2)
+;        fld dword REF(.r32V2)
+;        fld dword REF(.r32V2)
+;        fld dword REF(.r32V2)
+;fnclex
+;call SetFSW_C0_thru_C3
 ;int3
-;db 0dch, 0d9h ; fnop?
+;db 0deh, 0d0h
+;db 0deh, 0d1h
+;db 0deh, 0d2h
+;db 0deh, 0d3h
 ;int3
-fnclex
-call SetFSW_C0_thru_C3
-int3
-db 0ddh, 0c8h
-db 0ddh, 0c9h
-db 0ddh, 0cah
-db 0ddh, 0cbh
-db 0ddh, 0cch
-db 0ddh, 0cdh
-db 0ddh, 0ceh
-db 0ddh, 0cfh
-int3
 
 
         ; the 0xd9 block
@@ -1703,14 +1698,14 @@ int3
         ShouldTrap X86_XCPT_UD, db 0ddh, 02fh
 
         ; the 0xde block
-        FpuUnknownEncoding db 0deh, 0d0h ; fnop?
-        FpuUnknownEncoding db 0deh, 0d1h ; fnop?
-        FpuUnknownEncoding db 0deh, 0d2h ; fnop?
-        FpuUnknownEncoding db 0deh, 0d3h ; fnop?
-        FpuUnknownEncoding db 0deh, 0d4h ; fnop?
-        FpuUnknownEncoding db 0deh, 0d5h ; fnop?
-        FpuUnknownEncoding db 0deh, 0d6h ; fnop?
-        FpuUnknownEncoding db 0deh, 0d7h ; fnop?
+        ;FpuUnknownEncoding db 0deh, 0d0h ; fcomp?
+        ;FpuUnknownEncoding db 0deh, 0d1h ; fcomp?
+        ;FpuUnknownEncoding db 0deh, 0d2h ; fcomp?
+        ;FpuUnknownEncoding db 0deh, 0d3h ; fcomp?
+        ;FpuUnknownEncoding db 0deh, 0d4h ; fcomp?
+        ;FpuUnknownEncoding db 0deh, 0d5h ; fcomp?
+        ;FpuUnknownEncoding db 0deh, 0d6h ; fcomp?
+        ;FpuUnknownEncoding db 0deh, 0d7h ; fcomp?
         ShouldTrap X86_XCPT_UD, db 0deh, 0d8h
         ShouldTrap X86_XCPT_UD, db 0deh, 0dah
         ShouldTrap X86_XCPT_UD, db 0deh, 0dbh
