@@ -10388,10 +10388,12 @@ FNIEMOP_STUB_1(iemOp_fstcw, uint8_t, bRm);
 /** Opcode 0xd9 0xc9, 0xd9 0xd8-0xdf, ++?.  */
 FNIEMOP_DEF(iemOp_fnop)
 {
+#ifndef TST_IEM_CHECK_MC
     /* Note! This updates the FPU instruction pointer but leaves the opcode alone. */
     RTAssertMsg1(NULL, __LINE__, __FILE__, __FUNCTION__);
     iemOpStubMsg2(pIemCpu);
     RTAssertPanic();
+#endif
     return VERR_IEM_INSTR_NOT_IMPLEMENTED;
 }
 
