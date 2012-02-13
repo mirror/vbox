@@ -806,7 +806,7 @@ static void qcowTableMasksInit(PQCOWIMAGE pImage)
 }
 
 /**
- * Converts a given logical offset into the 
+ * Converts a given logical offset into the
  *
  * @returns nothing.
  * @param   pImage         The image instance data.
@@ -1429,6 +1429,7 @@ static int qcowAsyncClusterAllocRollback(PQCOWIMAGE pImage, PVDIOCTX pIoCtx, PQC
             /* Assumption right now is that the L2 table is not modified if the link fails. */
             rc = vdIfIoIntFileSetSize(pImage->pIfIo, pImage->pStorage, pClusterAlloc->offNextClusterOld);
             qcowL2TblCacheEntryRelease(pClusterAlloc->pL2Entry); /* Release L2 cache entry. */
+            break;
         }
         default:
             AssertMsgFailed(("Invalid cluster allocation state %d\n", pClusterAlloc->enmAllocState));
