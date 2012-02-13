@@ -601,8 +601,7 @@ static DECLCALLBACK(void) handleVDError(void *pvUser, int rc, RT_SRC_POS_DECL, c
 static int handleVDMessage(void *pvUser, const char *pszFormat, va_list va)
 {
     NOREF(pvUser);
-    RTPrintfV(pszFormat, va);
-    return RTPrintf("\n");
+    return RTPrintfV(pszFormat, va);
 }
 
 static int CmdSetHDUUID(int argc, char **argv, ComPtr<IVirtualBox> aVirtualBox, ComPtr<ISession> aSession)

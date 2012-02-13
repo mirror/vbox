@@ -3128,7 +3128,7 @@ static DECLCALLBACK(int) vhdRepair(const char *pszFilename, PVDINTERFACE pVDIfsD
                 break;
             }
             else
-                vdIfErrorMessage(pIfError, "Missing footer structure, using backup");
+                vdIfErrorMessage(pIfError, "Missing footer structure, using backup\n");
 
             /* Remember to fix the footer structure. */
             fRepairFooter = true;
@@ -3145,7 +3145,7 @@ static DECLCALLBACK(int) vhdRepair(const char *pszFilename, PVDINTERFACE pVDIfsD
 
         if (u32ChkSumOld != u32ChkSum)
         {
-            vdIfErrorMessage(pIfError, "Checksum is invalid (should be %u got %u), repairing",
+            vdIfErrorMessage(pIfError, "Checksum is invalid (should be %u got %u), repairing\n",
                              u32ChkSum, u32ChkSumOld);
             fRepairFooter = true;
             break;
@@ -3203,7 +3203,7 @@ static DECLCALLBACK(int) vhdRepair(const char *pszFilename, PVDINTERFACE pVDIfsD
 
             if (u32ChkSumOld != u32ChkSum)
             {
-                vdIfErrorMessage(pIfError, "Checksum of dynamic disk header is invalid (should be %u got %u), repairing",
+                vdIfErrorMessage(pIfError, "Checksum of dynamic disk header is invalid (should be %u got %u), repairing\n",
                                  u32ChkSum, u32ChkSumOld);
                 fRepairDynHeader = true;
                 break;
@@ -3257,7 +3257,7 @@ static DECLCALLBACK(int) vhdRepair(const char *pszFilename, PVDINTERFACE pVDIfsD
                     idxMinBlock = paBat[i];
             }
 
-            vdIfErrorMessage(pIfError, "First data block at sector %u", idxMinBlock);
+            vdIfErrorMessage(pIfError, "First data block at sector %u\n", idxMinBlock);
 
             for (uint32_t i = 0; i < cBatEntries; i++)
             {
@@ -3271,14 +3271,14 @@ static DECLCALLBACK(int) vhdRepair(const char *pszFilename, PVDINTERFACE pVDIfsD
                      */
                     if (offBlock + cbBlock > cbFile)
                     {
-                        vdIfErrorMessage(pIfError, "Entry %u points to invalid offset %llu, clearing",
+                        vdIfErrorMessage(pIfError, "Entry %u points to invalid offset %llu, clearing\n",
                                          i, offBlock);
                         paBat[i] = 0;
                         fRepairBat = true;
                     }
                     else if (offBlock + cbBlock > offFooter)
                     {
-                        vdIfErrorMessage(pIfError, "Entry %u intersects with footer, aligning footer",
+                        vdIfErrorMessage(pIfError, "Entry %u intersects with footer, aligning footer\n",
                                          i);
                         offFooter = offBlock + cbBlock;
                         fRepairBat = true;
@@ -3286,7 +3286,7 @@ static DECLCALLBACK(int) vhdRepair(const char *pszFilename, PVDINTERFACE pVDIfsD
 
                     if (ASMBitTestAndSet(pu32BlockBitmap, (paBat[i] - idxMinBlock) / (cbBlock / VHD_SECTOR_SIZE)))
                     {
-                        vdIfErrorMessage(pIfError, "Entry %u points to an already referenced data block, clearing",
+                        vdIfErrorMessage(pIfError, "Entry %u points to an already referenced data block, clearing\n",
                                          i);
                         paBat[i] = 0;
                         fRepairBat = true;
@@ -3297,7 +3297,7 @@ static DECLCALLBACK(int) vhdRepair(const char *pszFilename, PVDINTERFACE pVDIfsD
 
         /* Write repaired structures now. */
         if (!(fRepairBat || fRepairDynHeader || fRepairFooter))
-            vdIfErrorMessage(pIfError, "VHD image is in a consistent state, no repair required");
+            vdIfErrorMessage(pIfError, "VHD image is in a consistent state, no repair required\n");
         else if (!(fFlags & VD_REPAIR_DRY_RUN))
         {
             if (fRepairBat)
@@ -3305,7 +3305,7 @@ static DECLCALLBACK(int) vhdRepair(const char *pszFilename, PVDINTERFACE pVDIfsD
                 for (uint32_t i = 0; i < cBatEntries; i++)
                     paBat[i] = RT_H2BE_U32(paBat[i]);
 
-                vdIfErrorMessage(pIfError, "Writing repaired block allocation table...");
+                vdIfErrorMessage(pIfError, "Writing repaired block allocation table...\n");
 
                 rc = vdIfIoIntFileWriteSync(pIfIo, pStorage, offBat, paBat,
                                             cBatEntries * sizeof(uint32_t), NULL);
@@ -3322,7 +3322,7 @@ static DECLCALLBACK(int) vhdRepair(const char *pszFilename, PVDINTERFACE pVDIfsD
             {
                 Assert(fDynamic);
 
-                vdIfErrorMessage(pIfError, "Writing repaired dynamic disk header...");
+                vdIfErrorMessage(pIfError, "Writing repaired dynamic disk header...\n");
                 rc = vdIfIoIntFileWriteSync(pIfIo, pStorage, offDynamicDiskHeader, &dynamicDiskHeader,
                                             sizeof(VHDDynamicDiskHeader), NULL);
                 if (RT_FAILURE(rc))
@@ -3336,7 +3336,7 @@ static DECLCALLBACK(int) vhdRepair(const char *pszFilename, PVDINTERFACE pVDIfsD
 
             if (fRepairFooter)
             {
-                vdIfErrorMessage(pIfError, "Writing repaired Footer...");
+                vdIfErrorMessage(pIfError, "Writing repaired Footer...\n");
 
                 if (fDynamic)
                 {
@@ -3363,7 +3363,7 @@ static DECLCALLBACK(int) vhdRepair(const char *pszFilename, PVDINTERFACE pVDIfsD
                 }
             }
 
-            vdIfErrorMessage(pIfError, "Corrupted VHD image repaired successfully");
+            vdIfErrorMessage(pIfError, "Corrupted VHD image repaired successfully\n");
         }
     } while(0);
 
