@@ -10993,7 +10993,7 @@ FNIEMOP_DEF(iemOp_EscF6)
         {
             case 0: return FNIEMOP_CALL_1(iemOp_faddp_stN_st0, bRm);
             case 1: return FNIEMOP_CALL_1(iemOp_fmulp_stN_st0, bRm);
-            case 2: return FNIEMOP_CALL(iemOp_fnop);
+            case 2: return FNIEMOP_CALL_1(iemOp_fcomp_stN, bRm);
             case 3: if (bRm == 0xd9)
                         return FNIEMOP_CALL(iemOp_fcompp);
                     return IEMOP_RAISE_INVALID_OPCODE();
