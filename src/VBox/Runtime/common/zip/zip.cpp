@@ -563,7 +563,7 @@ static DECLCALLBACK(int) rtZipZlibCompInit(PRTZIPCOMP pZip, RTZIPLEVEL enmLevel)
     pZip->u.Zlib.avail_out = sizeof(pZip->abBuffer) - 1;
     pZip->u.Zlib.opaque    = pZip;
 
-    int rc = deflateInit(&pZip->u.Zlib, enmLevel);
+    int rc = deflateInit(&pZip->u.Zlib, iLevel);
     return rc >= 0 ? rc = VINF_SUCCESS : zipErrConvertFromZlib(rc, true /*fCompressing*/);
 }
 
