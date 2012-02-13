@@ -318,6 +318,7 @@ RTDECL(int)  RTSemEventMultiReset(RTSEMEVENTMULTI hEventMultiSem)
     /*
      * Validate input.
      */
+    int rc = VINF_SUCCESS;
     struct RTSEMEVENTMULTIINTERNAL *pThis = hEventMultiSem;
     AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
     uint32_t u32 = pThis->u32State;
@@ -326,11 +327,11 @@ RTDECL(int)  RTSemEventMultiReset(RTSEMEVENTMULTI hEventMultiSem)
     /*
      * Lock the mutex semaphore.
      */
-    int rc = pthread_mutex_lock(&pThis->Mutex);
-    if (rc)
+    int rcPosix = pthread_mutex_lock(&pThis->Mutex);
+    if (RT_UNLIKELY(rcPosix))
     {
-        AssertMsgFailed(("Failed to lock event multi sem %p, rc=%d.\n", hEventMultiSem, rc));
-        return RTErrConvertFromErrno(rc);
+        AssertMsgFailed(("Failed to lock event multi sem %p, rc=%d.\n", hEventMultiSem, rcPosix));
+        return RTErrConvertFromErrno(rcPosix);
     }
 
     /*
@@ -344,15 +345,14 @@ RTDECL(int)  RTSemEventMultiReset(RTSEMEVENTMULTI hEventMultiSem)
     /*
      * Release the mutex and return.
      */
-    rc = pthread_mutex_unlock(&pThis->Mutex);
-    if (rc)
+    rcPosix = pthread_mutex_unlock(&pThis->Mutex);
+    if (RT_UNLIKELY(rcPosix))
     {
-        AssertMsgFailed(("Failed to unlock event multi sem %p, rc=%d.\n", hEventMultiSem, rc));
-        return RTErrConvertFromErrno(rc);
+        AssertMsgFailed(("Failed to unlock event multi sem %p, rc=%d.\n", hEventMultiSem, rcPosix));
+        return RTErrConvertFromErrno(rcPosix);
     }
 
-    return VINF_SUCCESS;
-
+    return rc;
 }
 
 
