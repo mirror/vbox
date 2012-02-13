@@ -5321,8 +5321,8 @@
         <translation>Choisissez si le nouveau fichier disque virtuel doit être alloué au fur et à mesure que l&apos;espace disque est utilisé ou bien s&apos;il doit être créé entièrement alloué.</translation>
     </message>
     <message>
-        <source>&lt;p&gt;A &lt;b&gt;dynamically allocated&lt;/b&gt; virtual disk file will only use space on your physical hard disk as it fills up, although it will not shrink again automatically when space on it is freed.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Un fichier disque virtuel &lt;b&gt;dynamiquement alloué&lt;/b&gt; utilisera de l&apos;espace sur votre disque dur physique au fur et à mesure qu&apos;il se remplit. Il ne diminuera pas de taille automatiquement quand de l&apos;espace y est libéré.&lt;/p&gt;</translation>
+        <source>&lt;p&gt;A &lt;b&gt;dynamically allocated&lt;/b&gt; virtual disk file will only use space on your physical hard disk as it fills up (up to a &lt;b&gt;fixed maximum size&lt;/b&gt;), although it will not shrink again automatically when space on it is freed.&lt;/p&gt;</source>
+        <translation type="unfinished">&lt;p&gt;Un fichier disque virtuel &lt;b&gt;dynamiquement alloué&lt;/b&gt; utilisera de l&apos;espace sur votre disque dur physique au fur et à mesure qu&apos;il se remplit. Il ne diminuera pas de taille automatiquement quand de l&apos;espace y est libéré.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;A &lt;b&gt;fixed size&lt;/b&gt; virtual disk file may take longer to create on some systems but is often faster to use.&lt;/p&gt;</source>

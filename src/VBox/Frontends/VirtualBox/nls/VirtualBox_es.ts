@@ -6575,8 +6575,8 @@ dependiendo del tamaño de la imagen y el rendimiento de su disco duro.&lt;/p&gt
         <translation>Seleccione si el archivo del disco virtual debería ser reservado según sea usado o si debería reservarse completamente en la creación.</translation>
     </message>
     <message>
-        <source>&lt;p&gt;A &lt;b&gt;dynamically allocated&lt;/b&gt; virtual disk file will only use space on your physical hard disk as it fills up, although it will not shrink again automatically when space on it is freed.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Un archivo de disco virtual &lt;b&gt;reservado dinámcamente&lt;/b&gt; solo usa espacio en su disco duro físico según se llena, sin embargo no se reducirá de nuevo automáticamente cuando el espacio en él sea liberado.&lt;/p&gt;</translation>
+        <source>&lt;p&gt;A &lt;b&gt;dynamically allocated&lt;/b&gt; virtual disk file will only use space on your physical hard disk as it fills up (up to a &lt;b&gt;fixed maximum size&lt;/b&gt;), although it will not shrink again automatically when space on it is freed.&lt;/p&gt;</source>
+        <translation type="unfinished">&lt;p&gt;Un archivo de disco virtual &lt;b&gt;reservado dinámcamente&lt;/b&gt; solo usa espacio en su disco duro físico según se llena, sin embargo no se reducirá de nuevo automáticamente cuando el espacio en él sea liberado.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;A &lt;b&gt;fixed size&lt;/b&gt; virtual disk file may take longer to create on some systems but is often faster to use.&lt;/p&gt;</source>

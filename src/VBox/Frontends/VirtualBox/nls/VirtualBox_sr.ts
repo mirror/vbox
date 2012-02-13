@@ -6115,8 +6115,8 @@ p, li { white-space: pre-wrap; }
         <translation>Одаберите да ли диск треба да се дедељује како се користи или да ли треба да буде потпуно стоврен.</translation>
     </message>
     <message>
-        <source>&lt;p&gt;A &lt;b&gt;dynamically allocated&lt;/b&gt; virtual disk file will only use space on your physical hard disk as it fills up, although it will not shrink again automatically when space on it is freed.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Диск &lt;b&gt;динамично додељен&lt;/b&gt; ће користити простор како се пуни, мада неће да се смањи када се ослободи простор.&lt;/p&gt;</translation>
+        <source>&lt;p&gt;A &lt;b&gt;dynamically allocated&lt;/b&gt; virtual disk file will only use space on your physical hard disk as it fills up (up to a &lt;b&gt;fixed maximum size&lt;/b&gt;), although it will not shrink again automatically when space on it is freed.&lt;/p&gt;</source>
+        <translation type="unfinished">&lt;p&gt;Диск &lt;b&gt;динамично додељен&lt;/b&gt; ће користити простор како се пуни, мада неће да се смањи када се ослободи простор.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;A &lt;b&gt;fixed size&lt;/b&gt; virtual disk file may take longer to create on some systems but is often faster to use.&lt;/p&gt;</source>
