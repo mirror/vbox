@@ -1380,8 +1380,28 @@ ENDPROC     x861_Test4
 ;;
 ; Used for marking encodings which has a meaning other than FNOP and
 ; needs investigating.
-%macro FpuUnknownEncoding 1+
+%macro FpuReservedEncoding 2
+        fnclex
+        call    SetFSW_C0_thru_C3
+
+        push    xBP
+        mov     xBP, xSP
+        sub     xSP, 2048
+        and     xSP, ~0fh
+        fxsave  [xSP + 1024]
         %1
+        call    SaveFPUAndGRegsToStack
+
+        fxrstor [xSP + 1024]
+        %2
+        call    CompareFPUAndGRegsOnStack
+        ;fxrstor [xSP + 1024]
+        leave
+
+        jz      %%ok
+        add     eax, __LINE__
+        jmp     .return
+%%ok:
 %endmacro
 
 
@@ -1501,7 +1521,7 @@ CompareFPUAndGRegsOnStack:
         repe cmpsb
         je      .ok
 
-        ;int3
+        int3
         lea     xAX, [xSP + xS*3]
         xchg    xAX, xSI
         sub     xAX, xSI
@@ -1548,6 +1568,7 @@ BEGINPROC   x861_Test5
         ; Test the nop check.
         FpuNopEncoding fnop
 
+
         ; the 0xd9 block
         ShouldTrap X86_XCPT_UD, db 0d9h, 008h
         ShouldTrap X86_XCPT_UD, db 0d9h, 009h
@@ -1565,14 +1586,14 @@ BEGINPROC   x861_Test5
         ShouldTrap X86_XCPT_UD, db 0d9h, 0d5h
         ShouldTrap X86_XCPT_UD, db 0d9h, 0d6h
         ShouldTrap X86_XCPT_UD, db 0d9h, 0d7h
-        ;FpuUnknownEncoding db 0d9h, 0d8h ; fstp st(0),st(0)?
-        ;FpuUnknownEncoding db 0d9h, 0d9h ; fstp st(1),st(0)?
-        ;FpuUnknownEncoding db 0d9h, 0dah ; fstp st(2),st(0)?
-        ;FpuUnknownEncoding db 0d9h, 0dbh ; fstp st(3),st(0)?
-        ;FpuUnknownEncoding db 0d9h, 0dch ; fstp st(4),st(0)?
-        ;FpuUnknownEncoding db 0d9h, 0ddh ; fstp st(5),st(0)?
-        ;FpuUnknownEncoding db 0d9h, 0deh ; fstp st(6),st(0)?
-        ;FpuUnknownEncoding db 0d9h, 0dfh ; fstp st(7),st(0)?
+        FpuReservedEncoding {db 0d9h, 0d8h}, { fstp st0 }
+        FpuReservedEncoding {db 0d9h, 0d9h}, { fstp st1 }
+        FpuReservedEncoding {db 0d9h, 0dah}, { fstp st2 }
+        FpuReservedEncoding {db 0d9h, 0dbh}, { fstp st3 }
+        FpuReservedEncoding {db 0d9h, 0dch}, { fstp st4 }
+        FpuReservedEncoding {db 0d9h, 0ddh}, { fstp st5 }
+        FpuReservedEncoding {db 0d9h, 0deh}, { fstp st6 }
+        ;FpuReservedEncoding {db 0d9h, 0dfh}, { fstp st7 } ; This variant seems to ignore empty ST(0) values!
         ShouldTrap X86_XCPT_UD, db 0d9h, 0e2h
         ShouldTrap X86_XCPT_UD, db 0d9h, 0e3h
         ShouldTrap X86_XCPT_UD, db 0d9h, 0e6h
@@ -1635,32 +1656,32 @@ BEGINPROC   x861_Test5
         ShouldTrap X86_XCPT_UD, db 0dbh, 032h
 
         ; the 0xdc block
-        ;FpuNopEncoding db 0dch, 0d0h ; fcom?
-        ;FpuNopEncoding db 0dch, 0d1h ; fcom?
-        ;FpuNopEncoding db 0dch, 0d2h ; fcom?
-        ;FpuNopEncoding db 0dch, 0d3h ; fcom?
-        ;FpuNopEncoding db 0dch, 0d4h ; fcom?
-        ;FpuNopEncoding db 0dch, 0d5h ; fcom?
-        ;FpuNopEncoding db 0dch, 0d6h ; fcom?
-        ;FpuNopEncoding db 0dch, 0d7h ; fcom?
-        ;FpuNopEncoding db 0dch, 0d8h ; fcomp?
-        ;FpuNopEncoding db 0dch, 0d9h ; fcomp?
-        ;FpuNopEncoding db 0dch, 0dah ; fcomp?
-        ;FpuNopEncoding db 0dch, 0dbh ; fcomp?
-        ;FpuNopEncoding db 0dch, 0dch ; fcomp?
-        ;FpuNopEncoding db 0dch, 0ddh ; fcomp?
-        ;FpuNopEncoding db 0dch, 0deh ; fcomp?
-        ;FpuNopEncoding db 0dch, 0dfh ; fcomp?
+        FpuReservedEncoding {db 0dch, 0d0h}, { fcom st0 }
+        FpuReservedEncoding {db 0dch, 0d1h}, { fcom st1 }
+        FpuReservedEncoding {db 0dch, 0d2h}, { fcom st2 }
+        FpuReservedEncoding {db 0dch, 0d3h}, { fcom st3 }
+        FpuReservedEncoding {db 0dch, 0d4h}, { fcom st4 }
+        FpuReservedEncoding {db 0dch, 0d5h}, { fcom st5 }
+        FpuReservedEncoding {db 0dch, 0d6h}, { fcom st6 }
+        FpuReservedEncoding {db 0dch, 0d7h}, { fcom st7 }
+        FpuReservedEncoding {db 0dch, 0d8h}, { fcomp st0 }
+        FpuReservedEncoding {db 0dch, 0d9h}, { fcomp st1 }
+        FpuReservedEncoding {db 0dch, 0dah}, { fcomp st2 }
+        FpuReservedEncoding {db 0dch, 0dbh}, { fcomp st3 }
+        FpuReservedEncoding {db 0dch, 0dch}, { fcomp st4 }
+        FpuReservedEncoding {db 0dch, 0ddh}, { fcomp st5 }
+        FpuReservedEncoding {db 0dch, 0deh}, { fcomp st6 }
+        FpuReservedEncoding {db 0dch, 0dfh}, { fcomp st7 }
 
         ; the 0xdd block
-        ;FpuUnknownEncoding db 0ddh, 0c8h ; fxch?
-        ;FpuUnknownEncoding db 0ddh, 0c9h ; fxch?
-        ;FpuUnknownEncoding db 0ddh, 0cah ; fxch?
-        ;FpuUnknownEncoding db 0ddh, 0cbh ; fxch?
-        ;FpuUnknownEncoding db 0ddh, 0cch ; fxch?
-        ;FpuUnknownEncoding db 0ddh, 0cdh ; fxch?
-        ;FpuUnknownEncoding db 0ddh, 0ceh ; fxch?
-        ;FpuUnknownEncoding db 0ddh, 0cfh ; fxch?
+        FpuReservedEncoding {db 0ddh, 0c8h}, { fxch st0 }
+        FpuReservedEncoding {db 0ddh, 0c9h}, { fxch st1 }
+        FpuReservedEncoding {db 0ddh, 0cah}, { fxch st2 }
+        FpuReservedEncoding {db 0ddh, 0cbh}, { fxch st3 }
+        FpuReservedEncoding {db 0ddh, 0cch}, { fxch st4 }
+        FpuReservedEncoding {db 0ddh, 0cdh}, { fxch st5 }
+        FpuReservedEncoding {db 0ddh, 0ceh}, { fxch st6 }
+        FpuReservedEncoding {db 0ddh, 0cfh}, { fxch st7 }
         ShouldTrap X86_XCPT_UD, db 0ddh, 0f0h
         ShouldTrap X86_XCPT_UD, db 0ddh, 0f1h
         ShouldTrap X86_XCPT_UD, db 0ddh, 0f2h
@@ -1681,14 +1702,14 @@ BEGINPROC   x861_Test5
         ShouldTrap X86_XCPT_UD, db 0ddh, 02fh
 
         ; the 0xde block
-        ;FpuUnknownEncoding db 0deh, 0d0h ; fcomp?
-        ;FpuUnknownEncoding db 0deh, 0d1h ; fcomp?
-        ;FpuUnknownEncoding db 0deh, 0d2h ; fcomp?
-        ;FpuUnknownEncoding db 0deh, 0d3h ; fcomp?
-        ;FpuUnknownEncoding db 0deh, 0d4h ; fcomp?
-        ;FpuUnknownEncoding db 0deh, 0d5h ; fcomp?
-        ;FpuUnknownEncoding db 0deh, 0d6h ; fcomp?
-        ;FpuUnknownEncoding db 0deh, 0d7h ; fcomp?
+        FpuReservedEncoding {db 0deh, 0d0h}, { fcomp st0 }
+        FpuReservedEncoding {db 0deh, 0d1h}, { fcomp st1 }
+        FpuReservedEncoding {db 0deh, 0d2h}, { fcomp st2 }
+        FpuReservedEncoding {db 0deh, 0d3h}, { fcomp st3 }
+        FpuReservedEncoding {db 0deh, 0d4h}, { fcomp st4 }
+        FpuReservedEncoding {db 0deh, 0d5h}, { fcomp st5 }
+        FpuReservedEncoding {db 0deh, 0d6h}, { fcomp st6 }
+        FpuReservedEncoding {db 0deh, 0d7h}, { fcomp st7 }
         ShouldTrap X86_XCPT_UD, db 0deh, 0d8h
         ShouldTrap X86_XCPT_UD, db 0deh, 0dah
         ShouldTrap X86_XCPT_UD, db 0deh, 0dbh
@@ -1698,30 +1719,30 @@ BEGINPROC   x861_Test5
         ShouldTrap X86_XCPT_UD, db 0deh, 0dfh
 
         ; the 0xdf block
-        ;FpuUnknownEncoding db 0dfh, 0c8h ; fxch?
-        ;FpuUnknownEncoding db 0dfh, 0c9h ; fxch?
-        ;FpuUnknownEncoding db 0dfh, 0cah ; fxch?
-        ;FpuUnknownEncoding db 0dfh, 0cbh ; fxch?
-        ;FpuUnknownEncoding db 0dfh, 0cch ; fxch?
-        ;FpuUnknownEncoding db 0dfh, 0cdh ; fxch?
-        ;FpuUnknownEncoding db 0dfh, 0ceh ; fxch?
-        ;FpuUnknownEncoding db 0dfh, 0cfh ; fxch?
-        ;FpuUnknownEncoding db 0dfh, 0d0h ; fstp?
-        ;FpuUnknownEncoding db 0dfh, 0d1h ; fstp?
-        ;FpuUnknownEncoding db 0dfh, 0d2h ; fstp?
-        ;FpuUnknownEncoding db 0dfh, 0d3h ; fstp?
-        ;FpuUnknownEncoding db 0dfh, 0d4h ; fstp?
-        ;FpuUnknownEncoding db 0dfh, 0d5h ; fstp?
-        ;FpuUnknownEncoding db 0dfh, 0d6h ; fstp?
-        ;FpuUnknownEncoding db 0dfh, 0d7h ; fstp?
-        ;FpuUnknownEncoding db 0dfh, 0d8h ; fstp?
-        ;FpuUnknownEncoding db 0dfh, 0d9h ; fstp?
-        ;FpuUnknownEncoding db 0dfh, 0dah ; fstp?
-        ;FpuUnknownEncoding db 0dfh, 0dbh ; fstp?
-        ;FpuUnknownEncoding db 0dfh, 0dch ; fstp?
-        ;FpuUnknownEncoding db 0dfh, 0ddh ; fstp?
-        ;FpuUnknownEncoding db 0dfh, 0deh ; fstp?
-        ;FpuUnknownEncoding db 0dfh, 0dfh ; fstp?
+        FpuReservedEncoding {db 0dfh, 0c8h}, { fxch st0 }
+        FpuReservedEncoding {db 0dfh, 0c9h}, { fxch st1 }
+        FpuReservedEncoding {db 0dfh, 0cah}, { fxch st2 }
+        FpuReservedEncoding {db 0dfh, 0cbh}, { fxch st3 }
+        FpuReservedEncoding {db 0dfh, 0cch}, { fxch st4 }
+        FpuReservedEncoding {db 0dfh, 0cdh}, { fxch st5 }
+        FpuReservedEncoding {db 0dfh, 0ceh}, { fxch st6 }
+        FpuReservedEncoding {db 0dfh, 0cfh}, { fxch st7 }
+        FpuReservedEncoding {db 0dfh, 0d0h}, { fstp st0 }
+        FpuReservedEncoding {db 0dfh, 0d1h}, { fstp st1 }
+        FpuReservedEncoding {db 0dfh, 0d2h}, { fstp st2 }
+        FpuReservedEncoding {db 0dfh, 0d3h}, { fstp st3 }
+        FpuReservedEncoding {db 0dfh, 0d4h}, { fstp st4 }
+        FpuReservedEncoding {db 0dfh, 0d5h}, { fstp st5 }
+        FpuReservedEncoding {db 0dfh, 0d6h}, { fstp st6 }
+        FpuReservedEncoding {db 0dfh, 0d7h}, { fstp st7 }
+        FpuReservedEncoding {db 0dfh, 0d8h}, { fstp st0 }
+        FpuReservedEncoding {db 0dfh, 0d9h}, { fstp st1 }
+        FpuReservedEncoding {db 0dfh, 0dah}, { fstp st2 }
+        FpuReservedEncoding {db 0dfh, 0dbh}, { fstp st3 }
+        FpuReservedEncoding {db 0dfh, 0dch}, { fstp st4 }
+        FpuReservedEncoding {db 0dfh, 0ddh}, { fstp st5 }
+        FpuReservedEncoding {db 0dfh, 0deh}, { fstp st6 }
+        FpuReservedEncoding {db 0dfh, 0dfh}, { fstp st7 }
         ShouldTrap X86_XCPT_UD, db 0dfh, 0e1h
         ShouldTrap X86_XCPT_UD, db 0dfh, 0e2h
         ShouldTrap X86_XCPT_UD, db 0dfh, 0e3h
