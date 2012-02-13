@@ -830,16 +830,16 @@ static int vbsfOpenFile(SHFLCLIENTDATA *pClient, const char *pszPath, SHFLCREATE
     int rc = vbsfConvertFileOpenFlags(pParms->CreateFlags, pParms->Info.Attr.fMode, pParms->Handle, &fOpen);
     if (RT_SUCCESS(rc))
     {
+        rc = VERR_NO_MEMORY;  /* Default error. */
         handle  = vbsfAllocFileHandle(pClient);
-    }
-    if (SHFL_HANDLE_NIL != handle)
-    {
-        rc = VERR_NO_MEMORY;  /* If this fails - rewritten immediately on success. */
-        pHandle = vbsfQueryFileHandle(pClient, handle);
-    }
-    if (0 != pHandle)
-    {
-        rc = RTFileOpen(&pHandle->file.Handle, pszPath, fOpen);
+        if (handle != SHFL_HANDLE_NIL)
+        {
+            pHandle = vbsfQueryFileHandle(pClient, handle);
+            if (pHandle)
+            {
+                rc = RTFileOpen(&pHandle->file.Handle, pszPath, fOpen);
+            }
+        }
     }
     if (RT_FAILURE(rc))
     {
@@ -892,8 +892,7 @@ static int vbsfOpenFile(SHFLCLIENTDATA *pClient, const char *pszPath, SHFLCREATE
             pParms->Result = SHFL_NO_RESULT;
         }
     }
-
-    if (RT_SUCCESS(rc))
+    else
     {
         /** @note The shared folder status code is very approximate, as the runtime
           *       does not really provide this information. */
@@ -947,6 +946,7 @@ static int vbsfOpenFile(SHFLCLIENTDATA *pClient, const char *pszPath, SHFLCREATE
             vbfsCopyFsObjInfoFromIprt(&pParms->Info, &info);
         }
     }
+    /* Free resources if any part of the function has failed. */
     if (RT_FAILURE(rc))
     {
         if (   (0 != pHandle)
