@@ -566,7 +566,7 @@ static RTEXITCODE UnpackExtPack(RTFILE hTarballFile, const char *pszDirDst, RTMA
             rc = RTManifestEqualsEx(hUnpackManifest, hValidManifest, NULL /*papszIgnoreEntries*/, NULL /*papszIgnoreAttr*/,
                                     0 /*fFlags*/, szError, sizeof(szError));
             if (RT_SUCCESS(rc))
-                rc = RTEXITCODE_SUCCESS;
+                rcExit = RTEXITCODE_SUCCESS;
             else if (rc == VERR_NOT_EQUAL && szError[0])
                 rcExit = RTMsgErrorExit(RTEXITCODE_FAILURE, "Manifest mismatch: %s", szError);
             else
