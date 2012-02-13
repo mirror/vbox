@@ -10908,7 +10908,7 @@ FNIEMOP_DEF(iemOp_EscF5)
         switch ((bRm >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK)
         {
             case 0: return FNIEMOP_CALL_1(iemOp_ffree_stN,   bRm);
-            case 1: return FNIEMOP_CALL(  iemOp_fnop);
+            case 1: return FNIEMOP_CALL_1(iemOp_fxch_stN,    bRm); /* Reserved, intel behavior is that of XCHG ST(i). */
             case 2: return FNIEMOP_CALL_1(iemOp_fst_stN,     bRm);
             case 3: return FNIEMOP_CALL_1(iemOp_fstp_stN,    bRm);
             case 4: return FNIEMOP_CALL_1(iemOp_fucom_stN_st0,bRm);
