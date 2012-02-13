@@ -245,10 +245,10 @@ AssertCompile(PS2K_STRUCT_FILLER >= sizeof(PS2K));
 #define T_B          0x04    /* Key is make/break. */
 
 /* Special key values. */
-#define NONE         0x90    /* No PS/2 scan code returned. */
-#define UNAS         0x91    /* No PS/2 scan assigned to key. */
-#define RSVD         0x92    /* Reserved, do not use. */
-#define UNKN         0x93    /* Translation unknown. */
+#define NONE         0x93    /* No PS/2 scan code returned. */
+#define UNAS         0x94    /* No PS/2 scan assigned to key. */
+#define RSVD         0x95    /* Reserved, do not use. */
+#define UNKN         0x96    /* Translation unknown. */
 
 /* Key definition structure. */
 typedef struct {
@@ -487,7 +487,7 @@ static uint8_t aExtScan2Hid[] =
     0x00, 0x00, 0x00, 0x00, 0x00, 0x54, 0x00, 0x46, /* 30-37 */
     /* Sun-specific keys.  Most of the XT codes are made up  */
     0xe6, 0x00, 0x00, 0x75, 0x76, 0x77, 0xA3, 0x78, /* 38-3F */
-    0x80, 0x81, 0x82, 0x79, 0x00, 0x48, 0x00, 0x4a, /* 40-47 */
+    0x80, 0x81, 0x82, 0x79, 0x00, 0x00, 0x48, 0x4a, /* 40-47 */
     0x52, 0x4b, 0x00, 0x50, 0x00, 0x4f, 0x00, 0x4d, /* 48-4F */
     0x51, 0x4e, 0x49, 0x4c, 0x00, 0x00, 0x00, 0x00, /* 50-57 */
     0x00, 0x00, 0x00, 0xe3, 0xe7, 0x65, 0x66, 0x00, /* 58-5F */
@@ -856,6 +856,13 @@ static int PS2KProcessKeyEvent(PPS2K pThis, uint8_t u8HidCode, bool fKeyDown)
     /* Find the key definition in somewhat sparse storage. */
     pKeyDef = u8HidCode >= HID_MODIFIER_FIRST ? &aPS2ModKeys[u8HidCode - HID_MODIFIER_FIRST] : &aPS2Keys[u8HidCode];
 
+    /* Some keys are not processed at all; early return. */
+    if (pKeyDef->makeS1 == NONE)
+    {
+        LogFlow(("Skipping key processing.\n"));
+        return VINF_SUCCESS;
+    }
+
     /* Handle modifier keys (Ctrl/Alt/Shift/GUI). We need to keep track
      * of their state in addition to sending the scan code.
      */
@@ -880,6 +887,7 @@ static int PS2KProcessKeyEvent(PPS2K pThis, uint8_t u8HidCode, bool fKeyDown)
         abCodes[0] = 0;
         if (fKeyDown)
         {
+            /* Process key down event. */
             if (pKeyDef->keyFlags & KF_PB)
             {
                 /* Pause/Break sends different data if either Ctrl is held. */
@@ -912,7 +920,6 @@ static int PS2KProcessKeyEvent(PPS2K pThis, uint8_t u8HidCode, bool fKeyDown)
                     if (pThis->u8Modifiers & MOD_RSHIFT)
                         strcpy((char *)abCodes, "\xE0\xF0\x59");
                 }
-
             }
             /* Feed the bytes to the queue if there is room. */
             //@todo: check empty space!
@@ -920,36 +927,56 @@ static int PS2KProcessKeyEvent(PPS2K pThis, uint8_t u8HidCode, bool fKeyDown)
                 PS2InsertQueue((GeneriQ *)&pThis->keyQ, abCodes[i++]);
             Assert(i < sizeof(abCodes));
 
-            if (pKeyDef->keyFlags & (KF_E0 | KF_GK | KF_NS | KF_PS))
-                PS2InsertQueue((GeneriQ *)&pThis->keyQ, 0xE0);
-            PS2InsertQueue((GeneriQ *)&pThis->keyQ, pKeyDef->makeS2);
+            /* Standard processing for regular keys only. */
+            if (!(pKeyDef->keyFlags & (KF_PB | KF_PS)))
+            {
+                if (pKeyDef->keyFlags & (KF_E0 | KF_GK | KF_NS))
+                    PS2InsertQueue((GeneriQ *)&pThis->keyQ, 0xE0);
+                PS2InsertQueue((GeneriQ *)&pThis->keyQ, pKeyDef->makeS2);
+            }
         }
         else if (!(pKeyDef->keyFlags & (KF_NB | KF_PB)))
         {
+            /* Process key up event except for keys which produce none. */
 
-            /* Process base scan code. */
-            if (pKeyDef->keyFlags & (KF_E0 | KF_GK | KF_NS | KF_PS))
-                PS2InsertQueue((GeneriQ *)&pThis->keyQ, 0xE0);
-            PS2InsertQueue((GeneriQ *)&pThis->keyQ, 0xF0);
-            PS2InsertQueue((GeneriQ *)&pThis->keyQ, pKeyDef->makeS2);
-
-            /* Restore shift state for gray keys. */
-            if (pKeyDef->keyFlags & KF_GK)
+            /* Handle Print Screen release. */
+            if (pKeyDef->keyFlags & KF_PS)
             {
-                if (pThis->fNumLockOn)
-                {
-                    if ((pThis->u8Modifiers & (MOD_LSHIFT | MOD_RSHIFT)) == 0)
-                        strcpy((char *)abCodes, "\xE0\xF0\x12");
-                }
+                /* Undo faked Print Screen state as needed. */
+                if (pThis->u8Modifiers & (MOD_LALT | MOD_RALT))
+                    strcpy((char *)abCodes, "\xF0\x84");
+                else if (pThis->u8Modifiers & (MOD_LSHIFT | MOD_RSHIFT))
+                    strcpy((char *)abCodes, "\xE0\xF0\x7C");
                 else
+                    strcpy((char *)abCodes, "\xE0\xF0\x7C\xE0\xF0\x12");
+            }
+            else
+            {
+                /* Process base scan code for less unusual keys. */
+                if (pKeyDef->keyFlags & (KF_E0 | KF_GK | KF_NS))
+                    PS2InsertQueue((GeneriQ *)&pThis->keyQ, 0xE0);
+                PS2InsertQueue((GeneriQ *)&pThis->keyQ, 0xF0);
+                PS2InsertQueue((GeneriQ *)&pThis->keyQ, pKeyDef->makeS2);
+    
+                /* Restore shift state for gray keys. */
+                if (pKeyDef->keyFlags & KF_GK)
                 {
-                    if (pThis->u8Modifiers & MOD_LSHIFT)
-                        strcpy((char *)abCodes, "\xE0\x12");
-                    if (pThis->u8Modifiers & MOD_RSHIFT)
-                        strcpy((char *)abCodes, "\xE0\x59");
+                    if (pThis->fNumLockOn)
+                    {
+                        if ((pThis->u8Modifiers & (MOD_LSHIFT | MOD_RSHIFT)) == 0)
+                            strcpy((char *)abCodes, "\xE0\xF0\x12");
+                    }
+                    else
+                    {
+                        if (pThis->u8Modifiers & MOD_LSHIFT)
+                            strcpy((char *)abCodes, "\xE0\x12");
+                        if (pThis->u8Modifiers & MOD_RSHIFT)
+                            strcpy((char *)abCodes, "\xE0\x59");
+                    }
                 }
             }
-            /* Feed the bytes to the queue if there is room. */
+
+            /* Feed any additional bytes to the queue if there is room. */
             //@todo: check empty space!
             while (abCodes[i])
                 PS2InsertQueue((GeneriQ *)&pThis->keyQ, abCodes[i++]);
@@ -1164,6 +1191,7 @@ static DECLCALLBACK(int) PS2KPutEventWrapper(PPDMIKEYBOARDPORT pInterface, uint8
     PPS2K       pThis = RT_FROM_MEMBER(pInterface, PS2K, Keyboard.IPort);
     uint32_t    u32Usage = 0;
 
+    LogFlowFunc(("key code %02X\n", u8KeyCode ));
     pThis->XlatState = ScancodeToHidUsage(pThis->XlatState, u8KeyCode, &u32Usage);
 
     if (pThis->XlatState == SS_IDLE)
