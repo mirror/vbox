@@ -11083,9 +11083,9 @@ FNIEMOP_DEF(iemOp_EscF7)
         switch ((bRm >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK)
         {
             case 0: return FNIEMOP_CALL_1(iemOp_ffreep_stN, bRm); /* ffree + pop afterwards, since forever according to AMD. */
-            case 1: return FNIEMOP_CALL(iemOp_fnop);
-            case 2: return FNIEMOP_CALL(iemOp_fnop);
-            case 3: return FNIEMOP_CALL(iemOp_fnop);
+            case 1: return FNIEMOP_CALL_1(iemOp_fxch_stN,   bRm); /* Reserved, behaves like FXCH ST(i) on intel. */
+            case 2: return FNIEMOP_CALL_1(iemOp_fstp_stN,   bRm); /* Reserved, behaves like FSTP ST(i) on intel. */
+            case 3: return FNIEMOP_CALL_1(iemOp_fstp_stN,   bRm); /* Reserved, behaves like FSTP ST(i) on intel. */
             case 4: if (bRm == 0xe0)
                         return FNIEMOP_CALL(iemOp_fnstsw_ax);
                     return IEMOP_RAISE_INVALID_OPCODE();

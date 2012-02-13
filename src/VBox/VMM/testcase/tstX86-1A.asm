@@ -1542,28 +1542,11 @@ BEGINPROC   x861_Test5
         fld qword REF(.r64V1)
         fld tword REF(.r80V1)
         fld qword REF(.r64V1)
+        fld dword REF(.r32V2)
         fld dword REF(.r32V1)
-        fld qword REF(.r64V1)
 
         ; Test the nop check.
         FpuNopEncoding fnop
-
-;FpuNopEncoding db 0dch, 0d8h
-;int3
-;db 0dch, 0d0h
-;        fld dword REF(.r32V2)
-;        fld dword REF(.r32V2)
-;        fld dword REF(.r32V2)
-;        fld dword REF(.r32V2)
-;fnclex
-;call SetFSW_C0_thru_C3
-;int3
-;db 0deh, 0d0h
-;db 0deh, 0d1h
-;db 0deh, 0d2h
-;db 0deh, 0d3h
-;int3
-
 
         ; the 0xd9 block
         ShouldTrap X86_XCPT_UD, db 0d9h, 008h
@@ -1715,30 +1698,30 @@ BEGINPROC   x861_Test5
         ShouldTrap X86_XCPT_UD, db 0deh, 0dfh
 
         ; the 0xdf block
-        FpuUnknownEncoding db 0dfh, 0c8h ; fnop?
-        FpuUnknownEncoding db 0dfh, 0c9h ; fnop?
-        FpuUnknownEncoding db 0dfh, 0cah ; fnop?
-        FpuUnknownEncoding db 0dfh, 0cbh ; fnop?
-        FpuUnknownEncoding db 0dfh, 0cch ; fnop?
-        FpuUnknownEncoding db 0dfh, 0cdh ; fnop?
-        FpuUnknownEncoding db 0dfh, 0ceh ; fnop?
-        FpuUnknownEncoding db 0dfh, 0cfh ; fnop?
-        FpuUnknownEncoding db 0dfh, 0d0h ; fnop?
-        FpuUnknownEncoding db 0dfh, 0d1h ; fnop?
-        FpuUnknownEncoding db 0dfh, 0d2h ; fnop?
-        FpuUnknownEncoding db 0dfh, 0d3h ; fnop?
-        FpuUnknownEncoding db 0dfh, 0d4h ; fnop?
-        FpuUnknownEncoding db 0dfh, 0d5h ; fnop?
-        FpuUnknownEncoding db 0dfh, 0d6h ; fnop?
-        FpuUnknownEncoding db 0dfh, 0d7h ; fnop?
-        FpuUnknownEncoding db 0dfh, 0d8h ; fnop?
-        FpuUnknownEncoding db 0dfh, 0d9h ; fnop?
-        FpuUnknownEncoding db 0dfh, 0dah ; fnop?
-        FpuUnknownEncoding db 0dfh, 0dbh ; fnop?
-        FpuUnknownEncoding db 0dfh, 0dch ; fnop?
-        FpuUnknownEncoding db 0dfh, 0ddh ; fnop?
-        FpuUnknownEncoding db 0dfh, 0deh ; fnop?
-        FpuUnknownEncoding db 0dfh, 0dfh ; fnop?
+        ;FpuUnknownEncoding db 0dfh, 0c8h ; fxch?
+        ;FpuUnknownEncoding db 0dfh, 0c9h ; fxch?
+        ;FpuUnknownEncoding db 0dfh, 0cah ; fxch?
+        ;FpuUnknownEncoding db 0dfh, 0cbh ; fxch?
+        ;FpuUnknownEncoding db 0dfh, 0cch ; fxch?
+        ;FpuUnknownEncoding db 0dfh, 0cdh ; fxch?
+        ;FpuUnknownEncoding db 0dfh, 0ceh ; fxch?
+        ;FpuUnknownEncoding db 0dfh, 0cfh ; fxch?
+        ;FpuUnknownEncoding db 0dfh, 0d0h ; fstp?
+        ;FpuUnknownEncoding db 0dfh, 0d1h ; fstp?
+        ;FpuUnknownEncoding db 0dfh, 0d2h ; fstp?
+        ;FpuUnknownEncoding db 0dfh, 0d3h ; fstp?
+        ;FpuUnknownEncoding db 0dfh, 0d4h ; fstp?
+        ;FpuUnknownEncoding db 0dfh, 0d5h ; fstp?
+        ;FpuUnknownEncoding db 0dfh, 0d6h ; fstp?
+        ;FpuUnknownEncoding db 0dfh, 0d7h ; fstp?
+        ;FpuUnknownEncoding db 0dfh, 0d8h ; fstp?
+        ;FpuUnknownEncoding db 0dfh, 0d9h ; fstp?
+        ;FpuUnknownEncoding db 0dfh, 0dah ; fstp?
+        ;FpuUnknownEncoding db 0dfh, 0dbh ; fstp?
+        ;FpuUnknownEncoding db 0dfh, 0dch ; fstp?
+        ;FpuUnknownEncoding db 0dfh, 0ddh ; fstp?
+        ;FpuUnknownEncoding db 0dfh, 0deh ; fstp?
+        ;FpuUnknownEncoding db 0dfh, 0dfh ; fstp?
         ShouldTrap X86_XCPT_UD, db 0dfh, 0e1h
         ShouldTrap X86_XCPT_UD, db 0dfh, 0e2h
         ShouldTrap X86_XCPT_UD, db 0dfh, 0e3h
