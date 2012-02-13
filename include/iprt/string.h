@@ -710,8 +710,8 @@ RTDECL(size_t) RTStrPurgeEncoding(char *psz);
  * be replaced byte by byte.
  *
  * @returns The number of code points replaced, or a negative value if the
- *          string is not correctly encoded.  In this case the string will not
- *          be changed.
+ *          string is not correctly encoded.  In this last case the string
+ *          may be partially processed.
  * @param   psz            The string to sanitise.
  * @param   puszValidSet   A zero-terminated array of the Unicode code points
  *                         in the white list.
@@ -3324,8 +3324,8 @@ RTDECL(PRTUTF16) RTUtf16ToUpper(PRTUTF16 pwsz);
  * be replaced byte by byte.
  *
  * @returns The number of code points replaced, or a negative value if the
- *          string is not correctly encoded.  In this case the string will not
- *          be changed.
+ *          string is not correctly encoded.  In this last case the string
+ *          may be partially processed.
  * @param   pwsz           The string to sanitise.
  * @param   puszValidSet   A zero-terminated array of the Unicode code points
  *                         in the white list.
