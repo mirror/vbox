@@ -144,6 +144,16 @@ extern int testRTDirOpen(PRTDIR *ppDir, const char *pszPath)
     return VINF_SUCCESS;
 }
 
+/** @todo Do something useful with the last two arguments. */
+extern int testRTDirOpenFiltered(PRTDIR *ppDir, const char *pszPath, RTDIRFILTER, uint32_t)
+{
+ /* RTPrintf("%s: pszPath=%s\n", __PRETTY_FUNCTION__, pszPath); */
+    ARRAY_FROM_PATH(testRTDirOpenName, pszPath);
+    *ppDir = testRTDirOpenpDir;
+    testRTDirOpenpDir = 0;
+    return VINF_SUCCESS;
+}
+
 static PRTDIR testRTDirQueryInfoDir;
 static RTTIMESPEC testRTDirQueryInfoATime;
 
