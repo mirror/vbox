@@ -1353,6 +1353,183 @@ BEGINPROC   x861_Test4
 ENDPROC     x861_Test4
 
 
+;;
+; Tests an reserved FPU encoding, checking that it does not affect the FPU or
+; CPU state in any way.
+;
+; @uses stack
+%macro FpuNopEncoding 1+
+        fnclex
+        call    SetFSW_C0_thru_C3
+
+        push    xBP
+        mov     xBP, xSP
+        sub     xSP, 1024
+        and     xSP, ~0fh
+        call    SaveFPUAndGRegsToStack
+        %1
+        call    CompareFPUAndGRegsOnStack
+        leave
+
+        jz      %%ok
+        add     eax, __LINE__
+        jmp     .return
+%%ok:
+%endmacro
+
+;;
+; Used for marking encodings which has a meaning other than FNOP and
+; needs investigating.
+%macro FpuUnknownEncoding 1+
+        %1
+%endmacro
+
+
+;;
+; Saves the FPU and general registers to the stack area right next to the
+; return address.
+;
+; The required area size is 512 + 80h = 640.
+;
+; @uses Nothing, except stack.
+;
+SaveFPUAndGRegsToStack:
+        ; Must clear the FXSAVE area.
+        pushf
+        push    xCX
+        push    xAX
+        push    xDI
+
+        lea     xDI, [xSP + xS * 5]
+        mov     xCX, 512 / 4
+        mov     eax, 0cccccccch
+        cld
+        rep stosd
+
+        pop     xDI
+        pop     xAX
+        pop     xCX
+        popf
+
+        ; Save the FPU state.
+        fxsave  [xSP + xS]
+
+        ; Save GRegs (80h bytes).
+%ifdef RT_ARCH_AMD64
+        mov     [xSP + 512 + xS + 000h], xAX
+        mov     [xSP + 512 + xS + 008h], xBX
+        mov     [xSP + 512 + xS + 010h], xCX
+        mov     [xSP + 512 + xS + 018h], xDX
+        mov     [xSP + 512 + xS + 020h], xDI
+        mov     [xSP + 512 + xS + 028h], xSI
+        mov     [xSP + 512 + xS + 030h], xBP
+        mov     [xSP + 512 + xS + 038h], r8
+        mov     [xSP + 512 + xS + 040h], r9
+        mov     [xSP + 512 + xS + 048h], r10
+        mov     [xSP + 512 + xS + 050h], r11
+        mov     [xSP + 512 + xS + 058h], r12
+        mov     [xSP + 512 + xS + 060h], r13
+        mov     [xSP + 512 + xS + 068h], r14
+        mov     [xSP + 512 + xS + 070h], r15
+        pushf
+        pop     rax
+        mov     [xSP + 512 + xS + 078h], rax
+        mov     rax, [xSP + 512 + xS + 000h]
+%else
+        mov     [xSP + 512 + xS + 000h], eax
+        mov     [xSP + 512 + xS + 004h], eax
+        mov     [xSP + 512 + xS + 008h], ebx
+        mov     [xSP + 512 + xS + 00ch], ebx
+        mov     [xSP + 512 + xS + 010h], ecx
+        mov     [xSP + 512 + xS + 014h], ecx
+        mov     [xSP + 512 + xS + 018h], edx
+        mov     [xSP + 512 + xS + 01ch], edx
+        mov     [xSP + 512 + xS + 020h], edi
+        mov     [xSP + 512 + xS + 024h], edi
+        mov     [xSP + 512 + xS + 028h], esi
+        mov     [xSP + 512 + xS + 02ch], esi
+        mov     [xSP + 512 + xS + 030h], ebp
+        mov     [xSP + 512 + xS + 034h], ebp
+        mov     [xSP + 512 + xS + 038h], eax
+        mov     [xSP + 512 + xS + 03ch], eax
+        mov     [xSP + 512 + xS + 040h], eax
+        mov     [xSP + 512 + xS + 044h], eax
+        mov     [xSP + 512 + xS + 048h], eax
+        mov     [xSP + 512 + xS + 04ch], eax
+        mov     [xSP + 512 + xS + 050h], eax
+        mov     [xSP + 512 + xS + 054h], eax
+        mov     [xSP + 512 + xS + 058h], eax
+        mov     [xSP + 512 + xS + 05ch], eax
+        mov     [xSP + 512 + xS + 060h], eax
+        mov     [xSP + 512 + xS + 064h], eax
+        mov     [xSP + 512 + xS + 068h], eax
+        mov     [xSP + 512 + xS + 06ch], eax
+        mov     [xSP + 512 + xS + 070h], eax
+        mov     [xSP + 512 + xS + 074h], eax
+        pushf
+        pop     eax
+        mov     [xSP + 512 + xS + 078h], eax
+        mov     [xSP + 512 + xS + 07ch], eax
+        mov     eax, [xSP + 512 + xS + 000h]
+%endif
+        ret
+
+;;
+; Compares the current FPU and general registers to that found in the stack
+; area prior to the return address.
+;
+; @uses     Stack, flags and eax/rax.
+; @returns  eax is zero on success, eax is 1000000 * offset on failure.
+;           ZF reflects the eax value to save a couple of instructions...
+;
+CompareFPUAndGRegsOnStack:
+        lea     xSP, [xSP - (1024 - xS)]
+        call    SaveFPUAndGRegsToStack
+
+        push    xSI
+        push    xDI
+        push    xCX
+
+        mov     xCX, 640
+        lea     xSI, [xSP + xS*3]
+        lea     xDI, [xSI + 1024]
+
+        mov     dword [xSI + 0x8], 0    ; ignore FPUIP
+        mov     dword [xDI + 0x8], 0    ; ignore FPUIP
+
+        cld
+        repe cmpsb
+        je      .ok
+
+        ;int3
+        lea     xAX, [xSP + xS*3]
+        xchg    xAX, xSI
+        sub     xAX, xSI
+
+        push    xDX
+        mov     xDX, 1000000
+        mul     xDX
+        pop     xDX
+        jmp     .return
+.ok:
+        xor     eax, eax
+.return:
+        pop     xCX
+        pop     xDI
+        pop     xSI
+        lea     xSP, [xSP + (1024 - xS)]
+        or      eax, eax
+        ret
+
+
+SetFSW_C0_thru_C3:
+        sub     xSP, 20h
+        fstenv  [xSP]
+        or      word [xSP + 4], X86_FSW_C0 | X86_FSW_C1 | X86_FSW_C2 | X86_FSW_C3
+        fldenv  [xSP]
+        add     xSP, 20h
+        ret
+
 
 ;;
 ; Tests some odd floating point instruction encodings.
@@ -1364,6 +1541,22 @@ BEGINPROC   x861_Test5
         fld dword REF(.r32V1)
         fld qword REF(.r64V1)
         fld tword REF(.r80V1)
+        fld qword REF(.r64V1)
+        fld dword REF(.r32V1)
+        fld qword REF(.r64V1)
+
+        ; Test the nop check.
+        FpuNopEncoding fnop
+
+;FpuNopEncoding db 0dch, 0d8h
+;int3
+;db 0dch, 0d0h
+;        fld dword REF(.r32V1)
+;        fld dword REF(.r32D0)
+;int3
+;db 0dch, 0d9h ; fnop?
+;int3
+
 
         ; the 0xd9 block
         ShouldTrap X86_XCPT_UD, db 0d9h, 008h
@@ -1382,14 +1575,14 @@ BEGINPROC   x861_Test5
         ShouldTrap X86_XCPT_UD, db 0d9h, 0d5h
         ShouldTrap X86_XCPT_UD, db 0d9h, 0d6h
         ShouldTrap X86_XCPT_UD, db 0d9h, 0d7h
-        db 0d9h, 0d8h ; fnop?
-        db 0d9h, 0d9h ; fnop?
-        db 0d9h, 0dah ; fnop?
-        db 0d9h, 0dbh ; fnop?
-        db 0d9h, 0dch ; fnop?
-        db 0d9h, 0ddh ; fnop?
-        db 0d9h, 0deh ; fnop?
-        db 0d9h, 0dfh ; fnop?
+        ;FpuUnknownEncoding db 0d9h, 0d8h ; fstp st(0),st(0)?
+        ;FpuUnknownEncoding db 0d9h, 0d9h ; fstp st(1),st(0)?
+        ;FpuUnknownEncoding db 0d9h, 0dah ; fstp st(2),st(0)?
+        ;FpuUnknownEncoding db 0d9h, 0dbh ; fstp st(3),st(0)?
+        ;FpuUnknownEncoding db 0d9h, 0dch ; fstp st(4),st(0)?
+        ;FpuUnknownEncoding db 0d9h, 0ddh ; fstp st(5),st(0)?
+        ;FpuUnknownEncoding db 0d9h, 0deh ; fstp st(6),st(0)?
+        ;FpuUnknownEncoding db 0d9h, 0dfh ; fstp st(7),st(0)?
         ShouldTrap X86_XCPT_UD, db 0d9h, 0e2h
         ShouldTrap X86_XCPT_UD, db 0d9h, 0e3h
         ShouldTrap X86_XCPT_UD, db 0d9h, 0e6h
@@ -1432,9 +1625,9 @@ BEGINPROC   x861_Test5
         ShouldTrap X86_XCPT_UD, db 0dah, 0ffh
 
         ; the 0xdb block
-        db 0dbh, 0e0h ; fneni
-        db 0dbh, 0e1h ; fndisi
-        db 0dbh, 0e4h ; fnsetpm
+        FpuNopEncoding db 0dbh, 0e0h ; fneni
+        FpuNopEncoding db 0dbh, 0e1h ; fndisi
+        FpuNopEncoding db 0dbh, 0e4h ; fnsetpm
         ShouldTrap X86_XCPT_UD, db 0dbh, 0e5h
         ShouldTrap X86_XCPT_UD, db 0dbh, 0e6h
         ShouldTrap X86_XCPT_UD, db 0dbh, 0e7h
@@ -1452,32 +1645,32 @@ BEGINPROC   x861_Test5
         ShouldTrap X86_XCPT_UD, db 0dbh, 032h
 
         ; the 0xdc block
-        db 0dbh, 0d0h ; fnop?
-        db 0dbh, 0d1h ; fnop?
-        db 0dbh, 0d2h ; fnop?
-        db 0dbh, 0d3h ; fnop?
-        db 0dbh, 0d4h ; fnop?
-        db 0dbh, 0d5h ; fnop?
-        db 0dbh, 0d6h ; fnop?
-        db 0dbh, 0d7h ; fnop?
-        db 0dbh, 0d8h ; fnop?
-        db 0dbh, 0d9h ; fnop?
-        db 0dbh, 0dah ; fnop?
-        db 0dbh, 0dbh ; fnop?
-        db 0dbh, 0dch ; fnop?
-        db 0dbh, 0ddh ; fnop?
-        db 0dbh, 0deh ; fnop?
-        db 0dbh, 0dfh ; fnop?
+        ;FpuNopEncoding db 0dch, 0d0h ; fcom?
+        ;FpuNopEncoding db 0dch, 0d1h ; fcom?
+        ;FpuNopEncoding db 0dch, 0d2h ; fcom?
+        ;FpuNopEncoding db 0dch, 0d3h ; fcom?
+        ;FpuNopEncoding db 0dch, 0d4h ; fcom?
+        ;FpuNopEncoding db 0dch, 0d5h ; fcom?
+        ;FpuNopEncoding db 0dch, 0d6h ; fcom?
+        ;FpuNopEncoding db 0dch, 0d7h ; fcom?
+        ;FpuNopEncoding db 0dch, 0d8h ; fcomp?
+        ;FpuNopEncoding db 0dch, 0d9h ; fcomp?
+        ;FpuNopEncoding db 0dch, 0dah ; fcomp?
+        ;FpuNopEncoding db 0dch, 0dbh ; fcomp?
+        ;FpuNopEncoding db 0dch, 0dch ; fcomp?
+        ;FpuNopEncoding db 0dch, 0ddh ; fcomp?
+        ;FpuNopEncoding db 0dch, 0deh ; fcomp?
+        ;FpuNopEncoding db 0dch, 0dfh ; fcomp?
 
         ; the 0xdd block
-        db 0ddh, 0c0h ; fnop?
-        db 0ddh, 0c1h ; fnop?
-        db 0ddh, 0c2h ; fnop?
-        db 0ddh, 0c3h ; fnop?
-        db 0ddh, 0c4h ; fnop?
-        db 0ddh, 0c5h ; fnop?
-        db 0ddh, 0c6h ; fnop?
-        db 0ddh, 0c7h ; fnop?
+        FpuNopEncoding db 0ddh, 0c8h ; fnop?
+        FpuUnknownEncoding db 0ddh, 0c9h ; fnop?
+        FpuUnknownEncoding db 0ddh, 0cah ; fnop?
+        FpuUnknownEncoding db 0ddh, 0cbh ; fnop?
+        FpuUnknownEncoding db 0ddh, 0cch ; fnop?
+        FpuUnknownEncoding db 0ddh, 0cdh ; fnop?
+        FpuUnknownEncoding db 0ddh, 0ceh ; fnop?
+        FpuUnknownEncoding db 0ddh, 0cfh ; fnop?
         ShouldTrap X86_XCPT_UD, db 0ddh, 0f0h
         ShouldTrap X86_XCPT_UD, db 0ddh, 0f1h
         ShouldTrap X86_XCPT_UD, db 0ddh, 0f2h
@@ -1497,6 +1690,64 @@ BEGINPROC   x861_Test5
         ShouldTrap X86_XCPT_UD, db 0ddh, 028h
         ShouldTrap X86_XCPT_UD, db 0ddh, 02fh
 
+        ; the 0xde block
+        FpuUnknownEncoding db 0deh, 0d0h ; fnop?
+        FpuUnknownEncoding db 0deh, 0d1h ; fnop?
+        FpuUnknownEncoding db 0deh, 0d2h ; fnop?
+        FpuUnknownEncoding db 0deh, 0d3h ; fnop?
+        FpuUnknownEncoding db 0deh, 0d4h ; fnop?
+        FpuUnknownEncoding db 0deh, 0d5h ; fnop?
+        FpuUnknownEncoding db 0deh, 0d6h ; fnop?
+        FpuUnknownEncoding db 0deh, 0d7h ; fnop?
+        ShouldTrap X86_XCPT_UD, db 0deh, 0d8h
+        ShouldTrap X86_XCPT_UD, db 0deh, 0dah
+        ShouldTrap X86_XCPT_UD, db 0deh, 0dbh
+        ShouldTrap X86_XCPT_UD, db 0deh, 0dch
+        ShouldTrap X86_XCPT_UD, db 0deh, 0ddh
+        ShouldTrap X86_XCPT_UD, db 0deh, 0deh
+        ShouldTrap X86_XCPT_UD, db 0deh, 0dfh
+
+        ; the 0xdf block
+        FpuUnknownEncoding db 0dfh, 0c8h ; fnop?
+        FpuUnknownEncoding db 0dfh, 0c9h ; fnop?
+        FpuUnknownEncoding db 0dfh, 0cah ; fnop?
+        FpuUnknownEncoding db 0dfh, 0cbh ; fnop?
+        FpuUnknownEncoding db 0dfh, 0cch ; fnop?
+        FpuUnknownEncoding db 0dfh, 0cdh ; fnop?
+        FpuUnknownEncoding db 0dfh, 0ceh ; fnop?
+        FpuUnknownEncoding db 0dfh, 0cfh ; fnop?
+        FpuUnknownEncoding db 0dfh, 0d0h ; fnop?
+        FpuUnknownEncoding db 0dfh, 0d1h ; fnop?
+        FpuUnknownEncoding db 0dfh, 0d2h ; fnop?
+        FpuUnknownEncoding db 0dfh, 0d3h ; fnop?
+        FpuUnknownEncoding db 0dfh, 0d4h ; fnop?
+        FpuUnknownEncoding db 0dfh, 0d5h ; fnop?
+        FpuUnknownEncoding db 0dfh, 0d6h ; fnop?
+        FpuUnknownEncoding db 0dfh, 0d7h ; fnop?
+        FpuUnknownEncoding db 0dfh, 0d8h ; fnop?
+        FpuUnknownEncoding db 0dfh, 0d9h ; fnop?
+        FpuUnknownEncoding db 0dfh, 0dah ; fnop?
+        FpuUnknownEncoding db 0dfh, 0dbh ; fnop?
+        FpuUnknownEncoding db 0dfh, 0dch ; fnop?
+        FpuUnknownEncoding db 0dfh, 0ddh ; fnop?
+        FpuUnknownEncoding db 0dfh, 0deh ; fnop?
+        FpuUnknownEncoding db 0dfh, 0dfh ; fnop?
+        ShouldTrap X86_XCPT_UD, db 0dfh, 0e1h
+        ShouldTrap X86_XCPT_UD, db 0dfh, 0e2h
+        ShouldTrap X86_XCPT_UD, db 0dfh, 0e3h
+        ShouldTrap X86_XCPT_UD, db 0dfh, 0e4h
+        ShouldTrap X86_XCPT_UD, db 0dfh, 0e5h
+        ShouldTrap X86_XCPT_UD, db 0dfh, 0e6h
+        ShouldTrap X86_XCPT_UD, db 0dfh, 0e7h
+        ShouldTrap X86_XCPT_UD, db 0dfh, 0f8h
+        ShouldTrap X86_XCPT_UD, db 0dfh, 0f9h
+        ShouldTrap X86_XCPT_UD, db 0dfh, 0fah
+        ShouldTrap X86_XCPT_UD, db 0dfh, 0fbh
+        ShouldTrap X86_XCPT_UD, db 0dfh, 0fch
+        ShouldTrap X86_XCPT_UD, db 0dfh, 0fdh
+        ShouldTrap X86_XCPT_UD, db 0dfh, 0feh
+        ShouldTrap X86_XCPT_UD, db 0dfh, 0ffh
+
 
 .success:
         xor     eax, eax
@@ -1507,6 +1758,9 @@ BEGINPROC   x861_Test5
 .r32V1: dd 3.2
 .r64V1: dq 6.4
 .r80V1: dt 8.0
+
+; Denormal numbers.
+.r32D0: dd 0200000h
 
 ENDPROC     x861_Test5
 
