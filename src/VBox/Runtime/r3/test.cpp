@@ -625,7 +625,7 @@ RTR3DECL(int) RTTestGuardedFree(RTTEST hTest, void *pv)
     }
     RTCritSectLeave(&pTest->Lock);
 
-    return VINF_SUCCESS;
+    return rc;
 }
 
 
