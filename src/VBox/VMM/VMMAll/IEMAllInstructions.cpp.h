@@ -10341,7 +10341,8 @@ FNIEMOP_DEF(iemOp_EscF0)
 }
 
 
-/** Opcode 0xd9 /0 mem32real */
+/** Opcode 0xd9 /0 mem32real
+ * @sa  iemOp_fld_m64r */
 FNIEMOP_DEF_1(iemOp_fld_m32r, uint8_t, bRm)
 {
     IEMOP_MNEMONIC("fld m32r");
@@ -10359,7 +10360,7 @@ FNIEMOP_DEF_1(iemOp_fld_m32r, uint8_t, bRm)
     IEM_MC_FETCH_MEM_R32(r32Val, pIemCpu->iEffSeg, GCPtrEffSrc);
     IEM_MC_CALL_FPU_AIMPL_2(iemAImpl_fpu_r32_to_r80, pFpuRes, r32Val);
 
-    IEM_MC_PUSH_FPU_RESULT(FpuRes);
+    IEM_MC_PUSH_FPU_RESULT_MEM_OP(FpuRes, pIemCpu->iEffSeg, GCPtrEffSrc);
     IEM_MC_ADVANCE_RIP();
 
     IEM_MC_END();
@@ -10823,7 +10824,34 @@ FNIEMOP_STUB_1(iemOp_fsub_m64r,  uint8_t, bRm);
 FNIEMOP_STUB_1(iemOp_fsubr_m64r, uint8_t, bRm);
 
 /** Opcode 0xdc !11/6. */
+#if 0
+FNIEMOP_DEF_1(iemOp_fdiv_m64r,  uint8_t, bRm)
+{
+    IEMOP_MNEMONIC("fdiv m64r");
+    IEMOP_HLP_NO_LOCK_PREFIX();
+
+    IEM_MC_BEGIN(2, 3);
+    IEM_MC_LOCAL(RTGCPTR,               GCPtrEffSrc);
+    IEM_MC_LOCAL(IEMFPURESULT,          FpuRes);
+    IEM_MC_LOCAL(RTFLOAT64U,            r64Val);
+    IEM_MC_ARG_LOCAL_REF(PIEMFPURESULT, pFpuRes,    FpuRes, 0);
+    IEM_MC_ARG_LOCAL_REF(PRTFLOAT64U,   pr64Val,    r64Val, 1);
+
+    IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm);
+    IEM_MC_MAYBE_RAISE_DEVICE_NOT_AVAILABLE();
+    IEM_MC_MAYBE_RAISE_FPU_XCPT();
+    IEM_MC_FETCH_MEM_R64(r64Val, pIemCpu->iEffSeg, GCPtrEffSrc);
+    IEM_MC_CALL_FPU_AIMPL_2(iemAImpl_fpu_r64_to_r80, pFpuRes, pr64Val);
+
+    IEM_MC_PUSH_FPU_RESULT_MEM_OP(FpuRes, pIemCpu->iEffSeg, GCPtrEffSrc);
+    IEM_MC_ADVANCE_RIP();
+
+    IEM_MC_END();
+    return VINF_SUCCESS;
+}
+#else
 FNIEMOP_STUB_1(iemOp_fdiv_m64r,  uint8_t, bRm);
+#endif
 
 /** Opcode 0xdc !11/7. */
 FNIEMOP_STUB_1(iemOp_fdivr_m64r, uint8_t, bRm);
@@ -10867,8 +10895,32 @@ FNIEMOP_DEF(iemOp_EscF4)
 }
 
 
-/** Opcode 0xdd !11/0. */
-FNIEMOP_STUB_1(iemOp_fld_m64r,    uint8_t, bRm);
+/** Opcode 0xdd !11/0.
+ * @sa iemOp_fld_m32r */
+FNIEMOP_DEF_1(iemOp_fld_m64r,    uint8_t, bRm)
+{
+    IEMOP_MNEMONIC("fld m64r");
+    IEMOP_HLP_NO_LOCK_PREFIX();
+
+    IEM_MC_BEGIN(2, 3);
+    IEM_MC_LOCAL(RTGCPTR,               GCPtrEffSrc);
+    IEM_MC_LOCAL(IEMFPURESULT,          FpuRes);
+    IEM_MC_LOCAL(RTFLOAT64U,            r64Val);
+    IEM_MC_ARG_LOCAL_REF(PIEMFPURESULT, pFpuRes,    FpuRes, 0);
+    IEM_MC_ARG_LOCAL_REF(PRTFLOAT64U,   pr64Val,    r64Val, 1);
+
+    IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm);
+    IEM_MC_MAYBE_RAISE_DEVICE_NOT_AVAILABLE();
+    IEM_MC_MAYBE_RAISE_FPU_XCPT();
+    IEM_MC_FETCH_MEM_R64(r64Val, pIemCpu->iEffSeg, GCPtrEffSrc);
+    IEM_MC_CALL_FPU_AIMPL_2(iemAImpl_fpu_r64_to_r80, pFpuRes, pr64Val);
+
+    IEM_MC_PUSH_FPU_RESULT_MEM_OP(FpuRes, pIemCpu->iEffSeg, GCPtrEffSrc);
+    IEM_MC_ADVANCE_RIP();
+
+    IEM_MC_END();
+    return VINF_SUCCESS;
+}
 
 /** Opcode 0xdd !11/0. */
 FNIEMOP_STUB_1(iemOp_fisttp_m64i, uint8_t, bRm);
