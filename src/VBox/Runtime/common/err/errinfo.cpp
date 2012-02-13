@@ -54,7 +54,7 @@ RTDECL(int)         RTErrInfoAllocEx(size_t cbMsg, PRTERRINFO *ppErrInfo)
 
     PRTERRINFO pErrInfo;
     *ppErrInfo = pErrInfo = (PRTERRINFO)RTMemTmpAlloc(sizeof(*pErrInfo) + cbMsg);
-    if (RT_UNLIKELY(pErrInfo))
+    if (RT_UNLIKELY(!pErrInfo))
         return VERR_NO_TMP_MEMORY;
 
     RTErrInfoInit(pErrInfo, (char *)(pErrInfo + 1), cbMsg);
