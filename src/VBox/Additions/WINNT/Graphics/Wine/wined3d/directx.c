@@ -92,6 +92,7 @@ static const struct {
     {"GL_ARB_texture_env_dot3",             ARB_TEXTURE_ENV_DOT3,           0                           },
     {"GL_ARB_texture_float",                ARB_TEXTURE_FLOAT,              0                           },
     {"GL_ARB_texture_mirrored_repeat",      ARB_TEXTURE_MIRRORED_REPEAT,    0                           },
+    {"GL_IBM_texture_mirrored_repeat",      ARB_TEXTURE_MIRRORED_REPEAT,    0                           },
     {"GL_ARB_texture_non_power_of_two",     ARB_TEXTURE_NON_POWER_OF_TWO,   MAKEDWORD_VERSION(2, 0)     },
     {"GL_ARB_texture_rectangle",            ARB_TEXTURE_RECTANGLE,          0                           },
     {"GL_ARB_texture_rg",                   ARB_TEXTURE_RG,                 0                           },

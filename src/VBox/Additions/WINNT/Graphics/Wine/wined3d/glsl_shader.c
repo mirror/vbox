@@ -5042,7 +5042,8 @@ static void shader_glsl_get_caps(const struct wined3d_gl_info *gl_info, struct s
      * of native instructions, so use that here. For more info see the pixel shader versioning code below.
      */
     if ((gl_info->supported[NV_VERTEX_PROGRAM2] && !gl_info->supported[NV_VERTEX_PROGRAM3])
-            || gl_info->limits.arb_ps_instructions <= 512)
+            || gl_info->limits.arb_ps_instructions <= 512
+            || gl_info->limits.glsl_vs_float_constants < 256)
         pCaps->VertexShaderVersion = WINED3DVS_VERSION(2,0);
     else
         pCaps->VertexShaderVersion = WINED3DVS_VERSION(3,0);
@@ -5061,7 +5062,8 @@ static void shader_glsl_get_caps(const struct wined3d_gl_info *gl_info, struct s
      * NOTE: ps3.0 hardware requires 512 or more instructions but ati and nvidia offer 'enough' (1024 vs 4096) on their most basic ps3.0 hardware.
      */
     if ((gl_info->supported[NV_FRAGMENT_PROGRAM] && !gl_info->supported[NV_FRAGMENT_PROGRAM2])
-            || gl_info->limits.arb_ps_instructions <= 512)
+            || gl_info->limits.arb_ps_instructions <= 512
+            || gl_info->limits.glsl_vs_float_constants < 256)
         pCaps->PixelShaderVersion = WINED3DPS_VERSION(2,0);
     else
         pCaps->PixelShaderVersion = WINED3DPS_VERSION(3,0);
