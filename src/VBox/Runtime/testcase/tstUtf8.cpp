@@ -844,8 +844,10 @@ void TstRTStrPurgeEncoding(RTTEST hTest)
 void TstRTStrPurgeComplementSet(RTTEST hTest)
 {
     RTTestSub(hTest, "RTStrPurgeComplementSet");
-    RTUNICP aCpSet[] = { '1', '2', '3', '4', '5', 'w', 'r', 'f', 't', 'e',
-                         '\0' };
+    RTUNICP aCpSet[]    = { '1', '5', 'w', 'w', 'r', 'r', 'e', 'f', 't', 't',
+                            '\0' };
+    RTUNICP aCpBadSet[] = { '1', '5', 'w', 'w', 'r', 'r', 'e', 'f', 't', 't',
+                            '7', '\0' };  /* Contains an incomplete pair. */
     struct
     {
         const char *pcszIn;
@@ -861,7 +863,8 @@ void TstRTStrPurgeComplementSet(RTTEST hTest)
           "123_54wert__trew___4321", aCpSet, '_', 3 },
         { "hjhj8766", "????????", aCpSet, '?', 8 },
         { "123\xf0\xa4\xad\xa2""4", "123____4", aCpSet, '_', 1 },
-        { "\xff", "\xff", aCpSet, '_', -1 }
+        { "\xff", "\xff", aCpSet, '_', -1 },
+        { "____", "____", aCpBadSet, '_', -1 }
     };
     enum { MAX_IN_STRING = 256 };
 
@@ -889,8 +892,10 @@ void TstRTStrPurgeComplementSet(RTTEST hTest)
 void TstRTUtf16PurgeComplementSet(RTTEST hTest)
 {
     RTTestSub(hTest, "RTUtf16PurgeComplementSet");
-    RTUNICP aCpSet[] = { '1', '2', '3', '4', '5', 'w', 'r', 'f', 't', 'e',
-                         '\0' };
+    RTUNICP aCpSet[]    = { '1', '5', 'w', 'w', 'r', 'r', 'e', 'f', 't', 't',
+                            '\0' };
+    RTUNICP aCpBadSet[] = { '1', '5', 'w', 'w', 'r', 'r', 'e', 'f', 't', 't',
+                            '7', '\0' };  /* Contains an incomplete pair. */
     struct
     {
         const char *pcszIn;
@@ -908,7 +913,8 @@ void TstRTUtf16PurgeComplementSet(RTTEST hTest)
         { "hjhj8766", "????????", 0, aCpSet, '?', 8 },
         { "123\xf0\xa4\xad\xa2""4", "123__4", 0, aCpSet, '_', 1 },
         { "\xff\xff\0", "\xff\xff\0", 2, aCpSet, '_', -1 },
-        { "\xff\xff\0", "\xff\xff\0", 2, aCpSet, '_', -1 }
+        { "\xff\xff\0", "\xff\xff\0", 2, aCpSet, '_', -1 },
+        { "____", "____", 0, aCpBadSet, '_', -1 }
     };
     enum { MAX_IN_STRING = 256 };
 
@@ -1507,8 +1513,14 @@ int main()
     test3(hTest);
     TstRTStrXCmp(hTest);
     TstRTStrPurgeEncoding(hTest);
+    /* TstRT*PurgeComplementSet test conditions which assert. */
+    bool fAreQuiet = RTAssertAreQuiet(), fMayPanic = RTAssertMayPanic();
+    RTAssertSetQuiet(true);
+    RTAssertSetMayPanic(false);
     TstRTStrPurgeComplementSet(hTest);
     TstRTUtf16PurgeComplementSet(hTest);
+    RTAssertSetQuiet(fAreQuiet);
+    RTAssertSetMayPanic(fMayPanic);
     testStrEnd(hTest);
     testStrStr(hTest);
     testUtf8Latin1(hTest);

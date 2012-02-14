@@ -713,8 +713,9 @@ RTDECL(size_t) RTStrPurgeEncoding(char *psz);
  *          string is not correctly encoded.  In this last case the string
  *          may be partially processed.
  * @param   psz            The string to sanitise.
- * @param   puszValidSet   A zero-terminated array of the Unicode code points
- *                         in the white list.
+ * @param   puszValidSets  A zero-terminated array of pairs of Unicode points.
+ *                         Each pair is the start and end point of a range,
+ *                         and the union of these ranges forms the white list.
  * @param   chReplacement  The ASCII replacement character.
  */
 RTDECL(ssize_t) RTStrPurgeComplementSet(char *psz, PCRTUNICP puszValidSet, char chReplacement);
@@ -3327,8 +3328,9 @@ RTDECL(PRTUTF16) RTUtf16ToUpper(PRTUTF16 pwsz);
  *          string is not correctly encoded.  In this last case the string
  *          may be partially processed.
  * @param   pwsz           The string to sanitise.
- * @param   puszValidSet   A zero-terminated array of the Unicode code points
- *                         in the white list.
+ * @param   puszValidSets  A zero-terminated array of pairs of Unicode points.
+ *                         Each pair is the start and end point of a range,
+ *                         and the union of these ranges forms the white list.
  * @param   chReplacement  The ASCII replacement character.
  */
 RTDECL(ssize_t) RTUtf16PurgeComplementSet(PRTUTF16 pwsz, PCRTUNICP puszValidSet, char chReplacement);
