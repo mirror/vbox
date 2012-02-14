@@ -378,7 +378,8 @@ static DECLCALLBACK(int) VBoxServiceCpuHotPlugOption(const char **ppszShort, int
     NOREF(argc);
     NOREF(argv);
     NOREF(pi);
-    return VINF_SUCCESS;
+
+    return -1;
 }
 
 

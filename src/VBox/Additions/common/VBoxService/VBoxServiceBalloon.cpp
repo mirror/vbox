@@ -240,7 +240,8 @@ static DECLCALLBACK(int) VBoxServiceBalloonOption(const char **ppszShort, int ar
     NOREF(argc);
     NOREF(argv);
     NOREF(pi);
-    return VINF_SUCCESS;
+
+    return -1;
 }
 
 
