@@ -258,6 +258,7 @@ typedef struct {
 	GLboolean NV_vertex_program2;
 	GLboolean SGIS_generate_mipmap;
     GLboolean EXT_texture_from_pixmap;
+	GLboolean ATI_texture_mirror_once;
 
 	/* derived from above */
 	GLboolean any_vertex_program;    /* NV or ARB */

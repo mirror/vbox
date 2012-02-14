@@ -13,6 +13,10 @@
 #include "cr_version.h"
 #include "state_internals.h"
 
+#ifdef DEBUG_misha
+#include <iprt/assert.h>
+#endif
+
 #define UNUSED(x) ((void) (x))
 
 #define GET_TOBJ(tobj, state, id) \
@@ -1023,6 +1027,11 @@ crStateTexParameterfv(GLenum target, GLenum pname, const GLfloat *param)
                 tobj->wrapS = e;
             }
 #endif
+#ifdef CR_ATI_texture_mirror_once
+            else if ((e == GL_MIRROR_CLAMP_ATI || e == GL_MIRROR_CLAMP_TO_EDGE_ATI) && g->extensions.ATI_texture_mirror_once) {
+                tobj->wrapS = e;
+            }
+#endif
             else {
                 crStateError(__LINE__, __FILE__, GL_INVALID_ENUM,
                     "TexParameterfv: GL_TEXTURE_WRAP_S invalid param: 0x%x", e);
@@ -1053,6 +1062,11 @@ crStateTexParameterfv(GLenum target, GLenum pname, const GLfloat *param)
                 tobj->wrapT = e;
             }
 #endif
+#ifdef CR_ATI_texture_mirror_once
+            else if ((e == GL_MIRROR_CLAMP_ATI || e == GL_MIRROR_CLAMP_TO_EDGE_ATI) && g->extensions.ATI_texture_mirror_once) {
+                tobj->wrapT = e;
+            }
+#endif
             else {
                 crStateError(__LINE__, __FILE__, GL_INVALID_ENUM,
                     "TexParameterfv: GL_TEXTURE_WRAP_T invalid param: 0x%x", e);
@@ -1079,6 +1093,11 @@ crStateTexParameterfv(GLenum target, GLenum pname, const GLfloat *param)
 #endif
 #ifdef CR_ARB_texture_mirrored_repeat
             else if (e == GL_MIRRORED_REPEAT_ARB && g->extensions.ARB_texture_mirrored_repeat) {
+                tobj->wrapR = e;
+            }
+#endif
+#ifdef CR_ATI_texture_mirror_once
+            else if ((e == GL_MIRROR_CLAMP_ATI || e == GL_MIRROR_CLAMP_TO_EDGE_ATI) && g->extensions.ATI_texture_mirror_once) {
                 tobj->wrapR = e;
             }
 #endif
@@ -3183,6 +3202,22 @@ DECLEXPORT(GLuint) STATE_APIENTRY crStateGetTextureHWID(GLuint id)
     CRContext *g = GetCurrentContext();
     CRTextureObj *tobj = GET_TOBJ(tobj, g, id);
 
+#ifdef DEBUG_misha
+    if (id)
+    {
+        Assert(tobj);
+    }
+    else
+    {
+        Assert(!tobj);
+    }
+    if (tobj)
+    {
+        crDebug("tex id(%d), hwid(%d)", tobj->id, tobj->hwid);
+    }
+#endif
+
+
     return tobj ? crStateGetTextureObjHWID(tobj) : 0;
 }
 
@@ -3195,6 +3230,9 @@ DECLEXPORT(GLuint) STATE_APIENTRY crStateGetTextureObjHWID(CRTextureObj *tobj)
     {
         CRASSERT(diff_api.GenTextures);
         diff_api.GenTextures(1, &tobj->hwid);
+#ifdef DEBUG_misha
+        crDebug("tex id(%d), hwid(%d)", tobj->id, tobj->hwid);
+#endif
         CRASSERT(tobj->hwid);
     }
 #endif

@@ -412,6 +412,7 @@ void crNetInit( CRNetReceiveFunc recvFunc, CRNetCloseFunc closeFunc )
     else
     {
 #ifdef WINDOWS
+        /* @todo: do we actually need that WSA stuff with VBox at all? */
         WORD wVersionRequested = MAKEWORD(2, 0);
         WSADATA wsaData;
         int err;
