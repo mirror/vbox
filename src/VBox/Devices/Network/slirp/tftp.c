@@ -369,6 +369,11 @@ static void tftp_handle_rrq(PNATState pData, struct tftp_t *tp, int pktlen)
 
                 len = RTStrPrintf(buffer, sizeof(buffer), "%s/%s",
                                   tftp_prefix, spt->filename);
+                if (RT_UNLIKELY(len <= 0))
+                {
+                    tftp_send_error(pData, spt, 1, "Filename is invalid", tp);
+                    return;
+                }
                 if (stat(buffer, &stat_p) == 0)
                     tsize = stat_p.st_size;
                 else
