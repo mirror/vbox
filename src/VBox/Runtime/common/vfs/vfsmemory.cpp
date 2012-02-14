@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2010 Oracle Corporation
+ * Copyright (C) 2010-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -461,24 +461,27 @@ static DECLCALLBACK(int) rtVfsMemFile_Write(void *pvThis, RTFOFF off, PCRTSGBUF 
          */
         if (!fHit)
         {
-            Assert(!pExtent || (pExtent->off < offUnsigned && pExtent->off + pExtent->cb <= offUnsigned));
+            Assert(!pExtent || offUnsigned < pExtent->off);
 
             /* Skip leading zeros if there is a whole bunch of them. */
             uint8_t const *pbSrcNZ = (uint8_t const *)ASMMemIsAll8(pbSrc, cbLeftToWrite, 0);
-            if (!pbSrcNZ)
+            size_t         cbZeros = pbSrcNZ ? pbSrcNZ - pbSrc            : cbLeftToWrite;
+            if (cbZeros)
             {
-                offUnsigned  += cbLeftToWrite;
-                cbLeftToWrite = 0;
-                break;
-            }
-            size_t const cbZeros = pbSrcNZ - pbSrc;
-            if (cbZeros >= RT_MIN(pThis->cbExtent, _64K))
-            {
+                uint64_t const cbToNext = pExtent ? pExtent->off - offUnsigned : UINT64_MAX;
+                if (cbZeros > cbToNext)
+                    cbZeros = (size_t)cbToNext;
                 offUnsigned   += cbZeros;
                 cbLeftToWrite -= cbZeros;
-                pbSrc          = pbSrcNZ;
-                pExtent = rtVfsMemFile_LocateExtent(pThis, offUnsigned, &fHit);
-                break;
+                if (!cbLeftToWrite)
+                    break;
+
+                Assert(!pExtent || offUnsigned <= pExtent->off);
+                if (pExtent && pExtent->off == offUnsigned)
+                {
+                    fHit = true;
+                    continue;
+                }
             }
 
             fHit    = true;
@@ -507,14 +510,10 @@ static DECLCALLBACK(int) rtVfsMemFile_Write(void *pvThis, RTFOFF off, PCRTSGBUF 
         Assert(offUnsigned == pExtent->off + pExtent->cb);
 
         /*
-         * Advance to the next extent.
+         * Advance to the next extent (emulate the lookup).
          */
-        PRTVFSMEMEXTENT pNext = RTListGetNext(&pThis->ExtentHead, pExtent, RTVFSMEMEXTENT, Entry);
-        Assert(!pNext || pNext->off >= offUnsigned);
-        if (pNext && pNext->off == offUnsigned)
-            pExtent = pNext;
-        else
-            fHit = false;
+        pExtent = RTListGetNext(&pThis->ExtentHead, pExtent, RTVFSMEMEXTENT, Entry);
+        fHit = pExtent && (offUnsigned - pExtent->off < pExtent->cb);
     }
 
     /*
