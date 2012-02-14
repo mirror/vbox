@@ -504,10 +504,13 @@ sorecvoob(PNATState pData, struct socket *so)
      * urgent data.
      */
     ret = soread(pData, so);
-    tp->snd_up = tp->snd_una + SBUF_LEN(&so->so_snd);
-    tp->t_force = 1;
-    tcp_output(pData, tp);
-    tp->t_force = 0;
+    if (RT_LIKELY(ret > 0))
+    {
+        tp->snd_up = tp->snd_una + SBUF_LEN(&so->so_snd);
+        tp->t_force = 1;
+        tcp_output(pData, tp);
+        tp->t_force = 0;
+    }
 }
 #ifndef VBOX_WITH_SLIRP_BSD_SBUF
 /*
