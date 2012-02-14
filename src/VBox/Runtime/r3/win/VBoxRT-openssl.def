@@ -9,7 +9,7 @@
 ;
 
 ;
-; Copyright (C) 2009 Oracle Corporation
+; Copyright (C) 2009-2012 Oracle Corporation
 ;
 ; This file is part of VirtualBox Open Source Edition (OSE), as
 ; available from http://www.virtualbox.org. This file is free software;
@@ -1408,6 +1408,7 @@
     OPENSSL_DIR_read
     OPENSSL_gmtime
     OPENSSL_isservice
+    OPENSSL_issetugid
     OpenSSLDie
     OTHERNAME_free
     OTHERNAME_new
@@ -1581,7 +1582,9 @@
     RAND_egd
     RAND_egd_bytes
     RAND_event
+    RAND_file_name
     RAND_get_rand_method
+    RAND_load_file
     RAND_poll
     RAND_pseudo_bytes
     RAND_query_egd_bytes
@@ -1590,6 +1593,7 @@
     RAND_set_rand_method
     RAND_SSLeay
     RAND_status
+    RAND_write_file
     RC4
     RC4_options
     RC4_set_key
