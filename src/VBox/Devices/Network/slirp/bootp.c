@@ -678,13 +678,11 @@ static void dhcp_decode(PNATState pData, struct bootp_t *bp, const uint8_t *buf,
 {
     const uint8_t *p, *p_end;
     int rc;
-    int pmsg_type;
     struct in_addr req_ip;
     int fDhcpDiscover = 0;
     uint8_t *parameter_list = NULL;
     struct mbuf *m = NULL;
 
-    pmsg_type = 0;
     p = buf;
     p_end = buf + size;
     if (size < 5)
