@@ -364,9 +364,12 @@ RTDECL(ssize_t) RTStrPurgeComplementSet(char *psz, PCRTUNICP puszValidSet, char 
             return -1;
         if (!Cp)
             break;
-        for (pCp = puszValidSet; ; ++pCp)
-            if (!*pCp || *pCp == Cp)
+        for (pCp = puszValidSet; *pCp; pCp += 2)
+        {
+            AssertReturn(*(pCp + 1), -1);
+            if (*pCp <= Cp && *(pCp + 1) >= Cp) /* No, I won't do * and ++. */
                 break;
+        }
         if (!*pCp)
         {
             for (; pszOld != psz; ++pszOld)
