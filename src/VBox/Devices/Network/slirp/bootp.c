@@ -744,7 +744,7 @@ static void dhcp_decode(PNATState pData, struct bootp_t *bp, const uint8_t *buf,
             break;
 
         case DHCPRELEASE:
-            rc = dhcp_decode_release(pData, bp);
+            dhcp_decode_release(pData, bp);
             /* no reply required */
             break;
 
