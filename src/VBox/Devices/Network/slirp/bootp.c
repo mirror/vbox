@@ -676,24 +676,24 @@ static int dhcp_decode_release(PNATState pData, struct bootp_t *bp)
  */
 static void dhcp_decode(PNATState pData, struct bootp_t *bp, const uint8_t *buf, int size)
 {
-    const uint8_t *p, *p_end;
+    const uint8_t *pu8RawDhcpObject;
     int rc;
     struct in_addr req_ip;
     int fDhcpDiscover = 0;
     uint8_t *parameter_list = NULL;
     struct mbuf *m = NULL;
 
-    p = buf;
-    p_end = buf + size;
+    pu8RawDhcpObject = buf;
     if (size < 5)
         return;
 
-    if (memcmp(p, rfc1533_cookie, 4) != 0)
+    if (memcmp(pu8RawDhcpObject, rfc1533_cookie, 4) != 0)
         return;
 
-    p = dhcp_find_option(bp->bp_vend, RFC2132_MSG_TYPE);
-    Assert(p);
-    if (!p)
+    /* note: pu8RawDhcpObject doesn't point to parameter buf */
+    pu8RawDhcpObject = dhcp_find_option(bp->bp_vend, RFC2132_MSG_TYPE);
+    Assert(pu8RawDhcpObject);
+    if (!pu8RawDhcpObject)
         return;
     /*
      * We're going update dns list at least once per DHCP transaction (!not on every operation
@@ -724,7 +724,7 @@ static void dhcp_decode(PNATState pData, struct bootp_t *bp, const uint8_t *buf,
         return;
     }
 
-    switch (*(p+2))
+    switch (*(pu8RawDhcpObject + 2))
     {
         case DHCPDISCOVER:
             fDhcpDiscover = 1;
@@ -747,13 +747,16 @@ static void dhcp_decode(PNATState pData, struct bootp_t *bp, const uint8_t *buf,
             break;
 
         case DHCPDECLINE:
-            p = dhcp_find_option(&bp->bp_vend[0], RFC2132_REQ_ADDR);
-            if (!p)
+            /* note: pu8RawDhcpObject doesn't point to DHCP header, now it's expected it points
+             * to Dhcp Option RFC2132_REQ_ADDR
+             */
+            pu8RawDhcpObject = dhcp_find_option(&bp->bp_vend[0], RFC2132_REQ_ADDR);
+            if (!pu8RawDhcpObject)
             {
                 Log(("NAT: RFC2132_REQ_ADDR not found\n"));
                 break;
             }
-            req_ip.s_addr = *(uint32_t *)(p + 2);
+            req_ip.s_addr = *(uint32_t *)(pu8RawDhcpObject + 2);
             rc = bootp_cache_lookup_ether_by_ip(pData, req_ip.s_addr, NULL);
             if (RT_FAILURE(rc))
             {
