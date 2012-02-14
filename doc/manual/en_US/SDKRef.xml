@@ -292,7 +292,9 @@
           VirtualBox SDK, but instead ships with the standard VirtualBox
           binary package for your specific platform. Since the SDK contains
           only platform-independent text files and documentation, the binaries
-          are instead shipped with the platform-specific packages.</para>
+          are instead shipped with the platform-specific packages. For this
+          reason the information how to run it as a service is included in the
+          VirtualBox documentation.</para>
         </note></para>
 
       <para>The <computeroutput>vboxwebsrv</computeroutput> program, which
@@ -342,6 +344,58 @@
           </listitem>
 
           <listitem>
+            <para><computeroutput>--ssl</computeroutput> (or
+            <computeroutput>-s</computeroutput>): This enables SSL support.</para>
+          </listitem>
+
+          <listitem>
+            <para><computeroutput>--keyfile</computeroutput> (or
+            <computeroutput>-K</computeroutput>): This specifies the file name
+            containing the server private key and the certificate. This is a
+            mandatory parameter if SSL is enabled.</para>
+          </listitem>
+
+          <listitem>
+            <para><computeroutput>--passwordfile</computeroutput> (or
+            <computeroutput>-a</computeroutput>): This specifies the file name
+            containing the password for the server private key. If unspecified
+            or an empty string is specified this is interpreted as an empty
+            password (i.e. the private key is not protected by a password). If
+            the file name <computeroutput>-</computeroutput> is specified then
+            then the password is read from the standard input stream, otherwise
+            from the specified file. The user is responsible for appropriate
+            access rights to protect the confidential password.</para>
+          </listitem>
+
+          <listitem>
+            <para><computeroutput>--cacert</computeroutput> (or
+            <computeroutput>-c</computeroutput>): This specifies the file name
+            containing the CA certificate appropriate for the server
+            certificate.</para>
+          </listitem>
+
+          <listitem>
+            <para><computeroutput>--capath</computeroutput> (or
+            <computeroutput>-C</computeroutput>): This specifies the directory
+            containing several CA certificates appropriate for the server
+            certificate.</para>
+          </listitem>
+
+          <listitem>
+            <para><computeroutput>--dhfile</computeroutput> (or
+            <computeroutput>-D</computeroutput>): This specifies the file name
+            containing the DH key. Alternatively it can contain the number of
+            bits of the DH key to generate. If left empty, RSA is used.</para>
+          </listitem>
+
+          <listitem>
+            <para><computeroutput>--randfile</computeroutput> (or
+            <computeroutput>-r</computeroutput>): This specifies the file name
+            containing the seed for the random number generator. If left empty,
+            an operating system specific source of the seed.</para>
+          </listitem>
+
+          <listitem>
             <para><computeroutput>--timeout</computeroutput> (or
             <computeroutput>-t</computeroutput>): This specifies the session
             timeout, in seconds, and defaults to 300 (five minutes). A web
@@ -369,6 +423,31 @@
           </listitem>
 
           <listitem>
+            <para><computeroutput>--threads</computeroutput> (or
+            <computeroutput>-T</computeroutput>): This specifies the maximum
+            number or worker threads, and defaults to 100. This normally does
+            not need to be changed.</para>
+          </listitem>
+
+          <listitem>
+            <para><computeroutput>--keepalive</computeroutput> (or
+            <computeroutput>-k</computeroutput>): This specifies the maximum
+            number of requests which can be sent in one web service connection,
+            and defaults to 100. This normally does not need to be changed.</para>
+          </listitem>
+
+          <listitem>
+            <para><computeroutput>--authentication</computeroutput> (or
+            <computeroutput>-A</computeroutput>): This specifies the desired
+            web service authentication method. If the parameter is not
+            specified or the empty string is specified it does not change the
+            authentication method, otherwise it is set to the specified value.
+            Using this parameter is a good measure against accidental
+            misconfiguration, as the web service ensures periodically that it
+            isn't changed.</para>
+          </listitem>
+
+          <listitem>
             <para><computeroutput>--verbose</computeroutput> (or
             <computeroutput>-v</computeroutput>): Normally, the web service
             outputs only brief messages to the console each time a request is
@@ -376,6 +455,12 @@
             data about every request and the COM methods that those requests
             are mapped to internally, which can be useful for debugging client
             programs.</para>
+          </listitem>
+
+          <listitem>
+            <para><computeroutput>--pidfile</computeroutput> (or
+            <computeroutput>-P</computeroutput>): Name of the PID file which is
+            created when the daemon was started.</para>
           </listitem>
 
           <listitem>
@@ -388,6 +473,26 @@
             appended to it. This is useful if you run the web service
             unattended and need to debug problems after they have
             occurred.</para>
+          </listitem>
+
+          <listitem>
+            <para><computeroutput>--logrotate</computeroutput> (or
+            <computeroutput>-R</computeroutput>): Number of old log files to
+            keep, defaults to 10. Log rotation is disabled if set to 0.</para>
+          </listitem>
+
+          <listitem>
+            <para><computeroutput>--logsize</computeroutput> (or
+            <computeroutput>-S</computeroutput>): Maximum size of log file in
+            bytes, defaults to 100MB. Log rotation is triggered if the file
+            grows beyond this limit.</para>
+          </listitem>
+
+          <listitem>
+            <para><computeroutput>--loginterval</computeroutput> (or
+            <computeroutput>-I</computeroutput>): Maximum time interval to be
+            put in a log file before rotation is triggered, in seconds, and
+            defaults to one day.</para>
           </listitem>
         </itemizedlist>
       </sect2>
@@ -444,29 +549,6 @@
         suppress failures when unable to read the shadow password file. Please
         use this variable carefully, and only if you fully understand what
         you're doing.</para>
-      </sect2>
-
-      <sect2>
-        <title>Solaris host: starting the web service via SMF</title>
-
-        <para>On Solaris hosts, the VirtualBox web service daemon is
-        integrated into the SMF framework. You can change the parameters, but
-        don't have to if the defaults below already match your needs:<screen>svccfg -s svc:/application/virtualbox/webservice:default setprop config/host=localhost
-svccfg -s svc:/application/virtualbox/webservice:default setprop config/port=18083
-svccfg -s svc:/application/virtualbox/webservice:default setprop config/user=root</screen></para>
-
-        <para>If you made any change, don't forget to run the following
-        command to put the changes into effect immediately:<screen>svcadm refresh svc:/application/virtualbox/webservice:default</screen></para>
-
-        <para>If you forget the above command then the previous settings will
-        be used when enabling the service. Check the current property settings
-        with:<screen>svcprop -p config svc:/application/virtualbox/webservice:default</screen></para>
-
-        <para>When everything is configured correctly you can start the
-        VirtualBox web service with the following command:<screen>svcadm enable svc:/application/virtualbox/webservice:default</screen></para>
-
-        <para>For more information about SMF, please refer to the Solaris
-        documentation.</para>
       </sect2>
     </sect1>
   </chapter>

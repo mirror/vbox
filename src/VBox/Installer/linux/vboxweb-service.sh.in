@@ -2,7 +2,7 @@
 #
 # VirtualBox web service API daemon init script.
 #
-# Copyright (C) 2006-2011 Oracle Corporation
+# Copyright (C) 2006-2012 Oracle Corporation
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;
@@ -292,10 +292,17 @@ start() {
         PARAMS="--background"
         [ -n "$VBOXWEB_HOST" ]           && PARAMS="$PARAMS -H $VBOXWEB_HOST"
         [ -n "$VBOXWEB_PORT" ]           && PARAMS="$PARAMS -p $VBOXWEB_PORT"
+        [ -n "$VBOXWEB_SSL_KEYFILE" ]    && PARAMS="$PARAMS -s -K $VBOXWEB_SSL_KEYFILE"
+        [ -n "$VBOXWEB_SSL_PASSWORDFILE" ] && PARAMS="$PARAMS -a $VBOXWEB_SSL_PASSWORDFILE"
+        [ -n "$VBOXWEB_SSL_CACERT" ]     && PARAMS="$PARAMS -c $VBOXWEB_SSL_CACERT"
+        [ -n "$VBOXWEB_SSL_CAPATH" ]     && PARAMS="$PARAMS -C $VBOXWEB_SSL_CAPATH"
+        [ -n "$VBOXWEB_SSL_DHFILE" ]     && PARAMS="$PARAMS -D $VBOXWEB_SSL_DHFILE"
+        [ -n "$VBOXWEB_SSL_RANDFILE" ]   && PARAMS="$PARAMS -r $VBOXWEB_SSL_RANDFILE"
         [ -n "$VBOXWEB_TIMEOUT" ]        && PARAMS="$PARAMS -t $VBOXWEB_TIMEOUT"
         [ -n "$VBOXWEB_CHECK_INTERVAL" ] && PARAMS="$PARAMS -i $VBOXWEB_CHECK_INTERVAL"
         [ -n "$VBOXWEB_THREADS" ]        && PARAMS="$PARAMS -T $VBOXWEB_THREADS"
         [ -n "$VBOXWEB_KEEPALIVE" ]      && PARAMS="$PARAMS -k $VBOXWEB_KEEPALIVE"
+        [ -n "$VBOXWEB_AUTHENTICATION" ] && PARAMS="$PARAMS -A $VBOXWEB_AUTHENTICATION"
         [ -n "$VBOXWEB_LOGFILE" ]        && PARAMS="$PARAMS -F $VBOXWEB_LOGFILE"
         [ -n "$VBOXWEB_ROTATE" ]         && PARAMS="$PARAMS -R $VBOXWEB_ROTATE"
         [ -n "$VBOXWEB_LOGSIZE" ]        && PARAMS="$PARAMS -S $VBOXWEB_LOGSIZE"

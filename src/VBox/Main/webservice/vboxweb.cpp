@@ -5,7 +5,7 @@
  *      (plus static gSOAP server code) to implement the actual webservice
  *      server, to which clients can connect.
  *
- * Copyright (C) 2006-2011 Oracle Corporation
+ * Copyright (C) 2006-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -22,6 +22,7 @@
 // vbox headers
 #include <VBox/com/com.h>
 #include <VBox/com/array.h>
+#include <VBox/com/string.h>
 #include <VBox/com/ErrorInfo.h>
 #include <VBox/com/errorprint.h>
 #include <VBox/com/EventQueue.h>
@@ -41,12 +42,14 @@
 #include <iprt/process.h>
 #include <iprt/rand.h>
 #include <iprt/semaphore.h>
+#include <iprt/critsect.h>
 #include <iprt/string.h>
 #include <iprt/thread.h>
 #include <iprt/time.h>
 #include <iprt/path.h>
 #include <iprt/system.h>
 #include <iprt/base64.h>
+#include <iprt/stream.h>
 
 // workaround for compile problems on gcc 4.1
 #ifdef __GNUC__
@@ -74,6 +77,8 @@ extern DECLIMPORT(const unsigned char) g_abVBoxWebWSDL[];
 extern DECLIMPORT(const unsigned) g_cbVBoxWebWSDL;
 
 RT_C_DECLS_END
+
+static void WebLogSoapError(struct soap *soap);
 
 /****************************************************************************
  *
@@ -116,8 +121,22 @@ int                     g_iWatchdogCheckInterval = 5;
 const char              *g_pcszBindToHost = NULL;       // host; NULL = localhost
 unsigned int            g_uBindToPort = 18083;          // port
 unsigned int            g_uBacklog = 100;               // backlog = max queue size for requests
+
+#ifdef WITH_OPENSSL
+bool                    g_fSSL = false;                 // if SSL is enabled
+const char              *g_pcszKeyFile = NULL;          // server key file
+const char              *g_pcszPassword = NULL;         // password for server key
+const char              *g_pcszCACert = NULL;           // file with trusted CA certificates
+const char              *g_pcszCAPath = NULL;           // directory with trusted CA certificates
+const char              *g_pcszDHFile = NULL;           // DH file name or DH key length in bits, NULL=use RSA
+const char              *g_pcszRandFile = NULL;         // file with random data seed
+const char              *g_pcszSID = "vboxwebsrv";      // server ID for SSL session cache
+#endif /* WITH_OPENSSL */
+
 unsigned int            g_cMaxWorkerThreads = 100;      // max. no. of worker threads
 unsigned int            g_cMaxKeepAlive = 100;          // maximum number of soap requests in one connection
+
+const char              *g_pcszAuthentication = NULL;   // web service authentication
 
 uint32_t                g_cHistory = 10;                // enable log rotation, 10 files
 uint32_t                g_uHistoryFileTime = RT_SEC_1DAY; // max 1 day per file
@@ -179,10 +198,20 @@ static const RTGETOPTDEF g_aOptions[]
 #endif
         { "--host",             'H', RTGETOPT_REQ_STRING },
         { "--port",             'p', RTGETOPT_REQ_UINT32 },
+#ifdef WITH_OPENSSL
+        { "--ssl",              's', RTGETOPT_REQ_NOTHING },
+        { "--keyfile",          'K', RTGETOPT_REQ_STRING },
+        { "--passwordfile",     'a', RTGETOPT_REQ_STRING },
+        { "--cacert",           'c', RTGETOPT_REQ_STRING },
+        { "--capath",           'C', RTGETOPT_REQ_STRING },
+        { "--dhfile",           'D', RTGETOPT_REQ_STRING },
+        { "--randfile",         'r', RTGETOPT_REQ_STRING },
+#endif /* WITH_OPENSSL */
         { "--timeout",          't', RTGETOPT_REQ_UINT32 },
         { "--check-interval",   'i', RTGETOPT_REQ_UINT32 },
         { "--threads",          'T', RTGETOPT_REQ_UINT32 },
         { "--keepalive",        'k', RTGETOPT_REQ_UINT32 },
+        { "--authentication",   'A', RTGETOPT_REQ_STRING },
         { "--verbose",          'v', RTGETOPT_REQ_NOTHING },
         { "--pidfile",          'P', RTGETOPT_REQ_STRING },
         { "--logfile",          'F', RTGETOPT_REQ_STRING },
@@ -225,6 +254,36 @@ void DisplayHelp()
                 pcszDescr = "The port to bind to (18083).";
                 break;
 
+#ifdef WITH_OPENSSL
+            case 's':
+                pcszDescr = "Enable SSL/TLS encryption.";
+                break;
+
+            case 'K':
+                pcszDescr = "Server key and certificate file, PEM format (\"\").";
+                break;
+
+            case 'a':
+                pcszDescr = "File name for password to server key (\"\").";
+                break;
+
+            case 'c':
+                pcszDescr = "CA certificate file, PEM format (\"\").";
+                break;
+
+            case 'C':
+                pcszDescr = "CA certificate path (\"\").";
+                break;
+
+            case 'D':
+                pcszDescr = "DH file name or DH key length in bits (\"\").";
+                break;
+
+            case 'r':
+                pcszDescr = "File containing seed for random number generator (\"\").";
+                break;
+#endif /* WITH_OPENSSL */
+
             case 't':
                 pcszDescr = "Session timeout in seconds; 0 = disable timeouts (" DEFAULT_TIMEOUT_SECS_STRING ").";
                 break;
@@ -235,6 +294,10 @@ void DisplayHelp()
 
             case 'k':
                 pcszDescr = "Maximum number of requests before a socket will be closed (100).";
+                break;
+
+            case 'A':
+                pcszDescr = "Authentication method for the webservice (\"\").";
                 break;
 
             case 'i':
@@ -515,7 +578,16 @@ void SoapThread::process()
         m_soap->send_timeout = 60;
         m_soap->recv_timeout = 60;
         // process the request; this goes into the COM code in methodmaps.cpp
-        soap_serve(m_soap);
+        do {
+#ifdef WITH_OPENSSL
+            if (g_fSSL && soap_ssl_accept(m_soap))
+            {
+                WebLogSoapError(m_soap);
+                break;
+            }
+#endif /* WITH_OPENSSL */
+            soap_serve(m_soap);
+        } while (0);
 
         soap_destroy(m_soap); // clean up class instances
         soap_end(m_soap); // clean up everything and close socket
@@ -631,6 +703,7 @@ void WebLog(const char *pszFormat, ...)
  * Helper for printing SOAP error messages.
  * @param soap
  */
+/*static*/
 void WebLogSoapError(struct soap *soap)
 {
     if (soap_check_state(soap))
@@ -714,6 +787,108 @@ static void WebLogHeaderFooter(PRTLOGGER pLoggerRelease, RTLOGPHASE enmPhase, PF
     }
 }
 
+#ifdef WITH_OPENSSL
+/****************************************************************************
+ *
+ * OpenSSL convenience functions for multithread support
+ *
+ ****************************************************************************/
+
+static RTCRITSECT *g_pSSLMutexes = NULL;
+
+struct CRYPTO_dynlock_value
+{
+    RTCRITSECT mutex;
+};
+
+static unsigned long CRYPTO_id_function()
+{
+    return RTThreadNativeSelf();
+}
+
+static void CRYPTO_locking_function(int mode, int n, const char * /*file*/, int /*line*/)
+{
+    if (mode & CRYPTO_LOCK)
+        RTCritSectEnter(&g_pSSLMutexes[n]);
+    else
+        RTCritSectLeave(&g_pSSLMutexes[n]);
+}
+
+static struct CRYPTO_dynlock_value *CRYPTO_dyn_create_function(const char * /*file*/, int /*line*/)
+{
+    struct CRYPTO_dynlock_value *value = (struct CRYPTO_dynlock_value *)RTMemAlloc(sizeof(struct CRYPTO_dynlock_value));
+    if (value)
+        RTCritSectInit(&value->mutex);
+
+    return value;
+}
+
+static void CRYPTO_dyn_lock_function(int mode, struct CRYPTO_dynlock_value *value, const char * /*file*/, int /*line*/)
+{
+    if (mode & CRYPTO_LOCK)
+        RTCritSectEnter(&value->mutex);
+    else
+        RTCritSectLeave(&value->mutex);
+}
+
+static void CRYPTO_dyn_destroy_function(struct CRYPTO_dynlock_value *value, const char * /*file*/, int /*line*/)
+{
+    if (value)
+    {
+        RTCritSectDelete(&value->mutex);
+        free(value);
+    }
+}
+
+static int CRYPTO_thread_setup()
+{
+    int num_locks = CRYPTO_num_locks();
+    g_pSSLMutexes = (RTCRITSECT *)RTMemAlloc(num_locks * sizeof(RTCRITSECT));
+    if (!g_pSSLMutexes)
+        return SOAP_EOM;
+
+    for (int i = 0; i < num_locks; i++)
+    {
+        int rc = RTCritSectInit(&g_pSSLMutexes[i]);
+        if (RT_FAILURE(rc))
+        {
+            for ( ; i >= 0; i--)
+                RTCritSectDelete(&g_pSSLMutexes[i]);
+            RTMemFree(g_pSSLMutexes);
+            g_pSSLMutexes = NULL;
+            return SOAP_EOM;
+        }
+    }
+
+    CRYPTO_set_id_callback(CRYPTO_id_function);
+    CRYPTO_set_locking_callback(CRYPTO_locking_function);
+    CRYPTO_set_dynlock_create_callback(CRYPTO_dyn_create_function);
+    CRYPTO_set_dynlock_lock_callback(CRYPTO_dyn_lock_function);
+    CRYPTO_set_dynlock_destroy_callback(CRYPTO_dyn_destroy_function);
+
+    return SOAP_OK;
+}
+
+static void CRYPTO_thread_cleanup()
+{
+    if (!g_pSSLMutexes)
+        return;
+
+    CRYPTO_set_id_callback(NULL);
+    CRYPTO_set_locking_callback(NULL);
+    CRYPTO_set_dynlock_create_callback(NULL);
+    CRYPTO_set_dynlock_lock_callback(NULL);
+    CRYPTO_set_dynlock_destroy_callback(NULL);
+
+    int num_locks = CRYPTO_num_locks();
+    for (int i = 0; i < num_locks; i++)
+        RTCritSectDelete(&g_pSSLMutexes[i]);
+
+    RTMemFree(g_pSSLMutexes);
+    g_pSSLMutexes = NULL;
+}
+#endif /* WITH_OPENSSL */
+
 /****************************************************************************
  *
  * SOAP queue pumper thread
@@ -722,9 +897,27 @@ static void WebLogHeaderFooter(PRTLOGGER pLoggerRelease, RTLOGPHASE enmPhase, PF
 
 void doQueuesLoop()
 {
+#ifdef WITH_OPENSSL
+    if (g_fSSL && CRYPTO_thread_setup())
+    {
+        WebLog("Failed to set up OpenSSL thread mutex!");
+        exit(RTEXITCODE_FAILURE);
+    }
+#endif /* WITH_OPENSSL */
+
     // set up gSOAP
     struct soap soap;
     soap_init(&soap);
+
+#ifdef WITH_OPENSSL
+    if (g_fSSL && soap_ssl_server_context(&soap, SOAP_SSL_DEFAULT, g_pcszKeyFile,
+                                         g_pcszPassword, g_pcszCACert, g_pcszCAPath,
+                                         g_pcszDHFile, g_pcszRandFile, g_pcszSID))
+    {
+        WebLogSoapError(&soap);
+        exit(RTEXITCODE_FAILURE);
+    }
+#endif /* WITH_OPENSSL */
 
     soap.bind_flags |= SO_REUSEADDR;
             // avoid EADDRINUSE on bind()
@@ -738,9 +931,14 @@ void doQueuesLoop()
         WebLogSoapError(&soap);
     else
     {
-        WebLog("Socket connection successful: host = %s, port = %u, master socket = %d\n",
+        WebLog("Socket connection successful: host = %s, port = %u, %smaster socket = %d\n",
                (g_pcszBindToHost) ? g_pcszBindToHost : "default (localhost)",
                g_uBindToPort,
+#ifdef WITH_OPENSSL
+               g_fSSL ? "SSL, " : "",
+#else /* !WITH_OPENSSL */
+               "",
+#endif /*!WITH_OPENSSL */
                m);
 
         // initialize thread queue, mutex and eventsem
@@ -765,6 +963,11 @@ void doQueuesLoop()
         }
     }
     soap_done(&soap); // close master socket and detach environment
+
+#ifdef WITH_OPENSSL
+    if (g_fSSL)
+        CRYPTO_thread_cleanup();
+#endif /* WITH_OPENSSL */
 }
 
 /**
@@ -839,6 +1042,57 @@ int main(int argc, char *argv[])
                 g_uBindToPort = ValueUnion.u32;
                 break;
 
+#ifdef WITH_OPENSSL
+            case 's':
+                g_fSSL = true;
+                break;
+
+            case 'K':
+                g_pcszKeyFile = ValueUnion.psz;
+                break;
+
+            case 'a':
+                if (ValueUnion.psz[0] == '\0')
+                    g_pcszPassword = NULL;
+                else
+                {
+                    PRTSTREAM StrmIn;
+                    if (!strcmp(ValueUnion.psz, "-"))
+                        StrmIn = g_pStdIn;
+                    else
+                    {
+                        int vrc = RTStrmOpen(ValueUnion.psz, "r", &StrmIn);
+                        if (RT_FAILURE(vrc))
+                            return RTMsgErrorExit(RTEXITCODE_FAILURE, "failed to open password file (%s, %Rrc)", ValueUnion.psz, vrc);
+                    }
+                    char szPasswd[512];
+                    int vrc = RTStrmGetLine(StrmIn, szPasswd, sizeof(szPasswd));
+                    if (RT_FAILURE(vrc))
+                        return RTMsgErrorExit(RTEXITCODE_FAILURE, "failed to read password (%s, %Rrc)", ValueUnion.psz, vrc);
+                    g_pcszPassword = RTStrDup(szPasswd);
+                    memset(szPasswd, '\0', sizeof(szPasswd));
+                    if (StrmIn != g_pStdIn)
+                        RTStrmClose(StrmIn);
+                }
+                break;
+
+            case 'c':
+                g_pcszCACert = ValueUnion.psz;
+                break;
+
+            case 'C':
+                g_pcszCAPath = ValueUnion.psz;
+                break;
+
+            case 'D':
+                g_pcszDHFile = ValueUnion.psz;
+                break;
+
+            case 'r':
+                g_pcszRandFile = ValueUnion.psz;
+                break;
+#endif /* WITH_OPENSSL */
+
             case 't':
                 g_iWatchdogTimeoutSecs = ValueUnion.u32;
                 break;
@@ -873,6 +1127,10 @@ int main(int argc, char *argv[])
 
             case 'k':
                 g_cMaxKeepAlive = ValueUnion.u32;
+                break;
+
+            case 'A':
+                g_pcszAuthentication = ValueUnion.psz;
                 break;
 
             case 'h':
@@ -963,6 +1221,12 @@ int main(int argc, char *argv[])
     }
 #endif
 
+    // initialize SOAP SSL support if enabled
+#ifdef WITH_OPENSSL
+    if (g_fSSL)
+        soap_ssl_init();
+#endif /* WITH_OPENSSL */
+
     // initialize COM/XPCOM
     HRESULT hrc = com::Initialize();
     if (FAILED(hrc))
@@ -988,6 +1252,15 @@ int main(int argc, char *argv[])
     {
         RTMsgError("Failed to get VirtualBox object (rc=%Rhrc)!", hrc);
         return RTEXITCODE_FAILURE;
+    }
+
+    // set the authentication method if requested
+    if (g_pVirtualBox && g_pcszAuthentication && g_pcszAuthentication[0])
+    {
+        ComPtr<ISystemProperties> pSystemProperties;
+        g_pVirtualBox->COMGETTER(SystemProperties)(pSystemProperties.asOutParam());
+        if (pSystemProperties)
+            pSystemProperties->COMSETTER(WebServiceAuthLibrary)(com::Bstr(g_pcszAuthentication).raw());
     }
 
     /* VirtualBoxClient events registration. */
@@ -1112,6 +1385,15 @@ int fntWatchdog(RTTHREAD ThreadSelf, void *pvUser)
             }
             else
                 ++it;
+        }
+
+        // re-set the authentication method in case it has been changed
+        if (g_pVirtualBox && g_pcszAuthentication && g_pcszAuthentication[0])
+        {
+            ComPtr<ISystemProperties> pSystemProperties;
+            g_pVirtualBox->COMGETTER(SystemProperties)(pSystemProperties.asOutParam());
+            if (pSystemProperties)
+                pSystemProperties->COMSETTER(WebServiceAuthLibrary)(com::Bstr(g_pcszAuthentication).raw());
         }
     }
 

@@ -3,7 +3,7 @@
  *      demo webservice client in C++. This mimics some of the
  *      functionality of VBoxManage for testing purposes.
  *
- * Copyright (C) 2006-2010 Oracle Corporation
+ * Copyright (C) 2006-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -25,6 +25,44 @@
 #include <string>
 
 
+static void usage(int exitcode)
+{
+    std::cout <<
+       "webtest: VirtualBox webservice testcase.\n"
+       "\nUsage: webtest [options] [command]...\n"
+       "\nSupported options:\n"
+       " -h: print this help message and exit.\n"
+       " -c URL: specify the webservice server URL (default http://localhost:18083/).\n"
+       "\nSupported commands:\n"
+       " - IWebsessionManager:\n"
+       "   - webtest logon <user> <pass>: IWebsessionManager::logon().\n"
+       "   - webtest getsession <vboxref>: IWebsessionManager::getSessionObject().\n"
+       "   - webtest logoff <vboxref>: IWebsessionManager::logoff().\n"
+       " - IVirtualBox:\n"
+       "   - webtest version <vboxref>: IVirtualBox::getVersion().\n"
+       "   - webtest gethost <vboxref>: IVirtualBox::getHost().\n"
+       "   - webtest getpc <vboxref>: IVirtualBox::getPerformanceCollector().\n"
+       "   - webtest getmachines <vboxref>: IVirtualBox::getMachines().\n"
+       "   - webtest createmachine <vboxref> <settingsPath> <name>: IVirtualBox::createMachine().\n"
+       "   - webtest registermachine <vboxref> <machineref>: IVirtualBox::registerMachine().\n"
+       " - IHost:\n"
+       "   - webtest getdvddrives <hostref>: IHost::getDVDDrives.\n"
+       " - IHostDVDDrive:\n"
+       "   - webtest getdvdname <dvdref>: IHostDVDDrive::getname.\n"
+       " - IMachine:\n"
+       "   - webtest getname <machineref>: IMachine::getName().\n"
+       "   - webtest getid <machineref>: IMachine::getId().\n"
+       "   - webtest getostype <machineref>: IMachine::getGuestOSType().\n"
+       "   - webtest savesettings <machineref>: IMachine::saveSettings().\n"
+       " - IPerformanceCollector:\n"
+       "   - webtest setupmetrics <pcref>: IPerformanceCollector::setupMetrics()\n"
+       "   - webtest querymetricsdata <pcref>: IPerformanceCollector::QueryMetricsData()\n"
+       " - All managed object references:\n"
+       "   - webtest getif <ref>: report interface of object.\n"
+       "   - webtest release <ref>: IUnknown::Release().\n";
+    exit(exitcode);
+}
+
 /**
  *
  * @param argc
@@ -33,57 +71,67 @@
  */
 int main(int argc, char* argv[])
 {
-    struct soap soap; // gSOAP runtime environment
-    soap_init(&soap); // initialize runtime environment (only once)
+    bool fSSL = false;
+    const char *pcszArgEndpoint = "http://localhost:18083/";
 
-    if (argc < 2)
+    int ap;
+    for (ap = 1; ap <= argc; ap++)
     {
-        std::cout <<
-               "webtest: VirtualBox webservice testcase.\n"
-               "Usage:\n"
-               " - IWebsessionManager:\n"
-               "   - webtest logon <user> <pass>: IWebsessionManager::logon().\n"
-               "   - webtest getsession <vboxref>: IWebsessionManager::getSessionObject().\n"
-               "   - webtest logoff <vboxref>: IWebsessionManager::logoff().\n"
-               " - IVirtualBox:\n"
-               "   - webtest version <vboxref>: IVirtualBox::getVersion().\n"
-               "   - webtest gethost <vboxref>: IVirtualBox::getHost().\n"
-               "   - webtest getpc <vboxref>: IVirtualBox::getPerformanceCollector().\n"
-               "   - webtest getmachines <vboxref>: IVirtualBox::getMachines().\n"
-               "   - webtest createmachine <vboxref> <settingsPath> <name>: IVirtualBox::createMachine().\n"
-               "   - webtest registermachine <vboxref> <machineref>: IVirtualBox::registerMachine().\n"
-               " - IHost:\n"
-               "   - webtest getdvddrives <hostref>: IHost::getDVDDrives.\n"
-               " - IHostDVDDrive:\n"
-               "   - webtest getdvdname <dvdref>: IHostDVDDrive::getname.\n"
-               " - IMachine:\n"
-               "   - webtest getname <machineref>: IMachine::getName().\n"
-               "   - webtest getid <machineref>: IMachine::getId().\n"
-               "   - webtest getostype <machineref>: IMachine::getGuestOSType().\n"
-               "   - webtest savesettings <machineref>: IMachine::saveSettings().\n"
-               " - IPerformanceCollector:\n"
-               "   - webtest setupmetrics <pcref>: IPerformanceCollector::setupMetrics()\n"
-               "   - webtest querymetricsdata <pcref>: IPerformanceCollector::QueryMetricsData()\n"
-               " - All managed object references:\n"
-               "   - webtest getif <ref>: report interface of object.\n"
-               "   - webtest release <ref>: IUnknown::Release().\n";
-        exit(1);
+        if (argv[ap][0] == '-')
+        {
+            if (!strcmp(argv[ap], "-h"))
+                usage(0);
+            else if (!strcmp(argv[ap], "-c"))
+            {
+                ap++;
+                if (ap > argc)
+                    usage(1);
+                pcszArgEndpoint = argv[ap];
+                fSSL = !strncmp(pcszArgEndpoint, "https://", 8);
+            }
+            else
+                usage(1);
+        }
+        else
+            break;
     }
 
-    const char *pcszArgEndpoint = "localhost:18083";
+    if (argc < 1 + ap)
+        usage(1);
 
-    const char *pcszMode = argv[1];
-    int soaprc = 2;
+#ifdef WITH_OPENSSL
+    if (fSSL)
+        soap_ssl_init();
+#endif /* WITH_OPENSSL */
+
+    struct soap soap; // gSOAP runtime environment
+    soap_init(&soap); // initialize runtime environment (only once)
+#ifdef WITH_OPENSSL
+    // Use SOAP_SSL_NO_AUTHENTICATION here to accept broken server configs.
+    // In a real world setup please use at least SOAP_SSL_DEFAULT and provide
+    // the necessary CA certificate for validating the server's certificate.
+    if (fSSL && soap_ssl_client_context(&soap, SOAP_SSL_NO_AUTHENTICATION,
+                                        NULL /*clientkey*/, NULL /*password*/,
+                                        NULL /*cacert*/, NULL /*capath*/,
+                                        NULL /*randfile*/))
+    {
+        soap_print_fault(&soap, stderr);
+        exit(1);
+    }
+#endif /* WITH_OPENSSL */
+
+    const char *pcszMode = argv[ap];
+    int soaprc = SOAP_SVR_FAULT;
 
     if (!strcmp(pcszMode, "logon"))
     {
-        if (argc < 4)
+        if (argc < 3 + ap)
             std::cout << "Not enough arguments for \"" << pcszMode << "\" mode.\n";
         else
         {
             _vbox__IWebsessionManager_USCORElogon req;
-            req.username = argv[2];
-            req.password = argv[3];
+            req.username = argv[ap + 1];
+            req.password = argv[ap + 2];
             _vbox__IWebsessionManager_USCORElogonResponse resp;
 
             if (!(soaprc = soap_call___vbox__IWebsessionManager_USCORElogon(&soap,
@@ -96,12 +144,12 @@ int main(int argc, char* argv[])
     }
     else if (!strcmp(pcszMode, "getsession"))
     {
-        if (argc < 3)
+        if (argc < 2 + ap)
             std::cout << "Not enough arguments for \"" << pcszMode << "\" mode.\n";
         else
         {
             _vbox__IWebsessionManager_USCOREgetSessionObject req;
-            req.refIVirtualBox = argv[2];
+            req.refIVirtualBox = argv[ap + 1];
             _vbox__IWebsessionManager_USCOREgetSessionObjectResponse resp;
 
             if (!(soaprc = soap_call___vbox__IWebsessionManager_USCOREgetSessionObject(&soap,
@@ -114,12 +162,12 @@ int main(int argc, char* argv[])
     }
     else if (!strcmp(pcszMode, "logoff"))
     {
-        if (argc < 3)
+        if (argc < 2 + ap)
             std::cout << "Not enough arguments for \"" << pcszMode << "\" mode.\n";
         else
         {
             _vbox__IWebsessionManager_USCORElogoff req;
-            req.refIVirtualBox = argv[2];
+            req.refIVirtualBox = argv[ap + 1];
             _vbox__IWebsessionManager_USCORElogoffResponse resp;
 
             if (!(soaprc = soap_call___vbox__IWebsessionManager_USCORElogoff(&soap,
@@ -134,12 +182,12 @@ int main(int argc, char* argv[])
     }
     else if (!strcmp(pcszMode, "version"))
     {
-        if (argc < 3)
+        if (argc < 2 + ap)
             std::cout << "Not enough arguments for \"" << pcszMode << "\" mode.\n";
         else
         {
             _vbox__IVirtualBox_USCOREgetVersion req;
-            req._USCOREthis = argv[2];
+            req._USCOREthis = argv[ap + 1];
             _vbox__IVirtualBox_USCOREgetVersionResponse resp;
 
             if (!(soaprc = soap_call___vbox__IVirtualBox_USCOREgetVersion(&soap,
@@ -152,12 +200,12 @@ int main(int argc, char* argv[])
     }
     else if (!strcmp(pcszMode, "gethost"))
     {
-        if (argc < 3)
+        if (argc < 2 + ap)
             std::cout << "Not enough arguments for \"" << pcszMode << "\" mode.\n";
         else
         {
             _vbox__IVirtualBox_USCOREgetHost req;
-            req._USCOREthis = argv[2];
+            req._USCOREthis = argv[ap + 1];
             _vbox__IVirtualBox_USCOREgetHostResponse resp;
 
             if (!(soaprc = soap_call___vbox__IVirtualBox_USCOREgetHost(&soap,
@@ -172,12 +220,12 @@ int main(int argc, char* argv[])
     }
     else if (!strcmp(pcszMode, "getpc"))
     {
-        if (argc < 3)
+        if (argc < 2 + ap)
             std::cout << "Not enough arguments for \"" << pcszMode << "\" mode.\n";
         else
         {
             _vbox__IVirtualBox_USCOREgetPerformanceCollector req;
-            req._USCOREthis = argv[2];
+            req._USCOREthis = argv[ap + 1];
             _vbox__IVirtualBox_USCOREgetPerformanceCollectorResponse resp;
 
             if (!(soaprc = soap_call___vbox__IVirtualBox_USCOREgetPerformanceCollector(&soap,
@@ -192,12 +240,12 @@ int main(int argc, char* argv[])
     }
     else if (!strcmp(pcszMode, "getmachines"))
     {
-        if (argc < 3)
+        if (argc < 2 + ap)
             std::cout << "Not enough arguments for \"" << pcszMode << "\" mode.\n";
         else
         {
             _vbox__IVirtualBox_USCOREgetMachines req;
-            req._USCOREthis = argv[2];
+            req._USCOREthis = argv[ap + 1];
             _vbox__IVirtualBox_USCOREgetMachinesResponse resp;
 
             if (!(soaprc = soap_call___vbox__IVirtualBox_USCOREgetMachines(&soap,
@@ -218,14 +266,14 @@ int main(int argc, char* argv[])
     }
     else if (!strcmp(pcszMode, "createmachine"))
     {
-        if (argc < 5)
+        if (argc < 4 + ap)
             std::cout << "Not enough arguments for \"" << pcszMode << "\" mode.\n";
         else
         {
             _vbox__IVirtualBox_USCOREcreateMachine req;
-            req._USCOREthis = argv[2];
-            req.settingsFile = argv[3];
-            req.name = argv[4];
+            req._USCOREthis = argv[ap + 1];
+            req.settingsFile = argv[ap + 2];
+            req.name = argv[ap + 3];
             std::cout << "createmachine: settingsFile = \"" << req.settingsFile << "\", name = \"" << req.name << "\"\n";
             _vbox__IVirtualBox_USCOREcreateMachineResponse resp;
 
@@ -239,13 +287,13 @@ int main(int argc, char* argv[])
     }
     else if (!strcmp(pcszMode, "registermachine"))
     {
-        if (argc < 4)
+        if (argc < 3 + ap)
             std::cout << "Not enough arguments for \"" << pcszMode << "\" mode.\n";
         else
         {
             _vbox__IVirtualBox_USCOREregisterMachine req;
-            req._USCOREthis = argv[2];
-            req.machine = argv[3];
+            req._USCOREthis = argv[ap + 1];
+            req.machine = argv[ap + 2];
             _vbox__IVirtualBox_USCOREregisterMachineResponse resp;
             if (!(soaprc = soap_call___vbox__IVirtualBox_USCOREregisterMachine(&soap,
                                                                     pcszArgEndpoint,
@@ -257,12 +305,12 @@ int main(int argc, char* argv[])
     }
     else if (!strcmp(pcszMode, "getdvddrives"))
     {
-        if (argc < 3)
+        if (argc < 2 + ap)
             std::cout << "Not enough arguments for \"" << pcszMode << "\" mode.\n";
         else
         {
             _vbox__IHost_USCOREgetDVDDrives req;
-            req._USCOREthis = argv[2];
+            req._USCOREthis = argv[ap + 1];
             _vbox__IHost_USCOREgetDVDDrivesResponse resp;
             if (!(soaprc = soap_call___vbox__IHost_USCOREgetDVDDrives(&soap,
                                                            pcszArgEndpoint,
@@ -282,12 +330,12 @@ int main(int argc, char* argv[])
     }
     else if (!strcmp(pcszMode, "getname"))
     {
-        if (argc < 3)
+        if (argc < 2 + ap)
             std::cout << "Not enough arguments for \"" << pcszMode << "\" mode.\n";
         else
         {
             _vbox__IMachine_USCOREgetName req;
-            req._USCOREthis = argv[2];
+            req._USCOREthis = argv[ap + 1];
             _vbox__IMachine_USCOREgetNameResponse resp;
             if (!(soaprc = soap_call___vbox__IMachine_USCOREgetName(&soap,
                                                          pcszArgEndpoint,
@@ -299,12 +347,12 @@ int main(int argc, char* argv[])
     }
     else if (!strcmp(pcszMode, "getid"))
     {
-        if (argc < 3)
+        if (argc < 2 + ap)
             std::cout << "Not enough arguments for \"" << pcszMode << "\" mode.\n";
         else
         {
             _vbox__IMachine_USCOREgetId req;
-            req._USCOREthis = argv[2];
+            req._USCOREthis = argv[ap + 1];
             _vbox__IMachine_USCOREgetIdResponse resp;
             if (!(soaprc = soap_call___vbox__IMachine_USCOREgetId(&soap,
                                                        pcszArgEndpoint,
@@ -316,12 +364,12 @@ int main(int argc, char* argv[])
     }
     else if (!strcmp(pcszMode, "getostypeid"))
     {
-        if (argc < 3)
+        if (argc < 2 + ap)
             std::cout << "Not enough arguments for \"" << pcszMode << "\" mode.\n";
         else
         {
             _vbox__IMachine_USCOREgetOSTypeId req;
-            req._USCOREthis = argv[2];
+            req._USCOREthis = argv[ap + 1];
             _vbox__IMachine_USCOREgetOSTypeIdResponse resp;
             if (!(soaprc = soap_call___vbox__IMachine_USCOREgetOSTypeId(&soap,
                                                              pcszArgEndpoint,
@@ -333,12 +381,12 @@ int main(int argc, char* argv[])
     }
     else if (!strcmp(pcszMode, "savesettings"))
     {
-        if (argc < 3)
+        if (argc < 2 + ap)
             std::cout << "Not enough arguments for \"" << pcszMode << "\" mode.\n";
         else
         {
             _vbox__IMachine_USCOREsaveSettings req;
-            req._USCOREthis = argv[2];
+            req._USCOREthis = argv[ap + 1];
             _vbox__IMachine_USCOREsaveSettingsResponse resp;
             if (!(soaprc = soap_call___vbox__IMachine_USCOREsaveSettings(&soap,
                                                               pcszArgEndpoint,
@@ -350,12 +398,12 @@ int main(int argc, char* argv[])
     }
     else if (!strcmp(pcszMode, "setupmetrics"))
     {
-        if (argc < 3)
+        if (argc < 2 + ap)
             std::cout << "Not enough arguments for \"" << pcszMode << "\" mode.\n";
         else
         {
             _vbox__IPerformanceCollector_USCOREsetupMetrics req;
-            req._USCOREthis = argv[2];
+            req._USCOREthis = argv[ap + 1];
 //             req.metricNames[0] = "*";
 //             req.objects
             req.period = 1;     // seconds
@@ -379,12 +427,12 @@ int main(int argc, char* argv[])
     }
     else if (!strcmp(pcszMode, "querymetricsdata"))
     {
-        if (argc < 3)
+        if (argc < 2 + ap)
             std::cout << "Not enough arguments for \"" << pcszMode << "\" mode.\n";
         else
         {
             _vbox__IPerformanceCollector_USCOREqueryMetricsData req;
-            req._USCOREthis = argv[2];
+            req._USCOREthis = argv[ap + 1];
 //             req.metricNames[0] = "*";
 //             req.objects
             _vbox__IPerformanceCollector_USCOREqueryMetricsDataResponse resp;
@@ -406,12 +454,12 @@ int main(int argc, char* argv[])
     }
     else if (!strcmp(pcszMode, "release"))
     {
-        if (argc < 3)
+        if (argc < 2 + ap)
             std::cout << "Not enough arguments for \"" << pcszMode << "\" mode.\n";
         else
         {
             _vbox__IManagedObjectRef_USCORErelease req;
-            req._USCOREthis = argv[2];
+            req._USCOREthis = argv[ap + 1];
             _vbox__IManagedObjectRef_USCOREreleaseResponse resp;
             if (!(soaprc = soap_call___vbox__IManagedObjectRef_USCORErelease(&soap,
                                                                   pcszArgEndpoint,
@@ -434,12 +482,18 @@ int main(int argc, char* argv[])
             {
                 std::cout << "Bad object ID: " << soap.fault->detail->vbox__InvalidObjectFault->badObjectID << "\n";
             }
-            if (soap.fault->detail->vbox__RuntimeFault)
+            else if (soap.fault->detail->vbox__RuntimeFault)
             {
                 std::cout << "Result code:   0x" << std::hex << soap.fault->detail->vbox__RuntimeFault->resultCode << "\n";
                 std::cout << "Text:          " << std::hex << soap.fault->detail->vbox__RuntimeFault->text << "\n";
                 std::cout << "Component:     " << std::hex << soap.fault->detail->vbox__RuntimeFault->component << "\n";
                 std::cout << "Interface ID:  " << std::hex << soap.fault->detail->vbox__RuntimeFault->interfaceID << "\n";
+            }
+            else
+            {
+                // generic fault
+                std::cerr << "Generic fault message:\n";
+                soap_print_fault(&soap, stderr); // display the SOAP fault message on the stderr stream
             }
         }
         else

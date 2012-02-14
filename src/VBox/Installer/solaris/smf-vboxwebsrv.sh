@@ -1,7 +1,7 @@
 #!/sbin/sh
 # $Id$
 
-# Copyright (C) 2008-2011 Oracle Corporation
+# Copyright (C) 2008-2012 Oracle Corporation
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;
@@ -41,12 +41,30 @@ case $VW_OPT in
         [ $? != 0 ] && VW_HOST=
         VW_PORT=`/usr/bin/svcprop -p config/port $SMF_FMRI 2>/dev/null`
         [ $? != 0 ] && VW_PORT=
+        VW_SSL_KEYFILE=`/usr/bin/svcprop -p config/ssl_keyfile $SMF_FMRI 2>/dev/null`
+        [ $? != 0 ] && VW_SSL_KEYFILE=
+        VW_SSL_PASSWORDFILE=`/usr/bin/svcprop -p config/ssl_passwordfile $SMF_FMRI 2>/dev/null`
+        [ $? != 0 ] && VW_SSL_PASSWORDFILE=
+        VW_SSL_CACERT=`/usr/bin/svcprop -p config/ssl_cacert $SMF_FMRI 2>/dev/null`
+        [ $? != 0 ] && VW_SSL_CACERT=
+        VW_SSL_CAPATH=`/usr/bin/svcprop -p config/ssl_capath $SMF_FMRI 2>/dev/null`
+        [ $? != 0 ] && VW_SSL_CAPATH=
+        VW_SSL_DHFILE=`/usr/bin/svcprop -p config/ssl_dhfile $SMF_FMRI 2>/dev/null`
+        [ $? != 0 ] && VW_SSL_DHFILE=
+        VW_SSL_RANDFILE=`/usr/bin/svcprop -p config/ssl_randfile $SMF_FMRI 2>/dev/null`
+        [ $? != 0 ] && VW_SSL_RANDFILE=
         VW_TIMEOUT=`/usr/bin/svcprop -p config/timeout $SMF_FMRI 2>/dev/null`
         [ $? != 0 ] && VW_TIMEOUT=
         VW_CHECK_INTERVAL=`/usr/bin/svcprop -p config/checkinterval $SMF_FMRI 2>/dev/null`
         [ $? != 0 ] && VW_CHECK_INTERVAL=
+        VW_THREADS=`/usr/bin/svcprop -p config/threads $SMF_FMRI 2>/dev/null`
+        [ $? != 0 ] && VW_THREADS=
         VW_KEEPALIVE=`/usr/bin/svcprop -p config/keepalive $SMF_FMRI 2>/dev/null`
         [ $? != 0 ] && VW_KEEPALIVE=
+        VW_AUTHENTICATION=`/usr/bin/svcprop -p config/authentication $SMF_FMRI 2>/dev/null`
+        [ $? != 0 ] && VW_AUTHENTICATION=
+        VW_LOGFILE=`/usr/bin/svcprop -p config/logfile $SMF_FMRI 2>/dev/null`
+        [ $? != 0 ] && VW_LOGFILE=
         VW_ROTATE=`/usr/bin/svcprop -p config/logrotate $SMF_FMRI 2>/dev/null`
         [ $? != 0 ] && VW_ROTATE=
         VW_LOGSIZE=`/usr/bin/svcprop -p config/logsize $SMF_FMRI 2>/dev/null`
@@ -60,11 +78,24 @@ case $VW_OPT in
         [ -z "$VW_PORT" -o "$VW_PORT" -eq 0 ] && VW_PORT=18083
         [ -z "$VW_TIMEOUT" ] && VW_TIMEOUT=20
         [ -z "$VW_CHECK_INTERVAL" ] && VW_CHECK_INTERVAL=5
+        [ -z "$VW_THREADS" ] && VW_THREADS=100
         [ -z "$VW_KEEPALIVE" ] && VW_KEEPALIVE=100
         [ -z "$VW_ROTATE" ] && VW_ROTATE=10
         [ -z "$VW_LOGSIZE" ] && VW_LOGSIZE=104857600
         [ -z "$VW_LOGINTERVAL" ] && VW_LOGINTERVAL=86400
-        exec su - "$VW_USER" -c "/opt/VirtualBox/vboxwebsrv --background --host \"$VW_HOST\" --port \"$VW_PORT\" --timeout \"$VW_TIMEOUT\" --check-interval \"$VW_CHECK_INTERVAL\" --keepalive \"$VW_KEEPALIVE\" --logrotate \"$VW_ROTATE\" --logsize \"$VW_LOGSIZE\" --loginterval \"$VW_LOGINTERVAL\""
+
+        # Derived and optional settings
+        VW_SSL=
+        [ -n "$VW_SSL_KEYFILE" ] && VW_SSL=--ssl
+        [ -n "$VW_SSL_KEYFILE" ] && VW_SSL_KEYFILE="--keyfile $VW_SSL_KEYFILE"
+        [ -n "$VW_SSL_PASSWORDFILE" ] && VW_SSL_PASSWORDFILE="--passwordfile $VW_SSL_PASSWORDFILE"
+        [ -n "$VW_SSL_CACERT" ] && VW_SSL_CACERT="--cacert $VW_SSL_CACERT"
+        [ -n "$VW_SSL_CAPATH" ] && VW_SSL_CAPATH="--capath $VW_SSL_CAPATH"
+        [ -n "$VW_SSL_DHFILE" ] && VW_SSL_DHFILE="--dhfile $VW_SSL_DHFILE"
+        [ -n "$VW_SSL_RANDFILE" ] && VW_SSL_RANDFILE="--randfile $VW_SSL_RANDFILE"
+        [ -n "$VW_LOGFILE" ] && VW_LOGFILE="--logfile $VW_LOGFILE"
+
+        exec su - "$VW_USER" -c "/opt/VirtualBox/vboxwebsrv --background --host \"$VW_HOST\" --port \"$VW_PORT\" $VW_SSL $VW_SSL_KEYFILE $VW_SSL_PASSWORDFILE $VW_SSL_CACERT $VW_SSL_CAPATH $VW_SSL_DHFILE $VW_SSL_RANDFILE --timeout \"$VW_TIMEOUT\" --check-interval \"$VW_CHECK_INTERVAL\" --threads \"$VW_THREADS\" --keepalive \"$VW_KEEPALIVE\" --authentication \"$VW_AUTHENTICATION\" $VW_LOGFILE --logrotate \"$VW_ROTATE\" --logsize \"$VW_LOGSIZE\" --loginterval \"$VW_LOGINTERVAL\""
 
         VW_EXIT=$?
         if [ $VW_EXIT != 0 ]; then
