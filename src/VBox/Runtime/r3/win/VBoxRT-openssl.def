@@ -2183,6 +2183,7 @@
     dtls1_handle_timeout
     dtls1_is_timer_expired
     dtls1_listen
+    dtls1_min_mtu
     dtls1_new
     dtls1_output_cert_chain
     dtls1_read_bytes
