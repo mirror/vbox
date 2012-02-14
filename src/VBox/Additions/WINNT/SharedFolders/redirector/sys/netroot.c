@@ -179,16 +179,59 @@ NTSTATUS VBoxMRxCreateVNetRoot (IN PMRX_CREATENETROOT_CONTEXT pCreateNetRootCont
 
     Log(("VBOXSF: VBoxMRxCreateVNetRoot: pNetRoot = %p, fTreeConnectOpen = %d\n", pNetRoot, pRxContext->Create.ThisIsATreeConnectOpen));
 
+    Log(("VBOXSF: VBoxMRxCreateVNetRoot: name = [%.*ls]\n",
+          pNetRoot->pNetRootName->Length / sizeof(WCHAR), pNetRoot->pNetRootName->Buffer));
+
     /* IMPORTANT:
      *
      * This function must always call 'pCreateNetRootContext->Callback(pCreateNetRootContext)' before
      * returning and then return STATUS_PENDING. Otherwise Win64 will hang.
      */
 
-    if (pNetRoot->Type == NET_ROOT_MAILSLOT || pNetRoot->Type == NET_ROOT_PIPE)
+    if (pNetRoot->Type == NET_ROOT_PIPE)
+    {
+        /* VBoxSF claims everything which starts with '\vboxsrv'.
+         *
+         * So sometimes the system tries to open \vboxsrv\ipc$ pipe for DFS
+         * and fails the application call if an unexpected code is returned.
+         *
+         * According to MSDN: The Windows client returns STATUS_MORE_PROCESSING_REQUIRED to the calling
+         * application to indicate that the path does not correspond to a DFS Namespace.
+         */
+        pVNetRoot->Context = NULL;
+
+        if (pNetRoot->pNetRootName->Length >= 13 * sizeof (WCHAR)) /* Number of bytes in '\vboxsrv\ipc$' unicode string. */
+        {
+            const WCHAR *Suffix = &pNetRoot->pNetRootName->Buffer[8]; /* Number of chars in '\vboxsrv' */
+
+            if (   Suffix[0] == L'\\'
+                && (Suffix[1] == L'I' || Suffix[1] == L'i')
+                && (Suffix[2] == L'P' || Suffix[2] == L'p')
+                && (Suffix[3] == L'C' || Suffix[3] == L'c')
+                && Suffix[4] == L'$'
+               )
+            {
+                if (   pNetRoot->pNetRootName->Length == 13 * sizeof (WCHAR)
+                    || (Suffix[5] == L'\\' || Suffix[5] == 0)
+                   )
+                {
+                    /* It is '\vboxsrv\IPC$[\*]'. */
+                    Log(("VBOXSF: VBoxMRxCreateVNetRoot: IPC$\n"));
+                    Status = STATUS_MORE_PROCESSING_REQUIRED;
+                    goto l_Exit;
+                }
+            }
+        }
+
+        /* Fail all other pipe open requests with the same status code as returned by DDK sample. */
+        Log(("VBOXSF: VBoxMRxCreateVNetRoot: Pipe open not supported!\n"));
+        Status = STATUS_NOT_SUPPORTED;
+        goto l_Exit;
+    }
+    else if (pNetRoot->Type == NET_ROOT_MAILSLOT)
     {
         /* DDK sample returns this status code. And our driver does get such NetRoots. */
-        Log(("VBOXSF: VBoxMRxCreateVNetRoot: Mailslot or Pipe open (%d) not supported!\n", pNetRoot->Type));
+        Log(("VBOXSF: VBoxMRxCreateVNetRoot: Mailslot open not supported!\n"));
         pVNetRoot->Context = NULL;
 
         Status = STATUS_NOT_SUPPORTED;
