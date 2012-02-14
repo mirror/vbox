@@ -859,8 +859,8 @@ vga = 864</screen>
         <para>Creating the image requires read/write access for the given
         device. Read/write access is also later needed when using the image
         from a virtual machine. On some host platforms (e.g. Windows Vista
-	and later), raw disk access may be restricted and not permitted by
-	the host OS in some situations.</para>
+        and later), raw disk access may be restricted and not permitted by
+        the host OS in some situations.</para>
 
         <para>Just like with regular disk images, this does not automatically
         attach the newly created image to a virtual machine. This can be done
@@ -1876,92 +1876,169 @@ VBoxManage setextradata "VM name" VBoxInternal2/CoreDumpLive 1</screen>At
     VirtualBox remotely. It is documented in detail in the VirtualBox Software
     Development Kit (SDK); please see <xref linkend="VirtualBoxAPI" />. As the
     client base using this interface is growing, we added start scripts for
-    the various operation systems we support. The following describes how to
-    use them. Please be aware that the web service is never started automatically
-    as a result of a standard installation.<itemizedlist>
-        <listitem>
-          <para>On Mac OS X, launchd is used. An example configuration file
-          can be found in
-          <computeroutput>$HOME/Library/LaunchAgents/org.virtualbox.vboxwebsrv.plist</computeroutput>.
-          It can be enabled by changing the
-          <computeroutput>Disabled</computeroutput> key from
-          <computeroutput>true</computeroutput> to
-          <computeroutput>false</computeroutput>. To manually start the
-          service use the following command: <screen>launchctl load ~/Library/LaunchAgents/org.virtualbox.vboxwebsrv.plist</screen>
-          For additional information on how launchd services could be
-          configured see <literal><ulink
-          url="http://developer.apple.com/mac/library/documentation/MacOSX/Conceptual/BPSystemStartup/BPSystemStartup.html">http://developer.apple.com/mac/library/documentation/MacOSX/Conceptual/BPSystemStartup/BPSystemStartup.html</ulink></literal>.</para>
-        </listitem>
-        <listitem>
-          <para>On Linux, the web service can be automatically started during
-            host boot by adding appropriate parameters to the file /etc/default/virtualbox.
-            There is one mandatory parameter, VBOXWEB_USER which must be set to
-            the user which will later start the VMs.
-            <table>
-              <title>ignored</title>
-              <tgroup cols="2">
-                <tbody>
-                  <row>
-                    <entry><emphasis role="bold">Parameter</emphasis></entry>
-                    <entry><emphasis role="bold">Description</emphasis></entry>
-                    <entry><emphasis role="bold">Default</emphasis></entry>
-                  </row>
-                  <row>
-                    <entry>VBOXWEB_HOST</entry>
-                    <entry>The host to bind the web service to</entry>
-                    <entry>localhost</entry>
-                  </row>
-                  <row>
-                    <entry>VBOXWEB_PORT</entry>
-                    <entry>The port to bind the web service to</entry>
-                    <entry>18083</entry>
-                  </row>
-                  <row>
-                    <entry>VBOXWEB_TIMEOUT</entry>
-                    <entry>Session timeout in seconds; 0 disables timeouts</entry>
-                    <entry>300</entry>
-                  </row>
-                  <row>
-                    <entry>VBOXWEB_ CHECK_INTERVAL</entry>
-                    <entry>Frequency of timeout checks in seconds</entry>
-                    <entry>5</entry>
-                  </row>
-                  <row>
-                    <entry>VBOXWEB_THREADS</entry>
-                    <entry>Maximum number of worker threads to run in parallel</entry>
-                    <entry>100</entry>
-                  </row>
-                  <row>
-                    <entry>VBOXWEB_KEEPALIVE</entry>
-                    <entry>Maximum number of requests before a socket will be closed</entry>
-                    <entry>100</entry>
-                  </row>
-                  <row>
-                    <entry>VBOXWEB_LOGFILE</entry>
-                    <entry>Name of file to write log to</entry>
-                    <entry><emphasis>no file</emphasis></entry>
-                  </row>
-                  <row>
-                    <entry>VBOXWEB_ROTATE</entry>
-                    <entry>Number of log files; 0 disables log rotation</entry>
-                    <entry>10</entry>
-                  </row>
-                  <row>
-                    <entry>VBOXWEB_LOGSIZE</entry>
-                    <entry>Maximum size of a log file in bytes to trigger rotation</entry>
-                    <entry>1MB</entry>
-                  </row>
-                  <row>
-                    <entry>VBOXWEB_LOGINTERVAL</entry>
-                    <entry>Maximum time interval in seconds to trigger log rotation</entry>
-                    <entry>1 day</entry>
-                  </row>
-                </tbody>
-              </tgroup>
-            </table>
-          </para>
-        </listitem>
-      </itemizedlist></para>
+    the various operation systems we support. The following sections describe
+    how to use them. The VirtualBox web service is never started automatically
+    as a result of a standard installation.</para>
+
+    <sect2 id="vboxwebsrv-linux">
+      <title>Linux: starting the webservice via <computeroutput>init</computeroutput></title>
+
+      <para>On Linux, the web service can be automatically started during
+      host boot by adding appropriate parameters to the file
+      <computeroutput>/etc/default/virtualbox</computeroutput>.
+      There is one mandatory parameter, <computeroutput>VBOXWEB_USER</computeroutput>,
+      which must be set to the user which will later start the VMs. The
+      paramters in the table below all start with <computeroutput>VBOXWEB_</computeroutput>
+      (<computeroutput>VBOXWEB_HOST</computeroutput>,
+      <computeroutput>VBOXWEB_PORT</computeroutput> etc.):
+      <table>
+        <title>ignored</title>
+        <tgroup cols="3">
+          <tbody>
+            <row>
+              <entry><emphasis role="bold">Parameter</emphasis></entry>
+              <entry><emphasis role="bold">Description</emphasis></entry>
+              <entry><emphasis role="bold">Default</emphasis></entry>
+            </row>
+            <row>
+              <entry>USER</entry>
+              <entry>The user as which the web service runs</entry>
+              <entry></entry>
+            </row>
+            <row>
+              <entry>HOST</entry>
+              <entry>The host to bind the web service to</entry>
+              <entry>localhost</entry>
+            </row>
+            <row>
+              <entry>PORT</entry>
+              <entry>The port to bind the web service to</entry>
+              <entry>18083</entry>
+            </row>
+            <row>
+              <entry>SSL_KEYFILE</entry>
+              <entry>Server key and certificate file, PEM format</entry>
+              <entry></entry>
+            </row>
+            <row>
+              <entry>SSL_PASSWORDFILE</entry>
+              <entry>File name for password to server key</entry>
+              <entry></entry>
+            </row>
+            <row>
+              <entry>SSL_CACERT</entry>
+              <entry>CA certificate file, PEM format</entry>
+              <entry></entry>
+            </row>
+            <row>
+              <entry>SSL_CAPATH</entry>
+              <entry>CA certificate path</entry>
+              <entry></entry>
+            </row>
+            <row>
+              <entry>SSL_DHFILE</entry>
+              <entry>DH file name or DH key length in bits</entry>
+              <entry></entry>
+            </row>
+            <row>
+              <entry>SSL_RANDFILE</entry>
+              <entry>File containing seed for random number generator</entry>
+              <entry></entry>
+            </row>
+            <row>
+              <entry>TIMEOUT</entry>
+              <entry>Session timeout in seconds; 0 disables timeouts</entry>
+              <entry>300</entry>
+            </row>
+            <row>
+              <entry>CHECK_INTERVAL</entry>
+              <entry>Frequency of timeout checks in seconds</entry>
+              <entry>5</entry>
+            </row>
+            <row>
+              <entry>THREADS</entry>
+              <entry>Maximum number of worker threads to run in parallel</entry>
+              <entry>100</entry>
+            </row>
+            <row>
+              <entry>KEEPALIVE</entry>
+              <entry>Maximum number of requests before a socket will be closed</entry>
+              <entry>100</entry>
+            </row>
+            <row>
+              <entry>LOGFILE</entry>
+              <entry>Name of file to write log to</entry>
+              <entry></entry>
+            </row>
+            <row>
+              <entry>ROTATE</entry>
+              <entry>Number of log files; 0 disables log rotation</entry>
+              <entry>10</entry>
+            </row>
+            <row>
+              <entry>LOGSIZE</entry>
+              <entry>Maximum size of a log file in bytes to trigger rotation</entry>
+              <entry>1MB</entry>
+            </row>
+            <row>
+              <entry>LOGINTERVAL</entry>
+              <entry>Maximum time interval in seconds to trigger log rotation</entry>
+              <entry>1 day</entry>
+            </row>
+          </tbody>
+        </tgroup>
+      </table>
+      </para>
+
+      <para>Setting the parameter <computeroutput>SSL_KEYFILE</computeroutput>
+      enables the SSL/TLS support. Using encryption is strongly encouraged, as
+      otherwise everything (including passwords) is transferred in clear
+      text.</para>
+    </sect2>
+
+    <sect2 id="vboxwebsrv-solaris">
+      <title>Solaris: starting the web service via SMF</title>
+
+      <para>On Solaris hosts, the VirtualBox web service daemon is
+      integrated into the SMF framework. You can change the parameters, but
+      don't have to if the defaults below already match your needs:<screen>svccfg -s svc:/application/virtualbox/webservice:default setprop config/host=localhost
+svccfg -s svc:/application/virtualbox/webservice:default setprop config/port=18083
+svccfg -s svc:/application/virtualbox/webservice:default setprop config/user=root</screen></para>
+
+      <para>The table in the previous section showing the parameter names and
+      defaults also applies to Solaris. The parameter names must be changed
+      to lowercase and a prefix of <computeroutput>config/</computeroutput>
+      has to be added, e.g. <computeroutput>config/user</computeroutput> or
+      <computeroutput>config/ssl_keyfile</computeroutput>. If you made any
+      change, don't forget to run the following command to put the changes into
+      effect immediately:<screen>svcadm refresh svc:/application/virtualbox/webservice:default</screen></para>
+
+      <para>If you forget the above command then the previous settings will
+      be used when enabling the service. Check the current property settings
+      with:<screen>svcprop -p config svc:/application/virtualbox/webservice:default</screen></para>
+
+      <para>When everything is configured correctly you can start the
+      VirtualBox web service with the following command:<screen>svcadm enable svc:/application/virtualbox/webservice:default</screen></para>
+
+      <para>For more information about SMF, please refer to the Solaris
+      documentation.</para>
+    </sect2>
+
+    <sect2 id="vboxwebsrv-osx">
+      <title>Mac OS X: starting the webservice via launchd</title>
+
+      <para>On Mac OS X, launchd is used to start the VirtualBox webservice. An
+      example configuration file can be found in
+      <computeroutput>$HOME/Library/LaunchAgents/org.virtualbox.vboxwebsrv.plist</computeroutput>.
+      It can be enabled by changing the
+      <computeroutput>Disabled</computeroutput> key from
+      <computeroutput>true</computeroutput> to
+      <computeroutput>false</computeroutput>. To manually start the
+      service use the following command: <screen>launchctl load ~/Library/LaunchAgents/org.virtualbox.vboxwebsrv.plist</screen>
+      For additional information on how launchd services could be
+      configured see <literal><ulink
+      url="http://developer.apple.com/mac/library/documentation/MacOSX/Conceptual/BPSystemStartup/BPSystemStartup.html">http://developer.apple.com/mac/library/documentation/MacOSX/Conceptual/BPSystemStartup/BPSystemStartup.html</ulink></literal>.</para>
+    </sect2>
   </sect1>
 
   <sect1 id="vboxballoonctrl">

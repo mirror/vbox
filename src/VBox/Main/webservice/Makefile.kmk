@@ -6,7 +6,7 @@
 #
 
 #
-# Copyright (C) 2006-2011 Oracle Corporation
+# Copyright (C) 2006-2012 Oracle Corporation
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;
@@ -211,6 +211,10 @@ ifdef VBOX_GSOAP_INSTALLED
 	$(VBOX_GSOAP_INCS) \
 	$(VBOXWEB_OUT_DIR) \
 	$(PATH_SUB_CURRENT)
+ ifdef VBOX_WITH_WEBSERVICES_SSL
+  vboxsoap_DEFS += WITH_OPENSSL
+  vboxsoap_SDKS += VBOX_OPENSSL2
+ endif
  ifdef VBOX_WITHOUT_SPLIT_SOAPC
   vboxsoap_SOURCES = \
 	$(VBOXWEB_OUT_DIR)/soapC.cpp
@@ -286,8 +290,13 @@ endif
  endif
  vboxwebsrv_LIBS += \
 	$(PATH_STAGE_LIB)/vboxsoap$(VBOX_SUFF_LIB) \
-	$(VBOX_GSOAP_CXX_LIBS)
+	$(VBOX_GSOAP_CXX_LIBS) \
+	$(LIB_RUNTIME)
  vboxwebsrv_LIBS.solaris += socket nsl
+ ifdef VBOX_WITH_WEBSERVICES_SSL
+  vboxwebsrv_DEFS += WITH_OPENSSL
+  vboxwebsrv_SDKS += VBOX_OPENSSL2
+ endif
  vboxwebsrv_SOURCES = \
 	vboxweb.cpp \
 	$(VBOXWEB_OUT_DIR)/methodmaps.cpp \
@@ -429,8 +438,13 @@ $$(VBOX_JWSSRC_JAR): $$(VBOX_JWS_JAR) | $$(dir $$@)
 	.
  webtest_LIBS += \
 	$(PATH_STAGE_LIB)/vboxsoap$(VBOX_SUFF_LIB) \
-	$(VBOX_GSOAP_CXX_LIBS)
+	$(VBOX_GSOAP_CXX_LIBS) \
+	$(LIB_RUNTIME)
  webtest_LIBS.solaris += nsl
+ ifdef VBOX_WITH_WEBSERVICES_SSL
+  webtest_DEFS += WITH_OPENSSL
+  webtest_SDKS += VBOX_OPENSSL2
+ endif
  webtest_SOURCES = \
 	webtest.cpp \
 	$(VBOXWEB_OUT_DIR)/soapClient.cpp
