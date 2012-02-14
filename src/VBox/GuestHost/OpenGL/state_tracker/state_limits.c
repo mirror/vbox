@@ -291,6 +291,9 @@ void crStateExtensionsInit( CRLimitsState *limits, CRExtensionState *extensions 
 	if (hasExtension((const char*)limits->extensions, "GL_ARB_texture_mirrored_repeat"))
 		extensions->ARB_texture_mirrored_repeat = GL_TRUE;
 
+	if (hasExtension((const char*)limits->extensions, "GL_ATI_texture_mirror_once"))
+		extensions->ATI_texture_mirror_once = GL_TRUE;
+
 	if (hasExtension((const char*)limits->extensions, "GL_ARB_texture_non_power_of_two"))
 		extensions->ARB_texture_non_power_of_two = GL_TRUE;
 

@@ -785,6 +785,11 @@ extern "C" {
 #define GL_MIRRORED_REPEAT_ARB            0x8370
 #endif
 
+#ifndef GL_ATI_texture_mirror_once
+#define GL_MIRROR_CLAMP_ATI               0x8742
+#define GL_MIRROR_CLAMP_TO_EDGE_ATI       0x8743
+#endif
+
 #ifndef GL_ARB_depth_texture
 #define GL_DEPTH_COMPONENT16_ARB          0x81A5
 #define GL_DEPTH_COMPONENT24_ARB          0x81A6
@@ -4521,6 +4526,10 @@ typedef void (APIENTRYP PFNGLMATRIXINDEXPOINTERARBPROC) (GLint size, GLenum type
 
 #ifndef GL_ARB_texture_mirrored_repeat
 #define GL_ARB_texture_mirrored_repeat 1
+#endif
+
+#ifndef GL_ATI_texture_mirror_once
+#define GL_ATI_texture_mirror_once 1
 #endif
 
 #ifndef GL_ARB_depth_texture

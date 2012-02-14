@@ -82,7 +82,10 @@ static const char *crExtensions =
 	"GL_ARB_texture_env_dot3 GL_EXT_texture_env_dot3 "
 #endif
 #ifdef CR_ARB_texture_mirrored_repeat
-	"GL_ARB_texture_mirrored_repeat "
+	"GL_ARB_texture_mirrored_repeat GL_IBM_texture_mirrored_repeat "
+#endif
+#ifdef CR_ATI_texture_mirror_once
+	"GL_ATI_texture_mirror_once "
 #endif
 #ifdef CR_ARB_texture_non_power_of_two
 	"GL_ARB_texture_non_power_of_two "

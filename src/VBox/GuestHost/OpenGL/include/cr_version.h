@@ -67,6 +67,7 @@
 #define CR_ARB_texture_env_crossbar 1
 #define CR_ARB_texture_env_dot3 1
 #define CR_ARB_texture_mirrored_repeat 1
+#define CR_ATI_texture_mirror_once 1
 #define CR_ARB_texture_non_power_of_two 1
 #define CR_ARB_transpose_matrix 1
 #define CR_ARB_vertex_buffer_object 1
