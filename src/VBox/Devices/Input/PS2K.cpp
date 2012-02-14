@@ -344,7 +344,7 @@ static const   key_def   aPS2Keys[] = {
     /* 50 */ {0x4B, 0x6B, 0x61, KF_GK, T_T }, /* Key  79: Left Arrow (Note 1) */
     /* 51 */ {0x50, 0x72, 0x60, KF_GK, T_T }, /* Key  84: Down Arrow (Note 1) */
     /* 52 */ {0x48, 0x75, 0x63, KF_GK, T_T }, /* Key  83: Up Arrow (Note 1) */
-    /* 53 */ {0x45, 0x77, 0x76,     0, T_M }, /* Key  90: Num Lock */
+    /* 53 */ {0x45, 0x77, 0x76, KF_NL, T_M }, /* Key  90: Num Lock */
     /* 54 */ {0x35, 0x4A, 0x77, KF_NS, T_M }, /* Key  95: Keypad / (Note 1) */
     /* 55 */ {0x37, 0x7C, 0x7E,     0, T_M }, /* Key 100: Keypad * */
     /* 56 */ {0x4A, 0x7B, 0x84,     0, T_M }, /* Key 105: Keypad - */
@@ -916,9 +916,9 @@ static int PS2KProcessKeyEvent(PPS2K pThis, uint8_t u8HidCode, bool fKeyDown)
                 else
                 {
                     if (pThis->u8Modifiers & MOD_LSHIFT)
-                        strcpy((char *)abCodes, "\xE0\xF0\x12");
+                        strcat((char *)abCodes, "\xE0\xF0\x12");
                     if (pThis->u8Modifiers & MOD_RSHIFT)
-                        strcpy((char *)abCodes, "\xE0\xF0\x59");
+                        strcat((char *)abCodes, "\xE0\xF0\x59");
                 }
             }
             /* Feed the bytes to the queue if there is room. */
@@ -968,10 +968,10 @@ static int PS2KProcessKeyEvent(PPS2K pThis, uint8_t u8HidCode, bool fKeyDown)
                     }
                     else
                     {
-                        if (pThis->u8Modifiers & MOD_LSHIFT)
-                            strcpy((char *)abCodes, "\xE0\x12");
                         if (pThis->u8Modifiers & MOD_RSHIFT)
-                            strcpy((char *)abCodes, "\xE0\x59");
+                            strcat((char *)abCodes, "\xE0\x59");
+                        if (pThis->u8Modifiers & MOD_LSHIFT)
+                            strcat((char *)abCodes, "\xE0\x12");
                     }
                 }
             }
