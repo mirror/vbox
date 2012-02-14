@@ -1246,13 +1246,7 @@ LibAliasInLocked(struct libalias *la, char *ptr, int maxpacketsize)
 {
     struct in_addr alias_addr;
     struct ip *pip;
-#ifndef VBOX
     int iresult;
-#else
-    /* vbox: we need initialize iresult from the very beginning to avoid
-     * returning of uninitiolized value on first getout. */
-    int iresult = PKT_ALIAS_IGNORED;
-#endif
 
     if (la->packetAliasMode & PKT_ALIAS_REVERSE) {
         la->packetAliasMode &= ~PKT_ALIAS_REVERSE;
@@ -1272,9 +1266,7 @@ LibAliasInLocked(struct libalias *la, char *ptr, int maxpacketsize)
         goto getout;
     }
 
-#ifndef VBOX
     iresult = PKT_ALIAS_IGNORED;
-#endif
     if ((ntohs(pip->ip_off) & IP_OFFMASK) == 0) {
         switch (pip->ip_p) {
         case IPPROTO_ICMP:
