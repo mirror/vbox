@@ -1271,7 +1271,8 @@ static int codecReset(struct CODECState *pState, uint32_t cmd, uint64_t *pResp)
         Assert(pState->pfnCodecNodeReset);
         for (i = 0; i < pState->cTotalNodes; ++i)
         {
-            pState->pfnCodecNodeReset(pState, i, &pState->pNodes[i]);
+            if (pState->pfnCodecNodeReset)
+                pState->pfnCodecNodeReset(pState, i, &pState->pNodes[i]);
         }
         pState->fInReset = false;
         Log(("HDAcodec: exits reset\n"));
