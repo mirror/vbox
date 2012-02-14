@@ -97,7 +97,8 @@ static DECLCALLBACK(int) VBoxServiceVMStatsOption(const char **ppszShort, int ar
     NOREF(argc);
     NOREF(argv);
     NOREF(pi);
-    return VINF_SUCCESS;
+
+    return -1;
 }
 
 

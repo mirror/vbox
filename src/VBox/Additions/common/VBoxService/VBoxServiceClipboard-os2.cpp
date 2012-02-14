@@ -133,6 +133,11 @@ static DECLCALLBACK(int) VBoxServiceClipboardOS2PreInit(void)
 /** @copydoc VBOXSERVICE::pfnOption */
 static DECLCALLBACK(int) VBoxServiceClipboardOS2Option(const char **ppszShort, int argc, char **argv, int *pi)
 {
+    NOREF(ppszShort);
+    NOREF(argc);
+    NOREF(argv);
+    NOREF(pi);
+
     return -1;
 }
 
