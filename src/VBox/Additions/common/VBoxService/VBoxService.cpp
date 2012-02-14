@@ -35,7 +35,9 @@
 # include <pthread.h>
 #endif
 
+#include <package-generated.h>
 #include "product-generated.h"
+
 #include <iprt/asm.h>
 #include <iprt/buildconfig.h>
 #include <iprt/initterm.h>
@@ -44,9 +46,11 @@
 #endif
 #include <iprt/message.h>
 #include <iprt/path.h>
+#include <iprt/process.h>
 #include <iprt/semaphore.h>
 #include <iprt/string.h>
 #include <iprt/stream.h>
+#include <iprt/system.h>
 #include <iprt/thread.h>
 
 #include <VBox/log.h>
@@ -58,20 +62,26 @@
 *   Global Variables                                                           *
 *******************************************************************************/
 /** The program name (derived from argv[0]). */
-char *g_pszProgName =  (char *)"";
+char                *g_pszProgName =  (char *)"";
 /** The current verbosity level. */
-int g_cVerbosity = 0;
+int                  g_cVerbosity = 0;
+/** Logging parameters. */
+/** @todo Make this configurable later. */
+static PRTLOGGER     g_pLoggerRelease = NULL;
+static uint32_t      g_cHistory = 10;                   /* Enable log rotation, 10 files. */
+static uint32_t      g_uHistoryFileTime = RT_SEC_1DAY;  /* Max 1 day per file. */
+static uint64_t      g_uHistoryFileSize = 100 * _1M;    /* Max 100MB per file. */
 /** Critical section for (debug) logging. */
 #ifdef DEBUG
- RTCRITSECT g_csLog;
+ RTCRITSECT          g_csLog;
 #endif
 /** The default service interval (the -i | --interval) option). */
-uint32_t g_DefaultInterval = 0;
+uint32_t             g_DefaultInterval = 0;
 #ifdef RT_OS_WINDOWS
 /** Signal shutdown to the Windows service thread. */
 static bool volatile g_fWindowsServiceShutdown;
 /** Event the Windows service thread waits for shutdown. */
-static RTSEMEVENT g_hEvtWindowsService;
+static RTSEMEVENT    g_hEvtWindowsService;
 #endif
 
 /**
@@ -126,6 +136,118 @@ static struct
 
 
 /**
+ * Release logger callback.
+ *
+ * @return  IPRT status code.
+ * @param   pLoggerRelease
+ * @param   enmPhase
+ * @param   pfnLog
+ */
+static void VBoxServiceLogHeaderFooter(PRTLOGGER pLoggerRelease, RTLOGPHASE enmPhase, PFNRTLOGPHASEMSG pfnLog)
+{
+    /* Some introductory information. */
+    static RTTIMESPEC s_TimeSpec;
+    char szTmp[256];
+    if (enmPhase == RTLOGPHASE_BEGIN)
+        RTTimeNow(&s_TimeSpec);
+    RTTimeSpecToString(&s_TimeSpec, szTmp, sizeof(szTmp));
+
+    switch (enmPhase)
+    {
+        case RTLOGPHASE_BEGIN:
+        {
+            pfnLog(pLoggerRelease,
+                   "VBoxService %s r%s (verbosity: %d) %s (%s %s) release log\n"
+                   "Log opened %s\n",
+                   RTBldCfgVersion(), RTBldCfgRevisionStr(), g_cVerbosity, VBOX_BUILD_TARGET,
+                   __DATE__, __TIME__, szTmp);
+
+            int vrc = RTSystemQueryOSInfo(RTSYSOSINFO_PRODUCT, szTmp, sizeof(szTmp));
+            if (RT_SUCCESS(vrc) || vrc == VERR_BUFFER_OVERFLOW)
+                pfnLog(pLoggerRelease, "OS Product: %s\n", szTmp);
+            vrc = RTSystemQueryOSInfo(RTSYSOSINFO_RELEASE, szTmp, sizeof(szTmp));
+            if (RT_SUCCESS(vrc) || vrc == VERR_BUFFER_OVERFLOW)
+                pfnLog(pLoggerRelease, "OS Release: %s\n", szTmp);
+            vrc = RTSystemQueryOSInfo(RTSYSOSINFO_VERSION, szTmp, sizeof(szTmp));
+            if (RT_SUCCESS(vrc) || vrc == VERR_BUFFER_OVERFLOW)
+                pfnLog(pLoggerRelease, "OS Version: %s\n", szTmp);
+            if (RT_SUCCESS(vrc) || vrc == VERR_BUFFER_OVERFLOW)
+                pfnLog(pLoggerRelease, "OS Service Pack: %s\n", szTmp);
+
+            /* the package type is interesting for Linux distributions */
+            char szExecName[RTPATH_MAX];
+            char *pszExecName = RTProcGetExecutablePath(szExecName, sizeof(szExecName));
+            pfnLog(pLoggerRelease,
+                   "Executable: %s\n"
+                   "Process ID: %u\n"
+                   "Package type: %s"
+#ifdef VBOX_OSE
+                   " (OSE)"
+#endif
+                   "\n",
+                   pszExecName ? pszExecName : "unknown",
+                   RTProcSelf(),
+                   VBOX_PACKAGE_STRING);
+            break;
+        }
+
+        case RTLOGPHASE_PREROTATE:
+            pfnLog(pLoggerRelease, "Log rotated - Log started %s\n", szTmp);
+            break;
+
+        case RTLOGPHASE_POSTROTATE:
+            pfnLog(pLoggerRelease, "Log continuation - Log started %s\n", szTmp);
+            break;
+
+        case RTLOGPHASE_END:
+            pfnLog(pLoggerRelease, "End of log file - Log started %s\n", szTmp);
+            break;
+
+        default:
+            /* nothing */;
+    }
+}
+
+
+/**
+ * Creates the default release logger outputting to the specified file.
+ *
+ * @return  IPRT status code.
+ * @param   pszLogFile              Filename for log output.  Optional.
+ */
+static int VBoxServiceLogCreate(const char *pszLogFile)
+{
+    /* Create release logger (stdout + file). */
+    static const char * const s_apszGroups[] = VBOX_LOGGROUP_NAMES;
+    RTUINT fFlags = RTLOGFLAGS_PREFIX_THREAD | RTLOGFLAGS_PREFIX_TIME_PROG;
+#if defined(RT_OS_WINDOWS) || defined(RT_OS_OS2)
+    fFlags |= RTLOGFLAGS_USECRLF;
+#endif
+    char szError[RTPATH_MAX + 128] = "";
+    int rc = RTLogCreateEx(&g_pLoggerRelease, fFlags, "all",
+                           "VBOXSERVICE_RELEASE_LOG", RT_ELEMENTS(s_apszGroups), s_apszGroups,
+                           RTLOGDEST_STDOUT,
+                           VBoxServiceLogHeaderFooter, g_cHistory, g_uHistoryFileSize, g_uHistoryFileTime,
+                           szError, sizeof(szError), pszLogFile);
+    if (RT_SUCCESS(rc))
+    {
+        /* register this logger as the release logger */
+        RTLogRelSetDefaultInstance(g_pLoggerRelease);
+
+        /* Explicitly flush the log in case of VBOXSERVICE_RELEASE_LOG=buffered. */
+        RTLogFlush(g_pLoggerRelease);
+    }
+
+    return rc;
+}
+
+static void VBoxServiceLogDestroy(void)
+{
+    RTLogDestroy(g_pLoggerRelease);
+}
+
+
+/**
  * Displays the program usage message.
  *
  * @returns 1.
@@ -133,7 +255,8 @@ static struct
 static int vboxServiceUsage(void)
 {
     RTPrintf("Usage:\n"
-             " %-12s [-f|--foreground] [-v|--verbose] [-i|--interval <seconds>]\n"
+             " %-12s [-f|--foreground] [-v|--verbose] [-l|--logfile <file>]\n"
+             "              [-i|--interval <seconds>]\n"
              "              [--disable-<service>] [--enable-<service>]\n"
              "              [--only-<service>] [-h|-?|--help]\n", g_pszProgName);
 #ifdef RT_OS_WINDOWS
@@ -146,6 +269,7 @@ static int vboxServiceUsage(void)
              "Options:\n"
              "    -i | --interval         The default interval.\n"
              "    -f | --foreground       Don't daemonize the program. For debugging.\n"
+             "    -l | --logfile <file>   Enables logging to a file.\n"
              "    -v | --verbose          Increment the verbosity level. For debugging.\n"
              "    -V | --version          Show version information.\n"
              "    -h | -? | --help        Show this message and exit with status 1.\n"
@@ -173,26 +297,6 @@ static int vboxServiceUsage(void)
 
 
 /**
- * Displays a syntax error message.
- *
- * @returns RTEXITCODE_SYNTAX.
- * @param   pszFormat   The message text.
- * @param   ...         Format arguments.
- */
-RTEXITCODE VBoxServiceSyntax(const char *pszFormat, ...)
-{
-    RTStrmPrintf(g_pStdErr, "%s: syntax error: ", g_pszProgName);
-
-    va_list va;
-    va_start(va, pszFormat);
-    RTStrmPrintfV(g_pStdErr, pszFormat, va);
-    va_end(va);
-
-    return RTEXITCODE_SYNTAX;
-}
-
-
-/**
  * Displays an error message.
  *
  * @returns RTEXITCODE_FAILURE.
@@ -201,16 +305,16 @@ RTEXITCODE VBoxServiceSyntax(const char *pszFormat, ...)
  */
 RTEXITCODE VBoxServiceError(const char *pszFormat, ...)
 {
-    RTStrmPrintf(g_pStdErr, "%s: error: ", g_pszProgName);
+    va_list args;
+    va_start(args, pszFormat);
+    char *psz = NULL;
+    RTStrAPrintfV(&psz, pszFormat, args);
+    va_end(args);
 
-    va_list va;
-    va_start(va, pszFormat);
-    RTStrmPrintfV(g_pStdErr, pszFormat, va);
-    va_end(va);
+    AssertPtr(psz);
+    LogRel(("Error: %s", psz));
 
-    va_start(va, pszFormat);
-    LogRel(("%s: Error: %N", g_pszProgName, pszFormat, &va));
-    va_end(va);
+    RTStrFree(psz);
 
     return RTEXITCODE_FAILURE;
 }
@@ -219,7 +323,6 @@ RTEXITCODE VBoxServiceError(const char *pszFormat, ...)
 /**
  * Displays a verbose message.
  *
- * @returns 1
  * @param   iLevel      Minimum log level required to display this message.
  * @param   pszFormat   The message text.
  * @param   ...         Format arguments.
@@ -232,20 +335,17 @@ void VBoxServiceVerbose(int iLevel, const char *pszFormat, ...)
         int rc = RTCritSectEnter(&g_csLog);
         if (RT_SUCCESS(rc))
         {
-            const char *pszThreadName = RTThreadSelfName();
-            AssertPtr(pszThreadName);
-            RTStrmPrintf(g_pStdOut, "%s [%s]: ",
-                         g_pszProgName, pszThreadName);
-#else
-            RTStrmPrintf(g_pStdOut, "%s: ", g_pszProgName);
 #endif
-            va_list va;
-            va_start(va, pszFormat);
-            RTStrmPrintfV(g_pStdOut, pszFormat, va);
-            va_end(va);
-            va_start(va, pszFormat);
-            LogRel(("%s: %N", g_pszProgName, pszFormat, &va));
-            va_end(va);
+            va_list args;
+            va_start(args, pszFormat);
+            char *psz = NULL;
+            RTStrAPrintfV(&psz, pszFormat, args);
+            va_end(args);
+
+            AssertPtr(psz);
+            LogRel(("%s", psz));
+
+            RTStrFree(psz);
 #ifdef DEBUG
             RTCritSectLeave(&g_csLog);
         }
@@ -286,6 +386,7 @@ int VBoxServiceReportStatus(VBoxGuestFacilityStatus enmStatus)
 
 /**
  * Gets a 32-bit value argument.
+ * @todo Get rid of this and VBoxServiceArgString() as soon as we have RTOpt handling.
  *
  * @returns 0 on success, non-zero exit code on error.
  * @param   argc    The argument count.
@@ -303,19 +404,40 @@ int VBoxServiceArgUInt32(int argc, char **argv, const char *psz, int *pi, uint32
     if (!*psz)
     {
         if (*pi + 1 >= argc)
-            return VBoxServiceSyntax("Missing value for the '%s' argument\n", argv[*pi]);
+            return RTMsgErrorExit(RTEXITCODE_SYNTAX, "Missing value for the '%s' argument\n", argv[*pi]);
         psz = argv[++*pi];
     }
 
     char *pszNext;
     int rc = RTStrToUInt32Ex(psz, &pszNext, 0, pu32);
     if (RT_FAILURE(rc) || *pszNext)
-        return VBoxServiceSyntax("Failed to convert interval '%s' to a number.\n", psz);
+        return RTMsgErrorExit(RTEXITCODE_SYNTAX, "Failed to convert interval '%s' to a number\n", psz);
     if (*pu32 < u32Min || *pu32 > u32Max)
-        return VBoxServiceSyntax("The timesync interval of %RU32 seconds is out of range [%RU32..%RU32].\n",
-                                 *pu32, u32Min, u32Max);
+        return RTMsgErrorExit(RTEXITCODE_SYNTAX, "The timesync interval of %RU32 seconds is out of range [%RU32..%RU32]\n",
+                              *pu32, u32Min, u32Max);
     return 0;
 }
+
+/** @todo Get rid of this and VBoxServiceArgUInt32() as soon as we have RTOpt handling. */
+int VBoxServiceArgString(int argc, char **argv, const char *psz, int *pi, char *pszBuf, size_t cbBuf)
+{
+    AssertPtrReturn(pszBuf, VERR_INVALID_POINTER);
+    AssertPtrReturn(cbBuf, VERR_INVALID_PARAMETER);
+
+    if (*psz == ':' || *psz == '=')
+        psz++;
+    if (!*psz)
+    {
+        if (*pi + 1 >= argc)
+            return RTMsgErrorExit(RTEXITCODE_SYNTAX, "Missing string for the '%s' argument\n", argv[*pi]);
+        psz = argv[++*pi];
+    }
+
+    if (!RTStrPrintf(pszBuf, cbBuf, "%s", psz))
+        return RTMsgErrorExit(RTEXITCODE_FAILURE, "String for '%s' argument too big\n", argv[*pi]);
+    return 0;
+}
+
 
 
 /**
@@ -658,9 +780,9 @@ int main(int argc, char **argv)
     if (RT_FAILURE(rc))
     {
         if (rc == VERR_ACCESS_DENIED)
-            return VBoxServiceError("Insufficient privileges to start %s! Please start with Administrator/root privileges!\n",
+            return RTMsgErrorExit(RTEXITCODE_FAILURE, "Insufficient privileges to start %s! Please start with Administrator/root privileges!\n",
                                     g_pszProgName);
-        return VBoxServiceError("VbglR3Init failed with rc=%Rrc.\n", rc);
+        return RTMsgErrorExit(RTEXITCODE_FAILURE, "VbglR3Init failed with rc=%Rrc\n", rc);
     }
 
 #ifdef RT_OS_WINDOWS
@@ -673,6 +795,8 @@ int main(int argc, char **argv)
         return VBoxServicePageSharingInitFork();
 #endif
 
+    char szLogFile[RTPATH_MAX + 128] = "";
+
     /*
      * Parse the arguments.
      *
@@ -684,7 +808,7 @@ int main(int argc, char **argv)
     {
         const char *psz = argv[i];
         if (*psz != '-')
-            return VBoxServiceSyntax("Unknown argument '%s'\n", psz);
+            return RTMsgErrorExit(RTEXITCODE_SYNTAX, "Unknown argument '%s'\n", psz);
         psz++;
 
         /* translate long argument to short */
@@ -710,6 +834,8 @@ int main(int argc, char **argv)
             else if (MATCHES("unregister"))
                 psz = "u";
 #endif
+            else if (MATCHES("logfile"))
+                psz = "l";
             else if (MATCHES("daemonized"))
             {
                 fDaemonized = true;
@@ -731,18 +857,21 @@ int main(int argc, char **argv)
 
                 if (cch > sizeof("only-") && !memcmp(psz, "only-", sizeof("only-") - 1))
                     for (unsigned j = 0; j < RT_ELEMENTS(g_aServices); j++)
+                    {
                         g_aServices[j].fEnabled = !RTStrICmp(psz + sizeof("only-") - 1, g_aServices[j].pDesc->pszName);
+                        if (g_aServices[j].fEnabled)
+                            fFound = true;
+                    }
 
                 if (!fFound)
                 {
                     rcExit = vboxServiceLazyPreInit();
                     if (rcExit != RTEXITCODE_SUCCESS)
                         return rcExit;
-
                     for (unsigned j = 0; !fFound && j < RT_ELEMENTS(g_aServices); j++)
                     {
                         rc = g_aServices[j].pDesc->pfnOption(NULL, argc, argv, &i);
-                        fFound = rc == 0;
+                        fFound = rc == VINF_SUCCESS;
                         if (fFound)
                             break;
                         if (rc != -1)
@@ -750,7 +879,7 @@ int main(int argc, char **argv)
                     }
                 }
                 if (!fFound)
-                    return VBoxServiceSyntax("Unknown option '%s'\n", argv[i]);
+                    return RTMsgErrorExit(RTEXITCODE_SYNTAX, "Unknown option '%s'\n", argv[i]);
                 continue;
             }
 #undef MATCHES
@@ -793,6 +922,16 @@ int main(int argc, char **argv)
                     return VBoxServiceWinUninstall();
 #endif
 
+                case 'l':
+                {
+                    rc = VBoxServiceArgString(argc, argv, psz + 1, &i,
+                                              szLogFile, sizeof(szLogFile));
+                    if (rc)
+                        return rc;
+                    psz = NULL;
+                    break;
+                }
+
                 default:
                 {
                     rcExit = vboxServiceLazyPreInit();
@@ -810,7 +949,7 @@ int main(int argc, char **argv)
                             return rc;
                     }
                     if (!fFound)
-                        return VBoxServiceSyntax("Unknown option '%c' (%s)\n", *psz, argv[i]);
+                        return RTMsgErrorExit(RTEXITCODE_SYNTAX, "Unknown option '%c' (%s)\n", *psz, argv[i]);
                     break;
                 }
             }
@@ -819,7 +958,12 @@ int main(int argc, char **argv)
 
     /* Check that at least one service is enabled. */
     if (vboxServiceCountEnabledServices() == 0)
-        return VBoxServiceSyntax("At least one service must be enabled.\n");
+        return RTMsgErrorExit(RTEXITCODE_SYNTAX, "At least one service must be enabled\n");
+
+    rc = VBoxServiceLogCreate(strlen(szLogFile) ? szLogFile : NULL);
+    if (RT_FAILURE(rc))
+        return RTMsgErrorExit(RTEXITCODE_FAILURE, "Failed to create release log (%s, %Rrc)",
+                              strlen(szLogFile) ? szLogFile : "<None>", rc);
 
     /* Call pre-init if we didn't do it already. */
     rcExit = vboxServiceLazyPreInit();
@@ -850,15 +994,18 @@ int main(int argc, char **argv)
         hMutexAppRunning = CreateMutex(NULL, FALSE, VBOXSERVICE_NAME);
     if (hMutexAppRunning == NULL)
     {
+        DWORD dwErr = GetLastError();
+        if (   dwErr == ERROR_ALREADY_EXISTS
+            || dwErr == ERROR_ACCESS_DENIED)
+        {
+            VBoxServiceError("%s is already running! Terminating.", g_pszProgName);
+            return RTEXITCODE_FAILURE;
+        }
+
         VBoxServiceError("CreateMutex failed with last error %u! Terminating", GetLastError());
         return RTEXITCODE_FAILURE;
     }
-    if (GetLastError() == ERROR_ALREADY_EXISTS)
-    {
-        VBoxServiceError("%s is already running! Terminating.", g_pszProgName);
-        CloseHandle(hMutexAppRunning);
-        return RTEXITCODE_FAILURE;
-    }
+
 #else  /* !RT_OS_WINDOWS */
     /** @todo Add PID file creation here? */
 #endif /* !RT_OS_WINDOWS */
@@ -939,6 +1086,9 @@ int main(int argc, char **argv)
     RTCritSectDelete(&g_csLog);
     //RTMemTrackerDumpAllToStdOut();
 #endif
+
+    VBoxServiceLogDestroy();
+
     return rcExit;
 }
 
