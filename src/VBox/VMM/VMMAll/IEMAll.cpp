@@ -3527,6 +3527,18 @@ static void iemFpuPushResultWithMemOp(PIEMCPU pIemCpu, PIEMFPURESULT pResult, ui
     iemFpuPushResult(pIemCpu, pResult);
 }
 
+
+static void iemFpuStoreResult(PIEMCPU pIemCpu, PIEMFPURESULT pResult, uint8_t iStReg)
+{
+}
+
+static void iemFpuStoreResultWithMemOp(PIEMCPU pIemCpu, PIEMFPURESULT pResult, uint8_t iStReg, uint8_t iEffSeg, RTGCPTR GCPtrEff)
+{
+    iemFpuUpdateDP(pIemCpu, pIemCpu->CTX_SUFF(pCtx), iEffSeg, GCPtrEff);
+    //iemFpuStoreResult(pIemCpu, pResult);
+}
+
+
 /** @}  */
 
 
@@ -5313,6 +5325,7 @@ static VBOXSTRICTRC iemMemMarkSelDescAccessed(PIEMCPU pIemCpu, uint16_t uSel)
 #define IEM_MC_REF_GREG_U32(a_pu32Dst, a_iGReg)         (a_pu32Dst) = (uint32_t *)iemGRegRef(pIemCpu, (a_iGReg))
 #define IEM_MC_REF_GREG_U64(a_pu64Dst, a_iGReg)         (a_pu64Dst) = (uint64_t *)iemGRegRef(pIemCpu, (a_iGReg))
 #define IEM_MC_REF_EFLAGS(a_pEFlags)                    (a_pEFlags) = &(pIemCpu)->CTX_SUFF(pCtx)->eflags.u
+#define IEM_MC_REF_FPUREG_R80(a_pr80Dst, a_iSt)         (a_pr80Dst) = &(pIemCpu)->CTX_SUFF(pCtx)->fpu.aRegs[a_iSt].r80
 
 #define IEM_MC_ADD_GREG_U8(a_iGReg, a_u8Value)          *(uint8_t  *)iemGRegRef(pIemCpu, (a_iGReg)) += (a_u8Value)
 #define IEM_MC_ADD_GREG_U16(a_iGReg, a_u16Value)        *(uint16_t *)iemGRegRef(pIemCpu, (a_iGReg)) += (a_u16Value)
@@ -5669,12 +5682,36 @@ static VBOXSTRICTRC iemMemMarkSelDescAccessed(PIEMCPU pIemCpu, uint16_t uSel)
         iemFpuPrepareUsage(pIemCpu); \
         a_pfnAImpl(&pIemCpu->CTX_SUFF(pCtx)->fpu, (a0), (a1)); \
     } while (0)
+
+/**
+ * Calls a FPU assembly implementation taking three visible arguments.
+ *
+ * This shall be used without any IEM_MC_BEGIN or IEM_END macro surrounding it.
+ *
+ * @param   a_pfnAImpl      Pointer to the assembly FPU routine.
+ * @param   a0              The first extra argument.
+ * @param   a1              The second extra argument.
+ * @param   a2              The third extra argument.
+ */
+#define IEM_MC_CALL_FPU_AIMPL_3(a_pfnAImpl, a0, a1, a2) \
+    do { \
+        iemFpuPrepareUsage(pIemCpu); \
+        a_pfnAImpl(&pIemCpu->CTX_SUFF(pCtx)->fpu, (a0), (a1), (a2)); \
+    } while (0)
+
 /** Pushes FPU result onto the stack. */
 #define IEM_MC_PUSH_FPU_RESULT(a_FpuData) \
     iemFpuPushResult(pIemCpu, &a_FpuData)
 /** Pushes FPU result onto the stack and sets the FPUDP. */
 #define IEM_MC_PUSH_FPU_RESULT_MEM_OP(a_FpuData, a_iEffSeg, a_GCPtrEff) \
     iemFpuPushResultWithMemOp(pIemCpu, &a_FpuData, a_iEffSeg, a_GCPtrEff)
+
+/** Stores FPU result in a stack register. */
+#define IEM_MC_STORE_FPU_RESULT(a_FpuData, a_iStReg) \
+    iemFpuStoreResult(pIemCpu, &a_FpuData, a_iStReg)
+/** Stores FPU result in a stack register and sets the FPUDP. */
+#define IEM_MC_STORE_FPU_RESULT_MEM_OP(a_FpuData, a_iStReg, a_iEffSeg, a_GCPtrEff) \
+    iemFpuStoreResultWithMemOp(pIemCpu, &a_FpuData, a_iStReg, a_iEffSeg, a_GCPtrEff)
 
 
 #define IEM_MC_IF_EFL_BIT_SET(a_fBit)                   if (pIemCpu->CTX_SUFF(pCtx)->eflags.u & (a_fBit)) {
