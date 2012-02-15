@@ -1182,6 +1182,11 @@ NTSTATUS VBoxMRxQueryFileInformation (IN PRX_CONTEXT RxContext)
             break;
         }
 
+        case FileStreamInformation:
+            Log(("VBOXSF: VBoxMRxQueryFileInformation: FileStreamInformation: not supported\n"));
+            Status = STATUS_INVALID_PARAMETER;
+            goto end;
+
         default:
 
             Log(("VBOXSF: VBoxMRxQueryFileInformation: Invalid filesystem information class %d!\n", FunctionalityRequested));
@@ -1416,6 +1421,11 @@ NTSTATUS VBoxMRxQueryFileInformation (IN PRX_CONTEXT RxContext)
             }
             break;
         }
+
+        case FileStreamInformation:
+            Log(("VBOXSF: VBoxMRxQueryFileInformation: FileStreamInformation: not supported\n"));
+            Status = STATUS_INVALID_PARAMETER;
+            goto end;
 
         default:
             Log(("VBOXSF: VBoxMRxQueryFileInformation: Unknown functionality requested (0x%x)!\n", FunctionalityRequested));
