@@ -1644,7 +1644,7 @@ ENDPROC     x861_Test4
         and     xSP, ~0fh
         call    SaveFPUAndGRegsToStack
         %1
-        call    CompareFPUAndGRegsOnStack
+        call    CompareFPUAndGRegsOnStackIgnoreOpAndIp
         leave
 
         jz      %%ok
@@ -1670,7 +1670,7 @@ ENDPROC     x861_Test4
 
         arch_fxrstor [xSP + 1024]
         %2
-        call    CompareFPUAndGRegsOnStack
+        call    CompareFPUAndGRegsOnStackIgnoreOpAndIp
         ;arch_fxrstor [xSP + 1024]
         leave
 
@@ -1790,9 +1790,54 @@ CompareFPUAndGRegsOnStack:
         lea     xSI, [xSP + xS*3]
         lea     xDI, [xSI + 1024]
 
+        cld
+        repe cmpsb
+        je      .ok
+
+        ;int3
+        lea     xAX, [xSP + xS*3]
+        xchg    xAX, xSI
+        sub     xAX, xSI
+
+        push    xDX
+        mov     xDX, 1000000
+        mul     xDX
+        pop     xDX
+        jmp     .return
+.ok:
+        xor     eax, eax
+.return:
+        pop     xCX
+        pop     xDI
+        pop     xSI
+        lea     xSP, [xSP + (1024 - xS)]
+        or      eax, eax
+        ret
+
+;;
+; Same as CompareFPUAndGRegsOnStack, except that it ignores the FOP and FPUIP
+; registers.
+;
+; @uses     Stack, flags and eax/rax.
+; @returns  eax is zero on success, eax is 1000000 * offset on failure.
+;           ZF reflects the eax value to save a couple of instructions...
+;
+CompareFPUAndGRegsOnStackIgnoreOpAndIp:
+        lea     xSP, [xSP - (1024 - xS)]
+        call    SaveFPUAndGRegsToStack
+
+        push    xSI
+        push    xDI
+        push    xCX
+
+        mov     xCX, 640
+        lea     xSI, [xSP + xS*3]
+        lea     xDI, [xSI + 1024]
+
         mov     word [xSI + X86FXSTATE.FOP], 0          ; ignore
+        mov     word [xDI + X86FXSTATE.FOP], 0          ; ignore
         mov     dword [xSI + X86FXSTATE.FPUIP], 0       ; ignore
-        mov     dword [xDI + X86FXSTATE.FPUDP], 0       ; ignore
+        mov     dword [xDI + X86FXSTATE.FPUIP], 0       ; ignore
 
         cld
         repe cmpsb
@@ -2358,6 +2403,24 @@ BEGINCODE
 
 
 ;;
+; Checks that the FPU and GReg state is completely unchanged after an instruction
+; resulting in a CPU trap.
+;
+; @param        1       The trap number.
+; @param        2+      The instruction which should trap.
+;
+%macro FpuCheckCpuTrapUnchangedState 2+
+        call    SaveFPUAndGRegsToStack
+        ShouldTrap %1, %2
+        call    CompareFPUAndGRegsOnStack
+        jz      %%ok
+        or      eax, __LINE__
+        jmp     .return
+%%ok:
+%endmacro
+
+
+;;
 ; Initialize the FPU and set CW to %1.
 ;
 ; @uses dword at [xSP].
@@ -2377,10 +2440,6 @@ BEGINCODE
 BEGINPROC   x861_TestFPUInstr1
         SAVE_ALL_PROLOGUE
         sub     xSP, 2048
-
-        ; Make xBX (preserved accross calls) point to the invalid page.
-        mov     xBX, [REF_EXTERN(g_pbEfExecPage)]
-        add     xBX, PAGE_SIZE
 
         ;
         ; FDIV with 64-bit floating point memory operand.
@@ -2460,7 +2519,6 @@ BEGINPROC   x861_TestFPUInstr1
         FxSaveCheckSt0Value xSP, 0x00000800, 0x80000000, 0x43fd
 
         ; ## Unmasked exceptions. ##
-%if 1
         ; Stack underflow - TOP and ST0 unmodified.
         FpuInitWithCW X86_FCW_PC_64 | X86_FCW_RC_NEAREST
         FpuTrapOpcodeCsIpDsDp  { fdiv    qword [REF(g_r64_One)]    }, [REF(g_r64_One)]
@@ -2522,10 +2580,25 @@ BEGINPROC   x861_TestFPUInstr1
         FpuTrapOpcodeCsIpDsDp  { fdiv    qword [REF(g_r64_DnMax)]  }, [REF(g_r64_DnMax)]
         FxSaveCheckFSW xSP, X86_FSW_DE | X86_FSW_ES | X86_FSW_B, X86_FSW_C0 | X86_FSW_C2 | X86_FSW_C3
         FxSaveCheckSt0ValueConst xSP, REF(g_r80_One)
-%endif
+
+        ;;; @todo exception priority checks.
+
 
 
         ; ## A couple of variations on the #PF theme. ##
+
+        FpuInitWithCW X86_FCW_PC_64 | X86_FCW_RC_NEAREST
+        mov     xBX, [REF_EXTERN(g_pbEfExecPage)]
+        FpuCheckCpuTrapUnchangedState X86_XCPT_PF, fdiv qword [xBX + PAGE_SIZE]
+
+        ; Check that a pending FPU exception takes precedence over a #PF.
+        fninit
+        fdiv    qword [REF(g_r64_One)]
+        fstcw   [xSP]
+        and      word [xSP], ~(X86_FCW_IM)
+        fldcw   [xSP]
+        mov     xBX, [REF_EXTERN(g_pbEfExecPage)]
+        ShouldTrap X86_XCPT_MF, fdiv qword [xBX + PAGE_SIZE]
 
 .success:
         xor     eax, eax
