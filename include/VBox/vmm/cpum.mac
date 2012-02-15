@@ -200,39 +200,5 @@ struc CPUMCTXMSR
     .au64               resq  64
 endstruc
 
-;;
-; FPU/XMM state
-;;
-struc X86FXSTATE
-    ;/** Control word. */
-    .FCW            resw    1
-    ;/** Status word. */
-    .FSW            resw    1
-    ;/** Tag word. */
-    .FTW            resw    1
-    ;/** Opcode. */
-    .FOP            resw    1
-    ;/** Instruction pointer. */
-    .FPUIP          resd    1
-    ;/** Code selector. */
-    .CS             resw    1
-    .Rsrvd1         resw    1
-    ;/* - offset 16 - */
-    ;/** Data pointer. */
-    .FPUDP          resd    1
-    ;/** Data segment */
-    .DS             resw    1
-    .Rsrvd2         resw    1
-    .MXCSR          resd    1
-    .MXCSR_MASK     resd    1
-    ;/* - offset 32 - */
-    ; FPU & MMX registers
-    .aRegs          resq    8*2
-    ;/* - offset 160 - */
-    ;/* 8 XMM registers in 32 bits mode; 16 in long mode */
-    .aXMM           resq    16*2
-    ;/* - offset 416 - */
-    .au32RsrvdRest  resd    (512 - 416) / 4
-endstruc
 
 %endif

@@ -71,6 +71,7 @@ DECLASM(int32_t) x861_Test3(void);
 DECLASM(int32_t) x861_Test4(void);
 DECLASM(int32_t) x861_Test5(void);
 DECLASM(int32_t) x861_Test6(void);
+DECLASM(int32_t) x861_TestFPUInstr1(void);
 
 
 
@@ -178,6 +179,7 @@ static void sigHandler(int iSig, siginfo_t *pSigInfo, void *pvSigCtx)
 #endif
 
 
+
 int main()
 {
     /*
@@ -238,7 +240,6 @@ int main()
         rc = x861_Test4();
         if (rc != 0)
             RTTestFailed(hTest, "x861_Test4 -> %d", rc);
-#endif
 
         RTTestSub(hTest, "Odd floating point encodings");
         rc = x861_Test5();
@@ -249,6 +250,11 @@ int main()
         rc = x861_Test6();
         if (rc != 0)
             RTTestFailed(hTest, "x861_Test6 -> %d", rc);
+#endif
+
+        rc = x861_TestFPUInstr1();
+        if (rc != 0)
+            RTTestFailed(hTest, "x861_TestFPUInstr1 -> %d", rc);
     }
 
     return RTTestSummaryAndDestroy(hTest);

@@ -32,6 +32,14 @@ struc TRAPINFO
 endstruc
 
 
+%ifdef RT_ARCH_AMD64
+ %define arch_fxsave    o64 fxsave
+ %define arch_fxrstor   o64 fxrstor
+%else
+ %define arch_fxsave    fxsave
+ %define arch_fxrstor   fxrstor
+%endif
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;   Global Variables                                                          ;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -44,6 +52,89 @@ GLOBALNAME g_szAlpha
 g_szAlpha_end:
 %define g_cchAlpha (g_szAlpha_end - NAME(g_szAlpha))
         db      0, 0, 0,
+
+;; @name Floating point constants.
+; @{
+g_r32_0dot1:    dd 0.1
+g_r32_3dot2:    dd 3.2
+g_r32_Zero:     dd 0.0
+g_r32_One:      dd 1.0
+g_r32_Two:      dd 2.0
+g_r32_Three:    dd 3.0
+g_r32_Ten:      dd 10.0
+g_r32_Eleven:   dd 11.0
+g_r32_ThirtyTwo:dd 32.0
+g_r32_Min:      dd 000800000h
+g_r32_Max:      dd 07f7fffffh
+g_r32_Inf:      dd 07f800000h
+g_r32_SNaN:     dd 07f800001h
+g_r32_SNaNMax:  dd 07fbfffffh
+g_r32_QNaN:     dd 07fc00000h
+g_r32_QNaNMax:  dd 07fffffffh
+
+g_r64_0dot1:    dq 0.1
+g_r64_6dot9:    dq 6.9
+g_r64_Zero:     dq 0.0
+g_r64_One:      dq 1.0
+g_r64_Two:      dq 2.0
+g_r64_Three:    dq 3.0
+g_r64_Ten:      dq 10.0
+g_r64_Eleven:   dq 11.0
+g_r64_ThirtyTwo:dq 32.0
+g_r64_Min:      dq 00010000000000000h
+g_r64_Max:      dq 07fefffffffffffffh
+g_r64_Inf:      dq 07ff0000000000000h
+g_r64_SNaN:     dq 07ff0000000000001h
+g_r64_SNaNMax:  dq 07ff7ffffffffffffh
+g_r64_QNaN:     dq 07ff8000000000000h
+g_r64_QNaNMax:  dq 07fffffffffffffffh
+g_r64_DnMin:    dq 00000000000000001h
+g_r64_DnMax:    dq 0000fffffffffffffh
+
+
+g_r80_0dot1:    dt 0.1
+g_r80_3dot2:    dt 3.2
+g_r80_Zero:     dt 0.0
+g_r80_One:      dt 1.0
+g_r80_Two:      dt 2.0
+g_r80_Three:    dt 3.0
+g_r80_Ten:      dt 10.0
+g_r80_Eleven:   dt 11.0
+g_r80_ThirtyTwo:dt 32.0
+g_r80_Min:      dt 000018000000000000000h
+g_r80_Max:      dt 07ffeffffffffffffffffh
+g_r80_Inf:      dt 07fff8000000000000000h
+
+g_r32V1:        dd 3.2
+g_r32V2:        dd -1.9
+g_r64V1:        dq 6.4
+g_r80V1:        dt 8.0
+
+; Denormal numbers.
+g_r32D0:        dd 000200000h
+;; @}
+
+;; @name Upconverted Floating point constants
+; @{
+;g_r80_r32_0dot1:        dt 0.1
+g_r80_r32_3dot2:        dt 04000cccccd0000000000h
+;g_r80_r32_Zero:         dt 0.0
+;g_r80_r32_One:          dt 1.0
+;g_r80_r32_Two:          dt 2.0
+;g_r80_r32_Three:        dt 3.0
+;g_r80_r32_Ten:          dt 10.0
+;g_r80_r32_Eleven:       dt 11.0
+;g_r80_r32_ThirtyTwo:    dt 32.0
+;; @}
+
+;; @name Decimal constants.
+; @{
+g_u64Zero:      dd 0
+g_u32Zero:      dw 0
+g_u64Two:       dd 2
+g_u32Two:       dw 2
+;; @}
+
 
 ;;
 ; The last global data item. We build this as we write the code.
@@ -62,16 +153,16 @@ GLOBALNAME g_aTrapInfo
 
 ;; Reference a variable
 %ifdef RT_ARCH_AMD64
- %define REF(a_Name)     [a_Name wrt rip]
+ %define REF(a_Name)     a_Name wrt rip
 %else
- %define REF(a_Name)     [a_Name]
+ %define REF(a_Name)     a_Name
 %endif
 
 ;; Reference a global variable
 %ifdef RT_ARCH_AMD64
- %define REF_GLOBAL(a_Name)     [NAME(a_Name) wrt rip]
+ %define REF_EXTERN(a_Name)     NAME(a_Name) wrt rip
 %else
- %define REF_GLOBAL(a_Name)     [NAME(a_Name)]
+ %define REF_EXTERN(a_Name)     NAME(a_Name)
 %endif
 
 ;;
@@ -124,12 +215,12 @@ BEGINDATA
 iend
 BEGINCODE
 %%resume:
-        FpuCheckFSW ((%1) | X86_FSW_B | X86_FSW_ES), %2
+        FpuCheckFSW ((%1) | X86_FSW_ES | X86_FSW_B), %2
         fnclex
 %endmacro
 
 ;;
-; Macro for recording a FPU instruction trapping on a following fwait.
+; Macro for recording checking the FSW value.
 ;
 ; Uses stack.
 ;
@@ -147,7 +238,6 @@ BEGINCODE
         lea     eax, [eax + __LINE__ * 100000]
         jmp     .return
 %%ok:
-        fnstsw  ax
 %endmacro
 
 
@@ -171,9 +261,175 @@ BEGINCODE
         jne     %%bad
 %endmacro
 
+;; Checks that ST0 contains QNaN.
+%define CheckSt0Value_QNaN              CheckSt0Value 0x00000000, 0xc0000000, 0xffff
+;; Checks that ST0 contains +Inf.
+%define CheckSt0Value_PlusInf           CheckSt0Value 0x00000000, 0x80000000, 0x7fff
+;; Checks that ST0 contains 3 & 1/3.
+%define CheckSt0Value_3_and_a_3rd       CheckSt0Value 0x55555555, 0xd5555555, 0x4000
+;; Checks that ST0 contains 3 & 1/3.
+%define CheckSt0Value_3_and_two_3rds    CheckSt0Value 0xaaaaaaab, 0xeaaaaaaa, 0x4000
+
 
 ;;
-; Function prologue saving all registers except EAX.
+; Macro for recording checking the FSW value of a FXSAVE image.
+;
+; Uses stack.
+;
+; @param        1       Address expression for the FXSAVE image.
+; @param        2       The status flags that are expected to be set afterwards.
+; @param        3       C0..C3 to mask out in case undefined.
+; @uses         eax
+; @sa   FpuCheckFSW
+;
+%macro FxSaveCheckFSW 3
+%%resume:
+        movzx   eax, word [%1 + X86FXSTATE.FSW]
+        and     eax, ~X86_FSW_TOP_MASK & ~(%3)
+        cmp     eax, (%2)
+        je      %%ok
+        mov     eax, 10000000 + __LINE__
+        jmp     .return
+%%ok:
+%endmacro
+
+
+;;
+; Checks that ST0 is empty in an FXSAVE image.
+;
+; @uses         eax
+; @param        1       Address expression for the FXSAVE image.
+;
+%macro FxSaveCheckSt0Empty 1
+        movzx   eax, word [%1 + X86FXSTATE.FSW]
+        and     eax, X86_FSW_TOP_MASK
+        shr     eax, X86_FSW_TOP_SHIFT
+        bt      [%1 + X86FXSTATE.FTW], eax
+        jnc     %%ok
+        mov     eax, 20000000 + __LINE__
+        jmp     .return
+%%ok:
+%endmacro
+
+
+;;
+; Checks that ST0 is not-empty in an FXSAVE image.
+;
+; @uses         eax
+; @param        1       Address expression for the FXSAVE image.
+;
+%macro FxSaveCheckSt0NonEmpty 1
+        movzx   eax, word [%1 + X86FXSTATE.FSW]
+        and     eax, X86_FSW_TOP_MASK
+        shr     eax, X86_FSW_TOP_SHIFT
+        bt      [%1 + X86FXSTATE.FTW], eax
+        jc      %%ok
+        mov     eax, 30000000 + __LINE__
+        jmp     .return
+%%ok:
+%endmacro
+
+;;
+; Checks that ST0 in a FXSAVE image has a certain value (empty or not
+; is ignored).
+;
+; @uses         eax
+; @param        1       Address expression for the FXSAVE image.
+; @param        2       First dword of value.
+; @param        3       Second dword of value.
+; @param        4       Final word of value.
+;
+%macro FxSaveCheckSt0ValueEx 4
+        cmp     dword [%1 + X86FXSTATE.st0], %2
+        je      %%ok1
+%%bad:
+        mov     eax, 40000000 + __LINE__
+        jmp     .return
+%%ok1:
+        cmp     dword [%1 + X86FXSTATE.st0 + 4], %3
+        jne     %%bad
+        cmp     word  [%1 + X86FXSTATE.st0 + 8], %4
+        jne     %%bad
+%endmacro
+
+
+;;
+; Checks if ST0 in a FXSAVE image has the same value as the specified
+; floating point (80-bit) constant.
+;
+; @uses         eax, xDX
+; @param        1       Address expression for the FXSAVE image.
+; @param        2       The address expression of the constant.
+;
+%macro FxSaveCheckSt0ValueConstEx 2
+        mov     eax, [%2]
+        cmp     dword [%1 + X86FXSTATE.st0], eax
+        je      %%ok1
+%%bad:
+        mov     eax, 40000000 + __LINE__
+        jmp     .return
+%%ok1:
+        mov     eax, [4 + %2]
+        cmp     dword [%1 + X86FXSTATE.st0 + 4], eax
+        jne     %%bad
+        mov     ax, [8 + %2]
+        cmp     word  [%1 + X86FXSTATE.st0 + 8], ax
+        jne     %%bad
+%endmacro
+
+
+;;
+; Checks that ST0 in a FXSAVE image has a certain value.
+;
+; @uses         eax
+; @param        1       Address expression for the FXSAVE image.
+; @param        2       First dword of value.
+; @param        3       Second dword of value.
+; @param        4       Final word of value.
+;
+%macro FxSaveCheckSt0Value 4
+        FxSaveCheckSt0NonEmpty %1
+        FxSaveCheckSt0ValueEx %1, %2, %3, %4
+%endmacro
+
+
+;;
+; Checks that ST0 in a FXSAVE image is empty and that the value stored is the
+; init value set by FpuInitWithCW.
+;
+; @uses         eax
+; @param        1       Address expression for the FXSAVE image.
+;
+%macro FxSaveCheckSt0EmptyInitValue 1
+        FxSaveCheckSt0Empty %1
+        FxSaveCheckSt0ValueEx %1, 0x40404040, 0x40404040, 0xffff
+%endmacro
+
+;;
+; Checks that ST0 in a FXSAVE image is non-empty and has the same value as the
+; specified constant (80-bit).
+;
+; @uses         eax, xDX
+; @param        1       Address expression for the FXSAVE image.
+; @param        2       The address expression of the constant.
+%macro FxSaveCheckSt0ValueConst 2
+        FxSaveCheckSt0NonEmpty %1
+        FxSaveCheckSt0ValueConstEx %1, %2
+%endmacro
+
+;; Checks that ST0 contains QNaN.
+%define FxSaveCheckSt0Value_QNaN(p)              FxSaveCheckSt0Value p, 0x00000000, 0xc0000000, 0xffff
+;; Checks that ST0 contains +Inf.
+%define FxSaveCheckSt0Value_PlusInf(p)           FxSaveCheckSt0Value p, 0x00000000, 0x80000000, 0x7fff
+;; Checks that ST0 contains 3 & 1/3.
+%define FxSaveCheckSt0Value_3_and_a_3rd(p)       FxSaveCheckSt0Value p, 0x55555555, 0xd5555555, 0x4000
+;; Checks that ST0 contains 3 & 1/3.
+%define FxSaveCheckSt0Value_3_and_two_3rds(p)    FxSaveCheckSt0Value p, 0xaaaaaaab, 0xeaaaaaaa, 0x4000
+
+
+;;
+; Function prologue saving all registers except EAX and aligns the stack
+; on a 16-byte boundrary.
 ;
 %macro SAVE_ALL_PROLOGUE 0
         push    xBP
@@ -194,6 +450,7 @@ BEGINCODE
         push    r14
         push    r15
 %endif
+        and     xSP, ~0fh;
 %endmacro
 
 
@@ -202,6 +459,7 @@ BEGINCODE
 ;
 %macro SAVE_ALL_EPILOGUE 0
 %ifdef RT_ARCH_AMD64
+        lea     rsp, [rbp - 14 * 8]
         pop     r15
         pop     r14
         pop     r13
@@ -210,6 +468,8 @@ BEGINCODE
         pop     r10
         pop     r9
         pop     r8
+%else
+        lea     esp, [ebp - 6 * 4]
 %endif
         pop     xDI
         pop     xSI
@@ -284,31 +544,32 @@ x861_ClearRegisters:
 ; Loads all general, MMX and SSE registers except xBP and xSP with unique values.
 ;
 x861_LoadUniqueRegValuesSSE:
-        movq    mm0, REF(._mm0)
-        movq    mm1, REF(._mm1)
-        movq    mm2, REF(._mm2)
-        movq    mm3, REF(._mm3)
-        movq    mm4, REF(._mm4)
-        movq    mm5, REF(._mm5)
-        movq    mm6, REF(._mm6)
-        movq    mm7, REF(._mm7)
-        movdqu  xmm0, REF(._xmm0)
-        movdqu  xmm1, REF(._xmm1)
-        movdqu  xmm2, REF(._xmm2)
-        movdqu  xmm3, REF(._xmm3)
-        movdqu  xmm4, REF(._xmm4)
-        movdqu  xmm5, REF(._xmm5)
-        movdqu  xmm6, REF(._xmm6)
-        movdqu  xmm7, REF(._xmm7)
+        fninit
+        movq    mm0, [REF(._mm0)]
+        movq    mm1, [REF(._mm1)]
+        movq    mm2, [REF(._mm2)]
+        movq    mm3, [REF(._mm3)]
+        movq    mm4, [REF(._mm4)]
+        movq    mm5, [REF(._mm5)]
+        movq    mm6, [REF(._mm6)]
+        movq    mm7, [REF(._mm7)]
+        movdqu  xmm0, [REF(._xmm0)]
+        movdqu  xmm1, [REF(._xmm1)]
+        movdqu  xmm2, [REF(._xmm2)]
+        movdqu  xmm3, [REF(._xmm3)]
+        movdqu  xmm4, [REF(._xmm4)]
+        movdqu  xmm5, [REF(._xmm5)]
+        movdqu  xmm6, [REF(._xmm6)]
+        movdqu  xmm7, [REF(._xmm7)]
 %ifdef RT_ARCH_AMD64
-        movdqu  xmm8,  REF(._xmm8)
-        movdqu  xmm9,  REF(._xmm9)
-        movdqu  xmm10, REF(._xmm10)
-        movdqu  xmm11, REF(._xmm11)
-        movdqu  xmm12, REF(._xmm12)
-        movdqu  xmm13, REF(._xmm13)
-        movdqu  xmm14, REF(._xmm14)
-        movdqu  xmm15, REF(._xmm15)
+        movdqu  xmm8,  [REF(._xmm8)]
+        movdqu  xmm9,  [REF(._xmm9)]
+        movdqu  xmm10, [REF(._xmm10)]
+        movdqu  xmm11, [REF(._xmm11)]
+        movdqu  xmm12, [REF(._xmm12)]
+        movdqu  xmm13, [REF(._xmm13)]
+        movdqu  xmm14, [REF(._xmm14)]
+        movdqu  xmm15, [REF(._xmm15)]
 %endif
         call    x861_LoadUniqueRegValues
         ret
@@ -342,43 +603,58 @@ x861_LoadUniqueRegValuesSSE:
 
 
 ;;
-; Clears all general, MMX and SSE registers except xBP and xSP.
+; Clears all MMX and SSE registers.
 ;
 x861_ClearRegistersSSE:
-        call    x861_ClearRegisters
-        movq    mm0,   REF(.zero)
-        movq    mm1,   REF(.zero)
-        movq    mm2,   REF(.zero)
-        movq    mm3,   REF(.zero)
-        movq    mm4,   REF(.zero)
-        movq    mm5,   REF(.zero)
-        movq    mm6,   REF(.zero)
-        movq    mm7,   REF(.zero)
-        movdqu  xmm0,  REF(.zero)
-        movdqu  xmm1,  REF(.zero)
-        movdqu  xmm2,  REF(.zero)
-        movdqu  xmm3,  REF(.zero)
-        movdqu  xmm4,  REF(.zero)
-        movdqu  xmm5,  REF(.zero)
-        movdqu  xmm6,  REF(.zero)
-        movdqu  xmm7,  REF(.zero)
+        fninit
+        movq    mm0,   [REF(.zero)]
+        movq    mm1,   [REF(.zero)]
+        movq    mm2,   [REF(.zero)]
+        movq    mm3,   [REF(.zero)]
+        movq    mm4,   [REF(.zero)]
+        movq    mm5,   [REF(.zero)]
+        movq    mm6,   [REF(.zero)]
+        movq    mm7,   [REF(.zero)]
+        movdqu  xmm0,  [REF(.zero)]
+        movdqu  xmm1,  [REF(.zero)]
+        movdqu  xmm2,  [REF(.zero)]
+        movdqu  xmm3,  [REF(.zero)]
+        movdqu  xmm4,  [REF(.zero)]
+        movdqu  xmm5,  [REF(.zero)]
+        movdqu  xmm6,  [REF(.zero)]
+        movdqu  xmm7,  [REF(.zero)]
 %ifdef RT_ARCH_AMD64
-        movdqu  xmm8,  REF(.zero)
-        movdqu  xmm9,  REF(.zero)
-        movdqu  xmm10, REF(.zero)
-        movdqu  xmm11, REF(.zero)
-        movdqu  xmm12, REF(.zero)
-        movdqu  xmm13, REF(.zero)
-        movdqu  xmm14, REF(.zero)
-        movdqu  xmm15, REF(.zero)
+        movdqu  xmm8,  [REF(.zero)]
+        movdqu  xmm9,  [REF(.zero)]
+        movdqu  xmm10, [REF(.zero)]
+        movdqu  xmm11, [REF(.zero)]
+        movdqu  xmm12, [REF(.zero)]
+        movdqu  xmm13, [REF(.zero)]
+        movdqu  xmm14, [REF(.zero)]
+        movdqu  xmm15, [REF(.zero)]
 %endif
-        call    x861_LoadUniqueRegValues
         ret
 
         ret
 .zero   times 16 db 000h
 ; x861_ClearRegistersSSE
 
+
+;;
+; Loads all general, MMX and SSE registers except xBP and xSP with unique values.
+;
+x861_LoadUniqueRegValuesSSEAndGRegs:
+        call    x861_LoadUniqueRegValuesSSE
+        call    x861_LoadUniqueRegValues
+        ret
+
+;;
+; Clears all general, MMX and SSE registers except xBP and xSP.
+;
+x861_ClearRegistersSSEAndGRegs:
+        call    x861_ClearRegistersSSE
+        call    x861_ClearRegisters
+        ret
 
 BEGINPROC x861_Test1
         push    xBP
@@ -543,7 +819,7 @@ BEGINPROC x861_Test1
 
         ; Loading is always a word access.
         mov     eax, __LINE__
-        mov     xDI, REF_GLOBAL(g_pbEfPage)
+        mov     xDI, [REF_EXTERN(g_pbEfPage)]
         lea     xDI, [xDI + 0x1000 - 2]
         mov     xDX, es
         mov     [xDI], dx
@@ -551,7 +827,7 @@ BEGINPROC x861_Test1
 
         ; Saving is always a word access.
         mov     eax, __LINE__
-        mov     xDI, REF_GLOBAL(g_pbEfPage)
+        mov     xDI, [REF_EXTERN(g_pbEfPage)]
         mov     dword [xDI + 0x1000 - 4], -1
         mov     [xDI + 0x1000 - 2], ss ; Should not crash.
         mov     bx, ss
@@ -563,7 +839,7 @@ BEGINPROC x861_Test1
         ; Check that the rex.R and rex.W bits don't have any influence over a memory write.
         call    x861_ClearRegisters
         mov     eax, __LINE__
-        mov     xDI, REF_GLOBAL(g_pbEfPage)
+        mov     xDI, [REF_EXTERN(g_pbEfPage)]
         mov     dword [xDI + 0x1000 - 4], -1
         db 04ah
         mov     [xDI + 0x1000 - 2], ss ; Should not crash.
@@ -582,7 +858,7 @@ BEGINPROC x861_Test1
         mov     es, dx
 
         ; check that repne scasb (al=0) behaves like expected.
-        lea     xDI, REF_GLOBAL(g_szAlpha)
+        lea     xDI, [REF(g_szAlpha)]
         xor     eax, eax                ; find the end
         mov     ecx, g_cchAlpha + 1
         repne scasb
@@ -591,7 +867,7 @@ BEGINPROC x861_Test1
         jne     .failed
 
         ; check that repe scasb (al=0) behaves like expected.
-        lea     xDI, REF_GLOBAL(g_szAlpha)
+        lea     xDI, [REF(g_szAlpha)]
         xor     eax, eax                ; find the end
         mov     ecx, g_cchAlpha + 1
         repe scasb
@@ -600,7 +876,7 @@ BEGINPROC x861_Test1
         jne     .failed
 
         ; repne is last, it wins.
-        lea     xDI, REF_GLOBAL(g_szAlpha)
+        lea     xDI, [REF(g_szAlpha)]
         xor     eax, eax                ; find the end
         mov     ecx, g_cchAlpha + 1
         db 0f3h                         ; repe  - ignored
@@ -611,7 +887,7 @@ BEGINPROC x861_Test1
         jne     .failed
 
         ; repe is last, it wins.
-        lea     xDI, REF_GLOBAL(g_szAlpha)
+        lea     xDI, [REF(g_szAlpha)]
         xor     eax, eax                ; find the end
         mov     ecx, g_cchAlpha + 1
         db 0f2h                         ; repne - ignored
@@ -627,12 +903,12 @@ BEGINPROC x861_Test1
         cld
         mov     dx, ds
         mov     es, dx
-        mov     xDI, REF_GLOBAL(g_pbEfPage)
+        mov     xDI, [REF_EXTERN(g_pbEfPage)]
         xor     eax, eax
         mov     ecx, 01000h
         rep stosb
 
-        mov     xDI, REF_GLOBAL(g_pbEfPage)
+        mov     xDI, [REF_EXTERN(g_pbEfPage)]
         mov     ecx, 4
         mov     eax, 0ffh
         db 0f2h                         ; repne
@@ -641,13 +917,13 @@ BEGINPROC x861_Test1
         cmp     ecx, 0
         jne     .failed
         mov     eax, __LINE__
-        mov     xDI, REF_GLOBAL(g_pbEfPage)
+        mov     xDI, [REF_EXTERN(g_pbEfPage)]
         cmp     dword [xDI], 0ffffffffh
         jne     .failed
         cmp     dword [xDI+4], 0
         jne     .failed
 
-        mov     xDI, REF_GLOBAL(g_pbEfPage)
+        mov     xDI, [REF_EXTERN(g_pbEfPage)]
         mov     ecx, 4
         mov     eax, 0feh
         db 0f3h                         ; repe
@@ -656,7 +932,7 @@ BEGINPROC x861_Test1
         cmp     ecx, 0
         jne     .failed
         mov     eax, __LINE__
-        mov     xDI, REF_GLOBAL(g_pbEfPage)
+        mov     xDI, [REF_EXTERN(g_pbEfPage)]
         cmp     dword [xDI], 0fefefefeh
         jne     .failed
         cmp     dword [xDI+4], 0
@@ -669,7 +945,7 @@ BEGINPROC x861_Test1
         cld
         mov     dx, ds
         mov     es, dx
-        mov     xDI, REF_GLOBAL(g_pbEfPage)
+        mov     xDI, [REF_EXTERN(g_pbEfPage)]
         xor     xCX, xCX
         rep stosb                       ; no trap
 
@@ -701,7 +977,7 @@ BEGINPROC x861_Test1
         ; instruction at the very end of it.
         ;
         mov     eax, __LINE__
-        mov     xDI, REF_GLOBAL(g_pbEfExecPage)
+        mov     xDI, [REF_EXTERN(g_pbEfExecPage)]
         add     xDI, 1000h - 8h
         mov     byte [xDI+0], 0f0h
         mov     byte [xDI+1], 002h
@@ -711,7 +987,7 @@ BEGINPROC x861_Test1
         ShouldTrap X86_XCPT_UD, call xDI
 
         mov     eax, __LINE__
-        mov     xDI, REF_GLOBAL(g_pbEfExecPage)
+        mov     xDI, [REF_EXTERN(g_pbEfExecPage)]
         add     xDI, 1000h - 7h
         mov     byte [xDI+0], 0f0h
         mov     byte [xDI+1], 002h
@@ -720,7 +996,7 @@ BEGINPROC x861_Test1
         ShouldTrap X86_XCPT_UD, call xDI
 
         mov     eax, __LINE__
-        mov     xDI, REF_GLOBAL(g_pbEfExecPage)
+        mov     xDI, [REF_EXTERN(g_pbEfExecPage)]
         add     xDI, 1000h - 4h
         mov     byte [xDI+0], 0f0h
         mov     byte [xDI+1], 002h
@@ -729,7 +1005,7 @@ BEGINPROC x861_Test1
         ShouldTrap X86_XCPT_PF, call xDI
 
         mov     eax, __LINE__
-        mov     xDI, REF_GLOBAL(g_pbEfExecPage)
+        mov     xDI, [REF_EXTERN(g_pbEfExecPage)]
         add     xDI, 1000h - 6h
         mov     byte [xDI+0], 0f0h
         mov     byte [xDI+1], 002h
@@ -740,7 +1016,7 @@ BEGINPROC x861_Test1
         ShouldTrap X86_XCPT_PF, call xDI
 
         mov     eax, __LINE__
-        mov     xDI, REF_GLOBAL(g_pbEfExecPage)
+        mov     xDI, [REF_EXTERN(g_pbEfExecPage)]
         add     xDI, 1000h - 5h
         mov     byte [xDI+0], 0f0h
         mov     byte [xDI+1], 002h
@@ -750,7 +1026,7 @@ BEGINPROC x861_Test1
         ShouldTrap X86_XCPT_PF, call xDI
 
         mov     eax, __LINE__
-        mov     xDI, REF_GLOBAL(g_pbEfExecPage)
+        mov     xDI, [REF_EXTERN(g_pbEfExecPage)]
         add     xDI, 1000h - 4h
         mov     byte [xDI+0], 0f0h
         mov     byte [xDI+1], 002h
@@ -759,7 +1035,7 @@ BEGINPROC x861_Test1
         ShouldTrap X86_XCPT_PF, call xDI
 
         mov     eax, __LINE__
-        mov     xDI, REF_GLOBAL(g_pbEfExecPage)
+        mov     xDI, [REF_EXTERN(g_pbEfExecPage)]
         add     xDI, 1000h - 3h
         mov     byte [xDI+0], 0f0h
         mov     byte [xDI+1], 002h
@@ -767,14 +1043,14 @@ BEGINPROC x861_Test1
         ShouldTrap X86_XCPT_PF, call xDI
 
         mov     eax, __LINE__
-        mov     xDI, REF_GLOBAL(g_pbEfExecPage)
+        mov     xDI, [REF_EXTERN(g_pbEfExecPage)]
         add     xDI, 1000h - 2h
         mov     byte [xDI+0], 0f0h
         mov     byte [xDI+1], 002h
         ShouldTrap X86_XCPT_PF, call xDI
 
         mov     eax, __LINE__
-        mov     xDI, REF_GLOBAL(g_pbEfExecPage)
+        mov     xDI, [REF_EXTERN(g_pbEfExecPage)]
         add     xDI, 1000h - 1h
         mov     byte [xDI+0], 0f0h
         ShouldTrap X86_XCPT_PF, call xDI
@@ -818,12 +1094,12 @@ BEGINPROC   x861_Test2
         SAVE_ALL_PROLOGUE
 
         ; Check testcase preconditions.
-        call    x861_LoadUniqueRegValuesSSE
+        call    x861_LoadUniqueRegValuesSSEAndGRegs
         mov     eax, __LINE__
         db       00Fh, 073h, 0D0h, 080h  ;    psrlq   mm0, 128
         call    .check_mm0_zero_and_xmm0_nz
 
-        call    x861_LoadUniqueRegValuesSSE
+        call    x861_LoadUniqueRegValuesSSEAndGRegs
         mov     eax, __LINE__
         db 066h, 00Fh, 073h, 0D0h, 080h  ;    psrlq   xmm0, 128
         call    .check_xmm0_zero_and_mm0_nz
@@ -835,134 +1111,134 @@ BEGINPROC   x861_Test2
         ;
 
         ; General checks that order does not matter, etc.
-        call    x861_LoadUniqueRegValuesSSE
+        call    x861_LoadUniqueRegValuesSSEAndGRegs
         mov     eax, __LINE__
         db 026h, 066h, 00Fh, 073h, 0D0h, 080h
         call    .check_xmm0_zero_and_mm0_nz
 
-        call    x861_LoadUniqueRegValuesSSE
+        call    x861_LoadUniqueRegValuesSSEAndGRegs
         mov     eax, __LINE__
         db 066h, 026h, 00Fh, 073h, 0D0h, 080h
         call    .check_xmm0_zero_and_mm0_nz
 
-        call    x861_LoadUniqueRegValuesSSE
+        call    x861_LoadUniqueRegValuesSSEAndGRegs
         mov     eax, __LINE__
         db 066h, 067h, 00Fh, 073h, 0D0h, 080h
         call    .check_xmm0_zero_and_mm0_nz
 
-        call    x861_LoadUniqueRegValuesSSE
+        call    x861_LoadUniqueRegValuesSSEAndGRegs
         mov     eax, __LINE__
         db 067h, 066h, 00Fh, 073h, 0D0h, 080h
         call    .check_xmm0_zero_and_mm0_nz
 
-        call    x861_LoadUniqueRegValuesSSE
+        call    x861_LoadUniqueRegValuesSSEAndGRegs
         mov     eax, __LINE__
         db 067h, 066h, 065h, 00Fh, 073h, 0D0h, 080h
         call    .check_xmm0_zero_and_mm0_nz
 
 %ifdef RT_ARCH_AMD64
-        call    x861_LoadUniqueRegValuesSSE
+        call    x861_LoadUniqueRegValuesSSEAndGRegs
         mov     eax, __LINE__
         db 048h, 066h, 00Fh, 073h, 0D0h, 080h ; REX.W
         call    .check_xmm0_zero_and_mm0_nz
 
-        call    x861_LoadUniqueRegValuesSSE
+        call    x861_LoadUniqueRegValuesSSEAndGRegs
         mov     eax, __LINE__
         db 044h, 066h, 00Fh, 073h, 0D0h, 080h ; REX.R
         call    .check_xmm0_zero_and_mm0_nz
 
-        call    x861_LoadUniqueRegValuesSSE
+        call    x861_LoadUniqueRegValuesSSEAndGRegs
         mov     eax, __LINE__
         db 042h, 066h, 00Fh, 073h, 0D0h, 080h ; REX.X
         call    .check_xmm0_zero_and_mm0_nz
 
         ; Actually for REX, order does matter if the prefix is used.
-        call    x861_LoadUniqueRegValuesSSE
+        call    x861_LoadUniqueRegValuesSSEAndGRegs
         mov     eax, __LINE__
         db 041h, 066h, 00Fh, 073h, 0D0h, 080h ; REX.B
         call    .check_xmm0_zero_and_mm0_nz
 
-        call    x861_LoadUniqueRegValuesSSE
+        call    x861_LoadUniqueRegValuesSSEAndGRegs
         mov     eax, __LINE__
         db 066h, 041h, 00Fh, 073h, 0D0h, 080h ; REX.B
         call    .check_xmm8_zero_and_xmm0_nz
 %endif
 
         ; Check all ignored prefixes (repeates some of the above).
-        call    x861_LoadUniqueRegValuesSSE
+        call    x861_LoadUniqueRegValuesSSEAndGRegs
         mov     eax, __LINE__
         db 066h, 026h, 00Fh, 073h, 0D0h, 080h ; es
         call    .check_xmm0_zero_and_mm0_nz
 
-        call    x861_LoadUniqueRegValuesSSE
+        call    x861_LoadUniqueRegValuesSSEAndGRegs
         mov     eax, __LINE__
         db 066h, 065h, 00Fh, 073h, 0D0h, 080h ; gs
         call    .check_xmm0_zero_and_mm0_nz
 
-        call    x861_LoadUniqueRegValuesSSE
+        call    x861_LoadUniqueRegValuesSSEAndGRegs
         mov     eax, __LINE__
         db 066h, 064h, 00Fh, 073h, 0D0h, 080h ; fs
         call    .check_xmm0_zero_and_mm0_nz
 
-        call    x861_LoadUniqueRegValuesSSE
+        call    x861_LoadUniqueRegValuesSSEAndGRegs
         mov     eax, __LINE__
         db 066h, 02eh, 00Fh, 073h, 0D0h, 080h ; cs
         call    .check_xmm0_zero_and_mm0_nz
 
-        call    x861_LoadUniqueRegValuesSSE
+        call    x861_LoadUniqueRegValuesSSEAndGRegs
         mov     eax, __LINE__
         db 066h, 036h, 00Fh, 073h, 0D0h, 080h ; ss
         call    .check_xmm0_zero_and_mm0_nz
 
-        call    x861_LoadUniqueRegValuesSSE
+        call    x861_LoadUniqueRegValuesSSEAndGRegs
         mov     eax, __LINE__
         db 066h, 03eh, 00Fh, 073h, 0D0h, 080h ; ds
         call    .check_xmm0_zero_and_mm0_nz
 
-        call    x861_LoadUniqueRegValuesSSE
+        call    x861_LoadUniqueRegValuesSSEAndGRegs
         mov     eax, __LINE__
         db 066h, 067h, 00Fh, 073h, 0D0h, 080h ; addr size
         call    .check_xmm0_zero_and_mm0_nz
 
 %ifdef RT_ARCH_AMD64
-        call    x861_LoadUniqueRegValuesSSE
+        call    x861_LoadUniqueRegValuesSSEAndGRegs
         mov     eax, __LINE__
         db 066h, 048h, 00Fh, 073h, 0D0h, 080h ; REX.W
         call    .check_xmm0_zero_and_mm0_nz
 
-        call    x861_LoadUniqueRegValuesSSE
+        call    x861_LoadUniqueRegValuesSSEAndGRegs
         mov     eax, __LINE__
         db 066h, 044h, 00Fh, 073h, 0D0h, 080h ; REX.R
         call    .check_xmm0_zero_and_mm0_nz
 
-        call    x861_LoadUniqueRegValuesSSE
+        call    x861_LoadUniqueRegValuesSSEAndGRegs
         mov     eax, __LINE__
         db 066h, 042h, 00Fh, 073h, 0D0h, 080h ; REX.X
         call    .check_xmm0_zero_and_mm0_nz
 
-        call    x861_LoadUniqueRegValuesSSE
+        call    x861_LoadUniqueRegValuesSSEAndGRegs
         mov     eax, __LINE__
         db 066h, 041h, 00Fh, 073h, 0D0h, 080h ; REX.B - has actual effect on the instruction.
         call    .check_xmm8_zero_and_xmm0_nz
 %endif
 
         ; Repeated prefix until we hit the max opcode limit.
-        call    x861_LoadUniqueRegValuesSSE
+        call    x861_LoadUniqueRegValuesSSEAndGRegs
         mov     eax, __LINE__
         db 066h, 066h, 00Fh, 073h, 0D0h, 080h
         call    .check_xmm0_zero_and_mm0_nz
 
-        call    x861_LoadUniqueRegValuesSSE
+        call    x861_LoadUniqueRegValuesSSEAndGRegs
         mov     eax, __LINE__
         db 066h, 066h, 066h, 00Fh, 073h, 0D0h, 080h
         call    .check_xmm0_zero_and_mm0_nz
 
-        call    x861_LoadUniqueRegValuesSSE
+        call    x861_LoadUniqueRegValuesSSEAndGRegs
         mov     eax, __LINE__
         db 066h, 066h, 066h, 066h, 066h, 066h, 066h, 066h, 00Fh, 073h, 0D0h, 080h
         call    .check_xmm0_zero_and_mm0_nz
 
-        call    x861_LoadUniqueRegValuesSSE
+        call    x861_LoadUniqueRegValuesSSEAndGRegs
         mov     eax, __LINE__
         db 066h, 066h, 066h, 066h, 066h, 066h, 066h, 066h, 066h, 066h, 066h, 00Fh, 073h, 0D0h, 080h
         call    .check_xmm0_zero_and_mm0_nz
@@ -971,22 +1247,22 @@ BEGINPROC   x861_Test2
 
 %ifdef RT_ARCH_AMD64
         ; Repeated REX is parsed, but only the last byte matters.
-        call    x861_LoadUniqueRegValuesSSE
+        call    x861_LoadUniqueRegValuesSSEAndGRegs
         mov     eax, __LINE__
         db 066h, 041h, 048h, 00Fh, 073h, 0D0h, 080h ; REX.B, REX.W
         call    .check_xmm0_zero_and_mm0_nz
 
-        call    x861_LoadUniqueRegValuesSSE
+        call    x861_LoadUniqueRegValuesSSEAndGRegs
         mov     eax, __LINE__
         db 066h, 048h, 041h, 00Fh, 073h, 0D0h, 080h ; REX.B, REX.W
         call    .check_xmm8_zero_and_xmm0_nz
 
-        call    x861_LoadUniqueRegValuesSSE
+        call    x861_LoadUniqueRegValuesSSEAndGRegs
         mov     eax, __LINE__
         db 066h, 048h, 044h, 042h, 048h, 044h, 042h, 048h, 044h, 042h, 041h, 00Fh, 073h, 0D0h, 080h
         call    .check_xmm8_zero_and_xmm0_nz
 
-        call    x861_LoadUniqueRegValuesSSE
+        call    x861_LoadUniqueRegValuesSSEAndGRegs
         mov     eax, __LINE__
         db 066h, 041h, 041h, 041h, 041h, 041h, 041h, 041h, 041h, 041h, 04eh, 00Fh, 073h, 0D0h, 080h
         call    .check_xmm0_zero_and_mm0_nz
@@ -1092,12 +1368,12 @@ ENDPROC     x861_Test2
 ;
 BEGINPROC   x861_Test3
         SAVE_ALL_PROLOGUE
-        call    x861_LoadUniqueRegValuesSSE
-        mov     xDI, REF_GLOBAL(g_pbEfExecPage)
+        call    x861_LoadUniqueRegValuesSSEAndGRegs
+        mov     xDI, [REF_EXTERN(g_pbEfExecPage)]
 
         ; Check testcase preconditions.
-        fxsave  [xDI]
-        fxrstor [xDI]
+        fxsave   [xDI]
+        fxrstor  [xDI]
 
         add     xDI, PAGE_SIZE - 512
         mov     xSI, xDI
@@ -1125,7 +1401,7 @@ BEGINPROC   x861_Test3
         ja      .return
 
         ; Check that a save + restore + save cycle yield the same results.
-        mov     xBX, REF_GLOBAL(g_pbEfExecPage)
+        mov     xBX, [REF_EXTERN(g_pbEfExecPage)]
         mov     xDI, xBX
         mov     eax, 066778899h
         mov     ecx, 512 * 2 / 4
@@ -1133,8 +1409,8 @@ BEGINPROC   x861_Test3
         rep stosd
         fxsave  [xBX]
 
-        call    x861_ClearRegistersSSE
-        mov     xBX, REF_GLOBAL(g_pbEfExecPage)
+        call    x861_ClearRegistersSSEAndGRegs
+        mov     xBX, [REF_EXTERN(g_pbEfExecPage)]
         fxrstor [xBX]
 
         fxsave  [xBX + 512]
@@ -1149,8 +1425,8 @@ BEGINPROC   x861_Test3
 
         ; 464:511 are available to software use.  Let see how carefully access
         ; to the full 512 bytes are checked...
-        call    x861_LoadUniqueRegValuesSSE
-        mov     xDI, REF_GLOBAL(g_pbEfExecPage)
+        call    x861_LoadUniqueRegValuesSSEAndGRegs
+        mov     xDI, [REF_EXTERN(g_pbEfExecPage)]
         add     xDI, PAGE_SIZE - 512
         ShouldTrap X86_XCPT_PF, fxsave  [xDI + 16]
         ShouldTrap X86_XCPT_PF, fxsave  [xDI + 32]
@@ -1226,7 +1502,7 @@ BEGINPROC   x861_Test3
         ; Lets check what a FP in fxsave changes ... nothing on intel.
         mov     ebx, 16
 .fxsave_pf_effect_loop:
-        mov     xDI, REF_GLOBAL(g_pbEfExecPage)
+        mov     xDI, [REF_EXTERN(g_pbEfExecPage)]
         add     xDI, PAGE_SIZE - 512 * 2
         mov     xSI, xDI
         mov     eax, 066778899h
@@ -1248,23 +1524,23 @@ BEGINPROC   x861_Test3
         jbe     .fxsave_pf_effect_loop
 
         ; Lets check that a FP in fxrstor does not have any effect on the FPU or SSE state.
-        mov     xDI, REF_GLOBAL(g_pbEfExecPage)
+        mov     xDI, [REF_EXTERN(g_pbEfExecPage)]
         mov     ecx, PAGE_SIZE / 4
         mov     eax, 0ffaa33cch
         cld
         rep stosd
 
-        call    x861_LoadUniqueRegValuesSSE
-        mov     xDI, REF_GLOBAL(g_pbEfExecPage)
+        call    x861_LoadUniqueRegValuesSSEAndGRegs
+        mov     xDI, [REF_EXTERN(g_pbEfExecPage)]
         fxsave  [xDI]
 
-        call    x861_ClearRegistersSSE
-        mov     xDI, REF_GLOBAL(g_pbEfExecPage)
+        call    x861_ClearRegistersSSEAndGRegs
+        mov     xDI, [REF_EXTERN(g_pbEfExecPage)]
         fxsave  [xDI + 512]
 
         mov     ebx, 16
 .fxrstor_pf_effect_loop:
-        mov     xDI, REF_GLOBAL(g_pbEfExecPage)
+        mov     xDI, [REF_EXTERN(g_pbEfExecPage)]
         mov     xSI, xDI
         lea     xDI, [xDI + PAGE_SIZE - 512 + xBX]
         mov     ecx, 512
@@ -1273,12 +1549,12 @@ BEGINPROC   x861_Test3
         rep movsb                       ; copy unique state to end of page.
 
         push    xBX
-        call    x861_ClearRegistersSSE
+        call    x861_ClearRegistersSSEAndGRegs
         pop     xBX
-        mov     xDI, REF_GLOBAL(g_pbEfExecPage)
+        mov     xDI, [REF_EXTERN(g_pbEfExecPage)]
         ShouldTrap X86_XCPT_PF, fxrstor  [xDI + PAGE_SIZE - 512 + xBX] ; try load unique state
 
-        mov     xDI, REF_GLOBAL(g_pbEfExecPage)
+        mov     xDI, [REF_EXTERN(g_pbEfExecPage)]
         lea     xSI, [xDI + 512]        ; point it to the clean state, which is what we expect.
         lea     xDI, [xDI + 1024]
         fxsave  [xDI]                   ; save whatever the fpu state currently is.
@@ -1388,14 +1664,14 @@ ENDPROC     x861_Test4
         mov     xBP, xSP
         sub     xSP, 2048
         and     xSP, ~0fh
-        fxsave  [xSP + 1024]
+        arch_fxsave [xSP + 1024]
         %1
         call    SaveFPUAndGRegsToStack
 
-        fxrstor [xSP + 1024]
+        arch_fxrstor [xSP + 1024]
         %2
         call    CompareFPUAndGRegsOnStack
-        ;fxrstor [xSP + 1024]
+        ;arch_fxrstor [xSP + 1024]
         leave
 
         jz      %%ok
@@ -1432,7 +1708,7 @@ SaveFPUAndGRegsToStack:
         popf
 
         ; Save the FPU state.
-        fxsave  [xSP + xS]
+        arch_fxsave [xSP + xS]
 
         ; Save GRegs (80h bytes).
 %ifdef RT_ARCH_AMD64
@@ -1514,14 +1790,15 @@ CompareFPUAndGRegsOnStack:
         lea     xSI, [xSP + xS*3]
         lea     xDI, [xSI + 1024]
 
-        mov     dword [xSI + 0x8], 0    ; ignore FPUIP
-        mov     dword [xDI + 0x8], 0    ; ignore FPUIP
+        mov     word [xSI + X86FXSTATE.FOP], 0          ; ignore
+        mov     dword [xSI + X86FXSTATE.FPUIP], 0       ; ignore
+        mov     dword [xDI + X86FXSTATE.FPUDP], 0       ; ignore
 
         cld
         repe cmpsb
         je      .ok
 
-        int3
+        ;int3
         lea     xAX, [xSP + xS*3]
         xchg    xAX, xSI
         sub     xAX, xSI
@@ -1558,12 +1835,12 @@ BEGINPROC   x861_Test5
         SAVE_ALL_PROLOGUE
 
         ; standard stuff...
-        fld dword REF(.r32V1)
-        fld qword REF(.r64V1)
-        fld tword REF(.r80V1)
-        fld qword REF(.r64V1)
-        fld dword REF(.r32V2)
-        fld dword REF(.r32V1)
+        fld dword [REF(g_r32V1)]
+        fld qword [REF(g_r64V1)]
+        fld tword [REF(g_r80V1)]
+        fld qword [REF(g_r64V1)]
+        fld dword [REF(g_r32V2)]
+        fld dword [REF(g_r32V1)]
 
         ; Test the nop check.
         FpuNopEncoding fnop
@@ -1766,14 +2043,6 @@ BEGINPROC   x861_Test5
         SAVE_ALL_EPILOGUE
         ret
 
-.r32V1: dd 3.2
-.r32V2: dd -1.9
-.r64V1: dq 6.4
-.r80V1: dt 8.0
-
-; Denormal numbers.
-.r32D0: dd 0200000h
-
 ENDPROC     x861_Test5
 
 
@@ -1787,8 +2056,8 @@ BEGINPROC   x861_Test6
         sub     xSP, 2048
 
         ; Load some pointers.
-        lea     xSI, REF(.r32V1)
-        mov     xDI, REF_GLOBAL(g_pbEfExecPage)
+        lea     xSI, [REF(g_r32V1)]
+        mov     xDI, [REF_EXTERN(g_pbEfExecPage)]
         add     xDI, PAGE_SIZE          ; invalid page.
 
         ;
@@ -1798,12 +2067,12 @@ BEGINPROC   x861_Test6
         fninit
         mov     dword [xSP], X86_FCW_PC_64 | X86_FCW_RC_NEAREST
         fldcw   [xSP]
-        FpuShouldTrap  X86_FSW_DE, 0, fld dword REF(.r32D0)
+        FpuShouldTrap  X86_FSW_DE, 0, fld dword [REF(g_r32D0)]
         CheckSt0Value 0x00000000, 0x80000000, 0x3f7f
 
         mov     dword [xSP], X86_FCW_PC_64 | X86_FCW_RC_NEAREST | X86_FCW_DM
         fldcw   [xSP]
-        fld     dword REF(.r32D0)
+        fld     dword [REF(g_r32D0)]
         fwait
         FpuCheckFSW X86_FSW_DE, 0
         CheckSt0Value 0x00000000, 0x80000000, 0x3f7f
@@ -1814,14 +2083,14 @@ BEGINPROC   x861_Test6
         fninit
         mov     dword [xSP], X86_FCW_PC_64 | X86_FCW_RC_NEAREST
         fldcw   [xSP]
-        fld     qword REF(.r64V1)
+        fld     qword [REF(g_r64V1)]
         fld     dword [xSI]
         fld     dword [xSI]
         fld     dword [xSI]
         fld     dword [xSI]
         fld     dword [xSI]
         fld     dword [xSI]
-        fld     tword REF(.r80V1)
+        fld     tword [REF(g_r80V1)]
         fwait
 
         FpuShouldTrap  X86_FSW_IE | X86_FSW_SF | X86_FSW_C1, X86_FSW_C0 | X86_FSW_C2 | X86_FSW_C3, \
@@ -1853,13 +2122,13 @@ BEGINPROC   x861_Test6
         fnclex
         CheckSt0Value 0x00000000, 0xc0000000, 0xffff
 
-        fld     qword REF(.r64V1)
+        fld     qword [REF(g_r64V1)]
         FpuCheckFSW X86_FSW_IE | X86_FSW_SF | X86_FSW_C1, X86_FSW_C0 | X86_FSW_C2 | X86_FSW_C3
         fnclex
         CheckSt0Value 0x00000000, 0xc0000000, 0xffff
 
         ; This is includes denormal values.
-        fld     dword REF(.r32D0)
+        fld     dword [REF(g_r32D0)]
         fwait
         FpuCheckFSW X86_FSW_IE | X86_FSW_SF | X86_FSW_C1, X86_FSW_C0 | X86_FSW_C2 | X86_FSW_C3
         CheckSt0Value 0x00000000, 0xc0000000, 0xffff
@@ -1871,7 +2140,7 @@ BEGINPROC   x861_Test6
         ;
         mov     dword [xSP], X86_FCW_PC_64 | X86_FCW_RC_NEAREST
         fldcw   [xSP]
-        fld     qword REF(.r64V1)
+        fld     qword [REF(g_r64V1)]
         ShouldTrap X86_XCPT_MF, fld     dword [xDI]
         fnclex
 
@@ -1899,15 +2168,375 @@ BEGINPROC   x861_Test6
         add     xSP, 2048
         SAVE_ALL_EPILOGUE
         ret
-
-.r32V1: dd 3.2
-.r64V1: dq 6.4
-.r80V1: dt 8.0
-
-; Denormal numbers.
-.r32D0: dd 0200000h
-
 ENDPROC     x861_Test6
+
+
+extern NAME(RTTestISub)
+
+;;
+; Sets the current subtest.
+%macro SetSubTest 1
+%ifdef RT_ARCH_AMD64
+ %ifdef ASM_CALL64_GCC
+        lea     rdi, [%%s_szName wrt rip]
+ %else
+        lea     rcx, [%%s_szName wrt rip]
+ %endif
+        call    NAME(RTTestISub)
+%else
+        push    %%s_szName
+        call    NAME(RTTestISub)
+        add     esp, 4
+%endif
+        jmp     %%done
+%%s_szName:
+        db %1, 0
+%%done:
+%endmacro
+
+
+;;
+; Checks the opcode and CS:IP FPU.
+;
+; @returns ZF=1 on success, ZF=0 on failure.
+; @param    xSP + xS    fxsave image followed by fnstenv.
+; @param    xCX         Opcode address (no prefixes).
+;
+CheckOpcodeCsIp:
+        push    xBP
+        mov     xBP, xSP
+        push    xAX
+
+        ; Check the IP.
+%ifdef RT_ARCH_AMD64
+        cmp     rcx, [xBP + xS*2 + X86FXSTATE.FPUIP]
+%else
+        cmp     ecx, [xBP + xS*2 + X86FXSTATE.FPUIP]
+%endif
+        jne     .failure1
+
+        mov     ax, cs
+        cmp     ax, [xBP + xS*2 + 512 + X86FSTENV32P.FPUCS]
+        jne     .failure2
+
+        ; Check the opcode.  This may be disabled.
+        cmp     word [xBP + xS*2 + X86FXSTATE.FOP], 0
+        je      .success
+
+        mov     ah, [xCX]
+        mov     al, [xCX + 1]
+        and     ax, 07ffh
+        cmp     ax, [xBP + xS*2 + X86FXSTATE.FOP]
+        jne     .failure3
+
+.success:
+        xor     eax, eax                ; clear Z
+.return:
+        pop     xAX
+        leave
+        ret
+
+.failure1:
+        mov     eax, 10000000
+        jmp     .failure
+.failure2:
+        mov     eax, 20000000
+        jmp     .failure
+.failure3:
+        mov     eax, 30000000
+        jmp     .failure
+.failure:
+        or      eax, eax
+        leave
+        ret
+
+
+
+
+
+;;
+; Checks the opcode, CS:IP and DS:DP of the FPU.
+;
+; @returns ZF=1 on success, ZF=0+EAX on failure.
+; @param    xSP + xS    fxsave image followed by fnstenv.
+; @param    xCX         Opcode address (no prefixes).
+; @param    xDX         Memory address (DS relative).
+;
+CheckOpcodeCsIpDsDp:
+        push    xBP
+        mov     xBP, xSP
+        push    xAX
+
+        ; Check the memory operand.
+%ifdef RT_ARCH_AMD64
+        cmp     rdx, [xBP + xS*2 + X86FXSTATE.FPUDP]
+%else
+        cmp     edx, [xBP + xS*2 + X86FXSTATE.FPUDP]
+%endif
+        jne     .failure1
+
+        mov     ax, ds
+        cmp     ax, [xBP + xS*2 + 512 + X86FSTENV32P.FPUDS]
+        jne     .failure2
+
+.success:
+        pop     xAX
+        leave
+        ; Let CheckOpcodeCsIp to the rest.
+        jmp     CheckOpcodeCsIp
+
+.failure1:
+        mov     eax, 60000000
+        jmp     .failure
+.failure2:
+        mov     eax, 80000000
+.failure:
+        or      eax, eax
+        leave
+        ret
+
+
+;;
+; Checks a FPU instruction taking a memory operand.
+;
+; @uses xCX, xDX, xAX, Stack.
+;
+%macro FpuCheckOpcodeCsIpDsDp 2
+%%instruction:
+        %1
+        arch_fxsave  [xSP]
+        fnstenv [xSP + 512]             ; for the selectors (64-bit)
+        arch_fxrstor [xSP]              ; fnstenv screws up the ES bit.
+        lea     xDX, %2
+        lea     xCX, [REF(%%instruction)]
+        call    CheckOpcodeCsIpDsDp
+        jz      %%ok
+        or      eax, __LINE__
+        jmp     .return
+%%ok:
+%endmacro
+
+
+;;
+; Checks a trapping FPU instruction taking a memory operand.
+;
+; Upon return, there is are two FXSAVE image on the stack at xSP.
+;
+; @uses xCX, xDX, xAX, Stack.
+;
+; @param    %1  The instruction.
+; @param    %2  Operand memory address (DS relative).
+;
+%macro FpuTrapOpcodeCsIpDsDp 2
+%%instruction:
+        %1
+        fxsave [xSP + 1024 +512]        ; FPUDS and FPUCS for 64-bit hosts.
+                                        ; WEIRD: When saved after FWAIT they are ZEROed! (64-bit Intel)
+%%trap:
+        fwait
+%%trap_end:
+        mov     eax, __LINE__
+        jmp     .return
+BEGINDATA
+%%trapinfo: istruc TRAPINFO
+        at TRAPINFO.uTrapPC,    RTCCPTR_DEF     %%trap
+        at TRAPINFO.uResumePC,  RTCCPTR_DEF     %%resume
+        at TRAPINFO.u8TrapNo,   db              X86_XCPT_MF
+        at TRAPINFO.cbInstr,    db              (%%trap_end - %%trap)
+iend
+BEGINCODE
+%%resume:
+        arch_fxsave  [xSP]
+        lea     xDX, %2
+        lea     xCX, [REF(%%instruction)]
+        call    CheckOpcodeCsIpDsDp
+        jz      %%ok
+        or      eax, __LINE__
+        jmp     .return
+%%ok:
+%endmacro
+
+
+;;
+; Initialize the FPU and set CW to %1.
+;
+; @uses dword at [xSP].
+;
+%macro FpuInitWithCW 1
+        call    x861_LoadUniqueRegValuesSSE
+        fninit
+        mov     dword [xSP], %1
+        fldcw   [xSP]
+%endmacro
+
+
+;;
+; First bunch of FPU instruction tests.
+;
+;
+BEGINPROC   x861_TestFPUInstr1
+        SAVE_ALL_PROLOGUE
+        sub     xSP, 2048
+
+        ; Make xBX (preserved accross calls) point to the invalid page.
+        mov     xBX, [REF_EXTERN(g_pbEfExecPage)]
+        add     xBX, PAGE_SIZE
+
+        ;
+        ; FDIV with 64-bit floating point memory operand.
+        ;
+        SetSubTest "FDIV m64r"
+
+        ; ## Normal operation. ##
+        fninit
+        FpuCheckOpcodeCsIpDsDp { fld  dword [REF(g_r32_3dot2)]     }, [REF(g_r32_3dot2)]
+        CheckSt0Value 0x00000000, 0xcccccd00, 0x4000
+        FpuCheckOpcodeCsIpDsDp { fdiv qword [REF(g_r64_One)]       }, [REF(g_r64_One)]
+        FpuCheckFSW 0, X86_FSW_C0 | X86_FSW_C2 | X86_FSW_C3
+        CheckSt0Value 0x00000000, 0xcccccd00, 0x4000
+
+
+        ; ## Masked exceptions. ##
+        ; Masked stack underflow.
+        fninit
+        FpuCheckOpcodeCsIpDsDp { fdiv    qword [REF(g_r64_One)]    }, [REF(g_r64_One)]
+        FpuCheckFSW X86_FSW_IE | X86_FSW_SF, X86_FSW_C0 | X86_FSW_C2 | X86_FSW_C3
+        CheckSt0Value_QNaN
+
+        ; Masked zero divide.
+        fninit
+        FpuCheckOpcodeCsIpDsDp { fld     dword [REF(g_r32_3dot2)]  }, [REF(g_r32_3dot2)]
+        FpuCheckOpcodeCsIpDsDp { fdiv    qword [REF(g_r64_Zero)]   }, [REF(g_r64_Zero)]
+        FpuCheckFSW X86_FSW_ZE, X86_FSW_C0 | X86_FSW_C2 | X86_FSW_C3
+        CheckSt0Value_PlusInf
+
+        ; Masked Inf/Inf.
+        fninit
+        FpuCheckOpcodeCsIpDsDp { fld     dword [REF(g_r32_Inf)]    }, [REF(g_r32_Inf)]
+        FpuCheckOpcodeCsIpDsDp { fdiv    qword [REF(g_r64_Inf)]    }, [REF(g_r64_Inf)]
+        FpuCheckFSW X86_FSW_IE, X86_FSW_C0 | X86_FSW_C2 | X86_FSW_C3
+        CheckSt0Value_QNaN
+
+        ; Masked 0/0.
+        fninit
+        FpuCheckOpcodeCsIpDsDp { fld     dword [REF(g_r32_Zero)]   }, [REF(g_r32_Zero)]
+        FpuCheckOpcodeCsIpDsDp { fdiv    qword [REF(g_r64_Zero)]   }, [REF(g_r64_Zero)]
+        FpuCheckFSW X86_FSW_IE, X86_FSW_C0 | X86_FSW_C2 | X86_FSW_C3
+        CheckSt0Value_QNaN
+
+        ; Masked precision exception, rounded down.
+        fninit
+        FpuCheckOpcodeCsIpDsDp { fld     dword [REF(g_r32_Ten)]    }, [REF(g_r32_Ten)]
+        FpuCheckOpcodeCsIpDsDp { fdiv    qword [REF(g_r64_Three)]  }, [REF(g_r64_Three)]
+        FpuCheckFSW X86_FSW_PE, X86_FSW_C0 | X86_FSW_C2 | X86_FSW_C3
+        CheckSt0Value_3_and_a_3rd
+
+        ; Masked precision exception, rounded up.
+        fninit
+        FpuCheckOpcodeCsIpDsDp { fld     dword [REF(g_r32_Eleven)] }, [REF(g_r32_Eleven)]
+        FpuCheckOpcodeCsIpDsDp { fdiv    qword [REF(g_r64_Three)]  }, [REF(g_r64_Three)]
+        FpuCheckFSW X86_FSW_PE | X86_FSW_C1, X86_FSW_C0 | X86_FSW_C2 | X86_FSW_C3
+        CheckSt0Value_3_and_two_3rds
+
+        ; Masked overflow exception.
+        fninit
+        FpuCheckOpcodeCsIpDsDp { fld     tword [REF(g_r80_Max)]    }, [REF(g_r80_Max)]
+        FpuCheckOpcodeCsIpDsDp { fdiv    qword [REF(g_r64_0dot1)]  }, [REF(g_r64_0dot1)]
+        FpuCheckFSW X86_FSW_PE | X86_FSW_OE | X86_FSW_C1, X86_FSW_C0 | X86_FSW_C2 | X86_FSW_C3
+        CheckSt0Value_PlusInf
+
+        ; Masked underflow exception.
+        fninit
+        FpuCheckOpcodeCsIpDsDp { fld     tword [REF(g_r80_Min)]    }, [REF(g_r80_Min)]
+        FpuCheckOpcodeCsIpDsDp { fdiv    qword [REF(g_r64_Ten)]    }, [REF(g_r64_Ten)]
+        FpuCheckFSW X86_FSW_PE | X86_FSW_UE | X86_FSW_C1, X86_FSW_C0 | X86_FSW_C2 | X86_FSW_C3
+        CheckSt0Value 0xcccccccd, 0x0ccccccc, 0x0000
+
+        ; Denormal operand.
+        fninit
+        FpuCheckOpcodeCsIpDsDp { fld     tword [REF(g_r80_One)]    }, [REF(g_r80_One)]
+        FpuCheckOpcodeCsIpDsDp { fdiv    qword [REF(g_r64_DnMax)]  }, [REF(g_r64_DnMax)]
+        FxSaveCheckFSW xSP, X86_FSW_DE | X86_FSW_PE, X86_FSW_C0 | X86_FSW_C2 | X86_FSW_C3
+        FxSaveCheckSt0Value xSP, 0x00000800, 0x80000000, 0x43fd
+
+        ; ## Unmasked exceptions. ##
+%if 1
+        ; Stack underflow - TOP and ST0 unmodified.
+        FpuInitWithCW X86_FCW_PC_64 | X86_FCW_RC_NEAREST
+        FpuTrapOpcodeCsIpDsDp  { fdiv    qword [REF(g_r64_One)]    }, [REF(g_r64_One)]
+        FxSaveCheckFSW xSP, X86_FSW_IE | X86_FSW_SF | X86_FSW_B | X86_FSW_ES, X86_FSW_C0 | X86_FSW_C2 | X86_FSW_C3
+        FxSaveCheckSt0EmptyInitValue xSP
+
+        ; Zero divide - Unmodified ST0.
+        FpuInitWithCW X86_FCW_PC_64 | X86_FCW_RC_NEAREST
+        FpuCheckOpcodeCsIpDsDp { fld     dword [REF(g_r32_3dot2)]  }, [REF(g_r32_3dot2)]
+        FpuTrapOpcodeCsIpDsDp  { fdiv    qword [REF(g_r64_Zero)]   }, [REF(g_r64_Zero)]
+        FxSaveCheckFSW xSP, X86_FSW_ZE | X86_FSW_ES | X86_FSW_B, X86_FSW_C0 | X86_FSW_C2 | X86_FSW_C3
+        FxSaveCheckSt0ValueConst xSP, REF(g_r80_r32_3dot2)
+
+        ; Invalid Operand (Inf/Inf) - Unmodified ST0.
+        FpuInitWithCW X86_FCW_PC_64 | X86_FCW_RC_NEAREST
+        FpuCheckOpcodeCsIpDsDp { fld     dword [REF(g_r32_Inf)]    }, [REF(g_r32_Inf)]
+        FpuTrapOpcodeCsIpDsDp  { fdiv    qword [REF(g_r64_Inf)]    }, [REF(g_r64_Inf)]
+        FpuCheckFSW X86_FSW_IE | X86_FSW_ES | X86_FSW_B, X86_FSW_C0 | X86_FSW_C2 | X86_FSW_C3
+        FxSaveCheckSt0ValueConst xSP, REF(g_r80_Inf)
+
+        ; Invalid Operand (0/0) - Unmodified ST0.
+        FpuInitWithCW X86_FCW_PC_64 | X86_FCW_RC_NEAREST
+        FpuCheckOpcodeCsIpDsDp { fld     dword [REF(g_r32_Zero)]   }, [REF(g_r32_Zero)]
+        FpuTrapOpcodeCsIpDsDp  { fdiv    qword [REF(g_r64_Zero)]   }, [REF(g_r64_Zero)]
+        FxSaveCheckFSW xSP, X86_FSW_IE | X86_FSW_ES | X86_FSW_B, X86_FSW_C0 | X86_FSW_C2 | X86_FSW_C3
+        FxSaveCheckSt0ValueConst xSP, REF(g_r80_Zero)
+
+        ; Precision exception, rounded down.
+        FpuInitWithCW X86_FCW_PC_64 | X86_FCW_RC_NEAREST
+        FpuCheckOpcodeCsIpDsDp { fld     dword [REF(g_r32_Ten)]    }, [REF(g_r32_Ten)]
+        FpuTrapOpcodeCsIpDsDp  { fdiv    qword [REF(g_r64_Three)]  }, [REF(g_r64_Three)]
+        FxSaveCheckFSW xSP, X86_FSW_PE | X86_FSW_ES | X86_FSW_B, X86_FSW_C0 | X86_FSW_C2 | X86_FSW_C3
+        FxSaveCheckSt0Value_3_and_a_3rd(xSP)
+
+        ; Precision exception, rounded up.
+        FpuInitWithCW X86_FCW_PC_64 | X86_FCW_RC_NEAREST
+        FpuCheckOpcodeCsIpDsDp { fld     dword [REF(g_r32_Eleven)] }, [REF(g_r32_Eleven)]
+        FpuTrapOpcodeCsIpDsDp  { fdiv    qword [REF(g_r64_Three)]  }, [REF(g_r64_Three)]
+        FxSaveCheckFSW xSP, X86_FSW_PE | X86_FSW_C1 | X86_FSW_ES | X86_FSW_B, X86_FSW_C0 | X86_FSW_C2 | X86_FSW_C3
+        FxSaveCheckSt0Value_3_and_two_3rds(xSP)
+
+        ; Overflow exception.
+        FpuInitWithCW X86_FCW_PC_64 | X86_FCW_RC_NEAREST
+        FpuCheckOpcodeCsIpDsDp { fld     tword [REF(g_r80_Max)]    }, [REF(g_r80_Max)]
+        FpuTrapOpcodeCsIpDsDp  { fdiv    qword [REF(g_r64_0dot1)]  }, [REF(g_r64_0dot1)]
+        FxSaveCheckFSW xSP, X86_FSW_PE | X86_FSW_OE | X86_FSW_ES | X86_FSW_B, X86_FSW_C0 | X86_FSW_C2 | X86_FSW_C3
+        FxSaveCheckSt0Value xSP, 0xfffffd7f, 0x9fffffff, 0x2002
+
+        ; Underflow exception.
+        FpuInitWithCW X86_FCW_PC_64 | X86_FCW_RC_NEAREST
+        FpuCheckOpcodeCsIpDsDp { fld     tword [REF(g_r80_Min)]    }, [REF(g_r80_Min)]
+        FpuTrapOpcodeCsIpDsDp  { fdiv    qword [REF(g_r64_Ten)]    }, [REF(g_r64_Ten)]
+        FxSaveCheckFSW xSP, X86_FSW_PE | X86_FSW_UE | X86_FSW_C1 | X86_FSW_ES | X86_FSW_B, X86_FSW_C0 | X86_FSW_C2 | X86_FSW_C3
+        FxSaveCheckSt0Value xSP, 0xcccccccd, 0xcccccccc, 0x5ffd
+
+        ; Denormal operand - Unmodified ST0.
+        FpuInitWithCW X86_FCW_PC_64 | X86_FCW_RC_NEAREST
+        FpuCheckOpcodeCsIpDsDp { fld     tword [REF(g_r80_One)]    }, [REF(g_r80_One)]
+        FpuTrapOpcodeCsIpDsDp  { fdiv    qword [REF(g_r64_DnMax)]  }, [REF(g_r64_DnMax)]
+        FxSaveCheckFSW xSP, X86_FSW_DE | X86_FSW_ES | X86_FSW_B, X86_FSW_C0 | X86_FSW_C2 | X86_FSW_C3
+        FxSaveCheckSt0ValueConst xSP, REF(g_r80_One)
+%endif
+
+
+        ; ## A couple of variations on the #PF theme. ##
+
+.success:
+        xor     eax, eax
+.return:
+        add     xSP, 2048
+        SAVE_ALL_EPILOGUE
+        ret
+
+ENDPROC     x861_TestFPUInstr1
+
+
 
 
 ;;
