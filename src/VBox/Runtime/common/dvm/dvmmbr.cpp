@@ -355,7 +355,7 @@ static DECLCALLBACK(uint64_t) rtDvmFmtMbrVolumeGetFlags(RTDVMVOLUMEFMT hVolFmt)
 DECLCALLBACK(bool) rtDvmFmtMbrVolumeIsRangeIntersecting(RTDVMVOLUMEFMT hVolFmt,
                                                         uint64_t offStart, size_t cbRange,
                                                         uint64_t *poffVol,
-                                                        size_t *pcbIntersect)
+                                                        uint64_t *pcbIntersect)
 {
     bool fIntersect = false;
     PRTDVMVOLUMEFMTINTERNAL pVol = hVolFmt;

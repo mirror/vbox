@@ -214,7 +214,7 @@ typedef struct RTDVMFMTOPS
     DECLCALLBACKMEMBER(bool, pfnVolumeIsRangeIntersecting)(RTDVMVOLUMEFMT hVolFmt,
                                                            uint64_t offStart, size_t cbRange,
                                                            uint64_t *poffVol,
-                                                           size_t *pcbIntersect);
+                                                           uint64_t *pcbIntersect);
 
     /**
      * Read data from the given volume.
