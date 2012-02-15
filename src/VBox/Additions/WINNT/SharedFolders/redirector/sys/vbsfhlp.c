@@ -246,8 +246,6 @@ PVOID vbsfAllocNonPagedMem (ULONG ulSize)
     Log(("vbsfAllocNonPagedMem: RefCnt after incrementing: %d\n", s_iAllocRefCount));
 #endif
 
-    Assert(ulSize > sizeof(void *));
-
     /* Tag is reversed (a.k.a "SHFL") to display correctly in debuggers, so search for "SHFL" */
     pMemory = ExAllocatePoolWithTag(NonPagedPool, ulSize, 'LFHS');
 
