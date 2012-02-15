@@ -482,7 +482,7 @@ RTDECL(int) RTDvmMapQueryBlockStatus(RTDVM hVolMgr, uint64_t off, uint64_t cb,
     {
         PRTDVMVOLUMEINTERNAL pVol;
         bool fVolFound = false;
-        size_t cbIntersect;
+        uint64_t cbIntersect;
         uint64_t offVol;
 
         /*
