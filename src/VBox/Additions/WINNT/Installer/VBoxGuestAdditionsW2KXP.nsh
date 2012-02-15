@@ -331,6 +331,11 @@ Function W2K_InstallFiles
   FILE /oname=$g_strSystemDir\drivers\VBoxSF.sys "$%PATH_OUT%\bin\additions\VBoxSF.sys"
   !insertmacro ReplaceDLL "$%PATH_OUT%\bin\additions\VBoxMRXNP.dll" "$g_strSystemDir\VBoxMRXNP.dll" "$INSTDIR"
   AccessControl::GrantOnFile "$g_strSystemDir\VBoxMRXNP.dll" "(BU)" "GenericRead"
+  !if $%BUILD_TARGET_ARCH% == "amd64"
+    ; Only 64-bit installer: Copy the 32-bit DLL for 32 bit applications.
+    !insertmacro ReplaceDLL "$%PATH_OUT%\bin\additions\VBoxMRXNP-x86.dll" "$g_strSysWow64\VBoxMRXNP.dll" "$INSTDIR"
+    AccessControl::GrantOnFile "$g_strSysWow64\VBoxMRXNP.dll" "(BU)" "GenericRead"
+  !endif
 
   ; The VBoxTray hook DLL also goes to the system directory; it might be locked
   !insertmacro ReplaceDLL "$%PATH_OUT%\bin\additions\VBoxHook.dll" "$g_strSystemDir\VBoxHook.dll" "$INSTDIR"
@@ -713,6 +718,10 @@ d3d_uninstall_end:
   nsExec::ExecToLog '"$INSTDIR\VBoxDrvInst.exe" service delete VBoxSF'
   Pop $0 ; Ret value
   Delete /REBOOTOK "$g_strSystemDir\VBoxMRXNP.dll" ; The network provider DLL will be locked
+  !if $%BUILD_TARGET_ARCH% == "amd64"
+    ; Only 64-bit installer: Also remove 32-bit DLLs on 64-bit target arch in Wow64 node
+    Delete /REBOOTOK "$g_strSysWow64\VBoxMRXNP.dll"
+  !endif ; amd64
   Delete /REBOOTOK "$g_strSystemDir\drivers\VBoxSF.sys"
 
   Pop $0

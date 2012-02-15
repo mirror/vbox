@@ -81,6 +81,12 @@ DRIVER_FILES := \
 	$(PATH_STAGE_BIN)/additions/VBoxControl.exe \
 	$(PATH_STAGE_BIN)/additions/VBoxWHQLFake.exe \
 	$(PATH_STAGE_BIN)/additions/VBoxService.exe
+ifeq ($(KBUILD_TARGET_ARCH),amd64)
+      # Also include 32-bit network provider DLLs on 64-bit guests to enable
+      # running 32-bit apps which use that.
+      DRIVER_FILES += \
+		$(PATH_STAGE_BIN)/additions/VBoxMRXNP-x86.dll
+endif
 ifeq ($(KBUILD_TARGET_ARCH),x86)
 DRIVER_FILES += \
 	$(PATH_STAGE_BIN)/additions/VBoxMouseNT.sys \

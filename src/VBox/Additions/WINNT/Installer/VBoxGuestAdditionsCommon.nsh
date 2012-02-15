@@ -184,6 +184,10 @@ Function ExtractFiles
   SetOutPath "$0\VBoxSF"
   FILE "$%PATH_OUT%\bin\additions\VBoxSF.sys"
   FILE "$%PATH_OUT%\bin\additions\VBoxMRXNP.dll"
+  !if $%BUILD_TARGET_ARCH% == "amd64"
+    ; Only 64-bit installer: Also copy 32-bit DLLs on 64-bit target
+    FILE "$%PATH_OUT%\bin\additions\VBoxMRXNP-x86.dll"
+  !endif
 
   ; Auto-Logon
   SetOutPath "$0\AutoLogon"

@@ -37,5 +37,16 @@ VBoxMRXNP_LIBS     = \
 	$(VBOX_LIB_VBGL_R3) \
 	$(VBOX_LIB_IPRT_GUEST_R3)
 
+#
+# VBoxMRXNP-x86 - x86 version of VBoxMRXNP built for amd64 build
+#
+DLLS.win.amd64 += VBoxMRXNP-x86
+VBoxMRXNP-x86_EXTENDS = VBoxMRXNP
+VBoxMRXNP-x86_BLD_TRG_ARCH = x86
+VBoxMRXNP-x86_LIBS = \
+	$(VBOX_LIB_IPRT_GUEST_R3_X86) \
+	$(VBOX_LIB_VBGL_R3_X86)
+VBoxMRXNP-x86_DEFS = $(VBoxMRXNP_DEFS) VBOX_WOW64
+
 include	$(KBUILD_PATH)/subfooter.kmk
 
