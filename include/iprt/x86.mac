@@ -603,3 +603,4 @@
 %define X86_SREG_FS             4
 %define X86_SREG_GS             5
 %endif
+%include "iprt/x86extra.mac"

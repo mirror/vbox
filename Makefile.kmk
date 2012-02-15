@@ -1487,6 +1487,7 @@ incs:
 	$(APPEND) include/VBox/err.mac '%include "iprt/err.mac"'
 	$(SED) -f include/VBox/err.sed     --output include/iprt/err.mac           include/iprt/err.h
 	$(SED) -f include/VBox/various.sed --output include/iprt/x86.mac           include/iprt/x86.h
+	$(APPEND) include/iprt/x86.mac '%include "iprt/x86extra.mac"'
 	$(SED) -f include/VBox/various.sed --output include/VBox/apic.mac          include/VBox/apic.h
 	$(SED) -f include/VBox/various.sed --output include/VBox/param.mac         include/VBox/param.h
 	$(SED) -f include/VBox/various.sed --output include/VBox/VMMDevTesting.mac include/VBox/VMMDevTesting.h
