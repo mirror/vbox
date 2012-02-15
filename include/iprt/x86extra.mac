@@ -28,6 +28,14 @@
 %define ___iprt_x86extra_mac
 
 
+%define X86_XCPT_UD     6
+%define X86_XCPT_GP     13
+%define X86_XCPT_PF     14
+%define X86_XCPT_MF     16
+
+%define PAGE_SIZE       0x1000
+
+
 ;;
 ; 32-bit protected mode fstenv image.
 ;
