@@ -431,6 +431,17 @@ IEMOPSHIFTDBLSIZES g_iemAImpl_shrd;
 #define IEM_MC_ELSE()                                                   } else {
 #define IEM_MC_ENDIF()                                                  } do {} while (0)
 
+
+#define iemAImpl_fpu_r64_to_r80         NULL
+#define iemAImpl_fadd_r80_by_r64        NULL
+#define iemAImpl_fmul_r80_by_r64        NULL
+#define iemAImpl_fcom_r80_by_r64        NULL
+#define iemAImpl_fsub_r80_by_r64        NULL
+#define iemAImpl_fsubr_r80_by_r64       NULL
+#define iemAImpl_fdiv_r80_by_r64        NULL
+#define iemAImpl_fdivr_r80_by_r64       NULL
+
+
 /** @}  */
 
 #include "../VMMAll/IEMAllInstructions.cpp.h"

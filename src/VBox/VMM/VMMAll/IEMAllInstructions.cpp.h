@@ -10805,13 +10805,15 @@ FNIEMOP_STUB_1(iemOp_fdivr_stN_st0,  uint8_t, bRm);
 /** Opcode 0xdc 11/7. */
 FNIEMOP_STUB_1(iemOp_fdiv_stN_st0,   uint8_t, bRm);
 
-/** Opcode 0xdc !11/0. */
-FNIEMOP_STUB_1(iemOp_fadd_m64r,  uint8_t, bRm);
 
-/** Opcode 0xdc !11/1. */
-FNIEMOP_DEF_1(iemOp_fmul_m64r,  uint8_t, bRm)
+/**
+ * Common worker for FPU instructions working on ST0 and a 64-bit floating point
+ * memory operand, and storing the result in ST0.
+ *
+ * @param   pImpl       Pointer to the instruction implementation (assembly).
+ */
+FNIEMOP_DEF_2(iemOpHlpFpu_ST0_m64r, uint8_t, bRm, PFNIEMAIMPLFPUR64, pfnImpl)
 {
-    IEMOP_MNEMONIC("fdiv m64r");
     IEMOP_HLP_NO_LOCK_PREFIX();
 
     IEM_MC_BEGIN(3, 3);
@@ -10827,7 +10829,7 @@ FNIEMOP_DEF_1(iemOp_fmul_m64r,  uint8_t, bRm)
     IEM_MC_MAYBE_RAISE_FPU_XCPT();
     IEM_MC_FETCH_MEM_R64(r64Factor2, pIemCpu->iEffSeg, GCPtrEffSrc);
     IEM_MC_IF_FPUREG_NOT_EMPTY_REF_R80(pr80Factor1, 0)
-        IEM_MC_CALL_FPU_AIMPL_3(iemAImpl_fpu_fmul_r80_by_r64, pFpuRes, pr80Factor1, pr64Factor2);
+        IEM_MC_CALL_FPU_AIMPL_3(pfnImpl, pFpuRes, pr80Factor1, pr64Factor2);
         IEM_MC_STORE_FPU_RESULT_MEM_OP(FpuRes, 0, pIemCpu->iEffSeg, GCPtrEffSrc);
     IEM_MC_ELSE()
         IEM_MC_FPU_STACK_UNDERFLOW_MEM_OP(0, pIemCpu->iEffSeg, GCPtrEffSrc);
@@ -10838,52 +10840,64 @@ FNIEMOP_DEF_1(iemOp_fmul_m64r,  uint8_t, bRm)
     return VINF_SUCCESS;
 }
 
+
+/** Opcode 0xdc !11/0. */
+FNIEMOP_DEF_1(iemOp_fadd_m64r,  uint8_t, bRm)
+{
+    IEMOP_MNEMONIC("fadd m64r");
+    return FNIEMOP_CALL_2(iemOpHlpFpu_ST0_m64r, bRm, iemAImpl_fadd_r80_by_r64);
+}
+
+
+/** Opcode 0xdc !11/1. */
+FNIEMOP_DEF_1(iemOp_fmul_m64r,  uint8_t, bRm)
+{
+    IEMOP_MNEMONIC("fmul m64r");
+    return FNIEMOP_CALL_2(iemOpHlpFpu_ST0_m64r, bRm, iemAImpl_fmul_r80_by_r64);
+}
+
 /** Opcode 0xdc !11/2. */
-FNIEMOP_STUB_1(iemOp_fcom_m64r,  uint8_t, bRm);
+FNIEMOP_DEF_1(iemOp_fcom_m64r,  uint8_t, bRm)
+{
+    IEMOP_MNEMONIC("fcom m64r");
+    return FNIEMOP_CALL_2(iemOpHlpFpu_ST0_m64r, bRm, iemAImpl_fcom_r80_by_r64);
+}
+
 
 /** Opcode 0xdc !11/3. */
 FNIEMOP_STUB_1(iemOp_fcomp_m64r, uint8_t, bRm);
 
+
 /** Opcode 0xdc !11/4. */
-FNIEMOP_STUB_1(iemOp_fsub_m64r,  uint8_t, bRm);
+FNIEMOP_DEF_1(iemOp_fsub_m64r,  uint8_t, bRm)
+{
+    IEMOP_MNEMONIC("fsub m64r");
+    return FNIEMOP_CALL_2(iemOpHlpFpu_ST0_m64r, bRm, iemAImpl_fsub_r80_by_r64);
+}
+
 
 /** Opcode 0xdc !11/5. */
-FNIEMOP_STUB_1(iemOp_fsubr_m64r, uint8_t, bRm);
+FNIEMOP_DEF_1(iemOp_fsubr_m64r, uint8_t, bRm)
+{
+    IEMOP_MNEMONIC("fsubr m64r");
+    return FNIEMOP_CALL_2(iemOpHlpFpu_ST0_m64r, bRm, iemAImpl_fsubr_r80_by_r64);
+}
 
 
 /** Opcode 0xdc !11/6. */
 FNIEMOP_DEF_1(iemOp_fdiv_m64r,  uint8_t, bRm)
 {
     IEMOP_MNEMONIC("fdiv m64r");
-    IEMOP_HLP_NO_LOCK_PREFIX();
-
-    IEM_MC_BEGIN(3, 3);
-    IEM_MC_LOCAL(RTGCPTR,               GCPtrEffSrc);
-    IEM_MC_LOCAL(IEMFPURESULT,          FpuRes);
-    IEM_MC_LOCAL(RTFLOAT64U,            r64Divisor);
-    IEM_MC_ARG_LOCAL_REF(PIEMFPURESULT, pFpuRes,        FpuRes,     0);
-    IEM_MC_ARG(PCRTFLOAT80U,            pr80Dividend,               1);
-    IEM_MC_ARG_LOCAL_REF(PRTFLOAT64U,   pr64Divisor,    r64Divisor, 2);
-
-    IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm);
-    IEM_MC_MAYBE_RAISE_DEVICE_NOT_AVAILABLE();
-    IEM_MC_MAYBE_RAISE_FPU_XCPT();
-    IEM_MC_FETCH_MEM_R64(r64Divisor, pIemCpu->iEffSeg, GCPtrEffSrc);
-    IEM_MC_IF_FPUREG_NOT_EMPTY_REF_R80(pr80Dividend, 0)
-        IEM_MC_CALL_FPU_AIMPL_3(iemAImpl_fpu_fdiv_r80_by_r64, pFpuRes, pr80Dividend, pr64Divisor);
-        IEM_MC_STORE_FPU_RESULT_MEM_OP(FpuRes, 0, pIemCpu->iEffSeg, GCPtrEffSrc);
-    IEM_MC_ELSE()
-        IEM_MC_FPU_STACK_UNDERFLOW_MEM_OP(0, pIemCpu->iEffSeg, GCPtrEffSrc);
-    IEM_MC_ENDIF();
-    IEM_MC_ADVANCE_RIP();
-
-    IEM_MC_END();
-    return VINF_SUCCESS;
+    return FNIEMOP_CALL_2(iemOpHlpFpu_ST0_m64r, bRm, iemAImpl_fdiv_r80_by_r64);
 }
 
 
 /** Opcode 0xdc !11/7. */
-FNIEMOP_STUB_1(iemOp_fdivr_m64r, uint8_t, bRm);
+FNIEMOP_DEF_1(iemOp_fdivr_m64r, uint8_t, bRm)
+{
+    IEMOP_MNEMONIC("fdivr m64r");
+    return FNIEMOP_CALL_2(iemOpHlpFpu_ST0_m64r, bRm, iemAImpl_fdivr_r80_by_r64);
+}
 
 
 /** Opcode 0xdc. */
