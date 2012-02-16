@@ -5291,7 +5291,8 @@ void VBoxGlobal::cleanup()
 
     /* media list contains a lot of CUUnknown, release them */
     mMediaList.clear();
-    /* the last step to ensure we don't use COM any more */
+    /* the last steps to ensure we don't use COM any more */
+    mHost.detach();
     mVBox.detach();
 
     /* There may be VBoxMediaEnumEvent instances still in the message
