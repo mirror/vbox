@@ -28,6 +28,9 @@
     <widget class="QIRichTextLabel" name="m_pPage1Text1"/>
    </item>
    <item>
+    <widget class="QIRichTextLabel" name="m_pPage1Text2"/>
+   </item>
+   <item>
     <spacer name="m_pSpacer">
      <property name="orientation" >
       <enum>Qt::Vertical</enum>

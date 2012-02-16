@@ -183,6 +183,20 @@ UINewVMWzdPage1::UINewVMWzdPage1()
 {
     /* Decorate page */
     Ui::UINewVMWzdPage1::setupUi(this);
+
+    /* Register 'message-box-warning-icon' image in m_pPage1Text1 as 'image': */
+    m_pPage1Text1->registerImage(UIIconPool::defaultIcon(UIIconPool::MessageBoxWarningIcon).pixmap(256, 256).toImage(), "image");
+
+    /* Prepare table template: */
+    QString strTable("<table cellspacing=0 cellpadding=0>%1</table>");
+    QString strTableRow("<tr>%1</tr>");
+    QString strTableData("<td>%1</td>");
+    QString strTableDataCentered("<td valign=middle>%1</td>");
+    QString strImage("<img src=\"image\"/>");
+    QString strSpacing("&nbsp;&nbsp;&nbsp;");
+    QString strTableDataImage(strTableDataCentered.arg(strImage));
+    QString strTableDataSpacing(strTableData.arg(strSpacing));
+    m_strTableTemplate = strTable.arg(strTableRow.arg(strTableDataImage + strTableDataSpacing + strTableData));
 }
 
 void UINewVMWzdPage1::retranslateUi()
@@ -193,7 +207,13 @@ void UINewVMWzdPage1::retranslateUi()
     /* Wizard page 1 title */
     setTitle(tr("Welcome to the New Virtual Machine Wizard!"));
 
-    m_pPage1Text1->setText(tr("<p>This wizard will guide you through the steps that are necessary "
+    m_pPage1Text1->setText(m_strTableTemplate.arg("<b>STOP!</b> Before continuing, please understand what you are doing. "
+                                                  "Computer system virtualization involves complex concepts, "
+                                                  "which no user interface can hide. Please make sure that you have read "
+                                                  "the first section of the user manual before continuing "
+                                                  "or seeking out online assistance!"));
+
+    m_pPage1Text2->setText(tr("<p>This wizard will guide you through the steps that are necessary "
                               "to create a new virtual machine for VirtualBox.</p><p>%1</p>")
                            .arg(standardHelpText()));
 }
