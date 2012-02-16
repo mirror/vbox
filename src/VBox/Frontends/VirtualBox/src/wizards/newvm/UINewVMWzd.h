@@ -60,6 +60,10 @@ protected:
     void retranslateUi();
 
     void initializePage();
+
+private:
+
+    QString m_strTableTemplate;
 };
 
 class UINewVMWzdPage2 : public QIWizardPage, public Ui::UINewVMWzdPage2
