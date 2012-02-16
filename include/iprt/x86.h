@@ -2085,6 +2085,10 @@ typedef const X86FXSTATE *PCX86FXSTATE;
 #define X86_FSW_SF          RT_BIT(6)
 /** Error summary status. */
 #define X86_FSW_ES          RT_BIT(7)
+/** Mask of exceptions flags, excluding the summary bit. */
+#define X86_FSW_XCPT_MASK   UINT16_C(0x007f)
+/** Mask of exceptions flags, including the summary bit. */
+#define X86_FSW_XCPT_ES_MASK UINT16_C(0x00ff)
 /** Condition code 0. */
 #define X86_FSW_C0          RT_BIT(8)
 /** Condition code 1. */
@@ -2101,6 +2105,8 @@ typedef const X86FXSTATE *PCX86FXSTATE;
 #define X86_FSW_TOP_GET(a_uFsw) (((a_uFsw) >> X86_FSW_TOP_SHIFT) & X86_FSW_TOP_SMASK)
 /** Condition code 3. */
 #define X86_FSW_C3          RT_BIT(14)
+/** Mask of exceptions flags, including the summary bit. */
+#define X86_FSW_C_MASK      UINT16_C(0x4700)
 /** FPU busy. */
 #define X86_FSW_B           RT_BIT(15)
 /** @} */
