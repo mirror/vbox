@@ -3593,6 +3593,52 @@ static void iemFpuStoreResultWithMemOp(PIEMCPU pIemCpu, PIEMFPURESULT pResult, u
 }
 
 
+static void iemFpuStackUnderflowOnly(PIEMCPU pIemCpu, uint8_t iStReg, PCPUMCTX pCtx)
+{
+    Assert(iStReg < 8);
+    uint16_t iReg = (X86_FSW_TOP_GET(pCtx->fpu.FSW) + iStReg) & X86_FSW_TOP_SMASK;
+    if (pCtx->fpu.FCW & X86_FCW_IM)
+    {
+        /* Masked underflow. */
+        pCtx->fpu.FSW &= X86_FSW_C0 | X86_FSW_C2 | X86_FSW_C3;
+        pCtx->fpu.FSW |= X86_FSW_C1 | X86_FSW_IE | X86_FSW_SF;
+        pCtx->fpu.FTW |= RT_BIT(iReg);
+        iemFpuStoreQNan(&pCtx->fpu.aRegs[iStReg].r80);
+    }
+    else
+    {
+        pCtx->fpu.FSW &= X86_FSW_C0 | X86_FSW_C2 | X86_FSW_C3;
+        pCtx->fpu.FSW |= X86_FSW_C1 | X86_FSW_IE | X86_FSW_SF | X86_FSW_ES | X86_FSW_B;
+    }
+}
+
+static void iemFpuStackUnderflow(PIEMCPU pIemCpu, uint8_t iStReg)
+{
+    PCPUMCTX pCtx = pIemCpu->CTX_SUFF(pCtx);
+    iemFpuUpdateOpcodeAndIP(pIemCpu, pCtx);
+    iemFpuStackUnderflowOnly(pIemCpu, iStReg, pCtx);
+}
+
+static void iemFpuStackUnderflowWithMemOp(PIEMCPU pIemCpu, uint8_t iStReg, uint8_t iEffSeg, RTGCPTR GCPtrEff)
+{
+    PCPUMCTX pCtx = pIemCpu->CTX_SUFF(pCtx);
+    iemFpuUpdateDP(pIemCpu, pIemCpu->CTX_SUFF(pCtx), iEffSeg, GCPtrEff);
+    iemFpuUpdateOpcodeAndIP(pIemCpu, pCtx);
+    iemFpuStackUnderflowOnly(pIemCpu, iStReg, pCtx);
+}
+
+static int iemFpuStRegNonEmptyRef(PIEMCPU pIemCpu, uint8_t iStReg, PCRTFLOAT80U *ppRef)
+{
+    PCPUMCTX pCtx = pIemCpu->CTX_SUFF(pCtx);
+    uint16_t iReg = (X86_FSW_TOP_GET(pCtx->fpu.FSW) + iStReg) & X86_FSW_TOP_SMASK;
+    if (pCtx->fpu.FTW & RT_BIT(iReg))
+    {
+        *ppRef = &pCtx->fpu.aRegs[iStReg].r80;
+        return VINF_SUCCESS;
+    }
+    return VERR_NOT_FOUND;
+}
+
 /** @}  */
 
 
@@ -5379,7 +5425,6 @@ static VBOXSTRICTRC iemMemMarkSelDescAccessed(PIEMCPU pIemCpu, uint16_t uSel)
 #define IEM_MC_REF_GREG_U32(a_pu32Dst, a_iGReg)         (a_pu32Dst) = (uint32_t *)iemGRegRef(pIemCpu, (a_iGReg))
 #define IEM_MC_REF_GREG_U64(a_pu64Dst, a_iGReg)         (a_pu64Dst) = (uint64_t *)iemGRegRef(pIemCpu, (a_iGReg))
 #define IEM_MC_REF_EFLAGS(a_pEFlags)                    (a_pEFlags) = &(pIemCpu)->CTX_SUFF(pCtx)->eflags.u
-#define IEM_MC_REF_FPUREG_R80(a_pr80Dst, a_iSt)         (a_pr80Dst) = &(pIemCpu)->CTX_SUFF(pCtx)->fpu.aRegs[a_iSt].r80
 
 #define IEM_MC_ADD_GREG_U8(a_iGReg, a_u8Value)          *(uint8_t  *)iemGRegRef(pIemCpu, (a_iGReg)) += (a_u8Value)
 #define IEM_MC_ADD_GREG_U16(a_iGReg, a_u16Value)        *(uint16_t *)iemGRegRef(pIemCpu, (a_iGReg)) += (a_u16Value)
@@ -5767,6 +5812,13 @@ static VBOXSTRICTRC iemMemMarkSelDescAccessed(PIEMCPU pIemCpu, uint16_t uSel)
 #define IEM_MC_STORE_FPU_RESULT_MEM_OP(a_FpuData, a_iStReg, a_iEffSeg, a_GCPtrEff) \
     iemFpuStoreResultWithMemOp(pIemCpu, &a_FpuData, a_iStReg, a_iEffSeg, a_GCPtrEff)
 
+/** Raises a FPU stack underflow. Sets FPUIP, FPUCS and FOP. */
+#define IEM_MC_FPU_STACK_UNDERFLOW(a_iSt) \
+    iemFpuStackUnderflow(pIemCpu, a_iSt)
+/** Raises a FPU stack underflow. Sets FPUIP, FPUCS, FOP, FPUDP and FPUDS. */
+#define IEM_MC_FPU_STACK_UNDERFLOW_MEM_OP(a_iSt, a_iEffSeg, a_GCPtrEff) \
+    iemFpuStackUnderflowWithMemOp(pIemCpu, a_iSt, a_iEffSeg, a_GCPtrEff)
+
 
 #define IEM_MC_IF_EFL_BIT_SET(a_fBit)                   if (pIemCpu->CTX_SUFF(pCtx)->eflags.u & (a_fBit)) {
 #define IEM_MC_IF_EFL_BIT_NOT_SET(a_fBit)               if (!(pIemCpu->CTX_SUFF(pCtx)->eflags.u & (a_fBit))) {
@@ -5809,6 +5861,9 @@ static VBOXSTRICTRC iemMemMarkSelDescAccessed(PIEMCPU pIemCpu, uint16_t uSel)
             && !(pIemCpu->CTX_SUFF(pCtx)->eflags.u & a_fBit)) {
 #define IEM_MC_IF_LOCAL_IS_Z(a_Local)                   if ((a_Local) == 0) {
 #define IEM_MC_IF_GREG_BIT_SET(a_iGReg, a_iBitNo)       if (*(uint64_t *)iemGRegRef(pIemCpu, (a_iGReg)) & RT_BIT_64(a_iBitNo)) {
+#define IEM_MC_IF_FPUREG_NOT_EMPTY_REF_R80(a_pr80Dst, a_iSt) \
+    if (iemFpuStRegNonEmptyRef(pIemCpu, (a_iSt), &(a_pr80Dst)) == VINF_SUCCESS) {
+
 #define IEM_MC_ELSE()                                   } else {
 #define IEM_MC_ENDIF()                                  } do {} while (0)
 
