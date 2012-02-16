@@ -410,11 +410,12 @@ extern void                     VBoxServiceControlThreadRequestFree(PVBOXSERVICE
 #endif /* VBOX_WITH_GUEST_CONTROL */
 
 #ifdef VBOXSERVICE_MANAGEMENT
-extern uint32_t     VBoxServiceBalloonQueryPages(uint32_t cbPage);
+extern uint32_t                 VBoxServiceBalloonQueryPages(uint32_t cbPage);
 #endif
 #if defined(VBOX_WITH_PAGE_SHARING) && defined(RT_OS_WINDOWS)
-extern RTEXITCODE   VBoxServicePageSharingInitFork(void);
+extern RTEXITCODE               VBoxServicePageSharingInitFork(void);
 #endif
+extern int                      VBoxServiceVMInfoSignal(void);
 
 RT_C_DECLS_END
 
