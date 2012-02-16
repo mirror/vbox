@@ -3,7 +3,7 @@
 ; IEM - Instruction Implementation in Assembly.
 ;
 
-; Copyright (C) 2011 Oracle Corporation
+; Copyright (C) 2011-2012 Oracle Corporation
 ;
 ; This file is part of VirtualBox Open Source Edition (OSE), as
 ; available from http://www.virtualbox.org. This file is free software;
@@ -1391,4 +1391,30 @@ BEGINPROC_FASTCALL iemAImpl_fpu_fdiv_r80_by_r64, 16
         add     xSP, 20h
         EPILOGUE_4_ARGS 8
 ENDPROC iemAImpl_fpu_fdiv_r80_by_r64
+
+
+;;
+; FMUL with 64-bit floating point value.
+;
+; @param    A0      FPU context (fxsave).
+; @param    A1      Pointer to a IEMFPURESULT for the output.
+; @param    A2      Pointer to the 80-bit factor.
+; @param    A3      Pointer to the 64-bit factor.
+;
+BEGINPROC_FASTCALL iemAImpl_fpu_fmul_r80_by_r64, 16
+        PROLOGUE_4_ARGS
+        sub     xSP, 20h
+
+        fninit
+        fld     tword [A2]
+        FPU_LD_FXSTATE_FCW_AND_SAFE_FSW A0
+        fmul    qword [A3]
+
+        fnstsw  word  [A1 + IEMFPURESULT.FSW]
+        fnclex
+        fstp    tword [A1 + IEMFPURESULT.r80Result]
+
+        add     xSP, 20h
+        EPILOGUE_4_ARGS 8
+ENDPROC iemAImpl_fpu_fmul_r80_by_r64
 

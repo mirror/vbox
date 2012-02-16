@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2011 Oracle Corporation
+ * Copyright (C) 2011-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -10809,7 +10809,34 @@ FNIEMOP_STUB_1(iemOp_fdiv_stN_st0,   uint8_t, bRm);
 FNIEMOP_STUB_1(iemOp_fadd_m64r,  uint8_t, bRm);
 
 /** Opcode 0xdc !11/1. */
-FNIEMOP_STUB_1(iemOp_fmul_m64r,  uint8_t, bRm);
+FNIEMOP_DEF_1(iemOp_fmul_m64r,  uint8_t, bRm)
+{
+    IEMOP_MNEMONIC("fdiv m64r");
+    IEMOP_HLP_NO_LOCK_PREFIX();
+
+    IEM_MC_BEGIN(3, 3);
+    IEM_MC_LOCAL(RTGCPTR,               GCPtrEffSrc);
+    IEM_MC_LOCAL(IEMFPURESULT,          FpuRes);
+    IEM_MC_LOCAL(RTFLOAT64U,            r64Factor2);
+    IEM_MC_ARG_LOCAL_REF(PIEMFPURESULT, pFpuRes,        FpuRes,     0);
+    IEM_MC_ARG(PCRTFLOAT80U,            pr80Factor1,                1);
+    IEM_MC_ARG_LOCAL_REF(PRTFLOAT64U,   pr64Factor2,    r64Factor2, 2);
+
+    IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm);
+    IEM_MC_MAYBE_RAISE_DEVICE_NOT_AVAILABLE();
+    IEM_MC_MAYBE_RAISE_FPU_XCPT();
+    IEM_MC_FETCH_MEM_R64(r64Factor2, pIemCpu->iEffSeg, GCPtrEffSrc);
+    IEM_MC_IF_FPUREG_NOT_EMPTY_REF_R80(pr80Factor1, 0)
+        IEM_MC_CALL_FPU_AIMPL_3(iemAImpl_fpu_fmul_r80_by_r64, pFpuRes, pr80Factor1, pr64Factor2);
+        IEM_MC_STORE_FPU_RESULT_MEM_OP(FpuRes, 0, pIemCpu->iEffSeg, GCPtrEffSrc);
+    IEM_MC_ELSE()
+        IEM_MC_FPU_STACK_UNDERFLOW_MEM_OP(0, pIemCpu->iEffSeg, GCPtrEffSrc);
+    IEM_MC_ENDIF();
+    IEM_MC_ADVANCE_RIP();
+
+    IEM_MC_END();
+    return VINF_SUCCESS;
+}
 
 /** Opcode 0xdc !11/2. */
 FNIEMOP_STUB_1(iemOp_fcom_m64r,  uint8_t, bRm);
