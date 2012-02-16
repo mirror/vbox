@@ -171,7 +171,7 @@ private:
     /* Network-request prepare helper: */
     void prepareNetworkRequest(UINetworkRequest *pNetworkRequest);
     /* Network-request cleanup helper: */
-    void cleanupNetworkRequest(const QUuid &uuid);
+    void cleanupNetworkRequest(QUuid uuid);
     /* Network-requests cleanup helper: */
     void cleanupNetworkRequests();
 

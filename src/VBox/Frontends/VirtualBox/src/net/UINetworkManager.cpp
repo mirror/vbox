@@ -754,7 +754,7 @@ void UINetworkManager::prepareNetworkRequest(UINetworkRequest *pNetworkRequest)
 }
 
 /* Cleanup network-request: */
-void UINetworkManager::cleanupNetworkRequest(const QUuid &uuid)
+void UINetworkManager::cleanupNetworkRequest(QUuid uuid)
 {
     /* Cleanup network-request map: */
     delete m_requests[uuid];
