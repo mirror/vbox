@@ -3492,8 +3492,9 @@ static void iemFpuPushResult(PIEMCPU pIemCpu, PIEMFPURESULT pResult)
         if (!fXcpts)
         {
             /* No unmasked exceptions, just store the result. */
-            pCtx->fpu.FSW &= X86_FSW_TOP_MASK | X86_FSW_C0 | X86_FSW_C1 | X86_FSW_C2 | X86_FSW_C3;
-            pCtx->fpu.FSW |= (iNewTop << X86_FSW_TOP_SHIFT) | (pResult->FSW & ~(X86_FSW_TOP_MASK | X86_FSW_B | X86_FSW_ES));
+            pCtx->fpu.FSW &= ~(X86_FSW_TOP_MASK | X86_FSW_C0 | X86_FSW_C1 | X86_FSW_C2 | X86_FSW_C3);
+            pCtx->fpu.FSW |= pResult->FSW & ~(X86_FSW_TOP_MASK | X86_FSW_B | X86_FSW_ES);
+            pCtx->fpu.FSW |= iNewTop << X86_FSW_TOP_SHIFT;
             pCtx->fpu.FTW |= RT_BIT(iNewTop);
             pCtx->fpu.aRegs[7].r80 = pResult->r80Result;
         }
@@ -3506,7 +3507,7 @@ static void iemFpuPushResult(PIEMCPU pIemCpu, PIEMFPURESULT pResult)
     else if (pCtx->fpu.FCW & X86_FCW_IM)
     {
         /* Masked stack overflow. */
-        pCtx->fpu.FSW &= X86_FSW_TOP_MASK | X86_FSW_C0 | X86_FSW_C1 | X86_FSW_C2 | X86_FSW_C3;
+        pCtx->fpu.FSW &= ~(X86_FSW_TOP_MASK | X86_FSW_C0 | X86_FSW_C1 | X86_FSW_C2 | X86_FSW_C3);
         pCtx->fpu.FSW |= (iNewTop << X86_FSW_TOP_SHIFT) | X86_FSW_C1 | X86_FSW_IE | X86_FSW_SF;
         pCtx->fpu.FTW |= RT_BIT(iNewTop);
         iemFpuStoreQNan(&pCtx->fpu.aRegs[7].r80);
@@ -3514,7 +3515,7 @@ static void iemFpuPushResult(PIEMCPU pIemCpu, PIEMFPURESULT pResult)
     else
     {
         /* Stack overflow exception. */
-        pCtx->fpu.FSW &= X86_FSW_C0 | X86_FSW_C1 | X86_FSW_C2 | X86_FSW_C3;
+        pCtx->fpu.FSW &= ~(X86_FSW_C0 | X86_FSW_C1 | X86_FSW_C2 | X86_FSW_C3);
         pCtx->fpu.FSW |= X86_FSW_C1 | X86_FSW_IE | X86_FSW_SF | X86_FSW_ES | X86_FSW_B;
         return;
     }
@@ -3551,7 +3552,7 @@ static void iemFpuStoreResultOnly(PIEMCPU pIemCpu, PIEMFPURESULT pResult, uint8_
 {
     Assert(iStReg < 8);
     uint16_t  iReg = (X86_FSW_TOP_GET(pCtx->fpu.FSW) + iStReg) & X86_FSW_TOP_SMASK;
-    pCtx->fpu.FSW &= X86_FSW_C_MASK;
+    pCtx->fpu.FSW &= ~X86_FSW_C_MASK;
     pCtx->fpu.FSW |= pResult->FSW & ~X86_FSW_TOP_MASK;
     pCtx->fpu.FTW |= RT_BIT(iReg);
     pCtx->fpu.aRegs[iStReg].r80 = pResult->r80Result;
@@ -3600,26 +3601,28 @@ static void iemFpuStackUnderflowOnly(PIEMCPU pIemCpu, uint8_t iStReg, PCPUMCTX p
     if (pCtx->fpu.FCW & X86_FCW_IM)
     {
         /* Masked underflow. */
-        pCtx->fpu.FSW &= X86_FSW_C0 | X86_FSW_C2 | X86_FSW_C3;
+        pCtx->fpu.FSW &= ~(X86_FSW_C0 | X86_FSW_C2 | X86_FSW_C3);
         pCtx->fpu.FSW |= X86_FSW_C1 | X86_FSW_IE | X86_FSW_SF;
         pCtx->fpu.FTW |= RT_BIT(iReg);
         iemFpuStoreQNan(&pCtx->fpu.aRegs[iStReg].r80);
     }
     else
     {
-        pCtx->fpu.FSW &= X86_FSW_C0 | X86_FSW_C2 | X86_FSW_C3;
+        pCtx->fpu.FSW &= ~(X86_FSW_C0 | X86_FSW_C2 | X86_FSW_C3);
         pCtx->fpu.FSW |= X86_FSW_C1 | X86_FSW_IE | X86_FSW_SF | X86_FSW_ES | X86_FSW_B;
     }
 }
 
-static void iemFpuStackUnderflow(PIEMCPU pIemCpu, uint8_t iStReg)
+DECL_NO_INLINE(static, void) iemFpuStackUnderflow(PIEMCPU pIemCpu, uint8_t iStReg)
 {
     PCPUMCTX pCtx = pIemCpu->CTX_SUFF(pCtx);
     iemFpuUpdateOpcodeAndIP(pIemCpu, pCtx);
     iemFpuStackUnderflowOnly(pIemCpu, iStReg, pCtx);
 }
 
-static void iemFpuStackUnderflowWithMemOp(PIEMCPU pIemCpu, uint8_t iStReg, uint8_t iEffSeg, RTGCPTR GCPtrEff)
+
+DECL_NO_INLINE(static, void)
+iemFpuStackUnderflowWithMemOp(PIEMCPU pIemCpu, uint8_t iStReg, uint8_t iEffSeg, RTGCPTR GCPtrEff)
 {
     PCPUMCTX pCtx = pIemCpu->CTX_SUFF(pCtx);
     iemFpuUpdateDP(pIemCpu, pIemCpu->CTX_SUFF(pCtx), iEffSeg, GCPtrEff);
@@ -6751,6 +6754,18 @@ static void iemExecVerificationModeCheck(PIEMCPU pIemCpu)
             CHECK_FIELD(a_Sel##Hid.u32Limit); \
         } while (0)
 
+#if 1 /* The recompiler doesn't update these the intel way. */
+        pOrgCtx->fpu.FOP        = pDebugCtx->fpu.FOP;
+        pOrgCtx->fpu.FPUIP      = pDebugCtx->fpu.FPUIP;
+        pOrgCtx->fpu.CS         = pDebugCtx->fpu.CS;
+        pOrgCtx->fpu.Rsrvd1     = pDebugCtx->fpu.Rsrvd1;
+        pOrgCtx->fpu.FPUDP      = pDebugCtx->fpu.FPUDP;
+        pOrgCtx->fpu.DS         = pDebugCtx->fpu.DS;
+        pOrgCtx->fpu.Rsrvd2     = pDebugCtx->fpu.Rsrvd2;
+        pOrgCtx->fpu.MXCSR_MASK = pDebugCtx->fpu.MXCSR_MASK; /* only for the time being - old snapshots here. */
+        if ((pOrgCtx->fpu.FSW & X86_FSW_TOP_MASK) == (pDebugCtx->fpu.FSW & X86_FSW_TOP_MASK))
+            pOrgCtx->fpu.FSW = pDebugCtx->fpu.FSW;
+#endif
         if (memcmp(&pOrgCtx->fpu, &pDebugCtx->fpu, sizeof(pDebugCtx->fpu)))
         {
             RTAssertMsg2Weak("  the FPU state differs\n");

@@ -1287,16 +1287,31 @@ ENDPROC iemAImpl_bswap_u64
 %endmacro
 
 ;;
-; Initialize the FPU for x87 operation, loading the guest's status word.
+; Initialize the FPU for the actual instruction being emulated, this means
+; loading parts of the guest's control word and status word.
 ;
+; @uses     24 bytes of stack.
 ; @param    1       Expression giving the address of the FXSTATE of the guest.
-%macro FPU_INIT 1
-        fninit
+;
+%macro FPU_LD_FXSTATE_FCW_AND_SAFE_FSW 1
+        fnstenv [xSP]
+
+        ; FCW - for exception, precision and rounding control.
         movzx   T0, word [%1 + X86FXSTATE.FCW]
         and     T0, X86_FCW_MASK_ALL | X86_FCW_PC_MASK | X86_FCW_RC_MASK
-        mov     [xSP], T0
-        fldcw   [xSP]
+        mov     [xSP + X86FSTENV32P.FCW], T0_16
+
+        ; FSW - for undefined C0, C1, C2, and C3.
+        movzx   T1, word [%1 + X86FXSTATE.FSW]
+        and     T1, X86_FSW_C_MASK
+        movzx   T0, word [xSP + X86FSTENV32P.FSW]
+        and     T0, X86_FSW_TOP_MASK
+        or      T0, T1
+        mov     [xSP + X86FSTENV32P.FSW], T0_16
+
+        fldenv  [xSP]
 %endmacro
+
 
 ;;
 ; Need to move this as well somewhere better?
@@ -1364,7 +1379,9 @@ BEGINPROC_FASTCALL iemAImpl_fpu_fdiv_r80_by_r64, 16
         PROLOGUE_4_ARGS
         sub     xSP, 20h
 
-        FPU_INIT A0
+        fninit
+        fld     tword [A2]
+        FPU_LD_FXSTATE_FCW_AND_SAFE_FSW A0
         fdiv    qword [A3]
 
         fnstsw  word  [A1 + IEMFPURESULT.FSW]
