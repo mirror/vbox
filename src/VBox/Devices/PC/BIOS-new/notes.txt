@@ -40,6 +40,8 @@
 - Windows 98 SE boot CD uses 32-bit registers in real mode and will fail in
   mysterious ways if BIOS trashes high bits of EAX (and likely others).
 
+- PC DOS 6.x/7.x QCONFIG is a rare user of INT 16h fn 0Ah (read keyboard ID).
+
 
  Notes on BIOS implementation
  ----------------------------
