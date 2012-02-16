@@ -21,7 +21,7 @@
 
 void WebLog(const char *pszFormat, ...);
 
-#define WEBDEBUG(a) if (g_fVerbose) { WebLog a; }
+#define WEBDEBUG(a) do { if (g_fVerbose) { WebLog a; } } while (0)
 
 #ifdef DEBUG
 #define LOG_GROUP LOG_GROUP_WEBSERVICE
