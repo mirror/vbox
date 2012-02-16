@@ -3,7 +3,7 @@
  <comment>
  VBox frontends: Qt4 GUI ("VirtualBox"):
 
-     Copyright (C) 2009 Oracle Corporation
+     Copyright (C) 2009-2012 Oracle Corporation
 
      This file is part of VirtualBox Open Source Edition (OSE), as
      available from http://www.virtualbox.org. This file is free software;
@@ -15,12 +15,6 @@
  </comment>
  <class>UINewVMWzdPage2</class>
  <widget class="QWidget" name="UINewVMWzdPage2">
-  <property name="sizePolicy">
-   <sizepolicy hsizetype="Minimum" vsizetype="Minimum">
-    <horstretch>0</horstretch>
-    <verstretch>0</verstretch>
-   </sizepolicy>
-  </property>
   <property name="geometry">
    <rect>
     <x>0</x>
@@ -29,28 +23,22 @@
     <height>400</height>
    </rect>
   </property>
-  <property name="sizePolicy">
-   <sizepolicy hsizetype="Minimum" vsizetype="Minimum">
-    <horstretch>0</horstretch>
-    <verstretch>0</verstretch>
-   </sizepolicy>
-  </property>
   <layout class="QVBoxLayout" name="m_pLayout1">
-   <property name="bottomMargin" >
-    <number>0</number>
-   </property>
    <item>
-    <widget class="QILabel" name="m_pPage2Text1">
+    <widget class="QIRichTextLabel" name="m_pPage2Text1">
      <property name="text">
       <string>&lt;p&gt;Enter a name for the new virtual machine and select the type of the guest operating system you plan to install onto the virtual machine.&lt;/p&gt;&lt;p&gt;The name of the virtual machine usually indicates its software and hardware configuration. It will be used by all VirtualBox components to identify your virtual machine.&lt;/p&gt;</string>
-     </property>
-     <property name="wordWrap">
-      <bool>true</bool>
      </property>
     </widget>
    </item>
    <item>
     <widget class="QGroupBox" name="m_pNameEditorCnt">
+     <property name="sizePolicy">
+      <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
+       <horstretch>0</horstretch>
+       <verstretch>0</verstretch>
+      </sizepolicy>
+     </property>
      <property name="title">
       <string>N&amp;ame</string>
      </property>
@@ -63,6 +51,12 @@
    </item>
    <item>
     <widget class="QGroupBox" name="m_pTypeSelectorCnt">
+     <property name="sizePolicy">
+      <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
+       <horstretch>0</horstretch>
+       <verstretch>0</verstretch>
+      </sizepolicy>
+     </property>
      <property name="title">
       <string>OS &amp;Type</string>
      </property>
@@ -74,8 +68,11 @@
     </widget>
    </item>
    <item>
-    <spacer name="m_pSpacer1">
-     <property name="sizeHint" stdset="0">
+    <spacer name="m_pSpacer">
+     <property name="orientation" >
+      <enum>Qt::Vertical</enum>
+     </property>
+     <property name="sizeHint">
       <size>
        <width>0</width>
        <height>0</height>
@@ -87,9 +84,9 @@
  </widget>
  <customwidgets>
   <customwidget>
-   <class>QILabel</class>
-   <extends>QLabel</extends>
-   <header>QILabel.h</header>
+   <class>QIRichTextLabel</class>
+   <extends>QWidget</extends>
+   <header>QIRichTextLabel.h</header>
   </customwidget>
   <customwidget>
    <class>VBoxOSTypeSelectorWidget</class>

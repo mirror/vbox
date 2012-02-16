@@ -3,7 +3,7 @@
  <comment>
  VBox frontends: Qt4 GUI (&quot;VirtualBox&quot;):
 
-     Copyright (C) 2009-2010 Oracle Corporation
+     Copyright (C) 2009-2012 Oracle Corporation
 
      This file is part of VirtualBox Open Source Edition (OSE), as
      available from http://www.virtualbox.org. This file is free software;
@@ -23,19 +23,9 @@
     <height>400</height>
    </rect>
   </property>
-  <property name="sizePolicy">
-   <sizepolicy hsizetype="Minimum" vsizetype="Minimum">
-    <horstretch>0</horstretch>
-    <verstretch>0</verstretch>
-   </sizepolicy>
-  </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>
-    <widget class="QILabel" name="m_pPage4Text1">
-     <property name="wordWrap">
-      <bool>true</bool>
-     </property>
-    </widget>
+    <widget class="QIRichTextLabel" name="m_pPage4Text1"/>
    </item>
    <item>
     <layout class="QGridLayout" name="m_pLayout2">
@@ -146,14 +136,14 @@
     </widget>
    </item>
    <item>
-    <spacer name="m_pSpacer1">
+    <spacer name="m_pSpacer">
      <property name="orientation">
       <enum>Qt::Vertical</enum>
      </property>
-     <property name="sizeHint" stdset="0">
+     <property name="sizeHint">
       <size>
-       <width>579</width>
-       <height>144</height>
+       <width>0</width>
+       <height>0</height>
       </size>
      </property>
     </spacer>
@@ -162,9 +152,9 @@
  </widget>
  <customwidgets>
   <customwidget>
-   <class>QILabel</class>
-   <extends>QLabel</extends>
-   <header>QILabel.h</header>
+   <class>QIRichTextLabel</class>
+   <extends>QWidget</extends>
+   <header>QIRichTextLabel.h</header>
   </customwidget>
   <customwidget>
    <class>VBoxEmptyFileSelector</class>

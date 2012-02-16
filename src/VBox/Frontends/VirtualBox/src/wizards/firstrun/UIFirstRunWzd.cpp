@@ -6,7 +6,7 @@
  */
 
 /*
- * Copyright (C) 2008-2011 Oracle Corporation
+ * Copyright (C) 2008-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -48,16 +48,16 @@ UIFirstRunWzd::UIFirstRunWzd(QWidget *pParent, const CMachine &machine) : QIWiza
     /* Initial translate all pages */
     retranslateAllPages();
 
-    /* Resize to 'golden ratio' */
-    resizeToGoldenRatio();
-
-#ifdef Q_WS_MAC
-    /* Assign background image */
-    assignBackground(":/vmw_first_run_bg.png");
-#else /* Q_WS_MAC */
+#ifndef Q_WS_MAC
     /* Assign watermark */
     assignWatermark(":/vmw_first_run.png");
+#else /* Q_WS_MAC */
+    /* Assign background image */
+    assignBackground(":/vmw_first_run_bg.png");
 #endif /* Q_WS_MAC */
+
+    /* Resize to 'golden ratio' */
+    resizeToGoldenRatio();
 }
 
 bool UIFirstRunWzd::isBootHardDiskAttached(const CMachine &machine)
@@ -280,7 +280,6 @@ void UIFirstRunWzdPage3::retranslateUi()
     .arg(tr("Source", "summary"), source)
     ;
 
-    m_pSummaryText->setMinimumTextWidth(wizard()->minimumContentWidth());
     m_pSummaryText->setText("<table cellspacing=0 cellpadding=0>" + summary + "</table>");
 }
 

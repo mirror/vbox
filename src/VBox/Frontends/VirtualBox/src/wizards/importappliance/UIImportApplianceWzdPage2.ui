@@ -3,7 +3,7 @@
  <comment>
  VBox frontends: Qt4 GUI ("VirtualBox"):
 
-     Copyright (C) 2009-2010 Oracle Corporation
+     Copyright (C) 2009-2012 Oracle Corporation
 
      This file is part of VirtualBox Open Source Edition (OSE), as
      available from http://www.virtualbox.org. This file is free software;
@@ -23,23 +23,11 @@
     <height>400</height>
    </rect>
   </property>
-  <property name="sizePolicy">
-   <sizepolicy hsizetype="Minimum" vsizetype="Minimum">
-    <horstretch>0</horstretch>
-    <verstretch>0</verstretch>
-   </sizepolicy>
-  </property>
   <layout class="QVBoxLayout" name="m_pLayout1">
-   <property name="bottomMargin">
-    <number>0</number>
-   </property>
    <item>
-    <widget class="QILabel" name="m_pPage2Text1">
+    <widget class="QIRichTextLabel" name="m_pPage2Text1">
      <property name="text">
       <string>These are the virtual machines contained in the appliance and the suggested settings of the imported VirtualBox machines. You can change many of the properties shown by double-clicking on the items and disable others using the check boxes below.</string>
-     </property>
-     <property name="wordWrap">
-      <bool>true</bool>
      </property>
     </widget>
    </item>
@@ -57,9 +45,9 @@
  </widget>
  <customwidgets>
   <customwidget>
-   <class>QILabel</class>
-   <extends>QLabel</extends>
-   <header>QILabel.h</header>
+   <class>QIRichTextLabel</class>
+   <extends>QWidget</extends>
+   <header>QIRichTextLabel.h</header>
   </customwidget>
   <customwidget>
    <class>UIApplianceImportEditorWidget</class>

@@ -6,7 +6,7 @@
  */
 
 /*
- * Copyright (C) 2006-2011 Oracle Corporation
+ * Copyright (C) 2006-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -208,16 +208,16 @@ UINewHDWizard::UINewHDWizard(QWidget *pParent, const QString &strDefaultName, co
     /* Translate wizard pages: */
     retranslateAllPages();
 
-    /* Resize wizard to 'golden ratio': */
-    resizeToGoldenRatio();
-
-#ifdef Q_WS_MAC
-    /* Assign background image: */
-    assignBackground(":/vmw_new_harddisk_bg.png");
-#else /* Q_WS_MAC */
+#ifndef Q_WS_MAC
     /* Assign watermark: */
     assignWatermark(":/vmw_new_harddisk.png");
+#else /* Q_WS_MAC */
+    /* Assign background image: */
+    assignBackground(":/vmw_new_harddisk_bg.png");
 #endif /* Q_WS_MAC */
+
+    /* Resize wizard to 'golden ratio': */
+    resizeToGoldenRatio();
 }
 
 CMedium UINewHDWizard::hardDisk() const
@@ -992,7 +992,6 @@ void UINewHDWizardPageSummary::retranslateUi()
     .arg(UINewHDWizard::tr("Location", "summary"), strMediumPath)
     .arg(UINewHDWizard::tr("Size", "summary"), sizeFormatted, sizeUnformatted);
 
-    m_pSummaryText->setMinimumTextWidth(wizard()->minimumContentWidth());
     m_pSummaryText->setText("<table cellspacing=0 cellpadding=0>" + strSummary + "</table>");
 }
 

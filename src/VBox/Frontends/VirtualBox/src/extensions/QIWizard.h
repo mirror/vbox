@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2009-2010 Oracle Corporation
+ * Copyright (C) 2009-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -19,65 +19,76 @@
 #ifndef __QIWizard_h__
 #define __QIWizard_h__
 
-/* Global includes */
+/* Global includes: */
 #include <QWizard>
 
-/* Local includes */
+/* Local includes: */
 #include "QIWithRetranslateUI.h"
 
-/* Global forwards */
-class QTextEdit;
+/* Forward declarations: */
+class QIWizardPage;
 
+/* QWizard class reimplementation with extended funtionality. */
 class QIWizard : public QIWithRetranslateUI<QWizard>
 {
     Q_OBJECT;
 
 public:
 
+    /* Constructor: */
     QIWizard(QWidget *pParent);
-
-    int minimumContentWidth() const { return m_iMinimumContentWidth; }
 
 protected:
 
-    void resizeToGoldenRatio();
-    void assignWatermark(const QString &strWaterMark);
-    void assignBackground(const QString &strBg);
+    /* Page related methods: */
+    int addPage(QIWizardPage *pPage);
+    void setPage(int iId, QIWizardPage *pPage);
 
+    /* Translation stuff: */
     void retranslateAllPages();
+
+    /* Adjusting stuff: */
+    void resizeToGoldenRatio();
+
+    /* Design stuff: */
+#ifndef Q_WS_MAC
+    void assignWatermark(const QString &strWaterMark);
+#else
+    void assignBackground(const QString &strBackground);
+#endif
 
 private:
 
+    /* Helpers: */
+    void configurePage(QIWizardPage *pPage);
     void resizeAccordingLabelWidth(int iLabelWidth);
-
-    int m_iMinimumContentWidth;
+#ifndef Q_WS_MAC
+    int proposedWatermarkHeight();
+    void assignWatermarkHelper();
+    QString m_strWatermarkName;
+#endif /* !Q_WS_MAC */
 };
 
+/* QWizardPage class reimplementation with extended funtionality. */
 class QIWizardPage : public QIWithRetranslateUI<QWizardPage>
 {
     Q_OBJECT;
 
-    friend class QIWizard;
-
 public:
 
+    /* Constructor: */
     QIWizardPage();
 
-    QSize minimumSizeHint() const;
-    void setMinimumSizeHint(const QSize &minimumSizeHint);
+    /* Translation stuff: */
+    void retranslate() { retranslateUi(); }
 
 protected:
 
+    /* Helpers: */
+    QIWizard* wizard() const;
     QString standardHelpText() const;
-
     void startProcessing();
     void endProcessing();
-
-    QIWizard* wizard() const;
-
-private:
-
-    QSize m_MinimumSizeHint;
 };
 
 #endif // __QIWizard_h__

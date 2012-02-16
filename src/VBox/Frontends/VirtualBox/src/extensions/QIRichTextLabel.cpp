@@ -27,9 +27,13 @@
 QIRichTextLabel::QIRichTextLabel(QWidget *pParent)
     : QWidget(pParent)
     , m_pTextEdit(new QTextEdit(this))
+    , m_iMinimumTextWidth(0)
 {
+    /* Setup self: */
+    setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Fixed);
     /* Setup text-edit: */
     m_pTextEdit->setReadOnly(true);
+    m_pTextEdit->setFocusPolicy(Qt::NoFocus);
     m_pTextEdit->setFrameShape(QFrame::NoFrame);
     m_pTextEdit->viewport()->setAutoFillBackground(false);
     m_pTextEdit->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
@@ -40,32 +44,45 @@ QIRichTextLabel::QIRichTextLabel(QWidget *pParent)
     pMainLayout->addWidget(m_pTextEdit);
 }
 
+/* Text getter: */
+QString QIRichTextLabel::text() const
+{
+    return m_pTextEdit->toHtml();
+}
+
 /* Minimum text-width setter: */
 void QIRichTextLabel::setMinimumTextWidth(int iMinimumTextWidth)
 {
+    /* Remember minimum text width: */
+    m_iMinimumTextWidth = iMinimumTextWidth;
+
     /* Get corresponding QTextDocument: */
     QTextDocument *pTextDocument = m_pTextEdit->document();
     /* Bug in QTextDocument (?) : setTextWidth doesn't work from the first time. */
-    for (int iTry = 0; pTextDocument->textWidth() != iMinimumTextWidth && iTry < 3; ++iTry)
-        pTextDocument->setTextWidth(iMinimumTextWidth);
+    for (int iTry = 0; pTextDocument->textWidth() != m_iMinimumTextWidth && iTry < 3; ++iTry)
+        pTextDocument->setTextWidth(m_iMinimumTextWidth);
+    /* Get corresponding QTextDocument size: */
+    QSize size = pTextDocument->size().toSize();
+
+    /* Resize to content size: */
+    m_pTextEdit->setMinimumSize(size);
+    layout()->activate();
 }
 
 /* Text setter: */
 void QIRichTextLabel::setText(const QString &strText)
 {
     /* Set text: */
-    m_pTextEdit->setText(strText);
+    m_pTextEdit->setHtml(strText);
+
     /* Get corresponding QTextDocument: */
     QTextDocument *pTextDocument = m_pTextEdit->document();
+    /* Adjust text-edit size: */
+    pTextDocument->adjustSize();
     /* Get corresponding QTextDocument size: */
     QSize size = pTextDocument->size().toSize();
-    /* Check if current size is valid, otherwise adjust it: */
-    if (!size.isValid())
-    {
-        pTextDocument->adjustSize();
-        size = pTextDocument->size().toSize();
-    }
-    /* Resize to content size: */
-    m_pTextEdit->setMinimumSize(size);
+
+    /* Set minimum text width to corresponding value: */
+    setMinimumTextWidth(m_iMinimumTextWidth == 0 ? size.width() : m_iMinimumTextWidth);
 }
 

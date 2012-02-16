@@ -3,7 +3,7 @@
  <comment>
  VBox frontends: Qt4 GUI (&quot;VirtualBox&quot;):
 
-     Copyright (C) 2011 Oracle Corporation
+     Copyright (C) 2011-2012 Oracle Corporation
 
      This file is part of VirtualBox Open Source Edition (OSE), as
      available from http://www.virtualbox.org. This file is free software;
@@ -23,30 +23,18 @@
     <height>400</height>
    </rect>
   </property>
-  <property name="sizePolicy">
-   <sizepolicy hsizetype="Minimum" vsizetype="Minimum">
-    <horstretch>0</horstretch>
-    <verstretch>0</verstretch>
-   </sizepolicy>
-  </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>
-    <widget class="QILabel" name="m_pLabel">
+    <widget class="QIRichTextLabel" name="m_pLabel">
      <property name="text">
       <string>&lt;p&gt;This wizard will help you to create a clone of your virtual machine.&lt;/p&gt;</string>
-     </property>
-     <property name="wordWrap">
-      <bool>true</bool>
      </property>
     </widget>
    </item>
    <item>
-    <widget class="QILabel" name="m_pLabel2">
+    <widget class="QIRichTextLabel" name="m_pLabel2">
      <property name="text">
       <string>&lt;p&gt;Please choose a name for the new virtual machine:&lt;/p&gt;</string>
-     </property>
-     <property name="wordWrap">
-      <bool>true</bool>
      </property>
     </widget>
    </item>
@@ -64,14 +52,14 @@
     </widget>
    </item>
    <item>
-    <spacer name="verticalSpacer">
+    <spacer name="m_pSpacer">
      <property name="orientation">
       <enum>Qt::Vertical</enum>
      </property>
-     <property name="sizeHint" stdset="0">
+     <property name="sizeHint">
       <size>
-       <width>1</width>
-       <height>1</height>
+       <width>0</width>
+       <height>0</height>
       </size>
      </property>
     </spacer>
@@ -80,9 +68,9 @@
  </widget>
  <customwidgets>
   <customwidget>
-   <class>QILabel</class>
-   <extends>QLabel</extends>
-   <header>QILabel.h</header>
+   <class>QIRichTextLabel</class>
+   <extends>QWidget</extends>
+   <header>QIRichTextLabel.h</header>
   </customwidget>
  </customwidgets>
  <resources/>

@@ -6,7 +6,7 @@
  */
 
 /*
- * Copyright (C) 2009-2010 Oracle Corporation
+ * Copyright (C) 2009-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -17,22 +17,18 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-/* Global includes */
+/* Global includes: */
 #include <QAbstractButton>
 #include <QLayout>
-#include <QTextEdit>
+#include <qmath.h>
 
-/* Local includes */
+/* Local includes: */
 #include "QIWizard.h"
-#include "QILabel.h"
 #include "VBoxGlobal.h"
-
-/* System includes */
-#include <math.h>
+#include "QIRichTextLabel.h"
 
 QIWizard::QIWizard(QWidget *pParent)
     : QIWithRetranslateUI<QWizard>(pParent)
-    , m_iMinimumContentWidth(0)
 {
 #ifdef Q_WS_MAC
     /* I'm really not sure why there shouldn't be any default button on Mac OS
@@ -41,39 +37,215 @@ QIWizard::QIWizard(QWidget *pParent)
 #endif /* Q_WS_MAC */
 }
 
-void QIWizard::resizeToGoldenRatio()
+int	QIWizard::addPage(QIWizardPage *pPage)
 {
-    /* Random initial QILabel width() to be adjusted! */
-    int iLabelsWidth = 400;
-    resizeAccordingLabelWidth(iLabelsWidth);
+    /* Configure page first: */
+    configurePage(pPage);
 
-    /* Label delta for 'golden ratio' calculation. */
-    int iLabelDelta = width() - iLabelsWidth;
-
-    /* Calculating nearest 'golden ratio' width. */
-    int iGoldRatioWidth = (int)sqrt(1.61 * width() * height());
-    int iNewLabelWidth = iGoldRatioWidth - iLabelDelta;
-    resizeAccordingLabelWidth(iNewLabelWidth);
-    m_iMinimumContentWidth = iNewLabelWidth;
+    /* Add page finally: */
+    return QWizard::addPage(pPage);
 }
 
+void QIWizard::setPage(int iId, QIWizardPage *pPage)
+{
+    /* Configure page first: */
+    configurePage(pPage);
+
+    /* Add page finally: */
+    QWizard::setPage(iId, pPage);
+}
+
+void QIWizard::retranslateAllPages()
+{
+    QList<QIWizardPage*> pages = findChildren<QIWizardPage*>();
+    for(int i = 0; i < pages.size(); ++i)
+        qobject_cast<QIWizardPage*>(pages.at((i)))->retranslate();
+}
+
+void QIWizard::resizeToGoldenRatio()
+{
+    /* Use some small (!) initial QIRichTextLabel width: */
+    int iInitialLabelWidth = 200;
+
+    /* Resize wizard according that initial width,
+     * actually there could be other content
+     * which wants to be wider than that initial width. */
+    resizeAccordingLabelWidth(iInitialLabelWidth);
+
+    /* Get all the pages: */
+    QList<QIWizardPage*> pages = findChildren<QIWizardPage*>();
+    /* Get some (first) of those pages: */
+    QIWizardPage *pSomePage = pages[0];
+
+    /* Calculate actual label width: */
+    int iPageWidth = pSomePage->width();
+    int iLeft, iTop, iRight, iBottom;
+    pSomePage->layout()->getContentsMargins(&iLeft, &iTop, &iRight, &iBottom);
+    int iCurrentLabelWidth = iPageWidth - iLeft - iRight;
+
+    /* Calculate summary margin length, including margins of the page and wizard: */
+    int iMarginsLength = width() - iCurrentLabelWidth;
+
+    /* Calculating nearest to 'golden ratio' label width: */
+    int iCurrentWizardWidth = width();
+    int iCurrentWizardHeight = height();
+#ifndef Q_WS_MAC
+    /* We should take into account watermar thought its not assigned yet: */
+    QPixmap watermarkPixmap(m_strWatermarkName);
+    int iWatermarkWidth = watermarkPixmap.width();
+    iCurrentWizardWidth += iWatermarkWidth;
+#endif /* !Q_WS_MAC */
+    int iGoldenRatioWidth = (int)qSqrt((float)1.6 * iCurrentWizardWidth * iCurrentWizardHeight);
+    int iProposedLabelWidth = iGoldenRatioWidth - iMarginsLength;
+#ifndef Q_WS_MAC
+    /* We should take into account watermar thought its not assigned yet: */
+    iProposedLabelWidth -= iWatermarkWidth;
+#endif /* !Q_WS_MAC */
+
+    /* Choose maximum between current and proposed label width: */
+    int iNewLabelWidth = qMax(iCurrentLabelWidth, iProposedLabelWidth);
+
+    /* Finally resize wizard according new label width,
+     * taking into account all the content and 'golden ratio' rule: */
+    resizeAccordingLabelWidth(iNewLabelWidth);
+
+#ifndef Q_WS_MAC
+    /* Really assign watermark: */
+    if (!m_strWatermarkName.isEmpty())
+        assignWatermarkHelper();
+#endif /* !Q_WS_MAC */
+}
+
+#ifndef Q_WS_MAC
 void QIWizard::assignWatermark(const QString &strWatermark)
 {
-    /* Create initial watermark. */
-    QPixmap pixWaterMark(strWatermark);
+    if (wizardStyle() != QWizard::AeroStyle)
+        m_strWatermarkName = strWatermark;
+}
+#else
+void QIWizard::assignBackground(const QString &strBackground)
+{
+    setPixmap(QWizard::BackgroundPixmap, strBackground);
+}
+#endif
 
+void QIWizard::configurePage(QIWizardPage *pPage)
+{
+    /* Page margins: */
+    switch (wizardStyle())
+    {
+        case QWizard::ClassicStyle:
+        {
+            int iLeft, iTop, iRight, iBottom;
+            pPage->layout()->getContentsMargins(&iLeft, &iTop, &iRight, &iBottom);
+            pPage->layout()->setContentsMargins(iLeft, iTop, 0, 0);
+            break;
+        }
+        default:
+            break;
+    }
+}
+
+void QIWizard::resizeAccordingLabelWidth(int iLabelsWidth)
+{
+    /* Unfortunately QWizard hides some of useful API in private part,
+     * and also have few layouting bugs which could be easy fixed
+     * by that API, so we will use QWizard::restart() method
+     * to call the same functionality indirectly...
+     * Early call restart() which is usually goes on show()! */
+    restart();
+
+    /* Update QIRichTextLabel(s) text-width(s): */
+    QList<QIRichTextLabel*> labels = findChildren<QIRichTextLabel*>();
+    foreach (QIRichTextLabel *pLabel, labels)
+        pLabel->setMinimumTextWidth(iLabelsWidth);
+
+    /* Now we have correct label size-hint(s) for all the pages.
+     * We have to make sure all the pages uses maximum available size-hint. */
+    QSize maxOfSizeHints;
+    QList<QIWizardPage*> pages = findChildren<QIWizardPage*>();
+    /* Search for the maximum available size-hint: */
+    foreach (QIWizardPage *pPage, pages)
+    {
+        maxOfSizeHints.rwidth() = pPage->sizeHint().width() > maxOfSizeHints.width() ?
+                                  pPage->sizeHint().width() : maxOfSizeHints.width();
+        maxOfSizeHints.rheight() = pPage->sizeHint().height() > maxOfSizeHints.height() ?
+                                   pPage->sizeHint().height() : maxOfSizeHints.height();
+    }
+    /* Use that size-hint for all the pages: */
+    foreach (QIWizardPage *pPage, pages)
+        pPage->setMinimumSize(maxOfSizeHints);
+
+    /* Relayout widgets: */
+    QList<QLayout*> layouts = findChildren<QLayout*>();
+    foreach(QLayout *pLayout, layouts)
+        pLayout->activate();
+
+    /* Unfortunately QWizard hides some of useful API in private part,
+     * BUT it also have few layouting bugs which could be easy fixed
+     * by that API, so we will use QWizard::restart() method
+     * to call the same functionality indirectly...
+     * And now we call restart() after layout activation procedure! */
+    restart();
+
+    /* Resize it to minimum size: */
+    resize(QSize(0, 0));
+}
+
+#ifndef Q_WS_MAC
+int QIWizard::proposedWatermarkHeight()
+{
+    /* We should calculate suitable height for watermark pixmap,
+     * for that we have to take into account:
+     * 1. wizard-layout top-margin (for modern style),
+     * 2. wizard-header height,
+     * 3. margin between wizard-header and wizard-page,
+     * 4. wizard-page height,
+     * 5. wizard-layout bottom-margin (for modern style). */
+
+    /* Get current application style: */
+    QStyle *pStyle = QApplication::style();
+
+    /* Acquire wizard-layout top-margin: */
+    int iTopMargin = 0;
+    if (wizardStyle() == QWizard::ModernStyle)
+        iTopMargin = pStyle->pixelMetric(QStyle::PM_LayoutTopMargin);
+
+    /* We have no direct access to QWizardHeader inside QWizard private data...
+     * From Qt sources it seems title font is hardcoded as current font point-size + 4: */
+    QFont titleFont(QApplication::font());
+    titleFont.setPointSize(titleFont.pointSize() + 4);
+    QFontMetrics titleFontMetrics(titleFont);
+    int iTitleHeight = titleFontMetrics.height();
+
+    /* We have no direct access to margin between QWizardHeader and wizard-pages...
+     * From Qt sources it seems its hardcoded as just 7 pixels: */
+    int iMarginBetweenTitleAndPage = 7;
+
+    /* Also we should get any page height: */
+    QList<QIWizardPage*> pages = findChildren<QIWizardPage*>();
+    int iPageHeight = pages[0]->height();
+
+    /* Acquire wizard-layout bottom-margin: */
+    int iBottomMargin = 0;
+    if (wizardStyle() == QWizard::ModernStyle)
+        iBottomMargin = pStyle->pixelMetric(QStyle::PM_LayoutBottomMargin);
+
+    /* Finally, calculate summary height: */
+    return iTopMargin + iTitleHeight + iMarginBetweenTitleAndPage + iPageHeight + iBottomMargin;
+}
+
+void QIWizard::assignWatermarkHelper()
+{
+    /* Create initial watermark: */
+    QPixmap pixWaterMark(m_strWatermarkName);
     /* Convert watermark to image which
-     * allows to manage pixel data directly. */
+     * allows to manage pixel data directly: */
     QImage imgWatermark = pixWaterMark.toImage();
-
-    /* Use the right-top watermark pixel as frame color */
+    /* Use the right-top watermark pixel as frame color: */
     QRgb rgbFrame = imgWatermark.pixel(imgWatermark.width() - 1, 0);
-
-    /* Take into account button's height */
-    int iPageHeight = height() - button(QWizard::CancelButton)->height();
-
-    /* Create final image on the basis of incoming, applying the rules. */
-    QImage imgWatermarkNew(imgWatermark.width(), qMax(imgWatermark.height(), iPageHeight), imgWatermark.format());
+    /* Create final image on the basis of incoming, applying the rules: */
+    QImage imgWatermarkNew(imgWatermark.width(), qMax(imgWatermark.height(), proposedWatermarkHeight()), imgWatermark.format());
     for (int y = 0; y < imgWatermarkNew.height(); ++ y)
     {
         for (int x = 0; x < imgWatermarkNew.width(); ++ x)
@@ -99,89 +271,19 @@ void QIWizard::assignWatermark(const QString &strWatermark)
                 imgWatermarkNew.setPixel(x, y, imgWatermark.pixel(x, y));
         }
     }
-
     /* Convert processed image to pixmap and assign it to wizard's watermark. */
     QPixmap pixWatermarkNew = QPixmap::fromImage(imgWatermarkNew);
     setPixmap(QWizard::WatermarkPixmap, pixWatermarkNew);
 }
-
-void QIWizard::assignBackground(const QString &strBg)
-{
-    setPixmap(QWizard::BackgroundPixmap, strBg);
-}
-
-void QIWizard::resizeAccordingLabelWidth(int iLabelsWidth)
-{
-    /* Update QILabels size-hints */
-    QList<QILabel*> labels = findChildren<QILabel*>();
-    foreach (QILabel *pLabel, labels)
-    {
-        pLabel->useSizeHintForWidth(iLabelsWidth);
-        pLabel->updateGeometry();
-    }
-
-    /* Unfortunately QWizard hides some of useful API in private part,
-     * BUT it also have few layouting bugs which could be easy fixed
-     * by that API, so we will use QWizard::restart() method
-     * to call the same functionality indirectly...
-     * Early call restart() which is usually goes on show()! */
-    restart();
-
-    /* Now we have correct size-hints calculated for all the pages.
-     * We have to make sure all the pages uses maximum size-hint
-     * of all the available. */
-    QSize maxOfSizeHints;
-    QList<QIWizardPage*> pages = findChildren<QIWizardPage*>();
-    /* Search for the maximum available size-hint */
-    foreach (QIWizardPage *pPage, pages)
-    {
-        maxOfSizeHints.rwidth() = pPage->sizeHint().width() > maxOfSizeHints.width() ?
-                                  pPage->sizeHint().width() : maxOfSizeHints.width();
-        maxOfSizeHints.rheight() = pPage->sizeHint().height() > maxOfSizeHints.height() ?
-                                   pPage->sizeHint().height() : maxOfSizeHints.height();
-    }
-    /* Use that size-hint for all the pages */
-    foreach (QIWizardPage *pPage, pages)
-    {
-        pPage->setMinimumSizeHint(maxOfSizeHints);
-        pPage->updateGeometry();
-    }
-
-    /* Reactivate layouts tree */
-    QList<QLayout*> layouts = findChildren<QLayout*>();
-    foreach (QLayout *pLayout, layouts)
-        pLayout->activate();
-
-    /* Unfortunately QWizard hides some of useful API in private part,
-     * BUT it also have few layouting bugs which could be easy fixed
-     * by that API, so we will use QWizard::restart() method
-     * to call the same functionality indirectly...
-     * And now we call restart() after layout update procedure! */
-    restart();
-
-    /* Resize to minimum possible size */
-    resize(minimumSizeHint());
-}
-
-void QIWizard::retranslateAllPages()
-{
-    QList<QIWizardPage*> pages = findChildren<QIWizardPage*>();
-    for(int i=0; i < pages.size(); ++i)
-        static_cast<QIWizardPage*>(pages.at((i)))->retranslateUi();
-}
+#endif /* !Q_WS_MAC */
 
 QIWizardPage::QIWizardPage()
 {
 }
 
-QSize QIWizardPage::minimumSizeHint() const
+QIWizard* QIWizardPage::wizard() const
 {
-    return m_MinimumSizeHint.isValid() ? m_MinimumSizeHint : QWizardPage::minimumSizeHint();
-}
-
-void QIWizardPage::setMinimumSizeHint(const QSize &minimumSizeHint)
-{
-    m_MinimumSizeHint = minimumSizeHint;
+    return qobject_cast<QIWizard*>(QWizardPage::wizard());
 }
 
 QString QIWizardPage::standardHelpText() const
@@ -209,10 +311,5 @@ void QIWizardPage::endProcessing()
 {
     if (isFinalPage())
         wizard()->button(QWizard::FinishButton)->setEnabled(true);
-}
-
-QIWizard* QIWizardPage::wizard() const
-{
-    return qobject_cast<QIWizard*>(QWizardPage::wizard());
 }
 

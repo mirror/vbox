@@ -27,11 +27,15 @@
 class QIRichTextLabel : public QWidget
 {
     Q_OBJECT;
+    Q_PROPERTY(QString text READ text WRITE setText);
 
 public:
 
     /* Constructor: */
     QIRichTextLabel(QWidget *pParent = 0);
+
+    /* Text getter: */
+    QString text() const;
 
 public slots:
 
@@ -45,6 +49,9 @@ private:
 
     /* QTextEdit private member: */
     QTextEdit *m_pTextEdit;
+
+    /* Minimum text-width: */
+    int m_iMinimumTextWidth;
 };
 
 #endif // __QIRichTextLabel_h__
