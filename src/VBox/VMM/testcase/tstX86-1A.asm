@@ -2253,19 +2253,24 @@ CheckOpcodeCsIp:
 %endif
         jne     .failure1
 
+.check_fpucs:
         mov     ax, cs
         cmp     ax, [xBP + xS*2 + 512 + X86FSTENV32P.FPUCS]
         jne     .failure2
 
         ; Check the opcode.  This may be disabled.
-        cmp     word [xBP + xS*2 + X86FXSTATE.FOP], 0
-        je      .success
-
         mov     ah, [xCX]
         mov     al, [xCX + 1]
         and     ax, 07ffh
+
         cmp     ax, [xBP + xS*2 + X86FXSTATE.FOP]
-        jne     .failure3
+        je      .success
+        cmp     ax, [xBP + xS*2 + 512 + X86FSTENV32P.FOP]
+        je      .success
+
+;        xor        ax, ax
+;        cmp     ax, [xBP + xS*2 + X86FXSTATE.FOP]
+;        jne     .failure3
 
 .success:
         xor     eax, eax                ; clear Z
@@ -2275,6 +2280,16 @@ CheckOpcodeCsIp:
         ret
 
 .failure1:
+        ; AMD64 doesn't seem to store anything at IP and DP, so use the
+        ; fnstenv image instead even if that only contains the lower 32-bit.
+        xor        eax, eax
+        cmp     xAX, [xBP + xS*2 + X86FXSTATE.FPUIP]
+        jne     .failure1_for_real
+        cmp     xAX, [xBP + xS*2 + X86FXSTATE.FPUDP]
+        jne     .failure1_for_real
+        cmp     ecx, [xBP + xS*2 + 512 + X86FSTENV32P.FPUIP]
+        je      .check_fpucs
+.failure1_for_real:
         mov     eax, 10000000
         jmp     .failure
 .failure2:
@@ -2313,6 +2328,7 @@ CheckOpcodeCsIpDsDp:
 %endif
         jne     .failure1
 
+.check_fpuds:
         mov     ax, ds
         cmp     ax, [xBP + xS*2 + 512 + X86FSTENV32P.FPUDS]
         jne     .failure2
@@ -2324,6 +2340,16 @@ CheckOpcodeCsIpDsDp:
         jmp     CheckOpcodeCsIp
 
 .failure1:
+        ; AMD may leave all fields as ZERO in the FXSAVE image - figure
+        ; if there is a flag controlling this anywhere...
+        xor        eax, eax
+        cmp     xAX, [xBP + xS*2 + X86FXSTATE.FPUDP]
+        jne     .failure1_for_real
+        cmp     xAX, [xBP + xS*2 + X86FXSTATE.FPUIP]
+        jne     .failure1_for_real
+        cmp     edx, [xBP + xS*2 + 512 + X86FSTENV32P.FPUDP]
+        je      .check_fpuds
+.failure1_for_real:
         mov     eax, 60000000
         jmp     .failure
 .failure2:
@@ -2340,6 +2366,10 @@ CheckOpcodeCsIpDsDp:
 ; @uses xCX, xDX, xAX, Stack.
 ;
 %macro FpuCheckOpcodeCsIpDsDp 2
+        mov     dword [xSP + X86FXSTATE.FPUIP], 0
+        mov     dword [xSP + X86FXSTATE.FPUCS], 0
+        mov     dword [xSP + X86FXSTATE.FPUDP], 0
+        mov     dword [xSP + X86FXSTATE.FPUDS], 0
 %%instruction:
         %1
         arch_fxsave  [xSP]
@@ -2366,10 +2396,15 @@ CheckOpcodeCsIpDsDp:
 ; @param    %2  Operand memory address (DS relative).
 ;
 %macro FpuTrapOpcodeCsIpDsDp 2
+        mov     dword [xSP + X86FXSTATE.FPUCS], 0
+        mov     dword [xSP + X86FXSTATE.FPUDS], 0
 %%instruction:
         %1
         fxsave [xSP + 1024 +512]        ; FPUDS and FPUCS for 64-bit hosts.
                                         ; WEIRD: When saved after FWAIT they are ZEROed! (64-bit Intel)
+        arch_fxsave  [xSP]
+        fnstenv [xSP + 512]
+        arch_fxrstor [xSP]                
 %%trap:
         fwait
 %%trap_end:
@@ -2384,7 +2419,6 @@ BEGINDATA
 iend
 BEGINCODE
 %%resume:
-        arch_fxsave  [xSP]
         lea     xDX, %2
         lea     xCX, [REF(%%instruction)]
         call    CheckOpcodeCsIpDsDp
