@@ -70,6 +70,7 @@ class UINewVMWzdPage2 : public QIWizardPage, public Ui::UINewVMWzdPage2
 {
     Q_OBJECT;
     Q_PROPERTY(QString machineFolder READ machineFolder WRITE setMachineFolder);
+    Q_PROPERTY(QString machineBaseName READ machineBaseName WRITE setMachineBaseName);
 
 public:
 
@@ -97,6 +98,10 @@ private:
     QString machineFolder() const;
     void setMachineFolder(const QString &strMachineFolder);
     QString m_strMachineFolder;
+
+    QString machineBaseName() const;
+    void setMachineBaseName(const QString &strMachineBaseName);
+    QString m_strMachineBaseName;
 };
 
 class UINewVMWzdPage3 : public QIWizardPage, public Ui::UINewVMWzdPage3

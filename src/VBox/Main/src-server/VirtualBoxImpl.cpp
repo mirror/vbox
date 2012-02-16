@@ -1318,20 +1318,43 @@ STDMETHODIMP VirtualBox::ComposeMachineFilename(IN_BSTR aName,
      *
      * If a non-null and non-empty base folder is specified, the default
      * machine folder will be used as a base folder.
+     * We sanitise the machine name to a safe white list of characters before
+     * using it.
      */
     Utf8Str strBase = aBaseFolder;
+    Utf8Str strName = aName;
+    /** Set of characters which should be safe for use in filenames: some basic
+     * ASCII, Unicode from Latin-1 alphabetic to the end of Hangul.  We try to
+     * skip anything that could count as a control character in Windows or
+     * *nix, or be otherwise difficult for shells to handle (I would have
+     * preferred to remove the space and brackets too).  We also remove all
+     * characters which need UTF-16 surrogate pairs for Windows's benefit. */
+    RTUNICP aCpSet[] =
+        { ' ', ' ', '(', ')', '-', '-', '0', '9', 'A', 'Z', 'a', 'z', '_', '_',
+          0xa0, 0xd7af, '\0' };
+    Assert(RTStrPurgeComplementSet(strName.mutableRaw(), aCpSet, '_') > 0);
     if (strBase.isEmpty())
         /* we use the non-full folder value below to keep the path relative */
         getDefaultMachineFolder(strBase);
 
     calculateFullPath(strBase, strBase);
 
-    Bstr bstrSettingsFile = BstrFmt("%s%c%ls%c%ls.vbox",
+    Bstr bstrSettingsFile = BstrFmt("%s%c%s%c%s.vbox",
                                     strBase.c_str(),
                                     RTPATH_DELIMITER,
-                                    aName,
+                                    strName.c_str(),
                                     RTPATH_DELIMITER,
-                                    aName);
+                                    strName.c_str());
+
+#if 0  /* Try to get a unique name. */
+    for (unsigned i = 1; RTFileExists(bstrSettingsFile.c_str() && i < 100; ++i)
+        bstrSettingsFile = BstrFmt("%s%c%s%u%c%s%u.vbox",
+                                   strBase.c_str(),
+                                   RTPATH_DELIMITER,
+                                   strName.c_str(), i,
+                                   RTPATH_DELIMITER,
+                                   strName.c_str());
+#endif
 
     bstrSettingsFile.detachTo(aFilename);
 
