@@ -401,6 +401,7 @@ IEMOPSHIFTDBLSIZES g_iemAImpl_shrd;
 #define IEM_MC_DEFER_TO_CIMPL_3(a_pfnCImpl, a0, a1, a2)                 (VINF_SUCCESS)
 
 #define IEM_MC_CALL_FPU_AIMPL_2(a_pfnAImpl, a0, a1)                     do { } while (0)
+#define IEM_MC_CALL_FPU_AIMPL_3(a_pfnAImpl, a0, a1, a3)                 do { } while (0)
 #define IEM_MC_PUSH_FPU_RESULT(a_FpuData)                               do { } while (0)
 #define IEM_MC_PUSH_FPU_RESULT_MEM_OP(a_FpuData, a_iEffSeg, a_GCPtrEff) do { } while (0)
 #define IEM_MC_STORE_FPU_RESULT(a_FpuData, a_iStReg)                    do { } while (0)
