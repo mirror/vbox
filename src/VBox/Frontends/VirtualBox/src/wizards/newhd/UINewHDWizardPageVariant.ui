@@ -3,7 +3,7 @@
  <comment>
  VBox frontends: Qt4 GUI ("VirtualBox"):
 
-     Copyright (C) 2009-2011 Oracle Corporation
+     Copyright (C) 2009-2012 Oracle Corporation
 
      This file is part of VirtualBox Open Source Edition (OSE), as
      available from http://www.virtualbox.org. This file is free software;
@@ -23,25 +23,18 @@
     <height>400</height>
    </rect>
   </property>
-  <property name="sizePolicy">
-   <sizepolicy hsizetype="Minimum" vsizetype="Minimum">
-    <horstretch>0</horstretch>
-    <verstretch>0</verstretch>
-   </sizepolicy>
-  </property>
   <layout class="QVBoxLayout" name="m_pMainLayout">
-   <property name="bottomMargin" >
-    <number>0</number>
-   </property>
    <item>
-    <widget class="QILabel" name="m_pLabel">
-     <property name="wordWrap">
-      <bool>true</bool>
-     </property>
-    </widget>
+    <widget class="QIRichTextLabel" name="m_pLabel"/>
    </item>
    <item>
     <widget class="QGroupBox" name="m_pVariantContainer">
+     <property name="sizePolicy">
+      <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
+       <horstretch>0</horstretch>
+       <verstretch>0</verstretch>
+      </sizepolicy>
+     </property>
      <property name="title">
       <string>Storage details</string>
      </property>
@@ -50,7 +43,10 @@
    </item>
    <item>
     <spacer name="m_pSpacer">
-     <property name="sizeHint" stdset="0">
+     <property name="orientation">
+      <enum>Qt::Vertical</enum>
+     </property>
+     <property name="sizeHint">
       <size>
        <width>0</width>
        <height>0</height>
@@ -62,9 +58,9 @@
  </widget>
  <customwidgets>
   <customwidget>
-   <class>QILabel</class>
-   <extends>QLabel</extends>
-   <header>QILabel.h</header>
+   <class>QIRichTextLabel</class>
+   <extends>QWidget</extends>
+   <header>QIRichTextLabel.h</header>
   </customwidget>
  </customwidgets>
  <resources/>

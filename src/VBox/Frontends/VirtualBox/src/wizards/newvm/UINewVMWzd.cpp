@@ -6,7 +6,7 @@
  */
 
 /*
- * Copyright (C) 2006-2011 Oracle Corporation
+ * Copyright (C) 2006-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -153,16 +153,16 @@ UINewVMWzd::UINewVMWzd(QWidget *pParent) : QIWizard(pParent)
     /* Initial translate all pages */
     retranslateAllPages();
 
-    /* Resize to 'golden ratio' */
-    resizeToGoldenRatio();
-
-#ifdef Q_WS_MAC
-    /* Assign background image */
-    assignBackground(":/vmw_new_welcome_bg.png");
-#else /* Q_WS_MAC */
+#ifndef Q_WS_MAC
     /* Assign watermark */
     assignWatermark(":/vmw_new_welcome.png");
+#else /* Q_WS_MAC */
+    /* Assign background image */
+    assignBackground(":/vmw_new_welcome_bg.png");
 #endif /* Q_WS_MAC */
+
+    /* Resize to 'golden ratio' */
+    resizeToGoldenRatio();
 }
 
 const CMachine UINewVMWzd::machine() const
@@ -676,7 +676,6 @@ void UINewVMWzdPage5::retranslateUi()
             .arg(tr("Start-up Disk", "summary"), field("hardDiskName").toString());
     }
 
-    m_pSummaryText->setMinimumTextWidth(wizard()->minimumContentWidth());
     m_pSummaryText->setText("<table cellspacing=0 cellpadding=0>" + summary + "</table>");
 
     m_pPage5Text2->setText(tr("<p>If the above is correct press the <b>%1</b> button. Once "

@@ -6,7 +6,7 @@
  */
 
 /*
- * Copyright (C) 2009-2010 Oracle Corporation
+ * Copyright (C) 2009-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -67,16 +67,16 @@ UIExportApplianceWzd::UIExportApplianceWzd(QWidget *pParent, const QStringList &
     /* Initial translate all pages */
     retranslateAllPages();
 
-    /* Resize to 'golden ratio' */
-    resizeToGoldenRatio();
-
-#ifdef Q_WS_MAC
-    /* Assign background image */
-    assignBackground(":/vmw_ovf_export_bg.png");
-#else /* Q_WS_MAC */
+#ifndef Q_WS_MAC
     /* Assign watermark */
     assignWatermark(":/vmw_ovf_export.png");
+#else /* Q_WS_MAC */
+    /* Assign background image */
+    assignBackground(":/vmw_ovf_export_bg.png");
 #endif /* Q_WS_MAC */
+
+    /* Resize to 'golden ratio' */
+    resizeToGoldenRatio();
 
     /* Setup connections */
     connect(this, SIGNAL(currentIdChanged(int)), this, SLOT(sltCurrentIdChanged(int)));
