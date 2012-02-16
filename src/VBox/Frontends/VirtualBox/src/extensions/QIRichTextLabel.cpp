@@ -19,6 +19,7 @@
 
 /* Global includes: */
 #include <QVBoxLayout>
+#include <QUrl>
 
 /* Local includes: */
 #include "QIRichTextLabel.h"
@@ -48,6 +49,13 @@ QIRichTextLabel::QIRichTextLabel(QWidget *pParent)
 QString QIRichTextLabel::text() const
 {
     return m_pTextEdit->toHtml();
+}
+
+/* Register image: */
+void QIRichTextLabel::registerImage(const QImage &image, const QString &strName)
+{
+    /* Register passed image in internal text-document: */
+    m_pTextEdit->document()->addResource(QTextDocument::ImageResource, QUrl(strName), QVariant(image));
 }
 
 /* Minimum text-width setter: */
