@@ -1330,9 +1330,22 @@ STDMETHODIMP VirtualBox::ComposeMachineFilename(IN_BSTR aName,
      * preferred to remove the space and brackets too).  We also remove all
      * characters which need UTF-16 surrogate pairs for Windows's benefit. */
     RTUNICP aCpSet[] =
-        { ' ', ' ', '(', ')', '-', '-', '0', '9', 'A', 'Z', 'a', 'z', '_', '_',
+        { ' ', ' ', '(', ')', '-', '.', '0', '9', 'A', 'Z', 'a', 'z', '_', '_',
           0xa0, 0xd7af, '\0' };
-    Assert(RTStrPurgeComplementSet(strName.mutableRaw(), aCpSet, '_') > 0);
+    char *pszName = strName.mutableRaw();
+    Assert(RTStrPurgeComplementSet(pszName, aCpSet, '_') > 0);
+    /* No leading dot or dash. */
+    if (pszName[0] == '.' || pszName[0] == '-')
+        pszName[0] = '_';
+    /* No trailing dot. */
+    if (pszName[strName.length() - 1] == '.')
+        pszName[strName.length() - 1] = '_';
+    /* Mangle leading and trailing spaces. */
+    for (size_t i = 0; pszName[i] == ' '; ++i)
+       pszName[i] = '_';
+    for (size_t i = strName.length() - 1; i && pszName[i] == ' '; --i)
+       pszName[i] = '_';
+
     if (strBase.isEmpty())
         /* we use the non-full folder value below to keep the path relative */
         getDefaultMachineFolder(strBase);

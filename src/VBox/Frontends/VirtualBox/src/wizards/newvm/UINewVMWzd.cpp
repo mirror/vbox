@@ -313,7 +313,7 @@ bool UINewVMWzdPage2::createMachineFolder()
     QFileInfo fileInfo(strMachineFilename);
     /* Get machine directory: */
     QString strMachineFolder = fileInfo.absolutePath();
-    QString strMachineBaseName = fileInfo.baseName();
+    QString strMachineBaseName = fileInfo.completeBaseName();
 
     /* Try to create this machine directory (and it's predecessors): */
     bool fMachineFolderCreated = QDir().mkpath(strMachineFolder);
