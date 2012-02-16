@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2011 Oracle Corporation
+ * Copyright (C) 2011-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -724,6 +724,7 @@ typedef IEM_DECL_IMPL_TYPE(void, FNIEMAIMPLFPUR64U,(PCX86FXSTATE pFpuState, PIEM
 typedef FNIEMAIMPLFPUR64U  *PFNIEMAIMPLFPUR64U;
 FNIEMAIMPLFPUR64U iemAImpl_fpu_r64_to_r80;
 FNIEMAIMPLFPUR64  iemAImpl_fpu_fdiv_r80_by_r64;
+FNIEMAIMPLFPUR64  iemAImpl_fpu_fmul_r80_by_r64;
 
 /** @} */
 
