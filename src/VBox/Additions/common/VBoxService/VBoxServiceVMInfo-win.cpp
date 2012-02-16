@@ -52,6 +52,11 @@ typedef struct
     WCHAR wszLogonDomain[_MAX_PATH];
     /** Number of assigned user processes. */
     ULONG ulNumProcs;
+    /** Last (highest) session number. This
+     *  is needed for distinguishing old session
+     *  process counts from new (current) session
+     *  ones. */
+    ULONG ulSession;
 } VBOXSERVICEVMINFOUSER, *PVBOXSERVICEVMINFOUSER;
 
 /** Structure for the file information lookup. */
@@ -64,8 +69,12 @@ typedef struct
 /** Structure for process information lookup. */
 typedef struct
 {
+    /** The PID. */
     DWORD id;
+    /** The LUID. */
     LUID luid;
+    /** Interactive process. */
+    bool fInteractive;
 } VBOXSERVICEVMINFOPROC, *PVBOXSERVICEVMINFOPROC;
 
 
@@ -119,7 +128,7 @@ static int VBoxServiceVMInfoWinProcessesGetModuleName(PVBOXSERVICEVMINFOPROC con
     {
         DWORD dwErr = GetLastError();
         if (g_cVerbosity)
-            VBoxServiceError("VMInfo/Users: Unable to open process with PID=%ld, error=%ld",
+            VBoxServiceError("Unable to open process with PID=%ld, error=%ld\n",
                              pProc->id, dwErr);
         rc = RTErrConvertFromWin32(dwErr);
     }
@@ -141,7 +150,7 @@ static int VBoxServiceVMInfoWinProcessesGetModuleName(PVBOXSERVICEVMINFOPROC con
                 rc = RTLdrGetSymbol(hMod, "QueryFullProcessImageNameA", (void **)&pfnQueryFullProcessImageName);
                 if (RT_SUCCESS(rc))
                 {
-                    DWORD dwLen = sizeof(pszName);
+                    DWORD dwLen = cbName / sizeof(TCHAR);
                     if (!pfnQueryFullProcessImageName(h, 0 /*PROCESS_NAME_NATIVE*/, pszName, &dwLen))
                         rc = VERR_ACCESS_DENIED;
                 }
@@ -153,15 +162,6 @@ static int VBoxServiceVMInfoWinProcessesGetModuleName(PVBOXSERVICEVMINFOPROC con
         {
             if (!GetModuleFileNameEx(h, NULL /* Get main executable */, pszName, cbName / sizeof(TCHAR)))
                 rc = VERR_ACCESS_DENIED;
-        }
-
-        if (VERR_ACCESS_DENIED == rc)
-        {
-            DWORD dwErr = GetLastError();
-            if (g_cVerbosity)
-                VBoxServiceError("VMInfo/Users: Unable to retrieve module name for PID=%ld, error=%ld",
-                                 pProc->id, dwErr);
-            rc = RTErrConvertFromWin32(dwErr);
         }
 
         CloseHandle(h);
@@ -182,72 +182,155 @@ static int VBoxServiceVMInfoWinProcessesGetTokenInfo(PVBOXSERVICEVMINFOPROC pPro
                                                      TOKEN_INFORMATION_CLASS tkClass)
 {
     AssertPtrReturn(pProc, VERR_INVALID_POINTER);
+
+    DWORD  dwErr = ERROR_SUCCESS;
     HANDLE h = OpenProcess(PROCESS_QUERY_INFORMATION, FALSE, pProc->id);
     if (h == NULL)
     {
-        DWORD dwErr = GetLastError();
-        if (g_cVerbosity)
-            VBoxServiceError("VMInfo/Users: Unable to open process with PID=%ld, error=%ld",
+        dwErr = GetLastError();
+        if (g_cVerbosity > 4)
+            VBoxServiceError("Unable to open process with PID=%ld, error=%ld\n",
                              pProc->id, dwErr);
         return RTErrConvertFromWin32(dwErr);
     }
 
-     int    rc = VERR_NO_MEMORY;
-     HANDLE hToken;
-     if (OpenProcessToken(h, TOKEN_QUERY, &hToken))
-     {
-         void *pvTokenInfo = NULL;
-         DWORD dwTokenInfoSize;
-         switch (tkClass)
-         {
-             case TokenStatistics:
-                 dwTokenInfoSize = sizeof(TOKEN_STATISTICS);
-                 pvTokenInfo = RTMemAlloc(dwTokenInfoSize);
-                 break;
+    int    rc = VINF_SUCCESS;
+    HANDLE hToken;
+    if (OpenProcessToken(h, TOKEN_QUERY, &hToken))
+    {
+        void *pvTokenInfo = NULL;
+        DWORD dwTokenInfoSize;
+        switch (tkClass)
+        {
+            case TokenStatistics:
+                dwTokenInfoSize = sizeof(TOKEN_STATISTICS);
+                pvTokenInfo = HeapAlloc(GetProcessHeap(),
+                                        HEAP_ZERO_MEMORY, dwTokenInfoSize);
+                AssertPtr(pvTokenInfo);
+                break;
 
-             /** @todo Implement more token classes here. */
+            case TokenGroups:
+                dwTokenInfoSize = 0;
+                /* Allocating will follow in a second step. */
+                break;
 
-             default:
-                 VBoxServiceError("Token class not implemented: %ld", tkClass);
-                 rc = VERR_NOT_IMPLEMENTED;
-                 break;
-         }
+            /** @todo Implement more token classes here. */
 
-         if (pvTokenInfo)
-         {
-             DWORD dwRetLength;
-             if (GetTokenInformation(hToken, tkClass, pvTokenInfo, dwTokenInfoSize, &dwRetLength))
-             {
-                 switch (tkClass)
-                 {
-                     case TokenStatistics:
-                     {
-                         TOKEN_STATISTICS *pStats = (TOKEN_STATISTICS*)pvTokenInfo;
-                         pProc->luid = pStats->AuthenticationId;
-                         /** @todo Add more information of TOKEN_STATISTICS as needed. */
-                         break;
-                     }
+            default:
+                VBoxServiceError("Token class not implemented: %ld", tkClass);
+                rc = VERR_NOT_IMPLEMENTED;
+                break;
+        }
 
-                     default:
-                         /* Should never get here! */
-                         break;
-                 }
-                 rc = VINF_SUCCESS;
-             }
-             else
-                 rc = RTErrConvertFromWin32(GetLastError());
-             RTMemFree(pvTokenInfo);
-         }
-         CloseHandle(hToken);
+        if (RT_SUCCESS(rc))
+        {
+            DWORD dwRetLength;
+            if (!GetTokenInformation(hToken, tkClass, pvTokenInfo, dwTokenInfoSize, &dwRetLength))
+            {
+                dwErr = GetLastError();
+                if (dwErr == ERROR_INSUFFICIENT_BUFFER)
+                {
+                    dwErr = ERROR_SUCCESS;
+
+                    switch (tkClass)
+                    {
+                        case TokenGroups:
+                            pvTokenInfo = (PTOKEN_GROUPS)HeapAlloc(GetProcessHeap(),
+                                                                   HEAP_ZERO_MEMORY, dwRetLength);
+                            if (!pvTokenInfo)
+                                dwErr = GetLastError();
+                            dwTokenInfoSize = dwRetLength;
+                            break;
+
+                        default:
+                            AssertMsgFailed(("Re-allocating of token information for token class not implemented\n"));
+                            break;
+                    }
+
+                    if (dwErr == ERROR_SUCCESS)
+                    {
+                        if (!GetTokenInformation(hToken, tkClass, pvTokenInfo, dwTokenInfoSize, &dwRetLength))
+                            dwErr = GetLastError();
+                    }
+                }
+            }
+
+            if (dwErr == ERROR_SUCCESS)
+            {
+                rc = VINF_SUCCESS;
+
+                switch (tkClass)
+                {
+                    case TokenStatistics:
+                    {
+                        PTOKEN_STATISTICS pStats = (PTOKEN_STATISTICS)pvTokenInfo;
+                        memcpy(&pProc->luid, &pStats->AuthenticationId, sizeof(LUID));
+                        /** @todo Add more information of TOKEN_STATISTICS as needed. */
+                        break;
+                    }
+
+                    case TokenGroups:
+                    {
+                        pProc->fInteractive = false;
+
+                        SID_IDENTIFIER_AUTHORITY sidAuthNT = SECURITY_NT_AUTHORITY;
+                        PSID pSidInteractive = NULL; /*  S-1-5-4 */
+                        if (!AllocateAndInitializeSid(&sidAuthNT, 1, 4, 0, 0, 0, 0, 0, 0, 0, &pSidInteractive))
+                            dwErr = GetLastError();
+
+                        PSID pSidLocal = NULL; /*  S-1-2-0 */
+                        if (dwErr == ERROR_SUCCESS)
+                        {
+                            SID_IDENTIFIER_AUTHORITY sidAuthLocal = SECURITY_LOCAL_SID_AUTHORITY;
+                            if (!AllocateAndInitializeSid(&sidAuthLocal, 1, 0, 0, 0, 0, 0, 0, 0, 0, &pSidLocal))
+                                dwErr = GetLastError();
+                        }
+
+                        if (dwErr == ERROR_SUCCESS)
+                        {
+                            PTOKEN_GROUPS pGroups = (PTOKEN_GROUPS)pvTokenInfo;
+                            AssertPtr(pGroups);
+                            for (DWORD i = 0; i < pGroups->GroupCount; i++)
+                            {
+                                if (   EqualSid(pGroups->Groups[i].Sid, pSidInteractive)
+                                    || EqualSid(pGroups->Groups[i].Sid, pSidLocal)
+                                    || pGroups->Groups[i].Attributes & SE_GROUP_LOGON_ID)
+                                {
+                                    pProc->fInteractive = true;
+                                    break;
+                                }
+                            }
+                        }
+
+                        if (pSidInteractive)
+                            FreeSid(pSidInteractive);
+                        if (pSidLocal)
+                            FreeSid(pSidLocal);
+                        break;
+                    }
+
+                    default:
+                        AssertMsgFailed(("Unhandled token information class\n"));
+                        break;
+                }
+            }
+
+            if (pvTokenInfo)
+                HeapFree(GetProcessHeap(), 0 /* Flags */, pvTokenInfo);
+        }
+        CloseHandle(hToken);
     }
     else
+        dwErr = GetLastError();
+
+    if (dwErr != ERROR_SUCCESS)
     {
-        DWORD dwErr = GetLastError();
         if (g_cVerbosity)
-            VBoxServiceError("VMInfo/Users: Unable to query process token for PID=%ld, error=%ld\n",
+            VBoxServiceError("Unable to query token information for PID=%ld, error=%ld\n",
                              pProc->id, dwErr);
         rc = RTErrConvertFromWin32(dwErr);
     }
+
     CloseHandle(h);
     return rc;
 }
@@ -313,12 +396,22 @@ int VBoxServiceVMInfoWinProcessesEnumerate(PVBOXSERVICEVMINFOPROC *ppaProcs, PDW
             for (DWORD i = 0; i < cProcesses; i++)
             {
                 paProcs[i].id = paPID[i];
-                rc = VBoxServiceVMInfoWinProcessesGetTokenInfo(&paProcs[i], TokenStatistics);
+                rc = VBoxServiceVMInfoWinProcessesGetTokenInfo(&paProcs[i], TokenGroups);
                 if (RT_FAILURE(rc))
                 {
                     /* Because some processes cannot be opened/parsed on
-                       Windows, we should not consider to be this an error here. */
+                           Windows, we should not consider to be this an error here. */
                     rc = VINF_SUCCESS;
+                }
+                else
+                {
+                    rc = VBoxServiceVMInfoWinProcessesGetTokenInfo(&paProcs[i], TokenStatistics);
+                    if (RT_FAILURE(rc))
+                    {
+                        /* Because some processes cannot be opened/parsed on
+                           Windows, we should not consider to be this an error here. */
+                        rc = VINF_SUCCESS;
+                    }
                 }
             }
 
@@ -357,12 +450,15 @@ void VBoxServiceVMInfoWinProcessesFree(PVBOXSERVICEVMINFOPROC paProcs)
  * @param   pSession        The session.
  * @param   paProcs         The process snapshot.
  * @param   cProcs          The number of processes in the snaphot.
+ * @param   puSession       Looked up session number.  Optional.
  */
-uint32_t VBoxServiceVMInfoWinSessionHasProcesses(PLUID pSession, PVBOXSERVICEVMINFOPROC const paProcs, DWORD cProcs)
+uint32_t VBoxServiceVMInfoWinSessionHasProcesses(PLUID pSession,
+                                                 PVBOXSERVICEVMINFOPROC const paProcs, DWORD cProcs,
+                                                 PULONG puSession)
 {
     if (!pSession)
     {
-        VBoxServiceVerbose(1, "VMInfo/Users: Session became invalid while enumerating!\n");
+        VBoxServiceVerbose(1, "Session became invalid while enumerating!\n");
         return 0;
     }
 
@@ -370,7 +466,7 @@ uint32_t VBoxServiceVMInfoWinSessionHasProcesses(PLUID pSession, PVBOXSERVICEVMI
     NTSTATUS rcNt = LsaGetLogonSessionData(pSession, &pSessionData);
     if (rcNt != STATUS_SUCCESS)
     {
-        VBoxServiceError("VMInfo/Users: Could not get logon session data! rcNt=%#x", rcNt);
+        VBoxServiceError("Could not get logon session data! rcNt=%#x", rcNt);
         return 0;
     }
 
@@ -382,30 +478,38 @@ uint32_t VBoxServiceVMInfoWinSessionHasProcesses(PLUID pSession, PVBOXSERVICEVMI
     uint32_t cNumProcs = 0;
     for (DWORD i = 0; i < cProcs; i++)
     {
-        /*VBoxServiceVerbose(3, "%ld:%ld <-> %ld:%ld\n",
-                             paProcs[i].luid.HighPart, paProcs[i].luid.LowPart,
-                             pSessionData->LogonId.HighPart, pSessionData->LogonId.LowPart);*/
-        if (   paProcs[i].luid.HighPart == pSessionData->LogonId.HighPart
-            && paProcs[i].luid.LowPart  == pSessionData->LogonId.LowPart)
+        VBoxServiceVerbose(4, "PID=%ld: (Interactive: %RTbool) %ld:%ld <-> %ld:%ld\n",
+                           paProcs[i].id,                  paProcs[i].fInteractive,
+                           paProcs[i].luid.HighPart,       paProcs[i].luid.LowPart,
+                           pSessionData->LogonId.HighPart, pSessionData->LogonId.LowPart);
+        if (g_cVerbosity)
+        {
+            TCHAR szModule[_1K];
+            int rc2 = VBoxServiceVMInfoWinProcessesGetModuleName(&paProcs[i], szModule, sizeof(szModule));
+            if (RT_SUCCESS(rc2))
+                VBoxServiceVerbose(4, "PID=%ld: %s\n",
+                                   paProcs[i].id, szModule);
+        }
+
+        if (   paProcs[i].fInteractive
+            && (   paProcs[i].luid.HighPart == pSessionData->LogonId.HighPart
+                && paProcs[i].luid.LowPart  == pSessionData->LogonId.LowPart))
         {
             cNumProcs++;
             if (!g_cVerbosity) /* We want a bit more info on higher verbosity. */
                 break;
-
-            TCHAR szModule[_1K];
-            int rc2 = VBoxServiceVMInfoWinProcessesGetModuleName(&paProcs[i], szModule, sizeof(szModule));
-            if (RT_SUCCESS(rc2))
-                VBoxServiceVerbose(4, "VMInfo/Users: PID=%ld: %s\n",
-                                   paProcs[i].id, szModule);
         }
     }
 
     if (g_cVerbosity)
-        VBoxServiceVerbose(3, "VMInfo/Users: Session %u has %u processes\n",
+        VBoxServiceVerbose(3, "Session %u has %u processes total\n",
                            pSessionData->Session, cNumProcs);
     else
-        VBoxServiceVerbose(3, "VMInfo/Users: Session %u has at least one process\n",
+        VBoxServiceVerbose(3, "Session %u has at least one process\n",
                            pSessionData->Session);
+
+    if (puSession)
+        *puSession = pSessionData->Session;
 
     LsaFreeReturnBuffer(pSessionData);
     return cNumProcs;
@@ -446,7 +550,7 @@ static void VBoxServiceVMInfoWinSafeCopy(PWCHAR pwszDst, size_t cbDst, LSA_UNICO
  */
 bool VBoxServiceVMInfoWinIsLoggedIn(PVBOXSERVICEVMINFOUSER pUserInfo, PLUID pSession)
 {
-    AssertPtr(pUserInfo);
+    AssertPtrReturn(pUserInfo, false);
     if (!pSession)
         return false;
 
@@ -460,7 +564,7 @@ bool VBoxServiceVMInfoWinIsLoggedIn(PVBOXSERVICEVMINFOUSER pUserInfo, PLUID pSes
             case ERROR_NOT_ENOUGH_MEMORY:
                 /* If we don't have enough memory it's hard to judge whether the specified user
                  * is logged in or not, so just assume he/she's not. */
-                VBoxServiceVerbose(3, "VMInfo/Users: Not enough memory to retrieve logon session data!\n");
+                VBoxServiceVerbose(3, "Not enough memory to retrieve logon session data!\n");
                 break;
 
             case ERROR_NO_SUCH_LOGON_SESSION:
@@ -469,7 +573,7 @@ bool VBoxServiceVMInfoWinIsLoggedIn(PVBOXSERVICEVMINFOUSER pUserInfo, PLUID pSes
                 break;
 
             default:
-                VBoxServiceError("VMInfo/Users: LsaGetLogonSessionData failed with error %ul\n", ulError);
+                VBoxServiceError("LsaGetLogonSessionData failed with error %u\n", ulError);
                 break;
         }
         if (pSessionData)
@@ -478,7 +582,7 @@ bool VBoxServiceVMInfoWinIsLoggedIn(PVBOXSERVICEVMINFOUSER pUserInfo, PLUID pSes
     }
     if (!pSessionData)
     {
-        VBoxServiceError("VMInfo/Users: Invalid logon session data!\n");
+        VBoxServiceError("Invalid logon session data!\n");
         return false;
     }
 
@@ -490,14 +594,11 @@ bool VBoxServiceVMInfoWinIsLoggedIn(PVBOXSERVICEVMINFOUSER pUserInfo, PLUID pSes
     DWORD dwErr = NO_ERROR;
     if (   IsValidSid(pSessionData->Sid)
         && (   (SECURITY_LOGON_TYPE)pSessionData->LogonType == Interactive
-            || (SECURITY_LOGON_TYPE)pSessionData->LogonType == RemoteInteractive
-            || (SECURITY_LOGON_TYPE)pSessionData->LogonType == CachedInteractive
-            || (SECURITY_LOGON_TYPE)pSessionData->LogonType == CachedRemoteInteractive))
+            || (SECURITY_LOGON_TYPE)pSessionData->LogonType == RemoteInteractive))
     {
-        VBoxServiceVerbose(3, "VMInfo/Users: Session data: Name=%ls, Len=%d, SID=%s, LogonID=%ld,%ld, LogonType=%ld\n",
+        VBoxServiceVerbose(3, "Session data: Name=%ls, Session=%u, LogonID=%ld,%ld, LogonType=%ld\n",
                            pSessionData->UserName.Buffer,
-                           pSessionData->UserName.Length,
-                           pSessionData->Sid != NULL ? "1" : "0",
+                           pSessionData->Session,
                            pSessionData->LogonId.HighPart, pSessionData->LogonId.LowPart,
                            pSessionData->LogonType);
 
@@ -532,14 +633,14 @@ bool VBoxServiceVMInfoWinIsLoggedIn(PVBOXSERVICEVMINFOUSER pUserInfo, PLUID pSes
              * here that we just skip.
              */
             if (dwErr != ERROR_NONE_MAPPED)
-                VBoxServiceError("VMInfo/Users: Failed looking up account info for user=%ls, error=$ld!\n",
+                VBoxServiceError("Failed looking up account info for user=%ls, error=$ld!\n",
                                  pUserInfo->wszUser, dwErr);
         }
         else
         {
             if (enmOwnerType == SidTypeUser) /* Only recognize users; we don't care about the rest! */
             {
-                VBoxServiceVerbose(3, "VMInfo/Users: Account User=%ls, Session=%ld, LUID=%ld,%ld, AuthPkg=%ls, Domain=%ls\n",
+                VBoxServiceVerbose(3, "Account User=%ls, Session=%ld, LogonID=%ld,%ld, AuthPkg=%ls, Domain=%ls\n",
                                    pUserInfo->wszUser, pSessionData->Session, pSessionData->LogonId.HighPart,
                                    pSessionData->LogonId.LowPart, pUserInfo->wszAuthenticationPackage,
                                    pUserInfo->wszLogonDomain);
@@ -547,7 +648,7 @@ bool VBoxServiceVMInfoWinIsLoggedIn(PVBOXSERVICEVMINFOUSER pUserInfo, PLUID pSes
                 /* Detect RDP sessions as well. */
                 LPTSTR  pBuffer = NULL;
                 DWORD   cbRet   = 0;
-                int     iState  = 0;
+                int     iState  = -1;
                 if (WTSQuerySessionInformation(WTS_CURRENT_SERVER_HANDLE,
                                                pSessionData->Session,
                                                WTSConnectState,
@@ -556,15 +657,15 @@ bool VBoxServiceVMInfoWinIsLoggedIn(PVBOXSERVICEVMINFOUSER pUserInfo, PLUID pSes
                 {
                     if (cbRet)
                         iState = *pBuffer;
-                    VBoxServiceVerbose(3, "VMInfo/Users: Account User=%ls, WTSConnectState=%d\n",
-                                       pUserInfo->wszUser, iState);
+                    VBoxServiceVerbose(3, "Account User=%ls, WTSConnectState=%d (%ld)\n",
+                                       pUserInfo->wszUser, iState, cbRet);
                     if (    iState == WTSActive           /* User logged on to WinStation. */
                          || iState == WTSShadow           /* Shadowing another WinStation. */
                          || iState == WTSDisconnected)    /* WinStation logged on without client. */
                     {
                         /** @todo On Vista and W2K, always "old" user name are still
                          *        there. Filter out the old one! */
-                        VBoxServiceVerbose(3, "VMInfo/Users: Account User=%ls using TCS/RDP, state=%d\n",
+                        VBoxServiceVerbose(3, "Account User=%ls using TCS/RDP, state=%d \n",
                                            pUserInfo->wszUser, iState);
                         fFoundUser = true;
                     }
@@ -582,12 +683,12 @@ bool VBoxServiceVMInfoWinIsLoggedIn(PVBOXSERVICEVMINFOUSER pUserInfo, PLUID pSes
                          * fast user switching page!
                          */
                         case ERROR_CTX_WINSTATION_NOT_FOUND:
-                            VBoxServiceVerbose(3, "VMInfo/Users: Account User=%ls, no WinSta found\n",
+                            VBoxServiceVerbose(3, "No WinStation found for user=%ls\n",
                                                pUserInfo->wszUser);
                             break;
 
                         default:
-                            VBoxServiceVerbose(3, "VMInfo/Users: Account User=%ls, error=%ld\n",
+                            VBoxServiceVerbose(3, "Cannot query WTS connection state for user=%ls, error=%ld\n",
                                                pUserInfo->wszUser, dwLastErr);
                             break;
                     }
@@ -597,7 +698,7 @@ bool VBoxServiceVMInfoWinIsLoggedIn(PVBOXSERVICEVMINFOUSER pUserInfo, PLUID pSes
             }
         }
 
-        VBoxServiceVerbose(3, "VMInfo/Users: Account User=%ls %s logged in\n",
+        VBoxServiceVerbose(3, "Account User=%ls %s logged in\n",
                            pUserInfo->wszUser, fFoundUser ? "is" : "is not");
     }
 
@@ -629,24 +730,24 @@ int VBoxServiceVMInfoWinWriteUsers(char **ppszUserList, uint32_t *pcUsersInList)
         switch (ulError)
         {
             case ERROR_NOT_ENOUGH_MEMORY:
-                VBoxServiceError("VMInfo/Users: Not enough memory to enumerate logon sessions!\n");
+                VBoxServiceError("Not enough memory to enumerate logon sessions!\n");
                 break;
 
             case ERROR_SHUTDOWN_IN_PROGRESS:
                 /* If we're about to shutdown when we were in the middle of enumerating the logon
                  * sessions, skip the error to not confuse the user with an unnecessary log message. */
-                VBoxServiceVerbose(3, "VMInfo/Users: Shutdown in progress ...\n");
+                VBoxServiceVerbose(3, "Shutdown in progress ...\n");
                 ulError = ERROR_SUCCESS;
                 break;
 
             default:
-                VBoxServiceError("VMInfo/Users: LsaEnumerate failed with error %ul\n", ulError);
+                VBoxServiceError("LsaEnumerate failed with error %u\n", ulError);
                 break;
         }
 
         return RTErrConvertFromWin32(ulError);
     }
-    VBoxServiceVerbose(3, "VMInfo/Users: Found %ld sessions\n", cSessions);
+    VBoxServiceVerbose(3, "Found %ld sessions\n", cSessions);
 
     PVBOXSERVICEVMINFOPROC  paProcs;
     DWORD                   cProcs;
@@ -654,16 +755,16 @@ int VBoxServiceVMInfoWinWriteUsers(char **ppszUserList, uint32_t *pcUsersInList)
     if (RT_FAILURE(rc))
     {
         if (rc == VERR_NO_MEMORY)
-            VBoxServiceError("VMInfo/Users: Not enough memory to enumerate processes for a session!\n");
+            VBoxServiceError("Not enough memory to enumerate processes\n");
         else
-            VBoxServiceError("VMInfo/Users: Failed to enumerate processes for a session, rc=%Rrc\n", rc);
+            VBoxServiceError("Failed to enumerate processes, rc=%Rrc\n", rc);
     }
     else
     {
         PVBOXSERVICEVMINFOUSER pUserInfo;
         pUserInfo = (PVBOXSERVICEVMINFOUSER)RTMemAllocZ(cSessions * sizeof(VBOXSERVICEVMINFOUSER) + 1);
         if (!pUserInfo)
-            VBoxServiceError("VMInfo/Users: Not enough memory to store enumerated users!\n");
+            VBoxServiceError("Not enough memory to store enumerated users!\n");
         else
         {
             ULONG cUniqueUsers = 0;
@@ -672,11 +773,12 @@ int VBoxServiceVMInfoWinWriteUsers(char **ppszUserList, uint32_t *pcUsersInList)
                 VBOXSERVICEVMINFOUSER UserInfo;
                 if (VBoxServiceVMInfoWinIsLoggedIn(&UserInfo, &paSessions[i]))
                 {
-                    VBoxServiceVerbose(4, "VMInfo/Users: Handling user=%ls, domain=%ls, package=%ls\n",
-                                       pUserInfo[i].wszUser, pUserInfo[i].wszLogonDomain, pUserInfo[i].wszAuthenticationPackage);
+                    VBoxServiceVerbose(4, "Handling user=%ls, domain=%ls, package=%ls\n",
+                                       UserInfo.wszUser, UserInfo.wszLogonDomain, UserInfo.wszAuthenticationPackage);
 
                     /* Retrieve assigned processes of current session. */
-                    uint32_t cSessionProcs = VBoxServiceVMInfoWinSessionHasProcesses(&paSessions[i], paProcs, cProcs);
+                    ULONG ulSession;
+                    uint32_t cSessionProcs = VBoxServiceVMInfoWinSessionHasProcesses(&paSessions[i], paProcs, cProcs, &ulSession);
                     /* Don't return here when current session does not have assigned processes
                      * anymore -- in that case we have to search through the unique users list below
                      * and see if got a stale user/session entry. */
@@ -686,22 +788,36 @@ int VBoxServiceVMInfoWinWriteUsers(char **ppszUserList, uint32_t *pcUsersInList)
                     {
                         if (   !wcscmp(UserInfo.wszUser, pUserInfo[i].wszUser)
                             && !wcscmp(UserInfo.wszLogonDomain, pUserInfo[i].wszLogonDomain)
-                            && !wcscmp(UserInfo.wszAuthenticationPackage, pUserInfo[i].wszAuthenticationPackage))
+                            && !wcscmp(UserInfo.wszAuthenticationPackage, pUserInfo[i].wszAuthenticationPackage)
+                            && cSessionProcs)
                         {
-                            /* If the process-per-user count was higher than 0 before but another session was
-                             * was detected which also belongs to this user but has no assigned processes anymore,
-                             * we detected a stale session. */
-                            if (   pUserInfo[i].ulNumProcs > 0
-                                && !cSessionProcs)
+                            /*
+                             * Only respect the highest session for the current user.
+                             */
+                            if (ulSession > pUserInfo[i].ulSession)
                             {
-                                VBoxServiceVerbose(3, "VMInfo/Users: Stale session for user=%ls detected! Old processes: %u, new: %u\n",
-                                                   pUserInfo[i].wszUser, pUserInfo[i].ulNumProcs, cSessionProcs);
+                                VBoxServiceVerbose(4, "Updating user=%ls to %u processes (last session: %u)\n",
+                                                   UserInfo.wszUser, cSessionProcs, ulSession);
+
+                                pUserInfo[i].ulNumProcs = cSessionProcs;
+                                pUserInfo[i].ulSession  = ulSession;
+
+                                if (!cSessionProcs)
+                                    VBoxServiceVerbose(3, "Stale session for user=%ls detected! Old processes: %u, new: %u\n",
+                                                       pUserInfo[i].wszUser, pUserInfo[i].ulNumProcs, cSessionProcs);
+                            }
+                            /* There can be multiple session objects using the same session ID for the
+                             * current user -- so when we got the same session again just add the found
+                             * processes to it. */
+                            else if (pUserInfo[i].ulSession == ulSession)
+                            {
+                                VBoxServiceVerbose(4, "Adding %u processes to user=%ls (session %u)\n",
+                                                   cSessionProcs, UserInfo.wszUser, ulSession);
+
+                                pUserInfo[i].ulNumProcs += cSessionProcs;
+                                pUserInfo[i].ulSession   = ulSession;
                             }
 
-                            VBoxServiceVerbose(4, "VMInfo/Users: Updating user=%ls to %u processes\n",
-                                               UserInfo.wszUser, cSessionProcs);
-
-                            pUserInfo[i].ulNumProcs = cSessionProcs;
                             fFoundUser = true;
                             break;
                         }
@@ -709,17 +825,19 @@ int VBoxServiceVMInfoWinWriteUsers(char **ppszUserList, uint32_t *pcUsersInList)
 
                     if (!fFoundUser)
                     {
-                        VBoxServiceVerbose(4, "VMInfo/Users: Adding new user=%ls with %u processes\n",
-                                           UserInfo.wszUser, cSessionProcs);
+                        VBoxServiceVerbose(4, "Adding new user=%ls (session %u) with %u processes\n",
+                                           UserInfo.wszUser, ulSession, cSessionProcs);
 
                         memcpy(&pUserInfo[cUniqueUsers], &UserInfo, sizeof(VBOXSERVICEVMINFOUSER));
-                        pUserInfo[cUniqueUsers++].ulNumProcs = cSessionProcs;
+                        pUserInfo[cUniqueUsers].ulNumProcs = cSessionProcs;
+                        pUserInfo[cUniqueUsers].ulSession  = ulSession;
+                        cUniqueUsers++;
                         Assert(cUniqueUsers <= cSessions);
                     }
                 }
             }
 
-            VBoxServiceVerbose(3, "VMInfo/Users: Found %u unique logged-in user(s)\n",
+            VBoxServiceVerbose(3, "Found %u unique logged-in user(s)\n",
                                cUniqueUsers);
 
             *pcUsersInList = 0;
@@ -727,6 +845,9 @@ int VBoxServiceVMInfoWinWriteUsers(char **ppszUserList, uint32_t *pcUsersInList)
             {
                 if (pUserInfo[i].ulNumProcs)
                 {
+                    VBoxServiceVerbose(3, "User %ls has %ld processes (session %u)\n",
+                                       pUserInfo[i].wszUser, pUserInfo[i].ulNumProcs, pUserInfo[i].ulSession);
+
                     if (*pcUsersInList > 0)
                     {
                         rc = RTStrAAppend(ppszUserList, ",");

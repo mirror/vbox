@@ -135,6 +135,9 @@ static BOOL vboxServiceWinSetStatus(DWORD dwStatus, DWORD dwCheckPoint)
     ss.dwServiceType              = SERVICE_WIN32_OWN_PROCESS;
     ss.dwCurrentState             = dwStatus;
     ss.dwControlsAccepted         = SERVICE_ACCEPT_STOP | SERVICE_ACCEPT_SHUTDOWN;
+#ifndef TARGET_NT4
+    ss.dwControlsAccepted        |= SERVICE_ACCEPT_SESSIONCHANGE;
+#endif
     ss.dwWin32ExitCode            = NO_ERROR;
     ss.dwServiceSpecificExitCode  = 0; /* Not used */
     ss.dwCheckPoint               = dwCheckPoint;
@@ -378,6 +381,53 @@ RTEXITCODE VBoxServiceWinEnterCtrlDispatcher(void)
 }
 
 
+#ifndef TARGET_NT4
+static const char* vboxServiceWTSStateToString(DWORD dwEvent)
+{
+    switch (dwEvent)
+    {
+        case WTS_CONSOLE_CONNECT:
+            return "A session was connected to the console terminal";
+
+        case WTS_CONSOLE_DISCONNECT:
+            return "A session was disconnected from the console terminal";
+
+        case WTS_REMOTE_CONNECT:
+            return "A session connected to the remote terminal";
+
+        case WTS_REMOTE_DISCONNECT:
+            return "A session was disconnected from the remote terminal";
+
+        case WTS_SESSION_LOGON:
+            return "A user has logged on to a session";
+
+        case WTS_SESSION_LOGOFF:
+            return "A user has logged off the session";
+
+        case WTS_SESSION_LOCK:
+            return "A session has been locked";
+
+        case WTS_SESSION_UNLOCK:
+            return "A session has been unlocked";
+
+        case WTS_SESSION_REMOTE_CONTROL:
+            return "A session has changed its remote controlled status";
+#if 0
+        case WTS_SESSION_CREATE:
+            return "A session has been created";
+
+        case WTS_SESSION_TERMINATE:
+            return "The session has been terminated";
+#endif
+        default:
+            break;
+    }
+
+    return "Uknonwn state";
+}
+#endif /* !TARGET_NT4 */
+
+
 #ifdef TARGET_NT4
 static VOID WINAPI vboxServiceWinCtrlHandler(DWORD dwControl)
 #else
@@ -416,27 +466,26 @@ static DWORD WINAPI vboxServiceWinCtrlHandler(DWORD dwControl, DWORD dwEventType
             break;
         }
 
-        case SERVICE_CONTROL_SESSIONCHANGE:     /* Only Win XP and up. */
-#ifndef TARGET_NT4
-# if 0
-            switch (dwEventType)
-            {
-                case WTS_SESSION_LOGON:
-                    VBoxServiceVerbose(2, "A user has logged on to the session.\n");
-                    break;
+# ifndef TARGET_NT4
+        case SERVICE_CONTROL_SESSIONCHANGE: /* Only Windows 2000 and up. */
+        {
+            AssertPtr(lpEventData);
+            PWTSSESSION_NOTIFICATION pNotify = (PWTSSESSION_NOTIFICATION)lpEventData;
+            Assert(pNotify->cbSize == sizeof(WTSSESSION_NOTIFICATION));
 
-                case WTS_SESSION_LOGOFF:
-                    VBoxServiceVerbose(2, "A user has logged off from the session.\n");
-                    break;
-                default:
-                    break;
-            }
-# endif
-#endif /* !TARGET_NT4 */
+            VBoxServiceVerbose(1, "Control handler: %s (Session=%ld, Event=%#x)\n",
+                               vboxServiceWTSStateToString(dwEventType),
+                               pNotify->dwSessionId, dwEventType);
+
+            /* Handle all events, regardless of dwEventType. */
+            int rc2 = VBoxServiceVMInfoSignal();
+            AssertRC(rc2);
             break;
+        }
+# endif /* !TARGET_NT4 */
 
         default:
-            VBoxServiceVerbose(1, "Service control function not implemented: %#x\n", dwControl);
+            VBoxServiceVerbose(1, "Control handler: Function not implemented: %#x\n", dwControl);
             rcRet = ERROR_CALL_NOT_IMPLEMENTED;
             break;
     }

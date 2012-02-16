@@ -82,32 +82,22 @@ static VBOXSERVICEVEPROPCACHE   g_VMInfoPropCache;
 static uint64_t                 g_idVMInfoSession;
 
 
-#ifdef RT_OS_WINDOWS
-static BOOL WINAPI VBoxServiceVMInfoConsoleControlHandler(DWORD dwCtrlType)
-{
-    int rc = VINF_SUCCESS;
-    bool fEventHandled = FALSE;
-    switch (dwCtrlType)
-    {
-        case CTRL_LOGOFF_EVENT:
-            VBoxServiceVerbose(2, "VMInfo: Received logged-off event\n");
-            /* Trigger a re-enumeration of all logged-in users by unblocking
-             * the multi event semaphore of the VMInfo thread. */
-            if (g_hVMInfoEvent)
-                rc = RTSemEventMultiSignal(g_hVMInfoEvent);
-            fEventHandled = TRUE;
-            break;
-        default:
-            break;
-        /** @todo Add other events here. */
-    }
 
-    if (RT_FAILURE(rc))
-        VBoxServiceError("VMInfo: Event %ld handled with error rc=%Rrc\n",
-                         dwCtrlType, rc);
-    return fEventHandled;
+/**
+ * Signals the event so that a re-enumeration of VM-specific
+ * information (like logged in users) can happen.
+ *
+ * @return  IPRT status code.
+ */
+int VBoxServiceVMInfoSignal(void)
+{
+    /* Trigger a re-enumeration of all logged-in users by unblocking
+     * the multi event semaphore of the VMInfo thread. */
+    if (g_hVMInfoEvent)
+        return RTSemEventMultiSignal(g_hVMInfoEvent);
+
+    return VINF_SUCCESS;
 }
-#endif /* RT_OS_WINDOWS */
 
 
 /** @copydoc VBOXSERVICE::pfnPreInit */
@@ -181,17 +171,6 @@ static DECLCALLBACK(int) VBoxServiceVMInfoInit(void)
                                         VBOXSERVICEPROPCACHEFLAG_TEMPORARY | VBOXSERVICEPROPCACHEFLAG_TRANSIENT, "true");
         VBoxServicePropCacheUpdateEntry(&g_VMInfoPropCache, "/VirtualBox/GuestInfo/Net/Count",
                                         VBOXSERVICEPROPCACHEFLAG_TEMPORARY | VBOXSERVICEPROPCACHEFLAG_ALWAYS_UPDATE, NULL /* Delete on exit */);
-
-#ifdef RT_OS_WINDOWS
-# ifndef RT_OS_NT4
-    /* Install console control handler. */
-    if (!SetConsoleCtrlHandler((PHANDLER_ROUTINE)VBoxServiceVMInfoConsoleControlHandler, TRUE /* Add handler */))
-    {
-        VBoxServiceError("VMInfo: Unable to add console control handler, error=%ld\n", GetLastError());
-        /* Just skip this error, not critical. */
-    }
-# endif /* !RT_OS_NT4 */
-#endif /* RT_OS_WINDOWS */
     }
     return rc;
 }
@@ -300,7 +279,7 @@ static int vboxserviceVMInfoWriteUsers(void)
     while (   (ut_user = getutxent())
            && RT_SUCCESS(rc))
     {
-        VBoxServiceVerbose(4, "VMInfo/Users: Found logged in user \"%s\"\n",
+        VBoxServiceVerbose(4, "Found logged in user \"%s\"\n",
                            ut_user->ut_user);
         if (cUsersInList > cListSize)
         {
@@ -368,7 +347,7 @@ static int vboxserviceVMInfoWriteUsers(void)
         {
             static int s_iVMInfoBitchedOOM = 0;
             if (s_iVMInfoBitchedOOM++ < 3)
-                VBoxServiceVerbose(0, "VMInfo/Users: Warning: Not enough memory available to enumerate users! Keeping old value (%u)\n",
+                VBoxServiceVerbose(0, "Warning: Not enough memory available to enumerate users! Keeping old value (%u)\n",
                                    g_cVMInfoLoggedInUsers);
             cUsersInList = g_cVMInfoLoggedInUsers;
         }
@@ -376,7 +355,7 @@ static int vboxserviceVMInfoWriteUsers(void)
             cUsersInList = 0;
     }
 
-    VBoxServiceVerbose(4, "VMInfo/Users: cUsersInList: %u, pszUserList: %s, rc=%Rrc\n",
+    VBoxServiceVerbose(4, "cUsersInList: %u, pszUserList: %s, rc=%Rrc\n",
                        cUsersInList, pszUserList ? pszUserList : "<NULL>", rc);
 
     if (pszUserList && cUsersInList > 0)
@@ -877,19 +856,6 @@ static DECLCALLBACK(void) VBoxServiceVMInfoStop(void)
 /** @copydoc VBOXSERVICE::pfnTerm */
 static DECLCALLBACK(void) VBoxServiceVMInfoTerm(void)
 {
-    int rc;
-
-#ifdef RT_OS_WINDOWS
-# ifndef RT_OS_NT4
-    /* Uninstall console control handler. */
-    if (!SetConsoleCtrlHandler((PHANDLER_ROUTINE)NULL, FALSE /* Remove handler */))
-    {
-        VBoxServiceError("VMInfo: Unable to remove console control handler, error=%ld\n", GetLastError());
-        /* Just skip this error, not critical. */
-    }
-# endif /* !RT_OS_NT4 */
-#endif
-
     if (g_hVMInfoEvent != NIL_RTSEMEVENTMULTI)
     {
         /** @todo temporary solution: Zap all values which are not valid
@@ -905,7 +871,7 @@ static DECLCALLBACK(void) VBoxServiceVMInfoTerm(void)
          *        since it remembers what we've written. */
         /* Delete the "../Net" branch. */
         const char *apszPat[1] = { "/VirtualBox/GuestInfo/Net/*" };
-        rc = VbglR3GuestPropDelSet(g_uVMInfoGuestPropSvcClientID, &apszPat[0], RT_ELEMENTS(apszPat));
+        int rc = VbglR3GuestPropDelSet(g_uVMInfoGuestPropSvcClientID, &apszPat[0], RT_ELEMENTS(apszPat));
 
         /* Destroy property cache. */
         VBoxServicePropCacheDestroy(&g_VMInfoPropCache);
