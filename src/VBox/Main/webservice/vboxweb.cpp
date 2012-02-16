@@ -1720,9 +1720,9 @@ int WebServiceSession::authenticate(const char *pcszUsername,
         util::AutoReadLock vlock(g_pVirtualBoxLockHandle COMMA_LOCKVAL_SRC_POS);
         pVirtualBox = g_pVirtualBox;
     }
-    pVirtualBox.queryInterfaceTo(ppVirtualBox);
     if (pVirtualBox.isNull())
         return rc;
+    pVirtualBox.queryInterfaceTo(ppVirtualBox);
 
     util::AutoReadLock lock(g_pAuthLibLockHandle COMMA_LOCKVAL_SRC_POS);
 
@@ -1759,13 +1759,17 @@ int WebServiceSession::authenticate(const char *pcszUsername,
                 }
 
                 if (RT_FAILURE(rc = RTLdrGetSymbol(hlibAuth, AUTHENTRY3_NAME, (void**)&pfnAuthEntry3)))
+                {
                     WEBDEBUG(("%s(): Could not resolve import '%s'. Error code: %Rrc\n", __FUNCTION__, AUTHENTRY3_NAME, rc));
 
-                if (RT_FAILURE(rc = RTLdrGetSymbol(hlibAuth, AUTHENTRY2_NAME, (void**)&pfnAuthEntry2)))
-                    WEBDEBUG(("%s(): Could not resolve import '%s'. Error code: %Rrc\n", __FUNCTION__, AUTHENTRY2_NAME, rc));
+                    if (RT_FAILURE(rc = RTLdrGetSymbol(hlibAuth, AUTHENTRY2_NAME, (void**)&pfnAuthEntry2)))
+                    {
+                        WEBDEBUG(("%s(): Could not resolve import '%s'. Error code: %Rrc\n", __FUNCTION__, AUTHENTRY2_NAME, rc));
 
-                if (RT_FAILURE(rc = RTLdrGetSymbol(hlibAuth, AUTHENTRY_NAME, (void**)&pfnAuthEntry)))
-                    WEBDEBUG(("%s(): Could not resolve import '%s'. Error code: %Rrc\n", __FUNCTION__, AUTHENTRY_NAME, rc));
+                        if (RT_FAILURE(rc = RTLdrGetSymbol(hlibAuth, AUTHENTRY_NAME, (void**)&pfnAuthEntry)))
+                            WEBDEBUG(("%s(): Could not resolve import '%s'. Error code: %Rrc\n", __FUNCTION__, AUTHENTRY_NAME, rc));
+                    }
+                }
 
                 if (pfnAuthEntry || pfnAuthEntry2 || pfnAuthEntry3)
                     fAuthLibLoaded = true;
