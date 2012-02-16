@@ -37,6 +37,9 @@ public:
     /* Text getter: */
     QString text() const;
 
+    /* Register image: */
+    void registerImage(const QImage &image, const QString &strName);
+
 public slots:
 
     /* Minimum text-width setter: */
