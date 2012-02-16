@@ -2268,7 +2268,7 @@ CheckOpcodeCsIp:
         cmp     ax, [xBP + xS*2 + 512 + X86FSTENV32P.FOP]
         je      .success
 
-;        xor        ax, ax
+;        xor     ax, ax
 ;        cmp     ax, [xBP + xS*2 + X86FXSTATE.FOP]
 ;        jne     .failure3
 
