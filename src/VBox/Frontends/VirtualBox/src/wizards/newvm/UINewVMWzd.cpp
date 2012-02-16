@@ -233,6 +233,7 @@ UINewVMWzdPage2::UINewVMWzdPage2()
     registerField("name*", m_pNameEditor);
     registerField("type*", m_pTypeSelector, "type", SIGNAL(osTypeChanged()));
     registerField("machineFolder", this, "machineFolder");
+    registerField("machineBaseName", this, "machineBaseName");
 
     connect(m_pNameEditor, SIGNAL(textChanged(const QString&)),
             this, SLOT(sltNameChanged(const QString&)));
@@ -312,6 +313,7 @@ bool UINewVMWzdPage2::createMachineFolder()
     QFileInfo fileInfo(strMachineFilename);
     /* Get machine directory: */
     QString strMachineFolder = fileInfo.absolutePath();
+    QString strMachineBaseName = fileInfo.baseName();
 
     /* Try to create this machine directory (and it's predecessors): */
     bool fMachineFolderCreated = QDir().mkpath(strMachineFolder);
@@ -322,7 +324,8 @@ bool UINewVMWzdPage2::createMachineFolder()
     }
 
     /* Initialize machine dir value: */
-    m_strMachineFolder = strMachineFolder;
+    m_strMachineFolder   = strMachineFolder;
+    m_strMachineBaseName = strMachineBaseName;
     return true;
 }
 
@@ -348,6 +351,16 @@ QString UINewVMWzdPage2::machineFolder() const
 void UINewVMWzdPage2::setMachineFolder(const QString &strMachineFolder)
 {
     m_strMachineFolder = strMachineFolder;
+}
+
+QString UINewVMWzdPage2::machineBaseName() const
+{
+    return m_strMachineBaseName;
+}
+
+void UINewVMWzdPage2::setMachineBaseName(const QString &strMachineBaseName)
+{
+    m_strMachineBaseName = strMachineBaseName;
 }
 
 UINewVMWzdPage3::UINewVMWzdPage3()
@@ -591,7 +604,7 @@ void UINewVMWzdPage4::getWithFileOpenDialog()
 
 bool UINewVMWzdPage4::getWithNewHardDiskWizard()
 {
-    UINewHDWizard dlg(this, field("name").toString(), field("machineFolder").toString(), field("type").value<CGuestOSType>().GetRecommendedHDD());
+    UINewHDWizard dlg(this, field("machineBaseName").toString(), field("machineFolder").toString(), field("type").value<CGuestOSType>().GetRecommendedHDD());
 
     if (dlg.exec() == QDialog::Accepted)
     {
