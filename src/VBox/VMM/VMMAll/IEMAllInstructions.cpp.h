@@ -10823,6 +10823,7 @@ FNIEMOP_STUB_1(iemOp_fsub_m64r,  uint8_t, bRm);
 /** Opcode 0xdc !11/5. */
 FNIEMOP_STUB_1(iemOp_fsubr_m64r, uint8_t, bRm);
 
+
 /** Opcode 0xdc !11/6. */
 FNIEMOP_DEF_1(iemOp_fdiv_m64r,  uint8_t, bRm)
 {
@@ -10841,15 +10842,18 @@ FNIEMOP_DEF_1(iemOp_fdiv_m64r,  uint8_t, bRm)
     IEM_MC_MAYBE_RAISE_DEVICE_NOT_AVAILABLE();
     IEM_MC_MAYBE_RAISE_FPU_XCPT();
     IEM_MC_FETCH_MEM_R64(r64Divisor, pIemCpu->iEffSeg, GCPtrEffSrc);
-    IEM_MC_REF_FPUREG_R80(pr80Dividend, 0); /** @todo Check for and handle stack underflow! */
-    IEM_MC_CALL_FPU_AIMPL_3(iemAImpl_fpu_fdiv_r80_by_r64, pFpuRes, pr80Dividend, pr64Divisor);
-
-    IEM_MC_STORE_FPU_RESULT_MEM_OP(FpuRes, 0, pIemCpu->iEffSeg, GCPtrEffSrc);
+    IEM_MC_IF_FPUREG_NOT_EMPTY_REF_R80(pr80Dividend, 0)
+        IEM_MC_CALL_FPU_AIMPL_3(iemAImpl_fpu_fdiv_r80_by_r64, pFpuRes, pr80Dividend, pr64Divisor);
+        IEM_MC_STORE_FPU_RESULT_MEM_OP(FpuRes, 0, pIemCpu->iEffSeg, GCPtrEffSrc);
+    IEM_MC_ELSE()
+        IEM_MC_FPU_STACK_UNDERFLOW_MEM_OP(0, pIemCpu->iEffSeg, GCPtrEffSrc);
+    IEM_MC_ENDIF();
     IEM_MC_ADVANCE_RIP();
 
     IEM_MC_END();
     return VINF_SUCCESS;
 }
+
 
 /** Opcode 0xdc !11/7. */
 FNIEMOP_STUB_1(iemOp_fdivr_m64r, uint8_t, bRm);
