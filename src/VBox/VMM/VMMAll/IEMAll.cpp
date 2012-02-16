@@ -39,6 +39,17 @@
  *
  * The current code is very much work in progress. You've been warned!
  *
+ *
+ * @section sec_iem_fpu_instr   FPU Instructions
+ *
+ * On x86 and AMD64 hosts, the FPU instructions are implemented by executing the
+ * same or equivalent instructions on the host FPU.  To make life easy, we also
+ * let the FPU prioritize the unmasked exceptions for us.  This however, only
+ * works reliably when CR0.NE is set, i.e. when using \#MF instead the IRQ 13
+ * for FPU exception delivery, because with CR0.NE=0 there is a window where we
+ * can trigger spurious FPU exceptions.
+ *
+ *
  */
 
 /*******************************************************************************
@@ -3528,14 +3539,57 @@ static void iemFpuPushResultWithMemOp(PIEMCPU pIemCpu, PIEMFPURESULT pResult, ui
 }
 
 
-static void iemFpuStoreResult(PIEMCPU pIemCpu, PIEMFPURESULT pResult, uint8_t iStReg)
+/**
+ * Stores a result in a FPU register and updates the FSW and FTW.
+ *
+ * @param   pIemCpu             The IEM per CPU data.
+ * @param   pResult             The result to store.
+ * @param   iStReg              Which FPU register to store it in.
+ * @param   pCtx                The CPU context.
+ */
+static void iemFpuStoreResultOnly(PIEMCPU pIemCpu, PIEMFPURESULT pResult, uint8_t iStReg, PCPUMCTX pCtx)
 {
+    Assert(iStReg < 8);
+    uint16_t  iReg = (X86_FSW_TOP_GET(pCtx->fpu.FSW) + iStReg) & X86_FSW_TOP_SMASK;
+    pCtx->fpu.FSW &= X86_FSW_C_MASK;
+    pCtx->fpu.FSW |= pResult->FSW & ~X86_FSW_TOP_MASK;
+    pCtx->fpu.FTW |= RT_BIT(iReg);
+    pCtx->fpu.aRegs[iStReg].r80 = pResult->r80Result;
 }
 
+
+/**
+ * Stores a result in a FPU register, updates the FSW, FTW, FPUIP, FPUCS, and
+ * FOP.
+ *
+ * @param   pIemCpu             The IEM per CPU data.
+ * @param   pResult             The result to store.
+ * @param   iStReg              Which FPU register to store it in.
+ * @param   pCtx                The CPU context.
+ */
+static void iemFpuStoreResult(PIEMCPU pIemCpu, PIEMFPURESULT pResult, uint8_t iStReg)
+{
+    PCPUMCTX pCtx = pIemCpu->CTX_SUFF(pCtx);
+    iemFpuUpdateOpcodeAndIP(pIemCpu, pCtx);
+    iemFpuStoreResultOnly(pIemCpu, pResult, iStReg, pCtx);
+}
+
+
+/**
+ * Stores a result in a FPU register, updates the FSW, FTW, FPUIP, FPUCS, FOP,
+ * FPUDP, and FPUDS.
+ *
+ * @param   pIemCpu             The IEM per CPU data.
+ * @param   pResult             The result to store.
+ * @param   iStReg              Which FPU register to store it in.
+ * @param   pCtx                The CPU context.
+ */
 static void iemFpuStoreResultWithMemOp(PIEMCPU pIemCpu, PIEMFPURESULT pResult, uint8_t iStReg, uint8_t iEffSeg, RTGCPTR GCPtrEff)
 {
+    PCPUMCTX pCtx = pIemCpu->CTX_SUFF(pCtx);
     iemFpuUpdateDP(pIemCpu, pIemCpu->CTX_SUFF(pCtx), iEffSeg, GCPtrEff);
-    //iemFpuStoreResult(pIemCpu, pResult);
+    iemFpuUpdateOpcodeAndIP(pIemCpu, pCtx);
+    iemFpuStoreResultOnly(pIemCpu, pResult, iStReg, pCtx);
 }
 
 

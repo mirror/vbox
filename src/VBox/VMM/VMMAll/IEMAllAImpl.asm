@@ -1280,7 +1280,20 @@ ENDPROC iemAImpl_bswap_u64
 %macro FPU_SAFE_INIT 1
         fninit
         movzx   T0, word [%1 + X86FXSTATE.FCW]
+        and     T0, X86_FCW_MASK_ALL | X86_FCW_PC_MASK | X86_FCW_RC_MASK
         or      T0, X86_FCW_MASK_ALL
+        mov     [xSP], T0
+        fldcw   [xSP]
+%endmacro
+
+;;
+; Initialize the FPU for x87 operation, loading the guest's status word.
+;
+; @param    1       Expression giving the address of the FXSTATE of the guest.
+%macro FPU_INIT 1
+        fninit
+        movzx   T0, word [%1 + X86FXSTATE.FCW]
+        and     T0, X86_FCW_MASK_ALL | X86_FCW_PC_MASK | X86_FCW_RC_MASK
         mov     [xSP], T0
         fldcw   [xSP]
 %endmacro
@@ -1322,7 +1335,7 @@ ENDPROC iemAImpl_fpu_r32_to_r80
 ;
 ; @param    A0      FPU context (fxsave).
 ; @param    A1      Pointer to a IEMFPURESULT for the output.
-; @param    A2      Pointer to the 32-bit floating point value to convert.
+; @param    A2      Pointer to the 64-bit floating point value to convert.
 ;
 BEGINPROC_FASTCALL iemAImpl_fpu_r64_to_r80, 12
         PROLOGUE_3_ARGS
@@ -1337,4 +1350,28 @@ BEGINPROC_FASTCALL iemAImpl_fpu_r64_to_r80, 12
         add     xSP, 20h
         EPILOGUE_3_ARGS 0
 ENDPROC iemAImpl_fpu_r64_to_r80
+
+
+;;
+; FDIV with 64-bit floating point value.
+;
+; @param    A0      FPU context (fxsave).
+; @param    A1      Pointer to a IEMFPURESULT for the output.
+; @param    A2      Pointer to the 80-bit dividend.
+; @param    A3      Pointer to the 64-bit divisor.
+;
+BEGINPROC_FASTCALL iemAImpl_fpu_fdiv_r80_by_r64, 16
+        PROLOGUE_4_ARGS
+        sub     xSP, 20h
+
+        FPU_INIT A0
+        fdiv    qword [A3]
+
+        fnstsw  word  [A1 + IEMFPURESULT.FSW]
+        fnclex
+        fstp    tword [A1 + IEMFPURESULT.r80Result]
+
+        add     xSP, 20h
+        EPILOGUE_4_ARGS 8
+ENDPROC iemAImpl_fpu_fdiv_r80_by_r64
 
