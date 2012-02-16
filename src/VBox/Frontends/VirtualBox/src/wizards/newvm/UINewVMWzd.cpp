@@ -162,7 +162,7 @@ UINewVMWzd::UINewVMWzd(QWidget *pParent) : QIWizard(pParent)
 #endif /* Q_WS_MAC */
 
     /* Resize to 'golden ratio' */
-    resizeToGoldenRatio();
+    resizeToGoldenRatio(1.2);
 }
 
 const CMachine UINewVMWzd::machine() const

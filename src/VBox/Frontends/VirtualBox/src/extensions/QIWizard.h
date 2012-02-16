@@ -48,7 +48,7 @@ protected:
     void retranslateAllPages();
 
     /* Adjusting stuff: */
-    void resizeToGoldenRatio();
+    void resizeToGoldenRatio(double dRatio = 1.6);
 
     /* Design stuff: */
 #ifndef Q_WS_MAC
