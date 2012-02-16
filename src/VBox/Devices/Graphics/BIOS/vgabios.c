@@ -843,7 +843,9 @@ static void biosfn_set_video_mode(mode) Bit8u mode;
 
 #ifdef VBE
  if (vbe_has_vbe_display()) {
-   dispi_set_enable(VBE_DISPI_DISABLED);
+   // Force controller into VGA mode
+   outb(VGAREG_SEQU_ADDRESS,7);
+   outb(VGAREG_SEQU_DATA,0x00);
   }
 #endif // def VBE
 

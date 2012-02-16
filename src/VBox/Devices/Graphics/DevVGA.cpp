@@ -349,7 +349,7 @@ static const uint8_t sr_mask[8] = {
     (uint8_t)~0xf1,
     (uint8_t)~0xff,
     (uint8_t)~0xff,
-    (uint8_t)~0x00,
+    (uint8_t)~0x01,
 };
 
 static const uint8_t gr_mask[16] = {
@@ -724,6 +724,12 @@ static void vga_ioport_write(void *opaque, uint32_t addr, uint32_t val)
     case 0x3c5:
         Log2(("vga: write SR%x = 0x%02x\n", s->sr_index, val));
         s->sr[s->sr_index] = val & sr_mask[s->sr_index];
+        /* Allow SR07 to disable VBE. */
+        if (s->sr_index == 0x07 && !(val & 1))
+        {
+            s->vbe_regs[VBE_DISPI_INDEX_ENABLE] = VBE_DISPI_DISABLED;
+            s->bank_offset = 0;
+        }
         if (s->fRealRetrace && s->sr_index == 0x01)
             vga_update_retrace_state(s);
 #ifndef IN_RC
@@ -1090,6 +1096,8 @@ static int vbe_ioport_write_data(void *opaque, uint32_t addr, uint32_t val)
                     shift_control = 2;
                     s->sr[4] |= 0x08; /* set chain 4 mode */
                     s->sr[2] |= 0x0f; /* activate all planes */
+                    /* Indicate non-VGA mode in SR07. */
+                    s->sr[7] |= 1;
                 }
                 s->gr[0x05] = (s->gr[0x05] & ~0x60) | (shift_control << 5);
                 s->cr[0x09] &= ~0x9f; /* no double scan */
@@ -4141,7 +4149,7 @@ static DECLCALLBACK(void) vgaInfoState(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, c
  * @param   cCols               The number of columns.
  * @param   pszTitle            The title text, NULL if none.
  */
-static void vgaInfoTextPrintSeparatorLine(PCDBGFINFOHLP pHlp, uint32_t cCols, const char *pszTitle)
+static void vgaInfoTextPrintSeparatorLine(PCDBGFINFOHLP pHlp, size_t cCols, const char *pszTitle)
 {
     if (pszTitle)
     {
@@ -4153,7 +4161,7 @@ static void vgaInfoTextPrintSeparatorLine(PCDBGFINFOHLP pHlp, uint32_t cCols, co
         }
         else
         {
-            uint32_t cchLeft = (cCols - cchTitle - 2) / 2;
+            size_t cchLeft = (cCols - cchTitle - 2) / 2;
             cCols -= cchLeft + cchTitle + 2;
             while (cchLeft-- > 0)
                 pHlp->pfnPrintf(pHlp, "-");
