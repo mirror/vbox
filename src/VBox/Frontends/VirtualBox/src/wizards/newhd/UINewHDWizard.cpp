@@ -217,7 +217,7 @@ UINewHDWizard::UINewHDWizard(QWidget *pParent, const QString &strDefaultName, co
 #endif /* Q_WS_MAC */
 
     /* Resize wizard to 'golden ratio': */
-    resizeToGoldenRatio();
+    resizeToGoldenRatio(1.8);
 }
 
 CMedium UINewHDWizard::hardDisk() const
