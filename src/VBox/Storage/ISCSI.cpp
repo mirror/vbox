@@ -1766,8 +1766,8 @@ static int iscsiCommand(PISCSIIMAGE pImage, PSCSIREQ pRequest)
 
     itt = iscsiNewITT(pImage);
     memset(aReqBHS, 0, sizeof(aReqBHS));
-    aReqBHS[0] = RT_H2N_U32(    ISCSI_FINAL_BIT | ISCSI_TASK_ATTR_ORDERED | ISCSIOP_SCSI_CMD
-                            |   (pRequest->enmXfer << 21)); /* I=0,F=1,Attr=Ordered */
+    aReqBHS[0] = RT_H2N_U32(    ISCSI_FINAL_BIT | ISCSI_TASK_ATTR_SIMPLE | ISCSIOP_SCSI_CMD
+                            |   (pRequest->enmXfer << 21)); /* I=0,F=1,Attr=Simple */
     aReqBHS[1] = RT_H2N_U32(0x00000000 | ((uint32_t)pRequest->cbI2TData & 0xffffff)); /* TotalAHSLength=0 */
     aReqBHS[2] = RT_H2N_U32(pImage->LUN >> 32);
     aReqBHS[3] = RT_H2N_U32(pImage->LUN & 0xffffffff);
@@ -2614,8 +2614,8 @@ static int iscsiPDUTxPrepare(PISCSIIMAGE pImage, PISCSICMD pIScsiCmd)
     paReqBHS = pIScsiPDU->aBHS;
 
     /* Setup the BHS. */
-    paReqBHS[0] = RT_H2N_U32(  ISCSI_FINAL_BIT | ISCSI_TASK_ATTR_ORDERED | ISCSIOP_SCSI_CMD
-                             | (pScsiReq->enmXfer << 21)); /* I=0,F=1,Attr=Ordered */
+    paReqBHS[0] = RT_H2N_U32(  ISCSI_FINAL_BIT | ISCSI_TASK_ATTR_SIMPLE | ISCSIOP_SCSI_CMD
+                             | (pScsiReq->enmXfer << 21)); /* I=0,F=1,Attr=Simple */
     paReqBHS[1] = RT_H2N_U32(0x00000000 | ((uint32_t)pScsiReq->cbI2TData & 0xffffff)); /* TotalAHSLength=0 */
     paReqBHS[2] = RT_H2N_U32(pImage->LUN >> 32);
     paReqBHS[3] = RT_H2N_U32(pImage->LUN & 0xffffffff);
