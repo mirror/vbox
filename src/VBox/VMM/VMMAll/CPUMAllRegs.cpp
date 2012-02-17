@@ -888,6 +888,7 @@ VMMDECL(int) CPUMQueryGuestMsr(PVMCPU pVCpu, uint32_t idMsr, uint64_t *puValue)
             /* no break */
 #endif
 
+/** @todo missing CPU IA32_MTRRCAP (0xfe)! */
         default:
             /* In X2APIC specification this range is reserved for APIC control. */
             if (    idMsr >= MSR_IA32_APIC_START
