@@ -195,8 +195,9 @@ struc CPUMCTX
 endstruc
 
 
-;;/* Guest MSR state. */
-struc CPUMCTXMSR
+;;
+; Guest MSR state.
+struc CPUMCTXMSRS
     .au64               resq  64
 endstruc
 

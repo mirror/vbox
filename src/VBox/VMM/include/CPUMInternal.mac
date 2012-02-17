@@ -410,7 +410,7 @@ struc CPUMCPU
     .Guest.trHid.u32Limit     resd    1
     .Guest.trHid.Attr         resd    1
 
-    .GuestMsr.au64            resq    64
+    .GuestMsrs.au64           resq    64
 
     ;
     ; Other stuff.

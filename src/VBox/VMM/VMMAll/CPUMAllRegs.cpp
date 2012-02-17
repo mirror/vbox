@@ -754,7 +754,7 @@ VMMDECL(int) CPUMQueryGuestMsr(PVMCPU pVCpu, uint32_t idMsr, uint64_t *puValue)
     if (!(pVCpu->CTX_SUFF(pVM)->cpum.s.aGuestCpuIdStd[1].edx & X86_CPUID_FEATURE_EDX_MSR))
     {
         *puValue = 0;
-        return VERR_CPUM_RAISE_GP_0;
+        return VERR_CPUM_RAISE_GP_0; /** @todo isn't \#UD more correct if not supported? */
     }
 
     int rc = VINF_SUCCESS;
@@ -792,6 +792,58 @@ VMMDECL(int) CPUMQueryGuestMsr(PVMCPU pVCpu, uint32_t idMsr, uint64_t *puValue)
             *puValue = pVCpu->cpum.s.Guest.SysEnter.esp;
             break;
 
+        case MSR_IA32_MTRR_CAP:
+        {
+            /* This is currently a bit weird. :-) */
+            uint8_t const   cVariableRangeRegs              = 0;
+            bool const      fSystemManagementRangeRegisters = false;
+            bool const      fFixedRangeRegisters            = false;
+            bool const      fWriteCombiningType             = false;
+            *puValue = cVariableRangeRegs
+                     | (fFixedRangeRegisters            ? RT_BIT_64(8)  : 0)
+                     | (fWriteCombiningType             ? RT_BIT_64(10) : 0)
+                     | (fSystemManagementRangeRegisters ? RT_BIT_64(11) : 0);
+            break;
+        }
+
+        case MSR_IA32_MTRR_DEF_TYPE:
+            *puValue = pVCpu->cpum.s.GuestMsrs.msr.MtrrDefType;
+            break;
+
+        case IA32_MTRR_FIX64K_00000:
+            *puValue = pVCpu->cpum.s.GuestMsrs.msr.MtrrFix64K_00000;
+            break;
+        case IA32_MTRR_FIX16K_80000:
+            *puValue = pVCpu->cpum.s.GuestMsrs.msr.MtrrFix16K_80000;
+            break;
+        case IA32_MTRR_FIX16K_A0000:
+            *puValue = pVCpu->cpum.s.GuestMsrs.msr.MtrrFix16K_A0000;
+            break;
+        case IA32_MTRR_FIX4K_C0000:
+            *puValue = pVCpu->cpum.s.GuestMsrs.msr.MtrrFix4K_C0000;
+            break;
+        case IA32_MTRR_FIX4K_C8000:
+            *puValue = pVCpu->cpum.s.GuestMsrs.msr.MtrrFix4K_C8000;
+            break;
+        case IA32_MTRR_FIX4K_D0000:
+            *puValue = pVCpu->cpum.s.GuestMsrs.msr.MtrrFix4K_D0000;
+            break;
+        case IA32_MTRR_FIX4K_D8000:
+            *puValue = pVCpu->cpum.s.GuestMsrs.msr.MtrrFix4K_D8000;
+            break;
+        case IA32_MTRR_FIX4K_E0000:
+            *puValue = pVCpu->cpum.s.GuestMsrs.msr.MtrrFix4K_E0000;
+            break;
+        case IA32_MTRR_FIX4K_E8000:
+            *puValue = pVCpu->cpum.s.GuestMsrs.msr.MtrrFix4K_E8000;
+            break;
+        case IA32_MTRR_FIX4K_F0000:
+            *puValue = pVCpu->cpum.s.GuestMsrs.msr.MtrrFix4K_F0000;
+            break;
+        case IA32_MTRR_FIX4K_F8000:
+            *puValue = pVCpu->cpum.s.GuestMsrs.msr.MtrrFix4K_F8000;
+            break;
+
         case MSR_K6_EFER:
             *puValue = pVCpu->cpum.s.Guest.msrEFER;
             break;
@@ -825,7 +877,7 @@ VMMDECL(int) CPUMQueryGuestMsr(PVMCPU pVCpu, uint32_t idMsr, uint64_t *puValue)
             break;
 
         case MSR_K8_TSC_AUX:
-            *puValue = pVCpu->cpum.s.GuestMsr.msr.tscAux;
+            *puValue = pVCpu->cpum.s.GuestMsrs.msr.TscAux;
             break;
 
         case MSR_IA32_PERF_STATUS:
@@ -888,7 +940,6 @@ VMMDECL(int) CPUMQueryGuestMsr(PVMCPU pVCpu, uint32_t idMsr, uint64_t *puValue)
             /* no break */
 #endif
 
-/** @todo missing CPU IA32_MTRRCAP (0xfe)! */
         default:
             /* In X2APIC specification this range is reserved for APIC control. */
             if (    idMsr >= MSR_IA32_APIC_START
@@ -940,13 +991,13 @@ VMMDECL(int) CPUMSetGuestMsr(PVMCPU pVCpu, uint32_t idMsr, uint64_t uValue)
      * that a #GP(0) should be raised.
      */
     if (!(pVCpu->CTX_SUFF(pVM)->cpum.s.aGuestCpuIdStd[1].edx & X86_CPUID_FEATURE_EDX_MSR))
-        return VERR_CPUM_RAISE_GP_0;
+        return VERR_CPUM_RAISE_GP_0; /** @todo isn't \#UD more correct if not supported? */
 
     int rc = VINF_SUCCESS;
     switch (idMsr)
     {
         case MSR_IA32_MISC_ENABLE:
-            pVCpu->cpum.s.GuestMsr.msr.miscEnable = uValue;
+            pVCpu->cpum.s.GuestMsrs.msr.MiscEnable = uValue;
             break;
 
         case MSR_IA32_TSC:
@@ -973,6 +1024,57 @@ VMMDECL(int) CPUMSetGuestMsr(PVMCPU pVCpu, uint32_t idMsr, uint64_t uValue)
 
         case MSR_IA32_SYSENTER_ESP:
             pVCpu->cpum.s.Guest.SysEnter.esp = uValue;
+            break;
+
+        case MSR_IA32_MTRR_CAP:
+            return VERR_CPUM_RAISE_GP_0;
+
+        case MSR_IA32_MTRR_DEF_TYPE:
+            if (   (uValue & UINT64_C(0xfffffffffffff300))
+                || (    (uValue & 0xff) != 0
+                    &&  (uValue & 0xff) != 1
+                    &&  (uValue & 0xff) != 4
+                    &&  (uValue & 0xff) != 5
+                    &&  (uValue & 0xff) != 6) )
+            {
+                Log(("MSR_IA32_MTRR_DEF_TYPE: #GP(0) - writing reserved value (%#llx)\n", uValue));
+                return VERR_CPUM_RAISE_GP_0;
+            }
+            pVCpu->cpum.s.GuestMsrs.msr.MtrrDefType = uValue;
+            break;
+
+        case IA32_MTRR_FIX64K_00000:
+            pVCpu->cpum.s.GuestMsrs.msr.MtrrFix64K_00000 = uValue;
+            break;
+        case IA32_MTRR_FIX16K_80000:
+            pVCpu->cpum.s.GuestMsrs.msr.MtrrFix16K_80000 = uValue;
+            break;
+        case IA32_MTRR_FIX16K_A0000:
+            pVCpu->cpum.s.GuestMsrs.msr.MtrrFix16K_A0000 = uValue;
+            break;
+        case IA32_MTRR_FIX4K_C0000:
+            pVCpu->cpum.s.GuestMsrs.msr.MtrrFix4K_C0000 = uValue;
+            break;
+        case IA32_MTRR_FIX4K_C8000:
+            pVCpu->cpum.s.GuestMsrs.msr.MtrrFix4K_C8000 = uValue;
+            break;
+        case IA32_MTRR_FIX4K_D0000:
+            pVCpu->cpum.s.GuestMsrs.msr.MtrrFix4K_D0000 = uValue;
+            break;
+        case IA32_MTRR_FIX4K_D8000:
+            pVCpu->cpum.s.GuestMsrs.msr.MtrrFix4K_D8000 = uValue;
+            break;
+        case IA32_MTRR_FIX4K_E0000:
+            pVCpu->cpum.s.GuestMsrs.msr.MtrrFix4K_E0000 = uValue;
+            break;
+        case IA32_MTRR_FIX4K_E8000:
+            pVCpu->cpum.s.GuestMsrs.msr.MtrrFix4K_E8000 = uValue;
+            break;
+        case IA32_MTRR_FIX4K_F0000:
+            pVCpu->cpum.s.GuestMsrs.msr.MtrrFix4K_F0000 = uValue;
+            break;
+        case IA32_MTRR_FIX4K_F8000:
+            pVCpu->cpum.s.GuestMsrs.msr.MtrrFix4K_F8000 = uValue;
             break;
 
         case MSR_K6_EFER:
@@ -1053,7 +1155,7 @@ VMMDECL(int) CPUMSetGuestMsr(PVMCPU pVCpu, uint32_t idMsr, uint64_t uValue)
             break;
 
         case MSR_K8_TSC_AUX:
-            pVCpu->cpum.s.GuestMsr.msr.tscAux   = uValue;
+            pVCpu->cpum.s.GuestMsrs.msr.TscAux  = uValue;
             break;
 
         default:

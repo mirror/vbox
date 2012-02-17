@@ -362,7 +362,7 @@ typedef struct CPUMCPU
      * Guest context - misc MSRs
      * Aligned on a 64-byte boundary.
      */
-    CPUMCTXMSR              GuestMsr;
+    CPUMCTXMSRS             GuestMsrs;
 
     /** Pointer to the current hypervisor core context - R3Ptr. */
     R3PTRTYPE(PCPUMCTXCORE) pHyperCoreR3;

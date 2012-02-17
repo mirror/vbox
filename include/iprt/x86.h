@@ -923,6 +923,42 @@ typedef const X86CPUIDFEATEDX *PCX86CPUIDFEATEDX;
 /** When set to 1, the Execute Disable Bit feature (XD Bit) is disabled (R/W). */
 #define MSR_IA32_MISC_ENABLE_XD_DISABLE        RT_BIT(34)
 
+#define IA32_MTRR_PHYSBASE0                 0x200
+#define IA32_MTRR_PHYSMASK0                 0x201
+#define IA32_MTRR_PHYSBASE1                 0x202
+#define IA32_MTRR_PHYSMASK1                 0x203
+#define IA32_MTRR_PHYSBASE2                 0x204
+#define IA32_MTRR_PHYSMASK2                 0x205
+#define IA32_MTRR_PHYSBASE3                 0x206
+#define IA32_MTRR_PHYSMASK3                 0x207
+#define IA32_MTRR_PHYSBASE4                 0x208
+#define IA32_MTRR_PHYSMASK4                 0x209
+#define IA32_MTRR_PHYSBASE5                 0x20a
+#define IA32_MTRR_PHYSMASK5                 0x20b
+#define IA32_MTRR_PHYSBASE6                 0x20c
+#define IA32_MTRR_PHYSMASK6                 0x20d
+#define IA32_MTRR_PHYSBASE7                 0x20e
+#define IA32_MTRR_PHYSMASK7                 0x20f
+#define IA32_MTRR_PHYSBASE8                 0x210
+#define IA32_MTRR_PHYSMASK8                 0x211
+#define IA32_MTRR_PHYSBASE9                 0x212
+#define IA32_MTRR_PHYSMASK9                 0x213
+
+/** Fixed range MTRRs.
+ * @{  */
+#define IA32_MTRR_FIX64K_00000              0x250
+#define IA32_MTRR_FIX16K_80000              0x258
+#define IA32_MTRR_FIX16K_A0000              0x259
+#define IA32_MTRR_FIX4K_C0000               0x268
+#define IA32_MTRR_FIX4K_C8000               0x269
+#define IA32_MTRR_FIX4K_D0000               0x26a
+#define IA32_MTRR_FIX4K_D8000               0x26b
+#define IA32_MTRR_FIX4K_E0000               0x26c
+#define IA32_MTRR_FIX4K_E8000               0x26d
+#define IA32_MTRR_FIX4K_F0000               0x26e
+#define IA32_MTRR_FIX4K_F8000               0x26f
+/** @}  */
+
 /** MTRR Default Range. */
 #define MSR_IA32_MTRR_DEF_TYPE              0x2FF
 
