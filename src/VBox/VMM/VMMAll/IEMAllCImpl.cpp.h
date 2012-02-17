@@ -1006,14 +1006,14 @@ IEM_CIMPL_DEF_3(iemCImpl_callf, uint16_t, uSel, uint64_t, offSeg, IEMMODE, enmOp
         pCtx->rip           = offSeg;
         pCtx->cs            = uSel;
         pCtx->csHid.u64Base = (uint32_t)uSel << 4;
-        /** @todo Does REM reset the accessed bit here to? (See on jmp far16
+        /** @todo Does REM reset the accessed bit here too? (See on jmp far16
          *        after disabling PE.) Check with VT-x and AMD-V. */
 #ifdef IEM_VERIFICATION_MODE
         pCtx->csHid.Attr.u  &= ~X86_SEL_TYPE_ACCESSED;
 #endif
         return VINF_SUCCESS;
     }
-
+/** @todo implement next (pci bios call). */
     AssertFailedReturn(VERR_IEM_ASPECT_NOT_IMPLEMENTED);
 }
 
