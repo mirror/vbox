@@ -28,6 +28,7 @@ echo "Removing VirtualBox service..."
 /usr/sbin/svcadm disable -s virtualbox/vboxservice
 # Don't need to delete, taken care of by the manifest action
 # /usr/sbin/svccfg delete svc:/application/virtualbox/vboxservice:default
+/usr/sbin/svcadm restart svc:/system/manifest-import:default
 
 # stop VBoxClient
 pkill -INT VBoxClient

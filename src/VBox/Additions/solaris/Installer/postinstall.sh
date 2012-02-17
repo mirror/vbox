@@ -393,6 +393,7 @@ if test "$currentzone" = "global"; then
 
     # Setup our VBoxService SMF service
     echo "Configuring service..."
+    /usr/sbin/svcadm restart svc:/system/manifest-import:default
     /usr/sbin/svcadm enable -s virtualbox/vboxservice
 
     # Update boot archive
