@@ -105,7 +105,7 @@ void SERVER_DISPATCH_APIENTRY crServerDispatchGetAttachedObjectsARB(GLhandleARB 
         GLsizei i;
         GLuint *ids=(GLuint*)&pLocal[1];
 
-        for (i=0; i<*pLocal; ++i);
+        for (i=0; i<*pLocal; ++i)
           ids[i] = crStateGLSLShaderHWIDtoID(ids[i]);
     }
 
