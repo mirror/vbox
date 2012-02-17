@@ -3560,6 +3560,20 @@ static void iemFpuStoreResultOnly(PIEMCPU pIemCpu, PIEMFPURESULT pResult, uint8_
 
 
 /**
+ * Only updates the FPU status word (FSW) with the result of the current
+ * instruction.
+ *
+ * @param   pCtx                The CPU context.
+ * @param   u16FSW              The FSW output of the current instruction.
+ */
+static void iemFpuUpdateFSWOnly(PCPUMCTX pCtx, uint16_t u16FSW)
+{
+    pCtx->fpu.FSW &= ~X86_FSW_C_MASK;
+    pCtx->fpu.FSW |= u16FSW & ~X86_FSW_TOP_MASK;
+}
+
+
+/**
  * Pops one item off the FPU stack if no pending exception prevents it.
  *
  * @param   pCtx                The CPU context.
@@ -3630,6 +3644,8 @@ static void iemFpuStoreResultThenPop(PIEMCPU pIemCpu, PIEMFPURESULT pResult, uin
  * @param   pResult             The result to store.
  * @param   iStReg              Which FPU register to store it in.
  * @param   pCtx                The CPU context.
+ * @param   iEffSeg             The effective memory operand selector register.
+ * @param   GCPtrEff            The effective memory operand offset.
  */
 static void iemFpuStoreResultWithMemOp(PIEMCPU pIemCpu, PIEMFPURESULT pResult, uint8_t iStReg, uint8_t iEffSeg, RTGCPTR GCPtrEff)
 {
@@ -3648,6 +3664,8 @@ static void iemFpuStoreResultWithMemOp(PIEMCPU pIemCpu, PIEMFPURESULT pResult, u
  * @param   pResult             The result to store.
  * @param   iStReg              Which FPU register to store it in.
  * @param   pCtx                The CPU context.
+ * @param   iEffSeg             The effective memory operand selector register.
+ * @param   GCPtrEff            The effective memory operand offset.
  */
 static void iemFpuStoreResultWithMemOpThenPop(PIEMCPU pIemCpu, PIEMFPURESULT pResult,
                                               uint8_t iStReg, uint8_t iEffSeg, RTGCPTR GCPtrEff)
@@ -3656,6 +3674,70 @@ static void iemFpuStoreResultWithMemOpThenPop(PIEMCPU pIemCpu, PIEMFPURESULT pRe
     iemFpuUpdateDP(pIemCpu, pIemCpu->CTX_SUFF(pCtx), iEffSeg, GCPtrEff);
     iemFpuUpdateOpcodeAndIP(pIemCpu, pCtx);
     iemFpuStoreResultOnly(pIemCpu, pResult, iStReg, pCtx);
+    iemFpuMaybePopOne(pCtx);
+}
+
+
+/**
+ * Updates the FSW, FOP, FPUIP, and FPUCS.
+ *
+ * @param   pIemCpu             The IEM per CPU data.
+ * @param   u16FSW              The FSW from the current instruction.
+ */
+static void iemFpuUpdateFSW(PIEMCPU pIemCpu, uint16_t u16FSW)
+{
+    PCPUMCTX pCtx = pIemCpu->CTX_SUFF(pCtx);
+    iemFpuUpdateOpcodeAndIP(pIemCpu, pCtx);
+    iemFpuUpdateFSWOnly(pCtx, u16FSW);
+}
+
+
+/**
+ * Updates the FSW, FOP, FPUIP, and FPUCS, then pops the stack.
+ *
+ * @param   pIemCpu             The IEM per CPU data.
+ * @param   u16FSW              The FSW from the current instruction.
+ */
+static void iemFpuUpdateFSWThenPop(PIEMCPU pIemCpu, uint16_t u16FSW)
+{
+    PCPUMCTX pCtx = pIemCpu->CTX_SUFF(pCtx);
+    iemFpuUpdateOpcodeAndIP(pIemCpu, pCtx);
+    iemFpuUpdateFSWOnly(pCtx, u16FSW);
+    iemFpuMaybePopOne(pCtx);
+}
+
+
+/**
+ * Updates the FSW, FOP, FPUIP, FPUCS, FPUDP, and FPUDS.
+ *
+ * @param   pIemCpu             The IEM per CPU data.
+ * @param   u16FSW              The FSW from the current instruction.
+ * @param   iEffSeg             The effective memory operand selector register.
+ * @param   GCPtrEff            The effective memory operand offset.
+ */
+static void iemFpuUpdateFSWWithMemOp(PIEMCPU pIemCpu, uint16_t u16FSW, uint8_t iEffSeg, RTGCPTR GCPtrEff)
+{
+    PCPUMCTX pCtx = pIemCpu->CTX_SUFF(pCtx);
+    iemFpuUpdateDP(pIemCpu, pCtx, iEffSeg, GCPtrEff);
+    iemFpuUpdateOpcodeAndIP(pIemCpu, pCtx);
+    iemFpuUpdateFSWOnly(pCtx, u16FSW);
+}
+
+
+/**
+ * Updates the FSW, FOP, FPUIP, FPUCS, FPUDP, and FPUDS, then pops the stack.
+ *
+ * @param   pIemCpu             The IEM per CPU data.
+ * @param   u16FSW              The FSW from the current instruction.
+ * @param   iEffSeg             The effective memory operand selector register.
+ * @param   GCPtrEff            The effective memory operand offset.
+ */
+static void iemFpuUpdateFSWWithMemOpThenPop(PIEMCPU pIemCpu, uint16_t u16FSW, uint8_t iEffSeg, RTGCPTR GCPtrEff)
+{
+    PCPUMCTX pCtx = pIemCpu->CTX_SUFF(pCtx);
+    iemFpuUpdateDP(pIemCpu, pCtx, iEffSeg, GCPtrEff);
+    iemFpuUpdateOpcodeAndIP(pIemCpu, pCtx);
+    iemFpuUpdateFSWOnly(pCtx, u16FSW);
     iemFpuMaybePopOne(pCtx);
 }
 
@@ -5925,6 +6007,19 @@ static VBOXSTRICTRC iemMemMarkSelDescAccessed(PIEMCPU pIemCpu, uint16_t uSel)
  *  stack. */
 #define IEM_MC_STORE_FPU_RESULT_WITH_MEM_OP_THEN_POP(a_FpuData, a_iStReg, a_iEffSeg, a_GCPtrEff) \
     iemFpuStoreResultWithMemOpThenPop(pIemCpu, &a_FpuData, a_iStReg, a_iEffSeg, a_GCPtrEff)
+
+/** Updates the FSW, FPUIP, and FPUCS. */
+#define IEM_MC_UPDATE_FSW(a_u16FSW) \
+    iemFpuUpdateFSW(pIemCpu, a_u16FSW)
+/** Updates the FSW, FPUIP, FPUCS, FPUDP, and FPUDS. */
+#define IEM_MC_UPDATE_FSW_WITH_MEM_OP(a_u16FSW, a_iEffSeg, a_GCPtrEff) \
+    iemFpuUpdateFSWWithMemOp(pIemCpu, a_u16FSW, a_iEffSeg, a_GCPtrEff)
+/** Updates the FSW, FPUIP, and FPUCS, and then pops the stack. */
+#define IEM_MC_UPDATE_FSW_THEN_POP(a_u16FSW) \
+    iemFpuUpdateFSWThenPop(pIemCpu, a_u16FSW)
+/** Updates the FSW, FPUIP, FPUCS, FPUDP and FPUDS, and then pops the stack. */
+#define IEM_MC_UPDATE_FSW_WITH_MEM_OP_THEN_POP(a_u16FSW, a_iEffSeg, a_GCPtrEff) \
+    iemFpuUpdateFSWWithMemOpThenPop(pIemCpu, a_u16FSW, a_iEffSeg, a_GCPtrEff)
 
 /** Raises a FPU stack underflow. Sets FPUIP, FPUCS and FOP. */
 #define IEM_MC_FPU_STACK_UNDERFLOW(a_iStDst) \
