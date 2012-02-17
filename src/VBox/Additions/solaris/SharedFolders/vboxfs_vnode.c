@@ -1719,8 +1719,7 @@ sffs_putpage(
 	)
 {
 	/*
-	 * We don't support PROT_WRITE mmaps. For normal writes we do not map and IO via
-	 * vop_putpage() either, therefore, afaik this shouldn't ever be called.
+	 * We don't support PROT_WRITE mmaps.
 	 */
 	return (ENOSYS);
 }
@@ -1871,6 +1870,7 @@ sffs_delmap(
 {
 	if (dvp->v_flag & VNOMAP)
 		return (ENOSYS);
+
 	return (0);
 }
 #endif /* VBOXVFS_WITH_MMAP */
