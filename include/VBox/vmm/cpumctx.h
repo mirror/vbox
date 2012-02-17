@@ -560,23 +560,36 @@ typedef struct CPUMCTX_VER1_6 CPUMCTX_VER1_6;
 #endif /* VBOX_WITHOUT_UNNAMED_UNIONS */
 
 /**
- * Guest MSR state.
+ * Additional guest MSRs (i.e. not part of the CPU context structure).
  *
- * @note    Never change the order here because of saved stated!
+ * @remarks Never change the order here because of the saved stated!  The size
+ *          can in theory be changed, but keep older VBox versions in mind.
  */
-typedef union CPUMCTXMSR
+typedef union CPUMCTXMSRS
 {
     struct
     {
-        uint64_t        tscAux;         /**< MSR_K8_TSC_AUX */
-        uint64_t        miscEnable;     /**< MSR_IA32_MISC_ENABLE */
+        uint64_t    TscAux;             /**< MSR_K8_TSC_AUX */
+        uint64_t    MiscEnable;         /**< MSR_IA32_MISC_ENABLE */
+        uint64_t    MtrrDefType;        /**< IA32_MTRR_DEF_TYPE */
+        uint64_t    MtrrFix64K_00000;   /**< IA32_MTRR_FIX16K_80000 */
+        uint64_t    MtrrFix16K_80000;   /**< IA32_MTRR_FIX16K_80000 */
+        uint64_t    MtrrFix16K_A0000;   /**< IA32_MTRR_FIX16K_A0000 */
+        uint64_t    MtrrFix4K_C0000;    /**< IA32_MTRR_FIX4K_C0000 */
+        uint64_t    MtrrFix4K_C8000;    /**< IA32_MTRR_FIX4K_C8000 */
+        uint64_t    MtrrFix4K_D0000;    /**< IA32_MTRR_FIX4K_D0000 */
+        uint64_t    MtrrFix4K_D8000;    /**< IA32_MTRR_FIX4K_D8000 */
+        uint64_t    MtrrFix4K_E0000;    /**< IA32_MTRR_FIX4K_E0000 */
+        uint64_t    MtrrFix4K_E8000;    /**< IA32_MTRR_FIX4K_E8000 */
+        uint64_t    MtrrFix4K_F0000;    /**< IA32_MTRR_FIX4K_F0000 */
+        uint64_t    MtrrFix4K_F8000;    /**< IA32_MTRR_FIX4K_F8000 */
     } msr;
     uint64_t    au64[64];
-} CPUMCTXMSR;
+} CPUMCTXMSRS;
 /** Pointer to the guest MSR state. */
-typedef CPUMCTXMSR *PCPUMCTXMSR;
+typedef CPUMCTXMSRS *PCPUMCTXMSRS;
 /** Pointer to the const guest MSR state. */
-typedef const CPUMCTXMSR *PCCPUMCTXMSR;
+typedef const CPUMCTXMSRS *PCCPUMCTXMSRS;
 
 /**
  * The register set returned by a CPUID operation.

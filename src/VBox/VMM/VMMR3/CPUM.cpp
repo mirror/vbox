@@ -63,7 +63,9 @@
 *   Defined Constants And Macros                                               *
 *******************************************************************************/
 /** The current saved state version. */
-#define CPUM_SAVED_STATE_VERSION                12
+#define CPUM_SAVED_STATE_VERSION                13
+/** The saved state version before introducing the MSR size field. */
+#define CPUM_SAVED_STATE_VERSION_NO_MSR_SIZE    12
 /** The saved state version of 3.2, 3.1 and 3.3 trunk before the hidden
  * selector register change (CPUM_CHANGED_HIDDEN_SEL_REGS_INVALID). */
 #define CPUM_SAVED_STATE_VERSION_VER3_2         11
@@ -129,7 +131,7 @@ VMMR3DECL(int) CPUMR3Init(PVM pVM)
     AssertCompileMemberAlignment(VM, cpum.s, 32);
     AssertCompile(sizeof(pVM->cpum.s) <= sizeof(pVM->cpum.padding));
     AssertCompileSizeAlignment(CPUMCTX, 64);
-    AssertCompileSizeAlignment(CPUMCTXMSR, 64);
+    AssertCompileSizeAlignment(CPUMCTXMSRS, 64);
     AssertCompileSizeAlignment(CPUMHOSTCTX, 64);
     AssertCompileMemberAlignment(VM, cpum, 64);
     AssertCompileMemberAlignment(VM, aCpus, 64);
@@ -1937,6 +1939,7 @@ static DECLCALLBACK(int) cpumR3SaveExec(PVM pVM, PSSMHANDLE pSSM)
     }
 
     SSMR3PutU32(pSSM, pVM->cCpus);
+    SSMR3PutU32(pSSM, sizeof(pVM->aCpus[0].cpum.s.GuestMsrs.msr));
     for (VMCPUID i = 0; i < pVM->cCpus; i++)
     {
         PVMCPU pVCpu = &pVM->aCpus[i];
@@ -1944,7 +1947,8 @@ static DECLCALLBACK(int) cpumR3SaveExec(PVM pVM, PSSMHANDLE pSSM)
         SSMR3PutMem(pSSM, &pVCpu->cpum.s.Guest, sizeof(pVCpu->cpum.s.Guest));
         SSMR3PutU32(pSSM, pVCpu->cpum.s.fUseFlags);
         SSMR3PutU32(pSSM, pVCpu->cpum.s.fChanged);
-        SSMR3PutMem(pSSM, &pVCpu->cpum.s.GuestMsr, sizeof(pVCpu->cpum.s.GuestMsr));
+        AssertCompileSizeAlignment(pVM->aCpus[i].cpum.s.GuestMsrs.msr, sizeof(uint64_t));
+        SSMR3PutMem(pSSM, &pVCpu->cpum.s.GuestMsrs, sizeof(pVM->aCpus[i].cpum.s.GuestMsrs.msr));
     }
 
     cpumR3SaveCpuId(pVM, pSSM);
@@ -2067,6 +2071,7 @@ static DECLCALLBACK(int) cpumR3LoadExec(PVM pVM, PSSMHANDLE pSSM, uint32_t uVers
      * Validate version.
      */
     if (    uVersion != CPUM_SAVED_STATE_VERSION
+        &&  uVersion != CPUM_SAVED_STATE_VERSION_NO_MSR_SIZE
         &&  uVersion != CPUM_SAVED_STATE_VERSION_VER3_2
         &&  uVersion != CPUM_SAVED_STATE_VERSION_VER3_0
         &&  uVersion != CPUM_SAVED_STATE_VERSION_VER2_1_NOMSR
@@ -2128,13 +2133,28 @@ static DECLCALLBACK(int) cpumR3LoadExec(PVM pVM, PSSMHANDLE pSSM, uint32_t uVers
                                   ("cCpus=%u\n", pVM->cCpus),
                                   VERR_SSM_UNEXPECTED_DATA);
 
+            uint32_t cbMsrs = 0;
+            if (uVersion > CPUM_SAVED_STATE_VERSION_NO_MSR_SIZE)
+            {
+                int rc = SSMR3GetU32(pSSM, &cbMsrs); AssertRCReturn(rc, rc);
+                AssertLogRelMsgReturn(RT_ALIGN(cbMsrs, sizeof(uint64_t)) == cbMsrs, ("Size of MSRs is misaligned: %#x\n", cbMsrs),
+                                      VERR_SSM_UNEXPECTED_DATA);
+                AssertLogRelMsgReturn(cbMsrs <= sizeof(CPUMCTXMSRS) && cbMsrs > 0,  ("Size of MSRs is out of range: %#x\n", cbMsrs),
+                                      VERR_SSM_UNEXPECTED_DATA);
+            }
+
             for (VMCPUID i = 0; i < pVM->cCpus; i++)
             {
                 SSMR3GetMem(pSSM, &pVM->aCpus[i].cpum.s.Guest, sizeof(pVM->aCpus[i].cpum.s.Guest));
                 SSMR3GetU32(pSSM, &pVM->aCpus[i].cpum.s.fUseFlags);
                 SSMR3GetU32(pSSM, &pVM->aCpus[i].cpum.s.fChanged);
-                if (uVersion >= CPUM_SAVED_STATE_VERSION_VER3_0)
-                    SSMR3GetMem(pSSM, &pVM->aCpus[i].cpum.s.GuestMsr, sizeof(pVM->aCpus[i].cpum.s.GuestMsr));
+                if (uVersion > CPUM_SAVED_STATE_VERSION_NO_MSR_SIZE)
+                    SSMR3GetMem(pSSM, &pVM->aCpus[i].cpum.s.GuestMsrs.au64[0], cbMsrs);
+                else if (uVersion >= CPUM_SAVED_STATE_VERSION_VER3_0)
+                {
+                    SSMR3GetMem(pSSM, &pVM->aCpus[i].cpum.s.GuestMsrs.au64[0], 2 * sizeof(uint64_t)); /* Restore two MSRs. */
+                    SSMR3Skip(pSSM, 62 * sizeof(uint64_t));
+                }
             }
         }
 
