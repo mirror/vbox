@@ -1374,8 +1374,8 @@ ENDPROC iemAImpl_fpu_r64_to_r80
 ;
 ; @param    A0      FPU context (fxsave).
 ; @param    A1      Pointer to a IEMFPURESULT for the output.
-; @param    A2      Pointer to the 80-bit dividend.
-; @param    A3      Pointer to the 64-bit divisor.
+; @param    A2      Pointer to the 80-bit value.
+; @param    A3      Pointer to the 64-bit value.
 ;
 %macro IEMIMPL_FPU_R80_BY_R64 1
 BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _r80_by_r64, 16
@@ -1403,4 +1403,44 @@ IEMIMPL_FPU_R80_BY_R64 fsub
 IEMIMPL_FPU_R80_BY_R64 fsubr
 IEMIMPL_FPU_R80_BY_R64 fdiv
 IEMIMPL_FPU_R80_BY_R64 fdivr
+
+
+;;
+; FPU instruction working on two 80-bit floating point values.
+;
+; @param    1       The instruction
+;
+; @param    A0      FPU context (fxsave).
+; @param    A1      Pointer to a IEMFPURESULT for the output.
+; @param    A2      Pointer to the first 80-bit value.
+; @param    A3      Pointer to the second 80-bit value.
+;
+%macro IEMIMPL_FPU_R80_BY_R80 1
+BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _r80_by_r80, 16
+        PROLOGUE_4_ARGS
+        sub     xSP, 20h
+
+        fninit
+        fld     tword [A3]
+        fld     tword [A2]
+        FPU_LD_FXSTATE_FCW_AND_SAFE_FSW A0
+        %1      st0, st1
+
+        fnstsw  word  [A1 + IEMFPURESULT.FSW]
+        fnclex
+        fstp    tword [A1 + IEMFPURESULT.r80Result]
+
+        add     xSP, 20h
+        EPILOGUE_4_ARGS 8
+ENDPROC iemAImpl_ %+ %1 %+ _r80_by_r80
+%endmacro
+
+IEMIMPL_FPU_R80_BY_R80 fadd
+IEMIMPL_FPU_R80_BY_R80 fmul
+IEMIMPL_FPU_R80_BY_R80 fsub
+IEMIMPL_FPU_R80_BY_R80 fsubr
+IEMIMPL_FPU_R80_BY_R80 fdiv
+IEMIMPL_FPU_R80_BY_R80 fdivr
+IEMIMPL_FPU_R80_BY_R80 fcom
+IEMIMPL_FPU_R80_BY_R80 fucom
 

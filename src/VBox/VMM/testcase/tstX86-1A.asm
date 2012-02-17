@@ -104,6 +104,8 @@ g_r80_ThirtyTwo:dt 32.0
 g_r80_Min:      dt 000018000000000000000h
 g_r80_Max:      dt 07ffeffffffffffffffffh
 g_r80_Inf:      dt 07fff8000000000000000h
+g_r80_DnMin:    dt 000000000000000000001h
+g_r80_DnMax:    dt 000007fffffffffffffffh
 
 g_r32V1:        dd 3.2
 g_r32V2:        dd -1.9
@@ -323,50 +325,52 @@ BEGINCODE
 %endmacro
 
 ;;
-; Checks that ST0 in a FXSAVE image has a certain value (empty or not
+; Checks that STn in a FXSAVE image has a certain value (empty or not
 ; is ignored).
 ;
 ; @uses         eax
 ; @param        1       Address expression for the FXSAVE image.
-; @param        2       First dword of value.
-; @param        3       Second dword of value.
-; @param        4       Final word of value.
+; @param        2       The register number.
+; @param        3       First dword of value.
+; @param        4       Second dword of value.
+; @param        5       Final word of value.
 ;
-%macro FxSaveCheckSt0ValueEx 4
-        cmp     dword [%1 + X86FXSTATE.st0], %2
+%macro FxSaveCheckStNValueEx 5
+        cmp     dword [%1 + X86FXSTATE.st0 + %2 * 16], %3
         je      %%ok1
 %%bad:
         mov     eax, 40000000 + __LINE__
         jmp     .return
 %%ok1:
-        cmp     dword [%1 + X86FXSTATE.st0 + 4], %3
+        cmp     dword [%1 + X86FXSTATE.st0 + %2 * 16 + 4], %4
         jne     %%bad
-        cmp     word  [%1 + X86FXSTATE.st0 + 8], %4
+        cmp     word  [%1 + X86FXSTATE.st0 + %2 * 16 + 8], %5
         jne     %%bad
 %endmacro
 
 
 ;;
-; Checks if ST0 in a FXSAVE image has the same value as the specified
+; Checks if STn in a FXSAVE image has the same value as the specified
 ; floating point (80-bit) constant.
 ;
 ; @uses         eax, xDX
 ; @param        1       Address expression for the FXSAVE image.
-; @param        2       The address expression of the constant.
+; @param        2       The register number.
+; @param        3       The address expression of the constant.
 ;
-%macro FxSaveCheckSt0ValueConstEx 2
-        mov     eax, [%2]
-        cmp     dword [%1 + X86FXSTATE.st0], eax
+%macro FxSaveCheckStNValueConstEx 3
+        mov     eax, [%3]
+        cmp     dword [%1 + X86FXSTATE.st0 + %2 * 16], eax
         je      %%ok1
 %%bad:
         mov     eax, 40000000 + __LINE__
         jmp     .return
 %%ok1:
-        mov     eax, [4 + %2]
-        cmp     dword [%1 + X86FXSTATE.st0 + 4], eax
+        mov     eax, [4 + %3]
+        cmp     dword [%1 + X86FXSTATE.st0 + %2 * 16 + 4], eax
         jne     %%bad
-        mov     ax, [8 + %2]
-        cmp     word  [%1 + X86FXSTATE.st0 + 8], ax
+        mov     ax, [8 + %3]
+        cmp     word  [%1 + X86FXSTATE.st0 + %2 * 16 + 8], ax
         jne     %%bad
 %endmacro
 
@@ -382,7 +386,7 @@ BEGINCODE
 ;
 %macro FxSaveCheckSt0Value 4
         FxSaveCheckSt0NonEmpty %1
-        FxSaveCheckSt0ValueEx %1, %2, %3, %4
+        FxSaveCheckStNValueEx %1, 0, %2, %3, %4
 %endmacro
 
 
@@ -395,7 +399,7 @@ BEGINCODE
 ;
 %macro FxSaveCheckSt0EmptyInitValue 1
         FxSaveCheckSt0Empty %1
-        FxSaveCheckSt0ValueEx %1, 0x40404040, 0x40404040, 0xffff
+        FxSaveCheckStNValueEx %1, 0, 0x40404040, 0x40404040, 0xffff
 %endmacro
 
 ;;
@@ -407,7 +411,7 @@ BEGINCODE
 ; @param        2       The address expression of the constant.
 %macro FxSaveCheckSt0ValueConst 2
         FxSaveCheckSt0NonEmpty %1
-        FxSaveCheckSt0ValueConstEx %1, %2
+        FxSaveCheckStNValueConstEx %1, 0, %2
 %endmacro
 
 ;; Checks that ST0 contains QNaN.
@@ -418,6 +422,87 @@ BEGINCODE
 %define FxSaveCheckSt0Value_3_and_a_3rd(p)       FxSaveCheckSt0Value p, 0x55555555, 0xd5555555, 0x4000
 ;; Checks that ST0 contains 3 & 1/3.
 %define FxSaveCheckSt0Value_3_and_two_3rds(p)    FxSaveCheckSt0Value p, 0xaaaaaaab, 0xeaaaaaaa, 0x4000
+
+
+
+;;
+; Checks that STn is empty in an FXSAVE image.
+;
+; @uses         eax
+; @param        1       Address expression for the FXSAVE image.
+; @param        2       The register number.
+;
+%macro FxSaveCheckStNEmpty 2
+        movzx   eax, word [%1 + X86FXSTATE.FSW]
+        and     eax, X86_FSW_TOP_MASK
+        shr     eax, X86_FSW_TOP_SHIFT
+        add     eax, %2
+        and     eax, X86_FSW_TOP_SMASK
+        bt      [%1 + X86FXSTATE.FTW], eax
+        jnc     %%ok
+        mov     eax, 20000000 + __LINE__
+        jmp     .return
+%%ok:
+%endmacro
+
+
+;;
+; Checks that STn is not-empty in an FXSAVE image.
+;
+; @uses         eax
+; @param        1       Address expression for the FXSAVE image.
+; @param        2       The register number.
+;
+%macro FxSaveCheckStNNonEmpty 2
+        movzx   eax, word [%1 + X86FXSTATE.FSW]
+        and     eax, X86_FSW_TOP_MASK
+        shr     eax, X86_FSW_TOP_SHIFT
+        add     eax, %2
+        and     eax, X86_FSW_TOP_SMASK
+        bt      [%1 + X86FXSTATE.FTW], eax
+        jc      %%ok
+        mov     eax, 30000000 + __LINE__
+        jmp     .return
+%%ok:
+%endmacro
+
+
+;;
+; Checks that STn in a FXSAVE image has a certain value.
+;
+; @uses         eax
+; @param        1       Address expression for the FXSAVE image.
+; @param        2       The register number.
+; @param        3       First dword of value.
+; @param        4       Second dword of value.
+; @param        5       Final word of value.
+;
+%macro FxSaveCheckStNValue 5
+        FxSaveCheckStNNonEmpty %1, %2
+        FxSaveCheckStNValueEx %1, %2, %3, %4, %5
+%endmacro
+
+;;
+; Checks that ST0 in a FXSAVE image is non-empty and has the same value as the
+; specified constant (80-bit).
+;
+; @uses         eax, xDX
+; @param        1       Address expression for the FXSAVE image.
+; @param        2       The register number.
+; @param        3       The address expression of the constant.
+%macro FxSaveCheckStNValueConst 3
+        FxSaveCheckStNNonEmpty %1, %2
+        FxSaveCheckStNValueConstEx %1, %2, %3
+%endmacro
+
+;; Checks that ST0 contains QNaN.
+%define FxSaveCheckStNValue_QNaN(p, iSt)            FxSaveCheckStNValue p, iSt, 0x00000000, 0xc0000000, 0xffff
+;; Checks that ST0 contains +Inf.
+%define FxSaveCheckStNValue_PlusInf(p, iSt)         FxSaveCheckStNValue p, iSt, 0x00000000, 0x80000000, 0x7fff
+;; Checks that ST0 contains 3 & 1/3.
+%define FxSaveCheckStNValue_3_and_a_3rd(p, iSt)     FxSaveCheckStNValue p, iSt, 0x55555555, 0xd5555555, 0x4000
+;; Checks that ST0 contains 3 & 1/3.
+%define FxSaveCheckStNValue_3_and_two_3rds(p, iSt)  FxSaveCheckStNValue p, iSt, 0xaaaaaaab, 0xeaaaaaaa, 0x4000
 
 
 ;;
@@ -2303,6 +2388,64 @@ CheckOpcodeCsIp:
         leave
         ret
 
+;;
+; Checks a FPU instruction, no memory operand.
+;
+; @uses xCX, xAX, Stack.
+;
+%macro FpuCheckOpcodeCsIp 1
+%%instruction:
+        %1
+        arch_fxsave  [xSP]
+        fnstenv [xSP + 512]             ; for the selectors (64-bit)
+        arch_fxrstor [xSP]              ; fnstenv screws up the ES bit.
+        lea     xCX, [REF(%%instruction)]
+        call    CheckOpcodeCsIp
+        jz      %%ok
+        or      eax, __LINE__
+        jmp     .return
+%%ok:
+%endmacro
+
+
+;;
+; Checks a trapping FPU instruction, no memory operand.
+;
+; Upon return, there is are two FXSAVE image on the stack at xSP.
+;
+; @uses xCX, xAX, Stack.
+;
+; @param    %1  The instruction.
+;
+%macro FpuTrapOpcodeCsIp 1
+%%instruction:
+        %1
+        fxsave [xSP + 1024 +512]        ; FPUDS and FPUCS for 64-bit hosts.
+                                        ; WEIRD: When saved after FWAIT they are ZEROed! (64-bit Intel)
+        arch_fxsave  [xSP]
+        fnstenv [xSP + 512]
+        arch_fxrstor [xSP]
+%%trap:
+        fwait
+%%trap_end:
+        mov     eax, __LINE__
+        jmp     .return
+BEGINDATA
+%%trapinfo: istruc TRAPINFO
+        at TRAPINFO.uTrapPC,    RTCCPTR_DEF     %%trap
+        at TRAPINFO.uResumePC,  RTCCPTR_DEF     %%resume
+        at TRAPINFO.u8TrapNo,   db              X86_XCPT_MF
+        at TRAPINFO.cbInstr,    db              (%%trap_end - %%trap)
+iend
+BEGINCODE
+%%resume:
+        lea     xCX, [REF(%%instruction)]
+        call    CheckOpcodeCsIp
+        jz      %%ok
+        or      eax, __LINE__
+        jmp     .return
+%%ok:
+%endmacro
 
 
 
@@ -2404,7 +2547,7 @@ CheckOpcodeCsIpDsDp:
                                         ; WEIRD: When saved after FWAIT they are ZEROed! (64-bit Intel)
         arch_fxsave  [xSP]
         fnstenv [xSP + 512]
-        arch_fxrstor [xSP]                
+        arch_fxrstor [xSP]
 %%trap:
         fwait
 %%trap_end:
@@ -2467,13 +2610,14 @@ BEGINCODE
 BEGINPROC   x861_TestFPUInstr1
         SAVE_ALL_PROLOGUE
         sub     xSP, 2048
-
+%if 1
         ;
         ; FDIV with 64-bit floating point memory operand.
         ;
         SetSubTest "FDIV m64r"
 
         ; ## Normal operation. ##
+
         fninit
         FpuCheckOpcodeCsIpDsDp { fld  dword [REF(g_r32_3dot2)]     }, [REF(g_r32_3dot2)]
         CheckSt0Value 0x00000000, 0xcccccd00, 0x4000
@@ -2483,6 +2627,7 @@ BEGINPROC   x861_TestFPUInstr1
 
 
         ; ## Masked exceptions. ##
+
         ; Masked stack underflow.
         fninit
         FpuCheckOpcodeCsIpDsDp { fdiv    qword [REF(g_r64_One)]    }, [REF(g_r64_One)]
@@ -2546,6 +2691,7 @@ BEGINPROC   x861_TestFPUInstr1
         FxSaveCheckSt0Value xSP, 0x00000800, 0x80000000, 0x43fd
 
         ; ## Unmasked exceptions. ##
+
         ; Stack underflow - TOP and ST0 unmodified.
         FpuInitWithCW X86_FCW_PC_64 | X86_FCW_RC_NEAREST
         FpuTrapOpcodeCsIpDsDp  { fdiv    qword [REF(g_r64_One)]    }, [REF(g_r64_One)]
@@ -2626,6 +2772,71 @@ BEGINPROC   x861_TestFPUInstr1
         fldcw   [xSP]
         mov     xBX, [REF_EXTERN(g_pbEfExecPage)]
         ShouldTrap X86_XCPT_MF, fdiv qword [xBX + PAGE_SIZE]
+%endif
+
+        ;
+        ; FSUBRP STn, ST0
+        ;
+        SetSubTest "FSUBRP STn, ST0"
+
+        ; ## Normal operation. ##
+        fninit
+        FpuCheckOpcodeCsIpDsDp { fld  dword [REF(g_r32_3dot2)]     }, [REF(g_r32_3dot2)]
+        FpuCheckOpcodeCsIpDsDp { fld  dword [REF(g_r32_3dot2)]     }, [REF(g_r32_3dot2)]
+        FpuCheckOpcodeCsIp     { fsubrp st1, st0 }
+        FxSaveCheckFSW xSP, 0, 0
+        FxSaveCheckSt0ValueConst xSP, REF(g_r80_Zero)
+
+        ; ## Masked exceptions. ##
+
+        ; Masked stack underflow, both operands.
+        fninit
+        FpuCheckOpcodeCsIp     { fsubrp st1, st0 }
+        FxSaveCheckFSW xSP, X86_FSW_IE | X86_FSW_SF, X86_FSW_C0 | X86_FSW_C2 | X86_FSW_C3
+        FxSaveCheckSt0Value_QNaN(xSP)
+
+        ; Masked stack underflow, one operand.
+        fninit
+        FpuCheckOpcodeCsIpDsDp { fld  dword [REF(g_r32_3dot2)]     }, [REF(g_r32_3dot2)]
+        FpuCheckOpcodeCsIp     { fsubrp st1, st0 }
+        FxSaveCheckFSW xSP, X86_FSW_IE | X86_FSW_SF, X86_FSW_C0 | X86_FSW_C2 | X86_FSW_C3
+        FxSaveCheckSt0Value_QNaN(xSP)
+
+        ; Denormal operand.
+        fninit
+        fld    tword [REF(g_r80_DnMax)]
+        fld    tword [REF(g_r80_DnMin)]
+        FpuCheckOpcodeCsIp     { fsubrp st1, st0 }
+        FxSaveCheckFSW xSP, X86_FSW_DE, X86_FSW_C0 | X86_FSW_C2 | X86_FSW_C3
+        FxSaveCheckSt0Value xSP, 0xfffffffe, 0x7fffffff, 0x8000
+
+        ; ## Unmasked exceptions. ##
+
+        ; Stack underflow, both operands - no pop or change.
+        FpuInitWithCW X86_FCW_PC_64 | X86_FCW_RC_NEAREST
+        FpuTrapOpcodeCsIp      { fsubrp st1, st0 }
+        FxSaveCheckFSW xSP, X86_FSW_IE | X86_FSW_SF | X86_FSW_ES | X86_FSW_B, X86_FSW_C0 | X86_FSW_C2 | X86_FSW_C3
+        FxSaveCheckSt0EmptyInitValue xSP
+
+        ; Stack underflow, one operand - no pop or change.
+        FpuInitWithCW X86_FCW_PC_64 | X86_FCW_RC_NEAREST
+        FpuCheckOpcodeCsIpDsDp { fld  dword [REF(g_r32_3dot2)]     }, [REF(g_r32_3dot2)]
+        FpuTrapOpcodeCsIp      { fsubrp st1, st0 }
+        FxSaveCheckFSW xSP, X86_FSW_IE | X86_FSW_SF | X86_FSW_ES | X86_FSW_B, X86_FSW_C0 | X86_FSW_C2 | X86_FSW_C3
+        FxSaveCheckSt0ValueConst xSP, REF(g_r80_r32_3dot2)
+
+        ; Denormal operand - no pop.
+        fninit
+        fld    tword [REF(g_r80_DnMax)]
+        fld    tword [REF(g_r80_DnMin)]
+        fnclex
+        mov     dword [xSP], X86_FCW_PC_64 | X86_FCW_RC_NEAREST
+        fldcw   [xSP]
+        FpuTrapOpcodeCsIp      { fsubrp st1, st0 }
+        FxSaveCheckFSW xSP, X86_FSW_DE | X86_FSW_ES | X86_FSW_B, X86_FSW_C0 | X86_FSW_C2 | X86_FSW_C3
+        FxSaveCheckStNValueConst xSP, 1, REF(g_r80_DnMax)
+        FxSaveCheckStNValueConst xSP, 0, REF(g_r80_DnMin)
+
 
 .success:
         xor     eax, eax
