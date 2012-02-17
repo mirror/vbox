@@ -10713,8 +10713,33 @@ FNIEMOP_STUB_1(iemOp_fisttp_m32i, uint8_t, bRm);
 /** Opcode 0xdb !11/2. */
 FNIEMOP_STUB_1(iemOp_fist_m32i, uint8_t, bRm);
 
+
 /** Opcode 0xdb !11/3. */
-FNIEMOP_STUB_1(iemOp_fistp_m32i, uint8_t, bRm);
+FNIEMOP_DEF_1(iemOp_fistp_m32i, uint8_t, bRm)
+{
+    IEMOP_MNEMONIC("fistp m32i");
+    IEM_MC_BEGIN(3, 2);
+    IEM_MC_LOCAL(RTGCPTR,               GCPtrEffDst);
+    IEM_MC_LOCAL(uint16_t,              u16FSW);
+    IEM_MC_ARG_LOCAL_REF(uint16_t *,    pu16FSW,    u16FSW, 0);
+    IEM_MC_ARG(int32_t *,               pi32Dst,            1);
+    IEM_MC_ARG(PCRTFLOAT80U,            pr80Value,          2);
+
+    IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffDst, bRm);
+    IEM_MC_MEM_MAP(pi32Dst, IEM_ACCESS_DATA_W, pIemCpu->iEffSeg, GCPtrEffDst, 0 /*arg*/);
+    IEM_MC_IF_FPUREG_NOT_EMPTY_REF_R80(pr80Value, 0)
+        IEM_MC_CALL_FPU_AIMPL_3(iemAImpl_fpu_r80_to_i32, pu16FSW, pi32Dst, pr80Value);
+        IEM_MC_MEM_COMMIT_AND_UNMAP(pi32Dst, IEM_ACCESS_DATA_W);
+        IEM_MC_UPDATE_FSW_THEN_POP(u16FSW);
+    IEM_MC_ELSE()
+        IEM_MC_MEM_COMMIT_AND_UNMAP(pi32Dst, IEM_ACCESS_DATA_W);
+        IEM_MC_FPU_STACK_UNDERFLOW_THEN_POP(0);
+    IEM_MC_ENDIF();
+    IEM_MC_ADVANCE_RIP();
+    IEM_MC_END();
+    return VINF_SUCCESS;
+}
+
 
 /** Opcode 0xdb !11/5. */
 FNIEMOP_STUB_1(iemOp_fld_r80, uint8_t, bRm);
