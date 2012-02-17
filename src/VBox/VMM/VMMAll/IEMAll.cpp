@@ -3560,6 +3560,34 @@ static void iemFpuStoreResultOnly(PIEMCPU pIemCpu, PIEMFPURESULT pResult, uint8_
 
 
 /**
+ * Pops one item off the FPU stack if no pending exception prevents it.
+ *
+ * @param   pCtx                The CPU context.
+ */
+static void iemFpuMaybePopOne(PCPUMCTX pCtx)
+{
+    /* Check pending exceptions. */
+    uint16_t uFSW = pCtx->fpu.FSW;
+    if (   (pCtx->fpu.FSW & (X86_FSW_IE | X86_FSW_ZE | X86_FSW_DE))
+        & ~(pCtx->fpu.FCW & (X86_FCW_IM | X86_FCW_ZM | X86_FCW_DM)))
+        return;
+
+    /* TOP--. */
+    uint16_t iOldTop = uFSW & X86_FSW_TOP_MASK;
+    uFSW &= ~X86_FSW_TOP_MASK;
+    uFSW |= (iOldTop + (UINT16_C(9) << X86_FSW_TOP_SHIFT)) & X86_FSW_TOP_MASK;
+    pCtx->fpu.FSW = uFSW;
+
+    /* Mark the previous ST0 as empty. */
+    iOldTop >>= X86_FSW_TOP_SHIFT;
+    pCtx->fpu.FTW &= ~RT_BIT(iOldTop);
+
+    /* Rotate the registers. */
+    iemFpuRotateStackPop(pCtx);
+}
+
+
+/**
  * Stores a result in a FPU register, updates the FSW, FTW, FPUIP, FPUCS, and
  * FOP.
  *
@@ -3573,6 +3601,24 @@ static void iemFpuStoreResult(PIEMCPU pIemCpu, PIEMFPURESULT pResult, uint8_t iS
     PCPUMCTX pCtx = pIemCpu->CTX_SUFF(pCtx);
     iemFpuUpdateOpcodeAndIP(pIemCpu, pCtx);
     iemFpuStoreResultOnly(pIemCpu, pResult, iStReg, pCtx);
+}
+
+
+/**
+ * Stores a result in a FPU register, updates the FSW, FTW, FPUIP, FPUCS, and
+ * FOP, and then pops the stack.
+ *
+ * @param   pIemCpu             The IEM per CPU data.
+ * @param   pResult             The result to store.
+ * @param   iStReg              Which FPU register to store it in.
+ * @param   pCtx                The CPU context.
+ */
+static void iemFpuStoreResultThenPop(PIEMCPU pIemCpu, PIEMFPURESULT pResult, uint8_t iStReg)
+{
+    PCPUMCTX pCtx = pIemCpu->CTX_SUFF(pCtx);
+    iemFpuUpdateOpcodeAndIP(pIemCpu, pCtx);
+    iemFpuStoreResultOnly(pIemCpu, pResult, iStReg, pCtx);
+    iemFpuMaybePopOne(pCtx);
 }
 
 
@@ -3591,6 +3637,26 @@ static void iemFpuStoreResultWithMemOp(PIEMCPU pIemCpu, PIEMFPURESULT pResult, u
     iemFpuUpdateDP(pIemCpu, pIemCpu->CTX_SUFF(pCtx), iEffSeg, GCPtrEff);
     iemFpuUpdateOpcodeAndIP(pIemCpu, pCtx);
     iemFpuStoreResultOnly(pIemCpu, pResult, iStReg, pCtx);
+}
+
+
+/**
+ * Stores a result in a FPU register, updates the FSW, FTW, FPUIP, FPUCS, FOP,
+ * FPUDP, and FPUDS, and then pops the stack.
+ *
+ * @param   pIemCpu             The IEM per CPU data.
+ * @param   pResult             The result to store.
+ * @param   iStReg              Which FPU register to store it in.
+ * @param   pCtx                The CPU context.
+ */
+static void iemFpuStoreResultWithMemOpThenPop(PIEMCPU pIemCpu, PIEMFPURESULT pResult,
+                                              uint8_t iStReg, uint8_t iEffSeg, RTGCPTR GCPtrEff)
+{
+    PCPUMCTX pCtx = pIemCpu->CTX_SUFF(pCtx);
+    iemFpuUpdateDP(pIemCpu, pIemCpu->CTX_SUFF(pCtx), iEffSeg, GCPtrEff);
+    iemFpuUpdateOpcodeAndIP(pIemCpu, pCtx);
+    iemFpuStoreResultOnly(pIemCpu, pResult, iStReg, pCtx);
+    iemFpuMaybePopOne(pCtx);
 }
 
 
@@ -3630,6 +3696,27 @@ iemFpuStackUnderflowWithMemOp(PIEMCPU pIemCpu, uint8_t iStReg, uint8_t iEffSeg, 
     iemFpuStackUnderflowOnly(pIemCpu, iStReg, pCtx);
 }
 
+
+DECL_NO_INLINE(static, void) iemFpuStackUnderflowThenPop(PIEMCPU pIemCpu, uint8_t iStReg)
+{
+    PCPUMCTX pCtx = pIemCpu->CTX_SUFF(pCtx);
+    iemFpuUpdateOpcodeAndIP(pIemCpu, pCtx);
+    iemFpuStackUnderflowOnly(pIemCpu, iStReg, pCtx);
+    iemFpuMaybePopOne(pCtx);
+}
+
+
+DECL_NO_INLINE(static, void)
+iemFpuStackUnderflowWithMemOpThenPop(PIEMCPU pIemCpu, uint8_t iStReg, uint8_t iEffSeg, RTGCPTR GCPtrEff)
+{
+    PCPUMCTX pCtx = pIemCpu->CTX_SUFF(pCtx);
+    iemFpuUpdateDP(pIemCpu, pIemCpu->CTX_SUFF(pCtx), iEffSeg, GCPtrEff);
+    iemFpuUpdateOpcodeAndIP(pIemCpu, pCtx);
+    iemFpuStackUnderflowOnly(pIemCpu, iStReg, pCtx);
+    iemFpuMaybePopOne(pCtx);
+}
+
+
 static int iemFpuStRegNonEmptyRef(PIEMCPU pIemCpu, uint8_t iStReg, PCRTFLOAT80U *ppRef)
 {
     PCPUMCTX pCtx = pIemCpu->CTX_SUFF(pCtx);
@@ -3637,6 +3724,23 @@ static int iemFpuStRegNonEmptyRef(PIEMCPU pIemCpu, uint8_t iStReg, PCRTFLOAT80U 
     if (pCtx->fpu.FTW & RT_BIT(iReg))
     {
         *ppRef = &pCtx->fpu.aRegs[iStReg].r80;
+        return VINF_SUCCESS;
+    }
+    return VERR_NOT_FOUND;
+}
+
+
+static int iemFpu2StRegsNonEmptyRef(PIEMCPU pIemCpu, uint8_t iStReg0, PCRTFLOAT80U *ppRef0,
+                                    uint8_t iStReg1, PCRTFLOAT80U *ppRef1)
+{
+    PCPUMCTX pCtx  = pIemCpu->CTX_SUFF(pCtx);
+    uint16_t iTop  = X86_FSW_TOP_GET(pCtx->fpu.FSW);
+    uint16_t iReg0 = (iTop + iStReg0) & X86_FSW_TOP_SMASK;
+    uint16_t iReg1 = (iTop + iStReg1) & X86_FSW_TOP_SMASK;
+    if ((pCtx->fpu.FTW & (RT_BIT(iReg0) | RT_BIT(iReg1))) == (RT_BIT(iReg0) | RT_BIT(iReg1)))
+    {
+        *ppRef0 = &pCtx->fpu.aRegs[iStReg0].r80;
+        *ppRef1 = &pCtx->fpu.aRegs[iStReg1].r80;
         return VINF_SUCCESS;
     }
     return VERR_NOT_FOUND;
@@ -5811,16 +5915,30 @@ static VBOXSTRICTRC iemMemMarkSelDescAccessed(PIEMCPU pIemCpu, uint16_t uSel)
 /** Stores FPU result in a stack register. */
 #define IEM_MC_STORE_FPU_RESULT(a_FpuData, a_iStReg) \
     iemFpuStoreResult(pIemCpu, &a_FpuData, a_iStReg)
+/** Stores FPU result in a stack register and pops the stack. */
+#define IEM_MC_STORE_FPU_RESULT_THEN_POP(a_FpuData, a_iStReg) \
+    iemFpuStoreResultThenPop(pIemCpu, &a_FpuData, a_iStReg)
 /** Stores FPU result in a stack register and sets the FPUDP. */
 #define IEM_MC_STORE_FPU_RESULT_MEM_OP(a_FpuData, a_iStReg, a_iEffSeg, a_GCPtrEff) \
     iemFpuStoreResultWithMemOp(pIemCpu, &a_FpuData, a_iStReg, a_iEffSeg, a_GCPtrEff)
+/** Stores FPU result in a stack register, sets the FPUDP, and pops the
+ *  stack. */
+#define IEM_MC_STORE_FPU_RESULT_WITH_MEM_OP_THEN_POP(a_FpuData, a_iStReg, a_iEffSeg, a_GCPtrEff) \
+    iemFpuStoreResultWithMemOpThenPop(pIemCpu, &a_FpuData, a_iStReg, a_iEffSeg, a_GCPtrEff)
 
 /** Raises a FPU stack underflow. Sets FPUIP, FPUCS and FOP. */
-#define IEM_MC_FPU_STACK_UNDERFLOW(a_iSt) \
-    iemFpuStackUnderflow(pIemCpu, a_iSt)
+#define IEM_MC_FPU_STACK_UNDERFLOW(a_iStDst) \
+    iemFpuStackUnderflow(pIemCpu, a_iStDst)
+/** Raises a FPU stack underflow. Sets FPUIP, FPUCS and FOP. Pops stack. */
+#define IEM_MC_FPU_STACK_UNDERFLOW_THEN_POP(a_iStDst) \
+    iemFpuStackUnderflowThenPop(pIemCpu, a_iStDst)
 /** Raises a FPU stack underflow. Sets FPUIP, FPUCS, FOP, FPUDP and FPUDS. */
-#define IEM_MC_FPU_STACK_UNDERFLOW_MEM_OP(a_iSt, a_iEffSeg, a_GCPtrEff) \
-    iemFpuStackUnderflowWithMemOp(pIemCpu, a_iSt, a_iEffSeg, a_GCPtrEff)
+#define IEM_MC_FPU_STACK_UNDERFLOW_MEM_OP(a_iStDst, a_iEffSeg, a_GCPtrEff) \
+    iemFpuStackUnderflowWithMemOp(pIemCpu, a_iStDst, a_iEffSeg, a_GCPtrEff)
+/** Raises a FPU stack underflow. Sets FPUIP, FPUCS, FOP, FPUDP and FPUDS.
+ *  Pops stack. */
+#define IEM_MC_FPU_STACK_UNDERFLOW_MEM_OP_THEN_POP(a_iStDst, a_iEffSeg, a_GCPtrEff) \
+    iemFpuStackUnderflowWithMemOpThenPop(pIemCpu, a_iStDst, a_iEffSeg, a_GCPtrEff)
 
 
 #define IEM_MC_IF_EFL_BIT_SET(a_fBit)                   if (pIemCpu->CTX_SUFF(pCtx)->eflags.u & (a_fBit)) {
@@ -5866,6 +5984,8 @@ static VBOXSTRICTRC iemMemMarkSelDescAccessed(PIEMCPU pIemCpu, uint16_t uSel)
 #define IEM_MC_IF_GREG_BIT_SET(a_iGReg, a_iBitNo)       if (*(uint64_t *)iemGRegRef(pIemCpu, (a_iGReg)) & RT_BIT_64(a_iBitNo)) {
 #define IEM_MC_IF_FPUREG_NOT_EMPTY_REF_R80(a_pr80Dst, a_iSt) \
     if (iemFpuStRegNonEmptyRef(pIemCpu, (a_iSt), &(a_pr80Dst)) == VINF_SUCCESS) {
+#define IEM_MC_IF_TWO_FPUREGS_NOT_EMPTY_REF_R80(a_pr80Dst0, a_iSt0, a_pr80Dst1, a_iSt1) \
+    if (iemFpu2StRegsNonEmptyRef(pIemCpu, (a_iSt0), &(a_pr80Dst0), (a_iSt1), &(a_pr80Dst1)) == VINF_SUCCESS) {
 
 #define IEM_MC_ELSE()                                   } else {
 #define IEM_MC_ENDIF()                                  } do {} while (0)

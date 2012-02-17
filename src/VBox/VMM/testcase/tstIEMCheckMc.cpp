@@ -404,9 +404,13 @@ IEMOPSHIFTDBLSIZES g_iemAImpl_shrd;
 #define IEM_MC_PUSH_FPU_RESULT(a_FpuData)                               do { } while (0)
 #define IEM_MC_PUSH_FPU_RESULT_MEM_OP(a_FpuData, a_iEffSeg, a_GCPtrEff) do { } while (0)
 #define IEM_MC_STORE_FPU_RESULT(a_FpuData, a_iStReg)                    do { } while (0)
-#define IEM_MC_STORE_FPU_RESULT_MEM_OP(a_FpuData, a_iStReg, a_iEffSeg, a_GCPtrEff)  do { } while (0)
-#define IEM_MC_FPU_STACK_UNDERFLOW(a_iStReg)                            do { } while (0)
-#define IEM_MC_FPU_STACK_UNDERFLOW_MEM_OP(a_iStReg, a_iEffSeg, a_GCPtrEff) do { } while (0)
+#define IEM_MC_STORE_FPU_RESULT_THEN_POP(a_FpuData, a_iStReg)           do { } while (0)
+#define IEM_MC_STORE_FPU_RESULT_MEM_OP(a_FpuData, a_iStReg, a_iEffSeg, a_GCPtrEff)              do { } while (0)
+#define IEM_MC_STORE_FPU_RESULT_MEM_OP_THEN_POP(a_FpuData, a_iStReg, a_iEffSeg, a_GCPtrEff)     do { } while (0)
+#define IEM_MC_FPU_STACK_UNDERFLOW(a_iStReg)                                                    do { } while (0)
+#define IEM_MC_FPU_STACK_UNDERFLOW_THEN_POP(a_iStReg)                                           do { } while (0)
+#define IEM_MC_FPU_STACK_UNDERFLOW_MEM_OP(a_iStReg, a_iEffSeg, a_GCPtrEff)                      do { } while (0)
+#define IEM_MC_FPU_STACK_UNDERFLOW_MEM_OP_THEN_POP(a_iStReg, a_iEffSeg, a_GCPtrEff)             do { } while (0)
 
 #define IEM_MC_IF_EFL_BIT_SET(a_fBit)                                   if (g_fRandom) {
 #define IEM_MC_IF_EFL_BIT_NOT_SET(a_fBit)                               if (g_fRandom) {
@@ -428,6 +432,7 @@ IEMOPSHIFTDBLSIZES g_iemAImpl_shrd;
 #define IEM_MC_IF_LOCAL_IS_Z(a_Local)                                   if ((a_Local) == 0) {
 #define IEM_MC_IF_GREG_BIT_SET(a_iGReg, a_iBitNo)                       if (g_fRandom) {
 #define IEM_MC_IF_FPUREG_NOT_EMPTY_REF_R80(a_pr80Dst, a_iSt)            if (g_fRandom) {
+#define IEM_MC_IF_TWO_FPUREGS_NOT_EMPTY_REF_R80(p0, i0, p1, i1)         if (g_fRandom) {
 #define IEM_MC_ELSE()                                                   } else {
 #define IEM_MC_ENDIF()                                                  } do {} while (0)
 
@@ -440,6 +445,14 @@ IEMOPSHIFTDBLSIZES g_iemAImpl_shrd;
 #define iemAImpl_fsubr_r80_by_r64       NULL
 #define iemAImpl_fdiv_r80_by_r64        NULL
 #define iemAImpl_fdivr_r80_by_r64       NULL
+
+#define iemAImpl_fadd_r80_by_r80        NULL
+#define iemAImpl_fmul_r80_by_r80        NULL
+#define iemAImpl_fcom_r80_by_r80        NULL
+#define iemAImpl_fsub_r80_by_r80        NULL
+#define iemAImpl_fsubr_r80_by_r80       NULL
+#define iemAImpl_fdiv_r80_by_r80        NULL
+#define iemAImpl_fdivr_r80_by_r80       NULL
 
 
 /** @}  */
