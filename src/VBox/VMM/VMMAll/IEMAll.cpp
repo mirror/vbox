@@ -6112,7 +6112,8 @@ static VBOXSTRICTRC iemMemMarkSelDescAccessed(PIEMCPU pIemCpu, uint16_t uSel)
  */
 
 /** The instruction allows no lock prefixing (in this encoding), throw #UD if
- * lock prefixed. */
+ * lock prefixed.
+ * @deprecated  IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX */
 #define IEMOP_HLP_NO_LOCK_PREFIX() \
     do \
     { \
@@ -6137,6 +6138,24 @@ static VBOXSTRICTRC iemMemMarkSelDescAccessed(PIEMCPU pIemCpu, uint16_t uSel)
             iemRecalEffOpSize64Default(pIemCpu); \
     } while (0)
 
+/**
+ * Done decoding.
+ */
+#define IEMOP_HLP_DONE_DECODING() \
+    do \
+    { \
+        /*nothing for now, maybe later... */ \
+    } while (0)
+
+/**
+ * Done decoding, raise \#UD exception if lock prefix present.
+ */
+#define IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX() \
+    do \
+    { \
+        if (pIemCpu->fPrefixes & IEM_OP_PRF_LOCK) \
+            return IEMOP_RAISE_INVALID_LOCK_PREFIX(); \
+    } while (0)
 
 
 /**
