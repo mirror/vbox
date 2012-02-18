@@ -1073,15 +1073,13 @@ FNIEMOP_DEF(iemOp_mov_Rd_Cd)
     else
         pIemCpu->enmEffOpSize = pIemCpu->enmDefOpSize = IEMMODE_32BIT;
 
-    /** @todo Verify that the the invalid lock sequence exception (\#UD) is raised
-     *        before the privilege level violation (\#GP). */
     uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
     uint8_t iCrReg = ((bRm >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK) | pIemCpu->uRexReg;
     if (pIemCpu->fPrefixes & IEM_OP_PRF_LOCK)
     {
         /* The lock prefix can be used to encode CR8 accesses on some CPUs. */
         if (!IEM_IS_AMD_CPUID_FEATURE_PRESENT_ECX(X86_CPUID_AMD_FEATURE_ECX_CR8L))
-            return IEMOP_RAISE_INVALID_LOCK_PREFIX();
+            return IEMOP_RAISE_INVALID_LOCK_PREFIX(); /* #UD takes precedence over #GP(), see test. */
         iCrReg |= 8;
     }
     switch (iCrReg)
@@ -1091,6 +1089,7 @@ FNIEMOP_DEF(iemOp_mov_Rd_Cd)
         default:
             return IEMOP_RAISE_INVALID_OPCODE();
     }
+    IEMOP_HLP_DONE_DECODING();
 
     return IEM_MC_DEFER_TO_CIMPL_2(iemCImpl_mov_Rd_Cd, (X86_MODRM_RM_MASK & bRm) | pIemCpu->uRexB, iCrReg);
 }
@@ -1120,15 +1119,13 @@ FNIEMOP_DEF(iemOp_mov_Cd_Rd)
     else
         pIemCpu->enmEffOpSize = pIemCpu->enmDefOpSize = IEMMODE_32BIT;
 
-    /** @todo Verify that the the invalid lock sequence exception (\#UD) is raised
-     *        before the privilege level violation (\#GP). */
     uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
     uint8_t iCrReg = ((bRm >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK) | pIemCpu->uRexReg;
     if (pIemCpu->fPrefixes & IEM_OP_PRF_LOCK)
     {
         /* The lock prefix can be used to encode CR8 accesses on some CPUs. */
         if (!IEM_IS_AMD_CPUID_FEATURE_PRESENT_ECX(X86_CPUID_AMD_FEATURE_ECX_CR8L))
-            return IEMOP_RAISE_INVALID_LOCK_PREFIX();
+            return IEMOP_RAISE_INVALID_LOCK_PREFIX(); /* #UD takes precedence over #GP(), see test. */
         iCrReg |= 8;
     }
     switch (iCrReg)
@@ -1138,6 +1135,7 @@ FNIEMOP_DEF(iemOp_mov_Cd_Rd)
         default:
             return IEMOP_RAISE_INVALID_OPCODE();
     }
+    IEMOP_HLP_DONE_DECODING();
 
     return IEM_MC_DEFER_TO_CIMPL_2(iemCImpl_mov_Cd_Rd, iCrReg, (X86_MODRM_RM_MASK & bRm) | pIemCpu->uRexB);
 }
@@ -1148,7 +1146,7 @@ FNIEMOP_DEF(iemOp_mov_Dd_Rd)
 {
     IEMOP_MNEMONIC("mov Dd,Rd");
     uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
-    IEMOP_HLP_NO_LOCK_PREFIX();
+    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
     if (pIemCpu->fPrefixes & IEM_OP_PRF_REX_R)
         return IEMOP_RAISE_INVALID_OPCODE();
     return IEM_MC_DEFER_TO_CIMPL_2(iemCImpl_mov_Dd_Rd,
@@ -1161,16 +1159,16 @@ FNIEMOP_DEF(iemOp_mov_Dd_Rd)
 FNIEMOP_DEF(iemOp_mov_Rd_Td)
 {
     IEMOP_MNEMONIC("mov Rd,Td");
-/** @todo Is the invalid opcode raise before parsing any R/M byte? */
+    /* The RM byte is not considered, see testcase. */
     return IEMOP_RAISE_INVALID_OPCODE();
 }
-
 
 
 /** Opcode 0x0f 0x26. */
 FNIEMOP_DEF(iemOp_mov_Td_Rd)
 {
     IEMOP_MNEMONIC("mov Td,Rd");
+    /* The RM byte is not considered, see testcase. */
     return IEMOP_RAISE_INVALID_OPCODE();
 }
 
@@ -12580,11 +12578,7 @@ FNIEMOP_DEF_1(iemOp_Grp5_callf_Ep, uint8_t, bRm)
 
     /* Registers? How?? */
     if ((bRm & X86_MODRM_MOD_MASK) == (3 << X86_MODRM_MOD_SHIFT))
-    {
-        /** @todo How the heck does a 'callf eax' work? Probably just have to
-         *        search the docs... */
-        AssertFailedReturn(VERR_IEM_ASPECT_NOT_IMPLEMENTED);
-    }
+        return IEMOP_RAISE_INVALID_OPCODE(); /* callf eax is not legal */
 
     /* Far pointer loaded from memory. */
     switch (pIemCpu->enmEffOpSize)
@@ -12729,11 +12723,7 @@ FNIEMOP_DEF_1(iemOp_Grp5_jmpf_Ep, uint8_t, bRm)
     /* Decode the far pointer address and pass it on to the far call C
        implementation. */
     if ((bRm & X86_MODRM_MOD_MASK) == (3 << X86_MODRM_MOD_SHIFT))
-    {
-        /** @todo How the heck does a 'callf eax' work? Probably just have to
-         *        search the docs... */
-        AssertFailedReturn(VERR_IEM_ASPECT_NOT_IMPLEMENTED);
-    }
+        return IEMOP_RAISE_INVALID_OPCODE(); /* jmpf eax is not legal */
 
     /* Far pointer loaded from memory. */
     switch (pIemCpu->enmEffOpSize)

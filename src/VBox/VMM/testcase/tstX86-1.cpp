@@ -71,6 +71,7 @@ DECLASM(int32_t) x861_Test3(void);
 DECLASM(int32_t) x861_Test4(void);
 DECLASM(int32_t) x861_Test5(void);
 DECLASM(int32_t) x861_Test6(void);
+DECLASM(int32_t) x861_Test7(void);
 DECLASM(int32_t) x861_TestFPUInstr1(void);
 
 
@@ -240,21 +241,28 @@ int main()
         rc = x861_Test4();
         if (rc != 0)
             RTTestFailed(hTest, "x861_Test4 -> %d", rc);
+#endif
 
-        RTTestSub(hTest, "Odd floating point encodings");
+        RTTestSub(hTest, "Odd encodings and odd ends");
         rc = x861_Test5();
         if (rc != 0)
             RTTestFailed(hTest, "x861_Test5 -> %d", rc);
 
-        RTTestSub(hTest, "Floating point exceptions ++");
+#if 0
+        RTTestSub(hTest, "Odd floating point encodings");
         rc = x861_Test6();
         if (rc != 0)
+            RTTestFailed(hTest, "x861_Test5 -> %d", rc);
+
+        RTTestSub(hTest, "Floating point exceptions ++");
+        rc = x861_Test7();
+        if (rc != 0)
             RTTestFailed(hTest, "x861_Test6 -> %d", rc);
-#endif
 
         rc = x861_TestFPUInstr1();
         if (rc != 0)
             RTTestFailed(hTest, "x861_TestFPUInstr1 -> %d", rc);
+#endif
     }
 
     return RTTestSummaryAndDestroy(hTest);

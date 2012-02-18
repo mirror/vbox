@@ -182,6 +182,25 @@ BEGINCODE
 %%resume:
 %endmacro
 
+;;
+; Macro for recording a trapping instruction in the exec page.
+;
+; @uses     xAX, xDX
+; @param        1       The trap number.
+; @param        2       The offset into the exec page.
+%macro ShouldTrapExecPage 2
+        lea     xDX, [REF(NAME(g_aTrapInfoExecPage))]
+        lea     xAX, [REF(%%resume)]
+        mov     byte [xDX + TRAPINFO.cbInstr],  PAGE_SIZE - (%2)
+        mov     byte [xDX + TRAPINFO.u8TrapNo], %1
+        mov     [xDX + TRAPINFO.uResumePC],     xAX
+        mov     xAX, [REF_EXTERN(g_pbEfExecPage)]
+        lea     xAX, [xAX + (%2)]
+        mov     [xDX + TRAPINFO.uTrapPC],       xAX
+        jmp     xAX
+%%resume:
+%endmacro
+
 
 ;;
 ; Macro for recording a FPU instruction trapping on a following fwait.
@@ -1708,6 +1727,81 @@ ENDPROC     x861_Test4
 
 
 ;;
+; Tests various odd/weird/bad encodings.
+;
+BEGINPROC   x861_Test5
+        SAVE_ALL_PROLOGUE
+        call    x861_ClearRegisters
+
+%if 0
+        ; callf eax...
+        ShouldTrap X86_XCPT_UD, db 0xff, 11011000b
+        ShouldTrap X86_XCPT_UD, db 0xff, 11011001b
+        ShouldTrap X86_XCPT_UD, db 0xff, 11011010b
+        ShouldTrap X86_XCPT_UD, db 0xff, 11011011b
+        ShouldTrap X86_XCPT_UD, db 0xff, 11011100b
+        ShouldTrap X86_XCPT_UD, db 0xff, 11011101b
+        ShouldTrap X86_XCPT_UD, db 0xff, 11011110b
+        ShouldTrap X86_XCPT_UD, db 0xff, 11011111b
+
+        ; jmpf eax...
+        ShouldTrap X86_XCPT_UD, db 0xff, 11101000b
+        ShouldTrap X86_XCPT_UD, db 0xff, 11101001b
+        ShouldTrap X86_XCPT_UD, db 0xff, 11101010b
+        ShouldTrap X86_XCPT_UD, db 0xff, 11101011b
+        ShouldTrap X86_XCPT_UD, db 0xff, 11101100b
+        ShouldTrap X86_XCPT_UD, db 0xff, 11101101b
+        ShouldTrap X86_XCPT_UD, db 0xff, 11101110b
+        ShouldTrap X86_XCPT_UD, db 0xff, 11101111b
+
+        ; #GP(0) vs #UD.
+        ShouldTrap X86_XCPT_GP, mov xAX, cr0
+        ShouldTrap X86_XCPT_UD, lock mov xAX, cr0
+        ShouldTrap X86_XCPT_GP, mov cr0, xAX
+        ShouldTrap X86_XCPT_UD, lock mov cr0, xAX
+        ShouldTrap X86_XCPT_UD, db 0x0f, 0x20,11001000b ; mov xAX, cr1
+        ShouldTrap X86_XCPT_UD, db 0x0f, 0x20,11101000b ; mov xAX, cr5
+        ShouldTrap X86_XCPT_UD, db 0x0f, 0x20,11110000b ; mov xAX, cr6
+        ShouldTrap X86_XCPT_UD, db 0x0f, 0x20,11111000b ; mov xAX, cr7
+        ShouldTrap X86_XCPT_GP, mov xAX, dr7
+        ShouldTrap X86_XCPT_UD, lock mov xAX, dr7
+
+        ; The MOD is ignored by MOV CRx,GReg and MOV GReg,CRx
+        ShouldTrap X86_XCPT_GP, db 0x0f, 0x20,00000000b ; mov xAX, cr0
+        ShouldTrap X86_XCPT_GP, db 0x0f, 0x20,01000000b ; mov xAX, cr0
+        ShouldTrap X86_XCPT_GP, db 0x0f, 0x20,10000000b ; mov xAX, cr0
+        ShouldTrap X86_XCPT_GP, db 0x0f, 0x20,11000000b ; mov xAX, cr0
+        ShouldTrap X86_XCPT_GP, db 0x0f, 0x22,00000000b ; mov cr0, xAX
+        ShouldTrap X86_XCPT_GP, db 0x0f, 0x22,01000000b ; mov cr0, xAX
+        ShouldTrap X86_XCPT_GP, db 0x0f, 0x22,10000000b ; mov cr0, xAX
+        ShouldTrap X86_XCPT_GP, db 0x0f, 0x22,11000000b ; mov cr0, xAX
+%endif
+
+        ; mov eax, tr0, 0x0f 0x24
+        ShouldTrap X86_XCPT_UD, db 0x0f, 0x24, 0xc0     ; mov xAX, tr1
+
+        mov     xAX, [REF_EXTERN(g_pbEfExecPage)]
+        add     xAX, PAGE_SIZE - 3
+        mov     byte [xAX    ], 0x0f
+        mov     byte [xAX + 1], 0x24
+        mov     byte [xAX + 2], 0xc0
+        ShouldTrapExecPage X86_XCPT_UD, PAGE_SIZE - 3
+
+        mov     xAX, [REF_EXTERN(g_pbEfExecPage)]
+        add     xAX, PAGE_SIZE - 2
+        mov     byte [xAX    ], 0x0f
+        mov     byte [xAX + 1], 0x24
+        ShouldTrapExecPage X86_XCPT_UD, PAGE_SIZE - 2
+
+.success:
+        xor     eax, eax
+.return:
+        SAVE_ALL_EPILOGUE
+        ret
+ENDPROC     x861_Test5
+
+
+;;
 ; Tests an reserved FPU encoding, checking that it does not affect the FPU or
 ; CPU state in any way.
 ;
@@ -1954,7 +2048,7 @@ SetFSW_C0_thru_C3:
 ;;
 ; Tests some odd floating point instruction encodings.
 ;
-BEGINPROC   x861_Test5
+BEGINPROC   x861_Test6
         SAVE_ALL_PROLOGUE
 
         ; standard stuff...
@@ -2166,7 +2260,7 @@ BEGINPROC   x861_Test5
         SAVE_ALL_EPILOGUE
         ret
 
-ENDPROC     x861_Test5
+ENDPROC     x861_Test6
 
 
 ;;
@@ -2174,7 +2268,7 @@ ENDPROC     x861_Test5
 ;
 ;
 ;
-BEGINPROC   x861_Test6
+BEGINPROC   x861_Test7
         SAVE_ALL_PROLOGUE
         sub     xSP, 2048
 
@@ -2291,7 +2385,7 @@ BEGINPROC   x861_Test6
         add     xSP, 2048
         SAVE_ALL_EPILOGUE
         ret
-ENDPROC     x861_Test6
+ENDPROC     x861_Test7
 
 
 extern NAME(RTTestISub)
@@ -2853,6 +2947,13 @@ ENDPROC     x861_TestFPUInstr1
 ;;
 ; Terminate the trap info array with a NIL entry.
 BEGINDATA
+GLOBALNAME g_aTrapInfoExecPage
+istruc TRAPINFO
+        at TRAPINFO.uTrapPC,    RTCCPTR_DEF     1
+        at TRAPINFO.uResumePC,  RTCCPTR_DEF     1
+        at TRAPINFO.u8TrapNo,   db              16
+        at TRAPINFO.cbInstr,    db              3
+iend
 GLOBALNAME g_aTrapInfoEnd
 istruc TRAPINFO
         at TRAPINFO.uTrapPC,    RTCCPTR_DEF     0
