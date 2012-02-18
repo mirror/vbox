@@ -8129,7 +8129,7 @@ FNIEMOP_DEF(iemOp_call_Ap)
     else
         IEM_OPCODE_GET_NEXT_U16_ZX_U32(&offSeg);
     uint16_t uSel;  IEM_OPCODE_GET_NEXT_U16(&uSel);
-    IEMOP_HLP_NO_LOCK_PREFIX();
+    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
     return IEM_MC_DEFER_TO_CIMPL_3(iemCImpl_callf, uSel, offSeg, pIemCpu->enmEffOpSize);
 }
 
@@ -12566,16 +12566,10 @@ FNIEMOP_DEF_1(iemOp_Grp5_calln_Ev, uint8_t, bRm)
     }
 }
 
+typedef IEM_CIMPL_DECL_TYPE_3(FNIEMCIMPLFARBRANCH, uint16_t, uSel, uint64_t, offSeg, IEMMODE, enmOpSize);
 
-/**
- * Opcode 0xff /3.
- * @param   bRm             The RM byte.
- */
-FNIEMOP_DEF_1(iemOp_Grp5_callf_Ep, uint8_t, bRm)
+FNIEMOP_DEF_2(iemOpHlp_Grp5_far_Ep, uint8_t, bRm, FNIEMCIMPLFARBRANCH *, pfnCImpl)
 {
-    IEMOP_MNEMONIC("callf Ep");
-    IEMOP_HLP_NO_LOCK_PREFIX(); /** @todo Too early? */
-
     /* Registers? How?? */
     if ((bRm & X86_MODRM_MOD_MASK) == (3 << X86_MODRM_MOD_SHIFT))
         return IEMOP_RAISE_INVALID_OPCODE(); /* callf eax is not legal */
@@ -12590,9 +12584,10 @@ FNIEMOP_DEF_1(iemOp_Grp5_callf_Ep, uint8_t, bRm)
             IEM_MC_ARG_CONST(IEMMODE,   enmEffOpSize, IEMMODE_16BIT,    2);
             IEM_MC_LOCAL(RTGCPTR, GCPtrEffSrc);
             IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm);
+            IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
             IEM_MC_FETCH_MEM_U16(offSeg, pIemCpu->iEffSeg, GCPtrEffSrc);
             IEM_MC_FETCH_MEM_U16_DISP(u16Sel, pIemCpu->iEffSeg, GCPtrEffSrc, 2);
-            IEM_MC_CALL_CIMPL_3(iemCImpl_callf, u16Sel, offSeg, enmEffOpSize);
+            IEM_MC_CALL_CIMPL_3(pfnCImpl, u16Sel, offSeg, enmEffOpSize);
             IEM_MC_END();
             return VINF_SUCCESS;
 
@@ -12603,9 +12598,10 @@ FNIEMOP_DEF_1(iemOp_Grp5_callf_Ep, uint8_t, bRm)
             IEM_MC_ARG_CONST(IEMMODE,   enmEffOpSize, IEMMODE_32BIT,    2);
             IEM_MC_LOCAL(RTGCPTR, GCPtrEffSrc);
             IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm);
+            IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
             IEM_MC_FETCH_MEM_U32(offSeg, pIemCpu->iEffSeg, GCPtrEffSrc);
             IEM_MC_FETCH_MEM_U16_DISP(u16Sel, pIemCpu->iEffSeg, GCPtrEffSrc, 4);
-            IEM_MC_CALL_CIMPL_3(iemCImpl_callf, u16Sel, offSeg, enmEffOpSize);
+            IEM_MC_CALL_CIMPL_3(pfnCImpl, u16Sel, offSeg, enmEffOpSize);
             IEM_MC_END();
             return VINF_SUCCESS;
 
@@ -12616,14 +12612,26 @@ FNIEMOP_DEF_1(iemOp_Grp5_callf_Ep, uint8_t, bRm)
             IEM_MC_ARG_CONST(IEMMODE,   enmEffOpSize, IEMMODE_16BIT,    2);
             IEM_MC_LOCAL(RTGCPTR, GCPtrEffSrc);
             IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm);
+            IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
             IEM_MC_FETCH_MEM_U64(offSeg, pIemCpu->iEffSeg, GCPtrEffSrc);
             IEM_MC_FETCH_MEM_U16_DISP(u16Sel, pIemCpu->iEffSeg, GCPtrEffSrc, 8);
-            IEM_MC_CALL_CIMPL_3(iemCImpl_callf, u16Sel, offSeg, enmEffOpSize);
+            IEM_MC_CALL_CIMPL_3(pfnCImpl, u16Sel, offSeg, enmEffOpSize);
             IEM_MC_END();
             return VINF_SUCCESS;
 
         IEM_NOT_REACHED_DEFAULT_CASE_RET();
     }
+}
+
+
+/**
+ * Opcode 0xff /3.
+ * @param   bRm             The RM byte.
+ */
+FNIEMOP_DEF_1(iemOp_Grp5_callf_Ep, uint8_t, bRm)
+{
+    IEMOP_MNEMONIC("callf Ep");
+    return FNIEMOP_CALL_2(iemOpHlp_Grp5_far_Ep, bRm, iemCImpl_callf);
 }
 
 
@@ -12718,57 +12726,7 @@ FNIEMOP_DEF_1(iemOp_Grp5_jmpf_Ep, uint8_t, bRm)
 {
     IEMOP_MNEMONIC("jmp Ep");
     IEMOP_HLP_NO_64BIT();
-    /** @todo could share all the decoding with iemOp_Grp5_callf_Ep. */
-
-    /* Decode the far pointer address and pass it on to the far call C
-       implementation. */
-    if ((bRm & X86_MODRM_MOD_MASK) == (3 << X86_MODRM_MOD_SHIFT))
-        return IEMOP_RAISE_INVALID_OPCODE(); /* jmpf eax is not legal */
-
-    /* Far pointer loaded from memory. */
-    switch (pIemCpu->enmEffOpSize)
-    {
-        case IEMMODE_16BIT:
-            IEM_MC_BEGIN(3, 1);
-            IEM_MC_ARG(uint16_t,        u16Sel,                         0);
-            IEM_MC_ARG(uint16_t,        offSeg,                         1);
-            IEM_MC_ARG_CONST(IEMMODE,   enmEffOpSize, IEMMODE_16BIT,    2);
-            IEM_MC_LOCAL(RTGCPTR, GCPtrEffSrc);
-            IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm);
-            IEM_MC_FETCH_MEM_U16(offSeg, pIemCpu->iEffSeg, GCPtrEffSrc);
-            IEM_MC_FETCH_MEM_U16_DISP(u16Sel, pIemCpu->iEffSeg, GCPtrEffSrc, 2);
-            IEM_MC_CALL_CIMPL_3(iemCImpl_FarJmp, u16Sel, offSeg, enmEffOpSize);
-            IEM_MC_END();
-            return VINF_SUCCESS;
-
-        case IEMMODE_32BIT:
-            IEM_MC_BEGIN(3, 1);
-            IEM_MC_ARG(uint16_t,        u16Sel,                         0);
-            IEM_MC_ARG(uint32_t,        offSeg,                         1);
-            IEM_MC_ARG_CONST(IEMMODE,   enmEffOpSize, IEMMODE_32BIT,    2);
-            IEM_MC_LOCAL(RTGCPTR, GCPtrEffSrc);
-            IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm);
-            IEM_MC_FETCH_MEM_U32(offSeg, pIemCpu->iEffSeg, GCPtrEffSrc);
-            IEM_MC_FETCH_MEM_U16_DISP(u16Sel, pIemCpu->iEffSeg, GCPtrEffSrc, 4);
-            IEM_MC_CALL_CIMPL_3(iemCImpl_FarJmp, u16Sel, offSeg, enmEffOpSize);
-            IEM_MC_END();
-            return VINF_SUCCESS;
-
-        case IEMMODE_64BIT:
-            IEM_MC_BEGIN(3, 1);
-            IEM_MC_ARG(uint16_t,        u16Sel,                         0);
-            IEM_MC_ARG(uint64_t,        offSeg,                         1);
-            IEM_MC_ARG_CONST(IEMMODE,   enmEffOpSize, IEMMODE_16BIT,    2);
-            IEM_MC_LOCAL(RTGCPTR, GCPtrEffSrc);
-            IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm);
-            IEM_MC_FETCH_MEM_U64(offSeg, pIemCpu->iEffSeg, GCPtrEffSrc);
-            IEM_MC_FETCH_MEM_U16_DISP(u16Sel, pIemCpu->iEffSeg, GCPtrEffSrc, 8);
-            IEM_MC_CALL_CIMPL_3(iemCImpl_FarJmp, u16Sel, offSeg, enmEffOpSize);
-            IEM_MC_END();
-            return VINF_SUCCESS;
-
-        IEM_NOT_REACHED_DEFAULT_CASE_RET();
-    }
+    return FNIEMOP_CALL_2(iemOpHlp_Grp5_far_Ep, bRm, iemCImpl_FarJmp);
 }
 
 

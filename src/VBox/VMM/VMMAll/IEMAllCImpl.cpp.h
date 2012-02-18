@@ -766,7 +766,7 @@ IEM_CIMPL_DEF_1(iemCImpl_call_rel_64, int64_t, offDisp)
  * @param   offSeg          The segment offset.
  * @param   enmEffOpSize    The effective operand size.
  */
-IEM_CIMPL_DEF_3(iemCImpl_FarJmp, uint16_t, uSel, uint32_t, offSeg, IEMMODE, enmEffOpSize)
+IEM_CIMPL_DEF_3(iemCImpl_FarJmp, uint16_t, uSel, uint64_t, offSeg, IEMMODE, enmEffOpSize)
 {
     PCPUMCTX pCtx = pIemCpu->CTX_SUFF(pCtx);
     NOREF(cbInstr);
@@ -955,6 +955,8 @@ IEM_CIMPL_DEF_3(iemCImpl_FarJmp, uint16_t, uSel, uint32_t, offSeg, IEMMODE, enmE
 
 /**
  * Implements far calls.
+ *
+ * This very similar to iemCImpl_FarJmp.
  *
  * @param   uSel        The selector.
  * @param   offSeg      The segment offset.
