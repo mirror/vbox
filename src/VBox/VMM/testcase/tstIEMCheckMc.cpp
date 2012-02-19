@@ -461,6 +461,8 @@ IEMOPSHIFTDBLSIZES g_iemAImpl_shrd;
 #define iemAImpl_fdiv_r80_by_r80        NULL
 #define iemAImpl_fdivr_r80_by_r80       NULL
 
+#define iemCImpl_callf                  NULL
+#define iemCImpl_FarJmp                 NULL
 
 /** @}  */
 
