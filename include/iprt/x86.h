@@ -2370,7 +2370,7 @@ typedef struct X86DESC64GENERIC
 {
     /** Limit - Low word - *IGNORED*. */
     unsigned    u16LimitLow : 16;
-    /** Base address - lowe word. - *IGNORED*
+    /** Base address - low word. - *IGNORED*
      * Don't try set this to 24 because MSC is doing stupid things then. */
     unsigned    u16BaseLow : 16;
     /** Base address - first 8 bits of high word. - *IGNORED* */

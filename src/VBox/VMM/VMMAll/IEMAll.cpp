@@ -5264,7 +5264,7 @@ static VBOXSTRICTRC iemMemStackPopBeginSpecial(PIEMCPU pIemCpu, size_t cbMem, vo
 
 
 /**
- * Continue a special stack pop (used by iret).
+ * Continue a special stack pop (used by iret and retf).
  *
  * This will raise \#SS or \#PF if appropriate.
  *
@@ -5438,6 +5438,24 @@ static VBOXSTRICTRC iemMemFetchSelDesc(PIEMCPU pIemCpu, PIEMSELDESC pDesc, uint1
         }
     }
     return rcStrict;
+}
+
+
+/**
+ * Fakes a long mode stack selector for SS = 0.
+ *
+ * @param   pDescSs             Where to return the fake stack descriptor.
+ * @param   uDpl                The DPL we want.
+ */
+static void iemMemFakeStackSelDesc(PIEMSELDESC pDescSs, uint32_t uDpl)
+{
+    pDescSs->Long.au64[0] = 0;
+    pDescSs->Long.au64[1] = 0;
+    pDescSs->Long.Gen.u4Type     = X86_SEL_TYPE_RW_ACC;
+    pDescSs->Long.Gen.u1DescType = 1; /* 1 = code / data, 0 = system. */
+    pDescSs->Long.Gen.u2Dpl      = uDpl;
+    pDescSs->Long.Gen.u1Present  = 1;
+    pDescSs->Long.Gen.u1Long     = 1;
 }
 
 
