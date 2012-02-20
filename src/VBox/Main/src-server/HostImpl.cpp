@@ -175,7 +175,6 @@ struct Host::Data
 #ifdef VBOX_WITH_USB
           usbListsLock(LOCKCLASS_USBLIST),
 #endif
-          drivesLock(LOCKCLASS_LISTOFMEDIA),
           fDVDDrivesListBuilt(false),
           fFloppyDrivesListBuilt(false)
     {};
@@ -192,8 +191,8 @@ struct Host::Data
     USBProxyService         *pUSBProxyService;
 #endif /* VBOX_WITH_USB */
 
-    // list of host drives; lazily created by getDVDDrives() and getFloppyDrives()
-    WriteLockHandle         drivesLock;                 // protects the below two lists and the bools
+    // list of host drives; lazily created by getDVDDrives() and getFloppyDrives(),
+    // and protected by the medium tree lock handle (including the bools).
     MediaList               llDVDDrives,
                             llFloppyDrives;
     bool                    fDVDDrivesListBuilt,
@@ -472,7 +471,7 @@ STDMETHODIMP Host::COMGETTER(DVDDrives)(ComSafeArrayOut(IMedium *, aDrives))
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoWriteLock alock(m->drivesLock COMMA_LOCKVAL_SRC_POS);
+    AutoWriteLock alock(m->pParent->getMediaTreeLockHandle() COMMA_LOCKVAL_SRC_POS);
 
     MediaList *pList;
     HRESULT rc = getDrives(DeviceType_DVD, true /* fRefresh */, pList);
@@ -498,7 +497,7 @@ STDMETHODIMP Host::COMGETTER(FloppyDrives)(ComSafeArrayOut(IMedium *, aDrives))
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoWriteLock alock(m->drivesLock COMMA_LOCKVAL_SRC_POS);
+    AutoWriteLock alock(m->pParent->getMediaTreeLockHandle() COMMA_LOCKVAL_SRC_POS);
 
     MediaList *pList;
     HRESULT rc = getDrives(DeviceType_Floppy, true /* fRefresh */, pList);
@@ -1624,7 +1623,7 @@ HRESULT Host::saveSettings(settings::Host &data)
  * This builds the list on the first call; it adds or removes host drives
  * that may have changed if fRefresh == true.
  *
- * The caller must hold the m->drivesLock write lock before calling this.
+ * The caller must hold the medium tree write lock before calling this.
  * To protect the list to which the caller's pointer points, the caller
  * must also hold that lock.
  *
@@ -1638,7 +1637,7 @@ HRESULT Host::getDrives(DeviceType_T mediumType,
                         MediaList *&pll)
 {
     HRESULT rc = S_OK;
-    Assert(m->drivesLock.isWriteLockOnCurrentThread());
+    Assert(m->pParent->getMediaTreeLockHandle().isWriteLockOnCurrentThread());
 
     MediaList llNew;
     MediaList *pllCached;
@@ -1763,7 +1762,7 @@ HRESULT Host::findHostDriveById(DeviceType_T mediumType,
 {
     MediaList *pllMedia;
 
-    AutoWriteLock wlock(m->drivesLock COMMA_LOCKVAL_SRC_POS);
+    AutoWriteLock wlock(m->pParent->getMediaTreeLockHandle() COMMA_LOCKVAL_SRC_POS);
     HRESULT rc = getDrives(mediumType, fRefresh, pllMedia);
     if (SUCCEEDED(rc))
     {
@@ -1803,7 +1802,7 @@ HRESULT Host::findHostDriveByName(DeviceType_T mediumType,
 {
     MediaList *pllMedia;
 
-    AutoWriteLock wlock(m->drivesLock COMMA_LOCKVAL_SRC_POS);
+    AutoWriteLock wlock(m->pParent->getMediaTreeLockHandle() COMMA_LOCKVAL_SRC_POS);
     HRESULT rc = getDrives(mediumType, fRefresh, pllMedia);
     if (SUCCEEDED(rc))
     {
@@ -1839,7 +1838,7 @@ HRESULT Host::findHostDriveByNameOrId(DeviceType_T mediumType,
                                       const Utf8Str &strNameOrId,
                                       ComObjPtr<Medium> &pMedium)
 {
-    AutoWriteLock wlock(m->drivesLock COMMA_LOCKVAL_SRC_POS);
+    AutoWriteLock wlock(m->pParent->getMediaTreeLockHandle() COMMA_LOCKVAL_SRC_POS);
 
     Guid uuid(strNameOrId);
     if (!uuid.isEmpty())
@@ -1858,7 +1857,7 @@ HRESULT Host::buildDVDDrivesList(MediaList &list)
 {
     HRESULT rc = S_OK;
 
-    Assert(m->drivesLock.isWriteLockOnCurrentThread());
+    Assert(m->pParent->getMediaTreeLockHandle().isWriteLockOnCurrentThread());
 
     try
     {
@@ -1940,7 +1939,7 @@ HRESULT Host::buildFloppyDrivesList(MediaList &list)
 {
     HRESULT rc = S_OK;
 
-    Assert(m->drivesLock.isWriteLockOnCurrentThread());
+    Assert(m->pParent->getMediaTreeLockHandle().isWriteLockOnCurrentThread());
 
     try
     {
