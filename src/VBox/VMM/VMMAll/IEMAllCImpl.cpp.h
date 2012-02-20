@@ -1301,7 +1301,7 @@ IEM_CIMPL_DEF_2(iemCImpl_retf, IEMMODE, enmEffOpSize, uint16_t, cbPop)
             return iemRaiseSelectorBounds(pIemCpu, X86_SREG_CS, IEM_ACCESS_INSTRUCTION);
 
         /* commit the operation. */
-        rcStrict = iemMemStackPopCommitSpecial(pIemCpu, &uPtrFrame.pv, uNewRsp);
+        rcStrict = iemMemStackPopCommitSpecial(pIemCpu, uPtrFrame.pv, uNewRsp);
         if (rcStrict != VINF_SUCCESS)
             return rcStrict;
         pCtx->rip           = uNewRip;
@@ -1531,7 +1531,7 @@ IEM_CIMPL_DEF_2(iemCImpl_retf, IEMMODE, enmEffOpSize, uint16_t, cbPop)
         }
 
         /* commit */
-        rcStrict = iemMemStackPopCommitSpecial(pIemCpu, &uPtrFrame.pv, uNewRsp);
+        rcStrict = iemMemStackPopCommitSpecial(pIemCpu, uPtrFrame.pv, uNewRsp);
         if (rcStrict != VINF_SUCCESS)
             return rcStrict;
         if (enmEffOpSize == IEMMODE_16BIT)
@@ -1612,7 +1612,7 @@ IEM_CIMPL_DEF_2(iemCImpl_retf, IEMMODE, enmEffOpSize, uint16_t, cbPop)
         }
 
         /* commit */
-        rcStrict = iemMemStackPopCommitSpecial(pIemCpu, &uPtrFrame.pv, uNewRsp);
+        rcStrict = iemMemStackPopCommitSpecial(pIemCpu, uPtrFrame.pv, uNewRsp);
         if (rcStrict != VINF_SUCCESS)
             return rcStrict;
         if (enmEffOpSize == IEMMODE_16BIT)
