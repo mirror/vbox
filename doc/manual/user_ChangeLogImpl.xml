@@ -53,6 +53,11 @@
           guests</para>
       </listitem>
 
+      <listitem>
+        <para>GUI: do not create additional folders when a new machine has a
+           separator character in its name (bug 6541#)</para>
+      </listitem>
+
     </itemizedlist>
   </sect1>
 
