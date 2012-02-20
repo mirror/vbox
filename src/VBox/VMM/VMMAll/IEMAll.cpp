@@ -50,6 +50,19 @@
  * can trigger spurious FPU exceptions.
  *
  *
+ * @section sec_iem_logging     Logging
+ *
+ * The IEM code uses the \"IEM\" log group for the main logging. The different
+ * logging levels/flags are generally used for the following purposes:
+ *      - Level 1 (Log) : Errors, exceptions, interrupts and such major events.
+ *      - Flow (LogFlow): Additional exception details, basic enter/exit IEM
+ *                        state info.
+ *      - Level 2 (Log2): ?
+ *      - Level 3 (Log3): More detailed enter/exit IEM state info.
+ *      - Level 4 (Log4): Decoding mnemonics w/ EIP.
+ *      - Level 5 (Log5): Decoding details.
+ *      - Level 6 (Log6): Enables/disables the lockstep comparison with REM.
+ *
  */
 
 /*******************************************************************************
@@ -795,7 +808,7 @@ static VBOXSTRICTRC iemOpcodeFetchMoreBytes(PIEMCPU pIemCpu, size_t cbMin)
         return iemRaisePageFault(pIemCpu, GCPtrNext, IEM_ACCESS_INSTRUCTION, VERR_ACCESS_DENIED);
     }
     GCPhys |= GCPtrNext & PAGE_OFFSET_MASK;
-    //Log(("GCPtrNext=%RGv GCPhys=%RGp cbOpcodes=%#x\n",  GCPtrNext,  GCPhys,  pIemCpu->cbOpcode));
+    Log5(("GCPtrNext=%RGv GCPhys=%RGp cbOpcodes=%#x\n",  GCPtrNext,  GCPhys,  pIemCpu->cbOpcode));
     /** @todo Check reserved bits and such stuff. PGM is better at doing
      *        that, so do it when implementing the guest virtual address
      *        TLB... */
@@ -819,7 +832,7 @@ static VBOXSTRICTRC iemOpcodeFetchMoreBytes(PIEMCPU pIemCpu, size_t cbMin)
         return rc;
     }
     pIemCpu->cbOpcode += cbToTryRead;
-    //Log(("%.*Rhxs\n", pIemCpu->cbOpcode, pIemCpu->abOpcode));
+    Log5(("%.*Rhxs\n", pIemCpu->cbOpcode, pIemCpu->abOpcode));
 
     return VINF_SUCCESS;
 }
@@ -1754,9 +1767,9 @@ iemRaiseXcptOrIntInProtMode(PIEMCPU     pIemCpu,
                                               pCtx->idtr.pIdt + UINT32_C(8) * u8Vector);
     if (RT_UNLIKELY(rcStrict != VINF_SUCCESS))
         return rcStrict;
-    Log4(("iemRaiseXcptOrIntInProtMode: vec=%#x P=%u DPL=%u DT=%u:%u A=%u %04x:%04x%04x\n",
-          u8Vector, Idte.Gate.u1Present, Idte.Gate.u2Dpl, Idte.Gate.u1DescType, Idte.Gate.u4Type,
-          Idte.Gate.u4ParmCount, Idte.Gate.u16Sel, Idte.Gate.u16OffsetHigh, Idte.Gate.u16OffsetLow));
+    LogFlow(("iemRaiseXcptOrIntInProtMode: vec=%#x P=%u DPL=%u DT=%u:%u A=%u %04x:%04x%04x\n",
+             u8Vector, Idte.Gate.u1Present, Idte.Gate.u2Dpl, Idte.Gate.u1DescType, Idte.Gate.u4Type,
+             Idte.Gate.u4ParmCount, Idte.Gate.u16Sel, Idte.Gate.u16OffsetHigh, Idte.Gate.u16OffsetLow));
 
     /*
      * Check the descriptor type, DPL and such.
@@ -2199,8 +2212,8 @@ iemRaiseXcptOrInt(PIEMCPU     pIemCpu,
     pIemCpu->cXcptRecursions--;
     pIemCpu->uCurXcpt = uPrevXcpt;
     pIemCpu->fCurXcpt = fPrevXcpt;
-    Log(("iemRaiseXcptOrInt: returns %Rrc (vec=%#x); cs:rip=%04x:%RGv ss:rsp=%04x:%RGv\n",
-         VBOXSTRICTRC_VAL(rcStrict), u8Vector, pCtx->cs, pCtx->rip, pCtx->ss, pCtx->esp));
+    LogFlow(("iemRaiseXcptOrInt: returns %Rrc (vec=%#x); cs:rip=%04x:%RGv ss:rsp=%04x:%RGv\n",
+             VBOXSTRICTRC_VAL(rcStrict), u8Vector, pCtx->cs, pCtx->rip, pCtx->ss, pCtx->esp));
     return rcStrict;
 }
 
@@ -4022,7 +4035,7 @@ static VBOXSTRICTRC iemMemPageTranslateAndCheckAccess(PIEMCPU pIemCpu, RTGCPTR G
             && (   pIemCpu->uCpl != 0
                 || (pIemCpu->CTX_SUFF(pCtx)->cr0 & X86_CR0_WP)))
         {
-            Log(("iemMemPageTranslateAndCheckAccess: GCPtrMem=%RGv - read-only page\n", GCPtrMem));
+            Log(("iemMemPageTranslateAndCheckAccess: GCPtrMem=%RGv - read-only page -> #PF\n", GCPtrMem));
             *pGCPhysMem = NIL_RTGCPHYS;
             return iemRaisePageFault(pIemCpu, GCPtrMem, fAccess & ~IEM_ACCESS_TYPE_READ, VERR_ACCESS_DENIED);
         }
@@ -4032,7 +4045,7 @@ static VBOXSTRICTRC iemMemPageTranslateAndCheckAccess(PIEMCPU pIemCpu, RTGCPTR G
             && pIemCpu->uCpl == 3
             && !(fAccess & IEM_ACCESS_WHAT_SYS))
         {
-            Log(("iemMemPageTranslateAndCheckAccess: GCPtrMem=%RGv - user access to kernel page\n", GCPtrMem));
+            Log(("iemMemPageTranslateAndCheckAccess: GCPtrMem=%RGv - user access to kernel page -> #PF\n", GCPtrMem));
             *pGCPhysMem = NIL_RTGCPHYS;
             return iemRaisePageFault(pIemCpu, GCPtrMem, fAccess, VERR_ACCESS_DENIED);
         }
@@ -4042,7 +4055,7 @@ static VBOXSTRICTRC iemMemPageTranslateAndCheckAccess(PIEMCPU pIemCpu, RTGCPTR G
             && (fFlags & X86_PTE_PAE_NX)
             && (pIemCpu->CTX_SUFF(pCtx)->msrEFER & MSR_K6_EFER_NXE) )
         {
-            Log(("iemMemPageTranslateAndCheckAccess: GCPtrMem=%RGv - NX\n", GCPtrMem));
+            Log(("iemMemPageTranslateAndCheckAccess: GCPtrMem=%RGv - NX -> #PF\n", GCPtrMem));
             *pGCPhysMem = NIL_RTGCPHYS;
             return iemRaisePageFault(pIemCpu, GCPtrMem, fAccess & ~(IEM_ACCESS_TYPE_READ | IEM_ACCESS_TYPE_WRITE),
                                      VERR_ACCESS_DENIED);
@@ -6112,10 +6125,10 @@ static VBOXSTRICTRC iemMemMarkSelDescAccessed(PIEMCPU pIemCpu, uint16_t uSel)
  */
 #ifdef DEBUG
 # define IEMOP_MNEMONIC(a_szMnemonic) \
-    Log2(("decode - %04x:%RGv %s%s [#%u]\n", pIemCpu->CTX_SUFF(pCtx)->cs, pIemCpu->CTX_SUFF(pCtx)->rip, \
+    Log4(("decode - %04x:%RGv %s%s [#%u]\n", pIemCpu->CTX_SUFF(pCtx)->cs, pIemCpu->CTX_SUFF(pCtx)->rip, \
           pIemCpu->fPrefixes & IEM_OP_PRF_LOCK ? "lock " : "", a_szMnemonic, pIemCpu->cInstructions))
 # define IEMOP_MNEMONIC2(a_szMnemonic, a_szOps) \
-    Log2(("decode - %04x:%RGv %s%s %s [#%u]\n", pIemCpu->CTX_SUFF(pCtx)->cs, pIemCpu->CTX_SUFF(pCtx)->rip, \
+    Log4(("decode - %04x:%RGv %s%s %s [#%u]\n", pIemCpu->CTX_SUFF(pCtx)->cs, pIemCpu->CTX_SUFF(pCtx)->rip, \
           pIemCpu->fPrefixes & IEM_OP_PRF_LOCK ? "lock " : "", a_szMnemonic, a_szOps, pIemCpu->cInstructions))
 #else
 # define IEMOP_MNEMONIC(a_szMnemonic) do { } while (0)
@@ -6188,7 +6201,7 @@ static VBOXSTRICTRC iemMemMarkSelDescAccessed(PIEMCPU pIemCpu, uint16_t uSel)
  */
 static VBOXSTRICTRC iemOpHlpCalcRmEffAddr(PIEMCPU pIemCpu, uint8_t bRm, PRTGCPTR pGCPtrEff)
 {
-    LogFlow(("iemOpHlpCalcRmEffAddr: bRm=%#x\n", bRm));
+    Log5(("iemOpHlpCalcRmEffAddr: bRm=%#x\n", bRm));
     PCCPUMCTX pCtx = pIemCpu->CTX_SUFF(pCtx);
 #define SET_SS_DEF() \
     do \
@@ -6233,7 +6246,7 @@ static VBOXSTRICTRC iemOpHlpCalcRmEffAddr(PIEMCPU pIemCpu, uint8_t bRm, PRTGCPTR
             }
 
             *pGCPtrEff = u16EffAddr;
-            LogFlow(("iemOpHlpCalcRmEffAddr: EffAddr=%#06RGv\n", *pGCPtrEff));
+            Log5(("iemOpHlpCalcRmEffAddr: EffAddr=%#06RGv\n", *pGCPtrEff));
             return VINF_SUCCESS;
         }
 
@@ -6334,7 +6347,7 @@ static VBOXSTRICTRC iemOpHlpCalcRmEffAddr(PIEMCPU pIemCpu, uint8_t bRm, PRTGCPTR
                 Assert(pIemCpu->enmEffAddrMode == IEMMODE_16BIT);
                 *pGCPtrEff = u32EffAddr & UINT16_MAX;
             }
-            LogFlow(("iemOpHlpCalcRmEffAddr: EffAddr=%#010RGv\n", *pGCPtrEff));
+            Log5(("iemOpHlpCalcRmEffAddr: EffAddr=%#010RGv\n", *pGCPtrEff));
             return VINF_SUCCESS;
         }
 
@@ -6465,7 +6478,7 @@ static VBOXSTRICTRC iemOpHlpCalcRmEffAddr(PIEMCPU pIemCpu, uint8_t bRm, PRTGCPTR
                 *pGCPtrEff = u64EffAddr;
             else
                 *pGCPtrEff = u64EffAddr & UINT16_MAX;
-            LogFlow(("iemOpHlpCalcRmEffAddr: EffAddr=%#010RGv\n", *pGCPtrEff));
+            Log5(("iemOpHlpCalcRmEffAddr: EffAddr=%#010RGv\n", *pGCPtrEff));
             return VINF_SUCCESS;
         }
     }
@@ -6514,9 +6527,11 @@ static void iemExecVerificationModeSetup(PIEMCPU pIemCpu)
 #endif
 #if 1 /* Auto enable DSL - FPU stuff. */
         &&  pOrgCtx->cs  == 0x10
-        &&  (   pOrgCtx->rip == 0xc02ec07f
-             || pOrgCtx->rip == 0xc02ec082
-             || pOrgCtx->rip == 0xc02ec0c9
+        &&  (//   pOrgCtx->rip == 0xc02ec07f
+             //|| pOrgCtx->rip == 0xc02ec082
+             //|| pOrgCtx->rip == 0xc02ec0c9
+                0
+             || pOrgCtx->rip == 0x0c010e7c4   /* fxsave */
             )
 #endif
 #if 0
@@ -7289,7 +7304,7 @@ VMMDECL(VBOXSTRICTRC) IEMExecOne(PVMCPU pVCpu)
                            DBGF_DISAS_FLAGS_CURRENT_GUEST | DBGF_DISAS_FLAGS_DEFAULT_MODE,
                            szInstr, sizeof(szInstr), &cbInstr);
 
-        Log2(("**** "
+        Log3(("**** "
               " eax=%08x ebx=%08x ecx=%08x edx=%08x esi=%08x edi=%08x\n"
               " eip=%08x esp=%08x ebp=%08x iopl=%d\n"
               " cs=%04x ss=%04x ds=%04x es=%04x fs=%04x gs=%04x efl=%08x\n"
@@ -7306,6 +7321,9 @@ VMMDECL(VBOXSTRICTRC) IEMExecOne(PVMCPU pVCpu)
         if (LogIs3Enabled())
             DBGFR3Info(pVCpu->pVMR3, "cpumguest", "verbose", NULL);
     }
+    else
+        LogFlow(("IEMExecOne: cs:rip=%04x:%08RX64 ss:rsp=%04x:%08RX64 EFL=%06x\n",
+                 pCtx->cs, pCtx->rip, pCtx->ss, pCtx->rsp, pCtx->eflags.u));
 #endif
 
     /*
@@ -7351,6 +7369,8 @@ VMMDECL(VBOXSTRICTRC) IEMExecOne(PVMCPU pVCpu)
      */
     iemExecVerificationModeCheck(pIemCpu);
 #endif
+    LogFlow(("IEMExecOne: returns %Rrc - cs:rip=%04x:%08RX64 ss:rsp=%04x:%08RX64 EFL=%06x\n",
+             VBOXSTRICTRC_VAL(rcStrict), pCtx->cs, pCtx->rip, pCtx->ss, pCtx->rsp, pCtx->eflags.u));
     return rcStrict;
 }
 
@@ -7376,19 +7396,19 @@ VMM_INT_DECL(VBOXSTRICTRC) IEMInjectTrap(PVMCPU pVCpu, uint8_t u8TrapNo, TRPMEVE
     switch (enmType)
     {
         case TRPM_HARDWARE_INT:
-            Log(("IEMInjectTrap: %#4x ext\n", u8TrapNo));
+            LogFlow(("IEMInjectTrap: %#4x ext\n", u8TrapNo));
             fFlags = IEM_XCPT_FLAGS_T_EXT_INT;
             uErrCode = uCr2 = 0;
             break;
 
         case TRPM_SOFTWARE_INT:
-            Log(("IEMInjectTrap: %#4x soft\n", u8TrapNo));
+            LogFlow(("IEMInjectTrap: %#4x soft\n", u8TrapNo));
             fFlags = IEM_XCPT_FLAGS_T_SOFT_INT;
             uErrCode = uCr2 = 0;
             break;
 
         case TRPM_TRAP:
-            Log(("IEMInjectTrap: %#4x trap err=%#x cr2=%#RGv\n", u8TrapNo, uErrCode, uCr2));
+            LogFlow(("IEMInjectTrap: %#4x trap err=%#x cr2=%#RGv\n", u8TrapNo, uErrCode, uCr2));
             fFlags = IEM_XCPT_FLAGS_T_CPU_XCPT;
             if (u8TrapNo == X86_XCPT_PF)
                 fFlags |= IEM_XCPT_FLAGS_CR2;
