@@ -1373,7 +1373,7 @@ void sanitiseMachineFilename(Utf8Str &strName)
         { ' ', ' ', '(', ')', '-', '.', '0', '9', 'A', 'Z', 'a', 'z', '_', '_',
           0xa0, 0xd7af, '\0' };
     char *pszName = strName.mutableRaw();
-    Assert(RTStrPurgeComplementSet(pszName, aCpSet, '_') > 0);
+    Assert(RTStrPurgeComplementSet(pszName, aCpSet, '_') >= 0);
     /* No leading dot or dash. */
     if (pszName[0] == '.' || pszName[0] == '-')
         pszName[0] = '_';
