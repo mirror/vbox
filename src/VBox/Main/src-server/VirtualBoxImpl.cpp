@@ -1405,7 +1405,8 @@ static unsigned testSanitiseMachineFilename(void (*pfnPrintf)(const char *, ...)
         { "-!My VM!-", "__My VM_-" },
         { "\xF0\x90\x8C\xB0", "____" },
         { "  My VM  ", "__My VM__" },
-        { ".My VM.", "_My VM_" }
+        { ".My VM.", "_My VM_" },
+        { "My VM", "My VM" }
     };
     for (unsigned i = 0; i < RT_ELEMENTS(aTest); ++i)
     {
