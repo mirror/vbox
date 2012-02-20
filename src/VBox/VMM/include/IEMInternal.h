@@ -70,6 +70,20 @@ AssertCompileSize(IEMMODEX, 4);
 
 
 /**
+ * Branch types.
+ */
+typedef enum IEMBRANCH
+{
+    IEMBRANCH_JUMP = 1,
+    IEMBRANCH_CALL,
+    IEMBRANCH_TRAP,
+    IEMBRANCH_SOFTWARE_INT,
+    IEMBRANCH_HARDWARE_INT
+} IEMBRANCH;
+AssertCompileSize(IEMBRANCH, 4);
+
+
+/**
  * A FPU result.
  */
 typedef struct IEMFPURESULT
@@ -1011,8 +1025,9 @@ typedef IEMOPSHIFTDBLSIZES const *PCIEMOPSHIFTDBLSIZES;
  * @param   a_Type3             The type of the 4th argument.
  * @param   a_Arg3              The name of the 4th argument.
  */
-# define IEM_CIMPL_DEF_4(a_Name, a_Type0, a_Arg0, a_Type1, a_Arg1, a_Type2, a_Arg2, a_Type3, aArg3) \
-    IEM_DECL_IMPL_DEF(VBOXSTRICTRC, a_Name, (PIEMCPU pIemCpu, uint8_t cbInstr, a_Type0 a_Arg0, a_Type1 a_Arg1, a_Type2 a_Arg2, a_Type3 a_Arg3))
+# define IEM_CIMPL_DEF_4(a_Name, a_Type0, a_Arg0, a_Type1, a_Arg1, a_Type2, a_Arg2, a_Type3, a_Arg3) \
+    IEM_DECL_IMPL_DEF(VBOXSTRICTRC, a_Name, (PIEMCPU pIemCpu, uint8_t cbInstr, a_Type0 a_Arg0, a_Type1 a_Arg1, \
+                                             a_Type2 a_Arg2, a_Type3 a_Arg3))
 /**
  * For calling a C instruction implementation function taking four extra
  * arguments.
