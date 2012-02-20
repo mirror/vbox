@@ -1299,6 +1299,9 @@ VirtualBox::CheckFirmwarePresent(FirmwareType_T aFirmwareType,
 // IVirtualBox methods
 /////////////////////////////////////////////////////////////////////////////
 
+/* Helper for VirtualBox::ComposeMachineFilename */
+static void sanitiseMachineFilename(Utf8Str &aName);
+
 STDMETHODIMP VirtualBox::ComposeMachineFilename(IN_BSTR aName,
                                                 IN_BSTR aBaseFolder,
                                                 BSTR *aFilename)
@@ -1323,28 +1326,7 @@ STDMETHODIMP VirtualBox::ComposeMachineFilename(IN_BSTR aName,
      */
     Utf8Str strBase = aBaseFolder;
     Utf8Str strName = aName;
-    /** Set of characters which should be safe for use in filenames: some basic
-     * ASCII, Unicode from Latin-1 alphabetic to the end of Hangul.  We try to
-     * skip anything that could count as a control character in Windows or
-     * *nix, or be otherwise difficult for shells to handle (I would have
-     * preferred to remove the space and brackets too).  We also remove all
-     * characters which need UTF-16 surrogate pairs for Windows's benefit. */
-    RTUNICP aCpSet[] =
-        { ' ', ' ', '(', ')', '-', '.', '0', '9', 'A', 'Z', 'a', 'z', '_', '_',
-          0xa0, 0xd7af, '\0' };
-    char *pszName = strName.mutableRaw();
-    Assert(RTStrPurgeComplementSet(pszName, aCpSet, '_') > 0);
-    /* No leading dot or dash. */
-    if (pszName[0] == '.' || pszName[0] == '-')
-        pszName[0] = '_';
-    /* No trailing dot. */
-    if (pszName[strName.length() - 1] == '.')
-        pszName[strName.length() - 1] = '_';
-    /* Mangle leading and trailing spaces. */
-    for (size_t i = 0; pszName[i] == ' '; ++i)
-       pszName[i] = '_';
-    for (size_t i = strName.length() - 1; i && pszName[i] == ' '; --i)
-       pszName[i] = '_';
+    sanitiseMachineFilename(strName);
 
     if (strBase.isEmpty())
         /* we use the non-full folder value below to keep the path relative */
@@ -1373,6 +1355,89 @@ STDMETHODIMP VirtualBox::ComposeMachineFilename(IN_BSTR aName,
 
     return S_OK;
 }
+
+/**
+ * Remove characters from a machine file name which can be problematic on
+ * particular systems.
+ * @param  strName  The file name to sanitise.
+ */
+void sanitiseMachineFilename(Utf8Str &strName)
+{
+    /** Set of characters which should be safe for use in filenames: some basic
+     * ASCII, Unicode from Latin-1 alphabetic to the end of Hangul.  We try to
+     * skip anything that could count as a control character in Windows or
+     * *nix, or be otherwise difficult for shells to handle (I would have
+     * preferred to remove the space and brackets too).  We also remove all
+     * characters which need UTF-16 surrogate pairs for Windows's benefit. */
+    RTUNICP aCpSet[] =
+        { ' ', ' ', '(', ')', '-', '.', '0', '9', 'A', 'Z', 'a', 'z', '_', '_',
+          0xa0, 0xd7af, '\0' };
+    char *pszName = strName.mutableRaw();
+    Assert(RTStrPurgeComplementSet(pszName, aCpSet, '_') > 0);
+    /* No leading dot or dash. */
+    if (pszName[0] == '.' || pszName[0] == '-')
+        pszName[0] = '_';
+    /* No trailing dot. */
+    if (pszName[strName.length() - 1] == '.')
+        pszName[strName.length() - 1] = '_';
+    /* Mangle leading and trailing spaces. */
+    for (size_t i = 0; pszName[i] == ' '; ++i)
+       pszName[i] = '_';
+    for (size_t i = strName.length() - 1; i && pszName[i] == ' '; --i)
+       pszName[i] = '_';
+}
+
+/** Simple unit test/operation examples for sanitiseMachineFilename(). */
+static unsigned testSanitiseMachineFilename(void (*pfnPrintf)(const char *, ...))
+{
+    unsigned cErrors = 0;
+
+    /** Expected results of sanitising given file names. */
+    static struct
+    {
+        /** The test file name to be sanitised (Utf-8). */
+        const char *pcszIn;
+        /** The expected sanitised output (Utf-8). */
+        const char *pcszOutExpected;
+    } aTest[] =
+    {
+        { "OS/2 2.1", "OS_2 2.1" },
+        { "-!My VM!-", "__My VM_-" },
+        { "\xF0\x90\x8C\xB0", "____" },
+        { "  My VM  ", "__My VM__" },
+        { ".My VM.", "_My VM_" }
+    };
+    for (unsigned i = 0; i < RT_ELEMENTS(aTest); ++i)
+    {
+        Utf8Str str(aTest[i].pcszIn);
+        sanitiseMachineFilename(str);
+        if (str.compare(aTest[i].pcszOutExpected))
+        {
+            ++cErrors;
+            pfnPrintf("%s: line %d, expected %s, actual %s\n",
+                      __PRETTY_FUNCTION__, i, aTest[i].pcszOutExpected,
+                      str.c_str());
+        }
+    }
+    return cErrors;
+}
+
+#ifdef DEBUG
+/** @todo Proper testcase. */
+/** @todo Do we have a better method of doing init functions? */
+namespace
+{
+    class TestSanitiseMachineFilename
+    {
+    public:
+        TestSanitiseMachineFilename(void)
+        {
+            Assert(!testSanitiseMachineFilename(RTAssertMsg2));
+        }
+    };
+    TestSanitiseMachineFilename s_TestSanitiseMachineFilename;
+}
+#endif
 
 /** @note Locks mSystemProperties object for reading. */
 STDMETHODIMP VirtualBox::CreateMachine(IN_BSTR aSettingsFile,
