@@ -272,19 +272,7 @@ void UISelectorWindow::sltShowNewMachineWizard()
 {
     /* Show New Machine wizard: */
     UINewVMWzd wizard(this);
-    if (wizard.exec() == QDialog::Accepted)
-    {
-        /* Wait until the list is updated by OnMachineRegistered(): */
-        const CMachine &machine = wizard.machine();
-        QModelIndex index;
-        while(!index.isValid())
-        {
-            qApp->processEvents();
-            index = m_pVMModel->indexById(machine.GetId());
-        }
-        /* Choose newly created item: */
-        m_pVMListView->setCurrentIndex(index);
-    }
+    wizard.exec();
 }
 
 void UISelectorWindow::sltShowAddMachineDialog(const QString &strFileName /* = QString() */)
@@ -325,15 +313,6 @@ void UISelectorWindow::sltShowAddMachineDialog(const QString &strFileName /* = Q
             {
                 /* Register that machine: */
                 vbox.RegisterMachine(newMachine);
-                /* Wait until the list is updated by OnMachineRegistered(): */
-                QModelIndex index;
-                while(!index.isValid())
-                {
-                    qApp->processEvents();
-                    index = m_pVMModel->indexById(newMachine.GetId());
-                }
-                /* And choose added item: */
-                m_pVMListView->setCurrentIndex(index);
             }
             else
                 msgCenter().cannotReregisterMachine(this, strTmpFile, oldMachine.GetName());
@@ -1013,18 +992,15 @@ void UISelectorWindow::sltOpenUrls(QList<QUrl> list /* = QList<QUrl>() */)
 
 void UISelectorWindow::sltMachineRegistered(QString strMachineId, bool fRegistered)
 {
+    /* Add/remove VM: */
     if (fRegistered)
     {
-        CVirtualBox vbox = vboxGlobal().virtualBox();
-        CMachine m = vbox.FindMachine(strMachineId);
+        CMachine m = vboxGlobal().virtualBox().FindMachine(strMachineId);
         if (!m.isNull())
         {
             m_pVMModel->addItem(m);
-            /* Make sure the description, ... pages are properly updated.
-             * Actually we haven't call the next method, but unfortunately Qt
-             * seems buggy if the new item is on the same position as the
-             * previous one. So go on the safe side and call this by our self. */
-            sltCurrentVMItemChanged();
+            int iRow = m_pVMModel->rowById(strMachineId);
+            m_pVMListView->ensureOneRowSelected(iRow);
         }
         /* m.isNull() is ok (theoretically, the machine could have been
          * already deregistered by some other client at this point) */
@@ -1034,13 +1010,15 @@ void UISelectorWindow::sltMachineRegistered(QString strMachineId, bool fRegister
         UIVMItem *pItem = m_pVMModel->itemById(strMachineId);
         if (pItem)
         {
-            int iRow = m_pVMModel->rowById(pItem->id());
+            int iRow = m_pVMModel->rowById(strMachineId);
             m_pVMModel->removeItem(pItem);
             m_pVMListView->ensureOneRowSelected(iRow);
         }
         /* item = 0 is ok (if we originated this event then the item
          * has been already removed) */
     }
+    /* Make sure all updated: */
+    sltCurrentVMItemChanged();
 }
 
 void UISelectorWindow::sltMachineStateChanged(QString strMachineId, KMachineState /* state */)
