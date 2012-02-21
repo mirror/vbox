@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2011 Oracle Corporation
+ * Copyright (C) 2006-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -1673,7 +1673,10 @@ STDMETHODIMP VirtualBox::OpenMedium(IN_BSTR aLocation,
 
     ComObjPtr<Medium> pMedium;
 
-    /* we don't access non-const data members so no need to lock */
+    // have to get write lock as the whole find/update sequence must be done
+    // in one critical section, otherwise there are races which can lead to
+    // multiple Medium objects with the same content
+    AutoWriteLock treeLock(getMediaTreeLockHandle() COMMA_LOCKVAL_SRC_POS);
 
     // check if the device type is correct, and see if a medium for the
     // given path has already initialized; if so, return that
@@ -1715,8 +1718,6 @@ STDMETHODIMP VirtualBox::OpenMedium(IN_BSTR aLocation,
 
         if (SUCCEEDED(rc))
         {
-            AutoWriteLock treeLock(getMediaTreeLockHandle() COMMA_LOCKVAL_SRC_POS);
-
             switch (deviceType)
             {
                 case DeviceType_HardDisk:
