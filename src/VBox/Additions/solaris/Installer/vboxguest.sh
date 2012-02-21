@@ -22,6 +22,12 @@
 # terms and conditions of either the GPL or the CDDL or both.
 #
 
+LC_ALL=C
+export LC_ALL
+
+LANG=C
+export LANG
+
 SILENTUNLOAD=""
 MODNAME="vboxguest"
 VFSMODNAME="vboxfs"
