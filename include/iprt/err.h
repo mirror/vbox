@@ -869,8 +869,10 @@ RT_C_DECLS_END
 #define VERR_BUFFER_UNDERFLOW               (-22401)
 /** Buffer underflow. */
 #define VINF_BUFFER_UNDERFLOW               22401
-/** Uneven input.  */
+/** Uneven input. */
 #define VERR_UNEVEN_INPUT                   (-22402)
+/** Something is not available or not working properly. */
+#define VERR_NOT_AVAILABLE                  (-22403)
 /** @} */
 
 
@@ -1696,21 +1698,23 @@ RT_C_DECLS_END
 #define VERR_LOG_REVISION_MISMATCH                  (-22300)
 /** @} */
 
+/* see above, 22400..22499 is used for misc codes! */
+
 /** @name Logger status codes
  * @{ */
 /** Power off is not supported by the hardware or the OS. */
-#define VERR_SYS_CANNOT_POWER_OFF                   (-22400)
+#define VERR_SYS_CANNOT_POWER_OFF                   (-22500)
 /** The halt action was requested, but the OS may actually power
  * off the machine. */
-#define VINF_SYS_MAY_POWER_OFF                      (22401)
+#define VINF_SYS_MAY_POWER_OFF                      (22501)
 /** Shutdown failed. */
-#define VERR_SYS_SHUTDOWN_FAILED                    (-22402)
+#define VERR_SYS_SHUTDOWN_FAILED                    (-22502)
 /** @} */
 
 /** @name Filesystem status codes
  * @{ */
 /** Filesystem can't be opened because it is corrupt. */
-#define VERR_FILESYSTEM_CORRUPT                     (-22500)
+#define VERR_FILESYSTEM_CORRUPT                     (-22600)
 /** @} */
 
 /* SED-END */
