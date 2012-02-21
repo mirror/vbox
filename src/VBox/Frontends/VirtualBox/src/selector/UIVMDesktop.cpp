@@ -841,8 +841,7 @@ void UIDetailsBlock::sltUpdateDisplay()
             if (m_machine.GetAccelerate2DVideoEnabled())
                 accel << tr("2D Video", "details report");
 #endif /* VBOX_WITH_VIDEOHWACCEL */
-            if (   vboxGlobal().is3DAvailable()
-                && m_machine.GetAccelerate3DEnabled())
+            if (m_machine.GetAccelerate3DEnabled())
                 accel << tr("3D", "details report");
 
             if (!accel.isEmpty())

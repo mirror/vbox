@@ -2508,18 +2508,13 @@ int Console::configConstructorInner(PVM pVM, AutoWriteLock *pAlock)
                 BOOL fSupports3D = false;
                 hrc = host->COMGETTER(Acceleration3DAvailable)(&fSupports3D); H();
                 if (!fSupports3D)
-                {
-                    setVMRuntimeErrorCallbackF(pVM, this, 0,
-                            "Accel3DNotAvailable",
-                            N_("This VM was configured to use 3D support. However, the "
-                               "3D support of the host is not working properly. Therefore "
-                               "3D support for the guest has been disabled"));
-                    fEnabled3D = false;
-                }
-            }
+                    return VMSetError(pVM, VERR_NOT_AVAILABLE, RT_SRC_POS,
+                            N_("This VM was configured to use 3D acceleration. However, the "
+                               "3D support of the host is not working properly and the "
+                               "VM cannot be started. To fix this problem, either "
+                               "fix the host 3D support (update the host graphics driver?) "
+                               "or disable 3D acceleration in the VM settings"));
 
-            if (fEnabled3D)
-            {
                 /* Load the service */
                 rc = pVMMDev->hgcmLoadService("VBoxSharedCrOpenGL", "VBoxSharedCrOpenGL");
                 if (RT_FAILURE(rc))
