@@ -402,7 +402,7 @@ static int usbLibDevStrDriverKeyGet(HANDLE hHub, ULONG iPort, LPSTR* plpszName)
     pName->ConnectionIndex = iPort;
     if (DeviceIoControl(hHub, IOCTL_USB_GET_NODE_CONNECTION_DRIVERKEY_NAME, pName, Name.ActualLength, pName, Name.ActualLength, &cbReturned, NULL))
     {
-        rc = RTUtf16ToUtf8Ex((PCRTUTF16)pName->DriverKeyName, pName->ActualLength, plpszName, 0, NULL);
+        rc = RTUtf16ToUtf8Ex((PCRTUTF16)pName->DriverKeyName, pName->ActualLength / sizeof (WCHAR), plpszName, 0, NULL);
         AssertRC(rc);
         if (RT_SUCCESS(rc))
             rc = VINF_SUCCESS;
@@ -446,7 +446,7 @@ static int usbLibDevStrHubNameGet(HANDLE hHub, ULONG iPort, LPSTR* plpszName)
     pName->ConnectionIndex = iPort;
     if (DeviceIoControl(hHub, IOCTL_USB_GET_NODE_CONNECTION_NAME, pName, Name.ActualLength, pName, Name.ActualLength, &cbReturned, NULL))
     {
-        rc = RTUtf16ToUtf8Ex((PCRTUTF16)pName->NodeName, pName->ActualLength, plpszName, 0, NULL);
+        rc = RTUtf16ToUtf8Ex((PCRTUTF16)pName->NodeName, pName->ActualLength / sizeof (WCHAR), plpszName, 0, NULL);
         AssertRC(rc);
         if (RT_SUCCESS(rc))
             rc = VINF_SUCCESS;
@@ -476,7 +476,7 @@ static int usbLibDevStrRootHubNameGet(HANDLE hCtl, LPSTR* plpszName)
     int rc = VINF_SUCCESS;
     if (DeviceIoControl(hCtl, IOCTL_USB_GET_ROOT_HUB_NAME, NULL, 0, pHubName, HubName.ActualLength, &cbReturned, NULL))
     {
-        rc = RTUtf16ToUtf8Ex((PCRTUTF16)pHubName->RootHubName, pHubName->ActualLength, plpszName, 0, NULL);
+        rc = RTUtf16ToUtf8Ex((PCRTUTF16)pHubName->RootHubName, pHubName->ActualLength / sizeof (WCHAR), plpszName, 0, NULL);
         AssertRC(rc);
         if (RT_SUCCESS(rc))
             rc = VINF_SUCCESS;
