@@ -152,6 +152,9 @@ typedef struct VBOXGUESTDEVEXT
 #ifdef VBOX_WITH_VRDP_SESSION_HANDLING
     bool                        fVRDPEnabled;
 #endif
+    /** Flag indicating whether logging to the release log
+     *  is enabled. */
+    bool                        fLoggingEnabled;
     /** Memory balloon information for RTR0MemObjAllocPhysNC(). */
     VBOXGUESTMEMBALLOON         MemBalloon;
     /** For each mouse status feature the number of sessions which have
