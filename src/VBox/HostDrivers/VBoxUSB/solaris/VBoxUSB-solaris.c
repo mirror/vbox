@@ -47,6 +47,8 @@
 #include <sys/archsystm.h>
 #include <sys/disp.h>
 
+/** @todo review the locking here, verify assumptions about code executed
+ *        without the vboxusb_state_t::Mtx mutex */
 
 /*******************************************************************************
 *   Defined Constants And Macros                                               *
