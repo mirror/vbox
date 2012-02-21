@@ -6,7 +6,7 @@
  */
 
 /*
- * Copyright (C) 2006-2010 Oracle Corporation
+ * Copyright (C) 2006-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -393,6 +393,7 @@ UIVMListView::UIVMListView(QAbstractListModel *pModel, QWidget *aParent /* = 0 *
 void UIVMListView::selectItemByRow(int row)
 {
     setCurrentIndex(model()->index(row, 0));
+    selectionModel()->select(currentIndex(), QItemSelectionModel::Current | QItemSelectionModel::ClearAndSelect);
 }
 
 void UIVMListView::selectItemById(const QString &aID)
@@ -416,11 +417,7 @@ void UIVMListView::ensureOneRowSelected(int aRowHint)
     /* If there are less/more selected items than necessary
      * or other than hinted row is selected: */
     if (selectedIndexes.size() != 1 || selectedIndexes[0].row() != aRowHint)
-    {
-        /* Make sure that only necessary item is selected: */
-        setCurrentIndex(model()->index(aRowHint, 0));
-        selectionModel()->select(currentIndex(), QItemSelectionModel::Current | QItemSelectionModel::ClearAndSelect);
-    }
+        selectItemByRow(aRowHint);
 }
 
 UIVMItem *UIVMListView::currentItem() const
@@ -457,7 +454,7 @@ void UIVMListView::selectionChanged(const QItemSelection &aSelected, const QItem
 
     /* If selection is empty => select 'current item': */
     if (selectionModel()->selectedIndexes().isEmpty())
-        selectionModel()->select(currentIndex(), QItemSelectionModel::SelectCurrent);
+        selectionModel()->select(currentIndex(), QItemSelectionModel::Current | QItemSelectionModel::ClearAndSelect);
 
     /* Ensure current index is visible: */
     ensureCurrentVisible();
