@@ -1385,7 +1385,7 @@ VBoxManage setextradata "VM name"
       operating system which is very strict about the consistency of time
       sources you may get a warning or error message about the timing
       inconsistency. It may also cause clocks to become unreliable with some
-      guest operating systems depending on they use the TSC.</para>
+      guest operating systems depending on how they use the TSC.</para>
     </sect2>
 
     <sect2 id="warpguest">
