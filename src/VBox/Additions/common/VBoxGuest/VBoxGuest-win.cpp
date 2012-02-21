@@ -44,6 +44,7 @@ static NTSTATUS vboxguestwinCreate(PDEVICE_OBJECT pDevObj, PIRP pIrp);
 static NTSTATUS vboxguestwinClose(PDEVICE_OBJECT pDevObj, PIRP pIrp);
 static NTSTATUS vboxguestwinIOCtl(PDEVICE_OBJECT pDevObj, PIRP pIrp);
 static NTSTATUS vboxguestwinInternalIOCtl(PDEVICE_OBJECT pDevObj, PIRP pIrp);
+static NTSTATUS vboxguestwinRegistryReadDWORD(ULONG ulRoot, PCWSTR pwszPath, PWSTR pwszName, PULONG puValue);
 static NTSTATUS vboxguestwinSystemControl(PDEVICE_OBJECT pDevObj, PIRP pIrp);
 static NTSTATUS vboxguestwinShutdown(PDEVICE_OBJECT pDevObj, PIRP pIrp);
 static NTSTATUS vboxguestwinNotSupportedStub(PDEVICE_OBJECT pDevObj, PIRP pIrp);
@@ -490,6 +491,16 @@ NTSTATUS vboxguestwinInit(PDRIVER_OBJECT pDrvObj, PDEVICE_OBJECT pDevObj, PUNICO
 
     if (RT_SUCCESS(rc))
     {
+        ULONG ulValue = 0;
+        NTSTATUS s = vboxguestwinRegistryReadDWORD(RTL_REGISTRY_SERVICES, L"VBoxGuest", L"LoggingEnabled",
+                                                   &ulValue);
+        if (NT_SUCCESS(s))
+        {
+            pDevExt->fLoggingEnabled = ulValue >= 0xFF;
+            if (pDevExt->fLoggingEnabled)
+                Log(("Logging to release log enabled (0x%x)", ulValue));
+        }
+
         /* Ready to rumble! */
         Log(("VBoxGuest::vboxguestwinInit: Device is ready!\n"));
         VBOXGUEST_UPDATE_DEVSTATE(pDevExt, WORKING);
@@ -1022,6 +1033,43 @@ void VBoxGuestNativeISRMousePollEvent(PVBOXGUESTDEVEXT pDevExt)
     /* nothing to do here - i.e. since we can not KeSetEvent from ISR level,
      * we rely on the pDevExt->u32MousePosChangedSeq to be set to a non-zero value on a mouse event
      * and queue the DPC in our ISR routine in that case doing KeSetEvent from the DPC routine */
+}
+
+
+/**
+ * Queries (gets) a DWORD value from the registry.
+ *
+ * @return  NTSTATUS
+ * @param   ulRoot      Relative path root. See RTL_REGISTRY_SERVICES or RTL_REGISTRY_ABSOLUTE.
+ * @param   pwszPath    Path inside path root.
+ * @param   pwszName    Actual value name to look up.
+ * @param   puValue     On input this can specify the default value (if RTL_REGISTRY_OPTIONAL is
+ *                      not specified in ulRoot), on output this will retrieve the looked up
+ *                      registry value if found.
+ */
+NTSTATUS vboxguestwinRegistryReadDWORD(ULONG ulRoot, PCWSTR pwszPath, PWSTR pwszName,
+                                       PULONG puValue)
+{
+    if (!pwszPath || !pwszName || !puValue)
+        return STATUS_INVALID_PARAMETER;
+
+    ULONG ulDefault = *puValue;
+
+    RTL_QUERY_REGISTRY_TABLE  tblQuery[2];
+    RtlZeroMemory(tblQuery, sizeof(tblQuery));
+    /** @todo Add RTL_QUERY_REGISTRY_TYPECHECK! */
+    tblQuery[0].Flags         = RTL_QUERY_REGISTRY_DIRECT;
+    tblQuery[0].Name          = pwszName;
+    tblQuery[0].EntryContext  = puValue;
+    tblQuery[0].DefaultType   = REG_DWORD;
+    tblQuery[0].DefaultData   = &ulDefault;
+    tblQuery[0].DefaultLength = sizeof(ULONG);
+
+    return RtlQueryRegistryValues(ulRoot,
+                                  pwszPath,
+                                  &tblQuery[0],
+                                  NULL /* Context */,
+                                  NULL /* Environment */);
 }
 
 
