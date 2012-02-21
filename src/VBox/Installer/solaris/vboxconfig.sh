@@ -18,6 +18,10 @@
 # Never use exit 2 or exit 20 etc., the return codes are used in
 # SRv4 postinstall procedures which carry special meaning. Just use exit 1 for failure.
 
+# LC_ALL should take precedence over LC_* and LANG but whatever...
+LC_ALL=C
+export LC_ALL
+
 LANG=C
 export LANG
 
