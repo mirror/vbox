@@ -709,7 +709,6 @@ int VBoxGuestInitDevExt(PVBOXGUESTDEVEXT pDevExt, uint16_t IOPortBase,
 #endif
     RTListInit(&pDevExt->WokenUpList);
     RTListInit(&pDevExt->FreeList);
-#ifdef
 #ifdef VBOX_WITH_VRDP_SESSION_HANDLING
     pDevExt->fVRDPEnabled = false;
 #endif
