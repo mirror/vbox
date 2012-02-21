@@ -324,6 +324,14 @@ bool UIMachineSettingsDisplay::revalidate(QString &strWarning, QString & /* strT
     /* Check if video RAM requirement changed first: */
     checkVRAMRequirements();
 
+    if (mCb3D->isChecked() && !vboxGlobal().is3DAvailable())
+    {
+        strWarning = tr("you enabled 3D acceleration. However, 3D acceleration is not "
+                        "working on the current host setup so you will not be able to "
+                        "start the VM.");
+        return true;
+    }
+
     /* Video RAM amount test: */
     if (shouldWeWarnAboutLowVideoMemory() && !m_guestOSType.isNull())
     {
@@ -522,13 +530,7 @@ void UIMachineSettingsDisplay::polishPage()
     mSlMonitors->setEnabled(isMachineOffline());
     mLeMonitors->setEnabled(isMachineOffline());
     mLbOptions->setEnabled(isMachineOffline());
-    if (vboxGlobal().is3DAvailable())
-        mCb3D->setEnabled(isMachineOffline());
-    else
-    {
-        mCb3D->setEnabled(false);
-        mCb3D->setChecked(false);
-    }
+    mCb3D->setEnabled(isMachineOffline());
 #ifdef VBOX_WITH_VIDEOHWACCEL
     mCb2DVideo->setEnabled(isMachineOffline() && VBoxGlobal::isAcceleration2DVideoAvailable());
 #endif /* VBOX_WITH_VIDEOHWACCEL */
