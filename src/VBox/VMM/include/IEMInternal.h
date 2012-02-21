@@ -156,7 +156,7 @@ typedef struct IEMVERIFYEVTREC
         {
             RTGCPHYS    GCPhys;
             uint32_t    cb;
-            uint8_t     ab[32];
+            uint8_t     ab[512];
         } RamWrite;
     } u;
 } IEMVERIFYEVTREC;
@@ -352,8 +352,11 @@ typedef IEMCPU *PIEMCPU;
 #define IEM_ACCESS_WHAT_STACK           UINT32_C(0x00000030)
 #define IEM_ACCESS_WHAT_SYS             UINT32_C(0x00000040)
 #define IEM_ACCESS_WHAT_MASK            UINT32_C(0x00000070)
+/** The writes are partial, so if initialize the bounce buffer with the
+ * orignal RAM content. */
+#define IEM_ACCESS_PARTIAL_WRITE        UINT32_C(0x00000100)
 /** Used in aMemMappings to indicate that the entry is bounce buffered. */
-#define IEM_ACCESS_BOUNCE_BUFFERED      UINT32_C(0x00000100)
+#define IEM_ACCESS_BOUNCE_BUFFERED      UINT32_C(0x00000200)
 /** Read+write data alias. */
 #define IEM_ACCESS_DATA_RW              (IEM_ACCESS_TYPE_READ  | IEM_ACCESS_TYPE_WRITE | IEM_ACCESS_WHAT_DATA)
 /** Write data alias. */
