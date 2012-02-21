@@ -104,6 +104,10 @@ g_r80_ThirtyTwo:dt 32.0
 g_r80_Min:      dt 000018000000000000000h
 g_r80_Max:      dt 07ffeffffffffffffffffh
 g_r80_Inf:      dt 07fff8000000000000000h
+g_r80_QNaN:     dt 07fffc000000000000000h
+g_r80_QNaNMax:  dt 07fffffffffffffffffffh
+g_r80_SNaN:     dt 07fff8000000000000001h
+g_r80_SNaNMax:  dt 07fffbfffffffffffffffh
 g_r80_DnMin:    dt 000000000000000000001h
 g_r80_DnMax:    dt 000007fffffffffffffffh
 
@@ -302,7 +306,7 @@ BEGINCODE
         and     eax, ~X86_FSW_TOP_MASK & ~(%3)
         cmp     eax, (%2)
         je      %%ok
-        mov     eax, 10000000 + __LINE__
+        mov     eax, 100000000 + __LINE__
         jmp     .return
 %%ok:
 %endmacro
@@ -320,7 +324,7 @@ BEGINCODE
         shr     eax, X86_FSW_TOP_SHIFT
         bt      [%1 + X86FXSTATE.FTW], eax
         jnc     %%ok
-        mov     eax, 20000000 + __LINE__
+        mov     eax, 200000000 + __LINE__
         jmp     .return
 %%ok:
 %endmacro
@@ -1836,6 +1840,10 @@ ENDPROC     x861_Test5
         mov     xBP, xSP
         sub     xSP, 2048
         and     xSP, ~0fh
+        mov     dword [xSP + 1024 + X86FXSTATE.FPUIP], 0
+        mov     dword [xSP + 1024 + X86FXSTATE.FPUCS], 0
+        mov     dword [xSP + 1024 + X86FXSTATE.FPUDP], 0
+        mov     dword [xSP + 1024 + X86FXSTATE.FPUDS], 0
         arch_fxsave [xSP + 1024]
         %1
         call    SaveFPUAndGRegsToStack
@@ -1880,6 +1888,10 @@ SaveFPUAndGRegsToStack:
         popf
 
         ; Save the FPU state.
+        mov     dword [xSP + xS + X86FXSTATE.FPUIP], 0
+        mov     dword [xSP + xS + X86FXSTATE.FPUCS], 0
+        mov     dword [xSP + xS + X86FXSTATE.FPUDP], 0
+        mov     dword [xSP + xS + X86FXSTATE.FPUDS], 0
         arch_fxsave [xSP + xS]
 
         ; Save GRegs (80h bytes).
@@ -2461,7 +2473,7 @@ CheckOpcodeCsIp:
 .failure1:
         ; AMD64 doesn't seem to store anything at IP and DP, so use the
         ; fnstenv image instead even if that only contains the lower 32-bit.
-        xor        eax, eax
+        xor     eax, eax
         cmp     xAX, [xBP + xS*2 + X86FXSTATE.FPUIP]
         jne     .failure1_for_real
         cmp     xAX, [xBP + xS*2 + X86FXSTATE.FPUDP]
@@ -2488,6 +2500,10 @@ CheckOpcodeCsIp:
 ; @uses xCX, xAX, Stack.
 ;
 %macro FpuCheckOpcodeCsIp 1
+        mov     dword [xSP + X86FXSTATE.FPUIP], 0
+        mov     dword [xSP + X86FXSTATE.FPUCS], 0
+        mov     dword [xSP + X86FXSTATE.FPUDP], 0
+        mov     dword [xSP + X86FXSTATE.FPUDS], 0
 %%instruction:
         %1
         arch_fxsave  [xSP]
@@ -2496,7 +2512,7 @@ CheckOpcodeCsIp:
         lea     xCX, [REF(%%instruction)]
         call    CheckOpcodeCsIp
         jz      %%ok
-        or      eax, __LINE__
+        lea     xAX, [xAX + __LINE__]
         jmp     .return
 %%ok:
 %endmacro
@@ -2512,6 +2528,14 @@ CheckOpcodeCsIp:
 ; @param    %1  The instruction.
 ;
 %macro FpuTrapOpcodeCsIp 1
+        mov     dword [xSP + 1024 + 512 + X86FXSTATE.FPUIP], 0
+        mov     dword [xSP + 1024 + 512 + X86FXSTATE.FPUCS], 0
+        mov     dword [xSP + 1024 + 512 + X86FXSTATE.FPUDP], 0
+        mov     dword [xSP + 1024 + 512 + X86FXSTATE.FPUDS], 0
+        mov     dword [xSP + X86FXSTATE.FPUIP], 0
+        mov     dword [xSP + X86FXSTATE.FPUCS], 0
+        mov     dword [xSP + X86FXSTATE.FPUDP], 0
+        mov     dword [xSP + X86FXSTATE.FPUDS], 0
 %%instruction:
         %1
         fxsave [xSP + 1024 +512]        ; FPUDS and FPUCS for 64-bit hosts.
@@ -2536,7 +2560,7 @@ BEGINCODE
         lea     xCX, [REF(%%instruction)]
         call    CheckOpcodeCsIp
         jz      %%ok
-        or      eax, __LINE__
+        lea     xAX, [xAX + __LINE__]
         jmp     .return
 %%ok:
 %endmacro
@@ -2616,7 +2640,7 @@ CheckOpcodeCsIpDsDp:
         lea     xCX, [REF(%%instruction)]
         call    CheckOpcodeCsIpDsDp
         jz      %%ok
-        or      eax, __LINE__
+        lea     xAX, [xAX + __LINE__]
         jmp     .return
 %%ok:
 %endmacro
@@ -2633,7 +2657,9 @@ CheckOpcodeCsIpDsDp:
 ; @param    %2  Operand memory address (DS relative).
 ;
 %macro FpuTrapOpcodeCsIpDsDp 2
+        mov     dword [xSP + X86FXSTATE.FPUIP], 0
         mov     dword [xSP + X86FXSTATE.FPUCS], 0
+        mov     dword [xSP + X86FXSTATE.FPUDP], 0
         mov     dword [xSP + X86FXSTATE.FPUDS], 0
 %%instruction:
         %1
@@ -2660,7 +2686,7 @@ BEGINCODE
         lea     xCX, [REF(%%instruction)]
         call    CheckOpcodeCsIpDsDp
         jz      %%ok
-        or      eax, __LINE__
+        lea     xAX, [xAX + __LINE__]
         jmp     .return
 %%ok:
 %endmacro
@@ -2678,7 +2704,7 @@ BEGINCODE
         ShouldTrap %1, %2
         call    CompareFPUAndGRegsOnStack
         jz      %%ok
-        or      eax, __LINE__
+        lea     xAX, [xAX + __LINE__]
         jmp     .return
 %%ok:
 %endmacro
@@ -2704,7 +2730,7 @@ BEGINCODE
 BEGINPROC   x861_TestFPUInstr1
         SAVE_ALL_PROLOGUE
         sub     xSP, 2048
-%if 1
+%if 0
         ;
         ; FDIV with 64-bit floating point memory operand.
         ;
@@ -2866,7 +2892,6 @@ BEGINPROC   x861_TestFPUInstr1
         fldcw   [xSP]
         mov     xBX, [REF_EXTERN(g_pbEfExecPage)]
         ShouldTrap X86_XCPT_MF, fdiv qword [xBX + PAGE_SIZE]
-%endif
 
         ;
         ; FSUBRP STn, ST0
@@ -2930,7 +2955,97 @@ BEGINPROC   x861_TestFPUInstr1
         FxSaveCheckFSW xSP, X86_FSW_DE | X86_FSW_ES | X86_FSW_B, X86_FSW_C0 | X86_FSW_C2 | X86_FSW_C3
         FxSaveCheckStNValueConst xSP, 1, REF(g_r80_DnMax)
         FxSaveCheckStNValueConst xSP, 0, REF(g_r80_DnMin)
+%endif
 
+        ;
+        ; FSTP ST0, STn
+        ;
+        SetSubTest "FSTP ST0, STn"
+
+        ; ## Normal operation. ##
+        FpuInitWithCW X86_FCW_PC_64 | X86_FCW_RC_NEAREST
+        fld     tword [REF(g_r80_0dot1)]
+        fld     tword [REF(g_r80_3dot2)]
+        FpuCheckOpcodeCsIp     { fstp st2 }
+        FxSaveCheckFSW xSP, 0, 0
+        FxSaveCheckStNValueConst xSP, 0, REF(g_r80_0dot1)
+        FxSaveCheckStNValueConst xSP, 1, REF(g_r80_3dot2)
+
+        FpuInitWithCW X86_FCW_PC_64 | X86_FCW_RC_NEAREST
+        fld     tword [REF(g_r80_Max)]
+        fld     tword [REF(g_r80_Inf)]
+        FpuCheckOpcodeCsIp     { fstp st3 }
+        FxSaveCheckFSW xSP, 0, 0
+        FxSaveCheckStNValueConst xSP, 0, REF(g_r80_Max)
+        FxSaveCheckStNValueConst xSP, 2, REF(g_r80_Inf)
+
+        ; Denormal register values doesn't matter get reasserted.
+        fninit
+        fld     tword [REF(g_r80_DnMin)]
+        fld     tword [REF(g_r80_DnMax)]
+        fnclex
+        mov     dword [xSP], X86_FCW_PC_64 | X86_FCW_RC_NEAREST
+        fldcw   [xSP]
+        FpuCheckOpcodeCsIp     { fstp st2 }
+        FxSaveCheckFSW xSP, 0, 0
+        FxSaveCheckStNValueConst xSP, 0, REF(g_r80_DnMin)
+        FxSaveCheckStNValueConst xSP, 1, REF(g_r80_DnMax)
+
+        ; Signaled NaN doesn't matter.
+        FpuInitWithCW X86_FCW_PC_64 | X86_FCW_RC_NEAREST
+        fld     tword [REF(g_r80_SNaN)]
+        fld     tword [REF(g_r80_SNaN)]
+        fnclex
+        FpuCheckOpcodeCsIp     { fstp st3 }
+        FxSaveCheckFSW xSP, 0, 0
+        FxSaveCheckStNValueConst xSP, 0, REF(g_r80_SNaN)
+        FxSaveCheckStNValueConst xSP, 2, REF(g_r80_SNaN)
+
+        ; Quiet NaN doesn't matter either
+        FpuInitWithCW X86_FCW_PC_64 | X86_FCW_RC_NEAREST
+        fld     tword [REF(g_r80_QNaN)]
+        fld     tword [REF(g_r80_QNaN)]
+        fnclex
+        FpuCheckOpcodeCsIp     { fstp st4 }
+        FxSaveCheckFSW xSP, 0, 0
+        FxSaveCheckStNValueConst xSP, 0, REF(g_r80_QNaN)
+        FxSaveCheckStNValueConst xSP, 3, REF(g_r80_QNaN)
+
+        ; There is no overflow signalled.
+        FpuInitWithCW X86_FCW_PC_64 | X86_FCW_RC_NEAREST
+        fld     tword [REF(g_r80_SNaNMax)]
+        fld     tword [REF(g_r80_SNaNMax)]
+        fnclex
+        FpuCheckOpcodeCsIp     { fstp st1 }
+        FxSaveCheckFSW xSP, 0, 0
+        FxSaveCheckStNValueConst xSP, 0, REF(g_r80_SNaNMax)
+
+        ; ## Masked exceptions. ##
+
+        ; Masked stack underflow.
+        fninit
+        FpuCheckOpcodeCsIp     { fstp st1 }
+        FxSaveCheckFSW xSP, X86_FSW_IE | X86_FSW_SF, X86_FSW_C0 | X86_FSW_C2 | X86_FSW_C3
+        FxSaveCheckSt0Value_QNaN(xSP)
+
+        fninit
+        FpuCheckOpcodeCsIp     { fstp st0 }
+        FxSaveCheckFSW xSP, X86_FSW_IE | X86_FSW_SF, X86_FSW_C0 | X86_FSW_C2 | X86_FSW_C3
+        FxSaveCheckSt0Empty xSP
+
+        ; ## Unmasked exceptions. ##
+
+        ; Stack underflow - no pop or change.
+        FpuInitWithCW X86_FCW_PC_64 | X86_FCW_RC_NEAREST
+        fld     tword [REF(g_r80_0dot1)]
+        fld     tword [REF(g_r80_3dot2)]
+        fld     tword [REF(g_r80_Ten)]
+        ffree   st0
+        FpuTrapOpcodeCsIp      { fstp st1 }
+        FxSaveCheckFSW xSP, X86_FSW_IE | X86_FSW_SF | X86_FSW_ES | X86_FSW_B, X86_FSW_C0 | X86_FSW_C2 | X86_FSW_C3
+        FxSaveCheckSt0Empty xSP
+        FxSaveCheckStNValueConst xSP, 1, REF(g_r80_3dot2)
+        FxSaveCheckStNValueConst xSP, 2, REF(g_r80_0dot1)
 
 .success:
         xor     eax, eax

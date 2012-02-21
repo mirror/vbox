@@ -3818,6 +3818,16 @@ iemFpuStackUnderflowWithMemOpThenPop(PIEMCPU pIemCpu, uint8_t iStReg, uint8_t iE
 }
 
 
+static int iemFpuStRegNonEmpty(PIEMCPU pIemCpu, uint8_t iStReg)
+{
+    PCPUMCTX pCtx = pIemCpu->CTX_SUFF(pCtx);
+    uint16_t iReg = (X86_FSW_TOP_GET(pCtx->fpu.FSW) + iStReg) & X86_FSW_TOP_SMASK;
+    if (pCtx->fpu.FTW & RT_BIT(iReg))
+        return VINF_SUCCESS;
+    return VERR_NOT_FOUND;
+}
+
+
 static int iemFpuStRegNonEmptyRef(PIEMCPU pIemCpu, uint8_t iStReg, PCRTFLOAT80U *ppRef)
 {
     PCPUMCTX pCtx = pIemCpu->CTX_SUFF(pCtx);
@@ -6030,6 +6040,12 @@ static VBOXSTRICTRC iemMemMarkSelDescAccessed(PIEMCPU pIemCpu, uint16_t uSel)
         a_pfnAImpl(&pIemCpu->CTX_SUFF(pCtx)->fpu, (a0), (a1), (a2)); \
     } while (0)
 
+#define IEM_MC_SET_FPU_RESULT(a_FpuData, a_FSW, a_pr80Value) \
+    do { \
+        (a_FpuData).FSW       = (a_FSW); \
+        (a_FpuData).r80Result = *(a_pr80Value); \
+    } while (0)
+
 /** Pushes FPU result onto the stack. */
 #define IEM_MC_PUSH_FPU_RESULT(a_FpuData) \
     iemFpuPushResult(pIemCpu, &a_FpuData)
@@ -6051,16 +6067,17 @@ static VBOXSTRICTRC iemMemMarkSelDescAccessed(PIEMCPU pIemCpu, uint16_t uSel)
 #define IEM_MC_STORE_FPU_RESULT_WITH_MEM_OP_THEN_POP(a_FpuData, a_iStReg, a_iEffSeg, a_GCPtrEff) \
     iemFpuStoreResultWithMemOpThenPop(pIemCpu, &a_FpuData, a_iStReg, a_iEffSeg, a_GCPtrEff)
 
-/** Updates the FSW, FPUIP, and FPUCS. */
+/** Updates the FSW, FOP, FPUIP, and FPUCS. */
 #define IEM_MC_UPDATE_FSW(a_u16FSW) \
     iemFpuUpdateFSW(pIemCpu, a_u16FSW)
-/** Updates the FSW, FPUIP, FPUCS, FPUDP, and FPUDS. */
+/** Updates the FSW, FOP, FPUIP, FPUCS, FPUDP, and FPUDS. */
 #define IEM_MC_UPDATE_FSW_WITH_MEM_OP(a_u16FSW, a_iEffSeg, a_GCPtrEff) \
     iemFpuUpdateFSWWithMemOp(pIemCpu, a_u16FSW, a_iEffSeg, a_GCPtrEff)
-/** Updates the FSW, FPUIP, and FPUCS, and then pops the stack. */
+/** Updates the FSW, FOP, FPUIP, and FPUCS, and then pops the stack. */
 #define IEM_MC_UPDATE_FSW_THEN_POP(a_u16FSW) \
     iemFpuUpdateFSWThenPop(pIemCpu, a_u16FSW)
-/** Updates the FSW, FPUIP, FPUCS, FPUDP and FPUDS, and then pops the stack. */
+/** Updates the FSW, FOP, FPUIP, FPUCS, FPUDP and FPUDS, and then pops the
+ *  stack. */
 #define IEM_MC_UPDATE_FSW_WITH_MEM_OP_THEN_POP(a_u16FSW, a_iEffSeg, a_GCPtrEff) \
     iemFpuUpdateFSWWithMemOpThenPop(pIemCpu, a_u16FSW, a_iEffSeg, a_GCPtrEff)
 
@@ -6120,6 +6137,8 @@ static VBOXSTRICTRC iemMemMarkSelDescAccessed(PIEMCPU pIemCpu, uint16_t uSel)
             && !(pIemCpu->CTX_SUFF(pCtx)->eflags.u & a_fBit)) {
 #define IEM_MC_IF_LOCAL_IS_Z(a_Local)                   if ((a_Local) == 0) {
 #define IEM_MC_IF_GREG_BIT_SET(a_iGReg, a_iBitNo)       if (*(uint64_t *)iemGRegRef(pIemCpu, (a_iGReg)) & RT_BIT_64(a_iBitNo)) {
+#define IEM_MC_IF_FPUREG_NOT_EMPTY(a_iSt) \
+    if (iemFpuStRegNonEmpty(pIemCpu, (a_iSt)) == VINF_SUCCESS) {
 #define IEM_MC_IF_FPUREG_NOT_EMPTY_REF_R80(a_pr80Dst, a_iSt) \
     if (iemFpuStRegNonEmptyRef(pIemCpu, (a_iSt), &(a_pr80Dst)) == VINF_SUCCESS) {
 #define IEM_MC_IF_TWO_FPUREGS_NOT_EMPTY_REF_R80(a_pr80Dst0, a_iSt0, a_pr80Dst1, a_iSt1) \
@@ -6536,7 +6555,7 @@ static void iemExecVerificationModeSetup(PIEMCPU pIemCpu)
              || pOrgCtx->rip == 0x901d9810
             )
 #endif
-#if 1 /* Auto enable DSL - FPU stuff. */
+#if 0 /* Auto enable DSL - FPU stuff. */
         &&  pOrgCtx->cs  == 0x10
         &&  (//   pOrgCtx->rip == 0xc02ec07f
              //|| pOrgCtx->rip == 0xc02ec082
@@ -6544,6 +6563,10 @@ static void iemExecVerificationModeSetup(PIEMCPU pIemCpu)
                 0
              || pOrgCtx->rip == 0x0c010e7c4   /* fxsave */
             )
+#endif
+#if 1 /* Auto enable DSL - fstp st0 stuff. */
+        &&  pOrgCtx->cs  == 0x23
+        &&  pOrgCtx->rip == 0x804aff7
 #endif
 #if 0
        && pOrgCtx->rip == 0x9022bb3a

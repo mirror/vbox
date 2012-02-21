@@ -241,14 +241,14 @@ int main()
         rc = x861_Test4();
         if (rc != 0)
             RTTestFailed(hTest, "x861_Test4 -> %d", rc);
-#endif
+//#endif
 
         RTTestSub(hTest, "Odd encodings and odd ends");
         rc = x861_Test5();
         if (rc != 0)
             RTTestFailed(hTest, "x861_Test5 -> %d", rc);
 
-#if 0
+//#if 0
         RTTestSub(hTest, "Odd floating point encodings");
         rc = x861_Test6();
         if (rc != 0)
@@ -258,11 +258,11 @@ int main()
         rc = x861_Test7();
         if (rc != 0)
             RTTestFailed(hTest, "x861_Test6 -> %d", rc);
+#endif
 
         rc = x861_TestFPUInstr1();
         if (rc != 0)
             RTTestFailed(hTest, "x861_TestFPUInstr1 -> %d", rc);
-#endif
     }
 
     return RTTestSummaryAndDestroy(hTest);

@@ -10469,8 +10469,43 @@ FNIEMOP_STUB_1(iemOp_fld_stN, uint8_t, bRm);
 /** Opcode 0xd9 11/3 stN */
 FNIEMOP_STUB_1(iemOp_fxch_stN, uint8_t, bRm);
 
+
 /** Opcode 0xd9 11/4, 0xdd 11/2. */
-FNIEMOP_STUB_1(iemOp_fstp_stN, uint8_t, bRm);
+FNIEMOP_DEF_1(iemOp_fstp_stN, uint8_t, bRm)
+{
+    IEMOP_MNEMONIC("fstp st0,stN");
+
+    /* fstp st0, st0 is frequendly used as an official 'ffreep st0' sequence. */
+    uint8_t const iDstReg = bRm & X86_MODRM_RM_MASK;
+    if (!iDstReg)
+    {
+        IEM_MC_BEGIN(0, 1);
+        IEM_MC_LOCAL_CONST(uint16_t,        u16FSW, /*=*/ 0);
+        IEM_MC_IF_FPUREG_NOT_EMPTY(0)
+            IEM_MC_UPDATE_FSW_THEN_POP(u16FSW);
+        IEM_MC_ELSE()
+            IEM_MC_FPU_STACK_UNDERFLOW_THEN_POP(0);
+        IEM_MC_ENDIF();
+        IEM_MC_ADVANCE_RIP();
+        IEM_MC_END();
+    }
+    else
+    {
+        IEM_MC_BEGIN(0, 2);
+        IEM_MC_LOCAL(PCRTFLOAT80U,          pr80Value);
+        IEM_MC_LOCAL(IEMFPURESULT,          FpuRes);
+        IEM_MC_IF_FPUREG_NOT_EMPTY_REF_R80(pr80Value, 0)
+            IEM_MC_SET_FPU_RESULT(FpuRes, 0 /*FSW*/, pr80Value);
+            IEM_MC_STORE_FPU_RESULT_THEN_POP(FpuRes, iDstReg);
+        IEM_MC_ELSE()
+            IEM_MC_FPU_STACK_UNDERFLOW_THEN_POP(iDstReg);
+        IEM_MC_ENDIF();
+        IEM_MC_ADVANCE_RIP();
+        IEM_MC_END();
+    }
+    return VINF_SUCCESS;
+}
+
 
 /** Opcode 0xd9 0xe0. */
 FNIEMOP_STUB(iemOp_fchs);
@@ -10741,6 +10776,7 @@ FNIEMOP_DEF_1(iemOp_fistp_m32i, uint8_t, bRm)
 
 /** Opcode 0xdb !11/5. */
 FNIEMOP_STUB_1(iemOp_fld_r80, uint8_t, bRm);
+
 
 /** Opcode 0xdb !11/7. */
 FNIEMOP_STUB_1(iemOp_fstp_r80, uint8_t, bRm);
