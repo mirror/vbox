@@ -1036,7 +1036,7 @@ void UISelectorWindow::sltMachineRegistered(QString strMachineId, bool fRegister
         {
             int iRow = m_pVMModel->rowById(pItem->id());
             m_pVMModel->removeItem(pItem);
-            m_pVMListView->ensureSomeRowSelected(iRow);
+            m_pVMListView->ensureOneRowSelected(iRow);
         }
         /* item = 0 is ok (if we originated this event then the item
          * has been already removed) */

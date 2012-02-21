@@ -97,7 +97,7 @@ public:
 
     void selectItemByRow(int row);
     void selectItemById(const QString &aID);
-    void ensureSomeRowSelected(int aRowHint);
+    void ensureOneRowSelected(int aRowHint);
     UIVMItem* currentItem() const;
     QList<UIVMItem*> currentItems() const;
 
