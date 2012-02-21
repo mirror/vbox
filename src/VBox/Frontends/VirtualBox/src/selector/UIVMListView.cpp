@@ -405,16 +405,21 @@ void UIVMListView::selectItemById(const QString &aID)
     }
 }
 
-void UIVMListView::ensureSomeRowSelected(int aRowHint)
+void UIVMListView::ensureOneRowSelected(int aRowHint)
 {
-    UIVMItem *item = currentItem();
-    if (!item)
+    /* Calculate nearest index row: */
+    aRowHint = qBound(0, aRowHint, model()->rowCount() - 1);
+
+    /* Get current selection: */
+    QModelIndexList selectedIndexes = selectionModel()->selectedIndexes();
+
+    /* If there are less/more selected items than necessary
+     * or other than hinted row is selected: */
+    if (selectedIndexes.size() != 1 || selectedIndexes[0].row() != aRowHint)
     {
-        aRowHint = qBound(0, aRowHint, model()->rowCount() - 1);
-        selectItemByRow(aRowHint);
-        item = currentItem();
-        if (!item)
-            selectItemByRow(0);
+        /* Make sure that only necessary item is selected: */
+        setCurrentIndex(model()->index(aRowHint, 0));
+        selectionModel()->select(currentIndex(), QItemSelectionModel::Current | QItemSelectionModel::ClearAndSelect);
     }
 }
 
