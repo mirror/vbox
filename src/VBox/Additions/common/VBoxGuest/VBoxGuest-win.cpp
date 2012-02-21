@@ -733,7 +733,7 @@ static NTSTATUS vboxguestwinIOCtl(PDEVICE_OBJECT pDevObj, PIRP pIrp)
             {
                 KUSER_SHARED_DATA *pSharedUserData = (KUSER_SHARED_DATA *)KI_USER_SHARED_DATA;
 
-                pDevExt->fVRDPEnabled            = TRUE;
+                pDevExt->fVRDPEnabled            = true;
                 LogRel(("VBoxGuest::vboxguestwinIOCtl: ENABLE_VRDP_SESSION: Current active console ID: 0x%08X\n",
                         pSharedUserData->ActiveConsoleId));
                 pDevExt->ulOldActiveConsoleId    = pSharedUserData->ActiveConsoleId;
@@ -750,7 +750,7 @@ static NTSTATUS vboxguestwinIOCtl(PDEVICE_OBJECT pDevObj, PIRP pIrp)
             {
                 KUSER_SHARED_DATA *pSharedUserData = (KUSER_SHARED_DATA *)KI_USER_SHARED_DATA;
 
-                pDevExt->fVRDPEnabled            = FALSE;
+                pDevExt->fVRDPEnabled            = false;
                 Log(("VBoxGuest::vboxguestwinIOCtl: DISABLE_VRDP_SESSION: Current active console ID: 0x%08X\n",
                      pSharedUserData->ActiveConsoleId));
                 pSharedUserData->ActiveConsoleId = pDevExt->ulOldActiveConsoleId;
