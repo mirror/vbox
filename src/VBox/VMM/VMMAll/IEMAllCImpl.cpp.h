@@ -1040,7 +1040,7 @@ IEM_CIMPL_DEF_3(iemCImpl_callf, uint16_t, uSel, uint64_t, offSeg, IEMMODE, enmEf
     PCPUMCTX        pCtx = pIemCpu->CTX_SUFF(pCtx);
     VBOXSTRICTRC    rcStrict;
     uint64_t        uNewRsp;
-    void           *pvRet;
+    RTPTRUNION      uPtrRet;
 
     /*
      * Real mode and V8086 mode are easy.  The only snag seems to be that
@@ -1054,7 +1054,7 @@ IEM_CIMPL_DEF_3(iemCImpl_callf, uint16_t, uSel, uint64_t, offSeg, IEMMODE, enmEf
 
         /* Check stack first - may #SS(0). */
         rcStrict = iemMemStackPushBeginSpecial(pIemCpu, enmEffOpSize == IEMMODE_32BIT ? 6 : 4,
-                                               &pvRet, &uNewRsp);
+                                               &uPtrRet.pv, &uNewRsp);
         if (rcStrict != VINF_SUCCESS)
             return rcStrict;
 
@@ -1065,15 +1065,15 @@ IEM_CIMPL_DEF_3(iemCImpl_callf, uint16_t, uSel, uint64_t, offSeg, IEMMODE, enmEf
         /* Everything is fine, push the return address. */
         if (enmEffOpSize == IEMMODE_16BIT)
         {
-            ((uint16_t *)pvRet)[0] = pCtx->ip + cbInstr;
-            ((uint16_t *)pvRet)[1] = pCtx->cs;
+            uPtrRet.pu16[0] = pCtx->ip + cbInstr;
+            uPtrRet.pu16[1] = pCtx->cs;
         }
         else
         {
-            ((uint32_t *)pvRet)[0] = pCtx->eip + cbInstr;
-            ((uint16_t *)pvRet)[3] = pCtx->cs;
+            uPtrRet.pu32[0] = pCtx->eip + cbInstr;
+            uPtrRet.pu16[3] = pCtx->cs;
         }
-        rcStrict = iemMemStackPushCommitSpecial(pIemCpu, pvRet, uNewRsp);
+        rcStrict = iemMemStackPushCommitSpecial(pIemCpu, uPtrRet.pv, uNewRsp);
         if (rcStrict != VINF_SUCCESS)
             return rcStrict;
 
@@ -1159,10 +1159,12 @@ IEM_CIMPL_DEF_3(iemCImpl_callf, uint16_t, uSel, uint64_t, offSeg, IEMMODE, enmEf
     }
 
     /* Check stack first - may #SS(0). */
+    /** @todo check how operand prefix affects pushing of CS! Does callf 16:32 in
+     *        16-bit code cause a two or four byte CS to be pushed? */
     rcStrict = iemMemStackPushBeginSpecial(pIemCpu,
-                                           enmEffOpSize == IEMMODE_64BIT   ? 8+2
-                                           : enmEffOpSize == IEMMODE_32BIT ? 4+2 : 2+2,
-                                           &pvRet, &uNewRsp);
+                                           enmEffOpSize == IEMMODE_64BIT   ? 8+8
+                                           : enmEffOpSize == IEMMODE_32BIT ? 4+4 : 2+2,
+                                           &uPtrRet.pv, &uNewRsp);
     if (rcStrict != VINF_SUCCESS)
         return rcStrict;
 
@@ -1214,20 +1216,20 @@ IEM_CIMPL_DEF_3(iemCImpl_callf, uint16_t, uSel, uint64_t, offSeg, IEMMODE, enmEf
     /* stack */
     if (enmEffOpSize == IEMMODE_16BIT)
     {
-        ((uint16_t *)pvRet)[0] = pCtx->ip + cbInstr;
-        ((uint16_t *)pvRet)[1] = pCtx->cs;
+        uPtrRet.pu16[0] = pCtx->ip + cbInstr;
+        uPtrRet.pu16[1] = pCtx->cs;
     }
     else if (enmEffOpSize == IEMMODE_32BIT)
     {
-        ((uint32_t *)pvRet)[0] = pCtx->eip + cbInstr;
-        ((uint32_t *)pvRet)[1] = pCtx->cs;
+        uPtrRet.pu32[0] = pCtx->eip + cbInstr;
+        uPtrRet.pu32[1] = pCtx->cs; /** @todo Testcase: What is written to the high word when callf is pushing CS? */
     }
     else
     {
-        ((uint64_t *)pvRet)[0] = pCtx->rip + cbInstr;
-        ((uint64_t *)pvRet)[1] = pCtx->cs;
+        uPtrRet.pu64[0] = pCtx->rip + cbInstr;
+        uPtrRet.pu64[1] = pCtx->cs; /** @todo Testcase: What is written to the high words when callf is pushing CS? */
     }
-    rcStrict = iemMemStackPushCommitSpecial(pIemCpu, pvRet, uNewRsp);
+    rcStrict = iemMemStackPushCommitSpecial(pIemCpu, uPtrRet.pv, uNewRsp);
     if (rcStrict != VINF_SUCCESS)
         return rcStrict;
 
@@ -3883,7 +3885,7 @@ IEM_CIMPL_DEF_3(iemCImpl_fxsave, uint8_t, iEffSeg, RTGCPTR, GCPtrEff, IEMMODE, e
      * Access the memory.
      */
     void *pvMem512;
-    VBOXSTRICTRC rcStrict = iemMemMap(pIemCpu, &pvMem512, 512, iEffSeg, GCPtrEff, IEM_ACCESS_DATA_W);
+    VBOXSTRICTRC rcStrict = iemMemMap(pIemCpu, &pvMem512, 512, iEffSeg, GCPtrEff, IEM_ACCESS_DATA_W | IEM_ACCESS_PARTIAL_WRITE);
     if (rcStrict != VINF_SUCCESS)
         return rcStrict;
     PX86FXSTATE pDst = (PX86FXSTATE)pvMem512;
@@ -3937,7 +3939,7 @@ IEM_CIMPL_DEF_3(iemCImpl_fxsave, uint8_t, iEffSeg, RTGCPTR, GCPtrEff, IEMMODE, e
     /*
      * Commit the memory.
      */
-    rcStrict = iemMemCommitAndUnmap(pIemCpu, pvMem512, IEM_ACCESS_DATA_W);
+    rcStrict = iemMemCommitAndUnmap(pIemCpu, pvMem512, IEM_ACCESS_DATA_W | IEM_ACCESS_PARTIAL_WRITE);
     if (rcStrict != VINF_SUCCESS)
         return rcStrict;
 

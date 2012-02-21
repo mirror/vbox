@@ -49,6 +49,12 @@
  * for FPU exception delivery, because with CR0.NE=0 there is a window where we
  * can trigger spurious FPU exceptions.
  *
+ * The guest FPU state is not loaded into the host CPU and kept there till we
+ * leave IEM because the calling conventions have declared an all year open
+ * season on much of the FPU state.  For instance an innocent looking call to
+ * memcpy might end up using a whole bunch of XMM or MM registers if the
+ * particular implementation finds it worthwhile.
+ *
  *
  * @section sec_iem_logging     Logging
  *
@@ -4232,6 +4238,7 @@ static VBOXSTRICTRC iemMemBounceBufferCommitAndUnmap(PIEMCPU pIemCpu, unsigned i
             pEvtRec->u.RamWrite.GCPhys  = pIemCpu->aMemBbMappings[iMemMap].GCPhysFirst;
             pEvtRec->u.RamWrite.cb      = pIemCpu->aMemBbMappings[iMemMap].cbFirst;
             memcpy(pEvtRec->u.RamWrite.ab, &pIemCpu->aBounceBuffers[iMemMap].ab[0], pIemCpu->aMemBbMappings[iMemMap].cbFirst);
+            AssertCompile(sizeof(pEvtRec->u.RamWrite.ab) == sizeof(pIemCpu->aBounceBuffers[0].ab));
             pEvtRec->pNext = *pIemCpu->ppIemEvtRecNext;
             *pIemCpu->ppIemEvtRecNext = pEvtRec;
         }
@@ -4284,13 +4291,14 @@ static VBOXSTRICTRC iemMemBounceBufferMapCrossPage(PIEMCPU pIemCpu, int iMemMap,
     GCPhysSecond &= ~(RTGCPHYS)PAGE_OFFSET_MASK;
 
     /*
-     * Read in the current memory content if it's a read of execute access.
+     * Read in the current memory content if it's a read, execute or partial
+     * write access.
      */
     uint8_t        *pbBuf        = &pIemCpu->aBounceBuffers[iMemMap].ab[0];
     uint32_t const  cbFirstPage  = PAGE_SIZE - (GCPhysFirst & PAGE_OFFSET_MASK);
     uint32_t const  cbSecondPage = (uint32_t)(cbMem - cbFirstPage);
 
-    if (fAccess & (IEM_ACCESS_TYPE_READ | IEM_ACCESS_TYPE_EXEC))
+    if (fAccess & (IEM_ACCESS_TYPE_READ | IEM_ACCESS_TYPE_EXEC | IEM_ACCESS_PARTIAL_WRITE))
     {
         int rc;
         if (!pIemCpu->fByPassHandlers)
@@ -4313,7 +4321,8 @@ static VBOXSTRICTRC iemMemBounceBufferMapCrossPage(PIEMCPU pIemCpu, int iMemMap,
         }
 
 #ifdef IEM_VERIFICATION_MODE
-        if (!pIemCpu->fNoRem)
+        if (   !pIemCpu->fNoRem
+            && (fAccess & (IEM_ACCESS_TYPE_READ | IEM_ACCESS_TYPE_EXEC)) )
         {
             /*
              * Record the reads.
@@ -4384,10 +4393,11 @@ static VBOXSTRICTRC iemMemBounceBufferMapPhys(PIEMCPU pIemCpu, unsigned iMemMap,
     pIemCpu->cPotentialExits++;
 
     /*
-     * Read in the current memory content if it's a read of execute access.
+     * Read in the current memory content if it's a read, execute or partial
+     * write access.
      */
     uint8_t *pbBuf = &pIemCpu->aBounceBuffers[iMemMap].ab[0];
-    if (fAccess & (IEM_ACCESS_TYPE_READ | IEM_ACCESS_TYPE_EXEC))
+    if (fAccess & (IEM_ACCESS_TYPE_READ | IEM_ACCESS_TYPE_EXEC | IEM_ACCESS_PARTIAL_WRITE))
     {
         if (rcMap == VERR_PGM_PHYS_TLB_UNASSIGNED)
             memset(pbBuf, 0xff, cbMem);
@@ -4403,7 +4413,8 @@ static VBOXSTRICTRC iemMemBounceBufferMapPhys(PIEMCPU pIemCpu, unsigned iMemMap,
         }
 
 #ifdef IEM_VERIFICATION_MODE
-        if (!pIemCpu->fNoRem)
+        if (   !pIemCpu->fNoRem
+            && (fAccess & (IEM_ACCESS_TYPE_READ | IEM_ACCESS_TYPE_EXEC)) )
         {
             /*
              * Record the read.
@@ -6859,7 +6870,7 @@ static void iemVerifyAssertAddRecordDump(PIEMVERIFYEVTREC pEvtRec)
                             pEvtRec->u.RamRead.cb);
             break;
         case IEMVERIFYEVENT_RAM_WRITE:
-            RTAssertMsg2Add("RAM WRITE at %RGp, %#4zx bytes: %.*RHxs\n",
+            RTAssertMsg2Add("RAM WRITE at %RGp, %#4zx bytes: %.*Rhxs\n",
                             pEvtRec->u.RamWrite.GCPhys,
                             pEvtRec->u.RamWrite.cb,
                             (int)pEvtRec->u.RamWrite.cb,
@@ -6917,6 +6928,7 @@ static void iemVerifyAssertRecord(PIEMCPU pIemCpu, PIEMVERIFYEVTREC pEvtRec, con
 static void iemVerifyWriteRecord(PIEMCPU pIemCpu, PIEMVERIFYEVTREC pEvtRec)
 {
     uint8_t abBuf[sizeof(pEvtRec->u.RamWrite.ab)]; RT_ZERO(abBuf);
+    Assert(sizeof(abBuf) >= pEvtRec->u.RamWrite.cb);
     int rc = PGMPhysSimpleReadGCPhys(IEMCPU_TO_VM(pIemCpu), abBuf, pEvtRec->u.RamWrite.GCPhys, pEvtRec->u.RamWrite.cb);
     if (   RT_FAILURE(rc)
         || memcmp(abBuf, pEvtRec->u.RamWrite.ab, pEvtRec->u.RamWrite.cb) )
@@ -6933,15 +6945,19 @@ static void iemVerifyWriteRecord(PIEMCPU pIemCpu, PIEMVERIFYEVTREC pEvtRec)
                 && pEvtRec->u.RamWrite.GCPhys - UINT32_C(0x000e0000) > UINT32_C(0x20000)
                 && pEvtRec->u.RamWrite.GCPhys - UINT32_C(0xfffc0000) > UINT32_C(0x40000) )
             {
-                RTAssertMsg1(NULL, __LINE__, __FILE__, __PRETTY_FUNCTION__);
-                RTAssertMsg2Weak("Memory at %RGv differs\n", pEvtRec->u.RamWrite.GCPhys);
-                RTAssertMsg2Add("REM: %.*Rhxs\n"
-                                "IEM: %.*Rhxs\n",
-                                pEvtRec->u.RamWrite.cb, abBuf,
-                                pEvtRec->u.RamWrite.cb, pEvtRec->u.RamWrite.ab);
-                iemVerifyAssertAddRecordDump(pEvtRec);
-                iemVerifyAssertMsg2(pIemCpu);
-                RTAssertPanic();
+                /* fend off fxsave */
+                if (pEvtRec->u.RamWrite.cb != 512)
+                {
+                    RTAssertMsg1(NULL, __LINE__, __FILE__, __PRETTY_FUNCTION__);
+                    RTAssertMsg2Weak("Memory at %RGv differs\n", pEvtRec->u.RamWrite.GCPhys);
+                    RTAssertMsg2Add("REM: %.*Rhxs\n"
+                                    "IEM: %.*Rhxs\n",
+                                    pEvtRec->u.RamWrite.cb, abBuf,
+                                    pEvtRec->u.RamWrite.cb, pEvtRec->u.RamWrite.ab);
+                    iemVerifyAssertAddRecordDump(pEvtRec);
+                    iemVerifyAssertMsg2(pIemCpu);
+                    RTAssertPanic();
+                }
             }
         }
     }
@@ -7369,8 +7385,9 @@ VMMDECL(VBOXSTRICTRC) IEMExecOne(PVMCPU pVCpu)
      */
     iemExecVerificationModeCheck(pIemCpu);
 #endif
-    LogFlow(("IEMExecOne: returns %Rrc - cs:rip=%04x:%08RX64 ss:rsp=%04x:%08RX64 EFL=%06x\n",
-             VBOXSTRICTRC_VAL(rcStrict), pCtx->cs, pCtx->rip, pCtx->ss, pCtx->rsp, pCtx->eflags.u));
+    if (rcStrict != VINF_SUCCESS)
+        LogFlow(("IEMExecOne: cs:rip=%04x:%08RX64 ss:rsp=%04x:%08RX64 EFL=%06x - rcStrict=%Rrc\n",
+                 pCtx->cs, pCtx->rip, pCtx->ss, pCtx->rsp, pCtx->eflags.u, VBOXSTRICTRC_VAL(rcStrict)));
     return rcStrict;
 }
 
