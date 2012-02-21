@@ -424,6 +424,7 @@ IEMOPSHIFTDBLSIZES g_iemAImpl_shrd;
 
 #define IEM_MC_CALL_FPU_AIMPL_2(a_pfnAImpl, a0, a1)                     do { } while (0)
 #define IEM_MC_CALL_FPU_AIMPL_3(a_pfnAImpl, a0, a1, a3)                 do { } while (0)
+#define IEM_MC_SET_FPU_RESULT(a_FpuData, a_FSW, a_pr80Value)            do { } while (0)
 #define IEM_MC_PUSH_FPU_RESULT(a_FpuData)                               do { } while (0)
 #define IEM_MC_PUSH_FPU_RESULT_MEM_OP(a_FpuData, a_iEffSeg, a_GCPtrEff) do { } while (0)
 #define IEM_MC_STORE_FPU_RESULT(a_FpuData, a_iStReg)                    do { } while (0)
@@ -458,6 +459,7 @@ IEMOPSHIFTDBLSIZES g_iemAImpl_shrd;
 #define IEM_MC_IF_RCX_IS_NZ_AND_EFL_BIT_NOT_SET(a_fBit)                 if (g_fRandom) {
 #define IEM_MC_IF_LOCAL_IS_Z(a_Local)                                   if ((a_Local) == 0) {
 #define IEM_MC_IF_GREG_BIT_SET(a_iGReg, a_iBitNo)                       if (g_fRandom) {
+#define IEM_MC_IF_FPUREG_NOT_EMPTY(a_iSt)                               if (g_fRandom) {
 #define IEM_MC_IF_FPUREG_NOT_EMPTY_REF_R80(a_pr80Dst, a_iSt)            if (g_fRandom) {
 #define IEM_MC_IF_TWO_FPUREGS_NOT_EMPTY_REF_R80(p0, i0, p1, i1)         if (g_fRandom) {
 #define IEM_MC_ELSE()                                                   } else {
