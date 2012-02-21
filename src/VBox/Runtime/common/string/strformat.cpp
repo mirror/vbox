@@ -147,7 +147,8 @@ static unsigned _strnlenUni(PCRTUNICP pusz, unsigned cchMax)
  * @param     cchPrecision   Precision.
  * @param     fFlags         Flags (NTFS_*).
  */
-RTDECL(int) RTStrFormatNumber(char *psz, uint64_t u64Value, unsigned int uiBase, signed int cchWidth, signed int cchPrecision, unsigned int fFlags)
+RTDECL(int) RTStrFormatNumber(char *psz, uint64_t u64Value, unsigned int uiBase, signed int cchWidth, signed int cchPrecision,
+                              unsigned int fFlags)
 {
     return rtStrFormatNumber(psz, *(KSIZE64 *)(void *)&u64Value, uiBase, cchWidth, cchPrecision, fFlags);
 }
@@ -166,10 +167,12 @@ RT_EXPORT_SYMBOL(RTStrFormatNumber);
  * @param     cchPrecision   Precision.
  * @param     fFlags         Flags (NTFS_*).
  */
-static int rtStrFormatNumber(char *psz, KSIZE64 ullValue, unsigned int uiBase, signed int cchWidth, signed int cchPrecision, unsigned int fFlags)
+static int rtStrFormatNumber(char *psz, KSIZE64 ullValue, unsigned int uiBase, signed int cchWidth, signed int cchPrecision,
+                             unsigned int fFlags)
 {
     const char     *pachDigits = "0123456789abcdef";
     char           *pszStart = psz;
+    int             cchMax;
     int             cchValue;
     unsigned long   ul;
     int             i;
@@ -250,29 +253,35 @@ static int rtStrFormatNumber(char *psz, KSIZE64 ullValue, unsigned int uiBase, s
     /*
      * width - only if ZEROPAD
      */
+    cchMax    = 64 - (cchValue + i + 1);   /* HACK! 64 bytes seems to be the usual buffer size... */
     cchWidth -= i + cchValue;
     if (fFlags & RTSTR_F_ZEROPAD)
-        while (--cchWidth >= 0)
+        while (--cchWidth >= 0 && i < cchMax)
         {
+            AssertBreak(i < cchMax);
             psz[i++] = '0';
             cchPrecision--;
         }
     else if (!(fFlags & RTSTR_F_LEFT) && cchWidth > 0)
     {
-        for (j = i-1; j >= 0; j--)
+        AssertStmt(cchWidth < cchMax, cchWidth = cchMax - 1);
+        for (j = i - 1; j >= 0; j--)
             psz[cchWidth + j] = psz[j];
         for (j = 0; j < cchWidth; j++)
             psz[j] = ' ';
         i += cchWidth;
     }
-    psz += i;
-
 
     /*
      * precision
      */
     while (--cchPrecision >= cchValue)
-        *psz++ = '0';
+    {
+        AssertBreak(i < cchMax);
+        psz[i++] = '0';
+    }
+
+    psz += i;
 
     /*
      * write number - not good enough but it works
