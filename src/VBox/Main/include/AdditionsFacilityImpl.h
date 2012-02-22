@@ -3,7 +3,7 @@
  */
 
 /*
- * Copyright (C) 2011 Oracle Corporation
+ * Copyright (C) 2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -17,8 +17,10 @@
 #ifndef ____H_ADDITIONSFACILITYIMPL
 #define ____H_ADDITIONSFACILITYIMPL
 
-#include "VirtualBoxBase.h"
+#include <vector>
 #include <iprt/time.h>
+
+#include "VirtualBoxBase.h"
 
 class Guest;
 
@@ -59,7 +61,7 @@ public:
     struct FacilityInfo
     {
         /** The facilitie's name. */
-        const char            *mName; /* utf-8 */
+        const char              *mName; /* utf-8 */
         /** The facilitie's type. */
         AdditionsFacilityType_T  mType;
         /** The facilitie's class. */
@@ -77,16 +79,24 @@ public:
     void update(AdditionsFacilityStatus_T a_enmStatus, uint32_t a_fFlags, PCRTTIMESPEC a_pTimeSpecTS);
 
 private:
-    struct Data
+    /** A structure for keeping a facility status
+     *  set at a certain time. Good for book-keeping. */
+    struct FacilityState
     {
-        /** Timestamp of last updated status.
-         *  @todo Add a UpdateRecord struct to keep track of all
-         *        status changed + their time; nice for some GUIs. */
-        RTTIMESPEC mLastUpdated;
+        RTTIMESPEC                mTimestamp;
         /** The facilitie's current status. */
         AdditionsFacilityStatus_T mStatus;
+    };
+
+    struct Data
+    {
+        /** Record of current and previous facility
+         *  states, limited to the 10 last states set.
+         *  Note: This intentionally only is kept in
+         *        Main so far! */
+        std::vector<FacilityState> mStates;
         /** The facilitie's ID/type. */
-        AdditionsFacilityType_T mType;
+        AdditionsFacilityType_T    mType;
     } mData;
 };
 
