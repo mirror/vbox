@@ -3400,162 +3400,30 @@ DECLINLINE(void) iemFpuRotateStackPop(PCPUMCTX pCtx)
 }
 
 
-#if 0
 /**
+ * Pushes a FPU result onto the FPU stack if no pending exception prevents it.
  *
  * @param   pIemCpu             The IEM per CPU data.
  * @param   pResult             The FPU operation result to push.
  * @param   pCtx                The CPU context.
- * @param   iDstReg             The destination register,
- * @param   cStackAdj           The stack adjustment on successful operation.
- *                              Note that this is an unsigned value.
- * @param   fFlags              Flags.
  */
-static void iemFpuPushResult(PIEMCPU pIemCpu, PIEMFPURESULT pResult, PCPUMCTX pCtx, uint16_t iDstReg,
-                             uint8_t cStackAdj, )
+static void iemFpuMaybePushResult(PIEMCPU pIemCpu, PIEMFPURESULT pResult, PCPUMCTX pCtx)
 {
-    PCPUMCTX pCtx = pIemCpu->CTX_SUFF(pCtx);
-    iemFpuUpdateOpcodeAndIP(pIemCpu, pCtx);
-
-    uint16_t iNewTop = (X86_FSW_TOP_GET(pCtx->fpu.FSW) + 7) & X86_FSW_TOP_SMASK;
-    if (!(RT_BIT(iNewTop) & pCtx->fpu.FTW))
-    {
-        /* No stack error. */
-        uint16_t fXcpts = (pResult->FSW   & (X86_FSW_IE | X86_FSW_DE | X86_FSW_ZE | X86_FSW_OE | X86_FSW_UE | X86_FSW_PE))
-                        & ~(pCtx->fpu.FCW & (X86_FCW_IM | X86_FCW_DM | X86_FCW_ZM | X86_FCW_OM | X86_FCW_UM | X86_FCW_PM));
-        if (!fXcpts)
-        {
-            /* No unmasked exceptions, just store the result. */
-            pCtx->fpu.FSW &= X86_FSW_TOP_MASK | X86_FSW_C0 | X86_FSW_C1 | X86_FSW_C2 | X86_FSW_C3;
-            pCtx->fpu.FSW |= (iNewTop << X86_FSW_TOP_SHIFT) | (pResult->FSW & ~(X86_FSW_TOP_MASK | X86_FSW_B | X86_FSW_ES));
-            pCtx->fpu.FTW |= RT_BIT(iNewTop);
-            pCtx->fpu.aRegs[7].r80 = pResult->r80Result;
-        }
-        else
-        {
-            AssertFailed();
-        }
-
-    }
-    else if (pCtx->fpu.FCW & X86_FCW_IM)
-    {
-        /* Masked stack overflow. */
-        pCtx->fpu.FSW &= X86_FSW_TOP_MASK | X86_FSW_C0 | X86_FSW_C1 | X86_FSW_C2 | X86_FSW_C3;
-        pCtx->fpu.FSW |= (iNewTop << X86_FSW_TOP_SHIFT) | X86_FSW_C1 | X86_FSW_IE | X86_FSW_SF;
-        pCtx->fpu.FTW |= RT_BIT(iNewTop);
-        iemFpuStoreQNan(&pCtx->fpu.aRegs[7].r80);
-    }
-    else
-    {
-        /* Stack overflow exception. */
-        pCtx->fpu.FSW &= X86_FSW_C0 | X86_FSW_C1 | X86_FSW_C2 | X86_FSW_C3;
-        pCtx->fpu.FSW |= X86_FSW_C1 | X86_FSW_IE | X86_FSW_SF | X86_FSW_ES | X86_FSW_B;
+    /* Check pending exceptions. */
+    uint16_t uFSW = pCtx->fpu.FSW;
+    if (   (pCtx->fpu.FSW & (X86_FSW_IE | X86_FSW_ZE | X86_FSW_DE))
+        & ~(pCtx->fpu.FCW & (X86_FCW_IM | X86_FCW_ZM | X86_FCW_DM)))
         return;
-    }
+
+    /* Push it. */
+    uint16_t iNewTop = (X86_FSW_TOP_GET(pCtx->fpu.FSW) + 7) & X86_FSW_TOP_SMASK;
+    pCtx->fpu.FSW &= ~(X86_FSW_TOP_MASK | X86_FSW_C_MASK);
+    pCtx->fpu.FSW |= pResult->FSW & ~X86_FSW_TOP_MASK;
+    pCtx->fpu.FSW |= iNewTop << X86_FSW_TOP_SHIFT;
+    pCtx->fpu.FTW |= RT_BIT(iNewTop);
+    pCtx->fpu.aRegs[7].r80 = pResult->r80Result;
 
     iemFpuRotateStackPush(pCtx);
-}
-
-
-/**
- * Writes a FPU result to the FPU stack after inspecting the resulting
- * statuses.
- *
- * @param   pIemCpu             The IEM per CPU data.
- * @param   pResult             The FPU operation result to push.
- * @param   iReg                The stack relative FPU register number.
- */
-static void iemFpuStoreResult(PIEMCPU pIemCpu, PIEMFPURESULT pResult, uint8_t iReg)
-{
-    PCPUMCTX pCtx = pIemCpu->CTX_SUFF(pCtx);
-    iemFpuUpdateOpcodeAndIP(pIemCpu, pCtx);
-
-    uint16_t iReg = (X86_FSW_TOP_GET(pCtx->fpu.FSW) + iReg) & X86_FSW_TOP_SMASK;
-
-    uint16_t fXcpts = (pResult->FSW   & (X86_FSW_IE | X86_FSW_DE | X86_FSW_ZE | X86_FSW_OE | X86_FSW_UE | X86_FSW_PE))
-                    & ~(pCtx->fpu.FCW & (X86_FCW_IM | X86_FCW_DM | X86_FCW_ZM | X86_FCW_OM | X86_FCW_UM | X86_FCW_PM));
-    if (!fXcpts)
-    {
-        /* No unmasked exceptions, just store the result. */
-        pCtx->fpu.FSW &= X86_FSW_C0 | X86_FSW_C1 | X86_FSW_C2 | X86_FSW_C3;
-        pCtx->fpu.FSW |= (pResult->FSW & ~(X86_FSW_TOP_MASK | X86_FSW_B | X86_FSW_ES));
-        pCtx->fpu.FTW |= RT_BIT(iNewTop);
-        pCtx->fpu.aRegs[7].r80 = pResult->r80Result;
-    }
-    else
-    {
-        AssertFailed();
-    }
-}
-#endif
-
-
-/**
- * Pushes a FPU result onto the FPU stack after inspecting the resulting
- * statuses.
- *
- * @param   pIemCpu             The IEM per CPU data.
- * @param   pResult             The FPU operation result to push.
- */
-static void iemFpuPushResult(PIEMCPU pIemCpu, PIEMFPURESULT pResult)
-{
-    PCPUMCTX pCtx = pIemCpu->CTX_SUFF(pCtx);
-    iemFpuUpdateOpcodeAndIP(pIemCpu, pCtx);
-
-    uint16_t iNewTop = (X86_FSW_TOP_GET(pCtx->fpu.FSW) + 7) & X86_FSW_TOP_SMASK;
-    if (!(RT_BIT(iNewTop) & pCtx->fpu.FTW))
-    {
-        /* No stack error. */
-        uint16_t fXcpts = (pResult->FSW   & (X86_FSW_IE | X86_FSW_DE | X86_FSW_ZE | X86_FSW_OE | X86_FSW_UE | X86_FSW_PE))
-                        & ~(pCtx->fpu.FCW & (X86_FCW_IM | X86_FCW_DM | X86_FCW_ZM | X86_FCW_OM | X86_FCW_UM | X86_FCW_PM));
-        if (!fXcpts)
-        {
-            /* No unmasked exceptions, just store the result. */
-            pCtx->fpu.FSW &= ~(X86_FSW_TOP_MASK | X86_FSW_C0 | X86_FSW_C1 | X86_FSW_C2 | X86_FSW_C3);
-            pCtx->fpu.FSW |= pResult->FSW & ~(X86_FSW_TOP_MASK | X86_FSW_B | X86_FSW_ES);
-            pCtx->fpu.FSW |= iNewTop << X86_FSW_TOP_SHIFT;
-            pCtx->fpu.FTW |= RT_BIT(iNewTop);
-            pCtx->fpu.aRegs[7].r80 = pResult->r80Result;
-        }
-        else
-        {
-            AssertFailed();
-        }
-
-    }
-    else if (pCtx->fpu.FCW & X86_FCW_IM)
-    {
-        /* Masked stack overflow. */
-        pCtx->fpu.FSW &= ~(X86_FSW_TOP_MASK | X86_FSW_C0 | X86_FSW_C1 | X86_FSW_C2 | X86_FSW_C3);
-        pCtx->fpu.FSW |= (iNewTop << X86_FSW_TOP_SHIFT) | X86_FSW_C1 | X86_FSW_IE | X86_FSW_SF;
-        pCtx->fpu.FTW |= RT_BIT(iNewTop);
-        iemFpuStoreQNan(&pCtx->fpu.aRegs[7].r80);
-    }
-    else
-    {
-        /* Stack overflow exception. */
-        pCtx->fpu.FSW &= ~(X86_FSW_C0 | X86_FSW_C1 | X86_FSW_C2 | X86_FSW_C3);
-        pCtx->fpu.FSW |= X86_FSW_C1 | X86_FSW_IE | X86_FSW_SF | X86_FSW_ES | X86_FSW_B;
-        return;
-    }
-
-    iemFpuRotateStackPush(pCtx);
-}
-
-
-/**
- * Pushes a FPU result onto the FPU stack after inspecting the resulting
- * statuses, and sets FPU.DS and FPUDP.
- *
- * @param   pIemCpu             The IEM per CPU data.
- * @param   pResult             The FPU operation result to push.
- * @param   iEffSeg             The effective segment register.
- * @param   GCPtrEff            The effective address relative to @a iEffSeg.
- */
-static void iemFpuPushResultWithMemOp(PIEMCPU pIemCpu, PIEMFPURESULT pResult, uint8_t iEffSeg, RTGCPTR GCPtrEff)
-{
-    iemFpuUpdateDP(pIemCpu, pIemCpu->CTX_SUFF(pCtx), iEffSeg, GCPtrEff);
-    iemFpuPushResult(pIemCpu, pResult);
 }
 
 
@@ -3617,6 +3485,38 @@ static void iemFpuMaybePopOne(PCPUMCTX pCtx)
 
     /* Rotate the registers. */
     iemFpuRotateStackPop(pCtx);
+}
+
+
+/**
+ * Pushes a FPU result onto the FPU stack if no pending exception prevents it.
+ *
+ * @param   pIemCpu             The IEM per CPU data.
+ * @param   pResult             The FPU operation result to push.
+ */
+static void iemFpuPushResult(PIEMCPU pIemCpu, PIEMFPURESULT pResult)
+{
+    PCPUMCTX pCtx = pIemCpu->CTX_SUFF(pCtx);
+    iemFpuUpdateOpcodeAndIP(pIemCpu, pCtx);
+    iemFpuMaybePushResult(pIemCpu, pResult, pCtx);
+}
+
+
+/**
+ * Pushes a FPU result onto the FPU stack if no pending exception prevents it,
+ * and sets FPUDP and FPUDS.
+ *
+ * @param   pIemCpu             The IEM per CPU data.
+ * @param   pResult             The FPU operation result to push.
+ * @param   iEffSeg             The effective segment register.
+ * @param   GCPtrEff            The effective address relative to @a iEffSeg.
+ */
+static void iemFpuPushResultWithMemOp(PIEMCPU pIemCpu, PIEMFPURESULT pResult, uint8_t iEffSeg, RTGCPTR GCPtrEff)
+{
+    PCPUMCTX pCtx = pIemCpu->CTX_SUFF(pCtx);
+    iemFpuUpdateDP(pIemCpu, pCtx, iEffSeg, GCPtrEff);
+    iemFpuUpdateOpcodeAndIP(pIemCpu, pCtx);
+    iemFpuMaybePushResult(pIemCpu, pResult, pCtx);
 }
 
 
@@ -3761,17 +3661,27 @@ static void iemFpuUpdateFSWWithMemOpThenPop(PIEMCPU pIemCpu, uint16_t u16FSW, ui
 }
 
 
+/**
+ * Worker routine for raising an FPU stack underflow exception.
+ *
+ * @param   pIemCpu             The IEM per CPU data.
+ * @param   iStReg              The stack register being accessed.
+ * @param   pCtx                The CPU context.
+ */
 static void iemFpuStackUnderflowOnly(PIEMCPU pIemCpu, uint8_t iStReg, PCPUMCTX pCtx)
 {
-    Assert(iStReg < 8);
-    uint16_t iReg = (X86_FSW_TOP_GET(pCtx->fpu.FSW) + iStReg) & X86_FSW_TOP_SMASK;
+    Assert(iStReg < 8 || iStReg == UINT8_MAX);
     if (pCtx->fpu.FCW & X86_FCW_IM)
     {
         /* Masked underflow. */
         pCtx->fpu.FSW &= ~(X86_FSW_C0 | X86_FSW_C2 | X86_FSW_C3);
         pCtx->fpu.FSW |= X86_FSW_C1 | X86_FSW_IE | X86_FSW_SF;
-        pCtx->fpu.FTW |= RT_BIT(iReg);
-        iemFpuStoreQNan(&pCtx->fpu.aRegs[iStReg].r80);
+        uint16_t iReg = (X86_FSW_TOP_GET(pCtx->fpu.FSW) + iStReg) & X86_FSW_TOP_SMASK;
+        if (iStReg != UINT8_MAX)
+        {
+            pCtx->fpu.FTW |= RT_BIT(iReg);
+            iemFpuStoreQNan(&pCtx->fpu.aRegs[iStReg].r80);
+        }
     }
     else
     {
@@ -3780,6 +3690,15 @@ static void iemFpuStackUnderflowOnly(PIEMCPU pIemCpu, uint8_t iStReg, PCPUMCTX p
     }
 }
 
+
+/**
+ * Raises a FPU stack underflow exception.
+ *
+ * @param   pIemCpu             The IEM per CPU data.
+ * @param   iStReg              The destination register that should be loaded
+ *                              with QNaN if \#IS is not masked. Specify
+ *                              UINT8_MAX if none (like for fcom).
+ */
 DECL_NO_INLINE(static, void) iemFpuStackUnderflow(PIEMCPU pIemCpu, uint8_t iStReg)
 {
     PCPUMCTX pCtx = pIemCpu->CTX_SUFF(pCtx);
@@ -3818,7 +3737,65 @@ iemFpuStackUnderflowWithMemOpThenPop(PIEMCPU pIemCpu, uint8_t iStReg, uint8_t iE
 }
 
 
-static int iemFpuStRegNonEmpty(PIEMCPU pIemCpu, uint8_t iStReg)
+/**
+ * Worker routine for raising an FPU stack overflow exception on a push.
+ *
+ * @param   pIemCpu             The IEM per CPU data.
+ * @param   pCtx                The CPU context.
+ */
+static void iemFpuStackPushOverflowOnly(PIEMCPU pIemCpu, PCPUMCTX pCtx)
+{
+    if (pCtx->fpu.FCW & X86_FCW_IM)
+    {
+        /* Masked overflow. */
+        uint16_t iNewTop = (X86_FSW_TOP_GET(pCtx->fpu.FSW) + 7) & X86_FSW_TOP_SMASK;
+        pCtx->fpu.FSW &= ~(X86_FSW_TOP_MASK | X86_FSW_C0 | X86_FSW_C2 | X86_FSW_C3);
+        pCtx->fpu.FSW |= X86_FSW_C1 | X86_FSW_IE | X86_FSW_SF;
+        pCtx->fpu.FSW |= iNewTop << X86_FSW_TOP_SHIFT;
+        pCtx->fpu.FTW |= RT_BIT(iNewTop);
+        iemFpuStoreQNan(&pCtx->fpu.aRegs[7].r80);
+        iemFpuRotateStackPush(pCtx);
+    }
+    else
+    {
+        /* Exception pending - don't change TOP or the register stack. */
+        pCtx->fpu.FSW &= ~(X86_FSW_C0 | X86_FSW_C2 | X86_FSW_C3);
+        pCtx->fpu.FSW |= X86_FSW_C1 | X86_FSW_IE | X86_FSW_SF | X86_FSW_ES | X86_FSW_B;
+    }
+}
+
+
+/**
+ * Raises a FPU stack overflow exception on a push.
+ *
+ * @param   pIemCpu             The IEM per CPU data.
+ */
+DECL_NO_INLINE(static, void) iemFpuStackPushOverflow(PIEMCPU pIemCpu)
+{
+    PCPUMCTX pCtx = pIemCpu->CTX_SUFF(pCtx);
+    iemFpuUpdateOpcodeAndIP(pIemCpu, pCtx);
+    iemFpuStackPushOverflowOnly(pIemCpu, pCtx);
+}
+
+
+/**
+ * Raises a FPU stack overflow exception on a push with a memory operand.
+ *
+ * @param   pIemCpu             The IEM per CPU data.
+ * @param   iEffSeg             The effective memory operand selector register.
+ * @param   GCPtrEff            The effective memory operand offset.
+ */
+DECL_NO_INLINE(static, void)
+iemFpuStackPushOverflowWithMemOp(PIEMCPU pIemCpu, uint8_t iEffSeg, RTGCPTR GCPtrEff)
+{
+    PCPUMCTX pCtx = pIemCpu->CTX_SUFF(pCtx);
+    iemFpuUpdateDP(pIemCpu, pCtx, iEffSeg, GCPtrEff);
+    iemFpuUpdateOpcodeAndIP(pIemCpu, pCtx);
+    iemFpuStackPushOverflowOnly(pIemCpu, pCtx);
+}
+
+
+static int iemFpuStRegNotEmpty(PIEMCPU pIemCpu, uint8_t iStReg)
 {
     PCPUMCTX pCtx = pIemCpu->CTX_SUFF(pCtx);
     uint16_t iReg = (X86_FSW_TOP_GET(pCtx->fpu.FSW) + iStReg) & X86_FSW_TOP_SMASK;
@@ -3828,7 +3805,7 @@ static int iemFpuStRegNonEmpty(PIEMCPU pIemCpu, uint8_t iStReg)
 }
 
 
-static int iemFpuStRegNonEmptyRef(PIEMCPU pIemCpu, uint8_t iStReg, PCRTFLOAT80U *ppRef)
+static int iemFpuStRegNotEmptyRef(PIEMCPU pIemCpu, uint8_t iStReg, PCRTFLOAT80U *ppRef)
 {
     PCPUMCTX pCtx = pIemCpu->CTX_SUFF(pCtx);
     uint16_t iReg = (X86_FSW_TOP_GET(pCtx->fpu.FSW) + iStReg) & X86_FSW_TOP_SMASK;
@@ -3841,7 +3818,7 @@ static int iemFpuStRegNonEmptyRef(PIEMCPU pIemCpu, uint8_t iStReg, PCRTFLOAT80U 
 }
 
 
-static int iemFpu2StRegsNonEmptyRef(PIEMCPU pIemCpu, uint8_t iStReg0, PCRTFLOAT80U *ppRef0,
+static int iemFpu2StRegsNotEmptyRef(PIEMCPU pIemCpu, uint8_t iStReg0, PCRTFLOAT80U *ppRef0,
                                     uint8_t iStReg1, PCRTFLOAT80U *ppRef1)
 {
     PCPUMCTX pCtx  = pIemCpu->CTX_SUFF(pCtx);
@@ -5900,6 +5877,16 @@ static VBOXSTRICTRC iemMemMarkSelDescAccessed(PIEMCPU pIemCpu, uint16_t uSel)
 #define IEM_MC_MEM_COMMIT_AND_UNMAP(a_pvMem, a_fAccess) \
     IEM_MC_RETURN_ON_FAILURE(iemMemCommitAndUnmap(pIemCpu, (a_pvMem), (a_fAccess)))
 
+/** Commits the memory and unmaps the guest memory unless the FPU status word
+ * indicates an exception (FSW.ES).
+ * @remarks     May return (for now anyway).
+ */
+#define IEM_MC_MEM_COMMIT_AND_UNMAP_UNLESS_FPU_XCPT(a_pvMem, a_fAccess, a_u16FSW) \
+    do { \
+        if (!(a_u16FSW & X86_FSW_ES)) \
+            IEM_MC_RETURN_ON_FAILURE(iemMemCommitAndUnmap(pIemCpu, (a_pvMem), (a_fAccess))); \
+    } while (0)
+
 /** Calculate efficient address from R/M. */
 #define IEM_MC_CALC_RM_EFF_ADDR(a_GCPtrEff, bRm) \
     IEM_MC_RETURN_ON_FAILURE(iemOpHlpCalcRmEffAddr(pIemCpu, (bRm), &(a_GCPtrEff)))
@@ -6081,19 +6068,30 @@ static VBOXSTRICTRC iemMemMarkSelDescAccessed(PIEMCPU pIemCpu, uint16_t uSel)
 #define IEM_MC_UPDATE_FSW_WITH_MEM_OP_THEN_POP(a_u16FSW, a_iEffSeg, a_GCPtrEff) \
     iemFpuUpdateFSWWithMemOpThenPop(pIemCpu, a_u16FSW, a_iEffSeg, a_GCPtrEff)
 
-/** Raises a FPU stack underflow. Sets FPUIP, FPUCS and FOP. */
+/** Raises a FPU stack underflow exception.  Sets FPUIP, FPUCS and FOP. */
 #define IEM_MC_FPU_STACK_UNDERFLOW(a_iStDst) \
     iemFpuStackUnderflow(pIemCpu, a_iStDst)
-/** Raises a FPU stack underflow. Sets FPUIP, FPUCS and FOP. Pops stack. */
+/** Raises a FPU stack underflow exception.  Sets FPUIP, FPUCS and FOP. Pops
+ *  stack. */
 #define IEM_MC_FPU_STACK_UNDERFLOW_THEN_POP(a_iStDst) \
     iemFpuStackUnderflowThenPop(pIemCpu, a_iStDst)
-/** Raises a FPU stack underflow. Sets FPUIP, FPUCS, FOP, FPUDP and FPUDS. */
+/** Raises a FPU stack underflow exception.  Sets FPUIP, FPUCS, FOP, FPUDP and
+ *  FPUDS. */
 #define IEM_MC_FPU_STACK_UNDERFLOW_MEM_OP(a_iStDst, a_iEffSeg, a_GCPtrEff) \
     iemFpuStackUnderflowWithMemOp(pIemCpu, a_iStDst, a_iEffSeg, a_GCPtrEff)
-/** Raises a FPU stack underflow. Sets FPUIP, FPUCS, FOP, FPUDP and FPUDS.
- *  Pops stack. */
+/** Raises a FPU stack underflow exception.  Sets FPUIP, FPUCS, FOP, FPUDP and
+ *  FPUDS. Pops stack. */
 #define IEM_MC_FPU_STACK_UNDERFLOW_MEM_OP_THEN_POP(a_iStDst, a_iEffSeg, a_GCPtrEff) \
     iemFpuStackUnderflowWithMemOpThenPop(pIemCpu, a_iStDst, a_iEffSeg, a_GCPtrEff)
+
+/** Raises a FPU stack overflow exception as part of a push attempt.  Sets
+ *  FPUIP, FPUCS and FOP. */
+#define IEM_MC_FPU_STACK_PUSH_OVERFLOW() \
+    iemFpuStackPushOverflow(pIemCpu, a_iStDst)
+/** Raises a FPU stack overflow exception as part of a push attempt.  Sets
+ *  FPUIP, FPUCS, FOP, FPUDP and FPUDS. */
+#define IEM_MC_FPU_STACK_PUSH_OVERFLOW_MEM_OP(a_iEffSeg, a_GCPtrEff) \
+    iemFpuStackPushOverflowWithMemOp(pIemCpu, a_iEffSeg, a_GCPtrEff)
 
 
 #define IEM_MC_IF_EFL_BIT_SET(a_fBit)                   if (pIemCpu->CTX_SUFF(pCtx)->eflags.u & (a_fBit)) {
@@ -6138,11 +6136,13 @@ static VBOXSTRICTRC iemMemMarkSelDescAccessed(PIEMCPU pIemCpu, uint16_t uSel)
 #define IEM_MC_IF_LOCAL_IS_Z(a_Local)                   if ((a_Local) == 0) {
 #define IEM_MC_IF_GREG_BIT_SET(a_iGReg, a_iBitNo)       if (*(uint64_t *)iemGRegRef(pIemCpu, (a_iGReg)) & RT_BIT_64(a_iBitNo)) {
 #define IEM_MC_IF_FPUREG_NOT_EMPTY(a_iSt) \
-    if (iemFpuStRegNonEmpty(pIemCpu, (a_iSt)) == VINF_SUCCESS) {
+    if (iemFpuStRegNotEmpty(pIemCpu, (a_iSt)) == VINF_SUCCESS) {
+#define IEM_MC_IF_FPUREG_IS_EMPTY(a_iSt) \
+    if (iemFpuStRegNotEmpty(pIemCpu, (a_iSt)) != VINF_SUCCESS) {
 #define IEM_MC_IF_FPUREG_NOT_EMPTY_REF_R80(a_pr80Dst, a_iSt) \
-    if (iemFpuStRegNonEmptyRef(pIemCpu, (a_iSt), &(a_pr80Dst)) == VINF_SUCCESS) {
+    if (iemFpuStRegNotEmptyRef(pIemCpu, (a_iSt), &(a_pr80Dst)) == VINF_SUCCESS) {
 #define IEM_MC_IF_TWO_FPUREGS_NOT_EMPTY_REF_R80(a_pr80Dst0, a_iSt0, a_pr80Dst1, a_iSt1) \
-    if (iemFpu2StRegsNonEmptyRef(pIemCpu, (a_iSt0), &(a_pr80Dst0), (a_iSt1), &(a_pr80Dst1)) == VINF_SUCCESS) {
+    if (iemFpu2StRegsNotEmptyRef(pIemCpu, (a_iSt0), &(a_pr80Dst0), (a_iSt1), &(a_pr80Dst1)) == VINF_SUCCESS) {
 
 #define IEM_MC_ELSE()                                   } else {
 #define IEM_MC_ENDIF()                                  } do {} while (0)

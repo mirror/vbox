@@ -164,6 +164,22 @@ GLOBALNAME g_aTrapInfo
  %define REF_EXTERN(a_Name)     NAME(a_Name)
 %endif
 
+
+;;
+; Macro for checking a memory value.
+;
+; @param        1       The size (byte, word, dword, etc)
+; @param        2       The memory address expression.
+; @param        3       The valued expected at the location.
+%macro CheckMemoryValue 3
+        cmp     %1 [%2], %3
+        je      %%ok
+        mov     eax, __LINE__
+        jmp     .return
+%%ok:
+%endmacro
+
+
 ;;
 ; Macro for recording a trapping instruction (simple).
 ;
@@ -287,6 +303,8 @@ BEGINCODE
 %define CheckSt0Value_3_and_a_3rd       CheckSt0Value 0x55555555, 0xd5555555, 0x4000
 ;; Checks that ST0 contains 3 & 1/3.
 %define CheckSt0Value_3_and_two_3rds    CheckSt0Value 0xaaaaaaab, 0xeaaaaaaa, 0x4000
+;; Checks that ST0 contains 8.0.
+%define CheckSt0Value_Eight             CheckSt0Value 0x00000000, 0x80000000, 0x4002
 
 
 ;;
@@ -642,7 +660,7 @@ x861_ClearRegisters:
 
 
 ;;
-; Loads all general, MMX and SSE registers except xBP and xSP with unique values.
+; Loads all MMX and SSE registers except xBP and xSP with unique values.
 ;
 x861_LoadUniqueRegValuesSSE:
         fninit
@@ -672,7 +690,6 @@ x861_LoadUniqueRegValuesSSE:
         movdqu  xmm14, [REF(._xmm14)]
         movdqu  xmm15, [REF(._xmm15)]
 %endif
-        call    x861_LoadUniqueRegValues
         ret
 ._mm0:   times 8  db 040h
 ._mm1:   times 8  db 041h
@@ -2324,11 +2341,11 @@ BEGINPROC   x861_Test7
 
         FpuShouldTrap  X86_FSW_IE | X86_FSW_SF | X86_FSW_C1, X86_FSW_C0 | X86_FSW_C2 | X86_FSW_C3, \
                 fld     dword [xSI]
-        CheckSt0Value 0x00000000, 0x80000000, 0x4002
+        CheckSt0Value_Eight
 
         FpuShouldTrap  X86_FSW_IE | X86_FSW_SF | X86_FSW_C1, X86_FSW_C0 | X86_FSW_C2 | X86_FSW_C3, \
                 fld     dword [xSI]
-        CheckSt0Value 0x00000000, 0x80000000, 0x4002
+        CheckSt0Value_Eight
 
         ; stack overflow vs #PF.
         ShouldTrap X86_XCPT_PF, fld     dword [xDI]
@@ -2337,7 +2354,7 @@ BEGINPROC   x861_Test7
         ; stack overflow vs denormal number
         FpuShouldTrap  X86_FSW_IE | X86_FSW_SF | X86_FSW_C1, X86_FSW_C0 | X86_FSW_C2 | X86_FSW_C3, \
                 fld     dword [xSI]
-        CheckSt0Value 0x00000000, 0x80000000, 0x4002
+        CheckSt0Value_Eight
 
         ;
         ; Mask the overflow exception. We should get QNaN now regardless of
@@ -2955,7 +2972,6 @@ BEGINPROC   x861_TestFPUInstr1
         FxSaveCheckFSW xSP, X86_FSW_DE | X86_FSW_ES | X86_FSW_B, X86_FSW_C0 | X86_FSW_C2 | X86_FSW_C3
         FxSaveCheckStNValueConst xSP, 1, REF(g_r80_DnMax)
         FxSaveCheckStNValueConst xSP, 0, REF(g_r80_DnMin)
-%endif
 
         ;
         ; FSTP ST0, STn
@@ -3044,6 +3060,58 @@ BEGINPROC   x861_TestFPUInstr1
         FpuTrapOpcodeCsIp      { fstp st1 }
         FxSaveCheckFSW xSP, X86_FSW_IE | X86_FSW_SF | X86_FSW_ES | X86_FSW_B, X86_FSW_C0 | X86_FSW_C2 | X86_FSW_C3
         FxSaveCheckSt0Empty xSP
+        FxSaveCheckStNValueConst xSP, 1, REF(g_r80_3dot2)
+        FxSaveCheckStNValueConst xSP, 2, REF(g_r80_0dot1)
+%endif
+
+        ;
+        ; FISTP M32I, ST0
+        ;
+        SetSubTest "FISTP M32I, ST0"
+
+        mov     xBX, [REF_EXTERN(g_pbEfExecPage)]
+        lea     xBX, [xBX + PAGE_SIZE - 4]
+
+        ; ## Normal operation. ##
+        FpuInitWithCW X86_FCW_PC_64 | X86_FCW_RC_NEAREST
+        fld     tword [REF(g_r80_Ten)]
+        FpuCheckOpcodeCsIp     { fistp dword [xBX] }
+        FxSaveCheckFSW xSP, 0, 0
+        FxSaveCheckSt0Empty xSP
+        CheckMemoryValue dword, xBX, 10
+
+        ; ## Masked exceptions. ##
+
+        ; Masked stack underflow.
+        fninit
+        FpuCheckOpcodeCsIp     { fistp dword [xBX] }
+        FxSaveCheckFSW xSP, X86_FSW_IE | X86_FSW_SF, X86_FSW_C0 | X86_FSW_C2 | X86_FSW_C3
+        CheckMemoryValue dword, xBX, 0x80000000
+
+        fninit
+        fld     tword [REF(g_r80_0dot1)]
+        fld     tword [REF(g_r80_3dot2)]
+        fld     tword [REF(g_r80_Ten)]
+        ffree   st0
+        FpuCheckOpcodeCsIp     { fistp dword [xBX] }
+        FxSaveCheckFSW xSP, X86_FSW_IE | X86_FSW_SF, X86_FSW_C0 | X86_FSW_C2 | X86_FSW_C3
+        CheckMemoryValue dword, xBX, 0x80000000
+        FxSaveCheckStNValueConst xSP, 0, REF(g_r80_3dot2)
+        FxSaveCheckStNValueConst xSP, 1, REF(g_r80_0dot1)
+
+        ; ## Unmasked exceptions. ##
+
+        ; Stack underflow - no pop or change.
+        FpuInitWithCW X86_FCW_PC_64 | X86_FCW_RC_NEAREST
+        fld     tword [REF(g_r80_0dot1)]
+        fld     tword [REF(g_r80_3dot2)]
+        fld     tword [REF(g_r80_Ten)]
+        ffree   st0
+        mov     dword [xBX], 0xffeeddcc
+        FpuTrapOpcodeCsIp      { fistp dword [xBX] }
+        FxSaveCheckFSW xSP, X86_FSW_IE | X86_FSW_SF | X86_FSW_ES | X86_FSW_B, X86_FSW_C0 | X86_FSW_C2 | X86_FSW_C3
+        FxSaveCheckSt0Empty xSP
+        CheckMemoryValue dword, xBX, 0xffeeddcc
         FxSaveCheckStNValueConst xSP, 1, REF(g_r80_3dot2)
         FxSaveCheckStNValueConst xSP, 2, REF(g_r80_0dot1)
 
