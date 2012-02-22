@@ -193,6 +193,8 @@ RTR3DECL(void) RTIsoFsClose(PRTISOFSFILE pFile);
 /**
  * Retrieves the offset + length (both in bytes) of a given file
  * stored in the ISO.
+ * @note    According to the standard, a file cannot be larger than 2^32-1 bytes.
+ *          Therefore using size_t / uint32_t is not a problem.
  *
  * @return  IPRT status code.
  * @param   pFile       Pointer to open ISO file returned by RTIsoFsOpen().

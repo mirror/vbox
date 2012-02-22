@@ -556,6 +556,8 @@ HRESULT Guest::taskCopyFileFromGuest(GuestTask *aTask)
                                                          aTask->strDest.c_str(), vrc);
                 else
                 {
+                    /* Note: Using size_t here is possible because the file size is
+                     *       stored as 32-bit value in the ISO 9660 file system. */
                     size_t cbToRead = lFileSize;
                     size_t cbTransfered = 0;
                     while (   SUCCEEDED(execProgress->COMGETTER(Completed(&fCompleted)))
@@ -599,7 +601,7 @@ HRESULT Guest::taskCopyFileFromGuest(GuestTask *aTask)
                     if (SUCCEEDED(rc))
                     {
                         if (   cbTransfered
-                            && (cbTransfered != lFileSize))
+                            && (cbTransfered != (size_t)lFileSize))
                         {
                             /*
                              * Only bitch about an unexpected end of a file when there already
