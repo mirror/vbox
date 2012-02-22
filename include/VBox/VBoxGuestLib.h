@@ -3,7 +3,7 @@
  */
 
 /*
- * Copyright (C) 2006-2010 Oracle Corporation
+ * Copyright (C) 2006-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -587,11 +587,20 @@ VBGLR3DECL(int)     VbglR3GuestCtrlExecReportStatusIn(uint32_t     u32ClientId,
 /** @}  */
 # endif /* VBOX_WITH_GUEST_CONTROL defined */
 
+/** @name Auto-logon handling
+ * @{ */
+VBGLR3DECL(int)     VbglR3AutoLogonReportStatus(VBoxGuestFacilityStatus enmStatus);
+VBGLR3DECL(bool)    VbglR3AutoLogonIsRemoteSession(void);
+/** @}  */
+
 /** @name User credentials handling
  * @{ */
 VBGLR3DECL(int)     VbglR3CredentialsQueryAvailability(void);
 VBGLR3DECL(int)     VbglR3CredentialsRetrieve(char **ppszUser, char **ppszPassword, char **ppszDomain);
+VBGLR3DECL(int)     VbglR3CredentialsRetrieveUtf16(PRTUTF16 *ppwszUser, PRTUTF16 *ppwszPassword, PRTUTF16 *ppwszDomain);
 VBGLR3DECL(void)    VbglR3CredentialsDestroy(char *pszUser, char *pszPassword, char *pszDomain, uint32_t cPasses);
+VBGLR3DECL(void)    VbglR3CredentialsDestroyUtf16(PRTUTF16 pwszUser, PRTUTF16 pwszPassword, PRTUTF16 pwszDomain,
+                                                  uint32_t cPasses);
 /** @}  */
 
 /** @name CPU hotplug monitor

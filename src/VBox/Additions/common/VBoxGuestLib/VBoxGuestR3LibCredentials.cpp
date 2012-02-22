@@ -73,6 +73,10 @@ VBGLR3DECL(int) VbglR3CredentialsQueryAvailability(void)
  */
 VBGLR3DECL(int) VbglR3CredentialsRetrieve(char **ppszUser, char **ppszPassword, char **ppszDomain)
 {
+    AssertPtrReturn(ppszUser, VERR_INVALID_POINTER);
+    AssertPtrReturn(ppszPassword, VERR_INVALID_POINTER);
+    AssertPtrReturn(ppszDomain, VERR_INVALID_POINTER);
+
     VMMDevCredentials Req;
     RT_ZERO(Req);
     vmmdevInitRequest((VMMDevRequestHeader*)&Req, VMMDevReq_QueryCredentials);
@@ -101,6 +105,57 @@ VBGLR3DECL(int) VbglR3CredentialsRetrieve(char **ppszUser, char **ppszPassword, 
 
 
 /**
+ * Retrieves and clears the user credentials for logging into the guest OS.
+ * UTF-16 version.
+ *
+ * @returns IPRT status value
+ * @param   ppwszUser       Receives pointer of allocated user name string.
+ *                          The returned pointer must be freed using VbglR3CredentialsDestroyUtf16().
+ * @param   ppswzPassword   Receives pointer of allocated user password string.
+ *                          The returned pointer must be freed using VbglR3CredentialsDestroyUtf16().
+ * @param   ppwszDomain     Receives pointer of allocated domain name string.
+ *                          The returned pointer must be freed using VbglR3CredentialsDestroyUtf16().
+ */
+VBGLR3DECL(int) VbglR3CredentialsRetrieveUtf16(PRTUTF16 *ppwszUser, PRTUTF16 *ppwszPassword, PRTUTF16 *ppwszDomain)
+{
+    AssertPtrReturn(ppwszUser, VERR_INVALID_POINTER);
+    AssertPtrReturn(ppwszPassword, VERR_INVALID_POINTER);
+    AssertPtrReturn(ppwszDomain, VERR_INVALID_POINTER);
+
+    char *pszUser, *pszPassword, *pszDomain;
+    int rc = VbglR3CredentialsRetrieve(&pszUser, &pszPassword, &pszDomain);
+    if (RT_SUCCESS(rc))
+    {
+        PRTUTF16 pwszUser = NULL;
+        PRTUTF16 pwszPassword = NULL;
+        PRTUTF16 pwszDomain = NULL;
+
+        rc = RTStrToUtf16(pszUser, &pwszUser);
+        if (RT_SUCCESS(rc))
+        {
+            rc = RTStrToUtf16(pszPassword, &pwszPassword);
+            if (RT_SUCCESS(rc))
+                rc = RTStrToUtf16(pszDomain, &pwszDomain);
+        }
+
+        if (RT_SUCCESS(rc))
+        {
+            *ppwszUser     = pwszUser;
+            *ppwszPassword = pwszPassword;
+            *ppwszDomain   = pwszDomain;
+        }
+        else
+            VbglR3CredentialsDestroyUtf16(pwszUser, pwszPassword, pwszDomain,
+                                          3 /* Passes */);
+
+        VbglR3CredentialsDestroy(pszUser, pszPassword, pszDomain,
+                                 3 /* Passes */);
+    }
+
+    return rc;
+}
+
+/**
  * Clears and frees the three strings.
  *
  * @param   pszUser        Receives pointer of the user name string to destroy.
@@ -125,5 +180,33 @@ VBGLR3DECL(void) VbglR3CredentialsDestroy(char *pszUser, char *pszPassword, char
     RTStrFree(pszUser);
     RTStrFree(pszPassword);
     RTStrFree(pszDomain);
+}
+
+/**
+ * Clears and frees the three strings. UTF-16 version.
+ *
+ * @param   pwszUser       Receives pointer of the user name string to destroy.
+ *                         Optional.
+ * @param   pwszPassword   Receives pointer of the password string to destroy.
+ *                         Optional.
+ * @param   pwszDomain     Receives pointer of allocated domain name string.
+ *                         Optional.
+ * @param   cPasses        Number of wipe passes.  The more the better + slower.
+ */
+VBGLR3DECL(void) VbglR3CredentialsDestroyUtf16(PRTUTF16 pwszUser, PRTUTF16 pwszPassword, PRTUTF16 pwszDomain,
+                                               uint32_t cPasses)
+{
+    /* wipe first */
+    if (pwszUser)
+        RTMemWipeThoroughly(pwszUser,     RTUtf16Len(pwszUser) + 1,     cPasses);
+    if (pwszPassword)
+        RTMemWipeThoroughly(pwszPassword, RTUtf16Len(pwszPassword) + 1, cPasses);
+    if (pwszDomain)
+        RTMemWipeThoroughly(pwszDomain,   RTUtf16Len(pwszDomain) + 1,   cPasses);
+
+    /* then free. */
+    RTUtf16Free(pwszUser);
+    RTUtf16Free(pwszPassword);
+    RTUtf16Free(pwszDomain);
 }
 
