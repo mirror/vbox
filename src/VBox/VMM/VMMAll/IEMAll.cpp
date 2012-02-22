@@ -2801,26 +2801,6 @@ DECLINLINE(bool) iemFRegIsFxSaveFormat(PIEMCPU pIemCpu)
 
 
 /**
- * Gets the FPU status word.
- *
- * @returns FPU status word
- * @param   pIemCpu             The per CPU data.
- */
-static uint16_t iemFRegFetchFsw(PIEMCPU pIemCpu)
-{
-    PCPUMCTX pCtx = pIemCpu->CTX_SUFF(pCtx);
-    uint16_t u16Fsw;
-    if (iemFRegIsFxSaveFormat(pIemCpu))
-        u16Fsw = pCtx->fpu.FSW;
-    else
-    {
-        PX86FPUSTATE pFpu = (PX86FPUSTATE)&pCtx->fpu;
-        u16Fsw = pFpu->FSW;
-    }
-    return u16Fsw;
-}
-
-/**
  * Adds a 8-bit signed jump offset to RIP/EIP/IP.
  *
  * May raise a \#GP(0) if the new RIP is non-canonical or outside the code
@@ -3324,8 +3304,18 @@ DECLINLINE(void) iemFpuUpdateOpcodeAndIP(PIEMCPU pIemCpu, PCPUMCTX pCtx)
     pCtx->fpu.FOP   = pIemCpu->abOpcode[pIemCpu->offFpuOpcode]
                     | ((uint16_t)(pIemCpu->abOpcode[pIemCpu->offFpuOpcode - 1] & 0x7) << 8);
     /** @todo FPU.CS and FPUIP needs to be kept seperately. */
-    pCtx->fpu.CS    = pCtx->cs;
-    pCtx->fpu.FPUIP = pCtx->rip;
+    if (IEM_IS_REAL_OR_V86_MODE(pIemCpu))
+    {
+        /** @todo Testcase: making assumptions about how FPUIP and FPUDP are handled
+         *        happens in real mode here based on the fnsave and fnstenv images. */
+        pCtx->fpu.CS    = 0;
+        pCtx->fpu.FPUIP = pCtx->eip | ((uint32_t)pCtx->cs << 4);
+    }
+    else
+    {
+        pCtx->fpu.CS    = pCtx->cs;
+        pCtx->fpu.FPUIP = pCtx->rip;
+    }
 }
 
 
@@ -3353,8 +3343,16 @@ DECLINLINE(void) iemFpuUpdateDP(PIEMCPU pIemCpu, PCPUMCTX pCtx, uint8_t iEffSeg,
             sel = pCtx->ds;
     }
     /** @todo FPU.DS and FPUDP needs to be kept seperately. */
-    pCtx->fpu.DS    = sel;
-    pCtx->fpu.FPUDP = GCPtrEff;
+    if (IEM_IS_REAL_OR_V86_MODE(pIemCpu))
+    {
+        pCtx->fpu.DS    = 0;
+        pCtx->fpu.FPUDP = (uint32_t)GCPtrEff | ((uint32_t)sel << 4);
+    }
+    else
+    {
+        pCtx->fpu.DS    = sel;
+        pCtx->fpu.FPUDP = GCPtrEff;
+    }
 }
 
 
@@ -3832,6 +3830,84 @@ static int iemFpu2StRegsNotEmptyRef(PIEMCPU pIemCpu, uint8_t iStReg0, PCRTFLOAT8
         return VINF_SUCCESS;
     }
     return VERR_NOT_FOUND;
+}
+
+
+/**
+ * Updates the FPU exception status after FCW is changed.
+ *
+ * @param   pCtx                The CPU context.
+ */
+static void iemFpuRecalcExceptionStatus(PCPUMCTX pCtx)
+{
+    uint16_t u16Fsw = pCtx->fpu.FSW;
+    if ((u16Fsw & X86_FSW_XCPT_MASK) & ~(pCtx->fpu.FCW & X86_FCW_XCPT_MASK))
+        u16Fsw |= X86_FSW_ES | X86_FSW_B;
+    else
+        u16Fsw &= ~(X86_FSW_ES | X86_FSW_B);
+    pCtx->fpu.FSW = u16Fsw;
+}
+
+
+/**
+ * Calculates the full FTW (FPU tag word) for use in FNSTENV and FNSAVE.
+ *
+ * @returns The full FTW.
+ * @param   pCtx                The CPU state.
+ */
+static uint16_t iemFpuCalcFullFtw(PCCPUMCTX pCtx)
+{
+    uint8_t const   u8Ftw  = (uint8_t)pCtx->fpu.FTW;
+    uint16_t        u16Ftw = 0;
+    unsigned const  iTop   = X86_FSW_TOP_GET(pCtx->fpu.FSW);
+    for (unsigned iSt = 0; iSt < 8; iSt++)
+    {
+        unsigned const iReg = (iSt + iTop) & 7;
+        if (!(u8Ftw & RT_BIT(iReg)))
+            u16Ftw |= 3 << (iReg * 2); /* empty */
+        else
+        {
+            uint16_t uTag;
+            PCRTFLOAT80U const pr80Reg = &pCtx->fpu.aRegs[iSt].r80;
+            if (pr80Reg->s.uExponent == 0x7fff)
+                uTag = 2; /* Exponent is all 1's => Special. */
+            else if (pr80Reg->s.uExponent == 0x0000)
+            {
+                if (pr80Reg->s.u64Mantissa == 0x0000)
+                    uTag = 1; /* All bits are zero => Zero. */
+                else
+                    uTag = 2; /* Must be special. */
+            }
+            else if (pr80Reg->s.u64Mantissa & RT_BIT_64(63)) /* The J bit. */
+                uTag = 0; /* Valid. */
+            else
+                uTag = 2; /* Must be special. */
+
+            u16Ftw |= uTag << (iReg * 2); /* empty */
+        }
+    }
+
+    return u16Ftw;
+}
+
+
+/**
+ * Converts a full FTW to a compressed one (for use in FLDENV and FRSTOR).
+ *
+ * @returns The compressed FTW.
+ * @param   u16FullFtw      The full FTW to convert.
+ */
+static uint16_t iemFpuCompressFtw(uint16_t u16FullFtw)
+{
+    uint8_t u8Ftw = 0;
+    for (unsigned i = 0; i < 8; i++)
+    {
+        if ((u16FullFtw & 3) != 3 /*empty*/)
+            u8Ftw |= RT_BIT(i);
+        u16FullFtw >>= 2;
+    }
+
+    return u8Ftw;
 }
 
 /** @}  */
@@ -5573,7 +5649,7 @@ static VBOXSTRICTRC iemMemMarkSelDescAccessed(PIEMCPU pIemCpu, uint16_t uSel)
     } while (0)
 #define IEM_MC_MAYBE_RAISE_FPU_XCPT() \
     do { \
-        if (iemFRegFetchFsw(pIemCpu) & X86_FSW_ES) \
+        if ((pIemCpu)->CTX_SUFF(pCtx)->fpu.FSW & X86_FSW_ES) \
             return iemRaiseMathFault(pIemCpu); \
     } while (0)
 #define IEM_MC_RAISE_GP0_IF_CPL_NOT_ZERO() \
@@ -5623,7 +5699,8 @@ static VBOXSTRICTRC iemMemMarkSelDescAccessed(PIEMCPU pIemCpu, uint16_t uSel)
 #define IEM_MC_FETCH_CR0_U64(a_u64Dst)                  (a_u64Dst) = (pIemCpu)->CTX_SUFF(pCtx)->cr0
 #define IEM_MC_FETCH_EFLAGS(a_EFlags)                   (a_EFlags) = (pIemCpu)->CTX_SUFF(pCtx)->eflags.u
 #define IEM_MC_FETCH_EFLAGS_U8(a_EFlags)                (a_EFlags) = (uint8_t)(pIemCpu)->CTX_SUFF(pCtx)->eflags.u
-#define IEM_MC_FETCH_FSW(a_u16Fsw)                      (a_u16Fsw) = iemFRegFetchFsw(pIemCpu)
+#define IEM_MC_FETCH_FSW(a_u16Fsw)                      (a_u16Fsw) = pIemCpu->CTX_SUFF(pCtx)->fpu.FSW
+#define IEM_MC_FETCH_FCW(a_u16Fcw)                      (a_u16Fcw) = pIemCpu->CTX_SUFF(pCtx)->fpu.FCW
 
 #define IEM_MC_STORE_GREG_U8(a_iGReg, a_u8Value)        *iemGRegRefU8(pIemCpu, (a_iGReg)) = (a_u8Value)
 #define IEM_MC_STORE_GREG_U16(a_iGReg, a_u16Value)      *(uint16_t *)iemGRegRef(pIemCpu, (a_iGReg)) = (a_u16Value)
