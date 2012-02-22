@@ -160,6 +160,15 @@ IEMOPSHIFTDBLSIZES g_iemAImpl_shrd;
 #define iemAImpl_imul_u8    ((PFNIEMAIMPLMULDIVU8)0)
 #define iemAImpl_mul_u8     ((PFNIEMAIMPLMULDIVU8)0)
 
+#define iemAImpl_fpu_r32_to_r80         NULL
+#define iemAImpl_fcom_r80_by_r32        NULL
+#define iemAImpl_fadd_r80_by_r32        NULL
+#define iemAImpl_fmul_r80_by_r32        NULL
+#define iemAImpl_fsub_r80_by_r32        NULL
+#define iemAImpl_fsubr_r80_by_r32       NULL
+#define iemAImpl_fdiv_r80_by_r32        NULL
+#define iemAImpl_fdivr_r80_by_r32       NULL
+
 #define iemAImpl_fpu_r64_to_r80         NULL
 #define iemAImpl_fadd_r80_by_r64        NULL
 #define iemAImpl_fmul_r80_by_r64        NULL
@@ -406,6 +415,7 @@ IEMOPSHIFTDBLSIZES g_iemAImpl_shrd;
 #define IEM_MC_MEM_MAP(a_pMem, a_fAccess, a_iSeg, a_GCPtrMem, a_iArg)   do { NOREF(a_fAccess); } while (0)
 #define IEM_MC_MEM_MAP_EX(a_pvMem, a_fAccess, a_cbMem, a_iSeg, a_GCPtrMem, a_iArg)  do {} while (0)
 #define IEM_MC_MEM_COMMIT_AND_UNMAP(a_pvMem, a_fAccess)                 do {} while (0)
+#define IEM_MC_MEM_COMMIT_AND_UNMAP_UNLESS_FPU_XCPT(a_pvMem, a_fAccess, a_u16FSW)   do {} while (0)
 #define IEM_MC_CALC_RM_EFF_ADDR(a_GCPtrEff, bRm)                        do { (a_GCPtrEff) = 0; CHK_GCPTR(a_GCPtrEff); } while (0)
 #define IEM_MC_CALL_VOID_AIMPL_1(a_pfn, a0)                             do {} while (0)
 #define IEM_MC_CALL_VOID_AIMPL_2(a_pfn, a0, a1)                         do {} while (0)
@@ -435,6 +445,8 @@ IEMOPSHIFTDBLSIZES g_iemAImpl_shrd;
 #define IEM_MC_FPU_STACK_UNDERFLOW_THEN_POP(a_iStReg)                                           do { } while (0)
 #define IEM_MC_FPU_STACK_UNDERFLOW_MEM_OP(a_iStReg, a_iEffSeg, a_GCPtrEff)                      do { } while (0)
 #define IEM_MC_FPU_STACK_UNDERFLOW_MEM_OP_THEN_POP(a_iStReg, a_iEffSeg, a_GCPtrEff)             do { } while (0)
+#define IEM_MC_FPU_STACK_PUSH_OVERFLOW()                                                        do { } while (0)
+#define IEM_MC_FPU_STACK_PUSH_OVERFLOW_MEM_OP(a_iEffSeg, a_GCPtrEff)                            do { } while (0)
 #define IEM_MC_UPDATE_FSW(a_u16FSW)                                                             do { } while (0)
 #define IEM_MC_UPDATE_FSW_WITH_MEM_OP(a_u16FSW, a_iEffSeg, a_GCPtrEff)                          do { } while (0)
 #define IEM_MC_UPDATE_FSW_THEN_POP(a_u16FSW)                                                    do { } while (0)
@@ -460,6 +472,7 @@ IEMOPSHIFTDBLSIZES g_iemAImpl_shrd;
 #define IEM_MC_IF_LOCAL_IS_Z(a_Local)                                   if ((a_Local) == 0) {
 #define IEM_MC_IF_GREG_BIT_SET(a_iGReg, a_iBitNo)                       if (g_fRandom) {
 #define IEM_MC_IF_FPUREG_NOT_EMPTY(a_iSt)                               if (g_fRandom) {
+#define IEM_MC_IF_FPUREG_IS_EMPTY(a_iSt)                                if (g_fRandom) {
 #define IEM_MC_IF_FPUREG_NOT_EMPTY_REF_R80(a_pr80Dst, a_iSt)            if (g_fRandom) {
 #define IEM_MC_IF_TWO_FPUREGS_NOT_EMPTY_REF_R80(p0, i0, p1, i1)         if (g_fRandom) {
 #define IEM_MC_ELSE()                                                   } else {
