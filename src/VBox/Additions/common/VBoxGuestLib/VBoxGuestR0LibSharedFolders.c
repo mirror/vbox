@@ -506,7 +506,7 @@ DECLVBGL(int) VbglR0SfWritePhysCont(PVBSFCLIENT pClient, PVBSFMAP pMap, SHFLHAND
     pData->buffer.u.PageList.offset       = sizeof(VBoxSFWrite);
 
     pPgLst->flags = VBOX_HGCM_F_PARM_DIRECTION_TO_HOST;
-    pPgLst->offFirstPage = PhysBuffer & PAGE_OFFSET_MASK;
+    pPgLst->offFirstPage = (uint16_t)(PhysBuffer & PAGE_OFFSET_MASK);
     pPgLst->cPages = cPages;
     PhysBuffer &= ~(RTCCPHYS)PAGE_OFFSET_MASK;
     for (iPage = 0; iPage < cPages; iPage++, PhysBuffer += PAGE_SIZE)
