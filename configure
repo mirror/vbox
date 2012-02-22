@@ -2280,7 +2280,7 @@ for option in $*; do
       WITH_HARDENING=0
       ;;
     --disable-extpack)
-      WITH_EXTPACK=0)
+      WITH_EXTPACK=0
       ;;
     --disable-docs)
       WITH_DOCS=0
