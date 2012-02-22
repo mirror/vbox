@@ -123,20 +123,6 @@ RTDECL(PRTCPUSET) RTMpGetOnlineSet(PRTCPUSET pSet)
      */
     *pSet = g_rtMpSolarisCpuSet;
     return pSet;
-
-#if 0
-    RTCPUID idCpu;
-
-    RTCpuSetEmpty(pSet);
-    idCpu = RTMpGetMaxCpuId(); /* it's inclusive */
-    do
-    {
-        if (RTMpIsCpuOnline(idCpu))
-            RTCpuSetAdd(pSet, idCpu);
-    } while (idCpu-- > 0);
-
-    return pSet;
-#endif
 }
 
 
@@ -145,18 +131,6 @@ RTDECL(RTCPUID) RTMpGetOnlineCount(void)
     RTCPUSET Set;
     RTMpGetOnlineSet(&Set);
     return RTCpuSetCount(&Set);
-
-#if 0
-    int c;
-    int cnt = 0;
-
-    for (c = 0; c < vbi_cpu_count(); ++c)
-    {
-        if (vbi_cpu_online(c))
-            ++cnt;
-    }
-    return cnt;
-#endif
 }
 
 
