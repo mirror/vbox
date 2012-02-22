@@ -90,6 +90,7 @@ WITH_HARDENING=1
 WITH_UDPTUNNEL=1
 WITH_VDE=0
 WITH_VNC=0
+WITH_EXTPACK=1
 WITH_DOCS=1
 BUILD_LIBXML2=
 BUILD_LIBCURL=
@@ -2097,6 +2098,7 @@ EOF
 [ $WITH_OPENGL  -eq 1 ] && echo "  --disable-opengl         disable OpenGL support (2D & 3D)"
 [ $WITH_GSOAP   -eq 0 ] && echo "  --enable-webservice      enable the webservice stuff"
 [ $OSE          -eq 1 ] && echo "  --enable-vnc             enable the VNC server"
+[ $OSE          -eq 0 ] && echo "  --disable-extpack        don't build the extpack"
 [ $WITH_DOCS    -eq 1 ] && echo "  --disable-docs           don't build the documentation"
 [ "$OS" = "linux" -o "$OS" = "freebsd" ] && echo "  --enable-vde             enable VDE networking"
 cat << EOF
@@ -2163,8 +2165,13 @@ if [ "$OS" = "darwin" ]; then
   [ $OSE -eq 1 ] || BUILD_LIBCURL=1
 fi
 
-[ $OSE -eq 1 ] || BUILD_LIBSSL=1
-
+if [ $OSE -eq 0 ]; then
+  if [ $WITH_EXTPACK -eq 1 ]; then
+    BUILD_LIBSSL=1
+  else
+    cnf_append "VBOX_WITH_EXTPACK_PUEL_BUILD" ""
+  fi
+fi
 
 # scan command line options
 for option in $*; do
@@ -2271,6 +2278,9 @@ for option in $*; do
       ;;
     --disable-hardening)
       WITH_HARDENING=0
+      ;;
+    --disable-extpack)
+      WITH_EXTPACK=0)
       ;;
     --disable-docs)
       WITH_DOCS=0

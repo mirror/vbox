@@ -111,7 +111,8 @@ cfg_flags := $(if $(filter rhel4 sles10.1,$(rpmrel)),--build-libxml2,) \
 	     $(if $(filter sles10.1 turbolinux11,$(rpmrel)),--disable-pulse,) \
 	     $(if $(filter rhel4 rhel5 ol4 ol5 centos4 centos5,$(rpmrel)),--enable-pulse,) \
 	     $(if $(filter rhel4 rhel5 ol4 ol5 centos4 centos5 sles10.1 turbolinux11,$(rpmrel)),--with-qt4-dir=/home/vbox/Qt-4.7.4-stdc++6-$(arch)) \
-	     $(if $(DEBUG),--build-debug,)
+	     $(if $(DEBUG),--build-debug,) \
+	     --disable-extpack
 
 bld_flags := AUTOCFG=$(current)/rpm/AutoConfig.kmk \
 	     LOCALCFG=$(current)/rpm/LocalConfig.kmk \

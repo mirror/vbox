@@ -31,6 +31,3 @@ VBOX_PATH_APP_DOCS          = $(VBOX_PATH_PACKAGE_DOCS)
 
 # gcc 4.5 produces some more false positives
 VBOX_WITH_WARNINGS_AS_ERRORS :=
-
-# only relevant for non-OSE builds: don't build the PUEL package
-VBOX_WITH_EXTPACK_PUEL_BUILD :=

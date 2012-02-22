@@ -98,7 +98,8 @@ cfg_flags := $(if $(NOQT),--disable-qt,) \
 	     $(if $(HEADLESS),--build-headless,) \
 	     $(if $(DEBUG),--build-debug,) \
 	     $(if $(NOWINE),,--setup-wine) \
-	     $(if $(NOWEBSVC),,--enable-webservice)
+	     $(if $(NOWEBSVC),,--enable-webservice) \
+	     --disable-extpack
 
 bld_flags := AUTOCFG=$(current)/debian/AutoConfig.kmk \
 	     LOCALCFG=$(current)/debian/LocalConfig.kmk \
