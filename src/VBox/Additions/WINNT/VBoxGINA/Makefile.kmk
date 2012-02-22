@@ -4,7 +4,7 @@
 #
 
 #
-# Copyright (C) 2006-2011 Oracle Corporation
+# Copyright (C) 2006-2012 Oracle Corporation
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;
@@ -21,9 +21,6 @@ include	$(KBUILD_PATH)/subheader.kmk
 DLLS += VBoxGINA
 VBoxGINA_TEMPLATE = VBOXGUESTR3DLL
 VBoxGINA_DEFS     = UNICODE VBGL_VBOXGUEST VBOX_WITH_HGCM
-ifdef DEBUG_andy
- VBoxGINA_DEFS   += LOG_ENABLED
-endif
 VBoxGINA_SOURCES  = \
 	VBoxGINA.cpp \
 	Helper.cpp  \
@@ -33,6 +30,9 @@ VBoxGINA_SOURCES  = \
 VBoxGINA_LIBS     = \
 	$(VBOX_LIB_IPRT_GUEST_R3) \
 	$(VBOX_LIB_VBGL_R3)
+
+# Include testcase(s).
+include $(PATH_SUB_CURRENT)/testcase/Makefile.kmk
 
 include	$(KBUILD_PATH)/subfooter.kmk
 

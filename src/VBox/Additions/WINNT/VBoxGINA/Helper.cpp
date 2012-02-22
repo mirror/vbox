@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2011 Oracle Corporation
+ * Copyright (C) 2006-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -16,57 +16,54 @@
  */
 
 #include <windows.h>
+
+#include <iprt/semaphore.h>
+#include <iprt/string.h>
+#include <iprt/thread.h>
+
 #include "winwlx.h"
 #include "Helper.h"
 #include "VBoxGINA.h"
 
-#include <VBox/VBoxGuest.h>
-#include <VBox/VMMDev.h>
-#include <iprt/string.h>
+#include <VBox/log.h>
+#include <VBox/VboxGuestLib.h>
 
-/* remote session handling */
-DWORD g_dwHandleRemoteSessions = 0;
-
-/* the credentials */
-wchar_t g_Username[VMMDEV_CREDENTIALS_SZ_SIZE];
-wchar_t g_Password[VMMDEV_CREDENTIALS_SZ_SIZE];
-wchar_t g_Domain[VMMDEV_CREDENTIALS_SZ_SIZE];
-
-
-HANDLE getVBoxDriver(void)
-{
-    static HANDLE sVBoxDriver = INVALID_HANDLE_VALUE;
-    if (sVBoxDriver == INVALID_HANDLE_VALUE)
-    {
-        sVBoxDriver = CreateFile(L"\\\\.\\VBoxGuest", /** @todo use define */
-                                 GENERIC_READ | GENERIC_WRITE,
-                                 FILE_SHARE_READ | FILE_SHARE_WRITE,
-                                 NULL,
-                                 OPEN_EXISTING,
-                                 FILE_ATTRIBUTE_NORMAL,
-                                 NULL);
-        if (sVBoxDriver == INVALID_HANDLE_VALUE)
-            Log(("VBoxGINA::sVBoxDriver: failed to open VBoxGuest driver, last error = %d\n", GetLastError()));
-    }
-    return sVBoxDriver;
-}
+/** Flag indicating whether remote sessions (over MSRDP) should be
+ *  handled or not. Default is disabled. */
+static DWORD g_dwHandleRemoteSessions = 0;
+/** Verbosity flag for guest logging. */
+static DWORD g_dwVerbosity = 0;
 
 /**
- * Detects whether our process is running in a remote session or not.
+ * Displays a verbose message.
  *
- * @return  bool        true if running in a remote session, false if not.
+ * @param   iLevel      Minimum log level required to display this message.
+ * @param   pszFormat   The message text.
+ * @param   ...         Format arguments.
  */
-bool isRemoteSession(void)
+void VBoxGINAVerbose(DWORD dwLevel, const char *pszFormat, ...)
 {
-    return (0 != GetSystemMetrics(SM_REMOTESESSION)) ? true : false;
+    if (dwLevel <= g_dwVerbosity)
+    {
+        va_list args;
+        va_start(args, pszFormat);
+        char *psz = NULL;
+        RTStrAPrintfV(&psz, pszFormat, args);
+        va_end(args);
+
+        AssertPtr(psz);
+        LogRel(("%s", psz));
+
+        RTStrFree(psz);
+    }
 }
 
 /**
  * Loads the global configuration from registry.
  *
- * @return  DWORD       Windows error code.
+ * @return  IPRT status code.
  */
-DWORD loadConfiguration(void)
+int VBoxGINALoadConfiguration(void)
 {
     HKEY hKey;
     /** @todo Add some registry wrapper function(s) as soon as we got more values to retrieve. */
@@ -85,10 +82,30 @@ DWORD loadConfiguration(void)
         {
             g_dwHandleRemoteSessions = dwValue;
         }
+
+        dwRet = RegQueryValueEx(hKey, L"LoggingEnabled", NULL, &dwType, (LPBYTE)&dwValue, &dwSize);
+        if (   dwRet  == ERROR_SUCCESS
+            && dwType == REG_DWORD
+            && dwSize == sizeof(DWORD))
+        {
+            g_dwVerbosity = 1; /* Default logging level. */
+        }
+
+        if (g_dwVerbosity) /* Do we want logging at all? */
+        {
+            dwRet = RegQueryValueEx(hKey, L"LoggingLevel", NULL, &dwType, (LPBYTE)&dwValue, &dwSize);
+            if (   dwRet  == ERROR_SUCCESS
+                && dwType == REG_DWORD
+                && dwSize == sizeof(DWORD))
+            {
+                g_dwVerbosity = dwValue;
+            }
+        }
+
         RegCloseKey(hKey);
     }
     /* Do not report back an error here yet. */
-    return ERROR_SUCCESS;
+    return VINF_SUCCESS;
 }
 
 /**
@@ -96,15 +113,16 @@ DWORD loadConfiguration(void)
  *
  * @return  bool        true if we should handle this session, false if not.
  */
-bool handleCurrentSession(void)
+bool VBoxGINAHandleCurrentSession(void)
 {
     /* Load global configuration from registry. */
-    DWORD dwRet = loadConfiguration();
-    if (ERROR_SUCCESS != dwRet)
-        LogRel(("VBoxGINA::handleCurrentSession: Error loading global configuration, error=%ld\n", dwRet));
+    int rc = VBoxGINALoadConfiguration();
+    if (RT_FAILURE(rc))
+        VBoxGINAVerbose(0, "VBoxGINA::handleCurrentSession: Error loading global configuration, rc=%Rrc\n",
+                        rc);
 
     bool fHandle = false;
-    if (isRemoteSession())
+    if (VbglR3AutoLogonIsRemoteSession())
     {
         if (g_dwHandleRemoteSessions) /* Force remote session handling. */
             fHandle = true;
@@ -112,123 +130,44 @@ bool handleCurrentSession(void)
     else /* No remote session. */
         fHandle = true;
 
-    if (!fHandle)
-        LogRel(("VBoxGINA::handleCurrentSession: Handling of remote desktop sessions is disabled.\n"));
-
+    VBoxGINAVerbose(3, "VBoxGINA::handleCurrentSession: Handling current session=%RTbool\n", fHandle);
     return fHandle;
-}
-
-void credentialsReset(void)
-{
-    RT_ZERO(g_Username);
-    RT_ZERO(g_Password);
-    RT_ZERO(g_Domain);
-}
-
-bool credentialsAvailable(void)
-{
-    if (!handleCurrentSession())
-        return false;
-
-    HANDLE vboxDriver = getVBoxDriver();
-    if (vboxDriver ==  INVALID_HANDLE_VALUE)
-        return false;
-
-    /* query the VMMDev whether there are credentials */
-    VMMDevCredentials vmmreqCredentials = {0};
-    vmmdevInitRequest((VMMDevRequestHeader*)&vmmreqCredentials, VMMDevReq_QueryCredentials);
-    vmmreqCredentials.u32Flags |= VMMDEV_CREDENTIALS_QUERYPRESENCE;
-    DWORD cbReturned;
-    if (!DeviceIoControl(vboxDriver, VBOXGUEST_IOCTL_VMMREQUEST(sizeof(vmmreqCredentials)), &vmmreqCredentials, sizeof(vmmreqCredentials),
-                         &vmmreqCredentials, sizeof(vmmreqCredentials), &cbReturned, NULL))
-    {
-        Log(("VBoxGINA::credentialsAvailable: error doing IOCTL, last error: %d\n", GetLastError()));
-        return false;
-    }
-    bool fAvailable = ((vmmreqCredentials.u32Flags & VMMDEV_CREDENTIALS_PRESENT) != 0);
-    /*Log(("VBoxGINA::credentialsAvailable: fAvailable: %d\n", fAvailable));*/
-    return fAvailable;
-}
-
-bool credentialsRetrieve(void)
-{
-    if (!handleCurrentSession())
-        return false;
-
-    Log(("VBoxGINA::credentialsRetrieve\n"));
-
-    HANDLE vboxDriver = getVBoxDriver();
-    if (vboxDriver == INVALID_HANDLE_VALUE)
-        return false;
-
-    /* to be safe, reset the credentials */
-    credentialsReset();
-
-    /* query the credentials */
-    VMMDevCredentials vmmreqCredentials = {0};
-    vmmdevInitRequest((VMMDevRequestHeader*)&vmmreqCredentials, VMMDevReq_QueryCredentials);
-    vmmreqCredentials.u32Flags |= VMMDEV_CREDENTIALS_READ;
-    vmmreqCredentials.u32Flags |= VMMDEV_CREDENTIALS_CLEAR;
-    DWORD cbReturned;
-    if (!DeviceIoControl(vboxDriver, VBOXGUEST_IOCTL_VMMREQUEST(sizeof(vmmreqCredentials)), &vmmreqCredentials, sizeof(vmmreqCredentials),
-                         &vmmreqCredentials, sizeof(vmmreqCredentials), &cbReturned, NULL))
-    {
-        Log(("VBoxGINA::credentialsRetrieve: error doing IOCTL, last error: %d\n", GetLastError()));
-        return false;
-    }
-    /* convert from UTF-8 to UTF-16 and store in global variables */
-    PRTUTF16 ptr = NULL;
-    if (RT_SUCCESS(RTStrToUtf16(vmmreqCredentials.szUserName, &ptr)) && ptr)
-    {
-        wcscpy(g_Username, ptr);
-        RTUtf16Free(ptr);
-    }
-    ptr = NULL;
-    if (RT_SUCCESS(RTStrToUtf16(vmmreqCredentials.szPassword, &ptr)) && ptr)
-    {
-        wcscpy(g_Password, ptr);
-        RTUtf16Free(ptr);
-    }
-    ptr = NULL;
-    if (RT_SUCCESS(RTStrToUtf16(vmmreqCredentials.szDomain, &ptr)) && ptr)
-    {
-        wcscpy(g_Domain, ptr);
-        RTUtf16Free(ptr);
-    }
-    Log(("VBoxGINA::credentialsRetrieve: returning user '%s', password '%s', domain '%s'\n",
-         vmmreqCredentials.szUserName, vmmreqCredentials.szPassword, vmmreqCredentials.szDomain));
-
-    /* Let the release log know that we got something. */
-    LogRel(("VBoxGINA: Credentials from host retrieved\n"));
-
-    return true;
 }
 
 /* handle of the poller thread */
 RTTHREAD gThreadPoller = NIL_RTTHREAD;
-
 
 /**
  * Poller thread. Checks periodically whether there are credentials.
  */
 static DECLCALLBACK(int) credentialsPoller(RTTHREAD ThreadSelf, void *pvUser)
 {
-    Log(("VBoxGINA::credentialsPoller\n"));
+    VBoxGINAVerbose(0, "VBoxGINA::credentialsPoller\n");
 
     do
     {
-        if (credentialsAvailable())
+        int rc = VbglR3CredentialsQueryAvailability();
+        if (RT_SUCCESS(rc))
         {
-            Log(("VBoxGINA::credentialsPoller: got credentials, simulating C-A-D\n"));
+            VBoxGINAVerbose(0, "VBoxGINA::credentialsPoller: got credentials, simulating C-A-D\n");
             /* tell WinLogon to start the attestation process */
             pWlxFuncs->WlxSasNotify(hGinaWlx, WLX_SAS_TYPE_CTRL_ALT_DEL);
             /* time to say goodbye */
             return 0;
         }
+
+        if (   RT_FAILURE(rc)
+            && rc != VERR_NOT_FOUND)
+        {
+            static int s_cBitchedQueryAvail = 0;
+            if (s_cBitchedQueryAvail++ < 5)
+                VBoxGINAVerbose(0, "VBoxGINA::credentialsPoller: querying for credentials failed with rc=%Rrc\n", rc);
+        }
+
         /* wait a bit */
         if (RTThreadUserWait(ThreadSelf, 500) == VINF_SUCCESS)
         {
-            Log(("VBoxGINA::credentialsPoller: we were asked to terminate\n"));
+            VBoxGINAVerbose(0, "VBoxGINA::credentialsPoller: we were asked to terminate\n");
             /* we were asked to terminate, do that instantly! */
             return 0;
         }
@@ -238,58 +177,68 @@ static DECLCALLBACK(int) credentialsPoller(RTTHREAD ThreadSelf, void *pvUser)
     return 0;
 }
 
-bool credentialsPollerCreate(void)
+int VBoxGINACredentialsPollerCreate(void)
 {
-    if (!handleCurrentSession())
-        return false;
+    if (!VBoxGINAHandleCurrentSession())
+        return VINF_SUCCESS;
 
-    Log(("VBoxGINA::credentialsPollerCreate\n"));
+    VBoxGINAVerbose(0, "VBoxGINA::credentialsPollerCreate\n");
 
     /* don't create more than one of them */
     if (gThreadPoller != NIL_RTTHREAD)
     {
-        Log(("VBoxGINA::credentialsPollerCreate: thread already running, returning!\n"));
-        return false;
+        VBoxGINAVerbose(0, "VBoxGINA::credentialsPollerCreate: thread already running, returning!\n");
+        return VINF_SUCCESS;
     }
 
     /* create the poller thread */
     int rc = RTThreadCreate(&gThreadPoller, credentialsPoller, NULL, 0, RTTHREADTYPE_INFREQUENT_POLLER,
                             RTTHREADFLAGS_WAITABLE, "creds");
     if (RT_FAILURE(rc))
-    {
-        Log(("VBoxGINA::credentialsPollerCreate: failed to create thread, rc = %Rrc\n", rc));
-        return false;
-    }
-    return true;
+        VBoxGINAVerbose(0, "VBoxGINA::credentialsPollerCreate: failed to create thread, rc = %Rrc\n", rc);
+
+    return rc;
 }
 
-bool credentialsPollerTerminate(void)
+int VBoxGINACredentialsPollerTerminate(void)
 {
-    Log(("VBoxGINA::credentialsPollerTerminate\n"));
-
     if (gThreadPoller == NIL_RTTHREAD)
-    {
-        Log(("VBoxGINA::credentialsPollerTerminate: either thread or exit sem is NULL!\n"));
-        return false;
-    }
+        return VINF_SUCCESS;
+
+    VBoxGINAVerbose(0, "VBoxGINA::credentialsPollerTerminate\n");
+
     /* post termination event semaphore */
     int rc = RTThreadUserSignal(gThreadPoller);
     if (RT_SUCCESS(rc))
     {
-        Log(("VBoxGINA::credentialsPollerTerminate: waiting for thread to terminate\n"));
-        /* wait until the thread has terminated */
+        VBoxGINAVerbose(0, "VBoxGINA::credentialsPollerTerminate: waiting for thread to terminate\n");
         rc = RTThreadWait(gThreadPoller, RT_INDEFINITE_WAIT, NULL);
-        Log(("VBoxGINA::credentialsPollerTermiante: thread has (probably) terminated (rc = %Rrc)\n", rc));
     }
     else
+        VBoxGINAVerbose(0, "VBoxGINA::credentialsPollerTerminate: thread has terminated? wait rc = %Rrc\n",     rc);
+
+    if (RT_SUCCESS(rc))
     {
-        /* failed to signal the thread - very unlikely - so no point in waiting long. */
-        Log(("VBoxGINA::credentialsPollerTermiante: failed to signal semaphore, rc = %Rrc\n", rc));
-        rc = RTThreadWait(gThreadPoller, 100, NULL);
-        Log(("VBoxGINA::credentialsPollerTermiante: thread has terminated? wait rc = %Rrc\n", rc));
+        gThreadPoller = NIL_RTTHREAD;
     }
-    /* now cleanup */
-    gThreadPoller = NIL_RTTHREAD;
-    return true;
+
+    VBoxGINAVerbose(0, "VBoxGINA::credentialsPollerTerminate: returned with rc=%Rrc)\n", rc);
+    return rc;
+}
+
+/**
+ * Reports VBoxGINA's status to the host (treated as a guest facility).
+ *
+ * @return  IPRT status code.
+ * @param   enmStatus               Status to report to the host.
+ */
+int VBoxGINAReportStatus(VBoxGuestFacilityStatus enmStatus)
+{
+    VBoxGINAVerbose(0, "VBoxGINA: reporting status %d\n", enmStatus);
+
+    int rc = VbglR3AutoLogonReportStatus(enmStatus);
+    if (RT_FAILURE(rc))
+        VBoxGINAVerbose(0, "VBoxGINA: failed to report status %d, rc=%Rrc\n", enmStatus, rc);
+    return rc;
 }
 

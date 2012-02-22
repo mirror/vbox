@@ -2,7 +2,7 @@
  *
  * VBoxGINA -- Windows Logon DLL for VirtualBox
  *
- * Copyright (C) 2006-2011 Oracle Corporation
+ * Copyright (C) 2006-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -16,11 +16,16 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <windows.h>
+
+#include <iprt/buildconfig.h>
+#include <iprt/initterm.h>
+
+#include <VBox/VBoxGuestLib.h>
+
 #include "winwlx.h"
 #include "VBoxGINA.h"
 #include "Helper.h"
 #include "Dialog.h"
-#include <VBox/VBoxGuestLib.h>
 
 /*
  * Global variables.
@@ -77,9 +82,14 @@ BOOL WINAPI DllMain(HINSTANCE hInstance,
     {
         case DLL_PROCESS_ATTACH:
         {
-            RTR3InitDll(0);
+            RTR3InitDll(0 /* Flags */);
             VbglR3Init();
-            LogRel(("VBoxGINA: DLL loaded.\n"));
+
+            VBoxGINALoadConfiguration();
+
+            VBoxGINAVerbose(0, "VBoxGINA: v%s r%s (%s %s) loaded\n",
+                            RTBldCfgVersion(), RTBldCfgRevisionStr(),
+                            __DATE__, __TIME__);
 
             DisableThreadLibraryCalls(hInstance);
             hDllInstance = hInstance;
@@ -88,7 +98,7 @@ BOOL WINAPI DllMain(HINSTANCE hInstance,
 
         case DLL_PROCESS_DETACH:
         {
-            LogRel(("VBoxGINA: DLL unloaded.\n"));
+            VBoxGINAVerbose(0, "VBoxGINA: Unloaded\n");
             VbglR3Term();
             /// @todo RTR3Term();
             break;
@@ -106,17 +116,12 @@ BOOL WINAPI WlxNegotiate(DWORD dwWinlogonVersion,
 {
     HINSTANCE hDll;
 
-#ifdef DEBUG_andy
-    /* Enable full log output. */
-    RTLogGroupSettings(0, "+autologon.e.l.f.l2.l3");
-#endif
-
-    Log(("VBoxGINA::WlxNegotiate: dwWinlogonVersion: %ld\n", dwWinlogonVersion));
+    VBoxGINAVerbose(0, "VBoxGINA::WlxNegotiate: dwWinlogonVersion: %ld\n", dwWinlogonVersion);
 
     /* Load the standard Microsoft GINA DLL. */
     if (!(hDll = LoadLibrary(TEXT("MSGINA.DLL"))))
     {
-        Log(("VBoxGINA::WlxNegotiate: failed loading MSGINA! Last error=%ld\n", GetLastError()));
+        VBoxGINAVerbose(0, "VBoxGINA::WlxNegotiate: failed loading MSGINA! Last error=%ld\n", GetLastError());
         return FALSE;
     }
 
@@ -126,79 +131,79 @@ BOOL WINAPI WlxNegotiate(DWORD dwWinlogonVersion,
     GWlxNegotiate = (PGWLXNEGOTIATE)GetProcAddress(hDll, "WlxNegotiate");
     if (!GWlxNegotiate)
     {
-        Log(("VBoxGINA::WlxNegotiate: failed resolving WlxNegotiate\n"));
+        VBoxGINAVerbose(0, "VBoxGINA::WlxNegotiate: failed resolving WlxNegotiate\n");
         return FALSE;
     }
     GWlxInitialize = (PGWLXINITIALIZE)GetProcAddress(hDll, "WlxInitialize");
     if (!GWlxInitialize)
     {
-        Log(("VBoxGINA::WlxNegotiate: failed resolving WlxInitialize\n"));
+        VBoxGINAVerbose(0, "VBoxGINA::WlxNegotiate: failed resolving WlxInitialize\n");
         return FALSE;
     }
     GWlxDisplaySASNotice =
         (PGWLXDISPLAYSASNOTICE)GetProcAddress(hDll, "WlxDisplaySASNotice");
     if (!GWlxDisplaySASNotice)
     {
-        Log(("VBoxGINA::WlxNegotiate: failed resolving WlxDisplaySASNotice\n"));
+        VBoxGINAVerbose(0, "VBoxGINA::WlxNegotiate: failed resolving WlxDisplaySASNotice\n");
         return FALSE;
     }
     GWlxLoggedOutSAS =
         (PGWLXLOGGEDOUTSAS)GetProcAddress(hDll, "WlxLoggedOutSAS");
     if (!GWlxLoggedOutSAS)
     {
-        Log(("VBoxGINA::WlxNegotiate: failed resolving WlxLoggedOutSAS\n"));
+        VBoxGINAVerbose(0, "VBoxGINA::WlxNegotiate: failed resolving WlxLoggedOutSAS\n");
         return FALSE;
     }
     GWlxActivateUserShell =
         (PGWLXACTIVATEUSERSHELL)GetProcAddress(hDll, "WlxActivateUserShell");
     if (!GWlxActivateUserShell)
     {
-        Log(("VBoxGINA::WlxNegotiate: failed resolving WlxActivateUserShell\n"));
+        VBoxGINAVerbose(0, "VBoxGINA::WlxNegotiate: failed resolving WlxActivateUserShell\n");
         return FALSE;
     }
     GWlxLoggedOnSAS =
         (PGWLXLOGGEDONSAS)GetProcAddress(hDll, "WlxLoggedOnSAS");
     if (!GWlxLoggedOnSAS)
     {
-        Log(("VBoxGINA::WlxNegotiate: failed resolving WlxLoggedOnSAS\n"));
+        VBoxGINAVerbose(0, "VBoxGINA::WlxNegotiate: failed resolving WlxLoggedOnSAS\n");
         return FALSE;
     }
     GWlxDisplayLockedNotice =
         (PGWLXDISPLAYLOCKEDNOTICE)GetProcAddress(hDll, "WlxDisplayLockedNotice");
     if (!GWlxDisplayLockedNotice)
     {
-        Log(("VBoxGINA::WlxNegotiate: failed resolving WlxDisplayLockedNotice\n"));
+        VBoxGINAVerbose(0, "VBoxGINA::WlxNegotiate: failed resolving WlxDisplayLockedNotice\n");
         return FALSE;
     }
     GWlxIsLockOk = (PGWLXISLOCKOK)GetProcAddress(hDll, "WlxIsLockOk");
     if (!GWlxIsLockOk)
     {
-        Log(("VBoxGINA::WlxNegotiate: failed resolving WlxIsLockOk\n"));
+        VBoxGINAVerbose(0, "VBoxGINA::WlxNegotiate: failed resolving WlxIsLockOk\n");
         return FALSE;
     }
     GWlxWkstaLockedSAS =
         (PGWLXWKSTALOCKEDSAS)GetProcAddress(hDll, "WlxWkstaLockedSAS");
     if (!GWlxWkstaLockedSAS)
     {
-        Log(("VBoxGINA::WlxNegotiate: failed resolving WlxWkstaLockedSAS\n"));
+        VBoxGINAVerbose(0, "VBoxGINA::WlxNegotiate: failed resolving WlxWkstaLockedSAS\n");
         return FALSE;
     }
     GWlxIsLogoffOk = (PGWLXISLOGOFFOK)GetProcAddress(hDll, "WlxIsLogoffOk");
     if (!GWlxIsLogoffOk)
     {
-        Log(("VBoxGINA::WlxNegotiate: failed resolving WlxIsLogoffOk\n"));
+        VBoxGINAVerbose(0, "VBoxGINA::WlxNegotiate: failed resolving WlxIsLogoffOk\n");
         return FALSE;
     }
     GWlxLogoff = (PGWLXLOGOFF)GetProcAddress(hDll, "WlxLogoff");
     if (!GWlxLogoff)
     {
-        Log(("VBoxGINA::WlxNegotiate: failed resolving WlxLogoff\n"));
+        VBoxGINAVerbose(0, "VBoxGINA::WlxNegotiate: failed resolving WlxLogoff\n");
         return FALSE;
     }
     GWlxShutdown = (PGWLXSHUTDOWN)GetProcAddress(hDll, "WlxShutdown");
     if (!GWlxShutdown)
     {
-        Log(("VBoxGINA::WlxNegotiate: failed resolving WlxShutdown\n"));
+        VBoxGINAVerbose(0, "VBoxGINA::WlxNegotiate: failed resolving WlxShutdown\n");
         return FALSE;
     }
     /* GINA 1.1, optional */
@@ -214,19 +219,19 @@ BOOL WINAPI WlxNegotiate(DWORD dwWinlogonVersion,
         (PGWLXGETCONSOLESWITCHCREDENTIALS)GetProcAddress(hDll, "WlxGetConsoleSwitchCredentials");
     GWlxReconnectNotify = (PGWLXRECONNECTNOTIFY)GetProcAddress(hDll, "WlxReconnectNotify");
     GWlxDisconnectNotify = (PGWLXDISCONNECTNOTIFY)GetProcAddress(hDll, "WlxDisconnectNotify");
-    Log(("VBoxGINA::WlxNegotiate: optional function pointers:\n"
-             "  WlxStartApplication: %p\n"
-             "  WlxScreenSaverNotify: %p\n"
-             "  WlxNetworkProviderLoad: %p\n"
-             "  WlxDisplayStatusMessage: %p\n"
-             "  WlxGetStatusMessage: %p\n"
-             "  WlxRemoveStatusMessage: %p\n"
-             "  WlxGetConsoleSwitchCredentials: %p\n"
-             "  WlxReconnectNotify: %p\n"
-             "  WlxDisconnectNotify: %p\n",
-             GWlxStartApplication, GWlxScreenSaverNotify, GWlxNetworkProviderLoad,
-             GWlxDisplayStatusMessage, GWlxGetStatusMessage, GWlxRemoveStatusMessage,
-             GWlxGetConsoleSwitchCredentials, GWlxReconnectNotify, GWlxDisconnectNotify));
+    VBoxGINAVerbose(0, "VBoxGINA::WlxNegotiate: optional function pointers:\n"
+                    "  WlxStartApplication: %p\n"
+                    "  WlxScreenSaverNotify: %p\n"
+                    "  WlxNetworkProviderLoad: %p\n"
+                    "  WlxDisplayStatusMessage: %p\n"
+                    "  WlxGetStatusMessage: %p\n"
+                    "  WlxRemoveStatusMessage: %p\n"
+                    "  WlxGetConsoleSwitchCredentials: %p\n"
+                    "  WlxReconnectNotify: %p\n"
+                    "  WlxDisconnectNotify: %p\n",
+                    GWlxStartApplication, GWlxScreenSaverNotify, GWlxNetworkProviderLoad,
+                    GWlxDisplayStatusMessage, GWlxGetStatusMessage, GWlxRemoveStatusMessage,
+                    GWlxGetConsoleSwitchCredentials, GWlxReconnectNotify, GWlxDisconnectNotify);
 
     wlxVersion = dwWinlogonVersion;
 
@@ -241,13 +246,15 @@ BOOL WINAPI WlxNegotiate(DWORD dwWinlogonVersion,
 BOOL WINAPI WlxInitialize(LPWSTR lpWinsta, HANDLE hWlx, PVOID pvReserved,
                           PVOID pWinlogonFunctions, PVOID *pWlxContext)
 {
-    Log(("VBoxGINA::WlxInitialize\n"));
+    VBoxGINAVerbose(0, "VBoxGINA::WlxInitialize\n");
 
     /* Store Winlogon function table */
     pWlxFuncs = (PWLX_DISPATCH_VERSION_1_1)pWinlogonFunctions;
 
     /* Store handle to Winlogon service*/
     hGinaWlx = hWlx;
+
+    VBoxGINAReportStatus(VBoxGuestFacilityStatus_Init);
 
     /* Hook the dialogs */
     hookDialogBoxes(pWlxFuncs, wlxVersion);
@@ -259,20 +266,21 @@ BOOL WINAPI WlxInitialize(LPWSTR lpWinsta, HANDLE hWlx, PVOID pvReserved,
 
 VOID WINAPI WlxDisplaySASNotice(PVOID pWlxContext)
 {
-    Log(("VBoxGINA::WlxDisplaySASNotice\n"));
+    VBoxGINAVerbose(0, "VBoxGINA::WlxDisplaySASNotice\n");
 
     /* Check if there are credentials for us, if so simulate C-A-D */
-    if (credentialsAvailable())
+    int rc = VbglR3CredentialsQueryAvailability();
+    if (RT_SUCCESS(rc))
     {
-        Log(("VBoxGINA::WlxDisplaySASNotice: simulating C-A-D\n"));
+        VBoxGINAVerbose(0, "VBoxGINA::WlxDisplaySASNotice: simulating C-A-D\n");
         /* Wutomatic C-A-D */
         pWlxFuncs->WlxSasNotify(hGinaWlx, WLX_SAS_TYPE_CTRL_ALT_DEL);
     }
     else
     {
-        Log(("VBoxGINA::WlxDisplaySASNotice: starting credentials poller\n"));
+        VBoxGINAVerbose(0, "VBoxGINA::WlxDisplaySASNotice: starting credentials poller\n");
         /* start the credentials poller thread */
-        credentialsPollerCreate();
+        VBoxGINACredentialsPollerCreate();
         /* Forward call to MSGINA. */
         GWlxDisplaySASNotice(pWlxContext);
     }
@@ -283,11 +291,12 @@ int WINAPI WlxLoggedOutSAS(PVOID pWlxContext, DWORD dwSasType, PLUID pAuthentica
                            PSID pLogonSid, PDWORD pdwOptions, PHANDLE phToken,
                            PWLX_MPR_NOTIFY_INFO pMprNotifyInfo, PVOID *pProfile)
 {
-    Log(("VBoxGINA::WlxLoggedOutSAS\n"));
+    VBoxGINAVerbose(0, "VBoxGINA::WlxLoggedOutSAS\n");
 
     /* When performing a direct logon without C-A-D, our poller might not be running */
-    if (!credentialsAvailable())
-        credentialsPollerCreate();
+    int rc = VbglR3CredentialsQueryAvailability();
+    if (RT_FAILURE(rc))
+        VBoxGINACredentialsPollerCreate();
 
     int iRet;
     iRet = GWlxLoggedOutSAS(pWlxContext, dwSasType, pAuthenticationId, pLogonSid,
@@ -309,10 +318,19 @@ int WINAPI WlxLoggedOutSAS(PVOID pWlxContext, DWORD dwSasType, PLUID pAuthentica
 }
 
 
+/**
+ * WinLogon calls this function following a successful logon to request that the GINA activate the user's shell program.
+ */
 BOOL WINAPI WlxActivateUserShell(PVOID pWlxContext, PWSTR pszDesktopName,
                                  PWSTR pszMprLogonScript, PVOID pEnvironment)
 {
-    Log(("VBoxGINA::WlxActivateUserShell\n"));
+    VBoxGINAVerbose(0, "VBoxGINA::WlxActivateUserShell\n");
+
+    /*
+     * Report status "terminated" to the host -- this means that a user
+     * got logged in (either manually or automatically using the provided credentials).
+     */
+    VBoxGINAReportStatus(VBoxGuestFacilityStatus_Terminated);
 
     /* Forward call to MSGINA. */
     return GWlxActivateUserShell(pWlxContext, pszDesktopName, pszMprLogonScript, pEnvironment);
@@ -321,7 +339,7 @@ BOOL WINAPI WlxActivateUserShell(PVOID pWlxContext, PWSTR pszDesktopName,
 
 int WINAPI WlxLoggedOnSAS(PVOID pWlxContext, DWORD dwSasType, PVOID pReserved)
 {
-    Log(("VBoxGINA::WlxLoggedOnSAS: SaSType = %ld\n", dwSasType));
+    VBoxGINAVerbose(0, "VBoxGINA::WlxLoggedOnSAS: dwSasType=%ld\n", dwSasType);
 
     /*
      * We don't want to do anything special here since the OS should behave
@@ -330,81 +348,97 @@ int WINAPI WlxLoggedOnSAS(PVOID pWlxContext, DWORD dwSasType, PVOID pReserved)
      */
 
     /* Forward call to MSGINA. */
-    Log(("VBoxGINA::WlxLoggedOnSAS: Forwarding call to MSGINA ...\n"));
+    VBoxGINAVerbose(0, "VBoxGINA::WlxLoggedOnSAS: Forwarding call to MSGINA ...\n");
     return GWlxLoggedOnSAS(pWlxContext, dwSasType, pReserved);
 }
 
 VOID WINAPI WlxDisplayLockedNotice(PVOID pWlxContext)
 {
-    Log(("VBoxGINA::WlxDisplayLockedNotice\n"));
+    VBoxGINAVerbose(0, "VBoxGINA::WlxDisplayLockedNotice\n");
 
     /* Check if there are credentials for us, if so simulate C-A-D */
-    if (credentialsAvailable())
+    int rc = VbglR3CredentialsQueryAvailability();
+    if (RT_SUCCESS(rc))
     {
-        Log(("VBoxGINA::WlxDisplayLockedNotice: simulating C-A-D\n"));
+        VBoxGINAVerbose(0, "VBoxGINA::WlxDisplayLockedNotice: simulating C-A-D\n");
         /* Automatic C-A-D */
         pWlxFuncs->WlxSasNotify(hGinaWlx, WLX_SAS_TYPE_CTRL_ALT_DEL);
     }
     else
     {
-        Log(("VBoxGINA::WlxDisplayLockedNotice: starting credentials poller\n"));
+        VBoxGINAVerbose(0, "VBoxGINA::WlxDisplayLockedNotice: starting credentials poller\n");
         /* start the credentials poller thread */
-        credentialsPollerCreate();
+        VBoxGINACredentialsPollerCreate();
         /* Forward call to MSGINA. */
         GWlxDisplayLockedNotice(pWlxContext);
     }
 }
 
 
+/*
+ * Winlogon calls this function before it attempts to lock the workstation.
+ */
 BOOL WINAPI WlxIsLockOk(PVOID pWlxContext)
 {
-    Log(("VBoxGINA::WlxIsLockOk\n"));
+    VBoxGINAVerbose(0, "VBoxGINA::WlxIsLockOk\n");
     /* Forward call to MSGINA. */
     return GWlxIsLockOk(pWlxContext);
 }
 
+
 int WINAPI WlxWkstaLockedSAS(PVOID pWlxContext, DWORD dwSasType)
 {
-    Log(("VBoxGINA::WlxWkstaLockedSAS\n"));
+    VBoxGINAVerbose(0, "VBoxGINA::WlxWkstaLockedSAS, dwSasType=%ld\n", dwSasType);
 
     /* When performing a direct logon without C-A-D, our poller might not be running */
-    if (!credentialsAvailable())
-        credentialsPollerCreate();
+    int rc = VbglR3CredentialsQueryAvailability();
+    if (RT_FAILURE(rc))
+        VBoxGINACredentialsPollerCreate();
 
     /* Forward call to MSGINA. */
     return GWlxWkstaLockedSAS(pWlxContext, dwSasType);
 }
 
+
 BOOL WINAPI WlxIsLogoffOk(PVOID pWlxContext)
 {
-    Log(("VBoxGINA::WlxIsLogoffOk\n"));
+    VBoxGINAVerbose(0, "VBoxGINA::WlxIsLogoffOk\n");
 
-    BOOL bSuccess = GWlxIsLogoffOk(pWlxContext);
-    if (bSuccess)
-    {
-        //
-        // if it's ok to logoff, finish with the stored credentials
-        // and scrub the buffers
-        //
-        credentialsReset();
-
-    }
-    return bSuccess;
+    return GWlxIsLogoffOk(pWlxContext);
 }
 
 
+/*
+ * Winlogon calls this function to notify the GINA of a logoff operation on this
+ * workstation. This allows the GINA to perform any logoff operations that may be required.
+ */
 VOID WINAPI WlxLogoff(PVOID pWlxContext)
 {
-    Log(("VBoxGINA::WlxLogoff\n"));
+    VBoxGINAVerbose(0, "VBoxGINA::WlxLogoff\n");
+
+    /* No need to report the "active" status to the host here -- this will be done
+     * when VBoxGINA gets the chance to hook the dialogs (again). */
 
     /* Forward call to MSGINA. */
     GWlxLogoff(pWlxContext);
 }
 
 
+/*
+ * Winlogon calls this function just before shutting down.
+ * This allows the GINA to perform any necessary shutdown tasks.
+ * Will be called *after* WlxLogoff!
+ */
 VOID WINAPI WlxShutdown(PVOID pWlxContext, DWORD ShutdownType)
 {
-    Log(("VBoxGINA::WlxShutdown\n"));
+    VBoxGINAVerbose(0, "VBoxGINA::WlxShutdown\n");
+
+    /*
+     * Report status "inactive" to the host -- this means the
+     * auto-logon feature won't be active anymore at this point
+     * (until it maybe gets loaded again after a reboot).
+     */
+    VBoxGINAReportStatus(VBoxGuestFacilityStatus_Inactive);
 
     /* Forward call to MSGINA. */
     GWlxShutdown(pWlxContext, ShutdownType);
@@ -416,7 +450,7 @@ VOID WINAPI WlxShutdown(PVOID pWlxContext, DWORD ShutdownType)
  */
 BOOL WINAPI WlxScreenSaverNotify(PVOID pWlxContext, BOOL *pSecure)
 {
-    Log(("VBoxGINA::WlxScreenSaverNotify\n"));
+    VBoxGINAVerbose(0, "VBoxGINA::WlxScreenSaverNotify\n");
 
     /* Forward to MSGINA if present. */
     if (GWlxScreenSaverNotify)
@@ -430,8 +464,8 @@ BOOL WINAPI WlxScreenSaverNotify(PVOID pWlxContext, BOOL *pSecure)
 BOOL WINAPI WlxStartApplication(PVOID pWlxContext, PWSTR pszDesktopName,
                                 PVOID pEnvironment, PWSTR pszCmdLine)
 {
-    Log(("VBoxGINA::WlxStartApplication: pWlxCtx=%p, pszDesktopName=%ls, pEnvironment=%p, pszCmdLine=%ls\n",
-         pWlxContext, pszDesktopName, pEnvironment, pszCmdLine));
+    VBoxGINAVerbose(0, "VBoxGINA::WlxStartApplication: pWlxCtx=%p, pszDesktopName=%ls, pEnvironment=%p, pszCmdLine=%ls\n",
+                    pWlxContext, pszDesktopName, pEnvironment, pszCmdLine);
 
     /* Forward to MSGINA if present. */
     if (GWlxStartApplication)
@@ -445,7 +479,7 @@ BOOL WINAPI WlxStartApplication(PVOID pWlxContext, PWSTR pszDesktopName,
  */
 BOOL WINAPI WlxNetworkProviderLoad(PVOID pWlxContext, PWLX_MPR_NOTIFY_INFO pNprNotifyInfo)
 {
-    Log(("VBoxGINA::WlxNetworkProviderLoad\n"));
+    VBoxGINAVerbose(0, "VBoxGINA::WlxNetworkProviderLoad\n");
 
     /* Forward to MSGINA if present. */
     if (GWlxNetworkProviderLoad)
@@ -457,7 +491,7 @@ BOOL WINAPI WlxNetworkProviderLoad(PVOID pWlxContext, PWLX_MPR_NOTIFY_INFO pNprN
 BOOL WINAPI WlxDisplayStatusMessage(PVOID pWlxContext, HDESK hDesktop, DWORD dwOptions,
                                     PWSTR pTitle, PWSTR pMessage)
 {
-    Log(("VBoxGINA::WlxDisplayStatusMessage\n"));
+    VBoxGINAVerbose(0, "VBoxGINA::WlxDisplayStatusMessage\n");
 
     /* Forward to MSGINA if present. */
     if (GWlxDisplayStatusMessage)
@@ -469,7 +503,7 @@ BOOL WINAPI WlxDisplayStatusMessage(PVOID pWlxContext, HDESK hDesktop, DWORD dwO
 BOOL WINAPI WlxGetStatusMessage(PVOID pWlxContext, DWORD *pdwOptions,
                                 PWSTR pMessage, DWORD dwBufferSize)
 {
-    Log(("VBoxGINA::WlxGetStatusMessage\n"));
+    VBoxGINAVerbose(0, "VBoxGINA::WlxGetStatusMessage\n");
 
     /* Forward to MSGINA if present. */
     if (GWlxGetStatusMessage)
@@ -480,7 +514,7 @@ BOOL WINAPI WlxGetStatusMessage(PVOID pWlxContext, DWORD *pdwOptions,
 
 BOOL WINAPI WlxRemoveStatusMessage(PVOID pWlxContext)
 {
-    Log(("VBoxGINA::WlxRemoveStatusMessage\n"));
+    VBoxGINAVerbose(0, "VBoxGINA::WlxRemoveStatusMessage\n");
 
     /* Forward to MSGINA if present. */
     if (GWlxRemoveStatusMessage)
@@ -494,7 +528,7 @@ BOOL WINAPI WlxRemoveStatusMessage(PVOID pWlxContext)
  */
 BOOL WINAPI WlxGetConsoleSwitchCredentials(PVOID pWlxContext,PVOID pCredInfo)
 {
-    Log(("VBoxGINA::WlxGetConsoleSwitchCredentials\n"));
+    VBoxGINAVerbose(0, "VBoxGINA::WlxGetConsoleSwitchCredentials\n");
 
     /* Forward call to MSGINA if present */
     if (GWlxGetConsoleSwitchCredentials)
@@ -505,7 +539,7 @@ BOOL WINAPI WlxGetConsoleSwitchCredentials(PVOID pWlxContext,PVOID pCredInfo)
 
 VOID WINAPI WlxReconnectNotify(PVOID pWlxContext)
 {
-    Log(("VBoxGINA::WlxReconnectNotify\n"));
+    VBoxGINAVerbose(0, "VBoxGINA::WlxReconnectNotify\n");
 
     /* Forward to MSGINA if present. */
     if (GWlxReconnectNotify)
@@ -515,10 +549,47 @@ VOID WINAPI WlxReconnectNotify(PVOID pWlxContext)
 
 VOID WINAPI WlxDisconnectNotify(PVOID pWlxContext)
 {
-    Log(("VBoxGINA::WlxDisconnectNotify\n"));
+    VBoxGINAVerbose(0, "VBoxGINA::WlxDisconnectNotify\n");
 
     /* Forward to MSGINA if present. */
     if (GWlxDisconnectNotify)
         GWlxDisconnectNotify(pWlxContext);
+}
+
+
+DWORD WINAPI VBoxGINADebug(void)
+{
+#ifdef DEBUG
+    DWORD dwVersion;
+    BOOL fRes = WlxNegotiate(WLX_VERSION_1_4, &dwVersion);
+    if (!fRes)
+        return 1;
+
+    void* pWlxContext = NULL;
+    WLX_DISPATCH_VERSION_1_4 wlxDispatch;
+    ZeroMemory(&wlxDispatch, sizeof(WLX_DISPATCH_VERSION_1_4));
+
+    fRes = WlxInitialize(0, 0,
+                         NULL /* Reserved */,
+                         NULL /* Winlogon functions */,
+                         &pWlxContext);
+    if (!fRes)
+        return 2;
+
+    WlxDisplaySASNotice(pWlxContext);
+
+    char szSID[MAX_PATH];
+    LUID luidAuth;
+    DWORD dwOpts;
+    WLX_MPR_NOTIFY_INFO wlxNotifyInfo;
+    void* pvProfile;
+    HANDLE hToken;
+    int iRes = WlxLoggedOutSAS(pWlxContext, WLX_SAS_TYPE_CTRL_ALT_DEL,
+                               &luidAuth, szSID,
+                               &dwOpts, &hToken, &wlxNotifyInfo, &pvProfile);
+    return iRes;
+#else
+    return 0;
+#endif
 }
 
