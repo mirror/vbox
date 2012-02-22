@@ -8350,6 +8350,9 @@
     <const name="VBoxGuestDriver"         value="20">
       <desc>VirtualBox base driver (VBoxGuest).</desc>
     </const>
+    <const name="AutoLogon"               value="90">
+      <desc>Auto-logon modules (VBoxGINA, VBoxCredProv, pam_vbox).</desc>
+    </const>
     <const name="VBoxService"             value="100">
       <desc>VirtualBox system service (VBoxService).</desc>
     </const>
