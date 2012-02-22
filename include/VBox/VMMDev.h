@@ -708,6 +708,7 @@ typedef enum
 {
     VBoxGuestFacilityType_Unknown         = 0,
     VBoxGuestFacilityType_VBoxGuestDriver = 20,
+    VBoxGuestFacilityType_AutoLogon       = 90,  /* VBoxGINA / VBoxCredProv / pam_vbox. */
     VBoxGuestFacilityType_VBoxService     = 100,
     VBoxGuestFacilityType_VBoxTrayClient  = 101, /* VBoxTray (Windows), VBoxClient (Linux, Unix). */
     VBoxGuestFacilityType_Seamless        = 1000,
