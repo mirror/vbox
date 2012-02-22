@@ -10695,16 +10695,69 @@ FNIEMOP_DEF_1(iemOp_fstp_m32r, uint8_t, bRm)
 
 
 /** Opcode 0xd9 !11/4 */
-FNIEMOP_STUB_1(iemOp_fldenv, uint8_t, bRm);
+FNIEMOP_DEF_1(iemOp_fldenv, uint8_t, bRm)
+{
+    IEMOP_MNEMONIC("fldenv m14/28byte");
+    IEM_MC_BEGIN(3, 0);
+    IEM_MC_ARG_CONST(IEMMODE,           enmEffOpSize, /*=*/ pIemCpu->enmEffOpSize,  0);
+    IEM_MC_ARG_CONST(uint8_t,           iEffSeg,      /*=*/ pIemCpu->iEffSeg,       1);
+    IEM_MC_ARG(RTGCPTR,                 GCPtrEffSrc,                                2);
+    IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm);
+    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+    IEM_MC_CALL_CIMPL_3(iemCImpl_fldenv, enmEffOpSize, iEffSeg, GCPtrEffSrc);
+    IEM_MC_END();
+    return VINF_SUCCESS;
+}
+
 
 /** Opcode 0xd9 !11/5 */
-FNIEMOP_STUB_1(iemOp_fldcw, uint8_t, bRm);
+FNIEMOP_DEF_1(iemOp_fldcw, uint8_t, bRm)
+{
+    IEMOP_MNEMONIC("fldcw m2byte");
+    IEM_MC_BEGIN(1, 1);
+    IEM_MC_LOCAL(RTGCPTR,               GCPtrEffSrc);
+    IEM_MC_ARG(uint16_t,                u16Fsw,                                     0);
+    IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm);
+    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+    IEM_MC_FETCH_MEM_U16(u16Fsw, pIemCpu->iEffSeg, GCPtrEffSrc);
+    IEM_MC_CALL_CIMPL_1(iemCImpl_fldcw, u16Fsw);
+    IEM_MC_END();
+    return VINF_SUCCESS;
+}
+
 
 /** Opcode 0xd9 !11/6 */
-FNIEMOP_STUB_1(iemOp_fstenv, uint8_t, bRm);
+FNIEMOP_DEF_1(iemOp_fnstenv, uint8_t, bRm)
+{
+    IEMOP_MNEMONIC("fstenv m14/28byte");
+    IEM_MC_BEGIN(3, 0);
+    IEM_MC_ARG_CONST(IEMMODE,           enmEffOpSize, /*=*/ pIemCpu->enmEffOpSize,  0);
+    IEM_MC_ARG_CONST(uint8_t,           iEffSeg,      /*=*/ pIemCpu->iEffSeg,       1);
+    IEM_MC_ARG(RTGCPTR,                 GCPtrEffDst,                                2);
+    IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffDst, bRm);
+    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+    IEM_MC_CALL_CIMPL_3(iemCImpl_fnstenv, enmEffOpSize, iEffSeg, GCPtrEffDst);
+    IEM_MC_END();
+    return VINF_SUCCESS;
+}
+
 
 /** Opcode 0xd9 !11/7 */
-FNIEMOP_STUB_1(iemOp_fstcw, uint8_t, bRm);
+FNIEMOP_DEF_1(iemOp_fnstcw, uint8_t, bRm)
+{
+    IEMOP_MNEMONIC("fnstcw m2byte");
+    IEM_MC_BEGIN(2, 0);
+    IEM_MC_LOCAL(RTGCPTR,               GCPtrEffDst);
+    IEM_MC_LOCAL(uint16_t,              u16Fcw);
+    IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffDst, bRm);
+    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+    IEM_MC_FETCH_FSW(u16Fcw);
+    IEM_MC_STORE_MEM_U16(pIemCpu->iEffSeg, GCPtrEffDst, u16Fcw);
+    IEM_MC_ADVANCE_RIP(); /* C0-C3 are documented as undefined, we leave them unmodified. */
+    IEM_MC_END();
+    return VINF_SUCCESS;
+}
+
 
 /** Opcode 0xd9 0xc9, 0xd9 0xd8-0xdf, ++?.  */
 FNIEMOP_DEF(iemOp_fnop)
@@ -10916,8 +10969,8 @@ FNIEMOP_DEF(iemOp_EscF1)
             case 3: return FNIEMOP_CALL_1(iemOp_fstp_m32r, bRm);
             case 4: return FNIEMOP_CALL_1(iemOp_fldenv,    bRm);
             case 5: return FNIEMOP_CALL_1(iemOp_fldcw,     bRm);
-            case 6: return FNIEMOP_CALL_1(iemOp_fstenv,    bRm);
-            case 7: return FNIEMOP_CALL_1(iemOp_fstcw,     bRm);
+            case 6: return FNIEMOP_CALL_1(iemOp_fnstenv,    bRm);
+            case 7: return FNIEMOP_CALL_1(iemOp_fnstcw,     bRm);
             IEM_NOT_REACHED_DEFAULT_CASE_RET();
         }
     }

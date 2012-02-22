@@ -132,7 +132,6 @@ static void iemHlpAdjustSelectorForNewCpl(uint8_t uCpl, PRTSEL puSel, PCPUMSELRE
         iemHlpLoadNullDataSelectorProt(puSel, pHid);
 }
 
-
 /** @} */
 
 /** @name C Implementations
@@ -4058,6 +4057,205 @@ IEM_CIMPL_DEF_3(iemCImpl_fxrstor, uint8_t, iEffSeg, RTGCPTR, GCPtrEff, IEMMODE, 
     iemRegAddToRip(pIemCpu, cbInstr);
     return VINF_SUCCESS;
 }
+
+
+/**
+ * Commmon routine for fnstenv and fnsave.
+ *
+ * @param   uPtr                Where to store the state.
+ * @param   pCtx                The CPU context.
+ */
+static void iemCImplCommonFpuStoreEnv(PIEMCPU pIemCpu, IEMMODE enmEffOpSize, RTPTRUNION uPtr, PCCPUMCTX pCtx)
+{
+    if (enmEffOpSize == IEMMODE_16BIT)
+    {
+        uPtr.pu16[0] = pCtx->fpu.FCW;
+        uPtr.pu16[1] = pCtx->fpu.FSW;
+        uPtr.pu16[2] = iemFpuCalcFullFtw(pCtx);
+        if (IEM_IS_REAL_OR_V86_MODE(pIemCpu))
+        {
+            /** @todo Testcase: How does this work when the FPUIP/CS was saved in
+             *        protected mode or long mode and we save it in real mode?  And vice
+             *        versa?  And with 32-bit operand size?  I think CPU is storing the
+             *        effective address ((CS << 4) + IP) in the offset register and not
+             *        doing any address calculations here. */
+            uPtr.pu16[3] = (uint16_t)pCtx->fpu.FPUIP;
+            uPtr.pu16[4] = ((pCtx->fpu.FPUIP >> 4) & UINT16_C(0xf000)) | pCtx->fpu.FOP;
+            uPtr.pu16[5] = (uint16_t)pCtx->fpu.FPUDP;
+            uPtr.pu16[6] = (pCtx->fpu.FPUDP  >> 4) & UINT16_C(0xf000);
+        }
+        else
+        {
+            uPtr.pu16[3] = pCtx->fpu.FPUIP;
+            uPtr.pu16[4] = pCtx->fpu.CS;
+            uPtr.pu16[5] = pCtx->fpu.FPUDP;
+            uPtr.pu16[6] = pCtx->fpu.DS;
+        }
+    }
+    else
+    {
+        /** @todo Testcase: what is stored in the "gray" areas? (figure 8-9 and 8-10) */
+        uPtr.pu16[0*2] = pCtx->fpu.FCW;
+        uPtr.pu16[1*2] = pCtx->fpu.FSW;
+        uPtr.pu16[2*2] = iemFpuCalcFullFtw(pCtx);
+        if (IEM_IS_REAL_OR_V86_MODE(pIemCpu))
+        {
+            uPtr.pu16[3*2]  = (uint16_t)pCtx->fpu.FPUIP;
+            uPtr.pu32[4]    = ((pCtx->fpu.FPUIP & UINT32_C(0xffff0000)) >> 4) | pCtx->fpu.FOP;
+            uPtr.pu16[5*2]  = (uint16_t)pCtx->fpu.FPUDP;
+            uPtr.pu32[6]    = (pCtx->fpu.FPUDP  & UINT32_C(0xffff0000)) >> 4;
+        }
+        else
+        {
+            uPtr.pu32[3]    = pCtx->fpu.FPUIP;
+            uPtr.pu16[4*2]  = pCtx->fpu.CS;
+            uPtr.pu16[4*2+1]= pCtx->fpu.FOP;
+            uPtr.pu32[5]    = pCtx->fpu.FPUDP;
+            uPtr.pu16[6*2]  = pCtx->fpu.DS;
+        }
+    }
+}
+
+
+/**
+ * Commmon routine for fnstenv and fnsave.
+ *
+ * @param   uPtr                Where to store the state.
+ * @param   pCtx                The CPU context.
+ */
+static void iemCImplCommonFpuRestoreEnv(PIEMCPU pIemCpu, IEMMODE enmEffOpSize, RTCPTRUNION uPtr, PCPUMCTX pCtx)
+{
+    if (enmEffOpSize == IEMMODE_16BIT)
+    {
+        pCtx->fpu.FCW = uPtr.pu16[0];
+        pCtx->fpu.FSW = uPtr.pu16[1];
+        pCtx->fpu.FTW = uPtr.pu16[2];
+        if (IEM_IS_REAL_OR_V86_MODE(pIemCpu))
+        {
+            pCtx->fpu.FPUIP = uPtr.pu16[3] | ((uint32_t)(uPtr.pu16[4] & UINT16_C(0xf000)) << 4);
+            pCtx->fpu.FPUDP = uPtr.pu16[5] | ((uint32_t)(uPtr.pu16[6] & UINT16_C(0xf000)) << 4);
+            pCtx->fpu.FOP   = uPtr.pu16[4] & UINT16_C(0x07ff);
+            pCtx->fpu.CS    = 0;
+            pCtx->fpu.DS    = 0;
+        }
+        else
+        {
+            pCtx->fpu.FPUIP = uPtr.pu16[3];
+            pCtx->fpu.CS    = uPtr.pu16[4];
+            pCtx->fpu.FPUDP = uPtr.pu16[5];
+            pCtx->fpu.DS    = uPtr.pu16[6];
+            /** @todo Testcase: Is FOP cleared when doing 16-bit protected mode fldenv? */
+        }
+    }
+    else
+    {
+        pCtx->fpu.FCW = uPtr.pu16[0*2];
+        pCtx->fpu.FSW = uPtr.pu16[1*2];
+        pCtx->fpu.FTW = uPtr.pu16[2*2];
+        if (IEM_IS_REAL_OR_V86_MODE(pIemCpu))
+        {
+            pCtx->fpu.FPUIP = uPtr.pu16[3*2] | ((uPtr.pu32[4] & UINT32_C(0x0ffff000)) << 4);
+            pCtx->fpu.FOP   = uPtr.pu32[4] & UINT16_C(0x07ff);
+            pCtx->fpu.FPUDP = uPtr.pu16[5*2] | ((uPtr.pu32[6] & UINT32_C(0x0ffff000)) << 4);
+            pCtx->fpu.CS    = 0;
+            pCtx->fpu.DS    = 0;
+        }
+        else
+        {
+            pCtx->fpu.FPUIP = uPtr.pu32[3];
+            pCtx->fpu.CS    = uPtr.pu16[4*2];
+            pCtx->fpu.FOP   = uPtr.pu16[4*2+1];
+            pCtx->fpu.FPUDP = uPtr.pu32[5];
+            pCtx->fpu.DS    = uPtr.pu16[6*2];
+        }
+    }
+
+    /* Make adjustments. */
+    pCtx->fpu.FTW = iemFpuCompressFtw(pCtx->fpu.FTW);
+    pCtx->fpu.FCW &= ~X86_FCW_ZERO_MASK;
+    iemFpuRecalcExceptionStatus(pCtx);
+    /** @todo Testcase: Check if ES and/or B are automatically cleared if no
+     *        exceptions are pending after loading the saved state? */
+}
+
+
+/**
+ * Implements 'FNSTENV'.
+ *
+ * @param   enmEffOpSize    The operand size (only REX.W really matters).
+ * @param   iEffSeg         The effective segment register for @a GCPtrEff.
+ * @param   GCPtrEffDst     The address of the image.
+ */
+IEM_CIMPL_DEF_3(iemCImpl_fnstenv, IEMMODE, enmEffOpSize, uint8_t, iEffSeg, RTGCPTR, GCPtrEffDst)
+{
+    PCPUMCTX     pCtx = pIemCpu->CTX_SUFF(pCtx);
+    RTPTRUNION   uPtr;
+    VBOXSTRICTRC rcStrict = iemMemMap(pIemCpu, &uPtr.pv, enmEffOpSize == IEMMODE_16BIT ? 14 : 28,
+                                      iEffSeg, GCPtrEffDst, IEM_ACCESS_DATA_W | IEM_ACCESS_PARTIAL_WRITE);
+    if (rcStrict != VINF_SUCCESS)
+        return rcStrict;
+
+    iemCImplCommonFpuStoreEnv(pIemCpu, enmEffOpSize, uPtr, pCtx);
+
+    rcStrict = iemMemCommitAndUnmap(pIemCpu, uPtr.pv, IEM_ACCESS_DATA_W | IEM_ACCESS_PARTIAL_WRITE);
+    if (rcStrict != VINF_SUCCESS)
+        return rcStrict;
+
+    /* Note: C0, C1, C2 and C3 are documented as undefined, we leave them untouched! */
+    iemRegAddToRip(pIemCpu, cbInstr);
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Implements 'FLDENV'.
+ *
+ * @param   enmEffOpSize    The operand size (only REX.W really matters).
+ * @param   iEffSeg         The effective segment register for @a GCPtrEff.
+ * @param   GCPtrEffSrc     The address of the image.
+ */
+IEM_CIMPL_DEF_3(iemCImpl_fldenv, IEMMODE, enmEffOpSize, uint8_t, iEffSeg, RTGCPTR, GCPtrEffSrc)
+{
+    PCPUMCTX     pCtx = pIemCpu->CTX_SUFF(pCtx);
+    RTCPTRUNION  uPtr;
+    VBOXSTRICTRC rcStrict = iemMemMap(pIemCpu, (void **)&uPtr.pv, enmEffOpSize == IEMMODE_16BIT ? 14 : 28,
+                                      iEffSeg, GCPtrEffSrc, IEM_ACCESS_DATA_R);
+    if (rcStrict != VINF_SUCCESS)
+        return rcStrict;
+
+    iemCImplCommonFpuRestoreEnv(pIemCpu, enmEffOpSize, uPtr, pCtx);
+
+    rcStrict = iemMemCommitAndUnmap(pIemCpu, (void *)uPtr.pv, IEM_ACCESS_DATA_R);
+    if (rcStrict != VINF_SUCCESS)
+        return rcStrict;
+
+    iemRegAddToRip(pIemCpu, cbInstr);
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Implements 'FLDCW'.
+ *
+ * @param   u16Fcw          The new FCW.
+ */
+IEM_CIMPL_DEF_1(iemCImpl_fldcw, uint16_t, u16Fcw)
+{
+    PCPUMCTX pCtx = pIemCpu->CTX_SUFF(pCtx);
+
+    /** @todo Testcase: Check what happens when trying to load X86_FCW_PC_RSVD. */
+    /** @todo Testcase: Try see what happens when trying to set undefined bits
+     *        (other than 6 and 7).  Currently ignoring them. */
+    /** @todo Testcase: Test that it raises and loweres the FPU exception bits
+     *        according to FSW. (This is was is currently implemented.) */
+    pCtx->fpu.FCW = u16Fcw & ~X86_FCW_ZERO_MASK;
+    iemFpuRecalcExceptionStatus(pCtx);
+
+    /* Note: C0, C1, C2 and C3 are documented as undefined, we leave them untouched! */
+    iemRegAddToRip(pIemCpu, cbInstr);
+    return VINF_SUCCESS;
+}
+
 
 /** @} */
 

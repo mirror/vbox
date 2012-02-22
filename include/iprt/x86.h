@@ -2162,8 +2162,11 @@ typedef const X86FXSTATE *PCX86FXSTATE;
 #define X86_FCW_UM          RT_BIT(4)
 /** Exception Mask: Precision.  */
 #define X86_FCW_PM          RT_BIT(5)
-/** Mask all exceptions.  */
+/** Mask all exceptions, the value typically loaded (by for instance fninit).
+ * @remarks This includes reserved bit 6.  */
 #define X86_FCW_MASK_ALL    UINT16_C(0x007f)
+/** Mask all exceptions. Same as X86_FSW_XCPT_MASK. */
+#define X86_FCW_XCPT_MASK    UINT16_C(0x003f)
 /** Precision control mask. */
 #define X86_FCW_PC_MASK     UINT16_C(0x0300)
 /** Precision control: 24-bit. */
@@ -2184,6 +2187,8 @@ typedef const X86FXSTATE *PCX86FXSTATE;
 #define X86_FCW_RC_UP       UINT16_C(0x0800)
 /** Rounding control: Towards zero. */
 #define X86_FCW_RC_ZERO     UINT16_C(0x0c00)
+/** Bits which should be zero, apparently. */
+#define X86_FCW_ZERO_MASK   UINT16_C(0xf080)
 /** @} */
 
 
