@@ -136,7 +136,7 @@ int manualTest()
         { "\0\0test5=test5\0t51=t51",       sizeof("\0\0test5=test5\0t51=t51"),                        0,  sizeof("\0\0test5=test5\0") - 1,               1, VERR_MORE_DATA },
     };
 
-    int iTest = 0;
+    unsigned iTest = 0;
     for (iTest; iTest < RT_ELEMENTS(aTest); iTest++)
     {
         RTTestIPrintf(RTTESTLVL_DEBUG, "Manual test #%d\n", iTest);
