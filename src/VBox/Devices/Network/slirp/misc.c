@@ -98,7 +98,21 @@ fd_nonblock(int fd)
 #endif
 }
 
+#if !defined(VBOX_NAT_MEM_DEBUG) && defined(LOG_ENABLED)
+# undef LogFlowFunc
+# define LogFlowFunc(x)
 
+# undef LogFlowFuncEnter
+# define LogFlowFuncEnter()
+
+# undef LogFlowFuncLeave
+# define LogFlowFuncLeave()
+
+# undef Log2
+# define Log2(x)
+#else
+# define NAT_MEM_LOG_ENABLED
+#endif
 
 
 /**
@@ -136,7 +150,7 @@ static void *slirp_uma_alloc(uma_zone_t zone,
     int rc;
 
     LogFlowFunc(("ENTER: %R[mzone], size:%d, pflags:%p, %RTbool\n", zone, size, pflags, fWait));
-#ifndef LOG_ENABLED
+#ifndef NAT_MEM_LOG_ENABLED
     NOREF(size);
     NOREF(pflags);
     NOREF(fWait);
@@ -214,7 +228,7 @@ static void slirp_uma_free(void *item, int size, uint8_t flags)
 {
     struct item *it;
     uma_zone_t zone;
-#ifndef LOG_ENABLED
+#ifndef NAT_MEM_LOG_ENABLED
     NOREF(size);
     NOREF(flags);
 #endif
@@ -249,7 +263,7 @@ uma_zone_t uma_zcreate(PNATState pData, char *name, size_t size,
                        ctor_t ctor, dtor_t dtor, zinit_t init, zfini_t fini, int flags1, int flags2)
 {
     uma_zone_t zone = NULL;
-#ifndef LOG_ENABLED
+#ifndef NAT_MEM_LOG_ENABLED
     NOREF(flags1);
     NOREF(flags2);
 #endif
@@ -340,7 +354,7 @@ uint32_t *uma_find_refcnt(uma_zone_t zone, void *mem)
     /** @todo (vvl) this function supposed to work with special zone storing
     reference counters */
     struct item *it = NULL;
-#ifndef LOG_ENABLED
+#ifndef NAT_MEM_LOG_ENABLED
     NOREF(zone);
 #endif
     LogFlowFunc(("ENTER: zone:%R[mzone], mem:%p\n", zone, mem));
@@ -356,7 +370,7 @@ uint32_t *uma_find_refcnt(uma_zone_t zone, void *mem)
 void *uma_zalloc_arg(uma_zone_t zone, void *args, int how)
 {
     void *mem;
-#ifndef LOG_ENABLED
+#ifndef NAT_MEM_LOG_ENABLED
     NOREF(how);
 #endif
     Assert(zone->magic == ZONE_MAGIC);
@@ -392,7 +406,7 @@ void uma_zfree_arg(uma_zone_t zone, void *mem, void *flags)
     Assert((zone->pfFree));
     Assert((mem));
     LogFlowFunc(("ENTER: zone:%R[mzone], mem:%p, flags:%p\n", zone, mem, flags));
-#ifndef LOG_ENABLED
+#ifndef NAT_MEM_LOG_ENABLED
     NOREF(flags);
 #endif
 
@@ -452,7 +466,7 @@ void slirp_null_arg_free(void *mem, void *arg)
     /** @todo (vvl) make it wiser  */
     LogFlowFunc(("ENTER: mem:%p, arg:%p\n", mem, arg));
     Assert(mem);
-#ifndef LOG_ENABLED
+#ifndef NAT_MEM_LOG_ENABLED
     NOREF(arg);
 #endif
     RTMemFree(mem);
@@ -461,7 +475,7 @@ void slirp_null_arg_free(void *mem, void *arg)
 
 void *uma_zalloc(uma_zone_t zone, int len)
 {
-#ifndef LOG_ENABLED
+#ifndef NAT_MEM_LOG_ENABLED
     NOREF(zone);
     NOREF(len);
 #endif
