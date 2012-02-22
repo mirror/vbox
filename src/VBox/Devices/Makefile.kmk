@@ -1211,7 +1211,7 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
 
 endif # !VBOX_ONLY_EXTPACKS
 
-ifdef VBOX_WITH_EXTPACK_PUEL
+if defined(VBOX_WITH_EXTPACK_PUEL) && defined(VBOX_WITH_EXTPACK_PUEL_BUILD)
  #
  # The EHCI (USB 2.0) Extension Pack Modules.
  #
