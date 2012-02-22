@@ -2165,14 +2165,6 @@ if [ "$OS" = "darwin" ]; then
   [ $OSE -eq 1 ] || BUILD_LIBCURL=1
 fi
 
-if [ $OSE -eq 0 ]; then
-  if [ $WITH_EXTPACK -eq 1 ]; then
-    BUILD_LIBSSL=1
-  else
-    cnf_append "VBOX_WITH_EXTPACK_PUEL_BUILD" ""
-  fi
-fi
-
 # scan command line options
 for option in $*; do
   case "$option" in
@@ -2434,6 +2426,15 @@ if [ $OSE -ge 1 ]; then
     cnf_append "VBOX_WITH_LINUX_ADDITIONS" ""
   fi
   echo >> $CNF
+fi
+
+# extpack
+if [ $OSE -eq 0 ]; then
+  if [ $WITH_EXTPACK -eq 1 ]; then
+    BUILD_LIBSSL=1
+  else
+    cnf_append "VBOX_WITH_EXTPACK_PUEL_BUILD" ""
+  fi
 fi
 
 # headless
