@@ -3,7 +3,7 @@
  */
 
 /*
- * Copyright (C) 2006-2011 Oracle Corporation
+ * Copyright (C) 2006-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -17,22 +17,17 @@
 #ifndef ___H_GINAHELPER
 #define ___H_GINAHELPER
 
-#include <iprt/thread.h>
-#include <iprt/semaphore.h>
+#include <VBox/VBoxGuestLib.h>
 
-/* the credentials */
-extern wchar_t g_Username[];
-extern wchar_t g_Password[];
-extern wchar_t g_Domain[];
+void VBoxGINAVerbose(DWORD dwLevel, const char *pszFormat, ...);
 
-DWORD loadConfiguration();
-bool handleCurrentSession(void);
+int  VBoxGINALoadConfiguration();
+bool VBoxGINAHandleCurrentSession(void);
 
-void credentialsReset(void);
-bool credentialsAvailable(void);
-bool credentialsRetrieve(void);
-bool credentialsPollerCreate(void);
-bool credentialsPollerTerminate(void);
+int VBoxGINACredentialsPollerCreate(void);
+int VBoxGINACredentialsPollerTerminate(void);
+
+int VBoxGINAReportStatus(VBoxGuestFacilityStatus enmStatus);
 
 #endif /* !___H_GINAHELPER */
 
