@@ -727,16 +727,14 @@ IEM_DECL_IMPL_TYPE(void, iemAImpl_bswap_u64,(uint64_t *pu64Dst));
 
 /** @name FPU operations taking a 32-bit float argument
  * @{ */
-typedef IEM_DECL_IMPL_TYPE(void, FNIEMAIMPLFPUR32U,(PCX86FXSTATE pFpuState, PIEMFPURESULT pFpuRes, PCRTFLOAT32U pr32Val));
-typedef FNIEMAIMPLFPUR32U  *PFNIEMAIMPLFPUR32U;
 typedef IEM_DECL_IMPL_TYPE(void, FNIEMAIMPLFPUR32FSW,(PCX86FXSTATE pFpuState, uint16_t *pFSW,
                                                       PCRTFLOAT80U pr80Val1, PCRTFLOAT32U pr32Val2));
 typedef FNIEMAIMPLFPUR32FSW *PFNIEMAIMPLFPUR32FSW;
+
 typedef IEM_DECL_IMPL_TYPE(void, FNIEMAIMPLFPUR32,(PCX86FXSTATE pFpuState, PIEMFPURESULT pFpuRes,
                                                    PCRTFLOAT80U pr80Val1, PCRTFLOAT32U pr32Val2));
-typedef FNIEMAIMPLFPUR32  *PFNIEMAIMPLFPUR32;
+typedef FNIEMAIMPLFPUR32    *PFNIEMAIMPLFPUR32;
 
-FNIEMAIMPLFPUR32U   iemAImpl_fld_r32_to_r80;
 FNIEMAIMPLFPUR32FSW iemAImpl_fcom_r80_by_r32;
 FNIEMAIMPLFPUR32    iemAImpl_fadd_r80_by_r32;
 FNIEMAIMPLFPUR32    iemAImpl_fmul_r80_by_r32;
@@ -744,6 +742,10 @@ FNIEMAIMPLFPUR32    iemAImpl_fsub_r80_by_r32;
 FNIEMAIMPLFPUR32    iemAImpl_fsubr_r80_by_r32;
 FNIEMAIMPLFPUR32    iemAImpl_fdiv_r80_by_r32;
 FNIEMAIMPLFPUR32    iemAImpl_fdivr_r80_by_r32;
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_fld_r32_to_r80,(PCX86FXSTATE pFpuState, PIEMFPURESULT pFpuRes, PCRTFLOAT32U pr32Val));
+IEM_DECL_IMPL_DEF(void, iemAImpl_fst_r80_to_r32,(PCX86FXSTATE pFpuState, uint16_t *pu16FSW,
+                                                 PRTFLOAT32U pr32Val, PCRTFLOAT80U pr80Val));
 /** @} */
 
 /** @name FPU operations taking a 64-bit float argument
@@ -751,10 +753,7 @@ FNIEMAIMPLFPUR32    iemAImpl_fdivr_r80_by_r32;
 typedef IEM_DECL_IMPL_TYPE(void, FNIEMAIMPLFPUR64,(PCX86FXSTATE pFpuState, PIEMFPURESULT pFpuRes,
                                                    PCRTFLOAT80U pr80Val1, PCRTFLOAT64U pr64Val2));
 typedef FNIEMAIMPLFPUR64   *PFNIEMAIMPLFPUR64;
-typedef IEM_DECL_IMPL_TYPE(void, FNIEMAIMPLFPUR64U,(PCX86FXSTATE pFpuState, PIEMFPURESULT pFpuRes, PCRTFLOAT64U pr64Val));
-typedef FNIEMAIMPLFPUR64U  *PFNIEMAIMPLFPUR64U;
 
-FNIEMAIMPLFPUR64U iemAImpl_fld_r64_to_r80;
 FNIEMAIMPLFPUR64  iemAImpl_fadd_r80_by_r64;
 FNIEMAIMPLFPUR64  iemAImpl_fmul_r80_by_r64;
 FNIEMAIMPLFPUR64  iemAImpl_fcom_r80_by_r64;
@@ -762,6 +761,10 @@ FNIEMAIMPLFPUR64  iemAImpl_fsub_r80_by_r64;
 FNIEMAIMPLFPUR64  iemAImpl_fsubr_r80_by_r64;
 FNIEMAIMPLFPUR64  iemAImpl_fdiv_r80_by_r64;
 FNIEMAIMPLFPUR64  iemAImpl_fdivr_r80_by_r64;
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_fld_r64_to_r80,(PCX86FXSTATE pFpuState, PIEMFPURESULT pFpuRes, PCRTFLOAT64U pr64Val));
+IEM_DECL_IMPL_DEF(void, iemAImpl_fst_r80_to_r64,(PCX86FXSTATE pFpuState, uint16_t *pu16FSW,
+                                                 PRTFLOAT64U pr32Val, PCRTFLOAT80U pr80Val));
 /** @} */
 
 /** @name FPU operations taking a 80-bit float argument
@@ -769,6 +772,7 @@ FNIEMAIMPLFPUR64  iemAImpl_fdivr_r80_by_r64;
 typedef IEM_DECL_IMPL_TYPE(void, FNIEMAIMPLFPUR80FSW,(PCX86FXSTATE pFpuState, uint16_t *pFSW,
                                                       PCRTFLOAT80U pr80Val1, PCRTFLOAT80U pr80Val2));
 typedef FNIEMAIMPLFPUR80FSW *PFNIEMAIMPLFPUR80FSW;
+
 typedef IEM_DECL_IMPL_TYPE(void, FNIEMAIMPLFPUR80,(PCX86FXSTATE pFpuState, PIEMFPURESULT pFpuRes,
                                                    PCRTFLOAT80U pr80Val1, PCRTFLOAT80U pr80Val2));
 typedef FNIEMAIMPLFPUR80    *PFNIEMAIMPLFPUR80;
