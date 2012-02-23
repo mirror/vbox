@@ -1454,11 +1454,11 @@ VMMDECL(void) CPUMGetGuestCpuId(PVMCPU pVCpu, uint32_t iLeaf, uint32_t *pEax, ui
     PCCPUMCPUID pCpuId;
     if (iLeaf < RT_ELEMENTS(pVM->cpum.s.aGuestCpuIdStd))
         pCpuId = &pVM->cpum.s.aGuestCpuIdStd[iLeaf];
-    else if (iLeaf - UINT32_C(0x40000000) < RT_ELEMENTS(pVM->cpum.s.aGuestCpuIdHyper))
-        if ((pVCpu->CTX_SUFF(pVM)->cpum.s.aGuestCpuIdStd[1].ecx & X86_CPUID_FEATURE_ECX_HVP) != 0)
-            pCpuId = &pVM->cpum.s.aGuestCpuIdHyper[iLeaf - UINT32_C(0x40000000)];   /* Only report if HVP bit set. */
     else if (iLeaf - UINT32_C(0x80000000) < RT_ELEMENTS(pVM->cpum.s.aGuestCpuIdExt))
         pCpuId = &pVM->cpum.s.aGuestCpuIdExt[iLeaf - UINT32_C(0x80000000)];
+    else if (   iLeaf - UINT32_C(0x40000000) < RT_ELEMENTS(pVM->cpum.s.aGuestCpuIdHyper)
+             && (pVCpu->CTX_SUFF(pVM)->cpum.s.aGuestCpuIdStd[1].ecx & X86_CPUID_FEATURE_ECX_HVP))
+        pCpuId = &pVM->cpum.s.aGuestCpuIdHyper[iLeaf - UINT32_C(0x40000000)];   /* Only report if HVP bit set. */
     else if (iLeaf - UINT32_C(0xc0000000) < RT_ELEMENTS(pVM->cpum.s.aGuestCpuIdCentaur))
         pCpuId = &pVM->cpum.s.aGuestCpuIdCentaur[iLeaf - UINT32_C(0xc0000000)];
     else
