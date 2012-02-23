@@ -79,6 +79,7 @@ struc CPUM
     .aGuestCpuIdStd       resb    16*6
     .aGuestCpuIdExt       resb    16*10
     .aGuestCpuIdCentaur   resb    16*4
+    .aGuestCpuIdHyper     resb    16*4
     .GuestCpuIdDef        resb    16
 
 %if HC_ARCH_BITS == 32

@@ -905,6 +905,19 @@ static int cpumR3CpuIdInit(PVM pVM)
         for (i = 0; i < RT_ELEMENTS(pCPUM->aGuestCpuIdCentaur); i++)
             pCPUM->aGuestCpuIdCentaur[i] = pCPUM->GuestCpuIdDef;
 
+    /* 
+     * Hypervisor identification.
+     *
+     * We only return minimal information, primarily ensuring that the
+     * 0x40000000 function returns 0x40000001 and identifying ourselves.
+     * Currently we do not support any hypervisor-specific interface.
+     */
+    pCPUM->aGuestCpuIdHyper[0].eax = UINT32_C(0x40000001);
+    pCPUM->aGuestCpuIdHyper[0].ebx = pCPUM->aGuestCpuIdHyper[0].ecx
+                                   = pCPUM->aGuestCpuIdHyper[0].edx = 0x786f4256;   /* 'VBox' */
+    pCPUM->aGuestCpuIdHyper[1].eax = 0x656e6f6e;                            /* 'none' */
+    pCPUM->aGuestCpuIdHyper[1].ebx = pCPUM->aGuestCpuIdHyper[1].ecx
+                                   = pCPUM->aGuestCpuIdHyper[1].edx = 0;    /* Reserved */
 
     /*
      * Load CPUID overrides from configuration.
@@ -1552,7 +1565,7 @@ static int cpumR3LoadCpuId(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion)
         CPUID_RAW_FEATURE_RET(Std, ecx, X86_CPUID_FEATURE_ECX_AVX);
         CPUID_RAW_FEATURE_RET(Std, ecx, RT_BIT_32(29) /*reserved*/);
         CPUID_RAW_FEATURE_RET(Std, ecx, RT_BIT_32(30) /*reserved*/);
-        CPUID_RAW_FEATURE_RET(Std, ecx, RT_BIT_32(31) /*reserved*/);
+        CPUID_RAW_FEATURE_RET(Std, ecx, X86_CPUID_FEATURE_ECX_HVP);
 
         /* CPUID(1).edx */
         CPUID_RAW_FEATURE_RET(Std, edx, X86_CPUID_FEATURE_EDX_FPU);
@@ -1758,7 +1771,7 @@ static int cpumR3LoadCpuId(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion)
     CPUID_GST_FEATURE_RET(Std, ecx, X86_CPUID_FEATURE_ECX_AVX);     // -> EMU?
     CPUID_GST_FEATURE_RET(Std, ecx, RT_BIT_32(29) /*reserved*/);
     CPUID_GST_FEATURE_RET(Std, ecx, RT_BIT_32(30) /*reserved*/);
-    CPUID_GST_FEATURE_RET(Std, ecx, RT_BIT_32(31) /*reserved*/);
+    CPUID_GST_FEATURE_IGN(Std, ecx, X86_CPUID_FEATURE_ECX_HVP);     // Normally not set by host
 
     /* CPUID(1).edx */
     CPUID_GST_FEATURE_RET(Std, edx, X86_CPUID_FEATURE_EDX_FPU);

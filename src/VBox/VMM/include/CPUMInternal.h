@@ -302,13 +302,15 @@ typedef struct CPUM
     bool                    fPendingRestore;
     uint8_t                 abPadding[HC_ARCH_BITS == 64 ? 5 : 1];
 
-    /** The standard set of CpuId leafs. */
+    /** The standard set of CpuId leaves. */
     CPUMCPUID               aGuestCpuIdStd[6];
-    /** The extended set of CpuId leafs. */
+    /** The extended set of CpuId leaves. */
     CPUMCPUID               aGuestCpuIdExt[10];
-    /** The centaur set of CpuId leafs. */
+    /** The centaur set of CpuId leaves. */
     CPUMCPUID               aGuestCpuIdCentaur[4];
-    /** The default set of CpuId leafs. */
+    /** The hypervisor specific set of CpuId leaves. */
+    CPUMCPUID               aGuestCpuIdHyper[4];
+    /** The default set of CpuId leaves. */
     CPUMCPUID               GuestCpuIdDef;
 
 #if HC_ARCH_BITS == 32
