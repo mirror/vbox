@@ -253,6 +253,10 @@ ifdef VBOX_GSOAP_INSTALLED
 	$(VBOXWEB_OUT_DIR)/gsoap_copy_all_ts
  ifn1of ($(KBUILD_TARGET), win)
   $(VBOX_GSOAP_CXX_SOURCES)_CXXFLAGS = -Wno-format
+  # currently necessary when compiling against OpenSSL 1.0 due to a missing
+  # typecase from 'const v3_ext_method*' to 'aka v3_ext_method*'.
+  $(VBOX_GSOAP_CXX_SOURCES)_CXXFLAGS += -fpermissive
+
  endif
  $(VBOXWEB_OUT_DIR)/soapC-3.cpp_CXXFLAGS.win.x86 = -Og- # VCC70 says "function too large".
 
