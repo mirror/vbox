@@ -100,6 +100,26 @@ typedef IEMFPURESULT *PIEMFPURESULT;
 typedef IEMFPURESULT const *PCIEMFPURESULT;
 
 
+/**
+ * A FPU result consisting of two output values and FSW.
+ */
+typedef struct IEMFPURESULTTWO
+{
+    /** The first output value. */
+    RTFLOAT80U      r80Result1;
+    /** The output status. */
+    uint16_t        FSW;
+    /** The second output value. */
+    RTFLOAT80U      r80Result2;
+} IEMFPURESULTTWO;
+AssertCompileMemberOffset(IEMFPURESULTTWO, FSW, 10);
+AssertCompileMemberOffset(IEMFPURESULTTWO, r80Result2, 12);
+/** Pointer to a FPU result consisting of two output values and FSW. */
+typedef IEMFPURESULTTWO *PIEMFPURESULTTWO;
+/** Pointer to a const FPU result consisting of two output values and FSW. */
+typedef IEMFPURESULTTWO const *PCIEMFPURESULTTWO;
+
+
 #ifdef IEM_VERIFICATION_MODE
 
 /**
@@ -788,6 +808,8 @@ typedef IEM_DECL_IMPL_TYPE(void, FNIEMAIMPLFPUR80UNARY,(PCX86FXSTATE pFpuState, 
 typedef FNIEMAIMPLFPUR80UNARY *PFNIEMAIMPLFPUR80UNARY;
 FNIEMAIMPLFPUR80UNARY       iemAImpl_fabs_r80;
 FNIEMAIMPLFPUR80UNARY       iemAImpl_fchs_r80;
+FNIEMAIMPLFPUR80UNARY       iemAImpl_f2xm1_r80;
+FNIEMAIMPLFPUR80UNARY       iemAImpl_fylx2_r80;
 
 typedef IEM_DECL_IMPL_TYPE(void, FNIEMAIMPLFPUR80UNARYFSW,(PCX86FXSTATE pFpuState, uint16_t *pu16Fsw, PCRTFLOAT80U pr80Val));
 typedef FNIEMAIMPLFPUR80UNARYFSW *PFNIEMAIMPLFPUR80UNARYFSW;
@@ -803,6 +825,9 @@ FNIEMAIMPLFPUR80LDCONST     iemAImpl_fldpi;
 FNIEMAIMPLFPUR80LDCONST     iemAImpl_fldlg2;
 FNIEMAIMPLFPUR80LDCONST     iemAImpl_fldln2;
 FNIEMAIMPLFPUR80LDCONST     iemAImpl_fldz;
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_fptan_r80_r80,(PCX86FXSTATE pFpuState, PIEMFPURESULTTWO pFpuResTwo, PCRTFLOAT80U pr80Val));
+
 /** @} */
 
 /** @name FPU operations taking a 32-bit signed integer argument
