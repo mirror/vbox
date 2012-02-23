@@ -137,6 +137,7 @@ static void                 supdrvGipTerm(PSUPGLOBALINFOPAGE pGip);
 static void                 supdrvGipUpdate(PSUPGLOBALINFOPAGE pGip, uint64_t u64NanoTS, uint64_t u64TSC, RTCPUID idCpu, uint64_t iTick);
 static void                 supdrvGipUpdatePerCpu(PSUPGLOBALINFOPAGE pGip, uint64_t u64NanoTS, uint64_t u64TSC,
                                                   RTCPUID idCpu, uint8_t idApic, uint64_t iTick);
+static void                 supdrvGipInitCpu(PSUPGLOBALINFOPAGE pGip, PSUPGIPCPU pCpu, uint64_t u64NanoTS);
 
 
 /*******************************************************************************
@@ -5038,6 +5039,7 @@ static void supdrvGipMpEventOnline(PSUPGLOBALINFOPAGE pGip, RTCPUID idCpu)
     int         iCpuSet = 0;
     uint16_t    idApic = UINT16_MAX;
     uint32_t    i = 0;
+    uint64_t    u64NanoTS = 0;
 
     AssertRelease(idCpu == RTMpCpuId());
     Assert(pGip->cPossibleCpus == RTMpGetCount());
@@ -5058,7 +5060,9 @@ static void supdrvGipMpEventOnline(PSUPGLOBALINFOPAGE pGip, RTCPUID idCpu)
     /*
      * Update the entry.
      */
+    u64NanoTS = RTTimeSystemNanoTS() - pGip->u32UpdateIntervalNS;
     i = supdrvGipCpuIndexFromCpuId(pGip, idCpu);
+    supdrvGipInitCpu(pGip, &pGip->aCPUs[i], u64NanoTS);
     idApic = ASMGetApicId();
     ASMAtomicUoWriteU16(&pGip->aCPUs[i].idApic,  idApic);
     ASMAtomicUoWriteS16(&pGip->aCPUs[i].iCpuSet, (int16_t)iCpuSet);
@@ -5112,13 +5116,16 @@ static void supdrvGipMpEventOffline(PSUPGLOBALINFOPAGE pGip, RTCPUID idCpu)
  * @param   enmEvent    The event.
  * @param   idCpu       The cpu it applies to.
  * @param   pvUser      Pointer to the device extension.
+ *
+ * @remarks This function -must- fire on the newly online'd CPU for the
+ *          RTMPEVENT_ONLINE case and can fire on any CPU for the
+ *          RTMPEVENT_OFFLINE case.
  */
 static DECLCALLBACK(void) supdrvGipMpEvent(RTMPEVENT enmEvent, RTCPUID idCpu, void *pvUser)
 {
     PSUPDRVDEVEXT       pDevExt = (PSUPDRVDEVEXT)pvUser;
     PSUPGLOBALINFOPAGE  pGip    = pDevExt->pGip;
 
-    AssertRelease(idCpu == RTMpCpuId());
     AssertRelease(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));
 
     /*
@@ -5129,6 +5136,7 @@ static DECLCALLBACK(void) supdrvGipMpEvent(RTMPEVENT enmEvent, RTCPUID idCpu, vo
         switch (enmEvent)
         {
             case RTMPEVENT_ONLINE:
+                AssertRelease(idCpu == RTMpCpuId());
                 supdrvGipMpEventOnline(pGip, idCpu);
                 break;
             case RTMPEVENT_OFFLINE:
@@ -5328,6 +5336,42 @@ static SUPGIPMODE supdrvGipDeterminTscMode(PSUPDRVDEVEXT pDevExt)
 }
 
 
+/**
+ * Initializes per-CPU GIP information.
+ *
+ * @param   pGip        Pointer to the read-write kernel mapping of the GIP.
+ * @param   pCpu        Pointer to which GIP CPU to initalize.
+ * @param   u64NanoTS   The current nanosecond timestamp.
+ */
+static void supdrvGipInitCpu(PSUPGLOBALINFOPAGE pGip, PSUPGIPCPU pCpu, uint64_t u64NanoTS)
+{
+    pCpu->u32TransactionId   = 2;
+    pCpu->u64NanoTS          = u64NanoTS;
+    pCpu->u64TSC             = ASMReadTSC();
+
+    pCpu->enmState           = SUPGIPCPUSTATE_INVALID;
+    pCpu->idCpu              = NIL_RTCPUID;
+    pCpu->iCpuSet            = -1;
+    pCpu->idApic             = UINT16_MAX;
+
+    /*
+     * We don't know the following values until we've executed updates.
+     * So, we'll just pretend it's a 4 GHz CPU and adjust the history it on
+     * the 2nd timer callout.
+     */
+    pCpu->u64CpuHz          = _4G + 1; /* tstGIP-2 depends on this. */
+    pCpu->u32UpdateIntervalTSC
+        = pCpu->au32TSCHistory[0]
+        = pCpu->au32TSCHistory[1]
+        = pCpu->au32TSCHistory[2]
+        = pCpu->au32TSCHistory[3]
+        = pCpu->au32TSCHistory[4]
+        = pCpu->au32TSCHistory[5]
+        = pCpu->au32TSCHistory[6]
+        = pCpu->au32TSCHistory[7]
+        = (uint32_t)(_4G / pGip->u32UpdateHz);
+}
+
 
 /**
  * Initializes the GIP data.
@@ -5375,33 +5419,7 @@ static void supdrvGipInit(PSUPDRVDEVEXT pDevExt, PSUPGLOBALINFOPAGE pGip, RTHCPH
         pGip->aiCpuFromCpuSetIdx[i] = UINT16_MAX;
 
     for (i = 0; i < cCpus; i++)
-    {
-        pGip->aCPUs[i].u32TransactionId  = 2;
-        pGip->aCPUs[i].u64NanoTS         = u64NanoTS;
-        pGip->aCPUs[i].u64TSC            = ASMReadTSC();
-
-        pGip->aCPUs[i].enmState          = SUPGIPCPUSTATE_INVALID;
-        pGip->aCPUs[i].idCpu             = NIL_RTCPUID;
-        pGip->aCPUs[i].iCpuSet           = -1;
-        pGip->aCPUs[i].idApic            = UINT16_MAX;
-
-        /*
-         * We don't know the following values until we've executed updates.
-         * So, we'll just pretend it's a 4 GHz CPU and adjust the history it on
-         * the 2nd timer callout.
-         */
-        pGip->aCPUs[i].u64CpuHz          = _4G + 1; /* tstGIP-2 depends on this. */
-        pGip->aCPUs[i].u32UpdateIntervalTSC
-            = pGip->aCPUs[i].au32TSCHistory[0]
-            = pGip->aCPUs[i].au32TSCHistory[1]
-            = pGip->aCPUs[i].au32TSCHistory[2]
-            = pGip->aCPUs[i].au32TSCHistory[3]
-            = pGip->aCPUs[i].au32TSCHistory[4]
-            = pGip->aCPUs[i].au32TSCHistory[5]
-            = pGip->aCPUs[i].au32TSCHistory[6]
-            = pGip->aCPUs[i].au32TSCHistory[7]
-            = /*pGip->aCPUs[i].u64CpuHz*/ (uint32_t)(_4G / uUpdateHz);
-    }
+        supdrvGipInitCpu(pGip, &pGip->aCPUs[i], u64NanoTS);
 
     /*
      * Link it to the device extension.
