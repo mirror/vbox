@@ -11062,7 +11062,7 @@ FNIEMOP_DEF(iemOp_f2xm1)
 FNIEMOP_DEF(iemOp_fylx2)
 {
     IEMOP_MNEMONIC("fylx2 st0");
-    return FNIEMOP_CALL_1(iemOpHlpFpu_st0, iemAImpl_fylx2_r80);
+    return FNIEMOP_CALL_1(iemOpHlpFpu_st0, iemAImpl_fyl2x_r80);
 }
 
 

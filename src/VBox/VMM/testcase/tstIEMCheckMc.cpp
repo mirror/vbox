@@ -190,7 +190,7 @@ IEMOPSHIFTDBLSIZES g_iemAImpl_shrd;
 #define iemAImpl_ftst_r80               NULL
 #define iemAImpl_fxam_r80               NULL
 #define iemAImpl_f2xm1_r80              NULL
-#define iemAImpl_flx2y_r80              NULL
+#define iemAImpl_fyl2x_r80              NULL
 #define iemAImpl_fld1                   NULL
 #define iemAImpl_fldl2t                 NULL
 #define iemAImpl_fldl2e                 NULL
