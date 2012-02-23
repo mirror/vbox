@@ -4257,5 +4257,52 @@ IEM_CIMPL_DEF_1(iemCImpl_fldcw, uint16_t, u16Fcw)
 }
 
 
+
+/**
+ * Implements the underflow case of fxch.
+ *
+ * @param   iStReg              The other stack register.
+ */
+IEM_CIMPL_DEF_1(iemCImpl_fxch_underflow, uint8_t, iStReg)
+{
+    PCPUMCTX pCtx = pIemCpu->CTX_SUFF(pCtx);
+
+    unsigned const iReg1 = X86_FSW_TOP_GET(pCtx->fpu.FSW);
+    unsigned const iReg2 = (iReg1 + iStReg) & X86_FSW_TOP_SMASK;
+    Assert(!(RT_BIT(iReg1) & pCtx->fpu.FTW) || !(RT_BIT(iReg2) & pCtx->fpu.FTW));
+
+    /** @todo Testcase: fxch underflow. Making assumptions that underflowed
+     *        registers are read as QNaN and then exchanged. This could be
+     *        wrong... */
+    if (pCtx->fpu.FCW & X86_FCW_IM)
+    {
+        if (RT_BIT(iReg1) & pCtx->fpu.FTW)
+        {
+            if (RT_BIT(iReg2) & pCtx->fpu.FTW)
+                iemFpuStoreQNan(&pCtx->fpu.aRegs[0].r80);
+            else
+                pCtx->fpu.aRegs[0].r80 = pCtx->fpu.aRegs[iStReg].r80;
+            iemFpuStoreQNan(&pCtx->fpu.aRegs[iStReg].r80);
+        }
+        else
+        {
+            pCtx->fpu.aRegs[iStReg].r80 = pCtx->fpu.aRegs[0].r80;
+            iemFpuStoreQNan(&pCtx->fpu.aRegs[0].r80);
+        }
+        pCtx->fpu.FSW &= ~X86_FSW_C_MASK;
+        pCtx->fpu.FSW |= X86_FSW_C1 | X86_FSW_IE | X86_FSW_SF;
+    }
+    else
+    {
+        /* raise underflow exception, don't change anything. */
+        pCtx->fpu.FSW &= ~(X86_FSW_TOP_MASK | X86_FSW_XCPT_MASK);
+        pCtx->fpu.FSW |= X86_FSW_C1 | X86_FSW_IE | X86_FSW_SF | X86_FSW_ES | X86_FSW_B;
+    }
+    iemFpuUpdateOpcodeAndIpWorker(pIemCpu, pCtx);
+
+    iemRegAddToRip(pIemCpu, cbInstr);
+    return VINF_SUCCESS;
+}
+
 /** @} */
 
