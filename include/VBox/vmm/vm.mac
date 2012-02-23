@@ -107,7 +107,7 @@ struc VM
 %endif
 
     alignb 64
-    .cpum                   resb 1472
+    .cpum                   resb 1536
     .vmm                    resb 1536
 
 endstruc

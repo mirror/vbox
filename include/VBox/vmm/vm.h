@@ -909,7 +909,7 @@ typedef struct VM
 #ifdef ___CPUMInternal_h
         struct CPUM s;
 #endif
-        uint8_t     padding[1472];      /* multiple of 64 */
+        uint8_t     padding[1536];      /* multiple of 64 */
     } cpum;
 
     /** VMM part. */
@@ -1078,7 +1078,7 @@ typedef struct VM
 
 
     /** Padding for aligning the cpu array on a page boundary. */
-    uint8_t         abAlignment2[798];
+    uint8_t         abAlignment2[734];
 
     /* ---- end small stuff ---- */
 
