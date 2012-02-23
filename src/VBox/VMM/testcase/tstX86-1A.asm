@@ -106,6 +106,7 @@ g_r80_Max:      dt 07ffeffffffffffffffffh
 g_r80_Inf:      dt 07fff8000000000000000h
 g_r80_QNaN:     dt 07fffc000000000000000h
 g_r80_QNaNMax:  dt 07fffffffffffffffffffh
+g_r80_NegQNaN:  dt 0ffffc000000000000000h
 g_r80_SNaN:     dt 07fff8000000000000001h
 g_r80_SNaNMax:  dt 07fffbfffffffffffffffh
 g_r80_DnMin:    dt 000000000000000000001h
@@ -3062,7 +3063,6 @@ BEGINPROC   x861_TestFPUInstr1
         FxSaveCheckSt0Empty xSP
         FxSaveCheckStNValueConst xSP, 1, REF(g_r80_3dot2)
         FxSaveCheckStNValueConst xSP, 2, REF(g_r80_0dot1)
-%endif
 
         ;
         ; FISTP M32I, ST0
@@ -3114,6 +3114,42 @@ BEGINPROC   x861_TestFPUInstr1
         CheckMemoryValue dword, xBX, 0xffeeddcc
         FxSaveCheckStNValueConst xSP, 1, REF(g_r80_3dot2)
         FxSaveCheckStNValueConst xSP, 2, REF(g_r80_0dot1)
+%endif
+
+        ;
+        ; FPTAN - calc, store ST0, push 1.0.
+        ;
+        SetSubTest "FPTAN"
+
+        ; ## Normal operation. ##
+        fninit
+        fldpi
+        FpuCheckOpcodeCsIp     { fptan }
+        FxSaveCheckStNValueConst xSP, 0, REF(g_r80_One)
+        FxSaveCheckStNValue xSP, 1, 0x00000000, 0x80000000, 0x3fbf ; should be zero, so, this might fail due to precision later.
+
+        ; Masked stack underflow - two QNaNs.
+        fninit
+        FpuCheckOpcodeCsIp     { fptan }
+        FxSaveCheckStNValueConst xSP, 0, REF(g_r80_NegQNaN)
+        FxSaveCheckStNValueConst xSP, 1, REF(g_r80_NegQNaN)
+
+        ; Masked stack overflow - two QNaNs
+        fninit
+        fldpi
+        fldpi
+        fldpi
+        fldpi
+        fldpi
+        fldpi
+        fldpi
+        fldpi
+        FpuCheckOpcodeCsIp     { fptan }
+        FxSaveCheckStNValueConst xSP, 0, REF(g_r80_NegQNaN)
+        FxSaveCheckStNValueConst xSP, 1, REF(g_r80_NegQNaN)
+
+        ;; @todo Finish FPTAN testcase.
+
 
 .success:
         xor     eax, eax

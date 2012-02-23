@@ -11051,13 +11051,46 @@ FNIEMOP_DEF(iemOp_fldz)
 
 
 /** Opcode 0xd9 0xf0. */
-FNIEMOP_STUB(iemOp_f2xm1);
+FNIEMOP_DEF(iemOp_f2xm1)
+{
+    IEMOP_MNEMONIC("f2xm1 st0");
+    return FNIEMOP_CALL_1(iemOpHlpFpu_st0, iemAImpl_f2xm1_r80);
+}
+
 
 /** Opcode 0xd9 0xf1. */
-FNIEMOP_STUB(iemOp_fylx2);
+FNIEMOP_DEF(iemOp_fylx2)
+{
+    IEMOP_MNEMONIC("fylx2 st0");
+    return FNIEMOP_CALL_1(iemOpHlpFpu_st0, iemAImpl_fylx2_r80);
+}
+
 
 /** Opcode 0xd9 0xf2. */
-FNIEMOP_STUB(iemOp_fptan);
+FNIEMOP_DEF(iemOp_fptan)
+{
+    IEMOP_MNEMONIC("fptan st0");
+    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+
+    IEM_MC_BEGIN(2, 1);
+    IEM_MC_LOCAL(IEMFPURESULTTWO,           FpuResTwo);
+    IEM_MC_ARG_LOCAL_REF(PIEMFPURESULTTWO,  pFpuResTwo, FpuResTwo,  0);
+    IEM_MC_ARG(PCRTFLOAT80U,                pr80Value,              1);
+
+    IEM_MC_MAYBE_RAISE_DEVICE_NOT_AVAILABLE();
+    IEM_MC_MAYBE_RAISE_FPU_XCPT();
+    IEM_MC_IF_FPUREG_NOT_EMPTY_REF_R80(pr80Value, 0)
+        IEM_MC_CALL_FPU_AIMPL_2(iemAImpl_fptan_r80_r80, pFpuResTwo, pr80Value);
+        IEM_MC_PUSH_FPU_RESULT_TWO(FpuResTwo);
+    IEM_MC_ELSE()
+        IEM_MC_FPU_STACK_PUSH_UNDERFLOW_TWO();
+    IEM_MC_ENDIF();
+    IEM_MC_ADVANCE_RIP();
+
+    IEM_MC_END();
+    return VINF_SUCCESS;
+
+}
 
 /** Opcode 0xd9 0xf3. */
 FNIEMOP_STUB(iemOp_fpatan);

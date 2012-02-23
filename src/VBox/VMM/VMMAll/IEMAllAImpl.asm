@@ -1314,6 +1314,16 @@ endstruc
 
 
 ;;
+; Need to move this as well somewhere better?
+;
+struc IEMFPURESULTTWO
+    .r80Result1 resw 5
+    .FSW        resw 1
+    .r80Result2 resw 5
+endstruc
+
+
+;;
 ; Converts a 80-bit floating point value to a 32-bit signed integer.
 ;
 ; @param    A0      FPU context (fxsave).
@@ -1695,6 +1705,8 @@ ENDPROC iemAImpl_ %+ %1 %+ _r80
 
 IEMIMPL_FPU_R80 fchs
 IEMIMPL_FPU_R80 fabs
+IEMIMPL_FPU_R80 f2xm1
+IEMIMPL_FPU_R80 fyl2x
 
 
 ;;
@@ -1764,4 +1776,34 @@ IEMIMPL_FPU_R80_CONST fldpi
 IEMIMPL_FPU_R80_CONST fldlg2
 IEMIMPL_FPU_R80_CONST fldln2
 IEMIMPL_FPU_R80_CONST fldz
+
+
+;;
+; FPU instruction working on one 80-bit floating point value, outputing two.
+;
+; @param    1       The instruction
+;
+; @param    A0      FPU context (fxsave).
+; @param    A1      Pointer to a IEMFPURESULTTWO for the output.
+; @param    A2      Pointer to the 80-bit value.
+;
+BEGINPROC_FASTCALL iemAImpl_fptan_r80_r80, 12
+        PROLOGUE_3_ARGS
+        sub     xSP, 20h
+
+        fninit
+        fld     tword [A2]
+        FPU_LD_FXSTATE_FCW_AND_SAFE_FSW A0
+        fptan
+
+        fnstsw  word  [A1 + IEMFPURESULTTWO.FSW]
+        fnclex
+        fstp    tword [A1 + IEMFPURESULTTWO.r80Result2]
+        fnclex
+        fstp    tword [A1 + IEMFPURESULTTWO.r80Result1]
+
+        fninit
+        add     xSP, 20h
+        EPILOGUE_3_ARGS 4
+ENDPROC iemAImpl_fptan_r80_r80
 

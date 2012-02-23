@@ -254,11 +254,11 @@ int main()
         if (rc != 0)
             RTTestFailed(hTest, "x861_Test5 -> %d", rc);
 
-#endif
         RTTestSub(hTest, "Floating point exceptions ++");
         rc = x861_Test7();
         if (rc != 0)
             RTTestFailed(hTest, "x861_Test6 -> %d", rc);
+#endif
 
         rc = x861_TestFPUInstr1();
         if (rc != 0)
