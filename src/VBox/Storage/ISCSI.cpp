@@ -918,13 +918,10 @@ static int iscsiTransportRead(PISCSIIMAGE pImage, PISCSIRES paResponse, unsigned
                 break;
             }
             Assert(cMilliesRemaining < 1000000);
-            rc = pImage->pIfNet->pfnSelectOne(pImage->Socket,
-                                                              cMilliesRemaining);
+            rc = pImage->pIfNet->pfnSelectOne(pImage->Socket, cMilliesRemaining);
             if (RT_FAILURE(rc))
                 break;
-            rc = pImage->pIfNet->pfnRead(pImage->Socket,
-                                                         pDst, residual,
-                                                         &cbActuallyRead);
+            rc = pImage->pIfNet->pfnRead(pImage->Socket, pDst, residual, &cbActuallyRead);
             if (RT_FAILURE(rc))
                 break;
             if (cbActuallyRead == 0)
@@ -2090,7 +2087,9 @@ static int iscsiRecvPDU(PISCSIIMAGE pImage, uint32_t itt, PISCSIRES paRes, uint3
             if (RT_FAILURE(rc))
                 continue;
             if (    !pImage->FirstRecvPDU
-                &&  (cmd != ISCSIOP_SCSI_DATA_IN || (RT_N2H_U32(pcvResSeg[0]) & ISCSI_STATUS_BIT)))
+                &&  (cmd != ISCSIOP_SCSI_DATA_IN || (RT_N2H_U32(pcvResSeg[0]) & ISCSI_STATUS_BIT))
+                &&  (   cmd != ISCSIOP_LOGIN_RES
+                     || (ISCSILOGINSTATUSCLASS)((RT_N2H_U32(pcvResSeg[9]) >> 24) == ISCSI_LOGIN_STATUS_CLASS_SUCCESS)))
             {
                 if (pImage->ExpStatSN == RT_N2H_U32(pcvResSeg[6]))
                 {
@@ -2173,6 +2172,8 @@ static int iscsiRecvPDU(PISCSIIMAGE pImage, uint32_t itt, PISCSIRES paRes, uint3
             }
         }
     }
+
+    LogFlowFunc(("returns rc=%Rrc\n"));
     return rc;
 }
 
