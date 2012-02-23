@@ -59,7 +59,11 @@ static void printUsage(PRTSTREAM pStrm)
                  "   createbase   --filename <filename>\n"
                  "                --size <size in bytes>\n"
                  "                [--format VDI|VMDK|VHD] (default: VDI)\n"
-                 "                [--variant Standard,Fixed,Split2G,Stream,ESX]\n",
+                 "                [--variant Standard,Fixed,Split2G,Stream,ESX]\n"
+                 "\n"
+                 "   repair       --filename <filename>\n"
+                 "                [--dry-run]\n"
+                 "                [--format VDI|VMDK|VHD] (default: autodetect)\n",
                  g_pszProgName);
 }
 
@@ -1157,6 +1161,73 @@ int handleCreateBase(HandlerArg *a)
 }
 
 
+int handleRepair(HandlerArg *a)
+{
+    int rc = VINF_SUCCESS;
+    PVBOXHDD pDisk = NULL;
+    const char *pszFilename = NULL;
+    char *pszBackend = NULL;
+    const char *pszFormat  = NULL;
+    bool fDryRun = false;
+    VDTYPE enmType = VDTYPE_HDD;
+
+    /* Parse the command line. */
+    static const RTGETOPTDEF s_aOptions[] =
+    {
+        { "--filename", 'f', RTGETOPT_REQ_STRING  },
+        { "--dry-run",  'd', RTGETOPT_REQ_NOTHING },
+        { "--format",   'b', RTGETOPT_REQ_STRING  }
+    };
+    int ch;
+    RTGETOPTUNION ValueUnion;
+    RTGETOPTSTATE GetState;
+    RTGetOptInit(&GetState, a->argc, a->argv, s_aOptions, RT_ELEMENTS(s_aOptions), 0, 0 /* fFlags */);
+    while ((ch = RTGetOpt(&GetState, &ValueUnion)))
+    {
+        switch (ch)
+        {
+            case 'f':   // --filename
+                pszFilename = ValueUnion.psz;
+                break;
+
+            case 'd':   // --dry-run
+                fDryRun = true;
+                break;
+
+            case 'b':   // --format
+                pszFormat = ValueUnion.psz;
+                break;
+
+            default:
+                ch = RTGetOptPrintError(ch, &ValueUnion);
+                printUsage(g_pStdErr);
+                return ch;
+        }
+    }
+
+    /* Check for mandatory parameters. */
+    if (!pszFilename)
+        return errorSyntax("Mandatory --filename option missing\n");
+
+    /* just try it */
+    if (!pszFormat)
+    {
+        rc = VDGetFormat(NULL, NULL, pszFilename, &pszBackend, &enmType);
+        if (RT_FAILURE(rc))
+            return errorSyntax("Format autodetect failed: %Rrc\n", rc);
+        pszFormat = pszBackend;
+    }
+
+    rc = VDRepair(pVDIfs, NULL, pszFilename, pszFormat, fDryRun ? VD_REPAIR_DRY_RUN : 0);
+    if (RT_FAILURE(rc))
+        rc = errorRuntime("Error while repairing the virtual disk: %Rrc\n", rc);
+
+    if (pszBackend)
+        RTStrFree(pszBackend);
+    return rc;
+}
+
+
 int main(int argc, char *argv[])
 {
     int exitcode = 0;
@@ -1245,6 +1316,7 @@ int main(int argc, char *argv[])
         { "compact",     handleCompact     },
         { "createcache", handleCreateCache },
         { "createbase",  handleCreateBase  },
+        { "repair",      handleRepair      },
         { NULL,                       NULL }
     };
 
