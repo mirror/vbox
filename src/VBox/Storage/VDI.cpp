@@ -3106,6 +3106,217 @@ static DECLCALLBACK(int) vdiAsyncDiscard(void *pBackendData, PVDIOCTX pIoCtx,
     return rc;
 }
 
+/** @copydoc VBOXHDDBACKEND::pfnRepair */
+static DECLCALLBACK(int) vdiRepair(const char *pszFilename, PVDINTERFACE pVDIfsDisk,
+                                   PVDINTERFACE pVDIfsImage, uint32_t fFlags)
+{
+    LogFlowFunc(("pszFilename=\"%s\" pVDIfsDisk=%#p pVDIfsImage=%#p\n", pszFilename, pVDIfsDisk, pVDIfsImage));
+    int rc;
+    PVDINTERFACEERROR pIfError;
+    PVDINTERFACEIOINT pIfIo;
+    PVDIOSTORAGE pStorage;
+    uint64_t cbFile;
+    PVDIIMAGEBLOCKPOINTER paBlocks = NULL;
+    uint32_t *pu32BlockBitmap = NULL;
+    VDIPREHEADER PreHdr;
+    VDIHEADER    Hdr;
+
+    pIfIo = VDIfIoIntGet(pVDIfsImage);
+    AssertPtrReturn(pIfIo, VERR_INVALID_PARAMETER);
+
+    pIfError = VDIfErrorGet(pVDIfsDisk);
+
+    do
+    {
+        bool fRepairHdr = false;
+        bool fRepairBlockArray = false;
+
+        rc = vdIfIoIntFileOpen(pIfIo, pszFilename,
+                               VDOpenFlagsToFileOpenFlags(  fFlags & VD_REPAIR_DRY_RUN
+                                                          ? VD_OPEN_FLAGS_READONLY
+                                                          : 0,
+                                                          false /* fCreate */),
+                               &pStorage);
+        if (RT_FAILURE(rc))
+        {
+            rc = vdIfError(pIfError, rc, RT_SRC_POS, "VDI: Failed to open image \"%s\"", pszFilename);
+            break;
+        }
+
+        rc = vdIfIoIntFileGetSize(pIfIo, pStorage, &cbFile);
+        if (RT_FAILURE(rc))
+        {
+            rc = vdIfError(pIfError, rc, RT_SRC_POS, "VDI: Failed to query image size");
+            break;
+        }
+
+        /* Read pre-header. */
+        rc = vdIfIoIntFileReadSync(pIfIo, pStorage, 0, &PreHdr, sizeof(PreHdr), NULL);
+        if (RT_FAILURE(rc))
+        {
+            rc = vdIfError(pIfError, rc, RT_SRC_POS, N_("VDI: Error reading pre-header in '%s'"), pszFilename);
+            break;
+        }
+        rc = vdiValidatePreHeader(&PreHdr);
+        if (RT_FAILURE(rc))
+        {
+            rc = vdIfError(pIfError, VERR_VD_IMAGE_REPAIR_IMPOSSIBLE, RT_SRC_POS,
+                           N_("VDI: invalid pre-header in '%s'"), pszFilename);
+            break;
+        }
+
+        /* Read header. */
+        Hdr.uVersion = RT_H2LE_U32(PreHdr.u32Version);
+        switch (GET_MAJOR_HEADER_VERSION(&Hdr))
+        {
+            case 0:
+                rc = vdIfIoIntFileReadSync(pIfIo, pStorage, sizeof(PreHdr),
+                                           &Hdr.u.v0, sizeof(Hdr.u.v0),
+                                           NULL);
+                if (RT_FAILURE(rc))
+                    rc = vdIfError(pIfError, rc, RT_SRC_POS, N_("VDI: error reading v0 header in '%s'"),
+                                   pszFilename);
+                break;
+            case 1:
+                rc = vdIfIoIntFileReadSync(pIfIo, pStorage, sizeof(PreHdr),
+                                           &Hdr.u.v1, sizeof(Hdr.u.v1), NULL);
+                if (RT_FAILURE(rc))
+                {
+                    rc = vdIfError(pIfError, rc, RT_SRC_POS, N_("VDI: error reading v1 header in '%s'"),
+                                   pszFilename);
+                }
+                if (Hdr.u.v1.cbHeader >= sizeof(Hdr.u.v1plus))
+                {
+                    /* Read the VDI 1.1+ header completely. */
+                    rc = vdIfIoIntFileReadSync(pIfIo, pStorage, sizeof(PreHdr),
+                                               &Hdr.u.v1plus, sizeof(Hdr.u.v1plus),
+                                               NULL);
+                    if (RT_FAILURE(rc))
+                        rc = vdIfError(pIfError, rc, RT_SRC_POS, N_("VDI: error reading v1.1+ header in '%s'"),
+                                       pszFilename);
+                }
+                break;
+            default:
+                rc = vdIfError(pIfError, VERR_VD_IMAGE_REPAIR_IMPOSSIBLE, RT_SRC_POS,
+                               N_("VDI: unsupported major version %u in '%s'"),
+                               GET_MAJOR_HEADER_VERSION(&Hdr), pszFilename);
+                break;
+        }
+
+        if (RT_SUCCESS(rc))
+        {
+            rc = vdiValidateHeader(&Hdr);
+            if (RT_FAILURE(rc))
+            {
+                rc = vdIfError(pIfError, VERR_VD_IMAGE_REPAIR_IMPOSSIBLE, RT_SRC_POS,
+                               N_("VDI: invalid header in '%s'"), pszFilename);
+                break;
+            }
+        }
+
+        /* Setup image parameters by header. */
+        uint64_t offStartBlocks, offStartData;
+        size_t cbTotalBlockData;
+
+        offStartBlocks     = getImageBlocksOffset(&Hdr);
+        offStartData       = getImageDataOffset(&Hdr);
+        cbTotalBlockData   = getImageExtraBlockSize(&Hdr) + getImageBlockSize(&Hdr);
+
+        /* Allocate memory for blocks array. */
+        paBlocks = (PVDIIMAGEBLOCKPOINTER)RTMemAlloc(sizeof(VDIIMAGEBLOCKPOINTER) * getImageBlocks(&Hdr));
+        if (!paBlocks)
+        {
+            rc = vdIfError(pIfError, VERR_NO_MEMORY, RT_SRC_POS,
+                           "Failed to allocate memory for block array");
+            break;
+        }
+
+        /* Read blocks array. */
+        rc = vdIfIoIntFileReadSync(pIfIo, pStorage, offStartBlocks, paBlocks,
+                                   getImageBlocks(&Hdr) * sizeof(VDIIMAGEBLOCKPOINTER),
+                                   NULL);
+        if (RT_FAILURE(rc))
+        {
+            rc = vdIfError(pIfError, VERR_VD_IMAGE_REPAIR_IMPOSSIBLE, RT_SRC_POS,
+                           "Failed to read block array (at %llu), %Rrc",
+                           offStartBlocks, rc);
+            break;
+        }
+
+        pu32BlockBitmap = (uint32_t *)RTMemAllocZ(RT_ALIGN_Z(getImageBlocks(&Hdr) / 8, 4));
+        if (!pu32BlockBitmap)
+        {
+            rc = vdIfError(pIfError, VERR_NO_MEMORY, RT_SRC_POS,
+                           "Failed to allocate memory for block bitmap");
+            break;
+        }
+
+        for (uint32_t i = 0; i < getImageBlocks(&Hdr); i++)
+        {
+            if (IS_VDI_IMAGE_BLOCK_ALLOCATED(paBlocks[i]))
+            {
+                uint64_t offBlock =   (uint64_t)paBlocks[i] * cbTotalBlockData
+                                    + offStartData;
+
+                /*
+                 * Check that the offsets are valid (inside of the image) and
+                 * that there are no double references.
+                 */
+                if (offBlock + cbTotalBlockData > cbFile)
+                {
+                    vdIfErrorMessage(pIfError, "Entry %u points to invalid offset %llu, clearing\n",
+                                     i, offBlock);
+                    paBlocks[i] = VDI_IMAGE_BLOCK_FREE;
+                    fRepairBlockArray = true;
+                }
+                else if (ASMBitTestAndSet(pu32BlockBitmap, paBlocks[i]))
+                {
+                    vdIfErrorMessage(pIfError, "Entry %u points to an already referenced data block, clearing\n",
+                                     i);
+                    paBlocks[i] = VDI_IMAGE_BLOCK_FREE;
+                    fRepairBlockArray = true;
+                }
+            }
+        }
+
+        /* Write repaired structures now. */
+        if (!fRepairBlockArray)
+            vdIfErrorMessage(pIfError, "VDI image is in a consistent state, no repair required\n");
+        else if (!(fFlags & VD_REPAIR_DRY_RUN))
+        {
+            for (uint32_t i = 0; i < getImageBlocks(&Hdr); i++)
+                paBlocks[i] = RT_H2BE_U32(paBlocks[i]);
+
+            vdIfErrorMessage(pIfError, "Writing repaired block allocation table...\n");
+
+            rc = vdIfIoIntFileWriteSync(pIfIo, pStorage, offStartBlocks, paBlocks,
+                                        getImageBlocks(&Hdr) * sizeof(VDIIMAGEBLOCKPOINTER),
+                                        NULL);
+            if (RT_FAILURE(rc))
+            {
+                rc = vdIfError(pIfError, VERR_VD_IMAGE_REPAIR_IMPOSSIBLE, RT_SRC_POS,
+                               "Could not write repaired block allocation table (at %llu), %Rrc",
+                               offStartBlocks, rc);
+                break;
+            }
+        }
+
+        vdIfErrorMessage(pIfError, "Corrupted VDI image repaired successfully\n");
+    } while(0);
+
+    if (paBlocks)
+        RTMemFree(paBlocks);
+
+    if (pu32BlockBitmap)
+        RTMemFree(pu32BlockBitmap);
+
+    if (pStorage)
+        vdIfIoIntFileClose(pIfIo, pStorage);
+
+    LogFlowFunc(("returns %Rrc\n", rc));
+    return rc;
+}
+
 VBOXHDDBACKEND g_VDIBackend =
 {
     /* pszBackendName */
@@ -3208,5 +3419,5 @@ VBOXHDDBACKEND g_VDIBackend =
     /* pfnAsyncDiscard */
     vdiAsyncDiscard,
     /* pfnRepair */
-    NULL
+    vdiRepair
 };
