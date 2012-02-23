@@ -445,12 +445,14 @@ IEMOPSHIFTDBLSIZES g_iemAImpl_shrd;
 #define IEM_MC_FPU_STACK_UNDERFLOW_THEN_POP(a_iStReg)                                           do { } while (0)
 #define IEM_MC_FPU_STACK_UNDERFLOW_MEM_OP(a_iStReg, a_iEffSeg, a_GCPtrEff)                      do { } while (0)
 #define IEM_MC_FPU_STACK_UNDERFLOW_MEM_OP_THEN_POP(a_iStReg, a_iEffSeg, a_GCPtrEff)             do { } while (0)
+#define IEM_MC_FPU_STACK_PUSH_UNDERFLOW()                                                       do { } while (0)
 #define IEM_MC_FPU_STACK_PUSH_OVERFLOW()                                                        do { } while (0)
 #define IEM_MC_FPU_STACK_PUSH_OVERFLOW_MEM_OP(a_iEffSeg, a_GCPtrEff)                            do { } while (0)
 #define IEM_MC_UPDATE_FSW(a_u16FSW)                                                             do { } while (0)
 #define IEM_MC_UPDATE_FSW_WITH_MEM_OP(a_u16FSW, a_iEffSeg, a_GCPtrEff)                          do { } while (0)
 #define IEM_MC_UPDATE_FSW_THEN_POP(a_u16FSW)                                                    do { } while (0)
 #define IEM_MC_UPDATE_FSW_WITH_MEM_OP_THEN_POP(a_u16FSW, a_iEffSeg, a_GCPtrEff)                 do { } while (0)
+#define IEM_MC_UPDATE_FPU_OPCODE_IP()                                                           do { } while (0)
 
 #define IEM_MC_IF_EFL_BIT_SET(a_fBit)                                   if (g_fRandom) {
 #define IEM_MC_IF_EFL_BIT_NOT_SET(a_fBit)                               if (g_fRandom) {
