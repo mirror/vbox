@@ -260,16 +260,6 @@
         authentication:<itemizedlist>
 
         <listitem>
-          <para>When using teleporting, passwords can optionally be used to
-          protect a machine waiting to be teleported from unauthorized access.
-          Note however that these passwords are stored <emphasis
-          role="bold">unencrypted</emphasis> in the machine configuration XML
-          and therefore potentially readable on the host. See <xref
-          linkend="teleporting" /> and <xref
-          linkend="vboxmanage-modifyvm-teleport" />.</para>
-        </listitem>
-
-        <listitem>
           <para>When using remote iSCSI storage and the storage server
           requires authentication, a password can optionally be supplied with
           the <computeroutput>VBoxManage storageattach</computeroutput>
