@@ -10807,7 +10807,32 @@ FNIEMOP_DEF_1(iemOp_fld_stN, uint8_t, bRm)
 
 
 /** Opcode 0xd9 11/3 stN */
-FNIEMOP_STUB_1(iemOp_fxch_stN, uint8_t, bRm);
+FNIEMOP_DEF_1(iemOp_fxch_stN, uint8_t, bRm)
+{
+    IEMOP_MNEMONIC("fxch stN");
+    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+
+    /** @todo Testcase: Check if this raises \#MF?  Intel mentioned it not. AMD
+     *        indicates that it does. */
+    IEM_MC_BEGIN(1, 3);
+    IEM_MC_LOCAL(PCRTFLOAT80U,          pr80Value1);
+    IEM_MC_LOCAL(PCRTFLOAT80U,          pr80Value2);
+    IEM_MC_LOCAL(IEMFPURESULT,          FpuRes);
+    IEM_MC_ARG_CONST(uint8_t,           iStReg, /*=*/ bRm & X86_MODRM_RM_MASK, 0);
+    IEM_MC_MAYBE_RAISE_DEVICE_NOT_AVAILABLE();
+    IEM_MC_MAYBE_RAISE_FPU_XCPT();
+    IEM_MC_IF_TWO_FPUREGS_NOT_EMPTY_REF_R80(pr80Value1, 0, pr80Value2, bRm & X86_MODRM_RM_MASK)
+        IEM_MC_SET_FPU_RESULT(FpuRes, X86_FSW_C1, pr80Value2);
+        IEM_MC_STORE_FPUREG_R80_SRC_REF(bRm & X86_MODRM_RM_MASK, pr80Value1);
+        IEM_MC_STORE_FPU_RESULT(FpuRes, 0);
+    IEM_MC_ELSE()
+        IEM_MC_CALL_CIMPL_1(iemCImpl_fxch_underflow, iStReg);
+    IEM_MC_ENDIF();
+    IEM_MC_ADVANCE_RIP();
+    IEM_MC_END();
+
+    return VINF_SUCCESS;
+}
 
 
 /** Opcode 0xd9 11/4, 0xdd 11/2. */

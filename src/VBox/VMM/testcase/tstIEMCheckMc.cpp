@@ -305,6 +305,7 @@ IEMOPSHIFTDBLSIZES g_iemAImpl_shrd;
 #define IEM_MC_STORE_GREG_U16_CONST(a_iGReg, a_u16C)    do { AssertCompile((uint16_t)(a_u16C) == (a_u16C)); } while (0)
 #define IEM_MC_STORE_GREG_U32_CONST(a_iGReg, a_u32C)    do { AssertCompile((uint32_t)(a_u32C) == (a_u32C)); } while (0)
 #define IEM_MC_STORE_GREG_U64_CONST(a_iGReg, a_u64C)    do { AssertCompile((uint64_t)(a_u64C) == (a_u64C)); } while (0)
+#define IEM_MC_STORE_FPUREG_R80_SRC_REF(a_iSt, a_pr80Src) do { CHK_PTYPE(PCRTFLOAT80U, a_pr80Src); Assert((a_iSt) < 8); } while (0)
 #define IEM_MC_CLEAR_HIGH_GREG_U64(a_iGReg)             do {  } while (0)
 #define IEM_MC_CLEAR_HIGH_GREG_U64_BY_REF(a_pu32Dst)    do { CHK_PTYPE(uint32_t *, a_pu32Dst); } while (0)
 #define IEM_MC_REF_GREG_U8(a_pu8Dst, a_iGReg)           do { (a_pu8Dst)  = (uint8_t  *)((uintptr_t)0); CHK_PTYPE(uint8_t  *, a_pu8Dst);  } while (0)
@@ -475,8 +476,13 @@ IEMOPSHIFTDBLSIZES g_iemAImpl_shrd;
 #define IEM_MC_IF_GREG_BIT_SET(a_iGReg, a_iBitNo)                       if (g_fRandom) {
 #define IEM_MC_IF_FPUREG_NOT_EMPTY(a_iSt)                               if (g_fRandom) {
 #define IEM_MC_IF_FPUREG_IS_EMPTY(a_iSt)                                if (g_fRandom) {
-#define IEM_MC_IF_FPUREG_NOT_EMPTY_REF_R80(a_pr80Dst, a_iSt)            if (g_fRandom) {
-#define IEM_MC_IF_TWO_FPUREGS_NOT_EMPTY_REF_R80(p0, i0, p1, i1)         if (g_fRandom) {
+#define IEM_MC_IF_FPUREG_NOT_EMPTY_REF_R80(a_pr80Dst, a_iSt) \
+    a_pr80Dst = NULL; \
+    if (g_fRandom) {
+#define IEM_MC_IF_TWO_FPUREGS_NOT_EMPTY_REF_R80(p0, i0, p1, i1) \
+    p0 = NULL; \
+    p1 = NULL; \
+    if (g_fRandom) {
 #define IEM_MC_ELSE()                                                   } else {
 #define IEM_MC_ENDIF()                                                  } do {} while (0)
 
