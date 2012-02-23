@@ -6132,9 +6132,19 @@ static VBOXSTRICTRC iemMemMarkSelDescAccessed(PIEMCPU pIemCpu, uint16_t uSel)
 #define IEM_MC_DEFER_TO_CIMPL_3(a_pfnCImpl, a0, a1, a2) (a_pfnCImpl)(pIemCpu, pIemCpu->offOpcode, a0, a1, a2)
 
 /**
- * Calls a FPU assembly implementation taking two visible arguments.
+ * Calls a FPU assembly implementation taking one visible argument.
  *
- * This shall be used without any IEM_MC_BEGIN or IEM_END macro surrounding it.
+ * @param   a_pfnAImpl      Pointer to the assembly FPU routine.
+ * @param   a0              The first extra argument.
+ */
+#define IEM_MC_CALL_FPU_AIMPL_1(a_pfnAImpl, a0) \
+    do { \
+        iemFpuPrepareUsage(pIemCpu); \
+        a_pfnAImpl(&pIemCpu->CTX_SUFF(pCtx)->fpu, (a0)); \
+    } while (0)
+
+/**
+ * Calls a FPU assembly implementation taking two visible arguments.
  *
  * @param   a_pfnAImpl      Pointer to the assembly FPU routine.
  * @param   a0              The first extra argument.
@@ -6148,8 +6158,6 @@ static VBOXSTRICTRC iemMemMarkSelDescAccessed(PIEMCPU pIemCpu, uint16_t uSel)
 
 /**
  * Calls a FPU assembly implementation taking three visible arguments.
- *
- * This shall be used without any IEM_MC_BEGIN or IEM_END macro surrounding it.
  *
  * @param   a_pfnAImpl      Pointer to the assembly FPU routine.
  * @param   a0              The first extra argument.
@@ -6230,7 +6238,7 @@ static VBOXSTRICTRC iemMemMarkSelDescAccessed(PIEMCPU pIemCpu, uint16_t uSel)
 /** Raises a FPU stack overflow exception as part of a push attempt.  Sets
  *  FPUIP, FPUCS and FOP. */
 #define IEM_MC_FPU_STACK_PUSH_OVERFLOW() \
-    iemFpuStackPushOverflow(pIemCpu, a_iStDst)
+    iemFpuStackPushOverflow(pIemCpu)
 /** Raises a FPU stack overflow exception as part of a push attempt.  Sets
  *  FPUIP, FPUCS, FOP, FPUDP and FPUDS. */
 #define IEM_MC_FPU_STACK_PUSH_OVERFLOW_MEM_OP(a_iEffSeg, a_GCPtrEff) \
