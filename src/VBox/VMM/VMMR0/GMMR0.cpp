@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2007-2011 Oracle Corporation
+ * Copyright (C) 2007-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -161,6 +161,9 @@
 #include <VBox/err.h>
 #include <iprt/asm.h>
 #include <iprt/avl.h>
+#ifdef VBOX_STRICT
+# include <iprt/crc.h>
+#endif
 #include <iprt/list.h>
 #include <iprt/mem.h>
 #include <iprt/memobj.h>
@@ -221,8 +224,8 @@ typedef union GMMPAGE
         uint32_t    pfn;
         /** The reference count (64K VMs). */
         uint32_t    cRefs : 16;
-        /** Reserved. Checksum or something? Two hGVMs for forking? */
-        uint32_t    u14Reserved : 14;
+        /** Used for debug checksumming. */
+        uint32_t    u14Checksum : 14;
         /** The page state. */
         uint32_t    u2State : 2;
     } Shared;
@@ -722,6 +725,9 @@ DECLINLINE(void)            gmmR0FreeSharedPage(PGMM pGMM, PGVM pGVM, uint32_t i
 static int                  gmmR0UnmapChunkLocked(PGMM pGMM, PGVM pGVM, PGMMCHUNK pChunk);
 #ifdef VBOX_WITH_PAGE_SHARING
 static void                 gmmR0SharedModuleCleanup(PGMM pGMM, PGVM pGVM);
+# ifdef VBOX_STRICT
+static uint32_t             gmmR0StrictPageChecksum(PGMM pGMM, PGVM pGVM, uint32_t idPage);
+# endif
 #endif
 
 
@@ -3281,6 +3287,15 @@ DECLINLINE(void) gmmR0FreeSharedPage(PGMM pGMM, PGVM pGVM, uint32_t idPage, PGMM
     Assert(pGMM->cSharedPages > 0);
     Assert(pGMM->cAllocatedPages > 0);
     Assert(!pPage->Shared.cRefs);
+#ifdef VBOX_STRICT
+    if (pPage->Shared.u14Checksum)
+    {
+        uint32_t uChecksum = gmmR0StrictPageChecksum(pGMM, pGVM, idPage);
+        uChecksum &= UINT32_C(0x00003fff);
+        AssertMsg(!uChecksum || uChecksum == pPage->Shared.u14Checksum,
+                  ("%#x vs %#x - idPage=%#\n", uChecksum, pPage->Shared.u14Checksum, idPage));
+    }
+#endif
 
     pChunk->cShared--;
     pGMM->cAllocatedPages--;
@@ -3977,7 +3992,7 @@ static int gmmR0MapChunk(PGMM pGMM, PGVM pGVM, PGMMCHUNK pChunk, bool fRelaxedSe
  * @param   pChunk      Pointer to the chunk to be mapped.
  * @param   ppvR3       Where to store the ring-3 address of the mapping.
  */
-static int gmmR0IsChunkMapped(PGMM pGMM, PGVM pGVM, PGMMCHUNK pChunk, PRTR3PTR ppvR3)
+static bool gmmR0IsChunkMapped(PGMM pGMM, PGVM pGVM, PGMMCHUNK pChunk, PRTR3PTR ppvR3)
 {
     GMMR0CHUNKMTXSTATE MtxState;
     gmmR0ChunkMutexAcquire(&MtxState, pGMM, pChunk, GMMR0CHUNK_MTX_KEEP_GIANT);
@@ -4167,6 +4182,31 @@ GMMR0DECL(int) GMMR0SeedChunk(PVM pVM, VMCPUID idCpu, RTR3PTR pvR3)
 }
 
 #ifdef VBOX_WITH_PAGE_SHARING
+
+# ifdef VBOX_STRICT
+/**
+ * For checksumming shared pages in strict builds.
+ *
+ * The purpose is making sure that a page doesn't change.
+ *
+ * @returns Checksum, 0 on failure.
+ * @param   GMM                 The GMM instance data.
+ * @param   idPage              The page ID.
+ */
+static uint32_t gmmR0StrictPageChecksum(PGMM pGMM, PGVM pGVM, uint32_t idPage)
+{
+    PGMMCHUNK pChunk = gmmR0GetChunk(pGMM, idPage >> GMM_CHUNKID_SHIFT);
+    AssertMsgReturn(pChunk, ("idPage=%#x\n", idPage), 0);
+
+    uint8_t *pbChunk;
+    if (!gmmR0IsChunkMapped(pGMM, pGVM, pChunk, (PRTR3PTR)&pbChunk))
+        return 0;
+    uint8_t const *pbPage = pbChunk + ((idPage & GMM_PAGEID_IDX_MASK) << PAGE_SHIFT);
+
+    return RTCrc32(pbPage, PAGE_SIZE);
+}
+# endif /* VBOX_STRICT */
+
 
 /**
  * Calculates the module hash value.
@@ -4681,9 +4721,14 @@ DECLINLINE(void) gmmR0ConvertToSharedPage(PGMM pGMM, PGVM pGVM, RTHCPHYS HCPhys,
     pGVM->gmm.s.Stats.cPrivatePages--;
 
     /* Modify the page structure. */
-    pPage->Shared.pfn     = (uint32_t)(uint64_t)(HCPhys >> PAGE_SHIFT);
-    pPage->Shared.cRefs   = 1;
-    pPage->Common.u2State = GMM_PAGE_STATE_SHARED;
+    pPage->Shared.pfn         = (uint32_t)(uint64_t)(HCPhys >> PAGE_SHIFT);
+    pPage->Shared.cRefs       = 1;
+#ifdef VBOX_STRICT
+    pPage->Shared.u14Checksum = gmmR0StrictPageChecksum(pGMM, pGVM, idPage);
+#else
+    pPage->Shared.u14Checksum = 0;
+#endif
+    pPage->Shared.u2State     = GMM_PAGE_STATE_SHARED;
 }
 
 
@@ -4827,6 +4872,15 @@ GMMR0DECL(int) GMMR0SharedModuleCheckPage(PGVM pGVM, PGMMSHAREDMODULE pModule, u
         AssertRCReturn(rc, rc);
     }
     uint8_t *pbSharedPage = pbChunk + ((pGlobalRegion->paidPages[idxPage] & GMM_PAGEID_IDX_MASK) << PAGE_SHIFT);
+#ifdef VBOX_STRICT
+    if (pPage->Shared.u14Checksum)
+    {
+        uint32_t uChecksum = RTCrc32(pbSharedPage, PAGE_SIZE) & UINT32_C(0x00003fff);
+        AssertMsg(!uChecksum || uChecksum == pPage->Shared.u14Checksum,
+                  ("%#x vs %#x - idPage=%# - %s %s\n", uChecksum, pPage->Shared.u14Checksum,
+                   pGlobalRegion->paidPages[idxPage], pModule->szName, pModule->szVersion));
+    }
+#endif
 
     /** @todo write ASMMemComparePage. */
     if (memcmp(pbSharedPage, pbLocalPage, PAGE_SIZE))
