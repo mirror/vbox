@@ -5234,7 +5234,7 @@ int09_function(DI, SI, BP, SP, BX, DX, CX, AX)
   Bit16u DI, SI, BP, SP, BX, DX, CX, AX;
 {
   Bit8u scancode, asciicode, shift_flags;
-  Bit8u mf2_flags, mf2_state;
+  Bit8u mf2_flags, mf2_state, flag;
 
   //
   // DS has been set to F000 before call
@@ -5267,21 +5267,18 @@ int09_function(DI, SI, BP, SP, BX, DX, CX, AX)
       break;
 
     case 0x2a: /* L Shift press */
-      shift_flags |= 0x02;
-      write_byte(0x0040, 0x17, shift_flags);
-      break;
     case 0xaa: /* L Shift release */
-      shift_flags &= ~0x02;
-      write_byte(0x0040, 0x17, shift_flags);
-      break;
-
     case 0x36: /* R Shift press */
-      shift_flags |= 0x01;
-      write_byte(0x0040, 0x17, shift_flags);
-      break;
     case 0xb6: /* R Shift release */
-      shift_flags &= ~0x01;
-      write_byte(0x0040, 0x17, shift_flags);
+      /* If this was an extended (i.e. faked) key, leave flags alone. */
+      if (!(mf2_state & 0x02)) {
+        flag = (scancode & 0x7f) == 0x2a ? 0x02 : 0x01;
+        if (scancode & 0x80)
+          shift_flags &= ~flag;
+        else
+          shift_flags |= flag;
+        write_byte(0x0040, 0x17, shift_flags);
+      }
       break;
 
     case 0x1d: /* Ctrl press */
