@@ -3681,6 +3681,7 @@ IEM_CIMPL_DEF_0(iemCImpl_sti)
         pCtx->eflags.Bits.u1IF = 1;
 
     iemRegAddToRip(pIemCpu, cbInstr);
+    /** @todo don't do this unconditionally... */
     EMSetInhibitInterruptsPC(IEMCPU_TO_VMCPU(pIemCpu), pCtx->rip);
     return VINF_SUCCESS;
 }
