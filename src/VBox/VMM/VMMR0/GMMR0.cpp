@@ -3287,7 +3287,7 @@ DECLINLINE(void) gmmR0FreeSharedPage(PGMM pGMM, PGVM pGVM, uint32_t idPage, PGMM
     Assert(pGMM->cSharedPages > 0);
     Assert(pGMM->cAllocatedPages > 0);
     Assert(!pPage->Shared.cRefs);
-#ifdef VBOX_STRICT
+#if defined(VBOX_STRICT) && HC_ARCH_BITS == 64
     if (pPage->Shared.u14Checksum)
     {
         uint32_t uChecksum = gmmR0StrictPageChecksum(pGMM, pGVM, idPage);
