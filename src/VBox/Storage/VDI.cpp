@@ -3243,6 +3243,9 @@ static DECLCALLBACK(int) vdiRepair(const char *pszFilename, PVDINTERFACE pVDIfsD
             break;
         }
 
+        for (uint32_t i = 0; i < getImageBlocks(&Hdr); i++)
+            paBlocks[i] = RT_LE2H_U32(paBlocks[i]);
+
         pu32BlockBitmap = (uint32_t *)RTMemAllocZ(RT_ALIGN_Z(getImageBlocks(&Hdr) / 8, 4));
         if (!pu32BlockBitmap)
         {
@@ -3285,7 +3288,7 @@ static DECLCALLBACK(int) vdiRepair(const char *pszFilename, PVDINTERFACE pVDIfsD
         else if (!(fFlags & VD_REPAIR_DRY_RUN))
         {
             for (uint32_t i = 0; i < getImageBlocks(&Hdr); i++)
-                paBlocks[i] = RT_H2BE_U32(paBlocks[i]);
+                paBlocks[i] = RT_H2LE_U32(paBlocks[i]);
 
             vdIfErrorMessage(pIfError, "Writing repaired block allocation table...\n");
 
