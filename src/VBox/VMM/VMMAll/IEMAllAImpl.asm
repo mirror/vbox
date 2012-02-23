@@ -1663,3 +1663,105 @@ ENDPROC iemAImpl_ %+ %1 %+ _r80_by_r80
 IEMIMPL_FPU_R80_BY_R80_FSW fcom
 IEMIMPL_FPU_R80_BY_R80_FSW fucom
 
+
+;;
+; FPU instruction working on one 80-bit floating point value.
+;
+; @param    1       The instruction
+;
+; @param    A0      FPU context (fxsave).
+; @param    A1      Pointer to a IEMFPURESULT for the output.
+; @param    A2      Pointer to the 80-bit value.
+;
+%macro IEMIMPL_FPU_R80 1
+BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _r80, 12
+        PROLOGUE_3_ARGS
+        sub     xSP, 20h
+
+        fninit
+        fld     tword [A2]
+        FPU_LD_FXSTATE_FCW_AND_SAFE_FSW A0
+        %1
+
+        fnstsw  word  [A1 + IEMFPURESULT.FSW]
+        fnclex
+        fstp    tword [A1 + IEMFPURESULT.r80Result]
+
+        fninit
+        add     xSP, 20h
+        EPILOGUE_3_ARGS 4
+ENDPROC iemAImpl_ %+ %1 %+ _r80
+%endmacro
+
+IEMIMPL_FPU_R80 fchs
+IEMIMPL_FPU_R80 fabs
+
+
+;;
+; FPU instruction working on one 80-bit floating point value, only
+; returning FSW.
+;
+; @param    1       The instruction
+;
+; @param    A0      FPU context (fxsave).
+; @param    A1      Pointer to a uint16_t for the resulting FSW.
+; @param    A2      Pointer to the 80-bit value.
+;
+%macro IEMIMPL_FPU_R80_FSW 1
+BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _r80, 12
+        PROLOGUE_3_ARGS
+        sub     xSP, 20h
+
+        fninit
+        fld     tword [A2]
+        FPU_LD_FXSTATE_FCW_AND_SAFE_FSW A0
+        %1
+
+        fnstsw  word  [A1]
+
+        fninit
+        add     xSP, 20h
+        EPILOGUE_3_ARGS 4
+ENDPROC iemAImpl_ %+ %1 %+ _r80
+%endmacro
+
+IEMIMPL_FPU_R80_FSW ftst
+IEMIMPL_FPU_R80_FSW fxam
+
+
+
+;;
+; FPU instruction loading a 80-bit floating point constant.
+;
+; @param    1       The instruction
+;
+; @param    A0      FPU context (fxsave).
+; @param    A1      Pointer to a IEMFPURESULT for the output.
+;
+%macro IEMIMPL_FPU_R80_CONST 1
+BEGINPROC_FASTCALL iemAImpl_ %+ %1, 8
+        PROLOGUE_2_ARGS
+        sub     xSP, 20h
+
+        fninit
+        FPU_LD_FXSTATE_FCW_AND_SAFE_FSW A0
+        %1
+
+        fnstsw  word  [A1 + IEMFPURESULT.FSW]
+        fnclex
+        fstp    tword [A1 + IEMFPURESULT.r80Result]
+
+        fninit
+        add     xSP, 20h
+        EPILOGUE_2_ARGS 0
+ENDPROC iemAImpl_ %+ %1 %+
+%endmacro
+
+IEMIMPL_FPU_R80_CONST fld1
+IEMIMPL_FPU_R80_CONST fldl2t
+IEMIMPL_FPU_R80_CONST fldl2e
+IEMIMPL_FPU_R80_CONST fldpi
+IEMIMPL_FPU_R80_CONST fldlg2
+IEMIMPL_FPU_R80_CONST fldln2
+IEMIMPL_FPU_R80_CONST fldz
+

@@ -180,11 +180,22 @@ IEMOPSHIFTDBLSIZES g_iemAImpl_shrd;
 
 #define iemAImpl_fadd_r80_by_r80        NULL
 #define iemAImpl_fmul_r80_by_r80        NULL
-#define iemAImpl_fcom_r80_by_r80        NULL
 #define iemAImpl_fsub_r80_by_r80        NULL
 #define iemAImpl_fsubr_r80_by_r80       NULL
 #define iemAImpl_fdiv_r80_by_r80        NULL
 #define iemAImpl_fdivr_r80_by_r80       NULL
+#define iemAImpl_fcom_r80_by_r80        NULL
+#define iemAImpl_fabs_r80               NULL
+#define iemAImpl_fchs_r80               NULL
+#define iemAImpl_ftst_r80               NULL
+#define iemAImpl_fxam_r80               NULL
+#define iemAImpl_fld1                   NULL
+#define iemAImpl_fldl2t                 NULL
+#define iemAImpl_fldl2e                 NULL
+#define iemAImpl_fldpi                  NULL
+#define iemAImpl_fldlg2                 NULL
+#define iemAImpl_fldln2                 NULL
+#define iemAImpl_fldz                   NULL
 
 #define iemCImpl_callf                  NULL
 #define iemCImpl_FarJmp                 NULL
@@ -433,6 +444,7 @@ IEMOPSHIFTDBLSIZES g_iemAImpl_shrd;
 #define IEM_MC_DEFER_TO_CIMPL_2(a_pfnCImpl, a0, a1)                     (VINF_SUCCESS)
 #define IEM_MC_DEFER_TO_CIMPL_3(a_pfnCImpl, a0, a1, a2)                 (VINF_SUCCESS)
 
+#define IEM_MC_CALL_FPU_AIMPL_1(a_pfnAImpl, a0)                         do { } while (0)
 #define IEM_MC_CALL_FPU_AIMPL_2(a_pfnAImpl, a0, a1)                     do { } while (0)
 #define IEM_MC_CALL_FPU_AIMPL_3(a_pfnAImpl, a0, a1, a3)                 do { } while (0)
 #define IEM_MC_SET_FPU_RESULT(a_FpuData, a_FSW, a_pr80Value)            do { } while (0)
