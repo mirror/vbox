@@ -271,7 +271,12 @@ vbi_init(void)
 	modctl_t *genunix_modctl = mod_hold_by_name("genunix");
 	if (genunix_modctl)
 	{
+		/*
+		 * Hold mod_lock as ctf_modopen may update the module with uncompressed CTF data.
+		 */
+		mutex_enter(&mod_lock);
 		ctf_file_t *ctfp = ctf_modopen(genunix_modctl->mod_mp, &err);
+		mutex_exit(&mod_lock);
 		if (ctfp)
 		{
 			do {
