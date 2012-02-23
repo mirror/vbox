@@ -1031,8 +1031,17 @@ static int hmR0DisableCpu(RTCPUID idCpu)
     {
         void    *pvCpuPage     = RTR0MemObjAddress(pCpu->hMemObj);
         RTHCPHYS HCPhysCpuPage = RTR0MemObjGetPagePhysAddr(pCpu->hMemObj, 0);
-        rc = g_HvmR0.pfnDisableCpu(pCpu, pvCpuPage, HCPhysCpuPage);
-        AssertRC(rc);
+        if (idCpu == RTMpCpuId())
+        {
+            rc = g_HvmR0.pfnDisableCpu(pCpu, pvCpuPage, HCPhysCpuPage);
+            AssertRC(rc);
+        }
+        else
+        {
+            pCpu->fIgnoreAMDVInUseError = true;
+            rc = VINF_SUCCESS;
+        }
+
         pCpu->fConfigured = false;
     }
     else
@@ -1074,7 +1083,6 @@ static DECLCALLBACK(void) hmR0MpEventCallback(RTMPEVENT enmEvent, RTCPUID idCpu,
      * We only care about uninitializing a CPU that is going offline. When a
      * CPU comes online, the initialization is done lazily in HWACCMR0Enter().
      */
-    AssertRelease(idCpu == RTMpCpuId());
     Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));
     switch (enmEvent)
     {
