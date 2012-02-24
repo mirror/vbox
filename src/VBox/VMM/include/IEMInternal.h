@@ -809,6 +809,7 @@ typedef IEM_DECL_IMPL_TYPE(void, FNIEMAIMPLFPUR80FSW,(PCX86FXSTATE pFpuState, ui
                                                       PCRTFLOAT80U pr80Val1, PCRTFLOAT80U pr80Val2));
 typedef FNIEMAIMPLFPUR80FSW *PFNIEMAIMPLFPUR80FSW;
 FNIEMAIMPLFPUR80FSW         iemAImpl_fcom_r80_by_r80;
+FNIEMAIMPLFPUR80FSW         iemAImpl_fucom_r80_by_r80;
 
 typedef IEM_DECL_IMPL_TYPE(void, FNIEMAIMPLFPUR80UNARY,(PCX86FXSTATE pFpuState, PIEMFPURESULT pFpuRes, PCRTFLOAT80U pr80Val));
 typedef FNIEMAIMPLFPUR80UNARY *PFNIEMAIMPLFPUR80UNARY;
@@ -847,12 +848,25 @@ FNIEMAIMPLFPUR80UNARYTWO    iemAImpl_fsincos_r80_r80;
 
 /** @name FPU operations taking a 32-bit signed integer argument
  * @{  */
-typedef IEM_DECL_IMPL_TYPE(void, FNIEMAIMPLFPUS32OUT,(PCX86FXSTATE pFpuState, uint16_t *pu16FSW,
+typedef IEM_DECL_IMPL_TYPE(void, FNIEMAIMPLFPUI32OUT,(PCX86FXSTATE pFpuState, uint16_t *pu16FSW,
                                                      int32_t *pi32Dst, PCRTFLOAT80U pr80Value));
-typedef FNIEMAIMPLFPUS32OUT *PFNIEMAIMPLFPUS32OUT;
+typedef FNIEMAIMPLFPUI32OUT *PFNIEMAIMPLFPUI32OUT;
 
-FNIEMAIMPLFPUS32OUT iemAImpl_fpu_r80_to_i32;
+FNIEMAIMPLFPUI32OUT iemAImpl_fpu_r80_to_i32;
 
+typedef IEM_DECL_IMPL_TYPE(void, FNIEMAIMPLFPUI32,(PCX86FXSTATE pFpuState, PIEMFPURESULT pFpuRes,
+                                                   PCRTFLOAT80U pr80Val1, int32_t const *pi32Val2));
+typedef FNIEMAIMPLFPUI32    *PFNIEMAIMPLFPUI32;
+
+FNIEMAIMPLFPUI32    iemAImpl_fiadd_r80_by_i32;
+FNIEMAIMPLFPUI32    iemAImpl_fimul_r80_by_i32;
+FNIEMAIMPLFPUI32    iemAImpl_fisub_r80_by_i32;
+FNIEMAIMPLFPUI32    iemAImpl_fisubr_r80_by_i32;
+FNIEMAIMPLFPUI32    iemAImpl_fidiv_r80_by_i32;
+FNIEMAIMPLFPUI32    iemAImpl_fidivr_r80_by_i32;
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_ficom_r80_by_i32,(PCX86FXSTATE pFpuState, uint16_t *pu16Fsw,
+                                                   PCRTFLOAT80U pr80Val1, int32_t const *pi322Val2));
 /** @}  */
 
 

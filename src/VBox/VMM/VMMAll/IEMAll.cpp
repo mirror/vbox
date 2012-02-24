@@ -3728,6 +3728,22 @@ static void iemFpuUpdateFSWWithMemOp(PIEMCPU pIemCpu, uint16_t u16FSW, uint8_t i
 
 
 /**
+ * Updates the FSW, FOP, FPUIP, and FPUCS, then pops the stack twice.
+ *
+ * @param   pIemCpu             The IEM per CPU data.
+ * @param   u16FSW              The FSW from the current instruction.
+ */
+static void iemFpuUpdateFSWThenPopPop(PIEMCPU pIemCpu, uint16_t u16FSW)
+{
+    PCPUMCTX pCtx = pIemCpu->CTX_SUFF(pCtx);
+    iemFpuUpdateOpcodeAndIpWorker(pIemCpu, pCtx);
+    iemFpuUpdateFSWOnly(pCtx, u16FSW);
+    iemFpuMaybePopOne(pCtx);
+    iemFpuMaybePopOne(pCtx);
+}
+
+
+/**
  * Updates the FSW, FOP, FPUIP, FPUCS, FPUDP, and FPUDS, then pops the stack.
  *
  * @param   pIemCpu             The IEM per CPU data.
@@ -3817,6 +3833,16 @@ iemFpuStackUnderflowWithMemOpThenPop(PIEMCPU pIemCpu, uint8_t iStReg, uint8_t iE
     iemFpuUpdateDP(pIemCpu, pCtx, iEffSeg, GCPtrEff);
     iemFpuUpdateOpcodeAndIpWorker(pIemCpu, pCtx);
     iemFpuStackUnderflowOnly(pIemCpu, iStReg, pCtx);
+    iemFpuMaybePopOne(pCtx);
+}
+
+
+DECL_NO_INLINE(static, void) iemFpuStackUnderflowThenPopPop(PIEMCPU pIemCpu)
+{
+    PCPUMCTX pCtx = pIemCpu->CTX_SUFF(pCtx);
+    iemFpuUpdateOpcodeAndIpWorker(pIemCpu, pCtx);
+    iemFpuStackUnderflowOnly(pIemCpu, UINT8_MAX, pCtx);
+    iemFpuMaybePopOne(pCtx);
     iemFpuMaybePopOne(pCtx);
 }
 
@@ -5973,6 +5999,8 @@ static VBOXSTRICTRC iemMemMarkSelDescAccessed(PIEMCPU pIemCpu, uint16_t uSel)
     IEM_MC_RETURN_ON_FAILURE(iemMemFetchDataU32(pIemCpu, &(a_u32Dst), (a_iSeg), (a_GCPtrMem)))
 #define IEM_MC_FETCH_MEM_U32_DISP(a_u32Dst, a_iSeg, a_GCPtrMem, a_offDisp) \
     IEM_MC_RETURN_ON_FAILURE(iemMemFetchDataU32(pIemCpu, &(a_u32Dst), (a_iSeg), (a_GCPtrMem) + (a_offDisp)))
+#define IEM_MC_FETCH_MEM_I32(a_i32Dst, a_iSeg, a_GCPtrMem) \
+    IEM_MC_RETURN_ON_FAILURE(iemMemFetchDataU32(pIemCpu, (uint32_t *)&(a_i32Dst), (a_iSeg), (a_GCPtrMem)))
 
 #define IEM_MC_FETCH_MEM_S32_SX_U64(a_u64Dst, a_iSeg, a_GCPtrMem) \
     IEM_MC_RETURN_ON_FAILURE(iemMemFetchDataS32SxU64(pIemCpu, &(a_u64Dst), (a_iSeg), (a_GCPtrMem)))
@@ -6319,6 +6347,9 @@ static VBOXSTRICTRC iemMemMarkSelDescAccessed(PIEMCPU pIemCpu, uint16_t uSel)
  *  stack. */
 #define IEM_MC_UPDATE_FSW_WITH_MEM_OP_THEN_POP(a_u16FSW, a_iEffSeg, a_GCPtrEff) \
     iemFpuUpdateFSWWithMemOpThenPop(pIemCpu, a_u16FSW, a_iEffSeg, a_GCPtrEff)
+/** Updates the FSW, FOP, FPUIP, and FPUCS, and then pops the stack twice. */
+#define IEM_MC_UPDATE_FSW_THEN_POP_POP(a_u16FSW) \
+    iemFpuUpdateFSWThenPop(pIemCpu, a_u16FSW)
 
 /** Raises a FPU stack underflow exception.  Sets FPUIP, FPUCS and FOP. */
 #define IEM_MC_FPU_STACK_UNDERFLOW(a_iStDst) \
@@ -6335,6 +6366,10 @@ static VBOXSTRICTRC iemMemMarkSelDescAccessed(PIEMCPU pIemCpu, uint16_t uSel)
  *  FPUDS. Pops stack. */
 #define IEM_MC_FPU_STACK_UNDERFLOW_MEM_OP_THEN_POP(a_iStDst, a_iEffSeg, a_GCPtrEff) \
     iemFpuStackUnderflowWithMemOpThenPop(pIemCpu, a_iStDst, a_iEffSeg, a_GCPtrEff)
+/** Raises a FPU stack underflow exception.  Sets FPUIP, FPUCS and FOP. Pops
+ *  stack twice. */
+#define IEM_MC_FPU_STACK_UNDERFLOW_THEN_POP_POP() \
+    iemFpuStackUnderflowThenPopPop(pIemCpu)
 /** Raises a FPU stack underflow exception for an instruction pushing a result
  *  value onto the stack. Sets FPUIP, FPUCS and FOP. */
 #define IEM_MC_FPU_STACK_PUSH_UNDERFLOW() \

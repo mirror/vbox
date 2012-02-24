@@ -1323,6 +1323,11 @@ struc IEMFPURESULTTWO
 endstruc
 
 
+;
+;---------------------- 32-bit signed integer operations ----------------------
+;
+
+
 ;;
 ; Converts a 80-bit floating point value to a 32-bit signed integer.
 ;
@@ -1347,6 +1352,100 @@ BEGINPROC_FASTCALL iemAImpl_fpu_r80_to_i32, 12
         EPILOGUE_4_ARGS 0
 ENDPROC iemAImpl_fpu_r80_to_i32
 
+
+;;
+; Store a 80-bit floating point value (register) as a 32-bit signed integer (memory).
+;
+; @param    A0      FPU context (fxsave).
+; @param    A1      Where to return the output FSW.
+; @param    A2      Where to store the 32-bit signed integer value.
+; @param    A3      Pointer to the 80-bit value.
+;
+BEGINPROC_FASTCALL iemAImpl_fst_r80_to_i32, 12
+        PROLOGUE_3_ARGS
+        sub     xSP, 20h
+
+        fninit
+        fld     tword [A3]
+        FPU_LD_FXSTATE_FCW_AND_SAFE_FSW A0
+        fist    dword [A2]
+
+        fnstsw  word  [A1]
+
+        fninit
+        add     xSP, 20h
+        EPILOGUE_3_ARGS 0
+ENDPROC iemAImpl_fst_r80_to_i32
+
+
+;;
+; FPU instruction working on one 80-bit and one 32-bit signed integer value.
+;
+; @param    1       The instruction
+;
+; @param    A0      FPU context (fxsave).
+; @param    A1      Pointer to a IEMFPURESULT for the output.
+; @param    A2      Pointer to the 80-bit value.
+; @param    A3      Pointer to the 32-bit value.
+;
+%macro IEMIMPL_FPU_R80_BY_I32 1
+BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _r80_by_i32, 16
+        PROLOGUE_4_ARGS
+        sub     xSP, 20h
+
+        fninit
+        fld     tword [A2]
+        FPU_LD_FXSTATE_FCW_AND_SAFE_FSW A0
+        %1      dword [A3]
+
+        fnstsw  word  [A1 + IEMFPURESULT.FSW]
+        fnclex
+        fstp    tword [A1 + IEMFPURESULT.r80Result]
+
+        fninit
+        add     xSP, 20h
+        EPILOGUE_4_ARGS 8
+ENDPROC iemAImpl_ %+ %1 %+ _r80_by_i32
+%endmacro
+
+IEMIMPL_FPU_R80_BY_I32 fiadd
+IEMIMPL_FPU_R80_BY_I32 fimul
+IEMIMPL_FPU_R80_BY_I32 fisub
+IEMIMPL_FPU_R80_BY_I32 fisubr
+IEMIMPL_FPU_R80_BY_I32 fidiv
+IEMIMPL_FPU_R80_BY_I32 fidivr
+
+
+;;
+; FPU instruction working on one 80-bit and one 32-bit signed integer value,
+; only returning FSW.
+;
+; @param    1       The instruction
+;
+; @param    A0      FPU context (fxsave).
+; @param    A1      Where to store the output FSW.
+; @param    A2      Pointer to the 80-bit value.
+; @param    A3      Pointer to the 64-bit value.
+;
+%macro IEMIMPL_FPU_R80_BY_I32_FSW 1
+BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _r80_by_i32, 16
+        PROLOGUE_4_ARGS
+        sub     xSP, 20h
+
+        fninit
+        fld     tword [A2]
+        FPU_LD_FXSTATE_FCW_AND_SAFE_FSW A0
+        %1      dword [A3]
+
+        fnstsw  word  [A1]
+
+        fninit
+        add     xSP, 20h
+        EPILOGUE_4_ARGS 8
+ENDPROC iemAImpl_ %+ %1 %+ _r80_by_i32
+%endmacro
+
+IEMIMPL_FPU_R80_BY_I32_FSW ficom
 
 
 ;
@@ -1442,7 +1541,7 @@ IEMIMPL_FPU_R80_BY_R32 fdivr
 
 
 ;;
-; FPU instruction working on one 80-bit and one 64-bit floating point value,
+; FPU instruction working on one 80-bit and one 32-bit floating point value,
 ; only returning FSW.
 ;
 ; @param    1       The instruction
