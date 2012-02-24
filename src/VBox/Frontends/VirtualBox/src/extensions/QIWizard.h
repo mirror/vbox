@@ -40,6 +40,17 @@ public:
 
 protected:
 
+    /* Wizard type: */
+    enum UIWizardType
+    {
+        UIWizardType_NewVM,
+        UIWizardType_CloneVM,
+        UIWizardType_ExportAppliance,
+        UIWizardType_ImportAppliance,
+        UIWizardType_FirstRun,
+        UIWizardType_NewVD
+    };
+
     /* Page related methods: */
     int addPage(QIWizardPage *pPage);
     void setPage(int iId, QIWizardPage *pPage);
@@ -48,7 +59,7 @@ protected:
     void retranslateAllPages();
 
     /* Adjusting stuff: */
-    void resizeToGoldenRatio(double dRatio = 1.6);
+    void resizeToGoldenRatio(UIWizardType wizardType);
 
     /* Design stuff: */
 #ifndef Q_WS_MAC
@@ -57,11 +68,15 @@ protected:
     void assignBackground(const QString &strBackground);
 #endif
 
+    /* Show event: */
+    void showEvent(QShowEvent *pShowEvent);
+
 private:
 
     /* Helpers: */
     void configurePage(QIWizardPage *pPage);
     void resizeAccordingLabelWidth(int iLabelWidth);
+    double ratioForWizardType(UIWizardType wizardType);
 #ifndef Q_WS_MAC
     int proposedWatermarkHeight();
     void assignWatermarkHelper();
