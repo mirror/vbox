@@ -3114,7 +3114,6 @@ BEGINPROC   x861_TestFPUInstr1
         CheckMemoryValue dword, xBX, 0xffeeddcc
         FxSaveCheckStNValueConst xSP, 1, REF(g_r80_3dot2)
         FxSaveCheckStNValueConst xSP, 2, REF(g_r80_0dot1)
-%endif
 
         ;
         ; FPTAN - calc, store ST0, push 1.0.
@@ -3149,6 +3148,91 @@ BEGINPROC   x861_TestFPUInstr1
         FxSaveCheckStNValueConst xSP, 1, REF(g_r80_NegQNaN)
 
         ;; @todo Finish FPTAN testcase.
+%endif
+
+        ;
+        ; FCMOVB - move if CF=1.
+        ;
+        SetSubTest "FCMOVB ST0,STn"
+
+        ; ## Normal operation. ##
+        fninit
+        fldz
+        fldpi
+        call    SetFSW_C0_thru_C3
+        stc
+        FpuCheckOpcodeCsIp     { fcmovb st0,st1 }
+        FxSaveCheckFSW xSP, X86_FSW_C0 | X86_FSW_C1 | X86_FSW_C2 | X86_FSW_C3, 0 ; seems to be preserved...
+        FxSaveCheckStNValueConst xSP, 0, REF(g_r80_Zero)
+        FxSaveCheckStNValueConst xSP, 1, REF(g_r80_Zero)
+
+        fninit
+        fldz
+        fld1
+        call    SetFSW_C0_thru_C3
+        clc
+        FpuCheckOpcodeCsIp     { fcmovb st0,st1 }
+        FxSaveCheckFSW xSP, X86_FSW_C0 | X86_FSW_C1 | X86_FSW_C2 | X86_FSW_C3, 0 ; seems to be preserved...
+        FxSaveCheckStNValueConst xSP, 0, REF(g_r80_One)
+        FxSaveCheckStNValueConst xSP, 1, REF(g_r80_Zero)
+
+        ; ## Masked exceptions. ##
+
+        ; Masked stack underflow - both.
+        ; Note! #IE triggers regardless of the test result!
+        fninit
+        stc
+        FpuCheckOpcodeCsIp     { fcmovb st0,st1 }
+        FxSaveCheckFSW xSP, X86_FSW_IE | X86_FSW_SF, X86_FSW_C0 | X86_FSW_C2 | X86_FSW_C3
+        FxSaveCheckStNValue_QNaN(xSP, 0)
+        FxSaveCheckStNEmpty      xSP, 1
+
+        fninit
+        clc
+        FpuCheckOpcodeCsIp     { fcmovb st0,st1 }
+        FxSaveCheckFSW xSP, X86_FSW_IE | X86_FSW_SF, X86_FSW_C0 | X86_FSW_C2 | X86_FSW_C3
+        FxSaveCheckStNValue_QNaN(xSP, 0)
+        FxSaveCheckStNEmpty      xSP, 1
+
+        ; Masked stack underflow - source.
+        fninit
+        fldz
+        stc
+        FpuCheckOpcodeCsIp     { fcmovb st0,st1 }
+        FxSaveCheckFSW xSP, X86_FSW_IE | X86_FSW_SF, X86_FSW_C0 | X86_FSW_C2 | X86_FSW_C3
+        FxSaveCheckStNValue_QNaN(xSP, 0)
+        FxSaveCheckStNEmpty      xSP, 1
+
+        fninit
+        fldz
+        stc
+        FpuCheckOpcodeCsIp     { fcmovb st0,st1 }
+        FxSaveCheckFSW xSP, X86_FSW_IE | X86_FSW_SF, X86_FSW_C0 | X86_FSW_C2 | X86_FSW_C3
+        FxSaveCheckStNValue_QNaN(xSP, 0)
+        FxSaveCheckStNEmpty      xSP, 1
+
+        ; Masked stack underflow - destination.
+        fninit
+        fldz
+        fldpi
+        ffree st0
+        stc
+        FpuCheckOpcodeCsIp     { fcmovb st0,st1 }
+        FxSaveCheckFSW xSP, X86_FSW_IE | X86_FSW_SF, X86_FSW_C0 | X86_FSW_C2 | X86_FSW_C3
+        FxSaveCheckStNValue_QNaN(xSP, 0)
+        FxSaveCheckStNValueConst xSP, 1, REF(g_r80_Zero)
+
+        fninit
+        fldz
+        fldpi
+        ffree st0
+        clc
+        FpuCheckOpcodeCsIp     { fcmovb st0,st1 }
+        FxSaveCheckFSW xSP, X86_FSW_IE | X86_FSW_SF, X86_FSW_C0 | X86_FSW_C2 | X86_FSW_C3
+        FxSaveCheckStNValue_QNaN(xSP, 0)
+        FxSaveCheckStNValueConst xSP, 1, REF(g_r80_Zero)
+
+        ;; @todo Finish FCMOVB testcase.
 
 
 .success:
