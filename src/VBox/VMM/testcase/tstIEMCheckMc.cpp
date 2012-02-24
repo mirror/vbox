@@ -184,6 +184,13 @@ IEMOPSHIFTDBLSIZES g_iemAImpl_shrd;
 #define iemAImpl_fsubr_r80_by_r80       NULL
 #define iemAImpl_fdiv_r80_by_r80        NULL
 #define iemAImpl_fdivr_r80_by_r80       NULL
+#define iemAImpl_fprem_r80_by_r80       NULL
+#define iemAImpl_fprem1_r80_by_r80      NULL
+#define iemAImpl_fscale_r80_by_r80      NULL
+
+#define iemAImpl_fpatan_r80_by_r80      NULL
+#define iemAImpl_fyl2xp1_r80_by_r80     NULL
+
 #define iemAImpl_fcom_r80_by_r80        NULL
 #define iemAImpl_fabs_r80               NULL
 #define iemAImpl_fchs_r80               NULL
@@ -191,6 +198,11 @@ IEMOPSHIFTDBLSIZES g_iemAImpl_shrd;
 #define iemAImpl_fxam_r80               NULL
 #define iemAImpl_f2xm1_r80              NULL
 #define iemAImpl_fyl2x_r80              NULL
+#define iemAImpl_fsqrt_r80              NULL
+#define iemAImpl_frndint_r80            NULL
+#define iemAImpl_fsin_r80               NULL
+#define iemAImpl_fcos_r80               NULL
+
 #define iemAImpl_fld1                   NULL
 #define iemAImpl_fldl2t                 NULL
 #define iemAImpl_fldl2e                 NULL
@@ -198,6 +210,10 @@ IEMOPSHIFTDBLSIZES g_iemAImpl_shrd;
 #define iemAImpl_fldlg2                 NULL
 #define iemAImpl_fldln2                 NULL
 #define iemAImpl_fldz                   NULL
+
+#define iemAImpl_fptan_r80_r80          NULL
+#define iemAImpl_fxtract_r80_r80        NULL
+#define iemAImpl_fsincos_r80_r80        NULL
 
 #define iemCImpl_callf                  NULL
 #define iemCImpl_FarJmp                 NULL

@@ -798,6 +798,12 @@ FNIEMAIMPLFPUR80            iemAImpl_fsub_r80_by_r80;
 FNIEMAIMPLFPUR80            iemAImpl_fsubr_r80_by_r80;
 FNIEMAIMPLFPUR80            iemAImpl_fdiv_r80_by_r80;
 FNIEMAIMPLFPUR80            iemAImpl_fdivr_r80_by_r80;
+FNIEMAIMPLFPUR80            iemAImpl_fprem_r80_by_r80;
+FNIEMAIMPLFPUR80            iemAImpl_fprem1_r80_by_r80;
+FNIEMAIMPLFPUR80            iemAImpl_fscale_r80_by_r80;
+
+FNIEMAIMPLFPUR80            iemAImpl_fpatan_r80_by_r80;
+FNIEMAIMPLFPUR80            iemAImpl_fyl2xp1_r80_by_r80;
 
 typedef IEM_DECL_IMPL_TYPE(void, FNIEMAIMPLFPUR80FSW,(PCX86FXSTATE pFpuState, uint16_t *pFSW,
                                                       PCRTFLOAT80U pr80Val1, PCRTFLOAT80U pr80Val2));
@@ -810,6 +816,10 @@ FNIEMAIMPLFPUR80UNARY       iemAImpl_fabs_r80;
 FNIEMAIMPLFPUR80UNARY       iemAImpl_fchs_r80;
 FNIEMAIMPLFPUR80UNARY       iemAImpl_f2xm1_r80;
 FNIEMAIMPLFPUR80UNARY       iemAImpl_fyl2x_r80;
+FNIEMAIMPLFPUR80UNARY       iemAImpl_fsqrt_r80;
+FNIEMAIMPLFPUR80UNARY       iemAImpl_frndint_r80;
+FNIEMAIMPLFPUR80UNARY       iemAImpl_fsin_r80;
+FNIEMAIMPLFPUR80UNARY       iemAImpl_fcos_r80;
 
 typedef IEM_DECL_IMPL_TYPE(void, FNIEMAIMPLFPUR80UNARYFSW,(PCX86FXSTATE pFpuState, uint16_t *pu16Fsw, PCRTFLOAT80U pr80Val));
 typedef FNIEMAIMPLFPUR80UNARYFSW *PFNIEMAIMPLFPUR80UNARYFSW;
@@ -826,7 +836,12 @@ FNIEMAIMPLFPUR80LDCONST     iemAImpl_fldlg2;
 FNIEMAIMPLFPUR80LDCONST     iemAImpl_fldln2;
 FNIEMAIMPLFPUR80LDCONST     iemAImpl_fldz;
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_fptan_r80_r80,(PCX86FXSTATE pFpuState, PIEMFPURESULTTWO pFpuResTwo, PCRTFLOAT80U pr80Val));
+typedef IEM_DECL_IMPL_TYPE(void, FNIEMAIMPLFPUR80UNARYTWO,(PCX86FXSTATE pFpuState, PIEMFPURESULTTWO pFpuResTwo,
+                                                           PCRTFLOAT80U pr80Val));
+typedef FNIEMAIMPLFPUR80UNARYTWO *PFNIEMAIMPLFPUR80UNARYTWO;
+FNIEMAIMPLFPUR80UNARYTWO    iemAImpl_fptan_r80_r80;
+FNIEMAIMPLFPUR80UNARYTWO    iemAImpl_fxtract_r80_r80;
+FNIEMAIMPLFPUR80UNARYTWO    iemAImpl_fsincos_r80_r80;
 
 /** @} */
 

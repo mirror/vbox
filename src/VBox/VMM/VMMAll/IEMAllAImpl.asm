@@ -1608,10 +1608,10 @@ IEMIMPL_FPU_R80_BY_R64_FSW fcom
 ;
 ; @param    A0      FPU context (fxsave).
 ; @param    A1      Pointer to a IEMFPURESULT for the output.
-; @param    A2      Pointer to the first 80-bit value.
-; @param    A3      Pointer to the second 80-bit value.
+; @param    A2      Pointer to the first 80-bit value (ST0)
+; @param    A3      Pointer to the second 80-bit value (STn).
 ;
-%macro IEMIMPL_FPU_R80_BY_R80 1
+%macro IEMIMPL_FPU_R80_BY_R80 2
 BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _r80_by_r80, 16
         PROLOGUE_4_ARGS
         sub     xSP, 20h
@@ -1620,7 +1620,7 @@ BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _r80_by_r80, 16
         fld     tword [A3]
         fld     tword [A2]
         FPU_LD_FXSTATE_FCW_AND_SAFE_FSW A0
-        %1      st0, st1
+        %1      %2
 
         fnstsw  word  [A1 + IEMFPURESULT.FSW]
         fnclex
@@ -1632,12 +1632,51 @@ BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _r80_by_r80, 16
 ENDPROC iemAImpl_ %+ %1 %+ _r80_by_r80
 %endmacro
 
-IEMIMPL_FPU_R80_BY_R80 fadd
-IEMIMPL_FPU_R80_BY_R80 fmul
-IEMIMPL_FPU_R80_BY_R80 fsub
-IEMIMPL_FPU_R80_BY_R80 fsubr
-IEMIMPL_FPU_R80_BY_R80 fdiv
-IEMIMPL_FPU_R80_BY_R80 fdivr
+IEMIMPL_FPU_R80_BY_R80 fadd,   {st0, st1}
+IEMIMPL_FPU_R80_BY_R80 fmul,   {st0, st1}
+IEMIMPL_FPU_R80_BY_R80 fsub,   {st0, st1}
+IEMIMPL_FPU_R80_BY_R80 fsubr,  {st0, st1}
+IEMIMPL_FPU_R80_BY_R80 fdiv,   {st0, st1}
+IEMIMPL_FPU_R80_BY_R80 fdivr,  {st0, st1}
+IEMIMPL_FPU_R80_BY_R80 fprem,  {}
+IEMIMPL_FPU_R80_BY_R80 fprem1, {}
+IEMIMPL_FPU_R80_BY_R80 fscale, {}
+
+
+;;
+; FPU instruction working on two 80-bit floating point values, ST1 and ST0,
+; storing the result in ST1 and popping the stack.
+;
+; @param    1       The instruction
+;
+; @param    A0      FPU context (fxsave).
+; @param    A1      Pointer to a IEMFPURESULT for the output.
+; @param    A2      Pointer to the first 80-bit value (ST1).
+; @param    A3      Pointer to the second 80-bit value (ST0).
+;
+%macro IEMIMPL_FPU_R80_BY_R80_ST1_ST0_POP 1
+BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _r80_by_r80, 16
+        PROLOGUE_4_ARGS
+        sub     xSP, 20h
+
+        fninit
+        fld     tword [A2]
+        fld     tword [A3]
+        FPU_LD_FXSTATE_FCW_AND_SAFE_FSW A0
+        %1
+
+        fnstsw  word  [A1 + IEMFPURESULT.FSW]
+        fnclex
+        fstp    tword [A1 + IEMFPURESULT.r80Result]
+
+        fninit
+        add     xSP, 20h
+        EPILOGUE_4_ARGS 8
+ENDPROC iemAImpl_ %+ %1 %+ _r80_by_r80
+%endmacro
+
+IEMIMPL_FPU_R80_BY_R80_ST1_ST0_POP fpatan
+IEMIMPL_FPU_R80_BY_R80_ST1_ST0_POP fyl2xp1
 
 
 ;;
@@ -1707,6 +1746,10 @@ IEMIMPL_FPU_R80 fchs
 IEMIMPL_FPU_R80 fabs
 IEMIMPL_FPU_R80 f2xm1
 IEMIMPL_FPU_R80 fyl2x
+IEMIMPL_FPU_R80 fsqrt
+IEMIMPL_FPU_R80 frndint
+IEMIMPL_FPU_R80 fsin
+IEMIMPL_FPU_R80 fcos
 
 
 ;;
@@ -1787,14 +1830,15 @@ IEMIMPL_FPU_R80_CONST fldz
 ; @param    A1      Pointer to a IEMFPURESULTTWO for the output.
 ; @param    A2      Pointer to the 80-bit value.
 ;
-BEGINPROC_FASTCALL iemAImpl_fptan_r80_r80, 12
+%macro IEMIMPL_FPU_R80_R80 1
+BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _r80_r80, 12
         PROLOGUE_3_ARGS
         sub     xSP, 20h
 
         fninit
         fld     tword [A2]
         FPU_LD_FXSTATE_FCW_AND_SAFE_FSW A0
-        fptan
+        %1
 
         fnstsw  word  [A1 + IEMFPURESULTTWO.FSW]
         fnclex
@@ -1805,5 +1849,10 @@ BEGINPROC_FASTCALL iemAImpl_fptan_r80_r80, 12
         fninit
         add     xSP, 20h
         EPILOGUE_3_ARGS 4
-ENDPROC iemAImpl_fptan_r80_r80
+ENDPROC iemAImpl_ %+ %1 %+ _r80_r80
+%endmacro
+
+IEMIMPL_FPU_R80_R80 fptan
+IEMIMPL_FPU_R80_R80 fxtract
+IEMIMPL_FPU_R80_R80 fsincos
 
