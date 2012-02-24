@@ -11066,10 +11066,14 @@ FNIEMOP_DEF(iemOp_fylx2)
 }
 
 
-/** Opcode 0xd9 0xf2. */
-FNIEMOP_DEF(iemOp_fptan)
+/**
+ * Common worker for FPU instructions working on ST0 and having two outputs, one
+ * replacing ST0 and one pushed onto the stack.
+ *
+ * @param   pfnAImpl    Pointer to the instruction implementation (assembly).
+ */
+FNIEMOP_DEF_1(iemOpHlpFpuReplace_st0_push, PFNIEMAIMPLFPUR80UNARYTWO, pfnAImpl)
 {
-    IEMOP_MNEMONIC("fptan st0");
     IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
 
     IEM_MC_BEGIN(2, 1);
@@ -11080,7 +11084,7 @@ FNIEMOP_DEF(iemOp_fptan)
     IEM_MC_MAYBE_RAISE_DEVICE_NOT_AVAILABLE();
     IEM_MC_MAYBE_RAISE_FPU_XCPT();
     IEM_MC_IF_FPUREG_NOT_EMPTY_REF_R80(pr80Value, 0)
-        IEM_MC_CALL_FPU_AIMPL_2(iemAImpl_fptan_r80_r80, pFpuResTwo, pr80Value);
+        IEM_MC_CALL_FPU_AIMPL_2(pfnAImpl, pFpuResTwo, pr80Value);
         IEM_MC_PUSH_FPU_RESULT_TWO(FpuResTwo);
     IEM_MC_ELSE()
         IEM_MC_FPU_STACK_PUSH_UNDERFLOW_TWO();
@@ -11089,47 +11093,153 @@ FNIEMOP_DEF(iemOp_fptan)
 
     IEM_MC_END();
     return VINF_SUCCESS;
-
 }
 
+
+/** Opcode 0xd9 0xf2. */
+FNIEMOP_DEF(iemOp_fptan)
+{
+    IEMOP_MNEMONIC("fptan st0");
+    return FNIEMOP_CALL_1(iemOpHlpFpuReplace_st0_push, iemAImpl_fptan_r80_r80);
+}
+
+
+/**
+ * Common worker for FPU instructions working on STn and ST0, storing the result
+ * in STn, and popping the stack unless IE, DE or ZE was raised.
+ *
+ * @param   pfnAImpl    Pointer to the instruction implementation (assembly).
+ */
+FNIEMOP_DEF_2(iemOpHlpFpu_stN_st0_pop, uint8_t, bRm, PFNIEMAIMPLFPUR80, pfnAImpl)
+{
+    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+
+    IEM_MC_BEGIN(3, 1);
+    IEM_MC_LOCAL(IEMFPURESULT,          FpuRes);
+    IEM_MC_ARG_LOCAL_REF(PIEMFPURESULT, pFpuRes,        FpuRes,     0);
+    IEM_MC_ARG(PCRTFLOAT80U,            pr80Value1,                 1);
+    IEM_MC_ARG(PCRTFLOAT80U,            pr80Value2,                 2);
+
+    IEM_MC_MAYBE_RAISE_DEVICE_NOT_AVAILABLE();
+    IEM_MC_MAYBE_RAISE_FPU_XCPT();
+
+    IEM_MC_IF_TWO_FPUREGS_NOT_EMPTY_REF_R80(pr80Value1, bRm & X86_MODRM_RM_MASK, pr80Value2, 0)
+        IEM_MC_CALL_FPU_AIMPL_3(pfnAImpl, pFpuRes, pr80Value1, pr80Value2);
+        IEM_MC_STORE_FPU_RESULT_THEN_POP(FpuRes, bRm & X86_MODRM_RM_MASK);
+    IEM_MC_ELSE()
+        IEM_MC_FPU_STACK_UNDERFLOW_THEN_POP(bRm & X86_MODRM_RM_MASK);
+    IEM_MC_ENDIF();
+    IEM_MC_ADVANCE_RIP();
+
+    IEM_MC_END();
+    return VINF_SUCCESS;
+}
+
+
 /** Opcode 0xd9 0xf3. */
-FNIEMOP_STUB(iemOp_fpatan);
+FNIEMOP_DEF(iemOp_fpatan)
+{
+    IEMOP_MNEMONIC("fpatan st1,st0");
+    return FNIEMOP_CALL_2(iemOpHlpFpu_stN_st0_pop, 1, iemAImpl_fpatan_r80_by_r80);
+}
+
 
 /** Opcode 0xd9 0xf4. */
-FNIEMOP_STUB(iemOp_fxtract);
+FNIEMOP_DEF(iemOp_fxtract)
+{
+    IEMOP_MNEMONIC("fxtract st0");
+    return FNIEMOP_CALL_1(iemOpHlpFpuReplace_st0_push, iemAImpl_fxtract_r80_r80);
+}
+
 
 /** Opcode 0xd9 0xf5. */
-FNIEMOP_STUB(iemOp_fprem1);
+FNIEMOP_DEF(iemOp_fprem1)
+{
+    IEMOP_MNEMONIC("fprem1 st0, st1");
+    return FNIEMOP_CALL_2(iemOpHlpFpu_st0_stN, 1, iemAImpl_fprem1_r80_by_r80);
+}
+
 
 /** Opcode 0xd9 0xf6. */
-FNIEMOP_STUB(iemOp_fdecstp);
+FNIEMOP_DEF(iemOp_fdecstp)
+{
+    IEMOP_MNEMONIC("fdecstp");
+    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+    return IEM_MC_DEFER_TO_CIMPL_1(iemCImpl_fpu_AddToTop, 7);
+}
+
 
 /** Opcode 0xd9 0xf7. */
-FNIEMOP_STUB(iemOp_fincstp);
+FNIEMOP_DEF(iemOp_fincstp)
+{
+    IEMOP_MNEMONIC("fincstp");
+    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+    return IEM_MC_DEFER_TO_CIMPL_1(iemCImpl_fpu_AddToTop, 1);
+}
+
 
 /** Opcode 0xd9 0xf8. */
-FNIEMOP_STUB(iemOp_fprem);
+FNIEMOP_DEF(iemOp_fprem)
+{
+    IEMOP_MNEMONIC("fprem st0, st1");
+    return FNIEMOP_CALL_2(iemOpHlpFpu_st0_stN, 1, iemAImpl_fprem_r80_by_r80);
+}
+
 
 /** Opcode 0xd9 0xf9. */
-FNIEMOP_STUB(iemOp_fyl2xp1);
+FNIEMOP_DEF(iemOp_fyl2xp1)
+{
+    IEMOP_MNEMONIC("fyl2xp1 st1,st0");
+    return FNIEMOP_CALL_2(iemOpHlpFpu_stN_st0_pop, 1, iemAImpl_fyl2xp1_r80_by_r80);
+}
+
 
 /** Opcode 0xd9 0xfa. */
-FNIEMOP_STUB(iemOp_fsqrt);
+FNIEMOP_DEF(iemOp_fsqrt)
+{
+    IEMOP_MNEMONIC("fsqrt st0");
+    return FNIEMOP_CALL_1(iemOpHlpFpu_st0, iemAImpl_fsqrt_r80);
+}
+
 
 /** Opcode 0xd9 0xfb. */
-FNIEMOP_STUB(iemOp_fsincos);
+FNIEMOP_DEF(iemOp_fsincos)
+{
+    IEMOP_MNEMONIC("fsincos st0");
+    return FNIEMOP_CALL_1(iemOpHlpFpuReplace_st0_push, iemAImpl_fsincos_r80_r80);
+}
+
 
 /** Opcode 0xd9 0xfc. */
-FNIEMOP_STUB(iemOp_frndint);
+FNIEMOP_DEF(iemOp_frndint)
+{
+    IEMOP_MNEMONIC("frndint st0");
+    return FNIEMOP_CALL_1(iemOpHlpFpu_st0, iemAImpl_frndint_r80);
+}
+
 
 /** Opcode 0xd9 0xfd. */
-FNIEMOP_STUB(iemOp_fscale);
+FNIEMOP_DEF(iemOp_fscale)
+{
+    IEMOP_MNEMONIC("fscale st0, st1");
+    return FNIEMOP_CALL_2(iemOpHlpFpu_st0_stN, 1, iemAImpl_fscale_r80_by_r80);
+}
+
 
 /** Opcode 0xd9 0xfe. */
-FNIEMOP_STUB(iemOp_fsin);
+FNIEMOP_DEF(iemOp_fsin)
+{
+    IEMOP_MNEMONIC("fsin st0");
+    return FNIEMOP_CALL_1(iemOpHlpFpu_st0, iemAImpl_fsin_r80);
+}
+
 
 /** Opcode 0xd9 0xff. */
-FNIEMOP_STUB(iemOp_fcos);
+FNIEMOP_DEF(iemOp_fcos)
+{
+    IEMOP_MNEMONIC("fcos st0");
+    return FNIEMOP_CALL_1(iemOpHlpFpu_st0, iemAImpl_fcos_r80);
+}
 
 
 /** Used by iemOp_EscF1. */
@@ -11786,38 +11896,6 @@ FNIEMOP_DEF(iemOp_EscF5)
             IEM_NOT_REACHED_DEFAULT_CASE_RET();
         }
     }
-}
-
-
-/**
- * Common worker for FPU instructions working on STn and ST0, storing the result
- * in STn, and poping the stack unless IE, DE or ZE was raised.
- *
- * @param   pfnAImpl    Pointer to the instruction implementation (assembly).
- */
-FNIEMOP_DEF_2(iemOpHlpFpu_stN_st0_pop, uint8_t, bRm, PFNIEMAIMPLFPUR80, pfnAImpl)
-{
-    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
-
-    IEM_MC_BEGIN(3, 1);
-    IEM_MC_LOCAL(IEMFPURESULT,          FpuRes);
-    IEM_MC_ARG_LOCAL_REF(PIEMFPURESULT, pFpuRes,        FpuRes,     0);
-    IEM_MC_ARG(PCRTFLOAT80U,            pr80Value1,                 1);
-    IEM_MC_ARG(PCRTFLOAT80U,            pr80Value2,                 2);
-
-    IEM_MC_MAYBE_RAISE_DEVICE_NOT_AVAILABLE();
-    IEM_MC_MAYBE_RAISE_FPU_XCPT();
-
-    IEM_MC_IF_TWO_FPUREGS_NOT_EMPTY_REF_R80(pr80Value1, bRm & X86_MODRM_RM_MASK, pr80Value2, 0)
-        IEM_MC_CALL_FPU_AIMPL_3(pfnAImpl, pFpuRes, pr80Value1, pr80Value2);
-        IEM_MC_STORE_FPU_RESULT_THEN_POP(FpuRes, bRm & X86_MODRM_RM_MASK);
-    IEM_MC_ELSE()
-        IEM_MC_FPU_STACK_UNDERFLOW_THEN_POP(bRm & X86_MODRM_RM_MASK);
-    IEM_MC_ENDIF();
-    IEM_MC_ADVANCE_RIP();
-
-    IEM_MC_END();
-    return VINF_SUCCESS;
 }
 
 
