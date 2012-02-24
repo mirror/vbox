@@ -844,6 +844,10 @@ FNIEMAIMPLFPUR80UNARYTWO    iemAImpl_fptan_r80_r80;
 FNIEMAIMPLFPUR80UNARYTWO    iemAImpl_fxtract_r80_r80;
 FNIEMAIMPLFPUR80UNARYTWO    iemAImpl_fsincos_r80_r80;
 
+IEM_DECL_IMPL_DEF(void, iemAImpl_fld_r80_from_r80,(PCX86FXSTATE pFpuState, PIEMFPURESULT pFpuRes, PCRTFLOAT80U pr80Val));
+IEM_DECL_IMPL_DEF(void, iemAImpl_fst_r80_to_r80,(PCX86FXSTATE pFpuState, uint16_t *pu16FSW,
+                                                 PRTFLOAT80U pr80Dst, PCRTFLOAT80U pr80Src));
+
 /** @} */
 
 /** @name FPU operations taking a 16-bit signed integer argument

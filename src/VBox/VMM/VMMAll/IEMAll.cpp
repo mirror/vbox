@@ -4934,6 +4934,30 @@ static VBOXSTRICTRC iemMemFetchDataU64(PIEMCPU pIemCpu, uint64_t *pu64Dst, uint8
 
 
 /**
+ * Fetches a data tword.
+ *
+ * @returns Strict VBox status code.
+ * @param   pIemCpu             The IEM per CPU data.
+ * @param   pr80Dst             Where to return the tword.
+ * @param   iSegReg             The index of the segment register to use for
+ *                              this access.  The base and limits are checked.
+ * @param   GCPtrMem            The address of the guest memory.
+ */
+static VBOXSTRICTRC iemMemFetchDataR80(PIEMCPU pIemCpu, PRTFLOAT80U pr80Dst, uint8_t iSegReg, RTGCPTR GCPtrMem)
+{
+    /* The lazy approach for now... */
+    PCRTFLOAT80U pr80Src;
+    VBOXSTRICTRC rc = iemMemMap(pIemCpu, (void **)&pr80Src, sizeof(*pr80Src), iSegReg, GCPtrMem, IEM_ACCESS_DATA_R);
+    if (rc == VINF_SUCCESS)
+    {
+        *pr80Dst = *pr80Src;
+        rc = iemMemCommitAndUnmap(pIemCpu, (void *)pr80Src, IEM_ACCESS_DATA_R);
+    }
+    return rc;
+}
+
+
+/**
  * Fetches a descriptor register (lgdt, lidt).
  *
  * @returns Strict VBox status code.
@@ -6015,7 +6039,7 @@ static VBOXSTRICTRC iemMemMarkSelDescAccessed(PIEMCPU pIemCpu, uint16_t uSel)
 #define IEM_MC_FETCH_MEM_R64(a_r64Dst, a_iSeg, a_GCPtrMem) \
     IEM_MC_RETURN_ON_FAILURE(iemMemFetchDataU64(pIemCpu, &(a_r64Dst).au64[0], (a_iSeg), (a_GCPtrMem)))
 #define IEM_MC_FETCH_MEM_R80(a_r80Dst, a_iSeg, a_GCPtrMem) \
-    IEM_MC_RETURN_ON_FAILURE(iemMemFetchDataR80(pIemCpu, &(a_r64Dst), (a_iSeg), (a_GCPtrMem)))
+    IEM_MC_RETURN_ON_FAILURE(iemMemFetchDataR80(pIemCpu, &(a_r80Dst), (a_iSeg), (a_GCPtrMem)))
 
 
 #define IEM_MC_FETCH_MEM_U8_ZX_U16(a_u16Dst, a_iSeg, a_GCPtrMem) \
