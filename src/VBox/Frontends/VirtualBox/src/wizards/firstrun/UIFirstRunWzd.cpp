@@ -57,7 +57,7 @@ UIFirstRunWzd::UIFirstRunWzd(QWidget *pParent, const CMachine &machine) : QIWiza
 #endif /* Q_WS_MAC */
 
     /* Resize to 'golden ratio' */
-    resizeToGoldenRatio();
+    resizeToGoldenRatio(UIWizardType_FirstRun);
 }
 
 bool UIFirstRunWzd::isBootHardDiskAttached(const CMachine &machine)

@@ -60,7 +60,7 @@ UICloneVMWizard::UICloneVMWizard(QWidget *pParent, const CMachine &machine, CSna
 #endif /* Q_WS_MAC */
 
     /* Resize wizard to 'golden ratio': */
-    resizeToGoldenRatio();
+    resizeToGoldenRatio(UIWizardType_CloneVM);
 }
 
 void UICloneVMWizard::retranslateUi()

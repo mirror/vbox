@@ -30,6 +30,14 @@
 QIWizard::QIWizard(QWidget *pParent)
     : QIWithRetranslateUI<QWizard>(pParent)
 {
+#if 0 // This is VERY important change, have to discuss first!
+    /* Qt have a bug-o-feature which silently fallbacks complex-wizard-style
+     * to more simple in case it failed to initialize that complex-wizard-style.
+     * Further wizard's look-n-feel may partially corresponds to both:
+     * complex-wizard-style and falled-back-one, we have to be sure which we are using. */
+    setWizardStyle(wizardStyle());
+#endif
+
 #ifdef Q_WS_MAC
     /* I'm really not sure why there shouldn't be any default button on Mac OS
      * X. This prevents the using of Enter to jump to the next page. */
@@ -62,8 +70,11 @@ void QIWizard::retranslateAllPages()
         qobject_cast<QIWizardPage*>(pages.at((i)))->retranslate();
 }
 
-void QIWizard::resizeToGoldenRatio(double dRatio)
+void QIWizard::resizeToGoldenRatio(UIWizardType wizardType)
 {
+    /* Get corresponding ratio: */
+    double dRatio = ratioForWizardType(wizardType);
+
     /* Use some small (!) initial QIRichTextLabel width: */
     int iInitialLabelWidth = 200;
 
@@ -119,7 +130,14 @@ void QIWizard::resizeToGoldenRatio(double dRatio)
 #ifndef Q_WS_MAC
 void QIWizard::assignWatermark(const QString &strWatermark)
 {
-    if (wizardStyle() != QWizard::AeroStyle)
+    if (wizardStyle() != QWizard::AeroStyle
+# ifdef Q_WS_WIN
+        /* There is a Qt bug about Windows7 do NOT match conditions for 'aero' wizard-style,
+         * so its silently fallbacks to 'modern' one without any notification,
+         * so QWizard::wizardStyle() returns QWizard::ModernStyle, while using aero, at least partially. */
+        && QSysInfo::windowsVersion() != QSysInfo::WV_WINDOWS7
+# endif /* Q_WS_WIN */
+        )
         m_strWatermarkName = strWatermark;
 }
 #else
@@ -128,6 +146,15 @@ void QIWizard::assignBackground(const QString &strBackground)
     setPixmap(QWizard::BackgroundPixmap, strBackground);
 }
 #endif
+
+void QIWizard::showEvent(QShowEvent *pShowEvent)
+{
+    /* Resize to minimum possible size: */
+    resize(0, 0);
+
+    /* Call to base-class: */
+    QWizard::showEvent(pShowEvent);
+}
 
 void QIWizard::configurePage(QIWizardPage *pPage)
 {
@@ -190,6 +217,50 @@ void QIWizard::resizeAccordingLabelWidth(int iLabelsWidth)
 
     /* Resize it to minimum size: */
     resize(QSize(0, 0));
+}
+
+double QIWizard::ratioForWizardType(UIWizardType wizardType)
+{
+    /* Default value: */
+    double dRatio = 1.6;
+
+#ifdef Q_WS_WIN
+    switch (wizardStyle())
+    {
+        case QWizard::ClassicStyle:
+        case QWizard::ModernStyle:
+            /* There is a Qt bug about Windows7 do NOT match conditions for 'aero' wizard-style,
+             * so its silently fallbacks to 'modern' one without any notification,
+             * so QWizard::wizardStyle() returns QWizard::ModernStyle, while using aero, at least partially. */
+            if (QSysInfo::windowsVersion() != QSysInfo::WV_WINDOWS7)
+            {
+                dRatio = 2;
+                break;
+            }
+        case QWizard::AeroStyle:
+            dRatio = 2.2;
+            break;
+        default:
+            break;
+    }
+#endif /* Q_WS_WIN */
+
+    switch (wizardType)
+    {
+        /* New VM wizard much wider than others, fixing: */
+        case UIWizardType_NewVM:
+            dRatio -= 0.5;
+            break;
+        /* New VD wizard much taller than others, fixing: */
+        case UIWizardType_NewVD:
+            dRatio += 0.3;
+            break;
+        default:
+            break;
+    }
+
+    /* Return final result: */
+    return dRatio;
 }
 
 #ifndef Q_WS_MAC

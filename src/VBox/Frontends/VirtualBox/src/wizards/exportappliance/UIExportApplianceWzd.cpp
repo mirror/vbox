@@ -76,7 +76,7 @@ UIExportApplianceWzd::UIExportApplianceWzd(QWidget *pParent, const QStringList &
 #endif /* Q_WS_MAC */
 
     /* Resize to 'golden ratio' */
-    resizeToGoldenRatio(1.8);
+    resizeToGoldenRatio(UIWizardType_ExportAppliance);
 
     /* Setup connections */
     connect(this, SIGNAL(currentIdChanged(int)), this, SLOT(sltCurrentIdChanged(int)));
