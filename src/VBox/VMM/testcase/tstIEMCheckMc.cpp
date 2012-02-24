@@ -192,6 +192,7 @@ IEMOPSHIFTDBLSIZES g_iemAImpl_shrd;
 #define iemAImpl_fyl2xp1_r80_by_r80     NULL
 
 #define iemAImpl_fcom_r80_by_r80        NULL
+#define iemAImpl_fucom_r80_by_r80       NULL
 #define iemAImpl_fabs_r80               NULL
 #define iemAImpl_fchs_r80               NULL
 #define iemAImpl_ftst_r80               NULL
@@ -214,6 +215,13 @@ IEMOPSHIFTDBLSIZES g_iemAImpl_shrd;
 #define iemAImpl_fptan_r80_r80          NULL
 #define iemAImpl_fxtract_r80_r80        NULL
 #define iemAImpl_fsincos_r80_r80        NULL
+
+#define iemAImpl_fiadd_r80_by_i32       NULL
+#define iemAImpl_fimul_r80_by_i32       NULL
+#define iemAImpl_fisub_r80_by_i32       NULL
+#define iemAImpl_fisubr_r80_by_i32      NULL
+#define iemAImpl_fidiv_r80_by_i32       NULL
+#define iemAImpl_fidivr_r80_by_i32      NULL
 
 #define iemCImpl_callf                  NULL
 #define iemCImpl_FarJmp                 NULL
@@ -402,6 +410,7 @@ IEMOPSHIFTDBLSIZES g_iemAImpl_shrd;
 #define IEM_MC_FETCH_MEM32_U8(a_u8Dst, a_iSeg, a_GCPtrMem32)            do { CHK_TYPE(uint32_t, a_GCPtrMem32); } while (0)
 #define IEM_MC_FETCH_MEM_U16(a_u16Dst, a_iSeg, a_GCPtrMem)              do { CHK_GCPTR(a_GCPtrMem); } while (0)
 #define IEM_MC_FETCH_MEM_U32(a_u32Dst, a_iSeg, a_GCPtrMem)              do { CHK_GCPTR(a_GCPtrMem); } while (0)
+#define IEM_MC_FETCH_MEM_I32(a_i32Dst, a_iSeg, a_GCPtrMem)              do { CHK_GCPTR(a_GCPtrMem); CHK_TYPE(int32_t, a_i32Dst); } while (0)
 #define IEM_MC_FETCH_MEM_S32_SX_U64(a_u64Dst, a_iSeg, a_GCPtrMem)       do { CHK_GCPTR(a_GCPtrMem); } while (0)
 #define IEM_MC_FETCH_MEM_U64(a_u64Dst, a_iSeg, a_GCPtrMem)              do { CHK_GCPTR(a_GCPtrMem); } while (0)
 
@@ -474,9 +483,10 @@ IEMOPSHIFTDBLSIZES g_iemAImpl_shrd;
 #define IEM_MC_STORE_FPU_RESULT_MEM_OP(a_FpuData, a_iStReg, a_iEffSeg, a_GCPtrEff)              do { } while (0)
 #define IEM_MC_STORE_FPU_RESULT_MEM_OP_THEN_POP(a_FpuData, a_iStReg, a_iEffSeg, a_GCPtrEff)     do { } while (0)
 #define IEM_MC_FPU_STACK_UNDERFLOW(a_iStReg)                                                    do { } while (0)
-#define IEM_MC_FPU_STACK_UNDERFLOW_THEN_POP(a_iStReg)                                           do { } while (0)
 #define IEM_MC_FPU_STACK_UNDERFLOW_MEM_OP(a_iStReg, a_iEffSeg, a_GCPtrEff)                      do { } while (0)
+#define IEM_MC_FPU_STACK_UNDERFLOW_THEN_POP(a_iStReg)                                           do { } while (0)
 #define IEM_MC_FPU_STACK_UNDERFLOW_MEM_OP_THEN_POP(a_iStReg, a_iEffSeg, a_GCPtrEff)             do { } while (0)
+#define IEM_MC_FPU_STACK_UNDERFLOW_THEN_POP_POP(a_iStReg)                                       do { } while (0)
 #define IEM_MC_FPU_STACK_PUSH_UNDERFLOW()                                                       do { } while (0)
 #define IEM_MC_FPU_STACK_PUSH_UNDERFLOW_TWO()                                                   do { } while (0)
 #define IEM_MC_FPU_STACK_PUSH_OVERFLOW()                                                        do { } while (0)
@@ -486,6 +496,7 @@ IEMOPSHIFTDBLSIZES g_iemAImpl_shrd;
 #define IEM_MC_UPDATE_FSW_WITH_MEM_OP(a_u16FSW, a_iEffSeg, a_GCPtrEff)                          do { } while (0)
 #define IEM_MC_UPDATE_FSW_THEN_POP(a_u16FSW)                                                    do { } while (0)
 #define IEM_MC_UPDATE_FSW_WITH_MEM_OP_THEN_POP(a_u16FSW, a_iEffSeg, a_GCPtrEff)                 do { } while (0)
+#define IEM_MC_UPDATE_FSW_THEN_POP_POP(a_u16FSW)                                                do { } while (0)
 #define IEM_MC_UPDATE_FPU_OPCODE_IP()                                                           do { } while (0)
 
 #define IEM_MC_IF_EFL_BIT_SET(a_fBit)                                   if (g_fRandom) {
