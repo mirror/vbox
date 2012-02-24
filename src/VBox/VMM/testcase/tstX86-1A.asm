@@ -71,6 +71,7 @@ g_r32_SNaN:     dd 07f800001h
 g_r32_SNaNMax:  dd 07fbfffffh
 g_r32_QNaN:     dd 07fc00000h
 g_r32_QNaNMax:  dd 07fffffffh
+g_r32_NegQNaN:  dd 0ffc00000h
 
 g_r64_0dot1:    dq 0.1
 g_r64_6dot9:    dq 6.9
@@ -86,6 +87,7 @@ g_r64_Max:      dq 07fefffffffffffffh
 g_r64_Inf:      dq 07ff0000000000000h
 g_r64_SNaN:     dq 07ff0000000000001h
 g_r64_SNaNMax:  dq 07ff7ffffffffffffh
+g_r64_NegQNaN:  dq 0fff8000000000000h
 g_r64_QNaN:     dq 07ff8000000000000h
 g_r64_QNaNMax:  dq 07fffffffffffffffh
 g_r64_DnMin:    dq 00000000000000001h
@@ -178,6 +180,51 @@ GLOBALNAME g_aTrapInfo
         mov     eax, __LINE__
         jmp     .return
 %%ok:
+%endmacro
+
+
+;;
+; Checks if a 32-bit floating point memory value is the same as the specified
+; constant (also memory).
+;
+; @uses         eax
+; @param        1       Address expression for the 32-bit floating point value
+;                       to be checked.
+; @param        2       The address expression of the constant.
+;
+%macro CheckMemoryR32ValueConst 2
+        mov     eax, [%2]
+        cmp     dword [%1], eax
+        je      %%ok
+%%bad:
+        mov     eax, 90000000 + __LINE__
+        jmp     .return
+%%ok:
+%endmacro
+
+
+;;
+; Checks if a 80-bit floating point memory value is the same as the specified
+; constant (also memory).
+;
+; @uses         eax
+; @param        1       Address expression for the FXSAVE image.
+; @param        2       The address expression of the constant.
+;
+%macro CheckMemoryR80ValueConst 2
+        mov     eax, [%2]
+        cmp     dword [%1], eax
+        je      %%ok1
+%%bad:
+        mov     eax, 92000000 + __LINE__
+        jmp     .return
+%%ok1:
+        mov     eax, [4 + %2]
+        cmp     dword [%1 + 4], eax
+        jne     %%bad
+        mov     ax, [8 + %2]
+        cmp     word  [%1 + 8], ax
+        jne     %%bad
 %endmacro
 
 
@@ -3063,7 +3110,127 @@ BEGINPROC   x861_TestFPUInstr1
         FxSaveCheckSt0Empty xSP
         FxSaveCheckStNValueConst xSP, 1, REF(g_r80_3dot2)
         FxSaveCheckStNValueConst xSP, 2, REF(g_r80_0dot1)
+%endif
 
+        ;
+        ; FSTP M32R, ST0
+        ;
+        SetSubTest "FSTP M32R, ST0"
+
+        mov     xBX, [REF_EXTERN(g_pbEfExecPage)]
+        lea     xBX, [xBX + PAGE_SIZE - 4]
+
+        ; ## Normal operation. ##
+        FpuInitWithCW X86_FCW_PC_64 | X86_FCW_RC_NEAREST
+        fld     dword [REF(g_r32_Ten)]
+        FpuCheckOpcodeCsIp     { fstp dword [xBX] }
+        FxSaveCheckFSW xSP, 0, 0
+        FxSaveCheckSt0Empty xSP
+        CheckMemoryR32ValueConst xBX, REF(g_r32_Ten)
+
+        ; ## Masked exceptions. ##
+
+        ; Masked stack underflow.
+        fninit
+        FpuCheckOpcodeCsIp     { fstp dword [xBX] }
+        FxSaveCheckFSW xSP, X86_FSW_IE | X86_FSW_SF, X86_FSW_C0 | X86_FSW_C2 | X86_FSW_C3
+        CheckMemoryR32ValueConst xBX, REF(g_r32_NegQNaN)
+
+        fninit
+        fld     tword [REF(g_r80_0dot1)]
+        fld     tword [REF(g_r80_3dot2)]
+        fld     tword [REF(g_r80_Ten)]
+        ffree   st0
+        FpuCheckOpcodeCsIp     { fstp dword [xBX] }
+        FxSaveCheckFSW xSP, X86_FSW_IE | X86_FSW_SF, X86_FSW_C0 | X86_FSW_C2 | X86_FSW_C3
+        CheckMemoryR32ValueConst xBX, REF(g_r32_NegQNaN)
+        FxSaveCheckStNValueConst xSP, 0, REF(g_r80_3dot2)
+        FxSaveCheckStNValueConst xSP, 1, REF(g_r80_0dot1)
+
+        ; Masked #IA caused by SNaN.
+        fninit
+        fld     tword [REF(g_r80_SNaN)]
+        FpuCheckOpcodeCsIp     { fstp dword [xBX] }
+        FxSaveCheckFSW xSP, X86_FSW_IE, X86_FSW_C0 | X86_FSW_C2 | X86_FSW_C3
+        CheckMemoryR32ValueConst xBX, REF(g_r32_QNaN)
+
+        ; Masked #U caused by a denormal value.
+        fninit
+        fld     tword [REF(g_r80_DnMin)]
+        FpuCheckOpcodeCsIp     { fstp dword [xBX] }
+        FxSaveCheckFSW xSP, X86_FSW_UE | X86_FSW_PE, X86_FSW_C0 | X86_FSW_C2 | X86_FSW_C3
+        CheckMemoryR32ValueConst xBX, REF(g_r32_Zero)
+
+        ; Masked #P caused by a decimal value.
+        fninit
+        fld     tword [REF(g_r80_3dot2)]
+        FpuCheckOpcodeCsIp     { fstp dword [xBX] }
+        FxSaveCheckFSW xSP, X86_FSW_C1 | X86_FSW_PE, X86_FSW_C0 | X86_FSW_C2 | X86_FSW_C3
+        CheckMemoryR32ValueConst xBX, REF(g_r32_3dot2)
+
+        ; ## Unmasked exceptions. ##
+
+        ; Stack underflow - nothing stored or popped.
+        FpuInitWithCW X86_FCW_PC_64 | X86_FCW_RC_NEAREST
+        mov     dword [xBX], 0xffeeddcc
+        FpuTrapOpcodeCsIp      { fstp dword [xBX] }
+        FxSaveCheckFSW xSP, X86_FSW_IE | X86_FSW_SF | X86_FSW_ES | X86_FSW_B, X86_FSW_C0 | X86_FSW_C2 | X86_FSW_C3
+        CheckMemoryValue dword, xBX, 0xffeeddcc
+
+        FpuInitWithCW X86_FCW_PC_64 | X86_FCW_RC_NEAREST
+        fld     tword [REF(g_r80_0dot1)]
+        fld     tword [REF(g_r80_3dot2)]
+        fld     tword [REF(g_r80_Ten)]
+        ffree   st0
+        mov     dword [xBX], 0xffeeddcc
+        FpuTrapOpcodeCsIp      { fstp dword [xBX] }
+        FxSaveCheckFSW xSP, X86_FSW_IE | X86_FSW_SF | X86_FSW_ES | X86_FSW_B, X86_FSW_C0 | X86_FSW_C2 | X86_FSW_C3
+        CheckMemoryValue dword, xBX, 0xffeeddcc
+        FxSaveCheckStNEmpty      xSP, 0
+        FxSaveCheckStNValueConst xSP, 1, REF(g_r80_3dot2)
+        FxSaveCheckStNValueConst xSP, 2, REF(g_r80_0dot1)
+
+        ; #IA caused by SNaN.
+        FpuInitWithCW X86_FCW_PC_64 | X86_FCW_RC_NEAREST
+        fld     tword [REF(g_r80_SNaN)]
+        mov     dword [xBX], 0xffeeddcc
+        FpuTrapOpcodeCsIp      { fstp dword [xBX] }
+        FxSaveCheckFSW xSP, X86_FSW_IE | X86_FSW_ES | X86_FSW_B, X86_FSW_C0 | X86_FSW_C2 | X86_FSW_C3
+        CheckMemoryValue dword, xBX, 0xffeeddcc
+
+        ; #U caused by a denormal value - nothing written
+        FpuInitWithCW X86_FCW_PC_64 | X86_FCW_RC_NEAREST
+        fld     tword [REF(g_r80_DnMin)]
+        mov     dword [xBX], 0xffeeddcc
+        FpuTrapOpcodeCsIp      { fstp dword [xBX] }
+        FxSaveCheckFSW xSP, X86_FSW_UE | X86_FSW_ES | X86_FSW_B, X86_FSW_C0 | X86_FSW_C2 | X86_FSW_C3
+        CheckMemoryValue dword, xBX, 0xffeeddcc
+
+        ; #U caused by a small value - nothing written
+        FpuInitWithCW X86_FCW_PC_64 | X86_FCW_RC_NEAREST
+        fld     tword [REF(g_r80_Min)]
+        mov     dword [xBX], 0xffeeddcc
+        FpuTrapOpcodeCsIp      { fstp dword [xBX] }
+        FxSaveCheckFSW xSP, X86_FSW_UE | X86_FSW_ES | X86_FSW_B, X86_FSW_C0 | X86_FSW_C2 | X86_FSW_C3
+        CheckMemoryValue dword, xBX, 0xffeeddcc
+
+        ; #O caused by a small value - nothing written
+        FpuInitWithCW X86_FCW_PC_64 | X86_FCW_RC_NEAREST
+        fld     tword [REF(g_r80_Max)]
+        mov     dword [xBX], 0xffeeddcc
+        FpuTrapOpcodeCsIp      { fstp dword [xBX] }
+        FxSaveCheckFSW xSP, X86_FSW_OE | X86_FSW_ES | X86_FSW_B, X86_FSW_C0 | X86_FSW_C2 | X86_FSW_C3
+        CheckMemoryValue dword, xBX, 0xffeeddcc
+
+        ; #P caused by a decimal value - rounded value is written just like if it was masked.
+        FpuInitWithCW X86_FCW_PC_64 | X86_FCW_RC_NEAREST
+        fld     tword [REF(g_r80_3dot2)]
+        mov     dword [xBX], 0xffeeddcc
+        FpuTrapOpcodeCsIp      { fstp dword [xBX] }
+        FxSaveCheckFSW xSP, X86_FSW_C1 | X86_FSW_PE | X86_FSW_ES | X86_FSW_B, X86_FSW_C0 | X86_FSW_C2 | X86_FSW_C3
+        CheckMemoryR32ValueConst xBX, REF(g_r32_3dot2)
+
+%if 0 ;; @todo implement me
         ;
         ; FISTP M32I, ST0
         ;
@@ -3114,7 +3281,8 @@ BEGINPROC   x861_TestFPUInstr1
         CheckMemoryValue dword, xBX, 0xffeeddcc
         FxSaveCheckStNValueConst xSP, 1, REF(g_r80_3dot2)
         FxSaveCheckStNValueConst xSP, 2, REF(g_r80_0dot1)
-
+%endif
+%if 0
         ;
         ; FPTAN - calc, store ST0, push 1.0.
         ;
@@ -3148,7 +3316,6 @@ BEGINPROC   x861_TestFPUInstr1
         FxSaveCheckStNValueConst xSP, 1, REF(g_r80_NegQNaN)
 
         ;; @todo Finish FPTAN testcase.
-%endif
 
         ;
         ; FCMOVB - move if CF=1.
@@ -3233,6 +3400,7 @@ BEGINPROC   x861_TestFPUInstr1
         FxSaveCheckStNValueConst xSP, 1, REF(g_r80_Zero)
 
         ;; @todo Finish FCMOVB testcase.
+%endif
 
 
 .success:

@@ -1324,33 +1324,115 @@ endstruc
 
 
 ;
-;---------------------- 32-bit signed integer operations ----------------------
+;---------------------- 16-bit signed integer operations ----------------------
 ;
 
 
 ;;
-; Converts a 80-bit floating point value to a 32-bit signed integer.
+; Converts a 16-bit floating point value to a 80-bit one (fpu register).
 ;
 ; @param    A0      FPU context (fxsave).
-; @param    A1      Pointer to a 16-bit FSW output variable.
-; @param    A2      Pointer to the 32-bit signed integer output variable.
-; @param    A3      Pointer to the 80-bit floating point value to convert.
+; @param    A1      Pointer to a IEMFPURESULT for the output.
+; @param    A2      Pointer to the 16-bit floating point value to convert.
 ;
-BEGINPROC_FASTCALL iemAImpl_fpu_r80_to_i32, 12
-        PROLOGUE_4_ARGS
+BEGINPROC_FASTCALL iemAImpl_fild_i16_to_r80, 12
+        PROLOGUE_3_ARGS
+        sub     xSP, 20h
+
+        fninit
+        FPU_LD_FXSTATE_FCW_AND_SAFE_FSW A0
+        fild    word [A2]
+
+        fnstsw  word  [A1 + IEMFPURESULT.FSW]
+        fnclex
+        fstp    tword [A1 + IEMFPURESULT.r80Result]
+
+        fninit
+        add     xSP, 20h
+        EPILOGUE_3_ARGS 0
+ENDPROC iemAImpl_fild_i16_to_r80
+
+
+;;
+; Store a 80-bit floating point value (register) as a 16-bit signed integer (memory).
+;
+; @param    A0      FPU context (fxsave).
+; @param    A1      Where to return the output FSW.
+; @param    A2      Where to store the 16-bit signed integer value.
+; @param    A3      Pointer to the 80-bit value.
+;
+BEGINPROC_FASTCALL iemAImpl_fist_r80_to_i16, 12
+        PROLOGUE_3_ARGS
         sub     xSP, 20h
 
         fninit
         fld     tword [A3]
         FPU_LD_FXSTATE_FCW_AND_SAFE_FSW A0
-        fistp   dword [A2]
+        fistp   word [A2]
 
         fnstsw  word  [A1]
-        fnclex
 
+        fninit
         add     xSP, 20h
-        EPILOGUE_4_ARGS 0
-ENDPROC iemAImpl_fpu_r80_to_i32
+        EPILOGUE_3_ARGS 0
+ENDPROC iemAImpl_fist_r80_to_i16
+
+
+;;
+; Store a 80-bit floating point value (register) as a 16-bit signed integer
+; (memory) with truncation.
+;
+; @param    A0      FPU context (fxsave).
+; @param    A1      Where to return the output FSW.
+; @param    A2      Where to store the 16-bit signed integer value.
+; @param    A3      Pointer to the 80-bit value.
+;
+BEGINPROC_FASTCALL iemAImpl_fistt_r80_to_i16, 12
+        PROLOGUE_3_ARGS
+        sub     xSP, 20h
+
+        fninit
+        fld     tword [A3]
+        FPU_LD_FXSTATE_FCW_AND_SAFE_FSW A0
+        fisttp  dword [A2]
+
+        fnstsw  word  [A1]
+
+        fninit
+        add     xSP, 20h
+        EPILOGUE_3_ARGS 0
+ENDPROC iemAImpl_fistt_r80_to_i16
+
+
+
+;
+;---------------------- 32-bit signed integer operations ----------------------
+;
+
+
+;;
+; Converts a 32-bit floating point value to a 80-bit one (fpu register).
+;
+; @param    A0      FPU context (fxsave).
+; @param    A1      Pointer to a IEMFPURESULT for the output.
+; @param    A2      Pointer to the 32-bit floating point value to convert.
+;
+BEGINPROC_FASTCALL iemAImpl_fild_i32_to_r80, 12
+        PROLOGUE_3_ARGS
+        sub     xSP, 20h
+
+        fninit
+        FPU_LD_FXSTATE_FCW_AND_SAFE_FSW A0
+        fild    dword [A2]
+
+        fnstsw  word  [A1 + IEMFPURESULT.FSW]
+        fnclex
+        fstp    tword [A1 + IEMFPURESULT.r80Result]
+
+        fninit
+        add     xSP, 20h
+        EPILOGUE_3_ARGS 0
+ENDPROC iemAImpl_fild_i32_to_r80
 
 
 ;;
@@ -1361,21 +1443,47 @@ ENDPROC iemAImpl_fpu_r80_to_i32
 ; @param    A2      Where to store the 32-bit signed integer value.
 ; @param    A3      Pointer to the 80-bit value.
 ;
-BEGINPROC_FASTCALL iemAImpl_fst_r80_to_i32, 12
+BEGINPROC_FASTCALL iemAImpl_fist_r80_to_i32, 12
         PROLOGUE_3_ARGS
         sub     xSP, 20h
 
         fninit
         fld     tword [A3]
         FPU_LD_FXSTATE_FCW_AND_SAFE_FSW A0
-        fist    dword [A2]
+        fistp   dword [A2]
 
         fnstsw  word  [A1]
 
         fninit
         add     xSP, 20h
         EPILOGUE_3_ARGS 0
-ENDPROC iemAImpl_fst_r80_to_i32
+ENDPROC iemAImpl_fist_r80_to_i32
+
+
+;;
+; Store a 80-bit floating point value (register) as a 32-bit signed integer
+; (memory) with truncation.
+;
+; @param    A0      FPU context (fxsave).
+; @param    A1      Where to return the output FSW.
+; @param    A2      Where to store the 32-bit signed integer value.
+; @param    A3      Pointer to the 80-bit value.
+;
+BEGINPROC_FASTCALL iemAImpl_fistt_r80_to_i32, 12
+        PROLOGUE_3_ARGS
+        sub     xSP, 20h
+
+        fninit
+        fld     tword [A3]
+        FPU_LD_FXSTATE_FCW_AND_SAFE_FSW A0
+        fisttp  dword [A2]
+
+        fnstsw  word  [A1]
+
+        fninit
+        add     xSP, 20h
+        EPILOGUE_3_ARGS 0
+ENDPROC iemAImpl_fistt_r80_to_i32
 
 
 ;;
@@ -1446,6 +1554,89 @@ ENDPROC iemAImpl_ %+ %1 %+ _r80_by_i32
 %endmacro
 
 IEMIMPL_FPU_R80_BY_I32_FSW ficom
+
+
+
+;
+;---------------------- 64-bit signed integer operations ----------------------
+;
+
+
+;;
+; Converts a 64-bit floating point value to a 80-bit one (fpu register).
+;
+; @param    A0      FPU context (fxsave).
+; @param    A1      Pointer to a IEMFPURESULT for the output.
+; @param    A2      Pointer to the 64-bit floating point value to convert.
+;
+BEGINPROC_FASTCALL iemAImpl_fild_i64_to_r80, 12
+        PROLOGUE_3_ARGS
+        sub     xSP, 20h
+
+        fninit
+        FPU_LD_FXSTATE_FCW_AND_SAFE_FSW A0
+        fild    qword [A2]
+
+        fnstsw  word  [A1 + IEMFPURESULT.FSW]
+        fnclex
+        fstp    tword [A1 + IEMFPURESULT.r80Result]
+
+        fninit
+        add     xSP, 20h
+        EPILOGUE_3_ARGS 0
+ENDPROC iemAImpl_fild_i64_to_r80
+
+
+;;
+; Store a 80-bit floating point value (register) as a 64-bit signed integer (memory).
+;
+; @param    A0      FPU context (fxsave).
+; @param    A1      Where to return the output FSW.
+; @param    A2      Where to store the 64-bit signed integer value.
+; @param    A3      Pointer to the 80-bit value.
+;
+BEGINPROC_FASTCALL iemAImpl_fist_r80_to_i64, 12
+        PROLOGUE_3_ARGS
+        sub     xSP, 20h
+
+        fninit
+        fld     tword [A3]
+        FPU_LD_FXSTATE_FCW_AND_SAFE_FSW A0
+        fistp   qword [A2]
+
+        fnstsw  word  [A1]
+
+        fninit
+        add     xSP, 20h
+        EPILOGUE_3_ARGS 0
+ENDPROC iemAImpl_fist_r80_to_i64
+
+
+;;
+; Store a 80-bit floating point value (register) as a 64-bit signed integer
+; (memory) with truncation.
+;
+; @param    A0      FPU context (fxsave).
+; @param    A1      Where to return the output FSW.
+; @param    A2      Where to store the 64-bit signed integer value.
+; @param    A3      Pointer to the 80-bit value.
+;
+BEGINPROC_FASTCALL iemAImpl_fistt_r80_to_i64, 12
+        PROLOGUE_3_ARGS
+        sub     xSP, 20h
+
+        fninit
+        fld     tword [A3]
+        FPU_LD_FXSTATE_FCW_AND_SAFE_FSW A0
+        fisttp  qword [A2]
+
+        fnstsw  word  [A1]
+
+        fninit
+        add     xSP, 20h
+        EPILOGUE_3_ARGS 0
+ENDPROC iemAImpl_fistt_r80_to_i64
+
 
 
 ;
