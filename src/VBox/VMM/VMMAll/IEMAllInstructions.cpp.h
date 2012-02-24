@@ -12049,10 +12049,19 @@ FNIEMOP_DEF(iemOp_frstpm)
 
 
 /** Opcode 0xdb 11/5. */
-FNIEMOP_STUB_1(iemOp_fucomi_stN, uint8_t, bRm);
+FNIEMOP_DEF_1(iemOp_fucomi_stN, uint8_t, bRm)
+{
+    IEMOP_MNEMONIC("fucomi st0,stN");
+    return IEM_MC_DEFER_TO_CIMPL_3(iemCImpl_fcomi_fucomi, bRm & X86_MODRM_RM_MASK, iemAImpl_fucomi_r80_by_r80, false /*fPop*/);
+}
+
 
 /** Opcode 0xdb 11/6. */
-FNIEMOP_STUB_1(iemOp_fcomi_stN,  uint8_t, bRm);
+FNIEMOP_DEF_1(iemOp_fcomi_stN,  uint8_t, bRm)
+{
+    IEMOP_MNEMONIC("fcomi st0,stN");
+    return IEM_MC_DEFER_TO_CIMPL_3(iemCImpl_fcomi_fucomi, bRm & X86_MODRM_RM_MASK, iemAImpl_fcomi_r80_by_r80, false /*fPop*/);
+}
 
 
 /** Opcode 0xdb. */
@@ -12594,10 +12603,20 @@ FNIEMOP_DEF(iemOp_fnstsw_ax)
 
 
 /** Opcode 0xdf 11/5. */
-FNIEMOP_STUB_1(iemOp_fucomip_st0_stN, uint8_t, bRm);
+FNIEMOP_DEF_1(iemOp_fucomip_st0_stN, uint8_t, bRm)
+{
+    IEMOP_MNEMONIC("fcomip st0,stN");
+    return IEM_MC_DEFER_TO_CIMPL_3(iemCImpl_fcomi_fucomi, bRm & X86_MODRM_RM_MASK, iemAImpl_fcomi_r80_by_r80, true /*fPop*/);
+}
+
 
 /** Opcode 0xdf 11/6. */
-FNIEMOP_STUB_1(iemOp_fcomip_st0_stN,  uint8_t, bRm);
+FNIEMOP_DEF_1(iemOp_fcomip_st0_stN,  uint8_t, bRm)
+{
+    IEMOP_MNEMONIC("fcomip st0,stN");
+    return IEM_MC_DEFER_TO_CIMPL_3(iemCImpl_fcomi_fucomi, bRm & X86_MODRM_RM_MASK, iemAImpl_fcomi_r80_by_r80, true /*fPop*/);
+}
+
 
 /** Opcode 0xdf !11/0. */
 FNIEMOP_STUB_1(iemOp_fild_m16i,   uint8_t, bRm);

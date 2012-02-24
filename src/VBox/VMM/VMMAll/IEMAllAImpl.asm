@@ -2054,6 +2054,43 @@ IEMIMPL_FPU_R80_BY_R80_FSW fucom
 
 
 ;;
+; FPU instruction working on two 80-bit floating point values,
+; returning FSW and EFLAGS (eax).
+;
+; @param    1       The instruction
+;
+; @returns  EFLAGS in EAX.
+; @param    A0      FPU context (fxsave).
+; @param    A1      Pointer to a uint16_t for the resulting FSW.
+; @param    A2      Pointer to the first 80-bit value.
+; @param    A3      Pointer to the second 80-bit value.
+;
+%macro IEMIMPL_FPU_R80_BY_R80_EFL 1
+BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _r80_by_r80, 16
+        PROLOGUE_4_ARGS
+        sub     xSP, 20h
+
+        fninit
+        fld     tword [A3]
+        fld     tword [A2]
+        FPU_LD_FXSTATE_FCW_AND_SAFE_FSW A0
+        %1      st1
+
+        fnstsw  word  [A1]
+        pushf
+        pop     xAX
+
+        fninit
+        add     xSP, 20h
+        EPILOGUE_4_ARGS 8
+ENDPROC iemAImpl_ %+ %1 %+ _r80_by_r80
+%endmacro
+
+IEMIMPL_FPU_R80_BY_R80_EFL fcomi
+IEMIMPL_FPU_R80_BY_R80_EFL fucomi
+
+
+;;
 ; FPU instruction working on one 80-bit floating point value.
 ;
 ; @param    1       The instruction
