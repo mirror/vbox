@@ -3972,6 +3972,21 @@ static int iemFpu2StRegsNotEmptyRef(PIEMCPU pIemCpu, uint8_t iStReg0, PCRTFLOAT8
 }
 
 
+static int iemFpu2StRegsNotEmptyRefFirst(PIEMCPU pIemCpu, uint8_t iStReg0, PCRTFLOAT80U *ppRef0, uint8_t iStReg1)
+{
+    PCPUMCTX pCtx  = pIemCpu->CTX_SUFF(pCtx);
+    uint16_t iTop  = X86_FSW_TOP_GET(pCtx->fpu.FSW);
+    uint16_t iReg0 = (iTop + iStReg0) & X86_FSW_TOP_SMASK;
+    uint16_t iReg1 = (iTop + iStReg1) & X86_FSW_TOP_SMASK;
+    if ((pCtx->fpu.FTW & (RT_BIT(iReg0) | RT_BIT(iReg1))) == (RT_BIT(iReg0) | RT_BIT(iReg1)))
+    {
+        *ppRef0 = &pCtx->fpu.aRegs[iStReg0].r80;
+        return VINF_SUCCESS;
+    }
+    return VERR_NOT_FOUND;
+}
+
+
 /**
  * Updates the FPU exception status after FCW is changed.
  *
@@ -6291,6 +6306,9 @@ static VBOXSTRICTRC iemMemMarkSelDescAccessed(PIEMCPU pIemCpu, uint16_t uSel)
 /** Updates the FSW, FOP, FPUIP, and FPUCS. */
 #define IEM_MC_UPDATE_FSW(a_u16FSW) \
     iemFpuUpdateFSW(pIemCpu, a_u16FSW)
+/** Updates the FSW with a constant value as well as FOP, FPUIP, and FPUCS. */
+#define IEM_MC_UPDATE_FSW_CONST(a_u16FSW) \
+    iemFpuUpdateFSW(pIemCpu, a_u16FSW)
 /** Updates the FSW, FOP, FPUIP, FPUCS, FPUDP, and FPUDS. */
 #define IEM_MC_UPDATE_FSW_WITH_MEM_OP(a_u16FSW, a_iEffSeg, a_GCPtrEff) \
     iemFpuUpdateFSWWithMemOp(pIemCpu, a_u16FSW, a_iEffSeg, a_GCPtrEff)
@@ -6385,6 +6403,8 @@ static VBOXSTRICTRC iemMemMarkSelDescAccessed(PIEMCPU pIemCpu, uint16_t uSel)
     if (iemFpuStRegNotEmptyRef(pIemCpu, (a_iSt), &(a_pr80Dst)) == VINF_SUCCESS) {
 #define IEM_MC_IF_TWO_FPUREGS_NOT_EMPTY_REF_R80(a_pr80Dst0, a_iSt0, a_pr80Dst1, a_iSt1) \
     if (iemFpu2StRegsNotEmptyRef(pIemCpu, (a_iSt0), &(a_pr80Dst0), (a_iSt1), &(a_pr80Dst1)) == VINF_SUCCESS) {
+#define IEM_MC_IF_TWO_FPUREGS_NOT_EMPTY_REF_R80_FIRST(a_pr80Dst0, a_iSt0, a_iSt1) \
+    if (iemFpu2StRegsNotEmptyRefFirst(pIemCpu, (a_iSt0), &(a_pr80Dst0), (a_iSt1)) == VINF_SUCCESS) {
 
 #define IEM_MC_ELSE()                                   } else {
 #define IEM_MC_ENDIF()                                  } do {} while (0)
