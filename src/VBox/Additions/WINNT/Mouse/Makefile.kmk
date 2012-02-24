@@ -19,6 +19,7 @@ SUB_DEPTH = ../../../../..
 include	$(KBUILD_PATH)/subheader.kmk
 
 # Include Sub-Makefiles.
+include $(PATH_SUB_CURRENT)/NT4/Makefile.kmk
 include $(PATH_SUB_CURRENT)/NT5/Makefile.kmk
 
 include	$(KBUILD_PATH)/subfooter.kmk
