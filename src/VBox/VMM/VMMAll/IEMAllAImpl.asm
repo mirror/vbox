@@ -1892,6 +1892,56 @@ IEMIMPL_FPU_R80_BY_R64_FSW fcom
 ;
 
 ;;
+; Loads a 80-bit floating point register value from memory.
+;
+; @param    A0      FPU context (fxsave).
+; @param    A1      Pointer to a IEMFPURESULT for the output.
+; @param    A2      Pointer to the 80-bit floating point value to load.
+;
+BEGINPROC_FASTCALL iemAImpl_fld_r80_from_r80, 12
+        PROLOGUE_3_ARGS
+        sub     xSP, 20h
+
+        fninit
+        FPU_LD_FXSTATE_FCW_AND_SAFE_FSW A0
+        fld     tword [A2]
+
+        fnstsw  word  [A1 + IEMFPURESULT.FSW]
+        fnclex
+        fstp    tword [A1 + IEMFPURESULT.r80Result]
+
+        fninit
+        add     xSP, 20h
+        EPILOGUE_3_ARGS 0
+ENDPROC iemAImpl_fld_r80_from_r80
+
+
+;;
+; Store a 80-bit floating point register to memory
+;
+; @param    A0      FPU context (fxsave).
+; @param    A1      Where to return the output FSW.
+; @param    A2      Where to store the 80-bit value.
+; @param    A3      Pointer to the 80-bit register value.
+;
+BEGINPROC_FASTCALL iemAImpl_fst_r80_to_r80, 12
+        PROLOGUE_3_ARGS
+        sub     xSP, 20h
+
+        fninit
+        fld     tword [A3]
+        FPU_LD_FXSTATE_FCW_AND_SAFE_FSW A0
+        fstp    tword [A2]
+
+        fnstsw  word  [A1]
+
+        fninit
+        add     xSP, 20h
+        EPILOGUE_3_ARGS 0
+ENDPROC iemAImpl_fst_r80_to_r80
+
+
+;;
 ; FPU instruction working on two 80-bit floating point values.
 ;
 ; @param    1       The instruction
