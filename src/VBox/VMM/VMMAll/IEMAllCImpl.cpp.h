@@ -4340,9 +4340,77 @@ IEM_CIMPL_DEF_1(iemCImpl_fpu_AddToTop, uint8_t, cToAdd)
     u16Fsw |= (iTop << X86_FSW_TOP_SHIFT);
     pCtx->fpu.FSW = u16Fsw;
 
+    iemRegAddToRip(pIemCpu, cbInstr);
     return VINF_SUCCESS;
 }
 
+
+/**
+ * Implements 'FCOMI', 'FCOMIP', 'FUCOMI', and 'FUCOMIP'.
+ *
+ * @param   cToAdd              1 or 7.
+ */
+IEM_CIMPL_DEF_3(iemCImpl_fcomi_fucomi, uint8_t, iStReg, PFNIEMAIMPLFPUR80EFL, pfnAImpl, bool, fPop)
+{
+    PCPUMCTX pCtx = pIemCpu->CTX_SUFF(pCtx);
+    Assert(iStReg < 8);
+
+    /*
+     * Raise exceptions.
+     */
+    if (pCtx->cr0 & (X86_CR0_EM | X86_CR0_TS))
+        return iemRaiseDeviceNotAvailable(pIemCpu);
+    uint16_t u16Fsw = pCtx->fpu.FSW;
+    if (u16Fsw & X86_FSW_ES)
+        return iemRaiseMathFault(pIemCpu);
+
+    /*
+     * Check if any of the register accesses causes #SF + #IA.
+     */
+    unsigned const iReg1 = X86_FSW_TOP_GET(u16Fsw);
+    unsigned const iReg2 = (iReg1 + iStReg) & X86_FSW_TOP_SMASK;
+    if ((pCtx->fpu.FTW & (RT_BIT(iReg1) | RT_BIT(iReg2))) == (RT_BIT(iReg1) | RT_BIT(iReg2)))
+    {
+        uint32_t u32Eflags = pfnAImpl(&pCtx->fpu, &u16Fsw, &pCtx->fpu.aRegs[0].r80, &pCtx->fpu.aRegs[iStReg].r80);
+        pCtx->fpu.FSW &= ~X86_FSW_C1;
+        pCtx->fpu.FSW |= u16Fsw & ~X86_FSW_TOP_MASK;
+        if (   !(u16Fsw & X86_FSW_IE)
+            || (pCtx->fpu.FCW & X86_FCW_IM) )
+        {
+            pCtx->eflags.u &= ~(X86_EFL_OF | X86_EFL_SF | X86_EFL_AF | X86_EFL_ZF | X86_EFL_PF | X86_EFL_CF);
+            pCtx->eflags.u |= pCtx->eflags.u & (X86_EFL_ZF | X86_EFL_PF | X86_EFL_CF);
+        }
+    }
+    else if (pCtx->fpu.FCW & X86_FCW_IM)
+    {
+        /* Masked underflow. */
+        pCtx->fpu.FSW &= ~X86_FSW_C1;
+        pCtx->fpu.FSW |= X86_FSW_IE | X86_FSW_SF;
+        pCtx->eflags.u &= ~(X86_EFL_OF | X86_EFL_SF | X86_EFL_AF | X86_EFL_ZF | X86_EFL_PF | X86_EFL_CF);
+        pCtx->eflags.u |= X86_EFL_ZF | X86_EFL_PF | X86_EFL_CF;
+    }
+    else
+    {
+        /* Raise underflow - don't touch EFLAGS or TOP. */
+        pCtx->fpu.FSW &= ~X86_FSW_C1;
+        pCtx->fpu.FSW |= X86_FSW_IE | X86_FSW_SF | X86_FSW_ES | X86_FSW_B;
+        fPop = false;
+    }
+
+    /*
+     * Pop if necessary.
+     */
+    if (fPop)
+    {
+        pCtx->fpu.FTW &= ~RT_BIT(iReg1);
+        pCtx->fpu.FSW &= X86_FSW_TOP_MASK;
+        pCtx->fpu.FSW |= ((iReg1 + 7) & X86_FSW_TOP_SMASK) << X86_FSW_TOP_SHIFT;
+    }
+
+    iemFpuUpdateOpcodeAndIpWorker(pIemCpu, pCtx);
+    iemRegAddToRip(pIemCpu, cbInstr);
+    return VINF_SUCCESS;
+}
 
 /** @} */
 
