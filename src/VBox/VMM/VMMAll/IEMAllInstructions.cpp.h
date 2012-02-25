@@ -11173,7 +11173,20 @@ FNIEMOP_DEF(iemOp_fdecstp)
 {
     IEMOP_MNEMONIC("fdecstp");
     IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
-    return IEM_MC_DEFER_TO_CIMPL_1(iemCImpl_fpu_AddToTop, 7);
+    /* Note! C0, C2 and C3 are documented as undefined, we clear them. */
+    /** @todo Testcase: Check whether FOP, FPUIP and FPUCS are affected by
+     *        FINCSTP and FDECSTP. */
+
+    IEM_MC_BEGIN(0,0);
+
+    IEM_MC_MAYBE_RAISE_DEVICE_NOT_AVAILABLE();
+    IEM_MC_MAYBE_RAISE_FPU_XCPT();
+
+    IEM_MC_FPU_STACK_DEC_TOP();
+    IEM_MC_UPDATE_FSW_CONST(0);
+
+    IEM_MC_END();
+    return VINF_SUCCESS;
 }
 
 
@@ -11182,7 +11195,20 @@ FNIEMOP_DEF(iemOp_fincstp)
 {
     IEMOP_MNEMONIC("fincstp");
     IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
-    return IEM_MC_DEFER_TO_CIMPL_1(iemCImpl_fpu_AddToTop, 1);
+    /* Note! C0, C2 and C3 are documented as undefined, we clear them. */
+    /** @todo Testcase: Check whether FOP, FPUIP and FPUCS are affected by
+     *        FINCSTP and FDECSTP. */
+
+    IEM_MC_BEGIN(0,0);
+
+    IEM_MC_MAYBE_RAISE_DEVICE_NOT_AVAILABLE();
+    IEM_MC_MAYBE_RAISE_FPU_XCPT();
+
+    IEM_MC_FPU_STACK_INC_TOP();
+    IEM_MC_UPDATE_FSW_CONST(0);
+
+    IEM_MC_END();
+    return VINF_SUCCESS;
 }
 
 
@@ -12539,11 +12565,49 @@ FNIEMOP_STUB_1(iemOp_frstor,      uint8_t, bRm);
 /** Opcode 0xdd !11/0. */
 FNIEMOP_STUB_1(iemOp_fnsave,      uint8_t, bRm);
 
+
 /** Opcode 0xdd !11/0. */
-FNIEMOP_STUB_1(iemOp_fnstsw,      uint8_t, bRm);
+FNIEMOP_DEF_1(iemOp_fnstsw,      uint8_t, bRm)
+{
+    IEMOP_MNEMONIC("fnstsw m16");
+
+    IEM_MC_BEGIN(0, 2);
+    IEM_MC_LOCAL(uint16_t, u16Tmp);
+    IEM_MC_LOCAL(RTGCPTR,  GCPtrEffDst);
+
+    IEM_MC_MAYBE_RAISE_DEVICE_NOT_AVAILABLE();
+    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+
+    IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffDst, bRm);
+    IEM_MC_FETCH_FSW(u16Tmp);
+    IEM_MC_STORE_MEM_U16(pIemCpu->iEffSeg, GCPtrEffDst, u16Tmp);
+    IEM_MC_ADVANCE_RIP();
+
+    IEM_MC_END();
+    return VINF_SUCCESS;
+}
+
 
 /** Opcode 0xdd 11/0. */
-FNIEMOP_STUB_1(iemOp_ffree_stN,   uint8_t, bRm);
+FNIEMOP_DEF_1(iemOp_ffree_stN,   uint8_t, bRm)
+{
+    IEMOP_MNEMONIC("ffree stN");
+    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+    /* Note! C0, C1, C2 and C3 are documented as undefined, we leave the
+             unmodified. */
+
+    IEM_MC_BEGIN(0, 0);
+
+    IEM_MC_MAYBE_RAISE_DEVICE_NOT_AVAILABLE();
+    IEM_MC_MAYBE_RAISE_FPU_XCPT();
+
+    IEM_MC_FPU_STACK_FREE(bRm & X86_MODRM_RM_MASK);
+    IEM_MC_UPDATE_FPU_OPCODE_IP();
+
+    IEM_MC_ADVANCE_RIP();
+    IEM_MC_END();
+    return VINF_SUCCESS;
+}
 
 
 /** Opcode 0xdd 11/1. */
@@ -12869,8 +12933,26 @@ FNIEMOP_DEF(iemOp_EscF6)
 }
 
 
-/** Opcode 0xdf 11/0. */
-FNIEMOP_STUB_1(iemOp_ffreep_stN, uint8_t, bRm);
+/** Opcode 0xdf 11/0.
+ * Undocument instruction, assumed to work like ffree + fincstp.  */
+FNIEMOP_DEF_1(iemOp_ffreep_stN, uint8_t, bRm)
+{
+    IEMOP_MNEMONIC("ffreep stN");
+    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+
+    IEM_MC_BEGIN(0, 0);
+
+    IEM_MC_MAYBE_RAISE_DEVICE_NOT_AVAILABLE();
+    IEM_MC_MAYBE_RAISE_FPU_XCPT();
+
+    IEM_MC_FPU_STACK_FREE(bRm & X86_MODRM_RM_MASK);
+    IEM_MC_FPU_STACK_INC_TOP();
+    IEM_MC_UPDATE_FPU_OPCODE_IP();
+
+    IEM_MC_ADVANCE_RIP();
+    IEM_MC_END();
+    return VINF_SUCCESS;
+}
 
 
 /** Opcode 0xdf 0xe0. */
