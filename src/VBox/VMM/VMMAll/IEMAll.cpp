@@ -6018,6 +6018,8 @@ static VBOXSTRICTRC iemMemMarkSelDescAccessed(PIEMCPU pIemCpu, uint16_t uSel)
     IEM_MC_RETURN_ON_FAILURE(iemMemFetchDataU16(pIemCpu, &(a_u16Dst), (a_iSeg), (a_GCPtrMem)))
 #define IEM_MC_FETCH_MEM_U16_DISP(a_u16Dst, a_iSeg, a_GCPtrMem, a_offDisp) \
     IEM_MC_RETURN_ON_FAILURE(iemMemFetchDataU16(pIemCpu, &(a_u16Dst), (a_iSeg), (a_GCPtrMem) + (a_offDisp)))
+#define IEM_MC_FETCH_MEM_I16(a_i16Dst, a_iSeg, a_GCPtrMem) \
+    IEM_MC_RETURN_ON_FAILURE(iemMemFetchDataU16(pIemCpu, (uint16_t *)&(a_i16Dst), (a_iSeg), (a_GCPtrMem)))
 
 #define IEM_MC_FETCH_MEM_U32(a_u32Dst, a_iSeg, a_GCPtrMem) \
     IEM_MC_RETURN_ON_FAILURE(iemMemFetchDataU32(pIemCpu, &(a_u32Dst), (a_iSeg), (a_GCPtrMem)))

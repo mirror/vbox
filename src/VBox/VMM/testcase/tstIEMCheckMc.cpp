@@ -216,6 +216,13 @@ IEMOPSHIFTDBLSIZES g_iemAImpl_shrd;
 #define iemAImpl_fxtract_r80_r80        NULL
 #define iemAImpl_fsincos_r80_r80        NULL
 
+#define iemAImpl_fiadd_r80_by_i16       NULL
+#define iemAImpl_fimul_r80_by_i16       NULL
+#define iemAImpl_fisub_r80_by_i16       NULL
+#define iemAImpl_fisubr_r80_by_i16      NULL
+#define iemAImpl_fidiv_r80_by_i16       NULL
+#define iemAImpl_fidivr_r80_by_i16      NULL
+
 #define iemAImpl_fiadd_r80_by_i32       NULL
 #define iemAImpl_fimul_r80_by_i32       NULL
 #define iemAImpl_fisub_r80_by_i32       NULL
@@ -409,6 +416,7 @@ IEMOPSHIFTDBLSIZES g_iemAImpl_shrd;
 #define IEM_MC_FETCH_MEM16_U8(a_u8Dst, a_iSeg, a_GCPtrMem16)            do { CHK_TYPE(uint16_t, a_GCPtrMem16); } while (0)
 #define IEM_MC_FETCH_MEM32_U8(a_u8Dst, a_iSeg, a_GCPtrMem32)            do { CHK_TYPE(uint32_t, a_GCPtrMem32); } while (0)
 #define IEM_MC_FETCH_MEM_U16(a_u16Dst, a_iSeg, a_GCPtrMem)              do { CHK_GCPTR(a_GCPtrMem); } while (0)
+#define IEM_MC_FETCH_MEM_I16(a_i16Dst, a_iSeg, a_GCPtrMem)              do { CHK_GCPTR(a_GCPtrMem); CHK_TYPE(int16_t, a_i16Dst); } while (0)
 #define IEM_MC_FETCH_MEM_U32(a_u32Dst, a_iSeg, a_GCPtrMem)              do { CHK_GCPTR(a_GCPtrMem); } while (0)
 #define IEM_MC_FETCH_MEM_I32(a_i32Dst, a_iSeg, a_GCPtrMem)              do { CHK_GCPTR(a_GCPtrMem); CHK_TYPE(int32_t, a_i32Dst); } while (0)
 #define IEM_MC_FETCH_MEM_S32_SX_U64(a_u64Dst, a_iSeg, a_GCPtrMem)       do { CHK_GCPTR(a_GCPtrMem); } while (0)
