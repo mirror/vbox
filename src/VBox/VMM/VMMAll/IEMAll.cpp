@@ -3682,6 +3682,55 @@ static void iemFpuUpdateOpcodeAndIp(PIEMCPU pIemCpu)
 
 
 /**
+ * Marks the specified stack register as free (for FFREE).
+ *
+ * @param   pIemCpu             The IEM per CPU data.
+ * @param   iStReg              The register to free.
+ */
+static void iemFpuStackFree(PIEMCPU pIemCpu, uint8_t iStReg)
+{
+    Assert(iStReg < 8);
+    PCPUMCTX pCtx = pIemCpu->CTX_SUFF(pCtx);
+    uint8_t iReg = (X86_FSW_TOP_GET(pCtx->fpu.FSW) + iStReg) & X86_FSW_TOP_SMASK;
+    pCtx->fpu.FTW &= ~RT_BIT(iReg);
+}
+
+
+/**
+ * Increments FSW.TOP, i.e. pops an item off the stack without freeing it.
+ *
+ * @param   pIemCpu             The IEM per CPU data.
+ */
+static void iemFpuStackIncTop(PIEMCPU pIemCpu)
+{
+    PCPUMCTX pCtx = pIemCpu->CTX_SUFF(pCtx);
+    uint16_t uFsw = pCtx->fpu.FSW;
+    uint16_t uTop = uFsw & X86_FSW_TOP_MASK;
+    uTop  = (uTop + (1 << X86_FSW_TOP_SHIFT)) & X86_FSW_TOP_MASK;
+    uFsw &= ~X86_FSW_TOP_MASK;
+    uFsw |= uTop;
+    pCtx->fpu.FSW = uFsw;
+}
+
+
+/**
+ * Decrements FSW.TOP, i.e. push an item off the stack without storing anything.
+ *
+ * @param   pIemCpu             The IEM per CPU data.
+ */
+static void iemFpuStackDecTop(PIEMCPU pIemCpu)
+{
+    PCPUMCTX pCtx = pIemCpu->CTX_SUFF(pCtx);
+    uint16_t uFsw = pCtx->fpu.FSW;
+    uint16_t uTop = uFsw & X86_FSW_TOP_MASK;
+    uTop  = (uTop + (7 << X86_FSW_TOP_SHIFT)) & X86_FSW_TOP_MASK;
+    uFsw &= ~X86_FSW_TOP_MASK;
+    uFsw |= uTop;
+    pCtx->fpu.FSW = uFsw;
+}
+
+
+/**
  * Updates the FSW, FOP, FPUIP, and FPUCS.
  *
  * @param   pIemCpu             The IEM per CPU data.
@@ -6382,6 +6431,15 @@ static VBOXSTRICTRC iemMemMarkSelDescAccessed(PIEMCPU pIemCpu, uint16_t uSel)
 /** Only update the FOP, FPUIP, and FPUCS. (For FNOP.) */
 #define IEM_MC_UPDATE_FPU_OPCODE_IP() \
     iemFpuUpdateOpcodeAndIp(pIemCpu)
+/** Free a stack register (for FFREE and FFREEP). */
+#define IEM_MC_FPU_STACK_FREE(a_iStReg) \
+    iemFpuStackFree(pIemCpu, a_iStReg)
+/** Increment the FPU stack pointer. */
+#define IEM_MC_FPU_STACK_INC_TOP() \
+    iemFpuStackIncTop(pIemCpu)
+/** Decrement the FPU stack pointer. */
+#define IEM_MC_FPU_STACK_DEC_TOP() \
+    iemFpuStackDecTop(pIemCpu)
 
 /** Updates the FSW, FOP, FPUIP, and FPUCS. */
 #define IEM_MC_UPDATE_FSW(a_u16FSW) \
@@ -6439,7 +6497,6 @@ static VBOXSTRICTRC iemMemMarkSelDescAccessed(PIEMCPU pIemCpu, uint16_t uSel)
  *  FPUIP, FPUCS, FOP, FPUDP and FPUDS. */
 #define IEM_MC_FPU_STACK_PUSH_OVERFLOW_MEM_OP(a_iEffSeg, a_GCPtrEff) \
     iemFpuStackPushOverflowWithMemOp(pIemCpu, a_iEffSeg, a_GCPtrEff)
-
 
 #define IEM_MC_IF_EFL_BIT_SET(a_fBit)                   if (pIemCpu->CTX_SUFF(pCtx)->eflags.u & (a_fBit)) {
 #define IEM_MC_IF_EFL_BIT_NOT_SET(a_fBit)               if (!(pIemCpu->CTX_SUFF(pCtx)->eflags.u & (a_fBit))) {
