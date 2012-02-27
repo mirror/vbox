@@ -2599,6 +2599,25 @@ static void iemOpStubMsg2(PIEMCPU pIemCpu)
     } \
     typedef int ignore_semicolon
 
+/** Stubs an opcode which currently should raise \#UD. */
+#define FNIEMOP_UD_STUB(a_Name) \
+    FNIEMOP_DEF(a_Name) \
+    { \
+        Log(("Unsupported instruction %Rfn\n", __FUNCTION__)); \
+        return IEMOP_RAISE_INVALID_OPCODE(); \
+    } \
+    typedef int ignore_semicolon
+
+/** Stubs an opcode which currently should raise \#UD. */
+#define FNIEMOP_UD_STUB_1(a_Name, a_Type0, a_Name0) \
+    FNIEMOP_DEF_1(a_Name, a_Type0, a_Name0) \
+    { \
+        NOREF(a_Name0); \
+        Log(("Unsupported instruction %Rfn\n", __FUNCTION__)); \
+        return IEMOP_RAISE_INVALID_OPCODE(); \
+    } \
+    typedef int ignore_semicolon
+
 
 
 /** @name   Register Access.
