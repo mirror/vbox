@@ -104,7 +104,6 @@ else
 endif
 
 cfg_flags := $(if $(filter rhel4 sles10.1,$(rpmrel)),--build-libxml2,) \
-	     $(if $(filter rhel4 sles10.1,$(rpmrel)),--build-libxslt,) \
 	     $(if $(filter rhel4,$(rpmrel)),--build-libssl,) \
 	     $(if $(filter rhel4 rhel5 ol4 ol5 centos4 centos5 sles10.1,$(rpmrel)),--build-libcurl,) \
 	     $(if $(filter rhel5 centos5 sles10.1,$(rpmrel)),--disable-sdl-ttf,) \
