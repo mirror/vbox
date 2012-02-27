@@ -3537,15 +3537,15 @@ HRESULT VirtualBox::registerMachine(Machine *aMachine)
  * @note Caller must hold the media tree lock for writing; in addition, this
  * locks @a pMedium for reading
  *
- * @param pMedium   Hard disk object to remember.
- * @param ppMedium  Actually stored hard disk object. Can be different if due
+ * @param pMedium   Medium object to remember.
+ * @param ppMedium  Actually stored medium object. Can be different if due
  *                  to an unavoidable race there was a duplicate Medium object
  *                  created.
- * @param argType   Either DeviceType_DVD or DeviceType_Floppy.
+ * @param argType   Either DeviceType_HardDisk, DeviceType_DVD or DeviceType_Floppy.
  * @param pllRegistriesThatNeedSaving Optional pointer to a list of UUIDs of media registries that need saving.
  * @return
  */
-HRESULT VirtualBox::registerMedium(Medium *pMedium,
+HRESULT VirtualBox::registerMedium(const ComObjPtr<Medium> &pMedium,
                                    ComObjPtr<Medium> *ppMedium,
                                    DeviceType_T argType,
                                    GuidList *pllRegistriesThatNeedSaving)
@@ -3623,11 +3623,18 @@ HRESULT VirtualBox::registerMedium(Medium *pMedium,
 
         if (pllRegistriesThatNeedSaving)
             pMedium->addToRegistryIDList(*pllRegistriesThatNeedSaving);
+
+        *ppMedium = pMedium;
     }
     else
-        pMedium = pDupMedium;
-
-    *ppMedium = pMedium;
+    {
+        // pMedium may be the last reference, to the Medium object, and the
+        // caller may have specified the same ComObjPtr as the output parameter.
+        // In this case the assignment will uninit the object, and we must not
+        // have a caller pending.
+        mediumCaller.release();
+        *ppMedium = pDupMedium;
+    }
 
     return rc;
 }
