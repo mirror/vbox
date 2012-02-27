@@ -964,13 +964,13 @@ static int hmR0VmxCheckPendingInterrupt(PVM pVM, PVMCPU pVCpu, CPUMCTX *pCtx)
         if (enmType == TRPM_TRAP)
         {
             switch (u8Vector) {
-            case 8:
-            case 10:
-            case 11:
-            case 12:
-            case 13:
-            case 14:
-            case 17:
+            case X86_XCPT_DF:
+            case X86_XCPT_TS:
+            case X86_XCPT_NP:
+            case X86_XCPT_SS:
+            case X86_XCPT_GP:
+            case X86_XCPT_PF:
+            case X86_XCPT_AC:
                 /* Valid error codes. */
                 intInfo |= VMX_EXIT_INTERRUPTION_INFO_ERROR_CODE_VALID;
                 break;
