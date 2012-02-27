@@ -51,9 +51,10 @@ void crFreeTSD(CRtsd *tsd)
         crError("crFreeTSD failed!");
     }
 #else
-    if (pthread_key_delete(tsd->key) != 0) {
-        perror(FREE_TSD_ERROR);
-        crError("crFreeTSD failed!");
+    if (pthread_key_delete(tsd->key) != 0)
+    {
+//        perror(FREE_TSD_ERROR);
+//        crError("crFreeTSD failed!");
     }
 #endif
     tsd->initMagic = 0x0;
