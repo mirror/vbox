@@ -259,7 +259,7 @@ public:
     int calculateFullPath(const Utf8Str &strPath, Utf8Str &aResult);
     void copyPathRelativeToConfig(const Utf8Str &strSource, Utf8Str &strTarget);
 
-    HRESULT registerMedium(Medium *pMedium, ComObjPtr<Medium> *ppMedium, DeviceType_T argType, GuidList *pllRegistriesThatNeedSaving);
+    HRESULT registerMedium(const ComObjPtr<Medium> &pMedium, ComObjPtr<Medium> *ppMedium, DeviceType_T argType, GuidList *pllRegistriesThatNeedSaving);
     HRESULT unregisterMedium(Medium *pMedium, GuidList *pllRegistriesThatNeedSaving);
 
     void pushMediumToListWithChildren(MediaList &llMedia, Medium *pMedium);
