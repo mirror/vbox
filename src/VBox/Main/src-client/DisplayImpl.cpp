@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2010 Oracle Corporation
+ * Copyright (C) 2006-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -2037,15 +2037,15 @@ STDMETHODIMP Display::SetFramebuffer (ULONG aScreenId,
     Console::SafeVMPtrQuiet pVM (mParent);
     if (pVM.isOk())
     {
-        /* Must leave the lock here because the changeFramebuffer will
+        /* Must release the lock here because the changeFramebuffer will
          * also obtain it. */
-        alock.leave ();
+        alock.release();
 
         /* send request to the EMT thread */
         int vrc = VMR3ReqCallWait (pVM, VMCPUID_ANY,
                                    (PFNRT) changeFramebuffer, 3, this, aFramebuffer, aScreenId);
 
-        alock.enter ();
+        alock.acquire();
 
         ComAssertRCRet (vrc, E_FAIL);
 
@@ -2063,13 +2063,13 @@ STDMETHODIMP Display::SetFramebuffer (ULONG aScreenId,
 
                 VMMDev *pVMMDev = mParent->getVMMDev();
 
-                alock.leave ();
+                alock.release();
 
                 if (pVMMDev)
                     vrc = pVMMDev->hgcmHostCall("VBoxSharedCrOpenGL", SHCRGL_HOST_FN_SCREEN_CHANGED, SHCRGL_CPARMS_SCREEN_CHANGED, &parm);
                 /*ComAssertRCRet (vrc, E_FAIL);*/
 
-                alock.enter ();
+                alock.acquire();
             }
         }
 #endif /* VBOX_WITH_CROGL */
@@ -2154,9 +2154,9 @@ STDMETHODIMP Display::SetVideoModeHint(ULONG aWidth, ULONG aHeight,
 //    if ((width * height * (bpp / 8)) > (vramSize * 1024 * 1024))
 //        return setError(E_FAIL, tr("Not enough VRAM for the selected video mode"));
 
-    /* Have to leave the lock because the pfnRequestDisplayChange
+    /* Have to release the lock because the pfnRequestDisplayChange
      * will call EMT.  */
-    alock.leave ();
+    alock.release();
 
     VMMDev *pVMMDev = mParent->getVMMDev();
     if (pVMMDev)
@@ -2175,8 +2175,8 @@ STDMETHODIMP Display::SetSeamlessMode (BOOL enabled)
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    /* Have to leave the lock because the pfnRequestSeamlessChange will call EMT.  */
-    alock.leave ();
+    /* Have to release the lock because the pfnRequestSeamlessChange will call EMT.  */
+    alock.release();
 
     VMMDev *pVMMDev = mParent->getVMMDev();
     if (pVMMDev)
@@ -2376,12 +2376,12 @@ STDMETHODIMP Display::TakeScreenShot (ULONG aScreenId, BYTE *address, ULONG widt
 
     LogRelFlowFunc (("Sending SCREENSHOT request\n"));
 
-    /* Leave lock because other thread (EMT) is called and it may initiate a resize
+    /* Release lock because other thread (EMT) is called and it may initiate a resize
      * which also needs lock.
      *
      * This method does not need the lock anymore.
      */
-    alock.leave();
+    alock.release();
 
     int vrc = displayTakeScreenshot(pVM, this, mpDrv, aScreenId, address, width, height);
 
@@ -2429,12 +2429,12 @@ STDMETHODIMP Display::TakeScreenShotToArray (ULONG aScreenId, ULONG width, ULONG
 
     LogRelFlowFunc (("Sending SCREENSHOT request\n"));
 
-    /* Leave lock because other thread (EMT) is called and it may initiate a resize
+    /* Release lock because other thread (EMT) is called and it may initiate a resize
      * which also needs lock.
      *
      * This method does not need the lock anymore.
      */
-    alock.leave();
+    alock.release();
 
     size_t cbData = width * 4 * height;
     uint8_t *pu8Data = (uint8_t *)RTMemAlloc(cbData);
@@ -2506,12 +2506,12 @@ STDMETHODIMP Display::TakeScreenShotPNGToArray (ULONG aScreenId, ULONG width, UL
 
     LogRelFlowFunc (("Sending SCREENSHOT request\n"));
 
-    /* Leave lock because other thread (EMT) is called and it may initiate a resize
+    /* Release lock because other thread (EMT) is called and it may initiate a resize
      * which also needs lock.
      *
      * This method does not need the lock anymore.
      */
-    alock.leave();
+    alock.release();
 
     size_t cbData = width * 4 * height;
     uint8_t *pu8Data = (uint8_t *)RTMemAlloc(cbData);
@@ -2675,8 +2675,8 @@ STDMETHODIMP Display::DrawToScreen (ULONG aScreenId, BYTE *address, ULONG x, ULO
     Console::SafeVMPtr pVM(mParent);
     if (FAILED(pVM.rc())) return pVM.rc();
 
-    /* Leave lock because the call scheduled on EMT may also try to take it. */
-    alock.leave();
+    /* Release lock because the call scheduled on EMT may also try to take it. */
+    alock.release();
 
     /*
      * Again we're lazy and make the graphics device do all the
@@ -2799,13 +2799,13 @@ STDMETHODIMP Display::InvalidateAndUpdate()
 
     LogRelFlowFunc (("Sending DPYUPDATE request\n"));
 
-    /* Have to leave the lock when calling EMT.  */
-    alock.leave ();
+    /* Have to release the lock when calling EMT.  */
+    alock.release();
 
     /* pdm.h says that this has to be called from the EMT thread */
     int rcVBox = VMR3ReqCallVoidWait(pVM, VMCPUID_ANY, (PFNRT)Display::InvalidateAndUpdateEMT,
                                      1, this);
-    alock.enter ();
+    alock.acquire();
 
     if (RT_FAILURE(rcVBox))
         rc = setError(VBOX_E_IPRT_ERROR,
@@ -3002,14 +3002,14 @@ DECLCALLBACK(int) Display::changeFramebuffer (Display *that, IFramebuffer *aFB,
         DISPLAYFBINFO *pFBInfo = &that->maFramebuffers[uScreenId];
 
 #if defined(VBOX_WITH_CROGL)
-        /* Leave the lock, because SHCRGL_HOST_FN_SCREEN_CHANGED will read current framebuffer */
+        /* Release the lock, because SHCRGL_HOST_FN_SCREEN_CHANGED will read current framebuffer */
         {
             BOOL is3denabled;
             that->mParent->machine()->COMGETTER(Accelerate3DEnabled)(&is3denabled);
 
             if (is3denabled)
             {
-                alock.leave ();
+                alock.release();
             }
         }
 #endif

@@ -2076,8 +2076,8 @@ STDMETHODIMP Console::Reset()
     if (!ptrVM.isOk())
         return ptrVM.rc();
 
-    /* leave the lock before a VMR3* call (EMT will call us back)! */
-    alock.leave();
+    /* release the lock before a VMR3* call (EMT will call us back)! */
+    alock.release();
 
     int vrc = VMR3Reset(ptrVM);
 
@@ -2289,7 +2289,7 @@ HRESULT Console::doCPUAdd(ULONG aCpu, PVM pVM)
                           (PFNRT)Console::plugCpu, 3,
                           this, pVM, aCpu);
 
-    /* leave the lock before a VMR3* call (EMT will call us back)! */
+    /* release the lock before a VMR3* call (EMT will call us back)! */
     alock.release();
 
     if (vrc == VERR_TIMEOUT || RT_SUCCESS(vrc))
@@ -2353,8 +2353,8 @@ STDMETHODIMP Console::Pause()
 
     LogFlowThisFunc(("Sending PAUSE request...\n"));
 
-    /* leave the lock before a VMR3* call (EMT will call us back)! */
-    alock.leave();
+    /* release the lock before a VMR3* call (EMT will call us back)! */
+    alock.release();
 
     int vrc = VMR3Suspend(ptrVM);
 
@@ -2388,8 +2388,8 @@ STDMETHODIMP Console::Resume()
 
     LogFlowThisFunc(("Sending RESUME request...\n"));
 
-    /* leave the lock before a VMR3* call (EMT will call us back)! */
-    alock.leave();
+    /* release the lock before a VMR3* call (EMT will call us back)! */
+    alock.release();
 
 #ifdef VBOX_WITH_EXTPACK
     int vrc = mptrExtPackManager->callAllVmPowerOnHooks(this, ptrVM); /** @todo called a few times too many... */
@@ -2433,7 +2433,8 @@ STDMETHODIMP Console::PowerButton()
     SafeVMPtr ptrVM(this);
     if (!ptrVM.isOk())
         return ptrVM.rc();
-/** @todo leave the console lock? */
+
+/** @todo release the console lock? */
 
     /* get the acpi device interface and press the button. */
     PPDMIBASE pBase;
@@ -2480,7 +2481,8 @@ STDMETHODIMP Console::GetPowerButtonHandled(BOOL *aHandled)
     SafeVMPtr ptrVM(this);
     if (!ptrVM.isOk())
         return ptrVM.rc();
-/** @todo leave the console lock? */
+
+/** @todo release the console lock? */
 
     /* get the acpi device interface and check if the button press was handled. */
     PPDMIBASE pBase;
@@ -2535,7 +2537,7 @@ STDMETHODIMP Console::GetGuestEnteredACPIMode(BOOL *aEntered)
     if (!ptrVM.isOk())
         return ptrVM.rc();
 
-/** @todo leave the console lock? */
+/** @todo release the console lock? */
 
     /* get the acpi device interface and query the information. */
     PPDMIBASE pBase;
@@ -2576,7 +2578,7 @@ STDMETHODIMP Console::SleepButton()
     if (!ptrVM.isOk())
         return ptrVM.rc();
 
-/** @todo leave the console lock? */
+/** @todo release the console lock? */
 
     /* get the acpi device interface and press the sleep button. */
     PPDMIBASE pBase;
@@ -2678,7 +2680,7 @@ STDMETHODIMP Console::SaveState(IProgress **aProgress)
         rc = task->rc();
         /*
          * If we fail here it means a PowerDown() call happened on another
-         * thread while we were doing Pause() (which leaves the Console lock).
+         * thread while we were doing Pause() (which releases the Console lock).
          * We assign PowerDown() a higher precedence than SaveState(),
          * therefore just return the error to the caller.
          */
@@ -2886,9 +2888,9 @@ STDMETHODIMP Console::AttachUSBDevice(IN_BSTR aId)
         return setError(VBOX_E_PDM_ERROR,
             tr("The virtual machine does not have a USB controller"));
 
-    /* leave the lock because the USB Proxy service may call us back
+    /* release the lock because the USB Proxy service may call us back
      * (via onUSBDeviceAttach()) */
-    alock.leave();
+    alock.release();
 
     /* Request the device capture */
     return mControl->CaptureUSBDevice(aId);
@@ -2931,20 +2933,20 @@ STDMETHODIMP Console::DetachUSBDevice(IN_BSTR aId, IUSBDevice **aDevice)
     /*
      * Inform the USB device and USB proxy about what's cooking.
      */
-    alock.leave();
+    alock.release();
     HRESULT rc2 = mControl->DetachUSBDevice(aId, false /* aDone */);
     if (FAILED(rc2))
         return rc2;
-    alock.enter();
+    alock.acquire();
 
     /* Request the PDM to detach the USB device. */
     HRESULT rc = detachUSBDevice(it);
 
     if (SUCCEEDED(rc))
     {
-        /* leave the lock since we don't need it any more (note though that
+        /* release the lock since we don't need it any more (note though that
          * the USB Proxy service must not call us back here) */
-        alock.leave();
+        alock.release();
 
         /* Request the device release. Even if it fails, the device will
          * remain as held by proxy, which is OK for us (the VM process). */
@@ -3268,7 +3270,7 @@ STDMETHODIMP Console::TakeSnapshot(IN_BSTR aName,
 
         /*
          * If we fail here it means a PowerDown() call happened on another
-         * thread while we were doing Pause() (which leaves the Console lock).
+         * thread while we were doing Pause() (which releases the Console lock).
          * We assign PowerDown() a higher precedence than TakeSnapshot(),
          * therefore just return the error to the caller.
          */
@@ -3594,8 +3596,8 @@ HRESULT Console::doMediumChange(IMediumAttachment *aMediumAttachment, bool fForc
                           aMediumAttachment,
                           fForce);
 
-    /* leave the lock before waiting for a result (EMT will call us back!) */
-    alock.leave();
+    /* release the lock before waiting for a result (EMT will call us back!) */
+    alock.release();
 
     if (vrc == VERR_TIMEOUT || RT_SUCCESS(vrc))
     {
@@ -3847,8 +3849,8 @@ HRESULT Console::doStorageDeviceAttach(IMediumAttachment *aMediumAttachment, PVM
                           fUseHostIOCache,
                           aMediumAttachment);
 
-    /* leave the lock before waiting for a result (EMT will call us back!) */
-    alock.leave();
+    /* release the lock before waiting for a result (EMT will call us back!) */
+    alock.release();
 
     if (vrc == VERR_TIMEOUT || RT_SUCCESS(vrc))
     {
@@ -4088,8 +4090,8 @@ HRESULT Console::doStorageDeviceDetach(IMediumAttachment *aMediumAttachment, PVM
                           enmBus,
                           aMediumAttachment);
 
-    /* leave the lock before waiting for a result (EMT will call us back!) */
-    alock.leave();
+    /* release the lock before waiting for a result (EMT will call us back!) */
+    alock.release();
 
     if (vrc == VERR_TIMEOUT || RT_SUCCESS(vrc))
     {
@@ -4497,8 +4499,8 @@ HRESULT Console::doNetworkAdapterChange(PVM pVM,
                           (PFNRT) Console::changeNetworkAttachment, 6,
                           this, ptrVM.raw(), pszDevice, uInstance, uLun, aNetworkAdapter);
 
-    /* leave the lock before waiting for a result (EMT will call us back!) */
-    alock.leave();
+    /* release the lock before waiting for a result (EMT will call us back!) */
+    alock.release();
 
     if (vrc == VERR_TIMEOUT || RT_SUCCESS(vrc))
     {
@@ -4832,7 +4834,7 @@ HRESULT Console::onVRDEServerChange(BOOL aRestart)
         if (aRestart)
         {
             /* VRDP server may call this Console object back from other threads (VRDP INPUT or OUTPUT). */
-            alock.leave();
+            alock.release();
 
             if (vrdpEnabled)
             {
@@ -4851,7 +4853,7 @@ HRESULT Console::onVRDEServerChange(BOOL aRestart)
                 mConsoleVRDPServer->Stop();
             }
 
-            alock.enter();
+            alock.acquire();
         }
     }
 
@@ -6687,7 +6689,7 @@ HRESULT Console::powerDown(IProgress *aProgress /*= NULL*/)
 
     /* ----------------------------------------------------------------------
      * DONE with necessary state changes, perform the power down actions (it's
-     * safe to leave the object lock now if needed)
+     * safe to release the object lock now if needed)
      * ---------------------------------------------------------------------- */
 
     /* Stop the VRDP server to prevent new clients connection while VM is being
@@ -6698,11 +6700,11 @@ HRESULT Console::powerDown(IProgress *aProgress /*= NULL*/)
 
         /* Leave the lock since EMT will call us back as addVMCaller()
          * in updateDisplayData(). */
-        alock.leave();
+        alock.release();
 
         mConsoleVRDPServer->Stop();
 
-        alock.enter();
+        alock.acquire();
     }
 
     /* advance percent count */
@@ -6728,11 +6730,11 @@ HRESULT Console::powerDown(IProgress *aProgress /*= NULL*/)
         LogFlowThisFunc(("Waiting for mpVM callers (%d) to drop to zero...\n",
                           mVMCallers));
 
-        alock.leave();
+        alock.release();
 
         RTSemEventWait(mVMZeroCallersSem, RT_INDEFINITE_WAIT);
 
-        alock.enter();
+        alock.acquire();
     }
 
     /* advance percent count */
@@ -6752,12 +6754,12 @@ HRESULT Console::powerDown(IProgress *aProgress /*= NULL*/)
     if (!mVMPoweredOff)
     {
         LogFlowThisFunc(("Powering off the VM...\n"));
-        alock.leave();
+        alock.release();
         vrc = VMR3PowerOff(VMR3GetVM(pUVM));
 #ifdef VBOX_WITH_EXTPACK
         mptrExtPackManager->callAllVmPowerOffHooks(this, VMR3GetVM(pUVM));
 #endif
-        alock.enter();
+        alock.acquire();
     }
 
     /* advance percent count */
@@ -6771,11 +6773,11 @@ HRESULT Console::powerDown(IProgress *aProgress /*= NULL*/)
         LogFlowThisFunc(("Shutdown HGCM...\n"));
 
         /* Leave the lock since EMT will call us back as addVMCaller() */
-        alock.leave();
+        alock.release();
 
         m_pVMMDev->hgcmShutdown();
 
-        alock.enter();
+        alock.acquire();
     }
 
     /* advance percent count */
@@ -6804,7 +6806,7 @@ HRESULT Console::powerDown(IProgress *aProgress /*= NULL*/)
         }
 
         /* Now we've got to destroy the VM as well. (mpVM is not valid beyond
-         * this point). We leave the lock before calling VMR3Destroy() because
+         * this point). We release the lock before calling VMR3Destroy() because
          * it will result into calling destructors of drivers associated with
          * Console children which may in turn try to lock Console (e.g. by
          * instantiating SafeVMPtr to access mpVM). It's safe here because
@@ -6817,12 +6819,12 @@ HRESULT Console::powerDown(IProgress *aProgress /*= NULL*/)
 
         LogFlowThisFunc(("Destroying the VM...\n"));
 
-        alock.leave();
+        alock.release();
 
         vrc = VMR3Destroy(VMR3GetVM(pUVM));
 
         /* take the lock again */
-        alock.enter();
+        alock.acquire();
 
         /* advance percent count */
         if (aProgress)
@@ -6929,7 +6931,7 @@ HRESULT Console::setMachineState(MachineState_T aMachineState,
              * Cross-lock conditions should be carefully watched out: calling
              * UpdateState we will require Machine and SessionMachine locks
              * (remember that here we're holding the Console lock here, and also
-             * all locks that have been entered by the thread before calling
+             * all locks that have been acquire by the thread before calling
              * this method).
              */
             LogFlowThisFunc(("Doing mControl->UpdateState()...\n"));
@@ -7647,7 +7649,7 @@ HRESULT Console::attachUSBDevice(IUSBDevice *aHostDevice, ULONG aMaskedIfs)
     AssertReturn(aHostDevice, E_FAIL);
     AssertReturn(isWriteLockOnCurrentThread(), E_FAIL);
 
-    /* still want a lock object because we need to leave it */
+    /* still want a lock object because we need to release it */
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     HRESULT hrc;
@@ -7679,8 +7681,8 @@ HRESULT Console::attachUSBDevice(IUSBDevice *aHostDevice, ULONG aMaskedIfs)
     LogFlowThisFunc(("Proxying USB device '%s' {%RTuuid}...\n",
                       Address.c_str(), uuid.raw()));
 
-    /* leave the lock before a VMR3* call (EMT will call us back)! */
-    alock.leave();
+    /* release the lock before a VMR3* call (EMT will call us back)! */
+    alock.release();
 
 /** @todo just do everything here and only wrap the PDMR3Usb call. That'll offload some notification stuff from the EMT thread. */
     int vrc = VMR3ReqCallWait(ptrVM, VMCPUID_ANY,
@@ -7688,7 +7690,7 @@ HRESULT Console::attachUSBDevice(IUSBDevice *aHostDevice, ULONG aMaskedIfs)
                               this, ptrVM.raw(), aHostDevice, uuid.raw(), fRemote, Address.c_str(), aMaskedIfs);
 
     /* restore the lock */
-    alock.enter();
+    alock.acquire();
 
     /* hrc is S_OK here */
 
@@ -7789,7 +7791,7 @@ HRESULT Console::detachUSBDevice(USBDeviceList::iterator &aIt)
 {
     AssertReturn(isWriteLockOnCurrentThread(), E_FAIL);
 
-    /* still want a lock object because we need to leave it */
+    /* still want a lock object because we need to release it */
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     /* Get the VM handle. */
@@ -7803,8 +7805,8 @@ HRESULT Console::detachUSBDevice(USBDeviceList::iterator &aIt)
     LogFlowThisFunc(("Detaching USB proxy device {%RTuuid}...\n",
                      (*aIt)->id().raw()));
 
-    /* leave the lock before a VMR3* call (EMT will call us back)! */
-    alock.leave();
+    /* release the lock before a VMR3* call (EMT will call us back)! */
+    alock.release();
 
 /** @todo just do everything here and only wrap the PDMR3Usb call. That'll offload some notification stuff from the EMT thread. */
     int vrc = VMR3ReqCallWait(ptrVM, VMCPUID_ANY,
@@ -8265,11 +8267,11 @@ HRESULT Console::captureUSBDevices(PVM pVM)
     int vrc = PDMR3QueryLun(pVM, "usb-ohci", 0, 0, &pBase);
     if (RT_SUCCESS(vrc))
     {
-        /* leave the lock before calling Host in VBoxSVC since Host may call
+        /* release the lock before calling Host in VBoxSVC since Host may call
          * us back from under its lock (e.g. onUSBDeviceAttach()) which would
          * produce an inter-process dead-lock otherwise. */
         AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-        alock.leave();
+        alock.release();
 
         HRESULT hrc = mControl->AutoCaptureUSBDevices();
         ComAssertComRCRetRC(hrc);
@@ -8299,11 +8301,11 @@ void Console::detachAllUSBDevices(bool aDone)
 
     mUSBDevices.clear();
 
-    /* leave the lock before calling Host in VBoxSVC since Host may call
+    /* release the lock before calling Host in VBoxSVC since Host may call
      * us back from under its lock (e.g. onUSBDeviceAttach()) which would
      * produce an inter-process dead-lock otherwise. */
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-    alock.leave();
+    alock.release();
 
     mControl->DetachAllUSBDevices(aDone);
 }
@@ -8574,11 +8576,11 @@ DECLCALLBACK(int) Console::powerUpThread(RTTHREAD Thread, void *pvUser)
         Assert(server);
 
         /* Does VRDP server call Console from the other thread?
-         * Not sure (and can change), so leave the lock just in case.
+         * Not sure (and can change), so release the lock just in case.
          */
-        alock.leave();
+        alock.release();
         vrc = server->Launch();
-        alock.enter();
+        alock.acquire();
 
         if (vrc == VERR_NET_ADDRESS_IN_USE)
         {
@@ -8626,10 +8628,10 @@ DECLCALLBACK(int) Console::powerUpThread(RTTHREAD Thread, void *pvUser)
          */
         PVM pVM;
         /*
-         * leave the lock since EMT will call Console. It's safe because
+         * release the lock since EMT will call Console. It's safe because
          * mMachineState is either Starting or Restoring state here.
          */
-        alock.leave();
+        alock.release();
 
         vrc = VMR3Create(cCpus,
                          pConsole->mpVmm2UserMethods,
@@ -8639,7 +8641,7 @@ DECLCALLBACK(int) Console::powerUpThread(RTTHREAD Thread, void *pvUser)
                          static_cast<Console *>(pConsole),
                          &pVM);
 
-        alock.enter();
+        alock.acquire();
 
         /* Enable client connections to the server. */
         pConsole->consoleVRDPServer()->EnableConnections();
@@ -8676,8 +8678,8 @@ DECLCALLBACK(int) Console::powerUpThread(RTTHREAD Thread, void *pvUser)
                 if (pConsole->m_pVMMDev->isShFlActive())
                 {
                     /* Does the code below call Console from the other thread?
-                     * Not sure, so leave the lock just in case. */
-                    alock.leave();
+                     * Not sure, so release the lock just in case. */
+                    alock.release();
 
                     for (SharedFolderDataMap::const_iterator it = task->mSharedFolders.begin();
                          it != task->mSharedFolders.end();
@@ -8697,8 +8699,8 @@ DECLCALLBACK(int) Console::powerUpThread(RTTHREAD Thread, void *pvUser)
                     if (FAILED(rc))
                         rc = S_OK;          // do not fail with broken shared folders
 
-                    /* enter the lock again */
-                    alock.enter();
+                    /* acquire the lock again */
+                    alock.acquire();
                 }
 
                 /*
@@ -8707,8 +8709,8 @@ DECLCALLBACK(int) Console::powerUpThread(RTTHREAD Thread, void *pvUser)
                 rc = pConsole->captureUSBDevices(pVM);
                 if (FAILED(rc)) break;
 
-                /* leave the lock before a lengthy operation */
-                alock.leave();
+                /* release the lock before a lengthy operation */
+                alock.release();
 
                 /* Load saved state? */
                 if (task->mSavedStateFile.length())
@@ -8821,8 +8823,8 @@ DECLCALLBACK(int) Console::powerUpThread(RTTHREAD Thread, void *pvUser)
                     AssertLogRelRC(vrc);
                 }
 
-                /* enter the lock again */
-                alock.enter();
+                /* acquire the lock again */
+                alock.acquire();
             }
             while (0);
 
@@ -8834,7 +8836,9 @@ DECLCALLBACK(int) Console::powerUpThread(RTTHREAD Thread, void *pvUser)
 
                 /* powerDown() will call VMR3Destroy() and do all necessary
                  * cleanup (VRDP, USB devices) */
+                alock.release();
                 HRESULT rc2 = pConsole->powerDown();
+                alock.acquire();
                 AssertComRC(rc2);
             }
             else
@@ -8844,10 +8848,10 @@ DECLCALLBACK(int) Console::powerUpThread(RTTHREAD Thread, void *pvUser)
                  * pfnVMAtError() function passed to VMR3Create() is supposed to
                  * be sticky but our error callback isn't.
                  */
-                alock.leave();
+                alock.release();
                 VMR3AtErrorDeregister(pVM, Console::genericVMSetErrorCallback, &task->mErrorMsg);
                 /** @todo register another VMSetError callback? */
-                alock.enter();
+                alock.acquire();
             }
         }
         else
@@ -8913,8 +8917,8 @@ DECLCALLBACK(int) Console::powerUpThread(RTTHREAD Thread, void *pvUser)
      * is already set by vmstateChangeCallback() in all cases.
      */
 
-    /* leave the lock, don't need it any more */
-    alock.leave();
+    /* release the lock, don't need it any more */
+    alock.release();
 
     if (SUCCEEDED(rc))
     {
@@ -9113,7 +9117,7 @@ DECLCALLBACK(int) Console::fntTakeSnapshotWorker(RTTHREAD Thread, void *pvUser)
                                                pTask->ulMemSize);       // operation weight, same as computed when setting up progress object
             pTask->mProgress->setCancelCallback(takesnapshotProgressCancelCallback, ptrVM.rawUVM());
 
-            alock.leave();
+            alock.release();
             LogFlowFunc(("VMR3Save...\n"));
             int vrc = VMR3Save(ptrVM,
                                strSavedStateFile.c_str(),
@@ -9121,7 +9125,7 @@ DECLCALLBACK(int) Console::fntTakeSnapshotWorker(RTTHREAD Thread, void *pvUser)
                                Console::stateProgressCallback,
                                static_cast<IProgress *>(pTask->mProgress),
                                &fSuspenededBySave);
-            alock.enter();
+            alock.acquire();
             if (RT_FAILURE(vrc))
                 throw setErrorStatic(E_FAIL,
                                      tr("Failed to save the machine state to '%s' (%Rrc)"),
@@ -9189,7 +9193,7 @@ DECLCALLBACK(int) Console::fntTakeSnapshotWorker(RTTHREAD Thread, void *pvUser)
                     throw rc;
 
                 /*
-                 * don't leave the lock since reconfigureMediumAttachment
+                 * don't release the lock since reconfigureMediumAttachment
                  * isn't going to need the Console lock.
                  */
                 vrc = VMR3ReqCallWait(ptrVM,
@@ -9264,9 +9268,9 @@ DECLCALLBACK(int) Console::fntTakeSnapshotWorker(RTTHREAD Thread, void *pvUser)
             {
                 LogFlowFunc(("VMR3Resume...\n"));
                 SafeVMPtr ptrVM(that);
-                alock.leave();
+                alock.release();
                 int vrc = VMR3Resume(ptrVM);
-                alock.enter();
+                alock.acquire();
                 if (RT_FAILURE(vrc))
                 {
                     rc = setErrorStatic(VBOX_E_VM_ERROR, tr("Could not resume the machine execution (%Rrc)"), vrc);
@@ -9322,9 +9326,9 @@ DECLCALLBACK(int) Console::fntTakeSnapshotWorker(RTTHREAD Thread, void *pvUser)
                         Assert(pTask->lastMachineState == MachineState_Running);
                         LogFlowFunc(("VMR3Resume (on failure)...\n"));
                         SafeVMPtr ptrVM(that);
-                        alock.leave();
+                        alock.release();
                         int vrc = VMR3Resume(ptrVM); AssertLogRelRC(vrc);
-                        alock.enter();
+                        alock.acquire();
                         if (RT_FAILURE(vrc))
                             that->setMachineState(MachineState_Paused);
                     }
@@ -9410,7 +9414,9 @@ DECLCALLBACK(int) Console::saveStateThread(RTTHREAD Thread, void *pvUser)
          * deadlock.
          */
         task->releaseVMCaller();
+        thatLock.release();
         rc = that->powerDown();
+        thatLock.acquire();
     }
 
     /*
@@ -9457,6 +9463,8 @@ DECLCALLBACK(int) Console::powerDownThread(RTTHREAD Thread, void *pvUser)
 
     /* release VM caller to avoid the powerDown() deadlock */
     task->releaseVMCaller();
+
+    thatLock.release();
 
     that->powerDown(task->mServerProgress);
 

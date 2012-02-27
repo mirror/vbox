@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2007 Oracle Corporation
+ * Copyright (C) 2006-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -354,7 +354,7 @@ Utf8Str HostUSBDevice::getName()
  *
  * As a convenience, this method will operate like attachToVM() if the device
  * is already held by the proxy. Note that it will then perform IPC to the VM
- * process, which means it will temporarily leave all locks. (Is this a good idea?)
+ * process, which means it will temporarily release all locks. (Is this a good idea?)
  *
  * @param   aMachine    Machine this device should be attach to.
  * @param   aSetError   Whether to set full error message or not to bother.
@@ -482,14 +482,14 @@ HRESULT HostUSBDevice::attachToVM(SessionMachine *aMachine, ULONG aMaskedIfs /* 
     setState(kHostUSBDeviceState_AttachingToVM, kHostUSBDeviceState_UsedByVM);
 
     /*
-     * The VM process will query the object, so grab a reference to ourselves and leave the locks.
+     * The VM process will query the object, so grab a reference to ourselves and release the locks.
      */
     ComPtr<IUSBDevice> d = this;
 
     AutoWriteLock alockSelf(this COMMA_LOCKVAL_SRC_POS);
-    alockSelf.leave();
+    alockSelf.release();
     AutoWriteLock alockProxy(mUSBProxyService COMMA_LOCKVAL_SRC_POS);
-    alockProxy.leave();
+    alockProxy.release();
 
     /*
      * Call the VM process (IPC) and request it to attach the device.
@@ -503,11 +503,11 @@ HRESULT HostUSBDevice::attachToVM(SessionMachine *aMachine, ULONG aMaskedIfs /* 
     LogFlowThisFunc(("{%s} Done machine->onUSBDeviceAttach()=%08X\n", mName, hrc));
 
     /*
-     * As we re-enter the lock, we'll have to check if the device was
+     * As we re-acquire the lock, we'll have to check if the device was
      * physically detached while we were busy.
      */
-    alockProxy.enter();
-    alockSelf.enter();
+    alockProxy.acquire();
+    alockSelf.acquire();
 
     if (SUCCEEDED(hrc))
     {
@@ -560,15 +560,15 @@ void HostUSBDevice::detachFromVM(HostUSBDeviceState aFinalState)
     Assert(!mMachine.isNull());
 
     /*
-     * Change the state and abandond the locks. The VM may query
+     * Change the state and abandon the locks. The VM may query
      * data and we don't want to deadlock - the state protects us,
      * so, it's not a bit issue here.
      */
     setState(kHostUSBDeviceState_PhysDetachingFromVM, kHostUSBDeviceState_PhysDetached);
     AutoWriteLock alockSelf(this COMMA_LOCKVAL_SRC_POS);
-    alockSelf.leave();
+    alockSelf.release();
     AutoWriteLock alockProxy(mUSBProxyService COMMA_LOCKVAL_SRC_POS);
-    alockProxy.leave();
+    alockProxy.release();
 
     /*
      * Call the VM process (IPC) and request it to detach the device.
@@ -583,10 +583,10 @@ void HostUSBDevice::detachFromVM(HostUSBDeviceState aFinalState)
     NOREF(hrc);
 
     /*
-     * Re-enter the locks and complete the transition.
+     * Re-acquire the locks and complete the transition.
      */
-    alockProxy.enter();
-    alockSelf.enter();
+    alockProxy.acquire();
+    alockSelf.acquire();
     advanceTransition();
 }
 

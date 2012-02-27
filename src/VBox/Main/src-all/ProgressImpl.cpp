@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2006-2010 Oracle Corporation
+ * Copyright (C) 2006-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -819,10 +819,10 @@ STDMETHODIMP Progress::WaitForCompletion(LONG aTimeout)
         while (!mCompleted && (fForever || timeLeft > 0))
         {
             mWaitersCount++;
-            alock.leave();
+            alock.release();
             vrc = RTSemEventMultiWait(mCompletedSem,
                                       fForever ? RT_INDEFINITE_WAIT : (RTMSINTERVAL)timeLeft);
-            alock.enter();
+            alock.acquire();
             mWaitersCount--;
 
             /* the last waiter resets the semaphore */
@@ -883,10 +883,10 @@ STDMETHODIMP Progress::WaitForOperationCompletion(ULONG aOperation, LONG aTimeou
                 && (fForever || timeLeft > 0))
         {
             mWaitersCount ++;
-            alock.leave();
+            alock.release();
             vrc = RTSemEventMultiWait(mCompletedSem,
                                       fForever ? RT_INDEFINITE_WAIT : (unsigned) timeLeft);
-            alock.enter();
+            alock.acquire();
             mWaitersCount--;
 
             /* the last waiter resets the semaphore */
@@ -1663,9 +1663,9 @@ STDMETHODIMP CombinedProgress::WaitForCompletion(LONG aTimeout)
 
         while (!mCompleted && (forever || timeLeft > 0))
         {
-            alock.leave();
+            alock.release();
             rc = mProgresses.back()->WaitForCompletion(forever ? -1 : (LONG) timeLeft);
-            alock.enter();
+            alock.acquire();
 
             if (SUCCEEDED(rc))
                 rc = checkProgress();
@@ -1747,11 +1747,11 @@ STDMETHODIMP CombinedProgress::WaitForOperationCompletion(ULONG aOperation, LONG
         while (!mCompleted && aOperation >= m_ulCurrentOperation &&
                (forever || timeLeft > 0))
         {
-            alock.leave();
+            alock.release();
             /* wait for the appropriate progress operation completion */
             rc = mProgresses[progress]-> WaitForOperationCompletion(operation,
                                                                     forever ? -1 : (LONG) timeLeft);
-            alock.enter();
+            alock.acquire();
 
             if (SUCCEEDED(rc))
                 rc = checkProgress();

@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2010 Oracle Corporation
+ * Copyright (C) 2010-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -885,10 +885,10 @@ Console::teleporterSrcThreadWrapper(RTTHREAD hThread, void *pvUser)
                         pState->mptrConsole->setMachineState(MachineState_Paused);
                         if (pState->mfSuspendedByUs)
                         {
-                            autoLock.leave();
+                            autoLock.release();
                             int rc = VMR3Resume(VMR3GetVM(pState->mpUVM));
                             AssertLogRelMsgRC(rc, ("VMR3Resume -> %Rrc\n", rc));
-                            autoLock.enter();
+                            autoLock.acquire();
                         }
                     }
                     else
@@ -900,7 +900,7 @@ Console::teleporterSrcThreadWrapper(RTTHREAD hThread, void *pvUser)
             }
         }
     }
-    autoLock.leave();
+    autoLock.release();
 
     /*
      * Cleanup.

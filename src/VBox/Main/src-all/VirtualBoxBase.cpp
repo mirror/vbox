@@ -6,7 +6,7 @@
  */
 
 /*
- * Copyright (C) 2006-2010 Oracle Corporation
+ * Copyright (C) 2006-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -208,9 +208,9 @@ HRESULT VirtualBoxBase::addCaller(State *aState /* = NULL */,
 
             LogFlowThisFunc(("Waiting for AutoInitSpan/AutoReinitSpan to finish...\n"));
 
-            stateLock.leave();
+            stateLock.release();
             RTSemEventMultiWait (mInitUninitSem, RT_INDEFINITE_WAIT);
-            stateLock.enter();
+            stateLock.acquire();
 
             if (-- mInitUninitWaiters == 0)
             {
@@ -775,8 +775,8 @@ AutoInitSpan::~AutoInitSpan()
     else
     {
         mObj->setState(VirtualBoxBase::InitFailed);
-        /* leave the lock to prevent nesting when uninit() is called */
-        stateLock.leave();
+        /* release the lock to prevent nesting when uninit() is called */
+        stateLock.acquire();
         /* call uninit() to let the object uninit itself after failed init() */
         mObj->uninit();
         /* Note: the object may no longer exist here (for example, it can call
@@ -905,9 +905,9 @@ AutoUninitSpan::AutoUninitSpan(VirtualBoxBase *aObj)
             LogFlowFunc(("{%p}: Waiting for AutoUninitSpan to finish...\n",
                          mObj));
 
-            stateLock.leave();
+            stateLock.release();
             RTSemEventMultiWait(mObj->mInitUninitSem, RT_INDEFINITE_WAIT);
-            stateLock.enter();
+            stateLock.acquire();
 
             if (--mObj->mInitUninitWaiters == 0)
             {
@@ -934,7 +934,7 @@ AutoUninitSpan::AutoUninitSpan(VirtualBoxBase *aObj)
         LogFlowFunc(("{%p}: Waiting for callers (%d) to drop to zero...\n",
                      mObj, mObj->mCallers));
 
-        stateLock.leave();
+        stateLock.release();
         RTSemEventWait(mObj->mZeroCallersSem, RT_INDEFINITE_WAIT);
     }
 }

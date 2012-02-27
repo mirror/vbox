@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2011 Oracle Corporation
+ * Copyright (C) 2006-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -400,9 +400,7 @@ public:
  * This cannot be used directly. Use AutoWriteLock or AutoMultiWriteLock2/3
  * which derive from this.
  *
- * In addition to utility methods for subclasses, this implements the public
- * leave/enter methods, which are common to all
- * write locks.
+ * It has some utility methods for subclasses.
  */
 class AutoWriteLockBase : public AutoLockBase
 {
@@ -426,10 +424,6 @@ protected:
 
     virtual void callLockImpl(LockHandle &l);
     virtual void callUnlockImpl(LockHandle &l);
-
-public:
-    void leave();
-    void enter();
 };
 
 ////////////////////////////////////////////////////////////////////////////////

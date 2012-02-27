@@ -826,7 +826,7 @@ void Machine::uninit()
         mParent->unregisterMachineMedia(uuidMachine);
 
     /* the lock is no more necessary (SessionMachine is uninitialized) */
-    alock.leave();
+    alock.release();
 
     // has machine been modified?
     if (mData->flModifications)
@@ -3063,12 +3063,12 @@ STDMETHODIMP Machine::LockMachine(ISession *aSession,
         AssertReturn(!pSessionMachine.isNull(), E_FAIL);
 
         /*
-         *  Leave the lock before calling the client process. It's safe here
+         *  Release the lock before calling the client process. It's safe here
          *  since the only thing to do after we get the lock again is to add
          *  the remote control to the list (which doesn't directly influence
          *  anything).
          */
-        alock.leave();
+        alock.release();
 
         // get the console of the session holding the write lock (this is a remote call)
         ComPtr<IConsole> pConsoleW;
@@ -3091,9 +3091,9 @@ STDMETHODIMP Machine::LockMachine(ISession *aSession,
             // the failure may occur w/o any error info (from RPC), so provide one
             return setError(VBOX_E_VM_ERROR,
                             tr("Failed to assign the machine to the session (%Rrc)"), rc);
-        alock.enter();
+        alock.acquire();
 
-        // need to revalidate the state after entering the lock again
+        // need to revalidate the state after acquiring the lock again
         if (mData->mSession.mState != SessionState_Locked)
         {
             pSessionControl->Uninitialize();
@@ -3162,22 +3162,22 @@ STDMETHODIMP Machine::LockMachine(ISession *aSession,
             /*
              *  Set the session state to Spawning to protect against subsequent
              *  attempts to open a session and to unregister the machine after
-             *  we leave the lock.
+             *  we release the lock.
              */
             SessionState_T origState = mData->mSession.mState;
             mData->mSession.mState = SessionState_Spawning;
 
             /*
-             *  Leave the lock before calling the client process -- it will call
-             *  Machine/SessionMachine methods. Leaving the lock here is quite safe
+             *  Release the lock before calling the client process -- it will call
+             *  Machine/SessionMachine methods. Releasing the lock here is quite safe
              *  because the state is Spawning, so that LaunchVMProcess() and
              *  LockMachine() calls will fail. This method, called before we
-             *  enter the lock again, will fail because of the wrong PID.
+             *  acquire the lock again, will fail because of the wrong PID.
              *
              *  Note that mData->mSession.mRemoteControls accessed outside
              *  the lock may not be modified when state is Spawning, so it's safe.
              */
-            alock.leave();
+            alock.release();
 
             LogFlowThisFunc(("Calling AssignMachine()...\n"));
             rc = pSessionControl->AssignMachine(sessionMachine);
@@ -3226,8 +3226,8 @@ STDMETHODIMP Machine::LockMachine(ISession *aSession,
                     pSessionControl->Uninitialize();
             }
 
-            /* enter the lock again */
-            alock.enter();
+            /* acquire the lock again */
+            alock.acquire();
 
             /* Restore the session state */
             mData->mSession.mState = origState;
@@ -3282,9 +3282,9 @@ STDMETHODIMP Machine::LockMachine(ISession *aSession,
             NOREF(unk);
         }
 
-        /* Leave the lock since SessionMachine::uninit() locks VirtualBox which
+        /* Release the lock since SessionMachine::uninit() locks VirtualBox which
          * would break the lock order */
-        alock.leave();
+        alock.release();
 
         /* uninitialize the created session machine on failure */
         if (FAILED(rc))
@@ -3803,27 +3803,35 @@ STDMETHODIMP Machine::AttachDevice(IN_BSTR aControllerName,
 
         /* Apply the normal locking logic to the entire chain. */
         MediumLockList *pMediumLockList(new MediumLockList());
+        mediumLock.release();
+        treeLock.release();
         rc = diff->createMediumLockList(true /* fFailIfInaccessible */,
                                         true /* fMediumLockWrite */,
                                         medium,
                                         *pMediumLockList);
+        treeLock.acquire();
+        mediumLock.acquire();
         if (SUCCEEDED(rc))
         {
+            mediumLock.release();
+            treeLock.release();
             rc = pMediumLockList->Lock();
+            treeLock.acquire();
+            mediumLock.acquire();
             if (FAILED(rc))
                 setError(rc,
                          tr("Could not lock medium when creating diff '%s'"),
                          diff->getLocationFull().c_str());
             else
             {
-                /* will leave the lock before the potentially lengthy operation, so
-                 * protect with the special state */
+                /* will release the lock before the potentially lengthy
+                 * operation, so protect with the special state */
                 MachineState_T oldState = mData->mMachineState;
                 setMachineState(MachineState_SettingUp);
 
-                mediumLock.leave();
-                treeLock.leave();
-                alock.leave();
+                mediumLock.release();
+                treeLock.release();
+                alock.release();
 
                 rc = medium->createDiffStorage(diff,
                                                MediumVariant_Standard,
@@ -3832,9 +3840,9 @@ STDMETHODIMP Machine::AttachDevice(IN_BSTR aControllerName,
                                                true /* aWait */,
                                                &llRegistriesThatNeedSaving);
 
-                alock.enter();
-                treeLock.enter();
-                mediumLock.enter();
+                alock.acquire();
+                treeLock.acquire();
+                mediumLock.acquire();
 
                 setMachineState(oldState);
             }
@@ -3889,7 +3897,7 @@ STDMETHODIMP Machine::AttachDevice(IN_BSTR aControllerName,
     mMediaData->mAttachments.push_back(attachment);
 
     mediumLock.release();
-    treeLock.leave();
+    treeLock.release();
     alock.release();
 
     if (fHotplug)
@@ -3957,9 +3965,9 @@ STDMETHODIMP Machine::DetachDevice(IN_BSTR aControllerName, LONG aControllerPort
      */
     if (fHotplug)
     {
-        alock.leave();
+        alock.release();
         rc = onStorageDeviceChange(pAttach, TRUE /* aRemove */);
-        alock.enter();
+        alock.acquire();
     }
     if (FAILED(rc)) return rc;
 
@@ -4631,7 +4639,7 @@ STDMETHODIMP Machine::Unregister(CleanupMode_T cleanupMode,
         // here because currently there may be no unregistered that are inaccessible
         // (this state combination is not supported). Note releasing the caller and
         // leaving the lock before calling uninit()
-        alock.leave();
+        alock.release();
         autoCaller.release();
 
         uninit();
@@ -5063,7 +5071,7 @@ STDMETHODIMP Machine::CreateSharedFolder(IN_BSTR aName, IN_BSTR aHostPath, BOOL 
     mHWData->mSharedFolders.push_back(sharedFolder);
 
     /* inform the direct session if any */
-    alock.leave();
+    alock.release();
     onSharedFolderChange();
 
     return S_OK;
@@ -5090,7 +5098,7 @@ STDMETHODIMP Machine::RemoveSharedFolder(IN_BSTR aName)
     mHWData->mSharedFolders.remove(sharedFolder);
 
     /* inform the direct session if any */
-    alock.leave();
+    alock.release();
     onSharedFolderChange();
 
     return S_OK;
@@ -5649,7 +5657,7 @@ STDMETHODIMP Machine::AddStorageController(IN_BSTR aName,
     ctrl.queryInterfaceTo(controller);
 
     /* inform the direct session if any */
-    alock.leave();
+    alock.release();
     onStorageControllerChange();
 
     return S_OK;
@@ -5743,7 +5751,7 @@ STDMETHODIMP Machine::SetStorageControllerBootable(IN_BSTR aName, BOOL fBootable
     if (SUCCEEDED(rc))
     {
         /* inform the direct session if any */
-        alock.leave();
+        alock.release();
         onStorageControllerChange();
     }
 
@@ -5787,7 +5795,7 @@ STDMETHODIMP Machine::RemoveStorageController(IN_BSTR aName)
     mStorageControllers->remove(ctrl);
 
     /* inform the direct session if any */
-    alock.leave();
+    alock.release();
     onStorageControllerChange();
 
     return S_OK;
@@ -6796,9 +6804,9 @@ HRESULT Machine::launchVMProcess(IInternalSessionControl *aControl,
     LogFlowThisFunc(("launched.pid=%d(0x%x)\n", pid, pid));
 
     /*
-     *  Note that we don't leave the lock here before calling the client,
+     *  Note that we don't release the lock here before calling the client,
      *  because it doesn't need to call us back if called with a NULL argument.
-     *  Leaving the lock here is dangerous because we didn't prepare the
+     *  Releasing the lock here is dangerous because we didn't prepare the
      *  launch data yet, but the client we've just started may happen to be
      *  too fast and call openSession() that will fail (because of PID, etc.),
      *  so that the Machine will never get out of the Spawning session state.
@@ -7514,11 +7522,11 @@ void Machine::ensureNoStateDependencies()
          * it */
         RTSemEventMultiReset(mData->mMachineStateDepsSem);
 
-        alock.leave();
+        alock.release();
 
         RTSemEventMultiWait(mData->mMachineStateDepsSem, RT_INDEFINITE_WAIT);
 
-        alock.enter();
+        alock.acquire();
 
         -- mData->mMachineStateChangePending;
     }
@@ -9456,7 +9464,7 @@ HRESULT Machine::createImplicitDiffs(IProgress *aProgress,
     AutoMultiWriteLock2 alock(this->lockHandle(),
                               &mParent->getMediaTreeLockHandle() COMMA_LOCKVAL_SRC_POS);
 
-    /* must be in a protective state because we leave the lock below */
+    /* must be in a protective state because we release the lock below */
     AssertReturn(   mData->mMachineState == MachineState_Saving
                  || mData->mMachineState == MachineState_LiveSnapshotting
                  || mData->mMachineState == MachineState_RestoringSnapshot
@@ -9489,10 +9497,12 @@ HRESULT Machine::createImplicitDiffs(IProgress *aProgress,
                     Assert(pMedium);
 
                     MediumLockList *pMediumLockList(new MediumLockList());
+                    alock.release();
                     rc = pMedium->createMediumLockList(true /* fFailIfInaccessible */,
                                                        false /* fMediumLockWrite */,
                                                        NULL,
                                                        *pMediumLockList);
+                    alock.acquire();
                     if (FAILED(rc))
                     {
                         delete pMediumLockList;
@@ -9508,7 +9518,9 @@ HRESULT Machine::createImplicitDiffs(IProgress *aProgress,
             }
 
             /* Now lock all media. If this fails, nothing is locked. */
+            alock.release();
             rc = lockedMediaMap->Lock();
+            alock.acquire();
             if (FAILED(rc))
             {
                 throw setError(rc,
@@ -9582,7 +9594,7 @@ HRESULT Machine::createImplicitDiffs(IProgress *aProgress,
             if (FAILED(rc)) throw rc;
 
             /** @todo r=bird: How is the locking and diff image cleaned up if we fail before
-             *        the push_back?  Looks like we're going to leave medium with the
+             *        the push_back?  Looks like we're going to release medium with the
              *        wrong kind of lock (general issue with if we fail anywhere at all)
              *        and an orphaned VDI in the snapshots folder. */
 
@@ -9592,11 +9604,13 @@ HRESULT Machine::createImplicitDiffs(IProgress *aProgress,
             AssertComRCThrowRC(rc);
             if (aOnline)
             {
+                alock.release();
                 rc = pMediumLockList->Update(pMedium, false);
+                alock.acquire();
                 AssertComRCThrowRC(rc);
             }
 
-            /* leave the locks before the potentially lengthy operation */
+            /* release the locks before the potentially lengthy operation */
             alock.release();
             rc = pMedium->createDiffStorage(diff, MediumVariant_Standard,
                                             pMediumLockList,
@@ -9608,9 +9622,13 @@ HRESULT Machine::createImplicitDiffs(IProgress *aProgress,
 
             rc = lockedMediaMap->Unlock();
             AssertComRCThrowRC(rc);
+            alock.release();
             rc = pMediumLockList->Append(diff, true);
+            alock.acquire();
             AssertComRCThrowRC(rc);
+            alock.release();
             rc = lockedMediaMap->Lock();
+            alock.acquire();
             AssertComRCThrowRC(rc);
 
             rc = diff->addBackReference(mData->mUuid);
@@ -9653,6 +9671,7 @@ HRESULT Machine::createImplicitDiffs(IProgress *aProgress,
     {
         MultiResult mrc = rc;
 
+        alock.release();
         mrc = deleteImplicitDiffs(pllRegistriesThatNeedSaving);
     }
 
@@ -9725,7 +9744,7 @@ HRESULT Machine::deleteImplicitDiffs(GuidList *pllRegistriesThatNeedSaving)
     /* delete unused implicit diffs */
     if (implicitAtts.size() != 0)
     {
-        /* will leave the lock before the potentially lengthy
+        /* will release the lock before the potentially lengthy
          * operation, so protect with the special state (unless already
          * protected) */
         MachineState_T oldState = mData->mMachineState;
@@ -9738,7 +9757,7 @@ HRESULT Machine::deleteImplicitDiffs(GuidList *pllRegistriesThatNeedSaving)
            )
             setMachineState(MachineState_SettingUp);
 
-        alock.leave();
+        alock.release();
 
         for (MediaData::AttachmentList::const_iterator it = implicitAtts.begin();
              it != implicitAtts.end();
@@ -9753,7 +9772,7 @@ HRESULT Machine::deleteImplicitDiffs(GuidList *pllRegistriesThatNeedSaving)
             mrc = rc;
         }
 
-        alock.enter();
+        alock.acquire();
 
         if (mData->mMachineState == MachineState_SettingUp)
             setMachineState(oldState);
@@ -9868,14 +9887,14 @@ HRESULT Machine::detachDevice(MediumAttachment *pAttach,
     {
         /* attempt to implicitly delete the implicitly created diff */
 
-            /// @todo move the implicit flag from MediumAttachment to Medium
-            /// and forbid any hard disk operation when it is implicit. Or maybe
-            /// a special media state for it to make it even more simple.
+        /// @todo move the implicit flag from MediumAttachment to Medium
+        /// and forbid any hard disk operation when it is implicit. Or maybe
+        /// a special media state for it to make it even more simple.
 
         Assert(mMediaData.isBackedUp());
 
-            /* will leave the lock before the potentially lengthy operation, so
-            * protect with the special state */
+        /* will release the lock before the potentially lengthy operation, so
+         * protect with the special state */
         MachineState_T oldState = mData->mMachineState;
         setMachineState(MachineState_SettingUp);
 
@@ -10389,7 +10408,7 @@ void Machine::rollback(bool aNotify)
 
         ComObjPtr<Machine> that = this;
         uint32_t flModifications = mData->flModifications;
-        alock.leave();
+        alock.release();
 
         if (flModifications & IsModified_SharedFolders)
             that->onSharedFolderChange();
@@ -11257,13 +11276,8 @@ void SessionMachine::uninit(Uninit::Reason aReason)
     /* free the essential data structure last */
     mData.free();
 
-#if 1 /** @todo Please review this change! (bird) */
-    /* drop the exclusive lock before setting the below two to NULL */
+    /* release the exclusive lock before setting the below two to NULL */
     multilock.release();
-#else
-    /* leave the exclusive lock before setting the below two to NULL */
-    multilock.leave();
-#endif
 
     unconst(mParent) = NULL;
     unconst(mPeer) = NULL;
@@ -11989,7 +12003,7 @@ STDMETHODIMP SessionMachine::PushGuestProperty(IN_BSTR aName,
                                              RTSTR_MAX, NULL)
            )
         {
-            alock.leave();
+            alock.release();
 
             mParent->onGuestPropertyChange(mData->mUuid,
                                            aName,
@@ -12726,10 +12740,12 @@ HRESULT SessionMachine::lockMedia()
                                    || mediumType == MediumType_Shareable;
             bool fIsVitalImage = (devType == DeviceType_HardDisk);
 
+            alock.release();
             mrc = pMedium->createMediumLockList(fIsVitalImage /* fFailIfInaccessible */,
                                                 !fIsReadOnlyLock /* fMediumLockWrite */,
                                                 NULL,
                                                 *pMediumLockList);
+            alock.acquire();
             if (FAILED(mrc))
             {
                 delete pMediumLockList;
@@ -12751,7 +12767,9 @@ HRESULT SessionMachine::lockMedia()
     if (SUCCEEDED(mrc))
     {
         /* Now lock all media. If this fails, nothing is locked. */
+        alock.release();
         HRESULT rc = mData->mSession.mLockedMedia.Lock();
+        alock.acquire();
         if (FAILED(rc))
         {
             mrc = setError(rc,
