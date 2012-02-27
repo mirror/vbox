@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2011 Oracle Corporation
+ * Copyright (C) 2006-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -70,9 +70,9 @@ void InitAutoLockSystem()
         { LOCKCLASS_LISTOFMACHINES,     "4-LISTOFMACHINES" },
         { LOCKCLASS_MACHINEOBJECT,      "5-MACHINEOBJECT" },
         { LOCKCLASS_SNAPSHOTOBJECT,     "6-SNAPSHOTOBJECT" },
-        { LOCKCLASS_LISTOFMEDIA,        "7-LISTOFMEDIA" },
-        { LOCKCLASS_LISTOFOTHEROBJECTS, "8-LISTOFOTHEROBJECTS" },
-        { LOCKCLASS_MEDIUMQUERY,        "9-MEDIUMQUERY" },
+        { LOCKCLASS_MEDIUMQUERY,        "7-MEDIUMQUERY" },
+        { LOCKCLASS_LISTOFMEDIA,        "8-LISTOFMEDIA" },
+        { LOCKCLASS_LISTOFOTHEROBJECTS, "9-LISTOFOTHEROBJECTS" },
         { LOCKCLASS_OTHEROBJECT,        "10-OTHEROBJECT" },
         { LOCKCLASS_USBLIST,            "11-USBLIST" },
         { LOCKCLASS_PROGRESSLIST,       "12-PROGRESSLIST" },
@@ -302,7 +302,6 @@ WriteLockHandle::~WriteLockHandle()
 ////////////////////////////////////////////////////////////////////////////////
 
 typedef std::vector<LockHandle*> HandlesVector;
-typedef std::vector<uint32_t> CountsVector;
 
 struct AutoLockBase::Data
 {
@@ -314,8 +313,7 @@ struct AutoLockBase::Data
 #endif
         )
         : fIsLocked(false),
-          aHandles(cHandles),       // size of array
-          acUnlockedInLeave(cHandles)
+          aHandles(cHandles)        // size of array
 #ifdef VBOX_WITH_MAIN_LOCK_VALIDATION
           , pcszFile(pcszFile_),
           uLine(uLine_),
@@ -323,10 +321,7 @@ struct AutoLockBase::Data
 #endif
     {
         for (uint32_t i = 0; i < cHandles; ++i)
-        {
-            acUnlockedInLeave[i] = 0;
             aHandles[i] = NULL;
-        }
     }
 
     bool            fIsLocked;          // if true, then all items in aHandles are locked by this AutoLock and
@@ -334,7 +329,6 @@ struct AutoLockBase::Data
     HandlesVector   aHandles;           // array (vector) of LockHandle instances; in the case of AutoWriteLock
                                         // and AutoReadLock, there will only be one item on the list; with the
                                         // AutoMulti* derivatives, there will be multiple
-    CountsVector    acUnlockedInLeave;  // for each lock handle, how many times the handle was unlocked in leave(); otherwise 0
 
 #ifdef VBOX_WITH_MAIN_LOCK_VALIDATION
     // information about where the lock occurred (passed down from the AutoLock classes)
@@ -414,38 +408,11 @@ void AutoLockBase::callUnlockOnAllHandles()
 /**
  * Destructor implementation that can also be called explicitly, if required.
  * Restores the exact state before the AutoLock was created; that is, unlocks
- * all contained semaphores and might actually lock them again if leave()
- * was called during the AutoLock's lifetime.
+ * all contained semaphores.
  */
 void AutoLockBase::cleanup()
 {
-    bool fAnyUnlockedInLeave = false;
-
-    uint32_t i = 0;
-    for (HandlesVector::iterator it = m->aHandles.begin();
-         it != m->aHandles.end();
-         ++it)
-    {
-        LockHandle *pHandle = *it;
-        if (pHandle)
-        {
-            if (m->acUnlockedInLeave[i])
-            {
-                // there was a leave() before the destruction: then restore the
-                // lock level that might have been set by locks other than our own
-                if (m->fIsLocked)
-                {
-                    --m->acUnlockedInLeave[i];
-                    fAnyUnlockedInLeave = true;
-                }
-                for (; m->acUnlockedInLeave[i]; --m->acUnlockedInLeave[i])
-                    callLockImpl(*pHandle);
-            }
-        }
-        ++i;
-    }
-
-    if (m->fIsLocked && !fAnyUnlockedInLeave)
+    if (m->fIsLocked)
         callUnlockOnAllHandles();
 }
 
@@ -552,80 +519,6 @@ void AutoLockBase::release()
 /*virtual*/ void AutoWriteLockBase::callUnlockImpl(LockHandle &l)
 {
     l.unlockWrite();
-}
-
-/**
- * Causes the current thread to completely release the write lock to make
- * the managed semaphore immediately available for locking by other threads.
- *
- * This implies that all nested write locks on the semaphore will be
- * released, even those that were acquired through the calls to #lock()
- * methods of all other AutoWriteLock/AutoReadLock instances managing the
- * <b>same</b> read/write semaphore.
- *
- * After calling this method, the only method you are allowed to call is
- * #enter(). It will acquire the write lock again and restore the same
- * level of nesting as it had before calling #leave().
- *
- * If this instance is destroyed without calling #enter(), the destructor
- * will try to restore the write lock level that existed when #leave() was
- * called minus the number of nested #lock() calls made on this instance
- * itself. This is done to preserve lock levels of other
- * AutoWriteLock/AutoReadLock instances managing the same semaphore (if
- * any). Tiis also means that the destructor may indefinitely block if a
- * write or a read lock is owned by some other thread by that time.
- */
-void AutoWriteLockBase::leave()
-{
-    AssertMsg(m->fIsLocked, ("m->fIsLocked is false, cannot leave()!"));
-
-    // unlock in reverse order!
-    uint32_t i = m->aHandles.size();
-    for (HandlesVector::reverse_iterator it = m->aHandles.rbegin();
-         it != m->aHandles.rend();
-         ++it)
-    {
-        --i;            // array index is zero based, decrement with every loop since we iterate backwards
-        LockHandle *pHandle = *it;
-        if (pHandle)
-        {
-            AssertMsg(m->acUnlockedInLeave[i] == 0, ("m->cUnlockedInLeave[%d] is %d, must be 0! Called leave() twice?", i, m->acUnlockedInLeave[i]));
-            m->acUnlockedInLeave[i] = pHandle->writeLockLevel();
-            AssertMsg(m->acUnlockedInLeave[i] >= 1, ("m->cUnlockedInLeave[%d] is %d, must be >=1!", i, m->acUnlockedInLeave[i]));
-
-            for (uint32_t left = m->acUnlockedInLeave[i];
-                 left;
-                 --left)
-                callUnlockImpl(*pHandle);
-        }
-    }
-}
-
-/**
- * Causes the current thread to restore the write lock level after the
- * #leave() call. This call will indefinitely block if another thread has
- * successfully acquired a write or a read lock on the same semaphore in
- * between.
- */
-void AutoWriteLockBase::enter()
-{
-    AssertMsg(m->fIsLocked, ("m->fIsLocked is false, cannot enter()!"));
-
-    uint32_t i = 0;
-    for (HandlesVector::iterator it = m->aHandles.begin();
-         it != m->aHandles.end();
-         ++it)
-    {
-        LockHandle *pHandle = *it;
-        if (pHandle)
-        {
-            AssertMsg(m->acUnlockedInLeave[i] != 0, ("m->cUnlockedInLeave[%d] is 0! enter() without leave()?", i));
-
-            for (; m->acUnlockedInLeave[i]; --m->acUnlockedInLeave[i])
-                callLockImpl(*pHandle);
-        }
-        ++i;
-    }
 }
 
 ////////////////////////////////////////////////////////////////////////////////

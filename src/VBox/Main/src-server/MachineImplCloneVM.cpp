@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2011 Oracle Corporation
+ * Copyright (C) 2011-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -648,9 +648,13 @@ HRESULT MachineCloneVMPrivate::createDifferencingMedium(const ComObjPtr<Medium> 
     HRESULT rc = S_OK;
     try
     {
-        Bstr bstrSrcId;
-        rc = pParent->COMGETTER(Id)(bstrSrcId.asOutParam());
-        if (FAILED(rc)) throw rc;
+        // check validity of parent object
+        {
+            AutoReadLock alock(pParent COMMA_LOCKVAL_SRC_POS);
+            Bstr bstrSrcId;
+            rc = pParent->COMGETTER(Id)(bstrSrcId.asOutParam());
+            if (FAILED(rc)) throw rc;
+        }
         ComObjPtr<Medium> diff;
         diff.createObject();
         rc = diff->init(p->getVirtualBox(),
@@ -660,9 +664,6 @@ HRESULT MachineCloneVMPrivate::createDifferencingMedium(const ComObjPtr<Medium> 
                         NULL);       /* pllRegistriesThatNeedSaving */
         if (FAILED(rc)) throw rc;
 
-        // need tree lock for createMediumLockList
-        AutoWriteLock treeLock(p->getVirtualBox()->getMediaTreeLockHandle() COMMA_LOCKVAL_SRC_POS);
-
         MediumLockList *pMediumLockList(new MediumLockList());
         rc = diff->createMediumLockList(true /* fFailIfInaccessible */,
                                         true /* fMediumLockWrite */,
@@ -671,8 +672,6 @@ HRESULT MachineCloneVMPrivate::createDifferencingMedium(const ComObjPtr<Medium> 
         if (FAILED(rc)) throw rc;
         rc = pMediumLockList->Lock();
         if (FAILED(rc)) throw rc;
-
-        treeLock.release();
 
         /* this already registers the new diff image */
         rc = pParent->createDiffStorage(diff, MediumVariant_Standard,
@@ -1201,7 +1200,9 @@ HRESULT MachineCloneVM::run()
                         /* register the new harddisk */
                         {
                             AutoWriteLock tlock(p->mParent->getMediaTreeLockHandle() COMMA_LOCKVAL_SRC_POS);
-                            rc = p->mParent->registerHardDisk(pTarget, NULL /* pllRegistriesThatNeedSaving */);
+                            rc = p->mParent->registerMedium(pTarget, &pTarget,
+                                                            DeviceType_HardDisk,
+                                                            NULL /* pllRegistriesThatNeedSaving */);
                             if (FAILED(rc)) throw rc;
                         }
                         /* This medium becomes the parent of the next medium in the
