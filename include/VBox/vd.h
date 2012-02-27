@@ -469,9 +469,10 @@ VBOXDDU_DECL(int) VDCreate(PVDINTERFACE pVDIfsDisk, VDTYPE enmType, PVBOXHDD *pp
  * Destroys HDD container.
  * If container has opened image files they will be closed.
  *
+ * @return  VBox status code.
  * @param   pDisk           Pointer to HDD container.
  */
-VBOXDDU_DECL(void) VDDestroy(PVBOXHDD pDisk);
+VBOXDDU_DECL(int) VDDestroy(PVBOXHDD pDisk);
 
 /**
  * Try to get the backend name which can use this image.

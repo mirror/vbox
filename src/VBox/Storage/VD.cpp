@@ -5133,23 +5133,26 @@ VBOXDDU_DECL(int) VDCreate(PVDINTERFACE pVDIfsDisk, VDTYPE enmType, PVBOXHDD *pp
  * Destroys HDD container.
  * If container has opened image files they will be closed.
  *
+ * @returns VBox status code.
  * @param   pDisk           Pointer to HDD container.
  */
-VBOXDDU_DECL(void) VDDestroy(PVBOXHDD pDisk)
+VBOXDDU_DECL(int) VDDestroy(PVBOXHDD pDisk)
 {
+    int rc = VINF_SUCCESS;
     LogFlowFunc(("pDisk=%#p\n", pDisk));
     do
     {
         /* sanity check */
         AssertPtrBreak(pDisk);
         AssertMsg(pDisk->u32Signature == VBOXHDDDISK_SIGNATURE, ("u32Signature=%08x\n", pDisk->u32Signature));
-        VDCloseAll(pDisk);
+        rc = VDCloseAll(pDisk);
         RTCritSectDelete(&pDisk->CritSect);
         RTMemCacheDestroy(pDisk->hMemCacheIoCtx);
         RTMemCacheDestroy(pDisk->hMemCacheIoTask);
         RTMemFree(pDisk);
     } while (0);
-    LogFlowFunc(("returns\n"));
+    LogFlowFunc(("returns %Rrc\n", rc));
+    return rc;
 }
 
 /**
