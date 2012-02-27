@@ -198,11 +198,11 @@ VBGLR3DECL(void) VbglR3CredentialsDestroyUtf16(PRTUTF16 pwszUser, PRTUTF16 pwszP
 {
     /* wipe first */
     if (pwszUser)
-        RTMemWipeThoroughly(pwszUser,     RTUtf16Len(pwszUser) + 1,     cPasses);
+        RTMemWipeThoroughly(pwszUser,     RTUtf16Len(pwszUser) + sizeof(RTUTF16),     cPasses);
     if (pwszPassword)
-        RTMemWipeThoroughly(pwszPassword, RTUtf16Len(pwszPassword) + 1, cPasses);
+        RTMemWipeThoroughly(pwszPassword, RTUtf16Len(pwszPassword) + sizeof(RTUTF16), cPasses);
     if (pwszDomain)
-        RTMemWipeThoroughly(pwszDomain,   RTUtf16Len(pwszDomain) + 1,   cPasses);
+        RTMemWipeThoroughly(pwszDomain,   RTUtf16Len(pwszDomain) + sizeof(RTUTF16),   cPasses);
 
     /* then free. */
     RTUtf16Free(pwszUser);
