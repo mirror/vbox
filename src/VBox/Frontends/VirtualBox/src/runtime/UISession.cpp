@@ -6,7 +6,7 @@
  */
 
 /*
- * Copyright (C) 2006-2011 Oracle Corporation
+ * Copyright (C) 2006-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -58,9 +58,6 @@ UISession::UISession(UIMachine *pMachine, CSession &sessionReference)
     , m_session(sessionReference)
     /* Common variables: */
     , m_pMenuPool(0)
-#ifdef VBOX_WITH_VIDEOHWACCEL
-    , m_FrameBufferVector(sessionReference.GetMachine().GetMonitorCount())
-#endif
     , m_machineState(KMachineState_Null)
 #if defined(Q_WS_WIN)
     , m_alphaCursor(0)
@@ -139,6 +136,9 @@ UISession::UISession(UIMachine *pMachine, CSession &sessionReference)
     connect(gConsoleEvents, SIGNAL(sigCPUExecutionCapChange()),
             this, SIGNAL(sigCPUExecutionCapChange()));
 
+    /* Prepare framebuffers: */
+    prepareFramebuffers();
+
     /* Prepare main menu: */
     prepareMenuPool();
 
@@ -162,6 +162,9 @@ UISession::~UISession()
     /* Cleanup main menu: */
     cleanupMenuPool();
 
+    /* Cleanup framebuffers: */
+    cleanupFramebuffers();
+
     /* Destroy the console event handler */
     UIConsoleEventHandler::destroy();
 
@@ -169,23 +172,6 @@ UISession::~UISession()
     /* Destroy alpha cursor: */
     if (m_alphaCursor)
         DestroyIcon(m_alphaCursor);
-#endif
-
-#ifdef VBOX_WITH_VIDEOHWACCEL
-    for (int i = m_FrameBufferVector.size() - 1; i >= 0; --i)
-    {
-        UIFrameBuffer *pFb = m_FrameBufferVector[i];
-        if (pFb)
-        {
-            /* Warn framebuffer about its no more necessary: */
-            pFb->setDeleted(true);
-            /* Detach framebuffer from Display: */
-            CDisplay display = session().GetConsole().GetDisplay();
-            display.SetFramebuffer(i, CFramebuffer(NULL));
-            /* Release the reference: */
-            pFb->Release();
-        }
-    }
 #endif
 }
 
@@ -660,6 +646,12 @@ void UISession::sltAdditionsChange()
     }
 }
 
+void UISession::prepareFramebuffers()
+{
+    /* Each framebuffer will be really prepared on first UIMachineView creation: */
+    m_frameBufferVector.resize(m_session.GetMachine().GetMonitorCount());
+}
+
 void UISession::prepareMenuPool()
 {
     m_pMenuPool = new UIMachineMenuBar;
@@ -728,6 +720,26 @@ void UISession::cleanupMenuPool()
 {
     delete m_pMenuPool;
     m_pMenuPool = 0;
+}
+
+void UISession::cleanupFramebuffers()
+{
+    /* Cleanup framebuffers finally: */
+    for (int i = m_frameBufferVector.size() - 1; i >= 0; --i)
+    {
+        UIFrameBuffer *pFb = m_frameBufferVector[i];
+        if (pFb)
+        {
+            /* Warn framebuffer about its no more necessary: */
+            pFb->setDeleted(true);
+            /* Detach framebuffer from Display: */
+            CDisplay display = session().GetConsole().GetDisplay();
+            display.SetFramebuffer(i, CFramebuffer(NULL));
+            /* Release the reference: */
+            pFb->Release();
+        }
+    }
+    m_frameBufferVector.clear();
 }
 
 WId UISession::winId() const
@@ -1046,21 +1058,17 @@ void UISession::preparePowerUp()
     }
 }
 
-UIFrameBuffer* UISession::frameBuffer(ulong screenId) const
+UIFrameBuffer* UISession::frameBuffer(ulong uScreenId) const
 {
-    Assert(screenId < (ulong)m_FrameBufferVector.size());
-    return m_FrameBufferVector.value((int)screenId, NULL);
+    Assert(uScreenId < (ulong)m_frameBufferVector.size());
+    return m_frameBufferVector.value((int)uScreenId, 0);
 }
 
-int UISession::setFrameBuffer(ulong screenId, UIFrameBuffer* pFrameBuffer)
+void UISession::setFrameBuffer(ulong uScreenId, UIFrameBuffer* pFrameBuffer)
 {
-    Assert(screenId < (ulong)m_FrameBufferVector.size());
-    if (screenId < (ulong)m_FrameBufferVector.size())
-    {
-        m_FrameBufferVector[(int)screenId] = pFrameBuffer;
-        return VINF_SUCCESS;
-    }
-    return VERR_INVALID_PARAMETER;
+    Assert(uScreenId < (ulong)m_frameBufferVector.size());
+    if (uScreenId < (ulong)m_frameBufferVector.size())
+        m_frameBufferVector[(int)uScreenId] = pFrameBuffer;
 }
 
 #ifdef VBOX_GUI_WITH_KEYS_RESET_HANDLER
