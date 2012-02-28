@@ -1,10 +1,10 @@
-# $Id$
+# $Id: Makefile.kmk 65483 2010-09-02 08:35:30Z michael $
 ## @file
 # Sub-Makefile for VBoxCredProv.
 #
 
 #
-# Copyright (C) 2009 Oracle Corporation
+# Copyright (C) 2009-2012 Oracle Corporation
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;
@@ -20,17 +20,17 @@ include	$(KBUILD_PATH)/subheader.kmk
 
 DLLS += VBoxCredProv
 VBoxCredProv_TEMPLATE    = VBOXGUESTR3DLL
-VBoxCredProv_DEFS        = LOG_TO_BACKDOOR VBGL_VBOXGUEST VBOX_WITH_HGCM UNICODE
+VBoxCredProv_DEFS        = VBGL_VBOXGUEST VBOX_WITH_HGCM UNICODE
 VBoxCredProv_SDKS.x86    = WINDDK
 VBoxCredProv_SOURCES  = \
-	dll.cpp \
-	guid.cpp \
-	helpers.cpp \
-	VBoxCredential.cpp \
-	VBoxCredPoller.cpp \
-	VBoxCredProv.cpp \
-	VBoxCredProv.def \
-	VBoxCredProv.rc
+	VBoxCredentialProvider.cpp \
+	VBoxCredentialProvider.def \
+	VBoxCredentialProvider.rc \
+	VBoxCredProvFactory.cpp \
+	VBoxCredProvProvider.cpp \
+	VBoxCredProvCredential.cpp \
+	VBoxCredProvPoller.cpp \
+	VBoxCredProvUtils.cpp
 
 #
 # Since this is not the default SDK we have to navigate manually to it.
