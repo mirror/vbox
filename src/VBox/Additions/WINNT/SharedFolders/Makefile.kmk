@@ -4,7 +4,7 @@
 #
 
 #
-# Copyright (C) 2006-2007 Oracle Corporation
+# Copyright (C) 2012 Oracle Corporation
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;
@@ -19,7 +19,7 @@ SUB_DEPTH = ../../../../..
 include	$(KBUILD_PATH)/subheader.kmk
 
 # Include sub-makefile(s).
-include $(PATH_SUB_CURRENT)/redirector/Makefile.kmk
+include $(PATH_SUB_CURRENT)/np/Makefile.kmk
+include $(PATH_SUB_CURRENT)/driver/Makefile.kmk
 
 include	$(KBUILD_PATH)/subfooter.kmk
-

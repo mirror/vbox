@@ -2,9 +2,11 @@
  *
  * VirtualBox Windows Guest Shared Folders
  *
- * File System Driver system helpers
- *
- * Copyright (C) 2006-2007 Oracle Corporation
+ * File System Driver helpers
+ */
+
+/*
+ * Copyright (C) 2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -14,14 +16,15 @@
  * VirtualBox OSE distribution. VirtualBox OSE is distributed in the
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
-
 #ifndef __VBSFHLP__H
 #define __VBSFHLP__H
 
 #include <ntifs.h>
 #include <ntverp.h>
 
-// Windows version identifier
+#include "VBoxGuestR0LibSharedFolders.h"
+
+/* Windows version identifier
 typedef enum
 {
     UNKNOWN_WINVERSION = 0, WINNT4 = 1, WIN2K = 2, WINXP = 3
@@ -61,6 +64,8 @@ NTSTATUS VBoxErrorToNTStatus (int vboxRC);
 PVOID vbsfAllocNonPagedMem (ULONG ulSize);
 void vbsfFreeNonPagedMem (PVOID lpMem);
 
-winVersion_t vboxQueryWinVersion ();
+#if defined(DEBUG) || defined (LOG_ENABLED)
+PCHAR MajorFunctionString(UCHAR MajorFunction, LONG MinorFunction);
+#endif
 
 #endif /* __VBSFHLP__H */

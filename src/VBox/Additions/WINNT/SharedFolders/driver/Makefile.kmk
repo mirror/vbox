@@ -15,51 +15,32 @@
 # hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
 #
 
-SUB_DEPTH = ../../../../../../..
+SUB_DEPTH = ../../../../../..
 include	$(KBUILD_PATH)/subheader.kmk
-
-#
-# rdbss
-#
-LIBRARIES += rdbss
-rdbss_TEMPLATE       = VBOXGUESTR0
-rdbss_SOURCES        = rdbss/rdbss.def
 
 #
 # VBoxSF
 #
 SYSMODS += VBoxSF
 VBoxSF_TEMPLATE    = VBOXGUESTR0
-VBoxSF_DEFS        = LOG_TO_BACKDOOR VBOX_WITH_HGCM IN_RING0 VBOX_GUEST
-VBoxSF_DEFS       += VBOX_ASYNC_RW VBOX_FAIL_FASTIO
+VBoxSF_DEFS        = LOG_TO_BACKDOOR VBOX_WITH_HGCM IN_RING0
+#VBoxSF_DEFS       += LOG_ENABLED
 
 VBoxSF_SDKS.x86    = WINDDKW2K
 VBoxSF_SDKS.amd64  = WINDDKWLH
 
 VBoxSF_INCS        = \
-	../../../../common/VBoxGuestLib
+	../../../common/VBoxGuestLib
 VBoxSF_LDFLAGS.x86   = -Entry:DriverEntry@8
 VBoxSF_LDFLAGS.amd64 = -Entry:DriverEntry
 VBoxSF_CFLAGS      = -wd4005
 VBoxSF_SOURCES     =  \
-	devctrl.c \
-	devfcb.c \
-	downlvli.c \
-	ea.c \
-	fileinfo.c \
-	init.c \
-	locks.c \
-	netroot.c \
-	notimpl.c \
-	openclos.c \
-	read.c \
-	rename.c \
-	srvcall.c \
-	transprt.c \
-	write.c \
+	file.c \
+	info.c \
+	vbsf.c \
+	net.c \
+	path.c \
 	vbsfhlp.c \
-	wmlkm.c \
-	rdbss_vbox.c \
  	VBoxSF.rc
 
 VBoxSF_LIBS.x86  = \
@@ -83,13 +64,6 @@ VBoxSF_LIBS.amd64  = \
 VBoxSF_LIBS = \
 	$(VBOX_LIB_VBGL_R0) \
 	$(VBOX_LIB_IPRT_GUEST_R0)
-
-## Use with checked RDBSS libraries
-##	$(PATH_SDK_W2K3DDKX86_LIB)/bufferoverflowk.lib \
-
-##        rdbss.asm \
-##	$(PATH_STAGE_LIB)/rdbss$(VBOXW32GUEST_SUFF_LIB)
-
 
 include	$(KBUILD_PATH)/subfooter.kmk
 

@@ -3,8 +3,10 @@
  * VirtualBox Windows Guest Shared Folders
  *
  * File System Driver system helpers
- *
- * Copyright (C) 2006-2007 Oracle Corporation
+ */
+ 
+/*
+ * Copyright (C) 2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -18,7 +20,6 @@
 #include <ntifs.h>
 #include <ntdddisk.h>
 
-#include "vbsfhdrs.h"
 #include "vbsfhlp.h"
 
 #ifdef DEBUG
@@ -66,7 +67,7 @@ uint32_t VBoxToNTFileAttributes (uint32_t fMode)
         FileAttributes |= FILE_ATTRIBUTE_REPARSE_POINT;
     if (fMode & RTFS_DOS_NT_COMPRESSED)
         FileAttributes |= FILE_ATTRIBUTE_COMPRESSED;
-    //    if (fMode & RTFS_DOS_NT_OFFLINE)
+    /*    if (fMode & RTFS_DOS_NT_OFFLINE) */
     if (fMode & RTFS_DOS_NT_NOT_CONTENT_INDEXED)
         FileAttributes |= FILE_ATTRIBUTE_NOT_CONTENT_INDEXED;
     if (fMode & RTFS_DOS_NT_ENCRYPTED)
@@ -231,7 +232,8 @@ NTSTATUS VBoxErrorToNTStatus (int vboxRC)
     default:
         /* @todo error handling */
         Status = STATUS_INVALID_PARAMETER;
-        AssertMsgFailed(("Unexpected vbox error %d\n", vboxRC));
+        Log(("Unexpected vbox error %Rrc\n",
+             vboxRC));
         break;
     }
     return Status;
@@ -281,42 +283,6 @@ void vbsfFreeNonPagedMem (PVOID lpMem)
     lpMem = NULL;
 }
 
-winVersion_t vboxQueryWinVersion ()
-{
-    static winVersion_t winVersion = UNKNOWN_WINVERSION;
-    ULONG majorVersion;
-    ULONG minorVersion;
-    ULONG buildNumber;
-
-    if (winVersion != UNKNOWN_WINVERSION)
-        return winVersion;
-
-    PsGetVersion(&majorVersion, &minorVersion, &buildNumber, NULL);
-
-    Log(("VBoxVideo::vboxQueryWinVersion: running on Windows NT version %d.%d, build %d\n", majorVersion, minorVersion, buildNumber));
-
-    if (majorVersion >= 5)
-    {
-        if (minorVersion >= 1)
-        {
-            winVersion = WINXP;
-        }
-        else
-        {
-            winVersion = WIN2K;
-        }
-    }
-    else if (majorVersion == 4)
-    {
-        winVersion = WINNT4;
-    }
-    else
-    {
-        Log(("VBoxVideo::vboxQueryWinVersion: NT4 required!\n"));
-    }
-    return winVersion;
-}
-
 #if 0 //def DEBUG
 /**
  * Callback for RTLogFormatV which writes to the backdoor.
@@ -342,5 +308,128 @@ int RTLogBackdoorPrintf1(const char *pszFormat, ...)
     va_end(args);
 
     return 0;
+}
+#endif
+
+#if defined(DEBUG) || defined (LOG_ENABLED)
+static PCHAR PnPMinorFunctionString(LONG MinorFunction)
+{
+    switch (MinorFunction)
+    {
+        case IRP_MN_START_DEVICE:
+            return "IRP_MJ_PNP - IRP_MN_START_DEVICE";
+        case IRP_MN_QUERY_REMOVE_DEVICE:
+            return "IRP_MJ_PNP - IRP_MN_QUERY_REMOVE_DEVICE";
+        case IRP_MN_REMOVE_DEVICE:
+            return "IRP_MJ_PNP - IRP_MN_REMOVE_DEVICE";
+        case IRP_MN_CANCEL_REMOVE_DEVICE:
+            return "IRP_MJ_PNP - IRP_MN_CANCEL_REMOVE_DEVICE";
+        case IRP_MN_STOP_DEVICE:
+            return "IRP_MJ_PNP - IRP_MN_STOP_DEVICE";
+        case IRP_MN_QUERY_STOP_DEVICE:
+            return "IRP_MJ_PNP - IRP_MN_QUERY_STOP_DEVICE";
+        case IRP_MN_CANCEL_STOP_DEVICE:
+            return "IRP_MJ_PNP - IRP_MN_CANCEL_STOP_DEVICE";
+        case IRP_MN_QUERY_DEVICE_RELATIONS:
+            return "IRP_MJ_PNP - IRP_MN_QUERY_DEVICE_RELATIONS";
+        case IRP_MN_QUERY_INTERFACE:
+            return "IRP_MJ_PNP - IRP_MN_QUERY_INTERFACE";
+        case IRP_MN_QUERY_CAPABILITIES:
+            return "IRP_MJ_PNP - IRP_MN_QUERY_CAPABILITIES";
+        case IRP_MN_QUERY_RESOURCES:
+            return "IRP_MJ_PNP - IRP_MN_QUERY_RESOURCES";
+        case IRP_MN_QUERY_RESOURCE_REQUIREMENTS:
+            return "IRP_MJ_PNP - IRP_MN_QUERY_RESOURCE_REQUIREMENTS";
+        case IRP_MN_QUERY_DEVICE_TEXT:
+            return "IRP_MJ_PNP - IRP_MN_QUERY_DEVICE_TEXT";
+        case IRP_MN_FILTER_RESOURCE_REQUIREMENTS:
+            return "IRP_MJ_PNP - IRP_MN_FILTER_RESOURCE_REQUIREMENTS";
+        case IRP_MN_READ_CONFIG:
+            return "IRP_MJ_PNP - IRP_MN_READ_CONFIG";
+        case IRP_MN_WRITE_CONFIG:
+            return "IRP_MJ_PNP - IRP_MN_WRITE_CONFIG";
+        case IRP_MN_EJECT:
+            return "IRP_MJ_PNP - IRP_MN_EJECT";
+        case IRP_MN_SET_LOCK:
+            return "IRP_MJ_PNP - IRP_MN_SET_LOCK";
+        case IRP_MN_QUERY_ID:
+            return "IRP_MJ_PNP - IRP_MN_QUERY_ID";
+        case IRP_MN_QUERY_PNP_DEVICE_STATE:
+            return "IRP_MJ_PNP - IRP_MN_QUERY_PNP_DEVICE_STATE";
+        case IRP_MN_QUERY_BUS_INFORMATION:
+            return "IRP_MJ_PNP - IRP_MN_QUERY_BUS_INFORMATION";
+        case IRP_MN_DEVICE_USAGE_NOTIFICATION:
+            return "IRP_MJ_PNP - IRP_MN_DEVICE_USAGE_NOTIFICATION";
+        case IRP_MN_SURPRISE_REMOVAL:
+            return "IRP_MJ_PNP - IRP_MN_SURPRISE_REMOVAL";
+        default:
+            return "IRP_MJ_PNP - unknown_pnp_irp";
+    }
+}
+
+PCHAR MajorFunctionString(UCHAR MajorFunction, LONG MinorFunction)
+{
+    switch (MinorFunction)
+    {
+    case IRP_MJ_CREATE:
+        return "IRP_MJ_CREATE";
+    case IRP_MJ_CREATE_NAMED_PIPE:
+        return "IRP_MJ_CREATE_NAMED_PIPE";
+    case IRP_MJ_CLOSE:
+        return "IRP_MJ_CLOSE";
+    case IRP_MJ_READ:
+        return "IRP_MJ_READ";
+    case IRP_MJ_WRITE:
+        return "IRP_MJ_WRITE";
+    case IRP_MJ_QUERY_INFORMATION:
+        return "IRP_MJ_QUERY_INFORMATION";
+    case IRP_MJ_SET_INFORMATION:
+        return "IRP_MJ_SET_INFORMATION";
+    case IRP_MJ_QUERY_EA:
+        return "IRP_MJ_QUERY_EA";
+    case IRP_MJ_SET_EA:
+        return "IRP_MJ_SET_EA";
+    case IRP_MJ_FLUSH_BUFFERS:
+        return "IRP_MJ_FLUSH_BUFFERS";
+    case IRP_MJ_QUERY_VOLUME_INFORMATION:
+        return "IRP_MJ_QUERY_VOLUME_INFORMATION";
+    case IRP_MJ_SET_VOLUME_INFORMATION:
+        return "IRP_MJ_SET_VOLUME_INFORMATION";
+    case IRP_MJ_DIRECTORY_CONTROL:
+        return "IRP_MJ_DIRECTORY_CONTROL";
+    case IRP_MJ_FILE_SYSTEM_CONTROL:
+        return "IRP_MJ_FILE_SYSTEM_CONTROL";
+    case IRP_MJ_DEVICE_CONTROL:
+        return "IRP_MJ_DEVICE_CONTROL";
+    case IRP_MJ_INTERNAL_DEVICE_CONTROL:
+        return "IRP_MJ_INTERNAL_DEVICE_CONTROL";
+    case IRP_MJ_SHUTDOWN:
+        return "IRP_MJ_SHUTDOWN";
+    case IRP_MJ_LOCK_CONTROL:
+        return "IRP_MJ_LOCK_CONTROL";
+    case IRP_MJ_CLEANUP:
+        return "IRP_MJ_CLEANUP";
+    case IRP_MJ_CREATE_MAILSLOT:
+        return "IRP_MJ_CREATE_MAILSLOT";
+    case IRP_MJ_QUERY_SECURITY:
+        return "IRP_MJ_QUERY_SECURITY";
+    case IRP_MJ_SET_SECURITY:
+        return "IRP_MJ_SET_SECURITY";
+    case IRP_MJ_POWER:
+        return "IRP_MJ_POWER";
+    case IRP_MJ_SYSTEM_CONTROL:
+        return "IRP_MJ_SYSTEM_CONTROL";
+    case IRP_MJ_DEVICE_CHANGE:
+        return "IRP_MJ_DEVICE_CHANGE";
+    case IRP_MJ_QUERY_QUOTA:
+        return "IRP_MJ_QUERY_QUOTA";
+    case IRP_MJ_SET_QUOTA:
+        return "IRP_MJ_SET_QUOTA";
+    case IRP_MJ_PNP:
+        return PnPMinorFunctionString(MinorFunction);
+
+    default:
+        return "unknown_pnp_irp";
+    }
 }
 #endif
