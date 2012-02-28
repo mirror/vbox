@@ -38,6 +38,11 @@ static int swedish_chef = 0;
 static int australia = 0;
 static int warnings_enabled = 1;
 
+#ifdef DEBUG_misha
+//int g_VBoxFbgFBreakDdi = 0;
+#define DebugBreak() Assert(0)
+#endif
+
 void __getHostInfo( void )
 {
     char *temp;
@@ -245,7 +250,7 @@ DECLEXPORT(void) crWarning(const char *format, ... )
 #endif
         va_end( args );
 
-#if defined(WINDOWS) && defined(DEBUG) && !defined(IN_GUEST)
+#if defined(WINDOWS) && defined(DEBUG)/* && !defined(IN_GUEST) */
         DebugBreak();
 #endif
     }
@@ -321,7 +326,7 @@ DECLEXPORT(void) crDebug(const char *format, ... )
         }
         else
         {
-#if defined(WINDOWS) && defined(IN_GUEST) && (defined(DEBUG_leo) || defined(DEBUG_ll158262))
+#if defined(WINDOWS) && defined(IN_GUEST) && (defined(DEBUG_leo) || defined(DEBUG_ll158262) || defined(DEBUG_misha))
             crRedirectIOToConsole();
 #endif
             output = stderr;

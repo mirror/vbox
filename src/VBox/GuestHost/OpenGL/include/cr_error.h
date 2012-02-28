@@ -34,11 +34,20 @@ DECLEXPORT(void) crError(const char *format, ... ) NORETURN_PRINTF;
 
 /* Throw more info while opengl is not stable */
 #if defined(DEBUG) || 1
-#define CRASSERT( PRED ) ((PRED)?(void)0:crError( "Assertion failed: %s, file %s, line %d", #PRED, __FILE__, __LINE__))
-#define THREADASSERT( PRED ) ((PRED)?(void)0:crError( "Are you trying to run a threaded app ?\nBuild with 'make threadsafe'\nAssertion failed: %s, file %s, line %d", #PRED, __FILE__, __LINE__))
+# ifdef DEBUG_misha
+#  include <iprt/assert.h>
+#  define CRASSERT Assert
+//extern int g_VBoxFbgFBreakDdi;
+#  define CR_DDI_PROLOGUE() do { /*if (g_VBoxFbgFBreakDdi) {Assert(0);}*/ } while (0)
+# else
+#  define CRASSERT( PRED ) ((PRED)?(void)0:crError( "Assertion failed: %s, file %s, line %d", #PRED, __FILE__, __LINE__))
+#  define CR_DDI_PROLOGUE() do {} while (0)
+# endif
+# define THREADASSERT( PRED ) ((PRED)?(void)0:crError( "Are you trying to run a threaded app ?\nBuild with 'make threadsafe'\nAssertion failed: %s, file %s, line %d", #PRED, __FILE__, __LINE__))
 #else
-#define CRASSERT( PRED ) ((void)0)
-#define THREADASSERT( PRED ) ((void)0)
+# define CRASSERT( PRED ) ((void)0)
+# define THREADASSERT( PRED ) ((void)0)
+# define CR_DDI_PROLOGUE() do {} while (0)
 #endif
 
 #ifdef __cplusplus
