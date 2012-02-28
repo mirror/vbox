@@ -2628,9 +2628,21 @@ STDMETHODIMP Console::SaveState(IProgress **aProgress)
 
     if (mMachineState == MachineState_Running)
     {
-        HRESULT rc = Pause();
-        if (FAILED(rc))
-            return rc;
+        /* get the VM handle. */
+        SafeVMPtr ptrVM(this);
+        if (!ptrVM.isOk())
+            return ptrVM.rc();
+
+        /* release the lock before a VMR3* call (EMT will call us back)! */
+        alock.release();
+        int vrc = VMR3Suspend(ptrVM);
+        alock.acquire();
+
+        HRESULT hrc = S_OK;
+        if (RT_FAILURE(vrc))
+            hrc = setError(VBOX_E_VM_ERROR, tr("Could not suspend the machine execution (%Rrc)"), vrc);
+        if (FAILED(hrc))
+            return hrc;
     }
 
     HRESULT rc = S_OK;
@@ -2726,7 +2738,13 @@ STDMETHODIMP Console::SaveState(IProgress **aProgress)
             /* restore the paused state if appropriate */
             setMachineStateLocally(MachineState_Paused);
             /* restore the running state if appropriate */
-            Resume();
+            SafeVMPtr ptrVM(this);
+            if (ptrVM.isOk())
+            {
+                alock.release();
+                VMR3Resume(ptrVM);
+                alock.acquire();
+            }
         }
         else
             setMachineStateLocally(lastMachineState);
