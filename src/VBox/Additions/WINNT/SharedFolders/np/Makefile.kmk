@@ -4,7 +4,7 @@
 #
 
 #
-# Copyright (C) 2006-2007 Oracle Corporation
+# Copyright (C) 2012 Oracle Corporation
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;
@@ -15,22 +15,19 @@
 # hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
 #
 
-SUB_DEPTH = ../../../../../../..
+SUB_DEPTH = ../../../../../..
 include	$(KBUILD_PATH)/subheader.kmk
 
 DLLS += VBoxMRXNP
 VBoxMRXNP_TEMPLATE    = VBOXGUESTR3DLL
 VBoxMRXNP_SDKS        = WINDDK
 VBoxMRXNP_DEFS        = LOG_TO_BACKDOOR _WIN32_WINNT=0x0500 UNICODE WIN32_LEAN_AND_MEAN=1
-
-VBoxMRXNP_INCS        = \
-	$(PATH_SUB_ROOT)/WINNT/SharedFolders/include
+#VBoxMRXNP_DEFS       += LOG_ENABLED
 
 VBoxMRXNP_SOURCES     = \
-	dllmain.cpp \
-	vboxmrxp.cpp \
-	vboxmrxp.rc \
-	vboxmrxp.def
+	vboxmrxnp.cpp \
+	vboxmrxnp.rc \
+	vboxmrxnp.def
 
 VBoxMRXNP_LIBS     = \
 	$(VBOX_LIB_IPRT_GUEST_R3) \
@@ -49,4 +46,3 @@ VBoxMRXNP-x86_LIBS = \
 VBoxMRXNP-x86_DEFS = $(VBoxMRXNP_DEFS) VBOX_WOW64
 
 include	$(KBUILD_PATH)/subfooter.kmk
-
