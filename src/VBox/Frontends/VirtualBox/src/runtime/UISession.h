@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2010 Oracle Corporation
+ * Copyright (C) 2010-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -146,12 +146,12 @@ public:
     void setMouseCaptured(bool fIsMouseCaptured) { m_fIsMouseCaptured = fIsMouseCaptured; }
     void setMouseIntegrated(bool fIsMouseIntegrated) { m_fIsMouseIntegrated = fIsMouseIntegrated; }
 
-    /* return a persisted framebuffer for the given screen
-     * see comment below for the m_FrameBufferVector field */
-    UIFrameBuffer* frameBuffer(ulong screenId) const;
-    /* @return VINF_SUCCESS - on success
-     * VERR_INVALID_PARAMETER - if screenId is invalid */
-    int setFrameBuffer(ulong screenId, UIFrameBuffer* pFrameBuffer);
+    /* Returns existing framebuffer for the given screen-number;
+     * Returns 0 (asserts) if screen-number attribute is out of bounds: */
+    UIFrameBuffer* frameBuffer(ulong uScreenId) const;
+    /* Sets framebuffer for the given screen-number;
+     * Ignores (asserts) if screen-number attribute is out of bounds: */
+    void setFrameBuffer(ulong uScreenId, UIFrameBuffer* pFrameBuffer);
 
 signals:
 
@@ -199,12 +199,14 @@ private:
     UIMachine* uimachine() const { return m_pMachine; }
 
     /* Prepare helpers: */
+    void prepareFramebuffers();
     void prepareMenuPool();
     void loadSessionSettings();
 
     /* Cleanup helpers: */
     void saveSessionSettings();
     void cleanupMenuPool();
+    void cleanupFramebuffers();
 
     /* Common helpers: */
     WId winId() const;
@@ -222,9 +224,8 @@ private:
 
     UIMachineMenuBar *m_pMenuPool;
 
-    /** Used for keeping track of the framebuffers accross view object
-     * re-creation. */
-    QVector<UIFrameBuffer*> m_FrameBufferVector;
+    /* Frame-buffers vector: */
+    QVector<UIFrameBuffer*> m_frameBufferVector;
 
     /* Common variables: */
     KMachineState m_machineState;
