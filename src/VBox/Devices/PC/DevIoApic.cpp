@@ -324,7 +324,7 @@ static void ioapic_mem_writel(void *opaque, RTGCPHYS addr, uint32_t val)
 PDMBOTHCBDECL(int) ioapicMMIORead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr, void *pv, unsigned cb)
 {
     IOAPICState *pThis = PDMINS_2_DATA(pDevIns, IOAPICState *);
-    IOAPIC_LOCK(pThis, VINF_IOM_HC_MMIO_READ);
+    IOAPIC_LOCK(pThis, VINF_IOM_R3_MMIO_READ);
 
     STAM_COUNTER_INC(&CTXSUFF(pThis->StatMMIORead));
     switch (cb)
@@ -355,7 +355,7 @@ PDMBOTHCBDECL(int) ioapicMMIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GC
     IOAPICState *pThis = PDMINS_2_DATA(pDevIns, IOAPICState *);
 
     STAM_COUNTER_INC(&CTXSUFF(pThis->StatMMIOWrite));
-    IOAPIC_LOCK(pThis, VINF_IOM_HC_MMIO_WRITE);
+    IOAPIC_LOCK(pThis, VINF_IOM_R3_MMIO_WRITE);
     switch (cb)
     {
         case 1: ioapic_mem_writel(pThis, GCPhysAddr, *(uint8_t  const *)pv); break;

@@ -75,7 +75,7 @@
         { \
             AssertMsgReturn((off) < (pThis)->vram_size, ("%RX32 !< %RX32\n", (uint32_t)(off), (pThis)->vram_size), VINF_SUCCESS); \
             Log2(("%Rfn[%d]: %RX32 -> R3\n", __PRETTY_FUNCTION__, __LINE__, (off))); \
-            return VINF_IOM_HC_MMIO_WRITE; \
+            return VINF_IOM_R3_MMIO_WRITE; \
         } \
     } while (0)
 #else
@@ -91,7 +91,7 @@
         { \
             AssertMsgReturn((off) < (pThis)->vram_size, ("%RX32 !< %RX32\n", (uint32_t)(off), (pThis)->vram_size), 0xff); \
             Log2(("%Rfn[%d]: %RX32 -> R3\n", __PRETTY_FUNCTION__, __LINE__, (off))); \
-            (rcVar) = VINF_IOM_HC_MMIO_READ; \
+            (rcVar) = VINF_IOM_R3_MMIO_READ; \
             return 0; \
         } \
     } while (0)
@@ -1034,7 +1034,7 @@ static int vbe_ioport_write_data(void *opaque, uint32_t addr, uint32_t val)
 
         case VBE_DISPI_INDEX_ENABLE:
 #ifndef IN_RING3
-            return VINF_IOM_HC_IOPORT_WRITE;
+            return VINF_IOM_R3_IOPORT_WRITE;
 #else
             if ((val & VBE_DISPI_ENABLED) &&
                 !(s->vbe_regs[VBE_DISPI_INDEX_ENABLE] & VBE_DISPI_ENABLED)) {
@@ -1146,7 +1146,7 @@ static int vbe_ioport_write_data(void *opaque, uint32_t addr, uint32_t val)
             break;
         case VBE_DISPI_INDEX_VBOX_VIDEO:
 #ifndef IN_RING3
-            return VINF_IOM_HC_IOPORT_WRITE;
+            return VINF_IOM_R3_IOPORT_WRITE;
 #else
             /* Changes in the VGA device are minimal. The device is bypassed. The driver does all work. */
             if (val == VBOX_VIDEO_DISABLE_ADAPTER_MEMORY)
@@ -2535,7 +2535,7 @@ PDMBOTHCBDECL(int) vgaIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Por
 {
     VGAState *s = PDMINS_2_DATA(pDevIns, PVGASTATE);
 
-    int rc = PDMCritSectEnter(&s->lock, VINF_IOM_HC_IOPORT_WRITE);
+    int rc = PDMCritSectEnter(&s->lock, VINF_IOM_R3_IOPORT_WRITE);
     if (rc != VINF_SUCCESS)
         return rc;
 
@@ -2568,7 +2568,7 @@ PDMBOTHCBDECL(int) vgaIOPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port
     VGAState *s = PDMINS_2_DATA(pDevIns, PVGASTATE);
     NOREF(pvUser);
 
-    int rc = PDMCritSectEnter(&s->lock, VINF_IOM_HC_IOPORT_READ);
+    int rc = PDMCritSectEnter(&s->lock, VINF_IOM_R3_IOPORT_READ);
     if (rc != VINF_SUCCESS)
         return rc;
 
@@ -2604,7 +2604,7 @@ PDMBOTHCBDECL(int) vgaIOPortWriteVBEData(PPDMDEVINS pDevIns, void *pvUser, RTIOP
 {
     VGAState *s = PDMINS_2_DATA(pDevIns, PVGASTATE);
 
-    int rc = PDMCritSectEnter(&s->lock, VINF_IOM_HC_IOPORT_WRITE);
+    int rc = PDMCritSectEnter(&s->lock, VINF_IOM_R3_IOPORT_WRITE);
     if (rc != VINF_SUCCESS)
         return rc;
 
@@ -2619,7 +2619,7 @@ PDMBOTHCBDECL(int) vgaIOPortWriteVBEData(PPDMDEVINS pDevIns, void *pvUser, RTIOP
     {
         Log(("vgaIOPortWriteVBEData: VBE_DISPI_INDEX_ENABLE - Switching to host...\n"));
         PDMCritSectLeave(&s->lock);
-        return VINF_IOM_HC_IOPORT_WRITE;
+        return VINF_IOM_R3_IOPORT_WRITE;
     }
 #endif
 #ifdef VBE_BYTEWISE_IO
@@ -2663,7 +2663,7 @@ PDMBOTHCBDECL(int) vgaIOPortWriteVBEData(PPDMDEVINS pDevIns, void *pvUser, RTIOP
 //            &&  (u32 & VBE_DISPI_ENABLED))
 //        {
 //            Log(("vgaIOPortWriteVBEData: VBE_DISPI_INDEX_ENABLE & VBE_DISPI_ENABLED - Switching to host...\n"));
-//            return VINF_IOM_HC_IOPORT_WRITE;
+//            return VINF_IOM_R3_IOPORT_WRITE;
 //        }
 //#endif
         rc = vbe_ioport_write_data(s, Port, u32);
@@ -2694,7 +2694,7 @@ PDMBOTHCBDECL(int) vgaIOPortWriteVBEIndex(PPDMDEVINS pDevIns, void *pvUser, RTIO
     NOREF(pvUser);
     VGAState *s = PDMINS_2_DATA(pDevIns, PVGASTATE);
 
-    int rc = PDMCritSectEnter(&s->lock, VINF_IOM_HC_IOPORT_WRITE);
+    int rc = PDMCritSectEnter(&s->lock, VINF_IOM_R3_IOPORT_WRITE);
     if (rc != VINF_SUCCESS)
         return rc;
 
@@ -2743,7 +2743,7 @@ PDMBOTHCBDECL(int) vgaIOPortReadVBEData(PPDMDEVINS pDevIns, void *pvUser, RTIOPO
     NOREF(pvUser);
     VGAState *s = PDMINS_2_DATA(pDevIns, PVGASTATE);
 
-    int rc = PDMCritSectEnter(&s->lock, VINF_IOM_HC_IOPORT_READ);
+    int rc = PDMCritSectEnter(&s->lock, VINF_IOM_R3_IOPORT_READ);
     if (rc != VINF_SUCCESS)
         return rc;
 
@@ -2802,7 +2802,7 @@ PDMBOTHCBDECL(int) vgaIOPortReadVBEIndex(PPDMDEVINS pDevIns, void *pvUser, RTIOP
     NOREF(pvUser);
     VGAState *s = PDMINS_2_DATA(pDevIns, PVGASTATE);
 
-    int rc = PDMCritSectEnter(&s->lock, VINF_IOM_HC_IOPORT_READ);
+    int rc = PDMCritSectEnter(&s->lock, VINF_IOM_R3_IOPORT_READ);
     if (rc != VINF_SUCCESS)
         return rc;
 
@@ -3190,7 +3190,7 @@ PDMBOTHCBDECL(int) vgaMMIOFill(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhys
 {
     PVGASTATE pThis = PDMINS_2_DATA(pDevIns, PVGASTATE);
 
-    int rc = PDMCritSectEnter(&pThis->lock, VINF_IOM_HC_MMIO_WRITE);
+    int rc = PDMCritSectEnter(&pThis->lock, VINF_IOM_R3_MMIO_WRITE);
     if (rc != VINF_SUCCESS)
         return rc;
 
@@ -3217,7 +3217,7 @@ PDMBOTHCBDECL(int) vgaMMIORead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhys
     STAM_PROFILE_START(&pThis->CTX_MID_Z(Stat,MemoryRead), a);
     NOREF(pvUser);
 
-    int rc = PDMCritSectEnter(&pThis->lock, VINF_IOM_HC_MMIO_READ);
+    int rc = PDMCritSectEnter(&pThis->lock, VINF_IOM_R3_MMIO_READ);
     if (rc != VINF_SUCCESS)
         return rc;
 
@@ -3280,7 +3280,7 @@ PDMBOTHCBDECL(int) vgaMMIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhy
     NOREF(pvUser);
     STAM_PROFILE_START(&pThis->CTX_MID_Z(Stat,MemoryWrite), a);
 
-    int rc = PDMCritSectEnter(&pThis->lock, VINF_IOM_HC_MMIO_WRITE);
+    int rc = PDMCritSectEnter(&pThis->lock, VINF_IOM_R3_MMIO_WRITE);
     if (rc != VINF_SUCCESS)
         return rc;
 
@@ -3513,7 +3513,7 @@ PDMBOTHCBDECL(int) vgaIOPortWriteBIOS(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT
     PVGASTATE pThis = PDMINS_2_DATA(pDevIns, PVGASTATE);
     NOREF(pvUser);
 
-    int rc = PDMCritSectEnter(&pThis->lock, VINF_IOM_HC_IOPORT_WRITE);
+    int rc = PDMCritSectEnter(&pThis->lock, VINF_IOM_R3_IOPORT_WRITE);
     if (rc != VINF_SUCCESS)
         return rc;
 
@@ -3574,7 +3574,7 @@ PDMBOTHCBDECL(int) vbeIOPortWriteVBEExtra(PPDMDEVINS pDevIns, void *pvUser, RTIO
     NOREF(pvUser);
     NOREF(Port);
 
-    int rc = PDMCritSectEnter(&pThis->lock, VINF_IOM_HC_IOPORT_WRITE);
+    int rc = PDMCritSectEnter(&pThis->lock, VINF_IOM_R3_IOPORT_WRITE);
     if (rc != VINF_SUCCESS)
         return rc;
 
@@ -3608,7 +3608,7 @@ PDMBOTHCBDECL(int) vbeIOPortReadVBEExtra(PPDMDEVINS pDevIns, void *pvUser, RTIOP
     NOREF(pvUser);
     NOREF(Port);
 
-    int rc = PDMCritSectEnter(&pThis->lock, VINF_IOM_HC_IOPORT_READ);
+    int rc = PDMCritSectEnter(&pThis->lock, VINF_IOM_R3_IOPORT_READ);
     if (rc != VINF_SUCCESS)
         return rc;
 

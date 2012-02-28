@@ -425,19 +425,19 @@ static void vmmR0RecordRC(PVM pVM, PVMCPU pVCpu, int rc)
         case VINF_EM_RAW_IRET_TRAP:
             STAM_COUNTER_INC(&pVM->vmm.s.StatRZRetIRETTrap);
             break;
-        case VINF_IOM_HC_IOPORT_READ:
+        case VINF_IOM_R3_IOPORT_READ:
             STAM_COUNTER_INC(&pVM->vmm.s.StatRZRetIORead);
             break;
-        case VINF_IOM_HC_IOPORT_WRITE:
+        case VINF_IOM_R3_IOPORT_WRITE:
             STAM_COUNTER_INC(&pVM->vmm.s.StatRZRetIOWrite);
             break;
-        case VINF_IOM_HC_MMIO_READ:
+        case VINF_IOM_R3_MMIO_READ:
             STAM_COUNTER_INC(&pVM->vmm.s.StatRZRetMMIORead);
             break;
-        case VINF_IOM_HC_MMIO_WRITE:
+        case VINF_IOM_R3_MMIO_WRITE:
             STAM_COUNTER_INC(&pVM->vmm.s.StatRZRetMMIOWrite);
             break;
-        case VINF_IOM_HC_MMIO_READ_WRITE:
+        case VINF_IOM_R3_MMIO_READ_WRITE:
             STAM_COUNTER_INC(&pVM->vmm.s.StatRZRetMMIOReadWrite);
             break;
         case VINF_PATM_HC_MMIO_PATCH_READ:

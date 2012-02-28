@@ -1214,7 +1214,7 @@ DECLEXPORT(int) pcnetHandleRingWrite(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE 
         }
     }
     STAM_COUNTER_INC(&CTXALLSUFF(pThis->StatRingWriteFailed)); ;
-    return VINF_IOM_HC_MMIO_WRITE; /* handle in ring3 */
+    return VINF_IOM_R3_MMIO_WRITE; /* handle in ring3 */
 }
 
 # else /* IN_RING3 */
@@ -2807,7 +2807,7 @@ static int pcnetCSRWriteU16(PCNetState *pThis, uint32_t u32RAP, uint32_t val)
                 if (!(csr0 & 0x0001/*init*/) && (val & 1))
                 {
                     Log(("#%d pcnetCSRWriteU16: pcnetInit requested => HC\n", PCNET_INST_NR));
-                    return VINF_IOM_HC_IOPORT_WRITE;
+                    return VINF_IOM_R3_IOPORT_WRITE;
                 }
 #endif
                 pThis->aCSR[0] = csr0;
@@ -2894,7 +2894,7 @@ static int pcnetCSRWriteU16(PCNetState *pThis, uint32_t u32RAP, uint32_t val)
             {
                 Log(("#%d: promiscuous mode changed to %d\n", PCNET_INST_NR, !!(val & 0x8000)));
 #ifndef IN_RING3
-                return VINF_IOM_HC_IOPORT_WRITE;
+                return VINF_IOM_R3_IOPORT_WRITE;
 #else
                 /* check for promiscuous mode change */
                 if (pThis->pDrvR3)
@@ -3631,7 +3631,7 @@ PDMBOTHCBDECL(int) pcnetIOPortAPromRead(PPDMDEVINS pDevIns, void *pvUser,
     int        rc;
 
     STAM_PROFILE_ADV_START(&pThis->StatAPROMRead, a);
-    rc = PDMCritSectEnter(&pThis->CritSect, VINF_IOM_HC_IOPORT_WRITE);
+    rc = PDMCritSectEnter(&pThis->CritSect, VINF_IOM_R3_IOPORT_WRITE);
     if (rc == VINF_SUCCESS)
     {
 
@@ -3679,7 +3679,7 @@ PDMBOTHCBDECL(int) pcnetIOPortAPromWrite(PPDMDEVINS pDevIns, void *pvUser,
     if (cb == 1)
     {
         STAM_PROFILE_ADV_START(&pThis->StatAPROMWrite, a);
-        rc = PDMCritSectEnter(&pThis->CritSect, VINF_IOM_HC_IOPORT_WRITE);
+        rc = PDMCritSectEnter(&pThis->CritSect, VINF_IOM_R3_IOPORT_WRITE);
         if (RT_LIKELY(rc == VINF_SUCCESS))
         {
             pcnetAPROMWriteU8(pThis, Port, u32);
@@ -3694,7 +3694,7 @@ PDMBOTHCBDECL(int) pcnetIOPortAPromWrite(PPDMDEVINS pDevIns, void *pvUser,
     }
     LogFlow(("#%d pcnetIOPortAPromWrite: Port=%RTiop u32=%#RX32 cb=%d rc=%Rrc\n", PCNET_INST_NR, Port, u32, cb, rc));
 #ifdef LOG_ENABLED
-    if (rc == VINF_IOM_HC_IOPORT_WRITE)
+    if (rc == VINF_IOM_R3_IOPORT_WRITE)
         LogFlow(("#%d => HC\n", PCNET_INST_NR));
 #endif
     return rc;
@@ -3719,7 +3719,7 @@ PDMBOTHCBDECL(int) pcnetIOPortRead(PPDMDEVINS pDevIns, void *pvUser,
     int         rc    = VINF_SUCCESS;
 
     STAM_PROFILE_ADV_START(&pThis->CTX_SUFF_Z(StatIORead), a);
-    rc = PDMCritSectEnter(&pThis->CritSect, VINF_IOM_HC_IOPORT_READ);
+    rc = PDMCritSectEnter(&pThis->CritSect, VINF_IOM_R3_IOPORT_READ);
     if (RT_LIKELY(rc == VINF_SUCCESS))
     {
         switch (cb)
@@ -3737,7 +3737,7 @@ PDMBOTHCBDECL(int) pcnetIOPortRead(PPDMDEVINS pDevIns, void *pvUser,
     STAM_PROFILE_ADV_STOP(&pThis->CTX_SUFF_Z(StatIORead), a);
     Log2(("#%d pcnetIOPortRead: Port=%RTiop *pu32=%#RX32 cb=%d rc=%Rrc\n", PCNET_INST_NR, Port, *pu32, cb, rc));
 #ifdef LOG_ENABLED
-    if (rc == VINF_IOM_HC_IOPORT_READ)
+    if (rc == VINF_IOM_R3_IOPORT_READ)
         LogFlow(("#%d pcnetIOPortRead/critsect failed in GC => HC\n", PCNET_INST_NR));
 #endif
     return rc;
@@ -3762,7 +3762,7 @@ PDMBOTHCBDECL(int) pcnetIOPortWrite(PPDMDEVINS pDevIns, void *pvUser,
     int         rc    = VINF_SUCCESS;
 
     STAM_PROFILE_ADV_START(&pThis->CTX_SUFF_Z(StatIOWrite), a);
-    rc = PDMCritSectEnter(&pThis->CritSect, VINF_IOM_HC_IOPORT_WRITE);
+    rc = PDMCritSectEnter(&pThis->CritSect, VINF_IOM_R3_IOPORT_WRITE);
     if (RT_LIKELY(rc == VINF_SUCCESS))
     {
         switch (cb)
@@ -3780,7 +3780,7 @@ PDMBOTHCBDECL(int) pcnetIOPortWrite(PPDMDEVINS pDevIns, void *pvUser,
     STAM_PROFILE_ADV_STOP(&pThis->CTX_SUFF_Z(StatIOWrite), a);
     Log2(("#%d pcnetIOPortWrite: Port=%RTiop u32=%#RX32 cb=%d rc=%Rrc\n", PCNET_INST_NR, Port, u32, cb, rc));
 #ifdef LOG_ENABLED
-    if (rc == VINF_IOM_HC_IOPORT_WRITE)
+    if (rc == VINF_IOM_R3_IOPORT_WRITE)
         LogFlow(("#%d pcnetIOPortWrite/critsect failed in GC => HC\n", PCNET_INST_NR));
 #endif
     return rc;
@@ -3810,7 +3810,7 @@ PDMBOTHCBDECL(int) pcnetMMIORead(PPDMDEVINS pDevIns, void *pvUser,
     if (GCPhysAddr - pThis->MMIOBase < PCNET_PNPMMIO_SIZE)
     {
         STAM_PROFILE_ADV_START(&pThis->CTX_SUFF_Z(StatMMIORead), a);
-        rc = PDMCritSectEnter(&pThis->CritSect, VINF_IOM_HC_MMIO_READ);
+        rc = PDMCritSectEnter(&pThis->CritSect, VINF_IOM_R3_MMIO_READ);
         if (RT_LIKELY(rc == VINF_SUCCESS))
         {
             switch (cb)
@@ -3833,7 +3833,7 @@ PDMBOTHCBDECL(int) pcnetMMIORead(PPDMDEVINS pDevIns, void *pvUser,
     LogFlow(("#%d pcnetMMIORead: pvUser=%p:{%.*Rhxs} cb=%d GCPhysAddr=%RGp rc=%Rrc\n",
              PCNET_INST_NR, pv, cb, pv, cb, GCPhysAddr, rc));
 #ifdef LOG_ENABLED
-    if (rc == VINF_IOM_HC_MMIO_READ)
+    if (rc == VINF_IOM_R3_MMIO_READ)
         LogFlow(("#%d => HC\n", PCNET_INST_NR));
 #endif
     return rc;
@@ -3863,7 +3863,7 @@ PDMBOTHCBDECL(int) pcnetMMIOWrite(PPDMDEVINS pDevIns, void *pvUser,
     if (GCPhysAddr - pThis->MMIOBase < PCNET_PNPMMIO_SIZE)
     {
         STAM_PROFILE_ADV_START(&pThis->CTX_SUFF_Z(StatMMIOWrite), a);
-        rc = PDMCritSectEnter(&pThis->CritSect, VINF_IOM_HC_MMIO_WRITE);
+        rc = PDMCritSectEnter(&pThis->CritSect, VINF_IOM_R3_MMIO_WRITE);
         if (RT_LIKELY(rc == VINF_SUCCESS))
         {
             switch (cb)
@@ -3878,14 +3878,14 @@ PDMBOTHCBDECL(int) pcnetMMIOWrite(PPDMDEVINS pDevIns, void *pvUser,
             }
             PDMCritSectLeave(&pThis->CritSect);
         }
-        // else rc == VINF_IOM_HC_MMIO_WRITE => handle in ring3
+        // else rc == VINF_IOM_R3_MMIO_WRITE => handle in ring3
 
         STAM_PROFILE_ADV_STOP(&pThis->CTX_SUFF_Z(StatMMIOWrite), a);
     }
     LogFlow(("#%d pcnetMMIOWrite: pvUser=%p:{%.*Rhxs} cb=%d GCPhysAddr=%RGp rc=%Rrc\n",
              PCNET_INST_NR, pv, cb, pv, cb, GCPhysAddr, rc));
 #ifdef LOG_ENABLED
-    if (rc == VINF_IOM_HC_MMIO_WRITE)
+    if (rc == VINF_IOM_R3_MMIO_WRITE)
         LogFlow(("#%d => HC\n", PCNET_INST_NR));
 #endif
     return rc;

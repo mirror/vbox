@@ -273,7 +273,7 @@ static DECLCALLBACK(int) efiIOPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPOR
            return PDMDevHlpDBGFStop(pDevIns, RT_SRC_POS, "EFI Panic: panic port read!\n");
 #else
            /* Reschedule to R3 */
-           return VINF_IOM_HC_IOPORT_READ;
+           return VINF_IOM_R3_IOPORT_READ;
 #endif
     }
 

@@ -3871,8 +3871,8 @@ static int HcControl_w(POHCI pOhci, uint32_t iReg, uint32_t val)
 #else /* !IN_RING3 */
     if ( new_state != old_state )
     {
-        Log2(("HcControl_w: state changed -> VINF_IOM_HC_MMIO_WRITE\n"));
-        return VINF_IOM_HC_MMIO_WRITE;
+        Log2(("HcControl_w: state changed -> VINF_IOM_R3_MMIO_WRITE\n"));
+        return VINF_IOM_R3_MMIO_WRITE;
     }
     pOhci->ctl = val;
 #endif /* !IN_RING3 */
@@ -3923,8 +3923,8 @@ static int HcCommandStatus_w(POHCI pOhci, uint32_t iReg, uint32_t val)
 #else
     if ((pOhci->status | val) & OHCI_STATUS_HCR)
     {
-        LogFlow(("HcCommandStatus_w: reset -> VINF_IOM_HC_MMIO_WRITE\n"));
-        return VINF_IOM_HC_MMIO_WRITE;
+        LogFlow(("HcCommandStatus_w: reset -> VINF_IOM_R3_MMIO_WRITE\n"));
+        return VINF_IOM_R3_MMIO_WRITE;
     }
     pOhci->status |= val;
 #endif
@@ -4504,7 +4504,7 @@ static int HcRhStatus_w(POHCI pOhci, uint32_t iReg, uint32_t val)
           (chg >> 31) & 1 ? "*" : "", (val >> 31) & 1));
     return VINF_SUCCESS;
 #else  /* !IN_RING3 */
-    return VINF_IOM_HC_MMIO_WRITE;
+    return VINF_IOM_R3_MMIO_WRITE;
 #endif /* !IN_RING3 */
 }
 
@@ -4520,8 +4520,8 @@ static int HcRhPortStatus_r(PCOHCI pOhci, uint32_t iReg, uint32_t *pu32Value)
 #ifdef IN_RING3
         RTThreadYield();
 #else
-        Log2(("HcRhPortStatus_r: yield -> VINF_IOM_HC_MMIO_READ\n"));
-        return VINF_IOM_HC_MMIO_READ;
+        Log2(("HcRhPortStatus_r: yield -> VINF_IOM_R3_MMIO_READ\n"));
+        return VINF_IOM_R3_MMIO_READ;
 #endif
     }
     if (val & (OHCI_PORT_R_RESET_STATUS | OHCI_PORT_CSC | OHCI_PORT_PESC | OHCI_PORT_PSSC | OHCI_PORT_OCIC | OHCI_PORT_PRSC))
@@ -4735,7 +4735,7 @@ static int HcRhPortStatus_w(POHCI pOhci, uint32_t iReg, uint32_t val)
     }
     return VINF_SUCCESS;
 #else /* !IN_RING3 */
-    return VINF_IOM_HC_MMIO_WRITE;
+    return VINF_IOM_R3_MMIO_WRITE;
 #endif /* !IN_RING3 */
 }
 

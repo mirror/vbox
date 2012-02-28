@@ -119,7 +119,7 @@
         uint8_t     abQueue[size];  \
      } name
 
-/* Internal keyboard queue sizes. The input queue doesn't need to be 
+/* Internal keyboard queue sizes. The input queue doesn't need to be
  * extra huge and the command queue only needs to handle a few bytes.
  */
 #define KBD_KEY_QUEUE_SIZE         64
@@ -536,7 +536,7 @@ static scan_state_t ScancodeToHidUsage(scan_state_t state, uint8_t scanCode, uin
         break;
     case SS_EXT1:
         /* The sequence is E1 1D 45 E1 9D C5. We take the easy way out and remain
-         * in the SS_EXT1 state until 45 or C5 is received.  
+         * in the SS_EXT1 state until 45 or C5 is received.
          */
         if ((scanCode & 0x7F) == 0x45) {
             *pUsage = 0x48;
@@ -620,7 +620,7 @@ static void PS2SaveQueue(PSSMHANDLE pSSM, GeneriQ *pQ)
  *
  * @param   pSSM                SSM handle to read the state from.
  * @param   pQ                  Pointer to the queue.
- * 
+ *
  * @return  int                 VBox status/error code.
  */
 static int PS2LoadQueue(PSSMHANDLE pSSM, GeneriQ *pQ)
@@ -653,7 +653,7 @@ static int PS2LoadQueue(PSSMHANDLE pSSM, GeneriQ *pQ)
  *
  * @param   pQ                  Pointer to the queue.
  * @param   pVal                Pointer to storage for the byte.
- * 
+ *
  * @return  int                 VINF_TRY_AGAIN if queue is empty,
  *                              VINF_SUCCESS if a byte was read.
  */
@@ -691,7 +691,7 @@ static void PS2KSetupTypematic(PPS2K pThis, uint8_t val)
     B = (val >> 3) & 3;
     period = (8 + A) * (1 << B) * 417 / 100;
     pThis->uTypematicRepeat = period;
-    LogRel(("Typematic delay %u ms, repeat period %u ms\n", 
+    LogRel(("Typematic delay %u ms, repeat period %u ms\n",
             pThis->uTypematicDelay, pThis->uTypematicRepeat));
 }
 
@@ -772,7 +772,7 @@ int PS2KByteToKbd(PPS2K pThis, uint8_t cmd)
         switch (pThis->u8CurrCmd) {
         case KCMD_LEDS:
 #ifndef IN_RING3
-            return VINF_IOM_HC_IOPORT_WRITE;
+            return VINF_IOM_R3_IOPORT_WRITE;
 #else
             {
                 PDMKEYBLEDS enmLeds = PDMKEYBLEDS_NONE;
@@ -821,8 +821,8 @@ int PS2KByteToKbd(PPS2K pThis, uint8_t cmd)
 }
 
 /**
- * Send a byte (keystroke or command response) to the the 
- * keyboard controller. 
+ * Send a byte (keystroke or command response) to the the
+ * keyboard controller.
  *
  * @param   pThis               The keyboard.
  */
@@ -957,7 +957,7 @@ static int PS2KProcessKeyEvent(PPS2K pThis, uint8_t u8HidCode, bool fKeyDown)
                     PS2InsertQueue((GeneriQ *)&pThis->keyQ, 0xE0);
                 PS2InsertQueue((GeneriQ *)&pThis->keyQ, 0xF0);
                 PS2InsertQueue((GeneriQ *)&pThis->keyQ, pKeyDef->makeS2);
-    
+
                 /* Restore shift state for gray keys. */
                 if (pKeyDef->keyFlags & KF_GK)
                 {
@@ -982,7 +982,7 @@ static int PS2KProcessKeyEvent(PPS2K pThis, uint8_t u8HidCode, bool fKeyDown)
                 PS2InsertQueue((GeneriQ *)&pThis->keyQ, abCodes[i++]);
             Assert(i < sizeof(abCodes));
         }
-    } 
+    }
     else if (pThis->u8ScanSet == 1)
     {
         /* Handle Scan Set 1 - similar in complexity to Set 2. */
@@ -1009,7 +1009,7 @@ static int PS2KProcessKeyEvent(PPS2K pThis, uint8_t u8HidCode, bool fKeyDown)
         {
             /* Send a key release code unless it's a make only key. */
             //@todo: Look up the current typematic setting, not the default!
-            if (pKeyDef->keyMatic != T_M) 
+            if (pKeyDef->keyMatic != T_M)
             {
                 PS2InsertQueue((GeneriQ *)&pThis->keyQ, 0xF0);
                 PS2InsertQueue((GeneriQ *)&pThis->keyQ, pKeyDef->makeS3);
@@ -1107,10 +1107,10 @@ static DECLCALLBACK(void) PS2KInfoState(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, 
     PPS2K   pThis = GetPS2KFromDevIns(pDevIns);
     NOREF(pszArgs);
 
-    pHlp->pfnPrintf(pHlp, "PS/2 Keyboard: scan set %d, scanning %s\n", 
+    pHlp->pfnPrintf(pHlp, "PS/2 Keyboard: scan set %d, scanning %s\n",
                     pThis->u8ScanSet, pThis->fScanning ? "enabled" : "disabled");
     pHlp->pfnPrintf(pHlp, "Active command %02X\n", pThis->u8CurrCmd);
-    pHlp->pfnPrintf(pHlp, "LED state %02X, Num Lock %s\n", pThis->u8LEDs, 
+    pHlp->pfnPrintf(pHlp, "LED state %02X, Num Lock %s\n", pThis->u8LEDs,
                     pThis->fNumLockOn ? "on" : "off");
     pHlp->pfnPrintf(pHlp, "Typematic delay %ums, repeat period %ums\n",
                     pThis->uTypematicDelay, pThis->uTypematicRepeat);
@@ -1140,7 +1140,7 @@ static DECLCALLBACK(void *) PS2KQueryInterface(PPDMIBASE pInterface, const char 
  *
  * @returns VBox status code.
  * @param   pInterface      Pointer to the keyboard port interface (KBDState::Keyboard.IPort).
- * @param   u32Usage        USB HID usage code with key 
+ * @param   u32Usage        USB HID usage code with key
  *                          press/release flag.
  */
 static DECLCALLBACK(int) PS2KPutEvent(PPDMIKEYBOARDPORT pInterface, uint32_t u32Usage)
@@ -1177,9 +1177,9 @@ static DECLCALLBACK(int) PS2KPutEvent(PPDMIKEYBOARDPORT pInterface, uint32_t u32
     {
         rc = PDMCritSectEnter(&pThis->KbdCritSect, VERR_SEM_BUSY);
         AssertReleaseRC(rc);
-    
+
         rc = PS2KProcessKeyEvent(pThis, u8HidCode, fKeyDown);
-    
+
         PDMCritSectLeave(&pThis->KbdCritSect);
     }
 
@@ -1206,11 +1206,11 @@ static DECLCALLBACK(int) PS2KPutEventWrapper(PPDMIKEYBOARDPORT pInterface, uint8
 /**
  * Attach command.
  *
- * This is called to let the device attach to a driver for a 
+ * This is called to let the device attach to a driver for a
  * specified LUN.
  *
- * This is like plugging in the keyboard after turning on the 
- * system. 
+ * This is like plugging in the keyboard after turning on the
+ * system.
  *
  * @returns VBox status code.
  * @param   pDevIns     The device instance.
@@ -1444,9 +1444,9 @@ int PS2KConstruct(PPDMDEVINS pDevIns, PPS2K pThis, void *pParent, int iInstance)
 //@todo: The following should live with the KBC implementation.
 
 /* Table used by the keyboard controller to optionally translate the incoming
- * keyboard data. Note that the translation is designed for essentially taking 
- * Scan Set 2 input and producing Scan Set 1 output, but can be turned on and 
- * off regardless of what the keyboard is sending. 
+ * keyboard data. Note that the translation is designed for essentially taking
+ * Scan Set 2 input and producing Scan Set 1 output, but can be turned on and
+ * off regardless of what the keyboard is sending.
  */
 static uint8_t aAT2PC[128] = {
     0xff,0x43,0x41,0x3f,0x3d,0x3b,0x3c,0x58,0x64,0x44,0x42,0x40,0x3e,0x0f,0x29,0x59,
@@ -1462,10 +1462,10 @@ static uint8_t aAT2PC[128] = {
 /**
  * Convert an AT (Scan Set 2) scancode to PC (Scan Set 1).
  *
- * @param state         Current state of the translator 
+ * @param state         Current state of the translator
  *                      (xlat_state_t).
  * @param scanIn        Incoming scan code.
- * @param pScanOut      Pointer to outgoing scan code. The 
+ * @param pScanOut      Pointer to outgoing scan code. The
  *                      contents are only valid if returned
  *                      state is not XS_BREAK.
  *
@@ -1480,13 +1480,13 @@ int32_t XlateAT2PC(int32_t state, uint8_t scanIn, uint8_t *pScanOut)
     Assert(state == XS_IDLE || state == XS_BREAK || state == XS_HIBIT);
 
     /* Preprocess the scan code for a 128-entry translation table. */
-    if (scanIn == 0x83)         /* Check for F7 key. */ 
+    if (scanIn == 0x83)         /* Check for F7 key. */
         scan_in = 0x02;
     else if (scanIn == 0x84)    /* Check for SysRq key. */
         scan_in = 0x7f;
     else
         scan_in = scanIn;
-   
+
     /* Values 0x80 and above are passed through, except for 0xF0
      * which indicates a key release.
      */

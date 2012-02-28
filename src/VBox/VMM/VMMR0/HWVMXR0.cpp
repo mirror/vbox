@@ -3871,7 +3871,7 @@ ResumeExecution:
         /* paranoia */
         if (RT_UNLIKELY(uIOWidth == 2 || uIOWidth >= 4))
         {
-            rc = fIOWrite ? VINF_IOM_HC_IOPORT_WRITE : VINF_IOM_HC_IOPORT_READ;
+            rc = fIOWrite ? VINF_IOM_R3_IOPORT_WRITE : VINF_IOM_R3_IOPORT_READ;
             STAM_PROFILE_ADV_STOP(&pVCpu->hwaccm.s.StatExit2Sub1, y1);
             break;
         }
@@ -3916,7 +3916,7 @@ ResumeExecution:
             {
                 STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatExitIOWrite);
                 rc = IOMIOPortWrite(pVM, uPort, pCtx->eax & uAndVal, cbSize);
-                if (rc == VINF_IOM_HC_IOPORT_WRITE)
+                if (rc == VINF_IOM_R3_IOPORT_WRITE)
                     HWACCMR0SavePendingIOPortWrite(pVCpu, pCtx->rip, pCtx->rip + cbInstr, uPort, uAndVal, cbSize);
             }
             else
@@ -3931,7 +3931,7 @@ ResumeExecution:
                     pCtx->eax = (pCtx->eax & ~uAndVal) | (u32Val & uAndVal);
                 }
                 else
-                if (rc == VINF_IOM_HC_IOPORT_READ)
+                if (rc == VINF_IOM_R3_IOPORT_READ)
                     HWACCMR0SavePendingIOPortRead(pVCpu, pCtx->rip, pCtx->rip + cbInstr, uPort, uAndVal, cbSize);
             }
         }
@@ -4007,9 +4007,9 @@ ResumeExecution:
         }
 
 #ifdef VBOX_STRICT
-        if (rc == VINF_IOM_HC_IOPORT_READ)
+        if (rc == VINF_IOM_R3_IOPORT_READ)
             Assert(!fIOWrite);
-        else if (rc == VINF_IOM_HC_IOPORT_WRITE)
+        else if (rc == VINF_IOM_R3_IOPORT_WRITE)
             Assert(fIOWrite);
         else
             AssertMsg(RT_FAILURE(rc) || rc == VINF_EM_RAW_EMULATE_INSTR || rc == VINF_EM_RAW_GUEST_TRAP || rc == VINF_TRPM_XCPT_DISPATCHED, ("%Rrc\n", VBOXSTRICTRC_VAL(rc)));
@@ -4171,8 +4171,8 @@ ResumeExecution:
                   || rc == VERR_EM_INTERPRETER
                   || rc == VINF_EM_RAW_EMULATE_INSTR
                   || rc == VINF_PGM_SYNC_CR3
-                  || rc == VINF_IOM_HC_IOPORT_READ
-                  || rc == VINF_IOM_HC_IOPORT_WRITE
+                  || rc == VINF_IOM_R3_IOPORT_READ
+                  || rc == VINF_IOM_R3_IOPORT_WRITE
                   || rc == VINF_EM_RAW_GUEST_TRAP
                   || rc == VINF_TRPM_XCPT_DISPATCHED
                   || rc == VINF_EM_RESCHEDULE_REM,

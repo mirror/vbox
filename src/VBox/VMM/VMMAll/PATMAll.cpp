@@ -136,8 +136,8 @@ VMMDECL(void) PATMRawLeave(PVM pVM, PCPUMCTXCORE pCtxCore, int rawRC)
         &&  fPatchCode
        )
     {
-        if (    rawRC < VINF_PATM_LEAVEGC_FIRST
-            ||  rawRC > VINF_PATM_LEAVEGC_LAST)
+        if (    rawRC < VINF_PATM_LEAVE_RC_FIRST
+            ||  rawRC > VINF_PATM_LEAVE_RC_LAST)
         {
             /*
              * Golden rules:

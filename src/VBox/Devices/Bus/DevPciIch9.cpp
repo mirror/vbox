@@ -244,7 +244,7 @@ PDMBOTHCBDECL(int)  ich9pciIOPortAddressWrite(PPDMDEVINS pDevIns, void *pvUser, 
     {
         PICH9PCIGLOBALS pThis = PDMINS_2_DATA(pDevIns, PICH9PCIGLOBALS);
 
-        PCI_LOCK(pDevIns, VINF_IOM_HC_IOPORT_WRITE);
+        PCI_LOCK(pDevIns, VINF_IOM_R3_IOPORT_WRITE);
         pThis->uConfigReg = u32 & ~3; /* Bits 0-1 are reserved and we silently clear them */
         PCI_UNLOCK(pDevIns);
     }
@@ -269,7 +269,7 @@ PDMBOTHCBDECL(int)  ich9pciIOPortAddressRead(PPDMDEVINS pDevIns, void *pvUser, R
     if (cb == 4)
     {
         PICH9PCIGLOBALS pThis = PDMINS_2_DATA(pDevIns, PICH9PCIGLOBALS);
-        PCI_LOCK(pDevIns, VINF_IOM_HC_IOPORT_READ);
+        PCI_LOCK(pDevIns, VINF_IOM_R3_IOPORT_READ);
         *pu32 = pThis->uConfigReg;
         PCI_UNLOCK(pDevIns);
         LogFlow(("ich9pciIOPortAddressRead: Port=%#x cb=%d -> %#x\n", Port, cb, *pu32));
@@ -343,7 +343,7 @@ static int ich9pciDataWrite(PICH9PCIGLOBALS pGlobals, uint32_t addr, uint32_t va
     /* Compute destination device */
     ich9pciStateToPciAddr(pGlobals, addr, &aPciAddr);
 
-    return ich9pciDataWriteAddr(pGlobals, &aPciAddr, val, len, VINF_IOM_HC_IOPORT_WRITE);
+    return ich9pciDataWriteAddr(pGlobals, &aPciAddr, val, len, VINF_IOM_R3_IOPORT_WRITE);
 }
 
 static void ich9pciNoMem(void* ptr, int cb)
@@ -370,7 +370,7 @@ PDMBOTHCBDECL(int)  ich9pciIOPortDataWrite(PPDMDEVINS pDevIns, void *pvUser, RTI
     int rc = VINF_SUCCESS;
     if (!(Port % cb))
     {
-        PCI_LOCK(pDevIns, VINF_IOM_HC_IOPORT_WRITE);
+        PCI_LOCK(pDevIns, VINF_IOM_R3_IOPORT_WRITE);
         rc = ich9pciDataWrite(PDMINS_2_DATA(pDevIns, PICH9PCIGLOBALS), Port, u32, cb);
         PCI_UNLOCK(pDevIns);
     }
@@ -443,7 +443,7 @@ static int ich9pciDataRead(PICH9PCIGLOBALS pGlobals, uint32_t addr, int cb, uint
     /* Compute destination device */
     ich9pciStateToPciAddr(pGlobals, addr, &aPciAddr);
 
-    return ich9pciDataReadAddr(pGlobals, &aPciAddr, cb, pu32, VINF_IOM_HC_IOPORT_READ);
+    return ich9pciDataReadAddr(pGlobals, &aPciAddr, cb, pu32, VINF_IOM_R3_IOPORT_READ);
 }
 
 /**
@@ -462,7 +462,7 @@ PDMBOTHCBDECL(int)  ich9pciIOPortDataRead(PPDMDEVINS pDevIns, void *pvUser, RTIO
     NOREF(pvUser);
     if (!(Port % cb))
     {
-        PCI_LOCK(pDevIns, VINF_IOM_HC_IOPORT_READ);
+        PCI_LOCK(pDevIns, VINF_IOM_R3_IOPORT_READ);
         int rc = ich9pciDataRead(PDMINS_2_DATA(pDevIns, PICH9PCIGLOBALS), Port, cb, pu32);
         PCI_UNLOCK(pDevIns);
         LogFlow(("ich9pciIOPortDataRead: Port=%#x cb=%#x -> %#x (%Rrc)\n", Port, cb, *pu32, rc));
@@ -596,7 +596,7 @@ PDMBOTHCBDECL(int)  ich9pciMcfgMMIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCP
 
     Log2(("ich9pciMcfgMMIOWrite: %RGp(%d) \n", GCPhysAddr, cb));
 
-    PCI_LOCK(pDevIns, VINF_IOM_HC_MMIO_WRITE);
+    PCI_LOCK(pDevIns, VINF_IOM_R3_MMIO_WRITE);
 
     ich9pciPhysToPciAddr(pGlobals, GCPhysAddr, &aDest);
 
@@ -615,7 +615,7 @@ PDMBOTHCBDECL(int)  ich9pciMcfgMMIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCP
             Assert(false);
             break;
     }
-    int rc = ich9pciDataWriteAddr(pGlobals, &aDest, u32, cb, VINF_IOM_HC_MMIO_WRITE);
+    int rc = ich9pciDataWriteAddr(pGlobals, &aDest, u32, cb, VINF_IOM_R3_MMIO_WRITE);
     PCI_UNLOCK(pDevIns);
 
     return rc;
@@ -630,11 +630,11 @@ PDMBOTHCBDECL(int)  ich9pciMcfgMMIORead (PPDMDEVINS pDevIns, void *pvUser, RTGCP
 
     LogFlow(("ich9pciMcfgMMIORead: %RGp(%d) \n", GCPhysAddr, cb));
 
-    PCI_LOCK(pDevIns, VINF_IOM_HC_MMIO_READ);
+    PCI_LOCK(pDevIns, VINF_IOM_R3_MMIO_READ);
 
     ich9pciPhysToPciAddr(pGlobals, GCPhysAddr, &aDest);
 
-    int rc = ich9pciDataReadAddr(pGlobals, &aDest, cb, &rv, VINF_IOM_HC_MMIO_READ);
+    int rc = ich9pciDataReadAddr(pGlobals, &aDest, cb, &rv, VINF_IOM_R3_MMIO_READ);
 
     if (RT_SUCCESS(rc))
     {

@@ -4273,7 +4273,7 @@ static int ataIOPortWriteU8(PATACONTROLLER pCtl, uint32_t addr, uint32_t val)
                 break;
 #ifndef IN_RING3
             /* Don't do anything complicated in GC */
-            return VINF_IOM_HC_IOPORT_WRITE;
+            return VINF_IOM_R3_IOPORT_WRITE;
 #else /* IN_RING3 */
             ataParseCmd(&pCtl->aIfs[pCtl->iSelectedIf], val);
 #endif /* !IN_RING3 */
@@ -4430,7 +4430,7 @@ static int ataIOPortReadU8(PATACONTROLLER pCtl, uint32_t addr, uint32_t *pu32)
                 if (++cBusy >= 20)
                 {
                     cBusy = 0;
-                    return VINF_IOM_HC_IOPORT_READ;
+                    return VINF_IOM_R3_IOPORT_READ;
                 }
 #endif /* !IN_RING3 */
             }
@@ -4464,7 +4464,7 @@ static int ataControlWrite(PATACONTROLLER pCtl, uint32_t addr, uint32_t val)
 {
 #ifndef IN_RING3
     if ((val ^ pCtl->aIfs[0].uATARegDevCtl) & ATA_DEVCTL_RESET)
-        return VINF_IOM_HC_IOPORT_WRITE; /* The RESET stuff is too complicated for GC. */
+        return VINF_IOM_R3_IOPORT_WRITE; /* The RESET stuff is too complicated for GC. */
 #endif /* !IN_RING3 */
 
     Log2(("%s: addr=%#x val=%#04x\n", __FUNCTION__, addr, val));
@@ -4693,7 +4693,7 @@ static int ataDataWrite(PATACONTROLLER pCtl, uint32_t addr, uint32_t cbSize, con
             s->iIOBufferPIODataStart += cbSize;
         }
         else
-            return VINF_IOM_HC_IOPORT_WRITE;
+            return VINF_IOM_R3_IOPORT_WRITE;
 #else /* IN_RING3 */
         memcpy(p, pbBuf, cbSize);
         s->iIOBufferPIODataStart += cbSize;
@@ -4725,7 +4725,7 @@ static int ataDataRead(PATACONTROLLER pCtl, uint32_t addr, uint32_t cbSize, uint
             s->iIOBufferPIODataStart += cbSize;
         }
         else
-            return VINF_IOM_HC_IOPORT_READ;
+            return VINF_IOM_R3_IOPORT_READ;
 #else /* IN_RING3 */
         memcpy(pbBuf, p, cbSize);
         s->iIOBufferPIODataStart += cbSize;
@@ -5552,7 +5552,7 @@ PDMBOTHCBDECL(int) ataBMDMAIOPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT
     PATACONTROLLER pCtl = &pThis->aCts[i];
     int rc;
 
-    rc = PDMCritSectEnter(&pCtl->lock, VINF_IOM_HC_IOPORT_READ);
+    rc = PDMCritSectEnter(&pCtl->lock, VINF_IOM_R3_IOPORT_READ);
     if (rc != VINF_SUCCESS)
         return rc;
     switch (VAL(Port, cb))
@@ -5586,7 +5586,7 @@ PDMBOTHCBDECL(int) ataBMDMAIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPOR
     PATACONTROLLER pCtl = &pThis->aCts[i];
     int rc;
 
-    rc = PDMCritSectEnter(&pCtl->lock, VINF_IOM_HC_IOPORT_WRITE);
+    rc = PDMCritSectEnter(&pCtl->lock, VINF_IOM_R3_IOPORT_WRITE);
     if (rc != VINF_SUCCESS)
         return rc;
     switch (VAL(Port, cb))
@@ -5595,7 +5595,7 @@ PDMBOTHCBDECL(int) ataBMDMAIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPOR
 #ifndef IN_RING3
             if (u32 & BM_CMD_START)
             {
-                rc = VINF_IOM_HC_IOPORT_WRITE;
+                rc = VINF_IOM_R3_IOPORT_WRITE;
                 break;
             }
 #endif /* !IN_RING3 */
@@ -5761,7 +5761,7 @@ PDMBOTHCBDECL(int) ataIOPortWrite1(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Po
 
     Assert(i < 2);
 
-    rc = PDMCritSectEnter(&pCtl->lock, VINF_IOM_HC_IOPORT_WRITE);
+    rc = PDMCritSectEnter(&pCtl->lock, VINF_IOM_R3_IOPORT_WRITE);
     if (rc != VINF_SUCCESS)
         return rc;
     if (cb == 1)
@@ -5791,7 +5791,7 @@ PDMBOTHCBDECL(int) ataIOPortRead1(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Por
 
     Assert(i < 2);
 
-    rc = PDMCritSectEnter(&pCtl->lock, VINF_IOM_HC_IOPORT_READ);
+    rc = PDMCritSectEnter(&pCtl->lock, VINF_IOM_R3_IOPORT_READ);
     if (rc != VINF_SUCCESS)
         return rc;
     if (cb == 1)
@@ -5828,7 +5828,7 @@ PDMBOTHCBDECL(int) ataIOPortReadStr1(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT 
 
     Assert(i < 2);
 
-    rc = PDMCritSectEnter(&pCtl->lock, VINF_IOM_HC_IOPORT_READ);
+    rc = PDMCritSectEnter(&pCtl->lock, VINF_IOM_R3_IOPORT_READ);
     if (rc != VINF_SUCCESS)
         return rc;
     if (Port == pCtl->IOPortBase1)
@@ -5844,7 +5844,7 @@ PDMBOTHCBDECL(int) ataIOPortReadStr1(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT 
         if (!cTransAvailable)
         {
             PDMCritSectLeave(&pCtl->lock);
-            return VINF_IOM_HC_IOPORT_READ;
+            return VINF_IOM_R3_IOPORT_READ;
         }
         /* The last transfer unit cannot be handled in GC, as it involves thread communication. */
         cTransAvailable--;
@@ -5862,7 +5862,7 @@ PDMBOTHCBDECL(int) ataIOPortReadStr1(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT 
         {
             PDMCritSectLeave(&pCtl->lock);
             AssertFailed();
-            return VINF_IOM_HC_IOPORT_READ;
+            return VINF_IOM_R3_IOPORT_READ;
         }
 #else
         Assert(rc == VINF_SUCCESS);
@@ -5896,7 +5896,7 @@ PDMBOTHCBDECL(int) ataIOPortWriteStr1(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT
 
     Assert(i < 2);
 
-    rc = PDMCritSectEnter(&pCtl->lock, VINF_IOM_HC_IOPORT_WRITE);
+    rc = PDMCritSectEnter(&pCtl->lock, VINF_IOM_R3_IOPORT_WRITE);
     if (rc != VINF_SUCCESS)
         return rc;
     if (Port == pCtl->IOPortBase1)
@@ -5912,7 +5912,7 @@ PDMBOTHCBDECL(int) ataIOPortWriteStr1(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT
         if (!cTransAvailable)
         {
             PDMCritSectLeave(&pCtl->lock);
-            return VINF_IOM_HC_IOPORT_WRITE;
+            return VINF_IOM_R3_IOPORT_WRITE;
         }
         /* The last transfer unit cannot be handled in GC, as it involves thread communication. */
         cTransAvailable--;
@@ -5930,7 +5930,7 @@ PDMBOTHCBDECL(int) ataIOPortWriteStr1(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT
         {
             PDMCritSectLeave(&pCtl->lock);
             AssertFailed();
-            return VINF_IOM_HC_IOPORT_WRITE;
+            return VINF_IOM_R3_IOPORT_WRITE;
         }
 #else
         Assert(rc == VINF_SUCCESS);
@@ -5966,7 +5966,7 @@ PDMBOTHCBDECL(int) ataIOPortWrite2(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Po
 
     if (cb != 1)
         return VINF_SUCCESS;
-    rc = PDMCritSectEnter(&pCtl->lock, VINF_IOM_HC_IOPORT_WRITE);
+    rc = PDMCritSectEnter(&pCtl->lock, VINF_IOM_R3_IOPORT_WRITE);
     if (rc != VINF_SUCCESS)
         return rc;
     rc = ataControlWrite(pCtl, Port, u32);
@@ -5991,7 +5991,7 @@ PDMBOTHCBDECL(int) ataIOPortRead2(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Por
     if (cb != 1)
         return VERR_IOM_IOPORT_UNUSED;
 
-    rc = PDMCritSectEnter(&pCtl->lock, VINF_IOM_HC_IOPORT_READ);
+    rc = PDMCritSectEnter(&pCtl->lock, VINF_IOM_R3_IOPORT_READ);
     if (rc != VINF_SUCCESS)
         return rc;
     *pu32 = ataStatusRead(pCtl, Port);

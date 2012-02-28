@@ -572,7 +572,7 @@ static int apic_bus_deliver(APICDeviceInfo* pDev,
             return VINF_SUCCESS;
 #else
             /* We shall send init IPI only in R3. */
-            return VINF_IOM_HC_MMIO_READ_WRITE;
+            return VINF_IOM_R3_MMIO_READ_WRITE;
 #endif /* IN_RING3 */
 
         case APIC_DM_EXTINT:
@@ -1414,7 +1414,7 @@ static int  apic_deliver(APICDeviceInfo *pDev, APICState *s,
 # else
             /* We shall send SIPI only in R3, R0 calls should be
                rescheduled to R3 */
-            return VINF_IOM_HC_MMIO_WRITE;
+            return VINF_IOM_R3_MMIO_WRITE;
 # endif
     }
 
@@ -1844,7 +1844,7 @@ PDMBOTHCBDECL(int) apicMMIORead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhy
             /* It does its own locking. */
             uint64_t u64Value = 0;
             int rc = apicReadRegister(pDev, s, (GCPhysAddr >> 4) & 0xff, &u64Value,
-                                      VINF_IOM_HC_MMIO_READ, false /*fMsr*/);
+                                      VINF_IOM_R3_MMIO_READ, false /*fMsr*/);
             *(uint32_t *)pv = (uint32_t)u64Value;
             return rc;
         }
@@ -1877,7 +1877,7 @@ PDMBOTHCBDECL(int) apicMMIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPh
         case 4:
             /* It does its own locking. */
             return apicWriteRegister(pDev, s, (GCPhysAddr >> 4) & 0xff, *(uint32_t const *)pv,
-                                     VINF_IOM_HC_MMIO_WRITE, false /*fMsr*/);
+                                     VINF_IOM_R3_MMIO_WRITE, false /*fMsr*/);
 
         default:
             AssertReleaseMsgFailed(("cb=%d\n", cb)); /* for now we assume simple accesses. */

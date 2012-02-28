@@ -1864,10 +1864,10 @@ DECLCALLBACK(VBOXSTRICTRC) hwaccmR3ReplaceTprInstr(PVM pVM, PVMCPU pVCpu, void *
             Assert(pDis->param1.flags == USE_REG_GEN32);
 
             /* Found:
-                *   mov eax, dword [fffe0080]        (5 bytes)
-                * Check if next instruction is:
-                *   shr eax, 4
-                */
+             *   mov eax, dword [fffe0080]        (5 bytes)
+             * Check if next instruction is:
+             *   shr eax, 4
+             */
             pCtx->rip += cbOp;
             rc = EMInterpretDisasOne(pVM, pVCpu, CPUMCTX2CORE(pCtx), pDis, &cbOp);
             pCtx->rip = oldrip;

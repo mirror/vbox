@@ -413,7 +413,7 @@ PDMBOTHCBDECL(int) mouIOPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port
     if (cb == 1)
     {
         MouState *pThis = PDMINS_2_DATA(pDevIns, MouState *);
-        int rc = PDMCritSectEnter(&pThis->CritSect, VINF_IOM_HC_IOPORT_READ);
+        int rc = PDMCritSectEnter(&pThis->CritSect, VINF_IOM_R3_IOPORT_READ);
         if (RT_LIKELY(rc == VINF_SUCCESS))
         {
             *pu32 = bms_read_port(pThis, Port & 3);
@@ -444,7 +444,7 @@ PDMBOTHCBDECL(int) mouIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Por
     if (cb == 1)
     {
         MouState *pThis = PDMINS_2_DATA(pDevIns, MouState *);
-        rc = PDMCritSectEnter(&pThis->CritSect, VINF_IOM_HC_IOPORT_WRITE);
+        rc = PDMCritSectEnter(&pThis->CritSect, VINF_IOM_R3_IOPORT_WRITE);
         if (RT_LIKELY(rc == VINF_SUCCESS))
         {
             rc = bms_write_port(pThis, Port & 3, u32);

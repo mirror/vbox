@@ -1634,7 +1634,7 @@ static int buslogicRegisterWrite(PBUSLOGIC pBusLogic, unsigned iRegister, uint8_
     {
         case BUSLOGIC_REGISTER_CONTROL:
         {
-            rc = PDMCritSectEnter(&pBusLogic->CritSectIntr, VINF_IOM_HC_IOPORT_WRITE);
+            rc = PDMCritSectEnter(&pBusLogic->CritSectIntr, VINF_IOM_R3_IOPORT_WRITE);
             if (rc != VINF_SUCCESS)
                 return rc;
 
@@ -1653,7 +1653,7 @@ static int buslogicRegisterWrite(PBUSLOGIC pBusLogic, unsigned iRegister, uint8_
 #ifdef IN_RING3
                 buslogicIntiateHardReset(pBusLogic);
 #else
-                rc = VINF_IOM_HC_IOPORT_WRITE;
+                rc = VINF_IOM_R3_IOPORT_WRITE;
 #endif
             }
 

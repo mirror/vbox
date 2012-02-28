@@ -576,7 +576,7 @@ PDMBOTHCBDECL(int) pitIOPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port
     int ret;
     PITChannelState *s = &pit->channels[Port];
 
-    DEVPIT_LOCK_RETURN(pit, VINF_IOM_HC_IOPORT_READ);
+    DEVPIT_LOCK_RETURN(pit, VINF_IOM_R3_IOPORT_READ);
     if (s->status_latched)
     {
         s->status_latched = 0;
@@ -606,7 +606,7 @@ PDMBOTHCBDECL(int) pitIOPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port
     else
     {
         DEVPIT_UNLOCK(pit);
-        DEVPIT_LOCK_BOTH_RETURN(pit, VINF_IOM_HC_IOPORT_READ);
+        DEVPIT_LOCK_BOTH_RETURN(pit, VINF_IOM_R3_IOPORT_READ);
         int count;
         switch (s->read_state)
         {
@@ -684,7 +684,7 @@ PDMBOTHCBDECL(int) pitIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Por
         if (channel == 3)
         {
             /* read-back command */
-            DEVPIT_LOCK_BOTH_RETURN(pit, VINF_IOM_HC_IOPORT_WRITE);
+            DEVPIT_LOCK_BOTH_RETURN(pit, VINF_IOM_R3_IOPORT_WRITE);
             for (channel = 0; channel < RT_ELEMENTS(pit->channels); channel++)
             {
                 PITChannelState *s = &pit->channels[channel];
@@ -712,13 +712,13 @@ PDMBOTHCBDECL(int) pitIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Por
             unsigned access = (u32 >> 4) & 3;
             if (access == 0)
             {
-                DEVPIT_LOCK_BOTH_RETURN(pit, VINF_IOM_HC_IOPORT_WRITE);
+                DEVPIT_LOCK_BOTH_RETURN(pit, VINF_IOM_R3_IOPORT_WRITE);
                 pit_latch_count(s);
                 DEVPIT_UNLOCK_BOTH(pit);
             }
             else
             {
-                DEVPIT_LOCK_RETURN(pit, VINF_IOM_HC_IOPORT_WRITE);
+                DEVPIT_LOCK_RETURN(pit, VINF_IOM_R3_IOPORT_WRITE);
                 s->rw_mode = access;
                 s->read_state = access;
                 s->write_state = access;
@@ -735,14 +735,14 @@ PDMBOTHCBDECL(int) pitIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Por
 #ifndef IN_RING3
         /** @todo There is no reason not to do this in all contexts these
          *        days... */
-        return VINF_IOM_HC_IOPORT_WRITE;
+        return VINF_IOM_R3_IOPORT_WRITE;
 #else /* IN_RING3 */
         /*
          * Port 40-42h - Channel Data Ports.
          */
         PITChannelState *s = &pit->channels[Port];
         uint8_t const write_state = s->write_state;
-        DEVPIT_LOCK_BOTH_RETURN(pit, VINF_IOM_HC_IOPORT_WRITE);
+        DEVPIT_LOCK_BOTH_RETURN(pit, VINF_IOM_R3_IOPORT_WRITE);
         switch (s->write_state)
         {
             default:
@@ -785,7 +785,7 @@ PDMBOTHCBDECL(int) pitIOPortSpeakerRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPO
     if (cb == 1)
     {
         PITState *pThis = PDMINS_2_DATA(pDevIns, PITState *);
-        DEVPIT_LOCK_BOTH_RETURN(pThis, VINF_IOM_HC_IOPORT_READ);
+        DEVPIT_LOCK_BOTH_RETURN(pThis, VINF_IOM_R3_IOPORT_READ);
 
         const uint64_t u64Now = TMTimerGet(pThis->channels[0].CTX_SUFF(pTimer));
         Assert(TMTimerGetFreq(pThis->channels[0].CTX_SUFF(pTimer)) == 1000000000); /* lazy bird. */

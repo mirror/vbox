@@ -2196,7 +2196,7 @@ static int e1kRegWriteCTRL(E1KSTATE* pState, uint32_t offset, uint32_t index, ui
     if (value & CTRL_RESET)
     { /* RST */
 #ifndef IN_RING3
-        return VINF_IOM_HC_IOPORT_WRITE;
+        return VINF_IOM_R3_IOPORT_WRITE;
 #else
         e1kHardReset(pState);
 #endif
@@ -2279,7 +2279,7 @@ static int e1kRegWriteEECD(E1KSTATE* pState, uint32_t offset, uint32_t index, ui
 
     return VINF_SUCCESS;
 #else /* !IN_RING3 */
-    return VINF_IOM_HC_MMIO_WRITE;
+    return VINF_IOM_R3_MMIO_WRITE;
 #endif /* !IN_RING3 */
 }
 
@@ -2316,7 +2316,7 @@ static int e1kRegReadEECD(E1KSTATE* pState, uint32_t offset, uint32_t index, uin
 
     return rc;
 #else /* !IN_RING3 */
-    return VINF_IOM_HC_MMIO_READ;
+    return VINF_IOM_R3_MMIO_READ;
 #endif /* !IN_RING3 */
 }
 
@@ -2351,7 +2351,7 @@ static int e1kRegWriteEERD(E1KSTATE* pState, uint32_t offset, uint32_t index, ui
 
     return VINF_SUCCESS;
 #else /* !IN_RING3 */
-    return VINF_IOM_HC_MMIO_WRITE;
+    return VINF_IOM_R3_MMIO_WRITE;
 #endif /* !IN_RING3 */
 }
 
@@ -2436,7 +2436,7 @@ static int e1kRegWriteICR(E1KSTATE* pState, uint32_t offset, uint32_t index, uin
  */
 static int e1kRegReadICR(E1KSTATE* pState, uint32_t offset, uint32_t index, uint32_t *pu32Value)
 {
-    int rc = e1kCsEnter(pState, VINF_IOM_HC_MMIO_READ);
+    int rc = e1kCsEnter(pState, VINF_IOM_R3_MMIO_READ);
     if (RT_UNLIKELY(rc != VINF_SUCCESS))
         return rc;
 
@@ -2502,7 +2502,7 @@ static int e1kRegReadICR(E1KSTATE* pState, uint32_t offset, uint32_t index, uint
 static int e1kRegWriteICS(E1KSTATE* pState, uint32_t offset, uint32_t index, uint32_t value)
 {
     E1K_INC_ISTAT_CNT(pState->uStatIntICS);
-    return e1kRaiseInterrupt(pState, VINF_IOM_HC_MMIO_WRITE, value & s_e1kRegMap[ICS_IDX].writable);
+    return e1kRaiseInterrupt(pState, VINF_IOM_R3_MMIO_WRITE, value & s_e1kRegMap[ICS_IDX].writable);
 }
 
 /**
@@ -2549,7 +2549,7 @@ static int e1kRegWriteIMS(E1KSTATE* pState, uint32_t offset, uint32_t index, uin
  */
 static int e1kRegWriteIMC(E1KSTATE* pState, uint32_t offset, uint32_t index, uint32_t value)
 {
-    int rc = e1kCsEnter(pState, VINF_IOM_HC_MMIO_WRITE);
+    int rc = e1kCsEnter(pState, VINF_IOM_R3_MMIO_WRITE);
     if (RT_UNLIKELY(rc != VINF_SUCCESS))
         return rc;
     if (pState->fIntRaised)
@@ -2592,7 +2592,7 @@ static int e1kRegWriteRCTL(E1KSTATE* pState, uint32_t offset, uint32_t index, ui
     {
         /* Promiscuity has changed, pass the knowledge on. */
 #ifndef IN_RING3
-        return VINF_IOM_HC_IOPORT_WRITE;
+        return VINF_IOM_R3_IOPORT_WRITE;
 #else
         if (pState->pDrvR3)
             pState->pDrvR3->pfnSetPromiscuousMode(pState->pDrvR3, fBecomePromiscous);
@@ -2653,9 +2653,9 @@ static int e1kRegWriteRDT(E1KSTATE* pState, uint32_t offset, uint32_t index, uin
 {
 #ifndef IN_RING3
     /* XXX */
-//    return VINF_IOM_HC_MMIO_WRITE;
+//    return VINF_IOM_R3_MMIO_WRITE;
 #endif
-    int rc = e1kCsRxEnter(pState, VINF_IOM_HC_MMIO_WRITE);
+    int rc = e1kCsRxEnter(pState, VINF_IOM_R3_MMIO_WRITE);
     if (RT_LIKELY(rc == VINF_SUCCESS))
     {
         E1kLog(("%s e1kRegWriteRDT\n",  INSTANCE(pState)));
@@ -2702,7 +2702,7 @@ static int e1kRegWriteRDTR(E1KSTATE* pState, uint32_t offset, uint32_t index, ui
         e1kCancelTimer(pState, pState->CTX_SUFF(pRADTimer));
 #endif
         E1K_INC_ISTAT_CNT(pState->uStatIntRDTR);
-        return e1kRaiseInterrupt(pState, VINF_IOM_HC_MMIO_WRITE, ICR_RXT0);
+        return e1kRaiseInterrupt(pState, VINF_IOM_R3_MMIO_WRITE, ICR_RXT0);
     }
 
     return VINF_SUCCESS;
@@ -3209,9 +3209,9 @@ static void e1kTransmitFrame(E1KSTATE* pState, bool fOnWorkerThread)
         Assert(pSg->cbUsed == cbFrame);
         Assert(pSg->cbUsed <= pSg->cbAvailable);
     }
-/*    E1kLog2(("%s <<< Outgoing packet. Dump follows: >>>\n"
+/*    E1kLog2(("%s < < < Outgoing packet. Dump follows: > > >\n"
             "%.*Rhxd\n"
-            "%s <<<<<<<<<<<<< End of dump >>>>>>>>>>>>\n",
+            "%s < < < < < < < < < < < < <  End of dump > > > > > > > > > > > >\n",
             INSTANCE(pState), cbFrame, pSg->aSegs[0].pvSeg, INSTANCE(pState)));*/
 
     /* Update the stats */
@@ -3981,7 +3981,7 @@ static DECLCALLBACK(bool) e1kCanRxQueueConsumer(PPDMDEVINS pDevIns, PPDMQUEUEITE
  */
 static int e1kRegWriteTDT(E1KSTATE* pState, uint32_t offset, uint32_t index, uint32_t value)
 {
-    int rc = e1kCsTxEnter(pState, VINF_IOM_HC_MMIO_WRITE);
+    int rc = e1kCsTxEnter(pState, VINF_IOM_R3_MMIO_WRITE);
     if (RT_UNLIKELY(rc != VINF_SUCCESS))
         return rc;
     rc = e1kRegWriteDefault(pState, offset, index, value);
@@ -4333,7 +4333,7 @@ static int e1kRegRead(E1KSTATE *pState, uint32_t uOffset, void *pv, uint32_t cb)
              * Mask out irrelevant bits.
              */
 #ifdef E1K_GLOBAL_MUTEX
-            rc = e1kMutexAcquire(pState, VINF_IOM_HC_MMIO_READ, RT_SRC_POS);
+            rc = e1kMutexAcquire(pState, VINF_IOM_R3_MMIO_READ, RT_SRC_POS);
 #else
             //rc = e1kCsEnter(pState, VERR_SEM_BUSY, RT_SRC_POS);
 #endif
@@ -4416,7 +4416,7 @@ static int e1kRegWrite(E1KSTATE *pState, uint32_t uOffset, void const *pv, unsig
             E1kLog2(("%s At %08X write          %08X  to  %s (%s)\n",
                      INSTANCE(pState), uOffset, u32, s_e1kRegMap[index].abbrev, s_e1kRegMap[index].name));
 #ifdef E1K_GLOBAL_MUTEX
-            rc = e1kMutexAcquire(pState, VINF_IOM_HC_MMIO_WRITE, RT_SRC_POS);
+            rc = e1kMutexAcquire(pState, VINF_IOM_R3_MMIO_WRITE, RT_SRC_POS);
 #else
             //rc = e1kCsEnter(pState, VERR_SEM_BUSY, RT_SRC_POS);
 #endif
@@ -4540,8 +4540,8 @@ PDMBOTHCBDECL(int) e1kIOPortIn(PPDMDEVINS pDevIns, void *pvUser,
             case 0x04: /* IODATA */
                 rc = e1kRegRead(pState, pState->uSelectedReg, pu32, cb);
                 /** @todo wrong return code triggers assertions in the debug build; fix please */
-                if (rc == VINF_IOM_HC_MMIO_READ)
-                    rc = VINF_IOM_HC_IOPORT_READ;
+                if (rc == VINF_IOM_R3_MMIO_READ)
+                    rc = VINF_IOM_R3_IOPORT_READ;
 
                 E1kLog2(("%s e1kIOPortIn: IODATA(4), reading from selected register %#010x, val=%#010x\n", szInst, pState->uSelectedReg, *pu32));
                 break;
@@ -4594,8 +4594,8 @@ PDMBOTHCBDECL(int) e1kIOPortOut(PPDMDEVINS pDevIns, void *pvUser,
                 E1kLog2(("%s e1kIOPortOut: IODATA(4), writing to selected register %#010x, value=%#010x\n", szInst, pState->uSelectedReg, u32));
                 rc = e1kRegWrite(pState, pState->uSelectedReg, &u32, cb);
                 /** @todo wrong return code triggers assertions in the debug build; fix please */
-                if (rc == VINF_IOM_HC_MMIO_WRITE)
-                    rc = VINF_IOM_HC_IOPORT_WRITE;
+                if (rc == VINF_IOM_R3_MMIO_WRITE)
+                    rc = VINF_IOM_R3_IOPORT_WRITE;
                 break;
             default:
                 E1kLog(("%s e1kIOPortOut: invalid port %#010x\n", szInst, port));
@@ -4941,7 +4941,7 @@ static bool e1kAddressFilter(E1KSTATE *pState, const void *pvBuf, size_t cb, E1K
                          E1K_SPEC_VLAN(RT_BE2H_U16(u16Ptr[7]))));
             if (!ASMBitTest(pState->auVFTA, E1K_SPEC_VLAN(RT_BE2H_U16(u16Ptr[7]))))
             {
-                E1kLog2(("%s Packet filter: no VLAN match (id=%d)\n", 
+                E1kLog2(("%s Packet filter: no VLAN match (id=%d)\n",
                          INSTANCE(pState), E1K_SPEC_VLAN(RT_BE2H_U16(u16Ptr[7]))));
                 return false;
             }

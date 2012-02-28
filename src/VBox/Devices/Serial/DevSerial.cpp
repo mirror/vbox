@@ -459,7 +459,7 @@ static int serial_ioport_write(SerialState *s, uint32_t addr, uint32_t val)
 
 #ifndef IN_RING3
     NOREF(s);
-    return VINF_IOM_HC_IOPORT_WRITE;
+    return VINF_IOM_R3_IOPORT_WRITE;
 #else
     switch(addr) {
     default:
@@ -597,7 +597,7 @@ static uint32_t serial_ioport_read(void *opaque, uint32_t addr, int *pRC)
             ret = s->divider & 0xff;
         } else {
 #ifndef IN_RING3
-            *pRC = VINF_IOM_HC_IOPORT_READ;
+            *pRC = VINF_IOM_R3_IOPORT_READ;
 #else
             if (s->fcr & UART_FCR_FE) {
                 ret = fifo_get(s, RECV_FIFO);
@@ -632,7 +632,7 @@ static uint32_t serial_ioport_read(void *opaque, uint32_t addr, int *pRC)
         break;
     case 2:
 #ifndef IN_RING3
-        *pRC = VINF_IOM_HC_IOPORT_READ;
+        *pRC = VINF_IOM_R3_IOPORT_READ;
 #else
         ret = s->iir;
         if ((ret & UART_IIR_ID) == UART_IIR_THRI) {
@@ -654,7 +654,7 @@ static uint32_t serial_ioport_read(void *opaque, uint32_t addr, int *pRC)
         {
             /* No data available and yielding is enabled, so yield in ring3. */
 #ifndef IN_RING3
-            *pRC = VINF_IOM_HC_IOPORT_READ;
+            *pRC = VINF_IOM_R3_IOPORT_READ;
             break;
 #else
             RTThreadYield ();
@@ -664,7 +664,7 @@ static uint32_t serial_ioport_read(void *opaque, uint32_t addr, int *pRC)
         /* Clear break and overrun interrupts */
         if (s->lsr & (UART_LSR_BI|UART_LSR_OE)) {
 #ifndef IN_RING3
-            *pRC = VINF_IOM_HC_IOPORT_READ;
+            *pRC = VINF_IOM_R3_IOPORT_READ;
 #else
             s->lsr &= ~(UART_LSR_BI|UART_LSR_OE);
             serial_update_irq(s);
@@ -683,7 +683,7 @@ static uint32_t serial_ioport_read(void *opaque, uint32_t addr, int *pRC)
             /* Clear delta bits & msr int after read, if they were set */
             if (s->msr & UART_MSR_ANY_DELTA) {
 #ifndef IN_RING3
-                *pRC = VINF_IOM_HC_IOPORT_READ;
+                *pRC = VINF_IOM_R3_IOPORT_READ;
 #else
                 s->msr &= 0xF0;
                 serial_update_irq(s);
