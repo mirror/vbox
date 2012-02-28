@@ -16,8 +16,9 @@ int main(int argc, TCHAR* argv[])
     credUiInfo.hbmBanner = NULL;
     credUiInfo.hwndParent = NULL;
 
-    DWORD rc = CredUIPromptForWindowsCredentials(&(credUiInfo), 0, &(authPackage),
-                                                 NULL, 0, &authBuffer, &authBufferSize, &(save), 0);
-    printf("Test returned %ld\n", rc);
-    return rc;
+    DWORD dwErr = CredUIPromptForWindowsCredentials(&(credUiInfo), 0, &(authPackage),
+                                                    NULL, 0, &authBuffer, &authBufferSize, &(save), 0);
+    printf("Test returned %ld\n", dwErr);
+    
+    return dwERR == ERROR_SUCCESS ? 0 : 1;
 }
