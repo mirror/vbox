@@ -1198,9 +1198,11 @@ static DECLCALLBACK(int)  efiConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
 
     /*
      * Plant DMI and MPS tables
+     * XXX I wonder if we really need these tables as there is no SMBIOS header...
      */
-    rc = FwCommonPlantDMITable(pDevIns, pThis->au8DMIPage,
-                               VBOX_DMI_TABLE_SIZE, &pThis->aUuid, pDevIns->pCfg, pThis->cCpus);
+    uint16_t cbDmiTablesDummy;
+    rc = FwCommonPlantDMITable(pDevIns, pThis->au8DMIPage, VBOX_DMI_TABLE_SIZE, &pThis->aUuid,
+                               pDevIns->pCfg, pThis->cCpus, &cbDmiTablesDummy);
     AssertRCReturn(rc, rc);
     if (pThis->u8IOAPIC)
         FwCommonPlantMpsTable(pDevIns,

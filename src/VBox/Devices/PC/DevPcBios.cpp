@@ -923,7 +923,6 @@ static int pcbiosBootFromCfg(PPDMDEVINS pDevIns, PCFGMNODE pCfg, const char *psz
  */
 static DECLCALLBACK(int)  pcbiosConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNODE pCfg)
 {
-    unsigned    i;
     PDEVPCBIOS  pThis = PDMINS_2_DATA(pDevIns, PDEVPCBIOS);
     int         rc;
     int         cb;
@@ -1030,7 +1029,7 @@ static DECLCALLBACK(int)  pcbiosConstruct(PPDMDEVINS pDevIns, int iInstance, PCF
 
     static const char * const s_apszBootDevices[] = { "BootDevice0", "BootDevice1", "BootDevice2", "BootDevice3" };
     Assert(RT_ELEMENTS(s_apszBootDevices) == RT_ELEMENTS(pThis->aenmBootDevice));
-    for (i = 0; i < RT_ELEMENTS(pThis->aenmBootDevice); i++)
+    for (unsigned i = 0; i < RT_ELEMENTS(pThis->aenmBootDevice); i++)
     {
         rc = pcbiosBootFromCfg(pDevIns, pCfg, s_apszBootDevices[i], &pThis->aenmBootDevice[i]);
         if (RT_FAILURE(rc))
@@ -1059,7 +1058,7 @@ static DECLCALLBACK(int)  pcbiosConstruct(PPDMDEVINS pDevIns, int iInstance, PCF
         static const char * const s_apszSataDisks[] =
             { "SataPrimaryMasterLUN", "SataPrimarySlaveLUN", "SataSecondaryMasterLUN", "SataSecondarySlaveLUN" };
         Assert(RT_ELEMENTS(s_apszSataDisks) == RT_ELEMENTS(pThis->iSataHDLUN));
-        for (i = 0; i < RT_ELEMENTS(pThis->iSataHDLUN); i++)
+        for (unsigned i = 0; i < RT_ELEMENTS(pThis->iSataHDLUN); i++)
         {
             rc = CFGMR3QueryU32(pCfg, s_apszSataDisks[i], &pThis->iSataHDLUN[i]);
             if (rc == VERR_CFGM_VALUE_NOT_FOUND)
@@ -1078,33 +1077,6 @@ static DECLCALLBACK(int)  pcbiosConstruct(PPDMDEVINS pDevIns, int iInstance, PCF
         return rc;
     rc = PDMDevHlpIOPortRegister(pDevIns, 0x8900, 1, NULL, pcbiosIOPortWrite, pcbiosIOPortRead,
                                  NULL, NULL, "Bochs PC BIOS - Shutdown");
-    if (RT_FAILURE(rc))
-        return rc;
-
-    /*
-     * Query the machine's UUID for SMBIOS/DMI use.
-     */
-    RTUUID  uuid;
-    rc = CFGMR3QueryBytes(pCfg, "UUID", &uuid, sizeof(uuid));
-    if (RT_FAILURE(rc))
-        return PDMDEV_SET_ERROR(pDevIns, rc,
-                                N_("Configuration error: Querying \"UUID\" failed"));
-
-
-    /* Convert the UUID to network byte order. Not entirely straightforward as parts are MSB already... */
-    uuid.Gen.u32TimeLow = RT_H2BE_U32(uuid.Gen.u32TimeLow);
-    uuid.Gen.u16TimeMid = RT_H2BE_U16(uuid.Gen.u16TimeMid);
-    uuid.Gen.u16TimeHiAndVersion = RT_H2BE_U16(uuid.Gen.u16TimeHiAndVersion);
-    rc = FwCommonPlantDMITable(pDevIns, pThis->au8DMIPage,
-                               VBOX_DMI_TABLE_SIZE, &uuid, pCfg, pThis->cCpus);
-    if (RT_FAILURE(rc))
-        return rc;
-    if (pThis->u8IOAPIC)
-        FwCommonPlantMpsTable(pDevIns, pThis->au8DMIPage + VBOX_DMI_TABLE_SIZE,
-                              _4K - VBOX_DMI_TABLE_SIZE, pThis->cCpus);
-
-    rc = PDMDevHlpROMRegister(pDevIns, VBOX_DMI_TABLE_BASE, _4K, pThis->au8DMIPage, _4K,
-                              PGMPHYS_ROM_FLAGS_PERMANENT_BINARY, "DMI tables");
     if (RT_FAILURE(rc))
         return rc;
 
@@ -1140,7 +1112,7 @@ static DECLCALLBACK(int)  pcbiosConstruct(PPDMDEVINS pDevIns, int iInstance, PCF
         char        szIndex[] = "?";
 
         Assert(pCfgNetBoot);
-        for (i = 0; i < NET_BOOT_DEVS; ++i)
+        for (unsigned i = 0; i < NET_BOOT_DEVS; ++i)
         {
             szIndex[0] = '0' + i;
             pCfgNetBootDevice = CFGMR3GetChild(pCfgNetBoot, szIndex);
@@ -1240,17 +1212,17 @@ static DECLCALLBACK(int)  pcbiosConstruct(PPDMDEVINS pDevIns, int iInstance, PCF
                                              pThis->pszPcBiosFile, cbPcBios, cbPcBios);
             }
             else
-                rc = PDMDevHlpVMSetError(pDevIns, rc, RT_SRC_POS, N_("Failed to query the system BIOS file size ('%s')"),
+                rc = PDMDevHlpVMSetError(pDevIns, rc, RT_SRC_POS,
+                                         N_("Failed to query the system BIOS file size ('%s')"),
                                          pThis->pszPcBiosFile);
             RTFileClose(hFilePcBios);
         }
         else
-            rc = PDMDevHlpVMSetError(pDevIns, rc, RT_SRC_POS, N_("Failed to open system BIOS file '%s'"), pThis->pszPcBiosFile);
+            rc = PDMDevHlpVMSetError(pDevIns, rc, RT_SRC_POS,
+                                     N_("Failed to open system BIOS file '%s'"), pThis->pszPcBiosFile);
         if (RT_FAILURE(rc))
             return rc;
 
-        pu8PcBiosBinary = pThis->pu8PcBios;
-        cbPcBiosBinary  = pThis->cbPcBios;
         LogRel(("Using BIOS ROM '%s' with a size of %#x bytes\n", pThis->pszPcBiosFile, pThis->cbPcBios));
     }
     else
@@ -1258,9 +1230,62 @@ static DECLCALLBACK(int)  pcbiosConstruct(PPDMDEVINS pDevIns, int iInstance, PCF
         /*
          * Use the embedded BIOS ROM image.
          */
-        pu8PcBiosBinary = g_abPcBiosBinary;
-        cbPcBiosBinary  = g_cbPcBiosBinary;
+        pThis->pu8PcBios = (uint8_t *)PDMDevHlpMMHeapAlloc(pDevIns, g_cbPcBiosBinary);
+        if (pThis->pu8PcBios)
+        {
+            pThis->cbPcBios = g_cbPcBiosBinary;
+            memcpy(pThis->pu8PcBios, g_abPcBiosBinary, pThis->cbPcBios);
+        }
+        else
+            return PDMDevHlpVMSetError(pDevIns, VERR_NO_MEMORY, RT_SRC_POS,
+                                       N_("Failed to allocate %#x bytes for loading the embedded BIOS image"),
+                                       g_cbPcBiosBinary);
     }
+    pu8PcBiosBinary = pThis->pu8PcBios;
+    cbPcBiosBinary  = pThis->cbPcBios;
+
+    /*
+     * Query the machine's UUID for SMBIOS/DMI use.
+     */
+    RTUUID  uuid;
+    rc = CFGMR3QueryBytes(pCfg, "UUID", &uuid, sizeof(uuid));
+    if (RT_FAILURE(rc))
+        return PDMDEV_SET_ERROR(pDevIns, rc,
+                                N_("Configuration error: Querying \"UUID\" failed"));
+
+    /* Convert the UUID to network byte order. Not entirely straightforward as parts are MSB already... */
+    uuid.Gen.u32TimeLow = RT_H2BE_U32(uuid.Gen.u32TimeLow);
+    uuid.Gen.u16TimeMid = RT_H2BE_U16(uuid.Gen.u16TimeMid);
+    uuid.Gen.u16TimeHiAndVersion = RT_H2BE_U16(uuid.Gen.u16TimeHiAndVersion);
+    uint16_t cbDmiTables = 0;
+    rc = FwCommonPlantDMITable(pDevIns, pThis->au8DMIPage, VBOX_DMI_TABLE_SIZE,
+                               &uuid, pCfg, pThis->cCpus, &cbDmiTables);
+    if (RT_FAILURE(rc))
+        return rc;
+
+    /* If the DMI table is located at the expected place, patch the DMI table length and the checksum. */
+    if (   pThis->pu8PcBios[VBOX_DMI_TABLE_OFFSET + 0x00] == '_'
+        && pThis->pu8PcBios[VBOX_DMI_TABLE_OFFSET + 0x01] == 'D'
+        && pThis->pu8PcBios[VBOX_DMI_TABLE_OFFSET + 0x02] == 'M'
+        && pThis->pu8PcBios[VBOX_DMI_TABLE_OFFSET + 0x03] == 'I'
+        && pThis->pu8PcBios[VBOX_DMI_TABLE_OFFSET + 0x04] == '_')
+    {
+        *(uint16_t*)&pThis->pu8PcBios[VBOX_DMI_TABLE_OFFSET + 0x06] = cbDmiTables;
+        uint8_t u8Sum = 0;
+        for (unsigned i = 0; i < pThis->cbPcBios; i++)
+            if (i != VBOX_DMI_TABLE_OFFSET + 0x05)
+                u8Sum += pThis->pu8PcBios[i];
+        pThis->pu8PcBios[VBOX_DMI_TABLE_OFFSET + 0x05] = -u8Sum;
+    }
+
+    if (pThis->u8IOAPIC)
+        FwCommonPlantMpsTable(pDevIns, pThis->au8DMIPage + VBOX_DMI_TABLE_SIZE,
+                              _4K - VBOX_DMI_TABLE_SIZE, pThis->cCpus);
+
+    rc = PDMDevHlpROMRegister(pDevIns, VBOX_DMI_TABLE_BASE, _4K, pThis->au8DMIPage, _4K,
+                              PGMPHYS_ROM_FLAGS_PERMANENT_BINARY, "DMI tables");
+    if (RT_FAILURE(rc))
+        return rc;
 
     /*
      * Map the BIOS into memory.

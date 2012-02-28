@@ -416,7 +416,7 @@ static void fwCommonUseHostDMIStrings(void)
  *                              configuration string isn't present.
  * @param   pCfg                The handle to our config node.
  */
-int FwCommonPlantDMITable(PPDMDEVINS pDevIns, uint8_t *pTable, unsigned cbMax, PCRTUUID pUuid, PCFGMNODE pCfg, uint16_t cCpus)
+int FwCommonPlantDMITable(PPDMDEVINS pDevIns, uint8_t *pTable, unsigned cbMax, PCRTUUID pUuid, PCFGMNODE pCfg, uint16_t cCpus, uint16_t *pcbDmiTables)
 {
 #define CHECKSIZE(cbWant) \
     { \
@@ -874,13 +874,12 @@ int FwCommonPlantDMITable(PPDMDEVINS pDevIns, uint8_t *pTable, unsigned cbMax, P
 
         /* End-of-table marker - includes padding to account for fixed table size. */
         PDMIHDR pEndOfTable          = (PDMIHDR)pszStr;
+        pszStr                       = (char *)(pEndOfTable + 1);
         pEndOfTable->u8Type          = 0x7f;
-        uint32_t cbEof = cbMax - ((uintptr_t)pszStr - (uintptr_t)pTable) - 2;
-        if (cbEof > 255)
-            return PDMDevHlpVMSetError(pDevIns, VERR_TOO_MUCH_DATA, RT_SRC_POS, \
-                                       N_("DMI table has the wrong length (%u bytes left for the EOF marker). One of the DMI strings is too long. Check all bios/Dmi* configuration entries"), cbEof); \
-        pEndOfTable->u8Length        = cbEof;
+
+        pEndOfTable->u8Length        = sizeof(*pEndOfTable);
         pEndOfTable->u16Handle       = 0xFEFF;
+        *pcbDmiTables = ((uintptr_t)pszStr - (uintptr_t)pTable) + 2;
 
         /* If more fields are added here, fix the size check in READCFGSTR */
 
