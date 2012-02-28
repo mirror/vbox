@@ -847,7 +847,7 @@ int PS2KByteFromKbd(PPS2K pThis, uint8_t *pVal)
 
 static int PS2KProcessKeyEvent(PPS2K pThis, uint8_t u8HidCode, bool fKeyDown)
 {
-    int             i = 0;
+    unsigned int    i = 0;
     key_def const   *pKeyDef;
     uint8_t         abCodes[16];
 
@@ -1254,7 +1254,6 @@ void PS2KSaveState(PSSMHANDLE pSSM, PPS2K pThis)
 {
     uint32_t    cPressed = 0;
     uint32_t    cbTMSSize = 0;
-    int         i;
 
     LogFlowFunc(("Saving PS2K state\n"));
 
@@ -1281,13 +1280,13 @@ void PS2KSaveState(PSSMHANDLE pSSM, PPS2K pThis)
     /* Save any pressed keys. This is necessary to avoid "stuck"
      * keys after a restore. Needs two passes.
      */
-    for (i = 0; i < sizeof(pThis->abDepressedKeys); ++i)
+    for (unsigned i = 0; i < sizeof(pThis->abDepressedKeys); ++i)
         if (pThis->abDepressedKeys[i])
             ++cPressed;
 
     SSMR3PutU32(pSSM, cPressed);
 
-    for (i = 0; i < sizeof(pThis->abDepressedKeys); ++i)
+    for (unsigned i = 0; i < sizeof(pThis->abDepressedKeys); ++i)
         if (pThis->abDepressedKeys[i])
             SSMR3PutU8(pSSM, pThis->abDepressedKeys[i]);
 

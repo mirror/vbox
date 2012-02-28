@@ -51,7 +51,7 @@
 static char* gsViewportHackApps[] = {"googleearth.exe", NULL};
 #endif
 
-static int stub_initialized = 0;
+static bool stub_initialized = 0;
 #ifdef WINDOWS
 static CRmutex stub_init_mutex;
 #define STUB_INIT_LOCK() do { crLockMutex(&stub_init_mutex); } while (0)
