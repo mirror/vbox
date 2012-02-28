@@ -32,9 +32,9 @@
 #include "UIMessageCenter.h"
 #include "UIFirstRunWzd.h"
 #include "UIConsoleEventHandler.h"
+#include "UIFrameBuffer.h"
 #ifdef VBOX_WITH_VIDEOHWACCEL
 # include "VBoxFBOverlay.h"
-# include "UIFrameBuffer.h"
 #endif
 
 #ifdef Q_WS_X11
