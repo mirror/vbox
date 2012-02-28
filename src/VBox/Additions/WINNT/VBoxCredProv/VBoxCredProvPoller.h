@@ -1,4 +1,4 @@
-/* $Id: VBoxCredPoller.h 60692 2010-04-27 08:22:32Z umoeller $ */
+/* $Id$ */
 /** @file
  * VBoxCredPoller - Thread for retrieving user credentials.
  */
