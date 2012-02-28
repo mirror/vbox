@@ -427,7 +427,7 @@ static int kbd_write_command(void *opaque, uint32_t addr, uint32_t val)
 # ifndef IN_RING3
         if (!PDMDevHlpA20IsEnabled(s->CTX_SUFF(pDevIns)))
         {
-            rc = VINF_IOM_HC_IOPORT_WRITE;
+            rc = VINF_IOM_R3_IOPORT_WRITE;
             break;
         }
 # else /* IN_RING3 */
@@ -468,7 +468,7 @@ static int kbd_write_command(void *opaque, uint32_t addr, uint32_t val)
     case KBD_CCMD_ENABLE_A20:
 # ifndef IN_RING3
         if (!PDMDevHlpA20IsEnabled(s->CTX_SUFF(pDevIns)))
-            rc = VINF_IOM_HC_IOPORT_WRITE;
+            rc = VINF_IOM_R3_IOPORT_WRITE;
 # else /* IN_RING3 */
         PDMDevHlpA20Set(s->CTX_SUFF(pDevIns), true);
 # endif /* IN_RING3 */
@@ -476,7 +476,7 @@ static int kbd_write_command(void *opaque, uint32_t addr, uint32_t val)
     case KBD_CCMD_DISABLE_A20:
 # ifndef IN_RING3
         if (PDMDevHlpA20IsEnabled(s->CTX_SUFF(pDevIns)))
-            rc = VINF_IOM_HC_IOPORT_WRITE;
+            rc = VINF_IOM_R3_IOPORT_WRITE;
 # else /* IN_RING3 */
         PDMDevHlpA20Set(s->CTX_SUFF(pDevIns), false);
 # endif /* !IN_RING3 */
@@ -489,7 +489,7 @@ static int kbd_write_command(void *opaque, uint32_t addr, uint32_t val)
         break;
     case KBD_CCMD_RESET:
 #ifndef IN_RING3
-        rc = VINF_IOM_HC_IOPORT_WRITE;
+        rc = VINF_IOM_R3_IOPORT_WRITE;
 #else /* IN_RING3 */
         rc = PDMDevHlpVMReset(s->CTX_SUFF(pDevIns));
 #endif /* !IN_RING3 */
@@ -774,7 +774,7 @@ static int kbd_write_mouse(KBDState *s, int val)
             kbd_mouse_update_downstream_status(s);
 #else
             LogRelFlowFunc(("Enabling mouse device, R0 stub\n"));
-            rc = VINF_IOM_HC_IOPORT_WRITE;
+            rc = VINF_IOM_R3_IOPORT_WRITE;
 #endif
             break;
         case AUX_DISABLE_DEV:
@@ -787,7 +787,7 @@ static int kbd_write_mouse(KBDState *s, int val)
             s->mouse_event_queue.wptr = 0;
             kbd_mouse_update_downstream_status(s);
 #else
-            rc = VINF_IOM_HC_IOPORT_WRITE;
+            rc = VINF_IOM_R3_IOPORT_WRITE;
 #endif
             break;
         case AUX_SET_DEFAULT:
@@ -798,7 +798,7 @@ static int kbd_write_mouse(KBDState *s, int val)
             kbd_queue(s, AUX_ACK, 1);
             kbd_mouse_update_downstream_status(s);
 #else
-            rc = VINF_IOM_HC_IOPORT_WRITE;
+            rc = VINF_IOM_R3_IOPORT_WRITE;
 #endif
             break;
         case AUX_RESET:
@@ -816,7 +816,7 @@ static int kbd_write_mouse(KBDState *s, int val)
             s->mouse_event_queue.wptr = 0;
             kbd_mouse_update_downstream_status(s);
 #else
-            rc = VINF_IOM_HC_IOPORT_WRITE;
+            rc = VINF_IOM_R3_IOPORT_WRITE;
 #endif
             break;
         default:
@@ -937,14 +937,14 @@ static int kbd_write_data(void *opaque, uint32_t addr, uint32_t val)
 #ifdef TARGET_I386
 #  ifndef IN_RING3
         if (PDMDevHlpA20IsEnabled(s->CTX_SUFF(pDevIns)) != !!(val & 2))
-            rc = VINF_IOM_HC_IOPORT_WRITE;
+            rc = VINF_IOM_R3_IOPORT_WRITE;
 #  else /* IN_RING3 */
         PDMDevHlpA20Set(s->CTX_SUFF(pDevIns), !!(val & 2));
 #  endif /* !IN_RING3 */
 #endif
         if (!(val & 1)) {
 # ifndef IN_RING3
-            rc = VINF_IOM_HC_IOPORT_WRITE;
+            rc = VINF_IOM_R3_IOPORT_WRITE;
 # else
             rc = PDMDevHlpVMReset(s->CTX_SUFF(pDevIns));
 # endif
@@ -958,7 +958,7 @@ static int kbd_write_data(void *opaque, uint32_t addr, uint32_t val)
     default:
         break;
     }
-    if (rc != VINF_IOM_HC_IOPORT_WRITE)
+    if (rc != VINF_IOM_R3_IOPORT_WRITE)
         s->write_cmd = 0;
     return rc;
 }
@@ -1198,7 +1198,7 @@ PDMBOTHCBDECL(int) kbdIOPortDataRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT 
     if (cb == 1)
     {
         KBDState *pThis = PDMINS_2_DATA(pDevIns, KBDState *);
-        int rc = PDMCritSectEnter(&pThis->CritSect, VINF_IOM_HC_IOPORT_READ);
+        int rc = PDMCritSectEnter(&pThis->CritSect, VINF_IOM_R3_IOPORT_READ);
         if (RT_LIKELY(rc == VINF_SUCCESS))
         {
             *pu32 = kbd_read_data(pThis, Port);
@@ -1229,7 +1229,7 @@ PDMBOTHCBDECL(int) kbdIOPortDataWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT
     if (cb == 1)
     {
         KBDState *pThis = PDMINS_2_DATA(pDevIns, KBDState *);
-        rc = PDMCritSectEnter(&pThis->CritSect, VINF_IOM_HC_IOPORT_WRITE);
+        rc = PDMCritSectEnter(&pThis->CritSect, VINF_IOM_R3_IOPORT_WRITE);
         if (RT_LIKELY(rc == VINF_SUCCESS))
         {
             rc = kbd_write_data(pThis, Port, u32);
@@ -1259,7 +1259,7 @@ PDMBOTHCBDECL(int) kbdIOPortStatusRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPOR
     if (cb == 1)
     {
         KBDState *pThis = PDMINS_2_DATA(pDevIns, KBDState *);
-        int rc = PDMCritSectEnter(&pThis->CritSect, VINF_IOM_HC_IOPORT_READ);
+        int rc = PDMCritSectEnter(&pThis->CritSect, VINF_IOM_R3_IOPORT_READ);
         if (RT_LIKELY(rc == VINF_SUCCESS))
         {
             *pu32 = kbd_read_status(pThis, Port);
@@ -1290,7 +1290,7 @@ PDMBOTHCBDECL(int) kbdIOPortCommandWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOP
     if (cb == 1)
     {
         KBDState *pThis = PDMINS_2_DATA(pDevIns, KBDState *);
-        rc = PDMCritSectEnter(&pThis->CritSect, VINF_IOM_HC_IOPORT_WRITE);
+        rc = PDMCritSectEnter(&pThis->CritSect, VINF_IOM_R3_IOPORT_WRITE);
         if (RT_LIKELY(rc == VINF_SUCCESS))
         {
             rc = kbd_write_command(pThis, Port, u32);

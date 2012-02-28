@@ -2253,7 +2253,7 @@ ResumeExecution:
                 Log2(("IOMIOPortWrite %RGv %x %x size=%d\n", (RTGCPTR)pCtx->rip, IoExitInfo.n.u16Port, pCtx->eax & uAndVal, uIOSize));
                 STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatExitIOWrite);
                 rc = IOMIOPortWrite(pVM, IoExitInfo.n.u16Port, pCtx->eax & uAndVal, uIOSize);
-                if (rc == VINF_IOM_HC_IOPORT_WRITE)
+                if (rc == VINF_IOM_R3_IOPORT_WRITE)
                     HWACCMR0SavePendingIOPortWrite(pVCpu, pCtx->rip, pVMCB->ctrl.u64ExitInfo2, IoExitInfo.n.u16Port, uAndVal, uIOSize);
             }
             else
@@ -2269,7 +2269,7 @@ ResumeExecution:
                     Log2(("IOMIOPortRead %RGv %x %x size=%d\n", (RTGCPTR)pCtx->rip, IoExitInfo.n.u16Port, u32Val & uAndVal, uIOSize));
                 }
                 else
-                if (rc == VINF_IOM_HC_IOPORT_READ)
+                if (rc == VINF_IOM_R3_IOPORT_READ)
                     HWACCMR0SavePendingIOPortRead(pVCpu, pCtx->rip, pVMCB->ctrl.u64ExitInfo2, IoExitInfo.n.u16Port, uAndVal, uIOSize);
             }
         }
@@ -2342,9 +2342,9 @@ ResumeExecution:
         }
 
 #ifdef VBOX_STRICT
-        if (rc == VINF_IOM_HC_IOPORT_READ)
+        if (rc == VINF_IOM_R3_IOPORT_READ)
             Assert(IoExitInfo.n.u1Type != 0);
-        else if (rc == VINF_IOM_HC_IOPORT_WRITE)
+        else if (rc == VINF_IOM_R3_IOPORT_WRITE)
             Assert(IoExitInfo.n.u1Type == 0);
         else
             AssertMsg(RT_FAILURE(rc) || rc == VINF_EM_RAW_EMULATE_INSTR || rc == VINF_EM_RAW_GUEST_TRAP || rc == VINF_TRPM_XCPT_DISPATCHED, ("%Rrc\n", VBOXSTRICTRC_VAL(rc)));

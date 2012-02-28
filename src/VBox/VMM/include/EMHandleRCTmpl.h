@@ -203,17 +203,17 @@ int emR3HwaccmHandleRC(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, int rc)
         /*
          * I/O Port access - emulate the instruction.
          */
-        case VINF_IOM_HC_IOPORT_READ:
-        case VINF_IOM_HC_IOPORT_WRITE:
+        case VINF_IOM_R3_IOPORT_READ:
+        case VINF_IOM_R3_IOPORT_WRITE:
             rc = emR3ExecuteIOInstruction(pVM, pVCpu);
             break;
 
         /*
          * Memory mapped I/O access - emulate the instruction.
          */
-        case VINF_IOM_HC_MMIO_READ:
-        case VINF_IOM_HC_MMIO_WRITE:
-        case VINF_IOM_HC_MMIO_READ_WRITE:
+        case VINF_IOM_R3_MMIO_READ:
+        case VINF_IOM_R3_MMIO_WRITE:
+        case VINF_IOM_R3_MMIO_READ_WRITE:
             rc = emR3ExecuteInstruction(pVM, pVCpu, "MMIO");
             break;
 

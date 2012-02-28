@@ -417,7 +417,7 @@ PDMBOTHCBDECL(int) vnetReset(void *pvState)
     memset(pState->aVlanFilter, 0, sizeof(pState->aVlanFilter));
     pState->uIsTransmitting   = 0;
 #ifndef IN_RING3
-    return VINF_IOM_HC_IOPORT_WRITE;
+    return VINF_IOM_R3_IOPORT_WRITE;
 #else
     if (pState->pDrv)
         pState->pDrv->pfnSetPromiscuousMode(pState->pDrv, true);

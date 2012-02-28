@@ -333,7 +333,7 @@ PDMBOTHCBDECL(int) parallelIOPortWrite(PPDMDEVINS pDevIns, void *pvUser,
 
     if (cb == 1)
     {
-        rc = PDMCritSectEnter(&pThis->CritSect, VINF_IOM_HC_IOPORT_WRITE);
+        rc = PDMCritSectEnter(&pThis->CritSect, VINF_IOM_R3_IOPORT_WRITE);
         if (rc == VINF_SUCCESS)
         {
             uint8_t u8 = u32;
@@ -346,7 +346,7 @@ PDMBOTHCBDECL(int) parallelIOPortWrite(PPDMDEVINS pDevIns, void *pvUser,
                 case 0:
 #ifndef IN_RING3
                     NOREF(u8);
-                    rc = VINF_IOM_HC_IOPORT_WRITE;
+                    rc = VINF_IOM_R3_IOPORT_WRITE;
 #else
                     pThis->regData = u8;
                     if (RT_LIKELY(pThis->pDrvHostParallelConnector))
@@ -365,7 +365,7 @@ PDMBOTHCBDECL(int) parallelIOPortWrite(PPDMDEVINS pDevIns, void *pvUser,
                     if (u8 != pThis->regControl)
                     {
 #ifndef IN_RING3
-                        return VINF_IOM_HC_IOPORT_WRITE;
+                        return VINF_IOM_R3_IOPORT_WRITE;
 #else
                         /* Set data direction. */
                         if (u8 & LPT_CONTROL_ENABLE_BIDIRECT)
@@ -384,7 +384,7 @@ PDMBOTHCBDECL(int) parallelIOPortWrite(PPDMDEVINS pDevIns, void *pvUser,
                 case 3:
 #ifndef IN_RING3
                     NOREF(u8);
-                    rc = VINF_IOM_HC_IOPORT_WRITE;
+                    rc = VINF_IOM_R3_IOPORT_WRITE;
 #else
                     pThis->regEppAddr = u8;
                     if (RT_LIKELY(pThis->pDrvHostParallelConnector))
@@ -398,7 +398,7 @@ PDMBOTHCBDECL(int) parallelIOPortWrite(PPDMDEVINS pDevIns, void *pvUser,
                 case 4:
 #ifndef IN_RING3
                     NOREF(u8);
-                    rc = VINF_IOM_HC_IOPORT_WRITE;
+                    rc = VINF_IOM_R3_IOPORT_WRITE;
 #else
                     pThis->regEppData = u8;
                     if (RT_LIKELY(pThis->pDrvHostParallelConnector))
@@ -445,7 +445,7 @@ PDMBOTHCBDECL(int) parallelIOPortRead(PPDMDEVINS pDevIns, void *pvUser,
 
     if (cb == 1)
     {
-        rc = PDMCritSectEnter(&pThis->CritSect, VINF_IOM_HC_IOPORT_READ);
+        rc = PDMCritSectEnter(&pThis->CritSect, VINF_IOM_R3_IOPORT_READ);
         if (rc == VINF_SUCCESS)
         {
             Port &= 7;
@@ -457,7 +457,7 @@ PDMBOTHCBDECL(int) parallelIOPortRead(PPDMDEVINS pDevIns, void *pvUser,
                     else
                     {
 #ifndef IN_RING3
-                        rc = VINF_IOM_HC_IOPORT_READ;
+                        rc = VINF_IOM_R3_IOPORT_READ;
 #else
                         if (RT_LIKELY(pThis->pDrvHostParallelConnector))
                         {
@@ -472,7 +472,7 @@ PDMBOTHCBDECL(int) parallelIOPortRead(PPDMDEVINS pDevIns, void *pvUser,
                     break;
                 case 1:
 #ifndef IN_RING3
-                    rc = VINF_IOM_HC_IOPORT_READ;
+                    rc = VINF_IOM_R3_IOPORT_READ;
 #else
                     if (RT_LIKELY(pThis->pDrvHostParallelConnector))
                     {
@@ -485,7 +485,7 @@ PDMBOTHCBDECL(int) parallelIOPortRead(PPDMDEVINS pDevIns, void *pvUser,
                     break;
                 case 2:
 #ifndef IN_RING3
-                     rc = VINF_IOM_HC_IOPORT_READ;
+                     rc = VINF_IOM_R3_IOPORT_READ;
 #else
                      rc = pThis->pDrvHostParallelConnector->pfnReadControl(pThis->pDrvHostParallelConnector, &pThis->regControl);
                      AssertRC(rc);
@@ -495,7 +495,7 @@ PDMBOTHCBDECL(int) parallelIOPortRead(PPDMDEVINS pDevIns, void *pvUser,
                     break;
                 case 3:
 #ifndef IN_RING3
-                    rc = VINF_IOM_HC_IOPORT_READ;
+                    rc = VINF_IOM_R3_IOPORT_READ;
 #else
                     if (RT_LIKELY(pThis->pDrvHostParallelConnector))
                     {
@@ -509,7 +509,7 @@ PDMBOTHCBDECL(int) parallelIOPortRead(PPDMDEVINS pDevIns, void *pvUser,
                     break;
                 case 4:
 #ifndef IN_RING3
-                    rc = VINF_IOM_HC_IOPORT_READ;
+                    rc = VINF_IOM_R3_IOPORT_READ;
 #else
                     if (RT_LIKELY(pThis->pDrvHostParallelConnector))
                     {
@@ -557,7 +557,7 @@ PDMBOTHCBDECL(int) parallelIOPortWriteECP(PPDMDEVINS pDevIns, void *pvUser,
 
     if (cb == 1)
     {
-        rc = PDMCritSectEnter(&pThis->CritSect, VINF_IOM_HC_IOPORT_WRITE);
+        rc = PDMCritSectEnter(&pThis->CritSect, VINF_IOM_R3_IOPORT_WRITE);
         if (rc == VINF_SUCCESS)
         {
             Log2(("%s: ecp port %#06x val %#04x\n", __FUNCTION__, Port, u32));
@@ -590,7 +590,7 @@ PDMBOTHCBDECL(int) parallelIOPortReadECP(PPDMDEVINS pDevIns, void *pvUser,
 
     if (cb == 1)
     {
-        rc = PDMCritSectEnter(&pThis->CritSect, VINF_IOM_HC_IOPORT_READ);
+        rc = PDMCritSectEnter(&pThis->CritSect, VINF_IOM_R3_IOPORT_READ);
         if (rc == VINF_SUCCESS)
         {
             *pu32 = parallel_ioport_read_ecp (pThis, Port, &rc);

@@ -642,7 +642,7 @@ VMMR3_INT_DECL(int) IOMR3IOPortRegisterRC(PVM pVM, PPDMDEVINS pDevIns, RTIOPORT 
         {
             AssertMsgFailed(("No R3! Port=#x %#x-%#x! (%s)\n", Port, PortStart, (unsigned)PortStart + cPorts - 1, pszDesc));
             IOM_UNLOCK(pVM);
-            return VERR_IOM_NO_HC_IOPORT_RANGE;
+            return VERR_IOM_NO_R3_IOPORT_RANGE;
         }
 #ifndef IOM_NO_PDMINS_CHECKS
 # ifndef IN_RC
@@ -756,7 +756,7 @@ VMMR3_INT_DECL(int) IOMR3IOPortRegisterR0(PVM pVM, PPDMDEVINS pDevIns, RTIOPORT 
         {
             AssertMsgFailed(("No R3! Port=#x %#x-%#x! (%s)\n", Port, PortStart, (unsigned)PortStart + cPorts - 1, pszDesc));
             IOM_UNLOCK(pVM);
-            return VERR_IOM_NO_HC_IOPORT_RANGE;
+            return VERR_IOM_NO_R3_IOPORT_RANGE;
         }
 #ifndef IOM_NO_PDMINS_CHECKS
 # ifndef IN_RC

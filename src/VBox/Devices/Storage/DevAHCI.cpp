@@ -1138,7 +1138,7 @@ static int PortSControl_w(PAHCI ahci, PAHCIPort pAhciPort, uint32_t iReg, uint32
              AHCI_PORT_SCTL_IPM_GET(u32Value), AHCI_PORT_SCTL_SPD_GET(u32Value), AHCI_PORT_SCTL_DET_GET(u32Value)));
 
 #ifndef IN_RING3
-    return VINF_IOM_HC_MMIO_WRITE;
+    return VINF_IOM_R3_MMIO_WRITE;
 #else
     if ((u32Value & AHCI_PORT_SCTL_DET) == AHCI_PORT_SCTL_DET_INIT)
     {
@@ -1342,7 +1342,7 @@ static int PortCmd_w(PAHCI ahci, PAHCIPort pAhciPort, uint32_t iReg, uint32_t u3
             if (pAhciPort->regCMD & AHCI_PORT_CMD_FRE)
             {
 #ifndef IN_RING3
-                return VINF_IOM_HC_MMIO_WRITE;
+                return VINF_IOM_R3_MMIO_WRITE;
 #else
                 ahciPostFirstD2HFisIntoMemory(pAhciPort);
                 ASMAtomicOrU32(&pAhciPort->regIS, AHCI_PORT_IS_DHRS);
@@ -1374,7 +1374,7 @@ static int PortCmd_w(PAHCI ahci, PAHCIPort pAhciPort, uint32_t iReg, uint32_t u3
             && pAhciPort->pDrvBase)
         {
 #ifndef IN_RING3
-            return VINF_IOM_HC_MMIO_WRITE;
+            return VINF_IOM_R3_MMIO_WRITE;
 #else
             ahciPostFirstD2HFisIntoMemory(pAhciPort);
             pAhciPort->fFirstD2HFisSend = true;
@@ -1436,7 +1436,7 @@ static int PortIntrEnable_w(PAHCI ahci, PAHCIPort pAhciPort, uint32_t iReg, uint
     uint32_t u32IntrStatus = ASMAtomicReadU32(&pAhciPort->regIS);
 
     if (u32Value & u32IntrStatus)
-        rc = ahciHbaSetInterrupt(ahci, pAhciPort->iLUN, VINF_IOM_HC_MMIO_WRITE);
+        rc = ahciHbaSetInterrupt(ahci, pAhciPort->iLUN, VINF_IOM_R3_MMIO_WRITE);
 
     if (rc == VINF_SUCCESS)
         pAhciPort->regIE = u32Value;
@@ -1599,7 +1599,7 @@ static int HbaInterruptStatus_w(PAHCI ahci, uint32_t iReg, uint32_t u32Value)
     int rc;
     Log(("%s: write u32Value=%#010x\n", __FUNCTION__, u32Value));
 
-    rc = PDMCritSectEnter(&ahci->lock, VINF_IOM_HC_MMIO_WRITE);
+    rc = PDMCritSectEnter(&ahci->lock, VINF_IOM_R3_MMIO_WRITE);
     if (rc != VINF_SUCCESS)
         return rc;
 
@@ -1666,7 +1666,7 @@ static int HbaInterruptStatus_r(PAHCI ahci, uint32_t iReg, uint32_t *pu32Value)
     uint32_t u32PortsInterrupted;
     int rc;
 
-    rc = PDMCritSectEnter(&ahci->lock, VINF_IOM_HC_MMIO_READ);
+    rc = PDMCritSectEnter(&ahci->lock, VINF_IOM_R3_MMIO_READ);
     if (rc != VINF_SUCCESS)
         return rc;
 
@@ -1705,7 +1705,7 @@ static int HbaControl_w(PAHCI ahci, uint32_t iReg, uint32_t u32Value)
          (u32Value & AHCI_HBA_CTRL_HR)));
 
 #ifndef IN_RING3
-    return VINF_IOM_HC_MMIO_WRITE;
+    return VINF_IOM_R3_MMIO_WRITE;
 #else
     ahci->regHbaCtrl = (u32Value & AHCI_HBA_CTRL_RW_MASK) | AHCI_HBA_CTRL_AE;
     if (ahci->regHbaCtrl & AHCI_HBA_CTRL_HR)
@@ -2384,8 +2384,8 @@ PDMBOTHCBDECL(int) ahciIdxDataWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT P
         {
             Assert(iReg == 1);
             rc = ahciRegisterWrite(pAhci, pAhci->regIdx, &u32, cb);
-            if (rc == VINF_IOM_HC_MMIO_WRITE)
-                rc = VINF_IOM_HC_IOPORT_WRITE;
+            if (rc == VINF_IOM_R3_MMIO_WRITE)
+                rc = VINF_IOM_R3_IOPORT_WRITE;
         }
     }
     /* else: ignore */
@@ -2426,8 +2426,8 @@ PDMBOTHCBDECL(int) ahciIdxDataRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Po
         {
             Assert(iReg == 1);
             rc = ahciRegisterRead(pAhci, pAhci->regIdx, pu32, cb);
-            if (rc == VINF_IOM_HC_MMIO_READ)
-                rc = VINF_IOM_HC_IOPORT_READ;
+            if (rc == VINF_IOM_R3_MMIO_READ)
+                rc = VINF_IOM_R3_IOPORT_READ;
         }
     }
     else

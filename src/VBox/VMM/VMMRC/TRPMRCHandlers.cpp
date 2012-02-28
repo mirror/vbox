@@ -1073,11 +1073,11 @@ DECLASM(int) TRPMGCTrap0dHandler(PTRPMCPU pTrpmCpu, PCPUMCTXCORE pRegFrame)
             /* no break; */
         case VINF_PGM_SYNC_CR3: /** @todo Check this with Sander. */
         case VINF_EM_RAW_EMULATE_INSTR:
-        case VINF_IOM_HC_IOPORT_READ:
-        case VINF_IOM_HC_IOPORT_WRITE:
-        case VINF_IOM_HC_MMIO_WRITE:
-        case VINF_IOM_HC_MMIO_READ:
-        case VINF_IOM_HC_MMIO_READ_WRITE:
+        case VINF_IOM_R3_IOPORT_READ:
+        case VINF_IOM_R3_IOPORT_WRITE:
+        case VINF_IOM_R3_MMIO_WRITE:
+        case VINF_IOM_R3_MMIO_READ:
+        case VINF_IOM_R3_MMIO_READ_WRITE:
         case VINF_PATM_PATCH_INT3:
         case VINF_EM_NO_MEMORY:
         case VINF_EM_RAW_TO_R3:
@@ -1148,9 +1148,9 @@ DECLASM(int) TRPMGCTrap0eHandler(PTRPMCPU pTrpmCpu, PCPUMCTXCORE pRegFrame)
         case VINF_EM_RAW_INTERRUPT_PENDING:
             Assert(TRPMHasTrap(pVCpu));
             /* no break; */
-        case VINF_IOM_HC_MMIO_READ:
-        case VINF_IOM_HC_MMIO_WRITE:
-        case VINF_IOM_HC_MMIO_READ_WRITE:
+        case VINF_IOM_R3_MMIO_READ:
+        case VINF_IOM_R3_MMIO_WRITE:
+        case VINF_IOM_R3_MMIO_READ_WRITE:
         case VINF_PATM_HC_MMIO_PATCH_READ:
         case VINF_PATM_HC_MMIO_PATCH_WRITE:
         case VINF_SUCCESS:

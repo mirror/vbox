@@ -1064,7 +1064,7 @@ static int lsilogicRegisterWrite(PLSILOGICSCSI pThis, uint32_t uOffset, void con
                  */
 #ifndef IN_RING3
                 if (pThis->iMessage == pThis->cMessage - 1)
-                    return VINF_IOM_HC_MMIO_WRITE;
+                    return VINF_IOM_R3_MMIO_WRITE;
 #endif
                 pThis->aMessage[pThis->iMessage++] = u32;
 #ifdef IN_RING3
@@ -1144,7 +1144,7 @@ static int lsilogicRegisterWrite(PLSILOGICSCSI pThis, uint32_t uOffset, void con
         case LSILOGIC_REG_HOST_DIAGNOSTIC:
         {
 #ifndef IN_RING3
-            return VINF_IOM_HC_IOPORT_WRITE;
+            return VINF_IOM_R3_IOPORT_WRITE;
 #else
             if (u32 & LSILOGIC_REG_HOST_DIAGNOSTIC_RESET_ADAPTER)
             {
@@ -1187,7 +1187,7 @@ static int lsilogicRegisterRead(PLSILOGICSCSI pThis, uint32_t uOffset, void *pv,
             if (RT_UNLIKELY(cb != 4))
                 LogFlowFunc((": cb is not 4 (%u)\n", cb));
 
-            rc = PDMCritSectEnter(&pThis->ReplyPostQueueCritSect, VINF_IOM_HC_MMIO_READ);
+            rc = PDMCritSectEnter(&pThis->ReplyPostQueueCritSect, VINF_IOM_R3_MMIO_READ);
             if (rc != VINF_SUCCESS)
                 break;
 
@@ -1303,8 +1303,8 @@ PDMBOTHCBDECL(int) lsilogicIOPortWrite (PPDMDEVINS pDevIns, void *pvUser,
     Assert(cb <= 4);
 
     int rc = lsilogicRegisterWrite(pThis, uOffset, &u32, cb);
-    if (rc == VINF_IOM_HC_MMIO_WRITE)
-        rc = VINF_IOM_HC_IOPORT_WRITE;
+    if (rc == VINF_IOM_R3_MMIO_WRITE)
+        rc = VINF_IOM_R3_IOPORT_WRITE;
 
     return rc;
 }
@@ -1318,8 +1318,8 @@ PDMBOTHCBDECL(int) lsilogicIOPortRead (PPDMDEVINS pDevIns, void *pvUser,
     Assert(cb <= 4);
 
     int rc = lsilogicRegisterRead(pThis, uOffset, pu32, cb);
-    if (rc == VINF_IOM_HC_MMIO_READ)
-        rc = VINF_IOM_HC_IOPORT_READ;
+    if (rc == VINF_IOM_R3_MMIO_READ)
+        rc = VINF_IOM_R3_IOPORT_READ;
 
     return rc;
 }

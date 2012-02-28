@@ -508,7 +508,7 @@ static int pci_data_write(PPCIGLOBALS pGlobals, uint32_t addr, uint32_t val, int
                 pBridgeDevice->Int.s.pfnBridgeConfigWrite(pBridgeDevice->pDevIns, iBus, iDevice, config_addr, val, len);
             }
 #else
-            return VINF_IOM_HC_IOPORT_WRITE;
+            return VINF_IOM_R3_IOPORT_WRITE;
 #endif
         }
     }
@@ -521,7 +521,7 @@ static int pci_data_write(PPCIGLOBALS pGlobals, uint32_t addr, uint32_t val, int
             Log(("pci_config_write: %s: addr=%02x val=%08x len=%d\n", pci_dev->name, config_addr, val, len));
             pci_dev->Int.s.pfnConfigWrite(pci_dev, config_addr, val, len);
 #else
-            return VINF_IOM_HC_IOPORT_WRITE;
+            return VINF_IOM_R3_IOPORT_WRITE;
 #endif
         }
     }
@@ -555,7 +555,7 @@ static int pci_data_read(PPCIGLOBALS pGlobals, uint32_t addr, int len, uint32_t 
             }
 #else
             NOREF(len);
-            return VINF_IOM_HC_IOPORT_READ;
+            return VINF_IOM_R3_IOPORT_READ;
 #endif
         }
     }
@@ -569,7 +569,7 @@ static int pci_data_read(PPCIGLOBALS pGlobals, uint32_t addr, int len, uint32_t 
             Log(("pci_config_read: %s: addr=%02x val=%08x len=%d\n", pci_dev->name, config_addr, *pu32, len));
 #else
             NOREF(len);
-            return VINF_IOM_HC_IOPORT_READ;
+            return VINF_IOM_R3_IOPORT_READ;
 #endif
         }
     }
@@ -1142,7 +1142,7 @@ PDMBOTHCBDECL(int) pciIOPortAddressWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOP
     if (cb == 4)
     {
         PPCIGLOBALS pThis = PDMINS_2_DATA(pDevIns, PPCIGLOBALS);
-        PCI_LOCK(pDevIns, VINF_IOM_HC_IOPORT_WRITE);
+        PCI_LOCK(pDevIns, VINF_IOM_R3_IOPORT_WRITE);
         pThis->uConfigReg = u32 & ~3; /* Bits 0-1 are reserved and we silently clear them */
         PCI_UNLOCK(pDevIns);
     }
@@ -1169,7 +1169,7 @@ PDMBOTHCBDECL(int) pciIOPortAddressRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPO
     if (cb == 4)
     {
         PPCIGLOBALS pThis = PDMINS_2_DATA(pDevIns, PPCIGLOBALS);
-        PCI_LOCK(pDevIns, VINF_IOM_HC_IOPORT_READ);
+        PCI_LOCK(pDevIns, VINF_IOM_R3_IOPORT_READ);
         *pu32 = pThis->uConfigReg;
         PCI_UNLOCK(pDevIns);
         Log(("pciIOPortAddressRead: Port=%#x cb=%d -> %#x\n", Port, cb, *pu32));
@@ -1200,7 +1200,7 @@ PDMBOTHCBDECL(int) pciIOPortDataWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT
     int rc = VINF_SUCCESS;
     if (!(Port % cb))
     {
-        PCI_LOCK(pDevIns, VINF_IOM_HC_IOPORT_WRITE);
+        PCI_LOCK(pDevIns, VINF_IOM_R3_IOPORT_WRITE);
         rc = pci_data_write(PDMINS_2_DATA(pDevIns, PPCIGLOBALS), Port, u32, cb);
         PCI_UNLOCK(pDevIns);
     }
@@ -1226,7 +1226,7 @@ PDMBOTHCBDECL(int) pciIOPortDataRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT 
     NOREF(pvUser);
     if (!(Port % cb))
     {
-        PCI_LOCK(pDevIns, VINF_IOM_HC_IOPORT_READ);
+        PCI_LOCK(pDevIns, VINF_IOM_R3_IOPORT_READ);
         int rc = pci_data_read(PDMINS_2_DATA(pDevIns, PPCIGLOBALS), Port, cb, pu32);
         PCI_UNLOCK(pDevIns);
         Log(("pciIOPortDataRead: Port=%#x cb=%#x -> %#x (%Rrc)\n", Port, cb, *pu32, rc));

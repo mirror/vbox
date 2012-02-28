@@ -1615,7 +1615,7 @@ PDMBOTHCBDECL(int) acpiPMTmrRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port
      * We use the clock lock to serialize access to u64PmTimerInitial and to
      * make sure we get a reliable time from the clock.
      */
-    int rc = TMTimerLock(pThis->CTX_SUFF(pPmTimer), VINF_IOM_HC_IOPORT_READ);
+    int rc = TMTimerLock(pThis->CTX_SUFF(pPmTimer), VINF_IOM_R3_IOPORT_READ);
     if (rc == VINF_SUCCESS)
     {
         uint64_t const u64PmTimerInitial = pThis->u64PmTimerInitial;

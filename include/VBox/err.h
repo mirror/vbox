@@ -41,7 +41,8 @@
  */
 /** Failed to allocate VM memory. */
 #define VERR_NO_VM_MEMORY                   (-1000)
-/** GC is toasted and the VMM should be terminated at once, but no need to panic about it :-) */
+/** RC is toasted and the VMM should be terminated at once, but no need to
+ * panic about it :-) */
 #define VERR_DONT_PANIC                     (-1001)
 /** Unsupported CPU. */
 #define VERR_UNSUPPORTED_CPU                (-1002)
@@ -170,60 +171,60 @@
 /** Last scheduling related status code. (inclusive) */
 #define VINF_EM_LAST                        1120
 
-/** Reason for leaving GC: Guest trap which couldn't be handled in GC.
+/** Reason for leaving RC: Guest trap which couldn't be handled in RC.
  * The trap is generally forwarded to the REM and executed there. */
 #define VINF_EM_RAW_GUEST_TRAP              1121
-/** Reason for leaving GC: Interrupted by external interrupt.
+/** Reason for leaving RC: Interrupted by external interrupt.
  * The interrupt needed to be handled by the host OS. */
 #define VINF_EM_RAW_INTERRUPT               1122
-/** Reason for leaving GC: Interrupted by external interrupt while in hypervisor code.
- * The interrupt needed to be handled by the host OS and hypervisor execution must be
- * resumed. VM state is not complete at this point. */
+/** Reason for leaving RC: Interrupted by external interrupt while in hypervisor
+ * code. The interrupt needed to be handled by the host OS and hypervisor
+ * execution must be resumed. VM state is not complete at this point. */
 #define VINF_EM_RAW_INTERRUPT_HYPER         1123
-/** Reason for leaving GC: A Ring switch was attempted.
+/** Reason for leaving RC: A Ring switch was attempted.
  * Normal cause of action is to execute this in REM. */
 #define VINF_EM_RAW_RING_SWITCH             1124
-/** Reason for leaving GC: A Ring switch was attempted using software interrupt.
+/** Reason for leaving RC: A Ring switch was attempted using software interrupt.
  * Normal cause of action is to execute this in REM. */
 #define VINF_EM_RAW_RING_SWITCH_INT         1125
-/** Reason for leaving GC: A privileged instruction was attempted executed.
+/** Reason for leaving RC: A privileged instruction was attempted executed.
  * Normal cause of action is to execute this in REM. */
 #define VINF_EM_RAW_EXCEPTION_PRIVILEGED    1126
 
-/** Reason for leaving GC: Emulate instruction. */
+/** Reason for leaving RZ: Emulate instruction. */
 #define VINF_EM_RAW_EMULATE_INSTR           1127
-/** Reason for leaving GC: Unhandled TSS write.
+/** Reason for leaving RC: Unhandled TSS write.
  * Recompiler gets control. */
 #define VINF_EM_RAW_EMULATE_INSTR_TSS_FAULT 1128
-/** Reason for leaving GC: Unhandled LDT write.
+/** Reason for leaving RC: Unhandled LDT write.
  * Recompiler gets control. */
 #define VINF_EM_RAW_EMULATE_INSTR_LDT_FAULT 1129
-/** Reason for leaving GC: Unhandled IDT write.
+/** Reason for leaving RC: Unhandled IDT write.
  * Recompiler gets control. */
 #define VINF_EM_RAW_EMULATE_INSTR_IDT_FAULT 1130
-/** Reason for leaving GC: Unhandled GDT write.
+/** Reason for leaving RC: Unhandled GDT write.
  * Recompiler gets control. */
 #define VINF_EM_RAW_EMULATE_INSTR_GDT_FAULT 1131
-/** Reason for leaving GC: Unhandled Page Directory write.
+/** Reason for leaving RC: Unhandled Page Directory write.
  * Recompiler gets control. */
 #define VINF_EM_RAW_EMULATE_INSTR_PD_FAULT  1132
-/** Reason for leaving GC: jump inside generated patch jump.
+/** Reason for leaving RC: jump inside generated patch jump.
  * Fatal error. */
 #define VERR_EM_RAW_PATCH_CONFLICT          (-1133)
-/** Reason for leaving GC: Hlt instruction.
+/** Reason for leaving RC: Hlt instruction.
  * Recompiler gets control. */
 #define VINF_EM_RAW_EMULATE_INSTR_HLT       1134
-/** Reason for leaving GC: Ring-3 operation pending. */
+/** Reason for leaving RZ: Ring-3 operation pending. */
 #define VINF_EM_RAW_TO_R3                   1135
-/** Reason for leaving GC: Timer pending. */
+/** Reason for leaving RZ: Timer pending. */
 #define VINF_EM_RAW_TIMER_PENDING           1136
-/** Reason for leaving GC: Interrupt pending (guest). */
+/** Reason for leaving RC: Interrupt pending (guest). */
 #define VINF_EM_RAW_INTERRUPT_PENDING       1137
-/** Reason for leaving GC: Encountered a stale selector. */
+/** Reason for leaving RC: Encountered a stale selector. */
 #define VINF_EM_RAW_STALE_SELECTOR          1138
-/** Reason for leaving GC: The IRET resuming guest code trapped. */
+/** Reason for leaving RC: The IRET resuming guest code trapped. */
 #define VINF_EM_RAW_IRET_TRAP               1139
-/** Reason for leaving GC: Emulate (MM)IO intensive code in the recompiler. */
+/** Reason for leaving RC: Emulate (MM)IO intensive code in the recompiler. */
 #define VINF_EM_RAW_EMULATE_IO_BLOCK        1140
 /** The interpreter was unable to deal with the instruction at hand. */
 #define VERR_EM_INTERPRETER                 (-1148)
@@ -322,28 +323,28 @@
 /** Patch was removed. */
 #define VWRN_PATCH_REMOVED                  1407
 
-/** Reason for leaving GC: \#GP with EIP pointing to patch code. */
+/** Reason for leaving RC: \#GP with EIP pointing to patch code. */
 #define VINF_PATM_PATCH_TRAP_GP             1408
-/** First leave GC code. */
-#define VINF_PATM_LEAVEGC_FIRST             VINF_PATM_PATCH_TRAP_GP
-/** Reason for leaving GC: \#PF with EIP pointing to patch code. */
+/** First leave RC code. */
+#define VINF_PATM_LEAVE_RC_FIRST             VINF_PATM_PATCH_TRAP_GP
+/** Reason for leaving RC: \#PF with EIP pointing to patch code. */
 #define VINF_PATM_PATCH_TRAP_PF             1409
-/** Reason for leaving GC: int3 with EIP pointing to patch code. */
+/** Reason for leaving RC: int3 with EIP pointing to patch code. */
 #define VINF_PATM_PATCH_INT3                1410
-/** Reason for leaving GC: \#PF for monitored patch page. */
+/** Reason for leaving RC: \#PF for monitored patch page. */
 #define VINF_PATM_CHECK_PATCH_PAGE          1411
-/** Reason for leaving GC: duplicate instruction called at current eip. */
+/** Reason for leaving RC: duplicate instruction called at current eip. */
 #define VINF_PATM_DUPLICATE_FUNCTION        1412
 /** Execute one instruction with the recompiler */
 #define VINF_PATCH_EMULATE_INSTR            1413
-/** Reason for leaving GC: attempt to patch MMIO write. */
+/** Reason for leaving RC: attempt to patch MMIO write. */
 #define VINF_PATM_HC_MMIO_PATCH_WRITE       1414
-/** Reason for leaving GC: attempt to patch MMIO read. */
+/** Reason for leaving RC: attempt to patch MMIO read. */
 #define VINF_PATM_HC_MMIO_PATCH_READ        1415
-/** Reason for leaving GC: pending irq after iret that sets IF. */
+/** Reason for leaving RC: pending irq after iret that sets IF. */
 #define VINF_PATM_PENDING_IRQ_AFTER_IRET    1416
-/** Last leave GC code. */
-#define VINF_PATM_LEAVEGC_LAST              VINF_PATM_PENDING_IRQ_AFTER_IRET
+/** Last leave RC code. */
+#define VINF_PATM_LEAVE_RC_LAST              VINF_PATM_PENDING_IRQ_AFTER_IRET
 
 /** No conflicts to resolve */
 #define VERR_PATCH_NO_CONFLICT              (-1425)
@@ -370,7 +371,7 @@
 #define VWRN_CSAM_INSTRUCTION_PATCHED       1501
 /** Page record not found */
 #define VWRN_CSAM_PAGE_NOT_FOUND            1502
-/** Reason for leaving GC: CSAM wants perform a task in ring-3. */
+/** Reason for leaving RC: CSAM wants perform a task in ring-3. */
 #define VINF_CSAM_PENDING_ACTION            1503
 /** @} */
 
@@ -411,19 +412,20 @@
 #define VERR_PGM_MAPPINGS_FIX_REJECTED      (-1611)
 /** Failed to fix mappings because the proposed memory area was to small. */
 #define VERR_PGM_MAPPINGS_FIX_TOO_SMALL     (-1612)
-/** Reason for leaving GC: The urge to syncing CR3. */
+/** Reason for leaving RZ: The urge to syncing CR3. */
 #define VINF_PGM_SYNC_CR3                   1613
 /** Page not marked for dirty bit tracking */
 #define VINF_PGM_NO_DIRTY_BIT_TRACKING      1614
 /** Page fault caused by dirty bit tracking; corrected */
 #define VINF_PGM_HANDLED_DIRTY_BIT_FAULT    1615
 /** Go ahead with the default Read/Write operation.
- * This is returned by a HC physical or virtual handler when it wants the PGMPhys[Read|Write]
- * routine do the reading/writing. */
+ * This is returned by a R3 physical or virtual handler when it wants the
+ * PGMPhys[Read|Write] routine do the reading/writing. */
 #define VINF_PGM_HANDLER_DO_DEFAULT         1616
 /** The paging mode of the host is not supported yet. */
 #define VERR_PGM_UNSUPPORTED_HOST_PAGING_MODE (-1617)
-/** The physical guest page is a reserved/mmio page and does not have any HC address. */
+/** The physical guest page is a reserved/MMIO page and does not have any HC
+ *  address. */
 #define VERR_PGM_PHYS_PAGE_RESERVED         (-1618)
 /** No page directory available for the hypervisor. */
 #define VERR_PGM_NO_HYPERVISOR_ADDRESS      (-1619)
@@ -441,10 +443,9 @@
  * when the shadow PTs could be updated because the guest page
  * aliased or/and mapped by multiple PTs. */
 #define VINF_PGM_GCPHYS_ALIASED             1623
-/** Reason for leaving GC: Paging mode changed.
- * PGMChangeMode() uses this to force a switch to HC so it can safely
- * deal with a mode switch.
- */
+/** Reason for leaving RC: Paging mode changed.
+ * PGMChangeMode() uses this to force a switch to R3 so it can safely deal with
+ * a mode switch. */
 #define VINF_PGM_CHANGE_MODE                1624
 /** SyncPage modified the PDE.
  * This is an internal status code used to communicate back to the \#PF handler
@@ -940,13 +941,13 @@
 #define VERR_TRPM_NO_ACTIVE_TRAP            (-2400)
 /** Active trap. Cannot assert a new trap when when one is already active. */
 #define VERR_TRPM_ACTIVE_TRAP               (-2401)
-/** Reason for leaving GC: Guest tried to write to our IDT - fatal.
+/** Reason for leaving RC: Guest tried to write to our IDT - fatal.
  * The VM will be terminated assuming the worst, i.e. that the
  * guest has read the idtr register. */
 #define VERR_TRPM_SHADOW_IDT_WRITE          (-2402)
-/** Reason for leaving GC: Fatal trap in hypervisor. */
+/** Reason for leaving RC: Fatal trap in hypervisor. */
 #define VERR_TRPM_DONT_PANIC                (-2403)
-/** Reason for leaving GC: Double Fault. */
+/** Reason for leaving RC: Double Fault. */
 #define VERR_TRPM_PANIC                     (-2404)
 /** The exception was dispatched for raw-mode execution. */
 #define VINF_TRPM_XCPT_DISPATCHED           2405
@@ -964,19 +965,19 @@
 /** @name Selector Manager / Monitor (SELM) Status Code
  * @{
  */
-/** Reason for leaving GC: Guest tried to write to our GDT - fatal.
+/** Reason for leaving RC: Guest tried to write to our GDT - fatal.
  * The VM will be terminated assuming the worst, i.e. that the
  * guest has read the gdtr register. */
 #define VERR_SELM_SHADOW_GDT_WRITE          (-2500)
-/** Reason for leaving GC: Guest tried to write to our LDT - fatal.
+/** Reason for leaving RC: Guest tried to write to our LDT - fatal.
  * The VM will be terminated assuming the worst, i.e. that the
  * guest has read the ldtr register. */
 #define VERR_SELM_SHADOW_LDT_WRITE          (-2501)
-/** Reason for leaving GC: Guest tried to write to our TSS - fatal.
+/** Reason for leaving RC: Guest tried to write to our TSS - fatal.
  * The VM will be terminated assuming the worst, i.e. that the
  * guest has read the ltr register. */
 #define VERR_SELM_SHADOW_TSS_WRITE          (-2502)
-/** Reason for leaving GC: Sync the GDT table to solve a conflict. */
+/** Reason for leaving RC: Sync the GDT table to solve a conflict. */
 #define VINF_SELM_SYNC_GDT                  2503
 /** No valid TSS present. */
 #define VERR_SELM_NO_TSS                    (-2504)
@@ -993,9 +994,9 @@
 /** The specified I/O port range was invalid.
  * It was either empty or it was out of bounds. */
 #define VERR_IOM_INVALID_IOPORT_RANGE       (-2600)
-/** The specified GC I/O port range didn't have a corresponding HC range.
- * IOMIOPortRegisterHC() must be called before IOMIOPortRegisterGC(). */
-#define VERR_IOM_NO_HC_IOPORT_RANGE         (-2601)
+/** The specified R0 or RC I/O port range didn't have a corresponding R3 range.
+ * IOMR3IOPortRegisterR3() must be called first. */
+#define VERR_IOM_NO_R3_IOPORT_RANGE         (-2601)
 /** The specified I/O port range intruded on an existing range. There is
  * a I/O port conflict between two device, or a device tried to register
  * the same range twice. */
@@ -1003,17 +1004,17 @@
 /** The I/O port range specified for removal wasn't found or it wasn't contiguous. */
 #define VERR_IOM_IOPORT_RANGE_NOT_FOUND     (-2603)
 /** The specified I/O port range was owned by some other device(s). Both registration
- * and deregistration, but in the first case only GC ranges. */
+ * and deregistration, but in the first case only RC and R0 ranges. */
 #define VERR_IOM_NOT_IOPORT_RANGE_OWNER     (-2604)
 
 /** The specified MMIO range was invalid.
  * It was either empty or it was out of bounds. */
 #define VERR_IOM_INVALID_MMIO_RANGE         (-2605)
-/** The specified GC MMIO range didn't have a corresponding HC range.
- * IOMMMIORegisterHC() must be called before IOMMMIORegisterGC(). */
-#define VERR_IOM_NO_HC_MMIO_RANGE           (-2606)
+/** The specified R0 or RC MMIO range didn't have a corresponding R3 range.
+ * IOMR3MMIORegisterR3() must be called first. */
+#define VERR_IOM_NO_R3_MMIO_RANGE           (-2606)
 /** The specified MMIO range was owned by some other device(s). Both registration
- * and deregistration, but in the first case only GC ranges. */
+ * and deregistration, but in the first case only RC and R0 ranges. */
 #define VERR_IOM_NOT_MMIO_RANGE_OWNER       (-2607)
 /** The specified MMIO range intruded on an existing range. There is
  * a MMIO conflict between two device, or a device tried to register
@@ -1038,16 +1039,16 @@
 /** Unused MMIO register read, fill with FF. */
 #define VINF_IOM_MMIO_UNUSED_FF             2616
 
-/** Reason for leaving GC: I/O port read. */
-#define VINF_IOM_HC_IOPORT_READ             2620
-/** Reason for leaving GC: I/O port write. */
-#define VINF_IOM_HC_IOPORT_WRITE            2621
-/** Reason for leaving GC: MMIO write. */
-#define VINF_IOM_HC_MMIO_READ               2623
-/** Reason for leaving GC: MMIO read. */
-#define VINF_IOM_HC_MMIO_WRITE              2624
-/** Reason for leaving GC: MMIO read/write. */
-#define VINF_IOM_HC_MMIO_READ_WRITE         2625
+/** Reason for leaving RZ: I/O port read. */
+#define VINF_IOM_R3_IOPORT_READ             2620
+/** Reason for leaving RZ: I/O port write. */
+#define VINF_IOM_R3_IOPORT_WRITE            2621
+/** Reason for leaving RZ: MMIO write. */
+#define VINF_IOM_R3_MMIO_READ               2623
+/** Reason for leaving RZ: MMIO read. */
+#define VINF_IOM_R3_MMIO_WRITE              2624
+/** Reason for leaving RZ: MMIO read/write. */
+#define VINF_IOM_R3_MMIO_READ_WRITE         2625
 
 /** IOMGCIOPortHandler was given an unexpected opcode. */
 #define VERR_IOM_IOPORT_UNKNOWN_OPCODE      (-2630)

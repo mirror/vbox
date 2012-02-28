@@ -321,7 +321,7 @@ int vpciIOPortIn(PPDMDEVINS         pDevIns,
      * here we gain the ability to deliver RX packets to the guest while TX is
      * holding cs transmitting queued packets.
      *
-    rc = vpciCsEnter(pState, VINF_IOM_HC_IOPORT_READ);
+    rc = vpciCsEnter(pState, VINF_IOM_R3_IOPORT_READ);
     if (RT_UNLIKELY(rc != VINF_SUCCESS))
     {
         STAM_PROFILE_ADV_STOP(&pState->CTXSUFF(StatIORead), a);
@@ -490,7 +490,7 @@ int vpciIOPortOut(PPDMDEVINS                pDevIns,
             else
                 Log(("%s Invalid queue number (%d)\n", INSTANCE(pState), u32));
 #else
-            rc = VINF_IOM_HC_IOPORT_WRITE;
+            rc = VINF_IOM_R3_IOPORT_WRITE;
 #endif
             break;
 
