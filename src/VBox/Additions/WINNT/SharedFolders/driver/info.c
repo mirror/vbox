@@ -538,6 +538,7 @@ NTSTATUS VBoxMRxQueryVolumeInfo(IN OUT PRX_CONTEXT RxContext)
     PVOID pInfoBuffer = RxContext->Info.Buffer;
     ULONG cbInfoBuffer = RxContext->Info.LengthRemaining;
     ULONG cbToCopy = 0;
+    ULONG cbString = 0;
 
     Log(("VBOXSF: MrxQueryVolumeInfo: pInfoBuffer = %p, cbInfoBuffer = %d\n",
          RxContext->Info.Buffer, RxContext->Info.LengthRemaining));
@@ -577,12 +578,17 @@ NTSTATUS VBoxMRxQueryVolumeInfo(IN OUT PRX_CONTEXT RxContext)
             pRootName = pNetRoot->pNetRootName->Buffer + (pSrvCall->pSrvCallName->Length / sizeof(WCHAR));
             pRootName++; /* Remove the leading backslash. */
 
-            Log(("VBOXSF: MrxQueryVolumeInfo: FileFsVolumeInformation: Root name = %.*ls\n",
-                 cbRootName / sizeof(WCHAR), pRootName));
+            Log(("VBOXSF: MrxQueryVolumeInfo: FileFsVolumeInformation: Root name = %.*ls, %d bytes\n",
+                 cbRootName / sizeof(WCHAR), pRootName, cbRootName));
 
-            cbToCopy = sizeof(FILE_FS_VOLUME_INFORMATION);
-            cbToCopy += VBOX_VOLNAME_PREFIX_SIZE;
-            cbToCopy += cbRootName;
+            cbToCopy = FIELD_OFFSET(FILE_FS_VOLUME_INFORMATION, VolumeLabel);
+
+            cbString  = VBOX_VOLNAME_PREFIX_SIZE;
+            cbString += cbRootName;
+            cbString += sizeof(WCHAR);
+
+            Log(("VBOXSF: MrxQueryVolumeInfo: FileFsVolumeInformation: cbToCopy %d, cbString %d\n",
+                 cbToCopy, cbString));
 
             if (cbInfoBuffer < cbToCopy)
             {
@@ -590,7 +596,7 @@ NTSTATUS VBoxMRxQueryVolumeInfo(IN OUT PRX_CONTEXT RxContext)
                 break;
             }
 
-            RtlZeroMemory(pInfo, sizeof(FILE_FS_VOLUME_INFORMATION));
+            RtlZeroMemory(pInfo, cbToCopy);
 
             /* Query serial number. */
             cbHGCMBuffer = sizeof(SHFLVOLINFO);
@@ -616,11 +622,37 @@ NTSTATUS VBoxMRxQueryVolumeInfo(IN OUT PRX_CONTEXT RxContext)
             vbsfFreeNonPagedMem(pHGCMBuffer);
 
             pInfo->VolumeCreationTime.QuadPart = 0;
-            pInfo->VolumeLabelLength = VBOX_VOLNAME_PREFIX_SIZE + cbRootName;
             pInfo->SupportsObjects = FALSE;
 
-            RtlCopyMemory(&pInfo->VolumeLabel[0], VBOX_VOLNAME_PREFIX, VBOX_VOLNAME_PREFIX_SIZE);
-            RtlCopyMemory(&pInfo->VolumeLabel[VBOX_VOLNAME_PREFIX_SIZE / sizeof(WCHAR)], pRootName, cbRootName);
+            if (cbInfoBuffer >= cbToCopy + cbString)
+            {
+                RtlCopyMemory(&pInfo->VolumeLabel[0],
+                              VBOX_VOLNAME_PREFIX,
+                              VBOX_VOLNAME_PREFIX_SIZE);
+                RtlCopyMemory(&pInfo->VolumeLabel[VBOX_VOLNAME_PREFIX_SIZE / sizeof(WCHAR)],
+                              pRootName,
+                              cbRootName);
+                pInfo->VolumeLabel[cbString / sizeof(WCHAR) -  1] = 0;
+            }
+            else
+            {
+                cbString = cbInfoBuffer - cbToCopy;
+
+                RtlCopyMemory(&pInfo->VolumeLabel[0],
+                              VBOX_VOLNAME_PREFIX,
+                              RT_MIN(cbString, VBOX_VOLNAME_PREFIX_SIZE));
+                if (cbString > VBOX_VOLNAME_PREFIX_SIZE)
+                {
+                    RtlCopyMemory(&pInfo->VolumeLabel[VBOX_VOLNAME_PREFIX_SIZE / sizeof(WCHAR)],
+                                  pRootName,
+                                  cbString - VBOX_VOLNAME_PREFIX_SIZE);
+                }
+            }
+
+            pInfo->VolumeLabelLength = cbString;
+
+            cbToCopy += cbString;
+
             Log(("VBOXSF: MrxQueryVolumeInfo: FileFsVolumeInformation: VolumeLabelLength %d\n",
                  pInfo->VolumeLabelLength));
 
@@ -645,12 +677,14 @@ NTSTATUS VBoxMRxQueryVolumeInfo(IN OUT PRX_CONTEXT RxContext)
             pRootName = pNetRoot->pNetRootName->Buffer + (pSrvCall->pSrvCallName->Length / sizeof(WCHAR));
             pRootName++; /* Remove the leading backslash. */
 
-            Log(("VBOXSF: MrxQueryVolumeInfo: FileFsLabelInformation: Root name = %.*ls\n",
-                 cbRootName / sizeof(WCHAR), pRootName));
+            Log(("VBOXSF: MrxQueryVolumeInfo: FileFsLabelInformation: Root name = %.*ls, %d bytes\n",
+                 cbRootName / sizeof(WCHAR), pRootName, cbRootName));
 
-            cbToCopy = sizeof(FILE_FS_LABEL_INFORMATION);
-            cbToCopy += VBOX_VOLNAME_PREFIX_SIZE;
-            cbToCopy += cbRootName;
+            cbToCopy = FIELD_OFFSET(FILE_FS_LABEL_INFORMATION, VolumeLabel);
+
+            cbString  = VBOX_VOLNAME_PREFIX_SIZE;
+            cbString += cbRootName;
+            cbString += sizeof(WCHAR);
 
             if (cbInfoBuffer < cbToCopy)
             {
@@ -658,12 +692,39 @@ NTSTATUS VBoxMRxQueryVolumeInfo(IN OUT PRX_CONTEXT RxContext)
                 break;
             }
 
-            RtlZeroMemory(pInfo, sizeof(FILE_FS_LABEL_INFORMATION));
+            RtlZeroMemory(pInfo, cbToCopy);
 
-            pInfo->VolumeLabelLength = VBOX_VOLNAME_PREFIX_SIZE + cbRootName;
+            if (cbInfoBuffer >= cbToCopy + cbString)
+            {
+                RtlCopyMemory(&pInfo->VolumeLabel[0],
+                              VBOX_VOLNAME_PREFIX,
+                              VBOX_VOLNAME_PREFIX_SIZE);
+                RtlCopyMemory(&pInfo->VolumeLabel[VBOX_VOLNAME_PREFIX_SIZE / sizeof(WCHAR)],
+                              pRootName,
+                              cbRootName);
+                pInfo->VolumeLabel[cbString / sizeof(WCHAR) -  1] = 0;
+            }
+            else
+            {
+                cbString = cbInfoBuffer - cbToCopy;
 
-            RtlCopyMemory(&pInfo->VolumeLabel[0], VBOX_VOLNAME_PREFIX, VBOX_VOLNAME_PREFIX_SIZE);
-            RtlCopyMemory(&pInfo->VolumeLabel[VBOX_VOLNAME_PREFIX_SIZE / sizeof(WCHAR)], pRootName, cbRootName);
+                RtlCopyMemory(&pInfo->VolumeLabel[0],
+                              VBOX_VOLNAME_PREFIX,
+                              RT_MIN(cbString, VBOX_VOLNAME_PREFIX_SIZE));
+                if (cbString > VBOX_VOLNAME_PREFIX_SIZE)
+                {
+                    RtlCopyMemory(&pInfo->VolumeLabel[VBOX_VOLNAME_PREFIX_SIZE / sizeof(WCHAR)],
+                                  pRootName,
+                                  cbString - VBOX_VOLNAME_PREFIX_SIZE);
+                }
+            }
+
+            pInfo->VolumeLabelLength = cbString;
+
+            cbToCopy += cbString;
+
+            Log(("VBOXSF: MrxQueryVolumeInfo: FileFsLabelInformation: VolumeLabelLength %d\n",
+                 pInfo->VolumeLabelLength));
 
             Status = STATUS_SUCCESS;
             break;
@@ -788,12 +849,13 @@ NTSTATUS VBoxMRxQueryVolumeInfo(IN OUT PRX_CONTEXT RxContext)
 
         case FileFsAttributeInformation:
         {
-            PFILE_FS_ATTRIBUTE_INFORMATION pAttribInfo = (PFILE_FS_ATTRIBUTE_INFORMATION)pInfoBuffer;
+            PFILE_FS_ATTRIBUTE_INFORMATION pInfo = (PFILE_FS_ATTRIBUTE_INFORMATION)pInfoBuffer;
 
             Log(("VBOXSF: MrxQueryVolumeInfo: FileFsAttributeInformation\n"));
 
-            cbToCopy = sizeof(FILE_FS_ATTRIBUTE_INFORMATION);
-            cbToCopy += sizeof(MRX_VBOX_FILESYS_NAME_U) - sizeof(WCHAR);
+            cbToCopy = FIELD_OFFSET(FILE_FS_ATTRIBUTE_INFORMATION, FileSystemName);
+
+            cbString = sizeof(MRX_VBOX_FILESYS_NAME_U);
 
             if (cbInfoBuffer < cbToCopy)
             {
@@ -801,10 +863,30 @@ NTSTATUS VBoxMRxQueryVolumeInfo(IN OUT PRX_CONTEXT RxContext)
                 break;
             }
 
-            pAttribInfo->FileSystemAttributes = 0; /** @todo set unicode, case sensitive etc? */
-            pAttribInfo->MaximumComponentNameLength = 255; /** @todo should query from the host */
-            pAttribInfo->FileSystemNameLength = sizeof(MRX_VBOX_FILESYS_NAME_U);
-            RtlCopyMemory(pAttribInfo->FileSystemName, MRX_VBOX_FILESYS_NAME_U, sizeof(MRX_VBOX_FILESYS_NAME_U));
+            pInfo->FileSystemAttributes = 0; /** @todo set unicode, case sensitive etc? */
+            pInfo->MaximumComponentNameLength = 255; /** @todo should query from the host */
+
+            if (cbInfoBuffer >= cbToCopy + cbString)
+            {
+                RtlCopyMemory(pInfo->FileSystemName,
+                              MRX_VBOX_FILESYS_NAME_U,
+                              sizeof(MRX_VBOX_FILESYS_NAME_U));
+            }
+            else
+            {
+                cbString = cbInfoBuffer - cbToCopy;
+
+                RtlCopyMemory(pInfo->FileSystemName,
+                              MRX_VBOX_FILESYS_NAME_U,
+                              RT_MIN(cbString, sizeof(MRX_VBOX_FILESYS_NAME_U)));
+            }
+
+            pInfo->FileSystemNameLength = cbString;
+
+            cbToCopy += cbString;
+
+            Log(("VBOXSF: MrxQueryVolumeInfo: FileFsAttributeInformation: FileSystemNameLength %d\n",
+                 pInfo->FileSystemNameLength));
 
             Status = STATUS_SUCCESS;
             break;
