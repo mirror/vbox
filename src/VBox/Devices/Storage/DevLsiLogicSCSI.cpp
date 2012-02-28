@@ -5293,7 +5293,7 @@ const PDMDEVREG g_DeviceLsiLogicSCSI =
     /* fClass */
     PDM_DEVREG_CLASS_STORAGE,
     /* cMaxInstances */
-    ~0,
+    ~0U,
     /* cbInstance */
     sizeof(LSILOGICSCSI),
     /* pfnConstruct */
@@ -5349,7 +5349,7 @@ const PDMDEVREG g_DeviceLsiLogicSAS =
     /* fClass */
     PDM_DEVREG_CLASS_STORAGE,
     /* cMaxInstances */
-    ~0,
+    ~0U,
     /* cbInstance */
     sizeof(LSILOGICSCSI),
     /* pfnConstruct */

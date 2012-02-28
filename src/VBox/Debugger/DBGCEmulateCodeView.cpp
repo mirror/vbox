@@ -96,7 +96,7 @@ static const DBGCVARDESC    g_aArgBrkAcc[] =
 static const DBGCVARDESC    g_aArgBrks[] =
 {
     /* cTimesMin,   cTimesMax,  enmCategory,            fFlags,                         pszName,        pszDescription */
-    {  0,           ~0,         DBGCVAR_CAT_NUMBER,     0,                              "#bp",          "Breakpoint number." },
+    {  0,           ~0U,        DBGCVAR_CAT_NUMBER,     0,                              "#bp",          "Breakpoint number." },
     {  0,           1,          DBGCVAR_CAT_STRING,     0,                              "all",          "All breakpoints." },
 };
 
@@ -135,8 +135,8 @@ static const DBGCVARDESC    g_aArgDumpMem[] =
 static const DBGCVARDESC    g_aArgDumpDT[] =
 {
     /* cTimesMin,   cTimesMax,  enmCategory,            fFlags,                         pszName,        pszDescription */
-    {  0,           ~0,         DBGCVAR_CAT_NUMBER,     0,                              "sel",          "Selector or selector range." },
-    {  0,           ~0,         DBGCVAR_CAT_POINTER,    0,                              "address",      "Far address which selector should be dumped." },
+    {  0,           ~0U,        DBGCVAR_CAT_NUMBER,     0,                              "sel",          "Selector or selector range." },
+    {  0,           ~0U,        DBGCVAR_CAT_POINTER,    0,                              "address",      "Far address which selector should be dumped." },
 };
 
 
@@ -144,7 +144,7 @@ static const DBGCVARDESC    g_aArgDumpDT[] =
 static const DBGCVARDESC    g_aArgDumpIDT[] =
 {
     /* cTimesMin,   cTimesMax,  enmCategory,            fFlags,                         pszName,        pszDescription */
-    {  0,           ~0,         DBGCVAR_CAT_NUMBER,     0,                              "int",          "The interrupt vector or interrupt vector range." },
+    {  0,           ~0U,        DBGCVAR_CAT_NUMBER,     0,                              "int",          "The interrupt vector or interrupt vector range." },
 };
 
 
@@ -205,7 +205,7 @@ static const DBGCVARDESC    g_aArgEditMem[] =
 {
     /* cTimesMin,   cTimesMax,  enmCategory,            fFlags,                         pszName,        pszDescription */
     {  1,           1,          DBGCVAR_CAT_POINTER,    0,                              "address",      "Address where to write." },
-    {  1,           ~0,         DBGCVAR_CAT_NUMBER,     0,                              "value",        "Value to write." },
+    {  1,           ~0U,        DBGCVAR_CAT_NUMBER,     0,                              "value",        "Value to write." },
 };
 
 
@@ -213,7 +213,7 @@ static const DBGCVARDESC    g_aArgEditMem[] =
 static const DBGCVARDESC    g_aArgListMods[] =
 {
     /* cTimesMin,   cTimesMax,  enmCategory,            fFlags,                         pszName,        pszDescription */
-    {  0,           ~0,         DBGCVAR_CAT_STRING,     0,                              "module",       "Module name." },
+    {  0,           ~0U,        DBGCVAR_CAT_STRING,     0,                              "module",       "Module name." },
 };
 
 
@@ -221,8 +221,8 @@ static const DBGCVARDESC    g_aArgListMods[] =
 static const DBGCVARDESC    g_aArgListNear[] =
 {
     /* cTimesMin,   cTimesMax,  enmCategory,            fFlags,                         pszName,        pszDescription */
-    {  0,           ~0,         DBGCVAR_CAT_POINTER,    0,                              "address",      "Address of the symbol to look up." },
-    {  0,           ~0,         DBGCVAR_CAT_SYMBOL,     0,                              "symbol",       "Symbol to lookup." },
+    {  0,           ~0U,        DBGCVAR_CAT_POINTER,    0,                              "address",      "Address of the symbol to look up." },
+    {  0,           ~0U,        DBGCVAR_CAT_SYMBOL,     0,                              "symbol",       "Symbol to lookup." },
 };
 
 
@@ -263,7 +263,7 @@ static const DBGCVARDESC    g_aArgSearchMem[] =
     {  0,           1,          DBGCVAR_CAT_OPTION,     0,                              "-u",           "Unicode string." },
     {  0,           1,          DBGCVAR_CAT_OPTION_NUMBER, 0,                           "-n <Hits>",    "Maximum number of hits." },
     {  0,           1,          DBGCVAR_CAT_GC_POINTER, 0,                              "range",        "Register to show or set." },
-    {  0,           ~0,         DBGCVAR_CAT_ANY,        0,                              "pattern",      "Pattern to search for." },
+    {  0,           ~0U,        DBGCVAR_CAT_ANY,        0,                              "pattern",      "Pattern to search for." },
 };
 
 
@@ -272,7 +272,7 @@ static const DBGCVARDESC    g_aArgSearchMemType[] =
 {
     /* cTimesMin,   cTimesMax,  enmCategory,            fFlags,                         pszName,        pszDescription */
     {  1,           1,          DBGCVAR_CAT_GC_POINTER, 0,                              "range",        "Register to show or set." },
-    {  1,           ~0,         DBGCVAR_CAT_ANY,        0,                              "pattern",      "Pattern to search for." },
+    {  1,           ~0U,        DBGCVAR_CAT_ANY,        0,                              "pattern",      "Pattern to search for." },
 };
 
 
@@ -292,9 +292,9 @@ const DBGCCMD    g_aCmdsCodeView[] =
     /* pszCmd,      cArgsMin, cArgsMax, paArgDescs,         cArgDescs,                      fFlags,  pfnHandler          pszSyntax,          ....pszDescription */
     { "ba",         3,        6,        &g_aArgBrkAcc[0],   RT_ELEMENTS(g_aArgBrkAcc),      0,       dbgcCmdBrkAccess,   "<access> <size> <address> [passes [max passes]] [cmds]",
                                                                                                                                                  "Sets a data access breakpoint." },
-    { "bc",         1,       ~0,        &g_aArgBrks[0],     RT_ELEMENTS(g_aArgBrks),        0,       dbgcCmdBrkClear,    "all | <bp#> [bp# []]", "Enabled a set of breakpoints." },
-    { "bd",         1,       ~0,        &g_aArgBrks[0],     RT_ELEMENTS(g_aArgBrks),        0,       dbgcCmdBrkDisable,  "all | <bp#> [bp# []]", "Disables a set of breakpoints." },
-    { "be",         1,       ~0,        &g_aArgBrks[0],     RT_ELEMENTS(g_aArgBrks),        0,       dbgcCmdBrkEnable,   "all | <bp#> [bp# []]", "Enabled a set of breakpoints." },
+    { "bc",         1,       ~0U,       &g_aArgBrks[0],     RT_ELEMENTS(g_aArgBrks),        0,       dbgcCmdBrkClear,    "all | <bp#> [bp# []]", "Enabled a set of breakpoints." },
+    { "bd",         1,       ~0U,       &g_aArgBrks[0],     RT_ELEMENTS(g_aArgBrks),        0,       dbgcCmdBrkDisable,  "all | <bp#> [bp# []]", "Disables a set of breakpoints." },
+    { "be",         1,       ~0U,       &g_aArgBrks[0],     RT_ELEMENTS(g_aArgBrks),        0,       dbgcCmdBrkEnable,   "all | <bp#> [bp# []]", "Enabled a set of breakpoints." },
     { "bl",         0,        0,        NULL,               0,                              0,       dbgcCmdBrkList,     "",                     "Lists all the breakpoints." },
     { "bp",         1,        4,        &g_aArgBrkSet[0],   RT_ELEMENTS(g_aArgBrkSet),      0,       dbgcCmdBrkSet,      "<address> [passes [max passes]] [cmds]",
                                                                                                                                                  "Sets a breakpoint (int 3)." },
@@ -305,12 +305,12 @@ const DBGCCMD    g_aCmdsCodeView[] =
     { "db",         0,        1,        &g_aArgDumpMem[0],  RT_ELEMENTS(g_aArgDumpMem),     0,       dbgcCmdDumpMem,     "[addr]",               "Dump memory in bytes." },
     { "dd",         0,        1,        &g_aArgDumpMem[0],  RT_ELEMENTS(g_aArgDumpMem),     0,       dbgcCmdDumpMem,     "[addr]",               "Dump memory in double words." },
     { "da",         0,        1,        &g_aArgDumpMem[0],  RT_ELEMENTS(g_aArgDumpMem),     0,       dbgcCmdDumpMem,     "[addr]",               "Dump memory as ascii string." },
-    { "dg",         0,       ~0,        &g_aArgDumpDT[0],   RT_ELEMENTS(g_aArgDumpDT),      0,       dbgcCmdDumpDT,      "[sel [..]]",           "Dump the global descriptor table (GDT)." },
-    { "dga",        0,       ~0,        &g_aArgDumpDT[0],   RT_ELEMENTS(g_aArgDumpDT),      0,       dbgcCmdDumpDT,      "[sel [..]]",           "Dump the global descriptor table (GDT) including not-present entries." },
-    { "di",         0,       ~0,        &g_aArgDumpIDT[0],  RT_ELEMENTS(g_aArgDumpIDT),     0,       dbgcCmdDumpIDT,     "[int [..]]",           "Dump the interrupt descriptor table (IDT)." },
-    { "dia",        0,       ~0,        &g_aArgDumpIDT[0],  RT_ELEMENTS(g_aArgDumpIDT),     0,       dbgcCmdDumpIDT,     "[int [..]]",           "Dump the interrupt descriptor table (IDT) including not-present entries." },
-    { "dl",         0,       ~0,        &g_aArgDumpDT[0],   RT_ELEMENTS(g_aArgDumpDT),      0,       dbgcCmdDumpDT,      "[sel [..]]",           "Dump the local descriptor table (LDT)." },
-    { "dla",        0,       ~0,        &g_aArgDumpDT[0],   RT_ELEMENTS(g_aArgDumpDT),      0,       dbgcCmdDumpDT,      "[sel [..]]",           "Dump the local descriptor table (LDT) including not-present entries." },
+    { "dg",         0,       ~0U,       &g_aArgDumpDT[0],   RT_ELEMENTS(g_aArgDumpDT),      0,       dbgcCmdDumpDT,      "[sel [..]]",           "Dump the global descriptor table (GDT)." },
+    { "dga",        0,       ~0U,       &g_aArgDumpDT[0],   RT_ELEMENTS(g_aArgDumpDT),      0,       dbgcCmdDumpDT,      "[sel [..]]",           "Dump the global descriptor table (GDT) including not-present entries." },
+    { "di",         0,       ~0U,       &g_aArgDumpIDT[0],  RT_ELEMENTS(g_aArgDumpIDT),     0,       dbgcCmdDumpIDT,     "[int [..]]",           "Dump the interrupt descriptor table (IDT)." },
+    { "dia",        0,       ~0U,       &g_aArgDumpIDT[0],  RT_ELEMENTS(g_aArgDumpIDT),     0,       dbgcCmdDumpIDT,     "[int [..]]",           "Dump the interrupt descriptor table (IDT) including not-present entries." },
+    { "dl",         0,       ~0U,       &g_aArgDumpDT[0],   RT_ELEMENTS(g_aArgDumpDT),      0,       dbgcCmdDumpDT,      "[sel [..]]",           "Dump the local descriptor table (LDT)." },
+    { "dla",        0,       ~0U,       &g_aArgDumpDT[0],   RT_ELEMENTS(g_aArgDumpDT),      0,       dbgcCmdDumpDT,      "[sel [..]]",           "Dump the local descriptor table (LDT) including not-present entries." },
     { "dpd",        0,        1,        &g_aArgDumpPD[0],   RT_ELEMENTS(g_aArgDumpPD),      0,       dbgcCmdDumpPageDir, "[addr] [index]",       "Dumps page directory entries of the default context." },
     { "dpda",       0,        1,        &g_aArgDumpPDAddr[0],RT_ELEMENTS(g_aArgDumpPDAddr), 0,       dbgcCmdDumpPageDir, "[addr]",               "Dumps specified page directory." },
     { "dpdb",       1,        1,        &g_aArgDumpPD[0],   RT_ELEMENTS(g_aArgDumpPD),      0,       dbgcCmdDumpPageDirBoth, "[addr] [index]",   "Dumps page directory entries of the guest and the hypervisor. " },
@@ -340,9 +340,9 @@ const DBGCCMD    g_aCmdsCodeView[] =
     { "k",          0,        0,        NULL,               0,                              0,       dbgcCmdStack,       "",                     "Callstack." },
     { "kg",         0,        0,        NULL,               0,                              0,       dbgcCmdStack,       "",                     "Callstack - guest." },
     { "kh",         0,        0,        NULL,               0,                              0,       dbgcCmdStack,       "",                     "Callstack - hypervisor." },
-    { "lm",         0,        ~0,       &g_aArgListMods[0], RT_ELEMENTS(g_aArgListMods),    0,       dbgcCmdListModules, "[module [..]]",        "List modules." },
-    { "lmo",        0,        ~0,       &g_aArgListMods[0], RT_ELEMENTS(g_aArgListMods),    0,       dbgcCmdListModules, "[module [..]]",        "List modules and their segments." },
-    { "ln",         0,        ~0,       &g_aArgListNear[0], RT_ELEMENTS(g_aArgListNear),    0,       dbgcCmdListNear,    "[addr/sym [..]]",      "List symbols near to the address. Default address is CS:EIP." },
+    { "lm",         0,        ~0U,      &g_aArgListMods[0], RT_ELEMENTS(g_aArgListMods),    0,       dbgcCmdListModules, "[module [..]]",        "List modules." },
+    { "lmo",        0,        ~0U,      &g_aArgListMods[0], RT_ELEMENTS(g_aArgListMods),    0,       dbgcCmdListModules, "[module [..]]",        "List modules and their segments." },
+    { "ln",         0,        ~0U,      &g_aArgListNear[0], RT_ELEMENTS(g_aArgListNear),    0,       dbgcCmdListNear,    "[addr/sym [..]]",      "List symbols near to the address. Default address is CS:EIP." },
     { "ls",         0,        1,        &g_aArgListSource[0],RT_ELEMENTS(g_aArgListSource), 0,       dbgcCmdListSource,  "[addr]",               "Source." },
     { "m",          1,        1,        &g_aArgMemoryInfo[0],RT_ELEMENTS(g_aArgMemoryInfo), 0,       dbgcCmdMemoryInfo,  "<addr>",               "Display information about that piece of memory." },
     { "r",          0,        2,        &g_aArgReg[0],      RT_ELEMENTS(g_aArgReg),         0,       dbgcCmdReg,         "[reg [newval]]",       "Show or set register(s) - active reg set." },
@@ -351,13 +351,13 @@ const DBGCCMD    g_aCmdsCodeView[] =
     { "rg64",       0,        0,        NULL,               0,                              0,       dbgcCmdRegGuest,    "",                     "Show 64-bit guest registers." },
     { "rh",         0,        2,        &g_aArgReg[0],      RT_ELEMENTS(g_aArgReg),         0,       dbgcCmdRegHyper,    "[reg [newval]]",       "Show or set register(s) - hypervisor reg set." },
     { "rt",         0,        0,        NULL,               0,                              0,       dbgcCmdRegTerse,    "",                     "Toggles terse / verbose register info." },
-    { "s",          0,       ~0,        &g_aArgSearchMem[0], RT_ELEMENTS(g_aArgSearchMem),  0,       dbgcCmdSearchMem,   "[options] <range> <pattern>",  "Continue last search." },
-    { "sa",         2,       ~0,        &g_aArgSearchMemType[0], RT_ELEMENTS(g_aArgSearchMemType),0, dbgcCmdSearchMemType, "<range> <pattern>",  "Search memory for an ascii string." },
-    { "sb",         2,       ~0,        &g_aArgSearchMemType[0], RT_ELEMENTS(g_aArgSearchMemType),0, dbgcCmdSearchMemType, "<range> <pattern>",  "Search memory for one or more bytes." },
-    { "sd",         2,       ~0,        &g_aArgSearchMemType[0], RT_ELEMENTS(g_aArgSearchMemType),0, dbgcCmdSearchMemType, "<range> <pattern>",  "Search memory for one or more double words." },
-    { "sq",         2,       ~0,        &g_aArgSearchMemType[0], RT_ELEMENTS(g_aArgSearchMemType),0, dbgcCmdSearchMemType, "<range> <pattern>",  "Search memory for one or more quad words." },
-    { "su",         2,       ~0,        &g_aArgSearchMemType[0], RT_ELEMENTS(g_aArgSearchMemType),0, dbgcCmdSearchMemType, "<range> <pattern>",  "Search memory for an unicode string." },
-    { "sw",         2,       ~0,        &g_aArgSearchMemType[0], RT_ELEMENTS(g_aArgSearchMemType),0, dbgcCmdSearchMemType, "<range> <pattern>",  "Search memory for one or more words." },
+    { "s",          0,       ~0U,       &g_aArgSearchMem[0], RT_ELEMENTS(g_aArgSearchMem),  0,       dbgcCmdSearchMem,   "[options] <range> <pattern>",  "Continue last search." },
+    { "sa",         2,       ~0U,       &g_aArgSearchMemType[0], RT_ELEMENTS(g_aArgSearchMemType),0, dbgcCmdSearchMemType, "<range> <pattern>",  "Search memory for an ascii string." },
+    { "sb",         2,       ~0U,       &g_aArgSearchMemType[0], RT_ELEMENTS(g_aArgSearchMemType),0, dbgcCmdSearchMemType, "<range> <pattern>",  "Search memory for one or more bytes." },
+    { "sd",         2,       ~0U,       &g_aArgSearchMemType[0], RT_ELEMENTS(g_aArgSearchMemType),0, dbgcCmdSearchMemType, "<range> <pattern>",  "Search memory for one or more double words." },
+    { "sq",         2,       ~0U,       &g_aArgSearchMemType[0], RT_ELEMENTS(g_aArgSearchMemType),0, dbgcCmdSearchMemType, "<range> <pattern>",  "Search memory for one or more quad words." },
+    { "su",         2,       ~0U,       &g_aArgSearchMemType[0], RT_ELEMENTS(g_aArgSearchMemType),0, dbgcCmdSearchMemType, "<range> <pattern>",  "Search memory for an unicode string." },
+    { "sw",         2,       ~0U,       &g_aArgSearchMemType[0], RT_ELEMENTS(g_aArgSearchMemType),0, dbgcCmdSearchMemType, "<range> <pattern>",  "Search memory for one or more words." },
     { "t",          0,        0,        NULL,               0,                              0,       dbgcCmdTrace,       "",                     "Instruction trace (step into)." },
     { "u",          0,        1,        &g_aArgUnassemble[0],RT_ELEMENTS(g_aArgUnassemble), 0,       dbgcCmdUnassemble,  "[addr]",               "Unassemble." },
     { "u64",        0,        1,        &g_aArgUnassemble[0],RT_ELEMENTS(g_aArgUnassemble), 0,       dbgcCmdUnassemble,  "[addr]",               "Unassemble 64-bit code." },

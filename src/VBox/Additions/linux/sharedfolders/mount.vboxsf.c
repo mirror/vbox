@@ -382,8 +382,8 @@ main (int argc, char **argv)
         0,     /* uid */
         0,     /* gid */
         0,     /* ttl */
-       ~0,     /* dmode */
-       ~0,     /* fmode*/
+       ~0U,    /* dmode */
+       ~0U,    /* fmode*/
         0,     /* dmask */
         0,     /* fmask */
         0,     /* ronly */

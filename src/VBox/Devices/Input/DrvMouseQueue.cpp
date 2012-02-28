@@ -370,7 +370,7 @@ const PDMDRVREG g_DrvMouseQueue =
     /* fClass. */
     PDM_DRVREG_CLASS_MOUSE,
     /* cMaxInstances */
-    ~0,
+    ~0U,
     /* cbInstance */
     sizeof(DRVMOUSEQUEUE),
     /* pfnConstruct */

@@ -1461,7 +1461,7 @@ const PDMDRVREG g_DrvNAT =
     /* fClass. */
     PDM_DRVREG_CLASS_NETWORK,
     /* cMaxInstances */
-    ~0,
+    ~0U,
     /* cbInstance */
     sizeof(DRVNAT),
     /* pfnConstruct */

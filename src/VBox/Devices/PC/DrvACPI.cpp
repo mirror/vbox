@@ -1014,7 +1014,7 @@ const PDMDRVREG g_DrvACPI =
     /* fClass. */
     PDM_DRVREG_CLASS_ACPI,
     /* cMaxInstances */
-    ~0,
+    ~0U,
     /* cbInstance */
     sizeof(DRVACPI),
     /* pfnConstruct */

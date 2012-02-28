@@ -250,7 +250,7 @@ const PDMDRVREG AudioSniffer::DrvReg =
     /* fClass. */
     PDM_DRVREG_CLASS_AUDIO,
     /* cMaxInstances */
-    ~0,
+    ~0U,
     /* cbInstance */
     sizeof(DRVAUDIOSNIFFER),
     /* pfnConstruct */

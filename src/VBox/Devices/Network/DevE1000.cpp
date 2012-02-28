@@ -6200,7 +6200,7 @@ const PDMDEVREG g_DeviceE1000 =
     /* Device class(es), combination of the PDM_DEVREG_CLASS_* \#defines. */
     PDM_DEVREG_CLASS_NETWORK,
     /* Maximum number of instances (per VM). */
-    ~0,
+    ~0U,
     /* Size of the instance data. */
     sizeof(E1KSTATE),
 

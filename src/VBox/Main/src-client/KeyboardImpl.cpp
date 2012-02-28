@@ -415,7 +415,7 @@ const PDMDRVREG Keyboard::DrvReg =
     /* fClass. */
     PDM_DRVREG_CLASS_KEYBOARD,
     /* cMaxInstances */
-    ~0,
+    ~0U,
     /* cbInstance */
     sizeof(DRVMAINKEYBOARD),
     /* pfnConstruct */

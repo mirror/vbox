@@ -338,7 +338,7 @@ const PDMDRVREG g_DrvRawImage =
     /* fClass. */
     PDM_DRVREG_CLASS_MEDIA,
     /* cMaxInstances */
-    ~0,
+    ~0U,
     /* cbInstance */
     sizeof(DRVRAWIMAGE),
     /* pfnConstruct */

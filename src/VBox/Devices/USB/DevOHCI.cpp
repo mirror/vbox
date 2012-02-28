@@ -5549,7 +5549,7 @@ const PDMDEVREG g_DeviceOHCI =
     /* fClass */
     PDM_DEVREG_CLASS_BUS_USB,
     /* cMaxInstances */
-    ~0,
+    ~0U,
     /* cbInstance */
     sizeof(OHCI),
     /* pfnConstruct */

@@ -909,7 +909,7 @@ const PDMDRVREG VMMDev::DrvReg =
     /* fClass. */
     PDM_DRVREG_CLASS_VMMDEV,
     /* cMaxInstances */
-    ~0,
+    ~0U,
     /* cbInstance */
     sizeof(DRVMAINVMMDEV),
     /* pfnConstruct */

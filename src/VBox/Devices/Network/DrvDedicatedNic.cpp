@@ -526,7 +526,7 @@ const PDMDRVREG g_DrvDedicatedNic =
     /* fClass. */
     PDM_DRVREG_CLASS_NETWORK,
     /* cMaxInstances */
-    ~0,
+    ~0U,
     /* cbInstance */
     sizeof(DRVDEDICATEDNIC),
     /* pfnConstruct */

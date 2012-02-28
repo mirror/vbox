@@ -364,7 +364,7 @@ static const PDMDRVREG g_DrvStorageFilter =
     /* fClass. */
     PDM_DRVREG_CLASS_MEDIA,
     /* cMaxInstances */
-    ~0,
+    ~0U,
     /* cbInstance */
     sizeof(DRVSTORAGEFILTER),
     /* pfnConstruct */

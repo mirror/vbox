@@ -4196,7 +4196,7 @@ const PDMDRVREG Display::DrvReg =
     /* fClass. */
     PDM_DRVREG_CLASS_DISPLAY,
     /* cMaxInstances */
-    ~0,
+    ~0U,
     /* cbInstance */
     sizeof(DRVMAINDISPLAY),
     /* pfnConstruct */

@@ -2877,7 +2877,7 @@ const PDMDEVREG g_DevicePciIch9Bridge =
     /* fClass */
     PDM_DEVREG_CLASS_BUS_PCI,
     /* cMaxInstances */
-    ~0,
+    ~0U,
     /* cbInstance */
     sizeof(ICH9PCIBUS),
     /* pfnConstruct */

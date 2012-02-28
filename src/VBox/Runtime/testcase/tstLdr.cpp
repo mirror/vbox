@@ -100,12 +100,12 @@ static int testLdrOne(const char *pszFilename)
         const char *pszName;
     }   aLoads[6] =
     {
-        { NULL, NULL, (int32_t)0xefefef00, "foo" },
-        { NULL, NULL, (int32_t)0x40404040, "bar" },
-        { NULL, NULL, (int32_t)0xefefef00, "foobar" },
-        { NULL, NULL, (int32_t)0xefefef00, "kLdr-foo" },
-        { NULL, NULL, (int32_t)0x40404040, "kLdr-bar" },
-        { NULL, NULL, (int32_t)0xefefef00, "kLdr-foobar" }
+        { NULL, NULL, (RTUINTPTR)0xefefef00, "foo" },
+        { NULL, NULL, (RTUINTPTR)0x40404040, "bar" },
+        { NULL, NULL, (RTUINTPTR)0xefefef00, "foobar" },
+        { NULL, NULL, (RTUINTPTR)0xefefef00, "kLdr-foo" },
+        { NULL, NULL, (RTUINTPTR)0x40404040, "kLdr-bar" },
+        { NULL, NULL, (RTUINTPTR)0xefefef00, "kLdr-foobar" }
     };
     unsigned i;
 
@@ -169,15 +169,15 @@ static int testLdrOne(const char *pszFilename)
     {
         static RTUINTPTR aRels[] =
         {
-            (int32_t)0xefefef00,        /* same. */
-            (int32_t)0x40404040,        /* the other. */
-            (int32_t)0xefefef00,        /* back. */
-            (int32_t)0x40404040,        /* the other. */
-            (int32_t)0xefefef00,        /* back again. */
-            (int32_t)0x77773420,        /* somewhere entirely else. */
-            (int32_t)0xf0000000,        /* somewhere entirely else. */
-            (int32_t)0x40404040,        /* the other. */
-            (int32_t)0xefefef00         /* back again. */
+            (RTUINTPTR)0xefefef00,        /* same. */
+            (RTUINTPTR)0x40404040,        /* the other. */
+            (RTUINTPTR)0xefefef00,        /* back. */
+            (RTUINTPTR)0x40404040,        /* the other. */
+            (RTUINTPTR)0xefefef00,        /* back again. */
+            (RTUINTPTR)0x77773420,        /* somewhere entirely else. */
+            (RTUINTPTR)0xf0000000,        /* somewhere entirely else. */
+            (RTUINTPTR)0x40404040,        /* the other. */
+            (RTUINTPTR)0xefefef00         /* back again. */
         };
         struct Symbols
         {
@@ -187,14 +187,14 @@ static int testLdrOne(const char *pszFilename)
             const char *pszName;
         } aSyms[] =
         {
-            { ~0, "Entrypoint" },
-            { ~0, "SomeExportFunction1" },
-            { ~0, "SomeExportFunction2" },
-            { ~0, "SomeExportFunction3" },
-            { ~0, "SomeExportFunction4" },
-            { ~0, "SomeExportFunction5" },
-            { ~0, "SomeExportFunction5" },
-            { ~0, "DISCoreOne" }
+            { ~0U, "Entrypoint" },
+            { ~0U, "SomeExportFunction1" },
+            { ~0U, "SomeExportFunction2" },
+            { ~0U, "SomeExportFunction3" },
+            { ~0U, "SomeExportFunction4" },
+            { ~0U, "SomeExportFunction5" },
+            { ~0U, "SomeExportFunction5" },
+            { ~0U, "DISCoreOne" }
         };
 
         unsigned iRel = 0;

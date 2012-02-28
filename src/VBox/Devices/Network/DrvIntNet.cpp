@@ -1840,7 +1840,7 @@ const PDMDRVREG g_DrvIntNet =
     /* fClass. */
     PDM_DRVREG_CLASS_NETWORK,
     /* cMaxInstances */
-    ~0,
+    ~0U,
     /* cbInstance */
     sizeof(DRVINTNET),
     /* pfnConstruct */

@@ -3229,7 +3229,7 @@ const PDMDEVREG g_DeviceBusLogic =
     /* fClass */
     PDM_DEVREG_CLASS_STORAGE,
     /* cMaxInstances */
-    ~0,
+    ~0U,
     /* cbInstance */
     sizeof(BUSLOGIC),
     /* pfnConstruct */

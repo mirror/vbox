@@ -347,7 +347,7 @@ const PDMDRVREG g_DrvKeyboardQueue =
     /* fClass. */
     PDM_DRVREG_CLASS_KEYBOARD,
     /* cMaxInstances */
-    ~0,
+    ~0U,
     /* cbInstance */
     sizeof(DRVKBDQUEUE),
     /* pfnConstruct */

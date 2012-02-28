@@ -249,7 +249,7 @@ const PDMDRVREG g_DrvHostFloppy =
     /* fClass. */
     PDM_DRVREG_CLASS_BLOCK,
     /* cMaxInstances */
-    ~0,
+    ~0U,
     /* cbInstance */
     sizeof(DRVHOSTFLOPPY),
     /* pfnConstruct */
