@@ -135,8 +135,19 @@ CR_PROC CR_APIENTRY crGetProcAddress( const char *name )
     if (!crStrcmp( name, "wglGetPixelFormatAttribfvARB" )) return (CR_PROC) wglGetPixelFormatAttribfvEXT;
 
     if (!crStrcmp( name, "wglSwapIntervalEXT" )) return (CR_PROC) wglSwapIntervalEXT;
+    
+    /* this is needed for VSG Open Inventor stuff.
+     * @todo: make all these auto-generated!!! */
+    if (!crStrcmp( name, "glBeginQuery" )) return (CR_PROC) cr_glBeginQueryARB;
+    if (!crStrcmp( name, "glDeleteQueries" )) return (CR_PROC) cr_glDeleteQueriesARB;
+    if (!crStrcmp( name, "glEndQuery" )) return (CR_PROC) cr_glEndQueryARB;
+    if (!crStrcmp( name, "glGenQueries" )) return (CR_PROC) cr_glGenQueriesARB;
+    if (!crStrcmp( name, "glGetQueryObjectiv" )) return (CR_PROC) cr_glGetQueryObjectivARB;
+    if (!crStrcmp( name, "glGetQueryObjectuiv" )) return (CR_PROC) cr_glGetQueryObjectuivARB;
+    if (!crStrcmp( name, "glGetQueryiv" )) return (CR_PROC) cr_glGetQueryivARB;
+    if (!crStrcmp( name, "glIsQuery" )) return (CR_PROC) cr_glIsQueryARB;
 
-    crDebug("Returning GetProcAddress:NULL for %s", name);
+    crWarning("Returning GetProcAddress:NULL for %s", name);
     return NULL;
 }
 
