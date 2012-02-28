@@ -830,7 +830,7 @@ const PDMDRVREG Mouse::DrvReg =
     /* fClass. */
     PDM_DRVREG_CLASS_MOUSE,
     /* cMaxInstances */
-    ~0,
+    ~0U,
     /* cbInstance */
     sizeof(DRVMAINMOUSE),
     /* pfnConstruct */

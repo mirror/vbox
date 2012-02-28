@@ -1115,7 +1115,7 @@ const PDMDRVREG g_DrvVUSBRootHub =
     /* fClass. */
     PDM_DRVREG_CLASS_USB,
     /* cMaxInstances */
-    ~0,
+    ~0U,
     /* cbInstance */
     sizeof(VUSBROOTHUB),
     /* pfnConstruct */

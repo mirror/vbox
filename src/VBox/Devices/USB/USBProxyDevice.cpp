@@ -1076,7 +1076,7 @@ const PDMUSBREG g_UsbDevProxy =
     /* fFlags */
     0,
     /* cMaxInstances */
-    ~0,
+    ~0U,
     /* cbInstance */
     sizeof(USBPROXYDEV),
     /* pfnConstruct */

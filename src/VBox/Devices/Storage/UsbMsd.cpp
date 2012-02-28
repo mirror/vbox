@@ -1604,7 +1604,7 @@ const PDMUSBREG g_UsbMsd =
     /* fFlags */
     0,
     /* cMaxInstances */
-    ~0,
+    ~0U,
     /* cbInstance */
     sizeof(USBMSD),
     /* pfnConstruct */

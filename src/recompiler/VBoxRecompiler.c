@@ -198,7 +198,7 @@ static DECLCALLBACK(int) remR3CmdDisasEnableStepping(PCDBGCCMD pCmd, PDBGCCMDHLP
 static const DBGCVARDESC    g_aArgRemStep[] =
 {
     /* cTimesMin,   cTimesMax,  enmCategory,            fFlags,                         pszName,        pszDescription */
-    {  0,           ~0,         DBGCVAR_CAT_NUMBER,     0,                              "on/off",       "Boolean value/mnemonic indicating the new state." },
+    {  0,           ~0U,        DBGCVAR_CAT_NUMBER,     0,                              "on/off",       "Boolean value/mnemonic indicating the new state." },
 };
 
 /** Command descriptors. */

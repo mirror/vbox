@@ -286,7 +286,7 @@ const PDMDRVREG g_DrvMediaISO =
     /* fClass. */
     PDM_DRVREG_CLASS_MEDIA,
     /* cMaxInstances */
-    ~0,
+    ~0U,
     /* cbInstance */
     sizeof(DRVMEDIAISO),
     /* pfnConstruct */

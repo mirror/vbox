@@ -853,7 +853,7 @@ const PDMDRVREG g_DrvHostDVD =
     /* fClass. */
     PDM_DRVREG_CLASS_BLOCK,
     /* cMaxInstances */
-    ~0,
+    ~0U,
     /* cbInstance */
     sizeof(DRVHOSTBASE),
     /* pfnConstruct */

@@ -631,7 +631,7 @@ const PDMDRVREG g_DrvVDE =
     /* fClass. */
     PDM_DRVREG_CLASS_NETWORK,
     /* cMaxInstances */
-    ~0,
+    ~0U,
     /* cbInstance */
     sizeof(DRVVDE),
     /* pfnConstruct */

@@ -1183,9 +1183,9 @@ void VBoxSDLFB::paintSecureLabel(int x, int y, int w, int h, bool fForce)
          && !mSecureLabelText.isEmpty()
        )
     {
-        SDL_Color clrFg = {(mSecureLabelColorFG & 0x00FF0000) >> 16,
-                           (mSecureLabelColorFG & 0x0000FF00) >> 8,
-                           mSecureLabelColorFG & 0x000000FF, 0};
+        SDL_Color clrFg = {(uint8_t)((mSecureLabelColorFG & 0x00FF0000) >> 16),
+                           (uint8_t)((mSecureLabelColorFG & 0x0000FF00) >> 8),
+                           (uint8_t)( mSecureLabelColorFG & 0x000000FF      ), 0};
         SDL_Surface *sText = (pTTF_RenderUTF8_Blended != NULL)
                                  ? pTTF_RenderUTF8_Blended(mLabelFont, mSecureLabelText.c_str(), clrFg)
                                  : pTTF_RenderUTF8_Solid(mLabelFont, mSecureLabelText.c_str(), clrFg);

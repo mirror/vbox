@@ -427,7 +427,7 @@ const PDMDRVREG g_DrvChar =
     /* fClass. */
     PDM_DRVREG_CLASS_CHAR,
     /* cMaxInstances */
-    ~0,
+    ~0U,
     /* cbInstance */
     sizeof(DRVCHAR),
     /* pfnConstruct */

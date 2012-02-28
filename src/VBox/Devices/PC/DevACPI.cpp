@@ -3367,7 +3367,7 @@ const PDMDEVREG g_DeviceACPI =
     /* fClass */
     PDM_DEVREG_CLASS_ACPI,
     /* cMaxInstances */
-    ~0,
+    ~0U,
     /* cbInstance */
     sizeof(ACPIState),
     /* pfnConstruct */

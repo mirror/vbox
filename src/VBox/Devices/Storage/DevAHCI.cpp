@@ -8252,7 +8252,7 @@ const PDMDEVREG g_DeviceAHCI =
     /* fClass */
     PDM_DEVREG_CLASS_STORAGE,
     /* cMaxInstances */
-    ~0,
+    ~0U,
     /* cbInstance */
     sizeof(AHCI),
     /* pfnConstruct */

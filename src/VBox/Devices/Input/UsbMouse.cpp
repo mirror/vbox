@@ -1330,7 +1330,7 @@ const PDMUSBREG g_UsbHidMou =
     /* fFlags */
     0,
     /* cMaxInstances */
-    ~0,
+    ~0U,
     /* cbInstance */
     sizeof(USBHID),
     /* pfnConstruct */

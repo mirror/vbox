@@ -205,7 +205,7 @@ const PDMDRVREG VMStatus::DrvReg =
     /* fClass. */
     PDM_DRVREG_CLASS_STATUS,
     /* cMaxInstances */
-    ~0,
+    ~0U,
     /* cbInstance */
     sizeof(DRVMAINSTATUS),
     /* pfnConstruct */
