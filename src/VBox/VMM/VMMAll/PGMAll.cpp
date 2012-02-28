@@ -29,7 +29,9 @@
 #include <VBox/vmm/csam.h>
 #include <VBox/vmm/patm.h>
 #include <VBox/vmm/trpm.h>
-#include <VBox/vmm/rem.h>
+#ifdef VBOX_WITH_REM
+# include <VBox/vmm/rem.h>
+#endif
 #include <VBox/vmm/em.h>
 #include <VBox/vmm/hwaccm.h>
 #include <VBox/vmm/hwacc_vmx.h>
@@ -721,7 +723,7 @@ VMMDECL(int) PGMInvalidatePage(PVMCPU pVCpu, RTGCPTR GCPtrPage)
     int rc;
     Log3(("PGMInvalidatePage: GCPtrPage=%RGv\n", GCPtrPage));
 
-#ifndef IN_RING3
+#if !defined(IN_RING3) && defined(VBOX_WITH_REM)
     /*
      * Notify the recompiler so it can record this instruction.
      */

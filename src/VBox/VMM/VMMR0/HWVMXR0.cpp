@@ -27,7 +27,9 @@
 #include <VBox/vmm/dbgftrace.h>
 #include <VBox/vmm/selm.h>
 #include <VBox/vmm/iom.h>
-#include <VBox/vmm/rem.h>
+#ifdef VBOX_WITH_REM
+# include <VBox/vmm/rem.h>
+#endif
 #include <VBox/vmm/tm.h>
 #include "HWACCMInternal.h"
 #include <VBox/vmm/vm.h>
@@ -1433,11 +1435,13 @@ VMMR0DECL(int) VMXR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
                 if (    pVCpu->hwaccm.s.vmx.enmLastSeenGuestMode == PGMMODE_REAL
                     &&  enmGuestMode >= PGMMODE_PROTECTED)
                 {
+#ifdef VBOX_WITH_REM
                     /* Flush the recompiler code cache as it's not unlikely
                      * the guest will rewrite code it will later execute in real
                      * mode (OpenBSD 4.0 is one such example)
                      */
                     REMFlushTBs(pVM);
+#endif
 
                     /* DPL of all hidden selector registers must match the current CPL (0). */
                     pCtx->csHid.Attr.n.u2Dpl  = 0;

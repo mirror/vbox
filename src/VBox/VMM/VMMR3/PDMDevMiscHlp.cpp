@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2011 Oracle Corporation
+ * Copyright (C) 2006-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -22,7 +22,10 @@
 #define LOG_GROUP LOG_GROUP_PDM_DEVICE
 #include "PDMInternal.h"
 #include <VBox/vmm/pdm.h>
-#include <VBox/vmm/rem.h>
+#include <VBox/vmm/pgm.h>
+#ifdef VBOX_WITH_REM
+# include <VBox/vmm/rem.h>
+#endif
 #include <VBox/vmm/vm.h>
 #include <VBox/vmm/vmm.h>
 
@@ -59,7 +62,9 @@ static DECLCALLBACK(void) pdmR3PicHlp_SetInterruptFF(PPDMDEVINS pDevIns)
              pDevIns->pReg->szName, pDevIns->iInstance, VMCPU_FF_ISSET(pVCpu, VMCPU_FF_INTERRUPT_PIC)));
 
     VMCPU_FF_SET(pVCpu, VMCPU_FF_INTERRUPT_PIC);
+#ifdef VBOX_WITH_REM
     REMR3NotifyInterruptSet(pVM, pVCpu);
+#endif
     VMR3NotifyCpuFFU(pVCpu->pUVCpu, VMNOTIFYFF_FLAGS_DONE_REM | VMNOTIFYFF_FLAGS_POKE);
 }
 
@@ -85,7 +90,9 @@ static DECLCALLBACK(void) pdmR3PicHlp_ClearInterruptFF(PPDMDEVINS pDevIns)
              pDevIns->pReg->szName, pDevIns->iInstance, VMCPU_FF_ISSET(pVCpu, VMCPU_FF_INTERRUPT_PIC)));
 
     VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_INTERRUPT_PIC);
+#ifdef VBOX_WITH_REM
     REMR3NotifyInterruptClear(pVM, pVCpu);
+#endif
 }
 
 
@@ -189,7 +196,9 @@ static DECLCALLBACK(void) pdmR3ApicHlp_SetInterruptFF(PPDMDEVINS pDevIns, PDMAPI
             AssertMsgFailed(("enmType=%d\n", enmType));
             break;
     }
+#ifdef VBOX_WITH_REM
     REMR3NotifyInterruptSet(pVM, pVCpu);
+#endif
     VMR3NotifyCpuFFU(pVCpu->pUVCpu, VMNOTIFYFF_FLAGS_DONE_REM | VMNOTIFYFF_FLAGS_POKE);
 }
 
@@ -219,7 +228,9 @@ static DECLCALLBACK(void) pdmR3ApicHlp_ClearInterruptFF(PPDMDEVINS pDevIns, PDMA
             AssertMsgFailed(("enmType=%d\n", enmType));
             break;
     }
+#ifdef VBOX_WITH_REM
     REMR3NotifyInterruptClear(pVM, pVCpu);
+#endif
 }
 
 

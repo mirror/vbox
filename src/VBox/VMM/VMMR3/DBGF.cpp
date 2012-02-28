@@ -72,7 +72,9 @@
 #define LOG_GROUP LOG_GROUP_DBGF
 #include <VBox/vmm/dbgf.h>
 #include <VBox/vmm/selm.h>
-#include <VBox/vmm/rem.h>
+#ifdef VBOX_WITH_REM
+# include <VBox/vmm/rem.h>
+#endif
 #include <VBox/vmm/em.h>
 #include <VBox/vmm/hwaccm.h>
 #include "DBGFInternal.h"
@@ -408,8 +410,10 @@ static int dbgfR3EventPrologue(PVM pVM, DBGFEVENTTYPE enmEvent)
      * Sync back the state from the REM.
      */
     dbgfR3EventSetStoppedInHyperFlag(pVM, enmEvent);
+#ifdef VBOX_WITH_REM
     if (!pVM->dbgf.s.fStoppedInHyper)
         REMR3StateUpdate(pVM, pVCpu);
+#endif
 
     /*
      * Look thru pending commands and finish those which make sense now.

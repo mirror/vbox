@@ -23,7 +23,9 @@
 #include "PDMInternal.h"
 #include <VBox/vmm/pdm.h>
 #ifndef IN_RC
-# include <VBox/vmm/rem.h>
+# ifdef VBOX_WITH_REM
+#  include <VBox/vmm/rem.h>
+# endif
 # include <VBox/vmm/mm.h>
 #endif
 #include <VBox/vmm/vm.h>
@@ -101,7 +103,9 @@ VMMDECL(void) PDMQueueInsert(PPDMQUEUE pQueue, PPDMQUEUEITEMCORE pItem)
         VM_FF_SET(pVM, VM_FF_PDM_QUEUES);
         ASMAtomicBitSet(&pVM->pdm.s.fQueueFlushing, PDM_QUEUE_FLUSH_FLAG_PENDING_BIT);
 #ifdef IN_RING3
+# ifdef VBOX_WITH_REM
         REMR3NotifyQueuePending(pVM); /** @todo r=bird: we can remove REMR3NotifyQueuePending and let VMR3NotifyFF do the work. */
+# endif
         VMR3NotifyGlobalFFU(pVM->pUVM, VMNOTIFYFF_FLAGS_DONE_REM);
 #endif
     }

@@ -309,10 +309,12 @@ typedef struct EM
     /** Id of the VCPU that last executed code in the recompiler. */
     VMCPUID                 idLastRemCpu;
 
+#ifdef VBOX_WITH_REM
     /** REM critical section.
      * This protects recompiler usage
      */
     PDMCRITSECT             CritSectREM;
+#endif
 } EM;
 /** Pointer to EM VM instance data. */
 typedef EM *PEM;

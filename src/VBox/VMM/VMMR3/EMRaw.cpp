@@ -26,10 +26,13 @@
 #include <VBox/vmm/csam.h>
 #include <VBox/vmm/selm.h>
 #include <VBox/vmm/trpm.h>
+#include <VBox/vmm/iem.h>
 #include <VBox/vmm/iom.h>
 #include <VBox/vmm/dbgf.h>
 #include <VBox/vmm/pgm.h>
-#include <VBox/vmm/rem.h>
+#ifdef VBOX_WITH_REM
+# include <VBox/vmm/rem.h>
+#endif
 #include <VBox/vmm/tm.h>
 #include <VBox/vmm/mm.h>
 #include <VBox/vmm/ssm.h>
@@ -396,6 +399,7 @@ static int emR3ExecuteInstructionWorker(PVM pVM, PVMCPU pVCpu, int rcGC)
 #endif /* 0 */
     STAM_PROFILE_START(&pVCpu->em.s.StatREMEmu, a);
     Log(("EMINS: %04x:%RGv RSP=%RGv\n", pCtx->cs, (RTGCPTR)pCtx->rip, (RTGCPTR)pCtx->rsp));
+#ifdef VBOX_WITH_REM
     EMRemLock(pVM);
     /* Flush the recompiler TLB if the VCPU has changed. */
     if (pVM->em.s.idLastRemCpu != pVCpu->idCpu)
@@ -404,6 +408,9 @@ static int emR3ExecuteInstructionWorker(PVM pVM, PVMCPU pVCpu, int rcGC)
 
     rc = REMR3EmulateInstruction(pVM, pVCpu);
     EMRemUnlock(pVM);
+#else
+    rc = VBOXSTRICTRC_TODO(IEMExecOne(pVCpu));
+#endif
     STAM_PROFILE_STOP(&pVCpu->em.s.StatREMEmu, a);
 
     return rc;
@@ -1387,7 +1394,9 @@ int emR3RawExecute(PVM pVM, PVMCPU pVCpu, bool *pfFFDone)
          * Check various preconditions.
          */
 #ifdef VBOX_STRICT
+# ifdef VBOX_WITH_REM
         Assert(REMR3QueryPendingInterrupt(pVM, pVCpu) == REM_NO_PENDING_IRQ);
+# endif
         Assert(pCtx->eflags.Bits.u1VM || (pCtx->ss & X86_SEL_RPL) == 3 || (pCtx->ss & X86_SEL_RPL) == 0);
         AssertMsg(   (pCtx->eflags.u32 & X86_EFL_IF)
                   || PATMShouldUseRawMode(pVM, (RTGCPTR)pCtx->eip),

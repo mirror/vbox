@@ -25,7 +25,9 @@
 #include <VBox/vmm/mm.h>
 #include <VBox/vmm/pgm.h>
 #include <VBox/vmm/iom.h>
-#include <VBox/vmm/rem.h>
+#ifdef VBOX_WITH_REM
+# include <VBox/vmm/rem.h>
+#endif
 #include <VBox/vmm/dbgf.h>
 #include <VBox/vmm/vmapi.h>
 #include <VBox/vmm/vm.h>
@@ -1145,7 +1147,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_PCIRegister(PPDMDEVINS pDevIns, PPCIDEVICE 
             AssertMsgRCReturn(rc, ("Configuration error: PCIDeviceNo, but PCIFunctionNo query failed with rc=%Rrc (%s/%d)\n",
                                    rc, pDevIns->pReg->szName, pDevIns->iInstance),
                               rc);
-            AssertMsgReturn(u8Function <= 7, 
+            AssertMsgReturn(u8Function <= 7,
                             ("Configuration error: PCIFunctionNo=%d, max is 7. (%s/%d)\n",
                              u8Function, pDevIns->pReg->szName, pDevIns->iInstance),
                             VERR_PDM_BAD_PCI_CONFIG);
@@ -1905,7 +1907,9 @@ static DECLCALLBACK(void) pdmR3DevHlp_DMASchedule(PPDMDEVINS pDevIns)
 
     AssertMsg(pVM->pdm.s.pDmac, ("Configuration error: No DMAC controller available. This could be related to init order too!\n"));
     VM_FF_SET(pVM, VM_FF_PDM_DMA);
+#ifdef VBOX_WITH_REM
     REMR3NotifyDmaPending(pVM);
+#endif
     VMR3NotifyGlobalFFU(pVM->pUVM, VMNOTIFYFF_FLAGS_DONE_REM);
 }
 

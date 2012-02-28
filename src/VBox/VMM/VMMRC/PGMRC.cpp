@@ -27,7 +27,9 @@
 #include <VBox/vmm/selm.h>
 #include <VBox/vmm/iom.h>
 #include <VBox/vmm/trpm.h>
-#include <VBox/vmm/rem.h>
+#ifdef VBOX_WITH_REM
+# include <VBox/vmm/rem.h>
+#endif
 #include "PGMInternal.h"
 #include <VBox/vmm/vm.h>
 #include "PGMInline.h"

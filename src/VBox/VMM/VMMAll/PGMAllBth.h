@@ -4576,7 +4576,9 @@ PGM_BTH_DECL(int, MapCR3)(PVMCPU pVCpu, RTGCPHYS GCPhysCR3)
      *          state will be inconsistent! Flush important things now while
      *          we still can and then make sure there are no ring-3 calls.
      */
+#   ifdef VBOX_WITH_REM
     REMNotifyHandlerPhysicalFlushIfAlmostFull(pVM, pVCpu);
+#   endif
     VMMRZCallRing3Disable(pVCpu);
 #  endif
 

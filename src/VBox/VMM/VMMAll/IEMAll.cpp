@@ -7842,6 +7842,13 @@ VMMDECL(VBOXSTRICTRC) IEMExecOne(PVMCPU pVCpu)
 }
 
 
+VMMDECL(VBOXSTRICTRC) IEMExecLots(PVMCPU pVCpu)
+{
+    return IEMExecOne(pVCpu);
+}
+
+
+
 /**
  * Injects a trap, fault, abort, software interrupt or external interrupt.
  *
@@ -7896,5 +7903,17 @@ VMM_INT_DECL(VBOXSTRICTRC) IEMInjectTrap(PVMCPU pVCpu, uint8_t u8TrapNo, TRPMEVE
     }
 
     return iemRaiseXcptOrInt(&pVCpu->iem.s, 0, u8TrapNo, fFlags, uErrCode, uCr2);
+}
+
+
+VMM_INT_DECL(int) IEMBreakpointSet(PVM pVM, RTGCPTR GCPtrBp)
+{
+    return VERR_NOT_IMPLEMENTED;
+}
+
+
+VMM_INT_DECL(int) IEMBreakpointClear(PVM pVM, RTGCPTR GCPtrBp)
+{
+    return VERR_NOT_IMPLEMENTED;
 }
 

@@ -28,7 +28,9 @@
 #include <VBox/vmm/mm.h>
 #include <VBox/sup.h>
 #include <VBox/vmm/mm.h>
-#include <VBox/vmm/rem.h>
+#ifdef VBOX_WITH_REM
+# include <VBox/vmm/rem.h>
+#endif
 #include <VBox/param.h>
 #include <iprt/avl.h>
 #include "CSAMInternal.h"
@@ -69,8 +71,10 @@ VMMRCDECL(int) CSAMGCCodePageWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTX
 
     Assert(pVM->csam.s.cDirtyPages < CSAM_MAX_DIRTY_PAGES);
 
+#ifdef VBOX_WITH_REM
     /* Flush the recompilers translation block cache as the guest seems to be modifying instructions. */
     REMFlushTBs(pVM);
+#endif
 
     pPATMGCState = PATMQueryGCState(pVM);
     Assert(pPATMGCState);

@@ -55,7 +55,9 @@
 #include <VBox/vmm/pdmcritsect.h>
 #include <VBox/vmm/em.h>
 #include <VBox/vmm/iem.h>
-#include <VBox/vmm/rem.h>
+#ifdef VBOX_WITH_REM
+# include <VBox/vmm/rem.h>
+#endif
 #include <VBox/vmm/tm.h>
 #include <VBox/vmm/stam.h>
 #include <VBox/vmm/patm.h>
@@ -909,7 +911,9 @@ static int vmR3InitRing3(PVM pVM, PUVM pUVM)
                 rc = PGMR3Init(pVM);
                 if (RT_SUCCESS(rc))
                 {
+#ifdef VBOX_WITH_REM
                     rc = REMR3Init(pVM);
+#endif
                     if (RT_SUCCESS(rc))
                     {
                         rc = MMR3InitPaging(pVM);
@@ -961,8 +965,10 @@ static int vmR3InitRing3(PVM pVM, PUVM pUVM)
                                                                             rc = SELMR3InitFinalize(pVM);
                                                                         if (RT_SUCCESS(rc))
                                                                             rc = TMR3InitFinalize(pVM);
+#ifdef VBOX_WITH_REM
                                                                         if (RT_SUCCESS(rc))
                                                                             rc = REMR3InitFinalize(pVM);
+#endif
                                                                         if (RT_SUCCESS(rc))
                                                                             rc = vmR3InitDoCompleted(pVM, VMINITCOMPLETED_RING3);
                                                                         if (RT_SUCCESS(rc))
@@ -1007,8 +1013,10 @@ static int vmR3InitRing3(PVM pVM, PUVM pUVM)
                             int rc2 = TMR3Term(pVM);
                             AssertRC(rc2);
                         }
+#ifdef VBOX_WITH_REM
                         int rc2 = REMR3Term(pVM);
                         AssertRC(rc2);
+#endif
                     }
                     int rc2 = PGMR3Term(pVM);
                     AssertRC(rc2);
@@ -2434,8 +2442,10 @@ DECLCALLBACK(int) vmR3Destroy(PVM pVM)
         AssertRC(rc);
         rc = SELMR3Term(pVM);
         AssertRC(rc);
+#ifdef VBOX_WITH_REM
         rc = REMR3Term(pVM);
         AssertRC(rc);
+#endif
         rc = HWACCMR3Term(pVM);
         AssertRC(rc);
         rc = PGMR3Term(pVM);
@@ -2834,7 +2844,9 @@ static DECLCALLBACK(VBOXSTRICTRC) vmR3Reset(PVM pVM, PVMCPU pVCpu, void *pvUser)
         PDMR3Reset(pVM);
         SELMR3Reset(pVM);
         TRPMR3Reset(pVM);
+#ifdef VBOX_WITH_REM
         REMR3Reset(pVM);
+#endif
         IOMR3Reset(pVM);
         CPUMR3Reset(pVM);
     }
