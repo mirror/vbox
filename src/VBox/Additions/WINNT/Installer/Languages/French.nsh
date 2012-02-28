@@ -1,3 +1,18 @@
+; $Id$
+; @file NLS for French language.
+;
+
+;
+; Copyright (C) 2006-2012 Oracle Corporation
+;
+; This file is part of VirtualBox Open Source Edition (OSE), as
+; available from http://www.virtualbox.org. This file is free software;
+; you can redistribute it and/or modify it under the terms of the GNU
+; General Public License (GPL) as published by the Free Software
+; Foundation, in version 2 as it comes in the "COPYING" file of the
+; VirtualBox OSE distribution. VirtualBox OSE is distributed in the
+; hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
+;
 
 LangString VBOX_TEST ${LANG_FRENCH}                      "Ceci est un message de test de $(^Name)!"
 
@@ -29,8 +44,7 @@ LangString VBOX_COMPONENT_D3D_NO_SM ${LANG_FRENCH}                  "Windows ne 
 LangString VBOX_COMPONENT_D3D_NOT_SUPPORTED ${LANG_FRENCH}          "Le support invité pour Direct3D n'est pas disponible sur Windows $g_strWinVersion!"
 LangString VBOX_COMPONENT_D3D_OR_WDDM ${LANG_FRENCH}                "Ce système supporte l'interface Windows Aero (WDDM).$\r$\nLe support VirtualBox pour cette fonctionalité est expérimental et ne devrait pas encore être utilisé sur des systèmes importants.$\r$\n$\r$\nVoulez-vous installer le support Direct3D de base à la place?"
 LangString VBOX_COMPONENT_D3D_HINT_VRAM ${LANG_FRENCH}              "Veuillez noter que l'utilisation de l'accélération 3D nécécssite au moins 128 MB de mémoire vidéo ; pour un utilisation avec plusieurs écrans nous recommandons  d'affecter 256 MB.$\r$\n$\r$\nSi nécéssaire vous pouvez changer la taille du mémoire vidéo dans la sous-section $\"Affichage$\" des paramètres de la machine virtuelle."
-LangString VBOX_COMPONENT_D3D_INVALID_WDDM ${LANG_FRENCH}           "Le programme d'installation a détecté une installation DirectX corrompue ou invalide et ne peut continuer.$\r$\n$\r$\nVeuillez réinstaller le moteur d'exécution DirectX afin de permettre l'utilisation du support DirectX.$\r$\n$\r$\nCe programme d'installation se terminera maintenant."
-LangString VBOX_COMPONENT_D3D_INVALID_XPDM ${LANG_FRENCH}           "Le programme d'installation a détecté une installation DirectX corrompue ou invalide.$\r$\n$\r$\nAfin d'assurer le bon fonctionnement du support DirectX, nous conseillons de réinstaller le moteur d'exécution DirectX.$\r$\n$\r$\nDésirez-vous cependant continuer?"
+LangString VBOX_COMPONENT_D3D_INVALID ${LANG_FRENCH}                "Le programme d'installation a détecté une installation DirectX corrompue ou invalide.$\r$\n$\r$\nAfin d'assurer le bon fonctionnement du support DirectX, nous conseillons de réinstaller le moteur d'exécution DirectX.$\r$\n$\r$\nDésirez-vous cependant continuer?"
 
 LangString VBOX_WFP_WARN_REPLACE ${LANG_FRENCH}          "Le programme d'installation vient de remplacer certains fichiers systèmes afin de faire fonctionner correctement ${PRODUCT_NAME}.$\r$\nPour le cas qu'un avertissement de la Protection de fichiers Windows apparaisse, veuiller l'annuler sans restaurer les fichiers originaux!"
 LangString VBOX_REBOOT_REQUIRED ${LANG_FRENCH}           "Le système doit être redémarré pourque les changements prennent effet. Redémarrer Windows maintenant?"

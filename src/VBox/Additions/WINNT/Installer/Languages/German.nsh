@@ -1,3 +1,18 @@
+; $Id$
+; @file NLS for German language.
+;
+
+;
+; Copyright (C) 2006-2012 Oracle Corporation
+;
+; This file is part of VirtualBox Open Source Edition (OSE), as
+; available from http://www.virtualbox.org. This file is free software;
+; you can redistribute it and/or modify it under the terms of the GNU
+; General Public License (GPL) as published by the Free Software
+; Foundation, in version 2 as it comes in the "COPYING" file of the
+; VirtualBox OSE distribution. VirtualBox OSE is distributed in the
+; hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
+;
 
 LangString VBOX_TEST ${LANG_GERMAN}                     "Das ist eine Test-Nachricht von $(^Name)!"
 
@@ -29,8 +44,7 @@ LangString VBOX_COMPONENT_D3D_NO_SM ${LANG_GERMAN}                  "Windows bef
 LangString VBOX_COMPONENT_D3D_NOT_SUPPORTED ${LANG_GERMAN}          "Direct3D Gast-Unterstützung nicht verfügbar unter Windows $g_strWinVersion!"
 LangString VBOX_COMPONENT_D3D_OR_WDDM ${LANG_GERMAN}                "Für diesen Gast ist Windows Aero (WDDM)-Unterstützung verfügbar.$\r$\nDieses Feature ist jedoch noch experimentell und sollte daher noch nicht auf produktiven Systemen eingesetzt werden.$\r$\n$\r$\nMöchten Sie stattdessen die reguläre Direct3D-Unterstützung installieren?"
 LangString VBOX_COMPONENT_D3D_HINT_VRAM ${LANG_GERMAN}              "Bitte beachten Sie, dass die virtuelle Maschine für die Benutzung von 3D-Beschleunigung einen Grafikspeicher von mindestens 128 MB für einen Monitor benötigt und für den Multi-Monitor-Betrieb bis zu 256 MB empfohlen wird.$\r$\n$\r$\nSie können den Grafikspeicher in den VM-Einstellungen in der Kategorie $\"Anzeige$\" ändern."
-LangString VBOX_COMPONENT_D3D_INVALID_WDDM ${LANG_GERMAN}           "Das Setup hat eine ungültige/beschädigte DirectX-Installation festgestellt und kann nicht fortfahren.$\r$\n$\r$\nUm die Direct3D-Unterstützung installieren zu können, bitte dazu zuerst das VirtualBox Benutzerhandbuch konsultieren.$\r$\n$\r$\nDas Setup wird nun beendet."
-LangString VBOX_COMPONENT_D3D_INVALID_XPDM ${LANG_GERMAN}           "Das Setup hat eine ungültige/beschädigte DirectX-Installation festgestellt.$\r$\n$\r$\nUm die Direct3D-Unterstützung installieren zu können wird empfohlen, zuerst das VirtualBox Benutzerhandbuch zu konsultieren.$\r$\n$\r$\nMit der Installation jetzt trotzdem fortfahren?"
+LangString VBOX_COMPONENT_D3D_INVALID ${LANG_GERMAN}                "Das Setup hat eine ungültige/beschädigte DirectX-Installation festgestellt.$\r$\n$\r$\nUm die Direct3D-Unterstützung installieren zu können wird empfohlen, zuerst das VirtualBox Benutzerhandbuch zu konsultieren.$\r$\n$\r$\nMit der Installation jetzt trotzdem fortfahren?"
 
 LangString VBOX_WFP_WARN_REPLACE ${LANG_GERMAN}         "Das Setup hat gerade Systemdateien ersetzt um die ${PRODUCT_NAME} korrekt installieren zu können.$\r$\nFalls nun ein Warn-Dialog des Windows-Dateischutzes erscheint, diesen bitte abbrechen und die Dateien nicht wiederherstellen lassen!"
 LangString VBOX_REBOOT_REQUIRED ${LANG_GERMAN}          "Um alle Änderungen durchführen zu können, muss das System neu gestartet werden. Jetzt neu starten?"
