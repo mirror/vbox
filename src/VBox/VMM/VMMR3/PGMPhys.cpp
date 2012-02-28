@@ -24,7 +24,9 @@
 #include <VBox/vmm/iom.h>
 #include <VBox/vmm/mm.h>
 #include <VBox/vmm/stam.h>
-#include <VBox/vmm/rem.h>
+#ifdef VBOX_WITH_REM
+# include <VBox/vmm/rem.h>
+#endif
 #include <VBox/vmm/pdmdev.h>
 #include "PGMInternal.h"
 #include <VBox/vmm/vm.h>
@@ -1733,10 +1735,12 @@ VMMR3DECL(int) PGMR3PhysRegisterRam(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb, const
     pgmPhysInvalidatePageMapTLB(pVM);
     pgmUnlock(pVM);
 
+#ifdef VBOX_WITH_REM
     /*
      * Notify REM.
      */
     REMR3NotifyPhysRamRegister(pVM, GCPhys, cb, REM_NOTIFY_PHYS_RAM_FLAGS_RAM);
+#endif
 
     return VINF_SUCCESS;
 }
@@ -2753,7 +2757,9 @@ VMMR3DECL(int) PGMR3PhysMMIO2Map(PVM pVM, PPDMDEVINS pDevIns, uint32_t iRegion, 
         pgmR3PhysLinkRamRange(pVM, &pCur->RamRange, pRamPrev);
         pgmUnlock(pVM);
 
+#ifdef VBOX_WITH_REM
         REMR3NotifyPhysRamRegister(pVM, GCPhys, cb, REM_NOTIFY_PHYS_RAM_FLAGS_MMIO2);
+#endif
     }
 
     pgmPhysInvalidatePageMapTLB(pVM);
@@ -2794,9 +2800,11 @@ VMMR3DECL(int) PGMR3PhysMMIO2Unmap(PVM pVM, PPDMDEVINS pDevIns, uint32_t iRegion
      */
     pgmLock(pVM);
 
+#ifdef VBOX_WITH_REM
     RTGCPHYS    GCPhysRangeREM;
     RTGCPHYS    cbRangeREM;
     bool        fInformREM;
+#endif
     if (pCur->fOverlapping)
     {
         /* Restore the RAM pages we've replaced. */
@@ -2815,17 +2823,19 @@ VMMR3DECL(int) PGMR3PhysMMIO2Unmap(PVM pVM, PPDMDEVINS pDevIns, uint32_t iRegion
 
         /* Flush physical page map TLB. */
         pgmPhysInvalidatePageMapTLB(pVM);
-
+#ifdef VBOX_WITH_REM
         GCPhysRangeREM = NIL_RTGCPHYS;  /* shuts up gcc */
         cbRangeREM     = RTGCPHYS_MAX;  /* ditto */
         fInformREM     = false;
+#endif
     }
     else
     {
+#ifdef VBOX_WITH_REM
         GCPhysRangeREM = pCur->RamRange.GCPhys;
         cbRangeREM     = pCur->RamRange.cb;
         fInformREM     = true;
-
+#endif
         pgmR3PhysUnlinkRamRange(pVM, &pCur->RamRange);
     }
 
@@ -2846,8 +2856,10 @@ VMMR3DECL(int) PGMR3PhysMMIO2Unmap(PVM pVM, PPDMDEVINS pDevIns, uint32_t iRegion
     pgmPhysInvalidRamRangeTlbs(pVM);
     pgmUnlock(pVM);
 
+#ifdef VBOX_WITH_REM
     if (fInformREM)
         REMR3NotifyPhysRamDeregister(pVM, GCPhysRangeREM, cbRangeREM);
+#endif
 
     return VINF_SUCCESS;
 }
@@ -3182,7 +3194,9 @@ static int pgmR3PhysRomRegister(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhys, RT
              */
             if (fFlags & PGMPHYS_ROM_FLAGS_SHADOWED)
             {
+#ifdef VBOX_WITH_REM
                 REMR3NotifyPhysRomRegister(pVM, GCPhys, cb, NULL, true /* fShadowed */);
+#endif
                 rc = PGMR3HandlerPhysicalRegister(pVM,
                                                   fFlags & PGMPHYS_ROM_FLAGS_SHADOWED
                                                   ? PGMPHYSHANDLERTYPE_PHYSICAL_ALL
@@ -3202,7 +3216,9 @@ static int pgmR3PhysRomRegister(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhys, RT
                                                   pgmR3PhysRomWriteHandler, pRomNew,
                                                   NULL, "pgmPhysRomWriteHandler", MMHyperCCToR0(pVM, pRomNew),
                                                   NULL, "pgmPhysRomWriteHandler", MMHyperCCToRC(pVM, pRomNew), pszDesc);
+#ifdef VBOX_WITH_REM
                 REMR3NotifyPhysRomRegister(pVM, GCPhys, cb, NULL, false /* fShadowed */);
+#endif
             }
             if (RT_SUCCESS(rc))
             {
@@ -3704,7 +3720,9 @@ VMMDECL(void) PGMR3PhysSetA20(PVMCPU pVCpu, bool fEnable)
     {
         pVCpu->pgm.s.fA20Enabled = fEnable;
         pVCpu->pgm.s.GCPhysA20Mask = ~(RTGCPHYS)(!fEnable << 20);
+#ifdef VBOX_WITH_REM
         REMR3A20Set(pVCpu->pVMR3, pVCpu, fEnable);
+#endif
         /** @todo we're not handling this correctly for VT-x / AMD-V. See #2911 */
     }
 }
@@ -3909,9 +3927,10 @@ static DECLCALLBACK(VBOXSTRICTRC) pgmR3PhysUnmapChunkRendezvous(PVM pVM, PVMCPU 
                     /* Flush REM TLBs. */
                     CPUMSetChangedFlags(&pVM->aCpus[idCpu], CPUM_CHANGED_GLOBAL_TLB_FLUSH);
                 }
-
+#ifdef VBOX_WITH_REM
                 /* Flush REM translation blocks. */
                 REMFlushTBs(pVM);
+#endif
             }
         }
     }

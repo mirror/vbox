@@ -3155,6 +3155,7 @@ VMMDECL(RTGCUINTPTR) EMGetInhibitInterruptsPC(PVMCPU pVCpu)
  */
 VMMDECL(void) EMRemLock(PVM pVM)
 {
+#ifdef VBOX_WITH_REM
     if (!PDMCritSectIsInitialized(&pVM->em.s.CritSectREM))
         return;     /* early init */
 
@@ -3162,6 +3163,7 @@ VMMDECL(void) EMRemLock(PVM pVM)
     Assert(!IOMIsLockOwner(pVM));
     int rc = PDMCritSectEnter(&pVM->em.s.CritSectREM, VERR_SEM_BUSY);
     AssertRCSuccess(rc);
+#endif
 }
 
 /**
@@ -3171,10 +3173,12 @@ VMMDECL(void) EMRemLock(PVM pVM)
  */
 VMMDECL(void) EMRemUnlock(PVM pVM)
 {
+#ifdef VBOX_WITH_REM
     if (!PDMCritSectIsInitialized(&pVM->em.s.CritSectREM))
         return;     /* early init */
 
     PDMCritSectLeave(&pVM->em.s.CritSectREM);
+#endif
 }
 
 /**
@@ -3185,10 +3189,14 @@ VMMDECL(void) EMRemUnlock(PVM pVM)
  */
 VMMDECL(bool) EMRemIsLockOwner(PVM pVM)
 {
+#ifdef VBOX_WITH_REM
     if (!PDMCritSectIsInitialized(&pVM->em.s.CritSectREM))
         return true;   /* early init */
 
     return PDMCritSectIsOwner(&pVM->em.s.CritSectREM);
+#else
+    return true;
+#endif
 }
 
 /**
@@ -3199,10 +3207,14 @@ VMMDECL(bool) EMRemIsLockOwner(PVM pVM)
  */
 VMMDECL(int) EMRemTryLock(PVM pVM)
 {
+#ifdef VBOX_WITH_REM
     if (!PDMCritSectIsInitialized(&pVM->em.s.CritSectREM))
         return VINF_SUCCESS; /* early init */
 
     return PDMCritSectTryEnter(&pVM->em.s.CritSectREM);
+#else
+    return VINF_SUCCESS;
+#endif
 }
 
 /**

@@ -24,7 +24,9 @@
 #include <VBox/vmm/mm.h>
 #include <VBox/vmm/dbgftrace.h>
 #ifdef IN_RING3
-# include <VBox/vmm/rem.h>
+# ifdef VBOX_WITH_REM
+#  include <VBox/vmm/rem.h>
+# endif
 #endif
 #include "TMInternal.h"
 #include <VBox/vmm/vm.h>
@@ -233,7 +235,9 @@ DECLINLINE(void) tmScheduleNotify(PVM pVM)
         Log5(("TMAll(%u): FF: 0 -> 1\n", __LINE__));
         VMCPU_FF_SET(pVCpuDst, VMCPU_FF_TIMER);
 #ifdef IN_RING3
+# ifdef VBOX_WITH_REM
         REMR3NotifyTimerPending(pVM, pVCpuDst);
+# endif
         VMR3NotifyCpuFFU(pVCpuDst->pUVCpu, VMNOTIFYFF_FLAGS_DONE_REM);
 #endif
         STAM_COUNTER_INC(&pVM->tm.s.StatScheduleSetFF);
@@ -773,7 +777,7 @@ DECL_FORCE_INLINE(uint64_t) tmTimerPollInternal(PVM pVM, PVMCPU pVCpu, uint64_t 
         {
             Log5(("TMAll(%u): FF: %d -> 1\n", __LINE__, VMCPU_FF_ISPENDING(pVCpuDst, VMCPU_FF_TIMER)));
             VMCPU_FF_SET(pVCpuDst, VMCPU_FF_TIMER);
-#ifdef IN_RING3
+#if defined(IN_RING3) && defined(VBOX_WITH_REM)
             REMR3NotifyTimerPending(pVM, pVCpuDst);
 #endif
         }
@@ -819,7 +823,7 @@ DECL_FORCE_INLINE(uint64_t) tmTimerPollInternal(PVM pVM, PVMCPU pVCpu, uint64_t 
                 {
                     Log5(("TMAll(%u): FF: %d -> 1\n", __LINE__, VMCPU_FF_ISPENDING(pVCpuDst, VMCPU_FF_TIMER)));
                     VMCPU_FF_SET(pVCpuDst, VMCPU_FF_TIMER);
-#ifdef IN_RING3
+#if defined(IN_RING3) && defined(VBOX_WITH_REM)
                     REMR3NotifyTimerPending(pVM, pVCpuDst);
 #endif
                 }
@@ -918,7 +922,7 @@ DECL_FORCE_INLINE(uint64_t) tmTimerPollInternal(PVM pVM, PVMCPU pVCpu, uint64_t 
         {
             Log5(("TMAll(%u): FF: %d -> 1\n", __LINE__, VMCPU_FF_ISPENDING(pVCpuDst, VMCPU_FF_TIMER)));
             VMCPU_FF_SET(pVCpuDst, VMCPU_FF_TIMER);
-#ifdef IN_RING3
+#if defined(IN_RING3) && defined(VBOX_WITH_REM)
             REMR3NotifyTimerPending(pVM, pVCpuDst);
 #endif
         }

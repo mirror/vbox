@@ -581,7 +581,9 @@
 #include <VBox/vmm/mm.h>
 #include <VBox/vmm/em.h>
 #include <VBox/vmm/stam.h>
-#include <VBox/vmm/rem.h>
+#ifdef VBOX_WITH_REM
+# include <VBox/vmm/rem.h>
+#endif
 #include <VBox/vmm/selm.h>
 #include <VBox/vmm/ssm.h>
 #include <VBox/vmm/hwaccm.h>

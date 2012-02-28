@@ -22,7 +22,11 @@
 #define LOG_GROUP LOG_GROUP_DBGF
 #include <VBox/vmm/dbgf.h>
 #include <VBox/vmm/selm.h>
-#include <VBox/vmm/rem.h>
+#ifdef VBOX_WITH_REM
+# include <VBox/vmm/rem.h>
+#else
+# include <VBox/vmm/iem.h>
+#endif
 #include "DBGFInternal.h"
 #include <VBox/vmm/vm.h>
 #include <VBox/vmm/mm.h>
@@ -649,7 +653,11 @@ static DECLCALLBACK(int) dbgfR3BpSetREM(PVM pVM, PCDBGFADDRESS pAddress, uint64_
     {
         int rc = VINF_SUCCESS;
         if (!pBp->fEnabled)
+#ifdef VBOX_WITH_REM
             rc = REMR3BreakpointSet(pVM, pBp->GCPtr);
+#else
+            rc = IEMBreakpointSet(pVM, pBp->GCPtr);
+#endif
         if (RT_SUCCESS(rc))
         {
             rc = VINF_DBGF_BP_ALREADY_EXIST;
@@ -673,7 +681,11 @@ static DECLCALLBACK(int) dbgfR3BpSetREM(PVM pVM, PCDBGFADDRESS pAddress, uint64_
     /*
      * Now ask REM to set the breakpoint.
      */
+#ifdef VBOX_WITH_REM
     int rc = REMR3BreakpointSet(pVM, pAddress->FlatPtr);
+#else
+    int rc = IEMBreakpointSet(pVM, pAddress->FlatPtr);
+#endif
     if (RT_SUCCESS(rc))
     {
         if (piBp)
@@ -741,7 +753,11 @@ static DECLCALLBACK(int) dbgfR3BpClear(PVM pVM, uint32_t iBp)
                 break;
 
             case DBGFBPTYPE_REM:
+#ifdef VBOX_WITH_REM
                 rc = REMR3BreakpointClear(pVM, pBp->GCPtr);
+#else
+                rc = IEMBreakpointClear(pVM, pBp->GCPtr);
+#endif
                 break;
 
             default:
@@ -817,7 +833,11 @@ static DECLCALLBACK(int) dbgfR3BpEnable(PVM pVM, uint32_t iBp)
             break;
 
         case DBGFBPTYPE_REM:
+#ifdef VBOX_WITH_REM
             rc = REMR3BreakpointSet(pVM, pBp->GCPtr);
+#else
+            rc = IEMBreakpointSet(pVM, pBp->GCPtr);
+#endif
             break;
 
         default:
@@ -889,7 +909,11 @@ static DECLCALLBACK(int) dbgfR3BpDisable(PVM pVM, uint32_t iBp)
             break;
 
         case DBGFBPTYPE_REM:
+#ifdef VBOX_WITH_REM
             rc = REMR3BreakpointClear(pVM, pBp->GCPtr);
+#else
+            rc = IEMBreakpointClear(pVM, pBp->GCPtr);
+#endif
             break;
 
         default:

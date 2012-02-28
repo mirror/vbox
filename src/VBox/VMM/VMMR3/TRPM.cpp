@@ -89,7 +89,9 @@
 #include "TRPMInternal.h"
 #include <VBox/vmm/vm.h>
 #include <VBox/vmm/em.h>
-#include <VBox/vmm/rem.h>
+#ifdef VBOX_WITH_REM
+# include <VBox/vmm/rem.h>
+#endif
 #include <VBox/vmm/hwaccm.h>
 
 #include <VBox/err.h>
@@ -1467,8 +1469,11 @@ VMMR3DECL(int) TRPMR3InjectEvent(PVM pVM, PVMCPU pVCpu, TRPMEVENT enmEvent)
     /* Currently only useful for external hardware interrupts. */
     Assert(enmEvent == TRPM_HARDWARE_INT);
 
-    if (   REMR3QueryPendingInterrupt(pVM, pVCpu) == REM_NO_PENDING_IRQ
-        && !EMIsSupervisorCodeRecompiled(pVM))
+    if (   !EMIsSupervisorCodeRecompiled(pVM)
+#ifdef VBOX_WITH_REM
+        && REMR3QueryPendingInterrupt(pVM, pVCpu) == REM_NO_PENDING_IRQ
+#endif
+        )
     {
 #ifdef TRPM_FORWARD_TRAPS_IN_GC
 
@@ -1517,7 +1522,9 @@ VMMR3DECL(int) TRPMR3InjectEvent(PVM pVM, PVMCPU pVCpu, TRPMEVENT enmEvent)
             }
             else
                 STAM_COUNTER_INC(&pVM->trpm.s.StatForwardFailNoHandler);
+#ifdef VBOX_WITH_REM
             REMR3NotifyPendingInterrupt(pVM, pVCpu, u8Interrupt);
+#endif
         }
         else
         {

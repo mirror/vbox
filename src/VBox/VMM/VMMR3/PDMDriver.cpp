@@ -662,7 +662,6 @@ int pdmR3DrvInstantiate(PVM pVM, PCFGMNODE pNode, PPDMIBASE pBaseInterface, PPDM
     if (RT_SUCCESS(rc))
     {
         PPDMDRV pDrv = pdmR3DrvLookup(pVM, pszName);
-        MMR3HeapFree(pszName);
         if (    pDrv
             &&  pDrv->cInstances < pDrv->pReg->cMaxInstances)
         {
@@ -792,6 +791,7 @@ int pdmR3DrvInstantiate(PVM pVM, PCFGMNODE pNode, PPDMIBASE pBaseInterface, PPDM
             AssertMsgFailed(("Driver '%s' wasn't found!\n", pszName));
             rc = VERR_PDM_DRIVER_NOT_FOUND;
         }
+        MMR3HeapFree(pszName);
     }
     else
     {

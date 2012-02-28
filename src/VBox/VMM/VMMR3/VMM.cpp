@@ -91,7 +91,9 @@
 #include <VBox/vmm/dbgf.h>
 #include <VBox/vmm/csam.h>
 #include <VBox/vmm/patm.h>
-#include <VBox/vmm/rem.h>
+#ifdef VBOX_WITH_REM
+# include <VBox/vmm/rem.h>
+#endif
 #include <VBox/vmm/ssm.h>
 #include <VBox/vmm/tm.h>
 #include "VMMInternal.h"
@@ -2127,6 +2129,7 @@ static int vmmR3ServiceCallRing3Request(PVM pVM, PVMCPU pVCpu)
             break;
         }
 
+#ifdef VBOX_WITH_REM
         /*
          * Flush REM handler notifications.
          */
@@ -2136,6 +2139,7 @@ static int vmmR3ServiceCallRing3Request(PVM pVM, PVMCPU pVCpu)
             pVCpu->vmm.s.rcCallRing3 = VINF_SUCCESS;
             break;
         }
+#endif
 
         /*
          * This is a noop. We just take this route to avoid unnecessary

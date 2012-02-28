@@ -4,7 +4,7 @@
 #
 
 #
-# Copyright (C) 2006-2010 Oracle Corporation
+# Copyright (C) 2006-2012 Oracle Corporation
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;
@@ -30,7 +30,7 @@ else if defined(VBOX_ONLY_EXTPACKS)
  include $(PATH_SUB_CURRENT)/bldprogs/Makefile.kmk
  include $(PATH_SUB_CURRENT)/VBox/Makefile.kmk
  include $(PATH_SUB_CURRENT)/libs/Makefile.kmk
- ifndef VBOX_ONLY_EXTPACKS_USE_IMPLIBS
+ if !defined(VBOX_ONLY_EXTPACKS_USE_IMPLIBS) && defined(VBOX_WITH_REM)
   include $(PATH_SUB_CURRENT)/recompiler/Makefile.kmk
  endif
 
@@ -43,7 +43,9 @@ else  # !VBOX_ONLY_ADDITIONS && !VBOX_ONLY_EXTPACKS && !VBOX_ONLY_DOCS && !VBOX_
  include $(PATH_SUB_CURRENT)/VBox/Makefile.kmk
  include $(PATH_SUB_CURRENT)/libs/Makefile.kmk
  if1of ($(KBUILD_TARGET_ARCH), x86 amd64)
-  include $(PATH_SUB_CURRENT)/recompiler/Makefile.kmk
+  ifdef VBOX_WITH_REM
+   include $(PATH_SUB_CURRENT)/recompiler/Makefile.kmk
+  endif
  endif
  ifneq ($(wildcard $(PATH_SUB_CURRENT)/apps),)
   include $(PATH_SUB_CURRENT)/apps/Makefile.kmk
