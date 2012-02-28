@@ -1,3 +1,18 @@
+; $Id$
+; @file NLS for English language.
+;
+
+;
+; Copyright (C) 2006-2012 Oracle Corporation
+;
+; This file is part of VirtualBox Open Source Edition (OSE), as
+; available from http://www.virtualbox.org. This file is free software;
+; you can redistribute it and/or modify it under the terms of the GNU
+; General Public License (GPL) as published by the Free Software
+; Foundation, in version 2 as it comes in the "COPYING" file of the
+; VirtualBox OSE distribution. VirtualBox OSE is distributed in the
+; hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
+;
 
 LangString VBOX_TEST ${LANG_ENGLISH}                     "This is a test message of $(^Name)!"
 
@@ -29,8 +44,7 @@ LangString VBOX_COMPONENT_D3D_NO_SM ${LANG_ENGLISH}                 "Windows is 
 LangString VBOX_COMPONENT_D3D_NOT_SUPPORTED ${LANG_ENGLISH}         "The VirtualBox Direct3D support is not available on Windows $g_strWinVersion!"
 LangString VBOX_COMPONENT_D3D_OR_WDDM ${LANG_ENGLISH}               "This system supports the Windows Aero (WDDM) interface.$\r$\nVirtualBox support for this feature is experimental and should not be used on production systems yet.$\r$\n$\r$\nWould you like to install basic Direct3D support instead?"
 LangString VBOX_COMPONENT_D3D_HINT_VRAM ${LANG_ENGLISH}             "Please note that in order to use 3D acceleration the virtual machine requires at least 128 MB of video memory with 256 MB recommended if you wish to use it with multiple monitors.$\r$\n$\r$\nIf necessary you can change the video memory size in the $\"Display$\" section of the virtual machine settings."
-LangString VBOX_COMPONENT_D3D_INVALID_WDDM ${LANG_ENGLISH}          "The setup detected a corrupt/invalid DirectX installation and cannot continue.$\r$\n$\r$\nIn order to get Direct3D support working, please consult the VirtualBox manual first.$\r$\n$\r$\nThis setup will abort now."
-LangString VBOX_COMPONENT_D3D_INVALID_XPDM ${LANG_ENGLISH}          "The setup detected a corrupt/invalid DirectX installation.$\r$\n$\r$\nIn order to get Direct3D support working, consulting the VirtualBox manual is highly recommended.$\r$\n$\r$\nContinue anyway?"
+LangString VBOX_COMPONENT_D3D_INVALID ${LANG_ENGLISH}               "The setup detected a corrupt/invalid DirectX installation.$\r$\n$\r$\nIn order to get Direct3D support working, consulting the VirtualBox manual is highly recommended.$\r$\n$\r$\nContinue anyway?"
 
 LangString VBOX_WFP_WARN_REPLACE ${LANG_ENGLISH}         "In order to make ${PRODUCT_NAME} work correctly some system files have been replaced.$\r$\nIf the Windows File Protection service offers to restore the original files you should cancel the request to retain the newly installed functionality."
 LangString VBOX_REBOOT_REQUIRED ${LANG_ENGLISH}          "To apply all changes, the system must be restarted. Restart Windows now?"
