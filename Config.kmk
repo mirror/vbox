@@ -2275,7 +2275,7 @@ ifeq ($(KBUILD_TARGET),os2)
 		-e '/not-$(KBUILD_TARGET)/d' \
 		-e '/not-$(KBUILD_TARGET_ARCH)/d' \
 		-e 's/^LIBRARY[[:space:]][[:space:]]*\(.*\)\.dll/LIBRARY \1 INITINSTANCE TERMINSTANCE\nDATA MULTIPLE\n/' \
-		-e 's/^[ \t][ \t]*\([a-zA-Z]\)/    _\1/' \
+		-e 's/^[ \t][ \t]*\([_a-zA-Z]\)/    _\1/' \
 		-e 's/[ \t]DATA[ \t]*/ /'  \
 		--output $$@ $(addprefix $(PATH_SUB_CURRENT)/,$(3))
 else ifeq ($(KBUILD_TARGET),win)
