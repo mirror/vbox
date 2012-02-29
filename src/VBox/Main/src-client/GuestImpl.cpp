@@ -332,7 +332,8 @@ STDMETHODIMP Guest::COMGETTER(AdditionsVersion)(BSTR *a_pbstrAdditionsVersion)
 
             Bstr bstr;
             hrc = ptrMachine->GetGuestPropertyValue(Bstr("/VirtualBox/GuestAdd/Version").raw(), bstr.asOutParam());
-            if (SUCCEEDED(hrc))
+            if (   SUCCEEDED(hrc)
+                && !bstr.isEmpty())
             {
                 Utf8Str str(bstr);
                 if (str.count('.') == 0)
