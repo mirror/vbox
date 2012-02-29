@@ -255,7 +255,7 @@ VMMR3_INT_DECL(int) VMMR3Init(PVM pVM)
                 /*
                  * Debug info and statistics.
                  */
-                DBGFR3InfoRegisterInternal(pVM, "ff", "Displays the current Forced actions Flags.", vmmR3InfoFF);
+                DBGFR3InfoRegisterInternal(pVM, "fflags", "Displays the current Forced actions Flags.", vmmR3InfoFF);
                 vmmR3InitRegisterStats(pVM);
                 vmmInitFormatTypes();
 
@@ -2314,6 +2314,9 @@ static DECLCALLBACK(void) vmmR3InfoFF(PVM pVM, PCDBGFINFOHLP pHlp, const char *p
             pHlp->pfnPrintf(pHlp, "%s\n    Unknown bits: %#RX32\n", c ? "," : "", f);
         else
             pHlp->pfnPrintf(pHlp, "\n");
+
+        if (fLocalForcedActions & VMCPU_FF_INHIBIT_INTERRUPTS)
+            pHlp->pfnPrintf(pHlp, "    intr inhibit RIP: %RGp\n", EMGetInhibitInterruptsPC(&pVM->aCpus[i]));
 
         /* the groups */
         c = 0;
