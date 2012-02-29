@@ -25,4 +25,4 @@
 #define CTL_BROADCAST   255
 
 #define CTL_CHECK(x, ctl) ((RT_N2H_U32((x)) & ~pData->netmask) == (ctl) \
-                           && (((x) & ~pData->netmask) == (pData->special_addr.s_addr & ~pData->netmask)))
+                           && (((x) & ~pData->netmask) == pData->special_addr.s_addr))
