@@ -4354,7 +4354,7 @@
     </message>
     <message>
         <source>&lt;p&gt;You are about to change the attributes of the virtual disk located in &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Please choose one of the following medium types and press &lt;b&gt;%2&lt;/b&gt; to proceed or &lt;b&gt;%3&lt;/b&gt; otherwise.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Vous êtes sur le point de modifier les attributs du disque virtuel correspondant au fichier &lt;b&gt;%1&gt;/b&gt;.&gt;/p&gt;&lt;p&gt;Choisissez un des types de média suivants et utilisez le bouton &lt;b&gt;%2&lt;/b&gt; pour continuer ou bien &lt;b&gt;%3&lt;/b&gt; pour annuler.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Vous êtes sur le point de modifier les attributs du disque virtuel correspondant au fichier &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Choisissez un des types de média suivants et utilisez le bouton &lt;b&gt;%2&lt;/b&gt; pour continuer ou bien &lt;b&gt;%3&lt;/b&gt; pour annuler.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Choose medium type:</source>
@@ -4826,7 +4826,7 @@
     </message>
     <message>
         <source>&lt;p&gt;A new version of VirtualBox has been released! Version &lt;b&gt;%1&lt;/b&gt; is available at &lt;a href=&quot;http://www.virtualbox.org/&quot;&gt;virtualbox.org&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;You can download this version using the link:&lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Une nouvelle version de VirtualBox est disponible ! La version &lt;b&gt;%1&lt;/b&gt; est disponible sur &lt;a href=&quot;http://www.virtualbox.org/&quot;&gt;&gt;virtualbox.org&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;Vous pouvez télécharger cette version en utilisant le lien suivant : &lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Une nouvelle version de VirtualBox est disponible ! La version &lt;b&gt;%1&lt;/b&gt; est disponible sur &lt;a href=&quot;http://www.virtualbox.org/&quot;&gt;virtualbox.org&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;Vous pouvez télécharger cette version en utilisant le lien suivant : &lt;/p&gt;&lt;p&gt;&lt;a href=%2&gt;%3&lt;/a&gt;&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Are you sure you want to release the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;?&lt;/p&gt;&lt;p&gt;This will detach it from the following virtual machine(s): &lt;b&gt;%3&lt;/b&gt;.&lt;/p&gt;</source>
@@ -9000,6 +9000,42 @@ And the size is not necessarily &quot;in megabytes&quot;, the slider chooses the
     <message>
         <source>you have enabled a USB HID (Human Interface Device). This will not work unless USB emulation is also enabled. This will be done automatically when you accept the VM Settings by pressing the OK button.</source>
         <translation type="obsolete">vous avez activé un périphérique USB HID (clavier, souris ou tablette). Celui-ci ne pourra fonctionner que si l&apos;émulation USB est aussi activée donc elle le sera automatiquement lorsque vous cliquerez sur OK.</translation>
+    </message>
+    <message>
+        <source>Close the search panel</source>
+        <translation type="obsolete">Fermer le panneau de recherche</translation>
+    </message>
+    <message>
+        <source>Enter a search string here</source>
+        <translation type="obsolete">Entrez ici la chaîne de caractères à rechercher</translation>
+    </message>
+    <message>
+        <source>&amp;Previous</source>
+        <translation type="obsolete">&amp;Précédent</translation>
+    </message>
+    <message>
+        <source>Search for the previous occurrence of the string</source>
+        <translation type="obsolete">Rechercher l&apos;occurrence précédente de la chaîne de caractères</translation>
+    </message>
+    <message>
+        <source>&amp;Next</source>
+        <translation type="obsolete">&amp;Suivant</translation>
+    </message>
+    <message>
+        <source>Search for the next occurrence of the string</source>
+        <translation type="obsolete">Rechercher l&apos;occurrence suivante de la chaîne de caractères</translation>
+    </message>
+    <message>
+        <source>C&amp;ase Sensitive</source>
+        <translation type="obsolete">&amp;Respecter la casse</translation>
+    </message>
+    <message>
+        <source>Perform case sensitive search (when checked)</source>
+        <translation type="obsolete">Si cette case est cochée, la recherche tient compte des majuscules et des minuscules</translation>
+    </message>
+    <message>
+        <source>String not found</source>
+        <translation type="obsolete">Chaîne de caractères non trouvée</translation>
     </message>
 </context>
 </TS>
