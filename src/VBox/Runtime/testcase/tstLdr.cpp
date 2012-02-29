@@ -200,10 +200,6 @@ static int testLdrOne(const char *pszFilename)
         unsigned iRel = 0;
         for (;;)
         {
-            /* adjust load address and announce our intentions */
-            if (g_cBits == 32)
-                aRels[iRel] &= UINT32_C(0xffffffff);
-
             /* Compare all which are at the same address. */
             for (i = 0; i < RT_ELEMENTS(aLoads) - 1; i++)
             {
@@ -272,6 +268,10 @@ static int testLdrOne(const char *pszFilename)
 
             if (iRel >= RT_ELEMENTS(aRels))
                 break;
+
+            /* adjust load address and announce our intentions */
+            if (g_cBits == 32)
+                aRels[iRel] &= UINT32_C(0xffffffff);
 
             /* relocate it stuff. */
             RTPrintf("tstLdr: Relocating image 2 from %RTptr to %RTptr\n", aLoads[2].Addr, aRels[iRel]);
