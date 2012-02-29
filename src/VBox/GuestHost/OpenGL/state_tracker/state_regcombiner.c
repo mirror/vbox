@@ -542,7 +542,7 @@ void STATE_APIENTRY crStateGetCombinerInputParameterivNV( GLenum stage, GLenum p
 		return;
 	}
 
-	if (i < 0 || i > CR_MAX_GENERAL_COMBINERS) {
+	if (i < 0 || i >= CR_MAX_GENERAL_COMBINERS) {
 		crStateError(__LINE__, __FILE__, GL_INVALID_ENUM,
 								 "GetCombinerInputParameterivNV(stage=0x%x)", stage);
 		return;
