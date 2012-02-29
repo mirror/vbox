@@ -908,7 +908,7 @@ void STATE_APIENTRY crStateVertexAttribPointerARB(GLuint index, GLint size, GLen
 
     FLUSH();
 
-    if (index > CR_MAX_VERTEX_ATTRIBS)
+    if (index >= CR_MAX_VERTEX_ATTRIBS)
     {
         crStateError(__LINE__, __FILE__, GL_INVALID_VALUE, "glVertexAttribPointerARB: invalid index: %d", (int) index);
         return;
