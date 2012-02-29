@@ -45,7 +45,7 @@ RTR0DECL(int) RTR0MemUserCopyFrom(void *pvDst, RTR3PTR R3PtrSrc, size_t cb)
 
 RTR0DECL(int) RTR0MemUserCopyTo(RTR3PTR R3PtrDst, void const *pvSrc, size_t cb)
 {
-    int rc = KernCopyOut((void *)R3PtrDst, pvSrc, cb);
+    int rc = KernCopyOut((void *)R3PtrDst, (void *)pvSrc, cb);
     if (RT_LIKELY(rc == 0))
         return VINF_SUCCESS;
     return VERR_ACCESS_DENIED;

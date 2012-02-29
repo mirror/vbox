@@ -45,6 +45,8 @@
 #endif
 #ifdef RT_OS_OS2
 # include <InnoTekLIBC/fork.h>
+# define INCL_DOSMISC
+# include <os2.h>
 #endif
 #include <locale.h>
 
@@ -333,7 +335,7 @@ static int rtR3InitBody(uint32_t fFlags, int cArgs, char ***papszArgs, const cha
     UINT fOldErrMode = SetErrorMode(SEM_FAILCRITICALERRORS | SEM_NOOPENFILEERRORBOX);
     SetErrorMode(SEM_FAILCRITICALERRORS | SEM_NOOPENFILEERRORBOX | fOldErrMode);
 #elif defined(RT_OS_OS2)
-# error "FIXME"
+    DosError(FERR_DISABLEHARDERR);
 #endif
 
 #if !defined(IN_GUEST) && !defined(RT_NO_GIP)
