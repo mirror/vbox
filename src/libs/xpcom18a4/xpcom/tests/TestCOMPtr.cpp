@@ -419,7 +419,7 @@ main()
   {
     printf(">>main()\n");
 
-		printf("sizeof(nsCOMPtr<IFoo>) --> %d\n", sizeof(nsCOMPtr<IFoo>));
+		printf("sizeof(nsCOMPtr<IFoo>) --> %zd\n", sizeof(nsCOMPtr<IFoo>));
 
 #ifdef TEST_EXCEPTIONS
 		TestBloat_Raw();
