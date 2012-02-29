@@ -143,7 +143,7 @@ static int rtDvmVolumeCreate(PRTDVMINTERNAL pThis, RTDVMVOLUMEFMT hVolFmt,
     PRTDVMVOLUMEINTERNAL pVol = NULL;
 
     pVol = (PRTDVMVOLUMEINTERNAL)RTMemAllocZ(sizeof(RTDVMVOLUMEINTERNAL));
-    if (VALID_PTR(pVol))
+    if (pVol)
     {
         pVol->u32Magic = RTDVMVOLUME_MAGIC;
         pVol->cRefs    = 0;
@@ -193,7 +193,7 @@ RTDECL(int) RTDvmCreate(PRTDVM phVolMgr, PFNDVMREAD pfnRead,
                     VERR_INVALID_PARAMETER);
 
     pThis = (PRTDVMINTERNAL)RTMemAllocZ(sizeof(RTDVMINTERNAL));
-    if (VALID_PTR(pThis))
+    if (pThis)
     {
         pThis->u32Magic         = RTDVM_MAGIC;
         pThis->DvmDisk.cbDisk   = cbDisk;
