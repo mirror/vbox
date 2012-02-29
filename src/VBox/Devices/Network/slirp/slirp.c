@@ -1479,67 +1479,69 @@ AssertCompileSize(struct arphdr, 28);
  */
 static void arp_input(PNATState pData, struct mbuf *m)
 {
-    struct ethhdr *eh;
-    struct ethhdr *reh;
-    struct arphdr *ah;
-    struct arphdr *rah;
-    int ar_op;
-    uint32_t htip;
-    uint32_t tip;
-    struct mbuf *mr;
-    eh = mtod(m, struct ethhdr *);
-    ah = (struct arphdr *)&eh[1];
-    htip = RT_N2H_U32(*(uint32_t*)ah->ar_tip);
-    tip = *(uint32_t*)ah->ar_tip;
+    struct ethhdr *pEtherHeader;
+    struct arphdr *pARPHeader;
+    uint32_t ip4TargetAddress;
 
-    ar_op = RT_N2H_U16(ah->ar_op);
+    int ar_op;
+    pEtherHeader = mtod(m, struct ethhdr *);
+    pARPHeader = (struct arphdr *)&pEtherHeader[1];
+
+    ar_op = RT_N2H_U16(pARPHeader->ar_op);
+    ip4TargetAddress = *(uint32_t*)pARPHeader->ar_tip;
 
     switch (ar_op)
     {
         case ARPOP_REQUEST:
-            mr = m_getcl(pData, M_NOWAIT, MT_HEADER, M_PKTHDR);
-            if (!mr)
-                break;
-            reh = mtod(mr, struct ethhdr *);
-            mr->m_data += ETH_HLEN;
-            rah = mtod(mr, struct arphdr *);
-            mr->m_len = sizeof(struct arphdr);
-            memcpy(reh->h_source, eh->h_source, ETH_ALEN); /* XXX: if_encap will swap src and dst*/
-            if (   CTL_CHECK(tip, CTL_DNS)
-                || CTL_CHECK(tip, CTL_ALIAS)
-                || CTL_CHECK(tip, CTL_TFTP))
+            if (   CTL_CHECK(ip4TargetAddress, CTL_DNS)
+                || CTL_CHECK(ip4TargetAddress, CTL_ALIAS)
+                || CTL_CHECK(ip4TargetAddress, CTL_TFTP))
             {
-                rah->ar_hrd = RT_H2N_U16_C(1);
-                rah->ar_pro = RT_H2N_U16_C(ETH_P_IP);
-                rah->ar_hln = ETH_ALEN;
-                rah->ar_pln = 4;
-                rah->ar_op = RT_H2N_U16_C(ARPOP_REPLY);
-                memcpy(rah->ar_sha, special_ethaddr, ETH_ALEN);
+                struct ethhdr *pEtherHeaderResponse;
+                struct arphdr *pARPHeaderResponse;
+                uint32_t ip4TargetAddressInHostFormat;
+                struct mbuf *pMbufResponse;
+                ip4TargetAddressInHostFormat = RT_N2H_U32(ip4TargetAddress);
 
-                if (!slirpMbufTagService(pData, mr, (uint8_t)(htip & ~pData->netmask)))
+                pMbufResponse = m_getcl(pData, M_NOWAIT, MT_HEADER, M_PKTHDR);
+                if (!pMbufResponse)
+                    break;
+                pEtherHeaderResponse = mtod(pMbufResponse, struct ethhdr *);
+                /* @note: if_encap will swap src and dst*/
+                memcpy(pEtherHeaderResponse->h_source, pEtherHeader->h_source, ETH_ALEN);
+                pMbufResponse->m_data += ETH_HLEN;
+                pARPHeaderResponse = mtod(pMbufResponse, struct arphdr *);
+                pMbufResponse->m_len = sizeof(struct arphdr);
+
+                pARPHeaderResponse->ar_hrd = RT_H2N_U16_C(1);
+                pARPHeaderResponse->ar_pro = RT_H2N_U16_C(ETH_P_IP);
+                pARPHeaderResponse->ar_hln = ETH_ALEN;
+                pARPHeaderResponse->ar_pln = 4;
+                pARPHeaderResponse->ar_op = RT_H2N_U16_C(ARPOP_REPLY);
+                memcpy(pARPHeaderResponse->ar_sha, special_ethaddr, ETH_ALEN);
+
+                if (!slirpMbufTagService(pData, pMbufResponse, (uint8_t)(ip4TargetAddressInHostFormat & ~pData->netmask)))
                 {
                     static bool fTagErrorReported;
                     if (!fTagErrorReported)
                     {
                         LogRel(("NAT: couldn't add the tag(PACKET_SERVICE:%d) to mbuf:%p\n",
-                                    (uint8_t)(htip & ~pData->netmask), m));
+                                    (uint8_t)(ip4TargetAddressInHostFormat & ~pData->netmask), m));
                         fTagErrorReported = true;
                     }
                 }
-                rah->ar_sha[5] = (uint8_t)(htip & ~pData->netmask);
+                pARPHeaderResponse->ar_sha[5] = (uint8_t)(ip4TargetAddressInHostFormat & ~pData->netmask);
 
-                memcpy(rah->ar_sip, ah->ar_tip, 4);
-                memcpy(rah->ar_tha, ah->ar_sha, ETH_ALEN);
-                memcpy(rah->ar_tip, ah->ar_sip, 4);
-                if_encap(pData, ETH_P_ARP, mr, ETH_ENCAP_URG);
+                memcpy(pARPHeaderResponse->ar_sip, pARPHeader->ar_tip, 4);
+                memcpy(pARPHeaderResponse->ar_tha, pARPHeader->ar_sha, ETH_ALEN);
+                memcpy(pARPHeaderResponse->ar_tip, pARPHeader->ar_sip, 4);
+                if_encap(pData, ETH_P_ARP, pMbufResponse, ETH_ENCAP_URG);
             }
-            else
-                m_freem(pData, mr);
 
             /* Gratuitous ARP */
-            if (  *(uint32_t *)ah->ar_sip == *(uint32_t *)ah->ar_tip
-                && memcmp(ah->ar_tha, broadcast_ethaddr, ETH_ALEN) == 0
-                && memcmp(eh->h_dest, broadcast_ethaddr, ETH_ALEN) == 0)
+            if (  *(uint32_t *)pARPHeader->ar_sip == *(uint32_t *)pARPHeader->ar_tip
+                && memcmp(pARPHeader->ar_tha, broadcast_ethaddr, ETH_ALEN) == 0
+                && memcmp(pEtherHeader->h_dest, broadcast_ethaddr, ETH_ALEN) == 0)
             {
                 /* We've received an announce about address assignment,
                  * let's do an ARP cache update
@@ -1548,15 +1550,15 @@ static void arp_input(PNATState pData, struct mbuf *m)
                 if (!fGratuitousArpReported)
                 {
                     LogRel(("NAT: Gratuitous ARP [IP:%RTnaipv4, ether:%RTmac]\n",
-                            ah->ar_sip, ah->ar_sha));
+                            pARPHeader->ar_sip, pARPHeader->ar_sha));
                     fGratuitousArpReported = true;
                 }
-                slirp_arp_cache_update_or_add(pData, *(uint32_t *)ah->ar_sip, &ah->ar_sha[0]);
+                slirp_arp_cache_update_or_add(pData, *(uint32_t *)pARPHeader->ar_sip, &pARPHeader->ar_sha[0]);
             }
             break;
 
         case ARPOP_REPLY:
-            slirp_arp_cache_update_or_add(pData, *(uint32_t *)ah->ar_sip, &ah->ar_sha[0]);
+            slirp_arp_cache_update_or_add(pData, *(uint32_t *)pARPHeader->ar_sip, &pARPHeader->ar_sha[0]);
             break;
 
         default:
