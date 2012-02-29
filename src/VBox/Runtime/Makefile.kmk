@@ -726,13 +726,13 @@ RuntimeR3_SOURCES.os2   = \
 	r3/posix/path-posix.cpp \
 	r3/posix/path2-posix.cpp \
 	r3/posix/pathhost-posix.cpp \
+	r3/posix/rtmempage-exec-mmap-heap-posix.cpp \
 	r3/posix/RTPathUserDocuments-posix.cpp \
 	r3/posix/process-posix.cpp \
 	r3/posix/process-creation-posix.cpp \
 	r3/posix/symlink-posix.cpp \
 	r3/posix/timelocal-posix.cpp \
 	r3/posix/utf8-posix.cpp
-## @todo r3/posix/rtmempage-exec-mmap-heap-posix.cpp 
 
 RuntimeR3_SOURCES.darwin = \
 	darwin/RTErrConvertFromDarwin.cpp \

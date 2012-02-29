@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2010 Oracle Corporation
+ * Copyright (C) 2006-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -47,7 +47,6 @@
 #if !defined(MAP_ANONYMOUS) && defined(MAP_ANON)
 # define MAP_ANONYMOUS MAP_ANON
 #endif
-
 
 
 /*******************************************************************************
@@ -144,6 +143,45 @@ static RTHEAPPAGE   g_MemPagePosixHeap;
 /** The exec page heap. */
 static RTHEAPPAGE   g_MemExecPosixHeap;
 
+
+#ifdef RT_OS_OS2
+/*
+ * A quick mmap/munmap mockup for avoid duplicating lots of good code. 
+ */
+# define INCL_BASE
+# include <os2.h>
+# define MAP_PRIVATE    0
+# define MAP_ANONYMOUS  0
+# define MAP_FAILED  (void *)-1
+
+static void *mmap(void *pvWhere, size_t cb, int fProt, int fFlags, int fd, off_t off)
+{
+    NOREF(pvWhere); NOREF(fd); NOREF(off);
+    void   *pv    = NULL;
+    ULONG  fAlloc = OBJ_ANY | PAG_COMMIT;
+    if (fProt & PROT_EXEC)
+        fAlloc |= PAG_EXECUTE;
+    if (fProt & PROT_READ)
+        fAlloc |= PAG_READ;
+    if (fProt & PROT_WRITE)
+        fAlloc |= PAG_WRITE;
+    APIRET rc = DosAllocMem(&pv, cb, fAlloc);
+    if (rc == NO_ERROR)
+        return pv;
+    errno = ENOMEM;
+    return MAP_FAILED;
+}
+
+static int munmap(void *pv, size_t cb)
+{
+    APIRET rc = DosFreeMem(pv);
+    if (rc == NO_ERROR)
+        return 0;
+    errno = EINVAL;
+    return -1;
+}
+
+#endif
 
 /**
  * Initializes the heap.
