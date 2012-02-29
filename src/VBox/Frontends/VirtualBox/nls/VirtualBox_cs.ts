@@ -93,7 +93,7 @@
     </message>
     <message>
         <source>The VirtualBox Linux kernel driver (vboxdrv) is either not loaded or there is a permission problem with /dev/vboxdrv. Please reinstall the kernel module by executing&lt;br/&gt;&lt;br/&gt;  &lt;font color=blue&gt;&apos;/etc/init.d/vboxdrv setup&apos;&lt;/font&gt;&lt;br/&gt;&lt;br/&gt;as root. Users of Ubuntu, Fedora or Mandriva should install the DKMS package first. This package keeps track of Linux kernel changes and recompiles the vboxdrv kernel module if necessary.</source>
-        <translation>Ovladač jádra pro VirtualBox (vboxdrv) není buď zaveden, nebo je problém s přístupem na zařízení /dev/vboxdrv. Spusťte znovu modul jádra zadáním příkazu &lt;br/&gt;&lt;br/&gt;  &lt;font color=&quot;blue&quot;&gt;&apos;/etc/init.d/vboxdrv setup&apos;&lt;/font&gt;&lt;br/&gt;&lt;br/&gt; jako uživatel root. Uživatelé distribucí Ubuntu, Fedora nebo Mandriva by měli nainstalovat balíček DKMS. Ten udržuje všechny změny v jádře Linuxu a pokud je potřeba provede rekompilaci modulu vboxdrv.</translation>
+        <translation type="obsolete">Ovladač jádra pro VirtualBox (vboxdrv) není buď zaveden, nebo je problém s přístupem na zařízení /dev/vboxdrv. Spusťte znovu modul jádra zadáním příkazu &lt;br/&gt;&lt;br/&gt;  &lt;font color=&quot;blue&quot;&gt;&apos;/etc/init.d/vboxdrv setup&apos;&lt;/font&gt;&lt;br/&gt;&lt;br/&gt; jako uživatel root. Uživatelé distribucí Ubuntu, Fedora nebo Mandriva by měli nainstalovat balíček DKMS. Ten udržuje všechny změny v jádře Linuxu a pokud je potřeba provede rekompilaci modulu vboxdrv.</translation>
     </message>
     <message>
         <source>Make sure the kernel module has been loaded successfully.</source>
@@ -147,6 +147,10 @@
         <source>This error means that the kernel driver was either not able to allocate enough memory or that some mapping operation failed.</source>
         <translation>Tato chyba znamená, že ovladač jádra nebyl schopen alokovat dostatek paměti nebo selhala operace mapování.</translation>
     </message>
+    <message>
+        <source>The VirtualBox Linux kernel driver (vboxdrv) is either not loaded or there is a permission problem with /dev/vboxdrv. Please reinstall the kernel module by executing&lt;br/&gt;&lt;br/&gt;  &lt;font color=blue&gt;&apos;/etc/init.d/vboxdrv setup&apos;&lt;/font&gt;&lt;br/&gt;&lt;br/&gt;as root. If it is available in your distribution, you should install the DKMS package first. This package keeps track of Linux kernel changes and recompiles the vboxdrv kernel module if necessary.</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>QIArrowSplitter</name>
@@ -181,11 +185,11 @@
     <name>QIHttp</name>
     <message>
         <source>Connection timed out</source>
-        <translation>Spojení vypršelo</translation>
+        <translation type="obsolete">Spojení vypršelo</translation>
     </message>
     <message>
         <source>Could not locate the file on the server (response: %1)</source>
-        <translation>Nelze najít soubor na serveru (odpověd: %1)</translation>
+        <translation type="obsolete">Nelze najít soubor na serveru (odpověd: %1)</translation>
     </message>
 </context>
 <context>
@@ -340,7 +344,7 @@
     </message>
     <message>
         <source>&amp;Insert Ctrl-Alt-Backspace</source>
-        <translation>Vlož&amp;it Ctrl-Alt-Backspace</translation>
+        <translation type="obsolete">Vlož&amp;it Ctrl-Alt-Backspace</translation>
     </message>
     <message>
         <source>Send the Ctrl-Alt-Backspace sequence to the virtual machine</source>
@@ -348,7 +352,7 @@
     </message>
     <message>
         <source>Take &amp;Snapshot...</source>
-        <translation>Sejmout &amp;snímek...</translation>
+        <translation type="obsolete">Sejmout &amp;snímek...</translation>
     </message>
     <message>
         <source>Take a snapshot of the virtual machine</source>
@@ -717,6 +721,42 @@
         <source>Create a new virtual machine</source>
         <translation>Vytvoří nový virtuální počítač</translation>
     </message>
+    <message>
+        <source>Take Sn&amp;apshot...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Take Screensh&amp;ot...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Take a screenshot of the virtual machine</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Ins&amp;ert Ctrl-Alt-Backspace</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Sort List</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Sort the VM list alphabetically (Shift for descending order)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Close</source>
+        <translation type="unfinished">&amp;Zavřít</translation>
+    </message>
+    <message>
+        <source>Po&amp;wer Off</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Power off the virtual machine</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UIApplianceEditorWidget</name>
@@ -974,150 +1014,382 @@
     </message>
 </context>
 <context>
-    <name>UIDetailsPagePrivate</name>
+    <name>UIDetailsBlock</name>
     <message>
         <source>Name</source>
         <comment>details report</comment>
-        <translation>Název</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>OS Type</source>
         <comment>details report</comment>
-        <translation>Typ OS</translation>
+        <translation type="unfinished">Typ OS</translation>
+    </message>
+    <message>
+        <source>Information inaccessible</source>
+        <comment>details report</comment>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Base Memory</source>
         <comment>details report</comment>
-        <translation>Operační paměť</translation>
+        <translation type="unfinished">Operační paměť</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;%1 MB&lt;/nobr&gt;</source>
         <comment>details report</comment>
-        <translation>&lt;nobr&gt;%1 MB&lt;/nobr&gt;</translation>
+        <translation type="unfinished">&lt;nobr&gt;%1 MB&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>Processors</source>
         <comment>details report</comment>
-        <translation>Procesory</translation>
+        <translation type="unfinished">Procesory</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;%1&lt;/nobr&gt;</source>
         <comment>details report</comment>
-        <translation>&lt;nobr&gt;%1&lt;/nobr&gt;</translation>
+        <translation type="unfinished">&lt;nobr&gt;%1&lt;/nobr&gt;</translation>
+    </message>
+    <message>
+        <source>Execution Cap</source>
+        <comment>details report</comment>
+        <translation type="unfinished">Omezení procesoru</translation>
+    </message>
+    <message>
+        <source>&lt;nobr&gt;%1%&lt;/nobr&gt;</source>
+        <comment>details report</comment>
+        <translation type="unfinished">&lt;nobr&gt;%1%&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>Boot Order</source>
         <comment>details report</comment>
-        <translation>Pořadí při bootování</translation>
+        <translation type="unfinished">Pořadí při bootování</translation>
     </message>
     <message>
         <source>ACPI</source>
         <comment>details report</comment>
-        <translation>ACPI</translation>
+        <translation type="unfinished">ACPI</translation>
     </message>
     <message>
         <source>IO APIC</source>
         <comment>details report</comment>
-        <translation>IO APIC</translation>
+        <translation type="unfinished">IO APIC</translation>
     </message>
     <message>
         <source>BIOS</source>
         <comment>details report</comment>
-        <translation>BIOS</translation>
+        <translation type="unfinished">BIOS</translation>
     </message>
     <message>
         <source>VT-x/AMD-V</source>
         <comment>details report</comment>
-        <translation>VT-x/AMD-V</translation>
+        <translation type="unfinished">VT-x/AMD-V</translation>
     </message>
     <message>
         <source>Nested Paging</source>
         <comment>details report</comment>
-        <translation>Přímý přístup k hardware</translation>
+        <translation type="unfinished">Přímý přístup k hardware</translation>
     </message>
     <message>
         <source>PAE/NX</source>
         <comment>details report</comment>
-        <translation>PAE/NX</translation>
+        <translation type="unfinished">PAE/NX</translation>
     </message>
     <message>
         <source>Acceleration</source>
         <comment>details report</comment>
-        <translation>Akcelerace</translation>
+        <translation type="unfinished">Akcelerace</translation>
     </message>
     <message>
         <source>Video Memory</source>
         <comment>details report</comment>
-        <translation>Video paměť</translation>
+        <translation type="unfinished">Video paměť</translation>
     </message>
     <message>
         <source>Screens</source>
         <comment>details report</comment>
-        <translation>Obrazovky</translation>
+        <translation type="unfinished">Obrazovky</translation>
     </message>
     <message>
         <source>2D Video</source>
         <comment>details report</comment>
-        <translation>2D Video</translation>
+        <translation type="unfinished">2D Video</translation>
     </message>
     <message>
         <source>3D</source>
         <comment>details report</comment>
-        <translation>3D</translation>
+        <translation type="unfinished">3D</translation>
     </message>
     <message>
         <source>Remote Desktop Server Port</source>
         <comment>details report (VRDE Server)</comment>
-        <translation>Port vzdáleného serveru</translation>
+        <translation type="unfinished">Port vzdáleného serveru</translation>
     </message>
     <message>
         <source>Remote Desktop Server</source>
         <comment>details report (VRDE Server)</comment>
-        <translation>Vzdálený server</translation>
+        <translation type="unfinished">Vzdálený server</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>details report (VRDE Server)</comment>
-        <translation>Zakázán</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>(CD/DVD)</source>
-        <translation>CD/DVD</translation>
+        <translation type="unfinished">CD/DVD</translation>
     </message>
     <message>
         <source>Not Attached</source>
         <comment>details report (Storage)</comment>
-        <translation>Nepřipojena</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Host Driver</source>
         <comment>details report (audio)</comment>
-        <translation>Ovladač hostitele</translation>
+        <translation type="unfinished">Ovladač hostitele</translation>
     </message>
     <message>
         <source>Controller</source>
         <comment>details report (audio)</comment>
-        <translation>Řadič</translation>
+        <translation type="unfinished">Řadič</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>details report (audio)</comment>
-        <translation>Zakázán</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Bridged adapter, %1</source>
         <comment>details report (network)</comment>
-        <translation>Karta použitá v síťovém mostu, %1</translation>
+        <translation type="unfinished">Karta použitá v síťovém mostu, %1</translation>
     </message>
     <message>
         <source>Internal network, &apos;%1&apos;</source>
         <comment>details report (network)</comment>
-        <translation>Interní síť, &apos;%1&apos;</translation>
+        <translation type="unfinished">Interní síť, &apos;%1&apos;</translation>
     </message>
     <message>
         <source>Host-only adapter, &apos;%1&apos;</source>
         <comment>details report (network)</comment>
-        <translation>Síť pouze s hostem,&apos;%1&apos;</translation>
+        <translation type="unfinished">Síť pouze s hostem,&apos;%1&apos;</translation>
+    </message>
+    <message>
+        <source>Generic driver, &apos;%1&apos;</source>
+        <comment>details report (network)</comment>
+        <translation type="unfinished">Obecný ovladač, &apos;%1&apos;</translation>
+    </message>
+    <message>
+        <source>Generic driver, &apos;%1&apos; {&amp;nbsp;%2&amp;nbsp;}</source>
+        <comment>details report (network)</comment>
+        <translation type="unfinished">Obecný ovladač, &apos;%1&apos; {&amp;nbsp;%2&amp;nbsp;}</translation>
+    </message>
+    <message>
+        <source>Adapter %1</source>
+        <comment>details report (network)</comment>
+        <translation type="unfinished">Karta %1</translation>
+    </message>
+    <message>
+        <source>Disabled</source>
+        <comment>details report (network)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Port %1</source>
+        <comment>details report (serial ports)</comment>
+        <translation type="unfinished">Port %1</translation>
+    </message>
+    <message>
+        <source>Disabled</source>
+        <comment>details report (serial ports)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Port %1</source>
+        <comment>details report (parallel ports)</comment>
+        <translation type="unfinished">Port %1</translation>
+    </message>
+    <message>
+        <source>Disabled</source>
+        <comment>details report (parallel ports)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Device Filters</source>
+        <comment>details report (USB)</comment>
+        <translation type="unfinished">Filtry zařízení</translation>
+    </message>
+    <message>
+        <source>%1 (%2 active)</source>
+        <comment>details report (USB)</comment>
+        <translation type="unfinished">%1 (%2 aktivní)</translation>
+    </message>
+    <message>
+        <source>Disabled</source>
+        <comment>details report (USB)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Shared Folders</source>
+        <comment>details report (shared folders)</comment>
+        <translation type="unfinished">Sdílené složky</translation>
+    </message>
+    <message>
+        <source>None</source>
+        <comment>details report (shared folders)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>None</source>
+        <comment>details report (description)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIDetailsPagePrivate</name>
+    <message>
+        <source>Name</source>
+        <comment>details report</comment>
+        <translation type="obsolete">Název</translation>
+    </message>
+    <message>
+        <source>OS Type</source>
+        <comment>details report</comment>
+        <translation type="obsolete">Typ OS</translation>
+    </message>
+    <message>
+        <source>Base Memory</source>
+        <comment>details report</comment>
+        <translation type="obsolete">Operační paměť</translation>
+    </message>
+    <message>
+        <source>&lt;nobr&gt;%1 MB&lt;/nobr&gt;</source>
+        <comment>details report</comment>
+        <translation type="obsolete">&lt;nobr&gt;%1 MB&lt;/nobr&gt;</translation>
+    </message>
+    <message>
+        <source>Processors</source>
+        <comment>details report</comment>
+        <translation type="obsolete">Procesory</translation>
+    </message>
+    <message>
+        <source>&lt;nobr&gt;%1&lt;/nobr&gt;</source>
+        <comment>details report</comment>
+        <translation type="obsolete">&lt;nobr&gt;%1&lt;/nobr&gt;</translation>
+    </message>
+    <message>
+        <source>Boot Order</source>
+        <comment>details report</comment>
+        <translation type="obsolete">Pořadí při bootování</translation>
+    </message>
+    <message>
+        <source>ACPI</source>
+        <comment>details report</comment>
+        <translation type="obsolete">ACPI</translation>
+    </message>
+    <message>
+        <source>IO APIC</source>
+        <comment>details report</comment>
+        <translation type="obsolete">IO APIC</translation>
+    </message>
+    <message>
+        <source>BIOS</source>
+        <comment>details report</comment>
+        <translation type="obsolete">BIOS</translation>
+    </message>
+    <message>
+        <source>VT-x/AMD-V</source>
+        <comment>details report</comment>
+        <translation type="obsolete">VT-x/AMD-V</translation>
+    </message>
+    <message>
+        <source>Nested Paging</source>
+        <comment>details report</comment>
+        <translation type="obsolete">Přímý přístup k hardware</translation>
+    </message>
+    <message>
+        <source>PAE/NX</source>
+        <comment>details report</comment>
+        <translation type="obsolete">PAE/NX</translation>
+    </message>
+    <message>
+        <source>Acceleration</source>
+        <comment>details report</comment>
+        <translation type="obsolete">Akcelerace</translation>
+    </message>
+    <message>
+        <source>Video Memory</source>
+        <comment>details report</comment>
+        <translation type="obsolete">Video paměť</translation>
+    </message>
+    <message>
+        <source>Screens</source>
+        <comment>details report</comment>
+        <translation type="obsolete">Obrazovky</translation>
+    </message>
+    <message>
+        <source>2D Video</source>
+        <comment>details report</comment>
+        <translation type="obsolete">2D Video</translation>
+    </message>
+    <message>
+        <source>3D</source>
+        <comment>details report</comment>
+        <translation type="obsolete">3D</translation>
+    </message>
+    <message>
+        <source>Remote Desktop Server Port</source>
+        <comment>details report (VRDE Server)</comment>
+        <translation type="obsolete">Port vzdáleného serveru</translation>
+    </message>
+    <message>
+        <source>Remote Desktop Server</source>
+        <comment>details report (VRDE Server)</comment>
+        <translation type="obsolete">Vzdálený server</translation>
+    </message>
+    <message>
+        <source>Disabled</source>
+        <comment>details report (VRDE Server)</comment>
+        <translation type="obsolete">Zakázán</translation>
+    </message>
+    <message>
+        <source>(CD/DVD)</source>
+        <translation type="obsolete">CD/DVD</translation>
+    </message>
+    <message>
+        <source>Not Attached</source>
+        <comment>details report (Storage)</comment>
+        <translation type="obsolete">Nepřipojena</translation>
+    </message>
+    <message>
+        <source>Host Driver</source>
+        <comment>details report (audio)</comment>
+        <translation type="obsolete">Ovladač hostitele</translation>
+    </message>
+    <message>
+        <source>Controller</source>
+        <comment>details report (audio)</comment>
+        <translation type="obsolete">Řadič</translation>
+    </message>
+    <message>
+        <source>Disabled</source>
+        <comment>details report (audio)</comment>
+        <translation type="obsolete">Zakázán</translation>
+    </message>
+    <message>
+        <source>Bridged adapter, %1</source>
+        <comment>details report (network)</comment>
+        <translation type="obsolete">Karta použitá v síťovém mostu, %1</translation>
+    </message>
+    <message>
+        <source>Internal network, &apos;%1&apos;</source>
+        <comment>details report (network)</comment>
+        <translation type="obsolete">Interní síť, &apos;%1&apos;</translation>
+    </message>
+    <message>
+        <source>Host-only adapter, &apos;%1&apos;</source>
+        <comment>details report (network)</comment>
+        <translation type="obsolete">Síť pouze s hostem,&apos;%1&apos;</translation>
     </message>
     <message>
         <source>VDE network, &apos;%1&apos;</source>
@@ -1127,62 +1399,62 @@
     <message>
         <source>Adapter %1</source>
         <comment>details report (network)</comment>
-        <translation>Karta %1</translation>
+        <translation type="obsolete">Karta %1</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>details report (network)</comment>
-        <translation>Zakázána</translation>
+        <translation type="obsolete">Zakázána</translation>
     </message>
     <message>
         <source>Port %1</source>
         <comment>details report (serial ports)</comment>
-        <translation>Port %1</translation>
+        <translation type="obsolete">Port %1</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>details report (serial ports)</comment>
-        <translation>Zakázán</translation>
+        <translation type="obsolete">Zakázán</translation>
     </message>
     <message>
         <source>Port %1</source>
         <comment>details report (parallel ports)</comment>
-        <translation>Port %1</translation>
+        <translation type="obsolete">Port %1</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>details report (parallel ports)</comment>
-        <translation>Zakázán</translation>
+        <translation type="obsolete">Zakázán</translation>
     </message>
     <message>
         <source>Device Filters</source>
         <comment>details report (USB)</comment>
-        <translation>Filtry zařízení</translation>
+        <translation type="obsolete">Filtry zařízení</translation>
     </message>
     <message>
         <source>%1 (%2 active)</source>
         <comment>details report (USB)</comment>
-        <translation>%1 (%2 aktivní)</translation>
+        <translation type="obsolete">%1 (%2 aktivní)</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>details report (USB)</comment>
-        <translation>Zakázány</translation>
+        <translation type="obsolete">Zakázány</translation>
     </message>
     <message>
         <source>Shared Folders</source>
         <comment>details report (shared folders)</comment>
-        <translation>Sdílené složky</translation>
+        <translation type="obsolete">Sdílené složky</translation>
     </message>
     <message>
         <source>None</source>
         <comment>details report (shared folders)</comment>
-        <translation>Žádné</translation>
+        <translation type="obsolete">Žádné</translation>
     </message>
     <message>
         <source>None</source>
         <comment>details report (description)</comment>
-        <translation>Žádný</translation>
+        <translation type="obsolete">Žádný</translation>
     </message>
     <message>
         <source>The selected virtual machine is &lt;i&gt;inaccessible&lt;/i&gt;. Please inspect the error message shown below and press the &lt;b&gt;Refresh&lt;/b&gt; button if you want to repeat the accessibility check:</source>
@@ -1249,24 +1521,19 @@
         <translation>Popis</translation>
     </message>
     <message>
-        <source>Execution Cap</source>
-        <comment>details report</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>&lt;nobr&gt;%1%&lt;/nobr&gt;</source>
         <comment>details report</comment>
-        <translation>&lt;nobr&gt;%1%&lt;/nobr&gt;</translation>
+        <translation type="obsolete">&lt;nobr&gt;%1%&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>Generic driver, &apos;%1&apos;</source>
         <comment>details report (network)</comment>
-        <translation>Obecný ovladač, &apos;%1&apos;</translation>
+        <translation type="obsolete">Obecný ovladač, &apos;%1&apos;</translation>
     </message>
     <message>
         <source>Generic driver, &apos;%1&apos; {&amp;nbsp;%2&amp;nbsp;}</source>
         <comment>details report (network)</comment>
-        <translation>Obecný ovladač, &apos;%1&apos; {&amp;nbsp;%2&amp;nbsp;}</translation>
+        <translation type="obsolete">Obecný ovladač, &apos;%1&apos; {&amp;nbsp;%2&amp;nbsp;}</translation>
     </message>
 </context>
 <context>
@@ -1319,6 +1586,14 @@
         <source>The download process has been canceled by the user.</source>
         <translation type="obsolete">Proces stahovaní byl zrušen uživatelem.</translation>
     </message>
+    <message>
+        <source>Looking for %1...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Downloading %1...</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UIDownloaderAdditions</name>
@@ -1342,6 +1617,10 @@
         <source>Select folder to save Guest Additions image to</source>
         <translation>Vyberte složku pro uložení ISO obrazu Přídavků pro hosta</translation>
     </message>
+    <message>
+        <source>VirtualBox Guest Additions</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UIDownloaderExtensionPack</name>
@@ -1349,12 +1628,20 @@
         <source>Select folder to save %1 to</source>
         <translation>Vyberte složku pro uložení %1 </translation>
     </message>
+    <message>
+        <source>VirtualBox Extension Pack</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UIDownloaderUserManual</name>
     <message>
         <source>Select folder to save User Manual to</source>
         <translation>Zvolte složku pro uložení uživatelského manuálu</translation>
+    </message>
+    <message>
+        <source>VirtualBox User Manual</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -1898,6 +2185,56 @@ p, li { white-space: pre-wrap; }
         <source>Source</source>
         <comment>summary</comment>
         <translation>Zdroj</translation>
+    </message>
+</context>
+<context>
+    <name>UIGlobalSettingsDisplay</name>
+    <message>
+        <source>Maximum Guest Screen &amp;Size:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Width:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Specifies the maximum width which we would like the guest to use.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Height:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Specifies the maximum height which we would like the guest to use.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Automatic</source>
+        <comment>Maximum Guest Screen Size</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Suggest a reasonable maximum screen size to the guest. The guest will only see this suggestion when guest additions are installed.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>None</source>
+        <comment>Maximum Guest Screen Size</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Do not attempt to limit the size of the guest screen.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Hint</source>
+        <comment>Maximum Guest Screen Size</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Suggest a maximum screen size to the guest. The guest will only see this suggestion when guest additions are installed.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -2824,6 +3161,10 @@ p, li { white-space: pre-wrap; }
         <source>No supported devices connected to the host PC</source>
         <translation>K hostitelskému PC není připojeno žádné podporované zařízení</translation>
     </message>
+    <message>
+        <source>Select a filename for the screenshot ...</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UIMachineSettingsAudio</name>
@@ -2973,6 +3314,10 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>you have 2D Video Acceleration enabled. As 2D Video Acceleration is supported for Windows guests only, this feature will be disabled.</source>
         <translation>máte povolenu 2D akceleraci videa. Protože tato akcelerace je podporována pouze na virtuálních počítačích s Windows, bude tato vlastnost zákázána.</translation>
+    </message>
+    <message>
+        <source>you enabled 3D acceleration. However, 3D acceleration is not working on the current host setup so you will not be able to start the VM.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -5179,7 +5524,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;Failed to download the VirtualBox Guest Additions CD image from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;%3&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Nepodařilo se stáhnout obraz CD Přídavků pro hosta VirtualBoxu z &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;%3&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Nepodařilo se stáhnout obraz CD Přídavků pro hosta VirtualBoxu z &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;%3&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Are you sure you want to download the VirtualBox Guest Additions CD image from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; (size %3 bytes)?&lt;/p&gt;</source>
@@ -5650,7 +5995,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;Unable to obtain the new version information due to the following error:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Nelze získat informace o nové verzi z důvodu následující chyby: &lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Nelze získat informace o nové verzi z důvodu následující chyby: &lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;One or more virtual hard disks, CD/DVD or floppy media are not currently accessible. As a result, you will not be able to operate virtual machines that use these media until they become accessible later.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Check&lt;/b&gt; to open the Virtual Media Manager window and see what media are inaccessible, or press &lt;b&gt;Ignore&lt;/b&gt; to ignore this message.&lt;/p&gt;</source>
@@ -5916,7 +6261,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;Failed to download the VirtualBox User Manual from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;%3&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Stažení uživatelského manuálu pro VirtualBox z &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; selhalo.&lt;/p&gt;&lt;p&gt;%3&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Stažení uživatelského manuálu pro VirtualBox z &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; selhalo.&lt;/p&gt;&lt;p&gt;%3&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;The VirtualBox User Manual has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; and saved locally as &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;</source>
@@ -5936,11 +6281,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;You are about to remove the virtual machine &lt;b&gt;%1&lt;/b&gt; from the machine list.&lt;/p&gt;&lt;p&gt;Would you like to delete the files containing the virtual machine from your hard disk as well?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Chystáte se odstranit virtuální počítač &lt;b&gt;%1&lt;/b&gt; ze seznamu. &lt;/p&gt;&lt;p&gt;Chcete také zároveň smazat z disku soubory obsahující virtuální počítače?&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Chystáte se odstranit virtuální počítač &lt;b&gt;%1&lt;/b&gt; ze seznamu. &lt;/p&gt;&lt;p&gt;Chcete také zároveň smazat z disku soubory obsahující virtuální počítače?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;You are about to remove the virtual machine &lt;b&gt;%1&lt;/b&gt; from the machine list.&lt;/p&gt;&lt;p&gt;Would you like to delete the files containing the virtual machine from your hard disk as well? Doing this will also remove the files containing the machine&apos;s virtual hard disks if they are not in use by another machine.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Chystáte se odstranit virtuální počítač &lt;b&gt;%1&lt;/b&gt; ze seznamu.&lt;/p&gt;&lt;p&gt;Chcete také současně odstranit soubory obsahující virtuální počítač z pevného disku? Odstraněním se také smažou všechny soubory obsahující virtuální pevný disk pokud nejsou používány jiným virtuálním počítačem.&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Chystáte se odstranit virtuální počítač &lt;b&gt;%1&lt;/b&gt; ze seznamu.&lt;/p&gt;&lt;p&gt;Chcete také současně odstranit soubory obsahující virtuální počítač z pevného disku? Odstraněním se také smažou všechny soubory obsahující virtuální pevný disk pokud nejsou používány jiným virtuálním počítačem.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Delete all files</source>
@@ -5952,7 +6297,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>You are about to remove the inaccessible virtual machine &lt;b&gt;%1&lt;/b&gt; from the machine list. Do you wish to proceed?</source>
-        <translation>Chystáte se odstranit nedostupný virtuální počítač &lt;b&gt;%1&lt;/b&gt; ze seznamu. Chcete pokračovat?</translation>
+        <translation type="obsolete">Chystáte se odstranit nedostupný virtuální počítač &lt;b&gt;%1&lt;/b&gt; ze seznamu. Chcete pokračovat?</translation>
     </message>
     <message>
         <source>Remove</source>
@@ -6227,7 +6572,74 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;Failed to download the &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; from &lt;nobr&gt;&lt;a href=&quot;%2&quot;&gt;%2&lt;/a&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;%3&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Stažení souboru &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; z &lt;nobr&gt;&lt;a href=&quot;%2&quot;&gt;%2&lt;/a&gt; selhalo.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;%3&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Stažení souboru &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; z &lt;nobr&gt;&lt;a href=&quot;%2&quot;&gt;%2&lt;/a&gt; selhalo.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;%3&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Network Operations Manager...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show Network Operations Manager</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;You are about to remove following inaccessible virtual machines from the machine list:&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;&lt;p&gt;Do you wish to proceed?&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;You are about to remove following virtual machines from the machine list:&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;&lt;p&gt;Would you like to delete the files containing the virtual machine from your hard disk as well? Doing this will also remove the files containing the machine&apos;s virtual hard disks if they are not in use by another machine.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;You are about to remove following virtual machines from the machine list:&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;&lt;p&gt;Would you like to delete the files containing the virtual machine from your hard disk as well?&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;You have version %1 of the &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt; installed.&lt;/p&gt;&lt;p&gt;You should download and install version %3 of this extension pack from Oracle!&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Ok</source>
+        <comment>extension pack</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Do you wish to cancel all current network operations?</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Do you wish to cancel all current network operations or leave them running in the background?</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Cancel All</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Leave in Background</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Do you really want to send an ACPI shutdown signal to the virtual machine?&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>ACPI Shutdown</source>
+        <comment>machine</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Do you really want to power off the virtual machine?&lt;/p&gt;&lt;p&gt;This will cause any unsaved data in applications running inside it to be lost.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Power Off</source>
+        <comment>machine</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to drop data.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -6295,6 +6707,41 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Use Host Screen %1</source>
         <translation>Použít obrazovku hostitele %1</translation>
+    </message>
+</context>
+<context>
+    <name>UINetworkManager</name>
+    <message>
+        <source>Network Operation</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Restart network operation</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Cancel network operation</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Error: %1.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Network Operations Manager</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>There are no active network operations.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Cancel All</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Cancel all active network operations</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -7272,6 +7719,34 @@ krok a připojit pevné disky později použitím dialogu Nastavení VM.&lt;/p&g
     </message>
 </context>
 <context>
+    <name>UISelectorWindow</name>
+    <message>
+        <source>Show Toolbar</source>
+        <translation type="unfinished">Zobrazit nástrojovou lištu</translation>
+    </message>
+    <message>
+        <source>Show Statusbar</source>
+        <translation type="unfinished">Zobrazit stavovou lištu</translation>
+    </message>
+    <message>
+        <source>Select a virtual machine file</source>
+        <translation type="unfinished">Vybere soubor s virtuálním počítačem</translation>
+    </message>
+    <message>
+        <source>Virtual machine files (%1)</source>
+        <translation type="unfinished">Soubory virtuálního počítače (%1)</translation>
+    </message>
+    <message>
+        <source>&lt;h3&gt;Welcome to VirtualBox!&lt;/h3&gt;&lt;p&gt;The left part of this window is  a list of all virtual machines on your computer. The list is empty now because you haven&apos;t created any virtual machines yet.&lt;img src=:/welcome.png align=right/&gt;&lt;/p&gt;&lt;p&gt;In order to create a new virtual machine, press the &lt;b&gt;New&lt;/b&gt; button in the main tool bar located at the top of the window.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;%1&lt;/b&gt; key to get instant help, or visit &lt;a href=http://www.virtualbox.org&gt;www.virtualbox.org&lt;/a&gt; for the latest information and news.&lt;/p&gt;</source>
+        <translation type="unfinished">&lt;h3&gt;Vítejte ve VirtualBoxu!&lt;/h3&gt;&lt;p&gt;Levá část tohoto okna je určena pro zobrazení seznamu všech virtuálních počítačů na vašem počítači. Seznam je teď prázdný, protože jste ještě žádný nevytvořili.&lt;img src=:/welcome.png align=right/&gt;&lt;/p&gt;&lt;p&gt;Pro vytvoření nového virtuálního počítače stiskněte tlačítko &lt;b&gt;Nový&lt;/b&gt; v horní části hlavního okna.&lt;/p&gt;&lt;p&gt;Pro okamžitou nápovědu stiskněte klávesu &lt;b&gt;%1&lt;/b&gt; nebo navštivte stránky  &lt;a href=http://www.virtualbox.org&gt;www.virtualbox.org&lt;/a&gt; pro aktuální informace a novinky.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Manager</source>
+        <comment>Note: main window title which is pretended by the product name.</comment>
+        <translation type="unfinished">Správce</translation>
+    </message>
+</context>
+<context>
     <name>UISession</name>
     <message>
         <source>Install</source>
@@ -7338,6 +7813,10 @@ krok a připojit pevné disky později použitím dialogu Nastavení VM.&lt;/p&g
     <message>
         <source>Proxy</source>
         <translation>Proxy</translation>
+    </message>
+    <message>
+        <source>Display</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -7542,6 +8021,13 @@ krok a připojit pevné disky později použitím dialogu Nastavení VM.&lt;/p&g
     </message>
 </context>
 <context>
+    <name>UIUpdateStepVirtualBox</name>
+    <message>
+        <source>Checking for a new VirtualBox version...</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>UIVMCloseDialog</name>
     <message>
         <source>Close Virtual Machine</source>
@@ -7646,6 +8132,85 @@ krok a připojit pevné disky později použitím dialogu Nastavení VM.&lt;/p&g
     <message>
         <source>Suspend the execution of the virtual machine</source>
         <translation type="obsolete">Pozastaví chod virtuálního počítače</translation>
+    </message>
+</context>
+<context>
+    <name>UIVMLogViewer</name>
+    <message>
+        <source>Log Viewer</source>
+        <translation type="obsolete">Prohlížeč záznamu</translation>
+    </message>
+    <message>
+        <source>&amp;Save</source>
+        <translation>&amp;Uložit</translation>
+    </message>
+    <message>
+        <source>&amp;Refresh</source>
+        <translation>&amp;Aktualizovat</translation>
+    </message>
+    <message>
+        <source>&amp;Close</source>
+        <translation type="obsolete">&amp;Zavřít</translation>
+    </message>
+    <message>
+        <source>%1 - VirtualBox Log Viewer</source>
+        <translation>%1 - Prohlížeč záznamu VirtualBoxu</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;No log files found. Press the &lt;b&gt;Refresh&lt;/b&gt; button to rescan the log folder &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Žádný soubor se záznamem nenalezen. Stiskněte tlačítko &lt;b&gt;Aktualizovat&lt;/b&gt; pro opětovné prozkoumání složky se záznamy &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Save VirtualBox Log As</source>
+        <translation>Uložit záznam VirtualBoxu jako</translation>
+    </message>
+    <message>
+        <source>Help</source>
+        <translation type="obsolete">Nápověda</translation>
+    </message>
+    <message>
+        <source>&amp;Find</source>
+        <translation>&amp;Hledat</translation>
+    </message>
+    <message>
+        <source>Close</source>
+        <translation>Zavřít</translation>
+    </message>
+    <message>
+        <source>Close the search panel</source>
+        <translation>Zavřít panel hledání</translation>
+    </message>
+    <message>
+        <source>Enter a search string here</source>
+        <translation>Sem napište hledaný řetězec</translation>
+    </message>
+    <message>
+        <source>&amp;Previous</source>
+        <translation>&amp;Předchozí</translation>
+    </message>
+    <message>
+        <source>Search for the previous occurrence of the string</source>
+        <translation>Hledat předchozí výskyt řetězce</translation>
+    </message>
+    <message>
+        <source>&amp;Next</source>
+        <translation>&amp;Další</translation>
+    </message>
+    <message>
+        <source>Search for the next occurrence of the string</source>
+        <translation>Hledat další výskyt řetězce</translation>
+    </message>
+    <message>
+        <source>C&amp;ase Sensitive</source>
+        <translation>Rozlišov&amp;at velikost písmen</translation>
+    </message>
+    <message>
+        <source>Perform case sensitive search (when checked)</source>
+        <translation>Provede vyhledávání s ohledem na velikost písmen (je-li zatrženo)</translation>
+    </message>
+    <message>
+        <source>String not found</source>
+        <translation>Řetězec nenalezen</translation>
     </message>
 </context>
 <context>
@@ -11154,11 +11719,11 @@ na výchozí jazyk systému.&lt;/qt&gt;
     </message>
     <message>
         <source>Create a new virtual machine</source>
-        <translation>Vytvoří nový virtuální počítač</translation>
+        <translation type="obsolete">Vytvoří nový virtuální počítač</translation>
     </message>
     <message>
         <source>&amp;Settings...</source>
-        <translation>Nas&amp;tavení...</translation>
+        <translation type="obsolete">Nas&amp;tavení...</translation>
     </message>
     <message>
         <source>Settings</source>
@@ -11166,7 +11731,7 @@ na výchozí jazyk systému.&lt;/qt&gt;
     </message>
     <message>
         <source>Configure the selected virtual machine</source>
-        <translation>Nastaví vybraný virtuální počítač</translation>
+        <translation type="obsolete">Nastaví vybraný virtuální počítač</translation>
     </message>
     <message>
         <source>&amp;Delete</source>
@@ -11254,7 +11819,7 @@ na výchozí jazyk systému.&lt;/qt&gt;
     </message>
     <message>
         <source>&amp;Machine</source>
-        <translation>&amp;Počítač</translation>
+        <translation type="obsolete">&amp;Počítač</translation>
     </message>
     <message>
         <source>Show Log...</source>
@@ -11274,45 +11839,45 @@ na výchozí jazyk systému.&lt;/qt&gt;
     </message>
     <message>
         <source>Resume the execution of the virtual machine</source>
-        <translation>Obnoví chod virtuálního počítače</translation>
+        <translation type="obsolete">Obnoví chod virtuálního počítače</translation>
     </message>
     <message>
         <source>&amp;Pause</source>
-        <translation>&amp;Pauza</translation>
+        <translation type="obsolete">&amp;Pauza</translation>
     </message>
     <message>
         <source>Suspend the execution of the virtual machine</source>
-        <translation>Pozastaví chod virtuálního počítače</translation>
+        <translation type="obsolete">Pozastaví chod virtuálního počítače</translation>
     </message>
     <message>
         <source>&lt;h3&gt;Welcome to VirtualBox!&lt;/h3&gt;&lt;p&gt;The left part of this window is  a list of all virtual machines on your computer. The list is empty now because you haven&apos;t created any virtual machines yet.&lt;img src=:/welcome.png align=right/&gt;&lt;/p&gt;&lt;p&gt;In order to create a new virtual machine, press the &lt;b&gt;New&lt;/b&gt; button in the main tool bar located at the top of the window.&lt;/p&gt;&lt;p&gt;You can press the &lt;b&gt;%1&lt;/b&gt; key to get instant help, or visit &lt;a href=http://www.virtualbox.org&gt;www.virtualbox.org&lt;/a&gt; for the latest information and news.&lt;/p&gt;</source>
-        <translation>&lt;h3&gt;Vítejte ve VirtualBoxu!&lt;/h3&gt;&lt;p&gt;Levá část tohoto okna je určena pro zobrazení seznamu všech virtuálních počítačů na vašem počítači. Seznam je teď prázdný, protože jste ještě žádný nevytvořili.&lt;img src=:/welcome.png align=right/&gt;&lt;/p&gt;&lt;p&gt;Pro vytvoření nového virtuálního počítače stiskněte tlačítko &lt;b&gt;Nový&lt;/b&gt; v horní části hlavního okna.&lt;/p&gt;&lt;p&gt;Pro okamžitou nápovědu stiskněte klávesu &lt;b&gt;%1&lt;/b&gt; nebo navštivte stránky  &lt;a href=http://www.virtualbox.org&gt;www.virtualbox.org&lt;/a&gt; pro aktuální informace a novinky.&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;h3&gt;Vítejte ve VirtualBoxu!&lt;/h3&gt;&lt;p&gt;Levá část tohoto okna je určena pro zobrazení seznamu všech virtuálních počítačů na vašem počítači. Seznam je teď prázdný, protože jste ještě žádný nevytvořili.&lt;img src=:/welcome.png align=right/&gt;&lt;/p&gt;&lt;p&gt;Pro vytvoření nového virtuálního počítače stiskněte tlačítko &lt;b&gt;Nový&lt;/b&gt; v horní části hlavního okna.&lt;/p&gt;&lt;p&gt;Pro okamžitou nápovědu stiskněte klávesu &lt;b&gt;%1&lt;/b&gt; nebo navštivte stránky  &lt;a href=http://www.virtualbox.org&gt;www.virtualbox.org&lt;/a&gt; pro aktuální informace a novinky.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Log</source>
         <comment>icon text</comment>
-        <translation>Log</translation>
+        <translation type="obsolete">Log</translation>
     </message>
     <message>
         <source>Select a virtual machine file</source>
-        <translation>Vybere soubor s virtuálním počítačem</translation>
+        <translation type="obsolete">Vybere soubor s virtuálním počítačem</translation>
     </message>
     <message>
         <source>Virtual machine files (%1)</source>
-        <translation>Soubory virtuálního počítače (%1)</translation>
+        <translation type="obsolete">Soubory virtuálního počítače (%1)</translation>
     </message>
     <message>
         <source>Manager</source>
         <comment>Note: main window title which is pretended by the product name.</comment>
-        <translation>Správce</translation>
+        <translation type="obsolete">Správce</translation>
     </message>
     <message>
         <source>Show Toolbar</source>
-        <translation>Zobrazit nástrojovou lištu</translation>
+        <translation type="obsolete">Zobrazit nástrojovou lištu</translation>
     </message>
     <message>
         <source>Show Statusbar</source>
-        <translation>Zobrazit stavovou lištu</translation>
+        <translation type="obsolete">Zobrazit stavovou lištu</translation>
     </message>
 </context>
 <context>
@@ -12086,85 +12651,6 @@ hodnotu.&lt;/qt&gt;</translation>
     <message>
         <source>Inaccessible</source>
         <translation type="obsolete">Nedostupný</translation>
-    </message>
-</context>
-<context>
-    <name>UIVMLogViewer</name>
-    <message>
-        <source>Log Viewer</source>
-        <translation>Prohlížeč záznamu</translation>
-    </message>
-    <message>
-        <source>&amp;Save</source>
-        <translation>&amp;Uložit</translation>
-    </message>
-    <message>
-        <source>&amp;Refresh</source>
-        <translation>&amp;Aktualizovat</translation>
-    </message>
-    <message>
-        <source>&amp;Close</source>
-        <translation type="obsolete">&amp;Zavřít</translation>
-    </message>
-    <message>
-        <source>%1 - VirtualBox Log Viewer</source>
-        <translation>%1 - Prohlížeč záznamu VirtualBoxu</translation>
-    </message>
-    <message>
-        <source>&lt;p&gt;No log files found. Press the &lt;b&gt;Refresh&lt;/b&gt; button to rescan the log folder &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Žádný soubor se záznamem nenalezen. Stiskněte tlačítko &lt;b&gt;Aktualizovat&lt;/b&gt; pro opětovné prozkoumání složky se záznamy &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.&lt;/p&gt;</translation>
-    </message>
-    <message>
-        <source>Save VirtualBox Log As</source>
-        <translation>Uložit záznam VirtualBoxu jako</translation>
-    </message>
-    <message>
-        <source>Help</source>
-        <translation type="obsolete">Nápověda</translation>
-    </message>
-    <message>
-        <source>&amp;Find</source>
-        <translation>&amp;Hledat</translation>
-    </message>
-    <message>
-        <source>Close</source>
-        <translation>Zavřít</translation>
-    </message>
-    <message>
-        <source>Close the search panel</source>
-        <translation>Zavřít panel hledání</translation>
-    </message>
-    <message>
-        <source>Enter a search string here</source>
-        <translation>Sem napište hledaný řetězec</translation>
-    </message>
-    <message>
-        <source>&amp;Previous</source>
-        <translation>&amp;Předchozí</translation>
-    </message>
-    <message>
-        <source>Search for the previous occurrence of the string</source>
-        <translation>Hledat předchozí výskyt řetězce</translation>
-    </message>
-    <message>
-        <source>&amp;Next</source>
-        <translation>&amp;Další</translation>
-    </message>
-    <message>
-        <source>Search for the next occurrence of the string</source>
-        <translation>Hledat další výskyt řetězce</translation>
-    </message>
-    <message>
-        <source>C&amp;ase Sensitive</source>
-        <translation>Rozlišov&amp;at velikost písmen</translation>
-    </message>
-    <message>
-        <source>Perform case sensitive search (when checked)</source>
-        <translation>Provede vyhledávání s ohledem na velikost písmen (je-li zatrženo)</translation>
-    </message>
-    <message>
-        <source>String not found</source>
-        <translation>Řetězec nenalezen</translation>
     </message>
 </context>
 <context>
