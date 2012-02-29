@@ -508,10 +508,10 @@ DWORD APIENTRY NPGetConnection(LPWSTR lpLocalName,
 
     if (dwStatus == WN_SUCCESS)
     {
-        Log(("VBOXNP: NPGetConnection: RemoteName: %ls\n",
-             RemoteName));
-
         ULONG cbRemoteName = (lstrlen(RemoteName) + 1) * sizeof (WCHAR); /* Including the trailing 0. */
+
+        Log(("VBOXNP: NPGetConnection: RemoteName: %ls, cb %d\n",
+             RemoteName, cbRemoteName));
 
         DWORD len = sizeof(WCHAR) + cbRemoteName; /* Including the leading '\'. */
 
@@ -1537,10 +1537,10 @@ DWORD APIENTRY NPGetUniversalName(LPCWSTR lpLocalPath,
             return WN_NO_NETWORK;
         }
 
-        /* Adjust for actual remote name length. */
+        /* Adjust for actual remote name length as a part of the universal name. */
         BufferRequired += RemoteNameLength;
 
-        /* And for required place for remaining path. */
+        /* And for required place for remaining path as a part of the universal name. */
         BufferRequired += RemainingPathLength;
 
         /* lpConnectionName, which is the remote name. */
@@ -1561,12 +1561,14 @@ DWORD APIENTRY NPGetUniversalName(LPCWSTR lpLocalPath,
         lpString = &pRemoteNameInfo->lpUniversalName[RemoteNameLength / sizeof (WCHAR)];
         lpString--; /* Trailing NULL */
 
-        lpDelimiter = lpString; /* Delimiter will be inserted later. For now keep the NULL terminated string. */
+        lpDelimiter = lpString; /* Delimiter between the remote name and the remaining path.
+                                 * May be 0 if the remaining path is empty.
+                                 */
 
         CopyMemory( lpString, lpRemainingPath, RemainingPathLength);
         lpString += RemainingPathLength / sizeof (WCHAR);
 
-        *lpDelimiter = 0;
+        *lpDelimiter = 0; /* Keep NULL terminated remote name. */
 
         pRemoteNameInfo->lpConnectionName = lpString;
         CopyMemory( lpString, pRemoteNameInfo->lpUniversalName, RemoteNameLength);
@@ -1575,7 +1577,11 @@ DWORD APIENTRY NPGetUniversalName(LPCWSTR lpLocalPath,
         pRemoteNameInfo->lpRemainingPath = lpString;
         CopyMemory( lpString, lpRemainingPath, RemainingPathLength);
 
-        *lpDelimiter = L'\\';
+        /* If remaining path was not empty, restore the delimiter in the universal name. */
+        if (RemainingPathLength > sizeof(WCHAR))
+        {
+           *lpDelimiter = L'\\';
+        }
     }
 
     Log(("VBOXNP: NPGetUniversalName: WN_SUCCESS\n"));
