@@ -456,7 +456,7 @@ main(void) {
   }
   printf("OK\n");
 
-  printf("Filling hash with %d entries.\n", ENTITY_COUNT);
+  printf("Filling hash with %zd entries.\n", ENTITY_COUNT);
 
   PRUint32 i;
   for (i = 0; i < ENTITY_COUNT; ++i) {
@@ -523,7 +523,7 @@ main(void) {
   }
   printf("OK\n");
 
-  printf("Filling hash with %d entries.\n", ENTITY_COUNT);
+  printf("Filling hash with %zd entries.\n", ENTITY_COUNT);
 
   for (i = 0; i < ENTITY_COUNT; ++i) {
     printf("  Putting entry %u...", gEntities[i].mUnicode);
@@ -588,7 +588,7 @@ main(void) {
   }
   printf("OK\n");
 
-  printf("Filling hash with %d entries.\n", ENTITY_COUNT);
+  printf("Filling hash with %zd entries.\n", ENTITY_COUNT);
 
   for (i = 0; i < ENTITY_COUNT; ++i) {
     printf("  Putting entry %u...", gEntities[i].mUnicode);
@@ -657,7 +657,7 @@ main(void) {
   }
   printf("OK\n");
 
-  printf("Filling hash with %d entries.\n", ENTITY_COUNT);
+  printf("Filling hash with %zd entries.\n", ENTITY_COUNT);
 
   for (i = 0; i < ENTITY_COUNT; ++i) {
     printf("  Putting entry %u...", gEntities[i].mUnicode);
@@ -725,7 +725,7 @@ main(void) {
   }
   printf("OK\n");
 
-  printf("Filling hash with %d entries.\n", ENTITY_COUNT);
+  printf("Filling hash with %zd entries.\n", ENTITY_COUNT);
 
   nsCOMArray<IFoo> fooArray;
 
@@ -801,7 +801,7 @@ main(void) {
   }
   printf("OK\n");
 
-  printf("Filling hash with %d entries.\n", ENTITY_COUNT);
+  printf("Filling hash with %zd entries.\n", ENTITY_COUNT);
 
   for (i = 0; i < ENTITY_COUNT; ++i) {
     printf("  Putting entry %u...", gEntities[i].mUnicode);
@@ -875,7 +875,7 @@ main(void) {
   }
   printf("OK\n");
 
-  printf("Filling hash with %d entries.\n", ENTITY_COUNT);
+  printf("Filling hash with %zd entries.\n", ENTITY_COUNT);
 
   for (i = 0; i < ENTITY_COUNT; ++i) {
     printf("  Putting entry %u...", gEntities[i].mUnicode);
