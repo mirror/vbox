@@ -181,7 +181,7 @@ udp_input(PNATState pData, register struct mbuf *m, int iphlen)
     LogFunc(("uh src: %RTnaipv4:%d, dst: %RTnaipv4:%d\n", ip->ip_src, RT_H2N_U16_C(uh->uh_sport), ip->ip_dst, RT_H2N_U16_C(uh->uh_dport)));
     if (   pData->fUseHostResolver
         && uh->uh_dport == RT_H2N_U16_C(53)
-        && CTL_CHECK(RT_N2H_U32(ip->ip_dst.s_addr), CTL_DNS))
+        && CTL_CHECK(ip->ip_dst.s_addr, CTL_DNS))
     {
         struct sockaddr_in dst, src;
         src.sin_addr.s_addr = ip->ip_dst.s_addr;
@@ -201,7 +201,7 @@ udp_input(PNATState pData, register struct mbuf *m, int iphlen)
      *  handle TFTP
      */
     if (   uh->uh_dport == RT_H2N_U16_C(TFTP_SERVER)
-        && CTL_CHECK(RT_N2H_U32(ip->ip_dst.s_addr), CTL_TFTP))
+        && CTL_CHECK(ip->ip_dst.s_addr, CTL_TFTP))
     {
         tftp_input(pData, m);
         goto done_free_mbuf;
@@ -412,7 +412,7 @@ int udp_output(PNATState pData, struct socket *so, struct mbuf *m,
              */
             m->m_flags |= M_SKIP_FIREWALL;
             /**
-             * udp/137 port is used for NetBIOS lookup. for some reasons Windows guest rejects
+             * udp/137 port is Name Service in NetBIOS protocol. for some reasons Windows guest rejects
              * accept data from non-aliased server.
              */
             if (   (so->so_fport == so->so_lport)
