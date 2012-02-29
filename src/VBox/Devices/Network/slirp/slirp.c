@@ -1505,10 +1505,9 @@ static void arp_input(PNATState pData, struct mbuf *m)
             rah = mtod(mr, struct arphdr *);
             mr->m_len = sizeof(struct arphdr);
             memcpy(reh->h_source, eh->h_source, ETH_ALEN); /* XXX: if_encap will swap src and dst*/
-            if (   ((htip & pData->netmask) == RT_N2H_U32(pData->special_addr.s_addr))
-                && (   CTL_CHECK(htip, CTL_DNS)
-                    || CTL_CHECK(htip, CTL_ALIAS)
-                    || CTL_CHECK(htip, CTL_TFTP)))
+            if (   CTL_CHECK(tip, CTL_DNS)
+                || CTL_CHECK(tip, CTL_ALIAS)
+                || CTL_CHECK(tip, CTL_TFTP))
             {
                 rah->ar_hrd = RT_H2N_U16_C(1);
                 rah->ar_pro = RT_H2N_U16_C(ETH_P_IP);
@@ -1517,25 +1516,17 @@ static void arp_input(PNATState pData, struct mbuf *m)
                 rah->ar_op = RT_H2N_U16_C(ARPOP_REPLY);
                 memcpy(rah->ar_sha, special_ethaddr, ETH_ALEN);
 
-                switch (htip & ~pData->netmask)
+                if (!slirpMbufTagService(pData, mr, (uint8_t)(htip & ~pData->netmask)))
                 {
-                    case CTL_DNS:
-                    case CTL_ALIAS:
-                    case CTL_TFTP:
-                        if (!slirpMbufTagService(pData, mr, (uint8_t)(htip & ~pData->netmask)))
-                        {
-                            static bool fTagErrorReported;
-                            if (!fTagErrorReported)
-                            {
-                                LogRel(("NAT: couldn't add the tag(PACKET_SERVICE:%d) to mbuf:%p\n",
-                                            (uint8_t)(htip & ~pData->netmask), m));
-                                fTagErrorReported = true;
-                            }
-                        }
-                        rah->ar_sha[5] = (uint8_t)(htip & ~pData->netmask);
-                        break;
-                    default:;
+                    static bool fTagErrorReported;
+                    if (!fTagErrorReported)
+                    {
+                        LogRel(("NAT: couldn't add the tag(PACKET_SERVICE:%d) to mbuf:%p\n",
+                                    (uint8_t)(htip & ~pData->netmask), m));
+                        fTagErrorReported = true;
+                    }
                 }
+                rah->ar_sha[5] = (uint8_t)(htip & ~pData->netmask);
 
                 memcpy(rah->ar_sip, ah->ar_tip, 4);
                 memcpy(rah->ar_tha, ah->ar_sha, ETH_ALEN);
