@@ -4713,8 +4713,6 @@ HRESULT Console::onStorageControllerChange()
 
 /**
  * Called by IInternalSessionControl::OnMediumChange().
- *
- * @note Locks this object for writing.
  */
 HRESULT Console::onMediumChange(IMediumAttachment *aMediumAttachment, BOOL aForce)
 {
@@ -4722,8 +4720,6 @@ HRESULT Console::onMediumChange(IMediumAttachment *aMediumAttachment, BOOL aForc
 
     AutoCaller autoCaller(this);
     AssertComRCReturnRC(autoCaller.rc());
-
-    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     HRESULT rc = S_OK;
 
@@ -4737,10 +4733,7 @@ HRESULT Console::onMediumChange(IMediumAttachment *aMediumAttachment, BOOL aForc
 
     /* notify console callbacks on success */
     if (SUCCEEDED(rc))
-    {
-        alock.release(); /** @todo 101% safe? */
         fireMediumChangedEvent(mEventSource, aMediumAttachment);
-    }
 
     LogFlowThisFunc(("Leaving rc=%#x\n", rc));
     return rc;
