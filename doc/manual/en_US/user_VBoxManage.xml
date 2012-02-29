@@ -2294,6 +2294,12 @@ VBoxManage setextradata SUSE10 installdate 2006.02.02</screen>
 All rights reserved.
 
 Value: 2006.01.01</screen>
+    <para>To remove a key, the <computeroutput>setextradata</computeroutput> 
+    command must be run without specifying data (only the key), for example: 
+    </para>
+
+    <screen>VBoxManage setextradata Fedora5 installdate</screen>
+
   </sect1>
 
   <sect1 id="vboxmanage-setproperty">
