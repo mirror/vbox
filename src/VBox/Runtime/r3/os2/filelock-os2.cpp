@@ -82,7 +82,7 @@ RTR3DECL(int)  RTFileLock(RTFILE File, unsigned fLock, int64_t offLock, uint64_t
     fl.l_pid    = 0;
 
     Assert(RTFILE_LOCK_WAIT);
-    if (fcntl(File, (fLock & RTFILE_LOCK_WAIT) ? F_SETLKW : F_SETLK, &fl) >= 0)
+    if (fcntl(RTFileToNative(File), (fLock & RTFILE_LOCK_WAIT) ? F_SETLKW : F_SETLK, &fl) >= 0)
         return VINF_SUCCESS;
 
     int iErr = errno;
@@ -162,7 +162,7 @@ RTR3DECL(int)  RTFileUnlock(RTFILE File, int64_t offLock, uint64_t cbLock)
     fl.l_len    = (off_t)cbLock;
     fl.l_pid    = 0;
 
-    if (fcntl(File, F_SETLK, &fl) >= 0)
+    if (fcntl(RTFileToNative(File), F_SETLK, &fl) >= 0)
         return VINF_SUCCESS;
 
     /** @todo check error codes for non existing lock. */

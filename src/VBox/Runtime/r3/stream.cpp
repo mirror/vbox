@@ -52,10 +52,17 @@
 
 #include <stdio.h>
 #include <errno.h>
-#ifdef RT_OS_WINDOWS
+#if defined(RT_OS_WINDOWS) || defined(RT_OS_OS2)
 # include <io.h>
 # include <fcntl.h>
+#endif
+#ifdef RT_OS_WINDOWS
 # include <Windows.h>
+#endif
+
+#ifdef RT_OS_OS2
+# define _O_TEXT   O_TEXT
+# define _O_BINARY O_BINARY
 #endif
 
 

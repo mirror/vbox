@@ -616,7 +616,7 @@ RuntimeR3_SOURCES.linux = \
 	r3/posix/RTMemProtect-posix.cpp \
 	r3/posix/RTPathUserHome-posix.cpp \
 	r3/posix/RTSystemQueryOSInfo-posix.cpp \
-        r3/posix/RTSystemQueryTotalRam-posix.cpp \
+	r3/posix/RTSystemQueryTotalRam-posix.cpp \
 	r3/posix/RTTimeNow-posix.cpp \
 	r3/posix/RTTimeSet-posix.cpp \
 	r3/posix/rtmempage-exec-mmap-heap-posix.cpp \
@@ -714,7 +714,6 @@ RuntimeR3_SOURCES.os2   = \
 	r3/posix/RTSystemQueryOSInfo-posix.cpp \
 	r3/posix/RTTimeNow-posix.cpp \
 	r3/posix/RTTimeSet-posix.cpp \
-	r3/posix/rtmempage-exec-mmap-heap-posix.cpp \
 	r3/posix/dir-posix.cpp \
 	r3/posix/env-posix.cpp \
 	r3/posix/errvars-posix.cpp \
@@ -733,6 +732,7 @@ RuntimeR3_SOURCES.os2   = \
 	r3/posix/symlink-posix.cpp \
 	r3/posix/timelocal-posix.cpp \
 	r3/posix/utf8-posix.cpp
+## @todo r3/posix/rtmempage-exec-mmap-heap-posix.cpp 
 
 RuntimeR3_SOURCES.darwin = \
 	darwin/RTErrConvertFromDarwin.cpp \
@@ -774,7 +774,7 @@ RuntimeR3_SOURCES.darwin = \
 	r3/posix/RTMemProtect-posix.cpp \
 	r3/posix/RTPathUserHome-posix.cpp \
 	r3/posix/RTSystemQueryOSInfo-posix.cpp \
-        r3/posix/RTSystemQueryTotalRam-posix.cpp \
+	r3/posix/RTSystemQueryTotalRam-posix.cpp \
 	r3/posix/RTTimeSet-posix.cpp \
 	r3/posix/dir-posix.cpp \
 	r3/posix/env-posix.cpp \
@@ -1821,6 +1821,7 @@ RuntimeR0Drv_SOURCES.os2 = \
 	generic/RTTimerCreate-generic.cpp \
 	generic/mppresent-generic.cpp \
 	os2/RTErrConvertFromOS2.cpp \
+	os2/rtSemWaitOs2ConvertTimeout.cpp \
 	os2/sys0.asm \
 	r0drv/generic/RTMpIsCpuWorkPending-r0drv-generic.cpp \
 	r0drv/generic/RTMpOn-r0drv-generic.cpp \
@@ -1934,10 +1935,10 @@ RuntimeR0Drv_ORDERDEPS.freebsd = \
 #                  made irrelevant even for RuntimeR0Drv).
 #
 RuntimeGuestR0_TEMPLATE  := VBOXGUESTR0LIB
+RuntimeGuestR0_EXTENDS    = RuntimeR0Drv
 RuntimeGuestR0_SOURCES   := $(filter-out generic/RTLogWriteUser-generic.cpp, $(RuntimeR0Drv_SOURCES))
 RuntimeGuestR0_SOURCES   += \
 	VBox/logbackdoor.cpp
-RuntimeGuestR0_EXTENDS    = RuntimeR0Drv
 
 
 #
