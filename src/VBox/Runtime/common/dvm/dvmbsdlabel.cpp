@@ -296,7 +296,7 @@ DECLCALLBACK(int) rtDvmFmtBsdLblOpen(PCRTDVMDISK pDisk, PRTDVMFMT phVolMgrFmt)
     PRTDVMFMTINTERNAL pThis = NULL;
 
     pThis = (PRTDVMFMTINTERNAL)RTMemAllocZ(sizeof(RTDVMFMTINTERNAL));
-    if (VALID_PTR(pThis))
+    if (pThis)
     {
         pThis->pDisk       = pDisk;
         pThis->cPartitions = 0;
@@ -368,7 +368,7 @@ static int rtDvmFmtBsdLblVolumeCreate(PRTDVMFMTINTERNAL pThis, PBsdLabelPartitio
     int rc = VINF_SUCCESS;
     PRTDVMVOLUMEFMTINTERNAL pVol = (PRTDVMVOLUMEFMTINTERNAL)RTMemAllocZ(sizeof(RTDVMVOLUMEFMTINTERNAL));
 
-    if (VALID_PTR(pVol))
+    if (pVol)
     {
         pVol->pVolMgr            = pThis;
         pVol->idxEntry           = idx;
