@@ -1474,6 +1474,52 @@ struct arphdr
 };
 AssertCompileSize(struct arphdr, 28);
 
+static void arp_output(PNATState pData, const uint8_t *pcu8EtherSource, const struct arphdr *pcARPHeaderSource, uint32_t ip4TargetAddress)
+{
+    struct ethhdr *pEtherHeaderResponse;
+    struct arphdr *pARPHeaderResponse;
+    uint32_t ip4TargetAddressInHostFormat;
+    struct mbuf *pMbufResponse;
+
+    Assert((pcu8EtherSource));
+    if (!pcu8EtherSource)
+        return;
+    ip4TargetAddressInHostFormat = RT_N2H_U32(ip4TargetAddress);
+
+    pMbufResponse = m_getcl(pData, M_NOWAIT, MT_HEADER, M_PKTHDR);
+    if (!pMbufResponse)
+        return;
+    pEtherHeaderResponse = mtod(pMbufResponse, struct ethhdr *);
+    /* @note: if_encap will swap src and dst*/
+    memcpy(pEtherHeaderResponse->h_source, pcu8EtherSource, ETH_ALEN);
+    pMbufResponse->m_data += ETH_HLEN;
+    pARPHeaderResponse = mtod(pMbufResponse, struct arphdr *);
+    pMbufResponse->m_len = sizeof(struct arphdr);
+
+    pARPHeaderResponse->ar_hrd = RT_H2N_U16_C(1);
+    pARPHeaderResponse->ar_pro = RT_H2N_U16_C(ETH_P_IP);
+    pARPHeaderResponse->ar_hln = ETH_ALEN;
+    pARPHeaderResponse->ar_pln = 4;
+    pARPHeaderResponse->ar_op = RT_H2N_U16_C(ARPOP_REPLY);
+    memcpy(pARPHeaderResponse->ar_sha, special_ethaddr, ETH_ALEN);
+
+    if (!slirpMbufTagService(pData, pMbufResponse, (uint8_t)(ip4TargetAddressInHostFormat & ~pData->netmask)))
+    {
+        static bool fTagErrorReported;
+        if (!fTagErrorReported)
+        {
+            LogRel(("NAT: couldn't add the tag(PACKET_SERVICE:%d)\n",
+                        (uint8_t)(ip4TargetAddressInHostFormat & ~pData->netmask)));
+            fTagErrorReported = true;
+        }
+    }
+    pARPHeaderResponse->ar_sha[5] = (uint8_t)(ip4TargetAddressInHostFormat & ~pData->netmask);
+
+    memcpy(pARPHeaderResponse->ar_sip, pcARPHeaderSource->ar_tip, 4);
+    memcpy(pARPHeaderResponse->ar_tha, pcARPHeaderSource->ar_sha, ETH_ALEN);
+    memcpy(pARPHeaderResponse->ar_tip, pcARPHeaderSource->ar_sip, 4);
+    if_encap(pData, ETH_P_ARP, pMbufResponse, ETH_ENCAP_URG);
+}
 /**
  * @note This function will free m!
  */
@@ -1496,47 +1542,7 @@ static void arp_input(PNATState pData, struct mbuf *m)
             if (   CTL_CHECK(ip4TargetAddress, CTL_DNS)
                 || CTL_CHECK(ip4TargetAddress, CTL_ALIAS)
                 || CTL_CHECK(ip4TargetAddress, CTL_TFTP))
-            {
-                struct ethhdr *pEtherHeaderResponse;
-                struct arphdr *pARPHeaderResponse;
-                uint32_t ip4TargetAddressInHostFormat;
-                struct mbuf *pMbufResponse;
-                ip4TargetAddressInHostFormat = RT_N2H_U32(ip4TargetAddress);
-
-                pMbufResponse = m_getcl(pData, M_NOWAIT, MT_HEADER, M_PKTHDR);
-                if (!pMbufResponse)
-                    break;
-                pEtherHeaderResponse = mtod(pMbufResponse, struct ethhdr *);
-                /* @note: if_encap will swap src and dst*/
-                memcpy(pEtherHeaderResponse->h_source, pEtherHeader->h_source, ETH_ALEN);
-                pMbufResponse->m_data += ETH_HLEN;
-                pARPHeaderResponse = mtod(pMbufResponse, struct arphdr *);
-                pMbufResponse->m_len = sizeof(struct arphdr);
-
-                pARPHeaderResponse->ar_hrd = RT_H2N_U16_C(1);
-                pARPHeaderResponse->ar_pro = RT_H2N_U16_C(ETH_P_IP);
-                pARPHeaderResponse->ar_hln = ETH_ALEN;
-                pARPHeaderResponse->ar_pln = 4;
-                pARPHeaderResponse->ar_op = RT_H2N_U16_C(ARPOP_REPLY);
-                memcpy(pARPHeaderResponse->ar_sha, special_ethaddr, ETH_ALEN);
-
-                if (!slirpMbufTagService(pData, pMbufResponse, (uint8_t)(ip4TargetAddressInHostFormat & ~pData->netmask)))
-                {
-                    static bool fTagErrorReported;
-                    if (!fTagErrorReported)
-                    {
-                        LogRel(("NAT: couldn't add the tag(PACKET_SERVICE:%d) to mbuf:%p\n",
-                                    (uint8_t)(ip4TargetAddressInHostFormat & ~pData->netmask), m));
-                        fTagErrorReported = true;
-                    }
-                }
-                pARPHeaderResponse->ar_sha[5] = (uint8_t)(ip4TargetAddressInHostFormat & ~pData->netmask);
-
-                memcpy(pARPHeaderResponse->ar_sip, pARPHeader->ar_tip, 4);
-                memcpy(pARPHeaderResponse->ar_tha, pARPHeader->ar_sha, ETH_ALEN);
-                memcpy(pARPHeaderResponse->ar_tip, pARPHeader->ar_sip, 4);
-                if_encap(pData, ETH_P_ARP, pMbufResponse, ETH_ENCAP_URG);
-            }
+                arp_output(pData, pEtherHeader->h_source, pARPHeader, ip4TargetAddress);
 
             /* Gratuitous ARP */
             if (  *(uint32_t *)pARPHeader->ar_sip == *(uint32_t *)pARPHeader->ar_tip
