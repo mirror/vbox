@@ -1054,9 +1054,10 @@ static HANDLE vbsfOpenConnectionHandle(PUNICODE_STRING ConnectionName)
     Log(("VBOXSF: vbsfOpenConnectionHandle: ConnectionName = %.*ls\n",
          ConnectionName->Length / sizeof(WCHAR), ConnectionName->Buffer));
 
+    /* Have to create a OBJ_KERNEL_HANDLE. Otherwise the driver verifier on Windows 7 bugchecks. */
     InitializeObjectAttributes(&ObjectAttributes,
                                ConnectionName,
-                               OBJ_CASE_INSENSITIVE,
+                               OBJ_CASE_INSENSITIVE | OBJ_KERNEL_HANDLE,
                                NULL,
                                NULL);
 
