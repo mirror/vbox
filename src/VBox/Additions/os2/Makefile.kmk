@@ -27,10 +27,11 @@ endif
 # The sub-makefiles.
 #
 ifndef VBOX_OSE
- include $(PATH_SUB_CURRENT)/VBoxGradd/Makefile.kmk
- include $(PATH_SUB_CURRENT)/VBoxGrext/Makefile.kmk
+# include $(PATH_SUB_CURRENT)/VBoxGradd/Makefile.kmk
+# include $(PATH_SUB_CURRENT)/VBoxGrext/Makefile.kmk
+ include $(PATH_SUB_CURRENT)/Bin/Makefile.kmk
 endif
-include $(PATH_SUB_CURRENT)/VBoxSF/Makefile.kmk
+#include $(PATH_SUB_CURRENT)/VBoxSF/Makefile.kmk
 
 include	$(KBUILD_PATH)/subfooter.kmk
 
