@@ -153,6 +153,10 @@ static RTHEAPPAGE   g_MemExecPosixHeap;
 # define MAP_PRIVATE    0
 # define MAP_ANONYMOUS  0
 # define MAP_FAILED  (void *)-1
+# undef mmap
+# define mmap   iprt_mmap  
+# undef munmap
+# define munmap iprt_munmap  
 
 static void *mmap(void *pvWhere, size_t cb, int fProt, int fFlags, int fd, off_t off)
 {
