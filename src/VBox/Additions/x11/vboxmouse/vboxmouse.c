@@ -62,14 +62,6 @@
 
 #include "product-generated.h"
 
-enum
-{
-    /** The minumum value our device can return */
-    RANGE_MIN = 0,
-    /** The maximum value our device can return */
-    RANGE_MAX = 0xFFFF
-};
-
 static void
 VBoxReadInput(InputInfoPtr pInfo)
 {
@@ -143,7 +135,7 @@ VBoxInit(DeviceIntPtr device)
 # if GET_ABI_MAJOR(ABI_XINPUT_VERSION) >= 7
                                axis_labels[0],
 # endif
-                               RANGE_MIN /* min X */, RANGE_MAX /* max X */,
+                               VMMDEV_MOUSE_RANGE_MIN /* min X */, VMMDEV_MOUSE_RANGE_MAX /* max X */,
                                10000, 0, 10000
 # if GET_ABI_MAJOR(ABI_XINPUT_VERSION) >= 12
                                , Absolute
@@ -154,7 +146,7 @@ VBoxInit(DeviceIntPtr device)
 # if GET_ABI_MAJOR(ABI_XINPUT_VERSION) >= 7
                                axis_labels[1],
 # endif
-                               RANGE_MIN /* min Y */, RANGE_MAX /* max Y */,
+                               VMMDEV_MOUSE_RANGE_MIN /* min Y */, VMMDEV_MOUSE_RANGE_MAX /* max Y */,
                                10000, 0, 10000
 # if GET_ABI_MAJOR(ABI_XINPUT_VERSION) >= 12
                                , Absolute
