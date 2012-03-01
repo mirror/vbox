@@ -1652,21 +1652,35 @@ typedef struct VBOXWDDMVR_REG
 
 #define PVBOXWDDMVR_REG_FROM_ENTRY(_pEntry) ((PVBOXWDDMVR_REG)(((uint8_t*)(_pEntry)) - RT_OFFSETOF(VBOXWDDMVR_REG, ListEntry)))
 
+#ifdef DEBUG_misha
+# define VBOXVDBG_VR_LAL_DISABLE
+#endif
+
+#ifndef VBOXVDBG_VR_LAL_DISABLE
 static LOOKASIDE_LIST_EX g_VBoxWddmVrLookasideList;
+#endif
 
 static PVBOXWDDMVR_REG vboxWddmVrRegCreate()
 {
+#ifndef VBOXVDBG_VR_LAL_DISABLE
     PVBOXWDDMVR_REG pReg = (PVBOXWDDMVR_REG)ExAllocateFromLookasideListEx(&g_VBoxWddmVrLookasideList);
     if (!pReg)
     {
         WARN(("ExAllocateFromLookasideListEx failed!"));
     }
     return pReg;
+#else
+    return (PVBOXWDDMVR_REG)vboxWddmMemAlloc(sizeof (VBOXWDDMVR_REG));
+#endif
 }
 
 static void vboxWddmVrRegTerm(PVBOXWDDMVR_REG pReg)
 {
+#ifndef VBOXVDBG_VR_LAL_DISABLE
     ExFreeToLookasideListEx(&g_VBoxWddmVrLookasideList, pReg);
+#else
+    vboxWddmMemFree(pReg);
+#endif
 }
 
 void VBoxWddmVrListClear(PVBOXWDDMVR_LIST pList)
@@ -1685,6 +1699,7 @@ void VBoxWddmVrListClear(PVBOXWDDMVR_LIST pList)
 
 NTSTATUS VBoxWddmVrInit()
 {
+#ifndef VBOXVDBG_VR_LAL_DISABLE
     NTSTATUS Status = ExInitializeLookasideListEx(&g_VBoxWddmVrLookasideList,
                             NULL, /* PALLOCATE_FUNCTION_EX Allocate */
                             NULL, /* PFREE_FUNCTION_EX Free */
@@ -1699,12 +1714,16 @@ NTSTATUS VBoxWddmVrInit()
         WARN(("ExInitializeLookasideListEx failed, Status (0x%x)", Status));
         return Status;
     }
+#endif
+
     return STATUS_SUCCESS;
 }
 
 void VBoxWddmVrTerm()
 {
+#ifndef VBOXVDBG_VR_LAL_DISABLE
     ExDeleteLookasideListEx(&g_VBoxWddmVrLookasideList);
+#endif
 }
 
 typedef DECLCALLBACK(int) FNVBOXWDDMVR_CB_COMPARATOR(const PVBOXWDDMVR_REG pReg1, const PVBOXWDDMVR_REG pReg2);
@@ -1889,7 +1908,7 @@ static NTSTATUS vboxWddmVrListRegIntersectSubstNoJoin(PVBOXWDDMVR_LIST pList1, P
 typedef DECLCALLBACK(PLIST_ENTRY) FNVBOXWDDMVR_CB_INTERSECTED_VISITOR(PVBOXWDDMVR_LIST pList1, PVBOXWDDMVR_REG pReg1, const RECT * pRect2, void *pvContext, PLIST_ENTRY *ppNext);
 typedef FNVBOXWDDMVR_CB_INTERSECTED_VISITOR *PFNVBOXWDDMVR_CB_INTERSECTED_VISITOR;
 
-static void vboxWddmVrListVisitIntersected(PVBOXWDDMVR_LIST pList1, UINT cRects, const RECT *aRects, BOOLEAN fRectsNonintersectedOrdered, PFNVBOXWDDMVR_CB_INTERSECTED_VISITOR pfnVisitor, void* pvVisitor)
+static void vboxWddmVrListVisitIntersected(PVBOXWDDMVR_LIST pList1, UINT cRects, const RECT *aRects, PFNVBOXWDDMVR_CB_INTERSECTED_VISITOR pfnVisitor, void* pvVisitor)
 {
     PLIST_ENTRY pEntry1 = pList1->ListHead.Flink;
     PLIST_ENTRY pNext1;
@@ -1903,22 +1922,9 @@ static void vboxWddmVrListVisitIntersected(PVBOXWDDMVR_LIST pList1, UINT cRects,
         {
             const RECT *pRect2 = &aRects[i];
             if (pReg1->Rect.bottom <= pRect2->top)
-            {
-                if (fRectsNonintersectedOrdered)
-                    break; /* the forthcomming rects won't intersect as well since they have at least not bigget top */
-                else
-                    continue; /* no assumptions, just continue */
-            }
-            else if (pRect2->bottom <= pReg1->Rect.top)
-            {
-                if (fRectsNonintersectedOrdered)
-                {
-                    iFirst2 = i + 1; /* the previous rects including this one have top < pRect2->bottom,
-                                      * while the forhtcoming pRegs will have top >= pReg1->Rect.top
-                                      * so we can start with the next rect next time */
-                }
                 continue;
-            }
+            else if (pRect2->bottom <= pReg1->Rect.top)
+                continue;
             /* y coords intersect */
             else if (pReg1->Rect.right <= pRect2->left)
                 continue;
@@ -2111,7 +2117,7 @@ static DECLCALLBACK(PLIST_ENTRY) vboxWddmVrListSubstNoJoinCb(PVBOXWDDMVR_LIST pL
     return &pList->ListHead;
 }
 
-static NTSTATUS vboxWddmVrListSubstNoJoin(PVBOXWDDMVR_LIST pList, UINT cRects, const PRECT aRects, BOOLEAN fRectsNonintersectedOrdered, BOOLEAN *pfChanged)
+static NTSTATUS vboxWddmVrListSubstNoJoin(PVBOXWDDMVR_LIST pList, UINT cRects, const PRECT aRects, BOOLEAN *pfChanged)
 {
     if (VBoxWddmVrListIsEmpty(pList))
         return STATUS_SUCCESS;
@@ -2122,7 +2128,7 @@ static NTSTATUS vboxWddmVrListSubstNoJoin(PVBOXWDDMVR_LIST pList, UINT cRects, c
 
     *pfChanged = FALSE;
 
-    vboxWddmVrListVisitIntersected(pList, cRects, aRects, fRectsNonintersectedOrdered, vboxWddmVrListSubstNoJoinCb, &Data);
+    vboxWddmVrListVisitIntersected(pList, cRects, aRects, vboxWddmVrListSubstNoJoinCb, &Data);
     if (!NT_SUCCESS(Data.Status))
     {
         WARN(("vboxWddmVrListVisitIntersected failed!"));
@@ -2216,9 +2222,7 @@ NTSTATUS VBoxWddmVrListRectsSubst(PVBOXWDDMVR_LIST pList, UINT cRects, const PRE
     }
 #endif
 
-    NTSTATUS Status = vboxWddmVrListSubstNoJoin(pList, cRects, aRects,
-            FALSE, /* rects can be of any type, i.e. can intersect and can NOT be ordered */
-            pfChanged);
+    NTSTATUS Status = vboxWddmVrListSubstNoJoin(pList, cRects, aRects, pfChanged);
     if (!NT_SUCCESS(Status))
     {
         WARN(("vboxWddmVrListSubstNoJoin failed!"));
@@ -2336,7 +2340,7 @@ NTSTATUS VBoxWddmVrListRectsAdd(PVBOXWDDMVR_LIST pList, UINT cRects, const PRECT
         }
 
         BOOLEAN fDummyChanged = FALSE;
-        Status = vboxWddmVrListSubstNoJoin(&DiffList, cListRects, pListRects, TRUE, &fDummyChanged);
+        Status = vboxWddmVrListSubstNoJoin(&DiffList, cListRects, pListRects, &fDummyChanged);
         if (!NT_SUCCESS(Status))
         {
             WARN(("vboxWddmVrListSubstNoJoin failed!"));
