@@ -884,35 +884,41 @@ NTSTATUS VBoxMRxDevFcbXXXControlFile(IN OUT PRX_CONTEXT RxContext)
                     Log(("VBOXSF: MRxDevFcbXXXControlFile: IOCTL_MRX_VBOX_START: capFobx %p\n",
                          capFobx));
 
+                    Log(("VBOXSF: MRxDevFcbXXXControlFile: IOCTL_MRX_VBOX_START: process: current 0x%X, RDBSS 0x%X\n",
+                         IoGetCurrentProcess(), RxGetRDBSSProcess()));
+
                     switch (VBoxMRxState)
                     {
                         case MRX_VBOX_STARTABLE:
 
-                            /* The correct sequence of start events issued by the workstation
-                             * service would have avoided this. We can recover from this
-                             * by actually invoking RxStartMiniRdr.
-                             */
+                            Log(("VBOXSF: MRxDevFcbXXXControlFile: MRX_VBOX_STARTABLE\n"));
+
                             if (capFobx)
                             {
                                 Status = STATUS_INVALID_DEVICE_REQUEST;
                                 break;;
                             }
 
-                            /* Set global VBoxMRxState variable to MRX_VBOX_STARTABLE and fall through to the next case. */
-                            InterlockedCompareExchange((PLONG) & VBoxMRxState, MRX_VBOX_START_IN_PROGRESS, MRX_VBOX_STARTABLE);
-
-                            /* Lack of break is intentional. */
+                            InterlockedCompareExchange((PLONG)&VBoxMRxState, MRX_VBOX_START_IN_PROGRESS, MRX_VBOX_STARTABLE);
 
                         case MRX_VBOX_START_IN_PROGRESS:
                             Status = RxStartMinirdr(RxContext, &RxContext->PostRequest);
 
+                            Log(("VBOXSF: MRxDevFcbXXXControlFile: MRX_VBOX_START_IN_PROGRESS RxStartMiniRdr Status 0x%08X, post %d\n",
+                                 Status, RxContext->PostRequest));
+
                             if (Status == STATUS_REDIRECTOR_STARTED)
                             {
                                 Status = STATUS_SUCCESS;
+                                break;
                             }
-                            else if (Status == STATUS_PENDING && RxContext->PostRequest == TRUE)
+
+                            if (   Status == STATUS_PENDING
+                                && RxContext->PostRequest == TRUE)
                             {
+                                /* Will be restarted in RDBSS process. */
                                 Status = STATUS_MORE_PROCESSING_REQUIRED;
+                                break;
                             }
 
                             /* Allow restricted users to use shared folders; works only in XP and Vista. (@@todo hack) */
