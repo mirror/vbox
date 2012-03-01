@@ -50,6 +50,7 @@
 #include <iprt/system.h>
 #include <iprt/base64.h>
 #include <iprt/stream.h>
+#include <iprt/asm.h>
 
 // workaround for compile problems on gcc 4.1
 #ifdef __GNUC__
@@ -816,9 +817,12 @@ static void CRYPTO_locking_function(int mode, int n, const char * /*file*/, int 
 
 static struct CRYPTO_dynlock_value *CRYPTO_dyn_create_function(const char * /*file*/, int /*line*/)
 {
+    static uint32_t s_iCritSectDynlock = 0;
     struct CRYPTO_dynlock_value *value = (struct CRYPTO_dynlock_value *)RTMemAlloc(sizeof(struct CRYPTO_dynlock_value));
     if (value)
-        RTCritSectInit(&value->mutex);
+        RTCritSectInitEx(&value->mutex, RTCRITSECT_FLAGS_NO_LOCK_VAL,
+                         NIL_RTLOCKVALCLASS, RTLOCKVAL_SUB_CLASS_NONE,
+                         "openssl-dyn-%u", ASMAtomicIncU32(&s_iCritSectDynlock) - 1);
 
     return value;
 }
@@ -849,7 +853,9 @@ static int CRYPTO_thread_setup()
 
     for (int i = 0; i < num_locks; i++)
     {
-        int rc = RTCritSectInit(&g_pSSLMutexes[i]);
+        int rc = RTCritSectInitEx(&g_pSSLMutexes[i], RTCRITSECT_FLAGS_NO_LOCK_VAL,
+                                  NIL_RTLOCKVALCLASS, RTLOCKVAL_SUB_CLASS_NONE,
+                                  "openssl-%d", i);
         if (RT_FAILURE(rc))
         {
             for ( ; i >= 0; i--)
