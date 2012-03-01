@@ -318,6 +318,17 @@ AssertCompileSize(VMMDevReqMouseStatus, 24+12);
        | VMMDEV_MOUSE_HOST_HAS_ABS_DEV)
 /** @} */
 
+/** @name Absolute mouse reporting range
+ * @{ */
+/** @todo Should these be here?  They are needed by both host and guest. */
+/** The minumum value our pointing device can return. */
+#define VMMDEV_MOUSE_RANGE_MIN 0
+/** The maximum value our pointing device can return. */
+#define VMMDEV_MOUSE_RANGE_MAX 0xFFFF
+/** The full range our pointing device can return. */
+#define VMMDEV_MOUSE_RANGE (VMMDEV_MOUSE_RANGE_MAX - VMMDEV_MOUSE_RANGE_MIN)
+/** @} */
+
 
 /**
  * Mouse pointer shape/visibility change request.

@@ -389,15 +389,6 @@ static void vboxguestLinuxTermISR(void)
 }
 
 
-enum
-{
-    /** The minumum value our device can return */
-    RANGE_MIN = 0,
-    /** The maximum value our device can return */
-    RANGE_MAX = 0xFFFF
-};
-
-
 #ifdef VBOXGUEST_WITH_INPUT_DRIVER
 /** Calls the kernel IOCtl to report mouse status to the host on behalf of
  * our kernel session. */
@@ -475,8 +466,10 @@ static int __init vboxguestLinuxCreateInputDevice(void)
 # ifdef EV_SYN
     ASMBitSet(g_pInputDevice->evbit, EV_SYN);
 # endif
-    input_set_abs_params(g_pInputDevice, ABS_X, RANGE_MIN, RANGE_MAX, 0, 0);
-    input_set_abs_params(g_pInputDevice, ABS_Y, RANGE_MIN, RANGE_MAX, 0, 0);
+    input_set_abs_params(g_pInputDevice, ABS_X, VMMDEV_MOUSE_RANGE_MIN,
+                         VMMDEV_MOUSE_RANGE_MAX, 0, 0);
+    input_set_abs_params(g_pInputDevice, ABS_Y, VMMDEV_MOUSE_RANGE_MIN,
+                         VMMDEV_MOUSE_RANGE_MAX, 0, 0);
     ASMBitSet(g_pInputDevice->keybit, BTN_MOUSE);
     /** @todo this string should be in a header file somewhere. */
     g_pInputDevice->name = "VirtualBox mouse integration";

@@ -40,18 +40,6 @@ enum
 };
 /** @} */
 
-/** @name Absolute mouse reporting range
- * @{ */
-enum
-{
-    /** Lower end */
-    MOUSE_RANGE_LOWER = 0,
-    /** Higher end */
-    MOUSE_RANGE_UPPER = 0xFFFF,
-    /** Full range */
-    MOUSE_RANGE = MOUSE_RANGE_UPPER - MOUSE_RANGE_LOWER
-};
-/** @} */
 
 /**
  * Mouse driver instance data.
@@ -326,9 +314,11 @@ HRESULT Mouse::reportRelEventToMouseDev(int32_t dx, int32_t dy, int32_t dz,
 HRESULT Mouse::reportAbsEventToMouseDev(int32_t mouseXAbs, int32_t mouseYAbs,
                                         int32_t dz, int32_t dw, uint32_t fButtons)
 {
-    if (mouseXAbs < MOUSE_RANGE_LOWER || mouseXAbs > MOUSE_RANGE_UPPER)
+    if (   mouseXAbs < VMMDEV_MOUSE_RANGE_MIN
+        || mouseXAbs > VMMDEV_MOUSE_RANGE_MAX)
         return S_OK;
-    if (mouseYAbs < MOUSE_RANGE_LOWER || mouseYAbs > MOUSE_RANGE_UPPER)
+    if (   mouseYAbs < VMMDEV_MOUSE_RANGE_MIN
+        || mouseYAbs > VMMDEV_MOUSE_RANGE_MAX)
         return S_OK;
     if (   mouseXAbs != mcLastAbsX || mouseYAbs != mcLastAbsY
         || dz || dw || fButtons != mfLastButtons)
@@ -476,9 +466,9 @@ STDMETHODIMP Mouse::PutMouseEvent(LONG dx, LONG dy, LONG dz, LONG dw, LONG butto
 
 /**
  * Convert an (X, Y) value pair in screen co-ordinates (starting from 1) to a
- * value from MOUSE_RANGE_LOWER to MOUSE_RANGE_UPPER.  Sets the optional
- * validity value to false if the pair is not on an active screen and to true
- * otherwise.
+ * value from VMMDEV_MOUSE_RANGE_MIN to VMMDEV_MOUSE_RANGE_MAX.  Sets the
+ * optional validity value to false if the pair is not on an active screen and
+ * to true otherwise.
  * @note      since guests with recent versions of X.Org use a different method
  *            to everyone else to map the valuator value to a screen pixel (they
  *            multiply by the screen dimension, do a floating point divide by
@@ -500,7 +490,7 @@ HRESULT Mouse::convertDisplayRes(LONG x, LONG y, int32_t *pcX, int32_t *pcY,
     /** The amount to add to the result (multiplied by the screen width/height)
      * to compensate for differences in guest methods for mapping back to
      * pixels */
-    enum { ADJUST_RANGE = - 3 * MOUSE_RANGE / 4 };
+    enum { ADJUST_RANGE = - 3 * VMMDEV_MOUSE_RANGE / 4 };
 
     if (pfValid)
         *pfValid = true;
@@ -508,23 +498,27 @@ HRESULT Mouse::convertDisplayRes(LONG x, LONG y, int32_t *pcX, int32_t *pcY,
     {
         ULONG displayWidth, displayHeight;
         /* Takes the display lock */
-        HRESULT rc = pDisplay->GetScreenResolution(0, &displayWidth, &displayHeight,
-                                                   NULL);
+        HRESULT rc = pDisplay->GetScreenResolution(0, &displayWidth,
+                                                   &displayHeight, NULL);
         if (FAILED(rc))
             return rc;
 
-        *pcX = displayWidth ? (x * MOUSE_RANGE + ADJUST_RANGE) / (LONG) displayWidth: 0;
-        *pcY = displayHeight ? (y * MOUSE_RANGE + ADJUST_RANGE) / (LONG) displayHeight: 0;
+        *pcX = displayWidth ?    (x * VMMDEV_MOUSE_RANGE + ADJUST_RANGE)
+                               / (LONG) displayWidth: 0;
+        *pcY = displayHeight ?   (y * VMMDEV_MOUSE_RANGE + ADJUST_RANGE)
+                               / (LONG) displayHeight: 0;
     }
     else
     {
         int32_t x1, y1, x2, y2;
         /* Takes the display lock */
         pDisplay->getFramebufferDimensions(&x1, &y1, &x2, &y2);
-        *pcX = x1 < x2 ? ((x - x1) * MOUSE_RANGE + ADJUST_RANGE) / (x2 - x1) : 0;
-        *pcY = y1 < y2 ? ((y - y1) * MOUSE_RANGE + ADJUST_RANGE) / (y2 - y1) : 0;
-        if (   *pcX < MOUSE_RANGE_LOWER || *pcX > MOUSE_RANGE_UPPER
-            || *pcY < MOUSE_RANGE_LOWER || *pcY > MOUSE_RANGE_UPPER)
+        *pcX = x1 < x2 ?   ((x - x1) * VMMDEV_MOUSE_RANGE + ADJUST_RANGE)
+                         / (x2 - x1) : 0;
+        *pcY = y1 < y2 ?   ((y - y1) * VMMDEV_MOUSE_RANGE + ADJUST_RANGE)
+                         / (y2 - y1) : 0;
+        if (   *pcX < VMMDEV_MOUSE_RANGE_MIN || *pcX > VMMDEV_MOUSE_RANGE_MAX
+            || *pcY < VMMDEV_MOUSE_RANGE_MIN || *pcY > VMMDEV_MOUSE_RANGE_MAX)
             if (pfValid)
                 *pfValid = false;
     }
