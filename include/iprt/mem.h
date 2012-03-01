@@ -50,7 +50,11 @@ RT_C_DECLS_BEGIN
  *
  * @note This alignment is not forced if the electric fence is active!
  */
-#define RTMEM_ALIGNMENT    8
+#if defined(RT_OS_OS2)
+# define RTMEM_ALIGNMENT    4
+#else
+# define RTMEM_ALIGNMENT    8
+#endif
 
 /** @def RTMEM_TAG
  * The default allocation tag used by the RTMem allocation APIs.
