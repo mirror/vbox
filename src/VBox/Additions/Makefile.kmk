@@ -58,9 +58,9 @@ ifndef VBOX_ONLY_TESTSUITE
  ifeq ($(KBUILD_TARGET),linux)
   include $(PATH_SUB_CURRENT)/linux/Makefile.kmk
  endif
- #ifeq ($(KBUILD_TARGET),os2)
- # include $(PATH_SUB_CURRENT)/os2/Makefile.kmk
- #endif
+ ifeq ($(KBUILD_TARGET),os2)
+  include $(PATH_SUB_CURRENT)/os2/Makefile.kmk
+ endif
  ifeq ($(KBUILD_TARGET),solaris)
   include $(PATH_SUB_CURRENT)/solaris/Makefile.kmk
  endif
@@ -169,6 +169,21 @@ include	$(KBUILD_PATH)/subfooter.kmk
 # in the dependency list and mkisofs command.
 #
 
+# Darwin / Mac OS X			   
+ifdef VBOX_WITH_ADDITIONS_ISO.darwin.x86
+ VBOX_PATH_ADDITIONS.darwin.x86 = $(PATH_OUT_BASE)/darwin.x86/$(KBUILD_TYPE)/bin/additions
+ # or dmg?
+ GUESTADDITIONS_FILESPEC.darwin.x86 = \
+	VBoxDarwinAdditions-x86.run=$(VBOX_PATH_ADDITIONS.darwin.x86)/VBoxDarwinAdditions-x86.run
+endif
+
+ifdef VBOX_WITH_ADDITIONS_ISO.darwin.amd64
+ VBOX_PATH_ADDITIONS.darwin.amd64 = $(PATH_OUT_BASE)/darwin.amd64/$(KBUILD_TYPE)/bin/additions
+ GUESTADDITIONS_FILESPEC.darwin.amd64 = \
+	VBoxDarwinAdditions-amd64.run=$(VBOX_PATH_ADDITIONS.darwin.amd64)/VBoxDarwinAdditions-amd64.run
+endif
+
+# FreeBSD
 ifdef VBOX_WITH_ADDITIONS_ISO.freebsd.amd64
  VBOX_PATH_ADDITIONS.freebsd.amd64 = $(PATH_OUT_BASE)/freebsd.amd64/$(KBUILD_TYPE)/bin/additions
  GUESTADDITIONS_FILESPEC.freebsd.amd64 = \
@@ -180,27 +195,7 @@ ifdef VBOX_WITH_ADDITIONS_ISO.freebsd.x86
 	VBoxFreeBSDAdditions-x86.tbz=$(VBOX_PATH_ADDITIONS.freebsd.x86)/VBoxFreeBSDAdditions.tbz
 endif
 
-
-ifdef VBOX_WITH_ADDITIONS_ISO.os2.x86
- VBOX_PATH_ADDITIONS.os2.x86 = $(PATH_OUT_BASE)/os2.x86/$(KBUILD_TYPE)/bin/additions
- GUESTADDITIONS_FILESPEC.os2.x86 = \
-	32Bit/OS2/VBoxGuest.sys=$(VBOX_PATH_ADDITIONS.os2.x86)/VBoxGuest.sys \
-	32Bit/OS2/VBoxService.exe=$(VBOX_PATH_ADDITIONS.os2.x86)/VBoxService.exe \
-	32Bit/OS2/gengradd.dll=$(VBOX_PATH_ADDITIONS.os2.x86)/gengradd.dll \
-	32Bit/OS2/libc063.dll=$(VBOX_PATH_ADDITIONS_SRC)/os2/Bin/libc063.dll \
-	32Bit/OS2/readme.txt=$(VBOX_PATH_ADDITIONS_SRC)/os2/Bin/readme.txt \
-	32Bit/OS2/vboxmouse.sys=$(VBOX_PATH_ADDITIONS.os2.x86)/vboxmouse.sys
-else ifdef VBOX_WITH_OS2_ADDITIONS_BIN
- GUESTADDITIONS_FILESPEC.os2.x86 = \
-	32Bit/OS2/VBoxGuest.sys=$(VBOX_PATH_ADDITIONS_SRC)/os2/Bin/VBoxGuest.sys \
-	32Bit/OS2/VBoxService.exe=$(VBOX_PATH_ADDITIONS_SRC)/os2/Bin/VBoxService.exe \
-	32Bit/OS2/gengradd.dll=$(VBOX_PATH_ADDITIONS_SRC)/os2/Bin/gengradd.dll \
-	32Bit/OS2/libc063.dll=$(VBOX_PATH_ADDITIONS_SRC)/os2/Bin/libc063.dll \
-	32Bit/OS2/readme.txt=$(VBOX_PATH_ADDITIONS_SRC)/os2/Bin/readme.txt \
-	32Bit/OS2/vboxmouse.sys=$(VBOX_PATH_ADDITIONS_SRC)/os2/Bin/vboxmouse.sys
-endif
-
-
+# GNU/Linux
 ifdef VBOX_WITH_ADDITIONS_ISO.linux.amd64
  VBOX_PATH_ADDITIONS.linux.amd64 = $(PATH_OUT_BASE)/linux.amd64/$(KBUILD_TYPE)/bin/additions
  ifdef VBOX_WITH_COMBINED_LINUX_GUEST_PACKAGE
@@ -225,6 +220,28 @@ ifdef VBOX_WITH_ADDITIONS_ISO.linux.x86
 	autorun.sh=$(VBOX_PATH_ADDITIONS.linux.x86)/autorun.sh
 endif
 
+# IBM OS/2
+ifdef VBOX_WITH_ADDITIONS_ISO.os2.x86
+ VBOX_PATH_ADDITIONS.os2.x86 = $(PATH_OUT_BASE)/os2.x86/$(KBUILD_TYPE)/bin/additions
+ GUESTADDITIONS_FILESPEC.os2.x86 = \
+	OS2/VBoxGuest.sys=$(VBOX_PATH_ADDITIONS.os2.x86)/VBoxGuest.sys \
+	OS2/VBoxService.exe=$(VBOX_PATH_ADDITIONS.os2.x86)/VBoxService.exe \
+	OS2/VBoxControl.exe=$(VBOX_PATH_ADDITIONS.os2.x86)/VBoxControl.exe \
+	OS2/gengradd.dll=$(VBOX_PATH_ADDITIONS.os2.x86)/gengradd.dll \
+	OS2/libc064.dll=$(VBOX_PATH_ADDITIONS_SRC)/os2/Bin/libc064.dll \
+	OS2/readme.txt=$(VBOX_PATH_ADDITIONS_SRC)/os2/Bin/readme.txt \
+	OS2/vboxmouse.sys=$(VBOX_PATH_ADDITIONS.os2.x86)/vboxmouse.sys
+else ifdef VBOX_WITH_OS2_ADDITIONS_BIN
+ GUESTADDITIONS_FILESPEC.os2.x86 = \
+	32Bit/OS2/VBoxGuest.sys=$(VBOX_PATH_ADDITIONS_SRC)/os2/Bin/VBoxGuest.sys \
+	32Bit/OS2/VBoxService.exe=$(VBOX_PATH_ADDITIONS_SRC)/os2/Bin/VBoxService.exe \
+	32Bit/OS2/gengradd.dll=$(VBOX_PATH_ADDITIONS_SRC)/os2/Bin/gengradd.dll \
+	32Bit/OS2/libc063.dll=$(VBOX_PATH_ADDITIONS_SRC)/os2/Bin/libc063.dll \
+	32Bit/OS2/readme.txt=$(VBOX_PATH_ADDITIONS_SRC)/os2/Bin/readme.txt \
+	32Bit/OS2/vboxmouse.sys=$(VBOX_PATH_ADDITIONS_SRC)/os2/Bin/vboxmouse.sys
+endif
+
+# Oracle Solaris.
 ifdef VBOX_WITH_ADDITIONS_ISO.solaris.amd64
  VBOX_PATH_ADDITIONS.solaris.amd64 = $(PATH_OUT_BASE)/solaris.amd64/$(KBUILD_TYPE)/bin/additions
  GUESTADDITIONS_FILESPEC.solaris.amd64 = \
@@ -244,6 +261,7 @@ ifdef VBOX_WITH_COMBINED_SOLARIS_GUEST_PACKAGE
  GUESTADDITIONS_FILESPEC.solaris.amd64 =
 endif
 
+# Microsoft Windows.
 ifdef VBOX_WITH_ADDITIONS_ISO.win.amd64
  VBOX_PATH_ADDITIONS.win.amd64 = $(PATH_OUT_BASE)/win.amd64/$(KBUILD_TYPE)/bin/additions
  GUESTADDITIONS_FILESPEC.win.amd64 = \
@@ -267,18 +285,6 @@ ifdef VBOX_WITH_ADDITIONS_ISO.win.x86
 	cert/VBoxCertUtil.exe=$(VBOX_PATH_ADDITIONS.win.x86)/VBoxCertUtil.exe
 endif # win.x86
 
-ifdef VBOX_WITH_ADDITIONS_ISO.darwin.x86
- VBOX_PATH_ADDITIONS.darwin.x86 = $(PATH_OUT_BASE)/darwin.x86/$(KBUILD_TYPE)/bin/additions
- # or dmg?
- GUESTADDITIONS_FILESPEC.darwin.x86 = \
-	VBoxDarwinAdditions-x86.run=$(VBOX_PATH_ADDITIONS.darwin.x86)/VBoxDarwinAdditions-x86.run
-endif
-
-ifdef VBOX_WITH_ADDITIONS_ISO.darwin.amd64
- VBOX_PATH_ADDITIONS.darwin.amd64 = $(PATH_OUT_BASE)/darwin.amd64/$(KBUILD_TYPE)/bin/additions
- GUESTADDITIONS_FILESPEC.darwin.amd64 = \
-	VBoxDarwinAdditions-amd64.run=$(VBOX_PATH_ADDITIONS.darwin.amd64)/VBoxDarwinAdditions-amd64.run
-endif
 
 #
 # Build the Guest Additions ISO image.
