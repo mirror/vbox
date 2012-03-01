@@ -207,5 +207,15 @@ VBoxGuestInst_TEMPLATE= VBOXGUESTR3EXE
 VBoxGuestInst_SOURCES = win/VBoxGuestInst.cpp
 endif
 
+if defined(VBOX_WITH_TESTCASES) && !defined(VBOX_ONLY_ADDITIONS) && !defined(VBOX_ONLY_SDK)
+ PROGRAMS += tstVBoxGuest-solaris
+ tstVBoxGuest-solaris_TEMPLATE = VBOXR3TSTEXE
+ tstVBoxGuest-solaris_SOURCES  = \
+        VBoxGuest-solaris-streams.c \
+        testcase/tstVBoxGuest-solaris.cpp
+ tstVBoxGuest-solaris_DEFS     = TESTCASE
+ tstVBoxGuest-solaris_LIBS     = $(LIB_RUNTIME)
+endif
+
 include	$(KBUILD_PATH)/subfooter.kmk
 
