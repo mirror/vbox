@@ -815,6 +815,8 @@ VBOX_RSYNC_IN_FN = rsync -a -v --delete --delete-excluded --prune-empty-dirs \
 #
 VBOX_BLD_VM_RHEL3_X86_IP := 192.168.27.2
 VBOX_BLD_VM_OS2_IP       := 192.168.27.3
+VBOX_BLD_VM_SOLARIS_IP   := 192.168.27.4
+VBOX_BLD_VM_WIN_IP   := 192.168.27.5
 
 VBOX_WITH_OS2_ADD_BUILD=1
 
@@ -880,7 +882,7 @@ ifeq ($(KBUILD_TARGET),win)
 	+ $(VBOX_KMK_TIME) $(KMK) $(VBOX_ADDITIONS_BUILD.amd64) packing
 else
 	$(call MSG_L1,Building Windows/amd64 additions)
-	$(VBOX_KMK_TIME) ssh vbox@192.168.27.5 " echo $@ && cd e:/$(VBOX_ADDITIONS_BUILD_SUBDIRNAME) && tools/env.sh kmk $(VBOX_ADDITIONS_BUILD.amd64) all packing "
+	$(VBOX_KMK_TIME) ssh vbox@192.168.27.55 " echo $@ && cd e:/$(VBOX_ADDITIONS_BUILD_SUBDIRNAME) && tools/env.sh kmk $(VBOX_ADDITIONS_BUILD.amd64) all packing "
 endif
 
 additions-build-win.x86:
@@ -889,7 +891,7 @@ ifeq ($(KBUILD_TARGET),win)
 	+ $(VBOX_KMK_TIME) $(KMK) $(VBOX_ADDITIONS_BUILD.x86) packing
 else
 	$(call MSG_L1,Building Windows/x86 additions)
-	$(VBOX_KMK_TIME) ssh vbox@192.168.27.5 " echo $@ && cd e:/$(VBOX_ADDITIONS_BUILD_SUBDIRNAME) && tools/env.sh kmk $(VBOX_ADDITIONS_BUILD.x86) all packing"
+	$(VBOX_KMK_TIME) ssh vbox@192.168.27.55 " echo $@ && cd e:/$(VBOX_ADDITIONS_BUILD_SUBDIRNAME) && tools/env.sh kmk $(VBOX_ADDITIONS_BUILD.x86) all packing"
 endif
 
 # ASSUMES the 64-bit edition are built first. This also serializes VM access.
@@ -904,17 +906,17 @@ additions-build-solaris.x86: additions-build-solaris.amd64
 
 else
 additions-build-solaris.rsync-into-vm: $(VBOX_ADDITIONS_BUILD_WIN_HOST_FIRST)
-	$(VBOX_KMK_TIME) rsync -a --delete --delete-excluded --exclude=.svn --excludeFetchDir --exclude=tinderclient.log --exclude=win.amd64 --exclude=win.x86 . 192.168.27.4:/mnt/tinderbox/$(VBOX_ADDITIONS_BUILD_SUBDIRNAME)
+	$(VBOX_KMK_TIME) rsync -a --delete --delete-excluded --exclude=.svn --exclude=FetchDir --exclude=tinderclient.log --exclude=win.amd64 --exclude=win.x86 . $(VBOX_BLD_VM_SOLARIS_IP):/mnt/tinderbox/$(VBOX_ADDITIONS_BUILD_SUBDIRNAME)
 
 additions-build-solaris.build-it: additions-build-solaris.rsync-into-vm
 	$(call MSG_L1,Building Solaris/amd64 additions)
-	$(VBOX_KMK_TIME) ssh vbox@192.168.27.4 " echo $@/amd64 && cd /mnt/tinderbox/$(VBOX_ADDITIONS_BUILD_SUBDIRNAME) && tools/env.sh --no-wine kmk $(VBOX_ADDITIONS_BUILD.amd64) all packing"
+	$(VBOX_KMK_TIME) ssh vbox@$(VBOX_BLD_VM_SOLARIS_IP) " echo $@/amd64 && cd /mnt/tinderbox/$(VBOX_ADDITIONS_BUILD_SUBDIRNAME) && tools/env.sh --no-wine kmk $(VBOX_ADDITIONS_BUILD.amd64) all packing"
 	$(call MSG_L1,Building Solaris/x86 additions)
-	$(VBOX_KMK_TIME) ssh vbox@192.168.27.4 " echo $@/x86   && cd /mnt/tinderbox/$(VBOX_ADDITIONS_BUILD_SUBDIRNAME) && tools/env.sh --no-wine kmk $(VBOX_ADDITIONS_BUILD.x86) all packing VBOX_WITH_COMBINED_SOLARIS_GUEST_PACKAGE=1"
+	$(VBOX_KMK_TIME) ssh vbox@$(VBOX_BLD_VM_SOLARIS_IP) " echo $@/x86   && cd /mnt/tinderbox/$(VBOX_ADDITIONS_BUILD_SUBDIRNAME) && tools/env.sh --no-wine kmk $(VBOX_ADDITIONS_BUILD.x86) all packing VBOX_WITH_COMBINED_SOLARIS_GUEST_PACKAGE=1"
 
 additions-build-solaris.rsync-out-of-vm: additions-build-solaris.build-it
-	$(VBOX_KMK_TIME) rsync -a --delete 192.168.27.4:/mnt/tinderbox/$(VBOX_ADDITIONS_BUILD_SUBDIRNAME)/out/solaris.x86 out/
-	$(VBOX_KMK_TIME) rsync -a --delete 192.168.27.4:/mnt/tinderbox/$(VBOX_ADDITIONS_BUILD_SUBDIRNAME)/out/solaris.amd64 out/
+	$(VBOX_KMK_TIME) rsync -a --delete $(VBOX_BLD_VM_SOLARIS_IP):/mnt/tinderbox/$(VBOX_ADDITIONS_BUILD_SUBDIRNAME)/out/solaris.x86 out/
+	$(VBOX_KMK_TIME) rsync -a --delete $(VBOX_BLD_VM_SOLARIS_IP):/mnt/tinderbox/$(VBOX_ADDITIONS_BUILD_SUBDIRNAME)/out/solaris.amd64 out/
 
 .NOTPARALLEL: additions-build-solaris.rsync-out-of-vm additions-build-solaris.rsync-into-vm
 .PHONY:       additions-build-solaris.rsync-out-of-vm additions-build-solaris.rsync-into-vm additions-build-solaris.build-it
@@ -1097,17 +1099,17 @@ extpacks-build-solaris.x86: extpacks-build-solaris.amd64
 else
 # Serialize 32-bit and 64-bit ASSUMING the same VM builds both.
 extpacks-build-solaris.rsync-into-vm: $(VBOX_EXTPACKS_BUILD_WIN_HOST_FIRST)
-	$(VBOX_KMK_TIME) $(call VBOX_RSYNC_IN_FN,solaris,*) . 192.168.27.4:/mnt/tinderbox/$(VBOX_EXTPACKS_BUILD_SUBDIRNAME)
+	$(VBOX_KMK_TIME) $(call VBOX_RSYNC_IN_FN,solaris,*) . $(VBOX_BLD_VM_SOLARIS_IP):/mnt/tinderbox/$(VBOX_EXTPACKS_BUILD_SUBDIRNAME)
 
 extpacks-build-solaris.build-it: extpacks-build-solaris.rsync-into-vm
 	$(call MSG_L1,Building Solaris/amd64 extension packs)
-	$(VBOX_KMK_TIME) ssh vbox@192.168.27.4 " echo $@/amd64 && cd /mnt/tinderbox/$(VBOX_EXTPACKS_BUILD_SUBDIRNAME) && tools/env.sh --no-wine kmk $(VBOX_EXTPACKS_BUILD.amd64) all"
+	$(VBOX_KMK_TIME) ssh vbox@$(VBOX_BLD_VM_SOLARIS_IP) " echo $@/amd64 && cd /mnt/tinderbox/$(VBOX_EXTPACKS_BUILD_SUBDIRNAME) && tools/env.sh --no-wine kmk $(VBOX_EXTPACKS_BUILD.amd64) all"
 	$(call MSG_L1,Building Solaris/x86 extension packs)
-	$(VBOX_KMK_TIME) ssh vbox@192.168.27.4 " echo $@/x86   && cd /mnt/tinderbox/$(VBOX_EXTPACKS_BUILD_SUBDIRNAME) && tools/env.sh --no-wine kmk $(VBOX_EXTPACKS_BUILD.x86) all"
+	$(VBOX_KMK_TIME) ssh vbox@$(VBOX_BLD_VM_SOLARIS_IP) " echo $@/x86   && cd /mnt/tinderbox/$(VBOX_EXTPACKS_BUILD_SUBDIRNAME) && tools/env.sh --no-wine kmk $(VBOX_EXTPACKS_BUILD.x86) all"
 
 extpacks-build-solaris.rsync-out-of-vm: extpacks-build-solaris.build-it
-	$(VBOX_KMK_TIME) rsync -a --delete 192.168.27.4:/mnt/tinderbox/$(VBOX_EXTPACKS_BUILD_SUBDIRNAME)/out/solaris.x86 out/
-	$(VBOX_KMK_TIME) rsync -a --delete 192.168.27.4:/mnt/tinderbox/$(VBOX_EXTPACKS_BUILD_SUBDIRNAME)/out/solaris.amd64 out/
+	$(VBOX_KMK_TIME) rsync -a --delete $(VBOX_BLD_VM_SOLARIS_IP):/mnt/tinderbox/$(VBOX_EXTPACKS_BUILD_SUBDIRNAME)/out/solaris.x86 out/
+	$(VBOX_KMK_TIME) rsync -a --delete $(VBOX_BLD_VM_SOLARIS_IP):/mnt/tinderbox/$(VBOX_EXTPACKS_BUILD_SUBDIRNAME)/out/solaris.amd64 out/
 
 .NOTPARALLEL: extpacks-build-solaris.rsync-out-of-vm extpacks-build-solaris.rsync-into-vm
 .PHONY:       extpacks-build-solaris.rsync-out-of-vm extpacks-build-solaris.rsync-into-vm extpacks-build-solaris.build-it
@@ -1279,17 +1281,17 @@ testsuite-build-solaris.x86:
 
 else
 testsuite-build-solaris.rsync-into-vm: $(VBOX_TESTSUITE_BUILD_WIN_HOST_FIRST)
-	$(VBOX_KMK_TIME) rsync -a --delete --delete-excluded --exclude .svn --exclude=FetchDir --exclude=tinderclient.log --exclude=win.amd64 --exclude=win.x86 . 192.168.27.4:/mnt/tinderbox/$(VBOX_TESTSUITE_BUILD_SUBDIRNAME)
+	$(VBOX_KMK_TIME) rsync -a --delete --delete-excluded --exclude .svn --exclude=FetchDir --exclude=tinderclient.log --exclude=win.amd64 --exclude=win.x86 . $(VBOX_BLD_VM_SOLARIS_IP):/mnt/tinderbox/$(VBOX_TESTSUITE_BUILD_SUBDIRNAME)
 
 testsuite-build-solaris.build-it: testsuite-build-solaris.rsync-into-vm
 	$(call MSG_L1,Building Solaris/amd64 testsuite)
-	$(VBOX_KMK_TIME) ssh vbox@192.168.27.4 " echo $@/amd64 && cd /mnt/tinderbox/$(VBOX_TESTSUITE_BUILD_SUBDIRNAME) && tools/env.sh --no-wine kmk $(VBOX_TESTSUITE_BUILD.amd64) all"
+	$(VBOX_KMK_TIME) ssh vbox@$(VBOX_BLD_VM_SOLARIS_IP) " echo $@/amd64 && cd /mnt/tinderbox/$(VBOX_TESTSUITE_BUILD_SUBDIRNAME) && tools/env.sh --no-wine kmk $(VBOX_TESTSUITE_BUILD.amd64) all"
 	$(call MSG_L1,Building Solaris/x86 testsuite)
-	$(VBOX_KMK_TIME) ssh vbox@192.168.27.4 " echo $@/x86   && cd /mnt/tinderbox/$(VBOX_TESTSUITE_BUILD_SUBDIRNAME) && tools/env.sh --no-wine kmk $(VBOX_TESTSUITE_BUILD.x86) all "
+	$(VBOX_KMK_TIME) ssh vbox@$(VBOX_BLD_VM_SOLARIS_IP) " echo $@/x86   && cd /mnt/tinderbox/$(VBOX_TESTSUITE_BUILD_SUBDIRNAME) && tools/env.sh --no-wine kmk $(VBOX_TESTSUITE_BUILD.x86) all "
 
 testsuite-build-solaris.rsync-out-of-vm: testsuite-build-solaris.build-it
-	$(VBOX_KMK_TIME) rsync -a --delete 192.168.27.4:/mnt/tinderbox/$(VBOX_TESTSUITE_BUILD_SUBDIRNAME)/out/solaris.x86   out/
-	$(VBOX_KMK_TIME) rsync -a --delete 192.168.27.4:/mnt/tinderbox/$(VBOX_TESTSUITE_BUILD_SUBDIRNAME)/out/solaris.amd64 out/
+	$(VBOX_KMK_TIME) rsync -a --delete $(VBOX_BLD_VM_SOLARIS_IP):/mnt/tinderbox/$(VBOX_TESTSUITE_BUILD_SUBDIRNAME)/out/solaris.x86   out/
+	$(VBOX_KMK_TIME) rsync -a --delete $(VBOX_BLD_VM_SOLARIS_IP):/mnt/tinderbox/$(VBOX_TESTSUITE_BUILD_SUBDIRNAME)/out/solaris.amd64 out/
 
 .NOTPARALLEL: testsuite-build-solaris.rsync-out-of-vm testsuite-build-solaris.rsync-into-vm
 .PHONY:       testsuite-build-solaris.rsync-out-of-vm testsuite-build-solaris.rsync-into-vm testsuite-build-solaris.build-it
