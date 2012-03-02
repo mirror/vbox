@@ -102,7 +102,7 @@ static const unsigned nonchar_key_scan[256] =
 #else
     /*?*/ 0, 0x137, 0, 0x152, 0x00, 0x00, 0x00,    0x15D,        /* FF60 */
 #endif /* sun */
-             /* Help */
+             /* Help (invented scan code) */
     0x00, 0x00, 0x13B, 0x146, 0x00, 0x00, 0x00, 0x00,            /* FF68 */
     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,              /* FF70 */
     /* keypad keys */
@@ -119,16 +119,15 @@ static const unsigned nonchar_key_scan[256] =
                                         0x3B, 0x3C,
     0x3D, 0x3E, 0x3F, 0x40, 0x41, 0x42, 0x43, 0x44,              /* FFC0 */
 #ifdef sun
-    /* On Solaris, F11 to F20 are actually keys on the left function block.
-     * Since just one of them has a set 1 PS/2 scan code, we arbitrarily assign
-     * the rest scan codes which are extended versions of F2 to F10.  With
-     * the emulated PS/2 keyboard this will not help anyone, but with the
-     * emulated USB one we can translate them to the proper USB scan codes. */
-    0x13C, 0x13D, 0x72, 0x13E, 0x13F, 0x140, 0x141, 0x142,       /* FFC8 */
-    0x143, 0x144, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,            /* FFD0 */
+    /* On Solaris for historical reasons the STOP and AGAIN keys are reported
+     * as F11 and F12 respectively.  We send invented type 1 scan codes for
+     * which can be translated to real ones again by the USB keyboard
+     * emulation. */
+    0x13C, 0x13D, 0x64,  0x65,  0x66,  0x67,  0x68,  0x69,       /* FFC8 */
+    0x6a,  0x6b,  0x6c,  0x6d,  0x6e,  0x76,  0x00,  0x00,       /* FFD0 */
 #else
-    0x57, 0x58, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,              /* FFC8 */
-    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,              /* FFD0 */
+    0x57,  0x58,  0x64,  0x65,  0x66,  0x67,  0x68,  0x69,       /* FFC8 */
+    0x6a,  0x6b,  0x6c,  0x6d,  0x6e,  0x76,  0x00,  0x00,       /* FFD0 */
 #endif
     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,              /* FFD8 */
     /* modifier keys */
@@ -193,8 +192,7 @@ static const unsigned xfree86_vendor_key_scan[256] =
 
 /* This list was put together using /usr/include/X11/Sunkeysym.h and
    comparing the scancodes produced by a Sun type 7 USB keyboard.  Note that
-   Sun call F11 and F12 F36 and F37 respectively, as they already had 35
-   function keys when those two physical keys were added. */
+   Sun call F11 and F12 F36 and F37 respectively. */
 static const unsigned sun_key_scan[256] =
 {
  /* FAGrav, FACirc, FATild, FAAcut, FADiae, FACed */
