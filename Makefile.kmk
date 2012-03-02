@@ -853,12 +853,20 @@ endif
 # built first. The windows amd64 additions need some x86 files, so don't change
 # the order of the windows builds. TODO: Split building and packing for these two VMs.
 additions-build: \
+	additions-build-rsync-into-vms \
 	additions-build-solaris.amd64 \
 	additions-build-solaris.x86 \
 	additions-build-win.x86 \
 	additions-build-win.amd64 \
 	additions-build-os2.x86 \
 	additions-build-linux.x86.combined
+
+additions-build-rsync-into-vms: \
+		additions-build-solaris.rsync-into-vm \
+		additions-build-os2.rsync-into-vm
+	$(call MSG_L1,Rsynced the sources + tools into the VMs.)
+.NOTPARALLEL: additions-build-rsync-into-vms
+
 
 VBOX_ADDITIONS_BUILD.amd64 = VBOX_ONLY_ADDITIONS=1 VBOX_WITHOUT_ADDITIONS_ISO=1 \
 	KBUILD_TYPE=$(KBUILD_TYPE) BUILD_TYPE=$(KBUILD_TYPE) \
@@ -911,8 +919,9 @@ additions-build-solaris.x86: additions-build-solaris.amd64
 	+ $(VBOX_KMK_TIME) $(KMK) $(VBOX_ADDITIONS_BUILD.x86) VBOX_WITH_COMBINED_SOLARIS_GUEST_PACKAGE=1 all $(VBOX_ADD_HOST_BUILD_TWEAK)
 	+ $(VBOX_KMK_TIME) $(KMK) $(VBOX_ADDITIONS_BUILD.x86) VBOX_WITH_COMBINED_SOLARIS_GUEST_PACKAGE=1 packing
 
+additions-build-solaris.rsync-into-vm:
 else
-additions-build-solaris.rsync-into-vm: $(VBOX_ADDITIONS_BUILD_WIN_HOST_FIRST)
+additions-build-solaris.rsync-into-vm:
 	$(VBOX_KMK_TIME) $(call VBOX_RSYNC_IN_FN,os2,*) \
 		'--exclude=src/VBox/Additions/WINNT/**' \
 		'--exclude=src/VBox/Frontends/**' \
@@ -933,7 +942,7 @@ additions-build-solaris.rsync-out-of-vm: additions-build-solaris.build-it
 .PHONY:       additions-build-solaris.rsync-into-vm additions-build-solaris.rsync-out-of-vm additions-build-solaris.build-it
 
 additions-build-solaris.amd64: additions-build-solaris.rsync-out-of-vm
-additions-build-solaris.x86: additions-build-solaris.rsync-out-of-vm
+additions-build-solaris.x86:   additions-build-solaris.rsync-out-of-vm
 endif
 
 ifdef VBOX_WITH_OS2_ADD_BUILD
@@ -941,8 +950,10 @@ ifdef VBOX_WITH_OS2_ADD_BUILD
 additions-build-os2.x86:
 	+ $(VBOX_KMK_TIME) $(KMK) $(VBOX_ADDITIONS_BUILD.x86) all $(VBOX_ADD_HOST_BUILD_TWEAK)
 	+ $(VBOX_KMK_TIME) $(KMK) $(VBOX_ADDITIONS_BUILD.x86) packing
+
+additions-build-os2.rsync-into-vm:
  else
-additions-build-os2.rsync-into-vm: $(VBOX_ADDITIONS_BUILD_WIN_HOST_FIRST)
+additions-build-os2.rsync-into-vm:
 	$(VBOX_KMK_TIME) $(call VBOX_RSYNC_IN_FN,os2,*) \
 		'--exclude=src/VBox/Additions/x11/**' \
 		'--exclude=src/VBox/Additions/WINNT/**' \
