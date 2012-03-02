@@ -1306,9 +1306,9 @@ static const PortConfig kComKnownPorts[] =
 
 static const PortConfig kLptKnownPorts[] =
 {
-    { "LPT1", 7, 0x3BC },
-    { "LPT2", 5, 0x378 },
-    { "LPT3", 5, 0x278 },
+    { "LPT1", 7, 0x378 },
+    { "LPT2", 5, 0x278 },
+    { "LPT1", 2, 0x3BC },
     /* must not contain an element with IRQ=0 and IOBase=0 used to cause
      * toLPTPortName() to return the "User-defined" string for these values. */
 };
