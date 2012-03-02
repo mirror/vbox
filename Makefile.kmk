@@ -925,8 +925,8 @@ additions-build-solaris.rsync-out-of-vm: additions-build-solaris.build-it
 	$(VBOX_KMK_TIME) rsync -a --delete $(VBOX_BLD_VM_SOLARIS_IP):/mnt/tinderbox/$(VBOX_ADDITIONS_BUILD_SUBDIRNAME)/out/solaris.x86 out/
 	$(VBOX_KMK_TIME) rsync -a --delete $(VBOX_BLD_VM_SOLARIS_IP):/mnt/tinderbox/$(VBOX_ADDITIONS_BUILD_SUBDIRNAME)/out/solaris.amd64 out/
 
-.NOTPARALLEL: additions-build-solaris.rsync-out-of-vm additions-build-solaris.rsync-into-vm
-.PHONY:       additions-build-solaris.rsync-out-of-vm additions-build-solaris.rsync-into-vm additions-build-solaris.build-it
+.NOTPARALLEL: additions-build-solaris.rsync-into-vm # additions-build-solaris.rsync-out-of-vm
+.PHONY:       additions-build-solaris.rsync-into-vm additions-build-solaris.rsync-out-of-vm additions-build-solaris.build-it
 
 additions-build-solaris.amd64: additions-build-solaris.rsync-out-of-vm
 additions-build-solaris.x86: additions-build-solaris.rsync-out-of-vm
@@ -953,8 +953,8 @@ additions-build-os2.build-it: additions-build-os2.rsync-into-vm
 additions-build-os2.rsync-out-of-vm: additions-build-os2.build-it
 	$(VBOX_KMK_TIME) rsync -v -a --delete rsync://vbox@$(VBOX_BLD_VM_OS2_IP)/tinderbox/$(VBOX_ADDITIONS_BUILD_SUBDIRNAME)/out/os2.x86 ./out
 
-.NOTPARALLEL: additions-build-os2.rsync-out-of-vm additions-build-os2.rsync-into-vm
-.PHONY:       additions-build-os2.rsync-out-of-vm additions-build-os2.rsync-into-vm additions-build-os2.build-it
+.NOTPARALLEL: additions-build-os2.rsync-into-vm #additions-build-os2.rsync-out-of-vm
+.PHONY:       additions-build-os2.rsync-into-vm additions-build-os2.rsync-out-of-vm additions-build-os2.build-it
 
 additions-build-os2.x86: additions-build-os2.rsync-out-of-vm
  endif
@@ -983,7 +983,7 @@ else
 endif
 
 # Combined Linux Additions .run package.  This depends on the archives
-# created during packing by the archetecture-specific builds.
+# created during packing by the architecture-specific builds.
 additions-build-linux.x86.combined:   $(VBOX_ADDITIONS_BUILD_WIN_HOST_FIRST) additions-build-linux.x86 additions-build-linux.amd64
 ifeq ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH),linux.x86)
 	+ $(VBOX_KMK_TIME) $(KMK) $(VBOX_ADDITIONS_BUILD.x86) all $(VBOX_ADD_HOST_BUILD_TWEAK)
