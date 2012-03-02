@@ -792,6 +792,7 @@ VBOX_KMK_TIME = $(KBUILD_BIN_PATH)/kmk_time
 # @param    2   arch or *.
 #
 VBOX_RSYNC_IN_FN = rsync -a -v --delete --delete-excluded --prune-empty-dirs \
+	--exclude=*.pyc \
 	--exclude=.svn/ \
 	--exclude=doc/Devices/ \
 	--exclude=doc/tg/ \
