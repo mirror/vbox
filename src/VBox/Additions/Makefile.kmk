@@ -169,7 +169,7 @@ include	$(KBUILD_PATH)/subfooter.kmk
 # in the dependency list and mkisofs command.
 #
 
-# Darwin / Mac OS X			   
+# Darwin / Mac OS X
 ifdef VBOX_WITH_ADDITIONS_ISO.darwin.x86
  VBOX_PATH_ADDITIONS.darwin.x86 = $(PATH_OUT_BASE)/darwin.x86/$(KBUILD_TYPE)/bin/additions
  # or dmg?
@@ -228,8 +228,8 @@ ifdef VBOX_WITH_ADDITIONS_ISO.os2.x86
 	OS2/VBoxService.exe=$(VBOX_PATH_ADDITIONS.os2.x86)/VBoxService.exe \
 	OS2/VBoxControl.exe=$(VBOX_PATH_ADDITIONS.os2.x86)/VBoxControl.exe \
 	OS2/gengradd.dll=$(VBOX_PATH_ADDITIONS.os2.x86)/gengradd.dll \
-	OS2/libc064.dll=$(VBOX_PATH_ADDITIONS_SRC)/os2/Bin/libc064.dll \
-	OS2/readme.txt=$(VBOX_PATH_ADDITIONS_SRC)/os2/Bin/readme.txt \
+	OS2/libc064.dll=$(VBOX_PATH_ADDITIONS.os2.x86)/libc064.dll \
+	OS2/readme.txt=$(VBOX_PATH_ADDITIONS.os2.x86)/readme.txt \
 	OS2/vboxmouse.sys=$(VBOX_PATH_ADDITIONS.os2.x86)/vboxmouse.sys
 else ifdef VBOX_WITH_OS2_ADDITIONS_BIN
  GUESTADDITIONS_FILESPEC.os2.x86 = \
