@@ -20,6 +20,7 @@
 #
 # OS/2 stuff.
 #
+if 0
 ifeq ($(KBUILD_TARGET),os2)
 FETCHES += os2.x86.glibidl.20070521
 os2.x86.glibidl.20070521_TEMPLATE = VBOXFETCH
@@ -28,5 +29,4 @@ os2.x86.glibidl.20070521_SOURCES  = http://hobbes.nmsu.edu/download/pub/os2/dev/
 glibidl_20070521.zip_MD5  = 054646a49b96ab762e4d5e9451ca1b37
 glibidl_20070521.zip_SIZE = 611335
 endif # OS/2 stuff
-
-
+endif
