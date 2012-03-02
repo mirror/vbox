@@ -792,24 +792,23 @@ VBOX_KMK_TIME = $(KBUILD_BIN_PATH)/kmk_time
 # @param    2   arch or *.
 #
 VBOX_RSYNC_IN_FN = rsync -a -v --delete --delete-excluded --prune-empty-dirs \
-	--exclude .svn/ \
-	--exclude doc/Devices/ \
-	--exclude doc/tg/ \
-	--exclude doc/vp/ \
-	--exclude doc/L4VM/ \
-	--exclude tinderclient.log \
-	--exclude tools/FetchDir/ \
-	--exclude webtools/ \
+	--exclude=.svn/ \
+	--exclude=doc/Devices/ \
+	--exclude=doc/tg/ \
+	--exclude=doc/vp/ \
+	--exclude=doc/L4VM/ \
+	--exclude=tinderclient.log \
+	--exclude=tools/FetchDir/ \
+	--exclude=webtools/ \
 	$(foreach os,darwin freebsd linux solaris os2 win,$(if-expr "$(1)" != "$(os)", \
-		--exclude tools/$(os).x86/ \
-		--exclude tools/$(os).amd64/ \
-		--exclude out/$(os).amd64/ \
-		--exclude out/$(os).x86/ \
+		--exclude=tools/$(os).x86/ \
+		--exclude=tools/$(os).amd64/ \
+		--exclude=out/$(os).amd64/ \
+		--exclude=out/$(os).x86/ \
 	,$(select \
-		"$(2)" == "x86"  , --exclude out/$(os).amd64/$(KBUILD_TYPE)/, \
-		"$(2)" == "amd64", --exclude out/$(os).x86/$(KBUILD_TYPE)/) \
+		"$(2)" == "x86"  , --exclude=out/$(os).amd64/$(KBUILD_TYPE)/, \
+		"$(2)" == "amd64", --exclude=out/$(os).x86/$(KBUILD_TYPE)/) \
 	))
-
 
 #
 # VM IP addresses.
@@ -905,7 +904,7 @@ additions-build-solaris.x86: additions-build-solaris.amd64
 
 else
 additions-build-solaris.rsync-into-vm: $(VBOX_ADDITIONS_BUILD_WIN_HOST_FIRST)
-	$(VBOX_KMK_TIME) rsync -a --delete --delete-excluded --exclude .svn --exclude FetchDir --exclude tinderclient.log --exclude win.amd64 --exclude win.x86 . 192.168.27.4:/mnt/tinderbox/$(VBOX_ADDITIONS_BUILD_SUBDIRNAME)
+	$(VBOX_KMK_TIME) rsync -a --delete --delete-excluded --exclude=.svn --excludeFetchDir --exclude=tinderclient.log --exclude=win.amd64 --exclude=win.x86 . 192.168.27.4:/mnt/tinderbox/$(VBOX_ADDITIONS_BUILD_SUBDIRNAME)
 
 additions-build-solaris.build-it: additions-build-solaris.rsync-into-vm
 	$(call MSG_L1,Building Solaris/amd64 additions)
@@ -931,19 +930,11 @@ additions-build-os2.x86:
 	+ $(VBOX_KMK_TIME) $(KMK) $(VBOX_ADDITIONS_BUILD.x86) packing
  else
 additions-build-os2.rsync-into-vm: $(VBOX_ADDITIONS_BUILD_WIN_HOST_FIRST)
-	$(VBOX_KMK_TIME) rsync -v -v -a --delete --delete-excluded --exclude .svn \
-		--exclude 'tools/FetchDir/**' \
-		--exclude 'tinderclient.log' \
-		--exclude 'tools/freebsd**' \
-		--exclude 'tools/linux**' \
-		--exclude 'tools/solaris**' \
-		--exclude 'tools/win**' \
-		--exclude 'out/**' \
-		--exclude 'doc/Devices/**' \
-		--exclude 'src/VBox/Additions/x11/**' \
-		--exclude 'src/VBox/Additions/WINNT/**' \
-		--exclude 'src/VBox/Frontends/**' \
-		--exclude 'src/VBox/VMM/**' \
+	$(VBOX_KMK_TIME) $(call VBOX_RSYNC_IN_FN,os2,*) \
+		'--exclude=src/VBox/Additions/x11/**' \
+		'--exclude=src/VBox/Additions/WINNT/**' \
+		'--exclude=src/VBox/Frontends/**' \
+		'--exclude=src/VBox/VMM/**' \
 		. rsync://vbox@$(VBOX_BLD_VM_OS2_IP)/tinderbox/$(VBOX_ADDITIONS_BUILD_SUBDIRNAME)
 
 additions-build-os2.build-it: additions-build-os2.rsync-into-vm
@@ -1288,7 +1279,7 @@ testsuite-build-solaris.x86:
 
 else
 testsuite-build-solaris.rsync-into-vm: $(VBOX_TESTSUITE_BUILD_WIN_HOST_FIRST)
-	$(VBOX_KMK_TIME) rsync -a --delete --delete-excluded --exclude .svn --exclude FetchDir --exclude tinderclient.log --exclude win.amd64 --exclude win.x86 . 192.168.27.4:/mnt/tinderbox/$(VBOX_TESTSUITE_BUILD_SUBDIRNAME)
+	$(VBOX_KMK_TIME) rsync -a --delete --delete-excluded --exclude .svn --exclude=FetchDir --exclude=tinderclient.log --exclude=win.amd64 --exclude=win.x86 . 192.168.27.4:/mnt/tinderbox/$(VBOX_TESTSUITE_BUILD_SUBDIRNAME)
 
 testsuite-build-solaris.build-it: testsuite-build-solaris.rsync-into-vm
 	$(call MSG_L1,Building Solaris/amd64 testsuite)
