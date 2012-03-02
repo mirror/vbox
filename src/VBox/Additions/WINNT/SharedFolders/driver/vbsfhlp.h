@@ -24,12 +24,6 @@
 
 #include "VBoxGuestR0LibSharedFolders.h"
 
-/* Windows version identifier
-typedef enum
-{
-    UNKNOWN_WINVERSION = 0, WINNT4 = 1, WIN2K = 2, WINXP = 3
-} winVersion_t;
-
 void vbsfHlpSleep (ULONG ulMillies);
 NTSTATUS vbsfHlpCreateDriveLetter (WCHAR Letter, UNICODE_STRING *pDeviceName);
 NTSTATUS vbsfHlpDeleteDriveLetter (WCHAR Letter);
