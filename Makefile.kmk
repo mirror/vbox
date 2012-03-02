@@ -944,14 +944,14 @@ additions-build-os2.rsync-into-vm: $(VBOX_ADDITIONS_BUILD_WIN_HOST_FIRST)
 		--exclude 'src/VBox/Additions/WINNT/**' \
 		--exclude 'src/VBox/Frontends/**' \
 		--exclude 'src/VBox/VMM/**' \
-		$(PATH_ROOT)/. rsync://vbox@$(VBOX_BLD_VM_OS2_IP)/tinderbox/$(VBOX_ADDITIONS_BUILD_SUBDIRNAME)
+		. rsync://vbox@$(VBOX_BLD_VM_OS2_IP)/tinderbox/$(VBOX_ADDITIONS_BUILD_SUBDIRNAME)
 
 additions-build-os2.build-it: additions-build-os2.rsync-into-vm
 	$(call MSG_L1,Building OS/2 additions)
 	$(VBOX_KMK_TIME) rsh -n -l vbox $(VBOX_BLD_VM_OS2_IP) "cd e:\\tinderbox\\$(VBOX_ADDITIONS_BUILD_SUBDIRNAME) && e: && kbuild\\bin\\os2.x86\\kmk_ash tools\\env.sh --no-wine kmk $(VBOX_ADDITIONS_BUILD.x86) all packing"
 
 additions-build-os2.rsync-out-of-vm: additions-build-os2.build-it
-	$(VBOX_KMK_TIME) rsync -v -v -v -a --delete rsync://vbox@$(VBOX_BLD_VM_OS2_IP)/tinderbox/$(VBOX_ADDITIONS_BUILD_SUBDIRNAME)/out/os2.x86 $(PATH_ROOT)/out
+	$(VBOX_KMK_TIME) rsync -v -v -v -a --delete rsync://vbox@$(VBOX_BLD_VM_OS2_IP)/tinderbox/$(VBOX_ADDITIONS_BUILD_SUBDIRNAME)/out/os2.x86 ./out
 
 .NOTPARALLEL: additions-build-os2.rsync-out-of-vm additions-build-os2.rsync-into-vm
 .PHONY:       additions-build-os2.rsync-out-of-vm additions-build-os2.rsync-into-vm additions-build-os2.build-it
