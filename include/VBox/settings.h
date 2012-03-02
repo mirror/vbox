@@ -522,7 +522,7 @@ struct ParallelPort
         : ulSlot(0),
           fEnabled(false),
           ulIOBase(0x378),
-          ulIRQ(4)
+          ulIRQ(7)
     {}
 
     bool operator==(const ParallelPort &d) const;
