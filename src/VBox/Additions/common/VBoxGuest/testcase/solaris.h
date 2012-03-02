@@ -156,7 +156,7 @@ typedef struct dev_info *dev_info_t;
 typedef struct __ddi_acc_handle * ddi_acc_handle_t;
 typedef struct __ddi_intr_handle *ddi_intr_handle_t;
 typedef struct mutex *kmutex_t;
-typedef unsigned long uint_t;
+typedef unsigned int uint_t;
 typedef unsigned short ushort_t;
 typedef unsigned char uchar_t;
 
