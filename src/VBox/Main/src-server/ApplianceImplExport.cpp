@@ -557,9 +557,14 @@ STDMETHODIMP Appliance::Write(IN_BSTR format, BOOL fManifest, IN_BSTR path, IPro
         ovfF = OVF_0_9;
     else if (strFormat == "ovf-1.0")
         ovfF = OVF_1_0;
+    else if (strFormat == "ovf-2.0")
+        ovfF = OVF_2_0;
     else
         return setError(VBOX_E_FILE_ERROR,
                         tr("Invalid format \"%s\" specified"), strFormat.c_str());
+
+    /* as of OVF 2.0 we have to use SHA256 */
+    m->fSha256 = ovfF >= OVF_2_0;
 
     ComObjPtr<Progress> progress;
     HRESULT rc = S_OK;
@@ -657,7 +662,9 @@ void Appliance::buildXML(AutoWriteLockBase& writeLock,
 {
     xml::ElementNode *pelmRoot = doc.createRootElement("Envelope");
 
-    pelmRoot->setAttribute("ovf:version", (enFormat == OVF_1_0) ? "1.0" : "0.9");
+    pelmRoot->setAttribute("ovf:version", enFormat == OVF_2_0 ? "2.0"
+                                        : enFormat == OVF_1_0 ? "1.0"
+                                        :                       "0.9");
     pelmRoot->setAttribute("xml:lang", "en-US");
 
     Utf8Str strNamespace = (enFormat == OVF_0_9)
@@ -1620,12 +1627,12 @@ HRESULT Appliance::writeFSOVF(TaskOVF *pTask, AutoWriteLockBase& writeLock)
 
     HRESULT rc = S_OK;
 
-    PVDINTERFACEIO pSha1Io = 0;
+    PVDINTERFACEIO pShaIo = 0;
     PVDINTERFACEIO pFileIo = 0;
     do
     {
-        pSha1Io = Sha1CreateInterface();
-        if (!pSha1Io)
+        pShaIo = ShaCreateInterface();
+        if (!pShaIo)
         {
             rc = E_OUTOFMEMORY;
             break;
@@ -1637,9 +1644,10 @@ HRESULT Appliance::writeFSOVF(TaskOVF *pTask, AutoWriteLockBase& writeLock)
             break;
         }
 
-        SHA1STORAGE storage;
+        SHASTORAGE storage;
         RT_ZERO(storage);
         storage.fCreateDigest = m->fManifest;
+        storage.fSha256 = m->fSha256;
         int vrc = VDInterfaceAdd(&pFileIo->Core, "Appliance::IOFile",
                                  VDINTERFACETYPE_IO, 0, sizeof(VDINTERFACEIO),
                                  &storage.pVDImageIfaces);
@@ -1648,12 +1656,12 @@ HRESULT Appliance::writeFSOVF(TaskOVF *pTask, AutoWriteLockBase& writeLock)
             rc = E_FAIL;
             break;
         }
-        rc = writeFSImpl(pTask, writeLock, pSha1Io, &storage);
+        rc = writeFSImpl(pTask, writeLock, pShaIo, &storage);
     }while(0);
 
     /* Cleanup */
-    if (pSha1Io)
-        RTMemFree(pSha1Io);
+    if (pShaIo)
+        RTMemFree(pShaIo);
     if (pFileIo)
         RTMemFree(pFileIo);
 
@@ -1674,12 +1682,12 @@ HRESULT Appliance::writeFSOVA(TaskOVF *pTask, AutoWriteLockBase& writeLock)
 
     HRESULT rc = S_OK;
 
-    PVDINTERFACEIO pSha1Io = 0;
+    PVDINTERFACEIO pShaIo = 0;
     PVDINTERFACEIO pTarIo = 0;
     do
     {
-        pSha1Io = Sha1CreateInterface();
-        if (!pSha1Io)
+        pShaIo = ShaCreateInterface();
+        if (!pShaIo)
         {
             rc = E_OUTOFMEMORY;
             break;
@@ -1690,9 +1698,10 @@ HRESULT Appliance::writeFSOVA(TaskOVF *pTask, AutoWriteLockBase& writeLock)
             rc = E_OUTOFMEMORY;
             break;
         }
-        SHA1STORAGE storage;
+        SHASTORAGE storage;
         RT_ZERO(storage);
         storage.fCreateDigest = m->fManifest;
+        storage.fSha256 = m->fSha256;
         vrc = VDInterfaceAdd(&pTarIo->Core, "Appliance::IOTar",
                              VDINTERFACETYPE_IO, tar, sizeof(VDINTERFACEIO),
                              &storage.pVDImageIfaces);
@@ -1701,14 +1710,14 @@ HRESULT Appliance::writeFSOVA(TaskOVF *pTask, AutoWriteLockBase& writeLock)
             rc = E_FAIL;
             break;
         }
-        rc = writeFSImpl(pTask, writeLock, pSha1Io, &storage);
+        rc = writeFSImpl(pTask, writeLock, pShaIo, &storage);
     }while(0);
 
     RTTarClose(tar);
 
     /* Cleanup */
-    if (pSha1Io)
-        RTMemFree(pSha1Io);
+    if (pShaIo)
+        RTMemFree(pShaIo);
     if (pTarIo)
         RTMemFree(pTarIo);
 
@@ -1720,7 +1729,7 @@ HRESULT Appliance::writeFSOVA(TaskOVF *pTask, AutoWriteLockBase& writeLock)
     return rc;
 }
 
-HRESULT Appliance::writeFSImpl(TaskOVF *pTask, AutoWriteLockBase& writeLock, PVDINTERFACEIO pIfIo, PSHA1STORAGE pStorage)
+HRESULT Appliance::writeFSImpl(TaskOVF *pTask, AutoWriteLockBase& writeLock, PVDINTERFACEIO pIfIo, PSHASTORAGE pStorage)
 {
     LogFlowFuncEnter();
 
@@ -1752,7 +1761,7 @@ HRESULT Appliance::writeFSImpl(TaskOVF *pTask, AutoWriteLockBase& writeLock, PVD
                                tr("Could not create OVF file '%s'"),
                                strOvfFile.c_str());
             /* Write the ovf file to disk. */
-            vrc = Sha1WriteBuf(strOvfFile.c_str(), pvBuf, cbSize, pIfIo, pStorage);
+            vrc = ShaWriteBuf(strOvfFile.c_str(), pvBuf, cbSize, pIfIo, pStorage);
             if (RT_FAILURE(vrc))
                 throw setError(VBOX_E_FILE_ERROR,
                                tr("Could not create OVF file '%s' (%Rrc)"),
@@ -1860,7 +1869,8 @@ HRESULT Appliance::writeFSImpl(TaskOVF *pTask, AutoWriteLockBase& writeLock, PVD
             }
             void *pvBuf;
             size_t cbSize;
-            vrc = RTManifestWriteFilesBuf(&pvBuf, &cbSize, paManifestFiles, fileList.size());
+            vrc = RTManifestWriteFilesBuf(&pvBuf, &cbSize, m->fSha256 ? RTDIGESTTYPE_SHA256 : RTDIGESTTYPE_SHA1,
+                                          paManifestFiles, fileList.size());
             RTMemFree(paManifestFiles);
             if (RT_FAILURE(vrc))
                 throw setError(VBOX_E_FILE_ERROR,
@@ -1869,7 +1879,7 @@ HRESULT Appliance::writeFSImpl(TaskOVF *pTask, AutoWriteLockBase& writeLock, PVD
             /* Disable digest creation for the manifest file. */
             pStorage->fCreateDigest = false;
             /* Write the manifest file to disk. */
-            vrc = Sha1WriteBuf(strMfFilePath.c_str(), pvBuf, cbSize, pIfIo, pStorage);
+            vrc = ShaWriteBuf(strMfFilePath.c_str(), pvBuf, cbSize, pIfIo, pStorage);
             RTMemFree(pvBuf);
             if (RT_FAILURE(vrc))
                 throw setError(VBOX_E_FILE_ERROR,

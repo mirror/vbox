@@ -52,7 +52,7 @@ typedef struct TARSTORAGEINTERNAL
     PFNVDCOMPLETED pfnCompleted;
 } TARSTORAGEINTERNAL, *PTARSTORAGEINTERNAL;
 
-typedef struct SHA1STORAGEINTERNAL
+typedef struct SHASTORAGEINTERNAL
 {
     /** Completion callback. */
     PFNVDCOMPLETED pfnCompleted;
@@ -61,7 +61,7 @@ typedef struct SHA1STORAGEINTERNAL
     /** Current file open mode. */
     uint32_t fOpenMode;
     /** Our own storage handle. */
-    PSHA1STORAGE pSha1Storage;
+    PSHASTORAGE pShaStorage;
     /** Circular buffer used for transferring data from/to the worker thread. */
     PRTCIRCBUF pCircBuf;
     /** Current absolute position (regardless of the real read/written data). */
@@ -76,8 +76,12 @@ typedef struct SHA1STORAGEINTERNAL
     RTSEMEVENT newStatusEvent;
     /** Event for signaling a finished task of the worker thread. */
     RTSEMEVENT workFinishedEvent;
-    /** SHA1 calculation context. */
-    RTSHA1CONTEXT ctx;
+    /** SHA1/SHA256 calculation context. */
+    union
+    {
+        RTSHA1CONTEXT    Sha1;
+        RTSHA256CONTEXT  Sha256;
+    } ctx;
     /** Write mode only: Memory buffer for writing zeros. */
     void *pvZeroBuf;
     /** Write mode only: Size of the zero memory buffer. */
@@ -86,7 +90,7 @@ typedef struct SHA1STORAGEINTERNAL
     volatile bool fEOF;
 //    uint64_t calls;
 //    uint64_t waits;
-} SHA1STORAGEINTERNAL, *PSHA1STORAGEINTERNAL;
+} SHASTORAGEINTERNAL, *PSHASTORAGEINTERNAL;
 
 /******************************************************************************
  *   Defined Constants And Macros                                             *
@@ -457,17 +461,17 @@ static int tarFlushSyncCallback(void *pvUser, void *pvStorage)
 }
 
 /******************************************************************************
- *   Internal: RTSha1 interface
+ *   Internal: RTSha interface
  ******************************************************************************/
 
-DECLCALLBACK(int) sha1CalcWorkerThread(RTTHREAD /* aThread */, void *pvUser)
+DECLCALLBACK(int) shaCalcWorkerThread(RTTHREAD /* aThread */, void *pvUser)
 {
     /* Validate input. */
     AssertPtrReturn(pvUser, VERR_INVALID_POINTER);
 
-    PSHA1STORAGEINTERNAL pInt = (PSHA1STORAGEINTERNAL)pvUser;
+    PSHASTORAGEINTERNAL pInt = (PSHASTORAGEINTERNAL)pvUser;
 
-    PVDINTERFACEIO pIfIo = VDIfIoGet(pInt->pSha1Storage->pVDImageIfaces);
+    PVDINTERFACEIO pIfIo = VDIfIoGet(pInt->pShaStorage->pVDImageIfaces);
     AssertPtrReturn(pIfIo, VERR_INVALID_PARAMETER);
 
     int rc = VINF_SUCCESS;
@@ -525,10 +529,15 @@ DECLCALLBACK(int) sha1CalcWorkerThread(RTTHREAD /* aThread */, void *pvUser)
                         cbAllWritten += cbWritten;
                         pInt->cbCurFile += cbWritten;
                     }
-                    /* Update the SHA1 context with the next data block. */
+                    /* Update the SHA1/SHA256 context with the next data block. */
                     if (   RT_SUCCESS(rc)
-                        && pInt->pSha1Storage->fCreateDigest)
-                        RTSha1Update(&pInt->ctx, pcBuf, cbAllWritten);
+                        && pInt->pShaStorage->fCreateDigest)
+                    {
+                        if (pInt->pShaStorage->fSha256)
+                            RTSha256Update(&pInt->ctx.Sha256, pcBuf, cbAllWritten);
+                        else
+                            RTSha1Update(&pInt->ctx.Sha1, pcBuf, cbAllWritten);
+                    }
                     /* Mark the block as empty. */
                     RTCircBufReleaseReadBlock(pInt->pCircBuf, cbAllWritten);
                     cbMemAllRead += cbAllWritten;
@@ -584,10 +593,15 @@ DECLCALLBACK(int) sha1CalcWorkerThread(RTTHREAD /* aThread */, void *pvUser)
                         cbAllRead += cbRead;
                         pInt->cbCurFile += cbRead;
                     }
-                    /* Update the SHA1 context with the next data block. */
+                    /* Update the SHA1/SHA256 context with the next data block. */
                     if (   RT_SUCCESS(rc)
-                        && pInt->pSha1Storage->fCreateDigest)
-                        RTSha1Update(&pInt->ctx, pcBuf, cbAllRead);
+                        && pInt->pShaStorage->fCreateDigest)
+                    {
+                        if (pInt->pShaStorage->fSha256)
+                            RTSha256Update(&pInt->ctx.Sha256, pcBuf, cbAllRead);
+                        else
+                            RTSha1Update(&pInt->ctx.Sha1, pcBuf, cbAllRead);
+                    }
                     /* Mark the block as full. */
                     RTCircBufReleaseWriteBlock(pInt->pCircBuf, cbAllRead);
                     cbMemAllWrite += cbAllRead;
@@ -613,13 +627,13 @@ DECLCALLBACK(int) sha1CalcWorkerThread(RTTHREAD /* aThread */, void *pvUser)
     return rc;
 }
 
-DECLINLINE(int) sha1SignalManifestThread(PSHA1STORAGEINTERNAL pInt, uint32_t uStatus)
+DECLINLINE(int) shaSignalManifestThread(PSHASTORAGEINTERNAL pInt, uint32_t uStatus)
 {
     ASMAtomicWriteU32(&pInt->u32Status, uStatus);
     return RTSemEventSignal(pInt->newStatusEvent);
 }
 
-DECLINLINE(int) sha1WaitForManifestThreadFinished(PSHA1STORAGEINTERNAL pInt)
+DECLINLINE(int) shaWaitForManifestThreadFinished(PSHASTORAGEINTERNAL pInt)
 {
 //    RTPrintf("start\n");
     int rc = VINF_SUCCESS;
@@ -639,24 +653,24 @@ DECLINLINE(int) sha1WaitForManifestThreadFinished(PSHA1STORAGEINTERNAL pInt)
     return rc;
 }
 
-DECLINLINE(int) sha1FlushCurBuf(PSHA1STORAGEINTERNAL pInt)
+DECLINLINE(int) shaFlushCurBuf(PSHASTORAGEINTERNAL pInt)
 {
     int rc = VINF_SUCCESS;
     if (pInt->fOpenMode & RTFILE_O_WRITE)
     {
         /* Let the write worker thread start immediately. */
-        rc = sha1SignalManifestThread(pInt, STATUS_WRITE);
+        rc = shaSignalManifestThread(pInt, STATUS_WRITE);
         if (RT_FAILURE(rc))
             return rc;
 
         /* Wait until the write worker thread has finished. */
-        rc = sha1WaitForManifestThreadFinished(pInt);
+        rc = shaWaitForManifestThreadFinished(pInt);
     }
 
     return rc;
 }
 
-static int sha1OpenCallback(void *pvUser, const char *pszLocation, uint32_t fOpen,
+static int shaOpenCallback(void *pvUser, const char *pszLocation, uint32_t fOpen,
                               PFNVDCOMPLETED pfnCompleted, void **ppInt)
 {
     /* Validate input. */
@@ -666,13 +680,13 @@ static int sha1OpenCallback(void *pvUser, const char *pszLocation, uint32_t fOpe
     AssertPtrReturn(ppInt, VERR_INVALID_POINTER);
     AssertReturn((fOpen & RTFILE_O_READWRITE) != RTFILE_O_READWRITE, VERR_INVALID_PARAMETER); /* No read/write allowed */
 
-    PSHA1STORAGE pSha1Storage = (PSHA1STORAGE)pvUser;
-    PVDINTERFACEIO pIfIo = VDIfIoGet(pSha1Storage->pVDImageIfaces);
+    PSHASTORAGE pShaStorage = (PSHASTORAGE)pvUser;
+    PVDINTERFACEIO pIfIo = VDIfIoGet(pShaStorage->pVDImageIfaces);
     AssertPtrReturn(pIfIo, VERR_INVALID_PARAMETER);
 
     DEBUG_PRINT_FLOW();
 
-    PSHA1STORAGEINTERNAL pInt = (PSHA1STORAGEINTERNAL)RTMemAllocZ(sizeof(SHA1STORAGEINTERNAL));
+    PSHASTORAGEINTERNAL pInt = (PSHASTORAGEINTERNAL)RTMemAllocZ(sizeof(SHASTORAGEINTERNAL));
     if (!pInt)
         return VERR_NO_MEMORY;
 
@@ -680,7 +694,7 @@ static int sha1OpenCallback(void *pvUser, const char *pszLocation, uint32_t fOpe
     do
     {
         pInt->pfnCompleted = pfnCompleted;
-        pInt->pSha1Storage = pSha1Storage;
+        pInt->pShaStorage  = pShaStorage;
         pInt->fEOF         = false;
         pInt->fOpenMode    = fOpen;
         pInt->u32Status    = STATUS_WAIT;
@@ -715,13 +729,18 @@ static int sha1OpenCallback(void *pvUser, const char *pszLocation, uint32_t fOpe
         if (RT_FAILURE(rc))
             break;
         /* Create the worker thread. */
-        rc = RTThreadCreate(&pInt->pWorkerThread, sha1CalcWorkerThread, pInt, 0, RTTHREADTYPE_MAIN_HEAVY_WORKER, RTTHREADFLAGS_WAITABLE, "SHA1-Worker");
+        rc = RTThreadCreate(&pInt->pWorkerThread, shaCalcWorkerThread, pInt, 0, RTTHREADTYPE_MAIN_HEAVY_WORKER, RTTHREADFLAGS_WAITABLE, "SHA-Worker");
         if (RT_FAILURE(rc))
             break;
 
-        if (pSha1Storage->fCreateDigest)
-            /* Create a SHA1 context the worker thread will work with. */
-            RTSha1Init(&pInt->ctx);
+        if (pShaStorage->fCreateDigest)
+        {
+            /* Create a SHA1/SHA256 context the worker thread will work with. */
+            if (pShaStorage->fSha256)
+                RTSha256Init(&pInt->ctx.Sha256);
+            else
+                RTSha1Init(&pInt->ctx.Sha1);
+        }
 
         /* Open the file. */
         rc = vdIfIoFileOpen(pIfIo, pszLocation, fOpen, pInt->pfnCompleted,
@@ -732,7 +751,7 @@ static int sha1OpenCallback(void *pvUser, const char *pszLocation, uint32_t fOpe
         if (fOpen & RTFILE_O_READ)
         {
             /* Immediately let the worker thread start the reading. */
-            rc = sha1SignalManifestThread(pInt, STATUS_READ);
+            rc = shaSignalManifestThread(pInt, STATUS_READ);
         }
     }
     while(0);
@@ -741,7 +760,7 @@ static int sha1OpenCallback(void *pvUser, const char *pszLocation, uint32_t fOpe
     {
         if (pInt->pWorkerThread)
         {
-            sha1SignalManifestThread(pInt, STATUS_END);
+            shaSignalManifestThread(pInt, STATUS_END);
             RTThreadWait(pInt->pWorkerThread, RT_INDEFINITE_WAIT, 0);
         }
         if (pInt->workFinishedEvent)
@@ -760,46 +779,59 @@ static int sha1OpenCallback(void *pvUser, const char *pszLocation, uint32_t fOpe
     return rc;
 }
 
-static int sha1CloseCallback(void *pvUser, void *pvStorage)
+static int shaCloseCallback(void *pvUser, void *pvStorage)
 {
     /* Validate input. */
     AssertPtrReturn(pvUser, VERR_INVALID_POINTER);
     AssertPtrReturn(pvStorage, VERR_INVALID_POINTER);
 
-    PSHA1STORAGE pSha1Storage = (PSHA1STORAGE)pvUser;
-    PVDINTERFACEIO pIfIo = VDIfIoGet(pSha1Storage->pVDImageIfaces);
+    PSHASTORAGE pShaStorage = (PSHASTORAGE)pvUser;
+    PVDINTERFACEIO pIfIo = VDIfIoGet(pShaStorage->pVDImageIfaces);
     AssertPtrReturn(pIfIo, VERR_INVALID_PARAMETER);
 
-    PSHA1STORAGEINTERNAL pInt = (PSHA1STORAGEINTERNAL)pvStorage;
+    PSHASTORAGEINTERNAL pInt = (PSHASTORAGEINTERNAL)pvStorage;
 
     DEBUG_PRINT_FLOW();
 
     int rc = VINF_SUCCESS;
 
     /* Make sure all pending writes are flushed */
-    rc = sha1FlushCurBuf(pInt);
+    rc = shaFlushCurBuf(pInt);
 
     if (pInt->pWorkerThread)
     {
         /* Signal the worker thread to end himself */
-        rc = sha1SignalManifestThread(pInt, STATUS_END);
+        rc = shaSignalManifestThread(pInt, STATUS_END);
         /* Worker thread stopped? */
         rc = RTThreadWait(pInt->pWorkerThread, RT_INDEFINITE_WAIT, 0);
     }
 
     if (   RT_SUCCESS(rc)
-        && pSha1Storage->fCreateDigest)
+        && pShaStorage->fCreateDigest)
     {
-        /* Finally calculate & format the SHA1 sum */
-        unsigned char auchDig[RTSHA1_HASH_SIZE];
+        /* Finally calculate & format the SHA1/SHA256 sum */
+        unsigned char auchDig[RTSHA256_HASH_SIZE];
         char *pszDigest;
-        RTSha1Final(&pInt->ctx, auchDig);
-        rc = RTStrAllocEx(&pszDigest, RTSHA1_DIGEST_LEN + 1);
+        size_t cbDigest;
+        if (pShaStorage->fSha256)
+        {
+            RTSha256Final(&pInt->ctx.Sha256, auchDig);
+            cbDigest = RTSHA256_DIGEST_LEN;
+        }
+        else
+        {
+            RTSha1Final(&pInt->ctx.Sha1, auchDig);
+            cbDigest = RTSHA1_DIGEST_LEN;
+        }
+        rc = RTStrAllocEx(&pszDigest, cbDigest + 1);
         if (RT_SUCCESS(rc))
         {
-            rc = RTSha1ToString(auchDig, pszDigest, RTSHA1_DIGEST_LEN + 1);
+            if (pShaStorage->fSha256)
+                rc = RTSha256ToString(auchDig, pszDigest, cbDigest + 1);
+            else
+                rc = RTSha1ToString(auchDig, pszDigest, cbDigest + 1);
             if (RT_SUCCESS(rc))
-                pSha1Storage->strDigest = pszDigest;
+                pShaStorage->strDigest = pszDigest;
             RTStrFree(pszDigest);
         }
     }
@@ -823,13 +855,13 @@ static int sha1CloseCallback(void *pvUser, void *pvStorage)
     return rc;
 }
 
-static int sha1DeleteCallback(void *pvUser, const char *pcszFilename)
+static int shaDeleteCallback(void *pvUser, const char *pcszFilename)
 {
     /* Validate input. */
     AssertPtrReturn(pvUser, VERR_INVALID_POINTER);
 
-    PSHA1STORAGE pSha1Storage = (PSHA1STORAGE)pvUser;
-    PVDINTERFACEIO pIfIo = VDIfIoGet(pSha1Storage->pVDImageIfaces);
+    PSHASTORAGE pShaStorage = (PSHASTORAGE)pvUser;
+    PVDINTERFACEIO pIfIo = VDIfIoGet(pShaStorage->pVDImageIfaces);
     AssertPtrReturn(pIfIo, VERR_INVALID_PARAMETER);
 
     DEBUG_PRINT_FLOW();
@@ -837,13 +869,13 @@ static int sha1DeleteCallback(void *pvUser, const char *pcszFilename)
     return vdIfIoFileDelete(pIfIo, pcszFilename);
 }
 
-static int sha1MoveCallback(void *pvUser, const char *pcszSrc, const char *pcszDst, unsigned fMove)
+static int shaMoveCallback(void *pvUser, const char *pcszSrc, const char *pcszDst, unsigned fMove)
 {
     /* Validate input. */
     AssertPtrReturn(pvUser, VERR_INVALID_POINTER);
 
-    PSHA1STORAGE pSha1Storage = (PSHA1STORAGE)pvUser;
-    PVDINTERFACEIO pIfIo = VDIfIoGet(pSha1Storage->pVDImageIfaces);
+    PSHASTORAGE pShaStorage = (PSHASTORAGE)pvUser;
+    PVDINTERFACEIO pIfIo = VDIfIoGet(pShaStorage->pVDImageIfaces);
     AssertPtrReturn(pIfIo, VERR_INVALID_PARAMETER);
 
 
@@ -852,13 +884,13 @@ static int sha1MoveCallback(void *pvUser, const char *pcszSrc, const char *pcszD
     return vdIfIoFileMove(pIfIo, pcszSrc, pcszDst, fMove);
 }
 
-static int sha1GetFreeSpaceCallback(void *pvUser, const char *pcszFilename, int64_t *pcbFreeSpace)
+static int shaGetFreeSpaceCallback(void *pvUser, const char *pcszFilename, int64_t *pcbFreeSpace)
 {
     /* Validate input. */
     AssertPtrReturn(pvUser, VERR_INVALID_POINTER);
 
-    PSHA1STORAGE pSha1Storage = (PSHA1STORAGE)pvUser;
-    PVDINTERFACEIO pIfIo = VDIfIoGet(pSha1Storage->pVDImageIfaces);
+    PSHASTORAGE pShaStorage = (PSHASTORAGE)pvUser;
+    PVDINTERFACEIO pIfIo = VDIfIoGet(pShaStorage->pVDImageIfaces);
     AssertPtrReturn(pIfIo, VERR_INVALID_PARAMETER);
 
     DEBUG_PRINT_FLOW();
@@ -866,13 +898,13 @@ static int sha1GetFreeSpaceCallback(void *pvUser, const char *pcszFilename, int6
     return vdIfIoFileGetFreeSpace(pIfIo, pcszFilename, pcbFreeSpace);
 }
 
-static int sha1GetModificationTimeCallback(void *pvUser, const char *pcszFilename, PRTTIMESPEC pModificationTime)
+static int shaGetModificationTimeCallback(void *pvUser, const char *pcszFilename, PRTTIMESPEC pModificationTime)
 {
     /* Validate input. */
     AssertPtrReturn(pvUser, VERR_INVALID_POINTER);
 
-    PSHA1STORAGE pSha1Storage = (PSHA1STORAGE)pvUser;
-    PVDINTERFACEIO pIfIo = VDIfIoGet(pSha1Storage->pVDImageIfaces);
+    PSHASTORAGE pShaStorage = (PSHASTORAGE)pvUser;
+    PVDINTERFACEIO pIfIo = VDIfIoGet(pShaStorage->pVDImageIfaces);
     AssertPtrReturn(pIfIo, VERR_INVALID_PARAMETER);
 
     DEBUG_PRINT_FLOW();
@@ -881,17 +913,17 @@ static int sha1GetModificationTimeCallback(void *pvUser, const char *pcszFilenam
 }
 
 
-static int sha1GetSizeCallback(void *pvUser, void *pvStorage, uint64_t *pcbSize)
+static int shaGetSizeCallback(void *pvUser, void *pvStorage, uint64_t *pcbSize)
 {
     /* Validate input. */
     AssertPtrReturn(pvUser, VERR_INVALID_POINTER);
     AssertPtrReturn(pvStorage, VERR_INVALID_POINTER);
 
-    PSHA1STORAGE pSha1Storage = (PSHA1STORAGE)pvUser;
-    PVDINTERFACEIO pIfIo = VDIfIoGet(pSha1Storage->pVDImageIfaces);
+    PSHASTORAGE pShaStorage = (PSHASTORAGE)pvUser;
+    PVDINTERFACEIO pIfIo = VDIfIoGet(pShaStorage->pVDImageIfaces);
     AssertPtrReturn(pIfIo, VERR_INVALID_PARAMETER);
 
-    PSHA1STORAGEINTERNAL pInt = (PSHA1STORAGEINTERNAL)pvStorage;
+    PSHASTORAGEINTERNAL pInt = (PSHASTORAGEINTERNAL)pvStorage;
 
     DEBUG_PRINT_FLOW();
 
@@ -905,35 +937,35 @@ static int sha1GetSizeCallback(void *pvUser, void *pvStorage, uint64_t *pcbSize)
     return VINF_SUCCESS;
 }
 
-static int sha1SetSizeCallback(void *pvUser, void *pvStorage, uint64_t cbSize)
+static int shaSetSizeCallback(void *pvUser, void *pvStorage, uint64_t cbSize)
 {
     /* Validate input. */
     AssertPtrReturn(pvUser, VERR_INVALID_POINTER);
     AssertPtrReturn(pvStorage, VERR_INVALID_POINTER);
 
-    PSHA1STORAGE pSha1Storage = (PSHA1STORAGE)pvUser;
-    PVDINTERFACEIO pIfIo = VDIfIoGet(pSha1Storage->pVDImageIfaces);
+    PSHASTORAGE pShaStorage = (PSHASTORAGE)pvUser;
+    PVDINTERFACEIO pIfIo = VDIfIoGet(pShaStorage->pVDImageIfaces);
     AssertPtrReturn(pIfIo, VERR_INVALID_PARAMETER);
 
-    PSHA1STORAGEINTERNAL pInt = (PSHA1STORAGEINTERNAL)pvStorage;
+    PSHASTORAGEINTERNAL pInt = (PSHASTORAGEINTERNAL)pvStorage;
 
     DEBUG_PRINT_FLOW();
 
     return vdIfIoFileSetSize(pIfIo, pInt->pvStorage, cbSize);
 }
 
-static int sha1WriteSyncCallback(void *pvUser, void *pvStorage, uint64_t uOffset,
+static int shaWriteSyncCallback(void *pvUser, void *pvStorage, uint64_t uOffset,
                                  const void *pvBuf, size_t cbWrite, size_t *pcbWritten)
 {
     /* Validate input. */
     AssertPtrReturn(pvUser, VERR_INVALID_POINTER);
     AssertPtrReturn(pvStorage, VERR_INVALID_POINTER);
 
-    PSHA1STORAGE pSha1Storage = (PSHA1STORAGE)pvUser;
-    PVDINTERFACEIO pIfIo = VDIfIoGet(pSha1Storage->pVDImageIfaces);
+    PSHASTORAGE pShaStorage = (PSHASTORAGE)pvUser;
+    PVDINTERFACEIO pIfIo = VDIfIoGet(pShaStorage->pVDImageIfaces);
     AssertPtrReturn(pIfIo, VERR_INVALID_PARAMETER);
 
-    PSHA1STORAGEINTERNAL pInt = (PSHA1STORAGEINTERNAL)pvStorage;
+    PSHASTORAGEINTERNAL pInt = (PSHASTORAGEINTERNAL)pvStorage;
 
     DEBUG_PRINT_FLOW();
 
@@ -955,8 +987,8 @@ static int sha1WriteSyncCallback(void *pvUser, void *pvStorage, uint64_t uOffset
                 break;
             size_t cbToWrite = RT_MIN(pInt->cbZeroBuf, cbSize - cbAllWritten);
             size_t cbWritten = 0;
-            rc = sha1WriteSyncCallback(pvUser, pvStorage, pInt->cbCurAll,
-                                       pInt->pvZeroBuf, cbToWrite, &cbWritten);
+            rc = shaWriteSyncCallback(pvUser, pvStorage, pInt->cbCurAll,
+                                      pInt->pvZeroBuf, cbToWrite, &cbWritten);
             if (RT_FAILURE(rc))
                 break;
             cbAllWritten += cbWritten;
@@ -980,13 +1012,13 @@ static int sha1WriteSyncCallback(void *pvUser, void *pvStorage, uint64_t uOffset
          * writing some data. */
         if ((cbWrite - cbAllWritten) > cbAvail)
         {
-            rc = sha1SignalManifestThread(pInt, STATUS_WRITE);
+            rc = shaSignalManifestThread(pInt, STATUS_WRITE);
             if(RT_FAILURE(rc))
                 break;
             /* If there is _no_ free space available, we have to wait until it is. */
             if (cbAvail == 0)
             {
-                rc = sha1WaitForManifestThreadFinished(pInt);
+                rc = shaWaitForManifestThreadFinished(pInt);
                 if (RT_FAILURE(rc))
                     break;
                 cbAvail = RTCircBufFree(pInt->pCircBuf);
@@ -1012,25 +1044,25 @@ static int sha1WriteSyncCallback(void *pvUser, void *pvStorage, uint64_t uOffset
     /* Signal the thread to write more data in the mean time. */
     if (   RT_SUCCESS(rc)
            && RTCircBufUsed(pInt->pCircBuf) >= (RTCircBufSize(pInt->pCircBuf) / 2))
-        rc = sha1SignalManifestThread(pInt, STATUS_WRITE);
+        rc = shaSignalManifestThread(pInt, STATUS_WRITE);
 
     return rc;
 }
 
-static int sha1ReadSyncCallback(void *pvUser, void *pvStorage, uint64_t uOffset,
-                                  void *pvBuf, size_t cbRead, size_t *pcbRead)
+static int shaReadSyncCallback(void *pvUser, void *pvStorage, uint64_t uOffset,
+                               void *pvBuf, size_t cbRead, size_t *pcbRead)
 {
     /* Validate input. */
     AssertPtrReturn(pvUser, VERR_INVALID_POINTER);
     AssertPtrReturn(pvStorage, VERR_INVALID_POINTER);
 
-    PSHA1STORAGE pSha1Storage = (PSHA1STORAGE)pvUser;
-    PVDINTERFACEIO pIfIo = VDIfIoGet(pSha1Storage->pVDImageIfaces);
+    PSHASTORAGE pShaStorage = (PSHASTORAGE)pvUser;
+    PVDINTERFACEIO pIfIo = VDIfIoGet(pShaStorage->pVDImageIfaces);
     AssertPtrReturn(pIfIo, VERR_INVALID_PARAMETER);
 
 //    DEBUG_PRINT_FLOW();
 
-    PSHA1STORAGEINTERNAL pInt = (PSHA1STORAGEINTERNAL)pvStorage;
+    PSHASTORAGEINTERNAL pInt = (PSHASTORAGEINTERNAL)pvStorage;
 
     int rc = VINF_SUCCESS;
 
@@ -1038,11 +1070,11 @@ static int sha1ReadSyncCallback(void *pvUser, void *pvStorage, uint64_t uOffset,
 //    RTPrintf("Read uOffset: %7lu cbRead: %7lu = %7lu\n", uOffset, cbRead, uOffset + cbRead);
 
     /* Check if we jump forward in the file. If so we have to read the
-     * remaining stuff in the gap anyway (SHA1; streaming). */
+     * remaining stuff in the gap anyway (SHA1/SHA256; streaming). */
     if (pInt->cbCurAll < uOffset)
     {
-        rc = sha1ReadSyncCallback(pvUser, pvStorage, pInt->cbCurAll, 0,
-                                  (size_t)(uOffset - pInt->cbCurAll), 0);
+        rc = shaReadSyncCallback(pvUser, pvStorage, pInt->cbCurAll, 0,
+                                 (size_t)(uOffset - pInt->cbCurAll), 0);
         if (RT_FAILURE(rc))
             return rc;
 //        RTPrintf("Gap Read uOffset: %7lu cbRead: %7lu = %7lu\n", uOffset, cbRead, uOffset + cbRead);
@@ -1065,13 +1097,13 @@ static int sha1ReadSyncCallback(void *pvUser, void *pvStorage, uint64_t uOffset,
          * more. */
         if ((cbRead - cbAllRead) > cbAvail)
         {
-            rc = sha1SignalManifestThread(pInt, STATUS_READ);
+            rc = shaSignalManifestThread(pInt, STATUS_READ);
             if(RT_FAILURE(rc))
                 break;
             /* If there is _no_ data available, we have to wait until it is. */
             if (cbAvail == 0)
             {
-                rc = sha1WaitForManifestThreadFinished(pInt);
+                rc = shaWaitForManifestThreadFinished(pInt);
                 if (RT_FAILURE(rc))
                     break;
                 cbAvail = RTCircBufUsed(pInt->pCircBuf);
@@ -1102,27 +1134,27 @@ static int sha1ReadSyncCallback(void *pvUser, void *pvStorage, uint64_t uOffset,
     /* Signal the thread to read more data in the mean time. */
     if (   RT_SUCCESS(rc)
         && RTCircBufFree(pInt->pCircBuf) >= (RTCircBufSize(pInt->pCircBuf) / 2))
-        rc = sha1SignalManifestThread(pInt, STATUS_READ);
+        rc = shaSignalManifestThread(pInt, STATUS_READ);
 
     return rc;
 }
 
-static int sha1FlushSyncCallback(void *pvUser, void *pvStorage)
+static int shaFlushSyncCallback(void *pvUser, void *pvStorage)
 {
     /* Validate input. */
     AssertPtrReturn(pvUser, VERR_INVALID_POINTER);
     AssertPtrReturn(pvStorage, VERR_INVALID_POINTER);
 
-    PSHA1STORAGE pSha1Storage = (PSHA1STORAGE)pvUser;
-    PVDINTERFACEIO pIfIo = VDIfIoGet(pSha1Storage->pVDImageIfaces);
+    PSHASTORAGE pShaStorage = (PSHASTORAGE)pvUser;
+    PVDINTERFACEIO pIfIo = VDIfIoGet(pShaStorage->pVDImageIfaces);
     AssertPtrReturn(pIfIo, VERR_INVALID_PARAMETER);
 
     DEBUG_PRINT_FLOW();
 
-    PSHA1STORAGEINTERNAL pInt = (PSHA1STORAGEINTERNAL)pvStorage;
+    PSHASTORAGEINTERNAL pInt = (PSHASTORAGEINTERNAL)pvStorage;
 
     /* Check if there is still something in the buffer. If yes, flush it. */
-    int rc = sha1FlushCurBuf(pInt);
+    int rc = shaFlushCurBuf(pInt);
     if (RT_FAILURE(rc))
         return rc;
 
@@ -1133,23 +1165,23 @@ static int sha1FlushSyncCallback(void *pvUser, void *pvStorage)
  *   Public Functions                                                         *
  ******************************************************************************/
 
-PVDINTERFACEIO Sha1CreateInterface()
+PVDINTERFACEIO ShaCreateInterface()
 {
     PVDINTERFACEIO pCallbacks = (PVDINTERFACEIO)RTMemAllocZ(sizeof(VDINTERFACEIO));
     if (!pCallbacks)
         return NULL;
 
-    pCallbacks->pfnOpen                = sha1OpenCallback;
-    pCallbacks->pfnClose               = sha1CloseCallback;
-    pCallbacks->pfnDelete              = sha1DeleteCallback;
-    pCallbacks->pfnMove                = sha1MoveCallback;
-    pCallbacks->pfnGetFreeSpace        = sha1GetFreeSpaceCallback;
-    pCallbacks->pfnGetModificationTime = sha1GetModificationTimeCallback;
-    pCallbacks->pfnGetSize             = sha1GetSizeCallback;
-    pCallbacks->pfnSetSize             = sha1SetSizeCallback;
-    pCallbacks->pfnReadSync            = sha1ReadSyncCallback;
-    pCallbacks->pfnWriteSync           = sha1WriteSyncCallback;
-    pCallbacks->pfnFlushSync           = sha1FlushSyncCallback;
+    pCallbacks->pfnOpen                = shaOpenCallback;
+    pCallbacks->pfnClose               = shaCloseCallback;
+    pCallbacks->pfnDelete              = shaDeleteCallback;
+    pCallbacks->pfnMove                = shaMoveCallback;
+    pCallbacks->pfnGetFreeSpace        = shaGetFreeSpaceCallback;
+    pCallbacks->pfnGetModificationTime = shaGetModificationTimeCallback;
+    pCallbacks->pfnGetSize             = shaGetSizeCallback;
+    pCallbacks->pfnSetSize             = shaSetSizeCallback;
+    pCallbacks->pfnReadSync            = shaReadSyncCallback;
+    pCallbacks->pfnWriteSync           = shaWriteSyncCallback;
+    pCallbacks->pfnFlushSync           = shaFlushSyncCallback;
 
     return pCallbacks;
 }
@@ -1196,7 +1228,7 @@ PVDINTERFACEIO TarCreateInterface()
     return pCallbacks;
 }
 
-int Sha1ReadBuf(const char *pcszFilename, void **ppvBuf, size_t *pcbSize, PVDINTERFACEIO pIfIo, void *pvUser)
+int ShaReadBuf(const char *pcszFilename, void **ppvBuf, size_t *pcbSize, PVDINTERFACEIO pIfIo, void *pvUser)
 {
     /* Validate input. */
     AssertPtrReturn(ppvBuf, VERR_INVALID_POINTER);
@@ -1262,7 +1294,7 @@ int Sha1ReadBuf(const char *pcszFilename, void **ppvBuf, size_t *pcbSize, PVDINT
     return rc;
 }
 
-int Sha1WriteBuf(const char *pcszFilename, void *pvBuf, size_t cbSize, PVDINTERFACEIO pIfIo, void *pvUser)
+int ShaWriteBuf(const char *pcszFilename, void *pvBuf, size_t cbSize, PVDINTERFACEIO pIfIo, void *pvUser)
 {
     /* Validate input. */
     AssertPtrReturn(pvBuf, VERR_INVALID_POINTER);

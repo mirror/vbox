@@ -793,6 +793,9 @@ static const RTGETOPTDEF g_aExportOptions[]
     = {
         { "--output",             'o', RTGETOPT_REQ_STRING },
         { "--legacy09",           'l', RTGETOPT_REQ_NOTHING },
+        { "--ovf09",              'l', RTGETOPT_REQ_NOTHING },
+        { "--ovf10",              '1', RTGETOPT_REQ_NOTHING },
+        { "--ovf20",              '2', RTGETOPT_REQ_NOTHING },
         { "--manifest",           'm', RTGETOPT_REQ_NOTHING },
         { "--vsys",               's', RTGETOPT_REQ_UINT32 },
         { "--product",            'p', RTGETOPT_REQ_STRING },
@@ -836,61 +839,69 @@ int handleExportAppliance(HandlerArg *a)
                         return errorSyntax(USAGE_EXPORTAPPLIANCE, "You can only specify --output once.");
                     else
                         strOutputFile = ValueUnion.psz;
-                break;
+                    break;
 
-                case 'l':   // --legacy09
+                case 'l':   // --legacy09/--ovf09
                      strOvfFormat = "ovf-0.9";
-                break;
+                     break;
+
+                case '1':   // --ovf10
+                     strOvfFormat = "ovf-1.0";
+                     break;
+
+                case '2':   // --ovf20
+                     strOvfFormat = "ovf-2.0";
+                     break;
 
                 case 'm':   // --manifest
                      fManifest = true;
-                break;
+                     break;
 
                 case 's':   // --vsys
                      ulCurVsys = ValueUnion.u32;
-                break;
+                     break;
 
                 case 'p':   // --product
                      if (ulCurVsys == (uint32_t)-1)
                          return errorSyntax(USAGE_EXPORTAPPLIANCE, "Option \"%s\" requires preceding --vsys argument.", GetState.pDef->pszLong);
                      mapArgsMapsPerVsys[ulCurVsys]["product"] = ValueUnion.psz;
-                break;
+                     break;
 
                 case 'P':   // --producturl
                      if (ulCurVsys == (uint32_t)-1)
                          return errorSyntax(USAGE_EXPORTAPPLIANCE, "Option \"%s\" requires preceding --vsys argument.", GetState.pDef->pszLong);
                      mapArgsMapsPerVsys[ulCurVsys]["producturl"] = ValueUnion.psz;
-                break;
+                     break;
 
                 case 'd':   // --vendor
                      if (ulCurVsys == (uint32_t)-1)
                          return errorSyntax(USAGE_EXPORTAPPLIANCE, "Option \"%s\" requires preceding --vsys argument.", GetState.pDef->pszLong);
                      mapArgsMapsPerVsys[ulCurVsys]["vendor"] = ValueUnion.psz;
-                break;
+                     break;
 
                 case 'D':   // --vendorurl
                      if (ulCurVsys == (uint32_t)-1)
                          return errorSyntax(USAGE_EXPORTAPPLIANCE, "Option \"%s\" requires preceding --vsys argument.", GetState.pDef->pszLong);
                      mapArgsMapsPerVsys[ulCurVsys]["vendorurl"] = ValueUnion.psz;
-                break;
+                     break;
 
                 case 'v':   // --version
                      if (ulCurVsys == (uint32_t)-1)
                          return errorSyntax(USAGE_EXPORTAPPLIANCE, "Option \"%s\" requires preceding --vsys argument.", GetState.pDef->pszLong);
                      mapArgsMapsPerVsys[ulCurVsys]["version"] = ValueUnion.psz;
-                break;
+                     break;
 
                 case 'e':   // --eula
                      if (ulCurVsys == (uint32_t)-1)
                          return errorSyntax(USAGE_EXPORTAPPLIANCE, "Option \"%s\" requires preceding --vsys argument.", GetState.pDef->pszLong);
                      mapArgsMapsPerVsys[ulCurVsys]["eula"] = ValueUnion.psz;
-                break;
+                     break;
 
                 case 'E':   // --eulafile
                      if (ulCurVsys == (uint32_t)-1)
                          return errorSyntax(USAGE_EXPORTAPPLIANCE, "Option \"%s\" requires preceding --vsys argument.", GetState.pDef->pszLong);
                      mapArgsMapsPerVsys[ulCurVsys]["eulafile"] = ValueUnion.psz;
-                break;
+                     break;
 
                 case VINF_GETOPT_NOT_OPTION:
                 {
@@ -901,8 +912,8 @@ int handleExportAppliance(HandlerArg *a)
                                                                  machine.asOutParam()));
                     if (machine)
                         llMachines.push_back(machine);
+                    break;
                 }
-                break;
 
                 default:
                     if (c > 0)

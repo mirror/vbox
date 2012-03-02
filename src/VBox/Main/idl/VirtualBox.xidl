@@ -2616,8 +2616,8 @@
       </desc>
       <param name="format" type="wstring" dir="in">
         <desc>
-            Output format, as a string. Currently supported formats are "ovf-0.9" and "ovf-1.0";
-            future versions of VirtualBox may support additional formats.
+            Output format, as a string. Currently supported formats are "ovf-0.9", "ovf-1.0"
+            and "ovf-2.0"; future versions of VirtualBox may support additional formats.
         </desc>
       </param>
       <param name="manifest" type="boolean" dir="in">

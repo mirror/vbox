@@ -51,6 +51,7 @@ struct Appliance::Data
     Data()
       : state(ApplianceIdle)
       , fManifest(true)
+      , fSha256(false)
       , pReader(NULL)
       , ulWeightForXmlOperation(0)
       , ulWeightForManifestOperation(0)
@@ -72,6 +73,7 @@ struct Appliance::Data
 
     LocationInfo        locInfo;        // location info for the currently processed OVF
     bool                fManifest;      // Create a manifest file on export
+    bool                fSha256;        // true = SHA256 (OVF 2.0), false = SHA1 (OVF 1.0)
     RTCList<ImportOptions_T> optList;
 
     ovf::OVFReader      *pReader;
@@ -85,7 +87,7 @@ struct Appliance::Data
     ULONG               ulWeightForManifestOperation;
     ULONG               ulTotalDisksMB;
     ULONG               cDisks;
-    Utf8Str             strOVFSHA1Digest;
+    Utf8Str             strOVFSHADigest;
 
     std::list<Guid>     llGuidsMachinesCreated;
 };
@@ -223,18 +225,19 @@ ovf::CIMOSType_T convertVBoxOSType2CIMOSType(const char *pcszVbox);
 
 Utf8Str convertNetworkAttachmentTypeToString(NetworkAttachmentType_T type);
 
-typedef struct SHA1STORAGE
+typedef struct SHASTORAGE
 {
     PVDINTERFACE pVDImageIfaces;
     bool         fCreateDigest;
+    bool         fSha256;        /* false = SHA1 (OVF 1.x), true = SHA256 (OVF 2.0) */
     Utf8Str      strDigest;
-} SHA1STORAGE, *PSHA1STORAGE;
+} SHASTORAGE, *PSHASTORAGE;
 
-PVDINTERFACEIO Sha1CreateInterface();
+PVDINTERFACEIO ShaCreateInterface();
 PVDINTERFACEIO FileCreateInterface();
 PVDINTERFACEIO TarCreateInterface();
-int Sha1ReadBuf(const char *pcszFilename, void **ppvBuf, size_t *pcbSize, PVDINTERFACEIO pIfIo, void *pvUser);
-int Sha1WriteBuf(const char *pcszFilename, void *pvBuf, size_t cbSize, PVDINTERFACEIO pIfIo, void *pvUser);
+int ShaReadBuf(const char *pcszFilename, void **ppvBuf, size_t *pcbSize, PVDINTERFACEIO pIfIo, void *pvUser);
+int ShaWriteBuf(const char *pcszFilename, void *pvBuf, size_t cbSize, PVDINTERFACEIO pIfIo, void *pvUser);
 
 #endif // ____H_APPLIANCEIMPLPRIVATE
 
