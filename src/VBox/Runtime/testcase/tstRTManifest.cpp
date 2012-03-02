@@ -62,7 +62,7 @@ static void tst1(void)
     ;
 
     void *pvBuf = NULL;
-    RTTESTI_CHECK_RC_RETV(RTManifestWriteFilesBuf(&pvBuf, &cbSize, s_aFiles, 2), VINF_SUCCESS);
+    RTTESTI_CHECK_RC_RETV(RTManifestWriteFilesBuf(&pvBuf, &cbSize, RTDIGESTTYPE_SHA1, s_aFiles, 2), VINF_SUCCESS);
 
     /* Check returned memory size */
     RTTESTI_CHECK_RETV(cbSize == strlen(s_szTestPattern));

@@ -57,6 +57,24 @@ RT_C_DECLS_BEGIN
 #define RTMANIFEST_ATTR_ANY         UINT32_C(0xffffffff)
 /** @} */
 
+/** @name Digest types. */
+typedef enum RTDIGESTTYPE
+{
+    /** CRC32 checksum */
+    RTDIGESTTYPE_CRC32 = 1,
+    /** CRC64 checksum */
+    RTDIGESTTYPE_CRC64,
+    /** MD5 checksum (unsafe!) */
+    RTDIGESTTYPE_MD5,
+    /** SHA1 checksum (unsafe!) */
+    RTDIGESTTYPE_SHA1,
+    /** SHA256 checksum */
+    RTDIGESTTYPE_SHA256,
+    /** SHA512 checksum */
+    RTDIGESTTYPE_SHA512
+} RTDIGESTTYPE;
+/** @} */
+
 
 /**
  * Creates an empty manifest.
@@ -398,13 +416,13 @@ RTDECL(int) RTManifestWriteStandardToFile(RTMANIFEST hManifest, const char *pszF
 
 /**
  * Input structure for RTManifestVerify() which contains the filename & the
- * SHA1 digest.
+ * SHA1/SHA256 digest.
  */
 typedef struct RTMANIFESTTEST
 {
     /** The filename. */
     const char *pszTestFile;
-    /** The SHA1 digest of the file. */
+    /** The SHA1/SHA256 digest of the file. */
     const char *pszTestDigest;
 } RTMANIFESTTEST;
 /** Pointer to the input structure. */
@@ -456,12 +474,14 @@ RTR3DECL(int) RTManifestVerifyFiles(const char *pszManifestFile, const char * co
  * @returns iprt status code.
  *
  * @param   pszManifestFile      Filename of the manifest file to create.
+ * @param   enmDigestType        The digest type (RTDIGESTTYPE_*)
  * @param   papszFiles           Array of files to create SHA1 sums for.
  * @param   cFiles               Number of entries in papszFiles.
  * @param   pfnProgressCallback  optional callback for the progress indication
  * @param   pvUser               user defined pointer for the callback
  */
-RTR3DECL(int) RTManifestWriteFiles(const char *pszManifestFile, const char * const *papszFiles, size_t cFiles,
+RTR3DECL(int) RTManifestWriteFiles(const char *pszManifestFile, RTDIGESTTYPE enmDigestType,
+                                   const char * const *papszFiles, size_t cFiles,
                                    PFNRTPROGRESS pfnProgressCallback, void *pvUser);
 
 /**
@@ -489,10 +509,11 @@ RTR3DECL(int) RTManifestVerifyFilesBuf(void *pvBuf, size_t cbSize, PRTMANIFESTTE
  *
  * @param   ppvBuf               Pointer to resulting memory buffer.
  * @param   pcbSize              Pointer for the size of the memory buffer.
+ * @param   enmDigestType        Which type of digest ("SHA1", "SHA256", ...)
  * @param   paFiles              Array of file names and digests.
  * @param   cFiles               Number of entries in paFiles.
  */
-RTR3DECL(int) RTManifestWriteFilesBuf(void **ppvBuf, size_t *pcbSize, PRTMANIFESTTEST paFiles, size_t cFiles);
+RTR3DECL(int) RTManifestWriteFilesBuf(void **ppvBuf, size_t *pcbSize, RTDIGESTTYPE enmDigestType, PRTMANIFESTTEST paFiles, size_t cFiles);
 
 /** @} */
 

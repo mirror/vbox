@@ -359,7 +359,7 @@ void printUsage(USAGECATEGORY u64Cmd, PRTSTREAM pStrm)
     if (u64Cmd & USAGE_EXPORTAPPLIANCE)
         RTStrmPrintf(pStrm,
                      "VBoxManage export           <machines> --output|-o <ovf/ova>\n"
-                     "                            [--legacy09]\n"
+                     "                            [--legacy09|--ovf09|--ovf10|--ovf20]\n"
                      "                            [--manifest]\n"
                      "                            [--vsys <number of virtual system>]\n"
                      "                                    [--product <product name>]\n"

@@ -195,7 +195,8 @@ RTR3DECL(int) RTManifestVerifyFiles(const char *pszManifestFile, const char * co
     return rc;
 }
 
-RTR3DECL(int) RTManifestWriteFiles(const char *pszManifestFile, const char * const *papszFiles, size_t cFiles,
+RTR3DECL(int) RTManifestWriteFiles(const char *pszManifestFile, RTDIGESTTYPE enmDigestType,
+                                   const char * const *papszFiles, size_t cFiles,
                                    PFNRTPROGRESS pfnProgressCallback, void *pvUser)
 {
     /* Validate input */
@@ -238,7 +239,7 @@ RTR3DECL(int) RTManifestWriteFiles(const char *pszManifestFile, const char * con
         if (RT_SUCCESS(rc))
         {
             size_t cbSize = 0;
-            rc = RTManifestWriteFilesBuf(&pvBuf, &cbSize, paFiles, cFiles);
+            rc = RTManifestWriteFilesBuf(&pvBuf, &cbSize, enmDigestType, paFiles, cFiles);
             if (RT_FAILURE(rc))
                 break;
 
@@ -441,7 +442,7 @@ RTR3DECL(int) RTManifestVerifyFilesBuf(void *pvBuf, size_t cbSize, PRTMANIFESTTE
     return rc;
 }
 
-RTR3DECL(int) RTManifestWriteFilesBuf(void **ppvBuf, size_t *pcbSize, PRTMANIFESTTEST paFiles, size_t cFiles)
+RTR3DECL(int) RTManifestWriteFilesBuf(void **ppvBuf, size_t *pcbSize, RTDIGESTTYPE enmDigestType, PRTMANIFESTTEST paFiles, size_t cFiles)
 {
     /* Validate input */
     AssertPtrReturn(ppvBuf, VERR_INVALID_POINTER);
@@ -467,9 +468,19 @@ RTR3DECL(int) RTManifestWriteFilesBuf(void **ppvBuf, size_t *pcbSize, PRTMANIFES
     /* Allocate a temporary string buffer. */
     char * pszTmp = RTStrAlloc(cbMaxSize + 1);
     size_t cbPos = 0;
+    const char *pcszDigestType;
+    switch (enmDigestType)
+    {
+        case RTDIGESTTYPE_CRC32:  pcszDigestType = "CRC32:"; break;
+        case RTDIGESTTYPE_CRC64:  pcszDigestType = "CRC64:"; break;
+        case RTDIGESTTYPE_MD5:    pcszDigestType = "MD5:";   break;
+        case RTDIGESTTYPE_SHA1:   pcszDigestType = "SHA1:";  break;
+        case RTDIGESTTYPE_SHA256: pcszDigestType = "SHA256"; break;
+        default: return VERR_INVALID_PARAMETER;
+    }
     for (size_t i = 0; i < cFiles; ++i)
     {
-        size_t cch = RTStrPrintf(pszTmp, cbMaxSize + 1, "SHA1 (%s)= %s\n", RTPathFilename(paFiles[i].pszTestFile), paFiles[i].pszTestDigest);
+        size_t cch = RTStrPrintf(pszTmp, cbMaxSize + 1, "%s (%s)= %s\n", pcszDigestType, RTPathFilename(paFiles[i].pszTestFile), paFiles[i].pszTestDigest);
         memcpy(&((char*)pvBuf)[cbPos], pszTmp, cch);
         cbPos += cch;
     }

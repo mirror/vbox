@@ -817,12 +817,12 @@ HRESULT Appliance::readFSOVF(TaskOVF *pTask)
 
     HRESULT rc = S_OK;
 
-    PVDINTERFACEIO pSha1Io = 0;
+    PVDINTERFACEIO pShaIo = 0;
     PVDINTERFACEIO pFileIo = 0;
     do
     {
-        pSha1Io = Sha1CreateInterface();
-        if (!pSha1Io)
+        pShaIo = ShaCreateInterface();
+        if (!pShaIo)
         {
             rc = E_OUTOFMEMORY;
             break;
@@ -833,7 +833,7 @@ HRESULT Appliance::readFSOVF(TaskOVF *pTask)
             rc = E_OUTOFMEMORY;
             break;
         }
-        SHA1STORAGE storage;
+        SHASTORAGE storage;
         RT_ZERO(storage);
         int vrc = VDInterfaceAdd(&pFileIo->Core, "Appliance::IOFile",
                                  VDINTERFACETYPE_IO, 0, sizeof(VDINTERFACEIO),
@@ -844,12 +844,12 @@ HRESULT Appliance::readFSOVF(TaskOVF *pTask)
             break;
         }
 
-        rc = readFSImpl(pTask, pTask->locInfo.strPath, pSha1Io, &storage);
+        rc = readFSImpl(pTask, pTask->locInfo.strPath, pShaIo, &storage);
     }while(0);
 
     /* Cleanup */
-    if (pSha1Io)
-        RTMemFree(pSha1Io);
+    if (pShaIo)
+        RTMemFree(pShaIo);
     if (pFileIo)
         RTMemFree(pFileIo);
 
@@ -872,7 +872,7 @@ HRESULT Appliance::readFSOVA(TaskOVF *pTask)
 
     HRESULT rc = S_OK;
 
-    PVDINTERFACEIO pSha1Io = 0;
+    PVDINTERFACEIO pShaIo = 0;
     PVDINTERFACEIO pTarIo = 0;
     char *pszFilename = 0;
     do
@@ -883,8 +883,8 @@ HRESULT Appliance::readFSOVA(TaskOVF *pTask)
             rc = VBOX_E_FILE_ERROR;
             break;
         }
-        pSha1Io = Sha1CreateInterface();
-        if (!pSha1Io)
+        pShaIo = ShaCreateInterface();
+        if (!pShaIo)
         {
             rc = E_OUTOFMEMORY;
             break;
@@ -895,7 +895,7 @@ HRESULT Appliance::readFSOVA(TaskOVF *pTask)
             rc = E_OUTOFMEMORY;
             break;
         }
-        SHA1STORAGE storage;
+        SHASTORAGE storage;
         RT_ZERO(storage);
         vrc = VDInterfaceAdd(&pTarIo->Core, "Appliance::IOTar",
                              VDINTERFACETYPE_IO, tar, sizeof(VDINTERFACEIO),
@@ -905,7 +905,7 @@ HRESULT Appliance::readFSOVA(TaskOVF *pTask)
             rc = setError(VBOX_E_IPRT_ERROR, "Creation of the VD interface failed (%Rrc)", vrc);
             break;
         }
-        rc = readFSImpl(pTask, pszFilename, pSha1Io, &storage);
+        rc = readFSImpl(pTask, pszFilename, pShaIo, &storage);
     }while(0);
 
     RTTarClose(tar);
@@ -913,8 +913,8 @@ HRESULT Appliance::readFSOVA(TaskOVF *pTask)
     /* Cleanup */
     if (pszFilename)
         RTMemFree(pszFilename);
-    if (pSha1Io)
-        RTMemFree(pSha1Io);
+    if (pShaIo)
+        RTMemFree(pShaIo);
     if (pTarIo)
         RTMemFree(pTarIo);
 
@@ -924,7 +924,7 @@ HRESULT Appliance::readFSOVA(TaskOVF *pTask)
     return rc;
 }
 
-HRESULT Appliance::readFSImpl(TaskOVF *pTask, const RTCString &strFilename, PVDINTERFACEIO pIfIo, PSHA1STORAGE pStorage)
+HRESULT Appliance::readFSImpl(TaskOVF *pTask, const RTCString &strFilename, PVDINTERFACEIO pIfIo, PSHASTORAGE pStorage)
 {
     LogFlowFuncEnter();
 
@@ -937,14 +937,14 @@ HRESULT Appliance::readFSImpl(TaskOVF *pTask, const RTCString &strFilename, PVDI
     {
         /* Read the OVF into a memory buffer */
         size_t cbSize = 0;
-        int vrc = Sha1ReadBuf(strFilename.c_str(), &pvTmpBuf, &cbSize, pIfIo, pStorage);
+        int vrc = ShaReadBuf(strFilename.c_str(), &pvTmpBuf, &cbSize, pIfIo, pStorage);
         if (   RT_FAILURE(vrc)
             || !pvTmpBuf)
             throw setError(VBOX_E_FILE_ERROR,
                            tr("Could not read OVF file '%s' (%Rrc)"),
                            RTPathFilename(strFilename.c_str()), vrc);
-        /* Copy the SHA1 sum of the OVF file for later validation */
-        m->strOVFSHA1Digest = pStorage->strDigest;
+        /* Copy the SHA1/SHA256 sum of the OVF file for later validation */
+        m->strOVFSHADigest = pStorage->strDigest;
         /* Read & parse the XML structure of the OVF file */
         m->pReader = new ovf::OVFReader(pvTmpBuf, cbSize, pTask->locInfo.strPath);
     }
@@ -1232,21 +1232,21 @@ HRESULT Appliance::importFSOVF(TaskOVF *pTask, AutoWriteLockBase& writeLock)
 
     HRESULT rc = S_OK;
 
-    PVDINTERFACEIO pSha1Io = 0;
+    PVDINTERFACEIO pShaIo = 0;
     PVDINTERFACEIO pFileIo = 0;
     void *pvMfBuf = 0;
     writeLock.release();
     try
     {
         /* Create the necessary file access interfaces. */
-        pSha1Io = Sha1CreateInterface();
-        if (!pSha1Io)
+        pShaIo = ShaCreateInterface();
+        if (!pShaIo)
             throw setError(E_OUTOFMEMORY);
         pFileIo = FileCreateInterface();
         if (!pFileIo)
             throw setError(E_OUTOFMEMORY);
 
-        SHA1STORAGE storage;
+        SHASTORAGE storage;
         RT_ZERO(storage);
         storage.fCreateDigest = true;
         int vrc = VDInterfaceAdd(&pFileIo->Core, "Appliance::IOFile",
@@ -1262,13 +1262,13 @@ HRESULT Appliance::importFSOVF(TaskOVF *pTask, AutoWriteLockBase& writeLock)
         /* Do we need the digest information? */
         storage.fCreateDigest = RTFileExists(strMfFile.c_str());
         /* Now import the appliance. */
-        importMachines(stack, pSha1Io, &storage);
+        importMachines(stack, pShaIo, &storage);
         /* Read & verify the manifest file, if there is one. */
         if (storage.fCreateDigest)
         {
             /* Add the ovf file to the digest list. */
-            stack.llSrcDisksDigest.push_front(STRPAIR(pTask->locInfo.strPath, m->strOVFSHA1Digest));
-            rc = readManifestFile(strMfFile, &pvMfBuf, &cbMfSize, pSha1Io, &storage);
+            stack.llSrcDisksDigest.push_front(STRPAIR(pTask->locInfo.strPath, m->strOVFSHADigest));
+            rc = readManifestFile(strMfFile, &pvMfBuf, &cbMfSize, pShaIo, &storage);
             if (FAILED(rc)) throw rc;
             rc = verifyManifestFile(strMfFile, stack, pvMfBuf, cbMfSize);
             if (FAILED(rc)) throw rc;
@@ -1283,8 +1283,8 @@ HRESULT Appliance::importFSOVF(TaskOVF *pTask, AutoWriteLockBase& writeLock)
     /* Cleanup */
     if (pvMfBuf)
         RTMemFree(pvMfBuf);
-    if (pSha1Io)
-        RTMemFree(pSha1Io);
+    if (pShaIo)
+        RTMemFree(pShaIo);
     if (pFileIo)
         RTMemFree(pFileIo);
 
@@ -1307,7 +1307,7 @@ HRESULT Appliance::importFSOVA(TaskOVF *pTask, AutoWriteLockBase& writeLock)
 
     HRESULT rc = S_OK;
 
-    PVDINTERFACEIO pSha1Io = 0;
+    PVDINTERFACEIO pShaIo = 0;
     PVDINTERFACEIO pTarIo = 0;
     char *pszFilename = 0;
     void *pvMfBuf = 0;
@@ -1315,14 +1315,14 @@ HRESULT Appliance::importFSOVA(TaskOVF *pTask, AutoWriteLockBase& writeLock)
     try
     {
         /* Create the necessary file access interfaces. */
-        pSha1Io = Sha1CreateInterface();
-        if (!pSha1Io)
+        pShaIo = ShaCreateInterface();
+        if (!pShaIo)
             throw setError(E_OUTOFMEMORY);
         pTarIo = TarCreateInterface();
         if (!pTarIo)
             throw setError(E_OUTOFMEMORY);
 
-        SHA1STORAGE storage;
+        SHASTORAGE storage;
         RT_ZERO(storage);
         vrc = VDInterfaceAdd(&pTarIo->Core, "Appliance::IOTar",
                              VDINTERFACETYPE_IO, tar, sizeof(VDINTERFACEIO),
@@ -1344,8 +1344,8 @@ HRESULT Appliance::importFSOVA(TaskOVF *pTask, AutoWriteLockBase& writeLock)
             throw setError(VBOX_E_IPRT_ERROR,
                            tr("Seeking within the archive failed (%Rrc)"), vrc);
 
-        PVDINTERFACEIO pCallbacks = pSha1Io;
-        PSHA1STORAGE pStorage = &storage;
+        PVDINTERFACEIO pCallbacks = pShaIo;
+        PSHASTORAGE pStorage = &storage;
 
         /* We always need to create the digest, cause we didn't know if there
          * is a manifest file in the stream. */
@@ -1381,7 +1381,7 @@ HRESULT Appliance::importFSOVA(TaskOVF *pTask, AutoWriteLockBase& writeLock)
         if (pvMfBuf)
         {
             /* Add the ovf file to the digest list. */
-            stack.llSrcDisksDigest.push_front(STRPAIR(Utf8Str(pszFilename).stripExt().append(".ovf"), m->strOVFSHA1Digest));
+            stack.llSrcDisksDigest.push_front(STRPAIR(Utf8Str(pszFilename).stripExt().append(".ovf"), m->strOVFSHADigest));
             rc = verifyManifestFile(strMfFile, stack, pvMfBuf, cbMfSize);
             if (FAILED(rc)) throw rc;
         }
@@ -1399,8 +1399,8 @@ HRESULT Appliance::importFSOVA(TaskOVF *pTask, AutoWriteLockBase& writeLock)
         RTMemFree(pszFilename);
     if (pvMfBuf)
         RTMemFree(pvMfBuf);
-    if (pSha1Io)
-        RTMemFree(pSha1Io);
+    if (pShaIo)
+        RTMemFree(pShaIo);
     if (pTarIo)
         RTMemFree(pTarIo);
 
@@ -1603,13 +1603,13 @@ HRESULT Appliance::importS3(TaskOVF *pTask)
 }
 #endif /* VBOX_WITH_S3 */
 
-HRESULT Appliance::readManifestFile(const Utf8Str &strFile, void **ppvBuf, size_t *pcbSize, PVDINTERFACEIO pCallbacks, PSHA1STORAGE pStorage)
+HRESULT Appliance::readManifestFile(const Utf8Str &strFile, void **ppvBuf, size_t *pcbSize, PVDINTERFACEIO pCallbacks, PSHASTORAGE pStorage)
 {
     HRESULT rc = S_OK;
 
     bool fOldDigest = pStorage->fCreateDigest;
     pStorage->fCreateDigest = false; /* No digest for the manifest file */
-    int vrc = Sha1ReadBuf(strFile.c_str(), ppvBuf, pcbSize, pCallbacks, pStorage);
+    int vrc = ShaReadBuf(strFile.c_str(), ppvBuf, pcbSize, pCallbacks, pStorage);
     if (   RT_FAILURE(vrc)
         && vrc != VERR_FILE_NOT_FOUND)
         rc = setError(VBOX_E_FILE_ERROR,
@@ -1620,7 +1620,7 @@ HRESULT Appliance::readManifestFile(const Utf8Str &strFile, void **ppvBuf, size_
     return rc;
 }
 
-HRESULT Appliance::readTarManifestFile(RTTAR tar, const Utf8Str &strFile, void **ppvBuf, size_t *pcbSize, PVDINTERFACEIO pCallbacks, PSHA1STORAGE pStorage)
+HRESULT Appliance::readTarManifestFile(RTTAR tar, const Utf8Str &strFile, void **ppvBuf, size_t *pcbSize, PVDINTERFACEIO pCallbacks, PSHASTORAGE pStorage)
 {
     HRESULT rc = S_OK;
 
@@ -1794,7 +1794,7 @@ void Appliance::importOneDiskImage(const ovf::DiskImage &di,
                                    ComObjPtr<Medium> &pTargetHD,
                                    ImportStack &stack,
                                    PVDINTERFACEIO pCallbacks,
-                                   PSHA1STORAGE pStorage)
+                                   PSHASTORAGE pStorage)
 {
     ComObjPtr<Progress> pProgress;
     pProgress.createObject();
@@ -1933,7 +1933,7 @@ void Appliance::importMachineGeneric(const ovf::VirtualSystem &vsysThis,
                                      ComPtr<IMachine> &pNewMachine,
                                      ImportStack &stack,
                                      PVDINTERFACEIO pCallbacks,
-                                     PSHA1STORAGE pStorage)
+                                     PSHASTORAGE pStorage)
 {
     HRESULT rc;
 
@@ -2501,7 +2501,7 @@ void Appliance::importVBoxMachine(ComObjPtr<VirtualSystemDescription> &vsdescThi
                                   ComPtr<IMachine> &pReturnNewMachine,
                                   ImportStack &stack,
                                   PVDINTERFACEIO pCallbacks,
-                                  PSHA1STORAGE pStorage)
+                                  PSHASTORAGE pStorage)
 {
     Assert(vsdescThis->m->pConfig);
 
@@ -2813,7 +2813,7 @@ void Appliance::importVBoxMachine(ComObjPtr<VirtualSystemDescription> &vsdescThi
 
 void Appliance::importMachines(ImportStack &stack,
                                PVDINTERFACEIO pCallbacks,
-                               PSHA1STORAGE pStorage)
+                               PSHASTORAGE pStorage)
 {
     HRESULT rc = S_OK;
 
