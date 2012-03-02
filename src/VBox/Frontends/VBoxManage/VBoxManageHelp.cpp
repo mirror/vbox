@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2011 Oracle Corporation
+ * Copyright (C) 2006-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -243,6 +243,10 @@ void printUsage(USAGECATEGORY u64Cmd, PRTSTREAM pStrm)
                      "                                             client <pipe>|\n"
                      "                                             file <file>|\n"
                      "                                             <devicename>]\n"
+#if defined(RT_OS_LINUX) || defined(RT_OS_WINDOWS)
+                     "                            [--lpt<1-N> off|<I/O base> <IRQ>]\n"
+                     "                            [--lptmode<1-N> <devicename>]\n"
+#endif
                      "                            [--guestmemoryballoon <balloonsize in MB>]\n"
                      "                            [--gueststatisticsinterval <seconds>]\n"
                      "                            [--audio none|null");
