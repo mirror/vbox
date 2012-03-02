@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2011 Oracle Corporation
+ * Copyright (C) 2006-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -128,6 +128,10 @@ enum
     MODIFYVM_HIDKBD,
     MODIFYVM_UARTMODE,
     MODIFYVM_UART,
+#if defined(RT_OS_LINUX) || defined(RT_OS_WINDOWS)
+    MODIFYVM_LPTMODE,
+    MODIFYVM_LPT,
+#endif
     MODIFYVM_GUESTMEMORYBALLOON,
     MODIFYVM_AUDIOCONTROLLER,
     MODIFYVM_AUDIO,
@@ -259,6 +263,10 @@ static const RTGETOPTDEF g_aModifyVMOptions[] =
     { "--keyboard",                 MODIFYVM_HIDKBD,                    RTGETOPT_REQ_STRING },
     { "--uartmode",                 MODIFYVM_UARTMODE,                  RTGETOPT_REQ_STRING | RTGETOPT_FLAG_INDEX },
     { "--uart",                     MODIFYVM_UART,                      RTGETOPT_REQ_STRING | RTGETOPT_FLAG_INDEX },
+#if defined(RT_OS_LINUX) || defined(RT_OS_WINDOWS)
+    { "--lptmode",                  MODIFYVM_LPTMODE,                   RTGETOPT_REQ_STRING | RTGETOPT_FLAG_INDEX },
+    { "--lpt",                      MODIFYVM_LPT,                       RTGETOPT_REQ_STRING | RTGETOPT_FLAG_INDEX },
+#endif
     { "--guestmemoryballoon",       MODIFYVM_GUESTMEMORYBALLOON,        RTGETOPT_REQ_UINT32 },
     { "--audiocontroller",          MODIFYVM_AUDIOCONTROLLER,           RTGETOPT_REQ_STRING },
     { "--audio",                    MODIFYVM_AUDIO,                     RTGETOPT_REQ_STRING },
@@ -347,13 +355,6 @@ int handleModifyVM(HandlerArg *a)
      * individually. */
     if (a->argc < 2)
         return errorSyntax(USAGE_MODIFYVM, "Not enough parameters");
-
-    ULONG SerialPortCount = 0;
-    {
-        ComPtr <ISystemProperties> info;
-        CHECK_ERROR_RET(a->virtualBox, COMGETTER(SystemProperties)(info.asOutParam()), 1);
-        CHECK_ERROR_RET(info, COMGETTER(SerialPortCount)(&SerialPortCount), 1);
-    }
 
     /* try to find the given machine */
     CHECK_ERROR_RET(a->virtualBox, FindMachine(Bstr(a->argv[0]).raw(),
@@ -1765,6 +1766,52 @@ int handleModifyVM(HandlerArg *a)
                 }
                 break;
             }
+
+#if defined(RT_OS_LINUX) || defined(RT_OS_WINDOWS)
+            case MODIFYVM_LPTMODE:
+            {
+                ComPtr<IParallelPort> lpt;
+                char *pszIRQ = NULL;
+
+                CHECK_ERROR_BREAK(machine, GetParallelPort(GetOptState.uIndex - 1, lpt.asOutParam()));
+                ASSERT(lpt);
+
+                CHECK_ERROR(lpt, COMSETTER(Path)(Bstr(ValueUnion.psz).raw()));
+                break;
+            }
+
+            case MODIFYVM_LPT:
+            {
+                ComPtr<IParallelPort> lpt;
+
+                CHECK_ERROR_BREAK(machine, GetParallelPort(GetOptState.uIndex - 1, lpt.asOutParam()));
+                ASSERT(lpt);
+
+                if (!strcmp(ValueUnion.psz, "off") || !strcmp(ValueUnion.psz, "disable"))
+                    CHECK_ERROR(lpt, COMSETTER(Enabled)(FALSE));
+                else
+                {
+                    const char *pszIOBase = ValueUnion.psz;
+                    uint32_t uVal = 0;
+
+                    int vrc = RTGetOptFetchValue(&GetOptState, &ValueUnion, RTGETOPT_REQ_UINT32) != MODIFYVM_LPT;
+                    if (RT_FAILURE(vrc))
+                        return errorSyntax(USAGE_MODIFYVM,
+                                           "Missing or Invalid argument to '%s'",
+                                           GetOptState.pDef->pszLong);
+
+                    CHECK_ERROR(lpt, COMSETTER(IRQ)(ValueUnion.u32));
+
+                    vrc = RTStrToUInt32Ex(pszIOBase, NULL, 0, &uVal);
+                    if (vrc != VINF_SUCCESS || uVal == 0)
+                        return errorArgument("Error parsing LPT I/O base '%s'", pszIOBase);
+                    CHECK_ERROR(lpt, COMSETTER(IOBase)(uVal));
+
+                    CHECK_ERROR(lpt, COMSETTER(Enabled)(TRUE));
+                }
+                break;
+            }
+#endif
 
             case MODIFYVM_GUESTMEMORYBALLOON:
             {
