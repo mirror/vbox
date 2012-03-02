@@ -2023,7 +2023,7 @@ int Console::configConstructorInner(PVM pVM, AutoWriteLock *pAlock)
             InsertConfigInteger(pCfg,   "IOBase", ulIOBase);
             InsertConfigNode(pInst,     "LUN#0", &pLunL0);
             InsertConfigString(pLunL0,  "Driver", "HostParallel");
-            InsertConfigNode(pLunL0,    "AttachedDriver", &pLunL1);
+            InsertConfigNode(pLunL0,    "Config", &pLunL1);
             hrc = parallelPort->COMGETTER(Path)(bstr.asOutParam());                         H();
             InsertConfigString(pLunL1,  "DevicePath", bstr);
         }
