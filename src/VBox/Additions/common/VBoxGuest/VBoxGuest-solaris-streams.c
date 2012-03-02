@@ -1314,5 +1314,6 @@ void VBoxGuestVUIDPutAbsEvent(ushort_t cEvent, int cValue)
 
 
 /* Common code that depends on g_DevExt. */
-#include "VBoxGuestIDC-unix.c.h"
-
+#ifndef TESTCASE
+# include "VBoxGuestIDC-unix.c.h"
+#endif
