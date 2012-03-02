@@ -171,7 +171,7 @@ RTDECL(int) RTTimerLRDestroy(RTTIMERLR hTimerLR)
         AssertRC(rc);
     }
 
-    RTThreadWait(hThread, 250, NULL);
+    RTThreadWait(hThread, 500, NULL); /* 250 ms was not enough for valgrind! */
     return VINF_SUCCESS;
 }
 RT_EXPORT_SYMBOL(RTTimerLRDestroy);
