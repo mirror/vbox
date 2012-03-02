@@ -922,7 +922,7 @@ additions-build-solaris.x86: additions-build-solaris.amd64
 additions-build-solaris.rsync-into-vm:
 else
 additions-build-solaris.rsync-into-vm:
-	$(VBOX_KMK_TIME) $(call VBOX_RSYNC_IN_FN,os2,*) \
+	$(VBOX_KMK_TIME) $(call VBOX_RSYNC_IN_FN,solaris,*) \
 		'--exclude=src/VBox/Additions/WINNT/**' \
 		'--exclude=src/VBox/Frontends/**' \
 		'--exclude=src/VBox/VMM/**' \
