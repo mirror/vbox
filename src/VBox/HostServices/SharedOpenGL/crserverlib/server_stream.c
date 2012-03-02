@@ -439,7 +439,7 @@ crServerDispatchMessage(CRConnection *conn, CRMessage *msg)
         if (CRVBOXHGSMI_CMDDATA_IS_SETWB(pCmdData))
         {
             uint32_t cbWriteback = pCmdData->cbWriteback;
-            rc = crVBoxServerInternalClientRead(conn->pClient, pCmdData->pWriteback, &cbWriteback);
+            rc = crVBoxServerInternalClientRead(conn->pClient, (uint8_t*)pCmdData->pWriteback, &cbWriteback);
             CRASSERT(rc == VINF_SUCCESS || rc == VERR_BUFFER_OVERFLOW);
             *pCmdData->pcbWriteback = cbWriteback;
         }
