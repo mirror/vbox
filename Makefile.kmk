@@ -817,6 +817,7 @@ VBOX_RSYNC_IN_FN = rsync -a -v --delete --delete-excluded --prune-empty-dirs \
 VBOX_BLD_VM_RHEL3_X86_IP := 192.168.27.2
 VBOX_BLD_VM_OS2_IP       := 192.168.27.3
 
+VBOX_WITH_OS2_ADD_BUILD=1
 
 #
 # Build the additions, all of them.
@@ -923,7 +924,7 @@ additions-build-solaris.amd64: additions-build-solaris.rsync-out-of-vm
 additions-build-solaris.x86: additions-build-solaris.rsync-out-of-vm
 endif
 
-if 1 #def VBOX_WITH_OS2_ADD_BUILD
+ifdef VBOX_WITH_OS2_ADD_BUILD
  ifeq ($(KBUILD_TARGET),os2)
 additions-build-os2.x86:
 	+ $(VBOX_KMK_TIME) $(KMK) $(VBOX_ADDITIONS_BUILD.x86) all $(VBOX_ADD_HOST_BUILD_TWEAK)
