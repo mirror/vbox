@@ -835,8 +835,8 @@ if 0
  VBOX_BLD_VM_MSG_BEGIN = $(call MSG_L1,Building $1.)
  VBOX_BLD_VM_MSG_END__ =
 else
- VBOX_BLD_VM_MSG_BEGIN = $(call MSG_L1,$(date ) - Building $1.)
- VBOX_BLD_VM_MSG_END__ = $(call MSG_L1,$(date ) - Done building $1.)
+ VBOX_BLD_VM_MSG_BEGIN = @echo `date "+%Y-%m-%dT%H:%M:%S"` - Building $1.
+ VBOX_BLD_VM_MSG_END__ = @echo `date "+%Y-%m-%dT%H:%M:%S"` - Done building $1.
 endif
 
 #
