@@ -213,7 +213,10 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
             wcscpy(pwsz, pwszOrgCmdLine);
         }
         else
+        {
             *pwsz = L'\0';
+            pwszOrgCmdLine = NULL;
+        }
     }
 
     /*
@@ -256,7 +259,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
         ShExecInfo.hwnd         = NULL;
         ShExecInfo.lpVerb       = L"runas" ;
         ShExecInfo.lpFile       = wszModule;
-        ShExecInfo.lpParameters = pwszNewCmdLine;
+        ShExecInfo.lpParameters = pwszOrgCmdLine; /* pass only args here!!! */
         ShExecInfo.lpDirectory  = wszCurDir;
         ShExecInfo.nShow        = SW_NORMAL;
         ShExecInfo.hProcess     = INVALID_HANDLE_VALUE;
