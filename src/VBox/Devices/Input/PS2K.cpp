@@ -840,10 +840,12 @@ int PS2KByteFromKbd(PPS2K pThis, uint8_t *pVal)
     Assert(pVal);
 
     /* Anything in the command queue has priority over data
-     * in the keystroke queue.
+     * in the keystroke queue. Additionally, keystrokes are 
+     * blocked if a command is currently in progress, even if 
+     * the command queue is empty. 
      */
     rc = PS2RemoveQueue((GeneriQ *)&pThis->cmdQ, pVal);
-    if (rc != VINF_SUCCESS && pThis->fScanning)
+    if (rc != VINF_SUCCESS && !pThis->u8CurrCmd && pThis->fScanning)
         rc = PS2RemoveQueue((GeneriQ *)&pThis->keyQ, pVal);
 
     LogFlowFunc(("keyboard sends 0x%02x (%svalid data)\n", *pVal, rc == VINF_SUCCESS ? "" : "not "));
