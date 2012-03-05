@@ -5351,7 +5351,9 @@ HRESULT Machine::setGuestPropertyToService(IN_BSTR aName, IN_BSTR aValue,
         {
             /** @todo r=bird: Why aren't we leaving the lock here?  The
              *                same code in PushGuestProperty does... */
-            mParent->onGuestPropertyChange(mData->mUuid, aName, aValue, aFlags);
+            mParent->onGuestPropertyChange(mData->mUuid, aName,
+                                           aValue ? aValue : Bstr("").raw(),
+                                           aFlags ? aFlags : Bstr("").raw());
         }
     }
     catch (std::bad_alloc &)
@@ -11918,8 +11920,8 @@ STDMETHODIMP SessionMachine::PushGuestProperty(IN_BSTR aName,
     using namespace guestProp;
 
     CheckComArgStrNotEmptyOrNull(aName);
-    CheckComArgMaybeNull(aValue);
-    CheckComArgMaybeNull(aFlags);
+    CheckComArgNotNull(aValue);
+    CheckComArgNotNull(aFlags);
 
     try
     {
