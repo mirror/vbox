@@ -713,6 +713,8 @@ static void PS2KSetDefaults(PPS2K pThis)
  */
 int PS2KByteToKbd(PPS2K pThis, uint8_t cmd)
 {
+    bool    fHandled = true;
+
     LogFlowFunc(("new cmd=0x%02X, active cmd=0x%02X\n", cmd, pThis->u8CurrCmd));
 
     switch (cmd) {
@@ -808,8 +810,13 @@ int PS2KByteToKbd(PPS2K pThis, uint8_t cmd)
             PS2InsertQueue((GeneriQ *)&pThis->cmdQ, KRSP_ACK);
             pThis->u8CurrCmd = 0;
             break;
+        default:
+            fHandled = false;
         }
-    /* Fall through! */
+        /* Fall through only to handle unrecognized commands. */
+        if (fHandled)
+            break;
+
     case KCMD_INVALID_1:
     case KCMD_INVALID_2:
         PS2InsertQueue((GeneriQ *)&pThis->cmdQ, KRSP_RESEND);
