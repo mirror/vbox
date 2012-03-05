@@ -225,8 +225,6 @@ void VBoxCredProvCredential::Reset(void)
 
 int VBoxCredProvCredential::RetrieveCredentials(void)
 {
-    VBoxCredProvVerbose(0, "VBoxCredProvCredential: Checking for credentials ...\n");
-
     int rc = VbglR3CredentialsQueryAvailability();
     if (RT_SUCCESS(rc))
     {
@@ -295,6 +293,7 @@ int VBoxCredProvCredential::RetrieveCredentials(void)
         }
     }
 
+    VBoxCredProvVerbose(0, "VBoxCredProvCredential: Checking credentials returned with rc=%Rrc\n", rc);
     return rc;
 }
 
