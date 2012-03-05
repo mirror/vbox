@@ -357,6 +357,33 @@ vboxvideo_drv_111_INCS += $(PATH_ROOT)/src/VBox/Runtime/include
 vboxvideo_drv_111_SOURCES := $(vboxvideo_drv_15_SOURCES)
 
 
+#
+# vboxvideo_drv_112
+#
+DLLS += vboxvideo_drv_112
+vboxvideo_drv_112_TEMPLATE = VBOXGUESTR3XORGMOD
+vboxvideo_drv_112_CFLAGS := $(vboxvideo_drv_70_CFLAGS)
+vboxvideo_drv_112_DEFS := $(vboxvideo_drv_15_DEFS)
+## @todo replace $(VBOX_PATH_X11_ROOT)/xorg-server-1.6.0-local
+vboxvideo_drv_112_INCS = \
+	$(VBOX_PATH_X11_ROOT)/fontsproto-2.1.0 \
+	$(VBOX_PATH_X11_ROOT)/glproto-1.4.10 \
+	$(VBOX_PATH_X11_ROOT)/mesa-7.2/include \
+	$(VBOX_PATH_X11_ROOT)/inputproto-1.9.99.902 \
+	$(VBOX_PATH_X11_ROOT)/libdrm-2.4.13 \
+	$(VBOX_PATH_X11_ROOT)/libpciaccess-0.10.8 \
+	$(VBOX_PATH_X11_ROOT)/pixman-0.16.0 \
+	$(VBOX_PATH_X11_ROOT)/randrproto-1.3.0 \
+	$(VBOX_PATH_X11_ROOT)/renderproto-0.11 \
+	$(VBOX_PATH_X11_ROOT)/xextproto-7.1.1 \
+	$(VBOX_PATH_X11_ROOT)/xf86driproto-2.1.0 \
+	$(VBOX_PATH_X11_ROOT)/xorg-server-1.12.0 \
+	$(VBOX_PATH_X11_ROOT)/xorg-server-1.6.0-local \
+	$(VBOX_PATH_X11_ROOT)/xproto-7.0.18
+vboxvideo_drv_112_INCS += $(PATH_ROOT)/src/VBox/Runtime/include
+vboxvideo_drv_112_SOURCES := $(vboxvideo_drv_15_SOURCES)
+
+
 # Check the undefined symbols in the X.Org modules against lists of allowed
 # symbols.  Not very elegant, but it will catch problems early.
 ifdef VBOX_WITH_TESTCASES
@@ -462,6 +489,14 @@ $$(vboxvideo_drv_111_0_OUTDIR)/tstvboxvideo111.run: $$(vboxvideo_drv_111_1_STAGE
 	$(QUIET)$(call MSG_L1,Checking for unresolved symbols in $<)
 	$(QUIET)/bin/sh $(PATH_ROOT)/src/bldprogs/checkUndefined.sh $(KBUILD_TARGET)  \
 	    $(vboxvideo_drv_111_1_STAGE_TARGET) $(VBOXVIDEO_SRC_PATH)/undefined
+	$(QUIET)$(APPEND) -t "$@" "done"
+
+     TESTING += $(vboxvideo_drv_112_0_OUTDIR)/tstvboxvideo112.run
+     OTHERS += $(vboxvideo_drv_112_0_OUTDIR)/tstvboxvideo112.run
+$$(vboxvideo_drv_112_0_OUTDIR)/tstvboxvideo112.run: $$(vboxvideo_drv_112_1_STAGE_TARGET)
+	$(QUIET)$(call MSG_L1,Checking for unresolved symbols in $<)
+	$(QUIET)/bin/sh $(PATH_ROOT)/src/bldprogs/checkUndefined.sh $(KBUILD_TARGET)  \
+	    $(vboxvideo_drv_112_1_STAGE_TARGET) $(VBOXVIDEO_SRC_PATH)/undefined
 	$(QUIET)$(APPEND) -t "$@" "done"
 
     endif # ! VBOX_ONLY_SDK
