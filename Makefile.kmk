@@ -1474,9 +1474,9 @@ efi-packing:
 # the path where to store the tarball
 TARBALLPATH ?= $(abspath $(PATH_ROOT)/..)
 # the root directory inside the tarball
-TARBALLROOT ?= VirtualBox-$(VBOX_VERSION_STRING_RAW)
+TARBALLROOT ?= VirtualBox-$(subst _OSE,,$(VBOX_VERSION_STRING_RAW))
 # the name of the tarball file
-TARBALLNAME ?= VirtualBox-$(VBOX_VERSION_STRING_RAW).tar.bz2
+TARBALLNAME ?= VirtualBox-$(subst _OSE,,$(VBOX_VERSION_STRING_RAW)).tar.bz2
 snapshot-ose:
 	@$(call MSG_L1,Creating tarball $(TARBALLPATH)/$(TARBALLNAME))
 	@if [ -r "$(PATH_ROOT)/src/VBox/RDP/server/server.cpp" ]; then \
