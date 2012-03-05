@@ -2577,6 +2577,49 @@ static int emInterpretRdpmc(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, PCPUMCTXCO
     return EMInterpretRdpmc(pVM, pVCpu, pRegFrame);
 }
 
+
+/**
+ * Prepare an MWAIT - essentials of the MONITOR instruction.
+ *
+ * @returns VINF_SUCCESS
+ * @param   pVCpu               The current CPU.
+ * @param   rax                 The content of RAX.
+ * @param   rcx                 The content of RCX.
+ * @param   rdx                 The content of RDX.
+ */
+VMM_INT_DECL(int) EMMonitorWaitPrepare(PVMCPU pVCpu, uint64_t rax, uint64_t rcx, uint64_t rdx)
+{
+    pVCpu->em.s.MWait.uMonitorRAX = rax;
+    pVCpu->em.s.MWait.uMonitorRCX = rcx;
+    pVCpu->em.s.MWait.uMonitorRDX = rdx;
+    pVCpu->em.s.MWait.fWait |= EMMWAIT_FLAG_MONITOR_ACTIVE;
+    /** @todo Complete MONITOR implementation.  */
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Performs an MWAIT.
+ *
+ * @returns VINF_SUCCESS
+ * @param   pVCpu               The current CPU.
+ * @param   rax                 The content of RAX.
+ * @param   rcx                 The content of RCX.
+ */
+VMM_INT_DECL(int) EMMonitorWaitPerform(PVMCPU pVCpu, uint64_t rax, uint64_t rcx)
+{
+    pVCpu->em.s.MWait.uMWaitRAX = rax;
+    pVCpu->em.s.MWait.uMWaitRCX = rcx;
+    pVCpu->em.s.MWait.fWait |= EMMWAIT_FLAG_ACTIVE;
+    if (rcx)
+        pVCpu->em.s.MWait.fWait |= EMMWAIT_FLAG_BREAKIRQIF0;
+    else
+        pVCpu->em.s.MWait.fWait &= ~EMMWAIT_FLAG_BREAKIRQIF0;
+    /** @todo not completely correct?? */
+    return VINF_EM_HALT;
+}
+
+
 /**
  * MONITOR Emulation.
  */
@@ -2600,10 +2643,7 @@ VMMDECL(int) EMInterpretMonitor(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame)
     if (!(u32ExtFeatures & X86_CPUID_FEATURE_ECX_MONITOR))
         return VERR_EM_INTERPRETER; /* not supported */
 
-    pVCpu->em.s.mwait.uMonitorEAX = pRegFrame->rax;
-    pVCpu->em.s.mwait.uMonitorECX = pRegFrame->rcx;
-    pVCpu->em.s.mwait.uMonitorEDX = pRegFrame->rdx;
-    pVCpu->em.s.mwait.fWait |= EMMWAIT_FLAG_MONITOR_ACTIVE;
+    EMMonitorWaitPrepare(pVCpu, pRegFrame->rax, pRegFrame->rcx, pRegFrame->rdx);
     return VINF_SUCCESS;
 }
 
@@ -2642,24 +2682,13 @@ VMMDECL(VBOXSTRICTRC) EMInterpretMWait(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegF
         return VERR_EM_INTERPRETER; /* illegal value. */
     }
 
-    if (pRegFrame->ecx)
+    if (pRegFrame->ecx && !(u32MWaitFeatures & X86_CPUID_MWAIT_ECX_BREAKIRQIF0))
     {
-        if (!(u32MWaitFeatures & X86_CPUID_MWAIT_ECX_BREAKIRQIF0))
-        {
-            Log(("EMInterpretMWait: unsupported X86_CPUID_MWAIT_ECX_BREAKIRQIF0 -> recompiler\n"));
-            return VERR_EM_INTERPRETER; /* illegal value. */
-        }
-
-        pVCpu->em.s.mwait.fWait = EMMWAIT_FLAG_ACTIVE | EMMWAIT_FLAG_BREAKIRQIF0;
+        Log(("EMInterpretMWait: unsupported X86_CPUID_MWAIT_ECX_BREAKIRQIF0 -> recompiler\n"));
+        return VERR_EM_INTERPRETER; /* illegal value. */
     }
-    else
-        pVCpu->em.s.mwait.fWait = EMMWAIT_FLAG_ACTIVE;
 
-    pVCpu->em.s.mwait.uMWaitEAX = pRegFrame->rax;
-    pVCpu->em.s.mwait.uMWaitECX = pRegFrame->rcx;
-
-    /** @todo not completely correct */
-    return VINF_EM_HALT;
+    return EMMonitorWaitPerform(pVCpu, pRegFrame->rax, pRegFrame->rcx);
 }
 
 static VBOXSTRICTRC emInterpretMWait(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, uint32_t *pcbSize)
@@ -3218,19 +3247,23 @@ VMMDECL(int) EMRemTryLock(PVM pVM)
 }
 
 /**
- * Determine if we should continue after encountering a hlt or mwait instruction
+ * Determine if we should continue after encountering a hlt or mwait
+ * instruction.
+ *
+ * Clears MWAIT flags if returning @c true.
  *
  * @returns boolean
  * @param   pVCpu           The VMCPU to operate on.
- * @param   pCtx            Current CPU context
+ * @param   pCtx            Current CPU context.
  */
-VMMDECL(bool) EMShouldContinueAfterHalt(PVMCPU pVCpu, PCPUMCTX pCtx)
+VMM_INT_DECL(bool) EMShouldContinueAfterHalt(PVMCPU pVCpu, PCPUMCTX pCtx)
 {
-    if (    pCtx->eflags.Bits.u1IF
-        ||  ((pVCpu->em.s.mwait.fWait & (EMMWAIT_FLAG_ACTIVE | EMMWAIT_FLAG_BREAKIRQIF0)) == (EMMWAIT_FLAG_ACTIVE | EMMWAIT_FLAG_BREAKIRQIF0)))
+    if (   pCtx->eflags.Bits.u1IF
+        || (   (pVCpu->em.s.MWait.fWait & (EMMWAIT_FLAG_ACTIVE | EMMWAIT_FLAG_BREAKIRQIF0))
+            ==                            (EMMWAIT_FLAG_ACTIVE | EMMWAIT_FLAG_BREAKIRQIF0)) )
     {
-        pVCpu->em.s.mwait.fWait &= ~(EMMWAIT_FLAG_ACTIVE | EMMWAIT_FLAG_BREAKIRQIF0);
-        return !!VMCPU_FF_ISPENDING(pVCpu, (VMCPU_FF_INTERRUPT_APIC|VMCPU_FF_INTERRUPT_PIC));
+        pVCpu->em.s.MWait.fWait &= ~(EMMWAIT_FLAG_ACTIVE | EMMWAIT_FLAG_BREAKIRQIF0);
+        return !!VMCPU_FF_ISPENDING(pVCpu, (VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC));
     }
 
     return false;
