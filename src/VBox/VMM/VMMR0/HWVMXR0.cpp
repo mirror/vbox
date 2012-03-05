@@ -1452,39 +1452,6 @@ VMMR0DECL(int) VMXR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
                     pCtx->fsHid.Attr.n.u2Dpl  = 0;
                     pCtx->gsHid.Attr.n.u2Dpl  = 0;
                     pCtx->ssHid.Attr.n.u2Dpl  = 0;
-
-                    /* The limit must correspond to the 32 bits setting. */
-                    if (!pCtx->csHid.Attr.n.u1DefBig)
-                        pCtx->csHid.u32Limit &= 0xffff;
-                    if (!pCtx->dsHid.Attr.n.u1DefBig)
-                        pCtx->dsHid.u32Limit &= 0xffff;
-                    if (!pCtx->esHid.Attr.n.u1DefBig)
-                        pCtx->esHid.u32Limit &= 0xffff;
-                    if (!pCtx->fsHid.Attr.n.u1DefBig)
-                        pCtx->fsHid.u32Limit &= 0xffff;
-                    if (!pCtx->gsHid.Attr.n.u1DefBig)
-                        pCtx->gsHid.u32Limit &= 0xffff;
-                    if (!pCtx->ssHid.Attr.n.u1DefBig)
-                        pCtx->ssHid.u32Limit &= 0xffff;
-                }
-                else
-                /* Switching from protected mode to real mode. */
-                if (    pVCpu->hwaccm.s.vmx.enmLastSeenGuestMode >= PGMMODE_PROTECTED
-                    &&  enmGuestMode == PGMMODE_REAL)
-                {
-                    /* The limit must also be set to 0xffff. */
-                    pCtx->csHid.u32Limit = 0xffff;
-                    pCtx->dsHid.u32Limit = 0xffff;
-                    pCtx->esHid.u32Limit = 0xffff;
-                    pCtx->fsHid.u32Limit = 0xffff;
-                    pCtx->gsHid.u32Limit = 0xffff;
-                    pCtx->ssHid.u32Limit = 0xffff;
-
-                    Assert(pCtx->csHid.u64Base <= 0xfffff);
-                    Assert(pCtx->dsHid.u64Base <= 0xfffff);
-                    Assert(pCtx->esHid.u64Base <= 0xfffff);
-                    Assert(pCtx->fsHid.u64Base <= 0xfffff);
-                    Assert(pCtx->gsHid.u64Base <= 0xfffff);
                 }
                 pVCpu->hwaccm.s.vmx.enmLastSeenGuestMode = enmGuestMode;
             }
