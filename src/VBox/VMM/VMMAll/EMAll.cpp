@@ -104,6 +104,178 @@ VMMDECL(void)    EMSetState(PVMCPU pVCpu, EMSTATE enmNewState)
 
 
 /**
+ * Sets the PC for which interrupts should be inhibited.
+ *
+ * @param   pVCpu       The VMCPU handle.
+ * @param   PC          The PC.
+ */
+VMMDECL(void) EMSetInhibitInterruptsPC(PVMCPU pVCpu, RTGCUINTPTR PC)
+{
+    pVCpu->em.s.GCPtrInhibitInterrupts = PC;
+    VMCPU_FF_SET(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS);
+}
+
+
+/**
+ * Gets the PC for which interrupts should be inhibited.
+ *
+ * There are a few instructions which inhibits or delays interrupts
+ * for the instruction following them. These instructions are:
+ *      - STI
+ *      - MOV SS, r/m16
+ *      - POP SS
+ *
+ * @returns The PC for which interrupts should be inhibited.
+ * @param   pVCpu       The VMCPU handle.
+ *
+ */
+VMMDECL(RTGCUINTPTR) EMGetInhibitInterruptsPC(PVMCPU pVCpu)
+{
+    return pVCpu->em.s.GCPtrInhibitInterrupts;
+}
+
+
+/**
+ * Prepare an MWAIT - essentials of the MONITOR instruction.
+ *
+ * @returns VINF_SUCCESS
+ * @param   pVCpu               The current CPU.
+ * @param   rax                 The content of RAX.
+ * @param   rcx                 The content of RCX.
+ * @param   rdx                 The content of RDX.
+ */
+VMM_INT_DECL(int) EMMonitorWaitPrepare(PVMCPU pVCpu, uint64_t rax, uint64_t rcx, uint64_t rdx)
+{
+    pVCpu->em.s.MWait.uMonitorRAX = rax;
+    pVCpu->em.s.MWait.uMonitorRCX = rcx;
+    pVCpu->em.s.MWait.uMonitorRDX = rdx;
+    pVCpu->em.s.MWait.fWait |= EMMWAIT_FLAG_MONITOR_ACTIVE;
+    /** @todo Complete MONITOR implementation.  */
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Performs an MWAIT.
+ *
+ * @returns VINF_SUCCESS
+ * @param   pVCpu               The current CPU.
+ * @param   rax                 The content of RAX.
+ * @param   rcx                 The content of RCX.
+ */
+VMM_INT_DECL(int) EMMonitorWaitPerform(PVMCPU pVCpu, uint64_t rax, uint64_t rcx)
+{
+    pVCpu->em.s.MWait.uMWaitRAX = rax;
+    pVCpu->em.s.MWait.uMWaitRCX = rcx;
+    pVCpu->em.s.MWait.fWait |= EMMWAIT_FLAG_ACTIVE;
+    if (rcx)
+        pVCpu->em.s.MWait.fWait |= EMMWAIT_FLAG_BREAKIRQIF0;
+    else
+        pVCpu->em.s.MWait.fWait &= ~EMMWAIT_FLAG_BREAKIRQIF0;
+    /** @todo not completely correct?? */
+    return VINF_EM_HALT;
+}
+
+
+
+/**
+ * Determine if we should continue after encountering a hlt or mwait
+ * instruction.
+ *
+ * Clears MWAIT flags if returning @c true.
+ *
+ * @returns boolean
+ * @param   pVCpu           The VMCPU to operate on.
+ * @param   pCtx            Current CPU context.
+ */
+VMM_INT_DECL(bool) EMShouldContinueAfterHalt(PVMCPU pVCpu, PCPUMCTX pCtx)
+{
+    if (   pCtx->eflags.Bits.u1IF
+        || (   (pVCpu->em.s.MWait.fWait & (EMMWAIT_FLAG_ACTIVE | EMMWAIT_FLAG_BREAKIRQIF0))
+            ==                            (EMMWAIT_FLAG_ACTIVE | EMMWAIT_FLAG_BREAKIRQIF0)) )
+    {
+        pVCpu->em.s.MWait.fWait &= ~(EMMWAIT_FLAG_ACTIVE | EMMWAIT_FLAG_BREAKIRQIF0);
+        return !!VMCPU_FF_ISPENDING(pVCpu, (VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC));
+    }
+
+    return false;
+}
+
+
+/**
+ * Locks REM execution to a single VCpu
+ *
+ * @param   pVM         VM handle.
+ */
+VMMDECL(void) EMRemLock(PVM pVM)
+{
+#ifdef VBOX_WITH_REM
+    if (!PDMCritSectIsInitialized(&pVM->em.s.CritSectREM))
+        return;     /* early init */
+
+    Assert(!PGMIsLockOwner(pVM));
+    Assert(!IOMIsLockOwner(pVM));
+    int rc = PDMCritSectEnter(&pVM->em.s.CritSectREM, VERR_SEM_BUSY);
+    AssertRCSuccess(rc);
+#endif
+}
+
+
+/**
+ * Unlocks REM execution
+ *
+ * @param   pVM         VM handle.
+ */
+VMMDECL(void) EMRemUnlock(PVM pVM)
+{
+#ifdef VBOX_WITH_REM
+    if (!PDMCritSectIsInitialized(&pVM->em.s.CritSectREM))
+        return;     /* early init */
+
+    PDMCritSectLeave(&pVM->em.s.CritSectREM);
+#endif
+}
+
+
+/**
+ * Check if this VCPU currently owns the REM lock.
+ *
+ * @returns bool owner/not owner
+ * @param   pVM         The VM to operate on.
+ */
+VMMDECL(bool) EMRemIsLockOwner(PVM pVM)
+{
+#ifdef VBOX_WITH_REM
+    if (!PDMCritSectIsInitialized(&pVM->em.s.CritSectREM))
+        return true;   /* early init */
+
+    return PDMCritSectIsOwner(&pVM->em.s.CritSectREM);
+#else
+    return true;
+#endif
+}
+
+
+/**
+ * Try to acquire the REM lock.
+ *
+ * @returns VBox status code
+ * @param   pVM         The VM to operate on.
+ */
+VMMDECL(int) EMRemTryLock(PVM pVM)
+{
+#ifdef VBOX_WITH_REM
+    if (!PDMCritSectIsInitialized(&pVM->em.s.CritSectREM))
+        return VINF_SUCCESS; /* early init */
+
+    return PDMCritSectTryEnter(&pVM->em.s.CritSectREM);
+#else
+    return VINF_SUCCESS;
+#endif
+}
+
+
+/**
  * Read callback for disassembly function; supports reading bytes that cross a page boundary
  *
  * @returns VBox status code.
@@ -113,7 +285,7 @@ VMMDECL(void)    EMSetState(PVMCPU pVCpu, EMSTATE enmNewState)
  * @param   dwUserdata  Callback specific user data (pDis)
  *
  */
-DECLCALLBACK(int) EMReadBytes(RTUINTPTR pSrc, uint8_t *pDest, unsigned cb, void *pvUserdata)
+static DECLCALLBACK(int) EMReadBytes(RTUINTPTR pSrc, uint8_t *pDest, unsigned cb, void *pvUserdata)
 {
     PDISCPUSTATE  pDis   = (PDISCPUSTATE)pvUserdata;
     PEMDISSTATE   pState = (PEMDISSTATE)pDis->apvUserData[0];
@@ -410,6 +582,8 @@ VMMDECL(VBOXSTRICTRC) EMInterpretPortIO(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pCtx
 #endif
 }
 
+
+#ifndef VBOX_WITH_IEM
 
 DECLINLINE(int) emRamRead(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pCtxCore, void *pvDst, RTGCPTR GCPtrSrc, uint32_t cb)
 {
@@ -2579,48 +2753,6 @@ static int emInterpretRdpmc(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, PCPUMCTXCO
 
 
 /**
- * Prepare an MWAIT - essentials of the MONITOR instruction.
- *
- * @returns VINF_SUCCESS
- * @param   pVCpu               The current CPU.
- * @param   rax                 The content of RAX.
- * @param   rcx                 The content of RCX.
- * @param   rdx                 The content of RDX.
- */
-VMM_INT_DECL(int) EMMonitorWaitPrepare(PVMCPU pVCpu, uint64_t rax, uint64_t rcx, uint64_t rdx)
-{
-    pVCpu->em.s.MWait.uMonitorRAX = rax;
-    pVCpu->em.s.MWait.uMonitorRCX = rcx;
-    pVCpu->em.s.MWait.uMonitorRDX = rdx;
-    pVCpu->em.s.MWait.fWait |= EMMWAIT_FLAG_MONITOR_ACTIVE;
-    /** @todo Complete MONITOR implementation.  */
-    return VINF_SUCCESS;
-}
-
-
-/**
- * Performs an MWAIT.
- *
- * @returns VINF_SUCCESS
- * @param   pVCpu               The current CPU.
- * @param   rax                 The content of RAX.
- * @param   rcx                 The content of RCX.
- */
-VMM_INT_DECL(int) EMMonitorWaitPerform(PVMCPU pVCpu, uint64_t rax, uint64_t rcx)
-{
-    pVCpu->em.s.MWait.uMWaitRAX = rax;
-    pVCpu->em.s.MWait.uMWaitRCX = rcx;
-    pVCpu->em.s.MWait.fWait |= EMMWAIT_FLAG_ACTIVE;
-    if (rcx)
-        pVCpu->em.s.MWait.fWait |= EMMWAIT_FLAG_BREAKIRQIF0;
-    else
-        pVCpu->em.s.MWait.fWait &= ~EMMWAIT_FLAG_BREAKIRQIF0;
-    /** @todo not completely correct?? */
-    return VINF_EM_HALT;
-}
-
-
-/**
  * MONITOR Emulation.
  */
 VMMDECL(int) EMInterpretMonitor(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame)
@@ -3145,127 +3277,4 @@ DECLINLINE(VBOXSTRICTRC) emInterpretInstructionCPU(PVM pVM, PVMCPU pVCpu, PDISCP
     /* not reached */
 }
 
-
-/**
- * Sets the PC for which interrupts should be inhibited.
- *
- * @param   pVCpu       The VMCPU handle.
- * @param   PC          The PC.
- */
-VMMDECL(void) EMSetInhibitInterruptsPC(PVMCPU pVCpu, RTGCUINTPTR PC)
-{
-    pVCpu->em.s.GCPtrInhibitInterrupts = PC;
-    VMCPU_FF_SET(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS);
-}
-
-
-/**
- * Gets the PC for which interrupts should be inhibited.
- *
- * There are a few instructions which inhibits or delays interrupts
- * for the instruction following them. These instructions are:
- *      - STI
- *      - MOV SS, r/m16
- *      - POP SS
- *
- * @returns The PC for which interrupts should be inhibited.
- * @param   pVCpu       The VMCPU handle.
- *
- */
-VMMDECL(RTGCUINTPTR) EMGetInhibitInterruptsPC(PVMCPU pVCpu)
-{
-    return pVCpu->em.s.GCPtrInhibitInterrupts;
-}
-
-/**
- * Locks REM execution to a single VCpu
- *
- * @param   pVM         VM handle.
- */
-VMMDECL(void) EMRemLock(PVM pVM)
-{
-#ifdef VBOX_WITH_REM
-    if (!PDMCritSectIsInitialized(&pVM->em.s.CritSectREM))
-        return;     /* early init */
-
-    Assert(!PGMIsLockOwner(pVM));
-    Assert(!IOMIsLockOwner(pVM));
-    int rc = PDMCritSectEnter(&pVM->em.s.CritSectREM, VERR_SEM_BUSY);
-    AssertRCSuccess(rc);
-#endif
-}
-
-/**
- * Unlocks REM execution
- *
- * @param   pVM         VM handle.
- */
-VMMDECL(void) EMRemUnlock(PVM pVM)
-{
-#ifdef VBOX_WITH_REM
-    if (!PDMCritSectIsInitialized(&pVM->em.s.CritSectREM))
-        return;     /* early init */
-
-    PDMCritSectLeave(&pVM->em.s.CritSectREM);
-#endif
-}
-
-/**
- * Check if this VCPU currently owns the REM lock.
- *
- * @returns bool owner/not owner
- * @param   pVM         The VM to operate on.
- */
-VMMDECL(bool) EMRemIsLockOwner(PVM pVM)
-{
-#ifdef VBOX_WITH_REM
-    if (!PDMCritSectIsInitialized(&pVM->em.s.CritSectREM))
-        return true;   /* early init */
-
-    return PDMCritSectIsOwner(&pVM->em.s.CritSectREM);
-#else
-    return true;
-#endif
-}
-
-/**
- * Try to acquire the REM lock.
- *
- * @returns VBox status code
- * @param   pVM         The VM to operate on.
- */
-VMMDECL(int) EMRemTryLock(PVM pVM)
-{
-#ifdef VBOX_WITH_REM
-    if (!PDMCritSectIsInitialized(&pVM->em.s.CritSectREM))
-        return VINF_SUCCESS; /* early init */
-
-    return PDMCritSectTryEnter(&pVM->em.s.CritSectREM);
-#else
-    return VINF_SUCCESS;
-#endif
-}
-
-/**
- * Determine if we should continue after encountering a hlt or mwait
- * instruction.
- *
- * Clears MWAIT flags if returning @c true.
- *
- * @returns boolean
- * @param   pVCpu           The VMCPU to operate on.
- * @param   pCtx            Current CPU context.
- */
-VMM_INT_DECL(bool) EMShouldContinueAfterHalt(PVMCPU pVCpu, PCPUMCTX pCtx)
-{
-    if (   pCtx->eflags.Bits.u1IF
-        || (   (pVCpu->em.s.MWait.fWait & (EMMWAIT_FLAG_ACTIVE | EMMWAIT_FLAG_BREAKIRQIF0))
-            ==                            (EMMWAIT_FLAG_ACTIVE | EMMWAIT_FLAG_BREAKIRQIF0)) )
-    {
-        pVCpu->em.s.MWait.fWait &= ~(EMMWAIT_FLAG_ACTIVE | EMMWAIT_FLAG_BREAKIRQIF0);
-        return !!VMCPU_FF_ISPENDING(pVCpu, (VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC));
-    }
-
-    return false;
-}
-
+#endif /* !VBOX_WITH_IEM */
