@@ -83,6 +83,7 @@ PROGRAMS += \
 	tstRTMemEf \
 	tstRTMemCache \
 	tstRTMemPool \
+	tstRTMemWipe \
 	tstMove \
 	tstMp-1 \
 	tstOnce \
@@ -404,6 +405,9 @@ tstRTMemCache_SOURCES = tstRTMemCache.cpp
 
 tstRTMemPool_TEMPLATE = VBOXR3TSTEXE
 tstRTMemPool_SOURCES = tstRTMemPool.cpp
+
+tstRTMemWipe_TEMPLATE = VBOXR3TSTEXE
+tstRTMemWipe_SOURCES = tstRTMemWipe.cpp
 
 tstMove_TEMPLATE = VBOXR3TSTEXE
 tstMove_SOURCES = tstMove.cpp
