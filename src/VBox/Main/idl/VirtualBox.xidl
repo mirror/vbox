@@ -15500,7 +15500,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
     <method name="logoff">
       <desc>
-        Logs off the client who has previously logged on with <link to="IWebsessionManager::logoff" />
+        Logs off the client who has previously logged on with <link to="IWebsessionManager::logon" />
         and destroys all resources associated with the session (most importantly, all
         managed objects created in the server while the session was active).
       </desc>
