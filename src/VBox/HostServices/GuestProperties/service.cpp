@@ -1147,7 +1147,7 @@ void Service::doNotifications(const char *pszProperty, uint64_t u64Timestamp)
     {
         /* Send out a host notification */
         if (RT_SUCCESS(rc))
-            rc = notifyHost(pszProperty, NULL, u64Timestamp, NULL);
+            rc = notifyHost(pszProperty, "", u64Timestamp, "");
     }
     LogFlowThisFunc(("returning\n"));
 }
