@@ -1,0 +1,42 @@
+# $Id$
+## @file
+# Sub-Makefile for the VirtualBox NT4 guest additions mouse driver.
+#
+
+#
+# Copyright (C) 2006-2007 Oracle Corporation
+#
+# This file is part of VirtualBox Open Source Edition (OSE), as
+# available from http://www.virtualbox.org. This file is free software;
+# you can redistribute it and/or modify it under the terms of the GNU
+# General Public License (GPL) as published by the Free Software
+# Foundation, in version 2 as it comes in the "COPYING" file of the
+# VirtualBox OSE distribution. VirtualBox OSE is distributed in the
+# hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
+#
+
+SUB_DEPTH = ../../../../../..
+include	$(KBUILD_PATH)/subheader.kmk
+
+ifeq ($(KBUILD_TARGET_ARCH),x86)
+SYSMODS += VBoxMouseNT
+VBoxMouseNT_TEMPLATE    = VBOXGUESTR0
+VBoxMouseNT_DEFS        = LOG_TO_BACKDOOR
+VBoxMouseNT_INCS        = \
+	$(VBoxMouseNT_0_OUTDIR)
+VBoxMouseNT_LDFLAGS     = -Entry:DriverEntry@8
+VBoxMouseNT_SOURCES     = \
+	VBoxPS2NT.cpp \
+	VBoxPS2NT.rc
+VBoxMouseNT_LIBS        = \
+	$(PATH_SDK_W2K3DDK_LIB)/exsup.lib \
+	$(PATH_SDK_W2K3DDK_LIB)/ntoskrnl.lib \
+	$(PATH_SDK_W2K3DDK_LIB)/hal.lib \
+	$(VBOX_LIB_VBGL_R0) \
+	$(VBOX_LIB_IPRT_GUEST_R0_NT4)
+VBoxMouseNT_CLEAN       = \
+	$(VBoxMouseNT_0_OUTDIR)/VBoxMouseNT.pdb
+endif # x86
+
+include	$(KBUILD_PATH)/subfooter.kmk
+
