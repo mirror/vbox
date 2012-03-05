@@ -363,40 +363,6 @@ static int emR3ExecuteInstructionWorker(PVM pVM, PVMCPU pVCpu, int rcGC)
         }
     }
 
-#if 0
-    /* Try our own instruction emulator before falling back to the recompiler. */
-    DISCPUSTATE Cpu;
-    rc = CPUMR3DisasmInstrCPU(pVM, pVCpu, pCtx, pCtx->rip, &Cpu, "GEN EMU");
-    if (RT_SUCCESS(rc))
-    {
-        uint32_t size;
-
-        switch (Cpu.pCurInstr->opcode)
-        {
-        /* @todo we can do more now */
-        case OP_MOV:
-        case OP_AND:
-        case OP_OR:
-        case OP_XOR:
-        case OP_POP:
-        case OP_INC:
-        case OP_DEC:
-        case OP_XCHG:
-            STAM_PROFILE_START(&pVCpu->em.s.StatMiscEmu, a);
-            rc = EMInterpretInstructionCPU(pVM, &Cpu, CPUMCTX2CORE(pCtx), 0, &size);
-            if (RT_SUCCESS(rc))
-            {
-                pCtx->rip += Cpu.opsize;
-                STAM_PROFILE_STOP(&pVCpu->em.s.StatMiscEmu, a);
-                return rc;
-            }
-            if (rc != VERR_EM_INTERPRETER)
-                AssertMsgFailedReturn(("rc=%Rrc\n", rc), rc);
-            STAM_PROFILE_STOP(&pVCpu->em.s.StatMiscEmu, a);
-            break;
-        }
-    }
-#endif /* 0 */
     STAM_PROFILE_START(&pVCpu->em.s.StatREMEmu, a);
     Log(("EMINS: %04x:%RGv RSP=%RGv\n", pCtx->cs, (RTGCPTR)pCtx->rip, (RTGCPTR)pCtx->rsp));
 #ifdef VBOX_WITH_REM

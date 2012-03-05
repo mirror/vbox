@@ -2354,7 +2354,7 @@ ResumeExecution:
     }
 
     case SVM_EXIT_HLT:
-        /** Check if external interrupts are pending; if so, don't switch back. */
+        /* Check if external interrupts are pending; if so, don't switch back. */
         STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatExitHlt);
         pCtx->rip++;    /* skip hlt */
         if (EMShouldContinueAfterHalt(pVCpu, pCtx))
@@ -2373,7 +2373,7 @@ ResumeExecution:
             /* Update EIP and continue execution. */
             pCtx->rip += 3;     /* Note: hardcoded opcode size assumption! */
 
-            /** Check if external interrupts are pending; if so, don't switch back. */
+            /* Check if external interrupts are pending; if so, don't switch back. */
             if (    rc == VINF_SUCCESS
                 ||  (   rc == VINF_EM_HALT
                      && EMShouldContinueAfterHalt(pVCpu, pCtx))

@@ -4110,7 +4110,7 @@ ResumeExecution:
         break;
 
     case VMX_EXIT_HLT:                  /* 12 Guest software attempted to execute HLT. */
-        /** Check if external interrupts are pending; if so, don't switch back. */
+        /* Check if external interrupts are pending; if so, don't switch back. */
         STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatExitHlt);
         pCtx->rip++;    /* skip hlt */
         if (EMShouldContinueAfterHalt(pVCpu, pCtx))
@@ -4129,7 +4129,7 @@ ResumeExecution:
             /* Update EIP and continue execution. */
             pCtx->rip += cbInstr;
 
-            /** Check if external interrupts are pending; if so, don't switch back. */
+            /* Check if external interrupts are pending; if so, don't switch back. */
             if (    rc == VINF_SUCCESS
                 ||  (   rc == VINF_EM_HALT
                      && EMShouldContinueAfterHalt(pVCpu, pCtx))

@@ -175,7 +175,9 @@ VMMDECL(int)            EMInterpretCLTS(PVM pVM, PVMCPU pVCpu);
 VMMDECL(VBOXSTRICTRC)   EMInterpretPortIO(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pCtxCore, PDISCPUSTATE pCpu, uint32_t cbOp);
 VMMDECL(int)            EMInterpretRdmsr(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame);
 VMMDECL(int)            EMInterpretWrmsr(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame);
-VMMDECL(bool)           EMShouldContinueAfterHalt(PVMCPU pVCpu, PCPUMCTX pCtx);
+VMM_INT_DECL(bool)      EMShouldContinueAfterHalt(PVMCPU pVCpu, PCPUMCTX pCtx);
+VMM_INT_DECL(int)       EMMonitorWaitPrepare(PVMCPU pVCpu, uint64_t rax, uint64_t rcx, uint64_t rdx);
+VMM_INT_DECL(int)       EMMonitorWaitPerform(PVMCPU pVCpu, uint64_t rax, uint64_t rcx);
 
 /** @name Assembly routines
  * @{ */

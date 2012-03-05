@@ -509,17 +509,17 @@ static DECLCALLBACK(int) emR3Save(PVM pVM, PSSMHANDLE pSSM)
         AssertRCReturn(rc, rc);
 
         /* Save mwait state. */
-        rc = SSMR3PutU32(pSSM, pVCpu->em.s.mwait.fWait);
+        rc = SSMR3PutU32(pSSM, pVCpu->em.s.MWait.fWait);
         AssertRCReturn(rc, rc);
-        rc = SSMR3PutGCPtr(pSSM, pVCpu->em.s.mwait.uMWaitEAX);
+        rc = SSMR3PutGCPtr(pSSM, pVCpu->em.s.MWait.uMWaitRAX);
         AssertRCReturn(rc, rc);
-        rc = SSMR3PutGCPtr(pSSM, pVCpu->em.s.mwait.uMWaitECX);
+        rc = SSMR3PutGCPtr(pSSM, pVCpu->em.s.MWait.uMWaitRCX);
         AssertRCReturn(rc, rc);
-        rc = SSMR3PutGCPtr(pSSM, pVCpu->em.s.mwait.uMonitorEAX);
+        rc = SSMR3PutGCPtr(pSSM, pVCpu->em.s.MWait.uMonitorRAX);
         AssertRCReturn(rc, rc);
-        rc = SSMR3PutGCPtr(pSSM, pVCpu->em.s.mwait.uMonitorECX);
+        rc = SSMR3PutGCPtr(pSSM, pVCpu->em.s.MWait.uMonitorRCX);
         AssertRCReturn(rc, rc);
-        rc = SSMR3PutGCPtr(pSSM, pVCpu->em.s.mwait.uMonitorEDX);
+        rc = SSMR3PutGCPtr(pSSM, pVCpu->em.s.MWait.uMonitorRDX);
         AssertRCReturn(rc, rc);
     }
     return VINF_SUCCESS;
@@ -573,17 +573,17 @@ static DECLCALLBACK(int) emR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, u
         if (uVersion > EM_SAVED_STATE_VERSION_PRE_MWAIT)
         {
             /* Load mwait state. */
-            rc = SSMR3GetU32(pSSM, &pVCpu->em.s.mwait.fWait);
+            rc = SSMR3GetU32(pSSM, &pVCpu->em.s.MWait.fWait);
             AssertRCReturn(rc, rc);
-            rc = SSMR3GetGCPtr(pSSM, &pVCpu->em.s.mwait.uMWaitEAX);
+            rc = SSMR3GetGCPtr(pSSM, &pVCpu->em.s.MWait.uMWaitRAX);
             AssertRCReturn(rc, rc);
-            rc = SSMR3GetGCPtr(pSSM, &pVCpu->em.s.mwait.uMWaitECX);
+            rc = SSMR3GetGCPtr(pSSM, &pVCpu->em.s.MWait.uMWaitRCX);
             AssertRCReturn(rc, rc);
-            rc = SSMR3GetGCPtr(pSSM, &pVCpu->em.s.mwait.uMonitorEAX);
+            rc = SSMR3GetGCPtr(pSSM, &pVCpu->em.s.MWait.uMonitorRAX);
             AssertRCReturn(rc, rc);
-            rc = SSMR3GetGCPtr(pSSM, &pVCpu->em.s.mwait.uMonitorECX);
+            rc = SSMR3GetGCPtr(pSSM, &pVCpu->em.s.MWait.uMonitorRCX);
             AssertRCReturn(rc, rc);
-            rc = SSMR3GetGCPtr(pSSM, &pVCpu->em.s.mwait.uMonitorEDX);
+            rc = SSMR3GetGCPtr(pSSM, &pVCpu->em.s.MWait.uMonitorRDX);
             AssertRCReturn(rc, rc);
         }
 
@@ -1895,6 +1895,7 @@ VMMR3DECL(int) EMR3ExecuteVM(PVM pVM, PVMCPU pVCpu)
              * Now what to do?
              */
             Log2(("EMR3ExecuteVM: rc=%Rrc\n", rc));
+            EMSTATE const enmOldState = pVCpu->em.s.enmState;
             switch (rc)
             {
                 /*
@@ -2103,6 +2104,27 @@ VMMR3DECL(int) EMR3ExecuteVM(PVM pVM, PVMCPU pVCpu)
                     break;
             }
 
+            /*
+             * Act on state transition.
+             */
+            EMSTATE const enmNewState = pVCpu->em.s.enmState;
+            if (enmOldState != enmNewState)
+            {
+                /* Clear MWait flags. */
+                if (   enmOldState == EMSTATE_HALTED
+                    && (pVCpu->em.s.MWait.fWait & EMMWAIT_FLAG_ACTIVE)
+                    && (   enmNewState == EMSTATE_RAW
+                        || enmNewState == EMSTATE_HWACC
+                        || enmNewState == EMSTATE_REM
+                        || enmNewState == EMSTATE_DEBUG_GUEST_RAW
+                        || enmNewState == EMSTATE_DEBUG_GUEST_HWACC
+                        || enmNewState == EMSTATE_DEBUG_GUEST_REM) )
+                {
+                    LogFlow(("EMR3ExecuteVM: Clearing MWAIT\n"));
+                    pVCpu->em.s.MWait.fWait &= ~(EMMWAIT_FLAG_ACTIVE | EMMWAIT_FLAG_BREAKIRQIF0);
+                }
+            }
+
             STAM_PROFILE_ADV_STOP(&pVCpu->em.s.StatTotal, x); /* (skip this in release) */
             STAM_PROFILE_ADV_START(&pVCpu->em.s.StatTotal, x);
 
@@ -2158,11 +2180,18 @@ VMMR3DECL(int) EMR3ExecuteVM(PVM pVM, PVMCPU pVCpu)
                 case EMSTATE_HALTED:
                 {
                     STAM_REL_PROFILE_START(&pVCpu->em.s.StatHalted, y);
-                    if (pVCpu->em.s.mwait.fWait & EMMWAIT_FLAG_ACTIVE)
+                    /* MWAIT has a special extension where it's woken up when
+                       an interrupt is pending even when IF=0. */
+                    if (   (pVCpu->em.s.MWait.fWait & (EMMWAIT_FLAG_ACTIVE | EMMWAIT_FLAG_BREAKIRQIF0))
+                        ==                            (EMMWAIT_FLAG_ACTIVE | EMMWAIT_FLAG_BREAKIRQIF0))
                     {
-                        /* mwait has a special extension where it's woken up when an interrupt is pending even when IF=0. */
-                        rc = VMR3WaitHalted(pVM, pVCpu, !(pVCpu->em.s.mwait.fWait & EMMWAIT_FLAG_BREAKIRQIF0) && !(CPUMGetGuestEFlags(pVCpu) & X86_EFL_IF));
-                        pVCpu->em.s.mwait.fWait &= ~(EMMWAIT_FLAG_ACTIVE | EMMWAIT_FLAG_BREAKIRQIF0);
+                        rc = VMR3WaitHalted(pVM, pVCpu, false /*fIgnoreInterrupts*/);
+                        if (   rc == VINF_SUCCESS
+                            && VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC))
+                        {
+                            Log(("EMR3ExecuteVM: Triggering reschedule on pending IRQ after MWAIT\n"));
+                            rc = VINF_EM_RESCHEDULE;
+                        }
                     }
                     else
                         rc = VMR3WaitHalted(pVM, pVCpu, !(CPUMGetGuestEFlags(pVCpu) & X86_EFL_IF));
@@ -2177,7 +2206,7 @@ VMMR3DECL(int) EMR3ExecuteVM(PVM pVM, PVMCPU pVCpu)
                 case EMSTATE_SUSPENDED:
                     TMR3NotifySuspend(pVM, pVCpu);
                     STAM_REL_PROFILE_ADV_STOP(&pVCpu->em.s.StatTotal, x);
-                    Log(("EMR3ExecuteVM: actually returns %Rrc (state %s / %s)\n", rc, emR3GetStateName(pVCpu->em.s.enmState), emR3GetStateName(pVCpu->em.s.enmPrevState)));
+                    Log(("EMR3ExecuteVM: actually returns %Rrc (state %s / %s)\n", rc, emR3GetStateName(pVCpu->em.s.enmState), emR3GetStateName(enmOldState)));
                     return VINF_EM_SUSPEND;
 
                 /*
@@ -2206,7 +2235,7 @@ VMMR3DECL(int) EMR3ExecuteVM(PVM pVM, PVMCPU pVCpu)
                         /* switch to guru meditation mode */
                         pVCpu->em.s.enmState = EMSTATE_GURU_MEDITATION;
                         VMMR3FatalDump(pVM, pVCpu, rc);
-                        Log(("EMR3ExecuteVM: actually returns %Rrc (state %s / %s)\n", rc, emR3GetStateName(pVCpu->em.s.enmState), emR3GetStateName(pVCpu->em.s.enmPrevState)));
+                        Log(("EMR3ExecuteVM: actually returns %Rrc (state %s / %s)\n", rc, emR3GetStateName(pVCpu->em.s.enmState), emR3GetStateName(enmOldState)));
                         return rc;
                     }
 
@@ -2224,7 +2253,7 @@ VMMR3DECL(int) EMR3ExecuteVM(PVM pVM, PVMCPU pVCpu)
                     VMMR3FatalDump(pVM, pVCpu, rc);
                     emR3Debug(pVM, pVCpu, rc);
                     STAM_REL_PROFILE_ADV_STOP(&pVCpu->em.s.StatTotal, x);
-                    Log(("EMR3ExecuteVM: actually returns %Rrc (state %s / %s)\n", rc, emR3GetStateName(pVCpu->em.s.enmState), emR3GetStateName(pVCpu->em.s.enmPrevState)));
+                    Log(("EMR3ExecuteVM: actually returns %Rrc (state %s / %s)\n", rc, emR3GetStateName(pVCpu->em.s.enmState), emR3GetStateName(enmOldState)));
                     return rc;
                 }
 
@@ -2238,7 +2267,7 @@ VMMR3DECL(int) EMR3ExecuteVM(PVM pVM, PVMCPU pVCpu)
                     pVCpu->em.s.enmState = EMSTATE_GURU_MEDITATION;
                     TMR3NotifySuspend(pVM, pVCpu);
                     STAM_REL_PROFILE_ADV_STOP(&pVCpu->em.s.StatTotal, x);
-                    Log(("EMR3ExecuteVM: actually returns %Rrc (state %s / %s)\n", rc, emR3GetStateName(pVCpu->em.s.enmState), emR3GetStateName(pVCpu->em.s.enmPrevState)));
+                    Log(("EMR3ExecuteVM: actually returns %Rrc (state %s / %s)\n", rc, emR3GetStateName(pVCpu->em.s.enmState), emR3GetStateName(enmOldState)));
                     return VERR_EM_INTERNAL_ERROR;
             }
         } /* The Outer Main Loop */
