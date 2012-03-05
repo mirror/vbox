@@ -194,6 +194,8 @@ private:
     static void staticSamplerCallback (RTTIMERLR hTimerLR, void *pvUser, uint64_t iTick);
     void samplerCallback(uint64_t iTick);
 
+    const Utf8Str& getFailedGuestName();
+
     typedef std::list<pm::Metric*> MetricList;
     typedef std::list<pm::BaseMetric*> BaseMetricList;
 
@@ -203,6 +205,7 @@ private:
     };
 
     unsigned int mMagic;
+    const Utf8Str mUnknownGuest;
 
     struct Data
     {

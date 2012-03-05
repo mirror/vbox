@@ -138,7 +138,10 @@ static const char *g_papcszMetricNames[] =
 // constructor / destructor
 ////////////////////////////////////////////////////////////////////////////////
 
-PerformanceCollector::PerformanceCollector() : mMagic(0) {}
+PerformanceCollector::PerformanceCollector()
+  : mMagic(0), mUnknownGuest("unknown guest")
+{
+}
 
 PerformanceCollector::~PerformanceCollector() {}
 
@@ -298,6 +301,14 @@ HRESULT PerformanceCollector::toIPerformanceMetric(pm::BaseMetric *src, IPerform
     return rc;
 }
 
+const Utf8Str& PerformanceCollector::getFailedGuestName()
+{
+    pm::CollectorGuest *pGuest = m.gm->getBlockedGuest();
+    if (pGuest)
+        return pGuest->getVMName();
+    return mUnknownGuest;
+}
+
 STDMETHODIMP PerformanceCollector::GetMetrics(ComSafeArrayIn(IN_BSTR, metricNames),
                                               ComSafeArrayIn(IUnknown *, objects),
                                               ComSafeArrayOut(IPerformanceMetric *, outMetrics))
@@ -366,13 +377,17 @@ STDMETHODIMP PerformanceCollector::SetupMetrics(ComSafeArrayIn(IN_BSTR, metricNa
             {
                 LogFlow (("PerformanceCollector::SetupMetrics() disabling %s\n",
                           (*it)->getName()));
-                (*it)->disable();
+                rc = (*it)->disable();
+                if (FAILED(rc))
+                    break;
             }
             else
             {
                 LogFlow (("PerformanceCollector::SetupMetrics() enabling %s\n",
                           (*it)->getName()));
-                (*it)->enable();
+                rc = (*it)->enable();
+                if (FAILED(rc))
+                    break;
             }
             filteredMetrics.push_back(*it);
         }
@@ -385,6 +400,10 @@ STDMETHODIMP PerformanceCollector::SetupMetrics(ComSafeArrayIn(IN_BSTR, metricNa
     retMetrics.detachTo(ComSafeArrayOutArg(outMetrics));
 
     LogFlowThisFuncLeave();
+
+    if (FAILED(rc))
+        return setError(E_FAIL, "Failed to setup metrics for '%s'",
+                        getFailedGuestName().c_str());
     return rc;
 }
 
@@ -408,7 +427,9 @@ STDMETHODIMP PerformanceCollector::EnableMetrics(ComSafeArrayIn(IN_BSTR, metricN
     for (it = m.baseMetrics.begin(); it != m.baseMetrics.end(); ++it)
         if (filter.match((*it)->getObject(), (*it)->getName()))
         {
-            (*it)->enable();
+            rc = (*it)->enable();
+            if (FAILED(rc))
+                break;
             filteredMetrics.push_back(*it);
         }
 
@@ -420,6 +441,10 @@ STDMETHODIMP PerformanceCollector::EnableMetrics(ComSafeArrayIn(IN_BSTR, metricN
     retMetrics.detachTo(ComSafeArrayOutArg(outMetrics));
 
     LogFlowThisFuncLeave();
+
+    if (FAILED(rc))
+        return setError(E_FAIL, "Failed to enable metrics for '%s'",
+                        getFailedGuestName().c_str());
     return rc;
 }
 
@@ -443,7 +468,9 @@ STDMETHODIMP PerformanceCollector::DisableMetrics(ComSafeArrayIn(IN_BSTR, metric
     for (it = m.baseMetrics.begin(); it != m.baseMetrics.end(); ++it)
         if (filter.match((*it)->getObject(), (*it)->getName()))
         {
-            (*it)->disable();
+            rc = (*it)->disable();
+            if (FAILED(rc))
+                break;
             filteredMetrics.push_back(*it);
         }
 
@@ -455,6 +482,10 @@ STDMETHODIMP PerformanceCollector::DisableMetrics(ComSafeArrayIn(IN_BSTR, metric
     retMetrics.detachTo(ComSafeArrayOutArg(outMetrics));
 
     LogFlowThisFuncLeave();
+
+    if (FAILED(rc))
+        return setError(E_FAIL, "Failed to disable metrics for '%s'",
+                        getFailedGuestName().c_str());
     return rc;
 }
 
@@ -693,8 +724,11 @@ void PerformanceCollector::samplerCallback(uint64_t iTick)
 
     /* Let know the platform specific code what is being collected */
     m.hal->preCollect(hints, iTick);
+#if 0
+    /* Guest stats are now pushed by guests themselves */
     /* Collect the data in bulk from all hinted guests */
     m.gm->preCollect(hints, iTick);
+#endif
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
     /*

@@ -108,6 +108,87 @@ int CollectorHAL::getHostCpuMHz(ULONG *mhz)
 
 #ifndef VBOX_COLLECTOR_TEST_CASE
 
+CollectorGuestQueue::CollectorGuestQueue()
+{
+    mEvent = NIL_RTSEMEVENT;
+    RTSemEventCreate(&mEvent);
+}
+
+CollectorGuestQueue::~CollectorGuestQueue()
+{
+    RTSemEventDestroy(mEvent);
+}
+
+void CollectorGuestQueue::push(CollectorGuestRequest* rq)
+{
+    RTCLock lock(mLockMtx);
+
+    mQueue.push(rq);
+    RTSemEventSignal(mEvent);
+}
+
+CollectorGuestRequest* CollectorGuestQueue::pop()
+{
+    int rc = VINF_SUCCESS;
+    CollectorGuestRequest* rq = NULL;
+
+    do
+    {
+        {
+            RTCLock lock(mLockMtx);
+
+            if (!mQueue.empty())
+            {
+                rq = mQueue.front();
+                mQueue.pop();
+            }
+        }
+
+        if (rq)
+            return rq;
+        else
+            rc = RTSemEventWaitNoResume(mEvent, RT_INDEFINITE_WAIT);
+    }
+    while (RT_SUCCESS(rc));
+
+    return NULL;
+}
+
+int CGRQEnable::execute()
+{
+    Assert(mCGuest);
+    return mCGuest->enableInternal(mMask);
+}
+
+void CGRQEnable::debugPrint(void *aObject, const char *aFunction, const char *aText)
+{
+    LogAleksey(("{%p} " LOG_FN_FMT ": CGRQEnable(mask=0x%x) %s\n",
+                aObject, aFunction, mMask, aText));
+}
+
+int CGRQDisable::execute()
+{
+    Assert(mCGuest);
+    return mCGuest->disableInternal(mMask);
+}
+
+void CGRQDisable::debugPrint(void *aObject, const char *aFunction, const char *aText)
+{
+    LogAleksey(("{%p} " LOG_FN_FMT ": CGRQDisable(mask=0x%x) %s\n",
+                aObject, aFunction, mMask, aText));
+}
+
+int CGRQAbort::execute()
+{
+    return E_ABORT;
+}
+
+void CGRQAbort::debugPrint(void *aObject, const char *aFunction, const char *aText)
+{
+    LogAleksey(("{%p} " LOG_FN_FMT ": CGRQAbort %s\n",
+                aObject, aFunction, aText));
+}
+
 CollectorGuest::CollectorGuest(Machine *machine, RTPROCESS process) :
     mUnregistered(false), mEnabled(false), mValid(false), mMachine(machine), mProcess(process),
     mCpuUser(0), mCpuKernel(0), mCpuIdle(0),
@@ -152,53 +233,94 @@ int CollectorGuest::enableVMMStats(bool mCollectVMMStats)
     return ret;
 }
 
-int CollectorGuest::enable()
+int CollectorGuest::enable(ULONG mask)
 {
-    mEnabled = true;
-    /* Must make sure that the machine object does not get uninitialized
-     * in the middle of enabling this collector. Causes timing-related
-     * behavior otherwise, which we don't want. In particular the
-     * GetRemoteConsole call below can hang if the VM didn't completely
-     * terminate (the VM processes stop processing events shortly before
-     * closing the session). This avoids the hang. */
-    AutoCaller autoCaller(mMachine);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+    return enqueueRequest(new CGRQEnable(mask));
+}
 
+int CollectorGuest::disable(ULONG mask)
+{
+    return enqueueRequest(new CGRQDisable(mask));
+}
+
+int CollectorGuest::enableInternal(ULONG mask)
+{
     HRESULT ret = S_OK;
 
-    ComPtr<IInternalSessionControl> directControl;
+    if ((mEnabled & mask) == mask)
+        return E_UNEXPECTED;
 
-    ret = mMachine->getDirectControl(&directControl);
-    if (ret != S_OK)
-        return ret;
-
-    /* get the associated console; this is a remote call (!) */
-    ret = directControl->GetRemoteConsole(mConsole.asOutParam());
-    if (ret != S_OK)
-        return ret;
-
-    ret = mConsole->COMGETTER(Guest)(mGuest.asOutParam());
-    if (ret == S_OK)
+    if (!mEnabled)
     {
-        ret = mGuest->COMSETTER(StatisticsUpdateInterval)(1 /* 1 sec */);
-        LogAleksey(("{%p} " LOG_FN_FMT ": Set guest statistics update interval to 1 sec (%s)\n",
-                    this, __PRETTY_FUNCTION__, SUCCEEDED(ret)?"success":"failed"));
+        /* Must make sure that the machine object does not get uninitialized
+         * in the middle of enabling this collector. Causes timing-related
+         * behavior otherwise, which we don't want. In particular the
+         * GetRemoteConsole call below can hang if the VM didn't completely
+         * terminate (the VM processes stop processing events shortly before
+         * closing the session). This avoids the hang. */
+        AutoCaller autoCaller(mMachine);
+        if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+        mMachineName = mMachine->getName();
+
+        ComPtr<IInternalSessionControl> directControl;
+
+        ret = mMachine->getDirectControl(&directControl);
+        if (ret != S_OK)
+            return ret;
+
+        /* get the associated console; this is a remote call (!) */
+        ret = directControl->GetRemoteConsole(mConsole.asOutParam());
+        if (ret != S_OK)
+            return ret;
+
+        ret = mConsole->COMGETTER(Guest)(mGuest.asOutParam());
+        if (ret == S_OK)
+        {
+            ret = mGuest->COMSETTER(StatisticsUpdateInterval)(1 /* 1 sec */);
+            LogAleksey(("{%p} " LOG_FN_FMT ": Set guest statistics update interval to 1 sec (%s)\n",
+                        this, __PRETTY_FUNCTION__, SUCCEEDED(ret)?"success":"failed"));
+        }
     }
+    if ((mask & GUESTSTATS_VMMRAM) == GUESTSTATS_VMMRAM)
+        enableVMMStats(true);
+    mEnabled |= mask;
 
     return ret;
 }
 
-int CollectorGuest::disable()
+int CollectorGuest::disableInternal(ULONG mask)
 {
-    mEnabled = false;
-    Assert(mGuest && mConsole);
-    HRESULT ret = mGuest->COMSETTER(StatisticsUpdateInterval)(0 /* off */);
-    NOREF(ret);
-    LogAleksey(("{%p} " LOG_FN_FMT ": Set guest statistics update interval to 0 sec (%s)\n",
-                this, __PRETTY_FUNCTION__, SUCCEEDED(ret)?"success":"failed"));
-    invalidateStats();
+    if (!(mEnabled & mask))
+        return E_UNEXPECTED;
+
+    if ((mask & GUESTSTATS_VMMRAM) == GUESTSTATS_VMMRAM)
+        enableVMMStats(false);
+    mEnabled &= ~mask;
+    if (!mEnabled)
+    {
+        Assert(mGuest && mConsole);
+        HRESULT ret = mGuest->COMSETTER(StatisticsUpdateInterval)(0 /* off */);
+        NOREF(ret);
+        LogAleksey(("{%p} " LOG_FN_FMT ": Set guest statistics update interval to 0 sec (%s)\n",
+                    this, __PRETTY_FUNCTION__, SUCCEEDED(ret)?"success":"failed"));
+        invalidate(GUESTSTATS_ALL);
+    }
 
     return S_OK;
+}
+
+int CollectorGuest::enqueueRequest(CollectorGuestRequest *aRequest)
+{
+    if (mManager)
+    {
+        aRequest->setGuest(this);
+        return mManager->enqueueRequest(aRequest);
+    }
+
+    LogAleksey(("{%p} " LOG_FN_FMT ": Attempted enqueue guest request when mManager is null\n",
+                this, __PRETTY_FUNCTION__));
+    return E_POINTER;
 }
 
 void CollectorGuest::updateStats(ULONG aValidStats, ULONG aCpuUser,
@@ -234,54 +356,35 @@ void CollectorGuest::updateStats(ULONG aValidStats, ULONG aCpuUser,
     mValid = aValidStats;
 }
 
-void CollectorGuestManager::preCollect(CollectorHints& hints, uint64_t /* iTick */)
+CollectorGuestManager::CollectorGuestManager()
+  : mVMMStatsProvider(NULL), mGuestBeingCalled(NULL)
 {
-    /*
-     * Since we are running without a lock the value of mVMMStatsProvider
-     * can change at any moment. In the worst case we won't collect any data.
-     */
-    CollectorGuestList::iterator it;
+    int rc = RTThreadCreate(&mThread, CollectorGuestManager::requestProcessingThread,
+                            this, 0, RTTHREADTYPE_MAIN_WORKER, RTTHREADFLAGS_WAITABLE,
+                            "CGMgr");
+    LogAleksey(("{%p} " LOG_FN_FMT ": RTThreadCreate returned %u (mThread=%p)\n",
+                this, __PRETTY_FUNCTION__, rc));
+}
 
-    LogAleksey(("{%p} " LOG_FN_FMT ": provider=%p ramvmm=%s\n",
-                this, __PRETTY_FUNCTION__, mVMMStatsProvider, hints.isHostRamVmmCollected()?"y":"n"));
-    for (it = mGuests.begin(); it != mGuests.end(); it++)
+CollectorGuestManager::~CollectorGuestManager()
+{
+    Assert(mGuests.size() == 0);
+    int rcThread = 0;
+    int rc = enqueueRequest(new CGRQAbort());
+    if (SUCCEEDED(rc))
     {
-        LogAleksey(("{%p} " LOG_FN_FMT ": it=%p pid=%d gueststats=%s...\n",
-                    this, __PRETTY_FUNCTION__, *it, (*it)->getProcess(),
-                    hints.isGuestStatsCollected((*it)->getProcess())?"y":"n"));
-        if ((*it)->isUnregistered())
-            continue;
-        if (  (hints.isHostRamVmmCollected() && *it == mVMMStatsProvider)
-            || hints.isGuestStatsCollected((*it)->getProcess()))
-        {
-            /* Guest stats collection needs to be enabled */
-            if ((*it)->isEnabled())
-            {
-                /* Already enabled, collect the data */
-                /*
-                 * Actually the data will be pushed by Guest object, so
-                 * we don't need to do anything here.
-                 */
-                //(*it)->updateStats();
-            }
-            else
-            {
-                (*it)->invalidateStats();
-                (*it)->enable();
-                (*it)->enableVMMStats(*it == mVMMStatsProvider);
-            }
-        }
-        else
-        {
-            /* Guest stats collection needs to be disabled */
-            if ((*it)->isEnabled())
-                (*it)->disable();
-        }
+        /* We wait only if we were able to put the abort request to a queue */
+        LogAleksey(("{%p} " LOG_FN_FMT ": Waiting for CGM request processing thread to stop...\n",
+                    this, __PRETTY_FUNCTION__));
+        rc = RTThreadWait(mThread, 1000 /* 1 sec */, &rcThread);
+        LogAleksey(("{%p} " LOG_FN_FMT ": RTThreadWait returned %u (thread exit code: %u)\n",
+                    this, __PRETTY_FUNCTION__, rc, rcThread));
     }
 }
 
 void CollectorGuestManager::registerGuest(CollectorGuest* pGuest)
 {
+    pGuest->setManager(this);
     mGuests.push_back(pGuest);
     /*
      * If no VMM stats provider was elected previously than this is our
@@ -295,6 +398,8 @@ void CollectorGuestManager::registerGuest(CollectorGuest* pGuest)
 
 void CollectorGuestManager::unregisterGuest(CollectorGuest* pGuest)
 {
+    int rc = S_OK;
+
     LogAleksey(("{%p} " LOG_FN_FMT ": About to unregister guest=%p provider=%p\n",
                 this, __PRETTY_FUNCTION__, pGuest, mVMMStatsProvider));
     //mGuests.remove(pGuest); => destroyUnregistered()
@@ -316,18 +421,32 @@ void CollectorGuestManager::unregisterGuest(CollectorGuest* pGuest)
             {
                 /* Found the guest already collecting stats, elect it */
                 mVMMStatsProvider = *it;
-                mVMMStatsProvider->enableVMMStats(true);
+                rc = mVMMStatsProvider->enqueueRequest(new CGRQEnable(GUESTSTATS_VMMRAM));
+                if (FAILED(rc))
+                {
+                    /* This is not a good candidate -- try to find another */
+                    mVMMStatsProvider = NULL;
+                    continue;
+                }
                 break;
             }
-            else if (!mVMMStatsProvider)
+        }
+        if (!mVMMStatsProvider)
+        {
+            /* If nobody collects stats, take the first registered */
+            for (it = mGuests.begin(); it != mGuests.end(); it++)
             {
-                /* If nobody collects stats, take the first registered */
+                /* Skip unregistered as they are about to be destroyed */
+                if ((*it)->isUnregistered())
+                    continue;
+
                 mVMMStatsProvider = *it;
-                /*
-                 * No need to notify the guest at this point as it will be
-                 * done in CollectorGuestManager::preCollect when it gets
-                 * enabled.
-                 */
+                //mVMMStatsProvider->enable(GUESTSTATS_VMMRAM);
+                rc = mVMMStatsProvider->enqueueRequest(new CGRQEnable(GUESTSTATS_VMMRAM));
+                if (SUCCEEDED(rc))
+                    break;
+                /* This was not a good candidate -- try to find another */
+                mVMMStatsProvider = NULL;
             }
         }
     }
@@ -350,6 +469,58 @@ void CollectorGuestManager::destroyUnregistered()
         else
             ++it;
 }
+
+int CollectorGuestManager::enqueueRequest(CollectorGuestRequest *aRequest)
+{
+#ifdef DEBUG
+    aRequest->debugPrint(this, __PRETTY_FUNCTION__, "added to CGM queue");
+#endif /* DEBUG */
+    /*
+     * It is very unlikely that we will get high frequency calls to configure
+     * guest metrics collection, so we rely on this fact to detect blocked
+     * guests. If the guest has not finished processing the previous request
+     * we consider it blocked.
+     */
+    if (aRequest->getGuest() && aRequest->getGuest() == mGuestBeingCalled)
+    {
+        /* Request execution got stalled for this guest -- report an error */
+        return E_FAIL;
+    }
+    mQueue.push(aRequest);
+    return S_OK;
+}
+
+/* static */
+DECLCALLBACK(int) CollectorGuestManager::requestProcessingThread(RTTHREAD /* aThread */, void *pvUser)
+{
+    CollectorGuestRequest *pReq;
+    CollectorGuestManager *mgr = static_cast<CollectorGuestManager*>(pvUser);
+
+    HRESULT rc = S_OK;
+
+    LogAleksey(("{%p} " LOG_FN_FMT ": Starting request processing loop...p\n",
+                mgr, __PRETTY_FUNCTION__));
+    while ((pReq = mgr->mQueue.pop()) != NULL)
+    {
+#ifdef DEBUG
+        pReq->debugPrint(mgr, __PRETTY_FUNCTION__, "is being executed...");
+#endif /* DEBUG */
+        mgr->mGuestBeingCalled = pReq->getGuest();
+        rc = pReq->execute();
+        mgr->mGuestBeingCalled = NULL;
+        delete pReq;
+        if (rc == E_ABORT)
+            break;
+        if (FAILED(rc))
+            LogAleksey(("{%p} " LOG_FN_FMT ": request::execute returned %u\n",
+                        mgr, __PRETTY_FUNCTION__, rc));
+    }
+    LogAleksey(("{%p} " LOG_FN_FMT ": Exiting request processing loop... rc=%u\n",
+                        mgr, __PRETTY_FUNCTION__, rc));
+
+    return VINF_SUCCESS;
+}
+
 
 #endif /* !VBOX_COLLECTOR_TEST_CASE */
 
@@ -471,6 +642,7 @@ void HostRamUsage::collect()
     }
 }
 
+#ifndef VBOX_COLLECTOR_TEST_CASE
 void HostRamVmm::init(ULONG period, ULONG length)
 {
     mPeriod = period;
@@ -479,6 +651,26 @@ void HostRamVmm::init(ULONG period, ULONG length)
     mFreeVMM->init(mLength);
     mBalloonVMM->init(mLength);
     mSharedVMM->init(mLength);
+}
+
+int HostRamVmm::enable()
+{
+    int rc = S_OK;
+    CollectorGuest *provider = mCollectorGuestManager->getVMMStatsProvider();
+    if (provider)
+        rc = provider->enable(GUESTSTATS_VMMRAM);
+    BaseMetric::enable();
+    return rc;
+}
+
+int HostRamVmm::disable()
+{
+    int rc = S_OK;
+    BaseMetric::disable();
+    CollectorGuest *provider = mCollectorGuestManager->getVMMStatsProvider();
+    if (provider)
+        rc = provider->disable(GUESTSTATS_VMMRAM);
+    return rc;
 }
 
 void HostRamVmm::preCollect(CollectorHints& hints, uint64_t /* iTick */)
@@ -501,7 +693,13 @@ void HostRamVmm::collect()
             mFreeCurrent      = provider->getFreeVMM();
             mBalloonedCurrent = provider->getBalloonedVMM();
             mSharedCurrent    = provider->getSharedVMM();
+            provider->invalidate(GUESTSTATS_VMMRAM);
         }
+        /*
+         * Note that if there are no new values from the provider we will use
+         * the ones most recently provided instead of zeros, which is probably
+         * a desirable behavior.
+         */
     }
     else
     {
@@ -518,6 +716,7 @@ void HostRamVmm::collect()
     mBalloonVMM->put(mBalloonedCurrent);
     mSharedVMM->put(mSharedCurrent);
 }
+#endif /* !VBOX_COLLECTOR_TEST_CASE */
 
 
 
@@ -591,6 +790,7 @@ void MachineRamUsage::collect()
 }
 
 
+#ifndef VBOX_COLLECTOR_TEST_CASE
 void GuestCpuLoad::init(ULONG period, ULONG length)
 {
     mPeriod = period;
@@ -613,7 +813,21 @@ void GuestCpuLoad::collect()
         mUser->put((ULONG)(PM_CPU_LOAD_MULTIPLIER * mCGuest->getCpuUser()) / 100);
         mKernel->put((ULONG)(PM_CPU_LOAD_MULTIPLIER * mCGuest->getCpuKernel()) / 100);
         mIdle->put((ULONG)(PM_CPU_LOAD_MULTIPLIER * mCGuest->getCpuIdle()) / 100);
+        mCGuest->invalidate(GUESTSTATS_CPULOAD);
     }
+}
+
+int GuestCpuLoad::enable()
+{
+    int rc = mCGuest->enable(GUESTSTATS_CPULOAD);
+    BaseMetric::enable();
+    return rc;
+}
+
+int GuestCpuLoad::disable()
+{
+    BaseMetric::disable();
+    return mCGuest->disable(GUESTSTATS_CPULOAD);
 }
 
 void GuestRamUsage::init(ULONG period, ULONG length)
@@ -629,11 +843,6 @@ void GuestRamUsage::init(ULONG period, ULONG length)
     mPagedTotal->init(mLength);
 }
 
-void GuestRamUsage::preCollect(CollectorHints& hints,  uint64_t /* iTick */)
-{
-    hints.collectGuestStats(mCGuest->getProcess());
-}
-
 void GuestRamUsage::collect()
 {
     if (mCGuest->isValid(GUESTSTATS_RAMUSAGE))
@@ -644,8 +853,28 @@ void GuestRamUsage::collect()
         mShared->put(mCGuest->getMemShared());
         mCache->put(mCGuest->getMemCache());
         mPagedTotal->put(mCGuest->getPageTotal());
+        mCGuest->invalidate(GUESTSTATS_RAMUSAGE);
     }
 }
+
+int GuestRamUsage::enable()
+{
+    int rc = mCGuest->enable(GUESTSTATS_RAMUSAGE);
+    BaseMetric::enable();
+    return rc;
+}
+
+int GuestRamUsage::disable()
+{
+    BaseMetric::disable();
+    return mCGuest->disable(GUESTSTATS_RAMUSAGE);
+}
+
+void GuestRamUsage::preCollect(CollectorHints& hints,  uint64_t /* iTick */)
+{
+    hints.collectGuestStats(mCGuest->getProcess());
+}
+#endif /* !VBOX_COLLECTOR_TEST_CASE */
 
 void CircularBuffer::init(ULONG ulLength)
 {
