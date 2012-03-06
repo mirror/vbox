@@ -3,7 +3,7 @@
 # libraries VBox OSE depends on.
 
 #
-# Copyright (C) 2006-2011 Oracle Corporation
+# Copyright (C) 2006-2012 Oracle Corporation
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;
@@ -914,7 +914,7 @@ extern "C" int main()
 EOF
   if test_compile "$LIBVNCSERVER $INCVNCSERVER" libvncserver libvncserver; then
     if test_execute; then
-      cnf_append "VBOX_WITH_VNC" "1"
+      cnf_append "VBOX_WITH_EXTPACK_VNC" "1"
     fi
   fi
 }
@@ -2562,7 +2562,7 @@ if [ $OSE -ge 1 ]; then
   if [ $WITH_VNC = 1 ]; then
     check_vncserver
   else
-    cnf_append "VBOX_WITH_VNC" ""
+    cnf_append "VBOX_WITH_EXTPACK_VNC" ""
   fi
 fi
 

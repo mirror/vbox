@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2011 Oracle Corporation
+ * Copyright (C) 2006-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -58,9 +58,6 @@ using namespace com;
 #endif
 
 #include "Framebuffer.h"
-#ifdef VBOX_WITH_VNC
-# include "FramebufferVNC.h"
-#endif
 
 #include "NullFramebuffer.h"
 
@@ -80,10 +77,6 @@ static EventQueue *gEventQ = NULL;
 
 /* flag whether frontend should terminate */
 static volatile bool g_fTerminateFE = false;
-
-#ifdef VBOX_WITH_VNC
-static VNCFB *g_pFramebufferVNC;
-#endif
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -317,10 +310,6 @@ public:
                         mouse->PutMouseEventAbsolute(-1, -1, 0, 0 /* Horizontal wheel */, 0);
                     }
                 }
-#ifdef VBOX_WITH_VNC
-                if (g_pFramebufferVNC)
-                    g_pFramebufferVNC->enableAbsMouse(fSupportsAbsolute);
-#endif
                 break;
             }
             case VBoxEventType_OnStateChanged:
@@ -473,11 +462,6 @@ static void show_usage()
 {
     RTPrintf("Usage:\n"
              "   -s, -startvm, --startvm <name|uuid>   Start given VM (required argument)\n"
-#ifdef VBOX_WITH_VNC
-             "   -n, --vnc                             Enable the built in VNC server\n"
-             "   -m, --vncport <port>                  TCP port number to use for the VNC server\n"
-             "   -o, --vncpass <pw>                    Set the VNC server password\n"
-#endif
              "   -v, -vrde, --vrde on|off|config       Enable (default) or disable the VRDE\n"
              "                                         server or don't change the setting\n"
              "   -e, -vrdeproperty, --vrdeproperty <name=[value]> Set a VRDE property:\n"
@@ -559,11 +543,6 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
     const char *vrdeEnabled = NULL;
     unsigned cVRDEProperties = 0;
     const char *aVRDEProperties[16];
-#ifdef VBOX_WITH_VNC
-    bool        fVNCEnable      = false;
-    unsigned    uVNCPort        = 0;          /* default port */
-    char const *pszVNCPassword  = NULL;       /* no password */
-#endif
     unsigned fRawR0 = ~0U;
     unsigned fRawR3 = ~0U;
     unsigned fPATM  = ~0U;
@@ -614,11 +593,6 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
         { "--vrde", 'v', RTGETOPT_REQ_STRING },
         { "-vrdeproperty", 'e', RTGETOPT_REQ_STRING },
         { "--vrdeproperty", 'e', RTGETOPT_REQ_STRING },
-#ifdef VBOX_WITH_VNC
-        { "--vncport", 'm', RTGETOPT_REQ_INT32 },
-        { "--vncpass", 'o', RTGETOPT_REQ_STRING },
-        { "--vnc", 'n', 0 },
-#endif /* VBOX_WITH_VNC */
         { "-rawr0", OPT_RAW_R0, 0 },
         { "--rawr0", OPT_RAW_R0, 0 },
         { "-norawr0", OPT_NO_RAW_R0, 0 },
@@ -678,17 +652,6 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
                 else
                      RTPrintf("Warning: too many VRDE properties. Ignored: '%s'\n", ValueUnion.psz);
                 break;
-#ifdef VBOX_WITH_VNC
-            case 'n':
-                fVNCEnable = true;
-                break;
-            case 'm':
-                uVNCPort = ValueUnion.i32;
-                break;
-            case 'o':
-                pszVNCPassword = ValueUnion.psz;
-                break;
-#endif /* VBOX_WITH_VNC */
             case OPT_RAW_R0:
                 fRawR0 = true;
                 break;
@@ -915,27 +878,6 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
             break;
         }
 #endif /* defined(VBOX_FFMPEG) */
-#ifdef VBOX_WITH_VNC
-        if (fVNCEnable)
-        {
-            Bstr machineName;
-            machine->COMGETTER(Name)(machineName.asOutParam());
-            g_pFramebufferVNC = new VNCFB(console, uVNCPort, pszVNCPassword);
-            rc = g_pFramebufferVNC->init(machineName.raw() ? Utf8Str(machineName.raw()).c_str() : "");
-            if (rc != S_OK)
-            {
-                LogError("Failed to load the vnc server extension, possibly due to a damaged file\n", rc);
-                delete g_pFramebufferVNC;
-                break;
-            }
-
-            Log2(("VBoxHeadless: Registering VNC framebuffer\n"));
-            g_pFramebufferVNC->AddRef();
-            display->SetFramebuffer(VBOX_VIDEO_PRIMARY_SCREEN, g_pFramebufferVNC);
-        }
-        if (rc != S_OK)
-            break;
-#endif
         ULONG cMonitors = 1;
         machine->COMGETTER(MonitorCount)(&cMonitors);
 
@@ -944,13 +886,6 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
         {
 # ifdef VBOX_FFMPEG
             if (fFFMPEG && uScreenId == 0)
-            {
-                /* Already registered. */
-                continue;
-            }
-# endif
-# ifdef VBOX_WITH_VNC
-            if (fVNCEnable && uScreenId == 0)
             {
                 /* Already registered. */
                 continue;

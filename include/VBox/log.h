@@ -3,7 +3,7 @@
  */
 
 /*
- * Copyright (C) 2006-2011 Oracle Corporation
+ * Copyright (C) 2006-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -361,6 +361,8 @@ typedef enum LOGGROUP
     LOG_GROUP_VM,
     /** VMM group. */
     LOG_GROUP_VMM,
+    /** VRDE group */
+    LOG_GROUP_VRDE,
     /** VRDP group */
     LOG_GROUP_VRDP,
     /** VSCSI group */
@@ -539,6 +541,7 @@ typedef enum LOGGROUP
     "VD_VMDK",      \
     "VM",           \
     "VMM",          \
+    "VRDE",         \
     "VRDP",         \
     "VSCSI",        \
     "WEBSERVICE",   \
