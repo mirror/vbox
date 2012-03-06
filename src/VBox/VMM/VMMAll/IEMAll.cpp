@@ -6212,7 +6212,7 @@ static VBOXSTRICTRC iemMemMarkSelDescAccessed(PIEMCPU pIemCpu, uint16_t uSel)
 #define IEM_MC_STORE_MEM_NEG_QNAN_R64_BY_REF(a_pr64Dst)         (a_pr64Dst)->au64[0] = UINT64_C(0xfff8000000000000)
 #define IEM_MC_STORE_MEM_NEG_QNAN_R80_BY_REF(a_pr80Dst) \
     do { \
-        (a_pr80Dst)->au64[1] = UINT64_C(0xc000000000000000); \
+        (a_pr80Dst)->au64[0] = UINT64_C(0xc000000000000000); \
         (a_pr80Dst)->au16[4] = UINT16_C(0xffff); \
     } while (0)
 
