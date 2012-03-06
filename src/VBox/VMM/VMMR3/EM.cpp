@@ -1102,7 +1102,7 @@ l_REMDoForcedActions:
 #endif
             STAM_REL_PROFILE_ADV_SUSPEND(&pVCpu->em.s.StatREMTotal, a);
             rc = emR3ForcedActions(pVM, pVCpu, rc);
-            VBOXVMMR3_EM_FF_ALL_RET(pVCpu, rc);
+            VBOXVMM_EM_FF_ALL_RET(pVCpu, rc);
             STAM_REL_PROFILE_ADV_RESUME(&pVCpu->em.s.StatREMTotal, a);
             if (    rc != VINF_SUCCESS
                 &&  rc != VINF_EM_RESCHEDULE_REM)
@@ -1330,7 +1330,7 @@ EMSTATE emR3Reschedule(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
  */
 int emR3HighPriorityPostForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
 {
-    VBOXVMMR3_EM_FF_HIGH(pVCpu, pVM->fGlobalForcedActions, pVCpu->fLocalForcedActions, rc);
+    VBOXVMM_EM_FF_HIGH(pVCpu, pVM->fGlobalForcedActions, pVCpu->fLocalForcedActions, rc);
 
     if (VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_PDM_CRITSECT))
         PDMCritSectFF(pVCpu);
@@ -1383,7 +1383,7 @@ int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
             if (!rc || rc2 < rc) \
                 rc = rc2; \
         } while (0)
-    VBOXVMMR3_EM_FF_ALL(pVCpu, pVM->fGlobalForcedActions, pVCpu->fLocalForcedActions, rc);
+    VBOXVMM_EM_FF_ALL(pVCpu, pVM->fGlobalForcedActions, pVCpu->fLocalForcedActions, rc);
 
     /*
      * Post execution chunk first.
@@ -1888,7 +1888,7 @@ VMMR3DECL(int) EMR3ExecuteVM(PVM pVM, PVMCPU pVCpu)
                     || VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_ALL_REM_MASK)))
             {
                 rc = emR3ForcedActions(pVM, pVCpu, rc);
-                VBOXVMMR3_EM_FF_ALL_RET(pVCpu, rc);
+                VBOXVMM_EM_FF_ALL_RET(pVCpu, rc);
                 if (   (   rc == VINF_EM_RESCHEDULE_REM
                         || rc == VINF_EM_RESCHEDULE_HWACC)
                     && pVCpu->em.s.fForceRAW)
@@ -2116,7 +2116,7 @@ VMMR3DECL(int) EMR3ExecuteVM(PVM pVM, PVMCPU pVCpu)
             EMSTATE const enmNewState = pVCpu->em.s.enmState;
             if (enmOldState != enmNewState)
             {
-                VBOXVMMR3_EM_STATE_CHANGED(pVCpu, enmOldState, enmNewState, rc);
+                VBOXVMM_EM_STATE_CHANGED(pVCpu, enmOldState, enmNewState, rc);
 
                 /* Clear MWait flags. */
                 if (   enmOldState == EMSTATE_HALTED
@@ -2133,7 +2133,7 @@ VMMR3DECL(int) EMR3ExecuteVM(PVM pVM, PVMCPU pVCpu)
                 }
             }
             else
-                VBOXVMMR3_EM_STATE_UNCHANGED(pVCpu, enmNewState, rc);
+                VBOXVMM_EM_STATE_UNCHANGED(pVCpu, enmNewState, rc);
 
             STAM_PROFILE_ADV_STOP(&pVCpu->em.s.StatTotal, x); /* (skip this in release) */
             STAM_PROFILE_ADV_START(&pVCpu->em.s.StatTotal, x);
