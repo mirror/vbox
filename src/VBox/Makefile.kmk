@@ -92,9 +92,7 @@ else
  if1of ($(KBUILD_TARGET_ARCH), amd64 x86)
   include $(PATH_SUB_CURRENT)/NetworkServices/Makefile.kmk
  endif
- ifndef VBOX_OSE
-  include $(PATH_SUB_CURRENT)/ExtPacks/Makefile.kmk
- endif
+ include $(PATH_SUB_CURRENT)/ExtPacks/Makefile.kmk
  ifdef VBOX_WITH_INSTALLER
   include $(PATH_SUB_CURRENT)/Installer/Makefile.kmk 		        # Keep this last.
  endif
