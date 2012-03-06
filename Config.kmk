@@ -560,8 +560,8 @@ VBOX_WITH_MEMBALLOON = 1
 if1of ($(KBUILD_TARGET), darwin freebsd linux solaris win)
  VBOX_WITH_CROGL = 1
 endif
-# Enable the VNC server in VBoxHeadless (GPL only).
-#VBOX_WITH_VNC = 1
+# Enable the VNC server extension pack (GPL only).
+#VBOX_WITH_EXTPACK_VNC = 1
 # Enable S3 support (requires libcurl)
 VBOX_WITH_S3 = 1
 ## @}

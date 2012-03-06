@@ -4,7 +4,7 @@
 #
 
 #
-# Copyright (C) 2006-2007 Oracle Corporation
+# Copyright (C) 2006-2012 Oracle Corporation
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;
@@ -54,11 +54,6 @@ ifdef VBOX_WITH_GUEST_PROPS
 endif
 ifdef VBOX_WITH_HARDENING
  VBoxHeadless_LDFLAGS.darwin += -install_name $(VBOX_DYLD_EXECUTABLE_PATH)/VBoxHeadless.dylib
-endif
-ifdef VBOX_WITH_VNC                     # (GPL only)
- VBoxHeadless_DEFS     += VBOX_WITH_VNC
- VBoxHeadless_SOURCES  += FramebufferVNC.cpp
- VBoxHeadless_LIBS     += vncserver
 endif
 
 include $(KBUILD_PATH)/subfooter.kmk
