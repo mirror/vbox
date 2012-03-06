@@ -29,6 +29,7 @@
 #include <VBox/vmm/iem.h>
 #include <VBox/vmm/iom.h>
 #include <VBox/vmm/dbgf.h>
+#include <VBox/vmm/dbgftrace.h>
 #include <VBox/vmm/pgm.h>
 #ifdef VBOX_WITH_REM
 # include <VBox/vmm/rem.h>
@@ -1382,6 +1383,9 @@ int emR3RawExecute(PVM pVM, PVMCPU pVCpu, bool *pfFFDone)
         if (    VM_FF_ISPENDING(pVM, VM_FF_HIGH_PRIORITY_PRE_RAW_MASK)
             ||  VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_HIGH_PRIORITY_PRE_RAW_MASK))
         {
+#ifdef DBGFTRACE_ENABLED
+            RTTraceBufAddMsgF(pVM->CTX_SUFF(hTraceBuf), "em-raw ff %08x/%08x pre", pVM->fGlobalForcedActions, pVCpu->fLocalForcedActions);
+#endif
             rc = emR3RawForcedActions(pVM, pVCpu, pCtx);
             if (rc != VINF_SUCCESS)
                 break;
@@ -1448,6 +1452,9 @@ int emR3RawExecute(PVM pVM, PVMCPU pVCpu, bool *pfFFDone)
             STAM_PROFILE_START(&pVCpu->em.s.StatRAWExec, c);
             rc = VMMR3RawRunGC(pVM, pVCpu);
             STAM_PROFILE_STOP(&pVCpu->em.s.StatRAWExec, c);
+#ifdef DBGFTRACE_ENABLED
+            RTTraceBufAddMsgF(pVM->CTX_SUFF(hTraceBuf), "em-raw run => %d", rc);
+#endif
         }
         else
         {
@@ -1541,6 +1548,9 @@ int emR3RawExecute(PVM pVM, PVMCPU pVCpu, bool *pfFFDone)
             ||  VMCPU_FF_ISPENDING(pVCpu, ~VMCPU_FF_HIGH_PRIORITY_PRE_RAW_MASK))
         {
             Assert(pCtx->eflags.Bits.u1VM || (pCtx->ss & X86_SEL_RPL) != 1);
+#ifdef DBGFTRACE_ENABLED
+            RTTraceBufAddMsgF(pVM->CTX_SUFF(hTraceBuf), "em-raw ff %08x/%08x post", pVM->fGlobalForcedActions, pVCpu->fLocalForcedActions);
+#endif
 
             STAM_REL_PROFILE_ADV_SUSPEND(&pVCpu->em.s.StatRAWTotal, a);
             rc = emR3ForcedActions(pVM, pVCpu, rc);

@@ -43,6 +43,7 @@
 #include <VBox/vmm/trpm.h>
 #include <VBox/vmm/iom.h>
 #include <VBox/vmm/dbgf.h>
+#include <VBox/vmm/dbgftrace.h>
 #include <VBox/vmm/pgm.h>
 #ifdef VBOX_WITH_REM
 # include <VBox/vmm/rem.h>
@@ -2110,6 +2111,9 @@ VMMR3DECL(int) EMR3ExecuteVM(PVM pVM, PVMCPU pVCpu)
             EMSTATE const enmNewState = pVCpu->em.s.enmState;
             if (enmOldState != enmNewState)
             {
+#ifdef DBGFTRACE_ENABLED
+                RTTraceBufAddMsgF(pVM->CTX_SUFF(hTraceBuf), "em-outer %d: %d -> %d", rc, enmOldState, enmNewState);
+#endif
                 /* Clear MWait flags. */
                 if (   enmOldState == EMSTATE_HALTED
                     && (pVCpu->em.s.MWait.fWait & EMMWAIT_FLAG_ACTIVE)
@@ -2124,6 +2128,10 @@ VMMR3DECL(int) EMR3ExecuteVM(PVM pVM, PVMCPU pVCpu)
                     pVCpu->em.s.MWait.fWait &= ~(EMMWAIT_FLAG_ACTIVE | EMMWAIT_FLAG_BREAKIRQIF0);
                 }
             }
+#ifdef DBGFTRACE_ENABLED
+            else
+                RTTraceBufAddMsgF(pVM->CTX_SUFF(hTraceBuf), "em-outer %d: %d", rc, enmOldState);
+#endif
 
             STAM_PROFILE_ADV_STOP(&pVCpu->em.s.StatTotal, x); /* (skip this in release) */
             STAM_PROFILE_ADV_START(&pVCpu->em.s.StatTotal, x);
