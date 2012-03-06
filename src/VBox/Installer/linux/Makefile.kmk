@@ -147,12 +147,16 @@ VBOX_LNX_STRIP_BIN = \
 
 # Do not remove relocation information of these binaries
 VBOX_LNX_STRIP_OBJ = \
-	VBoxDD2GC.gc \
 	VBoxDD2R0.r0 \
-	VBoxDDGC.gc \
 	VBoxDDR0.r0 \
-	VMMGC.gc \
 	VMMR0.r0
+
+ifdef VBOX_WITH_RAW_MODE
+ VBOX_LNX_STRIP_OBJ += \
+	VBoxDD2GC.gc \
+	VBoxDDGC.gc \
+	VMMGC.gc
+endif
 
 # Do not strip anything of these files
 VBOX_LNX_NO_STRIP = \
