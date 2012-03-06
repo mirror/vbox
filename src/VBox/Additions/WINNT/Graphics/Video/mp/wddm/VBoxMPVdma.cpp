@@ -1314,7 +1314,7 @@ static int vboxVdmaInformHost(PVBOXMP_DEVEXT pDevExt, PVBOXVDMAINFO pInfo, VBOXV
     if (pCmd)
     {
         pCmd->enmCtl = enmCtl;
-        pCmd->u32Offset = pInfo->CmdHeap.area.offBase;
+        pCmd->u32Offset = pInfo->CmdHeap.Heap.area.offBase;
         pCmd->i32Result = VERR_NOT_SUPPORTED;
 
         const VBOXSHGSMIHEADER* pHdr = VBoxSHGSMICommandPrepSynch(&VBoxCommonFromDeviceExt(pDevExt)->guestCtx.heapCtx, pCmd);
@@ -1371,7 +1371,6 @@ int vboxVdmaCreate(PVBOXMP_DEVEXT pDevExt, VBOXVDMAINFO *pInfo
     pInfo->fEnabled           = FALSE;
 
 #ifdef VBOX_WITH_VDMA
-    KeInitializeSpinLock(&pInfo->HeapLock);
     Assert((offBuffer & 0xfff) == 0);
     Assert((cbBuffer & 0xfff) == 0);
     Assert(offBuffer);
@@ -1395,7 +1394,7 @@ int vboxVdmaCreate(PVBOXMP_DEVEXT pDevExt, VBOXVDMAINFO *pInfo
     if (RT_SUCCESS(rc))
     {
         /* Setup a HGSMI heap within the adapter information area. */
-        rc = HGSMIHeapSetup (&pInfo->CmdHeap,
+        rc = VBoxSHGSMIInit(&pInfo->CmdHeap,
                              pvBuffer,
                              cbBuffer,
                              offBuffer,
@@ -1487,7 +1486,8 @@ int vboxVdmaDestroy (PVBOXMP_DEVEXT pDevExt, PVBOXVDMAINFO pInfo)
         if (pInfo->fEnabled)
             rc = vboxVdmaDisable (pDevExt, pInfo);
 #ifdef VBOX_WITH_VDMA
-        VBoxMPCmnUnmapAdapterMemory(VBoxCommonFromDeviceExt(pDevExt), (void**)&pInfo->CmdHeap.area.pu8Base);
+        VBoxSHGSMITerm(&pInfo->CmdHeap);
+        VBoxMPCmnUnmapAdapterMemory(VBoxCommonFromDeviceExt(pDevExt), (void**)&pInfo->CmdHeap.Heap.area.pu8Base);
 #endif
     }
     else
@@ -1498,19 +1498,13 @@ int vboxVdmaDestroy (PVBOXMP_DEVEXT pDevExt, PVBOXVDMAINFO pInfo)
 #ifdef VBOX_WITH_VDMA
 void vboxVdmaCBufDrFree (PVBOXVDMAINFO pInfo, PVBOXVDMACBUF_DR pDr)
 {
-    KIRQL OldIrql;
-    KeAcquireSpinLock(&pInfo->HeapLock, &OldIrql);
     VBoxSHGSMICommandFree (&pInfo->CmdHeap, pDr);
-    KeReleaseSpinLock(&pInfo->HeapLock, OldIrql);
 }
 
 PVBOXVDMACBUF_DR vboxVdmaCBufDrCreate (PVBOXVDMAINFO pInfo, uint32_t cbTrailingData)
 {
     uint32_t cbDr = VBOXVDMACBUF_DR_SIZE(cbTrailingData);
-    KIRQL OldIrql;
-    KeAcquireSpinLock(&pInfo->HeapLock, &OldIrql);
     PVBOXVDMACBUF_DR pDr = (PVBOXVDMACBUF_DR)VBoxSHGSMICommandAlloc (&pInfo->CmdHeap, cbDr, HGSMI_CH_VBVA, VBVA_VDMA_CMD);
-    KeReleaseSpinLock(&pInfo->HeapLock, OldIrql);
     Assert(pDr);
     if (pDr)
         memset (pDr, 0, cbDr);
@@ -1520,7 +1514,7 @@ PVBOXVDMACBUF_DR vboxVdmaCBufDrCreate (PVBOXVDMAINFO pInfo, uint32_t cbTrailingD
     return pDr;
 }
 
-static DECLCALLBACK(void) vboxVdmaCBufDrCompletion(struct _HGSMIHEAP * pHeap, void *pvCmd, void *pvContext)
+static DECLCALLBACK(void) vboxVdmaCBufDrCompletion(PVBOXSHGSMI pHeap, void *pvCmd, void *pvContext)
 {
     PVBOXMP_DEVEXT pDevExt = (PVBOXMP_DEVEXT)pvContext;
     PVBOXVDMAINFO pInfo = &pDevExt->u.primary.Vdma;
@@ -1528,7 +1522,7 @@ static DECLCALLBACK(void) vboxVdmaCBufDrCompletion(struct _HGSMIHEAP * pHeap, vo
     vboxVdmaCBufDrFree (pInfo, (PVBOXVDMACBUF_DR)pvCmd);
 }
 
-static DECLCALLBACK(void) vboxVdmaCBufDrCompletionIrq(struct _HGSMIHEAP * pHeap, void *pvCmd, void *pvContext,
+static DECLCALLBACK(void) vboxVdmaCBufDrCompletionIrq(PVBOXSHGSMI pHeap, void *pvCmd, void *pvContext,
                                         PFNVBOXSHGSMICMDCOMPLETION *ppfnCompletion, void **ppvCompletion)
 {
     PVBOXMP_DEVEXT pDevExt = (PVBOXMP_DEVEXT)pvContext;

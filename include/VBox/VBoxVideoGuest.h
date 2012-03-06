@@ -42,6 +42,15 @@ RT_C_DECLS_END
 # include <iprt/asm-amd64-x86.h>
 #endif
 
+#ifdef VBOX_WDDM_MINIPORT
+# include "wddm/VBoxMPShgsmi.h"
+ typedef VBOXSHGSMI HGSMIGUESTCMDHEAP;
+# define HGSMIGUESTCMDHEAP_GET(_p) (&(_p)->Heap)
+#else
+ typedef HGSMIHEAP HGSMIGUESTCMDHEAP;
+# define HGSMIGUESTCMDHEAP_GET(_p) (_p)
+#endif
+
 RT_C_DECLS_BEGIN
 
 /**
@@ -52,7 +61,7 @@ typedef struct HGSMIGUESTCOMMANDCONTEXT
 {
     /** Information about the memory heap located in VRAM from which data
      * structures to be sent to the host are allocated. */
-    HGSMIHEAP heapCtx;
+    HGSMIGUESTCMDHEAP heapCtx;
     /** The I/O port used for submitting commands to the host by writing their
      * offsets into the heap. */
     RTIOPORT port;

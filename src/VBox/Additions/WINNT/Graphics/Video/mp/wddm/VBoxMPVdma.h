@@ -290,8 +290,7 @@ typedef struct VBOXVDMAGG
 typedef struct VBOXVDMAINFO
 {
 #ifdef VBOX_WITH_VDMA
-    KSPIN_LOCK HeapLock;
-    HGSMIHEAP CmdHeap;
+    VBOXSHGSMI CmdHeap;
 #endif
     UINT      uLastCompletedPagingBufferCmdFenceId;
     BOOL      fEnabled;
