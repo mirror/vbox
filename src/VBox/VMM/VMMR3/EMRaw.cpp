@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2011 Oracle Corporation
+ * Copyright (C) 2006-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -29,7 +29,6 @@
 #include <VBox/vmm/iem.h>
 #include <VBox/vmm/iom.h>
 #include <VBox/vmm/dbgf.h>
-#include <VBox/vmm/dbgftrace.h>
 #include <VBox/vmm/pgm.h>
 #ifdef VBOX_WITH_REM
 # include <VBox/vmm/rem.h>
@@ -48,6 +47,7 @@
 #include <VBox/dis.h>
 #include <VBox/disopcode.h>
 #include <VBox/vmm/dbgf.h>
+#include "VMMTracing.h"
 
 #include <VBox/log.h>
 #include <iprt/asm.h>
@@ -172,6 +172,7 @@ int emR3RawStep(PVM pVM, PVMCPU pVCpu)
             ||  VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_HIGH_PRIORITY_PRE_RAW_MASK))
         {
             rc = emR3RawForcedActions(pVM, pVCpu, pCtx);
+            VBOXVMMR3_EM_FF_RAW_RET(pVCpu, rc);
             if (rc != VINF_SUCCESS)
                 return rc;
         }
@@ -1200,7 +1201,9 @@ int emR3RawUpdateForceFlag(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, int rc)
  */
 VMMR3DECL(int) EMR3CheckRawForcedActions(PVM pVM, PVMCPU pVCpu)
 {
-    return emR3RawForcedActions(pVM, pVCpu, pVCpu->em.s.pCtx);
+    int rc = emR3RawForcedActions(pVM, pVCpu, pVCpu->em.s.pCtx);
+    VBOXVMMR3_EM_FF_RAW_RET(pVCpu, rc);
+    return rc;
 }
 
 
@@ -1221,7 +1224,7 @@ static int emR3RawForcedActions(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
      * Note that the order is *vitally* important!
      * Also note that SELMR3UpdateFromCPUM may trigger VM_FF_SELM_SYNC_TSS.
      */
-
+    VBOXVMMR3_EM_FF_RAW(pVCpu, pVM->fGlobalForcedActions, pVCpu->fLocalForcedActions);
 
     /*
      * Sync selector tables.
@@ -1383,10 +1386,8 @@ int emR3RawExecute(PVM pVM, PVMCPU pVCpu, bool *pfFFDone)
         if (    VM_FF_ISPENDING(pVM, VM_FF_HIGH_PRIORITY_PRE_RAW_MASK)
             ||  VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_HIGH_PRIORITY_PRE_RAW_MASK))
         {
-#ifdef DBGFTRACE_ENABLED
-            RTTraceBufAddMsgF(pVM->CTX_SUFF(hTraceBuf), "em-raw ff %08x/%08x pre", pVM->fGlobalForcedActions, pVCpu->fLocalForcedActions);
-#endif
             rc = emR3RawForcedActions(pVM, pVCpu, pCtx);
+            VBOXVMMR3_EM_FF_RAW_RET(pVCpu, rc);
             if (rc != VINF_SUCCESS)
                 break;
         }
@@ -1417,6 +1418,7 @@ int emR3RawExecute(PVM pVM, PVMCPU pVCpu, bool *pfFFDone)
                 ||  VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_HIGH_PRIORITY_PRE_RAW_MASK))
             {
                 rc = emR3RawForcedActions(pVM, pVCpu, pCtx);
+                VBOXVMMR3_EM_FF_RAW_RET(pVCpu, rc);
                 if (rc != VINF_SUCCESS)
                 {
                     rc = CPUMR3RawLeave(pVCpu, NULL, rc);
@@ -1450,11 +1452,10 @@ int emR3RawExecute(PVM pVM, PVMCPU pVCpu, bool *pfFFDone)
         if (RT_LIKELY(EMR3IsExecutionAllowed(pVM, pVCpu)))
         {
             STAM_PROFILE_START(&pVCpu->em.s.StatRAWExec, c);
+            VBOXVMMR3_EM_RAW_RUN_PRE(pVCpu, pCtx);
             rc = VMMR3RawRunGC(pVM, pVCpu);
+            VBOXVMMR3_EM_RAW_RUN_RET(pVCpu, pCtx, rc);
             STAM_PROFILE_STOP(&pVCpu->em.s.StatRAWExec, c);
-#ifdef DBGFTRACE_ENABLED
-            RTTraceBufAddMsgF(pVM->CTX_SUFF(hTraceBuf), "em-raw run => %d", rc);
-#endif
         }
         else
         {
@@ -1548,12 +1549,10 @@ int emR3RawExecute(PVM pVM, PVMCPU pVCpu, bool *pfFFDone)
             ||  VMCPU_FF_ISPENDING(pVCpu, ~VMCPU_FF_HIGH_PRIORITY_PRE_RAW_MASK))
         {
             Assert(pCtx->eflags.Bits.u1VM || (pCtx->ss & X86_SEL_RPL) != 1);
-#ifdef DBGFTRACE_ENABLED
-            RTTraceBufAddMsgF(pVM->CTX_SUFF(hTraceBuf), "em-raw ff %08x/%08x post", pVM->fGlobalForcedActions, pVCpu->fLocalForcedActions);
-#endif
 
             STAM_REL_PROFILE_ADV_SUSPEND(&pVCpu->em.s.StatRAWTotal, a);
             rc = emR3ForcedActions(pVM, pVCpu, rc);
+            VBOXVMMR3_EM_FF_ALL_RET(pVCpu, rc);
             STAM_REL_PROFILE_ADV_RESUME(&pVCpu->em.s.StatRAWTotal, a);
             if (    rc != VINF_SUCCESS
                 &&  rc != VINF_EM_RESCHEDULE_RAW)
