@@ -1653,7 +1653,7 @@ typedef struct VBOXWDDMVR_REG
 #define PVBOXWDDMVR_REG_FROM_ENTRY(_pEntry) ((PVBOXWDDMVR_REG)(((uint8_t*)(_pEntry)) - RT_OFFSETOF(VBOXWDDMVR_REG, ListEntry)))
 
 #ifdef DEBUG_misha
-# define VBOXVDBG_VR_LAL_DISABLE
+//# define VBOXVDBG_VR_LAL_DISABLE
 #endif
 
 #ifndef VBOXVDBG_VR_LAL_DISABLE
@@ -1704,7 +1704,7 @@ NTSTATUS VBoxWddmVrInit()
                             NULL, /* PALLOCATE_FUNCTION_EX Allocate */
                             NULL, /* PFREE_FUNCTION_EX Free */
                             NonPagedPool,
-                            EX_LOOKASIDE_LIST_EX_FLAGS_FAIL_NO_RAISE, /* ULONG Flags */
+                            0, /* ULONG Flags */
                             sizeof (VBOXWDDMVR_REG),
                             VBOXWDDMVR_MEMTAG,
                             0 /* USHORT Depth - reserved, must be null */
