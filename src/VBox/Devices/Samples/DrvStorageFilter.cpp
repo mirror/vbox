@@ -182,16 +182,16 @@ static DECLCALLBACK(int) drvStorageFltIMedia_Merge(PPDMIMEDIA pInterface, PFNSIM
 static DECLCALLBACK(uint64_t) drvStorageFltIMedia_GetSize(PPDMIMEDIA pInterface)
 {
     PDRVSTORAGEFILTER pThis = RT_FROM_MEMBER(pInterface, DRVSTORAGEFILTER, IMedia);
-    int rc = pThis->pIMediaBelow->pfnGetSize(pThis->pIMediaBelow);
-    return rc;
+    uint64_t cb = pThis->pIMediaBelow->pfnGetSize(pThis->pIMediaBelow);
+    return cb;
 }
 
 /** @interface_method_impl{PDMIMEDIA,pfnIsReadOnly} */
 static DECLCALLBACK(bool) drvStorageFltIMedia_IsReadOnly(PPDMIMEDIA pInterface)
 {
     PDRVSTORAGEFILTER pThis = RT_FROM_MEMBER(pInterface, DRVSTORAGEFILTER, IMedia);
-    int rc = pThis->pIMediaBelow->pfnIsReadOnly(pThis->pIMediaBelow);
-    return rc;
+    bool fRc = pThis->pIMediaBelow->pfnIsReadOnly(pThis->pIMediaBelow);
+    return fRc;
 }
 
 /** @interface_method_impl{PDMIMEDIA,pfnBiosGetPCHSGeometry} */
