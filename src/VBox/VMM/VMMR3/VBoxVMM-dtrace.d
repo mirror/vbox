@@ -15,22 +15,22 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-provider vboxvmmr3
+provider vboxvmm
 {
     probe em__state__changed(void *a_pVCpu, int a_enmOldState, int a_enmNewState, int a_rc);
     probe em__state__unchanged(void *a_pVCpu, int a_enmState, int a_rc);
     probe em__raw__run__pre(void *a_pVCpu, void *a_pCtx);
     probe em__raw__run__ret(void *a_pVCpu, void *a_pCtx, int a_rc);
-    probe em__raw__ff__high(void *a_pVCpu, unsigned int a_fGlobal, unsigned int a_fLocal, int a_rc);
-    probe em__raw__ff__all(void *a_pVCpu, unsigned int a_fGlobal, unsigned int a_fLocal, int a_rc);
-    probe em__raw__ff__all_ret(void *a_pVCpu, int a_rc);
-    probe em__raw__ff__raw(void *a_pVCpu, unsigned int a_fGlobal, unsigned int a_fLocal);
-    probe em__raw__ff__raw_ret(void *a_pVCpu, int a_rc);
+    probe em__ff__high(void *a_pVCpu, unsigned int a_fGlobal, unsigned int a_fLocal, int a_rc);
+    probe em__ff__all(void *a_pVCpu, unsigned int a_fGlobal, unsigned int a_fLocal, int a_rc);
+    probe em__ff__all_ret(void *a_pVCpu, int a_rc);
+    probe em__ff__raw(void *a_pVCpu, unsigned int a_fGlobal, unsigned int a_fLocal);
+    probe em__ff__raw_ret(void *a_pVCpu, int a_rc);
 };
 
-#pragma D attributes Evolving/Evolving/Common provider vboxdd provider
-#pragma D attributes Private/Private/Unknown  provider vboxdd module
-#pragma D attributes Private/Private/Unknown  provider vboxdd function
-#pragma D attributes Evolving/Evolving/Common provider vboxdd name
-#pragma D attributes Evolving/Evolving/Common provider vboxdd args
+#pragma D attributes Evolving/Evolving/Common provider vboxvmm provider
+#pragma D attributes Private/Private/Unknown  provider vboxvmm module
+#pragma D attributes Private/Private/Unknown  provider vboxvmm function
+#pragma D attributes Evolving/Evolving/Common provider vboxvmm name
+#pragma D attributes Evolving/Evolving/Common provider vboxvmm args
 

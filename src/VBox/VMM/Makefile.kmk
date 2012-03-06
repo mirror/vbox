@@ -218,10 +218,10 @@ ifdef VBOX_WITH_RAW_MODE
 endif
 
 ifdef VBOX_WITH_DTRACE_R3
- VMMR3_DEFS += VBOX_WITH_DTRACE
+ VMMR3_DEFS += VBOX_WITH_DTRACE VBOX_WITH_DTRACE_R3
  VMMR3_INCS          += $(VMMR3_0_OUTDIR)
- VMMR3_INTERMEDIATES += $(VMMR3_0_OUTDIR)/VBoxVMMR3-dtrace.h
- $$(VMMR3_0_OUTDIR)/VBoxVMMR3-dtrace.h: $(PATH_SUB_CURRENT)/VBoxVMMR3-dtrace.d | $$(dir $$@)
+ VMMR3_INTERMEDIATES += $(VMMR3_0_OUTDIR)/VBoxVMM-dtrace.h
+ $$(VMMR3_0_OUTDIR)/VBoxVMM-dtrace.h: $(PATH_SUB_CURRENT)/VMMR3/VBoxVMM-dtrace.d | $$(dir $$@)
 	dtrace -C -h -o $@ -s $<
 endif
 

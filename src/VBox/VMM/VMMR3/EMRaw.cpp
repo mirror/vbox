@@ -172,7 +172,7 @@ int emR3RawStep(PVM pVM, PVMCPU pVCpu)
             ||  VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_HIGH_PRIORITY_PRE_RAW_MASK))
         {
             rc = emR3RawForcedActions(pVM, pVCpu, pCtx);
-            VBOXVMMR3_EM_FF_RAW_RET(pVCpu, rc);
+            VBOXVMM_EM_FF_RAW_RET(pVCpu, rc);
             if (rc != VINF_SUCCESS)
                 return rc;
         }
@@ -1202,7 +1202,7 @@ int emR3RawUpdateForceFlag(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, int rc)
 VMMR3DECL(int) EMR3CheckRawForcedActions(PVM pVM, PVMCPU pVCpu)
 {
     int rc = emR3RawForcedActions(pVM, pVCpu, pVCpu->em.s.pCtx);
-    VBOXVMMR3_EM_FF_RAW_RET(pVCpu, rc);
+    VBOXVMM_EM_FF_RAW_RET(pVCpu, rc);
     return rc;
 }
 
@@ -1224,7 +1224,7 @@ static int emR3RawForcedActions(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
      * Note that the order is *vitally* important!
      * Also note that SELMR3UpdateFromCPUM may trigger VM_FF_SELM_SYNC_TSS.
      */
-    VBOXVMMR3_EM_FF_RAW(pVCpu, pVM->fGlobalForcedActions, pVCpu->fLocalForcedActions);
+    VBOXVMM_EM_FF_RAW(pVCpu, pVM->fGlobalForcedActions, pVCpu->fLocalForcedActions);
 
     /*
      * Sync selector tables.
@@ -1387,7 +1387,7 @@ int emR3RawExecute(PVM pVM, PVMCPU pVCpu, bool *pfFFDone)
             ||  VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_HIGH_PRIORITY_PRE_RAW_MASK))
         {
             rc = emR3RawForcedActions(pVM, pVCpu, pCtx);
-            VBOXVMMR3_EM_FF_RAW_RET(pVCpu, rc);
+            VBOXVMM_EM_FF_RAW_RET(pVCpu, rc);
             if (rc != VINF_SUCCESS)
                 break;
         }
@@ -1418,7 +1418,7 @@ int emR3RawExecute(PVM pVM, PVMCPU pVCpu, bool *pfFFDone)
                 ||  VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_HIGH_PRIORITY_PRE_RAW_MASK))
             {
                 rc = emR3RawForcedActions(pVM, pVCpu, pCtx);
-                VBOXVMMR3_EM_FF_RAW_RET(pVCpu, rc);
+                VBOXVMM_EM_FF_RAW_RET(pVCpu, rc);
                 if (rc != VINF_SUCCESS)
                 {
                     rc = CPUMR3RawLeave(pVCpu, NULL, rc);
@@ -1452,9 +1452,9 @@ int emR3RawExecute(PVM pVM, PVMCPU pVCpu, bool *pfFFDone)
         if (RT_LIKELY(EMR3IsExecutionAllowed(pVM, pVCpu)))
         {
             STAM_PROFILE_START(&pVCpu->em.s.StatRAWExec, c);
-            VBOXVMMR3_EM_RAW_RUN_PRE(pVCpu, pCtx);
+            VBOXVMM_EM_RAW_RUN_PRE(pVCpu, pCtx);
             rc = VMMR3RawRunGC(pVM, pVCpu);
-            VBOXVMMR3_EM_RAW_RUN_RET(pVCpu, pCtx, rc);
+            VBOXVMM_EM_RAW_RUN_RET(pVCpu, pCtx, rc);
             STAM_PROFILE_STOP(&pVCpu->em.s.StatRAWExec, c);
         }
         else
@@ -1552,7 +1552,7 @@ int emR3RawExecute(PVM pVM, PVMCPU pVCpu, bool *pfFFDone)
 
             STAM_REL_PROFILE_ADV_SUSPEND(&pVCpu->em.s.StatRAWTotal, a);
             rc = emR3ForcedActions(pVM, pVCpu, rc);
-            VBOXVMMR3_EM_FF_ALL_RET(pVCpu, rc);
+            VBOXVMM_EM_FF_ALL_RET(pVCpu, rc);
             STAM_REL_PROFILE_ADV_RESUME(&pVCpu->em.s.StatRAWTotal, a);
             if (    rc != VINF_SUCCESS
                 &&  rc != VINF_EM_RESCHEDULE_RAW)
