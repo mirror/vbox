@@ -450,6 +450,17 @@ RTR3DECL(int) RTManifestWriteFilesBuf(void **ppvBuf, size_t *pcbSize, RTDIGESTTY
     AssertPtrReturn(paFiles, VERR_INVALID_POINTER);
     AssertReturn(cFiles > 0, VERR_INVALID_PARAMETER);
 
+    const char *pcszDigestType;
+    switch (enmDigestType)
+    {
+        case RTDIGESTTYPE_CRC32:  pcszDigestType = "CRC32:"; break;
+        case RTDIGESTTYPE_CRC64:  pcszDigestType = "CRC64:"; break;
+        case RTDIGESTTYPE_MD5:    pcszDigestType = "MD5:";   break;
+        case RTDIGESTTYPE_SHA1:   pcszDigestType = "SHA1:";  break;
+        case RTDIGESTTYPE_SHA256: pcszDigestType = "SHA256"; break;
+        default: return VERR_INVALID_PARAMETER;
+    }
+
     /* Calculate the size necessary for the memory buffer. */
     size_t cbSize = 0;
     size_t cbMaxSize = 0;
@@ -466,18 +477,14 @@ RTR3DECL(int) RTManifestWriteFilesBuf(void **ppvBuf, size_t *pcbSize, RTDIGESTTY
         return VERR_NO_MEMORY;
 
     /* Allocate a temporary string buffer. */
-    char * pszTmp = RTStrAlloc(cbMaxSize + 1);
-    size_t cbPos = 0;
-    const char *pcszDigestType;
-    switch (enmDigestType)
+    char *pszTmp = RTStrAlloc(cbMaxSize + 1);
+    if (!pszTmp)
     {
-        case RTDIGESTTYPE_CRC32:  pcszDigestType = "CRC32:"; break;
-        case RTDIGESTTYPE_CRC64:  pcszDigestType = "CRC64:"; break;
-        case RTDIGESTTYPE_MD5:    pcszDigestType = "MD5:";   break;
-        case RTDIGESTTYPE_SHA1:   pcszDigestType = "SHA1:";  break;
-        case RTDIGESTTYPE_SHA256: pcszDigestType = "SHA256"; break;
-        default: return VERR_INVALID_PARAMETER;
+        RTMemFree(pvBuf);
+        return VERR_NO_MEMORY;
     }
+    size_t cbPos = 0;
+
     for (size_t i = 0; i < cFiles; ++i)
     {
         size_t cch = RTStrPrintf(pszTmp, cbMaxSize + 1, "%s (%s)= %s\n", pcszDigestType, RTPathFilename(paFiles[i].pszTestFile), paFiles[i].pszTestDigest);
