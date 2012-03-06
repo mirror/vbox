@@ -2084,4 +2084,34 @@ svccfg -s svc:/application/virtualbox/webservice:default setprop config/user=roo
     <para>For more options and parameters check the built-in command line help
     accessible with <computeroutput>--help</computeroutput>.</para>
   </sect1>
+
+  <sect1 id="otherextpacks">
+    <title>Other extension packs</title>
+
+    <para>Starting with VirtualBox 4.2.0 there is another extension pack,
+    <code>VNC</code>, which is open source and replaces the previous
+    integration of the VNC remote access protocol. This is experimental code,
+    and will be initially available in the VirtualBox source code package only.
+    It is to a large portion code contributed by users, and is not supported
+    in any way by Oracle.</para>
+
+    <para>It is possible to install both the Oracle VM VirtualBox Extension
+    Pack and VNC, but only one VRDE module can be active at any time. The
+    following command switches to the VBoxVNC VRDE module in
+    VNC:<screen>VBoxManage setproperty vrdeextpack VBoxVNC</screen></para>
+
+    <para>Configuring the remote access works very similarly to VRDP (see
+    <xref linkend="vrde" />), with some limitations: VNC does not
+    support specifying several port numbers, and the authentication is done
+    differently. VNC can only deal with password authentication, and there
+    is no option to use password hashes. This leaves no other choice than
+    having a clear-text password in the VM configuration, which can be set with
+    the following command:<screen>VBoxManage modifyvm VMNAME --vrdeproperty VNCPassword=secret</screen></para>
+
+    <para>The user is responsible for keeping this password secret, and it
+    should be removed when a VM configuration is passed to another person,
+    for whatever purpose. Some VNC servers claim to have "encrypted" passwords
+    in the configuration. This is not true encryption, it is only concealing
+    the passwords, which is exactly as secure as clear-text passwords.</para>
+  </sect1>
 </chapter>
