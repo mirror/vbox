@@ -172,6 +172,8 @@ typedef struct VBOXGUESTDEVEXT
     {
 #ifdef ___VBoxGuest_win_h
         VBOXGUESTDEVEXTWIN          s;
+#else
+        uint32_t                    dummy;
 #endif
     } win;
 
