@@ -1018,7 +1018,7 @@ RT_C_DECLS_END
 /** @name Internal Processing Errors
  * @{
  */
-/** Internal error - we're screwed if this happens.  */
+/** Internal error - this should never happen.  */
 #define VERR_INTERNAL_ERROR                 (-225)
 /** Internal error no. 2. */
 #define VERR_INTERNAL_ERROR_2               (-226)
