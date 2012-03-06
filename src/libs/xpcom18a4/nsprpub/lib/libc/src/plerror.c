@@ -133,7 +133,7 @@ PRIntn thoseIKnowAbout = sizeof(tags) / sizeof(char*);
 PRIntn lastError = PR_NSPR_ERROR_BASE + thoseIKnowAbout;
 
 	if (NULL != msg) PR_fprintf(fd, "%s: ", msg);
-    if ((error < PR_NSPR_ERROR_BASE) || (error > lastError))
+    if ((error < PR_NSPR_ERROR_BASE) || (error >= lastError))
         PR_fprintf(
 			fd, " (%d)OUT OF RANGE, oserror = %d\n", error, oserror);
     else
