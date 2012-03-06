@@ -153,7 +153,11 @@ static bool VBoxUnmapAdpInfoCallback(void *pvCommon)
 void VBoxFreeDisplaysHGSMI(PVBOXMP_COMMON pCommon)
 {
     VBoxMPCmnUnmapAdapterMemory(pCommon, &pCommon->pvMiniportHeap);
+#ifdef VBOX_WDDM_MINIPORT
+    VBoxSHGSMITerm(&pCommon->guestCtx.heapCtx);
+#else
     HGSMIHeapDestroy(&pCommon->guestCtx.heapCtx);
+#endif
 
     /* Unmap the adapter information needed for HGSMI IO. */
     VBoxMPCmnSyncToVideoIRQ(pCommon, VBoxUnmapAdpInfoCallback, pCommon);

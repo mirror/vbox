@@ -127,10 +127,11 @@ RTDECL(void *) VBoxHGSMIBufferAlloc(PHGSMIGUESTCOMMANDCONTEXT pCtx,
                                     uint8_t u8Ch,
                                     uint16_t u16Op)
 {
-#ifdef VBOX_WITH_WDDM
-    /* @todo: add synchronization */
-#endif
+#ifdef VBOX_WDDM_MINIPORT
+    return VBoxSHGSMIHeapAlloc (&pCtx->heapCtx, cbData, u8Ch, u16Op);
+#else
     return HGSMIHeapAlloc (&pCtx->heapCtx, cbData, u8Ch, u16Op);
+#endif
 }
 
 
@@ -143,10 +144,11 @@ RTDECL(void *) VBoxHGSMIBufferAlloc(PHGSMIGUESTCOMMANDCONTEXT pCtx,
 RTDECL(void) VBoxHGSMIBufferFree(PHGSMIGUESTCOMMANDCONTEXT pCtx,
                                  void *pvBuffer)
 {
-#ifdef VBOX_WITH_WDDM
-    /* @todo: add synchronization */
-#endif
+#ifdef VBOX_WDDM_MINIPORT
+    VBoxSHGSMIHeapFree (&pCtx->heapCtx, pvBuffer);
+#else
     HGSMIHeapFree (&pCtx->heapCtx, pvBuffer);
+#endif
 }
 
 
@@ -160,7 +162,7 @@ RTDECL(int) VBoxHGSMIBufferSubmit(PHGSMIGUESTCOMMANDCONTEXT pCtx,
                                   void *pvBuffer)
 {
     /* Initialize the buffer and get the offset for port IO. */
-    HGSMIOFFSET offBuffer = HGSMIHeapBufferOffset (&pCtx->heapCtx, pvBuffer);
+    HGSMIOFFSET offBuffer = HGSMIHeapBufferOffset (HGSMIGUESTCMDHEAP_GET(&pCtx->heapCtx), pvBuffer);
 
     Assert(offBuffer != HGSMIOFFSET_VOID);
     if (offBuffer != HGSMIOFFSET_VOID)
@@ -183,7 +185,7 @@ static int vboxHGSMIReportFlagsLocation(PHGSMIGUESTCOMMANDCONTEXT pCtx,
     int rc = VINF_SUCCESS;
 
     /* Allocate the IO buffer. */
-    p = (HGSMIBUFFERLOCATION *)HGSMIHeapAlloc(&pCtx->heapCtx,
+    p = (HGSMIBUFFERLOCATION *)VBoxHGSMIBufferAlloc(pCtx,
                                               sizeof(HGSMIBUFFERLOCATION),
                                               HGSMI_CH_HGSMI,
                                               HGSMI_CC_HOST_FLAGS_LOCATION);
@@ -194,7 +196,7 @@ static int vboxHGSMIReportFlagsLocation(PHGSMIGUESTCOMMANDCONTEXT pCtx,
         p->cbLocation  = sizeof(HGSMIHOSTFLAGS);
         rc = VBoxHGSMIBufferSubmit(pCtx, p);
         /* Free the IO buffer. */
-        HGSMIHeapFree (&pCtx->heapCtx, p);
+        VBoxHGSMIBufferFree(pCtx, p);
     }
     else
         rc = VERR_NO_MEMORY;
@@ -211,7 +213,7 @@ static int vboxHGSMISendCapsInfo(PHGSMIGUESTCOMMANDCONTEXT pCtx,
     int rc = VINF_SUCCESS;
 
     /* Allocate the IO buffer. */
-    pCaps = (VBVACAPS *)HGSMIHeapAlloc(&pCtx->heapCtx,
+    pCaps = (VBVACAPS *)VBoxHGSMIBufferAlloc(pCtx,
                                        sizeof(VBVACAPS), HGSMI_CH_VBVA,
                                        VBVA_INFO_CAPS);
 
@@ -227,7 +229,7 @@ static int vboxHGSMISendCapsInfo(PHGSMIGUESTCOMMANDCONTEXT pCtx,
             rc = pCaps->rc;
         }
         /* Free the IO buffer. */
-        HGSMIHeapFree(&pCtx->heapCtx, pCaps);
+        VBoxHGSMIBufferFree(pCtx, pCaps);
     }
     else
         rc = VERR_NO_MEMORY;
@@ -244,7 +246,7 @@ static int vboxHGSMIReportHostArea(PHGSMIGUESTCOMMANDCONTEXT pCtx,
     int rc = VINF_SUCCESS;
 
     /* Allocate the IO buffer. */
-    p = (VBVAINFOHEAP *)HGSMIHeapAlloc(&pCtx->heapCtx,
+    p = (VBVAINFOHEAP *)VBoxHGSMIBufferAlloc(pCtx,
                                        sizeof (VBVAINFOHEAP), HGSMI_CH_VBVA,
                                        VBVA_INFO_HEAP);
     if (p)
@@ -254,7 +256,7 @@ static int vboxHGSMIReportHostArea(PHGSMIGUESTCOMMANDCONTEXT pCtx,
         p->u32HeapSize   = u32AreaSize;
         rc = VBoxHGSMIBufferSubmit(pCtx, p);
         /* Free the IO buffer. */
-        HGSMIHeapFree(&pCtx->heapCtx, p);
+        VBoxHGSMIBufferFree(pCtx, p);
     }
     else
         rc = VERR_NO_MEMORY;
@@ -321,9 +323,15 @@ RTDECL(int) VBoxHGSMISetupGuestContext(PHGSMIGUESTCOMMANDCONTEXT pCtx,
 {
     /** @todo should we be using a fixed ISA port value here? */
     pCtx->port = (RTIOPORT)VGA_PORT_HGSMI_GUEST;
+#ifdef VBOX_WDDM_MINIPORT
+    return VBoxSHGSMIInit(&pCtx->heapCtx, pvGuestHeapMemory,
+                          cbGuestHeapMemory, offVRAMGuestHeapMemory,
+                          false /*fOffsetBased*/);
+#else
     return HGSMIHeapSetup(&pCtx->heapCtx, pvGuestHeapMemory,
                           cbGuestHeapMemory, offVRAMGuestHeapMemory,
                           false /*fOffsetBased*/);
+#endif
 }
 
 
@@ -459,7 +467,7 @@ RTDECL(int) VBoxQueryConfHGSMI(PHGSMIGUESTCOMMANDCONTEXT pCtx,
     LogFunc(("u32Index = %d\n", u32Index));
 
     /* Allocate the IO buffer. */
-    p = (VBVACONF32 *)HGSMIHeapAlloc(&pCtx->heapCtx,
+    p = (VBVACONF32 *)VBoxHGSMIBufferAlloc(pCtx,
                                      sizeof(VBVACONF32), HGSMI_CH_VBVA,
                                      VBVA_QUERY_CONF32);
     if (p)
@@ -474,7 +482,7 @@ RTDECL(int) VBoxQueryConfHGSMI(PHGSMIGUESTCOMMANDCONTEXT pCtx,
             LogFunc(("u32Value = %d\n", p->u32Value));
         }
         /* Free the IO buffer. */
-        HGSMIHeapFree(&pCtx->heapCtx, p);
+        VBoxHGSMIBufferFree(pCtx, p);
     }
     else
         rc = VERR_NO_MEMORY;
@@ -527,7 +535,7 @@ RTDECL(bool) VBoxHGSMIUpdatePointerShape(PHGSMIGUESTCOMMANDCONTEXT pCtx,
         return false;
     }
     /* Allocate the IO buffer. */
-    p = (VBVAMOUSEPOINTERSHAPE *)HGSMIHeapAlloc(&pCtx->heapCtx,
+    p = (VBVAMOUSEPOINTERSHAPE *)VBoxHGSMIBufferAlloc(pCtx,
                                                   sizeof(VBVAMOUSEPOINTERSHAPE)
                                                 + cbData,
                                                 HGSMI_CH_VBVA,
@@ -550,7 +558,7 @@ RTDECL(bool) VBoxHGSMIUpdatePointerShape(PHGSMIGUESTCOMMANDCONTEXT pCtx,
         if (RT_SUCCESS(rc))
             rc = p->i32Result;
         /* Free the IO buffer. */
-        HGSMIHeapFree(&pCtx->heapCtx, p);
+        VBoxHGSMIBufferFree(pCtx, p);
     }
     else
         rc = VERR_NO_MEMORY;
