@@ -43,7 +43,6 @@
 #include <VBox/vmm/trpm.h>
 #include <VBox/vmm/iom.h>
 #include <VBox/vmm/dbgf.h>
-#include <VBox/vmm/dbgftrace.h>
 #include <VBox/vmm/pgm.h>
 #ifdef VBOX_WITH_REM
 # include <VBox/vmm/rem.h>
@@ -68,6 +67,7 @@
 #include <VBox/dis.h>
 #include <VBox/disopcode.h>
 #include <VBox/vmm/dbgf.h>
+#include "VMMTracing.h"
 
 #include <iprt/asm.h>
 #include <iprt/string.h>
@@ -1102,6 +1102,7 @@ l_REMDoForcedActions:
 #endif
             STAM_REL_PROFILE_ADV_SUSPEND(&pVCpu->em.s.StatREMTotal, a);
             rc = emR3ForcedActions(pVM, pVCpu, rc);
+            VBOXVMMR3_EM_FF_ALL_RET(pVCpu, rc);
             STAM_REL_PROFILE_ADV_RESUME(&pVCpu->em.s.StatREMTotal, a);
             if (    rc != VINF_SUCCESS
                 &&  rc != VINF_EM_RESCHEDULE_REM)
@@ -1329,6 +1330,8 @@ EMSTATE emR3Reschedule(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
  */
 int emR3HighPriorityPostForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
 {
+    VBOXVMMR3_EM_FF_HIGH(pVCpu, pVM->fGlobalForcedActions, pVCpu->fLocalForcedActions, rc);
+
     if (VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_PDM_CRITSECT))
         PDMCritSectFF(pVCpu);
 
@@ -1380,6 +1383,7 @@ int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
             if (!rc || rc2 < rc) \
                 rc = rc2; \
         } while (0)
+    VBOXVMMR3_EM_FF_ALL(pVCpu, pVM->fGlobalForcedActions, pVCpu->fLocalForcedActions, rc);
 
     /*
      * Post execution chunk first.
@@ -1884,6 +1888,7 @@ VMMR3DECL(int) EMR3ExecuteVM(PVM pVM, PVMCPU pVCpu)
                     || VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_ALL_REM_MASK)))
             {
                 rc = emR3ForcedActions(pVM, pVCpu, rc);
+                VBOXVMMR3_EM_FF_ALL_RET(pVCpu, rc);
                 if (   (   rc == VINF_EM_RESCHEDULE_REM
                         || rc == VINF_EM_RESCHEDULE_HWACC)
                     && pVCpu->em.s.fForceRAW)
@@ -1909,7 +1914,7 @@ VMMR3DECL(int) EMR3ExecuteVM(PVM pVM, PVMCPU pVCpu)
                  * Reschedule - to raw-mode execution.
                  */
                 case VINF_EM_RESCHEDULE_RAW:
-                    Log2(("EMR3ExecuteVM: VINF_EM_RESCHEDULE_RAW: %d -> %d (EMSTATE_RAW)\n", pVCpu->em.s.enmState, EMSTATE_RAW));
+                    Log2(("EMR3ExecuteVM: VINF_EM_RESCHEDULE_RAW: %d -> %d (EMSTATE_RAW)\n", enmOldState, EMSTATE_RAW));
                     pVCpu->em.s.enmState = EMSTATE_RAW;
                     break;
 
@@ -1917,7 +1922,7 @@ VMMR3DECL(int) EMR3ExecuteVM(PVM pVM, PVMCPU pVCpu)
                  * Reschedule - to hardware accelerated raw-mode execution.
                  */
                 case VINF_EM_RESCHEDULE_HWACC:
-                    Log2(("EMR3ExecuteVM: VINF_EM_RESCHEDULE_HWACC: %d -> %d (EMSTATE_HWACC)\n", pVCpu->em.s.enmState, EMSTATE_HWACC));
+                    Log2(("EMR3ExecuteVM: VINF_EM_RESCHEDULE_HWACC: %d -> %d (EMSTATE_HWACC)\n", enmOldState, EMSTATE_HWACC));
                     Assert(!pVCpu->em.s.fForceRAW);
                     pVCpu->em.s.enmState = EMSTATE_HWACC;
                     break;
@@ -1926,7 +1931,7 @@ VMMR3DECL(int) EMR3ExecuteVM(PVM pVM, PVMCPU pVCpu)
                  * Reschedule - to recompiled execution.
                  */
                 case VINF_EM_RESCHEDULE_REM:
-                    Log2(("EMR3ExecuteVM: VINF_EM_RESCHEDULE_REM: %d -> %d (EMSTATE_REM)\n", pVCpu->em.s.enmState, EMSTATE_REM));
+                    Log2(("EMR3ExecuteVM: VINF_EM_RESCHEDULE_REM: %d -> %d (EMSTATE_REM)\n", enmOldState, EMSTATE_REM));
                     pVCpu->em.s.enmState = EMSTATE_REM;
                     break;
 
@@ -1934,7 +1939,7 @@ VMMR3DECL(int) EMR3ExecuteVM(PVM pVM, PVMCPU pVCpu)
                  * Resume.
                  */
                 case VINF_EM_RESUME:
-                    Log2(("EMR3ExecuteVM: VINF_EM_RESUME: %d -> VINF_EM_RESCHEDULE\n", pVCpu->em.s.enmState));
+                    Log2(("EMR3ExecuteVM: VINF_EM_RESUME: %d -> VINF_EM_RESCHEDULE\n", enmOldState));
                     /* Don't reschedule in the halted or wait for SIPI case. */
                     if (    pVCpu->em.s.enmPrevState == EMSTATE_WAIT_SIPI
                         ||  pVCpu->em.s.enmPrevState == EMSTATE_HALTED)
@@ -1950,7 +1955,7 @@ VMMR3DECL(int) EMR3ExecuteVM(PVM pVM, PVMCPU pVCpu)
                 case VINF_EM_RESCHEDULE:
                 {
                     EMSTATE enmState = emR3Reschedule(pVM, pVCpu, pVCpu->em.s.pCtx);
-                    Log2(("EMR3ExecuteVM: VINF_EM_RESCHEDULE: %d -> %d (%s)\n", pVCpu->em.s.enmState, enmState, emR3GetStateName(enmState)));
+                    Log2(("EMR3ExecuteVM: VINF_EM_RESCHEDULE: %d -> %d (%s)\n", enmOldState, enmState, emR3GetStateName(enmState)));
                     pVCpu->em.s.enmState = enmState;
                     break;
                 }
@@ -1959,7 +1964,7 @@ VMMR3DECL(int) EMR3ExecuteVM(PVM pVM, PVMCPU pVCpu)
                  * Halted.
                  */
                 case VINF_EM_HALT:
-                    Log2(("EMR3ExecuteVM: VINF_EM_HALT: %d -> %d\n", pVCpu->em.s.enmState, EMSTATE_HALTED));
+                    Log2(("EMR3ExecuteVM: VINF_EM_HALT: %d -> %d\n", enmOldState, EMSTATE_HALTED));
                     pVCpu->em.s.enmState = EMSTATE_HALTED;
                     break;
 
@@ -1968,7 +1973,7 @@ VMMR3DECL(int) EMR3ExecuteVM(PVM pVM, PVMCPU pVCpu)
                  */
                 case VINF_EM_WAIT_SIPI:
                     Assert(pVCpu->idCpu != 0);
-                    Log2(("EMR3ExecuteVM: VINF_EM_WAIT_SIPI: %d -> %d\n", pVCpu->em.s.enmState, EMSTATE_WAIT_SIPI));
+                    Log2(("EMR3ExecuteVM: VINF_EM_WAIT_SIPI: %d -> %d\n", enmOldState, EMSTATE_WAIT_SIPI));
                     pVCpu->em.s.enmState = EMSTATE_WAIT_SIPI;
                     break;
 
@@ -1977,9 +1982,9 @@ VMMR3DECL(int) EMR3ExecuteVM(PVM pVM, PVMCPU pVCpu)
                  * Suspend.
                  */
                 case VINF_EM_SUSPEND:
-                    Log2(("EMR3ExecuteVM: VINF_EM_SUSPEND: %d -> %d\n", pVCpu->em.s.enmState, EMSTATE_SUSPENDED));
-                    Assert(pVCpu->em.s.enmState != EMSTATE_SUSPENDED);
-                    pVCpu->em.s.enmPrevState = pVCpu->em.s.enmState;
+                    Log2(("EMR3ExecuteVM: VINF_EM_SUSPEND: %d -> %d\n", enmOldState, EMSTATE_SUSPENDED));
+                    Assert(enmOldState != EMSTATE_SUSPENDED);
+                    pVCpu->em.s.enmPrevState = enmOldState;
                     pVCpu->em.s.enmState     = EMSTATE_SUSPENDED;
                     break;
 
@@ -1992,7 +1997,7 @@ VMMR3DECL(int) EMR3ExecuteVM(PVM pVM, PVMCPU pVCpu)
                     if (pVCpu->idCpu == 0)
                     {
                         EMSTATE enmState = emR3Reschedule(pVM, pVCpu, pVCpu->em.s.pCtx);
-                        Log2(("EMR3ExecuteVM: VINF_EM_RESET: %d -> %d (%s)\n", pVCpu->em.s.enmState, enmState, emR3GetStateName(enmState)));
+                        Log2(("EMR3ExecuteVM: VINF_EM_RESET: %d -> %d (%s)\n", enmOldState, enmState, emR3GetStateName(enmState)));
                         pVCpu->em.s.enmState = enmState;
                     }
                     else
@@ -2008,7 +2013,7 @@ VMMR3DECL(int) EMR3ExecuteVM(PVM pVM, PVMCPU pVCpu)
                  */
                 case VINF_EM_OFF:
                     pVCpu->em.s.enmState = EMSTATE_TERMINATING;
-                    Log2(("EMR3ExecuteVM: returns VINF_EM_OFF (%d -> %d)\n", pVCpu->em.s.enmState, EMSTATE_TERMINATING));
+                    Log2(("EMR3ExecuteVM: returns VINF_EM_OFF (%d -> %d)\n", enmOldState, EMSTATE_TERMINATING));
                     TMR3NotifySuspend(pVM, pVCpu);
                     STAM_REL_PROFILE_ADV_STOP(&pVCpu->em.s.StatTotal, x);
                     return rc;
@@ -2018,7 +2023,7 @@ VMMR3DECL(int) EMR3ExecuteVM(PVM pVM, PVMCPU pVCpu)
                  */
                 case VINF_EM_TERMINATE:
                     pVCpu->em.s.enmState = EMSTATE_TERMINATING;
-                    Log(("EMR3ExecuteVM returns VINF_EM_TERMINATE (%d -> %d)\n", pVCpu->em.s.enmState, EMSTATE_TERMINATING));
+                    Log(("EMR3ExecuteVM returns VINF_EM_TERMINATE (%d -> %d)\n", enmOldState, EMSTATE_TERMINATING));
                     if (pVM->enmVMState < VMSTATE_DESTROYING) /* ugly */
                         TMR3NotifySuspend(pVM, pVCpu);
                     STAM_REL_PROFILE_ADV_STOP(&pVCpu->em.s.StatTotal, x);
@@ -2029,9 +2034,9 @@ VMMR3DECL(int) EMR3ExecuteVM(PVM pVM, PVMCPU pVCpu)
                  * Out of memory, suspend the VM and stuff.
                  */
                 case VINF_EM_NO_MEMORY:
-                    Log2(("EMR3ExecuteVM: VINF_EM_NO_MEMORY: %d -> %d\n", pVCpu->em.s.enmState, EMSTATE_SUSPENDED));
-                    Assert(pVCpu->em.s.enmState != EMSTATE_SUSPENDED);
-                    pVCpu->em.s.enmPrevState = pVCpu->em.s.enmState;
+                    Log2(("EMR3ExecuteVM: VINF_EM_NO_MEMORY: %d -> %d\n", enmOldState, EMSTATE_SUSPENDED));
+                    Assert(enmOldState != EMSTATE_SUSPENDED);
+                    pVCpu->em.s.enmPrevState = enmOldState;
                     pVCpu->em.s.enmState = EMSTATE_SUSPENDED;
                     TMR3NotifySuspend(pVM, pVCpu);
                     STAM_REL_PROFILE_ADV_STOP(&pVCpu->em.s.StatTotal, x);
@@ -2057,14 +2062,14 @@ VMMR3DECL(int) EMR3ExecuteVM(PVM pVM, PVMCPU pVCpu)
                 case VINF_EM_DBG_STOP:
                 case VINF_EM_DBG_BREAKPOINT:
                 case VINF_EM_DBG_STEP:
-                    if (pVCpu->em.s.enmState == EMSTATE_RAW)
+                    if (enmOldState == EMSTATE_RAW)
                     {
-                        Log2(("EMR3ExecuteVM: %Rrc: %d -> %d\n", rc, pVCpu->em.s.enmState, EMSTATE_DEBUG_GUEST_RAW));
+                        Log2(("EMR3ExecuteVM: %Rrc: %d -> %d\n", rc, enmOldState, EMSTATE_DEBUG_GUEST_RAW));
                         pVCpu->em.s.enmState = EMSTATE_DEBUG_GUEST_RAW;
                     }
                     else
                     {
-                        Log2(("EMR3ExecuteVM: %Rrc: %d -> %d\n", rc, pVCpu->em.s.enmState, EMSTATE_DEBUG_GUEST_REM));
+                        Log2(("EMR3ExecuteVM: %Rrc: %d -> %d\n", rc, enmOldState, EMSTATE_DEBUG_GUEST_REM));
                         pVCpu->em.s.enmState = EMSTATE_DEBUG_GUEST_REM;
                     }
                     break;
@@ -2075,7 +2080,7 @@ VMMR3DECL(int) EMR3ExecuteVM(PVM pVM, PVMCPU pVCpu)
                 case VINF_EM_DBG_HYPER_STEPPED:
                 case VINF_EM_DBG_HYPER_BREAKPOINT:
                 case VINF_EM_DBG_HYPER_ASSERTION:
-                    Log2(("EMR3ExecuteVM: %Rrc: %d -> %d\n", rc, pVCpu->em.s.enmState, EMSTATE_DEBUG_HYPER));
+                    Log2(("EMR3ExecuteVM: %Rrc: %d -> %d\n", rc, enmOldState, EMSTATE_DEBUG_HYPER));
                     pVCpu->em.s.enmState = EMSTATE_DEBUG_HYPER;
                     break;
 
@@ -2083,7 +2088,7 @@ VMMR3DECL(int) EMR3ExecuteVM(PVM pVM, PVMCPU pVCpu)
                  * Guru mediations.
                  */
                 case VERR_VMM_RING0_ASSERTION:
-                    Log(("EMR3ExecuteVM: %Rrc: %d -> %d (EMSTATE_GURU_MEDITATION)\n", rc, pVCpu->em.s.enmState, EMSTATE_GURU_MEDITATION));
+                    Log(("EMR3ExecuteVM: %Rrc: %d -> %d (EMSTATE_GURU_MEDITATION)\n", rc, enmOldState, EMSTATE_GURU_MEDITATION));
                     pVCpu->em.s.enmState = EMSTATE_GURU_MEDITATION;
                     break;
 
@@ -2100,7 +2105,7 @@ VMMR3DECL(int) EMR3ExecuteVM(PVM pVM, PVMCPU pVCpu)
                         AssertMsgFailed(("Unexpected warning or informational status code %Rra!\n", rc));
                         rc = VERR_EM_INTERNAL_ERROR;
                     }
-                    Log(("EMR3ExecuteVM: %Rrc: %d -> %d (EMSTATE_GURU_MEDITATION)\n", rc, pVCpu->em.s.enmState, EMSTATE_GURU_MEDITATION));
+                    Log(("EMR3ExecuteVM: %Rrc: %d -> %d (EMSTATE_GURU_MEDITATION)\n", rc, enmOldState, EMSTATE_GURU_MEDITATION));
                     pVCpu->em.s.enmState = EMSTATE_GURU_MEDITATION;
                     break;
             }
@@ -2111,9 +2116,8 @@ VMMR3DECL(int) EMR3ExecuteVM(PVM pVM, PVMCPU pVCpu)
             EMSTATE const enmNewState = pVCpu->em.s.enmState;
             if (enmOldState != enmNewState)
             {
-#ifdef DBGFTRACE_ENABLED
-                RTTraceBufAddMsgF(pVM->CTX_SUFF(hTraceBuf), "em-outer %d: %d -> %d", rc, enmOldState, enmNewState);
-#endif
+                VBOXVMMR3_EM_STATE_CHANGED(pVCpu, enmOldState, enmNewState, rc);
+
                 /* Clear MWait flags. */
                 if (   enmOldState == EMSTATE_HALTED
                     && (pVCpu->em.s.MWait.fWait & EMMWAIT_FLAG_ACTIVE)
@@ -2128,18 +2132,16 @@ VMMR3DECL(int) EMR3ExecuteVM(PVM pVM, PVMCPU pVCpu)
                     pVCpu->em.s.MWait.fWait &= ~(EMMWAIT_FLAG_ACTIVE | EMMWAIT_FLAG_BREAKIRQIF0);
                 }
             }
-#ifdef DBGFTRACE_ENABLED
             else
-                RTTraceBufAddMsgF(pVM->CTX_SUFF(hTraceBuf), "em-outer %d: %d", rc, enmOldState);
-#endif
+                VBOXVMMR3_EM_STATE_UNCHANGED(pVCpu, enmNewState, rc);
 
             STAM_PROFILE_ADV_STOP(&pVCpu->em.s.StatTotal, x); /* (skip this in release) */
             STAM_PROFILE_ADV_START(&pVCpu->em.s.StatTotal, x);
 
             /*
-             * Act on the state.
+             * Act on the new state.
              */
-            switch (pVCpu->em.s.enmState)
+            switch (enmNewState)
             {
                 /*
                  * Execute raw.
