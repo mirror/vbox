@@ -51,7 +51,6 @@
 #  include "VBoxVMM-dtrace.h"
 
 # elif defined(DBGFTRACE_ENABLED)
-# error
 #  define VBOXVMM_EM_STATE_CHANGED(a_pVCpu, a_enmOldState, a_enmNewState, a_rc) \
         RTTraceBufAddMsgF(VMCPU_TO_HTB(a_pVCpu), "em-state-changed %d -> %d (rc=%d)", a_enmOldState, a_enmNewState, a_rc)
 #  define VBOXVMM_EM_STATE_UNCHANGED(a_pVCpu, a_enmState, a_rc) \
