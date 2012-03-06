@@ -4,7 +4,7 @@
 #
 
 #
-# Copyright (C) 2010-2011 Oracle Corporation
+# Copyright (C) 2010-2012 Oracle Corporation
 #
 # Permission is hereby granted, free of charge, to any person
 # obtaining a copy of this software and associated documentation
@@ -64,8 +64,7 @@ VBOX_PATH_EXTPACK_SKELETON = $(PATH_STAGE)/$(INST_EXTPACK)Skeleton
 DLLS += VBoxSkeletonMain
 VBoxSkeletonMain_TEMPLATE = VBoxR3ExtPackSkeleton
 VBoxSkeletonMain_SOURCES = VBoxSkeletonMain.cpp
-VBoxSkeletonMain_DEFS = \
-	$(if $(VBOX_WITH_RAW_MODE),VBOX_WITH_RAW_MODE,)
+VBoxSkeletonMain_DEFS =
 
 #
 # Install the description.
@@ -78,7 +77,7 @@ $(call VBOX_EDIT_VERSION_RULE_FN,VBoxSkeletonIns,ExtPack.xml)
 
 
 #
-# Packing .
+# Packing.
 #
 ifndef VBOX_WITHOUT_EXTPACK_SKELETON_PACKING
  PACKING += $(VBOX_PATH_PACKAGES)/$(VBOX_SKELETON_MANGLED_NAME)-$(VBOX_VERSION_STRING)r$(VBOX_SVN_REV).vbox-extpack
@@ -157,7 +156,7 @@ $(VBOX_PATH_PACKAGES)/$(VBOX_SKELETON_MANGLED_NAME)-$(VBOX_VERSION_STRING)r$(VBO
 # Clean up
 	$(RM) -Rf $(VBoxSkeletonIns_0_OUTDIR)/Stage/
 
-BLDDIRS += $(VBOX_PATH_PACKAGES)/ $(VBOX_PATH_PACKAGES)/
+BLDDIRS += $(VBOX_PATH_PACKAGES)/
 
 include	$(KBUILD_PATH)/subfooter.kmk
 
