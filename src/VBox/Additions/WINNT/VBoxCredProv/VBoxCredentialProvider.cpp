@@ -32,8 +32,8 @@
 /*******************************************************************************
 *   Global Variables                                                           *
 *******************************************************************************/
-static LONG g_cDllRefCount = 0;        /* Global DLL reference count. */
-HINSTANCE g_hDllInst       = NULL;     /* Global DLL hInstance. */
+static LONG g_cDllRefCount  = 0;        /* Global DLL reference count. */
+static HINSTANCE g_hDllInst = NULL;     /* Global DLL hInstance. */
 
 
 
@@ -55,9 +55,9 @@ BOOL WINAPI DllMain(HINSTANCE hInst,
 
             if (RT_SUCCESS(rc))
             {
-                VBoxCredProvVerbose(0, "VBoxCredProv: v%s r%s (%s %s) loaded\n",
+                VBoxCredProvVerbose(0, "VBoxCredProv: v%s r%s (%s %s) loaded (refs=%ld)\n",
                                     RTBldCfgVersion(), RTBldCfgRevisionStr(),
-                                    __DATE__, __TIME__);
+                                    __DATE__, __TIME__, g_cDllRefCount);
             }
 
             DisableThreadLibraryCalls(hInst);
@@ -66,7 +66,8 @@ BOOL WINAPI DllMain(HINSTANCE hInst,
 
         case DLL_PROCESS_DETACH:
 
-            VbglR3Term();
+            if (!g_cDllRefCount)
+                VbglR3Term();
             break;
 
         case DLL_THREAD_ATTACH:
@@ -81,27 +82,23 @@ BOOL WINAPI DllMain(HINSTANCE hInst,
 /**
  * Increments the reference count by one. Must be released
  * with VBoxCredentialProviderRelease() when finished.
- *
- * @return  LONG                The current referecne count.
  */
-LONG VBoxCredentialProviderAcquire(void)
+void VBoxCredentialProviderAcquire(void)
 {
-    VBoxCredProvVerbose(0, "VBoxCredProv: Increasing global refcount to %ld\n",
-                        g_cDllRefCount + 1);
-    return InterlockedIncrement(&g_cDllRefCount);
+    LONG cRefCount = InterlockedIncrement(&g_cDllRefCount);
+    VBoxCredProvVerbose(0, "VBoxCredentialProviderAcquire: Increasing global refcount to %ld\n",
+                        cRefCount);
 }
 
 
 /**
  * Decrements the reference count by one.
- *
- * @return  LONG                The current referecne count.
  */
-LONG VBoxCredentialProviderRelease(void)
+void VBoxCredentialProviderRelease(void)
 {
-    VBoxCredProvVerbose(0, "VBoxCredProv: Decreasing global refcount to %ld\n",
-                        g_cDllRefCount - 1);
-    return InterlockedDecrement(&g_cDllRefCount);
+    LONG cRefCount = InterlockedDecrement(&g_cDllRefCount);
+    VBoxCredProvVerbose(0, "VBoxCredentialProviderRelease: Decreasing global refcount to %ld\n",
+                        cRefCount);
 }
 
 

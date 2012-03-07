@@ -29,30 +29,30 @@
 
 #include <lm.h>
 
+#include <iprt/initterm.h>
 #include <iprt/mem.h>
 #include <iprt/string.h>
 
 
 
-VBoxCredProvCredential::VBoxCredProvCredential(VBoxCredProvProvider *pProvider) :
+VBoxCredProvCredential::VBoxCredProvCredential(void) :
+    m_cpUS(CPUS_INVALID),
     m_cRefCount(1),
     m_pEvents(NULL)
 {
-    VBoxCredProvVerbose(0, "VBoxCredProvCredential: Created, pProvider=%p\n",
-                        pProvider);
+    VBoxCredProvVerbose(0, "VBoxCredProvCredential: Created\n");
 
     VBoxCredentialProviderAcquire();
 
-    AssertPtr(pProvider);
-    m_pProvider = pProvider;
-
-    ZeroMemory(m_pwszCredentials, sizeof(m_pwszCredentials));
+    ZeroMemory(m_pwszCredentials, sizeof(PRTUTF16) * VBOXCREDPROV_NUM_FIELDS);
 }
 
 
 VBoxCredProvCredential::~VBoxCredProvCredential(void)
 {
     VBoxCredProvVerbose(0, "VBoxCredProvCredential: Destroying\n");
+
+    Reset();
 
     VBoxCredentialProviderRelease();
 }
@@ -61,19 +61,17 @@ VBoxCredProvCredential::~VBoxCredProvCredential(void)
 /* IUnknown overrides. */
 ULONG VBoxCredProvCredential::AddRef(void)
 {
-    VBoxCredProvVerbose(0, "VBoxCredProvCredential: Increasing reference to %ld\n",
-                        m_cRefCount + 1);
-
-    return m_cRefCount++;
+    LONG cRefCount = InterlockedIncrement(&m_cRefCount);
+    VBoxCredProvVerbose(0, "VBoxCredProvCredential::AddRef: Returning refcount=%ld\n",
+                        cRefCount);
+    return cRefCount;
 }
 
 
 ULONG VBoxCredProvCredential::Release(void)
 {
-    Assert(m_cRefCount);
-
-    ULONG cRefCount = --m_cRefCount;
-    VBoxCredProvVerbose(0, "VBoxCredProvCredential: Decreasing reference to %ld\n",
+    LONG cRefCount = InterlockedDecrement(&m_cRefCount);
+    VBoxCredProvVerbose(0, "VBoxCredProvCredential::Release: Returning refcount=%ld\n",
                         cRefCount);
     if (!cRefCount)
     {
@@ -126,8 +124,8 @@ HRESULT VBoxCredProvCredential::QueryInterface(REFIID interfaceID, void **ppvInt
 HRESULT VBoxCredProvCredential::RTUTF16toToUnicode(PUNICODE_STRING pUnicodeDest, PRTUTF16 pwszSource,
                                                    bool fCopy)
 {
-    AssertPtrReturn(pwszSource, VERR_INVALID_POINTER);
     AssertPtrReturn(pUnicodeDest, VERR_INVALID_POINTER);
+    AssertPtrReturn(pwszSource, VERR_INVALID_POINTER);
 
     size_t cbLen = RTUtf16Len(pwszSource) * sizeof(RTUTF16);
 
@@ -164,7 +162,7 @@ HRESULT VBoxCredProvCredential::AllocateLogonPackage(const KERB_INTERACTIVE_UNLO
                   + pLogonIn->Password.Length;
 
 #ifdef DEBUG
-    VBoxCredProvVerbose(3, "VBoxCredProvCredential: AllocateLogonPackage: Allocating %ld bytes (%d bytes credentials)\n",
+    VBoxCredProvVerbose(3, "VBoxCredProvCredential::AllocateLogonPackage: Allocating %ld bytes (%d bytes credentials)\n",
                         cbLogon, cbLogon - sizeof(KERB_INTERACTIVE_UNLOCK_LOGON));
 #endif
 
@@ -206,20 +204,39 @@ HRESULT VBoxCredProvCredential::AllocateLogonPackage(const KERB_INTERACTIVE_UNLO
 }
 
 
-void VBoxCredProvCredential::Reset(void)
+HRESULT VBoxCredProvCredential::Reset(void)
 {
-    VBoxCredProvVerbose(0, "VBoxCredProvCredential: Wiping credentials ...\n");
+
+    VBoxCredProvVerbose(0, "VBoxCredProvCredential::Reset: Wiping credentials user=%ls, pw=%ls, domain=%ls\n",
+                        m_pwszCredentials[VBOXCREDPROV_FIELDID_USERNAME],
+#ifdef DEBUG
+                        m_pwszCredentials[VBOXCREDPROV_FIELDID_PASSWORD],
+#else
+                        L"XXX" /* Don't show any passwords in release mode. */,
+#endif
+                        m_pwszCredentials[VBOXCREDPROV_FIELDID_DOMAINNAME]);
 
     VbglR3CredentialsDestroyUtf16(m_pwszCredentials[VBOXCREDPROV_FIELDID_USERNAME],
                                   m_pwszCredentials[VBOXCREDPROV_FIELDID_PASSWORD],
                                   m_pwszCredentials[VBOXCREDPROV_FIELDID_DOMAINNAME],
                                   3 /* Passes */);
+    HRESULT hr = S_OK;
     if (m_pEvents)
     {
-        m_pEvents->SetFieldString(this, VBOXCREDPROV_FIELDID_USERNAME, NULL);
-        m_pEvents->SetFieldString(this, VBOXCREDPROV_FIELDID_PASSWORD, NULL);
-        m_pEvents->SetFieldString(this, VBOXCREDPROV_FIELDID_DOMAINNAME, NULL);
+        /* Note: On Windows 8, set "this" to "nullptr". */
+        HRESULT hr2 = m_pEvents->SetFieldString(this, VBOXCREDPROV_FIELDID_USERNAME, L"");
+        if (SUCCEEDED(hr))
+            hr = hr2;
+        hr2 = m_pEvents->SetFieldString(this, VBOXCREDPROV_FIELDID_PASSWORD, L"");
+        if (SUCCEEDED(hr))
+            hr = hr2;
+        hr2 = m_pEvents->SetFieldString(this, VBOXCREDPROV_FIELDID_DOMAINNAME, L"");
+        if (SUCCEEDED(hr))
+            hr = hr2;
     }
+
+    VBoxCredProvVerbose(0, "VBoxCredProvCredential::Reset: Returned hr=%08x\n", hr);
+    return hr;
 }
 
 
@@ -239,12 +256,12 @@ int VBoxCredProvCredential::RetrieveCredentials(void)
                                             &m_pwszCredentials[VBOXCREDPROV_FIELDID_PASSWORD],
                                             &m_pwszCredentials[VBOXCREDPROV_FIELDID_DOMAINNAME]);
 
-        VBoxCredProvVerbose(0, "VBoxCredProvCredential: Retrieving credentials returned rc=%Rrc\n", rc);
+        VBoxCredProvVerbose(0, "VBoxCredProvCredential::RetrieveCredentials: Retrieved credentials with rc=%Rrc\n", rc);
     }
 
     if (RT_SUCCESS(rc))
     {
-        VBoxCredProvVerbose(0, "VBoxCredProvCredential: Got credentials: User=%ls, Password=%ls, Domain=%ls\n",
+        VBoxCredProvVerbose(0, "VBoxCredProvCredential::RetrieveCredentials: User=%ls, Password=%ls, Domain=%ls\n",
                             m_pwszCredentials[VBOXCREDPROV_FIELDID_USERNAME],
 #ifdef DEBUG
                             m_pwszCredentials[VBOXCREDPROV_FIELDID_PASSWORD],
@@ -261,10 +278,15 @@ int VBoxCredProvCredential::RetrieveCredentials(void)
         PWSTR pwszAcount;
         if (TranslateAccountName(m_pwszCredentials[VBOXCREDPROV_FIELDID_USERNAME], &pwszAcount))
         {
-            VBoxCredProvVerbose(0, "VBoxCredProvCredential: Translated account name %ls -> %ls\n",
+            VBoxCredProvVerbose(0, "VBoxCredProvCredential::RetrieveCredentials: Translated account name %ls -> %ls\n",
                                 m_pwszCredentials[VBOXCREDPROV_FIELDID_USERNAME], pwszAcount);
 
-            RTUtf16Free(m_pwszCredentials[VBOXCREDPROV_FIELDID_USERNAME]);
+            if (m_pwszCredentials[VBOXCREDPROV_FIELDID_USERNAME])
+            {
+                RTMemWipeThoroughly(m_pwszCredentials[VBOXCREDPROV_FIELDID_USERNAME],
+                                    RTUtf16Len(m_pwszCredentials[VBOXCREDPROV_FIELDID_USERNAME]) + sizeof(RTUTF16), 3 /* Passes */);
+                RTUtf16Free(m_pwszCredentials[VBOXCREDPROV_FIELDID_USERNAME]);
+            }
             m_pwszCredentials[VBOXCREDPROV_FIELDID_USERNAME] = pwszAcount;
         }
         else
@@ -280,20 +302,31 @@ int VBoxCredProvCredential::RetrieveCredentials(void)
                                   &pwszAcount, &pwszDomain))
             {
                 /* Update user name. */
-                RTUtf16Free(m_pwszCredentials[VBOXCREDPROV_FIELDID_USERNAME]);
+                if (m_pwszCredentials[VBOXCREDPROV_FIELDID_USERNAME])
+                {
+                    RTMemWipeThoroughly(m_pwszCredentials[VBOXCREDPROV_FIELDID_USERNAME],
+                                        RTUtf16Len(m_pwszCredentials[VBOXCREDPROV_FIELDID_USERNAME]) + sizeof(RTUTF16), 3 /* Passes */);
+                    RTUtf16Free(m_pwszCredentials[VBOXCREDPROV_FIELDID_USERNAME]);
+                }
                 m_pwszCredentials[VBOXCREDPROV_FIELDID_USERNAME] = pwszAcount;
 
                 /* Update domain. */
-                RTUtf16Free(m_pwszCredentials[VBOXCREDPROV_FIELDID_DOMAINNAME]);
+                if (m_pwszCredentials[VBOXCREDPROV_FIELDID_DOMAINNAME])
+                {
+                    RTMemWipeThoroughly(m_pwszCredentials[VBOXCREDPROV_FIELDID_DOMAINNAME],
+                                        RTUtf16Len(m_pwszCredentials[VBOXCREDPROV_FIELDID_DOMAINNAME]) + sizeof(RTUTF16), 3 /* Passes */);
+                    RTUtf16Free(m_pwszCredentials[VBOXCREDPROV_FIELDID_DOMAINNAME]);
+                }
                 m_pwszCredentials[VBOXCREDPROV_FIELDID_DOMAINNAME] = pwszDomain;
 
-                VBoxCredProvVerbose(0, "VBoxCredProvCredential: Extracted account data is pwszAccount=%ls, pwszDomain=%ls\n",
-                                    pwszAcount, pwszDomain);
+                VBoxCredProvVerbose(0, "VBoxCredProvCredential::RetrieveCredentials: Extracted account data pwszAccount=%ls, pwszDomain=%ls\n",
+                                    m_pwszCredentials[VBOXCREDPROV_FIELDID_USERNAME],
+                                    m_pwszCredentials[VBOXCREDPROV_FIELDID_DOMAINNAME]);
             }
         }
     }
 
-    VBoxCredProvVerbose(0, "VBoxCredProvCredential: Checking credentials returned with rc=%Rrc\n", rc);
+    VBoxCredProvVerbose(0, "VBoxCredProvCredential::RetrieveCredentials: Returned rc=%Rrc\n", rc);
     return rc;
 }
 
@@ -305,7 +338,7 @@ int VBoxCredProvCredential::RetrieveCredentials(void)
  */
 HRESULT VBoxCredProvCredential::Initialize(CREDENTIAL_PROVIDER_USAGE_SCENARIO cpUS)
 {
-    VBoxCredProvVerbose(0, "VBoxCredProvCredential: Initialize: cpUS=%ld\n", cpUS);
+    VBoxCredProvVerbose(0, "VBoxCredProvCredential::Initialize: cpUS=%ld\n", cpUS);
 
     m_cpUS = cpUS;
 
@@ -317,14 +350,21 @@ HRESULT VBoxCredProvCredential::Initialize(CREDENTIAL_PROVIDER_USAGE_SCENARIO cp
  * LogonUI calls this in order to give us a callback in case we need to notify it of anything.
  * Store this callback pointer for later use.
  */
-HRESULT VBoxCredProvCredential::Advise(ICredentialProviderCredentialEvents* pcpce)
+HRESULT VBoxCredProvCredential::Advise(ICredentialProviderCredentialEvents *pEvents)
 {
-    VBoxCredProvVerbose(0, "VBoxCredProvCredential: Advise\n");
+    VBoxCredProvVerbose(0, "VBoxCredProvCredential::Advise: pEvents=0x%p\n",
+                        pEvents);
 
-    if (m_pEvents != NULL)
+    if (m_pEvents)
+    {
         m_pEvents->Release();
-    m_pEvents = pcpce;
-    m_pEvents->AddRef();
+        m_pEvents = NULL;
+    }
+
+    m_pEvents = pEvents;
+    if (m_pEvents)
+        m_pEvents->AddRef();
+
     return S_OK;
 }
 
@@ -332,24 +372,14 @@ HRESULT VBoxCredProvCredential::Advise(ICredentialProviderCredentialEvents* pcpc
 /* LogonUI calls this to tell us to release the callback. */
 HRESULT VBoxCredProvCredential::UnAdvise(void)
 {
-    VBoxCredProvVerbose(0, "VBoxCredProvCredential: UnAdvise\n");
-
-    /*
-     * We're done with the current iteration, trigger a refresh of ourselves
-     * to reset credentials and to keep the logon UI clean (no stale entries anymore).
-     */
-    Reset();
-
-    /*
-     * Force a re-iteration of the provider (which will give zero credentials
-     * to try out because we just reset our one and only a line above.
-     */
-    if (m_pProvider)
-        m_pProvider->OnCredentialsProvided();
+    VBoxCredProvVerbose(0, "VBoxCredProvCredential::UnAdvise\n");
 
     if (m_pEvents)
+    {
         m_pEvents->Release();
-    m_pEvents = NULL;
+        m_pEvents = NULL;
+    }
+
     return S_OK;
 }
 
@@ -362,16 +392,17 @@ HRESULT VBoxCredProvCredential::UnAdvise(void)
  * more complicated, like change the contents of a field when the tile is
  * selected, you would do it here.
  */
-HRESULT VBoxCredProvCredential::SetSelected(BOOL* pbAutoLogon)
+HRESULT VBoxCredProvCredential::SetSelected(BOOL *pbAutoLogon)
 {
-    VBoxCredProvVerbose(0, "VBoxCredProvCredential: SetSelected\n");
+    VBoxCredProvVerbose(0, "VBoxCredProvCredential::SetSelected\n");
 
     /*
      * Don't do auto logon here because it would retry too often with
      * every credential field (user name, password, domain, ...) which makes
      * winlogon wait before new login attempts can be made.
      */
-    *pbAutoLogon = FALSE;
+    if (pbAutoLogon)
+        *pbAutoLogon = FALSE;
     return S_OK;
 }
 
@@ -381,14 +412,11 @@ HRESULT VBoxCredProvCredential::SetSelected(BOOL* pbAutoLogon)
  * and now no longer is. The most common thing to do here (which we do below)
  * is to clear out the password field.
  */
-HRESULT VBoxCredProvCredential::SetDeselected()
+HRESULT VBoxCredProvCredential::SetDeselected(void)
 {
-    VBoxCredProvVerbose(0, "VBoxCredProvCredential: SetDeselected\n");
+    VBoxCredProvVerbose(0, "VBoxCredProvCredential::SetDeselected\n");
 
-    VbglR3CredentialsDestroyUtf16(m_pwszCredentials[VBOXCREDPROV_FIELDID_USERNAME],
-                                  m_pwszCredentials[VBOXCREDPROV_FIELDID_PASSWORD],
-                                  m_pwszCredentials[VBOXCREDPROV_FIELDID_DOMAINNAME],
-                                  3 /* Passes */);
+    Reset();
 
     if (m_pEvents)
         m_pEvents->SetFieldString(this, VBOXCREDPROV_FIELDID_PASSWORD, L"");
@@ -405,7 +433,7 @@ HRESULT VBoxCredProvCredential::GetFieldState(DWORD                             
                                               CREDENTIAL_PROVIDER_FIELD_STATE*             pFieldState,
                                               CREDENTIAL_PROVIDER_FIELD_INTERACTIVE_STATE* pFieldstateInteractive)
 {
-    VBoxCredProvVerbose(0, "VBoxCredProvCredential: GetFieldState: dwFieldID=%ld\n", dwFieldID);
+    VBoxCredProvVerbose(0, "VBoxCredProvCredential::GetFieldState: dwFieldID=%ld\n", dwFieldID);
 
     HRESULT hr = S_OK;
 
@@ -430,7 +458,7 @@ HRESULT VBoxCredProvCredential::GetFieldState(DWORD                             
 BOOL VBoxCredProvCredential::TranslateAccountName(PWSTR pwszDisplayName, PWSTR *ppwszAccoutName)
 {
     AssertPtrReturn(pwszDisplayName, FALSE);
-    VBoxCredProvVerbose(0, "VBoxCredProvCredential: TranslateAccountName: Getting account name for \"%ls\" ...\n",
+    VBoxCredProvVerbose(0, "VBoxCredProvCredential::TranslateAccountName: Getting account name for \"%ls\" ...\n",
                         pwszDisplayName);
 
     /** @todo Do we need ADS support (e.g. TranslateNameW) here? */
@@ -481,7 +509,7 @@ BOOL VBoxCredProvCredential::TranslateAccountName(PWSTR pwszDisplayName, PWSTR *
                             fFound = TRUE;
                         }
                         else
-                            VBoxCredProvVerbose(0, "VBoxCredProvCredential: TranslateAccountName: Error copying data, hr=%08x\n", hr);
+                            VBoxCredProvVerbose(0, "VBoxCredProvCredential::TranslateAccountName: Error copying data, hr=%08x\n", hr);
                         break;
                     }
                     pCurBuf++;
@@ -501,8 +529,8 @@ BOOL VBoxCredProvCredential::TranslateAccountName(PWSTR pwszDisplayName, PWSTR *
         pBuf = NULL;
     }
 
-    VBoxCredProvVerbose(0, "VBoxCredProvCredential: TranslateAccountName: Returned nStatus=%ld, fFound=%s\n",
-                        nStatus, fFound ? "Yes" : "No");
+    VBoxCredProvVerbose(0, "VBoxCredProvCredential::TranslateAccountName returned nStatus=%ld, fFound=%RTbool\n",
+                        nStatus, fFound);
     return fFound;
 
 #if 0
@@ -511,13 +539,13 @@ BOOL VBoxCredProvCredential::TranslateAccountName(PWSTR pwszDisplayName, PWSTR *
     if (   TranslateNameW(pwszName, NameUnknown, NameUserPrincipal, NULL, &cbLen)
         && cbLen > 0)
     {
-        VBoxCredProvVerbose(0, "VBoxCredProvCredential: GetAccountName: Translated ADS name has %u characters\n", cbLen));
+        VBoxCredProvVerbose(0, "VBoxCredProvCredential::GetAccountName: Translated ADS name has %u characters\n", cbLen));
 
         ppwszAccoutName = (PWSTR)RTMemAlloc(cbLen * sizeof(WCHAR));
         AssertPtrReturn(pwszName, FALSE);
         if (TranslateNameW(pwszName, NameUnknown, NameUserPrincipal, ppwszAccoutName, &cbLen))
         {
-            VBoxCredProvVerbose(0, "VBoxCredProvCredential: GetAccountName: Real ADS account name of '%ls' is '%ls'\n",
+            VBoxCredProvVerbose(0, "VBoxCredProvCredential::GetAccountName: Real ADS account name of '%ls' is '%ls'\n",
                  pwszName, ppwszAccoutName));
         }
         else
@@ -545,7 +573,7 @@ BOOL VBoxCredProvCredential::TranslateAccountName(PWSTR pwszDisplayName, PWSTR *
 BOOL VBoxCredProvCredential::ExtractAccoutData(PWSTR pwszAccountData, PWSTR *ppwszAccoutName, PWSTR *ppwszDomain)
 {
     AssertPtrReturn(pwszAccountData, FALSE);
-    VBoxCredProvVerbose(0, "VBoxCredProvCredential: ExtractAccoutData: Getting account name for \"%ls\" ...\n",
+    VBoxCredProvVerbose(0, "VBoxCredProvCredential::ExtractAccoutData: Getting account name for \"%ls\" ...\n",
                         pwszAccountData);
     HRESULT hr = E_FAIL;
 
@@ -572,16 +600,16 @@ BOOL VBoxCredProvCredential::ExtractAccoutData(PWSTR pwszAccountData, PWSTR *ppw
                     *ppwszDomain = pwszDomain;
                 }
                 else
-                    VBoxCredProvVerbose(0, "VBoxCredProvCredential: ExtractAccoutData: Error copying domain data, hr=%08x\n", hr);
+                    VBoxCredProvVerbose(0, "VBoxCredProvCredential::ExtractAccoutData: Error copying domain data, hr=%08x\n", hr);
             }
             else
             {
                 hr = E_FAIL;
-                VBoxCredProvVerbose(0, "VBoxCredProvCredential: ExtractAccoutData: No domain name found!\n");
+                VBoxCredProvVerbose(0, "VBoxCredProvCredential::ExtractAccoutData: No domain name found!\n");
             }
         }
         else
-            VBoxCredProvVerbose(0, "VBoxCredProvCredential: ExtractAccoutData: Error copying account data, hr=%08x\n", hr);
+            VBoxCredProvVerbose(0, "VBoxCredProvCredential::ExtractAccoutData: Error copying account data, hr=%08x\n", hr);
 
         if (hr != S_OK)
         {
@@ -591,7 +619,7 @@ BOOL VBoxCredProvCredential::ExtractAccoutData(PWSTR pwszAccountData, PWSTR *ppw
         }
     }
     else
-        VBoxCredProvVerbose(0, "VBoxCredProvCredential: ExtractAccoutData: No valid principal account name found!\n");
+        VBoxCredProvVerbose(0, "VBoxCredProvCredential::ExtractAccoutData: No valid principal account name found!\n");
 
     return (hr == S_OK);
 }
@@ -631,7 +659,7 @@ HRESULT VBoxCredProvCredential::GetStringValue(DWORD  dwFieldID,
         }
 #ifdef DEBUG
         if (SUCCEEDED(hr))
-            VBoxCredProvVerbose(0, "VBoxCredProvCredential: GetStringValue: dwFieldID=%ld, ppwszString=%ls\n",
+            VBoxCredProvVerbose(0, "VBoxCredProvCredential::GetStringValue: dwFieldID=%ld, ppwszString=%ls\n",
                                 dwFieldID, *ppwszString);
 #endif
     }
@@ -650,7 +678,7 @@ HRESULT VBoxCredProvCredential::GetStringValue(DWORD  dwFieldID,
 HRESULT VBoxCredProvCredential::GetSubmitButtonValue(DWORD  dwFieldID,
                                                      DWORD* pdwAdjacentTo)
 {
-    VBoxCredProvVerbose(0, "VBoxCredProvCredential: GetSubmitButtonValue: dwFieldID=%ld\n", dwFieldID);
+    VBoxCredProvVerbose(0, "VBoxCredProvCredential::GetSubmitButtonValue: dwFieldID=%ld\n", dwFieldID);
 
     HRESULT hr = S_OK;
 
@@ -660,7 +688,7 @@ HRESULT VBoxCredProvCredential::GetSubmitButtonValue(DWORD  dwFieldID,
     {
         /* pdwAdjacentTo is a pointer to the fieldID you want the submit button to appear next to. */
         *pdwAdjacentTo = VBOXCREDPROV_FIELDID_PASSWORD;
-        VBoxCredProvVerbose(0, "VBoxCredProvCredential: GetSubmitButtonValue: dwFieldID=%ld, *pdwAdjacentTo=%ld\n",
+        VBoxCredProvVerbose(0, "VBoxCredProvCredential::GetSubmitButtonValue: dwFieldID=%ld, *pdwAdjacentTo=%ld\n",
                             dwFieldID, *pdwAdjacentTo);
     }
     else
@@ -677,16 +705,16 @@ HRESULT VBoxCredProvCredential::GetSubmitButtonValue(DWORD  dwFieldID,
 HRESULT VBoxCredProvCredential::SetStringValue(DWORD  dwFieldID,
                                                PCWSTR pcwzString)
 {
-    VBoxCredProvVerbose(0, "VBoxCredProvCredential: SetStringValue: dwFieldID=%ld, pcwzString=%ls\n",
+#ifdef DEBUG
+    VBoxCredProvVerbose(0, "VBoxCredProvCredential::SetStringValue: dwFieldID=%ld, pcwzString=%ls\n",
                         dwFieldID, pcwzString);
+#endif
 
-    /*
-     * We don't set any values into fields (e.g. the password, hidden
-     * by dots), instead keep it secret by resetting all credentials.
-     */
-    Reset();
+    /* Do more things here later. */
+    HRESULT hr = S_OK;
 
-    return S_OK;
+    VBoxCredProvVerbose(0, "VBoxCredProvCredential::SetStringValue returned with hr=%08x\n", hr);
+    return hr;
 }
 
 
@@ -786,29 +814,40 @@ HRESULT VBoxCredProvCredential::GetSerialization(CREDENTIAL_PROVIDER_GET_SERIALI
     HRESULT hr;
 
 #ifdef DEBUG
-    VBoxCredProvVerbose(0, "VBoxCredProvCredential: GetSerialization: Username=%ls, Password=%ls, Domain=%ls\n",
+    VBoxCredProvVerbose(0, "VBoxCredProvCredential::GetSerialization: Username=%ls, Password=%ls, Domain=%ls\n",
                         m_pwszCredentials[VBOXCREDPROV_FIELDID_USERNAME],
                         m_pwszCredentials[VBOXCREDPROV_FIELDID_PASSWORD],
                         m_pwszCredentials[VBOXCREDPROV_FIELDID_DOMAINNAME]);
 #endif
 
-    WCHAR wszComputerName[MAX_COMPUTERNAME_LENGTH + 1];
-    DWORD cch = ARRAYSIZE(wszComputerName);
-    if (GetComputerNameW(wszComputerName, &cch))
+    /* Do we have a domain name set? */
+    if (   m_pwszCredentials[VBOXCREDPROV_FIELDID_DOMAINNAME]
+        && RTUtf16Len(m_pwszCredentials[VBOXCREDPROV_FIELDID_DOMAINNAME]))
     {
-        /* Is a domain name missing? Then use the name of the local computer. */
-        if (   m_pwszCredentials[VBOXCREDPROV_FIELDID_DOMAINNAME]
-            && RTUtf16Len(m_pwszCredentials[VBOXCREDPROV_FIELDID_DOMAINNAME]))
+        hr = RTUTF16toToUnicode(&pKerberosLogon->LogonDomainName,
+                                m_pwszCredentials[VBOXCREDPROV_FIELDID_DOMAINNAME],
+                                false /* Just assign, no copy */);
+    }
+    else /* No domain (FQDN) given, try local computer name. */
+    {
+        WCHAR wszComputerName[MAX_COMPUTERNAME_LENGTH + 1];
+        DWORD cch = ARRAYSIZE(wszComputerName);
+        if (GetComputerNameW(wszComputerName, &cch))
         {
-            hr = RTUTF16toToUnicode(&pKerberosLogon->LogonDomainName,
-                                    m_pwszCredentials[VBOXCREDPROV_FIELDID_DOMAINNAME],
-                                    false /* Just assign, no copy */);
-        }
-        else
+            /* Is a domain name missing? Then use the name of the local computer. */
             hr = RTUTF16toToUnicode(&pKerberosLogon->LogonDomainName,
                                     wszComputerName,
                                     false /* Just assign, no copy */);
 
+            VBoxCredProvVerbose(0, "VBoxCredProvCredential::GetSerialization: Local computer name=%ls\n",
+                                wszComputerName);
+        }
+        else
+            hr = HRESULT_FROM_WIN32(GetLastError());
+    }
+
+    if (SUCCEEDED(hr))
+    {
         /* Fill in the username and password. */
         if (SUCCEEDED(hr))
         {
@@ -843,13 +882,10 @@ HRESULT VBoxCredProvCredential::GetSerialization(CREDENTIAL_PROVIDER_GET_SERIALI
                             break;
                     }
 
-                    if (SUCCEEDED(hr))
-                    {
-                        /* Allocate copies of, and package, the strings in a binary blob. */
+                    if (SUCCEEDED(hr)) /* Build the logon package. */
                         hr = AllocateLogonPackage(KerberosUnlockLogon,
                                                   &pcpCredentialSerialization->rgbSerialization,
                                                   &pcpCredentialSerialization->cbSerialization);
-                    }
 
                     if (SUCCEEDED(hr))
                     {
@@ -899,10 +935,8 @@ HRESULT VBoxCredProvCredential::GetSerialization(CREDENTIAL_PROVIDER_GET_SERIALI
             }
         }
     }
-    else
-        hr = HRESULT_FROM_WIN32(GetLastError());
 
-    VBoxCredProvVerbose(0, "VBoxCredProvCredential: GetSerialization: Returned 0x%08x\n", hr);
+    VBoxCredProvVerbose(0, "VBoxCredProvCredential::GetSerialization returned hr=0x%08x\n", hr);
     return hr;
 }
 
@@ -913,8 +947,8 @@ HRESULT VBoxCredProvCredential::GetSerialization(CREDENTIAL_PROVIDER_GET_SERIALI
  * customize the error shown in the case of bad username/password and in the case of the account
  * being disabled.
  */
-HRESULT VBoxCredProvCredential::ReportResult(NTSTATUS                         ntsStatus,
-                                             NTSTATUS                         ntsSubstatus,
+HRESULT VBoxCredProvCredential::ReportResult(NTSTATUS                         ntStatus,
+                                             NTSTATUS                         ntSubStatus,
                                              PWSTR                           *ppwszOptionalStatusText,
                                              CREDENTIAL_PROVIDER_STATUS_ICON *pcpsiOptionalStatusIcon)
 {
@@ -922,6 +956,8 @@ HRESULT VBoxCredProvCredential::ReportResult(NTSTATUS                         nt
      * Since NULL is a valid value for *ppwszOptionalStatusText and *pcpsiOptionalStatusIcon
      * this function can't fail
      */
+    VBoxCredProvVerbose(0, "VBoxCredProvCredential::ReportResult: ntStatus=%ld, ntSubStatus=%ld\n",
+                        ntStatus, ntSubStatus);
     return S_OK;
 }
 

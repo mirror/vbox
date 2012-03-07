@@ -29,11 +29,10 @@ VBoxCredProvProvider::VBoxCredProvProvider(void) :
     m_cRefCount(1),
     m_pPoller(NULL),
     m_pCred(NULL),
-    m_pCredProvEvents(NULL),
-    m_fGotCredentials(false),
+    m_pEvents(NULL),
     m_fHandleRemoteSessions(false)
 {
-    LONG cRefCount = VBoxCredentialProviderAcquire();
+    VBoxCredentialProviderAcquire();
 
     VBoxCredProvReportStatus(VBoxGuestFacilityStatus_Init);
 }
@@ -41,6 +40,8 @@ VBoxCredProvProvider::VBoxCredProvProvider(void) :
 
 VBoxCredProvProvider::~VBoxCredProvProvider(void)
 {
+    VBoxCredProvVerbose(0, "VBoxCredProv: Destroying\n");
+
     if (m_pCred)
     {
         m_pCred->Release();
@@ -54,9 +55,6 @@ VBoxCredProvProvider::~VBoxCredProvProvider(void)
         m_pPoller = NULL;
     }
 
-    ULONG cRefCount = VBoxCredentialProviderRefCount();
-    VBoxCredProvVerbose(0, "VBoxCredProv: Destroying (global DLL refcount=%ld)\n", cRefCount);
-
     VBoxCredProvReportStatus(VBoxGuestFacilityStatus_Terminated);
 
     VBoxCredentialProviderRelease();
@@ -66,21 +64,18 @@ VBoxCredProvProvider::~VBoxCredProvProvider(void)
 /* IUnknown overrides. */
 ULONG VBoxCredProvProvider::AddRef(void)
 {
-    VBoxCredProvVerbose(0, "VBoxCredProv: Increasing reference from %ld to %ld\n",
-                        m_cRefCount, m_cRefCount + 1);
-
-    return m_cRefCount++;
+    LONG cRefCount = InterlockedIncrement(&m_cRefCount);
+    VBoxCredProvVerbose(0, "VBoxCredProv: AddRef: Returning refcount=%ld\n",
+                        cRefCount);
+    return cRefCount;
 }
 
 
 ULONG VBoxCredProvProvider::Release(void)
 {
-    Assert(m_cRefCount);
-
-    VBoxCredProvVerbose(0, "VBoxCredProv: Decreasing reference from %ld to %ld\n",
-                        m_cRefCount, m_cRefCount - 1);
-
-    ULONG cRefCount = --m_cRefCount;
+    LONG cRefCount = InterlockedDecrement(&m_cRefCount);
+    VBoxCredProvVerbose(0, "VBoxCredProv: Release: Returning refcount=%ld\n",
+                        cRefCount);
     if (!cRefCount)
     {
         VBoxCredProvVerbose(0, "VBoxCredProv: Calling destructor\n");
@@ -203,6 +198,9 @@ HRESULT VBoxCredProvProvider::SetUsageScenario(CREDENTIAL_PROVIDER_USAGE_SCENARI
     HRESULT hr = S_OK;
     DWORD dwErr;
 
+    VBoxCredProvVerbose(0, "VBoxCredProv::SetUsageScenario: cpUS=%d, dwFlags=%ld\n",
+                        cpUsageScenario, dwFlags);
+
     m_cpUsageScenario = cpUsageScenario;
 
     /* Decide which scenarios to support here. Returning E_NOTIMPL simply tells the caller
@@ -237,7 +235,7 @@ HRESULT VBoxCredProvProvider::SetUsageScenario(CREDENTIAL_PROVIDER_USAGE_SCENARI
 
             if (!m_pCred)
             {
-                m_pCred = new VBoxCredProvCredential(this);
+                m_pCred = new VBoxCredProvCredential();
                 if (m_pCred)
                 {
                     hr = m_pCred->Initialize(m_cpUsageScenario);
@@ -250,7 +248,7 @@ HRESULT VBoxCredProvProvider::SetUsageScenario(CREDENTIAL_PROVIDER_USAGE_SCENARI
                 /* All set up already! Nothing to do here right now. */
             }
 
-            /* If we did fail -> cleanup */
+            /* If we failed, do some cleanup. */
             if (FAILED(hr))
             {
                 if (m_pCred != NULL)
@@ -274,8 +272,7 @@ HRESULT VBoxCredProvProvider::SetUsageScenario(CREDENTIAL_PROVIDER_USAGE_SCENARI
             break;
     }
 
-    VBoxCredProvVerbose(0, "VBoxCredProv::SetUsageScenario returned hr=0x%08x (cpUS=%d, dwFlags=%ld)\n",
-                        hr, cpUsageScenario, dwFlags);
+    VBoxCredProvVerbose(0, "VBoxCredProv::SetUsageScenario returned hr=0x%08x\n", hr);
     return hr;
 }
 
@@ -307,14 +304,17 @@ STDMETHODIMP VBoxCredProvProvider::SetSerialization(const CREDENTIAL_PROVIDER_CR
 HRESULT VBoxCredProvProvider::Advise(ICredentialProviderEvents *pcpEvents,
                                      UINT_PTR                   upAdviseContext)
 {
-    VBoxCredProvVerbose(0, "VBoxCredProv::Advise\n");
+    VBoxCredProvVerbose(0, "VBoxCredProv::Advise, pcpEvents=0x%p, upAdviseContext=%u\n",
+                        pcpEvents, upAdviseContext);
+    if (m_pEvents)
+    {
+        m_pEvents->Release();
+        m_pEvents = NULL;
+    }
 
-    if (m_pCredProvEvents != NULL)
-        m_pCredProvEvents->Release();
-
-    m_pCredProvEvents = pcpEvents;
-    AssertPtr(m_pCredProvEvents);
-    m_pCredProvEvents->AddRef();
+    m_pEvents = pcpEvents;
+    if (m_pEvents)
+        m_pEvents->AddRef();
 
     /*
      * Save advice context for later use when binding to
@@ -328,11 +328,12 @@ HRESULT VBoxCredProvProvider::Advise(ICredentialProviderEvents *pcpEvents,
 /* Called by LogonUI when the ICredentialProviderEvents callback is no longer valid. */
 HRESULT VBoxCredProvProvider::UnAdvise(void)
 {
-    VBoxCredProvVerbose(0, "VBoxCredProv::UnAdvise\n");
-    if (m_pCredProvEvents != NULL)
+    VBoxCredProvVerbose(0, "VBoxCredProv::UnAdvise: pEvents=0x%p\n",
+                        m_pEvents);
+    if (m_pEvents)
     {
-        m_pCredProvEvents->Release();
-        m_pCredProvEvents = NULL;
+        m_pEvents->Release();
+        m_pEvents = NULL;
     }
 
     return S_OK;
@@ -349,10 +350,11 @@ HRESULT VBoxCredProvProvider::UnAdvise(void)
  */
 HRESULT VBoxCredProvProvider::GetFieldDescriptorCount(DWORD *pdwCount)
 {
-    Assert(pdwCount);
-    *pdwCount = VBOXCREDPROV_NUM_FIELDS;
-
-    VBoxCredProvVerbose(0, "VBoxCredProv::GetFieldDescriptorCount: %ld\n", *pdwCount);
+    if (pdwCount)
+    {
+        *pdwCount = VBOXCREDPROV_NUM_FIELDS;
+        VBoxCredProvVerbose(0, "VBoxCredProv::GetFieldDescriptorCount: %ld\n", *pdwCount);
+    }
     return S_OK;
 }
 
@@ -456,7 +458,8 @@ HRESULT VBoxCredProvProvider::GetCredentialAt(DWORD                           dw
 {
     HRESULT hr;
 
-    VBoxCredProvVerbose(0, "VBoxCredProv::GetCredentialAt: Index=%ld, ppCredProvCredential=%p\n", dwIndex, ppCredProvCredential);
+    VBoxCredProvVerbose(0, "VBoxCredProv::GetCredentialAt: Index=%ld, ppCredProvCredential=0x%p\n",
+                        dwIndex, ppCredProvCredential);
 
     if (!m_pCred)
     {
@@ -486,8 +489,8 @@ void VBoxCredProvProvider::OnCredentialsProvided(void)
 {
     VBoxCredProvVerbose(0, "VBoxCredProv::OnCredentialsProvided\n");
 
-    if (m_pCredProvEvents != NULL)
-        m_pCredProvEvents->CredentialsChanged(m_upAdviseContext);
+    if (m_pEvents)
+        m_pEvents->CredentialsChanged(m_upAdviseContext);
 }
 
 

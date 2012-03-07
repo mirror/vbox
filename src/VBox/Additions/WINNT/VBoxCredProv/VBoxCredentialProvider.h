@@ -70,8 +70,8 @@ static const VBOXCREDPROV_FIELD s_VBoxCredProvFields[] =
 };
 
 /** Prototypes. */
-LONG VBoxCredentialProviderAcquire(void);
-LONG VBoxCredentialProviderRelease(void);
+void VBoxCredentialProviderAcquire(void);
+void VBoxCredentialProviderRelease(void);
 LONG VBoxCredentialProviderRefCount(void);
 
 HRESULT VBoxCredentialProviderCreate(REFCLSID classID,
