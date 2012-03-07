@@ -1,7 +1,6 @@
 #!/usr/bin/make -f
-
 #
-# Copyright (C) 2006-2011 Oracle Corporation
+# Copyright (C) 2006-2012 Oracle Corporation
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;
@@ -11,6 +10,27 @@
 # distribution. VirtualBox OSE is distributed in the hope that it will
 # be useful, but WITHOUT ANY WARRANTY of any kind.
 #
+
+# possible overrides:
+#  OSE=1            force VBOX_OSE
+#  NOPARALLEL=1     compile with -j1
+#  LINUX=<dir>      compile vboxdrv against Linux found in <dir>
+#  VERBOSE=1        verbose build
+#  DEBUG=1          debug build
+#  NOSUBVER=1       disable generation of the sub-version field (which is
+#                   either the subversion rev [if available] or the build date)
+#  NODOCS=1         don't build docs, use precompiled UserManual.pdf and
+#                   VirtualBox.chm from $HOME
+#  NOMODS=1         don't build any module
+#  NOQT=1           don't build the Qt GUI
+#  EFI=1            include the EFI binary from prebuild
+#  VERSUFFIX=<suffix> set a particular package version suffix (e.g. _customer)
+#  HEADLESS=1       build the headless version
+#  VNC=1            build VNC code
+#  NOWEBSVC=1       don't build the webservice API, default for OSE
+#  STAGEDISO=<path> don't build the VBoxAdditions, use the precompiled .iso
+#  PKGDIR=<path>    where to store the final package(s)
+#  BLEEDING_EDGE=xyz
 
 ifeq ($(wildcard rpm/rules),)
 $(error call rpm/rules from src/VBox/Installer/linux)
@@ -34,14 +54,20 @@ endif
 
 verpkg   := VirtualBox-4.1
 current  := $(shell pwd)
-vboxroot := $(shell cd ../../../../; pwd)
+vboxroot := $(shell cd ../../../..; pwd)
 pkgdir   := $(if $(PKGDIR),$(PKGDIR),$(shell cd ../../../../..; pwd))
 builddir := $(current)/rpm/builddir
 rpmlib   := $(shell if [ `uname -m` = "x86_64" ]; then echo "lib64"; else echo "lib"; fi)
 arch     := $(shell if [ `uname -m` = "x86_64" ]; then echo "amd64"; else echo "i386"; fi)
 verfile  := $(builddir)/version-generated.mk
+ose      := $(if $(OSE),1,$(if $(wildcard $(vboxroot)/src/VBox/RDP/server),,1))
 -include $(vboxroot)/SVN_REVISION
 svnrev   :=$(if $(svn_revision),$(svn_revision),0)
+
+NOMODS   ?= $(ose)
+NOQT     ?= $(HEADLESS)
+NOWEBSVC ?= $(ose)
+NOWINE   := $(if $(NODOCS),$(if $(STAGEDISO),1,),)$(ose)
 
 ifneq ($(MAKECMDGOALS),clean)
  rpmrel   := $(shell cat /etc/distname)
@@ -70,16 +96,15 @@ ifneq ($(MAKECMDGOALS),clean)
  ifeq ($(rpmspec),)
   $(error failed to detect the .spec file (rpmrel=$(rpmrel)))
  endif
-
- include $(verfile)
-$(verfile): rpm/configure-stamp
-	. rpm/env.sh && kmk -C $(vboxroot) $(bld_flags) $(verfile)
 endif
 
+ifneq ($(wildcard $(verfile)),)
+include $(verfile)
 ver      := $(VBOX_VERSION_STRING)
-rpmver   :=$(ver)$(if $(NOSUBVER),,$(if $(svn_revision),_$(svn_revision),)$(VERSUFFIX)$(if $(DEBUG),_dbg,))$(if $(BLEEDING_EDGE),_$(BLEEDING_EDGE),)
+rpmver   :=$(ver)$(if $(NOSUBVER),,$(if $(svn_revision),_$(svn_revision),)$(VERSUFFIX)$(if $(HEADLESS),_headless,)$(if $(DEBUG),_dbg,))$(if $(BLEEDING_EDGE),_$(BLEEDING_EDGE),)
 archdir  := $(current)/rpm/VirtualBox-$(ver)
 rpmname  := $(verpkg)-$(rpmver)_$(rpmrel)
+endif
 
 # Fedora13/14 is bleeding edge, the other jails have outdated kernel headers
 instmod  := $(if $(filter rhel4 rhel5 rhel6 ol4 ol5 ol6 centos4 centos5 centos6 sles10.1 sles11.0 fedora13 fedora14 fedora15 fedora16,$(rpmrel)),,install_rpm)
@@ -103,24 +128,32 @@ else
  doc_dir := VBOX_PATH_PACKAGE_DOCS="\"/usr/share/doc/packages/$(verpkg)\""
 endif
 
-cfg_flags := $(if $(filter rhel4 sles10.1,$(rpmrel)),--build-libxml2,) \
+cfg_flags := $(if $(NOQT),--disable-qt,) \
+	     $(if $(filter rhel4 sles10.1,$(rpmrel)),--build-libxml2,) \
 	     $(if $(filter rhel4,$(rpmrel)),--build-libssl,) \
 	     $(if $(filter rhel4 rhel5 ol4 ol5 centos4 centos5 sles10.1,$(rpmrel)),--build-libcurl,) \
 	     $(if $(filter rhel5 centos5 sles10.1,$(rpmrel)),--disable-sdl-ttf,) \
 	     $(if $(filter sles10.1 turbolinux11,$(rpmrel)),--disable-pulse,) \
 	     $(if $(filter rhel4 rhel5 ol4 ol5 centos4 centos5,$(rpmrel)),--enable-pulse,) \
 	     $(if $(filter rhel4 rhel5 ol4 ol5 centos4 centos5 sles10.1 turbolinux11,$(rpmrel)),--with-qt4-dir=/home/vbox/Qt-4.7.4-stdc++6-$(arch)) \
+	     $(if $(ose),--ose,) $(if $(LINUX),--with-linux=$(LINUX),) \
+	     $(if $(HEADLESS),--build-headless,) \
 	     $(if $(DEBUG),--build-debug,) \
+	     $(if $(NOWINE),,--setup-wine) \
+	     $(if $(NOWEBSVC),,--enable-webservice) \
+	     $(if $(VNC),--enable-vnc,) \
 	     --disable-extpack
 
 bld_flags := AUTOCFG=$(current)/rpm/AutoConfig.kmk \
 	     LOCALCFG=$(current)/rpm/LocalConfig.kmk \
 	     PATH_OUT=$(builddir) \
 	     VBOX_WITHOUT_EXTPACK_PUEL_PACKING=1 \
+	     VBOX_WITHOUT_EXTPACK_VNC_PACKING=1 \
 	     VBOX_DO_STRIP= \
+	     VBOX_DO_STRIP_MODULES= \
 	     VBOX_WITH_MULTIVERSION_PYTHON= \
 	     $(doc_dir) \
-	     VBOX_WITH_DOCS_CHM=1 \
+	     $(if $(ose),,VBOX_WITH_DOCS_CHM=1) \
 	     VBOX_PACKAGE_DIST=$(rpmdist) \
 	     VBOX_SVN_REV=$(svnrev) \
 	     $(if $(NODOCS),VBOX_WITH_DOCS= ,) \
@@ -131,11 +164,10 @@ bld_flags := AUTOCFG=$(current)/rpm/AutoConfig.kmk \
 
 rpm/configure-stamp:
 	cd $(vboxroot) && ./configure --odir=$(current)/rpm $(cfg_flags)
-	touch $(current)/rpm/configure-stamp
+	touch rpm/configure-stamp
 
-rpm/build-stamp: rpm/configure-stamp
-	. rpm/env.sh && kmk -C $(vboxroot) $(if $(NOPARALLEL),-j1,) $(bld_flags) all
-	$(if $(NODOCS),,. rpm/env.sh && kmk -C $(vboxroot)/src/VBox/Main $(bld_flags) docs)
+rpm/build-stamp $(verfile): rpm/configure-stamp
+	. rpm/env.sh && kmk -C $(vboxroot) $(bld_flags) $(if $(NOPARALLEL),-j1,) all
 	$(if $(NODOCS),cp $(vboxroot)/prebuild/UserManual*.pdf $(builddir)/bin,)
 	$(if $(NODOCS),cp $(vboxroot)/prebuild/VirtualBox*.chm $(builddir)/bin,)
 	$(if $(EFI),cp $(vboxroot)/prebuild/VBoxEFI32.fd $(builddir)/bin,)
@@ -180,22 +212,22 @@ binary: rpm/build-stamp
 	  -e '}' \
 	   rpm/VirtualBox.tmpl.spec > $(archdir)/VirtualBox.spec
 	sed \
-	   -e 's|%NOLSB%|yes|g' \
-	   -e 's|%DEBIAN%||g' \
-	   -e 's|%PACKAGE%|virtualbox|g' \
-	   -e "s|%VERSION%|$(VBOX_VERSION_STRING)|g" \
-	   -e "s|%GROUP%|$(if $(VBOX_WITHOUT_HARDENING),vboxusers,root)|g" \
-	   vboxdrv.sh.in > $(archdir)/vboxdrv.init
+	    -e 's|%NOLSB%|yes|g' \
+	    -e 's|%DEBIAN%||g' \
+	    -e 's|%PACKAGE%|virtualbox|g' \
+	    -e "s|%VERSION%|$(VBOX_VERSION_STRING)|g" \
+	    -e "s|%GROUP%|$(if $(VBOX_WITHOUT_HARDENING),vboxusers,root)|g" \
+	    vboxdrv.sh.in > $(archdir)/vboxdrv.init
 	sed \
-	   -e 's|%NOLSB%|yes|g' \
-	   -e 's|%DEBIAN%||g' \
-	   -e 's|%PACKAGE%|virtualbox|g' \
-	   vboxballoonctrl-service.sh.in > $(archdir)/vboxballoonctrl-service.init
+	    -e 's|%NOLSB%|yes|g' \
+	    -e 's|%DEBIAN%||g' \
+	    -e 's|%PACKAGE%|virtualbox|g' \
+	    vboxballoonctrl-service.sh.in > $(archdir)/vboxballoonctrl-service.init
 	sed \
-	   -e 's|%NOLSB%|yes|g' \
-	   -e 's|%DEBIAN%||g' \
-	   -e 's|%PACKAGE%|virtualbox|g' \
-	   vboxweb-service.sh.in > $(archdir)/vboxweb-service.init
+	    -e 's|%NOLSB%|yes|g' \
+	    -e 's|%DEBIAN%||g' \
+	    -e 's|%PACKAGE%|virtualbox|g' \
+	    vboxweb-service.sh.in > $(archdir)/vboxweb-service.init
 	cp debian/VBox.sh $(archdir)
 	mv rpm/VirtualBox-$(ver) rpm/$(rpmname)
 	tar -cjf rpm/VirtualBox.tar.bz2 -C rpm $(rpmname)

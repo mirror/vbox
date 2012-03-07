@@ -3,7 +3,7 @@
 #
 
 #
-# Copyright (C) 2006-2011 Oracle Corporation
+# Copyright (C) 2006-2012 Oracle Corporation
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;
@@ -113,6 +113,9 @@ for i in VBoxManage VBoxSVC VBoxSDL VirtualBox VBoxHeadless VBoxExtPackHelperApp
   mv $i $RPM_BUILD_ROOT/usr/lib/virtualbox; done
 for i in VBoxSDL VirtualBox VBoxHeadless VBoxNetDHCP VBoxNetAdpCtl; do
   chmod 4511 $RPM_BUILD_ROOT/usr/lib/virtualbox/$i; done
+if [ -d ExtensionPacks/VNC ]; then
+  mv ExtensionPacks/VNC $RPM_BUILD_ROOT/usr/lib/virtualbox/ExtensionPacks
+fi
 mv VBoxTunctl $RPM_BUILD_ROOT/usr/bin
 for d in /lib/modules/*; do
   if [ -L $d/build ]; then

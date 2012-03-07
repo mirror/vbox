@@ -142,7 +142,10 @@ VBOX_LNX_STRIP_BIN = \
 		VBoxTestOGL \
 		VBoxSharedCrOpenGL.so,) \
 	$(if $(VBOX_WITH_PYTHON),$(notdir $(wildcard $(PATH_STAGE_BIN)/VBoxPython*.so)),) \
-        $(if $(VBOX_WITH_JXPCOM),libvboxjxpcom.so,) \
+	$(if $(VBOX_WITH_JXPCOM),libvboxjxpcom.so,) \
+	$(if $(and $(VBOX_WITH_EXTPACK_VNC),$(VBOX_WITHOUT_EXTPACK_VNC_PACKING)), \
+		ExtensionPacks/VNC/$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)/VBoxVNC.so \
+		ExtensionPacks/VNC/$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)/VBoxVNCMain.so,) \
 	VBoxTunctl
 
 # Do not remove relocation information of these binaries
@@ -165,6 +168,11 @@ VBOX_LNX_NO_STRIP = \
 	  components/VBoxXPCOMBase.xpt \
 	  components/VirtualBox_XPCOM.xpt) \
 	$(if $(VBOX_WITH_PYTHON),vboxshell.py,) \
+	$(if $(and $(VBOX_WITH_EXTPACK_VNC),$(VBOX_WITHOUT_EXTPACK_VNC_PACKING)), \
+	  ExtensionPacks/VNC/ExtPack.xml \
+	  ExtensionPacks/VNC/ExtPack-license.html \
+	  ExtensionPacks/VNC/ExtPack-license.rtf \
+	  ExtensionPacks/VNC/ExtPack-license.txt,) \
 	VBoxSysInfo.sh \
 	VBoxCreateUSBNode.sh \
 	VBox.sh \
@@ -469,7 +477,7 @@ $(addprefix $(VBOX_LNX_INST_OUT_DIR)/archive/,$(VBOX_LNX_NO_STRIP)): \
 	$(QUIET)$(RM) -f $@
 	$(QUIET)$(LN_SYMLINK) $< $@
 
-# rules for creating directories in archive (the pattern rules depends on these). ## @todo use BLDDIRS
+# rules for creating directories in archive (the pattern rules depends on these).
 BLDDIRS += $(foreach d,\
 	archive \
 	archive/components \
@@ -480,9 +488,12 @@ BLDDIRS += $(foreach d,\
 	  archive/sdk/installer/vboxapi \
 	  archive/sdk/bindings/xpcom/python/xpcom \
 	  archive/sdk/bindings/xpcom/python/xpcom/client \
-          archive/sdk/bindings/xpcom/python/xpcom/server,) \
+	  archive/sdk/bindings/xpcom/python/xpcom/server,) \
 	$(if $(VBOX_WITH_JXPCOM),\
 	  archive/sdk/bindings/xpcom/java,) \
+	$(if $(and $(VBOX_WITH_EXTPACK_VNC),$(VBOX_WITHOUT_EXTPACK_VNC_PACKING)), \
+	  archive/ExtensionPacks/VNC \
+	  archive/ExtensionPacks/VNC/$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH),) \
 	archive/additions \
 	install\
 ,$(VBOX_LNX_INST_OUT_DIR)/$(d)/)
@@ -512,7 +523,7 @@ $(addprefix $(VBOX_LNX_INST_OUT_DIR)/archive-dbg/$(VBOX_LNX_DBG_PATH)/,$(VBOX_LN
 	$(call MSG_TOOL,copydbg,$<,$@)
 	$(QUIET)objcopy --only-keep-debug $< $@
 
-# rules for creating directories in archive-dbg (the pattern rules depends on these). ## @todo use BLDDIRS
+# rules for creating directories in archive-dbg (the pattern rules depends on these).
 BLDDIRS += $(foreach d,\
 	$(VBOX_LNX_DBG_PATH) \
 	$(VBOX_LNX_DBG_PATH)/components \

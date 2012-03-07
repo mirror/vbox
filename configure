@@ -900,14 +900,14 @@ extern "C" int main()
   for (; *v !='.' && *v != '\0'; v++) micro = micro*10 + *v-'0';
 
   printf("found version %s", LIBVNCSERVER_PACKAGE_VERSION);
-  if (major*10000 + minor*100 + micro >= 907)
+  if (major*10000 + minor*100 + micro >= 900)
   {
     printf(", OK.\n");
     return 0;
   }
   else
   {
-    printf(", expected version 0.9.7 or higher\n");
+    printf(", expected version 0.9 or higher\n");
     return 1;
   }
 }

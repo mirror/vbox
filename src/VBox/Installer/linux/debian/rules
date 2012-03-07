@@ -1,6 +1,6 @@
 #!/usr/bin/make -f
 #
-# Copyright (C) 2006-2011 Oracle Corporation
+# Copyright (C) 2006-2012 Oracle Corporation
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;
@@ -31,9 +31,10 @@ export DH_COMPAT=4
 #                   VirtualBox.chm from $HOME
 #  NOMODS=1         don't build any module
 #  NOQT=1           don't build the Qt GUI
-#  EFI              include the EFI binary from prebuild
+#  EFI=1            include the EFI binary from prebuild
 #  VERSUFFIX=<suffix> set a particular package version suffix (e.g. _customer)
 #  HEADLESS=1       build the headless version
+#  VNC=1            build VNC code
 #  NOWEBSVC=1       don't build the webservice API, default for OSE
 #  STAGEDISO=<path> don't build the VBoxAdditions, use the precompiled .iso
 #  PKGDIR=<path>    where to store the final package(s)
@@ -56,7 +57,7 @@ svnrev   :=$(if $(svn_revision),$(svn_revision),0)
 NOMODS   ?= $(ose)
 NOQT     ?= $(HEADLESS)
 NOWEBSVC ?= $(ose)
-NOWINE   := $(if $(NODOCS),$(if $(STAGEDISO),1,),)
+NOWINE   := $(if $(NODOCS),$(if $(STAGEDISO),1,),)$(ose)
 
 ifneq ($(wildcard $(verfile)),)
 include $(verfile)
@@ -93,18 +94,20 @@ endif
 qtstdc6  := /home/vbox/Qt-4.7.4-stdc++6-$(arch)
 
 cfg_flags := $(if $(NOQT),--disable-qt,) \
-	     $(if $(ose),--ose,) $(if $(LINUX),--with-linux=$(LINUX),) \
 	     $(if $(filter _Ubuntu_hardy,$(debrel)),--with-qt4-dir=$(qtstdc6)) \
+	     $(if $(ose),--ose,) $(if $(LINUX),--with-linux=$(LINUX),) \
 	     $(if $(HEADLESS),--build-headless,) \
 	     $(if $(DEBUG),--build-debug,) \
 	     $(if $(NOWINE),,--setup-wine) \
 	     $(if $(NOWEBSVC),,--enable-webservice) \
+	     $(if $(VNC),--enable-vnc,) \
 	     --disable-extpack
 
 bld_flags := AUTOCFG=$(current)/debian/AutoConfig.kmk \
 	     LOCALCFG=$(current)/debian/LocalConfig.kmk \
-	     PATH_OUT=$(current)/debian/builddir \
+	     PATH_OUT=$(builddir) \
 	     VBOX_WITHOUT_EXTPACK_PUEL_PACKING=1 \
+	     VBOX_WITHOUT_EXTPACK_VNC_PACKING=1 \
 	     VBOX_DO_STRIP= \
 	     VBOX_DO_STRIP_MODULES= \
 	     VBOX_WITH_MULTIVERSION_PYTHON= \
@@ -112,7 +115,7 @@ bld_flags := AUTOCFG=$(current)/debian/AutoConfig.kmk \
 	     $(if $(ose),,VBOX_WITH_DOCS_CHM=1) \
 	     VBOX_PACKAGE_DIST=$(debdist) \
 	     VBOX_SVN_REV=$(svnrev) \
-	     $(if $(NODOCS),VBOX_WITH_DOCS= ,)\
+	     $(if $(NODOCS),VBOX_WITH_DOCS= ,) \
 	     $(if $(VERBOSE),--print-directory KBUILD_VERBOSE=2,--no-print-directory) \
 	     $(if $(STAGEDISO),VBOX_WITHOUT_ADDITIONS=1,) \
 	     $(if $(BLEEDING_EDGE),VBOX_BLEEDING_EDGE=$(BLEEDING_EDGE),) \
@@ -181,7 +184,8 @@ debian/modules-stamp: debian/build-stamp
 clean:
 	dh_testdir
 	dh_testroot
-	rm -f debian/changelog debian/preinst debian/postinst debian/prerm
+	rm -f debian/changelog
+	rm -f debian/preinst debian/postinst debian/prerm
 	rm -f debian/$(package).init debian/vboxdrv.init
 	rm -f debian/vboxballoonctrl-service.init debian/vboxweb-service.init
 	rm -f debian/AutoConfig.kmk debian/configure.log debian/env.sh
@@ -263,6 +267,7 @@ binary binary-arch binary-indep: build $(if $(NOMODS),,modules)
 	    VBoxExtPackHelperApp VBoxBalloonCtrl \
 	    $(if $(NOWEBSVC),,vboxwebsrv webtest); do \
 	    mv $(archdir)/$$i $(prefix)/usr/lib/$(package); done
+	$(if $(VNC),mv $(archdir)/ExtensionPacks/VNC $(prefix)/usr/lib/$(package)/ExtensionPacks,)
 	mv $(archdir)/VBoxTunctl $(prefix)/usr/bin
 	$(if $(NOMODS),,for d in $(moddir)/*; do \
 	    if [ -f $$d/vboxdrv.ko -a -f $$d/vboxnetflt.ko -a -f $$d/vboxnetadp.ko -a -f $$d/vboxpci.ko ]; then \
@@ -296,6 +301,7 @@ else
 	    mv $(archdir)/$$i $(prefix)/usr/share/$(package); done
 endif
 	rmdir $(archdir)/additions
+	$(if $(VNC),rmdir $(archdir)/ExtensionPacks)
 	rmdir $(archdir)
 	rmdir $(prefix)/opt
 	dh_link \
