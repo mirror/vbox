@@ -122,22 +122,22 @@ for d in /lib/modules/*; do
     rm -f /tmp/vboxdrv-Module.symvers
     ./src/vboxhost/build_in_tmp \
       --save-module-symvers /tmp/vboxdrv-Module.symvers \
-      --module-source $MODULE_SRC/vboxdrv \ 
+      --module-source `pwd`/src/vboxhost/vboxdrv \
       KBUILD_VERBOSE= KERN_DIR=$d/build MODULE_DIR=$RPM_BUILD_ROOT/$d/misc -j4 \
       %INSTMOD%
     ./src/vboxhost/build_in_tmp \
       --use-module-symvers /tmp/vboxdrv-Module.symvers \
-      --module-source $MODULE_SRC/vboxnetflt \ 
+      --module-source `pwd`/src/vboxhost/vboxnetflt \
       KBUILD_VERBOSE= KERN_DIR=$d/build MODULE_DIR=$RPM_BUILD_ROOT/$d/misc -j4 \
       %INSTMOD%
     ./src/vboxhost/build_in_tmp \
       --use-module-symvers /tmp/vboxdrv-Module.symvers \
-      --module-source $MODULE_SRC/vboxnetadp \ 
+      --module-source `pwd`/src/vboxhost/vboxnetadp \
       KBUILD_VERBOSE= KERN_DIR=$d/build MODULE_DIR=$RPM_BUILD_ROOT/$d/misc -j4 \
       %INSTMOD%
     ./src/vboxhost/build_in_tmp \
       --use-module-symvers /tmp/vboxdrv-Module.symvers \
-      --module-source $MODULE_SRC/vboxpci \ 
+      --module-source `pwd`/src/vboxhost/vboxpci \
       KBUILD_VERBOSE= KERN_DIR=$d/build MODULE_DIR=$RPM_BUILD_ROOT/$d/misc -j4 \
       %INSTMOD%
   fi
