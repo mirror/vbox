@@ -47,9 +47,6 @@
 #include "d3d9.h"
 #include "wine/wined3d.h"
 
-#ifdef VBOX_WITH_WDDM
-#include "../vbox/VBoxWineEx.h"
-#endif
 
 /* ===========================================================================
    Internal use

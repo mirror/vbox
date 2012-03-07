@@ -7010,6 +7010,49 @@ static HRESULT WINAPI IWineD3DDeviceImpl_Flush(IWineD3DDevice *iface)
     }
     return WINED3D_OK;
 }
+
+/* context activation is done by the caller */
+void device_cleanup_durtify_texture_target(IWineD3DDeviceImpl *This, GLuint texture_target)
+{
+    const struct wined3d_gl_info *gl_info = &This->adapter->gl_info;
+    unsigned int i;
+    GLint active_texture=GL_TEXTURE0_ARB;
+    ENTER_GL();
+    glGetIntegerv(GL_ACTIVE_TEXTURE, &active_texture);
+
+    for (i = 0; i < gl_info->limits.textures; ++i)
+    {
+        /* Make appropriate texture active */
+        GL_EXTCALL(glActiveTextureARB(GL_TEXTURE0_ARB + i));
+        checkGLcall("glActiveTextureARB");
+
+        /* don't do  glGet GL_TEXTURE_BINDING_xxx just ensure nothing is bound to IWineD3DSurfaceImpl::texture_target,
+         * and dirtify the state later */
+        if (texture_target == GL_TEXTURE_2D)
+            glBindTexture(texture_target, This->dummyTextureName[i]);
+        else
+            glBindTexture(texture_target, 0);
+    }
+
+    /* restore tha active texture unit */
+    GL_EXTCALL(glActiveTextureARB(active_texture));
+    checkGLcall("glActiveTextureARB");
+    LEAVE_GL();
+
+    /* dirtify */
+    for (i = 0; i < gl_info->limits.textures; ++i)
+    {
+        DWORD active_sampler = This->rev_tex_unit_map[active_texture - GL_TEXTURE0_ARB + i];
+
+        if (active_sampler != WINED3D_UNMAPPED_STAGE)
+        {
+            IWineD3DDeviceImpl_MarkStateDirty(This, STATE_SAMPLER(active_sampler));
+        }
+    }
+
+    /* do flush to ensure this all goes to host */
+    wglFlush();
+}
 #endif
 
 /**********************************************************

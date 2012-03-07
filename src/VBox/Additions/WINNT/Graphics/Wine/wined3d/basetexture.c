@@ -295,6 +295,10 @@ HRESULT basetexture_bind(IWineD3DBaseTexture *iface, BOOL srgb, BOOL *set_surfac
     struct gl_texture *gl_tex;
     TRACE("(%p) : About to bind texture\n", This);
 
+#ifdef VBOX_WITH_WDDM
+    Assert(!VBOXSHRC_IS_DISABLED(This));
+#endif
+
     This->baseTexture.is_srgb = srgb; /* SRGB mode cache for PreLoad calls outside drawprim */
     if(srgb) {
         gl_tex = &This->baseTexture.texture_srgb;

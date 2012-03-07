@@ -231,14 +231,14 @@ static HRESULT WINAPI IWineD3DTextureImpl_GetParent(IWineD3DTexture *iface, IUnk
 }
 
 #ifdef VBOX_WITH_WDDM
-static HRESULT WINAPI IWineD3DTextureImpl_SetDontDeleteGl(IWineD3DTexture *iface) {
+static HRESULT WINAPI IWineD3DTextureImpl_SetShRcState(IWineD3DTexture *iface, VBOXWINEEX_SHRC_STATE enmState) {
     IWineD3DTextureImpl *This = (IWineD3DTextureImpl*)iface;
-    HRESULT hr = IWineD3DResourceImpl_SetDontDeleteGl((IWineD3DResource*)iface);
+    HRESULT hr = IWineD3DResourceImpl_SetShRcState((IWineD3DResource*)iface, enmState);
     unsigned int i;
 
     if (FAILED(hr))
     {
-        ERR("IWineD3DResource_SetDontDeleteGl failed");
+        ERR("IWineD3DResource_SetShRcState failed");
         return hr;
     }
 
@@ -246,10 +246,12 @@ static HRESULT WINAPI IWineD3DTextureImpl_SetDontDeleteGl(IWineD3DTexture *iface
     {
         if (This->surfaces[i])
         {
-            HRESULT tmpHr = IWineD3DResource_SetDontDeleteGl((IWineD3DResource*)This->surfaces[i]);
+            HRESULT tmpHr = IWineD3DResource_SetShRcState((IWineD3DResource*)This->surfaces[i], enmState);
             Assert(tmpHr == S_OK);
         }
     }
+
+    device_cleanup_durtify_texture_target(This->resource.device, This->target);
 
     return WINED3D_OK;
 }
@@ -298,6 +300,10 @@ static HRESULT WINAPI IWineD3DTextureImpl_BindTexture(IWineD3DTexture *iface, BO
     HRESULT hr;
 
     TRACE("(%p) : relay to BaseTexture\n", This);
+
+#ifdef VBOX_WITH_WDDM
+    Assert(!VBOXSHRC_IS_DISABLED(This));
+#endif
 
     hr = basetexture_bind((IWineD3DBaseTexture *)iface, srgb, &set_gl_texture_desc);
     if (set_gl_texture_desc && SUCCEEDED(hr)) {
@@ -450,7 +456,7 @@ static const IWineD3DTextureVtbl IWineD3DTexture_Vtbl =
     IWineD3DTextureImpl_UnLoad,
     IWineD3DTextureImpl_GetType,
 #ifdef VBOX_WITH_WDDM
-    IWineD3DTextureImpl_SetDontDeleteGl,
+    IWineD3DTextureImpl_SetShRcState,
 #endif
     /* IWineD3DBaseTexture */
     IWineD3DTextureImpl_SetLOD,

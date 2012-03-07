@@ -3281,7 +3281,7 @@ HRESULT device_init(IDirect3DDevice9Impl *device, IWineD3D *wined3d, UINT adapte
 }
 
 #ifdef VBOX_WITH_WDDM
-VBOXWINEEX_DECL(HRESULT) VBoxWineExD3DRc9SetDontDeleteGl(IDirect3DResource9 *iface)
+VBOXWINEEX_DECL(HRESULT) VBoxWineExD3DRc9SetShRcState(IDirect3DResource9 *iface, VBOXWINEEX_SHRC_STATE enmState)
 {
     D3DRESOURCETYPE enmType = IDirect3DResource9_GetType(iface);
     HRESULT hr;
@@ -3291,7 +3291,7 @@ VBOXWINEEX_DECL(HRESULT) VBoxWineExD3DRc9SetDontDeleteGl(IDirect3DResource9 *ifa
         {
             IDirect3DSurface9Impl *This = (IDirect3DSurface9Impl*)iface ;
             wined3d_mutex_lock();
-            hr = IWineD3DResource_SetDontDeleteGl((IWineD3DResource*)This->wineD3DSurface);
+            hr = IWineD3DResource_SetShRcState((IWineD3DResource*)This->wineD3DSurface, enmState);
             wined3d_mutex_unlock();
             break;
         }
@@ -3299,7 +3299,7 @@ VBOXWINEEX_DECL(HRESULT) VBoxWineExD3DRc9SetDontDeleteGl(IDirect3DResource9 *ifa
         {
             IDirect3DVolume9Impl *This = (IDirect3DVolume9Impl*)iface ;
             wined3d_mutex_lock();
-            hr = IWineD3DResource_SetDontDeleteGl((IWineD3DResource*)This->wineD3DVolume);
+            hr = IWineD3DResource_SetShRcState((IWineD3DResource*)This->wineD3DVolume, enmState);
             wined3d_mutex_unlock();
             break;
         }
@@ -3307,7 +3307,7 @@ VBOXWINEEX_DECL(HRESULT) VBoxWineExD3DRc9SetDontDeleteGl(IDirect3DResource9 *ifa
         {
             IDirect3DTexture9Impl *This = (IDirect3DTexture9Impl*)iface ;
             wined3d_mutex_lock();
-            hr = IWineD3DResource_SetDontDeleteGl((IWineD3DResource*)This->wineD3DTexture);
+            hr = IWineD3DResource_SetShRcState((IWineD3DResource*)This->wineD3DTexture, enmState);
             wined3d_mutex_unlock();
             break;
         }
@@ -3315,7 +3315,7 @@ VBOXWINEEX_DECL(HRESULT) VBoxWineExD3DRc9SetDontDeleteGl(IDirect3DResource9 *ifa
         {
             IDirect3DVolumeTexture9Impl *This = (IDirect3DVolumeTexture9Impl*)iface ;
             wined3d_mutex_lock();
-            hr = IWineD3DResource_SetDontDeleteGl((IWineD3DResource*)This->wineD3DVolumeTexture);
+            hr = IWineD3DResource_SetShRcState((IWineD3DResource*)This->wineD3DVolumeTexture, enmState);
             wined3d_mutex_unlock();
             break;
         }
@@ -3323,7 +3323,7 @@ VBOXWINEEX_DECL(HRESULT) VBoxWineExD3DRc9SetDontDeleteGl(IDirect3DResource9 *ifa
         {
             IDirect3DCubeTexture9Impl *This = (IDirect3DCubeTexture9Impl*)iface ;
             wined3d_mutex_lock();
-            hr = IWineD3DResource_SetDontDeleteGl((IWineD3DResource*)This->wineD3DCubeTexture);
+            hr = IWineD3DResource_SetShRcState((IWineD3DResource*)This->wineD3DCubeTexture, enmState);
             wined3d_mutex_unlock();
             break;
         }
@@ -3331,7 +3331,7 @@ VBOXWINEEX_DECL(HRESULT) VBoxWineExD3DRc9SetDontDeleteGl(IDirect3DResource9 *ifa
         {
             IDirect3DVertexBuffer9Impl *This = (IDirect3DVertexBuffer9Impl*)iface ;
             wined3d_mutex_lock();
-            hr = IWineD3DResource_SetDontDeleteGl((IWineD3DResource*)This->wineD3DVertexBuffer);
+            hr = IWineD3DResource_SetShRcState((IWineD3DResource*)This->wineD3DVertexBuffer, enmState);
             wined3d_mutex_unlock();
             break;
         }
@@ -3339,7 +3339,7 @@ VBOXWINEEX_DECL(HRESULT) VBoxWineExD3DRc9SetDontDeleteGl(IDirect3DResource9 *ifa
         {
             IDirect3DIndexBuffer9Impl *This = (IDirect3DIndexBuffer9Impl*)iface ;
             wined3d_mutex_lock();
-            hr = IWineD3DResource_SetDontDeleteGl((IWineD3DResource*)This->wineD3DIndexBuffer);
+            hr = IWineD3DResource_SetShRcState((IWineD3DResource*)This->wineD3DIndexBuffer, enmState);
             wined3d_mutex_unlock();
             break;
         }

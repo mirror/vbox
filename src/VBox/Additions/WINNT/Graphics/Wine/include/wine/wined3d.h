@@ -3433,8 +3433,9 @@ typedef struct IWineD3DResourceVtbl {
         IWineD3DResource* This);
 
 #ifdef VBOX_WITH_WDDM
-    HRESULT (STDMETHODCALLTYPE *SetDontDeleteGl)(
-        IWineD3DResource* This);
+    HRESULT (STDMETHODCALLTYPE *SetShRcState)(
+        IWineD3DResource* This,
+        VBOXWINEEX_SHRC_STATE enmState);
 #endif
 
     END_INTERFACE
@@ -3460,7 +3461,7 @@ interface IWineD3DResource {
 #define IWineD3DResource_UnLoad(This) (This)->lpVtbl->UnLoad(This)
 #define IWineD3DResource_GetType(This) (This)->lpVtbl->GetType(This)
 # ifdef VBOX_WITH_WDDM
-#  define IWineD3DResource_SetDontDeleteGl(This) (This)->lpVtbl->SetDontDeleteGl(This)
+#  define IWineD3DResource_SetShRcState(This, enmState) (This)->lpVtbl->SetShRcState(This, enmState)
 # endif
 #endif
 
@@ -4068,8 +4069,9 @@ typedef struct IWineD3DSurfaceVtbl {
         IWineD3DSurface* This);
 
 #ifdef VBOX_WITH_WDDM
-    HRESULT (STDMETHODCALLTYPE *SetDontDeleteGl)(
-        IWineD3DResource* This);
+    HRESULT (STDMETHODCALLTYPE *SetShRcState)(
+        IWineD3DResource* This,
+        VBOXWINEEX_SHRC_STATE enmState);
 #endif
 
     /*** IWineD3DSurface methods ***/
@@ -4688,8 +4690,9 @@ typedef struct IWineD3DVolumeVtbl {
         IWineD3DVolume* This);
 
 #ifdef VBOX_WITH_WDDM
-    HRESULT (STDMETHODCALLTYPE *SetDontDeleteGl)(
-        IWineD3DResource* This);
+    HRESULT (STDMETHODCALLTYPE *SetShRcState)(
+        IWineD3DResource* This,
+        VBOXWINEEX_SHRC_STATE enmState);
 #endif
 
     /*** IWineD3DVolume methods ***/
@@ -4907,8 +4910,9 @@ typedef struct IWineD3DBaseTextureVtbl {
         IWineD3DBaseTexture* This);
 
 #ifdef VBOX_WITH_WDDM
-    HRESULT (STDMETHODCALLTYPE *SetDontDeleteGl)(
-        IWineD3DResource* This);
+    HRESULT (STDMETHODCALLTYPE *SetShRcState)(
+        IWineD3DResource* This,
+        VBOXWINEEX_SHRC_STATE enmState);
 #endif
 
     /*** IWineD3DBaseTexture methods ***/
@@ -5158,8 +5162,9 @@ typedef struct IWineD3DTextureVtbl {
         IWineD3DTexture* This);
 
 #ifdef VBOX_WITH_WDDM
-    HRESULT (STDMETHODCALLTYPE *SetDontDeleteGl)(
-        IWineD3DTexture* This);
+    HRESULT (STDMETHODCALLTYPE *SetShRcState)(
+        IWineD3DTexture* This,
+        VBOXWINEEX_SHRC_STATE enmState);
 #endif
 
     /*** IWineD3DBaseTexture methods ***/
@@ -5409,8 +5414,9 @@ typedef struct IWineD3DCubeTextureVtbl {
         IWineD3DCubeTexture* This);
 
 #ifdef VBOX_WITH_WDDM
-    HRESULT (STDMETHODCALLTYPE *SetDontDeleteGl)(
-        IWineD3DCubeTexture* This);
+    HRESULT (STDMETHODCALLTYPE *SetShRcState)(
+        IWineD3DCubeTexture* This,
+        VBOXWINEEX_SHRC_STATE enmState);
 #endif
 
     /*** IWineD3DBaseTexture methods ***/
@@ -5664,8 +5670,9 @@ typedef struct IWineD3DVolumeTextureVtbl {
         IWineD3DVolumeTexture* This);
 
 #ifdef VBOX_WITH_WDDM
-    HRESULT (STDMETHODCALLTYPE *SetDontDeleteGl)(
-        IWineD3DResource* This);
+    HRESULT (STDMETHODCALLTYPE *SetShRcState)(
+        IWineD3DResource* This,
+        VBOXWINEEX_SHRC_STATE enmState);
 #endif
 
     /*** IWineD3DBaseTexture methods ***/
@@ -6425,8 +6432,9 @@ typedef struct IWineD3DBufferVtbl {
         IWineD3DBuffer* This);
 
 #ifdef VBOX_WITH_WDDM
-    HRESULT (STDMETHODCALLTYPE *SetDontDeleteGl)(
-        IWineD3DResource* This);
+    HRESULT (STDMETHODCALLTYPE *SetShRcState)(
+        IWineD3DResource* This,
+        VBOXWINEEX_SHRC_STATE enmState);
 #endif
 
     /*** IWineD3DBuffer methods ***/

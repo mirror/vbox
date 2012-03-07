@@ -339,7 +339,7 @@ static const IWineD3DVolumeTextureVtbl IWineD3DVolumeTexture_Vtbl =
     IWineD3DVolumeTextureImpl_UnLoad,
     IWineD3DVolumeTextureImpl_GetType,
 #ifdef VBOX_WITH_WDDM
-    IWineD3DResourceImpl_SetDontDeleteGl,
+    IWineD3DResourceImpl_SetShRcState,
 #endif
     /* BaseTexture */
     IWineD3DVolumeTextureImpl_SetLOD,

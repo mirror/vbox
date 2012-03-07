@@ -287,7 +287,7 @@ HRESULT resource_get_parent(IWineD3DResource *iface, IUnknown **pParent)
 }
 
 #ifdef VBOX_WITH_WDDM
-HRESULT WINAPI IWineD3DResourceImpl_SetDontDeleteGl(IWineD3DResource *iface) {
+HRESULT WINAPI IWineD3DResourceImpl_SetShRcState(IWineD3DResource *iface, VBOXWINEEX_SHRC_STATE enmState) {
     IWineD3DResourceImpl *This = (IWineD3DResourceImpl*)iface;
     if (!VBOXSHRC_IS_SHARED(This))
     {
@@ -295,7 +295,19 @@ HRESULT WINAPI IWineD3DResourceImpl_SetDontDeleteGl(IWineD3DResource *iface) {
         return E_INVALIDARG;
     }
 
-    VBOXSHRC_SET_DONT_DELETE(This);
+    switch (enmState)
+    {
+        case VBOXWINEEX_SHRC_STATE_GL_DISABLE:
+            VBOXSHRC_SET_DISABLE(This);
+            break;
+        case VBOXWINEEX_SHRC_STATE_GL_DELETE:
+            VBOXSHRC_SET_DELETE(This);
+            break;
+        default:
+            ERR("invalid arg");
+            return E_INVALIDARG;
+    }
+
     return WINED3D_OK;
 }
 #endif

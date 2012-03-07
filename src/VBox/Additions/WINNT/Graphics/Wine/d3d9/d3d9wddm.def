@@ -16,4 +16,4 @@ EXPORTS
   VBoxWineExD3DDev9CreateCubeTexture
   VBoxWineExD3DDev9Update
   VBoxWineExD3DSwapchain9Present
-  VBoxWineExD3DRc9SetDontDeleteGl
+  VBoxWineExD3DRc9SetShRcState

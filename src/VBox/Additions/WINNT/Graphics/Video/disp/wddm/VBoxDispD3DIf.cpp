@@ -80,10 +80,10 @@ HRESULT VBoxDispD3DOpen(VBOXDISPD3D *pD3D)
             break;
         }
 
-        pD3D->pfnVBoxWineExD3DRc9SetDontDeleteGl = (PFNVBOXWINEEXD3DRC9_SETDONTDELETEGL)GetProcAddress(pD3D->hD3DLib, "VBoxWineExD3DRc9SetDontDeleteGl");
-        if (!pD3D->pfnVBoxWineExD3DRc9SetDontDeleteGl)
+        pD3D->pfnVBoxWineExD3DRc9SetShRcState = (PFNVBOXWINEEXD3DRC9_SETSHRCSTATE)GetProcAddress(pD3D->hD3DLib, "VBoxWineExD3DRc9SetShRcState");
+        if (!pD3D->pfnVBoxWineExD3DRc9SetShRcState)
         {
-            WARN(("no VBoxWineExD3DRc9SetDontDeleteGl"));
+            WARN(("no VBoxWineExD3DRc9SetShRcState"));
             break;
         }
 
