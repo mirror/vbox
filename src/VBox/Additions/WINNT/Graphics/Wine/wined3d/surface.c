@@ -672,6 +672,7 @@ static void surface_bind_and_dirtify(IWineD3DSurfaceImpl *This, BOOL srgb) {
     IWineD3DSurface_BindTexture((IWineD3DSurface *)This, srgb);
 }
 
+
 /* This function checks if the primary render target uses the 8bit paletted format. */
 static BOOL primary_render_target_is_p8(IWineD3DDeviceImpl *device)
 {
@@ -2866,6 +2867,10 @@ static void WINAPI IWineD3DSurfaceImpl_BindTexture(IWineD3DSurface *iface, BOOL 
     /* TODO: check for locks */
     IWineD3DSurfaceImpl *This = (IWineD3DSurfaceImpl *)iface;
     IWineD3DBaseTexture *baseTexture = NULL;
+
+#ifdef VBOX_WITH_WDDM
+    Assert(!VBOXSHRC_IS_DISABLED(This));
+#endif
 
     TRACE("(%p)Checking to see if the container is a base texture\n", This);
     if (IWineD3DSurface_GetContainer(iface, &IID_IWineD3DBaseTexture, (void **)&baseTexture) == WINED3D_OK) {
@@ -5343,6 +5348,55 @@ BOOL surface_is_offscreen(IWineD3DSurface *iface)
     return swapchain->render_to_fbo;
 }
 
+#ifdef VBOX_WITH_WDDM
+static HRESULT WINAPI IWineD3DSurfaceImpl_SetShRcState(IWineD3DSurface *iface, VBOXWINEEX_SHRC_STATE enmState) {
+    IWineD3DSurfaceImpl *This = (IWineD3DSurfaceImpl*)iface;
+    IWineD3DBaseTextureImpl *texture = NULL;
+    HRESULT hr;
+    unsigned int i;
+
+    if (SUCCEEDED(IWineD3DSurface_GetContainer(iface, &IID_IWineD3DBaseTexture, (void **)&texture)))
+    {
+        /* this is a texture, check that the */
+        switch (enmState)
+        {
+            case VBOXWINEEX_SHRC_STATE_GL_DISABLE:
+                if (!VBOXSHRC_IS_DISABLED(texture))
+                {
+                    ERR("directly doing SetShRcState for texture surface not allowed!");
+                    return E_FAIL;
+                }
+                break;
+            case VBOXWINEEX_SHRC_STATE_GL_DELETE:
+                if (!VBOXSHRC_IS_DELETE(texture))
+                {
+                    ERR("directly doing SetShRcState for texture surface not allowed!");
+                    return E_FAIL;
+                }
+                break;
+            default:
+                ERR("invalid arg");
+                return E_INVALIDARG;
+        }
+
+        IWineD3DBaseTexture_Release(texture);
+    }
+
+
+    hr = IWineD3DResourceImpl_SetShRcState((IWineD3DResource*)iface, enmState);
+    if (FAILED(hr))
+    {
+        ERR("IWineD3DResource_SetShRcState failed");
+        return hr;
+    }
+
+    if (!texture)
+        device_cleanup_durtify_texture_target(This->resource.device, This->texture_target);
+
+    return WINED3D_OK;
+}
+#endif
+
 const IWineD3DSurfaceVtbl IWineD3DSurface_Vtbl =
 {
     /* IUnknown */
@@ -5360,7 +5414,7 @@ const IWineD3DSurfaceVtbl IWineD3DSurface_Vtbl =
     IWineD3DSurfaceImpl_UnLoad,
     IWineD3DBaseSurfaceImpl_GetType,
 #ifdef VBOX_WITH_WDDM
-    IWineD3DResourceImpl_SetDontDeleteGl,
+    IWineD3DSurfaceImpl_SetShRcState,
 #endif
     /* IWineD3DSurface */
     IWineD3DBaseSurfaceImpl_GetContainer,

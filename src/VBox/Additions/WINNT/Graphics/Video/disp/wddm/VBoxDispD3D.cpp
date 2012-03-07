@@ -3129,9 +3129,9 @@ BOOL WINAPI DllMain(HINSTANCE hInstance,
             AssertRC(rc);
             if (RT_SUCCESS(rc))
             {
-                rc = VbglR3Init();
-                AssertRC(rc);
-                if (RT_SUCCESS(rc))
+//                rc = VbglR3Init();
+//                AssertRC(rc);
+//                if (RT_SUCCESS(rc))
                 {
                     HRESULT hr = vboxDispCmInit();
                     Assert(hr == S_OK);
@@ -3145,7 +3145,7 @@ BOOL WINAPI DllMain(HINSTANCE hInstance,
                             return TRUE;
                         }
                     }
-                    VbglR3Term();
+//                    VbglR3Term();
                 }
             }
 
@@ -3168,7 +3168,7 @@ BOOL WINAPI DllMain(HINSTANCE hInstance,
                 Assert(hr == S_OK);
                 if (hr == S_OK)
                 {
-                    VbglR3Term();
+//                    VbglR3Term();
                     /// @todo RTR3Term();
                     return TRUE;
                 }
@@ -5671,15 +5671,25 @@ static HRESULT APIENTRY vboxWddmDDevDestroyResource(HANDLE hDevice, HANDLE hReso
     {
         for (UINT i = 0; i < pRc->cAllocations; ++i)
         {
-            BOOL fSetDontDelete = FALSE;
+            BOOL fSetDelete = FALSE;
             PVBOXWDDMDISP_ALLOCATION pAlloc = &pRc->aAllocations[i];
             if (pAlloc->hSharedHandle)
             {
+                /* using one and the same shared resource by different clients could lead to the situation where one client can still refer to the resource
+                 * while another one has deleted it
+                 * this could lead to gl state corruption on both host and guest side.
+                 * This is why we take extra care to avoid it.
+                 * Until we do a vboxWddmShRcRefAlloc call below the resource is guarantied to be present, however it can be removed any time after the call
+                 * if cShRcRefs is non-zero, i.e. the current cliet is not the one deleting it.
+                 * We first explicitely say to wine that resource must NOT be accessed any more and that all references to it should be cleaned */
+                pAdapter->D3D.pfnVBoxWineExD3DRc9SetShRcState((IDirect3DResource9*)pAlloc->pD3DIf, VBOXWINEEX_SHRC_STATE_GL_DISABLE);
+
                 DWORD cShRcRefs;
                 HRESULT tmpHr = vboxWddmShRcRefAlloc(pDevice, pAlloc, FALSE, &cShRcRefs);
-                if (cShRcRefs)
+                if (!cShRcRefs)
                 {
-                    fSetDontDelete = TRUE;
+                    /* the current client IS the one deleting this resource */
+                    fSetDelete = TRUE;
                 }
 #ifdef DEBUG_misha
                 vboxVDbgPrint(("\n\n********\n(0x%x:0n%d)Shared DESTROYED pAlloc(0x%p), hRc(0x%p), hAl(0x%p), "
@@ -5691,10 +5701,10 @@ static HRESULT APIENTRY vboxWddmDDevDestroyResource(HANDLE hDevice, HANDLE hReso
 #endif
             }
 
-            if (fSetDontDelete)
+            if (fSetDelete)
             {
                 Assert(pAlloc->pD3DIf);
-                pAdapter->D3D.pfnVBoxWineExD3DRc9SetDontDeleteGl((IDirect3DResource9*)pAlloc->pD3DIf);
+                pAdapter->D3D.pfnVBoxWineExD3DRc9SetShRcState((IDirect3DResource9*)pAlloc->pD3DIf, VBOXWINEEX_SHRC_STATE_GL_DELETE);
             }
 
             if (pAlloc->pD3DIf)

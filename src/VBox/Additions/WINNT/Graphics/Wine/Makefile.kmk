@@ -188,7 +188,7 @@ wined3dwddm_EXTENDS        = wined3d
  endif
 wined3dwddm_INCS           = vbox/libWineStub/include
 wined3dwddm_DEFS           = $(subst VBOX_WINE_WITH_SINGLE_SWAPCHAIN_CONTEXT,,$(wined3d_DEFS))
-wined3dwddm_DEFS          += VBOX_WITH_WDDM VBOX_WINE_WITH_SINGLE_CONTEXT
+wined3dwddm_DEFS          += VBOX_WITH_WDDM VBOX_WINE_WITH_SINGLE_CONTEXT IN_VBOXLIBWINE
 wined3dwddm_SOURCES        = $(subst wined3d.def,wined3dwddm.def,$(wined3d_SOURCES)) vbox/VBoxDbgGl.c
 
 DLLS.amd64 += wined3dwddm-x86

@@ -666,7 +666,7 @@ const IWineD3DSurfaceVtbl IWineGDISurface_Vtbl =
     IWineGDISurfaceImpl_UnLoad,
     IWineD3DBaseSurfaceImpl_GetType,
 #ifdef VBOX_WITH_WDDM
-    IWineD3DResourceImpl_SetDontDeleteGl,
+    IWineD3DResourceImpl_SetShRcState,
 #endif
     /* IWineD3DSurface */
     IWineD3DBaseSurfaceImpl_GetContainer,

@@ -1810,6 +1810,8 @@ void device_preload_textures(IWineD3DDeviceImpl *device) DECLSPEC_HIDDEN;
 #ifndef VBOX_WITH_WDDM
 LRESULT device_process_message(IWineD3DDeviceImpl *device, HWND window,
         UINT message, WPARAM wparam, LPARAM lparam, WNDPROC proc) DECLSPEC_HIDDEN;
+#else
+void device_cleanup_durtify_texture_target(IWineD3DDeviceImpl *This, GLuint texture_target);
 #endif
 void device_resource_add(IWineD3DDeviceImpl *This, IWineD3DResource *resource) DECLSPEC_HIDDEN;
 void device_resource_released(IWineD3DDeviceImpl *This, IWineD3DResource *resource) DECLSPEC_HIDDEN;
@@ -1901,7 +1903,7 @@ HRESULT resource_set_private_data(IWineD3DResource *iface, REFGUID guid,
         const void *data, DWORD data_size, DWORD flags) DECLSPEC_HIDDEN;
 
 #ifdef VBOX_WITH_WDDM
-HRESULT WINAPI IWineD3DResourceImpl_SetDontDeleteGl(IWineD3DResource *iface) ;
+HRESULT WINAPI IWineD3DResourceImpl_SetShRcState(IWineD3DResource *iface, VBOXWINEEX_SHRC_STATE enmState);
 #endif
 
 /* Tests show that the start address of resources is 32 byte aligned */
