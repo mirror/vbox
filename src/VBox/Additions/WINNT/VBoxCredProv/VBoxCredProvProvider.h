@@ -74,19 +74,17 @@ class VBoxCredProvProvider : public ICredentialProvider
     private:
 
         /** Interface reference count. */
-        ULONG                                    m_cRefCount;
+        LONG                                     m_cRefCount;
         /** Our one and only credential. */
         VBoxCredProvCredential                  *m_pCred;
         /** Poller thread for credential lookup. */
         VBoxCredProvPoller                      *m_pPoller;
         /** Used to tell our owner to re-enumerate credentials. */
-        ICredentialProviderEvents               *m_pCredProvEvents;
+        ICredentialProviderEvents               *m_pEvents;
         /** Used to tell our owner who we are when asking to re-enumerate credentials. */
         UINT_PTR                                 m_upAdviseContext;
         /** Saved usage scenario. */
         CREDENTIAL_PROVIDER_USAGE_SCENARIO       m_cpUsageScenario;
-        /** Flag indicating we got some credentials to work with. */
-        bool                                     m_fGotCredentials;
         /** Flag whether we need to handle remote session over Windows Remote
          *  Desktop Service. */
         bool                                     m_fHandleRemoteSessions;

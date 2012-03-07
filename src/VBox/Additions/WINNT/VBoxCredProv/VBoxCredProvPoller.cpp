@@ -38,6 +38,8 @@ VBoxCredProvPoller::VBoxCredProvPoller(void) :
 
 VBoxCredProvPoller::~VBoxCredProvPoller(void)
 {
+    VBoxCredProvVerbose(0, "VBoxCredProvPoller: Destroying ...\n");
+
     Shutdown();
 }
 
@@ -51,14 +53,20 @@ int VBoxCredProvPoller::Initialize(VBoxCredProvProvider *pProvider)
     /* Don't create more than one of them. */
     if (m_hThreadPoller != NIL_RTTHREAD)
     {
-        VBoxCredProvVerbose(0, "VBoxCredProvPoller: Thread already running, returning!\n");
+        VBoxCredProvVerbose(0, "VBoxCredProvPoller: Thread already running, returning\n");
         return VINF_SUCCESS;
     }
 
     if (m_pProv != NULL)
         m_pProv->Release();
+
     m_pProv = pProvider;
-    AssertPtr(m_pProv);
+    /*
+     * We must not add a reference via AddRef() here, otherwise
+     * the credential provider does not get destructed properly.
+     * In order to get this thread terminated normally the credential
+     * provider has to call Shutdown().
+     */
 
     /* Create the poller thread. */
     int rc = RTThreadCreate(&m_hThreadPoller, VBoxCredProvPoller::threadPoller, this, 0, RTTHREADTYPE_INFREQUENT_POLLER,
@@ -84,17 +92,16 @@ int VBoxCredProvPoller::Shutdown(void)
         VBoxCredProvVerbose(0, "VBoxCredProvPoller: Waiting for thread to terminate\n");
         /* Wait until the thread has terminated. */
         rc = RTThreadWait(m_hThreadPoller, RT_INDEFINITE_WAIT, NULL);
-        VBoxCredProvVerbose(0, "VBoxCredProvPoller: Thread has (probably) terminated (rc=%Rrc)\n", rc);
+        if (RT_FAILURE(rc))
+            VBoxCredProvVerbose(0, "VBoxCredProvPoller: Wait returned error rc=%Rrc\n", rc);
     }
     else
-    {
-        /* Failed to signal the thread - very unlikely - so no point in waiting long. */
-        VBoxCredProvVerbose(0, "VBoxCredProvPoller::Shutdown: Failed to signal semaphore, rc=%Rrc\n", rc);
-        rc = RTThreadWait(m_hThreadPoller, 100, NULL);
-        VBoxCredProvVerbose(0, "VBoxCredProvPoller::Shutdown: Thread has terminated? Wait rc=%Rrc\n", rc);
-    }
+        VBoxCredProvVerbose(0, "VBoxCredProvPoller: Error waiting for thread shutdown, rc=%Rrc\n", rc);
 
+    m_pProv = NULL;
     m_hThreadPoller = NIL_RTTHREAD;
+
+    VBoxCredProvVerbose(0, "VBoxCredProvPoller: Shutdown returned with rc=%Rrc\n", rc);
     return rc;
 }
 

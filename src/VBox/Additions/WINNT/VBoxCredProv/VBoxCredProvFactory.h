@@ -46,7 +46,7 @@ class VBoxCredProvFactory : public IClassFactory
 
     private:
 
-        ULONG m_cRefCount;
+        LONG m_cRefCount;
         friend HRESULT VBoxCredentialProviderCreate(REFCLSID rclsid, REFIID riid, void** ppv);
 };
 #endif /* !__VBOX_CREDPROV_FACTORY_H__ */

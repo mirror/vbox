@@ -42,7 +42,7 @@ class VBoxCredProvCredential : public ICredentialProviderCredential
 {
     public:
 
-        VBoxCredProvCredential(VBoxCredProvProvider *pProvider);
+        VBoxCredProvCredential(void);
 
         virtual ~VBoxCredProvCredential(void);
 
@@ -80,14 +80,14 @@ class VBoxCredProvCredential : public ICredentialProviderCredential
                                          CREDENTIAL_PROVIDER_CREDENTIAL_SERIALIZATION  *pcpCredentialSerialization,
                                          PWSTR                                         *ppwszOptionalStatusText,
                                          CREDENTIAL_PROVIDER_STATUS_ICON               *pcpsiOptionalStatusIcon);
-        IFACEMETHODIMP ReportResult(NTSTATUS                         ntsStatus,
-                                    NTSTATUS                         ntsSubstatus,
+        IFACEMETHODIMP ReportResult(NTSTATUS                         ntStatus,
+                                    NTSTATUS                         ntSubStatus,
                                     PWSTR*                           ppwszOptionalStatusText,
                                     CREDENTIAL_PROVIDER_STATUS_ICON* pcpsiOptionalStatusIcon);
 
     public:
 
-        void Reset(void);
+        HRESULT Reset(void);
         HRESULT Initialize(CREDENTIAL_PROVIDER_USAGE_SCENARIO cpus);
         int RetrieveCredentials(void);
         BOOL TranslateAccountName(PWSTR pwszDisplayName, PWSTR *ppwszAccoutName);
@@ -101,10 +101,8 @@ class VBoxCredProvCredential : public ICredentialProviderCredential
 
     private:
 
-        /** Pointer to parent. */
-        VBoxCredProvProvider                 *m_pProvider;
         /** Internal reference count. */
-        ULONG                                 m_cRefCount;
+        LONG                                  m_cRefCount;
         /** The usage scenario for which we were enumerated. */
         CREDENTIAL_PROVIDER_USAGE_SCENARIO    m_cpUS;
         /** The actual credential strings. */
