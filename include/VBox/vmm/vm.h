@@ -93,8 +93,10 @@ typedef struct VMCPU
     PVMR3                   pVMR3;
     /** Ring-0 Host Context VM Pointer. */
     PVMR0                   pVMR0;
+    /** Flag indicating that tracing is enabled.  */
+    bool                    fTracingEnabled;
     /** Alignment padding. */
-    RTR0PTR                 pvR0Padding;
+    uint8_t                 abAlignment0[HC_ARCH_BITS == 32 ? 3 : 7];
     /** Raw-mode Context VM Pointer. */
     PVMRC                   pVMRC;
     /** The CPU ID.

@@ -120,7 +120,12 @@ struc VMCPU
     .pUVCpu                 RTR3PTR_RES 1
     .pVMR3                  RTR3PTR_RES 1
     .pVMR0                  RTR0PTR_RES 1
-    .pvR0Padding            RTR0PTR_RES 1
+    .fTracingEnabled        resb 1
+%if HC_ARCH_BITS == 32
+    .abAlignment0           resb 3
+%else
+    .abAlignment0           resb 7
+%endif
     .pVMRC                  RTRCPTR_RES 1
     .idCpu                  resd 1
 
