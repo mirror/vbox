@@ -68,8 +68,17 @@ static const struct {
  {NULL, NULL} /* sentinel */
 };
 
-/* Scan code table for non-character keys */
+/** @note On the whole we use Microsoft's "USB HID to PS/2 Scan Code
+ *    Translation Table" and
+ *      http://www.win.tue.nl/~aeb/linux/kbd/scancodes-6.html
+ *    as a reference for scan code numbers.
+ *    Sun keyboards have eleven additional keys on the left-hand side.
+ *    These keys never had PC scan codes assigned to them.  We map all X11
+ *    keycodes which can correspond to these keys to the PC scan codes for
+ *    F13 to F23 (as per Microsoft's translation table) and the USB keyboard
+ *    code translates them back to the correct usage codes. */
 
+/* Scan code table for non-character keys */
 static const unsigned nonchar_key_scan[256] =
 {
     /* unused */
@@ -96,14 +105,12 @@ static const unsigned nonchar_key_scan[256] =
     0x147, 0x14B, 0x148, 0x14D, 0x150, 0x149, 0x151, 0x14F,      /* FF50 */
     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,              /* FF58 */
     /* misc keys */
-                                                /* Menu */
-#ifdef sun
-    /*?*/ 0, 0x137, 0x7b, 0x152, 0x00, 0x00, 0x00, 0x15D,        /* FF60 */
-#else
-    /*?*/ 0, 0x137, 0, 0x152, 0x00, 0x00, 0x00,    0x15D,        /* FF60 */
-#endif /* sun */
-             /* Help (invented scan code) */
-    0x00, 0x00, 0x13B, 0x146, 0x00, 0x00, 0x00, 0x00,            /* FF68 */
+          /* Print Open  Insert       Undo  Again Menu */
+                /* ->F17              ->F14 ->F22 */
+    0x00, 0x137,   0x68, 0x152, 0x00, 0x65, 0x6d, 0x15D,         /* FF60 */
+ /* Find  Stop  Help  Break */
+ /* ->F19 ->F21 ->F23 */
+    0x6a, 0x6c, 0x6e, 0x146, 0x00, 0x00, 0x00, 0x00,             /* FF68 */
     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,              /* FF70 */
     /* keypad keys */
     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x138, 0x45,             /* FF78 */
@@ -119,16 +126,15 @@ static const unsigned nonchar_key_scan[256] =
                                         0x3B, 0x3C,
     0x3D, 0x3E, 0x3F, 0x40, 0x41, 0x42, 0x43, 0x44,              /* FFC0 */
 #ifdef sun
-    /* On Solaris for historical reasons the STOP and AGAIN keys are reported
-     * as F11 and F12 respectively.  We send invented type 1 scan codes for
-     * which can be translated to real ones again by the USB keyboard
-     * emulation. */
-    0x13C, 0x13D, 0x64,  0x65,  0x66,  0x67,  0x68,  0x69,       /* FFC8 */
-    0x6a,  0x6b,  0x6c,  0x6d,  0x6e,  0x76,  0x00,  0x00,       /* FFD0 */
+ /* Stop  Again F13   F14   F15   F16   F17   F18 */
+ /* ->F21 ->F22 */
+    0x6c, 0x6d, 0x64, 0x65, 0x66, 0x67, 0x68, 0x69,              /* FFC8 */
 #else
-    0x57,  0x58,  0x64,  0x65,  0x66,  0x67,  0x68,  0x69,       /* FFC8 */
-    0x6a,  0x6b,  0x6c,  0x6d,  0x6e,  0x76,  0x00,  0x00,       /* FFD0 */
+ /* F11    F12 */
+    0x57,  0x58,  0x64, 0x65, 0x66, 0x67, 0x68, 0x69,            /* FFC8 */
 #endif
+ /* F19   F20   F21   F22   F23   F24 */
+    0x6a, 0x6b, 0x6c, 0x6d, 0x6e, 0x76, 0x00, 0x00,              /* FFD0 */
     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,              /* FFD8 */
     /* modifier keys */
     0x00, 0x2A, 0x36, 0x1D, 0x11D, 0x3A, 0x00, 0x15B,            /* FFE0 */
@@ -138,7 +144,7 @@ static const unsigned nonchar_key_scan[256] =
 };
 
 /* This list was put together using /usr/include/X11/XF86keysym.h and
-   http://www.win.tue.nl/~aeb/linux/kbd/scancodes-6.html.  It has not yet
+   the documents referenced above for scan code numbers.  It has not yet
    been extensively tested.  The scancodes are those used by MicroSoft
    keyboards. */
 static const unsigned xfree86_vendor_key_scan[256] =
@@ -159,13 +165,16 @@ static const unsigned xfree86_vendor_key_scan[256] =
     0, 0, 0, 0, 0, 0, 0, 0,                                     /* 1008FF40 */
     0, 0, 0, 0, 0, 0, 0, 0,                                     /* 1008FF48 */
  /* AppL   AppR         Calc      Close  Copy */
-    0x109, 0x11e, 0, 0, 0x121, 0, 0x140, 0x118,                 /* 1008FF50 */
- /* Cut          Docmnts Excel */
-    0x117, 0, 0, 0x105, 0x114, 0, 0, 0,                         /* 1008FF58 */
+                                      /* ->F16 */
+    0x109, 0x11e, 0, 0, 0x121, 0, 0x140, 0x67,                  /* 1008FF50 */
+ /* Cut         Docmnts Excel */
+ /* ->F20 */
+    0x6b, 0, 0, 0x105, 0x114, 0, 0, 0,                         /* 1008FF58 */
  /*    LogOff */
     0, 0x116, 0, 0, 0, 0, 0, 0,                                 /* 1008FF60 */
- /*       OffcHm Open      Paste */
-    0, 0, 0x13c, 0x13f, 0, 0x10a, 0, 0,                         /* 1008FF68 */
+ /*       OffcHm Open     Paste */
+              /* ->F17    ->F18 */
+    0, 0, 0x13c, 0x68, 0, 0x69, 0, 0,                           /* 1008FF68 */
  /*       Reply  Refresh         Save */
     0, 0, 0x141, 0x167, 0, 0, 0, 0x157,                         /* 1008FF70 */
  /* ScrlUp ScrlDn    Send   Spell        TaskPane */
@@ -212,8 +221,9 @@ static const unsigned sun_key_scan[256] =
  /* SysReq */
     0,     0, 0, 0, 0, 0, 0, 0,                                 /* 1005FF60 */
     0, 0, 0, 0, 0, 0, 0, 0,                                     /* 1005FF68 */
- /* Props  Front  Copy   Paste Cut    Power  Vol-   Mute */
-    0x106, 0x10c, 0x178, 0x65, 0x13c, 0x15e, 0x12e, 0x120,      /* 1005FF70 */
+ /* Props Front Copy  Paste Cut    Power  Vol-   Mute */
+ /* ->F13 ->F15 ->F16 ->F18 ->F20 */
+    0x64, 0x66, 0x67, 0x69, 0x6b,  0x15e, 0x12e, 0x120,         /* 1005FF70 */
  /* Vol+ */
     0x130, 0, 0, 0, 0, 0, 0, 0,                                 /* 1005FF78 */
     0, 0, 0, 0, 0, 0, 0, 0,                                     /* 1005FF80 */
