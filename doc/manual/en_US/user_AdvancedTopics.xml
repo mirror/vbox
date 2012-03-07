@@ -2103,8 +2103,8 @@ svccfg -s svc:/application/virtualbox/webservice:default setprop config/user=roo
 
     <para>It is possible to install both the Oracle VM VirtualBox Extension
     Pack and VNC, but only one VRDE module can be active at any time. The
-    following command switches to the VBoxVNC VRDE module in
-    VNC:<screen>VBoxManage setproperty vrdeextpack VBoxVNC</screen></para>
+    following command switches to the VNC VRDE module in
+    VNC:<screen>VBoxManage setproperty vrdeextpack VNC</screen></para>
 
     <para>Configuring the remote access works very similarly to VRDP (see
     <xref linkend="vrde" />), with some limitations: VNC does not
@@ -2119,5 +2119,8 @@ svccfg -s svc:/application/virtualbox/webservice:default setprop config/user=roo
     for whatever purpose. Some VNC servers claim to have "encrypted" passwords
     in the configuration. This is not true encryption, it is only concealing
     the passwords, which is exactly as secure as clear-text passwords.</para>
+
+    <para>The following command switches back to VRDP (if
+    installed):<screen>VBoxManage setproperty vrdeextpack "Oracle VM VirtualBox Extension Pack"</screen></para>
   </sect1>
 </chapter>
