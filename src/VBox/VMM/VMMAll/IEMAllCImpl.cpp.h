@@ -2250,6 +2250,7 @@ IEM_CIMPL_DEF_2(iemCImpl_LoadSReg, uint8_t, iSegReg, uint16_t, uSel)
     {
         *pSel           = uSel;
         pHid->u64Base   = (uint32_t)uSel << 4;
+#if 0 /* AMD Volume 2, chapter 4.1 - "real mode segmentation" - states that limit and attributes are untouched. */
         /** @todo Does the CPU actually load limits and attributes in the
          *        real/V8086 mode segment load case?  It doesn't for CS in far
          *        jumps...  Affects unreal mode.  */
@@ -2260,7 +2261,7 @@ IEM_CIMPL_DEF_2(iemCImpl_LoadSReg, uint8_t, iSegReg, uint16_t, uSel)
         pHid->Attr.n.u4Type     = iSegReg != X86_SREG_CS
                                 ? X86_SEL_TYPE_RW
                                 : X86_SEL_TYPE_READ | X86_SEL_TYPE_CODE;
-
+#endif
         iemRegAddToRip(pIemCpu, cbInstr);
         return VINF_SUCCESS;
     }
