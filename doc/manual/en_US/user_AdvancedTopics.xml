@@ -2095,6 +2095,12 @@ svccfg -s svc:/application/virtualbox/webservice:default setprop config/user=roo
     It is to a large portion code contributed by users, and is not supported
     in any way by Oracle.</para>
 
+    <para>The keyboard handling is severely limited, and only the US keyboard
+    layout works. Other keyboard layouts will have at least some keys which
+    produce the wrong results (often quite surprising effects), and for layouts
+    which have significant differences to the US keyboard layout it is most
+    likely unusable.</para>
+
     <para>It is possible to install both the Oracle VM VirtualBox Extension
     Pack and VNC, but only one VRDE module can be active at any time. The
     following command switches to the VBoxVNC VRDE module in
