@@ -2509,24 +2509,24 @@ VMMR3_INT_DECL(bool) PDMR3TracingAreAll(PVM pVM, bool fEnabled)
 {
     for (PPDMDEVINS pDevIns = pVM->pdm.s.pDevInstances; pDevIns; pDevIns = pDevIns->Internal.s.pNextR3)
     {
-        if (pDevIns->fTraceing != fEnabled)
+        if (pDevIns->fTraceing != (uint32_t)fEnabled)
             return false;
 
         for (PPDMLUN pLun = pDevIns->Internal.s.pLunsR3; pLun; pLun = pLun->pNext)
             for (PPDMDRVINS pDrvIns = pLun->pTop; pDrvIns; pDrvIns = pDrvIns->Internal.s.pDown)
-                if (pDrvIns->fTraceing != fEnabled)
+                if (pDrvIns->fTraceing != (uint32_t)fEnabled)
                     return false;
     }
 
 #ifdef VBOX_WITH_USB
     for (PPDMUSBINS pUsbIns = pVM->pdm.s.pUsbInstances; pUsbIns; pUsbIns = pUsbIns->Internal.s.pNext)
     {
-        if (pUsbIns->fTraceing != fEnabled)
+        if (pUsbIns->fTraceing != (uint32_t)fEnabled)
             return false;
 
         for (PPDMLUN pLun = pUsbIns->Internal.s.pLuns; pLun; pLun = pLun->pNext)
             for (PPDMDRVINS pDrvIns = pLun->pTop; pDrvIns; pDrvIns = pDrvIns->Internal.s.pDown)
-                if (pDrvIns->fTraceing != fEnabled)
+                if (pDrvIns->fTraceing != (uint32_t)fEnabled)
                     return false;
     }
 #endif
