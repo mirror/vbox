@@ -2418,40 +2418,28 @@ int handleGuestControl(HandlerArg *pArg)
     if (RT_SUCCESS(vrc))
     {
         int rcExit;
-        if (   !strcmp(pArg->argv[1], "exec")
-            || !strcmp(pArg->argv[1], "execute"))
-        {
+        if (pArg->argc < 2)
+            rcExit = errorSyntax(USAGE_GUESTCONTROL, "No sub command specified!");
+        else if (   !strcmp(pArg->argv[1], "exec")
+                 || !strcmp(pArg->argv[1], "execute"))
             rcExit = handleCtrlExecProgram(guest, &arg);
-        }
         else if (!strcmp(pArg->argv[1], "copyfrom"))
-        {
-            rcExit = handleCtrlCopyTo(guest, &arg,
-                                      false /* Guest to host */);
-        }
+            rcExit = handleCtrlCopyTo(guest, &arg, false /* Guest to host */);
         else if (   !strcmp(pArg->argv[1], "copyto")
                  || !strcmp(pArg->argv[1], "cp"))
-        {
-            rcExit = handleCtrlCopyTo(guest, &arg,
-                                      true /* Host to guest */);
-        }
+            rcExit = handleCtrlCopyTo(guest, &arg, true /* Host to guest */);
         else if (   !strcmp(pArg->argv[1], "createdirectory")
                  || !strcmp(pArg->argv[1], "createdir")
                  || !strcmp(pArg->argv[1], "mkdir")
                  || !strcmp(pArg->argv[1], "md"))
-        {
             rcExit = handleCtrlCreateDirectory(guest, &arg);
-        }
         else if (   !strcmp(pArg->argv[1], "stat"))
-        {
             rcExit = handleCtrlStat(guest, &arg);
-        }
         else if (   !strcmp(pArg->argv[1], "updateadditions")
                  || !strcmp(pArg->argv[1], "updateadds"))
-        {
             rcExit = handleCtrlUpdateAdditions(guest, &arg);
-        }
         else
-            rcExit = errorSyntax(USAGE_GUESTCONTROL, "No sub command specified!");
+            rcExit = errorSyntax(USAGE_GUESTCONTROL, "Unknown sub command '%s' specified!", pArg->argv[1]);
 
         ctrlUninitVM(pArg);
         return rcExit;
