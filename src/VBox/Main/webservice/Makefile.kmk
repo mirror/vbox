@@ -522,7 +522,8 @@ ifdef VBOX_ONLY_SDK
  vboxwebinst_MODE = a+rx,u+w
  vboxwebinst_SOURCES = \
 	samples/perl/clienttest.pl=>perl/samples/clienttest.pl \
-	samples/php/clienttest.php=>php/samples/clienttest.php
+	samples/php/clienttest.php=>php/samples/clienttest.php \
+	samples/python/clienttest.py=>python/samples/clienttest.py
 
  INSTALLS += vboxwebinst_nox
  vboxwebinst_nox_INST = $(INST_SDK)bindings/webservice/
