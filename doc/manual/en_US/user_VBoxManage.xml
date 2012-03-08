@@ -2232,6 +2232,15 @@ VBoxManage convertfromraw   stdin &lt;outputfile&gt; &lt;bytes&gt;
 
     <para>where the parameters mean:<glosslist>
         <glossentry>
+          <glossterm>bytes</glossterm>
+
+          <glossdef>
+            <para>The size of the image file, in bytes, provided through
+            stdin.</para>
+          </glossdef>
+        </glossentry>
+
+        <glossentry>
           <glossterm>format</glossterm>
 
           <glossdef>
