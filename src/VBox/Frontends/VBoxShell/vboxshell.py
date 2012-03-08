@@ -294,7 +294,11 @@ def asFlag(var):
     else:
         return 'no'
 
-def perfStats(ctx,mach):
+def getFacilityStatus(ctx, guest, facilityType):
+    (status, ts) = guest.getFacilityStatus(facilityType)
+    return asEnumElem(ctx, 'AdditionsFacilityStatus', status)
+        
+def perfStats(ctx, mach):
     if not ctx['perf']:
         return
     for metric in ctx['perf'].query(["*"], [mach]):
@@ -628,12 +632,11 @@ def printSf(ctx,sf):
 
 def ginfo(ctx,console, args):
     guest = console.guest
-    if guest.additionsActive:
-        vers = int(str(guest.additionsVersion))
-        print "Additions active, version %d.%d"  %(vers >> 16, vers & 0xffff)
-        print "Support seamless: %s"          %(asFlag(guest.supportsSeamless))
-        print "Support graphics: %s"          %(asFlag(guest.supportsGraphics))
-        print "Baloon size: %d"               %(guest.memoryBalloonSize)
+    if guest.additionsRunLevel != ctx['const'].AdditionsRunLevelType_None:
+        print "Additions active, version %s"  %(guest.additionsVersion)
+        print "Support seamless: %s"          %(getFacilityStatus(ctx, guest, ctx['const'].AdditionsFacilityType_Seamless))
+        print "Support graphics: %s"          %(getFacilityStatus(ctx, guest, ctx['const'].AdditionsFacilityType_Graphics))
+        print "Balloon size: %d"              %(guest.memoryBalloonSize)
         print "Statistic update interval: %d" %(guest.statisticsUpdateInterval)
     else:
         print "No additions"
