@@ -2362,6 +2362,277 @@ VMMR3DECL(int) PDMR3VMMDevHeapFree(PVM pVM, RTR3PTR pv)
 
 
 /**
+ * Worker for DBGFR3TraceConfig that checks if the given tracing group name
+ * matches a device or driver name and applies the tracing config change.
+ *
+ * @returns VINF_SUCCESS or VERR_NOT_FOUND.
+ * @param   pVM                 The VM handle.
+ * @param   pszName             The tracing config group name.  This is NULL if
+ *                              the operation applies to every device and
+ *                              driver.
+ * @param   cchName             The length to match.
+ * @param   fEnable             Whether to enable or disable the corresponding
+ *                              trace points.
+ * @param   fApply              Whether to actually apply the changes or just do
+ *                              existence checks.
+ */
+VMMR3_INT_DECL(int) PDMR3TracingConfig(PVM pVM, const char *pszName, size_t cchName, bool fEnable, bool fApply)
+{
+    /** @todo This code is potentially racing driver attaching and detaching. */
+
+    /*
+     * Applies to all.
+     */
+    if (pszName == NULL)
+    {
+        AssertReturn(fApply, VINF_SUCCESS);
+
+        for (PPDMDEVINS pDevIns = pVM->pdm.s.pDevInstances; pDevIns; pDevIns = pDevIns->Internal.s.pNextR3)
+        {
+            pDevIns->fTraceing = fEnable;
+            for (PPDMLUN pLun = pDevIns->Internal.s.pLunsR3; pLun; pLun = pLun->pNext)
+                for (PPDMDRVINS pDrvIns = pLun->pTop; pDrvIns; pDrvIns = pDrvIns->Internal.s.pDown)
+                    pDrvIns->fTraceing = fEnable;
+        }
+
+#ifdef VBOX_WITH_USB
+        for (PPDMUSBINS pUsbIns = pVM->pdm.s.pUsbInstances; pUsbIns; pUsbIns = pUsbIns->Internal.s.pNext)
+        {
+            pUsbIns->fTraceing = fEnable;
+            for (PPDMLUN pLun = pUsbIns->Internal.s.pLuns; pLun; pLun = pLun->pNext)
+                for (PPDMDRVINS pDrvIns = pLun->pTop; pDrvIns; pDrvIns = pDrvIns->Internal.s.pDown)
+                    pDrvIns->fTraceing = fEnable;
+
+        }
+#endif
+        return VINF_SUCCESS;
+    }
+
+    /*
+     * Specific devices, USB devices or drivers.
+     * Decode prefix to figure which of these it applies to.
+     */
+    if (cchName <= 3)
+        return VERR_NOT_FOUND;
+
+    uint32_t cMatches = 0;
+    if (!strncmp("dev", pszName, 3))
+    {
+        for (PPDMDEVINS pDevIns = pVM->pdm.s.pDevInstances; pDevIns; pDevIns = pDevIns->Internal.s.pNextR3)
+        {
+            const char *pszDevName = pDevIns->Internal.s.pDevR3->pReg->szName;
+            size_t      cchDevName = strlen(pszDevName);
+            if (    (   cchDevName == cchName
+                     && RTStrNICmp(pszName, pszDevName, cchDevName))
+                ||  (   cchDevName == cchName - 3
+                     && RTStrNICmp(pszName + 3, pszDevName, cchDevName)) )
+            {
+                cMatches++;
+                if (fApply)
+                    pDevIns->fTraceing = fEnable;
+            }
+        }
+    }
+    else if (!strncmp("usb", pszName, 3))
+    {
+        for (PPDMUSBINS pUsbIns = pVM->pdm.s.pUsbInstances; pUsbIns; pUsbIns = pUsbIns->Internal.s.pNext)
+        {
+            const char *pszUsbName = pUsbIns->Internal.s.pUsbDev->pReg->szName;
+            size_t      cchUsbName = strlen(pszUsbName);
+            if (    (   cchUsbName == cchName
+                     && RTStrNICmp(pszName, pszUsbName, cchUsbName))
+                ||  (   cchUsbName == cchName - 3
+                     && RTStrNICmp(pszName + 3, pszUsbName, cchUsbName)) )
+            {
+                cMatches++;
+                if (fApply)
+                    pUsbIns->fTraceing = fEnable;
+            }
+        }
+    }
+    else if (!strncmp("drv", pszName, 3))
+    {
+        AssertReturn(fApply, VINF_SUCCESS);
+
+        for (PPDMDEVINS pDevIns = pVM->pdm.s.pDevInstances; pDevIns; pDevIns = pDevIns->Internal.s.pNextR3)
+            for (PPDMLUN pLun = pDevIns->Internal.s.pLunsR3; pLun; pLun = pLun->pNext)
+                for (PPDMDRVINS pDrvIns = pLun->pTop; pDrvIns; pDrvIns = pDrvIns->Internal.s.pDown)
+                {
+                    const char *pszDrvName = pDrvIns->Internal.s.pDrv->pReg->szName;
+                    size_t      cchDrvName = strlen(pszDrvName);
+                    if (    (   cchDrvName == cchName
+                             && RTStrNICmp(pszName, pszDrvName, cchDrvName))
+                        ||  (   cchDrvName == cchName - 3
+                             && RTStrNICmp(pszName + 3, pszDrvName, cchDrvName)) )
+                    {
+                        cMatches++;
+                        if (fApply)
+                            pDrvIns->fTraceing = fEnable;
+                    }
+                }
+
+#ifdef VBOX_WITH_USB
+        for (PPDMUSBINS pUsbIns = pVM->pdm.s.pUsbInstances; pUsbIns; pUsbIns = pUsbIns->Internal.s.pNext)
+            for (PPDMLUN pLun = pUsbIns->Internal.s.pLuns; pLun; pLun = pLun->pNext)
+                for (PPDMDRVINS pDrvIns = pLun->pTop; pDrvIns; pDrvIns = pDrvIns->Internal.s.pDown)
+                {
+                    const char *pszDrvName = pDrvIns->Internal.s.pDrv->pReg->szName;
+                    size_t      cchDrvName = strlen(pszDrvName);
+                    if (    (   cchDrvName == cchName
+                             && RTStrNICmp(pszName, pszDrvName, cchDrvName))
+                        ||  (   cchDrvName == cchName - 3
+                             && RTStrNICmp(pszName + 3, pszDrvName, cchDrvName)) )
+                    {
+                        cMatches++;
+                        if (fApply)
+                            pDrvIns->fTraceing = fEnable;
+                    }
+                }
+#endif
+    }
+    else
+        return VERR_NOT_FOUND;
+
+    return cMatches > 0 ? VINF_SUCCESS : VERR_NOT_FOUND;
+}
+
+
+/**
+ * Worker for DBGFR3TraceQueryConfig that checks whether all drivers, devices,
+ * and USB device have the same tracing settings.
+ *
+ * @returns true / false.
+ * @param   pVM                 The VM handle.
+ * @param   fEnabled            The tracing setting to check for.
+ */
+VMMR3_INT_DECL(bool) PDMR3TracingAreAll(PVM pVM, bool fEnabled)
+{
+    for (PPDMDEVINS pDevIns = pVM->pdm.s.pDevInstances; pDevIns; pDevIns = pDevIns->Internal.s.pNextR3)
+    {
+        if (pDevIns->fTraceing != fEnabled)
+            return false;
+
+        for (PPDMLUN pLun = pDevIns->Internal.s.pLunsR3; pLun; pLun = pLun->pNext)
+            for (PPDMDRVINS pDrvIns = pLun->pTop; pDrvIns; pDrvIns = pDrvIns->Internal.s.pDown)
+                if (pDrvIns->fTraceing != fEnabled)
+                    return false;
+    }
+
+#ifdef VBOX_WITH_USB
+    for (PPDMUSBINS pUsbIns = pVM->pdm.s.pUsbInstances; pUsbIns; pUsbIns = pUsbIns->Internal.s.pNext)
+    {
+        if (pUsbIns->fTraceing != fEnabled)
+            return false;
+
+        for (PPDMLUN pLun = pUsbIns->Internal.s.pLuns; pLun; pLun = pLun->pNext)
+            for (PPDMDRVINS pDrvIns = pLun->pTop; pDrvIns; pDrvIns = pDrvIns->Internal.s.pDown)
+                if (pDrvIns->fTraceing != fEnabled)
+                    return false;
+    }
+#endif
+
+    return true;
+}
+
+
+/**
+ * Worker for PDMR3TracingQueryConfig that adds a prefixed name to the output
+ * string.
+ *
+ * @returns VINF_SUCCESS or VERR_BUFFER_OVERFLOW
+ * @param   ppszDst             The pointer to the the output buffer pointer.
+ * @param   pcbDst              The pointer to the output buffer size.
+ * @param   fSpace              Whether to add a space before the name.
+ * @param   pszPrefix           The name prefix.
+ * @param   pszName             The name.
+ */
+static int pdmR3TracingAdd(char **ppszDst, size_t *pcbDst, bool fSpace, const char *pszPrefix, const char *pszName)
+{
+    size_t const cchPrefix = strlen(pszPrefix);
+    if (!RTStrNICmp(pszPrefix, pszName, cchPrefix))
+        pszName += cchPrefix;
+    size_t const cchName = strlen(pszName);
+
+    size_t const cchThis = cchName + cchPrefix + fSpace;
+    if (cchThis >= *pcbDst)
+        return VERR_BUFFER_OVERFLOW;
+    if (fSpace)
+    {
+        **ppszDst = ' ';
+        memcpy(*ppszDst + 1, pszPrefix, cchPrefix);
+        memcpy(*ppszDst + 1 + cchPrefix, pszName, cchName + 1);
+    }
+    else
+    {
+        memcpy(*ppszDst, pszPrefix, cchPrefix);
+        memcpy(*ppszDst + cchPrefix, pszName, cchName + 1);
+    }
+    *ppszDst += cchThis;
+    *pcbDst  -= cchThis;
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Worker for DBGFR3TraceQueryConfig use when not everything is either enabled
+ * or disabled.
+ *
+ * @returns VINF_SUCCESS or VERR_BUFFER_OVERFLOW
+ * @param   pVM                 The VM handle.
+ * @param   pszConfig           Where to store the config spec.
+ * @param   cbConfig            The size of the output buffer.
+ */
+VMMR3_INT_DECL(int) PDMR3TracingQueryConfig(PVM pVM, char *pszConfig, size_t cbConfig)
+{
+    int     rc;
+    char   *pszDst = pszConfig;
+    size_t  cbDst  = cbConfig;
+
+    for (PPDMDEVINS pDevIns = pVM->pdm.s.pDevInstances; pDevIns; pDevIns = pDevIns->Internal.s.pNextR3)
+    {
+        if (pDevIns->fTraceing)
+        {
+            rc = pdmR3TracingAdd(&pszDst, &cbDst, pszDst != pszConfig, "dev", pDevIns->Internal.s.pDevR3->pReg->szName);
+            if (RT_FAILURE(rc))
+                return rc;
+        }
+
+        for (PPDMLUN pLun = pDevIns->Internal.s.pLunsR3; pLun; pLun = pLun->pNext)
+            for (PPDMDRVINS pDrvIns = pLun->pTop; pDrvIns; pDrvIns = pDrvIns->Internal.s.pDown)
+                if (pDrvIns->fTraceing)
+                {
+                    rc = pdmR3TracingAdd(&pszDst, &cbDst, pszDst != pszConfig, "drv", pDrvIns->Internal.s.pDrv->pReg->szName);
+                    if (RT_FAILURE(rc))
+                        return rc;
+                }
+    }
+
+#ifdef VBOX_WITH_USB
+    for (PPDMUSBINS pUsbIns = pVM->pdm.s.pUsbInstances; pUsbIns; pUsbIns = pUsbIns->Internal.s.pNext)
+    {
+        if (pUsbIns->fTraceing)
+        {
+            rc = pdmR3TracingAdd(&pszDst, &cbDst, pszDst != pszConfig, "usb", pUsbIns->Internal.s.pUsbDev->pReg->szName);
+            if (RT_FAILURE(rc))
+                return rc;
+        }
+
+        for (PPDMLUN pLun = pUsbIns->Internal.s.pLuns; pLun; pLun = pLun->pNext)
+            for (PPDMDRVINS pDrvIns = pLun->pTop; pDrvIns; pDrvIns = pDrvIns->Internal.s.pDown)
+                if (pDrvIns->fTraceing)
+                {
+                    rc = pdmR3TracingAdd(&pszDst, &cbDst, pszDst != pszConfig, "drv", pDrvIns->Internal.s.pDrv->pReg->szName);
+                    if (RT_FAILURE(rc))
+                        return rc;
+                }
+    }
+#endif
+
+    return VINF_SUCCESS;
+}
+
+
+/**
  * Checks that a PDMDRVREG::szName, PDMDEVREG::szName or PDMUSBREG::szName
  * field contains only a limited set of ASCII characters.
  *

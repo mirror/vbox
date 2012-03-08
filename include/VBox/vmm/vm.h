@@ -83,46 +83,44 @@ typedef struct VMCPU
 {
     /** Per CPU forced action.
      * See the VMCPU_FF_* \#defines. Updated atomically. */
-    uint32_t volatile       fLocalForcedActions;
+    uint32_t volatile       fLocalForcedActions;                    /* 0 */
     /** The CPU state. */
-    VMCPUSTATE volatile     enmState;
+    VMCPUSTATE volatile     enmState;                               /* 4 */
 
     /** Pointer to the ring-3 UVMCPU structure. */
-    PUVMCPU                 pUVCpu;
+    PUVMCPU                 pUVCpu;                                 /* 8 */
     /** Ring-3 Host Context VM Pointer. */
-    PVMR3                   pVMR3;
+    PVMR3                   pVMR3;                                  /* 16 / 12 */
     /** Ring-0 Host Context VM Pointer. */
-    PVMR0                   pVMR0;
-    /** Flag indicating that tracing is enabled.  */
-    bool                    fTracingEnabled;
-    /** Alignment padding. */
-    uint8_t                 abAlignment0[HC_ARCH_BITS == 32 ? 3 : 7];
+    PVMR0                   pVMR0;                                  /* 24 / 16 */
     /** Raw-mode Context VM Pointer. */
-    PVMRC                   pVMRC;
+    PVMRC                   pVMRC;                                  /* 32 / 20 */
     /** The CPU ID.
      * This is the index into the VM::aCpu array. */
-    VMCPUID                 idCpu;
+    VMCPUID                 idCpu;                                  /* 36 / 24 */
     /** The native thread handle. */
-    RTNATIVETHREAD          hNativeThread;
+    RTNATIVETHREAD          hNativeThread;                          /* 40 / 28 */
     /** The native R0 thread handle. (different from the R3 handle!) */
-    RTNATIVETHREAD          hNativeThreadR0;
+    RTNATIVETHREAD          hNativeThreadR0;                        /* 48 / 32 */
     /** Which host CPU ID is this EMT running on.
      * Only valid when in RC or HWACCMR0 with scheduling disabled. */
-    RTCPUID volatile        idHostCpu;
-    /** State data for use by ad hoc profiling. */
-    uint32_t                uAdHoc;
-    /** Profiling samples for use by ad hoc profiling. */
-    STAMPROFILEADV          aStatAdHoc[8];
+    RTCPUID volatile        idHostCpu;                              /* 56 / 36 */
 
-    /** Align the next bit on a 64-byte boundary and make sure it starts at the same
-     *  offset in both 64-bit and 32-bit builds.
+    /** Trace groups enable flags.  */
+    uint32_t                fTraceGroups;                           /* 60 / 40 */
+    /** Align the structures below bit on a 64-byte boundary and make sure it starts
+     * at the same offset in both 64-bit and 32-bit builds.
      *
      * @remarks The alignments of the members that are larger than 48 bytes should be
      *          64-byte for cache line reasons. structs containing small amounts of
      *          data could be lumped together at the end with a < 64 byte padding
      *          following it (to grow into and align the struct size).
      *   */
-    uint8_t                 abAlignment1[HC_ARCH_BITS == 32 ? 16+64 : 56];
+    uint8_t                 abAlignment1[HC_ARCH_BITS == 64 ? 60 : 16+64];
+    /** State data for use by ad hoc profiling. */
+    uint32_t                uAdHoc;
+    /** Profiling samples for use by ad hoc profiling. */
+    STAMPROFILEADV          aStatAdHoc[8];                          /* size: 40*8 = 320 */
 
     /** CPUM part. */
     union

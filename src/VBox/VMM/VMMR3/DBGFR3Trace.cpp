@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2011 Oracle Corporation
+ * Copyright (C) 2011-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -23,14 +23,17 @@
 #include <VBox/vmm/dbgftrace.h>
 #include <VBox/vmm/cfgm.h>
 #include <VBox/vmm/mm.h>
+#include <VBox/vmm/pdmapi.h>
 #include "DBGFInternal.h"
 #include <VBox/vmm/vm.h>
+#include "VMMTracing.h"
 
 #include <VBox/err.h>
 #include <VBox/log.h>
 #include <VBox/param.h>
 
 #include <iprt/assert.h>
+#include <iprt/ctype.h>
 #include <iprt/trace.h>
 
 
@@ -38,6 +41,28 @@
 *   Internal Functions                                                         *
 *******************************************************************************/
 static DECLCALLBACK(void) dbgfR3TraceInfo(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszArgs);
+
+
+/*******************************************************************************
+*   Global Variables                                                           *
+*******************************************************************************/
+/**
+ * VMM trace point group translation table.
+ */
+static const struct
+{
+    /** The mask. */
+    uint32_t    fMask;
+    /** The name length. */
+    uint32_t    cchName;
+    /** The group name. */
+    const char *pszName;
+}   g_aVmmTpGroups[] =
+{
+    {  VMMTPGROUP_EM,   RT_STR_TUPLE("em")  },
+    {  VMMTPGROUP_HM,   RT_STR_TUPLE("hm")  },
+    {  VMMTPGROUP_TM,   RT_STR_TUPLE("tm")  },
+};
 
 
 /**
@@ -123,17 +148,33 @@ int dbgfR3TraceInit(PVM pVM)
     /*
      * Check the config and enable tracing if requested.
      */
+    PCFGMNODE pDbgfNode = CFGMR3GetChild(CFGMR3GetRoot(pVM), "DBGF");
 #if defined(DEBUG) || defined(RTTRACE_ENABLED)
-    bool const  fDefault = true;
+    bool const          fDefault        = true;
+    const char * const  pszConfigDefault = "*";
 #else
-    bool const  fDefault = false;
+    bool const          fDefault        = false;
+    const char * const  pszConfigDefault = "";
 #endif
-    bool        fTracingEnabled;
-    int rc = CFGMR3QueryBoolDef(CFGMR3GetChild(CFGMR3GetRoot(pVM), "DBGF"), "TracingEnabled",
-                                &fTracingEnabled, fDefault);
+    bool                fTracingEnabled;
+    int rc = CFGMR3QueryBoolDef(pDbgfNode, "TracingEnabled", &fTracingEnabled, fDefault);
     AssertRCReturn(rc, rc);
     if (fTracingEnabled)
+    {
         rc = dbgfR3TraceEnable(pVM, 0, 0);
+        if (RT_SUCCESS(rc))
+        {
+            char       *pszTracingConfig;
+            rc = CFGMR3QueryStringAllocDef(pDbgfNode, "TracingConfig", &pszTracingConfig, pszConfigDefault);
+            if (RT_SUCCESS(rc))
+            {
+                rc = DBGFR3TraceConfig(pVM, pszTracingConfig);
+                if (RT_FAILURE(rc))
+                    rc = VMSetError(pVM, rc, RT_SRC_POS, "TracingConfig=\"%s\" -> %Rrc", pszTracingConfig, rc);
+                MMR3HeapFree(pszTracingConfig);
+            }
+        }
+    }
 
     /*
      * Register a debug info item that will dump the trace buffer content.
@@ -166,6 +207,202 @@ void dbgfR3TraceRelocate(PVM pVM)
 {
     if (pVM->hTraceBufR3 != NIL_RTTRACEBUF)
         pVM->hTraceBufRC = MMHyperCCToRC(pVM, pVM->hTraceBufR3);
+}
+
+
+/**
+ * Change the traceing configuration of the VM.
+ *
+ * @returns VBox status code.
+ * @retval  VINF_SUCCESS
+ * @retval  VERR_NOT_FOUND if any of the trace point groups mentioned in the
+ *          config string cannot be found. (Or if the string cannot be made
+ *          sense of.)  No change made.
+ * @retval  VERR_INVALID_VM_HANDLE
+ * @retval  VERR_INVALID_POINTER
+ *
+ * @param   pVM         The VM handle.
+ * @param   pszConfig   The configuration change specification.
+ *
+ *                      Trace point group names, optionally prefixed by a '-' to
+ *                      indicate that the group is being disabled. A special
+ *                      group 'all' can be used to enable or disable all trace
+ *                      points.
+ *
+ *                      Drivers, devices and USB devices each have their own
+ *                      trace point group which can be accessed by prefixing
+ *                      their official PDM name by 'drv', 'dev' or 'usb'
+ *                      respectively.
+ */
+VMMDECL(int) DBGFR3TraceConfig(PVM pVM, const char *pszConfig)
+{
+    VM_ASSERT_VALID_EXT_RETURN(pVM, VERR_INVALID_VM_HANDLE);
+    AssertPtrReturn(pszConfig, VERR_INVALID_POINTER);
+    if (pVM->hTraceBufR3 == NIL_RTTRACEBUF)
+        return VERR_DBGF_NO_TRACE_BUFFER;
+
+    /*
+     * We do this in two passes, the first pass just validates the input string
+     * and the second applies the changes.
+     */
+    for (uint32_t uPass = 0; uPass < 1; uPass++)
+    {
+        char ch;
+        while ((ch = *pszConfig) != '\0')
+        {
+            if (RT_C_IS_SPACE(ch))
+                continue;
+
+            /*
+             * Operation prefix.
+             */
+            bool fNo = false;
+            do
+            {
+                if (ch == 'n' && pszConfig[1] == 'o')
+                {
+                    fNo = !fNo;
+                    pszConfig++;
+                }
+                else if (ch == '+')
+                    fNo = false;
+                else if (ch == '-' || ch == '!' || ch == '~')
+                    fNo = !fNo;
+                else
+                    break;
+            } while ((ch = *++pszConfig) != '\0');
+            if (ch == '\0')
+                break;
+
+            /*
+             * Extract the name.
+             */
+            const char *pszName = pszConfig;
+            while (   ch != '\0'
+                   && !RT_C_IS_SPACE(ch)
+                   && !RT_C_IS_PUNCT(ch))
+                ch = *++pszConfig;
+            size_t const cchName = pszConfig - pszName;
+
+            /*
+             * 'all' - special group that enables or disables all trace points.
+             */
+            if (cchName == 3 && !strncmp(pszName, "all", 3))
+            {
+                if (uPass != 0)
+                {
+                    uint32_t iCpu = pVM->cCpus;
+                    if (!fNo)
+                        while (iCpu-- > 0)
+                            pVM->aCpus[iCpu].fTraceGroups = UINT32_MAX;
+                    else
+                        while (iCpu-- > 0)
+                            pVM->aCpus[iCpu].fTraceGroups = 0;
+                    PDMR3TracingConfig(pVM, NULL, 0, !fNo, uPass > 0);
+                }
+            }
+            else
+            {
+                /*
+                 * A specific group, try the VMM first then PDM.
+                 */
+                uint32_t i = RT_ELEMENTS(g_aVmmTpGroups);
+                while (i-- > 0)
+                    if (   g_aVmmTpGroups[i].cchName == cchName
+                        && !strncmp(g_aVmmTpGroups[i].pszName, pszName, cchName))
+                    {
+                        if (uPass != 0)
+                        {
+                            uint32_t iCpu = pVM->cCpus;
+                            if (!fNo)
+                                while (iCpu-- > 0)
+                                    pVM->aCpus[iCpu].fTraceGroups |= g_aVmmTpGroups[i].fMask;
+                            else
+                                while (iCpu-- > 0)
+                                    pVM->aCpus[iCpu].fTraceGroups &= ~g_aVmmTpGroups[i].fMask;
+                        }
+                        break;
+                    }
+
+                if (i == UINT32_MAX)
+                {
+                    int rc = PDMR3TracingConfig(pVM, pszName, cchName, !fNo, uPass > 0);
+                    if (RT_FAILURE(rc))
+                        return rc;
+                }
+            }
+        }
+    }
+
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Query the trace configuration specification string.
+ *
+ * @returns VBox status code.
+ * @retval  VINF_SUCCESS
+ * @retval  VERR_INVALID_VM_HANDLE
+ * @retval  VERR_INVALID_POINTER
+ * @retval  VERR_BUFFER_OVERFLOW if the buffer is too small. Buffer will be
+ *          empty.
+
+ * @param   pVM                 The VM handle.
+ * @param   pszConfig           Pointer to the output buffer.
+ * @param   cbConfig            The size of the output buffer.
+ */
+VMMDECL(int) DBGFR3TraceQueryConfig(PVM pVM, char *pszConfig, size_t cbConfig)
+{
+    VM_ASSERT_VALID_EXT_RETURN(pVM, VERR_INVALID_VM_HANDLE);
+    AssertPtrReturn(pszConfig, VERR_INVALID_POINTER);
+    if (cbConfig < 1)
+        return VERR_BUFFER_OVERFLOW;
+    *pszConfig = '\0';
+
+    if (pVM->hTraceBufR3 == NIL_RTTRACEBUF)
+        return VERR_DBGF_NO_TRACE_BUFFER;
+
+    int             rc           = VINF_SUCCESS;
+    uint32_t const  fTraceGroups = pVM->aCpus[0].fTraceGroups;
+    if (   fTraceGroups == UINT32_MAX
+        && PDMR3TracingAreAll(pVM, true /*fEnabled*/))
+        rc = RTStrCopy(pszConfig, cbConfig, "all");
+    else if (   fTraceGroups == 0
+             && PDMR3TracingAreAll(pVM, false /*fEnabled*/))
+        rc = RTStrCopy(pszConfig, cbConfig, "-all");
+    else
+    {
+        char   *pszDst = pszConfig;
+        size_t  cbDst  = cbConfig;
+        uint32_t i = RT_ELEMENTS(g_aVmmTpGroups);
+        while (i-- > 0)
+            if (g_aVmmTpGroups[i].fMask & fTraceGroups)
+            {
+                size_t cchThis = g_aVmmTpGroups[i].cchName + (pszDst != pszConfig);
+                if (cchThis >= cbDst)
+                {
+                    rc = VERR_BUFFER_OVERFLOW;
+                    break;
+                }
+                if (pszDst != pszConfig)
+                {
+                    *pszDst = ' ';
+                    memcpy(pszDst + 1, g_aVmmTpGroups[i].pszName, g_aVmmTpGroups[i].cchName + 1);
+                }
+                else
+                    memcpy(pszDst, g_aVmmTpGroups[i].pszName, g_aVmmTpGroups[i].cchName + 1);
+                pszDst += cchThis;
+                cbDst  -= cchThis;
+            }
+
+        if (RT_SUCCESS(rc))
+            rc = PDMR3TracingQueryConfig(pVM, pszDst, cbDst);
+    }
+
+    if (RT_FAILURE(rc))
+        *pszConfig = '\0';
+    return rc;
 }
 
 

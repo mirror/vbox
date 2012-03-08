@@ -3921,8 +3921,13 @@ typedef struct PDMDEVINS
      * device level interfaces to export. To obtain this interface
      * call PDMR3QueryDevice(). */
     PDMIBASE                    IBase;
+
+    /** Tracing indicator. */
+    uint32_t                    fTraceing;
+#if HC_ARCH_BITS == 64
     /** Align the internal data more naturally. */
-    RTR3PTR                     R3PtrPadding;
+    uint32_t                    u32Padding;
+#endif
 
     /** Internal data. */
     union
