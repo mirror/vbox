@@ -296,6 +296,8 @@
 #define VERR_DBGF_STACK_IPE_1               (-1218)
 /** Internal processing error \#2 in the DBGF stack code. */
 #define VERR_DBGF_STACK_IPE_2               (-1218)
+/** No trace buffer available, please change the VM config. */
+#define VERR_DBGF_NO_TRACE_BUFFER           (-1219)
 /** @} */
 
 

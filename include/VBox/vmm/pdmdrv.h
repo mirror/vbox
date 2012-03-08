@@ -382,8 +382,13 @@ typedef struct PDMDRVINS
     /** The base interface of the driver.
      * The driver constructor initializes this. */
     PDMIBASE                    IBase;
+
+    /** Tracing indicator. */
+    uint32_t                    fTraceing;
+#if HC_ARCH_BITS == 64
     /** Align the internal data more naturally. */
-    RTR3PTR                     R3PtrPadding;
+    uint32_t                    u32Padding;
+#endif
 
     /** Internal data. */
     union

@@ -3,7 +3,7 @@
  */
 
 /*
- * Copyright (C) 2006-2010 Oracle Corporation
+ * Copyright (C) 2006-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -27,6 +27,7 @@
 #define ___VBox_vmm_dbgftrace_h
 
 #include <iprt/trace.h>
+#include <VBox/types.h>
 
 RT_C_DECLS_BEGIN
 /** @addgroup grp_dbgf_trace  Tracing
@@ -44,6 +45,9 @@ RT_C_DECLS_BEGIN
 # undef DBGFTRACE_DISABLED
 # define DBGFTRACE_DISABLED
 #endif
+
+VMMDECL(int) DBGFR3TraceConfig(PVM pVM, const char *pszConfig);
+
 
 /** @name VMM Internal Trace Macros
  * @remarks The user of these macros is responsible of including VBox/vmm/vm.h.
