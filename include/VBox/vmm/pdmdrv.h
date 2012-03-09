@@ -384,7 +384,7 @@ typedef struct PDMDRVINS
     PDMIBASE                    IBase;
 
     /** Tracing indicator. */
-    uint32_t                    fTraceing;
+    uint32_t                    fTracing;
 #if HC_ARCH_BITS == 64
     /** Align the internal data more naturally. */
     uint32_t                    u32Padding;

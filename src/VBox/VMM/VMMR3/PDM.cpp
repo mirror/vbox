@@ -2389,19 +2389,19 @@ VMMR3_INT_DECL(int) PDMR3TracingConfig(PVM pVM, const char *pszName, size_t cchN
 
         for (PPDMDEVINS pDevIns = pVM->pdm.s.pDevInstances; pDevIns; pDevIns = pDevIns->Internal.s.pNextR3)
         {
-            pDevIns->fTraceing = fEnable;
+            pDevIns->fTracing = fEnable;
             for (PPDMLUN pLun = pDevIns->Internal.s.pLunsR3; pLun; pLun = pLun->pNext)
                 for (PPDMDRVINS pDrvIns = pLun->pTop; pDrvIns; pDrvIns = pDrvIns->Internal.s.pDown)
-                    pDrvIns->fTraceing = fEnable;
+                    pDrvIns->fTracing = fEnable;
         }
 
 #ifdef VBOX_WITH_USB
         for (PPDMUSBINS pUsbIns = pVM->pdm.s.pUsbInstances; pUsbIns; pUsbIns = pUsbIns->Internal.s.pNext)
         {
-            pUsbIns->fTraceing = fEnable;
+            pUsbIns->fTracing = fEnable;
             for (PPDMLUN pLun = pUsbIns->Internal.s.pLuns; pLun; pLun = pLun->pNext)
                 for (PPDMDRVINS pDrvIns = pLun->pTop; pDrvIns; pDrvIns = pDrvIns->Internal.s.pDown)
-                    pDrvIns->fTraceing = fEnable;
+                    pDrvIns->fTracing = fEnable;
 
         }
 #endif
@@ -2429,7 +2429,7 @@ VMMR3_INT_DECL(int) PDMR3TracingConfig(PVM pVM, const char *pszName, size_t cchN
             {
                 cMatches++;
                 if (fApply)
-                    pDevIns->fTraceing = fEnable;
+                    pDevIns->fTracing = fEnable;
             }
         }
     }
@@ -2446,7 +2446,7 @@ VMMR3_INT_DECL(int) PDMR3TracingConfig(PVM pVM, const char *pszName, size_t cchN
             {
                 cMatches++;
                 if (fApply)
-                    pUsbIns->fTraceing = fEnable;
+                    pUsbIns->fTracing = fEnable;
             }
         }
     }
@@ -2467,7 +2467,7 @@ VMMR3_INT_DECL(int) PDMR3TracingConfig(PVM pVM, const char *pszName, size_t cchN
                     {
                         cMatches++;
                         if (fApply)
-                            pDrvIns->fTraceing = fEnable;
+                            pDrvIns->fTracing = fEnable;
                     }
                 }
 
@@ -2485,7 +2485,7 @@ VMMR3_INT_DECL(int) PDMR3TracingConfig(PVM pVM, const char *pszName, size_t cchN
                     {
                         cMatches++;
                         if (fApply)
-                            pDrvIns->fTraceing = fEnable;
+                            pDrvIns->fTracing = fEnable;
                     }
                 }
 #endif
@@ -2509,24 +2509,24 @@ VMMR3_INT_DECL(bool) PDMR3TracingAreAll(PVM pVM, bool fEnabled)
 {
     for (PPDMDEVINS pDevIns = pVM->pdm.s.pDevInstances; pDevIns; pDevIns = pDevIns->Internal.s.pNextR3)
     {
-        if (pDevIns->fTraceing != (uint32_t)fEnabled)
+        if (pDevIns->fTracing != (uint32_t)fEnabled)
             return false;
 
         for (PPDMLUN pLun = pDevIns->Internal.s.pLunsR3; pLun; pLun = pLun->pNext)
             for (PPDMDRVINS pDrvIns = pLun->pTop; pDrvIns; pDrvIns = pDrvIns->Internal.s.pDown)
-                if (pDrvIns->fTraceing != (uint32_t)fEnabled)
+                if (pDrvIns->fTracing != (uint32_t)fEnabled)
                     return false;
     }
 
 #ifdef VBOX_WITH_USB
     for (PPDMUSBINS pUsbIns = pVM->pdm.s.pUsbInstances; pUsbIns; pUsbIns = pUsbIns->Internal.s.pNext)
     {
-        if (pUsbIns->fTraceing != (uint32_t)fEnabled)
+        if (pUsbIns->fTracing != (uint32_t)fEnabled)
             return false;
 
         for (PPDMLUN pLun = pUsbIns->Internal.s.pLuns; pLun; pLun = pLun->pNext)
             for (PPDMDRVINS pDrvIns = pLun->pTop; pDrvIns; pDrvIns = pDrvIns->Internal.s.pDown)
-                if (pDrvIns->fTraceing != (uint32_t)fEnabled)
+                if (pDrvIns->fTracing != (uint32_t)fEnabled)
                     return false;
     }
 #endif
@@ -2590,7 +2590,7 @@ VMMR3_INT_DECL(int) PDMR3TracingQueryConfig(PVM pVM, char *pszConfig, size_t cbC
 
     for (PPDMDEVINS pDevIns = pVM->pdm.s.pDevInstances; pDevIns; pDevIns = pDevIns->Internal.s.pNextR3)
     {
-        if (pDevIns->fTraceing)
+        if (pDevIns->fTracing)
         {
             rc = pdmR3TracingAdd(&pszDst, &cbDst, pszDst != pszConfig, "dev", pDevIns->Internal.s.pDevR3->pReg->szName);
             if (RT_FAILURE(rc))
@@ -2599,7 +2599,7 @@ VMMR3_INT_DECL(int) PDMR3TracingQueryConfig(PVM pVM, char *pszConfig, size_t cbC
 
         for (PPDMLUN pLun = pDevIns->Internal.s.pLunsR3; pLun; pLun = pLun->pNext)
             for (PPDMDRVINS pDrvIns = pLun->pTop; pDrvIns; pDrvIns = pDrvIns->Internal.s.pDown)
-                if (pDrvIns->fTraceing)
+                if (pDrvIns->fTracing)
                 {
                     rc = pdmR3TracingAdd(&pszDst, &cbDst, pszDst != pszConfig, "drv", pDrvIns->Internal.s.pDrv->pReg->szName);
                     if (RT_FAILURE(rc))
@@ -2610,7 +2610,7 @@ VMMR3_INT_DECL(int) PDMR3TracingQueryConfig(PVM pVM, char *pszConfig, size_t cbC
 #ifdef VBOX_WITH_USB
     for (PPDMUSBINS pUsbIns = pVM->pdm.s.pUsbInstances; pUsbIns; pUsbIns = pUsbIns->Internal.s.pNext)
     {
-        if (pUsbIns->fTraceing)
+        if (pUsbIns->fTracing)
         {
             rc = pdmR3TracingAdd(&pszDst, &cbDst, pszDst != pszConfig, "usb", pUsbIns->Internal.s.pUsbDev->pReg->szName);
             if (RT_FAILURE(rc))
@@ -2619,7 +2619,7 @@ VMMR3_INT_DECL(int) PDMR3TracingQueryConfig(PVM pVM, char *pszConfig, size_t cbC
 
         for (PPDMLUN pLun = pUsbIns->Internal.s.pLuns; pLun; pLun = pLun->pNext)
             for (PPDMDRVINS pDrvIns = pLun->pTop; pDrvIns; pDrvIns = pDrvIns->Internal.s.pDown)
-                if (pDrvIns->fTraceing)
+                if (pDrvIns->fTracing)
                 {
                     rc = pdmR3TracingAdd(&pszDst, &cbDst, pszDst != pszConfig, "drv", pDrvIns->Internal.s.pDrv->pReg->szName);
                     if (RT_FAILURE(rc))

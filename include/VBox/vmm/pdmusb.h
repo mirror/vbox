@@ -729,7 +729,7 @@ typedef struct PDMUSBINS
      * The constructor sets this and the destructor frees it. */
     R3PTRTYPE(char *)           pszName;
     /** Tracing indicator. */
-    uint32_t                    fTraceing;
+    uint32_t                    fTracing;
     /** Padding to make achInstanceData aligned at 32 byte boundary. */
     uint32_t                    au32Padding[HC_ARCH_BITS == 32 ? 4 : 1];
     /** Device instance data. The size of this area is defined
