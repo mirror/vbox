@@ -110,9 +110,9 @@ endif
 instmod  := $(if $(filter rhel4 rhel5 rhel6 ol4 ol5 ol6 centos4 centos5 centos6 sles10.1 sles11.0 fedora13 fedora14 fedora15 fedora16,$(rpmrel)),,install_rpm)
 
 ifneq ($(STAGEDISO),)
-ifeq ($(wildcard $(STAGEDISO)/VBoxGuestAdditions.iso),)
-$(error STAGEDISO='$(STAGEDISO)/VBoxGuestAdditions.iso' not found)
-endif
+ ifeq ($(wildcard $(STAGEDISO)/VBoxGuestAdditions.iso),)
+  $(error STAGEDISO='$(STAGEDISO)/VBoxGuestAdditions.iso' not found)
+ endif
 endif
 
 ifeq ($(wildcard /usr/share/doc/packages/bash),)
@@ -176,6 +176,10 @@ rpm/build-stamp $(verfile): rpm/configure-stamp
 	$(if $(STAGEDISO),cp $(STAGEDISO)/VBoxGuestAdditions.iso $(builddir)/bin/additions,)
 	. rpm/env.sh && kmk -C $(vboxroot) $(bld_flags) \
 	    VBOX_NO_LINUX_RUN_INSTALLER=1 \
+	    VBOX_LNX_ADD_ARCHIVE.x86=$(builddir)/bin/additions/VBoxGuestAdditions-x86-r$(svnrev).tar.bz2 \
+	    VBOX_LNX_ADD_ARCHIVE.amd64=$(builddir)/bin/additions/VBoxGuestAdditions-amd64-r$(svnrev).tar.bz2 \
+	    VBOX_PATH_ADDITIONS.linux.x86=$(builddir)/bin/additions \
+	    VBOX_PATH_ADDITIONS.linux.amd64=$(builddir)/bin/additions \
 	    packing
 	touch rpm/build-stamp
 
