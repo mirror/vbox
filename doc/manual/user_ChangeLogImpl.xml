@@ -24,7 +24,8 @@
     <itemizedlist>
 
       <listitem>
-        <para>VMM: fixed unreal mode handling on older CPUs with VT-x (gPXE, Solaris 7/8/9)</para>
+        <para>VMM: fixed unreal mode handling on older CPUs with VT-x
+          (gPXE, Solaris 7/8/9; bug #9941)</para>
       </listitem>
 
       <listitem>
