@@ -413,9 +413,9 @@ check_gcc()
       elif [ $cc_maj -lt 3 \
              -o \( $cc_maj -eq 3 -a $cc_min -lt 2 \) \
              -o \( $cc_maj -eq 4 -a $cc_min -lt 1 -a "$OS" != "darwin" \) \
-             -o \( $cc_maj -eq 4 -a $cc_min -gt 6 \) \
+             -o \( $cc_maj -eq 4 -a $cc_min -gt 7 \) \
              -o $cc_maj -gt 4 ]; then
-        log_failure "gcc version $cc_ver found, expected gcc 3.x with x>1 or gcc 4.x with 0<x<7"
+        log_failure "gcc version $cc_ver found, expected gcc 3.x with x>1 or gcc 4.x with 0<x<8"
         fail really
       else
         log_success "found version $cc_ver"
