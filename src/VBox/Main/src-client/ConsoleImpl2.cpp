@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBox Console COM Class implementation
+ * VBox Console COM Class implementation - VM Configuration Bits.
  *
  * @remark  We've split out the code that the 64-bit VC++ v8 compiler finds
  *          problematic to optimize so we can disable optimizations and later,
@@ -9,7 +9,7 @@
  */
 
 /*
- * Copyright (C) 2006-2011 Oracle Corporation
+ * Copyright (C) 2006-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -2587,7 +2587,7 @@ int Console::configConstructorInner(PVM pVM, AutoWriteLock *pAlock)
             InsertConfigNode(pDev,     "0", &pInst);
             InsertConfigInteger(pInst, "Trusted", 1); /* boolean */
             InsertConfigNode(pInst,    "Config", &pCfg);
-            hrc = BusMgr->assignPciDevice("acpi", pInst);                               H();
+            hrc = BusMgr->assignPciDevice("acpi", pInst);                                   H();
 
             InsertConfigInteger(pCfg,  "RamSize",          cbRam);
             InsertConfigInteger(pCfg,  "RamHoleSize",      cbRamHole);
@@ -2653,13 +2653,14 @@ int Console::configConstructorInner(PVM pVM, AutoWriteLock *pAlock)
         }
 
         /*
-         * Set up the default DBGF search paths if all is cool so far.
+         * Configure DBGF (Debug(ger) Facility).
          */
         {
             PCFGMNODE pDbgf;
             InsertConfigNode(pRoot, "DBGF", &pDbgf);
 
-            hrc = pMachine->COMGETTER(SettingsFilePath)(bstr.asOutParam());         H();
+            /* Paths to search for debug info and such things. */
+            hrc = pMachine->COMGETTER(SettingsFilePath)(bstr.asOutParam());                 H();
             Utf8Str strSettingsPath(bstr);
             bstr.setNull();
             strSettingsPath.stripFilename();
@@ -2675,6 +2676,21 @@ int Console::configConstructorInner(PVM pVM, AutoWriteLock *pAlock)
             strPath.append(szHomeDir).append("/");
 
             InsertConfigString(pDbgf, "Path", strPath.c_str());
+
+            /* Tracing configuration. */
+            BOOL fTracingEnabled;
+            hrc = pMachine->COMGETTER(TracingEnabled)(&fTracingEnabled);                    H();
+            if (fTracingEnabled)
+                InsertConfigInteger(pDbgf, "TracingEnabled", 1);
+
+            hrc = pMachine->COMGETTER(TracingConfig)(bstr.asOutParam());                    H();
+            if (fTracingEnabled)
+                InsertConfigString(pDbgf, "TracingConfig", bstr);
+
+            BOOL fAllowTracingToAccessVM;
+            hrc = pMachine->COMGETTER(AllowTracingToAccessVM)(&fAllowTracingToAccessVM);    H();
+            if (fAllowTracingToAccessVM)
+                InsertConfigInteger(pPDM, "AllowTracingToAccessVM", 1);
         }
     }
     catch (ConfigError &x)

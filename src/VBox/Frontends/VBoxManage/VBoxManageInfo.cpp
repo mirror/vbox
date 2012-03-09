@@ -195,6 +195,43 @@ const char *facilityStateToName(AdditionsFacilityStatus_T faStatus, bool fShort)
     return "unknown";
 }
 
+/**
+ * This takes care of escaping double quotes and slashes that the string might
+ * contain.
+ *
+ * @param   pszName             The variable name.
+ * @param   pbstrValue          The value.
+ */
+static void outputMachineReadableString(const char *pszName, Bstr const *pbstrValue)
+{
+    Assert(strpbrk(pszName, "\"\\") == NULL);
+
+    com::Utf8Str strValue(*pbstrValue);
+    if (    strValue.isEmpty()
+        || (   !strValue.count('"')
+            && !strValue.count('\\')))
+        RTPrintf("%s=\"%s\"\n", pszName, strValue.c_str());
+    else
+    {
+        /* The value needs escaping. */
+        RTPrintf("%s=\"", pszName);
+        const char *psz = strValue.c_str();
+        for (;;)
+        {
+            const char *pszNext = strpbrk(psz, "\"\\");
+            if (!pszNext)
+            {
+                RTPrintf("%s", psz);
+                break;
+            }
+            RTPrintf(".*s\\%c", psz - pszNext, *pszNext);
+            psz = pszNext + 1;
+        }
+        RTPrintf("\"\n");
+    }
+}
+
+
 /* Disable global optimizations for MSC 8.0/64 to make it compile in reasonable
    time. MSC 7.1/32 doesn't have quite as much trouble with it, but still
    sufficient to qualify for this hack as well since this code isn't performance
@@ -210,9 +247,32 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> virtualBox,
 {
     HRESULT rc;
 
+#define SHOW_BOOLEAN_PROP(a_pObj, a_Prop, a_szMachine, a_szHuman) \
+    do \
+    { \
+        BOOL f; \
+        CHECK_ERROR2_RET(machine, COMGETTER(a_Prop)(&f), hrcCheck); \
+        if (details == VMINFO_MACHINEREADABLE) \
+            RTPrintf( a_szMachine "=\"%s\"\n", f ? "on" : "off"); \
+        else \
+            RTPrintf("%-16s %s\n", a_szHuman ":", f ? "on" : "off"); \
+    } while (0)
+
+#define SHOW_STRING_PROP(a_pObj, a_Prop, a_szMachine, a_szHuman) \
+    do \
+    { \
+        Bstr bstr; \
+        CHECK_ERROR2_RET(machine, COMGETTER(a_Prop)(bstr.asOutParam()), hrcCheck); \
+        if (details == VMINFO_MACHINEREADABLE) \
+            outputMachineReadableString(a_szMachine, &bstr); \
+        else \
+            RTPrintf("%-16s %ls\n", a_szHuman ":", bstr.raw()); \
+    } while (0)
+
+
     /*
      * The rules for output in -argdump format:
-     * 1) the key part (the [0-9a-zA-Z_]+ string before the '=' delimiter)
+     * 1) the key part (the [0-9a-zA-Z_\-]+ string before the '=' delimiter)
      *    is all lowercase for "VBoxManage modifyvm" parameters. Any
      *    other values printed are in CamelCase.
      * 2) strings (anything non-decimal) are printed surrounded by
@@ -680,6 +740,10 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> virtualBox,
         RTPrintf("teleporterpassword=\"%ls\"\n", teleporterPassword.raw());
     else
         RTPrintf("Teleporter Password: %ls\n", teleporterPassword.raw());
+
+    SHOW_BOOLEAN_PROP(machine, TracingEnabled, "tracing-enabled", "Tracing Enabled");
+    SHOW_BOOLEAN_PROP(machine, AllowTracingToAccessVM, "tracing-allow-vm-access", "Allow Tracing to Access VM");
+    SHOW_STRING_PROP(machine, TracingConfig, "tracing-config", "Tracing Configuration");
 
     /*
      * Storage Controllers and their attached Mediums.

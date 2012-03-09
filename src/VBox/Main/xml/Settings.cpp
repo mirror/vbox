@@ -833,11 +833,15 @@ void ConfigFileBase::setVersionAttribute(xml::ElementNode &elm)
             pcszVersion = "1.12";
             break;
 
+        case SettingsVersion_v1_13:
+            pcszVersion = "1.13";
+            break;
+
         case SettingsVersion_Future:
             // can be set if this code runs on XML files that were created by a future version of VBox;
             // in that case, downgrade to current version when writing since we can't write future versions...
-            pcszVersion = "1.12";
-            m->sv = SettingsVersion_v1_12;
+            pcszVersion = "1.13";
+            m->sv = SettingsVersion_v1_13;
             break;
 
         default:
@@ -1754,6 +1758,7 @@ bool Snapshot::operator==(const Snapshot &s) const
                   && (hardware              == s.hardware)                  // deep compare
                   && (storage               == s.storage)                   // deep compare
                   && (llChildSnapshots      == s.llChildSnapshots)          // deep compare
+                  && debugging              == s.debugging
                 )
            );
 }
@@ -3159,6 +3164,23 @@ void MachineConfigFile::readTeleporter(const xml::ElementNode *pElmTeleporter,
 }
 
 /**
+ * Called for reading the <Debugging> element under <Machine> or <Snapshot>.
+ */
+void MachineConfigFile::readDebugging(const xml::ElementNode *pElmDebugging, Debugging *pDbg)
+{
+    if (!pElmDebugging || m->sv < SettingsVersion_v1_13)
+        return;
+
+    const xml::ElementNode * const pelmTracing = pElmDebugging->findChildElement("Tracing");
+    if (pelmTracing)
+    {
+        pelmTracing->getAttributeValue("enabled", pDbg->fTracingEnabled);
+        pelmTracing->getAttributeValue("allowTracingToAccessVM", pDbg->fAllowTracingToAccessVM);
+        pelmTracing->getAttributeValue("config", pDbg->strTracingConfig);
+    }
+}
+
+/**
  * Called initially for the <Snapshot> element under <Machine>, if present,
  * to store the snapshot's data into the given Snapshot structure (which is
  * then the one in the Machine struct). This might then recurse if
@@ -3230,6 +3252,8 @@ void MachineConfigFile::readSnapshot(const xml::ElementNode &elmSnapshot,
         // go through Hardware once more to repair the settings controller structures
         // with data from old DVDDrive and FloppyDrive elements
         readDVDAndFloppies_pre1_9(*pelmHardware, snap.storage);
+
+    readDebugging(elmSnapshot.findChildElement("Debugging"), &snap.debugging);
 }
 
 const struct {
@@ -3378,6 +3402,8 @@ void MachineConfigFile::readMachine(const xml::ElementNode &elmMachine)
             }
             else if (pelmMachineChild->nameEquals("MediaRegistry"))
                 readMediaRegistry(*pelmMachineChild, mediaRegistry);
+            else if (pelmMachineChild->nameEquals("Debugging"))
+                readDebugging(pelmMachineChild, &debugging);
         }
 
         if (m->sv < SettingsVersion_v1_9)
@@ -4300,6 +4326,25 @@ void MachineConfigFile::buildStorageControllersXML(xml::ElementNode &elmParent,
 }
 
 /**
+ * Creates a <Debugging> node under elmParent and then writes out the XML
+ * keys under that. Called for both the <Machine> node and for snapshots.
+ *
+ * @param pElmParent    Pointer to the parent element.
+ * @param pDbg          Pointer to the debugging settings.
+ */
+void MachineConfigFile::buildDebuggingXML(xml::ElementNode *pElmParent, const Debugging *pDbg)
+{
+    if (m->sv < SettingsVersion_v1_13 || pDbg->areDefaultSettings())
+        return;
+
+    xml::ElementNode *pElmDebugging = pElmParent->createChild("Debugging");
+    xml::ElementNode *pElmTracing   = pElmDebugging->createChild("Tracing");
+    pElmTracing->setAttribute("enabled", pDbg->fTracingEnabled);
+    pElmTracing->setAttribute("allowTracingToAccessVM", pDbg->fAllowTracingToAccessVM);
+    pElmTracing->setAttribute("config", pDbg->strTracingConfig);
+}
+
+/**
  * Writes a single snapshot into the DOM tree. Initially this gets called from MachineConfigFile::write()
  * for the root snapshot of a machine, if present; elmParent then points to the <Snapshots> node under the
  * <Machine> node to which <Snapshot> must be added. This may then recurse for child snapshots.
@@ -4328,6 +4373,7 @@ void MachineConfigFile::buildSnapshotXML(xml::ElementNode &elmParent,
                                NULL); /* pllElementsWithUuidAttributes */
                                     // we only skip removable media for OVF, but we never get here for OVF
                                     // since snapshots never get written then
+    buildDebuggingXML(pelmSnapshot, &snap.debugging);
 
     if (snap.llChildSnapshots.size())
     {
@@ -4475,6 +4521,7 @@ void MachineConfigFile::buildMachineXML(xml::ElementNode &elmMachine,
                                storageMachine,
                                !!(fl & BuildMachineXML_SkipRemovableMedia),
                                pllElementsWithUuidAttributes);
+    buildDebuggingXML(&elmMachine, &debugging);
 }
 
 /**
@@ -4590,6 +4637,13 @@ AudioDriverType_T MachineConfigFile::getHostDefaultAudioDriver()
  */
 void MachineConfigFile::bumpSettingsVersionIfNeeded()
 {
+    if (m->sv < SettingsVersion_v1_13)
+    {
+        // VirtualBox 4.2 adds tracing.
+        if (!debugging.areDefaultSettings())
+            m->sv = SettingsVersion_v1_13;
+    }
+
     if (m->sv < SettingsVersion_v1_12)
     {
         // VirtualBox 4.1 adds PCI passthrough.

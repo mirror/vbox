@@ -1,10 +1,10 @@
 /* $Id$ */
 /** @file
- * VirtualBox COM class implementation
+ * Implementation of IMachine in VBoxSVC - Header.
  */
 
 /*
- * Copyright (C) 2006-2011 Oracle Corporation
+ * Copyright (C) 2006-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -296,6 +296,8 @@ public:
 
         typedef std::list<ComObjPtr<PciDeviceAttachment> > PciDeviceAssignmentList;
         PciDeviceAssignmentList mPciDeviceAssignments;
+
+        settings::Debugging  mDebugging;
     };
 
     /**
@@ -467,6 +469,12 @@ public:
     STDMETHOD(COMSETTER(IoCacheSize)) (ULONG  aIoCacheSize);
     STDMETHOD(COMGETTER(PciDeviceAssignments))(ComSafeArrayOut(IPciDeviceAttachment *, aAssignments));
     STDMETHOD(COMGETTER(BandwidthControl))(IBandwidthControl **aBandwidthControl);
+    STDMETHOD(COMGETTER(TracingEnabled))(BOOL *pfEnabled);
+    STDMETHOD(COMSETTER(TracingEnabled))(BOOL fEnabled);
+    STDMETHOD(COMGETTER(TracingConfig))(BSTR *pbstrConfig);
+    STDMETHOD(COMSETTER(TracingConfig))(IN_BSTR bstrConfig);
+    STDMETHOD(COMGETTER(AllowTracingToAccessVM))(BOOL *pfAllow);
+    STDMETHOD(COMSETTER(AllowTracingToAccessVM))(BOOL fAllow);
 
     // IMachine methods
     STDMETHOD(LockMachine)(ISession *aSession, LockType_T lockType);
@@ -785,7 +793,8 @@ protected:
     HRESULT loadSnapshot(const settings::Snapshot &data,
                          const Guid &aCurSnapshotId,
                          Snapshot *aParentSnapshot);
-    HRESULT loadHardware(const settings::Hardware &data);
+    HRESULT loadHardware(const settings::Hardware &data, const settings::Debugging *pDbg);
+    HRESULT loadDebugging(const settings::Debugging *pDbg);
     HRESULT loadStorageControllers(const settings::Storage &data,
                                    const Guid *puuidRegistry,
                                    const Guid *puuidSnapshot);
@@ -825,7 +834,7 @@ protected:
 
     void copyMachineDataToSettings(settings::MachineConfigFile &config);
     HRESULT saveAllSnapshots(settings::MachineConfigFile &config);
-    HRESULT saveHardware(settings::Hardware &data);
+    HRESULT saveHardware(settings::Hardware &data, settings::Debugging *pDbg);
     HRESULT saveStorageControllers(settings::Storage &data);
     HRESULT saveStorageDevices(ComObjPtr<StorageController> aStorageController,
                                settings::StorageController &data);
@@ -1194,11 +1203,12 @@ public:
     HRESULT init(SessionMachine *aSessionMachine,
                  IN_GUID aSnapshotId,
                  const Utf8Str &aStateFilePath);
-    HRESULT init(Machine *aMachine,
-                 const settings::Hardware &hardware,
-                 const settings::Storage &storage,
-                 IN_GUID aSnapshotId,
-                 const Utf8Str &aStateFilePath);
+    HRESULT initFromSettings(Machine *aMachine,
+                             const settings::Hardware &hardware,
+                             const settings::Debugging *pDbg,
+                             const settings::Storage &storage,
+                             IN_GUID aSnapshotId,
+                             const Utf8Str &aStateFilePath);
     void uninit();
 
     // util::Lockable interface

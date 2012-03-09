@@ -163,6 +163,9 @@ enum
     MODIFYVM_TELEPORTER_PORT,
     MODIFYVM_TELEPORTER_ADDRESS,
     MODIFYVM_TELEPORTER_PASSWORD,
+    MODIFYVM_TRACING_ENABLED,
+    MODIFYVM_TRACING_CONFIG,
+    MODIFYVM_TRACING_ALLOW_VM_ACCESS,
     MODIFYVM_HARDWARE_UUID,
     MODIFYVM_HPET,
     MODIFYVM_IOCACHE,
@@ -298,6 +301,9 @@ static const RTGETOPTDEF g_aModifyVMOptions[] =
     { "--teleporterport",           MODIFYVM_TELEPORTER_PORT,           RTGETOPT_REQ_UINT32 },
     { "--teleporteraddress",        MODIFYVM_TELEPORTER_ADDRESS,        RTGETOPT_REQ_STRING },
     { "--teleporterpassword",       MODIFYVM_TELEPORTER_PASSWORD,       RTGETOPT_REQ_STRING },
+    { "--tracing-enabled",          MODIFYVM_TRACING_ENABLED,           RTGETOPT_REQ_BOOL_ONOFF },
+    { "--tracing-config",           MODIFYVM_TRACING_CONFIG,            RTGETOPT_REQ_STRING },
+    { "--tracing-allow-vm-access",  MODIFYVM_TRACING_ALLOW_VM_ACCESS,   RTGETOPT_REQ_BOOL_ONOFF },
     { "--hardwareuuid",             MODIFYVM_HARDWARE_UUID,             RTGETOPT_REQ_STRING },
     { "--hpet",                     MODIFYVM_HPET,                      RTGETOPT_REQ_BOOL_ONOFF },
     { "--iocache",                  MODIFYVM_IOCACHE,                   RTGETOPT_REQ_BOOL_ONOFF },
@@ -2200,6 +2206,24 @@ int handleModifyVM(HandlerArg *a)
             case MODIFYVM_TELEPORTER_PASSWORD:
             {
                 CHECK_ERROR(machine, COMSETTER(TeleporterPassword)(Bstr(ValueUnion.psz).raw()));
+                break;
+            }
+
+            case MODIFYVM_TRACING_ENABLED:
+            {
+                CHECK_ERROR(machine, COMSETTER(TracingEnabled)(ValueUnion.f));
+                break;
+            }
+
+            case MODIFYVM_TRACING_CONFIG:
+            {
+                CHECK_ERROR(machine, COMSETTER(TracingConfig)(Bstr(ValueUnion.psz).raw()));
+                break;
+            }
+
+            case MODIFYVM_TRACING_ALLOW_VM_ACCESS:
+            {
+                CHECK_ERROR(machine, COMSETTER(AllowTracingToAccessVM)(ValueUnion.f));
                 break;
             }
 

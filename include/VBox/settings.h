@@ -914,6 +914,36 @@ struct Storage
     StorageControllersList  llStorageControllers;
 };
 
+/**
+ * Settings that has to do with debugging.
+ */
+struct Debugging
+{
+    Debugging()
+        : fTracingEnabled(false),
+          fAllowTracingToAccessVM(false),
+          strTracingConfig()
+    { }
+
+    bool operator==(const Debugging &rOther) const
+    {
+        return fTracingEnabled          == rOther.fTracingEnabled
+            && fAllowTracingToAccessVM  == rOther.fAllowTracingToAccessVM
+            && strTracingConfig         == rOther.strTracingConfig;
+    }
+
+    bool areDefaultSettings() const
+    {
+        return !fTracingEnabled
+            && !fAllowTracingToAccessVM
+            && strTracingConfig.isEmpty();
+    }
+
+    bool                    fTracingEnabled;
+    bool                    fAllowTracingToAccessVM;
+    com::Utf8Str            strTracingConfig;
+};
+
 struct Snapshot;
 typedef std::list<Snapshot> SnapshotsList;
 
@@ -935,6 +965,8 @@ struct Snapshot
 
     Hardware        hardware;
     Storage         storage;
+
+    Debugging       debugging;
 
     SnapshotsList   llChildSnapshots;
 };
@@ -1012,6 +1044,7 @@ public:
     Hardware                hardwareMachine;
     Storage                 storageMachine;
     MediaRegistry           mediaRegistry;
+    Debugging               debugging;
 
     StringsMap              mapExtraDataItems;
 
@@ -1057,6 +1090,7 @@ private:
     void readStorageControllers(const xml::ElementNode &elmStorageControllers, Storage &strg);
     void readDVDAndFloppies_pre1_9(const xml::ElementNode &elmHardware, Storage &strg);
     void readTeleporter(const xml::ElementNode *pElmTeleporter, MachineUserData *pUserData);
+    void readDebugging(const xml::ElementNode *pElmTeleporter, Debugging *pDbg);
     void readSnapshot(const xml::ElementNode &elmSnapshot, Snapshot &snap);
     void convertOldOSType_pre1_5(com::Utf8Str &str);
     void readMachine(const xml::ElementNode &elmMachine);
@@ -1067,6 +1101,7 @@ private:
                                     const Storage &st,
                                     bool fSkipRemovableMedia,
                                     std::list<xml::ElementNode*> *pllElementsWithUuidAttributes);
+    void buildDebuggingXML(xml::ElementNode *pElmParent, const Debugging *pDbg);
     void buildSnapshotXML(xml::ElementNode &elmParent, const Snapshot &snap);
 
     void bumpSettingsVersionIfNeeded();

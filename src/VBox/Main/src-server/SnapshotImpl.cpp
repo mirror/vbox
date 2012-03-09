@@ -772,7 +772,7 @@ HRESULT Snapshot::saveSnapshotImpl(settings::Snapshot &data, bool aAttrsOnly)
     else
         data.strStateFile.setNull();
 
-    HRESULT rc = m->pMachine->saveHardware(data.hardware);
+    HRESULT rc = m->pMachine->saveHardware(data.hardware, &data.debugging);
     if (FAILED(rc)) return rc;
 
     rc = m->pMachine->saveStorageControllers(data.storage);
@@ -1077,11 +1077,12 @@ HRESULT SnapshotMachine::init(SessionMachine *aSessionMachine,
  *
  *  @note Doesn't lock anything.
  */
-HRESULT SnapshotMachine::init(Machine *aMachine,
-                              const settings::Hardware &hardware,
-                              const settings::Storage &storage,
-                              IN_GUID aSnapshotId,
-                              const Utf8Str &aStateFilePath)
+HRESULT SnapshotMachine::initFromSettings(Machine *aMachine,
+                                          const settings::Hardware &hardware,
+                                          const settings::Debugging *pDbg,
+                                          const settings::Storage &storage,
+                                          IN_GUID aSnapshotId,
+                                          const Utf8Str &aStateFilePath)
 {
     LogFlowThisFuncEnter();
     LogFlowThisFunc(("mName={%s}\n", aMachine->mUserData->s.strName.c_str()));
@@ -1155,7 +1156,7 @@ HRESULT SnapshotMachine::init(Machine *aMachine,
 
     /* load hardware and harddisk settings */
 
-    HRESULT rc = loadHardware(hardware);
+    HRESULT rc = loadHardware(hardware, pDbg);
     if (SUCCEEDED(rc))
         rc = loadStorageControllers(storage,
                                     NULL, /* puuidRegistry */
