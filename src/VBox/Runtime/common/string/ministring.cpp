@@ -234,10 +234,13 @@ size_t RTCString::count(char ch) const
 
     size_t      c   = 0;
     const char *psz = m_psz;
-    char        chCur;
-    while ((chCur = *psz++) != '\0')
-        if (chCur == ch)
-            c++;
+    if (psz)
+    {
+        char    chCur;
+        while ((chCur = *psz++) != '\0')
+            if (chCur == ch)
+                c++;
+    }
     return c;
 }
 
