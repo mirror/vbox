@@ -6363,6 +6363,113 @@ STDMETHODIMP Machine::COMGETTER(BandwidthControl)(IBandwidthControl **aBandwidth
     return S_OK;
 }
 
+STDMETHODIMP Machine::COMGETTER(TracingEnabled)(BOOL *pfEnabled)
+{
+    CheckComArgOutPointerValid(pfEnabled);
+    AutoCaller autoCaller(this);
+    HRESULT hrc = autoCaller.rc();
+    if (SUCCEEDED(hrc))
+    {
+        AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+        *pfEnabled = mHWData->mDebugging.fTracingEnabled;
+    }
+    return hrc;
+}
+
+STDMETHODIMP Machine::COMSETTER(TracingEnabled)(BOOL fEnabled)
+{
+    AutoCaller autoCaller(this);
+    HRESULT hrc = autoCaller.rc();
+    if (SUCCEEDED(hrc))
+    {
+        AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+        hrc = checkStateDependency(MutableStateDep);
+        if (SUCCEEDED(hrc))
+        {
+            hrc = mHWData.backupEx();
+            if (SUCCEEDED(hrc))
+            {
+                setModified(IsModified_MachineData);
+                mHWData->mDebugging.fTracingEnabled = fEnabled != FALSE;
+            }
+        }
+    }
+    return hrc;
+}
+
+STDMETHODIMP Machine::COMGETTER(TracingConfig)(BSTR *pbstrConfig)
+{
+    CheckComArgOutPointerValid(pbstrConfig);
+    AutoCaller autoCaller(this);
+    HRESULT hrc = autoCaller.rc();
+    if (SUCCEEDED(hrc))
+    {
+        AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+        hrc = mHWData->mDebugging.strTracingConfig.cloneToEx(pbstrConfig);
+    }
+    return hrc;
+}
+
+STDMETHODIMP Machine::COMSETTER(TracingConfig)(IN_BSTR bstrConfig)
+{
+    CheckComArgStr(bstrConfig);
+    AutoCaller autoCaller(this);
+    HRESULT hrc = autoCaller.rc();
+    if (SUCCEEDED(hrc))
+    {
+        AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+        hrc = checkStateDependency(MutableStateDep);
+        if (SUCCEEDED(hrc))
+        {
+            hrc = mHWData.backupEx();
+            if (SUCCEEDED(hrc))
+            {
+                hrc = mHWData->mDebugging.strTracingConfig.cloneEx(bstrConfig);
+                if (SUCCEEDED(hrc))
+                    setModified(IsModified_MachineData);
+            }
+        }
+    }
+    return hrc;
+
+}
+
+STDMETHODIMP Machine::COMGETTER(AllowTracingToAccessVM)(BOOL *pfAllow)
+{
+    CheckComArgOutPointerValid(pfAllow);
+    AutoCaller autoCaller(this);
+    HRESULT hrc = autoCaller.rc();
+    if (SUCCEEDED(hrc))
+    {
+        AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+        *pfAllow = mHWData->mDebugging.fAllowTracingToAccessVM;
+    }
+    return hrc;
+}
+
+STDMETHODIMP Machine::COMSETTER(AllowTracingToAccessVM)(BOOL fAllow)
+{
+    AutoCaller autoCaller(this);
+    HRESULT hrc = autoCaller.rc();
+    if (SUCCEEDED(hrc))
+    {
+        AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+        hrc = checkStateDependency(MutableStateDep);
+        if (SUCCEEDED(hrc))
+        {
+            hrc = mHWData.backupEx();
+            if (SUCCEEDED(hrc))
+            {
+                setModified(IsModified_MachineData);
+                mHWData->mDebugging.fAllowTracingToAccessVM = fAllow != FALSE;
+            }
+        }
+    }
+    return hrc;
+}
+
+
+
 STDMETHODIMP Machine::CloneTo(IMachine *pTarget, CloneMode_T mode, ComSafeArrayIn(CloneOptions_T, options), IProgress **pProgress)
 {
     LogFlowFuncEnter();
@@ -7706,7 +7813,7 @@ HRESULT Machine::loadMachineDataFromSettings(const settings::MachineConfigFile &
     }
 
     // hardware data
-    rc = loadHardware(config.hardwareMachine);
+    rc = loadHardware(config.hardwareMachine, &config.debugging);
     if (FAILED(rc)) return rc;
 
     // load storage controllers
@@ -7774,11 +7881,12 @@ HRESULT Machine::loadSnapshot(const settings::Snapshot &data,
     /* create a snapshot machine object */
     ComObjPtr<SnapshotMachine> pSnapshotMachine;
     pSnapshotMachine.createObject();
-    rc = pSnapshotMachine->init(this,
-                                data.hardware,
-                                data.storage,
-                                data.uuid.ref(),
-                                strStateFile);
+    rc = pSnapshotMachine->initFromSettings(this,
+                                            data.hardware,
+                                            &data.debugging,
+                                            data.storage,
+                                            data.uuid.ref(),
+                                            strStateFile);
     if (FAILED(rc)) return rc;
 
     /* create a snapshot object */
@@ -7821,9 +7929,12 @@ HRESULT Machine::loadSnapshot(const settings::Snapshot &data,
 }
 
 /**
- *  @param aNode    <Hardware> node.
+ *  Loads settings into mHWData.
+ *
+ *  @param data     Reference to the hardware settings.
+ *  @param pDbg     Pointer to the debugging settings.
  */
-HRESULT Machine::loadHardware(const settings::Hardware &data)
+HRESULT Machine::loadHardware(const settings::Hardware &data, const settings::Debugging *pDbg)
 {
     AssertReturn(!isSessionMachine(), E_FAIL);
 
@@ -8050,6 +8161,11 @@ HRESULT Machine::loadHardware(const settings::Hardware &data)
             mHWData->mPciDeviceAssignments.push_back(pda);
         }
 
+        /*
+         * (The following isn't really real hardware, but it lives in HWData
+         * for reasons of convenience.)
+         */
+
 #ifdef VBOX_WITH_GUEST_PROPS
         /* Guest properties (optional) */
         for (settings::GuestPropertiesList::const_iterator it = data.llGuestProperties.begin();
@@ -8065,6 +8181,10 @@ HRESULT Machine::loadHardware(const settings::Hardware &data)
 
         mHWData->mGuestPropertyNotificationPatterns = data.strNotificationPatterns;
 #endif /* VBOX_WITH_GUEST_PROPS defined */
+
+        rc = loadDebugging(pDbg);
+        if (FAILED(rc))
+            return rc;
     }
     catch(std::bad_alloc &)
     {
@@ -8073,6 +8193,19 @@ HRESULT Machine::loadHardware(const settings::Hardware &data)
 
     AssertComRC(rc);
     return rc;
+}
+
+/**
+ * Called from Machine::loadHardware() to load the debugging settings of the
+ * machine.
+ *
+ * @param   pDbg        Pointer to the settings.
+ */
+HRESULT Machine::loadDebugging(const settings::Debugging *pDbg)
+{
+    mHWData->mDebugging = *pDbg;
+    /* no more processing currently required, this will probably change. */
+    return S_OK;
 }
 
 /**
@@ -8892,7 +9025,7 @@ void Machine::copyMachineDataToSettings(settings::MachineConfigFile &config)
     config.fAborted = (mData->mMachineState == MachineState_Aborted);
     /// @todo Live Migration:        config.fTeleported = (mData->mMachineState == MachineState_Teleported);
 
-    HRESULT rc = saveHardware(config.hardwareMachine);
+    HRESULT rc = saveHardware(config.hardwareMachine, &config.debugging);
     if (FAILED(rc)) throw rc;
 
     rc = saveStorageControllers(config.storageMachine);
@@ -8965,9 +9098,11 @@ HRESULT Machine::saveAllSnapshots(settings::MachineConfigFile &config)
  *  Saves the VM hardware configuration. It is assumed that the
  *  given node is empty.
  *
- *  @param aNode    <Hardware> node to save the VM hardware configuration to.
+ *  @param data     Reference to the settings object for the hardware config.
+ *  @param pDbg     Pointer to the settings object for the debugging config
+ *                  which happens to live in mHWData.
  */
-HRESULT Machine::saveHardware(settings::Hardware &data)
+HRESULT Machine::saveHardware(settings::Hardware &data, settings::Debugging *pDbg)
 {
     HRESULT rc = S_OK;
 
@@ -9197,6 +9332,8 @@ HRESULT Machine::saveHardware(settings::Hardware &data)
         /* I presume this doesn't require a backup(). */
         mData->mGuestPropertiesModified = FALSE;
 #endif /* VBOX_WITH_GUEST_PROPS defined */
+
+        *pDbg = mHWData->mDebugging;
     }
     catch(std::bad_alloc &)
     {

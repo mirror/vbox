@@ -350,15 +350,26 @@ public:
     } while (0)
 
 /**
- * Checks that the string argument is not a NULL or empty string and returns
- * E_INVALIDARG + extended error info on failure.
- * @param arg   Input string argument (BSTR etc.).
+ * Checks that a string input argument is valid (not NULL or obviously invalid
+ * pointer), returning E_INVALIDARG + extended error info if invalid.
+ * @param a_bstrIn  Input string argument (IN_BSTR).
  */
-#define CheckComArgStrNotEmptyOrNull(arg) \
+#define CheckComArgStr(a_bstrIn) \
     do { \
-        if (RT_UNLIKELY((arg) == NULL || *(arg) == '\0')) \
-            return setError(E_INVALIDARG, \
-                tr("Argument %s is empty or NULL"), #arg); \
+        IN_BSTR const bstrInCheck = (a_bstrIn); /* type check */ \
+        if (RT_UNLIKELY(!RT_VALID_PTR(bstrInCheck))) \
+            return setError(E_INVALIDARG, tr("Argument %s is an invalid pointer"), #a_bstrIn); \
+    } while (0)
+/**
+ * Checks that the string argument is not a NULL, a invalid pointer or an empty
+ * string, returning E_INVALIDARG + extended error info on failure.
+ * @param a_bstrIn  Input string argument (BSTR etc.).
+ */
+#define CheckComArgStrNotEmptyOrNull(a_bstrIn) \
+    do { \
+        IN_BSTR const bstrInCheck = (a_bstrIn); /* type check */ \
+        if (RT_UNLIKELY(!RT_VALID_PTR(bstrInCheck) || *(bstrInCheck) == '\0')) \
+            return setError(E_INVALIDARG, tr("Argument %s is empty or an invalid pointer"), #a_bstrIn); \
     } while (0)
 
 /**
@@ -958,6 +969,8 @@ public:
     /**
      *  Stores the current data pointer in the backup area, allocates new data
      *  using the copy constructor on current data and makes new data active.
+     *
+     *  @deprecated Use backupEx to avoid throwing wild out-of-memory exceptions.
      */
     void backup()
     {
@@ -968,6 +981,31 @@ public:
             mBackupData = this->mData;
             this->mData = pNewData;
         }
+    }
+
+    /**
+     *  Stores the current data pointer in the backup area, allocates new data
+     *  using the copy constructor on current data and makes new data active.
+     *
+     *  @returns S_OK, E_OUTOFMEMORY or E_FAIL (internal error).
+     */
+    HRESULT backupEx()
+    {
+        AssertMsgReturn(this->mData, ("data must not be NULL"), E_FAIL);
+        if (this->mData && !mBackupData)
+        {
+            try
+            {
+                D *pNewData = new D(*this->mData);
+                mBackupData = this->mData;
+                this->mData = pNewData;
+            }
+            catch (std::bad_alloc &)
+            {
+                return E_OUTOFMEMORY;
+            }
+        }
+        return S_OK;
     }
 
     /**

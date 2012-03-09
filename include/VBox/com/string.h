@@ -279,6 +279,8 @@ public:
      *
      *  If the member string is empty, this allocates an empty BSTR in *pstr
      *  (i.e. makes it point to a new buffer with a null byte).
+     *
+     *  @deprecated Use cloneToEx instead to avoid throwing exceptions.
      */
     void cloneTo(BSTR *pstr) const
     {
@@ -290,6 +292,19 @@ public:
                 throw std::bad_alloc();
 #endif
         }
+    }
+
+    /**
+     *  A version of cloneTo that does not throw any out of memory exceptions, but
+     *  returns E_OUTOFMEMORY intead.
+     *  @returns S_OK or E_OUTOFMEMORY.
+     */
+    HRESULT cloneToEx(BSTR *pstr) const
+    {
+        if (!pstr)
+            return S_OK;
+        *pstr = ::SysAllocString((const OLECHAR *)raw());       // raw() returns a pointer to "" if empty
+        return pstr ? S_OK : E_OUTOFMEMORY;
     }
 
     /**
@@ -310,7 +325,10 @@ public:
     void detachTo(BSTR *pbstrDst)
     {
         if (m_bstr)
+        {
             *pbstrDst = m_bstr;
+            m_bstr = NULL;
+        }
         else
         {
             // allocate null BSTR
@@ -320,7 +338,30 @@ public:
                 throw std::bad_alloc();
 #endif
         }
-        m_bstr = NULL;
+    }
+
+    /**
+     *  A version of detachTo that does not throw exceptions on out-of-memory
+     *  conditions, but instead returns E_OUTOFMEMORY.
+     *
+     * @param   pbstrDst        The BSTR variable to detach the string to.
+     * @returns S_OK or E_OUTOFMEMORY.
+     */
+    HRESULT detachToEx(BSTR *pbstrDst)
+    {
+        if (m_bstr)
+        {
+            *pbstrDst = m_bstr;
+            m_bstr = NULL;
+        }
+        else
+        {
+            // allocate null BSTR
+            *pbstrDst = ::SysAllocString((const OLECHAR *)g_bstrEmpty);
+            if (!*pbstrDst)
+                return E_OUTOFMEMORY;
+        }
+        return S_OK;
     }
 
     /**
@@ -520,6 +561,13 @@ public:
      * like char* strings anyway.
      */
     void cloneTo(char **pstr) const;
+
+    /**
+     * A version of cloneTo that does not throw allocation errors but returns
+     * E_OUTOFMEMORY instead.
+     * @returns S_OK or E_OUTOFMEMORY (COM status codes).
+     */
+    HRESULT cloneToEx(char **pstr) const;
 #endif
 
     /**
@@ -534,6 +582,33 @@ public:
             Bstr bstr(*this);
             bstr.cloneTo(pstr);
         }
+    }
+
+    /**
+     * A version of cloneTo that does not throw allocation errors but returns
+     * E_OUTOFMEMORY instead.
+     *
+     * @param   pbstr Where to store a clone of the string.
+     * @returns S_OK or E_OUTOFMEMORY (COM status codes).
+     */
+    HRESULT cloneToEx(BSTR *pbstr) const
+    {
+        if (!pbstr)
+            return S_OK;
+        Bstr bstr(*this);
+        return bstr.detachToEx(pbstr);
+    }
+
+    /**
+     * Safe assignment from BSTR.
+     *
+     * @param   pbstrSrc    The source string.
+     * @returns S_OK or E_OUTOFMEMORY (COM status codes).
+     */
+    HRESULT cloneEx(CBSTR pbstrSrc)
+    {
+        cleanup();
+        return copyFromEx(pbstrSrc);
     }
 
     /**
@@ -567,6 +642,7 @@ public:
 protected:
 
     void copyFrom(CBSTR a_pbstr);
+    HRESULT copyFromEx(CBSTR a_pbstr);
 
     friend class Bstr; /* to access our raw_copy() */
 };

@@ -487,9 +487,15 @@
           NetworkAdapter changes: bandwidth group.
       -->
     </const>
+    <const name="v1_13"     value="15">
+      <desc>Settings version "1.13", written by VirtualBox 4.2.x.</desc>
+      <!--
+          Machine changes: tracing config;
+      -->
+    </const>
 
     <const name="Future"     value="99999">
-      <desc>Settings version greater than "1.12", written by a future VirtualBox version.</desc>
+      <desc>Settings version greater than "1.13", written by a future VirtualBox version.</desc>
     </const>
   </enum>
 
@@ -3532,7 +3538,6 @@
         PXE trace information to the release log.
       </desc>
     </attribute>
-
   </interface>
 
   <enum
@@ -3682,7 +3687,7 @@
 
   <interface
     name="IMachine" extends="$unknown"
-    uuid="116704af-f221-4d9e-8697-c11331622907"
+    uuid="b0ce140d-02b6-469a-80f5-412ef8e1318e"
     wsmap="managed"
     >
     <desc>
@@ -4281,12 +4286,6 @@
       </desc>
     </attribute>
 
-    <attribute name="bandwidthControl" type="IBandwidthControl" readonly="yes">
-      <desc>
-        Bandwidth control manager.
-      </desc>
-    </attribute>
-
     <attribute name="pciDeviceAssignments" type="IPciDeviceAttachment" readonly="yes" safearray="yes">
       <desc>Array of PCI devices assigned to this machine, to get list of all
         PCI devices attached to the machine use
@@ -4294,6 +4293,49 @@
         is intended to list only devices additional to what described in
         virtual hardware config. Usually, this list keeps host's physical
         devices assigned to the particular machine.
+      </desc>
+    </attribute>
+
+    <attribute name="bandwidthControl" type="IBandwidthControl" readonly="yes">
+      <desc>
+        Bandwidth control manager.
+      </desc>
+    </attribute>
+
+    <attribute name="tracingEnabled" type="boolean">
+      <desc>
+        Enables the tracing facility in the VMM (including PDM devices +
+        drivers).  The VMM will consume about 0.5MB of more memory when
+        enabled and there may be some extra overhead from tracepoints that are
+        always enabled.
+      </desc>
+    </attribute>
+
+    <attribute name="tracingConfig" type="wstring">
+      <desc>
+        Tracepoint configuration to apply at startup when
+        <link to="IMachine::tracingEnabled" /> is true.  The string specifies
+        a space separated of tracepoint group names to enable.  The special
+        group 'all' enables all tracepoints.  Check DBGFR3TracingConfig for
+        more details on available tracepoint groups and such.
+
+        Note that on hosts supporting DTrace (or similar), a lot of the
+        tracepoints may be implemented exclusivly as DTrace probes.  So, the
+        effect of the same config may differ between Solaris and Windows for
+        example.
+      </desc>
+    </attribute>
+
+    <attribute name="allowTracingToAccessVM" type="boolean">
+      <desc>
+        Enables tracepoints in PDM devices and drivers to use the VMCPU or VM
+        structures when firing off trace points.  This is especially useful
+        with DTrace tracepoints, as it allow you to use the VMCPU or VM pointer
+        to obtail useful information such as guest register state.
+
+        This is disabled by default because devices and drivers normally has no
+        business accessing the VMCPU or VM structures, and are therefore unable
+        to get any pointers to these.
       </desc>
     </attribute>
 
