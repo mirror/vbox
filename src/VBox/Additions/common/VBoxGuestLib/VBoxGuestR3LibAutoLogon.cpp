@@ -56,8 +56,75 @@ VBGLR3DECL(int) VbglR3AutoLogonReportStatus(VBoxGuestFacilityStatus enmStatus)
     {
         int rc = VbglR3ReportAdditionsStatus(VBoxGuestFacilityType_AutoLogon,
                                              enmStatus, 0 /* Flags */);
-        if (RT_FAILURE(rc))
-            return rc;
+        if (rc == VERR_NOT_SUPPORTED)
+        {
+            /*
+             * To maintain backwards compatibility to older hosts which don't have
+             * VMMDevReportGuestStatus implemented we set the appropriate status via
+             * guest property to have at least something.
+             */
+            uint32_t u32ClientId = 0;
+            rc = VbglR3GuestPropConnect(&u32ClientId);
+            if (RT_SUCCESS(rc))
+            {
+                /** @todo Move VBoxGuestStatusCurrent -> const char* to an own function. */
+                char szStatus[RTPATH_MAX];
+                size_t cbRet = 0;
+                switch (enmStatus)
+                {
+                    case VBoxGuestFacilityStatus_Inactive:
+                        cbRet = RTStrPrintf(szStatus, sizeof(szStatus), "Inactive");
+                        break;
+                    case VBoxGuestFacilityStatus_Paused:
+                        cbRet = RTStrPrintf(szStatus, sizeof(szStatus), "Disabled");
+                        break;
+                    case VBoxGuestFacilityStatus_PreInit:
+                        cbRet = RTStrPrintf(szStatus, sizeof(szStatus), "PreInit");
+                        break;
+                    case VBoxGuestFacilityStatus_Init:
+                        cbRet = RTStrPrintf(szStatus, sizeof(szStatus), "Init");
+                        break;
+                    case VBoxGuestFacilityStatus_Active:
+                        cbRet = RTStrPrintf(szStatus, sizeof(szStatus), "Active");
+                        break;
+                    case VBoxGuestFacilityStatus_Terminating:
+                        cbRet = RTStrPrintf(szStatus, sizeof(szStatus), "Terminating");
+                        break;
+                    case VBoxGuestFacilityStatus_Terminated:
+                        cbRet = RTStrPrintf(szStatus, sizeof(szStatus), "Terminated");
+                        break;
+                    case VBoxGuestFacilityStatus_Failed:
+                        cbRet = RTStrPrintf(szStatus, sizeof(szStatus), "Failed");
+                        break;
+                    default:
+                        /* cbRet will be 0. */
+                        break;
+                }
+
+                if (cbRet)
+                {
+                    const char szPath[] = "/VirtualBox/GuestInfo/OS/AutoLogonStatus";
+
+                    /*
+                     * Because a value can be temporary we have to make sure it also
+                     * gets deleted when the property cache did not have the chance to
+                     * gracefully clean it up (due to a hard VM reset etc), so set this
+                     * guest property using the TRANSRESET flag..
+                     */
+                    rc = VbglR3GuestPropWrite(u32ClientId, szPath, szStatus, "TRANSRESET");
+                    if (rc == VERR_PARSE_ERROR)
+                    {
+                        /* Host does not support the "TRANSRESET" flag, so only
+                         * use the "TRANSIENT" flag -- better than nothing :-). */
+                        rc = VbglR3GuestPropWrite(u32ClientId, szPath, szStatus, "TRANSIENT");
+                    }
+                }
+                else
+                    rc = VERR_INVALID_PARAMETER;
+
+                VbglR3GuestPropDisconnect(u32ClientId);
+            }
+        }
 
         s_enmLastStatus = enmStatus;
     }
