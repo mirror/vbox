@@ -24,6 +24,10 @@
     <itemizedlist>
 
       <listitem>
+        <para>VMM: fixed unreal mode handling on older CPUs with VT-x (gPXE, Solaris 7/8/9)</para>
+      </listitem>
+
+      <listitem>
         <para>VMM: fixed MP tables fixes for I/O APIC interrupt routing relevant
           for ancient SMP guests (e.g. old OS/2 releases)</para>
       </listitem>
