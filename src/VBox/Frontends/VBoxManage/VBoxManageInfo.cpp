@@ -248,10 +248,24 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> virtualBox,
     HRESULT rc;
 
 #define SHOW_BOOLEAN_PROP(a_pObj, a_Prop, a_szMachine, a_szHuman) \
+    SHOW_BOOLEAN_PROP_EX(a_pObj, a_Prop, a_szMachine, a_szHuman, "on", "off")
+
+#define SHOW_BOOLEAN_PROP_EX(a_pObj, a_Prop, a_szMachine, a_szHuman, a_szTrue, a_szFalse) \
     do \
     { \
         BOOL f; \
-        CHECK_ERROR2_RET(machine, COMGETTER(a_Prop)(&f), hrcCheck); \
+        CHECK_ERROR2_RET(a_pObj, COMGETTER(a_Prop)(&f), hrcCheck); \
+        if (details == VMINFO_MACHINEREADABLE) \
+            RTPrintf( a_szMachine "=\"%s\"\n", f ? "on" : "off"); \
+        else \
+            RTPrintf("%-16s %s\n", a_szHuman ":", f ? a_szTrue : a_szFalse); \
+    } while (0)
+
+#define SHOW_BOOLEAN_METHOD(a_pObj, a_Invocation, a_szMachine, a_szHuman) \
+    do \
+    { \
+        BOOL f; \
+        CHECK_ERROR2_RET(a_pObj, a_Invocation, hrcCheck); \
         if (details == VMINFO_MACHINEREADABLE) \
             RTPrintf( a_szMachine "=\"%s\"\n", f ? "on" : "off"); \
         else \
@@ -262,13 +276,37 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> virtualBox,
     do \
     { \
         Bstr bstr; \
-        CHECK_ERROR2_RET(machine, COMGETTER(a_Prop)(bstr.asOutParam()), hrcCheck); \
+        CHECK_ERROR2_RET(a_pObj, COMGETTER(a_Prop)(bstr.asOutParam()), hrcCheck); \
         if (details == VMINFO_MACHINEREADABLE) \
             outputMachineReadableString(a_szMachine, &bstr); \
         else \
             RTPrintf("%-16s %ls\n", a_szHuman ":", bstr.raw()); \
     } while (0)
 
+#define SHOW_UUID_PROP(a_pObj, a_Prop, a_szMachine, a_szHuman) \
+    SHOW_STRING_PROP(a_pObj, a_Prop, a_szMachine, a_szHuman)
+
+#define SHOW_ULONG_PROP(a_pObj, a_Prop, a_szMachine, a_szHuman, a_szUnit) \
+    do \
+    { \
+        ULONG u32; \
+        CHECK_ERROR2_RET(a_pObj, COMGETTER(a_Prop)(&u32), hrcCheck); \
+        if (details == VMINFO_MACHINEREADABLE) \
+            RTPrintf(a_szHuman "=%u", u32); \
+        else \
+            RTPrintf("%-16s %u" a_szUnit "\n", a_szHuman ":", u32); \
+    } while (0)
+
+#define SHOW_LONG64_PROP(a_pObj, a_Prop, a_szMachine, a_szHuman, a_szUnit) \
+    do \
+    { \
+        LONG64 i64; \
+        CHECK_ERROR2_RET(a_pObj, COMGETTER(a_Prop)(&i64), hrcCheck); \
+        if (details == VMINFO_MACHINEREADABLE) \
+            RTPrintf(a_szHuman "=%lld", i64); \
+        else \
+            RTPrintf("%-16s %'lld" a_szUnit "\n", a_szHuman ":", i64); \
+    } while (0)
 
     /*
      * The rules for output in -argdump format:
@@ -282,18 +320,12 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> virtualBox,
      * 3) numbers (containing just [0-9\-]) are written out unchanged.
      */
 
-    /** @todo the quoting is not yet implemented! */
-    /** @todo error checking! */
-
-    BOOL accessible = FALSE;
-    CHECK_ERROR(machine, COMGETTER(Accessible)(&accessible));
-    if (FAILED(rc)) return rc;
-
-    Bstr uuid;
-    rc = machine->COMGETTER(Id)(uuid.asOutParam());
-
-    if (!accessible)
+    BOOL fAccessible;
+    CHECK_ERROR2_RET(machine, COMGETTER(Accessible)(&fAccessible), hrcCheck);
+    if (!fAccessible)
     {
+        Bstr uuid;
+        machine->COMGETTER(Id)(uuid.asOutParam());
         if (details == VMINFO_COMPACT)
             RTPrintf("\"<inaccessible>\" {%s}\n", Utf8Str(uuid).c_str());
         else
@@ -322,165 +354,69 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> virtualBox,
         return S_OK;
     }
 
-    Bstr machineName;
-    rc = machine->COMGETTER(Name)(machineName.asOutParam());
-
     if (details == VMINFO_COMPACT)
     {
+        Bstr machineName;
+        machine->COMGETTER(Name)(machineName.asOutParam());
+        Bstr uuid;
+        machine->COMGETTER(Id)(uuid.asOutParam());
+
         RTPrintf("\"%ls\" {%s}\n", machineName.raw(), Utf8Str(uuid).c_str());
         return S_OK;
     }
 
-    if (details == VMINFO_MACHINEREADABLE)
-        RTPrintf("name=\"%ls\"\n", machineName.raw());
-    else
-        RTPrintf("Name:            %ls\n", machineName.raw());
+    SHOW_STRING_PROP(      machine, Name,                       "name",                 "Name");
 
     Bstr osTypeId;
-    rc = machine->COMGETTER(OSTypeId)(osTypeId.asOutParam());
+    CHECK_ERROR2_RET(machine, COMGETTER(OSTypeId)(osTypeId.asOutParam()), hrcCheck);
     ComPtr<IGuestOSType> osType;
-    rc = virtualBox->GetGuestOSType(osTypeId.raw(), osType.asOutParam());
-    Bstr osName;
-    rc = osType->COMGETTER(Description)(osName.asOutParam());
-    if (details == VMINFO_MACHINEREADABLE)
-        RTPrintf("ostype=\"%ls\"\n", osTypeId.raw());
-    else
-        RTPrintf("Guest OS:        %ls\n", osName.raw());
+    CHECK_ERROR2_RET(virtualBox, GetGuestOSType(osTypeId.raw(), osType.asOutParam()), hrcCheck);
+    SHOW_STRING_PROP(       osType, Description,                "ostype",               "Guest OS");
+    SHOW_UUID_PROP(        machine, Id,                         "UUID",                 "UUID");
+    SHOW_STRING_PROP(      machine, SettingsFilePath,           "CfgFile",              "Config file");
+    SHOW_STRING_PROP(      machine, SnapshotFolder,             "SnapFldr",             "Snapshot folder");
+    SHOW_STRING_PROP(      machine, LogFolder,                  "LogFldr",              "Log folder");
+    SHOW_UUID_PROP(        machine, HardwareUUID,               "hardwareuuid",         "Hardware UUID");
+    SHOW_ULONG_PROP(       machine, MemorySize,                 "memory",               "Memory size",      "MB");
+    SHOW_BOOLEAN_PROP(     machine, PageFusionEnabled,          "pagefusion",           "Page Fusion");
+    SHOW_ULONG_PROP(       machine, VRAMSize,                   "vram",                 "VRAM size",        "MB");
+    SHOW_ULONG_PROP(       machine, CPUExecutionCap,            "cpuexecutioncap",      "CPU exec cap",     "%%");
+    SHOW_BOOLEAN_PROP(     machine, PageFusionEnabled,          "hpet",                 "HPET");
 
-    if (details == VMINFO_MACHINEREADABLE)
-        RTPrintf("UUID=\"%s\"\n", Utf8Str(uuid).c_str());
-    else
-        RTPrintf("UUID:            %s\n", Utf8Str(uuid).c_str());
-
-    Bstr settingsFilePath;
-    rc = machine->COMGETTER(SettingsFilePath)(settingsFilePath.asOutParam());
-    if (details == VMINFO_MACHINEREADABLE)
-        RTPrintf("CfgFile=\"%ls\"\n", settingsFilePath.raw());
-    else
-        RTPrintf("Config file:     %ls\n", settingsFilePath.raw());
-
-    Bstr snapshotFolder;
-    rc = machine->COMGETTER(SnapshotFolder)(snapshotFolder.asOutParam());
-    if (details == VMINFO_MACHINEREADABLE)
-        RTPrintf("SnapFldr=\"%ls\"\n", snapshotFolder.raw());
-    else
-        RTPrintf("Snapshot folder: %ls\n", snapshotFolder.raw());
-
-    Bstr logFolder;
-    rc = machine->COMGETTER(LogFolder)(logFolder.asOutParam());
-    if (details == VMINFO_MACHINEREADABLE)
-        RTPrintf("LogFldr=\"%ls\"\n", logFolder.raw());
-    else
-        RTPrintf("Log folder:      %ls\n", logFolder.raw());
-
-    Bstr strHardwareUuid;
-    rc = machine->COMGETTER(HardwareUUID)(strHardwareUuid.asOutParam());
-    if (details == VMINFO_MACHINEREADABLE)
-        RTPrintf("hardwareuuid=\"%ls\"\n", strHardwareUuid.raw());
-    else
-        RTPrintf("Hardware UUID:   %ls\n", strHardwareUuid.raw());
-
-    ULONG memorySize;
-    rc = machine->COMGETTER(MemorySize)(&memorySize);
-    if (details == VMINFO_MACHINEREADABLE)
-        RTPrintf("memory=%u\n", memorySize);
-    else
-        RTPrintf("Memory size:     %uMB\n", memorySize);
-
-    BOOL fPageFusionEnabled;
-    rc = machine->COMGETTER(PageFusionEnabled)(&fPageFusionEnabled);
-    if (details == VMINFO_MACHINEREADABLE)
-        RTPrintf("pagefusion=\"%s\"\n", fPageFusionEnabled ? "on" : "off");
-    else
-        RTPrintf("Page Fusion:     %s\n", fPageFusionEnabled ? "on" : "off");
-
-    ULONG vramSize;
-    rc = machine->COMGETTER(VRAMSize)(&vramSize);
-    if (details == VMINFO_MACHINEREADABLE)
-        RTPrintf("vram=%u\n", vramSize);
-    else
-        RTPrintf("VRAM size:       %uMB\n", vramSize);
-
-    ULONG cpuCap;
-    rc = machine->COMGETTER(CPUExecutionCap)(&cpuCap);
-    if (details == VMINFO_MACHINEREADABLE)
-        RTPrintf("cpuexecutioncap=%u\n", cpuCap);
-    else
-        RTPrintf("CPU exec cap:    %u%%\n", cpuCap);
-
-    BOOL fHpetEnabled;
-    machine->COMGETTER(HpetEnabled)(&fHpetEnabled);
-    if (details == VMINFO_MACHINEREADABLE)
-        RTPrintf("hpet=\"%s\"\n", fHpetEnabled ? "on" : "off");
-    else
-        RTPrintf("HPET:            %s\n", fHpetEnabled ? "on" : "off");
-
-    ChipsetType_T chipsetType = ChipsetType_Null;
-    const char *pszChipsetType = NULL;
-    machine->COMGETTER(ChipsetType)(&chipsetType);
+    ChipsetType_T chipsetType;
+    CHECK_ERROR2_RET(machine, COMGETTER(ChipsetType)(&chipsetType), hrcCheck);
+    const char *pszChipsetType;
     switch (chipsetType)
     {
-        case ChipsetType_Null:
-            pszChipsetType = "invalid";
-            break;
-        case ChipsetType_PIIX3:
-            pszChipsetType = "piix3";
-            break;
-        case ChipsetType_ICH9:
-            pszChipsetType = "ich9";
-            break;
-        default:
-            Assert(false);
-            pszChipsetType = "unknown";
+        case ChipsetType_Null:  pszChipsetType = "invalid"; break;
+        case ChipsetType_PIIX3: pszChipsetType = "piix3"; break;
+        case ChipsetType_ICH9:  pszChipsetType = "ich9"; break;
+        default:                AssertFailed(); pszChipsetType = "unknown"; break;
     }
     if (details == VMINFO_MACHINEREADABLE)
         RTPrintf("chipset=\"%s\"\n", pszChipsetType);
     else
         RTPrintf("Chipset:         %s\n", pszChipsetType);
 
-    FirmwareType_T firmwareType = FirmwareType_BIOS;
-    const char *pszFirmwareType = NULL;
-    machine->COMGETTER(FirmwareType)(&firmwareType);
+    FirmwareType_T firmwareType;
+    CHECK_ERROR2_RET(machine, COMGETTER(FirmwareType)(&firmwareType), hrcCheck);
+    const char *pszFirmwareType;
     switch (firmwareType)
     {
-        case FirmwareType_BIOS:
-            pszFirmwareType = "BIOS";
-            break;
-        case FirmwareType_EFI:
-            pszFirmwareType = "EFI";
-            break;
-        case FirmwareType_EFI32:
-            pszFirmwareType = "EFI32";
-            break;
-        case FirmwareType_EFI64:
-            pszFirmwareType = "EFI64";
-            break;
-        case FirmwareType_EFIDUAL:
-            pszFirmwareType = "EFIDUAL";
-            break;
-        default:
-            Assert(false);
-            pszFirmwareType = "unknown";
+        case FirmwareType_BIOS:     pszFirmwareType = "BIOS"; break;
+        case FirmwareType_EFI:      pszFirmwareType = "EFI"; break;
+        case FirmwareType_EFI32:    pszFirmwareType = "EFI32"; break;
+        case FirmwareType_EFI64:    pszFirmwareType = "EFI64"; break;
+        case FirmwareType_EFIDUAL:  pszFirmwareType = "EFIDUAL"; break;
+        default:                    AssertFailed(); pszFirmwareType = "unknown"; break;
     }
     if (details == VMINFO_MACHINEREADABLE)
         RTPrintf("firmware=\"%s\"\n", pszFirmwareType);
     else
         RTPrintf("Firmware:        %s\n", pszFirmwareType);
 
-
-    ULONG numCpus;
-    rc = machine->COMGETTER(CPUCount)(&numCpus);
-    if (details == VMINFO_MACHINEREADABLE)
-        RTPrintf("cpus=%u\n", numCpus);
-    else
-        RTPrintf("Number of CPUs:  %u\n", numCpus);
-
-    BOOL fSyntheticCpu;
-    machine->GetCPUProperty(CPUPropertyType_Synthetic, &fSyntheticCpu);
-    if (details == VMINFO_MACHINEREADABLE)
-        RTPrintf("synthcpu=\"%s\"\n", fSyntheticCpu ? "on" : "off");
-    else
-        RTPrintf("Synthetic Cpu:   %s\n", fSyntheticCpu ? "on" : "off");
+    SHOW_ULONG_PROP(       machine, CPUCount,                   "cpus",                 "Number of CPUs", "");
+    SHOW_BOOLEAN_METHOD(   machine, GetCPUProperty(CPUPropertyType_Synthetic, &f), "synthcpu", "Synthetic Cpu");
 
     if (details != VMINFO_MACHINEREADABLE)
         RTPrintf("CPUID overrides: ");
@@ -512,11 +448,11 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> virtualBox,
         RTPrintf("None\n");
 
     ComPtr <IBIOSSettings> biosSettings;
-    machine->COMGETTER(BIOSSettings)(biosSettings.asOutParam());
+    CHECK_ERROR2_RET(machine, COMGETTER(BIOSSettings)(biosSettings.asOutParam()), hrcCheck);
 
     BIOSBootMenuMode_T bootMenuMode;
-    biosSettings->COMGETTER(BootMenuMode)(&bootMenuMode);
-    const char *pszBootMenu = NULL;
+    CHECK_ERROR2_RET(biosSettings, COMGETTER(BootMenuMode)(&bootMenuMode), hrcCheck);
+    const char *pszBootMenu;
     switch (bootMenuMode)
     {
         case BIOSBootMenuMode_Disabled:
@@ -539,14 +475,14 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> virtualBox,
     else
         RTPrintf("Boot menu mode:  %s\n", pszBootMenu);
 
-    ULONG maxBootPosition = 0;
     ComPtr<ISystemProperties> systemProperties;
-    virtualBox->COMGETTER(SystemProperties)(systemProperties.asOutParam());
-    systemProperties->COMGETTER(MaxBootPosition)(&maxBootPosition);
+    CHECK_ERROR2_RET(virtualBox, COMGETTER(SystemProperties)(systemProperties.asOutParam()), hrcCheck);
+    ULONG maxBootPosition = 0;
+    CHECK_ERROR2_RET(systemProperties, COMGETTER(MaxBootPosition)(&maxBootPosition), hrcCheck);
     for (ULONG i = 1; i <= maxBootPosition; i++)
     {
         DeviceType_T bootOrder;
-        machine->GetBootOrder(i, &bootOrder);
+        CHECK_ERROR2_RET(machine, GetBootOrder(i, &bootOrder), hrcCheck);
         if (bootOrder == DeviceType_Floppy)
         {
             if (details == VMINFO_MACHINEREADABLE)
@@ -598,78 +534,19 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> virtualBox,
         }
     }
 
-    BOOL acpiEnabled;
-    biosSettings->COMGETTER(ACPIEnabled)(&acpiEnabled);
-    if (details == VMINFO_MACHINEREADABLE)
-        RTPrintf("acpi=\"%s\"\n", acpiEnabled ? "on" : "off");
-    else
-        RTPrintf("ACPI:            %s\n", acpiEnabled ? "on" : "off");
-
-    BOOL ioapicEnabled;
-    biosSettings->COMGETTER(IOAPICEnabled)(&ioapicEnabled);
-    if (details == VMINFO_MACHINEREADABLE)
-        RTPrintf("ioapic=\"%s\"\n", ioapicEnabled ? "on" : "off");
-    else
-        RTPrintf("IOAPIC:          %s\n", ioapicEnabled ? "on" : "off");
-
-    BOOL PAEEnabled;
-    machine->GetCPUProperty(CPUPropertyType_PAE, &PAEEnabled);
-    if (details == VMINFO_MACHINEREADABLE)
-        RTPrintf("pae=\"%s\"\n", PAEEnabled ? "on" : "off");
-    else
-        RTPrintf("PAE:             %s\n", PAEEnabled ? "on" : "off");
-
-    LONG64 timeOffset;
-    biosSettings->COMGETTER(TimeOffset)(&timeOffset);
-    if (details == VMINFO_MACHINEREADABLE)
-        RTPrintf("biossystemtimeoffset=%lld\n", timeOffset);
-    else
-        RTPrintf("Time offset:     %lld ms\n", timeOffset);
-
-    BOOL RTCUseUTC;
-    machine->COMGETTER(RTCUseUTC)(&RTCUseUTC);
-    if (details == VMINFO_MACHINEREADABLE)
-        RTPrintf("rtcuseutc=\"%s\"\n", RTCUseUTC ? "on" : "off");
-    else
-        RTPrintf("RTC:             %s\n", RTCUseUTC ? "UTC" : "local time");
-
-    BOOL hwVirtExEnabled;
-    machine->GetHWVirtExProperty(HWVirtExPropertyType_Enabled, &hwVirtExEnabled);
-    if (details == VMINFO_MACHINEREADABLE)
-        RTPrintf("hwvirtex=\"%s\"\n", hwVirtExEnabled ? "on" : "off");
-    else
-        RTPrintf("Hardw. virt.ext: %s\n", hwVirtExEnabled ? "on" : "off");
-
-    BOOL hwVirtExExclusive;
-    machine->GetHWVirtExProperty(HWVirtExPropertyType_Exclusive, &hwVirtExExclusive);
-    if (details == VMINFO_MACHINEREADABLE)
-        RTPrintf("hwvirtexexcl=\"%s\"\n", hwVirtExExclusive ? "on" : "off");
-    else
-        RTPrintf("Hardw. virt.ext exclusive: %s\n", hwVirtExExclusive ? "on" : "off");
-
-    BOOL HWVirtExNestedPagingEnabled;
-    machine->GetHWVirtExProperty(HWVirtExPropertyType_NestedPaging, &HWVirtExNestedPagingEnabled);
-    if (details == VMINFO_MACHINEREADABLE)
-        RTPrintf("nestedpaging=\"%s\"\n", HWVirtExNestedPagingEnabled ? "on" : "off");
-    else
-        RTPrintf("Nested Paging:   %s\n", HWVirtExNestedPagingEnabled ? "on" : "off");
-
-    BOOL HWVirtExLargePagesEnabled;
-    machine->GetHWVirtExProperty(HWVirtExPropertyType_LargePages, &HWVirtExLargePagesEnabled);
-    if (details == VMINFO_MACHINEREADABLE)
-        RTPrintf("largepages=\"%s\"\n", HWVirtExLargePagesEnabled ? "on" : "off");
-    else
-        RTPrintf("Large Pages:     %s\n", HWVirtExLargePagesEnabled ? "on" : "off");
-
-    BOOL HWVirtExVPIDEnabled;
-    machine->GetHWVirtExProperty(HWVirtExPropertyType_VPID, &HWVirtExVPIDEnabled);
-    if (details == VMINFO_MACHINEREADABLE)
-        RTPrintf("vtxvpid=\"%s\"\n", HWVirtExVPIDEnabled ? "on" : "off");
-    else
-        RTPrintf("VT-x VPID:       %s\n", HWVirtExVPIDEnabled ? "on" : "off");
+    SHOW_BOOLEAN_PROP(biosSettings, ACPIEnabled,                "acpi",                 "ACPI");
+    SHOW_BOOLEAN_PROP(biosSettings, IOAPICEnabled,              "ioapic",               "IOAPIC");
+    SHOW_BOOLEAN_METHOD(machine, GetCPUProperty(CPUPropertyType_PAE, &f), "pae",        "PAE");
+    SHOW_LONG64_PROP(biosSettings,  TimeOffset,                 "biossystemtimeoffset", "Time offset",  "ms");
+    SHOW_BOOLEAN_PROP_EX(machine,   RTCUseUTC,                  "rtcuseutc",            "RTC",          "UTC", "local time");
+    SHOW_BOOLEAN_METHOD(machine, GetHWVirtExProperty(HWVirtExPropertyType_Enabled,   &f),   "hwvirtex",     "Hardw. virt.ext");
+    SHOW_BOOLEAN_METHOD(machine, GetHWVirtExProperty(HWVirtExPropertyType_Exclusive, &f),   "hwvirtexexcl", "Hardw. virt.ext exclusive");
+    SHOW_BOOLEAN_METHOD(machine, GetHWVirtExProperty(HWVirtExPropertyType_NestedPaging, &f),"nestedpaging", "Nested Paging");
+    SHOW_BOOLEAN_METHOD(machine, GetHWVirtExProperty(HWVirtExPropertyType_LargePages, &f),  "largepages",   "Large Pages");
+    SHOW_BOOLEAN_METHOD(machine, GetHWVirtExProperty(HWVirtExPropertyType_VPID, &f),        "vtxvpid",      "VT-x VPID");
 
     MachineState_T machineState;
-    rc = machine->COMGETTER(State)(&machineState);
+    CHECK_ERROR2_RET(machine, COMGETTER(State)(&machineState), hrcCheck);
     const char *pszState = machineStateToName(machineState, details == VMINFO_MACHINEREADABLE /*=fShort*/);
 
     LONG64 stateSince;
@@ -678,73 +555,34 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> virtualBox,
     RTTimeSpecSetMilli(&timeSpec, stateSince);
     char pszTime[30] = {0};
     RTTimeSpecToString(&timeSpec, pszTime, sizeof(pszTime));
-    Bstr stateFile;
-    machine->COMGETTER(StateFilePath)(stateFile.asOutParam());
     if (details == VMINFO_MACHINEREADABLE)
     {
         RTPrintf("VMState=\"%s\"\n", pszState);
         RTPrintf("VMStateChangeTime=\"%s\"\n", pszTime);
+
+        Bstr stateFile;
+        machine->COMGETTER(StateFilePath)(stateFile.asOutParam());
         if (!stateFile.isEmpty())
             RTPrintf("VMStateFile=\"%ls\"\n", stateFile.raw());
     }
     else
         RTPrintf("State:           %s (since %s)\n", pszState, pszTime);
 
-    ULONG numMonitors;
-    machine->COMGETTER(MonitorCount)(&numMonitors);
-    if (details == VMINFO_MACHINEREADABLE)
-        RTPrintf("monitorcount=%d\n", numMonitors);
-    else
-        RTPrintf("Monitor count:   %d\n", numMonitors);
-
-    BOOL accelerate3d;
-    machine->COMGETTER(Accelerate3DEnabled)(&accelerate3d);
-    if (details == VMINFO_MACHINEREADABLE)
-        RTPrintf("accelerate3d=\"%s\"\n", accelerate3d ? "on" : "off");
-    else
-        RTPrintf("3D Acceleration: %s\n", accelerate3d ? "on" : "off");
-
+    SHOW_ULONG_PROP(      machine,  MonitorCount,               "monitorcount",             "Monitor count", "");
+    SHOW_BOOLEAN_PROP(    machine,  Accelerate3DEnabled,        "accelerate3d",             "3D Acceleration");
 #ifdef VBOX_WITH_VIDEOHWACCEL
-    BOOL accelerate2dVideo;
-    machine->COMGETTER(Accelerate2DVideoEnabled)(&accelerate2dVideo);
-    if (details == VMINFO_MACHINEREADABLE)
-        RTPrintf("accelerate2dvideo=\"%s\"\n", accelerate2dVideo ? "on" : "off");
-    else
-        RTPrintf("2D Video Acceleration: %s\n", accelerate2dVideo ? "on" : "off");
+    SHOW_BOOLEAN_PROP(    machine,  Accelerate2DVideoEnabled,   "accelerate2dvideo",        "2D Video Acceleration");
 #endif
+    SHOW_BOOLEAN_PROP(    machine,  TeleporterEnabled,          "teleporterenabled",        "Teleporter Enabled");
+    SHOW_ULONG_PROP(      machine,  TeleporterPort,             "teleporterport",           "Teleporter Port", "");
+    SHOW_STRING_PROP(     machine,  TeleporterAddress,          "teleporteraddress",        "Teleporter Address");
+    SHOW_STRING_PROP(     machine,  TeleporterPassword,         "teleporterpassword",       "Teleporter Password");
+    SHOW_BOOLEAN_PROP(    machine,  TracingEnabled,             "tracing-enabled",          "Tracing Enabled");
+    SHOW_BOOLEAN_PROP(    machine,  AllowTracingToAccessVM,     "tracing-allow-vm-access",  "Allow Tracing to Access VM");
+    SHOW_STRING_PROP(     machine,  TracingConfig,              "tracing-config",           "Tracing Configuration");
 
-    BOOL teleporterEnabled;
-    machine->COMGETTER(TeleporterEnabled)(&teleporterEnabled);
-    if (details == VMINFO_MACHINEREADABLE)
-        RTPrintf("teleporterenabled=\"%s\"\n", teleporterEnabled ? "on" : "off");
-    else
-        RTPrintf("Teleporter Enabled: %s\n", teleporterEnabled ? "on" : "off");
-
-    ULONG teleporterPort;
-    machine->COMGETTER(TeleporterPort)(&teleporterPort);
-    if (details == VMINFO_MACHINEREADABLE)
-        RTPrintf("teleporterport=%u\n", teleporterPort);
-    else
-        RTPrintf("Teleporter Port: %u\n", teleporterPort);
-
-    Bstr teleporterAddress;
-    machine->COMGETTER(TeleporterAddress)(teleporterAddress.asOutParam());
-    if (details == VMINFO_MACHINEREADABLE)
-        RTPrintf("teleporteraddress=\"%ls\"\n", teleporterAddress.raw());
-    else
-        RTPrintf("Teleporter Address: %ls\n", teleporterAddress.raw());
-
-    Bstr teleporterPassword;
-    machine->COMGETTER(TeleporterPassword)(teleporterPassword.asOutParam());
-    if (details == VMINFO_MACHINEREADABLE)
-        RTPrintf("teleporterpassword=\"%ls\"\n", teleporterPassword.raw());
-    else
-        RTPrintf("Teleporter Password: %ls\n", teleporterPassword.raw());
-
-    SHOW_BOOLEAN_PROP(machine, TracingEnabled, "tracing-enabled", "Tracing Enabled");
-    SHOW_BOOLEAN_PROP(machine, AllowTracingToAccessVM, "tracing-allow-vm-access", "Allow Tracing to Access VM");
-    SHOW_STRING_PROP(machine, TracingConfig, "tracing-config", "Tracing Configuration");
-
+/** @todo Convert the remainder of the function to SHOW_XXX macros and add error
+ *        checking where missing. */
     /*
      * Storage Controllers and their attached Mediums.
      */
@@ -863,6 +701,7 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> virtualBox,
                         mediumAttach->COMGETTER(Passthrough)(&fPassthrough);
 
                     medium->COMGETTER(Location)(filePath.asOutParam());
+                    Bstr uuid;
                     medium->COMGETTER(Id)(uuid.asOutParam());
 
                     if (details == VMINFO_MACHINEREADABLE)
