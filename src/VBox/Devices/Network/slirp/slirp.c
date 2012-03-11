@@ -113,8 +113,6 @@
        && (   N_(fdset ## _poll) == POLLNVAL                        \
            || !(polls[(so)->so_poll_index].revents & POLLNVAL)))
 
-  /* specific for Unix API */
-# define DO_UNIX_CHECK_FD_SET(so, events, fdset) DO_CHECK_FD_SET((so), (events), fdset)
   /* specific for Windows Winsock API */
 # define DO_WIN_CHECK_FD_SET(so, events, fdset) 0
 
@@ -128,8 +126,10 @@
 # define xfds_poll       (POLLPRI)
 # define closefds_poll   (POLLHUP)
 # define rderr_poll      (POLLERR)
-# define rdhup_poll      (POLLHUP)
-# define nval_poll       (POLLNVAL)
+# if 0 /* unused yet */
+#  define rdhup_poll      (POLLHUP)
+#  define nval_poll       (POLLNVAL)
+# endif
 
 # define ICMP_ENGAGE_EVENT(so, fdset)              \
    do {                                            \
@@ -205,8 +205,6 @@
 
 #ifdef RT_OS_WINDOWS
 # define WIN_TCP_ENGAGE_EVENT2(so, fdset, fdset2) TCP_ENGAGE_EVENT2(so, fdset1, fdset2)
-#else
-# define WIN_TCP_ENGAGE_EVENT2(so, fdset, fdset2) do{}while(0)
 #endif
 
 #define UDP_ENGAGE_EVENT(so, fdset) \
@@ -223,9 +221,6 @@
 
 #define WIN_CHECK_FD_SET(so, events, set) \
     (DO_WIN_CHECK_FD_SET((so), (events), set))
-
-#define UNIX_CHECK_FD_SET(so, events, set) \
-    (DO_UNIX_CHECK_FD_SET(so, events, set))
 
 /*
  * Loging macros

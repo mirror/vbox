@@ -326,12 +326,12 @@ struct alias_link {     /* Main data structure */
 #define LINK_UNKNOWN_DEST_ADDR     0x02
 #define LINK_PERMANENT             0x04
 #define LINK_PARTIALLY_SPECIFIED   0x03 /* logical-or of first two bits */
-#define LINK_UNFIREWALLED          0x08
-
 #ifndef VBOX
+# define LINK_UNFIREWALLED          0x08 /* This macro definition isn't used in this revision of libalias */
+
     int     timestamp;  /* Time link was last accessed         */
     int     expire_time;    /* Expire time for link                */
-#else
+#else /* VBOX */
     unsigned int timestamp;  /* Time link was last accessed         */
     unsigned int expire_time;    /* Expire time for link                */
 #endif

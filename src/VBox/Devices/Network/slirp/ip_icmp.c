@@ -53,7 +53,6 @@
  * ip_icmp.c,v 1.7 1995/05/30 08:09:42 rgrimes Exp
  */
 
-#define NEED_SOME_m_getjcl
 #include "slirp.h"
 #include "ip_icmp.h"
 #ifdef RT_OS_WINDOWS
