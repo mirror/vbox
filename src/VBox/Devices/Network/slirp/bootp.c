@@ -347,8 +347,6 @@ static int dhcp_do_ack_offer(PNATState pData, struct mbuf *m, BOOTPClient *bc, i
 
 static int dhcp_send_nack(PNATState pData, struct bootp_t *bp, BOOTPClient *bc, struct mbuf *m)
 {
-    struct bootp_t *rbp;
-    rbp = mtod(m, struct bootp_t *);
     NOREF(bc);
 
     dhcp_create_msg(pData, bp, m, DHCPNAK);
