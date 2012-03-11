@@ -112,16 +112,14 @@ _handler_chain_destroy(void)
         LIBALIAS_RWLOCK_DESTROY();
 }
 
-#else
-#define LIBALIAS_RWLOCK_INIT() ;
-#define LIBALIAS_RWLOCK_DESTROY()   ;
-#define LIBALIAS_WLOCK_ASSERT() ;
-#define LIBALIAS_RLOCK() ;
-#define LIBALIAS_RUNLOCK() ;
-#define LIBALIAS_WLOCK() ;
-#define LIBALIAS_WUNLOCK() ;
-#define _handler_chain_init() ;
-#define _handler_chain_destroy() ;
+#else /* VBOX */
+# define LIBALIAS_WLOCK_ASSERT() ;
+# define LIBALIAS_RLOCK() ;
+# define LIBALIAS_RUNLOCK() ;
+# define LIBALIAS_WLOCK() ;
+# define LIBALIAS_WUNLOCK() ;
+# define _handler_chain_init() ;
+# define _handler_chain_destroy() ;
 #endif
 
 void

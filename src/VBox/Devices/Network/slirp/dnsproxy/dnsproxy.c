@@ -78,10 +78,9 @@ signal_event(void)
     return 0;
 }
 
-#else
+#else /* VBOX */
 
 # define RD(x) (*(x + 2) & 0x01)
-# define MAX_BUFSPACE 512
 
 # define QUERYID queryid++
 

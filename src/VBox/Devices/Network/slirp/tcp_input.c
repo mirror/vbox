@@ -65,11 +65,13 @@
 #include "ip_icmp.h"
 
 
-#define TCP_PAWS_IDLE   (24 * 24 * 60 * 60 * PR_SLOWHZ)
+#if 0 /* code using this macroses is commented out */
+# define TCP_PAWS_IDLE   (24 * 24 * 60 * 60 * PR_SLOWHZ)
 
 /* for modulo comparisons of timestamps */
-#define TSTMP_LT(a, b)   ((int)((a)-(b)) < 0)
-#define TSTMP_GEQ(a, b)  ((int)((a)-(b)) >= 0)
+# define TSTMP_LT(a, b)   ((int)((a)-(b)) < 0)
+# define TSTMP_GEQ(a, b)  ((int)((a)-(b)) >= 0)
+#endif
 
 #ifndef TCP_ACK_HACK
 #define DELAY_ACK(tp, ti)                           \
