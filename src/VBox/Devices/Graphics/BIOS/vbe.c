@@ -1221,6 +1221,10 @@ Bit16u *AX;Bit16u CX; Bit16u ES;Bit16u DI;
                     // If BIOS not at 0xC000 -> boom
                     write_word(ES, DI + RT_OFFSETOF(ModeInfoBlock, WinFuncPtr) + 2, 0xC000);
                 }
+                // Update the LFB physical address which may change at runtime
+                outw(VBE_DISPI_IOPORT_INDEX, VBE_DISPI_INDEX_FB_BASE_HI);
+                write_word(ES, DI + RT_OFFSETOF(ModeInfoBlock, PhysBasePtr) + 2, inw(VBE_DISPI_IOPORT_DATA));
+
                 result = 0x4f;
         }
         else
