@@ -259,8 +259,8 @@ public:
     int calculateFullPath(const Utf8Str &strPath, Utf8Str &aResult);
     void copyPathRelativeToConfig(const Utf8Str &strSource, Utf8Str &strTarget);
 
-    HRESULT registerMedium(const ComObjPtr<Medium> &pMedium, ComObjPtr<Medium> *ppMedium, DeviceType_T argType, GuidList *pllRegistriesThatNeedSaving);
-    HRESULT unregisterMedium(Medium *pMedium, GuidList *pllRegistriesThatNeedSaving);
+    HRESULT registerMedium(const ComObjPtr<Medium> &pMedium, ComObjPtr<Medium> *ppMedium, DeviceType_T argType);
+    HRESULT unregisterMedium(Medium *pMedium);
 
     void pushMediumToListWithChildren(MediaList &llMedia, Medium *pMedium);
     HRESULT unregisterMachineMedia(const Guid &id);
@@ -275,8 +275,8 @@ public:
                            const Utf8Str &strMachineFolder);
     HRESULT saveSettings();
 
-    static void addGuidToListUniquely(GuidList &llRegistriesThatNeedSaving, const Guid &uuid);
-    HRESULT saveRegistries(const GuidList &llRegistriesThatNeedSaving);
+    void markRegistryModified(const Guid &uuid);
+    void saveModifiedRegistries();
 
     static HRESULT ensureFilePathExists(const Utf8Str &strFileName, bool fCreate);
 

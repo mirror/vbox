@@ -660,8 +660,7 @@ HRESULT MachineCloneVMPrivate::createDifferencingMedium(const ComObjPtr<Medium> 
         rc = diff->init(p->getVirtualBox(),
                         pParent->getPreferredDiffFormat(),
                         Utf8StrFmt("%s%c", strSnapshotFolder.c_str(), RTPATH_DELIMITER),
-                        Guid::Empty, /* empty media registry */
-                        NULL);       /* pllRegistriesThatNeedSaving */
+                        Guid::Empty /* empty media registry */);
         if (FAILED(rc)) throw rc;
 
         MediumLockList *pMediumLockList(new MediumLockList());
@@ -677,8 +676,7 @@ HRESULT MachineCloneVMPrivate::createDifferencingMedium(const ComObjPtr<Medium> 
         rc = pParent->createDiffStorage(diff, MediumVariant_Standard,
                                         pMediumLockList,
                                         NULL /* aProgress */,
-                                        true /* aWait */,
-                                        NULL); // pllRegistriesThatNeedSaving
+                                        true /* aWait */);
         delete pMediumLockList;
         if (FAILED(rc)) throw rc;
         /* Remember created medium. */
@@ -1024,7 +1022,6 @@ HRESULT MachineCloneVM::run()
         typedef std::map<Utf8Str, ComObjPtr<Medium> > TStrMediumMap;
         typedef std::pair<Utf8Str, ComObjPtr<Medium> > TStrMediumPair;
         TStrMediumMap map;
-        GuidList llRegistriesThatNeedSaving;
         size_t cDisks = 0;
         for (size_t i = 0; i < d->llMedias.size(); ++i)
         {
@@ -1154,8 +1151,7 @@ HRESULT MachineCloneVM::run()
                         rc = pTarget->init(p->mParent,
                                            Utf8Str(bstrSrcFormat),
                                            strFile,
-                                           Guid::Empty,  /* empty media registry */
-                                           NULL          /* llRegistriesThatNeedSaving */);
+                                           Guid::Empty /* empty media registry */);
                         if (FAILED(rc)) throw rc;
 
                         /* Update the new uuid. */
@@ -1201,8 +1197,7 @@ HRESULT MachineCloneVM::run()
                         {
                             AutoWriteLock tlock(p->mParent->getMediaTreeLockHandle() COMMA_LOCKVAL_SRC_POS);
                             rc = p->mParent->registerMedium(pTarget, &pTarget,
-                                                            DeviceType_HardDisk,
-                                                            NULL /* pllRegistriesThatNeedSaving */);
+                                                            DeviceType_HardDisk);
                             if (FAILED(rc)) throw rc;
                         }
                         /* This medium becomes the parent of the next medium in the
@@ -1275,7 +1270,7 @@ HRESULT MachineCloneVM::run()
                     if (FAILED(mac2.rc())) throw mac2.rc();
                     AutoReadLock mlock2(pParent COMMA_LOCKVAL_SRC_POS);
                     if (pParent->getFirstRegistryMachineId(uuid))
-                        VirtualBox::addGuidToListUniquely(llRegistriesThatNeedSaving, uuid);
+                        p->mParent->markRegistryModified(uuid);
                 }
                 mlock.acquire();
             }
@@ -1346,11 +1341,7 @@ HRESULT MachineCloneVM::run()
         }
 
         /* Any additional machines need saving? */
-        if (!llRegistriesThatNeedSaving.empty())
-        {
-            rc = p->mParent->saveRegistries(llRegistriesThatNeedSaving);
-            if (FAILED(rc)) throw rc;
-        }
+        p->mParent->saveModifiedRegistries();
     }
     catch (HRESULT rc2)
     {
@@ -1379,8 +1370,7 @@ HRESULT MachineCloneVM::run()
         {
             const ComObjPtr<Medium> &pMedium = newMedia.at(i - 1);
             mrc = pMedium->deleteStorage(NULL /* aProgress */,
-                                         true /* aWait */,
-                                         NULL /* llRegistriesThatNeedSaving */);
+                                         true /* aWait */);
             pMedium->Close();
         }
         /* Delete the snapshot folder when not empty. */

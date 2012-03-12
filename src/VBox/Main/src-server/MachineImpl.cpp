@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2011 Oracle Corporation
+ * Copyright (C) 2006-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -240,7 +240,8 @@ Machine::MediaData::~MediaData()
 Machine::Machine()
     : mCollectorGuest(NULL),
       mPeer(NULL),
-      mParent(NULL)
+      mParent(NULL),
+      uRegistryNeedsSaving(0)
 {}
 
 Machine::~Machine()
@@ -767,6 +768,17 @@ void Machine::uninit()
     LogFlowThisFuncEnter();
 
     Assert(!isWriteLockOnCurrentThread());
+
+    Assert(!uRegistryNeedsSaving);
+    if (uRegistryNeedsSaving)
+    {
+        AutoCaller autoCaller(this);
+        if (SUCCEEDED(autoCaller.rc()))
+        {
+            AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+            saveSettings(NULL, Machine::SaveS_Force);
+        }
+    }
 
     /* Enclose the state transition Ready->InUninit->NotReady */
     AutoUninitSpan autoUninitSpan(this);
@@ -3483,8 +3495,6 @@ STDMETHODIMP Machine::AttachDevice(IN_BSTR aControllerName,
     HRESULT rc = checkStateDependency(MutableStateDep);
     if (FAILED(rc)) return rc;
 
-    GuidList llRegistriesThatNeedSaving;
-
     /// @todo NEWMEDIA implicit machine registration
     if (!mData->mRegistered)
         return setError(VBOX_E_INVALID_OBJECT_STATE,
@@ -3791,14 +3801,14 @@ STDMETHODIMP Machine::AttachDevice(IN_BSTR aControllerName,
             // creating the diff image for the immutable, and the parent is not yet registered);
             // put the parent in the machine registry then
             mediumLock.release();
-            addMediumToRegistry(medium, llRegistriesThatNeedSaving, &uuidRegistryParent);
+            addMediumToRegistry(medium);
             mediumLock.acquire();
+            medium->getFirstRegistryMachineId(uuidRegistryParent);
         }
         rc = diff->init(mParent,
                         medium->getPreferredDiffFormat(),
                         strFullSnapshotFolder.append(RTPATH_SLASH_STR),
-                        uuidRegistryParent,
-                        &llRegistriesThatNeedSaving);
+                        uuidRegistryParent);
         if (FAILED(rc)) return rc;
 
         /* Apply the normal locking logic to the entire chain. */
@@ -3837,8 +3847,7 @@ STDMETHODIMP Machine::AttachDevice(IN_BSTR aControllerName,
                                                MediumVariant_Standard,
                                                pMediumLockList,
                                                NULL /* aProgress */,
-                                               true /* aWait */,
-                                               &llRegistriesThatNeedSaving);
+                                               true /* aWait */);
 
                 alock.acquire();
                 treeLock.acquire();
@@ -3885,9 +3894,7 @@ STDMETHODIMP Machine::AttachDevice(IN_BSTR aControllerName,
         if (FAILED(rc)) return rc;
 
         mediumLock.release();
-        addMediumToRegistry(medium,
-                            llRegistriesThatNeedSaving,
-                            NULL /* Guid *puuid */);
+        addMediumToRegistry(medium);
         mediumLock.acquire();
     }
 
@@ -3903,7 +3910,7 @@ STDMETHODIMP Machine::AttachDevice(IN_BSTR aControllerName,
     if (fHotplug)
         rc = onStorageDeviceChange(attachment, FALSE /* aRemove */);
 
-    mParent->saveRegistries(llRegistriesThatNeedSaving);
+    mParent->saveModifiedRegistries();
 
     return rc;
 }
@@ -3918,8 +3925,6 @@ STDMETHODIMP Machine::DetachDevice(IN_BSTR aControllerName, LONG aControllerPort
 
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
-
-    GuidList llRegistriesThatNeedSaving;
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -3972,12 +3977,11 @@ STDMETHODIMP Machine::DetachDevice(IN_BSTR aControllerName, LONG aControllerPort
     if (FAILED(rc)) return rc;
 
     /* If we are here everything went well and we can delete the implicit now. */
-    rc = detachDevice(pAttach, alock, NULL /* pSnapshot */, &llRegistriesThatNeedSaving);
+    rc = detachDevice(pAttach, alock, NULL /* pSnapshot */);
 
     alock.release();
 
-    if (SUCCEEDED(rc))
-        rc = mParent->saveRegistries(llRegistriesThatNeedSaving);
+    mParent->saveModifiedRegistries();
 
     return rc;
 }
@@ -4291,8 +4295,6 @@ STDMETHODIMP Machine::MountMedium(IN_BSTR aControllerName,
     setModified(IsModified_Storage);
     mMediaData.backup();
 
-    GuidList llRegistriesThatNeedSaving;
-
     {
         // The backup operation makes the pAttach reference point to the
         // old settings. Re-get the correct reference.
@@ -4308,7 +4310,7 @@ STDMETHODIMP Machine::MountMedium(IN_BSTR aControllerName,
             pMedium->addBackReference(mData->mUuid);
 
             mediumLock.release();
-            addMediumToRegistry(pMedium, llRegistriesThatNeedSaving, NULL /* Guid *puuid */ );
+            addMediumToRegistry(pMedium);
             mediumLock.acquire();
         }
 
@@ -4344,7 +4346,7 @@ STDMETHODIMP Machine::MountMedium(IN_BSTR aControllerName,
     mediumLock.release();
     multiLock.release();
 
-    mParent->saveRegistries(llRegistriesThatNeedSaving);
+    mParent->saveModifiedRegistries();
 
     return rc;
 }
@@ -4742,7 +4744,7 @@ STDMETHODIMP Machine::Unregister(CleanupMode_T cleanupMode,
     sfaMedia.detachTo(ComSafeArrayOutArg(aMedia));
 
     mParent->unregisterMachine(this, id);
-            // calls VirtualBox::saveSettings()
+            // calls VirtualBox::saveSettings() and VirtualBox::saveModifiedRegistries()
 
     return S_OK;
 }
@@ -4753,7 +4755,6 @@ struct Machine::DeleteTask
     RTCList< ComPtr<IMedium> >  llMediums;
     std::list<Utf8Str>          llFilesToDelete;
     ComObjPtr<Progress>         pProgress;
-    GuidList                    llRegistriesThatNeedSaving;
 };
 
 STDMETHODIMP Machine::Delete(ComSafeArrayIn(IMedium*, aMedia), IProgress **aProgress)
@@ -4999,8 +5000,7 @@ HRESULT Machine::deleteTaskWorker(DeleteTask &task)
 
         alock.release();
 
-        rc = mParent->saveRegistries(task.llRegistriesThatNeedSaving);
-        if (FAILED(rc)) throw rc;
+        mParent->saveModifiedRegistries();
     }
     catch (HRESULT aRC) { rc = aRC; }
 
@@ -9505,21 +9505,14 @@ HRESULT Machine::saveStateSettings(int aFlags)
 /**
  * Ensures that the given medium is added to a media registry. If this machine
  * was created with 4.0 or later, then the machine registry is used. Otherwise
- * the global VirtualBox media registry is used. If the medium was actually
- * added to a registry (because it wasn't in the registry yet), the UUID of
- * that registry is added to the given list so that the caller can save the
- * registry.
+ * the global VirtualBox media registry is used.
  *
  * Caller must hold machine read lock and at least media tree read lock!
  * Caller must NOT hold any medium locks.
  *
  * @param pMedium
- * @param llRegistriesThatNeedSaving
- * @param puuid Optional buffer that receives the registry UUID that was used.
  */
-void Machine::addMediumToRegistry(ComObjPtr<Medium> &pMedium,
-                                  GuidList &llRegistriesThatNeedSaving,
-                                  Guid *puuid)
+void Machine::addMediumToRegistry(ComObjPtr<Medium> &pMedium)
 {
     ComObjPtr<Medium> pBase = pMedium->getBase();
     /* Paranoia checks: do not hold medium locks. */
@@ -9534,28 +9527,16 @@ void Machine::addMediumToRegistry(ComObjPtr<Medium> &pMedium,
     else
         uuid = mParent->getGlobalRegistryId(); // VirtualBox global registry UUID
 
-    bool fAdd = false;
     if (pMedium->addRegistry(uuid, false /* fRecurse */))
-    {
-        // registry actually changed:
-        VirtualBox::addGuidToListUniquely(llRegistriesThatNeedSaving, uuid);
-        fAdd = true;
-    }
+        mParent->markRegistryModified(uuid);
 
     /* For more complex hard disk structures it can happen that the base
      * medium isn't yet associated with any medium registry. Do that now. */
     if (pMedium != pBase)
     {
-        if (   pBase->addRegistry(uuid, true /* fRecurse */)
-            && !fAdd)
-        {
-            VirtualBox::addGuidToListUniquely(llRegistriesThatNeedSaving, uuid);
-            fAdd = true;
-        }
+        if (pBase->addRegistry(uuid, true /* fRecurse */))
+            mParent->markRegistryModified(uuid);
     }
-
-    if (puuid)
-        *puuid = uuid;
 }
 
 /**
@@ -9583,7 +9564,6 @@ void Machine::addMediumToRegistry(ComObjPtr<Medium> &pMedium,
  *                          many operations left as the number of hard disks
  *                          attached).
  * @param aOnline           Whether the VM was online prior to this operation.
- * @param pllRegistriesThatNeedSaving Optional pointer to a list of UUIDs to receive the registry IDs that need saving
  *
  * @note The progress object is not marked as completed, neither on success nor
  *       on failure. This is a responsibility of the caller.
@@ -9592,8 +9572,7 @@ void Machine::addMediumToRegistry(ComObjPtr<Medium> &pMedium,
  */
 HRESULT Machine::createImplicitDiffs(IProgress *aProgress,
                                      ULONG aWeight,
-                                     bool aOnline,
-                                     GuidList *pllRegistriesThatNeedSaving)
+                                     bool aOnline)
 {
     LogFlowThisFunc(("aOnline=%d\n", aOnline));
 
@@ -9728,8 +9707,7 @@ HRESULT Machine::createImplicitDiffs(IProgress *aProgress,
             rc = diff->init(mParent,
                             pMedium->getPreferredDiffFormat(),
                             strFullSnapshotFolder.append(RTPATH_SLASH_STR),
-                            uuidRegistryParent,
-                            pllRegistriesThatNeedSaving);
+                            uuidRegistryParent);
             if (FAILED(rc)) throw rc;
 
             /** @todo r=bird: How is the locking and diff image cleaned up if we fail before
@@ -9754,8 +9732,7 @@ HRESULT Machine::createImplicitDiffs(IProgress *aProgress,
             rc = pMedium->createDiffStorage(diff, MediumVariant_Standard,
                                             pMediumLockList,
                                             NULL /* aProgress */,
-                                            true /* aWait */,
-                                            pllRegistriesThatNeedSaving);
+                                            true /* aWait */);
             alock.acquire();
             if (FAILED(rc)) throw rc;
 
@@ -9811,7 +9788,7 @@ HRESULT Machine::createImplicitDiffs(IProgress *aProgress,
         MultiResult mrc = rc;
 
         alock.release();
-        mrc = deleteImplicitDiffs(pllRegistriesThatNeedSaving);
+        mrc = deleteImplicitDiffs();
     }
 
     return rc;
@@ -9824,11 +9801,9 @@ HRESULT Machine::createImplicitDiffs(IProgress *aProgress,
  * Note that to delete hard disks created by #AttachDevice() this method is
  * called from #fixupMedia() when the changes are rolled back.
  *
- * @param pllRegistriesThatNeedSaving Optional pointer to a list of UUIDs to receive the registry IDs that need saving
- *
  * @note Locks this object for writing.
  */
-HRESULT Machine::deleteImplicitDiffs(GuidList *pllRegistriesThatNeedSaving)
+HRESULT Machine::deleteImplicitDiffs()
 {
     AutoCaller autoCaller(this);
     AssertComRCReturn(autoCaller.rc(), autoCaller.rc());
@@ -9905,8 +9880,7 @@ HRESULT Machine::deleteImplicitDiffs(GuidList *pllRegistriesThatNeedSaving)
             LogFlowThisFunc(("Deleting '%s'\n", (*it)->getLogName()));
             ComObjPtr<Medium> hd = (*it)->getMedium();
 
-            rc = hd->deleteStorage(NULL /*aProgress*/, true /*aWait*/,
-                                   pllRegistriesThatNeedSaving);
+            rc = hd->deleteStorage(NULL /*aProgress*/, true /*aWait*/);
             AssertMsg(SUCCEEDED(rc), ("rc=%Rhrc it=%s hd=%s\n", rc, (*it)->getLogName(), hd->getLocationFull().c_str() ));
             mrc = rc;
         }
@@ -10009,13 +9983,11 @@ MediumAttachment* Machine::findAttachment(const MediaData::AttachmentList &ll,
  * @param pAttach Medium attachment to detach.
  * @param writeLock Machine write lock which the caller must have locked once. This may be released temporarily in here.
  * @param pSnapshot If NULL, then the detachment is for the current machine. Otherwise this is for a SnapshotMachine, and this must be its snapshot.
- * @param pllRegistriesThatNeedSaving Optional pointer to a list of UUIDs to receive the registry IDs that need saving
  * @return
  */
 HRESULT Machine::detachDevice(MediumAttachment *pAttach,
                               AutoWriteLock &writeLock,
-                              Snapshot *pSnapshot,
-                              GuidList *pllRegistriesThatNeedSaving)
+                              Snapshot *pSnapshot)
 {
     ComObjPtr<Medium> oldmedium = pAttach->getMedium();
     DeviceType_T mediumType = pAttach->getType();
@@ -10040,8 +10012,7 @@ HRESULT Machine::detachDevice(MediumAttachment *pAttach,
         writeLock.release();
 
         HRESULT rc = oldmedium->deleteStorage(NULL /*aProgress*/,
-                                              true /*aWait*/,
-                                              pllRegistriesThatNeedSaving);
+                                              true /*aWait*/);
 
         writeLock.acquire();
 
@@ -10151,10 +10122,7 @@ HRESULT Machine::detachAllMedia(AutoWriteLock &writeLock,
         }
 
         // real machine: then we need to use the proper method
-        rc = detachDevice(pAttach,
-                          writeLock,
-                          pSnapshot,
-                          NULL /* pfNeedsSaveSettings */);
+        rc = detachDevice(pAttach, writeLock, pSnapshot);
 
         if (FAILED(rc))
             return rc;
@@ -10347,12 +10315,7 @@ void Machine::commitMedia(bool aOnline /*= false*/)
  * Does nothing if the hard disk attachment data (mMediaData) is not changed (not
  * backed up).
  *
- * @param pfNeedsSaveSettings Optional pointer to a bool that must have been initialized to false and that will be set to true
- *                by this function if the caller should invoke VirtualBox::saveSettings() because the global settings have changed.
- *
  * @note Locks this object for writing!
- *
- * @todo r=dj this needs a pllRegistriesThatNeedSaving as well
  */
 void Machine::rollbackMedia()
 {
@@ -10403,9 +10366,7 @@ void Machine::rollbackMedia()
 
     /** @todo convert all this Machine-based voodoo to MediumAttachment
      * based rollback logic. */
-    // @todo r=dj the below totally fails if this gets called from Machine::rollback(),
-    // which gets called if Machine::registeredInit() fails...
-    deleteImplicitDiffs(NULL /*pfNeedsSaveSettings*/);
+    deleteImplicitDiffs();
 
     return;
 }

@@ -840,15 +840,12 @@ protected:
                                settings::StorageController &data);
     HRESULT saveStateSettings(int aFlags);
 
-    void addMediumToRegistry(ComObjPtr<Medium> &pMedium,
-                             GuidList &llRegistriesThatNeedSaving,
-                             Guid *puuid);
+    void addMediumToRegistry(ComObjPtr<Medium> &pMedium);
 
     HRESULT createImplicitDiffs(IProgress *aProgress,
                                 ULONG aWeight,
-                                bool aOnline,
-                                GuidList *pllRegistriesThatNeedSaving);
-    HRESULT deleteImplicitDiffs(GuidList *pllRegistriesThatNeedSaving);
+                                bool aOnline);
+    HRESULT deleteImplicitDiffs();
 
     MediumAttachment* findAttachment(const MediaData::AttachmentList &ll,
                                      IN_BSTR aControllerName,
@@ -861,8 +858,7 @@ protected:
 
     HRESULT detachDevice(MediumAttachment *pAttach,
                          AutoWriteLock &writeLock,
-                         Snapshot *pSnapshot,
-                         GuidList *pllRegistriesThatNeedSaving);
+                         Snapshot *pSnapshot);
 
     HRESULT detachAllMedia(AutoWriteLock &writeLock,
                            Snapshot *pSnapshot,
@@ -936,6 +932,8 @@ protected:
 
     typedef std::list<ComObjPtr<StorageController> > StorageControllerList;
     Backupable<StorageControllerList> mStorageControllers;
+
+    uint64_t                        uRegistryNeedsSaving;
 
     friend class SessionMachine;
     friend class SnapshotMachine;
