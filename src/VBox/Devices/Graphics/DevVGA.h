@@ -75,9 +75,14 @@
 
 #ifdef CONFIG_BOCHS_VBE
 
+/* Cross reference with <VBox/Hardware/VBoxVideoVBE.h> */
+#define VBE_DISPI_INDEX_NB_SAVED        0xb /* Number of saved registers (vbe_regs array) */
+#define VBE_DISPI_INDEX_NB              0xc /* Total number of VBE registers */
+
 #define VGA_STATE_COMMON_BOCHS_VBE              \
     uint16_t vbe_index;                         \
-    uint16_t vbe_regs[VBE_DISPI_INDEX_NB_SAVED];\
+    uint16_t vbe_regs[VBE_DISPI_INDEX_NB];      \
+    uint16_t alignment[3]; /* pad to 64 bits */ \
     uint32_t vbe_start_addr;                    \
     uint32_t vbe_line_offset;                   \
     uint32_t vbe_bank_max;

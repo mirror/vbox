@@ -854,7 +854,7 @@ static uint32_t vbe_ioport_read_data(void *opaque, uint32_t addr)
                 val = VBE_DISPI_MAX_BPP;
                 break;
             default:
-                Assert(s->vbe_index < VBE_DISPI_INDEX_NB_SAVED);
+                Assert(s->vbe_index < VBE_DISPI_INDEX_NB);
                 val = s->vbe_regs[s->vbe_index];
                 break;
           }
@@ -865,7 +865,7 @@ static uint32_t vbe_ioport_read_data(void *opaque, uint32_t addr)
               val = 1;
               break;
           default:
-              Assert(s->vbe_index < VBE_DISPI_INDEX_NB_SAVED);
+              Assert(s->vbe_index < VBE_DISPI_INDEX_NB);
               val = s->vbe_regs[s->vbe_index];
               break;
           }
@@ -5264,7 +5264,10 @@ static DECLCALLBACK(int) vgaR3IORegionMap(PPCIDEVICE pPciDev, /*unsigned*/ int i
                                               "VGA LFB");
             AssertRC(rc);
             if (RT_SUCCESS(rc))
+            {
                 pThis->GCPhysVRAM = GCPhysAddress;
+                pThis->vbe_regs[VBE_DISPI_INDEX_FB_BASE_HI] = GCPhysAddress >> 16;
+            }
         }
     }
     else
@@ -5277,6 +5280,7 @@ static DECLCALLBACK(int) vgaR3IORegionMap(PPCIDEVICE pPciDev, /*unsigned*/ int i
         rc = PGMHandlerPhysicalDeregister(PDMDevHlpGetVM(pDevIns), pThis->GCPhysVRAM);
         AssertRC(rc);
         pThis->GCPhysVRAM = 0;
+        pThis->vbe_regs[VBE_DISPI_INDEX_FB_BASE_HI];
     }
     return rc;
 }
