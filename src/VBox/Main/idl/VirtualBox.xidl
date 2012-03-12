@@ -2968,7 +2968,7 @@
 
   <interface
     name="IInternalMachineControl" extends="$unknown"
-    uuid="2087906d-bb92-43a0-8014-4cab009e4888"
+    uuid="ec824977-e43f-479c-81c9-ac6cae1423a5"
     internal="yes"
     wsmap="suppress"
     >
@@ -14641,7 +14641,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <interface
     name="IInternalSessionControl" extends="$unknown"
-    uuid="0bdda5da-67c8-47be-a610-b83a7fa3e8b6"
+    uuid="c2b4cd5f-d3ce-4dd6-b915-123272163ef5"
     internal="yes"
     wsmap="suppress"
     >
