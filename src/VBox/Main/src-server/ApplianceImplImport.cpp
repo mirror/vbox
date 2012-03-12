@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2008-2011 Oracle Corporation
+ * Copyright (C) 2008-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -1846,8 +1846,7 @@ void Appliance::importOneDiskImage(const ovf::DiskImage &di,
         rc = pTargetHD->init(mVirtualBox,
                              strTrgFormat,
                              strTargetPath,
-                             Guid::Empty,       // media registry: none yet
-                             NULL /* llRegistriesThatNeedSaving */);
+                             Guid::Empty /* media registry: none yet */);
         if (FAILED(rc)) throw rc;
 
         /* Now create an empty hard disk. */

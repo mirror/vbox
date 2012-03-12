@@ -184,6 +184,7 @@ struct VirtualBox::Data
     Data()
         : pMainConfigFile(NULL),
           uuidMediaRegistry("48024e5c-fdd9-470f-93af-ec29f7ea518c"),
+          uRegistryNeedsSaving(0),
           lockMachines(LOCKCLASS_LISTOFMACHINES),
           allMachines(lockMachines),
           lockGuestOSTypes(LOCKCLASS_LISTOFOTHEROBJECTS),
@@ -222,6 +223,10 @@ struct VirtualBox::Data
 
     // constant pseudo-machine ID for global media registry
     const Guid                          uuidMediaRegistry;
+
+    // counter if global media registry needs saving, updated using atomic
+    // operations, without requiring any locks
+    uint64_t                            uRegistryNeedsSaving;
 
     // const objects not requiring locking
     const ComObjPtr<Host>               pHost;
@@ -627,8 +632,7 @@ HRESULT VirtualBox::initMedia(const Guid &uuidRegistry,
                                  strMachineFolder);
         if (FAILED(rc)) return rc;
 
-        rc = registerMedium(pHardDisk, &pHardDisk, DeviceType_HardDisk,
-                            NULL /* pllRegistriesThatNeedSaving */);
+        rc = registerMedium(pHardDisk, &pHardDisk, DeviceType_HardDisk);
         if (FAILED(rc)) return rc;
     }
 
@@ -648,8 +652,7 @@ HRESULT VirtualBox::initMedia(const Guid &uuidRegistry,
                               strMachineFolder);
         if (FAILED(rc)) return rc;
 
-        rc = registerMedium(pImage, &pImage, DeviceType_DVD,
-                            NULL /* pllRegistriesThatNeedSaving */);
+        rc = registerMedium(pImage, &pImage, DeviceType_DVD);
         if (FAILED(rc)) return rc;
     }
 
@@ -669,8 +672,7 @@ HRESULT VirtualBox::initMedia(const Guid &uuidRegistry,
                               strMachineFolder);
         if (FAILED(rc)) return rc;
 
-        rc = registerMedium(pImage, &pImage, DeviceType_Floppy,
-                            NULL /* pllRegistriesThatNeedSaving */);
+        rc = registerMedium(pImage, &pImage, DeviceType_Floppy);
         if (FAILED(rc)) return rc;
     }
 
@@ -681,6 +683,10 @@ HRESULT VirtualBox::initMedia(const Guid &uuidRegistry,
 
 void VirtualBox::uninit()
 {
+    Assert(!m->uRegistryNeedsSaving);
+    if (m->uRegistryNeedsSaving)
+        saveSettings();
+
     /* Enclose the state transition Ready->InUninit->NotReady */
     AutoUninitSpan autoUninitSpan(this);
     if (autoUninitSpan.uninitDone())
@@ -1651,8 +1657,7 @@ STDMETHODIMP VirtualBox::CreateHardDisk(IN_BSTR aFormat,
     HRESULT rc = hardDisk->init(this,
                                 format,
                                 aLocation,
-                                Guid::Empty,   // media registry: none yet
-                                NULL /* pllRegistriesThatNeedSaving */);
+                                Guid::Empty /* media registry: none yet */);
 
     if (SUCCEEDED(rc))
         hardDisk.queryInterfaceTo(aHardDisk);
@@ -1721,8 +1726,7 @@ STDMETHODIMP VirtualBox::OpenMedium(IN_BSTR aLocation,
 
         if (SUCCEEDED(rc))
         {
-            rc = registerMedium(pMedium, &pMedium, deviceType,
-                                NULL /* pllRegistriesThatNeedSaving */);
+            rc = registerMedium(pMedium, &pMedium, deviceType);
 
             treeLock.release();
 
@@ -3542,13 +3546,11 @@ HRESULT VirtualBox::registerMachine(Machine *aMachine)
  *                  to an unavoidable race there was a duplicate Medium object
  *                  created.
  * @param argType   Either DeviceType_HardDisk, DeviceType_DVD or DeviceType_Floppy.
- * @param pllRegistriesThatNeedSaving Optional pointer to a list of UUIDs of media registries that need saving.
  * @return
  */
 HRESULT VirtualBox::registerMedium(const ComObjPtr<Medium> &pMedium,
                                    ComObjPtr<Medium> *ppMedium,
-                                   DeviceType_T argType,
-                                   GuidList *pllRegistriesThatNeedSaving)
+                                   DeviceType_T argType)
 {
     AssertReturn(pMedium != NULL, E_INVALIDARG);
     AssertReturn(ppMedium != NULL, E_INVALIDARG);
@@ -3621,9 +3623,6 @@ HRESULT VirtualBox::registerMedium(const ComObjPtr<Medium> &pMedium,
         if (argType == DeviceType_HardDisk)
             m->mapHardDisks[id] = pMedium;
 
-        if (pllRegistriesThatNeedSaving)
-            pMedium->addToRegistryIDList(*pllRegistriesThatNeedSaving);
-
         *ppMedium = pMedium;
     }
     else
@@ -3643,13 +3642,10 @@ HRESULT VirtualBox::registerMedium(const ComObjPtr<Medium> &pMedium,
  * Removes the given medium from the respective registry.
  *
  * @param pMedium    Hard disk object to remove.
- * @param pfNeedsGlobalSaveSettings Optional pointer to a bool that must have been initialized to false and that will be set to true
- *                by this function if the caller should invoke VirtualBox::saveSettings() because the global settings have changed.
  *
  * @note Caller must hold the media tree lock for writing; in addition, this locks @a pMedium for reading
  */
-HRESULT VirtualBox::unregisterMedium(Medium *pMedium,
-                                     GuidList *pllRegistriesThatNeedSaving)
+HRESULT VirtualBox::unregisterMedium(Medium *pMedium)
 {
     AssertReturn(pMedium != NULL, E_INVALIDARG);
 
@@ -3699,9 +3695,6 @@ HRESULT VirtualBox::unregisterMedium(Medium *pMedium,
         Assert(cnt == 1);
         NOREF(cnt);
     }
-
-    if (pllRegistriesThatNeedSaving)
-        pMedium->addToRegistryIDList(*pllRegistriesThatNeedSaving);
 
     return S_OK;
 }
@@ -3776,7 +3769,7 @@ HRESULT VirtualBox::unregisterMachineMedia(const Guid &uuidMachine)
         ComObjPtr<Medium> pMedium = *it;
         Log(("Closing medium %RTuuid\n", pMedium->getId().raw()));
         AutoCaller mac(pMedium);
-        pMedium->close(NULL /* pfNeedsGlobalSaveSettings*/, mac);
+        pMedium->close(mac);
     }
 
     LogFlowFuncLeave();
@@ -3812,7 +3805,6 @@ HRESULT VirtualBox::unregisterMachine(Machine *pMachine,
      * A is deleted, A.vdi must be moved to the registry of B, or else B will
      * become inaccessible.
      */
-    GuidList llRegistriesThatNeedSaving;
     {
         AutoReadLock tlock(getMediaTreeLockHandle() COMMA_LOCKVAL_SRC_POS);
         // iterate over the list of *base* images
@@ -3836,13 +3828,13 @@ HRESULT VirtualBox::unregisterMachine(Machine *pMachine,
                     // 2) better registry found: then use that
                     pMedium->addRegistry(*puuidBetter, true /* fRecurse */);
                     // 3) and make sure the registry is saved below
-                    VirtualBox::addGuidToListUniquely(llRegistriesThatNeedSaving, *puuidBetter);
+                    markRegistryModified(*puuidBetter);
                 }
             }
         }
     }
 
-    saveRegistries(llRegistriesThatNeedSaving);
+    saveModifiedRegistries();
 
     /* fire an event */
     onMachineRegistered(id, FALSE);
@@ -3851,82 +3843,85 @@ HRESULT VirtualBox::unregisterMachine(Machine *pMachine,
 }
 
 /**
- * Adds uuid to llRegistriesThatNeedSaving unless it's already on the list.
+ * Marks the registry for @a uuid as modified, so that it's saved in a later
+ * call to saveModifiedRegistries().
  *
- * @todo maybe there's something in libstdc++ for this
- *
- * @param llRegistriesThatNeedSaving
  * @param uuid
  */
-/* static */
-void VirtualBox::addGuidToListUniquely(GuidList &llRegistriesThatNeedSaving,
-                                       const Guid &uuid)
+void VirtualBox::markRegistryModified(const Guid &uuid)
 {
-    for (GuidList::const_iterator it = llRegistriesThatNeedSaving.begin();
-         it != llRegistriesThatNeedSaving.end();
-         ++it)
+    if (uuid == getGlobalRegistryId())
+        ASMAtomicIncU64(&m->uRegistryNeedsSaving);
+    else
     {
-        if (*it == uuid)
-            // uuid is already in list:
-            return;
+        ComObjPtr<Machine> pMachine;
+        HRESULT rc = findMachine(uuid,
+                                 false /* fPermitInaccessible */,
+                                 false /* aSetError */,
+                                 &pMachine);
+        if (SUCCEEDED(rc))
+        {
+            AutoCaller machineCaller(pMachine);
+            if (SUCCEEDED(machineCaller.rc()))
+                ASMAtomicIncU64(&pMachine->uRegistryNeedsSaving);
+        }
     }
-
-    llRegistriesThatNeedSaving.push_back(uuid);
 }
 
 /**
- * Saves all settings files according to the given list of UUIDs, which are
- * either machine IDs (in which case Machine::saveSettings is invoked) or
- * the global registry UUID (in which case VirtualBox::saveSettings is invoked).
+ * Saves all settings files according to the modified flags in the Machine
+ * objects and in the VirtualBox object.
  *
  * This locks machines and the VirtualBox object as necessary, so better not
  * hold any locks before calling this.
  *
- * @param llRegistriesThatNeedSaving
  * @return
  */
-HRESULT VirtualBox::saveRegistries(const GuidList &llRegistriesThatNeedSaving)
+void VirtualBox::saveModifiedRegistries()
 {
-    bool fNeedsGlobalSettings = false;
     HRESULT rc = S_OK;
+    bool fNeedsGlobalSettings = false;
+    uint64_t uOld;
 
-    for (GuidList::const_iterator it = llRegistriesThatNeedSaving.begin();
-         it != llRegistriesThatNeedSaving.end();
+    for (MachinesOList::iterator it = m->allMachines.begin();
+         it != m->allMachines.end();
          ++it)
     {
-        const Guid &uuid = *it;
+        const ComObjPtr<Machine> &pMachine = *it;
 
-        if (uuid == getGlobalRegistryId())
-            fNeedsGlobalSettings = true;
-        else
+        for (;;)
         {
-            // should be machine ID then:
-            ComObjPtr<Machine> pMachine;
-            rc = findMachine(uuid,
-                             false /* fPermitInaccessible */,
-                             false /* aSetError */,
-                             &pMachine);
-            if (SUCCEEDED(rc))
-            {
-                AutoCaller autoCaller(pMachine);
-                if (FAILED(autoCaller.rc())) return autoCaller.rc();
-                AutoWriteLock mlock(pMachine COMMA_LOCKVAL_SRC_POS);
-                rc = pMachine->saveSettings(&fNeedsGlobalSettings,
-                                            Machine::SaveS_Force);           // caller said save, so stop arguing
-            }
-
-            if (FAILED(rc))
-                return rc;
+            uOld = ASMAtomicReadU64(&pMachine->uRegistryNeedsSaving);
+            if (!uOld)
+                break;
+            if (ASMAtomicCmpXchgU64(&pMachine->uRegistryNeedsSaving, 0, uOld))
+                break;
+            ASMNopPause();
+        }
+        if (uOld)
+        {
+            AutoCaller autoCaller(pMachine);
+            if (FAILED(autoCaller.rc())) continue;
+            AutoWriteLock mlock(pMachine COMMA_LOCKVAL_SRC_POS);
+            rc = pMachine->saveSettings(&fNeedsGlobalSettings,
+                                        Machine::SaveS_Force);           // caller said save, so stop arguing
         }
     }
 
-    if (fNeedsGlobalSettings)
+    for (;;)
     {
-        AutoWriteLock vlock(this COMMA_LOCKVAL_SRC_POS);
+        uOld = ASMAtomicReadU64(&m->uRegistryNeedsSaving);
+        if (!uOld)
+            break;
+        if (ASMAtomicCmpXchgU64(&m->uRegistryNeedsSaving, 0, uOld))
+            break;
+        ASMNopPause();
+    }
+    if (uOld || fNeedsGlobalSettings)
+    {
+        AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
         rc = saveSettings();
     }
-
-    return S_OK;
 }
 
 /**

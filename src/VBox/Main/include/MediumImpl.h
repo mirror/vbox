@@ -6,7 +6,7 @@
  */
 
 /*
- * Copyright (C) 2008-2011 Oracle Corporation
+ * Copyright (C) 2008-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -69,8 +69,7 @@ public:
     HRESULT init(VirtualBox *aVirtualBox,
                  const Utf8Str &aFormat,
                  const Utf8Str &aLocation,
-                 const Guid &uuidMachineRegistry,
-                 GuidList *pllRegistriesThatNeedSaving);
+                 const Guid &uuidMachineRegistry);
 
     // initializer for opening existing media
     // (VirtualBox::OpenMedium(); Machine::AttachDevice())
@@ -182,7 +181,6 @@ public:
     bool removeRegistry(const Guid& id, bool fRecurse);
     bool isInRegistry(const Guid& id);
     bool getFirstRegistryMachineId(Guid &uuid) const;
-    HRESULT addToRegistryIDList(GuidList &llRegistryIDs);
 
     HRESULT addBackReference(const Guid &aMachineId,
                              const Guid &aSnapshotId = Guid::Empty);
@@ -217,12 +215,11 @@ public:
                               MediumVariant_T aVariant,
                               MediumLockList *pMediumLockList,
                               ComObjPtr<Progress> *aProgress,
-                              bool aWait,
-                              GuidList *pllRegistriesThatNeedSaving);
+                              bool aWait);
     Utf8Str getPreferredDiffFormat();
 
-    HRESULT close(GuidList *pllRegistriesThatNeedSaving, AutoCaller &autoCaller);
-    HRESULT deleteStorage(ComObjPtr<Progress> *aProgress, bool aWait, GuidList *pllRegistriesThatNeedSaving);
+    HRESULT close(AutoCaller &autoCaller);
+    HRESULT deleteStorage(ComObjPtr<Progress> *aProgress, bool aWait);
     HRESULT markForDeletion();
     HRESULT unmarkForDeletion();
     HRESULT markLockedForDeletion();
@@ -242,8 +239,7 @@ public:
                     const MediaList &aChildrenToReparent,
                     MediumLockList *aMediumLockList,
                     ComObjPtr<Progress> *aProgress,
-                    bool aWait,
-                    GuidList *pllRegistriesThatNeedSaving);
+                    bool aWait);
     void cancelMergeTo(const MediaList &aChildrenToReparent,
                        MediumLockList *aMediumLockList);
 
@@ -272,7 +268,8 @@ private:
     HRESULT lockWrite(MediumState_T *aState, bool fWithinQueryInfo);
 
     HRESULT canClose();
-    HRESULT unregisterWithVirtualBox(GuidList *pllRegistriesThatNeedSaving);
+    HRESULT unregisterWithVirtualBox();
+    void markRegistriesModified();
 
     HRESULT setStateError();
 
@@ -332,7 +329,7 @@ private:
     friend class ImportTask;
 
     HRESULT startThread(Medium::Task *pTask);
-    HRESULT runNow(Medium::Task *pTask, GuidList *pllRegistriesThatNeedSaving);
+    HRESULT runNow(Medium::Task *pTask);
 
     HRESULT taskCreateBaseHandler(Medium::CreateBaseTask &task);
     HRESULT taskCreateDiffHandler(Medium::CreateDiffTask &task);

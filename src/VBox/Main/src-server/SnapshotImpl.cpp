@@ -1396,8 +1396,6 @@ STDMETHODIMP SessionMachine::BeginTakingSnapshot(IConsole *aInitiator,
     AutoCaller autoCaller(this);
     AssertComRCReturn(autoCaller.rc(), autoCaller.rc());
 
-    GuidList llRegistriesThatNeedSaving;
-
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     AssertReturn(    !Global::IsOnlineOrTransient(mData->mMachineState)
@@ -1484,15 +1482,14 @@ STDMETHODIMP SessionMachine::BeginTakingSnapshot(IConsole *aInitiator,
         /* create new differencing hard disks and attach them to this machine */
         rc = createImplicitDiffs(aConsoleProgress,
                                  1,            // operation weight; must be the same as in Console::TakeSnapshot()
-                                 !!fTakingSnapshotOnline,
-                                 &llRegistriesThatNeedSaving);
+                                 !!fTakingSnapshotOnline);
         if (FAILED(rc))
             throw rc;
 
         // if we got this far without an error, then save the media registries
         // that got modified for the diff images
         alock.release();
-        mParent->saveRegistries(llRegistriesThatNeedSaving);
+        mParent->saveModifiedRegistries();
     }
     catch (HRESULT hrc)
     {
@@ -1622,6 +1619,10 @@ STDMETHODIMP SessionMachine::EndTakingSnapshot(BOOL aSuccess)
     /* clear out the snapshot data */
     mConsoleTaskData.mLastState = MachineState_Null;
     mConsoleTaskData.mSnapshot.setNull();
+
+    machineLock.release();
+
+    mParent->saveModifiedRegistries();
 
     return rc;
 }
@@ -1773,7 +1774,6 @@ void SessionMachine::restoreSnapshotHandler(RestoreSnapshotTask &aTask)
     HRESULT rc = S_OK;
 
     bool stateRestored = false;
-    GuidList llRegistriesThatNeedSaving;
 
     try
     {
@@ -1840,8 +1840,7 @@ void SessionMachine::restoreSnapshotHandler(RestoreSnapshotTask &aTask)
 
             rc = createImplicitDiffs(aTask.pProgress,
                                      1,
-                                     false /* aOnline */,
-                                     &llRegistriesThatNeedSaving);
+                                     false /* aOnline */);
             if (FAILED(rc))
                 throw rc;
 
@@ -1948,7 +1947,7 @@ void SessionMachine::restoreSnapshotHandler(RestoreSnapshotTask &aTask)
             throw rc;
         // unconditionally add the parent registry. We do similar in SessionMachine::EndTakingSnapshot
         // (mParent->saveSettings())
-        VirtualBox::addGuidToListUniquely(llRegistriesThatNeedSaving, mParent->getGlobalRegistryId());
+        mParent->markRegistryModified(mParent->getGlobalRegistryId());
 
         // let go of the locks while we're deleting image files below
         alock.release();
@@ -1962,8 +1961,7 @@ void SessionMachine::restoreSnapshotHandler(RestoreSnapshotTask &aTask)
             LogFlowThisFunc(("Deleting old current state in differencing image '%s'\n", pMedium->getName().c_str()));
 
             HRESULT rc2 = pMedium->deleteStorage(NULL /* aProgress */,
-                                                 true /* aWait */,
-                                                 &llRegistriesThatNeedSaving);
+                                                 true /* aWait */);
             // ignore errors here because we cannot roll back after saveSettings() above
             if (SUCCEEDED(rc2))
                 pMedium->uninit();
@@ -1990,7 +1988,7 @@ void SessionMachine::restoreSnapshotHandler(RestoreSnapshotTask &aTask)
         }
     }
 
-    mParent->saveRegistries(llRegistriesThatNeedSaving);
+    mParent->saveModifiedRegistries();
 
     /* set the result (this will try to fetch current error info on failure) */
     aTask.pProgress->notifyComplete(rc);
@@ -2291,12 +2289,8 @@ void SessionMachine::deleteSnapshotHandler(DeleteSnapshotTask &aTask)
         return;
     }
 
-    MediumDeleteRecList toDelete;
-
     HRESULT rc = S_OK;
-
-    GuidList llRegistriesThatNeedSaving;
-
+    MediumDeleteRecList toDelete;
     Guid snapshotId;
 
     try
@@ -2498,7 +2492,7 @@ void SessionMachine::deleteSnapshotHandler(DeleteSnapshotTask &aTask)
                 releaseSavedStateFile(stateFilePath, aTask.pSnapshot /* pSnapshotToIgnore */);
 
                 // machine will need saving now
-                VirtualBox::addGuidToListUniquely(llRegistriesThatNeedSaving, getId());
+                mParent->markRegistryModified(getId());
             }
         }
 
@@ -2545,8 +2539,7 @@ void SessionMachine::deleteSnapshotHandler(DeleteSnapshotTask &aTask)
                     /* No need to hold the lock any longer. */
                     mLock.release();
                     rc = pMedium->deleteStorage(&aTask.pProgress,
-                                                true /* aWait */,
-                                                &llRegistriesThatNeedSaving);
+                                                true /* aWait */);
                     if (FAILED(rc))
                         throw rc;
 
@@ -2579,8 +2572,7 @@ void SessionMachine::deleteSnapshotHandler(DeleteSnapshotTask &aTask)
                                                it->mChildrenToReparent,
                                                it->mpMediumLockList,
                                                &aTask.pProgress,
-                                               true /* aWait */,
-                                               &llRegistriesThatNeedSaving);
+                                               true /* aWait */);
                 }
 
                 // If the merge failed, we need to do our best to have a usable
@@ -2673,7 +2665,7 @@ void SessionMachine::deleteSnapshotHandler(DeleteSnapshotTask &aTask)
                 it->mpSource->uninit();
 
             // One attachment is merged, must save the settings
-            VirtualBox::addGuidToListUniquely(llRegistriesThatNeedSaving, getId());
+            mParent->markRegistryModified(getId());
 
             // prevent calling cancelDeleteSnapshotMedium() for this attachment
             it = toDelete.erase(it);
@@ -2692,7 +2684,7 @@ void SessionMachine::deleteSnapshotHandler(DeleteSnapshotTask &aTask)
             aTask.pSnapshot->beginSnapshotDelete();
             aTask.pSnapshot->uninit();
 
-            VirtualBox::addGuidToListUniquely(llRegistriesThatNeedSaving, getId());
+            mParent->markRegistryModified(getId());
         }
     }
     catch (HRESULT aRC) { rc = aRC; }
@@ -2732,7 +2724,7 @@ void SessionMachine::deleteSnapshotHandler(DeleteSnapshotTask &aTask)
         setMachineState(aTask.machineStateBackup);
         updateMachineStateOnClient();
 
-        mParent->saveRegistries(llRegistriesThatNeedSaving);
+        mParent->saveModifiedRegistries();
     }
 
     // report the result (this will try to fetch current error info on failure)
@@ -3270,7 +3262,7 @@ STDMETHODIMP SessionMachine::FinishOnlineMergeMedium(IMediumAttachment *aMediumA
     {
         // first, unregister the target since it may become a base
         // hard disk which needs re-registration
-        rc = mParent->unregisterMedium(pTarget, NULL /*&fNeedsGlobalSaveSettings*/);
+        rc = mParent->unregisterMedium(pTarget);
         AssertComRC(rc);
 
         // then, reparent it and disconnect the deleted branch at
@@ -3281,8 +3273,7 @@ STDMETHODIMP SessionMachine::FinishOnlineMergeMedium(IMediumAttachment *aMediumA
             pSource->deparent();
 
         // then, register again
-        rc = mParent->registerMedium(pTarget, &pTarget, DeviceType_HardDisk,
-                                     NULL /* pllRegistriesThatNeedSaving */);
+        rc = mParent->registerMedium(pTarget, &pTarget, DeviceType_HardDisk);
         AssertComRC(rc);
     }
     else
@@ -3355,7 +3346,7 @@ STDMETHODIMP SessionMachine::FinishOnlineMergeMedium(IMediumAttachment *aMediumA
         }
         else
         {
-            rc = mParent->unregisterMedium(pMedium, NULL /*pfNeedsGlobalSaveSettings*/);
+            rc = mParent->unregisterMedium(pMedium);
             AssertComRC(rc);
 
             /* now, uninitialize the deleted hard disk (note that
