@@ -145,15 +145,13 @@ VBGLR3DECL(int) VbglR3CredentialsRetrieveUtf16(PRTUTF16 *ppwszUser, PRTUTF16 *pp
             *ppwszDomain   = pwszDomain;
         }
         else
-            VbglR3CredentialsDestroyUtf16(pwszUser, pwszPassword, pwszDomain,
-                                          3 /* Passes */);
-
-        VbglR3CredentialsDestroy(pszUser, pszPassword, pszDomain,
-                                 3 /* Passes */);
+            VbglR3CredentialsDestroyUtf16(pwszUser, pwszPassword, pwszDomain, 3 /* Passes */);
+        VbglR3CredentialsDestroy(pszUser, pszPassword, pszDomain, 3 /* Passes */);
     }
 
     return rc;
 }
+
 
 /**
  * Clears and frees the three strings.
@@ -182,6 +180,7 @@ VBGLR3DECL(void) VbglR3CredentialsDestroy(char *pszUser, char *pszPassword, char
     RTStrFree(pszDomain);
 }
 
+
 /**
  * Clears and frees the three strings. UTF-16 version.
  *
@@ -198,11 +197,11 @@ VBGLR3DECL(void) VbglR3CredentialsDestroyUtf16(PRTUTF16 pwszUser, PRTUTF16 pwszP
 {
     /* wipe first */
     if (pwszUser)
-        RTMemWipeThoroughly(pwszUser,     RTUtf16Len(pwszUser) + sizeof(RTUTF16),     cPasses);
+        RTMemWipeThoroughly(pwszUser,     (RTUtf16Len(pwszUser)     + 1) * sizeof(RTUTF16), cPasses);
     if (pwszPassword)
-        RTMemWipeThoroughly(pwszPassword, RTUtf16Len(pwszPassword) + sizeof(RTUTF16), cPasses);
+        RTMemWipeThoroughly(pwszPassword, (RTUtf16Len(pwszPassword) + 1) * sizeof(RTUTF16), cPasses);
     if (pwszDomain)
-        RTMemWipeThoroughly(pwszDomain,   RTUtf16Len(pwszDomain) + sizeof(RTUTF16),   cPasses);
+        RTMemWipeThoroughly(pwszDomain,   (RTUtf16Len(pwszDomain)   + 1) * sizeof(RTUTF16), cPasses);
 
     /* then free. */
     RTUtf16Free(pwszUser);
