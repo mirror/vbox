@@ -698,12 +698,16 @@
 #ifdef __cplusplus
 # ifdef _MSC_VER
 #  define DECLASM(type)          extern "C" type __cdecl
+# elif defined(__GNUC__) && defined(RT_ARCH_X86)
+#  define DECLASM(type)          extern "C" type __attribute__((cdecl,regparm(0)))
 # else
 #  define DECLASM(type)          extern "C" type
 # endif
 #else
 # ifdef _MSC_VER
 #  define DECLASM(type)          type __cdecl
+# elif defined(__GNUC__) && defined(RT_ARCH_X86)
+#  define DECLASM(type)          type __attribute__((cdecl,regparm(0)))
 # else
 #  define DECLASM(type)          type
 # endif
