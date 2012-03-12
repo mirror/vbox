@@ -590,11 +590,13 @@ crStateReadPixels( GLint x, GLint y, GLsizei width, GLsizei height,
     /* This no-op function helps smooth code-gen */
 }
 
-void crStateOnThreadAttachDetach(GLboolean attach)
+void crStateVBoxDetachThread()
 {
-    if (attach)
-        return;
-
     /* release the context ref so that it can be freed */
     SetCurrentContext(NULL);
+}
+
+
+void crStateVBoxAttachThread()
+{
 }

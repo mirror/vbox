@@ -478,7 +478,7 @@ void PACKSPU_APIENTRY packspu_VBoxPackSetInjectID(GLuint id)
     crUnlockMutex(&_PackMutex);
 }
 
-void PACKSPU_APIENTRY packspu_VBoxPackAttachThread()
+void PACKSPU_APIENTRY packspu_VBoxAttachThread()
 {
 #if 0
     int i;
@@ -494,9 +494,11 @@ void PACKSPU_APIENTRY packspu_VBoxPackAttachThread()
 #endif
 
     crSetTSD(&_PackTSD, NULL);
+
+    crStateVBoxAttachThread();
 }
 
-void PACKSPU_APIENTRY packspu_VBoxPackDetachThread()
+void PACKSPU_APIENTRY packspu_VBoxDetachThread()
 {
     int i;
     GET_THREAD(thread);
@@ -557,6 +559,8 @@ void PACKSPU_APIENTRY packspu_VBoxPackDetachThread()
 
         crUnlockMutex(&_PackMutex);
     }
+
+    crStateVBoxDetachThread();
 }
 
 #ifdef WINDOWS
@@ -582,19 +586,7 @@ BOOL WINAPI DllMain(HINSTANCE hDLLInst, DWORD fdwReason, LPVOID lpvReserved)
         }
 
         case DLL_THREAD_ATTACH:
-        {
-            packspu_VBoxPackAttachThread();
-            crStateOnThreadAttachDetach(GL_TRUE);
-            break;
-        }
-
         case DLL_THREAD_DETACH:
-        {
-            packspu_VBoxPackDetachThread();
-            crStateOnThreadAttachDetach(GL_FALSE);
-            break;
-        }
-
         default:
             break;
     }

@@ -8515,12 +8515,12 @@ param       id          GLuint
 category    VBox
 chromium    nopack
 
-name        VBoxPackAttachThread
+name        VBoxAttachThread
 return      void
 category    VBox
 chromium    nopack
 
-name        VBoxPackDetachThread
+name        VBoxDetachThread
 return      void
 category    VBox
 chromium    nopack
