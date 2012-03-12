@@ -84,7 +84,7 @@ ifneq ($(MAKECMDGOALS),clean)
   $(error Cannot detect package distribution (rpmrel=$(rpmrel)))
  endif
 
- ifeq ($(filter-out rhel4 rhel5 rhel6 ol4 ol5 ol6 centos4 centos5 centos6 fedora9 fedora11 fedora12 fedora13 fedora14 fedora15 fedora16 turbolinux11,$(rpmrel)),)
+ ifeq ($(filter-out rhel4 rhel5 rhel6 ol4 ol5 ol6 centos4 centos5 centos6 fedora9 fedora11 fedora12 fedora13 fedora14 fedora15 fedora16 fedora17 turbolinux11,$(rpmrel)),)
   rpmspec := rpm_redhat
  endif
  ifeq ($(filter-out openSUSE110 openSUSE111 openSUSE112 openSUSE113 openSUSE114 sles10.1 sles11.0,$(rpmrel)),)
@@ -107,7 +107,7 @@ rpmname  := $(verpkg)-$(rpmver)_$(rpmrel)
 endif
 
 # Fedora13/14 is bleeding edge, the other jails have outdated kernel headers
-instmod  := $(if $(filter rhel4 rhel5 rhel6 ol4 ol5 ol6 centos4 centos5 centos6 sles10.1 sles11.0 fedora13 fedora14 fedora15 fedora16,$(rpmrel)),,install_rpm)
+instmod  := $(if $(filter rhel4 rhel5 rhel6 ol4 ol5 ol6 centos4 centos5 centos6 sles10.1 sles11.0 fedora13 fedora14 fedora15 fedora16 fedora17,$(rpmrel)),,install_rpm)
 
 ifneq ($(STAGEDISO),)
  ifeq ($(wildcard $(STAGEDISO)/VBoxGuestAdditions.iso),)
