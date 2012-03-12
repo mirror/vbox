@@ -880,6 +880,21 @@ arrayspu_DestroyContext( GLint ctx )
 #endif
 }
 
+static void ARRAYSPU_APIENTRY
+arrayspu_VBoxAttachThread()
+{
+    crStateVBoxAttachThread();
+    array_spu.child.VBoxAttachThread();
+}
+
+static void ARRAYSPU_APIENTRY
+arrayspu_VBoxDetachThread()
+{
+    crStateVBoxDetachThread();
+    array_spu.child.VBoxDetachThread();
+}
+
+
 SPUNamedFunctionTable _cr_array_table[] = {
     { "ArrayElement", (SPUGenericFunction) arrayspu_ArrayElement },
     { "DrawArrays", (SPUGenericFunction) arrayspu_DrawArrays},
@@ -923,5 +938,7 @@ SPUNamedFunctionTable _cr_array_table[] = {
     { "MakeCurrent", (SPUGenericFunction) arrayspu_MakeCurrent},
     { "DestroyContext", (SPUGenericFunction) arrayspu_DestroyContext},
     { "UseProgram", (SPUGenericFunction) arrayspu_UseProgram},
+    { "VBoxAttachThread", (SPUGenericFunction) arrayspu_VBoxAttachThread},
+    { "VBoxDetachThread", (SPUGenericFunction) arrayspu_VBoxDetachThread},
     { NULL, NULL }
 };

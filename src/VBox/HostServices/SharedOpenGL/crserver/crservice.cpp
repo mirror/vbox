@@ -1255,18 +1255,20 @@ BOOL WINAPI DllMain(HINSTANCE hDLLInst, DWORD fdwReason, LPVOID lpvReserved)
     {
         case DLL_THREAD_ATTACH:
         {
-            crStateOnThreadAttachDetach(GL_TRUE);
+            crStateVBoxAttachThread();
             break;
         }
 
+        case DLL_PROCESS_DETACH:
+        /* do exactly the same thing as for DLL_THREAD_DETACH since
+         * DLL_THREAD_DETACH is not called for the thread doing DLL_PROCESS_DETACH according to msdn docs */
         case DLL_THREAD_DETACH:
         {
-            crStateOnThreadAttachDetach(GL_FALSE);
+            crStateVBoxDetachThread();
             break;
         }
 
         case DLL_PROCESS_ATTACH:
-        case DLL_PROCESS_DETACH:
         default:
             break;
     }

@@ -61,3 +61,5 @@ RasterPos4sv
 CreateContext
 MakeCurrent
 DestroyContext
+VBoxAttachThread
+VBoxDetachThread

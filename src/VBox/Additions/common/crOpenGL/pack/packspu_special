@@ -104,8 +104,8 @@ BindRenderbufferEXT
 VBoxPackSetInjectThread
 VBoxPackGetInjectID
 VBoxPackSetInjectID
-VBoxPackAttachThread
-VBoxPackDetachThread
+VBoxAttachThread
+VBoxDetachThread
 ChromiumParameteriCR
 CompressedTexImage1DARB
 CompressedTexImage2DARB

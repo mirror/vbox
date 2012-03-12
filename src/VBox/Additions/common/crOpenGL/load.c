@@ -1338,7 +1338,7 @@ stubInit(void)
 #ifdef DEBUG_misha
  /* debugging: this is to be able to catch first-chance notifications
   * for exceptions other than EXCEPTION_BREAKPOINT in kernel debugger */
-# define VDBG_VEHANDLER
+//# define VDBG_VEHANDLER
 #endif
 
 #ifdef VDBG_VEHANDLER
@@ -1425,6 +1425,15 @@ BOOL WINAPI DllMain(HINSTANCE hDLLInst, DWORD fdwReason, LPVOID lpvReserved)
 
     case DLL_PROCESS_DETACH:
     {
+        /* do exactly the same thing as for DLL_THREAD_DETACH since
+         * DLL_THREAD_DETACH is not called for the thread doing DLL_PROCESS_DETACH according to msdn docs */
+        stubSetCurrentContext(NULL);
+        if (stub_initialized)
+        {
+            CRASSERT(stub.spu);
+            stub.spu->dispatch_table.VBoxDetachThread();
+        }
+
         stubSPUSafeTearDown();
 
 #ifdef CHROMIUM_THREADSAFE
@@ -1439,26 +1448,22 @@ BOOL WINAPI DllMain(HINSTANCE hDLLInst, DWORD fdwReason, LPVOID lpvReserved)
 
     case DLL_THREAD_ATTACH:
     {
-#if 0
         if (stub_initialized)
         {
             CRASSERT(stub.spu);
-            stub.spu->dispatch_table.VBoxPackAttachThread();
+            stub.spu->dispatch_table.VBoxAttachThread();
         }
-#endif
         break;
     }
 
     case DLL_THREAD_DETACH:
     {
         stubSetCurrentContext(NULL);
-#if 0
         if (stub_initialized)
         {
             CRASSERT(stub.spu);
-            stub.spu->dispatch_table.VBoxPackDetachThread();
+            stub.spu->dispatch_table.VBoxDetachThread();
         }
-#endif
         break;
     }
 
