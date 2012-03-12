@@ -146,16 +146,6 @@
 #define NS_FASTCALL
 #endif
 
-/*
- * NS_DEFCALL undoes the effect of a global regparm/stdcall setting
- * so that xptcall works correctly.
- */
-#if defined(__i386__) && defined(__GNUC__) && (__GNUC__ >= 3) && !defined(XP_OS2)
-#define NS_DEFCALL __attribute__ ((regparm (0), cdecl))
-#else
-#define NS_DEFCALL
-#endif
-
 /* XXX: nike, maybe fix */
 #define NS_EXPORT_STATIC_MEMBER_(type) type
 #define NS_IMPORT_STATIC_MEMBER_(type) type
@@ -190,7 +180,7 @@
 #define NS_IMPORT_(type) type __declspec(dllimport) __stdcall
 #define NS_EXPORT __declspec(dllexport)
 #define NS_EXPORT_(type) type __declspec(dllexport) __stdcall
-#define NS_IMETHOD_(type) virtual IMETHOD_VISIBILITY type NS_DEFCALL
+#define NS_IMETHOD_(type) virtual IMETHOD_VISIBILITY type
 #define NS_IMETHODIMP_(type) type
 #define NS_METHOD_(type) type
 #define NS_CALLBACK_(_type, _name) _type (* _name)
@@ -203,7 +193,7 @@
 #  define NS_IMPORT_(type) type
 #  define NS_EXPORT __attribute__((visibility("default")))
 #  define NS_EXPORT_(type) __attribute__((visibility("default"))) type
-#  define NS_IMETHOD_(type) virtual IMETHOD_VISIBILITY type NS_DEFCALL
+#  define NS_IMETHOD_(type) virtual IMETHOD_VISIBILITY type
 #  define NS_IMETHODIMP_(type) type
 #  define NS_METHOD_(type) type
 #  define NS_CALLBACK_(_type, _name) _type (* _name)
@@ -213,7 +203,7 @@
 #  define NS_IMPORT_(type) type
 #  define NS_EXPORT
 #  define NS_EXPORT_(type) type
-#  define NS_IMETHOD_(type) virtual IMETHOD_VISIBILITY type NS_DEFCALL
+#  define NS_IMETHOD_(type) virtual IMETHOD_VISIBILITY type
 #  define NS_IMETHODIMP_(type) type
 #  define NS_METHOD_(type) type
 #  define NS_CALLBACK_(_type, _name) _type (* _name)
