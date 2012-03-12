@@ -20,6 +20,9 @@
 
 #include <iprt/assert.h>
 #include <iprt/string.h>  /* RT_ZERO */
+#ifdef RT_OS_WINDOWS
+# include <WinSock2.h>  /* struct timeval */
+#endif
 #include <errno.h>
 #include <time.h>  /* struct timeval */
 
