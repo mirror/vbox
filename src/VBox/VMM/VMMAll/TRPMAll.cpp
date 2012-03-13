@@ -487,7 +487,7 @@ VMMDECL(int) TRPMForwardTrap(PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, uint32_t iGat
             X86EFLAGS fakeflags;
             fakeflags.u32 = 0;
 
-            rc = SELMValidateAndConvertCSAddr(pVM, fakeflags, 0, GuestIdte.Gen.u16SegSel, NULL, pHandler, &dummy);
+            rc = SELMValidateAndConvertCSAddr(pVCpu, fakeflags, 0, GuestIdte.Gen.u16SegSel, NULL, pHandler, &dummy);
             if (rc == VINF_SUCCESS)
             {
                 VBOXGDTR gdtr = {0, 0};
@@ -553,7 +553,7 @@ VMMDECL(int) TRPMForwardTrap(PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, uint32_t iGat
                     if (   !esp_r0
                         || !ss_r0
                         || (ss_r0 & X86_SEL_RPL) != ((dpl == 0) ? 1 : dpl)
-                        || SELMToFlatBySelEx(pVM, fakeflags, ss_r0, (RTGCPTR)esp_r0, NULL, SELMTOFLAT_FLAGS_CPL1, (PRTGCPTR)&pTrapStackGC, NULL) != VINF_SUCCESS
+                        || SELMToFlatBySelEx(pVCpu, fakeflags, ss_r0, (RTGCPTR)esp_r0, NULL, SELMTOFLAT_FLAGS_CPL1, (PRTGCPTR)&pTrapStackGC, NULL) != VINF_SUCCESS
                        )
                     {
                         Log(("Invalid ring 0 stack %04X:%08RX32\n", ss_r0, esp_r0));
@@ -567,7 +567,7 @@ VMMDECL(int) TRPMForwardTrap(PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, uint32_t iGat
                     esp_r0 = pRegFrame->esp;
 
                     if (    eflags.Bits.u1VM    /* illegal */
-                        ||  SELMToFlatBySelEx(pVM, fakeflags, ss_r0, (RTGCPTR)esp_r0, NULL, SELMTOFLAT_FLAGS_CPL1, (PRTGCPTR)&pTrapStackGC, NULL) != VINF_SUCCESS)
+                        ||  SELMToFlatBySelEx(pVCpu, fakeflags, ss_r0, (RTGCPTR)esp_r0, NULL, SELMTOFLAT_FLAGS_CPL1, (PRTGCPTR)&pTrapStackGC, NULL) != VINF_SUCCESS)
                     {
                         AssertMsgFailed(("Invalid stack %04X:%08RX32??? (VM=%d)\n", ss_r0, esp_r0, eflags.Bits.u1VM));
                         goto failure;

@@ -493,7 +493,7 @@ DECLASM(int) TRPMGCTrap06Handler(PTRPMCPU pTrpmCpu, PCPUMCTXCORE pRegFrame)
          * Decode the instruction.
          */
         RTGCPTR PC;
-        rc = SELMValidateAndConvertCSAddr(pVM, pRegFrame->eflags, pRegFrame->ss, pRegFrame->cs, &pRegFrame->csHid,
+        rc = SELMValidateAndConvertCSAddr(pVCpu, pRegFrame->eflags, pRegFrame->ss, pRegFrame->cs, &pRegFrame->csHid,
                                           (RTGCPTR)pRegFrame->eip, &PC);
         if (RT_FAILURE(rc))
         {
@@ -628,7 +628,7 @@ DECLASM(int) TRPMGCTrap0bHandler(PTRPMCPU pTrpmCpu, PCPUMCTXCORE pRegFrame)
      * accessing user code. need to handle it somehow in future!
      */
     RTGCPTR GCPtr;
-    if (   SELMValidateAndConvertCSAddr(pVM, pRegFrame->eflags, pRegFrame->ss, pRegFrame->cs, &pRegFrame->csHid,
+    if (   SELMValidateAndConvertCSAddr(pVCpu, pRegFrame->eflags, pRegFrame->ss, pRegFrame->cs, &pRegFrame->csHid,
                                         (RTGCPTR)pRegFrame->eip, &GCPtr)
         == VINF_SUCCESS)
     {
@@ -950,7 +950,7 @@ static int trpmGCTrap0dHandler(PVM pVM, PTRPMCPU pTrpmCpu, PCPUMCTXCORE pRegFram
     STAM_PROFILE_START(&pVM->trpm.s.StatTrap0dDisasm, a);
     RTGCPTR PC;
     uint32_t cBits;
-    int rc = SELMValidateAndConvertCSAddrGCTrap(pVM, pRegFrame->eflags, pRegFrame->ss, pRegFrame->cs,
+    int rc = SELMValidateAndConvertCSAddrGCTrap(pVCpu, pRegFrame->eflags, pRegFrame->ss, pRegFrame->cs,
                                                 (RTGCPTR)pRegFrame->eip, &PC, &cBits);
     if (RT_FAILURE(rc))
     {

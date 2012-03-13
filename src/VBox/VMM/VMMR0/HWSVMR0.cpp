@@ -2737,11 +2737,11 @@ static int hmR0SvmInterpretInvpg(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, 
     /*
      * Only allow 32 & 64 bits code.
      */
-    DISCPUMODE enmMode = SELMGetCpuModeFromSelector(pVM, pRegFrame->eflags, pRegFrame->cs, &pRegFrame->csHid);
+    DISCPUMODE enmMode = SELMGetCpuModeFromSelector(pVCpu, pRegFrame->eflags, pRegFrame->cs, &pRegFrame->csHid);
     if (enmMode != CPUMODE_16BIT)
     {
         RTGCPTR pbCode;
-        int rc = SELMValidateAndConvertCSAddr(pVM, pRegFrame->eflags, pRegFrame->ss, pRegFrame->cs,
+        int rc = SELMValidateAndConvertCSAddr(pVCpu, pRegFrame->eflags, pRegFrame->ss, pRegFrame->cs,
                                               &pRegFrame->csHid, (RTGCPTR)pRegFrame->rip, &pbCode);
         if (RT_SUCCESS(rc))
         {

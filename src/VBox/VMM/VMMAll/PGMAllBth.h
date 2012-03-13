@@ -906,7 +906,7 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVMCPU pVCpu, RTGCUINT uErr, PCPUMCTXCORE pRegF
                  * Decode the instruction.
                  */
                 RTGCPTR PC;
-                rc = SELMValidateAndConvertCSAddr(pVM, pRegFrame->eflags, pRegFrame->ss, pRegFrame->cs,
+                rc = SELMValidateAndConvertCSAddr(pVCpu, pRegFrame->eflags, pRegFrame->ss, pRegFrame->cs,
                                                   &pRegFrame->csHid, (RTGCPTR)pRegFrame->eip, &PC);
                 if (rc == VINF_SUCCESS)
                 {
