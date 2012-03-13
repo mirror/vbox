@@ -62,7 +62,7 @@
 # define EM_ASSERT_FAULT_RETURN(expr, rc) do { } while (0)
 #endif
 
-/* Used to pass information during instruction disassembly. */
+/** Used to pass information during instruction disassembly. */
 typedef struct
 {
     PVM         pVM;
