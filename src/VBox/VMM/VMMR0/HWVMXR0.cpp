@@ -3114,7 +3114,6 @@ ResumeExecution:
             case X86_XCPT_GP:   /* General protection failure exception.*/
             {
                 uint32_t     cbOp;
-                uint32_t     cbSize;
                 PDISCPUSTATE pDis = &pVCpu->hwaccm.s.DisState;
 
                 STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatExitGuestGP);
@@ -3335,7 +3334,8 @@ ResumeExecution:
                     }
 
                     default:
-                        rc = EMInterpretInstructionCPU(pVM, pVCpu, pDis, CPUMCTX2CORE(pCtx), 0, EMCODETYPE_SUPERVISOR, &cbSize);
+                        rc = EMInterpretInstructionCpuUpdtPC(pVM, pVCpu, pDis, CPUMCTX2CORE(pCtx), 0, EMCODETYPE_SUPERVISOR);
+                        fUpdateRIP = false;
                         break;
                     }
 

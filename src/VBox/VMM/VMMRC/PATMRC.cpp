@@ -476,7 +476,7 @@ VMMDECL(int) PATMHandleInt3PatchTrap(PVM pVM, PCPUMCTXCORE pRegFrame)
         else
         if (pRec->patch.flags & PATMFL_INT3_REPLACEMENT)
         {
-            uint32_t    size, cbOp;
+            uint32_t    cbOp;
             DISCPUSTATE cpu;
 
             /* eip is pointing to the instruction *after* 'int 3' already */
@@ -522,8 +522,8 @@ VMMDECL(int) PATMHandleInt3PatchTrap(PVM pVM, PCPUMCTXCORE pRegFrame)
                 return VINF_EM_RAW_EMULATE_INSTR;
             }
 
-            rc = EMInterpretInstructionCPU(pVM, VMMGetCpu0(pVM), &cpu, pRegFrame, 0 /* not relevant here */,
-                                           EMCODETYPE_SUPERVISOR, &size);
+            rc = EMInterpretInstructionCpuUpdtPC(pVM, VMMGetCpu0(pVM), &cpu, pRegFrame, 0 /* not relevant here */,
+                                                 EMCODETYPE_SUPERVISOR);
             if (rc != VINF_SUCCESS)
             {
                 Log(("EMInterpretInstructionCPU failed with %Rrc\n", rc));
@@ -531,8 +531,6 @@ VMMDECL(int) PATMHandleInt3PatchTrap(PVM pVM, PCPUMCTXCORE pRegFrame)
                 pRec->patch.cTraps++;
                 return VINF_EM_RAW_EMULATE_INSTR;
             }
-
-            pRegFrame->eip += cpu.opsize;
             return VINF_SUCCESS;
         }
     }

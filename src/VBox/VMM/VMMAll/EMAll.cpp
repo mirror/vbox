@@ -74,8 +74,10 @@ typedef struct
 /*******************************************************************************
 *   Internal Functions                                                         *
 *******************************************************************************/
+#ifndef VBOX_WITH_IEM
 DECLINLINE(VBOXSTRICTRC) emInterpretInstructionCPU(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, PCPUMCTXCORE pRegFrame,
                                                    RTGCPTR pvFault, EMCODETYPE enmCodeType, uint32_t *pcbSize);
+#endif
 
 
 
@@ -487,9 +489,19 @@ VMMDECL(int) EMInterpretDisasOneEx(PVM pVM, PVMCPU pVCpu, RTGCUINTPTR GCPtrInstr
  */
 VMMDECL(VBOXSTRICTRC) EMInterpretInstruction(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, uint32_t *pcbSize)
 {
-    RTGCPTR pbCode;
-
     LogFlow(("EMInterpretInstruction %RGv fault %RGv\n", (RTGCPTR)pRegFrame->rip, pvFault));
+#ifdef VBOX_WITH_IEM
+    int rc = IEMExecOneEx(pVCpu, pRegFrame, IEM_EXEC_ONE_EX_FLAGS_, pcbSize);
+    if (RT_FAILURE(rc))
+        switch (rc)
+        {
+            case VERR_IEM_ASPECT_NOT_IMPLEMENTED:
+            case VERR_IEM_INSTR_NOT_IMPLEMENTED:
+                return VERR_EM_INTERPRETER;
+        }
+    return rc;
+#else
+    RTGCPTR pbCode;
     VBOXSTRICTRC rc = SELMToFlatEx(pVM, DIS_SELREG_CS, pRegFrame, pRegFrame->rip, 0, &pbCode);
     if (RT_SUCCESS(rc))
     {
@@ -508,6 +520,7 @@ VMMDECL(VBOXSTRICTRC) EMInterpretInstruction(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE
         }
     }
     return VERR_EM_INTERPRETER;
+#endif
 }
 
 
@@ -554,36 +567,66 @@ VMMDECL(VBOXSTRICTRC) EMInterpretInstructionCPU(PVM pVM, PVMCPU pVCpu, PDISCPUST
 
 
 /**
- * Interpret a port I/O instruction.
+ * Interprets the current instruction using the supplied DISCPUSTATE structure.
  *
- * @returns VBox status code suitable for scheduling.
+ * IP/EIP/RIP *IS* updated!
+ *
+ * @returns VBox strict status code.
+ * @retval  VINF_*                  Scheduling instructions. When these are returned, it
+ *                                  starts to get a bit tricky to know whether code was
+ *                                  executed or not... We'll address this when it becomes a problem.
+ * @retval  VERR_EM_INTERPRETER     Something we can't cope with.
+ * @retval  VERR_*                  Fatal errors.
+ *
  * @param   pVM         The VM handle.
  * @param   pVCpu       The VMCPU handle.
- * @param   pCtxCore    The context core. This will be updated on successful return.
- * @param   pDis        The instruction to interpret.
- * @param   cbOp        The size of the instruction.
- * @remark  This may raise exceptions.
+ * @param   pDis        The disassembler cpu state for the instruction to be
+ *                      interpreted.
+ * @param   pRegFrame   The register frame. IP/EIP/RIP *IS* changed!
+ * @param   pvFault     The fault address (CR2).
+ * @param   pcbSize     Size of the write (if applicable).
+ * @param   enmCodeType Code type (user/supervisor)
+ *
+ * @remark  Invalid opcode exceptions have a higher priority than GP (see Intel
+ *          Architecture System Developers Manual, Vol 3, 5.5) so we don't need
+ *          to worry about e.g. invalid modrm combinations (!)
+ *
+ * @todo    At this time we do NOT check if the instruction overwrites vital information.
+ *          Make sure this can't happen!! (will add some assertions/checks later)
  */
-VMMDECL(VBOXSTRICTRC) EMInterpretPortIO(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pCtxCore, PDISCPUSTATE pDis, uint32_t cbOp)
+VMMDECL(VBOXSTRICTRC) EMInterpretInstructionCpuUpdtPC(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, PCPUMCTXCORE pRegFrame,
+                                                      RTGCPTR pvFault, EMCODETYPE enmCodeType)
 {
-    /*
-     * Hand it on to IOM.
-     */
-#ifdef IN_RC
-    VBOXSTRICTRC rcStrict = IOMGCIOPortHandler(pVM, pCtxCore, pDis);
-    if (IOM_SUCCESS(rcStrict))
-        pCtxCore->rip += cbOp;
-    NOREF(pVCpu);
-    return rcStrict;
-#else
-    NOREF(pVM); NOREF(pVCpu); NOREF(pCtxCore); NOREF(pDis); NOREF(cbOp);
-    AssertReleaseMsgFailed(("not implemented\n"));
-    return VERR_NOT_IMPLEMENTED;
-#endif
+    STAM_PROFILE_START(&pVCpu->em.s.CTX_SUFF(pStats)->CTX_MID_Z(Stat,Emulate), a);
+    uint32_t cbIgnored;
+    VBOXSTRICTRC rc = emInterpretInstructionCPU(pVM, pVCpu, pDis, pRegFrame, pvFault, enmCodeType, &cbIgnored);
+    STAM_PROFILE_STOP(&pVCpu->em.s.CTX_SUFF(pStats)->CTX_MID_Z(Stat,Emulate), a);
+    if (RT_SUCCESS(rc))
+    {
+        pRegFrame->rip += pDis->opsize; /* Move on to the next instruction. */
+        STAM_COUNTER_INC(&pVCpu->em.s.CTX_SUFF(pStats)->CTX_MID_Z(Stat,InterpretSucceeded));
+    }
+    else
+        STAM_COUNTER_INC(&pVCpu->em.s.CTX_SUFF(pStats)->CTX_MID_Z(Stat,InterpretFailed));
+    return rc;
 }
 
-
 #ifndef VBOX_WITH_IEM
+
+
+
+
+
+
+/*
+ *
+ * The old interpreter.
+ * The old interpreter.
+ * The old interpreter.
+ * The old interpreter.
+ * The old interpreter.
+ *
+ */
 
 DECLINLINE(int) emRamRead(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pCtxCore, void *pvDst, RTGCPTR GCPtrSrc, uint32_t cb)
 {

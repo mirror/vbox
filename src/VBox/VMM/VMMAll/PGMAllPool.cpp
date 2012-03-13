@@ -839,13 +839,9 @@ static int pgmPoolAccessHandlerFlush(PVM pVM, PVMCPU pVCpu, PPGMPOOL pPool, PPGM
      * Emulate the instruction (xp/w2k problem, requires pc/cr2/sp detection).
      * Must do this in raw mode (!); XP boot will fail otherwise.
      */
-    uint32_t cbWritten;
-    VBOXSTRICTRC rc2 = EMInterpretInstructionCPU(pVM, pVCpu, pDis, pRegFrame, pvFault, EMCODETYPE_ALL, &cbWritten);
+    VBOXSTRICTRC rc2 = EMInterpretInstructionCpuUpdtPC(pVM, pVCpu, pDis, pRegFrame, pvFault, EMCODETYPE_ALL);
     if (RT_SUCCESS(rc2))
-    {
-        pRegFrame->rip += pDis->opsize;
         AssertMsg(rc2 == VINF_SUCCESS, ("%Rrc\n", VBOXSTRICTRC_VAL(rc2))); /* ASSUMES no complicated stuff here. */
-    }
     else if (rc2 == VERR_EM_INTERPRETER)
     {
 #ifdef IN_RC
@@ -982,13 +978,9 @@ DECLINLINE(int) pgmPoolAccessHandlerSimple(PVM pVM, PVMCPU pVCpu, PPGMPOOL pPool
     /*
      * Interpret the instruction.
      */
-    uint32_t cb;
-    VBOXSTRICTRC rc = EMInterpretInstructionCPU(pVM, pVCpu, pDis, pRegFrame, pvFault, EMCODETYPE_ALL, &cb);
+    VBOXSTRICTRC rc = EMInterpretInstructionCpuUpdtPC(pVM, pVCpu, pDis, pRegFrame, pvFault, EMCODETYPE_ALL);
     if (RT_SUCCESS(rc))
-    {
-        pRegFrame->rip += pDis->opsize;
         AssertMsg(rc == VINF_SUCCESS, ("%Rrc\n", VBOXSTRICTRC_VAL(rc))); /* ASSUMES no complicated stuff here. */
-    }
     else if (rc == VERR_EM_INTERPRETER)
     {
         LogFlow(("pgmPoolAccessHandlerPTWorker: Interpretation failed for %04x:%RGv - opcode=%d\n",
@@ -1027,7 +1019,7 @@ DECLINLINE(int) pgmPoolAccessHandlerSimple(PVM pVM, PVMCPU pVCpu, PPGMPOOL pPool
     }
 #endif
 
-    LogFlow(("pgmPoolAccessHandlerSimple: returns %Rrc cb=%d\n", VBOXSTRICTRC_VAL(rc), cb));
+    LogFlow(("pgmPoolAccessHandlerSimple: returns %Rrc\n", VBOXSTRICTRC_VAL(rc)));
     return VBOXSTRICTRC_VAL(rc);
 }
 
