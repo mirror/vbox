@@ -1010,11 +1010,13 @@ LOCAL void vboxNetFltSolarisDestroyVNIC(PVBOXNETFLTVNIC pVNIC)
     {
         if (pVNIC->hClient)
         {
+#if 0
             if (pVNIC->hUnicast)
             {
                 mac_unicast_remove(pVNIC->hClient, pVNIC->hUnicast);
                 pVNIC->hUnicast = NULL;
             }
+#endif
 
             if (pVNIC->hPromisc)
             {
@@ -1465,12 +1467,14 @@ void vboxNetFltPortOsNotifyMacAddress(PVBOXNETFLTINS pThis, void *pvIfData, PCRT
         /*
          * Remove existing unicast address, promisc. and the RX hook.
          */
+#if 0
         if (pVNIC->hUnicast)
         {
             mac_rx_clear(pVNIC->hClient);
             mac_unicast_remove(pVNIC->hClient, pVNIC->hUnicast);
             pVNIC->hUnicast = NULL;
         }
+#endif
 
         if (pVNIC->hPromisc)
         {
