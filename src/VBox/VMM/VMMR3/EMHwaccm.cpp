@@ -200,8 +200,6 @@ static int emR3ExecuteInstructionWorker(PVM pVM, PVMCPU pVCpu, int rcRC)
     rc = CPUMR3DisasmInstrCPU(pVM, pVCpu, pCtx, pCtx->rip, &Cpu, "GEN EMU");
     if (RT_SUCCESS(rc))
     {
-        uint32_t size;
-
         switch (Cpu.pCurInstr->opcode)
         {
         /* @todo we can do more now */
@@ -214,10 +212,9 @@ static int emR3ExecuteInstructionWorker(PVM pVM, PVMCPU pVCpu, int rcRC)
         case OP_DEC:
         case OP_XCHG:
             STAM_PROFILE_START(&pVCpu->em.s.StatMiscEmu, a);
-            rc = EMInterpretInstructionCPU(pVM, pVCpu, &Cpu, CPUMCTX2CORE(pCtx), 0, &size);
+            rc = EMInterpretInstructionCpuUpdtPC(pVM, pVCpu, &Cpu, CPUMCTX2CORE(pCtx), 0);
             if (RT_SUCCESS(rc))
             {
-                pCtx->rip += Cpu.opsize;
 #ifdef EM_NOTIFY_HWACCM
                 if (pVCpu->em.s.enmState == EMSTATE_DEBUG_GUEST_HWACC)
                     HWACCMR3NotifyEmulated(pVCpu);
