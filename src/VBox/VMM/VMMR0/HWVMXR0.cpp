@@ -3334,7 +3334,7 @@ ResumeExecution:
                     }
 
                     default:
-                        rc = EMInterpretInstructionCpuUpdtPC(pVM, pVCpu, pDis, CPUMCTX2CORE(pCtx), 0, EMCODETYPE_SUPERVISOR);
+                        rc = EMInterpretInstructionCpuUpdtPC(pVCpu, pDis, CPUMCTX2CORE(pCtx), 0, EMCODETYPE_SUPERVISOR);
                         fUpdateRIP = false;
                         break;
                     }
@@ -3659,7 +3659,7 @@ ResumeExecution:
 
         /* Note: the intel manual claims there's a REX version of RDMSR that's slightly different, so we play safe by completely disassembling the instruction. */
         Log2(("VMX: %s\n", (exitReason == VMX_EXIT_RDMSR) ? "rdmsr" : "wrmsr"));
-        rc = EMInterpretInstruction(pVM, pVCpu, CPUMCTX2CORE(pCtx), 0);
+        rc = EMInterpretInstruction(pVCpu, CPUMCTX2CORE(pCtx), 0);
         if (rc == VINF_SUCCESS)
         {
             /* EIP has been updated already. */

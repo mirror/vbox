@@ -193,7 +193,7 @@ VMMRCDECL(int) selmRCGuestGDTWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTX
          */
         /** @todo should check if any affected selectors are loaded. */
         uint32_t cb;
-        rc = EMInterpretInstructionEx(pVM, pVCpu, pRegFrame, (RTGCPTR)(RTRCUINTPTR)pvFault, &cb);
+        rc = EMInterpretInstructionEx(pVCpu, pRegFrame, (RTGCPTR)(RTRCUINTPTR)pvFault, &cb);
         if (RT_SUCCESS(rc) && cb)
         {
             unsigned iGDTE1 = offRange / sizeof(X86DESC);
@@ -304,7 +304,7 @@ VMMRCDECL(int) selmRCGuestTSSWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTX
      * Try emulate the access.
      */
     uint32_t cb;
-    int rc = EMInterpretInstructionEx(pVM, pVCpu, pRegFrame, (RTGCPTR)(RTRCUINTPTR)pvFault, &cb);
+    int rc = EMInterpretInstructionEx(pVCpu, pRegFrame, (RTGCPTR)(RTRCUINTPTR)pvFault, &cb);
     if (RT_SUCCESS(rc) && cb)
     {
         rc = VINF_SUCCESS;
