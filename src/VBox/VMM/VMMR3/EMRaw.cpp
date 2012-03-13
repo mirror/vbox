@@ -683,7 +683,7 @@ static int emR3RawRingSwitch(PVM pVM, PVMCPU pVCpu)
             if (pCtx->SysEnter.cs != 0)
             {
                 rc = PATMR3InstallPatch(pVM, SELMToFlat(pVM, DIS_SELREG_CS, CPUMCTX2CORE(pCtx), pCtx->eip),
-                                        (SELMGetCpuModeFromSelector(pVM, pCtx->eflags, pCtx->cs, &pCtx->csHid) == CPUMODE_32BIT) ? PATMFL_CODE32 : 0);
+                                        (SELMGetCpuModeFromSelector(pVCpu, pCtx->eflags, pCtx->cs, &pCtx->csHid) == CPUMODE_32BIT) ? PATMFL_CODE32 : 0);
                 if (RT_SUCCESS(rc))
                 {
                     DBGFR3DisasInstrCurrentLog(pVCpu, "Patched sysenter instruction");
@@ -933,7 +933,7 @@ static int emR3RawPrivileged(PVM pVM, PVMCPU pVCpu)
             && !PATMIsPatchGCAddr(pVM, pCtx->eip))
         {
             int rc = PATMR3InstallPatch(pVM, SELMToFlat(pVM, DIS_SELREG_CS, CPUMCTX2CORE(pCtx), pCtx->eip),
-                                        (SELMGetCpuModeFromSelector(pVM, pCtx->eflags, pCtx->cs, &pCtx->csHid) == CPUMODE_32BIT) ? PATMFL_CODE32 : 0);
+                                        (SELMGetCpuModeFromSelector(pVCpu, pCtx->eflags, pCtx->cs, &pCtx->csHid) == CPUMODE_32BIT) ? PATMFL_CODE32 : 0);
             if (RT_SUCCESS(rc))
             {
 #ifdef LOG_ENABLED
@@ -1040,7 +1040,7 @@ static int emR3RawPrivileged(PVM pVM, PVMCPU pVCpu)
 #endif /* VBOX_WITH_STATISTICS */
         if (    (pCtx->ss & X86_SEL_RPL) == 0
             &&  !pCtx->eflags.Bits.u1VM
-            &&  SELMGetCpuModeFromSelector(pVM, pCtx->eflags, pCtx->cs, &pCtx->csHid) == CPUMODE_32BIT)
+            &&  SELMGetCpuModeFromSelector(pVCpu, pCtx->eflags, pCtx->cs, &pCtx->csHid) == CPUMODE_32BIT)
         {
             STAM_PROFILE_START(&pVCpu->em.s.StatPrivEmu, a);
             switch (Cpu.pCurInstr->opcode)

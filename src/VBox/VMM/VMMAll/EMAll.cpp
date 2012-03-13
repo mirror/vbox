@@ -287,7 +287,7 @@ VMMDECL(int) EMRemTryLock(PVM pVM)
  * @param   dwUserdata  Callback specific user data (pDis)
  *
  */
-static DECLCALLBACK(int) EMReadBytes(RTUINTPTR pSrc, uint8_t *pDest, unsigned cb, void *pvUserdata)
+static DECLCALLBACK(int) emReadBytes(RTUINTPTR pSrc, uint8_t *pDest, unsigned cb, void *pvUserdata)
 {
     PDISCPUSTATE  pDis   = (PDISCPUSTATE)pvUserdata;
     PEMDISSTATE   pState = (PEMDISSTATE)pDis->apvUserData[0];
@@ -303,13 +303,10 @@ static DECLCALLBACK(int) EMReadBytes(RTUINTPTR pSrc, uint8_t *pDest, unsigned cb
         &&  pSrc + cb <= pState->GCPtr + sizeof(pState->aOpcode))
     {
         unsigned offset = pSrc - pState->GCPtr;
-
         Assert(pSrc >= pState->GCPtr);
 
-        for (unsigned i=0; i<cb; i++)
-        {
+        for (unsigned i = 0; i < cb; i++)
             pDest[i] = pState->aOpcode[offset + i];
-        }
         return VINF_SUCCESS;
     }
 
@@ -367,7 +364,7 @@ DECLINLINE(int) emDisCoreOne(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, RTGCUINTP
         }
         State.GCPtr = NIL_RTGCPTR;
     }
-    return DISCoreOneEx(InstrGC, pDis->mode, EMReadBytes, &State, pDis, pOpsize);
+    return DISCoreOneEx(InstrGC, pDis->mode, emReadBytes, &State, pDis, pOpsize);
 }
 
 #else /* IN_RC */
@@ -380,7 +377,7 @@ DECLINLINE(int) emDisCoreOne(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, RTGCUINTP
     State.pVCpu = pVCpu;
     State.GCPtr = InstrGC;
 
-    return DISCoreOneEx(InstrGC, pDis->mode, EMReadBytes, &State, pDis, pOpsize);
+    return DISCoreOneEx(InstrGC, pDis->mode, emReadBytes, &State, pDis, pOpsize);
 }
 
 #endif /* IN_RC */
@@ -402,7 +399,7 @@ DECLINLINE(int) emDisCoreOne(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, RTGCUINTP
 VMMDECL(int) EMInterpretDisasOne(PVM pVM, PVMCPU pVCpu, PCCPUMCTXCORE pCtxCore, PDISCPUSTATE pDis, unsigned *pcbInstr)
 {
     RTGCPTR GCPtrInstr;
-    int rc = SELMToFlatEx(pVM, DIS_SELREG_CS, pCtxCore, pCtxCore->rip, 0, &GCPtrInstr);
+    int rc = SELMToFlatEx(pVCpu, DIS_SELREG_CS, pCtxCore, pCtxCore->rip, 0, &GCPtrInstr);
     if (RT_FAILURE(rc))
     {
         Log(("EMInterpretDisasOne: Failed to convert %RTsel:%RGv (cpl=%d) - rc=%Rrc !!\n",
@@ -458,8 +455,8 @@ VMMDECL(int) EMInterpretDisasOneEx(PVM pVM, PVMCPU pVCpu, RTGCUINTPTR GCPtrInstr
     }
 #endif
 
-    rc = DISCoreOneEx(GCPtrInstr, SELMGetCpuModeFromSelector(pVM, pCtxCore->eflags, pCtxCore->cs, (PCPUMSELREGHID)&pCtxCore->csHid),
-                      EMReadBytes, &State,
+    rc = DISCoreOneEx(GCPtrInstr, SELMGetCpuModeFromSelector(pVCpu, pCtxCore->eflags, pCtxCore->cs, (PCPUMSELREGHID)&pCtxCore->csHid),
+                      emReadBytes, &State,
                       pDis, pcbInstr);
     if (RT_SUCCESS(rc))
         return VINF_SUCCESS;
@@ -502,13 +499,13 @@ VMMDECL(VBOXSTRICTRC) EMInterpretInstruction(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE
     return rc;
 #else
     RTGCPTR pbCode;
-    VBOXSTRICTRC rc = SELMToFlatEx(pVM, DIS_SELREG_CS, pRegFrame, pRegFrame->rip, 0, &pbCode);
+    VBOXSTRICTRC rc = SELMToFlatEx(pVCpu, DIS_SELREG_CS, pRegFrame, pRegFrame->rip, 0, &pbCode);
     if (RT_SUCCESS(rc))
     {
         uint32_t     cbOp;
         PDISCPUSTATE pDis = &pVCpu->em.s.DisState;
-        pDis->mode = SELMGetCpuModeFromSelector(pVM, pRegFrame->eflags, pRegFrame->cs, &pRegFrame->csHid);
-        rc = emDisCoreOne(pVM, pVCpu, pDis, (RTGCUINTPTR)pbCode, &cbOp);
+        pDis->mode = SELMGetCpuModeFromSelector(pVCpu, pRegFrame->eflags, pRegFrame->cs, &pRegFrame->csHid);
+        rc = emDisCoreOne(pVCpu->CTX_SUFF(pVM), pVCpu, pDis, (RTGCUINTPTR)pbCode, &cbOp);
         if (RT_SUCCESS(rc))
         {
             Assert(cbOp == pDis->opsize);
@@ -559,13 +556,13 @@ VMMDECL(VBOXSTRICTRC) EMInterpretInstructionEx(PVM pVM, PVMCPU pVCpu, PCPUMCTXCO
     return rc;
 #else
     RTGCPTR pbCode;
-    VBOXSTRICTRC rc = SELMToFlatEx(pVM, DIS_SELREG_CS, pRegFrame, pRegFrame->rip, 0, &pbCode);
+    VBOXSTRICTRC rc = SELMToFlatEx(pVCpu, DIS_SELREG_CS, pRegFrame, pRegFrame->rip, 0, &pbCode);
     if (RT_SUCCESS(rc))
     {
         uint32_t     cbOp;
         PDISCPUSTATE pDis = &pVCpu->em.s.DisState;
-        pDis->mode = SELMGetCpuModeFromSelector(pVM, pRegFrame->eflags, pRegFrame->cs, &pRegFrame->csHid);
-        rc = emDisCoreOne(pVM, pVCpu, pDis, (RTGCUINTPTR)pbCode, &cbOp);
+        pDis->mode = SELMGetCpuModeFromSelector(pVCpu, pRegFrame->eflags, pRegFrame->cs, &pRegFrame->csHid);
+        rc = emDisCoreOne(pVCpu->CTX_SUFF(pVM), pVCpu, pDis, (RTGCUINTPTR)pbCode, &cbOp);
         if (RT_SUCCESS(rc))
         {
             Assert(cbOp == pDis->opsize);
@@ -966,7 +963,7 @@ static int emInterpretPop(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, PCPUMCTXCORE
             RTGCPTR pStackVal;
 
             /* Read stack value first */
-            if (SELMGetCpuModeFromSelector(pVM, pRegFrame->eflags, pRegFrame->ss, &pRegFrame->ssHid) == CPUMODE_16BIT)
+            if (SELMGetCpuModeFromSelector(pVCpu, pRegFrame->eflags, pRegFrame->ss, &pRegFrame->ssHid) == CPUMODE_16BIT)
                 return VERR_EM_INTERPRETER; /* No legacy 16 bits stuff here, please. */
 
             /* Convert address; don't bother checking limits etc, as we only read here */

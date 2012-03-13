@@ -124,7 +124,7 @@ VMMRZDECL(int) DBGFRZTrap03Handler(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame
     if (pVM->dbgf.s.cBreakpoints > 0)
     {
         RTGCPTR pPc;
-        int rc = SELMValidateAndConvertCSAddr(pVM, pRegFrame->eflags, pRegFrame->ss, pRegFrame->cs, &pRegFrame->csHid,
+        int rc = SELMValidateAndConvertCSAddr(pVCpu, pRegFrame->eflags, pRegFrame->ss, pRegFrame->cs, &pRegFrame->csHid,
 #ifdef IN_RC
                                               (RTGCPTR)((RTGCUINTPTR)pRegFrame->eip - 1),
 #else

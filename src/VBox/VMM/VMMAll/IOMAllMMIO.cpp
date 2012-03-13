@@ -2051,7 +2051,7 @@ VMMDECL(VBOXSTRICTRC) IOMInterpretINSEx(PVM pVM, PCPUMCTXCORE pRegFrame, uint32_
 
     /* Convert destination address es:edi. */
     RTGCPTR GCPtrDst;
-    int rc2 = SELMToFlatEx(pVM, DIS_SELREG_ES, pRegFrame, pRegFrame->rdi & fAddrMask,
+    int rc2 = SELMToFlatEx(pVCpu, DIS_SELREG_ES, pRegFrame, pRegFrame->rdi & fAddrMask,
                            SELMTOFLAT_FLAGS_HYPER | SELMTOFLAT_FLAGS_NO_PL,
                            &GCPtrDst);
     if (RT_FAILURE(rc2))
@@ -2213,7 +2213,7 @@ VMMDECL(VBOXSTRICTRC) IOMInterpretOUTSEx(PVM pVM, PCPUMCTXCORE pRegFrame, uint32
 
     /* Convert source address ds:esi. */
     RTGCPTR GCPtrSrc;
-    int rc2 = SELMToFlatEx(pVM, DIS_SELREG_DS, pRegFrame, pRegFrame->rsi & fAddrMask,
+    int rc2 = SELMToFlatEx(pVCpu, DIS_SELREG_DS, pRegFrame, pRegFrame->rsi & fAddrMask,
                            SELMTOFLAT_FLAGS_HYPER | SELMTOFLAT_FLAGS_NO_PL,
                            &GCPtrSrc);
     if (RT_FAILURE(rc2))
