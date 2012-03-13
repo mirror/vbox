@@ -75,8 +75,8 @@ typedef struct
 *   Internal Functions                                                         *
 *******************************************************************************/
 #ifndef VBOX_WITH_IEM
-DECLINLINE(VBOXSTRICTRC) emInterpretInstructionCPU(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, PCPUMCTXCORE pRegFrame,
-                                                   RTGCPTR pvFault, EMCODETYPE enmCodeType, uint32_t *pcbSize);
+DECLINLINE(VBOXSTRICTRC) emInterpretInstructionCPUOuter(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, PCPUMCTXCORE pRegFrame,
+                                                        RTGCPTR pvFault, EMCODETYPE enmCodeType, uint32_t *pcbSize);
 #endif
 
 
@@ -513,7 +513,7 @@ VMMDECL(VBOXSTRICTRC) EMInterpretInstruction(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE
         {
             Assert(cbOp == pDis->opsize);
             uint32_t cbIgnored;
-            rc = EMInterpretInstructionCPU(pVM, pVCpu, pDis, pRegFrame, pvFault, EMCODETYPE_SUPERVISOR, &cbIgnored);
+            rc = emInterpretInstructionCPUOuter(pVM, pVCpu, pDis, pRegFrame, pvFault, EMCODETYPE_SUPERVISOR, &cbIgnored);
             if (RT_SUCCESS(rc))
                 pRegFrame->rip += cbOp; /* Move on to the next instruction. */
 
@@ -569,7 +569,7 @@ VMMDECL(VBOXSTRICTRC) EMInterpretInstructionEx(PVM pVM, PVMCPU pVCpu, PCPUMCTXCO
         if (RT_SUCCESS(rc))
         {
             Assert(cbOp == pDis->opsize);
-            rc = EMInterpretInstructionCPU(pVM, pVCpu, pDis, pRegFrame, pvFault, EMCODETYPE_SUPERVISOR, pcbWritten);
+            rc = emInterpretInstructionCPUOuter(pVM, pVCpu, pDis, pRegFrame, pvFault, EMCODETYPE_SUPERVISOR, pcbWritten);
             if (RT_SUCCESS(rc))
                 pRegFrame->rip += cbOp; /* Move on to the next instruction. */
 
@@ -578,48 +578,6 @@ VMMDECL(VBOXSTRICTRC) EMInterpretInstructionEx(PVM pVM, PVMCPU pVCpu, PCPUMCTXCO
     }
     return VERR_EM_INTERPRETER;
 #endif
-}
-
-
-/**
- * Interprets the current instruction using the supplied DISCPUSTATE structure.
- *
- * EIP is *NOT* updated!
- *
- * @returns VBox strict status code.
- * @retval  VINF_*                  Scheduling instructions. When these are returned, it
- *                                  starts to get a bit tricky to know whether code was
- *                                  executed or not... We'll address this when it becomes a problem.
- * @retval  VERR_EM_INTERPRETER     Something we can't cope with.
- * @retval  VERR_*                  Fatal errors.
- *
- * @param   pVM         The VM handle.
- * @param   pVCpu       The VMCPU handle.
- * @param   pDis        The disassembler cpu state for the instruction to be
- *                      interpreted.
- * @param   pRegFrame   The register frame. EIP is *NOT* changed!
- * @param   pvFault     The fault address (CR2).
- * @param   pcbSize     Size of the write (if applicable).
- * @param   enmCodeType Code type (user/supervisor)
- *
- * @remark  Invalid opcode exceptions have a higher priority than GP (see Intel
- *          Architecture System Developers Manual, Vol 3, 5.5) so we don't need
- *          to worry about e.g. invalid modrm combinations (!)
- *
- * @todo    At this time we do NOT check if the instruction overwrites vital information.
- *          Make sure this can't happen!! (will add some assertions/checks later)
- */
-VMMDECL(VBOXSTRICTRC) EMInterpretInstructionCPU(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, PCPUMCTXCORE pRegFrame,
-                                                RTGCPTR pvFault, EMCODETYPE enmCodeType, uint32_t *pcbSize)
-{
-    STAM_PROFILE_START(&pVCpu->em.s.CTX_SUFF(pStats)->CTX_MID_Z(Stat,Emulate), a);
-    VBOXSTRICTRC rc = emInterpretInstructionCPU(pVM, pVCpu, pDis, pRegFrame, pvFault, enmCodeType, pcbSize);
-    STAM_PROFILE_STOP(&pVCpu->em.s.CTX_SUFF(pStats)->CTX_MID_Z(Stat,Emulate), a);
-    if (RT_SUCCESS(rc))
-        STAM_COUNTER_INC(&pVCpu->em.s.CTX_SUFF(pStats)->CTX_MID_Z(Stat,InterpretSucceeded));
-    else
-        STAM_COUNTER_INC(&pVCpu->em.s.CTX_SUFF(pStats)->CTX_MID_Z(Stat,InterpretFailed));
-    return rc;
 }
 
 
@@ -656,7 +614,7 @@ VMMDECL(VBOXSTRICTRC) EMInterpretInstructionCpuUpdtPC(PVM pVM, PVMCPU pVCpu, PDI
 {
     STAM_PROFILE_START(&pVCpu->em.s.CTX_SUFF(pStats)->CTX_MID_Z(Stat,Emulate), a);
     uint32_t cbIgnored;
-    VBOXSTRICTRC rc = emInterpretInstructionCPU(pVM, pVCpu, pDis, pRegFrame, pvFault, enmCodeType, &cbIgnored);
+    VBOXSTRICTRC rc = emInterpretInstructionCPUOuter(pVM, pVCpu, pDis, pRegFrame, pvFault, enmCodeType, &cbIgnored);
     STAM_PROFILE_STOP(&pVCpu->em.s.CTX_SUFF(pStats)->CTX_MID_Z(Stat,Emulate), a);
     if (RT_SUCCESS(rc))
     {
@@ -3111,7 +3069,7 @@ static int emInterpretWrmsr(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, PCPUMCTXCO
 
 /**
  * Internal worker.
- * @copydoc EMInterpretInstructionCPU
+ * @copydoc emInterpretInstructionCPUOuter
  */
 DECLINLINE(VBOXSTRICTRC) emInterpretInstructionCPU(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, PCPUMCTXCORE pRegFrame,
                                                    RTGCPTR pvFault, EMCODETYPE enmCodeType, uint32_t *pcbSize)
@@ -3376,5 +3334,47 @@ DECLINLINE(VBOXSTRICTRC) emInterpretInstructionCPU(PVM pVM, PVMCPU pVCpu, PDISCP
     } /* switch (opcode) */
     /* not reached */
 }
+
+/**
+ * Interprets the current instruction using the supplied DISCPUSTATE structure.
+ *
+ * EIP is *NOT* updated!
+ *
+ * @returns VBox strict status code.
+ * @retval  VINF_*                  Scheduling instructions. When these are returned, it
+ *                                  starts to get a bit tricky to know whether code was
+ *                                  executed or not... We'll address this when it becomes a problem.
+ * @retval  VERR_EM_INTERPRETER     Something we can't cope with.
+ * @retval  VERR_*                  Fatal errors.
+ *
+ * @param   pVM         The VM handle.
+ * @param   pVCpu       The VMCPU handle.
+ * @param   pDis        The disassembler cpu state for the instruction to be
+ *                      interpreted.
+ * @param   pRegFrame   The register frame. EIP is *NOT* changed!
+ * @param   pvFault     The fault address (CR2).
+ * @param   pcbSize     Size of the write (if applicable).
+ * @param   enmCodeType Code type (user/supervisor)
+ *
+ * @remark  Invalid opcode exceptions have a higher priority than GP (see Intel
+ *          Architecture System Developers Manual, Vol 3, 5.5) so we don't need
+ *          to worry about e.g. invalid modrm combinations (!)
+ *
+ * @todo    At this time we do NOT check if the instruction overwrites vital information.
+ *          Make sure this can't happen!! (will add some assertions/checks later)
+ */
+DECLINLINE(VBOXSTRICTRC) emInterpretInstructionCPUOuter(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, PCPUMCTXCORE pRegFrame,
+                                                        RTGCPTR pvFault, EMCODETYPE enmCodeType, uint32_t *pcbSize)
+{
+    STAM_PROFILE_START(&pVCpu->em.s.CTX_SUFF(pStats)->CTX_MID_Z(Stat,Emulate), a);
+    VBOXSTRICTRC rc = emInterpretInstructionCPU(pVM, pVCpu, pDis, pRegFrame, pvFault, enmCodeType, pcbSize);
+    STAM_PROFILE_STOP(&pVCpu->em.s.CTX_SUFF(pStats)->CTX_MID_Z(Stat,Emulate), a);
+    if (RT_SUCCESS(rc))
+        STAM_COUNTER_INC(&pVCpu->em.s.CTX_SUFF(pStats)->CTX_MID_Z(Stat,InterpretSucceeded));
+    else
+        STAM_COUNTER_INC(&pVCpu->em.s.CTX_SUFF(pStats)->CTX_MID_Z(Stat,InterpretFailed));
+    return rc;
+}
+
 
 #endif /* !VBOX_WITH_IEM */

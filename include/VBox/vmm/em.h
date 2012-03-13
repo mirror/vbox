@@ -158,7 +158,6 @@ VMMDECL(int)            EMInterpretDisasOneEx(PVM pVM, PVMCPU pVCpu, RTGCUINTPTR
                                               PDISCPUSTATE pDISState, unsigned *pcbInstr);
 VMMDECL(VBOXSTRICTRC)   EMInterpretInstruction(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault);
 VMMDECL(VBOXSTRICTRC)   EMInterpretInstructionEx(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, uint32_t *pcbSize);
-VMMDECL(VBOXSTRICTRC)   EMInterpretInstructionCPU(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDISState, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, EMCODETYPE enmCodeType, uint32_t *pcbSize);
 VMMDECL(VBOXSTRICTRC)   EMInterpretInstructionCpuUpdtPC(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, EMCODETYPE enmCodeType);
 
 #ifndef VBOX_WITH_IEM
