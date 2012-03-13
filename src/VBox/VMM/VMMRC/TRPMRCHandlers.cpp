@@ -520,8 +520,8 @@ DECLASM(int) TRPMGCTrap06Handler(PTRPMCPU pTrpmCpu, PCPUMCTXCORE pRegFrame)
         if (    Cpu.pCurInstr->opcode == OP_ILLUD2
             &&  PATMIsPatchGCAddr(pVM, pRegFrame->eip))
         {
-            LogFlow(("TRPMGCTrap06Handler: -> PATMGCHandleIllegalInstrTrap\n"));
-            rc = PATMGCHandleIllegalInstrTrap(pVM, pRegFrame);
+            LogFlow(("TRPMGCTrap06Handler: -> PATMRCHandleIllegalInstrTrap\n"));
+            rc = PATMRCHandleIllegalInstrTrap(pVM, pRegFrame);
             /** @todo  These tests are completely unnecessary, should just follow the
              *         flow and return at the end of the function. */
             if (    rc == VINF_SUCCESS

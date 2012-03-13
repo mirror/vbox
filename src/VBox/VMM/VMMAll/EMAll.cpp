@@ -25,6 +25,9 @@
 #include <VBox/vmm/patm.h>
 #include <VBox/vmm/csam.h>
 #include <VBox/vmm/pgm.h>
+#ifdef VBOX_WITH_IEM
+# include <VBox/vmm/iem.h>
+#endif
 #include <VBox/vmm/iom.h>
 #include <VBox/vmm/stam.h>
 #include "EMInternal.h"
@@ -487,14 +490,11 @@ VMMDECL(VBOXSTRICTRC) EMInterpretInstruction(PVMCPU pVCpu, PCPUMCTXCORE pRegFram
 {
     LogFlow(("EMInterpretInstruction %RGv fault %RGv\n", (RTGCPTR)pRegFrame->rip, pvFault));
 #ifdef VBOX_WITH_IEM
-    int rc = IEMExecOneEx(pVCpu, pRegFrame, IEM_EXEC_ONE_EX_FLAGS_, pcbSize);
-    if (RT_FAILURE(rc))
-        switch (rc)
-        {
-            case VERR_IEM_ASPECT_NOT_IMPLEMENTED:
-            case VERR_IEM_INSTR_NOT_IMPLEMENTED:
-                return VERR_EM_INTERPRETER;
-        }
+    NOREF(pvFault);
+    VBOXSTRICTRC rc = IEMExecOneEx(pVCpu, pRegFrame, NULL);
+    if (RT_UNLIKELY(   rc == VERR_IEM_ASPECT_NOT_IMPLEMENTED
+                    || rc == VERR_IEM_INSTR_NOT_IMPLEMENTED))
+        return VERR_EM_INTERPRETER;
     return rc;
 #else
     RTGCPTR pbCode;
@@ -544,14 +544,11 @@ VMMDECL(VBOXSTRICTRC) EMInterpretInstructionEx(PVMCPU pVCpu, PCPUMCTXCORE pRegFr
 {
     LogFlow(("EMInterpretInstructionEx %RGv fault %RGv\n", (RTGCPTR)pRegFrame->rip, pvFault));
 #ifdef VBOX_WITH_IEM
-    int rc = IEMExecOneEx(pVCpu, pRegFrame, IEM_EXEC_ONE_EX_FLAGS_, pcbWritten);
-    if (RT_FAILURE(rc))
-        switch (rc)
-        {
-            case VERR_IEM_ASPECT_NOT_IMPLEMENTED:
-            case VERR_IEM_INSTR_NOT_IMPLEMENTED:
-                return VERR_EM_INTERPRETER;
-        }
+    NOREF(pvFault);
+    VBOXSTRICTRC rc = IEMExecOneEx(pVCpu, pRegFrame, pcbWritten);
+    if (RT_UNLIKELY(   rc == VERR_IEM_ASPECT_NOT_IMPLEMENTED
+                    || rc == VERR_IEM_INSTR_NOT_IMPLEMENTED))
+        return VERR_EM_INTERPRETER;
     return rc;
 #else
     RTGCPTR pbCode;
@@ -608,20 +605,89 @@ VMMDECL(VBOXSTRICTRC) EMInterpretInstructionEx(PVMCPU pVCpu, PCPUMCTXCORE pRegFr
 VMMDECL(VBOXSTRICTRC) EMInterpretInstructionDisasState(PVMCPU pVCpu, PDISCPUSTATE pDis, PCPUMCTXCORE pRegFrame,
                                                        RTGCPTR pvFault, EMCODETYPE enmCodeType)
 {
-    STAM_PROFILE_START(&pVCpu->em.s.CTX_SUFF(pStats)->CTX_MID_Z(Stat,Emulate), a);
+    LogFlow(("EMInterpretInstructionDisasState %RGv fault %RGv\n", (RTGCPTR)pRegFrame->rip, pvFault));
+#ifdef VBOX_WITH_IEM
+    NOREF(pDis); NOREF(pvFault); NOREF(enmCodeType);
+    VBOXSTRICTRC rc = IEMExecOneEx(pVCpu, pRegFrame, NULL);
+    if (RT_UNLIKELY(   rc == VERR_IEM_ASPECT_NOT_IMPLEMENTED
+                    || rc == VERR_IEM_INSTR_NOT_IMPLEMENTED))
+        return VERR_EM_INTERPRETER;
+    return rc;
+#else
     uint32_t cbIgnored;
     VBOXSTRICTRC rc = emInterpretInstructionCPUOuter(pVCpu, pDis, pRegFrame, pvFault, enmCodeType, &cbIgnored);
-    STAM_PROFILE_STOP(&pVCpu->em.s.CTX_SUFF(pStats)->CTX_MID_Z(Stat,Emulate), a);
     if (RT_SUCCESS(rc))
-    {
         pRegFrame->rip += pDis->opsize; /* Move on to the next instruction. */
-        STAM_COUNTER_INC(&pVCpu->em.s.CTX_SUFF(pStats)->CTX_MID_Z(Stat,InterpretSucceeded));
-    }
-    else
-        STAM_COUNTER_INC(&pVCpu->em.s.CTX_SUFF(pStats)->CTX_MID_Z(Stat,InterpretFailed));
     return rc;
+#endif
 }
 
+#if defined(IN_RC) /*&& defined(VBOX_WITH_PATM)*/
+
+DECLINLINE(int) emRCStackRead(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pCtxCore, void *pvDst, RTGCPTR GCPtrSrc, uint32_t cb)
+{
+    int rc = MMGCRamRead(pVM, pvDst, (void *)(uintptr_t)GCPtrSrc, cb);
+    if (RT_LIKELY(rc != VERR_ACCESS_DENIED))
+        return rc;
+    return PGMPhysInterpretedReadNoHandlers(pVCpu, pCtxCore, pvDst, GCPtrSrc, cb, /*fMayTrap*/ false);
+}
+
+
+/**
+ * Interpret IRET (currently only to V86 code) - PATM only.
+ *
+ * @returns VBox status code.
+ * @param   pVM         The VM handle.
+ * @param   pVCpu       The VMCPU handle.
+ * @param   pRegFrame   The register frame.
+ *
+ */
+VMMDECL(int) EMInterpretIretV86ForPatm(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame)
+{
+    RTGCUINTPTR pIretStack = (RTGCUINTPTR)pRegFrame->esp;
+    RTGCUINTPTR eip, cs, esp, ss, eflags, ds, es, fs, gs, uMask;
+    int         rc;
+
+    Assert(!CPUMIsGuestIn64BitCode(pVCpu, pRegFrame));
+    /** @todo Rainy day: Test what happens when VERR_EM_INTERPRETER is returned by
+     *        this function.  Faire that it may guru on us, thus not converted to
+     *        IEM. */
+
+    rc  = emRCStackRead(pVM, pVCpu, pRegFrame, &eip,      (RTGCPTR)pIretStack      , 4);
+    rc |= emRCStackRead(pVM, pVCpu, pRegFrame, &cs,       (RTGCPTR)(pIretStack + 4), 4);
+    rc |= emRCStackRead(pVM, pVCpu, pRegFrame, &eflags,   (RTGCPTR)(pIretStack + 8), 4);
+    AssertRCReturn(rc, VERR_EM_INTERPRETER);
+    AssertReturn(eflags & X86_EFL_VM, VERR_EM_INTERPRETER);
+
+    rc |= emRCStackRead(pVM, pVCpu, pRegFrame, &esp,      (RTGCPTR)(pIretStack + 12), 4);
+    rc |= emRCStackRead(pVM, pVCpu, pRegFrame, &ss,       (RTGCPTR)(pIretStack + 16), 4);
+    rc |= emRCStackRead(pVM, pVCpu, pRegFrame, &es,       (RTGCPTR)(pIretStack + 20), 4);
+    rc |= emRCStackRead(pVM, pVCpu, pRegFrame, &ds,       (RTGCPTR)(pIretStack + 24), 4);
+    rc |= emRCStackRead(pVM, pVCpu, pRegFrame, &fs,       (RTGCPTR)(pIretStack + 28), 4);
+    rc |= emRCStackRead(pVM, pVCpu, pRegFrame, &gs,       (RTGCPTR)(pIretStack + 32), 4);
+    AssertRCReturn(rc, VERR_EM_INTERPRETER);
+
+    pRegFrame->eip = eip & 0xffff;
+    pRegFrame->cs  = cs;
+
+    /* Mask away all reserved bits */
+    uMask = X86_EFL_CF | X86_EFL_PF | X86_EFL_AF | X86_EFL_ZF | X86_EFL_SF | X86_EFL_TF | X86_EFL_IF | X86_EFL_DF | X86_EFL_OF | X86_EFL_IOPL | X86_EFL_NT | X86_EFL_RF | X86_EFL_VM | X86_EFL_AC | X86_EFL_VIF | X86_EFL_VIP | X86_EFL_ID;
+    eflags &= uMask;
+
+    CPUMRawSetEFlags(pVCpu, pRegFrame, eflags);
+    Assert((pRegFrame->eflags.u32 & (X86_EFL_IF|X86_EFL_IOPL)) == X86_EFL_IF);
+
+    pRegFrame->esp = esp;
+    pRegFrame->ss  = ss;
+    pRegFrame->ds  = ds;
+    pRegFrame->es  = es;
+    pRegFrame->fs  = fs;
+    pRegFrame->gs  = gs;
+
+    return VINF_SUCCESS;
+}
+
+#endif /* IN_RC && VBOX_WITH_PATM */
 #ifndef VBOX_WITH_IEM
 
 
@@ -1924,62 +1990,6 @@ static int emInterpretXAdd(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, PCPUMCTXCOR
 
     return VERR_EM_INTERPRETER;
 #endif
-}
-#endif /* IN_RC */
-
-
-#ifdef IN_RC
-/**
- * Interpret IRET (currently only to V86 code)
- *
- * @returns VBox status code.
- * @param   pVM         The VM handle.
- * @param   pVCpu       The VMCPU handle.
- * @param   pRegFrame   The register frame.
- *
- */
-VMMDECL(int) EMInterpretIret(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame)
-{
-    RTGCUINTPTR pIretStack = (RTGCUINTPTR)pRegFrame->esp;
-    RTGCUINTPTR eip, cs, esp, ss, eflags, ds, es, fs, gs, uMask;
-    int         rc;
-
-    Assert(!CPUMIsGuestIn64BitCode(pVCpu, pRegFrame));
-
-    rc  = emRamRead(pVM, pVCpu, pRegFrame, &eip,      (RTGCPTR)pIretStack      , 4);
-    rc |= emRamRead(pVM, pVCpu, pRegFrame, &cs,       (RTGCPTR)(pIretStack + 4), 4);
-    rc |= emRamRead(pVM, pVCpu, pRegFrame, &eflags,   (RTGCPTR)(pIretStack + 8), 4);
-    AssertRCReturn(rc, VERR_EM_INTERPRETER);
-    AssertReturn(eflags & X86_EFL_VM, VERR_EM_INTERPRETER);
-
-    rc |= emRamRead(pVM, pVCpu, pRegFrame, &esp,      (RTGCPTR)(pIretStack + 12), 4);
-    rc |= emRamRead(pVM, pVCpu, pRegFrame, &ss,       (RTGCPTR)(pIretStack + 16), 4);
-    rc |= emRamRead(pVM, pVCpu, pRegFrame, &es,       (RTGCPTR)(pIretStack + 20), 4);
-    rc |= emRamRead(pVM, pVCpu, pRegFrame, &ds,       (RTGCPTR)(pIretStack + 24), 4);
-    rc |= emRamRead(pVM, pVCpu, pRegFrame, &fs,       (RTGCPTR)(pIretStack + 28), 4);
-    rc |= emRamRead(pVM, pVCpu, pRegFrame, &gs,       (RTGCPTR)(pIretStack + 32), 4);
-    AssertRCReturn(rc, VERR_EM_INTERPRETER);
-
-    pRegFrame->eip = eip & 0xffff;
-    pRegFrame->cs  = cs;
-
-    /* Mask away all reserved bits */
-    uMask = X86_EFL_CF | X86_EFL_PF | X86_EFL_AF | X86_EFL_ZF | X86_EFL_SF | X86_EFL_TF | X86_EFL_IF | X86_EFL_DF | X86_EFL_OF | X86_EFL_IOPL | X86_EFL_NT | X86_EFL_RF | X86_EFL_VM | X86_EFL_AC | X86_EFL_VIF | X86_EFL_VIP | X86_EFL_ID;
-    eflags &= uMask;
-
-#ifndef IN_RING0
-    CPUMRawSetEFlags(pVCpu, pRegFrame, eflags);
-#endif
-    Assert((pRegFrame->eflags.u32 & (X86_EFL_IF|X86_EFL_IOPL)) == X86_EFL_IF);
-
-    pRegFrame->esp = esp;
-    pRegFrame->ss  = ss;
-    pRegFrame->ds  = ds;
-    pRegFrame->es  = es;
-    pRegFrame->fs  = fs;
-    pRegFrame->gs  = gs;
-
-    return VINF_SUCCESS;
 }
 #endif /* IN_RC */
 
