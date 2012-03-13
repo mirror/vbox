@@ -147,9 +147,10 @@ VMMRCDECL(int) PATMGCHandleWriteToPatchPage(PVM pVM, PCPUMCTXCORE pRegFrame, RTR
  * @param   pVM         The VM handle.
  * @param   pCtxCore    The relevant core context.
  */
-VMMDECL(int) PATMGCHandleIllegalInstrTrap(PVM pVM, PCPUMCTXCORE pRegFrame)
+VMMDECL(int) PATMRCHandleIllegalInstrTrap(PVM pVM, PCPUMCTXCORE pRegFrame)
 {
     PPATMPATCHREC pRec;
+    PVMCPU pVCpu = VMMGetCpu0(pVM);
     int rc;
 
     /* Very important check -> otherwise we have a security leak. */
@@ -159,7 +160,7 @@ VMMDECL(int) PATMGCHandleIllegalInstrTrap(PVM pVM, PCPUMCTXCORE pRegFrame)
     /* OP_ILLUD2 in PATM generated code? */
     if (CTXSUFF(pVM->patm.s.pGCState)->uPendingAction)
     {
-        LogFlow(("PATMGC: Pending action %x at %x\n", CTXSUFF(pVM->patm.s.pGCState)->uPendingAction, pRegFrame->eip));
+        LogFlow(("PATMRC: Pending action %x at %x\n", CTXSUFF(pVM->patm.s.pGCState)->uPendingAction, pRegFrame->eip));
 
         /* Private PATM interface (@todo hack due to lack of anything generic). */
         /* Parameters:
@@ -182,7 +183,7 @@ VMMDECL(int) PATMGCHandleIllegalInstrTrap(PVM pVM, PCPUMCTXCORE pRegFrame)
                  */
                 AssertMsg(!pRegFrame->edi || PATMIsPatchGCAddr(pVM, pRegFrame->edi), ("edx = %x\n", pRegFrame->edi));
 
-                Log(("PATMGC: lookup %x jump table=%x\n", pRegFrame->edx, pRegFrame->edi));
+                Log(("PATMRC: lookup %x jump table=%x\n", pRegFrame->edx, pRegFrame->edi));
 
                 pRec = PATMQueryFunctionPatch(pVM, (RTRCPTR)(pRegFrame->edx));
                 if (pRec)
@@ -230,7 +231,7 @@ VMMDECL(int) PATMGCHandleIllegalInstrTrap(PVM pVM, PCPUMCTXCORE pRegFrame)
                 /* Parameters:
                  *  edi = GC address to jump to
                  */
-                Log(("PATMGC: Dispatch pending interrupt; eip=%x->%x\n", pRegFrame->eip, pRegFrame->edi));
+                Log(("PATMRC: Dispatch pending interrupt; eip=%x->%x\n", pRegFrame->eip, pRegFrame->edi));
 
                 /* Change EIP to the guest address the patch would normally jump to after setting IF. */
                 pRegFrame->eip = pRegFrame->edi;
@@ -256,7 +257,7 @@ VMMDECL(int) PATMGCHandleIllegalInstrTrap(PVM pVM, PCPUMCTXCORE pRegFrame)
                 /* Parameters:
                  *  edi = GC address to jump to
                  */
-                Log(("PATMGC: Dispatch pending interrupt (iret); eip=%x->%x\n", pRegFrame->eip, pRegFrame->edi));
+                Log(("PATMRC: Dispatch pending interrupt (iret); eip=%x->%x\n", pRegFrame->eip, pRegFrame->edi));
                 Assert(pVM->patm.s.CTXSUFF(pGCState)->Restore.uFlags == (PATM_RESTORE_EAX|PATM_RESTORE_ECX|PATM_RESTORE_EDI));
                 Assert(pVM->patm.s.CTXSUFF(pGCState)->fPIF == 0);
 
@@ -275,7 +276,7 @@ VMMDECL(int) PATMGCHandleIllegalInstrTrap(PVM pVM, PCPUMCTXCORE pRegFrame)
 
             case PATM_ACTION_DO_V86_IRET:
             {
-                Log(("PATMGC: Do iret to V86 code; eip=%x\n", pRegFrame->eip));
+                Log(("PATMRC: Do iret to V86 code; eip=%x\n", pRegFrame->eip));
                 Assert(pVM->patm.s.CTXSUFF(pGCState)->Restore.uFlags == (PATM_RESTORE_EAX|PATM_RESTORE_ECX));
                 Assert(pVM->patm.s.CTXSUFF(pGCState)->fPIF == 0);
 
@@ -283,14 +284,14 @@ VMMDECL(int) PATMGCHandleIllegalInstrTrap(PVM pVM, PCPUMCTXCORE pRegFrame)
                 pRegFrame->ecx = pVM->patm.s.CTXSUFF(pGCState)->Restore.uECX;
                 pVM->patm.s.CTXSUFF(pGCState)->Restore.uFlags = 0;
 
-                rc = EMInterpretIret(pVM, VMMGetCpu0(pVM), pRegFrame);
+                rc = EMInterpretIretV86ForPatm(pVM, pVCpu, pRegFrame);
                 if (RT_SUCCESS(rc))
                 {
                     STAM_COUNTER_INC(&pVM->patm.s.StatEmulIret);
 
                     /* We are no longer executing PATM code; set PIF again. */
                     pVM->patm.s.CTXSUFF(pGCState)->fPIF = 1;
-                    PGMRZDynMapReleaseAutoSet(VMMGetCpu0(pVM));
+                    PGMRZDynMapReleaseAutoSet(pVCpu);
                     CPUMGCCallV86Code(pRegFrame);
                     /* does not return */
                 }
@@ -301,32 +302,32 @@ VMMDECL(int) PATMGCHandleIllegalInstrTrap(PVM pVM, PCPUMCTXCORE pRegFrame)
 
 #ifdef DEBUG
             case PATM_ACTION_LOG_CLI:
-                Log(("PATMGC: CLI at %x (current IF=%d iopl=%d)\n", pRegFrame->eip, !!(pVM->patm.s.CTXSUFF(pGCState)->uVMFlags & X86_EFL_IF), X86_EFL_GET_IOPL(pVM->patm.s.CTXSUFF(pGCState)->uVMFlags) ));
+                Log(("PATMRC: CLI at %x (current IF=%d iopl=%d)\n", pRegFrame->eip, !!(pVM->patm.s.CTXSUFF(pGCState)->uVMFlags & X86_EFL_IF), X86_EFL_GET_IOPL(pVM->patm.s.CTXSUFF(pGCState)->uVMFlags) ));
                 pRegFrame->eip += PATM_ILLEGAL_INSTR_SIZE;
                 return VINF_SUCCESS;
 
             case PATM_ACTION_LOG_STI:
-                Log(("PATMGC: STI at %x (current IF=%d iopl=%d)\n", pRegFrame->eip, !!(pVM->patm.s.CTXSUFF(pGCState)->uVMFlags & X86_EFL_IF), X86_EFL_GET_IOPL(pVM->patm.s.CTXSUFF(pGCState)->uVMFlags) ));
+                Log(("PATMRC: STI at %x (current IF=%d iopl=%d)\n", pRegFrame->eip, !!(pVM->patm.s.CTXSUFF(pGCState)->uVMFlags & X86_EFL_IF), X86_EFL_GET_IOPL(pVM->patm.s.CTXSUFF(pGCState)->uVMFlags) ));
                 pRegFrame->eip += PATM_ILLEGAL_INSTR_SIZE;
                 return VINF_SUCCESS;
 
             case PATM_ACTION_LOG_POPF_IF1:
-                Log(("PATMGC: POPF setting IF at %x (current IF=%d iopl=%d)\n", pRegFrame->eip, !!(pVM->patm.s.CTXSUFF(pGCState)->uVMFlags & X86_EFL_IF), X86_EFL_GET_IOPL(pVM->patm.s.CTXSUFF(pGCState)->uVMFlags)));
+                Log(("PATMRC: POPF setting IF at %x (current IF=%d iopl=%d)\n", pRegFrame->eip, !!(pVM->patm.s.CTXSUFF(pGCState)->uVMFlags & X86_EFL_IF), X86_EFL_GET_IOPL(pVM->patm.s.CTXSUFF(pGCState)->uVMFlags)));
                 pRegFrame->eip += PATM_ILLEGAL_INSTR_SIZE;
                 return VINF_SUCCESS;
 
             case PATM_ACTION_LOG_POPF_IF0:
-                Log(("PATMGC: POPF at %x (current IF=%d iopl=%d)\n", pRegFrame->eip, !!(pVM->patm.s.CTXSUFF(pGCState)->uVMFlags & X86_EFL_IF), X86_EFL_GET_IOPL(pVM->patm.s.CTXSUFF(pGCState)->uVMFlags)));
+                Log(("PATMRC: POPF at %x (current IF=%d iopl=%d)\n", pRegFrame->eip, !!(pVM->patm.s.CTXSUFF(pGCState)->uVMFlags & X86_EFL_IF), X86_EFL_GET_IOPL(pVM->patm.s.CTXSUFF(pGCState)->uVMFlags)));
                 pRegFrame->eip += PATM_ILLEGAL_INSTR_SIZE;
                 return VINF_SUCCESS;
 
             case PATM_ACTION_LOG_PUSHF:
-                Log(("PATMGC: PUSHF at %x (current IF=%d iopl=%d)\n", pRegFrame->eip, !!(pVM->patm.s.CTXSUFF(pGCState)->uVMFlags & X86_EFL_IF), X86_EFL_GET_IOPL(pVM->patm.s.CTXSUFF(pGCState)->uVMFlags) ));
+                Log(("PATMRC: PUSHF at %x (current IF=%d iopl=%d)\n", pRegFrame->eip, !!(pVM->patm.s.CTXSUFF(pGCState)->uVMFlags & X86_EFL_IF), X86_EFL_GET_IOPL(pVM->patm.s.CTXSUFF(pGCState)->uVMFlags) ));
                 pRegFrame->eip += PATM_ILLEGAL_INSTR_SIZE;
                 return VINF_SUCCESS;
 
             case PATM_ACTION_LOG_IF1:
-                Log(("PATMGC: IF=1 escape from %x\n", pRegFrame->eip));
+                Log(("PATMRC: IF=1 escape from %x\n", pRegFrame->eip));
                 pRegFrame->eip += PATM_ILLEGAL_INSTR_SIZE;
                 return VINF_SUCCESS;
 
@@ -357,17 +358,17 @@ VMMDECL(int) PATMGCHandleIllegalInstrTrap(PVM pVM, PCPUMCTXCORE pRegFrame)
                             rc |= MMGCRamRead(pVM, &selGS,   pIretFrame + 32, 4);
                             if (rc == VINF_SUCCESS)
                             {
-                                Log(("PATMGC: IRET->VM stack frame: return address %04X:%x eflags=%08x ss:esp=%04X:%x\n", selCS, eip, uEFlags, selSS, esp));
-                                Log(("PATMGC: IRET->VM stack frame: DS=%04X ES=%04X FS=%04X GS=%04X\n", selDS, selES, selFS, selGS));
+                                Log(("PATMRC: IRET->VM stack frame: return address %04X:%x eflags=%08x ss:esp=%04X:%x\n", selCS, eip, uEFlags, selSS, esp));
+                                Log(("PATMRC: IRET->VM stack frame: DS=%04X ES=%04X FS=%04X GS=%04X\n", selDS, selES, selFS, selGS));
                             }
                         }
                         else
-                            Log(("PATMGC: IRET stack frame: return address %04X:%x eflags=%08x ss:esp=%04X:%x\n", selCS, eip, uEFlags, selSS, esp));
+                            Log(("PATMRC: IRET stack frame: return address %04X:%x eflags=%08x ss:esp=%04X:%x\n", selCS, eip, uEFlags, selSS, esp));
                     }
                     else
-                        Log(("PATMGC: IRET stack frame: return address %04X:%x eflags=%08x\n", selCS, eip, uEFlags));
+                        Log(("PATMRC: IRET stack frame: return address %04X:%x eflags=%08x\n", selCS, eip, uEFlags));
                 }
-                Log(("PATMGC: IRET from %x (IF->1) current eflags=%x\n", pRegFrame->eip, pVM->patm.s.CTXSUFF(pGCState)->uVMFlags));
+                Log(("PATMRC: IRET from %x (IF->1) current eflags=%x\n", pRegFrame->eip, pVM->patm.s.CTXSUFF(pGCState)->uVMFlags));
                 pRegFrame->eip += PATM_ILLEGAL_INSTR_SIZE;
                 return VINF_SUCCESS;
             }
@@ -399,27 +400,27 @@ VMMDECL(int) PATMGCHandleIllegalInstrTrap(PVM pVM, PCPUMCTXCORE pRegFrame)
                             rc |= MMGCRamRead(pVM, &selGS,   pIretFrame + 32, 4);
                             if (rc == VINF_SUCCESS)
                             {
-                                Log(("PATMGC: GATE->VM stack frame: return address %04X:%x eflags=%08x ss:esp=%04X:%x\n", selCS, eip, uEFlags, selSS, esp));
-                                Log(("PATMGC: GATE->VM stack frame: DS=%04X ES=%04X FS=%04X GS=%04X\n", selDS, selES, selFS, selGS));
+                                Log(("PATMRC: GATE->VM stack frame: return address %04X:%x eflags=%08x ss:esp=%04X:%x\n", selCS, eip, uEFlags, selSS, esp));
+                                Log(("PATMRC: GATE->VM stack frame: DS=%04X ES=%04X FS=%04X GS=%04X\n", selDS, selES, selFS, selGS));
                             }
                         }
                         else
-                            Log(("PATMGC: GATE stack frame: return address %04X:%x eflags=%08x ss:esp=%04X:%x\n", selCS, eip, uEFlags, selSS, esp));
+                            Log(("PATMRC: GATE stack frame: return address %04X:%x eflags=%08x ss:esp=%04X:%x\n", selCS, eip, uEFlags, selSS, esp));
                     }
                     else
-                        Log(("PATMGC: GATE stack frame: return address %04X:%x eflags=%08x\n", selCS, eip, uEFlags));
+                        Log(("PATMRC: GATE stack frame: return address %04X:%x eflags=%08x\n", selCS, eip, uEFlags));
                 }
                 pRegFrame->eip += PATM_ILLEGAL_INSTR_SIZE;
                 return VINF_SUCCESS;
             }
 
             case PATM_ACTION_LOG_RET:
-                Log(("PATMGC: RET from %x to %x ESP=%x iopl=%d\n", pRegFrame->eip, pRegFrame->edx, pRegFrame->ebx, X86_EFL_GET_IOPL(pVM->patm.s.CTXSUFF(pGCState)->uVMFlags)));
+                Log(("PATMRC: RET from %x to %x ESP=%x iopl=%d\n", pRegFrame->eip, pRegFrame->edx, pRegFrame->ebx, X86_EFL_GET_IOPL(pVM->patm.s.CTXSUFF(pGCState)->uVMFlags)));
                 pRegFrame->eip += PATM_ILLEGAL_INSTR_SIZE;
                 return VINF_SUCCESS;
 
             case PATM_ACTION_LOG_CALL:
-                Log(("PATMGC: CALL to %RRv return addr %RRv ESP=%x iopl=%d\n", pVM->patm.s.CTXSUFF(pGCState)->GCCallPatchTargetAddr, pVM->patm.s.CTXSUFF(pGCState)->GCCallReturnAddr, pRegFrame->edx, X86_EFL_GET_IOPL(pVM->patm.s.CTXSUFF(pGCState)->uVMFlags)));
+                Log(("PATMRC: CALL to %RRv return addr %RRv ESP=%x iopl=%d\n", pVM->patm.s.CTXSUFF(pGCState)->GCCallPatchTargetAddr, pVM->patm.s.CTXSUFF(pGCState)->GCCallReturnAddr, pRegFrame->edx, X86_EFL_GET_IOPL(pVM->patm.s.CTXSUFF(pGCState)->uVMFlags)));
                 pRegFrame->eip += PATM_ILLEGAL_INSTR_SIZE;
                 return VINF_SUCCESS;
 #endif

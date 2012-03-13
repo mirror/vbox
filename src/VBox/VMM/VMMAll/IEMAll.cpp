@@ -7917,3 +7917,61 @@ VMM_INT_DECL(int) IEMBreakpointClear(PVM pVM, RTGCPTR GCPtrBp)
     return VERR_NOT_IMPLEMENTED;
 }
 
+
+/**
+ * Updates the real CPU context structure with the context core (from the trap
+ * stack frame) before interpreting any instructions.
+ *
+ * @param   pCtx        The real CPU context.
+ * @param   pCtxCore    The trap stack CPU core context.
+ */
+DECLINLINE(void) iemCtxCoreToCtx(PCPUMCTX pCtx, PCCPUMCTXCORE pCtxCore)
+{
+    PCPUMCTXCORE pDst = CPUMCTX2CORE(pCtx);
+    if (pDst != pCtxCore)
+        *pDst = *pCtxCore;
+}
+
+
+/**
+ * Updates the context core (from the trap stack frame) with the updated values
+ * from the real CPU context structure after instruction emulation.
+ *
+ * @param   pCtx        The real CPU context.
+ * @param   pCtxCore    The trap stack CPU core context.
+ */
+DECLINLINE(void) iemCtxToCtxCore(PCPUMCTXCORE pCtxCore, PCCPUMCTX pCtx)
+{
+    PCCPUMCTXCORE pSrc = CPUMCTX2CORE(pCtx);
+    if (pSrc != pCtxCore)
+        *pCtxCore = *pSrc;
+}
+
+
+#if 0 /* The IRET-to-v8086 mode in PATM is very optimistic, so I don't dare do this yet. */
+/**
+ * Executes a IRET instruction with default operand size.
+ *
+ * This is for PATM.
+ *
+ * @returns VBox status code.
+ * @param   pVCpu               The current virtual CPU.
+ * @param   pCtxCore            The register frame.
+ */
+VMM_INT_DECL(int) IEMExecInstr_iret(PVMCPU pVCpu, PCPUMCTXCORE pCtxCore)
+{
+    PIEMCPU  pIemCpu = &pVCpu->iem.s;
+    PCPUMCTX pCtx    = pVCpu->iem.s.CTX_SUFF(pCtx);
+
+    iemCtxCoreToCtx(pCtx, pCtxCore);
+    iemInitDecoder(pIemCpu);
+    VBOXSTRICTRC rcStrict = iemCImpl_iret(pIemCpu, 1, pIemCpu->enmDefOpSize);
+    if (rcStrict == VINF_SUCCESS)
+        iemCtxToCtxCore(pCtxCore, pCtx);
+    else
+        LogFlow(("IEMExecInstr_iret: cs:rip=%04x:%08RX64 ss:rsp=%04x:%08RX64 EFL=%06x - rcStrict=%Rrc\n",
+                 pCtx->cs, pCtx->rip, pCtx->ss, pCtx->rsp, pCtx->eflags.u, VBOXSTRICTRC_VAL(rcStrict)));
+    return rcStrict;
+}
+#endif
+

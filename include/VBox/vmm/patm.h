@@ -313,7 +313,7 @@ VMMRCDECL(int) PATMGCHandleWriteToPatchPage(PVM pVM, PCPUMCTXCORE pRegFrame, RTR
  * @param   pVM         The VM handle.
  * @param   pCtxCore    The relevant core context.
  */
-VMMDECL(int) PATMGCHandleIllegalInstrTrap(PVM pVM, PCPUMCTXCORE pRegFrame);
+VMMDECL(int) PATMRCHandleIllegalInstrTrap(PVM pVM, PCPUMCTXCORE pRegFrame);
 
 /** @} */
 
