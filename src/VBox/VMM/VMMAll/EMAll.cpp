@@ -75,7 +75,7 @@ typedef struct
 *   Internal Functions                                                         *
 *******************************************************************************/
 #ifndef VBOX_WITH_IEM
-DECLINLINE(VBOXSTRICTRC) emInterpretInstructionCPUOuter(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, PCPUMCTXCORE pRegFrame,
+DECLINLINE(VBOXSTRICTRC) emInterpretInstructionCPUOuter(PVMCPU pVCpu, PDISCPUSTATE pDis, PCPUMCTXCORE pRegFrame,
                                                         RTGCPTR pvFault, EMCODETYPE enmCodeType, uint32_t *pcbSize);
 #endif
 
@@ -473,7 +473,6 @@ VMMDECL(int) EMInterpretDisasOneEx(PVM pVM, PVMCPU pVCpu, RTGCUINTPTR GCPtrInstr
  * @retval  VERR_EM_INTERPRETER     Something we can't cope with.
  * @retval  VERR_*                  Fatal errors.
  *
- * @param   pVM         The VM handle.
  * @param   pVCpu       The VMCPU handle.
  * @param   pRegFrame   The register frame.
  *                      Updates the EIP if an instruction was executed successfully.
@@ -484,7 +483,7 @@ VMMDECL(int) EMInterpretDisasOneEx(PVM pVM, PVMCPU pVCpu, RTGCUINTPTR GCPtrInstr
  *          Architecture System Developers Manual, Vol 3, 5.5) so we don't need
  *          to worry about e.g. invalid modrm combinations (!)
  */
-VMMDECL(VBOXSTRICTRC) EMInterpretInstruction(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault)
+VMMDECL(VBOXSTRICTRC) EMInterpretInstruction(PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault)
 {
     LogFlow(("EMInterpretInstruction %RGv fault %RGv\n", (RTGCPTR)pRegFrame->rip, pvFault));
 #ifdef VBOX_WITH_IEM
@@ -510,7 +509,7 @@ VMMDECL(VBOXSTRICTRC) EMInterpretInstruction(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE
         {
             Assert(cbOp == pDis->opsize);
             uint32_t cbIgnored;
-            rc = emInterpretInstructionCPUOuter(pVM, pVCpu, pDis, pRegFrame, pvFault, EMCODETYPE_SUPERVISOR, &cbIgnored);
+            rc = emInterpretInstructionCPUOuter(pVCpu, pDis, pRegFrame, pvFault, EMCODETYPE_SUPERVISOR, &cbIgnored);
             if (RT_SUCCESS(rc))
                 pRegFrame->rip += cbOp; /* Move on to the next instruction. */
 
@@ -566,7 +565,7 @@ VMMDECL(VBOXSTRICTRC) EMInterpretInstructionEx(PVM pVM, PVMCPU pVCpu, PCPUMCTXCO
         if (RT_SUCCESS(rc))
         {
             Assert(cbOp == pDis->opsize);
-            rc = emInterpretInstructionCPUOuter(pVM, pVCpu, pDis, pRegFrame, pvFault, EMCODETYPE_SUPERVISOR, pcbWritten);
+            rc = emInterpretInstructionCPUOuter(pVCpu, pDis, pRegFrame, pvFault, EMCODETYPE_SUPERVISOR, pcbWritten);
             if (RT_SUCCESS(rc))
                 pRegFrame->rip += cbOp; /* Move on to the next instruction. */
 
@@ -606,12 +605,12 @@ VMMDECL(VBOXSTRICTRC) EMInterpretInstructionEx(PVM pVM, PVMCPU pVCpu, PCPUMCTXCO
  * @todo    At this time we do NOT check if the instruction overwrites vital information.
  *          Make sure this can't happen!! (will add some assertions/checks later)
  */
-VMMDECL(VBOXSTRICTRC) EMInterpretInstructionCpuUpdtPC(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, PCPUMCTXCORE pRegFrame,
+VMMDECL(VBOXSTRICTRC) EMInterpretInstructionCpuUpdtPC(PVMCPU pVCpu, PDISCPUSTATE pDis, PCPUMCTXCORE pRegFrame,
                                                       RTGCPTR pvFault, EMCODETYPE enmCodeType)
 {
     STAM_PROFILE_START(&pVCpu->em.s.CTX_SUFF(pStats)->CTX_MID_Z(Stat,Emulate), a);
     uint32_t cbIgnored;
-    VBOXSTRICTRC rc = emInterpretInstructionCPUOuter(pVM, pVCpu, pDis, pRegFrame, pvFault, enmCodeType, &cbIgnored);
+    VBOXSTRICTRC rc = emInterpretInstructionCPUOuter(pVCpu, pDis, pRegFrame, pvFault, enmCodeType, &cbIgnored);
     STAM_PROFILE_STOP(&pVCpu->em.s.CTX_SUFF(pStats)->CTX_MID_Z(Stat,Emulate), a);
     if (RT_SUCCESS(rc))
     {
@@ -3344,7 +3343,6 @@ DECLINLINE(VBOXSTRICTRC) emInterpretInstructionCPU(PVM pVM, PVMCPU pVCpu, PDISCP
  * @retval  VERR_EM_INTERPRETER     Something we can't cope with.
  * @retval  VERR_*                  Fatal errors.
  *
- * @param   pVM         The VM handle.
  * @param   pVCpu       The VMCPU handle.
  * @param   pDis        The disassembler cpu state for the instruction to be
  *                      interpreted.
@@ -3360,11 +3358,11 @@ DECLINLINE(VBOXSTRICTRC) emInterpretInstructionCPU(PVM pVM, PVMCPU pVCpu, PDISCP
  * @todo    At this time we do NOT check if the instruction overwrites vital information.
  *          Make sure this can't happen!! (will add some assertions/checks later)
  */
-DECLINLINE(VBOXSTRICTRC) emInterpretInstructionCPUOuter(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, PCPUMCTXCORE pRegFrame,
+DECLINLINE(VBOXSTRICTRC) emInterpretInstructionCPUOuter(PVMCPU pVCpu, PDISCPUSTATE pDis, PCPUMCTXCORE pRegFrame,
                                                         RTGCPTR pvFault, EMCODETYPE enmCodeType, uint32_t *pcbSize)
 {
     STAM_PROFILE_START(&pVCpu->em.s.CTX_SUFF(pStats)->CTX_MID_Z(Stat,Emulate), a);
-    VBOXSTRICTRC rc = emInterpretInstructionCPU(pVM, pVCpu, pDis, pRegFrame, pvFault, enmCodeType, pcbSize);
+    VBOXSTRICTRC rc = emInterpretInstructionCPU(pVCpu->CTX_SUFF(pVM), pVCpu, pDis, pRegFrame, pvFault, enmCodeType, pcbSize);
     STAM_PROFILE_STOP(&pVCpu->em.s.CTX_SUFF(pStats)->CTX_MID_Z(Stat,Emulate), a);
     if (RT_SUCCESS(rc))
         STAM_COUNTER_INC(&pVCpu->em.s.CTX_SUFF(pStats)->CTX_MID_Z(Stat,InterpretSucceeded));

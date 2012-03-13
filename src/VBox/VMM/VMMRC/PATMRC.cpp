@@ -111,7 +111,7 @@ VMMRCDECL(int) PATMGCHandleWriteToPatchPage(PVM pVM, PCPUMCTXCORE pRegFrame, RTR
         {
             /* This part of the page was not patched; try to emulate the instruction. */
             LogFlow(("PATMHandleWriteToPatchPage: Interpret %x accessing %RRv\n", pRegFrame->eip, GCPtr));
-            int rc = EMInterpretInstruction(pVM, VMMGetCpu0(pVM), pRegFrame, (RTGCPTR)(RTRCUINTPTR)GCPtr);
+            int rc = EMInterpretInstruction(VMMGetCpu0(pVM), pRegFrame, (RTGCPTR)(RTRCUINTPTR)GCPtr);
             if (rc == VINF_SUCCESS)
             {
                 STAM_COUNTER_INC(&pVM->patm.s.StatPatchWriteInterpreted);
@@ -519,7 +519,7 @@ VMMDECL(int) PATMHandleInt3PatchTrap(PVM pVM, PCPUMCTXCORE pRegFrame)
                 return VINF_EM_RAW_EMULATE_INSTR;
             }
 
-            rc = EMInterpretInstructionCpuUpdtPC(pVM, VMMGetCpu0(pVM), &cpu, pRegFrame, 0 /* not relevant here */,
+            rc = EMInterpretInstructionCpuUpdtPC(VMMGetCpu0(pVM), &cpu, pRegFrame, 0 /* not relevant here */,
                                                  EMCODETYPE_SUPERVISOR);
             if (rc != VINF_SUCCESS)
             {
