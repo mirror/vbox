@@ -1016,7 +1016,7 @@ int Guest::notifyCtrlClientDisconnected(uint32_t                        u32Funct
  *
  * @return  IPRT status code.
  * @param   u32PID                  PID of process to get status for.
- * @param   pProcess                Where to store the process information.
+ * @param   pProcess                Where to store the process information. Optional.
  * @param   fRemove                 Flag indicating whether to remove the
  *                                  process from the map when process marked a
  *                                  exited/terminated.
@@ -1380,8 +1380,17 @@ int Guest::executeStreamDrain(ULONG aPID, ULONG aFlags, GuestProcessStream &stre
         }
         else /* No more output and/or error! */
         {
-            if (rc == VERR_NOT_FOUND)
+            if (   rc == VERR_NOT_FOUND
+                || rc == VERR_BROKEN_PIPE)
+            {
                 rc = VINF_SUCCESS;
+            }
+
+            /* In any case remove the (terminated/broken) process from
+             * the process table. */
+            int rc2 = processGetStatus(aPID, NULL /* PVBOXGUESTCTRL_PROCESS */,
+                                       true /* Remove from table */);
+            AssertRC(rc2);
             break;
         }
     }
@@ -2093,7 +2102,16 @@ HRESULT Guest::getProcessOutputInternal(ULONG aPID, ULONG aFlags, ULONG aTimeout
             rc = setError(VBOX_E_IPRT_ERROR,
                           Guest::tr("Guest process (PID %u) does not exist"), aPID);
         }
-        else
+        else if (proc.mStatus != ExecuteProcessStatus_Started)
+        {
+            /* If the process is still in the process table but does not run anymore
+             * don't remove it but report back an appropriate error. */
+            vrc = VERR_BROKEN_PIPE;
+            rc = setError(VBOX_E_IPRT_ERROR,
+                          Guest::tr("Guest process (PID %u) does not run anymore"), aPID);
+        }
+
+        if (RT_SUCCESS(vrc))
         {
             uint32_t uContextID = 0;
 
