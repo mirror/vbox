@@ -555,7 +555,7 @@ DECLASM(int) TRPMGCTrap06Handler(PTRPMCPU pTrpmCpu, PCPUMCTXCORE pRegFrame)
         else if (Cpu.pCurInstr->opcode == OP_MONITOR)
         {
             LogFlow(("TRPMGCTrap06Handler: -> EMInterpretInstructionCPU\n"));
-            rc = EMInterpretInstructionCpuUpdtPC(pVCpu, &Cpu, pRegFrame, PC, EMCODETYPE_SUPERVISOR);
+            rc = EMInterpretInstructionDisasState(pVCpu, &Cpu, pRegFrame, PC, EMCODETYPE_SUPERVISOR);
         }
         /* Never generate a raw trap here; it might be an instruction, that requires emulation. */
         else
@@ -797,7 +797,7 @@ static int trpmGCTrap0dHandlerRing0(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFram
         case OP_RDMSR:
         case OP_WRMSR:
         {
-            rc = EMInterpretInstructionCpuUpdtPC(pVCpu, pCpu, pRegFrame, PC, EMCODETYPE_SUPERVISOR);
+            rc = EMInterpretInstructionDisasState(pVCpu, pCpu, pRegFrame, PC, EMCODETYPE_SUPERVISOR);
             if (rc == VERR_EM_INTERPRETER)
                 rc = VINF_EM_RAW_EXCEPTION_PRIVILEGED;
             return trpmGCExitTrap(pVM, pVCpu, rc, pRegFrame);
@@ -873,7 +873,7 @@ static int trpmGCTrap0dHandlerRing3(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFram
         case OP_RDTSC:
         case OP_RDPMC:
         {
-            rc = EMInterpretInstructionCpuUpdtPC(pVCpu, pCpu, pRegFrame, PC, EMCODETYPE_SUPERVISOR);
+            rc = EMInterpretInstructionDisasState(pVCpu, pCpu, pRegFrame, PC, EMCODETYPE_SUPERVISOR);
             if (rc == VERR_EM_INTERPRETER)
                 rc = VINF_EM_RAW_EXCEPTION_PRIVILEGED;
             return trpmGCExitTrap(pVM, pVCpu, rc, pRegFrame);

@@ -839,7 +839,7 @@ static int pgmPoolAccessHandlerFlush(PVM pVM, PVMCPU pVCpu, PPGMPOOL pPool, PPGM
      * Emulate the instruction (xp/w2k problem, requires pc/cr2/sp detection).
      * Must do this in raw mode (!); XP boot will fail otherwise.
      */
-    VBOXSTRICTRC rc2 = EMInterpretInstructionCpuUpdtPC(pVCpu, pDis, pRegFrame, pvFault, EMCODETYPE_ALL);
+    VBOXSTRICTRC rc2 = EMInterpretInstructionDisasState(pVCpu, pDis, pRegFrame, pvFault, EMCODETYPE_ALL);
     if (RT_SUCCESS(rc2))
         AssertMsg(rc2 == VINF_SUCCESS, ("%Rrc\n", VBOXSTRICTRC_VAL(rc2))); /* ASSUMES no complicated stuff here. */
     else if (rc2 == VERR_EM_INTERPRETER)
@@ -978,7 +978,7 @@ DECLINLINE(int) pgmPoolAccessHandlerSimple(PVM pVM, PVMCPU pVCpu, PPGMPOOL pPool
     /*
      * Interpret the instruction.
      */
-    VBOXSTRICTRC rc = EMInterpretInstructionCpuUpdtPC(pVCpu, pDis, pRegFrame, pvFault, EMCODETYPE_ALL);
+    VBOXSTRICTRC rc = EMInterpretInstructionDisasState(pVCpu, pDis, pRegFrame, pvFault, EMCODETYPE_ALL);
     if (RT_SUCCESS(rc))
         AssertMsg(rc == VINF_SUCCESS, ("%Rrc\n", VBOXSTRICTRC_VAL(rc))); /* ASSUMES no complicated stuff here. */
     else if (rc == VERR_EM_INTERPRETER)
