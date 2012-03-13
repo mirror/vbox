@@ -586,6 +586,12 @@ bool VBoxServiceVMInfoWinIsLoggedIn(PVBOXSERVICEVMINFOUSER pUserInfo, PLUID pSes
         return false;
     }
 
+    VBoxServiceVerbose(3, "Session data: Name=%ls, Session=%u, LogonID=%ld,%ld, LogonType=%ld\n",
+                       pSessionData->UserName.Buffer,
+                       pSessionData->Session,
+                       pSessionData->LogonId.HighPart, pSessionData->LogonId.LowPart,
+                       pSessionData->LogonType);
+
     /*
      * Only handle users which can login interactively or logged in
      * remotely over native RDP.
@@ -594,12 +600,12 @@ bool VBoxServiceVMInfoWinIsLoggedIn(PVBOXSERVICEVMINFOUSER pUserInfo, PLUID pSes
     DWORD dwErr = NO_ERROR;
     if (   IsValidSid(pSessionData->Sid)
         && (   (SECURITY_LOGON_TYPE)pSessionData->LogonType == Interactive
-            || (SECURITY_LOGON_TYPE)pSessionData->LogonType == RemoteInteractive))
+            || (SECURITY_LOGON_TYPE)pSessionData->LogonType == RemoteInteractive
+            /* Note: We also need CachedInteractive in case Windows cached the credentials
+             *       or just wants to reuse them! */
+            || (SECURITY_LOGON_TYPE)pSessionData->LogonType == CachedInteractive))
     {
-        VBoxServiceVerbose(3, "Session data: Name=%ls, Session=%u, LogonID=%ld,%ld, LogonType=%ld\n",
-                           pSessionData->UserName.Buffer,
-                           pSessionData->Session,
-                           pSessionData->LogonId.HighPart, pSessionData->LogonId.LowPart,
+        VBoxServiceVerbose(3, "Session LogonType=%ld is supported -- looking up SID + type ...\n",
                            pSessionData->LogonType);
 
         /*
@@ -696,6 +702,9 @@ bool VBoxServiceVMInfoWinIsLoggedIn(PVBOXSERVICEVMINFOUSER pUserInfo, PLUID pSes
                     fFoundUser = true;
                 }
             }
+            else
+                VBoxServiceVerbose(3, "SID owner type=%d not handled, skipping\n",
+                                   enmOwnerType);
         }
 
         VBoxServiceVerbose(3, "Account User=%ls %s logged in\n",
@@ -770,6 +779,8 @@ int VBoxServiceVMInfoWinWriteUsers(char **ppszUserList, uint32_t *pcUsersInList)
             ULONG cUniqueUsers = 0;
             for (ULONG i = 0; i < cSessions; i++)
             {
+                VBoxServiceVerbose(3, "Handling session %u\n", i);
+
                 VBOXSERVICEVMINFOUSER UserInfo;
                 if (VBoxServiceVMInfoWinIsLoggedIn(&UserInfo, &paSessions[i]))
                 {
