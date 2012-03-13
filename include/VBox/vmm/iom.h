@@ -265,11 +265,11 @@ VMMDECL(int)            IOMMMIOResetRegion(PVM pVM, RTGCPHYS GCPhys);
 VMMDECL(bool)           IOMIsLockOwner(PVM pVM);
 
 #ifdef IN_RC
-/** @defgroup grp_iom_gc    The IOM Guest Context API
+/** @defgroup grp_iom_rc    The IOM Raw-Mode Context API
  * @ingroup grp_iom
  * @{
  */
-VMMRCDECL(VBOXSTRICTRC) IOMGCIOPortHandler(PVM pVM, PCPUMCTXCORE pRegFrame, PDISCPUSTATE pCpu);
+VMMRCDECL(VBOXSTRICTRC) IOMRCIOPortHandler(PVM pVM, PCPUMCTXCORE pRegFrame, PDISCPUSTATE pCpu);
 /** @} */
 #endif /* IN_RC */
 

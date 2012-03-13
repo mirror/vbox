@@ -604,13 +604,9 @@ static int emR3RawGuestTrap(PVM pVM, PVMCPU pVCpu)
                 rc = TRPMResetTrap(pVCpu);
                 AssertRC(rc);
 
-                uint32_t opsize;
-                rc = VBOXSTRICTRC_TODO(EMInterpretInstructionCPU(pVM, pVCpu, &cpu, CPUMCTX2CORE(pCtx), 0, EMCODETYPE_SUPERVISOR, &opsize));
+                rc = VBOXSTRICTRC_TODO(EMInterpretInstructionCpuUpdtPC(pVM, pVCpu, &cpu, CPUMCTX2CORE(pCtx), 0, EMCODETYPE_SUPERVISOR));
                 if (RT_SUCCESS(rc))
-                {
-                    pCtx->rip += cpu.opsize;
                     return rc;
-                }
                 return emR3ExecuteInstruction(pVM, pVCpu, "Monitor: ");
             }
         }
@@ -1046,8 +1042,6 @@ static int emR3RawPrivileged(PVM pVM, PVMCPU pVCpu)
             &&  !pCtx->eflags.Bits.u1VM
             &&  SELMGetCpuModeFromSelector(pVM, pCtx->eflags, pCtx->cs, &pCtx->csHid) == CPUMODE_32BIT)
         {
-            uint32_t size;
-
             STAM_PROFILE_START(&pVCpu->em.s.StatPrivEmu, a);
             switch (Cpu.pCurInstr->opcode)
             {
@@ -1099,10 +1093,9 @@ static int emR3RawPrivileged(PVM pVM, PVMCPU pVCpu)
                     }
 #endif
 
-                    rc = VBOXSTRICTRC_TODO(EMInterpretInstructionCPU(pVM, pVCpu, &Cpu, CPUMCTX2CORE(pCtx), 0, EMCODETYPE_SUPERVISOR, &size));
+                    rc = VBOXSTRICTRC_TODO(EMInterpretInstructionCpuUpdtPC(pVM, pVCpu, &Cpu, CPUMCTX2CORE(pCtx), 0, EMCODETYPE_SUPERVISOR));
                     if (RT_SUCCESS(rc))
                     {
-                        pCtx->rip += Cpu.opsize;
                         STAM_PROFILE_STOP(&pVCpu->em.s.StatPrivEmu, a);
 
                         if (    Cpu.pCurInstr->opcode == OP_MOV_CR
