@@ -806,8 +806,7 @@ VMMDECL(int) PGMInvalidatePage(PVMCPU pVCpu, RTGCPTR GCPtrPage)
  */
 VMMDECL(VBOXSTRICTRC) PGMInterpretInstruction(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault)
 {
-    uint32_t cb;
-    VBOXSTRICTRC rc = EMInterpretInstruction(pVM, pVCpu, pRegFrame, pvFault, &cb);
+    VBOXSTRICTRC rc = EMInterpretInstruction(pVM, pVCpu, pRegFrame, pvFault);
     if (rc == VERR_EM_INTERPRETER)
         rc = VINF_EM_RAW_EMULATE_INSTR;
     if (rc != VINF_SUCCESS)

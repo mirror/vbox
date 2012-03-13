@@ -80,7 +80,7 @@ typedef enum EMSTATE
 
 
 /**
- * EMInterpretInstructionCPUEx execution modes.
+ * EMInterpretInstructionCPU execution modes.
  */
 typedef enum
 {
@@ -156,7 +156,8 @@ VMMDECL(RTGCUINTPTR)    EMGetInhibitInterruptsPC(PVMCPU pVCpu);
 VMMDECL(int)            EMInterpretDisasOne(PVM pVM, PVMCPU pVCpu, PCCPUMCTXCORE pCtxCore, PDISCPUSTATE pCpu, unsigned *pcbInstr);
 VMMDECL(int)            EMInterpretDisasOneEx(PVM pVM, PVMCPU pVCpu, RTGCUINTPTR GCPtrInstr, PCCPUMCTXCORE pCtxCore,
                                               PDISCPUSTATE pDISState, unsigned *pcbInstr);
-VMMDECL(VBOXSTRICTRC)   EMInterpretInstruction(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, uint32_t *pcbSize);
+VMMDECL(VBOXSTRICTRC)   EMInterpretInstruction(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault);
+VMMDECL(VBOXSTRICTRC)   EMInterpretInstructionEx(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, uint32_t *pcbSize);
 VMMDECL(VBOXSTRICTRC)   EMInterpretInstructionCPU(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDISState, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, EMCODETYPE enmCodeType, uint32_t *pcbSize);
 VMMDECL(VBOXSTRICTRC)   EMInterpretInstructionCpuUpdtPC(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, EMCODETYPE enmCodeType);
 

@@ -2054,11 +2054,9 @@ ResumeExecution:
     case SVM_EXIT_WRITE_CR8:  case SVM_EXIT_WRITE_CR9:  case SVM_EXIT_WRITE_CR10: case SVM_EXIT_WRITE_CR11:
     case SVM_EXIT_WRITE_CR12: case SVM_EXIT_WRITE_CR13: case SVM_EXIT_WRITE_CR14: case SVM_EXIT_WRITE_CR15:
     {
-        uint32_t cbSize;
-
         Log2(("SVM: %RGv mov cr%d, \n", (RTGCPTR)pCtx->rip, exitCode - SVM_EXIT_WRITE_CR0));
         STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatExitCRxWrite[exitCode - SVM_EXIT_WRITE_CR0]);
-        rc = EMInterpretInstruction(pVM, pVCpu, CPUMCTX2CORE(pCtx), 0, &cbSize);
+        rc = EMInterpretInstruction(pVM, pVCpu, CPUMCTX2CORE(pCtx), 0);
 
         switch (exitCode - SVM_EXIT_WRITE_CR0)
         {
@@ -2095,11 +2093,9 @@ ResumeExecution:
     case SVM_EXIT_READ_CR8:   case SVM_EXIT_READ_CR9:   case SVM_EXIT_READ_CR10:  case SVM_EXIT_READ_CR11:
     case SVM_EXIT_READ_CR12:  case SVM_EXIT_READ_CR13:  case SVM_EXIT_READ_CR14:  case SVM_EXIT_READ_CR15:
     {
-        uint32_t cbSize;
-
         Log2(("SVM: %RGv mov x, cr%d\n", (RTGCPTR)pCtx->rip, exitCode - SVM_EXIT_READ_CR0));
         STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatExitCRxRead[exitCode - SVM_EXIT_READ_CR0]);
-        rc = EMInterpretInstruction(pVM, pVCpu, CPUMCTX2CORE(pCtx), 0, &cbSize);
+        rc = EMInterpretInstruction(pVM, pVCpu, CPUMCTX2CORE(pCtx), 0);
         if (rc == VINF_SUCCESS)
         {
             /* EIP has been updated already. */
@@ -2116,8 +2112,6 @@ ResumeExecution:
     case SVM_EXIT_WRITE_DR8:   case SVM_EXIT_WRITE_DR9:   case SVM_EXIT_WRITE_DR10:  case SVM_EXIT_WRITE_DR11:
     case SVM_EXIT_WRITE_DR12:  case SVM_EXIT_WRITE_DR13:  case SVM_EXIT_WRITE_DR14:  case SVM_EXIT_WRITE_DR15:
     {
-        uint32_t cbSize;
-
         Log2(("SVM: %RGv mov dr%d, x\n", (RTGCPTR)pCtx->rip, exitCode - SVM_EXIT_WRITE_DR0));
         STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatExitDRxWrite);
 
@@ -2136,7 +2130,7 @@ ResumeExecution:
             goto ResumeExecution;
         }
 
-        rc = EMInterpretInstruction(pVM, pVCpu, CPUMCTX2CORE(pCtx), 0, &cbSize);
+        rc = EMInterpretInstruction(pVM, pVCpu, CPUMCTX2CORE(pCtx), 0);
         if (rc == VINF_SUCCESS)
         {
             /* EIP has been updated already. */
@@ -2154,8 +2148,6 @@ ResumeExecution:
     case SVM_EXIT_READ_DR8:   case SVM_EXIT_READ_DR9:   case SVM_EXIT_READ_DR10:  case SVM_EXIT_READ_DR11:
     case SVM_EXIT_READ_DR12:  case SVM_EXIT_READ_DR13:  case SVM_EXIT_READ_DR14:  case SVM_EXIT_READ_DR15:
     {
-        uint32_t cbSize;
-
         Log2(("SVM: %RGv mov x, dr%d\n", (RTGCPTR)pCtx->rip, exitCode - SVM_EXIT_READ_DR0));
         STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatExitDRxRead);
 
@@ -2173,7 +2165,7 @@ ResumeExecution:
             goto ResumeExecution;
         }
 
-        rc = EMInterpretInstruction(pVM, pVCpu, CPUMCTX2CORE(pCtx), 0, &cbSize);
+        rc = EMInterpretInstruction(pVM, pVCpu, CPUMCTX2CORE(pCtx), 0);
         if (rc == VINF_SUCCESS)
         {
             /* EIP has been updated already. */
@@ -2433,8 +2425,6 @@ ResumeExecution:
     /* Emulate in ring 3. */
     case SVM_EXIT_MSR:
     {
-        uint32_t cbSize;
-
         /* When an interrupt is pending, we'll let MSR_K8_LSTAR writes fault in our TPR patch code. */
         if (    pVM->hwaccm.s.fTPRPatchingActive
             &&  pCtx->ecx == MSR_K8_LSTAR
@@ -2459,7 +2449,7 @@ ResumeExecution:
         /* Note: the intel manual claims there's a REX version of RDMSR that's slightly different, so we play safe by completely disassembling the instruction. */
         STAM_COUNTER_INC((pVMCB->ctrl.u64ExitInfo1 == 0) ? &pVCpu->hwaccm.s.StatExitRdmsr : &pVCpu->hwaccm.s.StatExitWrmsr);
         Log(("SVM: %s\n", (pVMCB->ctrl.u64ExitInfo1 == 0) ? "rdmsr" : "wrmsr"));
-        rc = EMInterpretInstruction(pVM, pVCpu, CPUMCTX2CORE(pCtx), 0, &cbSize);
+        rc = EMInterpretInstruction(pVM, pVCpu, CPUMCTX2CORE(pCtx), 0);
         if (rc == VINF_SUCCESS)
         {
             /* EIP has been updated already. */

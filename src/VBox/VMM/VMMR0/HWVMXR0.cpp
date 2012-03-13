@@ -3655,13 +3655,11 @@ ResumeExecution:
         /* no break */
     case VMX_EXIT_RDMSR:                /* 31 RDMSR. Guest software attempted to execute RDMSR. */
     {
-        uint32_t cbSize;
-
         STAM_COUNTER_INC((exitReason == VMX_EXIT_RDMSR) ? &pVCpu->hwaccm.s.StatExitRdmsr : &pVCpu->hwaccm.s.StatExitWrmsr);
 
         /* Note: the intel manual claims there's a REX version of RDMSR that's slightly different, so we play safe by completely disassembling the instruction. */
         Log2(("VMX: %s\n", (exitReason == VMX_EXIT_RDMSR) ? "rdmsr" : "wrmsr"));
-        rc = EMInterpretInstruction(pVM, pVCpu, CPUMCTX2CORE(pCtx), 0, &cbSize);
+        rc = EMInterpretInstruction(pVM, pVCpu, CPUMCTX2CORE(pCtx), 0);
         if (rc == VINF_SUCCESS)
         {
             /* EIP has been updated already. */

@@ -487,7 +487,7 @@ VMMDECL(int) EMInterpretDisasOneEx(PVM pVM, PVMCPU pVCpu, RTGCUINTPTR GCPtrInstr
  *          Architecture System Developers Manual, Vol 3, 5.5) so we don't need
  *          to worry about e.g. invalid modrm combinations (!)
  */
-VMMDECL(VBOXSTRICTRC) EMInterpretInstruction(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, uint32_t *pcbSize)
+VMMDECL(VBOXSTRICTRC) EMInterpretInstruction(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault)
 {
     LogFlow(("EMInterpretInstruction %RGv fault %RGv\n", (RTGCPTR)pRegFrame->rip, pvFault));
 #ifdef VBOX_WITH_IEM
@@ -512,7 +512,64 @@ VMMDECL(VBOXSTRICTRC) EMInterpretInstruction(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE
         if (RT_SUCCESS(rc))
         {
             Assert(cbOp == pDis->opsize);
-            rc = EMInterpretInstructionCPU(pVM, pVCpu, pDis, pRegFrame, pvFault, EMCODETYPE_SUPERVISOR, pcbSize);
+            uint32_t cbIgnored;
+            rc = EMInterpretInstructionCPU(pVM, pVCpu, pDis, pRegFrame, pvFault, EMCODETYPE_SUPERVISOR, &cbIgnored);
+            if (RT_SUCCESS(rc))
+                pRegFrame->rip += cbOp; /* Move on to the next instruction. */
+
+            return rc;
+        }
+    }
+    return VERR_EM_INTERPRETER;
+#endif
+}
+
+
+/**
+ * Interprets the current instruction.
+ *
+ * @returns VBox status code.
+ * @retval  VINF_*                  Scheduling instructions.
+ * @retval  VERR_EM_INTERPRETER     Something we can't cope with.
+ * @retval  VERR_*                  Fatal errors.
+ *
+ * @param   pVM         The VM handle.
+ * @param   pVCpu       The VMCPU handle.
+ * @param   pRegFrame   The register frame.
+ *                      Updates the EIP if an instruction was executed successfully.
+ * @param   pvFault     The fault address (CR2).
+ * @param   pcbWritten  Size of the write (if applicable).
+ *
+ * @remark  Invalid opcode exceptions have a higher priority than GP (see Intel
+ *          Architecture System Developers Manual, Vol 3, 5.5) so we don't need
+ *          to worry about e.g. invalid modrm combinations (!)
+ */
+VMMDECL(VBOXSTRICTRC) EMInterpretInstructionEx(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, uint32_t *pcbWritten)
+{
+    LogFlow(("EMInterpretInstructionEx %RGv fault %RGv\n", (RTGCPTR)pRegFrame->rip, pvFault));
+#ifdef VBOX_WITH_IEM
+    int rc = IEMExecOneEx(pVCpu, pRegFrame, IEM_EXEC_ONE_EX_FLAGS_, pcbWritten);
+    if (RT_FAILURE(rc))
+        switch (rc)
+        {
+            case VERR_IEM_ASPECT_NOT_IMPLEMENTED:
+            case VERR_IEM_INSTR_NOT_IMPLEMENTED:
+                return VERR_EM_INTERPRETER;
+        }
+    return rc;
+#else
+    RTGCPTR pbCode;
+    VBOXSTRICTRC rc = SELMToFlatEx(pVM, DIS_SELREG_CS, pRegFrame, pRegFrame->rip, 0, &pbCode);
+    if (RT_SUCCESS(rc))
+    {
+        uint32_t     cbOp;
+        PDISCPUSTATE pDis = &pVCpu->em.s.DisState;
+        pDis->mode = SELMGetCpuModeFromSelector(pVM, pRegFrame->eflags, pRegFrame->cs, &pRegFrame->csHid);
+        rc = emDisCoreOne(pVM, pVCpu, pDis, (RTGCUINTPTR)pbCode, &cbOp);
+        if (RT_SUCCESS(rc))
+        {
+            Assert(cbOp == pDis->opsize);
+            rc = EMInterpretInstructionCPU(pVM, pVCpu, pDis, pRegFrame, pvFault, EMCODETYPE_SUPERVISOR, pcbWritten);
             if (RT_SUCCESS(rc))
                 pRegFrame->rip += cbOp; /* Move on to the next instruction. */
 
