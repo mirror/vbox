@@ -3334,7 +3334,7 @@ ResumeExecution:
                     }
 
                     default:
-                        rc = EMInterpretInstructionCpuUpdtPC(pVCpu, pDis, CPUMCTX2CORE(pCtx), 0, EMCODETYPE_SUPERVISOR);
+                        rc = EMInterpretInstructionDisasState(pVCpu, pDis, CPUMCTX2CORE(pCtx), 0, EMCODETYPE_SUPERVISOR);
                         fUpdateRIP = false;
                         break;
                     }
