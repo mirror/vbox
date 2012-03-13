@@ -384,11 +384,8 @@ extern "C" DECLEXPORT(int) TrustedMain (int argc, char **argv, char ** /*envp*/)
             QApplication::setStyle (new QPlastiqueStyle);
 
 #ifdef Q_OS_SOLARIS
-        /* Solaris have some issue with cleanlooks style which leads to application
-         * crash in case of using it on Qt4.4 version, lets make the same substitute */
-        if (VBoxGlobal::qtRTVersionString().startsWith ("4.4") &&
-            qobject_cast <QCleanlooksStyle*> (QApplication::style()))
-            QApplication::setStyle (new QPlastiqueStyle);
+        /* Use plastique look 'n feel for Solaris instead of the default motif (Qt 4.7.x) */
+        QApplication::setStyle (new QPlastiqueStyle);
 #endif
 
 #ifdef Q_WS_X11
@@ -572,11 +569,8 @@ int main (int argc, char **argv, char **envp)
     {
         QApplication a (argc, &argv[0]);
 #ifdef Q_OS_SOLARIS
-        /* Solaris have some issue with cleanlooks style which leads to application
-         * crash in case of using it on Qt4.4 version, lets make the same substitute */
-        if (VBoxGlobal::qtRTVersionString().startsWith ("4.4") &&
-            qobject_cast <QCleanlooksStyle*> (QApplication::style()))
-            QApplication::setStyle (new QPlastiqueStyle);
+        /* Use plastique look 'n feel for Solaris instead of the default motif (Qt 4.7.x) */
+        QApplication::setStyle (new QPlastiqueStyle);
 #endif
         QString msgTitle = QApplication::tr ("VirtualBox - Runtime Error");
         QString msgText = "<html>";
