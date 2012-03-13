@@ -1266,6 +1266,44 @@ VBoxManage modifyvm "VM name" --nattftpfile1 /srv/tftp/boot/MyPXEBoot.pxe</scree
       the proxy mode just forwards DNS requests to the appropriate servers,
       the resolver mode will interpret the DNS requests and use the host's DNS
       API to query the information and return it to the guest.</para>
+        <sect3 id="nat_host_resolver_name_intercepting">
+            <title>User-defined host name resolving</title>
+            <para>In some cases it might be useful to intercept name resolving mechanism,
+            providing user-defined IP address on particular DNS request. Intercepting mechanism
+            lets user to map not only single host, but domains and more complex namings conventions if
+            required.
+            This command set rule for mapping name to specified IP.
+            <screen>
+                VBoxManage setextradata &lt;your-vm&gt; \
+                    "VBoxInternal/Devices/{pcnet,e1000}/0/LUN#0/AttachedDriver/Config/HostResolverMappings/\
+                     &lt;uniq name of interception rule&gt;/HostIP" &lt;IPv4&gt;
+                VBoxManage setextradata &lt;your-vm&gt; \
+                    "VBoxInternal/Devices/{pcnet,e1000}/0/LUN#0/AttachedDriver/Config/HostResolverMappings/\
+                    &lt;uniq name of interception rule&gt;/HostName" &lt;name of host&gt;
+            </screen>
+            This command set rule for mapping pattern name to specified IP.
+            <screen>
+                VBoxManage setextradata &lt;your-vm&gt; \
+                    "VBoxInternal/Devices/{pcnet,e1000}/0/LUN#0/AttachedDriver/Config/HostResolverMappings/\
+                    &lt;uniq name of interception rule&gt;/HostIP" &lt;IPv4&gt;
+                VBoxManage setextradata &lt;your-vm&gt; \
+                    "VBoxInternal/Devices/{pcnet,e1000}/0/LUN#0/AttachedDriver/Config/HostResolverMappings/\
+                    &lt;uniq name of interception rule&gt;/HostNamePattern" &lt;pattern of host "|","?","*" are allowed&gt;
+            </screen>
+            This example demonstrates how to instruct host-resolver mechanism to resolve all domain
+            and probably some mirrors of www.forbiden-palace.info site with IP 127.0.0.1.
+            <screen>
+                VBoxManage setextradata &lt;your-vm&gt; \
+                    "VBoxInternal/Devices/e1000/0/LUN#0/AttachedDriver/Config/HostResolverMappings/\
+                    all_forbiden_palace/HostIP" 127.0.0.1
+                VBoxManage setextradata &lt;your-vm&gt; \
+                    "VBoxInternal/Devices/e1000/0/LUN#0/AttachedDriver/Config/HostResolverMappings/\
+                    all_forbiden_palace/HostNamePattern" "*.forbinden-palace.*|*.fb.org"
+            </screen>
+            Note: host resolver mechanism should be on to use defined by user mapping rules (please see
+            <xref linkend="nat_host_resolver_proxy" /> for more details).
+            </para>
+        </sect3>
     </sect2>
 
     <sect2 id="nat-adv-alias">
