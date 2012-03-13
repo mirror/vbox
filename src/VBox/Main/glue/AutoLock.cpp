@@ -422,7 +422,7 @@ void AutoLockBase::cleanup()
  */
 void AutoLockBase::acquire()
 {
-    AssertMsg(!m->fIsLocked, ("m->fIsLocked is true, attempting to lock twice!"));
+    AssertMsgReturnVoid(!m->fIsLocked, ("m->fIsLocked is true, attempting to lock twice!"));
     callLockOnAllHandles();
     m->fIsLocked = true;
 }
@@ -432,7 +432,7 @@ void AutoLockBase::acquire()
  */
 void AutoLockBase::release()
 {
-    AssertMsg(m->fIsLocked, ("m->fIsLocked is false, cannot release!"));
+    AssertMsgReturnVoid(m->fIsLocked, ("m->fIsLocked is false, cannot release!"));
     callUnlockOnAllHandles();
     m->fIsLocked = false;
 }
