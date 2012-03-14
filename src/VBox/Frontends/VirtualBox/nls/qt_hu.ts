@@ -47,7 +47,7 @@
     </message>
     <message>
         <source>&lt;html&gt;Switching to the audio playback device &lt;b&gt;%1&lt;/b&gt;&lt;br/&gt;which just became available and has higher preference.&lt;/html&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;html&gt;&lt;b&gt;%1&lt;/b&gt; lejátszó eszközre váltás, ami épp most lett elérhető, és elsőbbséget élvez a jelenlegihez képest&lt;/html&gt;</translation>
     </message>
     <message>
         <source>Revert back to device &apos;%1&apos;</source>
@@ -2474,7 +2474,7 @@ Biztosan törlöd?</translation>
     </message>
     <message>
         <source>Unable to execute select statement</source>
-        <translation type="unfinished">A SELECT utasítás nem végrehajtható</translation>
+        <translation>A SELECT utasítás nem végrehajtható</translation>
     </message>
     <message>
         <source>Unable to execute statement</source>
@@ -4602,7 +4602,7 @@ Válassz másik fájlnevet.</translation>
     </message>
     <message>
         <source>Expected </source>
-        <translation>Amit vártam:</translation>
+        <translation>Amit vártam: </translation>
     </message>
     <message>
         <source>, but got &apos;</source>
@@ -4693,55 +4693,55 @@ Válassz másik fájlnevet.</translation>
     </message>
     <message>
         <source>Network timeout.</source>
-        <translation type="unfinished"></translation>
+        <translation>Hálózati időtúllépés.</translation>
     </message>
     <message>
         <source>Element %1 can&apos;t be serialized because it appears outside the document element.</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 elem nem szerializálható, mert a document elemen kívül szerepel.</translation>
     </message>
     <message>
         <source>Attribute %1 can&apos;t be serialized because it appears at the top level.</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 attribútum nem szerializálható, mert legfelső szinten szerepel.</translation>
     </message>
     <message>
         <source>Year %1 is invalid because it begins with %2.</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 év érvénytelen, mert %2-vel kezdődik.</translation>
     </message>
     <message>
         <source>Day %1 is outside the range %2..%3.</source>
-        <translation type="unfinished"></translation>
+        <translation>A(z) %1. nap nem esik %2 és %3 közé.</translation>
     </message>
     <message>
         <source>Month %1 is outside the range %2..%3.</source>
-        <translation type="unfinished"></translation>
+        <translation>A(z) %1. hónap nem esik %2 és %3 közé.</translation>
     </message>
     <message>
         <source>Overflow: Can&apos;t represent date %1.</source>
-        <translation type="unfinished"></translation>
+        <translation>Túlcsordulás: A(z) %1 dátum nem reprezentálható.</translation>
     </message>
     <message>
         <source>Day %1 is invalid for month %2.</source>
-        <translation type="unfinished"></translation>
+        <translation>Nincs %1 nap %2 hónapban.</translation>
     </message>
     <message>
         <source>Time 24:%1:%2.%3 is invalid. Hour is 24, but minutes, seconds, and milliseconds are not all 0; </source>
-        <translation type="unfinished"></translation>
+        <translation>Az 24:%1:%2.%3 időpont érvénytelen, mert az óra értéke 24, de a többi érték nem 0; </translation>
     </message>
     <message>
         <source>Time %1:%2:%3.%4 is invalid.</source>
-        <translation type="unfinished"></translation>
+        <translation>Az %1:%2:%3.%4 időpont érvénytelen.</translation>
     </message>
     <message>
         <source>Overflow: Date can&apos;t be represented.</source>
-        <translation type="unfinished"></translation>
+        <translation>Túlcsordulás: A dátum nem reprezentálható.</translation>
     </message>
     <message>
         <source>At least one component must be present.</source>
-        <translation type="unfinished"></translation>
+        <translation>Legalább egy komponenst meg kell adni.</translation>
     </message>
     <message>
         <source>At least one time component must appear after the %1-delimiter.</source>
-        <translation type="unfinished"></translation>
+        <translation>Legalább egy időkomponenst meg kell adni a(z) %1 elválasztó után.</translation>
     </message>
     <message>
         <source>No operand in an integer division, %1, can be %2.</source>
@@ -4757,83 +4757,83 @@ Válassz másik fájlnevet.</translation>
     </message>
     <message>
         <source>%1 is not a valid value of type %2.</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 nem érvényes %2 típusú érték.</translation>
     </message>
     <message>
         <source>When casting to %1 from %2, the source value cannot be %3.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ha %2-t %1-re kényszerítünk, a kiinduló érték nem lehet %3.</translation>
     </message>
     <message>
         <source>Integer division (%1) by zero (%2) is undefined.</source>
-        <translation type="unfinished"></translation>
+        <translation>A nullával (%2) való egészosztás (%1) nincs értelmezve.</translation>
     </message>
     <message>
         <source>Division (%1) by zero (%2) is undefined.</source>
-        <translation type="unfinished"></translation>
+        <translation>A nullával (%2) való osztás (%1) nincs értelmezve.</translation>
     </message>
     <message>
         <source>Modulus division (%1) by zero (%2) is undefined.</source>
-        <translation type="unfinished"></translation>
+        <translation>A nullával (%2) való maradékos osztás (%1) nincs értelmezve.</translation>
     </message>
     <message>
         <source>Dividing a value of type %1 by %2 (not-a-number) is not allowed.</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 típusú érték %2-vel osztása nem megengedett, mert az nem szám.</translation>
     </message>
     <message>
         <source>Dividing a value of type %1 by %2 or %3 (plus or minus zero) is not allowed.</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 típusú érték osztása %2 vagy %3 (pozitív vagy negatív nulla) értékkel nem megengedett.</translation>
     </message>
     <message>
         <source>Multiplication of a value of type %1 by %2 or %3 (plus or minus infinity) is not allowed.</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 típusú érték szorzása %2 vagy %3 (pozitív vagy negatív végtelen) típusú értékkel nem megengedett.</translation>
     </message>
     <message>
         <source>A value of type %1 cannot have an Effective Boolean Value.</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 típusú érték nem kaphat effektív logikai értéket.</translation>
     </message>
     <message>
         <source>Effective Boolean Value cannot be calculated for a sequence containing two or more atomic values.</source>
-        <translation type="unfinished"></translation>
+        <translation>Effektív logikai érték nem számítható olyan sorozatra, melyben kettő vagy több atomi érték szerepel.</translation>
     </message>
     <message>
         <source>Value %1 of type %2 exceeds maximum (%3).</source>
-        <translation type="unfinished"></translation>
+        <translation>A(z) %2 típusú %1 érték meghaladja a maximumot (%3).</translation>
     </message>
     <message>
         <source>Value %1 of type %2 is below minimum (%3).</source>
-        <translation type="unfinished"></translation>
+        <translation>A(z) %2 típusú %1 érték kisebb, mint a minimum (%3).</translation>
     </message>
     <message>
         <source>A value of type %1 must contain an even number of digits. The value %2 does not.</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 típusú értékben páros számú számjegynek kell szerepelnie. A(z) %2 érték nem megfelelő.</translation>
     </message>
     <message>
         <source>%1 is not valid as a value of type %2.</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 nem érvényes %2 típusú érték.</translation>
     </message>
     <message>
         <source>Operator %1 cannot be used on type %2.</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 operátor nem használható %2 típuson.</translation>
     </message>
     <message>
         <source>Operator %1 cannot be used on atomic values of type %2 and %3.</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 operátor nem használható %2 és %3 típusok atomi értékein.</translation>
     </message>
     <message>
         <source>The namespace URI in the name for a computed attribute cannot be %1.</source>
-        <translation type="unfinished"></translation>
+        <translation>Egy számított attribútum nevében szereplő névtér URI-je nem lehet %1.</translation>
     </message>
     <message>
         <source>The name for a computed attribute cannot have the namespace URI %1 with the local name %2.</source>
-        <translation type="unfinished"></translation>
+        <translation>Számított attribútum neve nem szerepelhet %1 névtér URI-ben  %2 lokális névvel.</translation>
     </message>
     <message>
         <source>Type error in cast, expected %1, received %2.</source>
-        <translation type="unfinished"></translation>
+        <translation>Típushiba a kényszerítés során, várt %1, kapott %2.</translation>
     </message>
     <message>
         <source>When casting to %1 or types derived from it, the source value must be of the same type, or it must be a string literal. Type %2 is not allowed.</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 vagy belőle származó típusra való kényszerítéskor a kiindulási értéknek azonos típusúnak vagy sztring literálnak kell lennie. %2 típus nem megengedett.</translation>
     </message>
     <message>
         <source>No casting is possible with %1 as the target type.</source>
@@ -4857,11 +4857,11 @@ Válassz másik fájlnevet.</translation>
     </message>
     <message>
         <source>A comment cannot contain %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Megjegyzésben nem szerepelhet %1</translation>
     </message>
     <message>
         <source>A comment cannot end with a %1.</source>
-        <translation type="unfinished"></translation>
+        <translation>Egy megjegyzés nem végződhet a következőre: %1.</translation>
     </message>
     <message>
         <source>No comparisons can be done involving the type %1.</source>
@@ -4873,19 +4873,19 @@ Válassz másik fájlnevet.</translation>
     </message>
     <message>
         <source>An attribute node cannot be a child of a document node. Therefore, the attribute %1 is out of place.</source>
-        <translation type="unfinished"></translation>
+        <translation>Attribútum csomópont nem lehet egy document csomópont gyermeke. Emiatt a(z) %1 attribútum nem ide való.</translation>
     </message>
     <message>
         <source>A library module cannot be evaluated directly. It must be imported from a main module.</source>
-        <translation type="unfinished"></translation>
+        <translation>Egy könyvtár modult nem lehet közvetlenül kiértékelni. Mindenképp egy fő modulból kell importálni.</translation>
     </message>
     <message>
         <source>A value of type %1 cannot be a predicate. A predicate must have either a numeric type or an Effective Boolean Value type.</source>
-        <translation type="unfinished"></translation>
+        <translation>Egy %1 típusú érték nem lehet predikátum. Egy predikátumnak szám vagy effektív logikai érték típusúnak kell lennie.</translation>
     </message>
     <message>
         <source>A positional predicate must evaluate to a single numeric value.</source>
-        <translation type="unfinished"></translation>
+        <translation>Egy pozicionális predikátumnak egyetlen numerikus értékké kell kiértékelődnie.</translation>
     </message>
     <message>
         <source>The target name in a processing instruction cannot be %1 in any combination of upper and lower case. Therefore, is %2 invalid.</source>
@@ -4893,55 +4893,55 @@ Válassz másik fájlnevet.</translation>
     </message>
     <message>
         <source>%1 is not a valid target name in a processing instruction. It must be a %2 value, e.g. %3.</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 érvénytelen célnév egy feldolgozási utasításban. Értéke %2 típusú kell legyen, mint pl. %3.</translation>
     </message>
     <message>
         <source>The last step in a path must contain either nodes or atomic values. It cannot be a mixture between the two.</source>
-        <translation type="unfinished"></translation>
+        <translation>Egy útvonal utolsó lépésének vagy csomópontokat vagy atomi értékeket kell tartalmaznia. Nem lehet a kettő keveréke.</translation>
     </message>
     <message>
         <source>The data of a processing instruction cannot contain the string %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Egy feldolgozási utasítás adata nem tartalmazhatja %1 sztringet</translation>
     </message>
     <message>
         <source>No namespace binding exists for the prefix %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Nincs névtér kötés a(z) %1 prefixumhoz</translation>
     </message>
     <message>
         <source>No namespace binding exists for the prefix %1 in %2</source>
-        <translation type="unfinished"></translation>
+        <translation>Nincs névtér kötés a(z) %1 prefixumhoz itt: %2</translation>
     </message>
     <message>
         <source>%1 is an invalid %2</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 egy érvénytelen %2</translation>
     </message>
     <message numerus="yes">
         <source>%1 takes at most %n argument(s). %2 is therefore invalid.</source>
-        <translation type="unfinished">
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>%1 maximum %n argumentumot fogad, így %2 érvénytelen.</numerusform>
         </translation>
     </message>
     <message numerus="yes">
         <source>%1 requires at least %n argument(s). %2 is therefore invalid.</source>
-        <translation type="unfinished">
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>%1 legalább %n argumentumot fogad, így %2 érvénytelen.</numerusform>
         </translation>
     </message>
     <message>
         <source>The first argument to %1 cannot be of type %2. It must be a numeric type, xs:yearMonthDuration or xs:dayTimeDuration.</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 első paramétere nem lehet %2 típusú. Csak numerikus típus, xs:yearMonthDuration vagy xs:dayTimeDuration lehet.</translation>
     </message>
     <message>
         <source>The first argument to %1 cannot be of type %2. It must be of type %3, %4, or %5.</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 első argumentuma nem lehet %2 típusú. Csak %3, %4 vagy %5 megengedett.</translation>
     </message>
     <message>
         <source>The second argument to %1 cannot be of type %2. It must be of type %3, %4, or %5.</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 második argumentuma nem lehet %2 típusú. Csak %3, %4 vagy %5 megengedett.</translation>
     </message>
     <message>
         <source>%1 is not a valid XML 1.0 character.</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 érvénytelen XML 1.0 karakter.</translation>
     </message>
     <message>
         <source>The first argument to %1 cannot be of type %2.</source>
@@ -4949,99 +4949,99 @@ Válassz másik fájlnevet.</translation>
     </message>
     <message>
         <source>If both values have zone offsets, they must have the same zone offset. %1 and %2 are not the same.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ha mindkét értékben zóna eltolás van, akkor annak azonosnak kell lennie. %1 és %2 nem egyezik.</translation>
     </message>
     <message>
         <source>%1 was called.</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 meghívva.</translation>
     </message>
     <message>
         <source>%1 must be followed by %2 or %3, not at the end of the replacement string.</source>
-        <translation type="unfinished"></translation>
+        <translation>%1-t %2 vagy %3 kell kövesse, nem a helyettesítő karakterlánc végén.</translation>
     </message>
     <message>
         <source>In the replacement string, %1 must be followed by at least one digit when not escaped.</source>
-        <translation type="unfinished"></translation>
+        <translation>A csereszövegben %1-t legalább egy számjegy kell kövesse, amennyiben az nincs escapelve.</translation>
     </message>
     <message>
         <source>In the replacement string, %1 can only be used to escape itself or %2, not %3</source>
-        <translation type="unfinished"></translation>
+        <translation>A csereszövegben %1 csak önmaga vagy %2 escapelésére használható, %3-ra nem</translation>
     </message>
     <message>
         <source>%1 matches newline characters</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 illeszkedik az újsor karakterekre</translation>
     </message>
     <message>
         <source>%1 and %2 match the start and end of a line.</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 és %2 a sor elejére és végére is illeszkedik.</translation>
     </message>
     <message>
         <source>Matches are case insensitive</source>
-        <translation type="unfinished"></translation>
+        <translation>Az illeszkedések nem nagybetű-érzékenyek</translation>
     </message>
     <message>
         <source>Whitespace characters are removed, except when they appear in character classes</source>
-        <translation type="unfinished"></translation>
+        <translation>A nem nyomtatható karakterek törlésre kerülnek, kivéve, ha karakter osztályokban szerepelnek</translation>
     </message>
     <message>
         <source>%1 is an invalid regular expression pattern: %2</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 érvénytelen reguláris kifejezés minta: %2</translation>
     </message>
     <message>
         <source>%1 is an invalid flag for regular expressions. Valid flags are:</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 érvénytelen kapcsoló reguláris kifejezésekhez. Az érvényes kapcsolók:</translation>
     </message>
     <message>
         <source>If the first argument is the empty sequence or a zero-length string (no namespace), a prefix cannot be specified. Prefix %1 was specified.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ha az első argumentum az üres szekvencia vagy egy nulla hosszúságú sztring (névtér nélkül), akkor nem adható meg prefixum. %1 prefixum lett megadva.</translation>
     </message>
     <message>
         <source>It will not be possible to retrieve %1.</source>
-        <translation type="unfinished"></translation>
+        <translation>Nem lesz lehetséges %1 lekérése.</translation>
     </message>
     <message>
         <source>The root node of the second argument to function %1 must be a document node. %2 is not a document node.</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 függvény második argumentumának gyökér csomópontja document típusú kell legyen. %2 nem document csomópont.</translation>
     </message>
     <message>
         <source>The default collection is undefined</source>
-        <translation type="unfinished"></translation>
+        <translation>Nincs meghatározva az alapértelmezett kollekció</translation>
     </message>
     <message>
         <source>%1 cannot be retrieved</source>
-        <translation type="unfinished"></translation>
+        <translation>%1-t nem lehet lekérni</translation>
     </message>
     <message>
         <source>The normalization form %1 is unsupported. The supported forms are %2, %3, %4, and %5, and none, i.e. the empty string (no normalization).</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 normalizáló formája nem támogatott. A támogatott formák %2, %3, %4 és %5 vagy semmi, pl. az üres sztring (normalizáció nélkül).</translation>
     </message>
     <message>
         <source>A zone offset must be in the range %1..%2 inclusive. %3 is out of range.</source>
-        <translation type="unfinished"></translation>
+        <translation>Egy zónaeltolásnak a(z) %1..%2 nyílt intervallumba kell esnie. %3 az értékhatáron kívül van.</translation>
     </message>
     <message>
         <source>%1 is not a whole number of minutes.</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 nem egész számú perc.</translation>
     </message>
     <message>
         <source>Required cardinality is %1; got cardinality %2.</source>
-        <translation type="unfinished"></translation>
+        <translation>Az elvárt kardinalitás %1; azonban %2 lett megadva.</translation>
     </message>
     <message>
         <source>The item %1 did not match the required type %2.</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 elem nem egyezik a várt %2 típussal.</translation>
     </message>
     <message>
         <source>%1 is an unknown schema type.</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 ismeretlen séma típus.</translation>
     </message>
     <message>
         <source>Only one %1 declaration can occur in the query prolog.</source>
-        <translation type="unfinished"></translation>
+        <translation>Csak egy %1 deklaráció szerepelhet a lekérdezés bevezetésben.</translation>
     </message>
     <message>
         <source>The initialization of variable %1 depends on itself</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 változó inicializálása önmagától függ</translation>
     </message>
     <message>
         <source>No variable by name %1 exists</source>
@@ -5049,35 +5049,35 @@ Válassz másik fájlnevet.</translation>
     </message>
     <message>
         <source>The variable %1 is unused</source>
-        <translation type="unfinished"></translation>
+        <translation>A(z) %1 változó nincs használva</translation>
     </message>
     <message>
         <source>Version %1 is not supported. The supported XQuery version is 1.0.</source>
-        <translation type="unfinished"></translation>
+        <translation>A(z) %1 verzió nem támogatott. A támogatott XQuery verzió 1.0.</translation>
     </message>
     <message>
         <source>The encoding %1 is invalid. It must contain Latin characters only, must not contain whitespace, and must match the regular expression %2.</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 kódolás érvénytelen. Csak Latin karaktereket tartalmazhat, nem nyomtatható karakterek nélkül, és illeszkednie kell %2 reguláris kifejezésre.</translation>
     </message>
     <message>
         <source>No function with signature %1 is available</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 szignaturájú függvény nem található</translation>
     </message>
     <message>
         <source>A default namespace declaration must occur before function, variable, and option declarations.</source>
-        <translation type="unfinished"></translation>
+        <translation>Egy alapértelmezett névtér deklarációnak meg kell előznie a függvény-, változó- és opció deklarációkat.</translation>
     </message>
     <message>
         <source>Namespace declarations must occur before function, variable, and option declarations.</source>
-        <translation type="unfinished"></translation>
+        <translation>A névtér deklarációknak meg kell előzniük a függvény-, változó- és opció deklarációkat.</translation>
     </message>
     <message>
         <source>Module imports must occur before function, variable, and option declarations.</source>
-        <translation type="unfinished"></translation>
+        <translation>Modul importoknak meg kell előzniük a függvény-, változó- és opció deklarációkat.</translation>
     </message>
     <message>
         <source>It is not possible to redeclare prefix %1.</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 prefixum újradeklarálása nem lehetséges.</translation>
     </message>
     <message>
         <source>Only the prefix %1 can be declared to bind the namespace %2. By default, it is already bound to the prefix %1.</source>
@@ -5085,11 +5085,11 @@ Válassz másik fájlnevet.</translation>
     </message>
     <message>
         <source>Prefix %1 is already declared in the prolog.</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 prefixum már deklarálva van a bevezetésben.</translation>
     </message>
     <message>
         <source>The name of an option must have a prefix. There is no default namespace for options.</source>
-        <translation type="unfinished"></translation>
+        <translation>Egy opció nevének kötelező prefixumot megadni. Nics alapértelmezett névetér az opciók számára.</translation>
     </message>
     <message>
         <source>The Schema Import feature is not supported, and therefore %1 declarations cannot occur.</source>
@@ -5097,11 +5097,11 @@ Válassz másik fájlnevet.</translation>
     </message>
     <message>
         <source>The target namespace of a %1 cannot be empty.</source>
-        <translation type="unfinished"></translation>
+        <translation>Egy %1 cél-névtere nem lehet üres.</translation>
     </message>
     <message>
         <source>The module import feature is not supported</source>
-        <translation type="unfinished"></translation>
+        <translation>A modul import szolgáltatás nem támogatott</translation>
     </message>
     <message>
         <source>A variable by name %1 has already been declared in the prolog.</source>
@@ -5113,23 +5113,23 @@ Válassz másik fájlnevet.</translation>
     </message>
     <message>
         <source>The namespace for a user defined function cannot be empty (try the predefined prefix %1 which exists for cases like this)</source>
-        <translation type="unfinished"></translation>
+        <translation>Egy felhasználói függvény névtere nem lehet üres (próbálja meg a(z) %1 prefixumot, ami ilyen esetekre van fenntartva)</translation>
     </message>
     <message>
         <source>The namespace %1 is reserved; therefore user defined functions may not use it. Try the predefined prefix %2, which exists for these cases.</source>
-        <translation type="unfinished"></translation>
+        <translation>A(z) %1 névtér fenntartott, így felhasználói függvények nem használhatják. Próbálja meg a(z) %2 prefixumot, ami ilyen esetekre van.</translation>
     </message>
     <message>
         <source>The namespace of a user defined function in a library module must be equivalent to the module namespace. In other words, it should be %1 instead of %2</source>
-        <translation type="unfinished"></translation>
+        <translation>Egy függvénytár modulban definiált felhasználói függvény névtere meg kell egyezzen a modul névterével. Más szóval %1 kellene legyen %2 helyett</translation>
     </message>
     <message>
         <source>A function already exists with the signature %1.</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 szignaturájú függvény már létezik.</translation>
     </message>
     <message>
         <source>No external functions are supported. All supported functions can be used directly, without first declaring them as external</source>
-        <translation type="unfinished"></translation>
+        <translation>Külső függvények nem támogatottak. Minden támogatott függvény használható, külső függvényként való deklarálás nélkül</translation>
     </message>
     <message>
         <source>An argument by name %1 has already been declared. Every argument name must be unique.</source>
@@ -5137,55 +5137,55 @@ Válassz másik fájlnevet.</translation>
     </message>
     <message>
         <source>The name of a variable bound in a for-expression must be different from the positional variable. Hence, the two variables named %1 collide.</source>
-        <translation type="unfinished"></translation>
+        <translation>Egy for-kifejezésben kötött változó nevének különbözőnek kell lennie, mint a pozicionális változó neve. Így a két %1 nevű változó ütközik.</translation>
     </message>
     <message>
         <source>The Schema Validation Feature is not supported. Hence, %1-expressions may not be used.</source>
-        <translation type="unfinished"></translation>
+        <translation>A Schema Validation szolgáltatás nem támogatott. Emiatt %1-kifejezések nem használhatók.</translation>
     </message>
     <message>
         <source>None of the pragma expressions are supported. Therefore, a fallback expression must be present</source>
-        <translation type="unfinished"></translation>
+        <translation>A pragma kifejezések egyike sem támogatott. Ezért léteznie kell egy alapértelmezett kifejezésnek</translation>
     </message>
     <message>
         <source>The %1-axis is unsupported in XQuery</source>
-        <translation type="unfinished"></translation>
+        <translation>A(z) %1-tengely nem támogatott XQuery-ben</translation>
     </message>
     <message>
         <source>%1 is not a valid numeric literal.</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 érvénytelen numerikus literál.</translation>
     </message>
     <message>
         <source>No function by name %1 is available.</source>
-        <translation type="unfinished"></translation>
+        <translation>Nincs %1 nevű függvény.</translation>
     </message>
     <message>
         <source>The namespace URI cannot be the empty string when binding to a prefix, %1.</source>
-        <translation type="unfinished"></translation>
+        <translation>Prefixumhoz kötés esetén a névtér URI nem lehet az üres sztring, %1.</translation>
     </message>
     <message>
         <source>%1 is an invalid namespace URI.</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 egy érvénytelen névtér URI.</translation>
     </message>
     <message>
         <source>It is not possible to bind to the prefix %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Nem lehet kötni %1 prefixumhoz</translation>
     </message>
     <message>
         <source>Namespace %1 can only be bound to %2 (and it is, in either case, pre-declared).</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 névtér csak %2-hoz köthető (és minden esetben előre deklarált).</translation>
     </message>
     <message>
         <source>Prefix %1 can only be bound to %2 (and it is, in either case, pre-declared).</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 prefixum csak %2-hoz köthető (és minden esetben előre deklarált).</translation>
     </message>
     <message>
         <source>Two namespace declaration attributes have the same name: %1.</source>
-        <translation type="unfinished"></translation>
+        <translation>Két névtér-deklaráció attribútum neve azonos: %1.</translation>
     </message>
     <message>
         <source>The namespace URI must be a constant and cannot use enclosed expressions.</source>
-        <translation type="unfinished"></translation>
+        <translation>Egy névtér URI-nek konstansnak kell lennie és nem használhat bennfoglalt kifejezéseket.</translation>
     </message>
     <message>
         <source>An attribute by name %1 has already appeared on this element.</source>
@@ -5193,19 +5193,19 @@ Válassz másik fájlnevet.</translation>
     </message>
     <message>
         <source>A direct element constructor is not well-formed. %1 is ended with %2.</source>
-        <translation type="unfinished"></translation>
+        <translation>Egy közvetlen elem konstruktor nem jól formázott. %1-t %2 zárja le.</translation>
     </message>
     <message>
         <source>The name %1 does not refer to any schema type.</source>
-        <translation type="unfinished"></translation>
+        <translation>A(z) %1 név nem mutat semmilyen séma típusra.</translation>
     </message>
     <message>
         <source>%1 is an complex type. Casting to complex types is not possible. However, casting to atomic types such as %2 works.</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 komplex típus. Komplex típusra való kényszerítés nem lehetséges. Azonban atomi típusokra, mint pl. %2 történő kényszerítés igen.</translation>
     </message>
     <message>
         <source>%1 is not an atomic type. Casting is only possible to atomic types.</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 nem atomi típus. Típuskényszerítés csak atomi típusra történhet.</translation>
     </message>
     <message>
         <source>%1 is not a valid name for a processing-instruction. Therefore this name test will never match.</source>
@@ -5213,55 +5213,55 @@ Válassz másik fájlnevet.</translation>
     </message>
     <message>
         <source>%1 is not in the in-scope attribute declarations. Note that the schema import feature is not supported.</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 nem a láthatóságon belüli attribútum deklarációk között van. A séma import szolgáltatás nem támogatott.</translation>
     </message>
     <message>
         <source>The name of an extension expression must be in a namespace.</source>
-        <translation type="unfinished"></translation>
+        <translation>Egy kiterjesztés kifejezés nevének névtérben kell lennie.</translation>
     </message>
     <message>
         <source>empty</source>
-        <translation type="unfinished"></translation>
+        <translation>üres</translation>
     </message>
     <message>
         <source>zero or one</source>
-        <translation type="unfinished"></translation>
+        <translation>nulla vagy egy</translation>
     </message>
     <message>
         <source>exactly one</source>
-        <translation type="unfinished"></translation>
+        <translation>pontosan egy</translation>
     </message>
     <message>
         <source>one or more</source>
-        <translation type="unfinished"></translation>
+        <translation>egy vagy több</translation>
     </message>
     <message>
         <source>zero or more</source>
-        <translation type="unfinished"></translation>
+        <translation>nulla vagy több</translation>
     </message>
     <message>
         <source>Required type is %1, but %2 was found.</source>
-        <translation type="unfinished"></translation>
+        <translation>Az elvárt típus %1, de a kapott %2.</translation>
     </message>
     <message>
         <source>Promoting %1 to %2 may cause loss of precision.</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 átalakítása %2 típusra a pontosság elvesztését okozhatja.</translation>
     </message>
     <message>
         <source>The focus is undefined.</source>
-        <translation type="unfinished"></translation>
+        <translation>A fókusz nincs definiálva.</translation>
     </message>
     <message>
         <source>It&apos;s not possible to add attributes after any other kind of node.</source>
-        <translation type="unfinished"></translation>
+        <translation>Semmilyen más csomópont után nem adható meg attribútum.</translation>
     </message>
     <message>
         <source>An attribute by name %1 has already been created.</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 nevű attribútum már létre van hozva.</translation>
     </message>
     <message>
         <source>Only the Unicode Codepoint Collation is supported(%1). %2 is unsupported.</source>
-        <translation type="unfinished"></translation>
+        <translation>Csak a Unicode Codepoint Collation támogatott(%1). %2 nem támogatott.</translation>
     </message>
 </context>
 <context>
