@@ -2434,7 +2434,7 @@ STDMETHODIMP Console::PowerButton()
     if (!ptrVM.isOk())
         return ptrVM.rc();
 
-/** @todo release the console lock? */
+    // no need to release lock, as there are no cross-thread callbacks
 
     /* get the acpi device interface and press the button. */
     PPDMIBASE pBase;
@@ -2482,7 +2482,7 @@ STDMETHODIMP Console::GetPowerButtonHandled(BOOL *aHandled)
     if (!ptrVM.isOk())
         return ptrVM.rc();
 
-/** @todo release the console lock? */
+    // no need to release lock, as there are no cross-thread callbacks
 
     /* get the acpi device interface and check if the button press was handled. */
     PPDMIBASE pBase;
@@ -2537,7 +2537,7 @@ STDMETHODIMP Console::GetGuestEnteredACPIMode(BOOL *aEntered)
     if (!ptrVM.isOk())
         return ptrVM.rc();
 
-/** @todo release the console lock? */
+    // no need to release lock, as there are no cross-thread callbacks
 
     /* get the acpi device interface and query the information. */
     PPDMIBASE pBase;
@@ -2578,7 +2578,7 @@ STDMETHODIMP Console::SleepButton()
     if (!ptrVM.isOk())
         return ptrVM.rc();
 
-/** @todo release the console lock? */
+    // no need to release lock, as there are no cross-thread callbacks
 
     /* get the acpi device interface and press the sleep button. */
     PPDMIBASE pBase;
@@ -2799,7 +2799,7 @@ STDMETHODIMP Console::DiscardSavedState(BOOL aRemoveFile)
     return rc;
 }
 
-/** read the value of a LEd. */
+/** read the value of a LED. */
 inline uint32_t readAndClearLed(PPDMLED pLed)
 {
     if (!pLed)
@@ -4322,6 +4322,10 @@ HRESULT Console::onNetworkAdapterChange(INetworkAdapter *aNetworkAdapter, BOOL c
                 rc = aNetworkAdapter->COMGETTER(AdapterType)(&adapterType);
                 AssertComRC(rc);
                 const char *pszAdapterName = networkAdapterTypeToName(adapterType);
+
+                // prevent cross-thread deadlocks, don't need the lock any more
+                alock.release();
+
                 PPDMIBASE pBase;
                 int vrc = PDMR3QueryDeviceLun(ptrVM, pszAdapterName, ulInstance, 0, &pBase);
                 if (RT_SUCCESS(vrc))
@@ -4373,12 +4377,12 @@ HRESULT Console::onNetworkAdapterChange(INetworkAdapter *aNetworkAdapter, BOOL c
         ptrVM.release();
     }
 
+    // definitely don't need the lock any more
+    alock.release();
+
     /* notify console callbacks on success */
     if (SUCCEEDED(rc))
-    {
-        alock.release(); /** @todo 101% safe? */
         fireNetworkAdapterChangedEvent(mEventSource, aNetworkAdapter);
-    }
 
     LogFlowThisFunc(("Leaving rc=%#x\n", rc));
     return rc;
@@ -4484,8 +4488,6 @@ HRESULT Console::onNATRedirectRuleChange(ULONG ulInstance, BOOL aNatRuleRemove,
  * @param   uInstance           The PDM device instance.
  * @param   uLun                The PDM LUN number of the drive.
  * @param   aNetworkAdapter     The network adapter whose attachment needs to be changed
- *
- * @note Locks this object for writing.
  */
 HRESULT Console::doNetworkAdapterChange(PVM pVM,
                                         const char *pszDevice,
@@ -4498,9 +4500,6 @@ HRESULT Console::doNetworkAdapterChange(PVM pVM,
 
     AutoCaller autoCaller(this);
     AssertComRCReturnRC(autoCaller.rc());
-
-    /* We will need to release the write lock before calling EMT */
-    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     /* Get the VM handle. */
     SafeVMPtr ptrVM(this);
@@ -4516,9 +4515,6 @@ HRESULT Console::doNetworkAdapterChange(PVM pVM,
     int vrc = VMR3ReqCall(pVM, 0 /*idDstCpu*/, &pReq, 0 /* no wait! */, VMREQFLAGS_VBOX_STATUS,
                           (PFNRT) Console::changeNetworkAttachment, 6,
                           this, ptrVM.raw(), pszDevice, uInstance, uLun, aNetworkAdapter);
-
-    /* release the lock before waiting for a result (EMT will call us back!) */
-    alock.release();
 
     if (vrc == VERR_TIMEOUT || RT_SUCCESS(vrc))
     {
@@ -4967,6 +4963,7 @@ HRESULT Console::onUSBDeviceAttach(IUSBDevice *aDevice, IVirtualBoxErrorInfo *aE
 
     if (aError != NULL)
     {
+        alock.release();
         /* notify callbacks about the error */
         onUSBDeviceStateChange(aDevice, true /* aAttached */, aError);
         return S_OK;
@@ -4978,6 +4975,8 @@ HRESULT Console::onUSBDeviceAttach(IUSBDevice *aDevice, IVirtualBoxErrorInfo *aE
         LogFlowThisFunc(("Attach request ignored (no USB controller).\n"));
         return E_FAIL;
     }
+
+    alock.release();
 
     HRESULT rc = attachUSBDevice(aDevice, aMaskedIfs);
     if (FAILED(rc))
@@ -5054,6 +5053,8 @@ HRESULT Console::onUSBDeviceDetach(IN_BSTR aId,
         /* the device must be in the list otherwise */
         AssertFailedReturn(E_FAIL);
     }
+
+    alock.release();
 
     if (aError != NULL)
     {
@@ -5153,8 +5154,6 @@ HRESULT Console::onStorageDeviceChange(IMediumAttachment *aMediumAttachment, BOO
     AutoCaller autoCaller(this);
     AssertComRCReturnRC(autoCaller.rc());
 
-    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-
     HRESULT rc = S_OK;
 
     /* don't trigger medium change if the VM isn't running */
@@ -5170,10 +5169,7 @@ HRESULT Console::onStorageDeviceChange(IMediumAttachment *aMediumAttachment, BOO
 
     /* notify console callbacks on success */
     if (SUCCEEDED(rc))
-    {
-        alock.release(); /** @todo 101% safe? */
         fireStorageDeviceChangedEvent(mEventSource, aMediumAttachment, aRemove);
-    }
 
     LogFlowThisFunc(("Leaving rc=%#x\n", rc));
     return rc;
@@ -6812,7 +6808,9 @@ HRESULT Console::powerDown(IProgress *aProgress /*= NULL*/)
             if (RT_SUCCESS(vrc))
             {
                 fHasUSBController = true;
+                alock.release();
                 detachAllUSBDevices(false /* aDone */);
+                alock.acquire();
             }
         }
 
@@ -6865,7 +6863,11 @@ HRESULT Console::powerDown(IProgress *aProgress /*= NULL*/)
 
         /* Complete the detaching of the USB devices. */
         if (fHasUSBController)
+        {
+            alock.release();
             detachAllUSBDevices(true /* aDone */);
+            alock.acquire();
+        }
 
         /* advance percent count */
         if (aProgress)
@@ -7660,9 +7662,6 @@ HRESULT Console::attachUSBDevice(IUSBDevice *aHostDevice, ULONG aMaskedIfs)
     AssertReturn(aHostDevice, E_FAIL);
     AssertReturn(isWriteLockOnCurrentThread(), E_FAIL);
 
-    /* still want a lock object because we need to release it */
-    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-
     HRESULT hrc;
 
     /*
@@ -7692,16 +7691,10 @@ HRESULT Console::attachUSBDevice(IUSBDevice *aHostDevice, ULONG aMaskedIfs)
     LogFlowThisFunc(("Proxying USB device '%s' {%RTuuid}...\n",
                       Address.c_str(), uuid.raw()));
 
-    /* release the lock before a VMR3* call (EMT will call us back)! */
-    alock.release();
-
 /** @todo just do everything here and only wrap the PDMR3Usb call. That'll offload some notification stuff from the EMT thread. */
     int vrc = VMR3ReqCallWait(ptrVM, VMCPUID_ANY,
                               (PFNRT)usbAttachCallback, 7,
                               this, ptrVM.raw(), aHostDevice, uuid.raw(), fRemote, Address.c_str(), aMaskedIfs);
-
-    /* restore the lock */
-    alock.acquire();
 
     /* hrc is S_OK here */
 
@@ -7779,6 +7772,8 @@ Console::usbAttachCallback(Console *that, PVM pVM, IUSBDevice *aHostDevice, PCRT
         that->mUSBDevices.push_back(pUSBDevice);
         LogFlowFunc(("Attached device {%RTuuid}\n", pUSBDevice->id().raw()));
 
+        alock.release();
+
         /* notify callbacks */
         that->onUSBDeviceStateChange(pUSBDevice, true /* aAttached */, NULL);
     }
@@ -7802,9 +7797,6 @@ HRESULT Console::detachUSBDevice(USBDeviceList::iterator &aIt)
 {
     AssertReturn(isWriteLockOnCurrentThread(), E_FAIL);
 
-    /* still want a lock object because we need to release it */
-    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-
     /* Get the VM handle. */
     SafeVMPtr ptrVM(this);
     if (!ptrVM.isOk())
@@ -7815,9 +7807,6 @@ HRESULT Console::detachUSBDevice(USBDeviceList::iterator &aIt)
 
     LogFlowThisFunc(("Detaching USB proxy device {%RTuuid}...\n",
                      (*aIt)->id().raw()));
-
-    /* release the lock before a VMR3* call (EMT will call us back)! */
-    alock.release();
 
 /** @todo just do everything here and only wrap the PDMR3Usb call. That'll offload some notification stuff from the EMT thread. */
     int vrc = VMR3ReqCallWait(ptrVM, VMCPUID_ANY,
@@ -7872,6 +7861,8 @@ Console::usbDetachCallback(Console *that, PVM pVM, USBDeviceList::iterator *aIt,
         /* Remove the device from the collection */
         that->mUSBDevices.erase(*aIt);
         LogFlowFunc(("Detached device {%RTuuid}\n", pUSBDevice->id().raw()));
+
+        alock.release();
 
         /* notify callbacks */
         that->onUSBDeviceStateChange(pUSBDevice, false /* aAttached */, NULL);
@@ -8262,15 +8253,14 @@ Console::setVMRuntimeErrorCallback(PVM pVM, void *pvUser, uint32_t fFlags,
  * Called at VM startup.
  *
  * @param   pVM     The VM handle.
- *
- * @note The caller must lock this object for writing.
  */
 HRESULT Console::captureUSBDevices(PVM pVM)
 {
     LogFlowThisFunc(("\n"));
 
     /* sanity check */
-    ComAssertRet(isWriteLockOnCurrentThread(), E_FAIL);
+    AssertReturn(!isWriteLockOnCurrentThread(), E_FAIL);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     /* If the machine has an USB controller, ask the USB proxy service to
      * capture devices */
@@ -8281,7 +8271,6 @@ HRESULT Console::captureUSBDevices(PVM pVM)
         /* release the lock before calling Host in VBoxSVC since Host may call
          * us back from under its lock (e.g. onUSBDeviceAttach()) which would
          * produce an inter-process dead-lock otherwise. */
-        AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
         alock.release();
 
         HRESULT hrc = mControl->AutoCaptureUSBDevices();
@@ -8300,22 +8289,20 @@ HRESULT Console::captureUSBDevices(PVM pVM)
 /**
  * Detach all USB device which are attached to the VM for the
  * purpose of clean up and such like.
- *
- * @note The caller must lock this object for writing.
  */
 void Console::detachAllUSBDevices(bool aDone)
 {
     LogFlowThisFunc(("aDone=%RTbool\n", aDone));
 
     /* sanity check */
-    AssertReturnVoid(isWriteLockOnCurrentThread());
+    AssertReturnVoid(!isWriteLockOnCurrentThread());
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     mUSBDevices.clear();
 
     /* release the lock before calling Host in VBoxSVC since Host may call
      * us back from under its lock (e.g. onUSBDeviceAttach()) which would
      * produce an inter-process dead-lock otherwise. */
-    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
     alock.release();
 
     mControl->DetachAllUSBDevices(aDone);
@@ -8414,7 +8401,9 @@ void Console::processRemoteUSBDevices(uint32_t u32ClientId, VRDEUSBDEVICEDESC *p
 
             if (fMatched)
             {
+                alock.release();
                 hrc = onUSBDeviceAttach(pUSBDevice, NULL, fMaskedIfs);
+                alock.acquire();
 
                 /// @todo (r=dmik) warning reporting subsystem
 
@@ -8479,7 +8468,9 @@ void Console::processRemoteUSBDevices(uint32_t u32ClientId, VRDEUSBDEVICEDESC *p
         {
             Bstr uuid;
             pUSBDevice->COMGETTER(Id)(uuid.asOutParam());
+            alock.release();
             onUSBDeviceDetach(uuid.raw(), NULL);
+            alock.acquire();
         }
 
         /* And remove it from the list. */
@@ -8714,14 +8705,14 @@ DECLCALLBACK(int) Console::powerUpThread(RTTHREAD Thread, void *pvUser)
                     alock.acquire();
                 }
 
+                /* release the lock before a lengthy operation */
+                alock.release();
+
                 /*
                  * Capture USB devices.
                  */
                 rc = pConsole->captureUSBDevices(pVM);
                 if (FAILED(rc)) break;
-
-                /* release the lock before a lengthy operation */
-                alock.release();
 
                 /* Load saved state? */
                 if (task->mSavedStateFile.length())
