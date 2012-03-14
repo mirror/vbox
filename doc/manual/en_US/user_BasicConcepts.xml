@@ -126,65 +126,57 @@
         </glossentry>
 
         <glossentry>
-          <glossterm>Mac OS X Server</glossterm>
+          <glossterm>Mac OS X</glossterm>
 
           <glossdef>
             <para>VirtualBox 3.2 added experimental support for Mac OS X
-            Server guests, but this comes with restrictions. Please see the
-            following section as well as <xref
-            linkend="KnownIssues" />.</para>
+            guests, but this comes with restrictions. Please see the following
+            section as well as <xref linkend="KnownIssues" />.</para>
           </glossdef>
         </glossentry>
       </glosslist></para>
 
     <sect2 id="intro-macosxguests">
-      <title>Mac OS X Server guests</title>
+      <title>Mac OS X guests</title>
 
       <para>Starting with version 3.2, VirtualBox has experimental support for
-      Mac OS X Server guests. This allows you to install and execute
-      unmodified versions of Mac OS X Server on supported host
-      hardware.</para>
+      Mac OS X guests. This allows you to install and execute unmodified
+      versions of Mac OS X on supported host hardware.</para>
 
       <para>Whereas competing solutions perform modifications to the Mac OS X
-      Server install DVDs (e.g. different boot loader and replaced files),
-      VirtualBox is the first product to provide the modern PC architecture
-      expected by OS X without requiring any "hacks".</para>
+      install DVDs (e.g. different boot loader and replaced files), VirtualBox
+      is the first product to provide the modern PC architecture expected by
+      OS X without requiring any "hacks".</para>
 
       <para>You should be aware of a number of <emphasis role="bold">important
-      issues</emphasis> before attempting to install a Mac OS X Server
-      guest:<orderedlist>
+      issues</emphasis> before attempting to install a Mac OS X guest:<orderedlist>
           <listitem>
             <para>Mac OS X is commercial, licensed software and contains
-            <emphasis role="bold">both license and technical
-            restrictions</emphasis> that limit its use to certain hardware and
-            usage scenarios. It is important that you understand and obey
-            these restrictions.</para>
+            <emphasis role="bold">both license and technical restrictions</emphasis>
+            that limit its use to certain hardware and usage scenarios. It is
+            important that you understand and obey these restrictions.</para>
 
-            <para>In particular, for most versions of Mac OS X Server, Apple
-            prohibits installing them on non-Apple hardware. Also, only the
-            server versions of Mac OS X are designed to be used in a virtual
-            environment; as a result, VirtualBox does not support client
-            versions of Mac OS X as a guest.</para>
+            <para>In particular, for most versions of Mac OS X, Apple prohibits
+            installing them on non-Apple hardware.</para>
 
             <para>These license restrictions are also enforced on a technical
-            level. Mac OS X Server verifies whether it is running on Apple
-            hardware, and most DVDs that that come with Apple hardware even
-            check for an exact model. These restrictions are
-            <emphasis>not</emphasis> circumvented by VirtualBox and continue
-            to apply.</para>
+            level. Mac OS X verifies whether it is running on Apple hardware,
+            and most DVDs that that come with Apple hardware even check for an
+            exact model. These restrictions are <emphasis>not</emphasis>
+            circumvented by VirtualBox and continue to apply.</para>
           </listitem>
 
           <listitem>
             <para>Only <emphasis role="bold">CPUs</emphasis> known and tested
             by Apple are supported. As a result, if your Intel CPU is newer
-            than the build of Mac OS X Server, or if you have a non-Intel CPU,
-            it will most likely panic during bootup with an "Unsupported CPU"
-            exception. It is generally best to use the Mac OS X Server DVD
-            that came with your Apple hardware.</para>
+            than the build of Mac OS X, or if you have a non-Intel CPU, it will
+            most likely panic during bootup with an "Unsupported CPU"
+            exception. It is generally best to use the Mac OS X DVD that came
+            with your Apple hardware.</para>
           </listitem>
 
           <listitem>
-            <para>The Mac OS X Server installer expects the harddisk to be
+            <para>The Mac OS X installer expects the harddisk to be
             <emphasis role="bold">partitioned</emphasis> so when it does not
             offer a selection, you have to launch the Disk Utility from the
             "Tools" menu and partition the hard disk. Then close the Disk
@@ -192,9 +184,8 @@
           </listitem>
 
           <listitem>
-            <para>In addition, as Mac OS X Server support in VirtualBox is
-            currently still experimental, please refer also to <xref
-            linkend="KnownIssues" />.</para>
+            <para>In addition, as Mac OS X support in VirtualBox is currently
+            still experimental, please refer also to <xref linkend="KnownIssues" />.</para>
           </listitem>
         </orderedlist></para>
     </sect2>
@@ -497,14 +488,14 @@
               <para>Here you can select which chipset will be presented to the
               virtual machine. Before VirtualBox 4.0, PIIX3 was the only
               available option here. For modern guest operating systems such
-              as Mac OS X server, that old chipset is no longer well
-              supported. As a result, VirtualBox 4.0 introduced an emulation
-              of the more modern ICH9 chipset, which supports PCI express,
-              three PCI buses, PCI-to-PCI bridges and Message Signalled
-              Interrupts (MSI). This allows modern operating systems to
-              address more PCI devices and no longer requires IRQ sharing.
-	      Note that the ICH9 support is experimental and not recommended
-	      for guest operating systems which do not require it.</para>
+              as Mac OS X, that old chipset is no longer well supported. As a
+              result, VirtualBox 4.0 introduced an emulation of the more
+              modern ICH9 chipset, which supports PCI express, three PCI
+              buses, PCI-to-PCI bridges and Message Signalled Interrupts
+              (MSI). This allows modern operating systems to address more PCI
+              devices and no longer requires IRQ sharing. Note that the ICH9
+              support is experimental and not recommended for guest operating
+              systems which do not require it.</para>
             </glossdef>
           </glossentry>
 
@@ -1313,9 +1304,9 @@
     Alternatively, use the <computeroutput>VBoxManage</computeroutput> command
     line interface like this: <screen>VBoxManage modifyvm "VM name" --firmware efi</screen>
     To switch back to using the BIOS, use: <screen>VBoxManage modifyvm "VM name" --firmware bios</screen>One
-    notable user of EFI is Apple's Mac OS X, but recent Linuxes (such as
-    Fedora 11) and Windows (starting with Vista) offer special versions that can
-    be booted using EFI as well.</para>
+    notable user of EFI is Apple's Mac OS X, but recent Linuxes (such as Fedora
+    11) and Windows (starting with Vista) offer special versions that can be
+    booted using EFI as well.</para>
 
     <para>Another possible use of EFI in VirtualBox is development and testing
     of EFI applications, without booting any OS.</para>
