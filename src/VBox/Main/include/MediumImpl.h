@@ -264,8 +264,6 @@ public:
 private:
 
     HRESULT queryInfo(bool fSetImageId, bool fSetParentId);
-    HRESULT lockRead(MediumState_T *aState, bool fWithinQueryInfo);
-    HRESULT lockWrite(MediumState_T *aState, bool fWithinQueryInfo);
 
     HRESULT canClose();
     HRESULT unregisterWithVirtualBox();
