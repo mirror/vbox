@@ -414,7 +414,7 @@
         <para>If a suitable kernel module was found in the package or the
         module was successfully built, the installation script will attempt to
         load that module. If this fails, please see <xref
-        linkend="linuxkernelmodulefailstoload" /> for further
+        linkend="ts_linux-kernelmodule-fails-to-load" /> for further
         information.</para>
 
         <para>Once VirtualBox has been successfully installed and configured,

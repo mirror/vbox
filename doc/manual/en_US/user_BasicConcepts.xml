@@ -78,7 +78,7 @@
             higher for better performance.<note>
                 <para>Certain Linux kernel releases have bugs that prevent
                 them from executing in a virtual environment; please see <xref
-                linkend="trouble-linux-buggy" /> for details.</para>
+                linkend="ts_linux-buggy" /> for details.</para>
               </note></para>
           </glossdef>
         </glossentry>
@@ -1284,7 +1284,7 @@
       The <computeroutput>Driver=</computeroutput> entry in
       <computeroutput>/proc/bus/usb/devices</computeroutput> will show you
       which devices are currently claimed. Please refer to <xref
-      linkend="usb_linux" /> also for details about
+      linkend="ts_usb-linux" /> also for details about
       <computeroutput>usbfs</computeroutput>.</para>
     </sect2>
   </sect1>
