@@ -798,8 +798,8 @@
           applications will utilize VirtualBox Direct3D files directly and thus
           will run as expected.</para>
 
-      <para>For WDDM Direct3D support however, the originally shipped system files
-          d3d8.dll and d3d9.dll files are required in order to run Direct3D 8.0
+      <para>For WDDM Direct3D support however, the originally shipped d3d8.dll and
+          d3d9.dll files are required in order to run Direct3D 8.0
           and Direct3D 9.0 applications. As a result of the above mentioned system
           files corruption these applications will not work anymore. See below for
           a step-by-step guide for restoring the original d3d8.dll and d3d9.dll
