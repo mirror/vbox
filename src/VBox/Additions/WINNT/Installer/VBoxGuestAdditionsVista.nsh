@@ -31,9 +31,20 @@ Function Vista_CheckForRequirements
   Pop $0
   ${If} $0 == "1" ; D3D files are invalid, notify user
     MessageBox MB_ICONSTOP|MB_OKCANCEL $(VBOX_COMPONENT_D3D_INVALID) /SD IDOK IDCANCEL failure
+    ; Offer to open up the VBox online manual on how to fix missing/corrupted D3D files
+    MessageBox MB_ICONQUESTION|MB_YESNO $(VBOX_COMPONENT_D3D_INVALID_MANUAL) /SD IDNO IDYES open_handbook_d3d_invalid    
   ${EndIf}
-
   Goto success
+
+open_handbook_d3d_invalid:
+
+  ; @todo Add a language GET parameter (e.g. ?lang=enUS) here as soon as we got the
+  ;       handbook online in different languages
+  ; Don't use https here (even if we offer it) -- we only want to display the handbook
+  ExecShell open "http://www.virtualbox.org/manual/ch12.html#ts_d3d8-d3d9-restore"
+  IfErrors 0 +2
+    MessageBox MB_ICONSTOP|MB_OK $(VBOX_ERROR_OPEN_LINK) /SD IDOK
+  Goto failure
 
 failure:
 
