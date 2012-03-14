@@ -93,22 +93,22 @@
 <context>
     <name>QApplication</name>
     <message>
-        <location filename="../src/main.cpp" line="448"/>
+        <location filename="../src/main.cpp" line="445"/>
         <source>Executable &lt;b&gt;%1&lt;/b&gt; requires Qt %2.x, found Qt %3.</source>
         <translation>実行ファイル &lt;b&gt;%1&lt;/b&gt; はQt %2.x が必要です。Qt %3 が見つかりました。</translation>
     </message>
     <message>
-        <location filename="../src/main.cpp" line="453"/>
+        <location filename="../src/main.cpp" line="450"/>
         <source>Incompatible Qt Library Error</source>
         <translation>互換性のないQtライブラリエラー</translation>
     </message>
     <message>
-        <location filename="../src/main.cpp" line="654"/>
+        <location filename="../src/main.cpp" line="648"/>
         <source>VirtualBox - Error In %1</source>
         <translation>VirtualBox - %1 のエラー</translation>
     </message>
     <message>
-        <location filename="../src/main.cpp" line="659"/>
+        <location filename="../src/main.cpp" line="653"/>
         <source>&lt;html&gt;&lt;b&gt;%1 (rc=%2)&lt;/b&gt;&lt;br/&gt;&lt;br/&gt;</source>
         <translation>&lt;html&gt;&lt;b&gt;%1 (rc=%2)&lt;/b&gt;&lt;br/&gt;&lt;br/&gt;</translation>
     </message>
@@ -131,22 +131,22 @@
         <translation>カーネル モジュールが正しくロードされたことを確認してください。</translation>
     </message>
     <message>
-        <location filename="../src/main.cpp" line="581"/>
+        <location filename="../src/main.cpp" line="575"/>
         <source>VirtualBox - Runtime Error</source>
         <translation>VirtualBox - ランタイムエラー</translation>
     </message>
     <message>
-        <location filename="../src/main.cpp" line="587"/>
+        <location filename="../src/main.cpp" line="581"/>
         <source>&lt;b&gt;Cannot access the kernel driver!&lt;/b&gt;&lt;br/&gt;&lt;br/&gt;</source>
         <translation>&lt;b&gt;カーネルドライバにアクセスできません！&lt;/b&gt;&lt;br/&gt;&lt;br/&gt;</translation>
     </message>
     <message>
-        <location filename="../src/main.cpp" line="611"/>
+        <location filename="../src/main.cpp" line="605"/>
         <source>Unknown error %2 during initialization of the Runtime</source>
         <translation>ランタイムの初期化中に予期しないエラー(%2)</translation>
     </message>
     <message>
-        <location filename="../src/main.cpp" line="601"/>
+        <location filename="../src/main.cpp" line="595"/>
         <source>Kernel driver not accessible</source>
         <translation>カーネルドライバにアクセスできない</translation>
     </message>
@@ -5289,31 +5289,31 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsStorage.cpp" line="2293"/>
-        <location filename="../src/wizards/newvm/UINewVMWzd.cpp" line="963"/>
+        <location filename="../src/wizards/newvm/UINewVMWzd.cpp" line="968"/>
         <source>IDE Controller</source>
         <translation>IDE コントローラ</translation>
     </message>
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsStorage.cpp" line="2298"/>
-        <location filename="../src/wizards/newvm/UINewVMWzd.cpp" line="971"/>
+        <location filename="../src/wizards/newvm/UINewVMWzd.cpp" line="976"/>
         <source>SATA Controller</source>
         <translation>SATA コントローラ</translation>
     </message>
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsStorage.cpp" line="2303"/>
-        <location filename="../src/wizards/newvm/UINewVMWzd.cpp" line="979"/>
+        <location filename="../src/wizards/newvm/UINewVMWzd.cpp" line="984"/>
         <source>SCSI Controller</source>
         <translation>SCSI コントローラ</translation>
     </message>
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsStorage.cpp" line="2308"/>
-        <location filename="../src/wizards/newvm/UINewVMWzd.cpp" line="987"/>
+        <location filename="../src/wizards/newvm/UINewVMWzd.cpp" line="992"/>
         <source>Floppy Controller</source>
         <translation>フロッピー コントローラ</translation>
     </message>
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsStorage.cpp" line="2313"/>
-        <location filename="../src/wizards/newvm/UINewVMWzd.cpp" line="995"/>
+        <location filename="../src/wizards/newvm/UINewVMWzd.cpp" line="1000"/>
         <source>SAS Controller</source>
         <translation>SAS コントローラ</translation>
     </message>
@@ -8824,12 +8824,12 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
 <context>
     <name>UINewVMWzdPage1</name>
     <message>
-        <location filename="../src/wizards/newvm/UINewVMWzd.cpp" line="208"/>
+        <location filename="../src/wizards/newvm/UINewVMWzd.cpp" line="213"/>
         <source>Welcome to the New Virtual Machine Wizard!</source>
         <translation>ようこそ新規仮想マシン作成ウィザードへ！</translation>
     </message>
     <message>
-        <location filename="../src/wizards/newvm/UINewVMWzd.cpp" line="216"/>
+        <location filename="../src/wizards/newvm/UINewVMWzd.cpp" line="221"/>
         <source>&lt;p&gt;This wizard will guide you through the steps that are necessary to create a new virtual machine for VirtualBox.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</source>
         <translation>&lt;p&gt;このウィザードはVirtualBox用の新規仮想マシンを作成するために必要なステップを案内します。&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</translation>
     </message>
@@ -8852,7 +8852,7 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
         <translation>OSタイプ(&amp;T)</translation>
     </message>
     <message>
-        <location filename="../src/wizards/newvm/UINewVMWzd.cpp" line="275"/>
+        <location filename="../src/wizards/newvm/UINewVMWzd.cpp" line="280"/>
         <source>VM Name and OS Type</source>
         <translation>仮想マシン名とOSタイプ</translation>
     </message>
@@ -8875,12 +8875,12 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
         <translation>MB</translation>
     </message>
     <message>
-        <location filename="../src/wizards/newvm/UINewVMWzd.cpp" line="393"/>
+        <location filename="../src/wizards/newvm/UINewVMWzd.cpp" line="398"/>
         <source>Memory</source>
         <translation>メモリ</translation>
     </message>
     <message>
-        <location filename="../src/wizards/newvm/UINewVMWzd.cpp" line="398"/>
+        <location filename="../src/wizards/newvm/UINewVMWzd.cpp" line="403"/>
         <source>The recommended base memory size is &lt;b&gt;%1&lt;/b&gt; MB.</source>
         <translation>推奨されるメインメモリのサイズは&lt;b&gt;%1&lt;/b&gt;MBです。</translation>
     </message>
@@ -8926,12 +8926,12 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
         <translation>仮想ハードディスクファイルを選択...</translation>
     </message>
     <message>
-        <location filename="../src/wizards/newvm/UINewVMWzd.cpp" line="487"/>
+        <location filename="../src/wizards/newvm/UINewVMWzd.cpp" line="492"/>
         <source>Virtual Hard Disk</source>
         <translation>仮想ハードディスク</translation>
     </message>
     <message>
-        <location filename="../src/wizards/newvm/UINewVMWzd.cpp" line="492"/>
+        <location filename="../src/wizards/newvm/UINewVMWzd.cpp" line="497"/>
         <source>The recommended size of the start-up disk is &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation type="unfinished">推奨される起動ディスクのサイズは&lt;b&gt;%1&lt;/b&gt;です。</translation>
     </message>
@@ -8948,24 +8948,24 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
         <translation>&lt;p&gt;新規仮想マシンは以下の設定で作成されます:&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../src/wizards/newvm/UINewVMWzd.cpp" line="683"/>
+        <location filename="../src/wizards/newvm/UINewVMWzd.cpp" line="688"/>
         <source>Summary</source>
         <translation>概要</translation>
     </message>
     <message>
-        <location filename="../src/wizards/newvm/UINewVMWzd.cpp" line="699"/>
+        <location filename="../src/wizards/newvm/UINewVMWzd.cpp" line="704"/>
         <source>Name</source>
         <comment>summary</comment>
         <translation>名前</translation>
     </message>
     <message>
-        <location filename="../src/wizards/newvm/UINewVMWzd.cpp" line="700"/>
+        <location filename="../src/wizards/newvm/UINewVMWzd.cpp" line="705"/>
         <source>OS Type</source>
         <comment>summary</comment>
         <translation>OSタイプ</translation>
     </message>
     <message>
-        <location filename="../src/wizards/newvm/UINewVMWzd.cpp" line="701"/>
+        <location filename="../src/wizards/newvm/UINewVMWzd.cpp" line="706"/>
         <source>Base Memory</source>
         <comment>summary</comment>
         <translation>メインメモリ</translation>
@@ -8976,13 +8976,13 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
         <translation type="obsolete">MB</translation>
     </message>
     <message>
-        <location filename="../src/wizards/newvm/UINewVMWzd.cpp" line="709"/>
+        <location filename="../src/wizards/newvm/UINewVMWzd.cpp" line="714"/>
         <source>Start-up Disk</source>
         <comment>summary</comment>
         <translation type="unfinished">起動 ハードディスク</translation>
     </message>
     <message>
-        <location filename="../src/wizards/newvm/UINewVMWzd.cpp" line="714"/>
+        <location filename="../src/wizards/newvm/UINewVMWzd.cpp" line="719"/>
         <source>&lt;p&gt;If the above is correct press the &lt;b&gt;%1&lt;/b&gt; button. Once you press it, a new virtual machine will be created. &lt;/p&gt;&lt;p&gt;Note that you can alter these and all other setting of the created virtual machine at any time using the &lt;b&gt;Settings&lt;/b&gt; dialog accessible through the menu of the main window.&lt;/p&gt;</source>
         <translation>&lt;p&gt;上記の設定が正しければ、&lt;b&gt;[%1]&lt;/b&gt;ボタンをクリックしてください。新規仮想マシンが作成されます。 &lt;/p&gt;&lt;p&gt;注：メインウィンドウのメニューからアクセスできる &lt;b&gt;[設定]&lt;/b&gt;ダイアログを使用して、作成した仮想マシンの設定を変更することができます。&lt;/p&gt;</translation>
     </message>
@@ -12500,8 +12500,8 @@ Version %1</source>
         <location filename="../src/globals/VBoxGlobal.cpp" line="3774"/>
         <location filename="../src/widgets/UIApplianceEditorWidget.cpp" line="236"/>
         <location filename="../src/widgets/UIApplianceEditorWidget.cpp" line="427"/>
-        <location filename="../src/wizards/newvm/UINewVMWzd.cpp" line="401"/>
-        <location filename="../src/wizards/newvm/UINewVMWzd.cpp" line="402"/>
+        <location filename="../src/wizards/newvm/UINewVMWzd.cpp" line="406"/>
+        <location filename="../src/wizards/newvm/UINewVMWzd.cpp" line="407"/>
         <source>MB</source>
         <comment>size suffix MBytes=1024 KBytes</comment>
         <translation>MB</translation>
@@ -12678,7 +12678,7 @@ Version %1</source>
         <translation>ネステッドページング</translation>
     </message>
     <message>
-        <location filename="../src/wizards/newvm/UINewVMWzd.cpp" line="701"/>
+        <location filename="../src/wizards/newvm/UINewVMWzd.cpp" line="706"/>
         <source>MB</source>
         <comment>size suffix MBytes=1024KBytes</comment>
         <translation>MB</translation>
