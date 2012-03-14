@@ -45,7 +45,7 @@ LangString VBOX_COMPONENT_D3D_NOT_SUPPORTED ${LANG_FRENCH}          "Le support 
 LangString VBOX_COMPONENT_D3D_OR_WDDM ${LANG_FRENCH}                "Ce système supporte l'interface Windows Aero (WDDM).$\r$\nLe support VirtualBox pour cette fonctionalité est expérimental et ne devrait pas encore être utilisé sur des systèmes importants.$\r$\n$\r$\nVoulez-vous installer le support Direct3D de base à la place?"
 LangString VBOX_COMPONENT_D3D_HINT_VRAM ${LANG_FRENCH}              "Veuillez noter que l'utilisation de l'accélération 3D nécécssite au moins 128 MB de mémoire vidéo ; pour un utilisation avec plusieurs écrans nous recommandons  d'affecter 256 MB.$\r$\n$\r$\nSi nécéssaire vous pouvez changer la taille du mémoire vidéo dans la sous-section $\"Affichage$\" des paramètres de la machine virtuelle."
 LangString VBOX_COMPONENT_D3D_INVALID ${LANG_FRENCH}                "Le programme d'installation a détecté une installation DirectX corrompue ou invalide.$\r$\n$\r$\nAfin d'assurer le bon fonctionnement du support DirectX, nous conseillons de réinstaller le moteur d'exécution DirectX.$\r$\n$\r$\nDésirez-vous cependant continuer?"
-LangString VBOX_COMPONENT_D3D_INVALID_MANUAL ${LANG_FRENCH}         "Shall the VirtualBox manual now be displayed for fixing this problem?"
+LangString VBOX_COMPONENT_D3D_INVALID_MANUAL ${LANG_FRENCH}         "Voulez-vous voir le manuel d'utilisateur VirtualBox pour chercher une solution?"
 
 LangString VBOX_WFP_WARN_REPLACE ${LANG_FRENCH}          "Le programme d'installation vient de remplacer certains fichiers systèmes afin de faire fonctionner correctement ${PRODUCT_NAME}.$\r$\nPour le cas qu'un avertissement de la Protection de fichiers Windows apparaisse, veuiller l'annuler sans restaurer les fichiers originaux!"
 LangString VBOX_REBOOT_REQUIRED ${LANG_FRENCH}           "Le système doit être redémarré pourque les changements prennent effet. Redémarrer Windows maintenant?"
@@ -53,7 +53,7 @@ LangString VBOX_REBOOT_REQUIRED ${LANG_FRENCH}           "Le système doit être r
 LangString VBOX_EXTRACTION_COMPLETE ${LANG_FRENCH}       "$(^Name): Les fichiers ont été extrait avec succès dans $\"$INSTDIR$\"!"
 
 LangString VBOX_ERROR_INST_FAILED ${LANG_FRENCH}         "Une erreur est survenue pendant l'installation!$\r$\nVeuillez consulter le fichier log '$INSTDIR\install_ui.log' pour plus d'informations."
-LangString VBOX_ERROR_OPEN_LINK ${LANG_ENGLISH}          "Could not open link in the default browser."
+LangString VBOX_ERROR_OPEN_LINK ${LANG_FRENCH}           "Impossible d'ouvrir le lien dans le navigateur par defaut."
 
 LangString VBOX_UNINST_CONFIRM ${LANG_FRENCH}            "Voulez-vous vraiment désinstaller $(^Name)?"
 LangString VBOX_UNINST_SUCCESS ${LANG_FRENCH}            "$(^Name) ont été désinstallés."
