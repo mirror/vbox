@@ -4,7 +4,7 @@
 <context>
     <name>UIMessageCenter</name>
     <message numerus="yes">
-        <location filename="../src/globals/UIMessageCenter.cpp" line="2279"/>
+        <location filename="../src/globals/UIMessageCenter.cpp" line="2386"/>
         <source>&lt;p&gt;The virtual machine(s) &lt;b&gt;%1&lt;/b&gt; are currently in a saved state.&lt;/p&gt;&lt;p&gt;If you continue the runtime state of the exported machine(s) will be discarded. Note that the existing machine(s) are not changed.&lt;/p&gt;</source>
         <translation>
             <numerusform>&lt;p&gt;The virtual machine &lt;b&gt;%1&lt;/b&gt; is currently in a saved state.&lt;/p&gt;&lt;p&gt;If you continue the runtime state of the exported machine will be discarded. Note that the existing machine is not changed.&lt;/p&gt;</numerusform>
@@ -15,7 +15,7 @@
 <context>
     <name>VBoxGlobal</name>
     <message numerus="yes">
-        <location filename="../src/globals/VBoxGlobal.h" line="219"/>
+        <location filename="../src/globals/VBoxGlobal.h" line="225"/>
         <source>%n year(s)</source>
         <translation>
             <numerusform>%n year</numerusform>
@@ -23,7 +23,7 @@
         </translation>
     </message>
     <message numerus="yes">
-        <location filename="../src/globals/VBoxGlobal.h" line="224"/>
+        <location filename="../src/globals/VBoxGlobal.h" line="230"/>
         <source>%n month(s)</source>
         <translation>
             <numerusform>%n month</numerusform>
@@ -31,7 +31,7 @@
         </translation>
     </message>
     <message numerus="yes">
-        <location filename="../src/globals/VBoxGlobal.h" line="229"/>
+        <location filename="../src/globals/VBoxGlobal.h" line="235"/>
         <source>%n day(s)</source>
         <translation>
             <numerusform>%n day</numerusform>
@@ -39,7 +39,7 @@
         </translation>
     </message>
     <message numerus="yes">
-        <location filename="../src/globals/VBoxGlobal.h" line="234"/>
+        <location filename="../src/globals/VBoxGlobal.h" line="240"/>
         <source>%n hour(s)</source>
         <translation>
             <numerusform>%n hour</numerusform>
@@ -47,7 +47,7 @@
         </translation>
     </message>
     <message numerus="yes">
-        <location filename="../src/globals/VBoxGlobal.h" line="244"/>
+        <location filename="../src/globals/VBoxGlobal.h" line="250"/>
         <source>%n second(s)</source>
         <translation>
             <numerusform>%n second</numerusform>
@@ -55,7 +55,7 @@
         </translation>
     </message>
     <message numerus="yes">
-        <location filename="../src/globals/VBoxGlobal.h" line="239"/>
+        <location filename="../src/globals/VBoxGlobal.h" line="245"/>
         <source>%n minute(s)</source>
         <translation>
             <numerusform>%n minute</numerusform>
