@@ -972,6 +972,28 @@ VBoxClient --seamless</screen> when your X11 user session is started if you
   </sect1>
 
   <sect1>
+    <title>Solaris guests</title>
+
+    <sect2>
+      <title>Older Solaris 10 releases hang in 64-bit mode</title>
+
+      <para>Solaris 10 releases up to and including Solaris 10 8/07 ("S10U4")
+          incorrectly detect newer Intel processors produced since 2007. This 
+          problem leads to the 64-bit Solaris kernel hanging or crashing almost 
+          immediately during startup, in both virtualized and physical 
+          environments.
+      </para>
+      <para>
+          The recommended solution is upgrading to at least Solaris 10 5/08 
+          ("S10U5"). Alternative solutions include forcing Solaris to always 
+          boot the 32-bit kernel or applying a patch for bug 6574102 (while 
+          Solaris is using the 32-bit kernel).
+      </para>
+    
+    </sect2>
+  </sect1>
+
+  <sect1>
     <title>Windows hosts</title>
 
     <sect2>
