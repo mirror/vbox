@@ -809,9 +809,11 @@
 
       <note><para>Starting at Windows 7 the 3D desktop (aka Aero) uses DirectX 10
           for rendering so that corrupted d3d8.dll and d3d9.dll system files will
-          have no effect on the actual rendering. Taken this into account such a
-          detected file corruption will not be considered as fatal for the basic
-          Direct3D and WDDM Direct3D installation on Windows 7 and later guests.</para></note>
+          have no effect on the actual rendering.</para></note>
+          
+      <para>This is why such a detected file corruption is not considered as fatal 
+          for the basic Direct3D installation on all supported Windows guests,
+          and for WDDM Direct3D installation on Windows 7 and later guests.</para>
 
       <para>Extracting d3d8 and d3d9.dll from a Windows XP installation CD:</para>
 
