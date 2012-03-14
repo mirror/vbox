@@ -344,7 +344,7 @@
       follows:<screen>rdesktop-vrdp -r usb -a 16 -N my.host.address</screen>Note
       that <computeroutput>rdesktop-vrdp</computeroutput> can access USB
       devices only through <computeroutput>/proc/bus/usb</computeroutput>.
-      Please refer to <xref linkend="usb_linux" /> for further details on how
+      Please refer to <xref linkend="ts_usb-linux" /> for further details on how
       to properly set up the permissions. Furthermore it is advisable to
       disable automatic loading of any host driver on the remote host which
       might work on USB devices to ensure that the devices are accessible by

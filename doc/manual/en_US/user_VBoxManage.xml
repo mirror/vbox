@@ -2303,8 +2303,8 @@ VBoxManage setextradata SUSE10 installdate 2006.02.02</screen>
 All rights reserved.
 
 Value: 2006.01.01</screen>
-    <para>To remove a key, the <computeroutput>setextradata</computeroutput> 
-    command must be run without specifying data (only the key), for example: 
+    <para>To remove a key, the <computeroutput>setextradata</computeroutput>
+    command must be run without specifying data (only the key), for example:
     </para>
 
     <screen>VBoxManage setextradata Fedora5 installdate</screen>
@@ -2731,7 +2731,7 @@ Value: 2006.01.01</screen>
           appropriate error message.</para>
 
           <para>To raise or lower the guest process execution limit, either the guest
-          property <computerouptut>/VirtualBox/GuestAdd/VBoxService/--control-procs-max-kept</computerouptut>
+          property <computeroutput>/VirtualBox/GuestAdd/VBoxService/--control-procs-max-kept</computeroutput>
           or VBoxService' command line by specifying <computeroutput>--control-procs-max-kept</computeroutput>
           needs to be modified. A restart of the guest OS is required afterwards. To serve unlimited
           guest processes, a value of <computeroutput>0</computeroutput> needs to be set (not recommended).</para>
@@ -3031,7 +3031,7 @@ Value: 2006.01.01</screen>
 
     <para>The "debugvm" commands are for experts who want to tinker with the
     exact details of virtual machine execution. Like the VM debugger described
-    in <xref linkend="debugger" />, these commands are only useful if you are
+    in <xref linkend="ts_debugger" />, these commands are only useful if you are
     very familiar with the details of the PC architecture and how to debug
     software.</para>
 
@@ -3042,7 +3042,7 @@ Value: 2006.01.01</screen>
           &lt;name&gt;</computeroutput>, you can create a system dump of the
           running VM, which will be written into the given file. This file
           will have the standard ELF core format (with custom sections); see
-          <xref linkend="guestcoreformat" />.</para>
+          <xref linkend="ts_guest-core-format" />.</para>
 
           <para>This corresponds to the
           <computeroutput>writecore</computeroutput> command in the debugger.

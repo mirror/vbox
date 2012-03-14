@@ -155,7 +155,7 @@
     </sect2>
 
     <sect2>
-      <title id="debugger">The built-in VM debugger</title>
+      <title id="ts_debugger">The built-in VM debugger</title>
 
       <para>VirtualBox includes a built-in VM debugger, which advanced users
       may find useful. This debugger allows for examining and, to some extent,
@@ -305,7 +305,7 @@
 
           <listitem>
             <para><computeroutput>writecore</computeroutput> -- writes a VM
-            core file to disk, refer <xref linkend="guestcoreformat" /></para>
+            core file to disk, refer <xref linkend="ts_guest-core-format" /></para>
           </listitem>
         </itemizedlist></para>
 
@@ -405,7 +405,7 @@
       provided can be invaluable.</para>
     </sect2>
 
-    <sect2 id="guestcoreformat">
+    <sect2 id="ts_guest-core-format">
       <title>VM core format</title>
 
       <para>VirtualBox uses the 64-bit ELF format for its VM core files
@@ -456,7 +456,7 @@
   <sect1>
     <title>General</title>
 
-    <sect2 id="configPeriodicFlush">
+    <sect2 id="ts_config-periodic-flush">
       <title>Guest shows IDE/SATA errors for file-based images on slow host
       file system</title>
 
@@ -542,13 +542,13 @@
       29.</para>
 
       <para>Note that this doesn't affect the flushes performed according to
-      the configuration described in <xref linkend="configPeriodicFlush"
+      the configuration described in <xref linkend="ts_config-periodic-flush"
       xrefstyle="template: %n" />. Restoring the default of ignoring flush
       commands is possible by setting the value to 1 or by removing the
       key.</para>
     </sect2>
 
-    <sect2 id="hostPowerMgmt">
+    <sect2 id="ts_host-powermgmt">
       <title>Poor performance caused by host power management</title>
 
       <para>On some hardware platforms and operating systems, virtualization
@@ -568,7 +568,7 @@
       considered.</para>
     </sect2>
 
-    <sect2 id="gui2D_grayedout">
+    <sect2 id="ts_gui-2d-grayed-out">
       <title>GUI: 2D Video Acceleration option is grayed out</title>
 
       <para>To use 2D Video Acceleration within VirtualBox, your host's video
@@ -780,7 +780,7 @@
       </para>
     </sect2>
 
-    <sect2>
+    <sect2 id="ts_d3d8-d3d9-restore">
       <title>Restoring d3d8.dll and d3d9.dll</title>
 
       <para>VirtualBox Guest Additions for Windows prior to 4.1.8 did not properly
@@ -918,7 +918,7 @@
       linkend="settings-system" />).</para>
     </sect2>
 
-    <sect2 id="trouble-linux-buggy">
+    <sect2 id="ts_linux-buggy">
       <title>Buggy Linux 2.6 kernel versions</title>
 
       <para>The following bugs in Linux kernels prevent them from executing
@@ -1149,7 +1149,7 @@ VirtualBox</screen>
   <sect1>
     <title>Linux hosts</title>
 
-    <sect2 id="linuxkernelmodulefailstoload">
+    <sect2 id="ts_linux-kernelmodule-fails-to-load">
       <title>Linux kernel module refuses to load</title>
 
       <para>If the VirtualBox kernel module
@@ -1291,7 +1291,7 @@ VirtualBox</screen>
       directory.</para>
     </sect2>
 
-    <sect2 id="usb_linux">
+    <sect2 id="ts_usb-linux">
       <title>USB not working</title>
 
       <para>If USB is not working on your Linux host, make sure that the
