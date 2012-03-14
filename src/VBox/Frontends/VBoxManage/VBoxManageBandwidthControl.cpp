@@ -42,51 +42,38 @@ using namespace com;
 ///////////////////////////////////////////////////////////////////////////////
 
 
-static const RTGETOPTDEF g_aBandwidthControlOptions[] =
+/**
+ * Handles the 'bandwidthctl myvm add' sub-command.
+ * @returns Exit code.
+ * @param   a               The handler argument package.
+ * @param   bwCtrl          Reference to the bandwidth control interface.
+ */
+static RTEXITCODE handleBandwidthControlAdd(HandlerArg *a, ComPtr<IBandwidthControl> &bwCtrl)
 {
-    { "--name",   'n', RTGETOPT_REQ_STRING },
-    { "--add",    'a', RTGETOPT_REQ_STRING },
-    { "--limit",  'l', RTGETOPT_REQ_UINT32 },
-    { "--delete", 'd', RTGETOPT_REQ_NOTHING },
-};
-
-int handleBandwidthControl(HandlerArg *a)
-{
-    int c = VERR_INTERNAL_ERROR;        /* initialized to shut up gcc */
     HRESULT rc = S_OK;
-    const char *pszName  = NULL;
+    static const RTGETOPTDEF g_aBWCtlAddOptions[] =
+        {
+            { "--type",   't', RTGETOPT_REQ_STRING },
+            { "--limit",  'l', RTGETOPT_REQ_UINT32 }
+        };
+
+
+    Bstr name(a->argv[2]);
     const char *pszType  = NULL;
     ULONG cMaxMbPerSec   = UINT32_MAX;
-    bool fDelete = false;
+
+    int c;
     RTGETOPTUNION ValueUnion;
     RTGETOPTSTATE GetState;
-    ComPtr<IMachine> machine;
-    ComPtr<IBandwidthControl> bwCtrl;
-    ComPtr<IBandwidthGroup> bwGroup;
-
-    if (a->argc < 4)
-        return errorSyntax(USAGE_BANDWIDTHCONTROL, "Too few parameters");
-    else if (a->argc > 7)
-        return errorSyntax(USAGE_BANDWIDTHCONTROL, "Too many parameters");
-
-    RTGetOptInit(&GetState, a->argc, a->argv, g_aBandwidthControlOptions,
-                 RT_ELEMENTS(g_aBandwidthControlOptions), 1, RTGETOPTINIT_FLAGS_NO_STD_OPTS);
+    RTGetOptInit(&GetState, a->argc, a->argv, g_aBWCtlAddOptions,
+                 RT_ELEMENTS(g_aBWCtlAddOptions), 3, RTGETOPTINIT_FLAGS_NO_STD_OPTS);
 
     while (   SUCCEEDED(rc)
            && (c = RTGetOpt(&GetState, &ValueUnion)))
     {
         switch (c)
         {
-            case 'n':   // bandwidth group name
-            {
-                if (ValueUnion.psz)
-                    pszName = ValueUnion.psz;
-                else
-                    rc = E_FAIL;
-                break;
-            }
-
-            case 'a':   // add
+            case 't':   // bandwidth group type
             {
                 if (ValueUnion.psz)
                     pszType = ValueUnion.psz;
@@ -101,9 +88,65 @@ int handleBandwidthControl(HandlerArg *a)
                 break;
             }
 
-            case 'd':   // delete
+            default:
             {
-                fDelete = true;
+                errorGetOpt(USAGE_BANDWIDTHCONTROL, c, &ValueUnion);
+                rc = E_FAIL;
+                break;
+            }
+        }
+    }
+    RTPrintf("Adding bwgroup: name=%ls type=%s limit=%u\n", name.raw(), pszType, cMaxMbPerSec);
+
+    BandwidthGroupType_T enmType;
+
+    if (!RTStrICmp(pszType, "disk"))
+        enmType = BandwidthGroupType_Disk;
+    else if (!RTStrICmp(pszType, "network"))
+        enmType = BandwidthGroupType_Network;
+    else
+    {
+        errorArgument("Invalid bandwidth group type\n");
+        return RTEXITCODE_FAILURE;
+    }
+    
+    CHECK_ERROR2_RET(bwCtrl, CreateBandwidthGroup(name.raw(), enmType, cMaxMbPerSec), RTEXITCODE_FAILURE);
+
+    return RTEXITCODE_SUCCESS;
+}
+
+/**
+ * Handles the 'bandwidthctl myvm set' sub-command.
+ * @returns Exit code.
+ * @param   a               The handler argument package.
+ * @param   bwCtrl          Reference to the bandwidth control interface.
+ */
+static RTEXITCODE handleBandwidthControlSet(HandlerArg *a, ComPtr<IBandwidthControl> &bwCtrl)
+{
+    HRESULT rc = S_OK;
+    static const RTGETOPTDEF g_aBWCtlAddOptions[] =
+        {
+            { "--limit",  'l', RTGETOPT_REQ_UINT32 }
+        };
+
+
+    Bstr name(a->argv[2]);
+    ULONG cMaxMbPerSec   = UINT32_MAX;
+
+    int c;
+    RTGETOPTUNION ValueUnion;
+    RTGETOPTSTATE GetState;
+    RTGetOptInit(&GetState, a->argc, a->argv, g_aBWCtlAddOptions,
+                 RT_ELEMENTS(g_aBWCtlAddOptions), 3, RTGETOPTINIT_FLAGS_NO_STD_OPTS);
+
+    while (   SUCCEEDED(rc)
+           && (c = RTGetOpt(&GetState, &ValueUnion)))
+    {
+        switch (c)
+        {
+            case 'l': // limit
+            {
+                cMaxMbPerSec = ValueUnion.u32;
                 break;
             }
 
@@ -115,12 +158,117 @@ int handleBandwidthControl(HandlerArg *a)
             }
         }
     }
+    RTPrintf("Updating bwgroup: name=%ls limit=%u\n", name.raw(), cMaxMbPerSec);
 
-    if (FAILED(rc))
-        return 1;
+    
+    if (cMaxMbPerSec != UINT32_MAX)
+    {
+        ComPtr<IBandwidthGroup> bwGroup;
+        CHECK_ERROR2_RET(bwCtrl, GetBandwidthGroup(name.raw(), bwGroup.asOutParam()), RTEXITCODE_FAILURE);
+        if (SUCCEEDED(rc))
+            CHECK_ERROR2_RET(bwGroup, COMSETTER(MaxMbPerSec)(cMaxMbPerSec), RTEXITCODE_FAILURE);
+    }
 
-    if (!pszName)
-        return errorSyntax(USAGE_BANDWIDTHCONTROL, "Bandwidth group name not specified");
+    return RTEXITCODE_SUCCESS;
+}
+
+/**
+ * Handles the 'bandwidthctl myvm remove' sub-command.
+ * @returns Exit code.
+ * @param   a               The handler argument package.
+ * @param   bwCtrl          Reference to the bandwidth control interface.
+ */
+static RTEXITCODE handleBandwidthControlRemove(HandlerArg *a, ComPtr<IBandwidthControl> &bwCtrl)
+{
+    Bstr name(a->argv[2]);
+    CHECK_ERROR2_RET(bwCtrl, DeleteBandwidthGroup(name.raw()), RTEXITCODE_FAILURE);
+    return RTEXITCODE_SUCCESS;
+}
+
+/**
+ * Converts bandwidth group type to a string.
+ * @returns String representation.
+ * @param   enmType         Bandwidth control group type.
+ */
+inline const char * typeToString(BandwidthGroupType_T enmType)
+{
+    switch (enmType)
+    {
+        case BandwidthGroupType_Disk:    return "Disk";
+        case BandwidthGroupType_Network: return "Network";
+    }
+    return "unknown";
+}
+
+/**
+ * Handles the 'bandwidthctl myvm list' sub-command.
+ * @returns Exit code.
+ * @param   a               The handler argument package.
+ * @param   bwCtrl          Reference to the bandwidth control interface.
+ */
+static RTEXITCODE handleBandwidthControlList(HandlerArg *pArgs, ComPtr<IBandwidthControl> &rptrBWControl)
+{
+    static const RTGETOPTDEF g_aOptions[] =
+    {
+        { "--machinereadable",  'M', RTGETOPT_REQ_NOTHING },
+    };
+
+    VMINFO_DETAILS enmDetails = VMINFO_STANDARD;
+
+    int c;
+    RTGETOPTUNION ValueUnion;
+    RTGETOPTSTATE GetState;
+    RTGetOptInit(&GetState, pArgs->argc, pArgs->argv, g_aOptions, RT_ELEMENTS(g_aOptions), 2 /*iArg*/, 0 /*fFlags*/);
+    while ((c = RTGetOpt(&GetState, &ValueUnion)))
+    {
+        switch (c)
+        {
+            case 'M':   enmDetails = VMINFO_MACHINEREADABLE; break;
+            default:    return errorGetOpt(USAGE_BANDWIDTHCONTROL, c, &ValueUnion);
+        }
+    }
+
+    /* See showVMInfo. */
+    com::SafeIfaceArray<IBandwidthGroup> bwGroups;
+    CHECK_ERROR2_RET(rptrBWControl, GetAllBandwidthGroups(ComSafeArrayAsOutParam(bwGroups)), RTEXITCODE_FAILURE);
+    for (size_t i = 0; i < bwGroups.size(); i++)
+    {
+        Bstr strName;
+        ULONG cMaxMbPerSec;
+        BandwidthGroupType_T enmType;
+
+        CHECK_ERROR2_RET(bwGroups[i], COMGETTER(Name)(strName.asOutParam()), RTEXITCODE_FAILURE);
+        CHECK_ERROR2_RET(bwGroups[i], COMGETTER(Type)(&enmType), RTEXITCODE_FAILURE);
+        CHECK_ERROR2_RET(bwGroups[i], COMGETTER(MaxMbPerSec)(&cMaxMbPerSec), RTEXITCODE_FAILURE);
+
+        RTPrintf(enmDetails == VMINFO_MACHINEREADABLE ?
+                 "Group=%ls\nType=%s\nLimit=%u\n\n" :
+                 "%-30ls %-10s %u MBytes/sec\n",
+                 strName.raw(),
+                 typeToString(enmType),
+                 cMaxMbPerSec);
+    }
+
+    return RTEXITCODE_SUCCESS;
+}
+
+
+/**
+ * Handles the 'bandwidthctl' command.
+ * @returns Exit code.
+ * @param   a               The handler argument package.
+ */
+int handleBandwidthControl(HandlerArg *a)
+{
+    int c = VERR_INTERNAL_ERROR;        /* initialized to shut up gcc */
+    HRESULT rc = S_OK;
+    ComPtr<IMachine> machine;
+    ComPtr<IBandwidthControl> bwCtrl;
+
+    if (a->argc < 2)
+        return errorSyntax(USAGE_BANDWIDTHCONTROL, "Too few parameters");
+    else if (a->argc > 7)
+        return errorSyntax(USAGE_BANDWIDTHCONTROL, "Too many parameters");
 
     /* try to find the given machine */
     CHECK_ERROR_RET(a->virtualBox, FindMachine(Bstr(a->argv[0]).raw(),
@@ -132,55 +280,37 @@ int handleBandwidthControl(HandlerArg *a)
     CHECK_ERROR_RET(a->session, COMGETTER(Type)(&st), 1);
     bool fRunTime = (st == SessionType_Shared);
 
-    if (fRunTime && pszType)
-    {
-        errorArgument("Bandwidth groups cannot be created while the VM is running\n");
-        goto leave;
-    }
-
-    if (fRunTime && fDelete)
-    {
-        errorArgument("Bandwidth groups cannot be deleted while the VM is running\n");
-        goto leave;
-    }
-
-    if (fDelete && pszType)
-    {
-        errorArgument("Bandwidth groups cannot be created and deleted at the same time\n");
-        goto leave;
-    }
-
     /* get the mutable session machine */
     a->session->COMGETTER(Machine)(machine.asOutParam());
     rc = machine->COMGETTER(BandwidthControl)(bwCtrl.asOutParam());
     if (FAILED(rc)) goto leave;
 
-    /* Add a new group if requested. */
-    if (pszType)
+    if (!strcmp(a->argv[1], "add"))
     {
-        BandwidthGroupType_T enmType;
-
-        if (!RTStrICmp(pszType, "disk"))
-            enmType = BandwidthGroupType_Disk;
-        else if (!RTStrICmp(pszType, "network"))
-            enmType = BandwidthGroupType_Network;
-        else
+        if (fRunTime)
         {
-            errorArgument("Invalid bandwidth group type\n");
+            errorArgument("Bandwidth groups cannot be created while the VM is running\n");
             goto leave;
         }
-
-        CHECK_ERROR(bwCtrl, CreateBandwidthGroup(Bstr(pszName).raw(), enmType, cMaxMbPerSec));
+        rc = handleBandwidthControlAdd(a, bwCtrl) == RTEXITCODE_SUCCESS ? S_OK : E_FAIL;
     }
-    else if (fDelete)
+    else if (!strcmp(a->argv[1], "remove"))
     {
-        CHECK_ERROR(bwCtrl, DeleteBandwidthGroup(Bstr(pszName).raw()));
+        if (fRunTime)
+        {
+            errorArgument("Bandwidth groups cannot be deleted while the VM is running\n");
+            goto leave;
+        }
+        rc = handleBandwidthControlRemove(a, bwCtrl) == RTEXITCODE_SUCCESS ? S_OK : E_FAIL;
     }
-    else if (cMaxMbPerSec != UINT32_MAX)
+    else if (!strcmp(a->argv[1], "set"))
+        rc = handleBandwidthControlSet(a, bwCtrl) == RTEXITCODE_SUCCESS ? S_OK : E_FAIL;
+    else if (!strcmp(a->argv[1], "list"))
+        rc = handleBandwidthControlList(a, bwCtrl) == RTEXITCODE_SUCCESS ? S_OK : E_FAIL;
+    else
     {
-        CHECK_ERROR(bwCtrl, GetBandwidthGroup(Bstr(pszName).raw(), bwGroup.asOutParam()));
-        if (SUCCEEDED(rc))
-            CHECK_ERROR(bwGroup, COMSETTER(MaxMbPerSec)(cMaxMbPerSec));
+        errorSyntax(USAGE_BANDWIDTHCONTROL, "Invalid parameter '%s'", Utf8Str(a->argv[1]).c_str());
+        rc = E_FAIL;
     }
 
     /* commit changes */

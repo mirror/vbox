@@ -1022,6 +1022,13 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> virtualBox,
                 ULONG ulBootPriority;
                 nic->COMGETTER(BootPriority)(&ulBootPriority);
 
+                /* bandwidth group */
+                ComObjPtr<IBandwidthGroup> pBwGroup;
+                Bstr strBwGroup;
+                nic->COMGETTER(BandwidthGroup)(pBwGroup.asOutParam());
+                if (!pBwGroup.isNull())
+                    pBwGroup->COMGETTER(Name)(strBwGroup.asOutParam());
+
                 if (details == VMINFO_MACHINEREADABLE)
                 {
                     RTPrintf("macaddress%d=\"%ls\"\n", currentNIC + 1, strMACAddress.raw());
@@ -1029,7 +1036,7 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> virtualBox,
                     RTPrintf("nic%d=\"%s\"\n", currentNIC + 1, strAttachment.c_str());
                 }
                 else
-                    RTPrintf("NIC %u:           MAC: %ls, Attachment: %s, Cable connected: %s, Trace: %s (file: %ls), Type: %s, Reported speed: %d Mbps, Boot priority: %d, Promisc Policy: %s\n",
+                    RTPrintf("NIC %u:           MAC: %ls, Attachment: %s, Cable connected: %s, Trace: %s (file: %ls), Type: %s, Reported speed: %d Mbps, Boot priority: %d, Promisc Policy: %s, Bandwidth group: %ls\n",
                              currentNIC + 1, strMACAddress.raw(), strAttachment.c_str(),
                              fConnected ? "on" : "off",
                              fTraceEnabled ? "on" : "off",
@@ -1037,7 +1044,8 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> virtualBox,
                              pszNICType,
                              ulLineSpeed / 1000,
                              (int)ulBootPriority,
-                             pszPromiscuousGuestPolicy);
+                             pszPromiscuousGuestPolicy,
+                             strBwGroup.isEmpty() ? Bstr("none").raw() : strBwGroup.raw());
                 if (strNatSettings.length())
                     RTPrintf(strNatSettings.c_str());
                 if (strNatForwardings.length())
@@ -1820,6 +1828,45 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> virtualBox,
     }
     /* Host PCI passthrough devices */
 #endif
+
+    /*
+     * Bandwidth groups
+     */
+    if (details != VMINFO_MACHINEREADABLE)
+        RTPrintf("Bandwidth groups:\n\n");
+    {
+        ComPtr<IBandwidthControl> bwCtrl;
+        SafeIfaceArray<IBandwidthGroup> bwGroups;
+
+        CHECK_ERROR_RET(machine, COMGETTER(BandwidthControl)(bwCtrl.asOutParam()), rc);
+
+        CHECK_ERROR_RET(bwCtrl, GetAllBandwidthGroups(ComSafeArrayAsOutParam(bwGroups)), rc);
+
+        for (size_t i = 0; i < bwGroups.size(); i++)
+        {
+            Bstr strName;
+            ULONG cMaxMbPerSec;
+            BandwidthGroupType_T enmType;
+
+            CHECK_ERROR_RET(bwGroups[i], COMGETTER(Name)(strName.asOutParam()), rc);
+            CHECK_ERROR_RET(bwGroups[i], COMGETTER(Type)(&enmType), rc);
+            CHECK_ERROR_RET(bwGroups[i], COMGETTER(MaxMbPerSec)(&cMaxMbPerSec), rc);
+
+            const char *pszType = "unknown";
+            switch (enmType)
+            {
+                case BandwidthGroupType_Disk:    pszType = "disk";    break;
+                case BandwidthGroupType_Network: pszType = "network"; break;
+            }
+            if (details == VMINFO_MACHINEREADABLE)
+                RTPrintf("BandwidthGroup%zu=%ls,%s,%d\n", strName.raw(), pszType, cMaxMbPerSec);
+            else
+                RTPrintf("Name: '%ls', Type: %s, Limit: %d Mbytes/sec\n", strName.raw(), pszType, cMaxMbPerSec);
+        }
+        if (details != VMINFO_MACHINEREADABLE && bwGroups.size() != 0)
+            RTPrintf("\n");
+    }
+
 
     /*
      * Shared folders
