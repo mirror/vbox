@@ -2079,7 +2079,60 @@ STDMETHODIMP Medium::LockRead(MediumState_T *aState)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    return lockRead(aState, false /* fWithinQueryInfo */);
+    /* Must not hold the object lock, as we need control over it below. */
+    Assert(!isWriteLockOnCurrentThread());
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    /* Wait for a concurrently running Medium::queryInfo to complete. */
+    if (m->queryInfoRunning)
+    {
+        /* Must not hold the media tree lock, as Medium::queryInfo needs this
+         * lock and thus we would run into a deadlock here. */
+        Assert(!m->pVirtualBox->getMediaTreeLockHandle().isWriteLockOnCurrentThread());
+        while (m->queryInfoRunning)
+        {
+            alock.release();
+            {
+                AutoReadLock qlock(m->queryInfoSem COMMA_LOCKVAL_SRC_POS);
+            }
+            alock.acquire();
+        }
+    }
+
+    /* return the current state before */
+    if (aState)
+        *aState = m->state;
+
+    HRESULT rc = S_OK;
+
+    switch (m->state)
+    {
+        case MediumState_Created:
+        case MediumState_Inaccessible:
+        case MediumState_LockedRead:
+        {
+            ++m->readers;
+
+            ComAssertMsgBreak(m->readers != 0, ("Counter overflow"), rc = E_FAIL);
+
+            /* Remember pre-lock state */
+            if (m->state != MediumState_LockedRead)
+                m->preLockState = m->state;
+
+            LogFlowThisFunc(("Okay - prev state=%d readers=%d\n", m->state, m->readers));
+            m->state = MediumState_LockedRead;
+
+            break;
+        }
+        default:
+        {
+            LogFlowThisFunc(("Failing - state=%d\n", m->state));
+            rc = setStateError();
+            break;
+        }
+    }
+
+    return rc;
 }
 
 /**
@@ -2142,7 +2195,52 @@ STDMETHODIMP Medium::LockWrite(MediumState_T *aState)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    return lockWrite(aState, false /* fWithinQueryInfo */);
+    /* Must not hold the object lock, as we need control over it below. */
+    Assert(!isWriteLockOnCurrentThread());
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    /* Wait for a concurrently running Medium::queryInfo to complete. */
+    if (m->queryInfoRunning)
+    {
+        /* Must not hold the media tree lock, as Medium::queryInfo needs this
+         * lock and thus we would run into a deadlock here. */
+        Assert(!m->pVirtualBox->getMediaTreeLockHandle().isWriteLockOnCurrentThread());
+        while (m->queryInfoRunning)
+        {
+            alock.release();
+            {
+                AutoReadLock qlock(m->queryInfoSem COMMA_LOCKVAL_SRC_POS);
+            }
+            alock.acquire();
+        }
+    }
+
+    /* return the current state before */
+    if (aState)
+        *aState = m->state;
+
+    HRESULT rc = S_OK;
+
+    switch (m->state)
+    {
+        case MediumState_Created:
+        case MediumState_Inaccessible:
+        {
+            m->preLockState = m->state;
+
+            LogFlowThisFunc(("Okay - prev state=%d locationFull=%s\n", m->state, getLocationFull().c_str()));
+            m->state = MediumState_LockedWrite;
+            break;
+        }
+        default:
+        {
+            LogFlowThisFunc(("Failing - state=%d locationFull=%s\n", m->state, getLocationFull().c_str()));
+            rc = setStateError();
+            break;
+        }
+    }
+
+    return rc;
 }
 
 /**
@@ -5187,124 +5285,6 @@ HRESULT Medium::cloneToEx(const ComObjPtr<Medium> &aTarget, ULONG aVariant,
 ////////////////////////////////////////////////////////////////////////////////
 
 /**
- * @note @a aState may be NULL if the state value is not needed (only for
- *       in-process calls).
- */
-HRESULT Medium::lockRead(MediumState_T *aState, bool fWithinQueryInfo)
-{
-    /* Must not hold the object lock, as we need control over it below. */
-    Assert(!isWriteLockOnCurrentThread());
-    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-
-    /* Wait for a concurrently running Medium::queryInfo to complete. */
-    if (m->queryInfoRunning)
-    {
-        /* Must not hold the media tree lock, as Medium::queryInfo needs this
-         * lock and thus we would run into a deadlock here. */
-        if (!fWithinQueryInfo)
-            Assert(!m->pVirtualBox->getMediaTreeLockHandle().isWriteLockOnCurrentThread());
-        while (m->queryInfoRunning)
-        {
-            alock.release();
-            {
-                AutoReadLock qlock(m->queryInfoSem COMMA_LOCKVAL_SRC_POS);
-            }
-            alock.acquire();
-        }
-    }
-
-    /* return the current state before */
-    if (aState)
-        *aState = m->state;
-
-    HRESULT rc = S_OK;
-
-    switch (m->state)
-    {
-        case MediumState_Created:
-        case MediumState_Inaccessible:
-        case MediumState_LockedRead:
-        {
-            ++m->readers;
-
-            ComAssertMsgBreak(m->readers != 0, ("Counter overflow"), rc = E_FAIL);
-
-            /* Remember pre-lock state */
-            if (m->state != MediumState_LockedRead)
-                m->preLockState = m->state;
-
-            LogFlowThisFunc(("Okay - prev state=%d readers=%d\n", m->state, m->readers));
-            m->state = MediumState_LockedRead;
-
-            break;
-        }
-        default:
-        {
-            LogFlowThisFunc(("Failing - state=%d\n", m->state));
-            rc = setStateError();
-            break;
-        }
-    }
-
-    return rc;
-}
-
-/**
- * @note @a aState may be NULL if the state value is not needed (only for
- *       in-process calls).
- */
-HRESULT Medium::lockWrite(MediumState_T *aState, bool fWithinQueryInfo)
-{
-    /* Must not hold the object lock, as we need control over it below. */
-    Assert(!isWriteLockOnCurrentThread());
-    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-
-    /* Wait for a concurrently running Medium::queryInfo to complete. */
-    if (m->queryInfoRunning)
-    {
-        /* Must not hold the media tree lock, as Medium::queryInfo needs this
-         * lock and thus we would run into a deadlock here. */
-        if (!fWithinQueryInfo)
-            Assert(!m->pVirtualBox->getMediaTreeLockHandle().isWriteLockOnCurrentThread());
-        while (m->queryInfoRunning)
-        {
-            alock.release();
-            {
-                AutoReadLock qlock(m->queryInfoSem COMMA_LOCKVAL_SRC_POS);
-            }
-            alock.acquire();
-        }
-    }
-
-    /* return the current state before */
-    if (aState)
-        *aState = m->state;
-
-    HRESULT rc = S_OK;
-
-    switch (m->state)
-    {
-        case MediumState_Created:
-        case MediumState_Inaccessible:
-        {
-            m->preLockState = m->state;
-
-            LogFlowThisFunc(("Okay - prev state=%d locationFull=%s\n", m->state, getLocationFull().c_str()));
-            m->state = MediumState_LockedWrite;
-            break;
-        }
-        default:
-        {
-            LogFlowThisFunc(("Failing - state=%d locationFull=%s\n", m->state, getLocationFull().c_str()));
-            rc = setStateError();
-            break;
-        }
-    }
-
-    return rc;
-}
-
-/**
  * Queries information from the medium.
  *
  * As a result of this call, the accessibility state and data members such as
@@ -5354,12 +5334,6 @@ HRESULT Medium::queryInfo(bool fSetImageId, bool fSetParentId)
         return S_OK;
     }
 
-    alock.release();
-    Assert(!isWriteLockOnCurrentThread());
-    Assert(!m->pVirtualBox->getMediaTreeLockHandle().isWriteLockOnCurrentThread());
-    AutoWriteLock treeLock(m->pVirtualBox->getMediaTreeLockHandle() COMMA_LOCKVAL_SRC_POS);
-    alock.acquire();
-
     bool success = false;
     Utf8Str lastAccessError;
 
@@ -5386,9 +5360,9 @@ HRESULT Medium::queryInfo(bool fSetImageId, bool fSetParentId)
     /* Lock the medium, which makes the behavior much more consistent */
     alock.release();
     if (uOpenFlags & (VD_OPEN_FLAGS_READONLY | VD_OPEN_FLAGS_SHAREABLE))
-        rc = lockRead(NULL, true /* fWithinQueryInfo */);
+        rc = LockRead(NULL);
     else
-        rc = lockWrite(NULL, true /* fWithinQueryInfo */);
+        rc = LockWrite(NULL);
     if (FAILED(rc)) return rc;
     alock.acquire();
 
@@ -5410,19 +5384,22 @@ HRESULT Medium::queryInfo(bool fSetImageId, bool fSetParentId)
      * need repairing after it was closed again. */
     bool fRepairImageZeroParentUuid = false;
 
-    /* release the object lock before a lengthy operation */
+    /* release the object lock before a lengthy operation, and take the
+     * opportunity to have a media tree lock, too, which isn't held initially */
     m->queryInfoRunning = true;
     alock.release();
-    treeLock.release();
     Assert(!isWriteLockOnCurrentThread());
     Assert(!m->pVirtualBox->getMediaTreeLockHandle().isWriteLockOnCurrentThread());
+    AutoWriteLock treeLock(m->pVirtualBox->getMediaTreeLockHandle() COMMA_LOCKVAL_SRC_POS);
+    treeLock.release();
 
     /* Note that taking the queryInfoSem after leaving the object lock above
      * can lead to short spinning of the loops waiting for queryInfo() to
      * complete. This is unavoidable since the other order causes a lock order
      * violation: here it would be requesting the object lock (at the beginning
-     * of the method), then SemRW, and below the other way round. */
+     * of the method), then queryInfoSem, and below the other way round. */
     AutoWriteLock qlock(m->queryInfoSem COMMA_LOCKVAL_SRC_POS);
+    alock.acquire();
 
     try
     {
@@ -5561,6 +5538,7 @@ HRESULT Medium::queryInfo(bool fSetImageId, bool fSetParentId)
                     }
 
                     /* we set mParent & children() */
+                    alock.release();
                     treeLock.acquire();
 
                     Assert(m->pParent.isNull());
@@ -5568,10 +5546,12 @@ HRESULT Medium::queryInfo(bool fSetImageId, bool fSetParentId)
                     m->pParent->m->llChildren.push_back(this);
 
                     treeLock.release();
+                    alock.acquire();
                 }
                 else
                 {
                     /* we access mParent */
+                    alock.release();
                     treeLock.acquire();
 
                     /* check that parent UUIDs match. Note that there's no need
@@ -5595,22 +5575,29 @@ HRESULT Medium::queryInfo(bool fSetImageId, bool fSetParentId)
                                 tr("Medium type of '%s' is differencing but it is not associated with any parent medium in the media registry ('%s')"),
                                 location.c_str(),
                                 m->pVirtualBox->settingsFilePath().c_str());
+                        treeLock.release();
+                        alock.acquire();
                         throw S_OK;
 #endif /* 0 */
                     }
 
-                    AutoReadLock parentLock(m->pParent COMMA_LOCKVAL_SRC_POS);
-                    if (   !fRepairImageZeroParentUuid
-                        && m->pParent->getState() != MediumState_Inaccessible
-                        && m->pParent->getId() != parentId)
                     {
-                        /** @todo r=klaus this always refers to VirtualBox.xml as the medium registry, even for new VMs */
-                        lastAccessError = Utf8StrFmt(
-                                tr("Parent UUID {%RTuuid} of the medium '%s' does not match UUID {%RTuuid} of its parent medium stored in the media registry ('%s')"),
-                                &parentId, location.c_str(),
-                                m->pParent->getId().raw(),
-                                m->pVirtualBox->settingsFilePath().c_str());
-                        throw S_OK;
+                        AutoReadLock parentLock(m->pParent COMMA_LOCKVAL_SRC_POS);
+                        if (   !fRepairImageZeroParentUuid
+                            && m->pParent->getState() != MediumState_Inaccessible
+                            && m->pParent->getId() != parentId)
+                        {
+                            /** @todo r=klaus this always refers to VirtualBox.xml as the medium registry, even for new VMs */
+                            lastAccessError = Utf8StrFmt(
+                                    tr("Parent UUID {%RTuuid} of the medium '%s' does not match UUID {%RTuuid} of its parent medium stored in the media registry ('%s')"),
+                                    &parentId, location.c_str(),
+                                    m->pParent->getId().raw(),
+                                    m->pVirtualBox->settingsFilePath().c_str());
+                            parentLock.release();
+                            treeLock.release();
+                            alock.acquire();
+                            throw S_OK;
+                        }
                     }
 
                     /// @todo NEWMEDIA what to do if the parent is not
@@ -5618,6 +5605,7 @@ HRESULT Medium::queryInfo(bool fSetImageId, bool fSetParentId)
                     /// real code will detect the mismatch anyway.
 
                     treeLock.release();
+                    alock.acquire();
                 }
             }
 
@@ -5645,6 +5633,7 @@ HRESULT Medium::queryInfo(bool fSetImageId, bool fSetParentId)
         rc = aRC;
     }
 
+    alock.release();
     treeLock.acquire();
     alock.acquire();
 
@@ -5729,8 +5718,6 @@ HRESULT Medium::queryInfo(bool fSetImageId, bool fSetParentId)
         {
             rc = aRC;
         }
-
-        alock.acquire();
 
         rc = UnlockWrite(NULL);
         if (SUCCEEDED(rc) && FAILED(rc2))
