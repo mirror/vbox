@@ -782,6 +782,21 @@
 
     <sect2>
       <title>Restoring d3d8.dll and d3d9.dll</title>
+      
+      <para>VirtualBox Guest Additions installer prior 4.1.8 had an issue, that might cause system d3d9.dll and d3d8.dll files corruption.
+          Although this issue was fixed with VirtualBox 4.1.8, there is no way Guest Additions installer can repare these files.
+          Corruption of these files has no implications in case 3D acceleration is enabled and "Basic" Direct3D support is installed,
+          since all Direct3D9 and Direct3D8 applications will utilize VirtualBox Direct3D files and thus will have no problems with Direct3D.
+          For WDDM Direct3D support system d3d9.dll and d3d8.dll files are always required for Direct3D8 and Direct3D9 applications,
+          as a result Direct3D8 and Direct3D9 applications will not work.
+          Note that starting Windows 7, 3D Desktop (aka Aero) uses d3d10.dll for rendering, thus d3d9.dll and d3d8.dll files corruption will not affect it.
+          Given all the above, system d3d9.dll and d3d8.dll files corruption is not sonsidered fatal for "Basic" Direct3D installation,
+          and for WDDM Direct3D installation on Windows 7 and later guests. 
+      </para>
+      
+      <para>Below is a step-by step guide for restoring original system d3d8.dll and d3d9.dll files for the case it is required. 
+      </para>
+      
 
       <para>Extracting d3d8 and d3d9.dll from Windows XP installation CD
       </para>
