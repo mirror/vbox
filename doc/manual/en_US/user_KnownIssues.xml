@@ -175,49 +175,49 @@
         </listitem>
     
         <listitem>
-          <para><emphasis role="bold">Mac OS X Server guests:</emphasis>
+          <para><emphasis role="bold">Mac OS X guests:</emphasis>
           <itemizedlist>
               <listitem>
-                <para>Mac OS X Server guests can only run on a certain host
-                hardware. For details about license and host hardware limitations,
-                please see <xref linkend="intro-macosxguests" />.</para>
+                <para>Mac OS X guests can only run on a certain host hardware.
+                For details about license and host hardware limitations, please
+                see <xref linkend="intro-macosxguests" /> and check the Apple
+                software license conditions.</para>
               </listitem>
     
               <listitem>
                 <para>VirtualBox does not provide Guest Additions for Mac OS X
-                Server at this time.</para>
+                at this time.</para>
               </listitem>
     
               <listitem>
                 <para>The graphics resolution currently defaults to 1024x768 as
-                Mac OS X Server falls back to the built-in EFI display support.
-                See <xref linkend="efividmode" /> for more information on how to
+                Mac OS X falls back to the built-in EFI display support. See
+                <xref linkend="efividmode" /> for more information on how to
                 change EFI video modes.</para>
               </listitem>
     
               <listitem>
-                <para>Even when idle, Mac OS X Server guests currently burn 100%
-                CPU. This is a power management issue that will be addressed in a
+                <para>Even when idle, Mac OS X guests currently burn 100% CPU.
+                This is a power management issue that will be addressed in a
                 future release.</para>
               </listitem>
     
               <listitem>
-                <para>Mac OS X Server guests only work with one CPU assigned to
-                the VM. Support for SMP will be provided in a future
-                release.</para>
+                <para>Mac OS X guests only work with one CPU assigned to the
+                VM. Support for SMP will be provided in a future release.</para>
               </listitem>
     
               <listitem>
-                <para>Depending on your system and version of Mac OS X Server, you
-                might experience guest hangs after some time. This can be fixed by
-                turning off energy saving (set timeout to "Never") in the system
-                preferences.</para>
+                <para>Depending on your system and version of Mac OS X, you
+                might experience guest hangs after some time. This can be fixed
+                by turning off energy saving (set timeout to "Never") in the
+                system preferences.</para>
               </listitem>
     
               <listitem>
                 <para>By default, the VirtualBox EFI enables debug output of the
-                Mac OS X Server kernel to help you diagnose boot problems. Note
-                that there is a lot of output and not all errors are fatal (they
+                Mac OS X kernel to help you diagnose boot problems. Note that
+                there is a lot of output and not all errors are fatal (they
                 would also show on your physical Mac). You can turn off these
                 messages by issuing this command:<screen>VBoxManage setextradata "VM name" "VBoxInternal2/EfiBootArgs" "  "</screen>To
                 revert to the previous behavior, use:<screen>VBoxManage setextradata "VM name" "VBoxInternal2/EfiBootArgs" ""</screen></para>
