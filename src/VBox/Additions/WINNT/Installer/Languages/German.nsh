@@ -45,6 +45,7 @@ LangString VBOX_COMPONENT_D3D_NOT_SUPPORTED ${LANG_GERMAN}          "Direct3D Ga
 LangString VBOX_COMPONENT_D3D_OR_WDDM ${LANG_GERMAN}                "Für diesen Gast ist Windows Aero (WDDM)-Unterstützung verfügbar.$\r$\nDieses Feature ist jedoch noch experimentell und sollte daher noch nicht auf produktiven Systemen eingesetzt werden.$\r$\n$\r$\nMöchten Sie stattdessen die reguläre Direct3D-Unterstützung installieren?"
 LangString VBOX_COMPONENT_D3D_HINT_VRAM ${LANG_GERMAN}              "Bitte beachten Sie, dass die virtuelle Maschine für die Benutzung von 3D-Beschleunigung einen Grafikspeicher von mindestens 128 MB für einen Monitor benötigt und für den Multi-Monitor-Betrieb bis zu 256 MB empfohlen wird.$\r$\n$\r$\nSie können den Grafikspeicher in den VM-Einstellungen in der Kategorie $\"Anzeige$\" ändern."
 LangString VBOX_COMPONENT_D3D_INVALID ${LANG_GERMAN}                "Das Setup hat eine ungültige/beschädigte DirectX-Installation festgestellt.$\r$\n$\r$\nUm die Direct3D-Unterstützung installieren zu können wird empfohlen, zuerst das VirtualBox Benutzerhandbuch zu konsultieren.$\r$\n$\r$\nMit der Installation jetzt trotzdem fortfahren?"
+LangString VBOX_COMPONENT_D3D_INVALID_MANUAL ${LANG_GERMAN}         "Soll nun das VirtualBox-Handbuch angezeigt werden um das Problem zu beheben?"
 
 LangString VBOX_WFP_WARN_REPLACE ${LANG_GERMAN}         "Das Setup hat gerade Systemdateien ersetzt um die ${PRODUCT_NAME} korrekt installieren zu können.$\r$\nFalls nun ein Warn-Dialog des Windows-Dateischutzes erscheint, diesen bitte abbrechen und die Dateien nicht wiederherstellen lassen!"
 LangString VBOX_REBOOT_REQUIRED ${LANG_GERMAN}          "Um alle Änderungen durchführen zu können, muss das System neu gestartet werden. Jetzt neu starten?"
@@ -52,6 +53,7 @@ LangString VBOX_REBOOT_REQUIRED ${LANG_GERMAN}          "Um alle Änderungen durc
 LangString VBOX_EXTRACTION_COMPLETE ${LANG_GERMAN}      "$(^Name): Die Dateien wurden erfolgreich nach $\"$INSTDIR$\" entpackt!"
 
 LangString VBOX_ERROR_INST_FAILED ${LANG_GERMAN}        "Es trat ein Fehler während der Installation auf!$\r$\nBitte werfen Sie einen Blick in die Log-Datei unter '$INSTDIR\install_ui.log' für mehr Informationen."
+LangString VBOX_ERROR_OPEN_LINK ${LANG_GERMAN}          "Link konnte nicht im Standard-Browser geöffnet werden."
 
 LangString VBOX_UNINST_CONFIRM ${LANG_GERMAN}           "Wollen Sie wirklich die $(^Name) deinstallieren?"
 LangString VBOX_UNINST_SUCCESS ${LANG_GERMAN}           "$(^Name) wurden erfolgreich deinstalliert."
