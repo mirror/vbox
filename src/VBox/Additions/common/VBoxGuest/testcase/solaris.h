@@ -297,15 +297,15 @@ extern int vboxguestSolarisInfo(struct modinfo *pModInfo);
 
 #define cmn_err(...) do {} while(0)
 #define allocb(...) NULL
-#define ddi_soft_state_init(...) 0
-#define ddi_soft_state_fini(...) do {} while(0)
-#define mod_install(...) 0
 #define mod_remove(...) 0
 #define mod_info(...) 0
 #define makedevice(...) 0
 #define getmajor(...) 0
 #define RTR0Init(...) VINF_SUCCESS
 #define RTR0Term(...) do {} while(0)
+#define RTLogCreate(...) VINF_SUCCESS
+#define RTLogRelSetDefaultInstance(...) do {} while(0)
+#define RTLogDestroy(...) do {} while(0)
 #define VBoxGuestCreateKernelSession(...) VINF_SUCCESS
 #define VBoxGuestCreateUserSession(...) VINF_SUCCESS
 #define VBoxGuestCloseSession(...) do {} while(0)
@@ -356,34 +356,20 @@ extern int vboxguestSolarisInfo(struct modinfo *pModInfo);
 /* API stubs with simple logic */
 
 static modctl_t s_ModCtl;
+static void **s_pvLinkage;
 
-#define mod_getctl(...) (&s_ModCtl)
+static inline modctl_t *mod_getctl(void **linkage)
+{
+    s_pvLinkage = linkage;
+    return s_pvLinkage ? &s_ModCtl : NULL;
+}
+
+#define mod_install(linkage) (s_pvLinkage && ((linkage) == s_pvLinkage) ? 0 : EINVAL)
 
 #define QREADR          0x00000010
 #define         WR(q)          ((q)->q_flag & QREADR ? (q) + 1 : (q))
 #define         RD(q)          ((q)->q_flag & QREADR ? (q) : (q) - 1)
 
 /* API stubs with controllable logic */
-
-void *s_pSoftState[256];
-void *s_pInstSoftState;
-
-static void testSetInstSoftState(void *pInst, unsigned cAllocated)
-{
-    unsigned i;
-    Assert(cAllocated < RT_ELEMENTS(s_pSoftState));
-    s_pInstSoftState = pInst;
-    RT_ZERO(s_pSoftState);
-    for (i = 0; i < cAllocated; ++i)
-        s_pSoftState[i] = (void *)1;
-}
-
-#define ddi_get_soft_state(a, c) \
-    (c < RT_ELEMENTS(s_pSoftState) ? s_pSoftState[c] : NULL)
-#define ddi_soft_state_zalloc(a, c) \
-    (  c < RT_ELEMENTS(s_pSoftState) && (s_pSoftState[c] = s_pInstSoftState) \
-     ? DDI_SUCCESS : DDI_FAILURE)
-#define ddi_soft_state_free(a, c) \
-    (c < RT_ELEMENTS(s_pSoftState) ? s_pSoftState[c] = NULL : NULL)
 
 #endif  /* ___VBoxGuestTestCaseSolaris_h */
