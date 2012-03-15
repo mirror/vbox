@@ -2497,12 +2497,54 @@ static BOOL IWineD3DImpl_FillGLCaps(struct wined3d_adapter *adapter)
     {
         glGetIntegerv(GL_MAX_VERTEX_UNIFORM_COMPONENTS_ARB, &gl_max);
         gl_info->limits.glsl_vs_float_constants = gl_max / 4;
+#ifdef VBOX_WITH_WDDM
+        /* AFAICT the " / 4" here comes from that we're going to use the glsl_vs/ps_float_constants to create vec4 arrays,
+         * thus each array element has 4 components, so the actual number of vec4 arrays is GL_MAX_VERTEX/FRAGMENT_UNIFORM_COMPONENTS_ARB / 4
+         * win8 Aero won't properly work with this constant < 256 in any way,
+         * while Intel drivers I've encountered this problem with supports vec4 arrays of size >  GL_MAX_VERTEX/FRAGMENT_UNIFORM_COMPONENTS_ARB / 4
+         * so use it here.
+         * @todo: add logging
+         * @todo: perhaps should be movet to quirks?
+         * */
+        if (gl_info->limits.glsl_vs_float_constants < 256 && gl_max >= 256)
+        {
+            DWORD dwVersion = GetVersion();
+            DWORD dwMajor = (DWORD)(LOBYTE(LOWORD(dwVersion)));
+            DWORD dwMinor = (DWORD)(HIBYTE(LOWORD(dwVersion)));
+            /* tmp workaround Win8 Aero requirement for 256 */
+            if (dwMajor > 6 || dwMinor > 1)
+            {
+                gl_info->limits.glsl_vs_float_constants = 256;
+            }
+        }
+#endif
         TRACE_(d3d_caps)("Max ARB_VERTEX_SHADER float constants: %u.\n", gl_info->limits.glsl_vs_float_constants);
     }
     if (gl_info->supported[ARB_FRAGMENT_SHADER])
     {
         glGetIntegerv(GL_MAX_FRAGMENT_UNIFORM_COMPONENTS_ARB, &gl_max);
         gl_info->limits.glsl_ps_float_constants = gl_max / 4;
+#ifdef VBOX_WITH_WDDM
+        /* AFAICT the " / 4" here comes from that we're going to use the glsl_vs/ps_float_constants to create vec4 arrays,
+         * thus each array element has 4 components, so the actual number of vec4 arrays is GL_MAX_VERTEX/FRAGMENT_UNIFORM_COMPONENTS_ARB / 4
+         * win8 Aero won't properly work with this constant < 256 in any way,
+         * while Intel drivers I've encountered this problem with supports vec4 arrays of size >  GL_MAX_VERTEX/FRAGMENT_UNIFORM_COMPONENTS_ARB / 4
+         * so use it here.
+         * @todo: add logging
+         * @todo: perhaps should be movet to quirks?
+         * */
+        if (gl_info->limits.glsl_ps_float_constants < 256 && gl_max >= 256)
+        {
+            DWORD dwVersion = GetVersion();
+            DWORD dwMajor = (DWORD)(LOBYTE(LOWORD(dwVersion)));
+            DWORD dwMinor = (DWORD)(HIBYTE(LOWORD(dwVersion)));
+            /* tmp workaround Win8 Aero requirement for 256 */
+            if (dwMajor > 6 || dwMinor > 1)
+            {
+                gl_info->limits.glsl_ps_float_constants = 256;
+            }
+        }
+#endif
         TRACE_(d3d_caps)("Max ARB_FRAGMENT_SHADER float constants: %u.\n", gl_info->limits.glsl_ps_float_constants);
         glGetIntegerv(GL_MAX_VARYING_FLOATS_ARB, &gl_max);
         gl_info->limits.glsl_varyings = gl_max;

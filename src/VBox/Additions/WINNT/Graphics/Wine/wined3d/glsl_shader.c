@@ -191,18 +191,41 @@ static const char *debug_gl_shader_type(GLenum type)
 
 /* Extract a line from the info log.
  * Note that this modifies the source string. */
-static char *get_info_log_line(char **ptr)
+static char *get_info_log_line(char **ptr, int *pcbStr)
 {
     char *p, *q;
+    const int cbStr = *pcbStr;
 
+    if (!cbStr)
+    {
+        /* zero-length string */
+        return NULL;
+    }
+
+    if ((*ptr)[cbStr-1] != '\0')
+    {
+        ERR("string should be null-rerminated, forcing it!");
+        (*ptr)[cbStr-1] = '\0';
+    }
     p = *ptr;
+    if (!*p)
+    {
+        *pcbStr = 0;
+        return NULL;
+    }
+
     if (!(q = strstr(p, "\n")))
     {
-        if (!*p) return NULL;
+        /* the string contains a single line! */
         *ptr += strlen(p);
+        *pcbStr = 0;
         return p;
     }
+
     *q = '\0';
+    *pcbStr = cbStr - ((uintptr_t)q) - ((uintptr_t)p) - 1;
+    Assert((*pcbStr) >= 0);
+    Assert((*pcbStr) < cbStr);
     *ptr = q + 1;
 
     return p;
@@ -243,6 +266,7 @@ static void print_glsl_info_log(const struct wined3d_gl_info *gl_info, GLhandleA
     if (infologLength > 1)
     {
         char *ptr, *line;
+        int cbPtr;
 
         /* Fglrx doesn't terminate the string properly, but it tells us the proper length.
          * So use HEAP_ZERO_MEMORY to avoid uninitialized bytes
@@ -259,15 +283,16 @@ static void print_glsl_info_log(const struct wined3d_gl_info *gl_info, GLhandleA
         }
 
         ptr = infoLog;
+        cbPtr = infologLength;
         if (is_spam)
         {
             WDLOG(("Spam received from GLSL shader #%u:\n", obj));
-            while ((line = get_info_log_line(&ptr))) WDLOG(("    %s\n", line));
+            while ((line = get_info_log_line(&ptr, &cbPtr))) WDLOG(("    %s\n", line));
         }
         else
         {
             WDLOG(("Error received from GLSL shader #%u:\n", obj));
-            while ((line = get_info_log_line(&ptr))) WDLOG(("    %s\n", line));
+            while ((line = get_info_log_line(&ptr, &cbPtr))) WDLOG(("    %s\n", line));
         }
         HeapFree(GetProcessHeap(), 0, infoLog);
     }
@@ -278,6 +303,7 @@ static void shader_glsl_dump_shader_source(const struct wined3d_gl_info *gl_info
     char *ptr;
     GLint tmp, source_size;
     char *source = NULL;
+    int cbPtr;
 
     GL_EXTCALL(glGetObjectParameterivARB(shader, GL_OBJECT_SHADER_SOURCE_LENGTH_ARB, &tmp));
 
@@ -298,9 +324,10 @@ static void shader_glsl_dump_shader_source(const struct wined3d_gl_info *gl_info
     WDLOG(("\n"));
 
     ptr = source;
+    cbPtr = source_size;
     GL_EXTCALL(glGetShaderSourceARB(shader, source_size, NULL, source));
 #if 0
-    while ((line = get_info_log_line(&ptr))) WDLOG(("    %s\n", line));
+    while ((line = get_info_log_line(&ptr, &cbPtr))) WDLOG(("    %s\n", line));
 #else
     WDLOG(("*****shader source***\n"));
     WDLOG(("    %s\n", source));
@@ -1032,9 +1059,22 @@ static void shader_generate_glsl_declarations(const struct wined3d_context *cont
                  *
                  * Writing gl_ClipVertex requires one uniform for each clipplane as well.
                  */
-#ifdef DEBUG_misha
-                /* tmp work-around to make Internet Explorer in win8 work with GPU supporting only with 256 shader uniform vars */
-                max_constantsF = gl_info->limits.glsl_vs_float_constants - 1;
+#ifdef VBOX_WITH_WDDM
+                if (gl_info->limits.glsl_vs_float_constants == 256)
+                {
+                    DWORD dwVersion = GetVersion();
+                    DWORD dwMajor = (DWORD)(LOBYTE(LOWORD(dwVersion)));
+                    DWORD dwMinor = (DWORD)(HIBYTE(LOWORD(dwVersion)));
+                    /* tmp workaround Win8 Aero requirement for 256 */
+                    if (dwMajor > 6 || dwMinor > 1)
+                    {
+                        /* tmp work-around to make Internet Explorer in win8 work with GPU supporting only with 256 shader uniform vars
+                         * @todo: make it more robust */
+                        max_constantsF = gl_info->limits.glsl_vs_float_constants - 1;
+                    }
+                    else
+                        max_constantsF = gl_info->limits.glsl_vs_float_constants - 3;
+                }
 #else
                 max_constantsF = gl_info->limits.glsl_vs_float_constants - 3;
 #endif
