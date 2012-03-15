@@ -247,6 +247,7 @@ static HRESULT WINAPI IWineD3DCubeTextureImpl_GetParent(IWineD3DCubeTexture *ifa
 #ifdef VBOX_WITH_WDDM
 static HRESULT WINAPI IWineD3DCubeTextureImpl_SetShRcState(IWineD3DCubeTexture *iface, VBOXWINEEX_SHRC_STATE enmState) {
     IWineD3DCubeTextureImpl *This = (IWineD3DCubeTextureImpl*)iface;
+    struct wined3d_context *context = NULL;
     HRESULT hr = IWineD3DResourceImpl_SetShRcState((IWineD3DResource*)iface, enmState);
     unsigned int i, j;
 
@@ -265,7 +266,27 @@ static HRESULT WINAPI IWineD3DCubeTextureImpl_SetShRcState(IWineD3DCubeTexture *
         }
     }
 
+    if (!This->resource.device->isInDraw)
+    {
+        context = context_acquire(This->resource.device, NULL, CTXUSAGE_RESOURCELOAD);
+        if (!context)
+        {
+            ERR("zero context!");
+            return E_FAIL;
+        }
+
+        if (!context->valid)
+        {
+            ERR("context invalid!");
+            context_release(context);
+            return E_FAIL;
+        }
+    }
+
     device_cleanup_durtify_texture_target(This->resource.device, ((IWineD3DSurfaceImpl*)This->surfaces[j][i])->texture_target);
+
+    if (context)
+        context_release(context);
 
     return WINED3D_OK;
 }
