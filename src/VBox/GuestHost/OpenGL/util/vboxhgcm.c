@@ -598,12 +598,14 @@ static bool _crVBoxHGCMWriteBytes(CRConnection *conn, const void *buf, uint32_t 
 static int crVBoxHGCMCall(CRConnection *conn, void *pvData, unsigned cbData)
 {
 #ifdef IN_GUEST
+# if defined(VBOX_WITH_CRHGSMI)
     PCRVBOXHGSMI_CLIENT pClient = _crVBoxHGSMIClientGet(conn);
     if (pClient)
     {
         return VBoxCrHgsmiCtlConCall(pClient->pHgsmi, (struct VBoxGuestHGCMCallInfo *)pvData, cbData);
     }
     else
+# endif
     {
 # ifdef RT_OS_WINDOWS
     DWORD cbReturned, lerr;
