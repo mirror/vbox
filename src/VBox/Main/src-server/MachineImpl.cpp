@@ -722,6 +722,8 @@ HRESULT Machine::registeredInit()
 
         /* commit all changes made during loading the settings file */
         commit(); // @todo r=dj why do we need a commit during init?!? this is very expensive
+        /// @todo r=klaus for some reason the settings loading logic backs up
+        // the settings, and therefore a commit is needed. Should probably be changed.
     }
     else
     {
