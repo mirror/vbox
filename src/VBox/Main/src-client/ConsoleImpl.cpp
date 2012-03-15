@@ -763,6 +763,8 @@ void Console::guestPropertiesVRDPUpdateLogon(uint32_t u32ClientId, const char *p
     if (!guestPropertiesVRDPEnabled())
         return;
 
+    LogFlowFunc(("\n"));
+
     char szPropNm[256];
     Bstr bstrReadOnlyGuest(L"RDONLYGUEST");
 
@@ -785,10 +787,29 @@ void Console::guestPropertiesVRDPUpdateLogon(uint32_t u32ClientId, const char *p
                                bstrReadOnlyGuest.raw());
 
     char szClientId[64];
-    RTStrPrintf(szClientId, sizeof(szClientId), "%d", u32ClientId);
+    RTStrPrintf(szClientId, sizeof(szClientId), "%u", u32ClientId);
     mMachine->SetGuestProperty(Bstr("/VirtualBox/HostInfo/VRDP/LastConnectedClient").raw(),
                                Bstr(szClientId).raw(),
                                bstrReadOnlyGuest.raw());
+
+    return;
+}
+
+void Console::guestPropertiesVRDPUpdateActiveClient(uint32_t u32ClientId)
+{
+    if (!guestPropertiesVRDPEnabled())
+        return;
+
+    LogFlowFunc(("%d\n", u32ClientId));
+
+    Bstr bstrFlags(L"RDONLYGUEST,TRANSIENT");
+
+    char szClientId[64];
+    RTStrPrintf(szClientId, sizeof(szClientId), "%u", u32ClientId);
+
+    mMachine->SetGuestProperty(Bstr("/VirtualBox/HostInfo/VRDP/ActiveClient").raw(),
+                               Bstr(szClientId).raw(),
+                               bstrFlags.raw());
 
     return;
 }
@@ -797,6 +818,8 @@ void Console::guestPropertiesVRDPUpdateNameChange(uint32_t u32ClientId, const ch
 {
     if (!guestPropertiesVRDPEnabled())
         return;
+
+    LogFlowFunc(("\n"));
 
     char szPropNm[256];
     Bstr bstrReadOnlyGuest(L"RDONLYGUEST");
@@ -815,6 +838,8 @@ void Console::guestPropertiesVRDPUpdateClientAttach(uint32_t u32ClientId, bool f
     if (!guestPropertiesVRDPEnabled())
         return;
 
+    LogFlowFunc(("\n"));
+
     Bstr bstrReadOnlyGuest(L"RDONLYGUEST");
 
     char szPropNm[256];
@@ -831,6 +856,8 @@ void Console::guestPropertiesVRDPUpdateDisconnect(uint32_t u32ClientId)
 {
     if (!guestPropertiesVRDPEnabled())
         return;
+
+    LogFlowFunc(("\n"));
 
     Bstr bstrReadOnlyGuest(L"RDONLYGUEST");
 
@@ -1117,6 +1144,8 @@ void Console::VRDPClientStatusChange(uint32_t u32ClientId, const char *pszStatus
     AutoCaller autoCaller(this);
     AssertComRCReturnVoid(autoCaller.rc());
 
+    LogFlowFunc(("%s\n", pszStatus));
+
     /* Parse the status string. */
     if (RTStrICmp(pszStatus, "ATTACH") == 0)
     {
@@ -1156,6 +1185,10 @@ void Console::VRDPClientConnect(uint32_t u32ClientId)
 
     NOREF(u32ClientId);
     mDisplay->VideoAccelVRDP(true);
+
+#ifdef VBOX_WITH_GUEST_PROPS
+    guestPropertiesVRDPUpdateActiveClient(u32ClientId);
+#endif /* VBOX_WITH_GUEST_PROPS */
 
     LogFlowFuncLeave();
     return;
@@ -1227,6 +1260,8 @@ void Console::VRDPClientDisconnect(uint32_t u32ClientId,
 
 #ifdef VBOX_WITH_GUEST_PROPS
     guestPropertiesVRDPUpdateDisconnect(u32ClientId);
+    if (u32Clients == 0)
+        guestPropertiesVRDPUpdateActiveClient(0);
 #endif /* VBOX_WITH_GUEST_PROPS */
 
     if (u32Clients == 0)
