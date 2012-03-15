@@ -91,7 +91,9 @@ VBoxDrvFindAdapter(IN PVOID HwDeviceExtension, IN PVOID HwContext, IN PWSTR Argu
                                         VBoxBiosString, sizeof(VBoxBiosString));
     VBOXMP_WARN_VPS(rc);
 
-    /* Call VideoPortGetAccessRanges to ensure interrupt info in ConfigInfo gets set up */
+    /* Call VideoPortGetAccessRanges to ensure interrupt info in ConfigInfo gets set up
+     * and to get LFB aperture data.
+     */
     {
         VIDEO_ACCESS_RANGE tmpRanges[4];
         ULONG slot = 0;
@@ -113,6 +115,13 @@ VBoxDrvFindAdapter(IN PVOID HwDeviceExtension, IN PVOID HwContext, IN PWSTR Argu
             rc = VideoPortGetAccessRanges(pExt, 0, NULL, RT_ELEMENTS(tmpRanges), tmpRanges, NULL, NULL, &slot);
         }
         VBOXMP_WARN_VPS(rc);
+        if (rc != NO_ERROR) {
+            return rc;
+        }
+
+        /* The first range is the framebuffer. We require that information. */
+        pExt->u.primary.physLFBBase    = tmpRanges[0].RangeStart;
+        pExt->u.primary.ulApertureSize = tmpRanges[0].RangeLength;
     }
 
     /* Initialize VBoxGuest library, which is used for requests which go through VMMDev. */
