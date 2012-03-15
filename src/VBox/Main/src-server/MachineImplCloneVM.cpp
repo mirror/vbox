@@ -1270,7 +1270,15 @@ HRESULT MachineCloneVM::run()
                     if (FAILED(mac2.rc())) throw mac2.rc();
                     AutoReadLock mlock2(pParent COMMA_LOCKVAL_SRC_POS);
                     if (pParent->getFirstRegistryMachineId(uuid))
+                    {
+                        mlock2.release();
+                        trgLock.release();
+                        srcLock.release();
                         p->mParent->markRegistryModified(uuid);
+                        srcLock.acquire();
+                        trgLock.acquire();
+                        mlock2.acquire();
+                    }
                 }
                 mlock.acquire();
             }

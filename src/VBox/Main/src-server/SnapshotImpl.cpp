@@ -1939,6 +1939,9 @@ void SessionMachine::restoreSnapshotHandler(RestoreSnapshotTask &aTask)
             llDiffsToDelete.push_back(pMedium);
         }
 
+        // release the locks before updating registry and deleting image files
+        alock.release();
+
         // save machine settings, reset the modified flag and commit;
         bool fNeedsGlobalSaveSettings = false;
         rc = saveSettings(&fNeedsGlobalSaveSettings,
@@ -1949,8 +1952,6 @@ void SessionMachine::restoreSnapshotHandler(RestoreSnapshotTask &aTask)
         // (mParent->saveSettings())
         mParent->markRegistryModified(mParent->getGlobalRegistryId());
 
-        // let go of the locks while we're deleting image files below
-        alock.release();
         // from here on we cannot roll back on failure any more
 
         for (MediaList::iterator it = llDiffsToDelete.begin();
@@ -2492,6 +2493,7 @@ void SessionMachine::deleteSnapshotHandler(DeleteSnapshotTask &aTask)
                 releaseSavedStateFile(stateFilePath, aTask.pSnapshot /* pSnapshotToIgnore */);
 
                 // machine will need saving now
+                machineLock.release();
                 mParent->markRegistryModified(getId());
             }
         }
@@ -2684,6 +2686,7 @@ void SessionMachine::deleteSnapshotHandler(DeleteSnapshotTask &aTask)
             aTask.pSnapshot->beginSnapshotDelete();
             aTask.pSnapshot->uninit();
 
+            machineLock.release();
             mParent->markRegistryModified(getId());
         }
     }
