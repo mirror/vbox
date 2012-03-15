@@ -1424,62 +1424,87 @@ int main(int argc, char *argv[])
     while (FALSE);
     RTPrintf("\n");
 #endif
-#if 0
+#if 1
     // check of network bandwidth control
     ///////////////////////////////////////////////////////////////////////////
     do
     {
-        // Get machine
-        ComPtr<IMachine> machine;
-        ComPtr<IBandwidthControl> bwCtrl;
-        ComPtr<IBandwidthGroup> bwGroup;
-        ComPtr<INetworkAdapter> nic;
         Bstr name = argc > 1 ? argv[1] : "ubuntu";
         Bstr sessionType = argc > 2 ? argv[2] : "headless";
         Bstr grpName = "tstAPI";
-        RTPrintf("Getting a machine object named '%ls'...\n", name.raw());
-        CHECK_ERROR_BREAK(virtualBox, FindMachine(name.raw(), machine.asOutParam()));
-        /* open a session for the VM (new or shared) */
-        CHECK_ERROR_BREAK(machine, LockMachine(session, LockType_Shared));
-        SessionType_T st;
-        CHECK_ERROR_BREAK(session, COMGETTER(Type)(&st));
-        bool fRunTime = (st == SessionType_Shared);
-        if (fRunTime)
         {
-            RTPrintf("Machine %ls must not be running!\n");
-            break;
+            // Get machine
+            ComPtr<IMachine> machine;
+            ComPtr<IBandwidthControl> bwCtrl;
+            ComPtr<IBandwidthGroup> bwGroup;
+            ComPtr<INetworkAdapter> nic;
+            RTPrintf("Getting a machine object named '%ls'...\n", name.raw());
+            CHECK_ERROR_BREAK(virtualBox, FindMachine(name.raw(), machine.asOutParam()));
+            /* open a session for the VM (new or shared) */
+            CHECK_ERROR_BREAK(machine, LockMachine(session, LockType_Shared));
+            SessionType_T st;
+            CHECK_ERROR_BREAK(session, COMGETTER(Type)(&st));
+            bool fRunTime = (st == SessionType_Shared);
+            if (fRunTime)
+            {
+                RTPrintf("Machine %ls must not be running!\n");
+                break;
+            }
+            /* get the mutable session machine */
+            session->COMGETTER(Machine)(machine.asOutParam());
+            CHECK_ERROR_BREAK(machine, COMGETTER(BandwidthControl)(bwCtrl.asOutParam()));
+            
+            RTPrintf("Creating bandwidth group named '%ls'...\n", grpName.raw());
+            CHECK_ERROR_BREAK(bwCtrl, CreateBandwidthGroup(grpName.raw(), BandwidthGroupType_Network, 123));
+
+
+            CHECK_ERROR_BREAK(bwCtrl, GetBandwidthGroup(grpName.raw(), bwGroup.asOutParam()));
+            CHECK_ERROR_BREAK(machine, GetNetworkAdapter(0, nic.asOutParam()));
+            RTPrintf("Assigning the group to the first network adapter...\n");
+            CHECK_ERROR_BREAK(nic, COMSETTER(BandwidthGroup)(bwGroup));
+            CHECK_ERROR_BREAK(machine, SaveSettings());
+            RTPrintf("Press enter to close this session...");
+            getchar();
+            session->UnlockMachine();
         }
-        /* get the mutable session machine */
-        session->COMGETTER(Machine)(machine.asOutParam());
-        CHECK_ERROR_BREAK(machine, COMGETTER(BandwidthControl)(bwCtrl.asOutParam()));
-
-        RTPrintf("Creating bandwidth group named '%ls'...\n", grpName.raw());
-        CHECK_ERROR_BREAK(bwCtrl, CreateBandwidthGroup(grpName.raw(), BandwidthGroupType_Network, 123));
-
-
-        CHECK_ERROR_BREAK(bwCtrl, GetBandwidthGroup(grpName.raw(), bwGroup.asOutParam()));
-        CHECK_ERROR_BREAK(machine, GetNetworkAdapter(0, nic.asOutParam()));
-        RTPrintf("Assigning the group to the first network adapter...\n");
-        CHECK_ERROR_BREAK(nic, COMSETTER(BandwidthGroup)(bwGroup));
         {
-            ComPtr<IBandwidthGroup> bwGroupReadFromNic;
+            // Get machine
+            ComPtr<IMachine> machine;
+            ComPtr<IBandwidthControl> bwCtrl;
+            ComPtr<IBandwidthGroup> bwGroup;
             Bstr grpNameReadFromNic;
+            ComPtr<INetworkAdapter> nic;
+            RTPrintf("Getting a machine object named '%ls'...\n", name.raw());
+            CHECK_ERROR_BREAK(virtualBox, FindMachine(name.raw(), machine.asOutParam()));
+            /* open a session for the VM (new or shared) */
+            CHECK_ERROR_BREAK(machine, LockMachine(session, LockType_Shared));
+            /* get the mutable session machine */
+            session->COMGETTER(Machine)(machine.asOutParam());
+            CHECK_ERROR_BREAK(machine, COMGETTER(BandwidthControl)(bwCtrl.asOutParam()));
+            CHECK_ERROR_BREAK(machine, GetNetworkAdapter(0, nic.asOutParam()));
+
             RTPrintf("Reading the group back from the first network adapter...\n");
-            CHECK_ERROR_BREAK(nic, COMGETTER(BandwidthGroup)(bwGroupReadFromNic.asOutParam()));
-            CHECK_ERROR_BREAK(bwGroupReadFromNic, COMGETTER(Name)(grpNameReadFromNic.asOutParam()));
-            if (grpName != grpNameReadFromNic)
-                RTPrintf("Error: Bandwidth group names do not match (%ls != %ls)!\n", grpName.raw(), grpNameReadFromNic.raw());
+            CHECK_ERROR_BREAK(nic, COMGETTER(BandwidthGroup)(bwGroup.asOutParam()));
+            if (bwGroup.isNull())
+                RTPrintf("Error: Bandwidth group is null at the first network adapter!\n");
             else
-                RTPrintf("Successfully retrieved bandwidth group attribute from NIC (name=%ls)\n", grpNameReadFromNic.raw());
-            ComPtr<IBandwidthGroup> bwGroupEmpty;
-            RTPrintf("Assigning an empty group to the first network adapter...\n");
-            CHECK_ERROR_BREAK(nic, COMSETTER(BandwidthGroup)(bwGroupEmpty));
+            {
+                CHECK_ERROR_BREAK(bwGroup, COMGETTER(Name)(grpNameReadFromNic.asOutParam()));
+                if (grpName != grpNameReadFromNic)
+                    RTPrintf("Error: Bandwidth group names do not match (%ls != %ls)!\n", grpName.raw(), grpNameReadFromNic.raw());
+                else
+                    RTPrintf("Successfully retrieved bandwidth group attribute from NIC (name=%ls)\n", grpNameReadFromNic.raw());
+                ComPtr<IBandwidthGroup> bwGroupEmpty;
+                RTPrintf("Assigning an empty group to the first network adapter...\n");
+                CHECK_ERROR_BREAK(nic, COMSETTER(BandwidthGroup)(bwGroupEmpty));
+            }
+            RTPrintf("Removing bandwidth group named '%ls'...\n", grpName.raw());
+            CHECK_ERROR_BREAK(bwCtrl, DeleteBandwidthGroup(grpName.raw()));
+            CHECK_ERROR_BREAK(machine, SaveSettings());
+            RTPrintf("Press enter to close this session...");
+            getchar();
+            session->UnlockMachine();
         }
-        RTPrintf("Removing bandwidth group named '%ls'...\n", grpName.raw());
-        CHECK_ERROR_BREAK(bwCtrl, DeleteBandwidthGroup(grpName.raw()));
-        RTPrintf("Press enter to close this session...");
-        getchar();
-        session->UnlockMachine();
     } while (FALSE);
     RTPrintf("\n");
 #endif
