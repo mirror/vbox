@@ -23,6 +23,8 @@
 
 static VBOXDISPKMT_CALLBACKS g_VBoxCrHgsmiKmtCallbacks;
 static int g_bVBoxKmtCallbacksInited = 0;
+static uint32_t g_VBoxCrVersionMajor;
+static uint32_t g_VBoxCrVersionMinor;
 
 #ifdef VBOX_CRHGSMI_WITH_D3DDEV
 static VBOXCRHGSMI_CALLBACKS g_VBoxCrHgsmiCallbacks;
@@ -180,12 +182,17 @@ static int vboxCrHgsmiInitPerform(VBOXDISPKMT_CALLBACKS *pCallbacks)
     return -1;
 }
 
-VBOXCRHGSMI_DECL(int) VBoxCrHgsmiInit()
+VBOXCRHGSMI_DECL(int) VBoxCrHgsmiInit(uint32_t crVersionMajor, uint32_t crVersionMinor)
 {
     if (!g_bVBoxKmtCallbacksInited)
     {
         g_bVBoxKmtCallbacksInited = vboxCrHgsmiInitPerform(&g_VBoxCrHgsmiKmtCallbacks);
         Assert(g_bVBoxKmtCallbacksInited);
+        if (g_bVBoxKmtCallbacksInited)
+        {
+            g_VBoxCrVersionMajor = crVersionMajor;
+            g_VBoxCrVersionMinor = crVersionMinor;
+        }
     }
 
     return g_bVBoxKmtCallbacksInited > 0 ? VINF_SUCCESS : VERR_NOT_SUPPORTED;
@@ -197,9 +204,9 @@ VBOXCRHGSMI_DECL(PVBOXUHGSMI) VBoxCrHgsmiCreate()
     if (pHgsmiGL)
     {
 #if 0
-        HRESULT hr = vboxUhgsmiKmtCreate(pHgsmiGL, TRUE /* bD3D tmp for injection thread*/);
+        HRESULT hr = vboxUhgsmiKmtCreate(pHgsmiGL, g_VBoxCrVersionMajor, g_VBoxCrVersionMinor, TRUE /* bD3D tmp for injection thread*/);
 #else
-        HRESULT hr = vboxUhgsmiKmtEscCreate(pHgsmiGL, TRUE /* bD3D tmp for injection thread*/);
+        HRESULT hr = vboxUhgsmiKmtEscCreate(pHgsmiGL, g_VBoxCrVersionMajor, g_VBoxCrVersionMinor, TRUE /* bD3D tmp for injection thread*/);
 #endif
         Log(("CrHgsmi: faled to create KmtEsc UHGSMI instance, hr (0x%x)\n", hr));
         if (hr == S_OK)
@@ -248,4 +255,26 @@ VBOXCRHGSMI_DECL(int) VBoxCrHgsmiTerm()
 VBOXCRHGSMI_DECL(void) VBoxCrHgsmiLog(char * szString)
 {
     vboxVDbgPrint(("%s", szString));
+}
+
+VBOXCRHGSMI_DECL(int) VBoxCrHgsmiCtlConGetClientID(PVBOXUHGSMI pHgsmi, uint32_t *pu32ClientID)
+{
+    PVBOXUHGSMI_PRIVATE_BASE pHgsmiPrivate = (PVBOXUHGSMI_PRIVATE_BASE)pHgsmi;
+    int rc = VBoxCrHgsmiPrivateCtlConGetClientID(pHgsmiPrivate, pu32ClientID);
+    if (!RT_SUCCESS(rc))
+    {
+        WARN(("VBoxCrHgsmiPrivateCtlConCall failed with rc (%d)", rc));
+    }
+    return rc;
+}
+
+VBOXCRHGSMI_DECL(int) VBoxCrHgsmiCtlConCall(PVBOXUHGSMI pHgsmi, struct VBoxGuestHGCMCallInfo *pCallInfo, int cbCallInfo)
+{
+    PVBOXUHGSMI_PRIVATE_BASE pHgsmiPrivate = (PVBOXUHGSMI_PRIVATE_BASE)pHgsmi;
+    int rc = VBoxCrHgsmiPrivateCtlConCall(pHgsmiPrivate, pCallInfo, cbCallInfo);
+    if (!RT_SUCCESS(rc))
+    {
+        WARN(("VBoxCrHgsmiPrivateCtlConCall failed with rc (%d)", rc));
+    }
+    return rc;
 }

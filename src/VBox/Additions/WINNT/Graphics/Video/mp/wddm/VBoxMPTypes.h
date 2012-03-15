@@ -30,6 +30,7 @@ typedef struct VBOXWDDM_ALLOCATION *PVBOXWDDM_ALLOCATION;
 #include "VBoxMPVdma.h"
 #include "VBoxMPShgsmi.h"
 #include "VBoxMPVbva.h"
+#include "VBoxMPCr.h"
 
 #if 0
 #include <iprt/avl.h>
@@ -219,6 +220,7 @@ typedef struct VBOXWDDM_CONTEXT
     VBOXWDDM_CONTEXT_TYPE enmType;
     UINT  NodeOrdinal;
     UINT  EngineAffinity;
+    uint32_t u32CrConClientID;
     VBOXWDDM_HTABLE Swapchains;
     VBOXVIDEOCM_CTX CmContext;
     VBOXVIDEOCM_ALLOC_CONTEXT AllocContext;

@@ -3644,6 +3644,7 @@ DxgkDdiEscape(
 
                 break;
             }
+
             case VBOXESC_UHGSMI_DEALLOCATE:
             {
                 /* deallocate UHGSMI buffer */
@@ -3660,6 +3661,7 @@ DxgkDdiEscape(
 
                 break;
             }
+
             case VBOXESC_GETVBOXVIDEOCMCMD:
             {
                 /* get the list of r0->r3 commands (d3d window visible regions reporting )*/
@@ -3676,6 +3678,50 @@ DxgkDdiEscape(
 
                 break;
             }
+
+            case VBOXESC_CRHGSMICTLCON_CALL:
+            {
+                PVBOXWDDM_CONTEXT pContext = (PVBOXWDDM_CONTEXT)pEscape->hContext;
+                PVBOXDISPIFESCAPE_CRHGSMICTLCON_CALL pCall = (PVBOXDISPIFESCAPE_CRHGSMICTLCON_CALL)pEscapeHdr;
+                if (pEscape->PrivateDriverDataSize >= sizeof (*pCall))
+                {
+                    /* this is true due to the above condition */
+                    Assert(pEscape->PrivateDriverDataSize > RT_OFFSETOF(VBOXDISPIFESCAPE_CRHGSMICTLCON_CALL, CallInfo));
+                    int rc = VBoxMpCrCtlConCallUserData(pDevExt, &pCall->CallInfo, pEscape->PrivateDriverDataSize - RT_OFFSETOF(VBOXDISPIFESCAPE_CRHGSMICTLCON_CALL, CallInfo));
+                    if (RT_SUCCESS(rc))
+                        Status = STATUS_SUCCESS;
+                    else
+                    {
+                        WARN(("VBoxMpCrUmCtlConCall failed, rc(%d)", rc));
+                        Status = STATUS_UNSUCCESSFUL;
+                    }
+                }
+                else
+                {
+                    WARN(("buffer too small!"));
+                    Status = STATUS_BUFFER_TOO_SMALL;
+                }
+
+                break;
+            }
+
+            case VBOXESC_CRHGSMICTLCON_GETCLIENTID:
+            {
+                PVBOXWDDM_CONTEXT pContext = (PVBOXWDDM_CONTEXT)pEscape->hContext;
+                if (pEscape->PrivateDriverDataSize == sizeof (*pEscapeHdr))
+                {
+                    pEscapeHdr->u32CmdSpecific = pContext->u32CrConClientID;
+                    Status = STATUS_SUCCESS;
+                }
+                else
+                {
+                    WARN(("unexpected buffer size!"));
+                    Status = STATUS_INVALID_PARAMETER;
+                }
+
+                break;
+            }
+
             case VBOXESC_SETVISIBLEREGION:
             {
                 /* visible regions for seamless */
@@ -5614,26 +5660,63 @@ DxgkDdiCreateContext(
                                 Assert(Status == STATUS_SUCCESS);
                                 if (Status == STATUS_SUCCESS)
                                 {
-        //                            Assert(KeGetCurrentIrql() < DISPATCH_LEVEL);
-        //                            ExAcquireFastMutex(&pDevExt->ContextMutex);
-                                    ASMAtomicIncU32(&pDevExt->cContexts3D);
-        //                            ExReleaseFastMutex(&pDevExt->ContextMutex);
-                                    break;
+                                    int rc = VINF_SUCCESS;
+                                    if (pInfo->crVersionMajor || pInfo->crVersionMinor)
+                                    {
+                                        rc = VBoxMpCrCtlConConnect(pDevExt,
+                                            pInfo->crVersionMajor, pInfo->crVersionMinor,
+                                            &pContext->u32CrConClientID);
+                                        if (!RT_SUCCESS(rc))
+                                        {
+                                            WARN(("VBoxMpCrCtlConConnect failed rc (%d)", rc));
+                                            Status = STATUS_UNSUCCESSFUL;
+                                        }
+                                    }
+
+                                    if (RT_SUCCESS(rc))
+                                    {
+            //                            Assert(KeGetCurrentIrql() < DISPATCH_LEVEL);
+            //                            ExAcquireFastMutex(&pDevExt->ContextMutex);
+                                        ASMAtomicIncU32(&pDevExt->cContexts3D);
+            //                            ExReleaseFastMutex(&pDevExt->ContextMutex);
+                                        break;
+                                    }
                                 }
 
                                 vboxWddmSwapchainCtxTerm(pDevExt, pContext);
                             }
+                            vboxVideoAMgrCtxDestroy(&pContext->AllocContext);
                         }
                         break;
                     }
                     case VBOXWDDM_CONTEXT_TYPE_CUSTOM_UHGSMI_3D:
                     case VBOXWDDM_CONTEXT_TYPE_CUSTOM_UHGSMI_GL:
                     {
+                        pContext->enmType = pInfo->enmType;
                         Status = vboxVideoAMgrCtxCreate(&pDevExt->AllocMgr, &pContext->AllocContext);
                         Assert(Status == STATUS_SUCCESS);
-                        if (Status != STATUS_SUCCESS)
-                            break;
-                        /* do not break to go to the _2D branch and do the rest stuff */
+                        if (Status == STATUS_SUCCESS)
+                        {
+                            int rc = VINF_SUCCESS;
+                            if (pInfo->crVersionMajor || pInfo->crVersionMinor)
+                            {
+                                rc = VBoxMpCrCtlConConnect(pDevExt,
+                                    pInfo->crVersionMajor, pInfo->crVersionMinor,
+                                    &pContext->u32CrConClientID);
+                                if (!RT_SUCCESS(rc))
+                                {
+                                    WARN(("VBoxMpCrCtlConConnect failed rc (%d)", rc));
+                                    Status = STATUS_UNSUCCESSFUL;
+                                }
+                            }
+
+                            if (RT_SUCCESS(rc))
+                            {
+                                break;
+                            }
+                            vboxVideoAMgrCtxDestroy(&pContext->AllocContext);
+                        }
+                        break;
                     }
                     case VBOXWDDM_CONTEXT_TYPE_CUSTOM_2D:
                     {
@@ -5683,14 +5766,27 @@ DxgkDdiDestroyContext(
     vboxVDbgBreakFv();
     PVBOXWDDM_CONTEXT pContext = (PVBOXWDDM_CONTEXT)hContext;
     PVBOXMP_DEVEXT pDevExt = pContext->pDevice->pAdapter;
-    if (pContext->enmType == VBOXWDDM_CONTEXT_TYPE_CUSTOM_3D)
+    switch(pContext->enmType)
     {
-        Assert(KeGetCurrentIrql() < DISPATCH_LEVEL);
-//        ExAcquireFastMutex(&pDevExt->ContextMutex);
-//        RemoveEntryList(&pContext->ListEntry);
-        uint32_t cContexts = ASMAtomicDecU32(&pDevExt->cContexts3D);
-//        ExReleaseFastMutex(&pDevExt->ContextMutex);
-        Assert(cContexts < UINT32_MAX/2);
+        case VBOXWDDM_CONTEXT_TYPE_CUSTOM_3D:
+        {
+            Assert(KeGetCurrentIrql() < DISPATCH_LEVEL);
+    //        ExAcquireFastMutex(&pDevExt->ContextMutex);
+    //        RemoveEntryList(&pContext->ListEntry);
+            uint32_t cContexts = ASMAtomicDecU32(&pDevExt->cContexts3D);
+    //        ExReleaseFastMutex(&pDevExt->ContextMutex);
+            Assert(cContexts < UINT32_MAX/2);
+            /* don't break! */
+        }
+        case VBOXWDDM_CONTEXT_TYPE_CUSTOM_UHGSMI_3D:
+        case VBOXWDDM_CONTEXT_TYPE_CUSTOM_UHGSMI_GL:
+            if (pContext->u32CrConClientID)
+            {
+                VBoxMpCrCtlConDisconnect(pDevExt, pContext->u32CrConClientID);
+            }
+            break;
+        default:
+            break;
     }
 
     /* first terminate the swapchain, this will also ensure

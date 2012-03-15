@@ -312,6 +312,18 @@ DECLVBGL(int) VbglHGCMDisconnect (VBGLHGCMHANDLE handle, VBoxGuestHGCMDisconnect
 DECLVBGL(int) VbglHGCMCall (VBGLHGCMHANDLE handle, VBoxGuestHGCMCallInfo *pData, uint32_t cbData);
 
 /**
+ * Call to a service with user-mode data received by the calling driver from the User-Mode process.
+ * The call must be done in the context of a calling process.
+ *
+ * @param handle      Handle of the connection.
+ * @param pData       Call request information structure, including function parameters.
+ * @param cbData      Length in bytes of data.
+ *
+ * @return VBox status code.
+ */
+DECLVBGL(int) VbglHGCMCallUserData (VBGLHGCMHANDLE handle, VBoxGuestHGCMCallInfo *pData, uint32_t cbData);
+
+/**
  * Call to a service with timeout.
  *
  * @param handle      Handle of the connection.
