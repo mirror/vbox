@@ -231,6 +231,51 @@ static void outputMachineReadableString(const char *pszName, Bstr const *pbstrVa
     }
 }
 
+/**
+ * Converts bandwidth group type to a string.
+ * @returns String representation.
+ * @param   enmType         Bandwidth control group type.
+ */
+inline const char * bwGroupTypeToString(BandwidthGroupType_T enmType)
+{
+    switch (enmType)
+    {
+        case BandwidthGroupType_Disk:    return "Disk";
+        case BandwidthGroupType_Network: return "Network";
+    }
+    return "unknown";
+}
+
+HRESULT showBandwidthGroups(ComPtr<IBandwidthControl> &bwCtrl,
+                            VMINFO_DETAILS details)
+{
+    int rc = S_OK;
+    SafeIfaceArray<IBandwidthGroup> bwGroups;
+
+    CHECK_ERROR_RET(bwCtrl, GetAllBandwidthGroups(ComSafeArrayAsOutParam(bwGroups)), rc);
+
+    for (size_t i = 0; i < bwGroups.size(); i++)
+    {
+        Bstr strName;
+        ULONG cMaxMbPerSec;
+        BandwidthGroupType_T enmType;
+
+        CHECK_ERROR_RET(bwGroups[i], COMGETTER(Name)(strName.asOutParam()), rc);
+        CHECK_ERROR_RET(bwGroups[i], COMGETTER(Type)(&enmType), rc);
+        CHECK_ERROR_RET(bwGroups[i], COMGETTER(MaxMbPerSec)(&cMaxMbPerSec), rc);
+
+        const char *pszType = bwGroupTypeToString(enmType);
+        if (details == VMINFO_MACHINEREADABLE)
+            RTPrintf("BandwidthGroup%zu=%ls,%s,%d\n", i, strName.raw(), pszType, cMaxMbPerSec);
+        else
+            RTPrintf("Name: '%ls', Type: %s, Limit: %d Mbytes/sec\n", strName.raw(), pszType, cMaxMbPerSec);
+    }
+    if (details != VMINFO_MACHINEREADABLE && bwGroups.size() != 0)
+        RTPrintf("\n");
+
+    return rc;
+}
+
 
 /* Disable global optimizations for MSC 8.0/64 to make it compile in reasonable
    time. MSC 7.1/32 doesn't have quite as much trouble with it, but still
@@ -1836,35 +1881,9 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> virtualBox,
         RTPrintf("Bandwidth groups:\n\n");
     {
         ComPtr<IBandwidthControl> bwCtrl;
-        SafeIfaceArray<IBandwidthGroup> bwGroups;
-
         CHECK_ERROR_RET(machine, COMGETTER(BandwidthControl)(bwCtrl.asOutParam()), rc);
 
-        CHECK_ERROR_RET(bwCtrl, GetAllBandwidthGroups(ComSafeArrayAsOutParam(bwGroups)), rc);
-
-        for (size_t i = 0; i < bwGroups.size(); i++)
-        {
-            Bstr strName;
-            ULONG cMaxMbPerSec;
-            BandwidthGroupType_T enmType;
-
-            CHECK_ERROR_RET(bwGroups[i], COMGETTER(Name)(strName.asOutParam()), rc);
-            CHECK_ERROR_RET(bwGroups[i], COMGETTER(Type)(&enmType), rc);
-            CHECK_ERROR_RET(bwGroups[i], COMGETTER(MaxMbPerSec)(&cMaxMbPerSec), rc);
-
-            const char *pszType = "unknown";
-            switch (enmType)
-            {
-                case BandwidthGroupType_Disk:    pszType = "disk";    break;
-                case BandwidthGroupType_Network: pszType = "network"; break;
-            }
-            if (details == VMINFO_MACHINEREADABLE)
-                RTPrintf("BandwidthGroup%zu=%ls,%s,%d\n", strName.raw(), pszType, cMaxMbPerSec);
-            else
-                RTPrintf("Name: '%ls', Type: %s, Limit: %d Mbytes/sec\n", strName.raw(), pszType, cMaxMbPerSec);
-        }
-        if (details != VMINFO_MACHINEREADABLE && bwGroups.size() != 0)
-            RTPrintf("\n");
+        rc = showBandwidthGroups(bwCtrl, details);
     }
 
 

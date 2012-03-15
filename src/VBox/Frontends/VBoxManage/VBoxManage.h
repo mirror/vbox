@@ -200,6 +200,8 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> virtualBox,
                    VMINFO_DETAILS details = VMINFO_NONE,
                    ComPtr <IConsole> console = ComPtr<IConsole>());
 const char *machineStateToName(MachineState_T machineState, bool fShort);
+HRESULT showBandwidthGroups(ComPtr<IBandwidthControl> &bwCtrl,
+                            VMINFO_DETAILS details);
 
 /* VBoxManageList.cpp */
 int handleList(HandlerArg *a);
