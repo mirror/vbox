@@ -24,6 +24,8 @@
 #include "server_dispatch.h"
 #include "server.h"
 
+#include <iprt/assert.h>
+
 #ifdef CR_OPENGL_VERSION_2_0
 
 typedef struct _crGetActive_t
@@ -113,6 +115,8 @@ void SERVER_DISPATCH_APIENTRY crServerDispatchGetAttachedObjectsARB(GLhandleARB 
     crFree(pLocal);
 }
 
+AssertCompile(sizeof(GLsizei) == 4);
+
 void SERVER_DISPATCH_APIENTRY crServerDispatchGetInfoLogARB(GLhandleARB obj, GLsizei maxLength, GLsizei * length, GLcharARB * infoLog)
 {
     GLsizei *pLocal;
@@ -128,6 +132,7 @@ void SERVER_DISPATCH_APIENTRY crServerDispatchGetInfoLogARB(GLhandleARB obj, GLs
     hwid = crStateGetProgramHWID(obj);
     if (!hwid) hwid = crStateGetShaderHWID(obj);
     cr_server.head_spu->dispatch_table.GetInfoLogARB(hwid, maxLength, pLocal, (char*)&pLocal[1]);
+    CRASSERT((*pLocal) <= maxLength);
     crServerReturnValue(pLocal, (*pLocal)+sizeof(GLsizei));
     crFree(pLocal);
 }
@@ -158,6 +163,7 @@ void SERVER_DISPATCH_APIENTRY crServerDispatchGetProgramInfoLog(GLuint program, 
         crServerReturnValue(&zero, sizeof(zero));
     }
     cr_server.head_spu->dispatch_table.GetProgramInfoLog(crStateGetProgramHWID(program), bufSize, pLocal, (char*)&pLocal[1]);
+    CRASSERT(pLocal[0] <= bufSize);
     crServerReturnValue(pLocal, pLocal[0]+sizeof(GLsizei));
     crFree(pLocal);
 }
@@ -173,6 +179,7 @@ void SERVER_DISPATCH_APIENTRY crServerDispatchGetShaderSource(GLuint shader, GLs
         crServerReturnValue(&zero, sizeof(zero));
     }
     cr_server.head_spu->dispatch_table.GetShaderSource(crStateGetShaderHWID(shader), bufSize, pLocal, (char*)&pLocal[1]);
+    CRASSERT(pLocal[0] <= bufSize);
     crServerReturnValue(pLocal, pLocal[0]+sizeof(GLsizei));
     crFree(pLocal);
 }
