@@ -127,6 +127,8 @@ typedef struct _VBOXMP_DEVEXT
                                                 */
            ULONG ulVbvaEnabled;                /* Indicates that VBVA mode is enabled. */
            ULONG ulMaxFrameBufferSize;         /* The size of the VRAM allocated for the a single framebuffer. */
+           PHYSICAL_ADDRESS physLFBBase;       /* Physical linear framebuffer base. */
+           ULONG ulApertureSize;               /* Size of the LFB aperture (>= VRAM size). */
            BOOLEAN fMouseHidden;               /* Has the mouse cursor been hidden by the guest? */
            VBOXMP_COMMON commonInfo;
 #ifdef VBOX_XPDM_MINIPORT
