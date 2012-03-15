@@ -5352,6 +5352,7 @@ BOOL surface_is_offscreen(IWineD3DSurface *iface)
 static HRESULT WINAPI IWineD3DSurfaceImpl_SetShRcState(IWineD3DSurface *iface, VBOXWINEEX_SHRC_STATE enmState) {
     IWineD3DSurfaceImpl *This = (IWineD3DSurfaceImpl*)iface;
     IWineD3DBaseTextureImpl *texture = NULL;
+    struct wined3d_context *context = NULL;
     HRESULT hr;
     unsigned int i;
 
@@ -5391,7 +5392,29 @@ static HRESULT WINAPI IWineD3DSurfaceImpl_SetShRcState(IWineD3DSurface *iface, V
     }
 
     if (!texture)
+    {
+        if (!This->resource.device->isInDraw)
+        {
+            context = context_acquire(This->resource.device, NULL, CTXUSAGE_RESOURCELOAD);
+            if (!context)
+            {
+                ERR("zero context!");
+                return E_FAIL;
+            }
+
+            if (!context->valid)
+            {
+                ERR("context invalid!");
+                context_release(context);
+                return E_FAIL;
+            }
+        }
+
         device_cleanup_durtify_texture_target(This->resource.device, This->texture_target);
+
+        if (context)
+            context_release(context);
+    }
 
     return WINED3D_OK;
 }
