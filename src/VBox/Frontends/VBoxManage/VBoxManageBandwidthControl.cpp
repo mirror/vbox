@@ -186,21 +186,6 @@ static RTEXITCODE handleBandwidthControlRemove(HandlerArg *a, ComPtr<IBandwidthC
 }
 
 /**
- * Converts bandwidth group type to a string.
- * @returns String representation.
- * @param   enmType         Bandwidth control group type.
- */
-inline const char * typeToString(BandwidthGroupType_T enmType)
-{
-    switch (enmType)
-    {
-        case BandwidthGroupType_Disk:    return "Disk";
-        case BandwidthGroupType_Network: return "Network";
-    }
-    return "unknown";
-}
-
-/**
  * Handles the 'bandwidthctl myvm list' sub-command.
  * @returns Exit code.
  * @param   a               The handler argument package.
@@ -229,6 +214,9 @@ static RTEXITCODE handleBandwidthControlList(HandlerArg *pArgs, ComPtr<IBandwidt
     }
 
     /* See showVMInfo. */
+    if (FAILED(showBandwidthGroups(rptrBWControl, enmDetails)))
+        return RTEXITCODE_FAILURE;
+#if 0
     com::SafeIfaceArray<IBandwidthGroup> bwGroups;
     CHECK_ERROR2_RET(rptrBWControl, GetAllBandwidthGroups(ComSafeArrayAsOutParam(bwGroups)), RTEXITCODE_FAILURE);
     for (size_t i = 0; i < bwGroups.size(); i++)
@@ -248,6 +236,7 @@ static RTEXITCODE handleBandwidthControlList(HandlerArg *pArgs, ComPtr<IBandwidt
                  typeToString(enmType),
                  cMaxMbPerSec);
     }
+#endif
 
     return RTEXITCODE_SUCCESS;
 }
