@@ -993,6 +993,7 @@ static int trpmGCTrap0dHandler(PVM pVM, PTRPMCPU pTrpmCpu, PCPUMCTXCORE pRegFram
         VBOXSTRICTRC rcStrict = IOMRCIOPortHandler(pVM, pRegFrame, &Cpu);
         if (IOM_SUCCESS(rcStrict))
             pRegFrame->rip += cbOp;
+        rc = VBOXSTRICTRC_TODO(rcStrict);
         return trpmGCExitTrap(pVM, pVCpu, rc, pRegFrame);
     }
 
