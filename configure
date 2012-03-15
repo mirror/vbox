@@ -1960,7 +1960,7 @@ check_gsoap()
           else
             cnf_append "VBOX_GSOAP_CXX_SOURCES" ""
           fi
-          cnf_append "VBOX_GSOAP_CXX_LIBS"    "libgsoap++"
+          cnf_append "VBOX_GSOAP_CXX_LIBS"    "libgsoap++ libgsoapssl++"
           log_success "found"
         else
           log_failure "stlvector.h not found -- disabling webservice"
