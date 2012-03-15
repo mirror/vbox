@@ -31,9 +31,10 @@
 #include "../../../../include/VBoxDisplay.h"
 #include "../VBoxVideoTools.h"
 #include <VBox/VBoxUhgsmi.h>
+#include <VBox/VBoxGuest2.h>
 
 /* One would increase this whenever definitions in this file are changed */
-#define VBOXVIDEOIF_VERSION 11
+#define VBOXVIDEOIF_VERSION 12
 
 #define VBOXWDDM_NODE_ID_SYSTEM           0
 #define VBOXWDDM_NODE_ID_3D               (VBOXWDDM_NODE_ID_SYSTEM)
@@ -251,6 +252,8 @@ typedef struct VBOXWDDM_CREATECONTEXT_INFO
     uint32_t u32IfVersion;
     /* true if d3d false if ddraw */
     VBOXWDDM_CONTEXT_TYPE enmType;
+    uint32_t crVersionMajor;
+    uint32_t crVersionMinor;
     /* we use uint64_t instead of HANDLE to ensure structure def is the same for both 32-bit and 64-bit
      * since x64 kernel driver can be called by 32-bit UMD */
     uint64_t hUmEvent;
@@ -461,6 +464,12 @@ typedef struct VBOXDISPIFESCAPE_SHRC_REF
     VBOXDISPIFESCAPE EscapeHdr;
     uint64_t hAlloc;
 } VBOXDISPIFESCAPE_SHRC_REF, *PVBOXDISPIFESCAPE_SHRC_REF;
+
+typedef struct VBOXDISPIFESCAPE_CRHGSMICTLCON_CALL
+{
+    VBOXDISPIFESCAPE EscapeHdr;
+    VBoxGuestHGCMCallInfo CallInfo;
+} VBOXDISPIFESCAPE_CRHGSMICTLCON_CALL, *PVBOXDISPIFESCAPE_CRHGSMICTLCON_CALL;
 
 /* query info func */
 typedef struct VBOXWDDM_QI

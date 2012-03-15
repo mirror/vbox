@@ -32,6 +32,8 @@
 # define VBOXESC_SHRC_ADDREF                0xABCD900B
 # define VBOXESC_SHRC_RELEASE               0xABCD900C
 # define VBOXESC_DBGDUMPBUF                 0xABCD900D
+# define VBOXESC_CRHGSMICTLCON_CALL         0xABCD900E
+# define VBOXESC_CRHGSMICTLCON_GETCLIENTID  0xABCD900F
 
 typedef struct
 {

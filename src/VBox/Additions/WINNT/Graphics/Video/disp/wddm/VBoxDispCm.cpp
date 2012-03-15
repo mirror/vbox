@@ -113,7 +113,7 @@ HRESULT vboxDispCmTerm()
 
 HRESULT vboxDispCmCtxCreate(PVBOXWDDMDISP_DEVICE pDevice, PVBOXWDDMDISP_CONTEXT pContext)
 {
-    VBOXWDDM_CREATECONTEXT_INFO Info;
+    VBOXWDDM_CREATECONTEXT_INFO Info = {0};
     Info.u32IfVersion = pDevice->u32IfVersion;
     Info.enmType = VBOXDISPMODE_IS_3D(pDevice->pAdapter) ? VBOXWDDM_CONTEXT_TYPE_CUSTOM_3D : VBOXWDDM_CONTEXT_TYPE_CUSTOM_2D;
     Info.hUmEvent = (uint64_t)g_pVBoxCmMgr.Session.hEvent;

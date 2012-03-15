@@ -96,6 +96,9 @@ typedef struct _VBOXMP_DEVEXT
    volatile uint32_t cContexts3D;
    volatile uint32_t cUnlockedVBVADisabled;
 
+   HVBOXCRCTL hCrCtl;
+   uint32_t cCrCtlRefs;
+
    VBOXWDDM_GLOBAL_POINTER_INFO PointerInfo;
 
    VBOXVTLIST CtlList;

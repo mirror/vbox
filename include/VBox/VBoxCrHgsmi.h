@@ -56,13 +56,18 @@ typedef struct VBOXCRHGSMI_CALLBACKS
 VBOXCRHGSMI_DECL(int) VBoxCrHgsmiInit(PVBOXCRHGSMI_CALLBACKS pCallbacks);
 VBOXCRHGSMI_DECL(HVBOXCRHGSMI_CLIENT) VBoxCrHgsmiQueryClient();
 #else
-VBOXCRHGSMI_DECL(int) VBoxCrHgsmiInit(void);
+VBOXCRHGSMI_DECL(int) VBoxCrHgsmiInit(uint32_t crVersionMajor, uint32_t crVersionMinor);
 VBOXCRHGSMI_DECL(PVBOXUHGSMI) VBoxCrHgsmiCreate(void);
 VBOXCRHGSMI_DECL(void) VBoxCrHgsmiDestroy(PVBOXUHGSMI pHgsmi);
 #endif
 VBOXCRHGSMI_DECL(int) VBoxCrHgsmiTerm(void);
 
 VBOXCRHGSMI_DECL(void) VBoxCrHgsmiLog(char * szString);
+
+VBOXCRHGSMI_DECL(int) VBoxCrHgsmiTerm(void);
+
+VBOXCRHGSMI_DECL(int) VBoxCrHgsmiCtlConGetClientID(PVBOXUHGSMI pHgsmi, uint32_t *pu32ClientID);
+VBOXCRHGSMI_DECL(int) VBoxCrHgsmiCtlConCall(PVBOXUHGSMI pHgsmi, struct VBoxGuestHGCMCallInfo *pCallInfo, int cbCallInfo);
 
 RT_C_DECLS_END
 

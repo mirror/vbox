@@ -1892,7 +1892,7 @@ static int VBoxGuestCommonIOCtl_HGCMDisconnect(PVBOXGUESTDEVEXT pDevExt, PVBOXGU
 static int VBoxGuestCommonIOCtl_HGCMCall(PVBOXGUESTDEVEXT pDevExt,
                                          PVBOXGUESTSESSION pSession,
                                          VBoxGuestHGCMCallInfo *pInfo,
-                                         uint32_t cMillies, bool fInterruptible, bool f32bit,
+                                         uint32_t cMillies, bool fInterruptible, bool f32bit, bool fUserData,
                                          size_t cbExtra, size_t cbData, size_t *pcbDataReturned)
 {
     const uint32_t  u32ClientId = pInfo->u32ClientID;
@@ -1948,7 +1948,7 @@ static int VBoxGuestCommonIOCtl_HGCMCall(PVBOXGUESTDEVEXT pDevExt,
      * be interruptible (should add a flag for this later I guess).
      */
     Log(("VBoxGuestCommonIOCtl: HGCM_CALL: u32Client=%RX32\n", pInfo->u32ClientID));
-    fFlags = pSession->R0Process == NIL_RTR0PROCESS ? VBGLR0_HGCMCALL_F_KERNEL : VBGLR0_HGCMCALL_F_USER;
+    fFlags = !fUserData && pSession->R0Process == NIL_RTR0PROCESS ? VBGLR0_HGCMCALL_F_KERNEL : VBGLR0_HGCMCALL_F_USER;
 #ifdef RT_ARCH_AMD64
     if (f32bit)
     {
@@ -2448,7 +2448,7 @@ int VBoxGuestCommonIOCtl(unsigned iFunction, PVBOXGUESTDEVEXT pDevExt, PVBOXGUES
         bool fInterruptible = pSession->R0Process != NIL_RTR0PROCESS;
         CHECKRET_MIN_SIZE("HGCM_CALL", sizeof(VBoxGuestHGCMCallInfo));
         rc = VBoxGuestCommonIOCtl_HGCMCall(pDevExt, pSession, (VBoxGuestHGCMCallInfo *)pvData, RT_INDEFINITE_WAIT,
-                                           fInterruptible, false /*f32bit*/,
+                                           fInterruptible, false /*f32bit*/, false /* fUserData */,
                                            0, cbData, pcbDataReturned);
     }
     else if (VBOXGUEST_IOCTL_STRIP_SIZE(iFunction) == VBOXGUEST_IOCTL_STRIP_SIZE(VBOXGUEST_IOCTL_HGCM_CALL_TIMED(0)))
@@ -2457,8 +2457,16 @@ int VBoxGuestCommonIOCtl(unsigned iFunction, PVBOXGUESTDEVEXT pDevExt, PVBOXGUES
         CHECKRET_MIN_SIZE("HGCM_CALL_TIMED", sizeof(VBoxGuestHGCMCallInfoTimed));
         rc = VBoxGuestCommonIOCtl_HGCMCall(pDevExt, pSession, &pInfo->info, pInfo->u32Timeout,
                                            !!pInfo->fInterruptible || pSession->R0Process != NIL_RTR0PROCESS,
-                                           false /*f32bit*/,
+                                           false /*f32bit*/, false /* fUserData */,
                                            RT_OFFSETOF(VBoxGuestHGCMCallInfoTimed, info), cbData, pcbDataReturned);
+    }
+    else if (VBOXGUEST_IOCTL_STRIP_SIZE(iFunction) == VBOXGUEST_IOCTL_STRIP_SIZE(VBOXGUEST_IOCTL_HGCM_CALL_USERDATA(0)))
+    {
+        bool fInterruptible = true;
+        CHECKRET_MIN_SIZE("HGCM_CALL", sizeof(VBoxGuestHGCMCallInfo));
+        rc = VBoxGuestCommonIOCtl_HGCMCall(pDevExt, pSession, (VBoxGuestHGCMCallInfo *)pvData, RT_INDEFINITE_WAIT,
+                                           fInterruptible, false /*f32bit*/, true /* fUserData */,
+                                           0, cbData, pcbDataReturned);
     }
 # ifdef RT_ARCH_AMD64
     else if (VBOXGUEST_IOCTL_STRIP_SIZE(iFunction) == VBOXGUEST_IOCTL_STRIP_SIZE(VBOXGUEST_IOCTL_HGCM_CALL_32(0)))
@@ -2466,7 +2474,7 @@ int VBoxGuestCommonIOCtl(unsigned iFunction, PVBOXGUESTDEVEXT pDevExt, PVBOXGUES
         bool fInterruptible = pSession->R0Process != NIL_RTR0PROCESS;
         CHECKRET_MIN_SIZE("HGCM_CALL", sizeof(VBoxGuestHGCMCallInfo));
         rc = VBoxGuestCommonIOCtl_HGCMCall(pDevExt, pSession, (VBoxGuestHGCMCallInfo *)pvData, RT_INDEFINITE_WAIT,
-                                           fInterruptible, true /*f32bit*/,
+                                           fInterruptible, true /*f32bit*/, false /* fUserData */,
                                            0, cbData, pcbDataReturned);
     }
     else if (VBOXGUEST_IOCTL_STRIP_SIZE(iFunction) == VBOXGUEST_IOCTL_STRIP_SIZE(VBOXGUEST_IOCTL_HGCM_CALL_TIMED_32(0)))
@@ -2475,7 +2483,7 @@ int VBoxGuestCommonIOCtl(unsigned iFunction, PVBOXGUESTDEVEXT pDevExt, PVBOXGUES
         VBoxGuestHGCMCallInfoTimed *pInfo = (VBoxGuestHGCMCallInfoTimed *)pvData;
         rc = VBoxGuestCommonIOCtl_HGCMCall(pDevExt, pSession, &pInfo->info, pInfo->u32Timeout,
                                            !!pInfo->fInterruptible || pSession->R0Process != NIL_RTR0PROCESS,
-                                           true /*f32bit*/,
+                                           true /*f32bit*/, false /* fUserData */,
                                            RT_OFFSETOF(VBoxGuestHGCMCallInfoTimed, info), cbData, pcbDataReturned);
     }
 # endif

@@ -85,7 +85,9 @@ HRESULT vboxDispKmtCloseAdapter(PVBOXDISPKMT_ADAPTER pAdapter);
 HRESULT vboxDispKmtCreateDevice(PVBOXDISPKMT_ADAPTER pAdapter, PVBOXDISPKMT_DEVICE pDevice);
 HRESULT vboxDispKmtDestroyDevice(PVBOXDISPKMT_DEVICE pDevice);
 HRESULT vboxDispKmtCreateContext(PVBOXDISPKMT_DEVICE pDevice, PVBOXDISPKMT_CONTEXT pContext,
-        VBOXWDDM_CONTEXT_TYPE enmType, HANDLE hEvent, uint64_t u64UmInfo);
+        VBOXWDDM_CONTEXT_TYPE enmType,
+        uint32_t crVersionMajor, uint32_t crVersionMinor,
+        HANDLE hEvent, uint64_t u64UmInfo);
 HRESULT vboxDispKmtDestroyContext(PVBOXDISPKMT_CONTEXT pContext);
 
 
