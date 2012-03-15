@@ -5757,7 +5757,7 @@ HRESULT Medium::canClose()
 HRESULT Medium::unregisterWithVirtualBox()
 {
     /* Note that we need to de-associate ourselves from the parent to let
-     * unregisterHardDisk() properly save the registry */
+     * unregisterMedium() properly save the registry */
 
     /* we modify mParent and access children */
     Assert(m->pVirtualBox->getMediaTreeLockHandle().isWriteLockOnCurrentThread());
@@ -7086,7 +7086,7 @@ HRESULT Medium::taskCloneHandler(Medium::CloneTask &task)
         if (fGenerateUuid)
         {
             targetId.create();
-            /* VirtualBox::registerHardDisk() will need UUID */
+            /* VirtualBox::registerMedium() will need UUID */
             unconst(pTarget->m->id) = targetId;
         }
 
@@ -7904,7 +7904,7 @@ HRESULT Medium::taskImportHandler(Medium::ImportTask &task)
         if (fGenerateUuid)
         {
             targetId.create();
-            /* VirtualBox::registerHardDisk() will need UUID */
+            /* VirtualBox::registerMedium() will need UUID */
             unconst(m->id) = targetId;
         }
 
