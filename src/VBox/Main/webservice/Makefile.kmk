@@ -193,6 +193,11 @@ VBOXWEB_OTHERS += \
 	$(VBOXWEB_GSOAPH_FROM_XSLT)
 
 
+# disable -fvisibility=hidden as the SOAP stuff does not properly set the visibility attributes
+TEMPLATE_VBOXWEBR3EXE = Webservices without -fvisibility
+TEMPLATE_VBOXWEBR3EXE_EXTENDS = VBOXR3EXE
+TEMPLATE_VBOXWEBR3EXE_CXXFLAGS = $(filter-out $(VBOX_GCC_fvisibility-hidden) $(VBOX_GCC_fvisibility-inlines-hidden),\
+				 $(TEMPLATE_VBOXR3EXE_CXXFLAGS))
 
 ifdef VBOX_GSOAP_INSTALLED
  ifndef VBOX_ONLY_SDK
@@ -200,7 +205,7 @@ ifdef VBOX_GSOAP_INSTALLED
  # vboxsoap - Library used by both the programs (save build time).
  #
  LIBRARIES += vboxsoap
- vboxsoap_TEMPLATE = VBOXR3EXE
+ vboxsoap_TEMPLATE = VBOXWEBR3EXE
  ifdef VBOX_USE_VCC80
   vboxsoap_CXXFLAGS.win += -bigobj
  endif
@@ -429,7 +434,7 @@ $$(VBOX_JWSSRC_JAR): $$(VBOX_JWS_JAR) | $$(dir $$@)
  # webtest - webservice sample client in C++
  #
  PROGRAMS += webtest
- webtest_TEMPLATE = VBOXR3EXE
+ webtest_TEMPLATE = VBOXWEBR3EXE
  ifdef VBOX_USE_VCC80
   webtest_CXXFLAGS.win += -bigobj
  endif
