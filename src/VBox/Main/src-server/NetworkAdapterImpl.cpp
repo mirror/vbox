@@ -1308,6 +1308,11 @@ void NetworkAdapter::commit()
         mData.commit();
         if (mPeer)
         {
+            if (!mData->mBandwidthGroup.isNull())
+            {
+                Assert(!mData->mBandwidthGroup->getPeer().isNull() && mData->mBandwidthGroup->getPeer()->getPeer().isNull());
+                mData->mBandwidthGroup = mData->mBandwidthGroup->getPeer();
+            }
             /* attach new data to the peer and reshare it */
             mPeer->mData.attach(mData);
         }
