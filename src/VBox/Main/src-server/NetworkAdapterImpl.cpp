@@ -1233,10 +1233,7 @@ HRESULT NetworkAdapter::saveSettings(settings::NetworkAdapter &data)
 
     data.ulBootPriority = mData->mBootPriority;
 
-    if (mData->mBandwidthGroup.isNull())
-        data.strBandwidthGroup = "";
-    else
-        data.strBandwidthGroup = mData->mBandwidthGroup->getName();
+    data.strBandwidthGroup = mData->mBandwidthGroup;
 
     data.type = mData->mAdapterType;
 
@@ -1308,11 +1305,6 @@ void NetworkAdapter::commit()
         mData.commit();
         if (mPeer)
         {
-            if (!mData->mBandwidthGroup.isNull())
-            {
-                Assert(!mData->mBandwidthGroup->getPeer().isNull() && mData->mBandwidthGroup->getPeer()->getPeer().isNull());
-                mData->mBandwidthGroup = mData->mBandwidthGroup->getPeer();
-            }
             /* attach new data to the peer and reshare it */
             mPeer->mData.attach(mData);
         }
@@ -1402,15 +1394,26 @@ STDMETHODIMP NetworkAdapter::COMGETTER(BandwidthGroup)(IBandwidthGroup **aBwGrou
     LogFlowThisFuncEnter();
     CheckComArgOutPointerValid(aBwGroup);
 
+    HRESULT hrc = S_OK;
+
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    mData->mBandwidthGroup.queryInterfaceTo(aBwGroup);
+    if (mData->mBandwidthGroup.isNotEmpty())
+    {
+        ComObjPtr<BandwidthGroup> pBwGroup;
+        hrc = mParent->getBandwidthGroup(mData->mBandwidthGroup, pBwGroup, true /* fSetError */);
+
+        Assert(SUCCEEDED(hrc)); /* This is not allowed to fail because the existence of the group was checked when it was attached. */
+
+        if (SUCCEEDED(hrc))
+            pBwGroup.queryInterfaceTo(aBwGroup);
+    }
 
     LogFlowThisFuncLeave();
-    return S_OK;
+    return hrc;
 }
 
 STDMETHODIMP NetworkAdapter::COMSETTER(BandwidthGroup)(IBandwidthGroup *aBwGroup)
@@ -1426,11 +1429,22 @@ STDMETHODIMP NetworkAdapter::COMSETTER(BandwidthGroup)(IBandwidthGroup *aBwGroup
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    if (mData->mBandwidthGroup != aBwGroup)
+    Utf8Str strBwGroup;
+    if (aBwGroup)
+        strBwGroup = static_cast<BandwidthGroup*>(aBwGroup)->getName();
+    if (mData->mBandwidthGroup != strBwGroup)
     {
+        ComObjPtr<BandwidthGroup> pBwGroup;
+        if (!strBwGroup.isEmpty())
+        {
+            HRESULT hrc = mParent->getBandwidthGroup(strBwGroup, pBwGroup, false /* fSetError */);
+
+            Assert(SUCCEEDED(hrc)); /* This is not allowed to fail because the existence of the group was checked when it was attached. */
+        }
+
         mData.backup();
 
-        updateBandwidthGroup(static_cast<BandwidthGroup*>(aBwGroup));
+        updateBandwidthGroup(pBwGroup);
 
         m_fModified = true;
         // leave the lock before informing callbacks
@@ -1453,17 +1467,25 @@ void NetworkAdapter::updateBandwidthGroup(BandwidthGroup *aBwGroup)
     LogFlowThisFuncEnter();
     Assert(isWriteLockOnCurrentThread());
 
+    ComObjPtr<BandwidthGroup> pOldBwGroup;
+    if (!mData->mBandwidthGroup.isEmpty())
+        {
+            HRESULT hrc = mParent->getBandwidthGroup(mData->mBandwidthGroup, pOldBwGroup, false /* fSetError */);
+
+            Assert(SUCCEEDED(hrc)); /* This is not allowed to fail because the existence of the group was checked when it was attached. */
+        }
+
     mData.backup();
-    if (!mData->mBandwidthGroup.isNull())
+    if (!pOldBwGroup.isNull())
     {
-        mData->mBandwidthGroup->release();
-        mData->mBandwidthGroup.setNull();
+        pOldBwGroup->release();
+        mData->mBandwidthGroup = Utf8Str::Empty;
     }
 
     if (aBwGroup)
     {
-        mData->mBandwidthGroup = aBwGroup;
-        mData->mBandwidthGroup->reference();
+        mData->mBandwidthGroup = aBwGroup->getName();
+        aBwGroup->reference();
     }
 
     LogFlowThisFuncLeave();

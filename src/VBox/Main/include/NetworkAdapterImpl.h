@@ -69,7 +69,7 @@ public:
         Bstr mGenericDriver;
         settings::StringsMap mGenericProperties;
         ULONG mBootPriority;
-        ComObjPtr<BandwidthGroup> mBandwidthGroup;
+        Utf8Str mBandwidthGroup;
     };
 
     VIRTUALBOXBASE_ADD_ERRORINFO_SUPPORT(NetworkAdapter, INetworkAdapter)
