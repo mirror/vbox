@@ -338,6 +338,11 @@ AssertCompileSize(VBoxGuestWriteCoreDump, 4);
 /** IOCTL to VBoxGuest to make a timed call to a HGCM service. */
 # define VBOXGUEST_IOCTL_HGCM_CALL_TIMED(Size)      VBOXGUEST_IOCTL_CODE(20, (Size))
 
+/** IOCTL to VBoxGuest passed from the Kernel Mode driver, but containing a user mode data in VBoxGuestHGCMCallInfo
+ * the driver received from the UM. Called in the context of the process passing the data.
+ * @see VBoxGuestHGCMCallInfo */
+# define VBOXGUEST_IOCTL_HGCM_CALL_USERDATA(Size)      VBOXGUEST_IOCTL_CODE(21, (Size))
+
 # ifdef RT_ARCH_AMD64
 /** @name IOCTL numbers that 32-bit clients, like the Windows OpenGL guest
  *        driver, will use when taking to a 64-bit driver.
