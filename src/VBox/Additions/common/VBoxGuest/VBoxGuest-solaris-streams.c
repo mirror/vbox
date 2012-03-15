@@ -50,7 +50,7 @@
 
 #ifdef TESTCASE  /* Include this last as we . */
 # include "testcase/solaris.h"
-# include <iprt/test.h>
+# include "testcase/tstVBoxGuest-solaris.h"
 #endif  /* TESTCASE */
 
 
@@ -62,32 +62,34 @@
 #define DEVICE_NAME              "vboxguest"
 /** The module description as seen in 'modinfo'. */
 #define DEVICE_DESC              "VirtualBox GstDrv"
+/** The maximum number of open device nodes we support. */
+#define MAX_OPEN_NODES           4096
 
 
 /******************************************************************************
 *   Internal functions used in global structures                              *
 ******************************************************************************/
 
-static int vboxGuestSolarisOpen(queue_t *pReadQueue, dev_t *pDev, int fFlag,
+static int vbgr0SolOpen(queue_t *pReadQueue, dev_t *pDev, int fFlag,
                                 int fMode, cred_t *pCred);
-static int vboxGuestSolarisClose(queue_t *pReadQueue, int fFlag, cred_t *pCred);
-static int vboxGuestSolarisWPut(queue_t *pWriteQueue, mblk_t *pMBlk);
+static int vbgr0SolClose(queue_t *pReadQueue, int fFlag, cred_t *pCred);
+static int vbgr0SolWPut(queue_t *pWriteQueue, mblk_t *pMBlk);
 
-static int vboxGuestSolarisGetInfo(dev_info_t *pDip, ddi_info_cmd_t enmCmd, void *pArg, void **ppResult);
-static int vboxGuestSolarisAttach(dev_info_t *pDip, ddi_attach_cmd_t enmCmd);
-static int vboxGuestSolarisDetach(dev_info_t *pDip, ddi_detach_cmd_t enmCmd);
+static int vbgr0SolGetInfo(dev_info_t *pDip, ddi_info_cmd_t enmCmd, void *pArg, void **ppResult);
+static int vbgr0SolAttach(dev_info_t *pDip, ddi_attach_cmd_t enmCmd);
+static int vbgr0SolDetach(dev_info_t *pDip, ddi_detach_cmd_t enmCmd);
 
 
 /******************************************************************************
 *   Driver global structures                                                  *
 ******************************************************************************/
 
-#ifndef TESTCASE  /* I see no value in including these. */
+#ifndef TESTCASE  /* I see no value in including these in the test. */
 
 /*
  * mod_info: STREAMS module information.
  */
-static struct module_info g_VBoxGuestSolarisModInfo =
+static struct module_info g_vbgr0SolModInfo =
 {
     0x0ffff,                /* module id number */
     "vboxguest",
@@ -102,14 +104,14 @@ static struct module_info g_VBoxGuestSolarisModInfo =
  * our case this means the host and the virtual hardware, so we do not need
  * the put and service procedures.
  */
-static struct qinit g_VBoxGuestSolarisRInit =
+static struct qinit g_vbgr0SolRInit =
 {
     NULL,                /* put */
     NULL,                /* service thread procedure */
-    vboxGuestSolarisOpen,
-    vboxGuestSolarisClose,
+    vbgr0SolOpen,
+    vbgr0SolClose,
     NULL,                /* reserved */
-    &g_VBoxGuestSolarisModInfo,
+    &g_vbgr0SolModInfo,
     NULL                 /* module statistics structure */
 };
 
@@ -120,24 +122,24 @@ static struct qinit g_VBoxGuestSolarisRInit =
  * through at least the "consms" console mouse streams module which multiplexes
  * hardware pointer drivers to a single virtual pointer.
  */
-static struct qinit g_VBoxGuestSolarisWInit =
+static struct qinit g_vbgr0SolWInit =
 {
-    vboxGuestSolarisWPut,
+    vbgr0SolWPut,
     NULL,                   /* service thread procedure */
     NULL,                   /* open */
     NULL,                   /* close */
     NULL,                   /* reserved */
-    &g_VBoxGuestSolarisModInfo,
+    &g_vbgr0SolModInfo,
     NULL                    /* module statistics structure */
 };
 
 /**
  * streamtab: for drivers that support char/block entry points.
  */
-static struct streamtab g_VBoxGuestSolarisStreamTab =
+static struct streamtab g_vbgr0SolStreamTab =
 {
-    &g_VBoxGuestSolarisRInit,
-    &g_VBoxGuestSolarisWInit,
+    &g_vbgr0SolRInit,
+    &g_vbgr0SolWInit,
     NULL,                   /* MUX rinit */
     NULL                    /* MUX winit */
 };
@@ -145,7 +147,7 @@ static struct streamtab g_VBoxGuestSolarisStreamTab =
 /**
  * cb_ops: for drivers that support char/block entry points.
  */
-static struct cb_ops g_VBoxGuestSolarisCbOps =
+static struct cb_ops g_vbgr0SolCbOps =
 {
     nulldev,                /* open */
     nulldev,                /* close */
@@ -160,24 +162,24 @@ static struct cb_ops g_VBoxGuestSolarisCbOps =
     nulldev,                /* c segmap */
     nochpoll,               /* c poll */
     ddi_prop_op,            /* property ops */
-    g_VBoxGuestSolarisStreamTab,
+    g_vbgr0SolStreamTab,
     D_NEW | D_MP,           /* compat. flag */
 };
 
 /**
  * dev_ops: for driver device operations.
  */
-static struct dev_ops g_VBoxGuestSolarisDevOps =
+static struct dev_ops g_vbgr0SolDevOps =
 {
     DEVO_REV,               /* driver build revision */
     0,                      /* ref count */
-    vboxGuestSolarisGetInfo,
+    vbgr0SolGetInfo,
     nulldev,                /* identify */
     nulldev,                /* probe */
-    vboxGuestSolarisAttach,
-    vboxGuestSolarisDetach,
+    vbgr0SolAttach,
+    vbgr0SolDetach,
     nodev,                  /* reset */
-    &g_VBoxGuestSolarisCbOps,
+    &g_vbgr0SolCbOps,
     (struct bus_ops *)0,
     nodev                   /* power */
 };
@@ -185,25 +187,25 @@ static struct dev_ops g_VBoxGuestSolarisDevOps =
 /**
  * modldrv: export driver specifics to the kernel.
  */
-static struct modldrv g_VBoxGuestSolarisModule =
+static struct modldrv g_vbgr0SolModule =
 {
     &mod_driverops,         /* extern from kernel */
     DEVICE_DESC " " VBOX_VERSION_STRING "r" RT_XSTR(VBOX_SVN_REV),
-    &g_VBoxGuestSolarisDevOps
+    &g_vbgr0SolDevOps
 };
 
 /**
  * modlinkage: export install/remove/info to the kernel.
  */
-static struct modlinkage g_VBoxGuestSolarisModLinkage =
+static struct modlinkage g_vbgr0SolModLinkage =
 {
     MODREV_1,               /* loadable module system revision */
-    &g_VBoxGuestSolarisModule,
+    &g_vbgr0SolModule,
     NULL                    /* terminate array of linkage structures */
 };
 
 #else  /* TESTCASE */
-static void *g_VBoxGuestSolarisModLinkage;
+static void *g_vbgr0SolModLinkage;
 #endif  /* TESTCASE */
 
 /**
@@ -216,8 +218,6 @@ typedef struct
     /** The STREAMS write queue which we need for sending messages up to
      * user-space. */
     queue_t           *pWriteQueue;
-    /** Our minor number. */
-    unsigned           cMinor;
     /* The current greatest horizontal pixel offset on the screen, used for
      * absolute mouse position reporting.
      */
@@ -226,7 +226,7 @@ typedef struct
      * absolute mouse position reporting.
      */
     unsigned           cMaxScreenY;
-} vboxguest_state_t;
+} VBGR0STATE, *PVBGR0STATE;
 
 
 /******************************************************************************
@@ -235,8 +235,12 @@ typedef struct
 
 /** Device handle (we support only one instance). */
 static dev_info_t          *g_pDip = NULL;
-/** Opaque pointer to file-descriptor states */
-static void                *g_pVBoxGuestSolarisState = NULL;
+/** Array of state structures for open device nodes.  I don't care about
+ * wasting a few K of memory. */
+static VBGR0STATE           g_aOpenNodeStates[MAX_OPEN_NODES] /* = { 0 } */;
+/** Mutex to protect the queue pointers in the node states from being unset
+ * during an IRQ. */
+static kmutex_t             g_StateMutex;
 /** Device extention & session data association structure. */
 static VBOXGUESTDEVEXT      g_DevExt;
 /** IO port handle. */
@@ -254,12 +258,7 @@ static ddi_intr_handle_t   *g_pIntr;
 /** Number of actually allocated interrupt handles */
 static size_t               g_cIntrAllocated;
 /** The IRQ Mutex */
-static kmutex_t             g_IrqMtx;
-/** Our global state.
- * @todo Make this into an opaque pointer in the device extension structure.
- * @todo Can't we make do without all these globals anyway?
- */
-static vboxguest_state_t   *g_pState;
+static kmutex_t             g_IrqMutex;
 
 
 /******************************************************************************
@@ -290,19 +289,15 @@ int _init(void)
         /*
          * Prevent module autounloading.
          */
-        pModCtl = mod_getctl(&g_VBoxGuestSolarisModLinkage);
+        pModCtl = mod_getctl(&g_vbgr0SolModLinkage);
         if (pModCtl)
             pModCtl->mod_loadflags |= MOD_NOAUTOUNLOAD;
         else
             LogRel((DEVICE_NAME ":failed to disable autounloading!\n"));
-
-        rc = ddi_soft_state_init(&g_pVBoxGuestSolarisState, sizeof(vboxguest_state_t), 1);
-        if (!rc)
-        {
-            rc = mod_install(&g_VBoxGuestSolarisModLinkage);
-            if (rc)
-                ddi_soft_state_fini(&g_pVBoxGuestSolarisState);
-        }
+        /* Initialise the node state mutex.  This will be taken in the ISR. */
+        mutex_init(&g_StateMutex, NULL, MUTEX_DRIVER,
+                   DDI_INTR_PRI(uIntrPriority));
+        rc = mod_install(&g_vbgr0SolModLinkage);
     }
     else
     {
@@ -315,8 +310,12 @@ int _init(void)
 
 
 #ifdef TESTCASE
-/* Nothing in these three really worth testing, plus we would have to stub
- * around the IPRT log functions. */
+/** Simple test of the flow through _init. */
+void test_init(RTTEST hTest)
+{
+    RTTestSub(hTest, "Testing _init");
+    RTTEST_CHECK(hTest, _init() == 0);
+}
 #endif
 
 
@@ -326,9 +325,8 @@ int _fini(void)
     int rc;
 
     LogFlow((DEVICE_NAME ":_fini\n"));
-    rc = mod_remove(&g_VBoxGuestSolarisModLinkage);
-    if (!rc)
-        ddi_soft_state_fini(&g_pVBoxGuestSolarisState);
+    rc = mod_remove(&g_vbgr0SolModLinkage);
+    mutex_destroy(&g_StateMutex);
 
     RTLogDestroy(RTLogRelSetDefaultInstance(NULL));
     RTLogDestroy(RTLogSetDefaultInstance(NULL));
@@ -342,9 +340,28 @@ int _fini(void)
 int _info(struct modinfo *pModInfo)
 {
     LogFlow((DEVICE_NAME ":_info\n"));
-    return mod_info(&g_VBoxGuestSolarisModLinkage, pModInfo);
+    return mod_info(&g_vbgr0SolModLinkage, pModInfo);
 }
 
+
+/******************************************************************************
+*   Helper routines                                                           *
+******************************************************************************/
+
+/** Calls the kernel IOCtl to report mouse status to the host on behalf of
+ * an open session. */
+static int vbgr0SolSetMouseStatus(PVBOXGUESTSESSION pSession, uint32_t fStatus)
+{
+    return VBoxGuestCommonIOCtl(VBOXGUEST_IOCTL_SET_MOUSE_STATUS, &g_DevExt,
+                                pSession, &fStatus, sizeof(fStatus), NULL);
+}
+
+static void vbgr0SolResetSoftState(PVBGR0STATE pState)
+{
+    mutex_enter(&g_StateMutex);
+    RT_ZERO(*pState);
+    mutex_exit(&g_StateMutex);
+}
 
 /******************************************************************************
 *   Main code                                                                 *
@@ -354,12 +371,12 @@ int _info(struct modinfo *pModInfo)
  * Open callback for the read queue, which we use as a generic device open
  * handler.
  */
-int vboxGuestSolarisOpen(queue_t *pReadQueue, dev_t *pDev, int fFlag, int fMode,
-                         cred_t *pCred)
+int vbgr0SolOpen(queue_t *pReadQueue, dev_t *pDev, int fFlag, int fMode,
+                 cred_t *pCred)
 {
     int                 rc;
     PVBOXGUESTSESSION   pSession = NULL;
-    vboxguest_state_t *pState = NULL;
+    PVBGR0STATE pState = NULL;
     unsigned cInstance;
 
     NOREF(fFlag);
@@ -367,17 +384,20 @@ int vboxGuestSolarisOpen(queue_t *pReadQueue, dev_t *pDev, int fFlag, int fMode,
     LogFlow((DEVICE_NAME "::Open\n"));
 
     /*
-     * Sanity check on the mode parameter.
+     * Sanity check on the mode parameter - only open as a driver, not a
+     * module, and we do cloning ourselves.  Note that we start at 1, as minor
+     * zero was allocated to the file system device node in vbgr0SolAttach
+     * (see https://blogs.oracle.com/timatworkhomeandinbetween/entry/using_makedevice_in_a_drivers).
      */
     if (fMode)
         return EINVAL;
 
-    for (cInstance = 0; cInstance < 4096; cInstance++)
+    for (cInstance = 1; cInstance < MAX_OPEN_NODES; cInstance++)
     {
-        if (    !ddi_get_soft_state(g_pVBoxGuestSolarisState, cInstance) /* faster */
-            &&  ddi_soft_state_zalloc(g_pVBoxGuestSolarisState, cInstance) == DDI_SUCCESS)
+        if (ASMAtomicCmpXchgPtr(&g_aOpenNodeStates[cInstance].pWriteQueue,
+                                WR(pReadQueue), NULL))
         {
-            pState = ddi_get_soft_state(g_pVBoxGuestSolarisState, cInstance);
+            pState = &g_aOpenNodeStates[cInstance];
             break;
         }
     }
@@ -398,16 +418,13 @@ int vboxGuestSolarisOpen(queue_t *pReadQueue, dev_t *pDev, int fFlag, int fMode,
         /* Initialise user data for the queues to our state and vice-versa. */
         WR(pReadQueue)->q_ptr = (char *)pState;
         pReadQueue->q_ptr = (char *)pState;
-        pState->pWriteQueue = WR(pReadQueue);
-        pState->cMinor = cInstance;
-        g_pState = pState;
         qprocson(pState->pWriteQueue);
         Log((DEVICE_NAME "::Open: pSession=%p pState=%p pid=%d\n", pSession, pState, (int)RTProcSelf()));
         return 0;
     }
 
     /* Failed, clean up. */
-    ddi_soft_state_free(g_pVBoxGuestSolarisState, cInstance);
+    vbgr0SolResetSoftState(pState);
 
     LogRel((DEVICE_NAME "::Open: VBoxGuestCreateUserSession failed. rc=%d\n", rc));
     return EFAULT;
@@ -418,10 +435,10 @@ int vboxGuestSolarisOpen(queue_t *pReadQueue, dev_t *pDev, int fFlag, int fMode,
  * Close callback for the read queue, which we use as a generic device close
  * handler.
  */
-int vboxGuestSolarisClose(queue_t *pReadQueue, int fFlag, cred_t *pCred)
+int vbgr0SolClose(queue_t *pReadQueue, int fFlag, cred_t *pCred)
 {
     PVBOXGUESTSESSION pSession = NULL;
-    vboxguest_state_t *pState = (vboxguest_state_t *)pReadQueue->q_ptr;
+    PVBGR0STATE pState = (PVBGR0STATE)pReadQueue->q_ptr;
 
     LogFlow((DEVICE_NAME "::Close pid=%d\n", (int)RTProcSelf()));
     NOREF(fFlag);
@@ -434,13 +451,12 @@ int vboxGuestSolarisClose(queue_t *pReadQueue, int fFlag, cred_t *pCred)
     }
     qprocsoff(pState->pWriteQueue);
     pState->pWriteQueue = NULL;
-    g_pState = NULL;
     pReadQueue->q_ptr = NULL;
 
     pSession = pState->pSession;
     pState->pSession = NULL;
     Log((DEVICE_NAME "::Close: pSession=%p pState=%p\n", pSession, pState));
-    ddi_soft_state_free(g_pVBoxGuestSolarisState, pState->cMinor);
+    vbgr0SolResetSoftState(pState);
     if (!pSession)
     {
         Log((DEVICE_NAME "::Close: failed to get pSession.\n"));
@@ -455,18 +471,18 @@ int vboxGuestSolarisClose(queue_t *pReadQueue, int fFlag, cred_t *pCred)
 }
 
 
-/* Helper for vboxGuestSolarisWPut. */
-static int vboxGuestSolarisDispatchIOCtl(queue_t *pWriteQueue, mblk_t *pMBlk);
+/* Helper for vbgr0SolWPut. */
+static int vbgr0SolDispatchIOCtl(queue_t *pWriteQueue, mblk_t *pMBlk);
 
 /**
  * Handler for messages sent from above (user-space and upper modules) which
  * land in our write queue.
  */
-int vboxGuestSolarisWPut(queue_t *pWriteQueue, mblk_t *pMBlk)
+int vbgr0SolWPut(queue_t *pWriteQueue, mblk_t *pMBlk)
 {
-    vboxguest_state_t *pState = (vboxguest_state_t *)pWriteQueue->q_ptr;
+    PVBGR0STATE pState = (PVBGR0STATE)pWriteQueue->q_ptr;
     
-    LogFlowFunc(("\n"));
+    LogFlowFunc((DEVICE_NAME "::\n"));
     switch (pMBlk->b_datap->db_type)
     {
         case M_FLUSH:
@@ -486,7 +502,7 @@ int vboxGuestSolarisWPut(queue_t *pWriteQueue, mblk_t *pMBlk)
         case M_IOCTL:
         case M_IOCDATA:
         {
-            int err = vboxGuestSolarisDispatchIOCtl(pWriteQueue, pMBlk);
+            int err = vbgr0SolDispatchIOCtl(pWriteQueue, pMBlk);
             if (!err)
                 qreply(pWriteQueue, pMBlk);
             else
@@ -526,22 +542,19 @@ enum IOCTLDIRECTION
  *                  used for IOCtls without data for convenience of
  *                  implemention.
  */
-typedef int FNVBOXGUESTSOLARISIOCTL(vboxguest_state_t *pState, int cCmd,
-                                    void *pvData, size_t cbBuffer,
-                                    size_t *pcbData, int *prc);
-typedef FNVBOXGUESTSOLARISIOCTL *PFNVBOXGUESTSOLARISIOCTL;
+typedef int FNVBGR0SOLIOCTL(PVBGR0STATE pState, int cCmd, void *pvData,
+                            size_t cbBuffer, size_t *pcbData, int *prc);
+typedef FNVBGR0SOLIOCTL *PFNVBGR0SOLIOCTL;
 
-/* Helpers for vboxGuestSolarisDispatchIOCtl. */
-static int vboxGuestSolarisHandleIOCtl(queue_t *pWriteQueue, mblk_t *pMBlk,
-                                       PFNVBOXGUESTSOLARISIOCTL pfnHandler,
-                                       int cCmd, size_t cbTransparent,
-                                       enum IOCTLDIRECTION enmDirection);
-static int vboxGuestSolarisVUIDIOCtl(vboxguest_state_t *pState, int cCmd,
-                                     void *pvData, size_t cbBuffer,
-                                     size_t *pcbData, int *prc);
-static int vboxGuestSolarisGuestIOCtl(vboxguest_state_t *pState, int cCmd,
-                                      void *pvData, size_t cbBuffer,
-                                      size_t *pcbData, int *prc);
+/* Helpers for vbgr0SolDispatchIOCtl. */
+static int vbgr0SolHandleIOCtl(queue_t *pWriteQueue, mblk_t *pMBlk,
+                               PFNVBGR0SOLIOCTL pfnHandler,
+                               int cCmd, size_t cbTransparent,
+                               enum IOCTLDIRECTION enmDirection);
+static int vbgr0SolVUIDIOCtl(PVBGR0STATE pState, int cCmd, void *pvData,
+                             size_t cbBuffer, size_t *pcbData, int *prc);
+static int vbgr0SolGuestIOCtl(PVBGR0STATE pState, int cCmd, void *pvData,
+                              size_t cbBuffer, size_t *pcbData, int *prc);
 
 /** Table of supported VUID IOCtls. */
 struct
@@ -554,7 +567,7 @@ struct
     /** The direction the buffer data needs to be copied.  This must be
      * specified for transparent IOCtls. */
     enum IOCTLDIRECTION enmDirection;
-} s_aVUIDIOCtlDescriptions[] =
+} g_aVUIDIOCtlDescriptions[] =
 {
    { VUIDGFORMAT,     sizeof(int),                  OUT         },
    { VUIDSFORMAT,     0,                            NONE        },
@@ -578,14 +591,14 @@ struct
  * @param  pWriteQueue  pointer to the STREAMS write queue structure.
  * @param  pMBlk        pointer to the STREAMS message block structure.
  */
-static int vboxGuestSolarisDispatchIOCtl(queue_t *pWriteQueue, mblk_t *pMBlk)
+static int vbgr0SolDispatchIOCtl(queue_t *pWriteQueue, mblk_t *pMBlk)
 {
     struct iocblk *pIOCBlk = (struct iocblk *)pMBlk->b_rptr;
     int cCmd = pIOCBlk->ioc_cmd, cCmdType = (cCmd >> 8) & ~0xff;
     size_t cbBuffer;
     enum IOCTLDIRECTION enmDirection;
 
-    LogFlowFunc(("cCmdType=%c, cCmd=%d\n", cCmdType, cCmd));
+    LogFlowFunc((DEVICE_NAME "::cCmdType=%c, cCmd=%d\n", cCmdType, cCmd));
     switch (cCmdType)
     {
         case MSIOC:
@@ -593,42 +606,39 @@ static int vboxGuestSolarisDispatchIOCtl(queue_t *pWriteQueue, mblk_t *pMBlk)
         {
             unsigned i;
             
-            for (i = 0; i < RT_ELEMENTS(s_aVUIDIOCtlDescriptions); ++i)
-                if (s_aVUIDIOCtlDescriptions[i].cCmd == cCmd)
+            for (i = 0; i < RT_ELEMENTS(g_aVUIDIOCtlDescriptions); ++i)
+                if (g_aVUIDIOCtlDescriptions[i].cCmd == cCmd)
                 {
-                    cbBuffer     = s_aVUIDIOCtlDescriptions[i].cbBuffer;
-                    enmDirection = s_aVUIDIOCtlDescriptions[i].enmDirection;
-                    return vboxGuestSolarisHandleIOCtl(pWriteQueue, pMBlk,
-                                                     vboxGuestSolarisVUIDIOCtl,
-                                                       cCmd, cbBuffer,
-                                                       enmDirection);
+                    cbBuffer     = g_aVUIDIOCtlDescriptions[i].cbBuffer;
+                    enmDirection = g_aVUIDIOCtlDescriptions[i].enmDirection;
+                    return vbgr0SolHandleIOCtl(pWriteQueue, pMBlk,
+                                               vbgr0SolVUIDIOCtl, cCmd,
+                                               cbBuffer, enmDirection);
                 }
             return EINVAL;
         }
         case 'V':
-            return vboxGuestSolarisHandleIOCtl(pWriteQueue, pMBlk,
-                                               vboxGuestSolarisGuestIOCtl,
-                                               cCmd, 0, UNSPECIFIED);
+            return vbgr0SolHandleIOCtl(pWriteQueue, pMBlk, vbgr0SolGuestIOCtl,
+                                       cCmd, 0, UNSPECIFIED);
         default:
             return ENOTTY;
     }
 }
 
 
-/* Helpers for vboxGuestSolarisHandleIOCtl. */
-static int vboxGuestSolarisHandleIOCtlData
-               (queue_t *pWriteQueue, mblk_t *pMBlk,
-                PFNVBOXGUESTSOLARISIOCTL pfnHandler, int cCmd,
-                size_t cbTransparent, enum IOCTLDIRECTION enmDirection);
+/* Helpers for vbgr0SolHandleIOCtl. */
+static int vbgr0SolHandleIOCtlData(queue_t *pWriteQueue, mblk_t *pMBlk,
+                                   PFNVBGR0SOLIOCTL pfnHandler, int cCmd,
+                                   size_t cbTransparent,
+                                   enum IOCTLDIRECTION enmDirection);
 
-static int vboxGuestSolarisHandleTransparentIOCtl
-                (queue_t *pWriteQueue, mblk_t *pMBlk,
-                 PFNVBOXGUESTSOLARISIOCTL pfnHandler, int cCmd,
-                size_t cbTransparent, enum IOCTLDIRECTION enmDirection);
+static int vbgr0SolHandleTransparentIOCtl(queue_t *pWriteQueue, mblk_t *pMBlk,
+                                          PFNVBGR0SOLIOCTL pfnHandler,
+                                          int cCmd, size_t cbTransparent,
+                                          enum IOCTLDIRECTION enmDirection);
 
-static int vboxGuestSolarisHandleIStrIOCtl
-                (queue_t *pWriteQueue, mblk_t *pMBlk,
-                 PFNVBOXGUESTSOLARISIOCTL pfnHandler, int cCmd);
+static int vbgr0SolHandleIStrIOCtl(queue_t *pWriteQueue, mblk_t *pMBlk,
+                                   PFNVBGR0SOLIOCTL pfnHandler, int cCmd);
 
 /**
  * Generic code for handling STREAMS-specific IOCtl logic and boilerplate.  It
@@ -651,43 +661,40 @@ static int vboxGuestSolarisHandleIStrIOCtl
  *                        no argument.
  * @param  enmDirection   data transfer direction of the IOCtl.
  */
-static int vboxGuestSolarisHandleIOCtl(queue_t *pWriteQueue, mblk_t *pMBlk,
-                                       PFNVBOXGUESTSOLARISIOCTL pfnHandler,
-                                       int cCmd, size_t cbTransparent,
-                                       enum IOCTLDIRECTION enmDirection)
+static int vbgr0SolHandleIOCtl(queue_t *pWriteQueue, mblk_t *pMBlk,
+                               PFNVBGR0SOLIOCTL pfnHandler, int cCmd,
+                               size_t cbTransparent,
+                               enum IOCTLDIRECTION enmDirection)
 {
     struct iocblk *pIOCBlk = (struct iocblk *)pMBlk->b_rptr;
-    vboxguest_state_t *pState = (vboxguest_state_t *)pWriteQueue->q_ptr;
+    PVBGR0STATE pState = (PVBGR0STATE)pWriteQueue->q_ptr;
 
     if (pMBlk->b_datap->db_type == M_IOCDATA)
-        return vboxGuestSolarisHandleIOCtlData(pWriteQueue, pMBlk, pfnHandler,
-                                               cCmd, cbTransparent,
-                                               enmDirection);
+        return vbgr0SolHandleIOCtlData(pWriteQueue, pMBlk, pfnHandler, cCmd,
+                                       cbTransparent, enmDirection);
     else if (pIOCBlk->ioc_count == TRANSPARENT)
-        return vboxGuestSolarisHandleTransparentIOCtl(pWriteQueue, pMBlk,
-                                                      pfnHandler, cCmd,
-                                                      cbTransparent,
-                                                      enmDirection);
+        return vbgr0SolHandleTransparentIOCtl(pWriteQueue, pMBlk, pfnHandler,
+                                              cCmd, cbTransparent,
+                                              enmDirection);
     else
-        return vboxGuestSolarisHandleIStrIOCtl(pWriteQueue, pMBlk, pfnHandler,
-                                               cCmd);
+        return vbgr0SolHandleIStrIOCtl(pWriteQueue, pMBlk, pfnHandler, cCmd);
 }
 
 
 /**
- * Helper for vboxGuestSolarisHandleIOCtl.  This rather complicated-looking
+ * Helper for vbgr0SolHandleIOCtl.  This rather complicated-looking
  * code is basically the standard boilerplate for handling any streams IOCtl
  * additional data, which we currently only use for transparent IOCtls.
- * @copydoc vboxGuestSolarisHandleIOCtl
+ * @copydoc vbgr0SolHandleIOCtl
  */
-static int vboxGuestSolarisHandleIOCtlData(queue_t *pWriteQueue, mblk_t *pMBlk,
-                                           PFNVBOXGUESTSOLARISIOCTL pfnHandler,
-                                           int cCmd, size_t cbTransparent,
-                                           enum IOCTLDIRECTION enmDirection)
+static int vbgr0SolHandleIOCtlData(queue_t *pWriteQueue, mblk_t *pMBlk,
+                                   PFNVBGR0SOLIOCTL pfnHandler, int cCmd,
+                                   size_t cbTransparent,
+                                   enum IOCTLDIRECTION enmDirection)
 {
     struct copyresp *pCopyResp = (struct copyresp *)pMBlk->b_rptr;
     struct iocblk   *pIOCBlk   = (struct iocblk *)pMBlk->b_rptr;
-    vboxguest_state_t *pState = (vboxguest_state_t *)pWriteQueue->q_ptr;
+    PVBGR0STATE pState = (PVBGR0STATE)pWriteQueue->q_ptr;
 
     if (pCopyResp->cp_rval)
     {
@@ -723,19 +730,19 @@ static int vboxGuestSolarisHandleIOCtlData(queue_t *pWriteQueue, mblk_t *pMBlk,
 }
 
 /**
- * Helper for vboxGuestSolarisHandleIOCtl.  This rather complicated-looking
+ * Helper for vbgr0SolHandleIOCtl.  This rather complicated-looking
  * code is basically the standard boilerplate for handling transparent IOCtls,
  * that is, IOCtls which are not re-packed inside STREAMS IOCtls.
- * @copydoc vboxGuestSolarisHandleIOCtl
+ * @copydoc vbgr0SolHandleIOCtl
  */
-int vboxGuestSolarisHandleTransparentIOCtl
-                (queue_t *pWriteQueue, mblk_t *pMBlk,
-                 PFNVBOXGUESTSOLARISIOCTL pfnHandler, int cCmd,
-                 size_t cbTransparent, enum IOCTLDIRECTION enmDirection)
+int vbgr0SolHandleTransparentIOCtl(queue_t *pWriteQueue, mblk_t *pMBlk,
+                                   PFNVBGR0SOLIOCTL pfnHandler, int cCmd,
+                                   size_t cbTransparent,
+                                   enum IOCTLDIRECTION enmDirection)
 {
     int err = 0, rc = 0;
     size_t cbData = 0;
-    vboxguest_state_t *pState = (vboxguest_state_t *)pWriteQueue->q_ptr;
+    PVBGR0STATE pState = (PVBGR0STATE)pWriteQueue->q_ptr;
 
     if (   (enmDirection != NONE && !pMBlk->b_cont)
         || enmDirection == UNSPECIFIED)
@@ -773,16 +780,15 @@ int vboxGuestSolarisHandleTransparentIOCtl
 }
                  
 /**
- * Helper for vboxGuestSolarisHandleIOCtl.  This rather complicated-looking
+ * Helper for vbgr0SolHandleIOCtl.  This rather complicated-looking
  * code is basically the standard boilerplate for handling any streams IOCtl.
- * @copydoc vboxGuestSolarisHandleIOCtl
+ * @copydoc vbgr0SolHandleIOCtl
  */
-static int vboxGuestSolarisHandleIStrIOCtl(queue_t *pWriteQueue, mblk_t *pMBlk,
-                                           PFNVBOXGUESTSOLARISIOCTL pfnHandler,
-                                           int cCmd)
+static int vbgr0SolHandleIStrIOCtl(queue_t *pWriteQueue, mblk_t *pMBlk,
+                                   PFNVBGR0SOLIOCTL pfnHandler, int cCmd)
 {
     struct iocblk *pIOCBlk = (struct iocblk *)pMBlk->b_rptr;
-    vboxguest_state_t *pState = (vboxguest_state_t *)pWriteQueue->q_ptr;
+    PVBGR0STATE pState = (PVBGR0STATE)pWriteQueue->q_ptr;
     uint_t cbBuffer = pIOCBlk->ioc_count;
     void *pvData = NULL;
     int err, rc = 0;
@@ -807,13 +813,12 @@ static int vboxGuestSolarisHandleIStrIOCtl(queue_t *pWriteQueue, mblk_t *pMBlk,
 
 /**
  * Handle a VUID input device IOCtl.
- * @copydoc FNVBOXGUESTSOLARISIOCTL
+ * @copydoc FNVBGR0SOLIOCTL
  */
-static int vboxGuestSolarisVUIDIOCtl(vboxguest_state_t *pState, int cCmd,
-                                     void *pvData, size_t cbBuffer,
-                                     size_t *pcbData, int *prc)
+static int vbgr0SolVUIDIOCtl(PVBGR0STATE pState, int cCmd, void *pvData,
+                             size_t cbBuffer, size_t *pcbData, int *prc)
 {
-    LogFlowFunc((": " /* no '\n' */));
+    LogFlowFunc((DEVICE_NAME ":: " /* no '\n' */));
     switch (cCmd)
     {
         case VUIDGFORMAT:
@@ -850,11 +855,21 @@ static int vboxGuestSolarisVUIDIOCtl(vboxguest_state_t *pState, int cCmd,
         case MSIOSRESOLUTION:
         {
             Ms_screen_resolution *pResolution = (Ms_screen_resolution *)pvData;
+            int rc;
+
             LogFlowFunc(("MSIOSRESOLUTION\n"));
             AssertReturn(cbBuffer >= sizeof(Ms_screen_resolution), EINVAL);
             pState->cMaxScreenX = pResolution->width  - 1;
             pState->cMaxScreenY = pResolution->height - 1;
-            return 0;
+            /* Note: we don't disable this again until session close. */
+            rc = vbgr0SolSetMouseStatus(pState->pSession,
+                                          VMMDEV_MOUSE_GUEST_CAN_ABSOLUTE
+                                        | VMMDEV_MOUSE_NEW_PROTOCOL);
+            if (RT_SUCCESS(rc))
+                return 0;
+            pState->cMaxScreenX = 0;
+            pState->cMaxScreenY = 0;
+            return ENODEV;
         }
         case MSIOBUTTONS:
         {
@@ -886,11 +901,10 @@ static int vboxGuestSolarisVUIDIOCtl(vboxguest_state_t *pState, int cCmd,
 
 /**
  * Handle a VBoxGuest IOCtl.
- * @copydoc FNVBOXGUESTSOLARISIOCTL
+ * @copydoc FNVBGR0SOLIOCTL
  */
-static int vboxGuestSolarisGuestIOCtl(vboxguest_state_t *pState, int cCmd,
-                                      void *pvData, size_t cbBuffer,
-                                      size_t *pcbData, int *prc)
+static int vbgr0SolGuestIOCtl(PVBGR0STATE pState, int cCmd, void *pvData,
+                              size_t cbBuffer, size_t *pcbData, int *prc)
 {
     int rc = VBoxGuestCommonIOCtl(cCmd, &g_DevExt, pState->pSession, pvData, cbBuffer, pcbData);
     if (RT_SUCCESS(rc))
@@ -922,8 +936,8 @@ static int vboxGuestSolarisGuestIOCtl(vboxguest_state_t *pState, int cCmd,
  *
  * @return  corresponding solaris error code.
  */
-int vboxGuestSolarisGetInfo(dev_info_t *pDip, ddi_info_cmd_t enmCmd,
-                            void *pvArg, void **ppvResult)
+int vbgr0SolGetInfo(dev_info_t *pDip, ddi_info_cmd_t enmCmd, void *pvArg,
+                    void **ppvResult)
 {
     int rc = DDI_SUCCESS;
 
@@ -948,9 +962,9 @@ int vboxGuestSolarisGetInfo(dev_info_t *pDip, ddi_info_cmd_t enmCmd,
 }
 
 
-/* Helpers for vboxGuestSolarisAttach and vboxGuestSolarisDetach. */
-static int vboxGuestSolarisAddIRQ(dev_info_t *pDip);
-static void vboxGuestSolarisRemoveIRQ(dev_info_t *pDip);
+/* Helpers for vbgr0SolAttach and vbgr0SolDetach. */
+static int vbgr0SolAddIRQ(dev_info_t *pDip);
+static void vbgr0SolRemoveIRQ(dev_info_t *pDip);
 
 /**
  * Attach entry point, to attach a device to the system or resume it.
@@ -960,7 +974,7 @@ static void vboxGuestSolarisRemoveIRQ(dev_info_t *pDip);
  *
  * @return  corresponding solaris error code.
  */
-int vboxGuestSolarisAttach(dev_info_t *pDip, ddi_attach_cmd_t enmCmd)
+int vbgr0SolAttach(dev_info_t *pDip, ddi_attach_cmd_t enmCmd)
 {
     LogFlow((DEVICE_NAME "::Attach\n"));
     switch (enmCmd)
@@ -1009,7 +1023,7 @@ int vboxGuestSolarisAttach(dev_info_t *pDip, ddi_attach_cmd_t enmCmd)
                             /*
                              * Add IRQ of VMMDev.
                              */
-                            rc = vboxGuestSolarisAddIRQ(pDip);
+                            rc = vbgr0SolAddIRQ(pDip);
                             if (rc == DDI_SUCCESS)
                             {
                                 /*
@@ -1041,10 +1055,10 @@ int vboxGuestSolarisAttach(dev_info_t *pDip, ddi_attach_cmd_t enmCmd)
                                 }
                                 else
                                     LogRel((DEVICE_NAME "::Attach: VBoxGuestInitDevExt failed.\n"));
-                                vboxGuestSolarisRemoveIRQ(pDip);
+                                vbgr0SolRemoveIRQ(pDip);
                             }
                             else
-                                LogRel((DEVICE_NAME "::Attach: vboxGuestSolarisAddIRQ failed.\n"));
+                                LogRel((DEVICE_NAME "::Attach: vbgr0SolAddIRQ failed.\n"));
                             ddi_regs_map_free(&g_PciMMIOHandle);
                         }
                         else
@@ -1083,14 +1097,14 @@ int vboxGuestSolarisAttach(dev_info_t *pDip, ddi_attach_cmd_t enmCmd)
  *
  * @return  corresponding solaris error code.
  */
-int vboxGuestSolarisDetach(dev_info_t *pDip, ddi_detach_cmd_t enmCmd)
+int vbgr0SolDetach(dev_info_t *pDip, ddi_detach_cmd_t enmCmd)
 {
     LogFlow((DEVICE_NAME "::Detach\n"));
     switch (enmCmd)
     {
         case DDI_DETACH:
         {
-            vboxGuestSolarisRemoveIRQ(pDip);
+            vbgr0SolRemoveIRQ(pDip);
             ddi_regs_map_free(&g_PciIOHandle);
             ddi_regs_map_free(&g_PciMMIOHandle);
             ddi_remove_minor_node(pDip, NULL);
@@ -1111,8 +1125,8 @@ int vboxGuestSolarisDetach(dev_info_t *pDip, ddi_detach_cmd_t enmCmd)
 }
 
 
-/* Interrupt service routine installed by vboxGuestSolarisAddIRQ. */
-static uint_t vboxGuestSolarisISR(char *Arg /* Actually caddr_t. */);
+/* Interrupt service routine installed by vbgr0SolAddIRQ. */
+static uint_t vbgr0SolISR(char *Arg /* Actually caddr_t. */);
 
 /**
  * Sets IRQ for VMMDev.
@@ -1120,7 +1134,7 @@ static uint_t vboxGuestSolarisISR(char *Arg /* Actually caddr_t. */);
  * @returns Solaris error code.
  * @param   pDip     Pointer to the device info structure.
  */
-static int vboxGuestSolarisAddIRQ(dev_info_t *pDip)
+static int vbgr0SolAddIRQ(dev_info_t *pDip)
 {
     int IntrType = 0, rc;
 
@@ -1157,12 +1171,12 @@ static int vboxGuestSolarisAddIRQ(dev_info_t *pDip)
                             if (rc == DDI_SUCCESS)
                             {
                                 /* Initialize the mutex. */
-                                mutex_init(&g_IrqMtx, NULL, MUTEX_DRIVER, DDI_INTR_PRI(uIntrPriority));
+                                mutex_init(&g_IrqMutex, NULL, MUTEX_DRIVER, DDI_INTR_PRI(uIntrPriority));
 
                                 /* Assign interrupt handler functions and enable interrupts. */
                                 for (i = 0; i < IntrAllocated; i++)
                                 {
-                                    rc = ddi_intr_add_handler(g_pIntr[i], (ddi_intr_handler_t *)vboxGuestSolarisISR,
+                                    rc = ddi_intr_add_handler(g_pIntr[i], (ddi_intr_handler_t *)vbgr0SolISR,
                                                             NULL /* No Private Data */, NULL);
                                     if (rc == DDI_SUCCESS)
                                         rc = ddi_intr_enable(g_pIntr[i]);
@@ -1215,7 +1229,7 @@ static int vboxGuestSolarisAddIRQ(dev_info_t *pDip)
  *
  * @param   pDip     Pointer to the device info structure.
  */
-static void vboxGuestSolarisRemoveIRQ(dev_info_t *pDip)
+static void vbgr0SolRemoveIRQ(dev_info_t *pDip)
 {
     unsigned i;
 
@@ -1231,7 +1245,7 @@ static void vboxGuestSolarisRemoveIRQ(dev_info_t *pDip)
         }
     }
     RTMemFree(g_pIntr);
-    mutex_destroy(&g_IrqMtx);
+    mutex_destroy(&g_IrqMutex);
 }
 
 
@@ -1241,20 +1255,21 @@ static void vboxGuestSolarisRemoveIRQ(dev_info_t *pDip)
  * @param   Arg     Private data (unused, will be NULL).
  * @returns DDI_INTR_CLAIMED if it's our interrupt, DDI_INTR_UNCLAIMED if it isn't.
  */
-static uint_t vboxGuestSolarisISR(char *Arg /* Actually caddr_t. */)
+static uint_t vbgr0SolISR(char *Arg /* Actually caddr_t. */)
 {
     bool fOurIRQ;
 
     LogFlow((DEVICE_NAME "::ISR:\n"));
-    mutex_enter(&g_IrqMtx);
+    mutex_enter(&g_IrqMutex);
     fOurIRQ = VBoxGuestCommonISR(&g_DevExt);
-    mutex_exit(&g_IrqMtx);
+    mutex_exit(&g_IrqMutex);
     return fOurIRQ ? DDI_INTR_CLAIMED : DDI_INTR_UNCLAIMED;
 }
 
 
 /* Helper for VBoxGuestNativeISRMousePollEvent. */
-static void VBoxGuestVUIDPutAbsEvent(ushort_t cEvent, int cValue);
+static void vbgr0SolVUIDPutAbsEvent(PVBGR0STATE pState, ushort_t cEvent,
+                                    int cValue);
 
 /**
  * Native part of the IRQ service routine, called when the VBoxGuest mouse
@@ -1276,23 +1291,33 @@ void VBoxGuestNativeISRMousePollEvent(PVBOXGUESTDEVEXT pDevExt)
     rc = VbglGRPerform(&pReq->header);
     if (RT_SUCCESS(rc))
     {
-        int cMaxScreenX  = g_pState->cMaxScreenX;
-        int cMaxScreenY  = g_pState->cMaxScreenY;
+        unsigned i;
 
-        VBoxGuestVUIDPutAbsEvent(LOC_X_ABSOLUTE,
-                                   pReq->pointerXPos * cMaxScreenX
-                                 / VMMDEV_MOUSE_RANGE_MAX);
-        VBoxGuestVUIDPutAbsEvent(LOC_Y_ABSOLUTE,
-                                   pReq->pointerYPos * cMaxScreenY
-                                 / VMMDEV_MOUSE_RANGE_MAX);
+        mutex_enter(&g_StateMutex);
+        for (i = 1; i < MAX_OPEN_NODES; ++i)
+        {
+            int cMaxScreenX  = g_aOpenNodeStates[i].cMaxScreenX;
+            int cMaxScreenY  = g_aOpenNodeStates[i].cMaxScreenY;
+
+            if (!cMaxScreenX || !cMaxScreenY)
+                continue;
+            vbgr0SolVUIDPutAbsEvent(&g_aOpenNodeStates[i], LOC_X_ABSOLUTE,
+                                       pReq->pointerXPos * cMaxScreenX
+                                     / VMMDEV_MOUSE_RANGE_MAX);
+            vbgr0SolVUIDPutAbsEvent(&g_aOpenNodeStates[i], LOC_Y_ABSOLUTE,
+                                       pReq->pointerYPos * cMaxScreenY
+                                     / VMMDEV_MOUSE_RANGE_MAX);
+        }
+        mutex_exit(&g_StateMutex);
     }
     VbglGRFree(&pReq->header);
 }
 
 
-void VBoxGuestVUIDPutAbsEvent(ushort_t cEvent, int cValue)
+void vbgr0SolVUIDPutAbsEvent(PVBGR0STATE pState, ushort_t cEvent,
+                              int cValue)
 {
-    queue_t *pReadQueue = RD(g_pState->pWriteQueue);
+    queue_t *pReadQueue = RD(pState->pWriteQueue);
     mblk_t *pMBlk = allocb(sizeof(Firm_event, BPRI_HI));
     Firm_event *pEvent;
     AssertReturnVoid(cEvent == LOC_X_ABSOLUTE || cEvent == LOC_Y_ABSOLUTE);

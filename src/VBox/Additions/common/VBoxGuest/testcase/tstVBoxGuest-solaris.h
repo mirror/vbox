@@ -1,7 +1,7 @@
 /* $Id$ */
 /** @file
  *
- * Test cases for VBoxGuest-solaris.
+ * Test cases for VBoxGuest-solaris, declarations.
  */
 
 /*
@@ -16,20 +16,15 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#include "tstVBoxGuest-solaris.h"
+#ifndef TESTCASE_TSTVBOXGUEST_SOLARIS_H  /* What is our convention for this? */
+# define TESTCASE_TSTVBOXGUEST_SOLARIS_H
 
-int main()
-{
-    RTTEST hTest;
-    int rc = RTTestInitAndCreate("tstVBoxGuest-solaris", &hTest);
-    if (rc)
-        return rc;
-    RTTestBanner(hTest);
-    test_init(hTest);
+# include <iprt/test.h>
 
-    /*
-     * Summary.
-     */
-    return RTTestSummaryAndDestroy(hTest);
-}
+RT_C_DECLS_BEGIN
 
+extern void test_init(RTTEST hTest);
+
+RT_C_DECLS_END
+
+#endif /* TESTCASE_TSTVBOXGUEST_SOLARIS_H */
