@@ -4453,6 +4453,8 @@ static DECLCALLBACK(void) vgaInfoVBE(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, con
     PVGASTATE   s = PDMINS_2_DATA(pDevIns, PVGASTATE);
     NOREF(pszArgs);
 
+    pHlp->pfnPrintf(pHlp, "LFB at %RGp\n", s->GCPhysVRAM);
+
     if (!(s->vbe_regs[VBE_DISPI_INDEX_ENABLE] & VBE_DISPI_ENABLED))
     {
         pHlp->pfnPrintf(pHlp, "VBE disabled\n");
