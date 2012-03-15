@@ -5064,9 +5064,9 @@ static void supdrvGipMpEventOnline(PSUPGLOBALINFOPAGE pGip, RTCPUID idCpu)
     i = supdrvGipCpuIndexFromCpuId(pGip, idCpu);
     supdrvGipInitCpu(pGip, &pGip->aCPUs[i], u64NanoTS);
     idApic = ASMGetApicId();
-    ASMAtomicUoWriteU16(&pGip->aCPUs[i].idApic,  idApic);
-    ASMAtomicUoWriteS16(&pGip->aCPUs[i].iCpuSet, (int16_t)iCpuSet);
-    ASMAtomicUoWriteSize(&pGip->aCPUs[i].idCpu,  idCpu);
+    ASMAtomicWriteU16(&pGip->aCPUs[i].idApic,  idApic);
+    ASMAtomicWriteS16(&pGip->aCPUs[i].iCpuSet, (int16_t)iCpuSet);
+    ASMAtomicWriteSize(&pGip->aCPUs[i].idCpu,  idCpu);
 
     /*
      * Update the APIC ID and CPU set index mappings.
@@ -5349,10 +5349,10 @@ static void supdrvGipInitCpu(PSUPGLOBALINFOPAGE pGip, PSUPGIPCPU pCpu, uint64_t 
     pCpu->u64NanoTS          = u64NanoTS;
     pCpu->u64TSC             = ASMReadTSC();
 
-    pCpu->enmState           = SUPGIPCPUSTATE_INVALID;
-    pCpu->idCpu              = NIL_RTCPUID;
-    pCpu->iCpuSet            = -1;
-    pCpu->idApic             = UINT16_MAX;
+    ASMAtomicWriteSize(&pCpu->enmState, SUPGIPCPUSTATE_INVALID);
+    ASMAtomicWriteSize(&pCpu->idCpu,    NIL_RTCPUID);
+    ASMAtomicWriteS16(&pCpu->iCpuSet,   -1);
+    ASMAtomicWriteU16(&pCpu->idApic,    UINT16_MAX);
 
     /*
      * We don't know the following values until we've executed updates.
