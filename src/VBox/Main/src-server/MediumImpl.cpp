@@ -1741,9 +1741,9 @@ STDMETHODIMP Medium::COMSETTER(Type)(MediumType_T aType)
     m->type = aType;
 
     // save the settings
-    markRegistriesModified();
     mlock.release();
     treeLock.release();
+    markRegistriesModified();
     m->pVirtualBox->saveModifiedRegistries();
 
     return S_OK;
@@ -1885,8 +1885,8 @@ STDMETHODIMP Medium::COMSETTER(AutoReset)(BOOL aAutoReset)
         m->autoReset = !!aAutoReset;
 
         // save the settings
-        markRegistriesModified();
         mlock.release();
+        markRegistriesModified();
         m->pVirtualBox->saveModifiedRegistries();
     }
 
@@ -2348,8 +2348,8 @@ STDMETHODIMP Medium::SetProperty(IN_BSTR aName, IN_BSTR aValue)
     it->second = aValue;
 
     // save the settings
-    markRegistriesModified();
     mlock.release();
+    markRegistriesModified();
     m->pVirtualBox->saveModifiedRegistries();
 
     return S_OK;
@@ -2425,8 +2425,8 @@ STDMETHODIMP Medium::SetProperties(ComSafeArrayIn(IN_BSTR, aNames),
     }
 
     // save the settings
-    markRegistriesModified();
     mlock.release();
+    markRegistriesModified();
     m->pVirtualBox->saveModifiedRegistries();
 
     return S_OK;
@@ -2580,7 +2580,9 @@ STDMETHODIMP Medium::CreateDiffStorage(IMedium *aTarget,
     {
         /* since this medium has been just created it isn't associated yet */
         diff->m->llRegistryIDs.push_back(parentMachineRegistry);
+        alock.release();
         diff->markRegistriesModified();
+        alock.acquire();
     }
 
     alock.release();
@@ -3323,10 +3325,16 @@ void Medium::markRegistriesModified()
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return;
 
-    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+    // Get local copy, as keeping the lock over VirtualBox::markRegistryModified
+    // causes trouble with the lock order
+    GuidList llRegistryIDs;
+    {
+        AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+        llRegistryIDs = m->llRegistryIDs;
+    }
 
-    for (GuidList::const_iterator it = m->llRegistryIDs.begin();
-         it != m->llRegistryIDs.end();
+    for (GuidList::const_iterator it = llRegistryIDs.begin();
+         it != llRegistryIDs.end();
          ++it)
     {
         m->pVirtualBox->markRegistryModified(*it);
@@ -6527,11 +6535,11 @@ HRESULT Medium::taskCreateBaseHandler(Medium::CreateBaseTask &task)
         m->logicalSize = logicalSize;
         m->variant = variant;
 
+        thisLock.release();
         markRegistriesModified();
         if (task.isAsync())
         {
             // in asynchronous mode, save settings now
-            thisLock.release();
             m->pVirtualBox->saveModifiedRegistries();
         }
     }
@@ -6731,11 +6739,11 @@ HRESULT Medium::taskCreateDiffHandler(Medium::CreateDiffTask &task)
     Assert(m->numCreateDiffTasks != 0);
     --m->numCreateDiffTasks;
 
+    mediaLock.release();
     markRegistriesModified();
     if (task.isAsync())
     {
         // in asynchronous mode, save settings now
-        mediaLock.release();
         m->pVirtualBox->saveModifiedRegistries();
     }
 

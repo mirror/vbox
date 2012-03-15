@@ -3828,7 +3828,11 @@ HRESULT VirtualBox::unregisterMachine(Machine *pMachine,
                     // 2) better registry found: then use that
                     pMedium->addRegistry(*puuidBetter, true /* fRecurse */);
                     // 3) and make sure the registry is saved below
+                    mlock.release();
+                    tlock.release();
                     markRegistryModified(*puuidBetter);
+                    tlock.acquire();
+                    mlock.release();
                 }
             }
         }

@@ -3801,7 +3801,9 @@ STDMETHODIMP Machine::AttachDevice(IN_BSTR aControllerName,
             // creating the diff image for the immutable, and the parent is not yet registered);
             // put the parent in the machine registry then
             mediumLock.release();
+            treeLock.release();
             addMediumToRegistry(medium);
+            treeLock.acquire();
             mediumLock.acquire();
             medium->getFirstRegistryMachineId(uuidRegistryParent);
         }
@@ -3894,7 +3896,9 @@ STDMETHODIMP Machine::AttachDevice(IN_BSTR aControllerName,
         if (FAILED(rc)) return rc;
 
         mediumLock.release();
+        treeLock.release();
         addMediumToRegistry(medium);
+        treeLock.acquire();
         mediumLock.acquire();
     }
 
@@ -4302,7 +4306,6 @@ STDMETHODIMP Machine::MountMedium(IN_BSTR aControllerName,
                                  aControllerName,
                                  aControllerPort,
                                  aDevice);
-        AutoWriteLock attLock(pAttach COMMA_LOCKVAL_SRC_POS);
         if (!oldmedium.isNull())
             oldmedium->removeBackReference(mData->mUuid);
         if (!pMedium.isNull())
@@ -4310,10 +4313,13 @@ STDMETHODIMP Machine::MountMedium(IN_BSTR aControllerName,
             pMedium->addBackReference(mData->mUuid);
 
             mediumLock.release();
+            multiLock.release();
             addMediumToRegistry(pMedium);
+            multiLock.acquire();
             mediumLock.acquire();
         }
 
+        AutoWriteLock attLock(pAttach COMMA_LOCKVAL_SRC_POS);
         pAttach->updateMedium(pMedium);
     }
 
