@@ -21,6 +21,7 @@
 #include "cr_net.h"
 #include "packspu_proto.h"
 #include "cr_mem.h"
+#include <iprt/assert.h>
 
 /*@todo combine with the one from server_getshaders.c*/
 typedef struct _crGetActive_t
@@ -122,6 +123,8 @@ void PACKSPU_APIENTRY packspu_GetAttachedObjectsARB(GLhandleARB containerObj, GL
     crFree(pLocal);
 }
 
+AssertCompile(sizeof(GLsizei) == 4);
+
 void PACKSPU_APIENTRY packspu_GetInfoLogARB(GLhandleARB obj, GLsizei maxLength, GLsizei * length, GLcharARB * infoLog)
 {
     GET_THREAD(thread);
@@ -139,8 +142,10 @@ void PACKSPU_APIENTRY packspu_GetInfoLogARB(GLhandleARB obj, GLsizei maxLength, 
     while (writeback)
         crNetRecv();
 
+    CRASSERT((pLocal[0]) <= maxLength);
+
     if (length) *length=*pLocal;
-    crMemcpy(infoLog, &pLocal[1], (*pLocal)+1);
+    crMemcpy(infoLog, &pLocal[1], (maxLength >= (pLocal[0])) ? pLocal[0] : maxLength);
     crFree(pLocal);
 }
 
