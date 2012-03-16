@@ -85,7 +85,7 @@ static long double check_lrd(const long double lrd, const unsigned long long ull
 #else
         printf("%llx:%04x instead of %llx:%04x\n", *(unsigned long long *)&lrd2, ((unsigned short *)&lrd2)[4], ull, us);
 #endif
-        __asm__("int3\n");
+        __asm__("int $3\n");
     }
     return lrd;
 }
@@ -114,7 +114,7 @@ static long double check_lrd_cw(const long double lrd, const unsigned long long 
     if (cw != get_cw())
     {
         printf("get_cw() -> %#x expected %#x\n", get_cw(), cw);
-        __asm__("int3\n");
+        __asm__("int $3\n");
     }
     return check_lrd(lrd, ull, us);
 }
@@ -204,7 +204,7 @@ extern int testmath(void)
     CHECKLL(lrint(-2147483649932412.12343), -2147483649932412L);
 #endif
 
-//    __asm__("int3");
+//    __asm__("int $3");
     CHECKL(lrintl(make_lrd_cw(000000000000000000ULL,000000,0x027f)), 0L);
     CHECKL(lrintl(make_lrd_cw(0x8000000000000000ULL,0x3ffe,0x027f)), 0L);
     CHECKL(lrintl(make_lrd_cw(0x8000000000000000ULL,0x3ffe,0x027f)), 0L);

@@ -23,6 +23,7 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <kstat.h>
+#include <unistd.h>
 #include <sys/sysinfo.h>
 #include <sys/time.h>
 
@@ -70,13 +71,13 @@ CollectorSolaris::CollectorSolaris()
         return;
     }
 
-    if ((mSysPages = kstat_lookup(mKC, "unix", 0, "system_pages")) == 0)
+    if ((mSysPages = kstat_lookup(mKC, (char *)"unix", 0, (char *)"system_pages")) == 0)
     {
         Log(("kstat_lookup(system_pages) -> %d\n", errno));
         return;
     }
 
-    if ((mZFSCache = kstat_lookup(mKC, "zfs", 0, "arcstats")) == 0)
+    if ((mZFSCache = kstat_lookup(mKC, (char *)"zfs", 0, (char *)"arcstats")) == 0)
     {
         Log(("kstat_lookup(system_pages) -> %d\n", errno));
     }
@@ -179,7 +180,7 @@ int CollectorSolaris::getHostMemoryUsage(ULONG *total, ULONG *used, ULONG *avail
         Log(("kstat_read(sys_pages) -> %d\n", errno));
         return VERR_INTERNAL_ERROR;
     }
-    if ((kn = (kstat_named_t *)kstat_data_lookup(mSysPages, "freemem")) == 0)
+    if ((kn = (kstat_named_t *)kstat_data_lookup(mSysPages, (char *)"freemem")) == 0)
     {
         Log(("kstat_data_lookup(freemem) -> %d\n", errno));
         return VERR_INTERNAL_ERROR;
@@ -190,11 +191,11 @@ int CollectorSolaris::getHostMemoryUsage(ULONG *total, ULONG *used, ULONG *avail
     {
         if (mZFSCache)
         {
-            if ((kn = (kstat_named_t *)kstat_data_lookup(mZFSCache, "size")))
+            if ((kn = (kstat_named_t *)kstat_data_lookup(mZFSCache, (char *)"size")))
             {
                 ulong_t ulSize = kn->value.ul;
 
-                if ((kn = (kstat_named_t *)kstat_data_lookup(mZFSCache, "c_min")))
+                if ((kn = (kstat_named_t *)kstat_data_lookup(mZFSCache, (char *)"c_min")))
                 {
                     /*
                      * Account for ZFS minimum arc cache size limit.
@@ -214,7 +215,7 @@ int CollectorSolaris::getHostMemoryUsage(ULONG *total, ULONG *used, ULONG *avail
             Log(("mZFSCache missing.\n"));
     }
 
-    if ((kn = (kstat_named_t *)kstat_data_lookup(mSysPages, "physmem")) == 0)
+    if ((kn = (kstat_named_t *)kstat_data_lookup(mSysPages, (char *)"physmem")) == 0)
     {
         Log(("kstat_data_lookup(physmem) -> %d\n", errno));
         return VERR_INTERNAL_ERROR;
