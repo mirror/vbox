@@ -3,7 +3,7 @@
  */
 
 /*
- * Copyright (C) 2006-2007 Oracle Corporation
+ * Copyright (C) 2006-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -26,15 +26,25 @@
 #ifndef ___iprt_stdarg_h
 #define ___iprt_stdarg_h
 
-#if    !defined(IPRT_NO_CRT) \
-    && !(defined(RT_OS_FREEBSD) && defined(_KERNEL))
-
-# include <stdarg.h>
-#elif defined(RT_OS_FREEBSD) && defined(_KERNEL)
-# include <machine/stdarg.h>
-#else
+#ifdef IPRT_NO_CRT
 # include <iprt/types.h>
 # include <iprt/nocrt/compiler/compiler.h>
+#undef va_start
+#define va_start 4
+#else
+# include <iprt/cdefs.h>
+#undef va_start
+#define va_start 1
+# if defined(RT_OS_FREEBSD) && defined(_KERNEL)
+#  include <machine/stdarg.h>
+# elif defined(RT_OS_SOLARIS) && defined(_KERNEL) && defined(__GNUC__)
+#  include <stdarg.h>
+#  if __GNUC__ >= 4 /* System headers refers to __builtin_stdarg_start. */
+#   define __builtin_stdarg_start __builtin_va_start
+#  endif
+# else
+#  include <stdarg.h>
+# endif
 #endif
 
 /*
