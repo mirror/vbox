@@ -5407,7 +5407,6 @@ HRESULT Medium::queryInfo(bool fSetImageId, bool fSetParentId)
      * violation: here it would be requesting the object lock (at the beginning
      * of the method), then queryInfoSem, and below the other way round. */
     AutoWriteLock qlock(m->queryInfoSem COMMA_LOCKVAL_SRC_POS);
-    alock.acquire();
 
     try
     {
@@ -5445,18 +5444,24 @@ HRESULT Medium::queryInfo(bool fSetImageId, bool fSetParentId)
                  * not modified by other code, so no need to copy. */
                 if (fSetImageId)
                 {
+                    alock.acquire();
                     vrc = VDSetUuid(hdd, 0, m->uuidImage.raw());
+                    alock.release();
                     ComAssertRCThrow(vrc, E_FAIL);
                     mediumId = m->uuidImage;
                 }
                 if (fSetParentId)
                 {
+                    alock.acquire();
                     vrc = VDSetParentUuid(hdd, 0, m->uuidParentImage.raw());
+                    alock.release();
                     ComAssertRCThrow(vrc, E_FAIL);
                 }
                 /* zap the information, these are no long-term members */
+                alock.acquire();
                 unconst(m->uuidImage).clear();
                 unconst(m->uuidParentImage).clear();
+                alock.release();
 
                 /* check the UUID */
                 RTUUID uuid;
@@ -5496,7 +5501,9 @@ HRESULT Medium::queryInfo(bool fSetImageId, bool fSetParentId)
                 if (fSetImageId)
                 {
                     /* set the UUID if an API client wants to change it */
+                    alock.acquire();
                     mediumId = m->uuidImage;
+                    alock.release();
                 }
                 else if (isImport)
                 {
@@ -5509,7 +5516,9 @@ HRESULT Medium::queryInfo(bool fSetImageId, bool fSetParentId)
             unsigned uImageFlags;
             vrc = VDGetImageFlags(hdd, 0, &uImageFlags);
             ComAssertRCThrow(vrc, E_FAIL);
+            alock.acquire();
             m->variant = (MediumVariant_T)uImageFlags;
+            alock.release();
 
             /* check/get the parent uuid and update corresponding state */
             if (uImageFlags & VD_IMAGE_FLAGS_DIFF)
@@ -5546,7 +5555,6 @@ HRESULT Medium::queryInfo(bool fSetImageId, bool fSetParentId)
                     }
 
                     /* we set mParent & children() */
-                    alock.release();
                     treeLock.acquire();
 
                     Assert(m->pParent.isNull());
@@ -5554,12 +5562,10 @@ HRESULT Medium::queryInfo(bool fSetImageId, bool fSetParentId)
                     m->pParent->m->llChildren.push_back(this);
 
                     treeLock.release();
-                    alock.acquire();
                 }
                 else
                 {
                     /* we access mParent */
-                    alock.release();
                     treeLock.acquire();
 
                     /* check that parent UUIDs match. Note that there's no need
@@ -5584,7 +5590,6 @@ HRESULT Medium::queryInfo(bool fSetImageId, bool fSetParentId)
                                 location.c_str(),
                                 m->pVirtualBox->settingsFilePath().c_str());
                         treeLock.release();
-                        alock.acquire();
                         throw S_OK;
 #endif /* 0 */
                     }
@@ -5603,7 +5608,6 @@ HRESULT Medium::queryInfo(bool fSetImageId, bool fSetParentId)
                                     m->pVirtualBox->settingsFilePath().c_str());
                             parentLock.release();
                             treeLock.release();
-                            alock.acquire();
                             throw S_OK;
                         }
                     }
@@ -5613,7 +5617,6 @@ HRESULT Medium::queryInfo(bool fSetImageId, bool fSetParentId)
                     /// real code will detect the mismatch anyway.
 
                     treeLock.release();
-                    alock.acquire();
                 }
             }
 
@@ -5641,7 +5644,6 @@ HRESULT Medium::queryInfo(bool fSetImageId, bool fSetParentId)
         rc = aRC;
     }
 
-    alock.release();
     treeLock.acquire();
     alock.acquire();
 
