@@ -35,11 +35,13 @@
 typedef struct VSCSILUNMMC
 {
     /** Core LUN structure */
-    VSCSILUNINT    Core;
+    VSCSILUNINT     Core;
     /** Size of the virtual disk. */
-    uint64_t       cSectors;
+    uint64_t        cSectors;
     /** Sector size. */
-    uint32_t       cbSector;
+    uint32_t        cbSector;
+    /** Medium locked indicator. */
+    bool            fLocked;
 } VSCSILUNMMC, *PVSCSILUNMMC;
 
 static int vscsiLunMmcInit(PVSCSILUNINT pVScsiLun)
@@ -262,6 +264,13 @@ static int vscsiLunMmcReqProcess(PVSCSILUNINT pVScsiLun, PVSCSIREQINT pVScsiReq)
             }
             break;
         }
+        case SCSI_PREVENT_ALLOW_MEDIUM_REMOVAL:
+        {
+            pVScsiLunMmc->fLocked = pVScsiReq->pbCDB[4] & 1;
+            rcReq = vscsiLunReqSenseOkSet(pVScsiLun, pVScsiReq);
+            break;
+        }
+
         default:
             //AssertMsgFailed(("Command %#x [%s] not implemented\n", pRequest->pbCDB[0], SCSICmdText(pRequest->pbCDB[0])));
             rcReq = vscsiLunReqSenseErrorSet(pVScsiLun, pVScsiReq, SCSI_SENSE_ILLEGAL_REQUEST, SCSI_ASC_ILLEGAL_OPCODE, 0x00);
