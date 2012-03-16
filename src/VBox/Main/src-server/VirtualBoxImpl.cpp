@@ -3627,7 +3627,7 @@ HRESULT VirtualBox::registerMedium(const ComObjPtr<Medium> &pMedium,
     }
     else
     {
-        // pMedium may be the last reference, to the Medium object, and the
+        // pMedium may be the last reference to the Medium object, and the
         // caller may have specified the same ComObjPtr as the output parameter.
         // In this case the assignment will uninit the object, and we must not
         // have a caller pending.
