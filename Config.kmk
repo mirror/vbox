@@ -2164,11 +2164,13 @@ ifneq ($(KBUILD_TARGET),l4)
 endif
 ifeq ($(KBUILD_TARGET),solaris)
 	$(APPEND) '$@' 'VBOX_GCC_msave-args            ?= $(call VBOX_GCC_CHECK_CXX,-msave-args,)'
+# Detect the solaris assembler. It is used by the the 4.x gcc compilers 
+# apparently. It will not be able to handle IEMAll via a -pipe.
 	$(APPEND) '$@' 'VBOX_AS_VERSION                ?= $(shell `gcc -print-prog-name=as` -V -o /dev/null < /dev/null 2>&1 | kmk_sed -e '1!d' -e 's/^as: *//' )'
-	$(APPEND) '$@' 'if "$$(VBOX_AS_VERSION)" == "Sun Compiler Common 12 SunOS_i386 snv_174 08/25/2011"' 
-	$(APPEND) '$@' ' VBOX_SOLARS_AS_IS_CRAP=1'
+	$(APPEND) '$@' 'if $$(pos Sun Compiler Common,$$(VBOX_AS_VERSION)) > 0'
+	$(APPEND) '$@' ' VBOX_SOLARIS_AS_IS_CRAP=1'
 	$(APPEND) '$@' 'endif'
-	$(APPEND) '$@' 'ifndef VBOX_SOLARS_AS_IS_CRAP'
+	$(APPEND) '$@' 'ifndef VBOX_SOLARIS_AS_IS_CRAP' 
 	$(APPEND) '$@' ' VBOX_GCC_pipe                 ?= -pipe'
 	$(APPEND) '$@' 'endif'
 else
