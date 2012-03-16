@@ -30,6 +30,7 @@
 #include "VBoxHostVersion.h"
 #include "VBoxSharedFolders.h"
 #include "VBoxIPC.h"
+#include "VBoxLA.h"
 #include <VBoxHook.h>
 #include "resource.h"
 #include <malloc.h>
@@ -105,6 +106,12 @@ static VBOXSERVICEINFO vboxServiceTable[] =
         VBoxIPCInit,
         VBoxIPCThread,
         VBoxIPCDestroy
+    },
+    {
+        "Location Awareness",
+        VBoxLAInit,
+        VBoxLAThread,
+        VBoxLADestroy
     },
     {
         NULL
