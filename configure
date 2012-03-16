@@ -1954,7 +1954,7 @@ check_gsoap()
         else
           cnf_append "VBOX_GSOAP_CXX_SOURCES" ""
         fi
-        cnf_append "VBOX_GSOAP_CXX_LIBS"    "$GSOAP_CXX_LIBS"
+        cnf_append "VBOX_GSOAP_CXX_LIBS"    "`strip_l "$GSOAP_CXX_LIBS"`"
         gsoap_version=`pkg-config gsoapssl++ --modversion`
         log_success "found version $gsoap_version"
         return
