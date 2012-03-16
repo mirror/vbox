@@ -710,6 +710,7 @@ int handleCloneHardDisk(HandlerArg *a)
             rc = createHardDisk(a, Utf8Str(format).c_str(), pszDst, dstDisk);
             if (FAILED(rc))
                 break;
+            fDstUnknown = true;
         }
 
         ComPtr<IProgress> progress;
