@@ -1937,6 +1937,30 @@ setup_wine()
 check_gsoap()
 {
   test_header "GSOAP compiler"
+  if [ -z "$GSOAP" -a -z "$GSOAP_IMPORT" ]; then
+    if which_wrapper pkg-config > /dev/null; then
+      GSOAP_CXX_LIBS=`pkg-config gsoapssl++ --libs 2>> $LOG`
+      if [ $? -eq 0 ]; then
+        GSOAP=`pkg-config gsoapssl++ --variable=exec_prefix`
+        GSOAP_IMPORT="$GSOAP/share/gsoap/import"
+        if [ ! -d "$GSOAP_IMPORT"  -a  -d "$GSOAP/include/gsoap" ]; then
+          GSOAP_IMPORT="$GSOAP/include/gsoap"
+        fi
+        cnf_append "VBOX_GSOAP_INSTALLED"   "1"
+        cnf_append "VBOX_PATH_GSOAP"        "$GSOAP"
+        cnf_append "VBOX_PATH_GSOAP_IMPORT" "$GSOAP_IMPORT"
+        if [ -f "$GSOAP/share/gsoap/stdsoap2.cpp" ]; then
+          cnf_append "VBOX_GSOAP_CXX_SOURCES" "$GSOAP/share/gsoap/stdsoap2.cpp"
+        else
+          cnf_append "VBOX_GSOAP_CXX_SOURCES" ""
+        fi
+        cnf_append "VBOX_GSOAP_CXX_LIBS"    "$GSOAP_CXX_LIBS"
+        gsoap_version=`pkg-config gsoapssl++ --modversion`
+        log_success "found version $gsoap_version"
+        return
+      fi
+    fi
+  fi
   if [ -z "$GSOAP" ]; then
     GSOAP="/usr"
   fi
