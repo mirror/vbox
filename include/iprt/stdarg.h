@@ -29,12 +29,8 @@
 #ifdef IPRT_NO_CRT
 # include <iprt/types.h>
 # include <iprt/nocrt/compiler/compiler.h>
-#undef va_start
-#define va_start 4
 #else
 # include <iprt/cdefs.h>
-#undef va_start
-#define va_start 1
 # if defined(RT_OS_FREEBSD) && defined(_KERNEL)
 #  include <machine/stdarg.h>
 # elif defined(RT_OS_SOLARIS) && defined(_KERNEL) && defined(__GNUC__)
