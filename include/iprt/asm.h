@@ -188,28 +188,10 @@ DECLINLINE(void) ASMCompilerBarrier(void)
 
 /** @def ASMBreakpoint
  * Debugger Breakpoint.
- * @remark  In the gnu world we add a nop instruction after the int3 to
- *          force gdb to remain at the int3 source line.
- * @remark  The L4 kernel will try make sense of the breakpoint, thus the jmp.
- * @internal
+ * @deprecated Use RT_BREAKPOINT instead. 
+ * @internal 
  */
-#if RT_INLINE_ASM_GNU_STYLE
-# if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
-#  ifndef __L4ENV__
-#   define ASMBreakpoint()      do { __asm__ __volatile__("int3\n\tnop"); } while (0)
-#  else
-#   define ASMBreakpoint()      do { __asm__ __volatile__("int3; jmp 1f; 1:"); } while (0)
-#  endif
-# elif defined(RT_ARCH_SPARC64)
-#  define ASMBreakpoint()       do { __asm__ __volatile__("illtrap 0\n\t") } while (0)  /** @todo Sparc64: this is just a wild guess. */
-# elif defined(RT_ARCH_SPARC)
-#  define ASMBreakpoint()       do { __asm__ __volatile__("unimp 0\n\t"); } while (0)   /** @todo Sparc: this is just a wild guess (same as Sparc64, just different name). */
-# else
-#  error "PORTME"
-# endif
-#else
-# define ASMBreakpoint()        __debugbreak()
-#endif
+#define ASMBreakpoint() RT_BREAKPOINT()
 
 
 /**

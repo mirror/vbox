@@ -246,7 +246,12 @@ static size_t GetFileSizeByFd(int fd)
 {
     struct stat st;
     if (fstat(fd, &st) == 0)
-        return st.st_size < ~(size_t)0 ? (size_t)st.st_size : ~(size_t)0;
+    {
+        if (st.st_size <= 0)
+            return 0;
+        size_t cbFile = (size_t)st.st_size;
+        return (off_t)cbFile == st.st_size ? cbFile : ~(size_t)0;
+    }
 
     CORELOGRELSYS((CORELOG_NAME "GetFileSizeByFd: fstat failed rc=%Rrc\n", RTErrConvertFromErrno(errno)));
     return 0;
@@ -1805,61 +1810,15 @@ static int ElfWriteMappingHeaders(PRTSOLCORE pSolCore)
     return rc;
 }
 
-
-/**
- * Write a prepared core file using a user-passed in writer function, requires all threads
- * to be in suspended state (i.e. called after CreateCore).
- *
- * @param pSolCore          Pointer to the core object.
- * @param pfnWriter         Pointer to the writer function to override default writer (NULL uses default).
- *
- * @remarks Resumes all suspended threads, unless it's an invalid core. This
- *          function must be called only -after- rtCoreDumperCreateCore().
- * @return IPRT status.
+/** 
+ * Inner worker for rtCoreDumperWriteCore, which purpose is to 
+ * squash cleanup gotos. 
  */
-static int rtCoreDumperWriteCore(PRTSOLCORE pSolCore, PFNRTCOREWRITER pfnWriter)
+static int rtCoreDumperWriteCoreDoIt(PRTSOLCORE pSolCore, PFNRTCOREWRITER pfnWriter, 
+                                     PRTSOLCOREPROCESS pSolProc)
 {
-    AssertReturn(pSolCore, VERR_INVALID_POINTER);
-
-    if (!pSolCore->fIsValid)
-        return VERR_INVALID_STATE;
-
-    if (pfnWriter)
-        pSolCore->pfnWriter = pfnWriter;
-
-    PRTSOLCOREPROCESS pSolProc = &pSolCore->SolProc;
-    char szPath[PATH_MAX];
-    int rc = VINF_SUCCESS;
-
-    /*
-     * Open the process address space file.
-     */
-    RTStrPrintf(szPath, sizeof(szPath), "/proc/%d/as", (int)pSolProc->Process);
-    int fd = open(szPath, O_RDONLY);
-    if (fd < 0)
-    {
-        rc = RTErrConvertFromErrno(fd);
-        CORELOGRELSYS((CORELOG_NAME "WriteCore: Failed to open address space, %s. rc=%Rrc\n", szPath, rc));
-        goto WriteCoreDone;
-    }
-
-    pSolProc->fdAs = fd;
-
-    /*
-     * Create the core file.
-     */
-    fd = open(pSolCore->szCorePath, O_CREAT | O_TRUNC | O_RDWR, S_IRUSR);
-    if (fd < 0)
-    {
-        rc = RTErrConvertFromErrno(fd);
-        CORELOGRELSYS((CORELOG_NAME "WriteCore: failed to open %s. rc=%Rrc\n", pSolCore->szCorePath, rc));
-        goto WriteCoreDone;
-    }
-
-    pSolCore->fdCoreFile = fd;
-
     pSolCore->offWrite = 0;
-    uint32_t cProgHdrs  = pSolProc->cMappings + 2; /* two PT_NOTE program headers (old, new style) */
+    uint32_t cProgHdrs = pSolProc->cMappings + 2; /* two PT_NOTE program headers (old, new style) */
 
     /*
      * Write the ELF header.
@@ -1888,11 +1847,11 @@ static int rtCoreDumperWriteCore(PRTSOLCORE pSolCore, PFNRTCOREWRITER pfnWriter)
     ElfHdr.e_phoff           = sizeof(ElfHdr);
     ElfHdr.e_phentsize       = sizeof(Elf_Phdr);
     ElfHdr.e_shentsize       = sizeof(Elf_Shdr);
-    rc = pSolCore->pfnWriter(pSolCore->fdCoreFile, &ElfHdr, sizeof(ElfHdr));
+    int rc = pSolCore->pfnWriter(pSolCore->fdCoreFile, &ElfHdr, sizeof(ElfHdr));
     if (RT_FAILURE(rc))
     {
         CORELOGRELSYS((CORELOG_NAME "WriteCore: pfnWriter failed writing ELF header. rc=%Rrc\n", rc));
-        goto WriteCoreDone;
+        return rc;
     }
 
     /*
@@ -1913,7 +1872,7 @@ static int rtCoreDumperWriteCore(PRTSOLCORE pSolCore, PFNRTCOREWRITER pfnWriter)
     if (RT_FAILURE(rc))
     {
         CORELOGRELSYS((CORELOG_NAME "WriteCore: pfnWriter failed writing old-style ELF program Header. rc=%Rrc\n", rc));
-        goto WriteCoreDone;
+        return rc;
     }
 
     /*
@@ -1926,7 +1885,7 @@ static int rtCoreDumperWriteCore(PRTSOLCORE pSolCore, PFNRTCOREWRITER pfnWriter)
     if (RT_FAILURE(rc))
     {
         CORELOGRELSYS((CORELOG_NAME "WriteCore: pfnWriter failed writing new-style ELF program header. rc=%Rrc\n", rc));
-        goto WriteCoreDone;
+        return rc;
     }
 
     /*
@@ -1937,7 +1896,7 @@ static int rtCoreDumperWriteCore(PRTSOLCORE pSolCore, PFNRTCOREWRITER pfnWriter)
     if (RT_FAILURE(rc))
     {
         CORELOGRELSYS((CORELOG_NAME "Write: ElfWriteMappings failed. rc=%Rrc\n", rc));
-        goto WriteCoreDone;
+        return rc;
     }
 
     /*
@@ -1947,7 +1906,7 @@ static int rtCoreDumperWriteCore(PRTSOLCORE pSolCore, PFNRTCOREWRITER pfnWriter)
     if (RT_FAILURE(rc))
     {
         CORELOGRELSYS((CORELOG_NAME "WriteCore: ElfWriteNoteSection old-style failed. rc=%Rrc\n", rc));
-        goto WriteCoreDone;
+        return rc;
     }
 
     /*
@@ -1957,7 +1916,7 @@ static int rtCoreDumperWriteCore(PRTSOLCORE pSolCore, PFNRTCOREWRITER pfnWriter)
     if (RT_FAILURE(rc))
     {
         CORELOGRELSYS((CORELOG_NAME "WriteCore: ElfWriteNoteSection new-style failed. rc=%Rrc\n", rc));
-        goto WriteCoreDone;
+        return rc;
     }
 
     /*
@@ -1967,21 +1926,75 @@ static int rtCoreDumperWriteCore(PRTSOLCORE pSolCore, PFNRTCOREWRITER pfnWriter)
     if (RT_FAILURE(rc))
     {
         CORELOGRELSYS((CORELOG_NAME "WriteCore: ElfWriteMappings failed. rc=%Rrc\n", rc));
-        goto WriteCoreDone;
+        return rc;
     }
 
+    return rc;
+}
 
-WriteCoreDone:
-    if (pSolCore->fdCoreFile != -1)     /* Initialized in rtCoreDumperCreateCore() */
-    {
-        close(pSolCore->fdCoreFile);
-        pSolCore->fdCoreFile = -1;
-    }
 
-    if (pSolProc->fdAs != -1)           /* Initialized in rtCoreDumperCreateCore() */
+/**
+ * Write a prepared core file using a user-passed in writer function, requires all threads
+ * to be in suspended state (i.e. called after CreateCore).
+ *
+ * @param pSolCore          Pointer to the core object.
+ * @param pfnWriter         Pointer to the writer function to override default writer (NULL uses default).
+ *
+ * @remarks Resumes all suspended threads, unless it's an invalid core. This
+ *          function must be called only -after- rtCoreDumperCreateCore().
+ * @return IPRT status.
+ */
+static int rtCoreDumperWriteCore(PRTSOLCORE pSolCore, PFNRTCOREWRITER pfnWriter)
+{
+    AssertReturn(pSolCore, VERR_INVALID_POINTER);
+
+    if (!pSolCore->fIsValid)
+        return VERR_INVALID_STATE;
+
+    if (pfnWriter)
+        pSolCore->pfnWriter = pfnWriter;
+
+    PRTSOLCOREPROCESS pSolProc = &pSolCore->SolProc;
+    char szPath[PATH_MAX];
+    int  rc;
+
+    /*
+     * Open the process address space file.
+     */
+    RTStrPrintf(szPath, sizeof(szPath), "/proc/%d/as", (int)pSolProc->Process);
+    int fd = open(szPath, O_RDONLY);
+    if (fd >= 0)
     {
+        pSolProc->fdAs = fd;
+
+        /*
+         * Create the core file.
+         */
+        fd = open(pSolCore->szCorePath, O_CREAT | O_TRUNC | O_RDWR, S_IRUSR);
+        if (fd >= 0)
+        {
+            pSolCore->fdCoreFile = fd;
+
+            /*
+             * Do the actual writing.
+             */
+            rc = rtCoreDumperWriteCoreDoIt(pSolCore, pfnWriter, pSolProc);
+
+            close(pSolCore->fdCoreFile);
+            pSolCore->fdCoreFile = -1;
+        }
+        else
+        {
+            rc = RTErrConvertFromErrno(fd);
+            CORELOGRELSYS((CORELOG_NAME "WriteCore: failed to open %s. rc=%Rrc\n", pSolCore->szCorePath, rc));
+        }
         close(pSolProc->fdAs);
         pSolProc->fdAs = -1;
+    }
+    else
+    {
+        rc = RTErrConvertFromErrno(fd);
+        CORELOGRELSYS((CORELOG_NAME "WriteCore: Failed to open address space, %s. rc=%Rrc\n", szPath, rc));
     }
 
     rtCoreDumperResumeThreads(pSolCore);

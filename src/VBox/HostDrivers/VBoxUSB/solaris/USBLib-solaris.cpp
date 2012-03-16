@@ -56,7 +56,7 @@
 /** Reference counter. */
 static uint32_t volatile g_cUsers = 0;
 /** VBoxUSB Device handle. */
-static RTFILE g_File = NIL_RTFILE;
+static RTFILE g_hFile = NIL_RTFILE;
 /** List of tasks handled by the USB helper. */
 typedef enum USBHELPER_OP
 {
@@ -92,7 +92,7 @@ USBLIB_DECL(int) USBLibInit(void)
         LogRel((USBLIBR3 ":failed to open the VBoxUSB monitor device node '%s' rc=%Rrc\n", VBOXUSB_DEVICE_NAME, rc));
         return rc;
     }
-    g_File = File;
+    g_hFile = File;
 
     ASMAtomicIncU32(&g_cUsers);
     /*
@@ -111,7 +111,7 @@ USBLIB_DECL(int) USBLibInit(void)
                         Req.u32Major, Req.u32Minor, VBOXUSBMON_VERSION_MAJOR, VBOXUSBMON_VERSION_MINOR));
 
             RTFileClose(File);
-            g_File = NIL_RTFILE;
+            g_hFile = NIL_RTFILE;
             ASMAtomicDecU32(&g_cUsers);
             return rc;
         }
@@ -120,7 +120,7 @@ USBLIB_DECL(int) USBLibInit(void)
     {
         LogRel((USBLIBR3 ":USBMonitor driver version query failed. rc=%Rrc\n", rc));
         RTFileClose(File);
-        g_File = NIL_RTFILE;
+        g_hFile = NIL_RTFILE;
         ASMAtomicDecU32(&g_cUsers);
         return rc;
     }
@@ -141,8 +141,8 @@ USBLIB_DECL(int) USBLibTerm(void)
     /*
      * We're the last guy, close down the connection.
      */
-    RTFILE File = g_File;
-    g_File = NIL_RTFILE;
+    RTFILE File = g_hFile;
+    g_hFile = NIL_RTFILE;
     if (File == NIL_RTFILE)
         return VERR_INTERNAL_ERROR;
 
@@ -237,7 +237,7 @@ USBLIB_DECL(int) USBLibResetDevice(char *pszDevicePath, bool fReattach)
 
 static int usblibDoIOCtl(unsigned iFunction, void *pvData, size_t cbData)
 {
-    if (g_File == NIL_RTFILE)
+    if (g_hFile == NIL_RTFILE)
     {
         LogRel((USBLIBR3 ":IOCtl failed, device not open.\n"));
         return VERR_FILE_NOT_FOUND;
@@ -248,11 +248,11 @@ static int usblibDoIOCtl(unsigned iFunction, void *pvData, size_t cbData)
     Hdr.cbData = cbData;    /* Don't include full size because the header size is fixed. */
     Hdr.pvDataR3 = pvData;
 
-    int rc = ioctl((int)g_File, iFunction, &Hdr);
+    int rc = ioctl(RTFileToNative(g_hFile), iFunction, &Hdr);
     if (rc < 0)
     {
         rc = errno;
-        LogRel((USBLIBR3 ":IOCtl failed iFunction=%x errno=%d g_file=%d\n", iFunction, rc, (int)g_File));
+        LogRel((USBLIBR3 ":IOCtl failed iFunction=%x errno=%d g_file=%d\n", iFunction, rc, RTFileToNative(g_hFile)));
         return RTErrConvertFromErrno(rc);
     }
 

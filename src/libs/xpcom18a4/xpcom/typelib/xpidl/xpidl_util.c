@@ -54,22 +54,17 @@ xpidl_malloc(size_t nbytes)
     return p;
 }
 
-#if defined(XP_MAC) || defined(XP_SOLARIS)
-static char *strdup(const char *c)
-{
-	char	*newStr = malloc(strlen(c) + 1);
-	if (newStr)
-	{
-		strcpy(newStr, c);
-	}
-	return newStr;
-}
-#endif
-
 char *
 xpidl_strdup(const char *s)
 {
+#if defined(XP_MAC) || defined(XP_SOLARIS) /* bird: dunno why this is required, but whatever*/
+    size_t len = strlen(s);
+	char *ns = malloc(len + 1);
+	if (ns)
+		memcpy(ns, s, len + 1);
+#else
     char *ns = strdup(s);
+#endif
     if (!ns) {
         fputs(OOM, stderr);
         exit(1);
