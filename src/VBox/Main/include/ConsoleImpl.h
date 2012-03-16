@@ -676,7 +676,7 @@ private:
     void guestPropertiesHandleVMReset(void);
     bool guestPropertiesVRDPEnabled(void);
     void guestPropertiesVRDPUpdateLogon(uint32_t u32ClientId, const char *pszUser, const char *pszDomain);
-    void Console::guestPropertiesVRDPUpdateActiveClient(uint32_t u32ClientId);
+    void guestPropertiesVRDPUpdateActiveClient(uint32_t u32ClientId);
     void guestPropertiesVRDPUpdateClientAttach(uint32_t u32ClientId, bool fAttached);
     void guestPropertiesVRDPUpdateNameChange(uint32_t u32ClientId, const char *pszName);
     void guestPropertiesVRDPUpdateDisconnect(uint32_t u32ClientId);
