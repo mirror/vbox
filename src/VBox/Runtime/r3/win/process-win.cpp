@@ -739,7 +739,7 @@ static int rtProcWinCreateEnvFromAccount(PRTUTF16 pwszUser, PRTUTF16 pwszPasswor
  *
  * @param   ppwszBlock      Environment block to destroy.
  */
-static void rtProcWinDestoryEnv(PRTUTF16 ppwszBlock)
+static void rtProcWinDestroyEnv(PRTUTF16 ppwszBlock)
 {
     RTEnvFreeUtf16Block(ppwszBlock);
 }
@@ -914,7 +914,7 @@ static int rtProcWinCreateAsUser2(PRTUTF16 pwszUser, PRTUTF16 pwszPassword, PRTU
                                     dwErr = NO_ERROR;
                                 else
                                     dwErr = GetLastError(); /* CreateProcessAsUserW() failed. */
-                                rtProcWinDestoryEnv(pwszzBlock);
+                                rtProcWinDestroyEnv(pwszzBlock);
                             }
 
                             if (!(fFlags & RTPROC_FLAGS_NO_PROFILE))
@@ -984,7 +984,7 @@ static int rtProcWinCreateAsUser1(PRTUTF16 pwszUser, PRTUTF16 pwszPassword, PRTU
                                                       pProcInfo);
                 if (!fRc)
                     rc = rtProcWinMapErrorCodes(GetLastError());
-                rtProcWinDestoryEnv(pwszzBlock);
+                rtProcWinDestroyEnv(pwszzBlock);
             }
         }
         RTLdrClose(hAdvAPI32);
