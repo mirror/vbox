@@ -32,31 +32,31 @@
 #include <iprt/stdarg.h>
 #include <iprt/err.h> /* for VINF_SUCCESS */
 #if defined(RT_OS_LINUX) && defined(__KERNEL__)
-RT_C_DECLS_BEGIN
+  RT_C_DECLS_BEGIN
 # include <linux/string.h>
-RT_C_DECLS_END
+  RT_C_DECLS_END
 
 #elif defined(IN_XF86_MODULE) && !defined(NO_ANSIC)
-RT_C_DECLS_BEGIN
+  RT_C_DECLS_BEGIN
 # include "xf86_ansic.h"
-RT_C_DECLS_END
+  RT_C_DECLS_END
 
 #elif defined(RT_OS_FREEBSD) && defined(_KERNEL)
-RT_C_DECLS_BEGIN
-/** @todo
- * XXX: Very ugly hack to get things build on recent FreeBSD builds. They have
- * memchr now and we need to include param.h to get __FreeBSD_version and make
- * memchr available based on the version below or we can't compile the kernel
- * module on older versions anymore.
- *
- * But including param.h here opens Pandora's box because we clash with a few
- * defines namely PVM and PAGE_SIZE. We can safely undefine PVM here but not
- * PAGE_SIZE because this results in build errors sooner or later. Luckily this
- * define is in a header included by param.h (machine/param.h). We define the
- * guards here to prevent inclusion of it if PAGE_SIZE was defined already.
- *
- * @todo aeichner: Search for an elegant solution and cleanup this mess ASAP!
- */
+  RT_C_DECLS_BEGIN
+  /** @todo
+   * XXX: Very ugly hack to get things build on recent FreeBSD builds. They have
+   * memchr now and we need to include param.h to get __FreeBSD_version and make
+   * memchr available based on the version below or we can't compile the kernel
+   * module on older versions anymore.
+   *
+   * But including param.h here opens Pandora's box because we clash with a few
+   * defines namely PVM and PAGE_SIZE. We can safely undefine PVM here but not
+   * PAGE_SIZE because this results in build errors sooner or later. Luckily this
+   * define is in a header included by param.h (machine/param.h). We define the
+   * guards here to prevent inclusion of it if PAGE_SIZE was defined already.
+   *
+   * @todo aeichner: Search for an elegant solution and cleanup this mess ASAP!
+   */
 # ifdef PAGE_SIZE
 #  define _AMD64_INCLUDE_PARAM_H_
 #  define _I386_INCLUDE_PARAM_H_
@@ -70,7 +70,7 @@ RT_C_DECLS_BEGIN
    * Defining a macro using bcopy here
    */
 # define memmove(dst, src, size) bcopy(src, dst, size)
-RT_C_DECLS_END
+  RT_C_DECLS_END
 
 #elif defined(RT_OS_SOLARIS) && defined(_KERNEL)
   /*
