@@ -26,7 +26,10 @@
 #include <errno.h>
 #include <time.h>  /* struct timeval */
 
-/* Const#define MOD_NOAUTOUNLOAD        0x1ants */
+/* Overrides */
+#define dev_t unsigned
+
+/* Constants */
 #define DDI_FAILURE (-1)
 #define DDI_SUCCESS (0)
 
@@ -299,8 +302,6 @@ extern int vboxguestSolarisInfo(struct modinfo *pModInfo);
 #define allocb(...) NULL
 #define mod_remove(...) 0
 #define mod_info(...) 0
-#define makedevice(...) 0
-#define getmajor(...) 0
 #define RTR0Init(...) VINF_SUCCESS
 #define RTR0Term(...) do {} while(0)
 #define RTLogCreate(...) VINF_SUCCESS
@@ -365,10 +366,26 @@ static inline modctl_t *mod_getctl(void **linkage)
 }
 
 #define mod_install(linkage) (s_pvLinkage && ((linkage) == s_pvLinkage) ? 0 : EINVAL)
-
 #define QREADR          0x00000010
 #define         WR(q)          ((q)->q_flag & QREADR ? (q) + 1 : (q))
 #define         RD(q)          ((q)->q_flag & QREADR ? (q) : (q) - 1)
+
+
+/* Basic initialisation of a queue structure pair for testing. */
+static inline void doInitQueues(queue_t aQueues[2])
+{
+    aQueues[0].q_flag = QREADR;
+}
+
+static inline dev_t makedevice(unsigned cMajor, unsigned cMinor)
+{
+    return cMajor * 4096 + cMinor;
+}
+
+static inline unsigned getmajor(dev_t device)
+{
+    return device / 4096;
+}
 
 /* API stubs with controllable logic */
 

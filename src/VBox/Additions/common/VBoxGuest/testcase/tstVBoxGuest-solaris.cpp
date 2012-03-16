@@ -26,6 +26,7 @@ int main()
         return rc;
     RTTestBanner(hTest);
     test_init(hTest);
+    testOpenClose(hTest);
 
     /*
      * Summary.

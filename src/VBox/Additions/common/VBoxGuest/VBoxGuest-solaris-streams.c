@@ -356,6 +356,8 @@ static int vbgr0SolSetMouseStatus(PVBOXGUESTSESSION pSession, uint32_t fStatus)
                                 pSession, &fStatus, sizeof(fStatus), NULL);
 }
 
+/** Resets (zeroes) a member in our open node state array in an IRQ-safe way.
+ */
 static void vbgr0SolResetSoftState(PVBGR0STATE pState)
 {
     mutex_enter(&g_StateMutex);
@@ -450,13 +452,11 @@ int vbgr0SolClose(queue_t *pReadQueue, int fFlag, cred_t *pCred)
         return EFAULT;
     }
     qprocsoff(pState->pWriteQueue);
-    pState->pWriteQueue = NULL;
+    pSession = pState->pSession;
+    vbgr0SolResetSoftState(pState);
     pReadQueue->q_ptr = NULL;
 
-    pSession = pState->pSession;
-    pState->pSession = NULL;
     Log((DEVICE_NAME "::Close: pSession=%p pState=%p\n", pSession, pState));
-    vbgr0SolResetSoftState(pState);
     if (!pSession)
     {
         Log((DEVICE_NAME "::Close: failed to get pSession.\n"));
@@ -469,6 +469,31 @@ int vbgr0SolClose(queue_t *pReadQueue, int fFlag, cred_t *pCred)
     VBoxGuestCloseSession(&g_DevExt, pSession);
     return 0;
 }
+
+
+#ifdef TESTCASE
+/** Simple test of vbgr0SolOpen and vbgr0SolClose. */
+void testOpenClose(RTTEST hTest)
+{
+    queue_t aQueues[4];
+    dev_t device = 0;
+    int rc;
+
+    RTTestSub(hTest, "Testing vbgr0SolOpen and vbgr0SolClose");
+    RT_ZERO(g_aOpenNodeStates);
+    RT_ZERO(aQueues);
+    doInitQueues(&aQueues[0]);
+    doInitQueues(&aQueues[2]);
+    rc = vbgr0SolOpen(RD(&aQueues[0]), &device, 0, 0, NULL);
+    RTTEST_CHECK(hTest, rc == 0);
+    RTTEST_CHECK(hTest, g_aOpenNodeStates[1].pWriteQueue == WR(&aQueues[0]));
+    rc = vbgr0SolOpen(RD(&aQueues[2]), &device, 0, 0, NULL);
+    RTTEST_CHECK(hTest, rc == 0);
+    RTTEST_CHECK(hTest, g_aOpenNodeStates[2].pWriteQueue == WR(&aQueues[2]));
+    vbgr0SolClose(RD(&aQueues[0]), 0, NULL);
+    vbgr0SolClose(RD(&aQueues[1]), 0, NULL);
+}
+#endif
 
 
 /* Helper for vbgr0SolWPut. */

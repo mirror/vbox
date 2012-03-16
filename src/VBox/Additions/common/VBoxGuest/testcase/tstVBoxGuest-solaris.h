@@ -24,6 +24,7 @@
 RT_C_DECLS_BEGIN
 
 extern void test_init(RTTEST hTest);
+extern void testOpenClose(RTTEST hTest);
 
 RT_C_DECLS_END
 
