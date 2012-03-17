@@ -521,11 +521,18 @@ typedef struct SUPDRVDEVEXT
     /** The head of the list of registered component factories. */
     PSUPDRVFACTORYREG               pComponentFactoryHead;
 
+#ifdef VBOX_WITH_DTRACE_R0DRV
+
+#endif
+
+    /* 
+     * Note! The non-agnostic bits must be a the very end of the structure!
+     */
 #ifndef SUPDRV_AGNOSTIC
 # ifdef RT_OS_WINDOWS
-    /* Callback object returned by ExCreateCallback. */
+    /** Callback object returned by ExCreateCallback. */
     PCALLBACK_OBJECT                pObjPowerCallback;
-    /* Callback handle returned by ExRegisterCallback. */
+    /** Callback handle returned by ExRegisterCallback. */
     PVOID                           hPowerCallback;
 # endif
 #endif
