@@ -221,8 +221,16 @@ ifdef VBOX_WITH_DTRACE_R3
  VMMR3_DEFS += VBOX_WITH_DTRACE VBOX_WITH_DTRACE_R3
  VMMR3_INCS          += $(VMMR3_0_OUTDIR)
  VMMR3_INTERMEDIATES += $(VMMR3_0_OUTDIR)/VBoxVMM-dtrace.h
+ VMMR3_CLEANS        += $(VMMR3_0_OUTDIR)/VBoxVMM-dtrace.h
  $$(VMMR3_0_OUTDIR)/VBoxVMM-dtrace.h: $(PATH_SUB_CURRENT)/VMMR3/VBoxVMM-dtrace.d | $$(dir $$@)
 	dtrace -C -h -o $@ -s $<
+
+ if1of ($(KBUILD_TARGET), solaris)
+  VMMR3_SOURCES      += $(VMMR3_0_OUTDIR)/VBoxVMM-dtrace.o
+  VMMR3_CLEANS       += $(VMMR3_0_OUTDIR)/VBoxVMM-dtrace.o
+  $$(VMMR3_0_OUTDIR)/VBoxVMM-dtrace.o: $(PATH_SUB_CURRENT)/VMMR3/VBoxVMM-dtrace.d $$(filter-out %/VBoxVMM-dtrace.o,$$(VMMR3_2_OBJS)) | $$(dir $$@)
+	dtrace -C -G $(if-expr $(KBUILD_TARGET_ARCH) == amd64,-64,-32) -o $@ -s $< $(filter-out %/VBoxVMM-dtrace.o,$(VMMR3_2_OBJS))
+ endif
 endif
 
 
@@ -236,7 +244,7 @@ VMMR3/SSM.cpp_DEFS +=	\
 # The VMM DLL.
 #
 ifndef VBOX_ONLY_EXTPACKS_USE_IMPLIBS
-DLLS += VBoxVMM
+ DLLS += VBoxVMM
 endif
 VBoxVMM_TEMPLATE = VBoxR3DllNoPic
 VBoxVMM_DEFS = $(VMMR3_DEFS)
@@ -263,6 +271,15 @@ VBoxVMM_LDFLAGS.solaris = -mimpure-text
 #ifdef VBOX_WITH_PDM_ASYNC_COMPLETION
 # ifeq ($(KBUILD_HOST), linux)
 #VBoxVMM_LIBS += aio
+# endif
+#endif
+
+#ifdef VBOX_WITH_DTRACE_R3
+# if1of ($(KBUILD_TARGET), solaris)
+#  VBoxVMM_SOURCES      += $(VBoxVMM_0_OUTDIR)/VBoxVMM-dtrace.o
+#  VBoxVMM_CLEANS       += $(VBoxVMM_0_OUTDIR)/VBoxVMM-dtrace.o
+#  $$(VBoxVMM_0_OUTDIR)/VBoxVMM-dtrace.o: $(PATH_SUB_CURRENT)/VMMR3/VBoxVMM-dtrace.d $$(VMMR3_2_OBJS) | $$(dir $$@)
+#	dtrace -C -G $(if-expr $(KBUILD_TARGET_ARCH) == amd64,-64,-32) -o $@ -s $< $(VMMR3_2_OBJS)
 # endif
 #endif
 
