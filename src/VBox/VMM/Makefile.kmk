@@ -218,19 +218,8 @@ ifdef VBOX_WITH_RAW_MODE
 endif
 
 ifdef VBOX_WITH_DTRACE_R3
- VMMR3_DEFS += VBOX_WITH_DTRACE VBOX_WITH_DTRACE_R3
- VMMR3_INCS          += $(VMMR3_0_OUTDIR)
- VMMR3_INTERMEDIATES += $(VMMR3_0_OUTDIR)/VBoxVMM-dtrace.h
- VMMR3_CLEANS        += $(VMMR3_0_OUTDIR)/VBoxVMM-dtrace.h
- $$(VMMR3_0_OUTDIR)/VBoxVMM-dtrace.h: $(PATH_SUB_CURRENT)/VMMR3/VBoxVMM-dtrace.d | $$(dir $$@)
-	dtrace -C -h -o $@ -s $<
-
- if1of ($(KBUILD_TARGET), solaris)
-  VMMR3_SOURCES      += $(VMMR3_0_OUTDIR)/VBoxVMM-dtrace.o
-  VMMR3_CLEANS       += $(VMMR3_0_OUTDIR)/VBoxVMM-dtrace.o
-  $$(VMMR3_0_OUTDIR)/VBoxVMM-dtrace.o: $(PATH_SUB_CURRENT)/VMMR3/VBoxVMM-dtrace.d $$(filter-out %/VBoxVMM-dtrace.o,$$(VMMR3_2_OBJS)) | $$(dir $$@)
-	dtrace -C -G $(if-expr $(KBUILD_TARGET_ARCH) == amd64,-64,-32) -o $@ -s $< $(filter-out %/VBoxVMM-dtrace.o,$(VMMR3_2_OBJS))
- endif
+ VMMR3_USES       += dtrace
+ VMMR3_SOURCES    += VMMR3/VBoxVMM.d
 endif
 
 
@@ -268,23 +257,18 @@ VBoxVMM_LDFLAGS.win = /DELAYLOAD:dbghelp.dll
 VBoxVMM_LDFLAGS.linux = -Wl,--no-undefined
 VBoxVMM_LDFLAGS.darwin = -install_name $(VBOX_DYLD_EXECUTABLE_PATH)/VBoxVMM.dylib
 VBoxVMM_LDFLAGS.solaris = -mimpure-text
+
+ifdef VBOX_WITH_DTRACE_R3
+ VBoxVMM_USES        += dtrace
+ VBoxVMM_SOURCES     += VMMR3/VBoxVMM.d
+endif
+
+
 #ifdef VBOX_WITH_PDM_ASYNC_COMPLETION
 # ifeq ($(KBUILD_HOST), linux)
 #VBoxVMM_LIBS += aio
 # endif
 #endif
-
-#ifdef VBOX_WITH_DTRACE_R3
-# if1of ($(KBUILD_TARGET), solaris)
-#  VBoxVMM_SOURCES      += $(VBoxVMM_0_OUTDIR)/VBoxVMM-dtrace.o
-#  VBoxVMM_CLEANS       += $(VBoxVMM_0_OUTDIR)/VBoxVMM-dtrace.o
-#  $$(VBoxVMM_0_OUTDIR)/VBoxVMM-dtrace.o: $(PATH_SUB_CURRENT)/VMMR3/VBoxVMM-dtrace.d $$(VMMR3_2_OBJS) | $$(dir $$@)
-#	dtrace -C -G $(if-expr $(KBUILD_TARGET_ARCH) == amd64,-64,-32) -o $@ -s $< $(VMMR3_2_OBJS)
-# endif
-#endif
-if1of ($(KBUILD_TARGET), solaris)
- VBoxVMM_SOURCES += $(VMMR3_0_OUTDIR)/VBoxVMM-dtrace.o
-endif
 
 
 if defined(VBOX_WITH_RAW_MODE) && $(intersects $(VBOX_LDR_FMT32), pe lx)
