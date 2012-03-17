@@ -282,6 +282,9 @@ VBoxVMM_LDFLAGS.solaris = -mimpure-text
 #	dtrace -C -G $(if-expr $(KBUILD_TARGET_ARCH) == amd64,-64,-32) -o $@ -s $< $(VMMR3_2_OBJS)
 # endif
 #endif
+if1of ($(KBUILD_TARGET), solaris)
+ VBoxVMM_SOURCES += $(VMMR3_0_OUTDIR)/VBoxVMM-dtrace.o
+endif
 
 
 if defined(VBOX_WITH_RAW_MODE) && $(intersects $(VBOX_LDR_FMT32), pe lx)
