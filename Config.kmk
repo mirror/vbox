@@ -2168,9 +2168,9 @@ ifeq ($(KBUILD_TARGET),solaris)
 # apparently. It will not be able to handle IEMAll via a -pipe.
 	$(APPEND) '$@' 'VBOX_AS_VERSION                ?= $(shell `gcc -print-prog-name=as` -V -o /dev/null < /dev/null 2>&1 | kmk_sed -e '1!d' -e 's/^as: *//' )'
 	$(APPEND) '$@' 'if $$(pos Sun Compiler Common,$$(VBOX_AS_VERSION)) > 0'
-	$(APPEND) '$@' ' VBOX_SOLARIS_AS_IS_CRAP=1'
+	$(APPEND) '$@' ' VBOX_GCC_USING_SOLARIS_AS=1'
 	$(APPEND) '$@' 'endif'
-	$(APPEND) '$@' 'ifndef VBOX_SOLARIS_AS_IS_CRAP' 
+	$(APPEND) '$@' 'ifndef VBOX_GCC_USING_SOLARIS_AS' 
 	$(APPEND) '$@' ' VBOX_GCC_pipe                 ?= -pipe'
 	$(APPEND) '$@' 'endif'
 else
@@ -2811,6 +2811,10 @@ ifeq ($(KBUILD_TARGET),solaris)
  TEMPLATE_VBoxR0_LDFLAGS.solaris    = -u _init -u _info
  TEMPLATE_VBoxR0_LIBS.solaris       = \
 	$(PATH_STAGE_LIB)/RuntimeR0Stub$(VBOX_SUFF_LIB)
+ ifdef VBOX_GCC_USING_SOLARIS_AS
+  TEMPLATE_VBoxR0_CFLAGS.amd64 += -Wa,-xmodel=kernel
+  TEMPLATE_VBoxR0_CXXFLAGS.amd64 += -Wa,-xmodel=kernel
+ endif
 else
  TEMPLATE_VBoxR0_LDFLAGS            = -nostdlib -Bsymbolic
  # temporarily, must fix the loader.
@@ -2965,7 +2969,8 @@ TEMPLATE_VBOXR0DRV_CFLAGS              = -Wpointer-arith -Winline $(VBOX_GCC_Wno
 	-Wformat  -Wimplicit-int -Wimplicit-function-declaration -Werror-implicit-function-declaration -Wparentheses \
 	-O2 -fno-omit-frame-pointer -ffreestanding -nodefaultlibs -fno-strict-aliasing -fno-common -std=c99
 TEMPLATE_VBOXR0DRV_CFLAGS.x86          = -m32 -mno-sse -mno-mmx -mno-sse2 -mno-3dnow
-TEMPLATE_VBOXR0DRV_CFLAGS.amd64        = -m64 -mno-sse -mno-mmx -mno-sse2 -mno-3dnow $(VBOX_GCC_msave-args) -mno-red-zone -mcmodel=kernel \
+TEMPLATE_VBOXR0DRV_CFLAGS.amd64        = -m64 -mno-sse -mno-mmx -mno-sse2 -mno-3dnow $(VBOX_GCC_msave-args) \
+	-mno-red-zone -mcmodel=kernel $(if-expr defined(VBOX_GCC_USING_SOLARIS_AS),-Wa$(COMMA)-xmodel=kernel,) \
 	-fno-reorder-blocks -fno-asynchronous-unwind-tables -funit-at-a-time
 TEMPLATE_VBOXR0DRV_CXXFLAGS           = -Wpointer-arith -Winline \
 	-Wshadow -Wuninitialized -Wunused-function -Wunused-label -Wunused-value -Wunused-variable \

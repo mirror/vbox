@@ -892,7 +892,7 @@ VBox-xpcom-xptcall_SOURCES.os2         = xpcom/reflect/xptcall/src/md/os2/xptcin
                                          xpcom/reflect/xptcall/src/md/os2/xptcstubs_gcc_x86_os2.cpp
 VBox-xpcom-xptcall_SOURCES.solaris.x86 = xpcom/reflect/xptcall/src/md/unix/xptcinvoke_x86_solaris.cpp \
                                          xpcom/reflect/xptcall/src/md/unix/xptcstubs_x86_solaris.cpp
-ifdef VBOX_SOLARIS_AS_IS_CRAP
+ifdef VBOX_GCC_USING_SOLARIS_AS
  VBox-xpcom-xptcall_SOURCES.solaris.amd64 = \
     xpcom/reflect/xptcall/src/md/unix/xptcinvoke_x86_64_linux.cpp \
     xpcom/reflect/xptcall/src/md/unix/xptcstubs_x86_64_solaris.cpp
