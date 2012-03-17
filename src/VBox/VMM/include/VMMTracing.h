@@ -66,7 +66,7 @@
  */
 #ifdef IN_RING3
 # ifdef VBOX_WITH_DTRACE_R3
-#  include "VBoxVMM-dtrace.h"
+#  include "dtrace/VBoxVMM.h"
 
 # elif defined(DBGFTRACE_ENABLED)
 #  define VBOXVMM_EM_STATE_CHANGED(a_pVCpu, a_enmOldState, a_enmNewState, a_rc) \

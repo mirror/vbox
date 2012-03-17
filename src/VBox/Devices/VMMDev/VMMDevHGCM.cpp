@@ -31,7 +31,7 @@
 #include "VMMDevHGCM.h"
 
 #ifdef VBOX_WITH_DTRACE
-# include "VBoxDD-dtrace.h"
+# include "dtrace/VBoxDD.h"
 #else
 # define VBOXDD_HGCMCALL_ENTER(a,b,c,d)             do { } while (0)
 # define VBOXDD_HGCMCALL_COMPLETED_REQ(a,b)         do { } while (0)

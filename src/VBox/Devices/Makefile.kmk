@@ -228,9 +228,8 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
  VBoxDD_LDFLAGS.l4       = -Wl,--no-undefined
 
  ifdef VBOX_WITH_DTRACE_R3
-  if1of ($(KBUILD_TARGET), solaris)
-   VBoxDD_SOURCES       += $(DevicesR3_0_OUTDIR)/VBoxDD-dtrace.o
-  endif
+  VBoxDD_USES           += dtrace
+  VBoxDD_SOURCES        += build/VBoxDD.d
  endif
 
 
@@ -470,18 +469,9 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
  endif
 
  ifdef VBOX_WITH_DTRACE_R3
-  DevicesR3_DEFS          += VBOX_WITH_DTRACE
-  DevicesR3_INCS          += $(DevicesR3_0_OUTDIR)
-  DevicesR3_INTERMEDIATES += $(DevicesR3_0_OUTDIR)/VBoxDD-dtrace.h
-  $$(DevicesR3_0_OUTDIR)/VBoxDD-dtrace.h: $(PATH_SUB_CURRENT)/build/VBoxDD-dtrace.d | $$(dir $$@)
-	dtrace -C -h -o $@ -s $<
-
-  if1of ($(KBUILD_TARGET), solaris)
-   DevicesR3_SOURCES      += $(DevicesR3_0_OUTDIR)/VBoxDD-dtrace.o
-   DevicesR3_CLEANS       += $(DevicesR3_0_OUTDIR)/VBoxDD-dtrace.o
-   $$(DevicesR3_0_OUTDIR)/VBoxDD-dtrace.o: $(PATH_SUB_CURRENT)/build/VBoxDD-dtrace.d $$(filter-out %/VBoxDD-dtrace.o,$$(DevicesR3_2_OBJS)) | $$(dir $$@)
-	dtrace -C -G $(if-expr $(KBUILD_TARGET_ARCH) == amd64,-64,-32) -o $@ -s $< $(filter-out %/VBoxDD-dtrace.o,$(DevicesR3_2_OBJS))
-  endif
+  DevicesR3_DEFS        += VBOX_WITH_DTRACE
+  DevicesR3_USES        += dtrace
+  DevicesR3_SOURCES     += build/VBoxDD.d
  endif
 
  ifdef VBOX_WITH_DYNAMIC_DSDT
