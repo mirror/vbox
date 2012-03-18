@@ -36,7 +36,7 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
  #
  # Main targets.
  #
- LIBRARIES += Drivers ServicesR0
+ LIBRARIES += ServicesR0
  DLLS      += VBoxDDU VBoxDD VBoxDD2
  SYSMODS   += VBoxDDR0 VBoxDD2R0
  ifdef VBOX_WITH_RAW_MODE
@@ -117,9 +117,21 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
  #
  VBoxDD_TEMPLATE         = VBoxR3DllWarnNoPic
  VBoxDD_SDKS.win         = WINPSDK DXSDK W2K3DDK VBOX_NTDLL
- VBoxDD_INCS             = build
+ Storage/DrvHostDVD.cpp_SDKS.win = W2K3DDK
+ VBoxDD_INCS             = \
+ 	build \
+ 	Network/slirp
+ VBoxDD_DEFS             = \
+ 	VBOX_ACPI \
+ 	VBOX_HGCM_HOST_CODE \
+ 	VBOX_WITH_HGCM \
+ 	$(if $(VBOX_BIOS_DMI_FALLBACK),VBOX_BIOS_DMI_FALLBACK,) \
+ 	VBOX_WITH_DMI_CHASSIS \
+ 	VBOX_WITH_DMI_OEMSTRINGS
+ VBoxDD_DEFS.win         = _WIN32_WINNT=0x0510
  VBoxDD_SOURCES          = \
  	build/VBoxDD.cpp \
+	\
  	Input/DevPS2.cpp \
  	Input/PS2K.cpp \
  	Input/UsbKbd.cpp \
@@ -152,19 +164,33 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
  	PC/DevLPC.cpp \
  	Storage/fdc.c \
  	Serial/DevSerial.cpp \
- 	Parallel/DevParallel.cpp
-
- VBoxDD_DEFS             = \
- 	VBOX_ACPI \
- 	VBOX_HGCM_HOST_CODE \
- 	VBOX_WITH_HGCM \
- 	$(if $(VBOX_BIOS_DMI_FALLBACK),VBOX_BIOS_DMI_FALLBACK,) 
- VBoxDD_DEFS            += \
- 	VBOX_WITH_DMI_CHASSIS \
- 	VBOX_WITH_DMI_OEMSTRINGS # why was these here and then again further down??
-
+ 	Parallel/DevParallel.cpp \
+	\
+ 	Audio/audio.c \
+ 	Audio/audiosniffer.c \
+ 	Audio/mixeng.c \
+ 	Audio/noaudio.c \
+ 	Audio/filteraudio.c \
+ 	Input/DrvKeyboardQueue.cpp \
+ 	Input/DrvMouseQueue.cpp \
+ 	Network/DrvIntNet.cpp \
+ 	Network/DrvDedicatedNic.cpp \
+ 	PC/DrvACPI.cpp \
+ 	PC/DrvAcpiCpu.cpp \
+ 	Serial/DrvChar.cpp \
+ 	Serial/DrvNamedPipe.cpp \
+ 	Serial/DrvRawFile.cpp \
+ 	Storage/DrvBlock.cpp \
+ 	Storage/DrvHostBase.cpp \
+ 	Storage/DrvHostDVD.cpp \
+ 	Storage/DrvHostFloppy.cpp \
+ 	Storage/DrvMediaISO.cpp \
+ 	Storage/DrvRawImage.cpp \
+ 	Storage/Debug.cpp \
+ 	Storage/DrvVD.cpp \
+ 	Network/DrvNetSniffer.cpp \
+ 	Network/Pcap.cpp
  VBoxDD_LIBS             = # more later.
-
  VBoxDD_LDFLAGS.darwin   = -install_name $(VBOX_DYLD_EXECUTABLE_PATH)/VBoxDD.dylib \
  	-framework CoreAudio \
  	-framework AudioUnit \
@@ -176,7 +202,7 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
  VBoxDD_LDFLAGS.l4       = -Wl,--no-undefined
 
 
- # Optional bits and pieces.
+ # --- Optional Devices, Drivers and other pieces ---
 
  ifdef VBOX_WITH_CRHGSMI
   VBoxDD_DEFS           += VBOX_WITH_CRHGSMI
@@ -190,18 +216,62 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
  ifdef VBOX_WITH_VIDEOHWACCEL
   VBoxDD_DEFS           += VBOX_WITH_VIDEOHWACCEL
  endif
- #ifdef VBOX_WITH_DMI_CHASSIS
- # VBoxDD_DEFS           += VBOX_WITH_DMI_CHASSIS     # this is always defined above...
- #endif
- #ifdef VBOX_WITH_DMI_OEMSTRINGS
- # VBoxDD_DEFS           += VBOX_WITH_DMI_OEMSTRINGS  # this is always defined above...
- #endif
  ifdef VBOX_WITH_PXE_ROM
   VBoxDD_DEFS           += VBOX_WITH_PXE_ROM
  endif
 
  ifdef VBOX_WITH_USB
   VBoxDD_DEFS           += VBOX_WITH_USB
+  VBoxDD_SOURCES        += \
+  	USB/vrdp/USBProxyDevice-vrdp.cpp
+
+  VBoxDD_DEFS.darwin    += VUSB_HAVE_USBPROXY_DEVICE
+  ifdef VBOX_WITH_NEW_USB_CODE_ON_DARWIN
+   VBoxDD_DEFS.darwin   += VBOX_WITH_NEW_USB_CODE_ON_DARWIN
+  endif
+  VBoxDD_SOURCES.darwin += \
+ 	USB/USBProxyDevice.cpp \
+ 	USB/darwin/USBProxyDevice-darwin.cpp
+
+  VBoxDD_DEFS.linux     += \
+ 	VUSB_HAVE_USBPROXY_DEVICE \
+ 	$(if $(VBOX_WITH_LINUX_COMPILER_H),VBOX_WITH_LINUX_COMPILER_H,) \
+ 	$(if $(VBOX_USB_WITH_SYSFS),VBOX_USB_WITH_SYSFS,)
+  VBoxDD_SOURCES.linux  += \
+ 	USB/USBProxyDevice.cpp \
+ 	USB/linux/USBProxyDevice-linux.cpp
+
+  VBoxDD_DEFS.l4        += VUSB_HAVE_USBPROXY_DEVICE
+  VBoxDD_SOURCES.l4     += \
+ 	USB/USBProxyDevice.cpp \
+ 	USB/linux/USBProxyDevice-linux.cpp
+
+  VBoxDD_DEFS.os2       += VUSB_HAVE_USBPROXY_DEVICE
+  VBoxDD_INCS.os2       += $(PATH_ROOT)/src/VBox/HostDrivers/VBoxUSB/os2
+  VBoxDD_SOURCES.os2    += \
+ 	USB/USBProxyDevice.cpp \
+ 	USB/os2/USBProxyDevice-os2.cpp
+
+  VBoxDD_DEFS.win       += VUSB_HAVE_USBPROXY_DEVICE
+  VBoxDD_SOURCES.win    += \
+ 	USB/USBProxyDevice.cpp \
+ 	USB/win/USBProxyDevice-win.cpp
+
+  VBoxDD_DEFS.solaris   += VUSB_HAVE_USBPROXY_DEVICE
+  VBoxDD_SOURCES.solaris+= \
+ 	USB/USBProxyDevice.cpp \
+ 	USB/solaris/USBProxyDevice-solaris.cpp
+
+  VBoxDD_DEFS.freebsd   += VUSB_HAVE_USBPROXY_DEVICE
+  VBoxDD_SOURCES.freebsd+= \
+ 	USB/USBProxyDevice.cpp \
+ 	USB/freebsd/USBProxyDevice-freebsd.cpp
+
+  ifdef VBOX_WITH_SCSI
+   VBoxDD_SOURCES       += \
+   	Storage/UsbMsd.cpp
+  endif
+
   if defined(VBOX_WITH_EHCI_IMPL) && !defined(VBOX_WITH_EXTPACK_PUEL)
    VBoxDD_DEFS          += VBOX_WITH_EHCI_IMPL
   endif
@@ -211,12 +281,17 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
    VBoxDD_SOURCES       += \
  	USB/DevEHCI.cpp
   endif
- endif
+
+ endif # VBOX_WITH_USB
 
  ifdef VBOX_WITH_VUSB
   VBoxDD_DEFS           += VBOX_WITH_VUSB
   VBoxDD_SOURCES        += \
- 	USB/DevOHCI.cpp
+ 	USB/DevOHCI.cpp \
+ 	USB/DrvVUSBRootHub.cpp \
+ 	USB/VUSBDevice.cpp \
+ 	USB/VUSBReadAhead.cpp \
+ 	USB/VUSBUrb.cpp
  endif
 
  ifdef VBOX_WITH_AHCI
@@ -282,17 +357,22 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
  	Storage/VBoxSCSI.cpp
  endif
 
- ifdef VBOX_WITH_PDM_ASYNC_COMPLETION
-  VBoxDD_DEFS           += VBOX_WITH_PDM_ASYNC_COMPLETION
- endif
- ifdef VBOX_WITH_SCSI
-  VBoxDD_DEFS           += VBOX_WITH_SCSI
- endif
-
  ifdef VBOX_WITH_LSILOGIC
   VBoxDD_DEFS           += VBOX_WITH_LSILOGIC
   VBoxDD_SOURCES        += \
  	Storage/DevLsiLogicSCSI.cpp
+ endif
+
+ ifdef VBOX_WITH_PDM_ASYNC_COMPLETION
+  VBoxDD_DEFS           += VBOX_WITH_PDM_ASYNC_COMPLETION
+ endif
+
+ ifdef VBOX_WITH_SCSI
+  VBoxDD_DEFS           += VBOX_WITH_SCSI
+  VBoxDD_SOURCES        += \
+  	Storage/DrvSCSI.cpp
+  VBoxDD_SOURCES.linux  += \
+  	Storage/DrvSCSIHost.cpp
  endif
 
  ifdef VBOX_WITH_EFI
@@ -307,20 +387,11 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
   EFI/DevEFI.cpp_INCS.amd64 += EFI/tools/include/X64
  endif
 
- ifdef VBOX_WITH_DRV_DISK_INTEGRITY
-  VBoxDD_DEFS           += VBOX_WITH_DRV_DISK_INTEGRITY
- endif
- ifdef VBOX_WITH_UDPTUNNEL
-  VBoxDD_DEFS           += VBOX_WITH_UDPTUNNEL
- endif
- ifdef VBOX_WITH_VDE
-  VBoxDD_DEFS           += VBOX_WITH_VDE
- endif
-
  if defined(VBOX_WITH_PCI_PASSTHROUGH_IMPL) && !defined(VBOX_WITH_EXTPACK_PUEL)
   VBoxDD_DEFS           += VBOX_WITH_PCI_PASSTHROUGH_IMPL
   VBoxDD_SOURCES        += \
-	Bus/DevPciRaw.cpp
+	Bus/DevPciRaw.cpp \
+	Bus/DrvPciRaw.cpp
  endif
 
  ifdef VBOX_WITH_HGSMI
@@ -359,9 +430,214 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
   VBoxDD_SOURCES        += build/VBoxDD.d
  endif
 
+ # --- WARNING! SLIRP MESS AHEAD! ;-) ---
+ VBOX_SLIRP_SOURCES = \
+ 	Network/DrvNAT.cpp \
+ 	Network/slirp/bootp.c \
+  	Network/slirp/debug.c \
+ 	Network/slirp/ip_icmp.c \
+ 	Network/slirp/ip_input.c \
+ 	Network/slirp/ip_output.c \
+ 	Network/slirp/misc.c \
+ 	Network/slirp/sbuf.c \
+ 	Network/slirp/slirp.c \
+ 	Network/slirp/socket.c \
+ 	Network/slirp/tcp_input.c \
+ 	Network/slirp/tcp_output.c \
+ 	Network/slirp/tcp_subr.c \
+ 	Network/slirp/tcp_timer.c \
+ 	Network/slirp/udp.c \
+ 	Network/slirp/dnsproxy/hash.c \
+ 	Network/slirp/tftp.c \
+ 	Network/slirp/dnsproxy/dnsproxy.c
+ ifdef VBOX_WITH_SLIRP_BSD_SBUF
+  VBOX_SLIRP_SOURCES += Network/slirp/bsd/kern/subr_sbuf.c
+ endif
+ VBOX_SLIRP_BSD_ARCH = $(subst x86,i386,$(KBUILD_TARGET_ARCH))
+ VBOX_SLIRP_BSD_SOURCES += \
+ 	Network/slirp/bsd/kern/kern_mbuf.c \
+ 	Network/slirp/bsd/kern/uipc_mbuf.c \
+ 	Network/slirp/bsd/kern/uipc_mbuf2.c \
+ 	Network/slirp/bsd/$(VBOX_SLIRP_BSD_ARCH)/in_cksum.c
+ VBOX_SLIRP_ALIAS_SOURCES = \
+ 	Network/slirp/libalias/alias.c \
+ 	Network/slirp/libalias/alias_db.c \
+ 	Network/slirp/libalias/alias_mod.c \
+ 	Network/slirp/libalias/alias_proxy.c \
+ 	Network/slirp/libalias/alias_ftp.c \
+ 	Network/slirp/libalias/alias_dns.c \
+ 	Network/slirp/libalias/alias_nbt.c \
+ 	Network/slirp/libalias/alias_util.c
+
+ # Enable VBOX_WITH_DNSMAPPING_IN_HOSTRESOLVER here for a while, then move to 
+ # $(file)_DEFS or clean the code disabled with this definition.
+ VBOX_WITH_DNSMAPPING_IN_HOSTRESOLVER=1
+
+ # dump memory related operations.
+ Network/slirp/misc.c_DEFS += $(if $(VBOX_NAT_MEM_DEBUG),VBOX_NAT_MEM_DEBUG,)
+
+ VBoxDD_SOURCES += $(VBOX_SLIRP_SOURCES)
+ define def_vbox_slirp_cflags
+   $(file)_DEFS += \
+       $(if $(VBOX_WITH_SLIRP_BSD_SBUF),VBOX_WITH_SLIRP_BSD_SBUF,) \
+       $(if $(VBOX_WITH_SLIRP_MEMORY_CHECK),RTMEM_WRAP_TO_EF_APIS,) \
+       $(if $(VBOX_WITH_DEBUG_NAT_SOCKETS),VBOX_WITH_DEBUG_NAT_SOCKETS,)	\
+       $(if $(VBOX_WITH_DNSMAPPING_IN_HOSTRESOLVER),VBOX_WITH_DNSMAPPING_IN_HOSTRESOLVER,)	\
+       $(if $(VBOX_WITH_NAT_UDP_SOCKET_CLONE),VBOX_WITH_NAT_UDP_SOCKET_CLONE,)	\
+       $(if $(VBOX_WITH_NAT_SEND2HOME),VBOX_WITH_NAT_SEND2HOME,)	\
+       $(if $(VBOX_WITH_SLIRP_MT),VBOX_WITH_SLIRP_MT,)
+  $(file)_INCS += \
+	$(1)/slirp/bsd/sys \
+	$(1)/slirp/bsd/sys/sys \
+	$(1)/slirp/bsd/$(VBOX_SLIRP_BSD_ARCH)/include \
+	$(1)/slirp/bsd/netinet \
+	$(1)/slirp \
+	$(1)/slirp/libalias
+  ifeq ($(KBUILD_TARGET),win)
+   $(file)_CFLAGS = -wd4018
+  else
+   $(file)_CFLAGS += -Wno-sign-compare -Wno-format-Wno-bad-function-cast
+  endif
+ endef
+
+ $(foreach file,$(VBOX_SLIRP_SOURCES),$(eval $(call def_vbox_slirp_cflags, Network)))
+
+ VBoxDD_SOURCES += $(VBOX_SLIRP_ALIAS_SOURCES)
+ define def_vbox_slirp_alias_cflags
+   $(file)_DEFS += VBOX_SLIRP_ALIAS \
+       $(if $(VBOX_WITH_DEBUG_LIBALIAS),VBOX_WITH_DEBUG_LIBALIAS,)
+   $(file)_INCS += \
+	$(1)/slirp/libalias \
+	$(1)/slirp \
+	$(1)/slirp/dnsproxy
+   ifneq ($(KBUILD_TARGET),win)
+    $(file)_CFLAGS += -Wno-shadow
+   endif
+ endef
+ $(foreach file,$(VBOX_SLIRP_ALIAS_SOURCES),$(eval $(call def_vbox_slirp_cflags, Network)))
+ $(foreach file,$(VBOX_SLIRP_ALIAS_SOURCES),$(eval $(call def_vbox_slirp_alias_cflags, Network)))
+
+ VBOX_SLIRP_BSD_SOURCES += $(VBOX_SLIRP_BSD_SOURCES.${KBUILD_TARGET_ARCH})
+ VBoxDD_SOURCES += $(VBOX_SLIRP_BSD_SOURCES)
+ define def_vbox_slirp_bsd_cflags
+  $(file)_DEFS += VBOX_SLIRP_BSD
+  $(file)_INCS += $(1)/slirp/dnsproxy
+ endef
+ $(foreach file,$(VBOX_SLIRP_BSD_SOURCES),$(eval $(call def_vbox_slirp_cflags, Network)))
+ $(foreach file,$(VBOX_SLIRP_BSD_SOURCES),$(eval $(call def_vbox_slirp_bsd_cflags, Network)))
+
+
+ # -- OS specific driver hacks. --
+
+ ifeq ($(KBUILD_TARGET),darwin)
+  VBoxDD_SOURCES        := \
+  	$(filter-out Storage/DrvHostRaw% Storage/DrvHostFloppy%, $(VBoxDD_SOURCES)) \
+  	Audio/coreaudio.c
+  VBoxDD_SOURCES.darwin += \
+  	Serial/DrvHostSerial.cpp
+ endif # darwin
+
+ ifeq ($(KBUILD_TARGET),freebsd)
+  VBoxDD_SOURCES        := \
+  	$(filter-out Storage/DrvHostFloppy%, $(VBoxDD_SOURCES)) \
+  	Audio/ossaudio.c \
+  	Serial/DrvHostSerial.cpp
+  VBoxDD_SOURCES.freebsd += \
+ 	Network/DrvTAP.cpp
+ endif # freebsd
+
+ ifeq ($(KBUILD_TARGET),l4)
+  $(error L4 is busted. Fix when needed.)
+  #VBoxDD_SOURCES      = filter needed
+  VBoxDD_SOURCES.l4    += \
+  	Audio/ossaudio.c
+ endif # l4
+
+ VBoxDD_SOURCES.linux  += \
+ 	Network/DrvTAP.cpp \
+ 	Audio/ossaudio.c \
+ 	Parallel/DrvHostParallel.cpp \
+ 	Serial/DrvHostSerial.cpp
+
+ ifeq ($(KBUILD_TARGET),os2)
+ VBoxDD_SOURCES        := $(filter-out Storage/DrvHost%, $(VBoxDD_SOURCES))
+ endif
+
+ ifeq ($(KBUILD_TARGET),solaris)
+ VBoxDD_SOURCES        := $(filter-out Storage/DrvHostFloppy%, $(VBoxDD_SOURCES))
+ VBoxDD_SOURCES.solaris += \
+ 	Audio/solaudio.c \
+ 	Serial/DrvHostSerial.cpp
+  ifdef VBOX_WITH_SOLARIS_OSS
+   VBoxDD_SOURCES += Audio/ossaudio.c
+   VBoxDD_DEFS += VBOX_WITH_SOLARIS_OSS
+  endif
+  ifdef VBOX_WITH_SUID_WRAPPER
+   VBoxDD_DEFS += VBOX_WITH_SUID_WRAPPER
+  endif
+ endif
+
+ VBoxDD_SOURCES.win    += \
+ 	Audio/dsoundaudio.c \
+ 	Serial/DrvHostSerial.cpp
+
+ if defined(VBOX_WITH_NETFLT)
+  VBoxDD_DEFS          += VBOX_WITH_NETFLT 
+  if defined(VBOX_NETFLT_ONDEMAND_BIND)
+   VBoxDD_DEFS.win     += VBOX_NETFLT_ONDEMAND_BIND
+  endif
+ endif
+
+ # --- Optional drivers. ---
+
+ ifdef VBOX_WITH_DRV_DISK_INTEGRITY
+  VBoxDD_DEFS           += VBOX_WITH_DRV_DISK_INTEGRITY
+  VBoxDD_SOURCES        += \
+  	Storage/DrvDiskIntegrity.cpp
+ endif
+
+ ifdef VBOX_WITH_UDPTUNNEL
+  VBoxDD_DEFS           += VBOX_WITH_UDPTUNNEL
+  VBoxDD_SOURCES        += \
+  	Network/DrvUDPTunnel.cpp
+ endif
+
+ ifdef VBOX_WITH_VDE
+  VBoxDD_DEFS           += VBOX_WITH_VDE
+  VBoxDD_SOURCES        += \
+  	Network/DrvVDE.cpp \
+  	Network/VDEPlug.cpp
+ endif
+
+ ifdef VBOX_WITH_ISCSI
+  Storage/DrvVD.cpp_INCS = \
+ 	Network/lwip/src/include \
+ 	Network/lwip/src/include/ipv4 \
+ 	Network/lwip/vbox/include
+ endif
+
+ ifdef VBOX_WITH_ALSA
+  VBoxDD_DEFS.linux     += VBOX_WITH_ALSA
+  VBoxDD_SOURCES.linux  += \
+ 	Audio/alsaaudio.c \
+ 	Audio/alsa_stubs.c
+ endif
+
+ ifdef VBOX_WITH_PULSE
+  VBoxDD_DEFS.linux     += VBOX_WITH_PULSE
+  VBoxDD_SOURCES.linux  += \
+ 	Audio/pulseaudio.c \
+ 	Audio/pulse_stubs.c
+  VBoxDD_DEFS.freebsd   += VBOX_WITH_PULSE
+  VBoxDD_SOURCES.freebsd+= \
+ 	Audio/pulseaudio.c \
+ 	Audio/pulse_stubs.c
+ endif
+
+
+ # --- Final bits, mostly libraries for order dependant linkers ---
 
  VBoxDD_LIBS            += \
- 	$(PATH_STAGE_LIB)/Drivers$(VBOX_SUFF_LIB) \
  	$(PATH_STAGE_LIB)/VgaDefBiosLogo$(VBOX_SUFF_LIB) \
  	$(LIB_VMM) \
  	$(LIB_RUNTIME)
@@ -741,6 +1017,7 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
   endif
  endif
 
+
  #
  # VBoxDD2R0 (LGPL sysmod)
  #
@@ -761,363 +1038,6 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
 
 
  #
- # Drivers (library)
- #
- ifeq ($(KBUILD_TARGET),l4) # We are using real Linux headers, not the cleaned up user space ones
- Drivers_TEMPLATE   = VBOXR3NP
- else
- Drivers_TEMPLATE   = VBoxR3DllWarnNoPic
- endif
- Drivers_SDKS.win   = WINPSDK W2K3DDK
- Storage/DrvHostDVD.cpp_SDKS.win = W2K3DDK
- Drivers_DEFS.win       += _WIN32_WINNT=0x0510
- Drivers_DEFS            = \
- 	IN_IDE_R3 \
- 	$(if $(VBOX_WITH_NETFLT),VBOX_WITH_NETFLT,) \
- 	$(if $(VBOX_WITH_INIP),VBOX_WITH_INIP,) \
- 	$(if $(VBOX_WITH_DRV_DISK_INTEGRITY),VBOX_WITH_DRV_DISK_INTEGRITY,) \
-
- Drivers_INCS      := \
- 	build \
- 	Network/slirp
- Drivers_SOURCES    = \
- 	Audio/audio.c \
- 	Audio/audiosniffer.c \
- 	Audio/mixeng.c \
- 	Audio/noaudio.c \
- 	Audio/filteraudio.c \
- 	Input/DrvKeyboardQueue.cpp \
- 	Input/DrvMouseQueue.cpp \
- 	Network/DrvIntNet.cpp \
- 	Network/DrvDedicatedNic.cpp \
- 	PC/DrvACPI.cpp \
- 	PC/DrvAcpiCpu.cpp \
- 	Serial/DrvChar.cpp \
- 	Serial/DrvNamedPipe.cpp \
- 	Serial/DrvRawFile.cpp \
- 	Storage/DrvBlock.cpp \
- 	Storage/DrvHostBase.cpp \
- 	Storage/DrvHostDVD.cpp \
- 	Storage/DrvHostFloppy.cpp \
- 	Storage/DrvMediaISO.cpp \
- 	Storage/DrvRawImage.cpp \
- 	Storage/Debug.cpp \
- 	Storage/DrvVD.cpp \
- 	Network/DrvNetSniffer.cpp \
- 	Network/Pcap.cpp
-
- VBOX_SLIRP_SOURCES = \
- 	Network/DrvNAT.cpp \
- 	Network/slirp/bootp.c \
-  	Network/slirp/debug.c \
- 	Network/slirp/ip_icmp.c \
- 	Network/slirp/ip_input.c \
- 	Network/slirp/ip_output.c \
- 	Network/slirp/misc.c \
- 	Network/slirp/sbuf.c \
- 	Network/slirp/slirp.c \
- 	Network/slirp/socket.c \
- 	Network/slirp/tcp_input.c \
- 	Network/slirp/tcp_output.c \
- 	Network/slirp/tcp_subr.c \
- 	Network/slirp/tcp_timer.c \
- 	Network/slirp/udp.c \
- 	Network/slirp/dnsproxy/hash.c \
- 	Network/slirp/tftp.c \
- 	Network/slirp/dnsproxy/dnsproxy.c
-
- ifdef VBOX_WITH_SLIRP_BSD_SBUF
- VBOX_SLIRP_SOURCES += Network/slirp/bsd/kern/subr_sbuf.c
- endif
-
- VBOX_SLIRP_BSD_ARCH = $(subst x86,i386,$(KBUILD_TARGET_ARCH))
- VBOX_SLIRP_BSD_SOURCES += \
- 	Network/slirp/bsd/kern/kern_mbuf.c \
- 	Network/slirp/bsd/kern/uipc_mbuf.c \
- 	Network/slirp/bsd/kern/uipc_mbuf2.c \
- 	Network/slirp/bsd/$(VBOX_SLIRP_BSD_ARCH)/in_cksum.c
-
- VBOX_SLIRP_ALIAS_SOURCES = \
- 	Network/slirp/libalias/alias.c \
- 	Network/slirp/libalias/alias_db.c \
- 	Network/slirp/libalias/alias_mod.c \
- 	Network/slirp/libalias/alias_proxy.c \
- 	Network/slirp/libalias/alias_ftp.c \
- 	Network/slirp/libalias/alias_dns.c \
- 	Network/slirp/libalias/alias_nbt.c \
- 	Network/slirp/libalias/alias_util.c
-
- # Enable VBOX_WITH_DNSMAPPING_IN_HOSTRESOLVER here for a while, then move to $(file)_DEFS or clean the code 
- # disabled with this definition
- VBOX_WITH_DNSMAPPING_IN_HOSTRESOLVER=1
-
- # dump memory related operations.
- Network/slirp/misc.c_DEFS += $(if $(VBOX_NAT_MEM_DEBUG),VBOX_NAT_MEM_DEBUG,)
-
- Drivers_SOURCES += $(VBOX_SLIRP_SOURCES)
- define def_vbox_slirp_cflags
-   $(file)_DEFS += \
-       $(if $(VBOX_WITH_SLIRP_BSD_SBUF),VBOX_WITH_SLIRP_BSD_SBUF,) \
-       $(if $(VBOX_WITH_SLIRP_MEMORY_CHECK),RTMEM_WRAP_TO_EF_APIS,) \
-       $(if $(VBOX_WITH_DEBUG_NAT_SOCKETS),VBOX_WITH_DEBUG_NAT_SOCKETS,)	\
-       $(if $(VBOX_WITH_DNSMAPPING_IN_HOSTRESOLVER),VBOX_WITH_DNSMAPPING_IN_HOSTRESOLVER,)	\
-       $(if $(VBOX_WITH_NAT_UDP_SOCKET_CLONE),VBOX_WITH_NAT_UDP_SOCKET_CLONE,)	\
-       $(if $(VBOX_WITH_NAT_SEND2HOME),VBOX_WITH_NAT_SEND2HOME,)	\
-       $(if $(VBOX_WITH_SLIRP_MT),VBOX_WITH_SLIRP_MT,)
-  $(file)_INCS += $(1)/slirp/bsd/sys
-  $(file)_INCS += $(1)/slirp/bsd/sys/sys
-  $(file)_INCS += $(1)/slirp/bsd/$(VBOX_SLIRP_BSD_ARCH)/include
-  $(file)_INCS += $(1)/slirp/bsd/netinet
-  $(file)_INCS += $(1)/slirp
-  $(file)_INCS += $(1)/slirp/libalias
-  ifeq ($(KBUILD_TARGET),win)
-   $(file)_CFLAGS = -wd4018
-  else
-   $(file)_CFLAGS += -Wno-sign-compare
-   $(file)_CFLAGS += -Wno-format
-   $(file)_CFLAGS += -Wno-bad-function-cast
-  endif
- endef
-
- $(foreach file,$(VBOX_SLIRP_SOURCES),$(eval $(call def_vbox_slirp_cflags, Network)))
-
- Drivers_SOURCES += $(VBOX_SLIRP_ALIAS_SOURCES)
- define def_vbox_slirp_alias_cflags
-   $(file)_DEFS += VBOX_SLIRP_ALIAS \
-       $(if $(VBOX_WITH_DEBUG_LIBALIAS),VBOX_WITH_DEBUG_LIBALIAS,)
-   $(file)_INCS += $(1)/slirp/libalias
-   $(file)_INCS += $(1)/slirp
-   $(file)_INCS += $(1)/slirp/dnsproxy
-   ifneq ($(KBUILD_TARGET),win)
-    $(file)_CFLAGS += -Wno-shadow
-   endif
- endef
- $(foreach file,$(VBOX_SLIRP_ALIAS_SOURCES),$(eval $(call def_vbox_slirp_cflags, Network)))
- $(foreach file,$(VBOX_SLIRP_ALIAS_SOURCES),$(eval $(call def_vbox_slirp_alias_cflags, Network)))
-
- VBOX_SLIRP_BSD_SOURCES += $(VBOX_SLIRP_BSD_SOURCES.${KBUILD_TARGET_ARCH})
- Drivers_SOURCES += $(VBOX_SLIRP_BSD_SOURCES)
- define def_vbox_slirp_bsd_cflags
-   $(file)_DEFS += VBOX_SLIRP_BSD
-   $(file)_INCS += $(1)/slirp/dnsproxy
- endef
- $(foreach file,$(VBOX_SLIRP_BSD_SOURCES),$(eval $(call def_vbox_slirp_cflags, Network)))
- $(foreach file,$(VBOX_SLIRP_BSD_SOURCES),$(eval $(call def_vbox_slirp_bsd_cflags, Network)))
-
- ifdef VBOX_WITH_DRV_DISK_INTEGRITY
- Drivers_SOURCES += \
- 	Storage/DrvDiskIntegrity.cpp
- endif
-
- ifdef VBOX_WITH_UDPTUNNEL
-  Drivers_SOURCES += \
-	Network/DrvUDPTunnel.cpp
-  Drivers_DEFS += VBOX_WITH_UDPTUNNEL
- endif
- ifdef VBOX_WITH_VDE
-  Drivers_SOURCES += \
- 	Network/DrvVDE.cpp \
- 	Network/VDEPlug.cpp
-  Drivers_DEFS += VBOX_WITH_VDE
- endif
- if defined(VBOX_WITH_PCI_PASSTHROUGH_IMPL) && !defined(VBOX_WITH_EXTPACK_PUEL)
-  Drivers_SOURCES += \
-	Bus/DrvPciRaw.cpp
-  Drivers_DEFS += VBOX_WITH_PCI_PASSTHROUGH_IMPL
- endif
-
- # -- OS specific --
-
- ifeq ($(KBUILD_TARGET),darwin)
- Drivers_SOURCES      := $(filter-out \
- 	Storage/DrvHostRaw% \
- 	Storage/DrvHostFloppy% \
- 	, $(Drivers_SOURCES)) \
- 	Audio/coreaudio.c
- Drivers_SOURCES.darwin = \
- 	Serial/DrvHostSerial.cpp
- endif # darwin
-
- ifeq ($(KBUILD_TARGET),freebsd)
- Drivers_SOURCES      := $(filter-out \
- 	Storage/DrvHostFloppy% \
- 	, $(Drivers_SOURCES)) \
- 	Audio/ossaudio.c \
- 	Serial/DrvHostSerial.cpp
- Drivers_SOURCES.freebsd = \
- 	Network/DrvTAP.cpp
- endif # freebsd
-
-
- ifeq ($(KBUILD_TARGET),l4)
- Drivers_SOURCES       = \
- 	Input/DrvMouseQueue.cpp \
- 	Input/DrvKeyboardQueue.cpp \
- 	Storage/DrvBlock.cpp \
- 	Storage/DrvMediaISO.cpp \
- 	Storage/DrvRawImage.cpp \
- 	Storage/DrvHostBase.cpp \
- 	Storage/DrvHostDVD.cpp \
- 	Storage/DrvVD.cpp \
- 	PC/DrvACPI.cpp \
- 	Network/DrvIntNet.cpp \
- 	Network/DHCPServerRunner.cpp \
- 	Network/DrvNetSniffer.cpp \
- 	Network/Pcap.cpp \
- 	Audio/audio.c \
- 	Audio/mixeng.c \
- 	Audio/noaudio.c \
- 	Audio/audiosniffer.c
-
- Drivers_SOURCES.l4    = \
- 	Audio/ossaudio.c
- endif # l4
-
- Drivers_SOURCES.linux = \
- 	Network/DrvTAP.cpp \
- 	Audio/ossaudio.c \
- 	Parallel/DrvHostParallel.cpp \
- 	Serial/DrvHostSerial.cpp
-
- ifeq ($(KBUILD_TARGET),os2)
- Drivers_SOURCES      := $(filter-out \
- 	Storage/DrvHost% \
- 	, $(Drivers_SOURCES))
- endif
-
- ifeq ($(KBUILD_TARGET),solaris)
- Drivers_SOURCES      := $(filter-out \
- 	Storage/DrvHost% \
- 	, $(Drivers_SOURCES))
- Drivers_SOURCES.solaris = \
- 	Audio/solaudio.c \
- 	Storage/DrvHostBase.cpp \
- 	Storage/DrvHostDVD.cpp \
- 	Serial/DrvHostSerial.cpp
-  ifdef VBOX_WITH_SOLARIS_OSS
-   Drivers_SOURCES += Audio/ossaudio.c
-   Drivers_DEFS += VBOX_WITH_SOLARIS_OSS
-  endif
-  ifdef VBOX_WITH_SUID_WRAPPER
-   Drivers_DEFS += VBOX_WITH_SUID_WRAPPER
-  endif
- endif
-
- Drivers_SOURCES.win   = \
- 	Audio/dsoundaudio.c \
- 	Serial/DrvHostSerial.cpp
-
- if defined(VBOX_WITH_NETFLT)
-  if defined(VBOX_NETFLT_ONDEMAND_BIND)
-   Drivers_DEFS.win     += VBOX_NETFLT_ONDEMAND_BIND
-  endif
- endif
-
- # -- features --
-
- ifdef VBOX_WITH_ISCSI
-  Storage/DrvVD.cpp_INCS = \
- 	Network/lwip/src/include \
- 	Network/lwip/src/include/ipv4 \
- 	Network/lwip/vbox/include
- endif # VBOX_WITH_ISCSI
-
- ifdef VBOX_WITH_ALSA
-  Drivers_DEFS.linux   += VBOX_WITH_ALSA
-  Drivers_SOURCES.linux+= \
- 	Audio/alsaaudio.c \
- 	Audio/alsa_stubs.c
- endif
-
- ifdef VBOX_WITH_PULSE
-  Drivers_DEFS.linux   += VBOX_WITH_PULSE
-  Drivers_SOURCES.linux+= \
- 	Audio/pulseaudio.c \
- 	Audio/pulse_stubs.c
-  Drivers_DEFS.freebsd += VBOX_WITH_PULSE
-  Drivers_SOURCES.freebsd+= \
- 	Audio/pulseaudio.c \
- 	Audio/pulse_stubs.c
- endif
-
- ifdef VBOX_WITH_VUSB
-  Drivers_DEFS         += VBOX_WITH_VUSB
-  Drivers_SOURCES      += \
- 	USB/DrvVUSBRootHub.cpp \
- 	USB/VUSBDevice.cpp \
- 	USB/VUSBReadAhead.cpp \
- 	USB/VUSBUrb.cpp
-
- endif # VBOX_WITH_VUSB
-
- ifdef VBOX_WITH_USB
-  Drivers_DEFS         += VBOX_WITH_USB
-
-  Drivers_SOURCES     += \
-        USB/vrdp/USBProxyDevice-vrdp.cpp
-
-  Drivers_DEFS.darwin  += VUSB_HAVE_USBPROXY_DEVICE
-  ifdef VBOX_WITH_NEW_USB_CODE_ON_DARWIN
-   Drivers_DEFS.darwin += VBOX_WITH_NEW_USB_CODE_ON_DARWIN
-  endif
-  Drivers_SOURCES.darwin += \
- 	USB/USBProxyDevice.cpp \
- 	USB/darwin/USBProxyDevice-darwin.cpp
-
-  Drivers_DEFS.linux    += \
- 	VUSB_HAVE_USBPROXY_DEVICE \
- 	$(if $(VBOX_WITH_LINUX_COMPILER_H),VBOX_WITH_LINUX_COMPILER_H,) \
- 	$(if $(VBOX_USB_WITH_SYSFS),VBOX_USB_WITH_SYSFS,)
-  Drivers_SOURCES.linux += \
- 	USB/USBProxyDevice.cpp \
- 	USB/linux/USBProxyDevice-linux.cpp
-
-  Drivers_DEFS.l4      += VUSB_HAVE_USBPROXY_DEVICE
-  Drivers_SOURCES.l4   += \
- 	USB/USBProxyDevice.cpp \
- 	USB/linux/USBProxyDevice-linux.cpp
-
-  Drivers_DEFS.os2 += VUSB_HAVE_USBPROXY_DEVICE
-  Drivers_INCS.os2 += $(PATH_ROOT)/src/VBox/HostDrivers/VBoxUSB/os2
-  Drivers_SOURCES.os2 += \
- 	USB/USBProxyDevice.cpp \
- 	USB/os2/USBProxyDevice-os2.cpp
-
-  Drivers_DEFS.win     += VUSB_HAVE_USBPROXY_DEVICE
-  Drivers_SOURCES.win  += \
- 	USB/USBProxyDevice.cpp \
- 	USB/win/USBProxyDevice-win.cpp
-
-  Drivers_DEFS.solaris    += VUSB_HAVE_USBPROXY_DEVICE
-  Drivers_SOURCES.solaris += \
- 	USB/USBProxyDevice.cpp \
- 	USB/solaris/USBProxyDevice-solaris.cpp
-
-  Drivers_DEFS.freebsd      += VUSB_HAVE_USBPROXY_DEVICE
-  Drivers_SOURCES.freebsd   += \
- 	USB/USBProxyDevice.cpp \
- 	USB/freebsd/USBProxyDevice-freebsd.cpp
-
-  ifdef VBOX_WITH_SCSI
-   Drivers_SOURCES += \
-   	Storage/UsbMsd.cpp
-  endif
-
- endif # VBOX_WITH_USB
-
- ifdef VBOX_WITH_PDM_ASYNC_COMPLETION
-  Drivers_DEFS += VBOX_WITH_PDM_ASYNC_COMPLETION
- endif #VBOX_WITH_PDM_ASYNC_COMPLETION
-
- ifdef VBOX_WITH_SCSI
-  Drivers_DEFS += VBOX_WITH_SCSI
-  Drivers_SOURCES += \
- 	Storage/DrvSCSI.cpp
-  Drivers_SOURCES.linux += \
- 	Storage/DrvSCSIHost.cpp
- endif # VBOX_WITH_SCSI
-
- #
  # Ring-0 Services (library, linked into VMMR0.r0)
  #
  ServicesR0_TEMPLATE  = VBoxR0
@@ -1126,6 +1046,7 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
  	Network/SrvIntNetR0.cpp \
         $(if $(VBOX_WITH_PCI_PASSTHROUGH),Bus/SrvPciRawR0.cpp,)
  Network/SrvIntNetR0.cpp_CXXFLAGS := $(if-expr $(KBUILD_TARGET) == "win",,$(VBOX_GCC_Wno-array_bounds))
+
 
  #
  # Internal Networking - Ring-3 Testcase for the Ring-0 code (a bit hackish).
@@ -1137,6 +1058,7 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
   tstIntNetR0_SOURCES     = \
  	Network/testcase/tstIntNetR0.cpp
  endif
+
 
  #
  # Internal Networking - Ring-3 Testcase for the Ring-0 code (a bit hackish).
@@ -1171,6 +1093,7 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
  endif
 
 endif # !VBOX_ONLY_EXTPACKS
+
 
 if defined(VBOX_WITH_EXTPACK_PUEL) && defined(VBOX_WITH_EXTPACK_PUEL_BUILD)
  #
@@ -1207,6 +1130,7 @@ if defined(VBOX_WITH_EXTPACK_PUEL) && defined(VBOX_WITH_EXTPACK_PUEL_BUILD)
 
   Bus/DevPciRaw.cpp_INCS   = Bus
  endif
+
 
  #
  # The Intel PXE rom.
