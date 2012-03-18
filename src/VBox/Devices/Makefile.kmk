@@ -201,8 +201,15 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
  VBoxDD_LDFLAGS.linux    = -Wl,--no-undefined
  VBoxDD_LDFLAGS.l4       = -Wl,--no-undefined
 
+ # --- Tracing bits. ---
 
- # --- Optional Devices, Drivers and other pieces ---
+ ifdef VBOX_WITH_DTRACE_R3
+  VBoxDD_DEFS           += VBOX_WITH_DTRACE
+  VBoxDD_USES           += dtrace
+  VBoxDD_SOURCES        += build/VBoxDD.d
+ endif
+
+ # --- Graphics bits. ---
 
  ifdef VBOX_WITH_CRHGSMI
   VBoxDD_DEFS           += VBOX_WITH_CRHGSMI
@@ -216,9 +223,34 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
  ifdef VBOX_WITH_VIDEOHWACCEL
   VBoxDD_DEFS           += VBOX_WITH_VIDEOHWACCEL
  endif
+
+ ifdef VBOX_WITH_HGSMI
+  VBoxDD_DEFS           += VBOX_WITH_HGSMI
+  VBoxDD_SOURCES        += \
+ 	Graphics/DevVGA_VBVA.cpp \
+ 	Graphics/HGSMI/HGSMIHost.cpp \
+ 	Graphics/HGSMI/HGSMIHostHlp.cpp
+  VBoxDD_LIBS           += \
+ 	$(PATH_STAGE_LIB)/HGSMIHostR3Lib$(VBOX_SUFF_LIB)
+ endif
+
+ ifdef VBOX_WITH_WDDM
+  VBoxDD_DEFS           += VBOX_WITH_WDDM
+  VBoxDD_SOURCES        += \
+ 	Graphics/HGSMI/SHGSMIHost.cpp
+ endif
+
+ ifdef VBOX_WITH_VDMA
+  VBoxDD_DEFS           += VBOX_WITH_VDMA
+  VBoxDD_SOURCES        += \
+ 	Graphics/DevVGA_VDMA.cpp
+ endif
+
  ifdef VBOX_WITH_PXE_ROM
   VBoxDD_DEFS           += VBOX_WITH_PXE_ROM
  endif
+
+ # --- USB bits. ---
 
  ifdef VBOX_WITH_USB
   VBoxDD_DEFS           += VBOX_WITH_USB
@@ -294,12 +326,7 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
  	USB/VUSBUrb.cpp
  endif
 
- ifdef VBOX_WITH_AHCI
-  VBoxDD_DEFS           += VBOX_WITH_AHCI IN_AHCI_R3
-  VBoxDD_SOURCES        += \
- 	Storage/DevAHCI.cpp \
- 	Storage/ATAController.cpp
- endif
+ # --- Networking bits. ---
 
  ifdef VBOX_WITH_INIP
   VBoxDD_DEFS           += VBOX_WITH_INIP
@@ -350,6 +377,28 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
  	Network/DevVirtioNet.cpp
  endif
 
+ ifdef VBOX_WITH_UDPTUNNEL
+  VBoxDD_DEFS           += VBOX_WITH_UDPTUNNEL
+  VBoxDD_SOURCES        += \
+  	Network/DrvUDPTunnel.cpp
+ endif
+
+ ifdef VBOX_WITH_VDE
+  VBoxDD_DEFS           += VBOX_WITH_VDE
+  VBoxDD_SOURCES        += \
+  	Network/DrvVDE.cpp \
+  	Network/VDEPlug.cpp
+ endif
+
+ # --- Storage bits. ---
+
+ ifdef VBOX_WITH_AHCI
+  VBoxDD_DEFS           += VBOX_WITH_AHCI IN_AHCI_R3
+  VBoxDD_SOURCES        += \
+ 	Storage/DevAHCI.cpp \
+ 	Storage/ATAController.cpp
+ endif
+
  ifdef VBOX_WITH_BUSLOGIC
   VBoxDD_DEFS           += VBOX_WITH_BUSLOGIC
   VBoxDD_SOURCES        += \
@@ -375,6 +424,19 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
   	Storage/DrvSCSIHost.cpp
  endif
 
+ ifdef VBOX_WITH_ISCSI
+  Storage/DrvVD.cpp_INCS = \
+ 	Network/lwip/src/include \
+ 	Network/lwip/src/include/ipv4 \
+ 	Network/lwip/vbox/include
+ endif
+
+ ifdef VBOX_WITH_DRV_DISK_INTEGRITY
+  VBoxDD_DEFS           += VBOX_WITH_DRV_DISK_INTEGRITY
+  VBoxDD_SOURCES        += \
+  	Storage/DrvDiskIntegrity.cpp
+ endif
+
  ifdef VBOX_WITH_EFI
   VBoxDD_DEFS           += VBOX_WITH_EFI
   VBoxDD_LIBS           += $(PATH_STAGE_LIB)/EfiThunkBin$(VBOX_SUFF_LIB)
@@ -394,28 +456,6 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
 	Bus/DrvPciRaw.cpp
  endif
 
- ifdef VBOX_WITH_HGSMI
-  VBoxDD_DEFS           += VBOX_WITH_HGSMI
-  VBoxDD_SOURCES        += \
- 	Graphics/DevVGA_VBVA.cpp \
- 	Graphics/HGSMI/HGSMIHost.cpp \
- 	Graphics/HGSMI/HGSMIHostHlp.cpp
-  VBoxDD_LIBS           += \
- 	$(PATH_STAGE_LIB)/HGSMIHostR3Lib$(VBOX_SUFF_LIB)
- endif
-
- ifdef VBOX_WITH_WDDM
-  VBoxDD_DEFS           += VBOX_WITH_WDDM
-  VBoxDD_SOURCES        += \
- 	Graphics/HGSMI/SHGSMIHost.cpp
- endif
-
- ifdef VBOX_WITH_VDMA
-  VBoxDD_DEFS           += VBOX_WITH_VDMA
-  VBoxDD_SOURCES        += \
- 	Graphics/DevVGA_VDMA.cpp
- endif
-
  ifdef VBOX_WITH_MSI_DEVICES
   VBoxDD_DEFS           += VBOX_WITH_MSI_DEVICES
  endif
@@ -424,11 +464,27 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
   VBoxDD_DEFS           += VBOX_WITH_DYNAMIC_DSDT
  endif
 
- ifdef VBOX_WITH_DTRACE_R3
-  VBoxDD_DEFS           += VBOX_WITH_DTRACE
-  VBoxDD_USES           += dtrace
-  VBoxDD_SOURCES        += build/VBoxDD.d
+
+ # --- Audio bits. ---
+
+ ifdef VBOX_WITH_ALSA
+  VBoxDD_DEFS.linux     += VBOX_WITH_ALSA
+  VBoxDD_SOURCES.linux  += \
+ 	Audio/alsaaudio.c \
+ 	Audio/alsa_stubs.c
  endif
+
+ ifdef VBOX_WITH_PULSE
+  VBoxDD_DEFS.linux     += VBOX_WITH_PULSE
+  VBoxDD_SOURCES.linux  += \
+ 	Audio/pulseaudio.c \
+ 	Audio/pulse_stubs.c
+  VBoxDD_DEFS.freebsd   += VBOX_WITH_PULSE
+  VBoxDD_SOURCES.freebsd+= \
+ 	Audio/pulseaudio.c \
+ 	Audio/pulse_stubs.c
+ endif
+
 
  # --- WARNING! SLIRP MESS AHEAD! ;-) ---
  VBOX_SLIRP_SOURCES = \
@@ -527,7 +583,7 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
  $(foreach file,$(VBOX_SLIRP_BSD_SOURCES),$(eval $(call def_vbox_slirp_bsd_cflags, Network)))
 
 
- # -- OS specific driver hacks. --
+ # --- OS specific driver hacks. ---
 
  ifeq ($(KBUILD_TARGET),darwin)
   VBoxDD_SOURCES        := \
@@ -588,54 +644,8 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
   endif
  endif
 
- # --- Optional drivers. ---
 
- ifdef VBOX_WITH_DRV_DISK_INTEGRITY
-  VBoxDD_DEFS           += VBOX_WITH_DRV_DISK_INTEGRITY
-  VBoxDD_SOURCES        += \
-  	Storage/DrvDiskIntegrity.cpp
- endif
-
- ifdef VBOX_WITH_UDPTUNNEL
-  VBoxDD_DEFS           += VBOX_WITH_UDPTUNNEL
-  VBoxDD_SOURCES        += \
-  	Network/DrvUDPTunnel.cpp
- endif
-
- ifdef VBOX_WITH_VDE
-  VBoxDD_DEFS           += VBOX_WITH_VDE
-  VBoxDD_SOURCES        += \
-  	Network/DrvVDE.cpp \
-  	Network/VDEPlug.cpp
- endif
-
- ifdef VBOX_WITH_ISCSI
-  Storage/DrvVD.cpp_INCS = \
- 	Network/lwip/src/include \
- 	Network/lwip/src/include/ipv4 \
- 	Network/lwip/vbox/include
- endif
-
- ifdef VBOX_WITH_ALSA
-  VBoxDD_DEFS.linux     += VBOX_WITH_ALSA
-  VBoxDD_SOURCES.linux  += \
- 	Audio/alsaaudio.c \
- 	Audio/alsa_stubs.c
- endif
-
- ifdef VBOX_WITH_PULSE
-  VBoxDD_DEFS.linux     += VBOX_WITH_PULSE
-  VBoxDD_SOURCES.linux  += \
- 	Audio/pulseaudio.c \
- 	Audio/pulse_stubs.c
-  VBoxDD_DEFS.freebsd   += VBOX_WITH_PULSE
-  VBoxDD_SOURCES.freebsd+= \
- 	Audio/pulseaudio.c \
- 	Audio/pulse_stubs.c
- endif
-
-
- # --- Final bits, mostly libraries for order dependant linkers ---
+ # --- Final bits, mostly libraries for order dependant linkers. ---
 
  VBoxDD_LIBS            += \
  	$(PATH_STAGE_LIB)/VgaDefBiosLogo$(VBOX_SUFF_LIB) \
