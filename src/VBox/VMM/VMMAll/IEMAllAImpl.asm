@@ -1361,8 +1361,8 @@ ENDPROC iemAImpl_fild_i16_to_r80
 ; @param    A2      Where to store the 16-bit signed integer value.
 ; @param    A3      Pointer to the 80-bit value.
 ;
-BEGINPROC_FASTCALL iemAImpl_fist_r80_to_i16, 12
-        PROLOGUE_3_ARGS
+BEGINPROC_FASTCALL iemAImpl_fist_r80_to_i16, 16
+        PROLOGUE_4_ARGS
         sub     xSP, 20h
 
         fninit
@@ -1374,7 +1374,7 @@ BEGINPROC_FASTCALL iemAImpl_fist_r80_to_i16, 12
 
         fninit
         add     xSP, 20h
-        EPILOGUE_3_ARGS 0
+        EPILOGUE_4_ARGS 0
 ENDPROC iemAImpl_fist_r80_to_i16
 
 
@@ -1387,8 +1387,8 @@ ENDPROC iemAImpl_fist_r80_to_i16
 ; @param    A2      Where to store the 16-bit signed integer value.
 ; @param    A3      Pointer to the 80-bit value.
 ;
-BEGINPROC_FASTCALL iemAImpl_fistt_r80_to_i16, 12
-        PROLOGUE_3_ARGS
+BEGINPROC_FASTCALL iemAImpl_fistt_r80_to_i16, 16
+        PROLOGUE_4_ARGS
         sub     xSP, 20h
 
         fninit
@@ -1400,7 +1400,7 @@ BEGINPROC_FASTCALL iemAImpl_fistt_r80_to_i16, 12
 
         fninit
         add     xSP, 20h
-        EPILOGUE_3_ARGS 0
+        EPILOGUE_4_ARGS 0
 ENDPROC iemAImpl_fistt_r80_to_i16
 
 
@@ -1513,8 +1513,8 @@ ENDPROC iemAImpl_fild_i32_to_r80
 ; @param    A2      Where to store the 32-bit signed integer value.
 ; @param    A3      Pointer to the 80-bit value.
 ;
-BEGINPROC_FASTCALL iemAImpl_fist_r80_to_i32, 12
-        PROLOGUE_3_ARGS
+BEGINPROC_FASTCALL iemAImpl_fist_r80_to_i32, 16
+        PROLOGUE_4_ARGS
         sub     xSP, 20h
 
         fninit
@@ -1526,7 +1526,7 @@ BEGINPROC_FASTCALL iemAImpl_fist_r80_to_i32, 12
 
         fninit
         add     xSP, 20h
-        EPILOGUE_3_ARGS 0
+        EPILOGUE_4_ARGS 0
 ENDPROC iemAImpl_fist_r80_to_i32
 
 
@@ -1539,8 +1539,8 @@ ENDPROC iemAImpl_fist_r80_to_i32
 ; @param    A2      Where to store the 32-bit signed integer value.
 ; @param    A3      Pointer to the 80-bit value.
 ;
-BEGINPROC_FASTCALL iemAImpl_fistt_r80_to_i32, 12
-        PROLOGUE_3_ARGS
+BEGINPROC_FASTCALL iemAImpl_fistt_r80_to_i32, 16
+        PROLOGUE_4_ARGS
         sub     xSP, 20h
 
         fninit
@@ -1552,7 +1552,7 @@ BEGINPROC_FASTCALL iemAImpl_fistt_r80_to_i32, 12
 
         fninit
         add     xSP, 20h
-        EPILOGUE_3_ARGS 0
+        EPILOGUE_4_ARGS 0
 ENDPROC iemAImpl_fistt_r80_to_i32
 
 
@@ -1665,8 +1665,8 @@ ENDPROC iemAImpl_fild_i64_to_r80
 ; @param    A2      Where to store the 64-bit signed integer value.
 ; @param    A3      Pointer to the 80-bit value.
 ;
-BEGINPROC_FASTCALL iemAImpl_fist_r80_to_i64, 12
-        PROLOGUE_3_ARGS
+BEGINPROC_FASTCALL iemAImpl_fist_r80_to_i64, 16
+        PROLOGUE_4_ARGS
         sub     xSP, 20h
 
         fninit
@@ -1678,7 +1678,7 @@ BEGINPROC_FASTCALL iemAImpl_fist_r80_to_i64, 12
 
         fninit
         add     xSP, 20h
-        EPILOGUE_3_ARGS 0
+        EPILOGUE_4_ARGS 0
 ENDPROC iemAImpl_fist_r80_to_i64
 
 
@@ -1691,8 +1691,8 @@ ENDPROC iemAImpl_fist_r80_to_i64
 ; @param    A2      Where to store the 64-bit signed integer value.
 ; @param    A3      Pointer to the 80-bit value.
 ;
-BEGINPROC_FASTCALL iemAImpl_fistt_r80_to_i64, 12
-        PROLOGUE_3_ARGS
+BEGINPROC_FASTCALL iemAImpl_fistt_r80_to_i64, 16
+        PROLOGUE_4_ARGS
         sub     xSP, 20h
 
         fninit
@@ -1704,7 +1704,7 @@ BEGINPROC_FASTCALL iemAImpl_fistt_r80_to_i64, 12
 
         fninit
         add     xSP, 20h
-        EPILOGUE_3_ARGS 0
+        EPILOGUE_4_ARGS 0
 ENDPROC iemAImpl_fistt_r80_to_i64
 
 
@@ -1746,8 +1746,8 @@ ENDPROC iemAImpl_fld_r32_to_r80
 ; @param    A2      Where to store the 32-bit value.
 ; @param    A3      Pointer to the 80-bit value.
 ;
-BEGINPROC_FASTCALL iemAImpl_fst_r80_to_r32, 12
-        PROLOGUE_3_ARGS
+BEGINPROC_FASTCALL iemAImpl_fst_r80_to_r32, 16
+        PROLOGUE_4_ARGS
         sub     xSP, 20h
 
         fninit
@@ -1759,7 +1759,7 @@ BEGINPROC_FASTCALL iemAImpl_fst_r80_to_r32, 12
 
         fninit
         add     xSP, 20h
-        EPILOGUE_3_ARGS 0
+        EPILOGUE_4_ARGS 0
 ENDPROC iemAImpl_fst_r80_to_r32
 
 
@@ -1870,8 +1870,8 @@ ENDPROC iemAImpl_fld_r64_to_r80
 ; @param    A2      Where to store the 64-bit value.
 ; @param    A3      Pointer to the 80-bit value.
 ;
-BEGINPROC_FASTCALL iemAImpl_fst_r80_to_r64, 12
-        PROLOGUE_3_ARGS
+BEGINPROC_FASTCALL iemAImpl_fst_r80_to_r64, 16
+        PROLOGUE_4_ARGS
         sub     xSP, 20h
 
         fninit
@@ -1883,7 +1883,7 @@ BEGINPROC_FASTCALL iemAImpl_fst_r80_to_r64, 12
 
         fninit
         add     xSP, 20h
-        EPILOGUE_3_ARGS 0
+        EPILOGUE_4_ARGS 0
 ENDPROC iemAImpl_fst_r80_to_r64
 
 
@@ -1994,8 +1994,8 @@ ENDPROC iemAImpl_fld_r80_from_r80
 ; @param    A2      Where to store the 80-bit value.
 ; @param    A3      Pointer to the 80-bit register value.
 ;
-BEGINPROC_FASTCALL iemAImpl_fst_r80_to_r80, 12
-        PROLOGUE_3_ARGS
+BEGINPROC_FASTCALL iemAImpl_fst_r80_to_r80, 16
+        PROLOGUE_4_ARGS
         sub     xSP, 20h
 
         fninit
@@ -2007,7 +2007,7 @@ BEGINPROC_FASTCALL iemAImpl_fst_r80_to_r80, 12
 
         fninit
         add     xSP, 20h
-        EPILOGUE_3_ARGS 0
+        EPILOGUE_4_ARGS 0
 ENDPROC iemAImpl_fst_r80_to_r80
 
 
