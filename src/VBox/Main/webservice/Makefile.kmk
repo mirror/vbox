@@ -374,7 +374,7 @@ $(VBOX_JWS_GEN)/jwsglue.list: \
 		$(VBOXWEB_WSDL) \
 		| $(VBOX_JWS_GEN)/java/
 	$(call MSG_L1,Generating JAX-WS Java glue files from XIDL)
-	$(RM) -f $(wildcard $(VBOX_JWS_GEN)/java/*/*/*.java) $(wildcard $(VBOX_JWS_GEN)/java/*/*/*/*.java)
+	$(QUIET)$(RM) -f $(wildcard $(VBOX_JWS_GEN)/java/*/*/*.java) $(wildcard $(VBOX_JWS_GEN)/java/*/*/*/*.java)
 	$(QUIET)$(VBOX_XSLTPROC) \
               --stringparam G_vboxApiSuffix $(VBOX_API_SUFFIX) \
               --stringparam G_vboxGlueStyle jaxws              \
