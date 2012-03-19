@@ -3804,7 +3804,9 @@ STDMETHODIMP Machine::AttachDevice(IN_BSTR aControllerName,
             // put the parent in the machine registry then
             mediumLock.release();
             treeLock.release();
+            alock.release();
             addMediumToRegistry(medium);
+            alock.acquire();
             treeLock.acquire();
             mediumLock.acquire();
             medium->getFirstRegistryMachineId(uuidRegistryParent);
@@ -3899,7 +3901,9 @@ STDMETHODIMP Machine::AttachDevice(IN_BSTR aControllerName,
 
         mediumLock.release();
         treeLock.release();
+        alock.release();
         addMediumToRegistry(medium);
+        alock.acquire();
         treeLock.acquire();
         mediumLock.acquire();
     }
@@ -9515,14 +9519,22 @@ HRESULT Machine::saveStateSettings(int aFlags)
  * was created with 4.0 or later, then the machine registry is used. Otherwise
  * the global VirtualBox media registry is used.
  *
- * Caller must hold machine read lock and at least media tree read lock!
- * Caller must NOT hold any medium locks.
+ * Caller must NOT hold machine lock, media tree or any medium locks!
  *
  * @param pMedium
  */
 void Machine::addMediumToRegistry(ComObjPtr<Medium> &pMedium)
 {
-    ComObjPtr<Medium> pBase = pMedium->getBase();
+    /* Paranoia checks: do not hold machine or media tree locks. */
+    AssertReturnVoid(!isWriteLockOnCurrentThread());
+    AssertReturnVoid(!mParent->getMediaTreeLockHandle().isWriteLockOnCurrentThread());
+
+    ComObjPtr<Medium> pBase;
+    {
+        AutoReadLock treeLock(&mParent->getMediaTreeLockHandle() COMMA_LOCKVAL_SRC_POS);
+        pBase = pMedium->getBase();
+    }
+
     /* Paranoia checks: do not hold medium locks. */
     AssertReturnVoid(!pMedium->isWriteLockOnCurrentThread());
     AssertReturnVoid(!pBase->isWriteLockOnCurrentThread());
