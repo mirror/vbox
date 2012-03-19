@@ -1130,37 +1130,44 @@ static int VBoxServiceControlThreadMakeFullPath(const char *pszPath, char *pszEx
  * VBOXSERVICE_NAME is specified as pszFileName.
  *
  * @return  IPRT status code.
- * @param   pszFileName                 File name to resovle.
+ * @param   pszFileName                 File name to resolve.
  * @param   pszResolved                 Pointer to a string where the resolved file name will be stored.
  * @param   cbResolved                  Size (in bytes) of resolved file name string.
  */
 static int VBoxServiceControlThreadResolveExecutable(const char *pszFileName,
                                                      char *pszResolved, size_t cbResolved)
 {
+    AssertPtrReturn(pszFileName, VERR_INVALID_POINTER);
+    AssertPtrReturn(pszResolved, VERR_INVALID_POINTER);
+    AssertReturn(cbResolved, VERR_INVALID_PARAMETER);
+
     int rc = VINF_SUCCESS;
 
-    /* Search the path of our executable. */
-    char szVBoxService[RTPATH_MAX];
-    if (RTProcGetExecutablePath(szVBoxService, sizeof(szVBoxService)))
+    char szPathToResolve[RTPATH_MAX];
+    if (    (g_pszProgName && (RTStrICmp(pszFileName, g_pszProgName) == 0))
+        || !RTStrICmp(pszFileName, VBOXSERVICE_NAME))
     {
-        char *pszExecResolved = NULL;
-        if (   (g_pszProgName && RTStrICmp(pszFileName, g_pszProgName) == 0)
-            || !RTStrICmp(pszFileName, VBOXSERVICE_NAME))
-        {
-            /* We just want to execute VBoxService (no toolbox). */
-            pszExecResolved = RTStrDup(szVBoxService);
-        }
-        else /* Nothing to resolve, copy original. */
-            pszExecResolved = RTStrDup(pszFileName);
-        AssertPtr(pszExecResolved);
-
-        rc = VBoxServiceControlThreadMakeFullPath(pszExecResolved, pszResolved, cbResolved);
-#ifdef DEBUG
-        VBoxServiceVerbose(3, "ControlThread: VBoxServiceControlExecResolveExecutable: %s -> %s\n",
-                           pszFileName, pszResolved);
-#endif
-        RTStrFree(pszExecResolved);
+        /* Resolve executable name of this process. */
+        if (!RTProcGetExecutablePath(szPathToResolve, sizeof(szPathToResolve)))
+            rc = VERR_FILE_NOT_FOUND;
     }
+    else
+    {
+        /* Take the raw argument to resolve. */
+        rc = RTStrCopy(szPathToResolve, sizeof(szPathToResolve), pszFileName);
+    }
+
+    if (RT_SUCCESS(rc))
+    {
+        rc = VBoxServiceControlThreadMakeFullPath(szPathToResolve, pszResolved, cbResolved);
+        if (RT_SUCCESS(rc))
+            VBoxServiceVerbose(3, "Looked up executable: %s -> %s\n",
+                               pszFileName, pszResolved);
+    }
+
+    if (RT_FAILURE(rc))
+        VBoxServiceError("Failed to lookup executable \"%s\" with rc=%Rrc\n",
+                         pszFileName, rc);
     return rc;
 }
 
@@ -1252,7 +1259,7 @@ static int VBoxServiceControlThreadCreateProcess(const char *pszExec, const char
      * (usually, if started by SCM) has administrator rights. Because of that a UI
      * won't be shown (doesn't have a desktop).
      */
-    if (RTStrICmp(pszExec, "sysprep") == 0)
+    if (!RTStrICmp(pszExec, "sysprep"))
     {
         /* Use a predefined sysprep path as default. */
         char szSysprepCmd[RTPATH_MAX] = "C:\\sysprep\\sysprep.exe";
@@ -1285,6 +1292,10 @@ static int VBoxServiceControlThreadCreateProcess(const char *pszExec, const char
                 RTGetOptArgvFree(papszArgsExp);
             }
         }
+
+        if (RT_FAILURE(rc))
+            VBoxServiceVerbose(3, "Starting sysprep returned rc=%Rrc\n", rc);
+
         return rc;
     }
 #endif /* RT_OS_WINDOWS */
@@ -1311,7 +1322,12 @@ static int VBoxServiceControlThreadCreateProcess(const char *pszExec, const char
         char **papszArgsExp;
         rc = VBoxServiceControlThreadPrepareArgv(pszExec /* Always use the unmodified executable name as argv0. */,
                                                  papszArgs /* Append the rest of the argument vector (if any). */, &papszArgsExp);
-        if (RT_SUCCESS(rc))
+        if (RT_FAILURE(rc))
+        {
+            /* Don't print any arguments -- may contain passwords or other sensible data! */
+            VBoxServiceError("Could not prepare arguments, rc=%Rrc\n", rc);
+        }
+        else
         {
             uint32_t uProcFlags = 0;
             if (fFlags)
@@ -1335,12 +1351,18 @@ static int VBoxServiceControlThreadCreateProcess(const char *pszExec, const char
             for (size_t i = 0; papszArgsExp[i]; i++)
                 VBoxServiceVerbose(3, "\targv[%ld]: %s\n", i, papszArgsExp[i]);
 #endif
+            VBoxServiceVerbose(3, "Starting process \"%s\" ...\n", szExecExp);
+
             /* Do normal execution. */
             rc = RTProcCreateEx(szExecExp, papszArgsExp, hEnv, uProcFlags,
                                 phStdIn, phStdOut, phStdErr,
                                 *pszAsUser   ? pszAsUser   : NULL,
                                 *pszPassword ? pszPassword : NULL,
                                 phProcess);
+
+            VBoxServiceVerbose(3, "Starting process \"%s\" returned rc=%Rrc\n",
+                               szExecExp, rc);
+
             RTGetOptArgvFree(papszArgsExp);
         }
     }
