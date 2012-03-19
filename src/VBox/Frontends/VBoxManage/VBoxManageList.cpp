@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2011 Oracle Corporation
+ * Copyright (C) 2006-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -325,6 +325,9 @@ static HRESULT produceList(enum enmListType enmCommand, bool fOptLong, const Com
              */
             com::SafeIfaceArray<IMachine> machines;
             rc = rptrVirtualBox->COMGETTER(Machines)(ComSafeArrayAsOutParam(machines));
+            com::SafeArray<MachineState_T> states;
+            if (SUCCEEDED(rc))
+                rc = rptrVirtualBox->GetMachineStates(ComSafeArrayAsInParam(machines), ComSafeArrayAsOutParam(states));
             if (SUCCEEDED(rc))
             {
                 /*
@@ -334,20 +337,16 @@ static HRESULT produceList(enum enmListType enmCommand, bool fOptLong, const Com
                 {
                     if (machines[i])
                     {
-                        MachineState_T machineState;
-                        rc = machines[i]->COMGETTER(State)(&machineState);
-                        if (SUCCEEDED(rc))
+                        MachineState_T machineState = states[i];
+                        switch (machineState)
                         {
-                            switch (machineState)
-                            {
-                                case MachineState_Running:
-                                case MachineState_Teleporting:
-                                case MachineState_LiveSnapshotting:
-                                case MachineState_Paused:
-                                case MachineState_TeleportingPausedVM:
-                                    rc = showVMInfo(rptrVirtualBox, machines[i], fOptLong ? VMINFO_STANDARD : VMINFO_COMPACT);
-                                    break;
-                            }
+                            case MachineState_Running:
+                            case MachineState_Teleporting:
+                            case MachineState_LiveSnapshotting:
+                            case MachineState_Paused:
+                            case MachineState_TeleportingPausedVM:
+                                rc = showVMInfo(rptrVirtualBox, machines[i], fOptLong ? VMINFO_STANDARD : VMINFO_COMPACT);
+                                break;
                         }
                     }
                 }
