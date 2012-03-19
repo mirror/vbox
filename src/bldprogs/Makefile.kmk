@@ -37,7 +37,8 @@ if  !defined(VBOX_ONLY_ADDITIONS) \
  scm_TEMPLATE = VBOXR3EXE
  scm_SOURCES = \
 	scm.cpp \
-	scmstream.cpp 
+	scmstream.cpp \
+	scmdiff.cpp 
  scm_LIBS = \
  	$(LIB_RUNTIME)
 endif
