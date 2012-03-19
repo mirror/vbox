@@ -20,18 +20,9 @@
 *******************************************************************************/
 #include <iprt/assert.h>
 #include <iprt/ctype.h>
-//#include <iprt/dir.h>
-//#include <iprt/env.h>
 #include <iprt/file.h>
 #include <iprt/err.h>
-//#include <iprt/getopt.h>
-//#include <iprt/initterm.h>
 #include <iprt/mem.h>
-//#include <iprt/message.h>
-//#include <iprt/param.h>
-//#include <iprt/path.h>
-//#include <iprt/process.h>
-//#include <iprt/stream.h>
 #include <iprt/string.h>
 
 #include "scmstream.h"
