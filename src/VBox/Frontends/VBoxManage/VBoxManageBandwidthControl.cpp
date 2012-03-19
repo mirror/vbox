@@ -96,7 +96,6 @@ static RTEXITCODE handleBandwidthControlAdd(HandlerArg *a, ComPtr<IBandwidthCont
             }
         }
     }
-    RTPrintf("Adding bwgroup: name=%ls type=%s limit=%u\n", name.raw(), pszType, cMaxMbPerSec);
 
     BandwidthGroupType_T enmType;
 
@@ -158,7 +157,6 @@ static RTEXITCODE handleBandwidthControlSet(HandlerArg *a, ComPtr<IBandwidthCont
             }
         }
     }
-    RTPrintf("Updating bwgroup: name=%ls limit=%u\n", name.raw(), cMaxMbPerSec);
 
     
     if (cMaxMbPerSec != UINT32_MAX)
