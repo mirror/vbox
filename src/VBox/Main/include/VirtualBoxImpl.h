@@ -100,40 +100,40 @@ public:
     void uninit();
 
     /* IVirtualBox properties */
-    STDMETHOD(COMGETTER(Version))               (BSTR *aVersion);
-    STDMETHOD(COMGETTER(Revision))              (ULONG *aRevision);
-    STDMETHOD(COMGETTER(PackageType))           (BSTR *aPackageType);
-    STDMETHOD(COMGETTER(APIVersion))            (BSTR *aAPIVersion);
-    STDMETHOD(COMGETTER(HomeFolder))            (BSTR *aHomeFolder);
-    STDMETHOD(COMGETTER(SettingsFilePath))      (BSTR *aSettingsFilePath);
-    STDMETHOD(COMGETTER(Host))                  (IHost **aHost);
-    STDMETHOD(COMGETTER(SystemProperties))      (ISystemProperties **aSystemProperties);
-    STDMETHOD(COMGETTER(Machines))              (ComSafeArrayOut(IMachine *, aMachines));
-    STDMETHOD(COMGETTER(HardDisks))             (ComSafeArrayOut(IMedium *, aHardDisks));
-    STDMETHOD(COMGETTER(DVDImages))             (ComSafeArrayOut(IMedium *, aDVDImages));
-    STDMETHOD(COMGETTER(FloppyImages))          (ComSafeArrayOut(IMedium *, aFloppyImages));
-    STDMETHOD(COMGETTER(ProgressOperations))    (ComSafeArrayOut(IProgress *, aOperations));
-    STDMETHOD(COMGETTER(GuestOSTypes))          (ComSafeArrayOut(IGuestOSType *, aGuestOSTypes));
-    STDMETHOD(COMGETTER(SharedFolders))         (ComSafeArrayOut(ISharedFolder *, aSharedFolders));
-    STDMETHOD(COMGETTER(PerformanceCollector))  (IPerformanceCollector **aPerformanceCollector);
-    STDMETHOD(COMGETTER(DHCPServers))           (ComSafeArrayOut(IDHCPServer *, aDHCPServers));
-    STDMETHOD(COMGETTER(EventSource))           (IEventSource ** aEventSource);
-    STDMETHOD(COMGETTER(ExtensionPackManager))  (IExtPackManager **aExtPackManager);
-    STDMETHOD(COMGETTER(InternalNetworks))      (ComSafeArrayOut(BSTR, aInternalNetworks));
-    STDMETHOD(COMGETTER(GenericNetworkDrivers)) (ComSafeArrayOut(BSTR, aGenericNetworkDrivers));
+    STDMETHOD(COMGETTER(Version))(BSTR *aVersion);
+    STDMETHOD(COMGETTER(Revision))(ULONG *aRevision);
+    STDMETHOD(COMGETTER(PackageType))(BSTR *aPackageType);
+    STDMETHOD(COMGETTER(APIVersion))(BSTR *aAPIVersion);
+    STDMETHOD(COMGETTER(HomeFolder))(BSTR *aHomeFolder);
+    STDMETHOD(COMGETTER(SettingsFilePath))(BSTR *aSettingsFilePath);
+    STDMETHOD(COMGETTER(Host))(IHost **aHost);
+    STDMETHOD(COMGETTER(SystemProperties))(ISystemProperties **aSystemProperties);
+    STDMETHOD(COMGETTER(Machines))(ComSafeArrayOut(IMachine *, aMachines));
+    STDMETHOD(COMGETTER(HardDisks))(ComSafeArrayOut(IMedium *, aHardDisks));
+    STDMETHOD(COMGETTER(DVDImages))(ComSafeArrayOut(IMedium *, aDVDImages));
+    STDMETHOD(COMGETTER(FloppyImages))(ComSafeArrayOut(IMedium *, aFloppyImages));
+    STDMETHOD(COMGETTER(ProgressOperations))(ComSafeArrayOut(IProgress *, aOperations));
+    STDMETHOD(COMGETTER(GuestOSTypes))(ComSafeArrayOut(IGuestOSType *, aGuestOSTypes));
+    STDMETHOD(COMGETTER(SharedFolders))(ComSafeArrayOut(ISharedFolder *, aSharedFolders));
+    STDMETHOD(COMGETTER(PerformanceCollector))(IPerformanceCollector **aPerformanceCollector);
+    STDMETHOD(COMGETTER(DHCPServers))(ComSafeArrayOut(IDHCPServer *, aDHCPServers));
+    STDMETHOD(COMGETTER(EventSource))(IEventSource ** aEventSource);
+    STDMETHOD(COMGETTER(ExtensionPackManager))(IExtPackManager **aExtPackManager);
+    STDMETHOD(COMGETTER(InternalNetworks))(ComSafeArrayOut(BSTR, aInternalNetworks));
+    STDMETHOD(COMGETTER(GenericNetworkDrivers))(ComSafeArrayOut(BSTR, aGenericNetworkDrivers));
 
     /* IVirtualBox methods */
-    STDMETHOD(ComposeMachineFilename) (IN_BSTR aName, IN_BSTR aBaseFolder, BSTR *aFilename);
-    STDMETHOD(CreateMachine) (IN_BSTR aSettingsFile,
-                              IN_BSTR aName,
-                              IN_BSTR aOsTypeId,
-                              IN_BSTR aId,
-                              BOOL forceOverwrite,
-                              IMachine **aMachine);
-    STDMETHOD(OpenMachine) (IN_BSTR aSettingsFile, IMachine **aMachine);
-    STDMETHOD(RegisterMachine) (IMachine *aMachine);
-    STDMETHOD(FindMachine) (IN_BSTR aNameOrId, IMachine **aMachine);
-    STDMETHOD(CreateAppliance) (IAppliance **anAppliance);
+    STDMETHOD(ComposeMachineFilename)(IN_BSTR aName, IN_BSTR aBaseFolder, BSTR *aFilename);
+    STDMETHOD(CreateMachine)(IN_BSTR aSettingsFile,
+                             IN_BSTR aName,
+                             IN_BSTR aOsTypeId,
+                             IN_BSTR aId,
+                             BOOL forceOverwrite,
+                             IMachine **aMachine);
+    STDMETHOD(OpenMachine)(IN_BSTR aSettingsFile, IMachine **aMachine);
+    STDMETHOD(RegisterMachine)(IMachine *aMachine);
+    STDMETHOD(FindMachine)(IN_BSTR aNameOrId, IMachine **aMachine);
+    STDMETHOD(CreateAppliance)(IAppliance **anAppliance);
 
     STDMETHOD(CreateHardDisk)(IN_BSTR aFormat,
                               IN_BSTR aLocation,
@@ -147,16 +147,16 @@ public:
                           DeviceType_T deviceType,
                           IMedium **aMedium);
 
-    STDMETHOD(GetGuestOSType) (IN_BSTR aId, IGuestOSType **aType);
-    STDMETHOD(CreateSharedFolder) (IN_BSTR aName, IN_BSTR aHostPath, BOOL aWritable, BOOL aAutoMount);
-    STDMETHOD(RemoveSharedFolder) (IN_BSTR aName);
-    STDMETHOD(GetExtraDataKeys) (ComSafeArrayOut(BSTR, aKeys));
-    STDMETHOD(GetExtraData) (IN_BSTR aKey, BSTR *aValue);
-    STDMETHOD(SetExtraData) (IN_BSTR aKey, IN_BSTR aValue);
+    STDMETHOD(GetGuestOSType)(IN_BSTR aId, IGuestOSType **aType);
+    STDMETHOD(CreateSharedFolder)(IN_BSTR aName, IN_BSTR aHostPath, BOOL aWritable, BOOL aAutoMount);
+    STDMETHOD(RemoveSharedFolder)(IN_BSTR aName);
+    STDMETHOD(GetExtraDataKeys)(ComSafeArrayOut(BSTR, aKeys));
+    STDMETHOD(GetExtraData)(IN_BSTR aKey, BSTR *aValue);
+    STDMETHOD(SetExtraData)(IN_BSTR aKey, IN_BSTR aValue);
 
-    STDMETHOD(CreateDHCPServer) (IN_BSTR aName, IDHCPServer ** aServer);
-    STDMETHOD(FindDHCPServerByNetworkName) (IN_BSTR aName, IDHCPServer ** aServer);
-    STDMETHOD(RemoveDHCPServer) (IDHCPServer * aServer);
+    STDMETHOD(CreateDHCPServer)(IN_BSTR aName, IDHCPServer ** aServer);
+    STDMETHOD(FindDHCPServerByNetworkName)(IN_BSTR aName, IDHCPServer ** aServer);
+    STDMETHOD(RemoveDHCPServer)(IDHCPServer * aServer);
     STDMETHOD(CheckFirmwarePresent)(FirmwareType_T aFirmwareType, IN_BSTR aVersion,
                                     BSTR * aUrl, BSTR * aFile, BOOL * aResult);
 
@@ -181,14 +181,14 @@ public:
     HRESULT removeProgress(IN_GUID aId);
 
 #ifdef RT_OS_WINDOWS
-    typedef DECLCALLBACKPTR (HRESULT, SVCHelperClientFunc)
+    typedef DECLCALLBACKPTR(HRESULT, SVCHelperClientFunc)
         (SVCHlpClient *aClient, Progress *aProgress, void *aUser, int *aVrc);
     HRESULT startSVCHelperClient(bool aPrivileged,
                                  SVCHelperClientFunc aFunc,
                                  void *aUser, Progress *aProgress);
 #endif
 
-    void addProcessToReap (RTPROCESS pid);
+    void addProcessToReap(RTPROCESS pid);
     void updateClientWatcher();
 
     void onMachineStateChange(const Guid &aId, MachineState_T aState);
@@ -280,7 +280,7 @@ public:
 
     static HRESULT ensureFilePathExists(const Utf8Str &strFileName, bool fCreate);
 
-    static HRESULT handleUnexpectedExceptions (RT_SRC_POS_DECL);
+    static HRESULT handleUnexpectedExceptions(RT_SRC_POS_DECL);
 
     const Utf8Str& settingsFilePath();
 
@@ -315,11 +315,11 @@ private:
     static Bstr sPackageType;
     static Bstr sAPIVersion;
 
-    static DECLCALLBACK(int) ClientWatcher (RTTHREAD thread, void *pvUser);
-    static DECLCALLBACK(int) AsyncEventHandler (RTTHREAD thread, void *pvUser);
+    static DECLCALLBACK(int) ClientWatcher(RTTHREAD thread, void *pvUser);
+    static DECLCALLBACK(int) AsyncEventHandler(RTTHREAD thread, void *pvUser);
 
 #ifdef RT_OS_WINDOWS
-    static DECLCALLBACK(int) SVCHelperClientThread (RTTHREAD aThread, void *aUser);
+    static DECLCALLBACK(int) SVCHelperClientThread(RTTHREAD aThread, void *aUser);
 #endif
 };
 
