@@ -761,8 +761,7 @@ void UISelectorWindow::sltMachineMenuAboutToShow()
     UIVMItem *pItem = m_pVMListView->currentItem();
     /* Get selected items: */
     QList<UIVMItem*> items = m_pVMListView->currentItems();
-    AssertMsgReturnVoid(pItem, ("Current item should be selected!\n"));
-
+    /* Enable/disable 'Machine/Close' menu according logic: */
     m_pMachineCloseMenuAction->setEnabled(isActionEnabled(UIActionIndexSelector_Menu_Machine_Close, pItem, items));
 }
 
@@ -1790,140 +1789,143 @@ void UISelectorWindow::saveSettings()
 
 bool UISelectorWindow::isActionEnabled(int iActionIndex, UIVMItem *pItem, const QList<UIVMItem*> &items)
 {
-    switch (iActionIndex)
+    if (pItem)
     {
-        case UIActionIndexSelector_Simple_Machine_SettingsDialog:
+        switch (iActionIndex)
         {
-            /* Check that there is only one item, its accessible
-             * and machine is not in 'stuck' or 'saved' state.
-             * Modifying VM settings in 'saved' state will be available later. */
-            return items.size() == 1 &&
-                   pItem && pItem->accessible() &&
-                   pItem->machineState() != KMachineState_Stuck &&
-                   pItem->machineState() != KMachineState_Saved;
-        }
-        case UIActionIndexSelector_Simple_Machine_CloneWizard:
-        {
-            /* Check that there is only one item, its accessible
-             * and session state is unlocked. */
-            return items.size() == 1 &&
-                   pItem && pItem->accessible() &&
-                   pItem->sessionState() == KSessionState_Unlocked;
-        }
-        case UIActionIndexSelector_Simple_Machine_RemoveDialog:
-        {
-            /* Check that item is present and
-             * machine is not accessible or session state is unlocked. */
-            return pItem &&
-                   (!pItem->accessible() || pItem->sessionState() == KSessionState_Unlocked);
-        }
-        case UIActionIndexSelector_State_Machine_StartOrShow:
-        {
-            /* Check that item present and accessible: */
-            if (!pItem || !pItem->accessible())
-                return false;
-
-            /* Check if we are in powered off mode which unifies next possible states.
-             * Then if session state is unlocked we can allow to start VM. */
-            if (pItem->machineState() == KMachineState_PoweredOff ||
-                pItem->machineState() == KMachineState_Saved ||
-                pItem->machineState() == KMachineState_Teleported ||
-                pItem->machineState() == KMachineState_Aborted)
-                return pItem->sessionState() == KSessionState_Unlocked;
-
-            /* Otherwise we are in running mode and
-             * should allow to switch to VM if its possible: */
-            return pItem->canSwitchTo();
-        }
-        case UIActionIndexSelector_Simple_Machine_Discard:
-        {
-            /* Check that there is only one item, its accessible
-             * and machine is in 'saved' state and session state is unlocked. */
-            return items.size() == 1 &&
-                   pItem && pItem->accessible() &&
-                   pItem->machineState() == KMachineState_Saved &&
-                   pItem->sessionState() == KSessionState_Unlocked;
-        }
-        case UIActionIndexSelector_Toggle_Machine_PauseAndResume:
-        {
-            /* Check that item present and accessible
-             * and machine is in 'running' or 'paused' mode which unifies next possible states. */
-            return pItem && pItem->accessible() &&
-                   (pItem->machineState() == KMachineState_Running ||
-                    pItem->machineState() == KMachineState_Teleporting ||
-                    pItem->machineState() == KMachineState_LiveSnapshotting ||
-                    pItem->machineState() == KMachineState_Paused ||
-                    pItem->machineState() == KMachineState_TeleportingPausedVM);
-        }
-        case UIActionIndexSelector_Simple_Machine_Reset:
-        {
-            /* Check that item present and accessible
-             * and machine is in 'running' mode which unifies next possible states. */
-            return pItem && pItem->accessible() &&
-                   (pItem->machineState() == KMachineState_Running ||
-                    pItem->machineState() == KMachineState_Teleporting ||
-                    pItem->machineState() == KMachineState_LiveSnapshotting);
-        }
-        case UIActionIndexSelector_Menu_Machine_Close:
-        {
-            /* Check that item present and accessible
-             * and machine is in 'running' or 'paused' state. */
-            return pItem && pItem->accessible() &&
-                   (pItem->machineState() == KMachineState_Running ||
-                    pItem->machineState() == KMachineState_Paused);
-        }
-        case UIActionIndexSelector_Simple_Machine_Close_ACPIShutdown:
-        {
-            /* Check that 'Machine/Close' menu is enabled: */
-            if (!isActionEnabled(UIActionIndexSelector_Menu_Machine_Close, pItem, items))
-                return false;
-
-            /* Check if we are entered ACPI mode already.
-             * Only then it make sense to send the ACPI shutdown sequence: */
-            bool fEnteredACPIMode = false;
-            CSession session = vboxGlobal().openExistingSession(pItem->id());
-            if (!session.isNull())
+            case UIActionIndexSelector_Simple_Machine_SettingsDialog:
             {
-                CConsole console = session.GetConsole();
-                if (!console.isNull())
-                    fEnteredACPIMode = console.GetGuestEnteredACPIMode();
-                session.UnlockMachine();
+                /* Check that there is only one item, its accessible
+                 * and machine is not in 'stuck' or 'saved' state.
+                 * Modifying VM settings in 'saved' state will be available later. */
+                return items.size() == 1 &&
+                       pItem && pItem->accessible() &&
+                       pItem->machineState() != KMachineState_Stuck &&
+                       pItem->machineState() != KMachineState_Saved;
             }
-            else
-                msgCenter().cannotOpenSession(session);
+            case UIActionIndexSelector_Simple_Machine_CloneWizard:
+            {
+                /* Check that there is only one item, its accessible
+                 * and session state is unlocked. */
+                return items.size() == 1 &&
+                       pItem && pItem->accessible() &&
+                       pItem->sessionState() == KSessionState_Unlocked;
+            }
+            case UIActionIndexSelector_Simple_Machine_RemoveDialog:
+            {
+                /* Check that item is present and
+                 * machine is not accessible or session state is unlocked. */
+                return pItem &&
+                       (!pItem->accessible() || pItem->sessionState() == KSessionState_Unlocked);
+            }
+            case UIActionIndexSelector_State_Machine_StartOrShow:
+            {
+                /* Check that item present and accessible: */
+                if (!pItem || !pItem->accessible())
+                    return false;
 
-            return fEnteredACPIMode;
-        }
-        case UIActionIndexSelector_Simple_Machine_Close_PowerOff:
-        {
-            /* The same as 'Machine/Close' menu is enabled: */
-            return isActionEnabled(UIActionIndexSelector_Menu_Machine_Close, pItem, items);
-        }
-        case UIActionIndexSelector_Simple_Machine_Refresh:
-        {
-            /* Check if item present and NOT accessible: */
-            return pItem && !pItem->accessible();
-        }
-        case UIActionIndexSelector_Simple_Machine_LogDialog:
-        case UIActionIndexSelector_Simple_Machine_ShowInFileManager:
-        case UIActionIndexSelector_Simple_Machine_Sort:
-        {
-            /* Check if item present and accessible: */
-            return pItem && pItem->accessible();
-        }
-        case UIActionIndexSelector_Simple_Machine_CreateShortcut:
-        {
+                /* Check if we are in powered off mode which unifies next possible states.
+                 * Then if session state is unlocked we can allow to start VM. */
+                if (pItem->machineState() == KMachineState_PoweredOff ||
+                    pItem->machineState() == KMachineState_Saved ||
+                    pItem->machineState() == KMachineState_Teleported ||
+                    pItem->machineState() == KMachineState_Aborted)
+                    return pItem->sessionState() == KSessionState_Unlocked;
+
+                /* Otherwise we are in running mode and
+                 * should allow to switch to VM if its possible: */
+                return pItem->canSwitchTo();
+            }
+            case UIActionIndexSelector_Simple_Machine_Discard:
+            {
+                /* Check that there is only one item, its accessible
+                 * and machine is in 'saved' state and session state is unlocked. */
+                return items.size() == 1 &&
+                       pItem && pItem->accessible() &&
+                       pItem->machineState() == KMachineState_Saved &&
+                       pItem->sessionState() == KSessionState_Unlocked;
+            }
+            case UIActionIndexSelector_Toggle_Machine_PauseAndResume:
+            {
+                /* Check that item present and accessible
+                 * and machine is in 'running' or 'paused' mode which unifies next possible states. */
+                return pItem && pItem->accessible() &&
+                       (pItem->machineState() == KMachineState_Running ||
+                        pItem->machineState() == KMachineState_Teleporting ||
+                        pItem->machineState() == KMachineState_LiveSnapshotting ||
+                        pItem->machineState() == KMachineState_Paused ||
+                        pItem->machineState() == KMachineState_TeleportingPausedVM);
+            }
+            case UIActionIndexSelector_Simple_Machine_Reset:
+            {
+                /* Check that item present and accessible
+                 * and machine is in 'running' mode which unifies next possible states. */
+                return pItem && pItem->accessible() &&
+                       (pItem->machineState() == KMachineState_Running ||
+                        pItem->machineState() == KMachineState_Teleporting ||
+                        pItem->machineState() == KMachineState_LiveSnapshotting);
+            }
+            case UIActionIndexSelector_Menu_Machine_Close:
+            {
+                /* Check that item present and accessible
+                 * and machine is in 'running' or 'paused' state. */
+                return pItem && pItem->accessible() &&
+                       (pItem->machineState() == KMachineState_Running ||
+                        pItem->machineState() == KMachineState_Paused);
+            }
+            case UIActionIndexSelector_Simple_Machine_Close_ACPIShutdown:
+            {
+                /* Check that 'Machine/Close' menu is enabled: */
+                if (!isActionEnabled(UIActionIndexSelector_Menu_Machine_Close, pItem, items))
+                    return false;
+
+                /* Check if we are entered ACPI mode already.
+                 * Only then it make sense to send the ACPI shutdown sequence: */
+                bool fEnteredACPIMode = false;
+                CSession session = vboxGlobal().openExistingSession(pItem->id());
+                if (!session.isNull())
+                {
+                    CConsole console = session.GetConsole();
+                    if (!console.isNull())
+                        fEnteredACPIMode = console.GetGuestEnteredACPIMode();
+                    session.UnlockMachine();
+                }
+                else
+                    msgCenter().cannotOpenSession(session);
+
+                return fEnteredACPIMode;
+            }
+            case UIActionIndexSelector_Simple_Machine_Close_PowerOff:
+            {
+                /* The same as 'Machine/Close' menu is enabled: */
+                return isActionEnabled(UIActionIndexSelector_Menu_Machine_Close, pItem, items);
+            }
+            case UIActionIndexSelector_Simple_Machine_Refresh:
+            {
+                /* Check if item present and NOT accessible: */
+                return pItem && !pItem->accessible();
+            }
+            case UIActionIndexSelector_Simple_Machine_LogDialog:
+            case UIActionIndexSelector_Simple_Machine_ShowInFileManager:
+            case UIActionIndexSelector_Simple_Machine_Sort:
+            {
+                /* Check if item present and accessible: */
+                return pItem && pItem->accessible();
+            }
+            case UIActionIndexSelector_Simple_Machine_CreateShortcut:
+            {
 #ifdef Q_WS_MAC
-            /* On Mac OS X this are real alias files, which don't work with the old
-             * legacy xml files. On the other OS's some kind of start up script is used. */
-            return pItem && pItem->accessible() &&
-                   pItem->settingsFile().endsWith(".vbox", Qt::CaseInsensitive);
+                /* On Mac OS X this are real alias files, which don't work with the old
+                 * legacy xml files. On the other OS's some kind of start up script is used. */
+                return pItem && pItem->accessible() &&
+                       pItem->settingsFile().endsWith(".vbox", Qt::CaseInsensitive);
 #else /* Q_WS_MAC */
-            return pItem && pItem->accessible();
+                return pItem && pItem->accessible();
 #endif /* Q_WS_MAC */
+            }
+            default:
+                break;
         }
-        default:
-            break;
     }
     return false;
 }
