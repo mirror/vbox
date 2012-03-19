@@ -414,9 +414,9 @@ rm -rf $RPM_BUILD_ROOT
 
 %files
 %defattr(-,root,root)
-%{!?is_ose: LICENSE}
-%{!?is_ose: UserManual*.pdf}
-%{!?is_ose: VirtualBox*.chm}
+%{!?is_ose: %doc: LICENSE}
+%doc: UserManual*.pdf
+%doc: VirtualBox*.chm
 %{_initrddir}/vboxdrv
 %{_initrddir}/vboxballoonctrl-service
 %{_initrddir}/vboxweb-service
