@@ -220,7 +220,7 @@ typedef struct datab
     unsigned char     *db_lim;
     unsigned char      db_ref;
     unsigned char      db_type;
-} dlk_t;
+} dblk_t;
 
 struct iocblk
 {

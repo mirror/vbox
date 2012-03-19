@@ -50,7 +50,7 @@
 
 #ifdef TESTCASE  /* Include this last as we . */
 # include "testcase/solaris.h"
-# include "testcase/tstVBoxGuest-solaris.h"
+# include <iprt/test.h>
 #endif  /* TESTCASE */
 
 
@@ -311,7 +311,7 @@ int _init(void)
 
 #ifdef TESTCASE
 /** Simple test of the flow through _init. */
-void test_init(RTTEST hTest)
+static void test_init(RTTEST hTest)
 {
     RTTestSub(hTest, "Testing _init");
     RTTEST_CHECK(hTest, _init() == 0);
@@ -473,7 +473,7 @@ int vbgr0SolClose(queue_t *pReadQueue, int fFlag, cred_t *pCred)
 
 #ifdef TESTCASE
 /** Simple test of vbgr0SolOpen and vbgr0SolClose. */
-void testOpenClose(RTTEST hTest)
+static void testOpenClose(RTTEST hTest)
 {
     queue_t aQueues[4];
     dev_t device = 0;
@@ -537,6 +537,46 @@ int vbgr0SolWPut(queue_t *pWriteQueue, mblk_t *pMBlk)
     }
     return 0;
 }
+
+
+#ifdef TESTCASE
+/** Test WPut's handling of different IOCtls, which is bulk of the logic in
+ * this file. */
+static void testWPut(RTTEST hTest)
+{
+    queue_t aQueues[2];
+    dev_t device = 0;
+    struct msgb MBlk, MBlkCont;
+    struct datab DBlk;
+    struct iocblk IOCBlk;
+    int rc, cFormat = 0;
+
+    /* Single simple test to start with.  We can try to make it more systematic
+     * next. */
+    RTTestSub(hTest, "Testing vbgr0WPut");
+    RT_ZERO(aQueues);
+    doInitQueues(&aQueues[0]);
+    rc = vbgr0SolOpen(RD(&aQueues[0]), &device, 0, 0, NULL);
+    RTTEST_CHECK(hTest, rc == 0);
+    RTTEST_CHECK(hTest, g_aOpenNodeStates[1].pWriteQueue == WR(&aQueues[0]));
+    RT_ZERO(MBlk);
+    RT_ZERO(DBlk);
+    RT_ZERO(IOCBlk);
+    RT_ZERO(MBlkCont);
+    DBlk.db_type = M_IOCTL;
+    IOCBlk.ioc_cmd = VUIDSFORMAT;
+    IOCBlk.ioc_count = sizeof(int);
+    MBlkCont.b_rptr = (unsigned char *)&cFormat;
+    MBlkCont.b_rptr = (unsigned char *)&cFormat + sizeof(cFormat);
+    MBlk.b_cont = &MBlkCont;
+    MBlk.b_rptr = (unsigned char *)&IOCBlk;
+    MBlkCont.b_rptr = (unsigned char *)&IOCBlk + sizeof(IOCBlk);
+    MBlk.b_datap = &DBlk;
+    rc = vbgr0SolWPut(WR(&aQueues[0]), &MBlk);
+    RTTEST_CHECK(hTest, rc == 0);
+    vbgr0SolClose(RD(&aQueues[1]), 0, NULL);
+}
+#endif
 
 
 /** Data transfer direction of an IOCtl.  This is used for describing
@@ -697,12 +737,14 @@ static int vbgr0SolHandleIOCtl(queue_t *pWriteQueue, mblk_t *pMBlk,
     if (pMBlk->b_datap->db_type == M_IOCDATA)
         return vbgr0SolHandleIOCtlData(pWriteQueue, pMBlk, pfnHandler, cCmd,
                                        cbTransparent, enmDirection);
-    else if (pIOCBlk->ioc_count == TRANSPARENT)
+    else if (   pMBlk->b_datap->db_type == M_IOCTL
+             && pIOCBlk->ioc_count == TRANSPARENT)
         return vbgr0SolHandleTransparentIOCtl(pWriteQueue, pMBlk, pfnHandler,
                                               cCmd, cbTransparent,
                                               enmDirection);
-    else
+    else if (pMBlk->b_datap->db_type == M_IOCTL)
         return vbgr0SolHandleIStrIOCtl(pWriteQueue, pMBlk, pfnHandler, cCmd);
+    return EINVAL;
 }
 
 
@@ -718,17 +760,16 @@ static int vbgr0SolHandleIOCtlData(queue_t *pWriteQueue, mblk_t *pMBlk,
                                    enum IOCTLDIRECTION enmDirection)
 {
     struct copyresp *pCopyResp = (struct copyresp *)pMBlk->b_rptr;
-    struct iocblk   *pIOCBlk   = (struct iocblk *)pMBlk->b_rptr;
     PVBGR0STATE pState = (PVBGR0STATE)pWriteQueue->q_ptr;
 
-    if (pCopyResp->cp_rval)
+    if (pCopyResp->cp_rval)  /* cp_rval is a pointer used as a boolean. */
     {
         freemsg(pMBlk);
-        return EAGAIN;  /* cp_rval is a pointer but should be the error. */
+        return EAGAIN;
     }
     if ((pCopyResp->cp_private && enmDirection == BOTH) || enmDirection == IN)
     {
-        size_t cbBuffer = pIOCBlk->ioc_count, cbData = 0;
+        size_t cbData = 0;
         void *pvData = NULL;
         int err;
 
@@ -739,7 +780,7 @@ static int vbgr0SolHandleIOCtlData(queue_t *pWriteQueue, mblk_t *pMBlk,
         if (enmDirection == BOTH && !pCopyResp->cp_private)
             return EINVAL;
         pvData = pMBlk->b_cont->b_rptr;
-        err = pfnHandler(pState, cCmd, pvData, cbBuffer, &cbData, NULL);
+        err = pfnHandler(pState, cCmd, pvData, cbTransparent, &cbData, NULL);
         if (!err && enmDirection == BOTH)
             mcopyout(pMBlk, NULL, cbData, pCopyResp->cp_private, NULL);
         else if (!err && enmDirection == IN)
@@ -1366,4 +1407,23 @@ void vbgr0SolVUIDPutAbsEvent(PVBGR0STATE pState, ushort_t cEvent,
 /* Common code that depends on g_DevExt. */
 #ifndef TESTCASE
 # include "VBoxGuestIDC-unix.c.h"
+#endif
+
+#ifdef TESTCASE
+int main(void)
+{
+    RTTEST hTest;
+    int rc = RTTestInitAndCreate("tstVBoxGuest-solaris", &hTest);
+    if (rc)
+        return rc;
+    RTTestBanner(hTest);
+    test_init(hTest);
+    testOpenClose(hTest);
+    testWPut(hTest);
+
+    /*
+     * Summary.
+     */
+    return RTTestSummaryAndDestroy(hTest);
+}
 #endif
