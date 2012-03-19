@@ -1433,18 +1433,22 @@ NTSTATUS VBoxMRxSetFileInfo(IN PRX_CONTEXT RxContext)
             if (pInfo->CreationTime.QuadPart == -1)
             {
                 pVBoxFobx->fKeepCreationTime = TRUE;
+                pVBoxFobx->SetFileInfoOnCloseFlags |= VBOX_FOBX_F_INFO_CREATION_TIME;
             }
             if (pInfo->LastAccessTime.QuadPart == -1)
             {
                 pVBoxFobx->fKeepLastAccessTime = TRUE;
+                pVBoxFobx->SetFileInfoOnCloseFlags |= VBOX_FOBX_F_INFO_LASTACCESS_TIME;
             }
             if (pInfo->LastWriteTime.QuadPart == -1)
             {
                 pVBoxFobx->fKeepLastWriteTime = TRUE;
+                pVBoxFobx->SetFileInfoOnCloseFlags |= VBOX_FOBX_F_INFO_LASTWRITE_TIME;
             }
             if (pInfo->ChangeTime.QuadPart == -1)
             {
                 pVBoxFobx->fKeepChangeTime = TRUE;
+                pVBoxFobx->SetFileInfoOnCloseFlags |= VBOX_FOBX_F_INFO_CHANGE_TIME;
             }
 
             cbBuffer = sizeof(SHFLFSOBJINFO);
@@ -1464,18 +1468,22 @@ NTSTATUS VBoxMRxSetFileInfo(IN PRX_CONTEXT RxContext)
             if (pInfo->CreationTime.QuadPart && !pVBoxFobx->fKeepCreationTime)
             {
                 RTTimeSpecSetNtTime(&pSHFLFileInfo->BirthTime, pInfo->CreationTime.QuadPart);
+                pVBoxFobx->SetFileInfoOnCloseFlags |= VBOX_FOBX_F_INFO_CREATION_TIME;
             }
             if (pInfo->LastAccessTime.QuadPart && !pVBoxFobx->fKeepLastAccessTime)
             {
                 RTTimeSpecSetNtTime(&pSHFLFileInfo->AccessTime, pInfo->LastAccessTime.QuadPart);
+                pVBoxFobx->SetFileInfoOnCloseFlags |= VBOX_FOBX_F_INFO_LASTACCESS_TIME;
             }
             if (pInfo->LastWriteTime.QuadPart && !pVBoxFobx->fKeepLastWriteTime)
             {
                 RTTimeSpecSetNtTime(&pSHFLFileInfo->ModificationTime, pInfo->LastWriteTime.QuadPart);
+                pVBoxFobx->SetFileInfoOnCloseFlags |= VBOX_FOBX_F_INFO_LASTWRITE_TIME;
             }
             if (pInfo->ChangeTime.QuadPart && !pVBoxFobx->fKeepChangeTime)
             {
                 RTTimeSpecSetNtTime(&pSHFLFileInfo->ChangeTime, pInfo->ChangeTime.QuadPart);
+                pVBoxFobx->SetFileInfoOnCloseFlags |= VBOX_FOBX_F_INFO_CHANGE_TIME;
             }
             if (pInfo->FileAttributes)
             {

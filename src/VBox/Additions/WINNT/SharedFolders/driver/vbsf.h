@@ -83,6 +83,12 @@ typedef struct _MRX_VBOX_NETROOT_EXTENSION
     VBSFMAP map;
 } MRX_VBOX_NETROOT_EXTENSION, *PMRX_VBOX_NETROOT_EXTENSION;
 
+#define VBOX_FOBX_F_INFO_CREATION_TIME   0x01
+#define VBOX_FOBX_F_INFO_LASTACCESS_TIME 0x02
+#define VBOX_FOBX_F_INFO_LASTWRITE_TIME  0x04
+#define VBOX_FOBX_F_INFO_CHANGE_TIME     0x08
+#define VBOX_FOBX_F_INFO_ATTRIBUTES      0x10
+
 /*
  * The shared folders file extension.
  */
@@ -96,6 +102,7 @@ typedef struct _MRX_VBOX_FOBX_
     BOOLEAN fKeepLastAccessTime;
     BOOLEAN fKeepLastWriteTime;
     BOOLEAN fKeepChangeTime;
+    BYTE SetFileInfoOnCloseFlags;
 } MRX_VBOX_FOBX, *PMRX_VBOX_FOBX;
 
 #define VBoxMRxGetDeviceExtension(RxContext) \
@@ -194,5 +201,8 @@ NTSTATUS vbsfRename(IN PRX_CONTEXT RxContext,
                     IN PVOID pBuffer,
                     IN ULONG BufferLength);
 NTSTATUS vbsfRemove(IN PRX_CONTEXT RxContext);
+NTSTATUS vbsfCloseFileHandle(PMRX_VBOX_DEVICE_EXTENSION pDeviceExtension,
+                             PMRX_VBOX_NETROOT_EXTENSION pNetRootExtension,
+                             PMRX_VBOX_FOBX pVBoxFobx);
 
 #endif /* VBSF_H */

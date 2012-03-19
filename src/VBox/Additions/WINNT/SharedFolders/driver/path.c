@@ -586,6 +586,12 @@ NTSTATUS VBoxMRxCreate(IN OUT PRX_CONTEXT RxContext)
         goto Exit;
     }
 
+    Log(("VBOXSF: MRxCreate: FileBasicInformation: CreationTime   %RX64\n", FileBasicInfo.CreationTime.QuadPart));
+    Log(("VBOXSF: MRxCreate: FileBasicInformation: LastAccessTime %RX64\n", FileBasicInfo.LastAccessTime.QuadPart));
+    Log(("VBOXSF: MRxCreate: FileBasicInformation: LastWriteTime  %RX64\n", FileBasicInfo.LastWriteTime.QuadPart));
+    Log(("VBOXSF: MRxCreate: FileBasicInformation: ChangeTime     %RX64\n", FileBasicInfo.ChangeTime.QuadPart));
+    Log(("VBOXSF: MRxCreate: FileBasicInformation: FileAttributes %RX32\n", FileBasicInfo.FileAttributes));
+
     pVBoxFobx->hFile = Handle;
     pVBoxFobx->pSrvCall = RxContext->Create.pSrvCall;
     pVBoxFobx->FileStandardInfo = FileStandardInfo;
@@ -594,6 +600,7 @@ NTSTATUS VBoxMRxCreate(IN OUT PRX_CONTEXT RxContext)
     pVBoxFobx->fKeepLastAccessTime = FALSE;
     pVBoxFobx->fKeepLastWriteTime = FALSE;
     pVBoxFobx->fKeepChangeTime = FALSE;
+    pVBoxFobx->SetFileInfoOnCloseFlags = 0;
 
     if (!RxIsFcbAcquiredExclusive(capFcb))
     {
@@ -656,6 +663,132 @@ NTSTATUS VBoxMRxForceClosed(IN PMRX_SRV_OPEN pSrvOpen)
     return STATUS_NOT_IMPLEMENTED;
 }
 
+NTSTATUS vbsfSetFileInfo(PMRX_VBOX_DEVICE_EXTENSION pDeviceExtension,
+                         PMRX_VBOX_NETROOT_EXTENSION pNetRootExtension,
+                         PMRX_VBOX_FOBX pVBoxFobx,
+                         PFILE_BASIC_INFORMATION pInfo,
+                         BYTE SetAttrFlags)
+{
+    NTSTATUS Status = STATUS_SUCCESS;
+
+    int vboxRC;
+    PSHFLFSOBJINFO pSHFLFileInfo;
+
+    uint8_t *pHGCMBuffer = NULL;
+    uint32_t cbBuffer = 0;
+
+    Log(("VBOXSF: vbsfSetFileInfo: SetAttrFlags 0x%02X\n", SetAttrFlags));
+    Log(("VBOXSF: vbsfSetFileInfo: FileBasicInformation: CreationTime   %RX64\n", pInfo->CreationTime.QuadPart));
+    Log(("VBOXSF: vbsfSetFileInfo: FileBasicInformation: LastAccessTime %RX64\n", pInfo->LastAccessTime.QuadPart));
+    Log(("VBOXSF: vbsfSetFileInfo: FileBasicInformation: LastWriteTime  %RX64\n", pInfo->LastWriteTime.QuadPart));
+    Log(("VBOXSF: vbsfSetFileInfo: FileBasicInformation: ChangeTime     %RX64\n", pInfo->ChangeTime.QuadPart));
+    Log(("VBOXSF: vbsfSetFileInfo: FileBasicInformation: FileAttributes %RX32\n", pInfo->FileAttributes));
+
+    if (SetAttrFlags == 0)
+    {
+        Log(("VBOXSF: vbsfSetFileInfo: nothing to set\n"));
+        return STATUS_SUCCESS;
+    }
+
+    cbBuffer = sizeof(SHFLFSOBJINFO);
+    pHGCMBuffer = (uint8_t *)vbsfAllocNonPagedMem(cbBuffer);
+    if (pHGCMBuffer == NULL)
+    {
+        AssertFailed();
+        return STATUS_INSUFFICIENT_RESOURCES;
+    }
+    RtlZeroMemory(pHGCMBuffer, cbBuffer);
+    pSHFLFileInfo = (PSHFLFSOBJINFO)pHGCMBuffer;
+
+    /* The properties, that need to be changed, are set to something other than zero */
+    if (pInfo->CreationTime.QuadPart && (SetAttrFlags & VBOX_FOBX_F_INFO_CREATION_TIME) != 0)
+    {
+        RTTimeSpecSetNtTime(&pSHFLFileInfo->BirthTime, pInfo->CreationTime.QuadPart);
+    }
+    if (pInfo->LastAccessTime.QuadPart && (SetAttrFlags & VBOX_FOBX_F_INFO_LASTACCESS_TIME) != 0)
+    {
+        RTTimeSpecSetNtTime(&pSHFLFileInfo->AccessTime, pInfo->LastAccessTime.QuadPart);
+    }
+    if (pInfo->LastWriteTime.QuadPart && (SetAttrFlags & VBOX_FOBX_F_INFO_LASTWRITE_TIME) != 0)
+    {
+        RTTimeSpecSetNtTime(&pSHFLFileInfo->ModificationTime, pInfo->LastWriteTime.QuadPart);
+    }
+    if (pInfo->ChangeTime.QuadPart && (SetAttrFlags & VBOX_FOBX_F_INFO_CHANGE_TIME) != 0)
+    {
+        RTTimeSpecSetNtTime(&pSHFLFileInfo->ChangeTime, pInfo->ChangeTime.QuadPart);
+    }
+    if (pInfo->FileAttributes && (SetAttrFlags & VBOX_FOBX_F_INFO_ATTRIBUTES) != 0)
+    {
+        pSHFLFileInfo->Attr.fMode = NTToVBoxFileAttributes(pInfo->FileAttributes);
+    }
+
+    vboxRC = vboxCallFSInfo(&pDeviceExtension->hgcmClient, &pNetRootExtension->map, pVBoxFobx->hFile,
+                            SHFL_INFO_SET | SHFL_INFO_FILE, &cbBuffer, (PSHFLDIRINFO)pSHFLFileInfo);
+
+    if (vboxRC != VINF_SUCCESS)
+    {
+        Status = VBoxErrorToNTStatus(vboxRC);
+    }
+
+    if (pHGCMBuffer)
+    {
+        vbsfFreeNonPagedMem(pHGCMBuffer);
+    }
+
+    Log(("VBOXSF: vbsfSetFileInfo: Returned 0x%08X\n",
+         Status));
+    return Status;
+}
+
+/*
+ * Closes an opened file handle of a MRX_VBOX_FOBX.
+ * Updates file attributes if necessary.
+ */
+NTSTATUS vbsfCloseFileHandle(PMRX_VBOX_DEVICE_EXTENSION pDeviceExtension,
+                             PMRX_VBOX_NETROOT_EXTENSION pNetRootExtension,
+                             PMRX_VBOX_FOBX pVBoxFobx)
+{
+    NTSTATUS Status = STATUS_SUCCESS;
+
+    int vboxRC;
+
+    if (pVBoxFobx->hFile == SHFL_HANDLE_NIL)
+    {
+        Log(("VBOXSF: vbsfCloseFileHandle: SHFL_HANDLE_NIL\n"));
+        return STATUS_SUCCESS;
+    }
+
+    Log(("VBOXSF: vbsfCloseFileHandle: 0x%RX64, on close info 0x%02X\n",
+         pVBoxFobx->hFile, pVBoxFobx->SetFileInfoOnCloseFlags));
+
+    if (pVBoxFobx->SetFileInfoOnCloseFlags)
+    {
+        /* If the file timestamps were set by the user, then update them before closing the handle,
+         * to cancel any effect of the file read/write operations on the host.
+         */
+        Status = vbsfSetFileInfo(pDeviceExtension,
+                                 pNetRootExtension,
+                                 pVBoxFobx,
+                                 &pVBoxFobx->FileBasicInfo,
+                                 pVBoxFobx->SetFileInfoOnCloseFlags);
+    }
+
+    vboxRC = vboxCallClose(&pDeviceExtension->hgcmClient,
+                           &pNetRootExtension->map,
+                           pVBoxFobx->hFile);
+
+    pVBoxFobx->hFile = SHFL_HANDLE_NIL;
+
+    if (vboxRC != VINF_SUCCESS)
+    {
+        Status = VBoxErrorToNTStatus(vboxRC);
+    }
+
+    Log(("VBOXSF: vbsfCloseFileHandle: Returned 0x%08X\n",
+         Status));
+    return Status;
+}
+
 NTSTATUS VBoxMRxCloseSrvOpen(IN PRX_CONTEXT RxContext)
 {
     NTSTATUS Status = STATUS_SUCCESS;
@@ -696,8 +829,7 @@ NTSTATUS VBoxMRxCloseSrvOpen(IN PRX_CONTEXT RxContext)
     /* Close file */
     if (pVBoxFobx->hFile != SHFL_HANDLE_NIL)
     {
-        vboxRC = vboxCallClose(&pDeviceExtension->hgcmClient, &pNetRootExtension->map, pVBoxFobx->hFile);
-        pVBoxFobx->hFile = SHFL_HANDLE_NIL;
+        vbsfCloseFileHandle(pDeviceExtension, pNetRootExtension, pVBoxFobx);
     }
 
     if (capFcb->FcbState & FCB_STATE_DELETE_ON_CLOSE)
@@ -738,8 +870,7 @@ NTSTATUS vbsfRemove(IN PRX_CONTEXT RxContext)
     /* Close file first if not already done. */
     if (pVBoxFobx->hFile != SHFL_HANDLE_NIL)
     {
-        vboxRC = vboxCallClose(&pDeviceExtension->hgcmClient, &pNetRootExtension->map, pVBoxFobx->hFile);
-        pVBoxFobx->hFile = SHFL_HANDLE_NIL;
+        vbsfCloseFileHandle(pDeviceExtension, pNetRootExtension, pVBoxFobx);
     }
 
     /* Calculate length required for parsed path.
@@ -819,8 +950,7 @@ NTSTATUS vbsfRename(IN PRX_CONTEXT RxContext,
     /* Must close the file before renaming it! */
     if (pVBoxFobx->hFile != SHFL_HANDLE_NIL)
     {
-        vboxRC = vboxCallClose(&pDeviceExtension->hgcmClient, &pNetRootExtension->map, pVBoxFobx->hFile);
-        pVBoxFobx->hFile = SHFL_HANDLE_NIL;
+        vbsfCloseFileHandle(pDeviceExtension, pNetRootExtension, pVBoxFobx);
     }
 
     /* Mark it as renamed, so we do nothing during close */
