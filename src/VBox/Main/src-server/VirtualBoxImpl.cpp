@@ -889,7 +889,7 @@ STDMETHODIMP VirtualBox::COMGETTER(SettingsFilePath)(BSTR *aSettingsFilePath)
 
 STDMETHODIMP VirtualBox::COMGETTER(Host)(IHost **aHost)
 {
-    CheckComArgOutSafeArrayPointerValid(aHost);
+    CheckComArgOutPointerValid(aHost);
 
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
@@ -902,7 +902,7 @@ STDMETHODIMP VirtualBox::COMGETTER(Host)(IHost **aHost)
 STDMETHODIMP
 VirtualBox::COMGETTER(SystemProperties)(ISystemProperties **aSystemProperties)
 {
-    CheckComArgOutSafeArrayPointerValid(aSystemProperties);
+    CheckComArgOutPointerValid(aSystemProperties);
 
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
@@ -975,7 +975,7 @@ STDMETHODIMP VirtualBox::COMGETTER(FloppyImages)(ComSafeArrayOut(IMedium *, aFlo
 
 STDMETHODIMP VirtualBox::COMGETTER(ProgressOperations)(ComSafeArrayOut(IProgress *, aOperations))
 {
-    CheckComArgOutSafeArrayPointerValid(aOperations);
+    CheckComArgOutPointerValid(aOperations);
 
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
@@ -1020,7 +1020,7 @@ STDMETHODIMP
 VirtualBox::COMGETTER(PerformanceCollector)(IPerformanceCollector **aPerformanceCollector)
 {
 #ifdef VBOX_WITH_RESOURCE_USAGE_API
-    CheckComArgOutSafeArrayPointerValid(aPerformanceCollector);
+    CheckComArgOutPointerValid(aPerformanceCollector);
 
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
@@ -1518,7 +1518,7 @@ STDMETHODIMP VirtualBox::OpenMachine(IN_BSTR aSettingsFile,
                                      IMachine **aMachine)
 {
     CheckComArgStrNotEmptyOrNull(aSettingsFile);
-    CheckComArgOutSafeArrayPointerValid(aMachine);
+    CheckComArgOutPointerValid(aMachine);
 
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
@@ -1581,7 +1581,7 @@ STDMETHODIMP VirtualBox::FindMachine(IN_BSTR aNameOrId, IMachine **aMachine)
     LogFlowThisFunc(("aName=\"%ls\", aMachine={%p}\n", aNameOrId, aMachine));
 
     CheckComArgStrNotEmptyOrNull(aNameOrId);
-    CheckComArgOutSafeArrayPointerValid(aMachine);
+    CheckComArgOutPointerValid(aMachine);
 
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
@@ -1672,7 +1672,7 @@ STDMETHODIMP VirtualBox::OpenMedium(IN_BSTR aLocation,
                                     IMedium **aMedium)
 {
     CheckComArgStrNotEmptyOrNull(aLocation);
-    CheckComArgOutSafeArrayPointerValid(aMedium);
+    CheckComArgOutPointerValid(aMedium);
 
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
@@ -1750,7 +1750,7 @@ STDMETHODIMP VirtualBox::FindMedium(IN_BSTR   aLocation,
                                     IMedium **aMedium)
 {
     CheckComArgStrNotEmptyOrNull(aLocation);
-    CheckComArgOutSafeArrayPointerValid(aMedium);
+    CheckComArgOutPointerValid(aMedium);
 
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
