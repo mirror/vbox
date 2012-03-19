@@ -212,9 +212,7 @@ if defined(VBOX_WITH_TESTCASES) && !defined(VBOX_ONLY_ADDITIONS) && !defined(VBO
  ifn1of ($(KBUILD_TARGET), solaris win)  # No variadic macros in Visual C++ 2002; Unresolved RTR0AssertPanicSystem on Solaris 11 / gcc 4.5.2.
   PROGRAMS += tstVBoxGuest-solaris
   tstVBoxGuest-solaris_TEMPLATE = VBOXR3TSTEXE
-  tstVBoxGuest-solaris_SOURCES  = \
-  	VBoxGuest-solaris-streams.c \
-  	testcase/tstVBoxGuest-solaris.cpp
+  tstVBoxGuest-solaris_SOURCES  = VBoxGuest-solaris-streams.c
   tstVBoxGuest-solaris_DEFS     = TESTCASE
   tstVBoxGuest-solaris_LIBS     = $(LIB_RUNTIME)
  endif
