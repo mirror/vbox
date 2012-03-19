@@ -33,16 +33,15 @@ if  !defined(VBOX_ONLY_ADDITIONS) \
  && !defined(VBOX_ONLY_DOCS) \
  && !defined(VBOX_ONLY_EXTPACKS) \
  && !defined(VBOX_ONLY_SDK)
- PROGRAMS += scm
- scm_TEMPLATE = VBOXR3EXE
+ BLDPROGS += scm
+ scm_TEMPLATE = VBoxAdvBldProg
  scm_SOURCES = \
 	scm.cpp \
 	scmdiff.cpp \
 	scmrw.cpp \
 	scmstream.cpp \
 	scmsubversion.cpp 
- scm_LIBS = \
- 	$(LIB_RUNTIME)
+
 endif
 
 include $(KBUILD_PATH)/subfooter.kmk
