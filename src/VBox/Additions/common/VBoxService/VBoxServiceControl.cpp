@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2011 Oracle Corporation
+ * Copyright (C) 2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -117,11 +117,11 @@ static DECLCALLBACK(int) VBoxServiceControlPreInit(void)
     {
         if (rc == VERR_HGCM_SERVICE_NOT_FOUND) /* Host service is not available. */
         {
-            VBoxServiceVerbose(0, "Control: Guest property service is not available, skipping\n");
+            VBoxServiceVerbose(0, "Guest property service is not available, skipping\n");
             rc = VINF_SUCCESS;
         }
         else
-            VBoxServiceError("Control: Failed to connect to the guest property service! Error: %Rrc\n", rc);
+            VBoxServiceError("Failed to connect to the guest property service! Error: %Rrc\n", rc);
     }
     else
     {
@@ -185,7 +185,7 @@ static DECLCALLBACK(int) VBoxServiceControlInit(void)
     rc = VbglR3GuestCtrlConnect(&g_uControlSvcClientID);
     if (RT_SUCCESS(rc))
     {
-        VBoxServiceVerbose(3, "Control: Service client ID: %#x\n", g_uControlSvcClientID);
+        VBoxServiceVerbose(3, "Service client ID: %#x\n", g_uControlSvcClientID);
 
         /* Init thread lists. */
         RTListInit(&g_lstControlThreadsActive);
@@ -201,11 +201,11 @@ static DECLCALLBACK(int) VBoxServiceControlInit(void)
            causing VBoxService to fail. */
         if (rc == VERR_HGCM_SERVICE_NOT_FOUND) /* Host service is not available. */
         {
-            VBoxServiceVerbose(0, "Control: Guest control service is not available\n");
+            VBoxServiceVerbose(0, "Guest control service is not available\n");
             rc = VERR_SERVICE_DISABLED;
         }
         else
-            VBoxServiceError("Control: Failed to connect to the guest control service! Error: %Rrc\n", rc);
+            VBoxServiceError("Failed to connect to the guest control service! Error: %Rrc\n", rc);
         RTSemEventMultiDestroy(g_hControlEvent);
         g_hControlEvent = NIL_RTSEMEVENTMULTI;
     }
@@ -232,24 +232,24 @@ DECLCALLBACK(int) VBoxServiceControlWorker(bool volatile *pfShutdown)
      */
     for (;;)
     {
-        VBoxServiceVerbose(3, "Control: Waiting for host msg ...\n");
+        VBoxServiceVerbose(3, "Waiting for host msg ...\n");
         uint32_t uMsg;
         uint32_t cParms;
         rc = VbglR3GuestCtrlWaitForHostMsg(g_uControlSvcClientID, &uMsg, &cParms);
         if (rc == VERR_TOO_MUCH_DATA)
         {
-            VBoxServiceVerbose(4, "Control: Message requires %ld parameters, but only 2 supplied -- retrying request (no error!)...\n", cParms);
+            VBoxServiceVerbose(4, "Message requires %ld parameters, but only 2 supplied -- retrying request (no error!)...\n", cParms);
             rc = VINF_SUCCESS; /* Try to get "real" message in next block below. */
         }
         else if (RT_FAILURE(rc))
-            VBoxServiceVerbose(3, "Control: Getting host message failed with %Rrc\n", rc); /* VERR_GEN_IO_FAILURE seems to be normal if ran into timeout. */
+            VBoxServiceVerbose(3, "Getting host message failed with %Rrc\n", rc); /* VERR_GEN_IO_FAILURE seems to be normal if ran into timeout. */
         if (RT_SUCCESS(rc))
         {
-            VBoxServiceVerbose(3, "Control: Msg=%u (%u parms) retrieved\n", uMsg, cParms);
+            VBoxServiceVerbose(3, "Msg=%u (%u parms) retrieved\n", uMsg, cParms);
             switch (uMsg)
             {
                 case HOST_CANCEL_PENDING_WAITS:
-                    VBoxServiceVerbose(3, "Control: Host asked us to quit ...\n");
+                    VBoxServiceVerbose(3, "Host asked us to quit ...\n");
                     break;
 
                 case HOST_EXEC_CMD:
@@ -266,7 +266,7 @@ DECLCALLBACK(int) VBoxServiceControlWorker(bool volatile *pfShutdown)
                     break;
 
                 default:
-                    VBoxServiceVerbose(3, "Control: Unsupported message from host! Msg=%u\n", uMsg);
+                    VBoxServiceVerbose(3, "Unsupported message from host! Msg=%u\n", uMsg);
                     /* Don't terminate here; just wait for the next message. */
                     break;
             }
@@ -324,7 +324,7 @@ static int VBoxServiceControlHandleCmdStartProc(uint32_t uClientID, uint32_t cPa
                                                &proc.uTimeLimitMS);
         if (RT_SUCCESS(rc))
         {
-            VBoxServiceVerbose(3, "Control: Request to start process szCmd=%s, uFlags=0x%x, szArgs=%s, szEnv=%s, szUser=%s, uTimeout=%u\n",
+            VBoxServiceVerbose(3, "Request to start process szCmd=%s, uFlags=0x%x, szArgs=%s, szEnv=%s, szUser=%s, uTimeout=%u\n",
                                proc.szCmd, proc.uFlags,
                                proc.uNumArgs ? proc.szArgs : "<None>",
                                proc.uNumEnvVars ? proc.szEnv : "<None>",
@@ -332,7 +332,7 @@ static int VBoxServiceControlHandleCmdStartProc(uint32_t uClientID, uint32_t cPa
 
             rc = VBoxServiceControlReapThreads();
             if (RT_FAILURE(rc))
-                VBoxServiceError("Control: Reaping stopped processes failed with rc=%Rrc\n", rc);
+                VBoxServiceError("Reaping stopped processes failed with rc=%Rrc\n", rc);
             /* Keep going. */
 
             rc = VBoxServiceControlStartAllowed(&fStartAllowed);
@@ -353,14 +353,14 @@ static int VBoxServiceControlHandleCmdStartProc(uint32_t uClientID, uint32_t cPa
     /* In case of an error we need to notify the host to not wait forever for our response. */
     if (RT_FAILURE(rc))
     {
-        VBoxServiceError("Control: Starting process failed with rc=%Rrc\n", rc);
+        VBoxServiceError("Starting process failed with rc=%Rrc\n", rc);
 
         int rc2 = VbglR3GuestCtrlExecReportStatus(uClientID, uContextID, 0 /* PID, invalid. */,
                                                   PROC_STS_ERROR, rc,
                                                   NULL /* pvData */, 0 /* cbData */);
         if (RT_FAILURE(rc2))
         {
-            VBoxServiceError("Control: Error sending start process status to host, rc=%Rrc\n", rc2);
+            VBoxServiceError("Error sending start process status to host, rc=%Rrc\n", rc2);
             if (RT_SUCCESS(rc))
                 rc = rc2;
         }
@@ -444,8 +444,8 @@ int VBoxServiceControlListSet(VBOXSERVICECTRLTHREADLISTTYPE enmList,
     int rc = RTCritSectEnter(&g_csControlThreads);
     if (RT_SUCCESS(rc))
     {
-        VBoxServiceVerbose(3, "Control: Setting thread (PID %u) inactive\n",
-                           pThread->uPID);
+        VBoxServiceVerbose(3, "Setting thread (PID %u) to list %d\n",
+                           pThread->uPID, enmList);
 
         PRTLISTANCHOR pAnchor = NULL;
         switch (enmList)
@@ -562,12 +562,12 @@ static int VBoxServiceControlHandleCmdSetInput(uint32_t idClient, uint32_t cParm
                                                 pabBuffer, cbMaxBufSize, &cbSize);
     if (RT_FAILURE(rc))
     {
-        VBoxServiceError("Control: [PID %u]: Failed to retrieve exec input command! Error: %Rrc\n",
+        VBoxServiceError("[PID %u]: Failed to retrieve exec input command! Error: %Rrc\n",
                          uPID, rc);
     }
     else if (cbSize > cbMaxBufSize)
     {
-        VBoxServiceError("Control: [PID %u]: Too much input received! cbSize=%u, cbMaxBufSize=%u\n",
+        VBoxServiceError("[PID %u]: Too much input received! cbSize=%u, cbMaxBufSize=%u\n",
                          uPID, cbSize, cbMaxBufSize);
         rc = VERR_INVALID_PARAMETER;
     }
@@ -580,13 +580,13 @@ static int VBoxServiceControlHandleCmdSetInput(uint32_t idClient, uint32_t cParm
         if (uFlags & INPUT_FLAG_EOF)
         {
             fPendingClose = true;
-            VBoxServiceVerbose(4, "Control: [PID %u]: Got last input block of size %u ...\n",
+            VBoxServiceVerbose(4, "[PID %u]: Got last input block of size %u ...\n",
                                uPID, cbSize);
         }
 
         rc = VBoxServiceControlSetInput(uPID, uContextID, fPendingClose, pabBuffer,
                                         cbSize, &cbWritten);
-        VBoxServiceVerbose(4, "Control: [PID %u]: Written input, CID=%u, rc=%Rrc, uFlags=0x%x, fPendingClose=%d, cbSize=%u, cbWritten=%u\n",
+        VBoxServiceVerbose(4, "[PID %u]: Written input, CID=%u, rc=%Rrc, uFlags=0x%x, fPendingClose=%d, cbSize=%u, cbWritten=%u\n",
                            uPID, uContextID, rc, uFlags, fPendingClose, cbSize, cbWritten);
         if (RT_SUCCESS(rc))
         {
@@ -618,7 +618,7 @@ static int VBoxServiceControlHandleCmdSetInput(uint32_t idClient, uint32_t cParm
     }
     Assert(uStatus > INPUT_STS_UNDEFINED);
 
-    VBoxServiceVerbose(3, "Control: [PID %u]: Input processed, CID=%u, uStatus=%u, uFlags=0x%x, cbWritten=%u\n",
+    VBoxServiceVerbose(3, "[PID %u]: Input processed, CID=%u, uStatus=%u, uFlags=0x%x, cbWritten=%u\n",
                        uPID, uContextID, uStatus, uFlags, cbWritten);
 
     /* Note: Since the context ID is unique the request *has* to be completed here,
@@ -628,7 +628,7 @@ static int VBoxServiceControlHandleCmdSetInput(uint32_t idClient, uint32_t cParm
                                            uStatus, uFlags, (uint32_t)cbWritten);
 
     if (RT_FAILURE(rc))
-        VBoxServiceError("Control: [PID %u]: Failed to report input status! Error: %Rrc\n",
+        VBoxServiceError("[PID %u]: Failed to report input status! Error: %Rrc\n",
                          uPID, rc);
     return rc;
 }
@@ -658,7 +658,7 @@ static int VBoxServiceControlHandleCmdGetOutput(uint32_t idClient, uint32_t cPar
             uint32_t cbRead = 0;
             rc = VBoxServiceControlExecGetOutput(uPID, uContextID, uHandleID, RT_INDEFINITE_WAIT /* Timeout */,
                                                  pBuf, _64K /* cbSize */, &cbRead);
-            VBoxServiceVerbose(3, "Control: [PID %u]: Got output, rc=%Rrc, CID=%u, cbRead=%u, uHandle=%u, uFlags=%u\n",
+            VBoxServiceVerbose(3, "[PID %u]: Got output, rc=%Rrc, CID=%u, cbRead=%u, uHandle=%u, uFlags=%u\n",
                                uPID, rc, uContextID, cbRead, uHandleID, uFlags);
 
 #ifdef DEBUG
@@ -703,7 +703,7 @@ static int VBoxServiceControlHandleCmdGetOutput(uint32_t idClient, uint32_t cPar
     }
 
     if (RT_FAILURE(rc))
-        VBoxServiceError("Control: [PID %u]: Error handling output command! Error: %Rrc\n",
+        VBoxServiceError("[PID %u]: Error handling output command! Error: %Rrc\n",
                          uPID, rc);
     return rc;
 }
@@ -712,7 +712,7 @@ static int VBoxServiceControlHandleCmdGetOutput(uint32_t idClient, uint32_t cPar
 /** @copydoc VBOXSERVICE::pfnStop */
 static DECLCALLBACK(void) VBoxServiceControlStop(void)
 {
-    VBoxServiceVerbose(3, "Control: Stopping ...\n");
+    VBoxServiceVerbose(3, "Stopping ...\n");
 
     /** @todo Later, figure what to do if we're in RTProcWait(). It's a very
      *        annoying call since doesn't support timeouts in the posix world. */
@@ -725,12 +725,12 @@ static DECLCALLBACK(void) VBoxServiceControlStop(void)
      */
     if (g_uControlSvcClientID)
     {
-        VBoxServiceVerbose(3, "Control: Cancelling pending waits (client ID=%u) ...\n",
+        VBoxServiceVerbose(3, "Cancelling pending waits (client ID=%u) ...\n",
                            g_uControlSvcClientID);
 
         int rc = VbglR3GuestCtrlCancelPendingWaits(g_uControlSvcClientID);
         if (RT_FAILURE(rc))
-            VBoxServiceError("Control: Cancelling pending waits failed; rc=%Rrc\n", rc);
+            VBoxServiceError("Cancelling pending waits failed; rc=%Rrc\n", rc);
     }
 }
 
@@ -760,13 +760,13 @@ static int VBoxServiceControlReapThreads(void)
                 rc2 = VBoxServiceControlThreadFree(pThread);
                 if (RT_FAILURE(rc2))
                 {
-                    VBoxServiceError("Control: Stopping guest process thread failed with rc=%Rrc\n", rc2);
+                    VBoxServiceError("Stopping guest process thread failed with rc=%Rrc\n", rc2);
                     if (RT_SUCCESS(rc)) /* Keep original failure. */
                         rc = rc2;
                 }
             }
             else
-                VBoxServiceError("Control: Waiting on guest process thread failed with rc=%Rrc\n", rc2);
+                VBoxServiceError("Waiting on guest process thread failed with rc=%Rrc\n", rc2);
             /* Keep going. */
 
             if (fLast)
@@ -780,7 +780,7 @@ static int VBoxServiceControlReapThreads(void)
             rc = rc2;
     }
 
-    VBoxServiceVerbose(4, "Control: Reaping threads returned with rc=%Rrc\n", rc);
+    VBoxServiceVerbose(4, "Reaping threads returned with rc=%Rrc\n", rc);
     return rc;
 }
 
@@ -790,7 +790,7 @@ static int VBoxServiceControlReapThreads(void)
  */
 static void VBoxServiceControlShutdown(void)
 {
-    VBoxServiceVerbose(2, "Control: Shutting down ...\n");
+    VBoxServiceVerbose(2, "Shutting down ...\n");
 
     /* Signal all threads in the active list that we want to shutdown. */
     PVBOXSERVICECTRLTHREAD pThread;
@@ -807,7 +807,7 @@ static void VBoxServiceControlShutdown(void)
         int rc2 = VBoxServiceControlThreadWait(pThread,
                                                30 * 1000 /* Wait 30 seconds max. */);
         if (RT_FAILURE(rc2))
-            VBoxServiceError("Control: Guest process thread failed to stop; rc=%Rrc\n", rc2);
+            VBoxServiceError("Guest process thread failed to stop; rc=%Rrc\n", rc2);
 
         if (fLast)
             break;
@@ -817,7 +817,7 @@ static void VBoxServiceControlShutdown(void)
 
     int rc2 = VBoxServiceControlReapThreads();
     if (RT_FAILURE(rc2))
-        VBoxServiceError("Control: Reaping inactive threads failed with rc=%Rrc\n", rc2);
+        VBoxServiceError("Reaping inactive threads failed with rc=%Rrc\n", rc2);
 
     AssertMsg(RTListIsEmpty(&g_lstControlThreadsActive),
               ("Guest process active thread list still contains entries when it should not\n"));
@@ -827,18 +827,18 @@ static void VBoxServiceControlShutdown(void)
     /* Destroy critical section. */
     RTCritSectDelete(&g_csControlThreads);
 
-    VBoxServiceVerbose(2, "Control: Shutting down complete\n");
+    VBoxServiceVerbose(2, "Shutting down complete\n");
 }
 
 
 /** @copydoc VBOXSERVICE::pfnTerm */
 static DECLCALLBACK(void) VBoxServiceControlTerm(void)
 {
-    VBoxServiceVerbose(3, "Control: Terminating ...\n");
+    VBoxServiceVerbose(3, "Terminating ...\n");
 
     VBoxServiceControlShutdown();
 
-    VBoxServiceVerbose(3, "Control: Disconnecting client ID=%u ...\n",
+    VBoxServiceVerbose(3, "Disconnecting client ID=%u ...\n",
                        g_uControlSvcClientID);
     VbglR3GuestCtrlDisconnect(g_uControlSvcClientID);
     g_uControlSvcClientID = 0;
@@ -878,13 +878,13 @@ static int VBoxServiceControlStartAllowed(bool *pbAllowed)
             RTListForEach(&g_lstControlThreadsActive, pThread, VBOXSERVICECTRLTHREAD, Node)
                 uProcsRunning++;
 
-            VBoxServiceVerbose(3, "Control: Maximum served guest processes set to %u, running=%u\n",
+            VBoxServiceVerbose(3, "Maximum served guest processes set to %u, running=%u\n",
                                g_uControlProcsMaxKept, uProcsRunning);
 
             int32_t iProcsLeft = (g_uControlProcsMaxKept - uProcsRunning - 1);
             if (iProcsLeft < 0)
             {
-                VBoxServiceVerbose(3, "Control: Maximum running guest processes reached (%u)\n",
+                VBoxServiceVerbose(3, "Maximum running guest processes reached (%u)\n",
                                    g_uControlProcsMaxKept);
                 fLimitReached = true;
             }
@@ -978,7 +978,7 @@ int VBoxServiceControlAssignPID(PVBOXSERVICECTRLTHREAD pThread, uint32_t uPID)
                     Assert(pThreadCur != pThread); /* can't happen */
                     uint32_t uTriedPID = uPID;
                     uPID += 391939;
-                    VBoxServiceVerbose(2, "ControlThread: PID %u was used before, trying again with %u ...\n",
+                    VBoxServiceVerbose(2, "PID %u was used before, trying again with %u ...\n",
                                        uTriedPID, uPID);
                     fTryAgain = true;
                     break;
