@@ -69,6 +69,8 @@ protected:
 
     UIActionInterface(QObject *pParent, UIActionType type);
 
+    QString menuText(const QString &strText);
+
 private:
 
     UIActionType m_type;
