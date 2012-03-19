@@ -4083,6 +4083,11 @@ HRESULT Medium::close(AutoCaller &autoCaller)
         // failure to do so)
         rc = unregisterWithVirtualBox();
         if (FAILED(rc)) return rc;
+
+        multilock.release();
+        markRegistriesModified();
+        m->pVirtualBox->saveModifiedRegistries();
+        multilock.acquire();
     }
 
     // release the AutoCaller, as otherwise uninit() will simply hang
@@ -4231,6 +4236,8 @@ HRESULT Medium::deleteStorage(ComObjPtr<Progress> *aProgress,
             throw rc;
         // no longer need lock
         multilock.release();
+        markRegistriesModified();
+        m->pVirtualBox->saveModifiedRegistries();
 
         if (aProgress != NULL)
         {
@@ -5787,7 +5794,6 @@ HRESULT Medium::unregisterWithVirtualBox()
             m->pParent->m->llChildren.push_back(this);
         }
     }
-    m->pVirtualBox->saveModifiedRegistries();
 
     return rc;
 }
