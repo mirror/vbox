@@ -1637,6 +1637,31 @@ STDMETHODIMP VirtualBox::FindMachine(IN_BSTR aNameOrId, IMachine **aMachine)
     return rc;
 }
 
+STDMETHODIMP VirtualBox::GetMachineStates(ComSafeArrayIn(IMachine *, aMachines), ComSafeArrayOut(MachineState_T, aStates))
+{
+    CheckComArgSafeArrayNotNull(aMachines);
+    CheckComArgOutSafeArrayPointerValid(aStates);
+
+    com::SafeIfaceArray<IMachine> saMachines(ComSafeArrayInArg(aMachines));
+    com::SafeArray<MachineState_T> saStates(saMachines.size());
+    for (size_t i = 0; i < saMachines.size(); i++)
+    {
+        ComPtr<IMachine> pMachine = saMachines[i];
+        MachineState_T state = MachineState_Null;
+        if (!pMachine.isNull())
+        {
+            HRESULT rc = pMachine->COMGETTER(State)(&state);
+            if (rc = E_ACCESSDENIED)
+                rc = S_OK;
+            AssertComRC(rc);
+        }
+        saStates[i] = state;
+    }
+    saStates.detachTo(ComSafeArrayOutArg(aStates));
+
+    return S_OK;
+}
+
 STDMETHODIMP VirtualBox::CreateHardDisk(IN_BSTR aFormat,
                                         IN_BSTR aLocation,
                                         IMedium **aHardDisk)
