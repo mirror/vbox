@@ -35,7 +35,9 @@ if  !defined(VBOX_ONLY_ADDITIONS) \
  && !defined(VBOX_ONLY_SDK)
  PROGRAMS += scm
  scm_TEMPLATE = VBOXR3EXE
- scm_SOURCES = scm.cpp
+ scm_SOURCES = \
+	scm.cpp \
+	scmstream.cpp 
  scm_LIBS = \
  	$(LIB_RUNTIME)
 endif
