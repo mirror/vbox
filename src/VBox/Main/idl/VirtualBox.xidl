@@ -2,7 +2,7 @@
 
 <!--
 
-    Copyright (C) 2006-2011 Oracle Corporation
+    Copyright (C) 2006-2012 Oracle Corporation
 
     This file is part of VirtualBox Open Source Edition (OSE), as
     available from http://www.virtualbox.org. This file is free software;
@@ -1397,7 +1397,7 @@
 
   <interface
     name="IVirtualBox" extends="$unknown"
-    uuid="c28be65f-1a8f-43b4-81f1-eb60cb516e66"
+    uuid="8bf22775-a3c1-4f81-80d3-138584474fb3"
     wsmap="managed"
     >
     <desc>
@@ -1783,6 +1783,18 @@
       </param>
       <param name="machine" type="IMachine" dir="return">
         <desc>Machine object, if found.</desc>
+      </param>
+    </method>
+
+    <method name="getMachineStates">
+      <desc>
+        Gets the state of several machines in a single operation.
+      </desc>
+      <param name="machines" type="IMachine" dir="in" safearray="yes">
+        <desc>Array with the machine references.</desc>
+      </param>
+      <param name="states" type="MachineState" dir="return" safearray="yes">
+        <desc>Machine states, corresponding to the machines.</desc>
       </param>
     </method>
 
