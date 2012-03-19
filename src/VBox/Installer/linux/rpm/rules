@@ -205,11 +205,13 @@ binary: rpm/build-stamp
 	  -e 's|%BUILDREL%|$(rpmrel)|g' \
 	  -e 's|%BUILDROOT%|$(current)/rpm/buildroot|g' \
 	  -e 's|%LIB%|$(rpmlib)|g' \
+	  -e 's|%OSE%|$(if $(ose),is_ose,not_ose)|g' \
 	  -e 's|%SPEC%|$(rpmspec)|g' \
 	  -e 's|%MACROSPYTHON%|$(if $(wildcard /usr/lib/rpm/macros.python),%include /usr/lib/rpm/macros.python,)|g' \
 	  -e 's|%INSTMOD%|$(instmod)|g' \
 	  -e 's|%LIBASOUND%|$(if $(filter lib64,$(rpmlib)),libasound.so.2()(64bit),libasound.so.2)|g' \
 	  -e 's|%INITSCRIPTS%|$(if $(filter fedora,$(rpmspec)),initscripts,)|g' \
+	  -e "s|%WEBSVC%|$(if $(NOWEBSVC),false,true)|g" \
 	  -e '/#include installer-common.sh/ {' \
 	  -e "r $(vboxroot)/src/VBox/Installer/linux/installer-common.sh" \
 	  -e 'd' \
