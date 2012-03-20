@@ -325,7 +325,6 @@ extern int vboxguestSolarisInfo(struct modinfo *pModInfo);
 #define mcopyout(...) do {} while(0)
 #define freemsg(...) do {} while(0)
 #define putnext(...) do {} while(0)
-#define miocpullup(...) 0
 #define ddi_get_instance(...) 0
 #define pci_config_setup(...) DDI_SUCCESS
 #define pci_config_teardown(...) do {} while(0)
@@ -406,6 +405,21 @@ static inline void miocnak(queue_t *pWriteQueue, mblk_t *pMBlk, int cbData,
     pIOCBlk->ioc_count = cbData;
     pIOCBlk->ioc_error = iErr;
     qreply(pWriteQueue, pMBlk);
+}
+
+/* This does not work like the real version, but does some sanity testing
+ * and sets a flag. */
+static inline int miocpullup(mblk_t *pMBlk, size_t cbMsg)
+{
+    struct iocblk *pIOCBlk = (struct iocblk *)pMBlk->b_rptr;
+
+    if (pIOCBlk->ioc_count == TRANSPARENT)
+        return EINVAL;
+    if (   !pMBlk->b_cont
+        || pMBlk->b_cont->b_wptr < pMBlk->b_cont->b_rptr + cbMsg)
+        return EINVAL;
+    pMBlk->b_flag = 1;  /* Test for this to be sure miocpullup was called. */
+    return 0;
 }
 
 /* API stubs with controllable logic */
