@@ -36,12 +36,18 @@ if  !defined(VBOX_ONLY_ADDITIONS) \
  BLDPROGS += scm
  scm_TEMPLATE = VBoxAdvBldProg
  scm_SOURCES = \
-	scm.cpp \
-	scmdiff.cpp \
-	scmrw.cpp \
-	scmstream.cpp \
-	scmsubversion.cpp 
+ 	scm.cpp \
+ 	scmdiff.cpp \
+ 	scmrw.cpp \
+ 	scmstream.cpp \
+ 	scmsubversion.cpp 
 
+
+ #BLDPROGS += VBoxTpG
+ VBoxTpG_TEMPLATE = VBoxAdvBldProg
+ VBoxTpG_SOURCES = \
+ 	VBoxTpG.cpp \
+ 	scmstream.cpp
 endif
 
 include $(KBUILD_PATH)/subfooter.kmk
