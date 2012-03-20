@@ -710,7 +710,7 @@ unsigned ScmStreamPeekCh(PSCMSTREAM pStream)
         return ~(unsigned)0;
 
     /* Peek at the next character. */
-    char ch = pStream->pch[pStream->off++];
+    char ch = pStream->pch[pStream->off];
     return (unsigned)ch;
 }
 

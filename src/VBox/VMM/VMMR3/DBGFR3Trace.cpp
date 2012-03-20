@@ -51,17 +51,17 @@ static DECLCALLBACK(void) dbgfR3TraceInfo(PVM pVM, PCDBGFINFOHLP pHlp, const cha
  */
 static const struct
 {
-    /** The mask. */
-    uint32_t    fMask;
-    /** The name length. */
-    uint32_t    cchName;
     /** The group name. */
     const char *pszName;
+    /** The name length. */
+    uint32_t    cchName;
+    /** The mask. */
+    uint32_t    fMask;
 }   g_aVmmTpGroups[] =
 {
-    {  VMMTPGROUP_EM,   RT_STR_TUPLE("em")  },
-    {  VMMTPGROUP_HM,   RT_STR_TUPLE("hm")  },
-    {  VMMTPGROUP_TM,   RT_STR_TUPLE("tm")  },
+    {  RT_STR_TUPLE("em"), VMMTPGROUP_EM },
+    {  RT_STR_TUPLE("hm"), VMMTPGROUP_HM },
+    {  RT_STR_TUPLE("tm"), VMMTPGROUP_TM },
 };
 
 

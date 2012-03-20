@@ -1073,11 +1073,11 @@
 #define RT_CONCAT4_HLP(a,b,c,d)     a##b##c##d
 
 /**
- * String constant tuple - strlen(string constant), string constant.
+ * String constant tuple - string constant, strlen(string constant).
  *
  * @param   a_szConst   String constant.
  */
-#define RT_STR_TUPLE(a_szConst)  sizeof(a_szConst) - 1, a_szConst
+#define RT_STR_TUPLE(a_szConst)  a_szConst, (sizeof(a_szConst) - 1)
 
 
 /** @def RT_BIT
