@@ -642,11 +642,78 @@ const char *ScmStreamGetLineByNo(PSCMSTREAM pStream, size_t iLine, size_t *pcchL
 const char *ScmStreamGetLine(PSCMSTREAM pStream, size_t *pcchLine, PSCMEOL penmEol)
 {
     /** @todo this doesn't work when pStream->off !=
-     *        pStream->paLines[pStream->iLine-1].pff. */
+     *        pStream->paLines[pStream->iLine-1].off. */
     if (!pStream->fFullyLineated)
         return scmStreamGetLineInternal(pStream, pcchLine, penmEol);
     return ScmStreamGetLineByNo(pStream, pStream->iLine, pcchLine, penmEol);
 }
+
+
+/**
+ * Gets a character from the stream.
+ *
+ * @returns The next unsigned character in the stream.
+ *          ~(unsigned)0 on failure.
+ * @param   pStream             The stream.  Must be in read mode.
+ */
+unsigned ScmStreamGetCh(PSCMSTREAM pStream)
+{
+    /* Check stream state. */
+    AssertReturn(!pStream->fWriteOrRead, ~(unsigned)0);
+    if (RT_FAILURE(pStream->rc))
+        return ~(unsigned)0;
+    if (RT_UNLIKELY(!pStream->fFullyLineated))
+    {
+        int rc = scmStreamLineate(pStream);
+        if (RT_FAILURE(rc))
+            return ~(unsigned)0;
+    }
+
+    /* If there isn't enough stream left, fail already. */
+    if (RT_UNLIKELY(pStream->off >= pStream->cb))
+        return ~(unsigned)0;
+
+    /* Read a character. */
+    char ch = pStream->pch[pStream->off++];
+
+    /* Advance the line indicator. */
+    size_t iLine = pStream->iLine;
+    if (pStream->off >= pStream->paLines[iLine].off + pStream->paLines[iLine].cch + pStream->paLines[iLine].enmEol)
+        pStream->iLine++;
+
+    return (unsigned)ch;
+}
+
+
+/**
+ * Peeks at the next character from the stream.
+ *
+ * @returns The next unsigned character in the stream.
+ *          ~(unsigned)0 on failure.
+ * @param   pStream             The stream.  Must be in read mode.
+ */
+unsigned ScmStreamPeekCh(PSCMSTREAM pStream)
+{
+    /* Check stream state. */
+    AssertReturn(!pStream->fWriteOrRead, ~(unsigned)0);
+    if (RT_FAILURE(pStream->rc))
+        return ~(unsigned)0;
+    if (RT_UNLIKELY(!pStream->fFullyLineated))
+    {
+        int rc = scmStreamLineate(pStream);
+        if (RT_FAILURE(rc))
+            return ~(unsigned)0;
+    }
+
+    /* If there isn't enough stream left, fail already. */
+    if (RT_UNLIKELY(pStream->off >= pStream->cb))
+        return ~(unsigned)0;
+
+    /* Peek at the next character. */
+    char ch = pStream->pch[pStream->off++];
+    return (unsigned)ch;
+}
+
 
 /**
  * Reads @a cbToRead bytes into @a pvBuf.
@@ -669,13 +736,14 @@ int ScmStreamRead(PSCMSTREAM pStream, void *pvBuf, size_t cbToRead)
         return pStream->rc;
 
     /* If there isn't enough stream left, fail already. */
-    if (RT_UNLIKELY(pStream->cb - pStream->cb < cbToRead))
+    if (RT_UNLIKELY(pStream->cb - pStream->off < cbToRead))
         return VERR_EOF;
 
     /* Copy the data and simply seek to the new stream position. */
     memcpy(pvBuf, &pStream->pch[pStream->off], cbToRead);
     return ScmStreamSeekAbsolute(pStream, pStream->off + cbToRead);
 }
+
 
 /**
  * Checks if the given line is empty or full of white space.

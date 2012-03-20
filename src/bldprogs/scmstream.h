@@ -106,6 +106,8 @@ int         ScmStreamSeekRelative(PSCMSTREAM pStream, ssize_t offRelative);
 int         ScmStreamSeekByLine(PSCMSTREAM pStream, size_t iLine);
 const char *ScmStreamGetLineByNo(PSCMSTREAM pStream, size_t iLine, size_t *pcchLine, PSCMEOL penmEol);
 const char *ScmStreamGetLine(PSCMSTREAM pStream, size_t *pcchLine, PSCMEOL penmEol);
+unsigned    ScmStreamGetCh(PSCMSTREAM pStream);
+unsigned    ScmStreamPeekCh(PSCMSTREAM pStream);
 int         ScmStreamRead(PSCMSTREAM pStream, void *pvBuf, size_t cbToRead);
 bool        ScmStreamIsWhiteLine(PSCMSTREAM pStream, size_t iLine);
 SCMEOL      ScmStreamGetEol(PSCMSTREAM pStream);
