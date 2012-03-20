@@ -574,14 +574,20 @@ static struct
     void (*pfnExtra)(RTTEST hTest, queue_t *pWriteQueue, struct msgb *pMBlk);
 } g_asTestWPut[] =
 {
-   /* iDBType  iIOCCmd          cbData       pvDataIn   cbDataIn
-      pvDataOut   cbDataOut rcExp pfnExtra */
-    { M_IOCTL, VUIDGFORMAT,     sizeof(int), NULL,      0,
-      PVGFORMAT, CBGFORMAT, 0,    NULL },
-    { M_IOCTL, VUIDSFORMAT,     sizeof(int), PVGFORMAT, CBGFORMAT,
-      NULL,       0,        0,    NULL },
-    { M_IOCTL, MSIOSRESOLUTION, CBMSIOSRES,  PMSIOSRES, CBMSIOSRES,
-      NULL,       0,        0,    testSetResolution }
+   /* iDBType  iIOCCmd          cbData           pvDataIn   cbDataIn
+      pvDataOut   cbDataOut rcExp   pfnExtra */
+    { M_IOCTL, VUIDGFORMAT,     sizeof(int),     NULL,      0,
+      PVGFORMAT, CBGFORMAT, 0,      NULL },
+    { M_IOCTL, VUIDGFORMAT,     sizeof(int) - 1, NULL,      0,
+      NULL,       0,        EINVAL, NULL },
+    { M_IOCTL, VUIDGFORMAT,     sizeof(int) + 1, NULL,      0,
+      PVGFORMAT, CBGFORMAT, 0,      NULL },
+    { M_IOCTL, VUIDSFORMAT,     sizeof(int),     PVGFORMAT, CBGFORMAT,
+      NULL,       0,        0,      NULL },
+    { M_IOCTL, MSIOSRESOLUTION, CBMSIOSRES,      PMSIOSRES, CBMSIOSRES,
+      NULL,       0,        0,      testSetResolution },
+    { M_IOCTL, VUIDGWHEELINFO,  0,               NULL,      0,
+      NULL,       0,        EINVAL, NULL }
 };
 
 # undef PVGFORMAT
@@ -618,25 +624,33 @@ static void testWPut(RTTEST hTest)
         RT_ZERO(DBlk);
         RT_ZERO(IOCBlk);
         RT_ZERO(MBlkCont);
+        RT_ZERO(acData);
         DBlk.db_type = g_asTestWPut[i].iDBType;
         IOCBlk.ioc_cmd = g_asTestWPut[i].iIOCCmd;
         IOCBlk.ioc_count = g_asTestWPut[i].cbData;
-        AssertReturnVoid(g_asTestWPut[i].cbDataIn <= sizeof(acData));
+        AssertReturnVoid(g_asTestWPut[i].cbData <= sizeof(acData));
+        AssertReturnVoid(g_asTestWPut[i].cbDataIn <= g_asTestWPut[i].cbData);
+        AssertReturnVoid(g_asTestWPut[i].cbDataOut <= g_asTestWPut[i].cbData);
         memcpy(acData, g_asTestWPut[i].pvDataIn, g_asTestWPut[i].cbDataIn);
         MBlkCont.b_rptr = acData;
-        MBlkCont.b_wptr = acData + g_asTestWPut[i].cbDataIn;
+        MBlkCont.b_wptr = acData + g_asTestWPut[i].cbData;
         MBlk.b_cont = &MBlkCont;
         MBlk.b_rptr = (unsigned char *)&IOCBlk;
         MBlk.b_wptr = (unsigned char *)&IOCBlk + sizeof(IOCBlk);
         MBlk.b_datap = &DBlk;
         rc = vbgr0SolWPut(WR(&aQueues[0]), &MBlk);
-        RTTEST_CHECK_MSG(hTest, rc == g_asTestWPut[i].rcExp,
-                         (hTest, "i=%u, rc=%d\n", i, rc));
+        RTTEST_CHECK_MSG(hTest, IOCBlk.ioc_error == g_asTestWPut[i].rcExp,
+                         (hTest, "i=%u, IOCBlk.ioc_error=%d\n", i,
+                          IOCBlk.ioc_error));
         RTTEST_CHECK_MSG(hTest, IOCBlk.ioc_count == g_asTestWPut[i].cbDataOut,
                          (hTest, "i=%u, ioc_count=%u\n", i, IOCBlk.ioc_count));
         RTTEST_CHECK_MSG(hTest, !memcmp(acData, g_asTestWPut[i].pvDataOut,
                                         g_asTestWPut[i].cbDataOut),
                          (hTest, "i=%u\n", i));
+        /* Hack to ensure that miocpullup() gets called when needed. */
+        if (   g_asTestWPut[i].iDBType == M_IOCTL
+            && g_asTestWPut[i].cbData > 0)  /* TRANSPARENT == -1 */
+            RTTEST_CHECK_MSG(hTest, MBlk.b_flag == 1, (hTest, "i=%u\n", i));
         if (g_asTestWPut[i].pfnExtra)
             g_asTestWPut[i].pfnExtra(hTest, WR(&aQueues[0]), &MBlk);
         vbgr0SolClose(RD(&aQueues[1]), 0, NULL);
@@ -956,7 +970,8 @@ static int vbgr0SolVUIDIOCtl(PVBGR0STATE pState, int iCmd, void *pvData,
         case VUIDGFORMAT:
         {
             LogFlowFunc(("VUIDGFORMAT\n"));
-            AssertReturn(cbBuffer >= sizeof(int), EINVAL);
+            if (cbBuffer < sizeof(int))
+                return EINVAL;
             *(int *)pvData = VUID_FIRM_EVENT;
             *pcbData = sizeof(int);
             return 0;
@@ -976,7 +991,8 @@ static int vbgr0SolVUIDIOCtl(PVBGR0STATE pState, int iCmd, void *pvData,
             Ms_parms parms = { 0 };
 
             LogFlowFunc(("MSIOGETPARMS\n"));
-            AssertReturn(cbBuffer >= sizeof(Ms_parms), EINVAL);
+            if (cbBuffer < sizeof(Ms_parms))
+                return EINVAL;
             *(Ms_parms *)pvData = parms;
             *pcbData = sizeof(Ms_parms);
             return 0;
@@ -990,7 +1006,8 @@ static int vbgr0SolVUIDIOCtl(PVBGR0STATE pState, int iCmd, void *pvData,
             int rc;
 
             LogFlowFunc(("MSIOSRESOLUTION\n"));
-            AssertReturn(cbBuffer >= sizeof(Ms_screen_resolution), EINVAL);
+            if (cbBuffer < sizeof(Ms_screen_resolution))
+                return EINVAL;
             pState->cMaxScreenX = pResolution->width  - 1;
             pState->cMaxScreenY = pResolution->height - 1;
             /* Note: we don't disable this again until session close. */
@@ -1006,7 +1023,8 @@ static int vbgr0SolVUIDIOCtl(PVBGR0STATE pState, int iCmd, void *pvData,
         case MSIOBUTTONS:
         {
             LogFlowFunc(("MSIOBUTTONS\n"));
-            AssertReturn(cbBuffer >= sizeof(int), EINVAL);
+            if (cbBuffer < sizeof(int))
+                return EINVAL;
             *(int *)pvData = 0;
             *pcbData = sizeof(int);
             return 0;
@@ -1014,7 +1032,8 @@ static int vbgr0SolVUIDIOCtl(PVBGR0STATE pState, int iCmd, void *pvData,
         case VUIDGWHEELCOUNT:
         {
             LogFlowFunc(("VUIDGWHEELCOUNT\n"));
-            AssertReturn(cbBuffer >= sizeof(int), EINVAL);
+            if (cbBuffer < sizeof(int))
+                return EINVAL;
             *(int *)pvData = 0;
             *pcbData = sizeof(int);
             return 0;
