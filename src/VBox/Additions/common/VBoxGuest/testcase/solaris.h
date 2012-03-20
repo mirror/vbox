@@ -321,8 +321,6 @@ extern int vboxguestSolarisInfo(struct modinfo *pModInfo);
 #define qprocsoff(...) do {} while(0)
 #define flushq(...) do {} while(0)
 #define qreply(...) do {} while(0)
-#define miocack(...) do {} while(0)
-#define miocnak(...) do {} while(0)
 #define mcopyin(...) do {} while(0)
 #define mcopyout(...) do {} while(0)
 #define freemsg(...) do {} while(0)
@@ -385,6 +383,29 @@ static inline dev_t makedevice(unsigned cMajor, unsigned cMinor)
 static inline unsigned getmajor(dev_t device)
 {
     return device / 4096;
+}
+
+static inline void miocack(queue_t *pWriteQueue, mblk_t *pMBlk, int cbData,
+                           int rc)
+{
+    struct iocblk *pIOCBlk = (struct iocblk *)pMBlk->b_rptr;
+
+    pMBlk->b_datap->db_type = M_IOCACK;
+    pIOCBlk->ioc_count = cbData;
+    pIOCBlk->ioc_error = 0;
+    pIOCBlk->ioc_rval = rc;
+    qreply(pWriteQueue, pMBlk);
+}
+
+static inline void miocnak(queue_t *pWriteQueue, mblk_t *pMBlk, int cbData,
+                           int iErr)
+{
+    struct iocblk *pIOCBlk = (struct iocblk *)pMBlk->b_rptr;
+
+    pMBlk->b_datap->db_type = M_IOCNAK;
+    pIOCBlk->ioc_count = cbData;
+    pIOCBlk->ioc_error = iErr;
+    qreply(pWriteQueue, pMBlk);
 }
 
 /* API stubs with controllable logic */
