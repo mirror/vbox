@@ -163,6 +163,8 @@ RTR3DECL(int) RTFileSetTimes(RTFILE hFile, PCRTTIMESPEC pAccessTime, PCRTTIMESPE
         RTTimeSpecGetTimeval(pModificationTime  ? pModificationTime : &ObjInfo.ModificationTime, &aTimevals[1]);
     }
 
+    /* XXX this falls back to utimes("/proc/self/fd/...",...) for older kernels/glibcs and this
+     * will not work for hardened builds where this directory is owned by root.root and mode 0500 */
     if (futimes(RTFileToNative(hFile), aTimevals))
     {
         int rc = RTErrConvertFromErrno(errno);
