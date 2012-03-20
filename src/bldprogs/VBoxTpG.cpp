@@ -41,10 +41,50 @@
 /*******************************************************************************
 *   Structures and Typedefs                                                    *
 *******************************************************************************/
+/**
+ * Code/data stability.
+ */
+typedef enum kVTGStability
+{
+    kVTGStability_Invalid = 0,
+    kVTGStability_Internal,
+    kVTGStability_Private,
+    kVTGStability_Obsolete,
+    kVTGStability_External,
+    kVTGStability_Unstable,
+    kVTGStability_Evolving,
+    kVTGStability_Stable,
+    kVTGStability_Standard
+} kVTGStability;
+
+/**
+ * Data dependency.
+ */
+typedef enum kVTGClass
+{
+    kVTGClass_Invalid = 0,
+    kVTGClass_Unknown,
+    kVTGClass_Cpu,
+    kVTGClass_Platform,
+    kVTGClass_Group,
+    kVTGClass_Isa,
+    kVTGClass_Common
+} kVTGClass;
+
+typedef struct VTGATTRS
+{
+    kVTGStability   enmCode;
+    kVTGStability   enmData;
+    kVTGClass       enmDataDep;
+} VTGATTRS;
+typedef VTGATTRS *PVTGATTRS;
+
+
 typedef struct VTGARG
 {
+    RTLISTNODE      ListEntry;
     const char     *pszName;
-    const char     *pszType;
+    char           *pszType;
 } VTGARG;
 typedef VTGARG *PVTGARG;
 
@@ -52,8 +92,8 @@ typedef struct VTGPROBE
 {
     RTLISTNODE      ListEntry;
     const char     *pszName;
+    RTLISTANCHOR    ArgHead;
     uint32_t        cArgs;
-    PVTGARG         paArgs;
 } VTGPROBE;
 typedef VTGPROBE *PVTGPROBE;
 
@@ -61,6 +101,13 @@ typedef struct VTGPROVIDER
 {
     RTLISTNODE      ListEntry;
     const char     *pszName;
+
+    VTGATTRS        AttrSelf;
+    VTGATTRS        AttrModules;
+    VTGATTRS        AttrFunctions;
+    VTGATTRS        AttrName;
+    VTGATTRS        AttrArguments;
+
     RTLISTANCHOR    ProbeHead;
 } VTGPROVIDER;
 typedef VTGPROVIDER *PVTGPROVIDER;
@@ -217,7 +264,7 @@ static RTEXITCODE generateHeader(const char *pszHeader)
  * @param   cchWord             The length of the word.
  * @param   pszWord             The word.
  */
-bool ScmStreamCMatchingWordM1(PSCMSTREAM pStream, size_t cchWord, const char *pszWord)
+bool ScmStreamCMatchingWordM1(PSCMSTREAM pStream, const char *pszWord, size_t cchWord)
 {
     /* Check stream state. */
     AssertReturn(!pStream->fWriteOrRead, false);
@@ -338,13 +385,14 @@ const char *ScmStreamCGetWordM1(PSCMSTREAM pStream, size_t *pcchWord)
  */
 static RTEXITCODE parseError(PSCMSTREAM pStrm, size_t cb, const char *pszMsg)
 {
-    ScmStreamSeekRelative(pStrm, -cb);
+    if (cb)
+        ScmStreamSeekRelative(pStrm, -cb);
     size_t const off     = ScmStreamTell(pStrm);
     size_t const iLine   = ScmStreamTellLine(pStrm);
     ScmStreamSeekByLine(pStrm, iLine);
     size_t const offLine = ScmStreamTell(pStrm);
 
-    RTPrintf("%s:%d:%zd: error: %s\n", g_pszScript, iLine + 1, off - offLine, pszMsg);
+    RTPrintf("%s:%d:%zd: error: %s.\n", g_pszScript, iLine + 1, off - offLine + 1, pszMsg);
 
     size_t cchLine;
     SCMEOL enmEof;
@@ -423,8 +471,7 @@ static RTEXITCODE parseSkipSpacesAndComments(PSCMSTREAM pStrm)
     {
         if (!RT_C_IS_SPACE(ch) && ch != '/')
             return RTEXITCODE_SUCCESS;
-        ch = ScmStreamGetCh(pStrm);
-        AssertBreak(ch != ~(unsigned)0);
+        unsigned ch2 = ScmStreamGetCh(pStrm); AssertBreak(ch == ch2); NOREF(ch2);
         if (ch == '/')
         {
             ch = ScmStreamGetCh(pStrm);
@@ -479,6 +526,46 @@ static unsigned parseGetNextNonSpaceNonCommentCh(PSCMSTREAM pStrm)
 
 
 /**
+ * Get the next non-space-non-comment character on a preprocessor line.
+ *
+ * @returns The next character. On error message and ~(unsigned)0.
+ * @param   pStrm               The stream.
+ */
+static unsigned parseGetNextNonSpaceNonCommentChOnPpLine(PSCMSTREAM pStrm)
+{
+    size_t   off = ScmStreamTell(pStrm) - 1;
+    unsigned ch;
+    while ((ch = ScmStreamGetCh(pStrm)) != ~(unsigned)0)
+    {
+        if (RT_C_IS_SPACE(ch))
+        {
+            if (ch == '\n' || ch == '\r')
+            {
+                parseErrorAbs(pStrm, off, "Invalid preprocessor statement");
+                break;
+            }
+        }
+        else if (ch == '\\')
+        {
+            size_t off2 = ScmStreamTell(pStrm) - 1;
+            ch = ScmStreamGetCh(pStrm);
+            if (ch == '\r')
+                ch = ScmStreamGetCh(pStrm);
+            if (ch != '\n')
+            {
+                parseErrorAbs(pStrm, off2, "Expected new line");
+                break;
+            }
+        }
+        else
+            return ch;
+    }
+    return ~(unsigned)0;
+}
+
+
+
+/**
  * Skips spaces and comments.
  *
  * @returns Same as ScmStreamCGetWord
@@ -493,11 +580,214 @@ static const char *parseGetNextCWord(PSCMSTREAM pStrm, size_t *pcchWord)
 }
 
 
+
+/**
+ * Parses interface stability.
+ *
+ * @returns Interface stability if parsed correctly, otherwise error message and
+ *          kVTGStability_Invalid.
+ * @param   pStrm               The stream.
+ * @param   ch                  The first character in the stability spec.
+ */
+static kVTGStability parseStability(PSCMSTREAM pStrm, unsigned ch)
+{
+    switch (ch)
+    {
+        case 'E':
+            if (ScmStreamCMatchingWordM1(pStrm, RT_STR_TUPLE("External")))
+                return kVTGStability_External;
+            if (ScmStreamCMatchingWordM1(pStrm, RT_STR_TUPLE("Evolving")))
+                return kVTGStability_Evolving;
+            break;
+        case 'I':
+            if (ScmStreamCMatchingWordM1(pStrm, RT_STR_TUPLE("Internal")))
+                return kVTGStability_Internal;
+            break;
+        case 'O':
+            if (ScmStreamCMatchingWordM1(pStrm, RT_STR_TUPLE("Obsolete")))
+                return kVTGStability_Obsolete;
+            break;
+        case 'P':
+            if (ScmStreamCMatchingWordM1(pStrm, RT_STR_TUPLE("Private")))
+                return kVTGStability_Private;
+            break;
+        case 'S':
+            if (ScmStreamCMatchingWordM1(pStrm, RT_STR_TUPLE("Stable")))
+                return kVTGStability_Stable;
+            if (ScmStreamCMatchingWordM1(pStrm, RT_STR_TUPLE("Standard")))
+                return kVTGStability_Standard;
+            break;
+        case 'U':
+            if (ScmStreamCMatchingWordM1(pStrm, RT_STR_TUPLE("Unstable")))
+                return kVTGStability_Unstable;
+            break;
+    }
+    parseError(pStrm, 1, "Unknown stability specifier");
+    return kVTGStability_Invalid;
+}
+
+
+/**
+ * Parses data depndency class.
+ *
+ * @returns Data dependency class if parsed correctly, otherwise error message
+ *          and kVTGClass_Invalid.
+ * @param   pStrm               The stream.
+ * @param   ch                  The first character in the stability spec.
+ */
+static kVTGClass parseDataDepClass(PSCMSTREAM pStrm, unsigned ch)
+{
+    switch (ch)
+    {
+        case 'C':
+            if (ScmStreamCMatchingWordM1(pStrm, RT_STR_TUPLE("Common")))
+                return kVTGClass_Common;
+            if (ScmStreamCMatchingWordM1(pStrm, RT_STR_TUPLE("Cpu")))
+                return kVTGClass_Cpu;
+            break;
+        case 'G':
+            if (ScmStreamCMatchingWordM1(pStrm, RT_STR_TUPLE("Group")))
+                return kVTGClass_Group;
+            break;
+        case 'I':
+            if (ScmStreamCMatchingWordM1(pStrm, RT_STR_TUPLE("Isa")))
+                return kVTGClass_Isa;
+            break;
+        case 'P':
+            if (ScmStreamCMatchingWordM1(pStrm, RT_STR_TUPLE("Platform")))
+                return kVTGClass_Platform;
+            break;
+        case 'U':
+            if (ScmStreamCMatchingWordM1(pStrm, RT_STR_TUPLE("Unknown")))
+                return kVTGClass_Unknown;
+            break;
+    }
+    parseError(pStrm, 1, "Unknown data dependency class specifier");
+    return kVTGClass_Invalid;
+}
+
+/**
+ * Parses a pragma D attributes statement.
+ *
+ * @returns Suitable exit code, errors message already written on failure.
+ * @param   pStrm               The stream.
+ */
+static RTEXITCODE parsePragmaDAttributes(PSCMSTREAM pStrm)
+{
+    /*
+     * "CodeStability/DataStability/DataDepClass" - no spaces allowed.
+     */
+    unsigned ch = parseGetNextNonSpaceNonCommentChOnPpLine(pStrm);
+    if (ch == ~(unsigned)0)
+        return RTEXITCODE_FAILURE;
+
+    kVTGStability enmCode = parseStability(pStrm, ch);
+    if (enmCode == kVTGStability_Invalid)
+        return RTEXITCODE_FAILURE;
+    ch = ScmStreamGetCh(pStrm);
+    if (ch != '/')
+        return parseError(pStrm, 1, "Expected '/' following the code stability specifier");
+
+    kVTGStability enmData = parseStability(pStrm, ScmStreamGetCh(pStrm));
+    if (enmData == kVTGStability_Invalid)
+        return RTEXITCODE_FAILURE;
+    ch = ScmStreamGetCh(pStrm);
+    if (ch != '/')
+        return parseError(pStrm, 1, "Expected '/' following the data stability specifier");
+
+    kVTGClass enmDataDep =  parseDataDepClass(pStrm, ScmStreamGetCh(pStrm));
+    if (enmDataDep == kVTGClass_Invalid)
+        return RTEXITCODE_FAILURE;
+
+    /*
+     * Expecting 'provider' followed by the name of an provider defined earlier.
+     */
+    ch = parseGetNextNonSpaceNonCommentChOnPpLine(pStrm);
+    if (ch == ~(unsigned)0)
+        return RTEXITCODE_FAILURE;
+    if (ch != 'p' || !ScmStreamCMatchingWordM1(pStrm, RT_STR_TUPLE("provider")))
+        return parseError(pStrm, 1, "Expected 'provider'");
+
+    size_t      cchName;
+    const char *pszName = parseGetNextCWord(pStrm, &cchName);
+    if (!pszName)
+        return parseError(pStrm, 1, "Expected provider name");
+
+    PVTGPROVIDER pProv;
+    RTListForEach(&g_ProviderHead, pProv, VTGPROVIDER, ListEntry)
+    {
+        if (   !strncmp(pProv->pszName, pszName, cchName)
+            && pProv->pszName[cchName] == '\0')
+            break;
+    }
+    if (!pProv)
+        return parseError(pStrm, cchName, "Provider not found");
+
+    /*
+     * Which aspect of the provider?
+     */
+    size_t      cchAspect;
+    const char *pszAspect = parseGetNextCWord(pStrm, &cchAspect);
+    if (!pszAspect)
+        return parseError(pStrm, 1, "Expected provider aspect");
+
+    PVTGATTRS pAttrs;
+    if (cchAspect == 8 && !memcmp(pszAspect, "provider", 8))
+        pAttrs = &pProv->AttrSelf;
+    else if (cchAspect == 8 && !memcmp(pszAspect, "function", 8))
+        pAttrs = &pProv->AttrFunctions;
+    else if (cchAspect == 6 && !memcmp(pszAspect, "module", 6))
+        pAttrs = &pProv->AttrModules;
+    else if (cchAspect == 4 && !memcmp(pszAspect, "name", 4))
+        pAttrs = &pProv->AttrName;
+    else if (cchAspect == 4 && !memcmp(pszAspect, "args", 4))
+        pAttrs = &pProv->AttrArguments;
+    else
+        return parseError(pStrm, cchAspect, "Unknown aspect");
+
+    if (pAttrs->enmCode != kVTGStability_Invalid)
+        return parseError(pStrm, cchAspect, "You have already specified these attributes");
+
+    pAttrs->enmCode     = enmCode;
+    pAttrs->enmData     = enmData;
+    pAttrs->enmDataDep  = enmDataDep;
+    return RTEXITCODE_SUCCESS;
+}
+
+/**
+ * Parses a D pragma statement.
+ *
+ * @returns Suitable exit code, errors message already written on failure.
+ * @param   pStrm               The stream.
+ */
+static RTEXITCODE parsePragma(PSCMSTREAM pStrm)
+{
+    RTEXITCODE rcExit;
+    unsigned   ch = parseGetNextNonSpaceNonCommentChOnPpLine(pStrm);
+    if (ch == ~(unsigned)0)
+        rcExit = RTEXITCODE_FAILURE;
+    else if (ch == 'D' && ScmStreamCMatchingWordM1(pStrm, RT_STR_TUPLE("D")))
+    {
+        ch = parseGetNextNonSpaceNonCommentChOnPpLine(pStrm);
+        if (ch == ~(unsigned)0)
+            rcExit = RTEXITCODE_FAILURE;
+        else if (ch == 'a' && ScmStreamCMatchingWordM1(pStrm, RT_STR_TUPLE("attributes")))
+            rcExit = parsePragmaDAttributes(pStrm);
+        else
+            rcExit = parseError(pStrm, 1, "Unknown pragma D");
+    }
+    else
+        rcExit = parseError(pStrm, 1, "Unknown pragma");
+    return rcExit;
+}
+
+
 /**
  * Parses a D probe statement.
  *
  * @returns Suitable exit code, errors message already written on failure.
  * @param   pStrm               The stream.
+ * @param   pProv               The provider being parsed.
  */
 static RTEXITCODE parseProbe(PSCMSTREAM pStrm, PVTGPROVIDER pProv)
 {
@@ -518,69 +808,89 @@ static RTEXITCODE parseProbe(PSCMSTREAM pStrm, PVTGPROVIDER pProv)
     PVTGPROBE pProbe = (PVTGPROBE)RTMemAllocZ(sizeof(*pProbe));
     if (!pProbe)
         return parseError(pStrm, 0, "Out of memory");
+    RTListInit(&pProbe->ArgHead);
     RTListAppend(&pProv->ProbeHead, &pProbe->ListEntry);
     pProbe->pszName = RTStrCacheEnterN(g_hStrCache, pszProbe, cchProbe);
     if (!pProbe->pszName)
         return parseError(pStrm, 0, "Out of memory");
-#if 0
+
     /*
-     * Parse loop.
+     * Parse loop for the argument.
      */
-    char *pszArg = NULL;
+    PVTGARG pArg    = NULL;
+    size_t  cchName = 0;
     for (;;)
     {
         ch = parseGetNextNonSpaceNonCommentCh(pStrm);
-        RTEXITCODE rcExit;
         switch (ch)
         {
             case ')':
             case ',':
             {
-                if (pszType)
+                /* commit the argument */
+                if (pArg)
                 {
+                    if (!cchName)
+                        return parseError(pStrm, 1, "Argument has no name");
+                    char *pszName;
+                    pArg->pszName = pszName = strchr(pArg->pszType, '\0') - cchName;
+                    pszName[-1] = '\0';
+                    pArg = NULL;
                 }
-                size_t off = ScmStreamTell(pStrm);
-                if ()
+                if (ch == ')')
                 {
-                }
-
-                ch = parseGetNextNonSpaceNonCommentCh(pStrm);
-                if (ch == ';')
+                    size_t off = ScmStreamTell(pStrm);
+                    ch = parseGetNextNonSpaceNonCommentCh(pStrm);
+                    if (ch != ';')
+                        return parseErrorAbs(pStrm, off, "Expected ';'");
                     return RTEXITCODE_SUCCESS;
-                rcExit = parseErrorAbs(pStrm, off, "Expected ';'");
+                }
                 break;
             }
 
             default:
             {
+                int         rc;
                 size_t      cchWord;
                 const char *pszWord = ScmStreamCGetWordM1(pStrm, &cchWord);
                 if (!pszWord)
+                    return parseError(pStrm, 0, "Expected argument");
+                if (!pArg)
+                {
+                    pArg = (PVTGARG)RTMemAllocZ(sizeof(*pArg));
+                    if (!pArg)
+                        return parseError(pStrm, 1, "Out of memory");
+                    RTListAppend(&pProbe->ArgHead, &pArg->ListEntry);
+                    pProbe->cArgs++;
+
+                    rc = RTStrAAppendN(&pArg->pszType, pszWord, cchWord);
+                    cchName = 0;
+                }
                 else
-                    rcExit = parseError(pStrm, 0, "Expected argument");
+                {
+                    rc = RTStrAAppendExN(&pArg->pszType, 2, RT_STR_TUPLE(" "), pszWord, cchWord);
+                    cchName = cchWord;
+                }
+                if (RT_FAILURE(rc))
+                    return parseError(pStrm, 1, "Out of memory");
                 break;
             }
 
             case '*':
-                if (pszArg)
-                    int rc = RTStrAAppendExN(&pszArg, 2, " ");
-                }
-                else
-                    rcExit = parseError(pStrm, 0, "Expected argument");
+            {
+                if (!pArg)
+                    return parseError(pStrm, 1, "A parameter type does not start with an asterix");
+                int rc = RTStrAAppend(&pArg->pszType, " *");
+                if (RT_FAILURE(rc))
+                    return parseError(pStrm, 1, "Out of memory");
+                cchName = 0;
+                break;
+            }
 
             case ~(unsigned)0:
-                rcExit = parseError(pStrm, 0, "Missing closing ')' on probe");
-                break;
-
-            default:
-                rcExit = parseError(pStrm, 1, "Unexpected character");
-                break;
+                return parseError(pStrm, 0, "Missing closing ')' on probe");
         }
-        if (rcExit != RTEXITCODE_SUCCESS)
-            return rcExit;
     }
-#endif
-    return parseError(pStrm, 0, "probe todo");
 }
 
 /**
@@ -694,8 +1004,16 @@ static RTEXITCODE parseScript(const char *pszScript)
                 break;
 
             case '#':
-                rcExit = parseError(&Strm, 1, "Not implemented");
+            {
+                ch = parseGetNextNonSpaceNonCommentChOnPpLine(&Strm);
+                if (ch == ~(unsigned)0)
+                    rcExit != RTEXITCODE_FAILURE;
+                else if (ch == 'p' && ScmStreamCMatchingWordM1(&Strm, RT_STR_TUPLE("pragma")))
+                    rcExit = parsePragma(&Strm);
+                else
+                    rcExit = parseError(&Strm, 1, "Unsupported preprocessor directive");
                 break;
+            }
 
             default:
                 rcExit = parseError(&Strm, 1, "Unexpected character");
