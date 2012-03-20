@@ -1165,10 +1165,10 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> virtualBox,
     else
         RTPrintf("Keyboard Device: %s\n", pszHid);
 
-    /* get the maximum amount of UARTs */
     ComPtr<ISystemProperties> sysProps;
     virtualBox->COMGETTER(SystemProperties)(sysProps.asOutParam());
 
+    /* get the maximum amount of UARTs */
     ULONG maxUARTs = 0;
     sysProps->COMGETTER(SerialPortCount)(&maxUARTs);
     for (ULONG currentUART = 0; currentUART < maxUARTs; currentUART++)
@@ -1177,6 +1177,7 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> virtualBox,
         rc = machine->GetSerialPort(currentUART, uart.asOutParam());
         if (SUCCEEDED(rc) && uart)
         {
+            /* show the config of this UART */
             BOOL fEnabled;
             uart->COMGETTER(Enabled)(&fEnabled);
             if (!fEnabled)
@@ -1237,6 +1238,50 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> virtualBox,
                             RTPrintf(", attached to device '%ls'\n", path.raw());
                         break;
                 }
+            }
+        }
+    }
+
+    /* get the maximum amount of LPTs */
+    ULONG maxLPTs = 0;
+    sysProps->COMGETTER(ParallelPortCount)(&maxLPTs);
+    for (ULONG currentLPT = 0; currentLPT < maxLPTs; currentLPT++)
+    {
+        ComPtr<IParallelPort> lpt;
+        rc = machine->GetParallelPort(currentLPT, lpt.asOutParam());
+        if (SUCCEEDED(rc) && lpt)
+        {
+            /* show the config of this LPT */
+            BOOL fEnabled;
+            lpt->COMGETTER(Enabled)(&fEnabled);
+            if (!fEnabled)
+            {
+                if (details == VMINFO_MACHINEREADABLE)
+                    RTPrintf("lpt%d=\"off\"\n", currentLPT + 1);
+                else
+                    RTPrintf("LPT %d:           disabled\n", currentLPT + 1);
+            }
+            else
+            {
+                ULONG ulIRQ, ulIOBase;
+                PortMode_T HostMode;
+                Bstr path;
+                BOOL fServer;
+                lpt->COMGETTER(IRQ)(&ulIRQ);
+                lpt->COMGETTER(IOBase)(&ulIOBase);
+                lpt->COMGETTER(Path)(path.asOutParam());
+
+                if (details == VMINFO_MACHINEREADABLE)
+                    RTPrintf("lpt%d=\"%#06x,%d\"\n", currentLPT + 1,
+                             ulIOBase, ulIRQ);
+                else
+                    RTPrintf("LPT %d:           I/O base: %#06x, IRQ: %d",
+                             currentLPT + 1, ulIOBase, ulIRQ);
+                    if (details == VMINFO_MACHINEREADABLE)
+                        RTPrintf("lptmode%d=\"%ls\"\n", currentLPT + 1,
+                                 path.raw());
+                    else
+                        RTPrintf(", attached to device '%ls'\n", path.raw());
             }
         }
     }
