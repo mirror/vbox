@@ -221,11 +221,11 @@ typedef struct
     /* The current greatest horizontal pixel offset on the screen, used for
      * absolute mouse position reporting.
      */
-    unsigned           cMaxScreenX;
+    int                cMaxScreenX;
     /* The current greatest vertical pixel offset on the screen, used for
      * absolute mouse position reporting.
      */
-    unsigned           cMaxScreenY;
+    int                cMaxScreenY;
 } VBGR0STATE, *PVBGR0STATE;
 
 
@@ -540,6 +540,55 @@ int vbgr0SolWPut(queue_t *pWriteQueue, mblk_t *pMBlk)
 
 
 #ifdef TESTCASE
+/* Constants, definitions and test functions for testWPut. */
+static const int g_ccTestWPutFirmEvent = VUID_FIRM_EVENT;
+# define PVGFORMAT (&g_ccTestWPutFirmEvent)
+# define CBGFORMAT (sizeof(g_ccTestWPutFirmEvent))
+static const Ms_screen_resolution g_TestResolution = { 640, 480 };
+# define PMSIOSRES (&g_TestResolution)
+# define CBMSIOSRES (sizeof(g_TestResolution))
+
+static inline void testSetResolution(RTTEST hTest, queue_t *pWriteQueue,
+                                     struct msgb *pMBlk)
+{
+    PVBGR0STATE pState = (PVBGR0STATE)pWriteQueue->q_ptr;
+    RTTEST_CHECK_MSG(hTest,    pState->cMaxScreenX
+                            == g_TestResolution.width - 1,
+                     (hTest, "pState->cMaxScreenX=%d\n", pState->cMaxScreenX));
+    RTTEST_CHECK_MSG(hTest,    pState->cMaxScreenY
+                            == g_TestResolution.height - 1,
+                     (hTest, "pState->cMaxScreenY=%d\n", pState->cMaxScreenY));
+}
+
+/** Data table for testWPut. */
+static struct
+{
+    unsigned char iDBType;
+    int iIOCCmd;
+    size_t cbData;
+    const void *pvDataIn;
+    size_t cbDataIn;
+    const void *pvDataOut;
+    size_t cbDataOut;
+    int rcExp;
+    void (*pfnExtra)(RTTEST hTest, queue_t *pWriteQueue, struct msgb *pMBlk);
+} g_asTestWPut[] =
+{
+   /* iDBType  iIOCCmd          cbData       pvDataIn   cbDataIn
+      pvDataOut   cbDataOut rcExp pfnExtra */
+    { M_IOCTL, VUIDGFORMAT,     sizeof(int), NULL,      0,
+      PVGFORMAT, CBGFORMAT, 0,    NULL },
+    { M_IOCTL, VUIDSFORMAT,     sizeof(int), PVGFORMAT, CBGFORMAT,
+      NULL,       0,        0,    NULL },
+    { M_IOCTL, MSIOSRESOLUTION, CBMSIOSRES,  PMSIOSRES, CBMSIOSRES,
+      NULL,       0,        0,    testSetResolution }
+};
+
+# undef PVGFORMAT
+# undef CBGFORMAT
+# undef PMSIOSRES
+# undef CBMSIOSRES
+
 /** Test WPut's handling of different IOCtls, which is bulk of the logic in
  * this file. */
 static void testWPut(RTTEST hTest)
@@ -550,31 +599,48 @@ static void testWPut(RTTEST hTest)
     struct datab DBlk;
     struct iocblk IOCBlk;
     int rc, cFormat = 0;
+    unsigned i;
 
     /* Single simple test to start with.  We can try to make it more systematic
      * next. */
     RTTestSub(hTest, "Testing vbgr0WPut");
-    RT_ZERO(aQueues);
-    doInitQueues(&aQueues[0]);
-    rc = vbgr0SolOpen(RD(&aQueues[0]), &device, 0, 0, NULL);
-    RTTEST_CHECK(hTest, rc == 0);
-    RTTEST_CHECK(hTest, g_aOpenNodeStates[1].pWriteQueue == WR(&aQueues[0]));
-    RT_ZERO(MBlk);
-    RT_ZERO(DBlk);
-    RT_ZERO(IOCBlk);
-    RT_ZERO(MBlkCont);
-    DBlk.db_type = M_IOCTL;
-    IOCBlk.ioc_cmd = VUIDSFORMAT;
-    IOCBlk.ioc_count = sizeof(int);
-    MBlkCont.b_rptr = (unsigned char *)&cFormat;
-    MBlkCont.b_rptr = (unsigned char *)&cFormat + sizeof(cFormat);
-    MBlk.b_cont = &MBlkCont;
-    MBlk.b_rptr = (unsigned char *)&IOCBlk;
-    MBlkCont.b_rptr = (unsigned char *)&IOCBlk + sizeof(IOCBlk);
-    MBlk.b_datap = &DBlk;
-    rc = vbgr0SolWPut(WR(&aQueues[0]), &MBlk);
-    RTTEST_CHECK(hTest, rc == 0);
-    vbgr0SolClose(RD(&aQueues[1]), 0, NULL);
+    for (i = 0; i < RT_ELEMENTS(g_asTestWPut); ++i)
+    {
+        unsigned char acData[1024];
+
+        RT_ZERO(aQueues);
+        doInitQueues(&aQueues[0]);
+        rc = vbgr0SolOpen(RD(&aQueues[0]), &device, 0, 0, NULL);
+        RTTEST_CHECK_MSG(hTest, rc == 0, (hTest, "i=%u, rc=%d\n", i, rc));
+        RTTEST_CHECK_MSG(hTest,    g_aOpenNodeStates[1].pWriteQueue
+                                == WR(&aQueues[0]), (hTest, "i=%u\n", i));
+        RT_ZERO(MBlk);
+        RT_ZERO(DBlk);
+        RT_ZERO(IOCBlk);
+        RT_ZERO(MBlkCont);
+        DBlk.db_type = g_asTestWPut[i].iDBType;
+        IOCBlk.ioc_cmd = g_asTestWPut[i].iIOCCmd;
+        IOCBlk.ioc_count = g_asTestWPut[i].cbData;
+        AssertReturnVoid(g_asTestWPut[i].cbDataIn <= sizeof(acData));
+        memcpy(acData, g_asTestWPut[i].pvDataIn, g_asTestWPut[i].cbDataIn);
+        MBlkCont.b_rptr = acData;
+        MBlkCont.b_wptr = acData + g_asTestWPut[i].cbDataIn;
+        MBlk.b_cont = &MBlkCont;
+        MBlk.b_rptr = (unsigned char *)&IOCBlk;
+        MBlk.b_wptr = (unsigned char *)&IOCBlk + sizeof(IOCBlk);
+        MBlk.b_datap = &DBlk;
+        rc = vbgr0SolWPut(WR(&aQueues[0]), &MBlk);
+        RTTEST_CHECK_MSG(hTest, rc == g_asTestWPut[i].rcExp,
+                         (hTest, "i=%u, rc=%d\n", i, rc));
+        RTTEST_CHECK_MSG(hTest, IOCBlk.ioc_count == g_asTestWPut[i].cbDataOut,
+                         (hTest, "i=%u, ioc_count=%u\n", i, IOCBlk.ioc_count));
+        RTTEST_CHECK_MSG(hTest, !memcmp(acData, g_asTestWPut[i].pvDataOut,
+                                        g_asTestWPut[i].cbDataOut),
+                         (hTest, "i=%u\n", i));
+        if (g_asTestWPut[i].pfnExtra)
+            g_asTestWPut[i].pfnExtra(hTest, WR(&aQueues[0]), &MBlk);
+        vbgr0SolClose(RD(&aQueues[1]), 0, NULL);
+    }
 }
 #endif
 
@@ -598,7 +664,7 @@ enum IOCTLDIRECTION
 /**
  * IOCtl handler function.
  * @returns 0 on success, error code on failure.
- * @param cCmd      The IOCtl command number.
+ * @param iCmd      The IOCtl command number.
  * @param pvData    Buffer for the user data.
  * @param cbBuffer  Size of the buffer in @a pvData or zero.
  * @param pcbData   Where to set the size of the data returned.  Required for
@@ -607,25 +673,25 @@ enum IOCTLDIRECTION
  *                  used for IOCtls without data for convenience of
  *                  implemention.
  */
-typedef int FNVBGR0SOLIOCTL(PVBGR0STATE pState, int cCmd, void *pvData,
+typedef int FNVBGR0SOLIOCTL(PVBGR0STATE pState, int iCmd, void *pvData,
                             size_t cbBuffer, size_t *pcbData, int *prc);
 typedef FNVBGR0SOLIOCTL *PFNVBGR0SOLIOCTL;
 
 /* Helpers for vbgr0SolDispatchIOCtl. */
 static int vbgr0SolHandleIOCtl(queue_t *pWriteQueue, mblk_t *pMBlk,
                                PFNVBGR0SOLIOCTL pfnHandler,
-                               int cCmd, size_t cbTransparent,
+                               int iCmd, size_t cbTransparent,
                                enum IOCTLDIRECTION enmDirection);
-static int vbgr0SolVUIDIOCtl(PVBGR0STATE pState, int cCmd, void *pvData,
+static int vbgr0SolVUIDIOCtl(PVBGR0STATE pState, int iCmd, void *pvData,
                              size_t cbBuffer, size_t *pcbData, int *prc);
-static int vbgr0SolGuestIOCtl(PVBGR0STATE pState, int cCmd, void *pvData,
+static int vbgr0SolGuestIOCtl(PVBGR0STATE pState, int iCmd, void *pvData,
                               size_t cbBuffer, size_t *pcbData, int *prc);
 
 /** Table of supported VUID IOCtls. */
 struct
 {
     /** The IOCtl number. */
-    int cCmd;
+    int iCmd;
     /** The size of the buffer which needs to be copied between user and kernel
      * space, or zero if unknown (must be known for tranparent IOCtls). */
     size_t cbBuffer;
@@ -659,12 +725,12 @@ struct
 static int vbgr0SolDispatchIOCtl(queue_t *pWriteQueue, mblk_t *pMBlk)
 {
     struct iocblk *pIOCBlk = (struct iocblk *)pMBlk->b_rptr;
-    int cCmd = pIOCBlk->ioc_cmd, cCmdType = (cCmd >> 8) & ~0xff;
+    int iCmd = pIOCBlk->ioc_cmd, iCmdType = iCmd & ~0xff;
     size_t cbBuffer;
     enum IOCTLDIRECTION enmDirection;
 
-    LogFlowFunc((DEVICE_NAME "::cCmdType=%c, cCmd=%d\n", cCmdType, cCmd));
-    switch (cCmdType)
+    LogFlowFunc((DEVICE_NAME "::iCmdType=%c, iCmd=%d\n", iCmdType, iCmd));
+    switch (iCmdType)
     {
         case MSIOC:
         case VUIOC:
@@ -672,19 +738,19 @@ static int vbgr0SolDispatchIOCtl(queue_t *pWriteQueue, mblk_t *pMBlk)
             unsigned i;
             
             for (i = 0; i < RT_ELEMENTS(g_aVUIDIOCtlDescriptions); ++i)
-                if (g_aVUIDIOCtlDescriptions[i].cCmd == cCmd)
+                if (g_aVUIDIOCtlDescriptions[i].iCmd == iCmd)
                 {
                     cbBuffer     = g_aVUIDIOCtlDescriptions[i].cbBuffer;
                     enmDirection = g_aVUIDIOCtlDescriptions[i].enmDirection;
                     return vbgr0SolHandleIOCtl(pWriteQueue, pMBlk,
-                                               vbgr0SolVUIDIOCtl, cCmd,
+                                               vbgr0SolVUIDIOCtl, iCmd,
                                                cbBuffer, enmDirection);
                 }
             return EINVAL;
         }
-        case 'V':
+        case 'V' << 8:
             return vbgr0SolHandleIOCtl(pWriteQueue, pMBlk, vbgr0SolGuestIOCtl,
-                                       cCmd, 0, UNSPECIFIED);
+                                       iCmd, 0, UNSPECIFIED);
         default:
             return ENOTTY;
     }
@@ -693,17 +759,17 @@ static int vbgr0SolDispatchIOCtl(queue_t *pWriteQueue, mblk_t *pMBlk)
 
 /* Helpers for vbgr0SolHandleIOCtl. */
 static int vbgr0SolHandleIOCtlData(queue_t *pWriteQueue, mblk_t *pMBlk,
-                                   PFNVBGR0SOLIOCTL pfnHandler, int cCmd,
+                                   PFNVBGR0SOLIOCTL pfnHandler, int iCmd,
                                    size_t cbTransparent,
                                    enum IOCTLDIRECTION enmDirection);
 
 static int vbgr0SolHandleTransparentIOCtl(queue_t *pWriteQueue, mblk_t *pMBlk,
                                           PFNVBGR0SOLIOCTL pfnHandler,
-                                          int cCmd, size_t cbTransparent,
+                                          int iCmd, size_t cbTransparent,
                                           enum IOCTLDIRECTION enmDirection);
 
 static int vbgr0SolHandleIStrIOCtl(queue_t *pWriteQueue, mblk_t *pMBlk,
-                                   PFNVBGR0SOLIOCTL pfnHandler, int cCmd);
+                                   PFNVBGR0SOLIOCTL pfnHandler, int iCmd);
 
 /**
  * Generic code for handling STREAMS-specific IOCtl logic and boilerplate.  It
@@ -718,7 +784,7 @@ static int vbgr0SolHandleIStrIOCtl(queue_t *pWriteQueue, mblk_t *pMBlk,
  * @param  pMBlk          pointer to the STREAMS message block structure.
  * @param  pfnHandler     pointer to the right IOCtl handler function for this
  *                        IOCtl number.
- * @param  cCmd           IOCtl command number.
+ * @param  iCmd           IOCtl command number.
  * @param  cbTransparent  size of the user space buffer for this IOCtl number,
  *                        used for processing transparent IOCtls.  Pass zero
  *                        for IOCtls with no maximum buffer size (which will
@@ -727,7 +793,7 @@ static int vbgr0SolHandleIStrIOCtl(queue_t *pWriteQueue, mblk_t *pMBlk,
  * @param  enmDirection   data transfer direction of the IOCtl.
  */
 static int vbgr0SolHandleIOCtl(queue_t *pWriteQueue, mblk_t *pMBlk,
-                               PFNVBGR0SOLIOCTL pfnHandler, int cCmd,
+                               PFNVBGR0SOLIOCTL pfnHandler, int iCmd,
                                size_t cbTransparent,
                                enum IOCTLDIRECTION enmDirection)
 {
@@ -735,15 +801,15 @@ static int vbgr0SolHandleIOCtl(queue_t *pWriteQueue, mblk_t *pMBlk,
     PVBGR0STATE pState = (PVBGR0STATE)pWriteQueue->q_ptr;
 
     if (pMBlk->b_datap->db_type == M_IOCDATA)
-        return vbgr0SolHandleIOCtlData(pWriteQueue, pMBlk, pfnHandler, cCmd,
+        return vbgr0SolHandleIOCtlData(pWriteQueue, pMBlk, pfnHandler, iCmd,
                                        cbTransparent, enmDirection);
     else if (   pMBlk->b_datap->db_type == M_IOCTL
              && pIOCBlk->ioc_count == TRANSPARENT)
         return vbgr0SolHandleTransparentIOCtl(pWriteQueue, pMBlk, pfnHandler,
-                                              cCmd, cbTransparent,
+                                              iCmd, cbTransparent,
                                               enmDirection);
     else if (pMBlk->b_datap->db_type == M_IOCTL)
-        return vbgr0SolHandleIStrIOCtl(pWriteQueue, pMBlk, pfnHandler, cCmd);
+        return vbgr0SolHandleIStrIOCtl(pWriteQueue, pMBlk, pfnHandler, iCmd);
     return EINVAL;
 }
 
@@ -755,7 +821,7 @@ static int vbgr0SolHandleIOCtl(queue_t *pWriteQueue, mblk_t *pMBlk,
  * @copydoc vbgr0SolHandleIOCtl
  */
 static int vbgr0SolHandleIOCtlData(queue_t *pWriteQueue, mblk_t *pMBlk,
-                                   PFNVBGR0SOLIOCTL pfnHandler, int cCmd,
+                                   PFNVBGR0SOLIOCTL pfnHandler, int iCmd,
                                    size_t cbTransparent,
                                    enum IOCTLDIRECTION enmDirection)
 {
@@ -780,7 +846,7 @@ static int vbgr0SolHandleIOCtlData(queue_t *pWriteQueue, mblk_t *pMBlk,
         if (enmDirection == BOTH && !pCopyResp->cp_private)
             return EINVAL;
         pvData = pMBlk->b_cont->b_rptr;
-        err = pfnHandler(pState, cCmd, pvData, cbTransparent, &cbData, NULL);
+        err = pfnHandler(pState, iCmd, pvData, cbTransparent, &cbData, NULL);
         if (!err && enmDirection == BOTH)
             mcopyout(pMBlk, NULL, cbData, pCopyResp->cp_private, NULL);
         else if (!err && enmDirection == IN)
@@ -802,7 +868,7 @@ static int vbgr0SolHandleIOCtlData(queue_t *pWriteQueue, mblk_t *pMBlk,
  * @copydoc vbgr0SolHandleIOCtl
  */
 int vbgr0SolHandleTransparentIOCtl(queue_t *pWriteQueue, mblk_t *pMBlk,
-                                   PFNVBGR0SOLIOCTL pfnHandler, int cCmd,
+                                   PFNVBGR0SOLIOCTL pfnHandler, int iCmd,
                                    size_t cbTransparent,
                                    enum IOCTLDIRECTION enmDirection)
 {
@@ -829,7 +895,7 @@ int vbgr0SolHandleTransparentIOCtl(queue_t *pWriteQueue, mblk_t *pMBlk,
         if (!pMBlkOut)
             return EAGAIN;
         pvData = pMBlkOut->b_rptr;
-        err = pfnHandler(pState, cCmd, pvData, cbTransparent, &cbData, NULL);
+        err = pfnHandler(pState, iCmd, pvData, cbTransparent, &cbData, NULL);
         if (!err)
             mcopyout(pMBlk, NULL, cbData, NULL, pMBlkOut);
         else
@@ -838,7 +904,7 @@ int vbgr0SolHandleTransparentIOCtl(queue_t *pWriteQueue, mblk_t *pMBlk,
     else
     {
         AssertReturn(enmDirection == NONE, EINVAL);
-        err = pfnHandler(pState, cCmd, NULL, 0, NULL, &rc);
+        err = pfnHandler(pState, iCmd, NULL, 0, NULL, &rc);
         if (!err)
             miocack(pWriteQueue, pMBlk, 0, rc);
     }
@@ -851,7 +917,7 @@ int vbgr0SolHandleTransparentIOCtl(queue_t *pWriteQueue, mblk_t *pMBlk,
  * @copydoc vbgr0SolHandleIOCtl
  */
 static int vbgr0SolHandleIStrIOCtl(queue_t *pWriteQueue, mblk_t *pMBlk,
-                                   PFNVBGR0SOLIOCTL pfnHandler, int cCmd)
+                                   PFNVBGR0SOLIOCTL pfnHandler, int iCmd)
 {
     struct iocblk *pIOCBlk = (struct iocblk *)pMBlk->b_rptr;
     PVBGR0STATE pState = (PVBGR0STATE)pWriteQueue->q_ptr;
@@ -870,7 +936,7 @@ static int vbgr0SolHandleIStrIOCtl(queue_t *pWriteQueue, mblk_t *pMBlk,
             return err;
         pvData = pMBlk->b_cont->b_rptr;
     }
-    err = pfnHandler(pState, cCmd, pvData, cbBuffer, &cbData, &rc);
+    err = pfnHandler(pState, iCmd, pvData, cbBuffer, &cbData, &rc);
     if (!err)
         miocack(pWriteQueue, pMBlk, cbData, rc);
     return err;
@@ -881,11 +947,11 @@ static int vbgr0SolHandleIStrIOCtl(queue_t *pWriteQueue, mblk_t *pMBlk,
  * Handle a VUID input device IOCtl.
  * @copydoc FNVBGR0SOLIOCTL
  */
-static int vbgr0SolVUIDIOCtl(PVBGR0STATE pState, int cCmd, void *pvData,
+static int vbgr0SolVUIDIOCtl(PVBGR0STATE pState, int iCmd, void *pvData,
                              size_t cbBuffer, size_t *pcbData, int *prc)
 {
     LogFlowFunc((DEVICE_NAME ":: " /* no '\n' */));
-    switch (cCmd)
+    switch (iCmd)
     {
         case VUIDGFORMAT:
         {
@@ -959,7 +1025,7 @@ static int vbgr0SolVUIDIOCtl(PVBGR0STATE pState, int cCmd, void *pvData,
             LogFlowFunc(("VUIDGWHEELINFO/VUIDGWHEELSTATE/VUIDSWHEELSTATE\n"));
             return EINVAL;
         default:
-            LogFlowFunc(("Invalid IOCtl command %x\n", cCmd));
+            LogFlowFunc(("Invalid IOCtl command %x\n", iCmd));
             return EINVAL;
     }
 }
@@ -969,10 +1035,10 @@ static int vbgr0SolVUIDIOCtl(PVBGR0STATE pState, int cCmd, void *pvData,
  * Handle a VBoxGuest IOCtl.
  * @copydoc FNVBGR0SOLIOCTL
  */
-static int vbgr0SolGuestIOCtl(PVBGR0STATE pState, int cCmd, void *pvData,
+static int vbgr0SolGuestIOCtl(PVBGR0STATE pState, int iCmd, void *pvData,
                               size_t cbBuffer, size_t *pcbData, int *prc)
 {
-    int rc = VBoxGuestCommonIOCtl(cCmd, &g_DevExt, pState->pSession, pvData, cbBuffer, pcbData);
+    int rc = VBoxGuestCommonIOCtl(iCmd, &g_DevExt, pState->pSession, pvData, cbBuffer, pcbData);
     if (RT_SUCCESS(rc))
     {
         *prc = rc;
@@ -985,7 +1051,7 @@ static int vbgr0SolGuestIOCtl(PVBGR0STATE pState, int cCmd, void *pvData,
          * VBOXGUEST_IOCTL_CANCEL_ALL_EVENTS can return VERR_INTERRUPTED and possibly more in the future;
          * which are not really failures that require logging.
          */
-        Log((DEVICE_NAME "::IOCtl: VBoxGuestCommonIOCtl failed. Cmd=%#x rc=%d\n", cCmd, rc));
+        Log((DEVICE_NAME "::IOCtl: VBoxGuestCommonIOCtl failed. Cmd=%#x rc=%d\n", iCmd, rc));
         rc = RTErrConvertToErrno(rc);
         return rc;
     }
