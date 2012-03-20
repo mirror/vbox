@@ -289,6 +289,45 @@ const char *ScmStreamCGetWord(PSCMSTREAM pStream, size_t *pcchWord)
 
 
 /**
+ * Get's the C word starting at the current position minus one.
+ *
+ * @returns Pointer to the word on success and the stream position advanced to
+ *          the end of it.
+ *          NULL on failure, stream position normally unchanged.
+ * @param   pStream             The stream to get the C word from.
+ * @param   pcchWord            Where to return the word length.
+ */
+const char *ScmStreamCGetWordM1(PSCMSTREAM pStream, size_t *pcchWord)
+{
+    /* Check stream state. */
+    AssertReturn(!pStream->fWriteOrRead, false);
+    AssertReturn(RT_SUCCESS(pStream->rc), false);
+    AssertReturn(pStream->fFullyLineated, false);
+
+    /* Get the number of chars left on the line and locate the current char. */
+    size_t const    iLine   = pStream->iLine;
+    size_t const    cchLeft = pStream->paLines[iLine].cch + pStream->paLines[iLine].off - (pStream->off - 1);
+    const char     *psz     = &pStream->pch[pStream->off - 1];
+
+    /* Is it a leading C character. */
+    if (!RT_C_IS_ALPHA(*psz) && !*psz == '_')
+        return NULL;
+
+    /* Find the end of the word. */
+    char    ch;
+    size_t  off = 1;
+    while (     off < cchLeft
+           &&  (   (ch = psz[off]) == '_'
+                || RT_C_IS_ALNUM(ch)))
+        off++;
+
+    pStream->off += off - 1;
+    *pcchWord = off;
+    return psz;
+}
+
+
+/**
  * Parser error with line and position.
  *
  * @returns RTEXITCODE_FAILURE.
@@ -439,11 +478,121 @@ static unsigned parseGetNextNonSpaceNonCommentCh(PSCMSTREAM pStrm)
 }
 
 
+/**
+ * Skips spaces and comments.
+ *
+ * @returns Same as ScmStreamCGetWord
+ * @param   pStrm               The stream..
+ * @param   pcchWord            Where to return the length.
+ */
+static const char *parseGetNextCWord(PSCMSTREAM pStrm, size_t *pcchWord)
+{
+    if (parseSkipSpacesAndComments(pStrm) != RTEXITCODE_SUCCESS)
+        return NULL;
+    return ScmStreamCGetWord(pStrm, pcchWord);
+}
 
+
+/**
+ * Parses a D probe statement.
+ *
+ * @returns Suitable exit code, errors message already written on failure.
+ * @param   pStrm               The stream.
+ */
+static RTEXITCODE parseProbe(PSCMSTREAM pStrm, PVTGPROVIDER pProv)
+{
+    /*
+     * Next up is a name followed by an opening parenthesis.
+     */
+    size_t      cchProbe;
+    const char *pszProbe = parseGetNextCWord(pStrm, &cchProbe);
+    if (!pszProbe)
+        return parseError(pStrm, 1, "Expected a probe name starting with an alphabetical character");
+    unsigned ch = parseGetNextNonSpaceNonCommentCh(pStrm);
+    if (ch != '(')
+        return parseError(pStrm, 1, "Expected '(' after the probe name");
+
+    /*
+     * Create a probe instance.
+     */
+    PVTGPROBE pProbe = (PVTGPROBE)RTMemAllocZ(sizeof(*pProbe));
+    if (!pProbe)
+        return parseError(pStrm, 0, "Out of memory");
+    RTListAppend(&pProv->ProbeHead, &pProbe->ListEntry);
+    pProbe->pszName = RTStrCacheEnterN(g_hStrCache, pszProbe, cchProbe);
+    if (!pProbe->pszName)
+        return parseError(pStrm, 0, "Out of memory");
+#if 0
+    /*
+     * Parse loop.
+     */
+    char *pszArg = NULL;
+    for (;;)
+    {
+        ch = parseGetNextNonSpaceNonCommentCh(pStrm);
+        RTEXITCODE rcExit;
+        switch (ch)
+        {
+            case ')':
+            case ',':
+            {
+                if (pszType)
+                {
+                }
+                size_t off = ScmStreamTell(pStrm);
+                if ()
+                {
+                }
+
+                ch = parseGetNextNonSpaceNonCommentCh(pStrm);
+                if (ch == ';')
+                    return RTEXITCODE_SUCCESS;
+                rcExit = parseErrorAbs(pStrm, off, "Expected ';'");
+                break;
+            }
+
+            default:
+            {
+                size_t      cchWord;
+                const char *pszWord = ScmStreamCGetWordM1(pStrm, &cchWord);
+                if (!pszWord)
+                else
+                    rcExit = parseError(pStrm, 0, "Expected argument");
+                break;
+            }
+
+            case '*':
+                if (pszArg)
+                    int rc = RTStrAAppendExN(&pszArg, 2, " ");
+                }
+                else
+                    rcExit = parseError(pStrm, 0, "Expected argument");
+
+            case ~(unsigned)0:
+                rcExit = parseError(pStrm, 0, "Missing closing ')' on probe");
+                break;
+
+            default:
+                rcExit = parseError(pStrm, 1, "Unexpected character");
+                break;
+        }
+        if (rcExit != RTEXITCODE_SUCCESS)
+            return rcExit;
+    }
+#endif
+    return parseError(pStrm, 0, "probe todo");
+}
+
+/**
+ * Parses a D provider statement.
+ *
+ * @returns Suitable exit code, errors message already written on failure.
+ * @param   pStrm               The stream.
+ */
 static RTEXITCODE parseProvider(PSCMSTREAM pStrm)
 {
     /*
-     * Next up is a name followed by a curly bracket. Ignore comment.s
+     * Next up is a name followed by a curly bracket. Ignore comments.
      */
     RTEXITCODE rcExit = parseSkipSpacesAndComments(pStrm);
     if (rcExit != RTEXITCODE_SUCCESS)
@@ -465,6 +614,7 @@ static RTEXITCODE parseProvider(PSCMSTREAM pStrm)
     PVTGPROVIDER pProv = (PVTGPROVIDER)RTMemAllocZ(sizeof(*pProv));
     if (!pProv)
         return parseError(pStrm, 0, "Out of memory");
+    RTListInit(&pProv->ProbeHead);
     RTListAppend(&g_ProviderHead, &pProv->ListEntry);
     pProv->pszName = RTStrCacheEnterN(g_hStrCache, pszName, cchName);
     if (!pProv->pszName)
@@ -480,26 +630,31 @@ static RTEXITCODE parseProvider(PSCMSTREAM pStrm)
         {
             case 'p':
                 if (ScmStreamCMatchingWordM1(pStrm, RT_STR_TUPLE("probe")))
-                    return parseError(pStrm, 5, "probe parsing not implemented");
+                    rcExit = parseProbe(pStrm, pProv);
                 else
-                    return parseError(pStrm, 1, "Unexpected character");
+                    rcExit = parseError(pStrm, 1, "Unexpected character");
                 break;
 
             case '}':
             {
                 size_t off = ScmStreamTell(pStrm);
                 ch = parseGetNextNonSpaceNonCommentCh(pStrm);
-                if (ch != ';')
-                    return parseErrorAbs(pStrm, off, "Expected ';'");
-                return RTEXITCODE_SUCCESS;
+                if (ch == ';')
+                    return RTEXITCODE_SUCCESS;
+                rcExit = parseErrorAbs(pStrm, off, "Expected ';'");
+                break;
             }
 
             case ~(unsigned)0:
-                return parseError(pStrm, 0, "Missing closing '}' on provider");
+                rcExit = parseError(pStrm, 0, "Missing closing '}' on provider");
+                break;
 
             default:
-                return parseError(pStrm, 1, "Unexpected character");
+                rcExit = parseError(pStrm, 1, "Unexpected character");
+                break;
         }
+        if (rcExit != RTEXITCODE_SUCCESS)
+            return rcExit;
     }
 }
 
