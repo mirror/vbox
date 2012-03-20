@@ -317,6 +317,22 @@ static RTEXITCODE parseError(PSCMSTREAM pStrm, size_t cb, const char *pszMsg)
     return RTEXITCODE_FAILURE;
 }
 
+
+/**
+ * Parser error with line and position.
+ *
+ * @returns RTEXITCODE_FAILURE.
+ * @param   pStrm               The stream.
+ * @param   cb                  The offset from the current position to the
+ *                              point of failure.
+ * @param   pszMsg              The message to display.
+ */
+static RTEXITCODE parseErrorAbs(PSCMSTREAM pStrm, size_t off, const char *pszMsg)
+{
+    ScmStreamSeekAbsolute(pStrm, off);
+    return parseError(pStrm, 0, pszMsg);
+}
+
 /**
  * Handles a C++ one line comment.
  *
@@ -389,6 +405,40 @@ static RTEXITCODE parseSkipSpacesAndComments(PSCMSTREAM pStrm)
 }
 
 
+/**
+ * Skips spaces and comments, returning the next character.
+ *
+ * @returns Next non-space-non-comment character. ~(unsigned)0 on EOF or
+ *          failure.
+ * @param   pStrm               The stream.
+ */
+static unsigned parseGetNextNonSpaceNonCommentCh(PSCMSTREAM pStrm)
+{
+    unsigned ch;
+    while ((ch = ScmStreamGetCh(pStrm)) != ~(unsigned)0)
+    {
+        if (!RT_C_IS_SPACE(ch) && ch != '/')
+            return ch;
+        if (ch == '/')
+        {
+            ch = ScmStreamGetCh(pStrm);
+            RTEXITCODE rcExit;
+            if (ch == '*')
+                rcExit = parseMultiLineComment(pStrm);
+            else if (ch == '/')
+                rcExit = parseOneLineComment(pStrm);
+            else
+                rcExit = parseError(pStrm, 2, "Unexpected character");
+            if (rcExit != RTEXITCODE_SUCCESS)
+                return ~(unsigned)0;
+        }
+    }
+
+    parseError(pStrm, 0, "Unexpected end of file");
+    return ~(unsigned)0;
+}
+
+
 
 static RTEXITCODE parseProvider(PSCMSTREAM pStrm)
 {
@@ -405,10 +455,7 @@ static RTEXITCODE parseProvider(PSCMSTREAM pStrm)
     if (RT_C_IS_DIGIT(pszName[cchName - 1]))
         return parseError(pStrm, 1, "A provider name cannot end with digit");
 
-    rcExit = parseSkipSpacesAndComments(pStrm);
-    if (rcExit != RTEXITCODE_SUCCESS)
-        return parseError(pStrm, 1, "Expected a provider name starting with an alphabetical character");
-    unsigned ch = ScmStreamGetCh(pStrm);
+    unsigned ch = parseGetNextNonSpaceNonCommentCh(pStrm);
     if (ch != '{')
         return parseError(pStrm, 1, "Expected '{' after the provider name");
 
@@ -420,15 +467,40 @@ static RTEXITCODE parseProvider(PSCMSTREAM pStrm)
         return parseError(pStrm, 0, "Out of memory");
     RTListAppend(&g_ProviderHead, &pProv->ListEntry);
     pProv->pszName = RTStrCacheEnterN(g_hStrCache, pszName, cchName);
-    if (pProv->pszName)
+    if (!pProv->pszName)
         return parseError(pStrm, 0, "Out of memory");
 
     /*
-     * Next up is a brace
+     * Parse loop.
      */
+    for (;;)
+    {
+        ch = parseGetNextNonSpaceNonCommentCh(pStrm);
+        switch (ch)
+        {
+            case 'p':
+                if (ScmStreamCMatchingWordM1(pStrm, RT_STR_TUPLE("probe")))
+                    return parseError(pStrm, 5, "probe parsing not implemented");
+                else
+                    return parseError(pStrm, 1, "Unexpected character");
+                break;
 
+            case '}':
+            {
+                size_t off = ScmStreamTell(pStrm);
+                ch = parseGetNextNonSpaceNonCommentCh(pStrm);
+                if (ch != ';')
+                    return parseErrorAbs(pStrm, off, "Expected ';'");
+                return RTEXITCODE_SUCCESS;
+            }
 
-    return parseError(pStrm, 0, "'provider' not implemented");
+            case ~(unsigned)0:
+                return parseError(pStrm, 0, "Missing closing '}' on provider");
+
+            default:
+                return parseError(pStrm, 1, "Unexpected character");
+        }
+    }
 }
 
 
