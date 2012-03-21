@@ -837,6 +837,7 @@ typedef struct HWACCMCPU
     STAMCOUNTER             StatExitIrqWindow;
     STAMCOUNTER             StatExitMaxResume;
     STAMCOUNTER             StatExitPreemptPending;
+    STAMCOUNTER             StatExitMTF;
     STAMCOUNTER             StatIntReinject;
     STAMCOUNTER             StatPendingHostIrq;
 
