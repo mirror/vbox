@@ -32,7 +32,7 @@ int VBoxMPCmnMapAdapterMemory(PVBOXMP_COMMON pCommon, void **ppv, uint32_t ulOff
     }
 
     PHYSICAL_ADDRESS FrameBuffer;
-    FrameBuffer.QuadPart = pPEXT->u.primary.physLFBBase.QuadPart + ulOffset;
+    FrameBuffer.QuadPart = VBoxCommonFromDeviceExt(pPEXT)->phVRAM.QuadPart + ulOffset;
 
     PVOID VideoRamBase = NULL;
     ULONG VideoRamLength = ulSize;

@@ -22,7 +22,7 @@
 #include "VBoxMPDevExt.h"
 
 RT_C_DECLS_BEGIN
-void VBoxSetupDisplaysHGSMI(PVBOXMP_COMMON pCommon, uint32_t AdapterMemorySize, uint32_t fCaps);
+void VBoxSetupDisplaysHGSMI(PVBOXMP_COMMON pCommon, PHYSICAL_ADDRESS phVRAM, uint32_t ulApertureSize, uint32_t cbVRAM, uint32_t fCaps);
 void VBoxFreeDisplaysHGSMI(PVBOXMP_COMMON pCommon);
 RT_C_DECLS_END
 

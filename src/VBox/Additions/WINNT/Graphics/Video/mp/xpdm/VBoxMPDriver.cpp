@@ -49,7 +49,9 @@ VBoxDrvFindAdapter(IN PVOID HwDeviceExtension, IN PVOID HwContext, IN PWSTR Argu
     PVBOXMP_DEVEXT pExt = (PVBOXMP_DEVEXT) HwDeviceExtension;
     VP_STATUS rc;
     USHORT DispiId;
-    ULONG AdapterMemorySize = VBE_DISPI_TOTAL_VIDEO_MEMORY_BYTES;
+    ULONG cbVRAM = VBE_DISPI_TOTAL_VIDEO_MEMORY_BYTES;
+    PHYSICAL_ADDRESS phVRAM = {0};
+    ULONG ulApertureSize = 0;
 
     PAGED_CODE();
     LOGF_ENTER();
@@ -72,7 +74,7 @@ VBoxDrvFindAdapter(IN PVOID HwDeviceExtension, IN PVOID HwContext, IN PWSTR Argu
      * Query the adapter's memory size. It's a bit of a hack, we just read
      * an ULONG from the data port without setting an index before.
      */
-    AdapterMemorySize = VideoPortReadPortUlong((PULONG)VBE_DISPI_IOPORT_DATA);
+    cbVRAM = VideoPortReadPortUlong((PULONG)VBE_DISPI_IOPORT_DATA);
 
     /* Write hw information to registry, so that it's visible in windows property dialog */
     rc = VideoPortSetRegistryParameters(pExt, L"HardwareInformation.ChipType",
@@ -82,7 +84,7 @@ VBoxDrvFindAdapter(IN PVOID HwDeviceExtension, IN PVOID HwContext, IN PWSTR Argu
                                         VBoxDACType, sizeof(VBoxDACType));
     VBOXMP_WARN_VPS(rc);
     rc = VideoPortSetRegistryParameters(pExt, L"HardwareInformation.MemorySize",
-                                        &AdapterMemorySize, sizeof(ULONG));
+                                        &cbVRAM, sizeof(ULONG));
     VBOXMP_WARN_VPS(rc);
     rc = VideoPortSetRegistryParameters(pExt, L"HardwareInformation.AdapterString",
                                         VBoxAdapterString, sizeof(VBoxAdapterString));
@@ -120,8 +122,8 @@ VBoxDrvFindAdapter(IN PVOID HwDeviceExtension, IN PVOID HwContext, IN PWSTR Argu
         }
 
         /* The first range is the framebuffer. We require that information. */
-        pExt->u.primary.physLFBBase    = tmpRanges[0].RangeStart;
-        pExt->u.primary.ulApertureSize = tmpRanges[0].RangeLength;
+        phVRAM = tmpRanges[0].RangeStart;
+        ulApertureSize = tmpRanges[0].RangeLength;
     }
 
     /* Initialize VBoxGuest library, which is used for requests which go through VMMDev. */
@@ -142,7 +144,7 @@ VBoxDrvFindAdapter(IN PVOID HwDeviceExtension, IN PVOID HwContext, IN PWSTR Argu
      * The host will however support both old and new interface to keep compatibility
      * with old guest additions.
      */
-    VBoxSetupDisplaysHGSMI(&pExt->u.primary.commonInfo, AdapterMemorySize, 0);
+    VBoxSetupDisplaysHGSMI(&pExt->u.primary.commonInfo, phVRAM, ulApertureSize, cbVRAM, 0);
 
     if (pExt->u.primary.commonInfo.bHGSMI)
     {
