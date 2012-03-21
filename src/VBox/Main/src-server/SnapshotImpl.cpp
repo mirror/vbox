@@ -1481,6 +1481,7 @@ STDMETHODIMP SessionMachine::BeginTakingSnapshot(IConsole *aInitiator,
         else
             setMachineState(MachineState_Saving); /** @todo Confusing! Saving is used for both online and offline snapshots. */
 
+        alock.release();
         /* create new differencing hard disks and attach them to this machine */
         rc = createImplicitDiffs(aConsoleProgress,
                                  1,            // operation weight; must be the same as in Console::TakeSnapshot()
@@ -1490,7 +1491,6 @@ STDMETHODIMP SessionMachine::BeginTakingSnapshot(IConsole *aInitiator,
 
         // if we got this far without an error, then save the media registries
         // that got modified for the diff images
-        alock.release();
         mParent->saveModifiedRegistries();
     }
     catch (HRESULT hrc)
@@ -1941,9 +1941,6 @@ void SessionMachine::restoreSnapshotHandler(RestoreSnapshotTask &aTask)
             llDiffsToDelete.push_back(pMedium);
         }
 
-        // release the locks before updating registry and deleting image files
-        alock.release();
-
         // save machine settings, reset the modified flag and commit;
         bool fNeedsGlobalSaveSettings = false;
         rc = saveSettings(&fNeedsGlobalSaveSettings,
@@ -1952,6 +1949,10 @@ void SessionMachine::restoreSnapshotHandler(RestoreSnapshotTask &aTask)
             throw rc;
         // unconditionally add the parent registry. We do similar in SessionMachine::EndTakingSnapshot
         // (mParent->saveSettings())
+
+        // release the locks before updating registry and deleting image files
+        alock.release();
+
         mParent->markRegistryModified(mParent->getGlobalRegistryId());
 
         // from here on we cannot roll back on failure any more
