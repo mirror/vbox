@@ -90,26 +90,6 @@ VBoxVideoWddm.sys
 HKR,, VgaCompatible, %REG_DWORD%, 0
 
 [VBoxVideo_RegisterDlls]
-;dispd3d 11,,VBoxDispD3D.dll,1
-;amd64 ;dispd3d 11,,VBoxDispD3D-x86.dll,1
-;amd64 ;gl 11,,VBoxOGL-x86.dll,1
-;gl 11,,VBoxOGL.dll,1
-;amd64 ;gl 11,,VBoxD3D9wddm-x86.dll,1
-;gl 11,,VBoxD3D9wddm.dll,1
-;amd64 ;gl 11,,wined3dwddm-x86.dll,1
-;gl 11,,wined3dwddm.dll,1
-;amd64 ;gl 11,,VBoxOGLarrayspu-x86.dll,1
-;gl 11,,VBoxOGLarrayspu.dll,1
-;amd64 ;gl 11,,VBoxOGLcrutil-x86.dll,1
-;gl 11,,VBoxOGLcrutil.dll,1
-;amd64 ;gl 11,,VBoxOGLerrorspu-x86.dll,1
-;gl 11,,VBoxOGLerrorspu.dll,1
-;amd64 ;gl 11,,VBoxOGLfeedbackspu-x86.dll,1
-;gl 11,,VBoxOGLfeedbackspu.dll,1
-;amd64 ;gl 11,,VBoxOGLpackspu-x86.dll,1
-;gl 11,,VBoxOGLpackspu.dll,1
-;amd64 ;gl 11,,VBoxOGLpassthroughspu-x86.dll,1
-;gl 11,,VBoxOGLpassthroughspu.dll,1
 
 
 [VBoxVideo.Services]
