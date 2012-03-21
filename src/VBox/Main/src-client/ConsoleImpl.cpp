@@ -4407,6 +4407,8 @@ HRESULT Console::onNetworkAdapterChange(INetworkAdapter *aNetworkAdapter, BOOL c
 
                 if (RT_FAILURE(vrc))
                     rc = E_FAIL;
+
+                alock.acquire();
             }
         }
         ptrVM.release();
