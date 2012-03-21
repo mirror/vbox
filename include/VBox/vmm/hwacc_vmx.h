@@ -497,6 +497,8 @@ typedef union
 #define VMX_EXIT_ERR_MSR_LOAD       34
 /** 36 Guest software executed MWAIT. */
 #define VMX_EXIT_MWAIT              36
+/** 37 VM exit due to monitor trap flag. */
+#define VMX_EXIT_MTF                37
 /** 39 Guest software attempted to execute MONITOR. */
 #define VMX_EXIT_MONITOR            39
 /** 40 Guest software attempted to execute PAUSE. */
