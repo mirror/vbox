@@ -94,6 +94,8 @@ typedef struct VTGPROBE
     const char     *pszName;
     RTLISTANCHOR    ArgHead;
     uint32_t        cArgs;
+    uint32_t        offArgList;
+    uint32_t        iProbe;
 } VTGPROBE;
 typedef VTGPROBE *PVTGPROBE;
 
@@ -153,7 +155,7 @@ static const char          *g_pszScript                 = NULL;
 static const char          *g_pszTempAsm                = NULL;
 #ifdef RT_OS_DARWIN
 static const char          *g_pszAssembler              = "yasm";
-static const char          *g_pszAssemblerFmtOpt        = "--oformat";
+static const char          *g_pszAssemblerFmtOpt        = "-f";
 static const char           g_szAssemblerFmtVal32[]     = "macho32";
 static const char           g_szAssemblerFmtVal64[]     = "macho64";
 #elif defined(RT_OS_OS2)
@@ -173,6 +175,10 @@ static const char           g_szAssemblerFmtVal32[]     = "elf32";
 static const char           g_szAssemblerFmtVal64[]     = "elf64";
 #endif
 static const char          *g_pszAssemblerFmtVal        = RT_CONCAT(g_szAssemblerFmtVal, ARCH_BITS);
+static const char          *g_pszAssemblerDefOpt        = "-D";
+static const char          *g_pszAssemblerIncOpt        = "-I";
+static char                 g_szAssemblerIncVal[RTPATH_MAX];
+static const char          *g_pszAssemblerIncVal        = __FILE__ "/../../../include/";
 static const char          *g_pszAssemblerOutputOpt     = "-o";
 static unsigned             g_cAssemblerOptions         = 0;
 static const char          *g_apszAssemblerOptions[32];
@@ -211,10 +217,92 @@ static const char *strtabInsertN(const char *pch, size_t cch)
 }
 
 
+/**
+ * Retrieves the string table offset of the given string table string.
+ *
+ * @returns String table offset.
+ * @param   pszStrTabString     The string table string.
+ */
+static uint32_t strtabGetOff(const char *pszStrTabString)
+{
+    PVTGSTRING pStr = RT_FROM_MEMBER(pszStrTabString, VTGSTRING, szString[0]);
+    Assert(pStr->Core.pszString == pszStrTabString);
+    return pStr->offStrTab;
+}
+
+
 static RTEXITCODE generateInvokeAssembler(const char *pszOutput, const char *pszTempAsm)
 {
-    RTPrintf("Todo invoke the assembler\n");
-    return RTEXITCODE_SKIPPED;
+    const char     *apszArgs[64];
+    unsigned        iArg = 0;
+
+    apszArgs[iArg++] = g_pszAssembler;
+    apszArgs[iArg++] = g_pszAssemblerFmtOpt;
+    apszArgs[iArg++] = g_pszAssemblerFmtVal;
+    apszArgs[iArg++] = g_pszAssemblerDefOpt;
+    if (!strcmp(g_pszAssemblerFmtVal, "macho32") || !strcmp(g_pszAssemblerFmtVal, "macho64"))
+        apszArgs[iArg++] = "ASM_FORMAT_MACHO";
+    else if (!strcmp(g_pszAssemblerFmtVal, "obj") || !strcmp(g_pszAssemblerFmtVal, "omf"))
+        apszArgs[iArg++] = "ASM_FORMAT_OMF";
+    else if (   !strcmp(g_pszAssemblerFmtVal, "win32")
+             || !strcmp(g_pszAssemblerFmtVal, "win64")
+             || !strcmp(g_pszAssemblerFmtVal, "pe32")
+             || !strcmp(g_pszAssemblerFmtVal, "pe64")
+             || !strcmp(g_pszAssemblerFmtVal, "pe") )
+        apszArgs[iArg++] = "ASM_FORMAT_PE";
+    else if (   !strcmp(g_pszAssemblerFmtVal, "elf32")
+             || !strcmp(g_pszAssemblerFmtVal, "elf64")
+             || !strcmp(g_pszAssemblerFmtVal, "elf"))
+        apszArgs[iArg++] = "ASM_FORMAT_ELF";
+    else
+        return RTMsgErrorExit(RTEXITCODE_FAILURE, "Unknown assembler format '%s'", g_pszAssemblerFmtVal);
+    apszArgs[iArg++] = g_pszAssemblerDefOpt;
+    if (g_cBits == 32)
+        apszArgs[iArg++] = "ARCH_BITS=32";
+    else
+        apszArgs[iArg++] = "ARCH_BITS=64";
+    apszArgs[iArg++] = g_pszAssemblerDefOpt;
+    if (g_cBits == 32)
+        apszArgs[iArg++] = "RT_ARCH_X86";
+    else
+        apszArgs[iArg++] = "RT_ARCH_AMD64";
+    apszArgs[iArg++] = g_pszAssemblerIncOpt;
+    apszArgs[iArg++] = g_pszAssemblerIncVal;
+    apszArgs[iArg++] = g_pszAssemblerOutputOpt;
+    apszArgs[iArg++] = pszOutput;
+    for (unsigned i = 0; i < g_cAssemblerOptions; i++)
+        apszArgs[iArg++] = g_apszAssemblerOptions[i];
+    apszArgs[iArg++] = pszTempAsm;
+    apszArgs[iArg]   = NULL;
+
+    if (g_cVerbosity > 1)
+    {
+        RTMsgInfo("Starting assmbler '%s' with arguments:\n",  g_pszAssembler);
+        for (unsigned i = 0; i < iArg; i++)
+            RTMsgInfo("  #%02u: '%s'\n",  i, apszArgs[i]);
+    }
+
+    RTPROCESS hProc;
+    int rc = RTProcCreate(apszArgs[0], apszArgs, RTENV_DEFAULT, RTPROC_FLAGS_SEARCH_PATH, &hProc);
+    if (RT_FAILURE(rc))
+        return RTMsgErrorExit(RTEXITCODE_FAILURE, "Failed to start '%s' (assmebler): %Rrc", apszArgs[0], rc);
+
+    RTPROCSTATUS Status;
+    rc = RTProcWait(hProc, RTPROCWAIT_FLAGS_BLOCK, &Status);
+    if (RT_FAILURE(rc))
+    {
+        RTProcTerminate(hProc);
+        return RTMsgErrorExit(RTEXITCODE_FAILURE, "RTProcWait failed: %Rrc", rc);
+    }
+    if (Status.enmReason == RTPROCEXITREASON_SIGNAL)
+        return RTMsgErrorExit(RTEXITCODE_FAILURE, "The assembler failed: signal %d", Status.iStatus);
+    if (Status.enmReason == RTPROCEXITREASON_ABEND)
+        return RTMsgErrorExit(RTEXITCODE_FAILURE, "The assembler failed: abend");
+    if (   Status.enmReason != RTPROCEXITREASON_NORMAL
+        || Status.iStatus != 0)
+        return RTMsgErrorExit(RTEXITCODE_FAILURE, "The assembler failed: exit code %d", Status.iStatus);
+
+    return RTEXITCODE_SUCCESS;
 }
 
 
@@ -314,26 +402,43 @@ static RTEXITCODE generateAssembly(PSCMSTREAM pStrm)
                     "; Automatically generated from %s. Do NOT edit!\n"
                     ";\n"
                     "\n"
-                    "%include \"iprt/asmdefs.h\"\n"
+                    "%%include \"iprt/asmdefs.mac\"\n"
                     "\n"
-                    "%ifdef ASM_FORMAT_OMF\n"
-                    " segment VTGObject public CLASS=VTGObject align=16 use32"
+                    "\n"
+                    ";"
+                    "; Put all the data in a dedicated section / segment."
+                    ";\n"
+                    "%%ifdef ASM_FORMAT_OMF\n"
+                    " segment VTG.Obj public CLASS=DATA align=4096 use32\n"
+                    "%%elifdef ASM_FORMAT_MACHO\n"
+                    " ;[section VTG Obj align=4096]\n"
+                    " [section .data]\n"
+                    "%%elifdef ASM_FORMAT_PE\n"
+                    " [section VTGObj align=4096]\n"
+                    "%%elifdef ASM_FORMAT_ELF\n"
+                    " [section .VTGObj progbits alloc noexec write align=4096]\n"
+                    "%%else\n"
+                    " %%error \"ASM_FORMAT_XXX is not defined\"\n"
+                    "%%endif\n"
+                    "\n"
+                    "GLOBALNAME g_VTGObjStart\n"
+                    "    db          'VBoxTpG Obj v1', 0, 0\n"
+                    "    RTCCPTR_DEF g_aVTGProviders\n"
+                    "    RTCCPTR_DEF g_aVTGProviders_End     - g_aVTGProviders\n"
+                    "    RTCCPTR_DEF g_aVTGProbes\n"
+                    "    RTCCPTR_DEF g_aVTGProbes_End        - g_aVTGProbes\n"
+                    "    RTCCPTR_DEF g_afVTGProbeEnabled\n"
+                    "    RTCCPTR_DEF g_afVTGProbeEnabled_End - g_afVTGProbeEnabled\n"
+                    "    RTCCPTR_DEF g_achVTGStringTable\n"
+                    "    RTCCPTR_DEF g_achVTGStringTable_End - g_achVTGStringTable\n"
+                    "    RTCCPTR_DEF g_aVTGArgLists\n"
+                    "    RTCCPTR_DEF g_aVTGArgLists_End      - g_aVTGArgLists\n"
+                    "    RTCCPTR_DEF 0\n"
+                    "    RTCCPTR_DEF 0\n"
+                    "    RTCCPTR_DEF 0\n"
+                    "    RTCCPTR_DEF 0\n"
                     ,
                     g_pszScript);
-
-    /*
-     * Dump the string table to set the offsets before we use them anywhere.
-     */
-    ScmStreamPrintf(pStrm,
-                    ";\n"
-                    "; The string table.\n"
-                    ";\n"
-                    "BEGINDATA\n"
-                    "GLOBALNAME g_achVTGStringTable\n");
-    g_offStrTab = 0;
-    RTStrSpaceEnumerate(&g_StrSpace, generateAssemblyStrTabCallback, pStrm);
-    ScmStreamPrintf(pStrm,
-                    "GLOBALNAME g_achVTGStringTable_End\n");
 
     /*
      * Declare the probe enable flags.
@@ -341,11 +446,9 @@ static RTEXITCODE generateAssembly(PSCMSTREAM pStrm)
     ScmStreamPrintf(pStrm,
                     ";\n"
                     "; Probe enabled flags.  Since these will be accessed all the time\n"
-                    "; they are placed together to get some more cache and TLB hits when\n"
-                    "; the probes are disabled."
+                    "; they are placed together and early in the section to get some more\n"
+                    "; cache and TLB hits when the probes are disabled.\n"
                     ";\n"
-                    "BEGINDATA\n"
-                    "ALIGNDATA(16)\n"
                     "GLOBALNAME g_afVTGProbeEnabled\n"
                     );
     PVTGPROVIDER pProv;
@@ -363,29 +466,158 @@ static RTEXITCODE generateAssembly(PSCMSTREAM pStrm)
     ScmStreamPrintf(pStrm, "GLOBALNAME g_afVTGProbeEnabled_End\n");
 
     /*
-     * Declare the probe data.
+     * Dump the string table before we start using the strings.
      */
     ScmStreamPrintf(pStrm,
-                    "\n"
                     ";\n"
-                    "; Prob data.\n"
+                    "; The string table.\n"
                     ";\n"
-                    "BEGINDATA\n"
-                    "GLOBALNAME g_abVTGProbeData\n"
-                    "\n");
+                    "GLOBALNAME g_achVTGStringTable\n");
+    g_offStrTab = 0;
+    RTStrSpaceEnumerate(&g_StrSpace, generateAssemblyStrTabCallback, pStrm);
+    ScmStreamPrintf(pStrm,
+                    "GLOBALNAME g_achVTGStringTable_End\n");
+
+    /*
+     * Write out the argument lists before we use them.
+     */
+    ScmStreamPrintf(pStrm,
+                    ";\n"
+                    "; The argument lists.\n"
+                    ";\n"
+                    "GLOBALNAME g_aVTGArgLists\n");
+    uint32_t off = 0;
     RTListForEach(&g_ProviderHead, pProv, VTGPROVIDER, ListEntry)
     {
         PVTGPROBE pProbe;
         RTListForEach(&pProv->ProbeHead, pProbe, VTGPROBE, ListEntry)
         {
-            /** @todo  */
-            //ScmStreamPrintf(pStrm,
-            //                "GLOBALNAME g_fVTGProbeEnabled_%s_%s\n"
-            //                "    db 0\n",
-            //                pProv->pszName, pProbe->pszName);
+            if (pProbe->offArgList != UINT32_MAX)
+                continue;
+
+            /* Write it. */
+            pProbe->offArgList = off;
+            ScmStreamPrintf(pStrm,
+                            "    ; off=%u\n"
+                            "    db   %2u     ; Argument count\n"
+                            "    db  0, 0, 0 ; Reserved\n"
+                            , off, pProbe->cArgs);
+            off += 4;
+            PVTGARG pArg;
+            RTListForEach(&pProbe->ArgHead, pArg, VTGARG, ListEntry)
+            {
+                ScmStreamPrintf(pStrm,
+                                "    dd %6u   ; type '%s'\n"
+                                "    dd %6u   ; name '%s'\n",
+                                strtabGetOff(pArg->pszType), pArg->pszType,
+                                strtabGetOff(pArg->pszName), pArg->pszName);
+                off += 8;
+            }
+
+            /* Look for matching argument lists (lazy bird walks the whole list). */
+            PVTGPROVIDER pProv2;
+            RTListForEach(&g_ProviderHead, pProv2, VTGPROVIDER, ListEntry)
+            {
+                PVTGPROBE pProbe2;
+                RTListForEach(&pProv->ProbeHead, pProbe2, VTGPROBE, ListEntry)
+                {
+                    if (pProbe2->offArgList != UINT32_MAX)
+                        continue;
+                    if (pProbe2->cArgs != pProbe->cArgs)
+                        continue;
+
+                    PVTGARG pArg2;
+                    pArg  = RTListNodeGetNext(&pProbe->ArgHead, VTGARG, ListEntry);
+                    pArg2 = RTListNodeGetNext(&pProbe2->ArgHead, VTGARG, ListEntry);
+                    int32_t cArgs = pProbe->cArgs;
+                    while (   cArgs-- > 0
+                           && pArg2->pszName == pArg2->pszName
+                           && pArg2->pszType == pArg2->pszType)
+                    {
+                        pArg  = RTListNodeGetNext(&pArg->ListEntry, VTGARG, ListEntry);
+                        pArg2 = RTListNodeGetNext(&pArg2->ListEntry, VTGARG, ListEntry);
+                    }
+                    if (cArgs >= 0)
+                        continue;
+                    pProbe2->offArgList = pProbe->offArgList;
+                }
+            }
         }
     }
-    ScmStreamPrintf(pStrm, "GLOBALNAME g_abVTGProbeData_End\n");
+    ScmStreamPrintf(pStrm,
+                    "GLOBALNAME g_aVTGArgLists_End\n");
+
+
+    /*
+     * Probe definitions..
+     */
+    ScmStreamPrintf(pStrm,
+                    "\n"
+                    ";\n"
+                    "; Prob definitions.\n"
+                    ";\n"
+                    "GLOBALNAME g_aVTGProbes\n"
+                    "\n");
+    uint32_t iProbe = 0;
+    RTListForEach(&g_ProviderHead, pProv, VTGPROVIDER, ListEntry)
+    {
+        PVTGPROBE pProbe;
+        RTListForEach(&pProv->ProbeHead, pProbe, VTGPROBE, ListEntry)
+        {
+            ScmStreamPrintf(pStrm,
+                            "    ; idx=#%4u - %s::%s\n "
+                            "    dd %6u  ; name\n"
+                            "    dd %6u  ; provider index\n"
+                            "    dd %6u  ; Argument list offset\n"
+                            "    dd g_fVTGProbeEnabled_%s_%s - g_afVTGProbeEnabled\n"
+                            ,
+                            iProbe, pProv->pszName, pProbe->pszName,
+                            strtabGetOff(pProbe->pszName),
+                            0 /** @todo provider index */,
+                            pProbe->offArgList,
+                            pProv->pszName, pProbe->pszName);
+            pProbe->iProbe = iProbe;
+            iProbe++;
+        }
+    }
+    ScmStreamPrintf(pStrm, "GLOBALNAME g_aVTGProbes_End\n");
+
+    /*
+     * The providers data.
+     */
+    ScmStreamPrintf(pStrm,
+                    "\n"
+                    ";\n"
+                    "; Provider data.\n"
+                    ";\n"
+                    "GLOBALNAME g_aVTGProviders\n"
+                    "\n");
+    uint32_t iProvider = 0;
+    RTListForEach(&g_ProviderHead, pProv, VTGPROVIDER, ListEntry)
+    {
+        ScmStreamPrintf(pStrm,
+                        "    ; idx=#%4u - %s\n "
+                        "    dd %6u  ; name\n"
+                        "    dd %6u  ; index of first probe\n"
+                        "    dd %6u  ; index of last probe\n"
+                        "    db 0, 0, 0  ; AttrSelf\n"
+                        "    db 0, 0, 0  ; AttrModules\n"
+                        "    db 0, 0, 0  ; AttrFunctions\n"
+                        "    db 0, 0, 0  ; AttrName\n"
+                        "    db 0, 0, 0  ; AttrArguments\n"
+                        ,
+                        iProvider, pProv->pszName,
+                        strtabGetOff(pProv->pszName),
+                        0 /** @todo probe index */,
+                        0 /** @todo probe index */
+                        /** @todo attributes */);
+        iProvider++;
+    }
+    ScmStreamPrintf(pStrm, "GLOBALNAME g_aVTGProviders_End\n");
+
+    /*
+     * Emit code for the stub functions.
+     */
 
     return RTEXITCODE_SUCCESS;
 }
@@ -1127,7 +1359,8 @@ static RTEXITCODE parseProbe(PSCMSTREAM pStrm, PVTGPROVIDER pProv)
         return parseError(pStrm, 0, "Out of memory");
     RTListInit(&pProbe->ArgHead);
     RTListAppend(&pProv->ProbeHead, &pProbe->ListEntry);
-    pProbe->pszName = strtabInsertN(pszProbe, cchProbe);
+    pProbe->offArgList = UINT32_MAX;
+    pProbe->pszName    = strtabInsertN(pszProbe, cchProbe);
     if (!pProbe->pszName)
         return parseError(pStrm, 0, "Out of memory");
 
@@ -1365,6 +1598,18 @@ static RTEXITCODE parseScript(const char *pszScript)
  */
 static RTEXITCODE parseArguments(int argc,  char **argv)
 {
+    /*
+     * Set / Adjust defaults.
+     */
+    int rc = RTPathAbs(g_pszAssemblerIncVal, g_szAssemblerIncVal, sizeof(g_szAssemblerIncVal) - 1);
+    if (RT_FAILURE(rc))
+        return RTMsgErrorExit(RTEXITCODE_FAILURE, "RTPathAbs failed: %Rrc", rc);
+    strcat(g_szAssemblerIncVal, "/");
+    g_pszAssemblerIncVal = g_szAssemblerIncVal;
+
+    /*
+     * Option config.
+     */
     enum
     {
         kVBoxTpGOpt_32Bit = 1000,
@@ -1398,9 +1643,12 @@ static RTEXITCODE parseArguments(int argc,  char **argv)
 
     RTGETOPTUNION   ValueUnion;
     RTGETOPTSTATE   GetOptState;
-    int rc = RTGetOptInit(&GetOptState, argc, argv, &s_aOpts[0], RT_ELEMENTS(s_aOpts), 1, RTGETOPTINIT_FLAGS_OPTS_FIRST);
+    rc = RTGetOptInit(&GetOptState, argc, argv, &s_aOpts[0], RT_ELEMENTS(s_aOpts), 1, RTGETOPTINIT_FLAGS_OPTS_FIRST);
     AssertReleaseRCReturn(rc, RTEXITCODE_FAILURE);
 
+    /*
+     * Process \the options.
+     */
     while ((rc = RTGetOpt(&GetOptState, &ValueUnion)) != 0)
     {
         switch (rc)
@@ -1410,12 +1658,12 @@ static RTEXITCODE parseArguments(int argc,  char **argv)
              */
             case kVBoxTpGOpt_32Bit:
                 g_cBits = 32;
-                g_pszAssemblerFmtOpt = g_szAssemblerFmtVal32;
+                g_pszAssemblerFmtVal = g_szAssemblerFmtVal32;
                 break;
 
             case kVBoxTpGOpt_64Bit:
                 g_cBits = 64;
-                g_pszAssemblerFmtOpt = g_szAssemblerFmtVal64;
+                g_pszAssemblerFmtVal = g_szAssemblerFmtVal64;
                 break;
 
             case 'C':
