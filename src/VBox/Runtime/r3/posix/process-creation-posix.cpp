@@ -68,6 +68,7 @@
 #include <iprt/env.h>
 #include <iprt/err.h>
 #include <iprt/file.h>
+#include <iprt/path.h>
 #include <iprt/pipe.h>
 #include <iprt/socket.h>
 #include <iprt/string.h>
@@ -255,6 +256,25 @@ RTR3DECL(int)   RTProcCreate(const char *pszExec, const char * const *papszArgs,
 }
 
 
+/**
+ * RTPathTraverseList callback used by RTProcCreateEx to locate the executable.
+ */
+static DECLCALLBACK(int) rtPathFindExec(char const *pchPath, size_t cchPath, void *pvUser1, void *pvUser2)
+{
+    const char *pszExec     = (const char *)pvUser1;
+    char       *pszRealExec = (char *)pvUser2;
+    int rc = RTPathJoinEx(pszRealExec, RTPATH_MAX, pchPath, cchPath, pszExec, RTSTR_MAX);
+    if (RT_FAILURE(rc))
+        return rc;
+    if (!access(pszRealExec, X_OK))
+        return VINF_SUCCESS;
+    if (   errno == EACCES
+        || errno == EPERM)
+        return RTErrConvertFromErrno(errno);
+    return VINF_TRY_AGAIN;
+}
+
+
 RTR3DECL(int)   RTProcCreateEx(const char *pszExec, const char * const *papszArgs, RTENV hEnv, uint32_t fFlags,
                                PCRTHANDLE phStdIn, PCRTHANDLE phStdOut, PCRTHANDLE phStdErr, const char *pszAsUser,
                                const char *pszPassword, PRTPROCESS phProcess)
@@ -266,7 +286,7 @@ RTR3DECL(int)   RTProcCreateEx(const char *pszExec, const char * const *papszArg
      */
     AssertPtrReturn(pszExec, VERR_INVALID_POINTER);
     AssertReturn(*pszExec, VERR_INVALID_PARAMETER);
-    AssertReturn(!(fFlags & ~(RTPROC_FLAGS_DETACHED | RTPROC_FLAGS_HIDDEN | RTPROC_FLAGS_SERVICE | RTPROC_FLAGS_SAME_CONTRACT | RTPROC_FLAGS_NO_PROFILE)), VERR_INVALID_PARAMETER);
+    AssertReturn(!(fFlags & ~(RTPROC_FLAGS_DETACHED | RTPROC_FLAGS_HIDDEN | RTPROC_FLAGS_SERVICE | RTPROC_FLAGS_SAME_CONTRACT | RTPROC_FLAGS_NO_PROFILE | RTPROC_FLAGS_SEARCH_PATH)), VERR_INVALID_PARAMETER);
     AssertReturn(!(fFlags & RTPROC_FLAGS_DETACHED) || !phProcess, VERR_INVALID_PARAMETER);
     AssertReturn(hEnv != NIL_RTENV, VERR_INVALID_PARAMETER);
     const char * const *papszEnv = RTEnvGetExecEnvP(hEnv);
@@ -339,8 +359,22 @@ RTR3DECL(int)   RTProcCreateEx(const char *pszExec, const char * const *papszArg
     /*
      * Check for execute access to the file.
      */
+    char szRealExec[RTPATH_MAX];
     if (access(pszExec, X_OK))
-        return RTErrConvertFromErrno(errno);
+    {
+        if (   !(fFlags & RTPROC_FLAGS_SEARCH_PATH)
+            || errno != ENOENT
+            || RTPathHavePath(pszExec) )
+            return RTErrConvertFromErrno(errno);
+
+        /* search */
+        char *pszPath = RTEnvDupEx(hEnv, "PATH");
+        rc = RTPathTraverseList(pszPath, ':', rtPathFindExec, (void *)pszExec, &szRealExec[0]);
+        RTStrFree(pszPath);
+        if (RT_FAILURE(rc))
+            return rc == VERR_END_OF_STRING ? VERR_FILE_NOT_FOUND : rc;
+        pszExec = szRealExec;
+    }
 
     pid_t pid = -1;
 
