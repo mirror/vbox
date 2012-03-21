@@ -30,6 +30,7 @@
 #include <iprt/list.h>
 #include <iprt/mem.h>
 #include <iprt/message.h>
+#include <iprt/path.h>
 #include <iprt/process.h>
 #include <iprt/stream.h>
 #include <iprt/string.h>
@@ -210,13 +211,115 @@ static RTEXITCODE generateFile(const char *pszOutput, const char *pszWhat,
     return rcExit;
 }
 
+static ssize_t ScmStreamPrintfV(PSCMSTREAM pStream, const char *pszFormat, va_list va)
+{
+    char   *psz;
+    ssize_t cch = RTStrAPrintfV(&psz, pszFormat, va);
+    if (cch)
+    {
+        int rc = ScmStreamWrite(pStream, psz, cch);
+        RTStrFree(psz);
+        if (RT_FAILURE(rc))
+            cch = rc;
+    }
+    return cch;
+}
+
+static ssize_t ScmStreamPrintf(PSCMSTREAM pStream, const char *pszFormat, ...)
+{
+    va_list va;
+    va_start(va, pszFormat);
+    ssize_t cch = ScmStreamPrintfV(pStream, pszFormat, va);
+    va_end(va);
+    return cch;
+}
+
 
 static RTEXITCODE generateAssembly(PSCMSTREAM pStrm)
 {
     if (g_cVerbosity > 0)
         RTMsgInfo("Generating assembly code...");
 
-    RTPrintf("Todo generate the assembly code\n");
+    /*
+     * Write the file header.
+     */
+    ScmStreamPrintf(pStrm,
+                    "; $Id$ \n"
+                    ";; @file\n"
+                    "; Automatically generated from %s. Do NOT edit!\n"
+                    ";\n"
+                    "\n"
+                    "%include \"iprt/asmdefs.h\"\n"
+                    "\n"
+                    ,
+                    g_pszScript);
+
+    /*
+     * Declare the probe enable flags.
+     */
+    ScmStreamPrintf(pStrm,
+                    ";\n"
+                    "; Probe enabled flags.  Since these will be accessed all the time\n"
+                    "; they are placed together to get some more cache and TLB hits when\n"
+                    "; the probes are disabled."
+                    ";\n"
+                    "BEGINDATA\n"
+                    "ALIGNDATA(16)\n"
+                    "GLOBALNAME g_afVTGProbeEnabled\n"
+                    );
+    PVTGPROVIDER pProv;
+    RTListForEach(&g_ProviderHead, pProv, VTGPROVIDER, ListEntry)
+    {
+        PVTGPROBE pProbe;
+        RTListForEach(&pProv->ProbeHead, pProbe, VTGPROBE, ListEntry)
+        {
+            ScmStreamPrintf(pStrm,
+                            "GLOBALNAME g_fVTGProbeEnabled_%s_%s\n"
+                            "    db 0\n",
+                            pProv->pszName, pProbe->pszName);
+        }
+    }
+    ScmStreamPrintf(pStrm, "GLOBALNAME g_afVTGProbeEnabled_End\n");
+
+    /*
+     * Declare the probe data.
+     */
+    ScmStreamPrintf(pStrm,
+                    "\n"
+                    ";\n"
+                    "; Prob data.\n"
+                    ";\n"
+                    "BEGINDATA\n"
+                    "GLOBALNAME g_aVTGProbeData\n"
+                    "\n");
+    RTListForEach(&g_ProviderHead, pProv, VTGPROVIDER, ListEntry)
+    {
+        PVTGPROBE pProbe;
+        RTListForEach(&pProv->ProbeHead, pProbe, VTGPROBE, ListEntry)
+        {
+            /** @todo  */
+            //ScmStreamPrintf(pStrm,
+            //                "GLOBALNAME g_fVTGProbeEnabled_%s_%s\n"
+            //                "    db 0\n",
+            //                pProv->pszName, pProbe->pszName);
+        }
+    }
+    ScmStreamPrintf(pStrm, "GLOBALNAME g_aVTGProbeData_End\n");
+
+    /*
+     * Write the string table.
+     */
+    ScmStreamPrintf(pStrm,
+                    "\n"
+                    ";\n"
+                    "; String table.\n"
+                    ";\n"
+                    "BEGINDATA\n"
+                    "GLOBALNAME g_abVTGProbeStrings\n"
+                    "\n");
+    /** @todo  */
+    ScmStreamPrintf(pStrm, "GLOBALNAME g_abVTGProbeStrings_End\n");
+
     return RTEXITCODE_SUCCESS;
 }
 
@@ -225,7 +328,7 @@ static RTEXITCODE generateObject(const char *pszOutput, const char *pszTempAsm)
 {
     if (!pszTempAsm)
     {
-        size_t cch = strlen(pszTempAsm);
+        size_t cch = strlen(pszOutput);
         char  *psz = (char *)alloca(cch + sizeof(".asm"));
         memcpy(psz, pszOutput, cch);
         memcpy(psz + cch, ".asm", sizeof(".asm"));
@@ -240,9 +343,156 @@ static RTEXITCODE generateObject(const char *pszOutput, const char *pszTempAsm)
 }
 
 
+static RTEXITCODE generateProbeDefineName(char *pszBuf, size_t cbBuf, const char *pszProvider, const char *pszProbe)
+{
+    size_t cbMax = strlen(pszProvider) + 1 + strlen(pszProbe) + 1;
+    if (cbMax > cbBuf || cbMax > 80)
+        return RTMsgErrorExit(RTEXITCODE_FAILURE, "Probe '%s' in provider '%s' ends up with a too long defined\n", pszProbe, pszProvider);
+
+    while (*pszProvider)
+        *pszBuf++ = RT_C_TO_UPPER(*pszProvider++);
+
+    *pszBuf++ = '_';
+
+    while (*pszProbe)
+    {
+        if (pszProbe[0] == '_' && pszProbe[1] == '_')
+            pszProbe++;
+        *pszBuf++ = RT_C_TO_UPPER(*pszProbe++);
+    }
+
+    *pszBuf = '\0';
+    return RTEXITCODE_SUCCESS;
+}
+
 static RTEXITCODE generateHeaderInner(PSCMSTREAM pStrm)
 {
-    RTPrintf("Todo generate the header\n");
+    /*
+     * Calc the double inclusion blocker define and then write the file header.
+     */
+    char szTmp[4096];
+    const char *pszName = RTPathFilename(g_pszScript);
+    size_t      cchName = strlen(pszName);
+    if (cchName >= sizeof(szTmp) - 64)
+        return RTMsgErrorExit(RTEXITCODE_FAILURE, "File name is too long '%s'", pszName);
+    szTmp[0] = '_';
+    szTmp[1] = '_';
+    szTmp[2] = '_';
+    memcpy(&szTmp[3], pszName, cchName);
+    szTmp[3 + cchName + 0] = '_';
+    szTmp[3 + cchName + 1] = '_';
+    szTmp[3 + cchName + 2] = '_';
+    szTmp[3 + cchName + 3] = '\0';
+    char *psz = &szTmp[3];
+    while (*psz)
+    {
+        if (!RT_C_IS_ALNUM(*psz) && *psz != '_')
+            *psz = '_';
+        psz++;
+    }
+
+    ScmStreamPrintf(pStrm,
+                    "/* $Id$ */\n"
+                    "/** @file\n"
+                    " * Automatically generated from %s. Do NOT edit!\n"
+                    " */\n"
+                    "\n"
+                    "#ifndef %s\n"
+                    "#define %s\n"
+                    "\n"
+                    "#include <iprt/types.h>\n"
+                    "\n"
+                    "#ifdef _MSC_VER\n"
+                    "# define DECL_DATA_SECT(scope, type, name, sect) __declspec(allocate(#sect)) scope type name\n"
+                    "#elif defined(__GNUC__)\n"
+                    "# ifdef RT_OS_DARWIN\n"
+                    "#  define DECL_DATA_SECT(scope, type, name, sect) scope type __attribute__((section(#sect \",\" #sect))) name\n"
+                    "# else\n"
+                    "#  define DECL_DATA_SECT(scope, type, name, sect) scope type __attribute__((section(#sect))) name\n"
+                    "# endif\n"
+                    "#else\n"
+                    "# error portme\n"
+                    "#endif\n"
+                    "\n"
+                    "typedef struct VBOXTPGPROBELOC\n"
+                    "{\n"
+                    "    uint32_t    uLine    : 31;\n"
+                    "    uint32_t    fEnabled : 1;\n"
+                    "    uint32_t    idProbe;\n"
+                    "    const char *pszFunction;\n"
+                    "    const char *pszFile;\n"
+                    "    uint8_t    *pbProbe;\n"
+                    "} VBOXTPGPROBELOC;\n"
+                    "\n"
+                    "RT_C_DECLS_BEGIN\n"
+                    ,
+                    g_pszScript,
+                    szTmp,
+                    szTmp);
+
+    /*
+     * Declare data, code and macros for each probe.
+     */
+    PVTGPROVIDER pProv;
+    RTListForEach(&g_ProviderHead, pProv, VTGPROVIDER, ListEntry)
+    {
+        PVTGPROBE pProbe;
+        RTListForEach(&pProv->ProbeHead, pProbe, VTGPROBE, ListEntry)
+        {
+            PVTGARG pArg;
+            ScmStreamPrintf(pStrm,
+                            "extern bool    g_fVTGProbeEnabled_%s_%s;\n"
+                            "extern uint8_t g_VTGProbeData_%s_%s;\n"
+                            "DECLASM(void)  VTGProbeStub_%s_%s(VBOXTPGPROBELOC *",
+                            pProv->pszName, pProbe->pszName,
+                            pProv->pszName, pProbe->pszName,
+                            pProv->pszName, pProbe->pszName);
+            RTListForEach(&pProbe->ArgHead, pArg, VTGARG, ListEntry)
+            {
+                ScmStreamPrintf(pStrm, ", %s", pArg->pszType);
+            }
+            generateProbeDefineName(szTmp, sizeof(szTmp), pProv->pszName, pProbe->pszName);
+            ScmStreamPrintf(pStrm,
+                            ");\n"
+                            "#define %s_ENABLED() \\\n"
+                            "    (RT_UNLIKELY(g_fVTGProbeEnabled_%s_%s)) \n"
+                            "#define %s("
+                            , szTmp,
+                            pProv->pszName, pProbe->pszName,
+                            szTmp);
+            RTListForEach(&pProbe->ArgHead, pArg, VTGARG, ListEntry)
+            {
+                if (RTListNodeIsFirst(&pProbe->ArgHead, &pArg->ListEntry))
+                    ScmStreamPrintf(pStrm, "%s", pArg->pszName);
+                else
+                    ScmStreamPrintf(pStrm, ", %s", pArg->pszName);
+            }
+            ScmStreamPrintf(pStrm,
+                            ") \\\n"
+                            "    do { \\\n"
+                            "        if (RT_UNLIKELY(/*g_fVTGProbeEnabled_%s_%s*/ true)) \\\n"
+                            "        { \\\n"
+                            "            DECL_DATA_SECT(static, VBOXTPGPROBELOC, s_VTGProbeLoc, VTGPrLc) = \\\n"
+                            "            { __LINE__, 0, UINT32_MAX, __PRETTY_FUNCTION__, __FILE__, /*&g_VTGProbeData_%s_%s*/ NULL }; \\\n"
+                            "            /*VTGProbeStub_%s_%s(&s_VTGProbeLoc",
+                            pProv->pszName, pProbe->pszName,
+                            pProv->pszName, pProbe->pszName,
+                            pProv->pszName, pProbe->pszName);
+            RTListForEach(&pProbe->ArgHead, pArg, VTGARG, ListEntry)
+            {
+                ScmStreamPrintf(pStrm, ", %s", pArg->pszName);
+            }
+            ScmStreamPrintf(pStrm,
+                            ");*/ RTAssertMsg2(\"%p\", &s_VTGProbeLoc); \\\n"
+                            "        } \\\n"
+                            "    } while (0)\n"
+                            "\n");
+        }
+    }
+
+    ScmStreamWrite(pStrm, RT_STR_TUPLE("\n"
+                                       "RT_C_DECLS_END\n"
+                                       "#endif\n"));
     return RTEXITCODE_SUCCESS;
 }
 

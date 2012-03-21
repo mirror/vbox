@@ -993,7 +993,8 @@ int ScmStreamWrite(PSCMSTREAM pStream, const char *pchBuf, size_t cchBuf)
             pStream->paLines[iLine].enmEol = SCMEOL_NONE;
 
             size_t cchLeft = cchBuf - offBuf;
-            pchLF = (const char *)memchr(pchLF + 1, '\n', cchLeft);
+            pchLine = pchLF + 1;
+            pchLF = (const char *)memchr(pchLine, '\n', cchLeft);
             if (!pchLF)
             {
                 pStream->paLines[iLine].cch = cchLeft;
