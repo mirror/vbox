@@ -34,7 +34,6 @@
 #include <iprt/process.h>
 #include <iprt/stream.h>
 #include <iprt/string.h>
-#include <iprt/strcache.h>
 
 #include "scmstream.h"
 
@@ -85,7 +84,7 @@ typedef struct VTGARG
 {
     RTLISTNODE      ListEntry;
     const char     *pszName;
-    char           *pszType;
+    const char     *pszType;
 } VTGARG;
 typedef VTGARG *PVTGARG;
 
@@ -113,12 +112,28 @@ typedef struct VTGPROVIDER
 } VTGPROVIDER;
 typedef VTGPROVIDER *PVTGPROVIDER;
 
+/**
+ * A string table string.
+ */
+typedef struct VTGSTRING
+{
+    /** The string space core. */
+    RTSTRSPACECORE  Core;
+    /** The string table offset. */
+    uint32_t        offStrTab;
+    /** The actual string. */
+    char            szString[1];
+} VTGSTRING;
+typedef VTGSTRING *PVTGSTRING;
+
 
 /*******************************************************************************
 *   Global Variables                                                           *
 *******************************************************************************/
-/** String cache used for storing strings when parsing. */
-static RTSTRCACHE       g_hStrCache = NIL_RTSTRCACHE;
+/** The string space organizing the string table strings. Each node is a VTGSTRING. */
+static RTSTRSPACE       g_StrSpace = NULL;
+/** Used by the string table enumerator to set VTGSTRING::offStrTab. */
+static uint32_t         g_offStrTab;
 /** List of providers created by the parser. */
 static RTLISTANCHOR     g_ProviderHead;
 
@@ -162,6 +177,38 @@ static const char          *g_pszAssemblerOutputOpt     = "-o";
 static unsigned             g_cAssemblerOptions         = 0;
 static const char          *g_apszAssemblerOptions[32];
 /** @} */
+
+
+/**
+ * Inserts a string into the string table, reusing any matching existing string
+ * if possible.
+ *
+ * @returns Read only string.
+ * @param   pch                 The string to insert (need not be terminated).
+ * @param   cch                 The length of the string.
+ */
+static const char *strtabInsertN(const char *pch, size_t cch)
+{
+    PVTGSTRING pStr = (PVTGSTRING)RTStrSpaceGetN(&g_StrSpace, pch, cch);
+    if (pStr)
+        return pStr->szString;
+
+    /*
+     * Create a new entry.
+     */
+    pStr = (PVTGSTRING)RTMemAlloc(RT_OFFSETOF(VTGSTRING, szString[cch + 1]));
+    if (!pStr)
+        return NULL;
+
+    pStr->Core.pszString = pStr->szString;
+    memcpy(pStr->szString, pch, cch);
+    pStr->szString[cch]  = '\0';
+    pStr->offStrTab      = UINT32_MAX;
+
+    bool fRc = RTStrSpaceInsert(&g_StrSpace, &pStr->Core);
+    Assert(fRc); NOREF(fRc);
+    return pStr->szString;
+}
 
 
 static RTEXITCODE generateInvokeAssembler(const char *pszOutput, const char *pszTempAsm)
@@ -235,6 +282,24 @@ static ssize_t ScmStreamPrintf(PSCMSTREAM pStream, const char *pszFormat, ...)
 }
 
 
+/**
+ * @callback_method_impl{FNRTSTRSPACECALLBACK, Writes the string table strings.}
+ */
+static DECLCALLBACK(int) generateAssemblyStrTabCallback(PRTSTRSPACECORE pStr, void *pvUser)
+{
+    PVTGSTRING pVtgStr = (PVTGSTRING)pStr;
+    PSCMSTREAM pStrm   = (PSCMSTREAM)pvUser;
+
+    pVtgStr->offStrTab = g_offStrTab;
+    g_offStrTab += pVtgStr->Core.cchString + 1;
+
+    ScmStreamPrintf(pStrm,
+                    "    db '%s', 0 ; off=%u len=%zu\n",
+                    pVtgStr->szString, pVtgStr->offStrTab, pVtgStr->Core.cchString);
+    return VINF_SUCCESS;
+}
+
+
 static RTEXITCODE generateAssembly(PSCMSTREAM pStrm)
 {
     if (g_cVerbosity > 0)
@@ -251,8 +316,24 @@ static RTEXITCODE generateAssembly(PSCMSTREAM pStrm)
                     "\n"
                     "%include \"iprt/asmdefs.h\"\n"
                     "\n"
+                    "%ifdef ASM_FORMAT_OMF\n"
+                    " segment VTGObject public CLASS=VTGObject align=16 use32"
                     ,
                     g_pszScript);
+
+    /*
+     * Dump the string table to set the offsets before we use them anywhere.
+     */
+    ScmStreamPrintf(pStrm,
+                    ";\n"
+                    "; The string table.\n"
+                    ";\n"
+                    "BEGINDATA\n"
+                    "GLOBALNAME g_achVTGStringTable\n");
+    g_offStrTab = 0;
+    RTStrSpaceEnumerate(&g_StrSpace, generateAssemblyStrTabCallback, pStrm);
+    ScmStreamPrintf(pStrm,
+                    "GLOBALNAME g_achVTGStringTable_End\n");
 
     /*
      * Declare the probe enable flags.
@@ -290,7 +371,7 @@ static RTEXITCODE generateAssembly(PSCMSTREAM pStrm)
                     "; Prob data.\n"
                     ";\n"
                     "BEGINDATA\n"
-                    "GLOBALNAME g_aVTGProbeData\n"
+                    "GLOBALNAME g_abVTGProbeData\n"
                     "\n");
     RTListForEach(&g_ProviderHead, pProv, VTGPROVIDER, ListEntry)
     {
@@ -304,21 +385,7 @@ static RTEXITCODE generateAssembly(PSCMSTREAM pStrm)
             //                pProv->pszName, pProbe->pszName);
         }
     }
-    ScmStreamPrintf(pStrm, "GLOBALNAME g_aVTGProbeData_End\n");
-
-    /*
-     * Write the string table.
-     */
-    ScmStreamPrintf(pStrm,
-                    "\n"
-                    ";\n"
-                    "; String table.\n"
-                    ";\n"
-                    "BEGINDATA\n"
-                    "GLOBALNAME g_abVTGProbeStrings\n"
-                    "\n");
-    /** @todo  */
-    ScmStreamPrintf(pStrm, "GLOBALNAME g_abVTGProbeStrings_End\n");
+    ScmStreamPrintf(pStrm, "GLOBALNAME g_abVTGProbeData_End\n");
 
     return RTEXITCODE_SUCCESS;
 }
@@ -1060,7 +1127,7 @@ static RTEXITCODE parseProbe(PSCMSTREAM pStrm, PVTGPROVIDER pProv)
         return parseError(pStrm, 0, "Out of memory");
     RTListInit(&pProbe->ArgHead);
     RTListAppend(&pProv->ProbeHead, &pProbe->ListEntry);
-    pProbe->pszName = RTStrCacheEnterN(g_hStrCache, pszProbe, cchProbe);
+    pProbe->pszName = strtabInsertN(pszProbe, cchProbe);
     if (!pProbe->pszName)
         return parseError(pStrm, 0, "Out of memory");
 
@@ -1069,6 +1136,8 @@ static RTEXITCODE parseProbe(PSCMSTREAM pStrm, PVTGPROVIDER pProv)
      */
     PVTGARG pArg    = NULL;
     size_t  cchName = 0;
+    size_t  cchArg  = 0;
+    char    szArg[4096];
     for (;;)
     {
         ch = parseGetNextNonSpaceNonCommentCh(pStrm);
@@ -1082,10 +1151,12 @@ static RTEXITCODE parseProbe(PSCMSTREAM pStrm, PVTGPROVIDER pProv)
                 {
                     if (!cchName)
                         return parseError(pStrm, 1, "Argument has no name");
-                    char *pszName;
-                    pArg->pszName = pszName = strchr(pArg->pszType, '\0') - cchName;
-                    pszName[-1] = '\0';
+                    pArg->pszType = strtabInsertN(szArg, cchArg - cchName - 1);
+                    pArg->pszName = strtabInsertN(&szArg[cchArg - cchName], cchName);
+                    if (!pArg->pszType || !pArg->pszName)
+                        return parseError(pStrm, 1, "Out of memory");
                     pArg = NULL;
+                    cchName = cchArg = 0;
                 }
                 if (ch == ')')
                 {
@@ -1100,7 +1171,6 @@ static RTEXITCODE parseProbe(PSCMSTREAM pStrm, PVTGPROVIDER pProv)
 
             default:
             {
-                int         rc;
                 size_t      cchWord;
                 const char *pszWord = ScmStreamCGetWordM1(pStrm, &cchWord);
                 if (!pszWord)
@@ -1113,16 +1183,24 @@ static RTEXITCODE parseProbe(PSCMSTREAM pStrm, PVTGPROVIDER pProv)
                     RTListAppend(&pProbe->ArgHead, &pArg->ListEntry);
                     pProbe->cArgs++;
 
-                    rc = RTStrAAppendN(&pArg->pszType, pszWord, cchWord);
+                    if (cchWord + 1 > sizeof(szArg))
+                        return parseError(pStrm, 1, "Too long parameter declaration");
+                    memcpy(szArg, pszWord, cchWord);
+                    szArg[cchWord] = '\0';
+                    cchArg  = cchWord;
                     cchName = 0;
                 }
                 else
                 {
-                    rc = RTStrAAppendExN(&pArg->pszType, 2, RT_STR_TUPLE(" "), pszWord, cchWord);
+                    if (cchArg + 1 + cchWord + 1 > sizeof(szArg))
+                        return parseError(pStrm, 1, "Too long parameter declaration");
+
+                    szArg[cchArg++] = ' ';
+                    memcpy(&szArg[cchArg], pszWord, cchWord);
+                    cchArg += cchWord;
+                    szArg[cchArg] = '\0';
                     cchName = cchWord;
                 }
-                if (RT_FAILURE(rc))
-                    return parseError(pStrm, 1, "Out of memory");
                 break;
             }
 
@@ -1130,9 +1208,11 @@ static RTEXITCODE parseProbe(PSCMSTREAM pStrm, PVTGPROVIDER pProv)
             {
                 if (!pArg)
                     return parseError(pStrm, 1, "A parameter type does not start with an asterix");
-                int rc = RTStrAAppend(&pArg->pszType, " *");
-                if (RT_FAILURE(rc))
-                    return parseError(pStrm, 1, "Out of memory");
+                if (cchArg + sizeof(" *") >= sizeof(szArg))
+                    return parseError(pStrm, 1, "Too long parameter declaration");
+                szArg[cchArg++] = ' ';
+                szArg[cchArg++] = '*';
+                szArg[cchArg  ] = '\0';
                 cchName = 0;
                 break;
             }
@@ -1176,7 +1256,7 @@ static RTEXITCODE parseProvider(PSCMSTREAM pStrm)
         return parseError(pStrm, 0, "Out of memory");
     RTListInit(&pProv->ProbeHead);
     RTListAppend(&g_ProviderHead, &pProv->ListEntry);
-    pProv->pszName = RTStrCacheEnterN(g_hStrCache, pszName, cchName);
+    pProv->pszName = strtabInsertN(pszName, cchName);
     if (!pProv->pszName)
         return parseError(pStrm, 0, "Out of memory");
 
@@ -1466,22 +1546,17 @@ int main(int argc, char **argv)
         /*
          * Parse the script.
          */
-        rc = RTStrCacheCreate(&g_hStrCache, "VBoxTpG");
-        if (RT_SUCCESS(rc))
+        RTListInit(&g_ProviderHead);
+        rcExit = parseScript(g_pszScript);
+        if (rcExit == RTEXITCODE_SUCCESS)
         {
-            RTListInit(&g_ProviderHead);
-            rcExit = parseScript(g_pszScript);
-            if (rcExit == RTEXITCODE_SUCCESS)
-            {
-                /*
-                 * Take action.
-                 */
-                if (g_enmAction == kVBoxTpGAction_GenerateHeader)
-                    rcExit = generateHeader(g_pszOutput);
-                else
-                    rcExit = generateObject(g_pszOutput, g_pszTempAsm);
-            }
-            RTStrCacheDestroy(g_hStrCache);
+            /*
+             * Take action.
+             */
+            if (g_enmAction == kVBoxTpGAction_GenerateHeader)
+                rcExit = generateHeader(g_pszOutput);
+            else
+                rcExit = generateObject(g_pszOutput, g_pszTempAsm);
         }
     }
 
