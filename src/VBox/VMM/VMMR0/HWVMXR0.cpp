@@ -1716,6 +1716,17 @@ VMMR0DECL(int) VMXR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
         AssertRC(rc);
     }
 
+#if 0
+    /* Enable single stepping if requested and CPU supports it. */
+    if (pVM->hwaccm.s.vmx.msr.vmx_proc_ctls.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_MONITOR_TRAP_FLAG)
+        if (DBGFIsStepping(pVCpu))
+        {
+            pVCpu->hwaccm.s.vmx.proc_ctls |= VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_MONITOR_TRAP_FLAG;
+            rc = VMXWriteVMCS(VMX_VMCS_CTRL_PROC_EXEC_CONTROLS, pVCpu->hwaccm.s.vmx.proc_ctls);
+            AssertRC(rc);
+        }
+#endif
+
     if (pVCpu->hwaccm.s.fContextUseFlags & HWACCM_CHANGED_GUEST_CR3)
     {
         if (pVM->hwaccm.s.fNestedPaging)
@@ -4104,6 +4115,18 @@ ResumeExecution:
     case VMX_EXIT_RSM:                  /* 17 Guest software attempted to execute RSM in SMM. */
         AssertFailed(); /* can't happen. */
         rc = VERR_EM_INTERPRETER;
+        break;
+
+    case VMX_EXIT_MTF:                  /* 37 Exit due to Monitor Trap Flag. */
+        LogFlow(("VMX_EXIT_MTF at %RGv\n", (RTGCPTR)pCtx->rip));
+        pVCpu->hwaccm.s.vmx.proc_ctls &= ~VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_MONITOR_TRAP_FLAG;
+        rc2 = VMXWriteVMCS(VMX_VMCS_CTRL_PROC_EXEC_CONTROLS, pVCpu->hwaccm.s.vmx.proc_ctls);
+        AssertRC(rc2);
+        STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatExitMTF);
+#if 0
+        DBGFDoneStepping(pVCpu);
+#endif
+        rc = VINF_EM_DBG_STOP;
         break;
 
     case VMX_EXIT_VMCALL:               /* 18 Guest software executed VMCALL. */

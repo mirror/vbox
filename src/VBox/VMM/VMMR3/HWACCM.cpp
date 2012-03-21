@@ -95,7 +95,7 @@ static const char * const g_apszVTxExitReasons[MAX_EXITREASON_STAT] =
     EXIT_REASON(VMX_EXIT_ERR_MSR_LOAD       , 34, "VM-entry failure due to MSR loading."),
     EXIT_REASON_NIL(),
     EXIT_REASON(VMX_EXIT_MWAIT              , 36, "Guest software executed MWAIT."),
-    EXIT_REASON_NIL(),
+    EXIT_REASON(VMX_EXIT_MTF                , 37, "Monitor Trap Flag."),
     EXIT_REASON_NIL(),
     EXIT_REASON(VMX_EXIT_MONITOR            , 39, "Guest software attempted to execute MONITOR."),
     EXIT_REASON(VMX_EXIT_PAUSE              , 40, "Guest software attempted to execute PAUSE."),
@@ -526,6 +526,7 @@ static int hwaccmR3InitCPU(PVM pVM)
         HWACCM_REG_COUNTER(&pVCpu->hwaccm.s.StatExitIrqWindow,          "/HWACCM/CPU%d/Exit/IrqWindow");
         HWACCM_REG_COUNTER(&pVCpu->hwaccm.s.StatExitMaxResume,          "/HWACCM/CPU%d/Exit/MaxResume");
         HWACCM_REG_COUNTER(&pVCpu->hwaccm.s.StatExitPreemptPending,     "/HWACCM/CPU%d/Exit/PreemptPending");
+        HWACCM_REG_COUNTER(&pVCpu->hwaccm.s.StatExitMTF,                "/HWACCM/CPU%d/Exit/MonitorTrapFlag");
 
         HWACCM_REG_COUNTER(&pVCpu->hwaccm.s.StatSwitchGuestIrq,         "/HWACCM/CPU%d/Switch/IrqPending");
         HWACCM_REG_COUNTER(&pVCpu->hwaccm.s.StatSwitchToR3,             "/HWACCM/CPU%d/Switch/ToR3");
