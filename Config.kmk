@@ -3996,13 +3996,6 @@ ifdef VBOX_WITH_QTGUI
   endif
  endif
 
- ifdef VBOX_WITH_QT4_SUN
-  VBOX_QT4_INFIX=VBox
- endif
-
- VBOX_QT4_MOD = QtCore QtGui QtNetwork $(if $(VBOX_GUI_USE_QGL),QtOpenGL,)
- VBOX_QT4_MOD_NAMES = $(foreach qtmod,$(VBOX_QT4_MOD),$(qtmod)$(VBOX_QT4_INFIX))
-
  #
  # Handmade configuration of qt4 - very annoying, this needs to
  # be cleaned up properly later some time (not important now).
@@ -4019,7 +4012,7 @@ ifdef VBOX_WITH_QTGUI
    endif
   else if1of ($(KBUILD_TARGET), win)
    VBOX_PATH_QT4 ?= $(lastword $(sort $(wildcard $(PATH_DEVTOOLS_TRG)/qt/v4*)))
-  else if1of ($(KBUILD_TARGET), solaris)
+  else if1of ($(KBUILD_TARGET), linux solaris)
    VBOX_PATH_QT4 ?= $(lastword $(sort $(wildcard $(PATH_DEVTOOLS_TRG)/qt/v4*)))
    ifneq ($(VBOX_PATH_QT4),)
     VBOX_WITH_QT4_SUN = 1
@@ -4035,6 +4028,13 @@ ifdef VBOX_WITH_QTGUI
  endif
  VBOX_PATH_QT4            ?= /usr
  VBOX_PATH_QT4_LIB        ?= $(VBOX_PATH_QT4)/lib
+
+ ifdef VBOX_WITH_QT4_SUN
+  VBOX_QT4_INFIX=VBox
+ endif
+
+ VBOX_QT4_MOD = QtCore QtGui QtNetwork $(if $(VBOX_GUI_USE_QGL),QtOpenGL,)
+ VBOX_QT4_MOD_NAMES = $(foreach qtmod,$(VBOX_QT4_MOD),$(qtmod)$(VBOX_QT4_INFIX))
 
  # Hack LD_LIBRARY_PATH for stuff in tools.
  ifdef VBOX_WITH_QT4_SUN
