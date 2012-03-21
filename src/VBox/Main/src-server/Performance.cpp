@@ -489,12 +489,27 @@ int CollectorGuestManager::enqueueRequest(CollectorGuestRequest *aRequest)
      * It is very unlikely that we will get high frequency calls to configure
      * guest metrics collection, so we rely on this fact to detect blocked
      * guests. If the guest has not finished processing the previous request
-     * we consider it blocked.
+     * after half a second we consider it blocked.
      */
     if (aRequest->getGuest() && aRequest->getGuest() == mGuestBeingCalled)
     {
-        /* Request execution got stalled for this guest -- report an error */
-        return E_FAIL;
+        /* 
+         * Before we can declare a guest blocked we need to wait for a while
+         * and then check again as it may never had a chance to process
+         * the previous request. Half a second is an eternity for processes
+         * and is barely noticable by humans.
+         */
+        LogAleksey(("{%p} " LOG_FN_FMT ": Suspecting %s is stalled. Waiting for .5 sec...\n",
+                    this, __PRETTY_FUNCTION__,
+                    aRequest->getGuest()->getVMName().c_str()));
+        RTThreadSleep(500 /* ms */);
+        if (aRequest->getGuest() == mGuestBeingCalled) {
+            LogAleksey(("{%p} " LOG_FN_FMT ": Request processing stalled for %s\n",
+                        this, __PRETTY_FUNCTION__,
+                        aRequest->getGuest()->getVMName().c_str()));
+            /* Request execution got stalled for this guest -- report an error */
+            return E_FAIL;
+        }
     }
     mQueue.push(aRequest);
     return S_OK;
@@ -508,7 +523,7 @@ DECLCALLBACK(int) CollectorGuestManager::requestProcessingThread(RTTHREAD /* aTh
 
     HRESULT rc = S_OK;
 
-    LogAleksey(("{%p} " LOG_FN_FMT ": Starting request processing loop...p\n",
+    LogAleksey(("{%p} " LOG_FN_FMT ": Starting request processing loop...\n",
                 mgr, __PRETTY_FUNCTION__));
     while ((pReq = mgr->mQueue.pop()) != NULL)
     {
