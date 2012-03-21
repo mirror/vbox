@@ -39,6 +39,10 @@ typedef struct VBOXMP_COMMON
 
     uint32_t cbVRAM;                    /* The VRAM size. */
 
+    PHYSICAL_ADDRESS phVRAM;            /* Physical VRAM base. */
+
+    ULONG ulApertureSize;               /* Size of the LFB aperture (>= VRAM size). */
+
     uint32_t cbMiniportHeap;            /* The size of reserved VRAM for miniport driver heap.
                                          * It is at offset:
                                          *   cbAdapterMemorySize - VBOX_VIDEO_ADAPTER_INFORMATION_SIZE - cbMiniportHeap
@@ -127,8 +131,6 @@ typedef struct _VBOXMP_DEVEXT
                                                 */
            ULONG ulVbvaEnabled;                /* Indicates that VBVA mode is enabled. */
            ULONG ulMaxFrameBufferSize;         /* The size of the VRAM allocated for the a single framebuffer. */
-           PHYSICAL_ADDRESS physLFBBase;       /* Physical linear framebuffer base. */
-           ULONG ulApertureSize;               /* Size of the LFB aperture (>= VRAM size). */
            BOOLEAN fMouseHidden;               /* Has the mouse cursor been hidden by the guest? */
            VBOXMP_COMMON commonInfo;
 #ifdef VBOX_XPDM_MINIPORT

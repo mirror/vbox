@@ -608,11 +608,19 @@ static NTSTATUS vboxWddmChildStatusCheck(PVBOXMP_DEVEXT pDevExt, PVBOXWDDM_VIDEO
     return STATUS_SUCCESS;
 }
 
-NTSTATUS vboxWddmPickResources(PVBOXMP_DEVEXT pContext, PDXGK_DEVICE_INFO pDeviceInfo, PULONG pAdapterMemorySize)
+typedef struct VBOXWDDM_HWRESOURCES
+{
+    PHYSICAL_ADDRESS phVRAM;
+    ULONG cbVRAM;
+    ULONG ulApertureSize;
+} VBOXWDDM_HWRESOURCES, *PVBOXWDDM_HWRESOURCES;
+
+NTSTATUS vboxWddmPickResources(PVBOXMP_DEVEXT pDevExt, PDXGK_DEVICE_INFO pDeviceInfo, PVBOXWDDM_HWRESOURCES pHwResources)
 {
     NTSTATUS Status = STATUS_SUCCESS;
     USHORT DispiId;
-    *pAdapterMemorySize = VBE_DISPI_TOTAL_VIDEO_MEMORY_BYTES;
+    memset(pHwResources, 0, sizeof (*pHwResources));
+    pHwResources->cbVRAM = VBE_DISPI_TOTAL_VIDEO_MEMORY_BYTES;
 
     VBoxVideoCmnPortWriteUshort(VBE_DISPI_IOPORT_INDEX, VBE_DISPI_INDEX_ID);
     VBoxVideoCmnPortWriteUshort(VBE_DISPI_IOPORT_DATA, VBE_DISPI_ID2);
@@ -629,7 +637,7 @@ NTSTATUS vboxWddmPickResources(PVBOXMP_DEVEXT pContext, PDXGK_DEVICE_INFO pDevic
         * Query the adapter's memory size. It's a bit of a hack, we just read
         * an ULONG from the data port without setting an index before.
         */
-       *pAdapterMemorySize = VBoxVideoCmnPortReadUlong(VBE_DISPI_IOPORT_DATA);
+       pHwResources->cbVRAM = VBoxVideoCmnPortReadUlong(VBE_DISPI_IOPORT_DATA);
        if (VBoxHGSMIIsSupported ())
        {
            PCM_RESOURCE_LIST pRcList = pDeviceInfo->TranslatedResourceList;
@@ -647,6 +655,12 @@ NTSTATUS vboxWddmPickResources(PVBOXMP_DEVEXT pContext, PDXGK_DEVICE_INFO pDevic
                        case CmResourceTypeInterrupt:
                            break;
                        case CmResourceTypeMemory:
+                           /* we assume there is one memory segment */
+                           Assert(pHwResources->phVRAM.QuadPart == 0);
+                           pHwResources->phVRAM = pPRc->u.Memory.Start;
+                           Assert(pHwResources->phVRAM.QuadPart != 0);
+                           pHwResources->ulApertureSize = pPRc->u.Memory.Length;
+                           Assert(pHwResources->cbVRAM <= pHwResources->ulApertureSize);
                            break;
                        case CmResourceTypeDma:
                            break;
@@ -906,21 +920,21 @@ NTSTATUS DxgkDdiStartDevice(
         ARGUMENT_PRESENT(NumberOfChildren)
         )
     {
-        PVBOXMP_DEVEXT pContext = (PVBOXMP_DEVEXT)MiniportDeviceContext;
+        PVBOXMP_DEVEXT pDevExt = (PVBOXMP_DEVEXT)MiniportDeviceContext;
 
-        vboxWddmVGuidGet(pContext);
+        vboxWddmVGuidGet(pDevExt);
 
         /* Save DeviceHandle and function pointers supplied by the DXGKRNL_INTERFACE structure passed to DxgkInterface. */
-        memcpy(&pContext->u.primary.DxgkInterface, DxgkInterface, sizeof (DXGKRNL_INTERFACE));
+        memcpy(&pDevExt->u.primary.DxgkInterface, DxgkInterface, sizeof (DXGKRNL_INTERFACE));
 
         /* Allocate a DXGK_DEVICE_INFO structure, and call DxgkCbGetDeviceInformation to fill in the members of that structure, which include the registry path, the PDO, and a list of translated resources for the display adapter represented by MiniportDeviceContext. Save selected members (ones that the display miniport driver will need later)
          * of the DXGK_DEVICE_INFO structure in the context block represented by MiniportDeviceContext. */
         DXGK_DEVICE_INFO DeviceInfo;
-        Status = pContext->u.primary.DxgkInterface.DxgkCbGetDeviceInformation (pContext->u.primary.DxgkInterface.DeviceHandle, &DeviceInfo);
+        Status = pDevExt->u.primary.DxgkInterface.DxgkCbGetDeviceInformation (pDevExt->u.primary.DxgkInterface.DeviceHandle, &DeviceInfo);
         if (Status == STATUS_SUCCESS)
         {
-            ULONG AdapterMemorySize;
-            Status = vboxWddmPickResources(pContext, &DeviceInfo, &AdapterMemorySize);
+            VBOXWDDM_HWRESOURCES HwRc;
+            Status = vboxWddmPickResources(pDevExt, &DeviceInfo, &HwRc);
             if (Status == STATUS_SUCCESS)
             {
                 /* Initialize VBoxGuest library, which is used for requests which go through VMMDev. */
@@ -930,37 +944,37 @@ NTSTATUS DxgkDdiStartDevice(
                  * The host will however support both old and new interface to keep compatibility
                  * with old guest additions.
                  */
-                VBoxSetupDisplaysHGSMI(VBoxCommonFromDeviceExt(pContext),
-                                       AdapterMemorySize,
+                VBoxSetupDisplaysHGSMI(VBoxCommonFromDeviceExt(pDevExt),
+                                       HwRc.phVRAM, HwRc.ulApertureSize, HwRc.cbVRAM,
                                        VBVACAPS_COMPLETEGCMD_BY_IOREAD | VBVACAPS_IRQ);
-                if (VBoxCommonFromDeviceExt(pContext)->bHGSMI)
+                if (VBoxCommonFromDeviceExt(pDevExt)->bHGSMI)
                 {
-                    vboxWddmSetupDisplays(pContext);
-                    if (!VBoxCommonFromDeviceExt(pContext)->bHGSMI)
-                        VBoxFreeDisplaysHGSMI(VBoxCommonFromDeviceExt(pContext));
+                    vboxWddmSetupDisplays(pDevExt);
+                    if (!VBoxCommonFromDeviceExt(pDevExt)->bHGSMI)
+                        VBoxFreeDisplaysHGSMI(VBoxCommonFromDeviceExt(pDevExt));
                 }
-                if (VBoxCommonFromDeviceExt(pContext)->bHGSMI)
+                if (VBoxCommonFromDeviceExt(pDevExt)->bHGSMI)
                 {
                     LOGREL(("using HGSMI"));
-                    *NumberOfVideoPresentSources = VBoxCommonFromDeviceExt(pContext)->cDisplays;
-                    *NumberOfChildren = VBoxCommonFromDeviceExt(pContext)->cDisplays;
+                    *NumberOfVideoPresentSources = VBoxCommonFromDeviceExt(pDevExt)->cDisplays;
+                    *NumberOfChildren = VBoxCommonFromDeviceExt(pDevExt)->cDisplays;
                     LOG(("sources(%d), children(%d)", *NumberOfVideoPresentSources, *NumberOfChildren));
 
-                    vboxVdmaDdiNodesInit(pContext);
-                    vboxVideoCmInit(&pContext->CmMgr);
-                    InitializeListHead(&pContext->SwapchainList3D);
-                    pContext->cContexts3D = 0;
-                    ExInitializeFastMutex(&pContext->ContextMutex);
-                    KeInitializeSpinLock(&pContext->SynchLock);
+                    vboxVdmaDdiNodesInit(pDevExt);
+                    vboxVideoCmInit(&pDevExt->CmMgr);
+                    InitializeListHead(&pDevExt->SwapchainList3D);
+                    pDevExt->cContexts3D = 0;
+                    ExInitializeFastMutex(&pDevExt->ContextMutex);
+                    KeInitializeSpinLock(&pDevExt->SynchLock);
 
-                    VBoxMPCmnInitCustomVideoModes(pContext);
-                    VBoxWddmInvalidateVideoModesInfo(pContext);
+                    VBoxMPCmnInitCustomVideoModes(pDevExt);
+                    VBoxWddmInvalidateVideoModesInfo(pDevExt);
 #if 0
-                    vboxShRcTreeInit(pContext);
+                    vboxShRcTreeInit(pDevExt);
 #endif
 
 #ifdef VBOX_WITH_VIDEOHWACCEL
-                    vboxVhwaInit(pContext);
+                    vboxVhwaInit(pDevExt);
 #endif
                 }
                 else
@@ -1566,7 +1580,7 @@ NTSTATUS APIENTRY DxgkDdiQueryAdapterInfo(
 
     LOGF(("ENTER, context(0x%x), Query type (%d)", hAdapter, pQueryAdapterInfo->Type));
     NTSTATUS Status = STATUS_SUCCESS;
-    PVBOXMP_DEVEXT pContext = (PVBOXMP_DEVEXT)hAdapter;
+    PVBOXMP_DEVEXT pDevExt = (PVBOXMP_DEVEXT)hAdapter;
 
     vboxVDbgBreakFv();
 
@@ -1586,10 +1600,10 @@ NTSTATUS APIENTRY DxgkDdiQueryAdapterInfo(
             pCaps->NumberOfSwizzlingRanges = 0;
             pCaps->MaxOverlays = 0;
 #ifdef VBOX_WITH_VIDEOHWACCEL
-            for (int i = 0; i < VBoxCommonFromDeviceExt(pContext)->cDisplays; ++i)
+            for (int i = 0; i < VBoxCommonFromDeviceExt(pDevExt)->cDisplays; ++i)
             {
-                if ( pContext->aSources[i].Vhwa.Settings.fFlags & VBOXVHWA_F_ENABLED)
-                    pCaps->MaxOverlays += pContext->aSources[i].Vhwa.Settings.cOverlaysSupported;
+                if ( pDevExt->aSources[i].Vhwa.Settings.fFlags & VBOXVHWA_F_ENABLED)
+                    pCaps->MaxOverlays += pDevExt->aSources[i].Vhwa.Settings.cOverlaysSupported;
             }
 #endif
             pCaps->GammaRampCaps.Value = 0;
@@ -1638,11 +1652,11 @@ NTSTATUS APIENTRY DxgkDdiQueryAdapterInfo(
             {
                 DXGK_SEGMENTDESCRIPTOR* pDr = pQsOut->pSegmentDescriptor;
                 /* we are requested to provide segment information */
-                pDr->BaseAddress.QuadPart = 0; /* VBE_DISPI_LFB_PHYSICAL_ADDRESS; */
-                pDr->CpuTranslatedAddress.QuadPart = VBE_DISPI_LFB_PHYSICAL_ADDRESS;
+                pDr->BaseAddress.QuadPart = 0;
+                pDr->CpuTranslatedAddress = VBoxCommonFromDeviceExt(pDevExt)->phVRAM;
                 /* make sure the size is page aligned */
                 /* @todo: need to setup VBVA buffers and adjust the mem size here */
-                pDr->Size = vboxWddmVramCpuVisibleSegmentSize(pContext);
+                pDr->Size = vboxWddmVramCpuVisibleSegmentSize(pDevExt);
                 pDr->NbOfBanks = 0;
                 pDr->pBankRangeTable = 0;
                 pDr->CommitLimit = pDr->Size;
@@ -1655,7 +1669,7 @@ NTSTATUS APIENTRY DxgkDdiQueryAdapterInfo(
                 pDr->CpuTranslatedAddress.QuadPart = 0;
                 /* make sure the size is page aligned */
                 /* @todo: need to setup VBVA buffers and adjust the mem size here */
-                pDr->Size = vboxWddmVramCpuInvisibleSegmentSize(pContext);
+                pDr->Size = vboxWddmVramCpuInvisibleSegmentSize(pDevExt);
                 pDr->NbOfBanks = 0;
                 pDr->pBankRangeTable = 0;
                 pDr->CommitLimit = pDr->Size;
@@ -1675,11 +1689,11 @@ NTSTATUS APIENTRY DxgkDdiQueryAdapterInfo(
                 VBOXWDDM_QI * pQi = (VBOXWDDM_QI*)pQueryAdapterInfo->pOutputData;
                 memset (pQi, 0, sizeof (VBOXWDDM_QI));
                 pQi->u32Version = VBOXVIDEOIF_VERSION;
-                pQi->cInfos = VBoxCommonFromDeviceExt(pContext)->cDisplays;
+                pQi->cInfos = VBoxCommonFromDeviceExt(pDevExt)->cDisplays;
 #ifdef VBOX_WITH_VIDEOHWACCEL
-                for (int i = 0; i < VBoxCommonFromDeviceExt(pContext)->cDisplays; ++i)
+                for (int i = 0; i < VBoxCommonFromDeviceExt(pDevExt)->cDisplays; ++i)
                 {
-                    pQi->aInfos[i] = pContext->aSources[i].Vhwa.Settings;
+                    pQi->aInfos[i] = pDevExt->aSources[i].Vhwa.Settings;
                 }
 #endif
             }
@@ -1711,7 +1725,7 @@ NTSTATUS APIENTRY DxgkDdiCreateDevice(
 
     LOGF(("ENTER, context(0x%x)", hAdapter));
     NTSTATUS Status = STATUS_SUCCESS;
-    PVBOXMP_DEVEXT pContext = (PVBOXMP_DEVEXT)hAdapter;
+    PVBOXMP_DEVEXT pDevExt = (PVBOXMP_DEVEXT)hAdapter;
 
     vboxVDbgBreakFv();
 
@@ -1725,7 +1739,7 @@ NTSTATUS APIENTRY DxgkDdiCreateDevice(
 //        LOGREL(("we do not support custom devices for now, hAdapter (0x%x)", hAdapter));
 //    }
 
-    pDevice->pAdapter = pContext;
+    pDevice->pAdapter = pDevExt;
     pDevice->hDevice = pCreateDevice->hDevice;
 
     pCreateDevice->hDevice = pDevice;
