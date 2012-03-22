@@ -67,7 +67,8 @@
 #define IDX_ParseImmZ               37
 #define IDX_ParseThreeByteEsc4      38
 #define IDX_ParseThreeByteEsc5      39
-#define IDX_ParseMax                (IDX_ParseThreeByteEsc5+1)
+#define IDX_ParseImmAddrF           40
+#define IDX_ParseMax                (IDX_ParseImmAddrF+1)
 
 #if defined(IN_RING0) || defined(IN_RC)
 #define DIS_THROW(a)                /* Not available. */
@@ -105,6 +106,8 @@ unsigned ParseImmZ_SizeOnly(RTUINTPTR pu8CodeBlock, PCOPCODE pOp, POP_PARAMETER 
 
 unsigned ParseImmAddr(RTUINTPTR pu8CodeBlock, PCOPCODE pOp, POP_PARAMETER pParam, PDISCPUSTATE pCpu);
 unsigned ParseImmAddr_SizeOnly(RTUINTPTR pu8CodeBlock, PCOPCODE pOp, POP_PARAMETER pParam, PDISCPUSTATE pCpu);
+unsigned ParseImmAddrF(RTUINTPTR pu8CodeBlock, PCOPCODE pOp, POP_PARAMETER pParam, PDISCPUSTATE pCpu);
+unsigned ParseImmAddrF_SizeOnly(RTUINTPTR pu8CodeBlock, PCOPCODE pOp, POP_PARAMETER pParam, PDISCPUSTATE pCpu);
 unsigned ParseFixedReg(RTUINTPTR pu8CodeBlock, PCOPCODE pOp, POP_PARAMETER pParam, PDISCPUSTATE pCpu);
 unsigned ParseImmUlong(RTUINTPTR pu8CodeBlock, PCOPCODE pOp, POP_PARAMETER pParam, PDISCPUSTATE pCpu);
 unsigned ParseImmUlong_SizeOnly(RTUINTPTR pu8CodeBlock, PCOPCODE pOp, POP_PARAMETER pParam, PDISCPUSTATE pCpu);
