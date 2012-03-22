@@ -1367,7 +1367,7 @@ int Guest::executeStreamDrain(ULONG aPID, ULONG aFlags, GuestProcessStream &stre
         HRESULT hr = getProcessOutputInternal(aPID, aFlags,
                                               0 /* Infinite timeout */,
                                               _64K, ComSafeArrayAsOutParam(aData), &rc);
-        if (SUCCEEDED(hr))
+        if (RT_SUCCESS(rc))
         {
             if (aData.size())
             {
@@ -1858,6 +1858,8 @@ HRESULT Guest::executeProcessInternal(IN_BSTR aCommand, ULONG aFlags,
     catch (std::bad_alloc &)
     {
         rc = E_OUTOFMEMORY;
+        if (pRC)
+            *pRC = VERR_NO_MEMORY;
     }
     return rc;
 }
@@ -2107,8 +2109,8 @@ HRESULT Guest::getProcessOutputInternal(ULONG aPID, ULONG aFlags, ULONG aTimeout
             /* If the process is still in the process table but does not run anymore
              * don't remove it but report back an appropriate error. */
             vrc = VERR_BROKEN_PIPE;
-            rc = setError(VBOX_E_IPRT_ERROR,
-                          Guest::tr("Guest process (PID %u) does not run anymore"), aPID);
+            /* Not getting any output is fine, so don't report an API error (rc)
+             * and only signal something through internal error code (vrc). */
         }
 
         if (RT_SUCCESS(vrc))
@@ -2270,6 +2272,8 @@ HRESULT Guest::getProcessOutputInternal(ULONG aPID, ULONG aFlags, ULONG aTimeout
     catch (std::bad_alloc &)
     {
         rc = E_OUTOFMEMORY;
+        if (pRC)
+            *pRC = VERR_NO_MEMORY;
     }
     return rc;
 #endif
