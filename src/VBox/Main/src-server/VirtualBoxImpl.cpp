@@ -1651,7 +1651,7 @@ STDMETHODIMP VirtualBox::GetMachineStates(ComSafeArrayIn(IMachine *, aMachines),
         if (!pMachine.isNull())
         {
             HRESULT rc = pMachine->COMGETTER(State)(&state);
-            if (rc = E_ACCESSDENIED)
+            if (rc == E_ACCESSDENIED)
                 rc = S_OK;
             AssertComRC(rc);
         }
