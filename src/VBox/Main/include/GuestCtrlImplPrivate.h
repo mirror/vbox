@@ -169,10 +169,11 @@ public:
 
     static int taskThread(RTTHREAD aThread, void *pvUser);
     static int uploadProgress(unsigned uPercent, void *pvUser);
-    static HRESULT setProgressErrorInfo(HRESULT hr,
-                                        ComObjPtr<Progress> pProgress, const char * pszText, ...);
-    static HRESULT setProgressErrorInfo(HRESULT hr,
-                                        ComObjPtr<Progress> pProgress, ComObjPtr<Guest> pGuest);
+    static HRESULT setProgressSuccess(ComObjPtr<Progress> pProgress);
+    static HRESULT setProgressErrorMsg(HRESULT hr,
+                                       ComObjPtr<Progress> pProgress, const char * pszText, ...);
+    static HRESULT setProgressErrorParent(HRESULT hr,
+                                          ComObjPtr<Progress> pProgress, ComObjPtr<Guest> pGuest);
 
     TaskType taskType;
     ComObjPtr<Guest> pGuest;
