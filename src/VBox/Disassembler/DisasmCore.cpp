@@ -376,7 +376,7 @@ static int disCoreOne(PDISCPUSTATE pCpu, RTUINTPTR InstructionAddr, unsigned *pc
             unsigned uIdx = iByte;
             iByte += sizeof(uint8_t); //first opcode byte
 
-            pCpu->opaddr = InstructionAddr + uIdx;
+            pCpu->opaddr = InstructionAddr;
             pCpu->opcode = codebyte;
 
             cbInc = ParseInstruction(InstructionAddr + iByte, &paOneByteMap[pCpu->opcode], pCpu);
