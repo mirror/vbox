@@ -349,7 +349,7 @@ HRESULT Guest::taskCopyFileToGuest(GuestTask *aTask)
 
                             cbTransferedTotal += uBytesWritten;
                             Assert(cbTransferedTotal <= cbSize);
-                            aTask->pProgress->SetCurrentOperationProgress(cbTransferedTotal / (cbSize / 100.0));
+                            aTask->pProgress->SetCurrentOperationProgress((ULONG)(cbTransferedTotal / (cbSize / 100.0)));
 
                             /* End of file reached? */
                             if (cbToRead == 0)
@@ -961,7 +961,7 @@ HRESULT Guest::taskUpdateGuestAdditions(GuestTask *aTask)
                     if (aTask->uFlags & AdditionsUpdateFlag_WaitForUpdateStartOnly)
                     {
                         rc = GuestTask::setProgressSuccess(aTask->pProgress);
-                        ComAssertRC(rc);
+                        AssertComRC(rc);
                     }
                     else
                         aTask->pProgress->SetCurrentOperationProgress(70);
