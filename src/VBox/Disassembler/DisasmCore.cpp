@@ -110,7 +110,8 @@ PFNDISPARSE  pfnFullDisasm[IDX_ParseMax] =
     ParseImmByteSX,
     ParseImmZ,
     ParseThreeByteEsc4,
-    ParseThreeByteEsc5
+    ParseThreeByteEsc5,
+    ParseImmAddrF
 };
 
 PFNDISPARSE  pfnCalcSize[IDX_ParseMax] =
@@ -154,7 +155,8 @@ PFNDISPARSE  pfnCalcSize[IDX_ParseMax] =
     ParseImmByteSX_SizeOnly,
     ParseImmZ_SizeOnly,
     ParseThreeByteEsc4,
-    ParseThreeByteEsc5
+    ParseThreeByteEsc5,
+    ParseImmAddrF_SizeOnly
 };
 
 /**
@@ -1574,6 +1576,55 @@ unsigned ParseImmAddr_SizeOnly(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAME
         {// near 16 bits pointer
             return sizeof(uint16_t);
         }
+    }
+}
+//*****************************************************************************
+//*****************************************************************************
+unsigned ParseImmAddrF(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pParam, PDISCPUSTATE pCpu)
+{
+    disasmGetPtrString(pCpu, pOp, pParam);
+    // immediate far pointers - only 16:16 or 16:32; determined by operand, *not* address size!
+    Assert(pCpu->opmode == CPUMODE_16BIT || pCpu->opmode == CPUMODE_32BIT);
+    Assert(OP_PARM_VSUBTYPE(pParam->param) == OP_PARM_p);
+    if (pCpu->opmode == CPUMODE_32BIT)
+    {
+        // far 16:32 pointer
+        pParam->parval = DISReadDWord(pCpu, lpszCodeBlock);
+        *((uint32_t*)&pParam->parval+1) = DISReadWord(pCpu, lpszCodeBlock+sizeof(uint32_t));
+        pParam->flags  |= USE_IMMEDIATE_ADDR_16_32;
+        pParam->size   = sizeof(uint16_t) + sizeof(uint32_t);
+
+        disasmAddStringF2(pParam->szParam, "0%04X:0%08Xh", (uint32_t)(pParam->parval>>32), (uint32_t)pParam->parval);
+        return sizeof(uint32_t) + sizeof(uint16_t);
+    }
+    else
+    {
+        // far 16:16 pointer
+        pParam->parval = DISReadDWord(pCpu, lpszCodeBlock);
+        pParam->flags |= USE_IMMEDIATE_ADDR_16_16;
+        pParam->size   = 2*sizeof(uint16_t);
+
+        disasmAddStringF2(pParam->szParam, "0%04X:0%04Xh", (uint32_t)(pParam->parval>>16), (uint16_t)pParam->parval );
+        return sizeof(uint32_t);
+    }
+}
+//*****************************************************************************
+//*****************************************************************************
+unsigned ParseImmAddrF_SizeOnly(RTUINTPTR lpszCodeBlock, PCOPCODE pOp, POP_PARAMETER pParam, PDISCPUSTATE pCpu)
+{
+    NOREF(lpszCodeBlock); NOREF(pOp);
+    // immediate far pointers - only 16:16 or 16:32
+    Assert(pCpu->opmode == CPUMODE_16BIT || pCpu->opmode == CPUMODE_32BIT);
+    Assert(OP_PARM_VSUBTYPE(pParam->param) == OP_PARM_p);
+    if (pCpu->opmode == CPUMODE_32BIT)
+    {
+        // far 16:32 pointer
+        return sizeof(uint32_t) + sizeof(uint16_t);
+    }
+    else
+    {
+        // far 16:16 pointer
+        return sizeof(uint32_t);
     }
 }
 //*****************************************************************************
