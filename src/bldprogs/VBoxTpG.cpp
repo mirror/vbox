@@ -168,12 +168,12 @@ static const char           g_szAssemblerFmtVal32[]     = "obj";
 static const char           g_szAssemblerFmtVal64[]     = "elf64";
 #elif defined(RT_OS_WINDOWS)
 static const char          *g_pszAssembler              = "yasm.exe";
-static const char          *g_pszAssemblerFmtOpt        = "--oformat";
+static const char          *g_pszAssemblerFmtOpt        = "-f";
 static const char           g_szAssemblerFmtVal32[]     = "win32";
 static const char           g_szAssemblerFmtVal64[]     = "win64";
 #else
 static const char          *g_pszAssembler              = "yasm";
-static const char          *g_pszAssemblerFmtOpt        = "--oformat";
+static const char          *g_pszAssemblerFmtOpt        = "-f";
 static const char           g_szAssemblerFmtVal32[]     = "elf32";
 static const char           g_szAssemblerFmtVal64[]     = "elf64";
 #endif
@@ -457,7 +457,11 @@ static RTEXITCODE generateAssembly(PSCMSTREAM pStrm)
                     "\n"
                     "\n"
                     ";"
-                    "; Put all the data in a dedicated section / segment."
+                    "; We put all the data in a dedicated section / segment.\n"
+                    ";\n"
+                    "; In order to find the probe location specifiers, we do the necessary\n"
+                    "; trickery here, ASSUMING that this object comes in first in the link\n"
+                    "; editing process.\n"
                     ";\n"
                     "%%ifdef ASM_FORMAT_OMF\n"
                     " segment VTG.Obj public CLASS=DATA align=4096 use32\n"
@@ -466,7 +470,23 @@ static RTEXITCODE generateAssembly(PSCMSTREAM pStrm)
                     " [section .data]\n"
                     "%%elifdef ASM_FORMAT_PE\n"
                     " [section VTGObj align=4096]\n"
+                    "\n"
                     "%%elifdef ASM_FORMAT_ELF\n"
+                    " [section .VTGPrLc.Start progbits alloc noexec write align=1]\n"
+                    "    dd              42\n"    
+                    "    dd              42\n"    
+                    "    RTCCPTR_DEF     42\n"    
+                    "    RTCCPTR_DEF     42\n"    
+                    "    RTCCPTR_DEF     42\n"    
+                    "GLOBALNAME g_aVTGPrLc\n"
+                    " [section .VTGPrLc progbits alloc noexec write align=1]\n"
+                    " [section .VTGPrLc.End progbits alloc noexec write align=1]\n"
+                    "GLOBALNAME g_aVTGPrLc_End\n"
+                    "    dd              0xdeadbeef\n"    
+                    "    dd              0xdeadbeef\n"    
+                    "    RTCCPTR_DEF     0xdeadbeef\n"    
+                    "    RTCCPTR_DEF     0xdeadbeef\n"    
+                    "    RTCCPTR_DEF     0xdeadbeef\n"    
                     " [section .VTGObj progbits alloc noexec write align=4096]\n"
                     "%%else\n"
                     " %%error \"ASM_FORMAT_XXX is not defined\"\n"
@@ -484,6 +504,8 @@ static RTEXITCODE generateAssembly(PSCMSTREAM pStrm)
                     "    RTCCPTR_DEF g_achVTGStringTable_End - g_achVTGStringTable\n"
                     "    RTCCPTR_DEF g_aVTGArgLists\n"
                     "    RTCCPTR_DEF g_aVTGArgLists_End      - g_aVTGArgLists\n"
+                    "    RTCCPTR_DEF g_aVTGPrLc\n"
+                    "    RTCCPTR_DEF g_aVTGPrLc_End ; cross section/segment size not possible\n"
                     "    RTCCPTR_DEF 0\n"
                     "    RTCCPTR_DEF 0\n"
                     "    RTCCPTR_DEF 0\n"
@@ -847,7 +869,7 @@ static RTEXITCODE generateHeaderInner(PSCMSTREAM pStrm)
                     "# ifdef RT_OS_DARWIN\n"
                     "#  define DECL_DATA_SECT(scope, type, name, sect) scope type __attribute__((section(#sect \",\" #sect))) name\n"
                     "# else\n"
-                    "#  define DECL_DATA_SECT(scope, type, name, sect) scope type __attribute__((section(#sect))) name\n"
+                    "#  define DECL_DATA_SECT(scope, type, name, sect) scope type __attribute__((section(\".\" #sect))) name\n"
                     "# endif\n"
                     "#else\n"
                     "# error portme\n"
@@ -927,8 +949,8 @@ static RTEXITCODE generateHeaderInner(PSCMSTREAM pStrm)
             RTListForEach(&pProbe->ArgHead, pArg, VTGARG, ListEntry)
             {
                 ScmStreamPrintf(pStrm,
-                                "        AssertCompile(sizeof(%s) <= sizeof(uintptr_t));\n"
-                                "        AssertCompile(sizeof(%s) <= sizeof(uintptr_t));\n",
+                                "        AssertCompile(sizeof(%s) <= sizeof(uintptr_t)); \\\n"
+                                "        AssertCompile(sizeof(%s) <= sizeof(uintptr_t)); \\\n",
                                 pArg->pszName,
                                 pArg->pszType);
             }
