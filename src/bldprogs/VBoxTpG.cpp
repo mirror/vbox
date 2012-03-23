@@ -187,6 +187,8 @@ static const char          *g_pszAssemblerIncVal        = __FILE__ "/../../../in
 static const char          *g_pszAssemblerOutputOpt     = "-o";
 static unsigned             g_cAssemblerOptions         = 0;
 static const char          *g_apszAssemblerOptions[32];
+static const char          *g_pszProbeFnName            = "SUPR0FireProbe";
+static bool                 g_fProbeFnImported          = true;
 /** @} */
 
 
@@ -723,8 +725,9 @@ static RTEXITCODE generateAssembly(PSCMSTREAM pStrm)
                     "; Prob stubs.\n"
                     ";\n"
                     "BEGINCODE\n"
-                    "extern IMPNAME(SUPR0FireProbe)\n" /** @todo VBoxDrv may eventually need special handling wrt importing. */
-                    );
+                    "extern %sNAME(%s)\n", 
+                    g_fProbeFnImported ? "IMP" : "",
+                    g_pszProbeFnName);
     RTListForEach(&g_ProviderHead, pProvider, VTGPROVIDER, ListEntry)
     {
         RTListForEach(&pProvider->ProbeHead, pProbe, VTGPROBE, ListEntry)
@@ -771,25 +774,36 @@ static RTEXITCODE generateAssembly(PSCMSTREAM pStrm)
                 ScmStreamPrintf(pStrm, "int3\n");
             }
             else if (g_cBits == 32)
-            {
-                /** @todo Check that none of the first 5 arguments are larger than pointer or
-                 *        32-bit!! */
-                ScmStreamPrintf(pStrm,
+                /* Assumes the size of the arguments are no larger than a
+                   pointer.  This is asserted in the header. */
+                ScmStreamPrintf(pStrm, g_fProbeFnImported ? 
                                 "        mov     edx, [eax + 4]     ; idProbe\n"
-                                "        mov     ecx, IMP(SUPR0FireProbe)\n"
+                                "        mov     ecx, IMP(%s)\n"
                                 "        mov     [esp + 4], edx     ; Replace pVTGProbeLoc with idProbe.\n"
-                                "        jmp     ecx\n");
-            }
+                                "        jmp     ecx\n"
+                                :
+                                "        mov     edx, [eax + 4]     ; idProbe\n"
+                                "        mov     [esp + 4], edx     ; Replace pVTGProbeLoc with idProbe.\n"
+                                "        jmp     NAME(%s)\n"
+                                , g_pszProbeFnName);
             else if (fWin64)
-                ScmStreamPrintf(pStrm,
-                                "        mov     rax, IMP(SUPR0FireProbe) wrt RIP\n"
+                ScmStreamPrintf(pStrm, g_fProbeFnImported ? 
+                                "        mov     rax, IMP(%s) wrt RIP\n"
                                 "        mov     ecx, [rcx + 4]     ; idProbe replaces pVTGProbeLoc.\n"
-                                "        jmp     rax\n");
+                                "        jmp     rax\n"
+                                :
+                                "        mov     ecx, [rcx + 4]     ; idProbe replaces pVTGProbeLoc.\n"
+                                "        jmp     NAME(SUPR0FireProbe)\n"
+                                , g_pszProbeFnName);
             else
-                ScmStreamPrintf(pStrm,
-                                "        lea     rax, [IMP(SUPR0FireProbe) wrt RIP]\n" //??? macho64?
+                ScmStreamPrintf(pStrm, g_fProbeFnImported ?
+                                "        lea     rax, [IMP(%s) wrt RIP]\n" //??? macho64?
                                 "        mov     edi, [rdi + 4]     ; idProbe replaces pVTGProbeLoc.\n"
-                                "        jmp     rax\n");
+                                "        jmp     rax\n"
+                                :
+                                "        mov     edi, [rdi + 4]     ; idProbe replaces pVTGProbeLoc.\n"
+                                "        jmp     NAME(SUPR0FireProbe)\n"
+                                , g_pszProbeFnName);
 
             ScmStreamPrintf(pStrm,
                             ".return:\n"
@@ -1815,6 +1829,8 @@ static RTEXITCODE parseArguments(int argc,  char **argv)
         kVBoxTpGOpt_AssemblerFmtVal,
         kVBoxTpGOpt_AssemblerOutputOpt,
         kVBoxTpGOpt_AssemblerOption,
+        kVBoxTpGOpt_ProbeFnName,
+        kVBoxTpGOpt_ProbeFnImported,
         kVBoxTpGOpt_End
     };
 
@@ -1835,6 +1851,8 @@ static RTEXITCODE parseArguments(int argc,  char **argv)
         { "--assembler-fmt-val",                kVBoxTpGOpt_AssemblerFmtVal,            RTGETOPT_REQ_STRING  },
         { "--assembler-output-opt",             kVBoxTpGOpt_AssemblerOutputOpt,         RTGETOPT_REQ_STRING  },
         { "--assembler-option",                 kVBoxTpGOpt_AssemblerOption,            RTGETOPT_REQ_STRING  },
+        { "--probe-fn-name",                    kVBoxTpGOpt_ProbeFnName,                RTGETOPT_REQ_STRING  },
+        { "--probe-fn-imported",                kVBoxTpGOpt_ProbeFnImported,            RTGETOPT_REQ_BOOL    },
     };
 
     RTGETOPTUNION   ValueUnion;
@@ -1931,7 +1949,7 @@ static RTEXITCODE parseArguments(int argc,  char **argv)
 
 
             /*
-             * Out options.
+             * Our options.
              */
             case kVBoxTpGOpt_Assembler:
                 g_pszAssembler = ValueUnion.psz;
@@ -1954,6 +1972,14 @@ static RTEXITCODE parseArguments(int argc,  char **argv)
                     return RTMsgErrorExit(RTEXITCODE_SYNTAX, "Too many assembly options (max %u)", RT_ELEMENTS(g_apszAssemblerOptions));
                 g_apszAssemblerOptions[g_cAssemblerOptions] = ValueUnion.psz;
                 g_cAssemblerOptions++;
+                break;
+            
+            case kVBoxTpGOpt_ProbeFnName:
+                g_pszProbeFnName = ValueUnion.psz;
+                break;
+
+            case kVBoxTpGOpt_ProbeFnImported:
+                g_pszProbeFnName = ValueUnion.psz;
                 break;
 
             /*
