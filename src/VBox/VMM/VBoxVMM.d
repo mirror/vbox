@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBoxVMM - Static ring-3 dtrace probes.
+ * VBoxVMM - Static dtrace probes.
  */
 
 /*
@@ -17,31 +17,31 @@
 
 provider vboxvmm
 {
-    probe em__state__changed(void *a_pVCpu, int a_enmOldState, int a_enmNewState, int a_rc);
+    probe em__state__changed(struct VMCPU *a_pVCpu, int a_enmOldState, int a_enmNewState, int a_rc);
     /*^^VMM-ALT-TP: "%d -> %d (rc=%d)", a_enmOldState, a_enmNewState, a_rc */
 
-    probe em__state__unchanged(void *a_pVCpu, int a_enmState, int a_rc);
+    probe em__state__unchanged(struct VMCPU *a_pVCpu, int a_enmState, int a_rc);
     /*^^VMM-ALT-TP: "%d (rc=%d)", a_enmState, a_rc */
 
-    probe em__raw__run__pre(void *a_pVCpu, void *a_pCtx);
+    probe em__raw__run__pre(struct VMCPU *a_pVCpu, struct CPUMCTX *a_pCtx);
     /*^^VMM-ALT-TP: "%04x:%08llx", (a_pCtx)->cs, (a_pCtx)->rip */
 
-    probe em__raw__run__ret(void *a_pVCpu, void *a_pCtx, int a_rc);
+    probe em__raw__run__ret(struct VMCPU *a_pVCpu, struct CPUMCTX *a_pCtx, int a_rc);
     /*^^VMM-ALT-TP: "%04x:%08llx rc=%d", (a_pCtx)->cs, (a_pCtx)->rip, (a_rc) */
 
-    probe em__ff__high(void *a_pVCpu, unsigned int a_fGlobal, unsigned int a_fLocal, int a_rc);
+    probe em__ff__high(struct VMCPU *a_pVCpu, unsigned int a_fGlobal, unsigned int a_fLocal, int a_rc);
     /*^^VMM-ALT-TP: "vm=%#x cpu=%#x rc=%d", (a_fGlobal), (a_fLocal), (a_rc) */
 
-    probe em__ff__all(void *a_pVCpu, unsigned int a_fGlobal, unsigned int a_fLocal, int a_rc);
+    probe em__ff__all(struct VMCPU *a_pVCpu, unsigned int a_fGlobal, unsigned int a_fLocal, int a_rc);
     /*^^VMM-ALT-TP: "vm=%#x cpu=%#x rc=%d", (a_fGlobal), (a_fLocal), (a_rc) */
 
-    probe em__ff__all_ret(void *a_pVCpu, int a_rc);
+    probe em__ff__all_ret(struct VMCPU *a_pVCpu, int a_rc);
     /*^^VMM-ALT-TP: "%d", (a_rc) */
 
-    probe em__ff__raw(void *a_pVCpu, unsigned int a_fGlobal, unsigned int a_fLocal);
+    probe em__ff__raw(struct VMCPU *a_pVCpu, unsigned int a_fGlobal, unsigned int a_fLocal);
     /*^^VMM-ALT-TP: "vm=%#x cpu=%#x", (a_fGlobal), (a_fLocal) */
 
-    probe em__ff__raw_ret(void *a_pVCpu, int a_rc);
+    probe em__ff__raw_ret(struct VMCPU *a_pVCpu, int a_rc);
     /*^^VMM-ALT-TP: "%d", (a_rc) */
 
     probe r0__gvmm__vm__created(void *a_pGVM, void *a_pVM, unsigned int a_Pid, void *a_hEMT0, unsigned int a_cCpus);
