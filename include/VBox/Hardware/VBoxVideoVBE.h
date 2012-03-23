@@ -77,8 +77,6 @@
 #define VBE_DISPI_LFB_ENABLED           0x40
 #define VBE_DISPI_NOCLEARMEM            0x80
 
-#define VBE_DISPI_LFB_PHYSICAL_ADDRESS  0xE0000000
-
 #define VGA_PORT_HGSMI_HOST             0x3b0
 #define VGA_PORT_HGSMI_GUEST            0x3d0
 
