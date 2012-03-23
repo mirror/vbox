@@ -926,11 +926,13 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
  	Network/DevPCNet.cpp \
  	Serial/DevSerial.cpp \
  	Parallel/DevParallel.cpp \
-	Parallel/DrvHostParallel.cpp \
  	VMMDev/VMMDevTesting.cpp \
  	\
  	Network/DrvIntNet.cpp \
  	Network/DrvDedicatedNic.cpp
+	ifdef VBOX_WITH_WIN_PARPORT_SUP 
+	VBoxDDR0_SOURCES += Parallel/DrvHostParallel.cpp 
+	endif
 
  ifdef VBOX_WITH_E1000
   VBoxDDR0_DEFS         += VBOX_WITH_E1000
