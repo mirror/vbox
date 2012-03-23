@@ -236,7 +236,7 @@ VBoxVMM_LDFLAGS.solaris = -mimpure-text
 ifdef VBOX_WITH_DTRACE_R3
  VBoxVMM_USES        += dtrace
  VBoxVMM_DEFS        += VBOX_WITH_DTRACE VBOX_WITH_DTRACE_R3
- VBoxVMM_SOURCES     += VMMR3/VBoxVMM.d
+ VBoxVMM_SOURCES     += VBoxVMM.d
 endif
 
 # SSM wish to know the build type, host os and arch.
@@ -466,6 +466,7 @@ ifndef VBOX_ONLY_EXTPACKS
 
  VMMR0_SOURCES   = \
  	VMMR0/CPUMR0.cpp \
+ 	VBoxVMM.d \
  	VMMR0/CPUMR0A.asm \
  	VMMR0/GMMR0.cpp \
  	VMMR0/GVMMR0.cpp \
