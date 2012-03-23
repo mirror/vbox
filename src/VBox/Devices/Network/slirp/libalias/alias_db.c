@@ -797,11 +797,23 @@ GetSocket(struct libalias *la, u_short port_net, int *sockfd, int link_type)
             ((struct sockaddr_in *)&sa_addr)->sin_addr.s_addr;
         NSOCK_INC_EX(la);
         if (link_type == LINK_TCP)
+        {
+            so->so_type = IPPROTO_TCP;
             insque(la->pData, so, &la->tcb);
+        }
         else if (link_type == LINK_UDP)
+        {
+            so->so_type = IPPROTO_UDP;
             insque(la->pData, so, &la->udb);
+        }
         else
+        {
+            /* socket wasn't added to queue */
+            closesocket(so->s);
+            RTMemFree(so);
             Assert(!"Shouldn't be here");
+            return 0;
+        }
         LogFunc(("bind called for socket: %R[natsock]\n", so));
 #else
         *sockfd = sock;

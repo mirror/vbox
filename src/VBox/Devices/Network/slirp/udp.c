@@ -270,6 +270,7 @@ udp_input(PNATState pData, register struct mbuf *m, int iphlen)
 
     so->so_faddr = ip->ip_dst;   /* XXX */
     so->so_fport = uh->uh_dport; /* XXX */
+    Assert(so->so_type == IPPROTO_UDP);
 
     /*
      * DNS proxy
@@ -346,6 +347,9 @@ int udp_output2(PNATState pData, struct socket *so, struct mbuf *m,
     LogFlowFunc(("ENTER: so = %R[natsock], m = %p, saddr = %RTnaipv4, daddr = %RTnaipv4\n",
                  so, m, saddr->sin_addr.s_addr, daddr->sin_addr.s_addr));
 
+    /* in case of built-in service so might be NULL */
+    if (so) Assert(so->so_type == IPPROTO_UDP);
+
     /*
      * Adjust for header
      */
@@ -398,6 +402,7 @@ int udp_output(PNATState pData, struct socket *so, struct mbuf *m,
 #ifdef VBOX_WITH_NAT_UDP_SOCKET_CLONE
     struct socket *pSocketClone = NULL;
 #endif
+    Assert(so->so_type == IPPROTO_UDP);
     LogFlowFunc(("ENTER: so = %R[natsock], m = %p, saddr = %RTnaipv4\n",
                  so, (long)m, addr->sin_addr.s_addr));
 
@@ -455,6 +460,8 @@ udp_attach(PNATState pData, struct socket *so)
     int status;
     int opt = 1;
 
+    /* We attaching some olready attched socket ??? */
+    Assert(so->so_type == 0);
     if ((so->s = socket(AF_INET, SOCK_DGRAM, 0)) == -1)
         goto error;
     /*
@@ -496,6 +503,7 @@ udp_attach(PNATState pData, struct socket *so)
     insque(pData, so, &udb);
     NSOCK_INC();
     QSOCKET_UNLOCK(udb);
+    so->so_type = IPPROTO_UDP;
     return so->s;
 error:
     Log2(("NAT: can't create datagramm socket\n"));
@@ -507,6 +515,7 @@ udp_detach(PNATState pData, struct socket *so)
 {
     if (so != &pData->icmp_socket)
     {
+        Assert(so->so_type == IPPROTO_UDP);
         QSOCKET_LOCK(udb);
         SOCKET_LOCK(so);
         QSOCKET_UNLOCK(udb);
@@ -551,6 +560,7 @@ udp_listen(PNATState pData, u_int32_t bind_addr, u_int port, u_int32_t laddr, u_
         return NULL;
     }
     so->so_expire = curtime + SO_EXPIRE;
+    so->so_type = IPPROTO_UDP;
     fd_nonblock(so->s);
     SOCKET_LOCK_CREATE(so);
     QSOCKET_LOCK(udb);
@@ -581,6 +591,9 @@ udp_listen(PNATState pData, u_int32_t bind_addr, u_int port, u_int32_t laddr, u_
     /* The original check was completely broken, as the commented out
      * if statement was always true (INADDR_ANY=0). */
     /* if (addr.sin_addr.s_addr == 0 || addr.sin_addr.s_addr == loopback_addr.s_addr) */
+    /* @todo: vvl - alias_addr should be set (if required)
+     * later by liabalias module.
+     */
     if (1 == 0)                 /* always use the else part */
         so->so_faddr = alias_addr;
     else

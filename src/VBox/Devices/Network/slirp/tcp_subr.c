@@ -226,6 +226,7 @@ tcp_newtcpcb(PNATState pData, struct socket *so)
     TCP_STATE_SWITCH_TO(tp, TCPS_CLOSED);
 
     so->so_tcpcb = tp;
+    so->so_type = IPPROTO_TCP;
 
     return (tp);
 }
@@ -597,6 +598,8 @@ tcp_connect(PNATState pData, struct socket *inso)
 int
 tcp_attach(PNATState pData, struct socket *so)
 {
+    /* We're attaching already attached socket??? */
+    Assert(so->so_type == 0);
     if ((so->so_tcpcb = tcp_newtcpcb(pData, so)) == NULL)
         return -1;
 
