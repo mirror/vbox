@@ -925,6 +925,7 @@ void slirp_select_fill(PNATState pData, int *pnfds, struct pollfd *polls)
 
     QSOCKET_FOREACH(so, so_next, tcp)
     /* { */
+        Assert(so->so_type == IPPROTO_TCP);
 #if !defined(RT_OS_WINDOWS)
         so->so_poll_index = -1;
 #endif
@@ -1011,6 +1012,7 @@ void slirp_select_fill(PNATState pData, int *pnfds, struct pollfd *polls)
     QSOCKET_FOREACH(so, so_next, udp)
     /* { */
 
+        Assert(so->so_type == IPPROTO_UDP);
         STAM_COUNTER_INC(&pData->StatUDP);
 #if !defined(RT_OS_WINDOWS)
         so->so_poll_index = -1;
