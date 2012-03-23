@@ -212,7 +212,7 @@ int main(int argc, char **argv)
       /* Mandatory information for VBE 2.0 and above */
       if (pm->depth > 4)
         printf("/*Bit32u PhysBasePtr*/ %s,\n",
-               "VBE_DISPI_LFB_PHYSICAL_ADDRESS");
+               "0xFFFF0000 /* Filled in at run-time; low word must be zero! */");
       else
         printf("/*Bit32u PhysBasePtr*/ %s,\n", "0");
       printf("/*Bit32u OffScreenMemOffset*/ %d,\n", 0);
