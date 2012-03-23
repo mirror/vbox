@@ -1131,6 +1131,10 @@ static DECLCALLBACK(void) PS2KInfoState(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, 
                     pThis->fNumLockOn ? "on" : "off");
     pHlp->pfnPrintf(pHlp, "Typematic delay %ums, repeat period %ums\n",
                     pThis->uTypematicDelay, pThis->uTypematicRepeat);
+    pHlp->pfnPrintf(pHlp, "Command queue: %d items (%d max)\n",
+                    pThis->cmdQ.cUsed, pThis->cmdQ.cSize);
+    pHlp->pfnPrintf(pHlp, "Input queue  : %d items (%d max)\n",
+                    pThis->keyQ.cUsed, pThis->keyQ.cSize);
     if (pThis->enmTypematicState != KBD_TMS_IDLE)
         pHlp->pfnPrintf(pHlp, "Active typematic key %02X (%s)\n", pThis->u8Typematic,
                         pThis->enmTypematicState == KBD_TMS_DELAY ? "delay" : "repeat");
