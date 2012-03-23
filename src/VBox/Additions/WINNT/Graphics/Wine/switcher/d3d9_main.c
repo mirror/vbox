@@ -22,6 +22,7 @@
 typedef void (WINAPI *DebugSetMuteProc)(void);
 typedef IDirect3D9* (WINAPI *Direct3DCreate9Proc)(UINT SDKVersion);
 typedef HRESULT (WINAPI *Direct3DCreate9ExProc)(UINT SDKVersion, IDirect3D9Ex **direct3d9ex);
+/* @todo: this does not return a value according to MSDN */
 typedef void* (WINAPI *Direct3DShaderValidatorCreate9Proc)(void);
 typedef int (WINAPI *D3DPERF_BeginEventProc)(D3DCOLOR color, LPCWSTR name);
 typedef int (WINAPI *D3DPERF_EndEventProc)(void);
@@ -30,6 +31,63 @@ typedef void (WINAPI *D3DPERF_SetOptionsProc)(DWORD options);
 typedef BOOL (WINAPI *D3DPERF_QueryRepeatFrameProc)(void);
 typedef void (WINAPI *D3DPERF_SetMarkerProc)(D3DCOLOR color, LPCWSTR name);
 typedef void (WINAPI *D3DPERF_SetRegionProc)(D3DCOLOR color, LPCWSTR name);
+
+static void WINAPI vboxDebugSetMuteStub(void)
+{
+}
+
+static IDirect3D9* WINAPI vboxDirect3DCreate9Stub(UINT SDKVersion)
+{
+    return NULL;
+}
+
+static HRESULT WINAPI vboxDirect3DCreate9ExStub(UINT SDKVersion, IDirect3D9Ex **direct3d9ex)
+{
+    if (direct3d9ex)
+        *direct3d9ex = NULL;
+    return E_FAIL;
+}
+
+static void* WINAPI vboxDirect3DShaderValidatorCreate9Stub(void)
+{
+    return NULL;
+}
+
+static int WINAPI vboxD3DPERF_BeginEventStub(D3DCOLOR color, LPCWSTR name)
+{
+    return 0;
+}
+
+static int WINAPI vboxD3DPERF_EndEventStub(void)
+{
+    return 0;
+}
+
+static DWORD WINAPI vboxD3DPERF_GetStatusStub(void)
+{
+    return 0;
+}
+
+static void WINAPI vboxD3DPERF_SetOptionsStub(DWORD options)
+{
+
+}
+
+static BOOL WINAPI vboxD3DPERF_QueryRepeatFrameStub(void)
+{
+    return 0;
+}
+
+static void WINAPI vboxD3DPERF_SetMarkerStub(D3DCOLOR color, LPCWSTR name)
+{
+
+}
+
+static void WINAPI vboxD3DPERF_SetRegionStub(D3DCOLOR color, LPCWSTR name)
+{
+
+}
+
 
 typedef struct _D3D9ExTag
 {
