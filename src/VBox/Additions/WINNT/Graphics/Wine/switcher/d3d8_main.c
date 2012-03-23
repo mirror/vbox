@@ -25,6 +25,31 @@ typedef IDirect3D8* (WINAPI *Direct3DCreate8Proc)(UINT SDKVersion);
 typedef HRESULT (WINAPI *ValidatePixelShaderProc)(DWORD* pixelshader, DWORD* reserved1, BOOL bool, DWORD* toto);
 typedef HRESULT (WINAPI *ValidateVertexShaderProc)(DWORD* vertexshader, DWORD* reserved1, DWORD* reserved2, BOOL bool, DWORD* toto);
 
+static HRESULT WINAPI vboxD3D8GetSWInfoStub(void)
+{
+    return E_FAIL;
+}
+
+static void WINAPI vboxDebugSetMuteStub(void)
+{
+
+}
+
+static IDirect3D8* WINAPI vboxDirect3DCreate8Stub(UINT SDKVersion)
+{
+    return NULL;
+}
+
+static HRESULT WINAPI vboxValidatePixelShaderStub(DWORD* pixelshader, DWORD* reserved1, BOOL bool, DWORD* toto)
+{
+    return E_FAIL;
+}
+
+static HRESULT WINAPI vboxValidateVertexShaderStub(DWORD* vertexshader, DWORD* reserved1, DWORD* reserved2, BOOL bool, DWORD* toto)
+{
+    return E_FAIL;
+}
+
 typedef struct _D3D8ExTag
 {
     int                      initialized;

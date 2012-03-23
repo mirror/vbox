@@ -22,7 +22,7 @@
 typedef BOOL (APIENTRY *DrvValidateVersionProc)(DWORD version);
 
 #define SW_FILLPROC(dispatch, hdll, name) \
-    dispatch.p##name = (name##Proc) GetProcAddress(hdll, #name);
+    dispatch.p##name = ((hdll) != NULL) ? (name##Proc) GetProcAddress((hdll), #name) : vbox##name##Stub;
 
 #define SW_DISPINIT(dispatch)                                   \
     {                                                           \
