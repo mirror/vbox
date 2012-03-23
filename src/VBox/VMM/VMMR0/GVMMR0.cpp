@@ -59,6 +59,7 @@
 #include <VBox/vmm/vmm.h>
 #include <VBox/param.h>
 #include <VBox/err.h>
+
 #include <iprt/asm.h>
 #include <iprt/asm-amd64-x86.h>
 #include <iprt/mem.h>
@@ -76,6 +77,8 @@
 #include <iprt/cpuset.h>
 #include <iprt/spinlock.h>
 #include <iprt/timer.h>
+
+#include "dtrace/VBoxVMM.h"
 
 
 /*******************************************************************************
@@ -750,7 +753,7 @@ GVMMR0DECL(int) GVMMR0CreateVM(PSUPDRVSESSION pSession, uint32_t cCpus, PVM *ppV
 
     RTNATIVETHREAD hEMT0 = RTThreadNativeSelf();
     AssertReturn(hEMT0 != NIL_RTNATIVETHREAD, VERR_GVMM_BROKEN_IPRT);
-    RTNATIVETHREAD ProcId = RTProcSelf();
+    RTPROCESS      ProcId = RTProcSelf();
     AssertReturn(ProcId != NIL_RTPROCESS, VERR_GVMM_BROKEN_IPRT);
 
     /*
@@ -887,6 +890,8 @@ GVMMR0DECL(int) GVMMR0CreateVM(PSUPDRVSESSION pSession, uint32_t cCpus, PVM *ppV
                                         pGVM->aCpus[0].hEMT           = hEMT0;
                                         pVM->aCpus[0].hNativeThreadR0 = hEMT0;
                                         pGVMM->cEMTs += cCpus;
+
+                                        VBOXVMM_R0_GVMM_VM_CREATED(pGVM, pVM, ProcId, (void *)hEMT0, cCpus);
 
                                         gvmmR0UsedUnlock(pGVMM);
                                         gvmmR0CreateDestroyUnlock(pGVMM);

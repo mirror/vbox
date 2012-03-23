@@ -1429,9 +1429,7 @@ ifdef VBOX_WITH_EF_WRAPS
  DEFS += RTMEM_WRAP_TO_EF_APIS RTMEM_WRAP_SOME_NEW_AND_DELETE_TO_EF
 endif
 
-ifdef VBOX_WITH_DTRACE_R3
- USES += dtrace
-endif
+USES += dtrace
 
 #
 # Compiler optimization flags.
@@ -1678,24 +1676,27 @@ endif
 # libxslt XSLT processor. (see PATH_TOOL_YASM for explanation why it's temporarily located in bin.)
 ifeq ($(KBUILD_HOST),win)
 # VBOX_XSLTPROC ?= $(PATH_DEVTOOLS)/win.x86/libxslt/10114/xsltproc.exe
- VBOX_XSLTPROC ?= $(PATH_DEVTOOLS)/win.x86/bin/xsltproc.exe
+ VBOX_XSLTPROC  ?= $(PATH_DEVTOOLS)/win.x86/bin/xsltproc.exe
 else ifeq ($(KBUILD_HOST),os2)
- VBOX_XSLTPROC ?= BEGINLIBPATH="$(PATH_DEVTOOLS_BLD)/bin;$$BEGINLIBPATH" $(PATH_DEVTOOLS_BLD)/bin/xsltproc.exe
+ VBOX_XSLTPROC  ?= BEGINLIBPATH="$(PATH_DEVTOOLS_BLD)/bin;$$BEGINLIBPATH" $(PATH_DEVTOOLS_BLD)/bin/xsltproc.exe
 else
- VBOX_XSLTPROC ?= xsltproc$(HOSTSUFF_EXE)
+ VBOX_XSLTPROC  ?= xsltproc$(HOSTSUFF_EXE)
 endif
 
 # bin2c (convert binary files into C arrays)
-VBOX_BIN2C     ?= $(PATH_OBJ)/bin2c/bin2c$(HOSTSUFF_EXE)
+VBOX_BIN2C      ?= $(PATH_OBJ)/bin2c/bin2c$(HOSTSUFF_EXE)
 
 # biossums (set BIOS checksums)
-VBOX_BIOSSUMS  ?= $(PATH_OBJ)/biossums/biossums$(HOSTSUFF_EXE)
+VBOX_BIOSSUMS   ?= $(PATH_OBJ)/biossums/biossums$(HOSTSUFF_EXE)
 
 # RTManifest (extension pack manifest utility)
 VBOX_RTMANIFEST ?= $(PATH_OBJ)/bldRTManifest/bldRTManifest$(HOSTSUFF_EXE)
 
+# VBoxTpG (tracepoint generator)
+VBOX_VBOXTPG    ?= $(PATH_OBJ)/VBoxTpG/VBoxTpG$(HOSTSUFF_EXE)
+
 # filesplitter (splits java files)
-VBOX_FILESPLIT ?= $(PATH_OBJ)/filesplitter/filesplitter$(HOSTSUFF_EXE)
+VBOX_FILESPLIT  ?= $(PATH_OBJ)/filesplitter/filesplitter$(HOSTSUFF_EXE)
 
 # GNU tar if present.
 if1of ($(KBUILD_TARGET), linux os2 win)
@@ -2168,14 +2169,14 @@ ifneq ($(KBUILD_TARGET),l4)
 endif
 ifeq ($(KBUILD_TARGET),solaris)
 	$(APPEND) '$@' 'VBOX_GCC_msave-args            ?= $(call VBOX_GCC_CHECK_CXX,-msave-args,)'
-# Detect the solaris assembler. It is used by the the 4.x gcc compilers, 
-# apparently. It will not be able to handle IEMAll via a -pipe, only when 
+# Detect the solaris assembler. It is used by the the 4.x gcc compilers,
+# apparently. It will not be able to handle IEMAll via a -pipe, only when
 # passed a file. The solaris assmbler rulez ... not!
 	$(APPEND) '$@' 'VBOX_AS_VERSION                ?= $(shell `gcc -print-prog-name=as` -V -o /dev/null < /dev/null 2>&1 | kmk_sed -e '1!d' -e 's/^as: *//' )'
 	$(APPEND) '$@' 'if $$(pos Sun Compiler Common,$$(VBOX_AS_VERSION)) > 0'
 	$(APPEND) '$@' ' VBOX_GCC_USING_SOLARIS_AS=1'
 	$(APPEND) '$@' 'endif'
-	$(APPEND) '$@' 'ifndef VBOX_GCC_USING_SOLARIS_AS' 
+	$(APPEND) '$@' 'ifndef VBOX_GCC_USING_SOLARIS_AS'
 	$(APPEND) '$@' ' VBOX_GCC_pipe                 ?= -pipe'
 	$(APPEND) '$@' 'endif'
 else
@@ -2623,6 +2624,36 @@ ifeq ($(KBUILD_TARGET),solaris)
  endif
 endif
 
+#
+# VBoxTpG tool.
+#
+TOOL_VBoxTpG = The VirtualBox Tracepoint Generator
+TOOL_VBoxTpG_DTRACE_DEPEND         = $(VBOX_VBOXTPG)
+TOOL_VBoxTpG_DTRACE_HDR_FLAGS      := -h #-vvv
+define TOOL_VBoxTpG_DTRACE_HDR_CMDS
+	$(QUIET)$(VBOX_VBOXTPG) $(flags) -o "$(out)" -s "$(source)"
+endef
+TOOL_VBoxTpG_DTRACE_OBJ_NOT_NEEDED :=
+TOOL_VBoxTpG_DTRACE_OBJ_FLAGS      := -G #-vvv
+define TOOL_VBoxTpG_DTRACE_OBJ_CMDS
+	$(QUIET)$(VBOX_VBOXTPG) \
+		$(if-expr $(intersects $(bld_trg_arch),$(KBUILD_ARCHES_64)),-64,-32) \
+		$(flags) \
+		-o "$(out)" -s "$(source)"
+endef
+
+#
+# VBoxTpG tool - Disabled, only generate the header.
+#
+TOOL_VBoxTpG-Disabled = The VirtualBox Tracepoint Generator, disabled.
+TOOL_VBoxTpG-Disabled_DTRACE_DEPEND     = $(VBOX_VBOXTPG)
+TOOL_VBoxTpG-Disabled_DTRACE_HDR_FLAGS := -h
+define TOOL_VBoxTpG-Disabled_DTRACE_HDR_CMDS
+	$(QUIET)$(VBOX_VBOXTPG) $(flags) -o "$(out)" -s "$(source)"
+endef
+TOOL_VBoxTpG-Disabled_DTRACE_OBJ_NOT_NEEDED := $(KBUILD_OSES)
+
+
 ifdef VBOX_WITH_RAW_MODE
  #
  # Template for building RC things.
@@ -2775,6 +2806,14 @@ TEMPLATE_VBoxR0_DEFS                = IN_RING0 IN_RING0_AGNOSTIC IPRT_NO_CRT RT_
 TEMPLATE_VBoxR0_INCS                = $(PATH_ROOT)/include/iprt/nocrt
 TEMPLATE_VBoxR0_SYSSUFF             = .r0
 TEMPLATE_VBoxR0_MODE                = a+r,u+w
+
+TEMPLATE_VBoxR0_USES               += dtrace
+ifdef VBOX_WITH_DTRACE_R0
+ TEMPLATE_VBoxR0_DTRACETOOL         = VBoxTpG
+ TEMPLATE_VBoxR0_DEFS              += VBOX_WITH_DTRACE VBOX_WITH_DTRACE_R0
+else
+ TEMPLATE_VBoxR0_DTRACETOOL         = VBoxTpG-Disabled
+endif
 
 ifeq ($(VBOX_LDR_FMT),pe)
 TEMPLATE_VBoxR0_TOOL                = $(VBOX_VCC_TOOL)
