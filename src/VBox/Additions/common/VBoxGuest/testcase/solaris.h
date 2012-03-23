@@ -179,7 +179,7 @@ struct modinfo {
     int                mi_state;
     int                mi_id;
     int                mi_nextid;
-    char              *mi_base;  /* Was caddr_t */
+    char              *mi_base;  /* Was caddr_t. */
     size_t             mi_size;
     int                mi_rev;
     int                mi_loadcnt;
@@ -233,6 +233,17 @@ struct iocblk
     int         ioc_error;
 };
 
+struct copyreq
+{
+    int       cq_cmd;
+    cred_t   *cq_cr;
+    uint_t    cq_id;
+    uint_t    cq_flag;
+    mblk_t   *cq_private;
+    char     *cq_addr;  /* Was caddr_t. */
+    size_t    cq_size;
+};
+
 struct copyresp
 {
     int      cp_cmd;
@@ -240,7 +251,7 @@ struct copyresp
     uint_t   cp_id;
     uint_t   cp_flag;
     mblk_t   *cp_private;
-    char     *cp_rval;  /* Was caddr_t */
+    char     *cp_rval;  /* Was caddr_t. */
 };
 
 typedef struct modctl
@@ -320,9 +331,6 @@ extern int vboxguestSolarisInfo(struct modinfo *pModInfo);
 #define qprocson(...) do {} while(0)
 #define qprocsoff(...) do {} while(0)
 #define flushq(...) do {} while(0)
-#define qreply(...) do {} while(0)
-#define mcopyin(...) do {} while(0)
-#define mcopyout(...) do {} while(0)
 #define freemsg(...) do {} while(0)
 #define putnext(...) do {} while(0)
 #define ddi_get_instance(...) 0
@@ -353,9 +361,19 @@ extern int vboxguestSolarisInfo(struct modinfo *pModInfo);
 
 /* Externally defined helpers. */
 
+/** Flags set in the struct mblk b_flag member for verification purposes.
+ * @{ */
+/** miocpullup was called for this message. */
+#define F_TEST_PULLUP 1
+/** @} */
+
 extern void miocack(queue_t *pWriteQueue, mblk_t *pMBlk, int cbData, int rc);
 extern void miocnak(queue_t *pWriteQueue, mblk_t *pMBlk, int cbData, int iErr);
 extern int miocpullup(mblk_t *pMBlk, size_t cbMsg);
+extern void mcopyin(mblk_t *pMBlk, void *pvState, size_t cbData, void *pvUser);
+extern void mcopyout(mblk_t *pMBlk, void *pvState, size_t cbData, void *pvUser,
+                     mblk_t *pMBlkData);
+extern void qreply(queue_t *pQueue, mblk_t *pMBlk);
 
 /* API stubs with simple logic */
 
@@ -370,6 +388,7 @@ static inline modctl_t *mod_getctl(void **linkage)
 
 #define mod_install(linkage) (s_pvLinkage && ((linkage) == s_pvLinkage) ? 0 : EINVAL)
 #define QREADR          0x00000010
+#define         OTHERQ(q)      ((q)->q_flag & QREADR ? (q) + 1 : (q) - 1)
 #define         WR(q)          ((q)->q_flag & QREADR ? (q) + 1 : (q))
 #define         RD(q)          ((q)->q_flag & QREADR ? (q) : (q) - 1)
 

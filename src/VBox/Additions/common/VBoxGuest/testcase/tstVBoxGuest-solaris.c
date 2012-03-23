@@ -57,6 +57,58 @@ int miocpullup(mblk_t *pMBlk, size_t cbMsg)
     if (   !pMBlk->b_cont
         || pMBlk->b_cont->b_wptr < pMBlk->b_cont->b_rptr + cbMsg)
         return EINVAL;
-    pMBlk->b_flag = 1;  /* Test for this to be sure miocpullup was called. */
+    pMBlk->b_flag |= F_TEST_PULLUP;
     return 0;
+}
+
+void mcopyin(mblk_t *pMBlk, void *pvState, size_t cbData, void *pvUser)
+{
+    struct iocblk *pIOCBlk = (struct iocblk *)pMBlk->b_rptr;
+    struct copyreq *pCopyReq = (struct copyreq *)pMBlk->b_rptr;
+
+    AssertReturnVoid(   pvUser
+                     || (   pMBlk->b_datap->db_type == M_IOCTL
+                         && pIOCBlk->ioc_count == TRANSPARENT
+                         && pMBlk->b_cont->b_rptr));
+    pMBlk->b_datap->db_type = M_COPYIN;
+    pMBlk->b_wptr = pMBlk->b_rptr + sizeof(*pCopyReq);
+    pCopyReq->cq_private = pvState;
+    pCopyReq->cq_size = cbData;
+    pCopyReq->cq_addr = pvUser ? pvUser : pMBlk->b_cont->b_rptr;
+    if (pMBlk->b_cont)
+    {
+        freemsg(pMBlk->b_cont);
+        pMBlk->b_cont = NULL;
+    }
+}
+
+void mcopyout(mblk_t *pMBlk, void *pvState, size_t cbData, void *pvUser,
+              mblk_t *pMBlkData)
+{
+    struct iocblk *pIOCBlk = (struct iocblk *)pMBlk->b_rptr;
+    struct copyreq *pCopyReq = (struct copyreq *)pMBlk->b_rptr;
+
+    AssertReturnVoid(   pvUser
+                     || (   pMBlk->b_datap->db_type == M_IOCTL
+                         && pIOCBlk->ioc_count == TRANSPARENT
+                         && pMBlk->b_cont->b_rptr));
+    pMBlk->b_datap->db_type = M_COPYOUT;
+    pMBlk->b_wptr = pMBlk->b_rptr + sizeof(*pCopyReq);
+    pCopyReq->cq_private = pvState;
+    pCopyReq->cq_size = cbData;
+    pCopyReq->cq_addr = pvUser ? pvUser : pMBlk->b_cont->b_rptr;
+    if (pMBlkData)
+    {
+        if (pMBlk->b_cont)
+            freemsg(pMBlk->b_cont);
+        pMBlk->b_cont = pMBlkData;
+        pMBlkData->b_wptr = pMBlkData->b_rptr + cbData;
+    }
+}
+
+/* This does not work like the real version but is easy to test the result of.
+ */
+void qreply(queue_t *pQueue, mblk_t *pMBlk)
+{
+    OTHERQ(pQueue)->q_first = pMBlk;
 }
