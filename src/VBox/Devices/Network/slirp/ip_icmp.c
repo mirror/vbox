@@ -631,6 +631,10 @@ void icmp_error(PNATState pData, struct mbuf *msrc, u_char type, u_char code, in
     ip = mtod(msrc, struct ip *);
     LogFunc(("msrc: %RTnaipv4 -> %RTnaipv4\n", ip->ip_src, ip->ip_dst));
 
+    /* if source IP datagram hasn't got src address don't bother with sending ICMP error */
+    if (ip->ip_src.s_addr == INADDR_ANY)
+        goto end_error;
+
     if (   ip->ip_off & IP_OFFMASK
         && type != ICMP_SOURCEQUENCH)
         goto end_error;    /* Only reply to fragment 0 */
