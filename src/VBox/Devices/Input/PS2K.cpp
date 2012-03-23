@@ -720,26 +720,31 @@ int PS2KByteToKbd(PPS2K pThis, uint8_t cmd)
     switch (cmd) {
     case KCMD_ECHO:
         PS2InsertQueue((GeneriQ *)&pThis->cmdQ, KRSP_ECHO);
+        pThis->u8CurrCmd = 0;
         break;
     case KCMD_READ_ID:
         PS2InsertQueue((GeneriQ *)&pThis->cmdQ, KRSP_ACK);
         PS2InsertQueue((GeneriQ *)&pThis->cmdQ, KRSP_ID1);
         PS2InsertQueue((GeneriQ *)&pThis->cmdQ, KRSP_ID2);
+        pThis->u8CurrCmd = 0;
         break;
     case KCMD_ENABLE:
         pThis->fScanning = true;
         PS2ClearQueue((GeneriQ *)&pThis->keyQ);
         /* Clear last typematic key?? */
         PS2InsertQueue((GeneriQ *)&pThis->cmdQ, KRSP_ACK);
+        pThis->u8CurrCmd = 0;
         break;
     case KCMD_DFLT_DISABLE:
         pThis->fScanning = false;
         PS2KSetDefaults(pThis);
         PS2InsertQueue((GeneriQ *)&pThis->cmdQ, KRSP_ACK);
+        pThis->u8CurrCmd = 0;
         break;
     case KCMD_SET_DEFAULT:
         PS2KSetDefaults(pThis);
         PS2InsertQueue((GeneriQ *)&pThis->cmdQ, KRSP_ACK);
+        pThis->u8CurrCmd = 0;
         break;
     case KCMD_ALL_TYPEMATIC:
     case KCMD_ALL_MK_BRK:
@@ -747,8 +752,10 @@ int PS2KByteToKbd(PPS2K pThis, uint8_t cmd)
     case KCMD_ALL_TMB:
         //@todo: Set the key types here.
         PS2InsertQueue((GeneriQ *)&pThis->cmdQ, KRSP_ACK);
+        pThis->u8CurrCmd = 0;
         break;
     case KCMD_RESEND:
+        pThis->u8CurrCmd = 0;
         break;
     case KCMD_RESET:
         pThis->u8ScanSet = 2;
@@ -820,6 +827,7 @@ int PS2KByteToKbd(PPS2K pThis, uint8_t cmd)
     case KCMD_INVALID_1:
     case KCMD_INVALID_2:
         PS2InsertQueue((GeneriQ *)&pThis->cmdQ, KRSP_RESEND);
+        pThis->u8CurrCmd = 0;
         break;
     }
     LogFlowFunc(("Active cmd now 0x%02X; updating interrupts\n", pThis->u8CurrCmd));
