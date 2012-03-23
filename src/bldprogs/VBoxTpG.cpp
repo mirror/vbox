@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * IPRT Testcase / Tool - VBox Tracepoint Compiler.
+ * VBox Build Tool - VBox Tracepoint Generator.
  */
 
 /*
@@ -19,6 +19,8 @@
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
+#include <VBox/VBoxTpG.h>
+
 #include <iprt/alloca.h>
 #include <iprt/assert.h>
 #include <iprt/ctype.h>
@@ -464,54 +466,68 @@ static RTEXITCODE generateAssembly(PSCMSTREAM pStrm)
                     "; editing process.\n"
                     ";\n"
                     "%%ifdef ASM_FORMAT_OMF\n"
+                    " %%macro VTG_GLOBAL 2\n"
+                    "  global NAME(%%1)\n"
+                    "  NAME(%%1):\n"
+                    " %%endmacro\n"
                     " segment VTG.Obj public CLASS=DATA align=4096 use32\n"
+                    "\n"
                     "%%elifdef ASM_FORMAT_MACHO\n"
+                    " %%macro VTG_GLOBAL 2\n"
+                    "  global NAME(%%1)\n"
+                    "  NAME(%%1):\n"
+                    " %%endmacro\n"
                     " ;[section VTG Obj align=4096]\n"
                     " [section .data]\n"
+                    "\n"
                     "%%elifdef ASM_FORMAT_PE\n"
+                    " %%macro VTG_GLOBAL 2\n"
+                    "  global NAME(%%1)\n"
+                    "  NAME(%%1):\n"
+                    " %%endmacro\n"
                     " [section VTGObj align=4096]\n"
                     "\n"
                     "%%elifdef ASM_FORMAT_ELF\n"
+                    " %%macro VTG_GLOBAL 2\n"
+                    "  global NAME(%%1):%%2 hidden\n"
+                    "  NAME(%%1):\n"
+                    " %%endmacro\n"
                     " [section .VTGPrLc.Start progbits alloc noexec write align=1]\n"
-                    "    dd              42\n"    
-                    "    dd              42\n"    
-                    "    RTCCPTR_DEF     42\n"    
-                    "    RTCCPTR_DEF     42\n"    
-                    "    RTCCPTR_DEF     42\n"    
-                    "GLOBALNAME g_aVTGPrLc\n"
+                    "VTG_GLOBAL g_aVTGPrLc, data\n"
                     " [section .VTGPrLc progbits alloc noexec write align=1]\n"
                     " [section .VTGPrLc.End progbits alloc noexec write align=1]\n"
-                    "GLOBALNAME g_aVTGPrLc_End\n"
-                    "    dd              0xdeadbeef\n"    
-                    "    dd              0xdeadbeef\n"    
-                    "    RTCCPTR_DEF     0xdeadbeef\n"    
-                    "    RTCCPTR_DEF     0xdeadbeef\n"    
-                    "    RTCCPTR_DEF     0xdeadbeef\n"    
-                    " [section .VTGObj progbits alloc noexec write align=4096]\n"
+                    "VTG_GLOBAL g_aVTGPrLc_End, data\n"
+                    " [section .VTGData progbits alloc noexec write align=4096]\n"
+                    "\n"
                     "%%else\n"
                     " %%error \"ASM_FORMAT_XXX is not defined\"\n"
                     "%%endif\n"
                     "\n"
-                    "GLOBALNAME g_VTGObjStart\n"
-                    "    db          'VBoxTpG Obj v1', 0, 0\n"
-                    "    RTCCPTR_DEF g_aVTGProviders\n"
-                    "    RTCCPTR_DEF g_aVTGProviders_End     - g_aVTGProviders\n"
-                    "    RTCCPTR_DEF g_aVTGProbes\n"
-                    "    RTCCPTR_DEF g_aVTGProbes_End        - g_aVTGProbes\n"
-                    "    RTCCPTR_DEF g_afVTGProbeEnabled\n"
-                    "    RTCCPTR_DEF g_afVTGProbeEnabled_End - g_afVTGProbeEnabled\n"
-                    "    RTCCPTR_DEF g_achVTGStringTable\n"
-                    "    RTCCPTR_DEF g_achVTGStringTable_End - g_achVTGStringTable\n"
-                    "    RTCCPTR_DEF g_aVTGArgLists\n"
-                    "    RTCCPTR_DEF g_aVTGArgLists_End      - g_aVTGArgLists\n"
-                    "    RTCCPTR_DEF g_aVTGPrLc\n"
-                    "    RTCCPTR_DEF g_aVTGPrLc_End ; cross section/segment size not possible\n"
+                    "\n"
+                    "VTG_GLOBAL g_VTGObjHeader, data\n"
+                    "                ;0         1         2         3\n"
+                    "                ;012345678901234567890123456789012\n"
+                    "    db          'VTG Object Header v1.0', 0, 0\n"
+                    "    dd          %u\n"
+                    "    dd          0\n"
+                    "    RTCCPTR_DEF NAME(g_aVTGProviders)\n"
+                    "    RTCCPTR_DEF NAME(g_aVTGProviders_End)     - NAME(g_aVTGProviders)\n"
+                    "    RTCCPTR_DEF NAME(g_aVTGProbes)\n"
+                    "    RTCCPTR_DEF NAME(g_aVTGProbes_End)        - NAME(g_aVTGProbes)\n"
+                    "    RTCCPTR_DEF NAME(g_afVTGProbeEnabled)\n"
+                    "    RTCCPTR_DEF NAME(g_afVTGProbeEnabled_End) - NAME(g_afVTGProbeEnabled)\n"
+                    "    RTCCPTR_DEF NAME(g_achVTGStringTable)\n"
+                    "    RTCCPTR_DEF NAME(g_achVTGStringTable_End) - NAME(g_achVTGStringTable)\n"
+                    "    RTCCPTR_DEF NAME(g_aVTGArgLists)\n"
+                    "    RTCCPTR_DEF NAME(g_aVTGArgLists_End)      - NAME(g_aVTGArgLists)\n"
+                    "    RTCCPTR_DEF NAME(g_aVTGPrLc)\n"
+                    "    RTCCPTR_DEF NAME(g_aVTGPrLc_End) ; cross section/segment size not possible\n"
                     "    RTCCPTR_DEF 0\n"
                     "    RTCCPTR_DEF 0\n"
                     "    RTCCPTR_DEF 0\n"
                     "    RTCCPTR_DEF 0\n"
                     ,
-                    g_pszScript);
+                    g_pszScript, g_cBits);
 
     /*
      * Declare the probe enable flags.
@@ -522,7 +538,7 @@ static RTEXITCODE generateAssembly(PSCMSTREAM pStrm)
                     "; they are placed together and early in the section to get some more\n"
                     "; cache and TLB hits when the probes are disabled.\n"
                     ";\n"
-                    "GLOBALNAME g_afVTGProbeEnabled\n"
+                    "VTG_GLOBAL g_afVTGProbeEnabled, data\n"
                     );
     uint32_t        cProbes = 0;
     RTListForEach(&g_ProviderHead, pProvider, VTGPROVIDER, ListEntry)
@@ -530,13 +546,13 @@ static RTEXITCODE generateAssembly(PSCMSTREAM pStrm)
         RTListForEach(&pProvider->ProbeHead, pProbe, VTGPROBE, ListEntry)
         {
             ScmStreamPrintf(pStrm,
-                            "GLOBALNAME g_fVTGProbeEnabled_%s_%s\n"
+                            "VTG_GLOBAL g_fVTGProbeEnabled_%s_%s, data\n"
                             "    db 0\n",
                             pProvider->pszName, pProbe->pszName);
             cProbes++;
         }
     }
-    ScmStreamPrintf(pStrm, "GLOBALNAME g_afVTGProbeEnabled_End\n");
+    ScmStreamPrintf(pStrm, "VTG_GLOBAL g_afVTGProbeEnabled_End, data\n");
     if (cProbes >= _32K)
         return RTMsgErrorExit(RTEXITCODE_FAILURE, "Too many probes: %u (max %u)", cProbes, _32K - 1);
 
@@ -548,11 +564,11 @@ static RTEXITCODE generateAssembly(PSCMSTREAM pStrm)
                     ";\n"
                     "; The string table.\n"
                     ";\n"
-                    "GLOBALNAME g_achVTGStringTable\n");
+                    "VTG_GLOBAL g_achVTGStringTable, data\n");
     g_offStrTab = 0;
     RTStrSpaceEnumerate(&g_StrSpace, generateAssemblyStrTabCallback, pStrm);
     ScmStreamPrintf(pStrm,
-                    "GLOBALNAME g_achVTGStringTable_End\n");
+                    "VTG_GLOBAL g_achVTGStringTable_End, data\n");
 
     /*
      * Write out the argument lists before we use them.
@@ -562,7 +578,7 @@ static RTEXITCODE generateAssembly(PSCMSTREAM pStrm)
                     ";\n"
                     "; The argument lists.\n"
                     ";\n"
-                    "GLOBALNAME g_aVTGArgLists\n");
+                    "VTG_GLOBAL g_aVTGArgLists, data\n");
     uint32_t off = 0;
     RTListForEach(&g_ProviderHead, pProvider, VTGPROVIDER, ListEntry)
     {
@@ -620,7 +636,7 @@ static RTEXITCODE generateAssembly(PSCMSTREAM pStrm)
         }
     }
     ScmStreamPrintf(pStrm,
-                    "GLOBALNAME g_aVTGArgLists_End\n");
+                    "VTG_GLOBAL g_aVTGArgLists_End, data\n");
 
 
     /*
@@ -631,7 +647,7 @@ static RTEXITCODE generateAssembly(PSCMSTREAM pStrm)
                     ";\n"
                     "; Prob definitions.\n"
                     ";\n"
-                    "GLOBALNAME g_aVTGProbes\n"
+                    "VTG_GLOBAL g_aVTGProbes, data\n"
                     "\n");
     uint32_t iProvider = 0;
     uint32_t iProbe = 0;
@@ -641,11 +657,12 @@ static RTEXITCODE generateAssembly(PSCMSTREAM pStrm)
         RTListForEach(&pProvider->ProbeHead, pProbe, VTGPROBE, ListEntry)
         {
             ScmStreamPrintf(pStrm,
-                            "GLOBALNAME g_VTGProbeData_%s_%s ; idx=#%4u\n"
+                            "VTG_GLOBAL g_VTGProbeData_%s_%s, data ; idx=#%4u\n"
                             "    dd %6u  ; name\n"
                             "    dd %6u  ; Argument list offset\n"
                             "    dw g_fVTGProbeEnabled_%s_%s - g_afVTGProbeEnabled\n"
                             "    dw %6u  ; provider index\n"
+                            "    dd 0       ; for the application\n"
                             ,
                             pProvider->pszName, pProbe->pszName, iProbe,
                             strtabGetOff(pProbe->pszName),
@@ -658,7 +675,7 @@ static RTEXITCODE generateAssembly(PSCMSTREAM pStrm)
         pProvider->cProbes = iProbe - pProvider->iFirstProbe;
         iProvider++;
     }
-    ScmStreamPrintf(pStrm, "GLOBALNAME g_aVTGProbes_End\n");
+    ScmStreamPrintf(pStrm, "VTG_GLOBAL g_aVTGProbes_End, data\n");
 
     /*
      * The providers data.
@@ -668,7 +685,7 @@ static RTEXITCODE generateAssembly(PSCMSTREAM pStrm)
                     ";\n"
                     "; Provider data.\n"
                     ";\n"
-                    "GLOBALNAME g_aVTGProviders\n");
+                    "VTG_GLOBAL g_aVTGProviders, data\n");
     iProvider = 0;
     RTListForEach(&g_ProviderHead, pProvider, VTGPROVIDER, ListEntry)
     {
@@ -695,7 +712,7 @@ static RTEXITCODE generateAssembly(PSCMSTREAM pStrm)
                         pProvider->AttrArguments.enmCode,   pProvider->AttrArguments.enmData,   pProvider->AttrArguments.enmDataDep);
         iProvider++;
     }
-    ScmStreamPrintf(pStrm, "GLOBALNAME g_aVTGProviders_End\n");
+    ScmStreamPrintf(pStrm, "VTG_GLOBAL g_aVTGProviders_End, data\n");
 
     /*
      * Emit code for the stub functions.
@@ -714,7 +731,7 @@ static RTEXITCODE generateAssembly(PSCMSTREAM pStrm)
         {
             ScmStreamPrintf(pStrm,
                             "\n"
-                            "GLOBALNAME VTGProbeStub_%s_%s ; (VBOXTPGPROBELOC pVTGProbeLoc",
+                            "VTG_GLOBAL VTGProbeStub_%s_%s, function; (VBOXTPGPROBELOC pVTGProbeLoc",
                             pProvider->pszName, pProbe->pszName);
             RTListForEach(&pProbe->ArgHead, pArg, VTGARG, ListEntry)
             {
@@ -861,31 +878,12 @@ static RTEXITCODE generateHeaderInner(PSCMSTREAM pStrm)
                     "#ifndef %s\n"
                     "#define %s\n"
                     "\n"
-                    "#include <iprt/types.h>\n"
-                    "\n"
-                    "#ifdef _MSC_VER\n"
-                    "# define DECL_DATA_SECT(scope, type, name, sect) __declspec(allocate(#sect)) scope type name\n"
-                    "#elif defined(__GNUC__)\n"
-                    "# ifdef RT_OS_DARWIN\n"
-                    "#  define DECL_DATA_SECT(scope, type, name, sect) scope type __attribute__((section(#sect \",\" #sect))) name\n"
-                    "# else\n"
-                    "#  define DECL_DATA_SECT(scope, type, name, sect) scope type __attribute__((section(\".\" #sect))) name\n"
-                    "# endif\n"
-                    "#else\n"
-                    "# error portme\n"
-                    "#endif\n"
-                    "\n"
-                    "typedef struct VBOXTPGPROBELOC\n"
-                    "{\n"
-                    "    uint32_t    uLine    : 31;\n"
-                    "    uint32_t    fEnabled : 1;\n"
-                    "    uint32_t    idProbe;\n"
-                    "    const char *pszFunction;\n"
-                    "    const char *pszFile;\n"
-                    "    uint8_t    *pbProbe;\n"
-                    "} VBOXTPGPROBELOC;\n"
+                    "#include <VBox/VBoxTpG.h>\n"
                     "\n"
                     "RT_C_DECLS_BEGIN\n"
+                    "\n"
+                    "#ifdef VBOX_WITH_DTRACE\n"
+                    "\n"
                     ,
                     g_pszScript,
                     szTmp,
@@ -895,16 +893,16 @@ static RTEXITCODE generateHeaderInner(PSCMSTREAM pStrm)
      * Declare data, code and macros for each probe.
      */
     PVTGPROVIDER pProv;
+    PVTGPROBE    pProbe;
+    PVTGARG      pArg;
     RTListForEach(&g_ProviderHead, pProv, VTGPROVIDER, ListEntry)
     {
-        PVTGPROBE pProbe;
         RTListForEach(&pProv->ProbeHead, pProbe, VTGPROBE, ListEntry)
         {
-            PVTGARG pArg;
             ScmStreamPrintf(pStrm,
                             "extern bool    g_fVTGProbeEnabled_%s_%s;\n"
                             "extern uint8_t g_VTGProbeData_%s_%s;\n"
-                            "DECLASM(void)  VTGProbeStub_%s_%s(VBOXTPGPROBELOC *",
+                            "DECLASM(void)  VTGProbeStub_%s_%s(PVTGPROBELOC",
                             pProv->pszName, pProbe->pszName,
                             pProv->pszName, pProbe->pszName,
                             pProv->pszName, pProbe->pszName);
@@ -915,9 +913,9 @@ static RTEXITCODE generateHeaderInner(PSCMSTREAM pStrm)
             generateProbeDefineName(szTmp, sizeof(szTmp), pProv->pszName, pProbe->pszName);
             ScmStreamPrintf(pStrm,
                             ");\n"
-                            "#define %s_ENABLED() \\\n"
+                            "# define %s_ENABLED() \\\n"
                             "    (RT_UNLIKELY(g_fVTGProbeEnabled_%s_%s)) \n"
-                            "#define %s("
+                            "# define %s("
                             , szTmp,
                             pProv->pszName, pProbe->pszName,
                             szTmp);
@@ -931,9 +929,9 @@ static RTEXITCODE generateHeaderInner(PSCMSTREAM pStrm)
             ScmStreamPrintf(pStrm,
                             ") \\\n"
                             "    do { \\\n"
-                            "        if (RT_UNLIKELY(/*g_fVTGProbeEnabled_%s_%s*/ true)) \\\n"
+                            "        if (RT_UNLIKELY(g_fVTGProbeEnabled_%s_%s)) \\\n"
                             "        { \\\n"
-                            "            DECL_DATA_SECT(static, VBOXTPGPROBELOC, s_VTGProbeLoc, VTGPrLc) = \\\n"
+                            "            VTG_DECL_VTGPROBELOC(s_VTGProbeLoc) = \\\n"
                             "            { __LINE__, 0, UINT32_MAX, __PRETTY_FUNCTION__, __FILE__, &g_VTGProbeData_%s_%s }; \\\n"
                             "            VTGProbeStub_%s_%s(&s_VTGProbeLoc",
                             pProv->pszName, pProbe->pszName,
@@ -960,7 +958,34 @@ static RTEXITCODE generateHeaderInner(PSCMSTREAM pStrm)
         }
     }
 
+    ScmStreamPrintf(pStrm,
+                    "\n"
+                    "#else\n"
+                    "\n");
+    RTListForEach(&g_ProviderHead, pProv, VTGPROVIDER, ListEntry)
+    {
+        RTListForEach(&pProv->ProbeHead, pProbe, VTGPROBE, ListEntry)
+        {
+            generateProbeDefineName(szTmp, sizeof(szTmp), pProv->pszName, pProbe->pszName);
+            ScmStreamPrintf(pStrm,
+                            "# define %s_ENABLED() (false)\n"
+                            "# define %s("
+                            , szTmp, szTmp);
+            RTListForEach(&pProbe->ArgHead, pArg, VTGARG, ListEntry)
+            {
+                if (RTListNodeIsFirst(&pProbe->ArgHead, &pArg->ListEntry))
+                    ScmStreamPrintf(pStrm, "%s", pArg->pszName);
+                else
+                    ScmStreamPrintf(pStrm, ", %s", pArg->pszName);
+            }
+            ScmStreamPrintf(pStrm,
+                            ") do { } while (0)\n");
+        }
+    }
+
     ScmStreamWrite(pStrm, RT_STR_TUPLE("\n"
+                                       "#endif\n"
+                                       "\n"
                                        "RT_C_DECLS_END\n"
                                        "#endif\n"));
     return RTEXITCODE_SUCCESS;
@@ -1440,7 +1465,7 @@ static RTEXITCODE parsePragmaDAttributes(PSCMSTREAM pStrm)
             && pProv->pszName[cchName] == '\0')
             break;
     }
-    if (!pProv)
+    if (RTListNodeIsDummy(&g_ProviderHead, pProv, VTGPROVIDER, ListEntry))
         return parseError(pStrm, cchName, "Provider not found");
 
     /*
