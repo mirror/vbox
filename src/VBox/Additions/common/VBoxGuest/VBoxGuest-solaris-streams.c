@@ -577,15 +577,15 @@ static struct
    /* iIOCCmd          cbData           pvDataIn   cbDataIn
       pvDataOut   cbDataOut rcExp   pfnExtra           fCanTransparent */
     { VUIDGFORMAT,     sizeof(int),     NULL,      0,
-      PVGFORMAT, CBGFORMAT, 0,      NULL,              false },
+      PVGFORMAT, CBGFORMAT, 0,      NULL,              true },
     { VUIDGFORMAT,     sizeof(int) - 1, NULL,      0,
       NULL,       0,        EINVAL, NULL,              false },
     { VUIDGFORMAT,     sizeof(int) + 1, NULL,      0,
-      PVGFORMAT, CBGFORMAT, 0,      NULL,              false },
+      PVGFORMAT, CBGFORMAT, 0,      NULL,              true },
     { VUIDSFORMAT,     sizeof(int),     PVGFORMAT, CBGFORMAT,
-      NULL,       0,        0,      NULL,              false },
+      NULL,       0,        0,      NULL,              true },
     { MSIOSRESOLUTION, CBMSIOSRES,      PMSIOSRES, CBMSIOSRES,
-      NULL,       0,        0,      testSetResolution, false },
+      NULL,       0,        0,      testSetResolution, true },
     { VUIDGWHEELINFO,  0,               NULL,      0,
       NULL,       0,        EINVAL, NULL,              true }
 };
@@ -662,6 +662,9 @@ void testWPutStreams(RTTEST hTest, unsigned i)
     /* Hack to ensure that miocpullup() gets called when needed. */
     if (g_asTestWPut[i].cbData > 0)
         RTTEST_CHECK_MSG(hTest, MBlk.b_flag == 1, (hTest, "i=%u\n", i));
+    if (!g_asTestWPut[i].rcExp)
+        RTTEST_CHECK_MSG(hTest, RD(&aQueues[0])->q_first = &MBlk,
+                         (hTest, "i=%u\n", i));
     if (g_asTestWPut[i].pfnExtra)
         g_asTestWPut[i].pfnExtra(hTest, WR(&aQueues[0]), &MBlk);
     vbgr0SolClose(RD(&aQueues[1]), 0, NULL);
@@ -677,9 +680,12 @@ void testWPutTransparent(RTTEST hTest, unsigned i)
     struct msgb MBlk, MBlkCont;
     struct datab DBlk;
     struct iocblk IOCBlk;
+    struct copyreq *pCopyReq = (struct copyreq *)&IOCBlk;
     int rc, cFormat = 0;
     unsigned char acData[1024];
 
+    if (g_asTestWPut[i].cbDataIn == 0 && g_asTestWPut[i].cbDataOut != 0)
+        return;  /* This case will be handled once the current ones work. */
     RT_ZERO(aQueues);
     doInitQueues(&aQueues[0]);
     rc = vbgr0SolOpen(RD(&aQueues[0]), &device, 0, 0, NULL);
@@ -705,18 +711,44 @@ void testWPutTransparent(RTTEST hTest, unsigned i)
     MBlk.b_wptr = (unsigned char *)&IOCBlk + sizeof(IOCBlk);
     MBlk.b_datap = &DBlk;
     rc = vbgr0SolWPut(WR(&aQueues[0]), &MBlk);
-    RTTEST_CHECK_MSG(hTest, IOCBlk.ioc_error == g_asTestWPut[i].rcExp,
-                     (hTest, "i=%u, IOCBlk.ioc_error=%d\n", i,
-                      IOCBlk.ioc_error));
-    RTTEST_CHECK_MSG(hTest, IOCBlk.ioc_count == g_asTestWPut[i].cbDataOut,
-                     (hTest, "i=%u, ioc_count=%u\n", i, IOCBlk.ioc_count));
-    RTTEST_CHECK_MSG(hTest, !memcmp(acData, g_asTestWPut[i].pvDataOut,
-                                    g_asTestWPut[i].cbDataOut),
-                     (hTest, "i=%u\n", i));
-    /* Hack to ensure that miocpullup() gets called when needed. */
-    if (g_asTestWPut[i].cbData > 0)
-        RTTEST_CHECK_MSG(hTest, MBlk.b_flag == 1, (hTest, "i=%u\n", i));
-    if (g_asTestWPut[i].pfnExtra)
+    RTTEST_CHECK_MSG(hTest, (   (   g_asTestWPut[i].cbDataIn
+                                 && (MBlk.b_datap->db_type == M_COPYIN))
+                             || (   g_asTestWPut[i].cbDataOut
+                                 && (MBlk.b_datap->db_type == M_COPYOUT))
+                             || (   (g_asTestWPut[i].rcExp == 0)
+                                 && MBlk.b_datap->db_type == M_IOCACK)
+                             || (MBlk.b_datap->db_type == M_IOCNAK)),
+                     (hTest, "i=%u, db_type=%u\n", i,
+                      (unsigned) MBlk.b_datap->db_type));
+    /* Our TRANSPARENT IOCtls can only return non-zero if they have no payload.
+     * Others should either return zero or be non-TRANSPARENT only. */
+    if (MBlk.b_datap->db_type == M_IOCNAK)
+        RTTEST_CHECK_MSG(hTest, IOCBlk.ioc_error == g_asTestWPut[i].rcExp,
+                         (hTest, "i=%u, IOCBlk.ioc_error=%d\n", i,
+                          IOCBlk.ioc_error));
+    if (g_asTestWPut[i].cbData)
+    {
+        RTTEST_CHECK_MSG(hTest, pCopyReq->cq_addr == acData,
+                         (hTest, "i=%u, cq_addr=%p\n", i, pCopyReq->cq_addr));
+        RTTEST_CHECK_MSG(hTest, pCopyReq->cq_size == g_asTestWPut[i].cbData,
+                         (hTest, "i=%u, cq_size=%llu\n", i,
+                          (unsigned long long)pCopyReq->cq_size));
+    }
+    /* Implementation detail - check that the private pointer is correctly
+     * set to the user address *for two direction IOCtls* or NULL otherwise. */
+    if (g_asTestWPut[i].cbDataIn && g_asTestWPut[i].cbDataOut)
+        RTTEST_CHECK_MSG(hTest, pCopyReq->cq_private == acData,
+                         (hTest, "i=%u, cq_private=%p\n", i,
+                          pCopyReq->cq_private));
+    else if (   (MBlk.b_datap->db_type == M_COPYIN)
+             || (MBlk.b_datap->db_type == M_COPYOUT))
+        RTTEST_CHECK_MSG(hTest, !pCopyReq->cq_private,
+                         (hTest, "i=%u, cq_private=%p\n", i,
+                          pCopyReq->cq_private));
+    if (!g_asTestWPut[i].rcExp)
+        RTTEST_CHECK_MSG(hTest, RD(&aQueues[0])->q_first = &MBlk,
+                         (hTest, "i=%u\n", i));
+    if (g_asTestWPut[i].pfnExtra && !g_asTestWPut[i].cbData)
         g_asTestWPut[i].pfnExtra(hTest, WR(&aQueues[0]), &MBlk);
     vbgr0SolClose(RD(&aQueues[1]), 0, NULL);
 }
@@ -779,10 +811,11 @@ struct
 } g_aVUIDIOCtlDescriptions[] =
 {
    { VUIDGFORMAT,     sizeof(int),                  OUT         },
-   { VUIDSFORMAT,     0,                            NONE        },
+   { VUIDSFORMAT,     sizeof(int),                  IN          },
+   { VUIDGADDR,       0,                            UNSPECIFIED },
    { VUIDGADDR,       0,                            UNSPECIFIED },
    { MSIOGETPARMS,    sizeof(Ms_parms),             OUT         },
-   { MSIOSETPARMS,    0,                            NONE        },
+   { MSIOSETPARMS,    sizeof(Ms_parms),             IN          },
    { MSIOSRESOLUTION, sizeof(Ms_screen_resolution), IN          },
    { MSIOBUTTONS,     sizeof(int),                  OUT         },
    { VUIDGWHEELCOUNT, sizeof(int),                  OUT         },
