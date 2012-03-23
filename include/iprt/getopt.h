@@ -82,6 +82,9 @@ RT_C_DECLS_BEGIN
 #define RTGETOPT_REQ_UUID                       15
 /** The value must be a string with value as "on" or "off". */
 #define RTGETOPT_REQ_BOOL_ONOFF                 16
+/** Boolean option accepting a wide range of typical ways of
+ * expression true and false. */
+#define RTGETOPT_REQ_BOOL                       17
 /** The mask of the valid required types. */
 #define RTGETOPT_REQ_MASK                       31
 /** Treat the value as hexadecimal - only applicable with the RTGETOPT_REQ_*INT*. */
