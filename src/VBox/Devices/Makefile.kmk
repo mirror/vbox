@@ -636,9 +636,9 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
  VBoxDD_SOURCES.win    += \
  	Audio/dsoundaudio.c \
  	Serial/DrvHostSerial.cpp 
-	ifdef VBOX_WITH_WIN_PARPORT_SUP
-	VBoxDD_SOURCES.win += Parallel/DrvHostParallel.cpp
-	endif
+ ifdef VBOX_WITH_WIN_PARPORT_SUP
+  VBoxDD_SOURCES.win += Parallel/DrvHostParallel.cpp
+ endif
 
  if defined(VBOX_WITH_NETFLT)
   VBoxDD_DEFS          += VBOX_WITH_NETFLT
