@@ -43,35 +43,6 @@
 /*******************************************************************************
 *   Structures and Typedefs                                                    *
 *******************************************************************************/
-/**
- * Code/data stability.
- */
-typedef enum kVTGStability
-{
-    kVTGStability_Invalid = 0,
-    kVTGStability_Internal,
-    kVTGStability_Private,
-    kVTGStability_Obsolete,
-    kVTGStability_External,
-    kVTGStability_Unstable,
-    kVTGStability_Evolving,
-    kVTGStability_Stable,
-    kVTGStability_Standard
-} kVTGStability;
-
-/**
- * Data dependency.
- */
-typedef enum kVTGClass
-{
-    kVTGClass_Invalid = 0,
-    kVTGClass_Unknown,
-    kVTGClass_Cpu,
-    kVTGClass_Platform,
-    kVTGClass_Group,
-    kVTGClass_Isa,
-    kVTGClass_Common
-} kVTGClass;
 
 typedef struct VTGATTRS
 {
