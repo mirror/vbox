@@ -1,10 +1,10 @@
 /* $Id$ */
 /** @file
- * SUPDrv - Static dtrace probes
+ * SUPDrv - Static dtrace probes.
  */
 
 /*
- * Copyright (C) 2010 Oracle Corporation
+ * Copyright (C) 2010-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -15,12 +15,13 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+
 provider vboxdrv
 {
-    probe supdrv__session__create(void *pvSession, int fUser);
-    probe supdrv__session__close(void *pvSession);
-    probe supdrv__ioctl__entry(void *pvSession, unsigned int uIOCtl, void *pvReqHdr);
-    probe supdrv__ioctl__return(void *pvSession, unsigned int uIOCtl, void *pvReqHdr, int rc, int rcReq);
+    probe session__create(struct SUPDRVSESSION *pSession, int fUser);
+    probe session__close(struct SUPDRVSESSION *pSession);
+    probe ioctl__entry(struct SUPDRVSESSION *pSession, unsigned int uIOCtl, void *pvReqHdr);
+    probe ioctl__return(struct SUPDRVSESSION *pSession, unsigned int uIOCtl, void *pvReqHdr, int rc, int rcReq);
 };
 
 #pragma D attributes Evolving/Evolving/Common provider vboxdrv provider
@@ -28,6 +29,5 @@ provider vboxdrv
 #pragma D attributes Private/Private/Unknown  provider vboxdrv function
 #pragma D attributes Evolving/Evolving/Common provider vboxdrv name
 #pragma D attributes Evolving/Evolving/Common provider vboxdrv args
-
 
 

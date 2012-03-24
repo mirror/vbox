@@ -65,6 +65,8 @@
 #include <iprt/string.h>
 #include <iprt/err.h>
 
+#include "dtrace/SUPDrv.h"
+
 
 /*******************************************************************************
 *   Defined Constants And Macros                                               *
