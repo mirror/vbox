@@ -398,7 +398,7 @@ ifdef VBOX_WITH_DTRACE_R0DRV
  VBoxDrv_SOURCES        += \
  	SUPDrv-dtrace.cpp 
 endif
-VBoxDRV_LDFLAGS.solaris += -N misc/ctf
+VBoxDrv_LDFLAGS.solaris += -N misc/ctf
 endif
 
 
