@@ -32,6 +32,7 @@
 #include "SUPDrvInternal.h"
 
 #include <VBox/err.h>
+#include <VBox/log.h>
 #include <VBox/VBoxTpG.h>
 
 #include <iprt/assert.h>
@@ -658,9 +659,6 @@ int supdrvDTraceModuleUnloading(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE pImage)
 }
 
 
-
-
-
 /**
  * @callback_method_impl{dtrace_pops_t,dtps_provide}
  */
@@ -678,7 +676,7 @@ static void     supdrvDTracePOps_Provide(void *pvProv, const dtrace_probedesc_t 
 
      /* Need a buffer for extracting the function names and mangling them in
         case of collision. */
-     pszFnNmBuf = (char *)RTMemAlloc(_4K + _1K);
+     pszFnNmBuf = (char *)RTMemAlloc(cbFnNmBuf);
      if (!pszFnNmBuf)
          return;
 
@@ -697,13 +695,19 @@ static void     supdrvDTracePOps_Provide(void *pvProv, const dtrace_probedesc_t 
                 using C++ compilers for most of the code.  ASSUMES nobody are
                 brave/stupid enough to use function pointer returns without
                 typedef'ing properly them. */
-             const char *pszName = supdrvVtgGetString(pProv->pHdr, pProbeDesc->offName);
-             const char *pszFunc = pProbeLoc->pszFunction;
-             const char *psz     = strchr(pProbeLoc->pszFunction, '(');
+             const char *pszPrbName = supdrvVtgGetString(pProv->pHdr, pProbeDesc->offName);
+             const char *pszFunc    = pProbeLoc->pszFunction;
+             const char *psz        = strchr(pProbeLoc->pszFunction, '(');
              size_t      cch;
              if (psz)
              {
-                 pszFunc = psz - 1; /* ASSUMES not space... FIXME */
+                 /* skip blanks preceeding the parameter parenthesis. */
+                 while (   (uintptr_t)psz > (uintptr_t)pProbeLoc->pszFunction
+                        && RT_C_IS_BLANK(psz[-1]))
+                     psz--;
+
+                 /* Find the start of the function name. */
+                 pszFunc = psz - 1;
                  while ((uintptr_t)pszFunc > (uintptr_t)pProbeLoc->pszFunction)
                  {
                      char ch = pszFunc[-1];
@@ -720,11 +724,33 @@ static void     supdrvDTracePOps_Provide(void *pvProv, const dtrace_probedesc_t 
              /* Look up the probe, if we have one in the same function, mangle
                 the function name a little to avoid having to deal with having
                 multiple location entries with the same probe ID. (lazy bird) */
-
-             //dtrace_probe_lookup()
-             //dtrace_probe_create()
-
              Assert(pProbeLoc->idProbe == UINT32_MAX);
+             if (dtrace_probe_lookup(pProv->idDtProv, pProv->pszModName, pszFnNmBuf, pszPrbName) != DTRACE_IDNONE)
+             {
+                 RTStrPrintf(pszFnNmBuf+cch, cbFnNmBuf - cch, "-%u",  pProbeLoc->uLine);
+                 if (dtrace_probe_lookup(pProv->idDtProv, pProv->pszModName, pszFnNmBuf, pszPrbName) != DTRACE_IDNONE)
+                 {
+                     unsigned iOrd = 2;
+                     while (iOrd < 128)
+                     {
+                         RTStrPrintf(pszFnNmBuf+cch, cbFnNmBuf - cch, "-%u-%u",  pProbeLoc->uLine, iOrd);
+                         if (dtrace_probe_lookup(pProv->idDtProv, pProv->pszModName, pszFnNmBuf, pszPrbName) == DTRACE_IDNONE)
+                             break;
+                         iOrd++;
+                     }
+                     if (iOrd >= 128)
+                     {
+                         LogRel(("VBoxDrv: More than 128 duplicate probe location instances in file %s at line %u, function %s [%s], probe %s\n",
+                                 pProbeLoc->pszFile, pProbeLoc->uLine, pProbeLoc->pszFunction, pszFnNmBuf, pszPrbName));
+                         continue;
+                     }
+                 }
+             }
+
+             /* Create the probe. */
+             AssertCompile(sizeof(pProbeLoc->idProbe) == sizeof(dtrace_id_t));
+             pProbeLoc->idProbe = dtrace_probe_create(pProv->idDtProv, pProv->pszModName, pszFnNmBuf, pszPrbName,
+                                                      0 /*aframes*/, pProbeLoc);
          }
 
          pProbeLoc++;
