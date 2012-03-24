@@ -290,63 +290,6 @@ $$(vboxdrv-mod_0_OUTDIR)/Makefile: \
 endif # real linux
 
 
-
-#
-# VBoxDrv.kext - The Darwin Kernel Extension.
-#
-ifeq ($(KBUILD_TARGET),darwin)
-# Leopard (x86) and Snow Leopard (x86/amd64)
-SYSMODS += VBoxDrv
-VBoxDrv_TEMPLATE    = VBOXR0DRV
-VBoxDrv_INST        = $(INST_VBOXDRV)Contents/MacOS/
-VBoxDrv_DEFS       := VBOX_WITH_HOST_VMX IN_RT_R0 IN_SUP_R0 SUPDRV_WITH_RELEASE_LOGGER VBOX_SVN_REV=$(VBOX_SVN_REV)
-VBoxDrv_DEFS.debug  = DEBUG_DARWIN_GIP
-VBoxDrv_INCS        = . $(VBoxDrv_0_OUTDIR)
-VBoxDrv_LIBS        = $(PATH_STAGE_LIB)/RuntimeR0Drv$(VBOX_SUFF_LIB)
-#VBoxDrv_LDFLAGS     = -v -Wl,-whyload -Wl,-v -Wl,-whatsloaded
-VBoxDrv_SOURCES     = \
-	SUPDrv.c \
-	SUPDrvSem.c \
-	$(KBUILD_TARGET)/SUPDrv-$(KBUILD_TARGET).cpp
-
-ifdef VBOX_WITH_DTRACE_R0DRV
- VBoxDrv_DEFS += VBOX_WITH_DTRACE
- VBoxDrv_INTERMEDIATES += $(VBoxDrv_0_OUTDIR)/SUPDrv-dtrace.h
- VBoxDrv_CLEAN         += $(VBoxDrv_0_OUTDIR)/SUPDrv-dtrace.h $(VBoxDrv_0_OUTDIR)/SUPDrv-dtrace.tmp
- $$(VBoxDrv_0_OUTDIR)/SUPDrv-dtrace.h: $(PATH_SUB_CURRENT)/SUPDrv-dtrace.d | $$(dir $$@)
-	dtrace -C -h -o $@.tmp -s $<
-	$(SED) -e '/<unistd\.h>/d' $@.tmp --output $@
-	$(RM) -f $@.tmp
-endif
-
-INSTALLS += VBoxDrv.kext
-VBoxDrv.kext_INST     = $(INST_VBOXDRV)Contents/
-VBoxDrv.kext_SOURCES  =	$(VBoxDrv.kext_0_OUTDIR)/Info.plist
-VBoxDrv.kext_CLEAN    =	$(VBoxDrv.kext_0_OUTDIR)/Info.plist
-
-$$(VBoxDrv.kext_0_OUTDIR)/Info.plist: \
-		$(PATH_SUB_CURRENT)/darwin/Info.plist \
-		$(VBOX_VERSION_MK) | $$(dir $$@)
-	$(call MSG_GENERATE,VBoxDrv,$@,$<)
-	$(QUIET)$(RM) -f $@
-	$(QUIET)$(SED) \
-		-e 's/@VBOX_VERSION_STRING@/$(VBOX_VERSION_STRING)/g' \
-		-e 's/@VBOX_VERSION_MAJOR@/$(VBOX_VERSION_MAJOR)/g' \
-		-e 's/@VBOX_VERSION_MINOR@/$(VBOX_VERSION_MINOR)/g' \
-		-e 's/@VBOX_VERSION_BUILD@/$(VBOX_VERSION_BUILD)/g' \
-		-e 's/@VBOX_VENDOR@/$(VBOX_VENDOR)/g' \
-		-e 's/@VBOX_PRODUCT@/$(VBOX_PRODUCT)/g' \
-		-e 's/@VBOX_C_YEAR@/$(VBOX_C_YEAR)/g' \
-		--output $@ \
-		$<
-
-# Common manual loader script.
-INSTALLS += Scripts
-Scripts_INST = $(INST_DIST)
-Scripts_EXEC_SOURCES  = \
-	darwin/load.sh
-
-endif # darwin
 ifeq ($(KBUILD_TARGET),os2)
 
 #
@@ -418,41 +361,77 @@ $$(vboxdrv-mod_0_OUTDIR)/Makefile: \
  endif
 
 endif # freebsd
-ifeq ($(KBUILD_TARGET),solaris)
+
 
 #
-# vboxdrv.o - The Solaris Kernel Module.
+# New VBoxDrv target. TODO: Convert all the above to use this!
 #
-vboxdrv_TEMPLATE      = VBOXR0DRV
-vboxdrv_DEFS          = IN_RT_R0 IN_SUP_R0 SUPDRV_WITH_RELEASE_LOGGER VBOX_SVN_REV=$(VBOX_SVN_REV)
+if1of ($(KBUILD_TARGET), darwin solaris)
+# Leopard (x86) and Snow Leopard (x86/amd64)
+SYSMODS += VBoxDrv
+VBoxDrv_TEMPLATE         = VBOXR0DRV
+VBoxDrv_NAME.solaris     = vboxdrv
+VBoxDrv_NAME.freebsd     = vboxdrv
+VBoxDrv_INST.darwin      = $(INST_VBOXDRV)Contents/MacOS/
+VBoxDrv_DEFS            := IN_RT_R0 IN_SUP_R0 SUPDRV_WITH_RELEASE_LOGGER VBOX_SVN_REV=$(VBOX_SVN_REV)
+ifdef VBOX_WITH_DTRACE_R0DRV
+ VBoxDrv_DEFS           += VBOX_WITH_DTRACE VBOX_WITH_DTRACE_R0DRV
+endif
 ifdef VBOX_WITH_NETFLT
- vboxdrv_DEFS        += VBOX_WITH_NETFLT
+ vboxdrv_DEFS.solaris   += VBOX_WITH_NETFLT
 endif
 ifdef VBOX_WITH_NATIVE_SOLARIS_LOADING
- vboxdrv_DEFS        += VBOX_WITH_NATIVE_SOLARIS_LOADING
+ vboxdrv_DEFS.solaris   += VBOX_WITH_NATIVE_SOLARIS_LOADING
 endif
-ifdef VBOX_WITH_DTRACE_R0DRV
- vboxdrv_DEFS        += VBOX_WITH_DTRACE VBOX_WITH_DTRACE_R0DRV
-endif
-vboxdrv_DEPS         += $(VBOX_SVN_REV_KMK)
-vboxdrv_INCS         := $(PATH_SUB_CURRENT)
-vboxdrv_LIBS          = $(PATH_STAGE_LIB)/RuntimeR0Drv$(VBOX_SUFF_LIB)
-vboxdrv_SOURCES       = \
-	$(KBUILD_TARGET)/SUPDrv-$(KBUILD_TARGET).c \
+VBoxDrv_DEFS.darwin:= VBOX_WITH_HOST_VMX
+#VBoxDrv_DEFS.debug      += DEBUG_DARWIN_GIP
+VBoxDrv_INCS             = . $(VBoxDrv_0_OUTDIR)
+VBoxDrv_INCS.darwin      = ./darwin
+VBoxDrv_LIBS             = $(PATH_STAGE_LIB)/RuntimeR0Drv$(VBOX_SUFF_LIB)
+#VBoxDrv_LDFLAGS         = -v -Wl,-whyload -Wl,-v -Wl,-whatsloaded
+VBoxDrv_SOURCES          = \
 	SUPDrv.c \
-	SUPDrvSem.c
- ifdef VBOX_WITH_DTRACE_R0DRV
-  vboxdrv_SOURCES    += \
-  	SUPDrv-dtrace.cpp
- endif
-vboxdrv_LDFLAGS     += -N misc/ctf
+	SUPDrvSem.c \
+	$(KBUILD_TARGET)/SUPDrv-$(KBUILD_TARGET).cpp
+ifdef VBOX_WITH_DTRACE_R0DRV
+ VBoxDrv_SOURCES        += \
+ 	SUPDrv-dtrace.cpp
+endif
+VBoxDRV_LDFLAGS.solaris += -N misc/ctf
+endif
 
-endif # solaris
 
-#
-# SUPDrv.c needs the VBOX_SVN_REV.
-#
-SUPDrv.c_DEFS += VBOX_SVN_REV=$(VBOX_SVN_REV)
+if1of ($(KBUILD_TARGET), darwin)
+ # Files necessary to make a darwin kernel extension bundle.
+ INSTALLS.darwin += VBoxDrv.kext
+ VBoxDrv.kext_INST     = $(INST_VBOXDRV)Contents/
+ VBoxDrv.kext_SOURCES  = $(VBoxDrv.kext_0_OUTDIR)/Info.plist
+ VBoxDrv.kext_CLEAN    = $(VBoxDrv.kext_0_OUTDIR)/Info.plist
+
+$$(VBoxDrv.kext_0_OUTDIR)/Info.plist: \
+		$(PATH_SUB_CURRENT)/darwin/Info.plist \
+		$(VBOX_VERSION_MK) | $$(dir $$@)
+	$(call MSG_GENERATE,VBoxDrv,$@,$<)
+	$(QUIET)$(RM) -f $@
+	$(QUIET)$(SED) \
+		-e 's/@VBOX_VERSION_STRING@/$(VBOX_VERSION_STRING)/g' \
+		-e 's/@VBOX_VERSION_MAJOR@/$(VBOX_VERSION_MAJOR)/g' \
+		-e 's/@VBOX_VERSION_MINOR@/$(VBOX_VERSION_MINOR)/g' \
+		-e 's/@VBOX_VERSION_BUILD@/$(VBOX_VERSION_BUILD)/g' \
+		-e 's/@VBOX_VENDOR@/$(VBOX_VENDOR)/g' \
+		-e 's/@VBOX_PRODUCT@/$(VBOX_PRODUCT)/g' \
+		-e 's/@VBOX_C_YEAR@/$(VBOX_C_YEAR)/g' \
+		--output $@ \
+		$<
+endif
+
+if1of ($(KBUILD_TARGET), darwin)
+ # Common manual loader script.
+ INSTALLS += Scripts
+ Scripts_INST = $(INST_DIST)
+ Scripts_EXEC_SOURCES  = \
+	$(KBUILD_TARGET)/load.sh
+endif
 
 
 endif # !VBOX_ONLY_DOCS && !VBOX_ONLY_EXTPACKS && !VBOX_ONLY_TESTSUITE

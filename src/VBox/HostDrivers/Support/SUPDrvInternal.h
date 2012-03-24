@@ -33,8 +33,10 @@
 *******************************************************************************/
 #include <VBox/cdefs.h>
 #include <VBox/types.h>
-#include <iprt/assert.h>
 #include <VBox/sup.h>
+
+#include <iprt/assert.h>
+#include <iprt/list.h>
 #include <iprt/memobj.h>
 #include <iprt/time.h>
 #include <iprt/timer.h>
@@ -522,10 +524,13 @@ typedef struct SUPDRVDEVEXT
     PSUPDRVFACTORYREG               pComponentFactoryHead;
 
 #ifdef VBOX_WITH_DTRACE_R0DRV
-
+    /** Lock protecting DtProviderList. */
+    RTSEMFASTMUTEX                  mtxDTrace;
+    /** List of DTrace providers (SUPDRVDTPROVIDER). */
+    RTLISTANCHOR                    DtProviderList;
 #endif
 
-    /* 
+    /*
      * Note! The non-agnostic bits must be a the very end of the structure!
      */
 #ifndef SUPDRV_AGNOSTIC
