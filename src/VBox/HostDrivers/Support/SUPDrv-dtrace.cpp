@@ -33,9 +33,18 @@
 
 #include <VBox/err.h>
 #include <VBox/VBoxTpG.h>
-#include <iprt/assert.h>
 
-#include <sys/dtrace.h>
+#include <iprt/assert.h>
+#include <iprt/ctype.h>
+#include <iprt/list.h>
+#include <iprt/mem.h>
+#include <iprt/semaphore.h>
+
+#ifdef RT_OS_DARWIN /** @todo figure this! */
+# include "/Developer/SDKs/MacOSX10.6.sdk/usr/include/sys/dtrace.h"
+#else
+# include <sys/dtrace.h>
+#endif
 
 
 /*******************************************************************************
@@ -58,19 +67,32 @@ typedef struct SUPDRVDTPROVIDER
      * driver. */
     PSUPDRVLDRIMAGE     pImage;
     /** The session this provider is associated with if registered via
-     * SUPR0VtgRegisterDrv.  NULL if pImage is set. */ 
+     * SUPR0VtgRegisterDrv.  NULL if pImage is set. */
     PSUPDRVSESSION      pSession;
     /** The module name. */
     const char         *pszModName;
+
+    /** Dtrace provider attributes. */
+    dtrace_pattr_t      DtAttrs;
+    /** The ID of this provider. */
+    dtrace_provider_id_t idDtProv;
 } SUPDRVDTPROVIDER;
 /** Pointer to the data for a provider. */
 typedef SUPDRVDTPROVIDER *PSUPDRVDTPROVIDER;
+
+/* Seems there is some return code difference here. Keep the return code and
+   case it to whatever the host desires. */
+#ifdef RT_OS_DARWIN
+typedef void FNPOPS_ENABLE(void *, dtrace_id_t, void *);
+#else
+typedef int  FNPOPS_ENABLE(void *, dtrace_id_t, void *);
+#endif
 
 
 /*******************************************************************************
 *   Internal Functions                                                         *
 *******************************************************************************/
-static void     supdrvDTracePOps_ProvideModule(void *pvProv, struct modctl *pMod);
+static void     supdrvDTracePOps_Provide(void *pvProv, const dtrace_probedesc_t *pDtProbeDesc);
 static int      supdrvDTracePOps_Enable(void *pvProv, dtrace_id_t idProbe, void *pvProbe);
 static void     supdrvDTracePOps_Disable(void *pvProv, dtrace_id_t idProbe, void *pvProbe);
 static void     supdrvDTracePOps_GetArgDesc(void *pvProv, dtrace_id_t idProbe, void *pvProbe,
@@ -99,9 +121,9 @@ static dtrace_pattr_t g_DefProvAttrs =
  */
 static const dtrace_pops_t g_SupDrvDTraceProvOps =
 {
-    /* .dtps_provide         = */ NULL,
-    /* .dtps_provide_module  = */ supdrvDTracePOps_ProvideModule,
-    /* .dtps_enable          = */ supdrvDTracePOps_Enable,
+    /* .dtps_provide         = */ supdrvDTracePOps_Provide,
+    /* .dtps_provide_module  = */ NULL,
+    /* .dtps_enable          = */ (FNPOPS_ENABLE *)supdrvDTracePOps_Enable,
     /* .dtps_disable         = */ supdrvDTracePOps_Disable,
     /* .dtps_suspend         = */ NULL,
     /* .dtps_resume          = */ NULL,
@@ -112,13 +134,25 @@ static const dtrace_pops_t g_SupDrvDTraceProvOps =
 };
 
 
-#define VERR_SUPDRV_VTG_MAGIC           (-3704)
-#define VERR_SUPDRV_VTG_BITS            (-3705)
-#define VERR_SUPDRV_VTG_RESERVED        (-3705)
-#define VERR_SUPDRV_VTG_BAD_PTR         (-3706)
-#define VERR_SUPDRV_VTG_TOO_FEW         (-3707)
-#define VERR_SUPDRV_VTG_TOO_MUCH        (-3708)
-#define VERR_SUPDRV_VTG_NOT_MULTIPLE    (-3709)
+#define VERR_SUPDRV_VTG_MAGIC                   (-3704)
+#define VERR_SUPDRV_VTG_BITS                    (-3705)
+//#define VERR_SUPDRV_VTG_RESERVED                (-3705)
+#define VERR_SUPDRV_VTG_BAD_HDR                 (-3706)
+#define VERR_SUPDRV_VTG_BAD_HDR_PTR             (-3706)
+#define VERR_SUPDRV_VTG_BAD_HDR_TOO_FEW         (-3707)
+#define VERR_SUPDRV_VTG_BAD_HDR_TOO_MUCH        (-3708)
+#define VERR_SUPDRV_VTG_BAD_HDR_NOT_MULTIPLE    (-3709)
+#define VERR_SUPDRV_VTG_STRTAB_OFF              (-3709)
+#define VERR_SUPDRV_VTG_BAD_STRING              (-1111)
+#define VERR_SUPDRV_VTG_STRING_TOO_LONG         (-1111)
+#define VERR_SUPDRV_VTG_BAD_ATTR                (-1111)
+#define VERR_SUPDRV_VTG_BAD_PROVIDER            (-1111)
+#define VERR_SUPDRV_VTG_BAD_PROBE               (-1111)
+#define VERR_SUPDRV_VTG_BAD_ARGLIST             (-3709)
+#define VERR_SUPDRV_VTG_BAD_PROBE_ENABLED       (-1111)
+#define VERR_SUPDRV_VTG_BAD_PROBE_LOC           (-3709)
+#define VERR_SUPDRV_VTG_ALREADY_REGISTERED      (-1111)
+#define VERR_SUPDRV_VTG_ONLY_ONCE_PER_SESSION   (-1111)
 
 
 static int supdrvVtgValidateString(const char *psz)
@@ -129,34 +163,36 @@ static int supdrvVtgValidateString(const char *psz)
         char const ch = psz[off++];
         if (!ch)
             return VINF_SUCCESS;
-        if (   !RTLocCIsAlNum(ch) 
+        if (   !RTLocCIsAlNum(ch)
             && ch != ' '
             && ch != '('
             && ch != ')'
             && ch != ','
             && ch != '*'
-            && ch != '&' 
+            && ch != '&'
            )
             return VERR_SUPDRV_VTG_BAD_STRING;
     }
     return VERR_SUPDRV_VTG_STRING_TOO_LONG;
 }
 
-/** 
+/**
  * Validates the VTG data.
- *  
+ *
  * @returns VBox status code.
  * @param   pVtgHdr             The VTG object header of the data to validate.
  * @param   cbVtgObj            The size of the VTG object.
- * @param   pbImage             The image base. For validating the probe 
+ * @param   pbImage             The image base. For validating the probe
  *                              locations.
  * @param   cbImage             The image size to go with @a pbImage.
  */
-static int supdrvVtgValidate(PVTGOBJHDR pVtgHdr, size_t cbVtgObj, uint8_t *pbImage, size_t cbImage)
+static int supdrvVtgValidate(PVTGOBJHDR pVtgHdr, size_t cbVtgObj, const uint8_t *pbImage, size_t cbImage)
 {
     uintptr_t   cbTmp;
+    uintptr_t   offTmp;
     uintptr_t   i;
     int         rc;
+    uint32_t    cProviders;
 
     if (!pbImage || !cbImage)
     {
@@ -164,38 +200,27 @@ static int supdrvVtgValidate(PVTGOBJHDR pVtgHdr, size_t cbVtgObj, uint8_t *pbIma
         cbImage = 0;
     }
 
-#define MY_VALIDATE_PTR(p, cb, cMin, cMax, cbUnit) \
+#define MY_VALIDATE_PTR(p, cb, cMin, cMax, cbUnit, rcBase) \
     do { \
         if (   (cb) >= cbVtgObj \
             || (uintptr_t)(p) - (uintptr_t)pVtgHdr < cbVtgObj - (cb) ) \
-            return VERR_SUPDRV_VTG_BAD_PTR; \
+            return rcBase ## _PTR; \
         if ((cb) <  (cMin) * (cbUnit)) \
-            return VERR_SUPDRV_VTG_TOO_FEW; \
+            return rcBase ## _TOO_FEW; \
         if ((cb) >= (cMax) * (cbUnit)) \
-            return VERR_SUPDRV_VTG_TOO_MUCH; \
+            return rcBase ## _TOO_MUCH; \
         if ((cb) / (cbUnit) * (cbUnit) != (cb)) \
-            return VERR_SUPDRV_VTG_NOT_MULTIPLE; \
+            return rcBase ## _NOT_MULTIPLE; \
     } while (0)
-#define MY_WITHIN_IMAGE(p) \
+#define MY_WITHIN_IMAGE(p, rc) \
     do { \
         if (pbImage) \
         { \
             if ((uintptr_t)(p) - (uintptr_t)pbImage > cbImage) \
-                return VERR_SUPDRV_VTG_BAD_PTR; \
+                return (rc); \
         } \
         else if (!RT_VALID_PTR(p)) \
-            return VERR_SUPDRV_VTG_BAD_PTR; \
-    } while (0)
-#define MY_WITHIN_IMAGE_RANGE(p, cb)
-    do { \
-        if (pbImage) \
-        { \
-            if (   (cb) > cbImage \
-                || (uintptr_t)(p) - (uintptr_t)pbImage > cbImage - (cb)) \
-                return VERR_SUPDRV_VTG_BAD_PTR; \
-        } \
-        else if (!RT_VALID_PTR(p) || RT_VALID_PTR((uint8_t *)(p) + cb)) \
-            return VERR_SUPDRV_VTG_BAD_PTR; \
+            return (rc); \
     } while (0)
 #define MY_VALIDATE_STR(offStrTab) \
     do { \
@@ -205,7 +230,7 @@ static int supdrvVtgValidate(PVTGOBJHDR pVtgHdr, size_t cbVtgObj, uint8_t *pbIma
         if (rc != VINF_SUCCESS) \
             return rc; \
     } while (0)
-#define MY_VALIDATE_ATTR(Attr)
+#define MY_VALIDATE_ATTR(Attr) \
     do { \
         if ((Attr).u8Code    <= (uint8_t)kVTGStability_Invalid || (Attr).u8Code    >= (uint8_t)kVTGStability_End) \
             return VERR_SUPDRV_VTG_BAD_ATTR; \
@@ -223,21 +248,21 @@ static int supdrvVtgValidate(PVTGOBJHDR pVtgHdr, size_t cbVtgObj, uint8_t *pbIma
     if (pVtgHdr->cBits != ARCH_BITS)
         return VERR_SUPDRV_VTG_BITS;
     if (pVtgHdr->u32Reserved0)
-        return VERR_SUPDRV_VTG_RESERVED;
+        return VERR_SUPDRV_VTG_BAD_HDR;
 
-    MY_VALIDATE_PTR(pVtgHdr->paProviders,       pVtgHdr->cbProviders,    1,    16, sizeof(VTGDESCPROVIDER));
-    MY_VALIDATE_PTR(pVtgHdr->paProbes,          pVtgHdr->cbProbes,       1,  _32K, sizeof(VTGDESCPROBE));
-    MY_VALIDATE_PTR(pVtgHdr->pafProbeEnabled,   pVtgHdr->cbProbeEnabled, 1,  _32K, sizeof(bool));
-    MY_VALIDATE_PTR(pVtgHdr->pachStrTab,        pVtgHdr->cbStrTab,       4,   _1M, sizeof(char));
-    MY_VALIDATE_PTR(pVtgHdr->paArgLists,        pVtgHdr->cbArgLists,     0,  _32K, sizeof(uint32_t));
-    MY_WITHIN_IMAGE(pVtgHdr->paProbLocs);
-    MY_WITHIN_IMAGE(pVtgHdr->paProbLocsEnd);
+    MY_VALIDATE_PTR(pVtgHdr->paProviders,       pVtgHdr->cbProviders,    1,    16, sizeof(VTGDESCPROVIDER), VERR_SUPDRV_VTG_BAD_HDR);
+    MY_VALIDATE_PTR(pVtgHdr->paProbes,          pVtgHdr->cbProbes,       1,  _32K, sizeof(VTGDESCPROBE),    VERR_SUPDRV_VTG_BAD_HDR);
+    MY_VALIDATE_PTR(pVtgHdr->pafProbeEnabled,   pVtgHdr->cbProbeEnabled, 1,  _32K, sizeof(bool),            VERR_SUPDRV_VTG_BAD_HDR);
+    MY_VALIDATE_PTR(pVtgHdr->pachStrTab,        pVtgHdr->cbStrTab,       4,   _1M, sizeof(char),            VERR_SUPDRV_VTG_BAD_HDR);
+    MY_VALIDATE_PTR(pVtgHdr->paArgLists,        pVtgHdr->cbArgLists,     1,  _32K, sizeof(uint32_t),        VERR_SUPDRV_VTG_BAD_HDR);
+    MY_WITHIN_IMAGE(pVtgHdr->paProbLocs,    VERR_SUPDRV_VTG_BAD_HDR_PTR);
+    MY_WITHIN_IMAGE(pVtgHdr->paProbLocsEnd, VERR_SUPDRV_VTG_BAD_HDR_PTR);
     if ((uintptr_t)pVtgHdr->paProbLocs > (uintptr_t)pVtgHdr->paProbLocsEnd)
-        return VERR_SUPDRV_VTG_BAD_PTR;
+        return VERR_SUPDRV_VTG_BAD_HDR_PTR;
     cbTmp = (uintptr_t)pVtgHdr->paProbLocsEnd - (uintptr_t)pVtgHdr->paProbLocs;
-    MY_VALIDATE_PTR(pVtgHdr->paProbLocs,        cbTmp,                   1, _128K, sizeof(VTGPROBELOC))
+    MY_VALIDATE_PTR(pVtgHdr->paProbLocs,        cbTmp,                   1, _128K, sizeof(VTGPROBELOC),     VERR_SUPDRV_VTG_BAD_HDR);
     if (cbTmp < sizeof(VTGPROBELOC))
-        return VERR_SUPDRV_VTG_TOO_FEW;
+        return VERR_SUPDRV_VTG_BAD_HDR_TOO_FEW;
 
     if (pVtgHdr->cbProbes / sizeof(VTGDESCPROBE) != pVtgHdr->cbProbeEnabled)
         return VERR_SUPDRV_VTG_BAD_HDR;
@@ -245,7 +270,7 @@ static int supdrvVtgValidate(PVTGOBJHDR pVtgHdr, size_t cbVtgObj, uint8_t *pbIma
     /*
      * Validate the providers.
      */
-    i = pVtgHdr->cbProviders / sizeof(VTGDESCPROVIDER);
+    cProviders = i = pVtgHdr->cbProviders / sizeof(VTGDESCPROVIDER);
     while (i-- > 0)
     {
         MY_VALIDATE_STR(pVtgHdr->paProviders[i].offName);
@@ -256,10 +281,10 @@ static int supdrvVtgValidate(PVTGOBJHDR pVtgHdr, size_t cbVtgObj, uint8_t *pbIma
         MY_VALIDATE_ATTR(pVtgHdr->paProviders[i].AttrSelf);
         MY_VALIDATE_ATTR(pVtgHdr->paProviders[i].AttrModules);
         MY_VALIDATE_ATTR(pVtgHdr->paProviders[i].AttrFunctions);
-        MY_VALIDATE_ATTR(pVtgHdr->paProviders[i].AttrName);
+        MY_VALIDATE_ATTR(pVtgHdr->paProviders[i].AttrNames);
         MY_VALIDATE_ATTR(pVtgHdr->paProviders[i].AttrArguments);
         if (pVtgHdr->paProviders[i].bReserved)
-            return VERR_SUPDRV_VTG_RESERVED;
+            return VERR_SUPDRV_VTG_BAD_PROVIDER;
     }
 
     /*
@@ -268,30 +293,121 @@ static int supdrvVtgValidate(PVTGOBJHDR pVtgHdr, size_t cbVtgObj, uint8_t *pbIma
     i = pVtgHdr->cbProbes / sizeof(VTGDESCPROBE);
     while (i-- > 0)
     {
+        PVTGDESCARGLIST pArgList;
+        unsigned        iArg;
+
         MY_VALIDATE_STR(pVtgHdr->paProbes[i].offName);
+        if (pVtgHdr->paProbes[i].offArgList >= pVtgHdr->cbArgLists)
+            return VERR_SUPDRV_VTG_BAD_PROBE;
+        if (pVtgHdr->paProbes[i].offArgList & 3)
+            return VERR_SUPDRV_VTG_BAD_PROBE;
+        if (pVtgHdr->paProbes[i].idxEnabled != i) /* The lists are parallel. */
+            return VERR_SUPDRV_VTG_BAD_PROBE;
+        if (pVtgHdr->paProbes[i].idxProvider >= cProviders)
+            return VERR_SUPDRV_VTG_BAD_PROBE;
+        if (  i - pVtgHdr->paProviders[pVtgHdr->paProbes[i].idxProvider].iFirstProbe
+            < pVtgHdr->paProviders[pVtgHdr->paProbes[i].idxProvider].cProbes)
+            return VERR_SUPDRV_VTG_BAD_PROBE;
+        if (pVtgHdr->paProbes[i].u32User)
+            return VERR_SUPDRV_VTG_BAD_PROBE;
+
+        /* The referenced argument list. */
+        pArgList = (PVTGDESCARGLIST)((uintptr_t)pVtgHdr->paArgLists + pVtgHdr->paProbes[i].offArgList);
+        if (pArgList->cArgs > 16)
+            return VERR_SUPDRV_VTG_BAD_ARGLIST;
+        if (   pArgList->abReserved[0]
+            || pArgList->abReserved[1]
+            || pArgList->abReserved[2])
+            return VERR_SUPDRV_VTG_BAD_ARGLIST;
+        iArg = pArgList->cArgs;
+        while (iArg-- > 0)
+        {
+            MY_VALIDATE_STR(pArgList->aArgs[iArg].offType);
+            MY_VALIDATE_STR(pArgList->aArgs[iArg].offName);
+        }
+    }
+
+    /*
+     * Check that pafProbeEnabled is all zero.
+     */
+    i = pVtgHdr->cbProbeEnabled;
+    while (i-- > 0)
+        if (pVtgHdr->pafProbeEnabled[0])
+            return VERR_SUPDRV_VTG_BAD_PROBE_ENABLED;
+
+    /*
+     * Probe locations.
+     */
+    i = pVtgHdr->paProbLocsEnd - pVtgHdr->paProbLocs;
+    while (i-- > 0)
+    {
+        if (pVtgHdr->paProbLocs[i].uLine >= _1G)
+            return VERR_SUPDRV_VTG_BAD_PROBE_LOC;
+        if (pVtgHdr->paProbLocs[i].fEnabled)
+            return VERR_SUPDRV_VTG_BAD_PROBE_LOC;
+        if (pVtgHdr->paProbLocs[i].idProbe != UINT32_MAX)
+            return VERR_SUPDRV_VTG_BAD_PROBE_LOC;
+        MY_WITHIN_IMAGE(pVtgHdr->paProbLocs[i].pszFunction, VERR_SUPDRV_VTG_BAD_PROBE_LOC);
+        MY_WITHIN_IMAGE(pVtgHdr->paProbLocs[i].pszFile,     VERR_SUPDRV_VTG_BAD_PROBE_LOC);
+        offTmp = (uintptr_t)pVtgHdr->paProbLocs[i].pbProbe - (uintptr_t)pVtgHdr->paProbes;
+        if (offTmp >= pVtgHdr->cbProbes)
+            return VERR_SUPDRV_VTG_BAD_PROBE_LOC;
+        if (offTmp / sizeof(VTGDESCPROBE) * sizeof(VTGDESCPROBE) != offTmp)
+            return VERR_SUPDRV_VTG_BAD_PROBE_LOC;
     }
 
     return VINF_SUCCESS;
 #undef MY_VALIDATE_STR
 #undef MY_VALIDATE_PTR
 #undef MY_WITHIN_IMAGE
-#undef MY_WITHIN_IMAGE_RANGE
+}
+
+
+/**
+ * Converts an attribute from VTG description speak to DTrace.
+ *
+ * @param   pDtAttr             The DTrace attribute (dst).
+ * @param   pVtgAttr            The VTG attribute descriptor (src).
+ */
+static void supdrvVtgConvAttr(dtrace_attribute_t *pDtAttr, PCVTGDESCATTR pVtgAttr)
+{
+    pDtAttr->dtat_name  = pVtgAttr->u8Code - 1;
+    pDtAttr->dtat_data  = pVtgAttr->u8Data - 1;
+    pDtAttr->dtat_class = pVtgAttr->u8DataDep - 1;
+}
+
+/**
+ * Gets a string from the string table.
+ *
+ * @returns Pointer to the string.
+ * @param   pVtgHdr             The VTG object header.
+ * @param   offStrTab           The string table offset.
+ */
+static const char *supdrvVtgGetString(PVTGOBJHDR pVtgHdr,  uint32_t offStrTab)
+{
+    Assert(offStrTab < pVtgHdr->cbStrTab);
+    return &pVtgHdr->pachStrTab[offStrTab];
 }
 
 
 /**
  * Registers the VTG tracepoint providers of a driver.
- *  
- * @returns VBox status code. 
+ *
+ * @returns VBox status code.
  * @param   pszName             The driver name.
- * @param   pVtgHdr             The VTG header. 
- * @param   pImage              The image if applicable. 
- * @param   pSession            The session if applicable. 
- * @param   pszModName          The module name. 
+ * @param   pVtgHdr             The VTG object header.
+ * @param   pVtgObj             The size of the VTG object.
+ * @param   pImage              The image if applicable.
+ * @param   pSession            The session if applicable.
+ * @param   pszModName          The module name.
  */
-static int supdrvVtgRegister(PSUPDRVDEVEXT pDevExt, PVTGOBJHDR pVtgHdr, PSUPDRVLDRIMAGE pImage, PSUPDRVSESSION pSession,
+static int supdrvVtgRegister(PSUPDRVDEVEXT pDevExt, PVTGOBJHDR pVtgHdr, size_t cbVtgObj, PSUPDRVLDRIMAGE pImage, PSUPDRVSESSION pSession,
                              const char *pszModName)
 {
+    int                 rc;
+    unsigned            i;
+    PSUPDRVDTPROVIDER   pProv;
+
     /*
      * Validate input.
      */
@@ -300,23 +416,113 @@ static int supdrvVtgRegister(PSUPDRVDEVEXT pDevExt, PVTGOBJHDR pVtgHdr, PSUPDRVL
     AssertPtrNullReturn(pImage, VERR_INVALID_POINTER);
     AssertPtrNullReturn(pSession, VERR_INVALID_POINTER);
     AssertPtrReturn(pszModName, VERR_INVALID_POINTER);
-    AssertReturn((pImage == NULL) != (pSession != NULL), VERR_INVALID_PARAMETER);
 
+    if (pImage)
+        rc = supdrvVtgValidate(pVtgHdr, cbVtgObj, (const uint8_t *)pImage->pvImage, pImage->cbImageBits);
+    else
+        rc = supdrvVtgValidate(pVtgHdr, cbVtgObj, NULL, 0);
+    if (RT_FAILURE(rc))
+        return rc;
 
+    rc = RTSemFastMutexRequest(pDevExt->mtxDTrace);
+    if (RT_SUCCESS(rc))
+    {
+        RTListForEach(&pDevExt->DtProviderList, pProv, SUPDRVDTPROVIDER, ListEntry)
+        {
+            if (pProv->pHdr == pVtgHdr)
+            {
+                RTSemFastMutexRelease(pDevExt->mtxDTrace);
+                return VERR_SUPDRV_VTG_ALREADY_REGISTERED;
+            }
+            if (pProv->pSession == pSession && !pProv->pImage)
+            {
+                RTSemFastMutexRelease(pDevExt->mtxDTrace);
+                return VERR_SUPDRV_VTG_ONLY_ONCE_PER_SESSION;
+            }
+        }
+        RTSemFastMutexRelease(pDevExt->mtxDTrace);
+    }
 
     /*
-     *
+     * Register the providers.
      */
+    i = pVtgHdr->cbProviders / sizeof(VTGDESCPROVIDER);
+    while (i-- > 0)
+    {
+        PVTGDESCPROVIDER pDesc  = &pVtgHdr->paProviders[i];
+        pProv = (PSUPDRVDTPROVIDER)RTMemAllocZ(sizeof(*pProv));
+        if (pProv)
+        {
+            pProv->pDesc        = pDesc;
+            pProv->pHdr         = pVtgHdr;
+            pProv->pImage       = pImage;
+            pProv->pSession     = pSession;
+            pProv->pszModName   = pszModName;
+            pProv->idDtProv     = 0;
+            supdrvVtgConvAttr(&pProv->DtAttrs.dtpa_provider, &pDesc->AttrSelf);
+            supdrvVtgConvAttr(&pProv->DtAttrs.dtpa_mod,      &pDesc->AttrModules);
+            supdrvVtgConvAttr(&pProv->DtAttrs.dtpa_func,     &pDesc->AttrFunctions);
+            supdrvVtgConvAttr(&pProv->DtAttrs.dtpa_name,     &pDesc->AttrNames);
+            supdrvVtgConvAttr(&pProv->DtAttrs.dtpa_args,     &pDesc->AttrArguments);
 
+            rc = dtrace_register(supdrvVtgGetString(pVtgHdr, pDesc->offName),
+                                 &pProv->DtAttrs,
+                                 DTRACE_PRIV_KERNEL,
+                                 NULL /* cred */,
+                                 &g_SupDrvDTraceProvOps,
+                                 pProv,
+                                 &pProv->idDtProv);
+            if (!rc)
+            {
+                rc = RTSemFastMutexRequest(pDevExt->mtxDTrace);
+                if (RT_SUCCESS(rc))
+                {
+                    RTListAppend(&pDevExt->DtProviderList, &pProv->ListEntry);
+                    RTSemFastMutexRelease(pDevExt->mtxDTrace);
+                }
+                else
+                    dtrace_unregister(pProv->idDtProv);
+            }
+            else
+                rc = RTErrConvertFromErrno(rc);
+        }
+        else
+            rc = VERR_NO_MEMORY;
+
+        if (RT_FAILURE(rc))
+        {
+            PSUPDRVDTPROVIDER   pProvNext;
+            RTMemFree(pProv);
+
+            RTSemFastMutexRequest(pDevExt->mtxDTrace);
+            RTListForEachReverseSafe(&pDevExt->DtProviderList, pProv, pProvNext, SUPDRVDTPROVIDER, ListEntry)
+            {
+                if (pProv->pHdr == pVtgHdr)
+                {
+                    RTListNodeRemove(&pProv->ListEntry);
+                    RTSemFastMutexRelease(pDevExt->mtxDTrace);
+
+                    dtrace_unregister(pProv->idDtProv);
+                    RTMemFree(pProv);
+
+                    RTSemFastMutexRequest(pDevExt->mtxDTrace);
+                }
+            }
+            RTSemFastMutexRelease(pDevExt->mtxDTrace);
+            return rc;
+        }
+    }
+
+    return VINF_SUCCESS;
 }
 
 
 
 /**
  * Registers the VTG tracepoint providers of a driver.
- *  
- * @returns VBox status code. 
- * @param   pSession            The support driver session handle. 
+ *
+ * @returns VBox status code.
+ * @param   pSession            The support driver session handle.
  * @param   pVtgHdr             The VTG header.
  * @param   pszName             The driver name.
  */
@@ -326,19 +532,39 @@ SUPR0DECL(int) SUPR0VtgRegisterDrv(PSUPDRVSESSION pSession, PVTGOBJHDR pVtgHdr, 
     AssertPtrReturn(pszName, VERR_INVALID_POINTER);
     AssertPtrReturn(pVtgHdr, VERR_INVALID_POINTER);
 
-    return supdrvVtgRegister(pSession->pDevExt, pVtgHdr, NULL, pSession, pszName);
+    return supdrvVtgRegister(pSession->pDevExt, pVtgHdr, _1M, NULL /*pImage*/, pSession, pszName);
 }
 
 
 
 /**
  * Deregister the VTG tracepoint providers of a driver.
- *  
- * @param   pSession            The support driver session handle. 
+ *
+ * @param   pSession            The support driver session handle.
  * @param   pVtgHdr             The VTG header.
  */
-SUPR0DECL(void) SUPR0VtgDeregisterDrv(PSUPDRVSESSION pSession, PVTGOBJHDR pVtgHdr)
+SUPR0DECL(void) SUPR0VtgDeregisterDrv(PSUPDRVSESSION pSession)
 {
+    PSUPDRVDTPROVIDER pProv, pProvNext;
+    PSUPDRVDEVEXT     pDevExt;
+    AssertReturnVoid(SUP_IS_SESSION_VALID(pSession));
+
+    pDevExt = pSession->pDevExt;
+    RTSemFastMutexRequest(pDevExt->mtxDTrace);
+    RTListForEachSafe(&pDevExt->DtProviderList, pProv, pProvNext, SUPDRVDTPROVIDER, ListEntry)
+    {
+        if (pProv->pSession == pSession)
+        {
+            RTListNodeRemove(&pProv->ListEntry);
+            RTSemFastMutexRelease(pDevExt->mtxDTrace);
+
+            dtrace_unregister(pProv->idDtProv);
+            RTMemFree(pProv);
+
+            RTSemFastMutexRequest(pDevExt->mtxDTrace);
+        }
+    }
+    RTSemFastMutexRelease(pDevExt->mtxDTrace);
 }
 
 
@@ -354,8 +580,17 @@ int supdrvDTraceInit(PSUPDRVDEVEXT pDevExt)
     /*
      * Register a provider for this module.
      */
-
-    return VINF_SUCCESS;
+    int rc = RTSemFastMutexCreate(&pDevExt->mtxDTrace);
+    if (RT_SUCCESS(rc))
+    {
+        RTListInit(&pDevExt->DtProviderList);
+        rc = supdrvVtgRegister(pDevExt, &g_VTGObjHeader, _1M, NULL /*pImage*/, NULL /*pSession*/, "vboxdrv");
+        if (RT_SUCCESS(rc))
+            return rc;
+        RTSemFastMutexDestroy(pDevExt->mtxDTrace);
+    }
+    pDevExt->mtxDTrace = NIL_RTSEMFASTMUTEX;
+    return rc;
 }
 
 
@@ -367,10 +602,25 @@ int supdrvDTraceInit(PSUPDRVDEVEXT pDevExt)
  */
 int supdrvDTraceTerm(PSUPDRVDEVEXT pDevExt)
 {
-    /*
-     * Undo what we did in supdrvDTraceInit.
-     */
+    PSUPDRVDTPROVIDER pProv, pProvNext;
 
+    /*
+     * Unregister all probes (there should only be one).
+     */
+    RTSemFastMutexRequest(pDevExt->mtxDTrace);
+    RTListForEachSafe(&pDevExt->DtProviderList, pProv, pProvNext, SUPDRVDTPROVIDER, ListEntry)
+    {
+        RTListNodeRemove(&pProv->ListEntry);
+        RTSemFastMutexRelease(pDevExt->mtxDTrace);
+
+        dtrace_unregister(pProv->idDtProv);
+        RTMemFree(pProv);
+
+        RTSemFastMutexRequest(pDevExt->mtxDTrace);
+    }
+    RTSemFastMutexRelease(pDevExt->mtxDTrace);
+    RTSemFastMutexDestroy(pDevExt->mtxDTrace);
+    pDevExt->mtxDTrace = NIL_RTSEMFASTMUTEX;
     return VINF_SUCCESS;
 }
 
@@ -412,11 +662,75 @@ int supdrvDTraceModuleUnloading(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE pImage)
 
 
 /**
- * @callback_method_impl{dtrace_pops_t,dtps_provide_module}
+ * @callback_method_impl{dtrace_pops_t,dtps_provide}
  */
-static void     supdrvDTracePOps_ProvideModule(void *pvProv, struct modctl *pMod)
+static void     supdrvDTracePOps_Provide(void *pvProv, const dtrace_probedesc_t *pDtProbeDesc)
 {
-    return;
+    PSUPDRVDTPROVIDER   pProv      = (PSUPDRVDTPROVIDER)pvProv;
+    uint16_t const      idxProv    = (uint16_t)(&pProv->pHdr->paProviders[0] - pProv->pDesc);
+    PVTGPROBELOC        pProbeLoc;
+    PVTGPROBELOC        pProbeLocEnd;
+    char               *pszFnNmBuf;
+    size_t const        cbFnNmBuf = _4K + _1K;
+
+    if (pDtProbeDesc)
+        return;  /* We don't generate probes, so never mind these requests. */
+
+     /* Need a buffer for extracting the function names and mangling them in
+        case of collision. */
+     pszFnNmBuf = (char *)RTMemAlloc(_4K + _1K);
+     if (!pszFnNmBuf)
+         return;
+
+     /*
+      * Itereate the probe location list and register all probes related to
+      * this provider.
+      */
+     pProbeLoc    = pProv->pHdr->paProbLocs;
+     pProbeLocEnd = pProv->pHdr->paProbLocsEnd;
+     while ((uintptr_t)pProbeLoc < (uintptr_t)pProbeLocEnd)
+     {
+         PVTGDESCPROBE pProbeDesc = (PVTGDESCPROBE)pProbeLoc->pbProbe;
+         if (pProbeDesc->idxProvider == idxProv)
+         {
+             /* The function name normally needs to be stripped since we're
+                using C++ compilers for most of the code.  ASSUMES nobody are
+                brave/stupid enough to use function pointer returns without
+                typedef'ing properly them. */
+             const char *pszName = supdrvVtgGetString(pProv->pHdr, pProbeDesc->offName);
+             const char *pszFunc = pProbeLoc->pszFunction;
+             const char *psz     = strchr(pProbeLoc->pszFunction, '(');
+             size_t      cch;
+             if (psz)
+             {
+                 pszFunc = psz - 1; /* ASSUMES not space... FIXME */
+                 while ((uintptr_t)pszFunc > (uintptr_t)pProbeLoc->pszFunction)
+                 {
+                     char ch = pszFunc[-1];
+                     if (!RT_C_IS_ALNUM(ch) && ch != '_' && ch != ':')
+                         break;
+                     pszFunc--;
+                 }
+                 cch = psz - pszFunc;
+             }
+             else
+                 cch = strlen(pszFunc);
+             RTStrCopyEx(pszFnNmBuf, cbFnNmBuf, pszFunc, cch);
+
+             /* Look up the probe, if we have one in the same function, mangle
+                the function name a little to avoid having to deal with having
+                multiple location entries with the same probe ID. (lazy bird) */
+
+             //dtrace_probe_lookup()
+             //dtrace_probe_create()
+
+             Assert(pProbeLoc->idProbe == UINT32_MAX);
+         }
+
+         pProbeLoc++;
+     }
+
+     RTMemFree(pszFnNmBuf);
 }
 
 
@@ -425,7 +739,18 @@ static void     supdrvDTracePOps_ProvideModule(void *pvProv, struct modctl *pMod
  */
 static int      supdrvDTracePOps_Enable(void *pvProv, dtrace_id_t idProbe, void *pvProbe)
 {
-    return -1;
+    PVTGPROBELOC    pProbeLoc  = (PVTGPROBELOC)pvProbe;
+    PVTGDESCPROBE   pProbeDesc = (PVTGDESCPROBE)pProbeLoc->pbProbe;
+
+    if (!pProbeLoc->fEnabled)
+    {
+        pProbeLoc->fEnabled = 1;
+        if (ASMAtomicIncU32(&pProbeDesc->u32User) == 1)
+            pProbeLoc->fEnabled = 1;
+    }
+
+    NOREF(pvProv);
+    return 0;
 }
 
 
@@ -434,6 +759,17 @@ static int      supdrvDTracePOps_Enable(void *pvProv, dtrace_id_t idProbe, void 
  */
 static void     supdrvDTracePOps_Disable(void *pvProv, dtrace_id_t idProbe, void *pvProbe)
 {
+    PVTGPROBELOC    pProbeLoc  = (PVTGPROBELOC)pvProbe;
+    PVTGDESCPROBE   pProbeDesc = (PVTGDESCPROBE)pProbeLoc->pbProbe;
+
+    if (pProbeLoc->fEnabled)
+    {
+        pProbeLoc->fEnabled = 0;
+        if (ASMAtomicDecU32(&pProbeDesc->u32User) == 0)
+            pProbeLoc->fEnabled = 0;
+    }
+
+    NOREF(pvProv);
 }
 
 
@@ -443,7 +779,23 @@ static void     supdrvDTracePOps_Disable(void *pvProv, dtrace_id_t idProbe, void
 static void     supdrvDTracePOps_GetArgDesc(void *pvProv, dtrace_id_t idProbe, void *pvProbe,
                                             dtrace_argdesc_t *pArgDesc)
 {
-    pArgDesc->dtargd_ndx = DTRACE_ARGNONE;
+    PSUPDRVDTPROVIDER   pProv      = (PSUPDRVDTPROVIDER)pvProv;
+    PVTGPROBELOC        pProbeLoc  = (PVTGPROBELOC)pvProbe;
+    PVTGDESCPROBE       pProbeDesc = (PVTGDESCPROBE)pProbeLoc->pbProbe;
+    PVTGDESCARGLIST     pArgList   = (PVTGDESCARGLIST)((uintptr_t)pProv->pHdr->paArgLists + pProbeDesc->offArgList);
+
+    Assert(pProbeDesc->offArgList < pProv->pHdr->cbArgLists);
+    if (pArgList->cArgs > pArgDesc->dtargd_ndx)
+    {
+        const char *pszType = supdrvVtgGetString(pProv->pHdr, pArgList->aArgs[pArgDesc->dtargd_ndx].offType);
+        size_t      cchType = strlen(pszType);
+        if (cchType < sizeof(pArgDesc->dtargd_native))
+            memcpy(pArgDesc->dtargd_native, pszType, cchType + 1);
+        else
+            pArgDesc->dtargd_ndx = DTRACE_ARGNONE;
+    }
+    else
+        pArgDesc->dtargd_ndx = DTRACE_ARGNONE;
 }
 
 
@@ -464,6 +816,12 @@ static uint64_t supdrvDTracePOps_GetArgVal(void *pvProv, dtrace_id_t idProbe, vo
  */
 static void    supdrvDTracePOps_Destroy(void *pvProv, dtrace_id_t idProbe, void *pvProbe)
 {
-}
+    PVTGPROBELOC        pProbeLoc  = (PVTGPROBELOC)pvProbe;
 
+    Assert(!pProbeLoc->fEnabled);
+    Assert(pProbeLoc->idProbe == idProbe); NOREF(idProbe);
+    pProbeLoc->idProbe = UINT32_MAX;
+
+    NOREF(pvProv);
+}
 
