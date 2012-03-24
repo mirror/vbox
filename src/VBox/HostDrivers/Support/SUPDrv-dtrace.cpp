@@ -566,7 +566,7 @@ SUPR0DECL(void) SUPR0VtgDeregisterDrv(PSUPDRVSESSION pSession)
  * @returns VBox status code.
  * @param   pDevExt             The device extension structure.
  */
-int supdrvDTraceInit(PSUPDRVDEVEXT pDevExt)
+int VBOXCALL supdrvDTraceInit(PSUPDRVDEVEXT pDevExt)
 {
     /*
      * Register a provider for this module.
@@ -591,7 +591,7 @@ int supdrvDTraceInit(PSUPDRVDEVEXT pDevExt)
  * @returns VBox status code.
  * @param   pDevExt             The device extension structure.
  */
-int supdrvDTraceTerm(PSUPDRVDEVEXT pDevExt)
+int VBOXCALL supdrvDTraceTerm(PSUPDRVDEVEXT pDevExt)
 {
     PSUPDRVDTPROVIDER pProv, pProvNext;
 

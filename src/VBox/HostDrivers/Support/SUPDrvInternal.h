@@ -619,6 +619,13 @@ int  VBOXCALL   supdrvCreateSession(PSUPDRVDEVEXT pDevExt, bool fUser, PSUPDRVSE
 void VBOXCALL   supdrvCloseSession(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession);
 void VBOXCALL   supdrvCleanupSession(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession);
 
+#ifdef VBOX_WITH_DTRACE_R0DRV
+int  VBOXCALL   supdrvDTraceTerm(PSUPDRVDEVEXT pDevExt);
+int  VBOXCALL   supdrvDTraceInit(PSUPDRVDEVEXT pDevExt);
+#endif
+
+
+
 RT_C_DECLS_END
 
 #endif
