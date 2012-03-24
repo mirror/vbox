@@ -166,7 +166,7 @@ typedef enum kVTGClass
 
 
 /**
- * VTG provider attributes.
+ * VTG attributes.
  */
 typedef struct VTGDESCATTR
 {
@@ -175,6 +175,8 @@ typedef struct VTGDESCATTR
     uint8_t         u8DataDep;
 } VTGDESCATTR;
 AssertCompileSize(VTGDESCATTR, 3);
+/** Pointer to a const VTG attribute. */
+typedef VTGDESCATTR const *PCVTGDESCATTR;
 
 
 /**
@@ -188,7 +190,7 @@ typedef struct VTGDESCPROVIDER
     VTGDESCATTR     AttrSelf;
     VTGDESCATTR     AttrModules;
     VTGDESCATTR     AttrFunctions;
-    VTGDESCATTR     AttrName;
+    VTGDESCATTR     AttrNames;
     VTGDESCATTR     AttrArguments;
     uint8_t         bReserved;
 } VTGDESCPROVIDER;
