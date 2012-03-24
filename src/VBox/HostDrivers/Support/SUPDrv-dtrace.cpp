@@ -121,6 +121,27 @@ static const dtrace_pops_t g_SupDrvDTraceProvOps =
 #define VERR_SUPDRV_VTG_NOT_MULTIPLE    (-3709)
 
 
+static int supdrvVtgValidateString(const char *psz)
+{
+    size_t off = 0;
+    while (off < _4K)
+    {
+        char const ch = psz[off++];
+        if (!ch)
+            return VINF_SUCCESS;
+        if (   !RTLocCIsAlNum(ch) 
+            && ch != ' '
+            && ch != '('
+            && ch != ')'
+            && ch != ','
+            && ch != '*'
+            && ch != '&' 
+           )
+            return VERR_SUPDRV_VTG_BAD_STRING;
+    }
+    return VERR_SUPDRV_VTG_STRING_TOO_LONG;
+}
+
 /** 
  * Validates the VTG data.
  *  
@@ -133,15 +154,15 @@ static const dtrace_pops_t g_SupDrvDTraceProvOps =
  */
 static int supdrvVtgValidate(PVTGOBJHDR pVtgHdr, size_t cbVtgObj, uint8_t *pbImage, size_t cbImage)
 {
-    /*
-     * The header.
-     */
-    if (!memcmp(pVtgHdr->szMagic, VTGOBJHDR_MAGIC, sizeof(pVtgHdr->szMagic)))
-        return VERR_SUPDRV_VTG_MAGIC;
-    if (pVtgHdr->cBits != ARCH_BITS)
-        return VERR_SUPDRV_VTG_BITS;
-    if (pVtgHdr->u32Reserved0)
-        return VERR_SUPDRV_VTG_RESERVED;
+    uintptr_t   cbTmp;
+    uintptr_t   i;
+    int         rc;
+
+    if (!pbImage || !cbImage)
+    {
+        pbImage = NULL;
+        cbImage = 0;
+    }
 
 #define MY_VALIDATE_PTR(p, cb, cMin, cMax, cbUnit) \
     do { \
@@ -155,40 +176,106 @@ static int supdrvVtgValidate(PVTGOBJHDR pVtgHdr, size_t cbVtgObj, uint8_t *pbIma
         if ((cb) / (cbUnit) * (cbUnit) != (cb)) \
             return VERR_SUPDRV_VTG_NOT_MULTIPLE; \
     } while (0)
+#define MY_WITHIN_IMAGE(p) \
+    do { \
+        if (pbImage) \
+        { \
+            if ((uintptr_t)(p) - (uintptr_t)pbImage > cbImage) \
+                return VERR_SUPDRV_VTG_BAD_PTR; \
+        } \
+        else if (!RT_VALID_PTR(p)) \
+            return VERR_SUPDRV_VTG_BAD_PTR; \
+    } while (0)
+#define MY_WITHIN_IMAGE_RANGE(p, cb)
+    do { \
+        if (pbImage) \
+        { \
+            if (   (cb) > cbImage \
+                || (uintptr_t)(p) - (uintptr_t)pbImage > cbImage - (cb)) \
+                return VERR_SUPDRV_VTG_BAD_PTR; \
+        } \
+        else if (!RT_VALID_PTR(p) || RT_VALID_PTR((uint8_t *)(p) + cb)) \
+            return VERR_SUPDRV_VTG_BAD_PTR; \
+    } while (0)
+#define MY_VALIDATE_STR(offStrTab) \
+    do { \
+        if ((offStrTab) >= pVtgHdr->cbStrTab) \
+            return VERR_SUPDRV_VTG_STRTAB_OFF; \
+        rc = supdrvVtgValidateString(pVtgHdr->pachStrTab + (offStrTab)); \
+        if (rc != VINF_SUCCESS) \
+            return rc; \
+    } while (0)
+#define MY_VALIDATE_ATTR(Attr)
+    do { \
+        if ((Attr).u8Code    <= (uint8_t)kVTGStability_Invalid || (Attr).u8Code    >= (uint8_t)kVTGStability_End) \
+            return VERR_SUPDRV_VTG_BAD_ATTR; \
+        if ((Attr).u8Data    <= (uint8_t)kVTGStability_Invalid || (Attr).u8Data    >= (uint8_t)kVTGStability_End) \
+            return VERR_SUPDRV_VTG_BAD_ATTR; \
+        if ((Attr).u8DataDep <= (uint8_t)kVTGClass_Invalid     || (Attr).u8DataDep >= (uint8_t)kVTGClass_End) \
+            return VERR_SUPDRV_VTG_BAD_ATTR; \
+    } while (0)
 
-    MY_VALIDATE_PTR(pVtgHdr->paProviders,       pVtgHdr->cbProviders,    1,   16, sizeof(VTGDESCPROVIDER));
-    MY_VALIDATE_PTR(pVtgHdr->paProbes,          pVtgHdr->cbProbes,       1, _32K, sizeof(VTGDESCPROBE));
-    MY_VALIDATE_PTR(pVtgHdr->pafProbeEnabled,   pVtgHdr->cbProbeEnabled, 1, _32K, sizeof(bool));
-    MY_VALIDATE_PTR(pVtgHdr->pachStrTab,        pVtgHdr->cbStrTab,       4,  _1M,  sizeof(char));
-    MY_VALIDATE_PTR(pVtgHdr->paArgLists,        pVtgHdr->cbArgLists,     0, _32K, sizeof(uint32_t));
-#undef MY_VALIDATE_PTR
+    /*
+     * The header.
+     */
+    if (!memcmp(pVtgHdr->szMagic, VTGOBJHDR_MAGIC, sizeof(pVtgHdr->szMagic)))
+        return VERR_SUPDRV_VTG_MAGIC;
+    if (pVtgHdr->cBits != ARCH_BITS)
+        return VERR_SUPDRV_VTG_BITS;
+    if (pVtgHdr->u32Reserved0)
+        return VERR_SUPDRV_VTG_RESERVED;
 
-    if (!RT_VALID_PTR(pVtgHdr->paProbLocs))
+    MY_VALIDATE_PTR(pVtgHdr->paProviders,       pVtgHdr->cbProviders,    1,    16, sizeof(VTGDESCPROVIDER));
+    MY_VALIDATE_PTR(pVtgHdr->paProbes,          pVtgHdr->cbProbes,       1,  _32K, sizeof(VTGDESCPROBE));
+    MY_VALIDATE_PTR(pVtgHdr->pafProbeEnabled,   pVtgHdr->cbProbeEnabled, 1,  _32K, sizeof(bool));
+    MY_VALIDATE_PTR(pVtgHdr->pachStrTab,        pVtgHdr->cbStrTab,       4,   _1M, sizeof(char));
+    MY_VALIDATE_PTR(pVtgHdr->paArgLists,        pVtgHdr->cbArgLists,     0,  _32K, sizeof(uint32_t));
+    MY_WITHIN_IMAGE(pVtgHdr->paProbLocs);
+    MY_WITHIN_IMAGE(pVtgHdr->paProbLocsEnd);
+    if ((uintptr_t)pVtgHdr->paProbLocs > (uintptr_t)pVtgHdr->paProbLocsEnd)
         return VERR_SUPDRV_VTG_BAD_PTR;
-    if (!RT_VALID_PTR(pVtgHdr->paProbLocsEnd))
-        return VERR_SUPDRV_VTG_BAD_PTR;
-    if ((uintptr_t)pVtgHdr->paProbLocsEnd - (uintptr_t)pVtgHdr->paProbLocs < sizeof(VTGPROBELOC))
+    cbTmp = (uintptr_t)pVtgHdr->paProbLocsEnd - (uintptr_t)pVtgHdr->paProbLocs;
+    MY_VALIDATE_PTR(pVtgHdr->paProbLocs,        cbTmp,                   1, _128K, sizeof(VTGPROBELOC))
+    if (cbTmp < sizeof(VTGPROBELOC))
         return VERR_SUPDRV_VTG_TOO_FEW;
-    if ((uintptr_t)pVtgHdr->paProbLocsEnd - (uintptr_t)pVtgHdr->paProbLocs > sizeof(VTGPROBELOC) * _128K)
-        return VERR_SUPDRV_VTG_TOO_MUCH;
-    if (   ((uintptr_t)pVtgHdr->paProbLocsEnd - (uintptr_t)pVtgHdr->paProbLocs) 
-           / sizeof(VTGPROBELOC) * sizeof(VTGPROBELOC)
-        != (uintptr_t)pVtgHdr->paProbLocsEnd - (uintptr_t)pVtgHdr->paProbLocs)
-        return VERR_SUPDRV_VTG_NOT_MULTIPLE;
-    if (pbImage && cbImage)
-    {
-        if ((uintptr_t)pVtgHdr->paProbLocs - (uintptr_t)pbImage >= cbImage)
-            return VERR_SUPDRV_VTG_BAD_PTR;
-        if ((uintptr_t)pVtgHdr->paProbLocsEnd - (uintptr_t)pbImage > cbImage)
-            return VERR_SUPDRV_VTG_BAD_PTR;
-    }
+
+    if (pVtgHdr->cbProbes / sizeof(VTGDESCPROBE) != pVtgHdr->cbProbeEnabled)
+        return VERR_SUPDRV_VTG_BAD_HDR;
 
     /*
      * Validate the providers.
      */
+    i = pVtgHdr->cbProviders / sizeof(VTGDESCPROVIDER);
+    while (i-- > 0)
+    {
+        MY_VALIDATE_STR(pVtgHdr->paProviders[i].offName);
+        if (pVtgHdr->paProviders[i].iFirstProbe >= pVtgHdr->cbProbeEnabled)
+            return VERR_SUPDRV_VTG_BAD_PROVIDER;
+        if (pVtgHdr->paProviders[i].iFirstProbe + pVtgHdr->paProviders[i].cProbes > pVtgHdr->cbProbeEnabled)
+            return VERR_SUPDRV_VTG_BAD_PROVIDER;
+        MY_VALIDATE_ATTR(pVtgHdr->paProviders[i].AttrSelf);
+        MY_VALIDATE_ATTR(pVtgHdr->paProviders[i].AttrModules);
+        MY_VALIDATE_ATTR(pVtgHdr->paProviders[i].AttrFunctions);
+        MY_VALIDATE_ATTR(pVtgHdr->paProviders[i].AttrName);
+        MY_VALIDATE_ATTR(pVtgHdr->paProviders[i].AttrArguments);
+        if (pVtgHdr->paProviders[i].bReserved)
+            return VERR_SUPDRV_VTG_RESERVED;
+    }
 
+    /*
+     * Validate probes.
+     */
+    i = pVtgHdr->cbProbes / sizeof(VTGDESCPROBE);
+    while (i-- > 0)
+    {
+        MY_VALIDATE_STR(pVtgHdr->paProbes[i].offName);
+    }
 
     return VINF_SUCCESS;
+#undef MY_VALIDATE_STR
+#undef MY_VALIDATE_PTR
+#undef MY_WITHIN_IMAGE
+#undef MY_WITHIN_IMAGE_RANGE
 }
 
 
