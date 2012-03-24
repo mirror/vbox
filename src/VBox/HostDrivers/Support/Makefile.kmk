@@ -392,10 +392,11 @@ VBoxDrv_SOURCES.darwin   = solaris/SUPDrv-solaris.cpp
 VBoxDrv_SOURCES.solaris  = solaris/SUPDrv-solaris.c
 VBoxDrv_SOURCES          = \
 	SUPDrv.c \
-	SUPDrvSem.c 
+	SUPDrvSem.c \
+	SUPDrv.d
 ifdef VBOX_WITH_DTRACE_R0DRV
  VBoxDrv_SOURCES        += \
- 	SUPDrv-dtrace.cpp
+ 	SUPDrv-dtrace.cpp 
 endif
 VBoxDRV_LDFLAGS.solaris += -N misc/ctf
 endif

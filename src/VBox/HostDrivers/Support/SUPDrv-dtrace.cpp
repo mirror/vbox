@@ -107,16 +107,6 @@ static void     supdrvDTracePOps_Destroy(void *pvProv, dtrace_id_t idProbe, void
 /*******************************************************************************
 *   Global Variables                                                           *
 *******************************************************************************/
-/** The default provider attributes. */
-static dtrace_pattr_t g_DefProvAttrs =
-{   /*                       .dtat_name,                .dtat_data,                .dtat_class */
-    /* .dtpa_provider = */ { DTRACE_STABILITY_UNSTABLE, DTRACE_STABILITY_UNSTABLE, DTRACE_CLASS_ISA },
-    /* .dtpa_mod      = */ { DTRACE_STABILITY_UNSTABLE, DTRACE_STABILITY_UNSTABLE, DTRACE_CLASS_ISA },
-    /* .dtpa_func     = */ { DTRACE_STABILITY_UNSTABLE, DTRACE_STABILITY_UNSTABLE, DTRACE_CLASS_ISA },
-    /* .dtpa_name     = */ { DTRACE_STABILITY_UNSTABLE, DTRACE_STABILITY_UNSTABLE, DTRACE_CLASS_ISA },
-    /* .dtpa_args     = */ { DTRACE_STABILITY_UNSTABLE, DTRACE_STABILITY_UNSTABLE, DTRACE_CLASS_ISA },
-};
-
 /**
  * DTrace provider method table.
  */
@@ -529,7 +519,7 @@ static int supdrvVtgRegister(PSUPDRVDEVEXT pDevExt, PVTGOBJHDR pVtgHdr, size_t c
  */
 SUPR0DECL(int) SUPR0VtgRegisterDrv(PSUPDRVSESSION pSession, PVTGOBJHDR pVtgHdr, const char *pszName)
 {
-    AssertReturn(SUP_IS_SESSION_VALID(pSession), NULL);
+    AssertReturn(SUP_IS_SESSION_VALID(pSession), VERR_INVALID_PARAMETER);
     AssertPtrReturn(pszName, VERR_INVALID_POINTER);
     AssertPtrReturn(pVtgHdr, VERR_INVALID_POINTER);
 
