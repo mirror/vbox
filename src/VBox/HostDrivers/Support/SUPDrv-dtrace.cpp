@@ -129,21 +129,21 @@ static const dtrace_pops_t g_SupDrvDTraceProvOps =
 #define VERR_SUPDRV_VTG_BITS                    (-3705)
 //#define VERR_SUPDRV_VTG_RESERVED                (-3705)
 #define VERR_SUPDRV_VTG_BAD_HDR                 (-3706)
-#define VERR_SUPDRV_VTG_BAD_HDR_PTR             (-3706)
-#define VERR_SUPDRV_VTG_BAD_HDR_TOO_FEW         (-3707)
-#define VERR_SUPDRV_VTG_BAD_HDR_TOO_MUCH        (-3708)
-#define VERR_SUPDRV_VTG_BAD_HDR_NOT_MULTIPLE    (-3709)
-#define VERR_SUPDRV_VTG_STRTAB_OFF              (-3709)
-#define VERR_SUPDRV_VTG_BAD_STRING              (-1111)
-#define VERR_SUPDRV_VTG_STRING_TOO_LONG         (-1111)
-#define VERR_SUPDRV_VTG_BAD_ATTR                (-1111)
-#define VERR_SUPDRV_VTG_BAD_PROVIDER            (-1111)
-#define VERR_SUPDRV_VTG_BAD_PROBE               (-1111)
-#define VERR_SUPDRV_VTG_BAD_ARGLIST             (-3709)
-#define VERR_SUPDRV_VTG_BAD_PROBE_ENABLED       (-1111)
-#define VERR_SUPDRV_VTG_BAD_PROBE_LOC           (-3709)
-#define VERR_SUPDRV_VTG_ALREADY_REGISTERED      (-1111)
-#define VERR_SUPDRV_VTG_ONLY_ONCE_PER_SESSION   (-1111)
+#define VERR_SUPDRV_VTG_BAD_HDR_PTR             (-3707)
+#define VERR_SUPDRV_VTG_BAD_HDR_TOO_FEW         (-3708)
+#define VERR_SUPDRV_VTG_BAD_HDR_TOO_MUCH        (-3709)
+#define VERR_SUPDRV_VTG_BAD_HDR_NOT_MULTIPLE    (-3710)
+#define VERR_SUPDRV_VTG_STRTAB_OFF              (-3711)
+#define VERR_SUPDRV_VTG_BAD_STRING              (-3712)
+#define VERR_SUPDRV_VTG_STRING_TOO_LONG         (-3713)
+#define VERR_SUPDRV_VTG_BAD_ATTR                (-3714)
+#define VERR_SUPDRV_VTG_BAD_PROVIDER            (-3715)
+#define VERR_SUPDRV_VTG_BAD_PROBE               (-3716)
+#define VERR_SUPDRV_VTG_BAD_ARGLIST             (-3717)
+#define VERR_SUPDRV_VTG_BAD_PROBE_ENABLED       (-3718)
+#define VERR_SUPDRV_VTG_BAD_PROBE_LOC           (-3719)
+#define VERR_SUPDRV_VTG_ALREADY_REGISTERED      (-3720)
+#define VERR_SUPDRV_VTG_ONLY_ONCE_PER_SESSION   (-3721)
 
 
 static int supdrvVtgValidateString(const char *psz)
@@ -156,13 +156,18 @@ static int supdrvVtgValidateString(const char *psz)
             return VINF_SUCCESS;
         if (   !RTLocCIsAlNum(ch)
             && ch != ' '
+            && ch != '_'
+            && ch != '-'
             && ch != '('
             && ch != ')'
             && ch != ','
             && ch != '*'
             && ch != '&'
            )
+        {
+            /*RTAssertMsg2("off=%u '%s'\n",  off, psz);*/
             return VERR_SUPDRV_VTG_BAD_STRING;
+        }
     }
     return VERR_SUPDRV_VTG_STRING_TOO_LONG;
 }
@@ -194,7 +199,7 @@ static int supdrvVtgValidate(PVTGOBJHDR pVtgHdr, size_t cbVtgObj, const uint8_t 
 #define MY_VALIDATE_PTR(p, cb, cMin, cMax, cbUnit, rcBase) \
     do { \
         if (   (cb) >= cbVtgObj \
-            || (uintptr_t)(p) - (uintptr_t)pVtgHdr < cbVtgObj - (cb) ) \
+            || (uintptr_t)(p) - (uintptr_t)pVtgHdr > cbVtgObj - (cb) ) \
             return rcBase ## _PTR; \
         if ((cb) <  (cMin) * (cbUnit)) \
             return rcBase ## _TOO_FEW; \
@@ -234,7 +239,7 @@ static int supdrvVtgValidate(PVTGOBJHDR pVtgHdr, size_t cbVtgObj, const uint8_t 
     /*
      * The header.
      */
-    if (!memcmp(pVtgHdr->szMagic, VTGOBJHDR_MAGIC, sizeof(pVtgHdr->szMagic)))
+    if (memcmp(pVtgHdr->szMagic, VTGOBJHDR_MAGIC, sizeof(pVtgHdr->szMagic)))
         return VERR_SUPDRV_VTG_MAGIC;
     if (pVtgHdr->cBits != ARCH_BITS)
         return VERR_SUPDRV_VTG_BITS;
@@ -246,14 +251,18 @@ static int supdrvVtgValidate(PVTGOBJHDR pVtgHdr, size_t cbVtgObj, const uint8_t 
     MY_VALIDATE_PTR(pVtgHdr->pafProbeEnabled,   pVtgHdr->cbProbeEnabled, 1,  _32K, sizeof(bool),            VERR_SUPDRV_VTG_BAD_HDR);
     MY_VALIDATE_PTR(pVtgHdr->pachStrTab,        pVtgHdr->cbStrTab,       4,   _1M, sizeof(char),            VERR_SUPDRV_VTG_BAD_HDR);
     MY_VALIDATE_PTR(pVtgHdr->paArgLists,        pVtgHdr->cbArgLists,     1,  _32K, sizeof(uint32_t),        VERR_SUPDRV_VTG_BAD_HDR);
+
     MY_WITHIN_IMAGE(pVtgHdr->paProbLocs,    VERR_SUPDRV_VTG_BAD_HDR_PTR);
     MY_WITHIN_IMAGE(pVtgHdr->paProbLocsEnd, VERR_SUPDRV_VTG_BAD_HDR_PTR);
     if ((uintptr_t)pVtgHdr->paProbLocs > (uintptr_t)pVtgHdr->paProbLocsEnd)
         return VERR_SUPDRV_VTG_BAD_HDR_PTR;
     cbTmp = (uintptr_t)pVtgHdr->paProbLocsEnd - (uintptr_t)pVtgHdr->paProbLocs;
-    MY_VALIDATE_PTR(pVtgHdr->paProbLocs,        cbTmp,                   1, _128K, sizeof(VTGPROBELOC),     VERR_SUPDRV_VTG_BAD_HDR);
     if (cbTmp < sizeof(VTGPROBELOC))
         return VERR_SUPDRV_VTG_BAD_HDR_TOO_FEW;
+    if (cbTmp >= _128K * sizeof(VTGPROBELOC))
+        return VERR_SUPDRV_VTG_BAD_HDR_TOO_MUCH;
+    if (cbTmp / sizeof(VTGPROBELOC) * sizeof(VTGPROBELOC) != cbTmp)
+        return VERR_SUPDRV_VTG_BAD_HDR_NOT_MULTIPLE;
 
     if (pVtgHdr->cbProbes / sizeof(VTGDESCPROBE) != pVtgHdr->cbProbeEnabled)
         return VERR_SUPDRV_VTG_BAD_HDR;
@@ -297,7 +306,7 @@ static int supdrvVtgValidate(PVTGOBJHDR pVtgHdr, size_t cbVtgObj, const uint8_t 
         if (pVtgHdr->paProbes[i].idxProvider >= cProviders)
             return VERR_SUPDRV_VTG_BAD_PROBE;
         if (  i - pVtgHdr->paProviders[pVtgHdr->paProbes[i].idxProvider].iFirstProbe
-            < pVtgHdr->paProviders[pVtgHdr->paProbes[i].idxProvider].cProbes)
+            >= pVtgHdr->paProviders[pVtgHdr->paProbes[i].idxProvider].cProbes)
             return VERR_SUPDRV_VTG_BAD_PROBE;
         if (pVtgHdr->paProbes[i].u32User)
             return VERR_SUPDRV_VTG_BAD_PROBE;
