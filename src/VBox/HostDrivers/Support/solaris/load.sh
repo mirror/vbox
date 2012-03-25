@@ -41,7 +41,7 @@ if [ ! -f "$DRVFILE.conf" ]; then
 fi
 
 SUDO=sudo
-set -x
+#set -x
 
 # Unload driver that may depend on the driver we're going to (re-)load 
 # as well as the driver itself.
