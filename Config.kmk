@@ -611,12 +611,14 @@ VBOX_WITH_ALL_DOXYGEN_TARGETS = 1
 # Enables VMMR0.r0 (++) loading using the native loader on solaris.
 # Good for debugging and analysis.  Experimental.
 #VBOX_WITH_NATIVE_SOLARIS_LOADING = 1
-# Set this to enable user mode dtrace probes (darwin & solaris only).
+# Set this to enable user mode dtrace probes.
 if1of ($(KBUILD_TARGET), darwin solaris)
  VBOX_WITH_DTRACE_R3 = 1
 endif
-# Set this to enable kernel driver dtrace probes (darwin & solaris only).
-#VBOX_WITH_DTRACE_R0DRV = 1
+# Set this to enable kernel driver dtrace probes.
+if1of ($(KBUILD_TARGET), solaris)
+ VBOX_WITH_DTRACE_R0DRV = 1
+endif
 # Set this to enable dtrace probes in platform agnostic kernel code.
 #VBOX_WITH_DTRACE_R0 = 1
 # Set this to enable dtrace probes raw-mode context code.
