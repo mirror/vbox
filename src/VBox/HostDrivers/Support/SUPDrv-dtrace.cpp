@@ -77,6 +77,8 @@ typedef struct SUPDRVDTPROVIDER
     dtrace_pattr_t      DtAttrs;
     /** The ID of this provider. */
     dtrace_provider_id_t idDtProv;
+    /** The number of probes we've provided to DTrace. */
+    uint32_t            cProvidedProbes;
 } SUPDRVDTPROVIDER;
 /** Pointer to the data for a provider. */
 typedef SUPDRVDTPROVIDER *PSUPDRVDTPROVIDER;
@@ -453,12 +455,13 @@ static int supdrvVtgRegister(PSUPDRVDEVEXT pDevExt, PVTGOBJHDR pVtgHdr, size_t c
         pProv = (PSUPDRVDTPROVIDER)RTMemAllocZ(sizeof(*pProv));
         if (pProv)
         {
-            pProv->pDesc        = pDesc;
-            pProv->pHdr         = pVtgHdr;
-            pProv->pImage       = pImage;
-            pProv->pSession     = pSession;
-            pProv->pszModName   = pszModName;
-            pProv->idDtProv     = 0;
+            pProv->pDesc            = pDesc;
+            pProv->pHdr             = pVtgHdr;
+            pProv->pImage           = pImage;
+            pProv->pSession         = pSession;
+            pProv->pszModName       = pszModName;
+            pProv->idDtProv         = 0;
+            pProv->cProvidedProbes  = 0;
             supdrvVtgConvAttr(&pProv->DtAttrs.dtpa_provider, &pDesc->AttrSelf);
             supdrvVtgConvAttr(&pProv->DtAttrs.dtpa_mod,      &pDesc->AttrModules);
             supdrvVtgConvAttr(&pProv->DtAttrs.dtpa_func,     &pDesc->AttrFunctions);
@@ -673,6 +676,9 @@ static void     supdrvDTracePOps_Provide(void *pvProv, const dtrace_probedesc_t 
     if (pDtProbeDesc)
         return;  /* We don't generate probes, so never mind these requests. */
 
+    if (pProv->cProvidedProbes >= pProv->pDesc->cProbes)
+        return;
+
      /* Need a buffer for extracting the function names and mangling them in
         case of collision. */
      pszFnNmBuf = (char *)RTMemAlloc(cbFnNmBuf);
@@ -688,7 +694,8 @@ static void     supdrvDTracePOps_Provide(void *pvProv, const dtrace_probedesc_t 
      while ((uintptr_t)pProbeLoc < (uintptr_t)pProbeLocEnd)
      {
          PVTGDESCPROBE pProbeDesc = (PVTGDESCPROBE)pProbeLoc->pbProbe;
-         if (pProbeDesc->idxProvider == idxProv)
+         if (   pProbeDesc->idxProvider == idxProv
+             && pProbeLoc->idProbe      == UINT32_MAX)
          {
              /* The function name normally needs to be stripped since we're
                 using C++ compilers for most of the code.  ASSUMES nobody are
@@ -750,6 +757,7 @@ static void     supdrvDTracePOps_Provide(void *pvProv, const dtrace_probedesc_t 
              AssertCompile(sizeof(pProbeLoc->idProbe) == sizeof(dtrace_id_t));
              pProbeLoc->idProbe = dtrace_probe_create(pProv->idDtProv, pProv->pszModName, pszFnNmBuf, pszPrbName,
                                                       0 /*aframes*/, pProbeLoc);
+             pProv->cProvidedProbes++;
          }
 
          pProbeLoc++;
@@ -764,14 +772,15 @@ static void     supdrvDTracePOps_Provide(void *pvProv, const dtrace_probedesc_t 
  */
 static int      supdrvDTracePOps_Enable(void *pvProv, dtrace_id_t idProbe, void *pvProbe)
 {
-    PVTGPROBELOC    pProbeLoc  = (PVTGPROBELOC)pvProbe;
-    PVTGDESCPROBE   pProbeDesc = (PVTGDESCPROBE)pProbeLoc->pbProbe;
+    PSUPDRVDTPROVIDER   pProv      = (PSUPDRVDTPROVIDER)pvProv;
+    PVTGPROBELOC        pProbeLoc  = (PVTGPROBELOC)pvProbe;
+    PVTGDESCPROBE       pProbeDesc = (PVTGDESCPROBE)pProbeLoc->pbProbe;
 
     if (!pProbeLoc->fEnabled)
     {
         pProbeLoc->fEnabled = 1;
         if (ASMAtomicIncU32(&pProbeDesc->u32User) == 1)
-            pProbeLoc->fEnabled = 1;
+            pProv->pHdr->pafProbeEnabled[pProbeDesc->idxEnabled] = 1;
     }
 
     NOREF(pvProv);
@@ -784,14 +793,15 @@ static int      supdrvDTracePOps_Enable(void *pvProv, dtrace_id_t idProbe, void 
  */
 static void     supdrvDTracePOps_Disable(void *pvProv, dtrace_id_t idProbe, void *pvProbe)
 {
-    PVTGPROBELOC    pProbeLoc  = (PVTGPROBELOC)pvProbe;
-    PVTGDESCPROBE   pProbeDesc = (PVTGDESCPROBE)pProbeLoc->pbProbe;
+    PSUPDRVDTPROVIDER   pProv      = (PSUPDRVDTPROVIDER)pvProv;
+    PVTGPROBELOC        pProbeLoc  = (PVTGPROBELOC)pvProbe;
+    PVTGDESCPROBE       pProbeDesc = (PVTGDESCPROBE)pProbeLoc->pbProbe;
 
     if (pProbeLoc->fEnabled)
     {
         pProbeLoc->fEnabled = 0;
         if (ASMAtomicDecU32(&pProbeDesc->u32User) == 0)
-            pProbeLoc->fEnabled = 0;
+            pProv->pHdr->pafProbeEnabled[pProbeDesc->idxEnabled] = 1;
     }
 
     NOREF(pvProv);
@@ -815,7 +825,10 @@ static void     supdrvDTracePOps_GetArgDesc(void *pvProv, dtrace_id_t idProbe, v
         const char *pszType = supdrvVtgGetString(pProv->pHdr, pArgList->aArgs[pArgDesc->dtargd_ndx].offType);
         size_t      cchType = strlen(pszType);
         if (cchType < sizeof(pArgDesc->dtargd_native))
+        {
             memcpy(pArgDesc->dtargd_native, pszType, cchType + 1);
+            /** @todo mapping */
+        }
         else
             pArgDesc->dtargd_ndx = DTRACE_ARGNONE;
     }
@@ -841,12 +854,12 @@ static uint64_t supdrvDTracePOps_GetArgVal(void *pvProv, dtrace_id_t idProbe, vo
  */
 static void    supdrvDTracePOps_Destroy(void *pvProv, dtrace_id_t idProbe, void *pvProbe)
 {
+    PSUPDRVDTPROVIDER   pProv      = (PSUPDRVDTPROVIDER)pvProv;
     PVTGPROBELOC        pProbeLoc  = (PVTGPROBELOC)pvProbe;
 
     Assert(!pProbeLoc->fEnabled);
     Assert(pProbeLoc->idProbe == idProbe); NOREF(idProbe);
     pProbeLoc->idProbe = UINT32_MAX;
-
-    NOREF(pvProv);
+    pProv->cProvidedProbes--;
 }
 
