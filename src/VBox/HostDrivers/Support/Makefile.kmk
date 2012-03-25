@@ -428,11 +428,11 @@ $$(VBoxDrv.kext_0_OUTDIR)/Info.plist: \
 		$<
 endif
 
-if1of ($(KBUILD_TARGET), darwin)
+if1of ($(KBUILD_TARGET), darwin solaris)
  # Common manual loader script.
- INSTALLS += Scripts
- Scripts_INST = $(INST_DIST)
- Scripts_EXEC_SOURCES  = \
+ INSTALLS += SUPDrvScripts
+ SUPDrvScripts_INST = $(INST_DIST)
+ SUPDrvScripts_EXEC_SOURCES  = \
 	$(KBUILD_TARGET)/load.sh
 endif
 
