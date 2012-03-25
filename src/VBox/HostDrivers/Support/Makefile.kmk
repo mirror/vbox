@@ -388,7 +388,7 @@ if1of ($(KBUILD_TARGET), darwin solaris)
  VBoxDrv_INCS.darwin      = ./darwin
  VBoxDrv_LIBS             = $(PATH_STAGE_LIB)/RuntimeR0Drv$(VBOX_SUFF_LIB)
  #VBoxDrv_LDFLAGS         = -v -Wl,-whyload -Wl,-v -Wl,-whatsloaded
- VBoxDrv_SOURCES.darwin   = solaris/SUPDrv-solaris.cpp
+ VBoxDrv_SOURCES.darwin   = darwin/SUPDrv-darwin.cpp
  VBoxDrv_SOURCES.solaris  = solaris/SUPDrv-solaris.c
  VBoxDrv_SOURCES          = \
  	SUPDrv.c \
