@@ -183,6 +183,7 @@ struct E1kChips
 #define CTRL_VME        0x40000000
 
 #define STATUS_LU       0x00000002
+#define STATUS_TXOFF    0x00000010
 
 #define EECD_EE_WIRES 0x0F
 #define EECD_EE_REQ   0x40
@@ -3112,7 +3113,11 @@ DECLINLINE(int) e1kXmitAllocBuf(E1KSTATE *pState, size_t cbMin, bool fExactSize,
             return VERR_NET_DOWN;
         int rc = pDrv->pfnAllocBuf(pDrv, cbMin, fGso ? &pState->GsoCtx : NULL, &pSg);
         if (RT_FAILURE(rc))
+        {
+            /* Suspend TX as we are out of buffers atm */
+            STATUS |= STATUS_TXOFF;
             return rc;
+        }
     }
     else
     {
@@ -3641,8 +3646,9 @@ static void e1kDescReport(E1KSTATE* pState, E1KTXDESC* pDesc, RTGCPHYS addr)
  * @param   fOnWorkerThread Whether we're on a worker thread or an EMT.
  * @thread  E1000_TX
  */
-static void e1kXmitDesc(E1KSTATE* pState, E1KTXDESC* pDesc, RTGCPHYS addr, bool fOnWorkerThread)
+static int e1kXmitDesc(E1KSTATE* pState, E1KTXDESC* pDesc, RTGCPHYS addr, bool fOnWorkerThread)
 {
+    int rc = VINF_SUCCESS;
     uint32_t cbVTag = 0;
 
     e1kPrintTDesc(pState, pDesc, "vvv");
@@ -3730,11 +3736,24 @@ static void e1kXmitDesc(E1KSTATE* pState, E1KTXDESC* pDesc, RTGCPHYS addr, bool 
                     cbVTag = 4;
                 E1kLog3(("%s About to allocate TX buffer: cbVTag=%u\n", INSTANCE(pState), cbVTag));
                 if (e1kCanDoGso(&pState->GsoCtx, &pDesc->data, &pState->contextTSE))
-                    e1kXmitAllocBuf(pState, pState->contextTSE.dw2.u20PAYLEN + pState->contextTSE.dw3.u8HDRLEN + cbVTag,
+                    rc = e1kXmitAllocBuf(pState, pState->contextTSE.dw2.u20PAYLEN + pState->contextTSE.dw3.u8HDRLEN + cbVTag,
                                     true /*fExactSize*/, true /*fGso*/);
+                else if (pDesc->data.cmd.fTSE)
+                    rc = e1kXmitAllocBuf(pState, pState->contextTSE.dw3.u16MSS + pState->contextTSE.dw3.u8HDRLEN + cbVTag,
+                                         pDesc->data.cmd.fTSE  /*fExactSize*/, false /*fGso*/);
                 else
-                    e1kXmitAllocBuf(pState, pState->contextTSE.dw3.u16MSS + pState->contextTSE.dw3.u8HDRLEN + cbVTag,
-                                    pDesc->data.cmd.fTSE  /*fExactSize*/, false /*fGso*/);
+                    rc = e1kXmitAllocBuf(pState, pDesc->data.cmd.u20DTALEN + cbVTag,
+                                         pDesc->data.cmd.fEOP  /*fExactSize*/, false /*fGso*/);
+
+                /**
+                 * @todo: Perhaps it is not that simple for GSO packets! We may
+                 * need to unwind some changes.
+                 */
+                if (RT_FAILURE(rc))
+                {
+                    STAM_PROFILE_ADV_STOP(&pState->CTX_SUFF_Z(StatTransmit), a);
+                    break;
+                }
                 /** @todo Is there any way to indicating errors other than collisions? Like
                  *        VERR_NET_DOWN. */
             }
@@ -3824,7 +3843,13 @@ static void e1kXmitDesc(E1KSTATE* pState, E1KTXDESC* pDesc, RTGCPHYS addr, bool 
                     cbVTag = 4;
                 E1kLog3(("%s About to allocate TX buffer: cbVTag=%u\n", INSTANCE(pState), cbVTag));
                 /** @todo reset status bits? */
-                e1kXmitAllocBuf(pState, pDesc->legacy.cmd.u16Length + cbVTag, pDesc->legacy.cmd.fEOP, false /*fGso*/);
+                rc = e1kXmitAllocBuf(pState, pDesc->legacy.cmd.u16Length + cbVTag, pDesc->legacy.cmd.fEOP, false /*fGso*/);
+                if (RT_FAILURE(rc))
+                {
+                    STAM_PROFILE_ADV_STOP(&pState->CTX_SUFF_Z(StatTransmit), a);
+                    break;
+                }
+
                 /** @todo Is there any way to indicating errors other than collisions? Like
                  *        VERR_NET_DOWN. */
             }
@@ -3860,6 +3885,8 @@ static void e1kXmitDesc(E1KSTATE* pState, E1KTXDESC* pDesc, RTGCPHYS addr, bool 
                     INSTANCE(pState), e1kGetDescType(pDesc)));
             break;
     }
+
+    return rc;
 }
 
 
@@ -3899,7 +3926,10 @@ static int e1kXmitPending(E1KSTATE *pState, bool fOnWorkerThread)
                      INSTANCE(pState), TDBAH, TDBAL + TDH * sizeof(desc), TDLEN, TDH, TDT));
 
             e1kLoadDesc(pState, &desc, ((uint64_t)TDBAH << 32) + TDBAL + TDH * sizeof(desc));
-            e1kXmitDesc(pState, &desc, ((uint64_t)TDBAH << 32) + TDBAL + TDH * sizeof(desc), fOnWorkerThread);
+            rc = e1kXmitDesc(pState, &desc, ((uint64_t)TDBAH << 32) + TDBAL + TDH * sizeof(desc), fOnWorkerThread);
+            /* If we failed to transmit descriptor we will try it again later */
+            if (RT_FAILURE(rc))
+                break;
             if (++TDH * sizeof(desc) >= TDLEN)
                 TDH = 0;
 
@@ -3934,6 +3964,8 @@ static int e1kXmitPending(E1KSTATE *pState, bool fOnWorkerThread)
 static DECLCALLBACK(void) e1kNetworkDown_XmitPending(PPDMINETWORKDOWN pInterface)
 {
     E1KSTATE *pState = RT_FROM_MEMBER(pInterface, E1KSTATE, INetworkDown);
+    /* Resume suspended transmission */
+    STATUS &= ~STATUS_TXOFF;
     e1kXmitPending(pState, true /*fOnWorkerThread*/);
 }
 

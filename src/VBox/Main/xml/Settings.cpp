@@ -1498,6 +1498,7 @@ bool NetworkAdapter::operator==(const NetworkAdapter &n) const
                   && (strGenericDriver      == n.strGenericDriver)
                   && (genericProperties     == n.genericProperties)
                   && (ulBootPriority        == n.ulBootPriority)
+                  && (strBandwidthGroup     == n.strBandwidthGroup)
                 )
            );
 }

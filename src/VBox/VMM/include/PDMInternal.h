@@ -24,6 +24,9 @@
 #include <VBox/vmm/stam.h>
 #include <VBox/vusb.h>
 #include <VBox/vmm/pdmasynccompletion.h>
+#ifdef VBOX_WITH_NETSHAPER
+#include <VBox/vmm/pdmnetshaper.h>
+#endif /* VBOX_WITH_NETSHAPER */
 #include <VBox/vmm/pdmblkcache.h>
 #include <VBox/vmm/pdmcommon.h>
 #include <iprt/assert.h>
@@ -1060,6 +1063,10 @@ typedef struct PDMUSERPERVM
     /** Head of the templates. Singly linked, protected by ListCritSect. */
     R3PTRTYPE(PPDMASYNCCOMPLETIONTEMPLATE) pAsyncCompletionTemplates;
     /** @} */
+#ifdef VBOX_WITH_NETSHAPER
+    /** Pointer to network shaper instance. */
+    R3PTRTYPE(PPDMNETSHAPER)        pNetShaper;
+#endif /* VBOX_WITH_NETSHAPER */
 
     R3PTRTYPE(PPDMBLKCACHEGLOBAL)   pBlkCacheGlobal;
 
@@ -1177,6 +1184,11 @@ int         pdmR3ThreadSuspendAll(PVM pVM);
 int         pdmR3AsyncCompletionInit(PVM pVM);
 int         pdmR3AsyncCompletionTerm(PVM pVM);
 void        pdmR3AsyncCompletionResume(PVM pVM);
+#endif
+
+#ifdef VBOX_WITH_NETSHAPER
+int         pdmR3NetShaperInit(PVM pVM);
+int         pdmR3NetShaperTerm(PVM pVM);
 #endif
 
 int         pdmR3BlkCacheInit(PVM pVM);

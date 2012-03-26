@@ -33,6 +33,9 @@
 #include <VBox/vmm/pdmins.h>
 #include <VBox/vmm/pdmcommon.h>
 #include <VBox/vmm/pdmasynccompletion.h>
+#ifdef VBOX_WITH_NETSHAPER
+#include <VBox/vmm/pdmnetshaper.h>
+#endif /* VBOX_WITH_NETSHAPER */
 #include <VBox/vmm/pdmblkcache.h>
 #include <VBox/vmm/tm.h>
 #include <VBox/vmm/ssm.h>
@@ -1164,6 +1167,29 @@ typedef struct PDMDRVHLPR3
                                                                 PFNPDMASYNCCOMPLETEDRV pfnCompleted, void *pvTemplateUser,
                                                                 const char *pszDesc));
 
+#ifdef VBOX_WITH_NETSHAPER
+    /**
+     * Attaches network filter driver to a bandwidth group.
+     *
+     * @returns VBox status code.
+     * @param   pDrvIns         The driver instance.
+     * @param   pcszBwGroup     Name of the bandwidth group to attach to.
+     * @param   pFilter         Pointer to the filter we attach.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnNetShaperAttach,(PPDMDRVINS pDrvIns, const char *pszBwGroup,
+                                                  PPDMNSFILTER pFilter));
+
+
+    /**
+     * Detaches network filter driver to a bandwidth group.
+     *
+     * @returns VBox status code.
+     * @param   pDrvIns         The driver instance.
+     * @param   pFilter         Pointer to the filter we attach.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnNetShaperDetach,(PPDMDRVINS pDrvIns, PPDMNSFILTER pFilter));
+#endif /* VBOX_WITH_NETSHAPER */
+
 
     /**
      * Resolves the symbol for a raw-mode context interface.
@@ -1700,6 +1726,24 @@ DECLINLINE(int) PDMDrvHlpAsyncCompletionTemplateCreate(PPDMDRVINS pDrvIns, PPPDM
                                                        PFNPDMASYNCCOMPLETEDRV pfnCompleted, void *pvTemplateUser, const char *pszDesc)
 {
     return pDrvIns->pHlpR3->pfnAsyncCompletionTemplateCreate(pDrvIns, ppTemplate, pfnCompleted, pvTemplateUser, pszDesc);
+}
+# endif
+
+# ifdef VBOX_WITH_NETSHAPER
+/**
+ * @copydoc PDMDRVHLP::pfnNetShaperAttach
+ */
+DECLINLINE(int) PDMDrvHlpNetShaperAttach(PPDMDRVINS pDrvIns, const char *pcszBwGroup, PPDMNSFILTER pFilter)
+{
+    return pDrvIns->pHlpR3->pfnNetShaperAttach(pDrvIns, pcszBwGroup, pFilter);
+}
+
+/**
+ * @copydoc PDMDRVHLP::pfnNetShaperDetach
+ */
+DECLINLINE(int) PDMDrvHlpNetShaperDetach(PPDMDRVINS pDrvIns, PPDMNSFILTER pFilter)
+{
+    return pDrvIns->pHlpR3->pfnNetShaperDetach(pDrvIns, pFilter);
 }
 # endif
 
