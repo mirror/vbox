@@ -354,6 +354,7 @@ void
 tcp_sockclosed(PNATState pData, struct tcpcb *tp)
 {
     LogFlowFunc(("ENTER: tp = %R[tcpcb793]\n", tp));
+    LogFunc(("tp->t_socket:%R[natsock]\n",tp->t_socket));
 
     switch (tp->t_state)
     {
