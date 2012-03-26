@@ -824,8 +824,8 @@ GetSocket(struct libalias *la, u_short port_net, struct alias_link *pLnk, int li
             return 0;
         }
         LogFunc(("bind called for socket: %R[natsock]\n", so));
-	pLnk->pSo = so;
-	so->so_pvLnk = pLnk;
+        pLnk->pSo = so;
+        so->so_pvLnk = pLnk;
 #else
         *sockfd = sock;
 #endif
@@ -986,8 +986,8 @@ IncrementalCleanup(struct libalias *la)
  */
 void slirpDeleteLinkSocket(void *pvLnk)
 {
-	struct alias_link *lnk = (struct alias_link *)pvLnk;
-	lnk->pSo = NULL;
+        struct alias_link *lnk = (struct alias_link *)pvLnk;
+        lnk->pSo = NULL;
 }
 #endif /* !VBOX */
 
@@ -1030,14 +1030,14 @@ DeleteLink(struct alias_link *lnk)
         close(lnk->sockfd);
     }
 # else
-    if (lnk->pSo) 
+    if (lnk->pSo)
     {
         la->sockCount--;
-	/* should we be more smart, or it's enough to be 
-	 * narrow-minded and just do sofree here 
-	 */
-	sofree(la->pData, lnk->pSo);
-	lnk->pSo = NULL;
+        /* should we be more smart, or it's enough to be
+         * narrow-minded and just do sofree here
+         */
+        sofree(la->pData, lnk->pSo);
+        lnk->pSo = NULL;
     }
 # endif
 #endif
@@ -1113,7 +1113,7 @@ AddLink(struct libalias *la, struct in_addr src_addr,
 # ifndef VBOX
         lnk->sockfd = -1;
 # else
-	lnk->pSo = NULL;
+        lnk->pSo = NULL;
 # endif
 #endif
         lnk->flags = 0;
