@@ -151,7 +151,7 @@ int main()
         { "0x04444444444444444444444",0,  VWRN_NUMBER_TOO_BIG,  0x4444444444444444ULL },
         { "0x07777777777777777777777",0,  VWRN_NUMBER_TOO_BIG,  0x7777777777777777ULL },
         { "0x07f7f7f7f7f7f7f7f7f7f7f",0,  VWRN_NUMBER_TOO_BIG,  0x7f7f7f7f7f7f7f7fULL },
-        { "0x0ffffffffffffffffffffff",0,  VWRN_NUMBER_TOO_BIG,  0xffffffffffffffffULL },
+        { "0x0ffffffffffffffffffffff",0,  VWRN_NUMBER_TOO_BIG,  (int64_t)0xffffffffffffffffULL },
         { "asdfasdfasdf",           0,  VERR_NO_DIGITS,         0 },
         { "0x111111111",            0,  VINF_SUCCESS,           0x111111111ULL },
     };
@@ -199,9 +199,9 @@ int main()
         { "0x7fffffff",             0,  VINF_SUCCESS,           0x7fffffff },
         { "0x80000000",             0,  VWRN_NUMBER_TOO_BIG,    INT32_MIN },
         { "0xffffffff",             0,  VWRN_NUMBER_TOO_BIG,    -1 },
-        { "0x0fffffffffffffff",     0,  VWRN_NUMBER_TOO_BIG,    0xffffffff },
+        { "0x0fffffffffffffff",     0,  VWRN_NUMBER_TOO_BIG,    (int32_t)0xffffffff },
         { "0x01111111111111111111111",0,  VWRN_NUMBER_TOO_BIG,  0x11111111 },
-        { "0x0ffffffffffffffffffffff",0,  VWRN_NUMBER_TOO_BIG,  0xffffffff },
+        { "0x0ffffffffffffffffffffff",0,  VWRN_NUMBER_TOO_BIG,  (int32_t)0xffffffff },
         { "asdfasdfasdf",           0,  VERR_NO_DIGITS,         0 },
         { "0x1111111",              0,  VINF_SUCCESS,           0x01111111 },
     };
@@ -212,7 +212,7 @@ int main()
         { "0",                      0,  VINF_SUCCESS,           0 },
         { "1",                      0,  VINF_SUCCESS,           1 },
         /// @todo { "-1",                     0,  VWRN_NEGATIVE_UNSIGNED, ~0 }, - no longer true. bad idea?
-        { "-1",                     0,  VWRN_NUMBER_TOO_BIG,    ~0 },
+        { "-1",                     0,  VWRN_NUMBER_TOO_BIG,    ~0U },
         { "0x",                     0,  VWRN_TRAILING_CHARS,    0 },
         { "0x1",                    0,  VINF_SUCCESS,           1 },
         { "0x0fffffffffffffff",     0,  VWRN_NUMBER_TOO_BIG,    0xffffffffU },
