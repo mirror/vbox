@@ -188,7 +188,7 @@ sofree(PNATState pData, struct socket *so)
         udp_last_so = &udb;
     /* libalias notification */
     if (so->so_pvLnk)
-	slirpDeleteLinkSocket(so->so_pvLnk);
+        slirpDeleteLinkSocket(so->so_pvLnk);
 
     /* check if mbuf haven't been already freed  */
     if (so->so_m != NULL)
