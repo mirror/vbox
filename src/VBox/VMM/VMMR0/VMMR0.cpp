@@ -64,9 +64,6 @@
 *   Internal Functions                                                         *
 *******************************************************************************/
 RT_C_DECLS_BEGIN
-VMMR0DECL(int)  ModuleInit(void *hMod);
-VMMR0DECL(void) ModuleTerm(void *hMod);
-
 #if defined(RT_ARCH_X86) && (defined(RT_OS_SOLARIS) || defined(RT_OS_FREEBSD))
 extern uint64_t __udivdi3(uint64_t, uint64_t);
 extern uint64_t __umoddi3(uint64_t, uint64_t);
@@ -105,7 +102,7 @@ extern "C" { char _depends_on[] = "vboxdrv"; }
  * @returns VBox status on failure.
  * @param   hMod        Image handle for use in APIs.
  */
-VMMR0DECL(int) ModuleInit(void *hMod)
+DECLEXPORT(int) ModuleInit(void *hMod)
 {
 #ifdef VBOX_WITH_DTRACE_R0
     /*
@@ -200,7 +197,7 @@ VMMR0DECL(int) ModuleInit(void *hMod)
  *  
  * @param   hMod        Image handle for use in APIs.
  */
-VMMR0DECL(void) ModuleTerm(void *hMod)
+DECLEXPORT(void) ModuleTerm(void *hMod)
 {
     LogFlow(("ModuleTerm:\n"));
 
