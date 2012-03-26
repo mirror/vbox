@@ -19,7 +19,8 @@
 #include <windows.h>
 #include "switcher.h"
 
-static char* gsBlackList[] = {"Dwm.exe", "java.exe", "javaw.exe", "javaws.exe"/*, "taskeng.exe"*/, NULL};
+static char* gsBlackListExe[] = {"Dwm.exe", "java.exe", "javaw.exe", "javaws.exe"/*, "taskeng.exe"*/, NULL};
+static char* gsBlackListDll[] = {"awt.dll", "wpfgfx_v0400.dll", "wpfgfx_v0300.dll", NULL};
 
 /* Checks if 3D is enabled for VM and it works on host machine */
 BOOL isVBox3DEnabled(void)
@@ -46,7 +47,19 @@ BOOL isVBox3DEnabled(void)
     return result;
 }
 
-BOOL checkOptions(void)
+BOOL checkOptionsDll(void)
+{
+    int i;
+    for (i=0; gsBlackListDll[i]; ++i)
+    {
+        if (GetModuleHandleA(gsBlackListDll[i]))
+            return FALSE;
+    }
+
+    return TRUE;
+}
+
+BOOL checkOptionsExe(void)
 {
     char name[1000];
     char *filename = name, *pName;
@@ -68,11 +81,22 @@ BOOL checkOptions(void)
         }
     }
 
-    for (i=0; gsBlackList[i]; ++i)
+    for (i=0; gsBlackListExe[i]; ++i)
     {
-        if (!stricmp(filename, gsBlackList[i]))
+        if (!stricmp(filename, gsBlackListExe[i]))
             return FALSE;
     }
+
+    return TRUE;
+}
+
+BOOL checkOptions(void)
+{
+    if (!checkOptionsDll())
+        return FALSE;
+
+    if (!checkOptionsExe())
+        return FALSE;
 
     return TRUE;
 }
