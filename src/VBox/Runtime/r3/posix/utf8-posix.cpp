@@ -39,6 +39,7 @@
 #include <errno.h>
 #include <locale.h>
 
+/* iconv prototype changed with 165+ (thanks to PSARC/2010/160 Bugster 7037400) */
 #if defined(RT_OS_SOLARIS)
 # if !defined(_XPG6)
 #  define VBOX_XPG6_TMP_DEF
@@ -192,7 +193,7 @@ static int rtstrConvertCached(const void *pvInput, size_t cbInput, const char *p
             size_t      cbOutLeft = cbOutput2;
             const void *pvInputLeft = pvInput;
             void       *pvOutputLeft = pvOutput;
-#if defined(RT_OS_LINUX) || (defined(RT_OS_SOLARIS) && !defined(VBOX_SOLARIS_11_LEGACY_ICONV)) || (defined(RT_OS_DARWIN) && defined(_DARWIN_FEATURE_UNIX_CONFORMANCE)) /* there are different opinions about the constness of the input buffer. */
+#if defined(RT_OS_LINUX) || defined(RT_OS_SOLARIS) || (defined(RT_OS_DARWIN) && defined(_DARWIN_FEATURE_UNIX_CONFORMANCE)) /* there are different opinions about the constness of the input buffer. */
             if (iconv(hIconv, (char **)&pvInputLeft, &cbInLeft, (char **)&pvOutputLeft, &cbOutLeft) != (size_t)-1)
 #else
             if (iconv(hIconv, (const char **)&pvInputLeft, &cbInLeft, (char **)&pvOutputLeft, &cbOutLeft) != (size_t)-1)
@@ -318,7 +319,7 @@ static int rtStrConvertUncached(const void *pvInput, size_t cbInput, const char 
             size_t      cbOutLeft = cbOutput2;
             const void *pvInputLeft = pvInput;
             void       *pvOutputLeft = pvOutput;
-#if defined(RT_OS_LINUX) || (defined(RT_OS_SOLARIS) && !defined(VBOX_SOLARIS_11_LEGACY_ICONV)) || (defined(RT_OS_DARWIN) && defined(_DARWIN_FEATURE_UNIX_CONFORMANCE)) /* there are different opinions about the constness of the input buffer. */
+#if defined(RT_OS_LINUX) || defined(RT_OS_SOLARIS) || (defined(RT_OS_DARWIN) && defined(_DARWIN_FEATURE_UNIX_CONFORMANCE)) /* there are different opinions about the constness of the input buffer. */
             if (iconv(icHandle, (char **)&pvInputLeft, &cbInLeft, (char **)&pvOutputLeft, &cbOutLeft) != (size_t)-1)
 #else
             if (iconv(icHandle, (const char **)&pvInputLeft, &cbInLeft, (char **)&pvOutputLeft, &cbOutLeft) != (size_t)-1)

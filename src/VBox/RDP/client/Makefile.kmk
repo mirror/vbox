@@ -60,13 +60,8 @@ endif
 # snv_166+ dirent.h: defines dd_fd only if __USE_LEGACY_PROTOTYPES__ is defined, otherwise uses d_fd, let's just 
 # define __USE_LEGACY_PROTOTYPES__ until our buildbox is updated sufficiently
 rdesktop-vrdp_DEFS.solaris = \
-	HAVE_SYS_FILIO_H=1 RDPSND_SUN=1 HAVE_ICONV_H=1 STAT_STATVFS64=1 _FILE_OFFSET_BITS=64 \
+	HAVE_SYS_FILIO_H=1 RDPSND_SUN=1 HAVE_ICONV_H=1 ICONV_CONST= STAT_STATVFS64=1 _FILE_OFFSET_BITS=64 \
 	DIR_FD_MEMBER_NAME=dd_fd __USE_LEGACY_PROTOTYPES__ HAVE_SYS_VFS_H=1 HAVE_SYS_STATFS_H=1
-ifdef VBOX_SOLARIS_11_LEGACY_ICONV
- rdesktop-vrdp_DEFS.solaris += VBOX_SOLARIS_11_LEGACY_ICONV ICONV_CONST=const
-else
- rdesktop-vrdp_DEFS.solaris += ICONV_CONST=
-endif
 rdesktop-vrdp_DEFS.freebsd = \
 	RDPSND_OSS=1 HAVE_ICONV_H=1 ICONV_CONST=const HAVE_SYS_STATVFS_H=1 _FILE_OFFSET_BITS=64 HAVE_DIRFD=1
 
