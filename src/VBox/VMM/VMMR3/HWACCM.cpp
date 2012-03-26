@@ -491,6 +491,7 @@ static int hwaccmR3InitCPU(PVM pVM)
         HWACCM_REG_COUNTER(&pVCpu->hwaccm.s.StatExitShadowNM,           "/HWACCM/CPU%d/Exit/Trap/Shw/#NM");
         HWACCM_REG_COUNTER(&pVCpu->hwaccm.s.StatExitGuestNM,            "/HWACCM/CPU%d/Exit/Trap/Gst/#NM");
         HWACCM_REG_COUNTER(&pVCpu->hwaccm.s.StatExitShadowPF,           "/HWACCM/CPU%d/Exit/Trap/Shw/#PF");
+        HWACCM_REG_COUNTER(&pVCpu->hwaccm.s.StatExitShadowPFEM,         "/HWACCM/CPU%d/Exit/Trap/Shw/#PF-EM");
         HWACCM_REG_COUNTER(&pVCpu->hwaccm.s.StatExitGuestPF,            "/HWACCM/CPU%d/Exit/Trap/Gst/#PF");
         HWACCM_REG_COUNTER(&pVCpu->hwaccm.s.StatExitGuestUD,            "/HWACCM/CPU%d/Exit/Trap/Gst/#UD");
         HWACCM_REG_COUNTER(&pVCpu->hwaccm.s.StatExitGuestSS,            "/HWACCM/CPU%d/Exit/Trap/Gst/#SS");
@@ -499,6 +500,9 @@ static int hwaccmR3InitCPU(PVM pVM)
         HWACCM_REG_COUNTER(&pVCpu->hwaccm.s.StatExitGuestMF,            "/HWACCM/CPU%d/Exit/Trap/Gst/#MF");
         HWACCM_REG_COUNTER(&pVCpu->hwaccm.s.StatExitGuestDE,            "/HWACCM/CPU%d/Exit/Trap/Gst/#DE");
         HWACCM_REG_COUNTER(&pVCpu->hwaccm.s.StatExitGuestDB,            "/HWACCM/CPU%d/Exit/Trap/Gst/#DB");
+        HWACCM_REG_COUNTER(&pVCpu->hwaccm.s.StatExitGuestBP,            "/HWACCM/CPU%d/Exit/Trap/Gst/#BP");
+        HWACCM_REG_COUNTER(&pVCpu->hwaccm.s.StatExitGuestXF,            "/HWACCM/CPU%d/Exit/Trap/Gst/#XF");
+        HWACCM_REG_COUNTER(&pVCpu->hwaccm.s.StatExitGuestXcpUnk,        "/HWACCM/CPU%d/Exit/Trap/Gst/Other");
         HWACCM_REG_COUNTER(&pVCpu->hwaccm.s.StatExitInvpg,              "/HWACCM/CPU%d/Exit/Instr/Invlpg");
         HWACCM_REG_COUNTER(&pVCpu->hwaccm.s.StatExitInvd,               "/HWACCM/CPU%d/Exit/Instr/Invd");
         HWACCM_REG_COUNTER(&pVCpu->hwaccm.s.StatExitCpuid,              "/HWACCM/CPU%d/Exit/Instr/Cpuid");
