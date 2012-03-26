@@ -47,6 +47,9 @@ pmode_enter	endp
 
 pmode_exit	proc	near
 
+		mov	ax, 28h		; Ensure RM limit/attributes
+		mov	ds, ax
+
 		mov	eax, cr0
 		and	al, 0FEh
 		mov	cr0, eax

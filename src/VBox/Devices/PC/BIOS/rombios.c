@@ -11371,6 +11371,8 @@ really_enter_pm:
   ret
 
 pmode_exit:
+  mov  ax, #0x28
+  mov  ds, ax
   mov  eax, cr0
   and  al, #0xfe
   mov  cr0, eax
