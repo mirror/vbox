@@ -4,7 +4,7 @@
 #
 
 #
-# Copyright (C) 2006-2011 Oracle Corporation
+# Copyright (C) 2006-2012 Oracle Corporation
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;
@@ -635,7 +635,7 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
 
  VBoxDD_SOURCES.win    += \
  	Audio/dsoundaudio.c \
- 	Serial/DrvHostSerial.cpp 
+ 	Serial/DrvHostSerial.cpp
  ifdef VBOX_WITH_WIN_PARPORT_SUP
   VBoxDD_SOURCES.win += Parallel/DrvHostParallel.cpp
  endif
@@ -930,9 +930,9 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
  	\
  	Network/DrvIntNet.cpp \
  	Network/DrvDedicatedNic.cpp
-	ifdef VBOX_WITH_WIN_PARPORT_SUP 
-	VBoxDDR0_SOURCES += Parallel/DrvHostParallel.cpp 
-	endif
+  ifdef VBOX_WITH_WIN_PARPORT_SUP
+	VBoxDDR0_SOURCES += Parallel/DrvHostParallel.cpp
+  endif
 
  ifdef VBOX_WITH_E1000
   VBoxDDR0_DEFS         += VBOX_WITH_E1000
