@@ -986,8 +986,14 @@ IncrementalCleanup(struct libalias *la)
  */
 void slirpDeleteLinkSocket(void *pvLnk)
 {
-        struct alias_link *lnk = (struct alias_link *)pvLnk;
+    struct alias_link *lnk = (struct alias_link *)pvLnk;
+    if (   lnk
+        && lnk->pSo)
+    {
+        struct libalias *la = lnk->la;
+        la->sockCount--;
         lnk->pSo = NULL;
+    }
 }
 #endif /* !VBOX */
 
@@ -1032,7 +1038,10 @@ DeleteLink(struct alias_link *lnk)
 # else
     if (lnk->pSo)
     {
-        la->sockCount--;
+        /* libalias's sockCount decremented in slirpDeleteLinkSocket,
+         * which called from sofree
+         */
+        /* la->sockCount--; */
         /* should we be more smart, or it's enough to be
          * narrow-minded and just do sofree here
          */
