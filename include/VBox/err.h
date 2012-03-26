@@ -1615,6 +1615,42 @@
 #define VERR_SUPDRV_SERVICE_NOT_FOUND               (-3702)
 /** The host kernel is too old. */
 #define VERR_SUPDRV_KERNEL_TOO_OLD_FOR_VTX          (-3703)
+/** Bad VTG magic value.  */
+#define VERR_SUPDRV_VTG_MAGIC                   (-3704)
+/** Bad VTG bit count value.  */
+#define VERR_SUPDRV_VTG_BITS                    (-3705)
+/** Bad VTG header.  */
+#define VERR_SUPDRV_VTG_BAD_HDR                 (-3706)
+/** Bad VTG header - pointer.  */
+#define VERR_SUPDRV_VTG_BAD_HDR_PTR             (-3707)
+/** Bad VTG header - to low value.  */
+#define VERR_SUPDRV_VTG_BAD_HDR_TOO_FEW         (-3708)
+/** Bad VTG header - to high value.  */
+#define VERR_SUPDRV_VTG_BAD_HDR_TOO_MUCH        (-3709)
+/** Bad VTG header - size value is not a multiple of the structure size. */
+#define VERR_SUPDRV_VTG_BAD_HDR_NOT_MULTIPLE    (-3710)
+/** Bad VTG string table offset. */
+#define VERR_SUPDRV_VTG_STRTAB_OFF              (-3711)
+/** Bad VTG string. */
+#define VERR_SUPDRV_VTG_BAD_STRING              (-3712)
+/** VTG string is too long. */
+#define VERR_SUPDRV_VTG_STRING_TOO_LONG         (-3713)
+/** Bad VTG attribute value. */
+#define VERR_SUPDRV_VTG_BAD_ATTR                (-3714)
+/** Bad VTG provider descriptor. */
+#define VERR_SUPDRV_VTG_BAD_PROVIDER            (-3715)
+/** Bad VTG probe descriptor. */
+#define VERR_SUPDRV_VTG_BAD_PROBE               (-3716)
+/** Bad VTG argument list descriptor. */
+#define VERR_SUPDRV_VTG_BAD_ARGLIST             (-3717)
+/** Bad VTG probe enabled data. */
+#define VERR_SUPDRV_VTG_BAD_PROBE_ENABLED       (-3718)
+/** Bad VTG probe location record. */
+#define VERR_SUPDRV_VTG_BAD_PROBE_LOC           (-3719)
+/** The VTG object for the session or image has already been registered. */
+#define VERR_SUPDRV_VTG_ALREADY_REGISTERED      (-3720)
+/** A driver may only register one VTG object per session. */
+#define VERR_SUPDRV_VTG_ONLY_ONCE_PER_SESSION   (-3721)
 /** @} */
 
 

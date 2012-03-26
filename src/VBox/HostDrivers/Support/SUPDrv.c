@@ -162,6 +162,7 @@ static SUPFUNC g_aFunctions[] =
     { "SUPR0AbsKernelES",                       (void *)0 },
     { "SUPR0AbsKernelFS",                       (void *)0 },
     { "SUPR0AbsKernelGS",                       (void *)0 },
+    { "SUPR0VtgFireProbe",                      (void *)SUPR0VtgFireProbe },
         /* Normal function pointers: */
     { "SUPR0ComponentRegisterFactory",          (void *)SUPR0ComponentRegisterFactory },
     { "SUPR0ComponentDeregisterFactory",        (void *)SUPR0ComponentDeregisterFactory },
@@ -202,6 +203,7 @@ static SUPFUNC g_aFunctions[] =
     { "SUPSemEventMultiGetResolution",          (void *)SUPSemEventMultiGetResolution },
     { "SUPR0GetPagingMode",                     (void *)SUPR0GetPagingMode },
     { "SUPR0EnableVTx",                         (void *)SUPR0EnableVTx },
+    { "SUPR0VtgRegisterModule",                 (void *)SUPR0VtgRegisterModule },
     { "SUPGetGIP",                              (void *)SUPGetGIP },
     { "g_pSUPGlobalInfoPage",                   (void *)&g_pSUPGlobalInfoPage },
     { "RTMemAllocTag",                          (void *)RTMemAllocTag },
@@ -464,13 +466,14 @@ int VBOXCALL supdrvInitDevExt(PSUPDRVDEVEXT pDevExt, size_t cbSession)
                     if (RT_SUCCESS(rc))
                     {
 #ifdef VBOX_WITH_DTRACE_R0DRV
-                        rc = supdrvDTraceInit(pDevExt);
+                        rc = supdrvVtgInit(pDevExt, &g_aFunctions[10]);
                         if (RT_SUCCESS(rc))
 #endif
                         {
-
-                            pDevExt->u32Cookie = BIRD;  /** @todo make this random? */
-                            pDevExt->cbSession = (uint32_t)cbSession;
+                            pDevExt->pLdrInitImage  = NULL;
+                            pDevExt->hLdrInitThread = NIL_RTNATIVETHREAD;
+                            pDevExt->u32Cookie      = BIRD;  /** @todo make this random? */
+                            pDevExt->cbSession      = (uint32_t)cbSession;
 
                             /*
                              * Fixup the absolute symbols.
@@ -623,7 +626,7 @@ void VBOXCALL supdrvDeleteDevExt(PSUPDRVDEVEXT pDevExt)
     supdrvGipDestroy(pDevExt);
 
 #ifdef VBOX_WITH_DTRACE_R0DRV
-    supdrvDTraceTerm(pDevExt);
+    supdrvVtgTerm(pDevExt);
 #endif
 
 #ifdef SUPDRV_WITH_RELEASE_LOGGER
@@ -3663,6 +3666,29 @@ SUPR0DECL(int) SUPR0ComponentQueryFactory(PSUPDRVSESSION pSession, const char *p
 }
 
 
+#if defined(VBOX_WITH_DTRACE_R0DRV) || defined(RT_OS_SOLARIS)
+/**
+ * Stub function.
+ */
+SUPR0DECL(void) SUPR0VtgFireProbe(uint32_t idProbe, uintptr_t uArg0, uintptr_t uArg1, uintptr_t uArg2, 
+                                  uintptr_t uArg3, uintptr_t uArg4)
+{
+    NOREF(idProbe); NOREF(uArg0); NOREF(uArg1); NOREF(uArg2); NOREF(uArg3); NOREF(uArg4);
+}
+#endif
+
+#ifndef VBOX_WITH_DTRACE_R0DRV
+/**
+ * Stub function.
+ */
+SUPR0DECL(int) SUPR0VtgRegisterModule(void *hMod, PVTGOBJHDR pVtgHdr)
+{
+    NOREF(hMod); NOREF(pVtgHdr);
+    return VINF_SUCCESS;
+}
+#endif
+
+
 /**
  * Adds a memory object to the session.
  *
@@ -3858,6 +3884,7 @@ static int supdrvIOCtl_LdrOpen(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, P
     pImage->pfnServiceReqHandler = NULL;
     pImage->uState          = SUP_IOCTL_LDR_OPEN;
     pImage->cUsage          = 1;
+    pImage->pDevExt         = pDevExt;
     memcpy(pImage->szName, pReq->u.In.szName, cchName + 1);
 
     /*
@@ -4112,13 +4139,22 @@ static int supdrvIOCtl_LdrLoad(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, P
     if (RT_SUCCESS(rc) && pImage->pfnModuleInit)
     {
         Log(("supdrvIOCtl_LdrLoad: calling pfnModuleInit=%p\n", pImage->pfnModuleInit));
-        rc = pImage->pfnModuleInit();
-        if (rc && pDevExt->pvVMMR0 == pImage->pvImage)
+        pDevExt->pLdrInitImage  = pImage;
+        pDevExt->hLdrInitThread = RTThreadNativeSelf();
+        rc = pImage->pfnModuleInit(pImage);
+        pDevExt->pLdrInitImage  = NULL;
+        pDevExt->hLdrInitThread = NIL_RTNATIVETHREAD;
+        if (RT_FAILURE(rc) && pDevExt->pvVMMR0 == pImage->pvImage)
             supdrvLdrUnsetVMMR0EPs(pDevExt);
     }
 
     if (RT_FAILURE(rc))
     {
+#ifdef VBOX_WITH_DTRACE_R0DRV
+        /* Inform the tracing component in case ModuleInit registered TPs. */
+        supdrvVtgModuleUnloading(pDevExt, pImage);
+#endif
+
         pImage->uState              = SUP_IOCTL_LDR_OPEN;
         pImage->pfnModuleInit       = NULL;
         pImage->pfnModuleTerm       = NULL;
@@ -4560,17 +4596,23 @@ static void supdrvLdrFree(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE pImage)
         &&  pImage->uState == SUP_IOCTL_LDR_LOAD)
     {
         LogFlow(("supdrvIOCtl_LdrLoad: calling pfnModuleTerm=%p\n", pImage->pfnModuleTerm));
-        pImage->pfnModuleTerm();
+        pImage->pfnModuleTerm(pImage);
     }
+
+#ifdef VBOX_WITH_DTRACE_R0DRV
+    /* Inform the tracing component. */
+    supdrvVtgModuleUnloading(pDevExt, pImage);
+#endif
 
     /* do native unload if appropriate. */
     if (pImage->fNative)
         supdrvOSLdrUnload(pDevExt, pImage);
 
     /* free the image */
-    pImage->cUsage = 0;
-    pImage->pNext  = 0;
-    pImage->uState = SUP_IOCTL_LDR_FREE;
+    pImage->cUsage  = 0;
+    pImage->pDevExt = NULL;
+    pImage->pNext   = NULL;
+    pImage->uState  = SUP_IOCTL_LDR_FREE;
     RTMemExecFree(pImage->pvImageAlloc, pImage->cbImageBits + 31);
     pImage->pvImageAlloc = NULL;
     RTMemFree(pImage->pachStrTab);

@@ -40,6 +40,7 @@
 #include <iprt/list.h>
 #include <iprt/mem.h>
 #include <iprt/semaphore.h>
+#include <iprt/thread.h>
 
 #ifdef RT_OS_DARWIN /** @todo figure this! */
 # include "/Developer/SDKs/MacOSX10.6.sdk/usr/include/sys/dtrace.h"
@@ -125,27 +126,6 @@ static const dtrace_pops_t g_SupDrvDTraceProvOps =
     /* .dtps_usermode        = */ NULL,
     /* .dtps_destroy         = */ supdrvDTracePOps_Destroy
 };
-
-
-#define VERR_SUPDRV_VTG_MAGIC                   (-3704)
-#define VERR_SUPDRV_VTG_BITS                    (-3705)
-//#define VERR_SUPDRV_VTG_RESERVED                (-3705)
-#define VERR_SUPDRV_VTG_BAD_HDR                 (-3706)
-#define VERR_SUPDRV_VTG_BAD_HDR_PTR             (-3707)
-#define VERR_SUPDRV_VTG_BAD_HDR_TOO_FEW         (-3708)
-#define VERR_SUPDRV_VTG_BAD_HDR_TOO_MUCH        (-3709)
-#define VERR_SUPDRV_VTG_BAD_HDR_NOT_MULTIPLE    (-3710)
-#define VERR_SUPDRV_VTG_STRTAB_OFF              (-3711)
-#define VERR_SUPDRV_VTG_BAD_STRING              (-3712)
-#define VERR_SUPDRV_VTG_STRING_TOO_LONG         (-3713)
-#define VERR_SUPDRV_VTG_BAD_ATTR                (-3714)
-#define VERR_SUPDRV_VTG_BAD_PROVIDER            (-3715)
-#define VERR_SUPDRV_VTG_BAD_PROBE               (-3716)
-#define VERR_SUPDRV_VTG_BAD_ARGLIST             (-3717)
-#define VERR_SUPDRV_VTG_BAD_PROBE_ENABLED       (-3718)
-#define VERR_SUPDRV_VTG_BAD_PROBE_LOC           (-3719)
-#define VERR_SUPDRV_VTG_ALREADY_REGISTERED      (-3720)
-#define VERR_SUPDRV_VTG_ONLY_ONCE_PER_SESSION   (-3721)
 
 
 static int supdrvVtgValidateString(const char *psz)
@@ -436,7 +416,8 @@ static int supdrvVtgRegister(PSUPDRVDEVEXT pDevExt, PVTGOBJHDR pVtgHdr, size_t c
                 RTSemFastMutexRelease(pDevExt->mtxDTrace);
                 return VERR_SUPDRV_VTG_ALREADY_REGISTERED;
             }
-            if (pProv->pSession == pSession && !pProv->pImage)
+            if (   pProv->pSession == pSession 
+                && pProv->pImage   == pImage)
             {
                 RTSemFastMutexRelease(pDevExt->mtxDTrace);
                 return VERR_SUPDRV_VTG_ONLY_ONCE_PER_SESSION;
@@ -520,7 +501,6 @@ static int supdrvVtgRegister(PSUPDRVDEVEXT pDevExt, PVTGOBJHDR pVtgHdr, size_t c
 }
 
 
-
 /**
  * Registers the VTG tracepoint providers of a driver.
  *
@@ -537,7 +517,6 @@ SUPR0DECL(int) SUPR0VtgRegisterDrv(PSUPDRVSESSION pSession, PVTGOBJHDR pVtgHdr, 
 
     return supdrvVtgRegister(pSession->pDevExt, pVtgHdr, _1M, NULL /*pImage*/, pSession, pszName);
 }
-
 
 
 /**
@@ -571,21 +550,97 @@ SUPR0DECL(void) SUPR0VtgDeregisterDrv(PSUPDRVSESSION pSession)
 }
 
 
+/**
+ * Registers the VTG tracepoint providers of a module loaded by 
+ * the support driver. 
+ *  
+ * This should be called from the ModuleInit code.
+ *
+ * @returns VBox status code.
+ * @param   hMod                The module handle.
+ * @param   pVtgHdr             The VTG header.
+ */
+SUPR0DECL(int) SUPR0VtgRegisterModule(void *hMod, PVTGOBJHDR pVtgHdr)
+{
+    PSUPDRVLDRIMAGE pImage = (PSUPDRVLDRIMAGE)hMod;
+    PSUPDRVDEVEXT   pDevExt;
+    uintptr_t       cbVtgObj;
+
+    /* 
+     * Validate input and context.
+     */
+    AssertPtrReturn(pImage,  VERR_INVALID_HANDLE);
+    AssertPtrReturn(pVtgHdr, VERR_INVALID_POINTER);
+
+    pDevExt = pImage->pDevExt;
+    AssertPtrReturn(pDevExt, VERR_INVALID_POINTER);
+    AssertReturn(pDevExt->pLdrInitImage  == pImage, VERR_WRONG_ORDER);
+    AssertReturn(pDevExt->hLdrInitThread == RTThreadNativeSelf(), VERR_WRONG_ORDER);
+
+    /*
+     * Calculate the max VTG object size and hand it over to the common code.
+     */
+    cbVtgObj = (uintptr_t)pVtgHdr - (uintptr_t)pImage->pvImage;
+    AssertMsgReturn(cbVtgObj /*off*/ < pImage->cbImageBits, 
+                    ("pVtgHdr=%p offVtgObj=%p cbImageBits=%p\n", pVtgHdr, cbVtgObj, pImage->cbImageBits),
+                    VERR_INVALID_PARAMETER);
+    cbVtgObj = pImage->cbImageBits - cbVtgObj;
+
+    return supdrvVtgRegister(pDevExt, pVtgHdr, cbVtgObj, pImage, NULL, pImage->szName);
+}
+
+
+/**
+ * Module unloading hook, called after execution in the module have ceased. 
+ *
+ * @param   pDevExt             The device extension structure. 
+ * @param   pImage              The image being unloaded. 
+ */
+void VBOXCALL supdrvVtgModuleUnloading(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE pImage)
+{
+    PSUPDRVDTPROVIDER pProv, pProvNext;
+
+    /*
+     * Unregister all providers belonging to this image.
+     */
+    RTSemFastMutexRequest(pDevExt->mtxDTrace);
+    RTListForEachSafe(&pDevExt->DtProviderList, pProv, pProvNext, SUPDRVDTPROVIDER, ListEntry)
+    {
+        if (pProv->pImage == pImage)
+        {
+            RTListNodeRemove(&pProv->ListEntry);
+            RTSemFastMutexRelease(pDevExt->mtxDTrace);
+
+            dtrace_unregister(pProv->idDtProv);
+            RTMemFree(pProv);
+
+            RTSemFastMutexRequest(pDevExt->mtxDTrace);
+        }
+    }
+    RTSemFastMutexRelease(pDevExt->mtxDTrace);
+}
+
 
 /**
  * Early module initialization hook.
  *
  * @returns VBox status code.
- * @param   pDevExt             The device extension structure.
+ * @param   pDevExt             The device extension structure. 
+ * @param   pVtgFireProbe       Pointer to the SUPR0VtgFireProbe entry. 
  */
-int VBOXCALL supdrvDTraceInit(PSUPDRVDEVEXT pDevExt)
+int VBOXCALL supdrvVtgInit(PSUPDRVDEVEXT pDevExt, PSUPFUNC pVtgFireProbe)
 {
+    Assert(!strcmp(pVtgFireProbe->szName, "SUPR0VtgFireProbe"));
+
     /*
      * Register a provider for this module.
      */
     int rc = RTSemFastMutexCreate(&pDevExt->mtxDTrace);
     if (RT_SUCCESS(rc))
     {
+#ifdef RT_OS_SOLARIS
+        pVtgFireProbe->pfn = (void *)(uintptr_t)dtrace_probe;
+#endif
         RTListInit(&pDevExt->DtProviderList);
         rc = supdrvVtgRegister(pDevExt, &g_VTGObjHeader, _1M, NULL /*pImage*/, NULL /*pSession*/, "vboxdrv");
         if (RT_SUCCESS(rc))
@@ -603,7 +658,7 @@ int VBOXCALL supdrvDTraceInit(PSUPDRVDEVEXT pDevExt)
  * @returns VBox status code.
  * @param   pDevExt             The device extension structure.
  */
-int VBOXCALL supdrvDTraceTerm(PSUPDRVDEVEXT pDevExt)
+int VBOXCALL supdrvVtgTerm(PSUPDRVDEVEXT pDevExt)
 {
     PSUPDRVDTPROVIDER pProv, pProvNext;
 
@@ -624,39 +679,6 @@ int VBOXCALL supdrvDTraceTerm(PSUPDRVDEVEXT pDevExt)
     RTSemFastMutexRelease(pDevExt->mtxDTrace);
     RTSemFastMutexDestroy(pDevExt->mtxDTrace);
     pDevExt->mtxDTrace = NIL_RTSEMFASTMUTEX;
-    return VINF_SUCCESS;
-}
-
-
-/**
- * Module loading hook, called before calling into the module.
- *
- * @returns VBox status code.
- * @param   pDevExt             The device extension structure.
- */
-int supdrvDTraceModuleLoading(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE pImage)
-{
-    /*
-     * Check for DTrace probes in the module, register a new provider for them
-     * if found.
-     */
-
-    return VINF_SUCCESS;
-}
-
-
-/**
- * Module unloading hook, called after execution in the module
- * have ceased.
- *
- * @returns VBox status code.
- * @param   pDevExt             The device extension structure.
- */
-int supdrvDTraceModuleUnloading(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE pImage)
-{
-    /*
-     * Undo what we did in supdrvDTraceModuleLoading.
-     */
     return VINF_SUCCESS;
 }
 

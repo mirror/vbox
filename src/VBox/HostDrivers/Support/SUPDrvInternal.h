@@ -294,6 +294,8 @@ typedef struct SUPDRVLDRIMAGE
     uint32_t                        uState;
     /** Usage count. */
     uint32_t volatile               cUsage;
+    /** Pointer to the device extension. */
+    struct SUPDRVDEVEXT            *pDevExt;
 #ifdef RT_OS_WINDOWS
     /** The section object for the loaded image (fNative=true). */
     void                           *pvNtSectionObj;
@@ -492,6 +494,17 @@ typedef struct SUPDRVDEVEXT
     /** Linked list of loaded code. */
     PSUPDRVLDRIMAGE volatile        pLdrImages;
 
+    /** @name These members for detecting whether an API caller is in ModuleInit.
+     * Certain APIs are only permitted from ModuleInit, like for instance tracepoint 
+     * registration. 
+     * @{ */
+    /** The image currently executing its ModuleInit. */
+    PSUPDRVLDRIMAGE volatile        pLdrInitImage;
+    /** The thread currently executing a ModuleInit function. */
+    RTNATIVETHREAD volatile         hLdrInitThread;
+    /** @} */
+
+
     /** GIP mutex.
      * Any changes to any of the GIP members requires ownership of this mutex,
      * except on driver init and termination. */
@@ -620,10 +633,10 @@ void VBOXCALL   supdrvCloseSession(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSessio
 void VBOXCALL   supdrvCleanupSession(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession);
 
 #ifdef VBOX_WITH_DTRACE_R0DRV
-int  VBOXCALL   supdrvDTraceTerm(PSUPDRVDEVEXT pDevExt);
-int  VBOXCALL   supdrvDTraceInit(PSUPDRVDEVEXT pDevExt);
+int  VBOXCALL   supdrvVtgInit(PSUPDRVDEVEXT pDevExt, PSUPFUNC pVtgFireProbe);
+int  VBOXCALL   supdrvVtgTerm(PSUPDRVDEVEXT pDevExt);
+void VBOXCALL   supdrvVtgModuleUnloading(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE pImage);
 #endif
-
 
 
 RT_C_DECLS_END
