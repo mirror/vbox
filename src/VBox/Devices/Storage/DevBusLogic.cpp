@@ -54,10 +54,13 @@
 /* Size of the reply buffer. */
 #define BUSLOGIC_REPLY_SIZE_MAX 64
 
-/* I/O port registered in the ISA compatible range to let the BIOS access
- * the controller.
+/*
+ * Custom fixed I/O ports for BIOS controller access. Note that these should
+ * not be in the ISA range (below 400h) to avoid conflicts with ISA device
+ * probing. Addresses in the 300h-340h range should be especially avoided.
  */
-#define BUSLOGIC_ISA_IO_PORT 0x330
+
+#define BUSLOGIC_BIOS_IO_PORT   0x330
 
 /** State saved version. */
 #define BUSLOGIC_SAVED_STATE_MINOR_VERSION 2
@@ -1869,10 +1872,10 @@ static int  buslogicIsaIOPortRead (PPDMDEVINS pDevIns, void *pvUser,
     if (!pBusLogic->fISAEnabled)
         return VINF_SUCCESS;
 
-    rc = vboxscsiReadRegister(&pBusLogic->VBoxSCSI, (Port - BUSLOGIC_ISA_IO_PORT), pu32);
+    rc = vboxscsiReadRegister(&pBusLogic->VBoxSCSI, (Port - BUSLOGIC_BIOS_IO_PORT), pu32);
 
     //Log2(("%s: pu32=%p:{%.*Rhxs} iRegister=%d rc=%Rrc\n",
-    //      __FUNCTION__, pu32, 1, pu32, (Port - BUSLOGIC_ISA_IO_PORT), rc));
+    //      __FUNCTION__, pu32, 1, pu32, (Port - BUSLOGIC_BIOS_IO_PORT), rc));
 
     return rc;
 }
@@ -2006,7 +2009,7 @@ static int buslogicIsaIOPortWrite (PPDMDEVINS pDevIns, void *pvUser,
     if (!pBusLogic->fISAEnabled)
         return VINF_SUCCESS;
 
-    rc = vboxscsiWriteRegister(&pBusLogic->VBoxSCSI, (Port - BUSLOGIC_ISA_IO_PORT), (uint8_t)u32);
+    rc = vboxscsiWriteRegister(&pBusLogic->VBoxSCSI, (Port - BUSLOGIC_BIOS_IO_PORT), (uint8_t)u32);
     if (rc == VERR_MORE_DATA)
     {
         rc = buslogicPrepareBIOSSCSIRequest(pBusLogic);
@@ -2030,7 +2033,7 @@ static DECLCALLBACK(int) buslogicIsaIOPortWriteStr(PPDMDEVINS pDevIns, void *pvU
     Log2(("#%d %s: pvUser=%#p cb=%d Port=%#x\n",
           pDevIns->iInstance, __FUNCTION__, pvUser, cb, Port));
 
-    rc = vboxscsiWriteString(pDevIns, &pBusLogic->VBoxSCSI, (Port - BUSLOGIC_ISA_IO_PORT),
+    rc = vboxscsiWriteString(pDevIns, &pBusLogic->VBoxSCSI, (Port - BUSLOGIC_BIOS_IO_PORT),
                              pGCPtrSrc, pcTransfer, cb);
     if (rc == VERR_MORE_DATA)
     {
@@ -2054,7 +2057,7 @@ static DECLCALLBACK(int) buslogicIsaIOPortReadStr(PPDMDEVINS pDevIns, void *pvUs
     LogFlowFunc(("#%d %s: pvUser=%#p cb=%d Port=%#x\n",
                  pDevIns->iInstance, __FUNCTION__, pvUser, cb, Port));
 
-    return vboxscsiReadString(pDevIns, &pBusLogic->VBoxSCSI, (Port - BUSLOGIC_ISA_IO_PORT),
+    return vboxscsiReadString(pDevIns, &pBusLogic->VBoxSCSI, (Port - BUSLOGIC_BIOS_IO_PORT),
                               pGCPtrDst, pcTransfer, cb);
 }
 
@@ -3111,7 +3114,7 @@ static DECLCALLBACK(int) buslogicConstruct(PPDMDEVINS pDevIns, int iInstance, PC
     if (fBootable)
     {
         /* Register I/O port space in ISA region for BIOS access. */
-        rc = PDMDevHlpIOPortRegister(pDevIns, BUSLOGIC_ISA_IO_PORT, 3, NULL,
+        rc = PDMDevHlpIOPortRegister(pDevIns, BUSLOGIC_BIOS_IO_PORT, 3, NULL,
                                      buslogicIsaIOPortWrite, buslogicIsaIOPortRead,
                                      buslogicIsaIOPortWriteStr, buslogicIsaIOPortReadStr,
                                      "BusLogic BIOS");
