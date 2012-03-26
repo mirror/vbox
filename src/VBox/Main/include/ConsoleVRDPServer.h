@@ -24,6 +24,7 @@
 #include <VBox/VBoxAuth.h>
 
 #include <VBox/RemoteDesktop/VRDEImage.h>
+#include <VBox/RemoteDesktop/VRDEMousePtr.h>
 
 #include <VBox/HostServices/VBoxClipboardExt.h>
 
@@ -84,6 +85,7 @@ public:
 
     void EnableConnections (void);
     void DisconnectClient (uint32_t u32ClientId, bool fReconnect);
+    int MousePointer(BOOL alpha, ULONG xHot, ULONG yHot, ULONG width, ULONG height, const uint8_t *pu8Shape);
     void MousePointerUpdate (const VRDECOLORPOINTER *pPointer);
     void MousePointerHide (void);
 
@@ -258,6 +260,8 @@ private:
                                                 uint32_t u32Id,
                                                 void *pvData,
                                                 uint32_t cbData);
+    /* Mouse pointer interface. */
+    VRDEMOUSEPTRINTERFACE m_interfaceMousePtr;
 };
 
 
