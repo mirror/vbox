@@ -16,11 +16,11 @@
  */
 
 /* The I/O port of the BusLogic SCSI adapter. */
-#define BUSLOGIC_ISA_IO_PORT 0x330
+#define BUSLOGIC_BIOS_IO_PORT       0x330
 /* The I/O port of the LsiLogic SCSI adapter. */
-#define LSILOGIC_ISA_IO_PORT 0x340
+#define LSILOGIC_BIOS_IO_PORT       0x340
 /* The I/O port of the LsiLogic SAS adapter. */
-#define LSILOGIC_SAS_ISA_IO_PORT 0x350
+#define LSILOGIC_SAS_BIOS_IO_PORT   0x350
 
 #define VBOXSCSI_REGISTER_STATUS   0
 #define VBOXSCSI_REGISTER_COMMAND  0
@@ -366,7 +366,7 @@ void scsi_enumerate_attached_devices(io_base)
                 }
 
                 /* We need to calculate the geometry for the disk. */
-                if (io_base == BUSLOGIC_ISA_IO_PORT)
+                if (io_base == BUSLOGIC_BIOS_IO_PORT)
                 {
                     /* This is from the BusLogic driver in the Linux kernel. */
                     if (sectors >= 4 * 1024 * 1024)
@@ -386,7 +386,7 @@ void scsi_enumerate_attached_devices(io_base)
                     }
                     cylinders = (uint32_t)(sectors / (heads * sectors_per_track));
                 }
-                else if (io_base == LSILOGIC_ISA_IO_PORT || io_base == LSILOGIC_SAS_ISA_IO_PORT)
+                else if (io_base == LSILOGIC_BIOS_IO_PORT || io_base == LSILOGIC_SAS_BIOS_IO_PORT)
                 {
                     /* This is from the BusLogic driver in the Linux kernel. */
                     if (sectors >= 4 * 1024 * 1024)
@@ -476,15 +476,15 @@ void scsi_init( )
     identifier = 0;
 
     /* Detect BusLogic adapter. */
-    outb(BUSLOGIC_ISA_IO_PORT+VBOXSCSI_REGISTER_IDENTIFY, 0x55);
-    identifier = inb(BUSLOGIC_ISA_IO_PORT+VBOXSCSI_REGISTER_IDENTIFY);
+    outb(BUSLOGIC_BIOS_IO_PORT+VBOXSCSI_REGISTER_IDENTIFY, 0x55);
+    identifier = inb(BUSLOGIC_BIOS_IO_PORT+VBOXSCSI_REGISTER_IDENTIFY);
 
     if (identifier == 0x55)
     {
         /* Detected - Enumerate attached devices. */
         VBOXSCSI_DEBUG("scsi_init: BusLogic SCSI adapter detected\n");
-        outb(BUSLOGIC_ISA_IO_PORT+VBOXSCSI_REGISTER_RESET, 0);
-        scsi_enumerate_attached_devices(BUSLOGIC_ISA_IO_PORT);
+        outb(BUSLOGIC_BIOS_IO_PORT+VBOXSCSI_REGISTER_RESET, 0);
+        scsi_enumerate_attached_devices(BUSLOGIC_BIOS_IO_PORT);
     }
     else
     {
@@ -492,15 +492,15 @@ void scsi_init( )
     }
 
     /* Detect LsiLogic adapter. */
-    outb(LSILOGIC_ISA_IO_PORT+VBOXSCSI_REGISTER_IDENTIFY, 0x55);
-    identifier = inb(LSILOGIC_ISA_IO_PORT+VBOXSCSI_REGISTER_IDENTIFY);
+    outb(LSILOGIC_BIOS_IO_PORT+VBOXSCSI_REGISTER_IDENTIFY, 0x55);
+    identifier = inb(LSILOGIC_BIOS_IO_PORT+VBOXSCSI_REGISTER_IDENTIFY);
 
     if (identifier == 0x55)
     {
         /* Detected - Enumerate attached devices. */
         VBOXSCSI_DEBUG("scsi_init: LsiLogic SCSI adapter detected\n");
-        outb(LSILOGIC_ISA_IO_PORT+VBOXSCSI_REGISTER_RESET, 0);
-        scsi_enumerate_attached_devices(LSILOGIC_ISA_IO_PORT);
+        outb(LSILOGIC_BIOS_IO_PORT+VBOXSCSI_REGISTER_RESET, 0);
+        scsi_enumerate_attached_devices(LSILOGIC_BIOS_IO_PORT);
     }
     else
     {
@@ -508,15 +508,15 @@ void scsi_init( )
     }
 
     /* Detect LsiLogic SAS adapter. */
-    outb(LSILOGIC_SAS_ISA_IO_PORT+VBOXSCSI_REGISTER_IDENTIFY, 0x55);
-    identifier = inb(LSILOGIC_SAS_ISA_IO_PORT+VBOXSCSI_REGISTER_IDENTIFY);
+    outb(LSILOGIC_SAS_BIOS_IO_PORT+VBOXSCSI_REGISTER_IDENTIFY, 0x55);
+    identifier = inb(LSILOGIC_SAS_BIOS_IO_PORT+VBOXSCSI_REGISTER_IDENTIFY);
 
     if (identifier == 0x55)
     {
         /* Detected - Enumerate attached devices. */
         VBOXSCSI_DEBUG("scsi_init: LsiLogic SAS adapter detected\n");
-        outb(LSILOGIC_SAS_ISA_IO_PORT+VBOXSCSI_REGISTER_RESET, 0);
-        scsi_enumerate_attached_devices(LSILOGIC_SAS_ISA_IO_PORT);
+        outb(LSILOGIC_SAS_BIOS_IO_PORT+VBOXSCSI_REGISTER_RESET, 0);
+        scsi_enumerate_attached_devices(LSILOGIC_SAS_BIOS_IO_PORT);
     }
     else
     {
