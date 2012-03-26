@@ -66,7 +66,7 @@ typedef struct RTSOLCOREMAPINFO
 {
     prmap_t                         pMap;                       /**< Proc description of this mapping */
     int                             fError;                     /**< Any error reading this mapping (errno) */
-    struct RTSOLCOREMAPINFO            *pNext;                      /**< Pointer to the next mapping */
+    struct RTSOLCOREMAPINFO        *pNext;                      /**< Pointer to the next mapping */
 } RTSOLCOREMAPINFO;
 /** Pointer to a solaris memory mapping descriptor. */
 typedef RTSOLCOREMAPINFO *PRTSOLCOREMAPINFO;
