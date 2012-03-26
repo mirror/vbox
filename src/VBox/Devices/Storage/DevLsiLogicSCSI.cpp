@@ -3668,8 +3668,8 @@ static int  lsilogicIsaIOPortRead (PPDMDEVINS pDevIns, void *pvUser,
     Assert(cb == 1);
 
     uint8_t iRegister =   pThis->enmCtrlType == LSILOGICCTRLTYPE_SCSI_SPI
-                        ? Port - LSILOGIC_ISA_IO_PORT
-                        : Port - LSILOGIC_SAS_ISA_IO_PORT;
+                        ? Port - LSILOGIC_BIOS_IO_PORT
+                        : Port - LSILOGIC_SAS_BIOS_IO_PORT;
     rc = vboxscsiReadRegister(&pThis->VBoxSCSI, iRegister, pu32);
 
     Log2(("%s: pu32=%p:{%.*Rhxs} iRegister=%d rc=%Rrc\n",
@@ -3757,8 +3757,8 @@ static int lsilogicIsaIOPortWrite (PPDMDEVINS pDevIns, void *pvUser,
     Assert(cb == 1);
 
     uint8_t iRegister =   pThis->enmCtrlType == LSILOGICCTRLTYPE_SCSI_SPI
-                        ? Port - LSILOGIC_ISA_IO_PORT
-                        : Port - LSILOGIC_SAS_ISA_IO_PORT;
+                        ? Port - LSILOGIC_BIOS_IO_PORT
+                        : Port - LSILOGIC_SAS_BIOS_IO_PORT;
     rc = vboxscsiWriteRegister(&pThis->VBoxSCSI, iRegister, (uint8_t)u32);
     if (rc == VERR_MORE_DATA)
     {
@@ -3784,8 +3784,8 @@ static DECLCALLBACK(int) lsilogicIsaIOPortWriteStr(PPDMDEVINS pDevIns, void *pvU
           pDevIns->iInstance, __FUNCTION__, pvUser, cb, Port));
 
     uint8_t iRegister =   pThis->enmCtrlType == LSILOGICCTRLTYPE_SCSI_SPI
-                        ? Port - LSILOGIC_ISA_IO_PORT
-                        : Port - LSILOGIC_SAS_ISA_IO_PORT;
+                        ? Port - LSILOGIC_BIOS_IO_PORT
+                        : Port - LSILOGIC_SAS_BIOS_IO_PORT;
     rc = vboxscsiWriteString(pDevIns, &pThis->VBoxSCSI, iRegister,
                              pGCPtrSrc, pcTransfer, cb);
     if (rc == VERR_MORE_DATA)
@@ -3811,8 +3811,8 @@ static DECLCALLBACK(int) lsilogicIsaIOPortReadStr(PPDMDEVINS pDevIns, void *pvUs
                  pDevIns->iInstance, __FUNCTION__, pvUser, cb, Port));
 
     uint8_t iRegister =   pThis->enmCtrlType == LSILOGICCTRLTYPE_SCSI_SPI
-                        ? Port - LSILOGIC_ISA_IO_PORT
-                        : Port - LSILOGIC_SAS_ISA_IO_PORT;
+                        ? Port - LSILOGIC_BIOS_IO_PORT
+                        : Port - LSILOGIC_SAS_BIOS_IO_PORT;
     return vboxscsiReadString(pDevIns, &pThis->VBoxSCSI, iRegister,
                               pGCPtrDst, pcTransfer, cb);
 }
@@ -5229,12 +5229,12 @@ static DECLCALLBACK(int) lsilogicConstruct(PPDMDEVINS pDevIns, int iInstance, PC
     if (fBootable)
     {
         if (pThis->enmCtrlType == LSILOGICCTRLTYPE_SCSI_SPI)
-            rc = PDMDevHlpIOPortRegister(pDevIns, LSILOGIC_ISA_IO_PORT, 3, NULL,
+            rc = PDMDevHlpIOPortRegister(pDevIns, LSILOGIC_BIOS_IO_PORT, 3, NULL,
                                          lsilogicIsaIOPortWrite, lsilogicIsaIOPortRead,
                                          lsilogicIsaIOPortWriteStr, lsilogicIsaIOPortReadStr,
                                          "LsiLogic BIOS");
         else if (pThis->enmCtrlType == LSILOGICCTRLTYPE_SCSI_SAS)
-            rc = PDMDevHlpIOPortRegister(pDevIns, LSILOGIC_SAS_ISA_IO_PORT, 3, NULL,
+            rc = PDMDevHlpIOPortRegister(pDevIns, LSILOGIC_SAS_BIOS_IO_PORT, 3, NULL,
                                          lsilogicIsaIOPortWrite, lsilogicIsaIOPortRead,
                                          lsilogicIsaIOPortWriteStr, lsilogicIsaIOPortReadStr,
                                          "LsiLogic SAS BIOS");
