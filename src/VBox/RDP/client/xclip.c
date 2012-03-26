@@ -45,7 +45,25 @@
 #ifdef HAVE_LANGINFO_H
 #ifdef HAVE_ICONV_H
 #include <langinfo.h>
+
+#if defined(RT_OS_SOLARIS) && !defined(_XPG6)
+# define VBOX_XPG6_TMP_DEF
+# define _XPG6
+#endif
+#if defined(RT_OS_SOLARIS) && defined(__USE_LEGACY_PROTOTYPES__)
+# define VBOX_LEGACY_PROTO_TMP_DEF
+# undef __USE_LEGACY_PROTOTYPES__
+# endif
 #include <iconv.h>
+#if defined(VBOX_XPG6_TMP_DEF)
+# undef _XPG6
+# undef VBOX_XPG6_TMP_DEF
+#endif
+#if defined(VBOX_LEGACY_PROTO_TMP_DEF)
+# define  __USE_LEGACY_PROTOTYPES__
+# undef VBOX_LEGACY_PROTO_TMP_DEF
+#endif
+
 #define USE_UNICODE_CLIPBOARD
 #endif
 #endif

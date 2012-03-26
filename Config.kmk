@@ -2623,6 +2623,11 @@ ifeq ($(KBUILD_TARGET),solaris)
    VBOX_SOLARIS_11_VERSION = $(shell pkg contents -H -t set -o pkg.fmri entire | head -1 | sed 's/^.*\@//;s/\:.*//;s/.*,//' | cut -f2 -d'-' | cut -f2 -d'.')
   endif
 
+  # iconv prototype changed with 165+ (thanks to PSARC/2010/160 Bugster 7037400)
+  if $(VBOX_SOLARIS_11_VERSION) < 165
+   VBOX_SOLARIS_11_LEGACY_ICONV := 1   
+  endif
+
   # OSS audio support for Solaris
  VBOX_WITH_SOLARIS_OSS := $(if-expr $(VBOX_SOLARIS_11_VERSION) >= 115,1,)
  endif
@@ -3308,6 +3313,10 @@ TEMPLATE_VBOXR3EXE_LIBPATH            += \
  else ifeq ($(KBUILD_TARGET),solaris)
 TEMPLATE_VBOXR3EXE_TOOL                = GXX3PLAIN
 TEMPLATE_VBOXR3EXE_DEFS               += LIBICONV_PLUG _REENTRANT # Avoid the GNU libiconv, for now at least.
+
+ifdef VBOX_SOLARIS_11_LEGACY_ICONV
+ TEMPLATE_VBOXR3EXE_DEFS               += VBOX_SOLARIS_11_LEGACY_ICONV
+endif
 TEMPLATE_VBOXR3EXE_LIBS                = rt socket
  else
 $(warning Warning: VBOX Build: Target $(KBUILD_TARGET) is not officially supported!)
