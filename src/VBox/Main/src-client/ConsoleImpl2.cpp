@@ -3269,7 +3269,7 @@ int Console::configMediumAttachment(PCFGMNODE pCtlInst,
                           uMergeSource,
                           uMergeTarget,
                           strBwGroup.isEmpty() ? NULL : Utf8Str(strBwGroup).c_str(),
-                          fDiscard,
+                          !!fDiscard,
                           pMedium,
                           aMachineState,
                           phrc);

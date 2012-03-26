@@ -776,8 +776,8 @@ int Service::delProperty(uint32_t cParms, VBOXHGCMSVCPARM paParms[], bool isGues
     if (rc == VINF_SUCCESS && pProp)
     {
         uint64_t u64Timestamp = getCurrentTimestamp();
-        bool fRc = RTStrSpaceRemove(&mhProperties, pProp->mStrCore.pszString);
-        Assert(fRc); NOREF(fRc);
+        PRTSTRSPACECORE pStrCore = RTStrSpaceRemove(&mhProperties, pProp->mStrCore.pszString);
+        AssertPtr(pStrCore); NOREF(pStrCore);
         mcProperties--;
         delete pProp;
         // if (isGuest)  /* Notify the host even for properties that the host
@@ -792,13 +792,13 @@ int Service::delProperty(uint32_t cParms, VBOXHGCMSVCPARM paParms[], bool isGues
 /**
  * Enumeration data shared between enumPropsCallback and Service::enumProps.
  */
-typedef struct EnumData
+typedef struct ENUMDATA
 {
     const char *pszPattern; /**< The pattern to match properties against. */
     char       *pchCur;     /**< The current buffer postion. */
     size_t      cbLeft;     /**< The amount of available buffer space. */
     size_t      cbNeeded;   /**< The amount of needed buffer space. */
-} EnumData;
+} ENUMDATA;
 
 /**
  * @callback_method_impl{FNRTSTRSPACECALLBACK}
@@ -806,7 +806,7 @@ typedef struct EnumData
 static DECLCALLBACK(int) enumPropsCallback(PRTSTRSPACECORE pStr, void *pvUser)
 {
     Property *pProp = (Property *)pStr;
-    EnumData *pEnum = (EnumData *)pvUser;
+    ENUMDATA *pEnum = (ENUMDATA *)pvUser;
 
     /* Included in the enumeration? */
     if (!pProp->Matches(pEnum->pszPattern))
@@ -904,7 +904,7 @@ int Service::enumProps(uint32_t cParms, VBOXHGCMSVCPARM paParms[])
      */
     if (RT_SUCCESS(rc))
     {
-        EnumData EnumData;
+        ENUMDATA EnumData;
         EnumData.pszPattern = szPatterns;
         EnumData.pchCur     = pchBuf;
         EnumData.cbLeft     = cbBuf;
