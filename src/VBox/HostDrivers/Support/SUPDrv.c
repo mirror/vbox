@@ -3681,7 +3681,7 @@ SUPR0DECL(void) SUPR0VtgFireProbe(uint32_t idProbe, uintptr_t uArg0, uintptr_t u
 /**
  * Stub function.
  */
-SUPR0DECL(int) SUPR0VtgRegisterModule(void *hMod, PVTGOBJHDR pVtgHdr)
+SUPR0DECL(int) SUPR0VtgRegisterModule(void *hMod, struct VTGOBJHDR *pVtgHdr)
 {
     NOREF(hMod); NOREF(pVtgHdr);
     return VINF_SUCCESS;
