@@ -370,6 +370,15 @@ STDMETHODIMP VRDPConsoleListener::OnMousePointerShapeChange(BOOL visible,
         }
         else if (width != 0 && height != 0)
         {
+            uint8_t* shape = aShape.raw();
+
+            dumpPointer(shape, width, height, true);
+
+            if (m_server->MousePointer(alpha, xHot, yHot, width, height, shape) == VINF_SUCCESS)
+            {
+                return S_OK;
+            }
+
             /* Pointer consists of 1 bpp AND and 24 BPP XOR masks.
              * 'shape' AND mask followed by XOR mask.
              * XOR mask contains 32 bit (lsb)BGR0(msb) values.
@@ -386,9 +395,6 @@ STDMETHODIMP VRDPConsoleListener::OnMousePointerShapeChange(BOOL visible,
              * So set pointer size to 32x32. This can be done safely
              * because most pointers are 32x32.
              */
-            uint8_t* shape = aShape.raw();
-
-            dumpPointer(shape, width, height, true);
 
             int cbDstAndMask = (((width + 7) / 8) * height + 3) & ~3;
 
@@ -1364,6 +1370,7 @@ ConsoleVRDPServer::ConsoleVRDPServer(Console *console)
     m_fInterfaceImage = false;
     memset(&m_interfaceImage, 0, sizeof (m_interfaceImage));
     memset(&m_interfaceCallbacksImage, 0, sizeof (m_interfaceCallbacksImage));
+    RT_ZERO(m_interfaceMousePtr);
 }
 
 ConsoleVRDPServer::~ConsoleVRDPServer()
@@ -1571,7 +1578,26 @@ int ConsoleVRDPServer::Launch(void)
                                                           this);
                     if (RT_SUCCESS(vrc))
                     {
+                        LogRel(("VRDE: [%s]\n", VRDE_IMAGE_INTERFACE_NAME));
                         m_fInterfaceImage = true;
+                    }
+
+                    /* Mouse pointer interface. */
+                    m_interfaceMousePtr.header.u64Version = 1;
+                    m_interfaceMousePtr.header.u64Size = sizeof(m_interfaceMousePtr);
+
+                    vrc = mpEntryPoints->VRDEGetInterface(mhServer,
+                                                          VRDE_MOUSEPTR_INTERFACE_NAME,
+                                                          &m_interfaceMousePtr.header,
+                                                          NULL,
+                                                          this);
+                    if (RT_SUCCESS(vrc))
+                    {
+                        LogRel(("VRDE: [%s]\n", VRDE_MOUSEPTR_INTERFACE_NAME));
+                    }
+                    else
+                    {
+                        RT_ZERO(m_interfaceMousePtr);
                     }
 
                     /* Since these interfaces are optional, it is always a success here. */
@@ -1963,6 +1989,63 @@ void ConsoleVRDPServer::DisconnectClient(uint32_t u32ClientId, bool fReconnect)
     {
         mpEntryPoints->VRDEDisconnect(mhServer, u32ClientId, fReconnect);
     }
+}
+
+int ConsoleVRDPServer::MousePointer(BOOL alpha,
+                                    ULONG xHot,
+                                    ULONG yHot,
+                                    ULONG width,
+                                    ULONG height,
+                                    const uint8_t *pu8Shape)
+{
+    int rc = VINF_SUCCESS;
+
+    if (mhServer && mpEntryPoints && m_interfaceMousePtr.VRDEMousePtr)
+    {
+        size_t cbMask = (((width + 7) / 8) * height + 3) & ~3;
+        size_t cbData = width * height * 4;
+
+        size_t cbDstMask = alpha? 0: cbMask;
+
+        size_t cbPointer = sizeof(VRDEMOUSEPTRDATA) + cbDstMask + cbData;
+        uint8_t *pu8Pointer = (uint8_t *)RTMemAlloc(cbPointer);
+        if (pu8Pointer != NULL)
+        {
+            VRDEMOUSEPTRDATA *pPointer = (VRDEMOUSEPTRDATA *)pu8Pointer;
+
+            pPointer->u16HotX    = (uint16_t)xHot;
+            pPointer->u16HotY    = (uint16_t)yHot;
+            pPointer->u16Width   = (uint16_t)width;
+            pPointer->u16Height  = (uint16_t)height;
+            pPointer->u16MaskLen = (uint16_t)cbDstMask;
+            pPointer->u32DataLen = (uint32_t)cbData;
+
+            /* AND mask. */
+            uint8_t *pu8Mask = pu8Pointer + sizeof(VRDEMOUSEPTRDATA);
+            if (cbDstMask)
+            {
+                memcpy(pu8Mask, pu8Shape, cbDstMask);
+            }
+
+            /* XOR mask */
+            uint8_t *pu8Data = pu8Mask + pPointer->u16MaskLen;
+            memcpy(pu8Data, pu8Shape + cbMask, cbData);
+
+            m_interfaceMousePtr.VRDEMousePtr(mhServer, pPointer);
+
+            RTMemFree(pu8Pointer);
+        }
+        else
+        {
+            rc = VERR_NO_MEMORY;
+        }
+    }
+    else
+    {
+        rc = VERR_NOT_SUPPORTED;
+    }
+
+    return rc;
 }
 
 void ConsoleVRDPServer::MousePointerUpdate(const VRDECOLORPOINTER *pPointer)
