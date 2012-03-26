@@ -3666,11 +3666,11 @@ SUPR0DECL(int) SUPR0ComponentQueryFactory(PSUPDRVSESSION pSession, const char *p
 }
 
 
-#if defined(VBOX_WITH_DTRACE_R0DRV) || defined(RT_OS_SOLARIS)
+#if !defined(VBOX_WITH_DTRACE_R0DRV) || defined(RT_OS_SOLARIS)
 /**
  * Stub function.
  */
-SUPR0DECL(void) SUPR0VtgFireProbe(uint32_t idProbe, uintptr_t uArg0, uintptr_t uArg1, uintptr_t uArg2, 
+SUPR0DECL(void) SUPR0VtgFireProbe(uint32_t idProbe, uintptr_t uArg0, uintptr_t uArg1, uintptr_t uArg2,
                                   uintptr_t uArg3, uintptr_t uArg4)
 {
     NOREF(idProbe); NOREF(uArg0); NOREF(uArg1); NOREF(uArg2); NOREF(uArg3); NOREF(uArg4);
