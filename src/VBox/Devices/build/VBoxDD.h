@@ -110,6 +110,9 @@ extern const PDMDRVREG g_DrvVDE;
 extern const PDMDRVREG g_DrvIntNet;
 extern const PDMDRVREG g_DrvDedicatedNic;
 extern const PDMDRVREG g_DrvNAT;
+#ifdef VBOX_WITH_NETSHAPER
+extern const PDMDRVREG g_DrvNetShaper;
+#endif /* VBOX_WITH_NETSHAPER */
 extern const PDMDRVREG g_DrvNetSniffer;
 extern const PDMDRVREG g_DrvAUDIO;
 extern const PDMDRVREG g_DrvACPI;

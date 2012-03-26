@@ -259,6 +259,8 @@ typedef enum LOGGROUP
     LOG_GROUP_NET_FLT_DRV,
     /** The common network service group */
     LOG_GROUP_NET_SERVICE,
+    /** Network traffic shaper driver group. */
+    LOG_GROUP_NET_SHAPER,
     /** PATM group. */
     LOG_GROUP_PATM,
     /** PDM group. */
@@ -490,6 +492,7 @@ typedef enum LOGGROUP
     "NET_ADP_DRV",  \
     "NET_FLT_DRV",  \
     "NET_SERVICE",  \
+    "NET_SHAPER",   \
     "PATM",         \
     "PDM",          \
     "PDM_ASYNC_COMPLETION", \

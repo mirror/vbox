@@ -389,6 +389,10 @@ VMMR3DECL(int) PDMR3Init(PVM pVM)
     if (RT_SUCCESS(rc))
         rc = pdmR3AsyncCompletionInit(pVM);
 #endif
+#ifdef VBOX_WITH_NETSHAPER
+    if (RT_SUCCESS(rc))
+        rc = pdmR3NetShaperInit(pVM);
+#endif
     if (RT_SUCCESS(rc))
         rc = pdmR3BlkCacheInit(pVM);
     if (RT_SUCCESS(rc))
@@ -661,6 +665,12 @@ VMMR3DECL(int) PDMR3Term(PVM pVM)
      */
     pdmR3BlkCacheTerm(pVM);
 
+#ifdef VBOX_WITH_NETSHAPER
+    /*
+     * Destroy network bandwidth groups.
+     */
+    pdmR3NetShaperTerm(pVM);
+#endif
 #ifdef VBOX_WITH_PDM_ASYNC_COMPLETION
     /*
      * Free async completion managers.

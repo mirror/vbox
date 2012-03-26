@@ -390,6 +390,12 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
   	Network/VDEPlug.cpp
  endif
 
+ ifdef VBOX_WITH_NETSHAPER
+  VBoxDD_DEFS           += VBOX_WITH_NETSHAPER
+  VBoxDD_SOURCES        += \
+ 	Network/DrvNetShaper.cpp
+ endif
+
  # --- Storage bits. ---
 
  ifdef VBOX_WITH_AHCI

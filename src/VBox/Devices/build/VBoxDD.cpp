@@ -256,6 +256,11 @@ extern "C" DECLEXPORT(int) VBoxDriversRegister(PCPDMDRVREGCB pCallbacks, uint32_
     rc = pCallbacks->pfnRegister(pCallbacks, &g_DrvNetSniffer);
     if (RT_FAILURE(rc))
         return rc;
+#ifdef VBOX_WITH_NETSHAPER
+    rc = pCallbacks->pfnRegister(pCallbacks, &g_DrvNetShaper);
+    if (RT_FAILURE(rc))
+        return rc;
+#endif /* VBOX_WITH_NETSHAPER */
     rc = pCallbacks->pfnRegister(pCallbacks, &g_DrvAUDIO);
     if (RT_FAILURE(rc))
         return rc;

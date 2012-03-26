@@ -78,6 +78,9 @@ endif
 ifdef VBOX_WITH_PDM_ASYNC_COMPLETION
  VBoxVMM_DEFS   += VBOX_WITH_PDM_ASYNC_COMPLETION
 endif
+ifdef VBOX_WITH_NETSHAPER
+ VBoxVMM_DEFS   += VBOX_WITH_NETSHAPER
+endif
 VBoxVMM_DEFS.darwin = VMM_R0_SWITCH_STACK
 VBoxVMM_DEFS.darwin.x86 = \
 	VBOX_WITH_2X_4GB_ADDR_SPACE   VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R3 \
@@ -200,6 +203,10 @@ ifdef VBOX_WITH_PDM_ASYNC_COMPLETION
  	VMMR3/PDMAsyncCompletionFile.cpp \
  	VMMR3/PDMAsyncCompletionFileFailsafe.cpp \
  	VMMR3/PDMAsyncCompletionFileNormal.cpp
+endif
+ifdef VBOX_WITH_NETSHAPER
+ VBoxVMM_SOURCES += \
+ 	VMMR3/PDMNetShaper.cpp
 endif
 
 ifdef VBOX_WITH_RAW_MODE

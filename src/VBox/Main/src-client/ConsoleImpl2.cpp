@@ -1019,6 +1019,13 @@ int Console::configConstructorInner(PVM pVM, AutoWriteLock *pAlock)
         InsertConfigNode(pPDM, "AsyncCompletion", &pAc);
         InsertConfigNode(pAc,  "File", &pAcFile);
         InsertConfigNode(pAcFile,  "BwGroups", &pAcFileBwGroups);
+#ifdef VBOX_WITH_NETSHAPER
+        PCFGMNODE pNetworkShaper;
+        PCFGMNODE pNetworkBwGroups;
+
+        InsertConfigNode(pPDM, "NetworkShaper",  &pNetworkShaper);
+        InsertConfigNode(pNetworkShaper, "BwGroups", &pNetworkBwGroups);
+#endif /* VBOX_WITH_NETSHAPER */
 
         for (size_t i = 0; i < bwGroups.size(); i++)
         {
@@ -1038,6 +1045,15 @@ int Console::configConstructorInner(PVM pVM, AutoWriteLock *pAlock)
                 InsertConfigInteger(pBwGroup, "Start", cMaxMbPerSec * _1M);
                 InsertConfigInteger(pBwGroup, "Step", 0);
             }
+#ifdef VBOX_WITH_NETSHAPER
+            else if (enmType == BandwidthGroupType_Network)
+            {
+                /* Network bandwidth groups. */
+                PCFGMNODE pBwGroup;
+                InsertConfigNode(pNetworkBwGroups, Utf8Str(strName).c_str(), &pBwGroup);
+                InsertConfigInteger(pBwGroup, "Max", cMaxMbPerSec * 1000); // @todo: _1M);
+            }
+#endif /* VBOX_WITH_NETSHAPER */
         }
 
         /*
@@ -3677,46 +3693,7 @@ int Console::configNetwork(const char *pszDevice,
             default: AssertFailedReturn(VERR_INTERNAL_ERROR_4);
         }
 
-        Utf8Str strNetDriver;
-        if (fAttachDetach && fSniffer)
-        {
-            const char *pszNetDriver = "IntNet";
-            if (meAttachmentType[uInstance] == NetworkAttachmentType_NAT)
-                pszNetDriver = "NAT";
-#if !defined(VBOX_WITH_NETFLT) && defined(RT_OS_LINUX)
-            if (meAttachmentType[uInstance] == NetworkAttachmentType_Bridged)
-                pszNetDriver = "HostInterface";
-#endif
-            if (meAttachmentType[uInstance] == NetworkAttachmentType_Generic)
-            {
-                hrc = aNetworkAdapter->COMGETTER(GenericDriver)(bstr.asOutParam()); H();
-                strNetDriver = bstr;
-                pszNetDriver = strNetDriver.c_str();
-            }
-
-            rc = PDMR3DriverDetach(pVM, pszDevice, uInstance, uLun, pszNetDriver, 0, 0 /*fFlags*/);
-            if (rc == VINF_PDM_NO_DRIVER_ATTACHED_TO_LUN)
-                rc = VINF_SUCCESS;
-            AssertLogRelRCReturn(rc, rc);
-
-            pLunL0 = CFGMR3GetChildF(pInst, "LUN#%u", uLun);
-            PCFGMNODE pLunAD = CFGMR3GetChildF(pLunL0, "AttachedDriver");
-            if (pLunAD)
-            {
-                CFGMR3RemoveNode(pLunAD);
-            }
-            else
-            {
-                CFGMR3RemoveNode(pLunL0);
-                InsertConfigNode(pInst, "LUN#0", &pLunL0);
-                InsertConfigString(pLunL0, "Driver", "NetSniffer");
-                InsertConfigNode(pLunL0, "Config", &pCfg);
-                hrc = aNetworkAdapter->COMGETTER(TraceFile)(bstr.asOutParam());             H();
-                if (!bstr.isEmpty()) /* check convention for indicating default file. */
-                    InsertConfigString(pCfg, "File", bstr);
-            }
-        }
-        else if (fAttachDetach && !fSniffer)
+        if (fAttachDetach)
         {
             rc = PDMR3DeviceDetach(pVM, pszDevice, uInstance, uLun, 0 /*fFlags*/);
             if (rc == VINF_PDM_NO_DRIVER_ATTACHED_TO_LUN)
@@ -3726,16 +3703,45 @@ int Console::configNetwork(const char *pszDevice,
             /* nuke anything which might have been left behind. */
             CFGMR3RemoveNode(CFGMR3GetChildF(pInst, "LUN#%u", uLun));
         }
-        else if (!fAttachDetach && fSniffer)
+
+#ifdef VBOX_WITH_NETSHAPER
+        ComObjPtr<IBandwidthGroup> pBwGroup;
+        Bstr strBwGroup;
+        PNETSHAPER pShaper = NULL;
+        PNETSHAPERFILTER pFilter = NULL;
+        hrc = aNetworkAdapter->COMGETTER(BandwidthGroup)(pBwGroup.asOutParam());            H();
+
+        if (!pBwGroup.isNull())
         {
-            /* insert the sniffer filter driver. */
-            InsertConfigNode(pInst, "LUN#0", &pLunL0);
+            hrc = pBwGroup->COMGETTER(Name)(strBwGroup.asOutParam());                       H();
+        }
+#endif /* VBOX_WITH_NETSHAPER */
+
+        Utf8Str strNetDriver;
+
+
+        InsertConfigNode(pInst, "LUN#0", &pLunL0);
+
+#ifdef VBOX_WITH_NETSHAPER
+        if (!strBwGroup.isEmpty())
+        {
+            InsertConfigString(pLunL0, "Driver", "NetShaper");
+            InsertConfigNode(pLunL0, "Config", &pCfg);
+            InsertConfigString(pCfg, "BwGroup", strBwGroup);
+            InsertConfigNode(pLunL0, "AttachedDriver", &pLunL0);
+        }
+#endif /* VBOX_WITH_NETSHAPER */
+
+        if (fSniffer)
+        {
             InsertConfigString(pLunL0, "Driver", "NetSniffer");
             InsertConfigNode(pLunL0, "Config", &pCfg);
-            hrc = aNetworkAdapter->COMGETTER(TraceFile)(bstr.asOutParam());                 H();
+            hrc = aNetworkAdapter->COMGETTER(TraceFile)(bstr.asOutParam());             H();
             if (!bstr.isEmpty()) /* check convention for indicating default file. */
                 InsertConfigString(pCfg, "File", bstr);
+            InsertConfigNode(pLunL0, "AttachedDriver", &pLunL0);
         }
+
 
         Bstr networkName, trunkName, trunkType;
         NetworkAttachmentType_T eAttachmentType;
@@ -3749,10 +3755,6 @@ int Console::configNetwork(const char *pszDevice,
             {
                 ComPtr<INATEngine> natDriver;
                 hrc = aNetworkAdapter->COMGETTER(NatDriver)(natDriver.asOutParam());        H();
-                if (fSniffer)
-                    InsertConfigNode(pLunL0, "AttachedDriver", &pLunL0);
-                else
-                    InsertConfigNode(pInst, "LUN#0", &pLunL0);
                 InsertConfigString(pLunL0, "Driver", "NAT");
                 InsertConfigNode(pLunL0, "Config", &pCfg);
 
@@ -3917,14 +3919,6 @@ int Console::configNetwork(const char *pszDevice,
                 Assert((int)maTapFD[uInstance] >= 0);
                 if ((int)maTapFD[uInstance] >= 0)
                 {
-                    if (fSniffer)
-                    {
-                        InsertConfigNode(pLunL0, "AttachedDriver", &pLunL0);
-                    }
-                    else
-                    {
-                        InsertConfigNode(pInst, "LUN#0", &pLunL0);
-                    }
                     InsertConfigString(pLunL0, "Driver", "HostInterface");
                     InsertConfigNode(pLunL0, "Config", &pCfg);
                     InsertConfigInteger(pCfg, "FileHandle", maTapFD[uInstance]);
@@ -3934,15 +3928,6 @@ int Console::configNetwork(const char *pszDevice,
                 /*
                  * This is the new VBoxNetFlt+IntNet stuff.
                  */
-                if (fSniffer)
-                {
-                    InsertConfigNode(pLunL0, "AttachedDriver", &pLunL0);
-                }
-                else
-                {
-                    InsertConfigNode(pInst, "LUN#0", &pLunL0);
-                }
-
                 Bstr BridgedIfName;
                 hrc = aNetworkAdapter->COMGETTER(BridgedInterface)(BridgedIfName.asOutParam());
                 if (FAILED(hrc))
@@ -4344,10 +4329,6 @@ int Console::configNetwork(const char *pszDevice,
                 hrc = aNetworkAdapter->COMGETTER(InternalNetwork)(bstr.asOutParam());       H();
                 if (!bstr.isEmpty())
                 {
-                    if (fSniffer)
-                        InsertConfigNode(pLunL0, "AttachedDriver", &pLunL0);
-                    else
-                        InsertConfigNode(pInst, "LUN#0", &pLunL0);
                     InsertConfigString(pLunL0, "Driver", "IntNet");
                     InsertConfigNode(pLunL0, "Config", &pCfg);
                     InsertConfigString(pCfg, "Network", bstr);
@@ -4361,11 +4342,6 @@ int Console::configNetwork(const char *pszDevice,
 
             case NetworkAttachmentType_HostOnly:
             {
-                if (fSniffer)
-                    InsertConfigNode(pLunL0, "AttachedDriver", &pLunL0);
-                else
-                    InsertConfigNode(pInst, "LUN#0", &pLunL0);
-
                 InsertConfigString(pLunL0, "Driver", "IntNet");
                 InsertConfigNode(pLunL0, "Config", &pCfg);
 
@@ -4572,10 +4548,6 @@ int Console::configNetwork(const char *pszDevice,
                                                      ComSafeArrayAsOutParam(names),
                                                      ComSafeArrayAsOutParam(values));       H();
 
-                if (fSniffer)
-                    InsertConfigNode(pLunL0, "AttachedDriver", &pLunL0);
-                else
-                    InsertConfigNode(pInst, "LUN#0", &pLunL0);
                 InsertConfigString(pLunL0, "Driver", bstr);
                 InsertConfigNode(pLunL0, "Config", &pCfg);
                 for (size_t ii = 0; ii < names.size(); ++ii)
