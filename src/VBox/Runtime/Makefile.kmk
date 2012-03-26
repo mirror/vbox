@@ -229,9 +229,6 @@ endif
 ifdef IPRT_WITH_FUTEX_BASED_SEMS
  RuntimeR3_DEFS.linux  += IPRT_WITH_FUTEX_BASED_SEMS
 endif
-ifdef VBOX_SOLARIS_11_LEGACY_ICONV
- RuntimeR3_DEFS.solaris += VBOX_SOLARIS_11_LEGACY_ICONV
-endif
 RuntimeR3_INCS          = \
 	include \
 	$(SDK_VBOX_ZLIB_INCS)
