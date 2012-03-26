@@ -1328,8 +1328,19 @@ SUPR0DECL(int) SUPR0IdcComponentDeregisterFactory(PSUPDRVIDCHANDLE pHandle, PCSU
 
 /** @} */
 
+/** @name Ring-0 module entry points.
+ *  
+ * These can be exported by ring-0 modules SUP are told to load.
+ *  
+ * @{ */
+DECLEXPORT(int)  ModuleInit(void *hMod);
+DECLEXPORT(void) ModuleTerm(void *hMod);
+/** @}  */
+
+
 /** @} */
 #endif
+
 
 /** @} */
 
