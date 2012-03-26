@@ -1197,7 +1197,7 @@ static const char *testCheckIfLockValidationIsCompiledIn(void)
     /* deadlock detection for RTSemRW */
     RTSEMRW hSemRW;
     RTTEST_CHECK_RC_OK_RET(g_hTest, RTSemRWCreateEx(&hSemRW, 0 /*fFlags*/, NIL_RTLOCKVALCLASS,
-                                                    RTLOCKVAL_SUB_CLASS_NONE, "RTSemRW-1"), false);
+                                                    RTLOCKVAL_SUB_CLASS_NONE, "RTSemRW-1"), NULL);
     RTTEST_CHECK_RC_OK_RET(g_hTest, RTSemRWRequestRead(hSemRW, 50), "");
     int rc = RTSemRWRequestWrite(hSemRW, 1);
     RTTEST_CHECK_RET(g_hTest, RT_FAILURE_NP(rc), "");
