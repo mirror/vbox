@@ -188,8 +188,8 @@ DECLINLINE(void) ASMCompilerBarrier(void)
 
 /** @def ASMBreakpoint
  * Debugger Breakpoint.
- * @deprecated Use RT_BREAKPOINT instead. 
- * @internal 
+ * @deprecated Use RT_BREAKPOINT instead.
+ * @internal
  */
 #define ASMBreakpoint() RT_BREAKPOINT()
 
@@ -1936,7 +1936,7 @@ DECLINLINE(bool) ASMAtomicUoReadBool(volatile bool *pf)
  * Atomically read a value which size might differ
  * between platforms or compilers, ordered.
  *
- * @param   pu      Pointer to the variable to update.
+ * @param   pu      Pointer to the variable to read.
  * @param   puRes   Where to store the result.
  */
 #define ASMAtomicReadSize(pu, puRes) \
@@ -2009,7 +2009,7 @@ DECLINLINE(void) ASMAtomicWriteS8(volatile int8_t *pi8, int8_t i8)
 /**
  * Atomically writes a signed 8-bit value, unordered.
  *
- * @param   pi8     Pointer to the 8-bit variable to read.
+ * @param   pi8     Pointer to the 8-bit variable to write.
  * @param   i8      The 8-bit value to assign to *pi8.
  */
 DECLINLINE(void) ASMAtomicUoWriteS8(volatile int8_t *pi8, int8_t i8)
@@ -2021,7 +2021,7 @@ DECLINLINE(void) ASMAtomicUoWriteS8(volatile int8_t *pi8, int8_t i8)
 /**
  * Atomically writes an unsigned 16-bit value, ordered.
  *
- * @param   pu16    Pointer to the 16-bit variable.
+ * @param   pu16    Pointer to the 16-bit variable to write.
  * @param   u16     The 16-bit value to assign to *pu16.
  */
 DECLINLINE(void) ASMAtomicWriteU16(volatile uint16_t *pu16, uint16_t u16)
@@ -2033,7 +2033,7 @@ DECLINLINE(void) ASMAtomicWriteU16(volatile uint16_t *pu16, uint16_t u16)
 /**
  * Atomically writes an unsigned 16-bit value, unordered.
  *
- * @param   pu16    Pointer to the 16-bit variable.
+ * @param   pu16    Pointer to the 16-bit variable to write.
  * @param   u16     The 16-bit value to assign to *pu16.
  */
 DECLINLINE(void) ASMAtomicUoWriteU16(volatile uint16_t *pu16, uint16_t u16)
@@ -2046,7 +2046,7 @@ DECLINLINE(void) ASMAtomicUoWriteU16(volatile uint16_t *pu16, uint16_t u16)
 /**
  * Atomically writes a signed 16-bit value, ordered.
  *
- * @param   pi16    Pointer to the 16-bit variable to read.
+ * @param   pi16    Pointer to the 16-bit variable to write.
  * @param   i16     The 16-bit value to assign to *pi16.
  */
 DECLINLINE(void) ASMAtomicWriteS16(volatile int16_t *pi16, int16_t i16)
@@ -2058,7 +2058,7 @@ DECLINLINE(void) ASMAtomicWriteS16(volatile int16_t *pi16, int16_t i16)
 /**
  * Atomically writes a signed 16-bit value, unordered.
  *
- * @param   pi16    Pointer to the 16-bit variable to read.
+ * @param   pi16    Pointer to the 16-bit variable to write.
  * @param   i16     The 16-bit value to assign to *pi16.
  */
 DECLINLINE(void) ASMAtomicUoWriteS16(volatile int16_t *pi16, int16_t i16)
@@ -2071,7 +2071,7 @@ DECLINLINE(void) ASMAtomicUoWriteS16(volatile int16_t *pi16, int16_t i16)
 /**
  * Atomically writes an unsigned 32-bit value, ordered.
  *
- * @param   pu32    Pointer to the 32-bit variable.
+ * @param   pu32    Pointer to the 32-bit variable to write.
  * @param   u32     The 32-bit value to assign to *pu32.
  */
 DECLINLINE(void) ASMAtomicWriteU32(volatile uint32_t *pu32, uint32_t u32)
@@ -2083,7 +2083,7 @@ DECLINLINE(void) ASMAtomicWriteU32(volatile uint32_t *pu32, uint32_t u32)
 /**
  * Atomically writes an unsigned 32-bit value, unordered.
  *
- * @param   pu32    Pointer to the 32-bit variable.
+ * @param   pu32    Pointer to the 32-bit variable to write.
  * @param   u32     The 32-bit value to assign to *pu32.
  */
 DECLINLINE(void) ASMAtomicUoWriteU32(volatile uint32_t *pu32, uint32_t u32)
@@ -2096,7 +2096,7 @@ DECLINLINE(void) ASMAtomicUoWriteU32(volatile uint32_t *pu32, uint32_t u32)
 /**
  * Atomically writes a signed 32-bit value, ordered.
  *
- * @param   pi32    Pointer to the 32-bit variable to read.
+ * @param   pi32    Pointer to the 32-bit variable to write.
  * @param   i32     The 32-bit value to assign to *pi32.
  */
 DECLINLINE(void) ASMAtomicWriteS32(volatile int32_t *pi32, int32_t i32)
@@ -2108,7 +2108,7 @@ DECLINLINE(void) ASMAtomicWriteS32(volatile int32_t *pi32, int32_t i32)
 /**
  * Atomically writes a signed 32-bit value, unordered.
  *
- * @param   pi32    Pointer to the 32-bit variable to read.
+ * @param   pi32    Pointer to the 32-bit variable to write.
  * @param   i32     The 32-bit value to assign to *pi32.
  */
 DECLINLINE(void) ASMAtomicUoWriteS32(volatile int32_t *pi32, int32_t i32)
@@ -2121,7 +2121,7 @@ DECLINLINE(void) ASMAtomicUoWriteS32(volatile int32_t *pi32, int32_t i32)
 /**
  * Atomically writes an unsigned 64-bit value, ordered.
  *
- * @param   pu64    Pointer to the 64-bit variable.
+ * @param   pu64    Pointer to the 64-bit variable to write.
  * @param   u64     The 64-bit value to assign to *pu64.
  */
 DECLINLINE(void) ASMAtomicWriteU64(volatile uint64_t *pu64, uint64_t u64)
@@ -2133,7 +2133,7 @@ DECLINLINE(void) ASMAtomicWriteU64(volatile uint64_t *pu64, uint64_t u64)
 /**
  * Atomically writes an unsigned 64-bit value, unordered.
  *
- * @param   pu64    Pointer to the 64-bit variable.
+ * @param   pu64    Pointer to the 64-bit variable to write.
  * @param   u64     The 64-bit value to assign to *pu64.
  */
 DECLINLINE(void) ASMAtomicUoWriteU64(volatile uint64_t *pu64, uint64_t u64)
@@ -2150,7 +2150,7 @@ DECLINLINE(void) ASMAtomicUoWriteU64(volatile uint64_t *pu64, uint64_t u64)
 /**
  * Atomically writes a signed 64-bit value, ordered.
  *
- * @param   pi64    Pointer to the 64-bit variable.
+ * @param   pi64    Pointer to the 64-bit variable to write.
  * @param   i64     The 64-bit value to assign to *pi64.
  */
 DECLINLINE(void) ASMAtomicWriteS64(volatile int64_t *pi64, int64_t i64)
@@ -2162,7 +2162,7 @@ DECLINLINE(void) ASMAtomicWriteS64(volatile int64_t *pi64, int64_t i64)
 /**
  * Atomically writes a signed 64-bit value, unordered.
  *
- * @param   pi64    Pointer to the 64-bit variable.
+ * @param   pi64    Pointer to the 64-bit variable to write.
  * @param   i64     The 64-bit value to assign to *pi64.
  */
 DECLINLINE(void) ASMAtomicUoWriteS64(volatile int64_t *pi64, int64_t i64)
@@ -2179,7 +2179,7 @@ DECLINLINE(void) ASMAtomicUoWriteS64(volatile int64_t *pi64, int64_t i64)
 /**
  * Atomically writes a boolean value, unordered.
  *
- * @param   pf      Pointer to the boolean variable.
+ * @param   pf      Pointer to the boolean variable to write.
  * @param   f       The boolean value to assign to *pf.
  */
 DECLINLINE(void) ASMAtomicWriteBool(volatile bool *pf, bool f)
@@ -2191,7 +2191,7 @@ DECLINLINE(void) ASMAtomicWriteBool(volatile bool *pf, bool f)
 /**
  * Atomically writes a boolean value, unordered.
  *
- * @param   pf      Pointer to the boolean variable.
+ * @param   pf      Pointer to the boolean variable to write.
  * @param   f       The boolean value to assign to *pf.
  */
 DECLINLINE(void) ASMAtomicUoWriteBool(volatile bool *pf, bool f)
@@ -2203,7 +2203,7 @@ DECLINLINE(void) ASMAtomicUoWriteBool(volatile bool *pf, bool f)
 /**
  * Atomically writes a pointer value, ordered.
  *
- * @param   ppv     Pointer to the pointer variable.
+ * @param   ppv     Pointer to the pointer variable to write.
  * @param   pv      The pointer value to assign to *ppv.
  */
 DECLINLINE(void) ASMAtomicWritePtrVoid(void * volatile *ppv, const void *pv)
@@ -2221,7 +2221,7 @@ DECLINLINE(void) ASMAtomicWritePtrVoid(void * volatile *ppv, const void *pv)
 /**
  * Atomically writes a pointer value, ordered.
  *
- * @param   ppv     Pointer to the pointer variable.
+ * @param   ppv     Pointer to the pointer variable to write.
  * @param   pv      The pointer value to assign to *ppv. If NULL use
  *                  ASMAtomicWriteNullPtr or you'll land in trouble.
  *
