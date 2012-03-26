@@ -52,6 +52,9 @@
 #include <iprt/thread.h>
 #include <iprt/timer.h>
 
+#include "dtrace/VBoxVMM.h"
+
+
 #if defined(_MSC_VER) && defined(RT_ARCH_AMD64) /** @todo check this with with VC7! */
 #  pragma intrinsic(_AddressOfReturnAddress)
 #endif
@@ -61,8 +64,8 @@
 *   Internal Functions                                                         *
 *******************************************************************************/
 RT_C_DECLS_BEGIN
-VMMR0DECL(int) ModuleInit(void);
-VMMR0DECL(void) ModuleTerm(void);
+VMMR0DECL(int)  ModuleInit(void *hMod);
+VMMR0DECL(void) ModuleTerm(void *hMod);
 
 #if defined(RT_ARCH_X86) && (defined(RT_OS_SOLARIS) || defined(RT_OS_FREEBSD))
 extern uint64_t __udivdi3(uint64_t, uint64_t);
@@ -100,9 +103,19 @@ extern "C" { char _depends_on[] = "vboxdrv"; }
  *
  * @returns 0 on success.
  * @returns VBox status on failure.
+ * @param   hMod        Image handle for use in APIs.
  */
-VMMR0DECL(int) ModuleInit(void)
+VMMR0DECL(int) ModuleInit(void *hMod)
 {
+#ifdef VBOX_WITH_DTRACE_R0
+    /*
+     * The first thing to do is register the static tracepoints. 
+     * (Deregistration is automatic.) 
+     */
+    int rc2 = SUPR0VtgRegisterModule(hMod, &g_VTGObjHeader);
+    if (RT_FAILURE(rc2))
+        return rc2;
+#endif
     LogFlow(("ModuleInit:\n"));
 
     /*
@@ -183,9 +196,11 @@ VMMR0DECL(int) ModuleInit(void)
 
 /**
  * Terminate the module.
- * This is called when we're finally unloaded.
+ * This is called when we're finally unloaded. 
+ *  
+ * @param   hMod        Image handle for use in APIs.
  */
-VMMR0DECL(void) ModuleTerm(void)
+VMMR0DECL(void) ModuleTerm(void *hMod)
 {
     LogFlow(("ModuleTerm:\n"));
 

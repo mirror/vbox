@@ -465,8 +465,8 @@ ifndef VBOX_ONLY_EXTPACKS
  	PATM
 
  VMMR0_SOURCES   = \
- 	VMMR0/CPUMR0.cpp \
  	VBoxVMM.d \
+ 	VMMR0/CPUMR0.cpp \
  	VMMR0/CPUMR0A.asm \
  	VMMR0/GMMR0.cpp \
  	VMMR0/GVMMR0.cpp \

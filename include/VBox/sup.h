@@ -1271,6 +1271,13 @@ SUPR0DECL(int) SUPR0ComponentDeregisterFactory(PSUPDRVSESSION pSession, PCSUPDRV
 SUPR0DECL(int) SUPR0ComponentQueryFactory(PSUPDRVSESSION pSession, const char *pszName, const char *pszInterfaceUuid, void **ppvFactoryIf);
 
 
+struct VTGOBJHDR;
+SUPR0DECL(int)  SUPR0VtgRegisterDrv(PSUPDRVSESSION pSession, struct VTGOBJHDR *pVtgHdr, const char *pszName);
+SUPR0DECL(void) SUPR0VtgDeregisterDrv(PSUPDRVSESSION pSession);
+SUPR0DECL(void) SUPR0VtgFireProbe(uint32_t idProbe, uintptr_t uArg0, uintptr_t uArg1, uintptr_t uArg2, 
+                                  uintptr_t uArg3, uintptr_t uArg4);
+SUPR0DECL(int)  SUPR0VtgRegisterModule(void *hMod, struct VTGOBJHDR *pVtgHdr);
+
 /**
  * Service request callback function.
  *
