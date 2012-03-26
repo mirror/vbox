@@ -886,15 +886,6 @@ static void quirk_fullsize_blit(struct wined3d_gl_info *gl_info)
 }
 
 #ifdef VBOX_WITH_WDDM
-static BOOL match_mesa_intel_hd(const struct wined3d_gl_info *gl_info, const char *gl_renderer,
-        enum wined3d_gl_vendor gl_vendor, enum wined3d_pci_vendor card_vendor, enum wined3d_pci_device device)
-{
-    if (card_vendor != HW_VENDOR_INTEL) return FALSE;
-    if (gl_vendor != GL_VENDOR_MESA) return FALSE;
-    if (device != CARD_INTEL_SBHD) return FALSE;
-    return TRUE;
-}
-
 static BOOL match_mesa_nvidia(const struct wined3d_gl_info *gl_info, const char *gl_renderer,
         enum wined3d_gl_vendor gl_vendor, enum wined3d_pci_vendor card_vendor, enum wined3d_pci_device device)
 {
@@ -1005,14 +996,9 @@ static const struct driver_quirk quirk_table[] =
     },
 #ifdef VBOX_WITH_WDDM
     {
-        match_mesa_nvidia,
-        quirk_no_shader_3,
-        "disable shader 3 support"
-    },
-    {
-        match_mesa_intel_hd,
-        quirk_no_np2,
-        "disable np2 for mesa intel hd"
+            match_mesa_nvidia,
+            quirk_no_shader_3,
+            "disable shader 3 support"
     },
 #endif
 };
@@ -1275,13 +1261,7 @@ static enum wined3d_gl_vendor wined3d_guess_gl_vendor(struct wined3d_gl_info *gl
     if (strstr(gl_vendor_string, "Intel(R)")
             || strstr(gl_renderer, "Intel(R)")
             || strstr(gl_vendor_string, "Intel Inc."))
-    {
-#ifdef VBOX_WITH_WDDM
-        if (strstr(gl_renderer, "Mesa"))
-            return GL_VENDOR_MESA;
-#endif
         return GL_VENDOR_INTEL;
-    }
 
     if (strstr(gl_vendor_string, "Mesa")
             || strstr(gl_vendor_string, "Advanced Micro Devices, Inc.")
@@ -2005,10 +1985,6 @@ static enum wined3d_pci_device select_card_nvidia_mesa(const struct wined3d_gl_i
 static enum wined3d_pci_device select_card_intel_mesa(const struct wined3d_gl_info *gl_info,
         const char *gl_renderer, unsigned int *vidmem)
 {
-#ifdef VBOX_WITH_WDDM
-    if (strstr(gl_renderer, "Sandybridge"))
-        return CARD_INTEL_SBHD;
-#endif
     FIXME_(d3d_caps)("Card selection not handled for Mesa Intel driver\n");
     return CARD_INTEL_I915G;
 }
