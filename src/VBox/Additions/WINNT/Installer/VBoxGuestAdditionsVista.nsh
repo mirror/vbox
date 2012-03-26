@@ -41,9 +41,11 @@ open_handbook_d3d_invalid:
   ; @todo Add a language GET parameter (e.g. ?lang=enUS) here as soon as we got the
   ;       handbook online in different languages
   ; Don't use https here (even if we offer it) -- we only want to display the handbook
+  Call SetAppMode64 ; For shell execution we need to switch to 64-bit mode first
   ExecShell open "http://www.virtualbox.org/manual/ch12.html#ts_d3d8-d3d9-restore"
   IfErrors 0 +2
     MessageBox MB_ICONSTOP|MB_OK $(VBOX_ERROR_OPEN_LINK) /SD IDOK
+  Call SetAppMode32
   Goto failure
 
 failure:
