@@ -3,7 +3,7 @@
  */
 
 /*
- * Copyright (C) 2006-2011 Oracle Corporation
+ * Copyright (C) 2006-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -1821,6 +1821,7 @@ typedef struct PDMIHOSTPARALLELCONNECTOR
      * @param   cbWrite         Number of bytes to write.
      * @param   enmMode         Mode to write the data.
      * @thread  Any thread.
+     * @todo r=klaus cbWrite only defines buffer length, method needs a way top return actually written amount of data.
      */
     DECLR3CALLBACKMEMBER(int, pfnWrite,(PPDMIHOSTPARALLELCONNECTOR pInterface, const void *pvBuf,
                                         size_t cbWrite, PDMPARALLELPORTMODE enmMode));
@@ -1834,6 +1835,7 @@ typedef struct PDMIHOSTPARALLELCONNECTOR
      * @param   cbRead          Number of bytes to read.
      * @param   enmMode         Mode to read the data.
      * @thread  Any thread.
+     * @todo r=klaus cbRead only defines buffer length, method needs a way top return actually read amount of data.
      */
     DECLR3CALLBACKMEMBER(int, pfnRead,(PPDMIHOSTPARALLELCONNECTOR pInterface, void *pvBuf,
                                        size_t cbRead, PDMPARALLELPORTMODE enmMode));
