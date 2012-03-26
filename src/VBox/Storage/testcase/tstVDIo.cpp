@@ -2708,6 +2708,7 @@ static int tstVDIoTestInit(PVDIOTEST pIoTest, PVDTESTGLOB pGlob, bool fRandomAcc
 {
     int rc = VINF_SUCCESS;
 
+    RT_ZERO(*pIoTest);
     pIoTest->fRandomAccess = fRandomAcc;
     pIoTest->cbIo          = cbIo;
     pIoTest->cbBlkIo       = cbBlkSize;
