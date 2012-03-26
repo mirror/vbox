@@ -129,7 +129,7 @@ STDMETHODIMP MachineDebugger::COMSETTER(RecompileUser)(BOOL enable)
     if (!gpVM)
         return E_FAIL;
 
-    int rcVBox = EMR3SetExecutionPolicy(gpVM, EMEXECPOLICY_RECOMPILE_RING3, enable);
+    int rcVBox = EMR3SetExecutionPolicy(gpVM, EMEXECPOLICY_RECOMPILE_RING3, !!enable);
     AssertRCReturn(rcVBox, E_FAIL);
     return S_OK;
 }
@@ -174,7 +174,7 @@ STDMETHODIMP MachineDebugger::COMSETTER(RecompileSupervisor)(BOOL enable)
     if (!gpVM)
         return E_FAIL;
 
-    int rcVBox = EMR3SetExecutionPolicy(gpVM, EMEXECPOLICY_RECOMPILE_RING0, enable);
+    int rcVBox = EMR3SetExecutionPolicy(gpVM, EMEXECPOLICY_RECOMPILE_RING0, !!enable);
     AssertRCReturn(rcVBox, E_FAIL);
     return S_OK;
 }

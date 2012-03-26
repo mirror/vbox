@@ -593,7 +593,7 @@ public:
      * used by ready Machine children (whose readiness is bound to the parent's
      * one) or after doing addCaller() manually.
      */
-    bool isAccessible() const { return mData->mAccessible; }
+    bool isAccessible() const { return !!mData->mAccessible; }
 
     /**
      * Returns this machine ID.

@@ -1938,7 +1938,7 @@ STDMETHODIMP Console::COMSETTER(UseHostClipboard)(BOOL aUseHostClipboard)
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    mfUseHostClipboard = aUseHostClipboard;
+    mfUseHostClipboard = !!aUseHostClipboard;
 
     return S_OK;
 }
@@ -3126,8 +3126,8 @@ Console::CreateSharedFolder(IN_BSTR aName, IN_BSTR aHostPath, BOOL aWritable, BO
     rc = pSharedFolder->init(this,
                              strName,
                              strHostPath,
-                             aWritable,
-                             aAutoMount,
+                             !!aWritable,
+                             !!aAutoMount,
                              true /* fFailOnError */);
     if (FAILED(rc)) return rc;
 
@@ -3149,7 +3149,7 @@ Console::CreateSharedFolder(IN_BSTR aName, IN_BSTR aHostPath, BOOL aWritable, BO
         }
 
         /* second, create the given folder */
-        rc = createSharedFolder(aName, SharedFolderData(aHostPath, aWritable, aAutoMount));
+        rc = createSharedFolder(aName, SharedFolderData(aHostPath, !!aWritable, !!aAutoMount));
         if (FAILED(rc))
             return rc;
     }
@@ -4501,7 +4501,7 @@ HRESULT Console::onNATRedirectRuleChange(ULONG ulInstance, BOOL aNatRuleRemove,
                 break;
 
             bool fUdp = aProto == NATProtocol_UDP;
-            vrc = pNetNatCfg->pfnRedirectRuleCommand(pNetNatCfg, aNatRuleRemove, fUdp,
+            vrc = pNetNatCfg->pfnRedirectRuleCommand(pNetNatCfg, !!aNatRuleRemove, fUdp,
                                                      Utf8Str(aHostIp).c_str(), aHostPort, Utf8Str(aGuestIp).c_str(),
                                                      aGuestPort);
             if (RT_FAILURE(vrc))
@@ -7094,7 +7094,7 @@ HRESULT Console::fetchSharedFolders(BOOL aGlobal)
                 if (FAILED(rc)) throw rc;
 
                 m_mapMachineSharedFolders.insert(std::make_pair(strName,
-                                                                SharedFolderData(strHostPath, writable, autoMount)));
+                                                                SharedFolderData(strHostPath, !!writable, !!autoMount)));
 
                 /* send changes to HGCM if the VM is running */
                 if (online)
@@ -7121,9 +7121,7 @@ HRESULT Console::fetchSharedFolders(BOOL aGlobal)
 
                             /* create the new machine folder */
                             rc = createSharedFolder(strName,
-                                                    SharedFolderData(strHostPath,
-                                                                     writable,
-                                                                     autoMount));
+                                                    SharedFolderData(strHostPath, !!writable, !!autoMount));
                             if (FAILED(rc)) throw rc;
                         }
                     }

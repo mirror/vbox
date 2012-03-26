@@ -1745,7 +1745,7 @@ STDMETHODIMP VirtualBox::OpenMedium(IN_BSTR aLocation,
         rc = pMedium->init(this,
                            aLocation,
                            (accessMode == AccessMode_ReadWrite) ? Medium::OpenReadWrite : Medium::OpenReadOnly,
-                           fForceNewUuid,
+                           !!fForceNewUuid,
                            deviceType);
         treeLock.acquire();
 
@@ -4089,8 +4089,6 @@ DECLCALLBACK(int) VirtualBox::ClientWatcher(RTTHREAD /* thread */, void *pvUser)
     VirtualBoxBase::initializeComForThread();
 
 #if defined(RT_OS_WINDOWS)
-
-    HRESULT hrc;
 
     /// @todo (dmik) processes reaping!
 
