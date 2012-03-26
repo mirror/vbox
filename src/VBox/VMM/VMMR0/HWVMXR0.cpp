@@ -3024,6 +3024,7 @@ ResumeExecution:
                     Log2(("PGMTrap0eHandler failed with %d\n", VBOXSTRICTRC_VAL(rc)));
 #endif
                 /* Need to go back to the recompiler to emulate the instruction. */
+                STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatExitShadowPFEM);
                 TRPMResetTrap(pVCpu);
                 break;
             }
@@ -3101,6 +3102,7 @@ ResumeExecution:
 
             case X86_XCPT_BP:   /* Breakpoint. */
             {
+                STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatExitGuestBP);
                 rc = DBGFRZTrap03Handler(pVM, pVCpu, CPUMCTX2CORE(pCtx));
                 if (rc == VINF_EM_RAW_GUEST_TRAP)
                 {
@@ -3388,6 +3390,9 @@ ResumeExecution:
                 case X86_XCPT_NP:
                     STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatExitGuestNP);
                     break;
+                case X86_XCPT_XF:
+                    STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatExitGuestXF);
+                    break;
                 }
 
                 Log(("Trap %x at %04X:%RGv\n", vector, pCtx->cs, (RTGCPTR)pCtx->rip));
@@ -3399,6 +3404,7 @@ ResumeExecution:
             }
 #endif
             default:
+                STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatExitGuestXcpUnk);
                 if (    CPUMIsGuestInRealModeEx(pCtx)
                     &&  pVM->hwaccm.s.vmx.pRealModeTSS)
                 {

@@ -800,6 +800,7 @@ typedef struct HWACCMCPU
     STAMCOUNTER             StatExitShadowNM;
     STAMCOUNTER             StatExitGuestNM;
     STAMCOUNTER             StatExitShadowPF;
+    STAMCOUNTER             StatExitShadowPFEM;
     STAMCOUNTER             StatExitGuestPF;
     STAMCOUNTER             StatExitGuestUD;
     STAMCOUNTER             StatExitGuestSS;
@@ -808,6 +809,9 @@ typedef struct HWACCMCPU
     STAMCOUNTER             StatExitGuestDE;
     STAMCOUNTER             StatExitGuestDB;
     STAMCOUNTER             StatExitGuestMF;
+    STAMCOUNTER             StatExitGuestBP;
+    STAMCOUNTER             StatExitGuestXF;
+    STAMCOUNTER             StatExitGuestXcpUnk;
     STAMCOUNTER             StatExitInvpg;
     STAMCOUNTER             StatExitInvd;
     STAMCOUNTER             StatExitCpuid;
