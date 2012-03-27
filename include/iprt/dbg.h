@@ -1164,7 +1164,7 @@ typedef RTDBGKRNLINFO           *PRTDBGKRNLINFO;
 #define NIL_RTDBGKRNLINFO       ((RTDBGKRNLINFO)0)
 
 /**
- * Opens the kernel debug info
+ * Opens the kernel debug info.
  *
  * @returns IPRT status code.  Can fail for any number of reasons.
  *
@@ -1175,7 +1175,7 @@ typedef RTDBGKRNLINFO           *PRTDBGKRNLINFO;
 RTR0DECL(int)       RTR0DbgKrnlInfoOpen(PRTDBGKRNLINFO phKrnlInfo, uint32_t fFlags);
 
 /**
- * Retains a refernece to the kernel debug info handle.
+ * Retains a reference to the kernel debug info handle.
  *
  * @returns New reference count, UINT32_MAX on invalid handle (asserted).
  * @param   hKrnlInfo       The kernel info handle.
@@ -1184,7 +1184,7 @@ RTR0DECL(uint32_t)  RTR0DbgKrnlInfoRetain(RTDBGKRNLINFO hKrnlInfo);
 
 
 /**
- * Releases a refernece to the kernel debug info handle, destroying it when the
+ * Releases a reference to the kernel debug info handle, destroying it when the
  * counter reaches zero.
  *
  * @returns New reference count, UINT32_MAX on invalid handle (asserted).
@@ -1194,7 +1194,7 @@ RTR0DECL(uint32_t)  RTR0DbgKrnlInfoRetain(RTDBGKRNLINFO hKrnlInfo);
 RTR0DECL(uint32_t)  RTR0DbgKrnlInfoRelease(RTDBGKRNLINFO hKrnlInfo);
 
 /**
- * Queries the offset of a member of a kernel structure.
+ * Queries the offset (in bytes) of a member of a kernel structure.
  *
  * @returns IPRT status code.
  * @retval  VINF_SUCCESS and offset at @a poffMember.
