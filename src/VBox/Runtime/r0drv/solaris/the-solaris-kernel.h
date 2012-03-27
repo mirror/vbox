@@ -88,4 +88,5 @@ extern uintptr_t                kernelbase;
 
 RT_C_DECLS_END
 
-#endif
+#endif /* ___the_solaris_kernel_h */
+
