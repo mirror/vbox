@@ -691,7 +691,7 @@ int Service::retrieveNextHostCmd(uint32_t u32ClientID, VBOXHGCMCALLHANDLE callHa
         /*
          * Get the next unassigned host command in the list.
          */
-         HostCmd curCmd = mHostCmds.front();
+         HostCmd &curCmd = mHostCmds.front();
          rc = assignHostCmdToGuest(&curCmd, callHandle, cParms, paParms);
          if (RT_SUCCESS(rc))
          {
@@ -705,22 +705,25 @@ int Service::retrieveNextHostCmd(uint32_t u32ClientID, VBOXHGCMCALLHANDLE callHa
              paramBufferFree(&curCmd.mParmBuf);
              mHostCmds.pop_front();
          }
-         else if (rc == VERR_BUFFER_OVERFLOW)
+         else
          {
+             bool fRemoveCmd = false;
+             uint32_t uTries = curCmd.mTries++;
+
              /* If the client understood the message but supplied too little buffer space
               * don't send this message again and drop it after 3 unsuccessful attempts.
               * The host then should take care of next actions (maybe retry it with a smaller buffer). */
-             if (++curCmd.mTries >= 3)
+             if (   rc     == VERR_BUFFER_OVERFLOW
+                 && uTries >= 3)
              {
-                 paramBufferFree(&curCmd.mParmBuf);
-                 mHostCmds.pop_front();
+                 fRemoveCmd = true;
              }
-         }
-         else
-         {
              /* Client did not understand the message or something else weird happened. Try again one
               * more time and drop it if it didn't get handled then. */
-             if (++curCmd.mTries > 1)
+             else if (uTries > 1)
+                 fRemoveCmd = true;
+
+             if (fRemoveCmd)
              {
                  paramBufferFree(&curCmd.mParmBuf);
                  mHostCmds.pop_front();
