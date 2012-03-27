@@ -627,11 +627,10 @@ static DECLCALLBACK(int) drvHostParallelSetPortDirection(PPDMIHOSTPARALLELCONNEC
 {
     PDRVHOSTPARALLEL    pThis   = RT_FROM_MEMBER(pInterface, DRVHOSTPARALLEL, CTX_SUFF(IHostParallelConnector));
     int rc = VINF_SUCCESS;
-
+    int iMode = 0;
     if (!fForward)
         iMode = 1;
 # ifndef VBOX_WITH_WIN_PARPORT_SUP
-    int iMode = 0;                      /** @todo r=bird: unused . */
     int rcLnx = ioctl(RTFileToNative(pThis->hFileDevice), PPDATADIR, &iMode);
     if (RT_UNLIKELY(rcLnx < 0))
         rc = RTErrConvertFromErrno(errno);
