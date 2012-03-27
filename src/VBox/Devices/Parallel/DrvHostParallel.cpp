@@ -46,8 +46,6 @@
 #endif
 
 
-/** @todo r=bird: The following indicator is neccessary to select the right
- *        code. */
 /** @def VBOX_WITH_WIN_PARPORT_SUP *
  * Indicates whether to use the generic direct hardware access or host specific
  * code to access the parallel port.
@@ -75,6 +73,8 @@
 # include <string.h>
 # include <cfgmgr32.h>
 # include <iprt/mem.h>
+# define CTRL_REG_OFFSET 2
+# define STATUS_REG_OFFSET  1
 #endif
 
 #include "VBoxDD.h"
@@ -100,22 +100,21 @@ typedef struct DRVHOSTPARALLEL
     PDMIHOSTPARALLELCONNECTOR     IHostParallelConnector;
     /** Our host device interface. */
     PDMIHOSTPARALLELCONNECTOR     IHostParallelConnectorR3;
-    /** Ring-3 base interface for the ring-0 context. */
-    PDMIBASER0                    IBaseR0;
     /** Device Path */
     char                         *pszDevicePath;
     /** Device Handle */
     RTFILE                        hFileDevice;
-#ifndef VBOX_WITH_WIN_PARPORT_SUP       /** @todo r=bird: Eliminate thing not needed, it rules out things you might have missed. */
+#ifndef VBOX_WITH_WIN_PARPORT_SUP
     /** Thread waiting for interrupts. */
     PPDMTHREAD                    pMonitorThread;
     /** Wakeup pipe read end. */
     RTPIPE                        hWakeupPipeR;
     /** Wakeup pipe write end. */
     RTPIPE                        hWakeupPipeW;
-#endif
     /** Current mode the parallel port is in. */
     PDMPARALLELPORTMODE           enmModeCur;
+#endif
+
 #ifdef VBOX_WITH_WIN_PARPORT_SUP
     /** Data register. */
     uint32_t                      u32LptAddr;
@@ -129,19 +128,10 @@ typedef struct DRVHOSTPARALLEL
     uint8_t                       u8ReadInControl;
     /** Status read buffer. */
     uint8_t                       u8ReadInStatus;
+	/** Parallel port name */
+    uint8_t                       u8ParportName[6];
     /** Whether the parallel port is available or not. */
     bool                          fParportAvail;
-# ifdef IN_RING0 /** @todo r=bird: This isn't needed and will not work as you always need to declare all structure members in all contexts. (Size will differer between ring-3 and ring-0 now, meaning you'll corrupt heap because ring-3 does the alloc.) */
-    typedef struct DEVICE_EXTENSION
-    {
-        PPARALLEL_PORT_INFORMATION  pParallelInfo;
-        PPARALLEL_PNP_INFORMATION   pPnpInfo;
-        UNICODE_STRING              uniName;
-        PFILE_OBJECT                FileObj;
-        PDEVICE_OBJECT              pParallelDeviceObject;
-    } DEVICE_EXTENSION, *PDEVICE_EXTENSION;
-    PDEVICE_EXTENSION             pDevExtn;
-# endif
 #endif /* VBOX_WITH_WIN_PARPORT_SUP */
 } DRVHOSTPARALLEL, *PDRVHOSTPARALLEL;
 
@@ -181,7 +171,7 @@ typedef enum DRVHOSTPARALLELR0OP
  * @param   u64Arg     Data to be written to data register.
  *
  */
-static int drvR0HostParallelReqWrite(PPDMDRVINS pDrvIns, uint64_t u64Arg) /** @todo r=bird: PDMBOTHCBDECL is only required for entry points. Everything which doesn't need to be globally visible shall be static! */
+static int drvR0HostParallelReqWrite(PPDMDRVINS pDrvIns, uint64_t u64Arg)
 {
     PDRVHOSTPARALLEL pThis = PDMINS_2_DATA(pDrvIns, PDRVHOSTPARALLEL);
     LogFlowFunc(("write to data port=%#x val=%#x\n", pThis->u32LptAddr, u64Arg));
@@ -291,26 +281,27 @@ PDMBOTHCBDECL(int) drvR0HostParallelReqHandler(PPDMDRVINS pDrvIns, uint32_t uOpe
     int rc;
 
     LogFlowFuncEnter();
+    /* I have included break after each case. Need to work on this. */
     switch ((DRVHOSTPARALLELR0OP)uOperation)
     {
         case DRVHOSTPARALLELR0OP_READ:
             rc = drvR0HostParallelReqRead(pDrvIns, u64Arg);
-
+            break;
         case DRVHOSTPARALLELR0OP_READSTATUS:
             rc = drvR0HostParallelReqReadStatus(pDrvIns, u64Arg);
-
+            break;
         case DRVHOSTPARALLELR0OP_READCONTROL:
             rc = drvR0HostParallelReqReadControl(pDrvIns, u64Arg);
-
+            break;
         case DRVHOSTPARALLELR0OP_WRITE:
             rc = drvR0HostParallelReqWrite(pDrvIns, u64Arg);
-
+            break;
         case DRVHOSTPARALLELR0OP_WRITECONTROL:
             rc = drvR0HostParallelReqWriteControl(pDrvIns, u64Arg);
-
+            break;
         case DRVHOSTPARALLELR0OP_SETPORTDIRECTION:
             rc = drvR0HostParallelReqSetPortDir(pDrvIns, u64Arg);
-
+            break;
         default:        /* not supported */
             rc = VERR_NOT_SUPPORTED;
     }
@@ -328,7 +319,7 @@ PDMBOTHCBDECL(int) drvR0HostParallelReqHandler(PPDMDRVINS pDrvIns, uint32_t uOpe
  * @returns parallel port IO address.
  * @param   DevInst    Device Instance for parallel port.
  */
-static uint32_t drvHostWinFindIORangeResource(const DEVINST DevInst) /** @todo r=bird: Prefix methods like in the rest of the file, since windows specific, throw in a 'Win'. */
+static uint32_t drvHostWinFindIORangeResource(const DEVINST DevInst)
 {
     uint8_t  *pBuf  = NULL;
     short     wHeaderSize;
@@ -388,8 +379,7 @@ static uint32_t drvHostWinFindIORangeResource(const DEVINST DevInst) /** @todo r
         RTMemFree(pBuf);
         if (cmRet != CR_SUCCESS)
            break;
-        /** @todo r=bird: No need to else soemthing when the 'then' clause
-         *        returned or broke ouf of the loop. */
+
         CM_Free_Res_Des_Handle(nextLogConf);
         nextLogConf = rdPrevResDes;
     }
@@ -404,7 +394,7 @@ static uint32_t drvHostWinFindIORangeResource(const DEVINST DevInst) /** @todo r
  * @returns VBox status code.
  * @param   pThis    The host parallel port instance data.
  */
-static int drvHostParallelGetParportAddr(PDRVHOSTPARALLEL pThis)
+static int drvWinHostGetparportAddr(PDRVHOSTPARALLEL pThis)
 {
     HDEVINFO hDevInfo;
     SP_DEVINFO_DATA DeviceInfoData;
@@ -432,7 +422,6 @@ static int drvHostParallelGetParportAddr(PDRVHOSTPARALLEL pThis)
                 if (pBuf)
                      RTMemFree(pBuf);
                 /* Max size will never be more than 2048 bytes */
-                /** @todo r=bird: Too many parentheses and casts: (uint8_t *)((char*)RTMemAlloc(u32BufSize * 2)) */
                 pBuf = (uint8_t *)RTMemAlloc(u32BufSize * 2);
             }
             else
@@ -441,17 +430,42 @@ static int drvHostParallelGetParportAddr(PDRVHOSTPARALLEL pThis)
 
         if (pBuf) /** @todo r=bird: You're not checking errors here. */
         {
-             LogFlowFunc(("device name=%s\n", pBuf));
-             if (strstr((char*)pBuf, "LPT"))        /** @todo Use IPRT equivalent? r=klaus: make check much more precise, must be LPT + number (>= 1), without anything else before or after. */
+             char *pCh = NULL;
+             char* pTmpCh = NULL;
+             if (strstr((char*)pBuf, "LPT"))        /** @todo Use IPRT equivalent? */
              {
-                 LogFlowFunc(("found parallel port\n"));
                  u32ParportAddr = drvHostWinFindIORangeResource(DeviceInfoData.DevInst);
                  if (u32ParportAddr)
                  {
+                     /* Find parallel port name and update the shared data struncture */
+                     pCh = strstr((char*)pBuf, "(");
+                     pTmpCh = strstr((char *)pBuf, ")");
+                     /* check for the confirmation for the availability of parallel port */
+                     if (!(pCh && pTmpCh))
+                     {
+                         LogFlowFunc(("Parallel port Not Found \n"));
+                         return VERR_NOT_FOUND;
+
+                     }
+                     /* check for the confirmation for the availability of parallel port */
+                     if (!strncpy((char *)(pThis->u8ParportName), pCh+1, ((pTmpCh - (char *)pBuf) -
+                                 (pCh - (char *)pBuf)) - 1))
+                     {
+                         LogFlowFunc(("Parallel Port Not Found\n"));
+                         return VERR_NOT_FOUND;
+                     }
+                     *((char *)pThis->u8ParportName + (pTmpCh - (char *)pBuf) - (pCh - (char *)pBuf) + 1 ) = '\0';
+                     /* checking again to make sure that we have got a valid name and in valid format too. */
+                     if (!strstr((char *)pThis->u8ParportName, "LPT") ||
+                          !(pThis->u8ParportName[3] >= '0' && pThis->u8ParportName[3] <= '9')) {
+                         pThis->u8ParportName[0] = '\0';
+                         LogFlowFunc(("Printer Port Name Not Found\n"));
+                         return VERR_NOT_FOUND;
+                     }
                      pThis->fParportAvail = true;
                      pThis->u32LptAddr = u32ParportAddr;
-                     pThis->u32LptAddrControl = pThis->u32LptAddr + DCR_OFFSET;
-                     pThis->u32LptAddrStatus = pThis->u32LptAddr + DSR_OFFSET;
+                     pThis->u32LptAddrControl = pThis->u32LptAddr + CTRL_REG_OFFSET;
+                     pThis->u32LptAddrStatus = pThis->u32LptAddr + STATUS_REG_OFFSET;
                  }
                  if (pThis->fParportAvail)
                      break;
@@ -617,7 +631,7 @@ static DECLCALLBACK(int) drvHostParallelRead(PPDMIHOSTPARALLELCONNECTOR pInterfa
     {
         int rc = PDMDrvHlpCallR0(pThis->CTX_SUFF(pDrvIns), DRVHOSTPARALLELR0OP_READ, 0);
         AssertRC(rc);
-        *(uint8_t *)pvBuf = (uint8_t)pThis->u8ReadIn; /** r=bird: *((uint8_t *)(pvBuf)) is too many parentheses. Heaping them up make the code harder to read. Please check C++ operator precedence rules. */
+        *(uint8_t *)pvBuf = (uint8_t)pThis->u8ReadIn;
     }
 # endif /* VBOX_WITH_WIN_PARPORT_SUP */
     return rc;
@@ -739,7 +753,7 @@ static DECLCALLBACK(int) drvHostParallelReadStatus(PPDMIHOSTPARALLELCONNECTOR pI
     return rc;
 }
 
-# ifndef VBOX_WITH_WIN_PARPORT_SUP /** @todo r=bird: This whole function is unused in the direct access path. */
+# ifndef VBOX_WITH_WIN_PARPORT_SUP
 
 static DECLCALLBACK(int) drvHostParallelMonitorThread(PPDMDRVINS pDrvIns, PPDMTHREAD pThread)
 {
@@ -957,26 +971,30 @@ static DECLCALLBACK(int) drvHostParallelConstruct(PPDMDRVINS pDrvIns, PCFGMNODE 
         return PDMDrvHlpVMSetError(pDrvIns, rc, RT_SRC_POS, N_("HostParallel#%d cannot create monitor thread"), pDrvIns->iInstance);
 
 #else /* VBOX_WITH_WIN_PARPORT_SUP */
+    HANDLE hPort;
     pThis->fParportAvail = false;
     pThis->u32LptAddr = 0L;
     pThis->u32LptAddrControl = 0L;
     pThis->u32LptAddrStatus = 0L;
-    rc = drvHostParallelGetParportAddr(pThis);
-    return rc;
-    /**@todo r=bird: Just remove or #if 0 this code.*/
-    HANDLE hPort;
-    /** @todo r=klaus convert to IPRT */
-    hPort = CreateFile("LPT1", GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ,
-                       NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL); /** @todo r=bird: Continuation indent under start parentheses like the rest of the file. */
-    if (hPort == INVALID_HANDLE_VALUE) /** @todo r=bird: Please, variable == constant, not the other way around. Just learn to not make accidental assignments in conditionals! */
-    {
-        /** @todo r=klaus probably worth a nicely formatted release log entry,
-         * pointing to the device name etc etc. */
-        LogFlowFunc(("failed to get exclusive access to parallel port\n"));
-        /** @todo r=klaus wrong kind of error code, must be IPRT error code */
-        return GetLastError();
+    rc = drvWinHostGetparportAddr(pThis);
+
+    /* If we have the char port availabe use it , else I am not getting exclusive access to parallel port.
+       Read and write will be done only if addresses are availabel
+    */
+    if (pThis->u8ParportName) {
+        LogFlowFunc(("Get the Handle to Printer Port =%s\n", (char *)pThis->u8ParportName));
+        /** @todo r=klaus convert to IPRT */
+        hPort = CreateFile((char *)pThis->u8ParportName, GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ,
+                           NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
     }
-#endif /* VBOX_WITH_WIN_PARPORT_SUP  */
+    /** @todo amakkar: handle the case if hPort is NULL */
+# if 0
+    if (hPort == INVALID_HANDLE_VALUE)
+    {
+        LogFlow(("Failed to get exclusive access to parallel port\n"));
+        rc = VERR_INVALID_HANDLE;
+    }*/
+# endif /* VBOX_WITH_WIN_PARPORT_SUP  */
     return VINF_SUCCESS;
 }
 
@@ -997,11 +1015,11 @@ const PDMDRVREG g_DrvHostParallel =
     /* pszDescription */
     "Parallel host driver.",
     /* fFlags */
-#if defined(VBOX_WITH_WIN_PARPORT_SUP)
+# if defined(VBOX_WITH_WIN_PARPORT_SUP)
     PDM_DRVREG_FLAGS_HOST_BITS_DEFAULT | PDM_DRVREG_FLAGS_R0,
-#else
+# else
     PDM_DRVREG_FLAGS_HOST_BITS_DEFAULT,
-#endif
+# endif
     /* fClass. */
     PDM_DRVREG_CLASS_CHAR,
     /* cMaxInstances */
