@@ -154,19 +154,19 @@ RTR0DECL(int) RTR0DbgKrnlInfoQueryMember(RTDBGKRNLINFO hKrnlInfo, const char *ps
     RT_ASSERT_PREEMPTIBLE();
 
     int rc = VERR_NOT_FOUND;
-	ctf_id_t TypeIdent = ctf_lookup_by_name(pThis->pGenUnixCTF, pszStructure);
-	if (TypeIdent != CTF_ERR)
-	{
-		ctf_membinfo_t MemberInfo;
+    ctf_id_t TypeIdent = ctf_lookup_by_name(pThis->pGenUnixCTF, pszStructure);
+    if (TypeIdent != CTF_ERR)
+    {
+        ctf_membinfo_t MemberInfo;
         RT_ZERO(MemberInfo);
-		if (ctf_member_info(pThis->pGenUnixCTF, TypeIdent, pszMember, &MemberInfo) != CTF_ERR)
-		{
-			*poffMember = (MemberInfo.ctm_offset >> 3);
-			return VINF_SUCCESS;
-		}
-	}
+        if (ctf_member_info(pThis->pGenUnixCTF, TypeIdent, pszMember, &MemberInfo) != CTF_ERR)
+        {
+            *poffMember = (MemberInfo.ctm_offset >> 3);
+            return VINF_SUCCESS;
+        }
+    }
 
-	return rc;
+    return rc;
 }
 
 
@@ -181,7 +181,7 @@ RTR0DECL(int) RTR0DbgKrnlInfoQuerySymbol(RTDBGKRNLINFO hKrnlInfo, const char *ps
     RT_ASSERT_PREEMPTIBLE();
 
     NOREF(pszModule);
-	*ppvSymbol = kobj_getsymvalue(pszSymbol, 1 /* only kernel */);
+    *ppvSymbol = kobj_getsymvalue(pszSymbol, 1 /* only kernel */);
     if (*ppvSymbol)
         return VINF_SUCCESS;
 
