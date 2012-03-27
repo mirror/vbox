@@ -1147,18 +1147,91 @@ RTDECL(int)         RTDbgModLineByAddrA(RTDBGMOD hDbgMod, RTDBGSEGIDX iSeg, RTUI
 /** @} */
 
 
-/** @name Proposed Kernel Structure API
+/** @name Kernel Debug Info API
+ *
+ * This is a specialized API for obtaining symbols and structure information
+ * about the running kernel.  It is relatively OS specific.  Its purpose and
+ * operation is doesn't map all that well onto RTDbgMod, so a few dedicated
+ * functions was created for it.
+ *
  * @{ */
-/** Handle to the kernel structures database. */
-typedef struct RTDBGKRNLSTRUCTSINT *RTDBGKRNLSTRUCTS;
-/** Pointer to a kernel structures database handle. */
-typedef RTDBGKRNLSTRUCTS           *PRTDBGKRNLSTRUCTS;
 
-RTR0DECL(int)       RTR0DbgKrnlStructsOpen(PRTDBGKRNLSTRUCTS phKrnlStructs, uint32_t fFlags);
-RTR0DECL(uint32_t)  RTR0DbgKrnlStructsRetain(RTDBGKRNLSTRUCTS hKrnlStructs);
-RTR0DECL(uint32_t)  RTR0DbgKrnlStructsRelease(RTDBGKRNLSTRUCTS hKrnlStructs);
-RTR0DECL(int)       RTR0DbgKrnlStructsQueryMember(RTDBGKRNLSTRUCTS hKrnlStructs, const char *pszStructure,
-                                                  const char *pszMember, size_t *poffMember);
+/** Handle to the kernel debug info. */
+typedef struct RTDBGKRNLINFOINT *RTDBGKRNLINFO;
+/** Pointer to a kernel debug info handle. */
+typedef RTDBGKRNLINFO           *PRTDBGKRNLINFO;
+/** Nil kernel debug info handle. */
+#define NIL_RTDBGKRNLINFO       ((RTDBGKRNLINFO)0)
+
+/**
+ * Opens the kernel debug info
+ *
+ * @returns IPRT status code.  Can fail for any number of reasons.
+ *
+ * @param   phKrnlInfo      Where to return the kernel debug info handle on
+ *                          success.
+ * @param   fFlags          Flags reserved for future use. Must be zero.
+ */
+RTR0DECL(int)       RTR0DbgKrnlInfoOpen(PRTDBGKRNLINFO phKrnlInfo, uint32_t fFlags);
+
+/**
+ * Retains a refernece to the kernel debug info handle.
+ *
+ * @returns New reference count, UINT32_MAX on invalid handle (asserted).
+ * @param   hKrnlInfo       The kernel info handle.
+ */
+RTR0DECL(uint32_t)  RTR0DbgKrnlInfoRetain(RTDBGKRNLINFO hKrnlInfo);
+
+
+/**
+ * Releases a refernece to the kernel debug info handle, destroying it when the
+ * counter reaches zero.
+ *
+ * @returns New reference count, UINT32_MAX on invalid handle (asserted).
+ * @param   hKrnlInfo       The kernel info handle. NIL_RTDBGKRNLINFO is
+ *                          quietly ignored.
+ */
+RTR0DECL(uint32_t)  RTR0DbgKrnlInfoRelease(RTDBGKRNLINFO hKrnlInfo);
+
+/**
+ * Queries the offset of a member of a kernel structure.
+ *
+ * @returns IPRT status code.
+ * @retval  VINF_SUCCESS and offset at @a poffMember.
+ * @retval  VERR_NOT_FOUND if the structure or the member was not found.
+ * @retval  VERR_INVALID_HANDLE if hKrnlInfo is bad.
+ * @retval  VERR_INVALID_POINTER if any of the pointers are bad.
+ *
+ * @param   hKrnlInfo       The kernel info handle.
+ * @param   pszStructure    The structure name.
+ * @param   pszMember       The member name.
+ * @param   poffMember      Where to return the offset.
+ */
+RTR0DECL(int)       RTR0DbgKrnlInfoQueryMember(RTDBGKRNLINFO hKrnlInfo, const char *pszStructure,
+                                               const char *pszMember, size_t *poffMember);
+
+
+/**
+ * Queries the value (usually the address) of a kernel symbol.
+ *
+ * This may go looking for the symbol in other modules, in which case it will
+ * always check the kernel symbol table first.
+ *
+ * @returns IPRT status code.
+ * @retval  VINF_SUCCESS and value at @a ppvSymbol.
+ * @retval  VERR_SYMBOL_NOT_FOUND
+ * @retval  VERR_INVALID_HANDLE if hKrnlInfo is bad.
+ * @retval  VERR_INVALID_POINTER if any of the pointers are bad.
+ *
+ * @param   hKrnlInfo       The kernel info handle.
+ * @param   pszModule       Reserved for future extensions. Pass NULL.
+ * @param   pszSymbol       The C name of the symbol.
+ * @param   ppvSymbol       Where to return the symbol value.
+ *
+ * @sa      RTLdrGetSymbol.
+ */
+RTR0DECL(int)       RTR0DbgKrnlInfoQuerySymbol(RTDBGKRNLINFO hKrnlInfo, const char *pszModule,
+                                               const char *pszSymbol, void **ppvSymbol);
 /** @} */
 
 
