@@ -995,6 +995,7 @@ static DECLCALLBACK(int) drvHostParallelConstruct(PPDMDRVINS pDrvIns, PCFGMNODE 
         rc = VERR_INVALID_HANDLE;
     }*/
 # endif /* VBOX_WITH_WIN_PARPORT_SUP  */
+#endif
     return VINF_SUCCESS;
 }
 
