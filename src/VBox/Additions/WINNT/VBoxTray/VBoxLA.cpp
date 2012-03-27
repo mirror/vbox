@@ -93,8 +93,13 @@ static const char *g_pszVolatileEnvironment = "Volatile Environment";
 static const WCHAR *g_pwszUTCINFOClientName = L"UTCINFO_CLIENTNAME";
 static const WCHAR *g_pwszClientName = L"CLIENTNAME";
 
+#ifdef RT_ARCH_AMD64
+const WCHAR *g_pwszRegKeyDisconnectActions = L"Software\\Wow6432Node\\Oracle\\Sun Ray\\ClientInfoAgent\\DisconnectActions";
+const WCHAR *g_pwszRegKeyReconnectActions = L"Software\\Wow6432Node\\Oracle\\Sun Ray\\ClientInfoAgent\\ReconnectActions";
+#else
 const WCHAR *g_pwszRegKeyDisconnectActions = L"Software\\Oracle\\Sun Ray\\ClientInfoAgent\\DisconnectActions";
 const WCHAR *g_pwszRegKeyReconnectActions = L"Software\\Oracle\\Sun Ray\\ClientInfoAgent\\ReconnectActions";
+#endif /* !RT_ARCH_AMD64 */
 
 const char g_szCommandPrefix[] = "Command";
 
