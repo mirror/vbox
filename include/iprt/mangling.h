@@ -973,6 +973,11 @@
 # define RTProcWait                                     RT_MANGLER(RTProcWait)
 # define RTProcWaitNoResume                             RT_MANGLER(RTProcWaitNoResume)
 # define RTR0AssertPanicSystem                          RT_MANGLER(RTR0AssertPanicSystem)      /* r0drv */
+# define RTR0DbgKrnlInfoOpen                            RT_MANGLER(RTR0DbgKrnlInfoOpen)        /* r0drv */
+# define RTR0DbgKrnlInfoQueryMember                     RT_MANGLER(RTR0DbgKrnlInfoQueryMember) /* r0drv */
+# define RTR0DbgKrnlInfoQuerySymbol                     RT_MANGLER(RTR0DbgKrnlInfoQuerySymbol) /* r0drv */
+# define RTR0DbgKrnlInfoRelease                         RT_MANGLER(RTR0DbgKrnlInfoRelease)     /* r0drv */
+# define RTR0DbgKrnlInfoRetain                          RT_MANGLER(RTR0DbgKrnlInfoRetain)      /* r0drv */
 # define RTR0Init                                       RT_MANGLER(RTR0Init)                   /* r0drv */
 # define RTR0MemAreKrnlAndUsrDifferent                  RT_MANGLER(RTR0MemAreKrnlAndUsrDifferent) /* r0drv */
 # define RTR0MemExecDonate                              RT_MANGLER(RTR0MemExecDonate)          /* r0drv */
