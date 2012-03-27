@@ -1274,7 +1274,7 @@ SUPR0DECL(int) SUPR0ComponentQueryFactory(PSUPDRVSESSION pSession, const char *p
 struct VTGOBJHDR;
 SUPR0DECL(int)  SUPR0VtgRegisterDrv(PSUPDRVSESSION pSession, struct VTGOBJHDR *pVtgHdr, const char *pszName);
 SUPR0DECL(void) SUPR0VtgDeregisterDrv(PSUPDRVSESSION pSession);
-SUPR0DECL(void) SUPR0VtgFireProbe(uint32_t idProbe, uintptr_t uArg0, uintptr_t uArg1, uintptr_t uArg2, 
+SUPR0DECL(void) SUPR0VtgFireProbe(uint32_t idProbe, uintptr_t uArg0, uintptr_t uArg1, uintptr_t uArg2,
                                   uintptr_t uArg3, uintptr_t uArg4);
 SUPR0DECL(int)  SUPR0VtgRegisterModule(void *hMod, struct VTGOBJHDR *pVtgHdr);
 
@@ -1329,9 +1329,9 @@ SUPR0DECL(int) SUPR0IdcComponentDeregisterFactory(PSUPDRVIDCHANDLE pHandle, PCSU
 /** @} */
 
 /** @name Ring-0 module entry points.
- *  
+ *
  * These can be exported by ring-0 modules SUP are told to load.
- *  
+ *
  * @{ */
 DECLEXPORT(int)  ModuleInit(void *hMod);
 DECLEXPORT(void) ModuleTerm(void *hMod);
