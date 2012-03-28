@@ -635,6 +635,15 @@ int Service::assignHostCmdToGuest(HostCmd *pCmd, VBOXHGCMCALLHANDLE callHandle, 
     else
     {
         rc = paramBufferAssign(paParms, cParms, &pCmd->mParmBuf);
+
+        /* Has there been enough parameter space but the wrong parameter types
+         * were submitted -- maybe the client was just asking for the next upcoming
+         * host message?
+         *
+         * Note: To keep this compatible to older clients we return VERR_TOO_MUCH_DATA
+         *       in every case. */
+        if (RT_FAILURE(rc))
+            rc = VERR_TOO_MUCH_DATA;
     }
 
     LogFlowFunc(("Returned with rc=%Rrc\n", rc));
