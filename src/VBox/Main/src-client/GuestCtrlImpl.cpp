@@ -1248,7 +1248,7 @@ HRESULT Guest::setErrorFromProgress(ComPtr<IProgress> pProgress)
     HRESULT rc = pProgress->COMGETTER(Completed)(&fCompleted);
     ComAssertComRC(rc);
 
-    HRESULT rcProc = S_OK;
+    LONG rcProc = S_OK;
     Utf8Str strError;
 
     if (!fCompleted)
