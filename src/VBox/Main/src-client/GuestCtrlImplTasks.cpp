@@ -278,13 +278,14 @@ HRESULT Guest::taskCopyFileToGuest(GuestTask *aTask)
                     {
                         BOOL fCompleted = FALSE;
                         BOOL fCanceled = FALSE;
+
                         uint64_t cbTransferedTotal = 0;
+                        uint64_t cbToRead = cbSize;
 
                         SafeArray<BYTE> aInputData(_64K);
                         while (   SUCCEEDED(execProgress->COMGETTER(Completed(&fCompleted)))
                                && !fCompleted)
                         {
-                            size_t cbToRead = cbSize;
                             size_t cbRead = 0;
                             if (cbSize) /* If we have nothing to read, take a shortcut. */
                             {
@@ -333,10 +334,10 @@ HRESULT Guest::taskCopyFileToGuest(GuestTask *aTask)
                                 uFlags |= ProcessInputFlag_EndOfFile;
                             }
 
-                            ULONG uBytesWritten = 0;
+                            ULONG cbBytesWritten = 0;
                             rc = pGuest->SetProcessInput(uPID, uFlags,
                                                          0 /* Infinite timeout */,
-                                                         ComSafeArrayAsInParam(aInputData), &uBytesWritten);
+                                                         ComSafeArrayAsInParam(aInputData), &cbBytesWritten);
                             if (FAILED(rc))
                             {
                                 rc = GuestTask::setProgressErrorParent(rc, aTask->pProgress, pGuest);
@@ -345,9 +346,10 @@ HRESULT Guest::taskCopyFileToGuest(GuestTask *aTask)
 
                             Assert(cbRead <= cbToRead);
                             Assert(cbToRead >= cbRead);
-                            cbToRead -= cbRead;
+                            /* Only subtract bytes reported written by the guest. */
+                            cbToRead -= cbBytesWritten;
 
-                            cbTransferedTotal += uBytesWritten;
+                            cbTransferedTotal += cbBytesWritten;
                             Assert(cbTransferedTotal <= cbSize);
                             aTask->pProgress->SetCurrentOperationProgress((ULONG)(cbTransferedTotal * 100 / cbSize));
 
@@ -376,23 +378,25 @@ HRESULT Guest::taskCopyFileToGuest(GuestTask *aTask)
                              * If we got here this means the started process either was completed,
                              * canceled or we simply got all stuff transferred.
                              */
-                            ExecuteProcessStatus_T retStatus;
-                            ULONG uRetExitCode;
-
-                            rc = executeWaitForExit(uPID, execProgress, 0 /* No timeout */,
-                                                    &retStatus, &uRetExitCode);
+                            rc = executeWaitForExit(uPID, execProgress, 0 /* No timeout */);
                             if (FAILED(rc))
                             {
                                 rc = GuestTask::setProgressErrorParent(rc, aTask->pProgress, pGuest);
                             }
                             else
                             {
-                                if (   uRetExitCode != 0
-                                    || retStatus    != ExecuteProcessStatus_TerminatedNormally)
+                                VBOXGUESTCTRL_PROCESS proc;
+                                vrc = processGetStatus(uPID, &proc, true /* Remove from PID list. */);
+                                if (RT_SUCCESS(vrc))
                                 {
-                                    rc = GuestTask::setProgressErrorMsg(VBOX_E_IPRT_ERROR, aTask->pProgress,
-                                                                        Guest::tr("Guest process reported error %u (status: %u) while copying file \"%s\" to \"%s\""),
-                                                                        uRetExitCode, retStatus, aTask->strSource.c_str(), aTask->strDest.c_str());
+
+                                    if (   proc.mExitCode != 0
+                                        || proc.mStatus   != ExecuteProcessStatus_TerminatedNormally)
+                                    {
+                                        rc = GuestTask::setProgressErrorMsg(VBOX_E_IPRT_ERROR, aTask->pProgress,
+                                                                            Guest::tr("Guest process reported error %u (status: %u) while copying file \"%s\" to \"%s\""),
+                                                                            proc.mExitCode, proc.mStatus, aTask->strSource.c_str(), aTask->strDest.c_str());
+                                    }
                                 }
                             }
                         }
