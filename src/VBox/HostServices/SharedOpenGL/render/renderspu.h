@@ -59,7 +59,7 @@ typedef struct {
     GLbitfield visAttribs;
     const char *displayName;
 #if defined(WINDOWS)
-    HDC device_context;
+//    HDC device_context;
 #elif defined(DARWIN)
 # ifndef VBOX_WITH_COCOA_QT
     WindowRef window;
@@ -316,6 +316,7 @@ extern void renderspu_GCWindow(void);
 extern int renderspuCreateFunctions( SPUNamedFunctionTable table[] );
 
 extern GLint RENDER_APIENTRY renderspuWindowCreate( const char *dpyName, GLint visBits );
+void RENDER_APIENTRY renderspuWindowDestroy( GLint win );
 extern GLint RENDER_APIENTRY renderspuCreateContext( const char *dpyname, GLint visBits, GLint shareCtx );
 extern void RENDER_APIENTRY renderspuMakeCurrent(GLint crWindow, GLint nativeWindow, GLint ctx);
 extern void RENDER_APIENTRY renderspuSwapBuffers( GLint window, GLint flags );

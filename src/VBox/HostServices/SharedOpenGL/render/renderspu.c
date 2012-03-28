@@ -349,7 +349,7 @@ static void renderspuCheckCurrentCtxWindowCB(unsigned long key, void *data1, voi
     }
 }
 
-static void
+void
 RENDER_APIENTRY renderspuWindowDestroy( GLint win )
 {
     WindowInfo *window;

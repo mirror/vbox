@@ -40,7 +40,7 @@ setDefaults(void)
 
     cr_server.num_overlap_intens = 0;
     cr_server.overlap_intens = 0;
-    cr_server.SpuContext = 0;
+    crMemset(&cr_server.MainContextInfo, 0, sizeof (cr_server.MainContextInfo));
 
     crMatrixInit(&cr_server.viewMatrix[0]);
     crMatrixInit(&cr_server.viewMatrix[1]);
@@ -218,7 +218,7 @@ void crServerSetVBoxConfiguration()
         newClient->conn = crNetAcceptClient(cr_server.protocol, NULL,
                                             cr_server.tcpip_port,
                                             cr_server.mtu, 0);
-        newClient->currentCtx = cr_server.DummyContext;
+        newClient->currentCtxInfo = &cr_server.MainContextInfo;
         crServerAddToRunQueue(newClient);
 
         cr_server.clients[i] = newClient;
@@ -292,7 +292,7 @@ void crServerSetVBoxConfigurationHGCM()
         newClient->conn = crNetAcceptClient(cr_server.protocol, NULL,
                                             cr_server.tcpip_port,
                                             cr_server.mtu, 0);
-        newClient->currentCtx = cr_server.DummyContext;
+        newClient->currentCtxInfo = &cr_server.MainContextInfo;
         crServerAddToRunQueue(newClient);
 
         cr_server.clients[i] = newClient;

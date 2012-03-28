@@ -31,7 +31,7 @@ int crServerGetCurrentEye(void)
     }
     else {
         /* we have a quad-buffered window and we're watching glDrawBuffer */
-        GLenum drawBuffer = cr_server.curClient->currentCtx->buffer.drawBuffer;
+        GLenum drawBuffer = cr_server.curClient->currentCtxInfo->pContext->buffer.drawBuffer;
         int eye = drawBuffer == GL_BACK_RIGHT || drawBuffer == GL_FRONT_RIGHT
             || drawBuffer == GL_RIGHT;
         return eye;
@@ -41,7 +41,7 @@ int crServerGetCurrentEye(void)
 
 void SERVER_DISPATCH_APIENTRY crServerDispatchLoadMatrixf( const GLfloat *m )
 {
-    const GLenum matMode = cr_server.curClient->currentCtx->transform.matrixMode;
+    const GLenum matMode = cr_server.curClient->currentCtxInfo->pContext->transform.matrixMode;
     const CRMuralInfo *mural = cr_server.curClient->currentMural;
 
     crStateLoadMatrixf( m );
@@ -58,7 +58,7 @@ void SERVER_DISPATCH_APIENTRY crServerDispatchLoadMatrixf( const GLfloat *m )
 
 void SERVER_DISPATCH_APIENTRY crServerDispatchLoadMatrixd( const GLdouble *m )
 {
-    const GLenum matMode = cr_server.curClient->currentCtx->transform.matrixMode;
+    const GLenum matMode = cr_server.curClient->currentCtxInfo->pContext->transform.matrixMode;
     const CRMuralInfo *mural = cr_server.curClient->currentMural;
 
     crStateLoadMatrixd( m );
@@ -75,7 +75,7 @@ void SERVER_DISPATCH_APIENTRY crServerDispatchLoadMatrixd( const GLdouble *m )
 
 void SERVER_DISPATCH_APIENTRY crServerDispatchMultMatrixf( const GLfloat *m )
 {
-    const GLenum matMode = cr_server.curClient->currentCtx->transform.matrixMode;
+    const GLenum matMode = cr_server.curClient->currentCtxInfo->pContext->transform.matrixMode;
 
     if (matMode == GL_PROJECTION && cr_server.projectionOverride) {
         /* load the overriding projection matrix */
@@ -92,7 +92,7 @@ void SERVER_DISPATCH_APIENTRY crServerDispatchMultMatrixf( const GLfloat *m )
 
 void SERVER_DISPATCH_APIENTRY crServerDispatchMultMatrixd( const GLdouble *m )
 {
-    const GLenum matMode = cr_server.curClient->currentCtx->transform.matrixMode;
+    const GLenum matMode = cr_server.curClient->currentCtxInfo->pContext->transform.matrixMode;
 
     if (matMode == GL_PROJECTION && cr_server.projectionOverride) {
         /* load the overriding projection matrix */
@@ -110,7 +110,7 @@ void SERVER_DISPATCH_APIENTRY crServerDispatchMultMatrixd( const GLdouble *m )
 
 void SERVER_DISPATCH_APIENTRY crServerDispatchLoadIdentity( void )
 {
-    const GLenum matMode = cr_server.curClient->currentCtx->transform.matrixMode;
+    const GLenum matMode = cr_server.curClient->currentCtxInfo->pContext->transform.matrixMode;
     const CRMuralInfo *mural = cr_server.curClient->currentMural;
 
     crStateLoadIdentity();

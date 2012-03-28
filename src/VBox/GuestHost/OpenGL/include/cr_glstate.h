@@ -206,6 +206,7 @@ DECLEXPORT(void) crStateMakeCurrent(CRContext *ctx);
 DECLEXPORT(void) crStateSetCurrent(CRContext *ctx);
 DECLEXPORT(CRContext *) crStateGetCurrent(void);
 DECLEXPORT(void) crStateDestroyContext(CRContext *ctx);
+DECLEXPORT(GLboolean) crStateEnableDiffOnMakeCurrent(GLboolean fEnable);
 
 CRContext * crStateSwichPrepare(CRContext *toCtx);
 void crStateSwichPostprocess(CRContext *fromCtx);
@@ -226,7 +227,9 @@ DECLEXPORT(void) crStateApplyFBImage(CRContext *to);
 
 #ifndef IN_GUEST
 DECLEXPORT(int32_t) crStateSaveContext(CRContext *pContext, PSSMHANDLE pSSM);
-DECLEXPORT(int32_t) crStateLoadContext(CRContext *pContext, CRHashTable * pCtxTable, PSSMHANDLE pSSM);
+typedef DECLCALLBACK(CRContext*) FNCRSTATE_CONTEXT_GET(void*);
+typedef FNCRSTATE_CONTEXT_GET *PFNCRSTATE_CONTEXT_GET;
+DECLEXPORT(int32_t) crStateLoadContext(CRContext *pContext, CRHashTable * pCtxTable, PFNCRSTATE_CONTEXT_GET pfnCtxGet, PSSMHANDLE pSSM);
 DECLEXPORT(void)    crStateFreeShared(CRSharedState *s);
 #endif
 
