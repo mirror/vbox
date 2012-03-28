@@ -44,7 +44,7 @@ DECLHIDDEN(size_t) rtPathVolumeSpecLen(const char *pszPath)
 #if defined (RT_OS_OS2) || defined (RT_OS_WINDOWS)
     if (pszPath && *pszPath)
     {
-        /* UTC path. */
+        /* UNC path. */
         /** @todo r=bird: it's UNC and we have to check that the next char isn't a
          *        slash, then skip both the server and the share name. */
         if (    (pszPath[0] == '\\' || pszPath[0] == '/')
