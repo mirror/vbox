@@ -25,7 +25,7 @@ crServerAddNewClient(void)
                                                                                  cr_server.tcpip_port,
                                                                                  cr_server.mtu, 1 );
 
-        newClient->currentCtx = cr_server.DummyContext;
+        newClient->currentCtxInfo = &cr_server.MainContextInfo;
 
         /* add to array */
         cr_server.clients[cr_server.numClients++] = newClient;
@@ -292,10 +292,11 @@ crServerDeleteClient( CRClient *client )
 GLboolean
 crServerClientInBeginEnd(const CRClient *client)
 {
-    if (client->currentCtx &&
-            (client->currentCtx->lists.currentIndex != 0 ||
-             client->currentCtx->current.inBeginEnd ||
-             client->currentCtx->occlusion.currentQueryObject)) {
+    if (client->currentCtxInfo
+            && client->currentCtxInfo->pContext
+            && (client->currentCtxInfo->pContext->lists.currentIndex != 0 ||
+             client->currentCtxInfo->pContext->current.inBeginEnd ||
+             client->currentCtxInfo->pContext->occlusion.currentQueryObject)) {
         return GL_TRUE;
     }
     else {
@@ -542,15 +543,14 @@ crServerServiceClient(const RunQueue *qEntry)
         if (cr_server.curClient) {
              int clientWindow = cr_server.curClient->currentWindow;
              int clientContext = cr_server.curClient->currentContextNumber;
-             if (clientWindow && clientWindow != cr_server.currentWindow) {
+             CRContextInfo *clientCtxInfo = cr_server.curClient->currentCtxInfo;
+             if (clientCtxInfo != cr_server.currentCtxInfo) {
                  crServerDispatchMakeCurrent(clientWindow, 0, clientContext);
                  /*
                  CRASSERT(cr_server.currentWindow == clientWindow);
                  */
              }
         }
-
-        crStateMakeCurrent( cr_server.curClient->currentCtx );
 #endif
 
         /* Force scissor, viewport and projection matrix update in

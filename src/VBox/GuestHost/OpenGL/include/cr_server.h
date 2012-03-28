@@ -103,6 +103,18 @@ typedef struct {
     void *pvOutputRedirectInstance;
 } CRMuralInfo;
 
+typedef struct {
+    char   *pszDpyName;
+    GLint   visualBits;
+    int32_t internalID;
+} CRCreateInfo_t;
+
+typedef struct {
+    CRContext *pContext;
+    int SpuContext;
+    CRCreateInfo_t CreateInfo;
+} CRContextInfo;
+
 /**
  * A client is basically an upstream Cr Node (connected via mothership)
  */
@@ -112,7 +124,7 @@ typedef struct _crclient {
     int number;        /**< a unique number for each client */
     uint64_t pid;      /*guest pid*/
     GLint currentContextNumber;
-    CRContext *currentCtx;
+    CRContextInfo *currentCtxInfo;
     GLint currentWindow;
     CRMuralInfo *currentMural;
     GLint windowList[CR_MAX_WINDOWS];
@@ -172,6 +184,7 @@ typedef struct {
     GLboolean firstCallMakeCurrent;
     GLboolean bIsInLoadingState; /* Indicates if we're in process of loading VM snapshot */
     GLboolean bIsInSavingState; /* Indicates if we're in process of saving VM snapshot */
+    CRContextInfo *currentCtxInfo;
     GLint currentWindow;
     GLint currentNativeWindow;
 
@@ -194,13 +207,9 @@ typedef struct {
 
     CRLimitsState limits; /**< GL limits for any contexts we create */
 
-    int SpuContext; /**< Rendering context for the head SPU */
-    int SpuContextVisBits; /**< Context's visual attributes */
-    char *SpuContextDpyName; /**< Context's dpyName */
+    CRContextInfo MainContextInfo;
 
     CRHashTable *contextTable;  /**< hash table for rendering contexts */
-    CRHashTable *pContextCreateInfoTable; /**< hash table with contexts creation info */
-    CRContext *DummyContext;    /**< used when no other bound context */
 
     CRHashTable *programTable;  /**< for vertex programs */
     GLuint currentProgram;
@@ -266,6 +275,8 @@ typedef struct {
 
     GLboolean             bUseOutputRedirect;       /* Whether the output redirect was set. */
     CROutputRedirect      outputRedirect;
+
+    GLboolean             bUseMultipleContexts;
 } CRServer;
 
 

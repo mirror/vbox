@@ -345,6 +345,7 @@ useful_wgl_functions = [
 	"wglSwapBuffers",
 	"wglCreateContext",
 	"wglDeleteContext",
+	"wglShareLists",
 	"wglGetCurrentContext",
 	"wglChoosePixelFormat",
 	"wglDescribePixelFormat",

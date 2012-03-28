@@ -264,7 +264,7 @@ crServerDispatchBoundsInfoCR( const CRrecti *bounds, const GLbyte *payload,
 	}
 
 	if (!mural->viewportValidated) {
-		crServerComputeViewportBounds(&(cr_server.curClient->currentCtx->viewport),
+		crServerComputeViewportBounds(&(cr_server.curClient->currentCtxInfo->pContext->viewport),
 																	mural);
 	}
 
@@ -291,7 +291,7 @@ crServerDispatchBoundsInfoCR( const CRrecti *bounds, const GLbyte *payload,
 					bounds->y2 >= p->extents.y1 )
 				{
 					mural->curExtent = p->id;
-					if (cr_server.run_queue->client->currentCtx) {
+					if (cr_server.run_queue->client->currentCtxInfo && cr_server.run_queue->client->currentCtxInfo->pContext) {
 						crServerSetOutputBounds( mural, mural->curExtent );
 					}
 					crUnpack( data_ptr, data_ptr-1, num_opcodes, &(cr_server.dispatch) );
@@ -314,7 +314,7 @@ crServerDispatchBoundsInfoCR( const CRrecti *bounds, const GLbyte *payload,
 					 extent->imagewindow.y1 < bounds->y2))
 			{
 				mural->curExtent = i;
-				if (cr_server.run_queue->client->currentCtx) {
+				if (cr_server.run_queue->client->currentCtxInfo && cr_server.run_queue->client->currentCtxInfo->pContext) {
 					crServerSetOutputBounds( mural, i );
 				}
 				crUnpack( data_ptr, data_ptr-1, num_opcodes, &(cr_server.dispatch) );

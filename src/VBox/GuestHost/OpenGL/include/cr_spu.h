@@ -136,6 +136,7 @@ struct _SPUSTRUCT {
 /*@{*/
 typedef HGLRC (WGL_APIENTRY *wglCreateContextFunc_t)(HDC);
 typedef void (WGL_APIENTRY *wglDeleteContextFunc_t)(HGLRC);
+typedef BOOL (WGL_APIENTRY *wglShareListsFunc_t)(HGLRC,HGLRC);
 typedef BOOL (WGL_APIENTRY *wglMakeCurrentFunc_t)(HDC,HGLRC);
 typedef BOOL (WGL_APIENTRY *wglSwapBuffersFunc_t)(HDC);
 typedef int (WGL_APIENTRY *wglChoosePixelFormatFunc_t)(HDC, CONST PIXELFORMATDESCRIPTOR *);
@@ -314,6 +315,7 @@ typedef struct {
     wglGetProcAddressFunc_t wglGetProcAddress;
     wglCreateContextFunc_t wglCreateContext;
     wglDeleteContextFunc_t wglDeleteContext;
+    wglShareListsFunc_t wglShareLists;
     wglMakeCurrentFunc_t wglMakeCurrent;
     wglSwapBuffersFunc_t wglSwapBuffers;
     wglGetCurrentContextFunc_t wglGetCurrentContext;

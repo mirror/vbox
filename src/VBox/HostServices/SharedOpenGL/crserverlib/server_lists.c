@@ -79,7 +79,7 @@ crServerDispatchCallList( GLuint list )
 {
     list = TranslateListID( list );
 
-    if (cr_server.curClient->currentCtx->lists.mode == 0) {
+    if (cr_server.curClient->currentCtxInfo->pContext->lists.mode == 0) {
         /* we're not compiling, so execute the list now */
         /* Issue the list as-is */
         cr_server.head_spu->dispatch_table.CallList( list );
@@ -207,7 +207,7 @@ crServerDispatchCallLists( GLsizei n, GLenum type, const GLvoid *lists )
         type = GL_UNSIGNED_INT;
     }
 
-    if (cr_server.curClient->currentCtx->lists.mode == 0) {
+    if (cr_server.curClient->currentCtxInfo->pContext->lists.mode == 0) {
         /* we're not compiling, so execute the list now */
         /* Issue the list as-is */
         cr_server.head_spu->dispatch_table.CallLists( n, type, lists );

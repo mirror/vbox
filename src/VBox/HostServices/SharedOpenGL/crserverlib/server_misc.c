@@ -262,6 +262,7 @@ void crServerCreateInfoDeleteCB(void *data)
     CRCreateInfo_t *pCreateInfo = (CRCreateInfo_t *) data;
     if (pCreateInfo->pszDpyName)
         crFree(pCreateInfo->pszDpyName);
+    crFree(pCreateInfo);
 }
 
 GLint crServerGenerateID(GLint *pCounter)

@@ -81,12 +81,6 @@ typedef struct {
                         /* glProgramLocalParameterARB, glProgramParameterNV */
 } CRServerProgram;
 
-typedef struct {
-    char   *pszDpyName;
-    GLint   visualBits; 
-    int32_t internalID;
-} CRCreateInfo_t;
-
 void crServerSetVBoxConfiguration();
 void crServerSetVBoxConfigurationHGCM();
 void crServerInitDispatch(void);

@@ -23,6 +23,7 @@ static CRSharedState *gSharedState=NULL;
 
 static CRContext *defaultContext = NULL;
 
+static GLboolean g_bVBoxEnableDiffOnMakeCurrent = GL_TRUE;
 
 
 /**
@@ -487,6 +488,12 @@ void crStateDestroyContext( CRContext *ctx )
 #endif
 }
 
+GLboolean crStateEnableDiffOnMakeCurrent(GLboolean fEnable)
+{
+    GLboolean bOld = g_bVBoxEnableDiffOnMakeCurrent;
+    g_bVBoxEnableDiffOnMakeCurrent = fEnable;
+    return bOld;
+}
 
 void crStateMakeCurrent( CRContext *ctx )
 {
@@ -500,7 +507,7 @@ void crStateMakeCurrent( CRContext *ctx )
 
     CRASSERT(ctx);
 
-    if (current) {
+    if (g_bVBoxEnableDiffOnMakeCurrent && current) {
         /* Check to see if the differencer exists first,
            we may not have one, aka the packspu */
         if (diff_api.AlphaFunc)

@@ -239,7 +239,7 @@ crServerApplyBaseProjection(const CRmatrix *baseProj)
 		projMatrix = &cr_server.projectionMatrix[eye];
 	}
 	else
-		projMatrix = cr_server.curClient->currentCtx->transform.projectionStack.top;
+		projMatrix = cr_server.curClient->currentCtxInfo->pContext->transform.projectionStack.top;
 
 	cr_server.head_spu->dispatch_table.PushAttrib( GL_TRANSFORM_BIT );
 	cr_server.head_spu->dispatch_table.MatrixMode( GL_PROJECTION );
@@ -253,7 +253,7 @@ crServerApplyBaseProjection(const CRmatrix *baseProj)
 void
 crServerApplyViewMatrix(const CRmatrix *view)
 {
-	const CRmatrix *modelview = cr_server.curClient->currentCtx->transform.modelViewStack.top;
+	const CRmatrix *modelview = cr_server.curClient->currentCtxInfo->pContext->transform.modelViewStack.top;
 
 	cr_server.head_spu->dispatch_table.PushAttrib( GL_TRANSFORM_BIT );
 	cr_server.head_spu->dispatch_table.MatrixMode( GL_MODELVIEW );

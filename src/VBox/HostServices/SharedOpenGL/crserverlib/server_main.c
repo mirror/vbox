@@ -108,10 +108,13 @@ static void DeleteBarrierCallback( void *data )
 }
 
 
-static void deleteContextCallback( void *data )
+static void deleteContextInfoCallback( void *data )
 {
-    CRContext *c = (CRContext *) data;
-    crStateDestroyContext(c);
+    CRContextInfo *c = (CRContextInfo *) data;
+    crStateDestroyContext(c->pContext);
+    if (c->CreateInfo.pszDpyName)
+        crFree(c->CreateInfo.pszDpyName);
+    crFree(c);
 }
 
 
@@ -143,10 +146,9 @@ static void crServerTearDown( void )
     cr_server.barriers = NULL;
 
     /* Free all context info */
-    crFreeHashtable(cr_server.contextTable, deleteContextCallback);
+    crFreeHashtable(cr_server.contextTable, deleteContextInfoCallback);
 
     /* Free context/window creation info */
-    crFreeHashtable(cr_server.pContextCreateInfoTable, crServerCreateInfoDeleteCB);
     crFreeHashtable(cr_server.pWindowCreateInfoTable, crServerCreateInfoDeleteCB);
 
     /* Free vertex programs */
@@ -274,6 +276,18 @@ crServerInit(int argc, char *argv[])
     }
 #endif
 
+#ifndef DEBUG_misha
+    cr_server.bUseMultipleContexts = GL_FALSE;
+#else
+    cr_server.bUseMultipleContexts = GL_FALSE;
+#endif
+
+    if (cr_server.bUseMultipleContexts)
+    {
+        crInfo("Info: using multiple contexts!");
+        crDebug("Debug: using multiple contexts!");
+    }
+
     cr_server.firstCallCreateContext = GL_TRUE;
     cr_server.firstCallMakeCurrent = GL_TRUE;
 
@@ -297,9 +311,9 @@ crServerInit(int argc, char *argv[])
      * Default context
      */
     cr_server.contextTable = crAllocHashtable();
-    cr_server.DummyContext = crStateCreateContext( &cr_server.limits,
+    cr_server.MainContextInfo.pContext = crStateCreateContext( &cr_server.limits,
                                                    CR_RGB_BIT | CR_DEPTH_BIT, NULL );
-    cr_server.curClient->currentCtx = cr_server.DummyContext;
+    cr_server.curClient->currentCtxInfo = &cr_server.MainContextInfo;
 
     crServerInitDispatch();
     crStateDiffAPI( &(cr_server.head_spu->dispatch_table) );
@@ -333,6 +347,18 @@ GLboolean crVBoxServerInit(void)
     }
 #endif
 
+#ifndef DEBUG_misha
+    cr_server.bUseMultipleContexts = GL_FALSE;
+#else
+    cr_server.bUseMultipleContexts = GL_FALSE;
+#endif
+
+    if (cr_server.bUseMultipleContexts)
+    {
+        crInfo("Info: using multiple contexts!");
+        crDebug("Debug: using multiple contexts!");
+    }
+
     crNetInit(crServerRecv, crServerClose);
 
     cr_server.firstCallCreateContext = GL_TRUE;
@@ -340,6 +366,7 @@ GLboolean crVBoxServerInit(void)
 
     cr_server.bIsInLoadingState = GL_FALSE;
     cr_server.bIsInSavingState  = GL_FALSE;
+
 
     cr_server.pCleanupClient = NULL;
 
@@ -366,9 +393,9 @@ GLboolean crVBoxServerInit(void)
      * Default context
      */
     cr_server.contextTable = crAllocHashtable();
-    cr_server.DummyContext = crStateCreateContext( &cr_server.limits,
+    cr_server.MainContextInfo.pContext = crStateCreateContext( &cr_server.limits,
                                                    CR_RGB_BIT | CR_DEPTH_BIT, NULL );
-    cr_server.pContextCreateInfoTable = crAllocHashtable();
+//    cr_server.pContextCreateInfoTable = crAllocHashtable();
     cr_server.pWindowCreateInfoTable = crAllocHashtable();
 
     crServerSetVBoxConfigurationHGCM();
@@ -401,7 +428,7 @@ int32_t crVBoxServerAddClient(uint32_t u32ClientID)
     crDebug("crServer: AddClient u32ClientID=%d", u32ClientID);
 
     newClient->spu_id = 0;
-    newClient->currentCtx = cr_server.DummyContext;
+    newClient->currentCtxInfo = &cr_server.MainContextInfo;
     newClient->currentContextNumber = -1;
     newClient->conn = crNetAcceptClient(cr_server.protocol, NULL,
                                         cr_server.tcpip_port,
@@ -685,7 +712,7 @@ static void crVBoxServerSaveMuralCB(unsigned long key, void *data1, void *data2)
 /* @todo add hashtable walker with result info and intermediate abort */
 static void crVBoxServerSaveCreateInfoCB(unsigned long key, void *data1, void *data2)
 {
-    CRCreateInfo_t *pCreateInfo = (CRCreateInfo_t *) data1;
+    CRCreateInfo_t *pCreateInfo = (CRCreateInfo_t *)data1;
     PSSMHANDLE pSSM = (PSSMHANDLE) data2;
     int32_t rc;
 
@@ -704,6 +731,13 @@ static void crVBoxServerSaveCreateInfoCB(unsigned long key, void *data1, void *d
     }
 }
 
+static void crVBoxServerSaveCreateInfoFromCtxInfoCB(unsigned long key, void *data1, void *data2)
+{
+    CRContextInfo *pContextInfo = (CRContextInfo *)data1;
+    CRCreateInfo_t *pCreateInfo = &pContextInfo->CreateInfo;
+    crVBoxServerSaveCreateInfoCB(key, pCreateInfo, data2);
+}
+
 static void crVBoxServerSyncTextureCB(unsigned long key, void *data1, void *data2)
 {
     CRTextureObj *pTexture = (CRTextureObj *) data1;
@@ -715,7 +749,8 @@ static void crVBoxServerSyncTextureCB(unsigned long key, void *data1, void *data
 
 static void crVBoxServerSaveContextStateCB(unsigned long key, void *data1, void *data2)
 {
-    CRContext *pContext = (CRContext *) data1;
+    CRContextInfo *pContextInfo = (CRContextInfo *) data1;
+    CRContext *pContext = pContextInfo->pContext;
     PSSMHANDLE pSSM = (PSSMHANDLE) data2;
     int32_t rc;
 
@@ -731,7 +766,7 @@ static void crVBoxServerSaveContextStateCB(unsigned long key, void *data1, void 
     if (cr_server.curClient)
     {
         unsigned long id;
-        if (!crHashtableGetDataKey(cr_server.contextTable, pContext, &id))
+        if (!crHashtableGetDataKey(cr_server.contextTable, pContextInfo, &id))
         {
             crWarning("No client id for server ctx %d", pContext->id);
         }
@@ -785,10 +820,10 @@ DECLEXPORT(int32_t) crVBoxServerSaveState(PSSMHANDLE pSSM)
     }
 
     /* Save rendering contexts creation info */
-    ui32 = crHashtableNumElements(cr_server.pContextCreateInfoTable);
+    ui32 = crHashtableNumElements(cr_server.contextTable);
     rc = SSMR3PutU32(pSSM, (uint32_t) ui32);
     AssertRCReturn(rc, rc);
-    crHashtableWalk(cr_server.pContextCreateInfoTable, crVBoxServerSaveCreateInfoCB, pSSM);
+    crHashtableWalk(cr_server.contextTable, crVBoxServerSaveCreateInfoFromCtxInfoCB, pSSM);
 
 #ifdef CR_STATE_NO_TEXTURE_IMAGE_STORE
     /* Save current win and ctx IDs, as we'd rebind contexts when saving textures */
@@ -854,9 +889,9 @@ DECLEXPORT(int32_t) crVBoxServerSaveState(PSSMHANDLE pSSM)
             rc = SSMR3PutMem(pSSM, pClient, sizeof(*pClient));
             AssertRCReturn(rc, rc);
 
-            if (pClient->currentCtx && pClient->currentContextNumber>=0)
+            if (pClient->currentCtxInfo && pClient->currentCtxInfo->pContext && pClient->currentContextNumber>=0)
             {
-                b = crHashtableGetDataKey(cr_server.contextTable, pClient->currentCtx, &key);
+                b = crHashtableGetDataKey(cr_server.contextTable, pClient->currentCtxInfo, &key);
                 CRASSERT(b);
                 rc = SSMR3PutMem(pSSM, &key, sizeof(key));
                 AssertRCReturn(rc, rc);
@@ -875,6 +910,14 @@ DECLEXPORT(int32_t) crVBoxServerSaveState(PSSMHANDLE pSSM)
     cr_server.bIsInSavingState = GL_FALSE;
 
     return VINF_SUCCESS;
+}
+
+static DECLCALLBACK(CRContext*) crVBoxServerGetContextCB(void* pvData)
+{
+    CRContextInfo* pContextInfo = (CRContextInfo*)pvData;
+    CRASSERT(pContextInfo);
+    CRASSERT(pContextInfo->pContext);
+    return pContextInfo->pContext;
 }
 
 DECLEXPORT(int32_t) crVBoxServerLoadState(PSSMHANDLE pSSM, uint32_t version)
@@ -914,6 +957,7 @@ DECLEXPORT(int32_t) crVBoxServerLoadState(PSSMHANDLE pSSM, uint32_t version)
         CRCreateInfo_t createInfo;
         char psz[200];
         GLint ctxID;
+        CRContextInfo* pContextInfo;
         CRContext* pContext;
 
         rc = SSMR3GetMem(pSSM, &key, sizeof(key));
@@ -931,23 +975,28 @@ DECLEXPORT(int32_t) crVBoxServerLoadState(PSSMHANDLE pSSM, uint32_t version)
         ctxID = crServerDispatchCreateContextEx(createInfo.pszDpyName, createInfo.visualBits, 0, key, createInfo.internalID);
         CRASSERT((int64_t)ctxID == (int64_t)key);
 
-        pContext = (CRContext*) crHashtableSearch(cr_server.contextTable, key);
-        CRASSERT(pContext);
+        pContextInfo = (CRContextInfo*) crHashtableSearch(cr_server.contextTable, key);
+        CRASSERT(pContextInfo);
+        CRASSERT(pContextInfo->pContext);
+        pContext = pContextInfo->pContext;
         pContext->shared->id=-1;
     }
 
     /* Restore context state data */
     for (ui=0; ui<uiNumElems; ++ui)
     {
+        CRContextInfo* pContextInfo;
         CRContext *pContext;
 
         rc = SSMR3GetMem(pSSM, &key, sizeof(key));
         AssertRCReturn(rc, rc);
 
-        pContext = (CRContext*) crHashtableSearch(cr_server.contextTable, key);
-        CRASSERT(pContext);
+        pContextInfo = (CRContextInfo*) crHashtableSearch(cr_server.contextTable, key);
+        CRASSERT(pContextInfo);
+        CRASSERT(pContextInfo->pContext);
+        pContext = pContextInfo->pContext;
 
-        rc = crStateLoadContext(pContext, cr_server.contextTable, pSSM);
+        rc = crStateLoadContext(pContext, cr_server.contextTable, crVBoxServerGetContextCB, pSSM);
         AssertRCReturn(rc, rc);
     }
 
@@ -1055,18 +1104,19 @@ DECLEXPORT(int32_t) crVBoxServerLoadState(PSSMHANDLE pSSM, uint32_t version)
             *pClient = client;
 
             pClient->currentContextNumber = -1;
-            pClient->currentCtx = cr_server.DummyContext;
+            pClient->currentCtxInfo = &cr_server.MainContextInfo;
             pClient->currentMural = NULL;
             pClient->currentWindow = -1;
 
             cr_server.curClient = pClient;
 
-            if (client.currentCtx && client.currentContextNumber>=0)
+            if (client.currentCtxInfo && client.currentContextNumber>=0)
             {
                 rc = SSMR3GetMem(pSSM, &ctxID, sizeof(ctxID));
                 AssertRCReturn(rc, rc);
-                client.currentCtx = (CRContext*) crHashtableSearch(cr_server.contextTable, ctxID);
-                CRASSERT(client.currentCtx);
+                client.currentCtxInfo = (CRContextInfo*) crHashtableSearch(cr_server.contextTable, ctxID);
+                CRASSERT(client.currentCtxInfo);
+                CRASSERT(client.currentCtxInfo->pContext);
                 //pClient->currentCtx = client.currentCtx;
                 //pClient->currentContextNumber = ctxID;
             }
@@ -1093,17 +1143,17 @@ DECLEXPORT(int32_t) crVBoxServerLoadState(PSSMHANDLE pSSM, uint32_t version)
 
             crServerDispatchMakeCurrent(winID, 0, ctxID);
 
-            crHashtableWalk(client.currentCtx->shared->textureTable, crVBoxServerSyncTextureCB, client.currentCtx);
+            crHashtableWalk(client.currentCtxInfo->pContext->shared->textureTable, crVBoxServerSyncTextureCB, client.currentCtxInfo->pContext);
 
-            crStateTextureObjectDiff(client.currentCtx, NULL, NULL, &client.currentCtx->texture.base1D, GL_TRUE);
-            crStateTextureObjectDiff(client.currentCtx, NULL, NULL, &client.currentCtx->texture.base2D, GL_TRUE);
-            crStateTextureObjectDiff(client.currentCtx, NULL, NULL, &client.currentCtx->texture.base3D, GL_TRUE);
+            crStateTextureObjectDiff(client.currentCtxInfo->pContext, NULL, NULL, &client.currentCtxInfo->pContext->texture.base1D, GL_TRUE);
+            crStateTextureObjectDiff(client.currentCtxInfo->pContext, NULL, NULL, &client.currentCtxInfo->pContext->texture.base2D, GL_TRUE);
+            crStateTextureObjectDiff(client.currentCtxInfo->pContext, NULL, NULL, &client.currentCtxInfo->pContext->texture.base3D, GL_TRUE);
 #ifdef CR_ARB_texture_cube_map
-            crStateTextureObjectDiff(client.currentCtx, NULL, NULL, &client.currentCtx->texture.baseCubeMap, GL_TRUE);
+            crStateTextureObjectDiff(client.currentCtxInfo->pContext, NULL, NULL, &client.currentCtxInfo->pContext->texture.baseCubeMap, GL_TRUE);
 #endif
 #ifdef CR_NV_texture_rectangle
             //@todo this doesn't work as expected
-            //crStateTextureObjectDiff(client.currentCtx, NULL, NULL, &client.currentCtx->texture.baseRect, GL_TRUE);
+            //crStateTextureObjectDiff(client.currentCtxInfo->pContext, NULL, NULL, &client.currentCtxInfo->pContext->texture.baseRect, GL_TRUE);
 #endif
             /*cr_server.head_spu->dispatch_table.Materialfv(GL_FRONT_AND_BACK, GL_AMBIENT, amb);
             cr_server.head_spu->dispatch_table.LightModelfv(GL_LIGHT_MODEL_AMBIENT, amb);
@@ -1140,7 +1190,7 @@ DECLEXPORT(int32_t) crVBoxServerLoadState(PSSMHANDLE pSSM, uint32_t version)
                 CRASSERT(createInfo);
                 tmpCtx = crStateCreateContext(NULL, createInfo->visualBits, NULL);
                 CRASSERT(tmpCtx);
-                crStateDiffContext(tmpCtx, client.currentCtx);
+                crStateDiffContext(tmpCtx, client.currentCtxInfo->pContext);
                 crStateDestroyContext(tmpCtx);*/
             }
         }
@@ -1263,12 +1313,13 @@ DECLEXPORT(int32_t) crVBoxServerMapScreen(int sIndex, int32_t x, int32_t y, uint
         for (i = 0; i < cr_server.numClients; i++)
         {
             cr_server.curClient = cr_server.clients[i];
-            if (cr_server.curClient->currentCtx
-                && (cr_server.curClient->currentCtx->buffer.pFrontImg || cr_server.curClient->currentCtx->buffer.pBackImg)
+            if (cr_server.curClient->currentCtxInfo
+                && cr_server.curClient->currentCtxInfo->pContext
+                && (cr_server.curClient->currentCtxInfo->pContext->buffer.pFrontImg || cr_server.curClient->currentCtxInfo->pContext->buffer.pBackImg)
                 && cr_server.curClient->currentMural
                 && cr_server.curClient->currentMural->screenId == sIndex
-                && cr_server.curClient->currentCtx->buffer.storedHeight == h
-                && cr_server.curClient->currentCtx->buffer.storedWidth == w)
+                && cr_server.curClient->currentCtxInfo->pContext->buffer.storedHeight == h
+                && cr_server.curClient->currentCtxInfo->pContext->buffer.storedWidth == w)
             {
                 int clientWindow = cr_server.curClient->currentWindow;
                 int clientContext = cr_server.curClient->currentContextNumber;
@@ -1278,7 +1329,7 @@ DECLEXPORT(int32_t) crVBoxServerMapScreen(int sIndex, int32_t x, int32_t y, uint
                     crServerDispatchMakeCurrent(clientWindow, 0, clientContext);
                 }
 
-                crStateApplyFBImage(cr_server.curClient->currentCtx);
+                crStateApplyFBImage(cr_server.curClient->currentCtxInfo->pContext);
             }
         }
         cr_server.curClient = NULL;
