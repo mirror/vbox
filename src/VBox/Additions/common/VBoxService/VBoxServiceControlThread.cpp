@@ -235,17 +235,20 @@ int VBoxServiceControlThreadStop(const PVBOXSERVICECTRLTHREAD pThread)
  * @return  IPRT status code.
  * @param   pThread             Thread to wait shutting down for.
  * @param   RTMSINTERVAL        Timeout in ms to wait for shutdown.
+ * @param   prc                 Where to store the thread's return code. Optional.
  */
 int VBoxServiceControlThreadWait(const PVBOXSERVICECTRLTHREAD pThread,
-                                 RTMSINTERVAL msTimeout)
+                                 RTMSINTERVAL msTimeout, int *prc)
 {
     AssertPtrReturn(pThread, VERR_INVALID_POINTER);
+    /* prc is optional. */
+
     int rc = VINF_SUCCESS;
     if (   pThread->Thread != NIL_RTTHREAD
         && ASMAtomicReadBool(&pThread->fStarted))
     {
-        VBoxServiceVerbose(2, "[PID %u]: Waiting for shutdown ...\n",
-                           pThread->uPID);
+        VBoxServiceVerbose(2, "[PID %u]: Waiting for shutdown of pThread=0x%p = \"%s\"...\n",
+                           pThread->uPID, pThread, pThread->pszCmd);
 
         /* Wait a bit ... */
         int rcThread;
@@ -257,12 +260,10 @@ int VBoxServiceControlThreadWait(const PVBOXSERVICECTRLTHREAD pThread,
         }
         else
         {
-            if (RT_FAILURE(rcThread))
-            {
-                VBoxServiceError("[PID %u]: Shutdown returned error rc=%Rrc\n",
-                                 pThread->uPID, rcThread);
-                rc = rcThread;
-            }
+            VBoxServiceVerbose(3, "[PID %u]: Thread reported exit code=%Rrc\n",
+                               pThread->uPID, rcThread);
+            if (prc)
+                *prc = rcThread;
         }
     }
     return rc;
@@ -1378,7 +1379,8 @@ static int VBoxServiceControlThreadCreateProcess(const char *pszExec, const char
 static int VBoxServiceControlThreadProcessWorker(PVBOXSERVICECTRLTHREAD pThread)
 {
     AssertPtrReturn(pThread, VERR_INVALID_POINTER);
-    VBoxServiceVerbose(3, "Thread of process \"%s\" started\n", pThread->pszCmd);
+    VBoxServiceVerbose(3, "Thread of process pThread=0x%p = \"%s\" started\n",
+                       pThread, pThread->pszCmd);
 
     int rc = VBoxServiceControlListSet(VBOXSERVICECTRLTHREADLIST_RUNNING, pThread);
     AssertRC(rc);

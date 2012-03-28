@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2007-2011 Oracle Corporation
+ * Copyright (C) 2007-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -396,7 +396,8 @@ extern int                      VBoxServiceControlThreadStart(uint32_t uContext,
                                                               PVBOXSERVICECTRLPROCESS pProcess);
 extern int                      VBoxServiceControlThreadPerform(uint32_t uPID, PVBOXSERVICECTRLREQUEST pRequest);
 extern int                      VBoxServiceControlThreadStop(const PVBOXSERVICECTRLTHREAD pThread);
-extern int                      VBoxServiceControlThreadWait(const PVBOXSERVICECTRLTHREAD pThread, RTMSINTERVAL msTimeout);
+extern int                      VBoxServiceControlThreadWait(const PVBOXSERVICECTRLTHREAD pThread,
+                                                             RTMSINTERVAL msTimeout, int *prc);
 extern int                      VBoxServiceControlThreadFree(PVBOXSERVICECTRLTHREAD pThread);
 /* Request handling. */
 extern int                      VBoxServiceControlThreadRequestAlloc(PVBOXSERVICECTRLREQUEST   *ppReq,
