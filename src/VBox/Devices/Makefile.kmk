@@ -639,12 +639,11 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
   endif
  endif
 
+ VBoxDD_DEFS.win       += VBOX_WITH_WIN_PARPORT_SUP
  VBoxDD_SOURCES.win    += \
  	Audio/dsoundaudio.c \
- 	Serial/DrvHostSerial.cpp
- ifdef VBOX_WITH_WIN_PARPORT_SUP
-  VBoxDD_SOURCES.win += Parallel/DrvHostParallel.cpp
- endif
+ 	Serial/DrvHostSerial.cpp \
+	Parallel/DrvHostParallel.cpp
 
  if defined(VBOX_WITH_NETFLT)
   VBoxDD_DEFS          += VBOX_WITH_NETFLT
@@ -912,6 +911,7 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
  VBoxDDR0_TEMPLATE       = VBoxR0
  VBoxDDR0_DEFS.darwin.x86= VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0 VBOX_WITH_2X_4GB_ADDR_SPACE
  VBoxDDR0_DEFS           = IN_RT_R0 VBOX_WITH_HGCM # - WTF is IN_RT_R0 doing here?
+ VBoxDDR0_DEFS.win    += VBOX_WITH_WIN_PARPORT_SUP
  VBoxDDR0_INCS           = build
  VBoxDDR0_SDKS.win 	 = WINPSDK W2K3DDK
  VBoxDDR0_SOURCES        = \
@@ -936,9 +936,8 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
  	\
  	Network/DrvIntNet.cpp \
  	Network/DrvDedicatedNic.cpp
-  ifdef VBOX_WITH_WIN_PARPORT_SUP
-	VBoxDDR0_SOURCES += Parallel/DrvHostParallel.cpp
-  endif
+
+ VBoxDDR0_SOURCES.win += Parallel/DrvHostParallel.cpp
 
  ifdef VBOX_WITH_E1000
   VBoxDDR0_DEFS         += VBOX_WITH_E1000
