@@ -1687,7 +1687,7 @@ void cocoaGLCtxCreate(NativeNSOpenGLContextRef *ppCtx, GLbitfield fVisParams, Na
 
     if (pFmt)
     {
-        *ppCtx = [[OverlayOpenGLContext alloc] initWithFormat:pFmt shareContext:nil];
+        *ppCtx = [[OverlayOpenGLContext alloc] initWithFormat:pFmt shareContext:pSharedCtx];
 
         /* Enable multi threaded OpenGL engine */
         /*
