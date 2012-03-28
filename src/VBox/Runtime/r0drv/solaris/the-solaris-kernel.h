@@ -54,6 +54,8 @@
 #include <sys/archsystm.h>
 #include <sys/callo.h>
 #include <sys/kobj.h>
+#include <sys/ctf_api.h>
+#include <sys/modctl.h>
 #include "vbi.h"
 
 #undef u /* /usr/include/sys/user.h:249:1 is where this is defined to (curproc->p_user). very cool. */
