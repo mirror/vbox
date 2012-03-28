@@ -92,7 +92,7 @@ static int rtR0DbgKrnlInfoModRetain(char *pszModule, modctl_t **ppMod, ctf_file_
              */
             int err;
             mutex_enter(&mod_lock);
-            *ppCTF = ctf_modopen(*ppMod->mod_mp, &err);
+            *ppCTF = ctf_modopen(((modctl_t *)*ppMod)->mod_mp, &err);
             mutex_exit(&mod_lock);
 
             if (*ppCTF)
