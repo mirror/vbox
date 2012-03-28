@@ -185,7 +185,7 @@ RTR0DECL(uint32_t) RTR0DbgKrnlInfoRelease(RTDBGKRNLINFO hKrnlInfo)
     if (cRefs == 0)
     {
         pThis->u32Magic = ~RTDBGKRNLINFO_MAGIC;
-        rtR0DbgKrnlInfoModRelease(pThis->pGenUnixCTF, pThis->pGenUnixCTF);
+        rtR0DbgKrnlInfoModRelease(pThis->pGenUnixMod, pThis->pGenUnixCTF);
         RTMemFree(pThis);
     }
     return cRefs;
