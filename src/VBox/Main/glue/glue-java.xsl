@@ -4020,6 +4020,7 @@ public class VirtualBoxManager
     }
     public void cleanup()
     {
+        disconnect();
         deinitPerThread();
     }
 
@@ -4053,6 +4054,17 @@ public class VirtualBoxManager
 
     public void waitForEvents(long tmo)
     {
+    }
+    
+    protected void finalize() throws Throwable 
+    {
+        try {
+            cleanup();
+        } catch(Exception e) {
+        }
+        finally {
+            super.finalize();
+        }
     }
 }
 ]]></xsl:text>
