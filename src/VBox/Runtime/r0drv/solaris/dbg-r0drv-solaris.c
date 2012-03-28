@@ -37,6 +37,7 @@
 #include <iprt/log.h>
 #include <iprt/mem.h>
 #include <iprt/string.h>
+#include <iprt/thread.h>
 
 #include <sys/kobj.h>
 #include <sys/thread.h>
@@ -47,9 +48,12 @@
 /*******************************************************************************
 *   Structures and Typedefs                                                    *
 *******************************************************************************/
+/**
+ * Solaris kernel debug info instance data.
+ */
 typedef struct RTDBGKRNLINFOINT
 {
-    /** Magic value (). */
+    /** Magic value (RTDBGKRNLINFO_MAGIC). */
     uint32_t volatile   u32Magic;
     /** The number of threads referencing this object. */
     uint32_t volatile   cRefs;
@@ -58,7 +62,9 @@ typedef struct RTDBGKRNLINFOINT
     /** Pointer to the genunix module handle. */
     modctl_t           *pGenUnixMod;
 } RTDBGKRNLINFOINT;
+/** Pointer to the solaris kernel debug info instance data. */
 typedef struct RTDBGKRNLINFOINT *PRTDBGKRNLINFOINT;
+
 /** Magic value for RTDBGKRNLINFOINT::u32Magic. (John Carmack) */
 #define RTDBGKRNLINFO_MAGIC       UINT32_C(0x19700820)
 
@@ -73,7 +79,14 @@ RTR0DECL(int) RTR0DbgKrnlInfoOpen(PRTDBGKRNLINFO phKrnlInfo, uint32_t fFlags)
     if (!pThis)
         return VERR_NO_MEMORY;
 
-    int rc = VINF_SUCCESS;
+    int rc;
+    /** @todo r=bird: Where do we release this module? I see other users (crypto) of
+     * this API mod_release_mod().  Not sure if this is a real issue with a primary 
+     * module like genunix, though.  Another thing, I noticed that mod_hold_by_name 
+     * will (a) allocated a module if not found and (b) replace the filename with 
+     * what you hand in under certain conditions.  These issues doesn't apply with 
+     * genunix, but is worth keeping in mind if other modules needs to be held.  A 
+     * safer alternative would probably be mod_name_to_modid + mod_hold_by_id. */ 
     pThis->pGenUnixMod = mod_hold_by_name("genunix");
     if (RT_LIKELY(pThis->pGenUnixMod))
     {
@@ -93,11 +106,9 @@ RTR0DECL(int) RTR0DbgKrnlInfoOpen(PRTDBGKRNLINFO phKrnlInfo, uint32_t fFlags)
             *phKrnlInfo = pThis;
             return VINF_SUCCESS;
         }
-        else
-        {
-            LogRel(("RTR0DbgKrnlInfoOpen: ctf_modopen failed. err=%d\n", err));
-            rc = VERR_INTERNAL_ERROR_2;
-        }
+
+        LogRel(("RTR0DbgKrnlInfoOpen: ctf_modopen failed. err=%d\n", err));
+        rc = VERR_INTERNAL_ERROR_2;
     }
     else
     {
@@ -115,15 +126,13 @@ RTR0DECL(uint32_t) RTR0DbgKrnlInfoRetain(RTDBGKRNLINFO hKrnlInfo)
     uint32_t cRefs = ASMAtomicIncU32(&pThis->cRefs);
     Assert(cRefs && cRefs < 100000);
     NOREF(cRefs);
+    return cRefs;
 }
 
-static void rtR0DbgKrnlInfoDestroy(RTDBGKRNLINFO hKrnlInfo)
-{
-    PRTDBGKRNLINFOINT pThis = hKrnlInfo;
-    AssertPtrReturnVoid(pThis);
-    AssertPtrReturnVoid(pThis->u32Magic == RTDBGKRNLINFO_MAGIC);
-    RT_ASSERT_PREEMPTIBLE();
 
+static void rtR0DbgKrnlInfoDestroy(PRTDBGKRNLINFOINT pThis)
+{
+    pThis->u32Magic = ~RTDBGKRNLINFO_MAGIC;
     ctf_close(pThis->pGenUnixCTF);
     mod_release_mod(pThis->pGenUnixMod);
     RTMemFree(pThis);
@@ -137,13 +146,15 @@ RTR0DECL(uint32_t) RTR0DbgKrnlInfoRelease(RTDBGKRNLINFO hKrnlInfo)
     AssertMsgReturn(pThis->u32Magic == RTDBGKRNLINFO_MAGIC, ("%p: u32Magic=%RX32\n", pThis, pThis->u32Magic), UINT32_MAX);
     RT_ASSERT_PREEMPTIBLE();
 
-    if (ASMAtomicDecU32(&pThis->cRefs) == 0)
+    uint32_t cRefs = ASMAtomicDecU32(&pThis->cRefs);
+    if (cRefs == 0)
         rtR0DbgKrnlInfoDestroy(pThis);
+    return cRefs;
 }
 
 
 RTR0DECL(int) RTR0DbgKrnlInfoQueryMember(RTDBGKRNLINFO hKrnlInfo, const char *pszStructure,
-                                               const char *pszMember, size_t *poffMember)
+                                         const char *pszMember, size_t *poffMember)
 {
     PRTDBGKRNLINFOINT pThis = hKrnlInfo;
     AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
@@ -178,10 +189,10 @@ RTR0DECL(int) RTR0DbgKrnlInfoQuerySymbol(RTDBGKRNLINFO hKrnlInfo, const char *ps
     AssertMsgReturn(pThis->u32Magic == RTDBGKRNLINFO_MAGIC, ("%p: u32Magic=%RX32\n", pThis, pThis->u32Magic), VERR_INVALID_HANDLE);
     AssertPtrReturn(pszSymbol, VERR_INVALID_PARAMETER);
     AssertPtrReturn(ppvSymbol, VERR_INVALID_PARAMETER);
+    AssertReturn(!pszModule, VERR_MODULE_NOT_FOUND);
     RT_ASSERT_PREEMPTIBLE();
 
-    NOREF(pszModule);
-    *ppvSymbol = kobj_getsymvalue(pszSymbol, 1 /* only kernel */);
+    *ppvSymbol = (void *)kobj_getsymvalue((char *)pszSymbol, 1 /* only kernel */);
     if (*ppvSymbol)
         return VINF_SUCCESS;
 
