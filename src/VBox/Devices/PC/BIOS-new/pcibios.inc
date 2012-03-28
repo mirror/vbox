@@ -151,7 +151,7 @@ pci_real_devloop:
 		dec	si
 pci_real_nextdev:
 		inc	ebx
-		cmp	ebx, 10000h
+		cmp	ebx, MAX_BUSDEVFN
 		jne	pci_real_devloop
 
 		mov	dx, cx
@@ -177,7 +177,7 @@ pci_real_devloop2:
 		dec	si
 pci_real_nextdev2:
 		inc	ebx
-		cmp	ebx, 10000h
+		cmp	ebx, MAX_BUSDEVFN
 		jne	pci_real_devloop2
 
 		mov	ax, 8603h

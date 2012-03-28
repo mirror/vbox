@@ -133,7 +133,7 @@ pci_pro_devloop:
 		dec	si
 pci_pro_nextdev:
 		inc	ebx
-		cmp	ebx, 10000h
+		cmp	ebx, MAX_BUSDEVFN 
 		jne	pci_pro_devloop
 
 		mov	ah, 86h
@@ -159,7 +159,7 @@ pci_pro_devloop2:
 		dec	si
 pci_pro_nextdev2:
 		inc	ebx
-		cmp	ebx, 10000h
+		cmp	ebx, MAX_BUSDEVFN 
 		jne	pci_pro_devloop2
 
 		mov	ah, 86h
