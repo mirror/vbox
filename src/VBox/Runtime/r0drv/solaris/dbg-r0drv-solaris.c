@@ -74,7 +74,7 @@ typedef struct RTDBGKRNLINFOINT *PRTDBGKRNLINFOINT;
  *
  * @return IPRT status code.
  */
-static int rtr0DbgKrnlInfoModRetain(char *pszModule, modclt_t **ppMod, ctf_file_t **ppCTF)
+static int rtR0DbgKrnlInfoModRetain(char *pszModule, modclt_t **ppMod, ctf_file_t **ppCTF)
 {
     AssertPtrReturn(pszModule, VERR_INVALID_PARAMETER);
     AssertPtrReturn(ppMod, VERR_INVALID_PARAMETER);
@@ -99,7 +99,7 @@ static int rtr0DbgKrnlInfoModRetain(char *pszModule, modclt_t **ppMod, ctf_file_
                 return VINF_SUCCESS;
             else
             {
-                LogRel(("rtr0DbgKrnlInfoModRetain: ctf_modopen failed for '%s' err=%d\n", pszModule, err));
+                LogRel(("rtR0DbgKrnlInfoModRetain: ctf_modopen failed for '%s' err=%d\n", pszModule, err));
                 rc = VERR_INTERNAL_ERROR_3;
             }
 
@@ -107,13 +107,13 @@ static int rtr0DbgKrnlInfoModRetain(char *pszModule, modclt_t **ppMod, ctf_file_
         }
         else
         {
-            LogRel(("rtr0DbgKrnlInfoModRetain: mod_hold_by_id failed for '%s'\n" pszModule));
+            LogRel(("rtR0DbgKrnlInfoModRetain: mod_hold_by_id failed for '%s'\n" pszModule));
             rc = VERR_INTERNAL_ERROR_2;
         }
     }
     else
     {
-        LogRel(("rtr0DbgKrnlInfoModRetain: mod_name_to_modid failed for '%s'\n", pszModule));
+        LogRel(("rtR0DbgKrnlInfoModRetain: mod_name_to_modid failed for '%s'\n", pszModule));
         rc = VERR_INTERNAL_ERROR;
     }
 
@@ -127,7 +127,7 @@ static int rtr0DbgKrnlInfoModRetain(char *pszModule, modclt_t **ppMod, ctf_file_
  * @param pMod          Pointer to the module handle.
  * @param pCTF          Pointer to the module's CTF handle.
  */
-static void rtr0DbgKrnlInfoModRelease(modctl_t *pMod, ctf_file_t *pCTF)
+static void rtR0DbgKrnlInfoModRelease(modctl_t *pMod, ctf_file_t *pCTF)
 {
     AssertPtrReturnVoid(pMod);
     AssertPtrReturnVoid(pCTF);
@@ -148,7 +148,7 @@ RTR0DECL(int) RTR0DbgKrnlInfoOpen(PRTDBGKRNLINFO phKrnlInfo, uint32_t fFlags)
         return VERR_NO_MEMORY;
 
     char szGenUnixModName[] = "genunix";
-    int rc = rtr0DbgKrnlInfoModRetain(szGenUnixModName, &pThis->pGenUnixMod, &pThis->pGenUnixCTF);
+    int rc = rtR0DbgKrnlInfoModRetain(szGenUnixModName, &pThis->pGenUnixMod, &pThis->pGenUnixCTF);
     if (RT_SUCCESS(rc))
     {
         pThis->u32Magic       = RTDBGKRNLINFO_MAGIC;
@@ -158,7 +158,7 @@ RTR0DECL(int) RTR0DbgKrnlInfoOpen(PRTDBGKRNLINFO phKrnlInfo, uint32_t fFlags)
         return VINF_SUCCESS;
     }
 
-    LogRel(("RTR0DbgKrnlInfoOpen: rtr0DbgKrnlOpenMod failed rc=%d.\n", rc));
+    LogRel(("RTR0DbgKrnlInfoOpen: rtR0DbgKrnlInfoModRetain failed rc=%d.\n", rc));
     RTMemFree(pThis);
     return rc;
 }
@@ -185,7 +185,7 @@ RTR0DECL(uint32_t) RTR0DbgKrnlInfoRelease(RTDBGKRNLINFO hKrnlInfo)
     if (cRefs == 0)
     {
         pThis->u32Magic = ~RTDBGKRNLINFO_MAGIC;
-        rtr0DbgKrnlInfoModRelease(pThis->pGenUnixCTF, pThis->pGenUnixCTF);
+        rtR0DbgKrnlInfoModRelease(pThis->pGenUnixCTF, pThis->pGenUnixCTF);
         RTMemFree(pThis);
     }
     return cRefs;
