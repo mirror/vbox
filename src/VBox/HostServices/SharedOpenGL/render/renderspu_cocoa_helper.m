@@ -1616,7 +1616,7 @@
 * OpenGL context management
 *
 ********************************************************************************/
-void cocoaGLCtxCreate(NativeNSOpenGLContextRef *ppCtx, GLbitfield fVisParams)
+void cocoaGLCtxCreate(NativeNSOpenGLContextRef *ppCtx, GLbitfield fVisParams, NativeNSOpenGLContextRef pSharedCtx)
 {
     NSOpenGLPixelFormat *pFmt = nil;
 

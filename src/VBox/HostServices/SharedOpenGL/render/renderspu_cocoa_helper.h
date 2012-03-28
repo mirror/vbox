@@ -28,7 +28,7 @@ ADD_COCOA_NATIVE_REF(NSView);
 ADD_COCOA_NATIVE_REF(NSOpenGLContext);
 
 /* OpenGL context management */
-void cocoaGLCtxCreate(NativeNSOpenGLContextRef *ppCtx, GLbitfield fVisParams);
+void cocoaGLCtxCreate(NativeNSOpenGLContextRef *ppCtx, GLbitfield fVisParams, NativeNSOpenGLContextRef pSharedCtx);
 void cocoaGLCtxDestroy(NativeNSOpenGLContextRef pCtx);
 
 /* View management */
