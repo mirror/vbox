@@ -552,29 +552,29 @@ unsigned __stdcall VBoxDisplayThread(void *pInstance)
                  * and try to set it until success. New events will not be seen
                  * but a new resolution will be read in this poll loop.
                  */
-                for (;;)
+                VMMDevDisplayChangeRequest2 displayChangeRequest = {0};
+                displayChangeRequest.header.size        = sizeof(VMMDevDisplayChangeRequest2);
+                displayChangeRequest.header.version     = VMMDEV_REQUEST_HEADER_VERSION;
+                displayChangeRequest.header.requestType = VMMDevReq_GetDisplayChangeRequest2;
+                displayChangeRequest.eventAck           = VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST;
+                BOOL fDisplayChangeQueried = DeviceIoControl(gVBoxDriver, VBOXGUEST_IOCTL_VMMREQUEST(sizeof(VMMDevDisplayChangeRequest2)), &displayChangeRequest, sizeof(VMMDevDisplayChangeRequest2),
+                                                             &displayChangeRequest, sizeof(VMMDevDisplayChangeRequest2), &cbReturned, NULL);
+                if (!fDisplayChangeQueried)
                 {
-                    /* get the display change request */
-                    VMMDevDisplayChangeRequest2 displayChangeRequest = {0};
-                    displayChangeRequest.header.size        = sizeof(VMMDevDisplayChangeRequest2);
+                    /* Try the old version of the request for old VBox hosts. */
+                    displayChangeRequest.header.size        = sizeof(VMMDevDisplayChangeRequest);
                     displayChangeRequest.header.version     = VMMDEV_REQUEST_HEADER_VERSION;
-                    displayChangeRequest.header.requestType = VMMDevReq_GetDisplayChangeRequest2;
+                    displayChangeRequest.header.requestType = VMMDevReq_GetDisplayChangeRequest;
                     displayChangeRequest.eventAck           = VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST;
-                    BOOL fDisplayChangeQueried = DeviceIoControl(gVBoxDriver, VBOXGUEST_IOCTL_VMMREQUEST(sizeof(VMMDevDisplayChangeRequest2)), &displayChangeRequest, sizeof(VMMDevDisplayChangeRequest2),
-                                                                 &displayChangeRequest, sizeof(VMMDevDisplayChangeRequest2), &cbReturned, NULL);
-                    if (!fDisplayChangeQueried)
-                    {
-                        /* Try the old version of the request for old VBox hosts. */
-                        displayChangeRequest.header.size        = sizeof(VMMDevDisplayChangeRequest);
-                        displayChangeRequest.header.version     = VMMDEV_REQUEST_HEADER_VERSION;
-                        displayChangeRequest.header.requestType = VMMDevReq_GetDisplayChangeRequest;
-                        displayChangeRequest.eventAck           = VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST;
-                        fDisplayChangeQueried = DeviceIoControl(gVBoxDriver, VBOXGUEST_IOCTL_VMMREQUEST(sizeof(VMMDevDisplayChangeRequest)), &displayChangeRequest, sizeof(VMMDevDisplayChangeRequest),
-                                                                 &displayChangeRequest, sizeof(VMMDevDisplayChangeRequest), &cbReturned, NULL);
-                        displayChangeRequest.display = 0;
-                    }
+                    fDisplayChangeQueried = DeviceIoControl(gVBoxDriver, VBOXGUEST_IOCTL_VMMREQUEST(sizeof(VMMDevDisplayChangeRequest)), &displayChangeRequest, sizeof(VMMDevDisplayChangeRequest),
+                                                             &displayChangeRequest, sizeof(VMMDevDisplayChangeRequest), &cbReturned, NULL);
+                    displayChangeRequest.display = 0;
+                }
 
-                    if (fDisplayChangeQueried)
+                if (fDisplayChangeQueried)
+                {
+                    /* Try to set the requested video mode. Repeat until it is successful or is rejected by the driver. */
+                    for (;;)
                     {
                         Log(("VBoxTray: VBoxDisplayThread: VMMDevReq_GetDisplayChangeRequest2: %dx%dx%d at %d\n", displayChangeRequest.xres, displayChangeRequest.yres, displayChangeRequest.bpp, displayChangeRequest.display));
 
@@ -707,16 +707,16 @@ unsigned __stdcall VBoxDisplayThread(void *pInstance)
                             break;
                         }
                     }
-                    else
+                }
+                else
+                {
+                    Log(("VBoxTray: VBoxDisplayThread: error from DeviceIoControl VBOXGUEST_IOCTL_VMMREQUEST\n"));
+                    /* sleep a bit to not eat too much CPU while retrying */
+                    /* are we supposed to stop? */
+                    if (WaitForSingleObject(pCtx->pEnv->hStopEvent, 50) == WAIT_OBJECT_0)
                     {
-                        Log(("VBoxTray: VBoxDisplayThread: error from DeviceIoControl VBOXGUEST_IOCTL_VMMREQUEST\n"));
-                        /* sleep a bit to not eat too much CPU while retrying */
-                        /* are we supposed to stop? */
-                        if (WaitForSingleObject(pCtx->pEnv->hStopEvent, 50) == WAIT_OBJECT_0)
-                        {
-                            fTerminate = true;
-                            break;
-                        }
+                        fTerminate = true;
+                        break;
                     }
                 }
             }
