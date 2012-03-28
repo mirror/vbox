@@ -103,8 +103,8 @@ VBGLR3DECL(int) VbglR3GuestCtrlDisconnect(uint32_t u32ClientId)
  */
 VBGLR3DECL(int) VbglR3GuestCtrlWaitForHostMsg(uint32_t u32ClientId, uint32_t *puMsg, uint32_t *puNumParms)
 {
-    AssertPtrReturn(puMsg, VERR_INVALID_PARAMETER);
-    AssertPtrReturn(puNumParms, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(puMsg, VERR_INVALID_POINTER);
+    AssertPtrReturn(puNumParms, VERR_INVALID_POINTER);
 
     VBoxGuestCtrlHGCMMsgType Msg;
 
