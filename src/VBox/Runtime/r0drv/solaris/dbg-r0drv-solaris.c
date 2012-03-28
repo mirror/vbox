@@ -74,7 +74,7 @@ typedef struct RTDBGKRNLINFOINT *PRTDBGKRNLINFOINT;
  *
  * @return IPRT status code.
  */
-static int rtR0DbgKrnlInfoModRetain(char *pszModule, modclt_t **ppMod, ctf_file_t **ppCTF)
+static int rtR0DbgKrnlInfoModRetain(char *pszModule, modctl_t **ppMod, ctf_file_t **ppCTF)
 {
     AssertPtrReturn(pszModule, VERR_INVALID_PARAMETER);
     AssertPtrReturn(ppMod, VERR_INVALID_PARAMETER);
@@ -92,7 +92,7 @@ static int rtR0DbgKrnlInfoModRetain(char *pszModule, modclt_t **ppMod, ctf_file_
              */
             int err;
             mutex_enter(&mod_lock);
-            *ppCTF = ctf_modopen(pThis->pGenUnixMod->mod_mp, &err);
+            *ppCTF = ctf_modopen(*ppMod->mod_mp, &err);
             mutex_exit(&mod_lock);
 
             if (*ppCTF)
