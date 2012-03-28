@@ -5940,6 +5940,7 @@ VBOXDDU_DECL(int) VDCreateBase(PVBOXHDD pDisk, const char *pszBackend,
 
         pImage->uOpenFlags = uOpenFlags & VD_OPEN_FLAGS_HONOR_SAME;
         uImageFlags &= ~VD_IMAGE_FLAGS_DIFF;
+        pImage->VDIo.fIgnoreFlush = (uOpenFlags & VD_OPEN_FLAGS_IGNORE_FLUSH) != 0;
         rc = pImage->Backend->pfnCreate(pImage->pszFilename, cbSize,
                                         uImageFlags, pszComment, pPCHSGeometry,
                                         pLCHSGeometry, pUuid,
@@ -5953,7 +5954,6 @@ VBOXDDU_DECL(int) VDCreateBase(PVBOXHDD pDisk, const char *pszBackend,
         if (RT_SUCCESS(rc))
         {
             pImage->VDIo.pBackendData = pImage->pBackendData;
-            pImage->VDIo.fIgnoreFlush = (uOpenFlags & VD_OPEN_FLAGS_IGNORE_FLUSH) != 0;
             pImage->uImageFlags = uImageFlags;
 
             /* Force sane optimization settings. It's not worth avoiding writes
