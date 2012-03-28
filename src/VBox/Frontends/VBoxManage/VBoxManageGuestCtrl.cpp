@@ -414,7 +414,10 @@ static int ctrlPrintProgressError(ComPtr<IProgress> pProgress)
             LONG rcProc;
             CHECK_ERROR_BREAK(pProgress, COMGETTER(ResultCode)(&rcProc));
             if (FAILED(rcProc))
-                vrc = ctrlPrintError(com::ProgressErrorInfo(pProgress));
+            {
+                com::ProgressErrorInfo ErrInfo(pProgress);
+                vrc = ctrlPrintError(ErrInfo);
+            }
         }
 
     } while(0);
