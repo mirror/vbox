@@ -233,8 +233,8 @@ DECLCALLBACK(int) VBoxServiceControlWorker(bool volatile *pfShutdown)
     for (;;)
     {
         VBoxServiceVerbose(3, "Waiting for host msg ...\n");
-        uint32_t uMsg;
-        uint32_t cParms;
+        uint32_t uMsg = 0;
+        uint32_t cParms = 0;
         rc = VbglR3GuestCtrlWaitForHostMsg(g_uControlSvcClientID, &uMsg, &cParms);
         if (rc == VERR_TOO_MUCH_DATA)
         {
@@ -355,7 +355,11 @@ static int VBoxServiceControlHandleCmdStartProc(uint32_t uClientID, uint32_t cPa
     {
         VBoxServiceError("Starting process failed with rc=%Rrc\n", rc);
 
-        int rc2 = VbglR3GuestCtrlExecReportStatus(uClientID, uContextID, 0 /* PID, invalid. */,
+        /*
+         * Note: The context ID can be 0 because we mabye weren't able to fetch the command
+         *       from the host. The host in case has to deal with that!
+         */
+        int rc2 = VbglR3GuestCtrlExecReportStatus(uClientID, uContextID /* Might be 0 */, 0 /* PID, invalid */,
                                                   PROC_STS_ERROR, rc,
                                                   NULL /* pvData */, 0 /* cbData */);
         if (RT_FAILURE(rc2))
@@ -590,11 +594,8 @@ static int VBoxServiceControlHandleCmdSetInput(uint32_t idClient, uint32_t cParm
                            uPID, uContextID, rc, uFlags, fPendingClose, cbSize, cbWritten);
         if (RT_SUCCESS(rc))
         {
-            if (cbWritten || !cbSize) /* Did we write something or was there anything to write at all? */
-            {
-                uStatus = INPUT_STS_WRITTEN;
-                uFlags = 0;
-            }
+            uStatus = INPUT_STS_WRITTEN;
+            uFlags = 0; /* No flags at the moment. */
         }
         else
         {
@@ -751,8 +752,8 @@ static int VBoxServiceControlReapThreads(void)
         {
             PVBOXSERVICECTRLTHREAD pNext = RTListNodeGetNext(&pThread->Node, VBOXSERVICECTRLTHREAD, Node);
             bool fLast = RTListNodeIsLast(&g_lstControlThreadsInactive, &pThread->Node);
-
-            int rc2 = VBoxServiceControlThreadWait(pThread, 30 * 1000 /* 30 seconds max. */);
+            int rc2 = VBoxServiceControlThreadWait(pThread, 30 * 1000 /* 30 seconds max. */,
+                                                   NULL /* rc */);
             if (RT_SUCCESS(rc2))
             {
                 RTListNodeRemove(&pThread->Node);
@@ -760,7 +761,7 @@ static int VBoxServiceControlReapThreads(void)
                 rc2 = VBoxServiceControlThreadFree(pThread);
                 if (RT_FAILURE(rc2))
                 {
-                    VBoxServiceError("Stopping guest process thread failed with rc=%Rrc\n", rc2);
+                    VBoxServiceError("Freeing guest process thread failed with rc=%Rrc\n", rc2);
                     if (RT_SUCCESS(rc)) /* Keep original failure. */
                         rc = rc2;
                 }
@@ -805,7 +806,8 @@ static void VBoxServiceControlShutdown(void)
         bool fLast = RTListNodeIsLast(&g_lstControlThreadsActive, &pThread->Node);
 
         int rc2 = VBoxServiceControlThreadWait(pThread,
-                                               30 * 1000 /* Wait 30 seconds max. */);
+                                               30 * 1000 /* Wait 30 seconds max. */,
+                                               NULL /* rc */);
         if (RT_FAILURE(rc2))
             VBoxServiceError("Guest process thread failed to stop; rc=%Rrc\n", rc2);
 
