@@ -82,6 +82,8 @@ typedef struct SUPDRVDTPROVIDER
     uint32_t            cProvidedProbes;
     /** Set when the module is unloaded or the driver deregisters its probes. */
     bool                fZombie;
+    /** The provider name (for logging purposes). */
+    char                szName[1];
 } SUPDRVDTPROVIDER;
 /** Pointer to the data for a provider. */
 typedef SUPDRVDTPROVIDER *PSUPDRVDTPROVIDER;
@@ -96,6 +98,15 @@ typedef int  FNPOPS_ENABLE(void *, dtrace_id_t, void *);
 
 
 /*******************************************************************************
+*   Defined Constants And Macros                                               *
+*******************************************************************************/
+#if 0
+# define LOG_DTRACE(a_Args)  SUPR0Printf a_Args
+#else
+# define LOG_DTRACE(a_Args)  do { } while (0)
+#endif
+
+/*******************************************************************************
 *   Internal Functions                                                         *
 *******************************************************************************/
 static void     supdrvDTracePOps_Provide(void *pvProv, const dtrace_probedesc_t *pDtProbeDesc);
@@ -103,8 +114,10 @@ static int      supdrvDTracePOps_Enable(void *pvProv, dtrace_id_t idProbe, void 
 static void     supdrvDTracePOps_Disable(void *pvProv, dtrace_id_t idProbe, void *pvProbe);
 static void     supdrvDTracePOps_GetArgDesc(void *pvProv, dtrace_id_t idProbe, void *pvProbe,
                                             dtrace_argdesc_t *pArgDesc);
-/*static uint64_t supdrvDTracePOps_GetArgVal(void *pvProv, dtrace_id_t idProbe, void *pvProbe,
-                                           int iArg, int cFrames);*/
+#ifdef RT_OS_SOLARIS
+static uint64_t supdrvDTracePOps_GetArgVal(void *pvProv, dtrace_id_t idProbe, void *pvProbe,
+                                           int iArg, int cFrames);
+#endif
 static void     supdrvDTracePOps_Destroy(void *pvProv, dtrace_id_t idProbe, void *pvProbe);
 
 
@@ -124,7 +137,11 @@ static const dtrace_pops_t g_SupDrvDTraceProvOps =
     /* .dtps_suspend         = */ NULL,
     /* .dtps_resume          = */ NULL,
     /* .dtps_getargdesc      = */ supdrvDTracePOps_GetArgDesc,
+#ifdef RT_OS_SOLARIS
+    /* .dtps_getargval       = */ supdrvDTracePOps_GetArgVal,
+#else
     /* .dtps_getargval       = */ NULL/*supdrvDTracePOps_GetArgVal*/,
+#endif
     /* .dtps_usermode        = */ NULL,
     /* .dtps_destroy         = */ supdrvDTracePOps_Destroy
 };
@@ -381,140 +398,11 @@ static const char *supdrvVtgGetString(PVTGOBJHDR pVtgHdr,  uint32_t offStrTab)
  */
 static void supdrvVtgFreeProvider(PSUPDRVDTPROVIDER pProv)
 {
+    LOG_DTRACE(("Freeing DTrace provider '%s' / %p\n", pProv->szName, pProv->idDtProv));
     pProv->fZombie = true;
     pProv->pDesc   = NULL;
     pProv->pHdr    = NULL;
     RTMemFree(pProv);
-}
-
-
-/**
- * Registers the VTG tracepoint providers of a driver.
- *
- * @returns VBox status code.
- * @param   pszName             The driver name.
- * @param   pVtgHdr             The VTG object header.
- * @param   pVtgObj             The size of the VTG object.
- * @param   pImage              The image if applicable.
- * @param   pSession            The session if applicable.
- * @param   pszModName          The module name.
- */
-static int supdrvVtgRegister(PSUPDRVDEVEXT pDevExt, PVTGOBJHDR pVtgHdr, size_t cbVtgObj, PSUPDRVLDRIMAGE pImage, PSUPDRVSESSION pSession,
-                             const char *pszModName)
-{
-    int                 rc;
-    unsigned            i;
-    PSUPDRVDTPROVIDER   pProv;
-
-    /*
-     * Validate input.
-     */
-    AssertPtrReturn(pDevExt, VERR_INVALID_POINTER);
-    AssertPtrReturn(pVtgHdr, VERR_INVALID_POINTER);
-    AssertPtrNullReturn(pImage, VERR_INVALID_POINTER);
-    AssertPtrNullReturn(pSession, VERR_INVALID_POINTER);
-    AssertPtrReturn(pszModName, VERR_INVALID_POINTER);
-
-    if (pImage)
-        rc = supdrvVtgValidate(pVtgHdr, cbVtgObj, (const uint8_t *)pImage->pvImage, pImage->cbImageBits);
-    else
-        rc = supdrvVtgValidate(pVtgHdr, cbVtgObj, NULL, 0);
-    if (RT_FAILURE(rc))
-        return rc;
-
-    rc = RTSemFastMutexRequest(pDevExt->mtxDTrace);
-    if (RT_SUCCESS(rc))
-    {
-        RTListForEach(&pDevExt->DtProviderList, pProv, SUPDRVDTPROVIDER, ListEntry)
-        {
-            if (pProv->pHdr == pVtgHdr)
-            {
-                RTSemFastMutexRelease(pDevExt->mtxDTrace);
-                return VERR_SUPDRV_VTG_ALREADY_REGISTERED;
-            }
-            if (   pProv->pSession == pSession 
-                && pProv->pImage   == pImage)
-            {
-                RTSemFastMutexRelease(pDevExt->mtxDTrace);
-                return VERR_SUPDRV_VTG_ONLY_ONCE_PER_SESSION;
-            }
-        }
-        RTSemFastMutexRelease(pDevExt->mtxDTrace);
-    }
-
-    /*
-     * Register the providers.
-     */
-    i = pVtgHdr->cbProviders / sizeof(VTGDESCPROVIDER);
-    while (i-- > 0)
-    {
-        PVTGDESCPROVIDER pDesc  = &pVtgHdr->paProviders[i];
-        pProv = (PSUPDRVDTPROVIDER)RTMemAllocZ(sizeof(*pProv));
-        if (pProv)
-        {
-            pProv->pDesc            = pDesc;
-            pProv->pHdr             = pVtgHdr;
-            pProv->pImage           = pImage;
-            pProv->pSession         = pSession;
-            pProv->pszModName       = pszModName;
-            pProv->idDtProv         = 0;
-            pProv->cProvidedProbes  = 0;
-            pProv->fZombie          = false;
-            supdrvVtgConvAttr(&pProv->DtAttrs.dtpa_provider, &pDesc->AttrSelf);
-            supdrvVtgConvAttr(&pProv->DtAttrs.dtpa_mod,      &pDesc->AttrModules);
-            supdrvVtgConvAttr(&pProv->DtAttrs.dtpa_func,     &pDesc->AttrFunctions);
-            supdrvVtgConvAttr(&pProv->DtAttrs.dtpa_name,     &pDesc->AttrNames);
-            supdrvVtgConvAttr(&pProv->DtAttrs.dtpa_args,     &pDesc->AttrArguments);
-
-            rc = dtrace_register(supdrvVtgGetString(pVtgHdr, pDesc->offName),
-                                 &pProv->DtAttrs,
-                                 DTRACE_PRIV_KERNEL,
-                                 NULL /* cred */,
-                                 &g_SupDrvDTraceProvOps,
-                                 pProv,
-                                 &pProv->idDtProv);
-            if (!rc)
-            {
-                rc = RTSemFastMutexRequest(pDevExt->mtxDTrace);
-                if (RT_SUCCESS(rc))
-                {
-                    RTListAppend(&pDevExt->DtProviderList, &pProv->ListEntry);
-                    RTSemFastMutexRelease(pDevExt->mtxDTrace);
-                }
-                else
-                    dtrace_unregister(pProv->idDtProv);
-            }
-            else
-                rc = RTErrConvertFromErrno(rc);
-        }
-        else
-            rc = VERR_NO_MEMORY;
-
-        if (RT_FAILURE(rc))
-        {
-            PSUPDRVDTPROVIDER   pProvNext;
-            supdrvVtgFreeProvider(pProv);
-
-            RTSemFastMutexRequest(pDevExt->mtxDTrace);
-            RTListForEachReverseSafe(&pDevExt->DtProviderList, pProv, pProvNext, SUPDRVDTPROVIDER, ListEntry)
-            {
-                if (pProv->pHdr == pVtgHdr)
-                {
-                    RTListNodeRemove(&pProv->ListEntry);
-                    RTSemFastMutexRelease(pDevExt->mtxDTrace);
-
-                    dtrace_unregister(pProv->idDtProv);
-                    RTMemFree(pProv);
-
-                    RTSemFastMutexRequest(pDevExt->mtxDTrace);
-                }
-            }
-            RTSemFastMutexRelease(pDevExt->mtxDTrace);
-            return rc;
-        }
-    }
-
-    return VINF_SUCCESS;
 }
 
 
@@ -542,6 +430,7 @@ static void supdrvVtgDeregister(PSUPDRVDEVEXT pDevExt, PSUPDRVDTPROVIDER pProv)
 
     pProv->fZombie = true;
     RTListAppend(&pDevExt->DtProviderZombieList, &pProv->ListEntry);
+    LOG_DTRACE(("Invalidate DTrace provider '%s' / %p and put it on the zombie list\n", pProv->szName, pProv->idDtProv));
 }
 
 
@@ -555,7 +444,7 @@ static void supdrvVtgProcessZombies(PSUPDRVDEVEXT pDevExt)
     PSUPDRVDTPROVIDER pProv, pProvNext;
 
     RTSemFastMutexRequest(pDevExt->mtxDTrace);
-    RTListForEachSafe(&pDevExt->DtProviderList, pProv, pProvNext, SUPDRVDTPROVIDER, ListEntry)
+    RTListForEachSafe(&pDevExt->DtProviderZombieList, pProv, pProvNext, SUPDRVDTPROVIDER, ListEntry)
     {
         int rc = dtrace_unregister(pProv->idDtProv);
         if (!rc)
@@ -565,6 +454,136 @@ static void supdrvVtgProcessZombies(PSUPDRVDEVEXT pDevExt)
         }
     }
     RTSemFastMutexRelease(pDevExt->mtxDTrace);
+}
+
+
+/**
+ * Registers the VTG tracepoint providers of a driver.
+ *
+ * @returns VBox status code.
+ * @param   pszName             The driver name.
+ * @param   pVtgHdr             The VTG object header.
+ * @param   pVtgObj             The size of the VTG object.
+ * @param   pImage              The image if applicable.
+ * @param   pSession            The session if applicable.
+ * @param   pszModName          The module name.
+ */
+static int supdrvVtgRegister(PSUPDRVDEVEXT pDevExt, PVTGOBJHDR pVtgHdr, size_t cbVtgObj, PSUPDRVLDRIMAGE pImage, 
+                             PSUPDRVSESSION pSession, const char *pszModName)
+{
+    int                 rc;
+    unsigned            i;
+    PSUPDRVDTPROVIDER   pProv;
+
+    /*
+     * Validate input.
+     */
+    AssertPtrReturn(pDevExt, VERR_INVALID_POINTER);
+    AssertPtrReturn(pVtgHdr, VERR_INVALID_POINTER);
+    AssertPtrNullReturn(pImage, VERR_INVALID_POINTER);
+    AssertPtrNullReturn(pSession, VERR_INVALID_POINTER);
+    AssertPtrReturn(pszModName, VERR_INVALID_POINTER);
+
+    if (pImage)
+        rc = supdrvVtgValidate(pVtgHdr, cbVtgObj, (const uint8_t *)pImage->pvImage, pImage->cbImageBits);
+    else
+        rc = supdrvVtgValidate(pVtgHdr, cbVtgObj, NULL, 0);
+    if (RT_FAILURE(rc))
+        return rc;
+
+    rc = RTSemFastMutexRequest(pDevExt->mtxDTrace);
+    if (RT_FAILURE(rc))
+        return rc;
+    RTListForEach(&pDevExt->DtProviderList, pProv, SUPDRVDTPROVIDER, ListEntry)
+    {
+        if (pProv->pHdr == pVtgHdr)
+        {
+            rc = VERR_SUPDRV_VTG_ALREADY_REGISTERED;
+            break;
+        }
+        if (   pProv->pSession == pSession 
+            && pProv->pImage   == pImage)
+        {
+            rc = VERR_SUPDRV_VTG_ONLY_ONCE_PER_SESSION;
+            break;
+        }
+    }
+    RTSemFastMutexRelease(pDevExt->mtxDTrace);
+    if (RT_FAILURE(rc))
+        return rc;
+
+    /*
+     * Register the providers.
+     */
+    i = pVtgHdr->cbProviders / sizeof(VTGDESCPROVIDER);
+    while (i-- > 0)
+    {
+        PVTGDESCPROVIDER pDesc   = &pVtgHdr->paProviders[i];
+        const char      *pszName = supdrvVtgGetString(pVtgHdr, pDesc->offName);
+        size_t const     cchName = strlen(pszName);
+        pProv = (PSUPDRVDTPROVIDER)RTMemAllocZ(RT_OFFSETOF(SUPDRVDTPROVIDER, szName[cchName + 1]));
+        if (pProv)
+        {
+            pProv->pDesc            = pDesc;
+            pProv->pHdr             = pVtgHdr;
+            pProv->pImage           = pImage;
+            pProv->pSession         = pSession;
+            pProv->pszModName       = pszModName;
+            pProv->idDtProv         = 0;
+            pProv->cProvidedProbes  = 0;
+            pProv->fZombie          = false;
+            memcpy(pProv->szName, pszName, cchName + 1);
+            supdrvVtgConvAttr(&pProv->DtAttrs.dtpa_provider, &pDesc->AttrSelf);
+            supdrvVtgConvAttr(&pProv->DtAttrs.dtpa_mod,      &pDesc->AttrModules);
+            supdrvVtgConvAttr(&pProv->DtAttrs.dtpa_func,     &pDesc->AttrFunctions);
+            supdrvVtgConvAttr(&pProv->DtAttrs.dtpa_name,     &pDesc->AttrNames);
+            supdrvVtgConvAttr(&pProv->DtAttrs.dtpa_args,     &pDesc->AttrArguments);
+
+            rc = dtrace_register(pProv->szName,
+                                 &pProv->DtAttrs,
+                                 DTRACE_PRIV_KERNEL,
+                                 NULL /* cred */,
+                                 &g_SupDrvDTraceProvOps,
+                                 pProv,
+                                 &pProv->idDtProv);
+            if (!rc)
+            {
+                rc = RTSemFastMutexRequest(pDevExt->mtxDTrace);
+                if (RT_SUCCESS(rc))
+                {
+                    RTListAppend(&pDevExt->DtProviderList, &pProv->ListEntry);
+                    RTSemFastMutexRelease(pDevExt->mtxDTrace);
+                    LOG_DTRACE(("Registered DTrace provider '%s' in '%s' -> %p\n", pProv->szName, pszModName, pProv->idDtProv));
+                }
+                else
+                    dtrace_unregister(pProv->idDtProv);
+            }
+            else
+                rc = RTErrConvertFromErrno(rc);
+        }
+        else
+            rc = VERR_NO_MEMORY;
+
+        if (RT_FAILURE(rc))
+        {
+            PSUPDRVDTPROVIDER   pProvNext;
+            supdrvVtgFreeProvider(pProv);
+
+            RTSemFastMutexRequest(pDevExt->mtxDTrace);
+            RTListForEachReverseSafe(&pDevExt->DtProviderList, pProv, pProvNext, SUPDRVDTPROVIDER, ListEntry)
+            {
+                if (pProv->pHdr == pVtgHdr)
+                {
+                    RTListNodeRemove(&pProv->ListEntry);
+                    supdrvVtgDeregister(pDevExt, pProv);
+                }
+            }
+            RTSemFastMutexRelease(pDevExt->mtxDTrace);
+            return rc;
+        }
+    }
+
+    return VINF_SUCCESS;
 }
 
 
@@ -753,6 +772,7 @@ void VBOXCALL supdrvVtgTerm(PSUPDRVDEVEXT pDevExt)
 {
     PSUPDRVDTPROVIDER pProv, pProvNext;
     uint32_t i;
+    LOG_DTRACE(("supdrvVtgTerm\n"));
 
     /*
      * Unregister all probes (there should only be one).
@@ -773,16 +793,20 @@ void VBOXCALL supdrvVtgTerm(PSUPDRVDEVEXT pDevExt)
         bool fEmpty;
 
         RTSemFastMutexRequest(pDevExt->mtxDTrace);
-        RTListForEachSafe(&pDevExt->DtProviderList, pProv, pProvNext, SUPDRVDTPROVIDER, ListEntry)
+        RTListForEachSafe(&pDevExt->DtProviderZombieList, pProv, pProvNext, SUPDRVDTPROVIDER, ListEntry)
         {
-            int rc = dtrace_unregister(pProv->idDtProv);
+            int rc;
+            LOG_DTRACE(("supdrvVtgTerm: Attemting to unregister '%s' / %p...\n", pProv->szName, pProv->idDtProv));
+            rc = dtrace_unregister(pProv->idDtProv);
             if (!rc)
             {
                 RTListNodeRemove(&pProv->ListEntry);
                 supdrvVtgFreeProvider(pProv);
             }
             else if (!(i & 0xf))
-                SUPR0Printf("supdrvVtgTerm: Waiting on busy provider %p\n", pProv->idDtProv);
+                SUPR0Printf("supdrvVtgTerm: Waiting on busy provider '%s' / %p (rc=%d)\n", pProv->szName, pProv->idDtProv, rc);
+            else
+                LOG_DTRACE(("supdrvVtgTerm: Failed to unregister provider '%s' / %p - rc=%d\n", pProv->szName, pProv->idDtProv, rc));
         }
 
         fEmpty = RTListIsEmpty(&pDevExt->DtProviderZombieList);
@@ -796,6 +820,7 @@ void VBOXCALL supdrvVtgTerm(PSUPDRVDEVEXT pDevExt)
 
     RTSemFastMutexDestroy(pDevExt->mtxDTrace);
     pDevExt->mtxDTrace = NIL_RTSEMFASTMUTEX;
+    LOG_DTRACE(("supdrvVtgTerm: Done\n"));
 }
 
 
@@ -986,16 +1011,37 @@ static void     supdrvDTracePOps_GetArgDesc(void *pvProv, dtrace_id_t idProbe, v
 }
 
 
-#if 0
+#ifdef RT_OS_SOLARIS
+
+# ifdef __cplusplus
+extern "C" 
+#endif
+uint64_t dtrace_getarg(int iArg, int cFrames);
+
 /**
  * @callback_method_impl{dtrace_pops_t,dtps_getargval}
  */
 static uint64_t supdrvDTracePOps_GetArgVal(void *pvProv, dtrace_id_t idProbe, void *pvProbe,
                                            int iArg, int cFrames)
 {
-    return 0xbeef;
+    /* dtrace_getarg on AMD64 has a different opinion about how to use the
+       cFrames argument than dtrace_caller() and/or dtrace_getpcstack(), at
+       least when the probe is fired by dtrace_probe() the way we do.
+     
+       Setting aframes to 1 when calling dtrace_probe_create gives me the right
+       arguments, but the wrong 'caller'.  Since I cannot do anything about
+       'caller', the only solution is this hack.
+     
+       Not sure why the Solaris guys hasn't seen this issue before, but maybe
+       there isn't anyone using the default argument getter path for ring-0
+       dtrace_probe() calls, SDT surely isn't.
+     
+       WARNING! This code is subject to dtrace_getarg interface unstability! */
+    /** @todo File a solaris bug on dtrace_probe() + dtrace_getarg(). */
+    return dtrace_getarg(iArg, cFrames + 1);
 }
-#endif
+
+#endif /* RT_OS_SOLARIS */
 
 
 /**
