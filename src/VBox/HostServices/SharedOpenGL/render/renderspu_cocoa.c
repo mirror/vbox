@@ -37,7 +37,7 @@ GLboolean renderspu_SystemCreateContext(VisualInfo *pVisInfo, ContextInfo *pCtxI
 
     pCtxInfo->currentWindow = NULL;
 
-    cocoaGLCtxCreate(&pCtxInfo->context, pVisInfo->visAttribs, pShharedCtxInfo ? pSharedCtxInfo->context : NULL);
+    cocoaGLCtxCreate(&pCtxInfo->context, pVisInfo->visAttribs, pSharedCtxInfo ? pSharedCtxInfo->context : NULL);
 
     return GL_TRUE;
 }
