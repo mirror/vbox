@@ -541,6 +541,8 @@ typedef struct SUPDRVDEVEXT
     RTSEMFASTMUTEX                  mtxDTrace;
     /** List of DTrace providers (SUPDRVDTPROVIDER). */
     RTLISTANCHOR                    DtProviderList;
+    /** List of zombie DTrace providers (SUPDRVDTPROVIDER). */
+    RTLISTANCHOR                    DtProviderZombieList;
 #endif
 
     /*
@@ -634,7 +636,7 @@ void VBOXCALL   supdrvCleanupSession(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSess
 
 #ifdef VBOX_WITH_DTRACE_R0DRV
 int  VBOXCALL   supdrvVtgInit(PSUPDRVDEVEXT pDevExt, PSUPFUNC pVtgFireProbe);
-int  VBOXCALL   supdrvVtgTerm(PSUPDRVDEVEXT pDevExt);
+void VBOXCALL   supdrvVtgTerm(PSUPDRVDEVEXT pDevExt);
 void VBOXCALL   supdrvVtgModuleUnloading(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE pImage);
 #endif
 

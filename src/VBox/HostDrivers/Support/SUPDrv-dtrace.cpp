@@ -80,6 +80,8 @@ typedef struct SUPDRVDTPROVIDER
     dtrace_provider_id_t idDtProv;
     /** The number of probes we've provided to DTrace. */
     uint32_t            cProvidedProbes;
+    /** Set when the module is unloaded or the driver deregisters its probes. */
+    bool                fZombie;
 } SUPDRVDTPROVIDER;
 /** Pointer to the data for a provider. */
 typedef SUPDRVDTPROVIDER *PSUPDRVDTPROVIDER;
@@ -373,6 +375,20 @@ static const char *supdrvVtgGetString(PVTGOBJHDR pVtgHdr,  uint32_t offStrTab)
 
 
 /**
+ * Frees the provider structure and associated resources. 
+ *  
+ * @param   pProv               The provider to free.
+ */
+static void supdrvVtgFreeProvider(PSUPDRVDTPROVIDER pProv)
+{
+    pProv->fZombie = true;
+    pProv->pDesc   = NULL;
+    pProv->pHdr    = NULL;
+    RTMemFree(pProv);
+}
+
+
+/**
  * Registers the VTG tracepoint providers of a driver.
  *
  * @returns VBox status code.
@@ -443,6 +459,7 @@ static int supdrvVtgRegister(PSUPDRVDEVEXT pDevExt, PVTGOBJHDR pVtgHdr, size_t c
             pProv->pszModName       = pszModName;
             pProv->idDtProv         = 0;
             pProv->cProvidedProbes  = 0;
+            pProv->fZombie          = false;
             supdrvVtgConvAttr(&pProv->DtAttrs.dtpa_provider, &pDesc->AttrSelf);
             supdrvVtgConvAttr(&pProv->DtAttrs.dtpa_mod,      &pDesc->AttrModules);
             supdrvVtgConvAttr(&pProv->DtAttrs.dtpa_func,     &pDesc->AttrFunctions);
@@ -476,7 +493,7 @@ static int supdrvVtgRegister(PSUPDRVDEVEXT pDevExt, PVTGOBJHDR pVtgHdr, size_t c
         if (RT_FAILURE(rc))
         {
             PSUPDRVDTPROVIDER   pProvNext;
-            RTMemFree(pProv);
+            supdrvVtgFreeProvider(pProv);
 
             RTSemFastMutexRequest(pDevExt->mtxDTrace);
             RTListForEachReverseSafe(&pDevExt->DtProviderList, pProv, pProvNext, SUPDRVDTPROVIDER, ListEntry)
@@ -502,6 +519,56 @@ static int supdrvVtgRegister(PSUPDRVDEVEXT pDevExt, PVTGOBJHDR pVtgHdr, size_t c
 
 
 /**
+ * Deregisters a provider. 
+ *  
+ * If the provider is still busy, it will be put in the zombie list.
+ *  
+ * @param   pDevExt             The device extension.
+ * @param   pProv               The provider. 
+ *  
+ * @remarks The caller owns mtxDTrace. 
+ */
+static void supdrvVtgDeregister(PSUPDRVDEVEXT pDevExt, PSUPDRVDTPROVIDER pProv)
+{
+    int rc;
+
+    dtrace_invalidate(pProv->idDtProv);
+    rc = dtrace_unregister(pProv->idDtProv);
+    if (!rc)
+    {
+        supdrvVtgFreeProvider(pProv);
+        return;
+    }
+
+    pProv->fZombie = true;
+    RTListAppend(&pDevExt->DtProviderZombieList, &pProv->ListEntry);
+}
+
+
+/**
+ * Processes the zombie list. 
+ *  
+ * @param   pDevExt             The device extension.
+ */
+static void supdrvVtgProcessZombies(PSUPDRVDEVEXT pDevExt)
+{
+    PSUPDRVDTPROVIDER pProv, pProvNext;
+
+    RTSemFastMutexRequest(pDevExt->mtxDTrace);
+    RTListForEachSafe(&pDevExt->DtProviderList, pProv, pProvNext, SUPDRVDTPROVIDER, ListEntry)
+    {
+        int rc = dtrace_unregister(pProv->idDtProv);
+        if (!rc)
+        {
+            RTListNodeRemove(&pProv->ListEntry);
+            supdrvVtgFreeProvider(pProv);
+        }
+    }
+    RTSemFastMutexRelease(pDevExt->mtxDTrace);
+}
+
+
+/**
  * Registers the VTG tracepoint providers of a driver.
  *
  * @returns VBox status code.
@@ -511,11 +578,21 @@ static int supdrvVtgRegister(PSUPDRVDEVEXT pDevExt, PVTGOBJHDR pVtgHdr, size_t c
  */
 SUPR0DECL(int) SUPR0VtgRegisterDrv(PSUPDRVSESSION pSession, PVTGOBJHDR pVtgHdr, const char *pszName)
 {
+    int rc;
+
     AssertReturn(SUP_IS_SESSION_VALID(pSession), VERR_INVALID_PARAMETER);
     AssertPtrReturn(pszName, VERR_INVALID_POINTER);
     AssertPtrReturn(pVtgHdr, VERR_INVALID_POINTER);
+    AssertReturn(pSession->R0Process == NIL_RTR0PROCESS, VERR_INVALID_PARAMETER);
 
-    return supdrvVtgRegister(pSession->pDevExt, pVtgHdr, _1M, NULL /*pImage*/, pSession, pszName);
+    rc = supdrvVtgRegister(pSession->pDevExt, pVtgHdr, _1M, NULL /*pImage*/, pSession, pszName);
+
+    /*
+     * Try unregister zombies while we have a chance.
+     */
+    supdrvVtgProcessZombies(pSession->pDevExt);
+
+    return rc;
 }
 
 
@@ -530,23 +607,28 @@ SUPR0DECL(void) SUPR0VtgDeregisterDrv(PSUPDRVSESSION pSession)
     PSUPDRVDTPROVIDER pProv, pProvNext;
     PSUPDRVDEVEXT     pDevExt;
     AssertReturnVoid(SUP_IS_SESSION_VALID(pSession));
+    AssertReturnVoid(pSession->R0Process == NIL_RTR0PROCESS);
 
     pDevExt = pSession->pDevExt;
+
+    /*
+     * Search for providers belonging to this driver session.
+     */
     RTSemFastMutexRequest(pDevExt->mtxDTrace);
     RTListForEachSafe(&pDevExt->DtProviderList, pProv, pProvNext, SUPDRVDTPROVIDER, ListEntry)
     {
         if (pProv->pSession == pSession)
         {
             RTListNodeRemove(&pProv->ListEntry);
-            RTSemFastMutexRelease(pDevExt->mtxDTrace);
-
-            dtrace_unregister(pProv->idDtProv);
-            RTMemFree(pProv);
-
-            RTSemFastMutexRequest(pDevExt->mtxDTrace);
+            supdrvVtgDeregister(pDevExt, pProv);
         }
     }
     RTSemFastMutexRelease(pDevExt->mtxDTrace);
+
+    /*
+     * Try unregister zombies while we have a chance.
+     */
+    supdrvVtgProcessZombies(pDevExt);
 }
 
 
@@ -565,6 +647,7 @@ SUPR0DECL(int) SUPR0VtgRegisterModule(void *hMod, PVTGOBJHDR pVtgHdr)
     PSUPDRVLDRIMAGE pImage = (PSUPDRVLDRIMAGE)hMod;
     PSUPDRVDEVEXT   pDevExt;
     uintptr_t       cbVtgObj;
+    int             rc;
 
     /* 
      * Validate input and context.
@@ -586,7 +669,14 @@ SUPR0DECL(int) SUPR0VtgRegisterModule(void *hMod, PVTGOBJHDR pVtgHdr)
                     VERR_INVALID_PARAMETER);
     cbVtgObj = pImage->cbImageBits - cbVtgObj;
 
-    return supdrvVtgRegister(pDevExt, pVtgHdr, cbVtgObj, pImage, NULL, pImage->szName);
+    rc = supdrvVtgRegister(pDevExt, pVtgHdr, cbVtgObj, pImage, NULL, pImage->szName);
+
+    /*
+     * Try unregister zombies while we have a chance.
+     */
+    supdrvVtgProcessZombies(pDevExt);
+
+    return rc;
 }
 
 
@@ -609,15 +699,15 @@ void VBOXCALL supdrvVtgModuleUnloading(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE pI
         if (pProv->pImage == pImage)
         {
             RTListNodeRemove(&pProv->ListEntry);
-            RTSemFastMutexRelease(pDevExt->mtxDTrace);
-
-            dtrace_unregister(pProv->idDtProv);
-            RTMemFree(pProv);
-
-            RTSemFastMutexRequest(pDevExt->mtxDTrace);
+            supdrvVtgDeregister(pDevExt, pProv);
         }
     }
     RTSemFastMutexRelease(pDevExt->mtxDTrace);
+
+    /*
+     * Try unregister zombies while we have a chance.
+     */
+    supdrvVtgProcessZombies(pDevExt);
 }
 
 
@@ -642,6 +732,7 @@ int VBOXCALL supdrvVtgInit(PSUPDRVDEVEXT pDevExt, PSUPFUNC pVtgFireProbe)
         pVtgFireProbe->pfn = (void *)(uintptr_t)dtrace_probe;
 #endif
         RTListInit(&pDevExt->DtProviderList);
+        RTListInit(&pDevExt->DtProviderZombieList);
         rc = supdrvVtgRegister(pDevExt, &g_VTGObjHeader, _1M, NULL /*pImage*/, NULL /*pSession*/, "vboxdrv");
         if (RT_SUCCESS(rc))
             return rc;
@@ -658,9 +749,10 @@ int VBOXCALL supdrvVtgInit(PSUPDRVDEVEXT pDevExt, PSUPFUNC pVtgFireProbe)
  * @returns VBox status code.
  * @param   pDevExt             The device extension structure.
  */
-int VBOXCALL supdrvVtgTerm(PSUPDRVDEVEXT pDevExt)
+void VBOXCALL supdrvVtgTerm(PSUPDRVDEVEXT pDevExt)
 {
     PSUPDRVDTPROVIDER pProv, pProvNext;
+    uint32_t i;
 
     /*
      * Unregister all probes (there should only be one).
@@ -669,17 +761,41 @@ int VBOXCALL supdrvVtgTerm(PSUPDRVDEVEXT pDevExt)
     RTListForEachSafe(&pDevExt->DtProviderList, pProv, pProvNext, SUPDRVDTPROVIDER, ListEntry)
     {
         RTListNodeRemove(&pProv->ListEntry);
-        RTSemFastMutexRelease(pDevExt->mtxDTrace);
-
-        dtrace_unregister(pProv->idDtProv);
-        RTMemFree(pProv);
-
-        RTSemFastMutexRequest(pDevExt->mtxDTrace);
+        supdrvVtgDeregister(pDevExt, pProv);
     }
     RTSemFastMutexRelease(pDevExt->mtxDTrace);
+
+    /*
+     * Try unregister zombies now, sleep on busy ones.
+     */
+    for (i = 0; ; i++)
+    {
+        bool fEmpty;
+
+        RTSemFastMutexRequest(pDevExt->mtxDTrace);
+        RTListForEachSafe(&pDevExt->DtProviderList, pProv, pProvNext, SUPDRVDTPROVIDER, ListEntry)
+        {
+            int rc = dtrace_unregister(pProv->idDtProv);
+            if (!rc)
+            {
+                RTListNodeRemove(&pProv->ListEntry);
+                supdrvVtgFreeProvider(pProv);
+            }
+            else if (!(i & 0xf))
+                SUPR0Printf("supdrvVtgTerm: Waiting on busy provider %p\n", pProv->idDtProv);
+        }
+
+        fEmpty = RTListIsEmpty(&pDevExt->DtProviderZombieList);
+        RTSemFastMutexRelease(pDevExt->mtxDTrace);
+        if (fEmpty)
+            break;
+
+        /* Delay...*/
+        RTThreadSleep(1000);
+    }
+
     RTSemFastMutexDestroy(pDevExt->mtxDTrace);
     pDevExt->mtxDTrace = NIL_RTSEMFASTMUTEX;
-    return VINF_SUCCESS;
 }
 
 
@@ -689,7 +805,7 @@ int VBOXCALL supdrvVtgTerm(PSUPDRVDEVEXT pDevExt)
 static void     supdrvDTracePOps_Provide(void *pvProv, const dtrace_probedesc_t *pDtProbeDesc)
 {
     PSUPDRVDTPROVIDER   pProv      = (PSUPDRVDTPROVIDER)pvProv;
-    uint16_t const      idxProv    = (uint16_t)(&pProv->pHdr->paProviders[0] - pProv->pDesc);
+    uint16_t            idxProv;
     PVTGPROBELOC        pProbeLoc;
     PVTGPROBELOC        pProbeLocEnd;
     char               *pszFnNmBuf;
@@ -697,6 +813,9 @@ static void     supdrvDTracePOps_Provide(void *pvProv, const dtrace_probedesc_t 
 
     if (pDtProbeDesc)
         return;  /* We don't generate probes, so never mind these requests. */
+
+    if (pProv->fZombie)
+        return;
 
     if (pProv->cProvidedProbes >= pProv->pDesc->cProbes)
         return;
@@ -711,6 +830,7 @@ static void     supdrvDTracePOps_Provide(void *pvProv, const dtrace_probedesc_t 
       * Itereate the probe location list and register all probes related to
       * this provider.
       */
+     idxProv      = (uint16_t)(&pProv->pHdr->paProviders[0] - pProv->pDesc);
      pProbeLoc    = pProv->pHdr->paProbLocs;
      pProbeLocEnd = pProv->pHdr->paProbLocsEnd;
      while ((uintptr_t)pProbeLoc < (uintptr_t)pProbeLocEnd)
@@ -795,17 +915,19 @@ static void     supdrvDTracePOps_Provide(void *pvProv, const dtrace_probedesc_t 
 static int      supdrvDTracePOps_Enable(void *pvProv, dtrace_id_t idProbe, void *pvProbe)
 {
     PSUPDRVDTPROVIDER   pProv      = (PSUPDRVDTPROVIDER)pvProv;
-    PVTGPROBELOC        pProbeLoc  = (PVTGPROBELOC)pvProbe;
-    PVTGDESCPROBE       pProbeDesc = (PVTGDESCPROBE)pProbeLoc->pbProbe;
-
-    if (!pProbeLoc->fEnabled)
+    if (!pProv->fZombie)
     {
-        pProbeLoc->fEnabled = 1;
-        if (ASMAtomicIncU32(&pProbeDesc->u32User) == 1)
-            pProv->pHdr->pafProbeEnabled[pProbeDesc->idxEnabled] = 1;
+        PVTGPROBELOC    pProbeLoc  = (PVTGPROBELOC)pvProbe;
+        PVTGDESCPROBE   pProbeDesc = (PVTGDESCPROBE)pProbeLoc->pbProbe;
+
+        if (!pProbeLoc->fEnabled)
+        {
+            pProbeLoc->fEnabled = 1;
+            if (ASMAtomicIncU32(&pProbeDesc->u32User) == 1)
+                pProv->pHdr->pafProbeEnabled[pProbeDesc->idxEnabled] = 1;
+        }
     }
 
-    NOREF(pvProv);
     return 0;
 }
 
@@ -816,17 +938,18 @@ static int      supdrvDTracePOps_Enable(void *pvProv, dtrace_id_t idProbe, void 
 static void     supdrvDTracePOps_Disable(void *pvProv, dtrace_id_t idProbe, void *pvProbe)
 {
     PSUPDRVDTPROVIDER   pProv      = (PSUPDRVDTPROVIDER)pvProv;
-    PVTGPROBELOC        pProbeLoc  = (PVTGPROBELOC)pvProbe;
-    PVTGDESCPROBE       pProbeDesc = (PVTGDESCPROBE)pProbeLoc->pbProbe;
-
-    if (pProbeLoc->fEnabled)
+    if (!pProv->fZombie)
     {
-        pProbeLoc->fEnabled = 0;
-        if (ASMAtomicDecU32(&pProbeDesc->u32User) == 0)
-            pProv->pHdr->pafProbeEnabled[pProbeDesc->idxEnabled] = 1;
-    }
+        PVTGPROBELOC    pProbeLoc  = (PVTGPROBELOC)pvProbe;
+        PVTGDESCPROBE   pProbeDesc = (PVTGDESCPROBE)pProbeLoc->pbProbe;
 
-    NOREF(pvProv);
+        if (pProbeLoc->fEnabled)
+        {
+            pProbeLoc->fEnabled = 0;
+            if (ASMAtomicDecU32(&pProbeDesc->u32User) == 0)
+                pProv->pHdr->pafProbeEnabled[pProbeDesc->idxEnabled] = 1;
+        }
+    }
 }
 
 
@@ -837,25 +960,29 @@ static void     supdrvDTracePOps_GetArgDesc(void *pvProv, dtrace_id_t idProbe, v
                                             dtrace_argdesc_t *pArgDesc)
 {
     PSUPDRVDTPROVIDER   pProv      = (PSUPDRVDTPROVIDER)pvProv;
-    PVTGPROBELOC        pProbeLoc  = (PVTGPROBELOC)pvProbe;
-    PVTGDESCPROBE       pProbeDesc = (PVTGDESCPROBE)pProbeLoc->pbProbe;
-    PVTGDESCARGLIST     pArgList   = (PVTGDESCARGLIST)((uintptr_t)pProv->pHdr->paArgLists + pProbeDesc->offArgList);
+    unsigned            uArg       = pArgDesc->dtargd_ndx; 
 
-    Assert(pProbeDesc->offArgList < pProv->pHdr->cbArgLists);
-    if (pArgList->cArgs > pArgDesc->dtargd_ndx)
+    if (!pProv->fZombie)
     {
-        const char *pszType = supdrvVtgGetString(pProv->pHdr, pArgList->aArgs[pArgDesc->dtargd_ndx].offType);
-        size_t      cchType = strlen(pszType);
-        if (cchType < sizeof(pArgDesc->dtargd_native))
+        PVTGPROBELOC    pProbeLoc  = (PVTGPROBELOC)pvProbe;
+        PVTGDESCPROBE   pProbeDesc = (PVTGDESCPROBE)pProbeLoc->pbProbe;
+        PVTGDESCARGLIST pArgList   = (PVTGDESCARGLIST)((uintptr_t)pProv->pHdr->paArgLists + pProbeDesc->offArgList);
+
+        Assert(pProbeDesc->offArgList < pProv->pHdr->cbArgLists);
+        if (pArgList->cArgs > uArg)
         {
-            memcpy(pArgDesc->dtargd_native, pszType, cchType + 1);
-            /** @todo mapping */
+            const char *pszType = supdrvVtgGetString(pProv->pHdr, pArgList->aArgs[uArg].offType);
+            size_t      cchType = strlen(pszType);
+            if (cchType < sizeof(pArgDesc->dtargd_native))
+            {
+                memcpy(pArgDesc->dtargd_native, pszType, cchType + 1);
+                /** @todo mapping */
+                return;
+            }
         }
-        else
-            pArgDesc->dtargd_ndx = DTRACE_ARGNONE;
     }
-    else
-        pArgDesc->dtargd_ndx = DTRACE_ARGNONE;
+
+    pArgDesc->dtargd_ndx = DTRACE_ARGNONE;
 }
 
 
@@ -877,11 +1004,13 @@ static uint64_t supdrvDTracePOps_GetArgVal(void *pvProv, dtrace_id_t idProbe, vo
 static void    supdrvDTracePOps_Destroy(void *pvProv, dtrace_id_t idProbe, void *pvProbe)
 {
     PSUPDRVDTPROVIDER   pProv      = (PSUPDRVDTPROVIDER)pvProv;
-    PVTGPROBELOC        pProbeLoc  = (PVTGPROBELOC)pvProbe;
-
-    Assert(!pProbeLoc->fEnabled);
-    Assert(pProbeLoc->idProbe == idProbe); NOREF(idProbe);
-    pProbeLoc->idProbe = UINT32_MAX;
+    if (!pProv->fZombie)
+    {
+        PVTGPROBELOC    pProbeLoc  = (PVTGPROBELOC)pvProbe;
+        Assert(!pProbeLoc->fEnabled);
+        Assert(pProbeLoc->idProbe == idProbe); NOREF(idProbe);
+        pProbeLoc->idProbe = UINT32_MAX;
+    }
     pProv->cProvidedProbes--;
 }
 
