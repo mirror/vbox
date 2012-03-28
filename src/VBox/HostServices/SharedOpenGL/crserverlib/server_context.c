@@ -24,36 +24,48 @@ GLint crServerDispatchCreateContextEx(const char *dpyName, GLint visualBits, GLi
 {
     GLint retVal = -1;
     CRContext *newCtx;
-    CRCreateInfo_t *pCreateInfo;
+    CRContextInfo *pContextInfo;
+    GLboolean fFirst = GL_FALSE;
 
     if (shareCtx > 0) {
         crWarning("CRServer: context sharing not implemented.");
         shareCtx = 0;
     }
 
+    pContextInfo = (CRContextInfo *) crAlloc(sizeof (CRContextInfo));
+    if (!pContextInfo)
+    {
+        crWarning("failed to alloc context info!");
+        return -1;
+    }
+
+    pContextInfo->CreateInfo.visualBits = visualBits;
+
     /* Since the Cr server serialized all incoming clients/contexts into
      * one outgoing GL stream, we only need to create one context for the
      * head SPU.  We'll only have to make it current once too, below.
      */
     if (cr_server.firstCallCreateContext) {
-        cr_server.SpuContextVisBits = visualBits;
-        cr_server.SpuContext = cr_server.head_spu->dispatch_table.
-            CreateContext(dpyName, cr_server.SpuContextVisBits, shareCtx);
-        if (cr_server.SpuContext < 0) {
+        cr_server.MainContextInfo.CreateInfo.visualBits = visualBits;
+        cr_server.MainContextInfo.SpuContext = cr_server.head_spu->dispatch_table.
+            CreateContext(dpyName, cr_server.MainContextInfo.CreateInfo.visualBits, shareCtx);
+        if (cr_server.MainContextInfo.SpuContext < 0) {
             crWarning("crServerDispatchCreateContext() failed.");
+            crFree(pContextInfo);
             return -1;
         }
         cr_server.firstCallCreateContext = GL_FALSE;
+        fFirst = GL_TRUE;
     }
     else {
         /* second or third or ... context */
-        if ((visualBits & cr_server.SpuContextVisBits) != visualBits) {
+        if (!cr_server.bUseMultipleContexts && ((visualBits & cr_server.MainContextInfo.CreateInfo.visualBits) != visualBits)) {
             int oldSpuContext;
 
             /* the new context needs new visual attributes */
-            cr_server.SpuContextVisBits |= visualBits;
+            cr_server.MainContextInfo.CreateInfo.visualBits |= visualBits;
             crDebug("crServerDispatchCreateContext requires new visual (0x%x).",
-                    cr_server.SpuContextVisBits);
+                    cr_server.MainContextInfo.CreateInfo.visualBits);
 
             /* Here, we used to just destroy the old rendering context.
              * Unfortunately, this had the side effect of destroying
@@ -66,16 +78,37 @@ GLint crServerDispatchCreateContextEx(const char *dpyName, GLint visualBits, GLi
              */
 
             /* create new rendering context with suitable visual */
-            oldSpuContext = cr_server.SpuContext;
-            cr_server.SpuContext = cr_server.head_spu->dispatch_table.
-                CreateContext(dpyName, cr_server.SpuContextVisBits, cr_server.SpuContext);
+            oldSpuContext = cr_server.MainContextInfo.SpuContext;
+            cr_server.MainContextInfo.SpuContext = cr_server.head_spu->dispatch_table.
+                CreateContext(dpyName, cr_server.MainContextInfo.CreateInfo.visualBits, cr_server.MainContextInfo.SpuContext);
             /* destroy old rendering context */
             cr_server.head_spu->dispatch_table.DestroyContext(oldSpuContext);
-            if (cr_server.SpuContext < 0) {
+            if (cr_server.MainContextInfo.SpuContext < 0) {
                 crWarning("crServerDispatchCreateContext() failed.");
+                crFree(pContextInfo);
                 return -1;
             }
         }
+    }
+
+    if (cr_server.bUseMultipleContexts) {
+        pContextInfo->SpuContext = cr_server.head_spu->dispatch_table.
+                CreateContext(dpyName, cr_server.MainContextInfo.CreateInfo.visualBits, cr_server.MainContextInfo.SpuContext);
+        if (pContextInfo->SpuContext < 0) {
+            crWarning("crServerDispatchCreateContext() failed.");
+            crStateEnableDiffOnMakeCurrent(GL_TRUE);
+            cr_server.bUseMultipleContexts = GL_FALSE;
+            if (!fFirst)
+                crError("creating shared context failed, while it is expected to work!");
+        }
+        else if (fFirst)
+        {
+            crStateEnableDiffOnMakeCurrent(GL_FALSE);
+        }
+    }
+    else
+    {
+        pContextInfo->SpuContext = -1;
     }
 
     /* Now create a new state-tracker context and initialize the
@@ -86,13 +119,12 @@ GLint crServerDispatchCreateContextEx(const char *dpyName, GLint visualBits, GLi
         crStateSetCurrentPointers( newCtx, &(cr_server.current) );
         crStateResetCurrentPointers(&(cr_server.current));
         retVal = preloadCtxID<0 ? crServerGenerateID(&cr_server.idsPool.freeContextID) : preloadCtxID;
-        crHashtableAdd(cr_server.contextTable, retVal, newCtx);
 
-        pCreateInfo = (CRCreateInfo_t *) crAlloc(sizeof(CRCreateInfo_t));
-        pCreateInfo->pszDpyName = dpyName ? crStrdup(dpyName) : NULL;
-        pCreateInfo->visualBits = visualBits;
-        pCreateInfo->internalID = newCtx->id;
-        crHashtableAdd(cr_server.pContextCreateInfoTable, retVal, pCreateInfo);
+        pContextInfo->pContext = newCtx;
+        pContextInfo->CreateInfo.visualBits = visualBits;
+        pContextInfo->CreateInfo.internalID = newCtx->id;
+        pContextInfo->CreateInfo.pszDpyName = dpyName ? crStrdup(dpyName) : NULL;
+        crHashtableAdd(cr_server.contextTable, retVal, pContextInfo);
     }
 
     if (retVal != -1 && !cr_server.bIsInLoadingState) {
@@ -148,29 +180,39 @@ static int crServerRemoveClientContext(CRClient *pClient, GLint ctx)
 void SERVER_DISPATCH_APIENTRY
 crServerDispatchDestroyContext( GLint ctx )
 {
+    CRContextInfo *crCtxInfo;
     CRContext *crCtx;
     int32_t client;
     CRClientNode *pNode;
     int found=false;
 
-    crCtx = (CRContext *) crHashtableSearch(cr_server.contextTable, ctx);
-    if (!crCtx) {
+    crCtxInfo = (CRContextInfo *) crHashtableSearch(cr_server.contextTable, ctx);
+    if (!crCtxInfo) {
         crWarning("CRServer: DestroyContext invalid context %d", ctx);
         return;
     }
+    crCtx = crCtxInfo->pContext;
+    CRASSERT(crCtx);
 
     crDebug("CRServer: DestroyContext context %d", ctx);
 
     crHashtableDelete(cr_server.contextTable, ctx, NULL);
     crStateDestroyContext( crCtx );
-    crHashtableDelete(cr_server.pContextCreateInfoTable, ctx, crServerCreateInfoDeleteCB);
+
+    if (crCtxInfo->CreateInfo.pszDpyName)
+        crFree(crCtxInfo->CreateInfo.pszDpyName);
+
+    if (crCtxInfo->SpuContext >= 0)
+        cr_server.head_spu->dispatch_table.DestroyContext(crCtxInfo->SpuContext);
+
+    crFree(crCtxInfo);
 
     if (cr_server.curClient)
     {
         /* If we delete our current context, default back to the null context */
-        if (cr_server.curClient->currentCtx == crCtx) {
+        if (cr_server.curClient->currentCtxInfo == crCtxInfo) {
             cr_server.curClient->currentContextNumber = -1;
-            cr_server.curClient->currentCtx = cr_server.DummyContext;
+            cr_server.curClient->currentCtxInfo = &cr_server.MainContextInfo;
         }
 
         found = crServerRemoveClientContext(cr_server.curClient, ctx);
@@ -206,20 +248,20 @@ crServerDispatchDestroyContext( GLint ctx )
     /*Make sure this context isn't active in other clients*/
     for (client=0; client<cr_server.numClients; ++client)
     {
-        if (cr_server.clients[client]->currentCtx == crCtx)
+        if (cr_server.clients[client]->currentCtxInfo == crCtxInfo)
         {
             cr_server.clients[client]->currentContextNumber = -1;
-            cr_server.clients[client]->currentCtx = cr_server.DummyContext;
+            cr_server.clients[client]->currentCtxInfo = &cr_server.MainContextInfo;
         }
     }
 
     pNode=cr_server.pCleanupClient;
     while (pNode)
     {
-        if (pNode->pClient->currentCtx == crCtx)
+        if (pNode->pClient->currentCtxInfo == crCtxInfo)
         {
             pNode->pClient->currentContextNumber = -1;
-            pNode->pClient->currentCtx = cr_server.DummyContext;
+            pNode->pClient->currentCtxInfo = &cr_server.MainContextInfo;
         }
         pNode = pNode->next;
     }
@@ -230,6 +272,7 @@ void SERVER_DISPATCH_APIENTRY
 crServerDispatchMakeCurrent( GLint window, GLint nativeWindow, GLint context )
 {
     CRMuralInfo *mural, *oldMural;
+    CRContextInfo *ctxInfo = NULL;
     CRContext *ctx, *oldCtx;
 
     if (context >= 0 && window >= 0) {
@@ -241,8 +284,8 @@ crServerDispatchMakeCurrent( GLint window, GLint nativeWindow, GLint context )
         }
 
         /* Update the state tracker's current context */
-        ctx = (CRContext *) crHashtableSearch(cr_server.contextTable, context);
-        if (!ctx) {
+        ctxInfo = (CRContextInfo *) crHashtableSearch(cr_server.contextTable, context);
+        if (!ctxInfo) {
             crWarning("CRserver: NULL context in MakeCurrent %d", context);
             return;
         }
@@ -261,29 +304,34 @@ crServerDispatchMakeCurrent( GLint window, GLint nativeWindow, GLint context )
             }
         }
 
-        ctx = cr_server.DummyContext;
+        ctxInfo = &cr_server.MainContextInfo;
         window = -1;
         mural = NULL;
         return;
     }
+
+    ctx = ctxInfo->pContext;
+    CRASSERT(ctx);
 
     /* Ubuntu 11.04 hosts misbehave if context window switch is
      * done with non-default framebuffer object settings.
      * crStateSwichPrepare & crStateSwichPostprocess are supposed to work around this problem
      * crStateSwichPrepare restores the FBO state to its default values before the context window switch,
      * while crStateSwichPostprocess restores it back to the original values */
-    oldCtx = crStateSwichPrepare(ctx);
+    if (!cr_server.bUseMultipleContexts)
+        oldCtx = crStateSwichPrepare(ctx);
 
     /*
     crDebug("**** %s client %d  curCtx=%d curWin=%d", __func__,
                     cr_server.curClient->number, ctxPos, window);
     */
     cr_server.curClient->currentContextNumber = context;
-    cr_server.curClient->currentCtx = ctx;
+    cr_server.curClient->currentCtxInfo = ctxInfo;
     cr_server.curClient->currentMural = mural;
     cr_server.curClient->currentWindow = window;
 
-    CRASSERT(cr_server.curClient->currentCtx);
+    CRASSERT(cr_server.curClient->currentCtxInfo);
+    CRASSERT(cr_server.curClient->currentCtxInfo->pContext);
 
     /* This is a hack to force updating the 'current' attribs */
     crStateUpdateColorBits();
@@ -323,8 +371,11 @@ crServerDispatchMakeCurrent( GLint window, GLint nativeWindow, GLint context )
          */
         cr_server.head_spu->dispatch_table.MakeCurrent( mural->spuWindow,
                                                         nativeWindow,
-                                                        cr_server.SpuContext );
+                                                        ctxInfo->SpuContext >= 0
+                                                            ? ctxInfo->SpuContext
+                                                              : cr_server.MainContextInfo.SpuContext);
         cr_server.firstCallMakeCurrent = GL_FALSE;
+        cr_server.currentCtxInfo = ctxInfo;
         cr_server.currentWindow = window;
         cr_server.currentNativeWindow = nativeWindow;
     }
@@ -332,7 +383,9 @@ crServerDispatchMakeCurrent( GLint window, GLint nativeWindow, GLint context )
     /* This used to be earlier, after crStateUpdateColorBits() call */
     crStateMakeCurrent( ctx );
 
-    crStateSwichPostprocess(oldCtx);
+
+    if (!cr_server.bUseMultipleContexts)
+        crStateSwichPostprocess(oldCtx);
 
     if (oldMural != mural && crServerSupportRedirMuralFBO())
     {
