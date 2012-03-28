@@ -12,6 +12,7 @@
 #include "cr_string.h"
 #include "cr_mem.h"
 #include "cr_hash.h"
+#include "cr_environment.h"
 #include "server_dispatch.h"
 #include "state/cr_texture.h"
 #include "render/renderspu.h"
@@ -276,11 +277,7 @@ crServerInit(int argc, char *argv[])
     }
 #endif
 
-#ifndef DEBUG_misha
-    cr_server.bUseMultipleContexts = GL_FALSE;
-#else
-    cr_server.bUseMultipleContexts = GL_FALSE;
-#endif
+    cr_server.bUseMultipleContexts = (crGetenv( "CR_SERVER_USE_MULTIPLE_CONTEXTS" ) != NULL);
 
     if (cr_server.bUseMultipleContexts)
     {
@@ -347,11 +344,7 @@ GLboolean crVBoxServerInit(void)
     }
 #endif
 
-#ifndef DEBUG_misha
-    cr_server.bUseMultipleContexts = GL_FALSE;
-#else
-    cr_server.bUseMultipleContexts = GL_FALSE;
-#endif
+    cr_server.bUseMultipleContexts = (crGetenv( "CR_SERVER_USE_MULTIPLE_CONTEXTS" ) != NULL);
 
     if (cr_server.bUseMultipleContexts)
     {
