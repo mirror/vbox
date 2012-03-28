@@ -110,6 +110,8 @@ HRESULT Guest::init(Console *aParent)
 #ifdef VBOX_WITH_GUEST_CONTROL
     /* Init the context ID counter at 1000. */
     mNextContextID = 1000;
+    /* Init the host PID counter. */
+    mNextHostPID = 0;
 #endif
 
 #ifdef VBOX_WITH_DRAG_AND_DROP
@@ -210,8 +212,8 @@ void Guest::updateStats(uint64_t iTick)
      * and released the lock.
      */
     uFreeTotal      = 0;
-    uAllocTotal     = 0; 
-    uBalloonedTotal = 0; 
+    uAllocTotal     = 0;
+    uBalloonedTotal = 0;
     uSharedTotal    = 0;
     uTotalMem       = 0;
     uPrivateMem     = 0;
@@ -252,7 +254,7 @@ void Guest::updateStats(uint64_t iTick)
 
     mParent->reportGuestStatistics(validStats,
                                    aGuestStats[GUESTSTATTYPE_CPUUSER],
-                                   aGuestStats[GUESTSTATTYPE_CPUKERNEL], 
+                                   aGuestStats[GUESTSTATTYPE_CPUKERNEL],
                                    aGuestStats[GUESTSTATTYPE_CPUIDLE],
                                    /* Convert the units for RAM usage stats: page (4K) -> 1KB units */
                                    mCurrentGuestStat[GUESTSTATTYPE_MEMTOTAL] * (_4K/_1K),

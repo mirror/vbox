@@ -131,44 +131,51 @@ HRESULT Guest::fileQueryInfoInternal(IN_BSTR aFile,
          */
         ULONG uPID;
         GuestCtrlStreamObjects stdOut;
+        ComPtr<IProgress> pProgress;
         hr = executeAndWaitForTool(Bstr(VBOXSERVICE_TOOL_STAT).raw(), Bstr("Querying file information").raw(),
                                    ComSafeArrayAsInParam(args),
                                    ComSafeArrayAsInParam(env),
                                    aUsername, aPassword,
                                    ExecuteProcessFlag_WaitForStdOut,
                                    &stdOut, NULL,
-                                   NULL /* Progress */, &uPID);
+                                   pProgress.asOutParam(), &uPID);
         if (SUCCEEDED(hr))
         {
-            int rc = VINF_SUCCESS;
-            if (stdOut.size())
+            hr = setErrorFromProgress(pProgress);
+            if (SUCCEEDED(hr))
             {
+                int rc = VINF_SUCCESS;
+                if (stdOut.size())
+                {
 #if 0
-                /* Dump the parsed stream contents to Log(). */
-                stdOut[0].Dump();
+                    /* Dump the parsed stream contents to Log(). */
+                    stdOut[0].Dump();
 #endif
-                const char *pszFsType = stdOut[0].GetString("ftype");
-                if (!pszFsType) /* Was an object found at all? */
-                    rc = VERR_FILE_NOT_FOUND;
-                if (   RT_SUCCESS(rc)
-                    && strcmp(pszFsType, "-")) /* Regular file? */
-                {
-                    rc = VERR_FILE_NOT_FOUND;
-                    /* This is not critical for Main, so don't set hr --
-                     * we will take care of rc then. */
+                    const char *pszFsType = stdOut[0].GetString("ftype");
+                    if (!pszFsType) /* Was an object found at all? */
+                        rc = VERR_FILE_NOT_FOUND;
+                    if (   RT_SUCCESS(rc)
+                        && strcmp(pszFsType, "-")) /* Regular file? */
+                    {
+                        rc = VERR_FILE_NOT_FOUND;
+                        /* This is not critical for Main, so don't set hr --
+                         * we will take care of rc then. */
+                    }
+                    if (   RT_SUCCESS(rc)
+                        && aObjInfo) /* Do we want object details? */
+                    {
+                        rc = executeStreamQueryFsObjInfo(aFile, stdOut[0],
+                                                         aObjInfo, enmAddAttribs);
+                    }
                 }
-                if (   RT_SUCCESS(rc)
-                    && aObjInfo) /* Do we want object details? */
-                {
-                    rc = executeStreamQueryFsObjInfo(aFile, stdOut[0],
-                                                     aObjInfo, enmAddAttribs);
-                }
-            }
-            else
-                rc = VERR_NO_DATA;
+                else
+                    rc = VERR_NO_DATA;
 
-            if (pRC)
-                *pRC = rc;
+                if (pRC)
+                    *pRC = rc;
+            }
+
+            pProgress.setNull();
         }
     }
     catch (std::bad_alloc &)

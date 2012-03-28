@@ -98,7 +98,7 @@ HRESULT Guest::directoryCreateInternal(IN_BSTR aDirectory,
         }
     }
 
-    HRESULT rc = S_OK;
+    HRESULT hr;
     try
     {
         Utf8Str Utf8Directory(aDirectory);
@@ -121,19 +121,26 @@ HRESULT Guest::directoryCreateInternal(IN_BSTR aDirectory,
         }
         args.push_back(Bstr(Utf8Directory).raw());  /* The directory we want to create. */
 
-        rc = executeAndWaitForTool(Bstr(VBOXSERVICE_TOOL_MKDIR).raw(), Bstr("Creating directory").raw(),
+        ULONG uPID;
+        ComPtr<IProgress> pProgress;
+        hr = executeAndWaitForTool(Bstr(VBOXSERVICE_TOOL_MKDIR).raw(), Bstr("Creating directory").raw(),
                                    ComSafeArrayAsInParam(args),
                                    ComSafeArrayAsInParam(env),
                                    aUsername, aPassword,
                                    ExecuteProcessFlag_None,
                                    NULL, NULL,
-                                   NULL /* Progress */, NULL /* PID */);
+                                   pProgress.asOutParam(), &uPID);
+        if (SUCCEEDED(hr))
+        {
+            hr = setErrorFromProgress(pProgress);
+            pProgress.setNull();
+        }
     }
     catch (std::bad_alloc &)
     {
-        rc = E_OUTOFMEMORY;
+        hr = E_OUTOFMEMORY;
     }
-    return rc;
+    return hr;
 }
 
 /**
@@ -298,7 +305,7 @@ int Guest::directoryGetNextEntry(uint32_t uHandle, GuestProcessStreamBlock &stre
     if (it != mGuestDirectoryMap.end())
     {
 #ifdef DEBUG
-        it->second.mStream.Dump("/tmp/stream.txt");
+        it->second.mStream.Dump("c:\\temp\\stream.txt");
 #endif
         return executeStreamGetNextBlock(it->second.mPID,
                                          ProcessOutputFlag_None /* StdOut */,
@@ -481,6 +488,7 @@ HRESULT Guest::directoryQueryInfoInternal(IN_BSTR aDirectory,
          * Execute guest process.
          */
         ULONG uPID;
+        ComPtr<IProgress> pProgress;
         GuestCtrlStreamObjects stdOut;
         hr = executeAndWaitForTool(Bstr(VBOXSERVICE_TOOL_STAT).raw(), Bstr("Querying directory information").raw(),
                                    ComSafeArrayAsInParam(args),
@@ -488,34 +496,40 @@ HRESULT Guest::directoryQueryInfoInternal(IN_BSTR aDirectory,
                                    aUsername, aPassword,
                                    ExecuteProcessFlag_WaitForStdOut,
                                    &stdOut, NULL /* stdErr */,
-                                   NULL /* Progress */, &uPID);
+                                   pProgress.asOutParam(), &uPID);
         if (SUCCEEDED(hr))
         {
-            int rc = VINF_SUCCESS;
-            if (stdOut.size())
+            hr = setErrorFromProgress(pProgress);
+            if (SUCCEEDED(hr))
             {
-                const char *pszFsType = stdOut[0].GetString("ftype");
-                if (!pszFsType) /* Attribute missing? */
-                     rc = VERR_PATH_NOT_FOUND;
-                if (   RT_SUCCESS(rc)
-                    && strcmp(pszFsType, "d")) /* Directory? */
+                int rc = VINF_SUCCESS;
+                if (stdOut.size())
                 {
-                     rc = VERR_PATH_NOT_FOUND;
-                     /* This is not critical for Main, so don't set hr --
-                      * we will take care of rc then. */
+                    const char *pszFsType = stdOut[0].GetString("ftype");
+                    if (!pszFsType) /* Attribute missing? */
+                         rc = VERR_PATH_NOT_FOUND;
+                    if (   RT_SUCCESS(rc)
+                        && strcmp(pszFsType, "d")) /* Directory? */
+                    {
+                         rc = VERR_PATH_NOT_FOUND;
+                         /* This is not critical for Main, so don't set hr --
+                          * we will take care of rc then. */
+                    }
+                    if (   RT_SUCCESS(rc)
+                        && aObjInfo) /* Do we want object details? */
+                    {
+                        rc = executeStreamQueryFsObjInfo(aDirectory, stdOut[0],
+                                                         aObjInfo, enmAddAttribs);
+                    }
                 }
-                if (   RT_SUCCESS(rc)
-                    && aObjInfo) /* Do we want object details? */
-                {
-                    rc = executeStreamQueryFsObjInfo(aDirectory, stdOut[0],
-                                                     aObjInfo, enmAddAttribs);
-                }
-            }
-            else
-                rc = VERR_NO_DATA;
+                else
+                    rc = VERR_NO_DATA;
 
-            if (pRC)
-                *pRC = rc;
+                if (pRC)
+                    *pRC = rc;
+            }
+
+            pProgress.setNull();
         }
     }
     catch (std::bad_alloc &)
