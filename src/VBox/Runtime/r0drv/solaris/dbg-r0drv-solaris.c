@@ -28,9 +28,10 @@
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
-#include <iprt/dbg.h>
+#include "the-solaris-kernel.h"
 #include "internal/iprt.h"
 
+#include <iprt/dbg.h>
 #include <iprt/asm.h>
 #include <iprt/assert.h>
 #include <iprt/err.h>
@@ -38,11 +39,6 @@
 #include <iprt/mem.h>
 #include <iprt/string.h>
 #include <iprt/thread.h>
-
-#include <sys/kobj.h>
-#include <sys/thread.h>
-#include <sys/ctf_api.h>
-#include <sys/modctl.h>
 
 
 /*******************************************************************************
@@ -69,6 +65,78 @@ typedef struct RTDBGKRNLINFOINT *PRTDBGKRNLINFOINT;
 #define RTDBGKRNLINFO_MAGIC       UINT32_C(0x19700820)
 
 
+/**
+ * Retains a kernel module and opens the CTF data associated with it.
+ *
+ * @param pszModule     The name of the module to open.
+ * @param ppMod         Where to store the module handle.
+ * @param ppCTF         Where to store the module's CTF handle.
+ *
+ * @return IPRT status code.
+ */
+static int rtr0DbgKrnlInfoModRetain(char *pszModule, modclt_t **ppMod, ctf_file_t **ppCTF)
+{
+    AssertPtrReturn(pszModule, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(ppMod, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(ppCTF, VERR_INVALID_PARAMETER);
+
+    int rc = VINF_SUCCESS;
+    modid_t ModId = mod_name_to_modid(pszModule);
+    if (ModId != -1)
+    {
+        *ppMod = mod_hold_by_id(ModId);
+        if (*ppMod)
+        {
+            /*
+             * Hold mod_lock as ctf_modopen may update the module with uncompressed CTF data.
+             */
+            int err;
+            mutex_enter(&mod_lock);
+            *ppCTF = ctf_modopen(pThis->pGenUnixMod->mod_mp, &err);
+            mutex_exit(&mod_lock);
+
+            if (*ppCTF)
+                return VINF_SUCCESS;
+            else
+            {
+                LogRel(("rtr0DbgKrnlInfoModRetain: ctf_modopen failed for '%s' err=%d\n", pszModule, err));
+                rc = VERR_INTERNAL_ERROR_3;
+            }
+
+            mod_release_mod(*ppMod);
+        }
+        else
+        {
+            LogRel(("rtr0DbgKrnlInfoModRetain: mod_hold_by_id failed for '%s'\n" pszModule));
+            rc = VERR_INTERNAL_ERROR_2;
+        }
+    }
+    else
+    {
+        LogRel(("rtr0DbgKrnlInfoModRetain: mod_name_to_modid failed for '%s'\n", pszModule));
+        rc = VERR_INTERNAL_ERROR;
+    }
+
+    return rc;
+}
+
+
+/**
+ * Releases the kernel module and closes its CTF data.
+ *
+ * @param pMod          Pointer to the module handle.
+ * @param pCTF          Pointer to the module's CTF handle.
+ */
+static void rtr0DbgKrnlInfoModRelease(modctl_t *pMod, ctf_file_t *pCTF)
+{
+    AssertPtrReturnVoid(pMod);
+    AssertPtrReturnVoid(pCTF);
+
+    ctf_close(pCTF);
+    mod_release_mod(pMod);
+}
+
+
 RTR0DECL(int) RTR0DbgKrnlInfoOpen(PRTDBGKRNLINFO phKrnlInfo, uint32_t fFlags)
 {
     AssertReturn(fFlags == 0, VERR_INVALID_PARAMETER);
@@ -79,43 +147,19 @@ RTR0DECL(int) RTR0DbgKrnlInfoOpen(PRTDBGKRNLINFO phKrnlInfo, uint32_t fFlags)
     if (!pThis)
         return VERR_NO_MEMORY;
 
-    int rc;
-    /** @todo r=bird: Where do we release this module? I see other users (crypto) of
-     * this API mod_release_mod().  Not sure if this is a real issue with a primary 
-     * module like genunix, though.  Another thing, I noticed that mod_hold_by_name 
-     * will (a) allocated a module if not found and (b) replace the filename with 
-     * what you hand in under certain conditions.  These issues doesn't apply with 
-     * genunix, but is worth keeping in mind if other modules needs to be held.  A 
-     * safer alternative would probably be mod_name_to_modid + mod_hold_by_id. */ 
-    pThis->pGenUnixMod = mod_hold_by_name("genunix");
-    if (RT_LIKELY(pThis->pGenUnixMod))
+    char szGenUnixModName[] = "genunix";
+    int rc = rtr0DbgKrnlInfoModRetain(szGenUnixModName, &pThis->pGenUnixMod, &pThis->pGenUnixCTF);
+    if (RT_SUCCESS(rc))
     {
-        /*
-         * Hold mod_lock as ctf_modopen may update the module with uncompressed CTF data.
-         */
-        int err;
-        mutex_enter(&mod_lock);
-        pThis->pGenUnixCTF = ctf_modopen(pThis->pGenUnixMod->mod_mp, &err);
-        mutex_exit(&mod_lock);
+        pThis->u32Magic       = RTDBGKRNLINFO_MAGIC;
+        pThis->cRefs          = 1;
 
-        if (RT_LIKELY(pThis->pGenUnixCTF))
-        {
-            pThis->u32Magic       = RTDBGKRNLINFO_MAGIC;
-            pThis->cRefs          = 1;
-
-            *phKrnlInfo = pThis;
-            return VINF_SUCCESS;
-        }
-
-        LogRel(("RTR0DbgKrnlInfoOpen: ctf_modopen failed. err=%d\n", err));
-        rc = VERR_INTERNAL_ERROR_2;
-    }
-    else
-    {
-        LogRel(("RTR0DbgKrnlInfoOpen: mod_hold_by_name failed for genunix.\n"));
-        rc = VERR_INTERNAL_ERROR;
+        *phKrnlInfo = pThis;
+        return VINF_SUCCESS;
     }
 
+    LogRel(("RTR0DbgKrnlInfoOpen: rtr0DbgKrnlOpenMod failed rc=%d.\n", rc));
+    RTMemFree(pThis);
     return rc;
 }
 
@@ -130,15 +174,6 @@ RTR0DECL(uint32_t) RTR0DbgKrnlInfoRetain(RTDBGKRNLINFO hKrnlInfo)
 }
 
 
-static void rtR0DbgKrnlInfoDestroy(PRTDBGKRNLINFOINT pThis)
-{
-    pThis->u32Magic = ~RTDBGKRNLINFO_MAGIC;
-    ctf_close(pThis->pGenUnixCTF);
-    mod_release_mod(pThis->pGenUnixMod);
-    RTMemFree(pThis);
-}
-
-
 RTR0DECL(uint32_t) RTR0DbgKrnlInfoRelease(RTDBGKRNLINFO hKrnlInfo)
 {
     PRTDBGKRNLINFOINT pThis = hKrnlInfo;
@@ -148,7 +183,11 @@ RTR0DECL(uint32_t) RTR0DbgKrnlInfoRelease(RTDBGKRNLINFO hKrnlInfo)
 
     uint32_t cRefs = ASMAtomicDecU32(&pThis->cRefs);
     if (cRefs == 0)
-        rtR0DbgKrnlInfoDestroy(pThis);
+    {
+        pThis->u32Magic = ~RTDBGKRNLINFO_MAGIC;
+        rtr0DbgKrnlInfoModRelease(pThis->pGenUnixCTF, pThis->pGenUnixCTF);
+        RTMemFree(pThis);
+    }
     return cRefs;
 }
 
