@@ -1529,6 +1529,9 @@
 #define VERR_VD_IMAGE_REPAIR_NOT_SUPPORTED          (-3280)
 /** Repairing the image is not possible because the corruption is to severe. */
 #define VERR_VD_IMAGE_REPAIR_IMPOSSIBLE             (-3281)
+/** Reading from the image was not possible because the offset is out of the image range.
+ * This usually indicates that there is a minor corruption in the image meta data. */
+#define VERR_VD_READ_OUT_OF_RANGE                   (-3282)
 /** @} */
 
 
