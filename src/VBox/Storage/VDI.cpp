@@ -486,11 +486,13 @@ static int vdiCreateImage(PVDIIMAGEDESC pImage, uint64_t cbSize,
          * effective than expanding file by write operations.
          */
         rc = vdIfIoIntFileSetSize(pImage->pIfIo, pImage->pStorage, cbTotal);
+        pImage->cbImage = cbTotal;
     }
     else
     {
         /* Set file size to hold header and blocks array. */
         rc = vdIfIoIntFileSetSize(pImage->pIfIo, pImage->pStorage, pImage->offStartData);
+        pImage->cbImage = pImage->offStartData;
     }
     if (RT_FAILURE(rc))
     {
@@ -614,6 +616,16 @@ static int vdiOpenImage(PVDIIMAGEDESC pImage, unsigned uOpenFlags)
     {
         /* Do NOT signal an appropriate error here, as the VD layer has the
          * choice of retrying the open if it failed. */
+        goto out;
+    }
+
+    /* Get file size. */
+    rc = vdIfIoIntFileGetSize(pImage->pIfIo, pImage->pStorage,
+                              &pImage->cbImage);
+    if (RT_FAILURE(rc))
+    {
+        vdIfError(pImage->pIfError, rc, RT_SRC_POS, N_("VDI: error getting the image size in '%s'"), pImage->pszFilename);
+        rc = VERR_VD_VDI_INVALID_HEADER;
         goto out;
     }
 
@@ -961,13 +973,9 @@ static int vdiDiscardBlock(PVDIIMAGEDESC pImage, unsigned uBlock, void *pvBlock)
         if (RT_FAILURE(rc))
             break;
 
-        /* Set new file size. */
-        rc = vdIfIoIntFileGetSize(pImage->pIfIo, pImage->pStorage, &cbImage);
-        if (RT_FAILURE(rc))
-            break;
-
-        LogFlowFunc(("Set new size %llu\n", cbImage - pImage->cbTotalBlockData));
-        rc = vdIfIoIntFileSetSize(pImage->pIfIo, pImage->pStorage, cbImage - pImage->cbTotalBlockData);
+        pImage->cbImage -= pImage->cbTotalBlockData;
+        LogFlowFunc(("Set new size %llu\n", pImage->cbImage));
+        rc = vdIfIoIntFileSetSize(pImage->pIfIo, pImage->pStorage, pImage->cbImage);
     } while (0);
 
     LogFlowFunc(("returns rc=%Rrc\n", rc));
@@ -1045,13 +1053,9 @@ static DECLCALLBACK(int) vdiDiscardBlockAsyncUpdate(void *pBackendData, PVDIOCTX
                 && rc != VERR_VD_ASYNC_IO_IN_PROGRESS)
                 break;
 
-            /* Set new file size. */
-            rc2 = vdIfIoIntFileGetSize(pImage->pIfIo, pImage->pStorage, &cbImage);
-            if (RT_FAILURE(rc2))
-                break;
-
-            LogFlowFunc(("Set new size %llu\n", cbImage - pImage->cbTotalBlockData));
-            rc2 = vdIfIoIntFileSetSize(pImage->pIfIo, pImage->pStorage, cbImage - pImage->cbTotalBlockData);
+            pImage->cbImage -= pImage->cbTotalBlockData;
+            LogFlowFunc(("Set new size %llu\n", pImage->cbImage));
+            rc2 = vdIfIoIntFileSetSize(pImage->pIfIo, pImage->pStorage, pImage->cbImage);
             if (RT_FAILURE(rc2))
                 rc = rc2;
 
@@ -1143,6 +1147,8 @@ static void *vdiAllocationBitmapCreate(void *pvData, size_t cbData)
     Assert(!(cSectors % 8));
 
     pbmAllocationBitmap = RTMemAllocZ(cSectors / 8);
+    if (!pbmAllocationBitmap)
+        return NULL;
 
     while (uSectorCur < cSectors)
     {
@@ -1163,6 +1169,39 @@ static void *vdiAllocationBitmapCreate(void *pvData, size_t cbData)
     return pbmAllocationBitmap;
 }
 
+
+/**
+ * Updates the state of the async cluster allocation.
+ *
+ * @returns VBox status code.
+ * @param   pBackendData    The opaque backend data.
+ * @param   pIoCtx          I/O context associated with this request.
+ * @param   pvUser          Opaque user data passed during a read/write request.
+ * @param   rcReq           Status code for the completed request.
+ */
+static DECLCALLBACK(int) vdiAsyncBlockAllocUpdate(void *pBackendData, PVDIOCTX pIoCtx, void *pvUser, int rcReq)
+{
+    int rc = VINF_SUCCESS;
+    PVDIIMAGEDESC pImage = (PVDIIMAGEDESC)pBackendData;
+    PVDIASYNCBLOCKALLOC pBlockAlloc = (PVDIASYNCBLOCKALLOC)pvUser;
+
+    if (RT_SUCCESS(rcReq))
+    {
+        pImage->cbImage += pImage->cbTotalBlockData;
+        pImage->paBlocks[pBlockAlloc->uBlock] = pBlockAlloc->cBlocksAllocated;
+
+        if (pImage->paBlocksRev)
+            pImage->paBlocksRev[pBlockAlloc->cBlocksAllocated] = pBlockAlloc->uBlock;
+
+        setImageBlocksAllocated(&pImage->Header, pBlockAlloc->cBlocksAllocated + 1);
+        rc = vdiUpdateBlockInfoAsync(pImage, pBlockAlloc->uBlock, pIoCtx,
+                                     true /* fUpdateHdr */);
+    }
+    /* else: I/O error don't update the block table. */
+
+    RTMemFree(pBlockAlloc);
+    return rc;
+}
 
 /** @copydoc VBOXHDDBACKEND::pfnCheckIfValid */
 static int vdiCheckIfValid(const char *pszFilename, PVDINTERFACE pVDIfsDisk,
@@ -1264,6 +1303,11 @@ static int vdiCreate(const char *pszFilename, uint64_t cbSize,
     PFNVDPROGRESS pfnProgress = NULL;
     void *pvUser = NULL;
     PVDINTERFACEPROGRESS pIfProgress = VDIfProgressGet(pVDIfsOperation);
+    if (pIfProgress)
+    {
+        pfnProgress = pIfProgress->pfnProgress;
+        pvUser = pIfProgress->Core.pvUser;
+    }
 
     /* Check the image flags. */
     if ((uImageFlags & ~VD_VDI_IMAGE_FLAGS_MASK) != 0)
@@ -1440,8 +1484,17 @@ static int vdiRead(void *pBackendData, uint64_t uOffset, void *pvBuf,
         /* Block present in image file, read relevant data. */
         uint64_t u64Offset = (uint64_t)pImage->paBlocks[uBlock] * pImage->cbTotalBlockData
                            + (pImage->offStartData + pImage->offStartBlockData + offRead);
-        rc = vdIfIoIntFileReadSync(pImage->pIfIo, pImage->pStorage, u64Offset,
-                                   pvBuf, cbToRead, NULL);
+
+        if (u64Offset + cbToRead <= pImage->cbImage)
+            rc = vdIfIoIntFileReadSync(pImage->pIfIo, pImage->pStorage, u64Offset,
+                                       pvBuf, cbToRead, NULL);
+        else
+        {
+            LogRel(("VDI: Out of range access (%llu) in image %s, image size %llu\n",
+                    u64Offset, pImage->pszFilename, pImage->cbImage));
+            memset(pvBuf, 0, cbToRead);
+            rc = VERR_VD_READ_OUT_OF_RANGE;
+        }
     }
 
     if (pcbActuallyRead)
@@ -1539,6 +1592,7 @@ static int vdiWrite(void *pBackendData, uint64_t uOffset, const void *pvBuf,
                 if (RT_FAILURE(rc))
                     goto out;
 
+                pImage->cbImage += cbToWrite;
                 *pcbPreRead = 0;
                 *pcbPostRead = 0;
             }
@@ -2242,8 +2296,17 @@ static int vdiAsyncRead(void *pBackendData, uint64_t uOffset, size_t cbToRead,
         /* Block present in image file, read relevant data. */
         uint64_t u64Offset = (uint64_t)pImage->paBlocks[uBlock] * pImage->cbTotalBlockData
                            + (pImage->offStartData + pImage->offStartBlockData + offRead);
-        rc = vdIfIoIntFileReadUserAsync(pImage->pIfIo, pImage->pStorage, u64Offset,
-                                        pIoCtx, cbToRead);
+
+        if (u64Offset + cbToRead <= pImage->cbImage)
+            rc = vdIfIoIntFileReadUserAsync(pImage->pIfIo, pImage->pStorage, u64Offset,
+                                            pIoCtx, cbToRead);
+        else
+        {
+            LogRel(("VDI: Out of range access (%llu) in image %s, image size %llu\n",
+                    u64Offset, pImage->pszFilename, pImage->cbImage));
+            vdIfIoIntIoCtxSet(pImage->pIfIo, pIoCtx, 0, cbToRead);
+            rc = VERR_VD_READ_OUT_OF_RANGE;
+        }
     }
 
     if (pcbActuallyRead)
@@ -2324,26 +2387,35 @@ static int vdiAsyncWrite(void *pBackendData, uint64_t uOffset, size_t cbToWrite,
                 /* Full block write to previously unallocated block.
                  * Allocate block and write data. */
                 Assert(!offWrite);
+                PVDIASYNCBLOCKALLOC pBlockAlloc = (PVDIASYNCBLOCKALLOC)RTMemAllocZ(sizeof(VDIASYNCBLOCKALLOC));
+                if (!pBlockAlloc)
+                {
+                    rc = VERR_NO_MEMORY;
+                    break;
+                }
+
                 unsigned cBlocksAllocated = getImageBlocksAllocated(&pImage->Header);
                 uint64_t u64Offset = (uint64_t)cBlocksAllocated * pImage->cbTotalBlockData
                                    + (pImage->offStartData + pImage->offStartBlockData);
-                rc = vdIfIoIntFileWriteUserAsync(pImage->pIfIo, pImage->pStorage,
-                                                 u64Offset, pIoCtx, cbToWrite, NULL, NULL);
-                if (RT_UNLIKELY(RT_FAILURE_NP(rc) && (rc != VERR_VD_ASYNC_IO_IN_PROGRESS)))
-                    goto out;
-                pImage->paBlocks[uBlock] = cBlocksAllocated;
 
-                if (pImage->paBlocksRev)
-                    pImage->paBlocksRev[cBlocksAllocated] = uBlock;
-
-                setImageBlocksAllocated(&pImage->Header, cBlocksAllocated + 1);
-
-                rc = vdiUpdateBlockInfoAsync(pImage, uBlock, pIoCtx, true /* fUpdateHdr */);
-                if (RT_FAILURE(rc) && (rc != VERR_VD_ASYNC_IO_IN_PROGRESS))
-                    goto out;
+                pBlockAlloc->cBlocksAllocated = cBlocksAllocated;
+                pBlockAlloc->uBlock           = uBlock;
 
                 *pcbPreRead = 0;
                 *pcbPostRead = 0;
+
+                rc = vdIfIoIntFileWriteUserAsync(pImage->pIfIo, pImage->pStorage,
+                                                 u64Offset, pIoCtx, cbToWrite,
+                                                 vdiAsyncBlockAllocUpdate, pBlockAlloc);
+                if (rc == VERR_VD_ASYNC_IO_IN_PROGRESS)
+                    break;
+                else if (RT_FAILURE(rc))
+                {
+                    RTMemFree(pBlockAlloc);
+                    break;
+                }
+
+                rc = vdiAsyncBlockAllocUpdate(pImage, pIoCtx, pBlockAlloc, rc);
             }
             else
             {

@@ -553,6 +553,8 @@ typedef struct VDIIMAGEDESC
     PVDINTERFACEERROR       pIfError;
     /** I/O interface. */
     PVDINTERFACEIOINT       pIfIo;
+    /** Current size of the image (used for range validation when reading). */
+    uint64_t                cbImage;
 } VDIIMAGEDESC, *PVDIIMAGEDESC;
 
 /**
@@ -590,6 +592,17 @@ typedef struct VDIBLOCKDISCARDASYNC
     /** Index of the last block in the block table (gathered from the reverse block table). */
     unsigned                uBlockLast;
 } VDIBLOCKDISCARDASYNC, *PVDIBLOCKDISCARDASYNC;
+
+/**
+ * Async image expansion state.
+ */
+typedef struct VDIASYNCBLOCKALLOC
+{
+    /** Number of blocks allocated. */
+    unsigned                cBlocksAllocated;
+    /** Block index to allocate. */
+    unsigned                uBlock;
+} VDIASYNCBLOCKALLOC, *PVDIASYNCBLOCKALLOC;
 
 #endif
 
