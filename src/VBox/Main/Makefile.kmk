@@ -709,6 +709,10 @@ VBoxC_SOURCES += \
 	src-client/RemoteUSBBackend.cpp
 endif
 
+ifdef VBOX_WITH_NETSHAPER
+VBoxC_DEFS += VBOX_WITH_NETSHAPER
+endif
+
 ifeq ($(KBUILD_TARGET),darwin)
 VBoxC_ORDERDEPS += $(VBoxC_0_OUTDIR)/VBoxC.def
 VBoxC_CLEAN     += $(VBoxC_0_OUTDIR)/VBoxC.def

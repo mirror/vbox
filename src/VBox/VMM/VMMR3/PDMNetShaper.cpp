@@ -86,6 +86,8 @@ typedef struct PDMNETSHAPER
     PVM                      pVM;
     /** Critical section protecting all members below. */
     RTCRITSECT               cs;
+    /** Pending TX thread. */
+    PPDMTHREAD               hTxThread;
     /** Pointer to the first bandwidth group. */
     PPDMNSBWGROUP            pBwGroupsHead;
 } PDMNETSHAPER;
@@ -220,6 +222,27 @@ DECLINLINE(void) pdmNsBwGroupUnref(PPDMNSBWGROUP pBwGroup)
     ASMAtomicDecU32(&pBwGroup->cRefs);
 }
 
+static void pdmNsBwGroupXmitPending(PPDMNSBWGROUP pBwGroup)
+{
+    int rc = RTCritSectEnter(&pBwGroup->cs); AssertRC(rc);
+
+    PPDMNSFILTER pFilter = pBwGroup->pFiltersHead;
+    while (pFilter)
+    {
+        bool fChoked = ASMAtomicXchgBool(&pFilter->fChoked, false);
+        LogFlowFunc(("pFilter=%#p fChoked=%RTbool\n", pFilter, fChoked));
+        if (fChoked && pFilter->pIDrvNet)
+        {
+            LogFlowFunc(("Calling pfnXmitPending for pFilter=%#p\n", pFilter));
+            pFilter->pIDrvNet->pfnXmitPending(pFilter->pIDrvNet);
+        }
+
+        pFilter = pFilter->pNext;
+    }
+
+    rc = RTCritSectLeave(&pBwGroup->cs); AssertRC(rc);
+}
+
 static void pdmNsFilterLink(PPDMNSFILTER pFilter)
 {
     PPDMNSBWGROUP pBwGroup = pFilter->pBwGroupR3;
@@ -315,6 +338,7 @@ VMMR3DECL(int) PDMR3NsDetach(PVM pVM, PPDMDRVINS pDrvIns, PPDMNSFILTER pFilter)
 
 bool PDMR3NsAllocateBandwidth(PPDMNSFILTER pFilter, uint32_t cbTransfer)
 {
+    AssertPtrReturn(pFilter, VERR_INVALID_POINTER);
     if (!VALID_PTR(pFilter->pBwGroupR3))
         return true;
 
@@ -327,7 +351,10 @@ bool PDMR3NsAllocateBandwidth(PPDMNSFILTER pFilter, uint32_t cbTransfer)
     uint32_t uTokens = RT_MIN(pBwGroup->cbBucketSize, uTokensAdded + pBwGroup->cbTokensLast);
 
     if (cbTransfer > uTokens)
+    {
         fAllowed = false;
+        ASMAtomicWriteBool(&pFilter->fChoked, true);
+    }
     else
     {
         pBwGroup->tsUpdatedLast = tsNow;
@@ -337,9 +364,46 @@ bool PDMR3NsAllocateBandwidth(PPDMNSFILTER pFilter, uint32_t cbTransfer)
     rc = RTCritSectLeave(&pBwGroup->cs); AssertRC(rc);
     LogFlowFunc(("BwGroup=%#p{%s} cbTransfer=%u uTokens=%u uTokensAdded=%u fAllowed=%RTbool\n",
                  pBwGroup, pBwGroup->pszName, cbTransfer, uTokens, uTokensAdded, fAllowed));
-    return true; // @todo: i need to implement TX thread first! return fAllowed;
+    return fAllowed;
 }
 
+/**
+ * I/O thread for pending TX.
+ *
+ * @returns VINF_SUCCESS (ignored).
+ * @param   pVM         The VM handle.
+ * @param   pThread     The PDM thread data.
+ */
+static DECLCALLBACK(int) pdmR3NsTxThread(PVM pVM, PPDMTHREAD pThread)
+{
+    PPDMNETSHAPER pShaper = (PPDMNETSHAPER)pThread->pvUser;
+    LogFlow(("pdmR3NsTxThread: pShaper=%p\n", pShaper));
+    while (pThread->enmState == PDMTHREADSTATE_RUNNING)
+    {
+        RTThreadSleep(PDM_NETSHAPER_MAX_LATENCY);
+        /* Go over all bandwidth groups/filters calling pfnXmitPending */
+        int rc = RTCritSectEnter(&pShaper->cs); AssertRC(rc);
+        PPDMNSBWGROUP pBwGroup = pShaper->pBwGroupsHead;
+        while (pBwGroup)
+        {
+            pdmNsBwGroupXmitPending(pBwGroup);
+            pBwGroup = pBwGroup->pNext;
+        }
+        rc = RTCritSectLeave(&pShaper->cs); AssertRC(rc);
+    }
+    return VINF_SUCCESS;
+}
+
+/**
+ * @copydoc FNPDMTHREADWAKEUPINT
+ */
+static DECLCALLBACK(int) pdmR3NsTxWakeUp(PVM pVM, PPDMTHREAD pThread)
+{
+    PPDMNETSHAPER pShaper = (PPDMNETSHAPER)pThread->pvUser;
+    LogFlow(("pdmR3NsTxWakeUp: pShaper=%p\n", pShaper));
+    /* Nothing to do */
+    return VINF_SUCCESS;
+}
 
 /**
  * Terminate the network shaper.
@@ -432,8 +496,18 @@ int pdmR3NetShaperInit(PVM pVM)
                 AssertMsg(!pUVM->pdm.s.pNetShaper,
                           ("Network shaper was already initialized\n"));
 
-                pUVM->pdm.s.pNetShaper = pNetShaper;
-                return VINF_SUCCESS;
+                char szDesc[256];
+                static unsigned iThread;
+
+                RTStrPrintf(szDesc, sizeof(szDesc), "PDMNSTXThread-%d", ++iThread);
+                rc = PDMR3ThreadCreate(pVM, &pNetShaper->hTxThread, pNetShaper,
+                                       pdmR3NsTxThread, pdmR3NsTxWakeUp, 0,
+                                       RTTHREADTYPE_IO, szDesc);
+                if (RT_SUCCESS(rc))
+                {
+                    pUVM->pdm.s.pNetShaper = pNetShaper;
+                    return VINF_SUCCESS;
+                }
             }
 
             RTCritSectDelete(&pNetShaper->cs);

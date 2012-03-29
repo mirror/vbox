@@ -402,6 +402,7 @@ static DECLCALLBACK(int) drvNetShaperConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCf
     else
         rc = VINF_SUCCESS;
 
+    pThis->Filter.pIDrvNet = &pThis->INetworkDown;
     rc = PDMDrvHlpNetShaperAttach(pDrvIns, pThis->pszBwGroup, &pThis->Filter);
     if (RT_FAILURE(rc))
     {
