@@ -120,7 +120,8 @@ VBoxDispD3D_SOURCES  = \
 VBoxDispD3D_SDKS     = WINDDKWLH
 VBoxDispD3D_LIBS     = \
 	$(VBOX_LIB_IPRT_GUEST_R3) \
-	$(VBOX_LIB_VBGL_R3)
+	$(VBOX_LIB_VBGL_R3) \
+	Psapi.lib
 
 #
 # 64-bit systems needs a 32-bit version of VBoxDispD3D.
@@ -130,7 +131,8 @@ VBoxDispD3D-x86_EXTENDS = VBoxDispD3D
 VBoxDispD3D-x86_BLD_TRG_ARCH = x86
 VBoxDispD3D-x86_LIBS = \
 	$(VBOX_LIB_IPRT_GUEST_R3_X86) \
-	$(VBOX_LIB_VBGL_R3_X86)
+	$(VBOX_LIB_VBGL_R3_X86) \
+	Psapi.lib
 VBoxDispD3D-x86_DEFS = $(VBoxDispD3D_DEFS) VBOX_WDDM_WOW64
 
 ifdef VBOX_WITH_CRHGSMI

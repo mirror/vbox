@@ -31,6 +31,8 @@
 #include "VBoxScreen.h"
 #include <VBox/VBoxCrHgsmi.h>
 
+#include <Psapi.h>
+
 #ifdef VBOX_WDDMDISP_WITH_PROFILE
 #include "VBoxDispProfile.h"
 
@@ -1188,22 +1190,17 @@ int vboxCapsInit(PVBOXWDDMDISP_ADAPTER pAdapter)
     pAdapter->cSurfDescs = 0;
     pAdapter->paSurfDescs = NULL;
 
-    if (pAdapter->uIfVersion > 7)
+    if (VBOXDISPMODE_IS_3D(pAdapter))
     {
-        if (pAdapter->pD3D9If)
+        pAdapter->paFormstOps = (FORMATOP*)RTMemAllocZ(sizeof (gVBoxFormatOps3D));
+        Assert(pAdapter->paFormstOps);
+        if (pAdapter->paFormstOps)
         {
-            pAdapter->paFormstOps = (FORMATOP*)RTMemAllocZ(sizeof (gVBoxFormatOps3D));
-            Assert(pAdapter->paFormstOps);
-            if (pAdapter->paFormstOps)
-            {
-                memcpy (pAdapter->paFormstOps , gVBoxFormatOps3D, sizeof (gVBoxFormatOps3D));
-                pAdapter->cFormstOps = RT_ELEMENTS(gVBoxFormatOps3D);
-            }
-            else
-                return VERR_OUT_OF_RESOURCES;
-
-            /* @todo: do we need surface caps here ? */
+            memcpy (pAdapter->paFormstOps , gVBoxFormatOps3D, sizeof (gVBoxFormatOps3D));
+            pAdapter->cFormstOps = RT_ELEMENTS(gVBoxFormatOps3D);
         }
+        else
+            return VERR_OUT_OF_RESOURCES;
     }
 #ifdef VBOX_WITH_VIDEOHWACCEL
     else
@@ -3218,11 +3215,18 @@ static HRESULT APIENTRY vboxWddmDispGetCaps (HANDLE hAdapter, CONST D3DDDIARG_GE
             {
                 memset(pData->pData, 0, sizeof (DDRAW_CAPS));
 #ifdef VBOX_WITH_VIDEOHWACCEL
-                if (vboxVhwaHasCKeying(pAdapter))
+                if (!VBOXDISPMODE_IS_3D(pAdapter))
                 {
-                    DDRAW_CAPS *pCaps = (DDRAW_CAPS*)pData->pData;
-                    pCaps->Caps |= DDRAW_CAPS_COLORKEY;
-//                    pCaps->Caps2 |= DDRAW_CAPS2_FLIPNOVSYNC;
+                    if (vboxVhwaHasCKeying(pAdapter))
+                    {
+                        DDRAW_CAPS *pCaps = (DDRAW_CAPS*)pData->pData;
+                        pCaps->Caps |= DDRAW_CAPS_COLORKEY;
+    //                    pCaps->Caps2 |= DDRAW_CAPS2_FLIPNOVSYNC;
+                    }
+                }
+                else
+                {
+                    WARN(("D3DDDICAPS_DDRAW query for D3D mode!"));
                 }
 #endif
             }
@@ -3241,36 +3245,43 @@ static HRESULT APIENTRY vboxWddmDispGetCaps (HANDLE hAdapter, CONST D3DDDIARG_GE
                                     zero starting with the one following "Head", i.e. Caps */,
                         0, sizeof (DDRAW_MODE_SPECIFIC_CAPS) - RT_OFFSETOF(DDRAW_MODE_SPECIFIC_CAPS, Caps));
 #ifdef VBOX_WITH_VIDEOHWACCEL
-                VBOXVHWA_INFO *pSettings = &pAdapter->aHeads[pCaps->Head].Vhwa.Settings;
-                if (pSettings->fFlags & VBOXVHWA_F_ENABLED)
+                if (!VBOXDISPMODE_IS_3D(pAdapter))
                 {
-                    pCaps->Caps |= MODE_CAPS_OVERLAY | MODE_CAPS_OVERLAYSTRETCH;
-
-                    if (pSettings->fFlags & VBOXVHWA_F_CKEY_DST)
+                    VBOXVHWA_INFO *pSettings = &pAdapter->aHeads[pCaps->Head].Vhwa.Settings;
+                    if (pSettings->fFlags & VBOXVHWA_F_ENABLED)
                     {
-                        pCaps->CKeyCaps |= MODE_CKEYCAPS_DESTOVERLAY
-                                | MODE_CKEYCAPS_DESTOVERLAYYUV /* ?? */
-                                ;
+                        pCaps->Caps |= MODE_CAPS_OVERLAY | MODE_CAPS_OVERLAYSTRETCH;
+
+                        if (pSettings->fFlags & VBOXVHWA_F_CKEY_DST)
+                        {
+                            pCaps->CKeyCaps |= MODE_CKEYCAPS_DESTOVERLAY
+                                    | MODE_CKEYCAPS_DESTOVERLAYYUV /* ?? */
+                                    ;
+                        }
+
+                        if (pSettings->fFlags & VBOXVHWA_F_CKEY_SRC)
+                        {
+                            pCaps->CKeyCaps |= MODE_CKEYCAPS_SRCOVERLAY
+                                    | MODE_CKEYCAPS_SRCOVERLAYCLRSPACE /* ?? */
+                                    | MODE_CKEYCAPS_SRCOVERLAYCLRSPACEYUV /* ?? */
+                                    | MODE_CKEYCAPS_SRCOVERLAYYUV /* ?? */
+                                    ;
+                        }
+
+                        pCaps->FxCaps = MODE_FXCAPS_OVERLAYSHRINKX
+                                | MODE_FXCAPS_OVERLAYSHRINKY
+                                | MODE_FXCAPS_OVERLAYSTRETCHX
+                                | MODE_FXCAPS_OVERLAYSTRETCHY;
+
+
+                        pCaps->MaxVisibleOverlays = pSettings->cOverlaysSupported;
+                        pCaps->MinOverlayStretch = 1;
+                        pCaps->MaxOverlayStretch = 32000;
                     }
-
-                    if (pSettings->fFlags & VBOXVHWA_F_CKEY_SRC)
-                    {
-                        pCaps->CKeyCaps |= MODE_CKEYCAPS_SRCOVERLAY
-                                | MODE_CKEYCAPS_SRCOVERLAYCLRSPACE /* ?? */
-                                | MODE_CKEYCAPS_SRCOVERLAYCLRSPACEYUV /* ?? */
-                                | MODE_CKEYCAPS_SRCOVERLAYYUV /* ?? */
-                                ;
-                    }
-
-                    pCaps->FxCaps = MODE_FXCAPS_OVERLAYSHRINKX
-                            | MODE_FXCAPS_OVERLAYSHRINKY
-                            | MODE_FXCAPS_OVERLAYSTRETCHX
-                            | MODE_FXCAPS_OVERLAYSTRETCHY;
-
-
-                    pCaps->MaxVisibleOverlays = pSettings->cOverlaysSupported;
-                    pCaps->MinOverlayStretch = 1;
-                    pCaps->MaxOverlayStretch = 32000;
+                }
+                else
+                {
+                    WARN(("D3DDDICAPS_DDRAW_MODE_SPECIFIC query for D3D mode!"));
                 }
 #endif
             }
@@ -4723,77 +4734,89 @@ static HRESULT APIENTRY vboxWddmDDevLock(HANDLE hDevice, D3DDDIARG_LOCK* pData)
     }
     else /* if !VBOXDISPMODE_IS_3D(pDevice->pAdapter) */
     {
-#ifdef DEBUG_misha
-        Assert(0);
-#endif
         PVBOXWDDMDISP_ALLOCATION pAlloc = &pRc->aAllocations[pData->SubResourceIndex];
-        D3DDDICB_LOCK LockData;
-        LockData.hAllocation = pAlloc->hAllocation;
-        LockData.PrivateDriverData = 0;
-        LockData.NumPages = 0;
-        LockData.pPages = NULL;
-        LockData.pData = NULL; /* out */
-        LockData.Flags.Value = 0;
-        LockData.Flags.Discard = pData->Flags.Discard;
-        LockData.Flags.DonotWait = pData->Flags.DoNotWait;
-
-
-        hr = pDevice->RtCallbacks.pfnLockCb(pDevice->hDevice, &LockData);
-        Assert(hr == S_OK || (hr == D3DERR_WASSTILLDRAWING && pData->Flags.DoNotWait));
-        if (hr == S_OK)
+        if (pAlloc->hAllocation)
         {
-            Assert(!pAlloc->LockInfo.cLocks);
+            if (pRc->RcDesc.enmPool != D3DDDIPOOL_SYSTEMMEM)
+            {
+                D3DDDICB_LOCK LockData;
+                LockData.hAllocation = pAlloc->hAllocation;
+                LockData.PrivateDriverData = 0;
+                LockData.NumPages = 0;
+                LockData.pPages = NULL;
+                LockData.pData = NULL; /* out */
+                LockData.Flags.Value = 0;
+                LockData.Flags.Discard = pData->Flags.Discard;
+                LockData.Flags.DonotWait = pData->Flags.DoNotWait;
 
-            uintptr_t offset;
-            if (pData->Flags.AreaValid)
-            {
-                offset = vboxWddmCalcOffXYrd(pData->Area.left, pData->Area.top, pAlloc->SurfDesc.pitch, pAlloc->SurfDesc.format);
-            }
-            else if (pData->Flags.RangeValid)
-            {
-                offset = pData->Range.Offset;
-            }
-            else if (pData->Flags.BoxValid)
-            {
-                vboxVDbgPrintF((__FUNCTION__": Implement Box area"));
-                Assert(0);
-            }
-            else
-            {
-                offset = 0;
-            }
-
-            if (!pData->Flags.ReadOnly)
-            {
+                uintptr_t offset;
                 if (pData->Flags.AreaValid)
-                    vboxWddmDirtyRegionAddRect(&pAlloc->DirtyRegion, &pData->Area);
+                {
+                    offset = vboxWddmCalcOffXYrd(pData->Area.left, pData->Area.top, pAlloc->SurfDesc.pitch, pAlloc->SurfDesc.format);
+                }
+                else if (pData->Flags.RangeValid)
+                {
+                    offset = pData->Range.Offset;
+                }
+                else if (pData->Flags.BoxValid)
+                {
+                    vboxVDbgPrintF((__FUNCTION__": Implement Box area"));
+                    Assert(0);
+                }
                 else
                 {
-                    Assert(!pData->Flags.RangeValid);
-                    Assert(!pData->Flags.BoxValid);
-                    vboxWddmDirtyRegionAddRect(&pAlloc->DirtyRegion, NULL); /* <- NULL means the entire surface */
+                    offset = 0;
+                }
+
+                hr = pDevice->RtCallbacks.pfnLockCb(pDevice->hDevice, &LockData);
+                Assert(hr == S_OK || (hr == D3DERR_WASSTILLDRAWING && pData->Flags.DoNotWait));
+                if (hr == S_OK)
+                {
+                    pData->pSurfData = ((uint8_t*)LockData.pData) + offset;
+                    pData->Pitch = pAlloc->SurfDesc.pitch;
+                    pData->SlicePitch = pAlloc->SurfDesc.slicePitch;
+
+                    if (pData->Flags.Discard)
+                    {
+                        /* check if the surface was renamed */
+                        if (LockData.hAllocation)
+                            pAlloc->hAllocation = LockData.hAllocation;
+                    }
                 }
             }
+            /* else - d3d may create sysmem render targets and call our Present callbacks for those
+             * to make it work properly we need to create a VRAM surface corresponding to sysmem one
+             * and copy stuff to VRAM on lock/unlock
+             *
+             * so we don't do any locking here, but still track the lock info here
+             * and do lock-memcopy-unlock to VRAM surface on sysmem surface unlock
+             * */
 
-            if (pData->Flags.Discard)
+            if (hr == S_OK)
             {
-                /* check if the surface was renamed */
-                if (LockData.hAllocation)
-                    pAlloc->hAllocation = LockData.hAllocation;
+                Assert(!pAlloc->LockInfo.cLocks);
+
+                if (!pData->Flags.ReadOnly)
+                {
+                    if (pData->Flags.AreaValid)
+                        vboxWddmDirtyRegionAddRect(&pAlloc->DirtyRegion, &pData->Area);
+                    else
+                    {
+                        Assert(!pData->Flags.RangeValid);
+                        Assert(!pData->Flags.BoxValid);
+                        vboxWddmDirtyRegionAddRect(&pAlloc->DirtyRegion, NULL); /* <- NULL means the entire surface */
+                    }
+                }
+
+                ++pAlloc->LockInfo.cLocks;
             }
-
-            pData->pSurfData = ((uint8_t*)LockData.pData) + offset;
-            pData->Pitch = pAlloc->SurfDesc.pitch;
-            pData->SlicePitch = pAlloc->SurfDesc.slicePitch;
-
-            Assert(hr == S_OK);
-            ++pAlloc->LockInfo.cLocks;
         }
     }
 
     vboxVDbgPrintF(("<== "__FUNCTION__", hDevice(0x%p), hr(%d)\n", hDevice, hr));
     return hr;
 }
+
 static HRESULT APIENTRY vboxWddmDDevUnlock(HANDLE hDevice, CONST D3DDDIARG_UNLOCK* pData)
 {
     VBOXDISP_DDI_PROLOGUE();
@@ -4947,25 +4970,75 @@ static HRESULT APIENTRY vboxWddmDDevUnlock(HANDLE hDevice, CONST D3DDDIARG_UNLOC
     }
     else
     {
-        struct
-        {
-            D3DDDICB_UNLOCK Unlock;
-            D3DKMT_HANDLE hAllocation;
-        } UnlockData;
-
         PVBOXWDDMDISP_ALLOCATION pAlloc = &pRc->aAllocations[pData->SubResourceIndex];
 
-        UnlockData.Unlock.NumAllocations = 1;
-        UnlockData.Unlock.phAllocations = &UnlockData.hAllocation;
-        UnlockData.hAllocation = pAlloc->hAllocation;
-
-        hr = pDevice->RtCallbacks.pfnUnlockCb(pDevice->hDevice, &UnlockData.Unlock);
-        Assert(hr == S_OK);
-        if (hr == S_OK)
+        if (pAlloc->hAllocation)
         {
+            BOOL fDoUnlock = FALSE;
+
             Assert(pAlloc->LockInfo.cLocks);
             --pAlloc->LockInfo.cLocks;
             Assert(pAlloc->LockInfo.cLocks < UINT32_MAX);
+
+            if (pRc->RcDesc.enmPool != D3DDDIPOOL_SYSTEMMEM)
+            {
+                fDoUnlock = TRUE;
+            }
+            else
+            {
+                if (!pAlloc->LockInfo.cLocks)
+                {
+                    D3DDDICB_LOCK LockData;
+                    LockData.hAllocation = pAlloc->hAllocation;
+                    LockData.PrivateDriverData = 0;
+                    LockData.NumPages = 0;
+                    LockData.pPages = NULL;
+                    LockData.pData = NULL; /* out */
+                    LockData.Flags.Value = 0;
+
+                    hr = pDevice->RtCallbacks.pfnLockCb(pDevice->hDevice, &LockData);
+                    if (hr == S_OK)
+                    {
+                        D3DLOCKED_RECT LRect;
+                        LRect.pBits = LockData.pData;
+                        LRect.Pitch = ((pAlloc->SurfDesc.bpp * pAlloc->SurfDesc.width) + 7) >> 3;
+                        Assert(pAlloc->DirtyRegion.fFlags & VBOXWDDM_DIRTYREGION_F_VALID);
+                        vboxWddmLockUnlockMemSynch(pAlloc, &LRect, &pAlloc->DirtyRegion.Rect, TRUE /* bool bToLockInfo*/);
+                        vboxWddmDirtyRegionClear(&pAlloc->DirtyRegion);
+                        fDoUnlock = TRUE;
+                    }
+                    else
+                    {
+                        WARN(("pfnLockCb failed, hr 0x%x", hr));
+                    }
+                }
+            }
+
+            if (fDoUnlock)
+            {
+                struct
+                {
+                    D3DDDICB_UNLOCK Unlock;
+                    D3DKMT_HANDLE hAllocation;
+                } UnlockData;
+
+
+                UnlockData.Unlock.NumAllocations = 1;
+                UnlockData.Unlock.phAllocations = &UnlockData.hAllocation;
+                UnlockData.hAllocation = pAlloc->hAllocation;
+
+                hr = pDevice->RtCallbacks.pfnUnlockCb(pDevice->hDevice, &UnlockData.Unlock);
+                if(hr != S_OK)
+                {
+                    WARN(("pfnUnlockCb failed, hr 0x%x", hr));
+                }
+            }
+
+            if (!SUCCEEDED(hr))
+            {
+                WARN(("unlock failure!"));
+                ++pAlloc->LockInfo.cLocks;
+            }
         }
     }
 
@@ -5492,8 +5565,8 @@ static HRESULT APIENTRY vboxWddmDDevCreateResource(HANDLE hDevice, D3DDDIARG_CRE
     }
     else
     {
-        bIssueCreateResource = true;
-        bCreateKMResource = true;
+        bIssueCreateResource = (pResource->Pool != D3DDDIPOOL_SYSTEMMEM) || pResource->Flags.RenderTarget;
+        bCreateKMResource = bIssueCreateResource;
     }
 
 
@@ -5724,7 +5797,6 @@ static HRESULT APIENTRY vboxWddmDDevDestroyResource(HANDLE hDevice, HANDLE hReso
         }
     }
 
-    Assert(pRc->hKMResource || VBOXDISPMODE_IS_3D(pAdapter));
     if (pRc->fFlags.KmResource)
     {
         D3DDDICB_DEALLOCATE Dealloc;
@@ -7418,6 +7490,40 @@ static HRESULT APIENTRY vboxWddmDispCloseAdapter (IN HANDLE hAdapter)
     return S_OK;
 }
 
+#define VBOXDISP_IS_MODULE_FUNC(_pvModule, _cbModule, _pfn) ( \
+           (((uintptr_t)(_pfn)) >= ((uintptr_t)(_pvModule))) \
+        && (((uintptr_t)(_pfn)) < (((uintptr_t)(_pvModule)) + ((DWORD)(_cbModule)))) \
+        )
+
+static BOOL vboxDispIsDDraw(__inout D3DDDIARG_OPENADAPTER*  pOpenData)
+{
+    /*if we are loaded by ddraw module, the Interface version should be 7
+     * and pAdapterCallbacks should be ddraw-supplied, i.e. reside in ddraw module */
+    if (pOpenData->Interface != 7)
+        return FALSE;
+
+    HMODULE hDDraw = GetModuleHandleA("ddraw.dll");
+    if (!hDDraw)
+        return FALSE;
+
+    HANDLE hProcess = GetCurrentProcess();
+    MODULEINFO ModuleInfo = {0};
+
+    if (!GetModuleInformation(hProcess, hDDraw, &ModuleInfo, sizeof (ModuleInfo)))
+    {
+        DWORD winEr = GetLastError();
+        WARN(("GetModuleInformation failed, %d", winEr));
+        return FALSE;
+    }
+
+    if (VBOXDISP_IS_MODULE_FUNC(ModuleInfo.lpBaseOfDll, ModuleInfo.SizeOfImage, pOpenData->pAdapterCallbacks->pfnQueryAdapterInfoCb))
+        return TRUE;
+    if (VBOXDISP_IS_MODULE_FUNC(ModuleInfo.lpBaseOfDll, ModuleInfo.SizeOfImage, pOpenData->pAdapterCallbacks->pfnGetMultisampleMethodListCb))
+        return TRUE;
+
+    return FALSE;
+}
+
 HRESULT APIENTRY OpenAdapter(__inout D3DDDIARG_OPENADAPTER*  pOpenData)
 {
     VBOXDISP_DDI_PROLOGUE();
@@ -7493,15 +7599,7 @@ HRESULT APIENTRY OpenAdapter(__inout D3DDDIARG_OPENADAPTER*  pOpenData)
         pOpenData->pAdapterFuncs->pfnCreateDevice = vboxWddmDispCreateDevice;
         pOpenData->pAdapterFuncs->pfnCloseAdapter = vboxWddmDispCloseAdapter;
         pOpenData->DriverVersion = D3D_UMD_INTERFACE_VERSION;
-        /*
-         * here we detect whether we are called by the d3d or ddraw.
-         * in the d3d case we init our d3d environment
-         * in the ddraw case we init 2D acceleration
-         * if interface version is > 7, this is D3D, treat it as so
-         * otherwise treat it as ddraw
-         * @todo: need a more clean way of doing this */
-
-        if (pAdapter->uIfVersion > 7)
+        if (!vboxDispIsDDraw(pOpenData))
         {
             do
             {
@@ -7549,7 +7647,7 @@ HRESULT APIENTRY OpenAdapter(__inout D3DDDIARG_OPENADAPTER*  pOpenData)
             } while (0);
         }
 #ifdef VBOX_WITH_VIDEOHWACCEL
-        else
+        if (!VBOXDISPMODE_IS_3D(pAdapter))
         {
             for (uint32_t i = 0; i < pAdapter->cHeads; ++i)
             {
