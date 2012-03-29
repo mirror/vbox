@@ -91,6 +91,16 @@ VMMR3DECL(int) PDMR3NsAttach(PVM pVM, PPDMDRVINS pDrvIns, const char *pcszBwGrou
  */
 VMMR3DECL(int) PDMR3NsDetach(PVM pVM, PPDMDRVINS pDrvIns, PPDMNSFILTER pFilter);
 
+/**
+ * Adjusts the maximum rate for the bandwidth group.
+ *
+ * @returns VBox status code.
+ * @param   pVM                   Handle of VM.
+ * @param   pcszBwGroup           Name of the bandwidth group to attach to.
+ * @param   cbTransferPerSecMax   Maximum number of bytes per second to be transmitted.
+ */
+VMMR3DECL(int) PDMR3NsBwGroupSetLimit(PVM pVM, const char *pcszBwGroup, uint32_t cbTransferPerSecMax);
+
 /** @} */
 
 RT_C_DECLS_END

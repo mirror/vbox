@@ -151,6 +151,15 @@ static void pdmNsBwGroupUnlink(PPDMNSBWGROUP pBwGroup)
 }
 #endif
 
+static void pdmNsBwGroupSetLimit(PPDMNSBWGROUP pBwGroup, uint32_t cbTransferPerSecMax)
+{
+    pBwGroup->cbTransferPerSecMax = cbTransferPerSecMax;
+    pBwGroup->cbBucketSize        = RT_MAX(PDM_NETSHAPER_MIN_BUCKET_SIZE,
+                                           cbTransferPerSecMax * PDM_NETSHAPER_MAX_LATENCY / 1000);
+    LogFlowFunc(("New rate limit is %d bytes per second, adjusted bucket size to %d bytes\n",
+                 pBwGroup->cbTransferPerSecMax, pBwGroup->cbBucketSize));
+}
+
 static int pdmNsBwGroupCreate(PPDMNETSHAPER pShaper, const char *pcszBwGroup, uint32_t cbTransferPerSecMax)
 {
     LogFlowFunc(("pShaper=%#p pcszBwGroup=%#p{%s} cbTransferPerSecMax=%u\n",
@@ -178,9 +187,8 @@ static int pdmNsBwGroupCreate(PPDMNETSHAPER pShaper, const char *pcszBwGroup, ui
                     pBwGroup->pShaper               = pShaper;
                     pBwGroup->cRefs                 = 0;
 
-                    pBwGroup->cbTransferPerSecMax   = cbTransferPerSecMax;
-                    pBwGroup->cbBucketSize          = RT_MAX(PDM_NETSHAPER_MIN_BUCKET_SIZE,
-                                                             cbTransferPerSecMax * PDM_NETSHAPER_MAX_LATENCY / 1000);
+                    pdmNsBwGroupSetLimit(pBwGroup, cbTransferPerSecMax);
+;
                     pBwGroup->cbTokensLast          = pBwGroup->cbBucketSize;
                     pBwGroup->tsUpdatedLast         = RTTimeSystemNanoTS();
 
@@ -230,7 +238,7 @@ static void pdmNsBwGroupXmitPending(PPDMNSBWGROUP pBwGroup)
     while (pFilter)
     {
         bool fChoked = ASMAtomicXchgBool(&pFilter->fChoked, false);
-        LogFlowFunc(("pFilter=%#p fChoked=%RTbool\n", pFilter, fChoked));
+        Log3((LOG_FN_FMT ": pFilter=%#p fChoked=%RTbool\n", __PRETTY_FUNCTION__, pFilter, fChoked));
         if (fChoked && pFilter->pIDrvNet)
         {
             LogFlowFunc(("Calling pfnXmitPending for pFilter=%#p\n", pFilter));
@@ -336,7 +344,7 @@ VMMR3DECL(int) PDMR3NsDetach(PVM pVM, PPDMDRVINS pDrvIns, PPDMNSFILTER pFilter)
     return rc;
 }
 
-bool PDMR3NsAllocateBandwidth(PPDMNSFILTER pFilter, uint32_t cbTransfer)
+VMMR3DECL(bool) PDMR3NsAllocateBandwidth(PPDMNSFILTER pFilter, uint32_t cbTransfer)
 {
     AssertPtrReturn(pFilter, VERR_INVALID_POINTER);
     if (!VALID_PTR(pFilter->pBwGroupR3))
@@ -362,10 +370,34 @@ bool PDMR3NsAllocateBandwidth(PPDMNSFILTER pFilter, uint32_t cbTransfer)
     }
 
     rc = RTCritSectLeave(&pBwGroup->cs); AssertRC(rc);
-    LogFlowFunc(("BwGroup=%#p{%s} cbTransfer=%u uTokens=%u uTokensAdded=%u fAllowed=%RTbool\n",
-                 pBwGroup, pBwGroup->pszName, cbTransfer, uTokens, uTokensAdded, fAllowed));
+    Log2((LOG_FN_FMT "BwGroup=%#p{%s} cbTransfer=%u uTokens=%u uTokensAdded=%u fAllowed=%RTbool\n",
+          __PRETTY_FUNCTION__, pBwGroup, pBwGroup->pszName, cbTransfer, uTokens, uTokensAdded, fAllowed));
     return fAllowed;
 }
+
+VMMR3DECL(int) PDMR3NsBwGroupSetLimit(PVM pVM, const char *pcszBwGroup, uint32_t cbTransferPerSecMax)
+{
+    PUVM pUVM = pVM->pUVM;
+    PPDMNETSHAPER pShaper = pUVM->pdm.s.pNetShaper;
+
+    int rc = RTCritSectEnter(&pShaper->cs); AssertRC(rc);
+    if (RT_SUCCESS(rc))
+    {
+        PPDMNSBWGROUP pBwGroup = pdmNsBwGroupFindById(pShaper, pcszBwGroup);
+        if (pBwGroup)
+        {
+            rc = RTCritSectEnter(&pBwGroup->cs); AssertRC(rc);
+            pdmNsBwGroupSetLimit(pBwGroup, cbTransferPerSecMax);
+            /* Drop extra tokens */
+            if (pBwGroup->cbTokensLast > pBwGroup->cbBucketSize)
+                pBwGroup->cbTokensLast = pBwGroup->cbBucketSize;
+            rc = RTCritSectLeave(&pBwGroup->cs); AssertRC(rc);
+        }
+        rc = RTCritSectLeave(&pShaper->cs); AssertRC(rc);
+    }
+    return rc;
+}
+
 
 /**
  * I/O thread for pending TX.

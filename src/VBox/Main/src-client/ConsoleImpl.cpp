@@ -95,6 +95,9 @@
 #ifdef VBOX_WITH_USB
 # include <VBox/vmm/pdmusb.h>
 #endif
+#ifdef VBOX_WITH_NETSHAPER
+# include <VBox/vmm/pdmnetshaper.h>
+#endif /* VBOX_WITH_NETSHAPER */
 #include <VBox/vmm/mm.h>
 #include <VBox/vmm/ftm.h>
 #include <VBox/vmm/ssm.h>
@@ -5151,15 +5154,24 @@ HRESULT Console::onBandwidthGroupChange(IBandwidthGroup *aBandwidthGroup)
             /* No need to call in the EMT thread. */
             ULONG cMax;
             Bstr strName;
+            BandwidthGroupType_T enmType;
             rc = aBandwidthGroup->COMGETTER(Name)(strName.asOutParam());
             if (SUCCEEDED(rc))
                 rc = aBandwidthGroup->COMGETTER(MaxMbPerSec)(&cMax);
+            if (SUCCEEDED(rc))
+                rc = aBandwidthGroup->COMGETTER(Type)(&enmType);
 
             if (SUCCEEDED(rc))
             {
-                int vrc;
-                vrc = PDMR3AsyncCompletionBwMgrSetMaxForFile(ptrVM, Utf8Str(strName).c_str(),
-                                                             cMax * _1M);
+                int vrc = VINF_SUCCESS;
+                if (enmType == BandwidthGroupType_Disk)
+                    vrc = PDMR3AsyncCompletionBwMgrSetMaxForFile(ptrVM, Utf8Str(strName).c_str(),
+                                                                 cMax * _1M);
+                else if (enmType == BandwidthGroupType_Network)
+                    vrc = PDMR3NsBwGroupSetLimit(ptrVM, Utf8Str(strName).c_str(),
+                                                                 cMax * 1000);
+                else
+                    rc = E_NOTIMPL;
                 AssertRC(vrc);
             }
         }
