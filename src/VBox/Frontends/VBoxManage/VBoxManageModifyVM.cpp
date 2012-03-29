@@ -29,6 +29,8 @@
 #endif /* !VBOX_ONLY_DOCS */
 
 #include <iprt/cidr.h>
+#include <iprt/ctype.h>
+#include <iprt/file.h>
 #include <iprt/param.h>
 #include <iprt/path.h>
 #include <iprt/stream.h>
@@ -163,6 +165,7 @@ enum
     MODIFYVM_TELEPORTER_PORT,
     MODIFYVM_TELEPORTER_ADDRESS,
     MODIFYVM_TELEPORTER_PASSWORD,
+    MODIFYVM_TELEPORTER_PASSWORD_FROM,
     MODIFYVM_TRACING_ENABLED,
     MODIFYVM_TRACING_CONFIG,
     MODIFYVM_TRACING_ALLOW_VM_ACCESS,
@@ -301,6 +304,7 @@ static const RTGETOPTDEF g_aModifyVMOptions[] =
     { "--teleporterport",           MODIFYVM_TELEPORTER_PORT,           RTGETOPT_REQ_UINT32 },
     { "--teleporteraddress",        MODIFYVM_TELEPORTER_ADDRESS,        RTGETOPT_REQ_STRING },
     { "--teleporterpassword",       MODIFYVM_TELEPORTER_PASSWORD,       RTGETOPT_REQ_STRING },
+    { "--teleporterpasswordfrom",   MODIFYVM_TELEPORTER_PASSWORD_FROM,  RTGETOPT_REQ_STRING },
     { "--tracing-enabled",          MODIFYVM_TRACING_ENABLED,           RTGETOPT_REQ_BOOL_ONOFF },
     { "--tracing-config",           MODIFYVM_TRACING_CONFIG,            RTGETOPT_REQ_STRING },
     { "--tracing-allow-vm-access",  MODIFYVM_TRACING_ALLOW_VM_ACCESS,   RTGETOPT_REQ_BOOL_ONOFF },
@@ -2206,6 +2210,27 @@ int handleModifyVM(HandlerArg *a)
             case MODIFYVM_TELEPORTER_PASSWORD:
             {
                 CHECK_ERROR(machine, COMSETTER(TeleporterPassword)(Bstr(ValueUnion.psz).raw()));
+                break;
+            }
+
+            case MODIFYVM_TELEPORTER_PASSWORD_FROM:
+            {
+                size_t cbFile;
+                char *pszFileBuf;
+                int vrc = RTFileReadAll(ValueUnion.psz, (void**)&pszFileBuf, &cbFile);
+                if (RT_SUCCESS(vrc))
+                {
+                    char szPasswd[512];
+                    for (unsigned i = 0;
+                            i < cbFile
+                         && i < sizeof(szPasswd)-1
+                         && !RT_C_IS_CNTRL(pszFileBuf[i]); i++)
+                        szPasswd[i] = pszFileBuf[i];
+
+                    CHECK_ERROR(machine, COMSETTER(TeleporterPassword)(Bstr(szPasswd).raw()));
+                }
+                else
+                    errorArgument("Cannot open password file '%s' (%Rrc)", ValueUnion.psz, vrc);
                 break;
             }
 
