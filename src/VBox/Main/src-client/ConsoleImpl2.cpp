@@ -3707,8 +3707,6 @@ int Console::configNetwork(const char *pszDevice,
 #ifdef VBOX_WITH_NETSHAPER
         ComObjPtr<IBandwidthGroup> pBwGroup;
         Bstr strBwGroup;
-        PNETSHAPER pShaper = NULL;
-        PNETSHAPERFILTER pFilter = NULL;
         hrc = aNetworkAdapter->COMGETTER(BandwidthGroup)(pBwGroup.asOutParam());            H();
 
         if (!pBwGroup.isNull())
