@@ -122,6 +122,7 @@ if [ -d ExtensionPacks/VNC ]; then
   mv ExtensionPacks/VNC $RPM_BUILD_ROOT/usr/lib/virtualbox/ExtensionPacks
 fi
 mv VBoxTunctl $RPM_BUILD_ROOT/usr/bin
+%if %{?is_ose:0}%{!?is_ose:1}
 for d in /lib/modules/*; do
   if [ -L $d/build ]; then
     rm -f /tmp/vboxdrv-Module.symvers
@@ -147,6 +148,7 @@ for d in /lib/modules/*; do
       %INSTMOD%
   fi
 done
+%endif
 %if %{?is_ose:0}%{!?is_ose:1}
   mv kchmviewer $RPM_BUILD_ROOT/usr/lib/virtualbox
   for i in rdesktop-vrdp.tar.gz rdesktop-vrdp-keymaps; do
