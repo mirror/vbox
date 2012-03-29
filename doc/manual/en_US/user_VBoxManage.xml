@@ -1063,11 +1063,15 @@ Statistics update:  disabled
             &lt;password&gt;</computeroutput>: if this optional argument is
             given, then the teleporting request will only succeed if the
             source machine specifies the same password as the one given with
-            this command.<note>
-                <para>Currently, the password is stored without encryption
-                (i.e. in clear text) in the XML machine configuration
-                file.</para>
-              </note></para>
+            this command.</para>
+          </listitem>
+
+          <listitem>
+            <para><computeroutput>--teleporterpasswordfrom
+            &lt;password&gt;</computeroutput>: if this optional argument is
+            given, then the teleporting request will only succeed if the
+            source machine specifies the same password as the one specified
+            in the file give with this command.</para>
           </listitem>
 
           <listitem>

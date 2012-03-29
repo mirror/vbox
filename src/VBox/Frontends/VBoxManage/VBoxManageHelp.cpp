@@ -320,6 +320,7 @@ void printUsage(USAGECATEGORY u64Cmd, PRTSTREAM pStrm)
                      "                            [--teleporterport <port>]\n"
                      "                            [--teleporteraddress <address|empty>\n"
                      "                            [--teleporterpassword <password>]\n"
+                     "                            [--teleporterpasswordfrom  <file>]\n"
                      "                            [--tracing-enabled on|off]\n"
                      "                            [--tracing-config <config-string>]\n"
                      "                            [--tracing-allow-vm-access on|off]\n"
