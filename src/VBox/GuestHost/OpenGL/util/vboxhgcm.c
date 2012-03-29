@@ -2332,12 +2332,10 @@ static int crVBoxHGSMIDoConnect( CRConnection *conn )
     VBOXCRHGSMIPROFILE_FUNC_PROLOGUE();
 
     pClient = _crVBoxHGSMIClientGet(conn);
-    CRASSERT(pClient);
     if (pClient)
-    {
         rc = VBoxCrHgsmiCtlConGetClientID(pClient->pHgsmi, &conn->u32ClientID);
-        CRASSERT(RT_SUCCESS(rc));
-    }
+    else
+        rc = VERR_GENERAL_FAILURE;
 
     VBOXCRHGSMIPROFILE_FUNC_EPILOGUE();
 
