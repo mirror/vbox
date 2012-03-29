@@ -5167,11 +5167,13 @@ HRESULT Console::onBandwidthGroupChange(IBandwidthGroup *aBandwidthGroup)
                 if (enmType == BandwidthGroupType_Disk)
                     vrc = PDMR3AsyncCompletionBwMgrSetMaxForFile(ptrVM, Utf8Str(strName).c_str(),
                                                                  cMax * _1M);
+#ifdef VBOX_WITH_NETSHAPER
                 else if (enmType == BandwidthGroupType_Network)
                     vrc = PDMR3NsBwGroupSetLimit(ptrVM, Utf8Str(strName).c_str(),
                                                                  cMax * 1000);
                 else
                     rc = E_NOTIMPL;
+#endif /* VBOX_WITH_NETSHAPER */
                 AssertRC(vrc);
             }
         }
