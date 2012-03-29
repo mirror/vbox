@@ -669,7 +669,7 @@ static DECLCALLBACK(int) vdScriptHandlerCreate(PVDTESTGLOB pGlob, PVDSCRIPTARG p
             }
             case 'f':
             {
-                fIgnoreFlush = true;
+                fIgnoreFlush = paScriptArgs[i].u.fFlag;
                 break;
             }
             default:
@@ -699,8 +699,8 @@ static DECLCALLBACK(int) vdScriptHandlerCreate(PVDTESTGLOB pGlob, PVDSCRIPTARG p
                                   &pDisk->PhysGeom, &pDisk->LogicalGeom,
                                   NULL, fOpenFlags, pGlob->pInterfacesImages, NULL);
             else
-                rc = VDCreateDiff(pDisk->pVD, pcszBackend, pcszImage, fImageFlags, NULL, NULL, NULL, VD_OPEN_FLAGS_ASYNC_IO,
-                                  pGlob->pInterfacesImages, NULL);
+                rc = VDCreateDiff(pDisk->pVD, pcszBackend, pcszImage, fImageFlags, NULL, NULL, NULL,
+                                  fOpenFlags, pGlob->pInterfacesImages, NULL);
         }
         else
             rc = VERR_NOT_FOUND;
@@ -2760,10 +2760,11 @@ static DECLCALLBACK(int) tstVDIoFileWriteSync(void *pvUser, void *pStorage, uint
     Seg.cbSeg = cbBuffer;
     RTSgBufInit(&SgBuf, &Seg, 1);
     rc = VDMemDiskWrite(pIoStorage->pFile->pMemDisk, uOffset, cbBuffer, &SgBuf);
-    if (RT_SUCCESS(rc) && pcbWritten)
+    if (RT_SUCCESS(rc))
     {
         pIoStorage->pFile->cWrites++;
-        *pcbWritten = cbBuffer;
+        if (pcbWritten)
+            *pcbWritten = cbBuffer;
     }
 
     return rc;
@@ -2782,10 +2783,11 @@ static DECLCALLBACK(int) tstVDIoFileReadSync(void *pvUser, void *pStorage, uint6
     Seg.cbSeg = cbBuffer;
     RTSgBufInit(&SgBuf, &Seg, 1);
     rc = VDMemDiskRead(pIoStorage->pFile->pMemDisk, uOffset, cbBuffer, &SgBuf);
-    if (RT_SUCCESS(rc) && pcbRead)
+    if (RT_SUCCESS(rc))
     {
         pIoStorage->pFile->cReads++;
-        *pcbRead = cbBuffer;
+        if (pcbRead)
+            *pcbRead = cbBuffer;
     }
 
     return rc;
