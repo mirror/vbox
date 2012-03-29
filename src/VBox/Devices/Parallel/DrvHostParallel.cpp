@@ -348,7 +348,7 @@ static uint32_t drvHostWinFindIORangeResource(const DEVINST DevInst)
     for (;;)
     {
         u32Size = 0;
-        cmRet = CM_Get_Res_Des_Data_Size((PULONG)(&u32Size), nextLogConf, 0L); /** @todo r=bird: (PULONG)(&u32Size) - generally a bad idea, but not really a problem here though... Why don't you use ULONG for the size variable? Like 'ULONG cbBuf;'? */
+        cmRet = CM_Get_Res_Des_Data_Size((PULONG)(&u32Size), nextLogConf, 0L);
         if (cmRet != CR_SUCCESS)
         {
             CM_Free_Res_Des_Handle(nextLogConf); /** @todo r=bird: Why are you doing this twice in this code path? */
@@ -364,7 +364,7 @@ static uint32_t drvHostWinFindIORangeResource(const DEVINST DevInst)
         if (cmRet != CR_SUCCESS)
         {
             CM_Free_Res_Des_Handle(nextLogConf);
-            RTMemFree(pBuf);            /** @todo r=bird: LocalFree(pBuf) was the wrong free function! */
+            RTMemFree(pBuf);
             break;
         }
         LogFlowFunc(("call GetIOResource\n"));
@@ -432,34 +432,44 @@ static int drvWinHostGetparportAddr(PDRVHOSTPARALLEL pThis)
         {
              char *pCh = NULL;
              char* pTmpCh = NULL;
-             if (strstr((char*)pBuf, "LPT"))        /** @todo Use IPRT equivalent? */
+             if (RTStrStr((char*)pBuf, "LPT"))
              {
                  u32ParportAddr = drvHostWinFindIORangeResource(DeviceInfoData.DevInst);
                  if (u32ParportAddr)
                  {
                      /* Find parallel port name and update the shared data struncture */
-                     pCh = strstr((char*)pBuf, "(");
-                     pTmpCh = strstr((char *)pBuf, ")");
+                     pCh = RTStrStr((char*)pBuf, "(");
+                     pTmpCh = RTStrStr((char *)pBuf, ")");
                      /* check for the confirmation for the availability of parallel port */
                      if (!(pCh && pTmpCh))
                      {
-                         LogFlowFunc(("Parallel port Not Found \n"));
+                         LogFlowFunc(("Parallel port Not Found. \n"));
                          return VERR_NOT_FOUND;
 
                      }
+                     if (((pTmpCh - (char *)pBuf) - (pCh - (char *)pBuf)) < 0) {
+                         LogFlowFunc(("Parallel port string not properly formatted. \n"));
+                         return VERR_NOT_FOUND;
+                     }
                      /* check for the confirmation for the availability of parallel port */
-                     if (!strncpy((char *)(pThis->u8ParportName), pCh+1, ((pTmpCh - (char *)pBuf) -
-                                 (pCh - (char *)pBuf)) - 1))
+                     if (RTStrCopyEx((char *)(pThis->u8ParportName), sizeof(pThis->u8ParportName),
+                                      pCh+1, ((pTmpCh - (char *)pBuf) - (pCh - (char *)pBuf)) - 1))
                      {
-                         LogFlowFunc(("Parallel Port Not Found\n"));
+                         LogFlowFunc(("Parallel Port Not Found. \n"));
                          return VERR_NOT_FOUND;
                      }
                      *((char *)pThis->u8ParportName + (pTmpCh - (char *)pBuf) - (pCh - (char *)pBuf) + 1 ) = '\0';
+
                      /* checking again to make sure that we have got a valid name and in valid format too. */
-                     if (!strstr((char *)pThis->u8ParportName, "LPT") ||
+                     if (RTStrNCmp((char *)pThis->u8ParportName, "LPT", 3)) {
+                         LogFlowFunc(("Parallel Port name \"LPT\" Not Found. \n"));
+                         return VERR_NOT_FOUND;
+                     }
+
+                     if (!RTStrStr((char *)pThis->u8ParportName, "LPT") ||
                           !(pThis->u8ParportName[3] >= '0' && pThis->u8ParportName[3] <= '9')) {
-                         pThis->u8ParportName[0] = '\0';
-                         LogFlowFunc(("Printer Port Name Not Found\n"));
+                         RT_BZERO(pThis->u8ParportName, sizeof(pThis->u8ParportName));
+                         LogFlowFunc(("Printer Port Name Not Found. \n"));
                          return VERR_NOT_FOUND;
                      }
                      pThis->fParportAvail = true;
@@ -979,7 +989,7 @@ static DECLCALLBACK(int) drvHostParallelConstruct(PPDMDRVINS pDrvIns, PCFGMNODE 
     rc = drvWinHostGetparportAddr(pThis);
 
     /* If we have the char port availabe use it , else I am not getting exclusive access to parallel port.
-       Read and write will be done only if addresses are availabel
+       Read and write will be done only if addresses are available
     */
     if (pThis->u8ParportName) {
         LogFlowFunc(("Get the Handle to Printer Port =%s\n", (char *)pThis->u8ParportName));
