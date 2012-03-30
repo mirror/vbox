@@ -33,7 +33,7 @@ DECLEXPORT(int) DBGCPlugInEntry(DBGCPLUGINOP enmOperation, PVM pVM, uintptr_t uA
     {
         //&g_DBGDiggerFreeBSD,
         &g_DBGDiggerLinux,
-        //&g_DBGDiggerOS2,
+        &g_DBGDiggerOS2,
         &g_DBGDiggerSolaris,
         &g_DBGDiggerWinNt
     };
