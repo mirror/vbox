@@ -160,7 +160,7 @@ VBGLR3DECL(int) VbglR3SharedFolderGetMappings(uint32_t u32ClientId, bool fAutoMo
     uint32_t cbSize = cMappings * sizeof(VBGLR3SHAREDFOLDERMAPPING);
     VBGLR3SHAREDFOLDERMAPPING *ppaMappingsTemp = (PVBGLR3SHAREDFOLDERMAPPING)RTMemAllocZ(cbSize);
     if (ppaMappingsTemp == NULL)
-        rc = VERR_NO_MEMORY;
+        return VERR_NO_MEMORY;
 
     *pcMappings = 0;
     do
@@ -191,7 +191,8 @@ VBGLR3DECL(int) VbglR3SharedFolderGetMappings(uint32_t u32ClientId, bool fAutoMo
         }
     } while (rc == VINF_BUFFER_OVERFLOW);
 
-    if (RT_FAILURE(rc) && ppaMappingsTemp)
+    if (   ppaMappingsTemp
+        && (RT_FAILURE(rc) || !*pcMappings))
         RTMemFree(ppaMappingsTemp);
 
     return rc;
