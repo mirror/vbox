@@ -240,7 +240,7 @@ post:
 		mov	al, bl
 		cmp	al, 0
 		jz	normal_post
-		cmp	al, 0
+		cmp	al, 0Dh
 		jae	normal_post
 		cmp	al, 9
 		je	normal_post	;; TODO: really?!
