@@ -1071,7 +1071,8 @@ Statistics update:  disabled
             &lt;password&gt;</computeroutput>: if this optional argument is
             given, then the teleporting request will only succeed if the
             source machine specifies the same password as the one specified
-            in the file give with this command.</para>
+            in the file give with this command. Use <computeroutput>stdin</computeroutput>
+            to read the password from stdin.</para>
           </listitem>
 
           <listitem>

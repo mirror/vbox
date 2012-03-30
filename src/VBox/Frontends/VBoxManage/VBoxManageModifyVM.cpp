@@ -2218,7 +2218,7 @@ int handleModifyVM(HandlerArg *a)
                 size_t cbFile;
                 char szPasswd[512];
                 int vrc = VINF_SUCCESS;
-                bool fStdIn = !strcmp(ValueUnion.psz, "-");
+                bool fStdIn = !strcmp(ValueUnion.psz, "stdin");
                 PRTSTREAM pStrm;
                 if (!fStdIn)
                     vrc = RTStrmOpen(ValueUnion.psz, "r", &pStrm);
