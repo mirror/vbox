@@ -243,7 +243,7 @@ static int VBoxServiceLogCreate(const char *pszLogFile)
 
 static void VBoxServiceLogDestroy(void)
 {
-    RTLogDestroy(g_pLoggerRelease);
+    RTLogDestroy(RTLogRelSetDefaultInstance(NULL));
 }
 
 
