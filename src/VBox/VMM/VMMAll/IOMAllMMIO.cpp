@@ -2331,7 +2331,8 @@ VMMDECL(VBOXSTRICTRC) IOMInterpretOUTS(PVM pVM, PCPUMCTXCORE pRegFrame, PDISCPUS
  *
  * (This is a special optimization used by the VGA device.)
  *
- * @returns VBox status code.
+ * @returns VBox status code.  This API may return VINF_SUCCESS even if no
+ *          remapping is made,.
  *
  * @param   pVM             The virtual machine.
  * @param   GCPhys          The address of the MMIO page to be changed.
@@ -2352,7 +2353,9 @@ VMMDECL(int) IOMMMIOMapMMIO2Page(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS GCPhysRemapp
              && !HWACCMIsNestedPagingActive(pVM)))
         return VINF_SUCCESS;    /* ignore */
 
-    IOM_LOCK(pVM);
+    int rc = IOM_LOCK(pVM);
+    if (RT_FAILURE(rc))
+        return VINF_SUCCESS; /* better luck the next time around */
 
     /*
      * Lookup the context range node the page belongs to.
@@ -2370,7 +2373,7 @@ VMMDECL(int) IOMMMIOMapMMIO2Page(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS GCPhysRemapp
     GCPhys         &= ~(RTGCPHYS)PAGE_OFFSET_MASK;
     GCPhysRemapped &= ~(RTGCPHYS)PAGE_OFFSET_MASK;
 
-    int rc = PGMHandlerPhysicalPageAlias(pVM, pRange->GCPhys, GCPhys, GCPhysRemapped);
+    rc = PGMHandlerPhysicalPageAlias(pVM, pRange->GCPhys, GCPhys, GCPhysRemapped);
 
     IOM_UNLOCK(pVM);
     AssertRCReturn(rc, rc);
