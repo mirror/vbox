@@ -572,7 +572,7 @@ unsigned int dequeue_key(uint8_t __far *scan_code, uint8_t __far *ascii_code, un
 #define DI      r.gr.u.r16.di
 #define BP      r.gr.u.r16.bp
 #define SP      r.gr.u.r16.sp
-#define FLAGS   r.fl.u.r16.flags
+#define FLAGS   r.ra.flags.u.r16.flags
 
 /* Interrupt 16h service implementation. */
 
@@ -614,6 +614,7 @@ void BIOSCALL int16_function(volatile kbd_regs_t r)
         break;
     
     case 0x01: /* check keyboard status */
+        SET_IF();   /* Enable interrupts. Some callers depend on that! */
         if ( !dequeue_key(&scan_code, &ascii_code, 0) ) {
             SET_ZF();
             return;
@@ -690,6 +691,7 @@ void BIOSCALL int16_function(volatile kbd_regs_t r)
         break;
     
     case 0x11: /* check MF-II keyboard status */
+        SET_IF();
         if ( !dequeue_key(&scan_code, &ascii_code, 0) ) {
             SET_ZF();
             return;
