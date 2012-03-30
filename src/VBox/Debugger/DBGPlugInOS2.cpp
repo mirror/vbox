@@ -33,7 +33,7 @@
 *   Structures and Typedefs                                                    *
 *******************************************************************************/
 
-/** @name Internal OS/2 structures
+/** @name Internal OS/2 structures */
 
 /** @} */
 
