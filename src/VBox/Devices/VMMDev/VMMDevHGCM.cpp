@@ -80,6 +80,12 @@ struct VBOXHGCMCMD
     /* Whether the command was cancelled by the guest. */
     bool fCancelled;
 
+    /* Whether the command is in the active commands list. */
+    bool fInList;
+
+    /* Whether the command was saved. */
+    bool fSaved;
+
     /* GC physical address of the guest request. */
     RTGCPHYS        GCPhys;
 
@@ -137,6 +143,8 @@ static int vmmdevHGCMAddCommand (VMMDevState *pVMMDevState, PVBOXHGCMCMD pCmd, R
 
         pVMMDevState->pHGCMCmdList = pCmd;
 
+        pCmd->fInList = true;
+
         if (enmCmdType != VBOXHGCMCMDTYPE_LOADSTATE)
         {
             /* Loaded commands already have the right type. */
@@ -173,6 +181,13 @@ static int vmmdevHGCMRemoveCommand (VMMDevState *pVMMDevState, PVBOXHGCMCMD pCmd
     {
         LogFlowFunc(("%p\n", pCmd));
 
+        if (!pCmd->fInList)
+        {
+            LogFlowFunc(("%p not in the list\n", pCmd));
+            vmmdevHGCMCmdListUnlock (pVMMDevState);
+            return VINF_SUCCESS;
+        }
+
         if (pCmd->pNext)
         {
             pCmd->pNext->pPrev = pCmd->pPrev;
@@ -190,6 +205,10 @@ static int vmmdevHGCMRemoveCommand (VMMDevState *pVMMDevState, PVBOXHGCMCMD pCmd
         {
             pVMMDevState->pHGCMCmdList = pCmd->pNext;
         }
+
+        pCmd->pNext = NULL;
+        pCmd->pPrev = NULL;
+        pCmd->fInList = false;
 
         vmmdevHGCMCmdListUnlock (pVMMDevState);
     }
@@ -1773,9 +1792,9 @@ DECLCALLBACK(void) hgcmCompletedWorker (PPDMIHGCMPORT pInterface, int32_t result
     VBOXDD_HGCMCALL_COMPLETED_EMT(pCmd, result);
     vmmdevHGCMRemoveCommand (pVMMDevState, pCmd);
 
-    if (pCmd->fCancelled)
+    if (pCmd->fCancelled || pCmd->fSaved)
     {
-        LogFlowFunc(("A cancelled command %p\n", pCmd));
+        LogFlowFunc(("A cancelled command %p: %d %d\n", pCmd, pCmd->fCancelled, pCmd->fSaved));
     }
     else
     {
@@ -2307,6 +2326,10 @@ int vmmdevHGCMSaveState(VMMDevState *pVMMDevState, PSSMHANDLE pSSM)
             rc = SSMR3PutU32(pSSM, 0);
             AssertRCReturn(rc, rc);
 
+            /* Mark the command as saved to make sure that it will not be
+             * completed later by a still running host service.
+             */
+            pIter->fSaved = true;
             vmmdevHGCMRemoveCommand (pVMMDevState, pIter);
 
             pIter = pNext;
