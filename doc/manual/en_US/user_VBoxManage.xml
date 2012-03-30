@@ -1067,7 +1067,7 @@ Statistics update:  disabled
           </listitem>
 
           <listitem>
-            <para><computeroutput>--teleporterpasswordfrom
+            <para><computeroutput>--teleporterpasswordfile
             &lt;password&gt;</computeroutput>: if this optional argument is
             given, then the teleporting request will only succeed if the
             source machine specifies the same password as the one specified

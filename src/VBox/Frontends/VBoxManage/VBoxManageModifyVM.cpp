@@ -165,7 +165,7 @@ enum
     MODIFYVM_TELEPORTER_PORT,
     MODIFYVM_TELEPORTER_ADDRESS,
     MODIFYVM_TELEPORTER_PASSWORD,
-    MODIFYVM_TELEPORTER_PASSWORD_FROM,
+    MODIFYVM_TELEPORTER_PASSWORD_FILE,
     MODIFYVM_TRACING_ENABLED,
     MODIFYVM_TRACING_CONFIG,
     MODIFYVM_TRACING_ALLOW_VM_ACCESS,
@@ -304,7 +304,7 @@ static const RTGETOPTDEF g_aModifyVMOptions[] =
     { "--teleporterport",           MODIFYVM_TELEPORTER_PORT,           RTGETOPT_REQ_UINT32 },
     { "--teleporteraddress",        MODIFYVM_TELEPORTER_ADDRESS,        RTGETOPT_REQ_STRING },
     { "--teleporterpassword",       MODIFYVM_TELEPORTER_PASSWORD,       RTGETOPT_REQ_STRING },
-    { "--teleporterpasswordfrom",   MODIFYVM_TELEPORTER_PASSWORD_FROM,  RTGETOPT_REQ_STRING },
+    { "--teleporterpasswordfile",   MODIFYVM_TELEPORTER_PASSWORD_FILE,  RTGETOPT_REQ_STRING },
     { "--tracing-enabled",          MODIFYVM_TRACING_ENABLED,           RTGETOPT_REQ_BOOL_ONOFF },
     { "--tracing-config",           MODIFYVM_TRACING_CONFIG,            RTGETOPT_REQ_STRING },
     { "--tracing-allow-vm-access",  MODIFYVM_TRACING_ALLOW_VM_ACCESS,   RTGETOPT_REQ_BOOL_ONOFF },
@@ -2213,7 +2213,7 @@ int handleModifyVM(HandlerArg *a)
                 break;
             }
 
-            case MODIFYVM_TELEPORTER_PASSWORD_FROM:
+            case MODIFYVM_TELEPORTER_PASSWORD_FILE:
             {
                 size_t cbFile;
                 char szPasswd[512];
