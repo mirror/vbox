@@ -57,7 +57,14 @@ static int no_run_out (HWVoiceOut *hw)
 
     ticks_per_second = audio_get_ticks_per_sec ();
     /* Minimize the rounding error: samples = int((ticks * freq) / ticks_per_second + 0.5). */
-    samples = (2 * ticks * hw->info.freq + ticks_per_second) / ticks_per_second / 2;
+    samples = (int)((2 * ticks * hw->info.freq + ticks_per_second) / ticks_per_second / 2);
+    /* Usually there is no integer overflow while calculating the 'samples' value.
+     * It can happen because this is the first invocation or because the function was not called for awhile.
+     * In this case simply claim that all samples has been played.
+     */
+    if (samples < 0) {
+        samples = live;
+    }
 
     no->old_ticks = now;
     decr = audio_MIN (live, samples);
