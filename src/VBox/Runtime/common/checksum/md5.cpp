@@ -93,7 +93,7 @@ DECL_FORCE_INLINE(uint32_t) F4(uint32_t x, uint32_t y, uint32_t z)
 
 /* This is the central step in the MD5 algorithm. */
 #define MD5STEP(f, w, x, y, z, data, s) \
-	( w += f(x, y, z) + data,  w = w<<s | w>>(32-s),  w += x )
+    ( w += f(x, y, z) + data,  w = w<<s | w>>(32-s),  w += x )
 
 
 /**
@@ -193,11 +193,12 @@ static void rtMd5Transform(uint32_t buf[4], uint32_t const in[16])
 static void rtMd5ByteReverse(uint32_t *buf, unsigned int longs)
 {
     uint32_t t;
-    do {
-	t = *buf;
+    do
+    {
+        t = *buf;
         t = RT_LE2H_U32(t);
-	*buf = t;
-	buf++;
+        *buf = t;
+        buf++;
     } while (--longs);
 }
 #else   /* little endian - do nothing */
@@ -235,25 +236,27 @@ RTDECL(void) RTMd5Update(PRTMD5CONTEXT ctx, const void *pvBuf, size_t len)
     /* Update bitcount */
     t = ctx->bits[0];
     if ((ctx->bits[0] = t + ((uint32_t) len << 3)) < t)
-	ctx->bits[1]++; 	/* Carry from low to high */
+    ctx->bits[1]++; /* Carry from low to high */
     ctx->bits[1] += (uint32_t)(len >> 29);
 
     t = (t >> 3) & 0x3f;	/* Bytes already in shsInfo->data */
 
     /* Handle any leading odd-sized chunks */
-    if (t) {
-	uint8_t *p = (uint8_t *) ctx->in + t;
+    if (t)
+    {
+        uint8_t *p = (uint8_t *) ctx->in + t;
 
-	t = 64 - t;
-	if (len < t) {
-	    memcpy(p, buf, len);
-	    return;
-	}
-	memcpy(p, buf, t);
-	rtMd5ByteReverse(ctx->in, 16);
-	rtMd5Transform(ctx->buf, ctx->in);
-	buf += t;
-	len -= t;
+        t = 64 - t;
+        if (len < t)
+        {
+            memcpy(p, buf, len);
+            return;
+        }
+        memcpy(p, buf, t);
+        rtMd5ByteReverse(ctx->in, 16);
+        rtMd5Transform(ctx->buf, ctx->in);
+        buf += t;
+        len -= t;
     }
 
     /* Process data in 64-byte chunks */
@@ -305,17 +308,20 @@ RTDECL(void) RTMd5Final(uint8_t digest[16], PRTMD5CONTEXT ctx)
     count = 64 - 1 - count;
 
     /* Pad out to 56 mod 64 */
-    if (count < 8) {
-	/* Two lots of padding:  Pad the first block to 64 bytes */
-	memset(p, 0, count);
-	rtMd5ByteReverse(ctx->in, 16);
-	rtMd5Transform(ctx->buf, ctx->in);
+    if (count < 8)
+    {
+        /* Two lots of padding:  Pad the first block to 64 bytes */
+        memset(p, 0, count);
+        rtMd5ByteReverse(ctx->in, 16);
+        rtMd5Transform(ctx->buf, ctx->in);
 
-	/* Now fill the next block with 56 bytes */
-	memset(ctx->in, 0, 56);
-    } else {
-	/* Pad block to 56 bytes */
-	memset(p, 0, count - 8);
+        /* Now fill the next block with 56 bytes */
+        memset(ctx->in, 0, 56);
+    }
+    else
+    {
+        /* Pad block to 56 bytes */
+        memset(p, 0, count - 8);
     }
     rtMd5ByteReverse(ctx->in, 14);
 
@@ -326,7 +332,7 @@ RTDECL(void) RTMd5Final(uint8_t digest[16], PRTMD5CONTEXT ctx)
     rtMd5Transform(ctx->buf, ctx->in);
     rtMd5ByteReverse(ctx->buf, 4);
     memcpy(digest, ctx->buf, 16);
-    memset(ctx, 0, sizeof(ctx));        /* In case it's sensitive */
+    memset(ctx, 0, sizeof(*ctx));        /* In case it's sensitive */
 }
 RT_EXPORT_SYMBOL(RTMd5Final);
 
