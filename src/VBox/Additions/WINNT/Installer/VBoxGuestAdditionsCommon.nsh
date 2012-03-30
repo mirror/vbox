@@ -861,12 +861,18 @@ Function ${un}ValidateD3DFiles
 
   ; Note: Not finding a file (like *d3d8.dll) on Windows Vista/7 is fine;
   ;       it simply is not present there.
+  
+  ; Note 2: On 64-bit systems there are no 64-bit *d3d8 DLLs, only 32-bit ones 
+  ;         in SysWOW64 (or in system32 on 32-bit systems).
 
+!if $%BUILD_TARGET_ARCH% == "x86"
   ${VerifyFileEx} "${un}" "$SYSDIR\d3d8.dll" "Microsoft Corporation" "$%BUILD_TARGET_ARCH%"
   Pop $0
   ${If} $0 == "1"
     Goto verify_msd3d
   ${EndIf}
+!endif
+  
   ${VerifyFileEx} "${un}" "$SYSDIR\d3d9.dll" "Microsoft Corporation" "$%BUILD_TARGET_ARCH%"
   Pop $0
   ${If} $0 == "1"
@@ -874,11 +880,13 @@ Function ${un}ValidateD3DFiles
   ${EndIf}
 
   ${If} $g_bCapDllCache == "true"
+!if $%BUILD_TARGET_ARCH% == "x86"
     ${VerifyFileEx} "${un}" "$SYSDIR\dllcache\d3d8.dll" "Microsoft Corporation" "$%BUILD_TARGET_ARCH%"
     Pop $0
     ${If} $0 == "1"
       Goto verify_msd3d
     ${EndIf}
+!endif
     ${VerifyFileEx} "${un}" "$SYSDIR\dllcache\d3d9.dll" "Microsoft Corporation" "$%BUILD_TARGET_ARCH%"
     Pop $0
     ${If} $0 == "1"
@@ -887,7 +895,6 @@ Function ${un}ValidateD3DFiles
   ${EndIf}
 
 !if $%BUILD_TARGET_ARCH% == "amd64"
-
   ${VerifyFileEx} "${un}" "$g_strSysWow64\d3d8.dll" "Microsoft Corporation" "x86"
   Pop $0
   ${If} $0 == "1"
@@ -918,11 +925,13 @@ Function ${un}ValidateD3DFiles
 
 verify_msd3d:
 
+!if $%BUILD_TARGET_ARCH% == "x86"
   ${VerifyFileEx} "${un}" "$SYSDIR\msd3d8.dll" "Microsoft Corporation" "$%BUILD_TARGET_ARCH%"
   Pop $0
   ${If} $0 == "1"
     Goto invalid
   ${EndIf}
+!endif
   ${VerifyFileEx} "${un}" "$SYSDIR\msd3d9.dll" "Microsoft Corporation" "$%BUILD_TARGET_ARCH%"
   Pop $0
   ${If} $0 == "1"
@@ -930,11 +939,13 @@ verify_msd3d:
   ${EndIf}
 
   ${If} $g_bCapDllCache == "true"
+!if $%BUILD_TARGET_ARCH% == "x86"
     ${VerifyFileEx} "${un}" "$SYSDIR\dllcache\msd3d8.dll" "Microsoft Corporation" "$%BUILD_TARGET_ARCH%"
     Pop $0
     ${If} $0 == "1"
       Goto invalid
     ${EndIf}
+!endif
     ${VerifyFileEx} "${un}" "$SYSDIR\dllcache\msd3d9.dll" "Microsoft Corporation" "$%BUILD_TARGET_ARCH%"
     Pop $0
     ${If} $0 == "1"
@@ -943,7 +954,6 @@ verify_msd3d:
   ${EndIf}
 
 !if $%BUILD_TARGET_ARCH% == "amd64"
-
   ${VerifyFileEx} "${un}" "$g_strSysWow64\msd3d8.dll" "Microsoft Corporation" "x86"
   Pop $0
   ${If} $0 == "1"
@@ -967,7 +977,6 @@ verify_msd3d:
       Goto invalid
     ${EndIf}
   ${EndIf}
-
 !endif
 
   Goto valid
