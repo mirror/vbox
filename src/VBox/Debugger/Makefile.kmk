@@ -62,6 +62,7 @@ DBGCPlugInDiggers_SOURCES = \
 	DBGPlugInLinux.cpp \
 	DBGPlugInSolaris.cpp \
 	DBGPlugInWinNt.cpp \
+	DBGPlugInOS2.cpp \
 	DBGPlugInCommonELF.cpp
 DBGCPlugInDiggers_LIBS = \
 	$(LIB_VMM) \
