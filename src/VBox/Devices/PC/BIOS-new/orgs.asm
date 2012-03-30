@@ -766,8 +766,6 @@ int16_handler:
 		sti
 		push	es
 		push	ds
-		;; TODO: the caller already pushed flags (INT instruction)??
-		pushf
 		pusha
 
 		cmp	ah, 0
@@ -779,24 +777,8 @@ int16_handler:
 		C_SETUP
 		call	_int16_function
 		popa
-		popf
 		pop	ds
 		pop	es
-		jz	int16_zero_set
-
-		;; TODO: Could use SP directly here (386+)
-int16_zero_clear:
-		push	bp
-		mov	bp, sp
-		and	byte ptr [bp+6], 0BFh
-		pop	bp
-		iret
-
-int16_zero_set:
-		push	bp
-		mov	bp, sp
-		or	byte ptr [bp+6], 040h
-		pop	bp
 		iret
 
 int16_F00:
@@ -822,10 +804,9 @@ int16_key_found:
 		C_SETUP
 		call	_int16_function
 		popa
-		popf
 		pop	ds
 		pop	es
-; TODO: review/enable?
+; TODO: review/enable? If so, flags should be restored here?
 if 0
 		push	ax
 		mov	ax, 9202h

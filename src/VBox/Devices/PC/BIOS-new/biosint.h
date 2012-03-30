@@ -110,8 +110,8 @@ typedef struct {
             uint16_t    flags;
         } r16;
         struct {
-            uint16_t    flagsl;
-            uint16_t    flagsh;
+            uint8_t     flagsl;
+            uint8_t     flagsh;
         } r8;
     } u;
 } flags_t;
@@ -131,7 +131,9 @@ typedef struct {
 
 typedef struct {
     pusha_regs_t    gr;
-    flags_t         fl;
+    uint16_t        es;
+    uint16_t        ds;
+    iret_addr_t     ra;
 } kbd_regs_t;
 
 typedef struct {
@@ -188,6 +190,8 @@ typedef struct {
 #define SET_ZF()     FLAGS |= 0x0040
 #define CLEAR_ZF()   FLAGS &= 0xffbf
 #define GET_ZF()     (FLAGS & 0x0040)
+
+#define SET_IF()     FLAGS |= 0x0200
 
 typedef unsigned short  bx_bool;
 
