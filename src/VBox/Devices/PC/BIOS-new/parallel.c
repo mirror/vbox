@@ -43,7 +43,7 @@
 #include "biosint.h"
 #include "inlines.h"
 
-void BIOSCALL int17_function(pusha_regs_t regs, uint16_t es, uint16_t ds, iret_addr_t iret_addr)
+void BIOSCALL int17_function(pusha_regs_t regs, uint16_t es, uint16_t ds, volatile iret_addr_t iret_addr)
 {
     uint16_t    addr,timeout;
     uint8_t     val8;
