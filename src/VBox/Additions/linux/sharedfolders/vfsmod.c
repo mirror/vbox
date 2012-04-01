@@ -294,7 +294,11 @@ static int sf_read_super_aux(struct super_block *sb, void *data, int flags)
     unlock_new_inode(iroot);
 #endif
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 4, 0)
+    droot = d_obtain_alias(iroot);
+#else
     droot = d_alloc_root(iroot);
+#endif
     if (!droot)
     {
         err = -ENOMEM;  /* XXX */
