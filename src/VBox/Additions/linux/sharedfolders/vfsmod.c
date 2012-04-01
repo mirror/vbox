@@ -198,6 +198,7 @@ static int sf_read_super_aux(struct super_block *sb, void *data, int flags)
     struct sf_glob_info *sf_g;
     SHFLFSOBJINFO fsinfo;
     struct vbsf_mount_info_new *info;
+    bool fInodePut = true;
 
     TRACE();
     if (!data)
@@ -295,7 +296,7 @@ static int sf_read_super_aux(struct super_block *sb, void *data, int flags)
 #endif
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 4, 0)
-    droot = d_obtain_alias(iroot);
+    droot = d_make_root(iroot);
 #else
     droot = d_alloc_root(iroot);
 #endif
@@ -303,6 +304,9 @@ static int sf_read_super_aux(struct super_block *sb, void *data, int flags)
     {
         err = -ENOMEM;  /* XXX */
         LogFunc(("d_alloc_root failed\n"));
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 4, 0)
+        fInodePut = false;
+#endif
         goto fail5;
     }
 
@@ -314,7 +318,8 @@ fail5:
     sf_done_backing_dev(sf_g);
 
 fail4:
-    iput(iroot);
+    if (fInodePut)
+        iput(iroot);
 
 fail3:
     kfree(sf_i->path);
