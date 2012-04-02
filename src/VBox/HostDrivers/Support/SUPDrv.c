@@ -4907,6 +4907,7 @@ static int supdrvGipCreate(PSUPDRVDEVEXT pDevExt)
 
     supdrvGipInit(pDevExt, pGip, HCPhysGip, RTTimeSystemNanoTS(), 1000000000 / u32Interval /*=Hz*/, cCpus);
 
+    /* Creating spinlocks can fail (in theory). supdrvGipInit() returns void. */
     rc = RTSpinlockCreate(&pGip->Spinlock);
     if (RT_FAILURE(rc))
     {
@@ -4982,7 +4983,7 @@ static void supdrvGipDestroy(PSUPDRVDEVEXT pDevExt)
     if (pDevExt->pGip)
     {
         supdrvGipTerm(pDevExt->pGip);
-        if (pDevExt->pGip->Spinlock)
+        if (pDevExt->pGip->Spinlock != NIL_RTSPINLOCK)
         {
             RTSpinlockDestroy(pDevExt->pGip->Spinlock);
             pDevExt->pGip->Spinlock = NIL_RTSPINLOCK;
@@ -5495,7 +5496,7 @@ static void supdrvGipInit(PSUPDRVDEVEXT pDevExt, PSUPGLOBALINFOPAGE pGip, RTHCPH
     pGip->cPresentCpus          = RTMpGetPresentCount();
     pGip->cPossibleCpus         = RTMpGetCount();
     pGip->idCpuMax              = RTMpGetMaxCpuId();
-    pGip->Spinlock              = NULL;
+    pGip->Spinlock              = NIL_RTSPINLOCK;
     for (i = 0; i < RT_ELEMENTS(pGip->aiCpuFromApicId); i++)
         pGip->aiCpuFromApicId[i]    = 0;
     for (i = 0; i < RT_ELEMENTS(pGip->aiCpuFromCpuSetIdx); i++)
