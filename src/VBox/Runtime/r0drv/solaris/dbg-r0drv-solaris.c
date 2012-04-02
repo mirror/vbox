@@ -169,7 +169,6 @@ RTR0DECL(uint32_t) RTR0DbgKrnlInfoRetain(RTDBGKRNLINFO hKrnlInfo)
     PRTDBGKRNLINFOINT pThis = hKrnlInfo;
     uint32_t cRefs = ASMAtomicIncU32(&pThis->cRefs);
     Assert(cRefs && cRefs < 100000);
-    NOREF(cRefs);
     return cRefs;
 }
 
@@ -200,7 +199,7 @@ RTR0DECL(int) RTR0DbgKrnlInfoQueryMember(RTDBGKRNLINFO hKrnlInfo, const char *ps
     AssertMsgReturn(pThis->u32Magic == RTDBGKRNLINFO_MAGIC, ("%p: u32Magic=%RX32\n", pThis, pThis->u32Magic), VERR_INVALID_HANDLE);
     AssertPtrReturn(pszMember, VERR_INVALID_PARAMETER);
     AssertPtrReturn(pszStructure, VERR_INVALID_PARAMETER);
-    AssertPtrReturn(poffMember,  VERR_INVALID_PARAMETER);
+    AssertPtrReturn(poffMember, VERR_INVALID_PARAMETER);
     RT_ASSERT_PREEMPTIBLE();
 
     int rc = VERR_NOT_FOUND;
