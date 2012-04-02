@@ -220,6 +220,7 @@ typedef struct VBOXWDDM_CONTEXT
     VBOXWDDM_CONTEXT_TYPE enmType;
     UINT  NodeOrdinal;
     UINT  EngineAffinity;
+    BOOLEAN fRenderFromShadowDisabled;
     uint32_t u32CrConClientID;
     VBOXWDDM_HTABLE Swapchains;
     VBOXVIDEOCM_CTX CmContext;

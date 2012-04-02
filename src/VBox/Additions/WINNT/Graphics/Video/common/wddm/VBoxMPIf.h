@@ -238,11 +238,16 @@ typedef struct VBOXWDDM_OVERLAYFLIP_INFO
 typedef enum
 {
     VBOXWDDM_CONTEXT_TYPE_UNDEFINED = 0,
+    /* system-created context (for GDI rendering) */
     VBOXWDDM_CONTEXT_TYPE_SYSTEM,
+    /* context created by the D3D User-mode driver when crogl IS available */
     VBOXWDDM_CONTEXT_TYPE_CUSTOM_3D,
+    /* context created by the D3D User-mode driver when crogl is NOT available or for ddraw overlay acceleration */
     VBOXWDDM_CONTEXT_TYPE_CUSTOM_2D,
+    /* contexts created by the cromium HGSMI transport for HGSMI commands submission */
     VBOXWDDM_CONTEXT_TYPE_CUSTOM_UHGSMI_3D,
     VBOXWDDM_CONTEXT_TYPE_CUSTOM_UHGSMI_GL,
+    /* context created by the kernel->user communication mechanism for visible rects reporting, etc.  */
     VBOXWDDM_CONTEXT_TYPE_CUSTOM_SESSION
 } VBOXWDDM_CONTEXT_TYPE;
 
@@ -480,6 +485,22 @@ typedef struct VBOXWDDM_QI
 } VBOXWDDM_QI;
 
 /* submit cmd func */
+DECLINLINE(D3DDDIFORMAT) vboxWddmFmtNoAlphaFormat(D3DDDIFORMAT enmFormat)
+{
+    switch (enmFormat)
+    {
+        case D3DDDIFMT_A8R8G8B8:
+            return D3DDDIFMT_X8R8G8B8;
+        case D3DDDIFMT_A1R5G5B5:
+            return D3DDDIFMT_X1R5G5B5;
+        case D3DDDIFMT_A4R4G4B4:
+            return D3DDDIFMT_X4R4G4B4;
+        case D3DDDIFMT_A8B8G8R8:
+            return D3DDDIFMT_X8B8G8R8;
+        default:
+            return enmFormat;
+    }
+}
 
 /* tooling */
 DECLINLINE(UINT) vboxWddmCalcBitsPerPixel(D3DDDIFORMAT enmFormat)

@@ -98,7 +98,11 @@ typedef struct _VBOXMP_DEVEXT
    FAST_MUTEX ContextMutex;
    KSPIN_LOCK SynchLock;
    volatile uint32_t cContexts3D;
+   volatile uint32_t cContexts2D;
+   volatile uint32_t cRenderFromShadowDisabledContexts;
    volatile uint32_t cUnlockedVBVADisabled;
+   /* this is examined and swicthed by DxgkDdiSubmitCommand only! */
+   volatile BOOLEAN fRenderToShadowDisabled;
 
    HVBOXCRCTL hCrCtl;
    uint32_t cCrCtlRefs;

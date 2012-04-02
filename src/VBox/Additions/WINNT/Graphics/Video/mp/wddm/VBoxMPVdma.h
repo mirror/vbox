@@ -217,9 +217,9 @@ typedef struct VBOXVDMAPIPE_FLAGS_DMACMD
     {
         struct
         {
-            UINT b2DRelated     : 1;
-            UINT b3DRelated     : 1;
-            UINT Reserved       : 30;
+            UINT fRealOp             : 1;
+            UINT fVisibleRegions     : 1;
+            UINT Reserve             : 30;
         };
         UINT Value;
     };
@@ -339,6 +339,9 @@ NTSTATUS vboxVdmaGgCmdDmaNotifySubmitted(PVBOXMP_DEVEXT pDevExt, PVBOXVDMAPIPE_C
 VOID vboxVdmaGgCmdDmaNotifyInit(PVBOXVDMAPIPE_CMD_DMACMD pCmd,
         uint32_t u32NodeOrdinal, uint32_t u32FenceId,
         PFNVBOXVDMADDICMDCOMPLETE_DPC pfnComplete, PVOID pvComplete);
+
+NTSTATUS vboxVdmaGgDmaBltPerform(PVBOXMP_DEVEXT pDevExt, PVBOXWDDM_ALLOCATION pSrcAlloc, RECT* pSrcRect,
+        PVBOXWDDM_ALLOCATION pDstAlloc, RECT* pDstRect);
 
 #define VBOXVDMAPIPE_CMD_DR_FROM_DDI_CMD(_pCmd) ((PVBOXVDMAPIPE_CMD_DR)(((uint8_t*)(_pCmd)) - RT_OFFSETOF(VBOXVDMAPIPE_CMD_DR, DdiCmd)))
 DECLCALLBACK(VOID) vboxVdmaGgDdiCmdDestroy(PVBOXMP_DEVEXT pDevExt, PVBOXVDMADDI_CMD pCmd, PVOID pvContext);
