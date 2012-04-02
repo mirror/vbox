@@ -763,11 +763,22 @@ FunctionEnd
 ; @param   Architecture ("x86" or "amd64") to check for.
 ;
 !macro VerifyFileEx un File Vendor Architecture
+  Push $0
   Push "${Architecture}"
   Push "${Vendor}"
   Push "${File}"
   DetailPrint "Verifying file $\"${File}$\" ..."
   Call ${un}VerifyFile
+  Pop $0
+  ${If} $0 == "0"
+    DetailPrint "Verification of file $\"${File}$\" successful (Vendor: ${Vendor}, Architecture: ${Architecture})"
+  ${ElseIf} $0 == "1"
+    DetailPrint "Verification of file $\"${File}$\" failed (not Vendor: ${Vendor}, and/or not Architecture: ${Architecture})"
+  ${Else}
+    DetailPrint "Skipping to file $\"${File}$\"; not found"
+  ${EndIf}
+  ; Push result popped off the stack to stack again
+  Push $0
 !macroend
 !define VerifyFileEx "!insertmacro VerifyFileEx"
 
@@ -794,7 +805,7 @@ FunctionEnd
   ${Else}
     DetailPrint "Skipping to copy file $\"${FileSrc}$\" to $\"${FileDest}$\" (not Vendor: ${Vendor}, Architecture: ${Architecture})"
   ${EndIf}
-  ; Push result popped off the stack to stack again.
+  ; Push result popped off the stack to stack again
   Push $0
 !macroend
 !define CopyFileEx "!insertmacro CopyFileEx"
