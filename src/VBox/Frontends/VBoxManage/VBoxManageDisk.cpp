@@ -563,8 +563,10 @@ int handleModifyHardDisk(HandlerArg *a)
                 RTMsgError("Compact hard disk operation is not implemented!");
             else if (rc == VBOX_E_NOT_SUPPORTED)
                 RTMsgError("Compact hard disk operation for this format is not implemented yet!");
-            else
+            else if (!progress.isNull())
                 CHECK_PROGRESS_ERROR(progress, ("Failed to compact hard disk"));
+            else
+                RTMsgError("Failed to compact hard disk!");
         }
     }
 
