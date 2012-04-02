@@ -5562,6 +5562,8 @@ static int vmdkOpen(const char *pszFilename, unsigned uOpenFlags,
     rc = vmdkOpenImage(pImage, uOpenFlags);
     if (RT_SUCCESS(rc))
         *ppBackendData = pImage;
+    else
+        RTMemFree(pImage);
 
 out:
     LogFlowFunc(("returns %Rrc (pBackendData=%#p)\n", rc, *ppBackendData));
