@@ -948,6 +948,12 @@ Section -Post
   ; Tune TcpWindowSize for a better network throughput
   WriteRegDWORD HKLM "SYSTEM\CurrentControlSet\Services\Tcpip\Parameters" "TcpWindowSize" 64240
 
+  ; Add Sun Ray  client info keys
+  ; Note: We only need 32-bit keys (HKLM\Software / HKLM\Software\Wow6432Node),
+  ;       so no need to switch registry views here
+  WriteRegStr HKLM "SOFTWARE\Oracle\Sun Ray\ClientInfoAgent\ReconnectActions" "" ""
+  WriteRegStr HKLM "SOFTWARE\Oracle\Sun Ray\ClientInfoAgent\DisconnectActions" "" ""
+
   DetailPrint "Installation completed."
 
 SectionEnd
