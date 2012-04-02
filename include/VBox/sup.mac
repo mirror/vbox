@@ -64,7 +64,14 @@ struc SUPGLOBALINFOPAGE
     .idCpuMax                   resd 1
     .au16Padding1               resw 2
     .Spinlock                   RTR0PTR_RES 1
+%ifndef HC_ARCH_BITS
+ %error "Missing HC_ARCH_BITS"
+%endif
+%if HC_ARCH_BITS == 64
     .au32Padding1               resd 26
+%else
+    .au32Padding1               resd 27
+%endif
     .aiCpuFromApicId            resw 256
     .aiCpuFromCpuSetIdx         resw 256
     .aCPUs                      resb SUPGIPCPU_size
