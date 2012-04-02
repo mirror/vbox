@@ -876,6 +876,9 @@ my_generate_project "RDP-Misc"      "src/VBox/RDP"                          --be
 # src/VBox/Testsuite
 my_generate_project "Testsuite"     "src/VBox/Testsuite"                    --begin-incs "include"                                          --end-includes "src/VBox/Testsuite"
 
+# src/VBox/ExtPacks
+my_generate_project "ExtPacks"      "src/VBox/ExtPacks"                     --begin-incs "include"                                          --end-includes "src/VBox/ExtPacks"
+
 # src/apps/adpctl - misplaced.
 my_generate_project "adpctl"        "src/apps/adpctl"                       --begin-incs "include"                                          --end-includes "src/apps/adpctl"
 
