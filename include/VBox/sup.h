@@ -213,7 +213,7 @@ typedef struct SUPGLOBALINFOPAGE
     RTSPINLOCK          Spinlock;                       /* 144 */
 
     /** Padding / reserved space for future data. */
-    uint32_t            au32Padding1[26];
+    uint32_t            au32Padding1[HC_ARCH_BITS == 64 ? 26 : 27];
 
     /** Table indexed by the CPU APIC ID to get the CPU table index. */
     uint16_t            aiCpuFromApicId[256];
