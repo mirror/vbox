@@ -4907,6 +4907,13 @@ static int supdrvGipCreate(PSUPDRVDEVEXT pDevExt)
 
     supdrvGipInit(pDevExt, pGip, HCPhysGip, RTTimeSystemNanoTS(), 1000000000 / u32Interval /*=Hz*/, cCpus);
 
+    rc = RTSpinlockCreate(&pGip->Spinlock);
+    if (RT_FAILURE(rc))
+    {
+        supdrvGipDestroy(pDevExt);
+        return rc;
+    }
+
     /*
      * Create the timer.
      * If CPU_ALL isn't supported we'll have to fall back to synchronous mode.
@@ -4975,6 +4982,12 @@ static void supdrvGipDestroy(PSUPDRVDEVEXT pDevExt)
     if (pDevExt->pGip)
     {
         supdrvGipTerm(pDevExt->pGip);
+        if (pDevExt->pGip->Spinlock)
+        {
+            RTSpinlockDestroy(pDevExt->pGip->Spinlock);
+            pDevExt->pGip->Spinlock = NIL_RTSPINLOCK;
+        }
+
         pDevExt->pGip = NULL;
     }
     g_pSUPGlobalInfoPage = NULL;
@@ -5095,9 +5108,16 @@ static void supdrvGipMpEventOnline(PSUPGLOBALINFOPAGE pGip, RTCPUID idCpu)
     uint16_t    idApic = UINT16_MAX;
     uint32_t    i = 0;
     uint64_t    u64NanoTS = 0;
+    RTSPINLOCKTMP SpinlockTmp = RTSPINLOCKTMP_INITIALIZER;
 
     AssertRelease(idCpu == RTMpCpuId());
     Assert(pGip->cPossibleCpus == RTMpGetCount());
+
+    /*
+     * Do this behind a spinlock with interrupts disabled as this can fire
+     * on all CPUs simultaneously, see #6110.
+     */
+    RTSpinlockAcquireNoInts(pGip->Spinlock, &SpinlockTmp);
 
     /*
      * Update the globals.
@@ -5131,6 +5151,8 @@ static void supdrvGipMpEventOnline(PSUPGLOBALINFOPAGE pGip, RTCPUID idCpu)
 
     /* commit it */
     ASMAtomicWriteSize(&pGip->aCPUs[i].enmState, SUPGIPCPUSTATE_ONLINE);
+
+    RTSpinlockReleaseNoInts(pGip->Spinlock, &SpinlockTmp);
 }
 
 
@@ -5147,6 +5169,9 @@ static void supdrvGipMpEventOffline(PSUPGLOBALINFOPAGE pGip, RTCPUID idCpu)
     int         iCpuSet;
     unsigned    i;
 
+    RTSPINLOCKTMP SpinlockTmp = RTSPINLOCKTMP_INITIALIZER;
+    RTSpinlockAcquireNoInts(pGip->Spinlock, &SpinlockTmp);
+
     iCpuSet = RTMpCpuIdToSetIndex(idCpu);
     AssertReturnVoid(iCpuSet >= 0);
 
@@ -5159,6 +5184,8 @@ static void supdrvGipMpEventOffline(PSUPGLOBALINFOPAGE pGip, RTCPUID idCpu)
 
     /* commit it */
     ASMAtomicWriteSize(&pGip->aCPUs[i].enmState, SUPGIPCPUSTATE_OFFLINE);
+
+    RTSpinlockReleaseNoInts(pGip->Spinlock, &SpinlockTmp);
 }
 
 
@@ -5468,6 +5495,7 @@ static void supdrvGipInit(PSUPDRVDEVEXT pDevExt, PSUPGLOBALINFOPAGE pGip, RTHCPH
     pGip->cPresentCpus          = RTMpGetPresentCount();
     pGip->cPossibleCpus         = RTMpGetCount();
     pGip->idCpuMax              = RTMpGetMaxCpuId();
+    pGip->Spinlock              = NULL;
     for (i = 0; i < RT_ELEMENTS(pGip->aiCpuFromApicId); i++)
         pGip->aiCpuFromApicId[i]    = 0;
     for (i = 0; i < RT_ELEMENTS(pGip->aiCpuFromCpuSetIdx); i++)
