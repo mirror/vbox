@@ -435,6 +435,10 @@ typedef struct SUPDRVSESSION
     /** Which process this session is associated with.
      * This is NIL_RTR0PROCESS for kernel sessions and valid for user ones. */
     RTR0PROCESS                     R0Process;
+#ifdef VBOX_WITH_SUPDRV_GENERIC_TRACER
+    /** Per session tracer specfic data. */
+    uintptr_t                       uTracerData;
+#endif
 #ifndef SUPDRV_AGNOSTIC
 # if defined(RT_OS_DARWIN)
     /** Pointer to the associated org_virtualbox_SupDrvClient object. */

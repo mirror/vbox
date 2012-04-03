@@ -874,6 +874,51 @@ void VBOXCALL supdrvTracerModuleUnloading(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE
 
 
 /**
+ * Called when a session is being cleaned up.
+ *
+ * @param   pDevExt             The device extension structure.
+ * @param   pSession            The session that is being torn down.
+ */
+void VBOXCALL supdrvTracerCleanupSession(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession)
+{
+    /*
+     * If ring-0 session, make sure it has deregistered VTG objects and the tracer.
+     */
+    if (pSession->R0Process == NIL_RTR0PROCESS)
+    {
+        SUPDRVTPPROVIDER *pNextProv;
+        SUPDRVTPPROVIDER *pProv;
+
+        RTSemFastMutexRequest(pDevExt->mtxTracer);
+        RTListForEachSafe(&pDevExt->TracerProviderList, pProv, pProvNext, SUPDRVTPPROVIDER, ListEntry)
+        {
+            if (pProv->pSession == pSession)
+            {
+                RTListNodeRemove(&pProv->ListEntry);
+                supdrvTracerDeregisterVtgObj(pDevExt, pProv);
+            }
+        }
+        RTSemFastMutexRelease(pDevExt->mtxTracer);
+
+        (void)SUPR0TracerDeregister(pSession);
+    }
+
+    /*
+     * Clean up instance data the trace may have associated with the session.
+     */
+    if (pSession->uTracerData)
+    {
+        RTSemFastMutexRequest(pDevExt->mtxTracer);
+        if (   pSession->uTracerData
+            && pDevExt->pTracerOps)
+            pSession->pTracerOps->pfnCloseTrace(pSession->pTracerOps, pSession, pSession->uTracerData);
+        pSession->uTracerData = 0;
+        RTSemFastMutexRelease(pDevExt->mtxTracer);
+    }
+}
+
+
+/**
  * Early module initialization hook.
  *
  * @returns VBox status code.
@@ -890,9 +935,9 @@ int VBOXCALL supdrvTracerInit(PSUPDRVDEVEXT pDevExt)
         pDevExt->TracerHlp.uVersion    = SUPDRVTRACERHLP_VERSION;
         /** @todo  */
         pDevExt->TracerHlp.uEndVersion = SUPDRVTRACERHLP_VERSION;
-
         RTListInit(&pDevExt->TracerProviderList);
         RTListInit(&pDevExt->TracerProviderZombieList);
+
         rc = supdrvTracerRegisterVtgObj(pDevExt, &g_VTGObjHeader, _1M, NULL /*pImage*/, NULL /*pSession*/, "vboxdrv");
         if (RT_SUCCESS(rc))
             return rc;
