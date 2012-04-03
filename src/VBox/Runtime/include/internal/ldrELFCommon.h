@@ -326,6 +326,7 @@ typedef struct {
 #define STT_SECTION	3	/* Section. */
 #define STT_FILE	4	/* Source file. */
 #define STT_TLS		6	/* TLS object. */
+#define STT_NUM		7	/* Number of generic symbol types. */
 #define STT_LOPROC	13	/* reserved range for processor */
 #define STT_HIPROC	15	/*  specific symbol types */
 
