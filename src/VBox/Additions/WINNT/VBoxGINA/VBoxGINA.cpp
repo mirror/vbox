@@ -450,14 +450,30 @@ VOID WINAPI WlxShutdown(PVOID pWlxContext, DWORD ShutdownType)
  */
 BOOL WINAPI WlxScreenSaverNotify(PVOID pWlxContext, BOOL *pSecure)
 {
-    VBoxGINAVerbose(0, "VBoxGINA::WlxScreenSaverNotify\n");
+    VBoxGINAVerbose(0, "VBoxGINA::WlxScreenSaverNotify, pSecure=%d\n",
+                    pSecure ? *pSecure : 0);
 
-    /* Forward to MSGINA if present. */
-    if (GWlxScreenSaverNotify)
-        return GWlxScreenSaverNotify(pWlxContext, pSecure);
-    /* Return something intelligent */
+    /* Report / set back status to "active" since the screensaver
+     * (Winlogon) does give VBoxGINA yet the chance to hook into dialogs
+     * which only then in turn would set the status to "active" -- so
+     * do this here explicitly. */
+    VBoxGINAReportStatus(VBoxGuestFacilityStatus_Active);
+
+    /* Note: Disabling the screensaver's grace period is necessary to get
+     *       VBoxGINA loaded and set the status to "terminated" again properly
+     *       after the logging-in handling was done. To do this:
+     *       - on a non-domain machine, set:
+     *         HKLM\Software\Microsoft\Windows NT\CurrentVersion\Winlogon\ScreenSaverGracePeriod (REG_SZ)
+     *         to "0"
+     *       - on a machine joined a domain:
+     *         use the group policy preferences and/or the registry key above,
+     *         depending on the domain's policies.
+     */
+
+    /* Indicate that the workstation should be locked. */
     *pSecure = TRUE;
-    return TRUE;
+
+    return TRUE; /* Screensaver should be activated. */
 }
 
 
