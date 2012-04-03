@@ -392,8 +392,8 @@ static const char *supdrvVtgGetString(PVTGOBJHDR pVtgHdr,  uint32_t offStrTab)
 
 
 /**
- * Frees the provider structure and associated resources. 
- *  
+ * Frees the provider structure and associated resources.
+ *
  * @param   pProv               The provider to free.
  */
 static void supdrvVtgFreeProvider(PSUPDRVDTPROVIDER pProv)
@@ -407,14 +407,14 @@ static void supdrvVtgFreeProvider(PSUPDRVDTPROVIDER pProv)
 
 
 /**
- * Deregisters a provider. 
- *  
+ * Deregisters a provider.
+ *
  * If the provider is still busy, it will be put in the zombie list.
- *  
+ *
  * @param   pDevExt             The device extension.
- * @param   pProv               The provider. 
- *  
- * @remarks The caller owns mtxDTrace. 
+ * @param   pProv               The provider.
+ *
+ * @remarks The caller owns mtxDTrace.
  */
 static void supdrvVtgDeregister(PSUPDRVDEVEXT pDevExt, PSUPDRVDTPROVIDER pProv)
 {
@@ -435,8 +435,8 @@ static void supdrvVtgDeregister(PSUPDRVDEVEXT pDevExt, PSUPDRVDTPROVIDER pProv)
 
 
 /**
- * Processes the zombie list. 
- *  
+ * Processes the zombie list.
+ *
  * @param   pDevExt             The device extension.
  */
 static void supdrvVtgProcessZombies(PSUPDRVDEVEXT pDevExt)
@@ -468,7 +468,7 @@ static void supdrvVtgProcessZombies(PSUPDRVDEVEXT pDevExt)
  * @param   pSession            The session if applicable.
  * @param   pszModName          The module name.
  */
-static int supdrvVtgRegister(PSUPDRVDEVEXT pDevExt, PVTGOBJHDR pVtgHdr, size_t cbVtgObj, PSUPDRVLDRIMAGE pImage, 
+static int supdrvVtgRegister(PSUPDRVDEVEXT pDevExt, PVTGOBJHDR pVtgHdr, size_t cbVtgObj, PSUPDRVLDRIMAGE pImage,
                              PSUPDRVSESSION pSession, const char *pszModName)
 {
     int                 rc;
@@ -501,7 +501,7 @@ static int supdrvVtgRegister(PSUPDRVDEVEXT pDevExt, PVTGOBJHDR pVtgHdr, size_t c
             rc = VERR_SUPDRV_VTG_ALREADY_REGISTERED;
             break;
         }
-        if (   pProv->pSession == pSession 
+        if (   pProv->pSession == pSession
             && pProv->pImage   == pImage)
         {
             rc = VERR_SUPDRV_VTG_ONLY_ONCE_PER_SESSION;
@@ -652,9 +652,9 @@ SUPR0DECL(void) SUPR0VtgDeregisterDrv(PSUPDRVSESSION pSession)
 
 
 /**
- * Registers the VTG tracepoint providers of a module loaded by 
- * the support driver. 
- *  
+ * Registers the VTG tracepoint providers of a module loaded by
+ * the support driver.
+ *
  * This should be called from the ModuleInit code.
  *
  * @returns VBox status code.
@@ -668,7 +668,7 @@ SUPR0DECL(int) SUPR0VtgRegisterModule(void *hMod, PVTGOBJHDR pVtgHdr)
     uintptr_t       cbVtgObj;
     int             rc;
 
-    /* 
+    /*
      * Validate input and context.
      */
     AssertPtrReturn(pImage,  VERR_INVALID_HANDLE);
@@ -683,7 +683,7 @@ SUPR0DECL(int) SUPR0VtgRegisterModule(void *hMod, PVTGOBJHDR pVtgHdr)
      * Calculate the max VTG object size and hand it over to the common code.
      */
     cbVtgObj = (uintptr_t)pVtgHdr - (uintptr_t)pImage->pvImage;
-    AssertMsgReturn(cbVtgObj /*off*/ < pImage->cbImageBits, 
+    AssertMsgReturn(cbVtgObj /*off*/ < pImage->cbImageBits,
                     ("pVtgHdr=%p offVtgObj=%p cbImageBits=%p\n", pVtgHdr, cbVtgObj, pImage->cbImageBits),
                     VERR_INVALID_PARAMETER);
     cbVtgObj = pImage->cbImageBits - cbVtgObj;
@@ -700,10 +700,10 @@ SUPR0DECL(int) SUPR0VtgRegisterModule(void *hMod, PVTGOBJHDR pVtgHdr)
 
 
 /**
- * Module unloading hook, called after execution in the module have ceased. 
+ * Module unloading hook, called after execution in the module have ceased.
  *
- * @param   pDevExt             The device extension structure. 
- * @param   pImage              The image being unloaded. 
+ * @param   pDevExt             The device extension structure.
+ * @param   pImage              The image being unloaded.
  */
 void VBOXCALL supdrvVtgModuleUnloading(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE pImage)
 {
@@ -734,8 +734,8 @@ void VBOXCALL supdrvVtgModuleUnloading(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE pI
  * Early module initialization hook.
  *
  * @returns VBox status code.
- * @param   pDevExt             The device extension structure. 
- * @param   pVtgFireProbe       Pointer to the SUPR0VtgFireProbe entry. 
+ * @param   pDevExt             The device extension structure.
+ * @param   pVtgFireProbe       Pointer to the SUPR0VtgFireProbe entry.
  */
 int VBOXCALL supdrvVtgInit(PSUPDRVDEVEXT pDevExt, PSUPFUNC pVtgFireProbe)
 {
@@ -985,7 +985,7 @@ static void     supdrvDTracePOps_GetArgDesc(void *pvProv, dtrace_id_t idProbe, v
                                             dtrace_argdesc_t *pArgDesc)
 {
     PSUPDRVDTPROVIDER   pProv      = (PSUPDRVDTPROVIDER)pvProv;
-    unsigned            uArg       = pArgDesc->dtargd_ndx; 
+    unsigned            uArg       = pArgDesc->dtargd_ndx;
 
     if (!pProv->fZombie)
     {
@@ -1014,7 +1014,7 @@ static void     supdrvDTracePOps_GetArgDesc(void *pvProv, dtrace_id_t idProbe, v
 #ifdef RT_OS_SOLARIS
 
 # ifdef __cplusplus
-extern "C" 
+extern "C"
 #endif
 uint64_t dtrace_getarg(int iArg, int cFrames);
 
@@ -1027,15 +1027,15 @@ static uint64_t supdrvDTracePOps_GetArgVal(void *pvProv, dtrace_id_t idProbe, vo
     /* dtrace_getarg on AMD64 has a different opinion about how to use the
        cFrames argument than dtrace_caller() and/or dtrace_getpcstack(), at
        least when the probe is fired by dtrace_probe() the way we do.
-     
+
        Setting aframes to 1 when calling dtrace_probe_create gives me the right
        arguments, but the wrong 'caller'.  Since I cannot do anything about
        'caller', the only solution is this hack.
-     
+
        Not sure why the Solaris guys hasn't seen this issue before, but maybe
        there isn't anyone using the default argument getter path for ring-0
        dtrace_probe() calls, SDT surely isn't.
-     
+
        WARNING! This code is subject to dtrace_getarg interface unstability! */
     /** @todo File a solaris bug on dtrace_probe() + dtrace_getarg(). */
     return dtrace_getarg(iArg, cFrames + 1);

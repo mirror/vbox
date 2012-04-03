@@ -495,8 +495,8 @@ typedef struct SUPDRVDEVEXT
     PSUPDRVLDRIMAGE volatile        pLdrImages;
 
     /** @name These members for detecting whether an API caller is in ModuleInit.
-     * Certain APIs are only permitted from ModuleInit, like for instance tracepoint 
-     * registration. 
+     * Certain APIs are only permitted from ModuleInit, like for instance tracepoint
+     * registration.
      * @{ */
     /** The image currently executing its ModuleInit. */
     PSUPDRVLDRIMAGE volatile        pLdrInitImage;
@@ -536,9 +536,25 @@ typedef struct SUPDRVDEVEXT
     /** The head of the list of registered component factories. */
     PSUPDRVFACTORYREG               pComponentFactoryHead;
 
-#ifdef VBOX_WITH_DTRACE_R0DRV
-    /** Lock protecting DtProviderList. */
-    RTSEMFASTMUTEX                  mtxDTrace;
+#ifdef VBOX_WITH_SUPDRV_GENERIC_TRACER
+    /** Lock protecting The tracer members. */
+    RTSEMFASTMUTEX                  mtxTracer;
+    /** List of tracer providers (SUPDRVTPPROVIDER). */
+    RTLISTANCHOR                    TracerProviderList;
+    /** List of zombie tracer providers (SUPDRVTPPROVIDER). */
+    RTLISTANCHOR                    TracerProviderZombieList;
+    /** Pointer to the tracer registration record. */
+    PCSUPDRVTRACERREG               pTracerOps;
+    /** The ring-0 session of a native tracer provider. */
+    PSUPDRVSESSION                  pTracerSession;
+    /** The image containing the tracer. */
+    PSUPDRVLDRIMAGE                 pTracerImage;
+    /** The tracer helpers. */
+    SUPDRVTRACERHLP                 TracerHlp;
+    /** Set if the tracer is being unloaded. */
+    bool                            fTracerUnloading;
+
+#elif defined(VBOX_WITH_DTRACE_R0DRV)
     /** List of DTrace providers (SUPDRVDTPROVIDER). */
     RTLISTANCHOR                    DtProviderList;
     /** List of zombie DTrace providers (SUPDRVDTPROVIDER). */
@@ -638,6 +654,13 @@ void VBOXCALL   supdrvCleanupSession(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSess
 int  VBOXCALL   supdrvVtgInit(PSUPDRVDEVEXT pDevExt, PSUPFUNC pVtgFireProbe);
 void VBOXCALL   supdrvVtgTerm(PSUPDRVDEVEXT pDevExt);
 void VBOXCALL   supdrvVtgModuleUnloading(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE pImage);
+#endif
+
+#ifdef VBOX_WITH_SUPDRV_GENERIC_TRACER
+int  VBOXCALL   supdrvTracerInit(PSUPDRVDEVEXT pDevExt);
+void VBOXCALL   supdrvTracerTerm(PSUPDRVDEVEXT pDevExt);
+void VBOXCALL   supdrvTracerModuleUnloading(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE pImage);
+void VBOXCALL   supdrvTracerCleanupSession(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession);
 #endif
 
 

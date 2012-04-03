@@ -1275,12 +1275,131 @@ SUPR0DECL(int) SUPR0ComponentDeregisterFactory(PSUPDRVSESSION pSession, PCSUPDRV
 SUPR0DECL(int) SUPR0ComponentQueryFactory(PSUPDRVSESSION pSession, const char *pszName, const char *pszInterfaceUuid, void **ppvFactoryIf);
 
 
+/** @name Tracing
+ * @{ */
+
 struct VTGOBJHDR;
+
+/**
+ * Tracer data associated with a provider.
+ */
+typedef union SUPDRVTRACERDATA
+{
+    /** Generic */
+    uint64_t                    au64[2];
+
+    /** DTrace data. */
+    struct
+    {
+        /** Provider ID. */
+        uintptr_t               idProvider;
+        /** The number of trace points. */
+        uint32_t volatile       cTracepoints;
+    } DTrace;
+} SUPDRVTRACERDATA;
+/** Pointer to the tracer data associated with a provider. */
+typedef SUPDRVTRACERDATA *PSUPDRVTRACERDATA;
+
+/**
+ * Support driver tracepoint provider core.
+ */
+typedef struct SUPDRVVDTPROVIDERCORE
+{
+    /** The tracer data member. */
+    SUPDRVTRACERDATA            TracerData;
+    /** The provider descriptor. */
+    struct VTGDESCPROVIDER     *pDesc;
+    /** The VTG header. */
+    struct VTGOBJHDR           *pHdr;
+    /** Pointer to the provider name (a copy that's always available). */
+    const char                 *pszName;
+} SUPDRVVDTPROVIDERCORE;
+/** Pointer to a tracepoint provider core structure. */
+typedef SUPDRVVDTPROVIDERCORE *PSUPDRVVDTPROVIDERCORE;
+
+
+/** Pointer to a tracer registration record. */
+typedef struct SUPDRVTRACERREG const *PCSUPDRVTRACERREG;
+/**
+ * Support driver tracer registration record.
+ */
+typedef struct SUPDRVTRACERREG
+{
+    /** Magic value (SUPDRVTRACERREG_MAGIC). */
+    uint32_t                    u32Magic;
+    /** Version (SUPDRVTRACERREG_VERSION). */
+    uint32_t                    u32Version;
+
+    DECLR0CALLBACKMEMBER(int,   pfnTodo1, (PCSUPDRVTRACERREG pThis));
+    DECLR0CALLBACKMEMBER(int,   pfnTodo2, (PCSUPDRVTRACERREG pThis));
+    DECLR0CALLBACKMEMBER(int,   pfnTodo3, (PCSUPDRVTRACERREG pThis));
+    DECLR0CALLBACKMEMBER(int,   pfnTodo4, (PCSUPDRVTRACERREG pThis));
+    DECLR0CALLBACKMEMBER(int,   pfnTodo5, (PCSUPDRVTRACERREG pThis));
+
+    /**
+     * Registers a provider.
+     *
+     * @returns VBox status code.
+     * @param   pThis           Pointer to the registration record.
+     * @param   pCore           The provider core data.
+     */
+    DECLR0CALLBACKMEMBER(int,   pfnRegisterProvider, (PCSUPDRVTRACERREG pThis, PSUPDRVVDTPROVIDERCORE pCore));
+
+    /**
+     * Attempts to deregisters a provider.
+     *
+     * @returns VINF_SUCCESS or VERR_TRY_AGAIN.  If the latter, the provider
+     *          should be made as harmless as possible before returning as the
+     *          VTG object and associated code will be unloaded upon return.
+     *
+     * @param   pThis           Pointer to the registration record.
+     * @param   pCore           The provider core data.
+     */
+    DECLR0CALLBACKMEMBER(int,   pfnDeregisterProvider, (PCSUPDRVTRACERREG pThis, PSUPDRVVDTPROVIDERCORE pCore));
+
+    /**
+     * Make another attempt at unregister a busy provider.
+     *
+     * @returns VINF_SUCCESS or VERR_TRY_AGAIN.
+     * @param   pThis           Pointer to the registration record.
+     * @param   pCore           The provider core data.
+     */
+    DECLR0CALLBACKMEMBER(int,   pfnDeregisterZombieProvider, (PCSUPDRVTRACERREG pThis, PSUPDRVVDTPROVIDERCORE pCore));
+
+    /** End marker (SUPDRVTRACERREG_MAGIC). */
+    uintptr_t                   uEndMagic;
+} SUPDRVTRACERREG;
+
+/** Tracer magic (Kenny Garrett). */
+#define SUPDRVTRACERREG_MAGIC   UINT32_C(0x19601009)
+/** Tracer registration structure version. */
+#define SUPDRVTRACERREG_VERSION RT_MAKE_U32(0, 1)
+
+/** Pointer to a trace helper structure. */
+typedef struct SUPDRVTRACERHLP const *PCSUPDRVTRACERHLP;
+/**
+ * Helper structure.
+ */
+typedef struct SUPDRVTRACERHLP
+{
+    /** The structure version (SUPDRVTRACERHLP_VERSION). */
+    uintptr_t                   uVersion;
+
+    /** @todo ... */
+
+    /** End marker (SUPDRVTRACERHLP_VERSION) */
+    uintptr_t                   uEndVersion;
+} SUPDRVTRACERHLP;
+/** Tracer helper structure version. */
+#define SUPDRVTRACERHLP_VERSION RT_MAKE_U32(0, 1)
+
 SUPR0DECL(int)  SUPR0VtgRegisterDrv(PSUPDRVSESSION pSession, struct VTGOBJHDR *pVtgHdr, const char *pszName);
 SUPR0DECL(void) SUPR0VtgDeregisterDrv(PSUPDRVSESSION pSession);
 SUPR0DECL(void) SUPR0VtgFireProbe(uint32_t idProbe, uintptr_t uArg0, uintptr_t uArg1, uintptr_t uArg2,
                                   uintptr_t uArg3, uintptr_t uArg4);
 SUPR0DECL(int)  SUPR0VtgRegisterModule(void *hMod, struct VTGOBJHDR *pVtgHdr);
+/** @}  */
+
 
 /**
  * Service request callback function.

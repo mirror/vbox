@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2011 Oracle Corporation
+ * Copyright (C) 2006-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -465,7 +465,9 @@ int VBOXCALL supdrvInitDevExt(PSUPDRVDEVEXT pDevExt, size_t cbSession)
                     rc = supdrvGipCreate(pDevExt);
                     if (RT_SUCCESS(rc))
                     {
-#ifdef VBOX_WITH_DTRACE_R0DRV
+#ifdef VBOX_WITH_SUPDRV_GENERIC_TRACER
+                        rc = supdrvTracerInit(pDevExt);
+#elif defined(VBOX_WITH_DTRACE_R0DRV)
                         rc = supdrvVtgInit(pDevExt, &g_aFunctions[10]);
                         if (RT_SUCCESS(rc))
 #endif
@@ -530,7 +532,7 @@ int VBOXCALL supdrvInitDevExt(PSUPDRVDEVEXT pDevExt, size_t cbSession)
                             return VINF_SUCCESS;
                         }
 
-#ifdef VBOX_WITH_DTRACE_R0DRV
+#if defined(VBOX_WITH_SUPDRV_GENERIC_TRACER) || defined(VBOX_WITH_DTRACE_R0DRV)
                         supdrvGipDestroy(pDevExt);
 #endif
                     }
@@ -625,7 +627,9 @@ void VBOXCALL supdrvDeleteDevExt(PSUPDRVDEVEXT pDevExt)
     /* kill the GIP. */
     supdrvGipDestroy(pDevExt);
 
-#ifdef VBOX_WITH_DTRACE_R0DRV
+#ifdef VBOX_WITH_SUPDRV_GENERIC_TRACER
+    supdrvTracerTerm(pDevExt);
+#elif defined(VBOX_WITH_DTRACE_R0DRV)
     supdrvVtgTerm(pDevExt);
 #endif
 
@@ -815,6 +819,15 @@ void VBOXCALL supdrvCleanupSession(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSessio
         AssertMsg(!pSession->pUsage, ("Some buster reregistered an object during desturction!\n"));
     }
     Log2(("release objects - done\n"));
+
+#ifdef VBOX_WITH_SUPDRV_GENERIC_TRACER
+    /*
+     * Do tracer cleanups related to this session.
+     */
+    Log2(("release tracer stuff - start\n"));
+    supdrvTracerCleanupSession(pDevExt, pSession);
+    Log2(("release tracer stuff - end\n"));
+#endif
 
     /*
      * Release memory allocated in the session.
@@ -3666,7 +3679,8 @@ SUPR0DECL(int) SUPR0ComponentQueryFactory(PSUPDRVSESSION pSession, const char *p
 }
 
 
-#if !defined(VBOX_WITH_DTRACE_R0DRV) || defined(RT_OS_SOLARIS)
+#if (!defined(VBOX_WITH_SUPDRV_GENERIC_TRACER) && !defined(VBOX_WITH_DTRACE_R0DRV)) \
+  || defined(RT_OS_SOLARIS)
 /**
  * Stub function.
  */
@@ -3677,7 +3691,7 @@ SUPR0DECL(void) SUPR0VtgFireProbe(uint32_t idProbe, uintptr_t uArg0, uintptr_t u
 }
 #endif
 
-#ifndef VBOX_WITH_DTRACE_R0DRV
+#if !defined(VBOX_WITH_SUPDRV_GENERIC_TRACER) && !defined(VBOX_WITH_DTRACE_R0DRV)
 /**
  * Stub function.
  */
@@ -4150,8 +4164,10 @@ static int supdrvIOCtl_LdrLoad(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, P
 
     if (RT_FAILURE(rc))
     {
-#ifdef VBOX_WITH_DTRACE_R0DRV
         /* Inform the tracing component in case ModuleInit registered TPs. */
+#ifdef VBOX_WITH_SUPDRV_GENERIC_TRACER
+        supdrvTracerModuleUnloading(pDevExt, pImage);
+#elif defined(VBOX_WITH_DTRACE_R0DRV)
         supdrvVtgModuleUnloading(pDevExt, pImage);
 #endif
 
@@ -4599,8 +4615,10 @@ static void supdrvLdrFree(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE pImage)
         pImage->pfnModuleTerm(pImage);
     }
 
-#ifdef VBOX_WITH_DTRACE_R0DRV
     /* Inform the tracing component. */
+#ifdef VBOX_WITH_SUPDRV_GENERIC_TRACER
+    supdrvTracerModuleUnloading(pDevExt, pImage);
+#elif defined(VBOX_WITH_DTRACE_R0DRV)
     supdrvVtgModuleUnloading(pDevExt, pImage);
 #endif
 

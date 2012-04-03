@@ -45,7 +45,6 @@ if  !defined(VBOX_ONLY_DOCS) \
  ifdef VBOX_WITH_VBOXDRV
   LIBRARIES       += SUPR0IdcClient
   SYSMODS.freebsd += vboxdrv
-  SYSMODS.linux   += vboxdrv
   SYSMODS.win     += VBoxDrv
   SYSMODS.os2     += VBoxDrv
  endif
@@ -233,62 +232,6 @@ $(PATH_TARGET)/VBoxDrvCat.dir/VBoxDrv.cat: \
 endif # win
 
 
-#
-# vboxdrv.ko - The Linux Kernel Module (syntax check only).
-#
-ifeq ($(KBUILD_TARGET),linux)
-vboxdrv_TEMPLATE      = VBOXR0DRV
-vboxdrv_DEFS          = KBUILD_MODNAME=KBUILD_STR\(vboxdrv\) KBUILD_BASENAME=KBUILD_STR\(vboxdrv\) MODULE IN_RT_R0 IN_SUP_R0 CONFIG_VBOXDRV_AS_MISC
-ifdef VBOX_LINUX_VERSION_2_4
- vboxdrv_DEFS        += EXPORT_SYMTAB
-endif
-vboxdrv_INCS         := \
-	$(PATH_SUB_CURRENT) \
-	$(PATH_ROOT)/src/VBox/Runtime/r0drv/linux
-vboxdrv_LIBS          = $(PATH_STAGE_LIB)/RuntimeR0Drv$(VBOX_SUFF_LIB)
-vboxdrv_LIBS.debug    = $(vboxdrv_LIBS) $(VBOX_GCC_LIBGCC)
-vboxdrv_SOURCES       = \
-	$(KBUILD_TARGET)/SUPDrv-$(KBUILD_TARGET).c \
-	SUPDrv.c \
-	SUPDrvSem.c
-ifndef VBOX_LINUX_VERSION_2_4
- vboxdrv_SOURCES     += \
- 	$(KBUILD_TARGET)/SUPDrv-$(KBUILD_TARGET).mod.c
-endif
-
-
-#
-# Targets for installing the linux sources.
-#
-vboxdrv-mod_INST    = bin/src/vboxdrv/
-vboxdrv-mod_SOURCES = \
-	$(subst $(DQUOTE),,$(FILES_VBOXDRV_NOBIN)) \
-	$(vboxdrv-mod_0_OUTDIR)/Makefile
-vboxdrv-mod_EXEC_SOURCES  = \
-	$(subst $(DQUOTE),,$(FILES_VBOXDRV_BIN)) \
-	$(PATH_ROOT)/src/VBox/HostDrivers/linux/do_Module.symvers
-vboxdrv-mod_CLEAN   = \
-	$(vboxdrv-mod_0_OUTDIR)/Makefile \
-	$(PATH_TARGET)/vboxdrv-mod-1.dep \
-
-# Scripts needed for building the kernel modules
-
-includedep $(PATH_TARGET)/vboxdrv-mod-1.dep
-$$(vboxdrv-mod_0_OUTDIR)/Makefile: \
-		$(PATH_SUB_CURRENT)/linux/Makefile \
-		$$(if $$(eq $$(Support/linux/Makefile_VBOX_HARDENED),$$(VBOX_WITH_HARDENING)),,FORCE) \
-		| $$(dir $$@)
-	$(call MSG_TOOL,Creating,,$@)
- ifndef VBOX_WITH_HARDENING
-	$(QUIET)$(SED) -e "s;-DVBOX_WITH_HARDENING;;g" --output $@ $<
- else
-	$(QUIET)$(CP) -f $< $@
- endif
-	%$(QUIET2)$(APPEND) -t '$(PATH_TARGET)/vboxdrv-mod-1.dep' 'Support/linux/Makefile_VBOX_HARDENED=$(VBOX_WITH_HARDENING)'
-
-endif # real linux
-
-
 ifeq ($(KBUILD_TARGET),os2)
 
 #
@@ -365,42 +308,62 @@ endif # freebsd
 #
 # New VBoxDrv target. TODO: Convert all the above to use this!
 #
-if1of ($(KBUILD_TARGET), darwin solaris)
+if1of ($(KBUILD_TARGET), darwin linux solaris)
  # Leopard (x86) and Snow Leopard (x86/amd64)
  SYSMODS += VBoxDrv
  VBoxDrv_TEMPLATE         = VBOXR0DRV
- VBoxDrv_NAME.solaris     = vboxdrv
  VBoxDrv_NAME.freebsd     = vboxdrv
+ VBoxDrv_NAME.linux       = vboxdrv
+ VBoxDrv_NAME.solaris     = vboxdrv
  VBoxDrv_INST.darwin      = $(INST_VBOXDRV)Contents/MacOS/
  VBoxDrv_DEFS            := IN_RT_R0 IN_SUP_R0 SUPDRV_WITH_RELEASE_LOGGER VBOX_SVN_REV=$(VBOX_SVN_REV)
+ ifdef VBOX_WITH_SUPDRV_GENERIC_TRACER
+  VBoxDrv_DEFS           += VBOX_WITH_SUPDRV_GENERIC_TRACER
+ endif
  ifdef VBOX_WITH_DTRACE_R0DRV
   VBoxDrv_DEFS           += VBOX_WITH_DTRACE VBOX_WITH_DTRACE_R0DRV
  endif
  ifdef VBOX_WITH_NETFLT
-  vboxdrv_DEFS.solaris   += VBOX_WITH_NETFLT
+  VBoxDrv_DEFS.solaris   += VBOX_WITH_NETFLT
  endif
  ifdef VBOX_WITH_NATIVE_SOLARIS_LOADING
-  vboxdrv_DEFS.solaris   += VBOX_WITH_NATIVE_SOLARIS_LOADING
+  VBoxDrv_DEFS.solaris   += VBOX_WITH_NATIVE_SOLARIS_LOADING
  endif
- VBoxDrv_DEFS.darwin:= VBOX_WITH_HOST_VMX
+ VBoxDrv_DEFS.linux      := \
+	KBUILD_MODNAME=KBUILD_STR\(vboxdrv\) KBUILD_BASENAME=KBUILD_STR\(vboxdrv\) MODULE CONFIG_VBOXDRV_AS_MISC
+ ifdef VBOX_LINUX_VERSION_2_4
+  VBoxDrv_DEFS.linux     += EXPORT_SYMTAB
+ endif
+ VBoxDrv_DEFS.darwin     := VBOX_WITH_HOST_VMX
  #VBoxDrv_DEFS.debug      += DEBUG_DARWIN_GIP
  VBoxDrv_INCS             = . $(VBoxDrv_0_OUTDIR)
  VBoxDrv_INCS.darwin      = ./darwin
+ VBoxDrv_INCS.linux       = $(PATH_ROOT)/src/VBox/Runtime/r0drv/linux
  VBoxDrv_LIBS             = $(PATH_STAGE_LIB)/RuntimeR0Drv$(VBOX_SUFF_LIB)
  #VBoxDrv_LDFLAGS         = -v -Wl,-whyload -Wl,-v -Wl,-whatsloaded
+ VBoxDrv_LIBS.linux.debug = $(VBoxDrv_LIBS) $(VBOX_GCC_LIBGCC)
+
  VBoxDrv_SOURCES.darwin   = darwin/SUPDrv-darwin.cpp
  VBoxDrv_SOURCES.solaris  = solaris/SUPDrv-solaris.c
  VBoxDrv_SOURCES          = \
  	SUPDrv.c \
  	SUPDrvSem.c \
  	SUPDrv.d
+ ifdef VBOX_WITH_SUPDRV_GENERIC_TRACER
+  VBoxDrv_SOURCES        += \
+  	SUPDrv-tracer.cpp
+ endif
  ifdef VBOX_WITH_DTRACE_R0DRV
   VBoxDrv_SOURCES        += \
-  	SUPDrv-dtrace.cpp 
+  	SUPDrv-dtrace.cpp
   VBoxDrv_DTRACE_OBJ_FLAGS.solaris = --probe-fn-name=dtrace_probe
   VBoxDrv_LDFLAGS.solaris+= -N misc/dtrace
  endif
  VBoxDrv_LDFLAGS.solaris += -N misc/ctf
+ ifndef VBOX_LINUX_VERSION_2_4
+  VBoxDrv_SOURCES.linux  += \
+ 	linux/SUPDrv-linux.mod.c
+ endif
 endif
 
 
@@ -428,6 +391,7 @@ $$(VBoxDrv.kext_0_OUTDIR)/Info.plist: \
 		$<
 endif
 
+
 if1of ($(KBUILD_TARGET), darwin solaris)
  # Common manual loader script.
  INSTALLS += SUPDrvScripts
@@ -435,6 +399,37 @@ if1of ($(KBUILD_TARGET), darwin solaris)
  SUPDrvScripts_EXEC_SOURCES  = \
 	$(KBUILD_TARGET)/load.sh
 endif
+
+
+if1of ($(KBUILD_TARGET), linux)
+ #
+ # Targets for installing the linux sources.
+ #
+ vboxdrv-mod_INST    = bin/src/vboxdrv/
+ vboxdrv-mod_SOURCES = \
+ 	$(subst $(DQUOTE),,$(FILES_VBOXDRV_NOBIN)) \
+ 	$(vboxdrv-mod_0_OUTDIR)/Makefile
+ vboxdrv-mod_EXEC_SOURCES  = \
+ 	$(subst $(DQUOTE),,$(FILES_VBOXDRV_BIN)) \
+ 	$(PATH_ROOT)/src/VBox/HostDrivers/linux/do_Module.symvers
+ vboxdrv-mod_CLEAN   = \
+ 	$(vboxdrv-mod_0_OUTDIR)/Makefile \
+ 	$(PATH_TARGET)/vboxdrv-mod-1.dep \
+
+ # Scripts needed for building the kernel modules
+ includedep $(PATH_TARGET)/vboxdrv-mod-1.dep
+ $$(vboxdrv-mod_0_OUTDIR)/Makefile: \
+		$(PATH_SUB_CURRENT)/linux/Makefile \
+		$$(if $$(eq $$(Support/linux/Makefile_VBOX_HARDENED),$$(VBOX_WITH_HARDENING)),,FORCE) \
+		| $$(dir $$@)
+	$(call MSG_TOOL,Creating,,$@)
+ ifndef VBOX_WITH_HARDENING
+	$(QUIET)$(SED) -e "s;-DVBOX_WITH_HARDENING;;g" --output $@ $<
+ else
+	$(QUIET)$(CP) -f $< $@
+ endif
+	%$(QUIET2)$(APPEND) -t '$(PATH_TARGET)/vboxdrv-mod-1.dep' 'Support/linux/Makefile_VBOX_HARDENED=$(VBOX_WITH_HARDENING)'
+endif # real linux
 
 
 endif # !VBOX_ONLY_DOCS && !VBOX_ONLY_EXTPACKS && !VBOX_ONLY_TESTSUITE
