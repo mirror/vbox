@@ -134,6 +134,7 @@ EXPORTS
     RTTimeMilliTS
     RTTimeSystemNanoTS
     RTTimeSystemMilliTS
+    RTTimeNow
     RTThreadSelf
     RTThreadNativeSelf
     RTThreadSleep
@@ -187,6 +188,7 @@ EXPORTS
     RTAssertMayPanic
     RTAssertSetMayPanic
     RTAssertAreQuiet
+    RTR0AssertPanicSystem
 
     RTNetIPv4AddDataChecksum
     RTNetIPv4AddTCPChecksum
