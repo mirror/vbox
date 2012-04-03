@@ -65,7 +65,7 @@ checkdep_ips()
 # nothing to check for remote install
 REMOTE_INST=0
 if test "x${PKG_INSTALL_ROOT:=/}" != "x/"; then
-    BASEDIR_OPT="-R \"$PKG_INSTALL_ROOT\""
+    BASEDIR_OPT="-R $PKG_INSTALL_ROOT"
     REMOTE_INST=1
 fi
 
