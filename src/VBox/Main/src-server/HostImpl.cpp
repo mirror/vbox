@@ -1089,7 +1089,6 @@ STDMETHODIMP Host::CreateHostOnlyNetworkInterface(IHostNetworkInterface **aHostN
                                                   IProgress **aProgress)
 {
     CheckComArgOutPointerValid(aHostNetworkInterface);
-    CheckComArgNotNull(*aHostNetworkInterface);
     CheckComArgOutPointerValid(aProgress);
 
     AutoCaller autoCaller(this);
@@ -1102,6 +1101,10 @@ STDMETHODIMP Host::CreateHostOnlyNetworkInterface(IHostNetworkInterface **aHostN
     int r = NetIfCreateHostOnlyNetworkInterface(m->pParent, aHostNetworkInterface, aProgress);
     if (RT_SUCCESS(r))
     {
+        if (!*aHostNetworkInterface)
+            return setError(E_FAIL,
+                            tr("Unable to create a host network interface"));
+
 #if !defined(RT_OS_WINDOWS)
         Bstr tmpAddr, tmpMask, tmpName;
         HRESULT hrc;
