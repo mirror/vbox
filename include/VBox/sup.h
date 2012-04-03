@@ -1279,6 +1279,7 @@ SUPR0DECL(int) SUPR0ComponentQueryFactory(PSUPDRVSESSION pSession, const char *p
  * @{ */
 
 struct VTGOBJHDR;
+struct VTGPROBELOC;
 
 /**
  * Tracer data associated with a provider.
@@ -1330,11 +1331,63 @@ typedef struct SUPDRVTRACERREG
     /** Version (SUPDRVTRACERREG_VERSION). */
     uint32_t                    u32Version;
 
-    DECLR0CALLBACKMEMBER(int,   pfnTodo1, (PCSUPDRVTRACERREG pThis));
-    DECLR0CALLBACKMEMBER(int,   pfnTodo2, (PCSUPDRVTRACERREG pThis));
-    DECLR0CALLBACKMEMBER(int,   pfnTodo3, (PCSUPDRVTRACERREG pThis));
-    DECLR0CALLBACKMEMBER(int,   pfnTodo4, (PCSUPDRVTRACERREG pThis));
-    DECLR0CALLBACKMEMBER(int,   pfnTodo5, (PCSUPDRVTRACERREG pThis));
+    /**
+     * Fire off a probe.
+     *
+     * @param   pVtgProbeLoc            The probe location record.
+     * @param   uArg0                   The first raw probe argument.
+     * @param   uArg1                   The second raw probe argument.
+     * @param   uArg2                   The third raw probe argument.
+     * @param   uArg3                   The fourth raw probe argument.
+     * @param   uArg4                   The fifth raw probe argument.
+     *
+     * @remarks SUPR0VtgFireProbe will do a tail jump thru this member, so no extra
+     *          stack frames will be added.
+     * @remarks This does not take a 'this' pointer argument because it doesn't map
+     *          well onto VTG or DTrace.
+     *
+     */
+    DECLR0CALLBACKMEMBER(void, pfnFireProbe, (struct VTGPROBELOC *pVtgProbeLoc, uintptr_t uArg0, uintptr_t uArg1, uintptr_t uArg2,
+                                              uintptr_t uArg3, uintptr_t uArg4));
+
+    /**
+     * Opens up the tracer.
+     *
+     * @returns VBox status code.
+     * @param   pThis           Pointer to the registration record.
+     * @param   pSession        The session doing the opening.
+     * @param   uCookie         A cookie (magic) unique to the tracer, so it can
+     *                          fend off incompatible clients.
+     * @param   uArg            Tracer specific argument.
+     * @param   puSessionData   Pointer to the session data variable.  This must be
+     *                          set to a non-zero value on success.
+     */
+    DECLR0CALLBACKMEMBER(int,   pfnOpenTracer, (PCSUPDRVTRACERREG pThis, PSUPDRVSESSION pSession, uint32_t uCookie, uintptr_t uArg,
+                                                uintptr_t *puSessionData));
+
+    /**
+     * I/O control style tracer communication method.
+     *
+     *
+     * @returns VBox status code.
+     * @param   pThis           Pointer to the registration record.
+     * @param   pSession        The session.
+     * @param   uSessionData    The session data value.
+     * @param   uCmd            The tracer specific command.
+     * @param   uArg            The tracer command specific argument.
+     * @param   piRetVal        The tracer specific return value.
+     */
+    DECLR0CALLBACKMEMBER(int,   pfnIoctl, (PCSUPDRVTRACERREG pThis, PSUPDRVSESSION pSession, uintptr_t uSessionData,
+                                           uintptr_t uCmd, uintptr_t uArg, int32_t *piRetVal));
+
+    /**
+     * Cleans up data the tracer has associated with a session.
+     *
+     * @param   pThis           Pointer to the registration record.
+     * @param   pSession        The session handle.
+     * @param   uSessionData    The data assoicated with the session.
+     */
+    DECLR0CALLBACKMEMBER(void,  pfnCloseTrace, (PCSUPDRVTRACERREG pThis, PSUPDRVSESSION pSession, uintptr_t uSessionData));
 
     /**
      * Registers a provider.
