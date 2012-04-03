@@ -28,6 +28,7 @@
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
+/*#define USE_VIRTUAL_ALLOC*/
 #define LOG_GROUP RTLOGGROUP_MEM
 #include <Windows.h>
 
@@ -53,12 +54,6 @@ RTDECL(void *) RTMemExecAllocTag(size_t cb, const char *pszTag) RT_NO_THROW
     AssertMsg(pv, ("malloc(%d) failed!!!\n", cb));
     if (pv)
     {
-        /*
-         * Add PROT_EXEC flag to the page.
-         *
-         * This is in violation of the SuS where I think it saith that mprotect() shall
-         * only be used with mmap()'ed memory. Works on linux and OS/2 LIBC v0.6.
-         */
         memset(pv, 0xcc, cb);
         void   *pvProt = (void *)((uintptr_t)pv & ~PAGE_OFFSET_MASK);
         size_t  cbProt = ((uintptr_t)pv & PAGE_OFFSET_MASK) + cb;
