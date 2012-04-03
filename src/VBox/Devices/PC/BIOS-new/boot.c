@@ -296,10 +296,8 @@ uint32_t BIOSCALL int19_function(uint8_t bseqnr)
         }
     }
     
-    // Don't check boot sectors on floppies and don't read CMOS - byte
-    // 0x38 in CMOS always has the low bit clear.
-    // There is *no* requirement whatsoever for a valid boot sector to
-    // have a 55AAh signature. UNIX boot floppies typically have no such
+    // There is *no* requirement whatsoever for a valid floppy boot sector
+    // to have a 55AAh signature. UNIX boot floppies typically have no such
     // signature. In general, it is impossible to tell a valid bootsector
     // from an invalid one.
     // NB: It is somewhat common for failed OS installs to have the
@@ -316,12 +314,11 @@ uint32_t BIOSCALL int19_function(uint8_t bseqnr)
         bootchk = 1;
 #endif // BX_ELTORITO_BOOT
     
-    if (bootchk == 0) {
-        if (read_word(bootseg,0x1fe) != 0xaa55 ||
-            read_word(bootseg,0) == read_word(bootseg,2)) {
-            print_boot_failure(bootcd, bootlan, bootdrv, 0, lastdrive);
-            return 0x00000000;
-        }
+    if (read_word(bootseg,0) == read_word(bootseg,2)
+      || (bootchk == 0 && read_word(bootseg,0x1fe) != 0xaa55))
+    {
+        print_boot_failure(bootcd, bootlan, bootdrv, 0, lastdrive);
+        return 0x00000000;
     }
     
 #if BX_ELTORITO_BOOT
