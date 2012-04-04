@@ -24,6 +24,7 @@
  * terms and conditions of either the GPL or the CDDL or both.
  */
 
+/** @todo Convert this to a generic tracer implementation. */
 
 /*******************************************************************************
 *   Header Files                                                               *
@@ -595,7 +596,7 @@ static int supdrvVtgRegister(PSUPDRVDEVEXT pDevExt, PVTGOBJHDR pVtgHdr, size_t c
  * @param   pVtgHdr             The VTG header.
  * @param   pszName             The driver name.
  */
-SUPR0DECL(int) SUPR0VtgRegisterDrv(PSUPDRVSESSION pSession, PVTGOBJHDR pVtgHdr, const char *pszName)
+SUPR0DECL(int) SUPR0TracerRegisterDrv(PSUPDRVSESSION pSession, PVTGOBJHDR pVtgHdr, const char *pszName)
 {
     int rc;
 
@@ -621,7 +622,7 @@ SUPR0DECL(int) SUPR0VtgRegisterDrv(PSUPDRVSESSION pSession, PVTGOBJHDR pVtgHdr, 
  * @param   pSession            The support driver session handle.
  * @param   pVtgHdr             The VTG header.
  */
-SUPR0DECL(void) SUPR0VtgDeregisterDrv(PSUPDRVSESSION pSession)
+SUPR0DECL(void) SUPR0TracerDeregisterDrv(PSUPDRVSESSION pSession)
 {
     PSUPDRVDTPROVIDER pProv, pProvNext;
     PSUPDRVDEVEXT     pDevExt;
@@ -661,7 +662,7 @@ SUPR0DECL(void) SUPR0VtgDeregisterDrv(PSUPDRVSESSION pSession)
  * @param   hMod                The module handle.
  * @param   pVtgHdr             The VTG header.
  */
-SUPR0DECL(int) SUPR0VtgRegisterModule(void *hMod, PVTGOBJHDR pVtgHdr)
+SUPR0DECL(int) SUPR0TracerRegisterModule(void *hMod, PVTGOBJHDR pVtgHdr)
 {
     PSUPDRVLDRIMAGE pImage = (PSUPDRVLDRIMAGE)hMod;
     PSUPDRVDEVEXT   pDevExt;
@@ -735,11 +736,11 @@ void VBOXCALL supdrvVtgModuleUnloading(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE pI
  *
  * @returns VBox status code.
  * @param   pDevExt             The device extension structure.
- * @param   pVtgFireProbe       Pointer to the SUPR0VtgFireProbe entry.
+ * @param   pFireProbeEntry     Pointer to the SUPR0TracerFireProbe entry.
  */
-int VBOXCALL supdrvVtgInit(PSUPDRVDEVEXT pDevExt, PSUPFUNC pVtgFireProbe)
+int VBOXCALL supdrvVtgInit(PSUPDRVDEVEXT pDevExt, PSUPFUNC pFireProbeEntry)
 {
-    Assert(!strcmp(pVtgFireProbe->szName, "SUPR0VtgFireProbe"));
+    Assert(!strcmp(pFireProbeEntry->szName, "SUPR0TracerFireProbe"));
 
     /*
      * Register a provider for this module.
@@ -748,7 +749,7 @@ int VBOXCALL supdrvVtgInit(PSUPDRVDEVEXT pDevExt, PSUPFUNC pVtgFireProbe)
     if (RT_SUCCESS(rc))
     {
 #ifdef RT_OS_SOLARIS
-        pVtgFireProbe->pfn = (void *)(uintptr_t)dtrace_probe;
+        pFireProbeEntry->pfn = (void *)(uintptr_t)dtrace_probe;
 #endif
         RTListInit(&pDevExt->DtProviderList);
         RTListInit(&pDevExt->DtProviderZombieList);

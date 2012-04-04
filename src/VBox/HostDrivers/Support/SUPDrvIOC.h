@@ -192,7 +192,7 @@ typedef SUPREQHDR *PSUPREQHDR;
  * @todo Pending work on next major version change:
  *          - None.
  */
-#define SUPDRV_IOC_VERSION                              0x00190001
+#define SUPDRV_IOC_VERSION                              0x00190002
 
 /** SUP_IOCTL_COOKIE. */
 typedef struct SUPCOOKIE
@@ -324,7 +324,7 @@ typedef struct SUPLDROPEN
  * This is called once after the module has been loaded.
  *
  * @returns 0 on success.
- * @returns Appropriate error code on failure. 
+ * @returns Appropriate error code on failure.
  * @param   hMod        Image handle for use in APIs.
  */
 typedef DECLCALLBACK(int) FNR0MODULEINIT(void *hMod);
@@ -333,8 +333,8 @@ typedef R0PTRTYPE(FNR0MODULEINIT *) PFNR0MODULEINIT;
 
 /**
  * Module termination callback function.
- * This is called once right before the module is being unloaded. 
- *  
+ * This is called once right before the module is being unloaded.
+ *
  * @param   hMod        Image handle for use in APIs.
  */
 typedef DECLCALLBACK(void) FNR0MODULETERM(void *hMod);

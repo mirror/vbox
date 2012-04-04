@@ -64,8 +64,6 @@ typedef struct SUPDRVTPPROVIDER
     /** The session this provider is associated with if registered via
      * SUPR0VtgRegisterDrv.  NULL if pImage is set. */
     PSUPDRVSESSION          pSession;
-    /** The module name. */
-    const char             *pszModName;
 
     /** Set when the module is unloaded or the driver deregisters its probes. */
     bool                    fZombie;
@@ -94,6 +92,14 @@ typedef SUPDRVTPPROVIDER *PSUPDRVTPPROVIDER;
 *******************************************************************************/
 
 
+
+/**
+ * Validates a VTG string against length and characterset limitations.
+ *
+ * @returns VINF_SUCCESS, VERR_SUPDRV_VTG_BAD_STRING or
+ *          VERR_SUPDRV_VTG_STRING_TOO_LONG.
+ * @param   psz                 The string.
+ */
 static int supdrvVtgValidateString(const char *psz)
 {
     size_t off = 0;
@@ -119,6 +125,7 @@ static int supdrvVtgValidateString(const char *psz)
     }
     return VERR_SUPDRV_VTG_STRING_TOO_LONG;
 }
+
 
 /**
  * Validates the VTG data.
@@ -532,9 +539,9 @@ static int supdrvTracerRegisterVtgObj(PSUPDRVDEVEXT pDevExt, PVTGOBJHDR pVtgHdr,
             pProv->Core.pDesc       = pDesc;
             pProv->Core.pHdr        = pVtgHdr;
             pProv->Core.pszName     = &pProv->szName[0];
+            pProv->Core.pszModName  = pszModName;
             pProv->pImage           = pImage;
             pProv->pSession         = pSession;
-            pProv->pszModName       = pszModName;
             pProv->fZombie          = false;
             pProv->fRegistered      = true;
             memcpy(&pProv->szName[0], pszName, cchName + 1);
@@ -597,7 +604,7 @@ static int supdrvTracerRegisterVtgObj(PSUPDRVDEVEXT pDevExt, PVTGOBJHDR pVtgHdr,
  * @param   pVtgHdr             The VTG header.
  * @param   pszName             The driver name.
  */
-SUPR0DECL(int) SUPR0VtgRegisterDrv(PSUPDRVSESSION pSession, PVTGOBJHDR pVtgHdr, const char *pszName)
+SUPR0DECL(int) SUPR0TracerRegisterDrv(PSUPDRVSESSION pSession, PVTGOBJHDR pVtgHdr, const char *pszName)
 {
     int rc;
 
@@ -623,7 +630,7 @@ SUPR0DECL(int) SUPR0VtgRegisterDrv(PSUPDRVSESSION pSession, PVTGOBJHDR pVtgHdr, 
  * @param   pSession            The support driver session handle.
  * @param   pVtgHdr             The VTG header.
  */
-SUPR0DECL(void) SUPR0VtgDeregisterDrv(PSUPDRVSESSION pSession)
+SUPR0DECL(void) SUPR0TracerDeregisterDrv(PSUPDRVSESSION pSession)
 {
     PSUPDRVTPPROVIDER pProv, pProvNext;
     PSUPDRVDEVEXT     pDevExt;
@@ -663,7 +670,7 @@ SUPR0DECL(void) SUPR0VtgDeregisterDrv(PSUPDRVSESSION pSession)
  * @param   hMod                The module handle.
  * @param   pVtgHdr             The VTG header.
  */
-SUPR0DECL(int) SUPR0VtgRegisterModule(void *hMod, PVTGOBJHDR pVtgHdr)
+SUPR0DECL(int) SUPR0TracerRegisterModule(void *hMod, PVTGOBJHDR pVtgHdr)
 {
     PSUPDRVLDRIMAGE pImage = (PSUPDRVLDRIMAGE)hMod;
     PSUPDRVDEVEXT   pDevExt;
@@ -703,7 +710,7 @@ SUPR0DECL(int) SUPR0VtgRegisterModule(void *hMod, PVTGOBJHDR pVtgHdr)
 
 
 /**
- * Registers the tracer.
+ * Registers the tracer implementation.
  *
  * This should be called from the ModuleInit code or from a ring-0 session.
  *
@@ -713,7 +720,7 @@ SUPR0DECL(int) SUPR0VtgRegisterModule(void *hMod, PVTGOBJHDR pVtgHdr)
  * @param   pReg                Pointer to the tracer registration structure.
  * @param   ppHlp               Where to return the tracer helper method table.
  */
-SUPR0DECL(int) SUPR0TracerRegister(void *hMod, PSUPDRVSESSION pSession, PCSUPDRVTRACERREG pReg, PCSUPDRVTRACERHLP *ppHlp)
+SUPR0DECL(int) SUPR0TracerRegisterImpl(void *hMod, PSUPDRVSESSION pSession, PCSUPDRVTRACERREG pReg, PCSUPDRVTRACERHLP *ppHlp)
 {
     PSUPDRVLDRIMAGE pImage = (PSUPDRVLDRIMAGE)hMod;
     PSUPDRVDEVEXT   pDevExt;
@@ -773,12 +780,12 @@ SUPR0DECL(int) SUPR0TracerRegister(void *hMod, PSUPDRVSESSION pSession, PCSUPDRV
 
 
 /**
- * Deregister a tracer associated with a ring-0 session.
+ * Deregister a tracer implementation associated with a ring-0 session.
  *
  * @returns VBox status code.
  * @param   pSession            Ring-0 session handle.
  */
-SUPR0DECL(int) SUPR0TracerDeregister(PSUPDRVSESSION pSession)
+SUPR0DECL(int) SUPR0TracerDeregisterImpl(PSUPDRVSESSION pSession)
 {
     PSUPDRVDEVEXT   pDevExt;
     int             rc;
