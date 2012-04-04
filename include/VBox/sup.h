@@ -1319,6 +1319,71 @@ typedef struct SUPDRVVDTPROVIDERCORE
 typedef SUPDRVVDTPROVIDERCORE *PSUPDRVVDTPROVIDERCORE;
 
 
+/**
+ * Usermode probe context information.
+ */
+typedef struct SUPDRVTRACERUSRCTX
+{
+    union
+    {
+        /** X86 context info. */
+        struct
+        {
+            uint32_t        uVtgProbeLoc;   /**< Location record address. */
+            uint32_t        aArgs[20];      /**< Raw arguments. */
+            uint32_t        eip;
+            uint32_t        eflags;
+            uint32_t        eax;
+            uint32_t        ecx;
+            uint32_t        edx;
+            uint32_t        ebx;
+            uint32_t        esp;
+            uint32_t        ebp;
+            uint32_t        esi;
+            uint32_t        edi;
+            uint16_t        cs;
+            uint16_t        ss;
+            uint16_t        ds;
+            uint16_t        es;
+            uint16_t        fs;
+            uint16_t        gs;
+        } X86;
+
+        /** AMD64 context info. */
+        struct
+        {
+            uint64_t        uVtgProbeLoc;   /**< Location record address. */
+            uint64_t        aArgs[10];      /**< Raw arguments. */
+            uint64_t        rip;
+            uint64_t        rflags;
+            uint64_t        rax;
+            uint64_t        rcx;
+            uint64_t        rdx;
+            uint64_t        rbx;
+            uint64_t        rsp;
+            uint64_t        rbp;
+            uint64_t        rsi;
+            uint64_t        rdi;
+            uint64_t        r8;
+            uint64_t        r9;
+            uint64_t        r10;
+            uint64_t        r11;
+            uint64_t        r12;
+            uint64_t        r13;
+            uint64_t        r14;
+        } Amd64;
+    } u;
+    /** 32 if X86, 64 if AMD64. */
+    uint8_t                 cBits;
+    /** Reserved padding. */
+    uint8_t                 abReserved[3];
+    /** The probe ID from the VTG location record.  */
+    uint32_t                idProbe;
+} SUPDRVTRACERUSRCTX;
+/** Pointer to the usermode probe context information. */
+typedef SUPDRVTRACERUSRCTX const *PCSUPDRVTRACERUSRCTX;
+
+
 /** Pointer to a tracer registration record. */
 typedef struct SUPDRVTRACERREG const *PCSUPDRVTRACERREG;
 /**
@@ -1332,14 +1397,14 @@ typedef struct SUPDRVTRACERREG
     uint32_t                    u32Version;
 
     /**
-     * Fire off a probe.
+     * Fire off a kernel probe.
      *
-     * @param   pVtgProbeLoc            The probe location record.
-     * @param   uArg0                   The first raw probe argument.
-     * @param   uArg1                   The second raw probe argument.
-     * @param   uArg2                   The third raw probe argument.
-     * @param   uArg3                   The fourth raw probe argument.
-     * @param   uArg4                   The fifth raw probe argument.
+     * @param   pVtgProbeLoc    The probe location record.
+     * @param   uArg0           The first raw probe argument.
+     * @param   uArg1           The second raw probe argument.
+     * @param   uArg2           The third raw probe argument.
+     * @param   uArg3           The fourth raw probe argument.
+     * @param   uArg4           The fifth raw probe argument.
      *
      * @remarks SUPR0VtgFireProbe will do a tail jump thru this member, so no extra
      *          stack frames will be added.
@@ -1347,8 +1412,18 @@ typedef struct SUPDRVTRACERREG
      *          well onto VTG or DTrace.
      *
      */
-    DECLR0CALLBACKMEMBER(void, pfnFireProbe, (struct VTGPROBELOC *pVtgProbeLoc, uintptr_t uArg0, uintptr_t uArg1, uintptr_t uArg2,
-                                              uintptr_t uArg3, uintptr_t uArg4));
+    DECLR0CALLBACKMEMBER(void, pfnFireKernelProbe, (struct VTGPROBELOC *pVtgProbeLoc, uintptr_t uArg0, uintptr_t uArg1, uintptr_t uArg2,
+                                                    uintptr_t uArg3, uintptr_t uArg4));
+
+    /**
+     * Fire off a user-mode probe.
+     *
+     * @param   pThis           Pointer to the registration record.
+     *
+     * @param   pVtgProbeLoc    The probe location record.
+     * @param   pCtx            The usermode context info.
+     */
+    DECLR0CALLBACKMEMBER(void, pfnFireUserProbe, (PCSUPDRVTRACERREG pThis, PCSUPDRVTRACERUSRCTX pCtx));
 
     /**
      * Opens up the tracer.
