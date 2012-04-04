@@ -1820,7 +1820,7 @@ static int pcnetTdtePoll(PCNetState *pThis, TMD *tmd)
 /**
  * Write data into guest receive buffers.
  */
-static void pcnetReceiveNoSync(PCNetState *pThis, const uint8_t *buf, size_t cbToRecv)
+static void pcnetReceiveNoSync(PCNetState *pThis, const uint8_t *buf, size_t cbToRecv, bool fAddFCS)
 {
     PPDMDEVINS pDevIns = PCNETSTATE_2_DEVINS(pThis);
     int is_padr = 0, is_bcast = 0, is_ladr = 0;
@@ -1891,12 +1891,15 @@ static void pcnetReceiveNoSync(PCNetState *pThis, const uint8_t *buf, size_t cbT
 
                 while (cbToRecv < 60)
                     src[cbToRecv++] = 0;
-                while (p != &src[cbToRecv])
-                    CRC(fcs, *p++);
-                ((uint32_t *)&src[cbToRecv])[0] = htonl(fcs);
-                /* FCS at end of packet */
+                if (fAddFCS)
+                {
+                    while (p != &src[cbToRecv])
+                        CRC(fcs, *p++);
+                    ((uint32_t *)&src[cbToRecv])[0] = htonl(fcs);
+                    /* FCS at end of packet */
+                    cbToRecv += 4;
+                }
             }
-            cbToRecv += 4;
             cbPacket = (int)cbToRecv;                           Assert((size_t)cbPacket == cbToRecv);
 
 #ifdef PCNET_DEBUG_MATCH
@@ -2153,7 +2156,7 @@ DECLINLINE(int) pcnetXmitSendBuf(PCNetState *pThis, bool fLoopback, PPDMSCATTERG
         if (HOST_IS_OWNER(CSR_CRST(pThis)))
             pcnetRdtePoll(pThis);
 
-        pcnetReceiveNoSync(pThis, pThis->abLoopBuf, pSgBuf->cbUsed);
+        pcnetReceiveNoSync(pThis, pThis->abLoopBuf, pSgBuf->cbUsed, true /* fAddFCS */);
         pThis->Led.Actual.s.fReading = 0;
         rc = VINF_SUCCESS;
     }
@@ -4653,16 +4656,19 @@ static DECLCALLBACK(int) pcnetNetworkDown_Receive(PPDMINETWORKDOWN pInterface, c
 
     /*
      * Check for the max ethernet frame size, taking the IEEE 802.1Q (VLAN) tag into
-     * account. Note that we are *not* expecting the CRC Checksum.
-     * Ethernet frames consists of a 14-byte header [+ 4-byte vlan tag] + a 1500-byte body.
+     * account. Note that the CRC Checksum is optional.
+     * Ethernet frames consist of a 14-byte header [+ 4-byte vlan tag] + a 1500-byte body [+ 4-byte CRC].
      */
-    if (RT_LIKELY(   cb <= 1514
-                  || (   cb <= 1518
+    if (RT_LIKELY(   cb <= 1518
+                  || (   cb <= 1522
                       && ((PCRTNETETHERHDR)pvBuf)->EtherType == RT_H2BE_U16_C(RTNET_ETHERTYPE_VLAN))))
     {
+        bool fAddFCS =   cb <= 1514
+                      || (   cb <= 1518
+                          && ((PCRTNETETHERHDR)pvBuf)->EtherType == RT_H2BE_U16_C(RTNET_ETHERTYPE_VLAN));
         if (cb > 70) /* unqualified guess */
             pThis->Led.Asserted.s.fReading = pThis->Led.Actual.s.fReading = 1;
-        pcnetReceiveNoSync(pThis, (const uint8_t *)pvBuf, cb);
+        pcnetReceiveNoSync(pThis, (const uint8_t *)pvBuf, cb, fAddFCS);
         pThis->Led.Actual.s.fReading = 0;
     }
 #ifdef LOG_ENABLED
