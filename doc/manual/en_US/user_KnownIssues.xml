@@ -39,6 +39,9 @@
             <listitem>
                 Support of iSCSI via internal networking
             </listitem>
+            <listitem>
+                Synthetic CPU reporting
+            </listitem>
         </itemizedlist>
     </sect1>
     <sect1 id="KnownProblems">
