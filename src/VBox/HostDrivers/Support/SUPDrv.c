@@ -162,7 +162,7 @@ static SUPFUNC g_aFunctions[] =
     { "SUPR0AbsKernelES",                       (void *)0 },
     { "SUPR0AbsKernelFS",                       (void *)0 },
     { "SUPR0AbsKernelGS",                       (void *)0 },
-    { "SUPR0VtgFireProbe",                      (void *)SUPR0VtgFireProbe },
+    { "SUPR0TracerFireProbe",                   (void *)SUPR0TracerFireProbe },
         /* Normal function pointers: */
     { "SUPR0ComponentRegisterFactory",          (void *)SUPR0ComponentRegisterFactory },
     { "SUPR0ComponentDeregisterFactory",        (void *)SUPR0ComponentDeregisterFactory },
@@ -203,7 +203,7 @@ static SUPFUNC g_aFunctions[] =
     { "SUPSemEventMultiGetResolution",          (void *)SUPSemEventMultiGetResolution },
     { "SUPR0GetPagingMode",                     (void *)SUPR0GetPagingMode },
     { "SUPR0EnableVTx",                         (void *)SUPR0EnableVTx },
-    { "SUPR0VtgRegisterModule",                 (void *)SUPR0VtgRegisterModule },
+    { "SUPR0TracerRegisterModule",              (void *)SUPR0TracerRegisterModule },
     { "SUPGetGIP",                              (void *)SUPGetGIP },
     { "g_pSUPGlobalInfoPage",                   (void *)&g_pSUPGlobalInfoPage },
     { "RTMemAllocTag",                          (void *)RTMemAllocTag },
@@ -3684,8 +3684,8 @@ SUPR0DECL(int) SUPR0ComponentQueryFactory(PSUPDRVSESSION pSession, const char *p
 /**
  * Stub function.
  */
-SUPR0DECL(void) SUPR0VtgFireProbe(uint32_t idProbe, uintptr_t uArg0, uintptr_t uArg1, uintptr_t uArg2,
-                                  uintptr_t uArg3, uintptr_t uArg4)
+SUPR0DECL(void) SUPR0TracerFireProbe(uint32_t idProbe, uintptr_t uArg0, uintptr_t uArg1, uintptr_t uArg2,
+                                     uintptr_t uArg3, uintptr_t uArg4)
 {
     NOREF(idProbe); NOREF(uArg0); NOREF(uArg1); NOREF(uArg2); NOREF(uArg3); NOREF(uArg4);
 }
@@ -3695,7 +3695,7 @@ SUPR0DECL(void) SUPR0VtgFireProbe(uint32_t idProbe, uintptr_t uArg0, uintptr_t u
 /**
  * Stub function.
  */
-SUPR0DECL(int) SUPR0VtgRegisterModule(void *hMod, struct VTGOBJHDR *pVtgHdr)
+SUPR0DECL(int) SUPR0TracerRegisterModule(void *hMod, struct VTGOBJHDR *pVtgHdr)
 {
     NOREF(hMod); NOREF(pVtgHdr);
     return VINF_SUCCESS;

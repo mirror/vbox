@@ -159,7 +159,7 @@ static const char          *g_pszAssemblerIncVal        = __FILE__ "/../../../in
 static const char          *g_pszAssemblerOutputOpt     = "-o";
 static unsigned             g_cAssemblerOptions         = 0;
 static const char          *g_apszAssemblerOptions[32];
-static const char          *g_pszProbeFnName            = "SUPR0VtgFireProbe";
+static const char          *g_pszProbeFnName            = "SUPR0TracerFireProbe";
 static bool                 g_fProbeFnImported          = true;
 /** @} */
 

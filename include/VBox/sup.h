@@ -1294,8 +1294,10 @@ typedef union SUPDRVTRACERDATA
     {
         /** Provider ID. */
         uintptr_t               idProvider;
-        /** The number of trace points. */
-        uint32_t volatile       cTracepoints;
+        /** The number of trace points provided. */
+        uint32_t volatile       cProvidedProbes;
+        /** Whether we've invalidated this bugger. */
+        bool                    fZombie;
     } DTrace;
 } SUPDRVTRACERDATA;
 /** Pointer to the tracer data associated with a provider. */
@@ -1314,6 +1316,8 @@ typedef struct SUPDRVVDTPROVIDERCORE
     struct VTGOBJHDR           *pHdr;
     /** Pointer to the provider name (a copy that's always available). */
     const char                 *pszName;
+    /** Pointer to the module name. */
+    const char                 *pszModName;
 } SUPDRVVDTPROVIDERCORE;
 /** Pointer to a tracepoint provider core structure. */
 typedef SUPDRVVDTPROVIDERCORE *PSUPDRVVDTPROVIDERCORE;
@@ -1324,6 +1328,13 @@ typedef SUPDRVVDTPROVIDERCORE *PSUPDRVVDTPROVIDERCORE;
  */
 typedef struct SUPDRVTRACERUSRCTX
 {
+    /** The probe ID from the VTG location record.  */
+    uint32_t                idProbe;
+    /** 32 if X86, 64 if AMD64. */
+    uint8_t                 cBits;
+    /** Reserved padding. */
+    uint8_t                 abReserved[3];
+    /** Data which format is dictated by the cBits member. */
     union
     {
         /** X86 context info. */
@@ -1373,12 +1384,6 @@ typedef struct SUPDRVTRACERUSRCTX
             uint64_t        r14;
         } Amd64;
     } u;
-    /** 32 if X86, 64 if AMD64. */
-    uint8_t                 cBits;
-    /** Reserved padding. */
-    uint8_t                 abReserved[3];
-    /** The probe ID from the VTG location record.  */
-    uint32_t                idProbe;
 } SUPDRVTRACERUSRCTX;
 /** Pointer to the usermode probe context information. */
 typedef SUPDRVTRACERUSRCTX const *PCSUPDRVTRACERUSRCTX;
@@ -1406,13 +1411,13 @@ typedef struct SUPDRVTRACERREG
      * @param   uArg3           The fourth raw probe argument.
      * @param   uArg4           The fifth raw probe argument.
      *
-     * @remarks SUPR0VtgFireProbe will do a tail jump thru this member, so no extra
-     *          stack frames will be added.
+     * @remarks SUPR0TracerFireProbe will do a tail jump thru this member, so
+     *          no extra stack frames will be added.
      * @remarks This does not take a 'this' pointer argument because it doesn't map
      *          well onto VTG or DTrace.
      *
      */
-    DECLR0CALLBACKMEMBER(void, pfnFireKernelProbe, (struct VTGPROBELOC *pVtgProbeLoc, uintptr_t uArg0, uintptr_t uArg1, uintptr_t uArg2,
+    DECLR0CALLBACKMEMBER(void, pfnProbeFireKernel, (struct VTGPROBELOC *pVtgProbeLoc, uintptr_t uArg0, uintptr_t uArg1, uintptr_t uArg2,
                                                     uintptr_t uArg3, uintptr_t uArg4));
 
     /**
@@ -1421,9 +1426,10 @@ typedef struct SUPDRVTRACERREG
      * @param   pThis           Pointer to the registration record.
      *
      * @param   pVtgProbeLoc    The probe location record.
+     * @param   pSession        The user session.
      * @param   pCtx            The usermode context info.
      */
-    DECLR0CALLBACKMEMBER(void, pfnFireUserProbe, (PCSUPDRVTRACERREG pThis, PCSUPDRVTRACERUSRCTX pCtx));
+    DECLR0CALLBACKMEMBER(void, pfnProbeFireUser, (PCSUPDRVTRACERREG pThis, PSUPDRVSESSION pSession, PCSUPDRVTRACERUSRCTX pCtx));
 
     /**
      * Opens up the tracer.
@@ -1437,7 +1443,7 @@ typedef struct SUPDRVTRACERREG
      * @param   puSessionData   Pointer to the session data variable.  This must be
      *                          set to a non-zero value on success.
      */
-    DECLR0CALLBACKMEMBER(int,   pfnOpenTracer, (PCSUPDRVTRACERREG pThis, PSUPDRVSESSION pSession, uint32_t uCookie, uintptr_t uArg,
+    DECLR0CALLBACKMEMBER(int,   pfnTracerOpen, (PCSUPDRVTRACERREG pThis, PSUPDRVSESSION pSession, uint32_t uCookie, uintptr_t uArg,
                                                 uintptr_t *puSessionData));
 
     /**
@@ -1452,8 +1458,8 @@ typedef struct SUPDRVTRACERREG
      * @param   uArg            The tracer command specific argument.
      * @param   piRetVal        The tracer specific return value.
      */
-    DECLR0CALLBACKMEMBER(int,   pfnIoctl, (PCSUPDRVTRACERREG pThis, PSUPDRVSESSION pSession, uintptr_t uSessionData,
-                                           uintptr_t uCmd, uintptr_t uArg, int32_t *piRetVal));
+    DECLR0CALLBACKMEMBER(int,   pfnTracerIoCtl, (PCSUPDRVTRACERREG pThis, PSUPDRVSESSION pSession, uintptr_t uSessionData,
+                                                 uintptr_t uCmd, uintptr_t uArg, int32_t *piRetVal));
 
     /**
      * Cleans up data the tracer has associated with a session.
@@ -1462,7 +1468,7 @@ typedef struct SUPDRVTRACERREG
      * @param   pSession        The session handle.
      * @param   uSessionData    The data assoicated with the session.
      */
-    DECLR0CALLBACKMEMBER(void,  pfnCloseTrace, (PCSUPDRVTRACERREG pThis, PSUPDRVSESSION pSession, uintptr_t uSessionData));
+    DECLR0CALLBACKMEMBER(void,  pfnTracerClose, (PCSUPDRVTRACERREG pThis, PSUPDRVSESSION pSession, uintptr_t uSessionData));
 
     /**
      * Registers a provider.
@@ -1470,8 +1476,10 @@ typedef struct SUPDRVTRACERREG
      * @returns VBox status code.
      * @param   pThis           Pointer to the registration record.
      * @param   pCore           The provider core data.
+     *
+     * @todo Kernel vs. Userland providers.
      */
-    DECLR0CALLBACKMEMBER(int,   pfnRegisterProvider, (PCSUPDRVTRACERREG pThis, PSUPDRVVDTPROVIDERCORE pCore));
+    DECLR0CALLBACKMEMBER(int,   pfnProviderRegister, (PCSUPDRVTRACERREG pThis, PSUPDRVVDTPROVIDERCORE pCore));
 
     /**
      * Attempts to deregisters a provider.
@@ -1483,7 +1491,7 @@ typedef struct SUPDRVTRACERREG
      * @param   pThis           Pointer to the registration record.
      * @param   pCore           The provider core data.
      */
-    DECLR0CALLBACKMEMBER(int,   pfnDeregisterProvider, (PCSUPDRVTRACERREG pThis, PSUPDRVVDTPROVIDERCORE pCore));
+    DECLR0CALLBACKMEMBER(int,   pfnProviderDeregister, (PCSUPDRVTRACERREG pThis, PSUPDRVVDTPROVIDERCORE pCore));
 
     /**
      * Make another attempt at unregister a busy provider.
@@ -1492,7 +1500,7 @@ typedef struct SUPDRVTRACERREG
      * @param   pThis           Pointer to the registration record.
      * @param   pCore           The provider core data.
      */
-    DECLR0CALLBACKMEMBER(int,   pfnDeregisterZombieProvider, (PCSUPDRVTRACERREG pThis, PSUPDRVVDTPROVIDERCORE pCore));
+    DECLR0CALLBACKMEMBER(int,   pfnProviderDeregisterZombie, (PCSUPDRVTRACERREG pThis, PSUPDRVVDTPROVIDERCORE pCore));
 
     /** End marker (SUPDRVTRACERREG_MAGIC). */
     uintptr_t                   uEndMagic;
@@ -1521,11 +1529,13 @@ typedef struct SUPDRVTRACERHLP
 /** Tracer helper structure version. */
 #define SUPDRVTRACERHLP_VERSION RT_MAKE_U32(0, 1)
 
-SUPR0DECL(int)  SUPR0VtgRegisterDrv(PSUPDRVSESSION pSession, struct VTGOBJHDR *pVtgHdr, const char *pszName);
-SUPR0DECL(void) SUPR0VtgDeregisterDrv(PSUPDRVSESSION pSession);
-SUPR0DECL(void) SUPR0VtgFireProbe(uint32_t idProbe, uintptr_t uArg0, uintptr_t uArg1, uintptr_t uArg2,
-                                  uintptr_t uArg3, uintptr_t uArg4);
-SUPR0DECL(int)  SUPR0VtgRegisterModule(void *hMod, struct VTGOBJHDR *pVtgHdr);
+SUPR0DECL(int)  SUPR0TracerRegisterImpl(void *hMod, PSUPDRVSESSION pSession, PCSUPDRVTRACERREG pReg, PCSUPDRVTRACERHLP *ppHlp);
+SUPR0DECL(int)  SUPR0TracerDeregisterImpl(PSUPDRVSESSION pSession);
+SUPR0DECL(int)  SUPR0TracerRegisterDrv(PSUPDRVSESSION pSession, struct VTGOBJHDR *pVtgHdr, const char *pszName);
+SUPR0DECL(void) SUPR0TracerDeregisterDrv(PSUPDRVSESSION pSession);
+SUPR0DECL(int)  SUPR0TracerRegisterModule(void *hMod, struct VTGOBJHDR *pVtgHdr);
+SUPR0DECL(void) SUPR0TracerFireProbe(uint32_t idProbe, uintptr_t uArg0, uintptr_t uArg1, uintptr_t uArg2,
+                                     uintptr_t uArg3, uintptr_t uArg4);
 /** @}  */
 
 
