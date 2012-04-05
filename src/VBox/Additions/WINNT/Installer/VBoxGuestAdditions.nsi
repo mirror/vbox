@@ -718,6 +718,10 @@ install:
   ${Else} ; Use VBoxGINA on older Windows OSes (< Vista)
     !insertmacro ReplaceDLL "$%PATH_OUT%\bin\additions\VBoxGINA.dll" "$g_strSystemDir\VBoxGINA.dll" "$INSTDIR"
     WriteRegStr HKLM "SOFTWARE\Microsoft\Windows NT\CurrentVersion\WinLogon" "GinaDLL" "VBoxGINA.dll"
+    ; Add Windows notification package callbacks for VBoxGINA
+    WriteRegStr   HKLM "SOFTWARE\Microsoft\Windows NT\CurrentVersion\WinLogon\Notify\VBoxGINA" "DLLName" "VBoxGINA.dll"
+    WriteRegDWORD HKLM "SOFTWARE\Microsoft\Windows NT\CurrentVersion\WinLogon\Notify\VBoxGINA" "Impersonate" 0
+    WriteRegStr   HKLM "SOFTWARE\Microsoft\Windows NT\CurrentVersion\WinLogon\Notify\VBoxGINA" "StopScreenSaver" "WnpScreenSaverStop"
   ${EndIf}
 
 skip:
