@@ -51,6 +51,7 @@
 #include <iprt/string.h>
 #include <iprt/thread.h>
 #include <iprt/time.h>
+#include <VBox/vmm/dbgf.h>
 
 #include <memory>  /* for auto_ptr */
 #include <string>
@@ -358,6 +359,7 @@ public:
         pSelf->mpvHostData = pvExtension;
         return VINF_SUCCESS;
     }
+
 private:
     static DECLCALLBACK(int) reqThreadFn(RTTHREAD ThreadSelf, void *pvUser);
     uint64_t getCurrentTimestamp(void);
@@ -382,6 +384,8 @@ private:
               VBOXHGCMSVCPARM paParms[]);
     int hostCall(uint32_t eFunction, uint32_t cParms, VBOXHGCMSVCPARM paParms[]);
     int uninit();
+    void dbgInfoShow(PCDBGFINFOHLP pHlp);
+    static DECLCALLBACK(void) dbgInfo(void *pvUser, PCDBGFINFOHLP pHlp, const char *pszArgs);
 };
 
 
@@ -1251,6 +1255,51 @@ void Service::call (VBOXHGCMCALLHANDLE callHandle, uint32_t u32ClientID,
     }
 }
 
+/**
+ * Enumeration data shared between dbgInfoCallback and Service::dbgInfoShow.
+ */
+typedef struct ENUMDBGINFO
+{
+    PCDBGFINFOHLP pHlp;
+} ENUMDBGINFO;
+
+static DECLCALLBACK(int) dbgInfoCallback(PRTSTRSPACECORE pStr, void *pvUser)
+{
+    Property *pProp = (Property *)pStr;
+    PCDBGFINFOHLP pHlp = ((ENUMDBGINFO*)pvUser)->pHlp;
+
+    char szFlags[MAX_FLAGS_LEN];
+    int rc = writeFlags(pProp->mFlags, szFlags);
+    if (RT_FAILURE(rc))
+        RTStrPrintf(szFlags, sizeof(szFlags), "???");
+
+    pHlp->pfnPrintf(pHlp, "%s: '%s', %RU64",
+                    pProp->mName.c_str(), pProp->mValue.c_str(), pProp->mTimestamp);
+    if (strlen(szFlags))
+        pHlp->pfnPrintf(pHlp, " (%s)", szFlags);
+    pHlp->pfnPrintf(pHlp, "\n");
+    return 0;
+}
+
+void Service::dbgInfoShow(PCDBGFINFOHLP pHlp)
+{
+    ENUMDBGINFO EnumData = { pHlp };
+    RTStrSpaceEnumerate(&mhProperties, dbgInfoCallback, &EnumData);
+}
+
+/**
+ * Handler for debug info.
+ *
+ * @param   pvUser      user pointer.
+ * @param   pHlp        The info helper functions.
+ * @param   pszArgs     Arguments, ignored.
+ */
+void Service::dbgInfo(void *pvUser, PCDBGFINFOHLP pHlp, const char *pszArgs)
+{
+    SELF *pSelf = reinterpret_cast<SELF *>(pvUser);
+    pSelf->dbgInfoShow(pHlp);
+}
+
 
 /**
  * Service call handler for the host.
@@ -1316,6 +1365,13 @@ int Service::hostCall (uint32_t eFunction, uint32_t cParms, VBOXHGCMSVCPARM paPa
                 }
                 else
                     rc = VERR_INVALID_PARAMETER;
+                break;
+
+            case GET_DBGF_INFO_FN:
+                if (cParms != 2)
+                    return VERR_INVALID_PARAMETER;
+                paParms[0].u.pointer.addr = (void*)(uintptr_t)dbgInfo;
+                paParms[1].u.pointer.addr = (void*)this;
                 break;
 
             default:

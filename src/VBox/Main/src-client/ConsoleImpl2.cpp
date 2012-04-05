@@ -2570,7 +2570,7 @@ int Console::configConstructorInner(PVM pVM, AutoWriteLock *pAlock)
          * Guest property service
          */
 
-        rc = configGuestProperties(this);
+        rc = configGuestProperties(this, pVM);
 #endif /* VBOX_WITH_GUEST_PROPS defined */
 
 #ifdef VBOX_WITH_GUEST_CONTROL
@@ -4735,7 +4735,7 @@ int configSetGlobalPropertyFlags(VMMDev * const pVMMDev,
  * Set up the Guest Property service, populate it with properties read from
  * the machine XML and set a couple of initial properties.
  */
-/* static */ int Console::configGuestProperties(void *pvConsole)
+/* static */ int Console::configGuestProperties(void *pvConsole, PVM pVM)
 {
 #ifdef VBOX_WITH_GUEST_PROPS
     AssertReturn(pvConsole, VERR_GENERAL_FAILURE);
@@ -4759,6 +4759,14 @@ int configSetGlobalPropertyFlags(VMMDev * const pVMMDev,
          * These are typically transient properties that the guest cannot
          * change.
          */
+
+        {
+            VBOXHGCMSVCPARM Params[2];
+            pConsole->m_pVMMDev->hgcmHostCall("VBoxGuestPropSvc", guestProp::GET_DBGF_INFO_FN, 2, &Params[0]);
+            PFNDBGFHANDLEREXT pfnHandler = (PFNDBGFHANDLEREXT)(uintptr_t)Params[0].u.pointer.addr;
+            void *pService = (void*)Params[1].u.pointer.addr;
+            DBGFR3InfoRegisterExternal(pVM, "guestprops", "Display the guest properties", pfnHandler, pService);
+        }
 
         /* Sysprep execution by VBoxService. */
         configSetProperty(pConsole->m_pVMMDev,
