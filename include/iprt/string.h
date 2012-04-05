@@ -3057,7 +3057,7 @@ RTDECL(bool) RTStrSpaceInsert(PRTSTRSPACE pStrSpace, PRTSTRSPACECORE pStr);
  *
  * @returns Pointer to the removed string node.
  * @returns NULL if the string was not found in the string space.
- * @param   pStrSpace       The space to insert it into.
+ * @param   pStrSpace       The space to remove it from.
  * @param   pszString       The string to remove.
  */
 RTDECL(PRTSTRSPACECORE) RTStrSpaceRemove(PRTSTRSPACE pStrSpace, const char *pszString);
@@ -3067,7 +3067,7 @@ RTDECL(PRTSTRSPACECORE) RTStrSpaceRemove(PRTSTRSPACE pStrSpace, const char *pszS
  *
  * @returns Pointer to the string node.
  * @returns NULL if the string was not found in the string space.
- * @param   pStrSpace       The space to insert it into.
+ * @param   pStrSpace       The space to get it from.
  * @param   pszString       The string to get.
  */
 RTDECL(PRTSTRSPACECORE) RTStrSpaceGet(PRTSTRSPACE pStrSpace, const char *pszString);
@@ -3077,7 +3077,7 @@ RTDECL(PRTSTRSPACECORE) RTStrSpaceGet(PRTSTRSPACE pStrSpace, const char *pszStri
  *
  * @returns Pointer to the string node.
  * @returns NULL if the string was not found in the string space.
- * @param   pStrSpace       The space to insert it into.
+ * @param   pStrSpace       The space to get it from.
  * @param   pszString       The string to get.
  * @param   cchMax          The max string length to evaluate.  Passing
  *                          RTSTR_MAX is ok and makes it behave just like
@@ -3105,7 +3105,7 @@ typedef FNRTSTRSPACECALLBACK *PFNRTSTRSPACECALLBACK;
  *
  * @returns 0 or what ever non-zero return value pfnCallback returned
  *          when aborting the destruction.
- * @param   pStrSpace       The space to insert it into.
+ * @param   pStrSpace       The space to destroy.
  * @param   pfnCallback     The callback.
  * @param   pvUser          The user argument.
  */
@@ -3118,7 +3118,7 @@ RTDECL(int) RTStrSpaceDestroy(PRTSTRSPACE pStrSpace, PFNRTSTRSPACECALLBACK pfnCa
  *
  * @returns 0 or what ever non-zero return value pfnCallback returned
  *          when aborting the destruction.
- * @param   pStrSpace       The space to insert it into.
+ * @param   pStrSpace       The space to enumerate.
  * @param   pfnCallback     The callback.
  * @param   pvUser          The user argument.
  */
