@@ -579,7 +579,7 @@ private:
                       PCFGMNODE pLunL0, PCFGMNODE pInst,
                       bool fAttachDetach, bool fIgnoreConnectFailure);
 
-    static DECLCALLBACK(int) configGuestProperties(void *pvConsole);
+    static DECLCALLBACK(int) configGuestProperties(void *pvConsole, PVM pVM);
     static DECLCALLBACK(int) configGuestControl(void *pvConsole);
     static DECLCALLBACK(void) vmstateChangeCallback(PVM aVM, VMSTATE aState,
                                                     VMSTATE aOldState, void *aUser);

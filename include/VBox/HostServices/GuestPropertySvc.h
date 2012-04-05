@@ -259,7 +259,12 @@ enum eHostFn
      * Set global flags for the service.  Currently RDONLYGUEST is supported.
      * Takes one 32-bit unsigned integer parameter for the flags.
      */
-    SET_GLOBAL_FLAGS_HOST = 7
+    SET_GLOBAL_FLAGS_HOST = 7,
+
+    /**
+     * Return the pointer to a debug info function enumerating all guest properties.
+     */
+    GET_DBGF_INFO_FN = 8
 };
 
 /**
