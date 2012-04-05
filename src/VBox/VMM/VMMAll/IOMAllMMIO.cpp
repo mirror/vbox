@@ -615,7 +615,11 @@ DECLINLINE(int) iomRamRead(PVMCPU pVCpu, void *pDest, RTGCPTR GCSrc, uint32_t cb
              isn't a problem though since the operation can be restarted in REM. */
 #ifdef IN_RC
     NOREF(pVCpu);
-    return MMGCRamReadNoTrapHandler(pDest, (void *)(uintptr_t)GCSrc, cb);
+    int rc = MMGCRamReadNoTrapHandler(pDest, (void *)(uintptr_t)GCSrc, cb);
+    /* Page may be protected and not directly accessible. */
+    if (rc == VERR_ACCESS_DENIED)
+        rc = VINF_IOM_R3_IOPORT_WRITE;
+    return rc;
 #else
     return PGMPhysReadGCPtr(pVCpu, pDest, GCSrc, cb);
 #endif
