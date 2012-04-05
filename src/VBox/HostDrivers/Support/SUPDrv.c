@@ -5112,7 +5112,7 @@ static uint32_t supdrvGipCpuIndexFromCpuId(PSUPGLOBALINFOPAGE pGip, RTCPUID idCp
  *
  * This is used by supdrvGipMpEvent as well as the supdrvGipCreate.
  *
- * @param   pDevExt             The device extension,
+ * @param   pDevExt             The device extension.
  * @param   idCpu               The CPU ID.
  */
 static void supdrvGipMpEventOnline(PSUPDRVDEVEXT pDevExt, RTCPUID idCpu)
