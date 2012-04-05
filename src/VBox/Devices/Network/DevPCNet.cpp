@@ -4676,7 +4676,7 @@ static DECLCALLBACK(int) pcnetNetworkDown_Receive(PPDMINETWORKDOWN pInterface, c
     {
         static bool s_fFirstBigFrameLoss = true;
         unsigned cbMaxFrame = ((PCRTNETETHERHDR)pvBuf)->EtherType == RT_H2BE_U16_C(RTNET_ETHERTYPE_VLAN)
-                            ? 1518 : 1514;
+                            ? 1522 : 1518;
         if (s_fFirstBigFrameLoss)
         {
             s_fFirstBigFrameLoss = false;
