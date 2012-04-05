@@ -517,6 +517,8 @@ typedef struct SUPDRVDEVEXT
 #else
     RTSEMFASTMUTEX                  mtxGip;
 #endif
+    /** GIP spinlock protecting GIP members during Mp events. */
+    RTSPINLOCK                      spinGip;
     /** Pointer to the Global Info Page (GIP). */
     PSUPGLOBALINFOPAGE              pGip;
     /** The physical address of the GIP. */

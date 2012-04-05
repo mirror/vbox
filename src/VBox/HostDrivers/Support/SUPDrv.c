@@ -133,8 +133,8 @@ static void                 supdrvGipInit(PSUPDRVDEVEXT pDevExt, PSUPGLOBALINFOP
                                           uint64_t u64NanoTS, unsigned uUpdateHz, unsigned cCpus);
 static DECLCALLBACK(void)   supdrvGipInitOnCpu(RTCPUID idCpu, void *pvUser1, void *pvUser2);
 static void                 supdrvGipTerm(PSUPGLOBALINFOPAGE pGip);
-static void                 supdrvGipUpdate(PSUPGLOBALINFOPAGE pGip, uint64_t u64NanoTS, uint64_t u64TSC, RTCPUID idCpu, uint64_t iTick);
-static void                 supdrvGipUpdatePerCpu(PSUPGLOBALINFOPAGE pGip, uint64_t u64NanoTS, uint64_t u64TSC,
+static void                 supdrvGipUpdate(PSUPDRVDEVEXT pDevExt, uint64_t u64NanoTS, uint64_t u64TSC, RTCPUID idCpu, uint64_t iTick);
+static void                 supdrvGipUpdatePerCpu(PSUPDRVDEVEXT pDevExt, uint64_t u64NanoTS, uint64_t u64TSC,
                                                   RTCPUID idCpu, uint8_t idApic, uint64_t iTick);
 static void                 supdrvGipInitCpu(PSUPGLOBALINFOPAGE pGip, PSUPGIPCPU pCpu, uint64_t u64NanoTS);
 
@@ -445,116 +445,122 @@ int VBOXCALL supdrvInitDevExt(PSUPDRVDEVEXT pDevExt, size_t cbSession)
     rc = RTSpinlockCreate(&pDevExt->Spinlock);
     if (RT_SUCCESS(rc))
     {
-#ifdef SUPDRV_USE_MUTEX_FOR_LDR
-        rc = RTSemMutexCreate(&pDevExt->mtxLdr);
-#else
-        rc = RTSemFastMutexCreate(&pDevExt->mtxLdr);
-#endif
+        rc = RTSpinlockCreate(&pDevExt->spinGip);
         if (RT_SUCCESS(rc))
         {
-            rc = RTSemFastMutexCreate(&pDevExt->mtxComponentFactory);
+#ifdef SUPDRV_USE_MUTEX_FOR_LDR
+            rc = RTSemMutexCreate(&pDevExt->mtxLdr);
+#else
+            rc = RTSemFastMutexCreate(&pDevExt->mtxLdr);
+#endif
             if (RT_SUCCESS(rc))
             {
-#ifdef SUPDRV_USE_MUTEX_FOR_LDR
-                rc = RTSemMutexCreate(&pDevExt->mtxGip);
-#else
-                rc = RTSemFastMutexCreate(&pDevExt->mtxGip);
-#endif
+                rc = RTSemFastMutexCreate(&pDevExt->mtxComponentFactory);
                 if (RT_SUCCESS(rc))
                 {
-                    rc = supdrvGipCreate(pDevExt);
+#ifdef SUPDRV_USE_MUTEX_FOR_LDR
+                    rc = RTSemMutexCreate(&pDevExt->mtxGip);
+#else
+                    rc = RTSemFastMutexCreate(&pDevExt->mtxGip);
+#endif
                     if (RT_SUCCESS(rc))
                     {
-#ifdef VBOX_WITH_SUPDRV_GENERIC_TRACER
-                        rc = supdrvTracerInit(pDevExt);
-#elif defined(VBOX_WITH_DTRACE_R0DRV)
-                        rc = supdrvVtgInit(pDevExt, &g_aFunctions[10]);
+                        rc = supdrvGipCreate(pDevExt);
                         if (RT_SUCCESS(rc))
-#endif
                         {
-                            pDevExt->pLdrInitImage  = NULL;
-                            pDevExt->hLdrInitThread = NIL_RTNATIVETHREAD;
-                            pDevExt->u32Cookie      = BIRD;  /** @todo make this random? */
-                            pDevExt->cbSession      = (uint32_t)cbSession;
+#ifdef VBOX_WITH_SUPDRV_GENERIC_TRACER
+                            rc = supdrvTracerInit(pDevExt);
+#elif defined(VBOX_WITH_DTRACE_R0DRV)
+                            rc = supdrvVtgInit(pDevExt, &g_aFunctions[10]);
+                            if (RT_SUCCESS(rc))
+#endif
+                            {
+                                pDevExt->pLdrInitImage  = NULL;
+                                pDevExt->hLdrInitThread = NIL_RTNATIVETHREAD;
+                                pDevExt->u32Cookie      = BIRD;  /** @todo make this random? */
+                                pDevExt->cbSession      = (uint32_t)cbSession;
 
-                            /*
-                             * Fixup the absolute symbols.
-                             *
-                             * Because of the table indexing assumptions we'll have a little #ifdef orgy
-                             * here rather than distributing this to OS specific files. At least for now.
-                             */
+                                /*
+                                 * Fixup the absolute symbols.
+                                 *
+                                 * Because of the table indexing assumptions we'll have a little #ifdef orgy
+                                 * here rather than distributing this to OS specific files. At least for now.
+                                 */
 #ifdef RT_OS_DARWIN
 # if ARCH_BITS == 32
-                            if (SUPR0GetPagingMode() >= SUPPAGINGMODE_AMD64)
-                            {
-                                g_aFunctions[0].pfn = (void *)1;                    /* SUPR0AbsIs64bit */
-                                g_aFunctions[1].pfn = (void *)0x80;                 /* SUPR0Abs64bitKernelCS - KERNEL64_CS, seg.h */
-                                g_aFunctions[2].pfn = (void *)0x88;                 /* SUPR0Abs64bitKernelSS - KERNEL64_SS, seg.h */
-                                g_aFunctions[3].pfn = (void *)0x88;                 /* SUPR0Abs64bitKernelDS - KERNEL64_SS, seg.h */
-                            }
-                            else
-                                g_aFunctions[0].pfn = g_aFunctions[1].pfn = g_aFunctions[2].pfn = g_aFunctions[4].pfn = (void *)0;
-                            g_aFunctions[4].pfn = (void *)0x08;                     /* SUPR0AbsKernelCS - KERNEL_CS, seg.h */
-                            g_aFunctions[5].pfn = (void *)0x10;                     /* SUPR0AbsKernelSS - KERNEL_DS, seg.h */
-                            g_aFunctions[6].pfn = (void *)0x10;                     /* SUPR0AbsKernelDS - KERNEL_DS, seg.h */
-                            g_aFunctions[7].pfn = (void *)0x10;                     /* SUPR0AbsKernelES - KERNEL_DS, seg.h */
-                            g_aFunctions[8].pfn = (void *)0x10;                     /* SUPR0AbsKernelFS - KERNEL_DS, seg.h */
-                            g_aFunctions[9].pfn = (void *)0x48;                     /* SUPR0AbsKernelGS - CPU_DATA_GS, seg.h */
+                                if (SUPR0GetPagingMode() >= SUPPAGINGMODE_AMD64)
+                                {
+                                    g_aFunctions[0].pfn = (void *)1;                    /* SUPR0AbsIs64bit */
+                                    g_aFunctions[1].pfn = (void *)0x80;                 /* SUPR0Abs64bitKernelCS - KERNEL64_CS, seg.h */
+                                    g_aFunctions[2].pfn = (void *)0x88;                 /* SUPR0Abs64bitKernelSS - KERNEL64_SS, seg.h */
+                                    g_aFunctions[3].pfn = (void *)0x88;                 /* SUPR0Abs64bitKernelDS - KERNEL64_SS, seg.h */
+                                }
+                                else
+                                    g_aFunctions[0].pfn = g_aFunctions[1].pfn = g_aFunctions[2].pfn = g_aFunctions[4].pfn = (void *)0;
+                                g_aFunctions[4].pfn = (void *)0x08;                     /* SUPR0AbsKernelCS - KERNEL_CS, seg.h */
+                                g_aFunctions[5].pfn = (void *)0x10;                     /* SUPR0AbsKernelSS - KERNEL_DS, seg.h */
+                                g_aFunctions[6].pfn = (void *)0x10;                     /* SUPR0AbsKernelDS - KERNEL_DS, seg.h */
+                                g_aFunctions[7].pfn = (void *)0x10;                     /* SUPR0AbsKernelES - KERNEL_DS, seg.h */
+                                g_aFunctions[8].pfn = (void *)0x10;                     /* SUPR0AbsKernelFS - KERNEL_DS, seg.h */
+                                g_aFunctions[9].pfn = (void *)0x48;                     /* SUPR0AbsKernelGS - CPU_DATA_GS, seg.h */
 # else /* 64-bit darwin: */
-                            g_aFunctions[0].pfn = (void *)1;                        /* SUPR0AbsIs64bit */
-                            g_aFunctions[1].pfn = (void *)(uintptr_t)ASMGetCS();    /* SUPR0Abs64bitKernelCS */
-                            g_aFunctions[2].pfn = (void *)(uintptr_t)ASMGetSS();    /* SUPR0Abs64bitKernelSS */
-                            g_aFunctions[3].pfn = (void *)0;                        /* SUPR0Abs64bitKernelDS */
-                            g_aFunctions[4].pfn = (void *)(uintptr_t)ASMGetCS();    /* SUPR0AbsKernelCS */
-                            g_aFunctions[5].pfn = (void *)(uintptr_t)ASMGetSS();    /* SUPR0AbsKernelSS */
-                            g_aFunctions[6].pfn = (void *)0;                        /* SUPR0AbsKernelDS */
-                            g_aFunctions[7].pfn = (void *)0;                        /* SUPR0AbsKernelES */
-                            g_aFunctions[8].pfn = (void *)0;                        /* SUPR0AbsKernelFS */
-                            g_aFunctions[9].pfn = (void *)0;                        /* SUPR0AbsKernelGS */
+                                g_aFunctions[0].pfn = (void *)1;                        /* SUPR0AbsIs64bit */
+                                g_aFunctions[1].pfn = (void *)(uintptr_t)ASMGetCS();    /* SUPR0Abs64bitKernelCS */
+                                g_aFunctions[2].pfn = (void *)(uintptr_t)ASMGetSS();    /* SUPR0Abs64bitKernelSS */
+                                g_aFunctions[3].pfn = (void *)0;                        /* SUPR0Abs64bitKernelDS */
+                                g_aFunctions[4].pfn = (void *)(uintptr_t)ASMGetCS();    /* SUPR0AbsKernelCS */
+                                g_aFunctions[5].pfn = (void *)(uintptr_t)ASMGetSS();    /* SUPR0AbsKernelSS */
+                                g_aFunctions[6].pfn = (void *)0;                        /* SUPR0AbsKernelDS */
+                                g_aFunctions[7].pfn = (void *)0;                        /* SUPR0AbsKernelES */
+                                g_aFunctions[8].pfn = (void *)0;                        /* SUPR0AbsKernelFS */
+                                g_aFunctions[9].pfn = (void *)0;                        /* SUPR0AbsKernelGS */
 
 # endif
 #else  /* !RT_OS_DARWIN */
 # if ARCH_BITS == 64
-                            g_aFunctions[0].pfn = (void *)1;                        /* SUPR0AbsIs64bit */
-                            g_aFunctions[1].pfn = (void *)(uintptr_t)ASMGetCS();    /* SUPR0Abs64bitKernelCS */
-                            g_aFunctions[2].pfn = (void *)(uintptr_t)ASMGetSS();    /* SUPR0Abs64bitKernelSS */
-                            g_aFunctions[3].pfn = (void *)(uintptr_t)ASMGetDS();    /* SUPR0Abs64bitKernelDS */
+                                g_aFunctions[0].pfn = (void *)1;                        /* SUPR0AbsIs64bit */
+                                g_aFunctions[1].pfn = (void *)(uintptr_t)ASMGetCS();    /* SUPR0Abs64bitKernelCS */
+                                g_aFunctions[2].pfn = (void *)(uintptr_t)ASMGetSS();    /* SUPR0Abs64bitKernelSS */
+                                g_aFunctions[3].pfn = (void *)(uintptr_t)ASMGetDS();    /* SUPR0Abs64bitKernelDS */
 # else
-                            g_aFunctions[0].pfn = g_aFunctions[1].pfn = g_aFunctions[2].pfn = g_aFunctions[4].pfn = (void *)0;
+                                g_aFunctions[0].pfn = g_aFunctions[1].pfn = g_aFunctions[2].pfn = g_aFunctions[4].pfn = (void *)0;
 # endif
-                            g_aFunctions[4].pfn = (void *)(uintptr_t)ASMGetCS();    /* SUPR0AbsKernelCS */
-                            g_aFunctions[5].pfn = (void *)(uintptr_t)ASMGetSS();    /* SUPR0AbsKernelSS */
-                            g_aFunctions[6].pfn = (void *)(uintptr_t)ASMGetDS();    /* SUPR0AbsKernelDS */
-                            g_aFunctions[7].pfn = (void *)(uintptr_t)ASMGetES();    /* SUPR0AbsKernelES */
-                            g_aFunctions[8].pfn = (void *)(uintptr_t)ASMGetFS();    /* SUPR0AbsKernelFS */
-                            g_aFunctions[9].pfn = (void *)(uintptr_t)ASMGetGS();    /* SUPR0AbsKernelGS */
+                                g_aFunctions[4].pfn = (void *)(uintptr_t)ASMGetCS();    /* SUPR0AbsKernelCS */
+                                g_aFunctions[5].pfn = (void *)(uintptr_t)ASMGetSS();    /* SUPR0AbsKernelSS */
+                                g_aFunctions[6].pfn = (void *)(uintptr_t)ASMGetDS();    /* SUPR0AbsKernelDS */
+                                g_aFunctions[7].pfn = (void *)(uintptr_t)ASMGetES();    /* SUPR0AbsKernelES */
+                                g_aFunctions[8].pfn = (void *)(uintptr_t)ASMGetFS();    /* SUPR0AbsKernelFS */
+                                g_aFunctions[9].pfn = (void *)(uintptr_t)ASMGetGS();    /* SUPR0AbsKernelGS */
 #endif /* !RT_OS_DARWIN */
-                            return VINF_SUCCESS;
-                        }
+                                return VINF_SUCCESS;
+                            }
 
 #if defined(VBOX_WITH_SUPDRV_GENERIC_TRACER) || defined(VBOX_WITH_DTRACE_R0DRV)
-                        supdrvGipDestroy(pDevExt);
+                            supdrvGipDestroy(pDevExt);
 #endif
-                    }
+                        }
 
 #ifdef SUPDRV_USE_MUTEX_FOR_GIP
-                    RTSemMutexDestroy(pDevExt->mtxGip);
-                    pDevExt->mtxGip = NIL_RTSEMMUTEX;
+                        RTSemMutexDestroy(pDevExt->mtxGip);
+                        pDevExt->mtxGip = NIL_RTSEMMUTEX;
 #else
-                    RTSemFastMutexDestroy(pDevExt->mtxGip);
-                    pDevExt->mtxGip = NIL_RTSEMFASTMUTEX;
+                        RTSemFastMutexDestroy(pDevExt->mtxGip);
+                        pDevExt->mtxGip = NIL_RTSEMFASTMUTEX;
 #endif
+                    }
+                    RTSemFastMutexDestroy(pDevExt->mtxComponentFactory);
+                    pDevExt->mtxComponentFactory = NIL_RTSEMFASTMUTEX;
                 }
-                RTSemFastMutexDestroy(pDevExt->mtxComponentFactory);
-                pDevExt->mtxComponentFactory = NIL_RTSEMFASTMUTEX;
-            }
 #ifdef SUPDRV_USE_MUTEX_FOR_LDR
-            RTSemMutexDestroy(pDevExt->mtxLdr);
-            pDevExt->mtxLdr = NIL_RTSEMMUTEX;
+                RTSemMutexDestroy(pDevExt->mtxLdr);
+                pDevExt->mtxLdr = NIL_RTSEMMUTEX;
 #else
-            RTSemFastMutexDestroy(pDevExt->mtxLdr);
-            pDevExt->mtxLdr = NIL_RTSEMFASTMUTEX;
+                RTSemFastMutexDestroy(pDevExt->mtxLdr);
+                pDevExt->mtxLdr = NIL_RTSEMFASTMUTEX;
 #endif
+            }
+            RTSpinlockDestroy(pDevExt->spinGip);
+            pDevExt->spinGip = NIL_RTSPINLOCK;
         }
         RTSpinlockDestroy(pDevExt->Spinlock);
         pDevExt->Spinlock = NIL_RTSPINLOCK;
@@ -626,6 +632,8 @@ void VBOXCALL supdrvDeleteDevExt(PSUPDRVDEVEXT pDevExt)
 
     /* kill the GIP. */
     supdrvGipDestroy(pDevExt);
+    RTSpinlockDestroy(pDevExt->spinGip);
+    pDevExt->spinGip = NIL_RTSPINLOCK;
 
 #ifdef VBOX_WITH_SUPDRV_GENERIC_TRACER
     supdrvTracerTerm(pDevExt);
@@ -4925,14 +4933,6 @@ static int supdrvGipCreate(PSUPDRVDEVEXT pDevExt)
 
     supdrvGipInit(pDevExt, pGip, HCPhysGip, RTTimeSystemNanoTS(), 1000000000 / u32Interval /*=Hz*/, cCpus);
 
-    /* Creating spinlocks can fail (in theory). supdrvGipInit() returns void. */
-    rc = RTSpinlockCreate(&pGip->Spinlock);
-    if (RT_FAILURE(rc))
-    {
-        supdrvGipDestroy(pDevExt);
-        return rc;
-    }
-
     /*
      * Create the timer.
      * If CPU_ALL isn't supported we'll have to fall back to synchronous mode.
@@ -5001,12 +5001,6 @@ static void supdrvGipDestroy(PSUPDRVDEVEXT pDevExt)
     if (pDevExt->pGip)
     {
         supdrvGipTerm(pDevExt->pGip);
-        if (pDevExt->pGip->Spinlock != NIL_RTSPINLOCK)
-        {
-            RTSpinlockDestroy(pDevExt->pGip->Spinlock);
-            pDevExt->pGip->Spinlock = NIL_RTSPINLOCK;
-        }
-
         pDevExt->pGip = NULL;
     }
     g_pSUPGlobalInfoPage = NULL;
@@ -5050,7 +5044,7 @@ static DECLCALLBACK(void) supdrvGipSyncTimer(PRTTIMER pTimer, void *pvUser, uint
     uint64_t        u64TSC    = ASMReadTSC();
     uint64_t        NanoTS    = RTTimeSystemNanoTS();
 
-    supdrvGipUpdate(pDevExt->pGip, NanoTS, u64TSC, NIL_RTCPUID, iTick);
+    supdrvGipUpdate(pDevExt, NanoTS, u64TSC, NIL_RTCPUID, iTick);
 
     ASMSetFlags(fOldFlags);
 }
@@ -5071,9 +5065,9 @@ static DECLCALLBACK(void) supdrvGipAsyncTimer(PRTTIMER pTimer, void *pvUser, uin
 
     /** @todo reset the transaction number and whatnot when iTick == 1. */
     if (pDevExt->idGipMaster == idCpu)
-        supdrvGipUpdate(pDevExt->pGip, NanoTS, u64TSC, idCpu, iTick);
+        supdrvGipUpdate(pDevExt, NanoTS, u64TSC, idCpu, iTick);
     else
-        supdrvGipUpdatePerCpu(pDevExt->pGip, NanoTS, u64TSC, idCpu, ASMGetApicId(), iTick);
+        supdrvGipUpdatePerCpu(pDevExt, NanoTS, u64TSC, idCpu, ASMGetApicId(), iTick);
 
     ASMSetFlags(fOldFlags);
 }
@@ -5118,17 +5112,19 @@ static uint32_t supdrvGipCpuIndexFromCpuId(PSUPGLOBALINFOPAGE pGip, RTCPUID idCp
  *
  * This is used by supdrvGipMpEvent as well as the supdrvGipCreate.
  *
- * @param   pGip                The GIP.
+ * @param   pDevExt             The device extension,
  * @param   idCpu               The CPU ID.
  */
-static void supdrvGipMpEventOnline(PSUPGLOBALINFOPAGE pGip, RTCPUID idCpu)
+static void supdrvGipMpEventOnline(PSUPDRVDEVEXT pDevExt, RTCPUID idCpu)
 {
     int         iCpuSet = 0;
     uint16_t    idApic = UINT16_MAX;
     uint32_t    i = 0;
     uint64_t    u64NanoTS = 0;
     RTSPINLOCKTMP SpinlockTmp = RTSPINLOCKTMP_INITIALIZER;
+    PSUPGLOBALINFOPAGE pGip = pDevExt->pGip;
 
+    AssertPtrReturnVoid(pGip);
     AssertRelease(idCpu == RTMpCpuId());
     Assert(pGip->cPossibleCpus == RTMpGetCount());
 
@@ -5136,7 +5132,7 @@ static void supdrvGipMpEventOnline(PSUPGLOBALINFOPAGE pGip, RTCPUID idCpu)
      * Do this behind a spinlock with interrupts disabled as this can fire
      * on all CPUs simultaneously, see #6110.
      */
-    RTSpinlockAcquireNoInts(pGip->Spinlock, &SpinlockTmp);
+    RTSpinlockAcquireNoInts(pDevExt->spinGip, &SpinlockTmp);
 
     /*
      * Update the globals.
@@ -5171,7 +5167,7 @@ static void supdrvGipMpEventOnline(PSUPGLOBALINFOPAGE pGip, RTCPUID idCpu)
     /* commit it */
     ASMAtomicWriteSize(&pGip->aCPUs[i].enmState, SUPGIPCPUSTATE_ONLINE);
 
-    RTSpinlockReleaseNoInts(pGip->Spinlock, &SpinlockTmp);
+    RTSpinlockReleaseNoInts(pDevExt->spinGip, &SpinlockTmp);
 }
 
 
@@ -5180,16 +5176,19 @@ static void supdrvGipMpEventOnline(PSUPGLOBALINFOPAGE pGip, RTCPUID idCpu)
  *
  * This is used by supdrvGipMpEvent.
  *
- * @param   pGip                The GIP.
+ * @param   pDevExt             The device extension.
  * @param   idCpu               The CPU ID.
  */
-static void supdrvGipMpEventOffline(PSUPGLOBALINFOPAGE pGip, RTCPUID idCpu)
+static void supdrvGipMpEventOffline(PSUPDRVDEVEXT pDevExt, RTCPUID idCpu)
 {
     int         iCpuSet;
     unsigned    i;
 
+    PSUPGLOBALINFOPAGE pGip   = pDevExt->pGip;
     RTSPINLOCKTMP SpinlockTmp = RTSPINLOCKTMP_INITIALIZER;
-    RTSpinlockAcquireNoInts(pGip->Spinlock, &SpinlockTmp);
+
+    AssertPtrReturnVoid(pGip);
+    RTSpinlockAcquireNoInts(pDevExt->spinGip, &SpinlockTmp);
 
     iCpuSet = RTMpCpuIdToSetIndex(idCpu);
     AssertReturnVoid(iCpuSet >= 0);
@@ -5204,7 +5203,7 @@ static void supdrvGipMpEventOffline(PSUPGLOBALINFOPAGE pGip, RTCPUID idCpu)
     /* commit it */
     ASMAtomicWriteSize(&pGip->aCPUs[i].enmState, SUPGIPCPUSTATE_OFFLINE);
 
-    RTSpinlockReleaseNoInts(pGip->Spinlock, &SpinlockTmp);
+    RTSpinlockReleaseNoInts(pDevExt->spinGip, &SpinlockTmp);
 }
 
 
@@ -5238,10 +5237,10 @@ static DECLCALLBACK(void) supdrvGipMpEvent(RTMPEVENT enmEvent, RTCPUID idCpu, vo
         {
             case RTMPEVENT_ONLINE:
                 AssertRelease(idCpu == RTMpCpuId());
-                supdrvGipMpEventOnline(pGip, idCpu);
+                supdrvGipMpEventOnline(pDevExt, idCpu);
                 break;
             case RTMPEVENT_OFFLINE:
-                supdrvGipMpEventOffline(pGip, idCpu);
+                supdrvGipMpEventOffline(pDevExt, idCpu);
                 break;
 
         }
@@ -5514,7 +5513,6 @@ static void supdrvGipInit(PSUPDRVDEVEXT pDevExt, PSUPGLOBALINFOPAGE pGip, RTHCPH
     pGip->cPresentCpus          = RTMpGetPresentCount();
     pGip->cPossibleCpus         = RTMpGetCount();
     pGip->idCpuMax              = RTMpGetMaxCpuId();
-    pGip->Spinlock              = NIL_RTSPINLOCK;
     for (i = 0; i < RT_ELEMENTS(pGip->aiCpuFromApicId); i++)
         pGip->aiCpuFromApicId[i]    = 0;
     for (i = 0; i < RT_ELEMENTS(pGip->aiCpuFromCpuSetIdx); i++)
@@ -5543,7 +5541,7 @@ static DECLCALLBACK(void) supdrvGipInitOnCpu(RTCPUID idCpu, void *pvUser1, void 
 {
     /* This is good enough, even though it will update some of the globals a
        bit to much. */
-    supdrvGipMpEventOnline((PSUPGLOBALINFOPAGE)pvUser2, idCpu);
+    supdrvGipMpEventOnline((PSUPDRVDEVEXT)pvUser1, idCpu);
 }
 
 
@@ -5569,13 +5567,13 @@ static void supdrvGipTerm(PSUPGLOBALINFOPAGE pGip)
  * Worker routine for supdrvGipUpdate and supdrvGipUpdatePerCpu that
  * updates all the per cpu data except the transaction id.
  *
- * @param   pGip            The GIP.
+ * @param   pDevExt         The device extension.
  * @param   pGipCpu         Pointer to the per cpu data.
  * @param   u64NanoTS       The current time stamp.
  * @param   u64TSC          The current TSC.
  * @param   iTick           The current timer tick.
  */
-static void supdrvGipDoUpdateCpu(PSUPGLOBALINFOPAGE pGip, PSUPGIPCPU pGipCpu, uint64_t u64NanoTS, uint64_t u64TSC, uint64_t iTick)
+static void supdrvGipDoUpdateCpu(PSUPDRVDEVEXT pDevExt, PSUPGIPCPU pGipCpu, uint64_t u64NanoTS, uint64_t u64TSC, uint64_t iTick)
 {
     uint64_t    u64TSCDelta;
     uint32_t    u32UpdateIntervalTSC;
@@ -5583,6 +5581,9 @@ static void supdrvGipDoUpdateCpu(PSUPGLOBALINFOPAGE pGip, PSUPGIPCPU pGipCpu, ui
     unsigned    iTSCHistoryHead;
     uint64_t    u64CpuHz;
     uint32_t    u32TransactionId;
+
+    PSUPGLOBALINFOPAGE pGip = pDevExt->pGip;
+    AssertPtrReturnVoid(pGip);
 
     /* Delta between this and the previous update. */
     ASMAtomicUoWriteU32(&pGipCpu->u32PrevUpdateIntervalNS, (uint32_t)(u64NanoTS - pGipCpu->u64NanoTS));
@@ -5681,18 +5682,21 @@ static void supdrvGipDoUpdateCpu(PSUPGLOBALINFOPAGE pGip, PSUPGIPCPU pGipCpu, ui
 /**
  * Updates the GIP.
  *
- * @param   pGip            Pointer to the GIP.
+ * @param   pDevExt         The device extension.
  * @param   u64NanoTS       The current nanosecond timesamp.
  * @param   u64TSC          The current TSC timesamp.
  * @param   idCpu           The CPU ID.
  * @param   iTick           The current timer tick.
  */
-static void supdrvGipUpdate(PSUPGLOBALINFOPAGE pGip, uint64_t u64NanoTS, uint64_t u64TSC, RTCPUID idCpu, uint64_t iTick)
+static void supdrvGipUpdate(PSUPDRVDEVEXT pDevExt, uint64_t u64NanoTS, uint64_t u64TSC, RTCPUID idCpu, uint64_t iTick)
 {
     /*
      * Determine the relevant CPU data.
      */
     PSUPGIPCPU pGipCpu;
+    PSUPGLOBALINFOPAGE pGip = pDevExt->pGip;
+    AssertPtrReturnVoid(pGip);
+
     if (pGip->u32Mode != SUPGIPMODE_ASYNC_TSC)
         pGipCpu = &pGip->aCPUs[0];
     else
@@ -5740,7 +5744,7 @@ static void supdrvGipUpdate(PSUPGLOBALINFOPAGE pGip, uint64_t u64NanoTS, uint64_
     /*
      * Update the data.
      */
-    supdrvGipDoUpdateCpu(pGip, pGipCpu, u64NanoTS, u64TSC, iTick);
+    supdrvGipDoUpdateCpu(pDevExt, pGipCpu, u64NanoTS, u64TSC, iTick);
 
     /*
      * Complete transaction.
@@ -5752,17 +5756,18 @@ static void supdrvGipUpdate(PSUPGLOBALINFOPAGE pGip, uint64_t u64NanoTS, uint64_
 /**
  * Updates the per cpu GIP data for the calling cpu.
  *
- * @param   pGip            Pointer to the GIP.
+ * @param   pDevExt         The device extension.
  * @param   u64NanoTS       The current nanosecond timesamp.
  * @param   u64TSC          The current TSC timesamp.
  * @param   idCpu           The CPU ID.
  * @param   idApic          The APIC id for the CPU index.
  * @param   iTick           The current timer tick.
  */
-static void supdrvGipUpdatePerCpu(PSUPGLOBALINFOPAGE pGip, uint64_t u64NanoTS, uint64_t u64TSC,
+static void supdrvGipUpdatePerCpu(PSUPDRVDEVEXT pDevExt, uint64_t u64NanoTS, uint64_t u64TSC,
                                   RTCPUID idCpu, uint8_t idApic, uint64_t iTick)
 {
     uint32_t iCpu;
+    PSUPGLOBALINFOPAGE pGip = pDevExt->pGip;
 
     /*
      * Avoid a potential race when a CPU online notification doesn't fire on
@@ -5773,7 +5778,7 @@ static void supdrvGipUpdatePerCpu(PSUPGLOBALINFOPAGE pGip, uint64_t u64NanoTS, u
     {
         iCpu = supdrvGipCpuIndexFromCpuId(pGip, idCpu);
         if (pGip->aCPUs[iCpu].enmState == SUPGIPCPUSTATE_OFFLINE)
-            supdrvGipMpEventOnline(pGip, idCpu);
+            supdrvGipMpEventOnline(pDevExt, idCpu);
     }
 
     iCpu = pGip->aiCpuFromApicId[idApic];
@@ -5796,7 +5801,7 @@ static void supdrvGipUpdatePerCpu(PSUPGLOBALINFOPAGE pGip, uint64_t u64NanoTS, u
             /*
              * Update the data.
              */
-            supdrvGipDoUpdateCpu(pGip, pGipCpu, u64NanoTS, u64TSC, iTick);
+            supdrvGipDoUpdateCpu(pDevExt, pGipCpu, u64NanoTS, u64TSC, iTick);
 
             /*
              * Complete transaction.

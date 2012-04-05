@@ -207,13 +207,9 @@ typedef struct SUPGLOBALINFOPAGE
     uint16_t            u16Padding0;
     /** The max CPU ID (RTMpGetMaxCpuId). */
     RTCPUID             idCpuMax;
-    /** Padding to 8 byte alignment. */
-    uint16_t            au16Padding1[2];
-    /** Spinlock protecting the GIP array members. */
-    RTSPINLOCK          Spinlock;                       /* 144 */
 
     /** Padding / reserved space for future data. */
-    uint32_t            au32Padding1[HC_ARCH_BITS == 64 ? 26 : 27];
+    uint32_t            au32Padding1[29];
 
     /** Table indexed by the CPU APIC ID to get the CPU table index. */
     uint16_t            aiCpuFromApicId[256];
