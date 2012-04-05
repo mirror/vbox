@@ -91,9 +91,7 @@ typedef SUPDRVTPPROVIDER *PSUPDRVTPPROVIDER;
 *   Global Variables                                                           *
 *******************************************************************************/
 /** The address of the current probe fire routine for kernel mode. */
-#if !defined(RT_OS_LINUX) && !defined(RT_OS_FREEBSD)
 PFNRT       g_pfnSupdrvProbeFireKernel = supdrvTracerProbeFireStub;
-#endif
 
 
 
@@ -912,6 +910,11 @@ SUPR0TracerFireProbe_End:                                               \
 # else
 SUPR0DECL(void) SUPR0TracerFireProbe(uint32_t idProbe, uintptr_t uArg0, uintptr_t uArg1, uintptr_t uArg2,
                                      uintptr_t uArg3, uintptr_t uArg4)
+{
+    return;
+}
+
+DECLASM(void)   supdrvTracerProbeFireStub(void)
 {
     return;
 }
