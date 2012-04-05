@@ -48,7 +48,7 @@ EXPORTEDNAME SUPR0TracerFireProbe
         mov     rax, [NAME(g_pfnSupdrvProbeFireKernel) wrt rip]
         jmp     rax
 %else
-        mov     eax
+        mov     eax, [NAME(g_g_pfnSupdrvProbeFireKernel)]
         jmp     eax
 %endif
 ENDPROC SUPR0TracerFireProbe
