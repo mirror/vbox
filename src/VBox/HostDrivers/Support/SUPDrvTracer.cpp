@@ -91,7 +91,7 @@ typedef SUPDRVTPPROVIDER *PSUPDRVTPPROVIDER;
 *   Global Variables                                                           *
 *******************************************************************************/
 /** The address of the current probe fire routine for kernel mode. */
-PFNRT       g_pfnSupdrvProbeFireKernel = supdrvTracerProbeFireStub;
+/*PFNRT       g_pfnSupdrvProbeFireKernel = supdrvTracerProbeFireStub;*/
 
 
 
