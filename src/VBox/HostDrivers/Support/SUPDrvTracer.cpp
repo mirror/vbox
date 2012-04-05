@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBoxDrv - The VirtualBox Support Driver - Generic Tracer Interface.
+ * VBoxDrv - The VirtualBox Support Driver - Tracer Interface.
  */
 
 /*
@@ -90,6 +90,8 @@ typedef SUPDRVTPPROVIDER *PSUPDRVTPPROVIDER;
 /*******************************************************************************
 *   Global Variables                                                           *
 *******************************************************************************/
+/** The address of the current probe fire routine for kernel mode. */
+PFNRT       g_pfnSupdrvProbeFireKernel = supdrvTracerProbeFireStub;
 
 
 
@@ -365,7 +367,7 @@ static void supdrvTracerDeregisterVtgObj(PSUPDRVDEVEXT pDevExt, PSUPDRVTPPROVIDE
     if (!pProv->fRegistered || !pDevExt->pTracerOps)
         rc = VINF_SUCCESS;
     else
-        rc = pDevExt->pTracerOps->pfnDeregisterProvider(pDevExt->pTracerOps, &pProv->Core);
+        rc = pDevExt->pTracerOps->pfnProviderDeregister(pDevExt->pTracerOps, &pProv->Core);
     if (RT_SUCCESS(rc))
     {
         supdrvTracerFreeProvider(pProv);
@@ -391,7 +393,7 @@ static void supdrvTracerProcessZombies(PSUPDRVDEVEXT pDevExt)
     RTSemFastMutexRequest(pDevExt->mtxTracer);
     RTListForEachSafe(&pDevExt->TracerProviderZombieList, pProv, pProvNext, SUPDRVTPPROVIDER, ListEntry)
     {
-        int rc = pDevExt->pTracerOps->pfnDeregisterZombieProvider(pDevExt->pTracerOps, &pProv->Core);
+        int rc = pDevExt->pTracerOps->pfnProviderDeregisterZombie(pDevExt->pTracerOps, &pProv->Core);
         if (RT_SUCCESS(rc))
         {
             RTListNodeRemove(&pProv->ListEntry);
@@ -442,7 +444,7 @@ static void supdrvTracerRemoveAllProviders(PSUPDRVDEVEXT pDevExt)
                         pProv->szName, pProv->Core.TracerData.DTrace.idProvider));
 
             if (pDevExt->pTracerOps)
-                rc = pDevExt->pTracerOps->pfnDeregisterZombieProvider(pDevExt->pTracerOps, &pProv->Core);
+                rc = pDevExt->pTracerOps->pfnProviderDeregisterZombie(pDevExt->pTracerOps, &pProv->Core);
             else
                 rc = VINF_SUCCESS;
             if (!rc)
@@ -550,7 +552,7 @@ static int supdrvTracerRegisterVtgObj(PSUPDRVDEVEXT pDevExt, PVTGOBJHDR pVtgHdr,
             if (RT_SUCCESS(rc))
             {
                 if (pDevExt->pTracerOps)
-                    rc = pDevExt->pTracerOps->pfnRegisterProvider(pDevExt->pTracerOps, &pProv->Core);
+                    rc = pDevExt->pTracerOps->pfnProviderRegister(pDevExt->pTracerOps, &pProv->Core);
                 else
                 {
                     pProv->fRegistered = false;
@@ -750,9 +752,14 @@ SUPR0DECL(int) SUPR0TracerRegisterImpl(void *hMod, PSUPDRVSESSION pSession, PCSU
         AssertPtrReturn(pDevExt, VERR_INVALID_POINTER);
     }
 
-    AssertPtrReturn(pReg->pfnRegisterProvider, VERR_INVALID_POINTER);
-    AssertPtrReturn(pReg->pfnDeregisterProvider, VERR_INVALID_POINTER);
-    AssertPtrReturn(pReg->pfnDeregisterZombieProvider, VERR_INVALID_POINTER);
+    AssertPtrReturn(pReg->pfnProbeFireKernel, VERR_INVALID_POINTER);
+    AssertPtrReturn(pReg->pfnProbeFireUser, VERR_INVALID_POINTER);
+    AssertPtrReturn(pReg->pfnTracerOpen, VERR_INVALID_POINTER);
+    AssertPtrReturn(pReg->pfnTracerIoCtl, VERR_INVALID_POINTER);
+    AssertPtrReturn(pReg->pfnTracerClose, VERR_INVALID_POINTER);
+    AssertPtrReturn(pReg->pfnProviderRegister, VERR_INVALID_POINTER);
+    AssertPtrReturn(pReg->pfnProviderDeregister, VERR_INVALID_POINTER);
+    AssertPtrReturn(pReg->pfnProviderDeregisterZombie, VERR_INVALID_POINTER);
 
     /*
      * Do the job.
@@ -780,22 +787,55 @@ SUPR0DECL(int) SUPR0TracerRegisterImpl(void *hMod, PSUPDRVSESSION pSession, PCSU
 
 
 /**
- * Deregister a tracer implementation associated with a ring-0 session.
+ * Common tracer implementation deregistration code.
+ *
+ * The caller sets fTracerUnloading prior to calling this function.
+ *
+ * @param   pDevExt             The device extension structure.
+ */
+static void supdrvTracerCommonDeregisterImpl(PSUPDRVDEVEXT pDevExt)
+{
+    supdrvTracerRemoveAllProviders(pDevExt);
+
+    RTSemFastMutexRequest(pDevExt->mtxTracer);
+    pDevExt->pTracerImage     = NULL;
+    pDevExt->pTracerSession   = NULL;
+    pDevExt->pTracerOps       = NULL;
+    pDevExt->fTracerUnloading = false;
+    RTSemFastMutexRelease(pDevExt->mtxTracer);
+}
+
+
+/**
+ * Deregister a tracer implementation.
+ *
+ * This should be called from the ModuleTerm code or from a ring-0 session.
  *
  * @returns VBox status code.
+ * @param   hMod                The module handle.
  * @param   pSession            Ring-0 session handle.
  */
-SUPR0DECL(int) SUPR0TracerDeregisterImpl(PSUPDRVSESSION pSession)
+SUPR0DECL(int) SUPR0TracerDeregisterImpl(void *hMod, PSUPDRVSESSION pSession)
 {
+    PSUPDRVLDRIMAGE pImage = (PSUPDRVLDRIMAGE)hMod;
     PSUPDRVDEVEXT   pDevExt;
     int             rc;
 
     /*
      * Validate input and context.
      */
-    AssertReturn(SUP_IS_SESSION_VALID(pSession), VERR_INVALID_PARAMETER);
-    AssertReturn(pSession->R0Process == NIL_RTR0PROCESS, VERR_INVALID_PARAMETER);
-    pDevExt = pSession->pDevExt;
+    if (pImage)
+    {
+        AssertPtrReturn(pImage, VERR_INVALID_POINTER);
+        AssertReturn(pSession == NULL, VERR_INVALID_PARAMETER);
+        pDevExt = pImage->pDevExt;
+    }
+    else
+    {
+        AssertReturn(SUP_IS_SESSION_VALID(pSession), VERR_INVALID_PARAMETER);
+        AssertReturn(pSession->R0Process == NIL_RTR0PROCESS, VERR_INVALID_PARAMETER);
+        pDevExt = pSession->pDevExt;
+    }
     AssertPtrReturn(pDevExt, VERR_INVALID_POINTER);
 
     /*
@@ -804,26 +844,77 @@ SUPR0DECL(int) SUPR0TracerDeregisterImpl(PSUPDRVSESSION pSession)
     rc = RTSemFastMutexRequest(pDevExt->mtxTracer);
     if (RT_SUCCESS(rc))
     {
-        if (pDevExt->pTracerSession == pSession)
+        if (  pImage
+            ? pDevExt->pTracerImage   == pImage
+            : pDevExt->pTracerSession == pSession)
         {
             pDevExt->fTracerUnloading = true;
             RTSemFastMutexRelease(pDevExt->mtxTracer);
-
-            supdrvTracerRemoveAllProviders(pDevExt);
-
-            RTSemFastMutexRequest(pDevExt->mtxTracer);
-            pDevExt->pTracerImage     = NULL;
-            pDevExt->pTracerSession   = NULL;
-            pDevExt->pTracerOps       = NULL;
-            pDevExt->fTracerUnloading = false;
+            supdrvTracerCommonDeregisterImpl(pDevExt);
         }
         else
+        {
             rc = VERR_SUPDRV_TRACER_NOT_REGISTERED;
-        RTSemFastMutexRelease(pDevExt->mtxTracer);
+            RTSemFastMutexRelease(pDevExt->mtxTracer);
+        }
     }
 
     return rc;
 }
+
+
+/*
+ * The probe function is a bit more fun since we need tail jump optimizating.
+ *
+ * Since we cannot ship yasm sources for linux and freebsd, owing to the cursed
+ * rebuilding of the kernel module from scratch at install time, we have to
+ * deploy some ugly gcc inline assembly here.
+ */
+#if defined(__GNUC__) && (defined(RT_OS_FREEBSD) || defined(RT_OS_LINUX))
+# if 0 /* Need to check this out on linux (on mac now) */
+/*DECLASM(void)   supdrvTracerProbeFireStub(void);*/
+__asm__ __volatile__("\
+    .pushsection .text                                                  \
+                                                                        \
+    .p2align 2,,3                                                       \
+    .type supdrvTracerProbeFireStub,@function                           \
+    .global supdrvTracerProbeFireStub                                   \
+supdrvTracerProbeFireStub:                                              \
+    ret                                                                 \
+supdrvTracerProbeFireStub_End:                                          \
+    .size supdrvTracerProbeFireStub_End - supdrvTracerProbeFireStub     \
+                                                                        \
+    .p2align 2,,3                                                       \
+    .global SUPR0TracerFireProbe                                        \
+SUPR0TracerFireProbe:                                                   \
+");
+# if   defined(RT_ARCH_AMD64)
+__asm__ __volatile__("                                                  \
+    mov     g_pfnSupdrvProbeFireKernel(%rip), %rax                      \
+    jmp     *%rax                                                       \
+");
+# elif defined(RT_ARCH_X86)
+__asm__ __volatile__("                                                  \
+    mov     g_pfnSupdrvProbeFireKernel, %eax                            \
+    jmp     *%eax                                                       \
+");
+# else
+#  error "Which arch is this?"
+#endif
+__asm__ __volatile__("                                                  \
+SUPR0TracerFireProbe_End:                                               \
+    .size SUPR0TracerFireProbe_End - SUPR0TracerFireProbe               \
+    .popsection                                                         \
+");
+
+# else
+SUPR0DECL(void) SUPR0TracerFireProbe(uint32_t idProbe, uintptr_t uArg0, uintptr_t uArg1, uintptr_t uArg2,
+                                     uintptr_t uArg3, uintptr_t uArg4)
+{
+    return;
+}
+# endif
+#endif
 
 
 /**
@@ -846,15 +937,7 @@ void VBOXCALL supdrvTracerModuleUnloading(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE
     {
         pDevExt->fTracerUnloading = true;
         RTSemFastMutexRelease(pDevExt->mtxTracer);
-
-        supdrvTracerRemoveAllProviders(pDevExt);
-
-        RTSemFastMutexRequest(pDevExt->mtxTracer);
-        pDevExt->pTracerImage     = NULL;
-        pDevExt->pTracerSession   = NULL;
-        pDevExt->pTracerOps       = NULL;
-        pDevExt->fTracerUnloading = false;
-        RTSemFastMutexRelease(pDevExt->mtxTracer);
+        supdrvTracerCommonDeregisterImpl(pDevExt);
     }
     else
     {
@@ -893,7 +976,7 @@ void VBOXCALL supdrvTracerCleanupSession(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION p
      */
     if (pSession->R0Process == NIL_RTR0PROCESS)
     {
-        SUPDRVTPPROVIDER *pNextProv;
+        SUPDRVTPPROVIDER *pProvNext;
         SUPDRVTPPROVIDER *pProv;
 
         RTSemFastMutexRequest(pDevExt->mtxTracer);
@@ -907,7 +990,7 @@ void VBOXCALL supdrvTracerCleanupSession(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION p
         }
         RTSemFastMutexRelease(pDevExt->mtxTracer);
 
-        (void)SUPR0TracerDeregister(pSession);
+        (void)SUPR0TracerDeregisterImpl(NULL, pSession);
     }
 
     /*
@@ -918,7 +1001,7 @@ void VBOXCALL supdrvTracerCleanupSession(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION p
         RTSemFastMutexRequest(pDevExt->mtxTracer);
         if (   pSession->uTracerData
             && pDevExt->pTracerOps)
-            pSession->pTracerOps->pfnCloseTrace(pSession->pTracerOps, pSession, pSession->uTracerData);
+            pDevExt->pTracerOps->pfnTracerClose(pDevExt->pTracerOps, pSession, pSession->uTracerData);
         pSession->uTracerData = 0;
         RTSemFastMutexRelease(pDevExt->mtxTracer);
     }
@@ -945,8 +1028,10 @@ int VBOXCALL supdrvTracerInit(PSUPDRVDEVEXT pDevExt)
         RTListInit(&pDevExt->TracerProviderList);
         RTListInit(&pDevExt->TracerProviderZombieList);
 
+#ifdef VBOX_WITH_DTRACE_R0DRV
         rc = supdrvTracerRegisterVtgObj(pDevExt, &g_VTGObjHeader, _1M, NULL /*pImage*/, NULL /*pSession*/, "vboxdrv");
         if (RT_SUCCESS(rc))
+#endif
             return rc;
         RTSemFastMutexDestroy(pDevExt->mtxTracer);
     }

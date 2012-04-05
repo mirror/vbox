@@ -318,9 +318,6 @@ if1of ($(KBUILD_TARGET), darwin linux solaris)
  VBoxDrv_NAME.solaris     = vboxdrv
  VBoxDrv_INST.darwin      = $(INST_VBOXDRV)Contents/MacOS/
  VBoxDrv_DEFS            := IN_RT_R0 IN_SUP_R0 SUPDRV_WITH_RELEASE_LOGGER VBOX_SVN_REV=$(VBOX_SVN_REV)
- ifdef VBOX_WITH_SUPDRV_GENERIC_TRACER
-  VBoxDrv_DEFS           += VBOX_WITH_SUPDRV_GENERIC_TRACER
- endif
  ifdef VBOX_WITH_DTRACE_R0DRV
   VBoxDrv_DEFS           += VBOX_WITH_DTRACE VBOX_WITH_DTRACE_R0DRV
  endif
@@ -349,10 +346,11 @@ if1of ($(KBUILD_TARGET), darwin linux solaris)
  VBoxDrv_SOURCES          = \
  	SUPDrv.c \
  	SUPDrvSem.c \
+  	SUPDrvTracer.cpp \
  	SUPDrv.d
- ifdef VBOX_WITH_SUPDRV_GENERIC_TRACER
+ ifn1of ($(KBUILD_TARGET), linux freebsd)
   VBoxDrv_SOURCES        += \
-  	SUPDrv-tracer.cpp
+ 	SUPDrvTracerA.asm
  endif
  ifdef VBOX_WITH_DTRACE_R0DRV
   VBoxDrv_SOURCES        += \

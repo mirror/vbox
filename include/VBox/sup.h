@@ -1526,7 +1526,7 @@ typedef struct SUPDRVTRACERHLP
 #define SUPDRVTRACERHLP_VERSION RT_MAKE_U32(0, 1)
 
 SUPR0DECL(int)  SUPR0TracerRegisterImpl(void *hMod, PSUPDRVSESSION pSession, PCSUPDRVTRACERREG pReg, PCSUPDRVTRACERHLP *ppHlp);
-SUPR0DECL(int)  SUPR0TracerDeregisterImpl(PSUPDRVSESSION pSession);
+SUPR0DECL(int)  SUPR0TracerDeregisterImpl(void *hMod, PSUPDRVSESSION pSession);
 SUPR0DECL(int)  SUPR0TracerRegisterDrv(PSUPDRVSESSION pSession, struct VTGOBJHDR *pVtgHdr, const char *pszName);
 SUPR0DECL(void) SUPR0TracerDeregisterDrv(PSUPDRVSESSION pSession);
 SUPR0DECL(int)  SUPR0TracerRegisterModule(void *hMod, struct VTGOBJHDR *pVtgHdr);

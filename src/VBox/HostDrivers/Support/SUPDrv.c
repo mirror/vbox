@@ -1,4 +1,4 @@
-/* $Revision$ */
+/* $Id$ */
 /** @file
  * VBoxDrv - The VirtualBox Support Driver - Common code.
  */
@@ -468,12 +468,8 @@ int VBOXCALL supdrvInitDevExt(PSUPDRVDEVEXT pDevExt, size_t cbSession)
                         rc = supdrvGipCreate(pDevExt);
                         if (RT_SUCCESS(rc))
                         {
-#ifdef VBOX_WITH_SUPDRV_GENERIC_TRACER
                             rc = supdrvTracerInit(pDevExt);
-#elif defined(VBOX_WITH_DTRACE_R0DRV)
-                            rc = supdrvVtgInit(pDevExt, &g_aFunctions[10]);
                             if (RT_SUCCESS(rc))
-#endif
                             {
                                 pDevExt->pLdrInitImage  = NULL;
                                 pDevExt->hLdrInitThread = NIL_RTNATIVETHREAD;
@@ -535,9 +531,7 @@ int VBOXCALL supdrvInitDevExt(PSUPDRVDEVEXT pDevExt, size_t cbSession)
                                 return VINF_SUCCESS;
                             }
 
-#if defined(VBOX_WITH_SUPDRV_GENERIC_TRACER) || defined(VBOX_WITH_DTRACE_R0DRV)
                             supdrvGipDestroy(pDevExt);
-#endif
                         }
 
 #ifdef SUPDRV_USE_MUTEX_FOR_GIP
@@ -635,11 +629,7 @@ void VBOXCALL supdrvDeleteDevExt(PSUPDRVDEVEXT pDevExt)
     RTSpinlockDestroy(pDevExt->spinGip);
     pDevExt->spinGip = NIL_RTSPINLOCK;
 
-#ifdef VBOX_WITH_SUPDRV_GENERIC_TRACER
     supdrvTracerTerm(pDevExt);
-#elif defined(VBOX_WITH_DTRACE_R0DRV)
-    supdrvVtgTerm(pDevExt);
-#endif
 
 #ifdef SUPDRV_WITH_RELEASE_LOGGER
     /* destroy the loggers. */
@@ -828,14 +818,12 @@ void VBOXCALL supdrvCleanupSession(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSessio
     }
     Log2(("release objects - done\n"));
 
-#ifdef VBOX_WITH_SUPDRV_GENERIC_TRACER
     /*
      * Do tracer cleanups related to this session.
      */
     Log2(("release tracer stuff - start\n"));
     supdrvTracerCleanupSession(pDevExt, pSession);
     Log2(("release tracer stuff - end\n"));
-#endif
 
     /*
      * Release memory allocated in the session.
@@ -3687,30 +3675,6 @@ SUPR0DECL(int) SUPR0ComponentQueryFactory(PSUPDRVSESSION pSession, const char *p
 }
 
 
-#if (!defined(VBOX_WITH_SUPDRV_GENERIC_TRACER) && !defined(VBOX_WITH_DTRACE_R0DRV)) \
-  || defined(RT_OS_SOLARIS)
-/**
- * Stub function.
- */
-SUPR0DECL(void) SUPR0TracerFireProbe(uint32_t idProbe, uintptr_t uArg0, uintptr_t uArg1, uintptr_t uArg2,
-                                     uintptr_t uArg3, uintptr_t uArg4)
-{
-    NOREF(idProbe); NOREF(uArg0); NOREF(uArg1); NOREF(uArg2); NOREF(uArg3); NOREF(uArg4);
-}
-#endif
-
-#if !defined(VBOX_WITH_SUPDRV_GENERIC_TRACER) && !defined(VBOX_WITH_DTRACE_R0DRV)
-/**
- * Stub function.
- */
-SUPR0DECL(int) SUPR0TracerRegisterModule(void *hMod, struct VTGOBJHDR *pVtgHdr)
-{
-    NOREF(hMod); NOREF(pVtgHdr);
-    return VINF_SUCCESS;
-}
-#endif
-
-
 /**
  * Adds a memory object to the session.
  *
@@ -4173,11 +4137,7 @@ static int supdrvIOCtl_LdrLoad(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, P
     if (RT_FAILURE(rc))
     {
         /* Inform the tracing component in case ModuleInit registered TPs. */
-#ifdef VBOX_WITH_SUPDRV_GENERIC_TRACER
         supdrvTracerModuleUnloading(pDevExt, pImage);
-#elif defined(VBOX_WITH_DTRACE_R0DRV)
-        supdrvVtgModuleUnloading(pDevExt, pImage);
-#endif
 
         pImage->uState              = SUP_IOCTL_LDR_OPEN;
         pImage->pfnModuleInit       = NULL;
@@ -4624,11 +4584,7 @@ static void supdrvLdrFree(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE pImage)
     }
 
     /* Inform the tracing component. */
-#ifdef VBOX_WITH_SUPDRV_GENERIC_TRACER
     supdrvTracerModuleUnloading(pDevExt, pImage);
-#elif defined(VBOX_WITH_DTRACE_R0DRV)
-    supdrvVtgModuleUnloading(pDevExt, pImage);
-#endif
 
     /* do native unload if appropriate. */
     if (pImage->fNative)
