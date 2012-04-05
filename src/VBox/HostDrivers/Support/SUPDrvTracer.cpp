@@ -871,40 +871,36 @@ SUPR0DECL(int) SUPR0TracerDeregisterImpl(void *hMod, PSUPDRVSESSION pSession)
  * deploy some ugly gcc inline assembly here.
  */
 #if defined(__GNUC__) && (defined(RT_OS_FREEBSD) || defined(RT_OS_LINUX))
-# if 0 /* Need to check this out on linux (on mac now) */
+# if 1 /* Need to check this out on linux (on mac now) */
 /*DECLASM(void)   supdrvTracerProbeFireStub(void);*/
 __asm__ __volatile__("\
-    .pushsection .text                                                  \
-                                                                        \
-    .p2align 2,,3                                                       \
-    .type supdrvTracerProbeFireStub,@function                           \
-    .global supdrvTracerProbeFireStub                                   \
-supdrvTracerProbeFireStub:                                              \
-    ret                                                                 \
-supdrvTracerProbeFireStub_End:                                          \
-    .size supdrvTracerProbeFireStub_End - supdrvTracerProbeFireStub     \
-                                                                        \
-    .p2align 2,,3                                                       \
-    .global SUPR0TracerFireProbe                                        \
-SUPR0TracerFireProbe:                                                   \
+    .section .text                                                      \n\
+                                                                        \n\
+    .p2align 2,,3                                                       \n\
+    .global SUPR0TracerFireProbe                                        \n\
+SUPR0TracerFireProbe:                                                   \n\
 ");
 # if   defined(RT_ARCH_AMD64)
-__asm__ __volatile__("                                                  \
-    mov     g_pfnSupdrvProbeFireKernel(%rip), %rax                      \
-    jmp     *%rax                                                       \
-");
+__asm__ __volatile__(" \
+	movq    g_pfnSupdrvProbeFireKernel(%rip), %rax                      \n\
+	jmp	    *%rax \n\
+");                     
 # elif defined(RT_ARCH_X86)
-__asm__ __volatile__("                                                  \
-    mov     g_pfnSupdrvProbeFireKernel, %eax                            \
-    jmp     *%eax                                                       \
+__asm__ __volatile__("\
+	movl    g_pfnSupdrvProbeFireKernel, %eax                            \n\
+	jmp	    *%eax \n\
 ");
 # else
 #  error "Which arch is this?"
 #endif
-__asm__ __volatile__("                                                  \
-SUPR0TracerFireProbe_End:                                               \
-    .size SUPR0TracerFireProbe_End - SUPR0TracerFireProbe               \
-    .popsection                                                         \
+__asm__ __volatile__("\
+                                                                        \n\
+    .type supdrvTracerProbeFireStub,@function                           \n\
+    .global supdrvTracerProbeFireStub                                   \n\
+supdrvTracerProbeFireStub:                                              \n\
+    ret                                                                 \n\
+                                                                        \n\
+    .previous                                                           \n\
 ");
 
 # else
