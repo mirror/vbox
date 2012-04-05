@@ -1577,10 +1577,10 @@ static void ataReadWriteSectorsBT(ATADevState *s)
 
 static bool ataReadSectorsSS(ATADevState *s)
 {
-    int rc;
+    int rc = VERR_GENERAL_FAILURE;
     uint32_t cSectors;
     uint64_t iLBA;
-    bool fRedo;
+    bool fRedo = false;
 
     cSectors = s->cbElementaryTransfer / 512;
     Assert(cSectors);
