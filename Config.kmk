@@ -615,14 +615,14 @@ VBOX_WITH_ALL_DOXYGEN_TARGETS = 1
 if1of ($(KBUILD_TARGET), darwin solaris)
  VBOX_WITH_DTRACE_R3 = 1
 endif
-# Set this to enable kernel driver dtrace probes.
-if1of ($(KBUILD_TARGET), solaris)
- VBOX_WITH_DTRACE_R0DRV = 1
-endif
-# Set this to enable dtrace probes in platform agnostic kernel code.
-if1of ($(KBUILD_TARGET), solaris)
- VBOX_WITH_DTRACE_R0 = 1
-endif
+## Set this to enable kernel driver dtrace probes.
+#if1of ($(KBUILD_TARGET), solaris)
+# VBOX_WITH_DTRACE_R0DRV = 1
+#endif
+## Set this to enable dtrace probes in platform agnostic kernel code.
+#if1of ($(KBUILD_TARGET), solaris)
+# VBOX_WITH_DTRACE_R0 = 1
+#endif
 # Set this to enable dtrace probes raw-mode context code.
 #VBOX_WITH_DTRACE_RC = 1
 # Set this to enable support for dtrace probes in guest code.
@@ -2956,7 +2956,7 @@ TEMPLATE_VBOXR0DRV_INCS                = $(VBOX_LINUX_INCS)
 TEMPLATE_VBOXR0DRV_CFLAGS              = -nostdinc -iwithprefix include $(VBOX_LINUX_INCLUDE) \
 	$(VBOX_GCC_WARN) -Wstrict-prototypes $(VBOX_GCC_Wno-pointer-sign) -Wno-sign-compare $(VBOX_GCC_fdiagnostics-show-option) \
 	$(VBOX_GCC_fno-stack-protector) $(VBOX_GCC_R0_OPT) $(VBOX_GCC_R0_FP) \
-	-fno-strict-aliasing -fno-common -Werror-implicit-function-declaration 
+	-fno-strict-aliasing -fno-common -Werror-implicit-function-declaration
 TEMPLATE_VBOXR0DRV_CFLAGS.x86          = -mpreferred-stack-boundary=2 -msoft-float
 TEMPLATE_VBOXR0DRV_CFLAGS.amd64        = -m64 -mno-red-zone -mcmodel=kernel -mno-sse -mno-mmx -mno-sse2 -mno-3dnow \
 	-fno-reorder-blocks -ffreestanding -fno-asynchronous-unwind-tables -funit-at-a-time \
