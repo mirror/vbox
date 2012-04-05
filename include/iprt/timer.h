@@ -149,7 +149,7 @@ RTDECL(int) RTTimerCreateEx(PRTTIMER *ppTimer, uint64_t u64NanoInterval, uint32_
 RTDECL(int) RTTimerDestroy(PRTTIMER pTimer);
 
 /**
- * Stops an active timer.
+ * Starts a suspended timer.
  *
  * @returns IPRT status code.
  * @retval  VERR_INVALID_HANDLE if pTimer isn't valid.
