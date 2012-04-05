@@ -1577,10 +1577,10 @@ static void ataReadWriteSectorsBT(ATADevState *s)
 
 static bool ataReadSectorsSS(ATADevState *s)
 {
-    int rc = VERR_GENERAL_FAILURE;
+    int rc;
     uint32_t cSectors;
     uint64_t iLBA;
-    bool fRedo = false;
+    bool fRedo;
 
     cSectors = s->cbElementaryTransfer / 512;
     Assert(cSectors);
@@ -3834,10 +3834,10 @@ static int ataTrimSectors(ATADevState *s, uint64_t u64Sector, uint32_t cSectors,
 
 static bool ataTrimSS(ATADevState *s)
 {
-    int rc;
+    int rc = VERR_GENERAL_FAILURE;
     uint32_t cRangesMax;
     uint64_t *pu64Range = (uint64_t *)s->CTX_SUFF(pbIOBuffer);
-    bool fRedo;
+    bool fRedo = false;
 
     cRangesMax = s->cbElementaryTransfer / sizeof(uint64_t);
     Assert(cRangesMax);
