@@ -435,10 +435,8 @@ typedef struct SUPDRVSESSION
     /** Which process this session is associated with.
      * This is NIL_RTR0PROCESS for kernel sessions and valid for user ones. */
     RTR0PROCESS                     R0Process;
-#ifdef VBOX_WITH_SUPDRV_GENERIC_TRACER
     /** Per session tracer specfic data. */
     uintptr_t                       uTracerData;
-#endif
 #ifndef SUPDRV_AGNOSTIC
 # if defined(RT_OS_DARWIN)
     /** Pointer to the associated org_virtualbox_SupDrvClient object. */
@@ -542,7 +540,6 @@ typedef struct SUPDRVDEVEXT
     /** The head of the list of registered component factories. */
     PSUPDRVFACTORYREG               pComponentFactoryHead;
 
-#ifdef VBOX_WITH_SUPDRV_GENERIC_TRACER
     /** Lock protecting The tracer members. */
     RTSEMFASTMUTEX                  mtxTracer;
     /** List of tracer providers (SUPDRVTPPROVIDER). */
@@ -559,15 +556,6 @@ typedef struct SUPDRVDEVEXT
     SUPDRVTRACERHLP                 TracerHlp;
     /** Set if the tracer is being unloaded. */
     bool                            fTracerUnloading;
-
-#elif defined(VBOX_WITH_DTRACE_R0DRV)
-    /** Lock protecting The DTrace members. */
-    RTSEMFASTMUTEX                  mtxDTrace;
-    /** List of DTrace providers (SUPDRVDTPROVIDER). */
-    RTLISTANCHOR                    DtProviderList;
-    /** List of zombie DTrace providers (SUPDRVDTPROVIDER). */
-    RTLISTANCHOR                    DtProviderZombieList;
-#endif
 
     /*
      * Note! The non-agnostic bits must be a the very end of the structure!
@@ -658,18 +646,12 @@ int  VBOXCALL   supdrvCreateSession(PSUPDRVDEVEXT pDevExt, bool fUser, PSUPDRVSE
 void VBOXCALL   supdrvCloseSession(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession);
 void VBOXCALL   supdrvCleanupSession(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession);
 
-#ifdef VBOX_WITH_DTRACE_R0DRV
-int  VBOXCALL   supdrvVtgInit(PSUPDRVDEVEXT pDevExt, PSUPFUNC pVtgFireProbe);
-void VBOXCALL   supdrvVtgTerm(PSUPDRVDEVEXT pDevExt);
-void VBOXCALL   supdrvVtgModuleUnloading(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE pImage);
-#endif
-
-#ifdef VBOX_WITH_SUPDRV_GENERIC_TRACER
 int  VBOXCALL   supdrvTracerInit(PSUPDRVDEVEXT pDevExt);
 void VBOXCALL   supdrvTracerTerm(PSUPDRVDEVEXT pDevExt);
 void VBOXCALL   supdrvTracerModuleUnloading(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE pImage);
 void VBOXCALL   supdrvTracerCleanupSession(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession);
-#endif
+extern PFNRT    g_pfnSupdrvProbeFireKernel;
+DECLASM(void)   supdrvTracerProbeFireStub(void);
 
 
 RT_C_DECLS_END
