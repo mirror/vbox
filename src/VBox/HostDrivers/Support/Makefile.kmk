@@ -45,7 +45,6 @@ if  !defined(VBOX_ONLY_DOCS) \
  ifdef VBOX_WITH_VBOXDRV
   LIBRARIES       += SUPR0IdcClient
   SYSMODS.freebsd += vboxdrv
-  SYSMODS.win     += VBoxDrv
   SYSMODS.os2     += VBoxDrv
  endif
  INSTALLS.linux   += vboxdrv-mod
@@ -166,71 +165,10 @@ SUPR0IdcClient_SOURCES = \
 	SUPR0IdcClientStubs.c
 
 
+
 if  !defined(VBOX_ONLY_DOCS) \
  && !defined(VBOX_ONLY_EXTPACKS) \
  && !defined(VBOX_ONLY_TESTSUITE)
-
-#
-# VBoxDrv.sys - The Windows driver.
-#
-## @todo consolidate all the targets into a single mess.
-ifeq ($(KBUILD_TARGET),win)
-VBoxDrv_TEMPLATE      = VBOXR0DRV
-ifdef VBOX_SIGNING_MODE
- VBoxDrv_INSTTYPE     = none
- VBoxDrv_DEBUG_INSTTYPE = both
-endif
-VBoxDrv_DEFS          = IN_RT_R0 IN_SUP_R0 SUPDRV_WITH_RELEASE_LOGGER
-ifdef VBOX_WITHOUT_NATIVE_R0_LOADER
- VBoxDrv_DEFS        += VBOX_WITHOUT_NATIVE_R0_LOADER
-endif
-ifdef VBOX_WITH_VMMR0_DISABLE_PREEMPTION
- VBoxDrv_DEFS        += VBOX_WITH_VMMR0_DISABLE_PREEMPTION
-endif
-VBoxDrv_SDKS          = W2K3DDK WINPSDKINCS
-VBoxDrv_INCS         := $(PATH_SUB_CURRENT)
-VBoxDrv_SOURCES       = \
-	win/SUPDrv-win.cpp \
-	win/SUPDrvA-win.asm \
-	SUPDrv.c \
-	SUPDrvSem.c \
-	win/VBoxDrv.rc
-VBoxDrv_LDFLAGS.x86   = -Entry:DriverEntry@8
-VBoxDrv_LDFLAGS.amd64 = -Entry:DriverEntry
-VBoxDrv_LIBS          = \
-	$(PATH_SDK_W2K3DDK_LIB)/ntoskrnl.lib \
-	$(PATH_SDK_W2K3DDK_LIB)/hal.lib \
-	$(PATH_STAGE_LIB)/RuntimeR0Drv$(VBOX_SUFF_LIB)
-
-
-INSTALLS += VBoxDrv-inf
-VBoxDrv-inf_INST = $(INST_BIN)
-VBoxDrv-inf_MODE = a+r,u+w
-VBoxDrv-inf_SOURCES = \
-	$(PATH_TARGET)/VBoxDrvCat.dir/VBoxDrv.inf
-VBoxDrv-inf_CLEAN = $(VBoxDrv-inf_SOURCES)
-VBoxDrv-inf_BLDDIRS = $(PATH_TARGET)/VBoxDrvCat.dir
-
-$(PATH_TARGET)/VBoxDrvCat.dir/VBoxDrv.inf: $(PATH_SUB_CURRENT)/win/VBoxDrv.inf $(MAKEFILE_CURRENT) | $$(dir $$@)
-	$(call MSG_GENERATE,VBoxDrv-inf,$@,$<)
-	$(call VBOX_EDIT_INF_FN,$<,$@)
-
- ifdef VBOX_SIGNING_MODE
-VBoxDrv-inf_SOURCES += \
-	$(PATH_TARGET)/VBoxDrvCat.dir/VBoxDrv.sys \
-	$(PATH_TARGET)/VBoxDrvCat.dir/VBoxDrv.cat
-
-$(PATH_TARGET)/VBoxDrvCat.dir/VBoxDrv.sys: $$(VBoxDrv_1_TARGET) | $$(dir $$@)
-	$(INSTALL) -m 644 $< $(@D)
-
-$(PATH_TARGET)/VBoxDrvCat.dir/VBoxDrv.cat: \
-		$(PATH_TARGET)/VBoxDrvCat.dir/VBoxDrv.inf \
-		$(PATH_TARGET)/VBoxDrvCat.dir/VBoxDrv.sys
-	$(call MSG_TOOL,Inf2Cat,VBoxDrv-inf,$@,$<)
-	$(call VBOX_MAKE_CAT_FN, $(@D),$@)
- endif # signing
-endif # win
-
 
 ifeq ($(KBUILD_TARGET),os2)
 
@@ -316,10 +254,23 @@ if1of ($(KBUILD_TARGET), darwin linux solaris)
  VBoxDrv_NAME.freebsd     = vboxdrv
  VBoxDrv_NAME.linux       = vboxdrv
  VBoxDrv_NAME.solaris     = vboxdrv
+ ifdef VBOX_SIGNING_MODE
+  VBoxDrv_INSTTYPE        = none
+  VBoxDrv_DEBUG_INSTTYPE  = both
+ endif
  VBoxDrv_INST.darwin      = $(INST_VBOXDRV)Contents/MacOS/
+ VBoxDrv_SDKS.win         = W2K3DDK WINPSDKINCS
+
  VBoxDrv_DEFS            := IN_RT_R0 IN_SUP_R0 SUPDRV_WITH_RELEASE_LOGGER VBOX_SVN_REV=$(VBOX_SVN_REV)
  ifdef VBOX_WITH_DTRACE_R0DRV
   VBoxDrv_DEFS           += VBOX_WITH_DTRACE VBOX_WITH_DTRACE_R0DRV
+ endif
+ #VBoxDrv_DEFS.debug      += DEBUG_DARWIN_GIP
+ VBoxDrv_DEFS.darwin     := VBOX_WITH_HOST_VMX
+ VBoxDrv_DEFS.linux      := \
+	KBUILD_MODNAME=KBUILD_STR\(vboxdrv\) KBUILD_BASENAME=KBUILD_STR\(vboxdrv\) MODULE CONFIG_VBOXDRV_AS_MISC
+ ifdef VBOX_LINUX_VERSION_2_4
+  VBoxDrv_DEFS.linux     += EXPORT_SYMTAB
  endif
  ifdef VBOX_WITH_NETFLT
   VBoxDrv_DEFS.solaris   += VBOX_WITH_NETFLT
@@ -327,22 +278,35 @@ if1of ($(KBUILD_TARGET), darwin linux solaris)
  ifdef VBOX_WITH_NATIVE_SOLARIS_LOADING
   VBoxDrv_DEFS.solaris   += VBOX_WITH_NATIVE_SOLARIS_LOADING
  endif
- VBoxDrv_DEFS.linux      := \
-	KBUILD_MODNAME=KBUILD_STR\(vboxdrv\) KBUILD_BASENAME=KBUILD_STR\(vboxdrv\) MODULE CONFIG_VBOXDRV_AS_MISC
- ifdef VBOX_LINUX_VERSION_2_4
-  VBoxDrv_DEFS.linux     += EXPORT_SYMTAB
+ ifdef VBOX_WITHOUT_NATIVE_R0_LOADER
+  VBoxDrv_DEFS.win       += VBOX_WITHOUT_NATIVE_R0_LOADER
  endif
- VBoxDrv_DEFS.darwin     := VBOX_WITH_HOST_VMX
- #VBoxDrv_DEFS.debug      += DEBUG_DARWIN_GIP
+ ifdef VBOX_WITH_VMMR0_DISABLE_PREEMPTION
+  VBoxDrv_DEFS.win       += VBOX_WITH_VMMR0_DISABLE_PREEMPTION
+ endif
+
  VBoxDrv_INCS             = . $(VBoxDrv_0_OUTDIR)
  VBoxDrv_INCS.darwin      = ./darwin
  VBoxDrv_INCS.linux       = $(PATH_ROOT)/src/VBox/Runtime/r0drv/linux
+
  VBoxDrv_LIBS             = $(PATH_STAGE_LIB)/RuntimeR0Drv$(VBOX_SUFF_LIB)
- #VBoxDrv_LDFLAGS         = -v -Wl,-whyload -Wl,-v -Wl,-whatsloaded
  VBoxDrv_LIBS.linux.debug = $(VBoxDrv_LIBS) $(VBOX_GCC_LIBGCC)
+ VBoxDrv_LIBS.win         = \
+ 	$(PATH_SDK_W2K3DDK_LIB)/ntoskrnl.lib \
+ 	$(PATH_SDK_W2K3DDK_LIB)/hal.lib \
+ 	$(PATH_STAGE_LIB)/RuntimeR0Drv$(VBOX_SUFF_LIB)
+
+ #VBoxDrv_LDFLAGS.darwin    = -v -Wl,-whyload -Wl,-v -Wl,-whatsloaded
+ VBoxDrv_LDFLAGS.solaris += -N misc/ctf
+ VBoxDrv_LDFLAGS.win.x86  = -Entry:DriverEntry@8
+ VBoxDrv_LDFLAGS.win.amd64= -Entry:DriverEntry
 
  VBoxDrv_SOURCES.darwin   = darwin/SUPDrv-darwin.cpp
  VBoxDrv_SOURCES.solaris  = solaris/SUPDrv-solaris.c
+ VBoxDrv_SOURCES.win      = \
+	win/SUPDrv-win.cpp \
+	win/SUPDrvA-win.asm \
+	win/SUPDrv.rc
  VBoxDrv_SOURCES          = \
  	SUPDrv.c \
  	SUPDrvSem.c \
@@ -352,18 +316,20 @@ if1of ($(KBUILD_TARGET), darwin linux solaris)
   VBoxDrv_SOURCES        += \
  	SUPDrvTracerA.asm
  endif
- ifdef VBOX_WITH_DTRACE_R0DRV
+ ifndef VBOX_LINUX_VERSION_2_4
+  VBoxDrv_SOURCES.linux  += \
+ 	linux/SUPDrv-linux.mod.c
+ endif
+
+ ifdef VBOX_WITH_DTRACE_R0DRV # FIXME
   VBoxDrv_SOURCES        += \
   	SUPDrv-dtrace.cpp
   VBoxDrv_DTRACE_OBJ_FLAGS.solaris = --probe-fn-name=dtrace_probe
   VBoxDrv_LDFLAGS.solaris+= -N misc/dtrace
  endif
- VBoxDrv_LDFLAGS.solaris += -N misc/ctf
- ifndef VBOX_LINUX_VERSION_2_4
-  VBoxDrv_SOURCES.linux  += \
- 	linux/SUPDrv-linux.mod.c
- endif
+
 endif
+
 
 
 if1of ($(KBUILD_TARGET), darwin)
@@ -429,6 +395,36 @@ if1of ($(KBUILD_TARGET), linux)
  endif
 	%$(QUIET2)$(APPEND) -t '$(PATH_TARGET)/vboxdrv-mod-1.dep' 'Support/linux/Makefile_VBOX_HARDENED=$(VBOX_WITH_HARDENING)'
 endif # real linux
+
+
+ifeq ($(KBUILD_TARGET), win)
+ INSTALLS.win += VBoxDrv-inf
+ VBoxDrv-inf_INST = $(INST_BIN)
+ VBoxDrv-inf_MODE = a+r,u+w
+ VBoxDrv-inf_SOURCES = \
+ 	$(PATH_TARGET)/VBoxDrvCat.dir/VBoxDrv.inf
+ VBoxDrv-inf_CLEAN = $(VBoxDrv-inf_SOURCES)
+ VBoxDrv-inf_BLDDIRS = $(PATH_TARGET)/VBoxDrvCat.dir
+
+ $(PATH_TARGET)/VBoxDrvCat.dir/VBoxDrv.inf: $(PATH_SUB_CURRENT)/win/VBoxDrv.inf $(MAKEFILE_CURRENT) | $$(dir $$@)
+	$(call MSG_GENERATE,VBoxDrv-inf,$@,$<)
+	$(call VBOX_EDIT_INF_FN,$<,$@)
+
+ ifdef VBOX_SIGNING_MODE
+  VBoxDrv-inf_SOURCES += \
+  	$(PATH_TARGET)/VBoxDrvCat.dir/VBoxDrv.sys \
+  	$(PATH_TARGET)/VBoxDrvCat.dir/VBoxDrv.cat
+
+  $(PATH_TARGET)/VBoxDrvCat.dir/VBoxDrv.sys: $$(VBoxDrv_1_TARGET) | $$(dir $$@)
+	$(INSTALL) -m 644 $< $(@D)
+
+  $(PATH_TARGET)/VBoxDrvCat.dir/VBoxDrv.cat: \
+		$(PATH_TARGET)/VBoxDrvCat.dir/VBoxDrv.inf \
+		$(PATH_TARGET)/VBoxDrvCat.dir/VBoxDrv.sys
+	$(call MSG_TOOL,Inf2Cat,VBoxDrv-inf,$@,$<)
+	$(call VBOX_MAKE_CAT_FN, $(@D),$@)
+ endif # signing
+endif # win
 
 
 endif # !VBOX_ONLY_DOCS && !VBOX_ONLY_EXTPACKS && !VBOX_ONLY_TESTSUITE
