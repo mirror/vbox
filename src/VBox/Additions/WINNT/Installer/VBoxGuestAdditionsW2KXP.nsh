@@ -691,6 +691,7 @@ d3d_uninstall_end:
     DetailPrint "Removing auto-logon support ..."
     DeleteRegValue HKLM "SOFTWARE\Microsoft\Windows NT\CurrentVersion\WinLogon" "GinaDLL"
   ${EndIf}
+  DeleteRegKey HKLM "SOFTWARE\Microsoft\Windows NT\CurrentVersion\WinLogon\Notify\VBoxGINA"
 
   ; Delete VBoxTray
   Call ${un}StopVBoxTray

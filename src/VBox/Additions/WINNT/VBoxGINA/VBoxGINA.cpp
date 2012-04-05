@@ -260,7 +260,9 @@ BOOL WINAPI WlxInitialize(LPWSTR lpWinsta, HANDLE hWlx, PVOID pvReserved,
     hookDialogBoxes(pWlxFuncs, wlxVersion);
 
     /* Forward call */
-    return GWlxInitialize(lpWinsta, hWlx, pvReserved, pWinlogonFunctions, pWlxContext);
+    if (GWlxInitialize)
+        return GWlxInitialize(lpWinsta, hWlx, pvReserved, pWinlogonFunctions, pWlxContext);
+    return TRUE;
 }
 
 
@@ -282,7 +284,8 @@ VOID WINAPI WlxDisplaySASNotice(PVOID pWlxContext)
         /* start the credentials poller thread */
         VBoxGINACredentialsPollerCreate();
         /* Forward call to MSGINA. */
-        GWlxDisplaySASNotice(pWlxContext);
+        if (GWlxDisplaySASNotice)
+            GWlxDisplaySASNotice(pWlxContext);
     }
 }
 
@@ -298,23 +301,28 @@ int WINAPI WlxLoggedOutSAS(PVOID pWlxContext, DWORD dwSasType, PLUID pAuthentica
     if (RT_FAILURE(rc))
         VBoxGINACredentialsPollerCreate();
 
-    int iRet;
-    iRet = GWlxLoggedOutSAS(pWlxContext, dwSasType, pAuthenticationId, pLogonSid,
-                            pdwOptions, phToken, pMprNotifyInfo, pProfile);
-
-    if (iRet == WLX_SAS_ACTION_LOGON)
+    if (GWlxLoggedOutSAS)
     {
-        //
-        // Copy pMprNotifyInfo and pLogonSid for later use
-        //
+        int iRet;
+        iRet = GWlxLoggedOutSAS(pWlxContext, dwSasType, pAuthenticationId, pLogonSid,
+                                pdwOptions, phToken, pMprNotifyInfo, pProfile);
 
-        // pMprNotifyInfo->pszUserName
-        // pMprNotifyInfo->pszDomain
-        // pMprNotifyInfo->pszPassword
-        // pMprNotifyInfo->pszOldPassword
+        if (iRet == WLX_SAS_ACTION_LOGON)
+        {
+            //
+            // Copy pMprNotifyInfo and pLogonSid for later use
+            //
+
+            // pMprNotifyInfo->pszUserName
+            // pMprNotifyInfo->pszDomain
+            // pMprNotifyInfo->pszPassword
+            // pMprNotifyInfo->pszOldPassword
+        }
+
+        return iRet;
     }
 
-    return iRet;
+    return WLX_SAS_ACTION_NONE;
 }
 
 
@@ -333,7 +341,9 @@ BOOL WINAPI WlxActivateUserShell(PVOID pWlxContext, PWSTR pszDesktopName,
     VBoxGINAReportStatus(VBoxGuestFacilityStatus_Terminated);
 
     /* Forward call to MSGINA. */
-    return GWlxActivateUserShell(pWlxContext, pszDesktopName, pszMprLogonScript, pEnvironment);
+    if (GWlxActivateUserShell)
+        return GWlxActivateUserShell(pWlxContext, pszDesktopName, pszMprLogonScript, pEnvironment);
+    return TRUE; /* Activate the user shell. */
 }
 
 
@@ -349,7 +359,9 @@ int WINAPI WlxLoggedOnSAS(PVOID pWlxContext, DWORD dwSasType, PVOID pReserved)
 
     /* Forward call to MSGINA. */
     VBoxGINAVerbose(0, "VBoxGINA::WlxLoggedOnSAS: Forwarding call to MSGINA ...\n");
-    return GWlxLoggedOnSAS(pWlxContext, dwSasType, pReserved);
+    if (GWlxLoggedOnSAS)
+        return GWlxLoggedOnSAS(pWlxContext, dwSasType, pReserved);
+    return WLX_SAS_ACTION_NONE;
 }
 
 VOID WINAPI WlxDisplayLockedNotice(PVOID pWlxContext)
@@ -370,7 +382,8 @@ VOID WINAPI WlxDisplayLockedNotice(PVOID pWlxContext)
         /* start the credentials poller thread */
         VBoxGINACredentialsPollerCreate();
         /* Forward call to MSGINA. */
-        GWlxDisplayLockedNotice(pWlxContext);
+        if (GWlxDisplayLockedNotice)
+            GWlxDisplayLockedNotice(pWlxContext);
     }
 }
 
@@ -381,8 +394,11 @@ VOID WINAPI WlxDisplayLockedNotice(PVOID pWlxContext)
 BOOL WINAPI WlxIsLockOk(PVOID pWlxContext)
 {
     VBoxGINAVerbose(0, "VBoxGINA::WlxIsLockOk\n");
+
     /* Forward call to MSGINA. */
-    return GWlxIsLockOk(pWlxContext);
+    if (GWlxIsLockOk)
+        return GWlxIsLockOk(pWlxContext);
+    return TRUE; /* Locking is OK. */
 }
 
 
@@ -396,7 +412,9 @@ int WINAPI WlxWkstaLockedSAS(PVOID pWlxContext, DWORD dwSasType)
         VBoxGINACredentialsPollerCreate();
 
     /* Forward call to MSGINA. */
-    return GWlxWkstaLockedSAS(pWlxContext, dwSasType);
+    if (GWlxWkstaLockedSAS)
+        return GWlxWkstaLockedSAS(pWlxContext, dwSasType);
+    return WLX_SAS_ACTION_NONE;
 }
 
 
@@ -404,7 +422,9 @@ BOOL WINAPI WlxIsLogoffOk(PVOID pWlxContext)
 {
     VBoxGINAVerbose(0, "VBoxGINA::WlxIsLogoffOk\n");
 
-    return GWlxIsLogoffOk(pWlxContext);
+    if (GWlxIsLogoffOk)
+        return GWlxIsLogoffOk(pWlxContext);
+    return TRUE; /* Log off is OK. */
 }
 
 
@@ -420,7 +440,8 @@ VOID WINAPI WlxLogoff(PVOID pWlxContext)
      * when VBoxGINA gets the chance to hook the dialogs (again). */
 
     /* Forward call to MSGINA. */
-    GWlxLogoff(pWlxContext);
+    if (GWlxLogoff)
+        GWlxLogoff(pWlxContext);
 }
 
 
@@ -441,7 +462,8 @@ VOID WINAPI WlxShutdown(PVOID pWlxContext, DWORD ShutdownType)
     VBoxGINAReportStatus(VBoxGuestFacilityStatus_Inactive);
 
     /* Forward call to MSGINA. */
-    GWlxShutdown(pWlxContext, ShutdownType);
+    if (GWlxShutdown)
+        GWlxShutdown(pWlxContext, ShutdownType);
 }
 
 
@@ -453,11 +475,11 @@ BOOL WINAPI WlxScreenSaverNotify(PVOID pWlxContext, BOOL *pSecure)
     VBoxGINAVerbose(0, "VBoxGINA::WlxScreenSaverNotify, pSecure=%d\n",
                     pSecure ? *pSecure : 0);
 
-    /* Report / set back status to "active" since the screensaver
-     * (Winlogon) does give VBoxGINA yet the chance to hook into dialogs
+    /* Report the status to "init" since the screensaver
+     * (Winlogon) does not give VBoxGINA yet the chance to hook into dialogs
      * which only then in turn would set the status to "active" -- so
-     * do this here explicitly. */
-    VBoxGINAReportStatus(VBoxGuestFacilityStatus_Active);
+     * at least set some status here. */
+    VBoxGINAReportStatus(VBoxGuestFacilityStatus_Init);
 
     /* Note: Disabling the screensaver's grace period is necessary to get
      *       VBoxGINA loaded and set the status to "terminated" again properly
@@ -570,6 +592,24 @@ VOID WINAPI WlxDisconnectNotify(PVOID pWlxContext)
     /* Forward to MSGINA if present. */
     if (GWlxDisconnectNotify)
         GWlxDisconnectNotify(pWlxContext);
+}
+
+
+/*
+ * Windows Notification Package callbacks
+ */
+void WnpScreenSaverStop(PWLX_NOTIFICATION_INFO pInfo)
+{
+    VBoxGINAVerbose(0, "VBoxGINA::WnpScreenSaverStop\n");
+
+    /*
+     * Because we set the status to "init" in WlxScreenSaverNotify when
+     * the screensaver becomes active we also have to take into account
+     * that in case the screensaver terminates (either within the grace
+     * period or because the lock screen appears) we have to set the
+     * status accordingly.
+     */
+    VBoxGINAReportStatus(VBoxGuestFacilityStatus_Terminated);
 }
 
 
