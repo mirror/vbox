@@ -2684,7 +2684,7 @@ static NTSTATUS vboxWddmSubmitCmd(PVBOXMP_DEVEXT pDevExt, VBOXVDMAPIPE_CMD_DMACM
     }
     else
     {
-        vboxVdmaGgCmdDestroy(pDevExt, &pCmd->Hdr);
+        vboxVdmaGgCmdRelease(pDevExt, &pCmd->Hdr);
     }
     return Status;
 }
@@ -2697,12 +2697,18 @@ static NTSTATUS vboxWddmSubmitBltCmd(PVBOXMP_DEVEXT pDevExt, VBOXWDDM_CONTEXT *p
     if (pBltCmd)
     {
         VBOXWDDM_SOURCE *pSource = &pDevExt->aSources[pBlt->Blt.DstAlloc.srcId];
-        vboxVdmaGgCmdDmaNotifyInit(&pBltCmd->Hdr, pContext->NodeOrdinal, u32FenceId, NULL, NULL);
+        vboxVdmaGgCmdDmaNotifyInit(&pBltCmd->Hdr, pContext->NodeOrdinal, u32FenceId, vboxVdmaGgDdiCmdRelease, pBltCmd);
         pBltCmd->Hdr.fFlags = fBltFlags;
         pBltCmd->Hdr.pContext = pContext;
         pBltCmd->Hdr.enmCmd = VBOXVDMACMD_TYPE_DMA_PRESENT_BLT;
         memcpy(&pBltCmd->Blt, &pBlt->Blt, RT_OFFSETOF(VBOXVDMA_BLT, DstRects.UpdateRects.aRects[pBlt->Blt.DstRects.UpdateRects.cRects]));
-        vboxWddmSubmitCmd(pDevExt, &pBltCmd->Hdr);
+        Status = vboxWddmSubmitCmd(pDevExt, &pBltCmd->Hdr);
+        if (Status != STATUS_SUCCESS)
+        {
+            WARN(("vboxWddmSubmitCmd failed, Status 0x%x", Status));
+            Status = STATUS_SUCCESS;
+        }
+        vboxVdmaGgCmdRelease(pDevExt, &pBltCmd->Hdr.Hdr);
     }
     else
     {
@@ -3025,14 +3031,16 @@ DxgkDdiSubmitCommand(
             if (pFlipCmd)
             {
                 VBOXWDDM_SOURCE *pSource = &pDevExt->aSources[pFlip->Flip.Alloc.srcId];
-                vboxVdmaGgCmdDmaNotifyInit(&pFlipCmd->Hdr, pContext->NodeOrdinal, pSubmitCommand->SubmissionFenceId, NULL, NULL);
+                vboxVdmaGgCmdDmaNotifyInit(&pFlipCmd->Hdr, pContext->NodeOrdinal, pSubmitCommand->SubmissionFenceId, vboxVdmaGgDdiCmdRelease, pFlipCmd);
                 pFlipCmd->Hdr.fFlags.Value = 0;
                 pFlipCmd->Hdr.fFlags.fVisibleRegions = 1;
                 pFlipCmd->Hdr.pContext = pContext;
                 pFlipCmd->Hdr.enmCmd = VBOXVDMACMD_TYPE_DMA_PRESENT_FLIP;
                 memcpy(&pFlipCmd->Flip, &pFlip->Flip, sizeof (pFlipCmd->Flip));
                 Status = vboxWddmSubmitCmd(pDevExt, &pFlipCmd->Hdr);
-                Assert(Status == STATUS_SUCCESS);
+                if (Status != STATUS_SUCCESS)
+                    WARN(("vboxWddmSubmitCmd failed, Status 0x%x", Status));
+                vboxVdmaGgCmdRelease(pDevExt, &pFlipCmd->Hdr.Hdr);
             }
             else
             {
@@ -3049,15 +3057,17 @@ DxgkDdiSubmitCommand(
             Assert(pCFCmd);
             if (pCFCmd)
             {
-//                VBOXWDDM_SOURCE *pSource = &pDevExt->aSources[pFlip->Flip.Alloc.srcId];
-                vboxVdmaGgCmdDmaNotifyInit(&pCFCmd->Hdr, pContext->NodeOrdinal, pSubmitCommand->SubmissionFenceId, NULL, NULL);
+                vboxVdmaGgCmdDmaNotifyInit(&pCFCmd->Hdr, pContext->NodeOrdinal, pSubmitCommand->SubmissionFenceId, vboxVdmaGgDdiCmdRelease, pCFCmd);
                 pCFCmd->Hdr.fFlags.Value = 0;
                 pCFCmd->Hdr.fFlags.fRealOp = 1;
                 pCFCmd->Hdr.pContext = pContext;
                 pCFCmd->Hdr.enmCmd = VBOXVDMACMD_TYPE_DMA_PRESENT_CLRFILL;
                 memcpy(&pCFCmd->ClrFill, &pCF->ClrFill, RT_OFFSETOF(VBOXVDMA_CLRFILL, Rects.aRects[pCF->ClrFill.Rects.cRects]));
                 Status = vboxWddmSubmitCmd(pDevExt, &pCFCmd->Hdr);
-                Assert(Status == STATUS_SUCCESS);
+                if (Status != STATUS_SUCCESS)
+                    WARN(("vboxWddmSubmitCmd failed, Status 0x%x", Status));
+                vboxVdmaGgCmdRelease(pDevExt, &pCFCmd->Hdr.Hdr);
+
             }
             else
             {
