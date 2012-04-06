@@ -5,7 +5,7 @@
 #
 
 #
-# Copyright (C) 2007-2010 Oracle Corporation
+# Copyright (C) 2007-2012 Oracle Corporation
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;
@@ -52,6 +52,7 @@ FILES_VBOXDRV_NOBIN=" \
     ${PATH_ROOT}/include/iprt/path.h=>include/iprt/path.h \
     ${PATH_ROOT}/include/iprt/power.h=>include/iprt/power.h \
     ${PATH_ROOT}/include/iprt/process.h=>include/iprt/process.h \
+    ${PATH_ROOT}/include/iprt/rand.h=>include/iprt/rand.h \
     ${PATH_ROOT}/include/iprt/semaphore.h=>include/iprt/semaphore.h \
     ${PATH_ROOT}/include/iprt/spinlock.h=>include/iprt/spinlock.h \
     ${PATH_ROOT}/include/iprt/stdarg.h=>include/iprt/stdarg.h \
@@ -114,6 +115,10 @@ FILES_VBOXDRV_NOBIN=" \
     ${PATH_ROOT}/src/VBox/Runtime/common/misc/handletablectx.cpp=>common/misc/handletablectx.c \
     ${PATH_ROOT}/src/VBox/Runtime/common/misc/thread.cpp=>common/misc/thread.c \
     ${PATH_ROOT}/src/VBox/Runtime/common/string/RTStrCopyP.cpp=>common/string/RTStrCopyP.c \
+    ${PATH_ROOT}/src/VBox/Runtime/common/string/RTStrCopy.cpp=>common/string/RTStrCopy.c \
+    ${PATH_ROOT}/src/VBox/Runtime/common/string/RTStrNCmp.cpp=>common/string/RTStrNCmp.c \
+    ${PATH_ROOT}/src/VBox/Runtime/common/string/RTStrNLen.cpp=>common/string/RTStrNLen.c \
+    ${PATH_ROOT}/src/VBox/Runtime/common/string/stringalloc.cpp=>common/string/stringalloc.c \
     ${PATH_ROOT}/src/VBox/Runtime/common/string/strformat.cpp=>common/string/strformat.c \
     ${PATH_ROOT}/src/VBox/Runtime/common/string/strformatrt.cpp=>common/string/strformatrt.c \
     ${PATH_ROOT}/src/VBox/Runtime/common/string/strformattype.cpp=>common/string/strformattype.c \

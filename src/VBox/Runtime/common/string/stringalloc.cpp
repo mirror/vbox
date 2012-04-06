@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2010 Oracle Corporation
+ * Copyright (C) 2006-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -61,7 +61,7 @@ RTDECL(int) RTStrAllocExTag(char **ppsz, size_t cb, const char *pszTag)
     }
     return VERR_NO_STR_MEMORY;
 }
-RT_EXPORT_SYMBOL(RTStrAllocTag);
+RT_EXPORT_SYMBOL(RTStrAllocExTag);
 
 
 RTDECL(int) RTStrReallocTag(char **ppsz, size_t cbNew, const char *pszTag)
@@ -103,7 +103,9 @@ RT_EXPORT_SYMBOL(RTStrFree);
 
 RTDECL(char *) RTStrDupTag(const char *pszString, const char *pszTag)
 {
+#if defined(__cplusplus)
     AssertPtr(pszString);
+#endif
     size_t cch = strlen(pszString) + 1;
     char *psz = (char *)RTMemAllocTag(cch, pszTag);
     if (psz)
@@ -115,8 +117,10 @@ RT_EXPORT_SYMBOL(RTStrDupTag);
 
 RTDECL(int)  RTStrDupExTag(char **ppszString, const char *pszString, const char *pszTag)
 {
+#if defined(__cplusplus)
     AssertPtr(ppszString);
     AssertPtr(pszString);
+#endif
 
     size_t cch = strlen(pszString) + 1;
     char *psz = (char *)RTMemAllocTag(cch, pszTag);
@@ -133,7 +137,9 @@ RT_EXPORT_SYMBOL(RTStrDupExTag);
 
 RTDECL(char *) RTStrDupNTag(const char *pszString, size_t cchMax, const char *pszTag)
 {
+#if defined(__cplusplus)
     AssertPtr(pszString);
+#endif
     char const *pszEnd = RTStrEnd(pszString, cchMax);
     size_t      cch    = pszEnd ? (uintptr_t)pszEnd - (uintptr_t)pszString : cchMax;
     char       *pszDst = (char *)RTMemAllocTag(cch + 1, pszTag);
@@ -157,6 +163,9 @@ RTDECL(int) RTStrAAppendTag(char **ppsz, const char *pszAppend, const char *pszT
 
 RTDECL(int) RTStrAAppendNTag(char **ppsz, const char *pszAppend, size_t cchAppend, const char *pszTag)
 {
+    size_t cchOrg;
+    char  *pszNew;
+
     if (!cchAppend)
         return VINF_SUCCESS;
     if (cchAppend == RTSTR_MAX)
@@ -164,8 +173,8 @@ RTDECL(int) RTStrAAppendNTag(char **ppsz, const char *pszAppend, size_t cchAppen
     else
         Assert(cchAppend == RTStrNLen(pszAppend, cchAppend));
 
-    size_t const cchOrg = *ppsz ? strlen(*ppsz) : 0;
-    char *pszNew = (char *)RTMemReallocTag(*ppsz, cchOrg + cchAppend + 1, pszTag);
+    cchOrg = *ppsz ? strlen(*ppsz) : 0;
+    pszNew = (char *)RTMemReallocTag(*ppsz, cchOrg + cchAppend + 1, pszTag);
     if (!pszNew)
         return VERR_NO_STR_MEMORY;
 
@@ -246,27 +255,29 @@ RT_EXPORT_SYMBOL(RTStrAAppendExNVTag);
 
 RTDECL(int) RTStrATruncateTag(char **ppsz, size_t cchNew, const char *pszTag)
 {
+    char *pszNew;
     char *pszOld = *ppsz;
     if (!cchNew)
     {
         if (pszOld && *pszOld)
         {
             *pszOld = '\0';
-            char *pszNew = (char *)RTMemReallocTag(pszOld, 1, pszTag);
+            pszNew = (char *)RTMemReallocTag(pszOld, 1, pszTag);
             if (pszNew)
                 *ppsz = pszNew;
         }
     }
     else
     {
+        char *pszZero;
         AssertPtrReturn(pszOld, VERR_OUT_OF_RANGE);
         AssertReturn(cchNew < ~(size_t)64, VERR_OUT_OF_RANGE);
-        char *pszZero = RTStrEnd(pszOld, cchNew + 63);
+        pszZero = RTStrEnd(pszOld, cchNew + 63);
         AssertReturn(!pszZero || (size_t)(pszZero - pszOld) >= cchNew, VERR_OUT_OF_RANGE);
         pszOld[cchNew] = '\0';
         if (!pszZero)
         {
-            char *pszNew = (char *)RTMemReallocTag(pszOld,  cchNew + 1, pszTag);
+            pszNew = (char *)RTMemReallocTag(pszOld,  cchNew + 1, pszTag);
             if (pszNew)
                 *ppsz = pszNew;
         }

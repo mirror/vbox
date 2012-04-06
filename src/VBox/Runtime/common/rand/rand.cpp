@@ -60,9 +60,6 @@ static RTRAND g_hRand = NIL_RTRAND;
  */
 static DECLCALLBACK(int) rtRandInitOnce(void *pvUser1, void *pvUser2)
 {
-    NOREF(pvUser1);
-    NOREF(pvUser2);
-
     RTRAND hRand;
     int rc = RTRandAdvCreateSystemFaster(&hRand);
     if (RT_FAILURE(rc))
@@ -79,6 +76,8 @@ static DECLCALLBACK(int) rtRandInitOnce(void *pvUser1, void *pvUser2)
     else
         AssertRC(rc);
 
+    NOREF(pvUser1);
+    NOREF(pvUser2);
     return rc;
 }
 
