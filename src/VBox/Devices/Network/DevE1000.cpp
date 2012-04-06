@@ -978,6 +978,11 @@ struct E1kState_st
     bool        fR0Enabled;
     /** EMT: */
     bool        fGCEnabled;
+    /** EMT: Compute Ethernet CRC for RX packets. */
+    bool        fEthernetCRC;
+#if HC_ARCH_BITS == 64
+    uint32_t                Alignment2;
+#endif
 
     /** All: Device register storage. */
     uint32_t    auRegs[E1K_NUM_OF_32BIT_REGS];
@@ -1073,6 +1078,7 @@ struct E1kState_st
     STAMCOUNTER                         StatIntsRaised;
     STAMCOUNTER                         StatIntsPrevented;
     STAMPROFILEADV                      StatReceive;
+    STAMPROFILEADV                      StatReceiveCRC;
     STAMPROFILEADV                      StatReceiveFilter;
     STAMPROFILEADV                      StatReceiveStore;
     STAMPROFILEADV                      StatTransmitRZ;
@@ -2038,9 +2044,16 @@ static int e1kHandleRxPacket(E1KSTATE* pState, const void *pvBuf, size_t cb, E1K
     }
     if (!(RCTL & RCTL_SECRC))
     {
-        /* Add FCS if CRC stripping is not enabled */
-        *(uint32_t*)(rxPacket + cb) = RTCrc32(rxPacket, cb);
+        STAM_PROFILE_ADV_START(&pState->StatReceiveCRC, a);
+        /*
+         * Add FCS if CRC stripping is not enabled. Since the value of CRC
+         * is ignored by most of drivers we may as well save us the trouble
+         * of calculating it (see EthernetCRC CFGM parameter).
+         */
+        if (pState->fEthernetCRC)
+            *(uint32_t*)(rxPacket + cb) = RTCrc32(rxPacket, cb);
         cb += sizeof(uint32_t);
+        STAM_PROFILE_ADV_STOP(&pState->StatReceiveCRC, a);
     }
     /* Compute checksum of complete packet */
     uint16_t checksum = e1kCSum16(rxPacket + GET_BITS(RXCSUM, PCSS), cb);
@@ -5895,7 +5908,9 @@ static DECLCALLBACK(int) e1kConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNO
     /*
      * Validate configuration.
      */
-    if (!CFGMR3AreValuesValid(pCfg, "MAC\0" "CableConnected\0" "AdapterType\0" "LineSpeed\0" "GCEnabled\0" "R0Enabled\0"))
+    if (!CFGMR3AreValuesValid(pCfg, "MAC\0" "CableConnected\0" "AdapterType\0"
+                                    "LineSpeed\0" "GCEnabled\0" "R0Enabled\0"
+                                    "EthernetCRC\0"))
         return PDMDEV_SET_ERROR(pDevIns, VERR_PDM_DEVINS_UNKNOWN_CFG_VALUES,
                                 N_("Invalid configuration for E1000 device"));
 
@@ -5903,6 +5918,7 @@ static DECLCALLBACK(int) e1kConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNO
 
     pState->fR0Enabled   = true;
     pState->fGCEnabled   = true;
+    pState->fEthernetCRC = true;
 
     /* Get config params */
     rc = CFGMR3QueryBytes(pCfg, "MAC", pState->macConfigured.au8,
@@ -5928,6 +5944,11 @@ static DECLCALLBACK(int) e1kConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNO
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Failed to get the value of 'R0Enabled'"));
+
+    rc = CFGMR3QueryBoolDef(pCfg, "EthernetCRC", &pState->fEthernetCRC, true);
+    if (RT_FAILURE(rc))
+        return PDMDEV_SET_ERROR(pDevIns, rc,
+                                N_("Configuration error: Failed to get the value of 'EthernetCRC'"));
 
     E1kLog(("%s Chip=%s\n", INSTANCE(pState), g_Chips[pState->eChip].pcszName));
 
@@ -6179,6 +6200,7 @@ static DECLCALLBACK(int) e1kConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNO
     PDMDevHlpSTAMRegisterF(pDevIns, &pState->StatIntsRaised,         STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,     "Number of raised interrupts",        "/Devices/E1k%d/Interrupts/Raised", iInstance);
     PDMDevHlpSTAMRegisterF(pDevIns, &pState->StatIntsPrevented,      STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,     "Number of prevented interrupts",     "/Devices/E1k%d/Interrupts/Prevented", iInstance);
     PDMDevHlpSTAMRegisterF(pDevIns, &pState->StatReceive,            STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling receive",                  "/Devices/E1k%d/Receive/Total", iInstance);
+    PDMDevHlpSTAMRegisterF(pDevIns, &pState->StatReceiveCRC,         STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling receive checksumming",     "/Devices/E1k%d/Receive/CRC", iInstance);
     PDMDevHlpSTAMRegisterF(pDevIns, &pState->StatReceiveFilter,      STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling receive filtering",        "/Devices/E1k%d/Receive/Filter", iInstance);
     PDMDevHlpSTAMRegisterF(pDevIns, &pState->StatReceiveStore,       STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling receive storing",          "/Devices/E1k%d/Receive/Store", iInstance);
     PDMDevHlpSTAMRegisterF(pDevIns, &pState->StatRxOverflow,         STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_OCCURENCE, "Profiling RX overflows",        "/Devices/E1k%d/RxOverflow", iInstance);
