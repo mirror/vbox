@@ -32,7 +32,7 @@ BEGINCODE
 ; @param    pszDst   gcc: rdi  msc: rcx  x86:[esp+4]
 ; @param    pszSrc   gcc: rsi  msc: rdx  x86:[esp+8]
 ; @param    cbMax    gcc: rdx  msc: r8   x86:[esp+12]
-RT_NOCRT_BEGINPROC strcpy
+RT_NOCRT_BEGINPROC strncpy
         ; input
 %ifdef RT_ARCH_AMD64
  %ifdef ASM_CALL64_MSC
@@ -116,5 +116,5 @@ RT_NOCRT_BEGINPROC strcpy
         pop     eax
 %endif
         ret
-ENDPROC RT_NOCRT(strcpy)
+ENDPROC RT_NOCRT(strncpy)
 
