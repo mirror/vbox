@@ -2026,13 +2026,21 @@ static int e1kHandleRxPacket(E1KSTATE* pState, const void *pvBuf, size_t cb, E1K
 
     Assert(cb <= E1K_MAX_RX_PKT_SIZE);
     Assert(cb > 16);
-    if (status.fVP && cb > 16)
+    if (status.fVP)
     {
-        uint16_t *u16Ptr = (uint16_t*)pvBuf;
-        /* VLAN packet -- strip VLAN tag */
-        memcpy(rxPacket, pvBuf, 12); /* Copy src and dst addresses */
-        status.u16Special = RT_BE2H_U16(u16Ptr[7]); /* Extract VLAN tag */
-        memcpy(rxPacket + 12, (uint8_t*)pvBuf + 16, cb - 16); /* Copy the rest of the packet */
+        /* VLAN packet -- strip VLAN tag in VLAN mode */
+        if ((CTRL & CTRL_VME) && cb > 16)
+        {
+            uint16_t *u16Ptr = (uint16_t*)pvBuf;
+            memcpy(rxPacket, pvBuf, 12); /* Copy src and dst addresses */
+            status.u16Special = RT_BE2H_U16(u16Ptr[7]); /* Extract VLAN tag */
+            memcpy(rxPacket + 12, (uint8_t*)pvBuf + 16, cb - 16); /* Copy the rest of the packet */
+            cb -= 4;
+            E1kLog3(("%s Stripped tag for VLAN %u (cb=%u)\n",
+                     INSTANCE(pState), status.u16Special, cb));
+        }
+        else
+            status.fVP = false; /* Set VP only if we stripped the tag */
     }
     else
         memcpy(rxPacket, pvBuf, cb);
@@ -4959,14 +4967,14 @@ static bool e1kAddressFilter(E1KSTATE *pState, const void *pvBuf, size_t cb, E1K
         return false;
     }
 
-    /* Is VLAN filtering enabled? */
-    if (RCTL & RCTL_VFE)
+    uint16_t *u16Ptr = (uint16_t*)pvBuf;
+    /* Compare TPID with VLAN Ether Type */
+    if (RT_BE2H_U16(u16Ptr[6]) == VET)
     {
-        uint16_t *u16Ptr = (uint16_t*)pvBuf;
-        /* Compare TPID with VLAN Ether Type */
-        if (RT_BE2H_U16(u16Ptr[6]) == VET)
+        pStatus->fVP = true;
+        /* Is VLAN filtering enabled? */
+        if (RCTL & RCTL_VFE)
         {
-            pStatus->fVP = true;
             /* It is 802.1q packet indeed, let's filter by VID */
             if (RCTL & RCTL_CFIEN)
             {
