@@ -274,7 +274,7 @@ static SUPFUNC g_aFunctions[] =
     { "RTSpinlockRelease",                      (void *)RTSpinlockRelease },
     { "RTSpinlockAcquireNoInts",                (void *)RTSpinlockAcquireNoInts },
     { "RTSpinlockReleaseNoInts",                (void *)RTSpinlockReleaseNoInts },
-    /*{ "RTTimeNow",                              (void *)RTTimeNow },*/
+    { "RTTimeNow",                              (void *)RTTimeNow },
     { "RTTimeNanoTS",                           (void *)RTTimeNanoTS },
     { "RTTimeMilliTS",                          (void *)RTTimeMilliTS },
     { "RTTimeSystemNanoTS",                     (void *)RTTimeSystemNanoTS },
