@@ -1602,6 +1602,8 @@ RuntimeR0Drv_SOURCES    = \
 	common/checksum/md5.cpp \
 	common/checksum/ipv4.cpp \
 	common/checksum/ipv6.cpp \
+	common/err/RTErrConvertToErrno.cpp \
+	common/err/RTErrConvertFromErrno.cpp \
 	common/log/log.cpp \
 	common/log/logellipsis.cpp \
 	common/log/logrel.cpp \
@@ -1687,8 +1689,6 @@ RuntimeR0Drv_SOURCES    = \
 RuntimeR0Drv_SOURCES.linux = \
 	common/misc/thread.cpp \
 	common/string/strpbrk.cpp \
-	common/err/RTErrConvertToErrno.cpp \
-	common/err/RTErrConvertFromErrno.cpp \
 	generic/RTAssertShouldPanic-generic.cpp \
 	generic/RTLogWriteStdOut-stub-generic.cpp \
 	generic/mppresent-generic.cpp \
@@ -1756,7 +1756,6 @@ RuntimeR0Drv_SOURCES.win.amd64 = $(RuntimeWin64ASM_SOURCES)
 RuntimeR0Drv_SOURCES.win.x86   = $(RuntimeWin32ASM_SOURCES)
 
 RuntimeR0Drv_SOURCES.darwin = \
-	common/err/RTErrConvertFromErrno.cpp \
 	common/misc/thread.cpp \
 	common/string/memchr.asm \
 	common/string/strpbrk.cpp \
@@ -1851,8 +1850,6 @@ RuntimeR0Drv_SOURCES.os2 = \
 	r0drv/os2/timerA-r0drv-os2.asm
 
 RuntimeR0Drv_SOURCES.freebsd = \
-	common/err/RTErrConvertFromErrno.cpp \
-	common/err/RTErrConvertToErrno.cpp \
 	common/misc/thread.cpp \
 	common/string/memchr.asm \
 	common/string/memmove.asm \
@@ -1886,8 +1883,6 @@ RuntimeR0Drv_SOURCES.freebsd = \
 	r0drv/powernotification-r0drv.c
 
 RuntimeR0Drv_SOURCES.solaris = \
-	common/err/RTErrConvertFromErrno.cpp \
-	common/err/RTErrConvertToErrno.cpp \
 	common/misc/thread.cpp \
 	common/string/memchr.asm \
 	generic/RTAssertShouldPanic-generic.cpp \
