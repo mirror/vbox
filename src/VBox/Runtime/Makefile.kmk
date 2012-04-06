@@ -201,6 +201,7 @@ RuntimeNoCrt_SOURCES = \
 	common/string/memset.asm \
 	common/string/strchr.asm \
 	common/string/strcpy.asm \
+	common/string/strncpy.asm \
 	common/string/strcmp.asm \
 	common/string/strlen.asm
 endif
