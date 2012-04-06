@@ -1147,8 +1147,8 @@ RuntimeGuestR3Mini_SOURCES = \
 	common/string/RTStrCopyP.cpp \
 	common/string/RTStrCopyPEx.cpp \
 	common/string/RTStrNCmp.cpp \
-        common/string/RTStrNLen.cpp \
-        common/string/RTStrNLenEx.cpp \
+	common/string/RTStrNLen.cpp \
+	common/string/RTStrNLenEx.cpp \
 	common/string/RTStrStr.cpp \
 	common/string/straprintf.cpp \
 	common/string/strformat.cpp \
