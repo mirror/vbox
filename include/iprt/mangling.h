@@ -1223,6 +1223,7 @@
 # define RTSpinlockCreate                               RT_MANGLER(RTSpinlockCreate)
 # define RTSpinlockDestroy                              RT_MANGLER(RTSpinlockDestroy)
 # define RTSpinlockRelease                              RT_MANGLER(RTSpinlockRelease)
+# define RTSpinlockReleaseNoInts                        RT_MANGLER(RTSpinlockReleaseNoInts)
 # define RTStrAAppendExNVTag                            RT_MANGLER(RTStrAAppendExNVTag)
 # define RTStrAAppendNTag                               RT_MANGLER(RTStrAAppendNTag)
 # define RTStrAAppendTag                                RT_MANGLER(RTStrAAppendTag)

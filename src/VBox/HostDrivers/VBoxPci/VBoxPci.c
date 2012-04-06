@@ -81,7 +81,6 @@ DECLINLINE(int) vboxPciDevLock(PVBOXRAWPCIINS pThis)
 #else
     int rc = RTSemFastMutexRequest(pThis->hFastMtx);
 
-    NOREF(pTmp);
     AssertRC(rc);
     return rc;
 #endif
@@ -92,7 +91,6 @@ DECLINLINE(void) vboxPciDevUnlock(PVBOXRAWPCIINS pThis)
 #ifdef VBOX_WITH_SHARED_PCI_INTERRUPTS
     RTSpinlockReleaseNoInts(pThis->hSpinlock);
 #else
-    NOREF(pTmp);
     RTSemFastMutexRelease(pThis->hFastMtx);
 #endif
 }
@@ -484,8 +482,7 @@ static int vboxPciNewInstance(PVBOXRAWPCIGLOBALS pGlobals,
     pNew->DevPort.pfnPowerStateChange   = vboxPciDevPowerStateChange;
     pNew->DevPort.u32VersionEnd         = RAWPCIDEVPORT_VERSION;
 
-    rc = RTSpinlockCreate(&pNew->hSpinlock);
-
+    rc = RTSpinlockCreate(&pNew->hSpinlock, RTSPINLOCK_FLAGS_INTERRUPT_SAFE, "VBoxPCI");
     if (RT_SUCCESS(rc))
     {
         rc = RTSemFastMutexCreate(&pNew->hFastMtx);
