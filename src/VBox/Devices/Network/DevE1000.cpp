@@ -2026,6 +2026,8 @@ static int e1kHandleRxPacket(E1KSTATE* pState, const void *pvBuf, size_t cb, E1K
 
     Assert(cb <= E1K_MAX_RX_PKT_SIZE);
     Assert(cb > 16);
+    size_t cbMax = ((RCTL & RCTL_LPE) ? E1K_MAX_RX_PKT_SIZE - 4 : 1518) - (status.fVP ? 0 : 4);
+    E1kLog3(("%s Max RX packet size is %u\n", INSTANCE(pState), cbMax));
     if (status.fVP)
     {
         /* VLAN packet -- strip VLAN tag in VLAN mode */
@@ -2050,7 +2052,7 @@ static int e1kHandleRxPacket(E1KSTATE* pState, const void *pvBuf, size_t cb, E1K
         memset(rxPacket + cb, 0, 60 - cb);
         cb = 60;
     }
-    if (!(RCTL & RCTL_SECRC))
+    if (!(RCTL & RCTL_SECRC) && cb <= cbMax)
     {
         STAM_PROFILE_ADV_START(&pState->StatReceiveCRC, a);
         /*
@@ -2062,6 +2064,7 @@ static int e1kHandleRxPacket(E1KSTATE* pState, const void *pvBuf, size_t cb, E1K
             *(uint32_t*)(rxPacket + cb) = RTCrc32(rxPacket, cb);
         cb += sizeof(uint32_t);
         STAM_PROFILE_ADV_STOP(&pState->StatReceiveCRC, a);
+        E1kLog3(("%s Added FCS (cb=%u)\n", INSTANCE(pState), cb));
     }
     /* Compute checksum of complete packet */
     uint16_t checksum = e1kCSum16(rxPacket + GET_BITS(RXCSUM, PCSS), cb);
