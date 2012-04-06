@@ -223,6 +223,8 @@ static SUPFUNC g_aFunctions[] =
     { "RTCrc32Finish",                          (void *)RTCrc32Finish },
     { "RTCrc32Process",                         (void *)RTCrc32Process },
     { "RTCrc32Start",                           (void *)RTCrc32Start },
+    { "RTErrConvertFromErrno",                  (void *)RTErrConvertFromErrno },
+    { "RTErrConvertToErrno",                    (void *)RTErrConvertToErrno },
     { "RTHandleTableAllocWithCtx",              (void *)RTHandleTableAllocWithCtx },
     { "RTHandleTableCreate",                    (void *)RTHandleTableCreate },
     { "RTHandleTableCreateEx",                  (void *)RTHandleTableCreateEx },
@@ -408,8 +410,6 @@ static SUPFUNC g_aFunctions[] =
  */
 PFNRT g_apfnVBoxDrvIPRTDeps[] =
 {
-    /* VBoxNetFlt */
-    (PFNRT)RTErrConvertFromErrno,
     /* VBoxNetAdp */
     (PFNRT)RTRandBytes,
     /* VBoxUSB */
