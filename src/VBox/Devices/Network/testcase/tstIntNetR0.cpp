@@ -177,8 +177,9 @@ INTNETR3DECL(int) SUPR0MemFree(PSUPDRVSESSION pSession, RTHCUINTPTR uPtr)
 #define RTMpCpuId()                         0
 
 /* No CLI/POPF, please. */
-#define RTSpinlockAcquireNoInts             RTSpinlockAcquire
-#define RTSpinlockReleaseNoInts             RTSpinlockRelease
+#include <iprt/spinlock.h>
+#undef  RTSPINLOCK_FLAGS_INTERRUPT_SAFE
+#define RTSPINLOCK_FLAGS_INTERRUPT_SAFE     RTSPINLOCK_FLAGS_INTERRUPT_UNSAFE
 
 
 /* ugly but necessary for making R0 code compilable for R3. */

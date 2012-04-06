@@ -1058,18 +1058,17 @@ DECLHIDDEN(NTSTATUS) vboxNetFltWinQuInitPacketQueue(PVBOXNETFLTINS pInstance)
  */
 DECLHIDDEN(void) vboxNetFltWinQuFiniPacketQueue(PVBOXNETFLTINS pInstance)
 {
-    RTSPINLOCKTMP Tmp = RTSPINLOCKTMP_INITIALIZER;
     PINTNETSG pSG;
     PPACKET_QUEUE_WORKER pWorker = &pInstance->u.s.PacketQueueWorker;
     Assert(KeGetCurrentIrql() < DISPATCH_LEVEL);
 
     /* using the pPacketQueueSG as an indicator that the packet queue is initialized */
-    RTSpinlockAcquireNoInts((pInstance)->hSpinlock, &Tmp);
+    RTSpinlockAcquire((pInstance)->hSpinlock);
     if (pWorker->pSG)
     {
         pSG = pWorker->pSG;
         pWorker->pSG = NULL;
-        RTSpinlockReleaseNoInts((pInstance)->hSpinlock, &Tmp);
+        RTSpinlockReleaseNoInts((pInstance)->hSpinlock);
         KeSetEvent(&pWorker->KillEvent, 0, FALSE);
 
         KeWaitForSingleObject(pWorker->pThread, Executive,
@@ -1083,7 +1082,7 @@ DECLHIDDEN(void) vboxNetFltWinQuFiniPacketQueue(PVBOXNETFLTINS pInstance)
     }
     else
     {
-        RTSpinlockReleaseNoInts((pInstance)->hSpinlock, &Tmp);
+        RTSpinlockReleaseNoInts((pInstance)->hSpinlock);
     }
 }
 
@@ -1844,7 +1843,6 @@ DECLHIDDEN(NDIS_STATUS) vboxNetFltWinPtInitBind(PVBOXNETFLTINS *ppNetFlt, PNDIS_
         PVBOXNETFLTINS pInstance;
         USHORT cbAnsiName = pBindToMiniportName->Length;/* the length is is bytes ; *2 ;RtlUnicodeStringToAnsiSize(pBindToMiniportName)*/
         CREATE_INSTANCE_CONTEXT Context;
-        RTSPINLOCKTMP Tmp = RTSPINLOCKTMP_INITIALIZER;
 
 # ifndef VBOXNETADP
         Context.pOurName = pOurMiniportName;
@@ -2610,7 +2608,6 @@ static int vboxNetFltWinInitNetFlt()
 /* detach*/
 static int vboxNetFltWinDeleteInstance(PVBOXNETFLTINS pThis)
 {
-    RTSPINLOCKTMP Tmp = RTSPINLOCKTMP_INITIALIZER;
     LogFlow(("vboxNetFltWinDeleteInstance: pThis=0x%p \n", pThis));
 
     Assert(KeGetCurrentIrql() < DISPATCH_LEVEL);
@@ -2645,7 +2642,6 @@ static NDIS_STATUS vboxNetFltWinDisconnectIt(PVBOXNETFLTINS pInstance)
 /* detach*/
 DECLHIDDEN(NDIS_STATUS) vboxNetFltWinDetachFromInterface(PVBOXNETFLTINS pNetFlt, bool bOnUnbind)
 {
-    RTSPINLOCKTMP Tmp = RTSPINLOCKTMP_INITIALIZER;
     NDIS_STATUS Status;
     int rc;
     LogFlow((__FUNCTION__": pThis=%0xp\n", pNetFlt));
@@ -2786,7 +2782,6 @@ static void vboxNetFltWinAttachToInterfaceWorker(PATTACH_INFO pAttachInfo)
     rc = RTSemMutexRequest(pThis->u.s.hWinIfMutex, RT_INDEFINITE_WAIT);
     if (RT_SUCCESS(rc))
     {
-        RTSPINLOCKTMP Tmp = RTSPINLOCKTMP_INITIALIZER;
         Assert(vboxNetFltWinGetWinIfState(pThis) == kVBoxWinIfState_Disconnected);
         Assert(vboxNetFltWinGetOpState(&pThis->u.s.WinIf.MpState) == kVBoxNetDevOpState_Deinitialized);
 #ifndef VBOXNETADP
@@ -2829,9 +2824,9 @@ static void vboxNetFltWinAttachToInterfaceWorker(PATTACH_INFO pAttachInfo)
                         Assert(vboxNetFltWinGetOpState(&pThis->u.s.WinIf.PtState) == kVBoxNetDevOpState_Initialized);
 #endif
                         /* 4. mark as connected */
-                        RTSpinlockAcquireNoInts(pThis->hSpinlock, &Tmp);
+                        RTSpinlockAcquire(pThis->hSpinlock);
                         ASMAtomicUoWriteBool(&pThis->fDisconnectedFromHost, false);
-                        RTSpinlockReleaseNoInts(pThis->hSpinlock, &Tmp);
+                        RTSpinlockRelease(pThis->hSpinlock);
 
                         pAttachInfo->Status = VINF_SUCCESS;
                         pAttachInfo->pCreateContext->Status = NDIS_STATUS_SUCCESS;

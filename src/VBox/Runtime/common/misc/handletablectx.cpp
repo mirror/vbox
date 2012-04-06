@@ -45,7 +45,6 @@
 RTDECL(int)     RTHandleTableAllocWithCtx(RTHANDLETABLE hHandleTable, void *pvObj, void *pvCtx, uint32_t *ph)
 {
     PRTHANDLETABLEINT   pThis;
-    RTSPINLOCKTMP       Tmp /*= no init */;
     int                 rc;
 
     /* validate the input */
@@ -60,7 +59,7 @@ RTDECL(int)     RTHandleTableAllocWithCtx(RTHANDLETABLE hHandleTable, void *pvOb
     /*
      * Allocation loop.
      */
-    rtHandleTableLock(pThis, &Tmp);
+    rtHandleTableLock(pThis);
 
     do
     {
@@ -115,7 +114,7 @@ RTDECL(int)     RTHandleTableAllocWithCtx(RTHANDLETABLE hHandleTable, void *pvOb
             Assert(!cLevel1 || pThis->cMax / RTHT_LEVEL2_ENTRIES >= RTHT_LEVEL1_DYN_ALLOC_THRESHOLD);
 
             /* leave the lock (never do fancy stuff from behind a spinlock). */
-            rtHandleTableUnlock(pThis, &Tmp);
+            rtHandleTableUnlock(pThis);
 
             /*
              * Do the allocation(s).
@@ -137,7 +136,7 @@ RTDECL(int)     RTHandleTableAllocWithCtx(RTHANDLETABLE hHandleTable, void *pvOb
             }
 
             /* re-enter the lock. */
-            rtHandleTableLock(pThis, &Tmp);
+            rtHandleTableLock(pThis);
 
             /*
              * Insert the new bits, but be a bit careful as someone might have
@@ -161,9 +160,9 @@ RTDECL(int)     RTHandleTableAllocWithCtx(RTHANDLETABLE hHandleTable, void *pvOb
                 }
 
                 /* free the obsolete one (outside the lock of course) */
-                rtHandleTableUnlock(pThis, &Tmp);
+                rtHandleTableUnlock(pThis);
                 RTMemFree(papvLevel1);
-                rtHandleTableLock(pThis, &Tmp);
+                rtHandleTableLock(pThis);
             }
 
             /* insert the table we allocated. */
@@ -199,16 +198,16 @@ RTDECL(int)     RTHandleTableAllocWithCtx(RTHANDLETABLE hHandleTable, void *pvOb
             else
             {
                 /* free the table (raced someone, and we lost). */
-                rtHandleTableUnlock(pThis, &Tmp);
+                rtHandleTableUnlock(pThis);
                 RTMemFree(paTable);
-                rtHandleTableLock(pThis, &Tmp);
+                rtHandleTableLock(pThis);
             }
 
             rc = VERR_TRY_AGAIN;
         }
     } while (rc == VERR_TRY_AGAIN);
 
-    rtHandleTableUnlock(pThis, &Tmp);
+    rtHandleTableUnlock(pThis);
 
     return rc;
 }
@@ -220,7 +219,6 @@ RTDECL(void *)  RTHandleTableLookupWithCtx(RTHANDLETABLE hHandleTable, uint32_t 
     void               *pvObj = NULL;
     PRTHTENTRYCTX       pEntry;
     PRTHANDLETABLEINT   pThis;
-    RTSPINLOCKTMP       Tmp /*= no init */;
 
     /* validate the input */
     pThis = (PRTHANDLETABLEINT)hHandleTable;
@@ -230,7 +228,7 @@ RTDECL(void *)  RTHandleTableLookupWithCtx(RTHANDLETABLE hHandleTable, uint32_t 
 
 
     /* acquire the lock */
-    rtHandleTableLock(pThis, &Tmp);
+    rtHandleTableLock(pThis);
 
     /*
      * Perform the lookup and retaining.
@@ -253,7 +251,7 @@ RTDECL(void *)  RTHandleTableLookupWithCtx(RTHANDLETABLE hHandleTable, uint32_t 
     }
 
     /* release the lock */
-    rtHandleTableUnlock(pThis, &Tmp);
+    rtHandleTableUnlock(pThis);
     return pvObj;
 }
 RT_EXPORT_SYMBOL(RTHandleTableLookupWithCtx);
@@ -264,7 +262,6 @@ RTDECL(void *)  RTHandleTableFreeWithCtx(RTHANDLETABLE hHandleTable, uint32_t h,
     void               *pvObj = NULL;
     PRTHTENTRYCTX       pEntry;
     PRTHANDLETABLEINT   pThis;
-    RTSPINLOCKTMP       Tmp /*= no init */;
 
     /* validate the input */
     pThis = (PRTHANDLETABLEINT)hHandleTable;
@@ -274,7 +271,7 @@ RTDECL(void *)  RTHandleTableFreeWithCtx(RTHANDLETABLE hHandleTable, uint32_t h,
 
 
     /* acquire the lock */
-    rtHandleTableLock(pThis, &Tmp);
+    rtHandleTableLock(pThis);
 
     /*
      * Perform the lookup and retaining.
@@ -325,7 +322,7 @@ RTDECL(void *)  RTHandleTableFreeWithCtx(RTHANDLETABLE hHandleTable, uint32_t h,
     }
 
     /* release the lock */
-    rtHandleTableUnlock(pThis, &Tmp);
+    rtHandleTableUnlock(pThis);
     return pvObj;
 }
 RT_EXPORT_SYMBOL(RTHandleTableFreeWithCtx);

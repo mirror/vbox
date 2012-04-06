@@ -137,7 +137,7 @@ RTDECL(int) RTMemPoolCreate(PRTMEMPOOL phMemPool, const char *pszName)
     PRTMEMPOOLINT   pMemPool = (PRTMEMPOOLINT)RTMemAlloc(RT_OFFSETOF(RTMEMPOOLINT, szName[cchName + 1]));
     if (!pMemPool)
         return VERR_NO_MEMORY;
-    int rc = RTSpinlockCreate(&pMemPool->hSpinLock);
+    int rc = RTSpinlockCreate(&pMemPool->hSpinLock, RTSPINLOCK_FLAGS_INTERRUPT_UNSAFE, "RTMemPoolCreate");
     if (RT_SUCCESS(rc))
     {
         pMemPool->u32Magic = RTMEMPOOL_MAGIC;
@@ -202,8 +202,7 @@ DECLINLINE(void) rtMemPoolInitAndLink(PRTMEMPOOLINT pMemPool, PRTMEMPOOLENTRY pE
 
     if (pMemPool->hSpinLock != NIL_RTSPINLOCK)
     {
-        RTSPINLOCKTMP Tmp = RTSPINLOCKTMP_INITIALIZER;
-        RTSpinlockAcquire(pMemPool->hSpinLock, &Tmp);
+        RTSpinlockAcquire(pMemPool->hSpinLock);
 
         PRTMEMPOOLENTRY pHead = pMemPool->pHead;
         pEntry->pNext = pHead;
@@ -211,7 +210,7 @@ DECLINLINE(void) rtMemPoolInitAndLink(PRTMEMPOOLINT pMemPool, PRTMEMPOOLENTRY pE
             pHead->pPrev = pEntry;
         pMemPool->pHead = pEntry;
 
-        RTSpinlockRelease(pMemPool->hSpinLock, &Tmp);
+        RTSpinlockRelease(pMemPool->hSpinLock);
     }
 
     ASMAtomicIncU32(&pMemPool->cEntries);
@@ -223,8 +222,7 @@ DECLINLINE(void) rtMemPoolUnlink(PRTMEMPOOLENTRY pEntry)
     PRTMEMPOOLINT pMemPool = pEntry->pMemPool;
     if (pMemPool->hSpinLock != NIL_RTSPINLOCK)
     {
-        RTSPINLOCKTMP Tmp = RTSPINLOCKTMP_INITIALIZER;
-        RTSpinlockAcquire(pMemPool->hSpinLock, &Tmp);
+        RTSpinlockAcquire(pMemPool->hSpinLock);
 
         PRTMEMPOOLENTRY pNext = pEntry->pNext;
         PRTMEMPOOLENTRY pPrev = pEntry->pPrev;
@@ -236,7 +234,7 @@ DECLINLINE(void) rtMemPoolUnlink(PRTMEMPOOLENTRY pEntry)
             pMemPool->pHead = pNext;
         pEntry->pMemPool = NULL;
 
-        RTSpinlockRelease(pMemPool->hSpinLock, &Tmp);
+        RTSpinlockRelease(pMemPool->hSpinLock);
     }
     else
         pEntry->pMemPool = NULL;

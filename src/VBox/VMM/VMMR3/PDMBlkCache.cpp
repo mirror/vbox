@@ -656,12 +656,11 @@ static void pdmBlkCacheCommit(PPDMBLKCACHE pBlkCache)
 
     /* The list is moved to a new header to reduce locking overhead. */
     RTLISTANCHOR ListDirtyNotCommitted;
-    RTSPINLOCKTMP Tmp;
 
     RTListInit(&ListDirtyNotCommitted);
-    RTSpinlockAcquire(pBlkCache->LockList, &Tmp);
+    RTSpinlockAcquire(pBlkCache->LockList);
     RTListMove(&ListDirtyNotCommitted, &pBlkCache->ListDirtyNotCommitted);
-    RTSpinlockRelease(pBlkCache->LockList, &Tmp);
+    RTSpinlockRelease(pBlkCache->LockList);
 
     if (!RTListIsEmpty(&ListDirtyNotCommitted))
     {
@@ -754,10 +753,9 @@ static bool pdmBlkCacheAddDirtyEntry(PPDMBLKCACHE pBlkCache, PPDMBLKCACHEENTRY p
     {
         pEntry->fFlags |= PDMBLKCACHE_ENTRY_IS_DIRTY;
 
-        RTSPINLOCKTMP Tmp;
-        RTSpinlockAcquire(pBlkCache->LockList, &Tmp);
+        RTSpinlockAcquire(pBlkCache->LockList);
         RTListAppend(&pBlkCache->ListDirtyNotCommitted, &pEntry->NodeNotCommitted);
-        RTSpinlockRelease(pBlkCache->LockList, &Tmp);
+        RTSpinlockRelease(pBlkCache->LockList);
 
         uint32_t cbDirty = ASMAtomicAddU32(&pCache->cbDirty, pEntry->cbData);
 
@@ -1219,7 +1217,7 @@ static int pdmR3BlkCacheRetain(PVM pVM, PPPDMBLKCACHE ppBlkCache, const char *pc
             pBlkCache->pCache = pBlkCacheGlobal;
             RTListInit(&pBlkCache->ListDirtyNotCommitted);
 
-            rc = RTSpinlockCreate(&pBlkCache->LockList);
+            rc = RTSpinlockCreate(&pBlkCache->LockList, RTSPINLOCK_FLAGS_INTERRUPT_UNSAFE, "pdmR3BlkCacheRetain");
             if (RT_SUCCESS(rc))
             {
                 rc = RTSemRWCreate(&pBlkCache->SemRWEntries);

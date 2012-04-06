@@ -218,15 +218,12 @@ DECLINLINE(PRTHTENTRYCTX) rtHandleTableLookupWithCtx(PRTHANDLETABLEINT pThis, ui
  * Locks the handle table.
  *
  * @param   pThis           The handle table structure.
- * @param   pTmp            The spinlock temp variable.
  */
-DECLINLINE(void) rtHandleTableLock(PRTHANDLETABLEINT pThis, PRTSPINLOCKTMP pTmp)
+DECLINLINE(void) rtHandleTableLock(PRTHANDLETABLEINT pThis)
 {
     if (pThis->hSpinlock != NIL_RTSPINLOCK)
     {
-        RTSPINLOCKTMP const Tmp = RTSPINLOCKTMP_INITIALIZER;
-        *pTmp = Tmp;
-        RTSpinlockAcquire(pThis->hSpinlock, pTmp);
+        RTSpinlockAcquire(pThis->hSpinlock);
     }
 }
 
@@ -235,11 +232,10 @@ DECLINLINE(void) rtHandleTableLock(PRTHANDLETABLEINT pThis, PRTSPINLOCKTMP pTmp)
  * Locks the handle table.
  *
  * @param   pThis           The handle table structure.
- * @param   pTmp            The spinlock temp variable.
  */
-DECLINLINE(void) rtHandleTableUnlock(PRTHANDLETABLEINT pThis, PRTSPINLOCKTMP pTmp)
+DECLINLINE(void) rtHandleTableUnlock(PRTHANDLETABLEINT pThis)
 {
     if (pThis->hSpinlock != NIL_RTSPINLOCK)
-        RTSpinlockRelease(pThis->hSpinlock, pTmp);
+        RTSpinlockRelease(pThis->hSpinlock);
 }
 

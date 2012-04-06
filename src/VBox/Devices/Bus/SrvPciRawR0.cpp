@@ -94,7 +94,6 @@ static PCIRAWSRVSTATE g_State;
  * depending on host OS implmenetation. */
 static DECLCALLBACK(bool) pcirawr0Isr(void* pContext, int32_t iHostIrq)
 {
-    RTSPINLOCKTMP aTmp;
     PPCIRAWDEV    pThis = (PPCIRAWDEV)pContext;
 
 #ifdef VBOX_WITH_SHARED_PCI_INTERRUPTS
@@ -113,9 +112,9 @@ static DECLCALLBACK(bool) pcirawr0Isr(void* pContext, int32_t iHostIrq)
         return false;
 #endif
 
-    RTSpinlockAcquireNoInts(pThis->hSpinlock, &aTmp);
+    RTSpinlockAcquire(pThis->hSpinlock);
     pThis->iPendingIrq = iHostIrq;
-    RTSpinlockReleaseNoInts(pThis->hSpinlock, &aTmp);
+    RTSpinlockReleaseNoInts(pThis->hSpinlock);
 
     /**
      * @todo RTSemEventSignal() docs claims that it's platform-dependent
@@ -574,7 +573,7 @@ static int pcirawr0OpenDevice(PSUPDRVSESSION   pSession,
 
         if (RT_SUCCESS(rc))
         {
-            rc = RTSpinlockCreate(&pNew->hSpinlock);
+            rc = RTSpinlockCreate(&pNew->hSpinlock, RTSPINLOCK_FLAGS_INTERRUPT_SAFE, "PciRaw");
             AssertRC(rc);
             rc = RTSemEventCreate(&pNew->hIrqEvent);
             AssertRC(rc);
@@ -861,7 +860,6 @@ static int pcirawr0GetIrq(PSUPDRVSESSION    pSession,
                           int32_t          *piIrq)
 {
     int            rc = VINF_SUCCESS;
-    RTSPINLOCKTMP  aTmp;
     bool           fTerminate = false;
     int32_t        iPendingIrq = 0;
 
@@ -869,11 +867,11 @@ static int pcirawr0GetIrq(PSUPDRVSESSION    pSession,
 
     GET_PORT(TargetDevice);
 
-    RTSpinlockAcquireNoInts(pDev->hSpinlock, &aTmp);
+    RTSpinlockAcquire(pDev->hSpinlock);
     iPendingIrq = pDev->iPendingIrq;
     pDev->iPendingIrq = 0;
     fTerminate = pDev->fTerminate;
-    RTSpinlockReleaseNoInts(pDev->hSpinlock, &aTmp);
+    RTSpinlockReleaseNoInts(pDev->hSpinlock);
 
     /* Block until new IRQs arrives */
     if (!fTerminate)
@@ -886,10 +884,10 @@ static int pcirawr0GetIrq(PSUPDRVSESSION    pSession,
                 /** @todo: racy */
                 if (!ASMAtomicReadBool(&pDev->fTerminate))
                 {
-                    RTSpinlockAcquireNoInts(pDev->hSpinlock, &aTmp);
+                    RTSpinlockAcquire(pDev->hSpinlock);
                     iPendingIrq = pDev->iPendingIrq;
                     pDev->iPendingIrq = 0;
-                    RTSpinlockReleaseNoInts(pDev->hSpinlock, &aTmp);
+                    RTSpinlockReleaseNoInts(pDev->hSpinlock);
                 }
                 else
                     rc = VERR_INTERRUPTED;

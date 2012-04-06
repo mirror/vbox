@@ -56,8 +56,7 @@ RTDECL(int)     RTHandleTableAlloc(RTHANDLETABLE hHandleTable, void *pvObj, uint
     /*
      * Allocation loop.
      */
-    RTSPINLOCKTMP Tmp /*= no init */;
-    rtHandleTableLock(pThis, &Tmp);
+    rtHandleTableLock(pThis);
 
     int rc;
     do
@@ -107,7 +106,7 @@ RTDECL(int)     RTHandleTableAlloc(RTHANDLETABLE hHandleTable, void *pvObj, uint
             Assert(!cLevel1 || pThis->cMax / RTHT_LEVEL2_ENTRIES >= RTHT_LEVEL1_DYN_ALLOC_THRESHOLD);
 
             /* leave the lock (never do fancy stuff from behind a spinlock). */
-            rtHandleTableUnlock(pThis, &Tmp);
+            rtHandleTableUnlock(pThis);
 
             /*
              * Do the allocation(s).
@@ -129,7 +128,7 @@ RTDECL(int)     RTHandleTableAlloc(RTHANDLETABLE hHandleTable, void *pvObj, uint
             }
 
             /* re-enter the lock. */
-            rtHandleTableLock(pThis, &Tmp);
+            rtHandleTableLock(pThis);
 
             /*
              * Insert the new bits, but be a bit careful as someone might have
@@ -151,9 +150,9 @@ RTDECL(int)     RTHandleTableAlloc(RTHANDLETABLE hHandleTable, void *pvObj, uint
                 }
 
                 /* free the obsolete one (outside the lock of course) */
-                rtHandleTableUnlock(pThis, &Tmp);
+                rtHandleTableUnlock(pThis);
                 RTMemFree(papvLevel1);
-                rtHandleTableLock(pThis, &Tmp);
+                rtHandleTableLock(pThis);
             }
 
             /* insert the table we allocated. */
@@ -185,16 +184,16 @@ RTDECL(int)     RTHandleTableAlloc(RTHANDLETABLE hHandleTable, void *pvObj, uint
             else
             {
                 /* free the table (raced someone, and we lost). */
-                rtHandleTableUnlock(pThis, &Tmp);
+                rtHandleTableUnlock(pThis);
                 RTMemFree(paTable);
-                rtHandleTableLock(pThis, &Tmp);
+                rtHandleTableLock(pThis);
             }
 
             rc = VERR_TRY_AGAIN;
         }
     } while (rc == VERR_TRY_AGAIN);
 
-    rtHandleTableUnlock(pThis, &Tmp);
+    rtHandleTableUnlock(pThis);
 
     return rc;
 }
@@ -212,8 +211,7 @@ RTDECL(void *)  RTHandleTableLookup(RTHANDLETABLE hHandleTable, uint32_t h)
     void *pvObj = NULL;
 
     /* acquire the lock */
-    RTSPINLOCKTMP Tmp /*= no init */;
-    rtHandleTableLock(pThis, &Tmp);
+    rtHandleTableLock(pThis);
 
     /*
      * Perform the lookup and retaining.
@@ -236,7 +234,7 @@ RTDECL(void *)  RTHandleTableLookup(RTHANDLETABLE hHandleTable, uint32_t h)
     }
 
     /* release the lock */
-    rtHandleTableUnlock(pThis, &Tmp);
+    rtHandleTableUnlock(pThis);
     return pvObj;
 }
 RT_EXPORT_SYMBOL(RTHandleTableLookup);
@@ -253,8 +251,7 @@ RTDECL(void *)  RTHandleTableFree(RTHANDLETABLE hHandleTable, uint32_t h)
     void *pvObj = NULL;
 
     /* acquire the lock */
-    RTSPINLOCKTMP Tmp /*= no init */;
-    rtHandleTableLock(pThis, &Tmp);
+    rtHandleTableLock(pThis);
 
     /*
      * Perform the lookup and retaining.
@@ -300,7 +297,7 @@ RTDECL(void *)  RTHandleTableFree(RTHANDLETABLE hHandleTable, uint32_t h)
     }
 
     /* release the lock */
-    rtHandleTableUnlock(pThis, &Tmp);
+    rtHandleTableUnlock(pThis);
     return pvObj;
 }
 RT_EXPORT_SYMBOL(RTHandleTableFree);

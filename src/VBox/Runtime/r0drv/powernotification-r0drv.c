@@ -88,7 +88,6 @@ RTDECL(int) RTPowerSignalEvent(RTPOWEREVENT enmEvent)
 {
     PRTPOWERNOTIFYREG pCur;
     RTSPINLOCK        hSpinlock;
-    RTSPINLOCKTMP     Tmp = RTSPINLOCKTMP_INITIALIZER;
 
     /*
      * This is a little bit tricky as we cannot be holding the spinlock
@@ -113,7 +112,7 @@ RTDECL(int) RTPowerSignalEvent(RTPOWEREVENT enmEvent)
     hSpinlock = g_hRTPowerNotifySpinLock;
     if (hSpinlock == NIL_RTSPINLOCK)
         return VERR_ACCESS_DENIED;
-    RTSpinlockAcquire(hSpinlock, &Tmp);
+    RTSpinlockAcquire(hSpinlock);
 
     /* Clear the bit. */
     for (pCur = g_pRTPowerCallbackHead; pCur; pCur = pCur->pNext)
@@ -132,7 +131,7 @@ RTDECL(int) RTPowerSignalEvent(RTPOWEREVENT enmEvent)
                 PFNRTPOWERNOTIFICATION pfnCallback = pCur->pfnCallback;
                 void *pvUser = pCur->pvUser;
                 pCur = pCur->pNext;
-                RTSpinlockRelease(g_hRTPowerNotifySpinLock, &Tmp);
+                RTSpinlockRelease(g_hRTPowerNotifySpinLock);
 
                 pfnCallback(enmEvent, pvUser);
 
@@ -140,7 +139,7 @@ RTDECL(int) RTPowerSignalEvent(RTPOWEREVENT enmEvent)
                 hSpinlock = g_hRTPowerNotifySpinLock;
                 if (hSpinlock == NIL_RTSPINLOCK)
                     return VERR_ACCESS_DENIED;
-                RTSpinlockAcquire(hSpinlock, &Tmp);
+                RTSpinlockAcquire(hSpinlock);
                 if (ASMAtomicUoReadU32(&g_iRTPowerGeneration) != iGeneration)
                     break;
             }
@@ -149,7 +148,7 @@ RTDECL(int) RTPowerSignalEvent(RTPOWEREVENT enmEvent)
         }
     } while (pCur);
 
-    RTSpinlockRelease(hSpinlock, &Tmp);
+    RTSpinlockRelease(hSpinlock);
     return VINF_SUCCESS;
 }
 RT_EXPORT_SYMBOL(RTPowerSignalEvent);
@@ -159,7 +158,6 @@ RTDECL(int) RTPowerNotificationRegister(PFNRTPOWERNOTIFICATION pfnCallback, void
 {
     PRTPOWERNOTIFYREG   pCur;
     PRTPOWERNOTIFYREG   pNew;
-    RTSPINLOCKTMP       Tmp = RTSPINLOCKTMP_INITIALIZER;
 
     /*
      * Validation.
@@ -168,12 +166,12 @@ RTDECL(int) RTPowerNotificationRegister(PFNRTPOWERNOTIFICATION pfnCallback, void
     AssertReturn(g_hRTPowerNotifySpinLock != NIL_RTSPINLOCK, VERR_WRONG_ORDER);
     RT_ASSERT_PREEMPTIBLE();
 
-    RTSpinlockAcquire(g_hRTPowerNotifySpinLock, &Tmp);
+    RTSpinlockAcquire(g_hRTPowerNotifySpinLock);
     for (pCur = g_pRTPowerCallbackHead; pCur; pCur = pCur->pNext)
         if (    pCur->pvUser == pvUser
             &&  pCur->pfnCallback == pfnCallback)
             break;
-    RTSpinlockRelease(g_hRTPowerNotifySpinLock, &Tmp);
+    RTSpinlockRelease(g_hRTPowerNotifySpinLock);
     AssertMsgReturn(!pCur, ("pCur=%p pfnCallback=%p pvUser=%p\n", pCur, pfnCallback, pvUser), VERR_ALREADY_EXISTS);
 
     /*
@@ -188,7 +186,7 @@ RTDECL(int) RTPowerNotificationRegister(PFNRTPOWERNOTIFICATION pfnCallback, void
     pNew->pvUser = pvUser;
     memset(&pNew->bmDone[0], 0xff, sizeof(pNew->bmDone));
 
-    RTSpinlockAcquire(g_hRTPowerNotifySpinLock, &Tmp);
+    RTSpinlockAcquire(g_hRTPowerNotifySpinLock);
 
     pCur = g_pRTPowerCallbackHead;
     if (!pCur)
@@ -209,7 +207,7 @@ RTDECL(int) RTPowerNotificationRegister(PFNRTPOWERNOTIFICATION pfnCallback, void
 
     ASMAtomicIncU32(&g_iRTPowerGeneration);
 
-    RTSpinlockRelease(g_hRTPowerNotifySpinLock, &Tmp);
+    RTSpinlockRelease(g_hRTPowerNotifySpinLock);
 
     /* duplicate? */
     if (pCur)
@@ -227,7 +225,6 @@ RTDECL(int) RTPowerNotificationDeregister(PFNRTPOWERNOTIFICATION pfnCallback, vo
 {
     PRTPOWERNOTIFYREG   pPrev;
     PRTPOWERNOTIFYREG   pCur;
-    RTSPINLOCKTMP       Tmp = RTSPINLOCKTMP_INITIALIZER;
 
     /*
      * Validation.
@@ -239,7 +236,7 @@ RTDECL(int) RTPowerNotificationDeregister(PFNRTPOWERNOTIFICATION pfnCallback, vo
     /*
      * Find and unlink the record from the list.
      */
-    RTSpinlockAcquire(g_hRTPowerNotifySpinLock, &Tmp);
+    RTSpinlockAcquire(g_hRTPowerNotifySpinLock);
     pPrev = NULL;
     for (pCur = g_pRTPowerCallbackHead; pCur; pCur = pCur->pNext)
     {
@@ -256,7 +253,7 @@ RTDECL(int) RTPowerNotificationDeregister(PFNRTPOWERNOTIFICATION pfnCallback, vo
             g_pRTPowerCallbackHead = pCur->pNext;
         ASMAtomicIncU32(&g_iRTPowerGeneration);
     }
-    RTSpinlockRelease(g_hRTPowerNotifySpinLock, &Tmp);
+    RTSpinlockRelease(g_hRTPowerNotifySpinLock);
 
     if (!pCur)
         return VERR_NOT_FOUND;
@@ -275,7 +272,7 @@ RT_EXPORT_SYMBOL(RTPowerNotificationDeregister);
 
 DECLHIDDEN(int) rtR0PowerNotificationInit(void)
 {
-    int rc = RTSpinlockCreate((PRTSPINLOCK)&g_hRTPowerNotifySpinLock);
+    int rc = RTSpinlockCreate((PRTSPINLOCK)&g_hRTPowerNotifySpinLock, RTSPINLOCK_FLAGS_INTERRUPT_SAFE, "RTR0Power");
     if (RT_SUCCESS(rc))
     {
         /** @todo OS specific init here */
@@ -292,19 +289,18 @@ DECLHIDDEN(int) rtR0PowerNotificationInit(void)
 DECLHIDDEN(void) rtR0PowerNotificationTerm(void)
 {
     PRTPOWERNOTIFYREG   pHead;
-    RTSPINLOCKTMP       Tmp       = RTSPINLOCKTMP_INITIALIZER;
     RTSPINLOCK          hSpinlock = g_hRTPowerNotifySpinLock;
     AssertReturnVoid(hSpinlock != NIL_RTSPINLOCK);
 
     /** @todo OS specific term here */
 
     /* pick up the list and the spinlock. */
-    RTSpinlockAcquire(hSpinlock, &Tmp);
+    RTSpinlockAcquire(hSpinlock);
     ASMAtomicWriteHandle(&g_hRTPowerNotifySpinLock, NIL_RTSPINLOCK);
     pHead = g_pRTPowerCallbackHead;
     g_pRTPowerCallbackHead = NULL;
     ASMAtomicIncU32(&g_iRTPowerGeneration);
-    RTSpinlockRelease(hSpinlock, &Tmp);
+    RTSpinlockRelease(hSpinlock);
 
     /* free the list. */
     while (pHead)

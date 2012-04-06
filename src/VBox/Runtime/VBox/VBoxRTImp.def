@@ -1035,11 +1035,9 @@ EXPORTS
     RTSocketWrite
     RTSocketWriteNB
     RTSpinlockAcquire
-    RTSpinlockAcquireNoInts
     RTSpinlockCreate
     RTSpinlockDestroy
     RTSpinlockRelease
-    RTSpinlockReleaseNoInts
     RTStrAAppendExNVTag
     RTStrAAppendNTag
     RTStrAAppendTag

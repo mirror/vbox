@@ -124,7 +124,7 @@ RTDECL(int) RTTimerCreateEx(PRTTIMER *ppTimer, uint64_t u64NanoInterval, uint32_
     if (g_Spinlock == NIL_RTSPINLOCK)
     {
         RTSPINLOCK Spinlock;
-        int rc = RTSpinlockCreate(&Spinlock);
+        int rc = RTSpinlockCreate(&Spinlock, RTSPINLOCK_FLAGS_INTERRUPT_SAFE, "RTTimerOS2");
         AssertRCReturn(rc, rc);
         //bool fRc;
         //ASMAtomicCmpXchgSize(&g_Spinlock, Spinlock, NIL_RTSPINLOCK, fRc);
@@ -151,13 +151,12 @@ RTDECL(int) RTTimerCreateEx(PRTTIMER *ppTimer, uint64_t u64NanoInterval, uint32_
     /*
      * Insert the timer into the list (LIFO atm).
      */
-    RTSPINLOCKTMP Tmp = RTSPINLOCKTMP_INITIALIZER;
-    RTSpinlockAcquireNoInts(g_Spinlock, &Tmp);
+    RTSpinlockAcquire(g_Spinlock);
     g_u32ChangeNo++;
     pTimer->pNext = g_pTimerHead;
     g_pTimerHead = pTimer;
     g_cTimers++;
-    RTSpinlockReleaseNoInts(g_Spinlock, &Tmp);
+    RTSpinlockReleaseNoInts(g_Spinlock);
 
     *ppTimer = pTimer;
     return VINF_SUCCESS;
@@ -189,8 +188,7 @@ RTDECL(int) RTTimerDestroy(PRTTIMER pTimer)
     /*
      * Remove it from the list.
      */
-    RTSPINLOCKTMP Tmp = RTSPINLOCKTMP_INITIALIZER;
-    RTSpinlockAcquireNoInts(g_Spinlock, &Tmp);
+    RTSpinlockAcquire(g_Spinlock);
     g_u32ChangeNo++;
     if (g_pTimerHead == pTimer)
         g_pTimerHead = pTimer->pNext;
@@ -202,7 +200,7 @@ RTDECL(int) RTTimerDestroy(PRTTIMER pTimer)
             pPrev = pPrev->pNext;
             if (RT_UNLIKELY(!pPrev))
             {
-                RTSpinlockReleaseNoInts(g_Spinlock, &Tmp);
+                RTSpinlockReleaseNoInts(g_Spinlock);
                 return VERR_INVALID_HANDLE;
             }
         }
@@ -217,7 +215,7 @@ RTDECL(int) RTTimerDestroy(PRTTIMER pTimer)
         if (!g_cActiveTimers)
             rtTimerOs2Dearm();
     }
-    RTSpinlockReleaseNoInts(g_Spinlock, &Tmp);
+    RTSpinlockReleaseNoInts(g_Spinlock);
 
     /*
      * Free the associated resources.
@@ -240,15 +238,14 @@ RTDECL(int) RTTimerStart(PRTTIMER pTimer, uint64_t u64First)
      */
     u64First += RTTimeNanoTS();
 
-    RTSPINLOCKTMP Tmp = RTSPINLOCKTMP_INITIALIZER;
-    RTSpinlockAcquireNoInts(g_Spinlock, &Tmp);
+    RTSpinlockAcquire(g_Spinlock);
     g_u32ChangeNo++;
     if (!g_cActiveTimers)
     {
         int rc = rtTimerOs2Arm();
         if (RT_FAILURE(rc))
         {
-            RTSpinlockReleaseNoInts(g_Spinlock, &Tmp);
+            RTSpinlockReleaseNoInts(g_Spinlock);
             return rc;
         }
     }
@@ -258,7 +255,7 @@ RTDECL(int) RTTimerStart(PRTTIMER pTimer, uint64_t u64First)
     pTimer->iTick = 0;
     pTimer->u64StartTS = u64First;
     pTimer->u64NextTS = u64First;
-    RTSpinlockReleaseNoInts(g_Spinlock, &Tmp);
+    RTSpinlockReleaseNoInts(g_Spinlock);
 
     return VINF_SUCCESS;
 }
@@ -274,15 +271,14 @@ RTDECL(int) RTTimerStop(PRTTIMER pTimer)
     /*
      * Suspend the timer.
      */
-    RTSPINLOCKTMP Tmp = RTSPINLOCKTMP_INITIALIZER;
-    RTSpinlockAcquireNoInts(g_Spinlock, &Tmp);
+    RTSpinlockAcquire(g_Spinlock);
     g_u32ChangeNo++;
     pTimer->fSuspended = true;
     Assert(g_cActiveTimers > 0);
     g_cActiveTimers--;
     if (!g_cActiveTimers)
         rtTimerOs2Dearm();
-    RTSpinlockReleaseNoInts(g_Spinlock, &Tmp);
+    RTSpinlockReleaseNoInts(g_Spinlock);
 
     return VINF_SUCCESS;
 }
@@ -304,8 +300,7 @@ DECLASM(void) rtTimerOs2Tick(void)
      */
     const uint64_t u64NanoTS = RTTimeNanoTS();
 
-    RTSPINLOCKTMP Tmp = RTSPINLOCKTMP_INITIALIZER;
-    RTSpinlockAcquireNoInts(g_Spinlock, &Tmp);
+    RTSpinlockAcquire(g_Spinlock);
 
     /*
      * Clear the fDone flag.
@@ -342,10 +337,10 @@ DECLASM(void) rtTimerOs2Tick(void)
             /* do the callout */
             PFNRTTIMER  pfnTimer = pTimer->pfnTimer;
             void       *pvUser   = pTimer->pvUser;
-            RTSpinlockReleaseNoInts(g_Spinlock, &Tmp);
+            RTSpinlockReleaseNoInts(g_Spinlock);
             pfnTimer(pTimer, pvUser, pTimer->iTick);
 
-            RTSpinlockAcquireNoInts(g_Spinlock, &Tmp);
+            RTSpinlockAcquire(g_Spinlock);
 
             /* check if anything changed. */
             if (u32CurChangeNo != g_u32ChangeNo)
@@ -359,7 +354,7 @@ DECLASM(void) rtTimerOs2Tick(void)
         pTimer = pNext;
     }
 
-    RTSpinlockReleaseNoInts(g_Spinlock, &Tmp);
+    RTSpinlockReleaseNoInts(g_Spinlock);
 }
 
 

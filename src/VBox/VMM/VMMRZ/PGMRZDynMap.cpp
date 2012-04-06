@@ -87,19 +87,19 @@
  * This will declare a temporary variable and expands to two statements!
  */
 # define PGMRZDYNMAP_SPINLOCK_ACQUIRE(pThis) \
-    RTSPINLOCKTMP   MySpinlockTmp = RTSPINLOCKTMP_INITIALIZER; \
-    RTSpinlockAcquire((pThis)->hSpinlock, &MySpinlockTmp)
+    RTSpinlockAcquire((pThis)->hSpinlock)
+
 /**
  * Releases the spinlock.
  */
 # define PGMRZDYNMAP_SPINLOCK_RELEASE(pThis) \
-    RTSpinlockRelease((pThis)->hSpinlock, &MySpinlockTmp)
+    RTSpinlockRelease((pThis)->hSpinlock)
 
 /**
  * Re-acquires the spinlock.
  */
 # define PGMRZDYNMAP_SPINLOCK_REACQUIRE(pThis) \
-    RTSpinlockAcquire((pThis)->hSpinlock, &MySpinlockTmp)
+    RTSpinlockAcquire((pThis)->hSpinlock)
 #else
 # define PGMRZDYNMAP_SPINLOCK_ACQUIRE(pThis)   do { } while (0)
 # define PGMRZDYNMAP_SPINLOCK_RELEASE(pThis)   do { } while (0)
@@ -407,7 +407,7 @@ VMMR0DECL(int) PGMR0DynMapInit(void)
         rc = RTSemFastMutexCreate(&pThis->hInitLock);
         if (RT_SUCCESS(rc))
         {
-            rc = RTSpinlockCreate(&pThis->hSpinlock);
+            rc = RTSpinlockCreate(&pThis->hSpinlock, RTSPINLOCK_FLAGS_INTERRUPT_UNSAFE, "PGMR0DynMap");
             if (RT_SUCCESS(rc))
             {
                 pThis->u32Magic = PGMRZDYNMAP_MAGIC;

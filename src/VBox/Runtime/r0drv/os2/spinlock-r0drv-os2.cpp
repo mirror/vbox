@@ -52,27 +52,33 @@ typedef struct RTSPINLOCKINTERNAL
 {
     /** Spinlock magic value (RTSPINLOCK_MAGIC). */
     uint32_t volatile   u32Magic;
+    /** Spinlock creation flags.  */
+    uint32_t            fFlags;
     /** The OS/2 spinlock structure. */
     SpinLock_t          Spinlock;
 } RTSPINLOCKINTERNAL, *PRTSPINLOCKINTERNAL;
 
 
-RTDECL(int)  RTSpinlockCreate(PRTSPINLOCK pSpinlock)
+RTDECL(int)  RTSpinlockCreate(PRTSPINLOCK pSpinlock, uint32_t fFlags, const char *pszName)
 {
+    AssertReturn(fFlags == RTSPINLOCK_FLAGS_INTERRUPT_SAFE || fFlags == RTSPINLOCK_FLAGS_INTERRUPT_UNSAFE, VERR_INVALID_PARAMETER);
+
     /*
      * Allocate.
      */
     AssertCompile(sizeof(RTSPINLOCKINTERNAL) > sizeof(void *));
-    PRTSPINLOCKINTERNAL pSpinlockInt = (PRTSPINLOCKINTERNAL)RTMemAlloc(sizeof(*pSpinlockInt));
-    if (!pSpinlockInt)
+    PRTSPINLOCKINTERNAL pThis = (PRTSPINLOCKINTERNAL)RTMemAlloc(sizeof(*pThis));
+    if (!pThis)
         return VERR_NO_MEMORY;
 
     /*
      * Initialize & return.
      */
-    pSpinlockInt->u32Magic = RTSPINLOCK_MAGIC;
-    KernAllocSpinLock(&pSpinlockInt->Spinlock);
-    *pSpinlock = pSpinlockInt;
+    pThis->u32Magic     = RTSPINLOCK_MAGIC;
+    pThis->fFlags       = fFlags;
+    pThis->fIntSaved    = 0;
+    KernAllocSpinLock(&pThis->Spinlock);
+    *pSpinlock = pThis;
     return VINF_SUCCESS;
 }
 
@@ -82,63 +88,52 @@ RTDECL(int)  RTSpinlockDestroy(RTSPINLOCK Spinlock)
     /*
      * Validate input.
      */
-    PRTSPINLOCKINTERNAL pSpinlockInt = (PRTSPINLOCKINTERNAL)Spinlock;
-    if (!pSpinlockInt)
+    PRTSPINLOCKINTERNAL pThis = (PRTSPINLOCKINTERNAL)Spinlock;
+    if (!pThis)
         return VERR_INVALID_PARAMETER;
-    AssertMsgReturn(pSpinlockInt->u32Magic == RTSPINLOCK_MAGIC,
-                    ("Invalid spinlock %p magic=%#x\n", pSpinlockInt, pSpinlockInt->u32Magic),
+    AssertMsgReturn(pThis->u32Magic == RTSPINLOCK_MAGIC,
+                    ("Invalid spinlock %p magic=%#x\n", pThis, pThis->u32Magic),
                     VERR_INVALID_PARAMETER);
 
     /*
      * Make the lock invalid and release the memory.
      */
-    ASMAtomicIncU32(&pSpinlockInt->u32Magic);
-    KernFreeSpinLock(&pSpinlockInt->Spinlock);
-    RTMemFree(pSpinlockInt);
+    ASMAtomicIncU32(&pThis->u32Magic);
+    KernFreeSpinLock(&pThis->Spinlock);
+    RTMemFree(pThis);
     return VINF_SUCCESS;
 }
 
 
-RTDECL(void) RTSpinlockAcquireNoInts(RTSPINLOCK Spinlock, PRTSPINLOCKTMP pTmp)
+RTDECL(void) RTSpinlockAcquire(RTSPINLOCK Spinlock)
 {
-    PRTSPINLOCKINTERNAL pSpinlockInt = (PRTSPINLOCKINTERNAL)Spinlock;
-    AssertPtr(pSpinlockInt);
-    Assert(pSpinlockInt->u32Magic == RTSPINLOCK_MAGIC);
+    PRTSPINLOCKINTERNAL pThis = (PRTSPINLOCKINTERNAL)Spinlock;
+    AssertPtr(pThis);
+    Assert(pThis->u32Magic == RTSPINLOCK_MAGIC);
 
-    KernAcquireSpinLock(&pSpinlockInt->Spinlock);
-    NOREF(pTmp);
+    KernAcquireSpinLock(&pThis->Spinlock);
+    Assert(!ASMIntAreEnabled()); /** @todo verify that interrupts are disabled. */
 }
 
 
-RTDECL(void) RTSpinlockReleaseNoInts(RTSPINLOCK Spinlock, PRTSPINLOCKTMP pTmp)
+RTDECL(void) RTSpinlockRelease(RTSPINLOCK Spinlock)
 {
-    PRTSPINLOCKINTERNAL pSpinlockInt = (PRTSPINLOCKINTERNAL)Spinlock;
-    AssertPtr(pSpinlockInt);
-    Assert(pSpinlockInt->u32Magic == RTSPINLOCK_MAGIC);
+    PRTSPINLOCKINTERNAL pThis = (PRTSPINLOCKINTERNAL)Spinlock;
+    AssertPtr(pThis);
+    Assert(pThis->u32Magic == RTSPINLOCK_MAGIC);
 
-    KernReleaseSpinLock(&pSpinlockInt->Spinlock);
-    NOREF(pTmp);
+    KernReleaseSpinLock(&pThis->Spinlock);
 }
 
 
-RTDECL(void) RTSpinlockAcquire(RTSPINLOCK Spinlock, PRTSPINLOCKTMP pTmp)
+RTDECL(void) RTSpinlockReleaseNoInts(RTSPINLOCK Spinlock)
 {
-    PRTSPINLOCKINTERNAL pSpinlockInt = (PRTSPINLOCKINTERNAL)Spinlock;
-    AssertPtr(pSpinlockInt);
-    Assert(pSpinlockInt->u32Magic == RTSPINLOCK_MAGIC);
-
-    KernAcquireSpinLock(&pSpinlockInt->Spinlock);
-    NOREF(pTmp);
-}
-
-
-RTDECL(void) RTSpinlockRelease(RTSPINLOCK Spinlock, PRTSPINLOCKTMP pTmp)
-{
-    PRTSPINLOCKINTERNAL pSpinlockInt = (PRTSPINLOCKINTERNAL)Spinlock;
-    AssertPtr(pSpinlockInt);
-    Assert(pSpinlockInt->u32Magic == RTSPINLOCK_MAGIC);
-
-    KernReleaseSpinLock(&pSpinlockInt->Spinlock);
-    NOREF(pTmp);
+#if 1
+    if (RT_UNLIKELY(!(Spinlock->fFlags & RTSPINLOCK_FLAGS_INTERRUPT_SAFE)))
+        RTAssertMsg2("RTSpinlockReleaseNoInts: %p (magic=%#x)\n", Spinlock, Spinlock->u32Magic);
+#else
+    AssertRelease(Spinlock->fFlags & RTSPINLOCK_FLAGS_INTERRUPT_SAFE);
+#endif
+    RTSpinlockRelease(Spinlock);
 }
 

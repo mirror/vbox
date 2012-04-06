@@ -415,7 +415,7 @@ GVMMR0DECL(int) GVMMR0Init(void)
                                          gvmmR0SchedPeriodicPreemptionTimerCallback,
                                          &pGVMM->aHostCpus[iCpu]);
                     if (RT_SUCCESS(rc))
-                        rc = RTSpinlockCreate(&pGVMM->aHostCpus[iCpu].Ppt.hSpinlock);
+                        rc = RTSpinlockCreate(&pGVMM->aHostCpus[iCpu].Ppt.hSpinlock, RTSPINLOCK_FLAGS_INTERRUPT_SAFE, "GVMM/CPU");
                     if (RT_FAILURE(rc))
                     {
                         while (iCpu < cHostCpus)
@@ -2175,8 +2175,7 @@ static DECLCALLBACK(void) gvmmR0SchedPeriodicPreemptionTimerCallback(PRTTIMER pT
     /*
      * Do the house keeping.
      */
-    RTSPINLOCKTMP Tmp = RTSPINLOCKTMP_INITIALIZER;
-    RTSpinlockAcquireNoInts(pCpu->Ppt.hSpinlock, &Tmp);
+    RTSpinlockAcquire(pCpu->Ppt.hSpinlock);
 
     if (++pCpu->Ppt.iTickHistorization >= pCpu->Ppt.cTicksHistoriziationInterval)
     {
@@ -2196,7 +2195,7 @@ static DECLCALLBACK(void) gvmmR0SchedPeriodicPreemptionTimerCallback(PRTTIMER pT
             if (pCpu->Ppt.aHzHistory[i] > uHistMaxHz)
                 uHistMaxHz = pCpu->Ppt.aHzHistory[i];
         if (uHistMaxHz == pCpu->Ppt.uTimerHz)
-            RTSpinlockReleaseNoInts(pCpu->Ppt.hSpinlock, &Tmp);
+            RTSpinlockReleaseNoInts(pCpu->Ppt.hSpinlock);
         else if (uHistMaxHz)
         {
             /*
@@ -2213,7 +2212,7 @@ static DECLCALLBACK(void) gvmmR0SchedPeriodicPreemptionTimerCallback(PRTTIMER pT
                                                        / cNsInterval;
             else
                 pCpu->Ppt.cTicksHistoriziationInterval = 1;
-            RTSpinlockReleaseNoInts(pCpu->Ppt.hSpinlock, &Tmp);
+            RTSpinlockReleaseNoInts(pCpu->Ppt.hSpinlock);
 
             /*SUPR0Printf("Cpu%u: change to %u Hz / %u ns\n", pCpu->idxCpuSet, uHistMaxHz, cNsInterval);*/
             RTTimerChangeInterval(pTimer, cNsInterval);
@@ -2226,14 +2225,14 @@ static DECLCALLBACK(void) gvmmR0SchedPeriodicPreemptionTimerCallback(PRTTIMER pT
             pCpu->Ppt.fStarted    = false;
             pCpu->Ppt.uTimerHz    = 0;
             pCpu->Ppt.cNsInterval = 0;
-            RTSpinlockReleaseNoInts(pCpu->Ppt.hSpinlock, &Tmp);
+            RTSpinlockReleaseNoInts(pCpu->Ppt.hSpinlock);
 
             /*SUPR0Printf("Cpu%u: stopping (%u Hz)\n", pCpu->idxCpuSet, uHistMaxHz);*/
             RTTimerStop(pTimer);
         }
     }
     else
-        RTSpinlockReleaseNoInts(pCpu->Ppt.hSpinlock, &Tmp);
+        RTSpinlockReleaseNoInts(pCpu->Ppt.hSpinlock);
 }
 #endif /* GVMM_SCHED_WITH_PPT */
 
@@ -2280,8 +2279,7 @@ GVMMR0DECL(void) GVMMR0SchedUpdatePeriodicPreemptionTimer(PVM pVM, RTCPUID idHos
                     && uHz >= pCpu->Ppt.uMinHz
                     && !pCpu->Ppt.fStarting /* solaris paranoia */))
     {
-        RTSPINLOCKTMP Tmp = RTSPINLOCKTMP_INITIALIZER;
-        RTSpinlockAcquireNoInts(pCpu->Ppt.hSpinlock, &Tmp);
+        RTSpinlockAcquire(pCpu->Ppt.hSpinlock);
 
         pCpu->Ppt.uDesiredHz = uHz;
         uint32_t cNsInterval = 0;
@@ -2301,7 +2299,7 @@ GVMMR0DECL(void) GVMMR0SchedUpdatePeriodicPreemptionTimer(PVM pVM, RTCPUID idHos
                 pCpu->Ppt.cTicksHistoriziationInterval = 1;
         }
 
-        RTSpinlockReleaseNoInts(pCpu->Ppt.hSpinlock, &Tmp);
+        RTSpinlockReleaseNoInts(pCpu->Ppt.hSpinlock);
 
         if (cNsInterval)
         {
@@ -2309,11 +2307,11 @@ GVMMR0DECL(void) GVMMR0SchedUpdatePeriodicPreemptionTimer(PVM pVM, RTCPUID idHos
             int rc = RTTimerStart(pCpu->Ppt.pTimer, cNsInterval);
             AssertRC(rc);
 
-            RTSpinlockAcquireNoInts(pCpu->Ppt.hSpinlock, &Tmp);
+            RTSpinlockAcquire(pCpu->Ppt.hSpinlock);
             if (RT_FAILURE(rc))
                 pCpu->Ppt.fStarted = false;
             pCpu->Ppt.fStarting = false;
-            RTSpinlockReleaseNoInts(pCpu->Ppt.hSpinlock, &Tmp);
+            RTSpinlockReleaseNoInts(pCpu->Ppt.hSpinlock);
         }
     }
 #else  /* !GVMM_SCHED_WITH_PPT */

@@ -131,19 +131,18 @@ static NDIS_STATUS vboxNetFltWinSendPassThru(PVBOXNETFLTINS pNetFlt, PNDIS_PACKE
 #else /* defined VBOXNETADP */
 DECLHIDDEN(NDIS_STATUS) vboxNetFltWinMpDoDeinitialization(PVBOXNETFLTINS pNetFlt)
 {
-    RTSPINLOCKTMP Tmp = RTSPINLOCKTMP_INITIALIZER;
     uint64_t NanoTS = RTTimeSystemNanoTS();
 
     Assert(vboxNetFltWinGetOpState(&pNetFlt->u.s.WinIf.MpState) == kVBoxNetDevOpState_Initialized);
 
-    RTSpinlockAcquireNoInts(pNetFlt->hSpinlock, &Tmp);
+    RTSpinlockAcquire(pNetFlt->hSpinlock);
     ASMAtomicUoWriteBool(&pNetFlt->fDisconnectedFromHost, true);
     ASMAtomicUoWriteBool(&pNetFlt->fRediscoveryPending, false);
     ASMAtomicUoWriteU64(&pNetFlt->NanoTSLastRediscovery, NanoTS);
 
     vboxNetFltWinSetOpState(&pNetFlt->u.s.WinIf.MpState, kVBoxNetDevOpState_Deinitializing);
 
-    RTSpinlockReleaseNoInts(pNetFlt->hSpinlock, &Tmp);
+    RTSpinlockReleaseNoInts(pNetFlt->hSpinlock);
 
     vboxNetFltWinWaitDereference(&pNetFlt->u.s.WinIf.MpState);
 
@@ -504,8 +503,6 @@ static VOID vboxNetFltWinMpSendPackets(IN NDIS_HANDLE hMiniportAdapterContext,
 #ifndef VBOXNETADP
 static UINT vboxNetFltWinMpRequestStatePrep(PVBOXNETFLTINS pNetFlt, NDIS_STATUS *pStatus)
 {
-    RTSPINLOCKTMP Tmp = RTSPINLOCKTMP_INITIALIZER;
-
     Assert(!pNetFlt->u.s.WinIf.StateFlags.fRequestInfo);
 
     if (vboxNetFltWinGetOpState(&pNetFlt->u.s.WinIf.PtState) > kVBoxNetDevOpState_Initialized /* protocol unbind in progress */
@@ -515,12 +512,12 @@ static UINT vboxNetFltWinMpRequestStatePrep(PVBOXNETFLTINS pNetFlt, NDIS_STATUS 
         return 0;
     }
 
-    RTSpinlockAcquireNoInts(pNetFlt->hSpinlock, &Tmp);
+    RTSpinlockAcquire(pNetFlt->hSpinlock);
     Assert(!pNetFlt->u.s.WinIf.StateFlags.fRequestInfo);
     if (vboxNetFltWinGetOpState(&pNetFlt->u.s.WinIf.PtState) > kVBoxNetDevOpState_Initialized /* protocol unbind in progress */
             || vboxNetFltWinGetPowerState(&pNetFlt->u.s.WinIf.MpState) > NdisDeviceStateD0)
     {
-        RTSpinlockReleaseNoInts(pNetFlt->hSpinlock, &Tmp);
+        RTSpinlockReleaseNoInts(pNetFlt->hSpinlock);
         *pStatus = NDIS_STATUS_FAILURE;
         return 0;
     }
@@ -529,21 +526,21 @@ static UINT vboxNetFltWinMpRequestStatePrep(PVBOXNETFLTINS pNetFlt, NDIS_STATUS 
             && !pNetFlt->u.s.WinIf.StateFlags.fStandBy)
     {
         pNetFlt->u.s.WinIf.StateFlags.fRequestInfo = VBOXNDISREQUEST_INPROGRESS | VBOXNDISREQUEST_QUEUED;
-        RTSpinlockReleaseNoInts(pNetFlt->hSpinlock, &Tmp);
+        RTSpinlockReleaseNoInts(pNetFlt->hSpinlock);
         *pStatus = NDIS_STATUS_PENDING;
         return VBOXNDISREQUEST_INPROGRESS | VBOXNDISREQUEST_QUEUED;
     }
 
     if (pNetFlt->u.s.WinIf.StateFlags.fStandBy)
     {
-        RTSpinlockReleaseNoInts(pNetFlt->hSpinlock, &Tmp);
+        RTSpinlockReleaseNoInts(pNetFlt->hSpinlock);
         *pStatus = NDIS_STATUS_FAILURE;
         return 0;
     }
 
     pNetFlt->u.s.WinIf.StateFlags.fRequestInfo = VBOXNDISREQUEST_INPROGRESS;
 
-    RTSpinlockReleaseNoInts(pNetFlt->hSpinlock, &Tmp);
+    RTSpinlockReleaseNoInts(pNetFlt->hSpinlock);
 
     *pStatus = NDIS_STATUS_SUCCESS;
     return VBOXNDISREQUEST_INPROGRESS;
@@ -775,7 +772,6 @@ static NDIS_STATUS vboxNetFltWinMpSetInformation(IN NDIS_HANDLE MiniportAdapterC
         OUT PULONG BytesNeeded)
 {
     PVBOXNETFLTINS pNetFlt = (PVBOXNETFLTINS)MiniportAdapterContext;
-    RTSPINLOCKTMP Tmp = RTSPINLOCKTMP_INITIALIZER;
     NDIS_STATUS Status = NDIS_STATUS_FAILURE;
 
     LogFlow(("==>"__FUNCTION__": pNetFlt (0x%p), Oid (%s)\n", pNetFlt, vboxNetFltWinMpDumpOid(Oid)));
