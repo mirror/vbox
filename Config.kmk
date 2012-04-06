@@ -2126,12 +2126,21 @@ VBOX_GCC_VERSION = $(shell \
 endif
 
 # No $(QUIET) here as it's interesting to see what goes into the file.
-$(PATH_OUT)/GCCConfig.kmk: $(PATH_ROOT)/Config.kmk $(LOCALCFG) $(AUTOCFG)
+$(PATH_OUT)/GCCConfig.kmk: \
+		$(PATH_ROOT)/Config.kmk \
+		$(LOCALCFG) \
+		$(AUTOCFG) \
+		$(VBOX_GCC_PATH_CC) \
+		$(VBOX_GCC_PATH_CXX) \
+		$(VBOX_GCC32_PATH_CC) \
+		$(VBOX_GCC32_PATH_CXX)
 	$(call MSG_GENERATE,,$@,)
 	$(QUIET)$(RM) -f '$@'
 	$(QUIET)$(MKDIR) -p $(@D)
 
 # HC compiler switch detection.
+	$(APPEND) '$@' 'VBOX_GCC_PATH_CC               ?= $(which $(TOOL_$(VBOX_GCC_TOOL)_CC))'
+	$(APPEND) '$@' 'VBOX_GCC_PATH_CXX              ?= $(which $(TOOL_$(VBOX_GCC_TOOL)_CXX))'
 	$(APPEND) '$@' 'VBOX_GCC_VERSION_CC            ?= $(call VBOX_GCC_VERSION,$(TOOL_$(VBOX_GCC_TOOL)_CC))'
 	$(APPEND) '$@' 'VBOX_GCC_VERSION_CXX           ?= $(call VBOX_GCC_VERSION,$(TOOL_$(VBOX_GCC_TOOL)_CXX))'
 	$(APPEND) '$@' 'VBOX_GCC_LIBGCC                ?= $(shell $(TOOL_$(VBOX_GCC_TOOL)_CC) -print-libgcc-file-name)'
@@ -2195,6 +2204,8 @@ else
 	$(APPEND) '$@' 'VBOX_PATH_GCC_INCS             ?= $(shell LC_ALL=C $(TOOL_$(VBOX_GCC_TOOL)_CC) -print-search-dirs|$(SED_EXT) -ne 's+^install: \(.*[^/][^/]*\)/+\1+p')/include'
 endif
 # 32-bit (GC) compiler switch detection.
+	$(APPEND) '$@' 'VBOX_GCC32_PATH_CC             ?= $(which $(TOOL_$(VBOX_GCC32_TOOL)_CC))'
+	$(APPEND) '$@' 'VBOX_GCC32_PATH_CXX            ?= $(which $(TOOL_$(VBOX_GCC32_TOOL)_CXX))'
 	$(APPEND) '$@' 'VBOX_GCC32_VERSION_CC          ?= $(call VBOX_GCC_VERSION,$(TOOL_$(VBOX_GCC32_TOOL)_CC))'
 	$(APPEND) '$@' 'VBOX_GCC32_VERSION_CXX         ?= $(call VBOX_GCC_VERSION,$(TOOL_$(VBOX_GCC32_TOOL)_CXX))'
 	$(APPEND) '$@' 'VBOX_GCC32_LIBGCC              ?= $(shell $(TOOL_$(VBOX_GCC32_TOOL)_CC) -print-libgcc-file-name)'
