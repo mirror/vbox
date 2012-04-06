@@ -679,6 +679,8 @@ SUPR0DECL(int) SUPR0TracerRegisterModule(void *hMod, PVTGOBJHDR pVtgHdr)
     uintptr_t       cbVtgObj;
     int             rc;
 
+SUPR0Printf("SUPR0TracerRegisterModule: %p\n", pVtgHdr);
+
     /*
      * Validate input and context.
      */
@@ -701,6 +703,7 @@ SUPR0DECL(int) SUPR0TracerRegisterModule(void *hMod, PVTGOBJHDR pVtgHdr)
     cbVtgObj = pImage->cbImageBits - cbVtgObj;
 
     rc = supdrvTracerRegisterVtgObj(pDevExt, pVtgHdr, cbVtgObj, pImage, NULL, pImage->szName);
+SUPR0Printf("SUPR0TracerRegisterModule: rc=%d\n", rc);
 
     /*
      * Try unregister zombies while we have a chance.

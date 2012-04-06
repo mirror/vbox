@@ -53,8 +53,10 @@ int main(int argc, char **argv)
      */
     static const RTGETOPTDEF s_aOptions[] =
     {
-        { "--help",             'h', RTGETOPT_REQ_NOTHING } /* (dummy entry) */
+        { "--keep",             'k', RTGETOPT_REQ_NOTHING }
     };
+
+    bool fKeepLoaded = false;
 
     int ch;
     RTGETOPTUNION ValueUnion;
@@ -77,14 +79,21 @@ int main(int argc, char **argv)
                 }
                 RTPrintf("Loaded '%s' at %p\n", ValueUnion.psz, pvImageBase);
 
-                rc = SUPR3FreeModule(pvImageBase);
-                if (RT_FAILURE(rc))
+                if (!fKeepLoaded)
                 {
-                    RTMsgError("%Rrc when attempting to load '%s'\n", rc, ValueUnion.psz);
-                    return 1;
+                    rc = SUPR3FreeModule(pvImageBase);
+                    if (RT_FAILURE(rc))
+                    {
+                        RTMsgError("%Rrc when attempting to load '%s'\n", rc, ValueUnion.psz);
+                        return 1;
+                    }
                 }
                 break;
             }
+
+            case 'k':
+                fKeepLoaded = true;
+                break;
 
             case 'h':
                 RTPrintf("%s [mod1 [mod2...]]\n");
