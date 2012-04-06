@@ -586,16 +586,14 @@ DECLINLINE(bool) vboxNetFltWinDoIncReferenceDevices(PVBOXNETFLT_WINIF_DEVICE pSt
 
 DECLINLINE(bool) vboxNetFltWinReferenceWinIfNetFlt(PVBOXNETFLTINS pNetFlt, bool * pbNetFltActive)
 {
-    RTSPINLOCKTMP Tmp = RTSPINLOCKTMP_INITIALIZER;
-
-    RTSpinlockAcquireNoInts((pNetFlt)->hSpinlock, &Tmp);
+    RTSpinlockAcquire((pNetFlt)->hSpinlock);
 #ifndef VBOXNETADP
     if(!vboxNetFltWinDoReferenceDevices(&pNetFlt->u.s.WinIf.MpState, &pNetFlt->u.s.WinIf.PtState))
 #else
     if(!vboxNetFltWinDoReferenceDevice(&pNetFlt->u.s.WinIf.MpState))
 #endif
     {
-        RTSpinlockReleaseNoInts((pNetFlt)->hSpinlock, &Tmp);
+        RTSpinlockReleaseNoInts((pNetFlt)->hSpinlock);
         *pbNetFltActive = false;
         return false;
     }
@@ -603,14 +601,14 @@ DECLINLINE(bool) vboxNetFltWinReferenceWinIfNetFlt(PVBOXNETFLTINS pNetFlt, bool 
     if(pNetFlt->enmTrunkState != INTNETTRUNKIFSTATE_ACTIVE)
     {
         vboxNetFltWinReferenceModePassThru(pNetFlt);
-        RTSpinlockReleaseNoInts((pNetFlt)->hSpinlock, &Tmp);
+        RTSpinlockReleaseNoInts((pNetFlt)->hSpinlock);
         *pbNetFltActive = false;
         return true;
     }
 
     vboxNetFltRetain((pNetFlt), true /* fBusy */);
     vboxNetFltWinReferenceModeNetFlt(pNetFlt);
-    RTSpinlockReleaseNoInts((pNetFlt)->hSpinlock, &Tmp);
+    RTSpinlockReleaseNoInts((pNetFlt)->hSpinlock);
 
     *pbNetFltActive = true;
     return true;
@@ -618,7 +616,6 @@ DECLINLINE(bool) vboxNetFltWinReferenceWinIfNetFlt(PVBOXNETFLTINS pNetFlt, bool 
 
 DECLINLINE(bool) vboxNetFltWinIncReferenceWinIfNetFlt(PVBOXNETFLTINS pNetFlt, uint32_t v, bool *pbNetFltActive)
 {
-    RTSPINLOCKTMP Tmp = RTSPINLOCKTMP_INITIALIZER;
     uint32_t i;
 
     Assert(v);
@@ -628,14 +625,14 @@ DECLINLINE(bool) vboxNetFltWinIncReferenceWinIfNetFlt(PVBOXNETFLTINS pNetFlt, ui
         return false;
     }
 
-    RTSpinlockAcquireNoInts((pNetFlt)->hSpinlock, &Tmp);
+    RTSpinlockAcquire((pNetFlt)->hSpinlock);
 #ifndef VBOXNETADP
     if(!vboxNetFltWinDoIncReferenceDevices(&pNetFlt->u.s.WinIf.MpState, &pNetFlt->u.s.WinIf.PtState, v))
 #else
     if(!vboxNetFltWinDoIncReferenceDevice(&pNetFlt->u.s.WinIf.MpState, v))
 #endif
     {
-        RTSpinlockReleaseNoInts(pNetFlt->hSpinlock, &Tmp);
+        RTSpinlockReleaseNoInts(pNetFlt->hSpinlock);
         *pbNetFltActive = false;
         return false;
     }
@@ -644,7 +641,7 @@ DECLINLINE(bool) vboxNetFltWinIncReferenceWinIfNetFlt(PVBOXNETFLTINS pNetFlt, ui
     {
         vboxNetFltWinIncReferenceModePassThru(pNetFlt, v);
 
-        RTSpinlockReleaseNoInts((pNetFlt)->hSpinlock, &Tmp);
+        RTSpinlockReleaseNoInts((pNetFlt)->hSpinlock);
         *pbNetFltActive = false;
         return true;
     }
@@ -653,7 +650,7 @@ DECLINLINE(bool) vboxNetFltWinIncReferenceWinIfNetFlt(PVBOXNETFLTINS pNetFlt, ui
 
     vboxNetFltWinIncReferenceModeNetFlt(pNetFlt, v);
 
-    RTSpinlockReleaseNoInts(pNetFlt->hSpinlock, &Tmp);
+    RTSpinlockReleaseNoInts(pNetFlt->hSpinlock);
 
     /* we have marked it as busy, so can do the res references outside the lock */
     for(i = 0; i < v-1; i++)
@@ -704,44 +701,41 @@ DECLINLINE(void) vboxNetFltWinDereferenceWinIf(PVBOXNETFLTINS pNetFlt)
 
 DECLINLINE(bool) vboxNetFltWinIncReferenceWinIf(PVBOXNETFLTINS pNetFlt, uint32_t v)
 {
-    RTSPINLOCKTMP Tmp = RTSPINLOCKTMP_INITIALIZER;
-
     Assert(v);
     if(!v)
     {
         return false;
     }
 
-    RTSpinlockAcquireNoInts(pNetFlt->hSpinlock, &Tmp);
+    RTSpinlockAcquire(pNetFlt->hSpinlock);
 #ifdef VBOXNETADP
     if(vboxNetFltWinDoIncReferenceDevice(&pNetFlt->u.s.WinIf.MpState, v))
 #else
     if(vboxNetFltWinDoIncReferenceDevices(&pNetFlt->u.s.WinIf.MpState, &pNetFlt->u.s.WinIf.PtState, v))
 #endif
     {
-        RTSpinlockReleaseNoInts(pNetFlt->hSpinlock, &Tmp);
+        RTSpinlockReleaseNoInts(pNetFlt->hSpinlock);
         return true;
     }
 
-    RTSpinlockReleaseNoInts(pNetFlt->hSpinlock, &Tmp);
+    RTSpinlockReleaseNoInts(pNetFlt->hSpinlock);
     return false;
 }
 
 DECLINLINE(bool) vboxNetFltWinReferenceWinIf(PVBOXNETFLTINS pNetFlt)
 {
-    RTSPINLOCKTMP Tmp = RTSPINLOCKTMP_INITIALIZER;
-    RTSpinlockAcquireNoInts(pNetFlt->hSpinlock, &Tmp);
+    RTSpinlockAcquire(pNetFlt->hSpinlock);
 #ifdef VBOXNETADP
     if(vboxNetFltWinDoReferenceDevice(&pNetFlt->u.s.WinIf.MpState))
 #else
     if(vboxNetFltWinDoReferenceDevices(&pNetFlt->u.s.WinIf.MpState, &pNetFlt->u.s.WinIf.PtState))
 #endif
     {
-        RTSpinlockReleaseNoInts(pNetFlt->hSpinlock, &Tmp);
+        RTSpinlockReleaseNoInts(pNetFlt->hSpinlock);
         return true;
     }
 
-    RTSpinlockReleaseNoInts(pNetFlt->hSpinlock, &Tmp);
+    RTSpinlockReleaseNoInts(pNetFlt->hSpinlock);
     return false;
 }
 

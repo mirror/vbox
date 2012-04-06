@@ -107,7 +107,7 @@ DECLASM(int) VBoxDrvInit(const char *pszArgs)
             /*
              * Initialize the session hash table.
              */
-            rc = RTSpinlockCreate(&g_Spinlock);
+            rc = RTSpinlockCreate(&g_Spinlock, RTSPINLOCK_FLAGS_INTERRUPT_SAFE, "VBoxDrvOS2");
             if (RT_SUCCESS(rc))
             {
                 /*
@@ -159,11 +159,10 @@ DECLASM(int) VBoxDrvOpen(uint16_t sfn)
          * Insert it into the hash table.
          */
         unsigned iHash = SESSION_HASH(sfn);
-        RTSPINLOCKTMP Tmp = RTSPINLOCKTMP_INITIALIZER;
-        RTSpinlockAcquireNoInts(g_Spinlock, &Tmp);
+        RTSpinlockAcquire(g_Spinlock);
         pSession->pNextHash = g_apSessionHashTab[iHash];
         g_apSessionHashTab[iHash] = pSession;
-        RTSpinlockReleaseNoInts(g_Spinlock, &Tmp);
+        RTSpinlockReleaseNoInts(g_Spinlock);
     }
 
     Log(("VBoxDrvOpen: g_DevExt=%p pSession=%p rc=%d pid=%d\n", &g_DevExt, pSession, rc, (int)RTProcSelf()));
@@ -181,8 +180,7 @@ DECLASM(int) VBoxDrvClose(uint16_t sfn)
     PSUPDRVSESSION  pSession;
     const RTPROCESS Process = RTProcSelf();
     const unsigned  iHash = SESSION_HASH(sfn);
-    RTSPINLOCKTMP Tmp = RTSPINLOCKTMP_INITIALIZER;
-    RTSpinlockAcquireNoInts(g_Spinlock, &Tmp);
+    RTSpinlockAcquire(g_Spinlock);
 
     pSession = g_apSessionHashTab[iHash];
     if (pSession)
@@ -213,7 +211,7 @@ DECLASM(int) VBoxDrvClose(uint16_t sfn)
             }
         }
     }
-    RTSpinlockReleaseNoInts(g_Spinlock, &Tmp);
+    RTSpinlockReleaseNoInts(g_Spinlock);
     if (!pSession)
     {
         OSDBGPRINT(("VBoxDrvIoctl: WHUT?!? pSession == NULL! This must be a mistake... pid=%d sfn=%d\n", (int)Process, sfn));
@@ -233,12 +231,11 @@ DECLASM(int) VBoxDrvIOCtlFast(uint16_t sfn, uint8_t iFunction)
     /*
      * Find the session.
      */
-    RTSPINLOCKTMP       Tmp = RTSPINLOCKTMP_INITIALIZER;
     const RTPROCESS     Process = RTProcSelf();
     const unsigned      iHash = SESSION_HASH(sfn);
     PSUPDRVSESSION      pSession;
 
-    RTSpinlockAcquireNoInts(g_Spinlock, &Tmp);
+    RTSpinlockAcquire(g_Spinlock);
     pSession = g_apSessionHashTab[iHash];
     if (pSession && pSession->Process != Process)
     {
@@ -247,7 +244,7 @@ DECLASM(int) VBoxDrvIOCtlFast(uint16_t sfn, uint8_t iFunction)
                &&   (   pSession->sfn != sfn
                      || pSession->Process != Process));
     }
-    RTSpinlockReleaseNoInts(g_Spinlock, &Tmp);
+    RTSpinlockReleaseNoInts(g_Spinlock);
     if (RT_UNLIKELY(!pSession))
     {
         OSDBGPRINT(("VBoxDrvIoctl: WHUT?!? pSession == NULL! This must be a mistake... pid=%d\n", (int)Process));
@@ -267,12 +264,11 @@ DECLASM(int) VBoxDrvIOCtl(uint16_t sfn, uint8_t iCat, uint8_t iFunction, void *p
     /*
      * Find the session.
      */
-    RTSPINLOCKTMP       Tmp = RTSPINLOCKTMP_INITIALIZER;
     const RTPROCESS     Process = RTProcSelf();
     const unsigned      iHash = SESSION_HASH(sfn);
     PSUPDRVSESSION      pSession;
 
-    RTSpinlockAcquireNoInts(g_Spinlock, &Tmp);
+    RTSpinlockAcquire(g_Spinlock);
     pSession = g_apSessionHashTab[iHash];
     if (pSession && pSession->Process != Process)
     {
@@ -281,7 +277,7 @@ DECLASM(int) VBoxDrvIOCtl(uint16_t sfn, uint8_t iCat, uint8_t iFunction, void *p
                &&   (   pSession->sfn != sfn
                      || pSession->Process != Process));
     }
-    RTSpinlockReleaseNoInts(g_Spinlock, &Tmp);
+    RTSpinlockReleaseNoInts(g_Spinlock);
     if (!pSession)
     {
         OSDBGPRINT(("VBoxDrvIoctl: WHUT?!? pSession == NULL! This must be a mistake... pid=%d\n", (int)Process));

@@ -341,7 +341,6 @@ static SUPFUNC g_aFunctions[] =
     { "RTSemMutexRequestNoResume",              (void *)RTSemMutexRequestNoResume },
     { "RTSemMutexRequestNoResumeDebug",         (void *)RTSemMutexRequestNoResumeDebug },
     { "RTSpinlockAcquire",                      (void *)RTSpinlockAcquire },
-    { "RTSpinlockAcquireNoInts",                (void *)RTSpinlockAcquireNoInts },
     { "RTSpinlockCreate",                       (void *)RTSpinlockCreate },
     { "RTSpinlockDestroy",                      (void *)RTSpinlockDestroy },
     { "RTSpinlockRelease",                      (void *)RTSpinlockRelease },
@@ -451,10 +450,10 @@ int VBOXCALL supdrvInitDevExt(PSUPDRVDEVEXT pDevExt, size_t cbSession)
      * Initialize it.
      */
     memset(pDevExt, 0, sizeof(*pDevExt));
-    rc = RTSpinlockCreate(&pDevExt->Spinlock);
+    rc = RTSpinlockCreate(&pDevExt->Spinlock, RTSPINLOCK_FLAGS_INTERRUPT_UNSAFE, "SUPDrvDevExt");
     if (RT_SUCCESS(rc))
     {
-        rc = RTSpinlockCreate(&pDevExt->spinGip);
+        rc = RTSpinlockCreate(&pDevExt->hGipSpinlock, RTSPINLOCK_FLAGS_INTERRUPT_SAFE, "SUPDrvGip");
         if (RT_SUCCESS(rc))
         {
 #ifdef SUPDRV_USE_MUTEX_FOR_LDR
@@ -562,8 +561,8 @@ int VBOXCALL supdrvInitDevExt(PSUPDRVDEVEXT pDevExt, size_t cbSession)
                 pDevExt->mtxLdr = NIL_RTSEMFASTMUTEX;
 #endif
             }
-            RTSpinlockDestroy(pDevExt->spinGip);
-            pDevExt->spinGip = NIL_RTSPINLOCK;
+            RTSpinlockDestroy(pDevExt->hGipSpinlock);
+            pDevExt->hGipSpinlock = NIL_RTSPINLOCK;
         }
         RTSpinlockDestroy(pDevExt->Spinlock);
         pDevExt->Spinlock = NIL_RTSPINLOCK;
@@ -635,8 +634,8 @@ void VBOXCALL supdrvDeleteDevExt(PSUPDRVDEVEXT pDevExt)
 
     /* kill the GIP. */
     supdrvGipDestroy(pDevExt);
-    RTSpinlockDestroy(pDevExt->spinGip);
-    pDevExt->spinGip = NIL_RTSPINLOCK;
+    RTSpinlockDestroy(pDevExt->hGipSpinlock);
+    pDevExt->hGipSpinlock = NIL_RTSPINLOCK;
 
     supdrvTracerTerm(pDevExt);
 
@@ -666,7 +665,7 @@ int VBOXCALL supdrvCreateSession(PSUPDRVDEVEXT pDevExt, bool fUser, PSUPDRVSESSI
     if (pSession)
     {
         /* Initialize session data. */
-        rc = RTSpinlockCreate(&pSession->Spinlock);
+        rc = RTSpinlockCreate(&pSession->Spinlock, RTSPINLOCK_FLAGS_INTERRUPT_UNSAFE, "SUPDrvSession");
         if (!rc)
         {
             rc = RTHandleTableCreateEx(&pSession->hHandleTable,
@@ -776,9 +775,8 @@ void VBOXCALL supdrvCleanupSession(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSessio
     Log2(("release objects - start\n"));
     if (pSession->pUsage)
     {
-        RTSPINLOCKTMP   SpinlockTmp = RTSPINLOCKTMP_INITIALIZER;
         PSUPDRVUSAGE    pUsage;
-        RTSpinlockAcquire(pDevExt->Spinlock, &SpinlockTmp);
+        RTSpinlockAcquire(pDevExt->Spinlock);
 
         while ((pUsage = pSession->pUsage) != NULL)
         {
@@ -789,7 +787,7 @@ void VBOXCALL supdrvCleanupSession(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSessio
             if (pUsage->cUsage < pObj->cUsage)
             {
                 pObj->cUsage -= pUsage->cUsage;
-                RTSpinlockRelease(pDevExt->Spinlock, &SpinlockTmp);
+                RTSpinlockRelease(pDevExt->Spinlock);
             }
             else
             {
@@ -807,7 +805,7 @@ void VBOXCALL supdrvCleanupSession(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSessio
                         }
                     Assert(pObjPrev);
                 }
-                RTSpinlockRelease(pDevExt->Spinlock, &SpinlockTmp);
+                RTSpinlockRelease(pDevExt->Spinlock);
 
                 Log(("supdrvCleanupSession: destroying %p/%d (%p/%p) cpid=%RTproc pid=%RTproc dtor=%p\n",
                      pObj, pObj->enmType, pObj->pvUser1, pObj->pvUser2, pObj->CreatorProcess, RTProcSelf(), pObj->pfnDestructor));
@@ -819,10 +817,10 @@ void VBOXCALL supdrvCleanupSession(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSessio
             /* free it and continue. */
             RTMemFree(pUsage);
 
-            RTSpinlockAcquire(pDevExt->Spinlock, &SpinlockTmp);
+            RTSpinlockAcquire(pDevExt->Spinlock);
         }
 
-        RTSpinlockRelease(pDevExt->Spinlock, &SpinlockTmp);
+        RTSpinlockRelease(pDevExt->Spinlock);
         AssertMsg(!pSession->pUsage, ("Some buster reregistered an object during desturction!\n"));
     }
     Log2(("release objects - done\n"));
@@ -2001,7 +1999,6 @@ int VBOXCALL supdrvIDC(uintptr_t uReq, PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSe
  */
 SUPR0DECL(void *) SUPR0ObjRegister(PSUPDRVSESSION pSession, SUPDRVOBJTYPE enmType, PFNSUPDRVDESTRUCTOR pfnDestructor, void *pvUser1, void *pvUser2)
 {
-    RTSPINLOCKTMP   SpinlockTmp = RTSPINLOCKTMP_INITIALIZER;
     PSUPDRVDEVEXT   pDevExt     = pSession->pDevExt;
     PSUPDRVOBJ      pObj;
     PSUPDRVUSAGE    pUsage;
@@ -2035,21 +2032,21 @@ SUPR0DECL(void *) SUPR0ObjRegister(PSUPDRVSESSION pSession, SUPDRVOBJTYPE enmTyp
      * Allocate the usage record.
      * (We keep freed usage records around to simplify SUPR0ObjAddRefEx().)
      */
-    RTSpinlockAcquire(pDevExt->Spinlock, &SpinlockTmp);
+    RTSpinlockAcquire(pDevExt->Spinlock);
 
     pUsage = pDevExt->pUsageFree;
     if (pUsage)
         pDevExt->pUsageFree = pUsage->pNext;
     else
     {
-        RTSpinlockRelease(pDevExt->Spinlock, &SpinlockTmp);
+        RTSpinlockRelease(pDevExt->Spinlock);
         pUsage = (PSUPDRVUSAGE)RTMemAlloc(sizeof(*pUsage));
         if (!pUsage)
         {
             RTMemFree(pObj);
             return NULL;
         }
-        RTSpinlockAcquire(pDevExt->Spinlock, &SpinlockTmp);
+        RTSpinlockAcquire(pDevExt->Spinlock);
     }
 
     /*
@@ -2066,7 +2063,7 @@ SUPR0DECL(void *) SUPR0ObjRegister(PSUPDRVSESSION pSession, SUPDRVOBJTYPE enmTyp
     /* Log2(("SUPR0ObjRegister: pUsage=%p:{.pObj=%p, .pNext=%p}\n", pUsage, pUsage->pObj, pUsage->pNext)); */
     pSession->pUsage    = pUsage;
 
-    RTSpinlockRelease(pDevExt->Spinlock, &SpinlockTmp);
+    RTSpinlockRelease(pDevExt->Spinlock);
 
     Log(("SUPR0ObjRegister: returns %p (pvUser1=%p, pvUser=%p)\n", pObj, pvUser1, pvUser2));
     return pObj;
@@ -2112,7 +2109,6 @@ SUPR0DECL(int) SUPR0ObjAddRef(void *pvObj, PSUPDRVSESSION pSession)
  */
 SUPR0DECL(int) SUPR0ObjAddRefEx(void *pvObj, PSUPDRVSESSION pSession, bool fNoBlocking)
 {
-    RTSPINLOCKTMP   SpinlockTmp = RTSPINLOCKTMP_INITIALIZER;
     PSUPDRVDEVEXT   pDevExt     = pSession->pDevExt;
     PSUPDRVOBJ      pObj        = (PSUPDRVOBJ)pvObj;
     int             rc          = VINF_SUCCESS;
@@ -2130,11 +2126,11 @@ SUPR0DECL(int) SUPR0ObjAddRefEx(void *pvObj, PSUPDRVSESSION pSession, bool fNoBl
                     ("Invalid pvObj=%p magic=%#x (expected %#x or %#x)\n", pvObj, pObj->u32Magic, SUPDRVOBJ_MAGIC, SUPDRVOBJ_MAGIC_DEAD),
                     VERR_INVALID_PARAMETER);
 
-    RTSpinlockAcquire(pDevExt->Spinlock, &SpinlockTmp);
+    RTSpinlockAcquire(pDevExt->Spinlock);
 
     if (RT_UNLIKELY(pObj->u32Magic != SUPDRVOBJ_MAGIC))
     {
-        RTSpinlockRelease(pDevExt->Spinlock, &SpinlockTmp);
+        RTSpinlockRelease(pDevExt->Spinlock);
 
         AssertMsgFailed(("pvObj=%p magic=%#x\n", pvObj, pObj->u32Magic));
         return VERR_WRONG_ORDER;
@@ -2148,15 +2144,15 @@ SUPR0DECL(int) SUPR0ObjAddRefEx(void *pvObj, PSUPDRVSESSION pSession, bool fNoBl
         pDevExt->pUsageFree = pUsagePre->pNext;
     else if (!fNoBlocking)
     {
-        RTSpinlockRelease(pDevExt->Spinlock, &SpinlockTmp);
+        RTSpinlockRelease(pDevExt->Spinlock);
         pUsagePre = (PSUPDRVUSAGE)RTMemAlloc(sizeof(*pUsagePre));
         if (!pUsagePre)
             return VERR_NO_MEMORY;
 
-        RTSpinlockAcquire(pDevExt->Spinlock, &SpinlockTmp);
+        RTSpinlockAcquire(pDevExt->Spinlock);
         if (RT_UNLIKELY(pObj->u32Magic != SUPDRVOBJ_MAGIC))
         {
-            RTSpinlockRelease(pDevExt->Spinlock, &SpinlockTmp);
+            RTSpinlockRelease(pDevExt->Spinlock);
 
             AssertMsgFailed(("pvObj=%p magic=%#x\n", pvObj, pObj->u32Magic));
             return VERR_WRONG_ORDER;
@@ -2205,7 +2201,7 @@ SUPR0DECL(int) SUPR0ObjAddRefEx(void *pvObj, PSUPDRVSESSION pSession, bool fNoBl
         pDevExt->pUsageFree = pUsagePre;
     }
 
-    RTSpinlockRelease(pDevExt->Spinlock, &SpinlockTmp);
+    RTSpinlockRelease(pDevExt->Spinlock);
 
     return rc;
 }
@@ -2227,7 +2223,6 @@ SUPR0DECL(int) SUPR0ObjAddRefEx(void *pvObj, PSUPDRVSESSION pSession, bool fNoBl
  */
 SUPR0DECL(int) SUPR0ObjRelease(void *pvObj, PSUPDRVSESSION pSession)
 {
-    RTSPINLOCKTMP       SpinlockTmp = RTSPINLOCKTMP_INITIALIZER;
     PSUPDRVDEVEXT       pDevExt     = pSession->pDevExt;
     PSUPDRVOBJ          pObj        = (PSUPDRVOBJ)pvObj;
     int                 rc          = VERR_INVALID_PARAMETER;
@@ -2245,7 +2240,7 @@ SUPR0DECL(int) SUPR0ObjRelease(void *pvObj, PSUPDRVSESSION pSession)
     /*
      * Acquire the spinlock and look for the usage record.
      */
-    RTSpinlockAcquire(pDevExt->Spinlock, &SpinlockTmp);
+    RTSpinlockAcquire(pDevExt->Spinlock);
 
     for (pUsagePrev = NULL, pUsage = pSession->pUsage;
          pUsage;
@@ -2302,7 +2297,7 @@ SUPR0DECL(int) SUPR0ObjRelease(void *pvObj, PSUPDRVSESSION pSession)
         }
     }
 
-    RTSpinlockRelease(pDevExt->Spinlock, &SpinlockTmp);
+    RTSpinlockRelease(pDevExt->Spinlock);
 
     /*
      * Call the destructor and free the object if required.
@@ -2685,7 +2680,6 @@ SUPR0DECL(int) SUPR0MemAlloc(PSUPDRVSESSION pSession, uint32_t cb, PRTR0PTR ppvR
 SUPR0DECL(int) SUPR0MemGetPhys(PSUPDRVSESSION pSession, RTHCUINTPTR uPtr, PSUPPAGE paPages) /** @todo switch this bugger to RTHCPHYS */
 {
     PSUPDRVBUNDLE pBundle;
-    RTSPINLOCKTMP SpinlockTmp = RTSPINLOCKTMP_INITIALIZER;
     LogFlow(("SUPR0MemGetPhys: pSession=%p uPtr=%p paPages=%p\n", pSession, (void *)uPtr, paPages));
 
     /*
@@ -2698,7 +2692,7 @@ SUPR0DECL(int) SUPR0MemGetPhys(PSUPDRVSESSION pSession, RTHCUINTPTR uPtr, PSUPPA
     /*
      * Search for the address.
      */
-    RTSpinlockAcquire(pSession->Spinlock, &SpinlockTmp);
+    RTSpinlockAcquire(pSession->Spinlock);
     for (pBundle = &pSession->Bundle; pBundle; pBundle = pBundle->pNext)
     {
         if (pBundle->cUsed > 0)
@@ -2721,13 +2715,13 @@ SUPR0DECL(int) SUPR0MemGetPhys(PSUPDRVSESSION pSession, RTHCUINTPTR uPtr, PSUPPA
                         paPages[iPage].Phys = RTR0MemObjGetPagePhysAddr(pBundle->aMem[i].MemObj, iPage);
                         paPages[iPage].uReserved = 0;
                     }
-                    RTSpinlockRelease(pSession->Spinlock, &SpinlockTmp);
+                    RTSpinlockRelease(pSession->Spinlock);
                     return VINF_SUCCESS;
                 }
             }
         }
     }
-    RTSpinlockRelease(pSession->Spinlock, &SpinlockTmp);
+    RTSpinlockRelease(pSession->Spinlock);
     Log(("Failed to find %p!!!\n", (void *)uPtr));
     return VERR_INVALID_PARAMETER;
 }
@@ -2850,7 +2844,6 @@ SUPR0DECL(int) SUPR0PageMapKernel(PSUPDRVSESSION pSession, RTR3PTR pvR3, uint32_
 {
     int             rc;
     PSUPDRVBUNDLE   pBundle;
-    RTSPINLOCKTMP   SpinlockTmp = RTSPINLOCKTMP_INITIALIZER;
     RTR0MEMOBJ      hMemObj = NIL_RTR0MEMOBJ;
     LogFlow(("SUPR0PageMapKernel: pSession=%p pvR3=%p offSub=%#x cbSub=%#x\n", pSession, pvR3, offSub, cbSub));
 
@@ -2867,7 +2860,7 @@ SUPR0DECL(int) SUPR0PageMapKernel(PSUPDRVSESSION pSession, RTR3PTR pvR3, uint32_
     /*
      * Find the memory object.
      */
-    RTSpinlockAcquire(pSession->Spinlock, &SpinlockTmp);
+    RTSpinlockAcquire(pSession->Spinlock);
     for (pBundle = &pSession->Bundle; pBundle; pBundle = pBundle->pNext)
     {
         if (pBundle->cUsed > 0)
@@ -2890,7 +2883,7 @@ SUPR0DECL(int) SUPR0PageMapKernel(PSUPDRVSESSION pSession, RTR3PTR pvR3, uint32_
             }
         }
     }
-    RTSpinlockRelease(pSession->Spinlock, &SpinlockTmp);
+    RTSpinlockRelease(pSession->Spinlock);
 
     rc = VERR_INVALID_PARAMETER;
     if (hMemObj != NIL_RTR0MEMOBJ)
@@ -2936,7 +2929,6 @@ SUPR0DECL(int) SUPR0PageProtect(PSUPDRVSESSION pSession, RTR3PTR pvR3, RTR0PTR p
 {
     int             rc;
     PSUPDRVBUNDLE   pBundle;
-    RTSPINLOCKTMP   SpinlockTmp = RTSPINLOCKTMP_INITIALIZER;
     RTR0MEMOBJ      hMemObjR0 = NIL_RTR0MEMOBJ;
     RTR0MEMOBJ      hMemObjR3 = NIL_RTR0MEMOBJ;
     LogFlow(("SUPR0PageProtect: pSession=%p pvR3=%p pvR0=%p offSub=%#x cbSub=%#x fProt-%#x\n", pSession, pvR3, pvR0, offSub, cbSub, fProt));
@@ -2953,7 +2945,7 @@ SUPR0DECL(int) SUPR0PageProtect(PSUPDRVSESSION pSession, RTR3PTR pvR3, RTR0PTR p
     /*
      * Find the memory object.
      */
-    RTSpinlockAcquire(pSession->Spinlock, &SpinlockTmp);
+    RTSpinlockAcquire(pSession->Spinlock);
     for (pBundle = &pSession->Bundle; pBundle; pBundle = pBundle->pNext)
     {
         if (pBundle->cUsed > 0)
@@ -2979,7 +2971,7 @@ SUPR0DECL(int) SUPR0PageProtect(PSUPDRVSESSION pSession, RTR3PTR pvR3, RTR0PTR p
             }
         }
     }
-    RTSpinlockRelease(pSession->Spinlock, &SpinlockTmp);
+    RTSpinlockRelease(pSession->Spinlock);
 
     rc = VERR_INVALID_PARAMETER;
     if (    hMemObjR0 != NIL_RTR0MEMOBJ
@@ -3695,12 +3687,11 @@ SUPR0DECL(int) SUPR0ComponentQueryFactory(PSUPDRVSESSION pSession, const char *p
 static int supdrvMemAdd(PSUPDRVMEMREF pMem, PSUPDRVSESSION pSession)
 {
     PSUPDRVBUNDLE pBundle;
-    RTSPINLOCKTMP SpinlockTmp = RTSPINLOCKTMP_INITIALIZER;
 
     /*
      * Find free entry and record the allocation.
      */
-    RTSpinlockAcquire(pSession->Spinlock, &SpinlockTmp);
+    RTSpinlockAcquire(pSession->Spinlock);
     for (pBundle = &pSession->Bundle; pBundle; pBundle = pBundle->pNext)
     {
         if (pBundle->cUsed < RT_ELEMENTS(pBundle->aMem))
@@ -3712,14 +3703,14 @@ static int supdrvMemAdd(PSUPDRVMEMREF pMem, PSUPDRVSESSION pSession)
                 {
                     pBundle->cUsed++;
                     pBundle->aMem[i] = *pMem;
-                    RTSpinlockRelease(pSession->Spinlock, &SpinlockTmp);
+                    RTSpinlockRelease(pSession->Spinlock);
                     return VINF_SUCCESS;
                 }
             }
             AssertFailed();             /* !!this can't be happening!!! */
         }
     }
-    RTSpinlockRelease(pSession->Spinlock, &SpinlockTmp);
+    RTSpinlockRelease(pSession->Spinlock);
 
     /*
      * Need to allocate a new bundle.
@@ -3734,10 +3725,10 @@ static int supdrvMemAdd(PSUPDRVMEMREF pMem, PSUPDRVSESSION pSession)
     pBundle->aMem[RT_ELEMENTS(pBundle->aMem) - 1] = *pMem;
 
     /* insert into list. */
-    RTSpinlockAcquire(pSession->Spinlock, &SpinlockTmp);
+    RTSpinlockAcquire(pSession->Spinlock);
     pBundle->pNext = pSession->Bundle.pNext;
     pSession->Bundle.pNext = pBundle;
-    RTSpinlockRelease(pSession->Spinlock, &SpinlockTmp);
+    RTSpinlockRelease(pSession->Spinlock);
 
     return VINF_SUCCESS;
 }
@@ -3754,7 +3745,6 @@ static int supdrvMemAdd(PSUPDRVMEMREF pMem, PSUPDRVSESSION pSession)
 static int supdrvMemRelease(PSUPDRVSESSION pSession, RTHCUINTPTR uPtr, SUPDRVMEMREFTYPE eType)
 {
     PSUPDRVBUNDLE pBundle;
-    RTSPINLOCKTMP SpinlockTmp = RTSPINLOCKTMP_INITIALIZER;
 
     /*
      * Validate input.
@@ -3768,7 +3758,7 @@ static int supdrvMemRelease(PSUPDRVSESSION pSession, RTHCUINTPTR uPtr, SUPDRVMEM
     /*
      * Search for the address.
      */
-    RTSpinlockAcquire(pSession->Spinlock, &SpinlockTmp);
+    RTSpinlockAcquire(pSession->Spinlock);
     for (pBundle = &pSession->Bundle; pBundle; pBundle = pBundle->pNext)
     {
         if (pBundle->cUsed > 0)
@@ -3788,7 +3778,7 @@ static int supdrvMemRelease(PSUPDRVSESSION pSession, RTHCUINTPTR uPtr, SUPDRVMEM
                     pBundle->aMem[i].eType = MEMREF_TYPE_UNUSED;
                     pBundle->aMem[i].MemObj = NIL_RTR0MEMOBJ;
                     pBundle->aMem[i].MapObjR3 = NIL_RTR0MEMOBJ;
-                    RTSpinlockRelease(pSession->Spinlock, &SpinlockTmp);
+                    RTSpinlockRelease(pSession->Spinlock);
 
                     if (Mem.MapObjR3 != NIL_RTR0MEMOBJ)
                     {
@@ -3805,7 +3795,7 @@ static int supdrvMemRelease(PSUPDRVSESSION pSession, RTHCUINTPTR uPtr, SUPDRVMEM
             }
         }
     }
-    RTSpinlockRelease(pSession->Spinlock, &SpinlockTmp);
+    RTSpinlockRelease(pSession->Spinlock);
     Log(("Failed to find %p!!! (eType=%d)\n", (void *)uPtr, eType));
     return VERR_INVALID_PARAMETER;
 }
@@ -4211,8 +4201,7 @@ static int supdrvIOCtl_LdrFree(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, P
          * so leave it for the session cleanup routine so we get a chance to
          * clean things up in the right order and not leave them all dangling.
          */
-        RTSPINLOCKTMP   SpinlockTmp = RTSPINLOCKTMP_INITIALIZER;
-        RTSpinlockAcquire(pDevExt->Spinlock, &SpinlockTmp);
+        RTSpinlockAcquire(pDevExt->Spinlock);
         if (pImage->cUsage <= 1)
         {
             PSUPDRVOBJ pObj;
@@ -4233,7 +4222,7 @@ static int supdrvIOCtl_LdrFree(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, P
                     break;
                 }
         }
-        RTSpinlockRelease(pDevExt->Spinlock, &SpinlockTmp);
+        RTSpinlockRelease(pDevExt->Spinlock);
         if (rc == VINF_SUCCESS)
         {
             /* unlink it */
@@ -4571,15 +4560,14 @@ static void supdrvLdrFree(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE pImage)
     {
         unsigned        cObjs = 0;
         PSUPDRVOBJ      pObj;
-        RTSPINLOCKTMP   SpinlockTmp = RTSPINLOCKTMP_INITIALIZER;
-        RTSpinlockAcquire(pDevExt->Spinlock, &SpinlockTmp);
+        RTSpinlockAcquire(pDevExt->Spinlock);
         for (pObj = pDevExt->pObjs; pObj; pObj = pObj->pNext)
             if (RT_UNLIKELY((uintptr_t)pObj->pfnDestructor - (uintptr_t)pImage->pvImage < pImage->cbImageBits))
             {
                 pObj->pfnDestructor = NULL;
                 cObjs++;
             }
-        RTSpinlockRelease(pDevExt->Spinlock, &SpinlockTmp);
+        RTSpinlockRelease(pDevExt->Spinlock);
         if (cObjs)
             OSDBGPRINT(("supdrvLdrFree: Image '%s' has %d dangling objects!\n", pImage->szName, cObjs));
     }
@@ -5086,7 +5074,6 @@ static void supdrvGipMpEventOnline(PSUPDRVDEVEXT pDevExt, RTCPUID idCpu)
     uint16_t    idApic = UINT16_MAX;
     uint32_t    i = 0;
     uint64_t    u64NanoTS = 0;
-    RTSPINLOCKTMP SpinlockTmp = RTSPINLOCKTMP_INITIALIZER;
     PSUPGLOBALINFOPAGE pGip = pDevExt->pGip;
 
     AssertPtrReturnVoid(pGip);
@@ -5097,7 +5084,7 @@ static void supdrvGipMpEventOnline(PSUPDRVDEVEXT pDevExt, RTCPUID idCpu)
      * Do this behind a spinlock with interrupts disabled as this can fire
      * on all CPUs simultaneously, see #6110.
      */
-    RTSpinlockAcquireNoInts(pDevExt->spinGip, &SpinlockTmp);
+    RTSpinlockAcquire(pDevExt->hGipSpinlock);
 
     /*
      * Update the globals.
@@ -5132,7 +5119,7 @@ static void supdrvGipMpEventOnline(PSUPDRVDEVEXT pDevExt, RTCPUID idCpu)
     /* commit it */
     ASMAtomicWriteSize(&pGip->aCPUs[i].enmState, SUPGIPCPUSTATE_ONLINE);
 
-    RTSpinlockReleaseNoInts(pDevExt->spinGip, &SpinlockTmp);
+    RTSpinlockReleaseNoInts(pDevExt->hGipSpinlock);
 }
 
 
@@ -5150,10 +5137,9 @@ static void supdrvGipMpEventOffline(PSUPDRVDEVEXT pDevExt, RTCPUID idCpu)
     unsigned    i;
 
     PSUPGLOBALINFOPAGE pGip   = pDevExt->pGip;
-    RTSPINLOCKTMP SpinlockTmp = RTSPINLOCKTMP_INITIALIZER;
 
     AssertPtrReturnVoid(pGip);
-    RTSpinlockAcquireNoInts(pDevExt->spinGip, &SpinlockTmp);
+    RTSpinlockAcquire(pDevExt->hGipSpinlock);
 
     iCpuSet = RTMpCpuIdToSetIndex(idCpu);
     AssertReturnVoid(iCpuSet >= 0);
@@ -5168,7 +5154,7 @@ static void supdrvGipMpEventOffline(PSUPDRVDEVEXT pDevExt, RTCPUID idCpu)
     /* commit it */
     ASMAtomicWriteSize(&pGip->aCPUs[i].enmState, SUPGIPCPUSTATE_OFFLINE);
 
-    RTSpinlockReleaseNoInts(pDevExt->spinGip, &SpinlockTmp);
+    RTSpinlockReleaseNoInts(pDevExt->hGipSpinlock);
 }
 
 

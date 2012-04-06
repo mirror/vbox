@@ -54,6 +54,10 @@ typedef struct RTSPINLOCKINTERNAL
 {
     /** Spinlock magic value (RTSPINLOCK_MAGIC). */
     uint32_t volatile   u32Magic;
+    /** Spinlock creation flags.  */
+    uint32_t            fFlags;
+    /** Saved interrupt flag. */
+    uint32_t volatile   fIntSaved;
     /** A Solaris spinlock. */
     kmutex_t            Mtx;
 #ifdef RT_MORE_STRICT
@@ -66,13 +70,17 @@ typedef struct RTSPINLOCKINTERNAL
 } RTSPINLOCKINTERNAL, *PRTSPINLOCKINTERNAL;
 
 
+This code has changed and need testing!;
 
-RTDECL(int)  RTSpinlockCreate(PRTSPINLOCK pSpinlock)
+
+RTDECL(int)  RTSpinlockCreate(PRTSPINLOCK pSpinlock, uint32_t fFlags, const char *pszName)
 {
+    RT_ASSERT_PREEMPTIBLE();
+    AssertReturn(fFlags == RTSPINLOCK_FLAGS_INTERRUPT_SAFE || fFlags == RTSPINLOCK_FLAGS_INTERRUPT_UNSAFE, VERR_INVALID_PARAMETER);
+
     /*
      * Allocate.
      */
-    RT_ASSERT_PREEMPTIBLE();
     AssertCompile(sizeof(RTSPINLOCKINTERNAL) > sizeof(void *));
     PRTSPINLOCKINTERNAL pThis = (PRTSPINLOCKINTERNAL)RTMemAlloc(sizeof(*pThis));
     if (!pThis)
@@ -81,7 +89,10 @@ RTDECL(int)  RTSpinlockCreate(PRTSPINLOCK pSpinlock)
     /*
      * Initialize & return.
      */
-    pThis->u32Magic = RTSPINLOCK_MAGIC;
+    pThis->u32Magic  = RTSPINLOCK_MAGIC;
+    pThis->fFlags    = fFlags;
+    pThis->fIntSaved = 0;
+    /** @todo Consider different PIL when not interrupt safe requirement. */
     mutex_init(&pThis->Mtx, "IPRT Spinlock", MUTEX_SPIN, (void *)ipltospl(PIL_MAX));
     *pSpinlock = pThis;
     return VINF_SUCCESS;
@@ -111,95 +122,97 @@ RTDECL(int)  RTSpinlockDestroy(RTSPINLOCK Spinlock)
 }
 
 
-RTDECL(void) RTSpinlockAcquireNoInts(RTSPINLOCK Spinlock, PRTSPINLOCKTMP pTmp)
+RTDECL(void) RTSpinlockAcquire(RTSPINLOCK Spinlock)
 {
     PRTSPINLOCKINTERNAL pThis = (PRTSPINLOCKINTERNAL)Spinlock;
     RT_ASSERT_PREEMPT_CPUID_VAR();
-
     AssertPtr(pThis);
     Assert(pThis->u32Magic == RTSPINLOCK_MAGIC);
 
+    if (pThis->fFlags & RTSPINLOCK_FLAGS_INTERRUPT_SAFE)
+    {
 #if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
-    pTmp->uFlags = ASMIntDisableFlags();
+        uint32_t fIntSaved = ASMIntDisableFlags();
+#endif
+        mutex_enter(&pThis->Mtx);
+
+        /*
+         * Solaris 10 doesn't preserve the interrupt flag, but since we're at PIL_MAX we should be
+         * fine and not get interrupts while lock is held. Re-disable interrupts to not upset
+         * assertions & assumptions callers might have.
+         */
+#if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
+        ASMIntDisable();
+#endif
+
+#if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
+        Assert(!ASMIntAreEnabled());
+#endif
+        pThis->fIntSaved = fIntSaved;
+    }
+    else
+    {
+#if defined(RT_STRICT) && (defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86))
+        bool fIntsOn = ASMIntAreEnabled();
+#endif
+
+        mutex_enter(&pThis->Mtx);
+
+#if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
+        AssertMsg(fIntsOn == ASMIntAreEnabled(), ("fIntsOn=%RTbool\n", fIntsOn));
+#endif
+    }
+
+    RT_ASSERT_PREEMPT_CPUID_SPIN_ACQUIRED(pThis);
+}
+
+
+RTDECL(void) RTSpinlockRelease(RTSPINLOCK Spinlock)
+{
+    PRTSPINLOCKINTERNAL pThis = (PRTSPINLOCKINTERNAL)Spinlock;
+    RT_ASSERT_PREEMPT_CPUID_SPIN_RELEASE_VARS();
+
+    AssertPtr(pThis);
+    Assert(pThis->u32Magic == RTSPINLOCK_MAGIC);
+    RT_ASSERT_PREEMPT_CPUID_SPIN_RELEASE(pThis);
+
+    if (pThis->fFlags & RTSPINLOCK_FLAGS_INTERRUPT_SAFE)
+    {
+#if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
+        uint32_t fIntSaved = pThis->fIntSaved;
+        pThis->fIntSaved = 0;
+#endif
+        mutex_exit(&pThis->Mtx);
+
+#if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
+        ASMSetFlags(fIntSaved);
+#endif
+    }
+    else
+    {
+#if defined(RT_STRICT) && (defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86))
+        bool fIntsOn = ASMIntAreEnabled();
+#endif
+
+        mutex_exit(&pThis->Mtx);
+
+#if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
+        AssertMsg(fIntsOn == ASMIntAreEnabled(), ("fIntsOn=%RTbool\n", fIntsOn));
+#endif
+    }
+
+    RT_ASSERT_PREEMPT_CPUID();
+}
+
+
+RTDECL(void) RTSpinlockReleaseNoInts(RTSPINLOCK Spinlock)
+{
+#if 1
+    if (RT_UNLIKELY(!(Spinlock->fFlags & RTSPINLOCK_FLAGS_INTERRUPT_SAFE)))
+        RTAssertMsg2("RTSpinlockReleaseNoInts: %p (magic=%#x)\n", Spinlock, Spinlock->u32Magic);
 #else
-    pTmp->uFlags = 0;
+    AssertRelease(Spinlock->fFlags & RTSPINLOCK_FLAGS_INTERRUPT_SAFE);
 #endif
-    mutex_enter(&pThis->Mtx);
-
-    /*
-     * Solaris 10 doesn't preserve the interrupt flag, but since we're at PIL_MAX we should be
-     * fine and not get interrupts while lock is held. Re-disable interrupts to not upset
-     * assertions & assumptions callers might have.
-     */
-#if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
-    ASMIntDisable();
-#endif
-
-#if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
-    Assert(!ASMIntAreEnabled());
-#endif
-    RT_ASSERT_PREEMPT_CPUID_SPIN_ACQUIRED(pThis);
-}
-
-
-RTDECL(void) RTSpinlockReleaseNoInts(RTSPINLOCK Spinlock, PRTSPINLOCKTMP pTmp)
-{
-    PRTSPINLOCKINTERNAL pThis = (PRTSPINLOCKINTERNAL)Spinlock;
-    RT_ASSERT_PREEMPT_CPUID_SPIN_RELEASE_VARS();
-
-    AssertPtr(pThis);
-    Assert(pThis->u32Magic == RTSPINLOCK_MAGIC);
-    RT_ASSERT_PREEMPT_CPUID_SPIN_RELEASE(pThis);
-    NOREF(pTmp);
-
-    mutex_exit(&pThis->Mtx);
-#if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
-    ASMSetFlags(pTmp->uFlags);
-#endif
-
-    RT_ASSERT_PREEMPT_CPUID();
-}
-
-
-RTDECL(void) RTSpinlockAcquire(RTSPINLOCK Spinlock, PRTSPINLOCKTMP pTmp)
-{
-    PRTSPINLOCKINTERNAL pThis = (PRTSPINLOCKINTERNAL)Spinlock;
-    RT_ASSERT_PREEMPT_CPUID_VAR();
-    AssertPtr(pThis);
-    Assert(pThis->u32Magic == RTSPINLOCK_MAGIC);
-    NOREF(pTmp);
-#if defined(RT_STRICT) && (defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86))
-    bool fIntsOn = ASMIntAreEnabled();
-#endif
-
-    mutex_enter(&pThis->Mtx);
-
-#if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
-    AssertMsg(fIntsOn == ASMIntAreEnabled(), ("fIntsOn=%RTbool\n", fIntsOn));
-#endif
-
-    RT_ASSERT_PREEMPT_CPUID_SPIN_ACQUIRED(pThis);
-}
-
-
-RTDECL(void) RTSpinlockRelease(RTSPINLOCK Spinlock, PRTSPINLOCKTMP pTmp)
-{
-    PRTSPINLOCKINTERNAL pThis = (PRTSPINLOCKINTERNAL)Spinlock;
-    RT_ASSERT_PREEMPT_CPUID_SPIN_RELEASE_VARS();
-
-    AssertPtr(pThis);
-    Assert(pThis->u32Magic == RTSPINLOCK_MAGIC);
-    RT_ASSERT_PREEMPT_CPUID_SPIN_RELEASE(pThis);
-    NOREF(pTmp);
-#if defined(RT_STRICT) && (defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86))
-    bool fIntsOn = ASMIntAreEnabled();
-#endif
-
-    mutex_exit(&pThis->Mtx);
-
-#if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
-    AssertMsg(fIntsOn == ASMIntAreEnabled(), ("fIntsOn=%RTbool\n", fIntsOn));
-#endif
-    RT_ASSERT_PREEMPT_CPUID();
+    RTSpinlockRelease(Spinlock);
 }
 

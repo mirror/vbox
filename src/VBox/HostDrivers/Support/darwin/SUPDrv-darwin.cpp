@@ -238,7 +238,7 @@ static kern_return_t    VBoxDrvDarwinStart(struct kmod_info *pKModInfo, void *pv
              * Initialize the session hash table.
              */
             memset(g_apSessionHashTab, 0, sizeof(g_apSessionHashTab)); /* paranoia */
-            rc = RTSpinlockCreate(&g_Spinlock);
+            rc = RTSpinlockCreate(&g_Spinlock, RTSPINLOCK_FLAGS_INTERRUPT_SAFE, "VBoxDrvDarwin");
             if (RT_SUCCESS(rc))
             {
                 /*
@@ -369,8 +369,7 @@ static int VBoxDrvDarwinOpen(dev_t Dev, int fFlags, int fDevType, struct proc *p
 #endif
         RTPROCESS       Process = RTProcSelf();
         unsigned        iHash = SESSION_HASH(Process);
-        RTSPINLOCKTMP   Tmp = RTSPINLOCKTMP_INITIALIZER;
-        RTSpinlockAcquireNoInts(g_Spinlock, &Tmp);
+        RTSpinlockAcquire(g_Spinlock);
 
         pSession = g_apSessionHashTab[iHash];
         if (pSession && pSession->Process != Process)
@@ -392,7 +391,7 @@ static int VBoxDrvDarwinOpen(dev_t Dev, int fFlags, int fDevType, struct proc *p
         else
             rc = VERR_GENERAL_FAILURE;
 
-        RTSpinlockReleaseNoInts(g_Spinlock, &Tmp);
+        RTSpinlockReleaseNoInts(g_Spinlock);
 #if MAC_OS_X_VERSION_MIN_REQUIRED >= 1050
         kauth_cred_unref(&pCred);
 #else  /* 10.4 */
@@ -441,7 +440,6 @@ static int VBoxDrvDarwinClose(dev_t Dev, int fFlags, int fDevType, struct proc *
  */
 static int VBoxDrvDarwinIOCtl(dev_t Dev, u_long iCmd, caddr_t pData, int fFlags, struct proc *pProcess)
 {
-    RTSPINLOCKTMP       Tmp = RTSPINLOCKTMP_INITIALIZER;
     const RTPROCESS     Process = proc_pid(pProcess);
     const unsigned      iHash = SESSION_HASH(Process);
     PSUPDRVSESSION      pSession;
@@ -449,14 +447,14 @@ static int VBoxDrvDarwinIOCtl(dev_t Dev, u_long iCmd, caddr_t pData, int fFlags,
     /*
      * Find the session.
      */
-    RTSpinlockAcquireNoInts(g_Spinlock, &Tmp);
+    RTSpinlockAcquire(g_Spinlock);
     pSession = g_apSessionHashTab[iHash];
     if (pSession && pSession->Process != Process)
     {
         do pSession = pSession->pNextHash;
         while (pSession && pSession->Process != Process);
     }
-    RTSpinlockReleaseNoInts(g_Spinlock, &Tmp);
+    RTSpinlockReleaseNoInts(g_Spinlock);
     if (!pSession)
     {
         OSDBGPRINT(("VBoxDrvDarwinIOCtl: WHAT?!? pSession == NULL! This must be a mistake... pid=%d iCmd=%#lx\n",
@@ -981,8 +979,7 @@ bool org_virtualbox_SupDrvClient::start(IOService *pProvider)
                  * already one for this process first.
                  */
                 unsigned iHash = SESSION_HASH(m_pSession->Process);
-                RTSPINLOCKTMP Tmp = RTSPINLOCKTMP_INITIALIZER;
-                RTSpinlockAcquireNoInts(g_Spinlock, &Tmp);
+                RTSpinlockAcquire(g_Spinlock);
 
                 PSUPDRVSESSION pCur = g_apSessionHashTab[iHash];
                 if (pCur && pCur->Process != m_pSession->Process)
@@ -1001,7 +998,7 @@ bool org_virtualbox_SupDrvClient::start(IOService *pProvider)
                 else
                     rc = VERR_ALREADY_LOADED;
 
-                RTSpinlockReleaseNoInts(g_Spinlock, &Tmp);
+                RTSpinlockReleaseNoInts(g_Spinlock);
                 if (RT_SUCCESS(rc))
                 {
                     Log(("org_virtualbox_SupDrvClient::start: created session %p for pid %d\n", m_pSession, (int)RTProcSelf()));
@@ -1033,8 +1030,7 @@ bool org_virtualbox_SupDrvClient::start(IOService *pProvider)
      * Look for the session.
      */
     const unsigned  iHash = SESSION_HASH(Process);
-    RTSPINLOCKTMP   Tmp = RTSPINLOCKTMP_INITIALIZER;
-    RTSpinlockAcquireNoInts(g_Spinlock, &Tmp);
+    RTSpinlockAcquire(g_Spinlock);
     PSUPDRVSESSION  pSession = g_apSessionHashTab[iHash];
     if (pSession)
     {
@@ -1064,7 +1060,7 @@ bool org_virtualbox_SupDrvClient::start(IOService *pProvider)
             }
         }
     }
-    RTSpinlockReleaseNoInts(g_Spinlock, &Tmp);
+    RTSpinlockReleaseNoInts(g_Spinlock);
     if (!pSession)
     {
         Log(("SupDrvClient::sessionClose: pSession == NULL, pid=%d; freed already?\n", (int)Process));

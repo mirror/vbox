@@ -489,8 +489,7 @@ static void rtTimerLnxCallbackDestroy(PRTTIMER pTimer, PRTTIMERLNXSUBTIMER pSubT
     if (pTimer->cCpus > 1)
     {
         uint32_t        iCpu        = pTimer->cCpus;
-        RTSPINLOCKTMP   Tmp         = RTSPINLOCKTMP_INITIALIZER;
-        RTSpinlockAcquire(pTimer->hSpinlock, &Tmp);
+        RTSpinlockAcquire(pTimer->hSpinlock);
 
         Assert(pSubTimer->enmState == RTTIMERLNXSTATE_CB_DESTROYING);
         rtTimerLnxSetState(&pSubTimer->enmState, RTTIMERLNXSTATE_STOPPED);
@@ -498,11 +497,11 @@ static void rtTimerLnxCallbackDestroy(PRTTIMER pTimer, PRTTIMERLNXSUBTIMER pSubT
         while (iCpu-- > 0)
             if (rtTimerLnxGetState(&pTimer->aSubTimers[iCpu].enmState) != RTTIMERLNXSTATE_STOPPED)
             {
-                RTSpinlockRelease(pTimer->hSpinlock, &Tmp);
+                RTSpinlockRelease(pTimer->hSpinlock);
                 return;
             }
 
-        RTSpinlockRelease(pTimer->hSpinlock, &Tmp);
+        RTSpinlockRelease(pTimer->hSpinlock);
     }
 
     /*
@@ -524,9 +523,8 @@ static void rtTimerLnxCallbackDestroy(PRTTIMER pTimer, PRTTIMERLNXSUBTIMER pSubT
 static void rtTimerLnxCallbackHandleMigration(PRTTIMER pTimer, PRTTIMERLNXSUBTIMER pSubTimer)
 {
     RTTIMERLNXSTATE enmState;
-    RTSPINLOCKTMP   Tmp = RTSPINLOCKTMP_INITIALIZER;
     if (pTimer->cCpus > 1)
-        RTSpinlockAcquire(pTimer->hSpinlock, &Tmp);
+        RTSpinlockAcquire(pTimer->hSpinlock);
 
     do
     {
@@ -554,7 +552,7 @@ static void rtTimerLnxCallbackHandleMigration(PRTTIMER pTimer, PRTTIMERLNXSUBTIM
             case RTTIMERLNXSTATE_CB_DESTROYING:
             {
                 if (pTimer->cCpus > 1)
-                    RTSpinlockRelease(pTimer->hSpinlock, &Tmp);
+                    RTSpinlockRelease(pTimer->hSpinlock);
 
                 rtTimerLnxCallbackDestroy(pTimer, pSubTimer);
                 return;
@@ -563,7 +561,7 @@ static void rtTimerLnxCallbackHandleMigration(PRTTIMER pTimer, PRTTIMERLNXSUBTIM
     } while (enmState != RTTIMERLNXSTATE_STOPPED);
 
     if (pTimer->cCpus > 1)
-        RTSpinlockRelease(pTimer->hSpinlock, &Tmp);
+        RTSpinlockRelease(pTimer->hSpinlock);
 }
 #endif /* CONFIG_SMP */
 
@@ -899,7 +897,6 @@ static DECLCALLBACK(void) rtTimerLnxStartAllOnCpu(RTCPUID idCpu, void *pvUser1, 
  */
 static int rtTimerLnxOmniStart(PRTTIMER pTimer, PRTTIMERLINUXSTARTONCPUARGS pArgs)
 {
-    RTSPINLOCKTMP   Tmp = RTSPINLOCKTMP_INITIALIZER;
     RTCPUID         iCpu;
     RTCPUSET        OnlineSet;
     RTCPUSET        OnlineSet2;
@@ -911,13 +908,13 @@ static int rtTimerLnxOmniStart(PRTTIMER pTimer, PRTTIMERLINUXSTARTONCPUARGS pArg
      * clearing fSuspended as the MP handler will be waiting on this
      * should something happen while we're looping.
      */
-    RTSpinlockAcquire(pTimer->hSpinlock, &Tmp);
+    RTSpinlockAcquire(pTimer->hSpinlock);
 
     /* Just make it a omni timer restriction that no stop/start races are allowed. */
     for (iCpu = 0; iCpu < pTimer->cCpus; iCpu++)
         if (rtTimerLnxGetState(&pTimer->aSubTimers[iCpu].enmState) != RTTIMERLNXSTATE_STOPPED)
         {
-            RTSpinlockRelease(pTimer->hSpinlock, &Tmp);
+            RTSpinlockRelease(pTimer->hSpinlock);
             return VERR_TIMER_BUSY;
         }
 
@@ -936,7 +933,7 @@ static int rtTimerLnxOmniStart(PRTTIMER pTimer, PRTTIMERLINUXSTARTONCPUARGS pArg
 
     ASMAtomicWriteBool(&pTimer->fSuspended, false);
 
-    RTSpinlockRelease(pTimer->hSpinlock, &Tmp);
+    RTSpinlockRelease(pTimer->hSpinlock);
 
     /*
      * Start them (can't find any exported function that allows me to
@@ -949,7 +946,7 @@ static int rtTimerLnxOmniStart(PRTTIMER pTimer, PRTTIMERLINUXSTARTONCPUARGS pArg
     /*
      * Reset the sub-timers who didn't start up (ALL CPUs case).
      */
-    RTSpinlockAcquire(pTimer->hSpinlock, &Tmp);
+    RTSpinlockAcquire(pTimer->hSpinlock);
 
     for (iCpu = 0; iCpu < pTimer->cCpus; iCpu++)
         if (rtTimerLnxCmpXchgState(&pTimer->aSubTimers[iCpu].enmState, RTTIMERLNXSTATE_STOPPED, RTTIMERLNXSTATE_STARTING))
@@ -961,7 +958,7 @@ static int rtTimerLnxOmniStart(PRTTIMER pTimer, PRTTIMERLINUXSTARTONCPUARGS pArg
             RTTIMERLNX_LOG(("what!? iCpu=%u -> didn't start\n", iCpu));
         }
 
-    RTSpinlockRelease(pTimer->hSpinlock, &Tmp);
+    RTSpinlockRelease(pTimer->hSpinlock);
 
     return VINF_SUCCESS;
 }
@@ -977,7 +974,6 @@ static int rtTimerLnxOmniStart(PRTTIMER pTimer, PRTTIMERLINUXSTARTONCPUARGS pArg
 static bool rtTimerLnxOmniStop(PRTTIMER pTimer, bool fForDestroy)
 {
     bool            fActiveCallbacks = false;
-    RTSPINLOCKTMP   Tmp = RTSPINLOCKTMP_INITIALIZER;
     RTCPUID         iCpu;
     RTTIMERLNXSTATE enmState;
 
@@ -986,7 +982,7 @@ static bool rtTimerLnxOmniStop(PRTTIMER pTimer, bool fForDestroy)
      * Mark the timer as suspended and flag all timers as stopping, except
      * for those being stopped by an MP event.
      */
-    RTSpinlockAcquire(pTimer->hSpinlock, &Tmp);
+    RTSpinlockAcquire(pTimer->hSpinlock);
 
     ASMAtomicWriteBool(&pTimer->fSuspended, true);
     for (iCpu = 0; iCpu < pTimer->cCpus; iCpu++)
@@ -1020,7 +1016,7 @@ static bool rtTimerLnxOmniStop(PRTTIMER pTimer, bool fForDestroy)
         }
     }
 
-    RTSpinlockRelease(pTimer->hSpinlock, &Tmp);
+    RTSpinlockRelease(pTimer->hSpinlock);
 
     /*
      * Do the actual stopping. Fortunately, this doesn't require any IPIs.
@@ -1057,8 +1053,7 @@ static DECLCALLBACK(void) rtTimerLinuxMpStartOnCpu(RTCPUID idCpu, void *pvUser1,
     if (    hSpinlock != NIL_RTSPINLOCK
         &&  pTimer->u32Magic == RTTIMER_MAGIC)
     {
-        RTSPINLOCKTMP Tmp = RTSPINLOCKTMP_INITIALIZER;
-        RTSpinlockAcquire(hSpinlock, &Tmp);
+        RTSpinlockAcquire(hSpinlock);
 
         if (    !ASMAtomicUoReadBool(&pTimer->fSuspended)
             &&  pTimer->u32Magic == RTTIMER_MAGIC)
@@ -1069,7 +1064,7 @@ static DECLCALLBACK(void) rtTimerLinuxMpStartOnCpu(RTCPUID idCpu, void *pvUser1,
                 rtTimerLnxStartSubTimer(pSubTimer, pArgs->u64Now, pArgs->u64First, true /*fPinned*/, pTimer->fHighRes);
         }
 
-        RTSpinlockRelease(hSpinlock, &Tmp);
+        RTSpinlockRelease(hSpinlock);
     }
 }
 
@@ -1085,7 +1080,6 @@ static DECLCALLBACK(void) rtTimerLinuxMpEvent(RTMPEVENT enmEvent, RTCPUID idCpu,
 {
     PRTTIMER            pTimer    = (PRTTIMER)pvUser;
     PRTTIMERLNXSUBTIMER pSubTimer = &pTimer->aSubTimers[idCpu];
-    RTSPINLOCKTMP       Tmp       = RTSPINLOCKTMP_INITIALIZER;
     RTSPINLOCK          hSpinlock;
 
     Assert(idCpu < pTimer->cCpus);
@@ -1099,7 +1093,7 @@ static DECLCALLBACK(void) rtTimerLinuxMpEvent(RTMPEVENT enmEvent, RTCPUID idCpu,
     if (hSpinlock == NIL_RTSPINLOCK)
         return;
 
-    RTSpinlockAcquire(hSpinlock, &Tmp);
+    RTSpinlockAcquire(hSpinlock);
 
     /* Is it active? */
     if (    !ASMAtomicUoReadBool(&pTimer->fSuspended)
@@ -1123,7 +1117,7 @@ static DECLCALLBACK(void) rtTimerLinuxMpEvent(RTMPEVENT enmEvent, RTCPUID idCpu,
                     else
                     {
                         rtTimerLnxSetState(&pSubTimer->enmState, RTTIMERLNXSTATE_STOPPED); /* we'll recheck it. */
-                        RTSpinlockRelease(hSpinlock, &Tmp);
+                        RTSpinlockRelease(hSpinlock);
 
                         RTMpOnSpecific(idCpu, rtTimerLinuxMpStartOnCpu, pTimer, &Args);
                         return; /* we've left the spinlock */
@@ -1148,7 +1142,7 @@ static DECLCALLBACK(void) rtTimerLinuxMpEvent(RTMPEVENT enmEvent, RTCPUID idCpu,
                     {
                         if (rtTimerLnxCmpXchgState(&pSubTimer->enmState, RTTIMERLNXSTATE_MP_STOPPING, RTTIMERLNXSTATE_ACTIVE))
                         {
-                            RTSpinlockRelease(hSpinlock, &Tmp);
+                            RTSpinlockRelease(hSpinlock);
 
                             rtTimerLnxStopSubTimer(pSubTimer, pTimer->fHighRes);
                             return; /* we've left the spinlock */
@@ -1165,7 +1159,7 @@ static DECLCALLBACK(void) rtTimerLinuxMpEvent(RTMPEVENT enmEvent, RTCPUID idCpu,
         }
     }
 
-    RTSpinlockRelease(hSpinlock, &Tmp);
+    RTSpinlockRelease(hSpinlock);
 }
 
 #endif /* CONFIG_SMP */
@@ -1415,9 +1409,8 @@ RTDECL(int) RTTimerDestroy(PRTTIMER pTimer)
     else
     {
         uint32_t        iCpu = pTimer->cCpus;
-        RTSPINLOCKTMP   Tmp  = RTSPINLOCKTMP_INITIALIZER;
         if (pTimer->cCpus > 1)
-            RTSpinlockAcquireNoInts(pTimer->hSpinlock, &Tmp);
+            RTSpinlockAcquire(pTimer->hSpinlock);
 
         fCanDestroy = true;
         while (iCpu-- > 0)
@@ -1447,7 +1440,7 @@ RTDECL(int) RTTimerDestroy(PRTTIMER pTimer)
         }
 
         if (pTimer->cCpus > 1)
-            RTSpinlockReleaseNoInts(pTimer->hSpinlock, &Tmp);
+            RTSpinlockReleaseNoInts(pTimer->hSpinlock);
     }
 
     if (fCanDestroy)
@@ -1564,7 +1557,7 @@ RTDECL(int) RTTimerCreateEx(PRTTIMER *ppTimer, uint64_t u64NanoInterval, uint32_
      */
     if (cCpus > 1)
     {
-        int rc = RTSpinlockCreate(&pTimer->hSpinlock);
+        int rc = RTSpinlockCreate(&pTimer->hSpinlock, RTSPINLOCK_FLAGS_INTERRUPT_UNSAFE, "RTTimerLnx");
         if (RT_SUCCESS(rc))
             rc = RTMpNotificationRegister(rtTimerLinuxMpEvent, pTimer);
         else

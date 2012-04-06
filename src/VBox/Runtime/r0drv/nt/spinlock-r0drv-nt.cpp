@@ -71,34 +71,45 @@ typedef struct RTSPINLOCKINTERNAL
     /** Spinlock hack. */
     uint32_t volatile   u32Hack;
 #endif
+    /** The saved IRQL. */
+    KIRQL volatile      SavedIrql;
+    /** The saved interrupt flag. */
+    uint32_t volatile   fIntSaved;
+    /** The spinlock creation flags. */
+    uint32_t            fFlags;
     /** The NT spinlock structure. */
     KSPIN_LOCK          Spinlock;
 } RTSPINLOCKINTERNAL, *PRTSPINLOCKINTERNAL;
 
 
+This code has changed and need testing!;
 
-RTDECL(int)  RTSpinlockCreate(PRTSPINLOCK pSpinlock)
+
+RTDECL(int)  RTSpinlockCreate(PRTSPINLOCK pSpinlock, uint32_t fFlags, const char *pszName)
 {
+    AssertReturn(fFlags == RTSPINLOCK_FLAGS_INTERRUPT_SAFE || fFlags == RTSPINLOCK_FLAGS_INTERRUPT_UNSAFE, VERR_INVALID_PARAMETER);
+
     /*
      * Allocate.
      */
     Assert(sizeof(RTSPINLOCKINTERNAL) > sizeof(void *));
-    PRTSPINLOCKINTERNAL pSpinlockInt = (PRTSPINLOCKINTERNAL)RTMemAlloc(sizeof(*pSpinlockInt));
-    if (!pSpinlockInt)
+    PRTSPINLOCKINTERNAL pThis = (PRTSPINLOCKINTERNAL)RTMemAlloc(sizeof(*pThis));
+    if (!pThis)
         return VERR_NO_MEMORY;
 
     /*
      * Initialize & return.
      */
-    pSpinlockInt->u32Magic = RTSPINLOCK_MAGIC;
+    pThis->u32Magic     = RTSPINLOCK_MAGIC;
 #ifdef RTSPINLOCK_NT_HACK_NOIRQ
-    pSpinlockInt->u32Hack  = RTSPINLOCK_NT_HACK_NOIRQ_FREE;
+    pThis->u32Hack      = RTSPINLOCK_NT_HACK_NOIRQ_FREE;
 #endif
-    KeInitializeSpinLock(&pSpinlockInt->Spinlock);
-    Assert(sizeof(KIRQL) == sizeof(unsigned char));
-    AssertCompile(sizeof(KIRQL) == sizeof(unsigned char));
+    pThis->SavedIrql    = 0;
+    pThis->fIntSaved    = 0;
+    pThis->fFlags       = fFlags;
+    KeInitializeSpinLock(&pThis->Spinlock);
 
-    *pSpinlock = pSpinlockInt;
+    *pSpinlock = pThis;
     return VINF_SUCCESS;
 }
 
@@ -108,79 +119,94 @@ RTDECL(int)  RTSpinlockDestroy(RTSPINLOCK Spinlock)
     /*
      * Validate input.
      */
-    PRTSPINLOCKINTERNAL pSpinlockInt = (PRTSPINLOCKINTERNAL)Spinlock;
-    if (!pSpinlockInt)
+    PRTSPINLOCKINTERNAL pThis = (PRTSPINLOCKINTERNAL)Spinlock;
+    if (!pThis)
         return VERR_INVALID_PARAMETER;
-    if (pSpinlockInt->u32Magic != RTSPINLOCK_MAGIC)
+    if (pThis->u32Magic != RTSPINLOCK_MAGIC)
     {
-        AssertMsgFailed(("Invalid spinlock %p magic=%#x\n", pSpinlockInt, pSpinlockInt->u32Magic));
+        AssertMsgFailed(("Invalid spinlock %p magic=%#x\n", pThis, pThis->u32Magic));
         return VERR_INVALID_PARAMETER;
     }
 
-    ASMAtomicIncU32(&pSpinlockInt->u32Magic);
-    RTMemFree(pSpinlockInt);
+    ASMAtomicIncU32(&pThis->u32Magic);
+    RTMemFree(pThis);
     return VINF_SUCCESS;
 }
 
 
-RTDECL(void) RTSpinlockAcquireNoInts(RTSPINLOCK Spinlock, PRTSPINLOCKTMP pTmp)
+RTDECL(void) RTSpinlockAcquire(RTSPINLOCK Spinlock)
 {
-    PRTSPINLOCKINTERNAL pSpinlockInt = (PRTSPINLOCKINTERNAL)Spinlock;
-    AssertMsg(pSpinlockInt && pSpinlockInt->u32Magic == RTSPINLOCK_MAGIC, ("magic=%#x\n", pSpinlockInt->u32Magic));
+    PRTSPINLOCKINTERNAL pThis = (PRTSPINLOCKINTERNAL)Spinlock;
+    AssertMsg(pThis && pThis->u32Magic == RTSPINLOCK_MAGIC, ("magic=%#x\n", pThis->u32Magic));
+
+    KIRQL SavedIrql;
+    if (pThis->fFlags & RTSPINLOCK_FLAGS_INTERRUPT_SAFE)
+    {
+#ifndef RTSPINLOCK_NT_HACK_NOIRQ
+        uint32_t fIntSaved = ASMGetFlags();
+        ASMIntDisable();
+        KeAcquireSpinLock(&pThis->Spinlock, &SavedIrql);
+#else
+        SavedIrql = KeGetCurrentIrql();
+        if (SavedIrql < DISPATCH_LEVEL)
+        {
+            KeRaiseIrql(DISPATCH_LEVEL, &SavedIrql);
+            Assert(SavedIrql < DISPATCH_LEVEL);
+        }
+        uint32_t fIntSaved = ASMGetFlags();
+        ASMIntDisable();
+
+        if (!ASMAtomicCmpXchgU32(&pThis->u32Hack, RTSPINLOCK_NT_HACK_NOIRQ_TAKEN, RTSPINLOCK_NT_HACK_NOIRQ_FREE))
+        {
+            while (!ASMAtomicCmpXchgU32(&pThis->u32Hack, RTSPINLOCK_NT_HACK_NOIRQ_TAKEN, RTSPINLOCK_NT_HACK_NOIRQ_FREE))
+                ASMNopPause();
+        }
+
+        pThis->fIntSaved = fIntSaved;
+#endif
+    }
+    else
+        KeAcquireSpinLock(&pThis->Spinlock, &SavedIrql);
+    pThis->SavedIrql = SavedIrql;
+}
+
+
+RTDECL(void) RTSpinlockRelease(RTSPINLOCK Spinlock)
+{
+    PRTSPINLOCKINTERNAL pThis = (PRTSPINLOCKINTERNAL)Spinlock;
+    AssertMsg(pThis && pThis->u32Magic == RTSPINLOCK_MAGIC, ("magic=%#x\n", pThis->u32Magic));
+
+    KIRQL SavedIrql = pThis->SavedIrql;
+    if (pThis->fFlags & RTSPINLOCK_FLAGS_INTERRUPT_SAFE)
+    {
+        uint32_t fIntSaved = pThis->fIntSaved;
+        pThis->fIntSaved = 0;
 
 #ifndef RTSPINLOCK_NT_HACK_NOIRQ
-    KeAcquireSpinLock(&pSpinlockInt->Spinlock, &pTmp->uchIrqL);
-    pTmp->uFlags = ASMGetFlags();
-    ASMIntDisable();
+        KeReleaseSpinLock(&pThis->Spinlock, SavedIrql);
+        ASMSetFlags(fIntSaved);
 #else
-    pTmp->uchIrqL = KeGetCurrentIrql();
-    if (pTmp->uchIrqL < DISPATCH_LEVEL)
-    {
-        KeRaiseIrql(DISPATCH_LEVEL, &pTmp->uchIrqL);
-        Assert(pTmp->uchIrqL < DISPATCH_LEVEL);
-    }
-    pTmp->uFlags = ASMGetFlags();
-    ASMIntDisable();
-    if (!ASMAtomicCmpXchgU32(&pSpinlockInt->u32Hack, RTSPINLOCK_NT_HACK_NOIRQ_TAKEN, RTSPINLOCK_NT_HACK_NOIRQ_FREE))
-    {
-        while (!ASMAtomicCmpXchgU32(&pSpinlockInt->u32Hack, RTSPINLOCK_NT_HACK_NOIRQ_TAKEN, RTSPINLOCK_NT_HACK_NOIRQ_FREE))
-            ASMNopPause();
-    }
+        Assert(pThis->u32Hack == RTSPINLOCK_NT_HACK_NOIRQ_TAKEN);
+
+        ASMAtomicWriteU32(&pThis->u32Hack, RTSPINLOCK_NT_HACK_NOIRQ_FREE);
+        ASMSetFlags(fIntSaved);
+        if (SavedIrql < DISPATCH_LEVEL)
+            KeLowerIrql(SavedIrql);
 #endif
+    }
+    else
+        KeReleaseSpinLock(&pThis->Spinlock, SavedIrql);
 }
 
 
-RTDECL(void) RTSpinlockReleaseNoInts(RTSPINLOCK Spinlock, PRTSPINLOCKTMP pTmp)
+RTDECL(void) RTSpinlockReleaseNoInts(RTSPINLOCK Spinlock)
 {
-    PRTSPINLOCKINTERNAL pSpinlockInt = (PRTSPINLOCKINTERNAL)Spinlock;
-    AssertMsg(pSpinlockInt && pSpinlockInt->u32Magic == RTSPINLOCK_MAGIC, ("magic=%#x\n", pSpinlockInt->u32Magic));
-
-#ifndef RTSPINLOCK_NT_HACK_NOIRQ
-    ASMSetFlags(pTmp->uFlags);
-    KeReleaseSpinLock(&pSpinlockInt->Spinlock, pTmp->uchIrqL);
+#if 1
+    if (RT_UNLIKELY(!(Spinlock->fFlags & RTSPINLOCK_FLAGS_INTERRUPT_SAFE)))
+        RTAssertMsg2("RTSpinlockReleaseNoInts: %p (magic=%#x)\n", Spinlock, Spinlock->u32Magic);
 #else
-    Assert(pSpinlockInt->u32Hack == RTSPINLOCK_NT_HACK_NOIRQ_TAKEN);
-    ASMAtomicWriteU32(&pSpinlockInt->u32Hack, RTSPINLOCK_NT_HACK_NOIRQ_FREE);
-    ASMSetFlags(pTmp->uFlags);
-    if (pTmp->uchIrqL < DISPATCH_LEVEL)
-        KeLowerIrql(pTmp->uchIrqL);
+    AssertRelease(Spinlock->fFlags & RTSPINLOCK_FLAGS_INTERRUPT_SAFE);
 #endif
+    RTSpinlockRelease(Spinlock);
 }
 
-
-RTDECL(void) RTSpinlockAcquire(RTSPINLOCK Spinlock, PRTSPINLOCKTMP pTmp)
-{
-    PRTSPINLOCKINTERNAL pSpinlockInt = (PRTSPINLOCKINTERNAL)Spinlock;
-    AssertMsg(pSpinlockInt && pSpinlockInt->u32Magic == RTSPINLOCK_MAGIC, ("magic=%#x\n", pSpinlockInt->u32Magic));
-
-    KeAcquireSpinLock(&pSpinlockInt->Spinlock, &pTmp->uchIrqL);
-}
-
-
-RTDECL(void) RTSpinlockRelease(RTSPINLOCK Spinlock, PRTSPINLOCKTMP pTmp)
-{
-    PRTSPINLOCKINTERNAL pSpinlockInt = (PRTSPINLOCKINTERNAL)Spinlock;
-    AssertMsg(pSpinlockInt && pSpinlockInt->u32Magic == RTSPINLOCK_MAGIC, ("magic=%#x\n", pSpinlockInt->u32Magic));
-
-    KeReleaseSpinLock(&pSpinlockInt->Spinlock, pTmp->uchIrqL);
-}

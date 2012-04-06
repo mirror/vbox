@@ -116,7 +116,7 @@ RTR0DECL(int) RTR0MemExecDonate(void *pvMemory, size_t cb)
     int rc;
     AssertReturn(g_HeapExec == NIL_RTHEAPSIMPLE, VERR_WRONG_ORDER);
 
-    rc = RTSpinlockCreate(&g_HeapExecSpinlock);
+    rc = RTSpinlockCreate(&g_HeapExecSpinlock, RTSPINLOCK_FLAGS_INTERRUPT_SAFE, "RTR0MemExecDonate");
     if (RT_SUCCESS(rc))
     {
         rc = RTHeapSimpleInit(&g_HeapExec, pvMemory, cb);
@@ -146,7 +146,7 @@ RTR0DECL(int) RTR0MemExecInit(size_t cb)
 
     AssertReturn(g_HeapExec == NIL_RTHEAPSIMPLE, VERR_WRONG_ORDER);
 
-    rc = RTSpinlockCreate(&g_HeapExecSpinlock);
+    rc = RTSpinlockCreate(&g_HeapExecSpinlock, RTSPINLOCK_FLAGS_INTERRUPT_SAFE, "RTR0MemExecInit");
     if (RT_SUCCESS(rc))
     {
         cb = RT_ALIGN(cb, PAGE_SIZE);
@@ -219,10 +219,9 @@ DECLHIDDEN(int) rtR0MemAllocEx(size_t cb, uint32_t fFlags, PRTMEMHDR *ppHdr)
 # ifdef RTMEMALLOC_EXEC_HEAP
         if (g_HeapExec != NIL_RTHEAPSIMPLE)
         {
-            RTSPINLOCKTMP SpinlockTmp = RTSPINLOCKTMP_INITIALIZER;
-            RTSpinlockAcquireNoInts(g_HeapExecSpinlock, &SpinlockTmp);
+            RTSpinlockAcquire(g_HeapExecSpinlock);
             pHdr = (PRTMEMHDR)RTHeapSimpleAlloc(g_HeapExec, cb + sizeof(*pHdr), 0);
-            RTSpinlockReleaseNoInts(g_HeapExecSpinlock, &SpinlockTmp);
+            RTSpinlockRelease(g_HeapExecSpinlock);
             fFlags |= RTMEMHDR_FLAG_EXEC_HEAP;
         }
         else
@@ -289,10 +288,9 @@ DECLHIDDEN(void) rtR0MemFree(PRTMEMHDR pHdr)
 #ifdef RTMEMALLOC_EXEC_HEAP
     else if (pHdr->fFlags & RTMEMHDR_FLAG_EXEC_HEAP)
     {
-        RTSPINLOCKTMP SpinlockTmp = RTSPINLOCKTMP_INITIALIZER;
-        RTSpinlockAcquireNoInts(g_HeapExecSpinlock, &SpinlockTmp);
+        RTSpinlockAcquire(g_HeapExecSpinlock);
         RTHeapSimpleFree(g_HeapExec, pHdr);
-        RTSpinlockReleaseNoInts(g_HeapExecSpinlock, &SpinlockTmp);
+        RTSpinlockRelease(g_HeapExecSpinlock);
     }
 #endif
     else

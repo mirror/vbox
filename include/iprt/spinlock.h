@@ -38,72 +38,28 @@ RT_C_DECLS_BEGIN
  */
 
 /**
- * Temporary spinlock state variable.
- * All members are undefined and highly platform specific.
- */
-typedef struct RTSPINLOCKTMP
-{
-#ifdef IN_RING0
-# ifdef RT_OS_LINUX
-    /** The saved [R|E]FLAGS. */
-    unsigned long   flFlags;
-#  define RTSPINLOCKTMP_INITIALIZER { 0 }
-
-# elif defined(RT_OS_WINDOWS)
-    /** The saved [R|E]FLAGS. */
-    RTCCUINTREG     uFlags;
-    /** The KIRQL. */
-    unsigned char   uchIrqL;
-#  define RTSPINLOCKTMP_INITIALIZER { 0, 0 }
-
-# elif defined(__L4__)
-    /** The saved [R|E]FLAGS. */
-    unsigned long   flFlags;
-#  define RTSPINLOCKTMP_INITIALIZER { 0 }
-
-# elif defined(RT_OS_DARWIN) || defined(RT_OS_FREEBSD) || defined(RT_OS_SOLARIS)
-    /** The saved [R|E]FLAGS. */
-    RTCCUINTREG     uFlags;
-#  define RTSPINLOCKTMP_INITIALIZER { 0 }
-
-# elif defined(RT_OS_OS2)
-    /** The saved [R|E]FLAGS. (dummy) */
-    RTCCUINTREG     uFlags;
-#  define RTSPINLOCKTMP_INITIALIZER { 0 }
-
-# else
-#  error "PORTME\n"
-    /** The saved [R|E]FLAGS. */
-    RTCCUINTREG     uFlags;
-# endif
-
-#else /* !IN_RING0 */
-    /** The saved [R|E]FLAGS. (dummy) */
-    RTCCUINTREG     uFlags;
-# define RTSPINLOCKTMP_INITIALIZER { 0 }
-#endif /* !IN_RING0 */
-} RTSPINLOCKTMP;
-/** Pointer to a temporary spinlock state variable. */
-typedef RTSPINLOCKTMP *PRTSPINLOCKTMP;
-/** Pointer to a const temporary spinlock state variable. */
-typedef const RTSPINLOCKTMP *PCRTSPINLOCKTMP;
-
-/** @def RTSPINLOCKTMP_INITIALIZER
- * What to assign to a RTSPINLOCKTMP at definition.
- */
-#ifdef DOXYGEN_RUNNING
-# define RTSPINLOCKTMP_INITIALIZER
-#endif
-
-
-
-/**
  * Creates a spinlock.
  *
  * @returns iprt status code.
  * @param   pSpinlock   Where to store the spinlock handle.
+ * @param   fFlags      Creation flags, see RTSPINLOCK_FLAGS_XXX.
+ * @param   pszName     Spinlock name, for debugging purposes.  String lifetime
+ *                      must be the same as the lock as it won't be copied.
  */
-RTDECL(int)  RTSpinlockCreate(PRTSPINLOCK pSpinlock);
+RTDECL(int)  RTSpinlockCreate(PRTSPINLOCK pSpinlock, uint32_t fFlags, const char *pszName);
+
+/** @name RTSPINLOCK_FLAGS_XXX
+ * @{ */
+/** Disable interrupts when taking the spinlock, making it interrupt safe
+ * (sans NMI of course).
+ *
+ * This is generally the safest option, though it isn't really required unless
+ * the data being protect is also accessed from interrupt handler context. */
+#define RTSPINLOCK_FLAGS_INTERRUPT_SAFE     RT_BIT(1)
+/** No need to disable interrupts, the protect code/data is not used by
+ * interrupt handlers. */
+#define RTSPINLOCK_FLAGS_INTERRUPT_UNSAFE   RT_BIT(2)
+/** @}  */
 
 /**
  * Destroys a spinlock created by RTSpinlockCreate().
@@ -115,12 +71,11 @@ RTDECL(int)  RTSpinlockDestroy(RTSPINLOCK Spinlock);
 
 /**
  * Acquires the spinlock.
- * Interrupts are disabled upon return.
  *
  * @param   Spinlock    The spinlock to acquire.
  * @param   pTmp        Where to save the state.
  */
-RTDECL(void) RTSpinlockAcquireNoInts(RTSPINLOCK Spinlock, PRTSPINLOCKTMP pTmp);
+RTDECL(void) RTSpinlockAcquire(RTSPINLOCK Spinlock);
 
 /**
  * Releases the spinlock.
@@ -128,23 +83,10 @@ RTDECL(void) RTSpinlockAcquireNoInts(RTSPINLOCK Spinlock, PRTSPINLOCKTMP pTmp);
  * @param   Spinlock    The spinlock to acquire.
  * @param   pTmp        The state to restore. (This better be the same as for the RTSpinlockAcquire() call!)
  */
-RTDECL(void) RTSpinlockReleaseNoInts(RTSPINLOCK Spinlock, PRTSPINLOCKTMP pTmp);
+RTDECL(void) RTSpinlockRelease(RTSPINLOCK Spinlock);
 
-/**
- * Acquires the spinlock.
- *
- * @param   Spinlock    The spinlock to acquire.
- * @param   pTmp        Where to save the state.
- */
-RTDECL(void) RTSpinlockAcquire(RTSPINLOCK Spinlock, PRTSPINLOCKTMP pTmp);
-
-/**
- * Releases the spinlock.
- *
- * @param   Spinlock    The spinlock to acquire.
- * @param   pTmp        The state to restore. (This better be the same as for the RTSpinlockAcquire() call!)
- */
-RTDECL(void) RTSpinlockRelease(RTSPINLOCK Spinlock, PRTSPINLOCKTMP pTmp);
+/* Temporarily, only for checking the spinlock creation flags. */
+RTDECL(void) RTSpinlockReleaseNoInts(RTSPINLOCK Spinlock);
 
 
 /** @} */

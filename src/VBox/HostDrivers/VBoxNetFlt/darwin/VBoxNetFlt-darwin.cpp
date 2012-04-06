@@ -226,20 +226,19 @@ static kern_return_t VBoxNetFltDarwinStop(struct kmod_info *pKModInfo, void *pvD
  */
 DECLINLINE(ifnet_t) vboxNetFltDarwinRetainIfNet(PVBOXNETFLTINS pThis)
 {
-    RTSPINLOCKTMP Tmp = RTSPINLOCKTMP_INITIALIZER;
     ifnet_t pIfNet = NULL;
 
     /*
      * Be careful here to avoid problems racing the detached callback.
      */
-    RTSpinlockAcquireNoInts(pThis->hSpinlock, &Tmp);
+    RTSpinlockAcquire(pThis->hSpinlock);
     if (!ASMAtomicUoReadBool(&pThis->fDisconnectedFromHost))
     {
         pIfNet = ASMAtomicUoReadPtrT(&pThis->u.s.pIfNet, ifnet_t);
         if (pIfNet)
             ifnet_reference(pIfNet);
     }
-    RTSpinlockReleaseNoInts(pThis->hSpinlock, &Tmp);
+    RTSpinlockReleaseNoInts(pThis->hSpinlock);
 
     return pIfNet;
 }
@@ -638,7 +637,6 @@ static bool vboxNetFltDarwinIsPromiscuous(PVBOXNETFLTINS pThis)
 static void vboxNetFltDarwinIffDetached(void *pvThis, ifnet_t pIfNet)
 {
     PVBOXNETFLTINS pThis = (PVBOXNETFLTINS)pvThis;
-    RTSPINLOCKTMP Tmp = RTSPINLOCKTMP_INITIALIZER;
     uint64_t NanoTS = RTTimeSystemNanoTS();
     LogFlow(("vboxNetFltDarwinIffDetached: pThis=%p NanoTS=%RU64 (%d)\n",
              pThis, NanoTS, VALID_PTR(pIfNet) ? VBOX_GET_PCOUNT(pIfNet) :  -1));
@@ -657,7 +655,7 @@ static void vboxNetFltDarwinIffDetached(void *pvThis, ifnet_t pIfNet)
      * We carefully take the spinlock and increase the interface reference
      * behind it in order to avoid problematic races with the detached callback.
      */
-    RTSpinlockAcquireNoInts(pThis->hSpinlock, &Tmp);
+    RTSpinlockAcquire(pThis->hSpinlock);
 
     pIfNet = ASMAtomicUoReadPtrT(&pThis->u.s.pIfNet, ifnet_t);
     int cPromisc = VALID_PTR(pIfNet) ? VBOX_GET_PCOUNT(pIfNet) : - 1;
@@ -670,7 +668,7 @@ static void vboxNetFltDarwinIffDetached(void *pvThis, ifnet_t pIfNet)
     ASMAtomicUoWriteBool(&pThis->fRediscoveryPending, false);
     ASMAtomicWriteBool(&pThis->fDisconnectedFromHost, true);
 
-    RTSpinlockReleaseNoInts(pThis->hSpinlock, &Tmp);
+    RTSpinlockReleaseNoInts(pThis->hSpinlock);
 
     if (pIfNet)
         ifnet_release(pIfNet);
@@ -915,10 +913,9 @@ static int vboxNetFltDarwinAttachToInterface(PVBOXNETFLTINS pThis, bool fRedisco
         return VERR_INTNET_FLT_IF_NOT_FOUND;
     }
 
-    RTSPINLOCKTMP Tmp = RTSPINLOCKTMP_INITIALIZER;
-    RTSpinlockAcquireNoInts(pThis->hSpinlock, &Tmp);
+    RTSpinlockAcquire(pThis->hSpinlock);
     ASMAtomicUoWritePtr(&pThis->u.s.pIfNet, pIfNet);
-    RTSpinlockReleaseNoInts(pThis->hSpinlock, &Tmp);
+    RTSpinlockReleaseNoInts(pThis->hSpinlock);
 
     /*
      * Get the mac address while we still have a valid ifnet reference.
@@ -942,7 +939,7 @@ static int vboxNetFltDarwinAttachToInterface(PVBOXNETFLTINS pThis, bool fRedisco
         err = iflt_attach(pIfNet, &RegRec, &pIfFilter);
         Assert(err || pIfFilter);
 
-        RTSpinlockAcquireNoInts(pThis->hSpinlock, &Tmp);
+        RTSpinlockAcquire(pThis->hSpinlock);
         pIfNet = ASMAtomicUoReadPtrT(&pThis->u.s.pIfNet, ifnet_t);
         if (pIfNet && !err)
         {
@@ -950,7 +947,7 @@ static int vboxNetFltDarwinAttachToInterface(PVBOXNETFLTINS pThis, bool fRedisco
             ASMAtomicUoWritePtr(&pThis->u.s.pIfFilter, pIfFilter);
             pIfNet = NULL; /* don't dereference it */
         }
-        RTSpinlockReleaseNoInts(pThis->hSpinlock, &Tmp);
+        RTSpinlockReleaseNoInts(pThis->hSpinlock);
 
         /* Report capabilities. */
         if (   !pIfNet
@@ -1162,17 +1159,16 @@ int  vboxNetFltOsConnectIt(PVBOXNETFLTINS pThis)
 
 void vboxNetFltOsDeleteInstance(PVBOXNETFLTINS pThis)
 {
-    RTSPINLOCKTMP Tmp = RTSPINLOCKTMP_INITIALIZER;
     interface_filter_t pIfFilter;
 
     /*
      * Carefully obtain the interface filter reference and detach it.
      */
-    RTSpinlockAcquireNoInts(pThis->hSpinlock, &Tmp);
+    RTSpinlockAcquire(pThis->hSpinlock);
     pIfFilter = ASMAtomicUoReadPtrT(&pThis->u.s.pIfFilter, interface_filter_t);
     if (pIfFilter)
         ASMAtomicUoWriteNullPtr(&pThis->u.s.pIfFilter);
-    RTSpinlockReleaseNoInts(pThis->hSpinlock, &Tmp);
+    RTSpinlockReleaseNoInts(pThis->hSpinlock);
 
     if (pIfFilter)
         iflt_detach(pIfFilter);

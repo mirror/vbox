@@ -580,7 +580,6 @@ int vboxNetFltOsInitInstance(PVBOXNETFLTINS pThis, void *pvContext)
     char nam[NG_NODESIZ];
     struct ifnet *ifp;
     node_p node;
-    RTSPINLOCKTMP Tmp = RTSPINLOCKTMP_INITIALIZER;
 
     VBOXCURVNET_SET_FROM_UCRED();
     NOREF(pvContext);
@@ -592,7 +591,7 @@ int vboxNetFltOsInitInstance(PVBOXNETFLTINS pThis, void *pvContext)
     if (ng_make_node_common(&ng_vboxnetflt_typestruct, &node) != 0)
         return VERR_INTERNAL_ERROR;
 
-    RTSpinlockAcquireNoInts(pThis->hSpinlock, &Tmp);
+    RTSpinlockAcquire(pThis->hSpinlock);
 
     ASMAtomicUoWritePtr(&pThis->u.s.ifp, ifp);
     pThis->u.s.node = node;
@@ -609,7 +608,7 @@ int vboxNetFltOsInitInstance(PVBOXNETFLTINS pThis, void *pvContext)
     mtx_init(&pThis->u.s.outq.ifq_mtx, "vboxnetflt outq", NULL, MTX_SPIN);
     TASK_INIT(&pThis->u.s.tskout, 0, vboxNetFltFreeBSDoutput, pThis);
 
-    RTSpinlockReleaseNoInts(pThis->hSpinlock, &Tmp);
+    RTSpinlockReleaseNoInts(pThis->hSpinlock);
 
     NG_NODE_SET_PRIVATE(node, pThis);
 
