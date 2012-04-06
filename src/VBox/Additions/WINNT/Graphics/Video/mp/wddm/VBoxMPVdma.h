@@ -169,6 +169,7 @@ typedef struct VBOXVDMAPIPE_CMD_DR
 {
     VBOXVDMAPIPE_CMD_HDR PipeHdr;
     VBOXVDMAPIPE_CMD_TYPE enmType;
+    volatile uint32_t cRefs;
 } VBOXVDMAPIPE_CMD_DR, *PVBOXVDMAPIPE_CMD_DR;
 
 #define VBOXVDMAPIPE_CMD_DR_FROM_ENTRY(_pE)  ( (PVBOXVDMAPIPE_CMD_DR)VBOXVDMAPIPE_CMD_HDR_FROM_ENTRY(_pE) )
@@ -328,7 +329,18 @@ AssertCompile(sizeof (VBOXVDMADDI_CMD) <= RT_SIZEOFMEMB(VBOXVDMACBUF_DR, aGuestD
 #endif
 NTSTATUS vboxVdmaGgCmdSubmit(PVBOXMP_DEVEXT pDevExt, PVBOXVDMAPIPE_CMD_DR pCmd);
 PVBOXVDMAPIPE_CMD_DR vboxVdmaGgCmdCreate(PVBOXMP_DEVEXT pDevExt, VBOXVDMAPIPE_CMD_TYPE enmType, uint32_t cbCmd);
+DECLINLINE(void) vboxVdmaGgCmdAddRef(PVBOXVDMAPIPE_CMD_DR pDr)
+{
+    ASMAtomicIncU32(&pDr->cRefs);
+}
 void vboxVdmaGgCmdDestroy(PVBOXMP_DEVEXT pDevExt, PVBOXVDMAPIPE_CMD_DR pDr);
+DECLINLINE(void) vboxVdmaGgCmdRelease(PVBOXMP_DEVEXT pDevExt, PVBOXVDMAPIPE_CMD_DR pDr)
+{
+    uint32_t cRefs = ASMAtomicDecU32(&pDr->cRefs);
+    Assert(cRefs < UINT32_MAX/2);
+    if (!cRefs)
+        vboxVdmaGgCmdDestroy(pDevExt, pDr);
+}
 NTSTATUS vboxVdmaGgCmdFinish(PVBOXMP_DEVEXT pDevExt, struct VBOXWDDM_CONTEXT *pContext, PKEVENT pEvent);
 NTSTATUS vboxVdmaGgCmdCancel(PVBOXMP_DEVEXT pDevExt, VBOXWDDM_CONTEXT *pContext, PVBOXWDDM_SWAPCHAIN pSwapchain);
 
@@ -344,5 +356,5 @@ NTSTATUS vboxVdmaGgDmaBltPerform(PVBOXMP_DEVEXT pDevExt, PVBOXWDDM_ALLOCATION pS
         PVBOXWDDM_ALLOCATION pDstAlloc, RECT* pDstRect);
 
 #define VBOXVDMAPIPE_CMD_DR_FROM_DDI_CMD(_pCmd) ((PVBOXVDMAPIPE_CMD_DR)(((uint8_t*)(_pCmd)) - RT_OFFSETOF(VBOXVDMAPIPE_CMD_DR, DdiCmd)))
-DECLCALLBACK(VOID) vboxVdmaGgDdiCmdDestroy(PVBOXMP_DEVEXT pDevExt, PVBOXVDMADDI_CMD pCmd, PVOID pvContext);
+DECLCALLBACK(VOID) vboxVdmaGgDdiCmdRelease(PVBOXMP_DEVEXT pDevExt, PVBOXVDMADDI_CMD pCmd, PVOID pvContext);
 #endif /* #ifndef ___VBoxMPVdma_h___ */
