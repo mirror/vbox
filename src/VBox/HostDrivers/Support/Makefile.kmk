@@ -246,7 +246,7 @@ endif # freebsd
 #
 # New VBoxDrv target. TODO: Convert all the above to use this!
 #
-if1of ($(KBUILD_TARGET), darwin linux solaris)
+if1of ($(KBUILD_TARGET), darwin linux solaris win)
  ifdef VBOX_WITH_VBOXDRV
   SYSMODS += VBoxDrv
  endif
@@ -306,7 +306,7 @@ if1of ($(KBUILD_TARGET), darwin linux solaris)
  VBoxDrv_SOURCES.win      = \
 	win/SUPDrv-win.cpp \
 	win/SUPDrvA-win.asm \
-	win/SUPDrv.rc
+	win/VBoxDrv.rc
  VBoxDrv_SOURCES          = \
  	SUPDrv.c \
  	SUPDrvSem.c \
