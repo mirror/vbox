@@ -70,8 +70,6 @@ typedef struct RTSPINLOCKINTERNAL
 } RTSPINLOCKINTERNAL, *PRTSPINLOCKINTERNAL;
 
 
-This code has changed and need testing!;
-
 
 RTDECL(int)  RTSpinlockCreate(PRTSPINLOCK pSpinlock, uint32_t fFlags, const char *pszName)
 {
