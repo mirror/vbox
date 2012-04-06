@@ -149,6 +149,7 @@ DECLEXPORT(PSUPGLOBALINFOPAGE) g_pSUPGlobalInfoPage = NULL;
  */
 static SUPFUNC g_aFunctions[] =
 {
+/* SED: START */
     /* name                                     function */
         /* Entries with absolute addresses determined at runtime, fixup
            code makes ugly ASSUMPTIONS about the order here: */
@@ -183,7 +184,7 @@ static SUPFUNC g_aFunctions[] =
     { "SUPR0MemFree",                           (void *)SUPR0MemFree },
     { "SUPR0PageAllocEx",                       (void *)SUPR0PageAllocEx },
     { "SUPR0PageFree",                          (void *)SUPR0PageFree },
-    { "SUPR0Printf",                            (void *)SUPR0Printf }, /** @todo needs wrapping? */
+    { "SUPR0Printf",                            (void *)SUPR0Printf },
     { "SUPSemEventCreate",                      (void *)SUPSemEventCreate },
     { "SUPSemEventClose",                       (void *)SUPSemEventClose },
     { "SUPSemEventSignal",                      (void *)SUPSemEventSignal },
@@ -205,7 +206,7 @@ static SUPFUNC g_aFunctions[] =
     { "SUPR0EnableVTx",                         (void *)SUPR0EnableVTx },
     { "SUPR0TracerRegisterModule",              (void *)SUPR0TracerRegisterModule },
     { "SUPGetGIP",                              (void *)SUPGetGIP },
-    { "g_pSUPGlobalInfoPage",                   (void *)&g_pSUPGlobalInfoPage },
+    { "g_pSUPGlobalInfoPage",                   (void *)&g_pSUPGlobalInfoPage },            /* SED: DATA */
     { "RTMemAllocTag",                          (void *)RTMemAllocTag },
     { "RTMemAllocZTag",                         (void *)RTMemAllocZTag },
     { "RTMemAllocVarTag",                       (void *)RTMemAllocVarTag },
@@ -273,6 +274,7 @@ static SUPFUNC g_aFunctions[] =
     { "RTSpinlockRelease",                      (void *)RTSpinlockRelease },
     { "RTSpinlockAcquireNoInts",                (void *)RTSpinlockAcquireNoInts },
     { "RTSpinlockReleaseNoInts",                (void *)RTSpinlockReleaseNoInts },
+    /*{ "RTTimeNow",                              (void *)RTTimeNow },*/
     { "RTTimeNanoTS",                           (void *)RTTimeNanoTS },
     { "RTTimeMilliTS",                          (void *)RTTimeMilliTS },
     { "RTTimeSystemNanoTS",                     (void *)RTTimeSystemNanoTS },
@@ -383,6 +385,7 @@ static SUPFUNC g_aFunctions[] =
     { "RTCrc32Finish",                          (void *)RTCrc32Finish },
     { "RTCrc32Process",                         (void *)RTCrc32Process },
     { "RTCrc32Start",                           (void *)RTCrc32Start },
+/* SED: END */
 };
 
 #if defined(RT_OS_DARWIN) || defined(RT_OS_SOLARIS) || defined(RT_OS_FREEBSD)

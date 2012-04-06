@@ -132,22 +132,20 @@ VBoxSupSvc_LIBS = \
 
 
 #
-# SUPR0 - The Ring-0 Import / Thunk library.
+# SUPR0 - The Ring-0 Import library.
 #
 SUPR0_TEMPLATE      = VBoxR0
-ifeq ($(VBOX_LDR_FMT),pe)
- SUPR0_SOURCES     += SUPR0.def
-endif
-ifeq ($(VBOX_LDR_FMT),lx)
-SUPR0_SOURCES      += $$(SUPR0_0_OUTDIR)/SUPR0.def
-$$(SUPR0_0_OUTDIR)/SUPR0.def: $(PATH_SUB_CURRENT)/SUPR0.def | $$(dir $$@)
+if1of ($(VBOX_LDR_FMT), pe lx)
+ SUPR0_SOURCES       = $(SUPR0_0_OUTDIR)/SUPR0.def
+ SUPR0_CLEAN         = $(SUPR0_0_OUTDIR)/SUPR0.def
+$$(SUPR0_0_OUTDIR)/SUPR0.def: \
+		$(PATH_SUB_CURRENT)/SUPDrv.c \
+		$(PATH_SUB_CURRENT)/SUPR0-def-$(VBOX_LDR_FMT).sed \
+		| $$(dir $$@)
 	$(SED) \
-		-e 's/^[ \t][ \t]*\([gA-Z]\)/    _\1/' \
-		-e 's/[ \t]DATA[ \t]*/ /' \
-		-e 's/g_pSUPGlobalInfoPage/g_SUPGlobalInfoPage/' \
-		--output $@.tmp\
+		-f $(dir $<)/SUPR0-def-$(VBOX_LDR_FMT).sed \
+		--output $@ \
 		$<
-	$(MV) -f $@.tmp $@
 endif
 
 
