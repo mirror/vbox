@@ -871,7 +871,7 @@ SUPR0DECL(int) SUPR0TracerDeregisterImpl(void *hMod, PSUPDRVSESSION pSession)
  * deploy some ugly gcc inline assembly here.
  */
 #if defined(__GNUC__) && (defined(RT_OS_FREEBSD) || defined(RT_OS_LINUX))
-__asm__ __volatile__("\
+__asm__("\
         .section .text                                                  \n\
                                                                         \n\
         .p2align 2,,3                                                   \n\
@@ -879,19 +879,19 @@ __asm__ __volatile__("\
 SUPR0TracerFireProbe:                                                   \n\
 ");
 # if   defined(RT_ARCH_AMD64)
-__asm__ __volatile__(" \
+__asm__(" \
 	    movq    g_pfnSupdrvProbeFireKernel(%rip), %rax                  \n\
 	    jmp	    *%rax \n\
 ");
 # elif defined(RT_ARCH_X86)
-__asm__ __volatile__("\
+__asm__("\
 	    movl    g_pfnSupdrvProbeFireKernel, %eax                        \n\
 	    jmp	    *%eax \n\
 ");
 # else
 #  error "Which arch is this?"
 #endif
-__asm__ __volatile__("\
+__asm__("\
                                                                         \n\
         .type supdrvTracerProbeFireStub,@function                       \n\
         .global supdrvTracerProbeFireStub                               \n\

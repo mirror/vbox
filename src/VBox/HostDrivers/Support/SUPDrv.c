@@ -385,6 +385,14 @@ static SUPFUNC g_aFunctions[] =
     { "RTCrc32Finish",                          (void *)RTCrc32Finish },
     { "RTCrc32Process",                         (void *)RTCrc32Process },
     { "RTCrc32Start",                           (void *)RTCrc32Start },
+    { "RTUuidCompare",                          (void *)RTUuidCompare },
+    { "RTUuidCompareStr",                       (void *)RTUuidCompareStr },
+    { "RTUuidFromStr",                          (void *)RTUuidFromStr },
+    { "RTStrDupTag",                            (void *)RTStrDupTag },
+    { "RTStrFree",                              (void *)RTStrFree },
+    { "RTStrCopy",                              (void *)RTStrCopy },
+    { "RTStrNCmp",                              (void *)RTStrNCmp },
+
 /* SED: END */
 };
 
@@ -397,13 +405,6 @@ PFNRT g_apfnVBoxDrvIPRTDeps[] =
 {
     /* VBoxNetFlt */
     (PFNRT)RTErrConvertFromErrno,
-    (PFNRT)RTUuidCompare,
-    (PFNRT)RTUuidCompareStr,
-    (PFNRT)RTUuidFromStr,
-    (PFNRT)RTStrDupTag,
-    (PFNRT)RTStrFree,
-    (PFNRT)RTStrCopy,
-    (PFNRT)RTStrNCmp,
     /* VBoxNetAdp */
     (PFNRT)RTRandBytes,
     /* VBoxUSB */
