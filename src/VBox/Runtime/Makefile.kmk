@@ -2336,6 +2336,7 @@ if1of ($(LIBRARIES),RuntimeR3 RuntimeR0 RuntimeR0Drv RuntimeRC)
 				-e '/^_Z7strpbrk/d' \
 				-e '/^strcmp/d' \
 				-e '/^strcpy/d' \
+				-e '/^strncpy/d' \
 				-e '/^strlen/d' \
 				-e '/^_Z[[:alpha:]]*[[:digit:]]\+RTC/d' \
 				\
