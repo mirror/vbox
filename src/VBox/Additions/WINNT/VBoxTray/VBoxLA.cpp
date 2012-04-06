@@ -27,7 +27,8 @@
 #include <iprt/alloc.h>
 #include <iprt/list.h>
 
-#define LALOG Log
+#define LALOG(a) do { if (gCtx.fLogEnabled) LogRel(a); } while(0)
+#define LALOGFORCE(a) do { LogRel(a); } while(0)
 
 #define REG_KEY_LEN 1024
 #define MAX_CLIENT_NAME_CHARS 1024
@@ -41,6 +42,8 @@
 struct VBOXLACONTEXT
 {
     const VBOXSERVICEENV *pEnv;
+
+    bool fLogEnabled;
 
     uint32_t u32GuestPropHandle;  /* The client identifier of the guest property system. */
 
@@ -102,6 +105,67 @@ const WCHAR *g_pwszRegKeyReconnectActions = L"Software\\Oracle\\Sun Ray\\ClientI
 #endif /* !RT_ARCH_AMD64 */
 
 const char g_szCommandPrefix[] = "Command";
+
+static BOOL laGetRegistryDWORD(WCHAR *pwszRegKey, WCHAR *pwszName, DWORD *pdwValue)
+{
+    LONG lErr;
+
+    HKEY hKey;
+    lErr = RegOpenKeyExW(HKEY_LOCAL_MACHINE,
+                         pwszRegKey,
+                         0,
+                         KEY_QUERY_VALUE,
+                         &hKey);
+
+    if (lErr != ERROR_SUCCESS)
+    {
+        LALOGFORCE(("LA: RegOpenKeyExW: failed [%ls]\n",
+                    pwszRegKey));
+        return FALSE;
+    }
+
+    DWORD nRegData = sizeof(DWORD);
+    DWORD dwType = 0;
+    lErr = RegQueryValueExW(hKey,
+                            pwszName,
+                            NULL,
+                            &dwType,
+                            (BYTE *)pdwValue,
+                            &nRegData);
+
+    if (lErr != ERROR_SUCCESS)
+    {
+        LALOGFORCE(("LA: RegQueryValueExW: failed [%ls/%ls]\n",
+                    pwszRegKey, pwszName));
+        RegCloseKey(hKey);
+        return FALSE;
+    }
+
+    if (nRegData != sizeof(DWORD))
+    {
+        LALOGFORCE(("LA: buffer overflow reg %d, [%ls]\n",
+                    nRegData, pwszRegKey));
+        RegCloseKey(hKey);
+        return FALSE;
+    }
+
+    if (dwType != REG_DWORD)
+    {
+        LALOGFORCE(("LA: wrong type %d, [%ls/%ls]\n",
+                    dwType, pwszRegKey, pwszName));
+        RegCloseKey(hKey);
+        return FALSE;
+    }
+
+    RegCloseKey(hKey);
+
+    if (lErr != ERROR_SUCCESS)
+    {
+        return FALSE;
+    }
+
+    return TRUE;
+}
 
 static void ActionExecutorDeleteActions(RTLISTANCHOR *listActions)
 {
@@ -263,6 +327,9 @@ static BOOL ActionExecutorEnumerateRegistryKey(const WCHAR *pwszRegKey,
     {
         ActionExecutorDeleteActions(listActions);
     }
+
+    LALOG(("LA: action enum %d\n",
+           bRet));
 
     return bRet;
 }
@@ -675,7 +742,7 @@ static int laGetProperty(uint32_t u32GuestPropHandle, const char *pszName, uint6
     }
     else if (rc == VERR_NOT_FOUND)
     {
-        LALOG(("LA: laGetProperty: not found [%s]\n"));
+        LALOG(("LA: laGetProperty: not found [%s]\n", pszName));
     }
     else
     {
@@ -1005,8 +1072,8 @@ static void laDoActions(VBOXLACONTEXT *pCtx)
      * Caller assumes that this function will filter double actions.
      * That is two or more LA_DO_ATTACH will do just one LA_DO_ATTACH.
      */
-    LALOG(("LA: laDoActions: action %d\n",
-           pCtx->u32Action));
+    LALOG(("LA: laDoActions: action %d, prev %d\n",
+           pCtx->u32Action, pCtx->u32PrevAction));
 
     switch(pCtx->u32Action)
     {
@@ -1062,9 +1129,20 @@ static void laDoActions(VBOXLACONTEXT *pCtx)
 
 int VBoxLAInit(const VBOXSERVICEENV *pEnv, void **ppInstance, bool *pfStartThread)
 {
-    LALOG(("VBoxTray: VBoxLAInit\n"));
-
     gCtx.pEnv = pEnv;
+
+    DWORD dwValue = 0;
+    if (   laGetRegistryDWORD(L"SOFTWARE\\Oracle\\VirtualBox Guest Additions", L"VBoxTrayLog", &dwValue)
+        && (dwValue & 0x10) != 0)
+    {
+         gCtx.fLogEnabled = true;
+    }
+    else
+    {
+         gCtx.fLogEnabled = false;
+    }
+
+    LALOG(("VBoxTray: VBoxLAInit\n"));
 
     int rc = VbglR3GuestPropConnect(&gCtx.u32GuestPropHandle);
     if (RT_FAILURE(rc))
