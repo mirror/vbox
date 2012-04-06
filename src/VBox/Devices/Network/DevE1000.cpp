@@ -980,9 +980,9 @@ struct E1kState_st
     bool        fGCEnabled;
     /** EMT: Compute Ethernet CRC for RX packets. */
     bool        fEthernetCRC;
-#if HC_ARCH_BITS == 64
-    uint32_t                Alignment2;
-#endif
+
+    bool        Alignment2[3];
+    uint32_t    Alignment3;
 
     /** All: Device register storage. */
     uint32_t    auRegs[E1K_NUM_OF_32BIT_REGS];
