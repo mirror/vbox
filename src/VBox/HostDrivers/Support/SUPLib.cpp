@@ -2307,3 +2307,82 @@ SUPR3DECL(int) SUPR3QueryVTCaps(uint32_t *pfCaps)
     return rc;
 }
 
+
+SUPR3DECL(int) SUPR3TracerOpen(uint32_t uCookie, uintptr_t uArg)
+{
+    /* fake */
+    if (RT_UNLIKELY(g_u32FakeMode))
+        return VINF_SUCCESS;
+
+    /*
+     * Issue IOCtl to the SUPDRV kernel module.
+     */
+    SUPTRACEROPEN Req;
+    Req.Hdr.u32Cookie       = g_u32Cookie;
+    Req.Hdr.u32SessionCookie= g_u32SessionCookie;
+    Req.Hdr.cbIn            = SUP_IOCTL_TRACER_OPEN_SIZE_IN;
+    Req.Hdr.cbOut           = SUP_IOCTL_TRACER_OPEN_SIZE_OUT;
+    Req.Hdr.fFlags          = SUPREQHDR_FLAGS_DEFAULT;
+    Req.Hdr.rc              = VERR_INTERNAL_ERROR;
+    Req.u.In.uCookie        = uCookie;
+    Req.u.In.uArg           = uArg;
+    int rc = suplibOsIOCtl(&g_supLibData, SUP_IOCTL_TRACER_OPEN, &Req, SUP_IOCTL_TRACER_OPEN_SIZE);
+    if (RT_SUCCESS(rc))
+        rc = Req.Hdr.rc;
+    return rc;
+}
+
+
+SUPR3DECL(int) SUPR3TracerClose(void)
+{
+    /* fake */
+    if (RT_UNLIKELY(g_u32FakeMode))
+        return VINF_SUCCESS;
+
+    /*
+     * Issue IOCtl to the SUPDRV kernel module.
+     */
+    SUPREQHDR Req;
+    Req.u32Cookie       = g_u32Cookie;
+    Req.u32SessionCookie= g_u32SessionCookie;
+    Req.cbIn            = SUP_IOCTL_TRACER_OPEN_SIZE_IN;
+    Req.cbOut           = SUP_IOCTL_TRACER_OPEN_SIZE_OUT;
+    Req.fFlags          = SUPREQHDR_FLAGS_DEFAULT;
+    Req.rc              = VERR_INTERNAL_ERROR;
+    int rc = suplibOsIOCtl(&g_supLibData, SUP_IOCTL_TRACER_CLOSE, &Req, SUP_IOCTL_TRACER_CLOSE_SIZE);
+    if (RT_SUCCESS(rc))
+        rc = Req.rc;
+    return rc;
+}
+
+
+SUPR3DECL(int) SUPR3TracerIoCtl(uintptr_t uCmd, uintptr_t uArg, int32_t *piRetVal)
+{
+    /* fake */
+    if (RT_UNLIKELY(g_u32FakeMode))
+    {
+        *piRetVal = -1;
+        return VERR_NOT_SUPPORTED;
+    }
+
+    /*
+     * Issue IOCtl to the SUPDRV kernel module.
+     */
+    SUPTRACERIOCTL Req;
+    Req.Hdr.u32Cookie       = g_u32Cookie;
+    Req.Hdr.u32SessionCookie= g_u32SessionCookie;
+    Req.Hdr.cbIn            = SUP_IOCTL_TRACER_IOCTL_SIZE_IN;
+    Req.Hdr.cbOut           = SUP_IOCTL_TRACER_IOCTL_SIZE_OUT;
+    Req.Hdr.fFlags          = SUPREQHDR_FLAGS_DEFAULT;
+    Req.Hdr.rc              = VERR_INTERNAL_ERROR;
+    Req.u.In.uCmd           = uCmd;
+    Req.u.In.uArg           = uArg;
+    int rc = suplibOsIOCtl(&g_supLibData, SUP_IOCTL_TRACER_IOCTL, &Req, SUP_IOCTL_TRACER_IOCTL_SIZE);
+    if (RT_SUCCESS(rc))
+    {
+        rc = Req.Hdr.rc;
+        *piRetVal = Req.u.Out.iRetVal;
+    }
+    return rc;
+}
+
