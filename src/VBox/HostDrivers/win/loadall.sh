@@ -61,8 +61,6 @@ do
     fi
 done
 
-exit 1
-
 #
 # Invoke the installers.
 #
