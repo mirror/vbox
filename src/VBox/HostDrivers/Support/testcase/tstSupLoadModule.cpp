@@ -53,7 +53,8 @@ int main(int argc, char **argv)
      */
     static const RTGETOPTDEF s_aOptions[] =
     {
-        { "--keep",             'k', RTGETOPT_REQ_NOTHING }
+        { "--keep",             'k', RTGETOPT_REQ_NOTHING },
+        { "--no-keep",          'n', RTGETOPT_REQ_NOTHING },
     };
 
     bool fKeepLoaded = false;
@@ -93,6 +94,10 @@ int main(int argc, char **argv)
 
             case 'k':
                 fKeepLoaded = true;
+                break;
+
+            case 'n':
+                fKeepLoaded = false;
                 break;
 
             case 'h':

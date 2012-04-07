@@ -65,7 +65,12 @@ typedef struct SUPDRVTPPROVIDER
      * SUPR0VtgRegisterDrv.  NULL if pImage is set. */
     PSUPDRVSESSION          pSession;
 
-    /** Set when the module is unloaded or the driver deregisters its probes. */
+    /** Used to indicate that we've called pfnProviderDeregistered already and it
+     * failed because the provider was busy.  Next time we must try
+     * pfnProviderDeregisterZombie.
+     *
+     * @remarks This does not necessiarly mean the provider is in the zombie
+     *          list.  See supdrvTracerCommonDeregisterImpl. */
     bool                    fZombie;
     /** Set if the provider has been successfully registered with the
      *  tracer. */
@@ -80,7 +85,7 @@ typedef SUPDRVTPPROVIDER *PSUPDRVTPPROVIDER;
 /*******************************************************************************
 *   Defined Constants And Macros                                               *
 *******************************************************************************/
-#if 0
+#ifdef DEBUG_bird
 # define LOG_TRACER(a_Args)  SUPR0Printf a_Args
 #else
 # define LOG_TRACER(a_Args)  do { } while (0)
@@ -551,7 +556,8 @@ static int supdrvTracerRegisterVtgObj(PSUPDRVDEVEXT pDevExt, PVTGOBJHDR pVtgHdr,
             rc = RTSemFastMutexRequest(pDevExt->mtxTracer);
             if (RT_SUCCESS(rc))
             {
-                if (pDevExt->pTracerOps)
+                if (   pDevExt->pTracerOps
+                    && !pDevExt->fTracerUnloading)
                     rc = pDevExt->pTracerOps->pfnProviderRegister(pDevExt->pTracerOps, &pProv->Core);
                 else
                 {
@@ -562,7 +568,7 @@ static int supdrvTracerRegisterVtgObj(PSUPDRVDEVEXT pDevExt, PVTGOBJHDR pVtgHdr,
                 {
                     RTListAppend(&pDevExt->TracerProviderList, &pProv->ListEntry);
                     RTSemFastMutexRelease(pDevExt->mtxTracer);
-                    LOG_TRACER(("Registered DTrace provider '%s' in '%s' -> %p\n",
+                    LOG_TRACER(("Registered Tracer provider '%s' in '%s' -> %p\n",
                                 pProv->szName, pszModName, pProv->Core.TracerData.DTrace.idProvider));
                 }
                 else
@@ -679,6 +685,8 @@ SUPR0DECL(int) SUPR0TracerRegisterModule(void *hMod, PVTGOBJHDR pVtgHdr)
     uintptr_t       cbVtgObj;
     int             rc;
 
+    LOG_TRACER(("SUPR0TracerRegisterModule: %p\n", pVtgHdr));
+
     /*
      * Validate input and context.
      */
@@ -701,6 +709,7 @@ SUPR0DECL(int) SUPR0TracerRegisterModule(void *hMod, PVTGOBJHDR pVtgHdr)
     cbVtgObj = pImage->cbImageBits - cbVtgObj;
 
     rc = supdrvTracerRegisterVtgObj(pDevExt, pVtgHdr, cbVtgObj, pImage, NULL, pImage->szName);
+    LOG_TRACER(("SUPR0TracerRegisterModule: rc=%d\n", rc));
 
     /*
      * Try unregister zombies while we have a chance.
@@ -724,9 +733,10 @@ SUPR0DECL(int) SUPR0TracerRegisterModule(void *hMod, PVTGOBJHDR pVtgHdr)
  */
 SUPR0DECL(int) SUPR0TracerRegisterImpl(void *hMod, PSUPDRVSESSION pSession, PCSUPDRVTRACERREG pReg, PCSUPDRVTRACERHLP *ppHlp)
 {
-    PSUPDRVLDRIMAGE pImage = (PSUPDRVLDRIMAGE)hMod;
-    PSUPDRVDEVEXT   pDevExt;
-    int             rc;
+    PSUPDRVLDRIMAGE     pImage = (PSUPDRVLDRIMAGE)hMod;
+    PSUPDRVDEVEXT       pDevExt;
+    PSUPDRVTPPROVIDER   pProv;
+    int                 rc;
 
     /*
      * Validate input and context.
@@ -752,6 +762,9 @@ SUPR0DECL(int) SUPR0TracerRegisterImpl(void *hMod, PSUPDRVSESSION pSession, PCSU
         AssertPtrReturn(pDevExt, VERR_INVALID_POINTER);
     }
 
+    AssertReturn(pReg->u32Magic   == SUPDRVTRACERREG_MAGIC, VERR_INVALID_MAGIC);
+    AssertReturn(pReg->u32Version == SUPDRVTRACERREG_VERSION, VERR_VERSION_MISMATCH);
+    AssertReturn(pReg->uEndMagic  == SUPDRVTRACERREG_MAGIC, VERR_VERSION_MISMATCH);
     AssertPtrReturn(pReg->pfnProbeFireKernel, VERR_INVALID_POINTER);
     AssertPtrReturn(pReg->pfnProbeFireUser, VERR_INVALID_POINTER);
     AssertPtrReturn(pReg->pfnTracerOpen, VERR_INVALID_POINTER);
@@ -769,12 +782,30 @@ SUPR0DECL(int) SUPR0TracerRegisterImpl(void *hMod, PSUPDRVSESSION pSession, PCSU
     {
         if (!pDevExt->pTracerOps)
         {
+            LOG_TRACER(("SUPR0TracerRegisterImpl: pReg=%p\n", pReg));
             pDevExt->pTracerOps     = pReg;
             pDevExt->pTracerSession = pSession;
             pDevExt->pTracerImage   = pImage;
 
             *ppHlp = &pDevExt->TracerHlp;
+
             rc = VINF_SUCCESS;
+
+            /*
+             * Iterate the already loaded modules and register their providers.
+             */
+            RTListForEach(&pDevExt->TracerProviderList, pProv, SUPDRVTPPROVIDER, ListEntry)
+            {
+                Assert(!pProv->fRegistered);
+                pProv->fRegistered = true;
+                int rc2 = pDevExt->pTracerOps->pfnProviderRegister(pDevExt->pTracerOps, &pProv->Core);
+                if (RT_FAILURE(rc2))
+                {
+                    pProv->fRegistered = false;
+                    SUPR0Printf("SUPR0TracerRegisterImpl: Failed to register provider %s::%s - rc=%d\n",
+                                pProv->Core.pszModName, pProv->szName, rc2);
+                }
+            }
         }
         else
             rc = VERR_SUPDRV_TRACER_ALREADY_REGISTERED;
@@ -795,13 +826,93 @@ SUPR0DECL(int) SUPR0TracerRegisterImpl(void *hMod, PSUPDRVSESSION pSession, PCSU
  */
 static void supdrvTracerCommonDeregisterImpl(PSUPDRVDEVEXT pDevExt)
 {
-    supdrvTracerRemoveAllProviders(pDevExt);
+    uint32_t            i;
+    PSUPDRVTPPROVIDER   pProv;
+    PSUPDRVTPPROVIDER   pProvNext;
 
     RTSemFastMutexRequest(pDevExt->mtxTracer);
+
+    /*
+     * Disassociate the tracer implementation from all providers.
+     * We will have to wait on busy providers.
+     */
+    for (i = 0; ; i++)
+    {
+        uint32_t cZombies = 0;
+
+        /* Live providers. */
+        RTListForEachSafe(&pDevExt->TracerProviderList, pProv, pProvNext, SUPDRVTPPROVIDER, ListEntry)
+        {
+            int rc;
+            LOG_TRACER(("supdrvTracerRemoveAllProviders: Attemting to unregister '%s' / %p...\n",
+                        pProv->szName, pProv->Core.TracerData.DTrace.idProvider));
+
+            if (!pProv->fRegistered)
+                continue;
+            if (!pProv->fZombie)
+            {
+                rc = pDevExt->pTracerOps->pfnProviderDeregister(pDevExt->pTracerOps, &pProv->Core);
+                if (RT_FAILURE(rc))
+                    pProv->fZombie = true;
+            }
+            else
+                rc = pDevExt->pTracerOps->pfnProviderDeregisterZombie(pDevExt->pTracerOps, &pProv->Core);
+            if (RT_SUCCESS(rc))
+                pProv->fZombie = pProv->fRegistered = false;
+            else
+            {
+                cZombies++;
+                if (!(i & 0xf))
+                    SUPR0Printf("supdrvTracerCommonDeregisterImpl: Waiting on busy provider '%s' / %p (rc=%d)\n",
+                                pProv->szName, pProv->Core.TracerData.DTrace.idProvider, rc);
+                else
+                    LOG_TRACER(("supdrvTracerCommonDeregisterImpl: Failed to unregister provider '%s' / %p - rc=%d\n",
+                                pProv->szName, pProv->Core.TracerData.DTrace.idProvider, rc));
+            }
+        }
+
+        /* Zombies providers. */
+        RTListForEachSafe(&pDevExt->TracerProviderZombieList, pProv, pProvNext, SUPDRVTPPROVIDER, ListEntry)
+        {
+            int rc;
+            LOG_TRACER(("supdrvTracerRemoveAllProviders: Attemting to unregister '%s' / %p (zombie)...\n",
+                        pProv->szName, pProv->Core.TracerData.DTrace.idProvider));
+
+            rc = pDevExt->pTracerOps->pfnProviderDeregisterZombie(pDevExt->pTracerOps, &pProv->Core);
+            if (RT_SUCCESS(rc))
+            {
+                RTListNodeRemove(&pProv->ListEntry);
+                supdrvTracerFreeProvider(pProv);
+            }
+            else
+            {
+                cZombies++;
+                if (!(i & 0xf))
+                    SUPR0Printf("supdrvTracerRemoveAllProviders: Waiting on busy provider '%s' / %p (rc=%d)\n",
+                                pProv->szName, pProv->Core.TracerData.DTrace.idProvider, rc);
+                else
+                    LOG_TRACER(("supdrvTracerRemoveAllProviders: Failed to unregister provider '%s' / %p - rc=%d\n",
+                                pProv->szName, pProv->Core.TracerData.DTrace.idProvider, rc));
+            }
+        }
+
+        if (cZombies == 0)
+            break;
+
+        /* Delay...*/
+        RTSemFastMutexRelease(pDevExt->mtxTracer);
+        RTThreadSleep(1000);
+        RTSemFastMutexRequest(pDevExt->mtxTracer);
+    }
+
+    /*
+     * Deregister the tracer implementation.
+     */
     pDevExt->pTracerImage     = NULL;
     pDevExt->pTracerSession   = NULL;
     pDevExt->pTracerOps       = NULL;
     pDevExt->fTracerUnloading = false;
+
     RTSemFastMutexRelease(pDevExt->mtxTracer);
 }
 
@@ -848,9 +959,11 @@ SUPR0DECL(int) SUPR0TracerDeregisterImpl(void *hMod, PSUPDRVSESSION pSession)
             ? pDevExt->pTracerImage   == pImage
             : pDevExt->pTracerSession == pSession)
         {
+            LOG_TRACER(("SUPR0TracerDeregisterImpl: Unloading ...\n"));
             pDevExt->fTracerUnloading = true;
             RTSemFastMutexRelease(pDevExt->mtxTracer);
             supdrvTracerCommonDeregisterImpl(pDevExt);
+            LOG_TRACER(("SUPR0TracerDeregisterImpl: ... done.\n"));
         }
         else
         {
@@ -921,9 +1034,11 @@ void VBOXCALL supdrvTracerModuleUnloading(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE
      */
     if (pDevExt->pTracerImage == pImage)
     {
+        LOG_TRACER(("supdrvTracerModuleUnloading: Unloading tracer ...\n"));
         pDevExt->fTracerUnloading = true;
         RTSemFastMutexRelease(pDevExt->mtxTracer);
         supdrvTracerCommonDeregisterImpl(pDevExt);
+        LOG_TRACER(("supdrvTracerModuleUnloading: ... done.\n"));
     }
     else
     {
