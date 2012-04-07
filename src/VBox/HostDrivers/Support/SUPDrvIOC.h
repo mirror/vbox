@@ -192,7 +192,7 @@ typedef SUPREQHDR *PSUPREQHDR;
  * @todo Pending work on next major version change:
  *          - Remove RTSpinlockReleaseNoInts.
  */
-#define SUPDRV_IOC_VERSION                              0x001a0000
+#define SUPDRV_IOC_VERSION                              0x001a0001
 
 /** SUP_IOCTL_COOKIE. */
 typedef struct SUPCOOKIE
@@ -1091,6 +1091,7 @@ typedef struct SUPSEMOP2
 #define SUPSEMOP2_CLOSE             5
 /** @} */
 
+
 /** @name SUP_IOCTL_SEM_OP3
  * Semaphore operations.
  * @{
@@ -1140,6 +1141,7 @@ typedef struct SUPSEMOP3
 #define SUPSEMOP3_GET_RESOLUTION    1
 /** @} */
 
+
 /** @name SUP_IOCTL_VT_CAPS
  * Get the VT-x/AMD-V capabilities.
  *
@@ -1166,6 +1168,85 @@ typedef struct SUPVTCAPS
     } u;
 } SUPVTCAPS, *PSUPVTCAPS;
 /** @} */
+
+
+/** @name SUP_IOCTL_TRACER_OPEN
+ * Open the tracer.
+ *
+ * Should be matched by an SUP_IOCTL_TRACER_CLOSE call.
+ *
+ * @{
+ */
+#define SUP_IOCTL_TRACER_OPEN                           SUP_CTL_CODE_SIZE(28, SUP_IOCTL_TRACER_OPEN_SIZE)
+#define SUP_IOCTL_TRACER_OPEN_SIZE                      sizeof(SUPTRACEROPEN)
+#define SUP_IOCTL_TRACER_OPEN_SIZE_IN                   sizeof(SUPTRACEROPEN)
+#define SUP_IOCTL_TRACER_OPEN_SIZE_OUT                  sizeof(SUPREQHDR)
+typedef struct SUPTRACEROPEN
+{
+    /** The header. */
+    SUPREQHDR               Hdr;
+    union
+    {
+        struct
+        {
+            /** Tracer cookie.  Used to make sure we only open a matching tracer. */
+            uint32_t        uCookie;
+            /** Tracer specific argument. */
+            RTHCUINTPTR     uArg;
+        } In;
+    } u;
+} SUPTRACEROPEN, *PSUPTRACEROPEN;
+/** @} */
+
+
+/** @name SUP_IOCTL_TRACER_CLOSE
+ * Close the tracer.
+ *
+ * Must match a SUP_IOCTL_TRACER_OPEN call.
+ *
+ * @{
+ */
+#define SUP_IOCTL_TRACER_CLOSE                          SUP_CTL_CODE_SIZE(29, SUP_IOCTL_TRACER_CLOSE_SIZE)
+#define SUP_IOCTL_TRACER_CLOSE_SIZE                     sizeof(SUPREQHDR)
+#define SUP_IOCTL_TRACER_CLOSE_SIZE_IN                  sizeof(SUPREQHDR)
+#define SUP_IOCTL_TRACER_CLOSE_SIZE_OUT                 sizeof(SUPREQHDR)
+/** @} */
+
+
+/** @name SUP_IOCTL_TRACER_IOCTL
+ * Speak UNIX ioctl() with the tracer.
+ *
+ * The session must have opened the tracer prior to issuing this request.
+ *
+ * @{
+ */
+#define SUP_IOCTL_TRACER_IOCTL                          SUP_CTL_CODE_SIZE(30, SUP_IOCTL_TRACER_IOCTL_SIZE)
+#define SUP_IOCTL_TRACER_IOCTL_SIZE                     sizeof(SUPTRACERIOCTL)
+#define SUP_IOCTL_TRACER_IOCTL_SIZE_IN                  sizeof(SUPTRACERIOCTL)
+#define SUP_IOCTL_TRACER_IOCTL_SIZE_OUT                 (RT_UOFFSETOF(SUPTRACERIOCTL, u.Out.iRetVal) + sizeof(int32_t))
+typedef struct SUPTRACERIOCTL
+{
+    /** The header. */
+    SUPREQHDR               Hdr;
+    union
+    {
+        struct
+        {
+            /** The command. */
+            RTHCUINTPTR     uCmd;
+            /** Argument to the command. */
+            RTHCUINTPTR     uArg;
+        } In;
+
+        struct
+        {
+            /** The return value. */
+            int32_t         iRetVal;
+        } Out;
+    } u;
+} SUPTRACERIOCTL, *PSUPTRACERIOCTL;
+/** @} */
+
 
 #pragma pack()                          /* paranoia */
 
