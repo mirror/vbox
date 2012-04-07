@@ -22,9 +22,13 @@ if [ ! -d "${MY_DIR}" ]; then
 fi
 echo MY_DIR=$MY_DIR
 
+set -e
+cd "$MY_DIR"
+set +e
+
 
 #
-# Stop all VBox drivers.
+# Query the status of the drivers.
 #
 for drv in VBoxNetAdp VBoxNetFlt VBoxUSBMon VBoxUSB VBoxDrv;
 do
@@ -35,16 +39,9 @@ do
                          -e 's/^ *//g' \
                          -e 's/ *$//g' \
               `
-        echo "dbg: drv=$drv state=$STATE"
-        case "$STATE" in
-            "STOPPED")
-                # Do nothing.
-                ;;
-            *)
-                echo "Stopping $drv..."
-                sc stop $drv
-                ;;
-        esac
+        echo "load.sh: $drv - $STATE"
+    else
+        echo "load.sh: $drv - not configured, probably."
     fi
 done
 
@@ -64,10 +61,13 @@ done
 #
 # Invoke the installers.
 #
-for inst in NetAdpInstall.exe NetFltInstall.exe USBInstall.exe SUPInstall.exe;
+for inst in SUPInstall.exe USBInstall.exe NetFltInstall.exe NetAdpInstall.exe;
 do
     if test -f ${MY_DIR}/$inst; then
         ${MY_DIR}/$inst
     fi
 done
+
+echo "load.sh: Successfully installed all drivers"
+exit 0
 
