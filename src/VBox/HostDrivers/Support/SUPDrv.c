@@ -694,6 +694,8 @@ int VBOXCALL supdrvCreateSession(PSUPDRVDEVEXT pDevExt, bool fUser, PSUPDRVSESSI
                     pSession->Process       = NIL_RTPROCESS;
                     pSession->R0Process     = NIL_RTR0PROCESS;
                 }
+                /*pSession->uTracerData       = 0;*/
+                pSession->hTracerCaller     = NIL_RTNATIVETHREAD;
 
                 VBOXDRV_SESSION_CREATE(pSession, fUser);
                 LogFlow(("Created session %p initial cookie=%#x\n", pSession, pSession->u32Cookie));
@@ -1115,9 +1117,9 @@ int VBOXCALL supdrvIOCtl(uintptr_t uIOCtl, PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION
         if (RT_UNLIKELY(pReqHdr->cbIn != (cbInExpect) || pReqHdr->cbOut != (cbOutExpect))) \
         { \
             OSDBGPRINT(( #Name ": Invalid input/output sizes. cbIn=%ld expected %ld. cbOut=%ld expected %ld.\n", \
-                        (long)pReq->Hdr.cbIn, (long)(cbInExpect), (long)pReq->Hdr.cbOut, (long)(cbOutExpect))); \
+                        (long)pReqHdr->cbIn, (long)(cbInExpect), (long)pReqHdr->cbOut, (long)(cbOutExpect))); \
             VBOXDRV_IOCTL_RETURN(pSession, uIOCtl, pReqHdr, VERR_INVALID_PARAMETER, VERR_INVALID_PARAMETER); \
-            return pReq->Hdr.rc = VERR_INVALID_PARAMETER; \
+            return pReqHdr->rc = VERR_INVALID_PARAMETER; \
         } \
     } while (0)
 
@@ -1128,9 +1130,9 @@ int VBOXCALL supdrvIOCtl(uintptr_t uIOCtl, PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION
         if (RT_UNLIKELY(pReqHdr->cbIn != (cbInExpect))) \
         { \
             OSDBGPRINT(( #Name ": Invalid input/output sizes. cbIn=%ld expected %ld.\n", \
-                        (long)pReq->Hdr.cbIn, (long)(cbInExpect))); \
+                        (long)pReqHdr->cbIn, (long)(cbInExpect))); \
             VBOXDRV_IOCTL_RETURN(pSession, uIOCtl, pReqHdr, VERR_INVALID_PARAMETER, VERR_INVALID_PARAMETER); \
-            return pReq->Hdr.rc = VERR_INVALID_PARAMETER; \
+            return pReqHdr->rc = VERR_INVALID_PARAMETER; \
         } \
     } while (0)
 
@@ -1139,9 +1141,9 @@ int VBOXCALL supdrvIOCtl(uintptr_t uIOCtl, PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION
         if (RT_UNLIKELY(pReqHdr->cbOut != (cbOutExpect))) \
         { \
             OSDBGPRINT(( #Name ": Invalid input/output sizes. cbOut=%ld expected %ld.\n", \
-                        (long)pReq->Hdr.cbOut, (long)(cbOutExpect))); \
+                        (long)pReqHdr->cbOut, (long)(cbOutExpect))); \
             VBOXDRV_IOCTL_RETURN(pSession, uIOCtl, pReqHdr, VERR_INVALID_PARAMETER, VERR_INVALID_PARAMETER); \
-            return pReq->Hdr.rc = VERR_INVALID_PARAMETER; \
+            return pReqHdr->rc = VERR_INVALID_PARAMETER; \
         } \
     } while (0)
 
@@ -1151,7 +1153,7 @@ int VBOXCALL supdrvIOCtl(uintptr_t uIOCtl, PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION
         { \
             OSDBGPRINT(( #Name ": %s\n", #expr)); \
             VBOXDRV_IOCTL_RETURN(pSession, uIOCtl, pReqHdr, VERR_INVALID_PARAMETER, VERR_INVALID_PARAMETER); \
-            return pReq->Hdr.rc = VERR_INVALID_PARAMETER; \
+            return pReqHdr->rc = VERR_INVALID_PARAMETER; \
         } \
     } while (0)
 
@@ -1161,7 +1163,7 @@ int VBOXCALL supdrvIOCtl(uintptr_t uIOCtl, PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION
         { \
             OSDBGPRINT( fmt ); \
             VBOXDRV_IOCTL_RETURN(pSession, uIOCtl, pReqHdr, VERR_INVALID_PARAMETER, VERR_INVALID_PARAMETER); \
-            return pReq->Hdr.rc = VERR_INVALID_PARAMETER; \
+            return pReqHdr->rc = VERR_INVALID_PARAMETER; \
         } \
     } while (0)
 
@@ -1821,6 +1823,41 @@ int VBOXCALL supdrvIOCtl(uintptr_t uIOCtl, PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION
             if (RT_FAILURE(pReq->Hdr.rc))
                 pReq->Hdr.cbOut = sizeof(pReq->Hdr);
             VBOXDRV_IOCTL_RETURN(pSession, uIOCtl, pReqHdr, VINF_SUCCESS, pReq->Hdr.rc);
+            return 0;
+        }
+
+        case SUP_CTL_CODE_NO_SIZE(SUP_IOCTL_TRACER_OPEN):
+        {
+            /* validate */
+            PSUPTRACEROPEN pReq = (PSUPTRACEROPEN)pReqHdr;
+            REQ_CHECK_SIZES(SUP_IOCTL_TRACER_OPEN);
+
+            /* execute */
+            pReq->Hdr.rc = supdrvIOCtl_TracerOpen(pDevExt, pSession, pReq->u.In.uCookie, pReq->u.In.uArg);
+            VBOXDRV_IOCTL_RETURN(pSession, uIOCtl, pReqHdr, VINF_SUCCESS, pReq->Hdr.rc);
+            return 0;
+        }
+
+        case SUP_CTL_CODE_NO_SIZE(SUP_IOCTL_TRACER_CLOSE):
+        {
+            /* validate */
+            REQ_CHECK_SIZES(SUP_IOCTL_TRACER_CLOSE);
+
+            /* execute */
+            pReqHdr->rc = supdrvIOCtl_TracerClose(pDevExt, pSession);
+            VBOXDRV_IOCTL_RETURN(pSession, uIOCtl, pReqHdr, VINF_SUCCESS, pReqHdr->rc);
+            return 0;
+        }
+
+        case SUP_CTL_CODE_NO_SIZE(SUP_IOCTL_TRACER_IOCTL):
+        {
+            /* validate */
+            PSUPTRACERIOCTL pReq = (PSUPTRACERIOCTL)pReqHdr;
+            REQ_CHECK_SIZES(SUP_IOCTL_TRACER_IOCTL);
+
+            /* execute */
+            pReqHdr->rc = supdrvIOCtl_TracerIOCtl(pDevExt, pSession, pReq->u.In.uCmd, pReq->u.In.uArg, &pReq->u.Out.iRetVal);
+            VBOXDRV_IOCTL_RETURN(pSession, uIOCtl, pReqHdr, VINF_SUCCESS, pReqHdr->rc);
             return 0;
         }
 

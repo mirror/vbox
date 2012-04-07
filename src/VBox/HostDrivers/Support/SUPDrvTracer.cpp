@@ -149,8 +149,8 @@ static int supdrvVtgValidate(PVTGOBJHDR pVtgHdr, size_t cbVtgObj, const uint8_t 
     uintptr_t   cbTmp;
     uintptr_t   offTmp;
     uintptr_t   i;
+    uintptr_t   cProviders;
     int         rc;
-    uint32_t    cProviders;
 
     if (!pbImage || !cbImage)
     {
@@ -435,13 +435,15 @@ static void supdrvTracerRemoveAllProviders(PSUPDRVDEVEXT pDevExt)
     RTSemFastMutexRelease(pDevExt->mtxTracer);
 
     /*
-     * Try unregister zombies now, sleep on busy ones.
+     * Try unregister zombies now, sleep on busy ones and tracer opens.
      */
     for (i = 0; ; i++)
     {
         bool fEmpty;
 
         RTSemFastMutexRequest(pDevExt->mtxTracer);
+
+        /* Zombies */
         RTListForEachSafe(&pDevExt->TracerProviderZombieList, pProv, pProvNext, SUPDRVTPPROVIDER, ListEntry)
         {
             int rc;
@@ -466,7 +468,20 @@ static void supdrvTracerRemoveAllProviders(PSUPDRVDEVEXT pDevExt)
         }
 
         fEmpty = RTListIsEmpty(&pDevExt->TracerProviderZombieList);
+
+        /* Tracer opens. */
+        if (   pDevExt->cTracerOpens
+            && pDevExt->pTracerOps)
+        {
+            fEmpty = false;
+            if (!(i & 0xf))
+                SUPR0Printf("supdrvTracerRemoveAllProviders: Waiting on %u opens\n", pDevExt->cTracerOpens);
+            else
+                LOG_TRACER(("supdrvTracerRemoveAllProviders: Waiting on %u opens\n", pDevExt->cTracerOpens));
+        }
+
         RTSemFastMutexRelease(pDevExt->mtxTracer);
+
         if (fEmpty)
             break;
 
@@ -491,7 +506,7 @@ static int supdrvTracerRegisterVtgObj(PSUPDRVDEVEXT pDevExt, PVTGOBJHDR pVtgHdr,
                                       PSUPDRVSESSION pSession, const char *pszModName)
 {
     int                 rc;
-    unsigned            i;
+    uintptr_t           i;
     PSUPDRVTPPROVIDER   pProv;
 
     /*
@@ -844,7 +859,7 @@ static void supdrvTracerCommonDeregisterImpl(PSUPDRVDEVEXT pDevExt)
         RTListForEachSafe(&pDevExt->TracerProviderList, pProv, pProvNext, SUPDRVTPPROVIDER, ListEntry)
         {
             int rc;
-            LOG_TRACER(("supdrvTracerRemoveAllProviders: Attemting to unregister '%s' / %p...\n",
+            LOG_TRACER(("supdrvTracerCommonDeregisterImpl: Attemting to unregister '%s' / %p...\n",
                         pProv->szName, pProv->Core.TracerData.DTrace.idProvider));
 
             if (!pProv->fRegistered)
@@ -875,7 +890,7 @@ static void supdrvTracerCommonDeregisterImpl(PSUPDRVDEVEXT pDevExt)
         RTListForEachSafe(&pDevExt->TracerProviderZombieList, pProv, pProvNext, SUPDRVTPPROVIDER, ListEntry)
         {
             int rc;
-            LOG_TRACER(("supdrvTracerRemoveAllProviders: Attemting to unregister '%s' / %p (zombie)...\n",
+            LOG_TRACER(("supdrvTracerCommonDeregisterImpl: Attemting to unregister '%s' / %p (zombie)...\n",
                         pProv->szName, pProv->Core.TracerData.DTrace.idProvider));
 
             rc = pDevExt->pTracerOps->pfnProviderDeregisterZombie(pDevExt->pTracerOps, &pProv->Core);
@@ -888,14 +903,25 @@ static void supdrvTracerCommonDeregisterImpl(PSUPDRVDEVEXT pDevExt)
             {
                 cZombies++;
                 if (!(i & 0xf))
-                    SUPR0Printf("supdrvTracerRemoveAllProviders: Waiting on busy provider '%s' / %p (rc=%d)\n",
+                    SUPR0Printf("supdrvTracerCommonDeregisterImpl: Waiting on busy provider '%s' / %p (rc=%d)\n",
                                 pProv->szName, pProv->Core.TracerData.DTrace.idProvider, rc);
                 else
-                    LOG_TRACER(("supdrvTracerRemoveAllProviders: Failed to unregister provider '%s' / %p - rc=%d\n",
+                    LOG_TRACER(("supdrvTracerCommonDeregisterImpl: Failed to unregister provider '%s' / %p - rc=%d\n",
                                 pProv->szName, pProv->Core.TracerData.DTrace.idProvider, rc));
             }
         }
 
+        /* Tracer opens. */
+        if (pDevExt->cTracerOpens)
+        {
+            cZombies++;
+            if (!(i & 0xf))
+                SUPR0Printf("supdrvTracerCommonDeregisterImpl: Waiting on %u opens\n", pDevExt->cTracerOpens);
+            else
+                LOG_TRACER(("supdrvTracerCommonDeregisterImpl: Waiting on %u opens\n", pDevExt->cTracerOpens));
+        }
+
+        /* Done? */
         if (cZombies == 0)
             break;
 
@@ -1013,6 +1039,9 @@ supdrvTracerProbeFireStub:                                              \n\
                                                                         \n\
         .previous                                                       \n\
 ");
+# if 0 /* Slickedit on windows highlighting fix */
+ )
+# endif
 #endif
 
 
@@ -1106,6 +1135,176 @@ void VBOXCALL supdrvTracerCleanupSession(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION p
         pSession->uTracerData = 0;
         RTSemFastMutexRelease(pDevExt->mtxTracer);
     }
+}
+
+
+/**
+ * Open the tracer.
+ *
+ * @returns VBox status code
+ * @param   pDevExt             The device extension structure.
+ * @param   pSession            The current session.
+ * @param   uCookie             The tracer cookie.
+ * @param   uArg                The tracer open argument.
+ */
+int  VBOXCALL   supdrvIOCtl_TracerOpen(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, uint32_t uCookie, uintptr_t uArg)
+{
+    RTNATIVETHREAD  hNativeSelf = RTThreadNativeSelf();
+    int             rc;
+
+    RTSemFastMutexRequest(pDevExt->mtxTracer);
+
+    if (!pSession->uTracerData)
+    {
+        if (pDevExt->pTracerOps)
+        {
+            if (pDevExt->pTracerSession != pSession)
+            {
+                if (!pDevExt->fTracerUnloading)
+                {
+                    if (pSession->hTracerCaller == NIL_RTNATIVETHREAD)
+                    {
+                        pDevExt->cTracerOpens++;
+                        pSession->uTracerData   = ~(uintptr_t)0;
+                        pSession->hTracerCaller = hNativeSelf;
+                        RTSemFastMutexRelease(pDevExt->mtxTracer);
+
+                        rc = pDevExt->pTracerOps->pfnTracerOpen(pDevExt->pTracerOps, pSession, uCookie, uArg, &pSession->uTracerData);
+
+                        RTSemFastMutexRequest(pDevExt->mtxTracer);
+                        if (RT_FAILURE(rc))
+                        {
+                            pDevExt->cTracerOpens--;
+                            pSession->uTracerData = 0;
+                        }
+                        pSession->hTracerCaller = NIL_RTNATIVETHREAD;
+                    }
+                    else
+                        rc = VERR_SUPDRV_TRACER_SESSION_BUSY;
+                }
+                else
+                    rc = VERR_SUPDRV_TRACER_UNLOADING;
+            }
+            else
+                rc = VERR_SUPDRV_TRACER_CANNOT_OPEN_SELF;
+        }
+        else
+            rc = VERR_SUPDRV_TRACER_NOT_PRESENT;
+    }
+    else
+        rc = VERR_SUPDRV_TRACER_ALREADY_OPENED;
+
+    RTSemFastMutexRelease(pDevExt->mtxTracer);
+    return rc;
+}
+
+
+/**
+ * Closes the tracer.
+ *
+ * @returns VBox status code.
+ * @param   pDevExt             The device extension structure.
+ * @param   pSession            The current session.
+ */
+int  VBOXCALL   supdrvIOCtl_TracerClose(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession)
+{
+    RTNATIVETHREAD  hNativeSelf = RTThreadNativeSelf();
+    int             rc;
+
+    RTSemFastMutexRequest(pDevExt->mtxTracer);
+
+    if (pSession->uTracerData)
+    {
+        Assert(pDevExt->cTracerOpens > 0);
+
+        if (pDevExt->pTracerOps)
+        {
+            if (pSession->hTracerCaller == NIL_RTNATIVETHREAD)
+            {
+                uintptr_t uTracerData   = pSession->uTracerData;
+                pSession->uTracerData   = 0;
+                pSession->hTracerCaller = hNativeSelf;
+                RTSemFastMutexRelease(pDevExt->mtxTracer);
+
+                pDevExt->pTracerOps->pfnTracerClose(pDevExt->pTracerOps, pSession, uTracerData);
+                rc = VINF_SUCCESS;
+
+                RTSemFastMutexRequest(pDevExt->mtxTracer);
+                pSession->hTracerCaller = NIL_RTNATIVETHREAD;
+                Assert(pDevExt->cTracerOpens > 0);
+                pDevExt->cTracerOpens--;
+            }
+            else
+                rc = VERR_SUPDRV_TRACER_SESSION_BUSY;
+        }
+        else
+        {
+            rc = VERR_SUPDRV_TRACER_NOT_PRESENT;
+            pSession->uTracerData = 0;
+            Assert(pDevExt->cTracerOpens > 0);
+            pDevExt->cTracerOpens--;
+        }
+    }
+    else
+        rc = VERR_SUPDRV_TRACER_NOT_OPENED;
+
+    RTSemFastMutexRelease(pDevExt->mtxTracer);
+    return rc;
+}
+
+
+/**
+ * Performs a tracer I/O control request.
+ *
+ * @returns VBox status code.
+ * @param   pDevExt             The device extension structure.
+ * @param   pSession            The current session.
+ * @param   uCmd                The tracer command.
+ * @param   uArg                The tracer argument.
+ * @param   piRetVal            Where to store the tracer specific return value.
+ */
+int  VBOXCALL   supdrvIOCtl_TracerIOCtl(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, uintptr_t uCmd, uintptr_t uArg, int32_t *piRetVal)
+{
+    RTNATIVETHREAD  hNativeSelf = RTThreadNativeSelf();
+    int             rc;
+
+    RTSemFastMutexRequest(pDevExt->mtxTracer);
+
+    if (pSession->uTracerData)
+    {
+        Assert(pDevExt->cTracerOpens > 0);
+        if (pDevExt->pTracerOps)
+        {
+            if (!pDevExt->fTracerUnloading)
+            {
+                if (pSession->hTracerCaller == NIL_RTNATIVETHREAD)
+                {
+                    uintptr_t uTracerData = pSession->uTracerData;
+                    pDevExt->cTracerOpens++;
+                    pSession->hTracerCaller = hNativeSelf;
+                    RTSemFastMutexRelease(pDevExt->mtxTracer);
+
+                    rc = pDevExt->pTracerOps->pfnTracerIoCtl(pDevExt->pTracerOps, pSession, uTracerData, uCmd, uArg, piRetVal);
+
+                    RTSemFastMutexRequest(pDevExt->mtxTracer);
+                    pSession->hTracerCaller = NIL_RTNATIVETHREAD;
+                    Assert(pDevExt->cTracerOpens > 0);
+                    pDevExt->cTracerOpens--;
+                }
+                else
+                    rc = VERR_SUPDRV_TRACER_SESSION_BUSY;
+            }
+            else
+                rc = VERR_SUPDRV_TRACER_UNLOADING;
+        }
+        else
+            rc = VERR_SUPDRV_TRACER_NOT_PRESENT;
+    }
+    else
+        rc = VERR_SUPDRV_TRACER_NOT_OPENED;
+
+    RTSemFastMutexRelease(pDevExt->mtxTracer);
+    return rc;
 }
 
 

@@ -437,6 +437,8 @@ typedef struct SUPDRVSESSION
     RTR0PROCESS                     R0Process;
     /** Per session tracer specfic data. */
     uintptr_t                       uTracerData;
+    /** The thread currently actively talking to the tracer. (One at the time!) */
+    RTNATIVETHREAD                  hTracerCaller;
 #ifndef SUPDRV_AGNOSTIC
 # if defined(RT_OS_DARWIN)
     /** Pointer to the associated org_virtualbox_SupDrvClient object. */
@@ -554,6 +556,8 @@ typedef struct SUPDRVDEVEXT
     PSUPDRVLDRIMAGE                 pTracerImage;
     /** The tracer helpers. */
     SUPDRVTRACERHLP                 TracerHlp;
+    /** The number of session having opened the tracer currently. */
+    uint32_t                        cTracerOpens;
     /** Set if the tracer is being unloaded. */
     bool                            fTracerUnloading;
 
@@ -650,6 +654,9 @@ int  VBOXCALL   supdrvTracerInit(PSUPDRVDEVEXT pDevExt);
 void VBOXCALL   supdrvTracerTerm(PSUPDRVDEVEXT pDevExt);
 void VBOXCALL   supdrvTracerModuleUnloading(PSUPDRVDEVEXT pDevExt, PSUPDRVLDRIMAGE pImage);
 void VBOXCALL   supdrvTracerCleanupSession(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession);
+int  VBOXCALL   supdrvIOCtl_TracerOpen(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, uint32_t uCookie, uintptr_t uArg);
+int  VBOXCALL   supdrvIOCtl_TracerClose(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession);
+int  VBOXCALL   supdrvIOCtl_TracerIOCtl(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, uintptr_t uCmd, uintptr_t uArg, int32_t *piRetVal);
 extern PFNRT    g_pfnSupdrvProbeFireKernel;
 DECLASM(void)   supdrvTracerProbeFireStub(void);
 
