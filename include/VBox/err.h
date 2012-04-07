@@ -1658,6 +1658,18 @@
 #define VERR_SUPDRV_TRACER_ALREADY_REGISTERED       (-3722)
 /** The session has no tracer associated with it. */
 #define VERR_SUPDRV_TRACER_NOT_REGISTERED           (-3723)
+/** The tracer has already been opened in this sesssion. */
+#define VERR_SUPDRV_TRACER_ALREADY_OPENED           (-3724)
+/** The tracer has not been opened. */
+#define VERR_SUPDRV_TRACER_NOT_OPENED               (-3725)
+/** There is no tracer present. */
+#define VERR_SUPDRV_TRACER_NOT_PRESENT              (-3726)
+/** The tracer is unloading. */
+#define VERR_SUPDRV_TRACER_UNLOADING                (-3727)
+/** Another thread in the session is talking to the tracer.  */
+#define VERR_SUPDRV_TRACER_SESSION_BUSY             (-3728)
+/** The tracer cannot open it self in the same session. */
+#define VERR_SUPDRV_TRACER_CANNOT_OPEN_SELF         (-3729)
 /** @} */
 
 
