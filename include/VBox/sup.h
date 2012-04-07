@@ -1144,6 +1144,32 @@ SUPR3DECL(int) SUPR3QueryVTxSupported(void);
  */
 SUPR3DECL(int) SUPR3QueryVTCaps(uint32_t *pfCaps);
 
+/**
+ * Open the tracer.
+ *
+ * @returns VBox status code.
+ * @param   uCookie         Cookie identifying the tracer we expect to talk to.
+ * @param   uArg            Tracer specific open argument.
+ */
+SUPR3DECL(int) SUPR3TracerOpen(uint32_t uCookie, uintptr_t uArg);
+
+/**
+ * Closes the tracer.
+ *
+ * @returns VBox status code.
+ */
+SUPR3DECL(int) SUPR3TracerClose(void);
+
+/**
+ * Perform an I/O request on the tracer.
+ *
+ * @returns VBox status.
+ * @param   uCmd                The tracer command.
+ * @param   uArg                The argument.
+ * @param   piRetVal            Where to store the tracer return value.
+ */
+SUPR3DECL(int) SUPR3TracerIoCtl(uintptr_t uCmd, uintptr_t uArg, int32_t *piRetVal);
+
 /** @} */
 #endif /* IN_RING3 */
 
