@@ -1015,6 +1015,23 @@ static int rtProcWinCreateAsUser(PRTUTF16 pwszUser, PRTUTF16 pwszPassword, PRTUT
     return rc;
 }
 
+
+/**
+ * RTPathTraverseList callback used by RTProcCreateEx to locate the executable.
+ */
+static DECLCALLBACK(int) rtPathFindExec(char const *pchPath, size_t cchPath, void *pvUser1, void *pvUser2)
+{
+    const char *pszExec     = (const char *)pvUser1;
+    char       *pszRealExec = (char *)pvUser2;
+    int rc = RTPathJoinEx(pszRealExec, RTPATH_MAX, pchPath, cchPath, pszExec, RTSTR_MAX);
+    if (RT_FAILURE(rc))
+        return rc;
+    if (RTFileExists(pszRealExec))
+        return VINF_SUCCESS;
+    return VERR_TRY_AGAIN;
+}
+
+
 RTR3DECL(int)   RTProcCreateEx(const char *pszExec, const char * const *papszArgs, RTENV hEnv, uint32_t fFlags,
                                PCRTHANDLE phStdIn, PCRTHANDLE phStdOut, PCRTHANDLE phStdErr, const char *pszAsUser,
                                const char *pszPassword, PRTPROCESS phProcess)
@@ -1024,7 +1041,9 @@ RTR3DECL(int)   RTProcCreateEx(const char *pszExec, const char * const *papszArg
      */
     AssertPtrReturn(pszExec, VERR_INVALID_POINTER);
     AssertReturn(*pszExec, VERR_INVALID_PARAMETER);
-    AssertReturn(!(fFlags & ~(RTPROC_FLAGS_DETACHED | RTPROC_FLAGS_HIDDEN | RTPROC_FLAGS_SERVICE | RTPROC_FLAGS_SAME_CONTRACT | RTPROC_FLAGS_NO_PROFILE | RTPROC_FLAGS_NO_WINDOW)), VERR_INVALID_PARAMETER);
+    AssertReturn(!(fFlags & ~(RTPROC_FLAGS_DETACHED | RTPROC_FLAGS_HIDDEN | RTPROC_FLAGS_SERVICE | RTPROC_FLAGS_SAME_CONTRACT
+                              | RTPROC_FLAGS_NO_PROFILE | RTPROC_FLAGS_NO_WINDOW | RTPROC_FLAGS_SEARCH_PATH)),
+                 VERR_INVALID_PARAMETER);
     AssertReturn(!(fFlags & RTPROC_FLAGS_DETACHED) || !phProcess, VERR_INVALID_PARAMETER);
     AssertReturn(hEnv != NIL_RTENV, VERR_INVALID_PARAMETER);
     AssertPtrReturn(papszArgs, VERR_INVALID_PARAMETER);
@@ -1039,6 +1058,27 @@ RTR3DECL(int)   RTProcCreateEx(const char *pszExec, const char * const *papszArg
      */
     int rc = RTOnce(&g_rtProcWinInitOnce, rtProcWinInitOnce, NULL, NULL);
     AssertRCReturn(rc, rc);
+
+    /*
+     * Resolve the executable name via the PATH if requested.
+     */
+    char szRealExec[RTPATH_MAX];
+    if (   (fFlags & RTPROC_FLAGS_SEARCH_PATH)
+        && !RTPathHavePath(pszExec)
+        && !RTPathExists(pszExec) )
+    {
+        /* search */
+        char *pszPath;
+        if (RTEnvExistEx(hEnv, "PATH"))
+            pszPath = RTEnvDupEx(hEnv, "PATH");
+        else
+            pszPath = RTEnvDupEx(hEnv, "Path");
+        rc = RTPathTraverseList(pszPath, ';', rtPathFindExec, (void *)pszExec, &szRealExec[0]);
+        RTStrFree(pszPath);
+        if (RT_FAILURE(rc))
+            return rc == VERR_END_OF_STRING ? VERR_FILE_NOT_FOUND : rc;
+        pszExec = szRealExec;
+    }
 
     /*
      * Get the file descriptors for the handles we've been passed.
