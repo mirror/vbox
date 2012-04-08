@@ -46,6 +46,9 @@
 #include <iprt/x86.h>
 #include "HWVMXR0.h"
 
+#include "dtrace/VBoxVMM.h"
+
+
 /*******************************************************************************
 *   Defined Constants And Macros                                               *
 *******************************************************************************/
@@ -2777,6 +2780,9 @@ ResumeExecution:
     /* Note! NOW IT'S SAFE FOR LOGGING! */
     VMMR0LogFlushEnable(pVCpu);
     Log2(("Raw exit reason %08x\n", exitReason));
+#if ARCH_BITS == 64 /* for the time being */
+    VBOXVMM_R0_HMVMX_VMEXIT(pVCpu, pCtx, exitReason);
+#endif
 
     /* Check if an injected event was interrupted prematurely. */
     rc2 = VMXReadCachedVMCS(VMX_VMCS32_RO_IDT_INFO,            &val);
