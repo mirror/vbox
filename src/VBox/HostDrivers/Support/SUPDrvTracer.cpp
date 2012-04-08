@@ -1127,14 +1127,7 @@ void VBOXCALL supdrvTracerCleanupSession(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION p
      * Clean up instance data the trace may have associated with the session.
      */
     if (pSession->uTracerData)
-    {
-        RTSemFastMutexRequest(pDevExt->mtxTracer);
-        if (   pSession->uTracerData
-            && pDevExt->pTracerOps)
-            pDevExt->pTracerOps->pfnTracerClose(pDevExt->pTracerOps, pSession, pSession->uTracerData);
-        pSession->uTracerData = 0;
-        RTSemFastMutexRelease(pDevExt->mtxTracer);
-    }
+        supdrvIOCtl_TracerClose(pDevExt, pSession);
 }
 
 
