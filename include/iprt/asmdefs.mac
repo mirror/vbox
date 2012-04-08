@@ -121,12 +121,28 @@
 ; Gets the pointer to an imported object.
 %ifdef ASM_FORMAT_PE
  %ifdef RT_ARCH_AMD64
-  %define IMP(name)       qword [IMPNAME(name) wrt rip]
+  %define IMP(name)     qword [IMPNAME(name) wrt rip]
  %else
-  %define IMP(name)       dword [IMPNAME(name)]
+  %define IMP(name)     dword [IMPNAME(name)]
  %endif
 %else
- %define IMP(name)       IMPNAME(name)
+ %define IMP(name)      IMPNAME(name)
+%endif
+
+;;
+; Gets the pointer to an imported object, version 2.
+%ifdef ASM_FORMAT_PE
+ %ifdef RT_ARCH_AMD64
+  %define IMP2(name)    qword [IMPNAME(name) wrt rip]
+ %else
+  %define IMP2(name)    dword [IMPNAME(name)]
+ %endif
+%else
+ %ifdef RT_ARCH_AMD64
+  %define IMP2(name)    IMPNAME(name) wrt rip
+ %else
+  %define IMP2(name)    IMPNAME(name)
+ %endif
 %endif
 
 
