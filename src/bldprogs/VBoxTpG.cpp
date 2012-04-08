@@ -742,6 +742,7 @@ static RTEXITCODE generateAssembly(PSCMSTREAM pStrm)
                                 "        test    byte [rdi+3], 0x80 ; fEnabled == true?\n"
                                 "        jz      .return            ; jump on false\n");
 
+#if 0
             /*
              * Shuffle the arguments around, replacing the location pointer with the probe ID.
              */
@@ -772,7 +773,7 @@ static RTEXITCODE generateAssembly(PSCMSTREAM pStrm)
                                 "        jmp     rax\n"
                                 :
                                 "        mov     ecx, [rcx + 4]     ; idProbe replaces pVTGProbeLoc.\n"
-                                "        jmp     NAME(SUPR0FireProbe)\n"
+                                "        jmp     NAME(%s)\n"
                                 , g_pszProbeFnName);
             else
                 ScmStreamPrintf(pStrm, g_fProbeFnImported ?
@@ -781,8 +782,34 @@ static RTEXITCODE generateAssembly(PSCMSTREAM pStrm)
                                 "        jmp     rax\n"
                                 :
                                 "        mov     edi, [rdi + 4]     ; idProbe replaces pVTGProbeLoc.\n"
-                                "        jmp     NAME(SUPR0FireProbe)\n"
+                                "        jmp     NAME(%s)\n"
                                 , g_pszProbeFnName);
+#else
+            /*
+             * Jump to the fire-probe function.
+             */
+            if (g_cBits == 32)
+                ScmStreamPrintf(pStrm, g_fProbeFnImported ?
+                                "        mov     ecx, IMP2(%s)\n"
+                                "        jmp     ecx\n"
+                                :
+                                "        jmp     NAME(%s)\n"
+                                , g_pszProbeFnName);
+            else if (fWin64)
+                ScmStreamPrintf(pStrm, g_fProbeFnImported ?
+                                "        mov     rax, IMP2(%s)\n"
+                                "        jmp     rax\n"
+                                :
+                                "        jmp     NAME(%s)\n"
+                                , g_pszProbeFnName);
+            else
+                ScmStreamPrintf(pStrm, g_fProbeFnImported ?
+                                "        lea     rax, [IMP2(%s)]\n" //??? macho64?
+                                "        jmp     rax\n"
+                                :
+                                "        jmp     NAME(%s)\n"
+                                , g_pszProbeFnName);
+#endif
 
             ScmStreamPrintf(pStrm,
                             ".return:\n"
