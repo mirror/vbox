@@ -45,9 +45,9 @@ provider vboxvmm
     /*^^VMM-ALT-TP: "%d", (a_rc) */
 
     probe r0__gvmm__vm__created(void *a_pGVM, void *a_pVM, unsigned int a_Pid, void *a_hEMT0, unsigned int a_cCpus);
-    probe r0__hmsvm__vmexit(struct VMCPU *a_pVM, struct CPUMCTX *a_pCtx, unsigned long a_ExitCode, 
-                            unsigned long a_ExitInfo1, unsigned long a_ExitInfo2, unsigned long a_ExitIntInfo, 
-                            unsigned long a_TestArgument);
+    probe r0__hmsvm__vmexit(struct VMCPU *a_pVM, struct CPUMCTX *a_pCtx, uint64_t a_ExitCode,
+                            uint64_t a_ExitInfo1, uint64_t a_ExitInfo2, uint64_t a_ExitIntInfo,
+                            uint64_t a_TestArgument);
 
 };
 
