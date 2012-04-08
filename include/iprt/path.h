@@ -557,7 +557,7 @@ RTDECL(int) RTPathJoinEx(char *pszPathDst, size_t cbPathDst,
 /**
  * Callback for RTPathTraverseList that's called for each element.
  *
- * @returns IPRT style status code. Return VINF_TRY_AGAIN to continue, any other
+ * @returns IPRT style status code. Return VERR_TRY_AGAIN to continue, any other
  *          value will abort the traversing and be returned to the caller.
  *
  * @param   pchPath         Pointer to the start of the current path. This is
@@ -575,7 +575,7 @@ typedef FNRTPATHTRAVERSER *PFNRTPATHTRAVERSER;
  * character.
  *
  * @returns IPRT style status code from the callback or VERR_END_OF_STRING if
- *          the callback returned VINF_TRY_AGAIN for all paths in the string.
+ *          the callback returned VERR_TRY_AGAIN for all paths in the string.
  *
  * @param   pszPathList     The string to traverse.
  * @param   chSep           The separator character.  Using the null terminator

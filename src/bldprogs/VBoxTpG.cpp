@@ -271,7 +271,7 @@ static RTEXITCODE generateInvokeAssembler(const char *pszOutput, const char *psz
     RTPROCESS hProc;
     int rc = RTProcCreate(apszArgs[0], apszArgs, RTENV_DEFAULT, RTPROC_FLAGS_SEARCH_PATH, &hProc);
     if (RT_FAILURE(rc))
-        return RTMsgErrorExit(RTEXITCODE_FAILURE, "Failed to start '%s' (assmebler): %Rrc", apszArgs[0], rc);
+        return RTMsgErrorExit(RTEXITCODE_FAILURE, "Failed to start '%s' (assembler): %Rrc", apszArgs[0], rc);
 
     RTPROCSTATUS Status;
     rc = RTProcWait(hProc, RTPROCWAIT_FLAGS_BLOCK, &Status);
@@ -393,7 +393,7 @@ static DECLCALLBACK(int) generateAssemblyStrTabCallback(PRTSTRSPACECORE pStr, vo
     PSCMSTREAM pStrm   = (PSCMSTREAM)pvUser;
 
     pVtgStr->offStrTab = g_offStrTab;
-    g_offStrTab += pVtgStr->Core.cchString + 1;
+    g_offStrTab += (uint32_t)pVtgStr->Core.cchString + 1;
 
     ScmStreamPrintf(pStrm,
                     "    db '%s', 0 ; off=%u len=%zu\n",
@@ -459,7 +459,14 @@ static RTEXITCODE generateAssembly(PSCMSTREAM pStrm)
                     "  global NAME(%%1)\n"
                     "  NAME(%%1):\n"
                     " %%endmacro\n"
-                    " [section VTGObj align=4096]\n"
+                    " [section VTGPrLc.Begin data align=64]\n"
+                    /*"   times 24 db 0xcc\n"*/
+                    "VTG_GLOBAL g_aVTGPrLc, data\n"
+                    " [section VTGPrLc.Data  data align=4]\n"
+                    " [section VTGPrLc.End   data align=4]\n"
+                    "VTG_GLOBAL g_aVTGPrLc_End, data\n"
+                    /*"   times 24 db 0xcc\n"*/
+                    " [section VTGObj   data align=32]\n"
                     "\n"
                     "%%elifdef ASM_FORMAT_ELF\n"
                     " %%macro VTG_GLOBAL 2\n"
@@ -750,7 +757,7 @@ static RTEXITCODE generateAssembly(PSCMSTREAM pStrm)
                    pointer.  This is asserted in the header. */
                 ScmStreamPrintf(pStrm, g_fProbeFnImported ?
                                 "        mov     edx, [eax + 4]     ; idProbe\n"
-                                "        mov     ecx, IMP(%s)\n"
+                                "        mov     ecx, IMP2(%s)\n"
                                 "        mov     [esp + 4], edx     ; Replace pVTGProbeLoc with idProbe.\n"
                                 "        jmp     ecx\n"
                                 :
@@ -760,7 +767,7 @@ static RTEXITCODE generateAssembly(PSCMSTREAM pStrm)
                                 , g_pszProbeFnName);
             else if (fWin64)
                 ScmStreamPrintf(pStrm, g_fProbeFnImported ?
-                                "        mov     rax, IMP(%s) wrt RIP\n"
+                                "        mov     rax, IMP2(%s)\n"
                                 "        mov     ecx, [rcx + 4]     ; idProbe replaces pVTGProbeLoc.\n"
                                 "        jmp     rax\n"
                                 :
@@ -769,7 +776,7 @@ static RTEXITCODE generateAssembly(PSCMSTREAM pStrm)
                                 , g_pszProbeFnName);
             else
                 ScmStreamPrintf(pStrm, g_fProbeFnImported ?
-                                "        lea     rax, [IMP(%s) wrt RIP]\n" //??? macho64?
+                                "        lea     rax, [IMP2(%s)]\n" //??? macho64?
                                 "        mov     edi, [rdi + 4]     ; idProbe replaces pVTGProbeLoc.\n"
                                 "        jmp     rax\n"
                                 :
@@ -869,6 +876,11 @@ static RTEXITCODE generateHeaderInner(PSCMSTREAM pStrm)
                     "RT_C_DECLS_BEGIN\n"
                     "\n"
                     "#ifdef VBOX_WITH_DTRACE\n"
+                    "\n"
+                    "# ifdef _MSC_VER\n"
+                    "#  pragma data_seg(VTG_LOC_SECT)\n"
+                    "#  pragma data_seg()\n"
+                    "# endif\n"
                     "\n"
                     ,
                     g_pszScript,
@@ -1051,7 +1063,7 @@ const char *ScmStreamCGetWord(PSCMSTREAM pStream, size_t *pcchWord)
     const char     *psz     = &pStream->pch[pStream->off];
 
     /* Is it a leading C character. */
-    if (!RT_C_IS_ALPHA(*psz) && !*psz == '_')
+    if (!RT_C_IS_ALPHA(*psz) && *psz == '_')
         return NULL;
 
     /* Find the end of the word. */
@@ -1090,7 +1102,7 @@ const char *ScmStreamCGetWordM1(PSCMSTREAM pStream, size_t *pcchWord)
     const char     *psz     = &pStream->pch[pStream->off - 1];
 
     /* Is it a leading C character. */
-    if (!RT_C_IS_ALPHA(*psz) && !*psz == '_')
+    if (!RT_C_IS_ALPHA(*psz) && *psz == '_')
         return NULL;
 
     /* Find the end of the word. */
@@ -1119,7 +1131,7 @@ const char *ScmStreamCGetWordM1(PSCMSTREAM pStream, size_t *pcchWord)
 static RTEXITCODE parseError(PSCMSTREAM pStrm, size_t cb, const char *pszMsg)
 {
     if (cb)
-        ScmStreamSeekRelative(pStrm, -cb);
+        ScmStreamSeekRelative(pStrm, -(ssize_t)cb);
     size_t const off     = ScmStreamTell(pStrm);
     size_t const iLine   = ScmStreamTellLine(pStrm);
     ScmStreamSeekByLine(pStrm, iLine);
@@ -1790,7 +1802,7 @@ static RTEXITCODE parseScript(const char *pszScript)
             {
                 ch = parseGetNextNonSpaceNonCommentChOnPpLine(&Strm);
                 if (ch == ~(unsigned)0)
-                    rcExit != RTEXITCODE_FAILURE;
+                    rcExit = RTEXITCODE_FAILURE;
                 else if (ch == 'p' && ScmStreamCMatchingWordM1(&Strm, RT_STR_TUPLE("pragma")))
                     rcExit = parsePragma(&Strm);
                 else

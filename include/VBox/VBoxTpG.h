@@ -36,6 +36,9 @@ typedef struct VTGPROBELOC
     const char *pszFunction;
     const char *pszFile;
     uint8_t    *pbProbe;
+#if ARCH_BITS == 32 /* Make the structure a multiple of 8. */
+    uint32_t    u32Padding;
+#endif
 } VTGPROBELOC;
 /** Pointer to a probe location. */
 typedef VTGPROBELOC *PVTGPROBELOC;
@@ -50,8 +53,8 @@ typedef VTGPROBELOC *PVTGPROBELOC;
  * Declares a static variable, @a a_VarName, of type VTGPROBELOC in the section
  * indicated by VTG_LOC_SECT.  */
 #if defined(RT_OS_WINDOWS)
-# define VTG_OBJ_SECT       ".VTGObj"
-# define VTG_LOC_SECT       ".VTGPrLc"
+# define VTG_OBJ_SECT       "VTGObj"
+# define VTG_LOC_SECT       "VTGPrLc.Data"
 # ifdef _MSC_VER
 #  define VTG_DECL_VTGPROBELOC(a_VarName) \
     __declspec(allocate(VTG_LOC_SECT)) static VTGPROBELOC a_VarName
