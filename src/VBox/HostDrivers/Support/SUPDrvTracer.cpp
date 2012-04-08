@@ -1261,6 +1261,7 @@ int  VBOXCALL   supdrvIOCtl_TracerIOCtl(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pS
     RTNATIVETHREAD  hNativeSelf = RTThreadNativeSelf();
     int             rc;
 
+    *piRetVal = 0;
     RTSemFastMutexRequest(pDevExt->mtxTracer);
 
     if (pSession->uTracerData)
