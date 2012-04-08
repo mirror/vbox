@@ -802,8 +802,9 @@ SUPR0DECL(int) SUPR0TracerRegisterImpl(void *hMod, PSUPDRVSESSION pSession, PCSU
             pDevExt->pTracerSession = pSession;
             pDevExt->pTracerImage   = pImage;
 
-            *ppHlp = &pDevExt->TracerHlp;
+            g_pfnSupdrvProbeFireKernel = (PFNRT)pDevExt->pTracerOps->pfnProbeFireKernel;
 
+            *ppHlp = &pDevExt->TracerHlp;
             rc = VINF_SUCCESS;
 
             /*
@@ -846,6 +847,11 @@ static void supdrvTracerCommonDeregisterImpl(PSUPDRVDEVEXT pDevExt)
     PSUPDRVTPPROVIDER   pProvNext;
 
     RTSemFastMutexRequest(pDevExt->mtxTracer);
+
+    /*
+     * Reinstall the stub probe-fire function.
+     */
+    g_pfnSupdrvProbeFireKernel = supdrvTracerProbeFireStub;
 
     /*
      * Disassociate the tracer implementation from all providers.
