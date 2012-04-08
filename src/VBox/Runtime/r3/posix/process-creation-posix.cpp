@@ -271,7 +271,7 @@ static DECLCALLBACK(int) rtPathFindExec(char const *pchPath, size_t cchPath, voi
     if (   errno == EACCES
         || errno == EPERM)
         return RTErrConvertFromErrno(errno);
-    return VINF_TRY_AGAIN;
+    return VERR_TRY_AGAIN;
 }
 
 
