@@ -408,6 +408,21 @@ static const REMPARMDESC g_aArgsPTR_SIZE_T[] =
     { REMPARMDESC_FLAGS_INT,        sizeof(void *),             NULL },
     { REMPARMDESC_FLAGS_INT,        sizeof(size_t),             NULL }
 };
+static const REMPARMDESC g_aArgsSIZE_TTagLoc[] =
+{
+    { REMPARMDESC_FLAGS_INT,        sizeof(size_t),             NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(const char *),       NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(const char *),       NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(unsigned int),       NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(const char *),       NULL }
+};
+static const REMPARMDESC g_aArgsPTRLoc[] =
+{
+    { REMPARMDESC_FLAGS_INT,        sizeof(void *),             NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(const char *),       NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(unsigned int),       NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(const char *),       NULL }
+};
 static const REMPARMDESC g_aArgsVM[] =
 {
     { REMPARMDESC_FLAGS_INT,        sizeof(PVM),                NULL }
@@ -877,6 +892,15 @@ static const REMPARMDESC g_aArgsRTMemReallocTag[] =
     { REMPARMDESC_FLAGS_INT,        sizeof(size_t),             NULL },
     { REMPARMDESC_FLAGS_INT,        sizeof(const char *),       NULL }
 };
+static const REMPARMDESC g_aArgsRTMemEfRealloc[] =
+{
+    { REMPARMDESC_FLAGS_INT,        sizeof(void*),              NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(size_t),             NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(const char *),       NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(const char *),       NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(unsigned int),       NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(const char *),       NULL }
+};
 static const REMPARMDESC g_aArgsSSMR3GetGCPtr[] =
 {
     { REMPARMDESC_FLAGS_INT,        sizeof(PSSMHANDLE),         NULL },
@@ -1322,6 +1346,10 @@ static REMFNDESC g_aRTImports[] =
     { "RTMemPageAllocTag",                      (void *)(uintptr_t)&RTMemPageAllocTag,              &g_aArgsSIZE_TTag[0],                       RT_ELEMENTS(g_aArgsSIZE_TTag),                         REMFNDESC_FLAGS_RET_INT,    sizeof(void *),     NULL },
     { "RTMemPageFree",                          (void *)(uintptr_t)&RTMemPageFree,                  &g_aArgsPTR_SIZE_T[0],                      RT_ELEMENTS(g_aArgsPTR_SIZE_T),                        REMFNDESC_FLAGS_RET_VOID,   0,                  NULL },
     { "RTMemProtect",                           (void *)(uintptr_t)&RTMemProtect,                   &g_aArgsRTMemProtect[0],                    RT_ELEMENTS(g_aArgsRTMemProtect),                      REMFNDESC_FLAGS_RET_INT,    sizeof(int),        NULL },
+    { "RTMemEfAlloc",                           (void *)(uintptr_t)&RTMemEfAlloc,                   &g_aArgsSIZE_TTagLoc[0],                    RT_ELEMENTS(g_aArgsSIZE_TTagLoc),                      REMFNDESC_FLAGS_RET_INT,    sizeof(void *),     NULL },
+    { "RTMemEfAllocZ",                          (void *)(uintptr_t)&RTMemEfAllocZ,                  &g_aArgsSIZE_TTagLoc[0],                    RT_ELEMENTS(g_aArgsSIZE_TTagLoc),                      REMFNDESC_FLAGS_RET_INT,    sizeof(void *),     NULL },
+    { "RTMemEfRealloc",                         (void *)(uintptr_t)&RTMemEfRealloc,                 &g_aArgsRTMemEfRealloc[0],                  RT_ELEMENTS(g_aArgsRTMemEfRealloc),                    REMFNDESC_FLAGS_RET_INT,    sizeof(void *),     NULL },
+    { "RTMemEfFree",                            (void *)(uintptr_t)&RTMemEfFree,                    &g_aArgsPTRLoc[0],                          RT_ELEMENTS(g_aArgsPTRLoc),                            REMFNDESC_FLAGS_RET_VOID,   0,                  NULL },
     { "RTStrPrintf",                            (void *)(uintptr_t)&RTStrPrintf,                    &g_aArgsRTStrPrintf[0],                     RT_ELEMENTS(g_aArgsRTStrPrintf),                       REMFNDESC_FLAGS_RET_INT | REMFNDESC_FLAGS_ELLIPSIS, sizeof(size_t), NULL },
     { "RTStrPrintfV",                           (void *)(uintptr_t)&RTStrPrintfV,                   &g_aArgsRTStrPrintfV[0],                    RT_ELEMENTS(g_aArgsRTStrPrintfV),                      REMFNDESC_FLAGS_RET_INT | REMFNDESC_FLAGS_VALIST, sizeof(size_t), NULL },
     { "RTThreadSelf",                           (void *)(uintptr_t)&RTThreadSelf,                   NULL,                                       0,                                                     REMFNDESC_FLAGS_RET_INT,    sizeof(RTTHREAD),    NULL },
