@@ -2231,7 +2231,11 @@
  *  for the other compilers.
  */
 #if !defined(__GNUC__) && !defined(__PRETTY_FUNCTION__)
-# define __PRETTY_FUNCTION__    __FUNCTION__
+# ifdef _MSC_VER
+#  define __PRETTY_FUNCTION__    __FUNCSIG__
+# else
+#  define __PRETTY_FUNCTION__    __FUNCTION__
+# endif
 #endif
 
 
