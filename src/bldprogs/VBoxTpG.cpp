@@ -488,7 +488,7 @@ static RTEXITCODE generateAssembly(PSCMSTREAM pStrm)
                     "VTG_GLOBAL g_VTGObjHeader, data\n"
                     "                ;0         1         2         3\n"
                     "                ;012345678901234567890123456789012\n"
-                    "    db          'VTG Object Header v1.0', 0, 0\n"
+                    "    db          'VTG Object Header v1.1', 0, 0\n"
                     "    dd          %u\n"
                     "    dd          0\n"
                     "    RTCCPTR_DEF NAME(g_aVTGProviders)\n"
@@ -957,7 +957,7 @@ static RTEXITCODE generateHeaderInner(PSCMSTREAM pStrm)
                             "        if (RT_UNLIKELY(g_fVTGProbeEnabled_%s_%s)) \\\n"
                             "        { \\\n"
                             "            VTG_DECL_VTGPROBELOC(s_VTGProbeLoc) = \\\n"
-                            "            { __LINE__, 0, UINT32_MAX, __PRETTY_FUNCTION__, __FILE__, &g_VTGProbeData_%s_%s }; \\\n"
+                            "            { __LINE__, 0, UINT32_MAX, __FUNCTION__, &g_VTGProbeData_%s_%s }; \\\n"
                             "            VTGProbeStub_%s_%s(&s_VTGProbeLoc",
                             pProv->pszName, pProbe->pszMangledName,
                             pProv->pszName, pProbe->pszMangledName,

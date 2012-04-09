@@ -310,7 +310,6 @@ static int supdrvVtgValidate(PVTGOBJHDR pVtgHdr, size_t cbVtgObj, const uint8_t 
         if (pVtgHdr->paProbLocs[i].idProbe != UINT32_MAX)
             return VERR_SUPDRV_VTG_BAD_PROBE_LOC;
         MY_WITHIN_IMAGE(pVtgHdr->paProbLocs[i].pszFunction, VERR_SUPDRV_VTG_BAD_PROBE_LOC);
-        MY_WITHIN_IMAGE(pVtgHdr->paProbLocs[i].pszFile,     VERR_SUPDRV_VTG_BAD_PROBE_LOC);
         offTmp = (uintptr_t)pVtgHdr->paProbLocs[i].pbProbe - (uintptr_t)pVtgHdr->paProbes;
         if (offTmp >= pVtgHdr->cbProbes)
             return VERR_SUPDRV_VTG_BAD_PROBE_LOC;
