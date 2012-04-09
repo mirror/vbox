@@ -1321,13 +1321,11 @@ void slirp_select_poll(PNATState pData, struct pollfd *polls, int ndfs)
                 ret = soread(pData, so);
                 if (ret > 0)
                     TCP_OUTPUT(pData, sototcpcb(so));
-#ifdef LOG_ENABLED
                 else if (pPrevSo->so_next == so)
                 {
                     Log2(("%R[natsock] errno %d (%s)\n", so, errno, strerror(errno)));
                     break;
                 }
-#endif
             }
             if (pPrevSo->so_next == so)
             {
