@@ -34,11 +34,7 @@ typedef struct VTGPROBELOC
     uint32_t    fEnabled : 1;
     uint32_t    idProbe;
     const char *pszFunction;
-    const char *pszFile;
     uint8_t    *pbProbe;
-#if ARCH_BITS == 32 /* Make the structure a multiple of 8. */
-    uint32_t    u32Padding;
-#endif
 } VTGPROBELOC;
 /** Pointer to a probe location. */
 typedef VTGPROBELOC *PVTGPROBELOC;
@@ -227,7 +223,7 @@ typedef struct VTGOBJHDR
 typedef VTGOBJHDR          *PVTGOBJHDR;
 
 /** The current VTGOBJHDR::szMagic value. */
-#define VTGOBJHDR_MAGIC     "VTG Object Header v1.0\0"
+#define VTGOBJHDR_MAGIC     "VTG Object Header v1.1\0"
 
 /** The name of the VTG data object header symbol in the object file. */
 extern VTGOBJHDR            g_VTGObjHeader;
