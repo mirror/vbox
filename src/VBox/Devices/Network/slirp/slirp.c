@@ -1306,28 +1306,38 @@ void slirp_select_poll(PNATState pData, struct pollfd *polls, int ndfs)
         if (   CHECK_FD_SET(so, NetworkEvents, closefds)
             || (so->so_close == 1))
         {
+            struct socket *pPrevSo = NULL;
+            /**
+             * we need easy way to detection mechanism if socket has been freed or not
+             * before continuing any further diagnostic.
+             */
+            pPrevSo = so->so_prev;
+            AssertPtr(pPrevSo);
             /*
              * drain the socket
              */
-            for (;;)
+            for (; pPrevSo->so_next == so ;)
             {
                 ret = soread(pData, so);
                 if (ret > 0)
                     TCP_OUTPUT(pData, sototcpcb(so));
-                else
+                else if (pPrevSo->so_next == so)
                 {
                     Log2(("%R[natsock] errno %d (%s)\n", so, errno, strerror(errno)));
                     break;
                 }
             }
-            /* mark the socket for termination _after_ it was drained */
-            so->so_close = 1;
-            /* No idea about Windows but on Posix, POLLHUP means that we can't send more.
-             * Actually in the specific error scenario, POLLERR is set as well. */
+            if (pPrevSo->so_next == so)
+            {
+                /* mark the socket for termination _after_ it was drained */
+                so->so_close = 1;
+                /* No idea about Windows but on Posix, POLLHUP means that we can't send more.
+                 * Actually in the specific error scenario, POLLERR is set as well. */
 #ifndef RT_OS_WINDOWS
-            if (CHECK_FD_SET(so, NetworkEvents, rderr))
-                sofcantsendmore(so);
+                if (CHECK_FD_SET(so, NetworkEvents, rderr))
+                    sofcantsendmore(so);
 #endif
+            }
             CONTINUE(tcp);
         }
 
