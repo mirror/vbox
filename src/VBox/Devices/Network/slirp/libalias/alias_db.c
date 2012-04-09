@@ -803,35 +803,35 @@ GetSocket(struct libalias *la, u_short port_net, struct alias_link *pLnk, int li
             RTMemFree(so);
             return 0;
         }
-	so->so_laddr.s_addr = la->aliasAddress.s_addr;
-	so->so_lport = htons(port_net);
-	so->so_faddr.s_addr = la->true_addr.s_addr;
-	so->so_fport = la->true_port;
+        so->so_laddr.s_addr = la->aliasAddress.s_addr;
+        so->so_lport = htons(port_net);
+        so->so_faddr.s_addr = la->true_addr.s_addr;
+        so->so_fport = la->true_port;
         so->so_hlport = ((struct sockaddr_in *)&sa_addr)->sin_port;
         so->so_hladdr.s_addr =
             ((struct sockaddr_in *)&sa_addr)->sin_addr.s_addr;
         NSOCK_INC_EX(la);
         if (link_type == LINK_TCP)
         {
-	    int ret = 0;
-	    struct sockaddr_in sin;
-	    RT_ZERO(sin);
-	    sin.sin_family = AF_INET;
-	    sin.sin_addr.s_addr = so->so_faddr.s_addr;
-	    sin.sin_port = so->so_fport;
-	    ret = connect(so->s, (struct sockaddr *)&sin, sizeof(sin));
-	    if (   ret < 0
-		&& errno == EINPROGRESS
-		&& errno == EAGAIN
-		&& errno == EWOULDBLOCK)
-	    {
-		closesocket(so->s);
-		RTMemFree(so);
-		return 0;
-	    }
-	    so->so_state = SS_ISFCONNECTING; /* slirp happy??? */
-	    tcp_attach(la->pData, so);
-	    /* tcp_{snd,rcv}space -> pData->tcp_{snd,rcv}space */
+            int ret = 0;
+            struct sockaddr_in sin;
+            RT_ZERO(sin);
+            sin.sin_family = AF_INET;
+            sin.sin_addr.s_addr = so->so_faddr.s_addr;
+            sin.sin_port = so->so_fport;
+            ret = connect(so->s, (struct sockaddr *)&sin, sizeof(sin));
+            if (   ret < 0
+                && errno == EINPROGRESS
+                && errno == EAGAIN
+                && errno == EWOULDBLOCK)
+            {
+                closesocket(so->s);
+                RTMemFree(so);
+                return 0;
+            }
+            so->so_state = SS_ISFCONNECTING; /* slirp happy??? */
+            tcp_attach(la->pData, so);
+            /* tcp_{snd,rcv}space -> pData->tcp_{snd,rcv}space */
             sbreserve(la->pData, &so->so_snd, la->tcp_sndspace);
             sbreserve(la->pData, &so->so_rcv, la->tcp_rcvspace);
         }
