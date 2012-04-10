@@ -40,6 +40,8 @@
 #include <iprt/string.h>
 #include <iprt/thread.h>
 
+#include "internal/magics.h"
+
 
 /*******************************************************************************
 *   Structures and Typedefs                                                    *
@@ -60,9 +62,6 @@ typedef struct RTDBGKRNLINFOINT
 } RTDBGKRNLINFOINT;
 /** Pointer to the solaris kernel debug info instance data. */
 typedef struct RTDBGKRNLINFOINT *PRTDBGKRNLINFOINT;
-
-/** Magic value for RTDBGKRNLINFOINT::u32Magic. (John Carmack) */
-#define RTDBGKRNLINFO_MAGIC       UINT32_C(0x19700820)
 
 
 /**
@@ -167,6 +166,9 @@ RTR0DECL(int) RTR0DbgKrnlInfoOpen(PRTDBGKRNLINFO phKrnlInfo, uint32_t fFlags)
 RTR0DECL(uint32_t) RTR0DbgKrnlInfoRetain(RTDBGKRNLINFO hKrnlInfo)
 {
     PRTDBGKRNLINFOINT pThis = hKrnlInfo;
+    AssertPtrReturn(pThis, UINT32_MAX);
+    AssertMsgReturn(pThis->u32Magic == RTDBGKRNLINFO_MAGIC, ("%p: u32Magic=%RX32\n", pThis, pThis->u32Magic), UINT32_MAX);
+
     uint32_t cRefs = ASMAtomicIncU32(&pThis->cRefs);
     Assert(cRefs && cRefs < 100000);
     return cRefs;
@@ -176,6 +178,8 @@ RTR0DECL(uint32_t) RTR0DbgKrnlInfoRetain(RTDBGKRNLINFO hKrnlInfo)
 RTR0DECL(uint32_t) RTR0DbgKrnlInfoRelease(RTDBGKRNLINFO hKrnlInfo)
 {
     PRTDBGKRNLINFOINT pThis = hKrnlInfo;
+    if (pThis == NIL_RTDBGKRNLINFO)
+        return 0;
     AssertPtrReturn(pThis, UINT32_MAX);
     AssertMsgReturn(pThis->u32Magic == RTDBGKRNLINFO_MAGIC, ("%p: u32Magic=%RX32\n", pThis, pThis->u32Magic), UINT32_MAX);
     RT_ASSERT_PREEMPTIBLE();
@@ -226,14 +230,15 @@ RTR0DECL(int) RTR0DbgKrnlInfoQuerySymbol(RTDBGKRNLINFO hKrnlInfo, const char *ps
     AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
     AssertMsgReturn(pThis->u32Magic == RTDBGKRNLINFO_MAGIC, ("%p: u32Magic=%RX32\n", pThis, pThis->u32Magic), VERR_INVALID_HANDLE);
     AssertPtrReturn(pszSymbol, VERR_INVALID_PARAMETER);
-    AssertPtrReturn(ppvSymbol, VERR_INVALID_PARAMETER);
+    AssertPtrNullReturn(ppvSymbol, VERR_INVALID_PARAMETER);
     AssertReturn(!pszModule, VERR_MODULE_NOT_FOUND);
     RT_ASSERT_PREEMPTIBLE();
 
-    *ppvSymbol = (void *)kobj_getsymvalue((char *)pszSymbol, 1 /* only kernel */);
-    if (*ppvSymbol)
+    uintptr_t uValue = kobj_getsymvalue((char *)pszSymbol, 1 /* only kernel */);
+    if (ppvSymbol)
+        *ppvSymbol = (void *)uValue;
+    if (uValue)
         return VINF_SUCCESS;
-
     return VERR_SYMBOL_NOT_FOUND;
 }
 
