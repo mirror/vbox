@@ -147,7 +147,8 @@ BOOL vrdpReportText(PVBOXDISPDEV pDev, VRDPCLIPRECTS *pClipRects, STROBJ *pstro,
         return FALSE;
     }
 
-    if (   (pstro->flAccel & SO_VERTICAL) != 0
+    /* The driver can get vertical strings with both SO_HORIZONTAL and SO_VERTICAL bits equal to zero. */
+    if (   (pstro->flAccel & SO_HORIZONTAL) == 0
         || (pstro->flAccel & SO_REVERSED) != 0)
     {
         /* Do not support (yet) the vertical and right to left strings.
