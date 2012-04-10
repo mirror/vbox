@@ -274,10 +274,6 @@ VBoxSVC_LIBS.solaris = \
 	socket \
         $(LIB_VMM)
         
-ifdef VBOX_WITH_CROGL
- VBoxSVC_LIBS += $(VBoxOGLTest_1_TARGET) 
-endif
-
 VBoxSVC_INTERMEDIATES = \
 	$(VBOX_MAIN_PREREQS) \
 	$(VBOX_XML_SCHEMADEFS_H) \
@@ -396,6 +392,7 @@ endif
 VBoxSVC_LDFLAGS.darwin    = -framework IOKit -framework SystemConfiguration
 
 ifdef VBOX_WITH_CROGL
+ VBoxSVC_LIBS += $(VBoxOGLTest_1_TARGET)
  VBoxSVC_LDFLAGS.darwin += -framework OpenGL
 endif
 
@@ -585,7 +582,9 @@ ifdef VBOX_WITH_NETFLT
 endif
 
 ifdef VBOX_WITH_CROGL
- VBoxC_LIBS += $(VBoxOGLTest_1_TARGET) 
+ VBoxC_LIBS += $(VBoxOGLTest_1_TARGET)
+ VBoxC_LDFLAGS.darwin += -framework OpenGL
+endif 
 endif
 
 
