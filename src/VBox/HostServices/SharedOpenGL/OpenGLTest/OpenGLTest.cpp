@@ -25,7 +25,9 @@
 #include <iprt/time.h>
 #include <iprt/thread.h>
 
-bool is3DAccelerationSupported()
+#include <VBox/VBoxOGLTest.h>
+
+bool RTCALL VBoxOglIs3DAccelerationSupported()
 {
     static char pszVBoxPath[RTPATH_MAX];
     const char *papszArgs[4] = { NULL, "-test", "3D", NULL};

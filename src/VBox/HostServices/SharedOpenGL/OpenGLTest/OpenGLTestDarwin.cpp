@@ -25,7 +25,9 @@
 # include <iprt/log.h>
 #endif /* VBOX_WITH_COCOA_QT */
 
-bool is3DAccelerationSupported()
+#include <VBox/VBoxOGLTest.h>
+
+bool RTCALL VBoxOglIs3DAccelerationSupported()
 {
     CGDirectDisplayID   display = CGMainDisplayID ();
     CGOpenGLDisplayMask cglDisplayMask = CGDisplayIDToOpenGLDisplayMask (display);

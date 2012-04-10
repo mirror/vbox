@@ -273,6 +273,10 @@ VBoxSVC_LIBS.solaris = \
 	devinfo \
 	socket \
         $(LIB_VMM)
+        
+ifdef VBOX_WITH_CROGL
+ VBoxSVC_LIBS += $(VBoxOGLTest_1_TARGET) 
+endif
 
 VBoxSVC_INTERMEDIATES = \
 	$(VBOX_MAIN_PREREQS) \
@@ -336,13 +340,6 @@ VBoxSVC_SOURCES = \
 VBoxSVC_SOURCES.darwin = \
 	src-server/darwin/iokit.cpp \
 	src-server/darwin/HostPowerDarwin.cpp
-
-ifdef VBOX_WITH_CROGL
-  ifneq ($(KBUILD_TARGET),darwin)
-    VBoxSVC_SOURCES += src-server/generic/OpenGLTest.cpp
-  endif
- VBoxSVC_SOURCES.darwin += src-server/darwin/OpenGLTestDarwin.cpp
-endif
 
 VBoxSVC_SOURCES.win = \
 	src-server/win/svcmain.cpp \
@@ -494,46 +491,6 @@ $(VBOX_AUTOGEN_EVENT_CPP): $(VBOX_PATH_MAIN_SRC)/idl/comimpl.xsl $(VBOX_XIDL_FIL
 
 OTHER_CLEAN += $(VBOX_AUTOGEN_EVENT_H) $(VBOX_AUTOGEN_EVENT_CPP)
 
-
-#
-# VBoxTestOGL - OpenGL support test app.
-# Note! Doesn't link with VBOX_WITH_DEBUG_VCC_CRT defined because it uses Qt.
-#
-if (   defined(VBOX_WITH_QTGUI) \
-    && (defined(VBOX_WITH_CROGL) || defined(VBOX_WITH_VIDEOHWACCEL)) \
-    && !defined(VBOX_WITH_DEBUG_VCC_CRT))
- ifneq ($(KBUILD_TARGET),darwin)
-  ifdef VBOX_WITH_VIDEOHWACCEL
-   USES += qt4
-  endif
-  PROGRAMS += VBoxTestOGL
-  VBoxTestOGL_TEMPLATE = $(if $(VBOX_WITH_VIDEOHWACCEL),$(if $(VBOX_WITH_HARDENING),VBOXQT4GUI,VBOXQT4GUIEXE),VBOXMAINEXE)
-  VBoxTestOGL_SOURCES = src-server/generic/OpenGLTestApp.cpp
-  VBoxTestOGL_LIBS = \
-	$(if $(VBOX_WITH_CROGL), \
-	  $(PATH_STAGE_LIB)/VBoxOGLhostspuload$(VBOX_SUFF_LIB) \
-	  $(VBOX_LIB_OGL_HOSTCRUTIL),) \
-	$(if $(VBOX_WITH_VIDEOHWACCEL), $(PATH_STAGE_LIB)/VBoxOGL2D$(VBOX_SUFF_LIB),) \
-	$(LIB_RUNTIME)
-  VBoxTestOGL_DEFS += \
-	$(if $(VBOX_WITH_CROGL), VBOX_WITH_CROGL,) \
-	$(if $(VBOX_WITH_VIDEOHWACCEL), VBOX_WITH_VIDEOHWACCEL,) \
-	VBOX_BUILD_TARGET=\"$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)\" \
-	$(if $(VBOX_BLEEDING_EDGE),VBOX_BLEEDING_EDGE=\"$(VBOX_BLEEDING_EDGE)\",)
-  ifdef VBOX_WITH_VIDEOHWACCEL
-   VBoxTestOGL_QT_MODULES += Core Gui OpenGL
-   VBoxTestOGL_LDFLAGS.darwin += -framework OpenGL
-   VBoxTestOGL_LIBS.win += $(PATH_SDK_WINPSDK_LIB)/Opengl32.lib
-   if1of ($(KBUILD_TARGET), solaris linux freebsd)
-    # must come after VBoxOGL2D, therefore don't set the arch-specific LIBS variable here!
-    VBoxTestOGL_LIBS += GL
-   endif
-  endif
-  VBoxTestOGL_LDFLAGS.win = /SUBSYSTEM:windows
- endif
-endif
-
-
 ifdef VBOX_WITH_XPCOM
 #
 # VBoxSVCM - VBoxSVC wrapper module
@@ -626,6 +583,11 @@ ifdef VBOX_WITH_NETFLT
  	$(PATH_TOOL_$(VBOX_VCC_TOOL)_LIB)/comsupp.lib \
  	$(PATH_SDK_WINPSDK_LIB)/WbemUuid.Lib
 endif
+
+ifdef VBOX_WITH_CROGL
+ VBoxC_LIBS += $(VBoxOGLTest_1_TARGET) 
+endif
+
 
 VBoxC_INTERMEDIATES =            \
 	$(VBOX_MAIN_PREREQS)     \
