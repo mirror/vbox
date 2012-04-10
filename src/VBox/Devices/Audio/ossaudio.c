@@ -851,19 +851,19 @@ static void oss_audio_fini (void *opaque)
 }
 
 static struct audio_option oss_options[] = {
-    {"FRAGSIZE", AUD_OPT_INT, &conf.fragsize,
+    {"Fragsize", AUD_OPT_INT, &conf.fragsize,
      "Fragment size in bytes", NULL, 0},
-    {"NFRAGS", AUD_OPT_INT, &conf.nfrags,
+    {"NFrags", AUD_OPT_INT, &conf.nfrags,
      "Number of fragments", NULL, 0},
 #ifndef RT_OS_L4
-    {"MMAP", AUD_OPT_BOOL, &conf.try_mmap,
+    {"MMap", AUD_OPT_BOOL, &conf.try_mmap,
      "Try using memory mapped access", NULL, 0},
 #endif
-    {"DAC_DEV", AUD_OPT_STR, &conf.devpath_out,
+    {"DACDev", AUD_OPT_STR, &conf.devpath_out,
      "Path to DAC device", NULL, 0},
-    {"ADC_DEV", AUD_OPT_STR, &conf.devpath_in,
+    {"ADCDev", AUD_OPT_STR, &conf.devpath_in,
      "Path to ADC device", NULL, 0},
-    {"DEBUG", AUD_OPT_BOOL, &conf.debug,
+    {"Debug", AUD_OPT_BOOL, &conf.debug,
      "Turn on some debugging messages", NULL, 0},
     {NULL, 0, NULL, NULL, NULL, 0}
 };

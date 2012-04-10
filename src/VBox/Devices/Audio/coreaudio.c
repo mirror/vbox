@@ -2139,9 +2139,9 @@ static void coreaudio_audio_fini(void *opaque)
 
 static struct audio_option coreaudio_options[] =
 {
-    {"OUTPUT_DEVICE_UID", AUD_OPT_STR, &conf.pszOutputDeviceUID,
+    {"OutputDeviceUID", AUD_OPT_STR, &conf.pszOutputDeviceUID,
      "UID of the output device to use", NULL, 0},
-    {"INPUT_DEVICE_UID", AUD_OPT_STR, &conf.pszInputDeviceUID,
+    {"InputDeviceUID", AUD_OPT_STR, &conf.pszInputDeviceUID,
      "UID of the input device to use", NULL, 0},
     {NULL, 0, NULL, NULL, NULL, 0}
 };
