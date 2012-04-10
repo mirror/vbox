@@ -1042,7 +1042,7 @@ static int scsiLogWriteParamsModePage(char *pszBuffer, size_t cchBuffer,
 }
 
 /**
- * Log a mode page to a human readable form.
+ * Log a mode page in a human readable form.
  *
  * @returns VBox status code.
  * @retval VERR_BUFFER_OVERFLOW if the given buffer is not large enough.
@@ -1092,3 +1092,45 @@ int SCSILogModePage(char *pszBuffer, size_t cchBuffer, uint8_t *pbModePage,
 
     return rc;
 }
+
+/**
+ * Log a cue sheet in a human readable form.
+ *
+ * @returns VBox status code.
+ * @retval VERR_BUFFER_OVERFLOW if the given buffer is not large enough.
+ *         The buffer might contain valid data though.
+ * @param  pszBuffer     The buffer to log into.
+ * @param  cchBuffer     Size of the buffer in characters.
+ * @param  pbCueSheet    The cue sheet buffer.
+ * @param  cbCueSheet    Size of the cue sheet buffer in bytes.
+ */
+int SCSILogCueSheet(char *pszBuffer, size_t cchBuffer, uint8_t *pbCueSheet,
+                    size_t cbCueSheet)
+{
+    int rc = VINF_SUCCESS;
+    size_t cch = 0;
+    unsigned cCueSheetEntries = cbCueSheet / 8;
+
+    AssertReturn(cbCueSheet % 8 == 0, VERR_INVALID_PARAMETER);
+
+    for (unsigned i = 0; i < cCueSheetEntries; i++)
+    {
+        cch = RTStrPrintf(pszBuffer, cchBuffer,
+                          "CTL/ADR=%#x TNO=%#x INDEX=%#x DATA=%#x SCMS=%#x TIME=%u:%u:%u\n",
+                          pbCueSheet[0], pbCueSheet[1], pbCueSheet[2], pbCueSheet[3],
+                          pbCueSheet[4], pbCueSheet[5], pbCueSheet[6], pbCueSheet[7]);
+        pszBuffer += cch;
+        cchBuffer -= cch;
+        if (!cchBuffer)
+        {
+            rc = VERR_BUFFER_OVERFLOW;
+            break;
+        }
+
+        pbCueSheet += 8;
+        cbCueSheet -= 8;
+    }
+
+    return rc;
+}
+

@@ -270,6 +270,8 @@ const char * SCSISenseText(uint8_t uSense);
 const char * SCSISenseExtText(uint8_t uASC, uint8_t uASCQ);
 int SCSILogModePage(char *pszBuf, size_t cchBuffer, uint8_t *pbModePage,
                     size_t cbModePage);
+int SCSILogCueSheet(char *pszBuf, size_t cchBuffer, uint8_t *pbCueSheet,
+                    size_t cbCueSheet);
 #endif
 
 #endif
