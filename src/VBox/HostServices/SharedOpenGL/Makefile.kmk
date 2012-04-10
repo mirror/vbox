@@ -133,6 +133,7 @@ VBoxOGLcrserverlib_SOURCES := \
 	crserverlib/server_glsl.c \
 	crserverlib/server_muralfbo.c \
 	crserverlib/server_texture.c \
+	crserverlib/server_vertattr.c \
 	$(VBOX_PATH_CROGL_GENFILES)/server_dispatch.c \
 	$(VBOX_PATH_CROGL_GENFILES)/server_retval.c \
 	$(VBOX_PATH_CROGL_GENFILES)/server_get.c \
@@ -279,6 +280,7 @@ ifneq ($(KBUILD_TARGET),darwin)
   VBoxOGLTest_SOURCES = OpenGLTest/OpenGLTest.cpp
 endif
 VBoxOGLTest_SOURCES.darwin = OpenGLTest/OpenGLTestDarwin.cpp
+VBoxOGLTest_DEFS = IN_RING3 $(ARCH_BITS_DEFS)
 
 #
 # VBoxTestOGL - OpenGL support test app.
