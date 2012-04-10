@@ -615,14 +615,18 @@ VBOX_WITH_ALL_DOXYGEN_TARGETS = 1
 if1of ($(KBUILD_TARGET), darwin solaris)
  VBOX_WITH_DTRACE_R3 = 1
 endif
-## Set this to enable kernel driver dtrace probes.
-#if1of ($(KBUILD_TARGET), solaris)
-# VBOX_WITH_DTRACE_R0DRV = 1
-#endif
-## Set this to enable dtrace probes in platform agnostic kernel code.
-#if1of ($(KBUILD_TARGET), solaris)
-# VBOX_WITH_DTRACE_R0 = 1
-#endif
+# Set this to enable kernel driver dtrace probes.
+if1of ($(KBUILD_TARGET), solaris)
+ VBOX_WITH_DTRACE_R0DRV = 1
+endif
+# Set this to enable all kernel driver dtrace probes.
+if1of ($(KBUILD_TARGET), solaris)
+ VBOX_WITH_NATIVE_DTRACE_R0DRV = 1
+endif
+# Set this to enable dtrace probes in platform agnostic kernel code.
+if1of ($(KBUILD_TARGET), solaris)
+ VBOX_WITH_DTRACE_R0 = 1
+endif
 # Set this to enable dtrace probes raw-mode context code.
 #VBOX_WITH_DTRACE_RC = 1
 # Set this to enable support for dtrace probes in guest code.
@@ -2931,6 +2935,9 @@ TEMPLATE_VBOXR0DRV_USES               += dtrace
 ifdef VBOX_WITH_DTRACE_R0DRV
  TEMPLATE_VBOXR0DRV_DTRACETOOL         = VBoxTpG
  TEMPLATE_VBOXR0DRV_DEFS              += VBOX_WITH_DTRACE VBOX_WITH_DTRACE_R0DRV
+ ifdef VBOX_WITH_NATIVE_DTRACE_R0DRV								  
+  TEMPLATE_VBOXR0DRV_DEFS             += VBOX_WITH_NATIVE_DTRACE_R0DRV
+ endif
 else
  TEMPLATE_VBOXR0DRV_DTRACETOOL         = VBoxTpG-Disabled
 endif
@@ -2968,7 +2975,7 @@ endif
 ifeq ($(KBUILD_TARGET),linux)
 TEMPLATE_VBOXR0DRV_TOOL                = $(VBOX_GCC_TOOL)
 TEMPLATE_VBOXR0DRV_INSTTYPE.linux      = none
-TEMPLATE_VBOXR0DRV_DEFS                = __KERNEL__ MODULE IN_RING0 IN_RT_R0
+TEMPLATE_VBOXR0DRV_DEFS               += __KERNEL__ MODULE 
 TEMPLATE_VBOXR0DRV_INCS                = $(VBOX_LINUX_INCS)
 TEMPLATE_VBOXR0DRV_CFLAGS              = -nostdinc -iwithprefix include $(VBOX_LINUX_INCLUDE) \
 	$(VBOX_GCC_WARN) -Wstrict-prototypes $(VBOX_GCC_Wno-pointer-sign) -Wno-sign-compare $(VBOX_GCC_fdiagnostics-show-option) \
@@ -3032,7 +3039,7 @@ ifeq ($(KBUILD_TARGET),solaris)
 VBOX_SOLARIS_SYS_INCS ?= /usr/platform/i86pc/include /usr/include
 
 TEMPLATE_VBOXR0DRV_TOOL                = $(VBOX_GCC_TOOL)
-TEMPLATE_VBOXR0DRV_DEFS                = _MACHDEP _KERNEL _STRICT_STDC IN_RING0 IN_RT_R0
+TEMPLATE_VBOXR0DRV_DEFS               += _MACHDEP _KERNEL _STRICT_STDC
 TEMPLATE_VBOXR0DRV_INCS                = $(VBOX_SOLARIS_SYS_INCS)
 TEMPLATE_VBOXR0DRV_LDFLAGS             = -r -dy
 TEMPLATE_VBOXR0DRV_LDFLAGS.amd64       = -64
@@ -3087,7 +3094,7 @@ VBOX_FREEBSD_SYS_INCS ?= /usr/include
 
 TEMPLATE_VBOXR0DRV_TOOL                = $(VBOX_GCC_TOOL)
 TEMPLATE_VBOXR0DRV_LDTOOL              = FREEBSDKMODLD
-TEMPLATE_VBOXR0DRV_DEFS                = _KERNEL KLD_MODULE IN_RING0 IN_RT_R0
+TEMPLATE_VBOXR0DRV_DEFS               += _KERNEL KLD_MODULE
 TEMPLATE_VBOXR0DRV_INCS                = \
 	$(VBOX_FREEBSD_SRC) \
 	$(VBOX_FREEBSD_SRC)/contrib/altq \
