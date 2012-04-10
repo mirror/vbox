@@ -296,11 +296,13 @@ if1of ($(KBUILD_TARGET), darwin linux solaris win)
 
  #VBoxDrv_LDFLAGS.darwin    = -v -Wl,-whyload -Wl,-v -Wl,-whatsloaded
  VBoxDrv_LDFLAGS.solaris += -N misc/ctf
+ VBoxDrv_LDFLAGS.solaris += -N misc/dtrace
  VBoxDrv_LDFLAGS.win.x86  = -Entry:DriverEntry@8
  VBoxDrv_LDFLAGS.win.amd64= -Entry:DriverEntry
 
  VBoxDrv_SOURCES.darwin   = darwin/SUPDrv-darwin.cpp
- VBoxDrv_SOURCES.solaris  = solaris/SUPDrv-solaris.c
+ VBoxDrv_SOURCES.solaris  = \
+	solaris/SUPDrv-solaris.c 
  VBoxDrv_SOURCES.win      = \
 	win/SUPDrv-win.cpp \
 	win/SUPDrvA-win.asm \
@@ -310,6 +312,10 @@ if1of ($(KBUILD_TARGET), darwin linux solaris win)
  	SUPDrvSem.c \
   	SUPDrvTracer.cpp \
  	SUPDrv.d
+ ifdef VBOX_WITH_NATIVE_DTRACE_R0DRV
+  VBoxDrv_SOURCES        += \
+  	SUPDrv-dtrace.cpp
+ endif
  ifn1of ($(KBUILD_TARGET), linux freebsd)
   VBoxDrv_SOURCES        += \
  	SUPDrvTracerA.asm
@@ -317,13 +323,6 @@ if1of ($(KBUILD_TARGET), darwin linux solaris win)
  ifndef VBOX_LINUX_VERSION_2_4
   VBoxDrv_SOURCES.linux  += \
  	linux/SUPDrv-linux.mod.c
- endif
-
- ifdef VBOX_WITH_DTRACE_R0DRV # FIXME
-  VBoxDrv_SOURCES        += \
-  	SUPDrv-dtrace.cpp
-  VBoxDrv_DTRACE_OBJ_FLAGS.solaris = --probe-fn-name=dtrace_probe
-  VBoxDrv_LDFLAGS.solaris+= -N misc/dtrace
  endif
 
 endif
