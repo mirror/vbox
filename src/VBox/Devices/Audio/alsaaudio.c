@@ -1134,30 +1134,30 @@ static void alsa_audio_fini (void *opaque)
 }
 
 static struct audio_option alsa_options[] = {
-    {"DAC_SIZE_IN_USEC", AUD_OPT_BOOL, &conf.size_in_usec_out,
+    {"DACSizeInUsec", AUD_OPT_BOOL, &conf.size_in_usec_out,
      "DAC period/buffer size in microseconds (otherwise in frames)", NULL, 0},
-    {"DAC_PERIOD_SIZE", AUD_OPT_INT, &conf.period_size_out,
+    {"DACPeriodSize", AUD_OPT_INT, &conf.period_size_out,
      "DAC period size", &conf.period_size_out_overriden, 0},
-    {"DAC_BUFFER_SIZE", AUD_OPT_INT, &conf.buffer_size_out,
+    {"DACBufferSize", AUD_OPT_INT, &conf.buffer_size_out,
      "DAC buffer size", &conf.buffer_size_out_overriden, 0},
 
-    {"ADC_SIZE_IN_USEC", AUD_OPT_BOOL, &conf.size_in_usec_in,
+    {"ADCSizeInUsec", AUD_OPT_BOOL, &conf.size_in_usec_in,
      "ADC period/buffer size in microseconds (otherwise in frames)", NULL, 0},
-    {"ADC_PERIOD_SIZE", AUD_OPT_INT, &conf.period_size_in,
+    {"ADCPeriodSize", AUD_OPT_INT, &conf.period_size_in,
      "ADC period size", &conf.period_size_in_overriden, 0},
-    {"ADC_BUFFER_SIZE", AUD_OPT_INT, &conf.buffer_size_in,
+    {"ADCBufferSize", AUD_OPT_INT, &conf.buffer_size_in,
      "ADC buffer size", &conf.buffer_size_in_overriden, 0},
 
-    {"THRESHOLD", AUD_OPT_INT, &conf.threshold,
+    {"Threshold", AUD_OPT_INT, &conf.threshold,
      "(undocumented)", NULL, 0},
 
-    {"DAC_DEV", AUD_OPT_STR, &conf.pcm_name_out,
+    {"DACDev", AUD_OPT_STR, &conf.pcm_name_out,
      "DAC device name (for instance dmix)", NULL, 0},
 
-    {"ADC_DEV", AUD_OPT_STR, &conf.pcm_name_in,
+    {"ADCDev", AUD_OPT_STR, &conf.pcm_name_in,
      "ADC device name", NULL, 0},
 
-    {"VERBOSE", AUD_OPT_BOOL, &conf.verbose,
+    {"Verbose", AUD_OPT_BOOL, &conf.verbose,
      "Behave in a more verbose way", NULL, 0},
 
     {NULL, 0, NULL, NULL, NULL, 0}

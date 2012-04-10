@@ -843,7 +843,7 @@ static struct audio_pcm_ops solaudio_pcm_ops =
 
 static struct audio_option solaudio_options[] =
 {
-    {"PLAY_BUFFER_SIZE", AUD_OPT_INT, &conf.cbPlayBuffer,
+    {"PlayBufferSize", AUD_OPT_INT, &conf.cbPlayBuffer,
      "Size of the buffer in bytes", NULL, 0},
 #if 0
     {"RECORD_BUFFER_SIZE", AUD_OPT_INT, &conf.cbRecordBuffer,
