@@ -584,7 +584,6 @@ endif
 ifdef VBOX_WITH_CROGL
  VBoxC_LIBS += $(VBoxOGLTest_1_TARGET)
  VBoxC_LDFLAGS.darwin += -framework OpenGL
-endif 
 endif
 
 
