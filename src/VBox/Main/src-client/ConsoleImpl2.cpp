@@ -68,6 +68,7 @@
 #include <VBox/HostServices/VBoxClipboardSvc.h>
 #ifdef VBOX_WITH_CROGL
 # include <VBox/HostServices/VBoxCrOpenGLSvc.h>
+#include <VBox/VBoxOGLTest.h>
 #endif
 #ifdef VBOX_WITH_GUEST_PROPS
 # include <VBox/HostServices/GuestPropertySvc.h>
@@ -2521,8 +2522,7 @@ int Console::configConstructorInner(PVM pVM, AutoWriteLock *pAlock)
 
             if (fEnabled3D)
             {
-                BOOL fSupports3D = false;
-                hrc = host->COMGETTER(Acceleration3DAvailable)(&fSupports3D); H();
+                BOOL fSupports3D = VBoxOglIs3DAccelerationSupported();
                 if (!fSupports3D)
                     return VMSetError(pVM, VERR_NOT_AVAILABLE, RT_SRC_POS,
                             N_("This VM was configured to use 3D acceleration. However, the "
