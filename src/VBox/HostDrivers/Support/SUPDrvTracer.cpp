@@ -162,20 +162,40 @@ static int supdrvVtgValidate(PVTGOBJHDR pVtgHdr, size_t cbVtgObj, const uint8_t 
     do { \
         if (   (cb) >= cbVtgObj \
             || (uintptr_t)(p) - (uintptr_t)pVtgHdr > cbVtgObj - (cb) ) \
+        { \
+            SUPR0Printf("supdrvVtgValidate: " #rcBase "_TOO_PTR - p=%p cb=%#zx pVtgHdr=%p cbVtgHdr=%#zu line=%u %s\n", \
+                        p, (size_t)(cb), pVtgHdr, cbVtgObj, __LINE__, #p); \
             return rcBase ## _PTR; \
+        } \
         if ((cb) <  (cMin) * (cbUnit)) \
+        { \
+            SUPR0Printf("supdrvVtgValidate: " #rcBase "_TOO_FEW - cb=%#zx cMin=%#zx cbUnit=%#zx line=%u %s\n", \
+                        (size_t)(cb), (size_t)(cMin), (size_t)cbUnit, __LINE__, #p); \
             return rcBase ## _TOO_FEW; \
+        } \
         if ((cb) >= (cMax) * (cbUnit)) \
+        { \
+            SUPR0Printf("supdrvVtgValidate: " #rcBase "_TOO_MUCH - cb=%#zx cMax=%#zx cbUnit=%#zx line=%u %s\n", \
+                        (size_t)(cb), (size_t)(cMax), (size_t)cbUnit, __LINE__, #p); \
             return rcBase ## _TOO_MUCH; \
+        } \
         if ((cb) / (cbUnit) * (cbUnit) != (cb)) \
+        { \
+            SUPR0Printf("supdrvVtgValidate: " #rcBase "_NOT_MULTIPLE - cb=%#zx cbUnit=%#zx line=%u %s\n", \
+                        (size_t)(cb), (size_t)cbUnit, __LINE__, #p); \
             return rcBase ## _NOT_MULTIPLE; \
+        } \
     } while (0)
 #define MY_WITHIN_IMAGE(p, rc) \
     do { \
         if (pbImage) \
         { \
             if ((uintptr_t)(p) - (uintptr_t)pbImage > cbImage) \
+            { \
+                SUPR0Printf("supdrvVtgValidate: " #rc " - p=%p pbImage=%p cbImage=%#zxline=%u %s\n", \
+                            p, pbImage, cbImage, #p); \
                 return (rc); \
+            } \
         } \
         else if (!RT_VALID_PTR(p)) \
             return (rc); \
@@ -217,17 +237,37 @@ static int supdrvVtgValidate(PVTGOBJHDR pVtgHdr, size_t cbVtgObj, const uint8_t 
     MY_WITHIN_IMAGE(pVtgHdr->paProbLocs,    VERR_SUPDRV_VTG_BAD_HDR_PTR);
     MY_WITHIN_IMAGE(pVtgHdr->paProbLocsEnd, VERR_SUPDRV_VTG_BAD_HDR_PTR);
     if ((uintptr_t)pVtgHdr->paProbLocs > (uintptr_t)pVtgHdr->paProbLocsEnd)
+    {
+        SUPR0Printf("supdrvVtgValidate: VERR_SUPDRV_VTG_BAD_HDR_PTR - paProbeLocs=%p > paProbLocsEnd=%p\n", 
+                    pVtgHdr->paProbLocs, pVtgHdr->paProbLocsEnd);
         return VERR_SUPDRV_VTG_BAD_HDR_PTR;
+    }
     cbTmp = (uintptr_t)pVtgHdr->paProbLocsEnd - (uintptr_t)pVtgHdr->paProbLocs;
     if (cbTmp < sizeof(VTGPROBELOC))
+    {
+        SUPR0Printf("supdrvVtgValidate: VERR_SUPDRV_VTG_BAD_HDR_TOO_FEW - cbTmp=%#zx paProbeLocs=%p paProbLocsEnd=%p\n", 
+                    cbTmp, pVtgHdr->paProbLocs, pVtgHdr->paProbLocsEnd);
         return VERR_SUPDRV_VTG_BAD_HDR_TOO_FEW;
+    }
     if (cbTmp >= _128K * sizeof(VTGPROBELOC))
+    {
+        SUPR0Printf("supdrvVtgValidate: VERR_SUPDRV_VTG_BAD_HDR_TOO_MUCH - cbTmp=%#zx paProbeLocs=%p paProbLocsEnd=%p\n", 
+                    cbTmp, pVtgHdr->paProbLocs, pVtgHdr->paProbLocsEnd);
         return VERR_SUPDRV_VTG_BAD_HDR_TOO_MUCH;
+    }
     if (cbTmp / sizeof(VTGPROBELOC) * sizeof(VTGPROBELOC) != cbTmp)
+    {
+        SUPR0Printf("supdrvVtgValidate: VERR_SUPDRV_VTG_BAD_HDR_NOT_MULTIPLE - cbTmp=%#zx cbUnit=%#zx paProbeLocs=%p paProbLocsEnd=%p\n", 
+                    cbTmp, sizeof(VTGPROBELOC), pVtgHdr->paProbLocs, pVtgHdr->paProbLocsEnd);
         return VERR_SUPDRV_VTG_BAD_HDR_NOT_MULTIPLE;
+    }
 
     if (pVtgHdr->cbProbes / sizeof(VTGDESCPROBE) != pVtgHdr->cbProbeEnabled)
+    {
+        SUPR0Printf("supdrvVtgValidate: VERR_SUPDRV_VTG_BAD_HDR - cbProbeEnabled=%#zx cbProbes=%#zx\n", 
+                    pVtgHdr->cbProbeEnabled, pVtgHdr->cbProbes);
         return VERR_SUPDRV_VTG_BAD_HDR;
+    }
 
     /*
      * Validate the providers.
@@ -588,6 +628,8 @@ static int supdrvTracerRegisterVtgObj(PSUPDRVDEVEXT pDevExt, PVTGOBJHDR pVtgHdr,
                 else
                 {
                     RTSemFastMutexRelease(pDevExt->mtxTracer);
+                    LOG_TRACER(("Failed to register tracepoint provider '%s' in '%s' -> %Rrc\n",
+                                pProv->szName, pszModName, rc));
                     RTMemFree(pProv);
                 }
             }
@@ -634,6 +676,7 @@ SUPR0DECL(int) SUPR0TracerRegisterDrv(PSUPDRVSESSION pSession, PVTGOBJHDR pVtgHd
     AssertPtrReturn(pszName, VERR_INVALID_POINTER);
     AssertPtrReturn(pVtgHdr, VERR_INVALID_POINTER);
     AssertReturn(pSession->R0Process == NIL_RTR0PROCESS, VERR_INVALID_PARAMETER);
+    LOG_TRACER(("SUPR0TracerRegisterDrv: pSession=%p pVtgHdr=%p pszName=%s\n", pSession, pVtgHdr, pszName));
 
     rc = supdrvTracerRegisterVtgObj(pSession->pDevExt, pVtgHdr, _1M, NULL /*pImage*/, pSession, pszName);
 
@@ -658,6 +701,7 @@ SUPR0DECL(void) SUPR0TracerDeregisterDrv(PSUPDRVSESSION pSession)
     PSUPDRVDEVEXT     pDevExt;
     AssertReturnVoid(SUP_IS_SESSION_VALID(pSession));
     AssertReturnVoid(pSession->R0Process == NIL_RTR0PROCESS);
+    LOG_TRACER(("SUPR0TracerDeregisterDrv: pSession=%p\n", pSession));
 
     pDevExt = pSession->pDevExt;
 
@@ -1316,7 +1360,7 @@ int  VBOXCALL   supdrvIOCtl_TracerIOCtl(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pS
 int VBOXCALL supdrvTracerInit(PSUPDRVDEVEXT pDevExt)
 {
     /*
-     * Register a provider for this module.
+     * Initialize the tracer.
      */
     int rc = RTSemFastMutexCreate(&pDevExt->mtxTracer);
     if (RT_SUCCESS(rc))
@@ -1327,12 +1371,23 @@ int VBOXCALL supdrvTracerInit(PSUPDRVDEVEXT pDevExt)
         RTListInit(&pDevExt->TracerProviderList);
         RTListInit(&pDevExt->TracerProviderZombieList);
 
+#ifdef VBOX_WITH_NATIVE_DTRACE_R0DRV
+        pDevExt->pTracerOps = supdrvDTraceInit();
+#endif
+
+        /* 
+         * Register the provider for this module, if compiled in.
+         */
 #ifdef VBOX_WITH_DTRACE_R0DRV
         rc = supdrvTracerRegisterVtgObj(pDevExt, &g_VTGObjHeader, _1M, NULL /*pImage*/, NULL /*pSession*/, "vboxdrv");
         if (RT_SUCCESS(rc))
-#endif
             return rc;
+        SUPR0Printf("supdrvTracerInit: supdrvTracerRegisterVtgObj failed with rc=%d\n", rc);
         RTSemFastMutexDestroy(pDevExt->mtxTracer);
+#else
+
+        return VINF_SUCCESS;
+#endif
     }
     pDevExt->mtxTracer = NIL_RTSEMFASTMUTEX;
     return rc;

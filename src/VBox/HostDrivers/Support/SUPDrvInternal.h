@@ -660,6 +660,9 @@ int  VBOXCALL   supdrvIOCtl_TracerIOCtl(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pS
 extern PFNRT    g_pfnSupdrvProbeFireKernel;
 DECLASM(void)   supdrvTracerProbeFireStub(void);
 
+#ifdef VBOX_WITH_NATIVE_DTRACE_R0DRV
+const SUPDRVTRACERREG * VBOXCALL supdrvDTraceInit(void);
+#endif
 
 RT_C_DECLS_END
 

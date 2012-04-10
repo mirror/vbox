@@ -460,12 +460,12 @@ static RTEXITCODE generateAssembly(PSCMSTREAM pStrm)
                     "  NAME(%%1):\n"
                     " %%endmacro\n"
                     " [section VTGPrLc.Begin data align=64]\n"
-                    /*"   times 24 db 0xcc\n"*/
+                    /*"   times 16 db 0xcc\n"*/
                     "VTG_GLOBAL g_aVTGPrLc, data\n"
                     " [section VTGPrLc.Data  data align=4]\n"
                     " [section VTGPrLc.End   data align=4]\n"
                     "VTG_GLOBAL g_aVTGPrLc_End, data\n"
-                    /*"   times 24 db 0xcc\n"*/
+                    /*"   times 16 db 0xcc\n"*/
                     " [section VTGObj   data align=32]\n"
                     "\n"
                     "%%elifdef ASM_FORMAT_ELF\n"
@@ -473,10 +473,10 @@ static RTEXITCODE generateAssembly(PSCMSTREAM pStrm)
                     "  global NAME(%%1):%%2 hidden\n"
                     "  NAME(%%1):\n"
                     " %%endmacro\n"
-                    " [section .VTGPrLc.Start progbits alloc noexec write align=1]\n"
+                    " [section .VTGPrLc.Begin progbits alloc noexec write align=4096]\n"
                     "VTG_GLOBAL g_aVTGPrLc, data\n"
-                    " [section .VTGPrLc progbits alloc noexec write align=1]\n"
-                    " [section .VTGPrLc.End progbits alloc noexec write align=1]\n"
+                    " [section .VTGPrLc       progbits alloc noexec write align=1]\n"
+                    " [section .VTGPrLc.End   progbits alloc noexec write align=1]\n"
                     "VTG_GLOBAL g_aVTGPrLc_End, data\n"
                     " [section .VTGData progbits alloc noexec write align=4096]\n"
                     "\n"
@@ -488,7 +488,7 @@ static RTEXITCODE generateAssembly(PSCMSTREAM pStrm)
                     "VTG_GLOBAL g_VTGObjHeader, data\n"
                     "                ;0         1         2         3\n"
                     "                ;012345678901234567890123456789012\n"
-                    "    db          'VTG Object Header v1.1', 0, 0\n"
+                    "    db          'VTG Object Header v1.2', 0, 0\n"
                     "    dd          %u\n"
                     "    dd          0\n"
                     "    RTCCPTR_DEF NAME(g_aVTGProviders)\n"
