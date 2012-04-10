@@ -2524,7 +2524,7 @@ static int vmdkReadBinaryMetaExtent(PVMDKIMAGE pImage, PVMDKEXTENT pExtent,
     if (RT_FAILURE(rc))
         goto out;
 
-    if (    RT_LE2H_U32(Header.flags & RT_BIT(17))
+    if (    (RT_LE2H_U32(Header.flags) & RT_BIT(17))
         &&  RT_LE2H_U64(Header.gdOffset) == VMDK_GD_AT_END)
         pExtent->fFooter = true;
 
@@ -4232,7 +4232,7 @@ static int vmdkStreamFlushGT(PVMDKIMAGE pImage, PVMDKEXTENT pExtent,
     uint8_t aMarker[512];
     PVMDKMARKER pMarker = (PVMDKMARKER)&aMarker[0];
     memset(pMarker, '\0', sizeof(aMarker));
-    pMarker->uSector = RT_H2LE_U64(VMDK_BYTE2SECTOR(pExtent->cGTEntries * sizeof(uint32_t)));
+    pMarker->uSector = RT_H2LE_U64(VMDK_BYTE2SECTOR((uint64_t)pExtent->cGTEntries * sizeof(uint32_t)));
     pMarker->uType = RT_H2LE_U32(VMDK_MARKER_GT);
     rc = vdIfIoIntFileWriteSync(pImage->pIfIo, pExtent->pFile->pStorage, uFileOffset,
                                 aMarker, sizeof(aMarker), NULL);
@@ -4340,7 +4340,7 @@ static int vmdkFreeImage(PVMDKIMAGE pImage, bool fDelete)
                 uint8_t aMarker[512];
                 PVMDKMARKER pMarker = (PVMDKMARKER)&aMarker[0];
                 memset(pMarker, '\0', sizeof(aMarker));
-                pMarker->uSector = VMDK_BYTE2SECTOR(RT_ALIGN_64(RT_H2LE_U64(pExtent->cGDEntries * sizeof(uint32_t)), 512));
+                pMarker->uSector = VMDK_BYTE2SECTOR(RT_ALIGN_64(RT_H2LE_U64((uint64_t)pExtent->cGDEntries * sizeof(uint32_t)), 512));
                 pMarker->uType = RT_H2LE_U32(VMDK_MARKER_GD);
                 rc = vdIfIoIntFileWriteSync(pImage->pIfIo, pExtent->pFile->pStorage, uFileOffset,
                                             aMarker, sizeof(aMarker), NULL);

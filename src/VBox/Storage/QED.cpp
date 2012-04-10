@@ -93,11 +93,11 @@ typedef QedHeader *PQedHeader;
  * @{
  */
 /** Image uses a backing file to provide data for unallocated clusters. */
-#define QED_FEATURE_BACKING_FILE             RT_BIT(0)
+#define QED_FEATURE_BACKING_FILE             RT_BIT_64(0)
 /** Image needs checking before use. */
-#define QED_FEATURE_NEED_CHECK               RT_BIT(1)
+#define QED_FEATURE_NEED_CHECK               RT_BIT_64(1)
 /** Don't probe for format of the backing file, treat as raw image. */
-#define QED_FEATURE_BACKING_FILE_NO_PROBE    RT_BIT(2)
+#define QED_FEATURE_BACKING_FILE_NO_PROBE    RT_BIT_64(2)
 /** Mask of valid features. */
 #define QED_FEATURE_MASK (QED_FEATURE_BACKING_FILE | QED_FEATURE_NEED_CHECK | QED_FEATURE_BACKING_FILE_NO_PROBE)
 /** @} */
@@ -312,9 +312,9 @@ static void qedHdrConvertFromHostEndianess(PQEDIMAGE pImage, PQedHeader pHeader)
     pHeader->u32ClusterSize           = RT_H2LE_U32(pImage->cbCluster);
     pHeader->u32TableSize             = RT_H2LE_U32(pImage->cbTable / pImage->cbCluster);
     pHeader->u32HeaderSize            = RT_H2LE_U32(1);
-    pHeader->u64FeatureFlags          = RT_H2LE_U64(pImage->pszBackingFilename ? QED_FEATURE_BACKING_FILE : 0);
-    pHeader->u64CompatFeatureFlags    = RT_H2LE_U64(0);
-    pHeader->u64AutoresetFeatureFlags = RT_H2LE_U64(0);
+    pHeader->u64FeatureFlags          = RT_H2LE_U64(pImage->pszBackingFilename ? QED_FEATURE_BACKING_FILE : UINT64_C(0));
+    pHeader->u64CompatFeatureFlags    = RT_H2LE_U64(UINT64_C(0));
+    pHeader->u64AutoresetFeatureFlags = RT_H2LE_U64(UINT64_C(0));
     pHeader->u64OffL1Table            = RT_H2LE_U64(pImage->offL1Table);
     pHeader->u64Size                  = RT_H2LE_U64(pImage->cbSize);
     pHeader->u32OffBackingFilename    = RT_H2LE_U32(pImage->offBackingFilename);

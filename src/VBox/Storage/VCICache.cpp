@@ -1241,7 +1241,7 @@ static int vciOpenImage(PVCICACHE pCache, unsigned uOpenFlags)
     Hdr.u32CacheType = RT_LE2H_U32(Hdr.u32CacheType);
     Hdr.offTreeRoot  = RT_LE2H_U64(Hdr.offTreeRoot);
     Hdr.offBlkMap    = RT_LE2H_U64(Hdr.offBlkMap);
-    Hdr.cBlkMap      = RT_LE2H_U64(Hdr.cBlkMap);
+    Hdr.cBlkMap      = RT_LE2H_U32(Hdr.cBlkMap);
 
     if (   Hdr.u32Signature == VCI_HDR_SIGNATURE
         && Hdr.u32Version == VCI_HDR_VERSION)
@@ -1390,7 +1390,7 @@ static int vciCreateImage(PVCICACHE pCache, uint64_t cbSize,
                                : RT_H2LE_U32(VCI_HDR_CACHE_TYPE_DYNAMIC);
         Hdr.offTreeRoot      = RT_H2LE_U64(offTreeRoot);
         Hdr.offBlkMap        = RT_H2LE_U64(offBlkMap);
-        Hdr.cBlkMap          = RT_H2LE_U64(cBlkMap);
+        Hdr.cBlkMap          = RT_H2LE_U32(cBlkMap);
 
         rc = vdIfIoIntFileWriteSync(pCache->pIfIo, pCache->pStorage, offHdr, &Hdr,
                                     VCI_BYTE2BLOCK(sizeof(VciHdr)), NULL);
@@ -1479,7 +1479,7 @@ static int vciProbe(const char *pszFilename, PVDINTERFACE pVDIfsCache,
     Hdr.u32CacheType = RT_LE2H_U32(Hdr.u32CacheType);
     Hdr.offTreeRoot  = RT_LE2H_U64(Hdr.offTreeRoot);
     Hdr.offBlkMap    = RT_LE2H_U64(Hdr.offBlkMap);
-    Hdr.cBlkMap      = RT_LE2H_U64(Hdr.cBlkMap);
+    Hdr.cBlkMap      = RT_LE2H_U32(Hdr.cBlkMap);
 
     if (   Hdr.u32Signature == VCI_HDR_SIGNATURE
         && Hdr.u32Version == VCI_HDR_VERSION)
