@@ -1150,7 +1150,6 @@ RTDECL(int)         RTDbgModLineByAddrA(RTDBGMOD hDbgMod, RTDBGSEGIDX iSeg, RTUI
 
 # endif /* IN_RING3 */
 
-# ifdef IN_RING0
 
 /** @name Kernel Debug Info API
  *
@@ -1231,15 +1230,16 @@ RTR0DECL(int)       RTR0DbgKrnlInfoQueryMember(RTDBGKRNLINFO hKrnlInfo, const ch
  * @param   hKrnlInfo       The kernel info handle.
  * @param   pszModule       Reserved for future extensions. Pass NULL.
  * @param   pszSymbol       The C name of the symbol.
- * @param   ppvSymbol       Where to return the symbol value.
+ * @param   ppvSymbol       Where to return the symbol value, passing NULL is
+ *                          OK. This may be modified even on failure, in
+ *                          particular, it will be set to NULL when
+ *                          VERR_SYMBOL_NOT_FOUND is returned.
  *
  * @sa      RTLdrGetSymbol.
  */
 RTR0DECL(int)       RTR0DbgKrnlInfoQuerySymbol(RTDBGKRNLINFO hKrnlInfo, const char *pszModule,
                                                const char *pszSymbol, void **ppvSymbol);
 /** @} */
-
-# endif /* IN_RING0 */
 
 /** @} */
 
