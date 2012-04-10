@@ -315,7 +315,6 @@ if1of ($(KBUILD_TARGET), darwin linux solaris win)
  ifdef VBOX_WITH_NATIVE_DTRACE_R0DRV
   VBoxDrv_SOURCES        += \
   	SUPDrv-dtrace.cpp
-  VBoxDrv_DTRACE_OBJ_FLAGS = -v -v -v
   SUPDrv-dtrace.cpp_DEFS.darwin += VBOX_PATH_MACOSX_DTRACE_H=\"$(VBOX_PATH_MACOSX_SDK)/usr/include/sys/dtrace.h\"
  endif
  ifn1of ($(KBUILD_TARGET), linux freebsd)
