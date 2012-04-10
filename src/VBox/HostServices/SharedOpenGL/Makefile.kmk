@@ -279,7 +279,6 @@ ifneq ($(KBUILD_TARGET),darwin)
   VBoxOGLTest_SOURCES = OpenGLTest/OpenGLTest.cpp
 endif
 VBoxOGLTest_SOURCES.darwin = OpenGLTest/OpenGLTestDarwin.cpp
-VBoxOGLTest_DEFS = IN_RING3 $(ARCH_BITS_DEFS)
 
 #
 # VBoxTestOGL - OpenGL support test app.
