@@ -1,10 +1,10 @@
 /* $Id$ */
 /** @file
- * IPRT - mach_kernel symbol resolving hack, R0 Driver, Darwin.
+ * IPRT - Kernel Debug Information, R0 Driver, Darwin.
  */
 
 /*
- * Copyright (C) 2011 Oracle Corporation
+ * Copyright (C) 2011-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -47,7 +47,7 @@ RT_C_DECLS_END
 #endif
 
 #include "internal/iprt.h"
-#include <iprt/darwin/machkernel.h>
+#include <iprt/dbg.h>
 
 #include <iprt/asm.h>
 #include <iprt/assert.h>
@@ -58,6 +58,7 @@ RT_C_DECLS_END
 #include <iprt/mem.h>
 #include <iprt/string.h>
 #include "internal/ldrMach-O.h"
+#include "internal/magics.h"
 
 /** @def MY_CPU_TYPE
  * The CPU type targeted by the compiler. */
@@ -122,8 +123,13 @@ RT_C_DECLS_END
  * Our internal representation of the mach_kernel after loading it's symbols
  * and successfully resolving their addresses.
  */
-typedef struct RTR0MACHKERNELINT
+typedef struct RTDBGKRNLINFOINT
 {
+    /** Magic value (RTDBGKRNLINFO_MAGIC). */
+    uint32_t            u32Magic;
+    /** Reference counter.  */
+    uint32_t volatile   cRefs;
+
     /** @name Result.
      * @{ */
     /** Pointer to the string table. */
@@ -162,7 +168,7 @@ typedef struct RTR0MACHKERNELINT
 
     /** Buffer space. */
     char                abBuf[_4K];
-} RTR0MACHKERNELINT;
+} RTDBGKRNLINFOINT;
 
 
 /*******************************************************************************
@@ -338,7 +344,7 @@ RTDECL(int) RTFileReadAt(RTFILE hFile, RTFOFF off, void *pvBuf, size_t cbToRead,
  *
  * @param   pThis               The internal scratch data.
  */
-static void rtR0MachKernelLoadDone(RTR0MACHKERNELINT *pThis)
+static void rtR0DbgKrnlDarwinLoadDone(RTDBGKRNLINFOINT *pThis)
 {
     RTFileClose(pThis->hFile);
     pThis->hFile = NIL_RTFILE;
@@ -358,7 +364,7 @@ static void rtR0MachKernelLoadDone(RTR0MACHKERNELINT *pThis)
  * @param   pszSymbol           The symbol to resolve.  Automatically prefixed
  *                              with an underscore.
  */
-static uintptr_t rtR0MachKernelLookup(RTR0MACHKERNELINT *pThis, const char *pszSymbol)
+static uintptr_t rtR0DbgKrnlDarwinLookup(RTDBGKRNLINFOINT *pThis, const char *pszSymbol)
 {
     uint32_t const  cSyms = pThis->cSyms;
     MY_NLIST const *pSym = pThis->paSyms;
@@ -402,7 +408,7 @@ extern "C" void kdp_set_interface(void);
  * @returns IPRT status code.
  * @param   pThis               The internal scratch data.
  */
-static int rtR0MachKernelCheckStandardSymbols(RTR0MACHKERNELINT *pThis)
+static int rtR0DbgKrnlDarwinCheckStandardSymbols(RTDBGKRNLINFOINT *pThis)
 {
     static struct
     {
@@ -521,7 +527,7 @@ static int rtR0MachKernelCheckStandardSymbols(RTR0MACHKERNELINT *pThis)
 
     for (unsigned i = 0; i < RT_ELEMENTS(s_aStandardCandles); i++)
     {
-        uintptr_t uAddr = rtR0MachKernelLookup(pThis, s_aStandardCandles[i].pszName);
+        uintptr_t uAddr = rtR0DbgKrnlDarwinLookup(pThis, s_aStandardCandles[i].pszName);
 #ifdef IN_RING0
         if (uAddr != s_aStandardCandles[i].uAddr)
 #else
@@ -542,7 +548,7 @@ static int rtR0MachKernelCheckStandardSymbols(RTR0MACHKERNELINT *pThis)
  * @returns IPRT status code.
  * @param   pThis               The internal scratch data.
  */
-static int rtR0MachKernelLoadSymTab(RTR0MACHKERNELINT *pThis)
+static int rtR0DbgKrnlDarwinLoadSymTab(RTDBGKRNLINFOINT *pThis)
 {
     /*
      * Load the tables.
@@ -647,7 +653,7 @@ static int rtR0MachKernelLoadSymTab(RTR0MACHKERNELINT *pThis)
  * @returns IPRT status code.
  * @param   pThis               The internal scratch data.
  */
-static int rtR0MachKernelLoadCommands(RTR0MACHKERNELINT *pThis)
+static int rtR0DbgKrnlDarwinLoadCommands(RTDBGKRNLINFOINT *pThis)
 {
     pThis->offStrTab = 0;
     pThis->cbStrTab  = 0;
@@ -873,7 +879,7 @@ static int rtR0MachKernelLoadCommands(RTR0MACHKERNELINT *pThis)
  * @returns IPRT status code.
  * @param   pThis               The internal scratch data.
  */
-static int rtR0MachKernelLoadFileHeaders(RTR0MACHKERNELINT *pThis)
+static int rtR0DbgKrnlDarwinLoadFileHeaders(RTDBGKRNLINFOINT *pThis)
 {
     uint32_t i;
 
@@ -972,55 +978,14 @@ static int rtR0MachKernelLoadFileHeaders(RTR0MACHKERNELINT *pThis)
 }
 
 
-RTDECL(int) RTR0MachKernelOpen(const char *pszMachKernel, PRTR0MACHKERNEL phKernel)
+/**
+ * Destructor.
+ *
+ * @param   pThis               The instance to destroy.
+ */
+static void rtR0DbgKrnlDarwinDtor(RTDBGKRNLINFOINT *pThis)
 {
-    *phKernel = NIL_RTR0MACHKERNEL;
-
-    RTR0MACHKERNELINT *pThis = (RTR0MACHKERNELINT *)RTMemAllocZ(sizeof(*pThis));
-    if (!pThis)
-        return VERR_NO_MEMORY;
-    pThis->hFile = NIL_RTFILE;
-
-    int rc = RTFileOpen(&pThis->hFile, pszMachKernel, RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_WRITE);
-    if (RT_SUCCESS(rc))
-        rc = rtR0MachKernelLoadFileHeaders(pThis);
-    if (RT_SUCCESS(rc))
-        rc = rtR0MachKernelLoadCommands(pThis);
-    if (RT_SUCCESS(rc))
-        rc = rtR0MachKernelLoadSymTab(pThis);
-    if (RT_SUCCESS(rc))
-        rc = rtR0MachKernelCheckStandardSymbols(pThis);
-
-    rtR0MachKernelLoadDone(pThis);
-    if (RT_SUCCESS(rc))
-        *phKernel = pThis;
-    else
-        RTR0MachKernelClose(pThis);
-    return rc;
-}
-
-
-RTR0DECL(int) RTR0MachKernelGetSymbol(RTR0MACHKERNEL hKernel, const char *pszSymbol, void **ppvValue)
-{
-    RTR0MACHKERNELINT *pThis = hKernel;
-    AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
-
-    uintptr_t uValue = rtR0MachKernelLookup(pThis, pszSymbol);
-    if (ppvValue)
-        *ppvValue = (void *)uValue;
-    if (!uValue)
-        return VERR_SYMBOL_NOT_FOUND;
-    return VINF_SUCCESS;
-}
-
-
-RTR0DECL(int) RTR0MachKernelClose(RTR0MACHKERNEL hKernel)
-{
-    if (hKernel == NIL_RTR0MACHKERNEL)
-        return VINF_SUCCESS;
-
-    RTR0MACHKERNELINT *pThis = hKernel;
-    AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
+    pThis->u32Magic = ~RTDBGKRNLINFO_MAGIC;
 
     RTMemFree(pThis->pachStrTab);
     pThis->pachStrTab = NULL;
@@ -1029,6 +994,98 @@ RTR0DECL(int) RTR0MachKernelClose(RTR0MACHKERNEL hKernel)
     pThis->paSyms = NULL;
 
     RTMemFree(pThis);
-    return VINF_SUCCESS;
+}
+
+
+RTR0DECL(int) RTR0DbgKrnlInfoOpen(PRTDBGKRNLINFO phKrnlInfo, uint32_t fFlags)
+{
+    AssertPtrReturn(phKrnlInfo, VERR_INVALID_POINTER);
+    *phKrnlInfo = NIL_RTDBGKRNLINFO;
+    AssertReturn(!fFlags, VERR_INVALID_PARAMETER);
+
+    RTDBGKRNLINFOINT *pThis = (RTDBGKRNLINFOINT *)RTMemAllocZ(sizeof(*pThis));
+    if (!pThis)
+        return VERR_NO_MEMORY;
+    pThis->hFile = NIL_RTFILE;
+
+    int rc = RTFileOpen(&pThis->hFile, "/mach_kernel", RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_WRITE);
+    if (RT_SUCCESS(rc))
+        rc = rtR0DbgKrnlDarwinLoadFileHeaders(pThis);
+    if (RT_SUCCESS(rc))
+        rc = rtR0DbgKrnlDarwinLoadCommands(pThis);
+    if (RT_SUCCESS(rc))
+        rc = rtR0DbgKrnlDarwinLoadSymTab(pThis);
+    if (RT_SUCCESS(rc))
+        rc = rtR0DbgKrnlDarwinCheckStandardSymbols(pThis);
+
+    rtR0DbgKrnlDarwinLoadDone(pThis);
+    if (RT_SUCCESS(rc))
+    {
+        pThis->u32Magic = RTDBGKRNLINFO_MAGIC;
+        pThis->cRefs    = 1;
+        *phKrnlInfo = pThis;
+    }
+    else
+        rtR0DbgKrnlDarwinDtor(pThis);
+    return rc;
+}
+
+
+RTR0DECL(uint32_t) RTR0DbgKrnlInfoRetain(RTDBGKRNLINFO hKrnlInfo)
+{
+    RTDBGKRNLINFOINT *pThis = hKrnlInfo;
+    AssertPtrReturn(pThis, UINT32_MAX);
+    AssertMsgReturn(pThis->u32Magic == RTDBGKRNLINFO_MAGIC, ("%p: u32Magic=%RX32\n", pThis, pThis->u32Magic), UINT32_MAX);
+
+    uint32_t cRefs = ASMAtomicIncU32(&pThis->cRefs);
+    Assert(cRefs && cRefs < 100000);
+    return cRefs;
+}
+
+
+RTR0DECL(uint32_t) RTR0DbgKrnlInfoRelease(RTDBGKRNLINFO hKrnlInfo)
+{
+    RTDBGKRNLINFOINT *pThis = hKrnlInfo;
+    if (pThis == NIL_RTDBGKRNLINFO)
+        return 0;
+    AssertPtrReturn(pThis, UINT32_MAX);
+    AssertMsgReturn(pThis->u32Magic == RTDBGKRNLINFO_MAGIC, ("%p: u32Magic=%RX32\n", pThis, pThis->u32Magic), UINT32_MAX);
+
+    uint32_t cRefs = ASMAtomicDecU32(&pThis->cRefs);
+    if (cRefs == 0)
+        rtR0DbgKrnlDarwinDtor(pThis);
+    return cRefs;
+}
+
+
+RTR0DECL(int) RTR0DbgKrnlInfoQueryMember(RTDBGKRNLINFO hKrnlInfo, const char *pszStructure,
+                                         const char *pszMember, size_t *poffMember)
+{
+    RTDBGKRNLINFOINT *pThis = hKrnlInfo;
+    AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
+    AssertMsgReturn(pThis->u32Magic == RTDBGKRNLINFO_MAGIC, ("%p: u32Magic=%RX32\n", pThis, pThis->u32Magic), VERR_INVALID_HANDLE);
+    AssertPtrReturn(pszMember, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pszStructure, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(poffMember, VERR_INVALID_PARAMETER);
+    return VERR_NOT_FOUND;
+}
+
+
+RTR0DECL(int) RTR0DbgKrnlInfoQuerySymbol(RTDBGKRNLINFO hKrnlInfo, const char *pszModule,
+                                         const char *pszSymbol, void **ppvSymbol)
+{
+    RTDBGKRNLINFOINT *pThis = hKrnlInfo;
+    AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
+    AssertMsgReturn(pThis->u32Magic == RTDBGKRNLINFO_MAGIC, ("%p: u32Magic=%RX32\n", pThis, pThis->u32Magic), VERR_INVALID_HANDLE);
+    AssertPtrReturn(pszSymbol, VERR_INVALID_PARAMETER);
+    AssertPtrNullReturn(ppvSymbol, VERR_INVALID_PARAMETER);
+    AssertReturn(!pszModule, VERR_MODULE_NOT_FOUND);
+
+    uintptr_t uValue = rtR0DbgKrnlDarwinLookup(pThis, pszSymbol);
+    if (ppvSymbol)
+        *ppvSymbol = (void *)uValue;
+    if (uValue)
+        return VINF_SUCCESS;
+    return VERR_SYMBOL_NOT_FOUND;
 }
 

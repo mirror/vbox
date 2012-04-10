@@ -33,7 +33,7 @@
 
 #include <iprt/err.h>
 #include <iprt/assert.h>
-#include <iprt/darwin/machkernel.h>
+#include <iprt/dbg.h>
 #include "internal/initterm.h"
 
 
@@ -66,15 +66,15 @@ DECLHIDDEN(int) rtR0InitNative(void)
         /*
          * Try resolve kernel symbols we need but apple don't wish to give us.
          */
-        RTR0MACHKERNEL hKernel;
-        rc = RTR0MachKernelOpen("/mach_kernel", &hKernel);
+        RTDBGKRNLINFO hKrnlInfo;
+        rc = RTR0DbgKrnlInfoOpen(&hKrnlInfo, 0 /*fFlags*/);
         if (RT_SUCCESS(rc))
         {
-            RTR0MachKernelGetSymbol(hKernel, "ast_pending",   (void **)&g_pfnR0DarwinAstPending);
+            RTR0DbgKrnlInfoQuerySymbol(hKrnlInfo, NULL, "ast_pending",   (void **)&g_pfnR0DarwinAstPending);
             printf("ast_pending=%p\n", g_pfnR0DarwinAstPending);
-            RTR0MachKernelGetSymbol(hKernel, "cpu_interrupt", (void **)&g_pfnR0DarwinCpuInterrupt);
+            RTR0DbgKrnlInfoQuerySymbol(hKrnlInfo, NULL, "cpu_interrupt", (void **)&g_pfnR0DarwinCpuInterrupt);
             printf("cpu_interrupt=%p\n", g_pfnR0DarwinCpuInterrupt);
-            RTR0MachKernelClose(hKernel);
+            RTR0DbgKrnlInfoRelease(hKrnlInfo);
         }
         if (RT_FAILURE(rc))
         {
