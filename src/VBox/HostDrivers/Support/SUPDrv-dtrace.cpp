@@ -38,9 +38,13 @@
 #include <iprt/assert.h>
 #include <iprt/ctype.h>
 #include <iprt/mem.h>
+#include <iprt/errno.h>
+#ifdef RT_OS_DARWIN
+# include <iprt/dbg.h>
+#endif
 
-#ifdef RT_OS_DARWIN /** @todo figure this! */
-# include "/Developer/SDKs/MacOSX10.6.sdk/usr/include/sys/dtrace.h"
+#ifdef RT_OS_DARWIN
+# include VBOX_PATH_MACOSX_DTRACE_H
 #else
 # include <sys/dtrace.h>
 #endif
@@ -111,14 +115,22 @@ typedef SUPDRVDTSTACKDATA *PSUPDRVDTSTACKDATA;
 *******************************************************************************/
 #ifdef RT_OS_DARWIN
 /** @name DTrace kernel interface used on Darwin
- * @{ */ 
-static void        (* dtrace_probe)(dtrace_id_t, uint64_t, uint64_t, uint64_t, uint64_t, uint64_t);
-static dtrace_id_t (* dtrace_probe_create)(dtrace_provider_id_t, const char *, const char *, const char *, int, void *);
-static dtrace_id_t (* dtrace_probe_lookup)(dtrace_provider_id_t, const char *, const char *, const char *);
-static int         (* dtrace_register)(const char *, const dtrace_pattr_t *, uint32_t, /*cred_t*/ void *, 
-                                       const dtrace_pops_t *, void *, dtrace_provider_id_t *);
-static void        (* dtrace_invalidate)(dtrace_provider_id_t);
-static int         (* dtrace_unregister)(dtrace_provider_id_t);
+ * @{ */
+static void        (* g_pfnDTraceProbeFire)(dtrace_id_t, uint64_t, uint64_t, uint64_t, uint64_t, uint64_t);
+static dtrace_id_t (* g_pfnDTraceProbeCreate)(dtrace_provider_id_t, const char *, const char *, const char *, int, void *);
+static dtrace_id_t (* g_pfnDTraceProbeLookup)(dtrace_provider_id_t, const char *, const char *, const char *);
+static int         (* g_pfnDTraceProviderRegister)(const char *, const dtrace_pattr_t *, uint32_t, /*cred_t*/ void *,
+                                                   const dtrace_pops_t *, void *, dtrace_provider_id_t *);
+static void        (* g_pfnDTraceProviderInvalidate)(dtrace_provider_id_t);
+static int         (* g_pfnDTraceProviderUnregister)(dtrace_provider_id_t);
+
+#define dtrace_probe            g_pfnDTraceProbeFire
+#define dtrace_probe_create     g_pfnDTraceProbeCreate
+#define dtrace_probe_lookup     g_pfnDTraceProbeLookup
+#define dtrace_register         g_pfnDTraceProviderRegister
+#define dtrace_invalidate       g_pfnDTraceProviderInvalidate
+#define dtrace_unregister       g_pfnDTraceProviderUnregister
+
 /** @} */
 #endif
 
@@ -357,36 +369,36 @@ static void     supdrvDtPOps_GetArgDesc(void *pvProv, dtrace_id_t idProbe, void 
 
 
 /**
- * @callback_method_impl{dtrace_pops_t,dtps_getargval} 
- *  
- *  
- * We just cook our own stuff here, using a stack marker for finding the 
- * required information.  That's more reliable than subjecting oneself to the 
- * solaris bugs and 32-bit apple peculiarities. 
- *  
- *  
+ * @callback_method_impl{dtrace_pops_t,dtps_getargval}
+ *
+ *
+ * We just cook our own stuff here, using a stack marker for finding the
+ * required information.  That's more reliable than subjecting oneself to the
+ * solaris bugs and 32-bit apple peculiarities.
+ *
+ *
  * @remarks Solaris Bug
- *  
- * dtrace_getarg on AMD64 has a different opinion about how to use the cFrames 
- * argument than dtrace_caller() and/or dtrace_getpcstack(), at least when the 
- * probe is fired by dtrace_probe() the way we do. 
- * 
+ *
+ * dtrace_getarg on AMD64 has a different opinion about how to use the cFrames
+ * argument than dtrace_caller() and/or dtrace_getpcstack(), at least when the
+ * probe is fired by dtrace_probe() the way we do.
+ *
  * Setting aframes to 1 when calling dtrace_probe_create gives me the right
  * arguments, but the wrong 'caller'.  Since I cannot do anything about
  * 'caller', the only solution is this hack.
- * 
+ *
  * Not sure why the  Solaris guys hasn't seen this issue before, but maybe there
- * isn't anyone using the default argument getter path for ring-0 dtrace_probe() 
- * calls, SDT surely isn't. 
- * 
+ * isn't anyone using the default argument getter path for ring-0 dtrace_probe()
+ * calls, SDT surely isn't.
+ *
  * @todo File a solaris bug on dtrace_probe() + dtrace_getarg().
- *  
- *  
- * @remarks 32-bit XNU (Apple) 
- *  
- * The dtrace_probe arguments are 64-bit unsigned integers instead of uintptr_t, 
- * so we need to make an extra call. 
- *  
+ *
+ *
+ * @remarks 32-bit XNU (Apple)
+ *
+ * The dtrace_probe arguments are 64-bit unsigned integers instead of uintptr_t,
+ * so we need to make an extra call.
+ *
  */
 static uint64_t supdrvDtPOps_GetArgVal(void *pvProv, dtrace_id_t idProbe, void *pvProbe,
                                        int iArg, int cFrames)
@@ -487,7 +499,7 @@ static DECLCALLBACK(void) supdrvDtTOps_ProbeFireUser(PCSUPDRVTRACERREG pThis, PS
 /**
  * interface_method_impl{SUPDRVTRACERREG,pfnTracerOpen}
  */
-static DECLCALLBACK(int) supdrvDtTOps_TracerOpen(PCSUPDRVTRACERREG pThis, PSUPDRVSESSION pSession, uint32_t uCookie, 
+static DECLCALLBACK(int) supdrvDtTOps_TracerOpen(PCSUPDRVTRACERREG pThis, PSUPDRVSESSION pSession, uint32_t uCookie,
                                                  uintptr_t uArg, uintptr_t *puSessionData)
 {
     NOREF(pThis); NOREF(pSession); NOREF(uCookie); NOREF(uArg);
@@ -652,7 +664,7 @@ const SUPDRVTRACERREG * VBOXCALL supdrvDTraceInit(void)
         const char *pszName;
         PFNRT      *ppfn;
     } s_aDTraceFunctions[] =
-    {   
+    {
         { "dtrace_probe",        (PFNRT*)&dtrace_probe        },
         { "dtrace_probe_create", (PFNRT*)&dtrace_probe_create },
         { "dtrace_probe_lookup", (PFNRT*)&dtrace_probe_lookup },
@@ -662,7 +674,7 @@ const SUPDRVTRACERREG * VBOXCALL supdrvDTraceInit(void)
     };
     for (unsigned i = 0; i < RT_ELEMENTS(s_aDTraceFunctions); i++)
     {
-        rc = RTR0DbgKrnlInfoQuerySymbol(hKrnlInfo, NULL, s_aDTraceFunctions[i].pszName, 
+        rc = RTR0DbgKrnlInfoQuerySymbol(hKrnlInfo, NULL, s_aDTraceFunctions[i].pszName,
                                         (void **)s_aDTraceFunctions[i].ppfn);
         if (RT_FAILURE(rc))
         {

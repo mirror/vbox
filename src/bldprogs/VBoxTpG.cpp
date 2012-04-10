@@ -135,21 +135,37 @@ static const char          *g_pszAssembler              = "yasm";
 static const char          *g_pszAssemblerFmtOpt        = "-f";
 static const char           g_szAssemblerFmtVal32[]     = "macho32";
 static const char           g_szAssemblerFmtVal64[]     = "macho64";
+static const char           g_szAssemblerOsDef[]        = "RT_OS_DARWIN";
 #elif defined(RT_OS_OS2)
 static const char          *pszAssembler                = "nasm.exe";
 static const char          *pszAssemblerFmtOpt          = "-f";
 static const char           g_szAssemblerFmtVal32[]     = "obj";
 static const char           g_szAssemblerFmtVal64[]     = "elf64";
+static const char           g_szAssemblerOsDef[]        = "RT_OS_OS2";
 #elif defined(RT_OS_WINDOWS)
 static const char          *g_pszAssembler              = "yasm.exe";
 static const char          *g_pszAssemblerFmtOpt        = "-f";
 static const char           g_szAssemblerFmtVal32[]     = "win32";
 static const char           g_szAssemblerFmtVal64[]     = "win64";
+static const char           g_szAssemblerOsDef[]        = "RT_OS_WINDOWS";
 #else
 static const char          *g_pszAssembler              = "yasm";
 static const char          *g_pszAssemblerFmtOpt        = "-f";
 static const char           g_szAssemblerFmtVal32[]     = "elf32";
 static const char           g_szAssemblerFmtVal64[]     = "elf64";
+# ifdef RT_OS_FREEBSD
+static const char           g_szAssemblerOsDef[]        = "RT_OS_FREEBSD";
+# elif  defined(RT_OS_NETBSD)
+static const char           g_szAssemblerOsDef[]        = "RT_OS_NETBSD";
+# elif  defined(RT_OS_OPENBSD)
+static const char           g_szAssemblerOsDef[]        = "RT_OS_OPENBSD";
+# elif  defined(RT_OS_LINUX)
+static const char           g_szAssemblerOsDef[]        = "RT_OS_LINUX";
+# elif  defined(RT_OS_SOLARIS)
+static const char           g_szAssemblerOsDef[]        = "RT_OS_SOLARIS";
+# else
+#  error "Port me!"
+# endif
 #endif
 static const char          *g_pszAssemblerFmtVal        = RT_CONCAT(g_szAssemblerFmtVal, ARCH_BITS);
 static const char          *g_pszAssemblerDefOpt        = "-D";
@@ -252,6 +268,11 @@ static RTEXITCODE generateInvokeAssembler(const char *pszOutput, const char *psz
         apszArgs[iArg++] = "RT_ARCH_X86";
     else
         apszArgs[iArg++] = "RT_ARCH_AMD64";
+    if (g_szAssemblerOsDef[0])
+    {
+        apszArgs[iArg++] = g_pszAssemblerDefOpt;
+        apszArgs[iArg++] = g_szAssemblerOsDef;
+    }
     apszArgs[iArg++] = g_pszAssemblerIncOpt;
     apszArgs[iArg++] = g_pszAssemblerIncVal;
     apszArgs[iArg++] = g_pszAssemblerOutputOpt;
@@ -451,8 +472,7 @@ static RTEXITCODE generateAssembly(PSCMSTREAM pStrm)
                     "  global NAME(%%1)\n"
                     "  NAME(%%1):\n"
                     " %%endmacro\n"
-                    " ;[section VTG Obj align=4096]\n"
-                    " [section .data]\n"
+                    " [section __VTG __VTGObj        align=64]\n"
                     "\n"
                     "%%elifdef ASM_FORMAT_PE\n"
                     " %%macro VTG_GLOBAL 2\n"
@@ -501,8 +521,15 @@ static RTEXITCODE generateAssembly(PSCMSTREAM pStrm)
                     "    RTCCPTR_DEF NAME(g_achVTGStringTable_End) - NAME(g_achVTGStringTable)\n"
                     "    RTCCPTR_DEF NAME(g_aVTGArgLists)\n"
                     "    RTCCPTR_DEF NAME(g_aVTGArgLists_End)      - NAME(g_aVTGArgLists)\n"
+                    "%%ifdef ASM_FORMAT_MACHO ; Apple has a real decent linker!\n"
+                    "extern section$start$__VTG$__VTGPrLc\n"
+                    "    RTCCPTR_DEF section$start$__VTG$__VTGPrLc\n"
+                    "extern section$end$__VTG$__VTGPrLc\n"
+                    "    RTCCPTR_DEF section$end$__VTG$__VTGPrLc\n"
+                    "%%else\n"
                     "    RTCCPTR_DEF NAME(g_aVTGPrLc)\n"
                     "    RTCCPTR_DEF NAME(g_aVTGPrLc_End) ; cross section/segment size not possible\n"
+                    "%%endif\n"
                     "    RTCCPTR_DEF 0\n"
                     "    RTCCPTR_DEF 0\n"
                     "    RTCCPTR_DEF 0\n"
@@ -641,7 +668,7 @@ static RTEXITCODE generateAssembly(PSCMSTREAM pStrm)
                             "VTG_GLOBAL g_VTGProbeData_%s_%s, data ; idx=#%4u\n"
                             "    dd %6u  ; name\n"
                             "    dd %6u  ; Argument list offset\n"
-                            "    dw g_fVTGProbeEnabled_%s_%s - g_afVTGProbeEnabled\n"
+                            "    dw NAME(g_fVTGProbeEnabled_%s_%s) - NAME(g_afVTGProbeEnabled)\n"
                             "    dw %6u  ; provider index\n"
                             "    dd 0       ; for the application\n"
                             ,
@@ -1902,6 +1929,7 @@ static RTEXITCODE parseArguments(int argc,  char **argv)
         { "--assembler-option",                 kVBoxTpGOpt_AssemblerOption,            RTGETOPT_REQ_STRING  },
         { "--probe-fn-name",                    kVBoxTpGOpt_ProbeFnName,                RTGETOPT_REQ_STRING  },
         { "--probe-fn-imported",                kVBoxTpGOpt_ProbeFnImported,            RTGETOPT_REQ_BOOL    },
+        /** @todo We're missing a bunch of assembler options! */
     };
 
     RTGETOPTUNION   ValueUnion;
