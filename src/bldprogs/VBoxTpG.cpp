@@ -56,8 +56,9 @@ typedef VTGATTRS *PVTGATTRS;
 typedef struct VTGARG
 {
     RTLISTNODE      ListEntry;
-    const char     *pszName;
+    char           *pszName;
     const char     *pszType;
+    uint32_t        fType;
 } VTGARG;
 typedef VTGARG *PVTGARG;
 
@@ -68,6 +69,7 @@ typedef struct VTGPROBE
     const char     *pszUnmangledName;
     RTLISTANCHOR    ArgHead;
     uint32_t        cArgs;
+    bool            fHaveLargeArgs;
     uint32_t        offArgList;
     uint32_t        iProbe;
 } VTGPROBE;
@@ -115,6 +117,9 @@ static RTSTRSPACE       g_StrSpace = NULL;
 static uint32_t         g_offStrTab;
 /** List of providers created by the parser. */
 static RTLISTANCHOR     g_ProviderHead;
+
+/** The number of type errors. */
+static uint32_t        g_cTypeErrors = 0;
 
 /** @name Options
  * @{ */
@@ -178,6 +183,8 @@ static const char          *g_apszAssemblerOptions[32];
 static const char          *g_pszProbeFnName            = "SUPR0TracerFireProbe";
 static bool                 g_fProbeFnImported          = true;
 /** @} */
+
+
 
 
 /**
@@ -508,7 +515,7 @@ static RTEXITCODE generateAssembly(PSCMSTREAM pStrm)
                     "VTG_GLOBAL g_VTGObjHeader, data\n"
                     "                ;0         1         2         3\n"
                     "                ;012345678901234567890123456789012\n"
-                    "    db          'VTG Object Header v1.2', 0, 0\n"
+                    "    db          'VTG Object Header v1.3', 0, 0\n"
                     "    dd          %u\n"
                     "    dd          0\n"
                     "    RTCCPTR_DEF NAME(g_aVTGProviders)\n"
@@ -606,10 +613,10 @@ static RTEXITCODE generateAssembly(PSCMSTREAM pStrm)
             RTListForEach(&pProbe->ArgHead, pArg, VTGARG, ListEntry)
             {
                 ScmStreamPrintf(pStrm,
-                                "    dd %6u   ; type '%s'\n"
-                                "    dd %6u   ; name '%s'\n",
-                                strtabGetOff(pArg->pszType), pArg->pszType,
-                                strtabGetOff(pArg->pszName), pArg->pszName);
+                                "    dd %6u   ; type '%s' (name '%s')\n"
+                                "    dd 0%08xh ; type flags\n",
+                                strtabGetOff(pArg->pszType), pArg->pszType, pArg->pszName,
+                                pArg->fType);
                 off += 8;
             }
 
@@ -630,8 +637,8 @@ static RTEXITCODE generateAssembly(PSCMSTREAM pStrm)
                     pArg2 = RTListNodeGetNext(&pProbe2->ArgHead, VTGARG, ListEntry);
                     int32_t cArgs = pProbe->cArgs;
                     while (   cArgs-- > 0
-                           && pArg2->pszName == pArg2->pszName
-                           && pArg2->pszType == pArg2->pszType)
+                           && pArg2->pszType == pArg2->pszType
+                           && pArg2->fType   == pArg2->fType )
                     {
                         pArg  = RTListNodeGetNext(&pArg->ListEntry, VTGARG, ListEntry);
                         pArg2 = RTListNodeGetNext(&pArg2->ListEntry, VTGARG, ListEntry);
@@ -962,13 +969,25 @@ static RTEXITCODE generateHeaderInner(PSCMSTREAM pStrm)
                             "); \\\n"
                             "        } \\\n"
                             "        { \\\n" );
+            uint32_t iArg = 0;
             RTListForEach(&pProbe->ArgHead, pArg, VTGARG, ListEntry)
             {
-                ScmStreamPrintf(pStrm,
-                                "        AssertCompile(sizeof(%s) <= sizeof(uintptr_t)); \\\n"
-                                "        AssertCompile(sizeof(%s) <= sizeof(uintptr_t)); \\\n",
-                                pArg->pszName,
-                                pArg->pszType);
+                if (iArg < 5)
+                {
+                    if (pArg->fType & VTG_TYPE_FIXED_SIZED)
+                        ScmStreamPrintf(pStrm,
+                                        "        AssertCompile(sizeof(%s) <= sizeof(uint32_t)); \\\n"
+                                        "        AssertCompile(sizeof(%s) <= sizeof(uint32_t)); \\\n",
+                                        pArg->pszName,
+                                        pArg->pszType);
+                    else
+                        ScmStreamPrintf(pStrm,
+                                        "        AssertCompile(sizeof(%s) <= sizeof(uintptr_t)); \\\n"
+                                        "        AssertCompile(sizeof(%s) <= sizeof(uintptr_t)); \\\n",
+                                        pArg->pszName,
+                                        pArg->pszType);
+                }
+                iArg++;
             }
             ScmStreamPrintf(pStrm,
                             "        } \\\n"
@@ -1547,6 +1566,150 @@ static RTEXITCODE parsePragma(PSCMSTREAM pStrm)
 
 
 /**
+ * Classifies the given type expression.
+ *
+ * @return  Type flags.
+ * @param   pszType         The type expression.
+ */
+static uint32_t parseTypeExpression(const char *pszType)
+{
+    size_t cchType = strlen(pszType);
+#define MY_STRMATCH(a_sz)  (cchType == sizeof(a_sz) - 1 && !memcmp(a_sz, pszType, sizeof(a_sz) - 1))
+
+    /*
+     * Try detect pointers.
+     */
+    if (pszType[cchType - 1] == '*')    return VTG_TYPE_POINTER;
+    if (pszType[cchType - 1] == '&')
+    {
+        RTMsgWarning("Please avoid using references like '%s' for probe arguments!", pszType);
+        return VTG_TYPE_POINTER;
+    }
+
+    /*
+     * Standard integer types and IPRT variants.
+     * It's important that we catch all types larger than 32-bit here or we'll
+     * screw up the probe argument handling.
+     */
+    //if (MY_STRMATCH("uint128_t"))       return VTG_TYPE_FIXED_SIZED | sizeof(uint128_t) | VTG_TYPE_UNSIGNED;
+    if (MY_STRMATCH("uint64_t"))        return VTG_TYPE_FIXED_SIZED | sizeof(uint64_t)  | VTG_TYPE_UNSIGNED;
+    if (MY_STRMATCH("uint32_t"))        return VTG_TYPE_FIXED_SIZED | sizeof(uint32_t)  | VTG_TYPE_UNSIGNED;
+    if (MY_STRMATCH("uint16_t"))        return VTG_TYPE_FIXED_SIZED | sizeof(uint16_t)  | VTG_TYPE_UNSIGNED;
+    if (MY_STRMATCH("uint8_t"))         return VTG_TYPE_FIXED_SIZED | sizeof(uint8_t)   | VTG_TYPE_UNSIGNED;
+
+    //if (MY_STRMATCH("int128_t"))        return VTG_TYPE_FIXED_SIZED | sizeof(int128_t)  | VTG_TYPE_SIGNED;
+    if (MY_STRMATCH("int64_t"))         return VTG_TYPE_FIXED_SIZED | sizeof(int64_t)   | VTG_TYPE_SIGNED;
+    if (MY_STRMATCH("int32_t"))         return VTG_TYPE_FIXED_SIZED | sizeof(int32_t)   | VTG_TYPE_SIGNED;
+    if (MY_STRMATCH("int16_t"))         return VTG_TYPE_FIXED_SIZED | sizeof(int16_t)   | VTG_TYPE_SIGNED;
+    if (MY_STRMATCH("int8_t"))          return VTG_TYPE_FIXED_SIZED | sizeof(int8_t)    | VTG_TYPE_SIGNED;
+
+    if (MY_STRMATCH("RTUINT64U"))       return VTG_TYPE_FIXED_SIZED | sizeof(uint64_t)  | VTG_TYPE_UNSIGNED;
+    if (MY_STRMATCH("RTUINT32U"))       return VTG_TYPE_FIXED_SIZED | sizeof(uint32_t)  | VTG_TYPE_UNSIGNED;
+    if (MY_STRMATCH("RTUINT16U"))       return VTG_TYPE_FIXED_SIZED | sizeof(uint16_t)  | VTG_TYPE_UNSIGNED;
+
+    if (MY_STRMATCH("RTMSINTERVAL"))    return VTG_TYPE_FIXED_SIZED | sizeof(RTMSINTERVAL) | VTG_TYPE_UNSIGNED;
+    if (MY_STRMATCH("RTTIMESPEC"))      return VTG_TYPE_FIXED_SIZED | sizeof(RTTIMESPEC)   | VTG_TYPE_SIGNED;
+    if (MY_STRMATCH("RTHCPHYS"))        return VTG_TYPE_FIXED_SIZED | sizeof(RTHCPHYS)     | VTG_TYPE_UNSIGNED | VTG_TYPE_PHYS;
+
+    if (MY_STRMATCH("RTR3PTR"))         return VTG_TYPE_CTX_POINTER | VTG_TYPE_CTX_R3;
+    if (MY_STRMATCH("RTR0PTR"))         return VTG_TYPE_CTX_POINTER | VTG_TYPE_CTX_R0;
+    if (MY_STRMATCH("RTRCPTR"))         return VTG_TYPE_CTX_POINTER | VTG_TYPE_CTX_RC;
+    if (MY_STRMATCH("RTHCPTR"))         return VTG_TYPE_CTX_POINTER | VTG_TYPE_CTX_R3 | VTG_TYPE_CTX_R0;
+
+    if (MY_STRMATCH("RTR3UINTPTR"))     return VTG_TYPE_CTX_POINTER | VTG_TYPE_CTX_R3 | VTG_TYPE_UNSIGNED;
+    if (MY_STRMATCH("RTR0UINTPTR"))     return VTG_TYPE_CTX_POINTER | VTG_TYPE_CTX_R0 | VTG_TYPE_UNSIGNED;
+    if (MY_STRMATCH("RTRCUINTPTR"))     return VTG_TYPE_CTX_POINTER | VTG_TYPE_CTX_RC | VTG_TYPE_UNSIGNED;
+    if (MY_STRMATCH("RTHCUINTPTR"))     return VTG_TYPE_CTX_POINTER | VTG_TYPE_CTX_R3 | VTG_TYPE_CTX_R0 | VTG_TYPE_UNSIGNED;
+
+    if (MY_STRMATCH("RTR3INTPTR"))      return VTG_TYPE_CTX_POINTER | VTG_TYPE_CTX_R3 | VTG_TYPE_SIGNED;
+    if (MY_STRMATCH("RTR0INTPTR"))      return VTG_TYPE_CTX_POINTER | VTG_TYPE_CTX_R0 | VTG_TYPE_SIGNED;
+    if (MY_STRMATCH("RTRCINTPTR"))      return VTG_TYPE_CTX_POINTER | VTG_TYPE_CTX_RC | VTG_TYPE_SIGNED;
+    if (MY_STRMATCH("RTHCINTPTR"))      return VTG_TYPE_CTX_POINTER | VTG_TYPE_CTX_R3 | VTG_TYPE_CTX_R0 | VTG_TYPE_SIGNED;
+
+    if (MY_STRMATCH("RTUINTPTR"))       return VTG_TYPE_CTX_POINTER | VTG_TYPE_CTX_R3 | VTG_TYPE_CTX_R0 | VTG_TYPE_CTX_RC | VTG_TYPE_UNSIGNED;
+    if (MY_STRMATCH("RTINTPTR"))        return VTG_TYPE_CTX_POINTER | VTG_TYPE_CTX_R3 | VTG_TYPE_CTX_R0 | VTG_TYPE_CTX_RC | VTG_TYPE_SIGNED;
+
+    if (MY_STRMATCH("RTHCUINTREG"))     return VTG_TYPE_HC_ARCH_SIZED | VTG_TYPE_CTX_R3 | VTG_TYPE_CTX_R0 | VTG_TYPE_UNSIGNED;
+    if (MY_STRMATCH("RTR3UINTREG"))     return VTG_TYPE_HC_ARCH_SIZED | VTG_TYPE_CTX_R3 | VTG_TYPE_UNSIGNED;
+    if (MY_STRMATCH("RTR0UINTREG"))     return VTG_TYPE_HC_ARCH_SIZED | VTG_TYPE_CTX_R3 | VTG_TYPE_UNSIGNED;
+
+    if (MY_STRMATCH("RTGCUINTREG"))     return VTG_TYPE_FIXED_SIZED | sizeof(RTGCUINTREG) | VTG_TYPE_UNSIGNED | VTG_TYPE_CTX_GST;
+    if (MY_STRMATCH("RTGCPTR"))         return VTG_TYPE_FIXED_SIZED | sizeof(RTGCPTR)     | VTG_TYPE_UNSIGNED | VTG_TYPE_CTX_GST;
+    if (MY_STRMATCH("RTGCINTPTR"))      return VTG_TYPE_FIXED_SIZED | sizeof(RTGCUINTPTR) | VTG_TYPE_SIGNED   | VTG_TYPE_CTX_GST;
+    if (MY_STRMATCH("RTGCPTR32"))       return VTG_TYPE_FIXED_SIZED | sizeof(RTGCPTR32)   | VTG_TYPE_SIGNED   | VTG_TYPE_CTX_GST;
+    if (MY_STRMATCH("RTGCPTR64"))       return VTG_TYPE_FIXED_SIZED | sizeof(RTGCPTR64)   | VTG_TYPE_SIGNED   | VTG_TYPE_CTX_GST;
+    if (MY_STRMATCH("RTGCPHYS"))        return VTG_TYPE_FIXED_SIZED | sizeof(RTGCPHYS)    | VTG_TYPE_UNSIGNED | VTG_TYPE_PHYS | VTG_TYPE_CTX_GST;
+    if (MY_STRMATCH("RTGCPHYS32"))      return VTG_TYPE_FIXED_SIZED | sizeof(RTGCPHYS32)  | VTG_TYPE_UNSIGNED | VTG_TYPE_PHYS | VTG_TYPE_CTX_GST;
+    if (MY_STRMATCH("RTGCPHYS64"))      return VTG_TYPE_FIXED_SIZED | sizeof(RTGCPHYS64)  | VTG_TYPE_UNSIGNED | VTG_TYPE_PHYS | VTG_TYPE_CTX_GST;
+
+    /*
+     * The special VBox types.
+     */
+    if (MY_STRMATCH("PVM"))             return VTG_TYPE_CTX_POINTER;
+    if (MY_STRMATCH("PVMCPU"))          return VTG_TYPE_CTX_POINTER;
+
+    /*
+     * Preaching time.
+     */
+    if (   MY_STRMATCH("unsigned long")
+        || MY_STRMATCH("unsigned long long")
+        || MY_STRMATCH("signed long")
+        || MY_STRMATCH("signed long long")
+        || MY_STRMATCH("long")
+        || MY_STRMATCH("long long")
+        || MY_STRMATCH("char")
+        || MY_STRMATCH("signed char")
+        || MY_STRMATCH("unsigned char")
+        || MY_STRMATCH("double")
+        || MY_STRMATCH("long double")
+        || MY_STRMATCH("float")
+       )
+    {
+        RTMsgError("Please do NOT use the type '%s' for probe arguments!", pszType);
+        g_cTypeErrors++;
+        return 0;
+    }
+
+    if (   MY_STRMATCH("unsigned")
+        || MY_STRMATCH("signed")
+        || MY_STRMATCH("int")
+        || MY_STRMATCH("signed int")
+        || MY_STRMATCH("unsigned int")
+        || MY_STRMATCH("short")
+        || MY_STRMATCH("signed short")
+        || MY_STRMATCH("unsigned short")
+       )
+        RTMsgWarning("Please avoid using the type '%s' for probe arguments!", pszType);
+    if (MY_STRMATCH("unsigned"))        return VTG_TYPE_FIXED_SIZED | sizeof(int)   | VTG_TYPE_UNSIGNED;
+    if (MY_STRMATCH("unsigned int"))    return VTG_TYPE_FIXED_SIZED | sizeof(int)   | VTG_TYPE_UNSIGNED;
+    if (MY_STRMATCH("int"))             return VTG_TYPE_FIXED_SIZED | sizeof(int)   | VTG_TYPE_SIGNED;
+    if (MY_STRMATCH("signed"))          return VTG_TYPE_FIXED_SIZED | sizeof(int)   | VTG_TYPE_SIGNED;
+    if (MY_STRMATCH("signed int"))      return VTG_TYPE_FIXED_SIZED | sizeof(int)   | VTG_TYPE_SIGNED;
+    if (MY_STRMATCH("short"))           return VTG_TYPE_FIXED_SIZED | sizeof(short) | VTG_TYPE_SIGNED;
+    if (MY_STRMATCH("signed short"))    return VTG_TYPE_FIXED_SIZED | sizeof(short) | VTG_TYPE_SIGNED;
+    if (MY_STRMATCH("unsigned short"))  return VTG_TYPE_FIXED_SIZED | sizeof(short) | VTG_TYPE_UNSIGNED;
+
+    /*
+     * What we haven't caught by now is either unknown to us or wrong.
+     */
+    if (pszType[0] == 'P')
+    {
+        RTMsgError("Type '%s' looks like a pointer typedef, please do NOT use those "
+                   "but rather the non-pointer typedef or struct with '*'",
+                   pszType);
+        g_cTypeErrors++;
+        return VTG_TYPE_POINTER;
+    }
+
+    RTMsgError("Don't know '%s' - please change or fix VBoxTpG", pszType);
+    g_cTypeErrors++;
+
+#undef MY_STRCMP
+    return 0;
+}
+
+
+/**
  * Unmangles the probe name.
  *
  * This involves translating double underscore to dash.
@@ -1636,9 +1799,12 @@ static RTEXITCODE parseProbe(PSCMSTREAM pStrm, PVTGPROVIDER pProv)
                     if (cchArg - cchName - 1 >= 128)
                         return parseError(pStrm, 1, "Argument type too long");
                     pArg->pszType = strtabInsertN(szArg, cchArg - cchName - 1);
-                    pArg->pszName = strtabInsertN(&szArg[cchArg - cchName], cchName);
+                    pArg->pszName = RTStrDupN(&szArg[cchArg - cchName], cchName);
                     if (!pArg->pszType || !pArg->pszName)
                         return parseError(pStrm, 1, "Out of memory");
+                    pArg->fType   = parseTypeExpression(pArg->pszType);
+                    if (VTG_TYPE_IS_LARGE(pArg->fType))
+                        pProbe->fHaveLargeArgs = true;
                     pArg = NULL;
                     cchName = cchArg = 0;
                 }
@@ -2072,6 +2238,8 @@ int main(int argc, char **argv)
         }
     }
 
+    if (rcExit == RTEXITCODE_SUCCESS && g_cTypeErrors > 0)
+        rcExit = RTEXITCODE_FAILURE;
     return rcExit;
 }
 

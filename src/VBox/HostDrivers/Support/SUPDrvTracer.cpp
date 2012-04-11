@@ -298,6 +298,7 @@ static int supdrvVtgValidate(PVTGOBJHDR pVtgHdr, size_t cbVtgObj, const uint8_t 
     {
         PVTGDESCARGLIST pArgList;
         unsigned        iArg;
+        bool            fHaveLargeArgs;
 
         MY_VALIDATE_STR(pVtgHdr->paProbes[i].offName);
         if (pVtgHdr->paProbes[i].offArgList >= pVtgHdr->cbArgLists)
@@ -318,16 +319,39 @@ static int supdrvVtgValidate(PVTGOBJHDR pVtgHdr, size_t cbVtgObj, const uint8_t 
         pArgList = (PVTGDESCARGLIST)((uintptr_t)pVtgHdr->paArgLists + pVtgHdr->paProbes[i].offArgList);
         if (pArgList->cArgs > 16)
             return VERR_SUPDRV_VTG_BAD_ARGLIST;
-        if (   pArgList->abReserved[0]
-            || pArgList->abReserved[1]
-            || pArgList->abReserved[2])
+        if (pArgList->fHaveLargeArgs >= 2)
             return VERR_SUPDRV_VTG_BAD_ARGLIST;
+        if (   pArgList->abReserved[0]
+            || pArgList->abReserved[1])
+            return VERR_SUPDRV_VTG_BAD_ARGLIST;
+        fHaveLargeArgs = false;
         iArg = pArgList->cArgs;
         while (iArg-- > 0)
         {
+            rc = VINF_SUCCESS;
             MY_VALIDATE_STR(pArgList->aArgs[iArg].offType);
-            MY_VALIDATE_STR(pArgList->aArgs[iArg].offName);
+            switch (pArgList->aArgs[iArg].fType & VTG_TYPE_SIZE_MASK)
+            {
+                case 0:
+                    if (!(pArgList->aArgs[iArg].fType & VTG_TYPE_FIXED_SIZED))
+                        rc = VERR_SUPDRV_TRACER_BAD_ARG_FLAGS;
+                    break;
+                case 1: case 2: case 4: case 8:
+                    break;
+                default:
+                    rc = VERR_SUPDRV_TRACER_BAD_ARG_FLAGS;
+            }
+            if (RT_FAILURE(rc))
+            {
+                SUPR0Printf("supdrvVtgValidate: VERR_SUPDRV_TRACER_BAD_ARG_FLAGS - fType=%#x iArg=%u iProbe=%u\n",
+                            pArgList->aArgs[iArg].fType, iArg, i);
+                return rc;
+            }
+            if (VTG_TYPE_IS_LARGE(pArgList->aArgs[iArg].fType))
+                fHaveLargeArgs = true;
         }
+        if ((uint8_t)fHaveLargeArgs != pArgList->fHaveLargeArgs)
+            return VERR_SUPDRV_VTG_BAD_PROBE;
     }
 
     /*
