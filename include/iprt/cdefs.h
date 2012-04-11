@@ -696,7 +696,7 @@
  * @param   type    The return type of the function declaration.
  */
 #ifdef __cplusplus
-# ifdef _MSC_VER
+# if defined(_MSC_VER) || defined(RT_OS_OS2)
 #  define DECLASM(type)          extern "C" type __cdecl
 # elif defined(__GNUC__) && defined(RT_ARCH_X86)
 #  define DECLASM(type)          extern "C" type __attribute__((cdecl,regparm(0)))
@@ -704,7 +704,7 @@
 #  define DECLASM(type)          extern "C" type
 # endif
 #else
-# ifdef _MSC_VER
+# if defined(_MSC_VER) || defined(RT_OS_OS2)
 #  define DECLASM(type)          type __cdecl
 # elif defined(__GNUC__) && defined(RT_ARCH_X86)
 #  define DECLASM(type)          type __attribute__((cdecl,regparm(0)))
@@ -717,7 +717,7 @@
  * How to declare an internal assembly function type.
  * @param   type    The return type of the function.
  */
-#ifdef _MSC_VER
+# if defined(_MSC_VER) || defined(RT_OS_OS2)
 # define DECLASMTYPE(type)      type __cdecl
 #else
 # define DECLASMTYPE(type)      type
