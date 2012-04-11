@@ -616,15 +616,15 @@ if1of ($(KBUILD_TARGET), darwin solaris)
  VBOX_WITH_DTRACE_R3 = 1
 endif
 # Set this to enable kernel driver dtrace probes.
-if1of ($(KBUILD_TARGET), solaris)
+if1of ($(KBUILD_TARGET), darwin solaris)
  VBOX_WITH_DTRACE_R0DRV = 1
 endif
 # Set this to enable all kernel driver dtrace probes.
-if1of ($(KBUILD_TARGET), solaris)
+if1of ($(KBUILD_TARGET), darwin solaris)
  VBOX_WITH_NATIVE_DTRACE_R0DRV = 1
 endif
 # Set this to enable dtrace probes in platform agnostic kernel code.
-if1of ($(KBUILD_TARGET), solaris)
+if1of ($(KBUILD_TARGET), darwin solaris)
  VBOX_WITH_DTRACE_R0 = 1
 endif
 # Set this to enable dtrace probes raw-mode context code.
@@ -2935,7 +2935,7 @@ TEMPLATE_VBOXR0DRV_USES               += dtrace
 ifdef VBOX_WITH_DTRACE_R0DRV
  TEMPLATE_VBOXR0DRV_DTRACETOOL         = VBoxTpG
  TEMPLATE_VBOXR0DRV_DEFS              += VBOX_WITH_DTRACE VBOX_WITH_DTRACE_R0DRV
- ifdef VBOX_WITH_NATIVE_DTRACE_R0DRV								  
+ ifdef VBOX_WITH_NATIVE_DTRACE_R0DRV
   TEMPLATE_VBOXR0DRV_DEFS             += VBOX_WITH_NATIVE_DTRACE_R0DRV
  endif
 else
@@ -2975,7 +2975,7 @@ endif
 ifeq ($(KBUILD_TARGET),linux)
 TEMPLATE_VBOXR0DRV_TOOL                = $(VBOX_GCC_TOOL)
 TEMPLATE_VBOXR0DRV_INSTTYPE.linux      = none
-TEMPLATE_VBOXR0DRV_DEFS               += __KERNEL__ MODULE 
+TEMPLATE_VBOXR0DRV_DEFS               += __KERNEL__ MODULE
 TEMPLATE_VBOXR0DRV_INCS                = $(VBOX_LINUX_INCS)
 TEMPLATE_VBOXR0DRV_CFLAGS              = -nostdinc -iwithprefix include $(VBOX_LINUX_INCLUDE) \
 	$(VBOX_GCC_WARN) -Wstrict-prototypes $(VBOX_GCC_Wno-pointer-sign) -Wno-sign-compare $(VBOX_GCC_fdiagnostics-show-option) \
@@ -3028,8 +3028,9 @@ TEMPLATE_VBOXR0DRV_CFLAGS              = $(VBOX_DARWIN_DEF_SDK_CFLAGS) \
 	$(VBOX_GCC_R0_OPT) $(VBOX_GCC_R0_FP) -fno-strict-aliasing -fasm-blocks
 TEMPLATE_VBOXR0DRV_CFLAGS.amd64        = -m64 -mkernel -mno-red-zone -gdwarf-2
 TEMPLATE_VBOXR0DRV_CFLAGS.x86          = -m32 -static
-TEMPLATE_VBOXR0DRV_LDFLAGS             =  $(filter-out $(VBOX_DARWIN_NO_COMPACT_LINKEDIT),$(VBOX_DARWIN_DEF_SDK_LDFLAGS)) -static -nostdlib -r -Wl,-Y,1455 -keep_private_extern
-TEMPLATE_VBOXR0DRV_LDFLAGS.amd64       = -m64 -Xlinker -kext
+TEMPLATE_VBOXR0DRV_LDFLAGS             =  $(filter-out $(VBOX_DARWIN_NO_COMPACT_LINKEDIT),$(VBOX_DARWIN_DEF_SDK_LDFLAGS)) \
+	-nostdlib -Wl,-kext,-new_linker -Wl,-Y,1455 -keep_private_extern
+TEMPLATE_VBOXR0DRV_LDFLAGS.amd64       = -m64
 TEMPLATE_VBOXR0DRV_LDFLAGS.x86         = -m32
 TEMPLATE_VBOXR0DRV_LIBS                = kmodc++ kmod cc_kext cpp_kext $(VBOX_GCC_LIBGCC)
 endif
