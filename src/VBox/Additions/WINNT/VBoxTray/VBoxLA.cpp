@@ -1245,7 +1245,9 @@ unsigned __stdcall VBoxLAThread(void *pInstance)
 
         if (RT_SUCCESS(rc))
         {
-            if (pCtx->activeClient.u32ClientId != u32ActiveClientId)
+            bool fClientIdChanged = pCtx->activeClient.u32ClientId != u32ActiveClientId;
+
+            if (fClientIdChanged)
             {
                 rc = laUpdateCurrentState(pCtx, u32ActiveClientId, u64Timestamp);
             }
@@ -1267,6 +1269,23 @@ unsigned __stdcall VBoxLAThread(void *pInstance)
                         pCtx->u64LastQuery = u64Timestamp;
                     }
                 }
+                else
+                {
+                    /* If the client has been disconnected, do the detach actions. */
+                    if (fClientIdChanged)
+                    {
+                        LALOG(("LA: client disconnected\n"));
+
+                        /* laDoActions will prevent a repeated detach action. So if there
+                         * was a detach already, then this detach will be ignored.
+                         */
+                        pCtx->u32Action = LA_DO_DETACH;
+
+                        laDoActions(pCtx);
+
+                        pCtx->u64LastQuery = u64Timestamp;
+                    }
+                }
             }
         }
 
@@ -1279,7 +1298,7 @@ unsigned __stdcall VBoxLAThread(void *pInstance)
             || pCtx->activeClient.u32ClientId == 0)
         {
             /* No connections, wait longer. */
-            u32Wait = 10000;
+            u32Wait = 5000;
         }
         else if (RT_FAILURE(rc))
         {
