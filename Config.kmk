@@ -624,7 +624,7 @@ if1of ($(KBUILD_TARGET), darwin solaris)
  VBOX_WITH_NATIVE_DTRACE_R0DRV = 1
 endif
 # Set this to enable dtrace probes in platform agnostic kernel code.
-if1of ($(KBUILD_TARGET), darwin solaris)
+ifn1of ($(KBUILD_TARGET), os2)
  VBOX_WITH_DTRACE_R0 = 1
 endif
 # Set this to enable dtrace probes raw-mode context code.
