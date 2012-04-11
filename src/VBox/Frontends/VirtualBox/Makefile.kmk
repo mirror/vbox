@@ -228,8 +228,8 @@ if defined(VBOX_WITH_VIDEOHWACCEL) || defined(VBOX_GUI_USE_QGL)
  VirtualBox_LIBS.freebsd   += GL
  VirtualBox_LDFLAGS.darwin += -framework OpenGL
 endif
+VirtualBox_LIBS += $(PATH_STAGE_LIB)/VBoxOGLTest$(VBOX_SUFF_LIB)
 
-VirtualBox_LIBS += $(VBoxOGLTest_1_TARGET)
 
 # Headers containing definitions of classes that use the Q_OBJECT macro.
 VirtualBox_QT_MOCHDRS = \
