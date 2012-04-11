@@ -20,8 +20,8 @@ provider vboxdrv
 {
     probe session__create(struct SUPDRVSESSION *pSession, int fUser);
     probe session__close(struct SUPDRVSESSION *pSession);
-    probe ioctl__entry(struct SUPDRVSESSION *pSession, unsigned int uIOCtl, void *pvReqHdr);
-    probe ioctl__return(struct SUPDRVSESSION *pSession, unsigned int uIOCtl, void *pvReqHdr, int rc, int rcReq);
+    probe ioctl__entry(struct SUPDRVSESSION *pSession, uintptr_t uIOCtl, void *pvReqHdr);
+    probe ioctl__return(struct SUPDRVSESSION *pSession, uintptr_t uIOCtl, void *pvReqHdr, int rc, int rcReq);
 };
 
 #pragma D attributes Evolving/Evolving/Common provider vboxdrv provider
