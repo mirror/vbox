@@ -56,10 +56,10 @@ struct HandlerArg
  */
 typedef struct VBOXWATCHDOG_MODULE_PAYLOAD
 {
-    /* Pointer to allocated payload. Can be NULL if
+    /** Pointer to allocated payload. Can be NULL if
      * a module doesn't have an own payload. */
     void *pvData;
-    /* Size of payload (in bytes). */
+    /** Size of payload (in bytes). */
     size_t cbData;
     /** @todo Add mutex for locking + getPayloadLocked(). */
 } VBOXWATCHDOG_MODULE_PAYLOAD, *PVBOXWATCHDOG_MODULE_PAYLOAD;
@@ -162,8 +162,8 @@ typedef struct
      */
     DECLCALLBACKMEMBER(void, pfnTerm)(void);
 
-    /**
-     * Callbacks.
+    /** @name  Callbacks.
+     * @{
      */
 
     /**
@@ -190,6 +190,7 @@ typedef struct
      */
     DECLCALLBACKMEMBER(int, pfnOnServiceStateChanged)(bool fAvailable);
 
+    /** @} */
 } VBOXMODULE;
 /** Pointer to a VBOXMODULE. */
 typedef VBOXMODULE *PVBOXMODULE;
