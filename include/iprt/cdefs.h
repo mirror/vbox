@@ -599,7 +599,7 @@
  */
 #ifdef RT_EXCEPTIONS_ENABLED
 # ifdef _MSC_VER
-#  if _MSC_VER >= 1400
+#  if _MSC_VER >= 1310
 #   define RT_THROW(type)
 #  else
 #   define RT_THROW(type)       throw(type)

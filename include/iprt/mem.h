@@ -728,7 +728,7 @@ RTDECL(void *) RTMemEfDupEx(const void *pvSrc, size_t cbSrc, size_t cbExtra, con
                 throw std::bad_alloc(); \
             return pv; \
         } \
-        void *operator new(size_t cb, const std::nothrow_t &nothrow_constant) throw() \
+        void *operator new(size_t cb, const std::nothrow_t &nothrow_constant) RT_NO_THROW \
         { \
             NOREF(nothrow_constant); \
             return RTMemEfAlloc(cb, RTMEM_TAG, RT_SRC_POS); \
@@ -740,26 +740,26 @@ RTDECL(void *) RTMemEfDupEx(const void *pvSrc, size_t cbSrc, size_t cbExtra, con
                 throw std::bad_alloc(); \
             return pv; \
         } \
-        void *operator new[](size_t cb, const std::nothrow_t &nothrow_constant) throw() \
+        void *operator new[](size_t cb, const std::nothrow_t &nothrow_constant) RT_NO_THROW \
         { \
             NOREF(nothrow_constant); \
             return RTMemEfAlloc(cb, RTMEM_TAG, RT_SRC_POS); \
         } \
         \
-        void operator delete(void *pv) throw() \
+        void operator delete(void *pv) RT_NO_THROW \
         { \
             RTMemEfFree(pv, RT_SRC_POS); \
         } \
-        void operator delete(void *pv, const std::nothrow_t &nothrow_constant) throw() \
+        void operator delete(void *pv, const std::nothrow_t &nothrow_constant) RT_NO_THROW \
         { \
             NOREF(nothrow_constant); \
             RTMemEfFree(pv, RT_SRC_POS); \
         } \
-        void operator delete[](void *pv) throw() \
+        void operator delete[](void *pv) RT_NO_THROW \
         { \
             RTMemEfFree(pv, RT_SRC_POS); \
         } \
-        void operator delete[](void *pv, const std::nothrow_t &nothrow_constant) throw() \
+        void operator delete[](void *pv, const std::nothrow_t &nothrow_constant) RT_NO_THROW \
         { \
             NOREF(nothrow_constant); \
             RTMemEfFree(pv, RT_SRC_POS); \
