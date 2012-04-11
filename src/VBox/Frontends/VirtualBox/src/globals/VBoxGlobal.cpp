@@ -3673,17 +3673,11 @@ QString VBoxGlobal::sizeRegexp()
 QString VBoxGlobal::toHumanReadableList(const QStringList &list)
 {
     QString strList;
-    if (list.size() == 1)
-        strList = list.at(0);
-    else if (list.size() > 1)
+    for (int i = 0; i < list.size(); ++i)
     {
-        for (int i = 0; i < list.size() - 1; ++i)
-        {
-            strList += list.at(i);
-            if (i < list.size() - 2)
-                strList += + ", ";
-        }
-        strList += " " + tr("and") + " " + list.at(list.size() - 1);
+        strList += list.at(i);
+        if (i < list.size() - 1)
+            strList += + " ";
     }
     return strList;
 }
