@@ -94,13 +94,51 @@ typedef VTGPROBELOC *PVTGPROBELOC;
 typedef uint32_t VTGSTROFF;
 
 
+/** @name VTG type flags
+ * @{ */
+/** Masking out the fixed size if given. */
+#define VTG_TYPE_SIZE_MASK      UINT32_C(0x000000ff)
+/** Indicates that VTG_TYPE_SIZE_MASK can be applied, UNSIGNED or SIGNED is
+ * usually set as well, so may PHYS. */
+#define VTG_TYPE_FIXED_SIZED    RT_BIT_32(8)
+/** It's a pointer type, the size is given by the context the probe fired in. */
+#define VTG_TYPE_POINTER        RT_BIT_32(9)
+/** A context specfic pointer or address, consult VTG_TYPE_CTX_XXX. */
+#define VTG_TYPE_CTX_POINTER    RT_BIT_32(10)
+/** The type has the same size as the host architecture. */
+#define VTG_TYPE_HC_ARCH_SIZED  RT_BIT_32(11)
+/** The type applies to ring-3 context. */
+#define VTG_TYPE_CTX_R3         RT_BIT_32(24)
+/** The type applies to ring-0 context. */
+#define VTG_TYPE_CTX_R0         RT_BIT_32(25)
+/** The type applies to raw-mode context. */
+#define VTG_TYPE_CTX_RC         RT_BIT_32(26)
+/** The type applies to guest context. */
+#define VTG_TYPE_CTX_GST        RT_BIT_32(27)
+/** The type context mask. */
+#define VTG_TYPE_CTX_MASK       UINT32_C(0x0f000000)
+/** The type is a physical address. */
+#define VTG_TYPE_PHYS           RT_BIT_32(29)
+/** The type is unsigned. */
+#define VTG_TYPE_UNSIGNED       RT_BIT_32(30)
+/** The type is signed. */
+#define VTG_TYPE_SIGNED         RT_BIT_32(31)
+/** @} */
+
+/**
+ * Checks if the VTG type flags indicates a large fixed size argument.
+ */
+#define VTG_TYPE_IS_LARGE(a_fType) \
+    ( ((a_fType) & VTG_TYPE_SIZE_MASK) > 4 && ((a_fType) & VTG_TYPE_FIXED_SIZED) )
+
+
 /**
  * VTG argument descriptor.
  */
 typedef struct VTGDESCARG
 {
     VTGSTROFF       offType;
-    VTGSTROFF       offName;
+    uint32_t        fType;
 } VTGDESCARG;
 /** Pointer to an argument descriptor. */
 typedef VTGDESCARG         *PVTGDESCARG;
@@ -112,7 +150,8 @@ typedef VTGDESCARG         *PVTGDESCARG;
 typedef struct VTGDESCARGLIST
 {
     uint8_t         cArgs;
-    uint8_t         abReserved[3];
+    uint8_t         fHaveLargeArgs;
+    uint8_t         abReserved[2];
     VTGDESCARG      aArgs[1];
 } VTGDESCARGLIST;
 /** Pointer to a VTG argument list descriptor. */
@@ -227,7 +266,7 @@ typedef struct VTGOBJHDR
 typedef VTGOBJHDR          *PVTGOBJHDR;
 
 /** The current VTGOBJHDR::szMagic value. */
-#define VTGOBJHDR_MAGIC     "VTG Object Header v1.2\0"
+#define VTGOBJHDR_MAGIC     "VTG Object Header v1.3\0"
 
 /** The name of the VTG data object header symbol in the object file. */
 extern VTGOBJHDR            g_VTGObjHeader;

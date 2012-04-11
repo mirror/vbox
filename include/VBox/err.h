@@ -1670,6 +1670,8 @@
 #define VERR_SUPDRV_TRACER_SESSION_BUSY             (-3728)
 /** The tracer cannot open it self in the same session. */
 #define VERR_SUPDRV_TRACER_CANNOT_OPEN_SELF         (-3729)
+/** Bad argument flags. */
+#define VERR_SUPDRV_TRACER_BAD_ARG_FLAGS            (-3730)
 /** @} */
 
 

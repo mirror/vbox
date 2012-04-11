@@ -396,7 +396,7 @@ static void     supdrvDtPOps_GetArgDesc(void *pvProv, dtrace_id_t idProbe, void 
             if (cchType < sizeof(pArgDesc->dtargd_native))
             {
                 memcpy(pArgDesc->dtargd_native, pszType, cchType + 1);
-                /** @todo mapping */
+                /** @todo mapping? */
                 pArgDesc->dtargd_ndx = uArg;
                 LOG_DTRACE(("supdrvDtPOps_GetArgVal: returns dtargd_native = %s\n", pArgDesc->dtargd_native));
                 return;
@@ -448,6 +448,12 @@ static uint64_t supdrvDtPOps_GetArgVal(void *pvProv, dtrace_id_t idProbe, void *
     AssertPtrReturn(pvProbe, UINT64_MAX);
     AssertReturn(!pProv->TracerData.DTrace.fZombie, UINT64_MAX);
     AssertPtrReturn(pProv->TracerData.DTrace.idProvider, UINT64_MAX);
+    PVTGPROBELOC    pProbeLoc = (PVTGPROBELOC)pvProbe;
+    AssertPtrReturn(pProbeLoc, UINT64_MAX);
+    PVTGDESCPROBE   pProbe    = (PVTGDESCPROBE)pProbeLoc->pbProbe
+    AssertPtrReturn(pProbe, UINT64_MAX);
+    PVTGDESCARGLIST pArgList  = (PVTGDESCPROBE)((uintptr_t)pProv->pHdr->paArgLists + pProbe->offArgList);
+    AssertPtrReturn(pArgList, UINT64_MAX);
 
     /* Locate the caller of probe_dtrace, . */
     int volatile        iDummy = 1; /* use this to get the stack address. */
@@ -463,8 +469,30 @@ static uint64_t supdrvDtPOps_GetArgVal(void *pvProv, dtrace_id_t idProbe, void *
     }
 
     /* Get the stack data. */
-    LOG_DTRACE(("supdrvDtPOps_GetArgVal: returns %#llx\n", (uint64_t)pData->pauStackArgs[iArg - 5]));
-    return pData->pauStackArgs[iArg - 5];
+#if ARCH_BITS == 64
+    uint64_t u64Ret = pData->pauStackArgs[iArg - 5];
+#else
+    uint64_t u64Ret;
+    if (   !pArgList->fHaveLargeArgs
+        || pArgList->cArgs <= iArg)
+        u64Ret = pData->pauStackArgs[iArg - 5];
+    else
+    {
+        /* wonder if this will work... */
+        uint32_t off = 0;
+        for (uint32_t i = 5; i < iArg; i++)
+            if (   (pArgList->aArgs[i].fType & VTG_TYPE_FIXED_SIZED)
+                && (pArgList->aArgs[i].fType & VTG_TYPE_SIZE_MASK) == 8)
+                off++;
+        u64Ret = pData->pauStackArgs[iArg - 5 + off];
+        if (   (pArgList->aArgs[iArg].fType & VTG_TYPE_FIXED_SIZED)
+            && (pArgList->aArgs[iArg].fType & VTG_TYPE_SIZE_MASK) == 8
+               u64Ret |= (uint64_t)pData->pauStackArgs[iArg - 5 + off + 1] << 32;
+    }
+#endif
+
+    LOG_DTRACE(("supdrvDtPOps_GetArgVal: returns %#llx\n", u64Ret));
+    return u64Ret;
 }
 
 
