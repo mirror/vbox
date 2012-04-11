@@ -44,6 +44,7 @@ struct VBOXLACONTEXT
     const VBOXSERVICEENV *pEnv;
 
     bool fLogEnabled;
+    bool fDetachOnDisconnect;
 
     uint32_t u32GuestPropHandle;  /* The client identifier of the guest property system. */
 
@@ -1144,6 +1145,19 @@ int VBoxLAInit(const VBOXSERVICEENV *pEnv, void **ppInstance, bool *pfStartThrea
 
     LALOG(("VBoxTray: VBoxLAInit\n"));
 
+    dwValue = 0;
+    if (   laGetRegistryDWORD(L"SOFTWARE\\Oracle\\VirtualBox Guest Additions", L"VBoxTrayLA", &dwValue)
+        && (dwValue & 0x02) != 0)
+    {
+         gCtx.fDetachOnDisconnect = true;
+    }
+    else
+    {
+         gCtx.fDetachOnDisconnect = false;
+    }
+
+    LALOG(("VBoxTray: VBoxLAInit: VBoxTrayLA %x\n", dwValue));
+
     int rc = VbglR3GuestPropConnect(&gCtx.u32GuestPropHandle);
     if (RT_FAILURE(rc))
     {
@@ -1272,7 +1286,8 @@ unsigned __stdcall VBoxLAThread(void *pInstance)
                 else
                 {
                     /* If the client has been disconnected, do the detach actions. */
-                    if (fClientIdChanged)
+                    if (   pCtx->fDetachOnDisconnect
+                        && fClientIdChanged)
                     {
                         LALOG(("LA: client disconnected\n"));
 
