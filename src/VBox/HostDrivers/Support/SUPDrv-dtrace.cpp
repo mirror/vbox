@@ -113,8 +113,8 @@ typedef SUPDRVDTSTACKDATA *PSUPDRVDTSTACKDATA;
         pStackData->pSelf       = NULL; \
     } while (0)
 
-/** SUPR0Printf logging.  */
-#if 0
+/** Simple SUPR0Printf-style logging.  */
+#if 0 /*def DEBUG_bird*/
 # define LOG_DTRACE(a) SUPR0Printf a
 #else
 # define LOG_DTRACE(a) do { } while (0)
@@ -358,7 +358,7 @@ static void     supdrvDtPOps_Disable(void *pvProv, dtrace_id_t idProbe, void *pv
         {
             pProbeLoc->fEnabled = 0;
             if (ASMAtomicDecU32(&pProbeDesc->u32User) == 0)
-                pProv->pHdr->pafProbeEnabled[pProbeDesc->idxEnabled] = 1;
+                pProv->pHdr->pafProbeEnabled[pProbeDesc->idxEnabled] = 0;
         }
     }
 }

@@ -85,6 +85,7 @@ typedef SUPDRVTPPROVIDER *PSUPDRVTPPROVIDER;
 /*******************************************************************************
 *   Defined Constants And Macros                                               *
 *******************************************************************************/
+/** Simple SUPR0Printf-style logging.  */
 #ifdef DEBUG_bird
 # define LOG_TRACER(a_Args)  SUPR0Printf a_Args
 #else
@@ -238,33 +239,33 @@ static int supdrvVtgValidate(PVTGOBJHDR pVtgHdr, size_t cbVtgObj, const uint8_t 
     MY_WITHIN_IMAGE(pVtgHdr->paProbLocsEnd, VERR_SUPDRV_VTG_BAD_HDR_PTR);
     if ((uintptr_t)pVtgHdr->paProbLocs > (uintptr_t)pVtgHdr->paProbLocsEnd)
     {
-        SUPR0Printf("supdrvVtgValidate: VERR_SUPDRV_VTG_BAD_HDR_PTR - paProbeLocs=%p > paProbLocsEnd=%p\n", 
+        SUPR0Printf("supdrvVtgValidate: VERR_SUPDRV_VTG_BAD_HDR_PTR - paProbeLocs=%p > paProbLocsEnd=%p\n",
                     pVtgHdr->paProbLocs, pVtgHdr->paProbLocsEnd);
         return VERR_SUPDRV_VTG_BAD_HDR_PTR;
     }
     cbTmp = (uintptr_t)pVtgHdr->paProbLocsEnd - (uintptr_t)pVtgHdr->paProbLocs;
     if (cbTmp < sizeof(VTGPROBELOC))
     {
-        SUPR0Printf("supdrvVtgValidate: VERR_SUPDRV_VTG_BAD_HDR_TOO_FEW - cbTmp=%#zx paProbeLocs=%p paProbLocsEnd=%p\n", 
+        SUPR0Printf("supdrvVtgValidate: VERR_SUPDRV_VTG_BAD_HDR_TOO_FEW - cbTmp=%#zx paProbeLocs=%p paProbLocsEnd=%p\n",
                     cbTmp, pVtgHdr->paProbLocs, pVtgHdr->paProbLocsEnd);
         return VERR_SUPDRV_VTG_BAD_HDR_TOO_FEW;
     }
     if (cbTmp >= _128K * sizeof(VTGPROBELOC))
     {
-        SUPR0Printf("supdrvVtgValidate: VERR_SUPDRV_VTG_BAD_HDR_TOO_MUCH - cbTmp=%#zx paProbeLocs=%p paProbLocsEnd=%p\n", 
+        SUPR0Printf("supdrvVtgValidate: VERR_SUPDRV_VTG_BAD_HDR_TOO_MUCH - cbTmp=%#zx paProbeLocs=%p paProbLocsEnd=%p\n",
                     cbTmp, pVtgHdr->paProbLocs, pVtgHdr->paProbLocsEnd);
         return VERR_SUPDRV_VTG_BAD_HDR_TOO_MUCH;
     }
     if (cbTmp / sizeof(VTGPROBELOC) * sizeof(VTGPROBELOC) != cbTmp)
     {
-        SUPR0Printf("supdrvVtgValidate: VERR_SUPDRV_VTG_BAD_HDR_NOT_MULTIPLE - cbTmp=%#zx cbUnit=%#zx paProbeLocs=%p paProbLocsEnd=%p\n", 
+        SUPR0Printf("supdrvVtgValidate: VERR_SUPDRV_VTG_BAD_HDR_NOT_MULTIPLE - cbTmp=%#zx cbUnit=%#zx paProbeLocs=%p paProbLocsEnd=%p\n",
                     cbTmp, sizeof(VTGPROBELOC), pVtgHdr->paProbLocs, pVtgHdr->paProbLocsEnd);
         return VERR_SUPDRV_VTG_BAD_HDR_NOT_MULTIPLE;
     }
 
     if (pVtgHdr->cbProbes / sizeof(VTGDESCPROBE) != pVtgHdr->cbProbeEnabled)
     {
-        SUPR0Printf("supdrvVtgValidate: VERR_SUPDRV_VTG_BAD_HDR - cbProbeEnabled=%#zx cbProbes=%#zx\n", 
+        SUPR0Printf("supdrvVtgValidate: VERR_SUPDRV_VTG_BAD_HDR - cbProbeEnabled=%#zx cbProbes=%#zx\n",
                     pVtgHdr->cbProbeEnabled, pVtgHdr->cbProbes);
         return VERR_SUPDRV_VTG_BAD_HDR;
     }
@@ -1078,7 +1079,7 @@ __asm__("\
 ");
 # else
 #  error "Which arch is this?"
-#endif
+# endif
 __asm__("\
                                                                         \n\
         .type supdrvTracerProbeFireStub,@function                       \n\
@@ -1373,9 +1374,11 @@ int VBOXCALL supdrvTracerInit(PSUPDRVDEVEXT pDevExt)
 
 #ifdef VBOX_WITH_NATIVE_DTRACE_R0DRV
         pDevExt->pTracerOps = supdrvDTraceInit();
+        if (pDevExt->pTracerOps)
+            g_pfnSupdrvProbeFireKernel = (PFNRT)pDevExt->pTracerOps->pfnProbeFireKernel;
 #endif
 
-        /* 
+        /*
          * Register the provider for this module, if compiled in.
          */
 #ifdef VBOX_WITH_DTRACE_R0DRV
