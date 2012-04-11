@@ -626,9 +626,8 @@
 # define RTCALL     __cdecl
 #elif defined(RT_OS_OS2)
 # define RTCALL     __cdecl
-#elif defined(__GNUC__) && defined(IN_RING0) \
-  && !(defined(RT_ARCH_AMD64) || defined(RT_ARCH_SPARC) || defined(RT_ARCH_SPARC64)) /* the latter is kernel/gcc */
-# define RTCALL     __attribute__((cdecl,regparm(0)))
+#elif defined(__GNUC__) && defined(IN_RING0) && defined(RT_ARCH_X86) /** @todo consider dropping IN_RING0 here. */
+# define RTCALL     __attribute__((cdecl,regparm(0))) /* regparm(0) deals with -mregparm=x use in the linux kernel. */
 #else
 # define RTCALL
 #endif
