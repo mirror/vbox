@@ -165,7 +165,13 @@ public:
         return *this;
     }
 
+#ifdef _MSC_VER
+# if _MSC_VER >= 1400
     RTMEMEF_NEW_AND_DELETE_OPERATORS();
+# endif
+#else
+    RTMEMEF_NEW_AND_DELETE_OPERATORS();
+#endif
 
     /** Case sensitivity selector. */
     enum CaseSensitivity
