@@ -36,7 +36,8 @@
 /* Local includes */
 #include "VBoxGlobal.h"
 #include "VBoxMediaManagerDlg.h"
-#include "UINewHDWizard.h"
+//#include "UIWizardNewVD.h"
+#include "UIWizardCloneVD.h"
 #include "UIMessageCenter.h"
 #include "UIToolBar.h"
 #include "QIFileDialog.h"
@@ -971,16 +972,14 @@ void VBoxMediaManagerDlg::doNewMedium()
 {
     AssertReturnVoid (currentTreeWidgetType() == VBoxDefs::MediumType_HardDisk);
 
-    UINewHDWizard dlg (this);
-
-    if (dlg.exec() == QDialog::Accepted)
-    {
-        CMedium hd = dlg.hardDisk();
-        /* Select the newly created hard disk */
-        MediaItem *item = searchItem (mTwHD, hd.GetId());
-        AssertReturnVoid (item);
-        mTwHD->setCurrentItem (item);
-    }
+//    UIWizardNewVD dlg(this);
+//    if (dlg.exec() == QDialog::Accepted)
+//    {
+//        CMedium virtualDisk = dlg.virtualDisk();
+//        MediaItem *pItem = searchItem(mTwHD, virtualDisk.GetId());
+//        AssertReturnVoid(pItem);
+//        mTwHD->setCurrentItem(pItem);
+//    }
 }
 
 void VBoxMediaManagerDlg::doAddMedium()
@@ -1063,11 +1062,8 @@ void VBoxMediaManagerDlg::doCopyMedium()
     /* Get current item of current tree: */
     MediaItem *pItem = toMediaItem(pTree->currentItem());
 
-    UINewHDWizard wizard(this /* parent dialog */,
-                         UINewHDWizard::tr("%1_copy", "copied virtual disk name").arg(QFileInfo(pItem->text(0)).baseName()) /* default name */,
-                         QFileInfo(pItem->location()).absolutePath() /* default path */,
-                         0 /* default size, not important for copying */,
-                         pItem->medium().medium() /* base medium for copying */);
+    /* Show Clone VD wizard: */
+    UIWizardCloneVD wizard(this, pItem->medium().medium());
     wizard.exec();
 }
 

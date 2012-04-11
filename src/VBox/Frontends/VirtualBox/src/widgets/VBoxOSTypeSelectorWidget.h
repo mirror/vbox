@@ -27,8 +27,6 @@
 class QComboBox;
 class QLabel;
 
-Q_DECLARE_METATYPE (CGuestOSType);
-
 class VBoxOSTypeSelectorWidget : public QIWithRetranslateUI <QWidget>
 {
     Q_OBJECT;

@@ -2279,6 +2279,24 @@ bool UIMessageCenter::confirmVMPowerOff(QWidget *pParent /* = 0 */)
         tr("Power Off", "machine"));
 }
 
+void UIMessageCenter::warnAboutCannotRemoveMachineFolder(QWidget *pParent, const QString &strFolderName)
+{
+    QFileInfo fi(strFolderName);
+    message(pParent ? pParent : mainWindowShown(), Critical,
+            tr("<p>Cannot remove the machine folder <nobr><b>%1</b>.</nobr></p>"
+               "<p>Please check that this folder really exists and that you have permissions to remove it.</p>")
+               .arg(fi.fileName()));
+}
+
+void UIMessageCenter::warnAboutCannotRewriteMachineFolder(QWidget *pParent, const QString &strFolderName)
+{
+    QFileInfo fi(strFolderName);
+    message(pParent ? pParent : mainWindowShown(), Critical,
+            tr("<p>Cannot create the machine folder <b>%1</b> in the parent folder <nobr><b>%2</b>.</nobr></p>"
+               "<p>This folder already exists and possibly belongs to another machine.</p>")
+               .arg(fi.fileName()).arg(fi.absolutePath()));
+}
+
 void UIMessageCenter::warnAboutCannotCreateMachineFolder(QWidget *pParent, const QString &strFolderName)
 {
     QFileInfo fi(strFolderName);
