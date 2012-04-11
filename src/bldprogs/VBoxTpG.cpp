@@ -608,7 +608,7 @@ static RTEXITCODE generateAssembly(PSCMSTREAM pStrm)
                             "    ; off=%u\n"
                             "    db   %2u     ; Argument count\n"
                             "    db   %u      ; fHaveLargeArgs"
-                            "    db  0, 0, 0 ; Reserved\n"
+                            "    db  0, 0    ; Reserved\n"
                             , off, pProbe->cArgs, pProbe->fHaveLargeArgs);
             off += 4;
             RTListForEach(&pProbe->ArgHead, pArg, VTGARG, ListEntry)
