@@ -607,9 +607,9 @@ static RTEXITCODE generateAssembly(PSCMSTREAM pStrm)
             ScmStreamPrintf(pStrm,
                             "    ; off=%u\n"
                             "    db   %2u     ; Argument count\n"
-                            "    db   %u      ; fHaveLargeArgs"
+                            "    db   %u      ; fHaveLargeArgs\n"
                             "    db  0, 0    ; Reserved\n"
-                            , off, pProbe->cArgs, pProbe->fHaveLargeArgs);
+                            , off, pProbe->cArgs, (int)pProbe->fHaveLargeArgs);
             off += 4;
             RTListForEach(&pProbe->ArgHead, pArg, VTGARG, ListEntry)
             {
@@ -1772,7 +1772,7 @@ static RTEXITCODE parseProbe(PSCMSTREAM pStrm, PVTGPROVIDER pProv)
         return parseError(pStrm, 0, "Out of memory");
     RTListInit(&pProbe->ArgHead);
     RTListAppend(&pProv->ProbeHead, &pProbe->ListEntry);
-    pProbe->offArgList = UINT32_MAX;
+    pProbe->offArgList     = UINT32_MAX;
     pProbe->pszMangledName = RTStrDupN(pszProbe, cchProbe);
     if (!pProbe->pszMangledName)
         return parseError(pStrm, 0, "Out of memory");
