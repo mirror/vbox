@@ -218,7 +218,7 @@ static void     supdrvDtPOps_Provide(void *pvProv, const dtrace_probedesc_t *pDt
     if (pProv->TracerData.DTrace.fZombie)
         return;
 
-    if (pProv->TracerData.DTrace.cProvidedProbes >= pProbeLocEnd - pProbeLoc)
+    if (pProv->TracerData.DTrace.cProvidedProbes >= (uintptr_t)(pProbeLocEnd - pProbeLoc))
         return;
 
      /* Need a buffer for extracting the function names and mangling them in
@@ -450,9 +450,9 @@ static uint64_t supdrvDtPOps_GetArgVal(void *pvProv, dtrace_id_t idProbe, void *
     AssertPtrReturn(pProv->TracerData.DTrace.idProvider, UINT64_MAX);
     PVTGPROBELOC    pProbeLoc = (PVTGPROBELOC)pvProbe;
     AssertPtrReturn(pProbeLoc, UINT64_MAX);
-    PVTGDESCPROBE   pProbe    = (PVTGDESCPROBE)pProbeLoc->pbProbe
+    PVTGDESCPROBE   pProbe    = (PVTGDESCPROBE)pProbeLoc->pbProbe;
     AssertPtrReturn(pProbe, UINT64_MAX);
-    PVTGDESCARGLIST pArgList  = (PVTGDESCPROBE)((uintptr_t)pProv->pHdr->paArgLists + pProbe->offArgList);
+    PVTGDESCARGLIST pArgList  = (PVTGDESCARGLIST)((uintptr_t)pProv->pHdr->paArgLists + pProbe->offArgList);
     AssertPtrReturn(pArgList, UINT64_MAX);
 
     /* Locate the caller of probe_dtrace, . */
@@ -480,13 +480,13 @@ static uint64_t supdrvDtPOps_GetArgVal(void *pvProv, dtrace_id_t idProbe, void *
     {
         /* wonder if this will work... */
         uint32_t off = 0;
-        for (uint32_t i = 5; i < iArg; i++)
+        for (int i = 5; i < iArg; i++)
             if (   (pArgList->aArgs[i].fType & VTG_TYPE_FIXED_SIZED)
                 && (pArgList->aArgs[i].fType & VTG_TYPE_SIZE_MASK) == 8)
                 off++;
         u64Ret = pData->pauStackArgs[iArg - 5 + off];
         if (   (pArgList->aArgs[iArg].fType & VTG_TYPE_FIXED_SIZED)
-            && (pArgList->aArgs[iArg].fType & VTG_TYPE_SIZE_MASK) == 8
+            && (pArgList->aArgs[iArg].fType & VTG_TYPE_SIZE_MASK) == 8 )
                u64Ret |= (uint64_t)pData->pauStackArgs[iArg - 5 + off + 1] << 32;
     }
 #endif
