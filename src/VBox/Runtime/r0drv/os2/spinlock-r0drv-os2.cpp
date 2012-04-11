@@ -76,7 +76,6 @@ RTDECL(int)  RTSpinlockCreate(PRTSPINLOCK pSpinlock, uint32_t fFlags, const char
      */
     pThis->u32Magic     = RTSPINLOCK_MAGIC;
     pThis->fFlags       = fFlags;
-    pThis->fIntSaved    = 0;
     KernAllocSpinLock(&pThis->Spinlock);
     *pSpinlock = pThis;
     return VINF_SUCCESS;
