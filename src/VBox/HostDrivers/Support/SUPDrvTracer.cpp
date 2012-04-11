@@ -333,7 +333,7 @@ static int supdrvVtgValidate(PVTGOBJHDR pVtgHdr, size_t cbVtgObj, const uint8_t 
             switch (pArgList->aArgs[iArg].fType & VTG_TYPE_SIZE_MASK)
             {
                 case 0:
-                    if (!(pArgList->aArgs[iArg].fType & VTG_TYPE_FIXED_SIZED))
+                    if (pArgList->aArgs[iArg].fType & VTG_TYPE_FIXED_SIZED)
                         rc = VERR_SUPDRV_TRACER_BAD_ARG_FLAGS;
                     break;
                 case 1: case 2: case 4: case 8:
