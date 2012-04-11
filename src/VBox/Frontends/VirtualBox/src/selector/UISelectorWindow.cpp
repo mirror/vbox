@@ -32,11 +32,11 @@
 #include "UIUpdateManager.h"
 #include "UIDownloaderUserManual.h"
 #include "UIDownloaderExtensionPack.h"
-#include "UIExportApplianceWzd.h"
 #include "UIIconPool.h"
-#include "UIImportApplianceWzd.h"
-#include "UICloneVMWizard.h"
-#include "UINewVMWzd.h"
+#include "UIWizardNewVM.h"
+#include "UIWizardCloneVM.h"
+#include "UIWizardExportApp.h"
+#include "UIWizardImportApp.h"
 #include "UIVMDesktop.h"
 #include "UIVMListView.h"
 #include "UIVirtualBoxEventHandler.h"
@@ -215,7 +215,7 @@ void UISelectorWindow::sltShowImportApplianceWizard(const QString &strFileName /
 #else /* Q_WS_MAC */
     QString strTmpFile = strFileName;
 #endif /* !Q_WS_MAC */
-    UIImportApplianceWzd wizard(strTmpFile, this);
+    UIWizardImportApp wizard(strTmpFile, this);
     if (strFileName.isEmpty() || wizard.isValid())
         wizard.exec();
 }
@@ -231,7 +231,7 @@ void UISelectorWindow::sltShowExportApplianceWizard()
     for (int i = 0; i < items.size(); ++i)
         names << items[i]->name();
     /* Show Export Appliance wizard: */
-    UIExportApplianceWzd wizard(this, names);
+    UIWizardExportApp wizard(this, names);
     wizard.exec();
 }
 
@@ -270,8 +270,8 @@ void UISelectorWindow::sltPerformExit()
 
 void UISelectorWindow::sltShowNewMachineWizard()
 {
-    /* Show New Machine wizard: */
-    UINewVMWzd wizard(this);
+    /* Show New VM wizard: */
+    UIWizardNewVM wizard(this);
     wizard.exec();
 }
 
@@ -374,8 +374,8 @@ void UISelectorWindow::sltShowCloneMachineWizard()
     UIVMItem *pItem = m_pVMListView->currentItem();
     AssertMsgReturnVoid(pItem, ("Current item should be selected!\n"));
 
-    /* Show clone VM wizard: */
-    UICloneVMWizard wizard(this, pItem->machine());
+    /* Show Clone VM wizard: */
+    UIWizardCloneVM wizard(this, pItem->machine());
     wizard.exec();
 }
 

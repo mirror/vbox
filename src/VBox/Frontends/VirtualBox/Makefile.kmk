@@ -161,12 +161,14 @@ VBOX_GUI_INC_DIRS = \
 	./src/settings/global \
 	./src/settings/machine \
 	./src/widgets \
+	./src/wizards \
+	./src/wizards/newvm \
+	./src/wizards/newvd \
 	./src/wizards/clonevm \
+	./src/wizards/clonevd \
 	./src/wizards/exportappliance \
-	./src/wizards/firstrun \
 	./src/wizards/importappliance \
-	./src/wizards/newhd \
-	./src/wizards/newvm
+	./src/wizards/firstrun
 
 VirtualBox_INCS = \
 	$(VBOX_GUI_INC_DIRS) \
@@ -263,7 +265,6 @@ VirtualBox_QT_MOCHDRS = \
 	src/extensions/QITreeView.h \
 	src/extensions/QITreeWidget.h \
 	src/extensions/QIWidgetValidator.h \
-	src/extensions/QIWizard.h \
 	src/globals/UIActionPool.h \
 	src/globals/UIExtraDataEventHandler.h \
 	src/globals/UIMainEventListener.h \
@@ -355,12 +356,41 @@ VirtualBox_QT_MOCHDRS = \
 	src/widgets/VBoxOSTypeSelectorButton.h \
 	src/widgets/VBoxOSTypeSelectorWidget.h \
 	src/widgets/VBoxWarningPane.h \
-	src/wizards/clonevm/UICloneVMWizard.h \
-	src/wizards/exportappliance/UIExportApplianceWzd.h \
-	src/wizards/firstrun/UIFirstRunWzd.h \
-	src/wizards/importappliance/UIImportApplianceWzd.h \
-	src/wizards/newhd/UINewHDWizard.h \
-	src/wizards/newvm/UINewVMWzd.h
+	src/wizards/UIWizard.h \
+	src/wizards/UIWizardPage.h \
+	src/wizards/newvm/UIWizardNewVM.h \
+	src/wizards/newvm/UIWizardNewVMPageBasic1.h \
+	src/wizards/newvm/UIWizardNewVMPageBasic2.h \
+	src/wizards/newvm/UIWizardNewVMPageBasic3.h \
+	src/wizards/newvm/UIWizardNewVMPageBasic4.h \
+	src/wizards/newvm/UIWizardNewVMPageBasic5.h \
+	src/wizards/newvd/UIWizardNewVD.h \
+	src/wizards/newvd/UIWizardNewVDPageBasic1.h \
+	src/wizards/newvd/UIWizardNewVDPageBasic2.h \
+	src/wizards/newvd/UIWizardNewVDPageBasic3.h \
+	src/wizards/newvd/UIWizardNewVDPageBasic4.h \
+	src/wizards/clonevm/UIWizardCloneVM.h \
+	src/wizards/clonevm/UIWizardCloneVMPageBasic1.h \
+	src/wizards/clonevm/UIWizardCloneVMPageBasic2.h \
+	src/wizards/clonevm/UIWizardCloneVMPageBasic3.h \
+	src/wizards/clonevd/UIWizardCloneVD.h \
+	src/wizards/clonevd/UIWizardCloneVDPageBasic1.h \
+	src/wizards/clonevd/UIWizardCloneVDPageBasic2.h \
+	src/wizards/clonevd/UIWizardCloneVDPageBasic3.h \
+	src/wizards/clonevd/UIWizardCloneVDPageBasic4.h \
+	src/wizards/clonevd/UIWizardCloneVDPageBasic5.h \
+	src/wizards/exportappliance/UIWizardExportApp.h \
+	src/wizards/exportappliance/UIWizardExportAppPageBasic1.h \
+	src/wizards/exportappliance/UIWizardExportAppPageBasic2.h \
+	src/wizards/exportappliance/UIWizardExportAppPageBasic3.h \
+	src/wizards/exportappliance/UIWizardExportAppPageBasic4.h \
+	src/wizards/importappliance/UIWizardImportApp.h \
+	src/wizards/importappliance/UIWizardImportAppPageBasic1.h \
+	src/wizards/importappliance/UIWizardImportAppPageBasic2.h \
+	src/wizards/firstrun/UIWizardFirstRun.h \
+	src/wizards/firstrun/UIWizardFirstRunPageBasic1.h \
+	src/wizards/firstrun/UIWizardFirstRunPageBasic2.h \
+	src/wizards/firstrun/UIWizardFirstRunPageBasic3.h
 
 VirtualBox_QT_MOCHDRS.darwin += \
     src/platform/darwin/UIWindowMenuManager.h
@@ -383,7 +413,7 @@ VirtualBox_QT_MOCSRCS = \
 	src/settings/UISettingsDialogSpecific.cpp \
 	src/settings/machine/UIMachineSettingsPortForwardingDlg.cpp \
 	src/settings/machine/UIMachineSettingsStorage.cpp \
-	src/wizards/newhd/UINewHDWizard.cpp
+	src/wizards/importappliance/UIWizardImportApp.cpp
 
 VirtualBox_QT_MOCSRCS.darwin += \
     src/platform/darwin/UIWindowMenuManager.cpp
@@ -429,7 +459,6 @@ VirtualBox_SOURCES = \
 	src/extensions/QITreeView.cpp \
 	src/extensions/QITreeWidget.cpp \
 	src/extensions/QIWidgetValidator.cpp \
-	src/extensions/QIWizard.cpp \
 	src/globals/COMDefs.cpp \
 	src/globals/UIActionPool.cpp \
 	src/globals/UIExtraDataEventHandler.cpp \
@@ -536,12 +565,41 @@ VirtualBox_SOURCES = \
 	src/widgets/VBoxOSTypeSelectorButton.cpp \
 	src/widgets/VBoxOSTypeSelectorWidget.cpp \
 	src/widgets/VBoxWarningPane.cpp \
-	src/wizards/clonevm/UICloneVMWizard.cpp \
-	src/wizards/exportappliance/UIExportApplianceWzd.cpp \
-	src/wizards/firstrun/UIFirstRunWzd.cpp \
-	src/wizards/importappliance/UIImportApplianceWzd.cpp \
-	src/wizards/newhd/UINewHDWizard.cpp \
-	src/wizards/newvm/UINewVMWzd.cpp
+	src/wizards/UIWizard.cpp \
+	src/wizards/UIWizardPage.cpp \
+	src/wizards/newvm/UIWizardNewVM.cpp \
+	src/wizards/newvm/UIWizardNewVMPageBasic1.cpp \
+	src/wizards/newvm/UIWizardNewVMPageBasic2.cpp \
+	src/wizards/newvm/UIWizardNewVMPageBasic3.cpp \
+	src/wizards/newvm/UIWizardNewVMPageBasic4.cpp \
+	src/wizards/newvm/UIWizardNewVMPageBasic5.cpp \
+	src/wizards/newvd/UIWizardNewVD.cpp \
+	src/wizards/newvd/UIWizardNewVDPageBasic1.cpp \
+	src/wizards/newvd/UIWizardNewVDPageBasic2.cpp \
+	src/wizards/newvd/UIWizardNewVDPageBasic3.cpp \
+	src/wizards/newvd/UIWizardNewVDPageBasic4.cpp \
+	src/wizards/clonevm/UIWizardCloneVM.cpp \
+	src/wizards/clonevm/UIWizardCloneVMPageBasic1.cpp \
+	src/wizards/clonevm/UIWizardCloneVMPageBasic2.cpp \
+	src/wizards/clonevm/UIWizardCloneVMPageBasic3.cpp \
+	src/wizards/clonevd/UIWizardCloneVD.cpp \
+	src/wizards/clonevd/UIWizardCloneVDPageBasic1.cpp \
+	src/wizards/clonevd/UIWizardCloneVDPageBasic2.cpp \
+	src/wizards/clonevd/UIWizardCloneVDPageBasic3.cpp \
+	src/wizards/clonevd/UIWizardCloneVDPageBasic4.cpp \
+	src/wizards/clonevd/UIWizardCloneVDPageBasic5.cpp \
+	src/wizards/exportappliance/UIWizardExportApp.cpp \
+	src/wizards/exportappliance/UIWizardExportAppPageBasic1.cpp \
+	src/wizards/exportappliance/UIWizardExportAppPageBasic2.cpp \
+	src/wizards/exportappliance/UIWizardExportAppPageBasic3.cpp \
+	src/wizards/exportappliance/UIWizardExportAppPageBasic4.cpp \
+	src/wizards/importappliance/UIWizardImportApp.cpp \
+	src/wizards/importappliance/UIWizardImportAppPageBasic1.cpp \
+	src/wizards/importappliance/UIWizardImportAppPageBasic2.cpp \
+	src/wizards/firstrun/UIWizardFirstRun.cpp \
+	src/wizards/firstrun/UIWizardFirstRunPageBasic1.cpp \
+	src/wizards/firstrun/UIWizardFirstRunPageBasic2.cpp \
+	src/wizards/firstrun/UIWizardFirstRunPageBasic3.cpp
 
 VirtualBox_SOURCES.win += \
 	src/runtime/UIFrameBufferDirectDraw.cpp

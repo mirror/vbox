@@ -26,7 +26,7 @@
 #include "VBoxSnapshotDetailsDlg.h"
 #include "VBoxSnapshotsWgt.h"
 #include "VBoxTakeSnapshotDlg.h"
-#include "UICloneVMWizard.h"
+#include "UIWizardCloneVM.h"
 #include "UIToolBar.h"
 #include "UIVirtualBoxEventHandler.h"
 #include "UISelectorShortcuts.h"
@@ -696,7 +696,8 @@ void VBoxSnapshotsWgt::sltCloneSnapshot()
     }
     AssertReturn(!machine.isNull(), (void)0);
 
-    UICloneVMWizard wzd(this, machine, snapshot);
+    /* Show Clone VM wizard: */
+    UIWizardCloneVM wzd(this, machine, snapshot);
     wzd.exec();
 }
 

@@ -48,28 +48,6 @@ FORMS = \
     src/settings/machine/UIMachineSettingsUSBFilterDetails.ui \
     src/settings/machine/UIMachineSettingsSF.ui \
     src/settings/machine/UIMachineSettingsSFDetails.ui \
-    src/wizards/clonevm/UICloneVMWizardPage1.ui \
-    src/wizards/clonevm/UICloneVMWizardPage2.ui \
-    src/wizards/clonevm/UICloneVMWizardPage3.ui \
-    src/wizards/newvm/UINewVMWzdPage1.ui \
-    src/wizards/newvm/UINewVMWzdPage2.ui \
-    src/wizards/newvm/UINewVMWzdPage3.ui \
-    src/wizards/newvm/UINewVMWzdPage4.ui \
-    src/wizards/newvm/UINewVMWzdPage5.ui \
-    src/wizards/newhd/UINewHDWizardPageWelcome.ui \
-    src/wizards/newhd/UINewHDWizardPageFormat.ui \
-    src/wizards/newhd/UINewHDWizardPageVariant.ui \
-    src/wizards/newhd/UINewHDWizardPageOptions.ui \
-    src/wizards/newhd/UINewHDWizardPageSummary.ui \
-    src/wizards/firstrun/UIFirstRunWzdPage1.ui \
-    src/wizards/firstrun/UIFirstRunWzdPage2.ui \
-    src/wizards/firstrun/UIFirstRunWzdPage3.ui \
-    src/wizards/exportappliance/UIExportApplianceWzdPage1.ui \
-    src/wizards/exportappliance/UIExportApplianceWzdPage2.ui \
-    src/wizards/exportappliance/UIExportApplianceWzdPage3.ui \
-    src/wizards/exportappliance/UIExportApplianceWzdPage4.ui \
-    src/wizards/importappliance/UIImportApplianceWzdPage1.ui \
-    src/wizards/importappliance/UIImportApplianceWzdPage2.ui \
     src/widgets/UIApplianceEditorWidget.ui \
     src/selector/VBoxSnapshotsWgt.ui \
     src/runtime/UIVMCloseDialog.ui

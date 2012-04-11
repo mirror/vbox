@@ -23,6 +23,7 @@
 #include <QTimer>
 
 /* Local includes */
+#include "VBoxGlobal.h"
 #include "UISession.h"
 #include "UIMachine.h"
 #include "UIActionPoolRuntime.h"
@@ -30,7 +31,7 @@
 #include "UIMachineWindow.h"
 #include "UIMachineMenuBar.h"
 #include "UIMessageCenter.h"
-#include "UIFirstRunWzd.h"
+#include "UIWizardFirstRun.h"
 #include "UIConsoleEventHandler.h"
 #include "UIFrameBuffer.h"
 #ifdef VBOX_WITH_VIDEOHWACCEL
@@ -1042,10 +1043,10 @@ void UISession::preparePowerUp()
     if (vboxGlobal().settings().autoCapture())
         msgCenter().remindAboutAutoCapture();
 
-    /* Shows first run wizard if necessary: */
+    /* Shows First Run wizard if necessary: */
     const CMachine &machine = session().GetMachine();
-    /* Check if we are in teleportation waiting mode. In that case no first run
-     * wizard is necessary. */
+    /* Check if we are in teleportation waiting mode.
+     * In that case no first run wizard is necessary. */
     m_machineState = machine.GetState();
     if (   isFirstTimeStarted()
         && !((   m_machineState == KMachineState_PoweredOff
@@ -1053,7 +1054,7 @@ void UISession::preparePowerUp()
               || m_machineState == KMachineState_Teleported)
              && machine.GetTeleporterEnabled()))
     {
-        UIFirstRunWzd wzd(mainMachineWindow(), session().GetMachine());
+        UIWizardFirstRun wzd(mainMachineWindow(), session().GetMachine());
         wzd.exec();
     }
 }

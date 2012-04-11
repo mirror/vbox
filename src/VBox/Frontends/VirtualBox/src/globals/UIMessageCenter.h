@@ -347,6 +347,8 @@ public:
     bool confirmVMACPIShutdown(QWidget *pParent = 0);
     bool confirmVMPowerOff(QWidget *pParent = 0);
 
+    void warnAboutCannotRemoveMachineFolder(QWidget *pParent, const QString &strFolderName);
+    void warnAboutCannotRewriteMachineFolder(QWidget *pParent, const QString &strFolderName);
     void warnAboutCannotCreateMachineFolder(QWidget *pParent, const QString &strFolderName);
     bool confirmHardDisklessMachine(QWidget *pParent);
 
