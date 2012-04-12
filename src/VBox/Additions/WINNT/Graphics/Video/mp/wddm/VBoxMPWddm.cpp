@@ -973,6 +973,7 @@ static int vboxWddmFreeDisplays(PVBOXMP_DEVEXT pDevExt)
     return rc;
 }
 
+
 /* driver callbacks */
 NTSTATUS DxgkDdiAddDevice(
     IN CONST PDEVICE_OBJECT PhysicalDeviceObject,
@@ -1061,9 +1062,6 @@ NTSTATUS DxgkDdiStartDevice(
             Status = vboxWddmPickResources(pDevExt, &DeviceInfo, &HwRc);
             if (Status == STATUS_SUCCESS)
             {
-                /* Initialize VBoxGuest library, which is used for requests which go through VMMDev. */
-                VbglInit ();
-
                 /* Guest supports only HGSMI, the old VBVA via VMMDev is not supported.
                  * The host will however support both old and new interface to keep compatibility
                  * with old guest additions.
@@ -1107,7 +1105,6 @@ NTSTATUS DxgkDdiStartDevice(
                 {
                     LOGREL(("HGSMI failed to initialize, returning err"));
 
-                    VbglTerminate();
                     /* @todo: report a better status */
                     Status = STATUS_UNSUCCESSFUL;
                 }
@@ -1164,8 +1161,6 @@ NTSTATUS DxgkDdiStopDevice(
     AssertRC(rc);
     if (RT_SUCCESS(rc))
     {
-        VbglTerminate();
-
         vboxWddmVGuidFree(pDevExt);
 
         /* revert back to the state we were right after the DxgkDdiAddDevice */
@@ -1653,6 +1648,8 @@ VOID DxgkDdiUnload(
 
     vboxVDbgBreakFv();
 
+    VbglTerminate();
+
     VBoxWddmVrTerm();
 
     PRTLOGGER pLogger = RTLogRelSetDefaultInstance(NULL);
@@ -1859,11 +1856,6 @@ NTSTATUS APIENTRY DxgkDdiCreateDevice(
     pCreateDevice->hDevice = pDevice;
     if (pCreateDevice->Flags.SystemDevice)
         pDevice->enmType = VBOXWDDM_DEVICE_TYPE_SYSTEM;
-//    else
-//    {
-//        AssertBreakpoint(); /* we do not support custom contexts for now */
-//        LOGREL(("we do not support custom devices for now, hAdapter (0x%x)", hAdapter));
-//    }
 
     pDevice->pAdapter = pDevExt;
     pDevice->hDevice = pCreateDevice->hDevice;
@@ -3862,7 +3854,7 @@ DxgkDdiEscape(
                 {
                     /* this is true due to the above condition */
                     Assert(pEscape->PrivateDriverDataSize > RT_OFFSETOF(VBOXDISPIFESCAPE_CRHGSMICTLCON_CALL, CallInfo));
-                    int rc = VBoxMpCrCtlConCallUserData(pDevExt, &pCall->CallInfo, pEscape->PrivateDriverDataSize - RT_OFFSETOF(VBOXDISPIFESCAPE_CRHGSMICTLCON_CALL, CallInfo));
+                    int rc = VBoxMpCrCtlConCallUserData(&pDevExt->CrCtlCon, &pCall->CallInfo, pEscape->PrivateDriverDataSize - RT_OFFSETOF(VBOXDISPIFESCAPE_CRHGSMICTLCON_CALL, CallInfo));
                     if (RT_SUCCESS(rc))
                         Status = STATUS_SUCCESS;
                     else
@@ -5839,7 +5831,7 @@ DxgkDdiCreateContext(
                                     int rc = VINF_SUCCESS;
                                     if (pInfo->crVersionMajor || pInfo->crVersionMinor)
                                     {
-                                        rc = VBoxMpCrCtlConConnect(pDevExt,
+                                        rc = VBoxMpCrCtlConConnect(&pDevExt->CrCtlCon,
                                             pInfo->crVersionMajor, pInfo->crVersionMinor,
                                             &pContext->u32CrConClientID);
                                         if (!RT_SUCCESS(rc))
@@ -5873,7 +5865,7 @@ DxgkDdiCreateContext(
                             int rc = VINF_SUCCESS;
                             if (pInfo->crVersionMajor || pInfo->crVersionMinor)
                             {
-                                rc = VBoxMpCrCtlConConnect(pDevExt,
+                                rc = VBoxMpCrCtlConConnect(&pDevExt->CrCtlCon,
                                     pInfo->crVersionMajor, pInfo->crVersionMinor,
                                     &pContext->u32CrConClientID);
                                 if (!RT_SUCCESS(rc))
@@ -5951,7 +5943,7 @@ DxgkDdiDestroyContext(
             Assert(cContexts < UINT32_MAX/2);
             if (pContext->u32CrConClientID)
             {
-                VBoxMpCrCtlConDisconnect(pDevExt, pContext->u32CrConClientID);
+                VBoxMpCrCtlConDisconnect(&pDevExt->CrCtlCon, pContext->u32CrConClientID);
             }
             break;
         }
@@ -6037,29 +6029,11 @@ DriverEntry(
 
     vboxVDbgBreakFv();
 
-/*
-    int irc = RTR0Init(0);
-    if (RT_FAILURE(irc))
-    {
-        LOGREL(("VBoxMP::failed to init IPRT (rc=%#x)", irc));
-        return ERROR_INVALID_FUNCTION;
-    }
-*/
-
 #ifdef DEBUG_misha
     RTLogGroupSettings(0, "+default.e.l.f.l2.l3");
 #endif
 
     LOGREL(("Built %s %s", __DATE__, __TIME__));
-
-    NTSTATUS Status = VBoxWddmVrInit();
-    if (!NT_SUCCESS(Status))
-    {
-        WARN(("VBoxWddmVrInit failed!"));
-        return Status;
-    }
-
-    DRIVER_INITIALIZATION_DATA DriverInitializationData = {'\0'};
 
     if (! ARGUMENT_PRESENT(DriverObject) ||
         ! ARGUMENT_PRESENT(RegistryPath))
@@ -6067,85 +6041,176 @@ DriverEntry(
         return STATUS_INVALID_PARAMETER;
     }
 
-    // Fill in the DriverInitializationData structure and call DxgkInitialize()
-    DriverInitializationData.Version = DXGKDDI_INTERFACE_VERSION;
+    ULONG major, minor, build;
+    BOOLEAN checkedBuild = PsGetVersion(&major, &minor, &build, NULL);
+    BOOLEAN f3Drequired = FALSE;
 
-    DriverInitializationData.DxgkDdiAddDevice = DxgkDdiAddDevice;
-    DriverInitializationData.DxgkDdiStartDevice = DxgkDdiStartDevice;
-    DriverInitializationData.DxgkDdiStopDevice = DxgkDdiStopDevice;
-    DriverInitializationData.DxgkDdiRemoveDevice = DxgkDdiRemoveDevice;
-    DriverInitializationData.DxgkDdiDispatchIoRequest = DxgkDdiDispatchIoRequest;
-    DriverInitializationData.DxgkDdiInterruptRoutine = DxgkDdiInterruptRoutine;
-    DriverInitializationData.DxgkDdiDpcRoutine = DxgkDdiDpcRoutine;
-    DriverInitializationData.DxgkDdiQueryChildRelations = DxgkDdiQueryChildRelations;
-    DriverInitializationData.DxgkDdiQueryChildStatus = DxgkDdiQueryChildStatus;
-    DriverInitializationData.DxgkDdiQueryDeviceDescriptor = DxgkDdiQueryDeviceDescriptor;
-    DriverInitializationData.DxgkDdiSetPowerState = DxgkDdiSetPowerState;
-    DriverInitializationData.DxgkDdiNotifyAcpiEvent = DxgkDdiNotifyAcpiEvent;
-    DriverInitializationData.DxgkDdiResetDevice = DxgkDdiResetDevice;
-    DriverInitializationData.DxgkDdiUnload = DxgkDdiUnload;
-    DriverInitializationData.DxgkDdiQueryInterface = DxgkDdiQueryInterface;
-    DriverInitializationData.DxgkDdiControlEtwLogging = DxgkDdiControlEtwLogging;
+    LOGREL(("OsVersion( %d, %d, %d )", major, minor, build));
 
-    DriverInitializationData.DxgkDdiQueryAdapterInfo = DxgkDdiQueryAdapterInfo;
-    DriverInitializationData.DxgkDdiCreateDevice = DxgkDdiCreateDevice;
-    DriverInitializationData.DxgkDdiCreateAllocation = DxgkDdiCreateAllocation;
-    DriverInitializationData.DxgkDdiDestroyAllocation = DxgkDdiDestroyAllocation;
-    DriverInitializationData.DxgkDdiDescribeAllocation = DxgkDdiDescribeAllocation;
-    DriverInitializationData.DxgkDdiGetStandardAllocationDriverData = DxgkDdiGetStandardAllocationDriverData;
-    DriverInitializationData.DxgkDdiAcquireSwizzlingRange = DxgkDdiAcquireSwizzlingRange;
-    DriverInitializationData.DxgkDdiReleaseSwizzlingRange = DxgkDdiReleaseSwizzlingRange;
-    DriverInitializationData.DxgkDdiPatch = DxgkDdiPatch;
-    DriverInitializationData.DxgkDdiSubmitCommand = DxgkDdiSubmitCommand;
-    DriverInitializationData.DxgkDdiPreemptCommand = DxgkDdiPreemptCommand;
-    DriverInitializationData.DxgkDdiBuildPagingBuffer = DxgkDdiBuildPagingBuffer;
-    DriverInitializationData.DxgkDdiSetPalette = DxgkDdiSetPalette;
-    DriverInitializationData.DxgkDdiSetPointerPosition = DxgkDdiSetPointerPosition;
-    DriverInitializationData.DxgkDdiSetPointerShape = DxgkDdiSetPointerShape;
-    DriverInitializationData.DxgkDdiResetFromTimeout = DxgkDdiResetFromTimeout;
-    DriverInitializationData.DxgkDdiRestartFromTimeout = DxgkDdiRestartFromTimeout;
-    DriverInitializationData.DxgkDdiEscape = DxgkDdiEscape;
-    DriverInitializationData.DxgkDdiCollectDbgInfo = DxgkDdiCollectDbgInfo;
-    DriverInitializationData.DxgkDdiQueryCurrentFence = DxgkDdiQueryCurrentFence;
-    DriverInitializationData.DxgkDdiIsSupportedVidPn = DxgkDdiIsSupportedVidPn;
-    DriverInitializationData.DxgkDdiRecommendFunctionalVidPn = DxgkDdiRecommendFunctionalVidPn;
-    DriverInitializationData.DxgkDdiEnumVidPnCofuncModality = DxgkDdiEnumVidPnCofuncModality;
-    DriverInitializationData.DxgkDdiSetVidPnSourceAddress = DxgkDdiSetVidPnSourceAddress;
-    DriverInitializationData.DxgkDdiSetVidPnSourceVisibility = DxgkDdiSetVidPnSourceVisibility;
-    DriverInitializationData.DxgkDdiCommitVidPn = DxgkDdiCommitVidPn;
-    DriverInitializationData.DxgkDdiUpdateActiveVidPnPresentPath = DxgkDdiUpdateActiveVidPnPresentPath;
-    DriverInitializationData.DxgkDdiRecommendMonitorModes = DxgkDdiRecommendMonitorModes;
-    DriverInitializationData.DxgkDdiRecommendVidPnTopology = DxgkDdiRecommendVidPnTopology;
-    DriverInitializationData.DxgkDdiGetScanLine = DxgkDdiGetScanLine;
-    DriverInitializationData.DxgkDdiStopCapture = DxgkDdiStopCapture;
-    DriverInitializationData.DxgkDdiControlInterrupt = DxgkDdiControlInterrupt;
-    DriverInitializationData.DxgkDdiCreateOverlay = DxgkDdiCreateOverlay;
+    NTSTATUS Status = STATUS_SUCCESS;
+    /* Initialize VBoxGuest library, which is used for requests which go through VMMDev. */
+    int rc = VbglInit();
+    if (RT_SUCCESS(rc))
+    {
+        if (major > 6)
+        {
+            WARN(("Unknow win version, newer major release, assuming 3D is required"));
+            f3Drequired = TRUE;
+        }
+        else if (major == 6)
+        {
+            if (minor > 2)
+            {
+                WARN(("Unknow win version, newer minor release, assuming 3D is required"));
+                f3Drequired = TRUE;
+            }
+            else if (minor == 2)
+            {
+                LOG(("3D is required!"));
+                f3Drequired = TRUE;
+            }
+            else
+            {
+                LOG(("3D is NOT required!"));
+                f3Drequired = FALSE;
+            }
+        }
+        else
+        {
+            WARN(("Unsupported OLDER win version, ignore and assume 3D is NOT required"));
+            f3Drequired = FALSE;
+        }
 
-    DriverInitializationData.DxgkDdiDestroyDevice = DxgkDdiDestroyDevice;
-    DriverInitializationData.DxgkDdiOpenAllocation = DxgkDdiOpenAllocation;
-    DriverInitializationData.DxgkDdiCloseAllocation = DxgkDdiCloseAllocation;
-    DriverInitializationData.DxgkDdiRender = DxgkDdiRender;
-    DriverInitializationData.DxgkDdiPresent = DxgkDdiPresent;
+        Status = STATUS_SUCCESS;
 
-    DriverInitializationData.DxgkDdiUpdateOverlay = DxgkDdiUpdateOverlay;
-    DriverInitializationData.DxgkDdiFlipOverlay = DxgkDdiFlipOverlay;
-    DriverInitializationData.DxgkDdiDestroyOverlay = DxgkDdiDestroyOverlay;
+        if (f3Drequired)
+        {
+            LOG(("3D is required, doing the 3D check.."));
+            if (!VBoxMpCrCtlConIs3DSupported())
+            {
+                LOGREL(("3D is NOT supported by the host, but is required for the current guest version.."));
+                Status = STATUS_UNSUCCESSFUL;
+            }
+        }
 
-    DriverInitializationData.DxgkDdiCreateContext = DxgkDdiCreateContext;
-    DriverInitializationData.DxgkDdiDestroyContext = DxgkDdiDestroyContext;
+        if (NT_SUCCESS(Status))
+        {
+            Status = VBoxWddmVrInit();
+            if (NT_SUCCESS(Status))
+            {
+                DRIVER_INITIALIZATION_DATA DriverInitializationData = {'\0'};
 
-    DriverInitializationData.DxgkDdiLinkDevice = NULL; //DxgkDdiLinkDevice;
-    DriverInitializationData.DxgkDdiSetDisplayPrivateDriverFormat = DxgkDdiSetDisplayPrivateDriverFormat;
-//#if (DXGKDDI_INTERFACE_VERSION >= DXGKDDI_INTERFACE_VERSION_WIN7)
-//# error port to Win7 DDI
-//    DriverInitializationData.DxgkDdiRenderKm  = DxgkDdiRenderKm;
-//    DriverInitializationData.DxgkDdiRestartFromTimeout  = DxgkDdiRestartFromTimeout;
-//    DriverInitializationData.DxgkDdiSetVidPnSourceVisibility  = DxgkDdiSetVidPnSourceVisibility;
-//    DriverInitializationData.DxgkDdiUpdateActiveVidPnPresentPath  = DxgkDdiUpdateActiveVidPnPresentPath;
-//    DriverInitializationData.DxgkDdiQueryVidPnHWCapability  = DxgkDdiQueryVidPnHWCapability;
-//#endif
+                // Fill in the DriverInitializationData structure and call DxgkInitialize()
+                DriverInitializationData.Version = DXGKDDI_INTERFACE_VERSION;
 
-    return DxgkInitialize(DriverObject,
-                          RegistryPath,
-                          &DriverInitializationData);
+                DriverInitializationData.DxgkDdiAddDevice = DxgkDdiAddDevice;
+                DriverInitializationData.DxgkDdiStartDevice = DxgkDdiStartDevice;
+                DriverInitializationData.DxgkDdiStopDevice = DxgkDdiStopDevice;
+                DriverInitializationData.DxgkDdiRemoveDevice = DxgkDdiRemoveDevice;
+                DriverInitializationData.DxgkDdiDispatchIoRequest = DxgkDdiDispatchIoRequest;
+                DriverInitializationData.DxgkDdiInterruptRoutine = DxgkDdiInterruptRoutine;
+                DriverInitializationData.DxgkDdiDpcRoutine = DxgkDdiDpcRoutine;
+                DriverInitializationData.DxgkDdiQueryChildRelations = DxgkDdiQueryChildRelations;
+                DriverInitializationData.DxgkDdiQueryChildStatus = DxgkDdiQueryChildStatus;
+                DriverInitializationData.DxgkDdiQueryDeviceDescriptor = DxgkDdiQueryDeviceDescriptor;
+                DriverInitializationData.DxgkDdiSetPowerState = DxgkDdiSetPowerState;
+                DriverInitializationData.DxgkDdiNotifyAcpiEvent = DxgkDdiNotifyAcpiEvent;
+                DriverInitializationData.DxgkDdiResetDevice = DxgkDdiResetDevice;
+                DriverInitializationData.DxgkDdiUnload = DxgkDdiUnload;
+                DriverInitializationData.DxgkDdiQueryInterface = DxgkDdiQueryInterface;
+                DriverInitializationData.DxgkDdiControlEtwLogging = DxgkDdiControlEtwLogging;
+
+                DriverInitializationData.DxgkDdiQueryAdapterInfo = DxgkDdiQueryAdapterInfo;
+                DriverInitializationData.DxgkDdiCreateDevice = DxgkDdiCreateDevice;
+                DriverInitializationData.DxgkDdiCreateAllocation = DxgkDdiCreateAllocation;
+                DriverInitializationData.DxgkDdiDestroyAllocation = DxgkDdiDestroyAllocation;
+                DriverInitializationData.DxgkDdiDescribeAllocation = DxgkDdiDescribeAllocation;
+                DriverInitializationData.DxgkDdiGetStandardAllocationDriverData = DxgkDdiGetStandardAllocationDriverData;
+                DriverInitializationData.DxgkDdiAcquireSwizzlingRange = DxgkDdiAcquireSwizzlingRange;
+                DriverInitializationData.DxgkDdiReleaseSwizzlingRange = DxgkDdiReleaseSwizzlingRange;
+                DriverInitializationData.DxgkDdiPatch = DxgkDdiPatch;
+                DriverInitializationData.DxgkDdiSubmitCommand = DxgkDdiSubmitCommand;
+                DriverInitializationData.DxgkDdiPreemptCommand = DxgkDdiPreemptCommand;
+                DriverInitializationData.DxgkDdiBuildPagingBuffer = DxgkDdiBuildPagingBuffer;
+                DriverInitializationData.DxgkDdiSetPalette = DxgkDdiSetPalette;
+                DriverInitializationData.DxgkDdiSetPointerPosition = DxgkDdiSetPointerPosition;
+                DriverInitializationData.DxgkDdiSetPointerShape = DxgkDdiSetPointerShape;
+                DriverInitializationData.DxgkDdiResetFromTimeout = DxgkDdiResetFromTimeout;
+                DriverInitializationData.DxgkDdiRestartFromTimeout = DxgkDdiRestartFromTimeout;
+                DriverInitializationData.DxgkDdiEscape = DxgkDdiEscape;
+                DriverInitializationData.DxgkDdiCollectDbgInfo = DxgkDdiCollectDbgInfo;
+                DriverInitializationData.DxgkDdiQueryCurrentFence = DxgkDdiQueryCurrentFence;
+                DriverInitializationData.DxgkDdiIsSupportedVidPn = DxgkDdiIsSupportedVidPn;
+                DriverInitializationData.DxgkDdiRecommendFunctionalVidPn = DxgkDdiRecommendFunctionalVidPn;
+                DriverInitializationData.DxgkDdiEnumVidPnCofuncModality = DxgkDdiEnumVidPnCofuncModality;
+                DriverInitializationData.DxgkDdiSetVidPnSourceAddress = DxgkDdiSetVidPnSourceAddress;
+                DriverInitializationData.DxgkDdiSetVidPnSourceVisibility = DxgkDdiSetVidPnSourceVisibility;
+                DriverInitializationData.DxgkDdiCommitVidPn = DxgkDdiCommitVidPn;
+                DriverInitializationData.DxgkDdiUpdateActiveVidPnPresentPath = DxgkDdiUpdateActiveVidPnPresentPath;
+                DriverInitializationData.DxgkDdiRecommendMonitorModes = DxgkDdiRecommendMonitorModes;
+                DriverInitializationData.DxgkDdiRecommendVidPnTopology = DxgkDdiRecommendVidPnTopology;
+                DriverInitializationData.DxgkDdiGetScanLine = DxgkDdiGetScanLine;
+                DriverInitializationData.DxgkDdiStopCapture = DxgkDdiStopCapture;
+                DriverInitializationData.DxgkDdiControlInterrupt = DxgkDdiControlInterrupt;
+                DriverInitializationData.DxgkDdiCreateOverlay = DxgkDdiCreateOverlay;
+
+                DriverInitializationData.DxgkDdiDestroyDevice = DxgkDdiDestroyDevice;
+                DriverInitializationData.DxgkDdiOpenAllocation = DxgkDdiOpenAllocation;
+                DriverInitializationData.DxgkDdiCloseAllocation = DxgkDdiCloseAllocation;
+                DriverInitializationData.DxgkDdiRender = DxgkDdiRender;
+                DriverInitializationData.DxgkDdiPresent = DxgkDdiPresent;
+
+                DriverInitializationData.DxgkDdiUpdateOverlay = DxgkDdiUpdateOverlay;
+                DriverInitializationData.DxgkDdiFlipOverlay = DxgkDdiFlipOverlay;
+                DriverInitializationData.DxgkDdiDestroyOverlay = DxgkDdiDestroyOverlay;
+
+                DriverInitializationData.DxgkDdiCreateContext = DxgkDdiCreateContext;
+                DriverInitializationData.DxgkDdiDestroyContext = DxgkDdiDestroyContext;
+
+                DriverInitializationData.DxgkDdiLinkDevice = NULL; //DxgkDdiLinkDevice;
+                DriverInitializationData.DxgkDdiSetDisplayPrivateDriverFormat = DxgkDdiSetDisplayPrivateDriverFormat;
+        //#if (DXGKDDI_INTERFACE_VERSION >= DXGKDDI_INTERFACE_VERSION_WIN7)
+        //# error port to Win7 DDI
+        //            DriverInitializationData.DxgkDdiRenderKm  = DxgkDdiRenderKm;
+        //            DriverInitializationData.DxgkDdiRestartFromTimeout  = DxgkDdiRestartFromTimeout;
+        //            DriverInitializationData.DxgkDdiSetVidPnSourceVisibility  = DxgkDdiSetVidPnSourceVisibility;
+        //            DriverInitializationData.DxgkDdiUpdateActiveVidPnPresentPath  = DxgkDdiUpdateActiveVidPnPresentPath;
+        //            DriverInitializationData.DxgkDdiQueryVidPnHWCapability  = DxgkDdiQueryVidPnHWCapability;
+        //#endif
+
+                Status = DxgkInitialize(DriverObject,
+                                      RegistryPath,
+                                      &DriverInitializationData);
+                if (NT_SUCCESS(Status))
+                    return Status;
+                VBoxWddmVrTerm();
+            }
+            else
+                WARN(("VBoxWddmVrInit failed, Status(0x%x)", Status));
+        }
+        else
+            LOGREL(("Aborting the video driver load due to 3D support missing"));
+
+        VbglTerminate();
+    }
+    else
+    {
+        WARN(("VbglInit failed, rc(%d)", rc));
+        Status = STATUS_UNSUCCESSFUL;
+    }
+
+    AssertRelease(!NT_SUCCESS(Status));
+
+    PRTLOGGER pLogger = RTLogRelSetDefaultInstance(NULL);
+    if (pLogger)
+    {
+        RTLogDestroy(pLogger);
+    }
+    pLogger = RTLogSetDefaultInstance(NULL);
+    if (pLogger)
+    {
+        RTLogDestroy(pLogger);
+    }
+
+    return Status;
 }

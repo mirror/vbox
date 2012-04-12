@@ -21,11 +21,19 @@
 #include <VBox/VBoxGuestLib.h>
 #include <VBoxGuestR0LibCrOgl.h>
 
-int VBoxMpCrCtlConConnect(struct _VBOXMP_DEVEXT *pDevExt,
+typedef struct VBOXMP_CRCTLCON
+{
+    HVBOXCRCTL hCrCtl;
+    uint32_t cCrCtlRefs;
+} VBOXMP_CRCTLCON, *PVBOXMP_CRCTLCON;
+
+bool VBoxMpCrCtlConIs3DSupported();
+
+int VBoxMpCrCtlConConnect(PVBOXMP_CRCTLCON pCrCtlCon,
         uint32_t crVersionMajor, uint32_t crVersionMinor,
         uint32_t *pu32ClientID);
-int VBoxMpCrCtlConDisconnect(struct _VBOXMP_DEVEXT *pDevExt, uint32_t u32ClientID);
-int VBoxMpCrCtlConCall(struct _VBOXMP_DEVEXT *pDevExt, struct VBoxGuestHGCMCallInfo *pData, uint32_t cbData);
-int VBoxMpCrCtlConCallUserData(struct _VBOXMP_DEVEXT *pDevExt, struct VBoxGuestHGCMCallInfo *pData, uint32_t cbData);
+int VBoxMpCrCtlConDisconnect(PVBOXMP_CRCTLCON pCrCtlCon, uint32_t u32ClientID);
+int VBoxMpCrCtlConCall(PVBOXMP_CRCTLCON pCrCtlCon, struct VBoxGuestHGCMCallInfo *pData, uint32_t cbData);
+int VBoxMpCrCtlConCallUserData(PVBOXMP_CRCTLCON pCrCtlCon, struct VBoxGuestHGCMCallInfo *pData, uint32_t cbData);
 
 #endif /* #ifndef ___VBoxMPCr_h__ */

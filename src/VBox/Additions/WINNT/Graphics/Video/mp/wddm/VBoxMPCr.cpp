@@ -19,48 +19,50 @@
 #include "VBoxMPWddm.h"
 #include "VBoxMPCr.h"
 
+#include <cr_protocol.h>
+
 #include <VBox/HostServices/VBoxCrOpenGLSvc.h>
 
-static int vboxMpCrCtlAddRef(struct _VBOXMP_DEVEXT *pDevExt)
+static int vboxMpCrCtlAddRef(PVBOXMP_CRCTLCON pCrCtlCon)
 {
-    if (pDevExt->cCrCtlRefs++)
+    if (pCrCtlCon->cCrCtlRefs++)
         return VINF_ALREADY_INITIALIZED;
 
-    int rc = vboxCrCtlCreate(&pDevExt->hCrCtl);
+    int rc = vboxCrCtlCreate(&pCrCtlCon->hCrCtl);
     if (RT_SUCCESS(rc))
     {
-        Assert(pDevExt->hCrCtl);
+        Assert(pCrCtlCon->hCrCtl);
         return VINF_SUCCESS;
     }
 
     WARN(("vboxCrCtlCreate failed, rc (%d)", rc));
 
-    --pDevExt->cCrCtlRefs;
+    --pCrCtlCon->cCrCtlRefs;
     return rc;
 }
 
-static int vboxMpCrCtlRelease(struct _VBOXMP_DEVEXT *pDevExt)
+static int vboxMpCrCtlRelease(PVBOXMP_CRCTLCON pCrCtlCon)
 {
-    Assert(pDevExt->cCrCtlRefs);
-    if (--pDevExt->cCrCtlRefs)
+    Assert(pCrCtlCon->cCrCtlRefs);
+    if (--pCrCtlCon->cCrCtlRefs)
     {
         return VINF_SUCCESS;
     }
 
-    int rc = vboxCrCtlDestroy(pDevExt->hCrCtl);
+    int rc = vboxCrCtlDestroy(pCrCtlCon->hCrCtl);
     if (RT_SUCCESS(rc))
     {
-        pDevExt->hCrCtl = NULL;
+        pCrCtlCon->hCrCtl = NULL;
         return VINF_SUCCESS;
     }
 
     WARN(("vboxCrCtlDestroy failed, rc (%d)", rc));
 
-    ++pDevExt->cCrCtlRefs;
+    ++pCrCtlCon->cCrCtlRefs;
     return rc;
 }
 
-static int vboxMpCrCtlConSetVersion(struct _VBOXMP_DEVEXT *pDevExt, uint32_t u32ClientID, uint32_t vMajor, uint32_t vMinor)
+static int vboxMpCrCtlConSetVersion(PVBOXMP_CRCTLCON pCrCtlCon, uint32_t u32ClientID, uint32_t vMajor, uint32_t vMinor)
 {
     CRVBOXHGCMSETVERSION parms;
     int rc;
@@ -75,7 +77,7 @@ static int vboxMpCrCtlConSetVersion(struct _VBOXMP_DEVEXT *pDevExt, uint32_t u32
     parms.vMinor.type      = VMMDevHGCMParmType_32bit;
     parms.vMinor.u.value32 = vMinor;
 
-    rc = vboxCrCtlConCall(pDevExt->hCrCtl, &parms.hdr, sizeof (parms));
+    rc = vboxCrCtlConCall(pCrCtlCon->hCrCtl, &parms.hdr, sizeof (parms));
     if (RT_FAILURE(rc))
     {
         WARN(("vboxCrCtlConCall failed, rc (%d)", rc));
@@ -90,7 +92,7 @@ static int vboxMpCrCtlConSetVersion(struct _VBOXMP_DEVEXT *pDevExt, uint32_t u32
     return VINF_SUCCESS;
 }
 
-static int vboxMpCrCtlConSetPID(struct _VBOXMP_DEVEXT *pDevExt, uint32_t u32ClientID)
+static int vboxMpCrCtlConSetPID(PVBOXMP_CRCTLCON pCrCtlCon, uint32_t u32ClientID)
 {
     CRVBOXHGCMSETPID parms;
     int rc;
@@ -105,7 +107,7 @@ static int vboxMpCrCtlConSetPID(struct _VBOXMP_DEVEXT *pDevExt, uint32_t u32Clie
 
     Assert(parms.u64PID.u.value64);
 
-    rc = vboxCrCtlConCall(pDevExt->hCrCtl, &parms.hdr, sizeof (parms));
+    rc = vboxCrCtlConCall(pCrCtlCon->hCrCtl, &parms.hdr, sizeof (parms));
     if (RT_FAILURE(rc))
     {
         WARN(("vboxCrCtlConCall failed, rc (%d)", rc));
@@ -120,21 +122,21 @@ static int vboxMpCrCtlConSetPID(struct _VBOXMP_DEVEXT *pDevExt, uint32_t u32Clie
     return VINF_SUCCESS;
 }
 
-int VBoxMpCrCtlConConnect(struct _VBOXMP_DEVEXT *pDevExt,
+int VBoxMpCrCtlConConnect(PVBOXMP_CRCTLCON pCrCtlCon,
         uint32_t crVersionMajor, uint32_t crVersionMinor,
         uint32_t *pu32ClientID)
 {
     uint32_t u32ClientID;
-    int rc = vboxMpCrCtlAddRef(pDevExt);
+    int rc = vboxMpCrCtlAddRef(pCrCtlCon);
     if (RT_SUCCESS(rc))
     {
-        rc = vboxCrCtlConConnect(pDevExt->hCrCtl, &u32ClientID);
+        rc = vboxCrCtlConConnect(pCrCtlCon->hCrCtl, &u32ClientID);
         if (RT_SUCCESS(rc))
         {
-            rc = vboxMpCrCtlConSetVersion(pDevExt, u32ClientID, crVersionMajor, crVersionMinor);
+            rc = vboxMpCrCtlConSetVersion(pCrCtlCon, u32ClientID, crVersionMajor, crVersionMinor);
             if (RT_SUCCESS(rc))
             {
-                rc = vboxMpCrCtlConSetPID(pDevExt, u32ClientID);
+                rc = vboxMpCrCtlConSetPID(pCrCtlCon, u32ClientID);
                 if (RT_SUCCESS(rc))
                 {
                     *pu32ClientID = u32ClientID;
@@ -149,13 +151,13 @@ int VBoxMpCrCtlConConnect(struct _VBOXMP_DEVEXT *pDevExt,
             {
                 WARN(("vboxMpCrCtlConSetVersion failed, rc (%d)", rc));
             }
-            vboxCrCtlConDisconnect(pDevExt->hCrCtl, u32ClientID);
+            vboxCrCtlConDisconnect(pCrCtlCon->hCrCtl, u32ClientID);
         }
         else
         {
             WARN(("vboxCrCtlConConnect failed, rc (%d)", rc));
         }
-        vboxMpCrCtlRelease(pDevExt);
+        vboxMpCrCtlRelease(pCrCtlCon);
     }
     else
     {
@@ -167,12 +169,12 @@ int VBoxMpCrCtlConConnect(struct _VBOXMP_DEVEXT *pDevExt,
     return rc;
 }
 
-int VBoxMpCrCtlConDisconnect(struct _VBOXMP_DEVEXT *pDevExt, uint32_t u32ClientID)
+int VBoxMpCrCtlConDisconnect(PVBOXMP_CRCTLCON pCrCtlCon, uint32_t u32ClientID)
 {
-    int rc = vboxCrCtlConDisconnect(pDevExt->hCrCtl, u32ClientID);
+    int rc = vboxCrCtlConDisconnect(pCrCtlCon->hCrCtl, u32ClientID);
     if (RT_SUCCESS(rc))
     {
-        vboxMpCrCtlRelease(pDevExt);
+        vboxMpCrCtlRelease(pCrCtlCon);
         return VINF_SUCCESS;
     }
     else
@@ -182,9 +184,9 @@ int VBoxMpCrCtlConDisconnect(struct _VBOXMP_DEVEXT *pDevExt, uint32_t u32ClientI
     return rc;
 }
 
-int VBoxMpCrCtlConCall(struct _VBOXMP_DEVEXT *pDevExt, VBoxGuestHGCMCallInfo *pData, uint32_t cbData)
+int VBoxMpCrCtlConCall(PVBOXMP_CRCTLCON pCrCtlCon, VBoxGuestHGCMCallInfo *pData, uint32_t cbData)
 {
-    int rc = vboxCrCtlConCall(pDevExt->hCrCtl, pData, cbData);
+    int rc = vboxCrCtlConCall(pCrCtlCon->hCrCtl, pData, cbData);
     if (RT_SUCCESS(rc))
         return VINF_SUCCESS;
 
@@ -192,12 +194,30 @@ int VBoxMpCrCtlConCall(struct _VBOXMP_DEVEXT *pDevExt, VBoxGuestHGCMCallInfo *pD
     return rc;
 }
 
-int VBoxMpCrCtlConCallUserData(struct _VBOXMP_DEVEXT *pDevExt, VBoxGuestHGCMCallInfo *pData, uint32_t cbData)
+int VBoxMpCrCtlConCallUserData(PVBOXMP_CRCTLCON pCrCtlCon, VBoxGuestHGCMCallInfo *pData, uint32_t cbData)
 {
-    int rc = vboxCrCtlConCallUserData(pDevExt->hCrCtl, pData, cbData);
+    int rc = vboxCrCtlConCallUserData(pCrCtlCon->hCrCtl, pData, cbData);
     if (RT_SUCCESS(rc))
         return VINF_SUCCESS;
 
     WARN(("vboxCrCtlConCallUserData failed, rc(%d)", rc));
     return rc;
+}
+
+bool VBoxMpCrCtlConIs3DSupported()
+{
+    VBOXMP_CRCTLCON CrCtlCon = {0};
+    uint32_t u32ClientID = 0;
+    int rc = VBoxMpCrCtlConConnect(&CrCtlCon, CR_PROTOCOL_VERSION_MAJOR, CR_PROTOCOL_VERSION_MINOR, &u32ClientID);
+    if (RT_FAILURE(rc))
+    {
+        LOGREL(("VBoxMpCrCtlConConnect failed with rc(%d), 3D not supported!"));
+        return false;
+    }
+
+    rc = VBoxMpCrCtlConDisconnect(&CrCtlCon, u32ClientID);
+    if (RT_FAILURE(rc))
+        WARN(("VBoxMpCrCtlConDisconnect failed, ignoring.."));
+
+    return true;
 }
