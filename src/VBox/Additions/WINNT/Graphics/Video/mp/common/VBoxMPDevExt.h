@@ -104,8 +104,7 @@ typedef struct _VBOXMP_DEVEXT
    /* this is examined and swicthed by DxgkDdiSubmitCommand only! */
    volatile BOOLEAN fRenderToShadowDisabled;
 
-   HVBOXCRCTL hCrCtl;
-   uint32_t cCrCtlRefs;
+   VBOXMP_CRCTLCON CrCtlCon;
 
    VBOXWDDM_GLOBAL_POINTER_INFO PointerInfo;
 
