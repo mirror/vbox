@@ -638,8 +638,8 @@ static RTEXITCODE generateAssembly(PSCMSTREAM pStrm)
                     pArg2 = RTListNodeGetNext(&pProbe2->ArgHead, VTGARG, ListEntry);
                     int32_t cArgs = pProbe->cArgs;
                     while (   cArgs-- > 0
-                           && pArg2->pszType == pArg2->pszType
-                           && pArg2->fType   == pArg2->fType )
+                           && pArg2->pszType == pArg->pszType
+                           && pArg2->fType   == pArg->fType)
                     {
                         pArg  = RTListNodeGetNext(&pArg->ListEntry, VTGARG, ListEntry);
                         pArg2 = RTListNodeGetNext(&pArg2->ListEntry, VTGARG, ListEntry);
