@@ -129,6 +129,9 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
  	VBOX_WITH_DMI_CHASSIS \
  	VBOX_WITH_DMI_OEMSTRINGS
  VBoxDD_DEFS.win         = _WIN32_WINNT=0x0510
+ ifeq ($(KBUILD_TARGET_ARCH),x86)
+  VBoxDD_DEFS.darwin     = VBOX_WITH_2X_4GB_ADDR_SPACE
+ endif
  VBoxDD_SOURCES          = \
  	build/VBoxDD.cpp \
 	\
