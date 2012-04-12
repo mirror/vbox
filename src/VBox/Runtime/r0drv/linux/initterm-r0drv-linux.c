@@ -49,7 +49,7 @@ static DECLARE_TASK_QUEUE(g_rtR0LnxWorkQueue);
 /*******************************************************************************
 *   Internal Functions                                                         *
 *******************************************************************************/
-#ifdef RT_ARCH_AMD64
+#if defined(RT_ARCH_AMD64) && LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 23)
 /* in alloc-r0drv0-linux.c */
 DECLHIDDEN(void) rtR0MemExecCleanup(void);
 #endif
@@ -114,7 +114,7 @@ DECLHIDDEN(void) rtR0TermNative(void)
     g_prtR0LnxWorkQueue = NULL;
 #endif
 
-#ifdef RT_ARCH_AMD64
+#if defined(RT_ARCH_AMD64) && LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 23)
     rtR0MemExecCleanup();
 #endif
 }

@@ -406,23 +406,6 @@ RTDECL(void)    RTMemExecFree(void *pv, size_t cb) RT_NO_THROW;
  * @param   cb          The size of the memory block.
  */
 RTR0DECL(int) RTR0MemExecDonate(void *pvMemory, size_t cb) RT_NO_THROW;
-
-/**
- * Allocate read+write+execute memory to the exec heap.
- *
- * This API is specific to AMD64 and Linux/GNU. A kernel module that desires to
- * use RTMemExecAlloc on AMD64 Linux/GNU will have to initialize some allocated
- * memory in the module range if it wishes for GCC generated code to work. GCC
- * can only generate modules that work in the address range ~2GB to ~0 currently.
- * As RTR0MemExecDonate() does not work if CONFIG_DEBUG_SET_MODULE_RONX is
- * enabled, use a different approach (only very recent Linux kernels).
- *
- * The API only accept one single initialization.
- *
- * @returns IPRT status code.
- * @param   cb          The size of the memory block.
- */
-RTR0DECL(int) RTR0MemExecInit(size_t cb) RT_NO_THROW;
 #endif /* R0+AMD64+LINUX */
 
 /**

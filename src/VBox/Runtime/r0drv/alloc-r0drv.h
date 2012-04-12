@@ -65,6 +65,8 @@ typedef struct RTMEMHDR
 /** Indicate that it was allocated by rtR0MemAllocExTag. */
 #define RTMEMHDR_FLAG_ALLOC_EX      RT_BIT(4)
 #ifdef RT_OS_LINUX
+/** Linux: Allocated using vm_area hacks. */
+# define RTMEMHDR_FLAG_EXEC_VM_AREA RT_BIT(29)
 /** Linux: Allocated from the special heap for executable memory. */
 # define RTMEMHDR_FLAG_EXEC_HEAP    RT_BIT(30)
 /** Linux: Allocated by kmalloc() instead of vmalloc(). */
