@@ -4129,7 +4129,10 @@ static int supdrvIOCtl_LdrLoad(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, P
         if (pImage->fNative)
             rc = supdrvOSLdrLoad(pDevExt, pImage, pReq->u.In.abImage, pReq);
         else
+        {
             memcpy(pImage->pvImage, &pReq->u.In.abImage[0], pImage->cbImageBits);
+            SUPR0Printf("vboxdrv: Loaded '%s' at %p\n", pImage->szName, pImage->pvImage);
+        }
     }
 
     /*
