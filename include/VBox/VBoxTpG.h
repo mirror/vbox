@@ -123,6 +123,8 @@ typedef uint32_t VTGSTROFF;
 #define VTG_TYPE_UNSIGNED       RT_BIT_32(30)
 /** The type is signed. */
 #define VTG_TYPE_SIGNED         RT_BIT_32(31)
+/** Mask of valid bits (for simple validation). */
+#define VTG_TYPE_VALID_MASK     UINT32_C(0xef000fff)
 /** @} */
 
 /**
