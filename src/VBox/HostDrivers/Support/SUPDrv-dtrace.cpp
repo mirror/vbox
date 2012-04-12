@@ -205,13 +205,6 @@ static void     supdrvDtPOps_Provide(void *pvProv, const dtrace_probedesc_t *pDt
     PSUPDRVVDTPROVIDERCORE  pProv        = (PSUPDRVVDTPROVIDERCORE)pvProv;
     AssertPtrReturnVoid(pProv);
     LOG_DTRACE(("supdrvDtPOps_Provide: %p / %p pDtProbeDesc=%p\n", pProv, pProv->TracerData.DTrace.idProvider, pDtProbeDesc));
-    AssertPtrReturnVoid(pProv->pHdr);
-    PVTGPROBELOC            pProbeLoc    = pProv->pHdr->paProbLocs;
-    AssertPtrReturnVoid(pProbeLoc);
-    PVTGPROBELOC            pProbeLocEnd = pProv->pHdr->paProbLocsEnd;
-    AssertPtrReturnVoid(pProbeLocEnd);
-    dtrace_provider_id_t    idProvider   = pProv->TracerData.DTrace.idProvider;
-    AssertPtrReturnVoid(idProvider);
     size_t const            cbFnNmBuf    = _4K + _1K;
     char                   *pszFnNmBuf;
     uint16_t                idxProv;
@@ -222,6 +215,14 @@ static void     supdrvDtPOps_Provide(void *pvProv, const dtrace_probedesc_t *pDt
     if (pProv->TracerData.DTrace.fZombie)
         return;
 
+    dtrace_provider_id_t    idProvider   = pProv->TracerData.DTrace.idProvider;
+    AssertPtrReturnVoid(idProvider);
+    
+    AssertPtrReturnVoid(pProv->pHdr);
+    PVTGPROBELOC            pProbeLoc    = pProv->pHdr->paProbLocs;
+    AssertPtrReturnVoid(pProbeLoc);
+    PVTGPROBELOC            pProbeLocEnd = pProv->pHdr->paProbLocsEnd;
+    AssertPtrReturnVoid(pProbeLocEnd);
     if (pProv->TracerData.DTrace.cProvidedProbes >= (uintptr_t)(pProbeLocEnd - pProbeLoc))
         return;
 
