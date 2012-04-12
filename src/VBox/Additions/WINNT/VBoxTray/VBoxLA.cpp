@@ -1145,18 +1145,19 @@ int VBoxLAInit(const VBOXSERVICEENV *pEnv, void **ppInstance, bool *pfStartThrea
 
     LALOG(("VBoxTray: VBoxLAInit\n"));
 
-    dwValue = 0;
+    /* DetachOnDisconnect is enabled by default. */
+    dwValue = 0x02;
     if (   laGetRegistryDWORD(L"SOFTWARE\\Oracle\\VirtualBox Guest Additions", L"VBoxTrayLA", &dwValue)
-        && (dwValue & 0x02) != 0)
-    {
-         gCtx.fDetachOnDisconnect = true;
-    }
-    else
+        && (dwValue & 0x02) == 0)
     {
          gCtx.fDetachOnDisconnect = false;
     }
+    else
+    {
+         gCtx.fDetachOnDisconnect = true;
+    }
 
-    LALOG(("VBoxTray: VBoxLAInit: VBoxTrayLA %x\n", dwValue));
+    LALOGFORCE(("VBoxTray: VBoxLAInit: dod %d, VBoxTrayLA %x\n", gCtx.fDetachOnDisconnect, dwValue));
 
     int rc = VbglR3GuestPropConnect(&gCtx.u32GuestPropHandle);
     if (RT_FAILURE(rc))
