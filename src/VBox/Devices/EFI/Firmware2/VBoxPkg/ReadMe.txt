@@ -10,6 +10,8 @@ creates an edk2 subdirectory):
     --username guest --password guest \
     -r9572 https://edk2.svn.sourceforge.net/svnroot/edk2/trunk/edk2 edk2
 
+Note for giters: r9572 = 1dba456e1a72a3c2d896f25f94ddeaa64d10a3be
+
 Enter into the edk2 directory and check out EFI/Firmware2/VBoxPkg into a
 VBoxPkg subdirectory:
 
