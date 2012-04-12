@@ -169,9 +169,12 @@ typedef struct VTGDESCPROBE
     uint32_t        offArgList;
     uint16_t        idxEnabled;
     uint16_t        idxProvider;
+    /** The distance from this structure to the VTG object header. */
+    int32_t         offObjHdr;
     uint32_t        u32User;
+    uint32_t        u32User2;
 } VTGDESCPROBE;
-AssertCompileSize(VTGDESCPROBE, 16);
+AssertCompileSize(VTGDESCPROBE, 24);
 /** Pointer to a VTG probe descriptor. */
 typedef VTGDESCPROBE       *PVTGDESCPROBE;
 
@@ -268,7 +271,7 @@ typedef struct VTGOBJHDR
 typedef VTGOBJHDR          *PVTGOBJHDR;
 
 /** The current VTGOBJHDR::szMagic value. */
-#define VTGOBJHDR_MAGIC     "VTG Object Header v1.3\0"
+#define VTGOBJHDR_MAGIC     "VTG Object Header v1.4\0"
 
 /** The name of the VTG data object header symbol in the object file. */
 extern VTGOBJHDR            g_VTGObjHeader;
