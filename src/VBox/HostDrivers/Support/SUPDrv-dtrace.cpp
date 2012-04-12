@@ -398,11 +398,13 @@ static void     supdrvDtPOps_GetArgDesc(void *pvProv, dtrace_id_t idProbe, void 
                 memcpy(pArgDesc->dtargd_native, pszType, cchType + 1);
                 /** @todo mapping? */
                 pArgDesc->dtargd_ndx = uArg;
+SUPR0Printf("supdrvDtPOps_GetArgVal: returns dtargd_native = %s for #%u\n", pArgDesc->dtargd_native, uArg);
                 LOG_DTRACE(("supdrvDtPOps_GetArgVal: returns dtargd_native = %s\n", pArgDesc->dtargd_native));
                 return;
             }
         }
     }
+SUPR0Printf("supdrvDtPOps_GetArgVal: returns faiure for #%u\n", uArg);
 }
 
 
@@ -468,7 +470,10 @@ static uint64_t supdrvDtPOps_GetArgVal(void *pvProv, dtrace_id_t idProbe, void *
         pData = (PSUPDRVDTSTACKDATA)((uintptr_t)pData + SUPDRVDT_STACK_DATA_ALIGN);
     }
 
-    /* Get the stack data. */
+    /*
+     * Get the stack data. This is a wee bit complicated on 32-bit systems
+     * since we want to support 64-bit integer arguments.
+     */
 #if ARCH_BITS == 64
     uint64_t u64Ret = pData->pauStackArgs[iArg - 5];
 #else
@@ -478,11 +483,10 @@ static uint64_t supdrvDtPOps_GetArgVal(void *pvProv, dtrace_id_t idProbe, void *
         u64Ret = pData->pauStackArgs[iArg - 5];
     else
     {
-        /* wonder if this will work... */
+        /* Similar to what we did for mac in when calling dtrace_probe(). */
         uint32_t off = 0;
         for (int i = 5; i < iArg; i++)
-            if (   (pArgList->aArgs[i].fType & VTG_TYPE_FIXED_SIZED)
-                && (pArgList->aArgs[i].fType & VTG_TYPE_SIZE_MASK) == 8)
+            if (VTG_TYPE_IS_LARGE(pArgList->aArgs[iArg].fType))
                 off++;
         u64Ret = pData->pauStackArgs[iArg - 5 + off];
         if (   (pArgList->aArgs[iArg].fType & VTG_TYPE_FIXED_SIZED)
@@ -565,8 +569,45 @@ static DECLCALLBACK(void) supdrvDtTOps_ProbeFireKernel(struct VTGPROBELOC *pVtgP
 
     SUPDRVDT_SETUP_STACK_DATA();
 
-    pStackData->pauStackArgs = &uArg4 + 1;
+    pStackData->pauStackArgs  = &uArg4 + 1;
+
+#if defined(RT_OS_DARWIN) && ARCH_BITS == 32
+    /*
+     * Convert arguments from uintptr_t to uint64_t.
+     */
+    PVTGDESCPROBE   pProbe   = (PVTGDESCPROBE)((PVTGPROBELOC)pVtgProbeLoc)->pbProbe;
+    AssertPtrReturnVoid(pProbe);
+    PVTGOBJHDR      pVtgHdr  = (PVTGOBJHDR)((uintptr_t)pProbe + pProbe->offObjHdr);
+    AssertPtrReturnVoid(pVtgHdr);
+    PVTGDESCARGLIST pArgList = (PVTGDESCARGLIST)((uintptr_t)pVtgHdr->paArgLists + pProbe->offArgList);
+    AssertPtrReturnVoid(pArgList);
+    if (!pArgList->fHaveLargeArgs)
+        dtrace_probe(pVtgProbeLoc->idProbe, uArg0, uArg1, uArg2, uArg3, uArg4);
+    else
+    {
+        uintptr_t *auSrcArgs = &uArg0;
+        uint32_t   iSrcArg   = 0;
+        uint32_t   iDstArg   = 0;
+        uint64_t   au64DstArgs[5];
+
+        while (   iDstArg < RT_ELEMENTS(au64DstArgs)
+               && iSrcArg < pArgList->cArgs)
+        {
+            au64DstArgs[iDstArg] = auSrcArgs[iSrcArg];
+            if (VTG_TYPE_IS_LARGE(pArgList->aArgs[iDstArg].fType))
+                au64DstArgs[iDstArg] |= (uint64_t)auSrcArgs[++iSrcArg] << 32;
+            iSrcArg++;
+            iDstArg++;
+        }
+        while (iDstArg < RT_ELEMENTS(au64DstArgs))
+            au64DstArgs[iDstArg++] = auSrcArgs[iSrcArg++];
+
+        pStackData->pauStackArgs  = &auSrcArgs[iSrcArg];
+        dtrace_probe(pVtgProbeLoc->idProbe, au64DstArgs[0], au64DstArgs[1], au64DstArgs[2], au64DstArgs[3], au64DstArgs[4]);
+    }
+#else
     dtrace_probe(pVtgProbeLoc->idProbe, uArg0, uArg1, uArg2, uArg3, uArg4);
+#endif
 
     SUPDRVDT_CLEAR_STACK_DATA();
     LOG_DTRACE(("supdrvDtTOps_ProbeFireKernel: returns\n"));

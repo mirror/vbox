@@ -515,7 +515,7 @@ static RTEXITCODE generateAssembly(PSCMSTREAM pStrm)
                     "VTG_GLOBAL g_VTGObjHeader, data\n"
                     "                ;0         1         2         3\n"
                     "                ;012345678901234567890123456789012\n"
-                    "    db          'VTG Object Header v1.3', 0, 0\n"
+                    "    db          'VTG Object Header v1.4', 0, 0\n"
                     "    dd          %u\n"
                     "    dd          0\n"
                     "    RTCCPTR_DEF NAME(g_aVTGProviders)\n"
@@ -606,15 +606,15 @@ static RTEXITCODE generateAssembly(PSCMSTREAM pStrm)
             pProbe->offArgList = off;
             ScmStreamPrintf(pStrm,
                             "    ; off=%u\n"
-                            "    db   %2u     ; Argument count\n"
-                            "    db   %u      ; fHaveLargeArgs\n"
-                            "    db  0, 0    ; Reserved\n"
+                            "    db        %2u  ; Argument count\n"
+                            "    db         %u  ; fHaveLargeArgs\n"
+                            "    db      0, 0  ; Reserved\n"
                             , off, pProbe->cArgs, (int)pProbe->fHaveLargeArgs);
             off += 4;
             RTListForEach(&pProbe->ArgHead, pArg, VTGARG, ListEntry)
             {
                 ScmStreamPrintf(pStrm,
-                                "    dd %6u   ; type '%s' (name '%s')\n"
+                                "    dd  %8u  ; type '%s' (name '%s')\n"
                                 "    dd 0%08xh ; type flags\n",
                                 strtabGetOff(pArg->pszType), pArg->pszType, pArg->pszName,
                                 pArg->fType);
@@ -678,13 +678,17 @@ static RTEXITCODE generateAssembly(PSCMSTREAM pStrm)
                             "    dd %6u  ; Argument list offset\n"
                             "    dw NAME(g_fVTGProbeEnabled_%s_%s) - NAME(g_afVTGProbeEnabled)\n"
                             "    dw %6u  ; provider index\n"
-                            "    dd 0       ; for the application\n"
+                            "    dd NAME(g_VTGObjHeader) - NAME(g_VTGProbeData_%s_%s) ; offset to the object header\n"
+                            "    dd      0  ; for the application\n"
+                            "    dd      0  ; for the application\n"
                             ,
                             pProvider->pszName, pProbe->pszMangledName, iProbe,
                             strtabGetOff(pProbe->pszUnmangledName),
                             pProbe->offArgList,
                             pProvider->pszName, pProbe->pszMangledName,
-                            iProvider);
+                            iProvider,
+                            pProvider->pszName, pProbe->pszMangledName
+                            );
             pProbe->iProbe = iProbe;
             iProbe++;
         }
@@ -973,21 +977,18 @@ static RTEXITCODE generateHeaderInner(PSCMSTREAM pStrm)
             uint32_t iArg = 0;
             RTListForEach(&pProbe->ArgHead, pArg, VTGARG, ListEntry)
             {
-                if (iArg < 5)
-                {
-                    if (pArg->fType & VTG_TYPE_FIXED_SIZED)
-                        ScmStreamPrintf(pStrm,
-                                        "        /*AssertCompile(sizeof(%s) <= sizeof(uint32_t));*/ \\\n"
-                                        "        /*AssertCompile(sizeof(%s) <= sizeof(uint32_t));*/ \\\n",
-                                        pArg->pszName,
-                                        pArg->pszType);
-                    else
-                        ScmStreamPrintf(pStrm,
-                                        "        AssertCompile(sizeof(%s) <= sizeof(uintptr_t)); \\\n"
-                                        "        AssertCompile(sizeof(%s) <= sizeof(uintptr_t)); \\\n",
-                                        pArg->pszName,
-                                        pArg->pszType);
-                }
+                if (pArg->fType & VTG_TYPE_FIXED_SIZED)
+                    ScmStreamPrintf(pStrm,
+                                    "        AssertCompile(sizeof(%s) == %u); \\\n"
+                                    "        AssertCompile(sizeof(%s) <= %u); \\\n",
+                                    pArg->pszType, pArg->fType & VTG_TYPE_SIZE_MASK,
+                                    pArg->pszName, pArg->fType & VTG_TYPE_SIZE_MASK);
+                else if (pArg->fType & (VTG_TYPE_POINTER | VTG_TYPE_HC_ARCH_SIZED))
+                    ScmStreamPrintf(pStrm,
+                                    "        AssertCompile(sizeof(%s) <= sizeof(uintptr_t)); \\\n"
+                                    "        AssertCompile(sizeof(%s) <= sizeof(uintptr_t)); \\\n",
+                                    pArg->pszName,
+                                    pArg->pszType);
                 iArg++;
             }
             ScmStreamPrintf(pStrm,

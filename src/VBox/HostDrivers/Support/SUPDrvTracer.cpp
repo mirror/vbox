@@ -314,12 +314,21 @@ static int supdrvVtgValidate(PVTGOBJHDR pVtgHdr, size_t cbVtgObj, const uint8_t 
             return VERR_SUPDRV_VTG_BAD_PROBE;
         if (pVtgHdr->paProbes[i].u32User)
             return VERR_SUPDRV_VTG_BAD_PROBE;
+        if (pVtgHdr->paProbes[i].u32User2)
+            return VERR_SUPDRV_VTG_BAD_PROBE;
+        if (   pVtgHdr->paProbes[i].offObjHdr
+            != (intptr_t)pVtgHdr - (intptr_t)&pVtgHdr->paProbes[i])
+        {
+            SUPR0Printf("supdrvVtgValidate: VERR_SUPDRV_TRACER_BAD_ARG_FLAGS - iProbe=%u offObjHdr=%d expected %zd\n",
+                        i, pVtgHdr->paProbes[i].offObjHdr, (intptr_t)pVtgHdr - (intptr_t)&pVtgHdr->paProbes[i]);
+            return VERR_SUPDRV_VTG_BAD_PROBE;
+        }
 
         /* The referenced argument list. */
         pArgList = (PVTGDESCARGLIST)((uintptr_t)pVtgHdr->paArgLists + pVtgHdr->paProbes[i].offArgList);
         if (pArgList->cArgs > 16)
         {
-            SUPR0Printf("supdrvVtgValidate: VERR_SUPDRV_TRACER_BAD_ARG_FLAGS - iProbe=%u cArgs=%u\n", i, pArgList->fHaveLargeArgs, pArgList->cArgs);
+            SUPR0Printf("supdrvVtgValidate: VERR_SUPDRV_TRACER_BAD_ARG_FLAGS - iProbe=%u cArgs=%u\n", i, pArgList->cArgs);
             return VERR_SUPDRV_VTG_BAD_ARGLIST;
         }
         if (pArgList->fHaveLargeArgs >= 2)
