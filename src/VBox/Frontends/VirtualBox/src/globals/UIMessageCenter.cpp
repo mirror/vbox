@@ -2403,7 +2403,7 @@ bool UIMessageCenter::confirmExportMachinesInSaveState(const QStringList &strMac
     return messageOkCancel(pParent ? pParent : mainWindowShown(), Warning,
         tr("<p>The %n following virtual machine(s) are currently in a saved state: <b>%1</b></p>"
            "<p>If you continue the runtime state of the exported machine(s) "
-           "will be discarded. The other machine(s) will not be changed.</p>", "",
+           "will be discarded. The other machine(s) will not be changed.</p>", "This text is never used with n == 0.  Feel free to drop the %n where possible, we only included it because of problems with Qt Linguist (but the user can see how many machines are in the list and doesn't need to be told).",
            strMachineNames.size()).arg(VBoxGlobal::toHumanReadableList(strMachineNames)),
         0 /* pcszAutoConfirmId */,
         tr("Continue"), tr("Cancel"));
