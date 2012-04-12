@@ -8,7 +8,7 @@ creates an edk2 subdirectory):
 
   svn checkout \
     --username guest --password guest \
-    -r9332 https://edk2.svn.sourceforge.net/svnroot/edk2/trunk/edk2 edk2
+    -r9572 https://edk2.svn.sourceforge.net/svnroot/edk2/trunk/edk2 edk2
 
 Enter into the edk2 directory and check out EFI/Firmware2/VBoxPkg into a
 VBoxPkg subdirectory:
