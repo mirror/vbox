@@ -318,42 +318,56 @@ static int supdrvVtgValidate(PVTGOBJHDR pVtgHdr, size_t cbVtgObj, const uint8_t 
         /* The referenced argument list. */
         pArgList = (PVTGDESCARGLIST)((uintptr_t)pVtgHdr->paArgLists + pVtgHdr->paProbes[i].offArgList);
         if (pArgList->cArgs > 16)
+        {
+            SUPR0Printf("supdrvVtgValidate: VERR_SUPDRV_TRACER_BAD_ARG_FLAGS - iProbe=%u cArgs=%u\n", i, pArgList->fHaveLargeArgs, pArgList->cArgs);
             return VERR_SUPDRV_VTG_BAD_ARGLIST;
+        }
         if (pArgList->fHaveLargeArgs >= 2)
+        {
+            SUPR0Printf("supdrvVtgValidate: VERR_SUPDRV_TRACER_BAD_ARG_FLAGS - iProbe=%u fHaveLargeArgs=%d\n", i, pArgList->fHaveLargeArgs);
             return VERR_SUPDRV_VTG_BAD_ARGLIST;
+        }
         if (   pArgList->abReserved[0]
             || pArgList->abReserved[1])
+        {
+            SUPR0Printf("supdrvVtgValidate: VERR_SUPDRV_TRACER_BAD_ARG_FLAGS - reserved MBZ iProbe=%u\n", i);
             return VERR_SUPDRV_VTG_BAD_ARGLIST;
+        }
         fHaveLargeArgs = false;
         iArg = pArgList->cArgs;
         while (iArg-- > 0)
         {
-            rc = VINF_SUCCESS;
-            MY_VALIDATE_STR(pArgList->aArgs[iArg].offType);
+            uint32_t const fType = pArgList->aArgs[iArg].fType;
+            if (fType & ~VTG_TYPE_VALID_MASK)
+            {
+                SUPR0Printf("supdrvVtgValidate: VERR_SUPDRV_TRACER_BAD_ARG_FLAGS - fType=%#x iArg=%u iProbe=%u (#0)\n", fType, iArg, i);
+                return VERR_SUPDRV_TRACER_BAD_ARG_FLAGS;
+            }
+
             switch (pArgList->aArgs[iArg].fType & VTG_TYPE_SIZE_MASK)
             {
                 case 0:
                     if (pArgList->aArgs[iArg].fType & VTG_TYPE_FIXED_SIZED)
-                        rc = VERR_SUPDRV_TRACER_BAD_ARG_FLAGS;
+                    {
+                        SUPR0Printf("supdrvVtgValidate: VERR_SUPDRV_TRACER_BAD_ARG_FLAGS - fType=%#x iArg=%u iProbe=%u (#1)\n", fType, iArg, i);
+                        return VERR_SUPDRV_TRACER_BAD_ARG_FLAGS;
+                    }
                     break;
                 case 1: case 2: case 4: case 8:
                     break;
                 default:
-                    rc = VERR_SUPDRV_TRACER_BAD_ARG_FLAGS;
+                    SUPR0Printf("supdrvVtgValidate: VERR_SUPDRV_TRACER_BAD_ARG_FLAGS - fType=%#x iArg=%u iProbe=%u (#2)\n", fType, iArg, i);
+                    return VERR_SUPDRV_TRACER_BAD_ARG_FLAGS;
             }
-            if (RT_FAILURE(rc))
-            {
-                SUPR0Printf("supdrvVtgValidate: VERR_SUPDRV_TRACER_BAD_ARG_FLAGS - fType=%#x iArg=%u iProbe=%u\n",
-                            pArgList->aArgs[iArg].fType, iArg, i);
-                return rc;
-            }
-            if (VTG_TYPE_IS_LARGE(pArgList->aArgs[iArg].fType) && iArg >= 5)
+            if (VTG_TYPE_IS_LARGE(pArgList->aArgs[iArg].fType))
                 fHaveLargeArgs = true;
+
+            MY_VALIDATE_STR(pArgList->aArgs[iArg].offType);
         }
         if ((uint8_t)fHaveLargeArgs != pArgList->fHaveLargeArgs)
         {
-            SUPR0Printf("supdrvVtgValidate: VERR_SUPDRV_TRACER_BAD_ARG_FLAGS - fType=%#x iProbe=%u fHaveLargeArgs=%d expected %d\n",
-                        pArgList->aArgs[iArg].fType, i, pArgList->fHaveLargeArgs, fHaveLargeArgs);
+            SUPR0Printf("supdrvVtgValidate: VERR_SUPDRV_TRACER_BAD_ARG_FLAGS - iProbe=%u fHaveLargeArgs=%d expected %d\n",
+                        i, pArgList->fHaveLargeArgs, fHaveLargeArgs);
             return VERR_SUPDRV_VTG_BAD_PROBE;
         }
     }
