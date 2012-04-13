@@ -43,6 +43,9 @@
 #include <iprt/string.h>
 #include <iprt/thread.h>
 
+#include "dtrace/VBoxVMM.h"
+#include "PDMInline.h"
+
 
 /*******************************************************************************
 *   Defined Constants And Macros                                               *
@@ -1341,7 +1344,8 @@ static DECLCALLBACK(void) pdmR3DevHlp_PCISetIrq(PPDMDEVINS pDevIns, int iIrq, in
     /*
      * Validate input.
      */
-    /** @todo iIrq and iLevel checks. */
+    Assert(iIrq == 0);
+    Assert((uint32_t)iLevel <= PDM_IRQ_LEVEL_FLIP_FLOP);
 
     /*
      * Must have a PCI device registered!
@@ -1352,8 +1356,24 @@ static DECLCALLBACK(void) pdmR3DevHlp_PCISetIrq(PPDMDEVINS pDevIns, int iIrq, in
         PPDMPCIBUS pBus = pDevIns->Internal.s.pPciBusR3; /** @todo the bus should be associated with the PCI device not the PDM device. */
         Assert(pBus);
         PVM pVM = pDevIns->Internal.s.pVMR3;
+
         pdmLock(pVM);
-        pBus->pfnSetIrqR3(pBus->pDevInsR3, pPciDev, iIrq, iLevel);
+        uint32_t uTagSrc;
+        if (iLevel & PDM_IRQ_LEVEL_HIGH)
+        {
+            pDevIns->Internal.s.uLastIrqTag = uTagSrc = pdmCalcIrqTag(pVM, pDevIns->idTracing);
+            if (iLevel == PDM_IRQ_LEVEL_HIGH)
+                VBOXVMM_PDM_IRQ_HIGH(VMMGetCpu(pVM), RT_LOWORD(uTagSrc), RT_HIWORD(uTagSrc));
+            else
+                VBOXVMM_PDM_IRQ_HILO(VMMGetCpu(pVM), RT_LOWORD(uTagSrc), RT_HIWORD(uTagSrc));
+        }
+        else
+            uTagSrc = pDevIns->Internal.s.uLastIrqTag;
+
+        pBus->pfnSetIrqR3(pBus->pDevInsR3, pPciDev, iIrq, iLevel, uTagSrc);
+
+        if (iLevel == PDM_IRQ_LEVEL_LOW)
+            VBOXVMM_PDM_IRQ_LOW(VMMGetCpu(pVM), RT_LOWORD(uTagSrc), RT_HIWORD(uTagSrc));
         pdmUnlock(pVM);
     }
     else
@@ -1410,10 +1430,32 @@ static DECLCALLBACK(void) pdmR3DevHlp_ISASetIrq(PPDMDEVINS pDevIns, int iIrq, in
     /*
      * Validate input.
      */
-    /** @todo iIrq and iLevel checks. */
+    Assert(iIrq < 16);
+    Assert((uint32_t)iLevel <= PDM_IRQ_LEVEL_FLIP_FLOP);
 
     PVM pVM = pDevIns->Internal.s.pVMR3;
-    PDMIsaSetIrq(pVM, iIrq, iLevel);    /* (The API takes the lock.) */
+
+    /*
+     * Do the job.
+     */
+    pdmLock(pVM);
+    uint32_t uTagSrc;
+    if (iLevel & PDM_IRQ_LEVEL_HIGH)
+    {
+        pDevIns->Internal.s.uLastIrqTag = uTagSrc = pdmCalcIrqTag(pVM, pDevIns->idTracing);
+        if (iLevel == PDM_IRQ_LEVEL_HIGH)
+            VBOXVMM_PDM_IRQ_HIGH(VMMGetCpu(pVM), RT_LOWORD(uTagSrc), RT_HIWORD(uTagSrc));
+        else
+            VBOXVMM_PDM_IRQ_HILO(VMMGetCpu(pVM), RT_LOWORD(uTagSrc), RT_HIWORD(uTagSrc));
+    }
+    else
+        uTagSrc = pDevIns->Internal.s.uLastIrqTag;
+
+    PDMIsaSetIrq(pVM, iIrq, iLevel, uTagSrc);  /* (The API takes the lock recursively.) */
+
+    if (iLevel == PDM_IRQ_LEVEL_LOW)
+        VBOXVMM_PDM_IRQ_LOW(VMMGetCpu(pVM), RT_LOWORD(uTagSrc), RT_HIWORD(uTagSrc));
+    pdmUnlock(pVM);
 
     LogFlow(("pdmR3DevHlp_ISASetIrq: caller='%s'/%d: returns void\n", pDevIns->pReg->szName, pDevIns->iInstance));
 }
@@ -3603,15 +3645,31 @@ DECLCALLBACK(bool) pdmR3DevHlpQueueConsumer(PVM pVM, PPDMQUEUEITEMCORE pItem)
     switch (pTask->enmOp)
     {
         case PDMDEVHLPTASKOP_ISA_SET_IRQ:
-            PDMIsaSetIrq(pVM, pTask->u.SetIRQ.iIrq, pTask->u.SetIRQ.iLevel);
+            PDMIsaSetIrq(pVM, pTask->u.SetIRQ.iIrq, pTask->u.SetIRQ.iLevel, pTask->u.SetIRQ.uTagSrc);
             break;
 
         case PDMDEVHLPTASKOP_PCI_SET_IRQ:
-            pdmR3DevHlp_PCISetIrq(pTask->pDevInsR3, pTask->u.SetIRQ.iIrq, pTask->u.SetIRQ.iLevel);
+        {
+            /* Same as pdmR3DevHlp_PCISetIrq, except we've got a tag already. */
+            PPDMDEVINS pDevIns = pTask->pDevInsR3;
+            PPCIDEVICE pPciDev = pDevIns->Internal.s.pPciDeviceR3;
+            if (pPciDev)
+            {
+                PPDMPCIBUS pBus = pDevIns->Internal.s.pPciBusR3; /** @todo the bus should be associated with the PCI device not the PDM device. */
+                Assert(pBus);
+
+                pdmLock(pVM);
+                pBus->pfnSetIrqR3(pBus->pDevInsR3, pPciDev, pTask->u.SetIRQ.iIrq,
+                                  pTask->u.SetIRQ.iLevel, pTask->u.SetIRQ.uTagSrc);
+                pdmUnlock(pVM);
+            }
+            else
+                AssertReleaseMsgFailed(("No PCI device registered!\n"));
             break;
+        }
 
         case PDMDEVHLPTASKOP_IOAPIC_SET_IRQ:
-            PDMIoApicSetIrq(pVM, pTask->u.SetIRQ.iIrq, pTask->u.SetIRQ.iLevel);
+            PDMIoApicSetIrq(pVM, pTask->u.SetIRQ.iIrq, pTask->u.SetIRQ.iLevel, pTask->u.SetIRQ.uTagSrc);
             break;
 
         default:

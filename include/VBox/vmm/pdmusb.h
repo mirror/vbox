@@ -693,7 +693,7 @@ typedef struct PDMUSBINS
     /** Structure version. PDM_USBINS_VERSION defines the current version. */
     uint32_t                    u32Version;
     /** USB device instance number. */
-    RTUINT                      iInstance;
+    uint32_t                    iInstance;
     /** The base interface of the device.
      * The device constructor initializes this if it has any device level
      * interfaces to export. To obtain this interface call PDMR3QueryUSBDevice(). */
@@ -730,15 +730,19 @@ typedef struct PDMUSBINS
     R3PTRTYPE(char *)           pszName;
     /** Tracing indicator. */
     uint32_t                    fTracing;
+    /** The tracing ID of this device.  */
+    uint32_t                    idTracing;
+
     /** Padding to make achInstanceData aligned at 32 byte boundary. */
-    uint32_t                    au32Padding[HC_ARCH_BITS == 32 ? 4 : 1];
+    uint32_t                    au32Padding[HC_ARCH_BITS == 32 ? 3 : 4];
+
     /** Device instance data. The size of this area is defined
      * in the PDMUSBREG::cbInstanceData field. */
     char                        achInstanceData[8];
 } PDMUSBINS;
 
 /** Current USBINS version number. */
-#define PDM_USBINS_VERSION                      PDM_VERSION_MAKE(0xeefd, 1, 0)
+#define PDM_USBINS_VERSION                      PDM_VERSION_MAKE(0xeefd, 2, 0)
 
 /**
  * Checks the structure versions of the USB device instance and USB device

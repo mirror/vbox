@@ -102,7 +102,8 @@ DECLINLINE(bool) msiBitJustSet(uint32_t uOldValue,
 }
 
 #ifdef IN_RING3
-void     MsiPciConfigWrite(PPDMDEVINS pDevIns, PCPDMPCIHLP pPciHlp, PPCIDEVICE pDev, uint32_t u32Address, uint32_t val, unsigned len)
+void     MsiPciConfigWrite(PPDMDEVINS pDevIns, PCPDMPCIHLP pPciHlp, PPCIDEVICE pDev,
+                           uint32_t u32Address, uint32_t val, unsigned len)
 {
     int32_t iOff = u32Address - pDev->Int.s.u8MsiCapOffset;
     Assert(iOff >= 0 && (pciDevIsMsiCapable(pDev) && iOff < pDev->Int.s.u8MsiCapSize));
@@ -168,7 +169,7 @@ void     MsiPciConfigWrite(PPDMDEVINS pDevIns, PCPDMPCIHLP pPciHlp, PPCIDEVICE p
                                 if ((*puPending & (1 << uVector)) != 0)
                                 {
                                     Log(("msi: notify earlier masked pending vector: %d\n", uVector));
-                                    MsiNotify(pDevIns, pPciHlp, pDev, uVector, PDM_IRQ_LEVEL_HIGH);
+                                    MsiNotify(pDevIns, pPciHlp, pDev, uVector, PDM_IRQ_LEVEL_HIGH, 0 /*uTagSrc*/);
                                 }
                             }
                             if (msiBitJustSet(pDev->config[uAddr], u8Val, iBit))
@@ -270,7 +271,7 @@ bool     MsiIsEnabled(PPCIDEVICE pDev)
     return pciDevIsMsiCapable(pDev) && msiIsEnabled(pDev);
 }
 
-void MsiNotify(PPDMDEVINS pDevIns, PCPDMPCIHLP pPciHlp, PPCIDEVICE pDev, int iVector, int iLevel)
+void MsiNotify(PPDMDEVINS pDevIns, PCPDMPCIHLP pPciHlp, PPCIDEVICE pDev, int iVector, int iLevel, uint32_t uTagSrc)
 {
     AssertMsg(msiIsEnabled(pDev), ("Must be enabled to use that"));
 
@@ -303,5 +304,5 @@ void MsiNotify(PPDMDEVINS pDevIns, PCPDMPCIHLP pPciHlp, PPCIDEVICE pDev, int iVe
     *puPending &= ~(1<<iVector);
 
     Assert(pPciHlp->pfnIoApicSendMsi != NULL);
-    pPciHlp->pfnIoApicSendMsi(pDevIns, GCAddr, u32Value);
+    pPciHlp->pfnIoApicSendMsi(pDevIns, GCAddr, u32Value, uTagSrc);
 }

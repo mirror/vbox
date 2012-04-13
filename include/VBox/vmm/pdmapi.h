@@ -40,20 +40,20 @@ RT_C_DECLS_BEGIN
  * @{
  */
 
-VMMDECL(int)    PDMGetInterrupt(PVMCPU pVCpu, uint8_t *pu8Interrupt);
-VMMDECL(int)    PDMIsaSetIrq(PVM pVM, uint8_t u8Irq, uint8_t u8Level);
-VMMDECL(int)    PDMIoApicSetIrq(PVM pVM, uint8_t u8Irq, uint8_t u8Level);
-VMMDECL(int)    PDMIoApicSendMsi(PVM pVM, RTGCPHYS GCAddr, uint32_t uValue);
-VMMDECL(bool)   PDMHasIoApic(PVM pVM);
-VMMDECL(int)    PDMApicHasPendingIrq(PVM pVM, bool *pfPending);
-VMMDECL(int)    PDMApicSetBase(PVM pVM, uint64_t u64Base);
-VMMDECL(int)    PDMApicGetBase(PVM pVM, uint64_t *pu64Base);
-VMMDECL(int)    PDMApicSetTPR(PVMCPU pVCpu, uint8_t u8TPR);
-VMMDECL(int)    PDMApicGetTPR(PVMCPU pVCpu, uint8_t *pu8TPR, bool *pfPending);
-VMMDECL(int)    PDMApicWriteMSR(PVM pVM, VMCPUID iCpu, uint32_t u32Reg, uint64_t u64Value);
-VMMDECL(int)    PDMApicReadMSR(PVM pVM, VMCPUID iCpu, uint32_t u32Reg, uint64_t *pu64Value);
-VMMDECL(int)    PDMVMMDevHeapR3ToGCPhys(PVM pVM, RTR3PTR pv, RTGCPHYS *pGCPhys);
-VMMDECL(bool)   PDMVMMDevHeapIsEnabled(PVM pVM);
+VMMDECL(int)        PDMGetInterrupt(PVMCPU pVCpu, uint8_t *pu8Interrupt);
+VMMDECL(int)        PDMIsaSetIrq(PVM pVM, uint8_t u8Irq, uint8_t u8Level, uint32_t uTagSrc);
+VMM_INT_DECL(int)   PDMIoApicSetIrq(PVM pVM, uint8_t u8Irq, uint8_t u8Level, uint32_t uTagSrc);
+VMM_INT_DECL(int)   PDMIoApicSendMsi(PVM pVM, RTGCPHYS GCAddr, uint32_t uValue, uint32_t uTagSrc);
+VMMDECL(bool)       PDMHasIoApic(PVM pVM);
+VMMDECL(int)        PDMApicHasPendingIrq(PVM pVM, bool *pfPending);
+VMMDECL(int)        PDMApicSetBase(PVM pVM, uint64_t u64Base);
+VMMDECL(int)        PDMApicGetBase(PVM pVM, uint64_t *pu64Base);
+VMMDECL(int)        PDMApicSetTPR(PVMCPU pVCpu, uint8_t u8TPR);
+VMMDECL(int)        PDMApicGetTPR(PVMCPU pVCpu, uint8_t *pu8TPR, bool *pfPending);
+VMMDECL(int)        PDMApicWriteMSR(PVM pVM, VMCPUID iCpu, uint32_t u32Reg, uint64_t u64Value);
+VMMDECL(int)        PDMApicReadMSR(PVM pVM, VMCPUID iCpu, uint32_t u32Reg, uint64_t *pu64Value);
+VMMDECL(int)        PDMVMMDevHeapR3ToGCPhys(PVM pVM, RTR3PTR pv, RTGCPHYS *pGCPhys);
+VMMDECL(bool)       PDMVMMDevHeapIsEnabled(PVM pVM);
 
 
 /** @defgroup grp_pdm_r3    The PDM Host Context Ring-3 API

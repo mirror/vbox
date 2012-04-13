@@ -213,8 +213,8 @@ typedef PCIGLOBALS *PPCIGLOBALS;
 *******************************************************************************/
 RT_C_DECLS_BEGIN
 
-PDMBOTHCBDECL(void) pciSetIrq(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, int iIrq, int iLevel);
-PDMBOTHCBDECL(void) pcibridgeSetIrq(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, int iIrq, int iLevel);
+PDMBOTHCBDECL(void) pciSetIrq(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, int iIrq, int iLevel, uint32_t uTag);
+PDMBOTHCBDECL(void) pcibridgeSetIrq(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, int iIrq, int iLevel, uint32_t uTag);
 PDMBOTHCBDECL(int)  pciIOPortAddressWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb);
 PDMBOTHCBDECL(int)  pciIOPortAddressRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *pu32, unsigned cb);
 PDMBOTHCBDECL(int)  pciIOPortDataWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb);
@@ -600,7 +600,7 @@ static inline int get_pci_irq_apic_level(PPCIGLOBALS pGlobals, int irq_num)
     return (pGlobals->pci_apic_irq_levels[irq_num] != 0);
 }
 
-static void apic_set_irq(PPCIBUS pBus, uint8_t uDevFn, PCIDevice *pPciDev, int irq_num1, int iLevel, int acpi_irq)
+static void apic_set_irq(PPCIBUS pBus, uint8_t uDevFn, PCIDevice *pPciDev, int irq_num1, int iLevel, int acpi_irq, uint32_t uTagSrc)
 {
     /* This is only allowed to be called with a pointer to the host bus. */
     AssertMsg(pBus->iBus == 0, ("iBus=%u\n", pBus->iBus));
@@ -619,7 +619,7 @@ static void apic_set_irq(PPCIBUS pBus, uint8_t uDevFn, PCIDevice *pPciDev, int i
         apic_level = get_pci_irq_apic_level(pGlobals, irq_num);
         Log3(("apic_set_irq: %s: irq_num1=%d level=%d apic_irq=%d apic_level=%d irq_num1=%d\n",
               R3STRING(pPciDev->name), irq_num1, iLevel, apic_irq, apic_level, irq_num));
-        pBus->CTX_SUFF(pPciHlp)->pfnIoApicSetIrq(pBus->CTX_SUFF(pDevIns), apic_irq, apic_level);
+        pBus->CTX_SUFF(pPciHlp)->pfnIoApicSetIrq(pBus->CTX_SUFF(pDevIns), apic_irq, apic_level, uTagSrc);
 
         if ((iLevel & PDM_IRQ_LEVEL_FLIP_FLOP) == PDM_IRQ_LEVEL_FLIP_FLOP) {
             ASMAtomicDecU32(&pGlobals->pci_apic_irq_levels[irq_num]);
@@ -627,12 +627,12 @@ static void apic_set_irq(PPCIBUS pBus, uint8_t uDevFn, PCIDevice *pPciDev, int i
             apic_level = get_pci_irq_apic_level(pGlobals, irq_num);
             Log3(("apic_set_irq: %s: irq_num1=%d level=%d apic_irq=%d apic_level=%d irq_num1=%d (flop)\n",
                   R3STRING(pPciDev->name), irq_num1, iLevel, apic_irq, apic_level, irq_num));
-            pBus->CTX_SUFF(pPciHlp)->pfnIoApicSetIrq(pBus->CTX_SUFF(pDevIns), apic_irq, apic_level);
+            pBus->CTX_SUFF(pPciHlp)->pfnIoApicSetIrq(pBus->CTX_SUFF(pDevIns), apic_irq, apic_level, uTagSrc);
         }
     } else {
         Log3(("apic_set_irq: %s: irq_num1=%d level=%d acpi_irq=%d\n",
               R3STRING(pPciDev->name), irq_num1, iLevel, acpi_irq));
-        pBus->CTX_SUFF(pPciHlp)->pfnIoApicSetIrq(pBus->CTX_SUFF(pDevIns), acpi_irq, iLevel);
+        pBus->CTX_SUFF(pPciHlp)->pfnIoApicSetIrq(pBus->CTX_SUFF(pDevIns), acpi_irq, iLevel, uTagSrc);
     }
 }
 
@@ -649,11 +649,12 @@ DECLINLINE(int) get_pci_irq_level(PPCIGLOBALS pGlobals, int irq_num)
  * @param   pPciDev         The PCI device structure which raised the interrupt.
  * @param   iIrq            IRQ number to set.
  * @param   iLevel          IRQ level.
+ * @param   uTagSrc         The IRQ tag and source ID (for tracing).
  * @remark  uDevFn and pPciDev->devfn are not the same if the device is behind a bridge.
  *          In that case uDevFn will be the slot of the bridge which is needed to calculate the
  *          PIRQ value.
  */
-static void pciSetIrqInternal(PPCIGLOBALS pGlobals, uint8_t uDevFn, PPCIDEVICE pPciDev, int iIrq, int iLevel)
+static void pciSetIrqInternal(PPCIGLOBALS pGlobals, uint8_t uDevFn, PPCIDEVICE pPciDev, int iIrq, int iLevel, uint32_t uTagSrc)
 {
     PPCIBUS     pBus =     &pGlobals->PciBus;
     uint8_t    *pbCfg = pGlobals->PIIX3State.dev.config;
@@ -681,9 +682,9 @@ static void pciSetIrqInternal(PPCIGLOBALS pGlobals, uint8_t uDevFn, PPCIDEVICE p
                  * kludge (i.e. we fetch the hardwired value from ACPIs
                  * PCI device configuration space).
                  */
-                apic_set_irq(pBus, uDevFn, pPciDev, -1, iLevel, pPciDev->config[PCI_INTERRUPT_LINE]);
+                apic_set_irq(pBus, uDevFn, pPciDev, -1, iLevel, pPciDev->config[PCI_INTERRUPT_LINE], uTagSrc);
             else
-                apic_set_irq(pBus, uDevFn, pPciDev, iIrq, iLevel, -1);
+                apic_set_irq(pBus, uDevFn, pPciDev, iIrq, iLevel, -1, uTagSrc);
             return;
         }
 
@@ -731,13 +732,13 @@ static void pciSetIrqInternal(PPCIGLOBALS pGlobals, uint8_t uDevFn, PPCIDEVICE p
         if (pic_irq == pGlobals->acpi_irq)
             pic_level |= pGlobals->acpi_irq_level;
 
-        Log3(("pciSetIrq: %s: iLevel=%d iIrq=%d pic_irq=%d pic_level=%d\n",
-              R3STRING(pPciDev->name), iLevel, iIrq, pic_irq, pic_level));
-        pBus->CTX_SUFF(pPciHlp)->pfnIsaSetIrq(pBus->CTX_SUFF(pDevIns), pic_irq, pic_level);
+        Log3(("pciSetIrq: %s: iLevel=%d iIrq=%d pic_irq=%d pic_level=%d uTagSrc=%#x\n",
+              R3STRING(pPciDev->name), iLevel, iIrq, pic_irq, pic_level, uTagSrc));
+        pBus->CTX_SUFF(pPciHlp)->pfnIsaSetIrq(pBus->CTX_SUFF(pDevIns), pic_irq, pic_level, uTagSrc);
 
         /** @todo optimize pci irq flip-flop some rainy day. */
         if ((iLevel & PDM_IRQ_LEVEL_FLIP_FLOP) == PDM_IRQ_LEVEL_FLIP_FLOP)
-            pciSetIrqInternal(pGlobals, uDevFn, pPciDev, iIrq, PDM_IRQ_LEVEL_LOW);
+            pciSetIrqInternal(pGlobals, uDevFn, pPciDev, iIrq, PDM_IRQ_LEVEL_LOW, uTagSrc);
     }
 }
 
@@ -748,10 +749,11 @@ static void pciSetIrqInternal(PPCIGLOBALS pGlobals, uint8_t uDevFn, PPCIDEVICE p
  * @param   pPciDev         The PCI device structure.
  * @param   iIrq            IRQ number to set.
  * @param   iLevel          IRQ level.
+ * @param   uTagSrc         The IRQ tag and source ID (for tracing).
  */
-PDMBOTHCBDECL(void) pciSetIrq(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, int iIrq, int iLevel)
+PDMBOTHCBDECL(void) pciSetIrq(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, int iIrq, int iLevel, uint32_t uTagSrc)
 {
-    pciSetIrqInternal(PDMINS_2_DATA(pDevIns, PPCIGLOBALS), pPciDev->devfn, pPciDev, iIrq, iLevel);
+    pciSetIrqInternal(PDMINS_2_DATA(pDevIns, PPCIGLOBALS), pPciDev->devfn, pPciDev, iIrq, iLevel, uTagSrc);
 }
 
 #ifdef IN_RING3
@@ -2245,8 +2247,9 @@ const PDMDEVREG g_DevicePCI =
  * @param   pPciDev         The PCI device structure.
  * @param   iIrq            IRQ number to set.
  * @param   iLevel          IRQ level.
+ * @param   uTagSrc         The IRQ tag and source ID (for tracing).
  */
-PDMBOTHCBDECL(void) pcibridgeSetIrq(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, int iIrq, int iLevel)
+PDMBOTHCBDECL(void) pcibridgeSetIrq(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, int iIrq, int iLevel, uint32_t uTagSrc)
 {
     /*
      * The PCI-to-PCI bridge specification defines how the interrupt pins
@@ -2272,7 +2275,7 @@ PDMBOTHCBDECL(void) pcibridgeSetIrq(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, int 
     } while (pBus->iBus != 0);
 
     AssertMsg(pBus->iBus == 0, ("This is not the host pci bus iBus=%d\n", pBus->iBus));
-    pciSetIrqInternal(PCIBUS_2_PCIGLOBALS(pBus), uDevFnBridge, pPciDev, iIrqPinBridge, iLevel);
+    pciSetIrqInternal(PCIBUS_2_PCIGLOBALS(pBus), uDevFnBridge, pPciDev, iIrqPinBridge, iLevel, uTagSrc);
 }
 
 #ifdef IN_RING3

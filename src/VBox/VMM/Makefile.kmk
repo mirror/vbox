@@ -371,6 +371,7 @@ if defined(VBOX_WITH_RAW_MODE) && !defined(VBOX_ONLY_EXTPACKS)
  endif
 
  VMMRC_SOURCES   = \
+ 	VBoxVMM.d \
  	VMMRC/VMMRC0.asm \
  	VMMRC/VMMRCDeps.cpp \
  	VMMRC/CPUMRC.cpp \

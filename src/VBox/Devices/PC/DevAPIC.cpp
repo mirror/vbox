@@ -55,6 +55,7 @@
 #include "VBoxDD2.h"
 #include "DevApic.h"
 
+
 /*******************************************************************************
 *   Defined Constants And Macros                                               *
 *******************************************************************************/
@@ -337,6 +338,10 @@ typedef struct APICState
     uint32_t                uHintedCountShift;
     /** Timer description timer. */
     R3PTRTYPE(char *)       pszDesc;
+
+    /** The IRQ tags and source IDs for each (tracing purposes). */
+    uint32_t                auTags[256];
+
 # ifdef VBOX_WITH_STATISTICS
 #  if HC_ARCH_BITS == 32
     uint32_t                u32Alignment0;
@@ -435,7 +440,7 @@ static void apicTimerSetLvt(APICDeviceInfo *pDev, APICState *pApic, uint32_t fNe
 static void apicSendInitIpi(APICDeviceInfo* pDev, APICState *s);
 
 static void apic_init_ipi(APICDeviceInfo* pDev, APICState *s);
-static void apic_set_irq(APICDeviceInfo* pDev, APICState *s, int vector_num, int trigger_mode);
+static void apic_set_irq(APICDeviceInfo* pDev, APICState *s, int vector_num, int trigger_mode, uint32_t uTagSrc);
 static bool apic_update_irq(APICDeviceInfo* pDev, APICState *s);
 
 
@@ -529,10 +534,10 @@ DECLINLINE(PDMAPICVERSION) getApicMode(APICState *apic)
 static int apic_bus_deliver(APICDeviceInfo* pDev,
                             PCVMCPUSET pDstSet, uint8_t delivery_mode,
                             uint8_t vector_num, uint8_t polarity,
-                            uint8_t trigger_mode)
+                            uint8_t trigger_mode, uint32_t uTagSrc)
 {
-    LogFlow(("apic_bus_deliver mask=%R[vmcpuset] mode=%x vector=%x polarity=%x trigger_mode=%x\n",
-             pDstSet, delivery_mode, vector_num, polarity, trigger_mode));
+    LogFlow(("apic_bus_deliver mask=%R[vmcpuset] mode=%x vector=%x polarity=%x trigger_mode=%x uTagSrc=%#x\n",
+             pDstSet, delivery_mode, vector_num, polarity, trigger_mode, uTagSrc));
 
     switch (delivery_mode)
     {
@@ -542,7 +547,7 @@ static int apic_bus_deliver(APICDeviceInfo* pDev,
             if (idDstCpu != NIL_VMCPUID)
             {
                 APICState *pApic = getLapicById(pDev, idDstCpu);
-                apic_set_irq(pDev, pApic, vector_num, trigger_mode);
+                apic_set_irq(pDev, pApic, vector_num, trigger_mode, uTagSrc);
             }
             return VINF_SUCCESS;
         }
@@ -584,7 +589,7 @@ static int apic_bus_deliver(APICDeviceInfo* pDev,
     }
 
     APIC_FOREACH_IN_SET_BEGIN(pDev, pDstSet);
-        apic_set_irq(pDev, pCurApic, vector_num, trigger_mode);
+        apic_set_irq(pDev, pCurApic, vector_num, trigger_mode, uTagSrc);
     APIC_FOREACH_END();
     return VINF_SUCCESS;
 }
@@ -829,7 +834,8 @@ static int apicWriteRegister(APICDeviceInfo *pDev, APICState *pApic, uint32_t iR
                                       0 /* Delivery mode - fixed */,
                                       vector,
                                       0 /* Polarity - conform to the bus */,
-                                      0 /* Trigger mode - edge */);
+                                      0 /* Trigger mode - edge */,
+                                      0 /*uTagSrc*/);
                 APIC_UNLOCK(pDev);
                 break;
             }
@@ -1076,15 +1082,15 @@ PDMBOTHCBDECL(int) apicReadMSR(PPDMDEVINS pDevIns, VMCPUID idCpu, uint32_t u32Re
  */
 PDMBOTHCBDECL(int) apicBusDeliverCallback(PPDMDEVINS pDevIns, uint8_t u8Dest, uint8_t u8DestMode,
                                           uint8_t u8DeliveryMode, uint8_t iVector, uint8_t u8Polarity,
-                                          uint8_t u8TriggerMode)
+                                          uint8_t u8TriggerMode, uint32_t uTagSrc)
 {
     APICDeviceInfo *pDev = PDMINS_2_DATA(pDevIns, APICDeviceInfo *);
     Assert(PDMCritSectIsOwner(pDev->CTX_SUFF(pCritSect)));
-    LogFlow(("apicBusDeliverCallback: pDevIns=%p u8Dest=%#x u8DestMode=%#x u8DeliveryMode=%#x iVector=%#x u8Polarity=%#x u8TriggerMode=%#x\n",
-             pDevIns, u8Dest, u8DestMode, u8DeliveryMode, iVector, u8Polarity, u8TriggerMode));
+    LogFlow(("apicBusDeliverCallback: pDevIns=%p u8Dest=%#x u8DestMode=%#x u8DeliveryMode=%#x iVector=%#x u8Polarity=%#x u8TriggerMode=%#x uTagSrc=%#x\n",
+             pDevIns, u8Dest, u8DestMode, u8DeliveryMode, iVector, u8Polarity, u8TriggerMode, uTagSrc));
     VMCPUSET DstSet;
     return apic_bus_deliver(pDev, apic_get_delivery_bitmask(pDev, u8Dest, u8DestMode, &DstSet),
-                            u8DeliveryMode, iVector, u8Polarity, u8TriggerMode);
+                            u8DeliveryMode, iVector, u8Polarity, u8TriggerMode, uTagSrc);
 }
 
 /**
@@ -1268,14 +1274,21 @@ static void apic_update_tpr(APICDeviceInfo *pDev, APICState* s, uint32_t val)
     }
 }
 
-static void apic_set_irq(APICDeviceInfo *pDev,  APICState* s, int vector_num, int trigger_mode)
+static void apic_set_irq(APICDeviceInfo *pDev,  APICState* s, int vector_num, int trigger_mode, uint32_t uTagSrc)
 {
-    LogFlow(("CPU%d: apic_set_irq vector=%x, trigger_mode=%x\n", s->phys_id, vector_num, trigger_mode));
+    LogFlow(("CPU%d: apic_set_irq vector=%x trigger_mode=%x uTagSrc=%#x\n", s->phys_id, vector_num, trigger_mode, uTagSrc));
+
     Apic256BitReg_SetBit(&s->irr, vector_num);
     if (trigger_mode)
         Apic256BitReg_SetBit(&s->tmr, vector_num);
     else
         Apic256BitReg_ClearBit(&s->tmr, vector_num);
+
+    if (!s->auTags[vector_num])
+        s->auTags[vector_num] = uTagSrc;
+    else
+        s->auTags[vector_num] |= RT_BIT_32(31);
+
     apic_update_irq(pDev, s);
 }
 
@@ -1367,7 +1380,7 @@ static int  apic_deliver(APICDeviceInfo *pDev, APICState *s,
                          uint8_t polarity, uint8_t trigger_mode)
 {
     int dest_shorthand = (s->icr[0] >> 18) & 3;
-    LogFlow(("apic_deliver dest=%x dest_mode=%x dest_shorthand=%x delivery_mode=%x vector_num=%x polarity=%x trigger_mode=%x\n", dest, dest_mode, dest_shorthand, delivery_mode, vector_num, polarity, trigger_mode));
+    LogFlow(("apic_deliver dest=%x dest_mode=%x dest_shorthand=%x delivery_mode=%x vector_num=%x polarity=%x trigger_mode=%x uTagSrc=%#x\n", dest, dest_mode, dest_shorthand, delivery_mode, vector_num, polarity, trigger_mode));
 
     VMCPUSET DstSet;
     switch (dest_shorthand)
@@ -1419,11 +1432,11 @@ static int  apic_deliver(APICDeviceInfo *pDev, APICState *s,
     }
 
     return apic_bus_deliver(pDev, &DstSet, delivery_mode, vector_num,
-                            polarity, trigger_mode);
+                            polarity, trigger_mode, 0 /* uTagSrc*/);
 }
 
 
-PDMBOTHCBDECL(int) apicGetInterrupt(PPDMDEVINS pDevIns)
+PDMBOTHCBDECL(int) apicGetInterrupt(PPDMDEVINS pDevIns, uint32_t *puTagSrc)
 {
     APICDeviceInfo *pDev = PDMINS_2_DATA(pDevIns, APICDeviceInfo *);
     /* if the APIC is not installed or enabled, we let the 8259 handle the
@@ -1454,13 +1467,20 @@ PDMBOTHCBDECL(int) apicGetInterrupt(PPDMDEVINS pDevIns)
 
     if (s->tpr && (uint32_t)intno <= s->tpr)
     {
+        *puTagSrc = 0;
         Log(("apic_get_interrupt: returns %d (sp)\n", s->spurious_vec & 0xff));
         return s->spurious_vec & 0xff;
     }
+
     Apic256BitReg_ClearBit(&s->irr, intno);
     Apic256BitReg_SetBit(&s->isr, intno);
+
+    *puTagSrc = s->auTags[intno];
+    s->auTags[intno] = 0;
+
     apic_update_irq(pDev, s);
-    LogFlow(("CPU%d: apic_get_interrupt: returns %d\n", s->phys_id, intno));
+
+    LogFlow(("CPU%d: apic_get_interrupt: returns %d / %#x\n", s->phys_id, intno, *puTagSrc));
     return intno;
 }
 
@@ -1678,7 +1698,7 @@ static DECLCALLBACK(void) apicR3TimerCallback(PPDMDEVINS pDevIns, PTMTIMER pTime
 
     if (!(pApic->lvt[APIC_LVT_TIMER] & APIC_LVT_MASKED)) {
         LogFlow(("apic_timer: trigger irq\n"));
-        apic_set_irq(pDev, pApic, pApic->lvt[APIC_LVT_TIMER] & 0xff, APIC_TRIGGER_EDGE);
+        apic_set_irq(pDev, pApic, pApic->lvt[APIC_LVT_TIMER] & 0xff, APIC_TRIGGER_EDGE, 0 /*uTagSrc*/);
 
         if (   (pApic->lvt[APIC_LVT_TIMER] & APIC_LVT_TIMER_PERIODIC)
             && pApic->initial_count > 0) {

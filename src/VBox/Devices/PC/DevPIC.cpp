@@ -50,8 +50,8 @@
 *******************************************************************************/
 RT_C_DECLS_BEGIN
 
-PDMBOTHCBDECL(void) picSetIrq(PPDMDEVINS pDevIns, int iIrq, int iLevel);
-PDMBOTHCBDECL(int) picGetInterrupt(PPDMDEVINS pDevIns);
+PDMBOTHCBDECL(void) picSetIrq(PPDMDEVINS pDevIns, int iIrq, int iLevel, uint32_t uTagSrc);
+PDMBOTHCBDECL(int) picGetInterrupt(PPDMDEVINS pDevIns, uint32_t *puTagSrc);
 PDMBOTHCBDECL(int) picIOPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *pu32, unsigned cb);
 PDMBOTHCBDECL(int) picIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb);
 PDMBOTHCBDECL(int) picIOPortElcrRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *pu32, unsigned cb);
@@ -108,12 +108,15 @@ typedef struct PicState {
     uint8_t elcr; /* PIIX edge/trigger selection*/
     uint8_t elcr_mask;
     /** Pointer to the device instance, R3 Ptr. */
-    PPDMDEVINSR3 pDevInsR3;
+    PPDMDEVINSR3    pDevInsR3;
     /** Pointer to the device instance, R0 Ptr. */
-    PPDMDEVINSR0 pDevInsR0;
+    PPDMDEVINSR0    pDevInsR0;
     /** Pointer to the device instance, RC Ptr. */
-    PPDMDEVINSRC pDevInsRC;
-    RTRCPTR      Alignment0; /**< Structure size alignment. */
+    PPDMDEVINSRC    pDevInsRC;
+    RTRCPTR         Alignment0; /**< Structure size alignment. */
+    /** The IRQ tags and source IDs for each (tracing purposes). */
+    uint32_t        auTags[8];
+
 } PicState;
 
 /**
@@ -163,7 +166,7 @@ static inline void DumpPICState(PicState *s, const char *szFn)
 #endif
 
 /* set irq level. If an edge is detected, then the IRR is set to 1 */
-static inline void pic_set_irq1(PicState *s, int irq, int level)
+static inline void pic_set_irq1(PicState *s, int irq, int level, uint32_t uTagSrc)
 {
     int mask;
     Log(("pic_set_irq1: irq=%d level=%d\n", irq, level));
@@ -193,6 +196,16 @@ static inline void pic_set_irq1(PicState *s, int irq, int level)
             s->last_irr &= ~mask;
         }
     }
+
+    /* Save the tag. */
+    if (level)
+    {
+        if (!s->auTags[irq])
+            s->auTags[irq] = uTagSrc;
+        else
+            s->auTags[irq] |= RT_BIT_32(31);
+    }
+
     DumpPICState(s, "pic_set_irq1");
 }
 
@@ -250,10 +263,10 @@ static int pic_update_irq(PDEVPIC pThis)
     Log(("pic_update_irq irq2=%d\n", irq2));
     if (irq2 >= 0) {
         /* if irq request by slave pic, signal master PIC */
-        pic_set_irq1(&pics[0], 2, 1);
+        pic_set_irq1(&pics[0], 2, 1, pics[1].auTags[irq2]);
     } else {
         /* If not, clear the IR on the master PIC. */
-        pic_set_irq1(&pics[0], 2, 0);
+        pic_set_irq1(&pics[0], 2, 0, 0 /*uTagSrc*/);
     }
     /* look at requested irq */
     irq = pic_get_irq(&pics[0]);
@@ -351,8 +364,9 @@ static void pic_update_imr(PDEVPIC pThis, PicState *s, uint8_t val)
  * @param   pDevIns         Device instance of the PICs.
  * @param   iIrq            IRQ number to set.
  * @param   iLevel          IRQ level.
+ * @param   uTagSrc         The IRQ tag and source ID (for tracing).
  */
-PDMBOTHCBDECL(void) picSetIrq(PPDMDEVINS pDevIns, int iIrq, int iLevel)
+PDMBOTHCBDECL(void) picSetIrq(PPDMDEVINS pDevIns, int iIrq, int iLevel, uint32_t uTagSrc)
 {
     PDEVPIC     pThis = PDMINS_2_DATA(pDevIns, PDEVPIC);
     Assert(pThis->CTX_SUFF(pDevIns) == pDevIns);
@@ -370,10 +384,10 @@ PDMBOTHCBDECL(void) picSetIrq(PPDMDEVINS pDevIns, int iIrq, int iLevel)
          * that a rising edge is guaranteed to occur. Note that the IRQ
          * line must be held high for a while to avoid spurious interrupts.
          */
-        pic_set_irq1(&pThis->aPics[iIrq >> 3], iIrq & 7, 0);
+        pic_set_irq1(&pThis->aPics[iIrq >> 3], iIrq & 7, 0, uTagSrc);
         pic_update_irq(pThis);
     }
-    pic_set_irq1(&pThis->aPics[iIrq >> 3], iIrq & 7, iLevel & PDM_IRQ_LEVEL_HIGH);
+    pic_set_irq1(&pThis->aPics[iIrq >> 3], iIrq & 7, iLevel & PDM_IRQ_LEVEL_HIGH, uTagSrc);
     pic_update_irq(pThis);
 }
 
@@ -401,8 +415,9 @@ static inline void pic_intack(PicState *s, int irq)
  *
  * @returns Pending interrupt number.
  * @param   pDevIns         Device instance of the PICs.
+ * @param   puTagSrc        Where to return the IRQ tag and source ID.
  */
-PDMBOTHCBDECL(int) picGetInterrupt(PPDMDEVINS pDevIns)
+PDMBOTHCBDECL(int) picGetInterrupt(PPDMDEVINS pDevIns, uint32_t *puTagSrc)
 {
     PDEVPIC     pThis = PDMINS_2_DATA(pDevIns, PDEVPIC);
     int         irq;
@@ -430,12 +445,17 @@ PDMBOTHCBDECL(int) picGetInterrupt(PPDMDEVINS pDevIns)
                 irq2 = 7;
             }
             intno = pThis->aPics[1].irq_base + irq2;
-            Log2(("picGetInterrupt1: %x base=%x irq=%x\n", intno, pThis->aPics[1].irq_base, irq2));
+            *puTagSrc = pThis->aPics[0].auTags[irq2];
+            pThis->aPics[0].auTags[irq2] = 0;
+            Log2(("picGetInterrupt1: %x base=%x irq=%x uTagSrc=%#x\n", intno, pThis->aPics[1].irq_base, irq2, *puTagSrc));
             irq = irq2 + 8;
         }
-        else {
+        else
+        {
             intno = pThis->aPics[0].irq_base + irq;
-            Log2(("picGetInterrupt0: %x base=%x irq=%x\n", intno, pThis->aPics[0].irq_base, irq));
+            *puTagSrc = pThis->aPics[0].auTags[irq];
+            pThis->aPics[0].auTags[irq] = 0;
+            Log2(("picGetInterrupt0: %x base=%x irq=%x uTagSrc=%#x\n", intno, pThis->aPics[0].irq_base, irq, *puTagSrc));
         }
     }
     else
@@ -444,6 +464,7 @@ PDMBOTHCBDECL(int) picGetInterrupt(PPDMDEVINS pDevIns)
         Log(("picGetInterrupt: spurious IRQ on master controller, converted to IRQ7\n"));
         irq = 7;
         intno = pThis->aPics[0].irq_base + irq;
+        *puTagSrc = 0;
     }
     pic_update_irq(pThis);
 

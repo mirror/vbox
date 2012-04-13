@@ -388,9 +388,11 @@ typedef struct PDMDRVINS
 
     /** Tracing indicator. */
     uint32_t                    fTracing;
-#if HC_ARCH_BITS == 64
+    /** The tracing ID of this device.  */
+    uint32_t                    idTracing;
+#if HC_ARCH_BITS == 32
     /** Align the internal data more naturally. */
-    uint32_t                    u32Padding;
+    uint32_t                    au32Padding[HC_ARCH_BITS == 32 ? 7 : 0];
 #endif
 
     /** Internal data. */
@@ -408,7 +410,7 @@ typedef struct PDMDRVINS
 } PDMDRVINS;
 
 /** Current DRVREG version number. */
-#define PDM_DRVINS_VERSION                      PDM_VERSION_MAKE(0xf0fe, 1, 0)
+#define PDM_DRVINS_VERSION                      PDM_VERSION_MAKE(0xf0fe, 2, 0)
 
 /** Converts a pointer to the PDMDRVINS::IBase to a pointer to PDMDRVINS. */
 #define PDMIBASE_2_PDMDRV(pInterface)   ( (PPDMDRVINS)((char *)(pInterface) - RT_OFFSETOF(PDMDRVINS, IBase)) )

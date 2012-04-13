@@ -36,7 +36,7 @@ int      MsiInit(PPCIDEVICE pDev, PPDMMSIREG pMsiReg);
 bool     MsiIsEnabled(PPCIDEVICE pDev);
 
 /* Device notification (aka interrupt). */
-void     MsiNotify(PPDMDEVINS pDevIns, PCPDMPCIHLP pPciHlp, PPCIDEVICE pDev, int iVector, int iLevel);
+void     MsiNotify(PPDMDEVINS pDevIns, PCPDMPCIHLP pPciHlp, PPCIDEVICE pDev, int iVector, int iLevel, uint32_t uTagSrc);
 
 #ifdef IN_RING3
 /* PCI config space accessors for MSI registers */
@@ -53,7 +53,7 @@ int      MsixInit(PCPDMPCIHLP pPciHlp, PPCIDEVICE pDev, PPDMMSIREG pMsiReg);
 bool     MsixIsEnabled(PPCIDEVICE pDev);
 
 /* Device notification (aka interrupt). */
-void     MsixNotify(PPDMDEVINS pDevIns, PCPDMPCIHLP pPciHlp, PPCIDEVICE pDev, int iVector, int iLevel);
+void     MsixNotify(PPDMDEVINS pDevIns, PCPDMPCIHLP pPciHlp, PPCIDEVICE pDev, int iVector, int iLevel, uint32_t uTagSrc);
 
 #ifdef IN_RING3
 /* PCI config space accessors for MSI-X */
