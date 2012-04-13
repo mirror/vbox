@@ -1,7 +1,6 @@
+/* $Id$ */
 /** @file
- *
- * vboxsf -- VirtualBox Guest Additions for Linux:
- * Regular file inode and file operations
+ * vboxsf - VBox Linux Shared Folders, Regular file inode and file operations.
  */
 
 /*
@@ -22,7 +21,7 @@
 
 #include "vfsmod.h"
 
-static void *alloc_bounch_buffer(size_t *tmp_sizep, PRTCCPHYS physp, size_t
+static void *alloc_bounce_buffer(size_t *tmp_sizep, PRTCCPHYS physp, size_t
                                  xfer_size, const char *caller)
 {
     size_t tmp_size;
@@ -50,7 +49,7 @@ static void *alloc_bounch_buffer(size_t *tmp_sizep, PRTCCPHYS physp, size_t
     return tmp;
 }
 
-static void free_bounch_buffer(void *tmp)
+static void free_bounce_buffer(void *tmp)
 {
     kfree (tmp);
 }
@@ -126,7 +125,7 @@ static ssize_t sf_reg_read(struct file *file, char *buf, size_t size, loff_t *of
     if (!size)
         return 0;
 
-    tmp = alloc_bounch_buffer(&tmp_size, &tmp_phys, size, __PRETTY_FUNCTION__);
+    tmp = alloc_bounce_buffer(&tmp_size, &tmp_phys, size, __PRETTY_FUNCTION__);
     if (!tmp)
         return -ENOMEM;
 
@@ -159,11 +158,11 @@ static ssize_t sf_reg_read(struct file *file, char *buf, size_t size, loff_t *of
     }
 
     *off += total_bytes_read;
-    free_bounch_buffer(tmp);
+    free_bounce_buffer(tmp);
     return total_bytes_read;
 
 fail:
-    free_bounch_buffer(tmp);
+    free_bounce_buffer(tmp);
     return err;
 }
 
@@ -213,7 +212,7 @@ static ssize_t sf_reg_write(struct file *file, const char *buf, size_t size, lof
     if (!size)
         return 0;
 
-    tmp = alloc_bounch_buffer(&tmp_size, &tmp_phys, size, __PRETTY_FUNCTION__);
+    tmp = alloc_bounce_buffer(&tmp_size, &tmp_phys, size, __PRETTY_FUNCTION__);
     if (!tmp)
         return -ENOMEM;
 
@@ -259,11 +258,11 @@ static ssize_t sf_reg_write(struct file *file, const char *buf, size_t size, lof
         inode->i_size = *off;
 
     sf_i->force_restat = 1;
-    free_bounch_buffer(tmp);
+    free_bounce_buffer(tmp);
     return total_bytes_written;
 
 fail:
-    free_bounch_buffer(tmp);
+    free_bounce_buffer(tmp);
     return err;
 }
 
