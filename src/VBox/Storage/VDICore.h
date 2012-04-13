@@ -604,5 +604,16 @@ typedef struct VDIASYNCBLOCKALLOC
     unsigned                uBlock;
 } VDIASYNCBLOCKALLOC, *PVDIASYNCBLOCKALLOC;
 
+/**
+ * Endianess conversion direction.
+ */
+typedef enum VDIECONV
+{
+    /** Host to file endianess. */
+    VDIECONV_H2F = 0,
+    /** File to host endianess. */
+    VDIECONV_F2H
+} VDIECONV;
+
 #endif
 
