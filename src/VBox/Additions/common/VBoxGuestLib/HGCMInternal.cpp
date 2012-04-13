@@ -259,9 +259,7 @@ static int vbglR0HGCMInternalPreprocessCall(VBoxGuestHGCMCallInfo const *pCallIn
             case VMMDevHGCMParmType_LinAddr_Locked:
                 if (fIsUser)
                     return VERR_INVALID_PARAMETER;
-                /* always perform it as !VBGLR0_CAN_USE_PHYS_PAGE_LIST() since otherwise
-                 * we end up creating a RTR0MEMOBJ and doing page lock again, which leads to undefined behavior and possible BSOD on Win */
-                //if (!VBGLR0_CAN_USE_PHYS_PAGE_LIST())
+                if (!VBGLR0_CAN_USE_PHYS_PAGE_LIST(/*a_fLocked =*/ true))
                 {
                     cb = pSrcParm->u.Pointer.size;
                     AssertMsgReturn(cb <= VBGLR0_MAX_HGCM_KERNEL_PARM, ("%#x > %#x\n", cb, VBGLR0_MAX_HGCM_KERNEL_PARM),
@@ -400,7 +398,7 @@ static int vbglR0HGCMInternalPreprocessCall(VBoxGuestHGCMCallInfo const *pCallIn
 #endif
                     pParmInfo->cLockBufs = iLockBuf + 1;
 
-                    if (VBGLR0_CAN_USE_PHYS_PAGE_LIST())
+                    if (VBGLR0_CAN_USE_PHYS_PAGE_LIST(/*a_fLocked =*/ false))
                     {
                         size_t const cPages = RTR0MemObjSize(hObj) >> PAGE_SHIFT;
                         *pcbExtra += RT_OFFSETOF(HGCMPageListInfo, aPages[cPages]);
@@ -538,9 +536,7 @@ static void vbglR0HGCMInternalInitCall(VMMDevHGCMCall *pHGCMCall, VBoxGuestHGCMC
             case VMMDevHGCMParmType_LinAddr_Locked_In:
             case VMMDevHGCMParmType_LinAddr_Locked_Out:
             case VMMDevHGCMParmType_LinAddr_Locked:
-                /* always perform it as !VBGLR0_CAN_USE_PHYS_PAGE_LIST() since otherwise
-                 * we end up creating a RTR0MEMOBJ and doing page lock again, which leads to undefined behavior and possible BSOD on Win */
-//                if (!VBGLR0_CAN_USE_PHYS_PAGE_LIST())
+                if (!VBGLR0_CAN_USE_PHYS_PAGE_LIST(/*a_fLocked =*/ true))
                 {
                     *pDstParm = *pSrcParm;
                     pDstParm->type = vbglR0HGCMInternalConvertLinAddrType(pSrcParm->type);
@@ -559,7 +555,7 @@ static void vbglR0HGCMInternalInitCall(VMMDevHGCMCall *pHGCMCall, VBoxGuestHGCMC
                     RTR0MEMOBJ hObj       = pParmInfo->aLockBufs[iLockBuf].hObj;
                     Assert(iParm == pParmInfo->aLockBufs[iLockBuf].iParm);
 
-                    if (VBGLR0_CAN_USE_PHYS_PAGE_LIST())
+                    if (VBGLR0_CAN_USE_PHYS_PAGE_LIST(/*a_fLocked =*/ false))
                     {
                         HGCMPageListInfo   *pDstPgLst = (HGCMPageListInfo *)((uint8_t *)pHGCMCall + offExtra);
                         size_t const        cPages    = RTR0MemObjSize(hObj) >> PAGE_SHIFT;
@@ -804,9 +800,7 @@ static int vbglR0HGCMInternalCopyBackResult(VBoxGuestHGCMCallInfo *pCallInfo, VM
 
             case VMMDevHGCMParmType_LinAddr_Locked_Out:
             case VMMDevHGCMParmType_LinAddr_Locked:
-                /* always perform it as !VBGLR0_CAN_USE_PHYS_PAGE_LIST() since otherwise
-                 * we end up creating a RTR0MEMOBJ and doing page lock again, which leads to undefined behavior and possible BSOD on Win */
-//                if (!VBGLR0_CAN_USE_PHYS_PAGE_LIST())
+                if (!VBGLR0_CAN_USE_PHYS_PAGE_LIST(/*a_fLocked =*/ true))
                 {
                     pDstParm->u.Pointer.size = pSrcParm->u.Pointer.size;
                     break;
