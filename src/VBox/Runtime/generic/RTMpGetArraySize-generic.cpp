@@ -51,7 +51,7 @@ RTDECL(uint32_t) RTMpGetArraySize(void)
         RTCPUSET    CpuSet;
         uint32_t    cCpus1 = RTCpuLastIndex(RTMpGetSet(&CpuSet)) + 1;
         uint32_t    cCpus2 = RTMpGetCount();
-        uint32_t    cCpus  = RT_MAX(cCpus1, cCpus2);
+        cCpus              = RT_MAX(cCpus1, cCpus2);
         ASMAtomicCmpXchgU32(&s_cMaxCpus, cCpus, 0);
         return cCpus;
     }
