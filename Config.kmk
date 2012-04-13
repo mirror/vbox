@@ -2686,6 +2686,14 @@ ifdef VBOX_WITH_RAW_MODE
  TEMPLATE_VBoxRc_BLD_TRG_ARCH        = x86
  TEMPLATE_VBoxRc_MODE                = a+r,u+w
 
+ TEMPLATE_VBoxRc_USES               += dtrace
+ ifdef VBOX_WITH_DTRACE_RC
+  TEMPLATE_VBoxRc_DTRACETOOL         = VBoxTpG
+  TEMPLATE_VBoxRc_DEFS              += VBOX_WITH_DTRACE VBOX_WITH_DTRACE_RC
+ else
+  TEMPLATE_VBoxRc_DTRACETOOL         = VBoxTpG-Disabled
+ endif
+
  ifeq ($(VBOX_LDR_FMT32),pe)
   ifndef VBOX_USE_VCC70
    TEMPLATE_VBoxRc_TOOL              = $(VBOX_VCC_TOOL_STEM)X86
