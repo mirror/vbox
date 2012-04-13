@@ -496,7 +496,7 @@ int handleModifyHardDisk(HandlerArg *a)
                 if (!FilenameOrUuid)
                     FilenameOrUuid = ValueUnion.psz;
                 else
-                    return errorSyntax(USAGE_CREATEHD, "Invalid parameter '%s'", ValueUnion.psz);
+                    return errorSyntax(USAGE_MODIFYHD, "Invalid parameter '%s'", ValueUnion.psz);
                 break;
 
             default:
