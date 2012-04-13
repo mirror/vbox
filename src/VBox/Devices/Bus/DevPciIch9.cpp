@@ -164,7 +164,8 @@ typedef struct
     DEVINS_2_PCIBUS(pDevIns)->CTX_SUFF(pPciHlp)->pfnUnlock(pDevIns)
 
 /* Prototypes */
-static void ich9pciSetIrqInternal(PICH9PCIGLOBALS pGlobals, uint8_t uDevFn, PPCIDEVICE pPciDev, int iIrq, int iLevel);
+static void ich9pciSetIrqInternal(PICH9PCIGLOBALS pGlobals, uint8_t uDevFn, PPCIDEVICE pPciDev,
+                                  int iIrq, int iLevel, uint32_t uTagSrc);
 #ifdef IN_RING3
 static void ich9pcibridgeReset(PPDMDEVINS pDevIns);
 static int ich9pciRegisterInternal(PICH9PCIBUS pBus, int iDev, PPCIDEVICE pPciDev, const char *pszName);
@@ -191,12 +192,12 @@ DECLINLINE(void) ich9pciStateToPciAddr(PICH9PCIGLOBALS pGlobals, RTGCPHYS addr, 
     pPciAddr->iRegister    = (pGlobals->uConfigReg & 0xfc) | (addr & 3);
 }
 
-PDMBOTHCBDECL(void) ich9pciSetIrq(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, int iIrq, int iLevel)
+PDMBOTHCBDECL(void) ich9pciSetIrq(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, int iIrq, int iLevel, uint32_t uTagSrc)
 {
-    ich9pciSetIrqInternal(PDMINS_2_DATA(pDevIns, PICH9PCIGLOBALS), pPciDev->devfn, pPciDev, iIrq, iLevel);
+    ich9pciSetIrqInternal(PDMINS_2_DATA(pDevIns, PICH9PCIGLOBALS), pPciDev->devfn, pPciDev, iIrq, iLevel, uTagSrc);
 }
 
-PDMBOTHCBDECL(void) ich9pcibridgeSetIrq(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, int iIrq, int iLevel)
+PDMBOTHCBDECL(void) ich9pcibridgeSetIrq(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, int iIrq, int iLevel, uint32_t uTagSrc)
 {
     /*
      * The PCI-to-PCI bridge specification defines how the interrupt pins
@@ -222,7 +223,7 @@ PDMBOTHCBDECL(void) ich9pcibridgeSetIrq(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, 
     } while (pBus->iBus != 0);
 
     AssertMsgReturnVoid(pBus->iBus == 0, ("This is not the host pci bus iBus=%d\n", pBus->iBus));
-    ich9pciSetIrqInternal(PCIROOTBUS_2_PCIGLOBALS(pBus), uDevFnBridge, pPciDev, iIrqPinBridge, iLevel);
+    ich9pciSetIrqInternal(PCIROOTBUS_2_PCIGLOBALS(pBus), uDevFnBridge, pPciDev, iIrqPinBridge, iLevel, uTagSrc);
 }
 
 /**
@@ -503,7 +504,8 @@ DECLINLINE(void) ich9pciApicLevelDown(PICH9PCIGLOBALS pGlobals, int irq_num)
     ASMAtomicDecU32(&pGlobals->uaPciApicIrqLevels[irq_num]);
 }
 
-static void ich9pciApicSetIrq(PICH9PCIBUS pBus, uint8_t uDevFn, PCIDevice *pPciDev, int irq_num1, int iLevel, int iForcedIrq)
+static void ich9pciApicSetIrq(PICH9PCIBUS pBus, uint8_t uDevFn, PCIDevice *pPciDev, int irq_num1, int iLevel,
+                              uint32_t uTagSrc, int iForcedIrq)
 {
     /* This is only allowed to be called with a pointer to the root bus. */
     AssertMsg(pBus->iBus == 0, ("iBus=%u\n", pBus->iBus));
@@ -521,9 +523,9 @@ static void ich9pciApicSetIrq(PICH9PCIBUS pBus, uint8_t uDevFn, PCIDevice *pPciD
 
         apic_irq = irq_num + 0x10;
         apic_level = pGlobals->uaPciApicIrqLevels[irq_num] != 0;
-        Log3(("ich9pciApicSetIrq: %s: irq_num1=%d level=%d apic_irq=%d apic_level=%d irq_num1=%d\n",
-              R3STRING(pPciDev->name), irq_num1, iLevel, apic_irq, apic_level, irq_num));
-        pBus->CTX_SUFF(pPciHlp)->pfnIoApicSetIrq(pBus->CTX_SUFF(pDevIns), apic_irq, apic_level);
+        Log3(("ich9pciApicSetIrq: %s: irq_num1=%d level=%d apic_irq=%d apic_level=%d irq_num1=%d uTagSrc=%#x\n",
+              R3STRING(pPciDev->name), irq_num1, iLevel, apic_irq, apic_level, irq_num, uTagSrc));
+        pBus->CTX_SUFF(pPciHlp)->pfnIoApicSetIrq(pBus->CTX_SUFF(pDevIns), apic_irq, apic_level, uTagSrc);
 
         if ((iLevel & PDM_IRQ_LEVEL_FLIP_FLOP) == PDM_IRQ_LEVEL_FLIP_FLOP)
         {
@@ -534,18 +536,19 @@ static void ich9pciApicSetIrq(PICH9PCIBUS pBus, uint8_t uDevFn, PCIDevice *pPciD
             ich9pciApicLevelDown(pGlobals, irq_num);
             pPciDev->Int.s.uIrqPinState = PDM_IRQ_LEVEL_LOW;
             apic_level = pGlobals->uaPciApicIrqLevels[irq_num] != 0;
-            Log3(("ich9pciApicSetIrq: %s: irq_num1=%d level=%d apic_irq=%d apic_level=%d irq_num1=%d (flop)\n",
-                  R3STRING(pPciDev->name), irq_num1, iLevel, apic_irq, apic_level, irq_num));
-            pBus->CTX_SUFF(pPciHlp)->pfnIoApicSetIrq(pBus->CTX_SUFF(pDevIns), apic_irq, apic_level);
+            Log3(("ich9pciApicSetIrq: %s: irq_num1=%d level=%d apic_irq=%d apic_level=%d irq_num1=%d uTagSrc=%#x (flop)\n",
+                  R3STRING(pPciDev->name), irq_num1, iLevel, apic_irq, apic_level, irq_num, uTagSrc));
+            pBus->CTX_SUFF(pPciHlp)->pfnIoApicSetIrq(pBus->CTX_SUFF(pDevIns), apic_irq, apic_level, uTagSrc);
         }
     } else {
-        Log3(("ich9pciApicSetIrq: (forced) %s: irq_num1=%d level=%d acpi_irq=%d\n",
-              R3STRING(pPciDev->name), irq_num1, iLevel, iForcedIrq));
-        pBus->CTX_SUFF(pPciHlp)->pfnIoApicSetIrq(pBus->CTX_SUFF(pDevIns), iForcedIrq, iLevel);
+        Log3(("ich9pciApicSetIrq: (forced) %s: irq_num1=%d level=%d acpi_irq=%d uTagSrc=%#x\n",
+              R3STRING(pPciDev->name), irq_num1, iLevel, iForcedIrq, uTagSrc));
+        pBus->CTX_SUFF(pPciHlp)->pfnIoApicSetIrq(pBus->CTX_SUFF(pDevIns), iForcedIrq, iLevel, uTagSrc);
     }
 }
 
-static void ich9pciSetIrqInternal(PICH9PCIGLOBALS pGlobals, uint8_t uDevFn, PPCIDEVICE pPciDev, int iIrq, int iLevel)
+static void ich9pciSetIrqInternal(PICH9PCIGLOBALS pGlobals, uint8_t uDevFn, PPCIDEVICE pPciDev,
+                                  int iIrq, int iLevel, uint32_t uTagSrc)
 {
 
     if (PCIDevIsIntxDisabled(pPciDev))
@@ -553,13 +556,13 @@ static void ich9pciSetIrqInternal(PICH9PCIGLOBALS pGlobals, uint8_t uDevFn, PPCI
         if (MsiIsEnabled(pPciDev))
         {
             PPDMDEVINS pDevIns = pGlobals->aPciBus.CTX_SUFF(pDevIns);
-            MsiNotify(pDevIns, pGlobals->aPciBus.CTX_SUFF(pPciHlp), pPciDev, iIrq, iLevel);
+            MsiNotify(pDevIns, pGlobals->aPciBus.CTX_SUFF(pPciHlp), pPciDev, iIrq, iLevel, uTagSrc);
         }
 
         if (MsixIsEnabled(pPciDev))
         {
             PPDMDEVINS pDevIns = pGlobals->aPciBus.CTX_SUFF(pDevIns);
-            MsixNotify(pDevIns, pGlobals->aPciBus.CTX_SUFF(pPciHlp), pPciDev, iIrq, iLevel);
+            MsixNotify(pDevIns, pGlobals->aPciBus.CTX_SUFF(pPciHlp), pPciDev, iIrq, iLevel, uTagSrc);
         }
         return;
     }
@@ -581,9 +584,9 @@ static void ich9pciSetIrqInternal(PICH9PCIGLOBALS pGlobals, uint8_t uDevFn, PPCI
              * kludge (i.e. we fetch the hardwired value from ACPIs
              * PCI device configuration space).
              */
-            ich9pciApicSetIrq(pBus, uDevFn, pPciDev, -1, iLevel, PCIDevGetInterruptLine(pPciDev));
+            ich9pciApicSetIrq(pBus, uDevFn, pPciDev, -1, iLevel, uTagSrc, PCIDevGetInterruptLine(pPciDev));
         else
-            ich9pciApicSetIrq(pBus, uDevFn, pPciDev, iIrq, iLevel, -1);
+            ich9pciApicSetIrq(pBus, uDevFn, pPciDev, iIrq, iLevel, uTagSrc, -1);
     }
 }
 

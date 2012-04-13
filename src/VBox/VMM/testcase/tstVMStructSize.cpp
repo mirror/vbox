@@ -161,9 +161,8 @@ int main()
 #define PRINT_OFFSET(strct, member) \
     do \
     { \
-        printf("info: %s::%s offset %#x (%d) sizeof %d\n",  #strct, #member, (int)RT_OFFSETOF(strct, member), (int)RT_OFFSETOF(strct, member), (int)RT_SIZEOFMEMB(strct, member)); \
+        printf("info: %10s::%-24s offset %#6x (%6d) sizeof %4d\n",  #strct, #member, (int)RT_OFFSETOF(strct, member), (int)RT_OFFSETOF(strct, member), (int)RT_SIZEOFMEMB(strct, member)); \
     } while (0)
-
 
 
     CHECK_SIZE(uint128_t, 128/8);
@@ -335,12 +334,21 @@ int main()
     CHECK_SIZE_ALIGNMENT(CPUMCTXMSRS, 64);
 
     /* pdm */
+    PRINT_OFFSET(PDMDEVINS, Internal);
+    PRINT_OFFSET(PDMDEVINS, achInstanceData);
     CHECK_MEMBER_ALIGNMENT(PDMDEVINS, achInstanceData, 64);
     CHECK_PADDING(PDMDEVINS, Internal, 1);
-    CHECK_MEMBER_ALIGNMENT(PDMUSBINS, achInstanceData, 16);
+
+    PRINT_OFFSET(PDMUSBINS, Internal);
+    PRINT_OFFSET(PDMUSBINS, achInstanceData);
+    CHECK_MEMBER_ALIGNMENT(PDMUSBINS, achInstanceData, 32);
     CHECK_PADDING(PDMUSBINS, Internal, 1);
-    CHECK_MEMBER_ALIGNMENT(PDMDRVINS, achInstanceData, 16);
+
+    PRINT_OFFSET(PDMDRVINS, Internal);
+    PRINT_OFFSET(PDMDRVINS, achInstanceData);
+    CHECK_MEMBER_ALIGNMENT(PDMDRVINS, achInstanceData, 32);
     CHECK_PADDING(PDMDRVINS, Internal, 1);
+
     CHECK_PADDING2(PDMCRITSECT);
 
     /* pgm */

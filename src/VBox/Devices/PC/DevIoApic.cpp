@@ -86,6 +86,8 @@ struct IOAPICState
 
     uint32_t                irr;
     uint64_t                ioredtbl[IOAPIC_NUM_PINS];
+    /** The IRQ tags and source IDs for each pin (tracing purposes). */
+    uint32_t                auTagSrc[IOAPIC_NUM_PINS];
 
     /** The device instance - R3 Ptr. */
     PPDMDEVINSR3            pDevInsR3;
@@ -156,6 +158,8 @@ static void ioapic_service(IOAPICState *pThis)
                 }
                 else
                     vector = entry & 0xff;
+                uint32_t uTagSrc = pThis->auTagSrc[vector];
+                pThis->auTagSrc[vector] = 0;
 
                 int rc = pThis->CTX_SUFF(pIoApicHlp)->pfnApicBusDeliver(pThis->CTX_SUFF(pDevIns),
                                                                         dest,
@@ -163,7 +167,8 @@ static void ioapic_service(IOAPICState *pThis)
                                                                         delivery_mode,
                                                                         vector,
                                                                         polarity,
-                                                                        trig_mode);
+                                                                        trig_mode,
+                                                                        uTagSrc);
                 /* We must be sure that attempts to reschedule in R3
                    never get here */
                 Assert(rc == VINF_SUCCESS);
@@ -173,7 +178,7 @@ static void ioapic_service(IOAPICState *pThis)
 }
 
 
-static void ioapic_set_irq(void *opaque, int vector, int level)
+static void ioapic_set_irq(void *opaque, int vector, int level, uint32_t uTagSrc)
 {
     IOAPICState *pThis = (IOAPICState*)opaque;
 
@@ -188,7 +193,13 @@ static void ioapic_set_irq(void *opaque, int vector, int level)
             if (level)
             {
                 pThis->irr |= mask;
+                if (!pThis->auTagSrc[vector])
+                    pThis->auTagSrc[vector] = uTagSrc;
+                else
+                    pThis->auTagSrc[vector] = RT_BIT_32(31);
+
                 ioapic_service(pThis);
+
                 if ((level & PDM_IRQ_LEVEL_FLIP_FLOP) == PDM_IRQ_LEVEL_FLIP_FLOP)
                     pThis->irr &= ~mask;
             }
@@ -201,6 +212,11 @@ static void ioapic_set_irq(void *opaque, int vector, int level)
             if (level)
             {
                 pThis->irr |= mask;
+                if (!pThis->auTagSrc[vector])
+                    pThis->auTagSrc[vector] = uTagSrc;
+                else
+                    pThis->auTagSrc[vector] = RT_BIT_32(31);
+
                 ioapic_service(pThis);
             }
         }
@@ -371,16 +387,16 @@ PDMBOTHCBDECL(int) ioapicMMIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GC
     return VINF_SUCCESS;
 }
 
-PDMBOTHCBDECL(void) ioapicSetIrq(PPDMDEVINS pDevIns, int iIrq, int iLevel)
+PDMBOTHCBDECL(void) ioapicSetIrq(PPDMDEVINS pDevIns, int iIrq, int iLevel, uint32_t uTagSrc)
 {
     /* PDM lock is taken here; */ /** @todo add assertion */
     IOAPICState *pThis = PDMINS_2_DATA(pDevIns, IOAPICState *);
     STAM_COUNTER_INC(&pThis->CTXSUFF(StatSetIrq));
-    LogFlow(("ioapicSetIrq: iIrq=%d iLevel=%d\n", iIrq, iLevel));
-    ioapic_set_irq(pThis, iIrq, iLevel);
+    LogFlow(("ioapicSetIrq: iIrq=%d iLevel=%d uTagSrc=%#x\n", iIrq, iLevel, uTagSrc));
+    ioapic_set_irq(pThis, iIrq, iLevel, uTagSrc);
 }
 
-PDMBOTHCBDECL(void) ioapicSendMsi(PPDMDEVINS pDevIns, RTGCPHYS GCAddr, uint32_t uValue)
+PDMBOTHCBDECL(void) ioapicSendMsi(PPDMDEVINS pDevIns, RTGCPHYS GCAddr, uint32_t uValue, uint32_t uTagSrc)
 {
     IOAPICState *pThis = PDMINS_2_DATA(pDevIns, IOAPICState *);
 
@@ -405,7 +421,8 @@ PDMBOTHCBDECL(void) ioapicSendMsi(PPDMDEVINS pDevIns, RTGCPHYS GCAddr, uint32_t 
                                                             delivery_mode,
                                                             vector_num,
                                                             0 /* polarity, n/a */,
-                                                            trigger_mode);
+                                                            trigger_mode,
+                                                            uTagSrc);
     /* We must be sure that attempts to reschedule in R3
        never get here */
     Assert(rc == VINF_SUCCESS);

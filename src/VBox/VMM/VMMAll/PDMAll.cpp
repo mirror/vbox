@@ -30,6 +30,10 @@
 #include <iprt/asm.h>
 #include <iprt/assert.h>
 
+#include "PDMInline.h"
+#include "dtrace/VBoxVMM.h"
+
+
 
 /**
  * Gets the pending interrupt.
@@ -52,12 +56,14 @@ VMMDECL(int) PDMGetInterrupt(PVMCPU pVCpu, uint8_t *pu8Interrupt)
         VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_INTERRUPT_APIC);
         Assert(pVM->pdm.s.Apic.CTX_SUFF(pDevIns));
         Assert(pVM->pdm.s.Apic.CTX_SUFF(pfnGetInterrupt));
-        int i = pVM->pdm.s.Apic.CTX_SUFF(pfnGetInterrupt)(pVM->pdm.s.Apic.CTX_SUFF(pDevIns));
+        uint32_t uTagSrc;
+        int i = pVM->pdm.s.Apic.CTX_SUFF(pfnGetInterrupt)(pVM->pdm.s.Apic.CTX_SUFF(pDevIns), &uTagSrc);
         AssertMsg(i <= 255 && i >= 0, ("i=%d\n", i));
         if (i >= 0)
         {
             pdmUnlock(pVM);
             *pu8Interrupt = (uint8_t)i;
+            VBOXVMM_PDM_IRQ_GET(pVCpu, RT_LOWORD(uTagSrc), RT_HIWORD(uTagSrc), i);
             return VINF_SUCCESS;
         }
     }
@@ -70,12 +76,14 @@ VMMDECL(int) PDMGetInterrupt(PVMCPU pVCpu, uint8_t *pu8Interrupt)
         VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_INTERRUPT_PIC);
         Assert(pVM->pdm.s.Pic.CTX_SUFF(pDevIns));
         Assert(pVM->pdm.s.Pic.CTX_SUFF(pfnGetInterrupt));
-        int i = pVM->pdm.s.Pic.CTX_SUFF(pfnGetInterrupt)(pVM->pdm.s.Pic.CTX_SUFF(pDevIns));
+        uint32_t uTagSrc;
+        int i = pVM->pdm.s.Pic.CTX_SUFF(pfnGetInterrupt)(pVM->pdm.s.Pic.CTX_SUFF(pDevIns), &uTagSrc);
         AssertMsg(i <= 255 && i >= 0, ("i=%d\n", i));
         if (i >= 0)
         {
             pdmUnlock(pVM);
             *pu8Interrupt = (uint8_t)i;
+            VBOXVMM_PDM_IRQ_GET(pVCpu, RT_LOWORD(uTagSrc), RT_HIWORD(uTagSrc), i);
             return VINF_SUCCESS;
         }
     }
@@ -93,17 +101,27 @@ VMMDECL(int) PDMGetInterrupt(PVMCPU pVCpu, uint8_t *pu8Interrupt)
  * @returns VBox status code.
  * @param   pVM             VM handle.
  * @param   u8Irq           The IRQ line.
- * @param   u8Level         The new level.
+ * @param   u8Level         The new level. 
+ * @param   uTagSrc         The IRQ tag and source tracer ID.  
  */
-VMMDECL(int) PDMIsaSetIrq(PVM pVM, uint8_t u8Irq, uint8_t u8Level)
+VMMDECL(int) PDMIsaSetIrq(PVM pVM, uint8_t u8Irq, uint8_t u8Level, uint32_t uTagSrc)
 {
     pdmLock(pVM);
+
+    /** @todo put the IRQ13 code elsewhere to avoid this unnecessary bloat. */
+    if (!uTagSrc && (u8Level & PDM_IRQ_LEVEL_HIGH)) /* FPU IRQ */
+    {
+        if (u8Level == PDM_IRQ_LEVEL_HIGH)
+            VBOXVMM_PDM_IRQ_HIGH(VMMGetCpu(pVM), 0, 0);
+        else
+            VBOXVMM_PDM_IRQ_HILO(VMMGetCpu(pVM), 0, 0);
+    }
 
     int rc = VERR_PDM_NO_PIC_INSTANCE;
     if (pVM->pdm.s.Pic.CTX_SUFF(pDevIns))
     {
         Assert(pVM->pdm.s.Pic.CTX_SUFF(pfnSetIrq));
-        pVM->pdm.s.Pic.CTX_SUFF(pfnSetIrq)(pVM->pdm.s.Pic.CTX_SUFF(pDevIns), u8Irq, u8Level);
+        pVM->pdm.s.Pic.CTX_SUFF(pfnSetIrq)(pVM->pdm.s.Pic.CTX_SUFF(pDevIns), u8Irq, u8Level, uTagSrc);
         rc = VINF_SUCCESS;
     }
 
@@ -111,7 +129,7 @@ VMMDECL(int) PDMIsaSetIrq(PVM pVM, uint8_t u8Irq, uint8_t u8Level)
     {
         Assert(pVM->pdm.s.IoApic.CTX_SUFF(pfnSetIrq));
 
-        /**
+        /*
          * Apply Interrupt Source Override rules.
          * See ACPI 4.0 specification 5.2.12.4 and 5.2.12.5 for details on
          * interrupt source override.
@@ -123,10 +141,12 @@ VMMDECL(int) PDMIsaSetIrq(PVM pVM, uint8_t u8Irq, uint8_t u8Level)
         if (u8Irq == 0)
             u8Irq = 2;
 
-        pVM->pdm.s.IoApic.CTX_SUFF(pfnSetIrq)(pVM->pdm.s.IoApic.CTX_SUFF(pDevIns), u8Irq, u8Level);
+        pVM->pdm.s.IoApic.CTX_SUFF(pfnSetIrq)(pVM->pdm.s.IoApic.CTX_SUFF(pDevIns), u8Irq, u8Level, uTagSrc);
         rc = VINF_SUCCESS;
     }
 
+    if (!uTagSrc && u8Level == PDM_IRQ_LEVEL_LOW)
+        VBOXVMM_PDM_IRQ_LOW(VMMGetCpu(pVM), 0, 0);
     pdmUnlock(pVM);
     return rc;
 }
@@ -139,14 +159,15 @@ VMMDECL(int) PDMIsaSetIrq(PVM pVM, uint8_t u8Irq, uint8_t u8Level)
  * @param   pVM             VM handle.
  * @param   u8Irq           The IRQ line.
  * @param   u8Level         The new level.
+ * @param   uTagSrc         The IRQ tag and source tracer ID.  
  */
-VMMDECL(int) PDMIoApicSetIrq(PVM pVM, uint8_t u8Irq, uint8_t u8Level)
+VMM_INT_DECL(int) PDMIoApicSetIrq(PVM pVM, uint8_t u8Irq, uint8_t u8Level, uint32_t uTagSrc)
 {
     if (pVM->pdm.s.IoApic.CTX_SUFF(pDevIns))
     {
         Assert(pVM->pdm.s.IoApic.CTX_SUFF(pfnSetIrq));
         pdmLock(pVM);
-        pVM->pdm.s.IoApic.CTX_SUFF(pfnSetIrq)(pVM->pdm.s.IoApic.CTX_SUFF(pDevIns), u8Irq, u8Level);
+        pVM->pdm.s.IoApic.CTX_SUFF(pfnSetIrq)(pVM->pdm.s.IoApic.CTX_SUFF(pDevIns), u8Irq, u8Level, uTagSrc);
         pdmUnlock(pVM);
         return VINF_SUCCESS;
     }
@@ -160,14 +181,15 @@ VMMDECL(int) PDMIoApicSetIrq(PVM pVM, uint8_t u8Irq, uint8_t u8Level)
  * @param   pVM             VM handle.
  * @param   GCAddr          Request address.
  * @param   u8Value         Request value.
+ * @param   uTagSrc         The IRQ tag and source tracer ID.  
  */
-VMMDECL(int) PDMIoApicSendMsi(PVM pVM, RTGCPHYS GCAddr, uint32_t uValue)
+VMM_INT_DECL(int) PDMIoApicSendMsi(PVM pVM, RTGCPHYS GCAddr, uint32_t uValue, uint32_t uTagSrc)
 {
     if (pVM->pdm.s.IoApic.CTX_SUFF(pDevIns))
     {
         Assert(pVM->pdm.s.IoApic.CTX_SUFF(pfnSendMsi));
         pdmLock(pVM);
-        pVM->pdm.s.IoApic.CTX_SUFF(pfnSendMsi)(pVM->pdm.s.IoApic.CTX_SUFF(pDevIns), GCAddr, uValue);
+        pVM->pdm.s.IoApic.CTX_SUFF(pfnSendMsi)(pVM->pdm.s.IoApic.CTX_SUFF(pDevIns), GCAddr, uValue, uTagSrc);
         pdmUnlock(pVM);
         return VINF_SUCCESS;
     }

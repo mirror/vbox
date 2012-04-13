@@ -108,7 +108,7 @@ DECLINLINE(bool)      msixIsPending(PPCIDEVICE pDev, uint32_t iVector)
 static void msixCheckPendingVector(PPDMDEVINS pDevIns, PCPDMPCIHLP pPciHlp, PPCIDEVICE pDev, uint32_t iVector)
 {
     if (msixIsPending(pDev, iVector) && !msixIsVectorMasked(pDev, iVector))
-        MsixNotify(pDevIns, pPciHlp, pDev, iVector, 1 /* iLevel */);
+        MsixNotify(pDevIns, pPciHlp, pDev, iVector, 1 /* iLevel */, 0 /*uTagSrc*/);
 }
 
 #ifdef IN_RING3
@@ -238,7 +238,7 @@ bool     MsixIsEnabled(PPCIDEVICE pDev)
     return pciDevIsMsixCapable(pDev) && msixIsEnabled(pDev);
 }
 
-void MsixNotify(PPDMDEVINS pDevIns, PCPDMPCIHLP pPciHlp, PPCIDEVICE pDev, int iVector, int iLevel)
+void MsixNotify(PPDMDEVINS pDevIns, PCPDMPCIHLP pPciHlp, PPCIDEVICE pDev, int iVector, int iLevel, uint32_t uTagSrc)
 {
     AssertMsg(msixIsEnabled(pDev), ("Must be enabled to use that"));
 
@@ -264,7 +264,7 @@ void MsixNotify(PPDMDEVINS pDevIns, PCPDMPCIHLP pPciHlp, PPCIDEVICE pDev, int iV
     RTGCPHYS   GCAddr = msixGetMsiAddress(pDev, iVector);
     uint32_t   u32Value = msixGetMsiData(pDev, iVector);
 
-    pPciHlp->pfnIoApicSendMsi(pDevIns, GCAddr, u32Value);
+    pPciHlp->pfnIoApicSendMsi(pDevIns, GCAddr, u32Value, uTagSrc);
 }
 
 DECLINLINE(bool) msixBitJustCleared(uint32_t uOldValue,
