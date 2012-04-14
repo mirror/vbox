@@ -19,10 +19,10 @@
 
 
 /**
- * Calculates the next IRQ tag. 
- *  
+ * Calculates the next IRQ tag.
+ *
  * @returns IRQ tag.
- * @param   pVM                 The VM handle. 
+ * @param   pVM                 The VM handle.
  * @param   idTracer            The ID of the source device.
  */
 DECLINLINE(uint32_t) pdmCalcIrqTag(PVM pVM, uint32_t idTracer)
@@ -30,7 +30,7 @@ DECLINLINE(uint32_t) pdmCalcIrqTag(PVM pVM, uint32_t idTracer)
     uint32_t uTag = (pVM->pdm.s.uIrqTag + 1) & 0x3ff; /* {0..1023} */
     if (!uTag)
         uTag++;
-    pVM->pdm.s.uIrqTag = uTag | (idTracer << 16);
+    pVM->pdm.s.uIrqTag = uTag |= (idTracer << 16);
     return uTag;
 }
 
