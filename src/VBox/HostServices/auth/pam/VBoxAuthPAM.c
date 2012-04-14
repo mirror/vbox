@@ -62,6 +62,8 @@
 /* The name of the PAM library */
 # ifdef RT_OS_SOLARIS
 #  define PAM_LIB_NAME "libpam.so.1"
+# elif defined(RT_OS_FREEBSD)
+#  define PAM_LIB_NAME "libpam.so"
 # else
 #  define PAM_LIB_NAME "libpam.so.0"
 # endif
