@@ -650,13 +650,13 @@ bool vboxNetFltOsMaybeRediscovered(PVBOXNETFLTINS pThis)
         ng_rmnode_self(pThis->u.s.node);
         pThis->u.s.node = NULL;
     }
+    VBOXCURVNET_RESTORE();
 
     if (ifp0 != NULL)
     {
         vboxNetFltOsDeleteInstance(pThis);
         vboxNetFltOsInitInstance(pThis, NULL);
     }
-    VBOXCURVNET_RESTORE();
 
     return !ASMAtomicUoReadBool(&pThis->fDisconnectedFromHost);
 }
@@ -670,8 +670,10 @@ void vboxNetFltOsDeleteInstance(PVBOXNETFLTINS pThis)
     mtx_destroy(&pThis->u.s.inq.ifq_mtx);
     mtx_destroy(&pThis->u.s.outq.ifq_mtx);
 
+    VBOXCURVNET_SET_FROM_UCRED();
     if (pThis->u.s.node != NULL)
         ng_rmnode_self(pThis->u.s.node);
+    VBOXCURVNET_RESTORE();
     pThis->u.s.node = NULL;
 }
 
