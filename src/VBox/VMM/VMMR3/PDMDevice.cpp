@@ -314,6 +314,7 @@ int pdmR3DevInit(PVM pVM)
          * Initialize it.
          */
         pDevIns->u32Version                     = PDM_DEVINS_VERSION;
+        pDevIns->iInstance                      = paDevs[i].iInstance;
         //pDevIns->Internal.s.pNextR3             = NULL;
         //pDevIns->Internal.s.pPerDeviceNextR3    = NULL;
         pDevIns->Internal.s.pDevR3              = paDevs[i].pDev;
@@ -329,12 +330,15 @@ int pdmR3DevInit(PVM pVM)
         //pDevIns->Internal.s.pPciDeviceRC        = 0;
         //pDevIns->Internal.s.pPciBusRC           = 0;
         pDevIns->Internal.s.fIntFlags           = PDMDEVINSINT_FLAGS_SUSPENDED;
+        //pDevIns->Internal.s.uLastIrqTag         = 0;
         pDevIns->pHlpR3                         = fTrusted ? &g_pdmR3DevHlpTrusted : &g_pdmR3DevHlpUnTrusted;
         pDevIns->pHlpRC                         = pHlpRC;
         pDevIns->pHlpR0                         = pHlpR0;
         pDevIns->pReg                           = paDevs[i].pDev->pReg;
         pDevIns->pCfg                           = pConfigNode;
-        pDevIns->iInstance                      = paDevs[i].iInstance;
+        //pDevIns->IBase.pfnQueryInterface        = NULL;
+        //pDevIns->fTracing                       = 0;
+        pDevIns->idTracing                      = ++pVM->pdm.s.idTracingDev;
         pDevIns->pvInstanceDataR3               = &pDevIns->achInstanceData[0];
         pDevIns->pvInstanceDataRC               = pDevIns->pReg->fFlags & PDM_DEVREG_FLAGS_RC
                                                 ? MMHyperR3ToRC(pVM, pDevIns->pvInstanceDataR3) : NIL_RTRCPTR;

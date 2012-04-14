@@ -576,6 +576,8 @@ static int pdmR3UsbCreateDevice(PVM pVM, PPDMUSBHUB pHub, PPDMUSB pUsbDev, int i
     pUsbIns->iInstance                      = iInstance;
     pUsbIns->pvInstanceDataR3               = &pUsbIns->achInstanceData[0];
     pUsbIns->pszName                        = RTStrDup(pUsbDev->pReg->szName);
+    //pUsbIns->fTracing                       = 0;
+    pUsbIns->idTracing                      = ++pVM->pdm.s.idTracingOther;
 
     /*
      * Link it into all the lists.

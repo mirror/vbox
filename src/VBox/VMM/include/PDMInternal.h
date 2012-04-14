@@ -1014,8 +1014,21 @@ typedef struct PDM
     /** Bitmask controlling the queue flushing.
      * See PDM_QUEUE_FLUSH_FLAG_ACTIVE and PDM_QUEUE_FLUSH_FLAG_PENDING. */
     uint32_t volatile               fQueueFlushing;
+
     /** The current IRQ tag (tracing purposes). */
-    uint32_t                        uIrqTag;
+    uint32_t volatile               uIrqTag;
+
+    /** The tracing ID of the next device instance.
+     *
+     * @remarks We keep the device tracing ID seperate from the rest as these are
+     *          then more likely to end up with the same ID from one run to
+     *          another, making analysis somewhat easier.  Drivers and USB devices
+     *          are more volatile and can be changed at runtime, thus these are much
+     *          less likely to remain stable, so just heap them all together. */
+    uint32_t                        idTracingDev;
+    /** The tracing ID of the next driver instance, USB device instance or other
+     * PDM entity requiring an ID. */
+    uint32_t                        idTracingOther;
 
     /** @name   VMM device heap
      * @{ */
