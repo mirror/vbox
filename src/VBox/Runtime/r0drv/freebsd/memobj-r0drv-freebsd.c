@@ -191,16 +191,36 @@ static vm_page_t rtR0MemObjFreeBSDContigPhysAllocHelper(vm_object_t pObject, vm_
                                                         u_long uAlignment, bool fWire)
 {
     vm_page_t pPages;
+    int cTries = 0;
+
 #if __FreeBSD_version > 1000000
     int fFlags = VM_ALLOC_INTERRUPT | VM_ALLOC_NOBUSY;
     if (fWire)
         fFlags |= VM_ALLOC_WIRED;
-    VM_OBJECT_LOCK(pObject);
-    pPages = vm_page_alloc_contig(pObject, iPIndex, fFlags, cPages, 0, VmPhysAddrHigh, uAlignment, 0, VM_MEMATTR_DEFAULT);
-    VM_OBJECT_UNLOCK(pObject);
+
+    while (cTries <= 1)
+    {
+        VM_OBJECT_LOCK(pObject);
+        pPages = vm_page_alloc_contig(pObject, iPIndex, fFlags, cPages, 0,
+                                      VmPhysAddrHigh, uAlignment, 0, VM_MEMATTR_DEFAULT);
+        VM_OBJECT_UNLOCK(pObject);
+        if (pPages)
+            break;
+        vm_contig_grow_cache(cTries, 0, VmPhysAddrHigh);
+        cTries++;
+    }
+
     return pPages;
 #else
-    pPages = vm_phys_alloc_contig(cPages, 0, VmPhysAddrHigh, uAlignment, 0);
+    while (cTries <= 1)
+    {
+        pPages = vm_phys_alloc_contig(cPages, 0, VmPhysAddrHigh, uAlignment, 0);
+        if (pPages)
+            break;
+        vm_contig_grow_cache(cTries, 0, VmPhysAddrHigh);
+        cTries++;
+    }
+
     if (!pPages)
         return pPages;
     VM_OBJECT_LOCK(pObject);
@@ -259,11 +279,11 @@ static int rtR0MemObjFreeBSDPhysAllocHelper(vm_object_t pObject, u_long cPages,
 static int rtR0MemObjFreeBSDAllocHelper(PRTR0MEMOBJFREEBSD pMemFreeBSD, bool fExecutable,
                                         vm_paddr_t VmPhysAddrHigh, bool fContiguous, int rcNoMem)
 {
-    int rc;
-    size_t cPages = atop(pMemFreeBSD->Core.cb);
+    vm_offset_t MapAddress = vm_map_min(kernel_map);
+    size_t      cPages = atop(pMemFreeBSD->Core.cb);
+    int         rc;
 
     pMemFreeBSD->pObject = vm_object_allocate(OBJT_PHYS, cPages);
-    vm_offset_t MapAddress;
 
     /* No additional object reference for auto-deallocation upon unmapping. */
     rc = vm_map_find(kernel_map, pMemFreeBSD->pObject, 0,
@@ -287,9 +307,12 @@ static int rtR0MemObjFreeBSDAllocHelper(PRTR0MEMOBJFREEBSD pMemFreeBSD, bool fEx
 
         vm_map_remove(kernel_map, MapAddress, MapAddress + pMemFreeBSD->Core.cb);
     }
-    rc = rcNoMem; /** @todo fix translation (borrow from darwin) */
+    else
+    {
+        rc = rcNoMem; /** @todo fix translation (borrow from darwin) */
+        vm_object_deallocate(pMemFreeBSD->pObject);
+    }
 
-    vm_object_deallocate(pMemFreeBSD->pObject);
     rtR0MemObjDelete(&pMemFreeBSD->Core);
     return rc;
 }
@@ -319,7 +342,7 @@ DECLHIDDEN(int) rtR0MemObjNativeAllocLow(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, 
     if (!pMemFreeBSD)
         return VERR_NO_MEMORY;
 
-    int rc = rtR0MemObjFreeBSDAllocHelper(pMemFreeBSD, fExecutable, _4G, false, VERR_NO_LOW_MEMORY);
+    int rc = rtR0MemObjFreeBSDAllocHelper(pMemFreeBSD, fExecutable, _4G - 1, false, VERR_NO_LOW_MEMORY);
     if (RT_FAILURE(rc))
     {
         rtR0MemObjDelete(&pMemFreeBSD->Core);
@@ -338,7 +361,7 @@ DECLHIDDEN(int) rtR0MemObjNativeAllocCont(PPRTR0MEMOBJINTERNAL ppMem, size_t cb,
     if (!pMemFreeBSD)
         return VERR_NO_MEMORY;
 
-    int rc = rtR0MemObjFreeBSDAllocHelper(pMemFreeBSD, fExecutable, _4G, true, VERR_NO_CONT_MEMORY);
+    int rc = rtR0MemObjFreeBSDAllocHelper(pMemFreeBSD, fExecutable, _4G - 1, true, VERR_NO_CONT_MEMORY);
     if (RT_FAILURE(rc))
     {
         rtR0MemObjDelete(&pMemFreeBSD->Core);
