@@ -366,6 +366,8 @@ VMMR3DECL(int) PDMR3Init(PVM pVM)
      * Init the structure.
      */
     pVM->pdm.s.GCPhysVMMDevHeap = NIL_RTGCPHYS;
+    //pVM->pdm.s.idTracingDev = 0;
+    pVM->pdm.s.idTracingOther = 1024;
 
     /*
      * Initialize critical sections first.
