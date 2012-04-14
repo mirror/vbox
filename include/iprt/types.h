@@ -183,6 +183,10 @@ RT_C_DECLS_END
 # if defined(__GNUC__)
 #  if defined(RT_OS_LINUX) && __GNUC__ < 3
 typedef uint8_t bool;
+#  elif defined(RT_OS_FREEBSD)
+#   ifndef __bool_true_false_are_defined
+typedef _Bool bool;
+#   endif
 #  else
 #   if defined(RT_OS_DARWIN) && defined(_STDBOOL_H)
 #    undef bool
