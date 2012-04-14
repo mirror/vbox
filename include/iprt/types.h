@@ -82,6 +82,8 @@ RT_C_DECLS_END
 #  include <stddef.h>
 #  define _UINT64_T_DECLARED
 #  define _INT64_T_DECLARED
+#  define _UINTPTR_T_DECLARED
+#  define _INTPTR_T_DECLARED
 #  include <sys/types.h>
 
 # elif defined(RT_OS_LINUX) && defined(__KERNEL__)
