@@ -29,6 +29,7 @@
 #include <iprt/mem.h>
 #include <iprt/dvm.h>
 #include <iprt/string.h>
+#include <iprt/asm.h>
 #include "internal/dvm.h"
 
 /*******************************************************************************
