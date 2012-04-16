@@ -125,18 +125,17 @@ RT_C_DECLS_END
 #   undef __inline
 #   define __inline __inline
 #  endif
-#  if LINUX_VERSION_CODE >= KERNEL_VERSION(3,4,0)
-#   undef __KERNEL__
-    /**
-     * linux 3.4-rc3 unconditionally defines NULL as ((void *)0)
-     * don't let it break our build
+#  include <linux/types.h>
+#  include <linux/stddef.h>
+    /*
+     * Starting with 3.4, <linux/stddef.h> defines NULL as '((void*)0)' which
+     * does not work for C++ code.
      */
-#   include <linux/stddef.h>
-#   define __KERNEL__
-#   include <linux/types.h>
+#  undef NULL
+#  if defined(__cplusplus)
+#   define NULL 0
 #  else
-#   include <linux/types.h>
-#   include <linux/stddef.h>
+#   define NULL ((void *)0)
 #  endif
 #  undef uintptr_t
 #  ifdef __GNUC__
