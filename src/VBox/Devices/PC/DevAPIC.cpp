@@ -1698,7 +1698,8 @@ static DECLCALLBACK(void) apicR3TimerCallback(PPDMDEVINS pDevIns, PTMTIMER pTime
 
     if (!(pApic->lvt[APIC_LVT_TIMER] & APIC_LVT_MASKED)) {
         LogFlow(("apic_timer: trigger irq\n"));
-        apic_set_irq(pDev, pApic, pApic->lvt[APIC_LVT_TIMER] & 0xff, APIC_TRIGGER_EDGE, 0 /*uTagSrc*/);
+        apic_set_irq(pDev, pApic, pApic->lvt[APIC_LVT_TIMER] & 0xff, APIC_TRIGGER_EDGE, 
+                     pDev->CTX_SUFF(pApicHlp)->pfnCalcIrqTag(pDevIns));
 
         if (   (pApic->lvt[APIC_LVT_TIMER] & APIC_LVT_TIMER_PERIODIC)
             && pApic->initial_count > 0) {

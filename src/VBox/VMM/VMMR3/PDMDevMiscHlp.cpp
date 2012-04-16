@@ -238,6 +238,21 @@ static DECLCALLBACK(void) pdmR3ApicHlp_ClearInterruptFF(PPDMDEVINS pDevIns, PDMA
 }
 
 
+/** @interface_method_impl{PDMAPICHLPR3,pfnCalcIrqTag} */
+static DECLCALLBACK(uint32_t) pdmR3ApicHlp_CalcIrqTag(PPDMDEVINS pDevIns)
+{
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+    PVM pVM = pDevIns->Internal.s.pVMR3;
+
+    pdmLock(pVM);
+    uint32_t uTagSrc = pdmCalcIrqTag(pVM, pDevIns->idTracing);
+    pdmUnlock(pVM);
+
+    LogFlow(("pdmR3ApicHlp_CalcIrqTag: caller='%s'/%d: returns %#x\n", pDevIns->pReg->szName, pDevIns->iInstance, uTagSrc));
+    return uTagSrc;
+}
+
+
 /** @interface_method_impl{PDMAPICHLPR3,pfnChangeFeature} */
 static DECLCALLBACK(void) pdmR3ApicHlp_ChangeFeature(PPDMDEVINS pDevIns, PDMAPICVERSION enmVersion)
 {
@@ -358,6 +373,7 @@ const PDMAPICHLPR3 g_pdmR3DevApicHlp =
     PDM_APICHLPR3_VERSION,
     pdmR3ApicHlp_SetInterruptFF,
     pdmR3ApicHlp_ClearInterruptFF,
+    pdmR3ApicHlp_CalcIrqTag,
     pdmR3ApicHlp_ChangeFeature,
     pdmR3ApicHlp_GetCpuId,
     pdmR3ApicHlp_SendSipi,
