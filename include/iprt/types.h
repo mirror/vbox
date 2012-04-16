@@ -40,6 +40,7 @@
      */
 RT_C_DECLS_BEGIN
 #  include "xf86_ansic.h"
+#  undef NULL
 RT_C_DECLS_END
 
 # elif defined(RT_OS_DARWIN) && defined(KERNEL)
@@ -148,11 +149,21 @@ RT_C_DECLS_END
 #  undef false
 #  undef true
 #  undef bool
-
 # else
 #  include <stddef.h>
 #  include <sys/types.h>
 # endif
+
+
+/* Define any types missing from sys/types.h on windows. */
+# ifdef _MSC_VER
+#  undef ssize_t
+   typedef intptr_t ssize_t;
+# endif
+
+#else  /* no crt */
+# include <iprt/nocrt/compiler/compiler.h>
+#endif /* no crt */
 
 /** @def NULL
  * NULL pointer.
@@ -164,16 +175,6 @@ RT_C_DECLS_END
 #  define NULL ((void*)0)
 # endif
 #endif
-
-/* Define any types missing from sys/types.h on windows. */
-# ifdef _MSC_VER
-#  undef ssize_t
-   typedef intptr_t ssize_t;
-# endif
-
-#else  /* no crt */
-# include <iprt/nocrt/compiler/compiler.h>
-#endif /* no crt */
 
 
 
