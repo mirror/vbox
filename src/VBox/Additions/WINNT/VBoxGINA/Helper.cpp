@@ -130,7 +130,9 @@ bool VBoxGINAHandleCurrentSession(void)
     else /* No remote session. */
         fHandle = true;
 
+#ifdef DEBUG
     VBoxGINAVerbose(3, "VBoxGINA::handleCurrentSession: Handling current session=%RTbool\n", fHandle);
+#endif
     return fHandle;
 }
 
