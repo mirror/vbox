@@ -106,6 +106,8 @@ ifdef VBOX_WITH_TESTCASES
   vbox-img_LIBS += iconv
  else ifeq ($(KBUILD_TARGET),win)
   vbox-img_SDKS.win = VBOX_NTDLL
+ else ifeq ($(KBUILD_TARGET),solaris)
+  vbox-img_LIBS += kstat
  endif
 
 endif
