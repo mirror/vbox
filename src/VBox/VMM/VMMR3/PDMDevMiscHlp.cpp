@@ -239,16 +239,24 @@ static DECLCALLBACK(void) pdmR3ApicHlp_ClearInterruptFF(PPDMDEVINS pDevIns, PDMA
 
 
 /** @interface_method_impl{PDMAPICHLPR3,pfnCalcIrqTag} */
-static DECLCALLBACK(uint32_t) pdmR3ApicHlp_CalcIrqTag(PPDMDEVINS pDevIns)
+static DECLCALLBACK(uint32_t) pdmR3ApicHlp_CalcIrqTag(PPDMDEVINS pDevIns, uint8_t u8Level)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
     PVM pVM = pDevIns->Internal.s.pVMR3;
+    Assert(u8Level == PDM_IRQ_LEVEL_HIGH || u8Level == PDM_IRQ_LEVEL_FLIP_FLOP);
 
     pdmLock(pVM);
-    uint32_t uTagSrc = pdmCalcIrqTag(pVM, pDevIns->idTracing);
-    pdmUnlock(pVM);
 
-    LogFlow(("pdmR3ApicHlp_CalcIrqTag: caller='%s'/%d: returns %#x\n", pDevIns->pReg->szName, pDevIns->iInstance, uTagSrc));
+    uint32_t uTagSrc = pdmCalcIrqTag(pVM, pDevIns->idTracing);
+    if (u8Level == PDM_IRQ_LEVEL_HIGH)
+        VBOXVMM_PDM_IRQ_HIGH(VMMGetCpu(pVM), RT_LOWORD(uTagSrc), RT_HIWORD(uTagSrc));
+    else
+        VBOXVMM_PDM_IRQ_HILO(VMMGetCpu(pVM), RT_LOWORD(uTagSrc), RT_HIWORD(uTagSrc));
+
+
+    pdmUnlock(pVM);
+    LogFlow(("pdmR3ApicHlp_CalcIrqTag: caller='%s'/%d: returns %#x (u8Level=%d)\n", 
+             pDevIns->pReg->szName, pDevIns->iInstance, uTagSrc, u8Level));
     return uTagSrc;
 }
 

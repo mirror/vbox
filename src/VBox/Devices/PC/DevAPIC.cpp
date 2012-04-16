@@ -835,7 +835,7 @@ static int apicWriteRegister(APICDeviceInfo *pDev, APICState *pApic, uint32_t iR
                                       vector,
                                       0 /* Polarity - conform to the bus */,
                                       0 /* Trigger mode - edge */,
-                                      0 /*uTagSrc*/);
+                                      pDev->CTX_SUFF(pApicHlp)->pfnCalcIrqTag(pDev->CTX_SUFF(pDevIns), PDM_IRQ_LEVEL_HIGH));
                 APIC_UNLOCK(pDev);
                 break;
             }
@@ -1432,7 +1432,8 @@ static int  apic_deliver(APICDeviceInfo *pDev, APICState *s,
     }
 
     return apic_bus_deliver(pDev, &DstSet, delivery_mode, vector_num,
-                            polarity, trigger_mode, 0 /* uTagSrc*/);
+                            polarity, trigger_mode, 
+                            pDev->CTX_SUFF(pApicHlp)->pfnCalcIrqTag(pDev->CTX_SUFF(pDevIns), PDM_IRQ_LEVEL_HIGH));
 }
 
 
@@ -1699,7 +1700,7 @@ static DECLCALLBACK(void) apicR3TimerCallback(PPDMDEVINS pDevIns, PTMTIMER pTime
     if (!(pApic->lvt[APIC_LVT_TIMER] & APIC_LVT_MASKED)) {
         LogFlow(("apic_timer: trigger irq\n"));
         apic_set_irq(pDev, pApic, pApic->lvt[APIC_LVT_TIMER] & 0xff, APIC_TRIGGER_EDGE, 
-                     pDev->CTX_SUFF(pApicHlp)->pfnCalcIrqTag(pDevIns));
+                     pDev->CTX_SUFF(pApicHlp)->pfnCalcIrqTag(pDevIns, PDM_IRQ_LEVEL_HIGH));
 
         if (   (pApic->lvt[APIC_LVT_TIMER] & APIC_LVT_TIMER_PERIODIC)
             && pApic->initial_count > 0) {

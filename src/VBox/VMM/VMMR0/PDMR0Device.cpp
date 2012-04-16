@@ -526,6 +526,28 @@ static DECLCALLBACK(void) pdmR0ApicHlp_ClearInterruptFF(PPDMDEVINS pDevIns, PDMA
 }
 
 
+/** @interface_method_impl{PDMAPICHLPR0,pfnCalcIrqTag} */
+static DECLCALLBACK(uint32_t) pdmR0ApicHlp_CalcIrqTag(PPDMDEVINS pDevIns, uint8_t u8Level)
+{
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+    PVM pVM = pDevIns->Internal.s.pVMR0;
+
+    pdmLock(pVM);
+
+    uint32_t uTagSrc = pdmCalcIrqTag(pVM, pDevIns->idTracing);
+    if (u8Level == PDM_IRQ_LEVEL_HIGH)
+        VBOXVMM_PDM_IRQ_HIGH(VMMGetCpu(pVM), RT_LOWORD(uTagSrc), RT_HIWORD(uTagSrc));
+    else
+        VBOXVMM_PDM_IRQ_HILO(VMMGetCpu(pVM), RT_LOWORD(uTagSrc), RT_HIWORD(uTagSrc));
+
+
+    pdmUnlock(pVM);
+    LogFlow(("pdmR0ApicHlp_CalcIrqTag: caller=%p/%d: returns %#x (u8Level=%d)\n", 
+             pDevIns, pDevIns->iInstance, uTagSrc, u8Level));
+    return uTagSrc;
+}
+
+
 /** @interface_method_impl{PDMAPICHLPR0,pfnChangeFeature} */
 static DECLCALLBACK(void) pdmR0ApicHlp_ChangeFeature(PPDMDEVINS pDevIns, PDMAPICVERSION enmVersion)
 {
@@ -583,6 +605,7 @@ extern DECLEXPORT(const PDMAPICHLPR0) g_pdmR0ApicHlp =
     PDM_APICHLPR0_VERSION,
     pdmR0ApicHlp_SetInterruptFF,
     pdmR0ApicHlp_ClearInterruptFF,
+    pdmR0ApicHlp_CalcIrqTag,
     pdmR0ApicHlp_ChangeFeature,
     pdmR0ApicHlp_Lock,
     pdmR0ApicHlp_Unlock,

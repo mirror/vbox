@@ -1298,6 +1298,15 @@ typedef struct PDMAPICHLPRC
     DECLRCCALLBACKMEMBER(void, pfnClearInterruptFF,(PPDMDEVINS pDevIns, PDMAPICIRQ enmType, VMCPUID idCpu));
 
     /**
+     * Calculates an IRQ tag for a timer, IPI or similar event.
+     *  
+     * @returns The IRQ tag. 
+     * @param   pDevIns         Device instance of the APIC. 
+     * @param   u8Level         PDM_IRQ_LEVEL_HIGH or PDM_IRQ_LEVEL_FLIP_FLOP. 
+     */
+    DECLRCCALLBACKMEMBER(uint32_t, pfnCalcIrqTag,(PPDMDEVINS pDevIns, uint8_t u8Level));
+
+    /**
      * Modifies APIC-related bits in the CPUID feature mask.
      *
      * @param   pDevIns         Device instance of the APIC.
@@ -1338,7 +1347,7 @@ typedef RCPTRTYPE(PDMAPICHLPRC *) PPDMAPICHLPRC;
 typedef RCPTRTYPE(const PDMAPICHLPRC *) PCPDMAPICHLPRC;
 
 /** Current PDMAPICHLPRC version number. */
-#define PDM_APICHLPRC_VERSION                   PDM_VERSION_MAKE(0xfff5, 1, 0)
+#define PDM_APICHLPRC_VERSION                   PDM_VERSION_MAKE(0xfff5, 2, 0)
 
 
 /**
@@ -1366,6 +1375,15 @@ typedef struct PDMAPICHLPR0
      * @param   idCpu           Virtual CPU to clear flag upon.
      */
     DECLR0CALLBACKMEMBER(void, pfnClearInterruptFF,(PPDMDEVINS pDevIns, PDMAPICIRQ enmType, VMCPUID idCpu));
+
+    /**
+     * Calculates an IRQ tag for a timer, IPI or similar event.
+     *  
+     * @returns The IRQ tag. 
+     * @param   pDevIns         Device instance of the APIC. 
+     * @param   u8Level         PDM_IRQ_LEVEL_HIGH or PDM_IRQ_LEVEL_FLIP_FLOP. 
+     */
+    DECLR0CALLBACKMEMBER(uint32_t, pfnCalcIrqTag,(PPDMDEVINS pDevIns, uint8_t u8Level));
 
     /**
      * Modifies APIC-related bits in the CPUID feature mask.
@@ -1408,7 +1426,7 @@ typedef RCPTRTYPE(PDMAPICHLPR0 *) PPDMAPICHLPR0;
 typedef R0PTRTYPE(const PDMAPICHLPR0 *) PCPDMAPICHLPR0;
 
 /** Current PDMAPICHLPR0 version number. */
-#define PDM_APICHLPR0_VERSION                   PDM_VERSION_MAKE(0xfff4, 1, 0)
+#define PDM_APICHLPR0_VERSION                   PDM_VERSION_MAKE(0xfff4, 2, 0)
 
 /**
  * APIC R3 helpers.
@@ -1437,12 +1455,13 @@ typedef struct PDMAPICHLPR3
     DECLR3CALLBACKMEMBER(void, pfnClearInterruptFF,(PPDMDEVINS pDevIns, PDMAPICIRQ enmType, VMCPUID idCpu));
 
     /**
-     * Calculates an IRQ tag for a timer event.
+     * Calculates an IRQ tag for a timer, IPI or similar event.
      *  
      * @returns The IRQ tag. 
-     * @param   pDevIns         Device instance of the APIC.
+     * @param   pDevIns         Device instance of the APIC. 
+     * @param   u8Level         PDM_IRQ_LEVEL_HIGH or PDM_IRQ_LEVEL_FLIP_FLOP. 
      */
-    DECLR3CALLBACKMEMBER(uint32_t, pfnCalcIrqTag,(PPDMDEVINS pDevIns));
+    DECLR3CALLBACKMEMBER(uint32_t, pfnCalcIrqTag,(PPDMDEVINS pDevIns, uint8_t u8Level));
 
     /**
      * Modifies APIC-related bits in the CPUID feature mask.

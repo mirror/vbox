@@ -148,8 +148,12 @@ static void ioapic_service(IOAPICState *pThis)
                 dest_mode = (entry >> 11) & 1;
                 delivery_mode = (entry >> 8) & 7;
                 polarity = (entry >> 13) & 1;
+                uint32_t uTagSrc = pThis->auTagSrc[i];
                 if (trig_mode == APIC_TRIGGER_EDGE)
+                {
+                    pThis->auTagSrc[i] = 0;
                     pThis->irr &= ~mask;
+                }
                 if (delivery_mode == APIC_DM_EXTINT)
                     /* malc: i'm still not so sure about ExtINT delivery */
                 {
@@ -158,8 +162,6 @@ static void ioapic_service(IOAPICState *pThis)
                 }
                 else
                     vector = entry & 0xff;
-                uint32_t uTagSrc = pThis->auTagSrc[i];
-                pThis->auTagSrc[i] = 0;
 
                 int rc = pThis->CTX_SUFF(pIoApicHlp)->pfnApicBusDeliver(pThis->CTX_SUFF(pDevIns),
                                                                         dest,
@@ -201,10 +203,16 @@ static void ioapic_set_irq(void *opaque, int vector, int level, uint32_t uTagSrc
                 ioapic_service(pThis);
 
                 if ((level & PDM_IRQ_LEVEL_FLIP_FLOP) == PDM_IRQ_LEVEL_FLIP_FLOP)
+                {
                     pThis->irr &= ~mask;
+                    pThis->auTagSrc[vector] = 0;
+                }
             }
             else
+            {
                 pThis->irr &= ~mask;
+                pThis->auTagSrc[vector] = 0;
+            }
         }
         else
         {
@@ -525,7 +533,10 @@ static DECLCALLBACK(void) ioapicReset(PPDMDEVINS pDevIns)
     pThis->ioregsel = 0;
     pThis->irr      = 0;
     for (unsigned i = 0; i < IOAPIC_NUM_PINS; i++)
+    {
         pThis->ioredtbl[i] = 1 << 16; /* mask LVT */
+        pThis->auTagSrc[i] = 0;
+    }
 
     IOAPIC_UNLOCK(pThis);
 }
