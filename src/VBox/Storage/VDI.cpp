@@ -73,6 +73,7 @@ static int  vdiUpdateBlockInfoAsync(PVDIIMAGEDESC pImage, unsigned uBlock, PVDIO
 static void vdiConvPreHeaderEndianess(VDIECONV enmConv, PVDIPREHEADER pPreHdrConv,
                                       PVDIPREHEADER pPreHdr)
 {
+    memcpy(pPreHdrConv->szFileInfo, pPreHdr->szFileInfo, sizeof(pPreHdr->szFileInfo));
     pPreHdrConv->u32Signature = SET_ENDIAN_U32(enmConv, pPreHdr->u32Signature);
     pPreHdrConv->u32Version   = SET_ENDIAN_U32(enmConv, pPreHdr->u32Version);
 }
