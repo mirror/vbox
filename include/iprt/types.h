@@ -125,8 +125,19 @@ RT_C_DECLS_END
 #   undef __inline
 #   define __inline __inline
 #  endif
-#  include <linux/types.h>
-#  include <linux/stddef.h>
+#  if LINUX_VERSION_CODE >= KERNEL_VERSION(3,4,0)
+#   undef __KERNEL__
+    /**
+     * linux 3.4-rc3 unconditionally defines NULL in as ((void *)0)
+     * don't let it break our build
+     */
+#   include <linux/stddef.h>
+#   define __KERNEL__
+#   include <linux/types.h>
+#  else
+#   include <linux/types.h>
+#   include <linux/stddef.h>
+#  endif
 #  undef uintptr_t
 #  ifdef __GNUC__
 #   if (__GNUC__ * 100 + __GNUC_MINOR__) <= 400
