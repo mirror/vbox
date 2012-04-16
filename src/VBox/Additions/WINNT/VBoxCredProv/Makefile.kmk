@@ -20,7 +20,7 @@ include	$(KBUILD_PATH)/subheader.kmk
 
 DLLS += VBoxCredProv
 VBoxCredProv_TEMPLATE    = VBOXGUESTR3DLL
-VBoxCredProv_DEFS        = VBGL_VBOXGUEST VBOX_WITH_HGCM UNICODE
+VBoxCredProv_DEFS        = VBGL_VBOXGUEST VBOX_WITH_HGCM VBOX_WITH_SENS UNICODE
 VBoxCredProv_SDKS.x86    = WINDDK
 VBoxCredProv_SOURCES  = \
 	VBoxCredentialProvider.cpp \
