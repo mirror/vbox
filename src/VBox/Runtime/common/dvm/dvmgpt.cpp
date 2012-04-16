@@ -34,6 +34,7 @@
 #include <iprt/dvm.h>
 #include <iprt/string.h>
 #include <iprt/uuid.h>
+#include <iprt/asm.h>
 #include "internal/dvm.h"
 
 
