@@ -42,7 +42,7 @@
 RTDECL(char *) RTPathExt(const char *pszPath)
 {
     const char *psz = pszPath;
-    const char *pszExt = (char *)NULL;
+    const char *pszExt = NULL;
 
     for (;; psz++)
     {
@@ -51,13 +51,13 @@ RTDECL(char *) RTPathExt(const char *pszPath)
             /* handle separators. */
 #if defined(RT_OS_WINDOWS) || defined(RT_OS_OS2)
             case ':':
-                pszExt = (char *)NULL;
+                pszExt = NULL;
                 break;
 
             case '\\':
 #endif
             case '/':
-                pszExt = (char *)NULL;
+                pszExt = NULL;
                 break;
             case '.':
                 pszExt = psz;
@@ -67,11 +67,11 @@ RTDECL(char *) RTPathExt(const char *pszPath)
             case '\0':
                 if (pszExt)
                     return (char *)(void *)pszExt;
-                return (char *)NULL;
+                return NULL;
         }
     }
 
     /* will never get here */
-    return (char *)NULL;
+    return NULL;
 }
 

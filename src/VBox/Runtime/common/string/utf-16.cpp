@@ -463,7 +463,7 @@ RTDECL(int)  RTUtf16ToUtf8Tag(PCRTUTF16 pwszString, char **ppszString, const cha
      */
     Assert(VALID_PTR(ppszString));
     Assert(VALID_PTR(pwszString));
-    *ppszString = (char *)NULL;
+    *ppszString = NULL;
 
     /*
      * Validate the UTF-16 string and calculate the length of the UTF-8 encoding of it.
@@ -528,7 +528,7 @@ RTDECL(int)  RTUtf16ToUtf8ExTag(PCRTUTF16 pwszString, size_t cwcString, char **p
         }
         else
         {
-            *ppsz = (char *)NULL;
+            *ppsz = NULL;
             fShouldFree = true;
             cch = RT_MAX(cch, cchResult + 1);
             pszResult = (char *)RTStrAllocTag(cch, pszTag);
@@ -823,7 +823,7 @@ RTDECL(int)  RTUtf16ToLatin1Tag(PCRTUTF16 pwszString, char **ppszString, const c
      */
     Assert(VALID_PTR(ppszString));
     Assert(VALID_PTR(pwszString));
-    *ppszString = (char *)NULL;
+    *ppszString = NULL;
 
     /*
      * Validate the UTF-16 string and calculate the length of the UTF-8 encoding of it.
@@ -888,7 +888,7 @@ RTDECL(int)  RTUtf16ToLatin1ExTag(PCRTUTF16 pwszString, size_t cwcString, char *
         }
         else
         {
-            *ppsz = (char *)NULL;
+            *ppsz = NULL;
             fShouldFree = true;
             cch = RT_MAX(cch, cchResult + 1);
             pszResult = (char *)RTMemAllocTag(cch, pszTag);
@@ -1002,7 +1002,7 @@ RTDECL(int) RTLatin1ToUtf16Tag(const char *pszString, PRTUTF16 *ppwszString, con
      */
     Assert(VALID_PTR(ppwszString));
     Assert(VALID_PTR(pszString));
-    *ppwszString = (PRTUTF16)NULL;
+    *ppwszString = NULL;
 
     /*
      * Validate the input and calculate the length of the UTF-16 string.
@@ -1070,7 +1070,7 @@ RTDECL(int)  RTLatin1ToUtf16ExTag(const char *pszString, size_t cchString,
         }
         else
         {
-            *ppwsz = (PRTUTF16)NULL;
+            *ppwsz = NULL;
             fShouldFree = true;
             cwc = RT_MAX(cwcResult + 1, cwc);
             pwszResult = (PRTUTF16)RTMemAllocTag(cwc * sizeof(RTUTF16), pszTag);

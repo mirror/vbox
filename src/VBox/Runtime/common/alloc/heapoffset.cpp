@@ -507,10 +507,10 @@ RT_EXPORT_SYMBOL(RTHeapOffsetAllocZ);
  */
 static PRTHEAPOFFSETBLOCK rtHeapOffsetAllocBlock(PRTHEAPOFFSETINTERNAL pHeapInt, size_t cb, size_t uAlignment)
 {
-    PRTHEAPOFFSETBLOCK  pRet = (PRTHEAPOFFSETBLOCK)NULL;
+    PRTHEAPOFFSETBLOCK  pRet = NULL;
     PRTHEAPOFFSETFREE   pFree;
 
-    AssertReturn((pHeapInt)->u32Magic == RTHEAPOFFSET_MAGIC, (PRTHEAPOFFSETBLOCK)NULL);
+    AssertReturn((pHeapInt)->u32Magic == RTHEAPOFFSET_MAGIC, NULL);
 #ifdef RTHEAPOFFSET_STRICT
     rtHeapOffsetAssertAll(pHeapInt);
 #endif
@@ -703,8 +703,8 @@ static void rtHeapOffsetFreeBlock(PRTHEAPOFFSETINTERNAL pHeapInt, PRTHEAPOFFSETB
      * Look for the closest free list blocks by walking the blocks right
      * of us (both lists are sorted by address).
      */
-    pLeft = (PRTHEAPOFFSETFREE)NULL;
-    pRight = (PRTHEAPOFFSETFREE)NULL;
+    pLeft = NULL;
+    pRight = NULL;
     if (pHeapInt->offFreeTail)
     {
         pRight = RTHEAPOFF_TO_PTR_N(pHeapInt, pFree->Core.offNext, PRTHEAPOFFSETFREE);
@@ -813,8 +813,8 @@ static void rtHeapOffsetFreeBlock(PRTHEAPOFFSETINTERNAL pHeapInt, PRTHEAPOFFSETB
  */
 static void rtHeapOffsetAssertAll(PRTHEAPOFFSETINTERNAL pHeapInt)
 {
-    PRTHEAPOFFSETFREE pPrev = (PRTHEAPOFFSETFREE)NULL;
-    PRTHEAPOFFSETFREE pPrevFree = (PRTHEAPOFFSETFREE)NULL;
+    PRTHEAPOFFSETFREE pPrev = NULL;
+    PRTHEAPOFFSETFREE pPrevFree = NULL;
     PRTHEAPOFFSETFREE pBlock;
     for (pBlock = (PRTHEAPOFFSETFREE)(pHeapInt + 1);
          pBlock;

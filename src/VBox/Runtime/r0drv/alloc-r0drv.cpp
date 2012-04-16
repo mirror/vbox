@@ -84,7 +84,7 @@ DECLINLINE(PRTMEMHDR) rtR0MemAlloc(size_t cb, uint32_t fFlags)
     PRTMEMHDR pHdr;
     int rc = rtR0MemAllocEx(cb, fFlags, &pHdr);
     if (RT_FAILURE(rc))
-        return (PRTMEMHDR)NULL;
+        return NULL;
     return pHdr;
 }
 

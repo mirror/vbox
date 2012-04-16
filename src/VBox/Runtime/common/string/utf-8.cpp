@@ -274,7 +274,7 @@ static int rtUtf8Decode(const char *psz, size_t cch, PRTUNICP paCps, size_t cCps
 RTDECL(size_t) RTStrUniLen(const char *psz)
 {
     size_t cCodePoints;
-    int rc = rtUtf8Length(psz, RTSTR_MAX, &cCodePoints, (size_t *)NULL);
+    int rc = rtUtf8Length(psz, RTSTR_MAX, &cCodePoints, NULL);
     return RT_SUCCESS(rc) ? cCodePoints : 0;
 }
 RT_EXPORT_SYMBOL(RTStrUniLen);
@@ -283,7 +283,7 @@ RT_EXPORT_SYMBOL(RTStrUniLen);
 RTDECL(int) RTStrUniLenEx(const char *psz, size_t cch, size_t *pcCps)
 {
     size_t cCodePoints;
-    int rc = rtUtf8Length(psz, cch, &cCodePoints, (size_t *)NULL);
+    int rc = rtUtf8Length(psz, cch, &cCodePoints, NULL);
     if (pcCps)
         *pcCps = RT_SUCCESS(rc) ? cCodePoints : 0;
     return rc;
@@ -389,13 +389,13 @@ RTDECL(int) RTStrToUni(const char *pszString, PRTUNICP *ppaCps)
      */
     Assert(VALID_PTR(pszString));
     Assert(VALID_PTR(ppaCps));
-    *ppaCps = (PRTUNICP)NULL;
+    *ppaCps = NULL;
 
     /*
      * Validate the UTF-8 input and count its code points.
      */
     size_t cCps;
-    int rc = rtUtf8Length(pszString, RTSTR_MAX, &cCps, (size_t *)NULL);
+    int rc = rtUtf8Length(pszString, RTSTR_MAX, &cCps, NULL);
     if (RT_SUCCESS(rc))
     {
         /*
@@ -436,7 +436,7 @@ RTDECL(int)  RTStrToUniEx(const char *pszString, size_t cchString, PRTUNICP *ppa
      * Validate the UTF-8 input and count the code points.
      */
     size_t cCpsResult;
-    int rc = rtUtf8Length(pszString, cchString, &cCpsResult, (size_t *)NULL);
+    int rc = rtUtf8Length(pszString, cchString, &cCpsResult, NULL);
     if (RT_SUCCESS(rc))
     {
         if (pcCps)
@@ -456,7 +456,7 @@ RTDECL(int)  RTStrToUniEx(const char *pszString, size_t cchString, PRTUNICP *ppa
         }
         else
         {
-            *ppaCps = (PRTUNICP)NULL;
+            *ppaCps = NULL;
             fShouldFree = true;
             cCps = RT_MAX(cCpsResult + 1, cCps);
             paCpsResult = (PRTUNICP)RTMemAlloc(cCps * sizeof(RTUNICP));
@@ -710,7 +710,7 @@ RTDECL(int) RTStrToUtf16Tag(const char *pszString, PRTUTF16 *ppwszString, const 
      */
     Assert(VALID_PTR(ppwszString));
     Assert(VALID_PTR(pszString));
-    *ppwszString = (PRTUTF16)NULL;
+    *ppwszString = NULL;
 
     /*
      * Validate the UTF-8 input and calculate the length of the UTF-16 string.
@@ -778,7 +778,7 @@ RTDECL(int)  RTStrToUtf16ExTag(const char *pszString, size_t cchString,
         }
         else
         {
-            *ppwsz = (PRTUTF16)NULL;
+            *ppwsz = NULL;
             fShouldFree = true;
             cwc = RT_MAX(cwcResult + 1, cwc);
             pwszResult = (PRTUTF16)RTMemAllocTag(cwc * sizeof(RTUTF16), pszTag);
@@ -900,7 +900,7 @@ RTDECL(int)  RTLatin1ToUtf8Tag(const char *pszString, char **ppszString, const c
      */
     Assert(VALID_PTR(ppszString));
     Assert(VALID_PTR(pszString));
-    *ppszString = (char *)NULL;
+    *ppszString = NULL;
 
     /*
      * Calculate the length of the UTF-8 encoding of the Latin-1 string.
@@ -965,7 +965,7 @@ RTDECL(int)  RTLatin1ToUtf8ExTag(const char *pszString, size_t cchString, char *
         }
         else
         {
-            *ppsz = (char *)NULL;
+            *ppsz = NULL;
             fShouldFree = true;
             cch = RT_MAX(cch, cchResult + 1);
             pszResult = (char *)RTStrAllocTag(cch, pszTag);
@@ -1093,7 +1093,7 @@ RTDECL(int) RTStrToLatin1Tag(const char *pszString, char **ppszString, const cha
      */
     Assert(VALID_PTR(ppszString));
     Assert(VALID_PTR(pszString));
-    *ppszString = (char *)NULL;
+    *ppszString = NULL;
 
     /*
      * Validate the UTF-8 input and calculate the length of the Latin-1 string.
@@ -1161,7 +1161,7 @@ RTDECL(int)  RTStrToLatin1ExTag(const char *pszString, size_t cchString,
         }
         else
         {
-            *ppsz = (char *)NULL;
+            *ppsz = NULL;
             fShouldFree = true;
             cch = RT_MAX(cchResult + 1, cch);
             pszResult = (char *)RTMemAllocTag(cch, pszTag);

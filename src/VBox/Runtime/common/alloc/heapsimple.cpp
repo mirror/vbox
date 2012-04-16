@@ -317,12 +317,12 @@ RTDECL(int) RTHeapSimpleInit(PRTHEAPSIMPLE phHeap, void *pvMemory, size_t cbMemo
 
     /* Init the single free block. */
     pFree = pHeapInt->pFreeHead;
-    pFree->Core.pNext = (PRTHEAPSIMPLEBLOCK)NULL;
-    pFree->Core.pPrev = (PRTHEAPSIMPLEBLOCK)NULL;
+    pFree->Core.pNext = NULL;
+    pFree->Core.pPrev = NULL;
     pFree->Core.pHeap = pHeapInt;
     pFree->Core.fFlags = RTHEAPSIMPLEBLOCK_FLAGS_MAGIC | RTHEAPSIMPLEBLOCK_FLAGS_FREE;
-    pFree->pNext = (PRTHEAPSIMPLEFREE)NULL;
-    pFree->pPrev = (PRTHEAPSIMPLEFREE)NULL;
+    pFree->pNext = NULL;
+    pFree->pPrev = NULL;
     pFree->cb = pHeapInt->cbFree;
 
     *phHeap = pHeapInt;
@@ -475,7 +475,7 @@ RT_EXPORT_SYMBOL(RTHeapSimpleAllocZ);
  */
 static PRTHEAPSIMPLEBLOCK rtHeapSimpleAllocBlock(PRTHEAPSIMPLEINTERNAL pHeapInt, size_t cb, size_t uAlignment)
 {
-    PRTHEAPSIMPLEBLOCK  pRet = (PRTHEAPSIMPLEBLOCK)NULL;
+    PRTHEAPSIMPLEBLOCK  pRet = NULL;
     PRTHEAPSIMPLEFREE   pFree;
 
 #ifdef RTHEAPSIMPLE_STRICT
@@ -532,7 +532,7 @@ static PRTHEAPSIMPLEBLOCK rtHeapSimpleAllocBlock(PRTHEAPSIMPLEINTERNAL pHeapInt,
             {
                 pPrev = (PRTHEAPSIMPLEBLOCK)(pHeapInt + 1);
                 Assert(pPrev == &pFree->Core);
-                pPrev->pPrev = (PRTHEAPSIMPLEBLOCK)NULL;
+                pPrev->pPrev = NULL;
                 pPrev->pNext = &pFree->Core;
                 pPrev->pHeap = pHeapInt;
                 pPrev->fFlags = RTHEAPSIMPLEBLOCK_FLAGS_MAGIC;
@@ -695,8 +695,8 @@ static void rtHeapSimpleFreeBlock(PRTHEAPSIMPLEINTERNAL pHeapInt, PRTHEAPSIMPLEB
      * Look for the closest free list blocks by walking the blocks right
      * of us (both lists are sorted by address).
      */
-    pLeft = (PRTHEAPSIMPLEFREE)NULL;
-    pRight = (PRTHEAPSIMPLEFREE)NULL;
+    pLeft = NULL;
+    pRight = NULL;
     if (pHeapInt->pFreeTail)
     {
         pRight = (PRTHEAPSIMPLEFREE)pFree->Core.pNext;
@@ -727,7 +727,7 @@ static void rtHeapSimpleFreeBlock(PRTHEAPSIMPLEINTERNAL pHeapInt, PRTHEAPSIMPLEB
     {
         Assert(pRight == pHeapInt->pFreeHead);
         pFree->Core.fFlags |= RTHEAPSIMPLEBLOCK_FLAGS_FREE;
-        pFree->pPrev = (PRTHEAPSIMPLEFREE)NULL;
+        pFree->pPrev = NULL;
         pFree->pNext = pRight;
         if (pRight)
             pRight->pPrev = pFree;
@@ -805,8 +805,8 @@ static void rtHeapSimpleFreeBlock(PRTHEAPSIMPLEINTERNAL pHeapInt, PRTHEAPSIMPLEB
  */
 static void rtHeapSimpleAssertAll(PRTHEAPSIMPLEINTERNAL pHeapInt)
 {
-    PRTHEAPSIMPLEFREE pPrev = (PRTHEAPSIMPLEFREE)NULL;
-    PRTHEAPSIMPLEFREE pPrevFree = (PRTHEAPSIMPLEFREE)NULL;
+    PRTHEAPSIMPLEFREE pPrev = NULL;
+    PRTHEAPSIMPLEFREE pPrevFree = NULL;
     PRTHEAPSIMPLEFREE pBlock;
     for (pBlock = (PRTHEAPSIMPLEFREE)(pHeapInt + 1);
          pBlock;

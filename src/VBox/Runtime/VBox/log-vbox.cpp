@@ -168,7 +168,7 @@
 *   Global Variables                                                           *
 *******************************************************************************/
 /** The default logger. */
-static PRTLOGGER                    g_pLogger = (PRTLOGGER)NULL;
+static PRTLOGGER                    g_pLogger = NULL;
 /** The default logger groups.
  * This must match LOGGROUP! */
 static const char                  *g_apszGroups[] =
@@ -411,14 +411,14 @@ RTDECL(PRTLOGGER) RTLogDefaultInit(void)
 
 # else  /* IN_GUEST */
     /* The user destination is backdoor logging. */
-    rc = RTLogCreate(&pLogger, 0, (const char *)NULL, "VBOX_LOG", RT_ELEMENTS(g_apszGroups), &g_apszGroups[0], RTLOGDEST_USER, "VBox.log");
+    rc = RTLogCreate(&pLogger, 0, NULL, "VBOX_LOG", RT_ELEMENTS(g_apszGroups), &g_apszGroups[0], RTLOGDEST_USER, "VBox.log");
 # endif /* IN_GUEST */
 
 #else /* IN_RING0 */
 # ifndef IN_GUEST
-    rc = RTLogCreate(&pLogger, 0, (const char *)NULL, "VBOX_LOG", RT_ELEMENTS(g_apszGroups), &g_apszGroups[0], RTLOGDEST_FILE, "VBox-ring0.log");
+    rc = RTLogCreate(&pLogger, 0, NULL, "VBOX_LOG", RT_ELEMENTS(g_apszGroups), &g_apszGroups[0], RTLOGDEST_FILE, "VBox-ring0.log");
 # else  /* IN_GUEST */
-    rc = RTLogCreate(&pLogger, 0, (const char *)NULL, "VBOX_LOG", RT_ELEMENTS(g_apszGroups), &g_apszGroups[0], RTLOGDEST_USER, "VBox-ring0.log");
+    rc = RTLogCreate(&pLogger, 0, NULL, "VBOX_LOG", RT_ELEMENTS(g_apszGroups), &g_apszGroups[0], RTLOGDEST_USER, "VBox-ring0.log");
 # endif /* IN_GUEST */
     if (RT_SUCCESS(rc))
     {
@@ -473,5 +473,5 @@ RTDECL(PRTLOGGER) RTLogDefaultInit(void)
 # endif
     }
 #endif /* IN_RING0 */
-    return g_pLogger = RT_SUCCESS(rc) ? pLogger : (PRTLOGGER)NULL;
+    return g_pLogger = RT_SUCCESS(rc) ? pLogger : NULL;
 }

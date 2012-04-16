@@ -99,7 +99,7 @@ RT_EXPORT_SYMBOL(RTStrPrintfExV);
 
 RTDECL(size_t) RTStrPrintfV(char *pszBuffer, size_t cchBuffer, const char *pszFormat, va_list args)
 {
-    return RTStrPrintfExV((PFNSTRFORMAT)NULL, NULL, pszBuffer, cchBuffer, pszFormat, args);
+    return RTStrPrintfExV(NULL, NULL, pszBuffer, cchBuffer, pszFormat, args);
 }
 RT_EXPORT_SYMBOL(RTStrPrintfV);
 

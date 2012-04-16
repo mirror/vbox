@@ -92,7 +92,7 @@ RTDECL(int) RTHandleTableCreateEx(PRTHANDLETABLE phHandleTable, uint32_t fFlags,
     if (cLevel1 < RTHT_LEVEL1_DYN_ALLOC_THRESHOLD)
         pThis->papvLevel1 = (void **)((uint8_t *)pThis + RT_ALIGN(sizeof(*pThis), sizeof(void *)));
     else
-        pThis->papvLevel1 = (void **)NULL;
+        pThis->papvLevel1 = NULL;
     pThis->pfnRetain = pfnRetain;
     pThis->pvRetainUser = pvUser;
     pThis->cMax = cMax;
@@ -118,7 +118,7 @@ RT_EXPORT_SYMBOL(RTHandleTableCreateEx);
 
 RTDECL(int) RTHandleTableCreate(PRTHANDLETABLE phHandleTable)
 {
-    return RTHandleTableCreateEx(phHandleTable, RTHANDLETABLE_FLAGS_LOCKED, 1, 65534, (PFNRTHANDLETABLERETAIN)NULL, NULL);
+    return RTHandleTableCreateEx(phHandleTable, RTHANDLETABLE_FLAGS_LOCKED, 1, 65534, NULL, NULL);
 }
 RT_EXPORT_SYMBOL(RTHandleTableCreate);
 

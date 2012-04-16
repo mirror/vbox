@@ -151,7 +151,7 @@ static DECLCALLBACK(int) rtRandParkMillerRestoreState(PRTRANDINT pThis, char con
     pszState += 3;
 
     /* u32Ctx */
-    char *pszNext = (char *)NULL;
+    char *pszNext = NULL;
     uint32_t u32Ctx;
     int rc = RTStrToUInt32Ex(pszState, &pszNext, 16, &u32Ctx);
     if (    rc != VWRN_TRAILING_CHARS

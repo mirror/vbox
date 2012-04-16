@@ -384,7 +384,7 @@ PRTTHREADINT rtThreadAlloc(RTTHREADTYPE enmType, unsigned fFlags, uint32_t fIntF
         }
         RTMemFree(pThread);
     }
-    return (PRTTHREADINT)NULL;
+    return NULL;
 }
 
 
@@ -537,7 +537,7 @@ DECLHIDDEN(PRTTHREADINT) rtThreadGet(RTTHREAD Thread)
     }
 
     AssertMsgFailed(("Thread=%RTthrd\n", Thread));
-    return (PRTTHREADINT)NULL;
+    return NULL;
 }
 
 /**
@@ -905,7 +905,7 @@ RTDECL(const char *) RTThreadSelfName(void)
             return szName;
         }
     }
-    return (char *)NULL;
+    return NULL;
 }
 RT_EXPORT_SYMBOL(RTThreadSelfName);
 
@@ -921,7 +921,7 @@ RTDECL(const char *) RTThreadGetName(RTTHREAD Thread)
 {
     PRTTHREADINT pThread;
     if (Thread == NIL_RTTHREAD)
-        return (char *)NULL;
+        return NULL;
     pThread = rtThreadGet(Thread);
     if (pThread)
     {
@@ -929,7 +929,7 @@ RTDECL(const char *) RTThreadGetName(RTTHREAD Thread)
         rtThreadRelease(pThread);
         return szName;
     }
-    return (char *)NULL;
+    return NULL;
 }
 RT_EXPORT_SYMBOL(RTThreadGetName);
 

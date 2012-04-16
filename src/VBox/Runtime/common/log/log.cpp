@@ -439,7 +439,7 @@ RTDECL(int) RTLogCreateExV(PRTLOGGER *ppLogger, uint32_t fFlags, const char *psz
         AssertMsgFailed(("Invalid parameters!\n"));
         return VERR_INVALID_PARAMETER;
     }
-    *ppLogger = (PRTLOGGER)NULL;
+    *ppLogger = NULL;
 
     if (pszErrorMsg)
         RTStrPrintf(pszErrorMsg, cchErrorMsg, N_("unknown error"));
@@ -468,8 +468,8 @@ RTDECL(int) RTLogCreateExV(PRTLOGGER *ppLogger, uint32_t fFlags, const char *psz
         pLogger->pInt->uRevision                = RTLOGGERINTERNAL_REV;
         pLogger->pInt->cbSelf                   = sizeof(RTLOGGERINTERNAL);
         pLogger->pInt->hSpinMtx                 = NIL_RTSEMSPINMUTEX;
-        pLogger->pInt->pfnFlush                 = (PFNRTLOGFLUSH)NULL;
-        pLogger->pInt->pfnPrefix                = (PFNRTLOGPREFIX)NULL;
+        pLogger->pInt->pfnFlush                 = NULL;
+        pLogger->pInt->pfnPrefix                = NULL;
         pLogger->pInt->pvPrefixUserArg          = NULL;
         pLogger->pInt->afPadding1[0]            = false;
         pLogger->pInt->afPadding1[1]            = false;
@@ -479,7 +479,7 @@ RTDECL(int) RTLogCreateExV(PRTLOGGER *ppLogger, uint32_t fFlags, const char *psz
         if (fFlags & RTLOGFLAGS_RESTRICT_GROUPS)
             pLogger->pInt->pacEntriesPerGroup   = (uint32_t *)(pLogger->pInt + 1);
         else
-            pLogger->pInt->pacEntriesPerGroup   = (uint32_t *)NULL;
+            pLogger->pInt->pacEntriesPerGroup   = NULL;
         pLogger->pInt->cMaxEntriesPerGroup      = UINT32_MAX;
 # ifdef IN_RING3
         pLogger->pInt->pfnPhase                 = pfnPhase;
@@ -669,8 +669,8 @@ RTDECL(int) RTLogCreate(PRTLOGGER *ppLogger, uint32_t fFlags, const char *pszGro
 
     va_start(args, pszFilenameFmt);
     rc = RTLogCreateExV(ppLogger, fFlags, pszGroupSettings, pszEnvVarBase, cGroups, papszGroups,
-                        fDestFlags, (PFNRTLOGPHASE)NULL /*pfnPhase*/, 0 /*cHistory*/, 0 /*cbHistoryFileMax*/, 0 /*cSecsHistoryTimeSlot*/,
-                        (char *)NULL /*pszErrorMsg*/, 0 /*cchErrorMsg*/, pszFilenameFmt, args);
+                        fDestFlags, NULL /*pfnPhase*/, 0 /*cHistory*/, 0 /*cbHistoryFileMax*/, 0 /*cSecsHistoryTimeSlot*/,
+                        NULL /*pszErrorMsg*/, 0 /*cchErrorMsg*/, pszFilenameFmt, args);
     va_end(args);
     return rc;
 }
@@ -778,7 +778,7 @@ RTDECL(int) RTLogDestroy(PRTLOGGER pLogger)
 # else
         RTMemExecFree(*(void **)&pLogger->pfnLogger, 64);
 # endif
-        pLogger->pfnLogger = (PFNRTLOGGER)NULL;
+        pLogger->pfnLogger = NULL;
     }
     RTMemFree(pLogger);
 
@@ -915,7 +915,7 @@ RTDECL(void) RTLogFlushRC(PRTLOGGER pLogger, PRTLOGGERRC pLoggerRC)
         if (pLoggerRC->offScratch)
         {
             rtLogOutput(pLogger, pLoggerRC->achScratch, pLoggerRC->offScratch);
-            rtLogOutput(pLogger, (char *)NULL, 0);
+            rtLogOutput(pLogger, NULL, 0);
             pLoggerRC->offScratch = 0;
         }
 
@@ -1173,7 +1173,7 @@ RTDECL(void) RTLogFlushToLogger(PRTLOGGER pSrcLogger, PRTLOGGER pDstLogger)
             if (pSrcLogger->offScratch)
             {
                 rtLogOutput(pDstLogger, pSrcLogger->achScratch, pSrcLogger->offScratch);
-                rtLogOutput(pDstLogger, (char *)NULL, 0);
+                rtLogOutput(pDstLogger, NULL, 0);
                 pSrcLogger->offScratch = 0;
             }
 
@@ -2585,7 +2585,7 @@ static void rtR0LogLoggerExFallback(uint32_t fDestFlags, uint32_t fFlags, const 
  */
 RTDECL(void) RTLogPrintfV(const char *pszFormat, va_list args)
 {
-    RTLogLoggerV((PRTLOGGER)NULL, pszFormat, args);
+    RTLogLoggerV(NULL, pszFormat, args);
 }
 RT_EXPORT_SYMBOL(RTLogPrintfV);
 
@@ -3187,7 +3187,7 @@ static DECLCALLBACK(size_t) rtLogOutputPrefixed(void *pv, const char *pachChars,
 #ifdef IN_RING3
                     const char *pszGroup = pArgs->iGroup != ~0U ? pLogger->pInt->papszGroups[pArgs->iGroup] : NULL;
 #else
-                    const char *pszGroup = (char *)NULL;
+                    const char *pszGroup = NULL;
 #endif
                     psz = rtLogStPNCpyPad(psz, pszGroup, 16, 8);
                 }
