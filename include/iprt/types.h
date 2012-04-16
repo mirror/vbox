@@ -128,7 +128,7 @@ RT_C_DECLS_END
 #  if LINUX_VERSION_CODE >= KERNEL_VERSION(3,4,0)
 #   undef __KERNEL__
     /**
-     * linux 3.4-rc3 unconditionally defines NULL in as ((void *)0)
+     * linux 3.4-rc3 unconditionally defines NULL as ((void *)0)
      * don't let it break our build
      */
 #   include <linux/stddef.h>
