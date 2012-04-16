@@ -26,6 +26,7 @@
 #include <iprt/uuid.h>
 #include <iprt/path.h>
 #include <iprt/string.h>
+#include <iprt/asm.h>
 
 #define PARALLELS_HEADER_MAGIC "WithoutFreeSpace"
 #define PARALLELS_DISK_VERSION 2
