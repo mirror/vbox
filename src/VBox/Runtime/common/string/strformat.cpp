@@ -781,7 +781,7 @@ RTDECL(size_t) RTStrFormatV(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, PFNSTRF
         cch += pfnOutput(pvArgOutput, pszStartOutput, pszFormat - pszStartOutput);
 
     /* terminate the output */
-    pfnOutput(pvArgOutput, (const char *)NULL, 0);
+    pfnOutput(pvArgOutput, NULL, 0);
 
     return cch;
 }

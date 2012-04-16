@@ -3363,7 +3363,7 @@ DECLINLINE(uint32_t *) ASMMemIsAllU32(void const *pv, size_t cb, uint32_t u32)
     for (; cb; cb -= 4, pu32++)
         if (RT_UNLIKELY(*pu32 != u32))
             return (uint32_t *)pu32;
-    return (uint32_t *)NULL;
+    return NULL;
 }
 
 

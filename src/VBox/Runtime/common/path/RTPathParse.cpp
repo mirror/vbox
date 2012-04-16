@@ -55,7 +55,7 @@ RTDECL(size_t) RTPathParse(const char *pszPath, size_t *pcchDir, ssize_t *poffNa
     const char *psz = pszPath;
     ssize_t     offRoot = 0;
     const char *pszName = pszPath;
-    const char *pszLastDot = (char *)NULL;
+    const char *pszLastDot = NULL;
 
     for (;; psz++)
     {

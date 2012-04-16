@@ -48,14 +48,14 @@ KAVL_DECL(PKAVLNODECORE) KAVL_FN(Get)(PPKAVLNODECORE ppTree, KAVLKEY Key)
                 if (pNode->pLeft != KAVL_NULL)
                     pNode = KAVL_GET_POINTER(&pNode->pLeft);
                 else
-                    return KAVL_NULL;
+                    return NULL;
             }
             else
             {
                 if (pNode->pRight != KAVL_NULL)
                     pNode = KAVL_GET_POINTER(&pNode->pRight);
                 else
-                    return KAVL_NULL;
+                    return NULL;
             }
         }
     }

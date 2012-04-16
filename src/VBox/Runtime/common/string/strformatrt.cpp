@@ -345,7 +345,7 @@ DECLHIDDEN(size_t) rtstrFormatRt(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, co
                         if (u.u64 == 0)
                             return pfnOutput(pvArgOutput, s_szFalse, sizeof(s_szFalse) - 1);
                         /* invalid boolean value */
-                        return RTStrFormat(pfnOutput, pvArgOutput, (PFNSTRFORMAT)NULL, 0, "!%lld!", u.u64);
+                        return RTStrFormat(pfnOutput, pvArgOutput, NULL, 0, "!%lld!", u.u64);
                     }
 
                     case RTSF_FP16:
@@ -383,7 +383,7 @@ DECLHIDDEN(size_t) rtstrFormatRt(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, co
                     }
 
                     case RTSF_IPV4:
-                        return RTStrFormat(pfnOutput, pvArgOutput, (PFNSTRFORMAT)NULL, 0,
+                        return RTStrFormat(pfnOutput, pvArgOutput, NULL, 0,
                                            "%u.%u.%u.%u",
                                            u.Ipv4Addr.au8[0],
                                            u.Ipv4Addr.au8[1],
@@ -393,7 +393,7 @@ DECLHIDDEN(size_t) rtstrFormatRt(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, co
                     case RTSF_IPV6:
                     {
                         if (VALID_PTR(u.pIpv6Addr))
-                            return RTStrFormat(pfnOutput, pvArgOutput, (PFNSTRFORMAT)NULL, 0,
+                            return RTStrFormat(pfnOutput, pvArgOutput, NULL, 0,
                                                "%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x",
                                                u.pIpv6Addr->au8[0],
                                                u.pIpv6Addr->au8[1],
@@ -417,7 +417,7 @@ DECLHIDDEN(size_t) rtstrFormatRt(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, co
                     case RTSF_MAC:
                     {
                         if (VALID_PTR(u.pMac))
-                            return RTStrFormat(pfnOutput, pvArgOutput, (PFNSTRFORMAT)NULL, 0,
+                            return RTStrFormat(pfnOutput, pvArgOutput, NULL, 0,
                                                "%02x:%02x:%02x:%02x:%02x:%02x",
                                                u.pMac->au8[0],
                                                u.pMac->au8[1],
@@ -436,13 +436,13 @@ DECLHIDDEN(size_t) rtstrFormatRt(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, co
                             {
                                 case RTNETADDRTYPE_IPV4:
                                     if (u.pNetAddr->uPort == RTNETADDR_PORT_NA)
-                                        return RTStrFormat(pfnOutput, pvArgOutput, (PFNSTRFORMAT)NULL, 0,
+                                        return RTStrFormat(pfnOutput, pvArgOutput, NULL, 0,
                                                            "%u.%u.%u.%u",
                                                            u.pNetAddr->uAddr.IPv4.au8[0],
                                                            u.pNetAddr->uAddr.IPv4.au8[1],
                                                            u.pNetAddr->uAddr.IPv4.au8[2],
                                                            u.pNetAddr->uAddr.IPv4.au8[3]);
-                                    return RTStrFormat(pfnOutput, pvArgOutput, (PFNSTRFORMAT)NULL, 0,
+                                    return RTStrFormat(pfnOutput, pvArgOutput, NULL, 0,
                                                        "%u.%u.%u.%u:%u",
                                                        u.pNetAddr->uAddr.IPv4.au8[0],
                                                        u.pNetAddr->uAddr.IPv4.au8[1],
@@ -452,7 +452,7 @@ DECLHIDDEN(size_t) rtstrFormatRt(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, co
 
                                 case RTNETADDRTYPE_IPV6:
                                     if (u.pNetAddr->uPort == RTNETADDR_PORT_NA)
-                                        return RTStrFormat(pfnOutput, pvArgOutput, (PFNSTRFORMAT)NULL, 0,
+                                        return RTStrFormat(pfnOutput, pvArgOutput, NULL, 0,
                                                            "%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x",
                                                            u.pNetAddr->uAddr.IPv6.au8[0],
                                                            u.pNetAddr->uAddr.IPv6.au8[1],
@@ -470,7 +470,7 @@ DECLHIDDEN(size_t) rtstrFormatRt(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, co
                                                            u.pNetAddr->uAddr.IPv6.au8[13],
                                                            u.pNetAddr->uAddr.IPv6.au8[14],
                                                            u.pNetAddr->uAddr.IPv6.au8[15]);
-                                    return RTStrFormat(pfnOutput, pvArgOutput, (PFNSTRFORMAT)NULL, 0,
+                                    return RTStrFormat(pfnOutput, pvArgOutput, NULL, 0,
                                                        "%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x %u",
                                                        u.pNetAddr->uAddr.IPv6.au8[0],
                                                        u.pNetAddr->uAddr.IPv6.au8[1],
@@ -491,7 +491,7 @@ DECLHIDDEN(size_t) rtstrFormatRt(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, co
                                                        u.pNetAddr->uPort);
 
                                 case RTNETADDRTYPE_MAC:
-                                    return RTStrFormat(pfnOutput, pvArgOutput, (PFNSTRFORMAT)NULL, 0,
+                                    return RTStrFormat(pfnOutput, pvArgOutput, NULL, 0,
                                                        "%02x:%02x:%02x:%02x:%02x:%02x",
                                                        u.pNetAddr->uAddr.Mac.au8[0],
                                                        u.pNetAddr->uAddr.Mac.au8[1],
@@ -501,7 +501,7 @@ DECLHIDDEN(size_t) rtstrFormatRt(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, co
                                                        u.pNetAddr->uAddr.Mac.au8[5]);
 
                                 default:
-                                    return RTStrFormat(pfnOutput, pvArgOutput, (PFNSTRFORMAT)NULL, 0,
+                                    return RTStrFormat(pfnOutput, pvArgOutput, NULL, 0,
                                                        "unsupported-netaddr-type=%u", u.pNetAddr->enmType);
 
                             }
@@ -514,7 +514,7 @@ DECLHIDDEN(size_t) rtstrFormatRt(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, co
                         if (VALID_PTR(u.pUuid))
                         {
                             /* cannot call RTUuidToStr because of GC/R0. */
-                            return RTStrFormat(pfnOutput, pvArgOutput, (PFNSTRFORMAT)NULL, 0,
+                            return RTStrFormat(pfnOutput, pvArgOutput, NULL, 0,
                                                "%08x-%04x-%04x-%02x%02x-%02x%02x%02x%02x%02x%02x",
                                                u.pUuid->Gen.u32TimeLow,
                                                u.pUuid->Gen.u16TimeMid,
@@ -663,9 +663,9 @@ DECLHIDDEN(size_t) rtstrFormatRt(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, co
                                     while (off < cchPrecision)
                                     {
                                         int i;
-                                        cch += RTStrFormat(pfnOutput, pvArgOutput, (PFNSTRFORMAT)NULL, 0, "%s%0*x %04x:", off ? "\n" : "", sizeof(pu8) * 2, (uintptr_t)pu8, off);
+                                        cch += RTStrFormat(pfnOutput, pvArgOutput, NULL, 0, "%s%0*x %04x:", off ? "\n" : "", sizeof(pu8) * 2, (uintptr_t)pu8, off);
                                         for (i = 0; i < cchWidth && off + i < cchPrecision ; i++)
-                                            cch += RTStrFormat(pfnOutput, pvArgOutput, (PFNSTRFORMAT)NULL, 0,
+                                            cch += RTStrFormat(pfnOutput, pvArgOutput, NULL, 0,
                                                                off + i < cchPrecision ? !(i & 7) && i ? "-%02x" : " %02x" : "   ", pu8[i]);
                                         while (i++ < cchWidth)
                                             cch += pfnOutput(pvArgOutput, "   ", 3);
@@ -692,9 +692,9 @@ DECLHIDDEN(size_t) rtstrFormatRt(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, co
                                 {
                                     if (cchPrecision-- > 0)
                                     {
-                                        cch = RTStrFormat(pfnOutput, pvArgOutput, (PFNSTRFORMAT)NULL, 0, "%02x", *pu8++);
+                                        cch = RTStrFormat(pfnOutput, pvArgOutput, NULL, 0, "%02x", *pu8++);
                                         for (; cchPrecision > 0; cchPrecision--, pu8++)
-                                            cch += RTStrFormat(pfnOutput, pvArgOutput, (PFNSTRFORMAT)NULL, 0, " %02x", *pu8);
+                                            cch += RTStrFormat(pfnOutput, pvArgOutput, NULL, 0, " %02x", *pu8);
                                         return cch;
                                     }
                                     break;
@@ -727,7 +727,7 @@ DECLHIDDEN(size_t) rtstrFormatRt(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, co
                             case 'f':
                                 return pfnOutput(pvArgOutput, pMsg->pszMsgFull,strlen(pMsg->pszMsgFull));
                             case 'a':
-                                return RTStrFormat(pfnOutput, pvArgOutput, (PFNSTRFORMAT)NULL, 0, "%s (0x%08X) - %s", pMsg->pszDefine, hrc, pMsg->pszMsgFull);
+                                return RTStrFormat(pfnOutput, pvArgOutput, NULL, 0, "%s (0x%08X) - %s", pMsg->pszDefine, hrc, pMsg->pszMsgFull);
                             default:
                                 AssertMsgFailed(("Invalid status code format type '%.10s'!\n", pszFormatOrg));
                                 return 0;
@@ -761,7 +761,7 @@ DECLHIDDEN(size_t) rtstrFormatRt(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, co
                     case 'f':
                         return pfnOutput(pvArgOutput, pMsg->pszMsgFull,   strlen(pMsg->pszMsgFull));
                     case 'a':
-                        return RTStrFormat(pfnOutput, pvArgOutput, (PFNSTRFORMAT)NULL, 0, "%s (%d) - %s", pMsg->pszDefine, rc, pMsg->pszMsgFull);
+                        return RTStrFormat(pfnOutput, pvArgOutput, NULL, 0, "%s (%d) - %s", pMsg->pszDefine, rc, pMsg->pszMsgFull);
                     default:
                         AssertMsgFailed(("Invalid status code format type '%.10s'!\n", pszFormatOrg));
                         return 0;
@@ -773,7 +773,7 @@ DECLHIDDEN(size_t) rtstrFormatRt(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, co
                     case 's':
                     case 'f':
                     case 'a':
-                        return RTStrFormat(pfnOutput, pvArgOutput, (PFNSTRFORMAT)NULL, 0, "%d", rc);
+                        return RTStrFormat(pfnOutput, pvArgOutput, NULL, 0, "%d", rc);
                     default:
                         AssertMsgFailed(("Invalid status code format type '%.10s'!\n", pszFormatOrg));
                         return 0;
@@ -800,12 +800,12 @@ DECLHIDDEN(size_t) rtstrFormatRt(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, co
                     case 'f':
                         return pfnOutput(pvArgOutput, pMsg->pszMsgFull,strlen(pMsg->pszMsgFull));
                     case 'a':
-                        return RTStrFormat(pfnOutput, pvArgOutput, (PFNSTRFORMAT)NULL, 0, "%s (0x%08X) - %s", pMsg->pszDefine, rc, pMsg->pszMsgFull);
+                        return RTStrFormat(pfnOutput, pvArgOutput, NULL, 0, "%s (0x%08X) - %s", pMsg->pszDefine, rc, pMsg->pszMsgFull);
 # else
                     case 'c':
                     case 'f':
                     case 'a':
-                        return RTStrFormat(pfnOutput, pvArgOutput, (PFNSTRFORMAT)NULL, 0, "0x%08X", rc);
+                        return RTStrFormat(pfnOutput, pvArgOutput, NULL, 0, "0x%08X", rc);
 # endif
                     default:
                         AssertMsgFailed(("Invalid status code format type '%.10s'!\n", pszFormatOrg));
@@ -910,7 +910,7 @@ DECLHIDDEN(size_t) rtstrFormatRt(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, co
                 switch (s_aTypes[i].enmType)
                 {
                     case RTST_TIMESPEC:
-                        return RTStrFormat(pfnOutput, pvArgOutput, (PFNSTRFORMAT)NULL, NULL, "%'lld ns", RTTimeSpecGetNano(u.pTimeSpec));
+                        return RTStrFormat(pfnOutput, pvArgOutput, NULL, NULL, "%'lld ns", RTTimeSpecGetNano(u.pTimeSpec));
 
                     default:
                         AssertMsgFailed(("Invalid/unhandled enmType=%d\n", s_aTypes[i].enmType));

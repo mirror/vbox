@@ -46,7 +46,7 @@ KAVL_DECL(PKAVLNODECORE) KAVL_FN(GetBestFit)(PPKAVLNODECORE ppTree, KAVLKEY Key,
     register PKAVLNODECORE  pNode = KAVL_GET_POINTER_NULL(ppTree);
     if (pNode)
     {
-        PKAVLNODECORE           pNodeLast = KAVL_NULL;
+        PKAVLNODECORE           pNodeLast = NULL;
         if (fAbove)
         {   /* pNode->Key >= Key */
             while (KAVL_NE(pNode->Key, Key))

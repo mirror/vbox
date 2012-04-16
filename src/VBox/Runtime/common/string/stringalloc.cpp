@@ -70,7 +70,7 @@ RTDECL(int) RTStrReallocTag(char **ppsz, size_t cbNew, const char *pszTag)
     if (!cbNew)
     {
         RTMemFree(pszOld);
-        *ppsz = (char *)NULL;
+        *ppsz = NULL;
     }
     else if (pszOld)
     {

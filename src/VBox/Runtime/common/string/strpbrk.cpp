@@ -59,6 +59,6 @@ char *strpbrk(const char *pszStr, const char *pszChars)
                 return (char *)(pszStr - 1);
 
     }
-    return (char *)NULL;
+    return NULL;
 }
 

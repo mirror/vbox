@@ -337,7 +337,7 @@ RTR0DECL(int) RTR0MemObjFree(RTR0MEMOBJ MemObj, bool fFreeMappings)
         while (pMem->uRel.Parent.cMappings > 0)
         {
             PRTR0MEMOBJINTERNAL pChild = pMem->uRel.Parent.papMappings[--pMem->uRel.Parent.cMappings];
-            pMem->uRel.Parent.papMappings[pMem->uRel.Parent.cMappings] = (PRTR0MEMOBJINTERNAL)NULL;
+            pMem->uRel.Parent.papMappings[pMem->uRel.Parent.cMappings] = NULL;
 
             /* sanity checks. */
             AssertPtr(pChild);

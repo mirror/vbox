@@ -165,7 +165,7 @@ DECLINLINE(PRTHTENTRY) rtHandleTableLookupSimpleIdx(PRTHANDLETABLEINT pThis, uin
         if (paTable)
             return &paTable[i % RTHT_LEVEL2_ENTRIES];
     }
-    return (PRTHTENTRY)NULL;
+    return NULL;
 }
 
 
@@ -197,7 +197,7 @@ DECLINLINE(PRTHTENTRYCTX) rtHandleTableLookupWithCtxIdx(PRTHANDLETABLEINT pThis,
         if (paTable)
             return &paTable[i % RTHT_LEVEL2_ENTRIES];
     }
-    return (PRTHTENTRYCTX)NULL;
+    return NULL;
 }
 
 

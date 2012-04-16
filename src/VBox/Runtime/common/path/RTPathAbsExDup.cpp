@@ -52,6 +52,6 @@ RTDECL(char *) RTPathAbsExDup(const char *pszBase, const char *pszPath)
     int rc = RTPathAbsEx(pszBase, pszPath, szPath, sizeof(szPath));
     if (RT_SUCCESS(rc))
         return RTStrDup(szPath);
-    return (char *)NULL;
+    return NULL;
 }
 
