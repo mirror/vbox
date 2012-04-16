@@ -158,8 +158,8 @@ static void ioapic_service(IOAPICState *pThis)
                 }
                 else
                     vector = entry & 0xff;
-                uint32_t uTagSrc = pThis->auTagSrc[vector];
-                pThis->auTagSrc[vector] = 0;
+                uint32_t uTagSrc = pThis->auTagSrc[i];
+                pThis->auTagSrc[i] = 0;
 
                 int rc = pThis->CTX_SUFF(pIoApicHlp)->pfnApicBusDeliver(pThis->CTX_SUFF(pDevIns),
                                                                         dest,
