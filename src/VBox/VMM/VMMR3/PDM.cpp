@@ -324,6 +324,7 @@ static DECLCALLBACK(int) pdmR3SaveExec(PVM pVM, PSSMHANDLE pSSM);
 static DECLCALLBACK(int) pdmR3LoadExec(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass);
 static DECLCALLBACK(int) pdmR3LoadPrep(PVM pVM, PSSMHANDLE pSSM);
 
+static FNDBGFHANDLERINT pdmR3InfoTracingIds;
 
 
 /**
@@ -412,6 +413,13 @@ VMMR3DECL(int) PDMR3Init(PVM pVM)
                                    pdmR3LoadPrep, pdmR3LoadExec, NULL);
         if (RT_SUCCESS(rc))
         {
+            /*
+             * Register the info handlers.
+             */
+            DBGFR3InfoRegisterInternal(pVM, "pdmtracingids", 
+                                       "Displays the tracing IDs assigned by PDM to devices, USB device, drivers and more.", 
+                                       pdmR3InfoTracingIds);
+
             LogFlow(("PDM: Successfully initialized\n"));
             return rc;
         }
@@ -2661,5 +2669,84 @@ bool pdmR3IsValidName(const char *pszName)
                || ch == '_') )
         pszName++;
     return ch == '\0';
+}
+
+
+/**
+ * Info handler for 'pdmtracingids'.
+ * 
+ * @param   pVM         The VM handle.
+ * @param   pHlp        The output helpers.
+ * @param   pszArgs     The optional user arguments.
+ * 
+ * @remarks Can be called on most threads.
+ */
+static DECLCALLBACK(void) pdmR3InfoTracingIds(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszArgs)
+{
+    /*
+     * Parse the argument (optional).
+     */
+    if (   *pszArgs
+        && strcmp(pszArgs, "all")
+        && strcmp(pszArgs, "devices")
+        && strcmp(pszArgs, "drivers")
+        && strcmp(pszArgs, "usb"))
+    {
+        pHlp->pfnPrintf(pHlp, "Unable to grok '%s'\n", pszArgs);
+        return;
+    }
+    bool fAll     = !*pszArgs || !strcmp(pszArgs, "all");
+    bool fDevices = fAll || !strcmp(pszArgs, "devices");
+    bool fUsbDevs = fAll || !strcmp(pszArgs, "usb");
+    bool fDrivers = fAll || !strcmp(pszArgs, "drivers");
+
+    /* 
+     * Produce the requested output.
+     */
+/** @todo lock PDM lists! */
+    /* devices */
+    if (fDevices)
+    {
+        pHlp->pfnPrintf(pHlp, "Device tracing IDs:\n");
+        for (PPDMDEVINS pDevIns = pVM->pdm.s.pDevInstances; pDevIns; pDevIns = pDevIns->Internal.s.pNextR3)
+            pHlp->pfnPrintf(pHlp, "%05u  %s\n", pDevIns->idTracing, pDevIns->Internal.s.pDevR3->pReg->szName);
+    }
+
+    /* USB devices */
+    if (fUsbDevs)
+    {
+        pHlp->pfnPrintf(pHlp, "USB device tracing IDs:\n");
+        for (PPDMUSBINS pUsbIns = pVM->pdm.s.pUsbInstances; pUsbIns; pUsbIns = pUsbIns->Internal.s.pNext)
+            pHlp->pfnPrintf(pHlp, "%05u  %s\n", pUsbIns->idTracing, pUsbIns->Internal.s.pUsbDev->pReg->szName);
+    }
+
+    /* Drivers */
+    if (fDrivers)
+    {
+        pHlp->pfnPrintf(pHlp, "Driver tracing IDs:\n");
+        for (PPDMDEVINS pDevIns = pVM->pdm.s.pDevInstances; pDevIns; pDevIns = pDevIns->Internal.s.pNextR3)
+        {
+            for (PPDMLUN pLun = pDevIns->Internal.s.pLunsR3; pLun; pLun = pLun->pNext)
+            {
+                uint32_t iLevel = 0;
+                for (PPDMDRVINS pDrvIns = pLun->pTop; pDrvIns; pDrvIns = pDrvIns->Internal.s.pDown, iLevel++)
+                    pHlp->pfnPrintf(pHlp, "%05u  %s (level %u, lun %u, dev %s)\n", 
+                                    pDrvIns->idTracing, pDrvIns->Internal.s.pDrv->pReg->szName, 
+                                    iLevel, pLun->iLun, pDevIns->Internal.s.pDevR3->pReg->szName);
+            }
+        }
+
+        for (PPDMUSBINS pUsbIns = pVM->pdm.s.pUsbInstances; pUsbIns; pUsbIns = pUsbIns->Internal.s.pNext)
+        {
+            for (PPDMLUN pLun = pUsbIns->Internal.s.pLuns; pLun; pLun = pLun->pNext)
+            {
+                uint32_t iLevel = 0;
+                for (PPDMDRVINS pDrvIns = pLun->pTop; pDrvIns; pDrvIns = pDrvIns->Internal.s.pDown, iLevel++)
+                    pHlp->pfnPrintf(pHlp, "%05u  %s (level %u, lun %u, dev %s)\n", 
+                                    pDrvIns->idTracing, pDrvIns->Internal.s.pDrv->pReg->szName, 
+                                    iLevel, pLun->iLun, pUsbIns->Internal.s.pUsbDev->pReg->szName);
+            }
+        }
+    }
 }
 
