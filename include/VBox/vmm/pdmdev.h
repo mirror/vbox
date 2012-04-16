@@ -1437,6 +1437,14 @@ typedef struct PDMAPICHLPR3
     DECLR3CALLBACKMEMBER(void, pfnClearInterruptFF,(PPDMDEVINS pDevIns, PDMAPICIRQ enmType, VMCPUID idCpu));
 
     /**
+     * Calculates an IRQ tag for a timer event.
+     *  
+     * @returns The IRQ tag. 
+     * @param   pDevIns         Device instance of the APIC.
+     */
+    DECLR3CALLBACKMEMBER(uint32_t, pfnCalcIrqTag,(PPDMDEVINS pDevIns));
+
+    /**
      * Modifies APIC-related bits in the CPUID feature mask.
      *
      * @param   pDevIns         Device instance of the APIC.
@@ -1524,7 +1532,7 @@ typedef R3PTRTYPE(PDMAPICHLPR3 *) PPDMAPICHLPR3;
 typedef R3PTRTYPE(const PDMAPICHLPR3 *) PCPDMAPICHLPR3;
 
 /** Current PDMAPICHLP version number. */
-#define PDM_APICHLPR3_VERSION                   PDM_VERSION_MAKE(0xfff3, 1, 0)
+#define PDM_APICHLPR3_VERSION                   PDM_VERSION_MAKE(0xfff3, 2, 0)
 
 
 /**
