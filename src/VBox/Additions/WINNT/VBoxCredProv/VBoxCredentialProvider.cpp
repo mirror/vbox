@@ -21,6 +21,12 @@
 #include <windows.h>
 #include <initguid.h>
 
+#ifdef VBOX_WITH_SENS
+# include <eventsys.h>
+# include <sens.h>
+# include <Sensevts.h>
+#endif
+
 #include <iprt/buildconfig.h>
 #include <iprt/initterm.h>
 #ifdef VBOX_WITH_SENS
@@ -30,12 +36,6 @@
 
 #include "VBoxCredentialProvider.h"
 #include "VBoxCredProvFactory.h"
-
-#include <eventsys.h>
-#include <sens.h>
-#include <Sensevts.h>
-
-#include <stdio.h>
 
 /*******************************************************************************
 *   Global Variables                                                           *
@@ -207,7 +207,8 @@ static HRESULT VBoxCredentialProviderRegisterSENS(void)
     }
 
     IEventSubscription *pIEventSubscription;
-    for (int i = 0; i < RT_ELEMENTS(g_aSENSEvents); i++)
+    int i;
+    for (i = 0; i < RT_ELEMENTS(g_aSENSEvents); i++)
     {
         VBoxCredProvVerbose(0, "VBoxCredProv: Registering \"%s\" (%s) ...\n",
                             g_aSENSEvents[i].pszMethod, g_aSENSEvents[i].pszSubscriptionName);
