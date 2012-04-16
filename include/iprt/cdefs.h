@@ -1810,18 +1810,6 @@
 # undef CLSIZELOG2
 #endif
 
-
-/** @def NULL
- * NULL pointer.
- */
-#ifndef NULL
-# ifdef __cplusplus
-#  define NULL 0
-# else
-#  define NULL ((void*)0)
-# endif
-#endif
-
 /** @def NIL_OFFSET
  * NIL offset.
  * Whenever we use offsets instead of pointers to save space and relocation effort
