@@ -66,7 +66,7 @@ RTDECL(char *) RTPathFilename(const char *pszPath)
             case '\0':
                 if (*pszName)
                     return (char *)(void *)pszName;
-                return NULL;
+                return (char *)NULL;
         }
     }
 

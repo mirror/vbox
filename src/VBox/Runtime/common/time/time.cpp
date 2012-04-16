@@ -382,30 +382,30 @@ RTDECL(PRTTIMESPEC) RTTimeImplode(PRTTIMESPEC pTimeSpec, PCRTTIME pTime)
     /*
      * Validate input.
      */
-    AssertReturn(VALID_PTR(pTimeSpec), NULL);
-    AssertReturn(VALID_PTR(pTime), NULL);
-    AssertReturn(pTime->u32Nanosecond < 1000000000, NULL);
-    AssertReturn(pTime->u8Second < 60, NULL);
-    AssertReturn(pTime->u8Minute < 60, NULL);
-    AssertReturn(pTime->u8Hour < 24, NULL);
-    AssertReturn(pTime->u16YearDay >= 1, NULL);
-    AssertReturn(pTime->u16YearDay <= (rtTimeIsLeapYear(pTime->i32Year) ? 366 : 365), NULL);
-    AssertMsgReturn(pTime->i32Year <= RTTIME_MAX_YEAR && pTime->i32Year >= RTTIME_MIN_YEAR, ("%RI32\n", pTime->i32Year), NULL);
+    AssertReturn(VALID_PTR(pTimeSpec), (PRTTIMESPEC)NULL);
+    AssertReturn(VALID_PTR(pTime), (PRTTIMESPEC)NULL);
+    AssertReturn(pTime->u32Nanosecond < 1000000000, (PRTTIMESPEC)NULL);
+    AssertReturn(pTime->u8Second < 60, (PRTTIMESPEC)NULL);
+    AssertReturn(pTime->u8Minute < 60, (PRTTIMESPEC)NULL);
+    AssertReturn(pTime->u8Hour < 24, (PRTTIMESPEC)NULL);
+    AssertReturn(pTime->u16YearDay >= 1, (PRTTIMESPEC)NULL);
+    AssertReturn(pTime->u16YearDay <= (rtTimeIsLeapYear(pTime->i32Year) ? 366 : 365), (PRTTIMESPEC)NULL);
+    AssertMsgReturn(pTime->i32Year <= RTTIME_MAX_YEAR && pTime->i32Year >= RTTIME_MIN_YEAR, ("%RI32\n", pTime->i32Year), (PRTTIMESPEC)NULL);
 
     /*
      * Do the conversion to nanoseconds.
      */
     i32Days  = g_aoffYear[pTime->i32Year - OFF_YEAR_IDX_0_YEAR]
              + pTime->u16YearDay - 1;
-    AssertMsgReturn(i32Days <= RTTIME_MAX_DAY && i32Days >= RTTIME_MIN_DAY, ("%RI32\n", i32Days), NULL);
+    AssertMsgReturn(i32Days <= RTTIME_MAX_DAY && i32Days >= RTTIME_MIN_DAY, ("%RI32\n", i32Days), (PRTTIMESPEC)NULL);
 
     u32Secs  = pTime->u8Second
              + pTime->u8Minute * 60
              + pTime->u8Hour   * 3600;
     i64Nanos = (uint64_t)pTime->u32Nanosecond
              + u32Secs * UINT64_C(1000000000);
-    AssertMsgReturn(i32Days != RTTIME_MAX_DAY || i64Nanos <= RTTIME_MAX_DAY_NANO, ("%RI64\n", i64Nanos), NULL);
-    AssertMsgReturn(i32Days != RTTIME_MIN_DAY || i64Nanos >= RTTIME_MIN_DAY_NANO, ("%RI64\n", i64Nanos), NULL);
+    AssertMsgReturn(i32Days != RTTIME_MAX_DAY || i64Nanos <= RTTIME_MAX_DAY_NANO, ("%RI64\n", i64Nanos), (PRTTIMESPEC)NULL);
+    AssertMsgReturn(i32Days != RTTIME_MIN_DAY || i64Nanos >= RTTIME_MIN_DAY_NANO, ("%RI64\n", i64Nanos), (PRTTIMESPEC)NULL);
 
     i64Nanos += i32Days * UINT64_C(86400000000000);
 
@@ -438,7 +438,7 @@ static PRTTIME rtTimeNormalizeInternal(PRTTIME pTime)
         AssertMsgReturn(    pTime->u8Month
                         &&  pTime->u8MonthDay,
                         ("date=%d-%d-%d\n", pTime->i32Year, pTime->u8Month, pTime->u8MonthDay),
-                        NULL);
+                        (PRTTIME)NULL);
         while (pTime->u8Month > 12)
         {
             pTime->u8Month -= 12;
@@ -662,10 +662,10 @@ RTDECL(PRTTIME) RTTimeNormalize(PRTTIME pTime)
     /*
      * Validate that we've got the minimum of stuff handy.
      */
-    AssertReturn(VALID_PTR(pTime), NULL);
-    AssertMsgReturn(!(pTime->fFlags & ~RTTIME_FLAGS_MASK), ("%#x\n", pTime->fFlags), NULL);
-    AssertMsgReturn((pTime->fFlags & RTTIME_FLAGS_TYPE_MASK) != RTTIME_FLAGS_TYPE_LOCAL, ("Use RTTimeLocalNormalize!\n"), NULL);
-    AssertMsgReturn(pTime->offUTC == 0, ("%d; Use RTTimeLocalNormalize!\n", pTime->offUTC), NULL);
+    AssertReturn(VALID_PTR(pTime), (PRTTIME)NULL);
+    AssertMsgReturn(!(pTime->fFlags & ~RTTIME_FLAGS_MASK), ("%#x\n", pTime->fFlags), (PRTTIME)NULL);
+    AssertMsgReturn((pTime->fFlags & RTTIME_FLAGS_TYPE_MASK) != RTTIME_FLAGS_TYPE_LOCAL, ("Use RTTimeLocalNormalize!\n"), (PRTTIME)NULL);
+    AssertMsgReturn(pTime->offUTC == 0, ("%d; Use RTTimeLocalNormalize!\n", pTime->offUTC), (PRTTIME)NULL);
 
     pTime = rtTimeNormalizeInternal(pTime);
     if (pTime)
@@ -711,7 +711,7 @@ RTDECL(char *) RTTimeToString(PCRTTIME pTime, char *psz, size_t cb)
                           chSign, offUTCHour, offUTCMinute);
         if (    cch <= 15
             ||  psz[cch - 5] != chSign)
-            return NULL;
+            return (char *)NULL;
     }
     else
     {
@@ -720,7 +720,7 @@ RTDECL(char *) RTTimeToString(PCRTTIME pTime, char *psz, size_t cb)
                           pTime->u8Hour, pTime->u8Minute, pTime->u8Second, pTime->u32Nanosecond);
         if (    cch <= 15
             ||  psz[cch - 1] != 'Z')
-            return NULL;
+            return (char *)NULL;
     }
     return psz;
 }

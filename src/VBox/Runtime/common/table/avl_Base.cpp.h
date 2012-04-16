@@ -117,7 +117,7 @@
 # ifdef KAVL_OFFSET
 #  define KAVL_NULL     0
 # else
-#  define KAVL_NULL     NULL
+#  define KAVL_NULL     ((PKAVLNODECORE)0)
 # endif
 #endif
 
@@ -409,7 +409,7 @@ KAVL_DECL(PKAVLNODECORE) KAVL_FN(Remove)(PPKAVLNODECORE ppTree, KAVLKEY Key)
         if (*ppDeleteNode != KAVL_NULL)
             pDeleteNode = KAVL_GET_POINTER(ppDeleteNode);
         else
-            return NULL;
+            return KAVL_NULL;
 
         kASSERT(AVLStack.cEntries < KAVL_MAX_STACK);
         AVLStack.aEntries[AVLStack.cEntries++] = ppDeleteNode;
