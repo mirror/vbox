@@ -132,11 +132,6 @@ RT_C_DECLS_END
      * does not work for C++ code.
      */
 #  undef NULL
-#  if defined(__cplusplus)
-#   define NULL 0
-#  else
-#   define NULL ((void *)0)
-#  endif
 #  undef uintptr_t
 #  ifdef __GNUC__
 #   if (__GNUC__ * 100 + __GNUC_MINOR__) <= 400
@@ -158,6 +153,17 @@ RT_C_DECLS_END
 #  include <stddef.h>
 #  include <sys/types.h>
 # endif
+
+/** @def NULL
+ * NULL pointer.
+ */
+#ifndef NULL
+# ifdef __cplusplus
+#  define NULL 0
+# else
+#  define NULL ((void*)0)
+# endif
+#endif
 
 /* Define any types missing from sys/types.h on windows. */
 # ifdef _MSC_VER
