@@ -43,7 +43,7 @@
 RTDECL(void) RTPathStripFilename(char *pszPath)
 {
     char *psz = pszPath;
-    char *pszLastSep = NULL;
+    char *pszLastSep = (char *)NULL;
 
 
     for (;; psz++)

@@ -112,7 +112,7 @@ RTDECL(int)     RTHandleTableAlloc(RTHANDLETABLE hHandleTable, void *pvObj, uint
              * Do the allocation(s).
              */
             rc = VERR_TRY_AGAIN;
-            void **papvLevel1 = NULL;
+            void **papvLevel1 = (void **)NULL;
             if (cLevel1)
             {
                 papvLevel1 = (void **)RTMemAlloc(sizeof(void *) * cLevel1);

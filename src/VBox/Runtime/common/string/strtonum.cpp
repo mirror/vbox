@@ -260,7 +260,7 @@ RT_EXPORT_SYMBOL(RTStrToUInt64Full);
 RTDECL(uint64_t) RTStrToUInt64(const char *pszValue)
 {
     uint64_t u64;
-    int rc = RTStrToUInt64Ex(pszValue, NULL, 0, &u64);
+    int rc = RTStrToUInt64Ex(pszValue, (char **)NULL, 0, &u64);
     if (RT_SUCCESS(rc))
         return u64;
     return 0;
@@ -347,7 +347,7 @@ RT_EXPORT_SYMBOL(RTStrToUInt32Full);
 RTDECL(uint32_t) RTStrToUInt32(const char *pszValue)
 {
     uint32_t u32;
-    int rc = RTStrToUInt32Ex(pszValue, NULL, 0, &u32);
+    int rc = RTStrToUInt32Ex(pszValue, (char **)NULL, 0, &u32);
     if (RT_SUCCESS(rc))
         return u32;
     return 0;
@@ -434,7 +434,7 @@ RT_EXPORT_SYMBOL(RTStrToUInt16Full);
 RTDECL(uint16_t) RTStrToUInt16(const char *pszValue)
 {
     uint16_t u16;
-    int rc = RTStrToUInt16Ex(pszValue, NULL, 0, &u16);
+    int rc = RTStrToUInt16Ex(pszValue, (char **)NULL, 0, &u16);
     if (RT_SUCCESS(rc))
         return u16;
     return 0;
@@ -521,7 +521,7 @@ RT_EXPORT_SYMBOL(RTStrToUInt8Full);
 RTDECL(uint8_t) RTStrToUInt8(const char *pszValue)
 {
     uint8_t u8;
-    int rc = RTStrToUInt8Ex(pszValue, NULL, 0, &u8);
+    int rc = RTStrToUInt8Ex(pszValue, (char **)NULL, 0, &u8);
     if (RT_SUCCESS(rc))
         return u8;
     return 0;
@@ -700,7 +700,7 @@ RT_EXPORT_SYMBOL(RTStrToInt64Full);
 RTDECL(int64_t) RTStrToInt64(const char *pszValue)
 {
     int64_t i64;
-    int rc = RTStrToInt64Ex(pszValue, NULL, 0, &i64);
+    int rc = RTStrToInt64Ex(pszValue, (char **)NULL, 0, &i64);
     if (RT_SUCCESS(rc))
         return i64;
     return 0;
@@ -787,7 +787,7 @@ RT_EXPORT_SYMBOL(RTStrToInt32Full);
 RTDECL(int32_t) RTStrToInt32(const char *pszValue)
 {
     int32_t i32;
-    int rc = RTStrToInt32Ex(pszValue, NULL, 0, &i32);
+    int rc = RTStrToInt32Ex(pszValue, (char **)NULL, 0, &i32);
     if (RT_SUCCESS(rc))
         return i32;
     return 0;
@@ -874,7 +874,7 @@ RT_EXPORT_SYMBOL(RTStrToInt16Full);
 RTDECL(int16_t) RTStrToInt16(const char *pszValue)
 {
     int16_t i16;
-    int rc = RTStrToInt16Ex(pszValue, NULL, 0, &i16);
+    int rc = RTStrToInt16Ex(pszValue, (char **)NULL, 0, &i16);
     if (RT_SUCCESS(rc))
         return i16;
     return 0;
@@ -961,7 +961,7 @@ RT_EXPORT_SYMBOL(RTStrToInt8Full);
 RTDECL(int8_t) RTStrToInt8(const char *pszValue)
 {
     int8_t i8;
-    int rc = RTStrToInt8Ex(pszValue, NULL, 0, &i8);
+    int rc = RTStrToInt8Ex(pszValue, (char **)NULL, 0, &i8);
     if (RT_SUCCESS(rc))
         return i8;
     return 0;

@@ -292,7 +292,8 @@ tstRTInlineAsmPIC_DEFS = PIC
 
 tstRTInlineAsmPIC3_TEMPLATE = VBOXR3TSTEXE
 tstRTInlineAsmPIC3_SOURCES = tstRTInlineAsm.cpp
-tstRTInlineAsmPIC3_CXXFLAGS = -fPIC -fomit-frame-pointer -O3
+# with -O3 gcc-4.8 asserts
+tstRTInlineAsmPIC3_CXXFLAGS = -fPIC -fomit-frame-pointer #-O3
 tstRTInlineAsmPIC3_DEFS = PIC
 
 tstIprtList_TEMPLATE = VBOXR3TSTEXE

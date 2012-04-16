@@ -41,7 +41,7 @@
  */
 RTDECL(void) RTPathStripExt(char *pszPath)
 {
-    char *pszDot = NULL;
+    char *pszDot = (char *)NULL;
     for (;; pszPath++)
     {
         switch (*pszPath)
@@ -52,7 +52,7 @@ RTDECL(void) RTPathStripExt(char *pszPath)
             case '\\':
 #endif
             case '/':
-                pszDot = NULL;
+                pszDot = (char *)NULL;
                 break;
             case '.':
                 pszDot = pszPath;
