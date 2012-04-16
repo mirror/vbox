@@ -1418,7 +1418,7 @@ DECLINLINE(size_t) RTLatin1CpSize(RTUNICP CodePoint)
  */
 DECLINLINE(char *) RTLatin1PutCp(char *psz, RTUNICP CodePoint)
 {
-    AssertReturn(CodePoint < 0x100, NULL);
+    AssertReturn(CodePoint < 0x100, (char *)NULL);
     *psz++ = (unsigned char)CodePoint;
     return psz;
 }
