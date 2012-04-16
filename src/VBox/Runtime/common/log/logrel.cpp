@@ -141,7 +141,7 @@ RT_EXPORT_SYMBOL(RTLogRelLoggerV);
  */
 RTDECL(void) RTLogRelPrintfV(const char *pszFormat, va_list args)
 {
-    RTLogRelLoggerV(NULL, 0, ~0U, pszFormat, args);
+    RTLogRelLoggerV((PRTLOGGER)NULL, 0, ~0U, pszFormat, args);
 }
 RT_EXPORT_SYMBOL(RTLogRelPrintfV);
 
