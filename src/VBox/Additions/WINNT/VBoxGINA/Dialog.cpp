@@ -274,13 +274,13 @@ int credentialsHandle(HWND hwndDlg,
         rc = VbglR3CredentialsRetrieveUtf16(&pwszUser, &pwszPassword, &pwszDomain);
         if (RT_SUCCESS(rc))
         {
-    #ifdef DEBUG
+#ifdef DEBUG
             VBoxGINAVerbose(0, "VBoxGINA::credentialsHandle: retrieved credentials: user=%ls, password=%ls, domain=%ls\n",
                             pwszUser, pwszPassword, pwszDomain);
-    #else
+#else
             VBoxGINAVerbose(0, "VBoxGINA::credentialsHandle: retrieved credentials: user=%ls, password=XXX, domain=%ls\n",
                             pwszUser, pwszDomain);
-    #endif
+#endif
             /* Fill in credentials to appropriate UI elements. */
             rc = credentialsToUI(hwndDlg,
                                  hwndUserId, hwndPassword, hwndDomain,
@@ -300,7 +300,9 @@ int credentialsHandle(HWND hwndDlg,
         }
     }
 
+#ifdef DEBUG
     VBoxGINAVerbose(3, "VBoxGINA::credentialsHandle: returned with rc=%Rrc\n", rc);
+#endif
     return rc;
 }
 
