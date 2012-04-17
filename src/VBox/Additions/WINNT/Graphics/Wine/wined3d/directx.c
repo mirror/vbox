@@ -905,6 +905,19 @@ static void quirk_no_shader_3(struct wined3d_gl_info *gl_info)
 }
 #endif
 
+static BOOL match_intel(const struct wined3d_gl_info *gl_info, const char *gl_renderer,
+        enum wined3d_gl_vendor gl_vendor, enum wined3d_pci_vendor card_vendor, enum wined3d_pci_device device)
+{
+    if (card_vendor == HW_VENDOR_INTEL) return TRUE;
+    if (gl_vendor == HW_VENDOR_INTEL) return TRUE;
+    return FALSE;
+}
+
+static void quirk_force_blit(struct wined3d_gl_info *gl_info)
+{
+    gl_info->quirks |= WINED3D_QUIRK_FORCE_BLIT;
+}
+
 struct driver_quirk
 {
     BOOL (*match)(const struct wined3d_gl_info *gl_info, const char *gl_renderer,
@@ -996,11 +1009,16 @@ static const struct driver_quirk quirk_table[] =
     },
 #ifdef VBOX_WITH_WDDM
     {
-            match_mesa_nvidia,
-            quirk_no_shader_3,
-            "disable shader 3 support"
+        match_mesa_nvidia,
+        quirk_no_shader_3,
+        "disable shader 3 support"
     },
 #endif
+    {
+        match_intel,
+        quirk_force_blit,
+        "force framebuffer blit when possible"
+    }
 };
 
 /* Certain applications (Steam) complain if we report an outdated driver version. In general,
@@ -1261,7 +1279,11 @@ static enum wined3d_gl_vendor wined3d_guess_gl_vendor(struct wined3d_gl_info *gl
     if (strstr(gl_vendor_string, "Intel(R)")
             || strstr(gl_renderer, "Intel(R)")
             || strstr(gl_vendor_string, "Intel Inc."))
+    {
+        if (strstr(gl_renderer, "Mesa"))
+            return GL_VENDOR_MESA;
         return GL_VENDOR_INTEL;
+    }
 
     if (strstr(gl_vendor_string, "Mesa")
             || strstr(gl_vendor_string, "Advanced Micro Devices, Inc.")
@@ -1982,13 +2004,21 @@ static enum wined3d_pci_device select_card_nvidia_mesa(const struct wined3d_gl_i
     return CARD_NVIDIA_RIVA_128;
 }
 
-static enum wined3d_pci_device select_card_intel_mesa(const struct wined3d_gl_info *gl_info,
+static enum wined3d_pci_device select_card_intel_cmn(const struct wined3d_gl_info *gl_info,
         const char *gl_renderer, unsigned int *vidmem)
 {
-    FIXME_(d3d_caps)("Card selection not handled for Mesa Intel driver\n");
+    if (strstr(gl_renderer, "HD Graphics")
+            || strstr(gl_renderer, "Sandybridge"))
+        return CARD_INTEL_SBHD;
+    FIXME_(d3d_caps)("Card selection not handled for Windows Intel driver\n");
     return CARD_INTEL_I915G;
 }
 
+static enum wined3d_pci_device select_card_intel_mesa(const struct wined3d_gl_info *gl_info,
+        const char *gl_renderer, unsigned int *vidmem)
+{
+    return select_card_intel_cmn(gl_info, gl_renderer, vidmem);
+}
 
 struct vendor_card_selection
 {
@@ -2008,7 +2038,8 @@ static const struct vendor_card_selection vendor_card_select_table[] =
     {GL_VENDOR_FGLRX,  HW_VENDOR_ATI,     "AMD/ATI binary driver",    select_card_ati_binary},
     {GL_VENDOR_MESA,   HW_VENDOR_ATI,     "Mesa AMD/ATI driver",      select_card_ati_mesa},
     {GL_VENDOR_MESA,   HW_VENDOR_NVIDIA,  "Mesa Nouveau driver",      select_card_nvidia_mesa},
-    {GL_VENDOR_MESA,   HW_VENDOR_INTEL,   "Mesa Intel driver",        select_card_intel_mesa}
+    {GL_VENDOR_MESA,   HW_VENDOR_INTEL,   "Mesa Intel driver",        select_card_intel_mesa},
+    {GL_VENDOR_INTEL,  HW_VENDOR_INTEL,   "Windows Intel binary driver",  select_card_intel_cmn}
 };
 
 

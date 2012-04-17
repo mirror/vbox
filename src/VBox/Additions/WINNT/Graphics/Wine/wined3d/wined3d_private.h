@@ -80,6 +80,7 @@
 #define WINED3D_QUIRK_NV_CLIP_BROKEN            0x00000010
 #define WINED3D_QUIRK_FBO_TEX_UPDATE            0x00000020
 #define WINED3D_QUIRK_FULLSIZE_BLIT             0x00000040
+#define WINED3D_QUIRK_FORCE_BLIT                0x00000080
 
 /* Texture format fixups */
 
@@ -1440,6 +1441,7 @@ enum wined3d_pci_device
     CARD_INTEL_I915GM               = 0x2592,
     CARD_INTEL_I945GM               = 0x27a2, /* Same as GMA 950? */
     CARD_INTEL_X3100                = 0x2a02, /* Found in Macs. Same as GMA 965? */
+    CARD_INTEL_SBHD                 = 0x0126, /* SundyBridge HD */
 };
 
 struct wined3d_fbo_ops
