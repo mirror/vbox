@@ -1,10 +1,10 @@
 /* $Id$ */
 /** @file
- * IPRT - Process Management, Ring-0 Driver, Solaris.
+ * IPRT - RTMpPokeCpu, Solaris Implementation.
  */
 
 /*
- * Copyright (C) 2006-2007 Oracle Corporation
+ * Copyright (C) 2009 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -28,22 +28,23 @@
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
-#include "../the-solaris-kernel.h"
+#include "the-solaris-kernel.h"
 #include "internal/iprt.h"
-#include <iprt/process.h>
+#include <iprt/mp.h>
+
+#if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
+# include <iprt/asm-amd64-x86.h>
+#endif
+#include <iprt/assert.h>
+#include <iprt/err.h>
 
 
 
-RTDECL(RTPROCESS) RTProcSelf(void)
+RTDECL(int) RTMpPokeCpu(RTCPUID idCpu)
 {
-    return ddi_get_pid();
-}
-
-
-RTR0DECL(RTR0PROCESS) RTR0ProcHandleSelf(void)
-{
-    proc_t *pProcess = NULL;
-    drv_getparm(UPROCP, &pProcess);
-    return (RTR0PROCESS)pProcess;
+    RT_ASSERT_INTS_ON();
+    if (idCpu < ncpus)
+        poke_cpu(idCpu);
+    return VINF_SUCCESS;
 }
 

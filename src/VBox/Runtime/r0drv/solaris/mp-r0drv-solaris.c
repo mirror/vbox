@@ -28,7 +28,7 @@
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
-#include "../the-solaris-kernel.h"
+#include "the-solaris-kernel.h"
 #include "internal/iprt.h"
 #include <iprt/mp.h>
 #include <iprt/cpuset.h>
