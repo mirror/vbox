@@ -1752,6 +1752,18 @@ static int buslogicRegisterWrite(PBUSLOGIC pBusLogic, unsigned iRegister, uint8_
             }
             break;
         }
+
+        /* On BusLogic adapters, the interrupt and geometry registers are R/W.
+         * That is different from Adaptec 154x where those are read only.
+         */
+        case BUSLOGIC_REGISTER_INTERRUPT:
+            pBusLogic->regInterrupt = uVal;
+            break;
+
+        case BUSLOGIC_REGISTER_GEOMETRY:
+            pBusLogic->regGeometry = uVal;
+            break;
+
         default:
             AssertMsgFailed(("Register not available\n"));
             rc = VERR_IOM_IOPORT_UNUSED;
