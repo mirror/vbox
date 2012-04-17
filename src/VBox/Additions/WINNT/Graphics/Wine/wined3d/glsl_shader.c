@@ -223,7 +223,7 @@ static char *get_info_log_line(char **ptr, int *pcbStr)
     }
 
     *q = '\0';
-    *pcbStr = cbStr - ((uintptr_t)q) - ((uintptr_t)p) - 1;
+    *pcbStr = cbStr - (((uintptr_t)q) - ((uintptr_t)p)) - 1;
     Assert((*pcbStr) >= 0);
     Assert((*pcbStr) < cbStr);
     *ptr = q + 1;
