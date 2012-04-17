@@ -2018,10 +2018,13 @@ print_bios_banner()
   // Skip the logo if a warm boot is requested.
   Bit16u warm_boot = read_word(0x0040,0x0072);
   write_word(0x0040,0x0072, 0);
-  if (warm_boot == 0x1234)
+  if (warm_boot == 0x1234) {
+    /* set text mode */
+    set_mode(3);
     return;
-  /* show graphical logo */
-  show_logo();
+  } else
+    /* show graphical logo */
+    show_logo();
 #else /* !VBOX */
   printf(BX_APPNAME" BIOS - build: %s\n%s\nOptions: ",
     BIOS_BUILD_DATE, bios_cvs_version_string);
