@@ -384,15 +384,15 @@ ifdef VBOX_WITH_NETFLT
  #       needing it.
  src-server/win/NetIf-win.cpp_INCS.win += $(PATH_TOOL_$(VBOX_VCC_TOOL)_INC)
  VBoxSVC_LIBS.win += \
-	$(WinNetConfig_1_TARGET) \
-	$(VBoxDrvCfg_1_TARGET) \
+	$(PATH_STAGE_LIB)/WinNetConfig$(VBOX_SUFF_LIB) \
+	$(PATH_STAGE_LIB)/VBoxDrvCfg$(VBOX_SUFF_LIB) \
 	$(PATH_TOOL_$(VBOX_VCC_TOOL)_LIB)/comsupp.lib \
 	$(PATH_SDK_WINPSDK_LIB)/WbemUuid.Lib
 endif
 VBoxSVC_LDFLAGS.darwin    = -framework IOKit -framework SystemConfiguration
 
 ifdef VBOX_WITH_CROGL
- VBoxSVC_LIBS += $(VBoxOGLTest_1_TARGET)
+ VBoxSVC_LIBS += $(PATH_STAGE_LIB)/VBoxOGLTest$(VBOX_SUFF_LIB)
  VBoxSVC_LDFLAGS.darwin += -framework OpenGL
 endif
 
@@ -575,14 +575,14 @@ VBoxC_LIBS += \
 
 ifdef VBOX_WITH_NETFLT
  VBoxC_LIBS.win += \
- 	$(VBoxDrvCfg_1_TARGET) \
- 	$(WinNetConfig_1_TARGET) \
+ 	$(PATH_STAGE_LIB)/VBoxDrvCfg$(VBOX_SUFF_LIB) \
+ 	$(PATH_STAGE_LIB)/WinNetConfig$(VBOX_SUFF_LIB) \
  	$(PATH_TOOL_$(VBOX_VCC_TOOL)_LIB)/comsupp.lib \
  	$(PATH_SDK_WINPSDK_LIB)/WbemUuid.Lib
 endif
 
 ifdef VBOX_WITH_CROGL
- VBoxC_LIBS += $(VBoxOGLTest_1_TARGET)
+ VBoxC_LIBS += $(PATH_STAGE_LIB)/VBoxOGLTest$(VBOX_SUFF_LIB)
  VBoxC_LDFLAGS.darwin += -framework OpenGL
 endif
 
