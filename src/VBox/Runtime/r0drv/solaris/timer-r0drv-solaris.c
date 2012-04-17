@@ -239,7 +239,6 @@ RTDECL(int) RTTimerCreateEx(PRTTIMER *ppTimer, uint64_t u64NanoInterval, uint32_
     pTimer->pOmniTimer = NULL;
     pTimer->hCyclicId = CYCLIC_NONE;
 
-    cmn_err(CE_NOTE, "Create pTimer->u32Magic=%x RTTIMER_MAGIC=%x\n",  pTimer->u32Magic, RTTIMER_MAGIC);
     *ppTimer = pTimer;
     return VINF_SUCCESS;
 }
@@ -264,7 +263,6 @@ RTDECL(int) RTTimerDestroy(PRTTIMER pTimer)
 
 RTDECL(int) RTTimerStart(PRTTIMER pTimer, uint64_t u64First)
 {
-    cmn_err(CE_NOTE, "Start pTimer->u32Magic=%x RTTIMER_MAGIC=%x\n",  pTimer->u32Magic, RTTIMER_MAGIC);
     RTTIMER_ASSERT_VALID_RET(pTimer);
     RT_ASSERT_INTS_ON();
 
