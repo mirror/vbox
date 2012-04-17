@@ -2022,7 +2022,6 @@ _crVBoxHGSMIWriteReadExact(CRConnection *conn, PCRVBOXHGSMI_CLIENT pClient, void
                 rc = pClient->pHgsmi->pfnBufferCreate(pClient->pHgsmi, CRVBOXHGSMI_PAGE_ALIGN(cbWriteback),
                                 VBOXUHGSMI_SYNCHOBJECT_TYPE_NONE, NULL, &pClient->pHGBuffer);
                 AssertRC(rc);
-                CRASSERT(RT_SUCCESS(rc));
                 if (RT_SUCCESS(rc))
                 {
                     rc = pOldBuf->pfnDestroy(pOldBuf);
