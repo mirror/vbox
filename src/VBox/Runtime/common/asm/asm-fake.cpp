@@ -126,6 +126,13 @@ RTDECL(uint32_t) ASMAtomicAddU32(uint32_t volatile *pu32, uint32_t u32)
     return u32Old;
 }
 
+RTDECL(uint64_t) ASMAtomicAddU64(uint64_t volatile *pu64, uint64_t u64)
+{
+    uint64_t u64Old = *pu64;
+    *pu64 = u64Old + u64;
+    return u64Old;
+}
+
 RTDECL(uint32_t) ASMAtomicIncU32(uint32_t volatile *pu32)
 {
     return *pu32 += 1;
@@ -136,6 +143,16 @@ RTDECL(uint32_t) ASMAtomicDecU32(uint32_t volatile *pu32)
     return *pu32 -= 1;
 }
 
+RTDECL(uint64_t) ASMAtomicIncU64(uint64_t volatile *pu64)
+{
+    return *pu64 += 1;
+}
+
+RTDECL(uint64_t) ASMAtomicDecU64(uint64_t volatile *pu64)
+{
+    return *pu64 -= 1;
+}
+
 RTDECL(void) ASMAtomicOrU32(uint32_t volatile *pu32, uint32_t u32)
 {
     *pu32 |= u32;
@@ -144,6 +161,16 @@ RTDECL(void) ASMAtomicOrU32(uint32_t volatile *pu32, uint32_t u32)
 RTDECL(void) ASMAtomicAndU32(uint32_t volatile *pu32, uint32_t u32)
 {
     *pu32 &= u32;
+}
+
+RTDECL(void) ASMAtomicOrU64(uint64_t volatile *pu64, uint64_t u64)
+{
+    *pu64 |= u64;
+}
+
+RTDECL(void) ASMAtomicAndU64(uint64_t volatile *pu64, uint64_t u64)
+{
+    *pu64 &= u64;
 }
 
 RTDECL(void) ASMSerializeInstruction(void)
