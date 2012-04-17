@@ -388,6 +388,7 @@ static page_t *rtR0MemObjSolLargePageAlloc(uint64_t *puPhys, size_t cb)
     return NULL;
 }
 
+
 /**
  * Prepares the large page allocated by rtR0MemObjSolLargePageAlloc to be mapped.
  *
@@ -488,6 +489,7 @@ static void rtR0MemObjSolUnmap(void *pv, size_t cb)
         as_rangeunlock(pAddrSpace);
     }
 }
+
 
 /**
  * Lock down memory mappings for a virtual address.
@@ -733,7 +735,6 @@ DECLHIDDEN(int) rtR0MemObjNativeAllocPhys(PPRTR0MEMOBJINTERNAL ppMem, size_t cb,
         /*
          * Allocate one large page.
          */
-        cmn_err(CE_NOTE,  "calling rtR0MemObjSolLargePageAlloc\n");
         void *pvPages = rtR0MemObjSolLargePageAlloc(&PhysAddr, cb);
         if (RT_LIKELY(pvPages))
         {
@@ -753,7 +754,6 @@ DECLHIDDEN(int) rtR0MemObjNativeAllocPhys(PPRTR0MEMOBJINTERNAL ppMem, size_t cb,
         /*
          * Allocate physically contiguous memory aligned as specified.
          */
-        cmn_err(CE_NOTE,  "rtR0MemObjNativeAllocPhys->rtR0SolMemAlloc\n");
         AssertCompile(NIL_RTHCPHYS == UINT64_MAX);
         PhysAddr = PhysHighest;
         void *pvMem = rtR0SolMemAlloc(PhysHighest, &PhysAddr, cb, uAlignment, true /* fContig */);
