@@ -136,6 +136,13 @@ void BIOSCALL log_bios_start(void)
     BX_INFO("%s\n", bios_cvs_version_string);
 }
 
+/* Set video mode. */
+void set_mode(uint8_t mode);
+#pragma aux set_mode =      \
+    "mov    ah, 0"          \
+    "int    10h"            \
+    parm [al] modify [ax];
+
 //@todo: restore
 //#undef VBOX
 
@@ -153,7 +160,11 @@ void BIOSCALL print_bios_banner(void)
     uint16_t    warm_boot = read_word(0x0040,0x0072);
     write_word(0x0040,0x0072, 0);
     if (warm_boot == 0x1234)
+    {
+        /* Only set text mode. */
+        set_mode(3);
         return;
+    }
     /* show graphical logo */
     show_logo();
 #else /* !VBOX */
