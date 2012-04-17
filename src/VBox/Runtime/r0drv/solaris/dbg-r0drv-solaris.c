@@ -93,6 +93,7 @@ static int rtR0DbgKrnlInfoModRetain(char *pszModule, modctl_t **ppMod, ctf_file_
             mutex_enter(&mod_lock);
             *ppCTF = ctf_modopen(((modctl_t *)*ppMod)->mod_mp, &err);
             mutex_exit(&mod_lock);
+            mod_release_mod(*ppMod);
 
             if (*ppCTF)
                 return VINF_SUCCESS;
@@ -101,8 +102,6 @@ static int rtR0DbgKrnlInfoModRetain(char *pszModule, modctl_t **ppMod, ctf_file_
                 LogRel(("rtR0DbgKrnlInfoModRetain: ctf_modopen failed for '%s' err=%d\n", pszModule, err));
                 rc = VERR_INTERNAL_ERROR_3;
             }
-
-            mod_release_mod(*ppMod);
         }
         else
         {
@@ -132,7 +131,6 @@ static void rtR0DbgKrnlInfoModRelease(modctl_t *pMod, ctf_file_t *pCTF)
     AssertPtrReturnVoid(pCTF);
 
     ctf_close(pCTF);
-    mod_release_mod(pMod);
 }
 
 

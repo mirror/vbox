@@ -44,7 +44,7 @@ RTDECL(void) RTLogWriteDebugger(const char *pch, size_t cb)
 {
     if (pch[cb] != '\0')
         AssertBreakpoint();
-    if (    !g_frtSolarisSplSetsEIF
+    if (    !g_frtSolSplSetsEIF
 #if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
         ||  ASMIntAreEnabled()
 #else

@@ -56,29 +56,95 @@
 #include <sys/kobj.h>
 #include <sys/ctf_api.h>
 #include <sys/modctl.h>
-#include "vbi.h"
 
 #undef u /* /usr/include/sys/user.h:249:1 is where this is defined to (curproc->p_user). very cool. */
 
 #include <iprt/cdefs.h>
 #include <iprt/types.h>
+#include <iprt/dbg.h>
 
 RT_C_DECLS_BEGIN
 
+/* IPRT functions. */
+DECLHIDDEN(void *)   rtR0SolMemAlloc(uint64_t cbPhysHi, uint64_t *puPhys, size_t cb, uint64_t cbAlign, bool fContig);
+DECLHIDDEN(void)     rtR0SolMemFree(void *pv, size_t cb);
+
+
+/* Solaris functions. */
 typedef callout_id_t (*PFNSOL_timeout_generic)(int type, void (*func)(void *),
                                                void *arg, hrtime_t expiration,
                                                hrtime_t resultion, int flags);
-typedef hrtime_t    (*PFNSOL_untimeout_generic)(callout_id_t id, int nowait);
-typedef int         (*PFNSOL_cyclic_reprogram)(cyclic_id_t id, hrtime_t expiration);
-
+typedef hrtime_t     (*PFNSOL_untimeout_generic)(callout_id_t id, int nowait);
+typedef int          (*PFNSOL_cyclic_reprogram)(cyclic_id_t id, hrtime_t expiration);
+typedef void         (*PFNSOL_contig_free)(void *addr, size_t size);
 
 /* IPRT globals. */
-extern bool                     g_frtSolarisSplSetsEIF;
+extern bool                     g_frtSolSplSetsEIF;
 extern struct ddi_dma_attr      g_SolarisX86PhysMemLimits;
-extern RTCPUSET                 g_rtMpSolarisCpuSet;
+extern RTCPUSET                 g_rtMpSolCpuSet;
 extern PFNSOL_timeout_generic   g_pfnrtR0Sol_timeout_generic;
 extern PFNSOL_untimeout_generic g_pfnrtR0Sol_untimeout_generic;
 extern PFNSOL_cyclic_reprogram  g_pfnrtR0Sol_cyclic_reprogram;
+extern PFNSOL_contig_free       g_pfnrtR0Sol_contig_free;
+extern bool                     g_frtSolUseKflt;
+extern size_t                   g_offrtSolThreadPreempt;
+extern size_t                   g_offrtSolCpuPreempt;
+extern size_t                   g_offrtSolCpuForceKernelPreempt;
+extern bool                     g_frtSolInitDone;
+extern RTDBGKRNLINFO            g_hKrnlDbgInfo;
+
+/*
+ * Workarounds for running on old versions of solaris with different cross call
+ * interfaces. If we find xc_init_cpu() in the kernel, then just use the
+ * defined interfaces for xc_call() from the include file where the xc_call()
+ * interfaces just takes a pointer to a ulong_t array. The array must be long
+ * enough to hold "ncpus" bits at runtime.
+
+ * The reason for the hacks is that using the type "cpuset_t" is pretty much
+ * impossible from code built outside the Solaris source repository that wants
+ * to run on multiple releases of Solaris.
+ *
+ * For old style xc_call()s, 32 bit solaris and older 64 bit versions use
+ * "ulong_t" as cpuset_t.
+ *
+ * Later versions of 64 bit Solaris used: struct {ulong_t words[x];}
+ * where "x" depends on NCPU.
+ *
+ * We detect the difference in 64 bit support by checking the kernel value of
+ * max_cpuid, which always holds the compiled value of NCPU - 1.
+ *
+ * If Solaris increases NCPU to more than 256, VBox will continue to work on
+ * all versions of Solaris as long as the number of installed CPUs in the
+ * machine is <= IPRT_SOLARIS_NCPUS. If IPRT_SOLARIS_NCPUS is increased, this
+ * code has to be re-written some to provide compatibility with older Solaris
+ * which expects cpuset_t to be based on NCPU==256 -- or we discontinue
+ * support of old Nevada/S10.
+ */
+#define IPRT_SOL_NCPUS          256
+#define IPRT_SOL_SET_WORDS      (IPRT_SOL_NCPUS / (sizeof(ulong_t) * 8))
+#define IPRT_SOL_X_CALL_HIPRI   (2) /* for Old Solaris interface */
+typedef struct RTSOLCPUSET
+{
+    ulong_t                     auCpus[IPRT_SOL_SET_WORDS];
+} RTSOLCPUSET;
+typedef RTSOLCPUSET *PRTSOLCPUSET;
+
+/* Avoid warnings even if it means more typing... */
+typedef struct RTR0FNSOLXCCALL
+{
+    union
+    {
+        void *(*pfnSol_xc_call)          (xc_arg_t, xc_arg_t, xc_arg_t, ulong_t *, xc_func_t);
+        void *(*pfnSol_xc_call_old)      (xc_arg_t, xc_arg_t, xc_arg_t, int, RTSOLCPUSET, xc_func_t);
+        void *(*pfnSol_xc_call_old_ulong)(xc_arg_t, xc_arg_t, xc_arg_t, int, ulong_t, xc_func_t);
+    } u;
+} RTR0FNSOLXCCALL;
+typedef RTR0FNSOLXCCALL *PRTR0FNSOLXCCALL;
+
+extern RTR0FNSOLXCCALL          g_rtSolXcCall;
+extern bool                     g_frtSolOldIPI;
+extern bool                     g_frtSolOldIPIUlong;
+
 
 /* Solaris globals. */
 extern uintptr_t                kernelbase;

@@ -43,7 +43,8 @@
 RTDECL(int) RTMpPokeCpu(RTCPUID idCpu)
 {
     RT_ASSERT_INTS_ON();
-    vbi_poke_cpu(idCpu);
+    if (idCpu < ncpus)
+        poke_cpu(idCpu);
     return VINF_SUCCESS;
 }
 

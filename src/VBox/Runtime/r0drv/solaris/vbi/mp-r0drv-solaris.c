@@ -32,6 +32,7 @@
 #include "internal/iprt.h"
 #include <iprt/mp.h>
 #include <iprt/cpuset.h>
+#include <iprt/thread.h>
 
 #include <iprt/asm.h>
 #if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
@@ -40,6 +41,8 @@
 #include <iprt/err.h>
 #include "r0drv/mp-r0drv.h"
 
+typedef int FNRTMPSOLWORKER(void *pvUser1, void *pvUser2, void *pvUser3);
+typedef FNRTMPSOLWORKER *PFNRTMPSOLWORKER;
 
 
 RTDECL(bool) RTMpIsCpuWorkPending(void)
@@ -50,25 +53,25 @@ RTDECL(bool) RTMpIsCpuWorkPending(void)
 
 RTDECL(RTCPUID) RTMpCpuId(void)
 {
-    return vbi_cpu_id();
+    return CPU->cpu_id;
 }
 
 
 RTDECL(int) RTMpCpuIdToSetIndex(RTCPUID idCpu)
 {
-    return idCpu < RTCPUSET_MAX_CPUS && idCpu < vbi_cpu_maxcount() ? idCpu : -1;
+    return idCpu < RTCPUSET_MAX_CPUS && idCpu <= max_cpuid ? idCpu : -1;
 }
 
 
 RTDECL(RTCPUID) RTMpCpuIdFromSetIndex(int iCpu)
 {
-    return (unsigned)iCpu < vbi_cpu_maxcount() ? iCpu : NIL_RTCPUID;
+    return (unsigned)iCpu <= max_cpuid ? iCpu : NIL_RTCPUID;
 }
 
 
 RTDECL(RTCPUID) RTMpGetMaxCpuId(void)
 {
-    return vbi_max_cpu_id();
+    return max_cpuid;
 }
 
 
@@ -77,20 +80,16 @@ RTDECL(bool) RTMpIsCpuOnline(RTCPUID idCpu)
     /*
      * We cannot query CPU status recursively, check cpu member from cached set.
      */
-    if (idCpu >= vbi_cpu_count())
+    if (idCpu >= ncpus)
         return false;
 
-    return RTCpuSetIsMember(&g_rtMpSolarisCpuSet, idCpu);
-
-#if 0
-    return idCpu < vbi_cpu_count() && vbi_cpu_online(idCpu);
-#endif
+    return RTCpuSetIsMember(&g_rtMpSolCpuSet, idCpu);
 }
 
 
 RTDECL(bool) RTMpIsCpuPossible(RTCPUID idCpu)
 {
-    return idCpu < vbi_cpu_count();
+    return idCpu < ncpus;
 }
 
 
@@ -112,7 +111,7 @@ RTDECL(PRTCPUSET) RTMpGetSet(PRTCPUSET pSet)
 
 RTDECL(RTCPUID) RTMpGetCount(void)
 {
-    return vbi_cpu_count();
+    return ncpus;
 }
 
 
@@ -121,7 +120,7 @@ RTDECL(PRTCPUSET) RTMpGetOnlineSet(PRTCPUSET pSet)
     /*
      * We cannot query CPU status recursively, return the cached set.
      */
-    *pSet = g_rtMpSolarisCpuSet;
+    *pSet = g_rtMpSolCpuSet;
     return pSet;
 }
 
@@ -134,6 +133,52 @@ RTDECL(RTCPUID) RTMpGetOnlineCount(void)
 }
 
 
+/**
+ * Wrapper to Solaris IPI infrastructure.
+ *
+ * @param    pCpuSet        Pointer to Solaris CPU set.
+ * @param    pfnSolWorker     Function to execute on target CPU(s).
+ * @param     pArgs            Pointer to RTMPARGS to pass to @a pfnSolWorker.
+ *
+ * @returns Solaris error code.
+ */
+static void rtMpSolCrossCall(PRTSOLCPUSET pCpuSet, PFNRTMPSOLWORKER pfnSolWorker, PRTMPARGS pArgs)
+{
+    AssertPtrReturnVoid(pCpuSet);
+    AssertPtrReturnVoid(pfnSolWorker);
+    AssertPtrReturnVoid(pCpuSet);
+
+    if (g_frtSolOldIPI)
+    {
+        if (g_frtSolOldIPIUlong)
+        {
+            g_rtSolXcCall.u.pfnSol_xc_call_old_ulong((xc_arg_t)pArgs,          /* Arg to IPI function */
+                                                     0,                        /* Arg2, ignored */
+                                                     0,                        /* Arg3, ignored */
+                                                     IPRT_SOL_X_CALL_HIPRI,    /* IPI priority */
+                                                     pCpuSet->auCpus[0],       /* Target CPU(s) */
+                                                     (xc_func_t)pfnSolWorker); /* Function to execute on target(s) */
+        }
+        else
+        {
+            g_rtSolXcCall.u.pfnSol_xc_call_old((xc_arg_t)pArgs,          /* Arg to IPI function */
+                                               0,                        /* Arg2, ignored */
+                                               0,                        /* Arg3, ignored */
+                                               IPRT_SOL_X_CALL_HIPRI,    /* IPI priority */
+                                               *pCpuSet,                 /* Target CPU set */
+                                               (xc_func_t)pfnSolWorker); /* Function to execute on target(s) */
+        }
+    }
+    else
+    {
+        g_rtSolXcCall.u.pfnSol_xc_call((xc_arg_t)pArgs,          /* Arg to IPI function */
+                                       0,                        /* Arg2 */
+                                       0,                        /* Arg3 */
+                                       &pCpuSet->auCpus[0],      /* Target CPU set */
+                                       (xc_func_t)pfnSolWorker); /* Function to execute on target(s) */
+    }
+}
+
 
 /**
  * Wrapper between the native solaris per-cpu callback and PFNRTWORKER
@@ -143,7 +188,7 @@ RTDECL(RTCPUID) RTMpGetOnlineCount(void)
  * @param   uIgnored1   Ignored.
  * @param   uIgnored2   Ignored.
  */
-static int rtmpOnAllSolarisWrapper(void *uArg, void *uIgnored1, void *uIgnored2)
+static int rtMpSolOnAllCpuWrapper(void *uArg, void *uIgnored1, void *uIgnored2)
 {
     PRTMPARGS pArgs = (PRTMPARGS)(uArg);
 
@@ -173,11 +218,16 @@ RTDECL(int) RTMpOnAll(PFNRTMPWORKER pfnWorker, void *pvUser1, void *pvUser2)
     Args.idCpu = NIL_RTCPUID;
     Args.cHits = 0;
 
-    vbi_preempt_disable();
+    RTTHREADPREEMPTSTATE PreemptState = RTTHREADPREEMPTSTATE_INITIALIZER;
+    RTThreadPreemptDisable(&PreemptState);
 
-    vbi_execute_on_all(rtmpOnAllSolarisWrapper, &Args);
+    RTSOLCPUSET CpuSet;
+    for (int i = 0; i < IPRT_SOL_SET_WORDS; i++)
+        CpuSet.auCpus[i] = (ulong_t)-1L;
 
-    vbi_preempt_enable();
+    rtMpSolCrossCall(&CpuSet, rtMpSolOnAllCpuWrapper, &Args);
+
+    RTThreadPreemptRestore(&PreemptState);
 
     return VINF_SUCCESS;
 }
@@ -191,7 +241,7 @@ RTDECL(int) RTMpOnAll(PFNRTMPWORKER pfnWorker, void *pvUser1, void *pvUser2)
  * @param   uIgnored1   Ignored.
  * @param   uIgnored2   Ignored.
  */
-static int rtmpOnOthersSolarisWrapper(void *uArg, void *uIgnored1, void *uIgnored2)
+static int rtMpSolOnOtherCpusWrapper(void *uArg, void *uIgnored1, void *uIgnored2)
 {
     PRTMPARGS pArgs = (PRTMPARGS)(uArg);
     RTCPUID idCpu = RTMpCpuId();
@@ -210,18 +260,24 @@ RTDECL(int) RTMpOnOthers(PFNRTMPWORKER pfnWorker, void *pvUser1, void *pvUser2)
     RTMPARGS Args;
     RT_ASSERT_INTS_ON();
 
-    /* The caller is supposed to have disabled preemption, but take no chances. */
-    vbi_preempt_disable();
-
     Args.pfnWorker = pfnWorker;
     Args.pvUser1 = pvUser1;
     Args.pvUser2 = pvUser2;
     Args.idCpu = RTMpCpuId();
     Args.cHits = 0;
 
-    vbi_execute_on_others(rtmpOnOthersSolarisWrapper, &Args);
+    /* The caller is supposed to have disabled preemption, but take no chances. */
+    RTTHREADPREEMPTSTATE PreemptState = RTTHREADPREEMPTSTATE_INITIALIZER;
+    RTThreadPreemptDisable(&PreemptState);
 
-    vbi_preempt_enable();
+    RTSOLCPUSET CpuSet;
+    for (int i = 0; i < IPRT_SOL_SET_WORDS; i++)
+        CpuSet.auCpus[0] = (ulong_t)-1L;
+    BT_CLEAR(CpuSet.auCpus, RTMpCpuId());
+
+    rtMpSolCrossCall(&CpuSet, rtMpSolOnOtherCpusWrapper, &Args);
+
+    RTThreadPreemptRestore(&PreemptState);
 
     return VINF_SUCCESS;
 }
@@ -231,12 +287,13 @@ RTDECL(int) RTMpOnOthers(PFNRTMPWORKER pfnWorker, void *pvUser1, void *pvUser2)
  * Wrapper between the native solaris per-cpu callback and PFNRTWORKER
  * for the RTMpOnSpecific API.
  *
- *
  * @param   uArgs       Pointer to the RTMPARGS package.
  * @param   uIgnored1   Ignored.
  * @param   uIgnored2   Ignored.
+ *
+ * @returns Solaris error code.
  */
-static int rtmpOnSpecificSolarisWrapper(void *uArg, void *uIgnored1, void *uIgnored2)
+static int rtMpSolOnSpecificCpuWrapper(void *uArg, void *uIgnored1, void *uIgnored2)
 {
     PRTMPARGS pArgs = (PRTMPARGS)(uArg);
     RTCPUID idCpu = RTMpCpuId();
@@ -256,7 +313,7 @@ RTDECL(int) RTMpOnSpecific(RTCPUID idCpu, PFNRTMPWORKER pfnWorker, void *pvUser1
     RTMPARGS Args;
     RT_ASSERT_INTS_ON();
 
-    if (idCpu >= vbi_cpu_count())
+    if (idCpu >= ncpus)
         return VERR_CPU_NOT_FOUND;
 
     if (RT_UNLIKELY(!RTMpIsCpuOnline(idCpu)))
@@ -268,11 +325,17 @@ RTDECL(int) RTMpOnSpecific(RTCPUID idCpu, PFNRTMPWORKER pfnWorker, void *pvUser1
     Args.idCpu = idCpu;
     Args.cHits = 0;
 
-    vbi_preempt_disable();
+    RTTHREADPREEMPTSTATE PreemptState = RTTHREADPREEMPTSTATE_INITIALIZER;
+    RTThreadPreemptDisable(&PreemptState);
 
-    vbi_execute_on_one(rtmpOnSpecificSolarisWrapper, &Args, idCpu);
+    RTSOLCPUSET CpuSet;
+    for (int i = 0; i < IPRT_SOL_SET_WORDS; i++)
+        CpuSet.auCpus[i] = 0;
+    BT_SET(CpuSet.auCpus, idCpu);
 
-    vbi_preempt_enable();
+    rtMpSolCrossCall(&CpuSet, rtMpSolOnSpecificCpuWrapper, &Args);
+
+    RTThreadPreemptRestore(&PreemptState);
 
     Assert(ASMAtomicUoReadU32(&Args.cHits) <= 1);
 

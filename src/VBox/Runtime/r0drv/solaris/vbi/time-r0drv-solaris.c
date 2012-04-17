@@ -60,6 +60,11 @@ RTDECL(uint64_t) RTTimeSystemMilliTS(void)
 
 RTDECL(PRTTIMESPEC) RTTimeNow(PRTTIMESPEC pTime)
 {
-    return RTTimeSpecSetNano(pTime, vbi_tod());
+    timestruc_t TimeSpec;
+
+    mutex_enter(&tod_lock);
+    TimeSpec = tod_get();
+    mutex_exit(&tod_lock);
+    return RTTimeSpecSetNano(pTime, (uint64_t)TimeSpec.tv_sec * 1000000000 + TimeSpec.tv_nsec);
 }
 

@@ -31,6 +31,7 @@
 #include "../the-solaris-kernel.h"
 #include "internal/iprt.h"
 #include <iprt/thread.h>
+#include <iprt/process.h>
 
 #include <iprt/assert.h>
 #include <iprt/err.h>
@@ -66,7 +67,11 @@ DECLHIDDEN(int) rtThreadNativeSetPriority(PRTTHREADINT pThread, RTTHREADTYPE enm
             return VERR_INVALID_PARAMETER;
     }
 
-    vbi_set_priority(vbi_curthread(), iPriority);
+    kthread_t *pCurThread = curthread;
+    Assert(pCurThread);
+    thread_lock(pCurThread);
+    thread_change_pri(pCurThread, iPriority, 0);
+    thread_unlock(pCurThread);
     return VINF_SUCCESS;
 }
 
@@ -95,20 +100,26 @@ static void rtThreadNativeMain(void *pvThreadInt)
 {
     PRTTHREADINT pThreadInt = (PRTTHREADINT)pvThreadInt;
 
-    rtThreadMain(pThreadInt, (RTNATIVETHREAD)vbi_curthread(), &pThreadInt->szName[0]);
-    vbi_thread_exit();
+    rtThreadMain(pThreadInt, RTThreadNativeSelf(), &pThreadInt->szName[0]);
+    thread_exit();
 }
 
 
 DECLHIDDEN(int) rtThreadNativeCreate(PRTTHREADINT pThreadInt, PRTNATIVETHREAD pNativeThread)
 {
-    void   *pvKernThread;
     RT_ASSERT_PREEMPTIBLE();
-
-    pvKernThread = vbi_thread_create(rtThreadNativeMain, pThreadInt, sizeof(pThreadInt), minclsyspri);
-    if (pvKernThread)
+    kthread_t *pThread = thread_create(NULL,                            /* Stack, use base */
+                                       0,                               /* Stack size */
+                                       rtThreadNativeMain,              /* Thread function */
+                                       pThreadInt,                      /* Function data */
+                                       sizeof(pThreadInt),              /* Data size*/
+                                       (proc_t *)RTR0ProcHandleSelf(),  /* Process handle */
+                                       TS_RUN,                          /* Ready to run */
+                                       minclsyspri                      /* Priority */
+                                       );
+    if (RT_LIKELY(pThread))
     {
-        *pNativeThread = (RTNATIVETHREAD)pvKernThread;
+        *pNativeThread = (RTNATIVETHREAD)pThread;
         return VINF_SUCCESS;
     }
 
