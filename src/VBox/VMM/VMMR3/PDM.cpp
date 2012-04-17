@@ -416,8 +416,8 @@ VMMR3DECL(int) PDMR3Init(PVM pVM)
             /*
              * Register the info handlers.
              */
-            DBGFR3InfoRegisterInternal(pVM, "pdmtracingids", 
-                                       "Displays the tracing IDs assigned by PDM to devices, USB device, drivers and more.", 
+            DBGFR3InfoRegisterInternal(pVM, "pdmtracingids",
+                                       "Displays the tracing IDs assigned by PDM to devices, USB device, drivers and more.",
                                        pdmR3InfoTracingIds);
 
             LogFlow(("PDM: Successfully initialized\n"));
@@ -2674,11 +2674,11 @@ bool pdmR3IsValidName(const char *pszName)
 
 /**
  * Info handler for 'pdmtracingids'.
- * 
+ *
  * @param   pVM         The VM handle.
  * @param   pHlp        The output helpers.
  * @param   pszArgs     The optional user arguments.
- * 
+ *
  * @remarks Can be called on most threads.
  */
 static DECLCALLBACK(void) pdmR3InfoTracingIds(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszArgs)
@@ -2686,7 +2686,8 @@ static DECLCALLBACK(void) pdmR3InfoTracingIds(PVM pVM, PCDBGFINFOHLP pHlp, const
     /*
      * Parse the argument (optional).
      */
-    if (   *pszArgs
+    if (   pszArgs
+        && *pszArgs
         && strcmp(pszArgs, "all")
         && strcmp(pszArgs, "devices")
         && strcmp(pszArgs, "drivers")
@@ -2695,12 +2696,12 @@ static DECLCALLBACK(void) pdmR3InfoTracingIds(PVM pVM, PCDBGFINFOHLP pHlp, const
         pHlp->pfnPrintf(pHlp, "Unable to grok '%s'\n", pszArgs);
         return;
     }
-    bool fAll     = !*pszArgs || !strcmp(pszArgs, "all");
+    bool fAll     = !pszArgs || !*pszArgs || !strcmp(pszArgs, "all");
     bool fDevices = fAll || !strcmp(pszArgs, "devices");
     bool fUsbDevs = fAll || !strcmp(pszArgs, "usb");
     bool fDrivers = fAll || !strcmp(pszArgs, "drivers");
 
-    /* 
+    /*
      * Produce the requested output.
      */
 /** @todo lock PDM lists! */
@@ -2730,8 +2731,8 @@ static DECLCALLBACK(void) pdmR3InfoTracingIds(PVM pVM, PCDBGFINFOHLP pHlp, const
             {
                 uint32_t iLevel = 0;
                 for (PPDMDRVINS pDrvIns = pLun->pTop; pDrvIns; pDrvIns = pDrvIns->Internal.s.pDown, iLevel++)
-                    pHlp->pfnPrintf(pHlp, "%05u  %s (level %u, lun %u, dev %s)\n", 
-                                    pDrvIns->idTracing, pDrvIns->Internal.s.pDrv->pReg->szName, 
+                    pHlp->pfnPrintf(pHlp, "%05u  %s (level %u, lun %u, dev %s)\n",
+                                    pDrvIns->idTracing, pDrvIns->Internal.s.pDrv->pReg->szName,
                                     iLevel, pLun->iLun, pDevIns->Internal.s.pDevR3->pReg->szName);
             }
         }
@@ -2742,8 +2743,8 @@ static DECLCALLBACK(void) pdmR3InfoTracingIds(PVM pVM, PCDBGFINFOHLP pHlp, const
             {
                 uint32_t iLevel = 0;
                 for (PPDMDRVINS pDrvIns = pLun->pTop; pDrvIns; pDrvIns = pDrvIns->Internal.s.pDown, iLevel++)
-                    pHlp->pfnPrintf(pHlp, "%05u  %s (level %u, lun %u, dev %s)\n", 
-                                    pDrvIns->idTracing, pDrvIns->Internal.s.pDrv->pReg->szName, 
+                    pHlp->pfnPrintf(pHlp, "%05u  %s (level %u, lun %u, dev %s)\n",
+                                    pDrvIns->idTracing, pDrvIns->Internal.s.pDrv->pReg->szName,
                                     iLevel, pLun->iLun, pUsbIns->Internal.s.pUsbDev->pReg->szName);
             }
         }
