@@ -3924,8 +3924,11 @@ static HRESULT IWineD3DSurfaceImpl_BltOverride(IWineD3DSurfaceImpl *This, const 
                )
            )
         {
-            /* blit framebuffer might be buggy for some GPUs, try if fb_copy_to_texture_direct can do it quickly */
-            if (!fb_copy_to_texture_direct(This, SrcSurface, &src_rect, &dst_rect, Filter, TRUE /* fast only */))
+            /* blit framebuffer might be buggy for some NVIDIA GPUs,
+             * on the contrary some Intel GPUs fail glCopyTexSubImage2D for some reason,
+             * check if we can use fb_copy_to_texture_direct and try if it can do it quickly */
+            if ((myDevice->adapter->gl_info.quirks & WINED3D_QUIRK_FORCE_BLIT)
+                    || !fb_copy_to_texture_direct(This, SrcSurface, &src_rect, &dst_rect, Filter, TRUE /* fast only */))
             {
                 TRACE("fb_copy_to_texture_direct can not do it fast, use stretch_rect_fbo\n");
                 stretch_rect_fbo((IWineD3DDevice *)myDevice, SrcSurface, &src_rect,
@@ -5380,7 +5383,7 @@ static HRESULT WINAPI IWineD3DSurfaceImpl_SetShRcState(IWineD3DSurface *iface, V
                 return E_INVALIDARG;
         }
 
-        IWineD3DBaseTexture_Release(texture);
+        IWineD3DBaseTexture_Release((IWineD3DBaseTexture*)texture);
     }
 
 
