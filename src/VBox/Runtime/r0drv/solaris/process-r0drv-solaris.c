@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * IPRT - Time, Ring-0 Driver, Solaris.
+ * IPRT - Process Management, Ring-0 Driver, Solaris.
  */
 
 /*
@@ -28,43 +28,22 @@
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
-#define RTTIME_INCL_TIMESPEC
-#include "../the-solaris-kernel.h"
+#include "the-solaris-kernel.h"
 #include "internal/iprt.h"
-#include <iprt/time.h>
+#include <iprt/process.h>
 
 
-RTDECL(uint64_t) RTTimeNanoTS(void)
+
+RTDECL(RTPROCESS) RTProcSelf(void)
 {
-    return (uint64_t)gethrtime();
+    return ddi_get_pid();
 }
 
 
-RTDECL(uint64_t) RTTimeMilliTS(void)
+RTR0DECL(RTR0PROCESS) RTR0ProcHandleSelf(void)
 {
-    return RTTimeNanoTS() / 1000000;
-}
-
-
-RTDECL(uint64_t) RTTimeSystemNanoTS(void)
-{
-    return RTTimeNanoTS();
-}
-
-
-RTDECL(uint64_t) RTTimeSystemMilliTS(void)
-{
-    return RTTimeNanoTS() / 1000000;
-}
-
-
-RTDECL(PRTTIMESPEC) RTTimeNow(PRTTIMESPEC pTime)
-{
-    timestruc_t TimeSpec;
-
-    mutex_enter(&tod_lock);
-    TimeSpec = tod_get();
-    mutex_exit(&tod_lock);
-    return RTTimeSpecSetNano(pTime, (uint64_t)TimeSpec.tv_sec * 1000000000 + TimeSpec.tv_nsec);
+    proc_t *pProcess = NULL;
+    drv_getparm(UPROCP, &pProcess);
+    return (RTR0PROCESS)pProcess;
 }
 
