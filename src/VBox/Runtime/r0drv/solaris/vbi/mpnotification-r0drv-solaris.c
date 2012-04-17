@@ -41,87 +41,134 @@
 /*******************************************************************************
 *   Global Variables                                                           *
 *******************************************************************************/
-/** CPU watch callback handle. */
-static vbi_cpu_watch_t *g_hVbiCpuWatch = NULL;
+/** Whether CPUs are being watched or not. */
+static volatile bool g_fSolCpuWatch = false;
 /** Set of online cpus that is maintained by the MP callback.
  * This avoids locking issues querying the set from the kernel as well as
  * eliminating any uncertainty regarding the online status during the
  * callback. */
-RTCPUSET g_rtMpSolarisCpuSet;
+RTCPUSET g_rtMpSolCpuSet;
 
-
-static void rtMpNotificationSolarisOnCurrentCpu(void *pvArgs, void *uIgnored1, void *uIgnored2)
+/**
+ * Internal solaris representation for watching CPUs.
+ */
+typedef struct RTMPSOLWATCHCPUS
 {
-    NOREF(uIgnored1);
-    NOREF(uIgnored2);
+    /** Function pointer to Mp worker. */
+    PFNRTMPWORKER   pfnWorker;
+    /** Argument to pass to the Mp worker. */
+    void           *pvArg;
+} RTMPSOLWATCHCPUS;
+typedef RTMPSOLWATCHCPUS *PRTMPSOLWATCHCPUS;
 
-    PRTMPARGS pArgs = (PRTMPARGS)(pvArgs);
+
+/**
+ * PFNRTMPWORKER worker for executing Mp events on the target CPU.
+ *
+ * @param    idCpu          The current CPU Id.
+ * @param    pvArg          Opaque pointer to event type (online/offline).
+ * @param    pvIgnored1     Ignored.
+ */
+static void rtMpNotificationSolOnCurrentCpu(RTCPUID idCpu, void *pvArg, void *pvIgnored1)
+{
+    NOREF(pvIgnored1);
+    NOREF(idCpu);
+
+    PRTMPARGS pArgs = (PRTMPARGS)pvArg;
     AssertRelease(pArgs && pArgs->idCpu == RTMpCpuId());
-    Assert(pArgs->pvUser2);
+    Assert(pArgs->pvUser1);
     Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));
 
-    int online = *(int *)pArgs->pvUser2;
-    if (online)
-    {
-        RTCpuSetAdd(&g_rtMpSolarisCpuSet, pArgs->idCpu);
-        rtMpNotificationDoCallbacks(RTMPEVENT_ONLINE, pArgs->idCpu);
-    }
-    else
-    {
-        RTCpuSetDel(&g_rtMpSolarisCpuSet, pArgs->idCpu);
-        rtMpNotificationDoCallbacks(RTMPEVENT_OFFLINE, pArgs->idCpu);
-    }
+    RTMPEVENT enmMpEvent = *(RTMPEVENT *)pArgs->pvUser1;
+    rtMpNotificationDoCallbacks(enmMpEvent, pArgs->idCpu);
 }
 
 
-static void rtMpNotificationSolarisCallback(void *pvUser, int iCpu, int online)
+/**
+ * Solaris callback function for Mp event notification.
+ *
+ * @param    CpuState   The current event/state of the CPU.
+ * @param    iCpu       Which CPU is this event fore.
+ * @param    pvArg      Ignored.
+ *
+ * @remarks This function assumes index == RTCPUID.
+ * @returns Solaris error code.
+ */
+static int rtMpNotificationCpuEvent(cpu_setup_t CpuState, int iCpu, void *pvArg)
 {
-    vbi_preempt_disable();
+    RTMPEVENT enmMpEvent;
 
-    RTMPARGS Args;
-    RT_ZERO(Args);
-    Args.pvUser1 = pvUser;
-    Args.pvUser2 = &online;
-    Args.idCpu   = iCpu;
+    RTTHREADPREEMPTSTATE PreemptState = RTTHREADPREEMPTSTATE_INITIALIZER;
+    RTThreadPreemptDisable(&PreemptState);
 
     /*
-     * If we're not on the target CPU, schedule (synchronous) the event notification callback
-     * to run on the target CPU i.e. the one pertaining to the MP event.
+     * Update our CPU set structures first regardless of whether we've been
+     * scheduled on the right CPU or not, this is just atomic accounting.
      */
-    bool fRunningOnTargetCpu = iCpu == RTMpCpuId();      /* ASSUMES iCpu == RTCPUID */
-    if (fRunningOnTargetCpu)
-        rtMpNotificationSolarisOnCurrentCpu(&Args, NULL /* pvIgnored1 */, NULL /* pvIgnored2 */);
+    if (CpuState == CPU_ON)
+    {
+        enmMpEvent = RTMPEVENT_ONLINE;
+        RTCpuSetAdd(&g_rtMpSolCpuSet, iCpu);
+    }
+    else if (CpuState == CPU_OFF)
+    {
+        enmMpEvent = RTMPEVENT_OFFLINE;
+        RTCpuSetDel(&g_rtMpSolCpuSet, iCpu);
+    }
+    else
+        return 0;
+
+    /*
+     * Since we don't absolutely need to do CPU bound code in any of the CPU offline
+     * notification hooks, run it on the current CPU. Scheduling a callback to execute
+     * on the CPU going offline at this point is too late and will not work reliably.
+     */
+    bool fRunningOnTargetCpu = iCpu == RTMpCpuId();
+    if (   fRunningOnTargetCpu == true
+        || enmMpEvent == RTMPEVENT_OFFLINE)
+    {
+        rtMpNotificationDoCallbacks(enmMpEvent, iCpu);
+    }
     else
     {
-        if (online)
-            vbi_execute_on_one(rtMpNotificationSolarisOnCurrentCpu, &Args, iCpu);
-        else
-        {
-            /*
-             * Since we don't absolutely need to do CPU bound code in any of the CPU offline
-             * notification hooks, run it on the current CPU. Scheduling a callback to execute
-             * on the CPU going offline at this point is too late and will not work reliably.
-             */
-            RTCpuSetDel(&g_rtMpSolarisCpuSet, iCpu);
-            rtMpNotificationDoCallbacks(RTMPEVENT_OFFLINE, iCpu);
-        }
+        /*
+         * We're not on the target CPU, schedule (synchronous) the event notification callback
+         * to run on the target CPU i.e. the CPU that was online'd.
+         */
+        RTMPARGS Args;
+        RT_ZERO(Args);
+        Args.pvUser1 = &enmMpEvent;
+        Args.pvUser2 = NULL;
+        Args.idCpu   = iCpu;
+        RTMpOnSpecific(iCpu, rtMpNotificationSolOnCurrentCpu, &Args, NULL /* pvIgnored1 */);
     }
 
-    vbi_preempt_enable();
+    RTThreadPreemptRestore(&PreemptState);
+
+    NOREF(pvArg);
+    return 0;
 }
 
 
 DECLHIDDEN(int) rtR0MpNotificationNativeInit(void)
 {
-    if (g_hVbiCpuWatch != NULL)
+    if (ASMAtomicReadBool(&g_fSolCpuWatch) == true)
         return VERR_WRONG_ORDER;
 
     /*
-     * Register the callback building the online cpu set as we
-     * do so (current_too = 1).
+     * Register the callback building the online cpu set as we do so.
      */
-    RTCpuSetEmpty(&g_rtMpSolarisCpuSet);
-    g_hVbiCpuWatch = vbi_watch_cpus(rtMpNotificationSolarisCallback, NULL, 1 /*current_too*/);
+    RTCpuSetEmpty(&g_rtMpSolCpuSet);
+
+    mutex_enter(&cpu_lock);
+    register_cpu_setup_func(rtMpNotificationCpuEvent, NULL /* pvArg */);
+
+    for (int i = 0; i < (int)RTMpGetCount(); ++i)
+        if (cpu_is_online(cpu[i]))
+            rtMpNotificationCpuEvent(CPU_ON, i, NULL /* pvArg */);
+
+    ASMAtomicWriteBool(&g_fSolCpuWatch, true);
+    mutex_exit(&cpu_lock);
 
     return VINF_SUCCESS;
 }
@@ -129,8 +176,12 @@ DECLHIDDEN(int) rtR0MpNotificationNativeInit(void)
 
 DECLHIDDEN(void) rtR0MpNotificationNativeTerm(void)
 {
-    if (g_hVbiCpuWatch != NULL)
-        vbi_ignore_cpus(g_hVbiCpuWatch);
-    g_hVbiCpuWatch = NULL;
+    if (ASMAtomicReadBool(&g_fSolCpuWatch) == true)
+    {
+        mutex_enter(&cpu_lock);
+        unregister_cpu_setup_func(rtMpNotificationCpuEvent, NULL /* pvArg */);
+        ASMAtomicWriteBool(&g_fSolCpuWatch, false);
+        mutex_exit(&cpu_lock);
+    }
 }
 

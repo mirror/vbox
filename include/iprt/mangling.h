@@ -1219,6 +1219,7 @@
 # define RTSortApvShell                                 RT_MANGLER(RTSortApvShell)
 # define RTSortIsSorted                                 RT_MANGLER(RTSortIsSorted)
 # define RTSpinlockAcquire                              RT_MANGLER(RTSpinlockAcquire)
+# define RTSpinlockAcquireNoInts                        RT_MANGLER(RTSpinlockAcquireNoInts)
 # define RTSpinlockCreate                               RT_MANGLER(RTSpinlockCreate)
 # define RTSpinlockDestroy                              RT_MANGLER(RTSpinlockDestroy)
 # define RTSpinlockRelease                              RT_MANGLER(RTSpinlockRelease)
@@ -1750,6 +1751,7 @@
 # define g_aRTUniLowerRanges                            RT_MANGLER(g_aRTUniLowerRanges)
 # define g_aRTUniUpperRanges                            RT_MANGLER(g_aRTUniUpperRanges)
 # define g_fRTAlignmentChecks                           RT_MANGLER(g_fRTAlignmentChecks)
+# define g_hKrnlDbgInfo                                 RT_MANGLER(g_hKrnlDbgInfo) /* solaris */
 # define g_pStdErr                                      RT_MANGLER(g_pStdErr)
 # define g_pStdIn                                       RT_MANGLER(g_pStdIn)
 # define g_pStdOut                                      RT_MANGLER(g_pStdOut)

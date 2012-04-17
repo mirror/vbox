@@ -40,6 +40,27 @@
 #include "r0drv/alloc-r0drv.h"
 
 
+/*******************************************************************************
+*   Structures and Typedefs                                                    *
+*******************************************************************************/
+static ddi_dma_attr_t s_rtR0SolDmaAttr =
+{
+    DMA_ATTR_V0,                /* Version Number */
+    (uint64_t)0,                /* Lower limit */
+    (uint64_t)0,                /* High limit */
+    (uint64_t)0xffffffff,       /* Counter limit */
+    (uint64_t)PAGESIZE,         /* Alignment */
+    (uint64_t)PAGESIZE,         /* Burst size */
+    (uint64_t)PAGESIZE,         /* Effective DMA size */
+    (uint64_t)0xffffffff,       /* Max DMA xfer size */
+    (uint64_t)0xffffffff,       /* Segment boundary */
+    1,                          /* Scatter-gather list length (1 for contiguous) */
+    1,                          /* Device granularity */
+    0                           /* Bus-specific flags */
+};
+
+extern void *contig_alloc(size_t cb, ddi_dma_attr_t *pDmaAttr, size_t uAlign, int fCanSleep);
+
 
 /**
  * OS specific allocation function.
@@ -54,7 +75,7 @@ DECLHIDDEN(int) rtR0MemAllocEx(size_t cb, uint32_t fFlags, PRTMEMHDR *ppHdr)
     {
         AssertReturn(!(fFlags & RTMEMHDR_FLAG_ANY_CTX), NULL);
         cbAllocated = RT_ALIGN_Z(cb + sizeof(*pHdr), PAGE_SIZE) - sizeof(*pHdr);
-        pHdr = (PRTMEMHDR)vbi_text_alloc(cbAllocated + sizeof(*pHdr));
+        pHdr = (PRTMEMHDR)segkmem_alloc(heaptext_arena, cbAllocated + sizeof(*pHdr), KM_SLEEP);
     }
     else
 #endif
@@ -89,10 +110,70 @@ DECLHIDDEN(void) rtR0MemFree(PRTMEMHDR pHdr)
     pHdr->u32Magic += 1;
 #ifdef RT_ARCH_AMD64
     if (pHdr->fFlags & RTMEMHDR_FLAG_EXEC)
-        vbi_text_free(pHdr, pHdr->cb + sizeof(*pHdr));
+        segkmem_free(heaptext_arena, pHdr, pHdr->cb + sizeof(*pHdr));
     else
 #endif
         kmem_free(pHdr, pHdr->cb + sizeof(*pHdr));
+}
+
+
+/**
+ * Allocates physical memory which satisfy the given constraints.
+ *
+ * @param   uPhysHi        The upper physical address limit (inclusive).
+ * @param   puPhys         Where to store the physical address of the allocated
+ *                         memory. Optional, can be NULL.
+ * @param   cb             Size of allocation.
+ * @param   uAlignment     Alignment.
+ * @param   fContig        Whether the memory must be physically contiguous or
+ *                         not.
+ *
+ * @returns Virtual address of allocated memory block or NULL if allocation
+ *        failed.
+ */
+DECLHIDDEN(void *) rtR0SolMemAlloc(uint64_t uPhysHi, uint64_t *puPhys, size_t cb, uint64_t uAlignment, bool fContig)
+{
+    if ((cb & PAGEOFFSET) != 0)
+        return NULL;
+
+    size_t cPages = (cb + PAGESIZE - 1) >> PAGESHIFT;
+    if (!cPages)
+        return NULL;
+
+    ddi_dma_attr_t DmaAttr = s_rtR0SolDmaAttr;
+    DmaAttr.dma_attr_addr_hi    = uPhysHi;
+    DmaAttr.dma_attr_align      = uAlignment;
+    if (!fContig)
+        DmaAttr.dma_attr_sgllen = cPages > INT_MAX ? INT_MAX - 1 : cPages;
+    else
+        AssertRelease(DmaAttr.dma_attr_sgllen == 1);
+
+    void *pvMem = contig_alloc(cb, &DmaAttr, PAGESIZE, 1 /* can sleep */);
+    if (!pvMem)
+    {
+        LogRel(("rtR0SolMemAlloc failed. cb=%u Align=%u fContig=%d\n", (unsigned)cb, (unsigned)uAlignment, fContig));
+        return NULL;
+    }
+
+    pfn_t PageFrameNum = hat_getpfnum(kas.a_hat, (caddr_t)pvMem);
+    AssertRelease(PageFrameNum != PFN_INVALID);
+    if (puPhys)
+        *puPhys = (uint64_t)PageFrameNum << PAGESHIFT;
+
+    return pvMem;
+}
+
+
+/**
+ * Frees memory allocated using rtR0SolMemAlloc().
+ *
+ * @param   pv         The memory to free.
+ * @param   cb         Size of the memory block
+ */
+DECLHIDDEN(void) rtR0SolMemFree(void *pv, size_t cb)
+{
+    if (RT_LIKELY(pv))
+        g_pfnrtR0Sol_contig_free(pv, cb);
 }
 
 
@@ -103,24 +184,23 @@ RTR0DECL(void *) RTMemContAlloc(PRTCCPHYS pPhys, size_t cb)
     RT_ASSERT_PREEMPTIBLE();
 
     /* Allocate physically contiguous (< 4GB) page-aligned memory. */
-    uint64_t physAddr = _4G -1;
-    caddr_t virtAddr  = vbi_contig_alloc(&physAddr, cb);
-    if (virtAddr == NULL)
+    uint64_t uPhys;
+    void *pvMem = rtR0SolMemAlloc((uint64_t)_4G - 1, &uPhys, cb, PAGESIZE, true);
+    if (RT_UNLIKELY(!pvMem))
     {
-        LogRel(("vbi_contig_alloc failed to allocate %u bytes\n", cb));
+        LogRel(("RTMemContAlloc failed to allocate %u bytes\n", cb));
         return NULL;
     }
 
-    Assert(physAddr < _4G);
-    *pPhys = physAddr;
-    return virtAddr;
+    Assert(uPhys < _4G);
+    *pPhys = uPhys;
+    return pvMem;
 }
 
 
 RTR0DECL(void) RTMemContFree(void *pv, size_t cb)
 {
     RT_ASSERT_PREEMPTIBLE();
-    if (pv)
-        vbi_contig_free(pv, cb);
+    rtR0SolMemFree(pv, cb);
 }
 

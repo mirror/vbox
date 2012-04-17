@@ -42,6 +42,8 @@ RTDECL(RTPROCESS) RTProcSelf(void)
 
 RTR0DECL(RTR0PROCESS) RTR0ProcHandleSelf(void)
 {
-    return (RTR0PROCESS)vbi_proc();
+    proc_t *pProcess = NULL;
+    drv_getparm(UPROCP, &pProcess);
+    return (RTR0PROCESS)pProcess;
 }
 

@@ -146,7 +146,7 @@ RTDECL(int) RTSemMutexDestroy(RTSEMMUTEX hMtx)
 
 
 /**
- * Worker for rtSemMutexSolarisRequest that handles the case where we go to sleep.
+ * Worker for rtSemMutexSolRequest that handles the case where we go to sleep.
  *
  * @returns VINF_SUCCESS, VERR_INTERRUPTED, or VERR_SEM_DESTROYED.
  *          Returns without owning the mutex.
@@ -156,7 +156,7 @@ RTDECL(int) RTSemMutexDestroy(RTSEMMUTEX hMtx)
  *
  * @remarks This needs to be called with the mutex object held!
  */
-static int rtSemMutexSolarisRequestSleep(PRTSEMMUTEXINTERNAL pThis, RTMSINTERVAL cMillies,
+static int rtSemMutexSolRequestSleep(PRTSEMMUTEXINTERNAL pThis, RTMSINTERVAL cMillies,
                                        bool fInterruptible)
 {
     int rc = VERR_GENERAL_FAILURE;
@@ -253,7 +253,7 @@ static int rtSemMutexSolarisRequestSleep(PRTSEMMUTEXINTERNAL pThis, RTMSINTERVAL
 /**
  * Internal worker.
  */
-DECLINLINE(int) rtSemMutexSolarisRequest(RTSEMMUTEX hMutexSem, RTMSINTERVAL cMillies, bool fInterruptible)
+DECLINLINE(int) rtSemMutexSolRequest(RTSEMMUTEX hMutexSem, RTMSINTERVAL cMillies, bool fInterruptible)
 {
     PRTSEMMUTEXINTERNAL pThis = hMutexSem;
     int rc = VERR_GENERAL_FAILURE;
@@ -295,7 +295,7 @@ DECLINLINE(int) rtSemMutexSolarisRequest(RTSEMMUTEX hMutexSem, RTMSINTERVAL cMil
      * No, we really need to get to sleep.
      */
     else
-        rc = rtSemMutexSolarisRequestSleep(pThis, cMillies, fInterruptible);
+        rc = rtSemMutexSolRequestSleep(pThis, cMillies, fInterruptible);
 
     mutex_exit(&pThis->Mtx);
     return rc;
@@ -304,7 +304,7 @@ DECLINLINE(int) rtSemMutexSolarisRequest(RTSEMMUTEX hMutexSem, RTMSINTERVAL cMil
 
 RTDECL(int) RTSemMutexRequest(RTSEMMUTEX hMutexSem, RTMSINTERVAL cMillies)
 {
-    return rtSemMutexSolarisRequest(hMutexSem, cMillies, false /*fInterruptible*/);
+    return rtSemMutexSolRequest(hMutexSem, cMillies, false /*fInterruptible*/);
 }
 
 
@@ -316,7 +316,7 @@ RTDECL(int) RTSemMutexRequestDebug(RTSEMMUTEX hMutexSem, RTMSINTERVAL cMillies, 
 
 RTDECL(int) RTSemMutexRequestNoResume(RTSEMMUTEX hMutexSem, RTMSINTERVAL cMillies)
 {
-    return rtSemMutexSolarisRequest(hMutexSem, cMillies, true /*fInterruptible*/);
+    return rtSemMutexSolRequest(hMutexSem, cMillies, true /*fInterruptible*/);
 }
 
 

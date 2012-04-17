@@ -1914,8 +1914,7 @@ RuntimeR0Drv_SOURCES.solaris = \
  	r0drv/solaris/vbi/thread-r0drv-solaris.c \
  	r0drv/solaris/vbi/thread2-r0drv-solaris.c \
  	r0drv/solaris/vbi/time-r0drv-solaris.c \
- 	r0drv/solaris/vbi/timer-r0drv-solaris.c \
- 	r0drv/solaris/vbi/i86pc/os/vbi.c
+ 	r0drv/solaris/vbi/timer-r0drv-solaris.c
 
 
 ## PORTME: Porters create and add their selection of platform specific Ring-0 Driver files here.

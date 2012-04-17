@@ -39,11 +39,13 @@
 #include <iprt/err.h>
 #include <iprt/mp.h>
 
-
+#define SOL_THREAD_PREEMPT       (*((char *)curthread + g_offrtSolThreadPreempt))
+#define SOL_CPU_RUNRUN           (*((char *)CPU + g_offrtSolCpuPreempt))
+#define SOL_CPU_KPRUNRUN         (*((char *)CPU + g_offrtSolCpuForceKernelPreempt))
 
 RTDECL(RTNATIVETHREAD) RTThreadNativeSelf(void)
 {
-    return (RTNATIVETHREAD)vbi_curthread();
+    return (RTNATIVETHREAD)curthread;
 }
 
 
@@ -54,7 +56,7 @@ static int rtR0ThreadSolSleepCommon(RTMSINTERVAL cMillies)
 
     if (!cMillies)
     {
-        vbi_yield();
+        RTThreadYield();
         return VINF_SUCCESS;
     }
 
@@ -83,14 +85,41 @@ RTDECL(int) RTThreadSleepNoLog(RTMSINTERVAL cMillies)
 RTDECL(bool) RTThreadYield(void)
 {
     RT_ASSERT_PREEMPTIBLE();
-    return vbi_yield();
+
+    RTTHREADPREEMPTSTATE PreemptState = RTTHREADPREEMPTSTATE_INITIALIZER;
+    RTThreadPreemptDisable(&PreemptState);
+
+    char cThreadPreempt = SOL_THREAD_PREEMPT;
+    char cForcePreempt  = SOL_CPU_KPRUNRUN;
+    bool fWillYield = false;
+    Assert(cThreadPreempt >= 1);
+
+    /*
+     * If we are the last preemption enabler for this thread and if force
+     * preemption is set on the CPU, only then we are guaranteed to be preempted.
+     */
+    if (cThreadPreempt == 1 && cForcePreempt != 0)
+        fWillYield = true;
+
+    RTThreadPreemptRestore(&PreemptState);
+    return fWillYield;
 }
 
 
 RTDECL(bool) RTThreadPreemptIsEnabled(RTTHREAD hThread)
 {
     Assert(hThread == NIL_RTTHREAD);
-    if (!vbi_is_preempt_enabled())
+    if (RT_UNLIKELY(g_frtSolInitDone == false))
+    {
+        cmn_err(CE_CONT, "!RTThreadPreemptIsEnabled called before RTR0Init!\n");
+        return true;
+    }
+
+    bool fThreadPreempt = false;
+    if (SOL_THREAD_PREEMPT == 0)
+        fThreadPreempt = true;
+
+    if (!fThreadPreempt)
         return false;
 #if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
     if (!ASMIntAreEnabled())
@@ -105,7 +134,10 @@ RTDECL(bool) RTThreadPreemptIsEnabled(RTTHREAD hThread)
 RTDECL(bool) RTThreadPreemptIsPending(RTTHREAD hThread)
 {
     Assert(hThread == NIL_RTTHREAD);
-    return !!vbi_is_preempt_pending();
+
+    char cPreempt      = SOL_CPU_RUNRUN;
+    char cForcePreempt = SOL_CPU_KPRUNRUN;
+    return (cPreempt != 0 || cForcePreempt != 0);
 }
 
 
@@ -127,7 +159,8 @@ RTDECL(void) RTThreadPreemptDisable(PRTTHREADPREEMPTSTATE pState)
 {
     AssertPtr(pState);
 
-    vbi_preempt_disable();
+    SOL_THREAD_PREEMPT++;
+    Assert(SOL_THREAD_PREEMPT >= 1);
 
     RT_ASSERT_PREEMPT_CPUID_DISABLE(pState);
 }
@@ -138,7 +171,9 @@ RTDECL(void) RTThreadPreemptRestore(PRTTHREADPREEMPTSTATE pState)
     AssertPtr(pState);
     RT_ASSERT_PREEMPT_CPUID_RESTORE(pState);
 
-    vbi_preempt_enable();
+    Assert(SOL_THREAD_PREEMPT >= 1);
+    if (--SOL_THREAD_PREEMPT == 0 && SOL_CPU_RUNRUN != 0)
+        kpreempt(KPREEMPT_SYNC);
 }
 
 
