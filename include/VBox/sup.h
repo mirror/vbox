@@ -1174,8 +1174,50 @@ SUPR3DECL(int) SUPR3TracerClose(void);
  */
 SUPR3DECL(int) SUPR3TracerIoCtl(uintptr_t uCmd, uintptr_t uArg, int32_t *piRetVal);
 
+/**
+ * Registers the user module with the tracer.
+ *
+ * @returns VBox status code.
+ * @param   hModNative          Native module handle.  Pass ~(uintptr_t)0 if not
+ *                              at hand.
+ * @param   pszModule           The module name.
+ * @param   pVtgHdr             The VTG header.
+ * @param   fFlags              See SUP_TRACER_UMOD_FLAGS_XXX
+ */
+SUPR3DECL(int) SUPR3TracerRegisterModule(uintptr_t hModNative, const char *pszModule, struct VTGOBJHDR *pVtgHdr, uint32_t fFlags);
+
+/**
+ * Deregisters the user module.
+ *
+ * @returns VBox status code.
+ * @param   pVtgHdr             The VTG header.
+ */
+SUPR3DECL(int) SUPR3TracerDeregisterModule(struct VTGOBJHDR *pVtgHdr);
+
+/**
+ * Fire the probe.
+ *
+ * @param   pVtgProbeLoc        The probe location record.
+ * @param   uArg0               Raw probe argument 0.
+ * @param   uArg1               Raw probe argument 1.
+ * @param   uArg2               Raw probe argument 2.
+ * @param   uArg3               Raw probe argument 3.
+ * @param   uArg4               Raw probe argument 4.
+ */
+SUPDECL(void)  SUPTracerFireProbe(struct VTGPROBELOC *pVtgProbeLoc, uintptr_t uArg0, uintptr_t uArg1, uintptr_t uArg2,
+                                  uintptr_t uArg3, uintptr_t uArg4);
 /** @} */
 #endif /* IN_RING3 */
+
+/** @name User mode module flags (SUPR3TracerRegisterModule & SUP_IOCTL_TRACER_UMOD_REG).
+ * @{ */
+/** Executable image. */
+#define SUP_TRACER_UMOD_FLAGS_EXE           UINT32_C(1)
+/** Shared library (DLL, DYLIB, SO, etc). */
+#define SUP_TRACER_UMOD_FLAGS_SHARED        UINT32_C(2)
+/** Image type mask. */
+#define SUP_TRACER_UMOD_FLAGS_TYPE_MASK     UINT32_C(3)
+/** @} */
 
 
 #ifdef IN_RING0
@@ -1560,7 +1602,7 @@ SUPR0DECL(int)  SUPR0TracerDeregisterImpl(void *hMod, PSUPDRVSESSION pSession);
 SUPR0DECL(int)  SUPR0TracerRegisterDrv(PSUPDRVSESSION pSession, struct VTGOBJHDR *pVtgHdr, const char *pszName);
 SUPR0DECL(void) SUPR0TracerDeregisterDrv(PSUPDRVSESSION pSession);
 SUPR0DECL(int)  SUPR0TracerRegisterModule(void *hMod, struct VTGOBJHDR *pVtgHdr);
-SUPR0DECL(void) SUPR0TracerFireProbe(uint32_t idProbe, uintptr_t uArg0, uintptr_t uArg1, uintptr_t uArg2,
+SUPR0DECL(void) SUPR0TracerFireProbe(struct VTGPROBELOC *pVtgProbeLoc, uintptr_t uArg0, uintptr_t uArg1, uintptr_t uArg2,
                                      uintptr_t uArg3, uintptr_t uArg4);
 /** @}  */
 

@@ -2386,15 +2386,98 @@ SUPR3DECL(int) SUPR3TracerIoCtl(uintptr_t uCmd, uintptr_t uArg, int32_t *piRetVa
     return rc;
 }
 
-extern "C"
-{
-    SUPDECL(void) SUPTracerFireProbe(uint32_t idProbe, uintptr_t uArg0, uintptr_t uArg1, uintptr_t uArg2,
-                                     uintptr_t uArg3, uintptr_t uArg4);
-}
 
-SUPDECL(void) SUPTracerFireProbe(uint32_t idProbe, uintptr_t uArg0, uintptr_t uArg1, uintptr_t uArg2,
+
+SUPDECL(void) SUPTracerFireProbe(struct VTGPROBELOC *pVtgProbeLoc, uintptr_t uArg0, uintptr_t uArg1, uintptr_t uArg2,
                                  uintptr_t uArg3, uintptr_t uArg4)
 {
     /* C and stubbed for now. */
+}
+
+
+SUPR3DECL(int) SUPR3TracerRegisterModule(uintptr_t hModNative, const char *pszModule, struct VTGOBJHDR *pVtgHdr, uint32_t fFlags)
+{
+    /* Validate input. */
+    NOREF(hModNative);
+    AssertPtrReturn(pVtgHdr, VERR_INVALID_POINTER);
+    AssertPtrReturn(pszModule, VERR_INVALID_POINTER);
+    size_t cchModule = strlen(pszModule);
+    AssertReturn(cchModule < RT_SIZEOFMEMB(SUPTRACERUMODREG, u.In.szName), VERR_FILENAME_TOO_LONG);
+    AssertReturn(!RTPathHavePath(pszModule), VERR_INVALID_PARAMETER);
+    AssertReturn(fFlags == SUP_TRACER_UMOD_FLAGS_EXE || fFlags == SUP_TRACER_UMOD_FLAGS_SHARED, VERR_INVALID_PARAMETER);
+
+    /* fake */
+    if (RT_UNLIKELY(g_u32FakeMode))
+        return VINF_SUCCESS;
+
+    /*
+     * Issue IOCtl to the SUPDRV kernel module.
+     */
+    SUPTRACERUMODREG Req;
+    Req.Hdr.u32Cookie       = g_u32Cookie;
+    Req.Hdr.u32SessionCookie= g_u32SessionCookie;
+    Req.Hdr.cbIn            = SUP_IOCTL_TRACER_UMOD_REG_SIZE_IN;
+    Req.Hdr.cbOut           = SUP_IOCTL_TRACER_UMOD_REG_SIZE_OUT;
+    Req.Hdr.fFlags          = SUPREQHDR_FLAGS_DEFAULT;
+    Req.Hdr.rc              = VERR_INTERNAL_ERROR;
+    Req.u.In.pVtgHdr        = pVtgHdr;
+    Req.u.In.fFlags         = fFlags;
+
+    memcpy(Req.u.In.szName, pszModule, cchModule);
+    if (!RTPathHasExt(Req.u.In.szName))
+    {
+        /* Add the default suffix if none is given. */
+        switch (fFlags & SUP_TRACER_UMOD_FLAGS_TYPE_MASK)
+        {
+#if defined(RT_OS_WINDOWS) || defined(RT_OS_OS2)
+            case SUP_TRACER_UMOD_FLAGS_EXE:
+                if (cchModule + sizeof(".exe") <= sizeof(Req.u.In.szName))
+                    strcpy(&Req.u.In.szName[cchModule], ".exe");
+                break;
+#endif
+
+            case SUP_TRACER_UMOD_FLAGS_SHARED:
+            {
+                const char *pszSuff = RTLdrGetSuff();
+                size_t      cchSuff = strlen(pszSuff);
+                if (cchModule + cchSuff < sizeof(Req.u.In.szName))
+                    memcpy(&Req.u.In.szName[cchModule], pszSuff, cchSuff + 1);
+                break;
+            }
+        }
+    }
+
+    int rc = suplibOsIOCtl(&g_supLibData, SUP_IOCTL_TRACER_UMOD_REG, &Req, SUP_IOCTL_TRACER_UMOD_REG_SIZE);
+    if (RT_SUCCESS(rc))
+        rc = Req.Hdr.rc;
+    return rc;
+}
+
+
+SUPR3DECL(int) SUPR3TracerDeregisterModule(struct VTGOBJHDR *pVtgHdr)
+{
+    /* Validate input. */
+    AssertPtrReturn(pVtgHdr, VERR_INVALID_POINTER);
+
+    /* fake */
+    if (RT_UNLIKELY(g_u32FakeMode))
+        return VINF_SUCCESS;
+
+    /*
+     * Issue IOCtl to the SUPDRV kernel module.
+     */
+    SUPTRACERUMODDEREG Req;
+    Req.Hdr.u32Cookie       = g_u32Cookie;
+    Req.Hdr.u32SessionCookie= g_u32SessionCookie;
+    Req.Hdr.cbIn            = SUP_IOCTL_TRACER_UMOD_REG_SIZE_IN;
+    Req.Hdr.cbOut           = SUP_IOCTL_TRACER_UMOD_REG_SIZE_OUT;
+    Req.Hdr.fFlags          = SUPREQHDR_FLAGS_DEFAULT;
+    Req.Hdr.rc              = VERR_INTERNAL_ERROR;
+    Req.u.In.pVtgHdr        = pVtgHdr;
+
+    int rc = suplibOsIOCtl(&g_supLibData, SUP_IOCTL_TRACER_UMOD_DEREG, &Req, SUP_IOCTL_TRACER_UMOD_DEREG_SIZE);
+    if (RT_SUCCESS(rc))
+        rc = Req.Hdr.rc;
+    return rc;
 }
 

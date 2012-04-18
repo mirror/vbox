@@ -1232,6 +1232,22 @@ void VBOXCALL supdrvTracerCleanupSession(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION p
 }
 
 
+int  VBOXCALL   supdrvIOCtl_TracerUmodRegister(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, RTR3PTR pVtgHdr, const char *pszModName, uint32_t fFlags)
+{
+    return VERR_NOT_IMPLEMENTED;
+}
+
+int  VBOXCALL   supdrvIOCtl_TracerUmodDeregister(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, RTR3PTR pVtgHdr)
+{
+    return VERR_NOT_IMPLEMENTED;
+}
+
+void  VBOXCALL  supdrvIOCtl_TracerUmodProbeFire(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession, PCSUPDRVTRACERUSRCTX pCtx)
+{
+
+}
+
+
 /**
  * Open the tracer.
  *
