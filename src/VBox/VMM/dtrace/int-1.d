@@ -41,7 +41,7 @@ vboxvmm*:::pdm-irq-high,vboxvmm*:::pdm-irq-hilo
     g_cUntaggedHighs++;
 }
 
-/* 
+/*
  * Catch the CPU getting the IRQ from the (A)PIC and preparing for injection.
  */
 vboxvmm*:::pdm-irq-get
