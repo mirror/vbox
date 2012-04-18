@@ -1,10 +1,10 @@
 /* $Id$ */
 /** @file
- * IPRT - RTPathHavePath
+ * IPRT - RTPathHasPath
  */
 
 /*
- * Copyright (C) 2006-2007 Oracle Corporation
+ * Copyright (C) 2006-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -40,7 +40,7 @@
  * @returns false if no path.
  * @param   pszPath     Path to check.
  */
-RTDECL(bool) RTPathHavePath(const char *pszPath)
+RTDECL(bool) RTPathHasPath(const char *pszPath)
 {
 #if defined(RT_OS_WINDOWS) || defined(RT_OS_OS2)
     return strpbrk(pszPath, "/\\:") != NULL;
