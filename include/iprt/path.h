@@ -337,7 +337,7 @@ RTDECL(char *) RTPathExt(const char *pszPath);
  * @returns false if no extension.
  * @param   pszPath     Path to check.
  */
-RTDECL(bool) RTPathHaveExt(const char *pszPath);
+RTDECL(bool) RTPathHasExt(const char *pszPath);
 /** Misspelled, don't use.  */
 #define RTPathHaveExt   RTPathHasExt
 
