@@ -132,7 +132,7 @@ static page_t *rtR0MemObjSolPageFromFreelist(caddr_t virtAddr, size_t cbPage)
         && g_frtSolUseKflt)
     {
         pPage = page_get_freelist(&s_PageVnode, 0 /* offset */, &KernelSeg, virtAddr,
-                                  cbPage, 0x200 /* PG_KFLT */, NULL /* NUMA group */);
+                                  cbPage, PG_KFLT, NULL /* NUMA group */);
     }
     return pPage;
 }
@@ -157,7 +157,7 @@ static page_t *rtR0MemObjSolPageFromCachelist(caddr_t virtAddr, size_t cbPage)
         && g_frtSolUseKflt)
     {
         pPage = page_get_cachelist(&s_PageVnode, 0 /* offset */, &KernelSeg, virtAddr,
-                                   0x200 /* PG_KFLT */, NULL /* NUMA group */);
+                                   PG_KFLT, NULL /* NUMA group */);
     }
 
     /*
