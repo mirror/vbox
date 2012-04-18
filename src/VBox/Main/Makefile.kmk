@@ -4,7 +4,7 @@
 #
 
 #
-# Copyright (C) 2006-2011 Oracle Corporation
+# Copyright (C) 2006-2012 Oracle Corporation
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;
@@ -79,20 +79,22 @@ VBOX_IDL_HEADER.XPCOM  = $(VBOX_PATH_SDK)/bindings/xpcom/include/VirtualBox_XPCO
 # The MS COM specific stuff.
 if defined(VBOX_ONLY_SDK) || "$(KBUILD_TARGET)" == "win"
  OTHERS         += \
-	$(VBOX_IDL_FILE.MSCOM) \
-	$(VBOX_PATH_SDK)/bindings/mscom/include/VirtualBox.h \
-	$(VBOX_PATH_SDK)/bindings/mscom/lib/VirtualBox.tlb \
-	$(VBOX_PATH_SDK)/bindings/mscom/lib/VirtualBox_i.c
+	$(VBOX_IDL_FILE.MSCOM)
  OTHER_CLEAN    += \
-	$(VBOX_IDL_FILE.MSCOM) \
-	$(VBOX_PATH_SDK)/bindings/mscom/include/VirtualBox.h \
-	$(VBOX_PATH_SDK)/bindings/mscom/lib/VirtualBox.tlb \
-	$(VBOX_PATH_SDK)/bindings/mscom/lib/VirtualBox_i.c \
-	$(VBoxCOM_0_OUTDIR)/VirtualBox.h   \
-	$(VBoxCOM_0_OUTDIR)/VirtualBox_i.c \
+	$(VBOX_IDL_FILE.MSCOM)
+
+ INSTALLS += VBox-mscom-bindings-include VBox-mscom-bindings-lib
+ VBox-mscom-bindings-include_INST = $(INST_SDK)bindings/mscom/include/
+ VBox-mscom-bindings-include_MODE = a+r,u+w
+ VBox-mscom-bindings-include_SOURCES = $(VBoxCOM_0_OUTDIR)/VirtualBox.h
+ VBox-mscom-bindings-include_CLEAN = $(VBoxCOM_0_OUTDIR)/VirtualBox.h
+ VBox-mscom-bindings-lib_INST = $(INST_SDK)bindings/mscom/lib/
+ VBox-mscom-bindings-lib_MODE = a+r,u+w
+ VBox-mscom-bindings-lib_SOURCES = $(VBoxCOM_0_OUTDIR)/VirtualBox_i.c \
+	$(VBoxCOM_0_OUTDIR)/VirtualBox.tlb
+ VBox-mscom-bindings-lib_CLEAN = $(VBoxCOM_0_OUTDIR)/VirtualBox_i.c \
 	$(VBoxCOM_0_OUTDIR)/VirtualBox.tlb
 
- VBOX_MAIN_PREREQS += $(VBoxCOM_0_OUTDIR)/VirtualBox_i.c
  BLDDIRS += $(VBOX_PATH_SDK)/bindings/mscom/idl
 endif
 
@@ -812,28 +814,15 @@ testidl:    $(VBOX_IDL_FILE.MSCOM) $(VBoxCOM_0_OUTDIR)/VirtualBox_i.c
 endif
 
 
-## @todo r=bird: last changes to this rule showed incorrect dependencies here as it broke testcase (see testboxwin2).
-# This is kind of obvious when looking at the rule, because it's (a) not specifying all it output
-# and (b) generating more stuff *after* the main target has been completed.
-#
-# What needs to be done is to not depend on _i.c in the object subdir, but on all the final outputs.
 $(VBoxCOM_0_OUTDIR)/VirtualBox_i.c \
-+ $(VBOX_PATH_SDK)/bindings/mscom/lib/VirtualBox_i.c \
 + $(VBoxCOM_0_OUTDIR)/VirtualBox.h \
-+ $(VBOX_PATH_SDK)/bindings/mscom/include/VirtualBox.h \
-+ $(VBoxCOM_0_OUTDIR)/VirtualBox.tlb \
-+ $(VBOX_PATH_SDK)/bindings/mscom/lib/VirtualBox.tlb: $(VBOX_IDL_FILE.MSCOM) | $$(dir $$@)
++ $(VBoxCOM_0_OUTDIR)/VirtualBox.tlb: $(VBOX_IDL_FILE.MSCOM) | $$(dir $$@)
 	$(VBOX_MAIN_IDL) $(IDL_DEFS) \
 		/out $(call VBOX_FN_MAKE_WIN_PATH,$(VBoxCOM_0_OUTDIR)) \
 		/cpp_cmd $(subst $(EXEC_X86_WIN32),,$(call VBOX_FN_MAKE_WIN_PATH,$(TOOL_$(VBOX_VCC_TOOL)_CC))) \
 		/I $(call VBOX_FN_MAKE_WIN_PATH,$(PATH_SDK_WINPSDK_INC)) \
 		/I idl \
 		$(call VBOX_FN_MAKE_WIN_PATH,$<)
-	$(MKDIR) -p $(VBOX_PATH_SDK)/bindings/mscom/include
-	$(CP) $(VBoxCOM_0_OUTDIR)/VirtualBox.h $(VBOX_PATH_SDK)/bindings/mscom/include
-	$(MKDIR) -p $(VBOX_PATH_SDK)/bindings/mscom/lib
-	$(CP) $(VBoxCOM_0_OUTDIR)/VirtualBox.tlb $(VBOX_PATH_SDK)/bindings/mscom/lib
-	$(CP) $(VBoxCOM_0_OUTDIR)/VirtualBox_i.c $(VBOX_PATH_SDK)/bindings/mscom/lib
 
 #
 # Translation stuff
