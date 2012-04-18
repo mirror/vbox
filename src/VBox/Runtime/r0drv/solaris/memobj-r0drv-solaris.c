@@ -96,19 +96,17 @@ static uint64_t rtR0MemObjSolVirtToPhys(void *pv)
 
 
 /**
- * Returns the physical address of a page from an array of pages.
+ * Returns the physical address for a page.
  *
- * @param ppPages       The array of pages.
- * @param iPage         Index of the page in the array to get the physical
- *                      address.
+ * @param    pPage      Pointer to the page.
  *
- * @returns Physical address of specific page within the list of pages specified
- *         in @a ppPages.
+ * @returns The physical address for a page.
  */
-static inline uint64_t rtR0MemObjSolPageToPhys(page_t **ppPages, size_t iPage)
+static inline uint64_t rtR0MemObjSolPagePhys(page_t *pPage)
 {
-    pfn_t PageFrameNum = page_pptonum(ppPages[iPage]);
-    AssertReleaseMsg(PageFrameNum != PFN_INVALID, ("rtR0MemObjSolPageToPhys failed. ppPages=%p iPage=%u\n", ppPages, iPage));
+    AssertPtr(pPage);
+    pfn_t PageFrameNum = page_pptonum(pPage);
+    AssertReleaseMsg(PageFrameNum != PFN_INVALID, ("rtR0MemObjSolPagePhys failed pPage=%p\n"));
     return (uint64_t)PageFrameNum << PAGESHIFT;
 }
 
@@ -214,18 +212,20 @@ static page_t **rtR0MemObjSolPagesAlloc(uint64_t uPhysHi, uint64_t *puPhys, size
                      */
                     page_t *pPage = rtR0MemObjSolPageFromFreelist(virtAddr, PAGESIZE);
                     if (!pPage)
-                        pPage = rtR0MemObjSolPageFromCachelist(virtAddr, PAGESIZE);
-                    if (RT_UNLIKELY(!pPage))
                     {
-                        /*
-                         * No more pages found, release was grabbed so far.
-                         */
-                        page_create_putback(cPages - i);
-                        while (--i >= 0)
-                            page_free(ppPages[i], 0 /* don't need page, move to tail of pagelist */);
-                        kmem_free(ppPages, cbPages);
-                        page_unresv(cPages);
-                        return NULL;
+                        pPage = rtR0MemObjSolPageFromCachelist(virtAddr, PAGESIZE);
+                        if (RT_UNLIKELY(!pPage))
+                        {
+                            /*
+                             * No more pages found, release was grabbed so far.
+                             */
+                            page_create_putback(cPages - i);
+                            while (--i >= 0)
+                                page_free(ppPages[i], 0 /* don't need page, move to tail of pagelist */);
+                            kmem_free(ppPages, cbPages);
+                            page_unresv(cPages);
+                            return NULL;
+                        }
                     }
 
                     PP_CLRFREE(pPage);      /* Page is no longer free */
@@ -238,7 +238,7 @@ static page_t **rtR0MemObjSolPagesAlloc(uint64_t uPhysHi, uint64_t *puPhys, size
                  * we must downgrade the lock.
                  */
                 if (puPhys)
-                    *puPhys = (uint64_t)page_pptonum(ppPages[0]) << PAGESHIFT;
+                    *puPhys = rtR0MemObjSolPagePhys(ppPages[0]);
                 return ppPages;
             }
 
@@ -277,7 +277,7 @@ static int rtR0MemObjSolPagesPreMap(page_t **ppPages, size_t cb, uint64_t auPhys
         if (page_tryupgrade(ppPages[iPage]) == 1)
             page_downgrade(ppPages[iPage]);
 
-        auPhys[iPage] = rtR0MemObjSolPageToPhys(ppPages, iPage);
+        auPhys[iPage] = rtR0MemObjSolPagePhys(ppPages[iPage]);
     }
 
     return VINF_SUCCESS;
@@ -371,7 +371,7 @@ static page_t *rtR0MemObjSolLargePageAlloc(uint64_t *puPhys, size_t cb)
                     PP_CLRAGED(pPage);      /* Page no longer hashed-in */
                 }
 
-                uint64_t uPhys = (uint64_t)page_pptonum(pRootPage) << PAGESHIFT;
+                uint64_t uPhys = rtR0MemObjSolPagePhys(pRootPage);
                 AssertMsg(!(uPhys & (cb - 1)), ("%llx %zx\n", uPhys, cb));
                 if (puPhys)
                     *puPhys = uPhys;
@@ -1023,7 +1023,8 @@ DECLHIDDEN(RTHCPHYS) rtR0MemObjNativeGetPagePhysAddr(PRTR0MEMOBJINTERNAL pMem, s
                 uint8_t *pb = (uint8_t *)pMemSolaris->Core.pv + ((size_t)iPage << PAGE_SHIFT);
                 return rtR0MemObjSolVirtToPhys(pb);
             }
-            return rtR0MemObjSolPageToPhys(pMemSolaris->pvHandle, iPage);
+            page_t **ppPages = pMemSolaris->pvHandle;
+            return rtR0MemObjSolPagePhys(ppPages[iPage]);
 
         case RTR0MEMOBJTYPE_PAGE:
         case RTR0MEMOBJTYPE_LOW:
