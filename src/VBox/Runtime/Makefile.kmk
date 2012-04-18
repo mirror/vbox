@@ -346,8 +346,8 @@ RuntimeR3_SOURCES       = \
 	common/path/RTPathCountComponents.cpp \
 	common/path/RTPathExt.cpp \
 	common/path/RTPathFilename.cpp \
-	common/path/RTPathHaveExt.cpp \
-	common/path/RTPathHavePath.cpp \
+	common/path/RTPathHasExt.cpp \
+	common/path/RTPathHasPath.cpp \
 	common/path/RTPathJoin.cpp \
 	common/path/RTPathJoinA.cpp \
 	common/path/RTPathJoinEx.cpp \
@@ -1128,8 +1128,8 @@ RuntimeGuestR3Mini_SOURCES = \
 	common/path/RTPathAppendEx.cpp \
 	common/path/RTPathExt.cpp \
 	common/path/RTPathFilename.cpp \
-	common/path/RTPathHaveExt.cpp \
-	common/path/RTPathHavePath.cpp \
+	common/path/RTPathHasExt.cpp \
+	common/path/RTPathHasPath.cpp \
 	common/path/RTPathJoin.cpp \
 	common/path/RTPathJoinA.cpp \
 	common/path/RTPathParse.cpp \
@@ -1636,8 +1636,8 @@ RuntimeR0Drv_SOURCES    = \
 	common/path/RTPathAppendEx.cpp \
 	common/path/RTPathExt.cpp \
 	common/path/RTPathFilename.cpp \
-	common/path/RTPathHaveExt.cpp \
-	common/path/RTPathHavePath.cpp \
+	common/path/RTPathHasExt.cpp \
+	common/path/RTPathHasPath.cpp \
 	common/path/RTPathParse.cpp \
 	common/path/RTPathRealDup.cpp \
 	common/path/RTPathStripExt.cpp \

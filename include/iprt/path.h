@@ -331,13 +331,15 @@ RTDECL(char *) RTPathFilename(const char *pszPath);
 RTDECL(char *) RTPathExt(const char *pszPath);
 
 /**
- * Checks if a path have an extension.
+ * Checks if a path has an extension.
  *
  * @returns true if extension present.
  * @returns false if no extension.
  * @param   pszPath     Path to check.
  */
 RTDECL(bool) RTPathHaveExt(const char *pszPath);
+/** Misspelled, don't use.  */
+#define RTPathHaveExt   RTPathHasExt
 
 /**
  * Checks if a path includes more than a filename.
@@ -346,7 +348,9 @@ RTDECL(bool) RTPathHaveExt(const char *pszPath);
  * @returns false if no path.
  * @param   pszPath     Path to check.
  */
-RTDECL(bool) RTPathHavePath(const char *pszPath);
+RTDECL(bool) RTPathHasPath(const char *pszPath);
+/** Misspelled, don't use.  */
+#define RTPathHavePath  RTPathHasPath
 
 /**
  * Checks if the path starts with a root specifier or not.

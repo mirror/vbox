@@ -1,10 +1,10 @@
 /* $Id$ */
 /** @file
- * IPRT - RTPathHaveExt
+ * IPRT - RTPathHasExt
  */
 
 /*
- * Copyright (C) 2006-2007 Oracle Corporation
+ * Copyright (C) 2006-2012 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -40,7 +40,7 @@
  * @returns false if no extension present.
  * @param   pszPath     Path to check.
  */
-RTDECL(bool) RTPathHaveExt(const char *pszPath)
+RTDECL(bool) RTPathHasExt(const char *pszPath)
 {
     return RTPathExt(pszPath) != NULL;
 }
