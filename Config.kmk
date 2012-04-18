@@ -619,10 +619,6 @@ endif
 if1of ($(KBUILD_TARGET), darwin solaris)
  VBOX_WITH_DTRACE_R0DRV = 1
 endif
-# Set this to enable all kernel driver dtrace probes.
-if1of ($(KBUILD_TARGET), darwin solaris)
- VBOX_WITH_NATIVE_DTRACE_R0DRV = 1
-endif
 # Set this to enable dtrace probes in platform agnostic kernel code.
 ifn1of ($(KBUILD_TARGET), os2)
  VBOX_WITH_DTRACE_R0 = 1
@@ -631,6 +627,10 @@ endif
 #VBOX_WITH_DTRACE_RC = 1
 # Set this to enable support for dtrace probes in guest code.
 #VBOX_WITH_DTRACE_GST = 1
+# Set this to indicate that the host shipts with DTrace.
+if1of ($(KBUILD_TARGET), darwin solaris freebsd)
+ VBOX_WITH_NATIVE_DTRACE = 1
+endif
 ## @}
 
 
@@ -2943,8 +2943,8 @@ TEMPLATE_VBOXR0DRV_USES               += dtrace
 ifdef VBOX_WITH_DTRACE_R0DRV
  TEMPLATE_VBOXR0DRV_DTRACETOOL         = VBoxTpG
  TEMPLATE_VBOXR0DRV_DEFS              += VBOX_WITH_DTRACE VBOX_WITH_DTRACE_R0DRV
- ifdef VBOX_WITH_NATIVE_DTRACE_R0DRV
-  TEMPLATE_VBOXR0DRV_DEFS             += VBOX_WITH_NATIVE_DTRACE_R0DRV
+ ifdef VBOX_WITH_NATIVE_DTRACE
+  TEMPLATE_VBOXR0DRV_DEFS             += VBOX_WITH_NATIVE_DTRACE
  endif
 else
  TEMPLATE_VBOXR0DRV_DTRACETOOL         = VBoxTpG-Disabled
@@ -3200,15 +3200,22 @@ TEMPLATE_VBOXR3EXE                     = VBox Ring 3 Exe
 TEMPLATE_VBOXR3EXE_ASTOOL              = $(VBOX_ASTOOL)
 TEMPLATE_VBOXR3EXE_ASFLAGS.x86         = $(VBOX_ASFLAGS32)
 TEMPLATE_VBOXR3EXE_ASFLAGS.amd64       = $(VBOX_ASFLAGS64)
+TEMPLATE_VBOXR3EXE_DEFS                = IN_RING3 $(ARCH_BITS_DEFS)
 TEMPLATE_VBOXR3EXE_USES                = dtrace
 ifdef VBOX_WITH_DTRACE_R3
- TEMPLATE_VBOXR3EXE_DTRACETOOL         = StandardDTrace
- TEMPLATE_VBOXR3EXE_DTRACE_OBJ_FLAGS   = -C
- TEMPLATE_VBOXR3EXE_DTRACE_HDR_FLAGS   = -C
+ ifdef VBOX_WITH_NATIVE_DTRACE
+  TEMPLATE_VBOXR3EXE_DTRACETOOL        = StandardDTrace
+  TEMPLATE_VBOXR3EXE_DTRACE_OBJ_FLAGS  = -C
+  TEMPLATE_VBOXR3EXE_DTRACE_HDR_FLAGS  = -C
+  TEMPLATE_VBOXR3EXE_DEFS             += VBOX_WITH_DTRACE VBOX_WITH_DTRACE_R3 VBOX_WITH_NATIVE_DTRACE
+ else
+  TEMPLATE_VBOXR3EXE_DTRACETOOL        = VBoxTpG
+  TEMPLATE_VBOXR3EXE_DTRACE_OBJ_FLAGS  = --pic --probe-fn-imported --probe-fn-name "SUPTracerFireProbe"
+  TEMPLATE_VBOXR3EXE_DEFS             += VBOX_WITH_DTRACE VBOX_WITH_DTRACE_R3
+ endif
 else
  TEMPLATE_VBOXR3EXE_DTRACETOOL         = VBoxTpG-Disabled
 endif
-TEMPLATE_VBOXR3EXE_DEFS                = IN_RING3 $(ARCH_BITS_DEFS)
 TEMPLATE_VBOXR3EXE_LIBS.kprofile       = $(LIB_KPROFILE)
 ifeq ($(KBUILD_TARGET),win)
 # TEMPLATE_VBOXR3EXE_TOOL               = $(VBOX_VCC_TOOL)
@@ -3308,6 +3315,10 @@ TEMPLATE_VBOXR3EXE_LDFLAGS.l4          = \
 	-Wl,--export-dynamic,--dynamic-linker=libld-l4.s.so \
 	-Wl,--rpath-link,$(L4_LIBDIR)
 TEMPLATE_VBOXR3EXE_LDFLAGS.linux       = -Wl,-z,noexecstack $(VBOX_LD_as_needed)
+ifdef VBOX_WITH_DTRACE_R3
+ TEMPLATE_VBOXR3EXE_LDFLAGS.linux     += -Wl,--verbose
+endif
+
  ifeq ($(KBUILD_TARGET),linux)
 TEMPLATE_VBOXR3EXE_LIBS                = pthread m rt dl
  else ifeq ($(KBUILD_TARGET),l4)
