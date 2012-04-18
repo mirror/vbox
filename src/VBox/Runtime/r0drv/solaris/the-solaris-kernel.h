@@ -84,7 +84,6 @@ typedef void         (*PFNSOL_contig_free)(void *addr, size_t size);
 
 /* IPRT globals. */
 extern bool                     g_frtSolSplSetsEIF;
-extern struct ddi_dma_attr      g_SolarisX86PhysMemLimits;
 extern RTCPUSET                 g_rtMpSolCpuSet;
 extern PFNSOL_timeout_generic   g_pfnrtR0Sol_timeout_generic;
 extern PFNSOL_untimeout_generic g_pfnrtR0Sol_untimeout_generic;
