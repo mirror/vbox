@@ -217,7 +217,7 @@ static void     supdrvDtPOps_Provide(void *pvProv, const dtrace_probedesc_t *pDt
 
     dtrace_provider_id_t    idProvider   = pProv->TracerData.DTrace.idProvider;
     AssertPtrReturnVoid(idProvider);
-    
+
     AssertPtrReturnVoid(pProv->pHdr);
     PVTGPROBELOC            pProbeLoc    = pProv->pHdr->paProbLocs;
     AssertPtrReturnVoid(pProbeLoc);
@@ -836,7 +836,7 @@ const SUPDRVTRACERREG * VBOXCALL supdrvDTraceInit(void)
     return &g_supdrvDTraceReg;
 }
 
-#ifndef VBOX_WITH_NATIVE_DTRACE_R0DRV
-# error "VBOX_WITH_NATIVE_DTRACE_R0DRV is not defined as it should"
+#ifndef VBOX_WITH_NATIVE_DTRACE
+# error "VBOX_WITH_NATIVE_DTRACE is not defined as it should"
 #endif
 

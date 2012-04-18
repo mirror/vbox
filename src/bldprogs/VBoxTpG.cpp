@@ -182,6 +182,7 @@ static unsigned             g_cAssemblerOptions         = 0;
 static const char          *g_apszAssemblerOptions[32];
 static const char          *g_pszProbeFnName            = "SUPR0TracerFireProbe";
 static bool                 g_fProbeFnImported          = true;
+static bool                 g_fPic                      = false;
 /** @} */
 
 
@@ -749,7 +750,7 @@ static RTEXITCODE generateAssembly(PSCMSTREAM pStrm)
                     "extern %sNAME(%s)\n",
                     g_fProbeFnImported ? "IMP" : "",
                     g_pszProbeFnName);
-    if (fMachO64 && g_fProbeFnImported)
+    if (fMachO64 && g_fProbeFnImported && !g_fPic)
         ScmStreamPrintf(pStrm,
                         "g_pfnVtgProbeFn:\n"
                         "   dq NAME(%s)\n",
@@ -791,7 +792,16 @@ static RTEXITCODE generateAssembly(PSCMSTREAM pStrm)
              * Jump to the fire-probe function.
              */
             if (g_cBits == 32)
-                ScmStreamPrintf(pStrm, g_fProbeFnImported ?
+                ScmStreamPrintf(pStrm, g_fPic ?
+                                "        call    .mov_ecx_eip_plus_5\n"
+                                ".got_eip:\n"
+                                "        add     ecx, _GLOBAL_OFFSET_TABLE + ($$ - .got_eip) wrt ..gotpc\n"
+                                "        mov     ecx, [%s@GOT + ecx]\n"
+                                "        jmp     ecx\n"
+                                ".mov_ecx_eip_plus_5:\n"
+                                "        pop     ecx\n"
+                                "        jmp     ecx\n"
+                                : g_fProbeFnImported ?
                                 "        mov     ecx, IMP2(%s)\n"
                                 "        jmp     ecx\n"
                                 :
@@ -808,8 +818,10 @@ static RTEXITCODE generateAssembly(PSCMSTREAM pStrm)
                 ScmStreamPrintf(pStrm,
                                 "        jmp     [g_pfnVtgProbeFn wrt rip]\n");
             else
-                ScmStreamPrintf(pStrm, g_fProbeFnImported ?
-                                "        lea     rax, [IMP2(%s)]\n" //??? macho64?
+                ScmStreamPrintf(pStrm, g_fPic ?
+                                "        jmp     [rel %s wrt ..got]\n"
+                                : g_fProbeFnImported ?
+                                "        lea     rax, [IMP2(%s)]\n"
                                 "        jmp     rax\n"
                                 :
                                 "        jmp     NAME(%s)\n"
@@ -2042,8 +2054,10 @@ static RTEXITCODE parseArguments(int argc,  char **argv)
         kVBoxTpGOpt_AssemblerFmtVal,
         kVBoxTpGOpt_AssemblerOutputOpt,
         kVBoxTpGOpt_AssemblerOption,
+        kVBoxTpGOpt_Pic,
         kVBoxTpGOpt_ProbeFnName,
         kVBoxTpGOpt_ProbeFnImported,
+        kVBoxTpGOpt_ProbeFnNotImported,
         kVBoxTpGOpt_End
     };
 
@@ -2064,8 +2078,10 @@ static RTEXITCODE parseArguments(int argc,  char **argv)
         { "--assembler-fmt-val",                kVBoxTpGOpt_AssemblerFmtVal,            RTGETOPT_REQ_STRING  },
         { "--assembler-output-opt",             kVBoxTpGOpt_AssemblerOutputOpt,         RTGETOPT_REQ_STRING  },
         { "--assembler-option",                 kVBoxTpGOpt_AssemblerOption,            RTGETOPT_REQ_STRING  },
+        { "--pic",                              kVBoxTpGOpt_Pic,                        RTGETOPT_REQ_NOTHING },
         { "--probe-fn-name",                    kVBoxTpGOpt_ProbeFnName,                RTGETOPT_REQ_STRING  },
-        { "--probe-fn-imported",                kVBoxTpGOpt_ProbeFnImported,            RTGETOPT_REQ_BOOL    },
+        { "--probe-fn-imported",                kVBoxTpGOpt_ProbeFnImported,            RTGETOPT_REQ_NOTHING },
+        { "--probe-fn-not-imported",            kVBoxTpGOpt_ProbeFnNotImported,         RTGETOPT_REQ_NOTHING },
         /** @todo We're missing a bunch of assembler options! */
     };
 
@@ -2188,12 +2204,20 @@ static RTEXITCODE parseArguments(int argc,  char **argv)
                 g_cAssemblerOptions++;
                 break;
 
+            case kVBoxTpGOpt_Pic:
+                g_fPic = true;
+                break;
+
             case kVBoxTpGOpt_ProbeFnName:
                 g_pszProbeFnName = ValueUnion.psz;
                 break;
 
             case kVBoxTpGOpt_ProbeFnImported:
-                g_pszProbeFnName = ValueUnion.psz;
+                g_fProbeFnImported = true;
+                break;
+
+            case kVBoxTpGOpt_ProbeFnNotImported:
+                g_fProbeFnImported = false;
                 break;
 
             /*

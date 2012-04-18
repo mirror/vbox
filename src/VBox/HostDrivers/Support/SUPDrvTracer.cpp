@@ -1423,7 +1423,7 @@ int VBOXCALL supdrvTracerInit(PSUPDRVDEVEXT pDevExt)
         RTListInit(&pDevExt->TracerProviderList);
         RTListInit(&pDevExt->TracerProviderZombieList);
 
-#ifdef VBOX_WITH_NATIVE_DTRACE_R0DRV
+#ifdef VBOX_WITH_NATIVE_DTRACE
         pDevExt->pTracerOps = supdrvDTraceInit();
         if (pDevExt->pTracerOps)
             g_pfnSupdrvProbeFireKernel = (PFNRT)pDevExt->pTracerOps->pfnProbeFireKernel;

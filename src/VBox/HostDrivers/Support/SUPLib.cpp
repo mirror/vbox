@@ -2386,3 +2386,15 @@ SUPR3DECL(int) SUPR3TracerIoCtl(uintptr_t uCmd, uintptr_t uArg, int32_t *piRetVa
     return rc;
 }
 
+extern "C"
+{
+    SUPDECL(void) SUPTracerFireProbe(uint32_t idProbe, uintptr_t uArg0, uintptr_t uArg1, uintptr_t uArg2,
+                                     uintptr_t uArg3, uintptr_t uArg4);
+}
+
+SUPDECL(void) SUPTracerFireProbe(uint32_t idProbe, uintptr_t uArg0, uintptr_t uArg1, uintptr_t uArg2,
+                                 uintptr_t uArg3, uintptr_t uArg4)
+{
+    /* C and stubbed for now. */
+}
+
