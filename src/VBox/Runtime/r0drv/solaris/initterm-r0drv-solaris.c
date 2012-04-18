@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * IPRT - Initialization & Termination, R0 Driver, Solaris.
+ * IPRT - Initialization & Termination, Ring-0 Driver, Solaris.
  */
 
 /*
