@@ -28,6 +28,7 @@
 #include <iprt/file.h>
 #include <iprt/string.h>
 #include <iprt/semaphore.h>
+#include <iprt/asm.h>
 
 /*******************************************************************************
 *   Structures in a I/O log file, little endian                                *
@@ -369,7 +370,7 @@ VBOXDDU_DECL(uint32_t) VDDbgIoLogGetFlags(VDIOLOGGER hIoLogger)
 {
     PVDIOLOGGERINT pIoLogger = hIoLogger;
 
-    AssertPtrReturn(pIoLogger, VERR_INVALID_HANDLE);
+    AssertPtrReturn(pIoLogger, 0);
 
     return pIoLogger->fFlags;
 }
