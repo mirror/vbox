@@ -447,6 +447,79 @@ static BOOL vboxNetCfgWinRemoveAllNetDevicesOfIdCallback(HDEVINFO hDevInfo, PSP_
     return TRUE;
 }
 
+typedef struct VBOXNECTFGWINPROPCHANGE
+{
+    VBOXNECTFGWINPROPCHANGE_TYPE enmPcType;
+    HRESULT hr;
+} VBOXNECTFGWINPROPCHANGE ,*PVBOXNECTFGWINPROPCHANGE;
+
+static BOOL vboxNetCfgWinPropChangeAllNetDevicesOfIdCallback(HDEVINFO hDevInfo, PSP_DEVINFO_DATA pDev, PVOID pContext)
+{
+    PVBOXNECTFGWINPROPCHANGE pPc = (PVBOXNECTFGWINPROPCHANGE)pContext;
+    HRESULT hr = S_OK;
+    SP_PROPCHANGE_PARAMS PcParams;
+    memset (&PcParams, 0, sizeof (PcParams));
+
+    PcParams.ClassInstallHeader.cbSize = sizeof (SP_CLASSINSTALL_HEADER);
+    PcParams.ClassInstallHeader.InstallFunction = DIF_PROPERTYCHANGE;
+    PcParams.Scope = DICS_FLAG_GLOBAL;
+    PcParams.HwProfile = 0;
+    switch(pPc->enmPcType)
+    {
+        case VBOXNECTFGWINPROPCHANGE_TYPE_DISABLE:
+            PcParams.StateChange = DICS_DISABLE;
+            break;
+        case VBOXNECTFGWINPROPCHANGE_TYPE_ENABLE:
+            PcParams.StateChange = DICS_ENABLE;
+            break;
+        default:
+            NonStandardLogFlow(("unexpected prop change type: %d\n", pPc->enmPcType));
+            pPc->hr = E_INVALIDARG;
+            return FALSE;
+    }
+
+
+    if (SetupDiSetClassInstallParams(hDevInfo, pDev, &PcParams.ClassInstallHeader, sizeof (PcParams)))
+    {
+        if (SetupDiSetSelectedDevice(hDevInfo, pDev))
+        {
+            if (SetupDiCallClassInstaller(DIF_PROPERTYCHANGE, hDevInfo, pDev))
+            {
+                SP_DEVINSTALL_PARAMS devParams;
+                devParams.cbSize = sizeof(devParams);
+                if (SetupDiGetDeviceInstallParams(hDevInfo,pDev,&devParams))
+                {
+                    if (devParams.Flags & (DI_NEEDRESTART|DI_NEEDREBOOT))
+                    {
+                        hr = S_FALSE;
+                        NonStandardLogFlow(("PropChange: !!!REBOOT REQUIRED!!!\n"));
+                    }
+                }
+            }
+            else
+            {
+                DWORD dwErr = GetLastError();
+                NonStandardLogFlow(("SetupDiCallClassInstaller failed with %ld\n", dwErr));
+                hr = HRESULT_FROM_WIN32(dwErr);
+            }
+        }
+        else
+        {
+            DWORD dwErr = GetLastError();
+            NonStandardLogFlow(("SetupDiSetSelectedDevice failed with %ld\n", dwErr));
+            hr = HRESULT_FROM_WIN32(dwErr);
+        }
+    }
+    else
+    {
+        DWORD dwErr = GetLastError();
+        NonStandardLogFlow(("SetupDiSetClassInstallParams failed with %ld\n", dwErr));
+        hr = HRESULT_FROM_WIN32(dwErr);
+    }
+
+    return TRUE;
+}
+
 typedef BOOL (*VBOXNETCFGWIN_NETENUM_CALLBACK) (HDEVINFO hDevInfo, PSP_DEVINFO_DATA pDev, PVOID pContext);
 VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinEnumNetDevices(LPCWSTR pPnPId, VBOXNETCFGWIN_NETENUM_CALLBACK callback, PVOID pContext)
 {
@@ -552,6 +625,14 @@ VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinEnumNetDevices(LPCWSTR pPnPId, VBOXNETC
 VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinRemoveAllNetDevicesOfId(IN LPCWSTR lpszPnPId)
 {
     return VBoxNetCfgWinEnumNetDevices(lpszPnPId, vboxNetCfgWinRemoveAllNetDevicesOfIdCallback, NULL);
+}
+
+VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinPropChangeAllNetDevicesOfId(IN LPCWSTR lpszPnPId, VBOXNECTFGWINPROPCHANGE_TYPE enmPcType)
+{
+    VBOXNECTFGWINPROPCHANGE Pc;
+    Pc.enmPcType = enmPcType;
+    Pc.hr = S_OK;
+    return VBoxNetCfgWinEnumNetDevices(lpszPnPId, vboxNetCfgWinPropChangeAllNetDevicesOfIdCallback, &Pc);
 }
 
 /*
@@ -2346,6 +2427,11 @@ VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinRemoveHostOnlyNetworkInterface(IN const
     while (0);
 
     return hrc;
+}
+
+VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinUpdateHostOnlyNetworkInterface(LPCWSTR pcsxwInf, BOOL *pbRebootRequired)
+{
+    return VBoxDrvCfgDrvUpdate(DRIVERHWID, pcsxwInf, pbRebootRequired);
 }
 
 VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinCreateHostOnlyNetworkInterface(IN LPCWSTR pInfPath, IN bool bIsInfPathFile,
