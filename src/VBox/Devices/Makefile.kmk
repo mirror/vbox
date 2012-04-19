@@ -86,7 +86,8 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
   VBoxDDU_LIBS           += \
  	$(PATH_STAGE_LIB)/USBLib$(VBOX_SUFF_LIB)
   VBoxDDU_LIBS.win       += \
- 	$(PATH_STAGE_LIB)/VBoxDrvCfg$(VBOX_SUFF_LIB)
+ 	$(PATH_STAGE_LIB)/VBoxDrvCfg$(VBOX_SUFF_LIB) \
+ 	$(PATH_SDK_W2K3DDK_LIB)/Newdev.lib
  endif
  ifeq ($(KBUILD_TARGET),l4)
   VBoxDDU_LIBS           += \

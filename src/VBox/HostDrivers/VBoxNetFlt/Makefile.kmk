@@ -159,6 +159,7 @@ $(PATH_TARGET)/VBoxNetFltCat.dir/VBoxNetFlt.cat: \
  NetFltInstall_LIBS     = \
  	$(WinNetConfig_1_TARGET) \
  	$(VBoxDrvCfg_1_TARGET) \
+ 	$(PATH_SDK_W2K3DDK_LIB)/Newdev.lib \
   	$(PATH_TOOL_$(VBOX_VCC_TOOL)_LIB)/comsupp.lib \
  	$(PATH_SDK_WINPSDK_LIB)/WbemUuid.Lib
 
@@ -173,6 +174,7 @@ $(PATH_TARGET)/VBoxNetFltCat.dir/VBoxNetFlt.cat: \
  NetFltUninstall_LIBS     = \
  	$(WinNetConfig_1_TARGET) \
  	$(VBoxDrvCfg_1_TARGET) \
+ 	$(PATH_SDK_W2K3DDK_LIB)/Newdev.lib \
   	$(PATH_TOOL_$(VBOX_VCC_TOOL)_LIB)/comsupp.lib \
  	$(PATH_SDK_WINPSDK_LIB)/WbemUuid.Lib
 
@@ -186,6 +188,7 @@ $(PATH_TARGET)/VBoxNetFltCat.dir/VBoxNetFlt.cat: \
  NetAdpInstall_LIBS     = \
  	$(WinNetConfig_1_TARGET) \
  	$(VBoxDrvCfg_1_TARGET) \
+ 	$(PATH_SDK_W2K3DDK_LIB)/Newdev.lib \
   	$(PATH_TOOL_$(VBOX_VCC_TOOL)_LIB)/comsupp.lib \
  	$(PATH_SDK_WINPSDK_LIB)/WbemUuid.Lib
 
@@ -200,6 +203,7 @@ $(PATH_TARGET)/VBoxNetFltCat.dir/VBoxNetFlt.cat: \
  NetAdpUninstall_LIBS     = \
  	$(WinNetConfig_1_TARGET) \
  	$(VBoxDrvCfg_1_TARGET) \
+ 	$(PATH_SDK_W2K3DDK_LIB)/Newdev.lib \
   	$(PATH_TOOL_$(VBOX_VCC_TOOL)_LIB)/comsupp.lib \
  	$(PATH_SDK_WINPSDK_LIB)/WbemUuid.Lib
 
