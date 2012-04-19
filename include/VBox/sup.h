@@ -34,6 +34,10 @@
 
 RT_C_DECLS_BEGIN
 
+struct VTGOBJHDR;
+struct VTGPROBELOC;
+
+
 /** @defgroup   grp_sup     The Support Library API
  * @{
  */
@@ -1345,9 +1349,6 @@ SUPR0DECL(int) SUPR0ComponentQueryFactory(PSUPDRVSESSION pSession, const char *p
 
 /** @name Tracing
  * @{ */
-
-struct VTGOBJHDR;
-struct VTGPROBELOC;
 
 /**
  * Tracer data associated with a provider.
