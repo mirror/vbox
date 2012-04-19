@@ -493,8 +493,15 @@ NTSTATUS VBoxMRxCreate(IN OUT PRX_CONTEXT RxContext)
     SHFLHANDLE Handle = SHFL_HANDLE_NIL;
     PMRX_VBOX_FOBX pVBoxFobx;
 
-    Log(("VBOXSF: MRxCreate: name ptr %p length=%d\n",
-         RemainingName, RemainingName->Length));
+    Log(("VBOXSF: MRxCreate: name ptr %p length=%d, SrvOpen->Flags 0x%08X\n",
+         RemainingName, RemainingName->Length, SrvOpen->Flags));
+
+    /* Disable FastIO. It causes a verifier bugcheck. */
+#if (NTDDI_VERSION >= NTDDI_VISTA)
+    SetFlag(SrvOpen->Flags, SRVOPEN_FLAG_DONTUSE_READ_CACHING | SRVOPEN_FLAG_DONTUSE_WRITE_CACHING);
+#else
+    SetFlag(SrvOpen->Flags, SRVOPEN_FLAG_DONTUSE_READ_CACHEING | SRVOPEN_FLAG_DONTUSE_WRITE_CACHEING);
+#endif
 
     if (RemainingName->Length)
     {
