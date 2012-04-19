@@ -43,6 +43,13 @@
 #include <VBox/vd-plugin.h>
 #include <VBox/vd-cache-plugin.h>
 
+/** Disable dynamic backends on non x86 architectures. This feature
+ * requires the SUPR3 library which is not available there.
+ */
+#if !defined(RT_ARCH_X86) && !defined(RT_ARCH_AMD64)
+# define VBOX_HDD_NO_DYNAMIC_BACKENDS
+#endif
+
 #define VBOXHDDDISK_SIGNATURE 0x6f0e2a7d
 
 /** Buffer size used for merging images. */
