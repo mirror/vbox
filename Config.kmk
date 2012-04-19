@@ -417,7 +417,9 @@ VBOX_WITH_EFI = 1
 # Include the EFI firmware into the package
 VBOX_WITH_EFIFW_PACKING = 1
 # Use kStuff for MACH-O and LX binary loading.
-IPRT_WITH_KSTUFF = 1
+if1of ($(KBUILD_TARGET_ARCH), x86 amd64)
+ IPRT_WITH_KSTUFF = 1
+endif
 # Enable setuid wrapper for Solaris host DVD.
 #VBOX_WITH_SUID_WRAPPER = 1
 # Enable the virtual SATA/AHCI controller
