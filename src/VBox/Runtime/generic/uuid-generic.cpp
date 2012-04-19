@@ -33,6 +33,7 @@
 
 #include <iprt/assert.h>
 #include <iprt/err.h>
+#include <iprt/asm.h>
 
 
 /*******************************************************************************
@@ -200,7 +201,7 @@ RTDECL(int)  RTUuidToStr(PCRTUUID pUuid, char *pszString, size_t cchString)
      *             pUuid->Gen.au8Node[4],
      *             pUuid->Gen.au8Node[5]);
      */
-    u32TimeLow = pUuid->Gen.u32TimeLow;
+    u32TimeLow = RT_H2LE_U32(pUuid->Gen.u32TimeLow);
     pszString[ 0] = g_achDigits[(u32TimeLow >> 28)/*& 0xf*/];
     pszString[ 1] = g_achDigits[(u32TimeLow >> 24) & 0xf];
     pszString[ 2] = g_achDigits[(u32TimeLow >> 20) & 0xf];
@@ -210,13 +211,13 @@ RTDECL(int)  RTUuidToStr(PCRTUUID pUuid, char *pszString, size_t cchString)
     pszString[ 6] = g_achDigits[(u32TimeLow >>  4) & 0xf];
     pszString[ 7] = g_achDigits[(u32TimeLow/*>>0*/)& 0xf];
     pszString[ 8] = '-';
-    u = pUuid->Gen.u16TimeMid;
+    u = RT_H2LE_U16(pUuid->Gen.u16TimeMid);
     pszString[ 9] = g_achDigits[(u >> 12)/*& 0xf*/];
     pszString[10] = g_achDigits[(u >>  8) & 0xf];
     pszString[11] = g_achDigits[(u >>  4) & 0xf];
     pszString[12] = g_achDigits[(u/*>>0*/)& 0xf];
     pszString[13] = '-';
-    u = pUuid->Gen.u16TimeHiAndVersion;
+    u = RT_H2LE_U16(pUuid->Gen.u16TimeHiAndVersion);
     pszString[14] = g_achDigits[(u >> 12)/*& 0xf*/];
     pszString[15] = g_achDigits[(u >>  8) & 0xf];
     pszString[16] = g_achDigits[(u >>  4) & 0xf];
@@ -307,23 +308,23 @@ RTDECL(int)  RTUuidFromStr(PRTUUID pUuid, const char *pszString)
      * Inverse of RTUuidToStr (see above).
      */
 #define MY_TONUM(ch) (g_au8Digits[(ch) & 0xff])
-    pUuid->Gen.u32TimeLow = (uint32_t)MY_TONUM(pszString[ 0]) << 28
+    pUuid->Gen.u32TimeLow = RT_LE2H_U32((uint32_t)MY_TONUM(pszString[ 0]) << 28
                           | (uint32_t)MY_TONUM(pszString[ 1]) << 24
                           | (uint32_t)MY_TONUM(pszString[ 2]) << 20
                           | (uint32_t)MY_TONUM(pszString[ 3]) << 16
                           | (uint32_t)MY_TONUM(pszString[ 4]) << 12
                           | (uint32_t)MY_TONUM(pszString[ 5]) <<  8
                           | (uint32_t)MY_TONUM(pszString[ 6]) <<  4
-                          | (uint32_t)MY_TONUM(pszString[ 7]);
-    pUuid->Gen.u16TimeMid = (uint16_t)MY_TONUM(pszString[ 9]) << 12
+                          | (uint32_t)MY_TONUM(pszString[ 7]));
+    pUuid->Gen.u16TimeMid = RT_LE2H_U16((uint16_t)MY_TONUM(pszString[ 9]) << 12
                           | (uint16_t)MY_TONUM(pszString[10]) << 8
                           | (uint16_t)MY_TONUM(pszString[11]) << 4
-                          | (uint16_t)MY_TONUM(pszString[12]);
-    pUuid->Gen.u16TimeHiAndVersion =
+                          | (uint16_t)MY_TONUM(pszString[12]));
+    pUuid->Gen.u16TimeHiAndVersion = RT_LE2H_U16(
                             (uint16_t)MY_TONUM(pszString[14]) << 12
                           | (uint16_t)MY_TONUM(pszString[15]) << 8
                           | (uint16_t)MY_TONUM(pszString[16]) << 4
-                          | (uint16_t)MY_TONUM(pszString[17]);
+                          | (uint16_t)MY_TONUM(pszString[17]));
     pUuid->Gen.u8ClockSeqHiAndReserved =
                             (uint16_t)MY_TONUM(pszString[19]) << 4
                           | (uint16_t)MY_TONUM(pszString[20]);
@@ -372,7 +373,7 @@ RTDECL(int)  RTUuidToUtf16(PCRTUUID pUuid, PRTUTF16 pwszString, size_t cwcString
      *             pUuid->Gen.au8Node[4],
      *             pUuid->Gen.au8Node[5]);
      */
-    u32TimeLow = pUuid->Gen.u32TimeLow;
+    u32TimeLow = RT_H2LE_U32(pUuid->Gen.u32TimeLow);
     pwszString[ 0] = g_achDigits[(u32TimeLow >> 28)/*& 0xf*/];
     pwszString[ 1] = g_achDigits[(u32TimeLow >> 24) & 0xf];
     pwszString[ 2] = g_achDigits[(u32TimeLow >> 20) & 0xf];
@@ -382,13 +383,13 @@ RTDECL(int)  RTUuidToUtf16(PCRTUUID pUuid, PRTUTF16 pwszString, size_t cwcString
     pwszString[ 6] = g_achDigits[(u32TimeLow >>  4) & 0xf];
     pwszString[ 7] = g_achDigits[(u32TimeLow/*>>0*/)& 0xf];
     pwszString[ 8] = '-';
-    u = pUuid->Gen.u16TimeMid;
+    u = RT_H2LE_U16(pUuid->Gen.u16TimeMid);
     pwszString[ 9] = g_achDigits[(u >> 12)/*& 0xf*/];
     pwszString[10] = g_achDigits[(u >>  8) & 0xf];
     pwszString[11] = g_achDigits[(u >>  4) & 0xf];
     pwszString[12] = g_achDigits[(u/*>>0*/)& 0xf];
     pwszString[13] = '-';
-    u = pUuid->Gen.u16TimeHiAndVersion;
+    u = RT_H2LE_U16(pUuid->Gen.u16TimeHiAndVersion);
     pwszString[14] = g_achDigits[(u >> 12)/*& 0xf*/];
     pwszString[15] = g_achDigits[(u >>  8) & 0xf];
     pwszString[16] = g_achDigits[(u >>  4) & 0xf];
@@ -479,23 +480,23 @@ RTDECL(int)  RTUuidFromUtf16(PRTUUID pUuid, PCRTUTF16 pwszString)
      * Inverse of RTUuidToUtf8 (see above).
      */
 #define MY_TONUM(ch) (g_au8Digits[(ch) & 0xff])
-    pUuid->Gen.u32TimeLow = (uint32_t)MY_TONUM(pwszString[ 0]) << 28
+    pUuid->Gen.u32TimeLow = RT_LE2H_U32((uint32_t)MY_TONUM(pwszString[ 0]) << 28
                           | (uint32_t)MY_TONUM(pwszString[ 1]) << 24
                           | (uint32_t)MY_TONUM(pwszString[ 2]) << 20
                           | (uint32_t)MY_TONUM(pwszString[ 3]) << 16
                           | (uint32_t)MY_TONUM(pwszString[ 4]) << 12
                           | (uint32_t)MY_TONUM(pwszString[ 5]) <<  8
                           | (uint32_t)MY_TONUM(pwszString[ 6]) <<  4
-                          | (uint32_t)MY_TONUM(pwszString[ 7]);
-    pUuid->Gen.u16TimeMid = (uint16_t)MY_TONUM(pwszString[ 9]) << 12
+                          | (uint32_t)MY_TONUM(pwszString[ 7]));
+    pUuid->Gen.u16TimeMid = RT_LE2H_U16((uint16_t)MY_TONUM(pwszString[ 9]) << 12
                           | (uint16_t)MY_TONUM(pwszString[10]) << 8
                           | (uint16_t)MY_TONUM(pwszString[11]) << 4
-                          | (uint16_t)MY_TONUM(pwszString[12]);
-    pUuid->Gen.u16TimeHiAndVersion =
+                          | (uint16_t)MY_TONUM(pwszString[12]));
+    pUuid->Gen.u16TimeHiAndVersion = RT_LE2H_U16(
                             (uint16_t)MY_TONUM(pwszString[14]) << 12
                           | (uint16_t)MY_TONUM(pwszString[15]) << 8
                           | (uint16_t)MY_TONUM(pwszString[16]) << 4
-                          | (uint16_t)MY_TONUM(pwszString[17]);
+                          | (uint16_t)MY_TONUM(pwszString[17]));
     pUuid->Gen.u8ClockSeqHiAndReserved =
                             (uint16_t)MY_TONUM(pwszString[19]) << 4
                           | (uint16_t)MY_TONUM(pwszString[20]);
