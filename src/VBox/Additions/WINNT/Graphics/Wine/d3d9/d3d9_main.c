@@ -29,6 +29,7 @@
  * that LGPLv2 or any later version may be used, or where a choice of which version
  * of the LGPL is applied is otherwise unspecified.
  */
+
 #define VBOX_WINE_DEBUG_DEFINES
 
 #include "config.h"

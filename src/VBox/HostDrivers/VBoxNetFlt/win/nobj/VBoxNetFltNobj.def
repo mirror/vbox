@@ -1,4 +1,4 @@
-; $Id$ 
+; $Id$
 ; @file
 ; VBoxNetFltNobj.def - Notify Object for Bridged Networking Driver.
 ; Library def file
