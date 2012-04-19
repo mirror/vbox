@@ -966,7 +966,23 @@ UINT __stdcall StopHostOnlyInterfaces(MSIHANDLE hModule)
 
     logStringW(hModule, L"StopHostOnlyInterfaces: Stopping all host-only Interfaces");
 
-    /** TODO */
+    BOOL bSetupModeInteractive = SetupSetNonInteractiveMode(FALSE);
+
+    HRESULT hr = VBoxNetCfgWinPropChangeAllNetDevicesOfId(NETADP_ID, VBOXNECTFGWINPROPCHANGE_TYPE_DISABLE);
+    if (SUCCEEDED(hr))
+    {
+        hr = VBoxDrvCfgInfUninstallAllSetupDi(&GUID_DEVCLASS_NET, NETADP_ID, L"Net", 0/* could be SUOI_FORCEDELETE */);
+        if (FAILED(hr))
+        {
+            logStringW(hModule, L"RemoveHostOnlyInterfaces: VBoxDrvCfgInfUninstallAllSetupDi failed hr = 0x%x\n", hr);
+        }
+    }
+    else
+        logStringW(hModule, L"RemoveHostOnlyInterfaces: NetAdp uninstall failed, hr = 0x%x\n", hr);
+
+    /* Restore original setup mode. */
+    if (bSetupModeInteractive)
+        SetupSetNonInteractiveMode(bSetupModeInteractive);
 
     netCfgLoggerDisable();
 #endif /* VBOX_WITH_NETFLT */
@@ -981,6 +997,8 @@ UINT __stdcall UpdateHostOnlyInterfaces(MSIHANDLE hModule)
     netCfgLoggerEnable(hModule);
 
     logStringW(hModule, L"UpdateHostOnlyInterfaces: Updating all host-only Interfaces");
+
+    BOOL bSetupModeInteractive = SetupSetNonInteractiveMode(FALSE);
 
     WCHAR wszMpInf[MAX_PATH];
     DWORD cchMpInf = RT_ELEMENTS(wszMpInf) - sizeof("drivers\\network\\netadp\\VBoxNetAdp.inf") - 1;
@@ -1003,6 +1021,21 @@ UINT __stdcall UpdateHostOnlyInterfaces(MSIHANDLE hModule)
             bIsFile = true;
 
             logStringW(hModule, L"UpdateHostOnlyInterfaces: Resulting INF path = %s", pwszInfPath);
+
+            BOOL fRebootRequired = FALSE;
+            HRESULT hr = VBoxNetCfgWinUpdateHostOnlyNetworkInterface(pwszInfPath, &fRebootRequired);
+            if (SUCCEEDED(hr))
+            {
+                if (fRebootRequired)
+                {
+                    logStringW(hModule, L"Reboot required, setting REBOOT property to Force");
+                    HRESULT hr2 = MsiSetPropertyW(hModule, L"REBOOT", L"Force");
+                    if (hr2 != ERROR_SUCCESS)
+                        logStringW(hModule, L"Failed to set REBOOT property, error = 0x%x", hr2);
+                }
+            }
+            else
+                logStringW(hModule, L"UpdateHostOnlyInterfaces: VBoxNetCfgWinUpdateHostOnlyNetworkInterface failed, hr = 0x%x", hr);
         }
         else
             logStringW(hModule, L"UpdateHostOnlyInterfaces: NetAdpDir property value is empty");
@@ -1010,7 +1043,9 @@ UINT __stdcall UpdateHostOnlyInterfaces(MSIHANDLE hModule)
     else
         logStringW(hModule, L"UpdateHostOnlyInterfaces: Failed to get NetAdpDir property, error = 0x%x", uErr);
 
-    /** TODO */
+    /* Restore original setup mode. */
+    if (bSetupModeInteractive)
+        SetupSetNonInteractiveMode(bSetupModeInteractive);
 
     netCfgLoggerDisable();
 #endif /* VBOX_WITH_NETFLT */
