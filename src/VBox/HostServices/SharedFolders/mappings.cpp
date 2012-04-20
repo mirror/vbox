@@ -429,8 +429,18 @@ int vbsfMappingsQueryName(PSHFLCLIENTDATA pClient, SHFLROOT root, SHFLSTRING *pS
 
     if (pFolderMapping->fValid == true)
     {
-        pString->u16Length = pFolderMapping->pMapName->u16Length;
-        memcpy(pString->String.ucs2, pFolderMapping->pMapName->String.ucs2, pString->u16Size);
+        if (pString->u16Size < pFolderMapping->pMapName->u16Size)
+        {
+            Log(("vbsfMappingsQuery: passed string too short (%d < %d bytes)!\n",
+                pString->u16Size,  pFolderMapping->pMapName->u16Size));
+            rc = VERR_INVALID_PARAMETER;
+        }
+        else
+        {
+            pString->u16Length = pFolderMapping->pMapName->u16Length;
+            memcpy(pString->String.ucs2, pFolderMapping->pMapName->String.ucs2,
+                   pFolderMapping->pMapName->u16Size);
+        }
     }
     else
         rc = VERR_FILE_NOT_FOUND;
