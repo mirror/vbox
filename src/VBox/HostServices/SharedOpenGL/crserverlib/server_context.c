@@ -273,7 +273,7 @@ crServerDispatchMakeCurrent( GLint window, GLint nativeWindow, GLint context )
 {
     CRMuralInfo *mural, *oldMural;
     CRContextInfo *ctxInfo = NULL;
-    CRContext *ctx, *oldCtx;
+    CRContext *ctx, *oldCtx = NULL;
 
     if (context >= 0 && window >= 0) {
         mural = (CRMuralInfo *) crHashtableSearch(cr_server.muralTable, window);
