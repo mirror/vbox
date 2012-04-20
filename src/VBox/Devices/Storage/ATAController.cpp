@@ -3026,10 +3026,10 @@ static int ataTrimSectors(AHCIATADevState *s, uint64_t u64Sector, uint32_t cSect
 
 static bool ataTrimSS(AHCIATADevState *s)
 {
-    int rc;
+    int rc = VERR_GENERAL_FAILURE;
     uint32_t cRangesMax;
     uint64_t *pu64Range = (uint64_t *)s->CTX_SUFF(pbIOBuffer);
-    bool fRedo;
+    bool fRedo = false;
 
     cRangesMax = s->cbElementaryTransfer / sizeof(uint64_t);
     Assert(cRangesMax);
