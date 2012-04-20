@@ -4500,7 +4500,7 @@ static int e1kXmitPacket(E1KSTATE *pState, bool fOnWorkerThread)
  */
 static int e1kXmitPending(E1KSTATE *pState, bool fOnWorkerThread)
 {
-    int rc;
+    int rc = VINF_SUCCESS;
 
     /*
      * Grab the xmit lock of the driver as well as the E1K device state.
@@ -4561,7 +4561,7 @@ static int e1kXmitPending(E1KSTATE *pState, bool fOnWorkerThread)
  */
 static int e1kXmitPending(E1KSTATE *pState, bool fOnWorkerThread)
 {
-    int rc;
+    int rc = VINF_SUCCESS;
 
     /*
      * Grab the xmit lock of the driver as well as the E1K device state.
