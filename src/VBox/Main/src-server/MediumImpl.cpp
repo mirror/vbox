@@ -5977,7 +5977,9 @@ HRESULT Medium::setLocation(const Utf8Str &aLocation,
                 vrc = VDGetFormat(NULL /* pVDIfsDisk */, NULL /* pVDIfsImage */,
                                   locationFull.c_str(), &backendName, &enmType);
             }
-            else if (vrc != VERR_FILE_NOT_FOUND && vrc != VERR_PATH_NOT_FOUND)
+            else if (   vrc != VERR_FILE_NOT_FOUND
+                     && vrc != VERR_PATH_NOT_FOUND
+                     && vrc != VERR_ACCESS_DENIED)
             {
                 /* assume it's not a file, restore the original location */
                 locationFull = aLocation;
@@ -5987,7 +5989,11 @@ HRESULT Medium::setLocation(const Utf8Str &aLocation,
 
             if (RT_FAILURE(vrc))
             {
-                if (vrc == VERR_FILE_NOT_FOUND || vrc == VERR_PATH_NOT_FOUND)
+                if (vrc == VERR_ACCESS_DENIED)
+                    return setError(VBOX_E_FILE_ERROR,
+                                    tr("Permission problem accessing the file for the medium '%s' (%Rrc)"),
+                                    locationFull.c_str(), vrc);
+                else if (vrc == VERR_FILE_NOT_FOUND || vrc == VERR_PATH_NOT_FOUND)
                     return setError(VBOX_E_FILE_ERROR,
                                     tr("Could not find file for the medium '%s' (%Rrc)"),
                                     locationFull.c_str(), vrc);
