@@ -32,5 +32,9 @@ ifneq ($(wildcard $(PATH_SUB_CURRENT)/Installer/Makefile.kmk),)
  include $(PATH_SUB_CURRENT)/Installer/Makefile.kmk
 endif
 
+ifdef VBOX_WITH_MMR
+include $(PATH_SUB_CURRENT)/VBoxMMR/Makefile.kmk
+endif
+
 include $(KBUILD_PATH)/subfooter.kmk
 
