@@ -75,6 +75,9 @@ Function Vista_CopyFiles
   ;FILE "$%PATH_OUT%\bin\additions\VBoxNET.inf"
   ;FILE "$%PATH_OUT%\bin\additions\VBoxNET.sys"
 
+!ifdef VBOX_WITH_MMR
+  FILE "$%PATH_OUT%\bin\additions\VBoxMMR.dll"
+!endif
 
 FunctionEnd
 
@@ -84,6 +87,12 @@ Function Vista_InstallFiles
 
   SetOutPath "$INSTDIR"
   ; Nothing here yet
+
+!ifdef VBOX_WITH_MMR
+  DetailPrint "Registering VBoxMMR.dll ..."
+  nsExec::ExecToLog '"$g_strSystemDir\regsvr32.exe" -s "$INSTDIR\VBoxMMR.dll"'
+!endif
+
   Goto done
 
 error:
@@ -123,6 +132,13 @@ Function ${un}Vista_Uninstall
    DeleteRegKey HKLM "SOFTWARE\Microsoft\Windows\CurrentVersion\Authentication\Credential Providers\{275D3BCC-22BB-4948-A7F6-3A3054EBA92B}"
    DeleteRegKey HKCR "CLSID\{275D3BCC-22BB-4948-A7F6-3A3054EBA92B}"
    Delete /REBOOTOK "$g_strSystemDir\VBoxCredProv.dll"
+
+!ifdef VBOX_WITH_MMR
+   DetailPrint "Unregistering VBoxMMR.dll ..."
+   nsExec::ExecToLog '"$g_strSystemDir\regsvr32.exe" -s -u "$INSTDIR\VBoxMMR.dll"'
+
+   Delete /REBOOTOK "$INSTDIR\VBoxMMR.dll"
+!endif
 
 FunctionEnd
 !macroend
