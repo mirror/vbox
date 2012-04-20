@@ -227,10 +227,6 @@ int __cdecl main(int argc, char **argv)
         return 1;
     }
 
-#if 0
-    __debugbreak();
-#endif
-
     if (!strcmp(argv[1], "i"))
         return VBoxNetAdpInstall();
     if (!strcmp(argv[1], "u"))
