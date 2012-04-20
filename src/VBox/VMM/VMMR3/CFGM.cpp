@@ -3050,15 +3050,18 @@ static void cfgmR3Dump(PCFGMNODE pRoot, unsigned iLevel, PCDBGFINFOHLP pHlp)
         {
             case CFGMVALUETYPE_INTEGER:
             {
-                pHlp->pfnPrintf(pHlp, "  %-*s <integer> = %#018llx (%lld", (int)cchMax, pLeaf->szName, pLeaf->Value.Integer.u64, pLeaf->Value.Integer.u64);
-                size_t cchLeafName = strlen(pLeaf->szName);
-                if (   cchLeafName >= 4
-                    && !RTStrCmp(&pLeaf->szName[cchLeafName - 4], "Size"))
+                pHlp->pfnPrintf(pHlp, "  %-*s <integer> = %#018llx (%'lld", (int)cchMax, pLeaf->szName, pLeaf->Value.Integer.u64, pLeaf->Value.Integer.u64);
+                if (   (   pLeaf->cchName >= 4
+                        && !RTStrCmp(&pLeaf->szName[pLeaf->cchName - 4], "Size"))
+                    || (   pLeaf->cchName >= 2
+                        && !RTStrNCmp(pLeaf->szName, "cb", 2)) )
                 {
-                    if (pLeaf->Value.Integer.u64 > _2M)
-                        pHlp->pfnPrintf(pHlp, ", %lldMB", pLeaf->Value.Integer.u64 / _1M);
-                    else if (pLeaf->Value.Integer.u64 > 2 * _1K)
-                        pHlp->pfnPrintf(pHlp, ", %lldKB", pLeaf->Value.Integer.u64 / _1K);
+                    if (pLeaf->Value.Integer.u64 > _2G)
+                        pHlp->pfnPrintf(pHlp, ", %'lld GB", pLeaf->Value.Integer.u64 / _1G);
+                    else if (pLeaf->Value.Integer.u64 > _2M)
+                        pHlp->pfnPrintf(pHlp, ", %'lld MB", pLeaf->Value.Integer.u64 / _1M);
+                    else if (pLeaf->Value.Integer.u64 > _2K)
+                        pHlp->pfnPrintf(pHlp, ", %'lld KB", pLeaf->Value.Integer.u64 / _1K);
                 }
                 pHlp->pfnPrintf(pHlp, ")\n");
                 break;
