@@ -342,6 +342,8 @@ HRESULT Initialize(bool fGui)
     char szXptiDat[RTPATH_MAX];
 
     int vrc = GetVBoxUserHomeDirectory(szCompReg, sizeof(szCompReg));
+    if (vrc == VERR_ACCESS_DENIED)
+        return NS_ERROR_FILE_ACCESS_DENIED;
     AssertRCReturn(vrc, NS_ERROR_FAILURE);
     strcpy(szXptiDat, szCompReg);
 

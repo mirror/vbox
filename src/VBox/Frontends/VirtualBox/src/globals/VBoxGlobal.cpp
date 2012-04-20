@@ -4776,7 +4776,14 @@ void VBoxGlobal::init()
     HRESULT rc = COMBase::InitializeCOM(true);
     if (FAILED (rc))
     {
-        msgCenter().cannotInitCOM (rc);
+        if (rc == NS_ERROR_FILE_ACCESS_DENIED)
+        {
+            char szHome[RTPATH_MAX] = "";
+            com::GetVBoxUserHomeDirectory(szHome, sizeof(szHome));
+            msgCenter().cannotInitUserHome(QString(szHome));
+        }
+        else
+            msgCenter().cannotInitCOM(rc);
         return;
     }
 

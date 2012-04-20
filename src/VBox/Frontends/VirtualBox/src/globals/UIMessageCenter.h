@@ -180,6 +180,7 @@ public:
     void cannotLoadLanguage(const QString &strLangFile);
 
     void cannotInitCOM(HRESULT rc);
+    void cannotInitUserHome(const QString &strUserHome);
     void cannotCreateVirtualBox(const CVirtualBox &vbox);
 
     void cannotLoadGlobalConfig(const CVirtualBox &vbox, const QString &strError);

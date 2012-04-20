@@ -600,6 +600,17 @@ void UIMessageCenter::cannotInitCOM(HRESULT rc)
         formatErrorInfo(COMErrorInfo(), rc));
 }
 
+void UIMessageCenter::cannotInitUserHome(const QString &strUserHome)
+{
+    message(0, Critical,
+        tr("<p>Failed to initialize COM because the VirtualBox global "
+           "configuration directory <b><nobr>%1</nobr></b> is not accessible. "
+           "Please check the permissions of this directory and of its parent "
+           "directory.</p>"
+           "<p>The application will now terminate.</p>").arg(strUserHome),
+        formatErrorInfo(COMErrorInfo()));
+}
+
 void UIMessageCenter::cannotCreateVirtualBox(const CVirtualBox &vbox)
 {
     message(0, Critical,
