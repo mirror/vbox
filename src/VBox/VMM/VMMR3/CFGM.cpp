@@ -3049,8 +3049,20 @@ static void cfgmR3Dump(PCFGMNODE pRoot, unsigned iLevel, PCDBGFINFOHLP pHlp)
         switch (CFGMR3GetValueType(pLeaf))
         {
             case CFGMVALUETYPE_INTEGER:
-                pHlp->pfnPrintf(pHlp, "  %-*s <integer> = %#018llx (%lld)\n", (int)cchMax, pLeaf->szName, pLeaf->Value.Integer.u64, pLeaf->Value.Integer.u64);
+            {
+                pHlp->pfnPrintf(pHlp, "  %-*s <integer> = %#018llx (%lld", (int)cchMax, pLeaf->szName, pLeaf->Value.Integer.u64, pLeaf->Value.Integer.u64);
+                size_t cchLeafName = strlen(pLeaf->szName);
+                if (   cchLeafName >= 4
+                    && !RTStrCmp(&pLeaf->szName[cchLeafName - 4], "Size"))
+                {
+                    if (pLeaf->Value.Integer.u64 > _2M)
+                        pHlp->pfnPrintf(pHlp, ", %lldMB", pLeaf->Value.Integer.u64 / _1M);
+                    else if (pLeaf->Value.Integer.u64 > 2 * _1K)
+                        pHlp->pfnPrintf(pHlp, ", %lldKB", pLeaf->Value.Integer.u64 / _1K);
+                }
+                pHlp->pfnPrintf(pHlp, ")\n");
                 break;
+            }
 
             case CFGMVALUETYPE_STRING:
                 pHlp->pfnPrintf(pHlp, "  %-*s <string>  = \"%s\" (cb=%zu)\n", (int)cchMax, pLeaf->szName, pLeaf->Value.String.psz, pLeaf->Value.String.cb);
