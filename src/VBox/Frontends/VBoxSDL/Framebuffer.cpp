@@ -465,8 +465,8 @@ STDMETHODIMP VBoxSDLFB::NotifyUpdate(ULONG x, ULONG y,
     event.user.code  = mScreenId;
     event.user.type  = SDL_USER_EVENT_UPDATERECT;
     // 16 bit is enough for coordinates
-    event.user.data1 = (void*)(x << 16 | y);
-    event.user.data2 = (void*)(w << 16 | h);
+    event.user.data1 = (void*)(uintptr_t)(x << 16 | y);
+    event.user.data2 = (void*)(uintptr_t)(w << 16 | h);
     PushNotifyUpdateEvent(&event);
 #else /* !VBOXSDL_WITH_X11 */
     update(x, y, w, h, true /* fGuestRelative */);
