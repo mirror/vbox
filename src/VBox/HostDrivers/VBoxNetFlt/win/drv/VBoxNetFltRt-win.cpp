@@ -1677,10 +1677,10 @@ DECLHIDDEN(VOID) vboxNetFltWinUnload(IN PDRIVER_OBJECT DriverObject)
 
     vboxNetFltWinMpDeregister(&g_VBoxNetFltGlobalsWin.Mp);
 
+    LogFlow((__FUNCTION__" <== DO (0x%x)\n", DriverObject));
+
     vboxNetFltWinFiniNetFltBase();
     /* don't use logging or any RT after de-init */
-
-    LogFlow((__FUNCTION__" <== DO (0x%x)\n", DriverObject));
 }
 
 RT_C_DECLS_BEGIN
