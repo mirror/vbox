@@ -632,7 +632,20 @@ VBOXNETCFGWIN_DECL(HRESULT) VBoxNetCfgWinPropChangeAllNetDevicesOfId(IN LPCWSTR 
     VBOXNECTFGWINPROPCHANGE Pc;
     Pc.enmPcType = enmPcType;
     Pc.hr = S_OK;
-    return VBoxNetCfgWinEnumNetDevices(lpszPnPId, vboxNetCfgWinPropChangeAllNetDevicesOfIdCallback, &Pc);
+    HRESULT hr = VBoxNetCfgWinEnumNetDevices(lpszPnPId, vboxNetCfgWinPropChangeAllNetDevicesOfIdCallback, &Pc);
+    if (!SUCCEEDED(hr))
+    {
+        NonStandardLogFlow(("VBoxNetCfgWinEnumNetDevices failed 0x%x\n", hr));
+        return hr;
+    }
+
+    if (!SUCCEEDED(Pc.hr))
+    {
+        NonStandardLogFlow(("vboxNetCfgWinPropChangeAllNetDevicesOfIdCallback failed 0x%x\n", Pc.hr));
+        return Pc.hr;
+    }
+
+    return S_OK;
 }
 
 /*
