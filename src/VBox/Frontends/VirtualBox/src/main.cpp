@@ -578,6 +578,7 @@ int main (int argc, char **argv, char **envp)
         switch (rc)
         {
             case VERR_VM_DRIVER_NOT_INSTALLED:
+            case VERR_VM_DRIVER_LOAD_ERROR:
                 msgText += QApplication::tr (
                         "<b>Cannot access the kernel driver!</b><br/><br/>");
 # ifdef RT_OS_LINUX
