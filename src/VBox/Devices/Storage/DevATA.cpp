@@ -251,6 +251,8 @@ typedef struct ATADevState
     bool            fNonRotational;
     /** Enable passing through commands directly to the ATAPI drive. */
     bool            fATAPIPassthrough;
+    /** Flag whether to overwrite inquiry data in passthrough mode. */
+    bool            fOverwriteInquiry;
     /** Number of errors we've reported to the release log.
      * This is to prevent flooding caused by something going horribly wrong.
      * this value against MAX_LOG_REL_ERRORS in places likely to cause floods
@@ -2279,7 +2281,8 @@ static bool atapiPassthroughSS(ATADevState *s)
             if (s->cbElementaryTransfer < s->cbIOBuffer)
                 s->cbTotalTransfer = cbTransfer;
 
-            if (s->aATAPICmd[0] == SCSI_INQUIRY)
+            if (   s->aATAPICmd[0] == SCSI_INQUIRY
+                && s->fOverwriteInquiry)
             {
                 /* Make sure that the real drive cannot be identified.
                  * Motivation: changing the VM configuration should be as
@@ -7598,6 +7601,11 @@ static DECLCALLBACK(int)   ataR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
                             return PDMDEV_SET_ERROR(pDevIns, rc,
                                         N_("PIIX3 configuration error: failed to read \"ATAPIRevision\" as string"));
                         }
+
+                        rc = CFGMR3QueryBoolDef(pCfgNode, "OverwriteInquiry", &pIf->fOverwriteInquiry, true);
+                        if (RT_FAILURE(rc))
+                            return PDMDEV_SET_ERROR(pDevIns, rc,
+                                        N_("PIIX3 configuration error: failed to read \"OverwriteInquiry\" as boolean"));
                     }
                 }
 
