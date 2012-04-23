@@ -2,7 +2,7 @@
 <!--
     User interface include for VirtualBox WiX script.
 
-    Copyright (C) 2006-2011 Oracle Corporation
+    Copyright (C) 2006-2012 Oracle Corporation
 
     This file is part of VirtualBox Open Source Edition (OSE), as
     available from http://www.virtualbox.org. This file is free software;
@@ -53,6 +53,8 @@
             </Control>
 
             <Control Id="Next" Type="PushButton" X="236" Y="243" Width="56" Height="17" Default="yes" Text="!(loc.ButtonText_Next)">
+                <!-- Set the install mode -->
+                <Publish Property="InstallMode" Value="!(loc.InstallModeCustom)">1</Publish>
         <?if $(env.VBOX_WITH_LICENSE_DISPLAY) = "yes" ?>
                 <!-- Next dialog is the license agreement -->
                 <Publish Event="NewDialog" Value="VBoxLicenseAgreementDlg">1</Publish>
@@ -122,9 +124,7 @@
             <Control Id="Next" Type="PushButton" X="236" Y="243" Width="56" Height="17" Default="yes" Text="!(loc.ButtonText_Next)">
                 <!-- 'Next' button is only enabled when 'I agree' radio button is selected -->
                 <Condition Action="disable"><![CDATA[IAgree <> "Yes"]]></Condition>
-                <Condition Action="enable">IAgree = "Yes"</Condition>
-                <Publish Property="InstallMode" Value="!(loc.InstallModeCustom)">1</Publish>
-
+                <Condition Action="enable"><![CDATA[IAgree = "Yes"]]></Condition>
                 <!-- Decide which dialog to show next: The serial number dialog (if this is a branded build)
                      or directly proceed to the customization dialog (Vbox not installed yet) -->
             <?if $(env.VBOX_WITH_SERIALNUMBER_INSTALL) = "yes" ?>
