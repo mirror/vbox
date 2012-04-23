@@ -131,13 +131,13 @@
 #  define E1kLog(a)               LogRel(a)
 #  define E1kLog2(a)              LogRel(a)
 #  define E1kLog3(a)              LogRel(a)
-#  define E1kLogX(a)              LogRel(a)
+#  define E1kLogX(x, a)           LogRel(a)
 //#  define E1kLog3(a)              do {} while (0)
 # else
 #  define E1kLog(a)               do {} while (0)
 #  define E1kLog2(a)              do {} while (0)
 #  define E1kLog3(a)              do {} while (0)
-#  define E1kLogX(a)              do {} while (0)
+#  define E1kLogX(x, a)           do {} while (0)
 # endif
 #else
 #  define E1kLog(a)               Log(a)
