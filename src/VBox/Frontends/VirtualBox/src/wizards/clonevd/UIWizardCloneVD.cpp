@@ -27,30 +27,14 @@
 #include "UIWizardCloneVDPageBasic3.h"
 #include "UIWizardCloneVDPageBasic4.h"
 #include "UIWizardCloneVDPageBasic5.h"
+#include "UIWizardCloneVDPageExpert.h"
 #include "VBoxGlobal.h"
 #include "UIMessageCenter.h"
 
 UIWizardCloneVD::UIWizardCloneVD(QWidget *pParent, const CMedium &sourceVirtualDisk)
-    : UIWizard(pParent)
+    : UIWizard(pParent, UIWizardType_CloneVD)
+    , m_sourceVirtualDisk(sourceVirtualDisk)
 {
-#ifdef Q_WS_WIN
-    /* Hide window icon: */
-    setWindowIcon(QIcon());
-#endif /* Q_WS_WIN */
-
-    /* Create & add pages: */
-    setPage(Page1, new UIWizardCloneVDPageBasic1(sourceVirtualDisk));
-    setPage(Page2, new UIWizardCloneVDPageBasic2);
-    setPage(Page3, new UIWizardCloneVDPageBasic3);
-    setPage(Page4, new UIWizardCloneVDPageBasic4);
-    setPage(Page5, new UIWizardCloneVDPageBasic5);
-
-    /* Translate wizard: */
-    retranslateUi();
-
-    /* Translate wizard pages: */
-    retranslateAllPages();
-
 #ifndef Q_WS_MAC
     /* Assign watermark: */
     assignWatermark(":/vmw_new_harddisk.png");
@@ -58,9 +42,6 @@ UIWizardCloneVD::UIWizardCloneVD(QWidget *pParent, const CMedium &sourceVirtualD
     /* Assign background image: */
     assignBackground(":/vmw_new_harddisk_bg.png");
 #endif /* Q_WS_MAC */
-
-    /* Resize wizard to 'golden ratio': */
-    resizeToGoldenRatio(UIWizardType_CloneVD);
 }
 
 /* static */
@@ -134,8 +115,35 @@ bool UIWizardCloneVD::copyVirtualDisk()
 
 void UIWizardCloneVD::retranslateUi()
 {
+    /* Call to base-class: */
+    UIWizard::retranslateUi();
+
     /* Translate wizard: */
     setWindowTitle(tr("Copy Virtual Disk"));
     setButtonText(QWizard::FinishButton, tr("Copy"));
+}
+
+void UIWizardCloneVD::prepare()
+{
+    /* Create corresponding pages: */
+    switch (mode())
+    {
+        case UIWizardMode_Basic:
+        {
+            setPage(Page1, new UIWizardCloneVDPageBasic1(m_sourceVirtualDisk));
+            setPage(Page2, new UIWizardCloneVDPageBasic2);
+            setPage(Page3, new UIWizardCloneVDPageBasic3);
+            setPage(Page4, new UIWizardCloneVDPageBasic4);
+            setPage(Page5, new UIWizardCloneVDPageBasic5);
+            break;
+        }
+        case UIWizardMode_Expert:
+        {
+            setPage(PageExpert, new UIWizardCloneVDPageExpert(m_sourceVirtualDisk));
+            break;
+        }
+    }
+    /* Call to base-class: */
+    UIWizard::prepare();
 }
 

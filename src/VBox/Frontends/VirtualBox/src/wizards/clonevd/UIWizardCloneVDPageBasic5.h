@@ -26,8 +26,17 @@
 /* Forward declarations: */
 class QIRichTextLabel;
 
-/* 5th page of the Clone Virtual Disk wizard: */
-class UIWizardCloneVDPageBasic5 : public UIWizardPage
+/* 5th page of the Clone Virtual Disk wizard (base part): */
+class UIWizardCloneVDPage5 : public UIWizardPageBase
+{
+protected:
+
+    /* Constructor: */
+    UIWizardCloneVDPage5();
+};
+
+/* 5th page of the Clone Virtual Disk wizard (basic extension): */
+class UIWizardCloneVDPageBasic5 : public UIWizardPage, public UIWizardCloneVDPage5
 {
     Q_OBJECT;
 

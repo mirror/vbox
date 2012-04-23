@@ -23,12 +23,37 @@
 #include "UIWizardPage.h"
 
 /* Forward declarations: */
-class QIRichTextLabel;
+class QGroupBox;
 class QLineEdit;
 class QCheckBox;
+class QIRichTextLabel;
 
-/* 1st page of the Clone Virtual Machine wizard: */
-class UIWizardCloneVMPageBasic1 : public UIWizardPage
+/* 1st page of the Clone Virtual Machine wizard (base part): */
+class UIWizardCloneVMPage1 : public UIWizardPageBase
+{
+protected:
+
+    /* Constructor: */
+    UIWizardCloneVMPage1(const QString &strOriginalName);
+
+    /* Stuff for 'cloneName' field: */
+    QString cloneName() const;
+    void setCloneName(const QString &strName);
+
+    /* Stuff for 'reinitMACs' field: */
+    bool isReinitMACsChecked() const;
+
+    /* Variables: */
+    QString m_strOriginalName;
+
+    /* Widgets: */
+    QGroupBox *m_pNameCnt;
+    QLineEdit *m_pNameEditor;
+    QCheckBox *m_pReinitMACsCheckBox;
+};
+
+/* 1st page of the Clone Virtual Machine wizard (basic extension): */
+class UIWizardCloneVMPageBasic1 : public UIWizardPage, public UIWizardCloneVMPage1
 {
     Q_OBJECT;
     Q_PROPERTY(QString cloneName READ cloneName WRITE setCloneName);
@@ -49,23 +74,10 @@ private:
 
     /* Validation stuff: */
     bool isComplete() const;
-    bool validatePage();
-
-    /* Stuff for 'cloneName' field: */
-    QString cloneName() const;
-    void setCloneName(const QString &strName);
-
-    /* Stuff for 'reinitMACs' field: */
-    bool isReinitMACsChecked() const;
-
-    /* Variables: */
-    QString m_strOriginalName;
 
     /* Widgets: */
     QIRichTextLabel *m_pLabel1;
     QIRichTextLabel *m_pLabel2;
-    QLineEdit *m_pNameEditor;
-    QCheckBox *m_pReinitMACsCheckBox;
 };
 
 #endif // __UIWizardCloneVMPageBasic1_h__

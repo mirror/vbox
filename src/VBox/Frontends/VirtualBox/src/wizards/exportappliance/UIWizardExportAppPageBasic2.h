@@ -24,11 +24,34 @@
 #include "UIWizardExportAppDefs.h"
 
 /* Forward declarations: */
-class QIRichTextLabel;
+class QGroupBox;
 class QRadioButton;
+class QIRichTextLabel;
 
-/* 2nd page of the Export Appliance wizard: */
-class UIWizardExportAppPageBasic2 : public UIWizardPage
+/* 2nd page of the Export Appliance wizard (base part): */
+class UIWizardExportAppPage2 : public UIWizardPageBase
+{
+protected:
+
+    /* Constructor: */
+    UIWizardExportAppPage2();
+
+    /* Helpers: */
+    void chooseDefaultStorageType();
+
+    /* Stuff for 'storageType' field: */
+    StorageType storageType() const;
+    void setStorageType(StorageType storageType);
+
+    /* Widgets: */
+    QGroupBox *m_pTypeCnt;
+    QRadioButton *m_pTypeLocalFilesystem;
+    QRadioButton *m_pTypeSunCloud;
+    QRadioButton *m_pTypeSimpleStorageSystem;
+};
+
+/* 2nd page of the Export Appliance wizard (basic extension): */
+class UIWizardExportAppPageBasic2 : public UIWizardPage, public UIWizardExportAppPage2
 {
     Q_OBJECT;
     Q_PROPERTY(StorageType storageType READ storageType WRITE setStorageType);
@@ -46,15 +69,8 @@ private:
     /* Prepare stuff: */
     void initializePage();
 
-    /* Stuff for 'storageType' field: */
-    StorageType storageType() const;
-    void setStorageType(StorageType storageType);
-
     /* Widgets: */
     QIRichTextLabel *m_pLabel;
-    QRadioButton *m_pTypeLocalFilesystem;
-    QRadioButton *m_pTypeSunCloud;
-    QRadioButton *m_pTypeSimpleStorageSystem;
 };
 
 #endif /* __UIWizardExportAppPageBasic2_h__ */

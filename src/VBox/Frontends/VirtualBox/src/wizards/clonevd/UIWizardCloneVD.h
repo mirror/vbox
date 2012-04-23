@@ -40,6 +40,12 @@ public:
         Page5
     };
 
+    /* Page IDs: */
+    enum
+    {
+        PageExpert
+    };
+
     /* Constructor: */
     UIWizardCloneVD(QWidget *pParent, const CMedium &sourceVirtualDisk);
 
@@ -56,13 +62,18 @@ protected:
 
     /* Who will be able to copy virtual-disk: */
     friend class UIWizardCloneVDPageBasic5;
+    friend class UIWizardCloneVDPageExpert;
 
 private:
 
     /* Translation stuff: */
     void retranslateUi();
 
+    /* Pages related stuff: */
+    void prepare();
+
     /* Variables: */
+    CMedium m_sourceVirtualDisk;
     CMedium m_virtualDisk;
 };
 

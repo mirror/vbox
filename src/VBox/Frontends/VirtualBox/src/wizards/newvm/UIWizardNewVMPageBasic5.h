@@ -25,8 +25,17 @@
 /* Forward declarations: */
 class QIRichTextLabel;
 
-/* 5th page of the New Virtual Machine wizard: */
-class UIWizardNewVMPageBasic5 : public UIWizardPage
+/* 5th page of the New Virtual Machine wizard (base part): */
+class UIWizardNewVMPage5 : public UIWizardPageBase
+{
+protected:
+
+    /* Constructor: */
+    UIWizardNewVMPage5();
+};
+
+/* 5th page of the New Virtual Machine wizard (basic extension): */
+class UIWizardNewVMPageBasic5 : public UIWizardPage, public UIWizardNewVMPage5
 {
     Q_OBJECT;
 
@@ -35,7 +44,7 @@ public:
     /* Constructor: */
     UIWizardNewVMPageBasic5();
 
-protected:
+private:
 
     /* Translate stuff: */
     void retranslateUi();
@@ -46,12 +55,10 @@ protected:
     /* Validation stuff: */
     bool validatePage();
 
-private:
-
     /* Widgets: */
-    QIRichTextLabel *m_pPage5Text1;
-    QIRichTextLabel *m_pSummaryText;
-    QIRichTextLabel *m_pPage5Text2;
+    QIRichTextLabel *m_pLabel1;
+    QIRichTextLabel *m_pSummary;
+    QIRichTextLabel *m_pLabel2;
 };
 
 #endif // __UIWizardNewVMPageBasic5_h__

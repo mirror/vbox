@@ -20,6 +20,7 @@
 #define __UIWizardPage_h__
 
 /* Global includes: */
+#include <QVariant>
 #include <QWizardPage>
 
 /* Local includes: */
@@ -27,8 +28,22 @@
 
 /* Forward declarations: */
 class UIWizard;
+class UIWizardPage;
 
-/* QWizardPage class reimplementation with extended funtionality. */
+/* One of interfaces for wizard page,
+ * providing API for basic/expert pages. */
+class UIWizardPageBase
+{
+protected:
+
+    /* Helpers: */
+    virtual UIWizard* wizardImp();
+    virtual UIWizardPage* thisImp();
+    virtual QVariant fieldImp(const QString &strFieldName) const;
+};
+
+/* One of interfaces for wizard page,
+ * QWizardPage class reimplementation with extended funtionality. */
 class UIWizardPage : public QIWithRetranslateUI<QWizardPage>
 {
     Q_OBJECT;
@@ -41,6 +56,12 @@ public:
     /* Translation stuff: */
     void retranslate() { retranslateUi(); }
 
+    /* Prepare stuff: */
+    void markReady();
+
+    /* Title stuff: */
+    void setTitle(const QString &strTitle);
+
 protected:
 
     /* Helpers: */
@@ -48,6 +69,10 @@ protected:
     QString standardHelpText() const;
     void startProcessing();
     void endProcessing();
+
+    /* Variables: */
+    bool m_fReady;
+    QString m_strTitle;
 };
 
 #endif // __UIWizardPage_h__

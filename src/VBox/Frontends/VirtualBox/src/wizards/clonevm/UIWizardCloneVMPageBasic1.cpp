@@ -19,6 +19,7 @@
 
 /* Global includes: */
 #include <QVBoxLayout>
+#include <QGroupBox>
 #include <QLineEdit>
 #include <QCheckBox>
 
@@ -28,24 +29,55 @@
 #include "COMDefs.h"
 #include "QIRichTextLabel.h"
 
-UIWizardCloneVMPageBasic1::UIWizardCloneVMPageBasic1(const QString &strOriginalName)
+UIWizardCloneVMPage1::UIWizardCloneVMPage1(const QString &strOriginalName)
     : m_strOriginalName(strOriginalName)
+{
+}
+
+QString UIWizardCloneVMPage1::cloneName() const
+{
+    return m_pNameEditor->text();
+}
+
+void UIWizardCloneVMPage1::setCloneName(const QString &strName)
+{
+    m_pNameEditor->setText(strName);
+}
+
+bool UIWizardCloneVMPage1::isReinitMACsChecked() const
+{
+    return m_pReinitMACsCheckBox->isChecked();
+}
+
+UIWizardCloneVMPageBasic1::UIWizardCloneVMPageBasic1(const QString &strOriginalName)
+    : UIWizardCloneVMPage1(strOriginalName)
 {
     /* Create widgets: */
     QVBoxLayout *pMainLayout = new QVBoxLayout(this);
+    {
         m_pLabel1 = new QIRichTextLabel(this);
         m_pLabel2 = new QIRichTextLabel(this);
-        m_pNameEditor = new QLineEdit(this);
-            m_pNameEditor->setText(UIWizardCloneVM::tr("%1 Clone").arg(m_strOriginalName));
+        m_pNameCnt = new QGroupBox(this);
+        {
+            QVBoxLayout *pNameCntLayout = new QVBoxLayout(m_pNameCnt);
+            {
+                m_pNameEditor = new QLineEdit(m_pNameCnt);
+                {
+                    m_pNameEditor->setText(UIWizardCloneVM::tr("%1 Clone").arg(m_strOriginalName));
+                }
+                pNameCntLayout->addWidget(m_pNameEditor);
+            }
+        }
         m_pReinitMACsCheckBox = new QCheckBox(this);
-    pMainLayout->addWidget(m_pLabel1);
-    pMainLayout->addWidget(m_pLabel2);
-    pMainLayout->addWidget(m_pNameEditor);
-    pMainLayout->addWidget(m_pReinitMACsCheckBox);
-    pMainLayout->addStretch();
+        pMainLayout->addWidget(m_pLabel1);
+        pMainLayout->addWidget(m_pLabel2);
+        pMainLayout->addWidget(m_pNameCnt);
+        pMainLayout->addWidget(m_pReinitMACsCheckBox);
+        pMainLayout->addStretch();
+    }
 
     /* Setup connections: */
-    connect(m_pNameEditor, SIGNAL(textChanged(const QString&)), this, SIGNAL(completeChanged()));
+    connect(m_pNameEditor, SIGNAL(textChanged(const QString &)), this, SIGNAL(completeChanged()));
 
     /* Register fields: */
     registerField("cloneName", this, "cloneName");
@@ -55,17 +87,15 @@ UIWizardCloneVMPageBasic1::UIWizardCloneVMPageBasic1(const QString &strOriginalN
 void UIWizardCloneVMPageBasic1::retranslateUi()
 {
     /* Translate page: */
-    setTitle(UIWizardCloneVM::tr("Welcome to the virtual machine clone wizard"));
+    setTitle(UIWizardCloneVM::tr("Welcome to the Clone Virtual Machine wizard!"));
 
     /* Translate widgets: */
     m_pLabel1->setText(UIWizardCloneVM::tr("<p>This wizard will help you to create a clone of your virtual machine.</p>"));
+    m_pLabel1->setText(m_pLabel1->text() + QString("<p>%1</p>").arg(standardHelpText()));
     m_pLabel2->setText(UIWizardCloneVM::tr("<p>Please choose a name for the new virtual machine:</p>"));
+    m_pNameCnt->setTitle(UIWizardCloneVM::tr("&Name"));
     m_pReinitMACsCheckBox->setToolTip(UIWizardCloneVM::tr("When checked a new unique MAC address will be assigned to all configured network cards."));
     m_pReinitMACsCheckBox->setText(UIWizardCloneVM::tr("&Reinitialize the MAC address of all network cards"));
-
-    /* Append page text with common part: */
-    QString strCommonPart = QString("<p>%1</p>").arg(standardHelpText());
-    m_pLabel1->setText(m_pLabel1->text() + strCommonPart);
 }
 
 void UIWizardCloneVMPageBasic1::initializePage()
@@ -76,36 +106,8 @@ void UIWizardCloneVMPageBasic1::initializePage()
 
 bool UIWizardCloneVMPageBasic1::isComplete() const
 {
+    /* Make sure VM name feat the rules: */
     QString strName = m_pNameEditor->text().trimmed();
     return !strName.isEmpty() && strName != m_strOriginalName;
-}
-
-bool UIWizardCloneVMPageBasic1::validatePage()
-{
-    if (isFinalPage())
-    {
-        /* Try to create the clone: */
-        startProcessing();
-        bool fResult = qobject_cast<UIWizardCloneVM*>(wizard())->cloneVM();
-        endProcessing();
-        return fResult;
-    }
-    else
-        return true;
-}
-
-QString UIWizardCloneVMPageBasic1::cloneName() const
-{
-    return m_pNameEditor->text();
-}
-
-void UIWizardCloneVMPageBasic1::setCloneName(const QString &strName)
-{
-    m_pNameEditor->setText(strName);
-}
-
-bool UIWizardCloneVMPageBasic1::isReinitMACsChecked() const
-{
-    return m_pReinitMACsCheckBox->isChecked();
 }
 

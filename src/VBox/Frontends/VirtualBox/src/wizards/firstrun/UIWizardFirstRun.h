@@ -38,6 +38,12 @@ public:
         Page3
     };
 
+    /* Page IDs: */
+    enum
+    {
+        PageExpert
+    };
+
     /* Constructor: */
     UIWizardFirstRun(QWidget *pParent, const CMachine &machine);
 
@@ -48,17 +54,22 @@ protected:
 
     /* Who will be able to export appliance: */
     friend class UIWizardFirstRunPageBasic3;
+    friend class UIWizardFirstRunPageExpert;
 
 private:
 
     /* Translate stuff: */
     void retranslateUi();
 
+    /* Pages related stuff: */
+    void prepare();
+
     /* Helping stuff: */
     static bool isBootHardDiskAttached(const CMachine &machine);
 
     /* Variables: */
     CMachine m_machine;
+    bool m_fHardDiskWasSet;
 };
 
 #endif // __UIFirstRunWzd_h__

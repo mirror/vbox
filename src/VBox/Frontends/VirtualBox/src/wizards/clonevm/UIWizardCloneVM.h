@@ -38,6 +38,12 @@ public:
         Page3
     };
 
+    /* Page IDs: */
+    enum
+    {
+        PageExpert
+    };
+
     /* Constructor: */
     UIWizardCloneVM(QWidget *pParent, const CMachine &machine, CSnapshot snapshot = CSnapshot());
 
@@ -50,11 +56,15 @@ protected:
     friend class UIWizardCloneVMPageBasic1;
     friend class UIWizardCloneVMPageBasic2;
     friend class UIWizardCloneVMPageBasic3;
+    friend class UIWizardCloneVMPageExpert;
 
 private:
 
     /* Translation stuff: */
     void retranslateUi();
+
+    /* Pages related stuff: */
+    void prepare();
 
     /* Variables: */
     CMachine m_machine;

@@ -22,33 +22,15 @@
 #include "UIWizardCloneVMPageBasic1.h"
 #include "UIWizardCloneVMPageBasic2.h"
 #include "UIWizardCloneVMPageBasic3.h"
+#include "UIWizardCloneVMPageExpert.h"
 #include "VBoxGlobal.h"
 #include "UIMessageCenter.h"
 
 UIWizardCloneVM::UIWizardCloneVM(QWidget *pParent, const CMachine &machine, CSnapshot snapshot /* = CSnapshot() */)
-    : UIWizard(pParent)
+    : UIWizard(pParent, UIWizardType_CloneVM)
     , m_machine(machine)
     , m_snapshot(snapshot)
 {
-#ifdef Q_WS_WIN
-    /* Hide window icon: */
-    setWindowIcon(QIcon());
-#endif /* Q_WS_WIN */
-
-    /* Create & add pages: */
-    setPage(Page1, new UIWizardCloneVMPageBasic1(m_machine.GetName()));
-    /* If we are having a snapshot we can show the "Linked" option. */
-    setPage(Page2, new UIWizardCloneVMPageBasic2(snapshot.isNull()));
-    /* If the machine has no snapshots, we don't bother the user about options for it. */
-    if (m_machine.GetSnapshotCount() > 0)
-        setPage(Page3, new UIWizardCloneVMPageBasic3(snapshot.isNull() ? false : snapshot.GetChildrenCount() > 0));
-
-    /* Translate wizard: */
-    retranslateUi();
-
-    /* Translate wizard pages: */
-    retranslateAllPages();
-
 #ifndef Q_WS_MAC
     /* Assign watermark: */
     assignWatermark(":/vmw_clone.png");
@@ -57,16 +39,6 @@ UIWizardCloneVM::UIWizardCloneVM(QWidget *pParent, const CMachine &machine, CSna
     /* Assign background image: */
     assignBackground(":/vmw_clone_bg.png");
 #endif /* Q_WS_MAC */
-
-    /* Resize wizard to 'golden ratio': */
-    resizeToGoldenRatio(UIWizardType_CloneVM);
-}
-
-void UIWizardCloneVM::retranslateUi()
-{
-    /* Translate wizard: */
-    setWindowTitle(tr("Clone Virtual Machine"));
-    setButtonText(QWizard::FinishButton, tr("Clone"));
 }
 
 bool UIWizardCloneVM::cloneVM()
@@ -78,22 +50,28 @@ bool UIWizardCloneVM::cloneVM()
     /* Should we create linked clone? */
     bool fLinked = field("linkedClone").toBool();
     /* Get clone mode: */
-    KCloneMode mode = page(Page3) ? field("cloneMode").value<KCloneMode>() : KCloneMode_MachineState;
+    KCloneMode cloneMode = (mode() == UIWizardMode_Basic && page(Page3)) ||
+                           (mode() == UIWizardMode_Expert && page(PageExpert)) ?
+                           field("cloneMode").value<KCloneMode>() : KCloneMode_MachineState;
 
+    /* Get VBox object: */
     CVirtualBox vbox = vboxGlobal().virtualBox();
-    const QString &strSettingsFile = vbox.ComposeMachineFilename(strName, QString::null);
 
+    /* Prepare machine for cloning: */
     CMachine srcMachine = m_machine;
+
     /* If the user like to create a linked clone from the current machine, we
      * have to take a little bit more action. First we create an snapshot, so
      * that new differencing images on the source VM are created. Based on that
      * we could use the new snapshot machine for cloning. */
     if (fLinked && m_snapshot.isNull())
     {
-        const QString &strId = m_machine.GetId();
-        CSession session = vboxGlobal().openSession(strId);
+        /* Open session: */
+        CSession session = vboxGlobal().openSession(m_machine.GetId());
         if (session.isNull())
             return false;
+
+        /* Prepare console: */
         CConsole console = session.GetConsole();
 
         /* Take the snapshot: */
@@ -131,6 +109,7 @@ bool UIWizardCloneVM::cloneVM()
     }
 
     /* Create a new machine object. */
+    const QString &strSettingsFile = vbox.ComposeMachineFilename(strName, QString::null);
     CMachine cloneMachine = vbox.CreateMachine(strSettingsFile, strName, QString::null, QString::null, false);
     if (!vbox.isOk())
     {
@@ -147,7 +126,7 @@ bool UIWizardCloneVM::cloneVM()
         options.append(KCloneOptions_Link);
 
     /* Start cloning. */
-    CProgress progress = srcMachine.CloneTo(cloneMachine, mode, options);
+    CProgress progress = srcMachine.CloneTo(cloneMachine, cloneMode, options);
     if (!srcMachine.isOk())
     {
         msgCenter().cannotCreateClone(srcMachine, this);
@@ -173,5 +152,40 @@ bool UIWizardCloneVM::cloneVM()
     }
 
     return true;
+}
+
+void UIWizardCloneVM::retranslateUi()
+{
+    /* Call to base-class: */
+    UIWizard::retranslateUi();
+
+    /* Translate wizard: */
+    setWindowTitle(tr("Clone Virtual Machine"));
+    setButtonText(QWizard::FinishButton, tr("Clone"));
+}
+
+void UIWizardCloneVM::prepare()
+{
+    /* Create corresponding pages: */
+    switch (mode())
+    {
+        case UIWizardMode_Basic:
+        {
+            setPage(Page1, new UIWizardCloneVMPageBasic1(m_machine.GetName()));
+            setPage(Page2, new UIWizardCloneVMPageBasic2(m_snapshot.isNull()));
+            if (m_machine.GetSnapshotCount() > 0)
+                setPage(Page3, new UIWizardCloneVMPageBasic3(m_snapshot.isNull() ? false : m_snapshot.GetChildrenCount() > 0));
+            break;
+        }
+        case UIWizardMode_Expert:
+        {
+            setPage(PageExpert, new UIWizardCloneVMPageExpert(m_machine.GetName(),
+                                                              m_snapshot.isNull(),
+                                                              m_snapshot.isNull() ? false : m_snapshot.GetChildrenCount() > 0));
+            break;
+        }
+    }
+    /* Call to base-class: */
+    UIWizard::prepare();
 }
 

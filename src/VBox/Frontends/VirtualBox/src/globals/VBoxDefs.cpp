@@ -42,6 +42,7 @@ const char* VBoxDefs::GUI_Scale = "GUI/Scale";
 const char* VBoxDefs::GUI_VirtualScreenToHostScreen = "GUI/VirtualScreenToHostScreen";
 const char* VBoxDefs::GUI_AutoresizeGuest = "GUI/AutoresizeGuest";
 const char* VBoxDefs::GUI_FirstRun = "GUI/FirstRun";
+const char* VBoxDefs::GUI_HideDescriptionForWizards = "GUI/HideDescriptionForWizards";
 const char* VBoxDefs::GUI_SaveMountedAtRuntime = "GUI/SaveMountedAtRuntime";
 const char* VBoxDefs::GUI_ShowMiniToolBar = "GUI/ShowMiniToolBar";
 const char* VBoxDefs::GUI_MiniToolBarAlignment = "GUI/MiniToolBarAlignment";

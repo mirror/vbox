@@ -24,13 +24,34 @@
 #include "COMDefs.h"
 
 /* Forward declarations: */
-class QIRichTextLabel;
 class QGroupBox;
 class VBoxMediaComboBox;
 class QIToolButton;
+class QIRichTextLabel;
 
-/* 1st page of the Clone Virtual Disk wizard: */
-class UIWizardCloneVDPageBasic1 : public UIWizardPage
+/* 1st page of the Clone Virtual Disk wizard (base part): */
+class UIWizardCloneVDPage1 : public UIWizardPageBase
+{
+protected:
+
+    /* Constructor: */
+    UIWizardCloneVDPage1();
+
+    /* Handlers: */
+    void onHandleOpenSourceDiskClick();
+
+    /* Stuff for 'sourceVirtualDisk' field: */
+    CMedium sourceVirtualDisk() const;
+    void setSourceVirtualDisk(const CMedium &sourceVirtualDisk);
+
+    /* Widgets: */
+    QGroupBox *m_pSourceDiskCnt;
+    VBoxMediaComboBox *m_pSourceDiskSelector;
+    QIToolButton *m_pSourceDiskOpenButton;
+};
+
+/* 1st page of the Clone Virtual Disk wizard (basic extension): */
+class UIWizardCloneVDPageBasic1 : public UIWizardPage, public UIWizardCloneVDPage1
 {
     Q_OBJECT;
     Q_PROPERTY(CMedium sourceVirtualDisk READ sourceVirtualDisk WRITE setSourceVirtualDisk);
@@ -39,6 +60,11 @@ public:
 
     /* Constructor: */
     UIWizardCloneVDPageBasic1(const CMedium &sourceVirtualDisk);
+
+protected:
+
+    /* Wrapper to access 'this' from base part: */
+    UIWizardPage* thisImp() { return this; }
 
 private slots:
 
@@ -56,15 +82,8 @@ private:
     /* Validation stuff: */
     bool isComplete() const;
 
-    /* Stuff for 'sourceVirtualDisk' field: */
-    CMedium sourceVirtualDisk() const;
-    void setSourceVirtualDisk(const CMedium &sourceVirtualDisk);
-
     /* Widgets: */
     QIRichTextLabel *m_pLabel;
-    QGroupBox *m_pSourceDiskContainer;
-    VBoxMediaComboBox *m_pSourceDiskSelector;
-    QIToolButton *m_pOpenSourceDiskButton;
 };
 
 #endif // __UIWizardCloneVDPageBasic1_h__

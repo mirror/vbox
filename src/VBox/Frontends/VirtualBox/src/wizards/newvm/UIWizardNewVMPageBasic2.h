@@ -23,13 +23,49 @@
 #include "UIWizardPage.h"
 
 /* Forward declarations: */
-class QIRichTextLabel;
 class QGroupBox;
 class QLineEdit;
 class VBoxOSTypeSelectorWidget;
+class QIRichTextLabel;
 
-/* 2nd page of the New Virtual Machine wizard: */
-class UIWizardNewVMPageBasic2 : public UIWizardPage
+/* 2nd page of the New Virtual Machine wizard (base part): */
+class UIWizardNewVMPage2 : public UIWizardPageBase
+{
+protected:
+
+    /* Constructor: */
+    UIWizardNewVMPage2();
+
+    /* Handlers: */
+    void onNameChanged(const QString &strNewName);
+    void onOsTypeChanged();
+
+    /* Helping stuff: */
+    bool machineFolderCreated();
+    bool createMachineFolder();
+    bool cleanupMachineFolder();
+
+    /* Stuff for 'machineFolder' field: */
+    QString machineFolder() const { return m_strMachineFolder; }
+    void setMachineFolder(const QString &strMachineFolder) { m_strMachineFolder = strMachineFolder; }
+
+    /* Stuff for 'machineBaseName' field: */
+    QString machineBaseName() const { return m_strMachineBaseName; }
+    void setMachineBaseName(const QString &strMachineBaseName) { m_strMachineBaseName = strMachineBaseName; }
+
+    /* Variables: */
+    QString m_strMachineFolder;
+    QString m_strMachineBaseName;
+
+    /* Widgets: */
+    QGroupBox *m_pNameCnt;
+    QLineEdit *m_pNameEditor;
+    QGroupBox *m_pTypeCnt;
+    VBoxOSTypeSelectorWidget *m_pTypeSelector;
+};
+
+/* 2nd page of the New Virtual Machine wizard (basic extension): */
+class UIWizardNewVMPageBasic2 : public UIWizardPage, public UIWizardNewVMPage2
 {
     Q_OBJECT;
     Q_PROPERTY(QString machineFolder READ machineFolder WRITE setMachineFolder);
@@ -39,6 +75,11 @@ public:
 
     /* Constructor: */
     UIWizardNewVMPageBasic2();
+
+protected:
+
+    /* Wrapper to access 'this' from base part: */
+    UIWizardPage* thisImp() { return this; }
 
 private slots:
 
@@ -58,27 +99,8 @@ private:
     /* Validation stuff: */
     bool validatePage();
 
-    /* Helping stuff: */
-    bool machineFolderCreated();
-    bool createMachineFolder();
-    bool cleanupMachineFolder();
-
-    /* Stuff for 'machineFolder' field: */
-    QString machineFolder() const;
-    void setMachineFolder(const QString &strMachineFolder);
-    QString m_strMachineFolder;
-
-    /* Stuff for 'machineBaseName' field: */
-    QString machineBaseName() const;
-    void setMachineBaseName(const QString &strMachineBaseName);
-    QString m_strMachineBaseName;
-
     /* Widgets: */
     QIRichTextLabel *m_pLabel;
-    QGroupBox *m_pNameEditorCnt;
-    QLineEdit *m_pNameEditor;
-    QGroupBox *m_pTypeSelectorCnt;
-    VBoxOSTypeSelectorWidget *m_pTypeSelector;
 };
 
 #endif // __UIWizardNewVMPageBasic2_h__

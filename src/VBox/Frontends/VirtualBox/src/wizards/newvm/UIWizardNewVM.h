@@ -40,6 +40,12 @@ public:
         Page5
     };
 
+    /* Page IDs: */
+    enum
+    {
+        PageExpert
+    };
+
     /* Constructor: */
     UIWizardNewVM(QWidget *pParent);
 
@@ -50,11 +56,15 @@ protected:
 
     /* Who will be able to create virtual-machine: */
     friend class UIWizardNewVMPageBasic5;
+    friend class UIWizardNewVMPageExpert;
 
 private:
 
     /* Translation stuff: */
     void retranslateUi();
+
+    /* Pages related stuff: */
+    void prepare();
 
     /* Helping stuff: */
     QString getNextControllerName(KStorageBus type);

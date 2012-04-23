@@ -25,20 +25,28 @@
 #include "UIWizardImportApp.h"
 #include "QIRichTextLabel.h"
 
+UIWizardImportAppPage2::UIWizardImportAppPage2()
+{
+}
+
 UIWizardImportAppPageBasic2::UIWizardImportAppPageBasic2(const QString &strFileName)
 {
     /* Create widgets: */
     QVBoxLayout *pMainLayout = new QVBoxLayout(this);
+    {
         m_pLabel = new QIRichTextLabel(this);
         m_pApplianceWidget = new UIApplianceImportEditorWidget(this);
+        {
             m_pApplianceWidget->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::MinimumExpanding);
             m_pApplianceWidget->setFile(strFileName);
-    pMainLayout->addWidget(m_pLabel);
-    pMainLayout->addWidget(m_pApplianceWidget);
+        }
+        pMainLayout->addWidget(m_pLabel);
+        pMainLayout->addWidget(m_pApplianceWidget);
+    }
 
-    /* Register ImportAppliancePointer class: */
+    /* Register classes: */
     qRegisterMetaType<ImportAppliancePointer>();
-    /* Register 'applianceWidget' field! */
+    /* Register fields: */
     registerField("applianceWidget", this, "applianceWidget");
 }
 
@@ -70,10 +78,20 @@ void UIWizardImportAppPageBasic2::cleanupPage()
 
 bool UIWizardImportAppPageBasic2::validatePage()
 {
-    /* Import appliance: */
+    /* Initial result: */
+    bool fResult = true;
+
+    /* Lock finish button: */
     startProcessing();
-    bool fResult = qobject_cast<UIWizardImportApp*>(wizard())->importAppliance();
+
+    /* Try to import appliance: */
+    if (fResult)
+        fResult = qobject_cast<UIWizardImportApp*>(wizard())->importAppliance();
+
+    /* Unlock finish button: */
     endProcessing();
+
+    /* Return result: */
     return fResult;
 }
 

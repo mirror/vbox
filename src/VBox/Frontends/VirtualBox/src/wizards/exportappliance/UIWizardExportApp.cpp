@@ -28,24 +28,14 @@
 #include "UIWizardExportAppPageBasic2.h"
 #include "UIWizardExportAppPageBasic3.h"
 #include "UIWizardExportAppPageBasic4.h"
+#include "UIWizardExportAppPageExpert.h"
 #include "COMDefs.h"
 #include "UIMessageCenter.h"
 
 UIWizardExportApp::UIWizardExportApp(QWidget *pParent, const QStringList &selectedVMNames)
-    : UIWizard(pParent)
+    : UIWizard(pParent, UIWizardType_ExportAppliance)
+    , m_selectedVMNames(selectedVMNames)
 {
-    /* Create & add pages */
-    setPage(Page1, new UIWizardExportAppPageBasic1(selectedVMNames));
-    setPage(Page2, new UIWizardExportAppPageBasic2);
-    setPage(Page3, new UIWizardExportAppPageBasic3);
-    setPage(Page4, new UIWizardExportAppPageBasic4);
-
-    /* Translate wizard: */
-    retranslateUi();
-
-    /* Translate wizard pages: */
-    retranslateAllPages();
-
 #ifndef Q_WS_MAC
     /* Assign watermark: */
     assignWatermark(":/vmw_ovf_export.png");
@@ -53,14 +43,6 @@ UIWizardExportApp::UIWizardExportApp(QWidget *pParent, const QStringList &select
     /* Assign background image: */
     assignBackground(":/vmw_ovf_export_bg.png");
 #endif /* Q_WS_MAC */
-
-    /* Resize wizard to 'golden ratio': */
-    resizeToGoldenRatio(UIWizardType_ExportAppliance);
-
-    /* Setup connections: */
-    AssertMsg(!field("applianceWidget").value<ExportAppliancePointer>().isNull(), ("Appliance Widget is not set!\n"));
-    connect(this, SIGNAL(customButtonClicked(int)), field("applianceWidget").value<ExportAppliancePointer>(), SLOT(restoreDefaults()));
-    connect(this, SIGNAL(currentIdChanged(int)), this, SLOT(sltCurrentIdChanged(int)));
 }
 
 bool UIWizardExportApp::exportAppliance()
@@ -218,16 +200,62 @@ QString UIWizardExportApp::uri(bool fWithFile) const
     return QString();
 }
 
+void UIWizardExportApp::sltCurrentIdChanged(int iId)
+{
+    /* Call to base-class: */
+    UIWizard::sltCurrentIdChanged(iId);
+    /* Enable 2nd button (Reset to Defaults) for 4th and Expert pages only! */
+    setOption(QWizard::HaveCustomButton2, (mode() == UIWizardMode_Basic && iId == Page4) ||
+                                          (mode() == UIWizardMode_Expert && iId == PageExpert));
+}
+
+void UIWizardExportApp::sltCustomButtonClicked(int iId)
+{
+    /* Call to base-class: */
+    UIWizard::sltCustomButtonClicked(iId);
+
+    /* Handle 2nd button: */
+    if (iId == CustomButton2)
+    {
+        /* Get appliance widget: */
+        ExportAppliancePointer pApplianceWidget = field("applianceWidget").value<ExportAppliancePointer>();
+        AssertMsg(!pApplianceWidget.isNull(), ("Appliance Widget is not set!\n"));
+        /* Reset it to default: */
+        pApplianceWidget->restoreDefaults();
+    }
+}
+
 void UIWizardExportApp::retranslateUi()
 {
+    /* Call to base-class: */
+    UIWizard::retranslateUi();
+
     /* Translate wizard: */
     setWindowTitle(tr("Appliance Export Wizard"));
-    setButtonText(QWizard::CustomButton1, tr("Restore Defaults"));
+    setButtonText(QWizard::CustomButton2, tr("Restore Defaults"));
     setButtonText(QWizard::FinishButton, tr("Export"));
 }
 
-void UIWizardExportApp::sltCurrentIdChanged(int iId)
+void UIWizardExportApp::prepare()
 {
-    setOption(QWizard::HaveCustomButton1, iId == Page4);
+    /* Create corresponding pages: */
+    switch (mode())
+    {
+        case UIWizardMode_Basic:
+        {
+            setPage(Page1, new UIWizardExportAppPageBasic1(m_selectedVMNames));
+            setPage(Page2, new UIWizardExportAppPageBasic2);
+            setPage(Page3, new UIWizardExportAppPageBasic3);
+            setPage(Page4, new UIWizardExportAppPageBasic4);
+            break;
+        }
+        case UIWizardMode_Expert:
+        {
+            setPage(PageExpert, new UIWizardExportAppPageExpert(m_selectedVMNames));
+            break;
+        }
+    }
+    /* Call to base-class: */
+    UIWizard::prepare();
 }
 

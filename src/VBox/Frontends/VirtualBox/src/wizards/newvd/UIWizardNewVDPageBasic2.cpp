@@ -19,9 +19,10 @@
 
 /* Global includes: */
 #include <QVBoxLayout>
+#include <QGroupBox>
+#include <QButtonGroup>
 #include <QRadioButton>
 #include <QCheckBox>
-#include <QGroupBox>
 
 /* Local includes: */
 #include "UIWizardNewVDPageBasic2.h"
@@ -29,39 +30,91 @@
 #include "COMDefs.h"
 #include "QIRichTextLabel.h"
 
+UIWizardNewVDPage2::UIWizardNewVDPage2()
+{
+}
+
+qulonglong UIWizardNewVDPage2::mediumVariant() const
+{
+    /* Initial value: */
+    qulonglong uMediumVariant = (qulonglong)KMediumVariant_Max;
+
+    /* Exclusive options: */
+    if (m_pDynamicalButton->isChecked())
+        uMediumVariant = (qulonglong)KMediumVariant_Standard;
+    else if (m_pFixedButton->isChecked())
+        uMediumVariant = (qulonglong)KMediumVariant_Fixed;
+
+    /* Additional options: */
+    if (m_pSplitBox->isChecked())
+        uMediumVariant |= (qulonglong)KMediumVariant_VmdkSplit2G;
+
+    /* Return options: */
+    return uMediumVariant;
+}
+
+void UIWizardNewVDPage2::setMediumVariant(qulonglong uMediumVariant)
+{
+    /* Exclusive options: */
+    if (uMediumVariant & (qulonglong)KMediumVariant_Fixed)
+    {
+        m_pFixedButton->click();
+        m_pFixedButton->setFocus();
+    }
+    else
+    {
+        m_pDynamicalButton->click();
+        m_pDynamicalButton->setFocus();
+    }
+
+    /* Additional options: */
+    m_pSplitBox->setChecked(uMediumVariant & (qulonglong)KMediumVariant_VmdkSplit2G);
+}
+
 UIWizardNewVDPageBasic2::UIWizardNewVDPageBasic2()
-    : m_pDynamicalButton(0), m_pFixedButton(0), m_pSplitBox(0)
 {
     /* Create widgets: */
     QVBoxLayout *pMainLayout = new QVBoxLayout(this);
+    {
         m_pDescriptionLabel = new QIRichTextLabel(this);
         m_pDynamicLabel = new QIRichTextLabel(this);
         m_pFixedLabel = new QIRichTextLabel(this);
         m_pSplitLabel = new QIRichTextLabel(this);
-        m_pVariantContainer = new QGroupBox(this);
-            m_pVariantContainer->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Fixed);
-            QVBoxLayout *pVariantsLayout = new QVBoxLayout(m_pVariantContainer);
-                m_pDynamicalButton = new QRadioButton(m_pVariantContainer);
-                    m_pDynamicalButton->click();
-                    m_pDynamicalButton->setFocus();
-                m_pFixedButton = new QRadioButton(m_pVariantContainer);
-                m_pSplitBox = new QCheckBox(m_pVariantContainer);
-            pVariantsLayout->addWidget(m_pDynamicalButton);
-            pVariantsLayout->addWidget(m_pFixedButton);
-            pVariantsLayout->addWidget(m_pSplitBox);
-    pMainLayout->addWidget(m_pDescriptionLabel);
-    pMainLayout->addWidget(m_pDynamicLabel);
-    pMainLayout->addWidget(m_pFixedLabel);
-    pMainLayout->addWidget(m_pSplitLabel);
-    pMainLayout->addWidget(m_pVariantContainer);
-    pMainLayout->addStretch();
+        m_pVariantCnt = new QGroupBox(this);
+        {
+            m_pVariantCnt->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Fixed);
+            QVBoxLayout *pVariantCntLayout = new QVBoxLayout(m_pVariantCnt);
+            {
+                m_pVariantButtonGroup = new QButtonGroup(m_pVariantCnt);
+                {
+                    m_pDynamicalButton = new QRadioButton(m_pVariantCnt);
+                    {
+                        m_pDynamicalButton->click();
+                        m_pDynamicalButton->setFocus();
+                    }
+                    m_pFixedButton = new QRadioButton(m_pVariantCnt);
+                    m_pVariantButtonGroup->addButton(m_pDynamicalButton, 0);
+                    m_pVariantButtonGroup->addButton(m_pFixedButton, 1);
+                }
+                m_pSplitBox = new QCheckBox(m_pVariantCnt);
+                pVariantCntLayout->addWidget(m_pDynamicalButton);
+                pVariantCntLayout->addWidget(m_pFixedButton);
+                pVariantCntLayout->addWidget(m_pSplitBox);
+            }
+        }
+        pMainLayout->addWidget(m_pDescriptionLabel);
+        pMainLayout->addWidget(m_pDynamicLabel);
+        pMainLayout->addWidget(m_pFixedLabel);
+        pMainLayout->addWidget(m_pSplitLabel);
+        pMainLayout->addWidget(m_pVariantCnt);
+        pMainLayout->addStretch();
+    }
 
     /* Setup connections: */
-    connect(m_pDynamicalButton, SIGNAL(clicked(bool)), this, SIGNAL(completeChanged()));
-    connect(m_pFixedButton, SIGNAL(clicked(bool)), this, SIGNAL(completeChanged()));
+    connect(m_pVariantButtonGroup, SIGNAL(buttonClicked(QAbstractButton *)), this, SIGNAL(completeChanged()));
     connect(m_pSplitBox, SIGNAL(stateChanged(int)), this, SIGNAL(completeChanged()));
 
-    /* Register 'mediumVariant' field: */
+    /* Register fields: */
     registerField("mediumVariant", this, "mediumVariant");
 }
 
@@ -82,9 +135,7 @@ void UIWizardNewVDPageBasic2::retranslateUi()
                                              "of up to two gigabytes each. This is mainly useful if you wish to store the "
                                              "virtual machine on removable USB devices or old systems, some of which cannot "
                                              "handle very large files."));
-    m_pVariantContainer->setTitle(UIWizardNewVD::tr("Storage details"));
-
-    /* Translate buttons: */
+    m_pVariantCnt->setTitle(UIWizardNewVD::tr("Storage details"));
     m_pDynamicalButton->setText(UIWizardNewVD::tr("&Dynamically allocated"));
     m_pFixedButton->setText(UIWizardNewVD::tr("&Fixed size"));
     m_pSplitBox->setText(UIWizardNewVD::tr("&Split into files of less than 2GB"));
@@ -111,43 +162,7 @@ void UIWizardNewVDPageBasic2::initializePage()
 
 bool UIWizardNewVDPageBasic2::isComplete() const
 {
+    /* Make sure medium variant is correct: */
     return mediumVariant() != (qulonglong)KMediumVariant_Max;
-}
-
-qulonglong UIWizardNewVDPageBasic2::mediumVariant() const
-{
-    /* Initial value: */
-    qulonglong uMediumVariant = (qulonglong)KMediumVariant_Max;
-
-    /* Exclusive options: */
-    if (m_pDynamicalButton->isChecked())
-        uMediumVariant = (qulonglong)KMediumVariant_Standard;
-    else if (m_pFixedButton->isChecked())
-        uMediumVariant = (qulonglong)KMediumVariant_Fixed;
-
-    /* Additional options: */
-    if (m_pSplitBox->isChecked())
-        uMediumVariant |= (qulonglong)KMediumVariant_VmdkSplit2G;
-
-    /* Return options: */
-    return uMediumVariant;
-}
-
-void UIWizardNewVDPageBasic2::setMediumVariant(qulonglong uMediumVariant)
-{
-    /* Exclusive options: */
-    if (uMediumVariant & (qulonglong)KMediumVariant_Fixed)
-    {
-        m_pFixedButton->click();
-        m_pFixedButton->setFocus();
-    }
-    else
-    {
-        m_pDynamicalButton->click();
-        m_pDynamicalButton->setFocus();
-    }
-
-    /* Additional options: */
-    m_pSplitBox->setChecked(uMediumVariant & (qulonglong)KMediumVariant_VmdkSplit2G);
 }
 

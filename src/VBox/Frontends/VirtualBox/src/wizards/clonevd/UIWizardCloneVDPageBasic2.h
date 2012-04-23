@@ -25,13 +25,37 @@
 
 /* Forward declarations: */
 class QVBoxLayout;
-class QRadioButton;
-class QIRichTextLabel;
 class QGroupBox;
 class QButtonGroup;
+class QRadioButton;
+class QIRichTextLabel;
 
-/* 2nd page of the Clone Virtual Disk wizard: */
-class UIWizardCloneVDPageBasic2 : public UIWizardPage
+/* 2nd page of the Clone Virtual Disk wizard (base part): */
+class UIWizardCloneVDPage2 : public UIWizardPageBase
+{
+protected:
+
+    /* Constructor: */
+    UIWizardCloneVDPage2();
+
+    /* Helping stuff: */
+    QRadioButton* addFormatButton(QVBoxLayout *pFormatsLayout, CMediumFormat mediumFormat);
+
+    /* Stuff for 'mediumFormat' field: */
+    CMediumFormat mediumFormat() const;
+    void setMediumFormat(const CMediumFormat &mediumFormat);
+
+    /* Variables: */
+    QButtonGroup *m_pFormatButtonGroup;
+    QList<CMediumFormat> m_formats;
+    QStringList m_formatNames;
+
+    /* Widgets: */
+    QGroupBox *m_pFormatCnt;
+};
+
+/* 2nd page of the Clone Virtual Disk wizard (basic extension): */
+class UIWizardCloneVDPageBasic2 : public UIWizardPage, public UIWizardCloneVDPage2
 {
     Q_OBJECT;
     Q_PROPERTY(CMediumFormat mediumFormat READ mediumFormat WRITE setMediumFormat);
@@ -55,22 +79,8 @@ private:
     /* Navigation stuff: */
     int nextId() const;
 
-    /* Helping stuff: */
-    QRadioButton* addFormatButton(QVBoxLayout *pFormatsLayout, CMediumFormat mediumFormat);
-
-    /* Stuff for 'mediumFormat' field: */
-    CMediumFormat mediumFormat() const;
-    void setMediumFormat(const CMediumFormat &mediumFormat);
-
-    /* Variables: */
-    QRadioButton *m_pDefaultButton;
-    QButtonGroup *m_pButtonGroup;
-    QList<CMediumFormat> m_formats;
-    QStringList m_formatNames;
-
     /* Widgets: */
     QIRichTextLabel *m_pLabel;
-    QGroupBox *m_pFormatContainer;
 };
 
 #endif // __UIWizardCloneVDPageBasic2_h__

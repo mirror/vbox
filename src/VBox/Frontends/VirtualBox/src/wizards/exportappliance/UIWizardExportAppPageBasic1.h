@@ -23,11 +23,34 @@
 #include "UIWizardPage.h"
 
 /* Forward declarations: */
-class QIRichTextLabel;
+class QILabelSeparator;
 class QListWidget;
+class QIRichTextLabel;
 
-/* 1st page of the Export Appliance wizard: */
-class UIWizardExportAppPageBasic1 : public UIWizardPage
+/* 1st page of the Export Appliance wizard (base part): */
+class UIWizardExportAppPage1 : public UIWizardPageBase
+{
+protected:
+
+    /* Constructor: */
+    UIWizardExportAppPage1();
+
+    /* Helping stuff: */
+    void populateVMSelectorItems(const QStringList &selectedVMNames);
+
+    /* Stuff for 'machineNames' field: */
+    QStringList machineNames() const;
+
+    /* Stuff for 'machineIDs' field: */
+    QStringList machineIDs() const;
+
+    /* Widgets: */
+    QILabelSeparator *m_pVMSelectorLabel;
+    QListWidget *m_pVMSelector;
+};
+
+/* 1st page of the Export Appliance wizard (basic extension): */
+class UIWizardExportAppPageBasic1 : public UIWizardPage, public UIWizardExportAppPage1
 {
     Q_OBJECT;
     Q_PROPERTY(QStringList machineNames READ machineNames);
@@ -53,21 +76,8 @@ private:
     /* Navigation stuff: */
     int nextId() const;
 
-    /* Helping stuff: */
-    void populateVMSelectorItems();
-
-    /* Stuff for 'machineNames' field: */
-    QStringList machineNames() const;
-
-    /* Stuff for 'machineIDs' field: */
-    QStringList machineIDs() const;
-
-    /* Variables: */
-    QStringList m_selectedVMNames;
-
     /* Widgets: */
     QIRichTextLabel *m_pLabel;
-    QListWidget *m_pVMSelector;
 };
 
 #endif /* __UIWizardExportAppPageBasic1_h__ */

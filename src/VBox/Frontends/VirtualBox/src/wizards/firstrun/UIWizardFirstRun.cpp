@@ -22,27 +22,15 @@
 #include "UIWizardFirstRunPageBasic1.h"
 #include "UIWizardFirstRunPageBasic2.h"
 #include "UIWizardFirstRunPageBasic3.h"
+#include "UIWizardFirstRunPageExpert.h"
 #include "VBoxGlobal.h"
 #include "UIMessageCenter.h"
 
 UIWizardFirstRun::UIWizardFirstRun(QWidget *pParent, const CMachine &machine)
-    : UIWizard(pParent)
+    : UIWizard(pParent, UIWizardType_FirstRun)
     , m_machine(machine)
+    , m_fHardDiskWasSet(isBootHardDiskAttached(m_machine))
 {
-    /* Check if boot hard disk was set: */
-    bool fHardDiskWasSet = isBootHardDiskAttached(machine);
-
-    /* Create & add pages: */
-    setPage(Page1, new UIWizardFirstRunPageBasic1(fHardDiskWasSet));
-    setPage(Page2, new UIWizardFirstRunPageBasic2(machine, fHardDiskWasSet));
-    setPage(Page3, new UIWizardFirstRunPageBasic3(fHardDiskWasSet));
-
-    /* Translate wizard: */
-    retranslateUi();
-
-    /* Translate wizard pages: */
-    retranslateAllPages();
-
 #ifndef Q_WS_MAC
     /* Assign watermark: */
     assignWatermark(":/vmw_first_run.png");
@@ -50,9 +38,6 @@ UIWizardFirstRun::UIWizardFirstRun(QWidget *pParent, const CMachine &machine)
     /* Assign background image: */
     assignBackground(":/vmw_first_run_bg.png");
 #endif /* Q_WS_MAC */
-
-    /* Resize to 'golden ratio': */
-    resizeToGoldenRatio(UIWizardType_FirstRun);
 }
 
 bool UIWizardFirstRun::insertMedium()
@@ -102,9 +87,34 @@ bool UIWizardFirstRun::insertMedium()
 
 void UIWizardFirstRun::retranslateUi()
 {
+    /* Call to base-class: */
+    UIWizard::retranslateUi();
+
     /* Translate wizard: */
     setWindowTitle(tr("First Run Wizard"));
     setButtonText(QWizard::FinishButton, tr("Start"));
+}
+
+void UIWizardFirstRun::prepare()
+{
+    /* Create corresponding pages: */
+    switch (mode())
+    {
+        case UIWizardMode_Basic:
+        {
+            setPage(Page1, new UIWizardFirstRunPageBasic1(m_fHardDiskWasSet));
+            setPage(Page2, new UIWizardFirstRunPageBasic2(m_machine.GetId(), m_fHardDiskWasSet));
+            setPage(Page3, new UIWizardFirstRunPageBasic3(m_fHardDiskWasSet));
+            break;
+        }
+        case UIWizardMode_Expert:
+        {
+            setPage(PageExpert, new UIWizardFirstRunPageExpert(m_machine.GetId(), m_fHardDiskWasSet));
+            break;
+        }
+    }
+    /* Call to base-class: */
+    UIWizard::prepare();
 }
 
 /* static */

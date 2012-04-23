@@ -23,14 +23,35 @@
 #include "UIWizardPage.h"
 
 /* Forward declarations: */
-class QIRichTextLabel;
 class QGroupBox;
 class VBoxGuestRAMSlider;
 class QILineEdit;
 class QLabel;
+class QIRichTextLabel;
 
-/* 3rd page of the New Virtual Machine wizard: */
-class UIWizardNewVMPageBasic3 : public UIWizardPage
+/* 3rd page of the New Virtual Machine wizard (base part): */
+class UIWizardNewVMPage3 : public UIWizardPageBase
+{
+protected:
+
+    /* Constructor: */
+    UIWizardNewVMPage3();
+
+    /* Handlers: */
+    void onRamSliderValueChanged(int iValue);
+    void onRamEditorTextChanged(const QString &strText);
+
+    /* Widgets: */
+    QGroupBox *m_pMemoryCnt;
+    VBoxGuestRAMSlider *m_pRamSlider;
+    QILineEdit *m_pRamEditor;
+    QLabel *m_pRamMin;
+    QLabel *m_pRamMax;
+    QLabel *m_pRamUnits;
+};
+
+/* 3rd page of the New Virtual Machine wizard (basic extension): */
+class UIWizardNewVMPageBasic3 : public UIWizardPage, public UIWizardNewVMPage3
 {
     Q_OBJECT;
 
@@ -42,8 +63,8 @@ public:
 private slots:
 
     /* Handlers: */
-    void ramSliderValueChanged(int iValue);
-    void ramEditorTextChanged(const QString &strText);
+    void sltRamSliderValueChanged(int iValue);
+    void sltRamEditorTextChanged(const QString &strText);
 
 private:
 
@@ -59,12 +80,6 @@ private:
     /* Widgets: */
     QIRichTextLabel *m_pLabel1;
     QIRichTextLabel *m_pLabel2;
-    QGroupBox *m_pMemoryCnt;
-    VBoxGuestRAMSlider *m_pRamSlider;
-    QILineEdit *m_pRamEditor;
-    QLabel *m_pRamMin;
-    QLabel *m_pRamMax;
-    QLabel *m_pRamUnits;
 };
 
 #endif // __UINewVMWzd_h__

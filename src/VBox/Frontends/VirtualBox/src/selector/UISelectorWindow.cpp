@@ -215,7 +215,7 @@ void UISelectorWindow::sltShowImportApplianceWizard(const QString &strFileName /
 #else /* Q_WS_MAC */
     QString strTmpFile = strFileName;
 #endif /* !Q_WS_MAC */
-    UIWizardImportApp wizard(strTmpFile, this);
+    UIWizardImportApp wizard(this, strTmpFile);
     if (strFileName.isEmpty() || wizard.isValid())
         wizard.exec();
 }

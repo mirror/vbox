@@ -19,15 +19,39 @@
 #ifndef __UIWizardExportAppPageBasic4_h__
 #define __UIWizardExportAppPageBasic4_h__
 
+/* Global includes: */
+#include <QVariant>
+
 /* Local includes: */
 #include "UIWizardPage.h"
 #include "UIWizardExportAppDefs.h"
 
 /* Forward declarations: */
+class QILabelSeparator;
+class UIWizardExportApp;
 class QIRichTextLabel;
 
-/* 4th page of the Export Appliance wizard: */
-class UIWizardExportAppPageBasic4 : public UIWizardPage
+/* 4th page of the Export Appliance wizard (base part): */
+class UIWizardExportAppPage4 : public UIWizardPageBase
+{
+protected:
+
+    /* Constructor: */
+    UIWizardExportAppPage4();
+
+    /* Helpers: */
+    void refreshApplianceSettingsWidget(    );
+
+    /* Stuff for 'applianceWidget' field: */
+    ExportAppliancePointer applianceWidget() const { return m_pApplianceWidget; }
+
+    /* Widgets: */
+    QILabelSeparator *m_pVMApplianceLabel;
+    UIApplianceExportEditorWidget *m_pApplianceWidget;
+};
+
+/* 4th page of the Export Appliance wizard (basic extension): */
+class UIWizardExportAppPageBasic4 : public UIWizardPage, public UIWizardExportAppPage4
 {
     Q_OBJECT;
     Q_PROPERTY(ExportAppliancePointer applianceWidget READ applianceWidget);
@@ -36,6 +60,15 @@ public:
 
     /* Constructor: */
     UIWizardExportAppPageBasic4();
+
+protected:
+
+    /* Wrapper to access 'wizard' from base part: */
+    UIWizard* wizardImp() { return UIWizardPage::wizard(); }
+    /* Wrapper to access 'this' from base part: */
+    UIWizardPage* thisImp() { return this; }
+    /* Wrapper to access 'wizard-field' from base part: */
+    QVariant fieldImp(const QString &strFieldName) const { return UIWizardPage::field(strFieldName); }
 
 private:
 
@@ -48,12 +81,8 @@ private:
     /* Validation stuff: */
     bool validatePage();
 
-    /* Stuff for 'applianceWidget' field: */
-    ExportAppliancePointer applianceWidget() const { return m_pApplianceWidget; }
-
     /* Widgets: */
     QIRichTextLabel *m_pLabel;
-    UIApplianceExportEditorWidget *m_pApplianceWidget;
 };
 
 #endif /* __UIWizardExportAppPageBasic4_h__ */

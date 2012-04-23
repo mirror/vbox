@@ -25,13 +25,37 @@
 
 /* Forward declarations: */
 class QVBoxLayout;
+class QButtonGroup;
+class QGroupBox;
 class QRadioButton;
 class QIRichTextLabel;
-class QGroupBox;
-class QButtonGroup;
 
-/* 1st page of the New Virtual Disk wizard: */
-class UIWizardNewVDPageBasic1 : public UIWizardPage
+/* 1st page of the New Virtual Disk wizard (base part): */
+class UIWizardNewVDPage1 : public UIWizardPageBase
+{
+protected:
+
+    /* Constructor: */
+    UIWizardNewVDPage1();
+
+    /* Helping stuff: */
+    QRadioButton* addFormatButton(QVBoxLayout *pFormatsLayout, CMediumFormat mf);
+
+    /* Stuff for 'mediumFormat' field: */
+    CMediumFormat mediumFormat() const;
+    void setMediumFormat(const CMediumFormat &mediumFormat);
+
+    /* Variables: */
+    QButtonGroup *m_pFormatButtonGroup;
+    QList<CMediumFormat> m_formats;
+    QStringList m_formatNames;
+
+    /* Widgets: */
+    QGroupBox *m_pFormatCnt;
+};
+
+/* 1st page of the New Virtual Disk wizard (basic extension): */
+class UIWizardNewVDPageBasic1 : public UIWizardPage, public UIWizardNewVDPage1
 {
     Q_OBJECT;
     Q_PROPERTY(CMediumFormat mediumFormat READ mediumFormat WRITE setMediumFormat);
@@ -55,21 +79,8 @@ private:
     /* Navigation stuff: */
     int nextId() const;
 
-    /* Helping stuff: */
-    QRadioButton* addFormatButton(QVBoxLayout *pFormatsLayout, CMediumFormat mediumFormat);
-
-    /* Stuff for 'mediumFormat' field: */
-    CMediumFormat mediumFormat() const;
-    void setMediumFormat(const CMediumFormat &mediumFormat);
-
-    /* Variables: */
-    QButtonGroup *m_pButtonGroup;
-    QList<CMediumFormat> m_formats;
-    QStringList m_formatNames;
-
     /* Widgets: */
     QIRichTextLabel *m_pLabel;
-    QGroupBox *m_pFormatContainer;
 };
 
 #endif // __UIWizardNewVDPageBasic1_h__

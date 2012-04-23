@@ -24,6 +24,7 @@
 #include "UIWizardNewVMPageBasic3.h"
 #include "UIWizardNewVMPageBasic4.h"
 #include "UIWizardNewVMPageBasic5.h"
+#include "UIWizardNewVMPageExpert.h"
 #include "VBoxDefs.h"
 #include "VBoxGlobal.h"
 #include "UIMessageCenter.h"
@@ -32,26 +33,13 @@
 using namespace VBoxGlobalDefs;
 
 UIWizardNewVM::UIWizardNewVM(QWidget *pParent)
-    : UIWizard(pParent)
+    : UIWizard(pParent, UIWizardType_NewVM)
     , m_iIDECount(0)
     , m_iSATACount(0)
     , m_iSCSICount(0)
     , m_iFloppyCount(0)
     , m_iSASCount(0)
 {
-    /* Create & add pages: */
-    setPage(Page1, new UIWizardNewVMPageBasic1);
-    setPage(Page2, new UIWizardNewVMPageBasic2);
-    setPage(Page3, new UIWizardNewVMPageBasic3);
-    setPage(Page4, new UIWizardNewVMPageBasic4);
-    setPage(Page5, new UIWizardNewVMPageBasic5);
-
-    /* Translate wizard: */
-    retranslateUi();
-
-    /* Translate wizard pages: */
-    retranslateAllPages();
-
 #ifndef Q_WS_MAC
     /* Assign watermark: */
     assignWatermark(":/vmw_new_welcome.png");
@@ -59,9 +47,6 @@ UIWizardNewVM::UIWizardNewVM(QWidget *pParent)
     /* Assign background image: */
     assignBackground(":/vmw_new_welcome_bg.png");
 #endif /* Q_WS_MAC */
-
-    /* Resize wizard to 'golden ratio': */
-    resizeToGoldenRatio(UIWizardType_NewVM);
 }
 
 bool UIWizardNewVM::createVM()
@@ -272,9 +257,36 @@ bool UIWizardNewVM::createVM()
 
 void UIWizardNewVM::retranslateUi()
 {
+    /* Call to base-class: */
+    UIWizard::retranslateUi();
+
     /* Translate wizard: */
     setWindowTitle(tr("Create New Virtual Machine"));
     setButtonText(QWizard::FinishButton, tr("Create"));
+}
+
+void UIWizardNewVM::prepare()
+{
+    /* Create corresponding pages: */
+    switch (mode())
+    {
+        case UIWizardMode_Basic:
+        {
+            setPage(Page1, new UIWizardNewVMPageBasic1);
+            setPage(Page2, new UIWizardNewVMPageBasic2);
+            setPage(Page3, new UIWizardNewVMPageBasic3);
+            setPage(Page4, new UIWizardNewVMPageBasic4);
+            setPage(Page5, new UIWizardNewVMPageBasic5);
+            break;
+        }
+        case UIWizardMode_Expert:
+        {
+            setPage(PageExpert, new UIWizardNewVMPageExpert);
+            break;
+        }
+    }
+    /* Call to base-class: */
+    UIWizard::prepare();
 }
 
 QString UIWizardNewVM::getNextControllerName(KStorageBus type)

@@ -26,20 +26,28 @@
 #include "UIWizardImportAppPageBasic2.h"
 #include "UIWizardImportApp.h"
 #include "VBoxGlobal.h"
-#include "QIRichTextLabel.h"
 #include "VBoxFilePathSelectorWidget.h"
+#include "QIRichTextLabel.h"
+
+UIWizardImportAppPage1::UIWizardImportAppPage1()
+{
+}
 
 UIWizardImportAppPageBasic1::UIWizardImportAppPageBasic1()
 {
     /* Create widgets: */
     QVBoxLayout *pMainLayout = new QVBoxLayout(this);
+    {
         m_pLabel = new QIRichTextLabel(this);
         m_pFileSelector = new VBoxEmptyFileSelector(this);
+        {
             m_pFileSelector->setMode(VBoxFilePathSelectorWidget::Mode_File_Open);
             m_pFileSelector->setHomeDir(vboxGlobal().documentsPath());
-    pMainLayout->addWidget(m_pLabel);
-    pMainLayout->addWidget(m_pFileSelector);
-    pMainLayout->addStretch();
+        }
+        pMainLayout->addWidget(m_pLabel);
+        pMainLayout->addWidget(m_pFileSelector);
+        pMainLayout->addStretch();
+    }
 
     /* Setup connections: */
     connect(m_pFileSelector, SIGNAL(pathChanged(const QString&)), this, SIGNAL(completeChanged()));
@@ -48,16 +56,17 @@ UIWizardImportAppPageBasic1::UIWizardImportAppPageBasic1()
 void UIWizardImportAppPageBasic1::retranslateUi()
 {
     /* Translate page: */
-    setTitle(UIWizardImportApp::tr("Welcome to the Appliance Import Wizard!"));
+    setTitle(UIWizardImportApp::tr("Welcome to the Appliance Import wizard!"));
 
     /* Translate widgets: */
-    m_pFileSelector->setFileDialogTitle(UIWizardImportApp::tr("Select an appliance to import"));
-    m_pFileSelector->setFileFilters(UIWizardImportApp::tr("Open Virtualization Format (%1)").arg("*.ova *.ovf"));
     m_pLabel->setText(UIWizardImportApp::tr("<p>This wizard will guide you through importing an appliance.</p>"
                                             "<p>%1</p><p>VirtualBox currently supports importing appliances "
                                             "saved in the Open Virtualization Format (OVF). To continue, "
                                             "select the file to import below:</p>")
                                            .arg(standardHelpText()));
+    m_pFileSelector->setChooseButtonText(UIWizardImportApp::tr("Open appliance..."));
+    m_pFileSelector->setFileDialogTitle(UIWizardImportApp::tr("Select an appliance to import"));
+    m_pFileSelector->setFileFilters(UIWizardImportApp::tr("Open Virtualization Format (%1)").arg("*.ova *.ovf"));
 }
 
 void UIWizardImportAppPageBasic1::initializePage()
@@ -68,8 +77,9 @@ void UIWizardImportAppPageBasic1::initializePage()
 
 bool UIWizardImportAppPageBasic1::isComplete() const
 {
-    const QString &strFile = m_pFileSelector->path().toLower();
-    return VBoxGlobal::hasAllowedExtension(strFile, VBoxDefs::OVFFileExts) && QFileInfo(m_pFileSelector->path()).exists();
+    /* Make sure appliance file has allowed extension and exists: */
+    return VBoxGlobal::hasAllowedExtension(m_pFileSelector->path().toLower(), VBoxDefs::OVFFileExts) &&
+           QFileInfo(m_pFileSelector->path()).exists();
 }
 
 bool UIWizardImportAppPageBasic1::validatePage()

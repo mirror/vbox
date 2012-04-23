@@ -26,29 +26,16 @@
 #include "UIWizardNewVDPageBasic2.h"
 #include "UIWizardNewVDPageBasic3.h"
 #include "UIWizardNewVDPageBasic4.h"
+#include "UIWizardNewVDPageExpert.h"
 #include "VBoxGlobal.h"
 #include "UIMessageCenter.h"
 
 UIWizardNewVD::UIWizardNewVD(QWidget *pParent, const QString &strDefaultName, const QString &strDefaultPath, qulonglong uDefaultSize)
-    : UIWizard(pParent)
+    : UIWizard(pParent, UIWizardType_NewVD)
+    , m_strDefaultName(strDefaultName)
+    , m_strDefaultPath(strDefaultPath)
+    , m_uDefaultSize(uDefaultSize)
 {
-#ifdef Q_WS_WIN
-    /* Hide window icon: */
-    setWindowIcon(QIcon());
-#endif /* Q_WS_WIN */
-
-    /* Create & add pages: */
-    setPage(Page1, new UIWizardNewVDPageBasic1);
-    setPage(Page2, new UIWizardNewVDPageBasic2);
-    setPage(Page3, new UIWizardNewVDPageBasic3(strDefaultName, strDefaultPath, uDefaultSize));
-    setPage(Page4, new UIWizardNewVDPageBasic4);
-
-    /* Translate wizard: */
-    retranslateUi();
-
-    /* Translate wizard pages: */
-    retranslateAllPages();
-
 #ifndef Q_WS_MAC
     /* Assign watermark: */
     assignWatermark(":/vmw_new_harddisk.png");
@@ -56,9 +43,6 @@ UIWizardNewVD::UIWizardNewVD(QWidget *pParent, const QString &strDefaultName, co
     /* Assign background image: */
     assignBackground(":/vmw_new_harddisk_bg.png");
 #endif /* Q_WS_MAC */
-
-    /* Resize wizard to 'golden ratio': */
-    resizeToGoldenRatio(UIWizardType_NewVD);
 }
 
 /* static */
@@ -86,7 +70,6 @@ bool UIWizardNewVD::createVirtualDisk()
     qulonglong uVariant = field("mediumVariant").toULongLong();
     QString strMediumPath = field("mediumPath").toString();
     qulonglong uSize = field("mediumSize").toULongLong();
-
     /* Check attributes: */
     AssertReturn(!strMediumPath.isNull(), false);
     AssertReturn(uSize > 0, false);
@@ -105,13 +88,13 @@ bool UIWizardNewVD::createVirtualDisk()
 
     /* Create base storage for the new hard disk: */
     progress = virtualDisk.CreateBaseStorage(uSize, uVariant);
-
-    /* Check for errors: */
     if (!virtualDisk.isOk())
     {
         msgCenter().cannotCreateHardDiskStorage(this, vbox, strMediumPath, virtualDisk, progress);
         return false;
     }
+
+    /* Show creation progress: */
     msgCenter().showModalProgressDialog(progress, windowTitle(), ":/progress_media_create_90px.png", this, true);
     if (progress.GetCanceled())
         return false;
@@ -121,7 +104,7 @@ bool UIWizardNewVD::createVirtualDisk()
         return false;
     }
 
-    /* Assign virtualDisk field value: */
+    /* Remember created virtual-disk: */
     m_virtualDisk = virtualDisk;
 
     /* Inform everybody there is a new medium: */
@@ -132,8 +115,34 @@ bool UIWizardNewVD::createVirtualDisk()
 
 void UIWizardNewVD::retranslateUi()
 {
+    /* Call to base-class: */
+    UIWizard::retranslateUi();
+
     /* Translate wizard: */
     setWindowTitle(tr("Create New Virtual Disk"));
     setButtonText(QWizard::FinishButton, tr("Create"));
+}
+
+void UIWizardNewVD::prepare()
+{
+    /* Create corresponding pages: */
+    switch (mode())
+    {
+        case UIWizardMode_Basic:
+        {
+            setPage(Page1, new UIWizardNewVDPageBasic1);
+            setPage(Page2, new UIWizardNewVDPageBasic2);
+            setPage(Page3, new UIWizardNewVDPageBasic3(m_strDefaultName, m_strDefaultPath, m_uDefaultSize));
+            setPage(Page4, new UIWizardNewVDPageBasic4);
+            break;
+        }
+        case UIWizardMode_Expert:
+        {
+            setPage(PageExpert, new UIWizardNewVDPageExpert(m_strDefaultName, m_strDefaultPath, m_uDefaultSize));
+            break;
+        }
+    }
+    /* Call to base-class: */
+    UIWizard::prepare();
 }
 

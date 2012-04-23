@@ -27,14 +27,30 @@
 class QDialogButtonBox;
 class QIRichTextLabel;
 
-/* 2nd page of the Import Appliance wizard: */
-class UIWizardImportAppPageBasic2 : public UIWizardPage
+/* 2nd page of the Import Appliance wizard (base part): */
+class UIWizardImportAppPage2 : public UIWizardPageBase
+{
+protected:
+
+    /* Constructor: */
+    UIWizardImportAppPage2();
+
+    /* Stuff for 'applianceWidget' field: */
+    ImportAppliancePointer applianceWidget() const { return m_pApplianceWidget; }
+
+    /* Widgets: */
+    ImportAppliancePointer m_pApplianceWidget;
+};
+
+/* 2nd page of the Import Appliance wizard (basic extension): */
+class UIWizardImportAppPageBasic2 : public UIWizardPage, public UIWizardImportAppPage2
 {
     Q_OBJECT;
     Q_PROPERTY(ImportAppliancePointer applianceWidget READ applianceWidget);
 
 public:
 
+    /* Constructor: */
     UIWizardImportAppPageBasic2(const QString &strFileName);
 
 private:
@@ -49,12 +65,8 @@ private:
     /* Validation stuff: */
     bool validatePage();
 
-    /* Stuff for 'applianceWidget' field: */
-    ImportAppliancePointer applianceWidget() const { return m_pApplianceWidget; }
-
     /* Widgets: */
     QIRichTextLabel *m_pLabel;
-    ImportAppliancePointer m_pApplianceWidget;
 };
 
 #endif /* __UIWizardImportAppPageBasic2_h__ */

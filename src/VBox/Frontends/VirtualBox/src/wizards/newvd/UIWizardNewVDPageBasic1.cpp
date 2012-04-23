@@ -19,9 +19,9 @@
 
 /* Global includes: */
 #include <QVBoxLayout>
-#include <QRadioButton>
-#include <QGroupBox>
 #include <QButtonGroup>
+#include <QGroupBox>
+#include <QRadioButton>
 
 /* Local includes: */
 #include "UIWizardNewVDPageBasic1.h"
@@ -29,76 +29,114 @@
 #include "VBoxGlobal.h"
 #include "QIRichTextLabel.h"
 
+UIWizardNewVDPage1::UIWizardNewVDPage1()
+{
+}
+
+QRadioButton* UIWizardNewVDPage1::addFormatButton(QVBoxLayout *pFormatsLayout, CMediumFormat mf)
+{
+    /* Check that medium format supports creation: */
+    ULONG uFormatCapabilities = mf.GetCapabilities();
+    if (!(uFormatCapabilities & MediumFormatCapabilities_CreateFixed ||
+          uFormatCapabilities & MediumFormatCapabilities_CreateDynamic))
+        return 0;
+
+    /* Check that medium format supports creation of virtual hard-disks: */
+    QVector<QString> fileExtensions;
+    QVector<KDeviceType> deviceTypes;
+    mf.DescribeFileExtensions(fileExtensions, deviceTypes);
+    if (!deviceTypes.contains(KDeviceType_HardDisk))
+        return 0;
+
+    /* Create/add corresponding radio-button: */
+    QRadioButton *pFormatButton = new QRadioButton(m_pFormatCnt);
+    pFormatsLayout->addWidget(pFormatButton);
+    return pFormatButton;
+}
+
+CMediumFormat UIWizardNewVDPage1::mediumFormat() const
+{
+    return m_pFormatButtonGroup->checkedButton() ? m_formats[m_pFormatButtonGroup->checkedId()] : CMediumFormat();
+}
+
+void UIWizardNewVDPage1::setMediumFormat(const CMediumFormat &mediumFormat)
+{
+    int iPosition = m_formats.indexOf(mediumFormat);
+    if (iPosition >= 0)
+    {
+        m_pFormatButtonGroup->button(iPosition)->click();
+        m_pFormatButtonGroup->button(iPosition)->setFocus();
+    }
+}
+
 UIWizardNewVDPageBasic1::UIWizardNewVDPageBasic1()
 {
     /* Create widgets: */
     QVBoxLayout *pMainLayout = new QVBoxLayout(this);
+    {
         m_pLabel = new QIRichTextLabel(this);
-        m_pFormatContainer = new QGroupBox(this);
-            m_pFormatContainer->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Fixed);
-            QVBoxLayout *pFormatsLayout = new QVBoxLayout(m_pFormatContainer);
-    pMainLayout->addWidget(m_pLabel);
-    pMainLayout->addWidget(m_pFormatContainer);
-    pMainLayout->addStretch();
-
-    /* Greate button group: */
-    m_pButtonGroup = new QButtonGroup(this);
-
-    /* Enumerate supportable formats: */
-    CSystemProperties systemProperties = vboxGlobal().virtualBox().GetSystemProperties();
-    const QVector<CMediumFormat> &medFormats = systemProperties.GetMediumFormats();
-    /* Search for default (VDI) format first: */
-    for (int i = 0; i < medFormats.size(); ++i)
-    {
-        /* Get iterated medium format: */
-        const CMediumFormat &medFormat = medFormats[i];
-        QString strFormatName(medFormat.GetName());
-        if (strFormatName == "VDI")
+        m_pFormatCnt = new QGroupBox(this);
         {
-            QRadioButton *pButton = addFormatButton(pFormatsLayout, medFormat);
-            if (pButton)
+            m_pFormatCnt->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Fixed);
+            m_pFormatButtonGroup = new QButtonGroup(m_pFormatCnt);
             {
-                m_formats << medFormat;
-                m_formatNames << strFormatName;
-                m_pButtonGroup->addButton(pButton, m_formatNames.size() - 1);
+                QVBoxLayout *pFormatsLayout = new QVBoxLayout(m_pFormatCnt);
+                {
+                    CSystemProperties systemProperties = vboxGlobal().virtualBox().GetSystemProperties();
+                    const QVector<CMediumFormat> &medFormats = systemProperties.GetMediumFormats();
+                    for (int i = 0; i < medFormats.size(); ++i)
+                    {
+                        const CMediumFormat &medFormat = medFormats[i];
+                        QString strFormatName(medFormat.GetName());
+                        if (strFormatName == "VDI")
+                        {
+                            QRadioButton *pButton = addFormatButton(pFormatsLayout, medFormat);
+                            if (pButton)
+                            {
+                                m_formats << medFormat;
+                                m_formatNames << strFormatName;
+                                m_pFormatButtonGroup->addButton(pButton, m_formatNames.size() - 1);
+                            }
+                        }
+                    }
+                    for (int i = 0; i < medFormats.size(); ++i)
+                    {
+                        const CMediumFormat &medFormat = medFormats[i];
+                        QString strFormatName(medFormat.GetName());
+                        if (strFormatName != "VDI")
+                        {
+                            QRadioButton *pButton = addFormatButton(pFormatsLayout, medFormat);
+                            if (pButton)
+                            {
+                                m_formats << medFormat;
+                                m_formatNames << strFormatName;
+                                m_pFormatButtonGroup->addButton(pButton, m_formatNames.size() - 1);
+                            }
+                        }
+                    }
+                }
+                m_pFormatButtonGroup->button(0)->click();
+                m_pFormatButtonGroup->button(0)->setFocus();
             }
         }
-    }
-    /* Look for other formats: */
-    for (int i = 0; i < medFormats.size(); ++i)
-    {
-        /* Get iterated medium format: */
-        const CMediumFormat &medFormat = medFormats[i];
-        QString strFormatName(medFormat.GetName());
-        if (strFormatName != "VDI")
-        {
-            QRadioButton *pButton = addFormatButton(pFormatsLayout, medFormat);
-            if (pButton)
-            {
-                m_formats << medFormat;
-                m_formatNames << strFormatName;
-                m_pButtonGroup->addButton(pButton, m_formatNames.size() - 1);
-            }
-        }
+        pMainLayout->addWidget(m_pLabel);
+        pMainLayout->addWidget(m_pFormatCnt);
+        pMainLayout->addStretch();
     }
 
     /* Setup connections: */
-    connect(m_pButtonGroup, SIGNAL(buttonClicked(QAbstractButton*)), this, SIGNAL(completeChanged()));
+    connect(m_pFormatButtonGroup, SIGNAL(buttonClicked(QAbstractButton*)), this, SIGNAL(completeChanged()));
 
-    /* Initialize connections: */
-    m_pButtonGroup->button(0)->click();
-    m_pButtonGroup->button(0)->setFocus();
-
-    /* Register CMediumFormat class: */
+    /* Register classes: */
     qRegisterMetaType<CMediumFormat>();
-    /* Register 'mediumFormat' field: */
+    /* Register fields: */
     registerField("mediumFormat", this, "mediumFormat");
 }
 
 void UIWizardNewVDPageBasic1::retranslateUi()
 {
     /* Translate page: */
-    setTitle(UIWizardNewVD::tr("Welcome to the virtual disk creation wizard"));
+    setTitle(UIWizardNewVD::tr("Welcome to the New Virtual Disk wizard!"));
 
     /* Translate widgets: */
     m_pLabel->setText(UIWizardNewVD::tr("<p>This wizard will help you to create a new virtual disk for your virtual machine.</p>"));
@@ -107,14 +145,12 @@ void UIWizardNewVDPageBasic1::retranslateUi()
                                                            "to use for the new virtual disk. If you do not need "
                                                            "to use it with other virtualization software you can "
                                                            "leave this setting unchanged.</p>"));
-    m_pFormatContainer->setTitle(UIWizardNewVD::tr("File type"));
-
-    /* Translate 'format' buttons: */
-    QList<QAbstractButton*> buttons = m_pButtonGroup->buttons();
+    m_pFormatCnt->setTitle(UIWizardNewVD::tr("File type"));
+    QList<QAbstractButton*> buttons = m_pFormatButtonGroup->buttons();
     for (int i = 0; i < buttons.size(); ++i)
     {
         QAbstractButton *pButton = buttons[i];
-        pButton->setText(UIWizardNewVD::fullFormatName(m_formatNames[m_pButtonGroup->id(pButton)]));
+        pButton->setText(UIWizardNewVD::fullFormatName(m_formatNames[m_pFormatButtonGroup->id(pButton)]));
     }
 }
 
@@ -126,13 +162,15 @@ void UIWizardNewVDPageBasic1::initializePage()
 
 bool UIWizardNewVDPageBasic1::isComplete() const
 {
+    /* Make sure medium format is correct: */
     return !mediumFormat().isNull();
 }
 
 int UIWizardNewVDPageBasic1::nextId() const
 {
-    CMediumFormat medFormat = mediumFormat();
-    ULONG uCapabilities = medFormat.GetCapabilities();
+    /* Show variant page only if there is something to show: */
+    CMediumFormat mf = mediumFormat();
+    ULONG uCapabilities = mf.GetCapabilities();
     int cTest = 0;
     if (uCapabilities & KMediumFormatCapabilities_CreateDynamic)
         ++cTest;
@@ -142,42 +180,7 @@ int UIWizardNewVDPageBasic1::nextId() const
         ++cTest;
     if (cTest > 1)
         return UIWizardNewVD::Page2;
+    /* Skip otherwise: */
     return UIWizardNewVD::Page3;
-}
-
-QRadioButton* UIWizardNewVDPageBasic1::addFormatButton(QVBoxLayout *pFormatsLayout, CMediumFormat medFormat)
-{
-    /* Check that medium format supports creation: */
-    ULONG uFormatCapabilities = medFormat.GetCapabilities();
-    if (!(uFormatCapabilities & MediumFormatCapabilities_CreateFixed ||
-          uFormatCapabilities & MediumFormatCapabilities_CreateDynamic))
-        return 0;
-
-    /* Check that medium format supports creation of virtual hard-disks: */
-    QVector<QString> fileExtensions;
-    QVector<KDeviceType> deviceTypes;
-    medFormat.DescribeFileExtensions(fileExtensions, deviceTypes);
-    if (!deviceTypes.contains(KDeviceType_HardDisk))
-        return 0;
-
-    /* Create/add corresponding radio-button: */
-    QRadioButton *pFormatButton = new QRadioButton(m_pFormatContainer);
-    pFormatsLayout->addWidget(pFormatButton);
-    return pFormatButton;
-}
-
-CMediumFormat UIWizardNewVDPageBasic1::mediumFormat() const
-{
-    return m_pButtonGroup->checkedButton() ? m_formats[m_pButtonGroup->checkedId()] : CMediumFormat();
-}
-
-void UIWizardNewVDPageBasic1::setMediumFormat(const CMediumFormat &mediumFormat)
-{
-    int iPosition = m_formats.indexOf(mediumFormat);
-    if (iPosition >= 0)
-    {
-        m_pButtonGroup->button(iPosition)->click();
-        m_pButtonGroup->button(iPosition)->setFocus();
-    }
 }
 

@@ -19,19 +19,68 @@
 #ifndef __UIWizardNewVMPageBasic4_h__
 #define __UIWizardNewVMPageBasic4_h__
 
+/* Global includes: */
+#include <QVariant>
+
 /* Local includes: */
 #include "UIWizardPage.h"
 #include "COMDefs.h"
 
 /* Forward declarations: */
-class QIRichTextLabel;
 class QGroupBox;
 class QRadioButton;
 class VBoxMediaComboBox;
 class QIToolButton;
+class QIRichTextLabel;
 
-/* 4th page of the New Virtual Machine wizard: */
-class UIWizardNewVMPageBasic4 : public UIWizardPage
+/* 4th page of the New Virtual Machine wizard (base part): */
+class UIWizardNewVMPage4 : public UIWizardPageBase
+{
+protected:
+
+    /* Constructor: */
+    UIWizardNewVMPage4();
+
+    /* Handlers: */
+    void updateVirtualDiskSource();
+    void getWithFileOpenDialog();
+    bool getWithNewVirtualDiskWizard();
+
+    /* Stuff for 'virtualDisk' field: */
+    CMedium virtualDisk() const { return m_virtualDisk; }
+    void setVirtualDisk(const CMedium &virtualDisk) { m_virtualDisk = virtualDisk; }
+
+    /* Stuff for 'virtualDiskId' field: */
+    QString virtualDiskId() const { return m_strVirtualDiskId; }
+    void setVirtualDiskId(const QString &strVirtualDiskId) { m_strVirtualDiskId = strVirtualDiskId; }
+
+    /* Stuff for 'virtualDiskName' field: */
+    QString virtualDiskName() const { return m_strVirtualDiskName; }
+    void setVirtualDiskName(const QString &strVirtualDiskName) { m_strVirtualDiskName = strVirtualDiskName; }
+
+    /* Stuff for 'virtualDiskLocation' field: */
+    QString virtualDiskLocation() const { return m_strVirtualDiskLocation; }
+    void setVirtualDiskLocation(const QString &strVirtualDiskLocation) { m_strVirtualDiskLocation = strVirtualDiskLocation; }
+
+    /* Helpers: */
+    void ensureNewVirtualDiskDeleted();
+
+    /* Variables: */
+    CMedium m_virtualDisk;
+    QString m_strVirtualDiskId;
+    QString m_strVirtualDiskName;
+    QString m_strVirtualDiskLocation;
+
+    /* Widgets: */
+    QGroupBox *m_pDiskCnt;
+    QRadioButton *m_pDiskCreate;
+    QRadioButton *m_pDiskPresent;
+    VBoxMediaComboBox *m_pDiskSelector;
+    QIToolButton *m_pVMMButton;
+};
+
+/* 4th page of the New Virtual Machine wizard (basic extension): */
+class UIWizardNewVMPageBasic4 : public UIWizardPage, public UIWizardNewVMPage4
 {
     Q_OBJECT;
     Q_PROPERTY(CMedium virtualDisk READ virtualDisk WRITE setVirtualDisk);
@@ -44,12 +93,18 @@ public:
     /* Constructor: */
     UIWizardNewVMPageBasic4();
 
+protected:
+
+    /* Wrapper to access 'this' from base part: */
+    UIWizardPage* thisImp() { return this; }
+    /* Wrapper to access 'wizard-field' from base part: */
+    QVariant fieldImp(const QString &strFieldName) const { return UIWizardPage::field(strFieldName); }
+
 private slots:
 
     /* Handlers: */
-    void ensureNewVirtualDiskDeleted();
-    void virtualDiskSourceChanged();
-    void getWithFileOpenDialog();
+    void sltVirtualDiskSourceChanged();
+    void sltGetWithFileOpenDialog();
 
 private:
 
@@ -64,37 +119,9 @@ private:
     bool isComplete() const;
     bool validatePage();
 
-    /* Helpers: */
-    bool getWithNewVirtualDiskWizard();
-
-    /* Stuff for 'virtualDisk' field: */
-    CMedium virtualDisk() const;
-    void setVirtualDisk(const CMedium &virtualDisk);
-    CMedium m_virtualDisk;
-
-    /* Stuff for 'virtualDiskId' field: */
-    QString virtualDiskId() const;
-    void setVirtualDiskId(const QString &strVirtualDiskId);
-    QString m_strVirtualDiskId;
-
-    /* Stuff for 'virtualDiskName' field: */
-    QString virtualDiskName() const;
-    void setVirtualDiskName(const QString &strVirtualDiskName);
-    QString m_strVirtualDiskName;
-
-    /* Stuff for 'virtualDiskLocation' field: */
-    QString virtualDiskLocation() const;
-    void setVirtualDiskLocation(const QString &strVirtualDiskLocation);
-    QString m_strVirtualDiskLocation;
-
     /* Widgets: */
     QIRichTextLabel *m_pLabel1;
     QIRichTextLabel *m_pLabel2;
-    QGroupBox *m_pBootHDCnt;
-    QRadioButton *m_pDiskCreate;
-    QRadioButton *m_pDiskPresent;
-    VBoxMediaComboBox *m_pDiskSelector;
-    QIToolButton *m_pVMMButton;
 };
 
 #endif // __UIWizardNewVMPageBasic4_h__

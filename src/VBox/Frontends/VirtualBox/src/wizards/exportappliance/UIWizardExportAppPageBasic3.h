@@ -19,43 +19,30 @@
 #ifndef __UIWizardExportAppPageBasic3_h__
 #define __UIWizardExportAppPageBasic3_h__
 
+/* Global includes: */
+#include <QVariant>
+
 /* Local includes: */
 #include "UIWizardPage.h"
 
 /* Forward declarations: */
-class QIRichTextLabel;
 class QLabel;
 class QLineEdit;
 class VBoxEmptyFileSelector;
 class QCheckBox;
+class QIRichTextLabel;
 
-/* 3rd page of the Export Appliance wizard: */
-class UIWizardExportAppPageBasic3 : public UIWizardPage
+/* 3rd page of the Export Appliance wizard (base part): */
+class UIWizardExportAppPage3 : public UIWizardPageBase
 {
-    Q_OBJECT;
-    Q_PROPERTY(bool OVF09Selected READ isOVF09Selected WRITE setOVF09Selected);
-    Q_PROPERTY(bool manifestSelected READ isManifestSelected WRITE setManifestSelected);
-    Q_PROPERTY(QString username READ username WRITE setUserName);
-    Q_PROPERTY(QString password READ password WRITE setPassword);
-    Q_PROPERTY(QString hostname READ hostname WRITE setHostname);
-    Q_PROPERTY(QString bucket READ bucket WRITE setBucket);
-    Q_PROPERTY(QString path READ path WRITE setPath);
-
-public:
+protected:
 
     /* Constructor: */
-    UIWizardExportAppPageBasic3();
+    UIWizardExportAppPage3();
 
-private:
-
-    /* Translate stuff: */
-    void retranslateUi();
-
-    /* Prepare stuff: */
-    void initializePage();
-
-    /* Validation stuff: */
-    bool isComplete() const;
+    /* Helpers: */
+    void chooseDefaultSettings();
+    virtual void refreshCurrentSettings();
 
     /* Stuff for 'OVF09Selected' field: */
     bool isOVF09Selected() const;
@@ -83,7 +70,6 @@ private:
     QString m_strDefaultApplianceName;
 
     /* Widgets: */
-    QIRichTextLabel *m_pLabel;
     QLabel *m_pUsernameLabel;
     QLineEdit *m_pUsernameEditor;
     QLabel *m_pPasswordLabel;
@@ -96,6 +82,46 @@ private:
     VBoxEmptyFileSelector *m_pFileSelector;
     QCheckBox *m_pOVF09Checkbox;
     QCheckBox *m_pManifestCheckbox;
+};
+
+/* 3rd page of the Export Appliance wizard (basic extension): */
+class UIWizardExportAppPageBasic3 : public UIWizardPage, public UIWizardExportAppPage3
+{
+    Q_OBJECT;
+    Q_PROPERTY(bool OVF09Selected READ isOVF09Selected WRITE setOVF09Selected);
+    Q_PROPERTY(bool manifestSelected READ isManifestSelected WRITE setManifestSelected);
+    Q_PROPERTY(QString username READ username WRITE setUserName);
+    Q_PROPERTY(QString password READ password WRITE setPassword);
+    Q_PROPERTY(QString hostname READ hostname WRITE setHostname);
+    Q_PROPERTY(QString bucket READ bucket WRITE setBucket);
+    Q_PROPERTY(QString path READ path WRITE setPath);
+
+public:
+
+    /* Constructor: */
+    UIWizardExportAppPageBasic3();
+
+protected:
+
+    /* Wrapper to access 'wizard-field' from base part: */
+    QVariant fieldImp(const QString &strFieldName) const { return UIWizardPage::field(strFieldName); }
+
+private:
+
+    /* Translate stuff: */
+    void retranslateUi();
+
+    /* Prepare stuff: */
+    void initializePage();
+
+    /* Validation stuff: */
+    bool isComplete() const;
+
+    /* Helpers: */
+    void refreshCurrentSettings();
+
+    /* Widgets: */
+    QIRichTextLabel *m_pLabel;
 };
 
 #endif /* __UIWizardExportAppPageBasic3_h__ */

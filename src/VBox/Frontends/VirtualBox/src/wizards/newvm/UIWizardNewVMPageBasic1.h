@@ -21,14 +21,21 @@
 
 /* Local includes: */
 #include "UIWizardPage.h"
-#include "COMDefs.h"
-#include "QIWithRetranslateUI.h"
 
 /* Forward declarations: */
 class QIRichTextLabel;
 
-/* 1st page of the New Virtual Machine wizard: */
-class UIWizardNewVMPageBasic1 : public UIWizardPage
+/* 1st page of the New Virtual Machine wizard (base part): */
+class UIWizardNewVMPage1 : public UIWizardPageBase
+{
+protected:
+
+    /* Constructor: */
+    UIWizardNewVMPage1();
+};
+
+/* 1st page of the New Virtual Machine wizard (basic extension): */
+class UIWizardNewVMPageBasic1 : public UIWizardPage, public UIWizardNewVMPage1
 {
     Q_OBJECT;
 

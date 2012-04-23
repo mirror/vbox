@@ -161,6 +161,9 @@ public:
     bool isModified () const { return mIsModified; }
     void resetModified () { mIsModified = false; }
 
+    void setChooseButtonText(const QString &aText);
+    QString chooseButtonText() const;
+
     void setFileDialogTitle (const QString& aTitle);
     QString fileDialogTitle() const;
 
