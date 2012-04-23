@@ -23,11 +23,34 @@
 #include "UIWizardPage.h"
 
 /* Forward declarations: */
-class QIRichTextLabel;
+class QGroupBox;
+class QButtonGroup;
 class QRadioButton;
+class QIRichTextLabel;
 
-/* 2nd page of the Clone Virtual Machine wizard: */
-class UIWizardCloneVMPageBasic2 : public UIWizardPage
+/* 2nd page of the Clone Virtual Machine wizard (base part): */
+class UIWizardCloneVMPage2 : public UIWizardPageBase
+{
+protected:
+
+    /* Constructor: */
+    UIWizardCloneVMPage2(bool fAdditionalInfo);
+
+    /* Stuff for 'linkedClone' field: */
+    bool isLinkedClone() const;
+
+    /* Variables: */
+    bool m_fAdditionalInfo;
+
+    /* Widgets: */
+    QGroupBox *m_pCloneTypeCnt;
+    QButtonGroup *m_pButtonGroup;
+    QRadioButton *m_pFullCloneRadio;
+    QRadioButton *m_pLinkedCloneRadio;
+};
+
+/* 2nd page of the Clone Virtual Machine wizard (basic extension): */
+class UIWizardCloneVMPageBasic2 : public UIWizardPage, public UIWizardCloneVMPage2
 {
     Q_OBJECT;
     Q_PROPERTY(bool linkedClone READ isLinkedClone);
@@ -40,7 +63,7 @@ public:
 private slots:
 
     /* Button click handler: */
-    void buttonClicked(QAbstractButton *pButton);
+    void sltButtonClicked(QAbstractButton *pButton);
 
 private:
 
@@ -56,16 +79,8 @@ private:
     /* Navigation stuff: */
     int nextId() const;
 
-    /* Stuff for 'linkedClone' field: */
-    bool isLinkedClone() const;
-
-    /* Variables: */
-    bool m_fAdditionalInfo;
-
     /* Widgets: */
     QIRichTextLabel *m_pLabel;
-    QRadioButton *m_pFullCloneRadio;
-    QRadioButton *m_pLinkedCloneRadio;
 };
 
 #endif // __UIWizardCloneVMPageBasic2_h__

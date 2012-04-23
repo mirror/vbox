@@ -22,6 +22,7 @@
 /* Global includes: */
 #include <QMetaType>
 #include <QPointer>
+#include <QListWidget>
 
 /* Local includes: */
 #include "UIApplianceExportEditorWidget.h"
@@ -33,6 +34,31 @@ Q_DECLARE_METATYPE(StorageType);
 /* Typedefs: */
 typedef QPointer<UIApplianceExportEditorWidget> ExportAppliancePointer;
 Q_DECLARE_METATYPE(ExportAppliancePointer);
+
+class VMListWidgetItem : public QListWidgetItem
+{
+public:
+
+    VMListWidgetItem(QPixmap &pixIcon, QString &strText, QString strUuid, bool fInSaveState, QListWidget *pParent)
+        : QListWidgetItem(pixIcon, strText, pParent)
+        , m_strUuid(strUuid)
+        , m_fInSaveState(fInSaveState)
+    {
+    }
+
+    bool operator<(const QListWidgetItem &other) const
+    {
+        return text().toLower() < other.text().toLower();
+    }
+
+    QString uuid() { return m_strUuid; }
+    bool isInSaveState() { return m_fInSaveState; }
+
+private:
+
+    QString m_strUuid;
+    bool m_fInSaveState;
+};
 
 #endif /* __UIWizardExportAppDefs_h__ */
 

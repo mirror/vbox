@@ -19,33 +19,74 @@
 #ifndef __UIWizardCloneVDPageBasic4_h__
 #define __UIWizardCloneVDPageBasic4_h__
 
+/* Global includes: */
+#include <QVariant>
+
 /* Local includes: */
 #include "UIWizardPage.h"
 #include "COMDefs.h"
 
 /* Forward declarations: */
-class QIRichTextLabel;
+class CMediumFormat;
 class QGroupBox;
 class QLineEdit;
 class QIToolButton;
-class CMediumFormat;
+class QIRichTextLabel;
 
-/* 4th page of the Clone Virtual Disk wizard: */
-class UIWizardCloneVDPageBasic4 : public UIWizardPage
+/* 4th page of the Clone Virtual Disk wizard (base part): */
+class UIWizardCloneVDPage4 : public UIWizardPageBase
+{
+protected:
+
+    /* Constructor: */
+    UIWizardCloneVDPage4();
+
+    /* Handlers: */
+    void onSelectLocationButtonClicked();
+
+    /* Location-editors stuff: */
+    static QString toFileName(const QString &strName, const QString &strExtension);
+    static QString absoluteFilePath(const QString &strFileName, const QString &strDefaultPath);
+    static QString defaultExtension(const CMediumFormat &mediumFormatRef);
+
+    /* Stuff for 'mediumPath' field: */
+    QString mediumPath() const;
+
+    /* Stuff for 'mediumSize' field: */
+    qulonglong mediumSize() const;
+
+    /* Variables: */
+    QString m_strDefaultPath;
+    QString m_strDefaultExtension;
+
+    /* Widgets: */
+    QGroupBox *m_pDestinationCnt;
+    QLineEdit *m_pDestinationDiskEditor;
+    QIToolButton *m_pDestinationDiskOpenButton;
+};
+
+/* 4th page of the Clone Virtual Disk wizard (basic extension): */
+class UIWizardCloneVDPageBasic4 : public UIWizardPage, public UIWizardCloneVDPage4
 {
     Q_OBJECT;
-    Q_PROPERTY(QString mediumPath READ mediumPath WRITE setMediumPath);
-    Q_PROPERTY(qulonglong mediumSize READ mediumSize WRITE setMediumSize);
+    Q_PROPERTY(QString mediumPath READ mediumPath);
+    Q_PROPERTY(qulonglong mediumSize READ mediumSize);
 
 public:
 
     /* Constructor: */
     UIWizardCloneVDPageBasic4();
 
+protected:
+
+    /* Wrapper to access 'this' from base part: */
+    UIWizardPage* thisImp() { return this; }
+    /* Wrapper to access 'wizard-field' from base part: */
+    QVariant fieldImp(const QString &strFieldName) const { return UIWizardPage::field(strFieldName); }
+
 private slots:
 
-    /* Location editors stuff: */
-    void sltLocationEditorTextChanged(const QString &strMediumName);
+    /* Location editor stuff: */
     void sltSelectLocationButtonClicked();
 
 private:
@@ -60,30 +101,8 @@ private:
     bool isComplete() const;
     bool validatePage();
 
-    /* Location-editors stuff: */
-    static QString toFileName(const QString &strName, const QString &strExtension);
-    static QString absoluteFilePath(const QString &strFileName, const QString &strDefaultPath);
-    static QString defaultExtension(const CMediumFormat &mediumFormatRef);
-
-    /* Stuff for 'mediumPath' field: */
-    QString mediumPath() const { return m_strMediumPath; }
-    void setMediumPath(const QString &strMediumPath) { m_strMediumPath = strMediumPath; }
-    QString m_strMediumPath;
-
-    /* Stuff for 'mediumSize' field: */
-    qulonglong mediumSize() const { return m_uMediumSize; }
-    void setMediumSize(qulonglong uMediumSize) { m_uMediumSize = uMediumSize; }
-    qulonglong m_uMediumSize;
-
-    /* Location-editors variables: */
-    QString m_strDefaultPath;
-    QString m_strDefaultExtension;
-
     /* Widgets: */
     QIRichTextLabel *m_pLabel;
-    QGroupBox *m_pLocationCnt;
-    QLineEdit *m_pLocationEditor;
-    QIToolButton *m_pLocationSelector;
 };
 
 #endif // __UIWizardCloneVDPageBasic4_h__

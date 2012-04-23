@@ -23,13 +23,34 @@
 #include "UIWizardPage.h"
 
 /* Forward declarations: */
+class QGroupBox;
+class QButtonGroup;
 class QRadioButton;
 class QCheckBox;
 class QIRichTextLabel;
-class QGroupBox;
 
-/* 2nd page of the New Virtual Disk wizard: */
-class UIWizardNewVDPageBasic2 : public UIWizardPage
+/* 2nd page of the New Virtual Disk wizard (base part): */
+class UIWizardNewVDPage2 : public UIWizardPageBase
+{
+protected:
+
+    /* Constructor: */
+    UIWizardNewVDPage2();
+
+    /* Stuff for 'variant' field: */
+    qulonglong mediumVariant() const;
+    void setMediumVariant(qulonglong uMediumVariant);
+
+    /* Widgets: */
+    QGroupBox *m_pVariantCnt;
+    QButtonGroup *m_pVariantButtonGroup;
+    QRadioButton *m_pDynamicalButton;
+    QRadioButton *m_pFixedButton;
+    QCheckBox *m_pSplitBox;
+};
+
+/* 2nd page of the New Virtual Disk wizard (basic extension): */
+class UIWizardNewVDPageBasic2 : public UIWizardPage, public UIWizardNewVDPage2
 {
     Q_OBJECT;
     Q_PROPERTY(qulonglong mediumVariant READ mediumVariant WRITE setMediumVariant);
@@ -50,21 +71,11 @@ private:
     /* Validation stuff: */
     bool isComplete() const;
 
-    /* Stuff for 'variant' field: */
-    qulonglong mediumVariant() const;
-    void setMediumVariant(qulonglong uMediumVariant);
-
-    /* Variables: */
-    QRadioButton *m_pDynamicalButton;
-    QRadioButton *m_pFixedButton;
-    QCheckBox *m_pSplitBox;
-
     /* Widgets: */
     QIRichTextLabel *m_pDescriptionLabel;
     QIRichTextLabel *m_pDynamicLabel;
     QIRichTextLabel *m_pFixedLabel;
     QIRichTextLabel *m_pSplitLabel;
-    QGroupBox *m_pVariantContainer;
 };
 
 #endif // __UIWizardNewVDPageBasic2_h__

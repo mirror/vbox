@@ -28,53 +28,21 @@
 #include "UIWizardCloneVDPageBasic4.h"
 #include "UIWizardCloneVD.h"
 #include "COMDefs.h"
+#include "VBoxGlobal.h"
 #include "UIMessageCenter.h"
 #include "UIIconPool.h"
 #include "QIFileDialog.h"
 #include "QIRichTextLabel.h"
 #include "QIToolButton.h"
-#include "iprt/path.h"
 
-UIWizardCloneVDPageBasic4::UIWizardCloneVDPageBasic4()
-    : m_uMediumSize(0)
+UIWizardCloneVDPage4::UIWizardCloneVDPage4()
 {
-    /* Create widgets: */
-    QVBoxLayout *pMainLayout = new QVBoxLayout(this);
-        m_pLabel = new QIRichTextLabel(this);
-        m_pLocationCnt = new QGroupBox(this);
-            m_pLocationCnt->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Fixed);
-            QHBoxLayout *pOptionsLayout = new QHBoxLayout(m_pLocationCnt);
-                m_pLocationEditor = new QLineEdit(m_pLocationCnt);
-                m_pLocationSelector = new QIToolButton(m_pLocationCnt);
-                    m_pLocationSelector->setAutoRaise(true);
-                    m_pLocationSelector->setIcon(UIIconPool::iconSet(":/select_file_16px.png", "select_file_dis_16px.png"));
-            pOptionsLayout->addWidget(m_pLocationEditor);
-            pOptionsLayout->addWidget(m_pLocationSelector);
-    pMainLayout->addWidget(m_pLabel);
-    pMainLayout->addWidget(m_pLocationCnt);
-    pMainLayout->addStretch();
-
-    /* Setup page connections: */
-    connect(m_pLocationEditor, SIGNAL(textChanged(const QString &)), this, SLOT(sltLocationEditorTextChanged(const QString &)));
-    connect(m_pLocationSelector, SIGNAL(clicked()), this, SLOT(sltSelectLocationButtonClicked()));
-
-    /* Register 'mediumPath', 'mediumSize' fields: */
-    registerField("mediumPath", this, "mediumPath");
-    registerField("mediumSize", this, "mediumSize");
 }
 
-void UIWizardCloneVDPageBasic4::sltLocationEditorTextChanged(const QString &strMediumName)
-{
-    /* Compose new medium path: */
-    m_strMediumPath = absoluteFilePath(toFileName(strMediumName, m_strDefaultExtension), m_strDefaultPath);
-    /* Notify wizard sub-system about complete status changed: */
-    emit completeChanged();
-}
-
-void UIWizardCloneVDPageBasic4::sltSelectLocationButtonClicked()
+void UIWizardCloneVDPage4::onSelectLocationButtonClicked()
 {
     /* Get current folder and filename: */
-    QFileInfo fullFilePath(m_strMediumPath);
+    QFileInfo fullFilePath(mediumPath());
     QDir folder = fullFilePath.path();
     QString strFileName = fullFilePath.fileName();
 
@@ -96,9 +64,9 @@ void UIWizardCloneVDPageBasic4::sltSelectLocationButtonClicked()
     }
 
     /* Prepare backends list: */
-    CMediumFormat mediumFormat = field("mediumFormat").value<CMediumFormat>();
     QVector<QString> fileExtensions;
     QVector<KDeviceType> deviceTypes;
+    CMediumFormat mediumFormat = fieldImp("mediumFormat").value<CMediumFormat>();
     mediumFormat.DescribeFileExtensions(fileExtensions, deviceTypes);
     QStringList validExtensionList;
     for (int i = 0; i < fileExtensions.size(); ++i)
@@ -109,8 +77,8 @@ void UIWizardCloneVDPageBasic4::sltSelectLocationButtonClicked()
 
     /* Open corresponding file-dialog: */
     QString strChosenFilePath = QIFileDialog::getSaveFileName(folder.absoluteFilePath(strFileName),
-                                                              strBackendsList, this,
-                                                              UIWizardCloneVD::tr("Select a file for the new hard disk image file"));
+                                                              strBackendsList, thisImp(),
+                                                              VBoxGlobal::tr("Choose a virtual hard disk file"));
 
     /* If there was something really chosen: */
     if (!strChosenFilePath.isEmpty())
@@ -118,63 +86,14 @@ void UIWizardCloneVDPageBasic4::sltSelectLocationButtonClicked()
         /* If valid file extension is missed, append it: */
         if (QFileInfo(strChosenFilePath).suffix().isEmpty())
             strChosenFilePath += QString(".%1").arg(m_strDefaultExtension);
-        m_pLocationEditor->setText(QDir::toNativeSeparators(strChosenFilePath));
-        m_pLocationEditor->selectAll();
-        m_pLocationEditor->setFocus();
+        m_pDestinationDiskEditor->setText(QDir::toNativeSeparators(strChosenFilePath));
+        m_pDestinationDiskEditor->selectAll();
+        m_pDestinationDiskEditor->setFocus();
     }
-}
-
-void UIWizardCloneVDPageBasic4::retranslateUi()
-{
-    /* Translate page: */
-    setTitle(UIWizardCloneVD::tr("Virtual disk file location"));
-
-    /* Translate widgets: */
-    m_pLabel->setText(UIWizardCloneVD::tr("Please type the name of the new virtual disk file into the box below or "
-                                          "click on the folder icon to select a different folder to create the file in."));
-    m_pLocationCnt->setTitle(UIWizardCloneVD::tr("&Location"));
-}
-
-void UIWizardCloneVDPageBasic4::initializePage()
-{
-    /* Translate page: */
-    retranslateUi();
-
-    /* Get source virtual-disk: */
-    const CMedium &sourceVirtualDisk = field("sourceVirtualDisk").value<CMedium>();
-    /* Get default path: */
-    m_strDefaultPath = QFileInfo(sourceVirtualDisk.GetLocation()).absolutePath();
-    /* Get default name: */
-    QString strMediumName = UIWizardCloneVD::tr("%1_copy", "copied virtual disk name")
-                                               .arg(QFileInfo(sourceVirtualDisk.GetLocation()).baseName());
-    /* Get virtual-disk size: */
-    m_uMediumSize = sourceVirtualDisk.GetLogicalSize();
-    /* Get virtual-disk extension: */
-    m_strDefaultExtension = defaultExtension(field("mediumFormat").value<CMediumFormat>());
-    /* Compose path for cloned virtual-disk: */
-    m_strMediumPath = absoluteFilePath(toFileName(strMediumName, m_strDefaultExtension), m_strDefaultPath);
-    /* Set text to location editor: */
-    m_pLocationEditor->setText(strMediumName);
-}
-
-bool UIWizardCloneVDPageBasic4::isComplete() const
-{
-    /* Check what current name is not empty! */
-    return !m_pLocationEditor->text().trimmed().isEmpty();
-}
-
-bool UIWizardCloneVDPageBasic4::validatePage()
-{
-    if (QFileInfo(m_strMediumPath).exists())
-    {
-        msgCenter().sayCannotOverwriteHardDiskStorage(this, m_strMediumPath);
-        return false;
-    }
-    return true;
 }
 
 /* static */
-QString UIWizardCloneVDPageBasic4::toFileName(const QString &strName, const QString &strExtension)
+QString UIWizardCloneVDPage4::toFileName(const QString &strName, const QString &strExtension)
 {
     /* Convert passed name to native separators (it can be full, actually): */
     QString strFileName = QDir::toNativeSeparators(strName);
@@ -193,7 +112,7 @@ QString UIWizardCloneVDPageBasic4::toFileName(const QString &strName, const QStr
 }
 
 /* static */
-QString UIWizardCloneVDPageBasic4::absoluteFilePath(const QString &strFileName, const QString &strDefaultPath)
+QString UIWizardCloneVDPage4::absoluteFilePath(const QString &strFileName, const QString &strDefaultPath)
 {
     /* Wrap file-info around received file name: */
     QFileInfo fileInfo(strFileName);
@@ -208,7 +127,7 @@ QString UIWizardCloneVDPageBasic4::absoluteFilePath(const QString &strFileName, 
 }
 
 /* static */
-QString UIWizardCloneVDPageBasic4::defaultExtension(const CMediumFormat &mediumFormatRef)
+QString UIWizardCloneVDPage4::defaultExtension(const CMediumFormat &mediumFormatRef)
 {
     /* Load extension / device list: */
     QVector<QString> fileExtensions;
@@ -220,5 +139,104 @@ QString UIWizardCloneVDPageBasic4::defaultExtension(const CMediumFormat &mediumF
             return fileExtensions[i].toLower();
     AssertMsgFailed(("Extension can't be NULL!\n"));
     return QString();
+}
+
+QString UIWizardCloneVDPage4::mediumPath() const
+{
+    return absoluteFilePath(toFileName(m_pDestinationDiskEditor->text(), m_strDefaultExtension), m_strDefaultPath);
+}
+
+qulonglong UIWizardCloneVDPage4::mediumSize() const
+{
+    const CMedium &sourceVirtualDisk = fieldImp("sourceVirtualDisk").value<CMedium>();
+    return sourceVirtualDisk.isNull() ? 0 : sourceVirtualDisk.GetLogicalSize();
+}
+
+UIWizardCloneVDPageBasic4::UIWizardCloneVDPageBasic4()
+{
+    /* Create widgets: */
+    QVBoxLayout *pMainLayout = new QVBoxLayout(this);
+    {
+        m_pLabel = new QIRichTextLabel(this);
+        m_pDestinationCnt = new QGroupBox(this);
+        {
+            m_pDestinationCnt->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Fixed);
+            QHBoxLayout *pLocationCntLayout = new QHBoxLayout(m_pDestinationCnt);
+            {
+                m_pDestinationDiskEditor = new QLineEdit(m_pDestinationCnt);
+                m_pDestinationDiskOpenButton = new QIToolButton(m_pDestinationCnt);
+                {
+                    m_pDestinationDiskOpenButton->setAutoRaise(true);
+                    m_pDestinationDiskOpenButton->setIcon(UIIconPool::iconSet(":/select_file_16px.png", "select_file_dis_16px.png"));
+                }
+                pLocationCntLayout->addWidget(m_pDestinationDiskEditor);
+                pLocationCntLayout->addWidget(m_pDestinationDiskOpenButton);
+            }
+        }
+        pMainLayout->addWidget(m_pLabel);
+        pMainLayout->addWidget(m_pDestinationCnt);
+        pMainLayout->addStretch();
+    }
+
+    /* Setup page connections: */
+    connect(m_pDestinationDiskEditor, SIGNAL(textChanged(const QString &)), this, SIGNAL(completeChanged()));
+    connect(m_pDestinationDiskOpenButton, SIGNAL(clicked()), this, SLOT(sltSelectLocationButtonClicked()));
+
+    /* Register fields: */
+    registerField("mediumPath", this, "mediumPath");
+    registerField("mediumSize", this, "mediumSize");
+}
+
+void UIWizardCloneVDPageBasic4::sltSelectLocationButtonClicked()
+{
+    /* Call to base-class: */
+    onSelectLocationButtonClicked();
+}
+
+void UIWizardCloneVDPageBasic4::retranslateUi()
+{
+    /* Translate page: */
+    setTitle(UIWizardCloneVD::tr("Virtual disk file location"));
+
+    /* Translate widgets: */
+    m_pLabel->setText(UIWizardCloneVD::tr("Please type the name of the new virtual disk file into the box below or "
+                                          "click on the folder icon to select a different folder to create the file in."));
+    m_pDestinationCnt->setTitle(UIWizardCloneVD::tr("&Location"));
+    m_pDestinationDiskOpenButton->setToolTip(UIWizardCloneVD::tr("Choose a virtual hard disk file..."));
+}
+
+void UIWizardCloneVDPageBasic4::initializePage()
+{
+    /* Translate page: */
+    retranslateUi();
+
+    /* Get source virtual-disk file-information: */
+    QFileInfo sourceFileInfo(field("sourceVirtualDisk").value<CMedium>().GetLocation());
+    /* Get default path for virtual-disk copy: */
+    m_strDefaultPath = sourceFileInfo.absolutePath();
+    /* Get default extension for virtual-disk copy: */
+    m_strDefaultExtension = defaultExtension(field("mediumFormat").value<CMediumFormat>());
+    /* Compose default-name for virtual-disk copy: */
+    QString strMediumName = UIWizardCloneVD::tr("%1_copy", "copied virtual disk name").arg(sourceFileInfo.baseName());
+    /* Set default-name as text for location editor: */
+    m_pDestinationDiskEditor->setText(strMediumName);
+}
+
+bool UIWizardCloneVDPageBasic4::isComplete() const
+{
+    /* Make sure current name is not empty: */
+    return !m_pDestinationDiskEditor->text().trimmed().isEmpty();
+}
+
+bool UIWizardCloneVDPageBasic4::validatePage()
+{
+    /* Make sure such virtual-disk doesn't exists already: */
+    QString strMediumPath(mediumPath());
+    if (QFileInfo(strMediumPath).exists())
+    {
+        msgCenter().sayCannotOverwriteHardDiskStorage(this, strMediumPath);
+        return false;
+    }
+    return true;
 }
 

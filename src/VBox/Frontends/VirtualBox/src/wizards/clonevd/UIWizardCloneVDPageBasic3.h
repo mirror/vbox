@@ -23,13 +23,34 @@
 #include "UIWizardPage.h"
 
 /* Forward declarations: */
+class QGroupBox;
+class QButtonGroup;
 class QRadioButton;
 class QCheckBox;
 class QIRichTextLabel;
-class QGroupBox;
 
-/* 3rd page of the Clone Virtual Disk wizard: */
-class UIWizardCloneVDPageBasic3 : public UIWizardPage
+/* 3rd page of the Clone Virtual Disk wizard (base part): */
+class UIWizardCloneVDPage3 : public UIWizardPageBase
+{
+protected:
+
+    /* Constructor: */
+    UIWizardCloneVDPage3();
+
+    /* Stuff for 'variant' field: */
+    qulonglong mediumVariant() const;
+    void setMediumVariant(qulonglong uMediumVariant);
+
+    /* Widgets: */
+    QGroupBox *m_pVariantCnt;
+    QButtonGroup *m_pVariantButtonGroup;
+    QRadioButton *m_pDynamicalButton;
+    QRadioButton *m_pFixedButton;
+    QCheckBox *m_pSplitBox;
+};
+
+/* 3rd page of the Clone Virtual Disk wizard (basic extension): */
+class UIWizardCloneVDPageBasic3 : public UIWizardPage, public UIWizardCloneVDPage3
 {
     Q_OBJECT;
     Q_PROPERTY(qulonglong mediumVariant READ mediumVariant WRITE setMediumVariant);
@@ -50,21 +71,11 @@ private:
     /* Validation stuff: */
     bool isComplete() const;
 
-    /* Stuff for 'variant' field: */
-    qulonglong mediumVariant() const;
-    void setMediumVariant(qulonglong uMediumVariant);
-
-    /* Variables: */
-    QRadioButton *m_pDynamicalButton;
-    QRadioButton *m_pFixedButton;
-    QCheckBox *m_pSplitBox;
-
     /* Widgets: */
     QIRichTextLabel *m_pDescriptionLabel;
     QIRichTextLabel *m_pDynamicLabel;
     QIRichTextLabel *m_pFixedLabel;
     QIRichTextLabel *m_pSplitLabel;
-    QGroupBox *m_pVariantContainer;
 };
 
 #endif // __UIWizardCloneVDPageBasic3_h__

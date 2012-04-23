@@ -30,67 +30,106 @@
 #include "UIWizardNewVM.h"
 #include "COMDefs.h"
 #include "VBoxGlobal.h"
-#include "QIRichTextLabel.h"
 #include "VBoxGuestRAMSlider.h"
 #include "QILineEdit.h"
+#include "QIRichTextLabel.h"
+
+UIWizardNewVMPage3::UIWizardNewVMPage3()
+{
+}
+
+void UIWizardNewVMPage3::onRamSliderValueChanged(int iValue)
+{
+    /* Update 'ram' field editor connected to slider: */
+    m_pRamEditor->blockSignals(true);
+    m_pRamEditor->setText(QString::number(iValue));
+    m_pRamEditor->blockSignals(false);
+}
+
+void UIWizardNewVMPage3::onRamEditorTextChanged(const QString &strText)
+{
+    /* Update 'ram' field slider connected to editor: */
+    m_pRamSlider->blockSignals(true);
+    m_pRamSlider->setValue(strText.toInt());
+    m_pRamSlider->blockSignals(false);
+}
 
 UIWizardNewVMPageBasic3::UIWizardNewVMPageBasic3()
 {
     /* Create widget: */
     QVBoxLayout *pMainLayout = new QVBoxLayout(this);
+    {
         m_pLabel1 = new QIRichTextLabel(this);
         m_pLabel2 = new QIRichTextLabel(this);
         m_pMemoryCnt = new QGroupBox(this);
+        {
             m_pMemoryCnt->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Fixed);
-            QGridLayout *pMemoryLayout = new QGridLayout(m_pMemoryCnt);
+            QGridLayout *pMemoryCntLayout = new QGridLayout(m_pMemoryCnt);
+            {
                 m_pRamSlider = new VBoxGuestRAMSlider(m_pMemoryCnt);
+                {
                     m_pRamSlider->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
                     m_pRamSlider->setOrientation(Qt::Horizontal);
                     m_pRamSlider->setTickPosition(QSlider::TicksBelow);
+                }
                 m_pRamEditor = new QILineEdit(m_pMemoryCnt);
+                {
                     m_pRamEditor->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
                     m_pRamEditor->setFixedWidthByText("88888");
                     m_pRamEditor->setAlignment(Qt::AlignRight);
                     m_pRamEditor->setValidator(new QIntValidator(m_pRamSlider->minRAM(), m_pRamSlider->maxRAM(), this));
+                }
                 m_pRamUnits = new QLabel(m_pMemoryCnt);
+                {
                     m_pRamUnits->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Fixed);
+                }
                 m_pRamMin = new QLabel(m_pMemoryCnt);
+                {
                     m_pRamMin->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Fixed);
+                }
                 QSpacerItem *m_pRamSpacer = new QSpacerItem(0, 0, QSizePolicy::Expanding);
                 m_pRamMax = new QLabel(m_pMemoryCnt);
+                {
                     m_pRamMax->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Fixed);
-            pMemoryLayout->addWidget(m_pRamSlider, 0, 0, 1, 3);
-            pMemoryLayout->addWidget(m_pRamEditor, 0, 3);
-            pMemoryLayout->addWidget(m_pRamUnits, 0, 4);
-            pMemoryLayout->addWidget(m_pRamMin, 1, 0);
-            pMemoryLayout->addItem(m_pRamSpacer, 1, 1);
-            pMemoryLayout->addWidget(m_pRamMax, 1, 2);
-    pMainLayout->addWidget(m_pLabel1);
-    pMainLayout->addWidget(m_pLabel2);
-    pMainLayout->addWidget(m_pMemoryCnt);
-    pMainLayout->addStretch();
+                }
+                pMemoryCntLayout->addWidget(m_pRamSlider, 0, 0, 1, 3);
+                pMemoryCntLayout->addWidget(m_pRamEditor, 0, 3);
+                pMemoryCntLayout->addWidget(m_pRamUnits, 0, 4);
+                pMemoryCntLayout->addWidget(m_pRamMin, 1, 0);
+                pMemoryCntLayout->addItem(m_pRamSpacer, 1, 1);
+                pMemoryCntLayout->addWidget(m_pRamMax, 1, 2);
+            }
+        }
+        pMainLayout->addWidget(m_pLabel1);
+        pMainLayout->addWidget(m_pLabel2);
+        pMainLayout->addWidget(m_pMemoryCnt);
+        pMainLayout->addStretch();
+    }
 
     /* Setup connections: */
-    connect(m_pRamSlider, SIGNAL(valueChanged(int)), this, SLOT(ramSliderValueChanged(int)));
-    connect(m_pRamEditor, SIGNAL(textChanged(const QString&)), this, SLOT(ramEditorTextChanged(const QString&)));
+    connect(m_pRamSlider, SIGNAL(valueChanged(int)), this, SLOT(sltRamSliderValueChanged(int)));
+    connect(m_pRamEditor, SIGNAL(textChanged(const QString&)), this, SLOT(sltRamEditorTextChanged(const QString&)));
 
-    /* Initialize connections: */
-    ramSliderValueChanged(m_pRamSlider->value());
-
-    /* Register field: */
-    registerField("ram*", m_pRamSlider, "value", SIGNAL(valueChanged(int)));
+    /* Register fields: */
+    registerField("ram", m_pRamSlider, "value", SIGNAL(valueChanged(int)));
 }
 
-void UIWizardNewVMPageBasic3::ramSliderValueChanged(int iValue)
+void UIWizardNewVMPageBasic3::sltRamSliderValueChanged(int iValue)
 {
-    /* Update 'ram' field editor connected to slider: */
-    m_pRamEditor->setText(QString::number(iValue));
+    /* Call to base-class: */
+    onRamSliderValueChanged(iValue);
+
+    /* Broadcast complete-change: */
+    emit completeChanged();
 }
 
-void UIWizardNewVMPageBasic3::ramEditorTextChanged(const QString &strText)
+void UIWizardNewVMPageBasic3::sltRamEditorTextChanged(const QString &strText)
 {
-    /* Update 'ram' field slider connected to editor: */
-    m_pRamSlider->setValue(strText.toInt());
+    /* Call to base-class: */
+    onRamEditorTextChanged(strText);
+
+    /* Broadcast complete-change: */
+    emit completeChanged();
 }
 
 void UIWizardNewVMPageBasic3::retranslateUi()
@@ -116,7 +155,8 @@ void UIWizardNewVMPageBasic3::initializePage()
 
     /* Get recommended 'ram' field value: */
     CGuestOSType type = field("type").value<CGuestOSType>();
-    ramSliderValueChanged(type.GetRecommendedRAM());
+    m_pRamSlider->setValue(type.GetRecommendedRAM());
+    m_pRamEditor->setText(QString::number(type.GetRecommendedRAM()));
 
     /* 'Ram' field should have focus initially: */
     m_pRamSlider->setFocus();
@@ -124,7 +164,7 @@ void UIWizardNewVMPageBasic3::initializePage()
 
 bool UIWizardNewVMPageBasic3::isComplete() const
 {
-    /* Check what 'ram' field value feats the bounds: */
+    /* Make sure 'ram' field feats the bounds: */
     return m_pRamSlider->value() >= qMax(1, (int)m_pRamSlider->minRAM()) &&
            m_pRamSlider->value() <= (int)m_pRamSlider->maxRAM();
 }

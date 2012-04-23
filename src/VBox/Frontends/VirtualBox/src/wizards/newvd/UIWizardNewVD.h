@@ -39,9 +39,16 @@ public:
         Page4
     };
 
+    /* Page IDs: */
+    enum
+    {
+        PageExpert
+    };
+
     /* Constructor: */
-    UIWizardNewVD(QWidget *pParent, const QString &strDefaultName,
-                  const QString &strDefaultPath, qulonglong uDefaultSize);
+    UIWizardNewVD(QWidget *pParent,
+                  const QString &strDefaultName, const QString &strDefaultPath,
+                  qulonglong uDefaultSize);
 
     /* Returns virtual-disk: */
     CMedium virtualDisk() const { return m_virtualDisk; }
@@ -56,13 +63,20 @@ protected:
 
     /* Who will be able to create virtual-disk: */
     friend class UIWizardNewVDPageBasic4;
+    friend class UIWizardNewVDPageExpert;
 
 private:
 
     /* Translation stuff: */
     void retranslateUi();
 
+    /* Pages related stuff: */
+    void prepare();
+
     /* Variables: */
+    QString m_strDefaultName;
+    QString m_strDefaultPath;
+    qulonglong m_uDefaultSize;
     CMedium m_virtualDisk;
 };
 

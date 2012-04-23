@@ -28,6 +28,7 @@
 #include "UIWizardImportApp.h"
 #include "UIWizardImportAppPageBasic1.h"
 #include "UIWizardImportAppPageBasic2.h"
+#include "UIWizardImportAppPageExpert.h"
 #include "VBoxGlobal.h"
 #include "QIDialog.h"
 #include "QIFileDialog.h"
@@ -133,20 +134,10 @@ private:
     QString m_strText;
 };
 
-UIWizardImportApp::UIWizardImportApp(const QString &strFileName /* = QString() */, QWidget *pParent /* = 0 */)
-    : UIWizard(pParent)
+UIWizardImportApp::UIWizardImportApp(QWidget *pParent, const QString &strFileName)
+    : UIWizard(pParent, UIWizardType_ImportAppliance)
+    , m_strFileName(strFileName)
 {
-    /* Create & add pages: */
-    if (strFileName.isEmpty())
-        setPage(Page1, new UIWizardImportAppPageBasic1);
-    setPage(Page2, new UIWizardImportAppPageBasic2(strFileName));
-
-    /* Translate wizard: */
-    retranslateUi();
-
-    /* Translate wizard pages: */
-    retranslateAllPages();
-
 #ifndef Q_WS_MAC
     /* Assign watermark: */
     assignWatermark(":/vmw_ovf_import.png");
@@ -154,17 +145,6 @@ UIWizardImportApp::UIWizardImportApp(const QString &strFileName /* = QString() *
     /* Assign background image: */
     assignBackground(":/vmw_ovf_import_bg.png");
 #endif /* Q_WS_MAC */
-
-    /* Resize wizard to 'golden ratio': */
-    resizeToGoldenRatio(UIWizardType_ImportAppliance);
-
-    /* Setup connections: */
-    AssertMsg(!field("applianceWidget").value<ImportAppliancePointer>().isNull(), ("Appliance Widget is not set!\n"));
-    connect(this, SIGNAL(customButtonClicked(int)), field("applianceWidget").value<ImportAppliancePointer>(), SLOT(restoreDefaults()));
-    connect(this, SIGNAL(currentIdChanged(int)), this, SLOT(sltCurrentIdChanged(int)));
-
-    /* Make sure custom button shown even if final page is first to show: */
-    sltCurrentIdChanged(startId());
 }
 
 bool UIWizardImportApp::isValid() const
@@ -173,19 +153,6 @@ bool UIWizardImportApp::isValid() const
     if (UIApplianceImportEditorWidget *pImportApplianceWidget = field("applianceWidget").value<ImportAppliancePointer>())
         fResult = pImportApplianceWidget->isValid();
     return fResult;
-}
-
-void UIWizardImportApp::retranslateUi()
-{
-    /* Translate wizard: */
-    setWindowTitle(tr("Appliance Import Wizard"));
-    setButtonText(QWizard::CustomButton1, tr("Restore Defaults"));
-    setButtonText(QWizard::FinishButton, tr("Import"));
-}
-
-void UIWizardImportApp::sltCurrentIdChanged(int iId)
-{
-    setOption(QWizard::HaveCustomButton1, iId == Page2);
 }
 
 bool UIWizardImportApp::importAppliance()
@@ -209,6 +176,64 @@ bool UIWizardImportApp::importAppliance()
     }
     /* Now import all virtual systems: */
     return pImportApplianceWidget->import();
+}
+
+void UIWizardImportApp::sltCurrentIdChanged(int iId)
+{
+    /* Call to base-class: */
+    UIWizard::sltCurrentIdChanged(iId);
+    /* Enable 2nd button (Reset to Defaults) for 2nd and Expert pages only! */
+    setOption(QWizard::HaveCustomButton2, (mode() == UIWizardMode_Basic && iId == Page2) ||
+                                          (mode() == UIWizardMode_Expert && iId == PageExpert));
+}
+
+void UIWizardImportApp::sltCustomButtonClicked(int iId)
+{
+    /* Call to base-class: */
+    UIWizard::sltCustomButtonClicked(iId);
+
+    /* Handle 2nd button: */
+    if (iId == CustomButton2)
+    {
+        /* Get appliance widget: */
+        ImportAppliancePointer pApplianceWidget = field("applianceWidget").value<ImportAppliancePointer>();
+        AssertMsg(!pApplianceWidget.isNull(), ("Appliance Widget is not set!\n"));
+        /* Reset it to default: */
+        pApplianceWidget->restoreDefaults();
+    }
+}
+
+void UIWizardImportApp::retranslateUi()
+{
+    /* Call to base-class: */
+    UIWizard::retranslateUi();
+
+    /* Translate wizard: */
+    setWindowTitle(tr("Appliance Import Wizard"));
+    setButtonText(QWizard::CustomButton2, tr("Restore Defaults"));
+    setButtonText(QWizard::FinishButton, tr("Import"));
+}
+
+void UIWizardImportApp::prepare()
+{
+    /* Create corresponding pages: */
+    switch (mode())
+    {
+        case UIWizardMode_Basic:
+        {
+            if (m_strFileName.isEmpty())
+                setPage(Page1, new UIWizardImportAppPageBasic1);
+            setPage(Page2, new UIWizardImportAppPageBasic2(m_strFileName));
+            break;
+        }
+        case UIWizardMode_Expert:
+        {
+            setPage(PageExpert, new UIWizardImportAppPageExpert(m_strFileName));
+            break;
+        }
+    }
+    /* Call to base-class: */
+    UIWizard::prepare();
 }
 
 #include "UIWizardImportApp.moc"

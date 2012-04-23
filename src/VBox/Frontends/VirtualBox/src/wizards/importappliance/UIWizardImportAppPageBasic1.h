@@ -23,11 +23,23 @@
 #include "UIWizardPage.h"
 
 /* Forward declarations: */
-class QIRichTextLabel;
 class VBoxEmptyFileSelector;
+class QIRichTextLabel;
 
-/* 1st page of the Import Appliance wizard: */
-class UIWizardImportAppPageBasic1 : public UIWizardPage
+/* 1st page of the Import Appliance wizard (base part): */
+class UIWizardImportAppPage1 : public UIWizardPageBase
+{
+protected:
+
+    /* Constructor: */
+    UIWizardImportAppPage1();
+
+    /* Widgets: */
+    VBoxEmptyFileSelector *m_pFileSelector;
+};
+
+/* 1st page of the Import Appliance wizard (basic extension): */
+class UIWizardImportAppPageBasic1 : public UIWizardPage, public UIWizardImportAppPage1
 {
     Q_OBJECT;
 
@@ -50,7 +62,6 @@ private:
 
     /* Widgets: */
     QIRichTextLabel *m_pLabel;
-    VBoxEmptyFileSelector *m_pFileSelector;
 };
 
 #endif /* __UIWizardImportAppPageBasic1_h__ */

@@ -24,11 +24,34 @@
 #include "COMDefs.h"
 
 /* Forward declaration: */
-class QIRichTextLabel;
+class QGroupBox;
 class QRadioButton;
+class QIRichTextLabel;
 
-/* 3rd page of the Clone Virtual Machine wizard: */
-class UIWizardCloneVMPageBasic3 : public UIWizardPage
+/* 3rd page of the Clone Virtual Machine wizard (base part): */
+class UIWizardCloneVMPage3 : public UIWizardPageBase
+{
+protected:
+
+    /* Constructor: */
+    UIWizardCloneVMPage3(bool fShowChildsOption);
+
+    /* Stuff for 'cloneMode' field: */
+    KCloneMode cloneMode() const;
+    void setCloneMode(KCloneMode cloneMode);
+
+    /* Variables: */
+    bool m_fShowChildsOption;
+
+    /* Widgets: */
+    QGroupBox *m_pCloneModeCnt;
+    QRadioButton *m_pMachineRadio;
+    QRadioButton *m_pMachineAndChildsRadio;
+    QRadioButton *m_pAllRadio;
+};
+
+/* 3rd page of the Clone Virtual Machine wizard (basic extension): */
+class UIWizardCloneVMPageBasic3 : public UIWizardPage, public UIWizardCloneVMPage3
 {
     Q_OBJECT;
     Q_PROPERTY(KCloneMode cloneMode READ cloneMode WRITE setCloneMode);
@@ -36,7 +59,7 @@ class UIWizardCloneVMPageBasic3 : public UIWizardPage
 public:
 
     /* Constructor: */
-    UIWizardCloneVMPageBasic3(bool fShowChildsOption = true);
+    UIWizardCloneVMPageBasic3(bool fShowChildsOption);
 
 private:
 
@@ -49,18 +72,8 @@ private:
     /* Validation stuff: */
     bool validatePage();
 
-    /* Stuff for 'cloneMode' field: */
-    KCloneMode cloneMode() const;
-    void setCloneMode(KCloneMode cloneMode);
-
-    /* Variables: */
-    bool m_fShowChildsOption;
-
     /* Widgets: */
     QIRichTextLabel *m_pLabel;
-    QRadioButton *m_pMachineRadio;
-    QRadioButton *m_pMachineAndChildsRadio;
-    QRadioButton *m_pAllRadio;
 };
 
 #endif // __UIWizardCloneVMPageBasic3_h__

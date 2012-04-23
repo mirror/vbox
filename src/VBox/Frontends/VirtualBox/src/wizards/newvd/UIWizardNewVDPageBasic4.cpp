@@ -23,22 +23,23 @@
 #include "VBoxGlobal.h"
 #include "QIRichTextLabel.h"
 
+UIWizardNewVDPage4::UIWizardNewVDPage4()
+{
+}
+
 UIWizardNewVDPageBasic4::UIWizardNewVDPageBasic4()
 {
     /* Create widgets: */
     QVBoxLayout *pMainLayout = new QVBoxLayout(this);
+    {
         m_pLabel1 = new QIRichTextLabel(this);
         m_pSummaryText = new QIRichTextLabel(this);
         m_pLabel2 = new QIRichTextLabel(this);
-    pMainLayout->addWidget(m_pLabel1);
-    pMainLayout->addWidget(m_pSummaryText);
-    pMainLayout->addWidget(m_pLabel2);
-    pMainLayout->addStretch();
-
-    /* Register CMedium class: */
-    qRegisterMetaType<CMedium>();
-    /* Register 'virtualDisk' field: */
-    registerField("virtualDisk", this, "virtualDisk");
+        pMainLayout->addWidget(m_pLabel1);
+        pMainLayout->addWidget(m_pSummaryText);
+        pMainLayout->addWidget(m_pLabel2);
+        pMainLayout->addStretch();
+    }
 }
 
 void UIWizardNewVDPageBasic4::retranslateUi()
@@ -83,10 +84,20 @@ void UIWizardNewVDPageBasic4::initializePage()
 
 bool UIWizardNewVDPageBasic4::validatePage()
 {
-    /* Try to create virtual-disk: */
+    /* Initial result: */
+    bool fResult = true;
+
+    /* Lock finish button: */
     startProcessing();
-    bool fResult = qobject_cast<UIWizardNewVD*>(wizard())->createVirtualDisk();
+
+    /* Try to create virtual-disk: */
+    if (fResult)
+        fResult = qobject_cast<UIWizardNewVD*>(wizard())->createVirtualDisk();
+
+    /* Unlock finish button: */
     endProcessing();
+
+    /* Return result: */
     return fResult;
 }
 

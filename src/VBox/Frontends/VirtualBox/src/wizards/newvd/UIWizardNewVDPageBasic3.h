@@ -25,18 +25,67 @@
 
 /* Forward declarations: */
 class CMediumFormat;
-class QIRichTextLabel;
 class QGroupBox;
 class QLineEdit;
 class QIToolButton;
 class QSlider;
 class QILineEdit;
+class QIRichTextLabel;
 
-/* 3rd page of the New Virtual Disk wizard: */
-class UIWizardNewVDPageBasic3 : public UIWizardPage
+/* 3rd page of the New Virtual Disk wizard (base part): */
+class UIWizardNewVDPage3 : public UIWizardPageBase
+{
+protected:
+
+    /* Constructor: */
+    UIWizardNewVDPage3(const QString &strDefaultName, const QString &strDefaultPath);
+
+    /* Handlers: */
+    void onSelectLocationButtonClicked();
+    void onSizeSliderValueChanged(int iValue);
+    void onSizeEditorTextChanged(const QString &strValue);
+
+    /* Location-editors stuff: */
+    static QString toFileName(const QString &strName, const QString &strExtension);
+    static QString absoluteFilePath(const QString &strFileName, const QString &strDefaultPath);
+    static QString defaultExtension(const CMediumFormat &mediumFormatRef);
+
+    /* Size-editors stuff: */
+    static int calculateSliderScale(qulonglong uMaximumMediumSize);
+    static int log2i(qulonglong uValue);
+    static int sizeMBToSlider(qulonglong uValue, int iSliderScale);
+    static qulonglong sliderToSizeMB(int uValue, int iSliderScale);
+    void updateSizeToolTips(qulonglong uSize);
+
+    /* Stuff for 'mediumPath' field: */
+    QString mediumPath() const;
+
+    /* Stuff for 'mediumSize' field: */
+    qulonglong mediumSize() const;
+    void setMediumSize(qulonglong uMediumSize);
+
+    /* Variables: */
+    QString m_strDefaultName;
+    QString m_strDefaultPath;
+    QString m_strDefaultExtension;
+    qulonglong m_uMediumSizeMin;
+    qulonglong m_uMediumSizeMax;
+    int m_iSliderScale;
+
+    /* Widgets: */
+    QGroupBox *m_pLocationCnt;
+    QLineEdit *m_pLocationEditor;
+    QIToolButton *m_pLocationOpenButton;
+    QGroupBox *m_pSizeCnt;
+    QSlider *m_pSizeSlider;
+    QILineEdit *m_pSizeEditor;
+};
+
+/* 3rd page of the New Virtual Disk wizard (basic extension): */
+class UIWizardNewVDPageBasic3 : public UIWizardPage, public UIWizardNewVDPage3
 {
     Q_OBJECT;
-    Q_PROPERTY(QString mediumPath READ mediumPath WRITE setMediumPath);
+    Q_PROPERTY(QString mediumPath READ mediumPath);
     Q_PROPERTY(qulonglong mediumSize READ mediumSize WRITE setMediumSize);
 
 public:
@@ -44,10 +93,16 @@ public:
     /* Constructor: */
     UIWizardNewVDPageBasic3(const QString &strDefaultName, const QString &strDefaultPath, qulonglong uDefaultSize);
 
+protected:
+
+    /* Wrapper to access 'this' from base part: */
+    UIWizardPage* thisImp() { return this; }
+    /* Wrapper to access 'wizard-field' from base part: */
+    QVariant fieldImp(const QString &strFieldName) const { return UIWizardPage::field(strFieldName); }
+
 private slots:
 
     /* Location editors stuff: */
-    void sltLocationEditorTextChanged(const QString &strMediumName);
     void sltSelectLocationButtonClicked();
 
     /* Size editors stuff: */
@@ -66,45 +121,9 @@ private:
     bool isComplete() const;
     bool validatePage();
 
-    /* Location-editors stuff: */
-    static QString toFileName(const QString &strName, const QString &strExtension);
-    static QString absoluteFilePath(const QString &strFileName, const QString &strDefaultPath);
-    static QString defaultExtension(const CMediumFormat &mediumFormatRef);
-
-    /* Size-editors stuff: */
-    static int log2i(qulonglong uValue);
-    static int sizeMBToSlider(qulonglong uValue, int iSliderScale);
-    static qulonglong sliderToSizeMB(int uValue, int iSliderScale);
-    void updateSizeToolTips(qulonglong uSize);
-
-    /* Stuff for 'mediumPath' field: */
-    QString mediumPath() const { return m_strMediumPath; }
-    void setMediumPath(const QString &strMediumPath) { m_strMediumPath = strMediumPath; }
-    QString m_strMediumPath;
-
-    /* Stuff for 'mediumSize' field: */
-    qulonglong mediumSize() const;
-    void setMediumSize(qulonglong uMediumSize);
-
-    /* Location-editors variables: */
-    QString m_strDefaultName;
-    QString m_strDefaultPath;
-    QString m_strDefaultExtension;
-
-    /* Size-editors variables: */
-    qulonglong m_uMediumSizeMin;
-    qulonglong m_uMediumSizeMax;
-    int m_iSliderScale;
-
     /* Widgets: */
     QIRichTextLabel *m_pLocationLabel;
     QIRichTextLabel *m_pSizeLabel;
-    QGroupBox *m_pLocationCnt;
-    QLineEdit *m_pLocationEditor;
-    QIToolButton *m_pLocationSelector;
-    QGroupBox *m_pSizeCnt;
-    QSlider *m_pSizeSlider;
-    QILineEdit *m_pSizeEditor;
 };
 
 #endif // __UIWizardNewVDPageBasic3_h__

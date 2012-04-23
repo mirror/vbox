@@ -24,13 +24,37 @@
 
 /* Forward declarations: */
 class CMachine;
-class QIRichTextLabel;
 class QGroupBox;
 class VBoxMediaComboBox;
 class QIToolButton;
+class QIRichTextLabel;
 
-/* 2nd page of the First Run wizard: */
-class UIWizardFirstRunPageBasic2 : public UIWizardPage
+/* 2nd page of the First Run wizard (base part): */
+class UIWizardFirstRunPage2 : public UIWizardPageBase
+{
+protected:
+
+    /* Constructor: */
+    UIWizardFirstRunPage2(bool fBootHardDiskWasSet);
+
+    /* Handlers: */
+    void onOpenMediumWithFileOpenDialog();
+
+    /* Stuff for 'id' field: */
+    QString id() const;
+    void setId(const QString &strId);
+
+    /* Variables: */
+    bool m_fBootHardDiskWasSet;
+
+    /* Widgets: */
+    QGroupBox *m_pSourceCnt;
+    VBoxMediaComboBox *m_pMediaSelector;
+    QIToolButton *m_pSelectMediaButton;
+};
+
+/* 2nd page of the First Run wizard (basic extension): */
+class UIWizardFirstRunPageBasic2 : public UIWizardPage, public UIWizardFirstRunPage2
 {
     Q_OBJECT;
     Q_PROPERTY(QString source READ source);
@@ -39,12 +63,17 @@ class UIWizardFirstRunPageBasic2 : public UIWizardPage
 public:
 
     /* Constructor: */
-    UIWizardFirstRunPageBasic2(const CMachine &machine, bool fBootHardDiskWasSet);
+    UIWizardFirstRunPageBasic2(const QString &strMachineId, bool fBootHardDiskWasSet);
+
+protected:
+
+    /* Wrapper to access 'this' from base part: */
+    UIWizardPage* thisImp() { return this; }
 
 private slots:
 
     /* Open with file-open dialog: */
-    void sltOpenWithFileOpenDialog();
+    void sltOpenMediumWithFileOpenDialog();
 
 private:
 
@@ -60,18 +89,8 @@ private:
     /* Stuff for 'source' field: */
     QString source() const;
 
-    /* Stuff for 'id' field: */
-    QString id() const;
-    void setId(const QString &strId);
-
-    /* Variables: */
-    bool m_fBootHardDiskWasSet;
-
     /* Widgets: */
     QIRichTextLabel *m_pLabel;
-    QGroupBox *m_pCntSource;
-    VBoxMediaComboBox *m_pMediaSelector;
-    QIToolButton *m_pSelectMediaButton;
 };
 
 #endif // __UIWizardFirstRunPageBasic2_h__

@@ -28,39 +28,61 @@
 /* Forward declarations: */
 class UIWizardPage;
 
+/* Wizard type: */
+enum UIWizardType
+{
+    UIWizardType_NewVM,
+    UIWizardType_CloneVM,
+    UIWizardType_ExportAppliance,
+    UIWizardType_ImportAppliance,
+    UIWizardType_FirstRun,
+    UIWizardType_NewVD,
+    UIWizardType_CloneVD
+};
+
+/* Wizard mode: */
+enum UIWizardMode
+{
+    UIWizardMode_Basic,
+    UIWizardMode_Expert
+};
+
 /* QWizard class reimplementation with extended funtionality. */
 class UIWizard : public QIWithRetranslateUI<QWizard>
 {
     Q_OBJECT;
 
-public:
+public slots:
 
-    /* Constructor: */
-    UIWizard(QWidget *pParent);
+    /* Exec slot: */
+    int	exec();
+
+protected slots:
+
+    /* Page change handler: */
+    virtual void sltCurrentIdChanged(int iId);
+    /* Custom button 1 click handler: */
+    virtual void sltCustomButtonClicked(int iId);
 
 protected:
 
-    /* Wizard type: */
-    enum UIWizardType
-    {
-        UIWizardType_NewVM,
-        UIWizardType_CloneVM,
-        UIWizardType_ExportAppliance,
-        UIWizardType_ImportAppliance,
-        UIWizardType_FirstRun,
-        UIWizardType_NewVD,
-        UIWizardType_CloneVD
-    };
-
-    /* Page related methods: */
-    int addPage(UIWizardPage *pPage);
-    void setPage(int iId, UIWizardPage *pPage);
+    /* Constructor: */
+    UIWizard(QWidget *pParent, UIWizardType type);
 
     /* Translation stuff: */
-    void retranslateAllPages();
+    void retranslateUi();
+    void retranslatePages();
+
+    /* Mode related stuff: */
+    UIWizardMode mode() { return m_mode; }
+
+    /* Page related methods: */
+    void setPage(int iId, UIWizardPage *pPage);
+    virtual void prepare();
+    void cleanup();
 
     /* Adjusting stuff: */
-    void resizeToGoldenRatio(UIWizardType wizardType);
+    void resizeToGoldenRatio();
 
     /* Design stuff: */
 #ifndef Q_WS_MAC
@@ -77,10 +99,18 @@ private:
     /* Helpers: */
     void configurePage(UIWizardPage *pPage);
     void resizeAccordingLabelWidth(int iLabelWidth);
-    double ratioForWizardType(UIWizardType wizardType);
+    double ratio();
 #ifndef Q_WS_MAC
     int proposedWatermarkHeight();
     void assignWatermarkHelper();
+#endif /* !Q_WS_MAC */
+    static QString nameForType(UIWizardType type);
+    static UIWizardMode loadModeForType(UIWizardType type);
+
+    /* Variables: */
+    UIWizardType m_type;
+    UIWizardMode m_mode;
+#ifndef Q_WS_MAC
     QString m_strWatermarkName;
 #endif /* !Q_WS_MAC */
 };

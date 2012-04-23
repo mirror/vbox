@@ -26,11 +26,17 @@
 #include "UIIconPool.h"
 #include "QIRichTextLabel.h"
 
+UIWizardNewVMPage1::UIWizardNewVMPage1()
+{
+}
+
 UIWizardNewVMPageBasic1::UIWizardNewVMPageBasic1()
 {
     /* Create widgets: */
     QVBoxLayout *pMainLayout = new QVBoxLayout(this);
+    {
         m_pLabel1 = new QIRichTextLabel(this);
+        {
             /* Register 'message-box warning-icon' image in m_pLabel1 as 'image': */
             QSize wSize(64, 64);
             QPixmap wPixmap = UIIconPool::defaultIcon(UIIconPool::MessageBoxWarningIcon).pixmap(wSize);
@@ -38,16 +44,18 @@ UIWizardNewVMPageBasic1::UIWizardNewVMPageBasic1()
                 wPixmap = wPixmap.scaled(wSize, Qt::KeepAspectRatio, Qt::SmoothTransformation);
             QImage wImage = wPixmap.toImage();
             m_pLabel1->registerImage(wImage, "image");
+        }
         m_pLabel2 = new QIRichTextLabel(this);
-    pMainLayout->addWidget(m_pLabel1);
-    pMainLayout->addWidget(m_pLabel2);
-    pMainLayout->addStretch();
+        pMainLayout->addWidget(m_pLabel1);
+        pMainLayout->addWidget(m_pLabel2);
+        pMainLayout->addStretch();
+    }
 }
 
 void UIWizardNewVMPageBasic1::retranslateUi()
 {
     /* Translate page: */
-    setTitle(UIWizardNewVM::tr("Welcome to the New Virtual Machine Wizard!"));
+    setTitle(UIWizardNewVM::tr("Welcome to the New Virtual Machine wizard!"));
 
     /* Translate widgets: */
     m_pLabel1->setText(tableTemplate().arg("<b>STOP!</b> Before continuing, please understand what you are doing. "

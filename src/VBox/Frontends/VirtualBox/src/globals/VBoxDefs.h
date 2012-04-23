@@ -122,6 +122,7 @@ struct VBoxDefs
     static const char* GUI_VirtualScreenToHostScreen;
     static const char* GUI_AutoresizeGuest;
     static const char* GUI_FirstRun;
+    static const char* GUI_HideDescriptionForWizards;
     static const char* GUI_SaveMountedAtRuntime;
     static const char* GUI_ShowMiniToolBar;
     static const char* GUI_MiniToolBarAlignment;

@@ -28,98 +28,243 @@
 #include "VBoxGlobal.h"
 #include "QIRichTextLabel.h"
 
-UIWizard::UIWizard(QWidget *pParent)
-    : QIWithRetranslateUI<QWizard>(pParent)
+int	UIWizard::exec()
 {
-#if 0 // This is VERY important change, have to discuss first!
-    /* Qt have a bug-o-feature which silently fallbacks complex-wizard-style
-     * to more simple in case it failed to initialize that complex-wizard-style.
-     * Further wizard's look-n-feel may partially corresponds to both:
-     * complex-wizard-style and falled-back-one, we have to be sure which we are using. */
-    setWizardStyle(wizardStyle());
-#endif
-
-#ifdef Q_WS_MAC
-    /* I'm really not sure why there shouldn't be any default button on Mac OS
-     * X. This prevents the using of Enter to jump to the next page. */
-    setOptions(options() ^ QWizard::NoDefaultButton);
-#endif /* Q_WS_MAC */
+    /* Prepare wizard: */
+    prepare();
+    /* Call to base-class: */
+    return QWizard::exec();
 }
 
-int	UIWizard::addPage(UIWizardPage *pPage)
+void UIWizard::sltCurrentIdChanged(int iId)
 {
-    /* Configure page first: */
-    configurePage(pPage);
+    /* Enable 1st button (Hide/Show Description) for 1st page only: */
+    setOption(QWizard::HaveCustomButton1, iId == 0);
+}
 
-    /* Add page finally: */
-    return QWizard::addPage(pPage);
+void UIWizard::sltCustomButtonClicked(int iId)
+{
+    /* Handle 1st button: */
+    if (iId == CustomButton1)
+    {
+        /* Cleanup: */
+        cleanup();
+
+        /* Compose wizard's name: */
+        QString strWizardName = nameForType(m_type);
+        /* Load mode settings: */
+        QStringList wizards = vboxGlobal().virtualBox().GetExtraDataStringList(VBoxDefs::GUI_HideDescriptionForWizards);
+
+        /* Switch mode: */
+        switch (m_mode)
+        {
+            case UIWizardMode_Basic:
+            {
+                m_mode = UIWizardMode_Expert;
+                if (!wizards.contains(strWizardName))
+                    wizards << strWizardName;
+                break;
+            }
+            case UIWizardMode_Expert:
+            {
+                m_mode = UIWizardMode_Basic;
+                if (wizards.contains(strWizardName))
+                    wizards.removeAll(strWizardName);
+                break;
+            }
+        }
+
+        /* Save mode settings: */
+        vboxGlobal().virtualBox().SetExtraDataStringList(VBoxDefs::GUI_HideDescriptionForWizards, wizards);
+
+        /* Prepare: */
+        prepare();
+    }
+}
+
+UIWizard::UIWizard(QWidget *pParent, UIWizardType type)
+    : QIWithRetranslateUI<QWizard>(pParent)
+    , m_type(type)
+    , m_mode(loadModeForType(m_type))
+{
+#ifdef Q_WS_WIN
+    /* Hide window icon: */
+    setWindowIcon(QIcon());
+#endif /* Q_WS_WIN */
+
+#ifdef Q_WS_MAC
+    /* I'm really not sure why there shouldn't be any default button on Mac OS X.
+     * This prevents the using of Enter to jump to the next page. */
+    setOptions(options() ^ QWizard::NoDefaultButton);
+#endif /* Q_WS_MAC */
+
+    /* Setup connections: */
+    connect(this, SIGNAL(currentIdChanged(int)), this, SLOT(sltCurrentIdChanged(int)));
+    connect(this, SIGNAL(customButtonClicked(int)), this, SLOT(sltCustomButtonClicked(int)));
+}
+
+void UIWizard::retranslateUi()
+{
+    /* Translate basic/expert button: */
+    switch (m_mode)
+    {
+        case UIWizardMode_Basic: setButtonText(QWizard::CustomButton1, tr("Hide Description")); break;
+        case UIWizardMode_Expert: setButtonText(QWizard::CustomButton1, tr("Show Description")); break;
+    }
+}
+
+void UIWizard::retranslatePages()
+{
+    /* Translate all the pages: */
+    QList<int> ids = pageIds();
+    for (int i = 0; i < ids.size(); ++i)
+        qobject_cast<UIWizardPage*>(page(ids[i]))->retranslate();
 }
 
 void UIWizard::setPage(int iId, UIWizardPage *pPage)
 {
     /* Configure page first: */
     configurePage(pPage);
-
     /* Add page finally: */
     QWizard::setPage(iId, pPage);
 }
 
-void UIWizard::retranslateAllPages()
+void UIWizard::prepare()
 {
-    QList<UIWizardPage*> pages = findChildren<UIWizardPage*>();
-    for(int i = 0; i < pages.size(); ++i)
-        qobject_cast<UIWizardPage*>(pages.at((i)))->retranslate();
+    /* Translate wizard: */
+    retranslateUi();
+    /* Translate wizard pages: */
+    retranslatePages();
+
+    /* Resize wizard to 'golden ratio': */
+    resizeToGoldenRatio();
+
+    /* Notify pages they are ready: */
+    QList<int> ids = pageIds();
+    for (int i = 0; i < ids.size(); ++i)
+        qobject_cast<UIWizardPage*>(page(ids[i]))->markReady();
+
+    /* Make sure custom buttons shown even if final page is first to show: */
+    sltCurrentIdChanged(startId());
 }
 
-void UIWizard::resizeToGoldenRatio(UIWizardType wizardType)
+void UIWizard::cleanup()
 {
-    /* Get corresponding ratio: */
-    double dRatio = ratioForWizardType(wizardType);
+    /* Remove all the pages: */
+    QList<int> ids = pageIds();
+    for (int i = ids.size() - 1; i >= 0 ; --i)
+    {
+        /* Get enumerated page ID: */
+        int iId = ids[i];
+        /* Get corresponding page: */
+        QWizardPage *pWizardPage = page(iId);
 
-    /* Use some small (!) initial QIRichTextLabel width: */
-    int iInitialLabelWidth = 200;
+        /* Remove page from the wizard: */
+        removePage(iId);
+        /* Delete page finally: */
+        delete pWizardPage;
+    }
 
-    /* Resize wizard according that initial width,
-     * actually there could be other content
-     * which wants to be wider than that initial width. */
-    resizeAccordingLabelWidth(iInitialLabelWidth);
-
-    /* Get all the pages: */
-    QList<UIWizardPage*> pages = findChildren<UIWizardPage*>();
-    /* Get some (first) of those pages: */
-    UIWizardPage *pSomePage = pages[0];
-
-    /* Calculate actual label width: */
-    int iPageWidth = pSomePage->width();
-    int iLeft, iTop, iRight, iBottom;
-    pSomePage->layout()->getContentsMargins(&iLeft, &iTop, &iRight, &iBottom);
-    int iCurrentLabelWidth = iPageWidth - iLeft - iRight;
-
-    /* Calculate summary margin length, including margins of the page and wizard: */
-    int iMarginsLength = width() - iCurrentLabelWidth;
-
-    /* Calculating nearest to 'golden ratio' label width: */
-    int iCurrentWizardWidth = width();
-    int iCurrentWizardHeight = height();
 #ifndef Q_WS_MAC
-    /* We should take into account watermar thought its not assigned yet: */
-    QPixmap watermarkPixmap(m_strWatermarkName);
-    int iWatermarkWidth = watermarkPixmap.width();
-    iCurrentWizardWidth += iWatermarkWidth;
+    /* Cleanup watermark: */
+    if (!m_strWatermarkName.isEmpty())
+        setPixmap(QWizard::WatermarkPixmap, QPixmap());
 #endif /* !Q_WS_MAC */
-    int iGoldenRatioWidth = (int)qSqrt(dRatio * iCurrentWizardWidth * iCurrentWizardHeight);
-    int iProposedLabelWidth = iGoldenRatioWidth - iMarginsLength;
+}
+
+void UIWizard::resizeToGoldenRatio()
+{
+    /* Check if wizard is in basic or expert mode: */
+    if (m_mode == UIWizardMode_Expert)
+    {
+        /* Unfortunately QWizard hides some of useful API in private part,
+         * and also have few layouting bugs which could be easy fixed
+         * by that API, so we will use QWizard::restart() method
+         * to call the same functionality indirectly...
+         * Early call restart() which is usually goes on show()! */
+        restart();
+
+        /* Now we have correct label size-hint(s) for all the pages.
+         * We have to make sure all the pages uses maximum available size-hint. */
+        QSize maxOfSizeHints;
+        QList<UIWizardPage*> pages = findChildren<UIWizardPage*>();
+        /* Search for the maximum available size-hint: */
+        foreach (UIWizardPage *pPage, pages)
+        {
+            maxOfSizeHints.rwidth() = pPage->sizeHint().width() > maxOfSizeHints.width() ?
+                                      pPage->sizeHint().width() : maxOfSizeHints.width();
+            maxOfSizeHints.rheight() = pPage->sizeHint().height() > maxOfSizeHints.height() ?
+                                       pPage->sizeHint().height() : maxOfSizeHints.height();
+        }
+        /* Minimum height to 350pix: */
+        if (maxOfSizeHints.height() < 350)
+            maxOfSizeHints.setHeight(350);
+        /* Feat corresponding height: */
+        maxOfSizeHints.setWidth(qMax((int)(1.5 * maxOfSizeHints.height()), maxOfSizeHints.width()));
+        /* Use that size-hint for all the pages: */
+        foreach (UIWizardPage *pPage, pages)
+            pPage->setMinimumSize(maxOfSizeHints);
+
+        /* Relayout widgets: */
+        QList<QLayout*> layouts = findChildren<QLayout*>();
+        foreach(QLayout *pLayout, layouts)
+            pLayout->activate();
+
+        /* Unfortunately QWizard hides some of useful API in private part,
+         * BUT it also have few layouting bugs which could be easy fixed
+         * by that API, so we will use QWizard::restart() method
+         * to call the same functionality indirectly...
+         * And now we call restart() after layout activation procedure! */
+        restart();
+
+        /* Resize it to minimum size: */
+        resize(QSize(0, 0));
+    }
+    else
+    {
+        /* Use some small (!) initial QIRichTextLabel width: */
+        int iInitialLabelWidth = 200;
+
+        /* Resize wizard according that initial width,
+         * actually there could be other content
+         * which wants to be wider than that initial width. */
+        resizeAccordingLabelWidth(iInitialLabelWidth);
+
+        /* Get some (first) of those pages: */
+        UIWizardPage *pPage = qobject_cast<UIWizardPage*>(page(0));
+        /* Calculate actual label width: */
+        int iPageWidth = pPage->minimumWidth();
+        int iLeft, iTop, iRight, iBottom;
+        pPage->layout()->getContentsMargins(&iLeft, &iTop, &iRight, &iBottom);
+        int iCurrentLabelWidth = iPageWidth - iLeft - iRight;
+        /* Calculate summary margin length,
+         * including margins of the page and the wizard: */
+        int iMarginsLength = width() - iCurrentLabelWidth;
+
+        /* Get current wizard width and height: */
+        int iCurrentWizardWidth = width();
+        int iCurrentWizardHeight = height();
 #ifndef Q_WS_MAC
-    /* We should take into account watermar thought its not assigned yet: */
-    iProposedLabelWidth -= iWatermarkWidth;
+        /* We should take into account watermark like its assigned already: */
+        QPixmap watermarkPixmap(m_strWatermarkName);
+        int iWatermarkWidth = watermarkPixmap.width();
+        iCurrentWizardWidth += iWatermarkWidth;
+#endif /* !Q_WS_MAC */
+        /* Calculating nearest to 'golden ratio' label width: */
+        int iGoldenRatioWidth = (int)qSqrt(ratio() * iCurrentWizardWidth * iCurrentWizardHeight);
+        int iProposedLabelWidth = iGoldenRatioWidth - iMarginsLength;
+#ifndef Q_WS_MAC
+        /* We should take into account watermark like its assigned already: */
+        iProposedLabelWidth -= iWatermarkWidth;
 #endif /* !Q_WS_MAC */
 
-    /* Choose maximum between current and proposed label width: */
-    int iNewLabelWidth = qMax(iCurrentLabelWidth, iProposedLabelWidth);
+        /* Choose maximum between current and proposed label width: */
+        int iNewLabelWidth = qMax(iCurrentLabelWidth, iProposedLabelWidth);
 
-    /* Finally resize wizard according new label width,
-     * taking into account all the content and 'golden ratio' rule: */
-    resizeAccordingLabelWidth(iNewLabelWidth);
+        /* Finally resize wizard according new label width,
+         * taking into account all the content and 'golden ratio' rule: */
+        resizeAccordingLabelWidth(iNewLabelWidth);
+    }
 
 #ifndef Q_WS_MAC
     /* Really assign watermark: */
@@ -220,7 +365,7 @@ void UIWizard::resizeAccordingLabelWidth(int iLabelsWidth)
     resize(QSize(0, 0));
 }
 
-double UIWizard::ratioForWizardType(UIWizardType wizardType)
+double UIWizard::ratio()
 {
     /* Default value: */
     double dRatio = 1.6;
@@ -246,7 +391,7 @@ double UIWizard::ratioForWizardType(UIWizardType wizardType)
     }
 #endif /* Q_WS_WIN */
 
-    switch (wizardType)
+    switch (m_type)
     {
         /* New VM wizard much wider than others, fixing: */
         case UIWizardType_NewVM:
@@ -272,7 +417,7 @@ int UIWizard::proposedWatermarkHeight()
      * for that we have to take into account:
      * 1. wizard-layout top-margin (for modern style),
      * 2. wizard-header height,
-     * 3. margin between wizard-header and wizard-page,
+     * 3. spacing between wizard-header and wizard-page,
      * 4. wizard-page height,
      * 5. wizard-layout bottom-margin (for modern style). */
 
@@ -281,23 +426,39 @@ int UIWizard::proposedWatermarkHeight()
 
     /* Acquire wizard-layout top-margin: */
     int iTopMargin = 0;
-    if (wizardStyle() == QWizard::ModernStyle)
-        iTopMargin = pStyle->pixelMetric(QStyle::PM_LayoutTopMargin);
+    if (m_mode == UIWizardMode_Basic)
+    {
+        if (wizardStyle() == QWizard::ModernStyle)
+            iTopMargin = pStyle->pixelMetric(QStyle::PM_LayoutTopMargin);
+    }
 
-    /* We have no direct access to QWizardHeader inside QWizard private data...
-     * From Qt sources it seems title font is hardcoded as current font point-size + 4: */
-    QFont titleFont(QApplication::font());
-    titleFont.setPointSize(titleFont.pointSize() + 4);
-    QFontMetrics titleFontMetrics(titleFont);
-    int iTitleHeight = titleFontMetrics.height();
+    /* Acquire wizard-header height: */
+    int iTitleHeight = 0;
+    if (m_mode == UIWizardMode_Basic)
+    {
+        /* We have no direct access to QWizardHeader inside QWizard private data...
+         * From Qt sources it seems title font is hardcoded as current font point-size + 4: */
+        QFont titleFont(QApplication::font());
+        titleFont.setPointSize(titleFont.pointSize() + 4);
+        QFontMetrics titleFontMetrics(titleFont);
+        iTitleHeight = titleFontMetrics.height();
+    }
 
-    /* We have no direct access to margin between QWizardHeader and wizard-pages...
-     * From Qt sources it seems its hardcoded as just 7 pixels: */
-    int iMarginBetweenTitleAndPage = 7;
+    /* Acquire spacing between wizard-header and wizard-page: */
+    int iMarginBetweenTitleAndPage = 0;
+    if (m_mode == UIWizardMode_Basic)
+    {
+        /* We have no direct access to margin between QWizardHeader and wizard-pages...
+         * From Qt sources it seems its hardcoded as just 7 pixels: */
+        iMarginBetweenTitleAndPage = 7;
+    }
 
-    /* Also we should get any page height: */
-    QList<UIWizardPage*> pages = findChildren<UIWizardPage*>();
-    int iPageHeight = pages[0]->height();
+    /* Acquire wizard-page height: */
+    int iPageHeight = 0;
+    if (page(0))
+    {
+        iPageHeight = page(0)->minimumSize().height();
+    }
 
     /* Acquire wizard-layout bottom-margin: */
     int iBottomMargin = 0;
@@ -319,9 +480,9 @@ void UIWizard::assignWatermarkHelper()
     QRgb rgbFrame = imgWatermark.pixel(imgWatermark.width() - 1, 0);
     /* Create final image on the basis of incoming, applying the rules: */
     QImage imgWatermarkNew(imgWatermark.width(), qMax(imgWatermark.height(), proposedWatermarkHeight()), imgWatermark.format());
-    for (int y = 0; y < imgWatermarkNew.height(); ++ y)
+    for (int y = 0; y < imgWatermarkNew.height(); ++y)
     {
-        for (int x = 0; x < imgWatermarkNew.width(); ++ x)
+        for (int x = 0; x < imgWatermarkNew.width(); ++x)
         {
             /* Border rule 1 - draw border for ClassicStyle */
             if (wizardStyle() == QWizard::ClassicStyle &&
@@ -349,4 +510,34 @@ void UIWizard::assignWatermarkHelper()
     setPixmap(QWizard::WatermarkPixmap, pixWatermarkNew);
 }
 #endif /* !Q_WS_MAC */
+
+/* static */
+QString UIWizard::nameForType(UIWizardType type)
+{
+    QString strName;
+    switch (type)
+    {
+        case UIWizardType_NewVM: strName = "NewVM"; break;
+        case UIWizardType_CloneVM: strName = "CloneVM"; break;
+        case UIWizardType_ExportAppliance: strName = "ExportAppliance"; break;
+        case UIWizardType_ImportAppliance: strName = "ImportAppliance"; break;
+        case UIWizardType_FirstRun: strName = "FirstRun"; break;
+        case UIWizardType_NewVD: strName = "NewVD"; break;
+        case UIWizardType_CloneVD: strName = "CloneVD"; break;
+    }
+    return strName;
+}
+
+/* static */
+UIWizardMode UIWizard::loadModeForType(UIWizardType type)
+{
+    /* Default mode is Basic: */
+    UIWizardMode mode = UIWizardMode_Basic;
+    /* Get mode from extra-data: */
+    QStringList wizards = vboxGlobal().virtualBox().GetExtraDataStringList(VBoxDefs::GUI_HideDescriptionForWizards);
+    if (wizards.contains(nameForType(type)))
+        mode = UIWizardMode_Expert;
+    /* Return mode: */
+    return mode;
+}
 

@@ -26,17 +26,23 @@
 #include "VBoxGlobal.h"
 #include "QIRichTextLabel.h"
 
+UIWizardNewVMPage5::UIWizardNewVMPage5()
+{
+}
+
 UIWizardNewVMPageBasic5::UIWizardNewVMPageBasic5()
 {
     /* Create widget: */
     QVBoxLayout *pMainLayout = new QVBoxLayout(this);
-        m_pPage5Text1 = new QIRichTextLabel(this);
-        m_pSummaryText = new QIRichTextLabel(this);
-        m_pPage5Text2 = new QIRichTextLabel(this);
-    pMainLayout->addWidget(m_pPage5Text1);
-    pMainLayout->addWidget(m_pSummaryText);
-    pMainLayout->addWidget(m_pPage5Text2);
-    pMainLayout->addStretch();
+    {
+        m_pLabel1 = new QIRichTextLabel(this);
+        m_pSummary = new QIRichTextLabel(this);
+        m_pLabel2 = new QIRichTextLabel(this);
+        pMainLayout->addWidget(m_pLabel1);
+        pMainLayout->addWidget(m_pSummary);
+        pMainLayout->addWidget(m_pLabel2);
+        pMainLayout->addStretch();
+    }
 }
 
 void UIWizardNewVMPageBasic5::retranslateUi()
@@ -45,13 +51,13 @@ void UIWizardNewVMPageBasic5::retranslateUi()
     setTitle(UIWizardNewVM::tr("Summary"));
 
     /* Translate widgets: */
-    m_pPage5Text1->setText(UIWizardNewVM::tr("<p>You are going to create a new virtual machine with the following parameters:</p>"));
-    m_pPage5Text2->setText(UIWizardNewVM::tr("<p>If the above is correct press the <b>%1</b> button. Once "
-                                             "you press it, a new virtual machine will be created. </p><p>Note "
-                                             "that you can alter these and all other setting of the created "
-                                             "virtual machine at any time using the <b>Settings</b> dialog "
-                                             "accessible through the menu of the main window.</p>")
-                                            .arg(VBoxGlobal::replaceHtmlEntities(VBoxGlobal::removeAccelMark(wizard()->buttonText(QWizard::FinishButton)))));
+    m_pLabel1->setText(UIWizardNewVM::tr("<p>You are going to create a new virtual machine with the following parameters:</p>"));
+    m_pLabel2->setText(UIWizardNewVM::tr("<p>If the above is correct press the <b>%1</b> button. Once "
+                                         "you press it, a new virtual machine will be created. </p><p>Note "
+                                         "that you can alter these and all other setting of the created "
+                                         "virtual machine at any time using the <b>Settings</b> dialog "
+                                         "accessible through the menu of the main window.</p>")
+                                        .arg(VBoxGlobal::replaceHtmlEntities(VBoxGlobal::removeAccelMark(wizard()->buttonText(QWizard::FinishButton)))));
 
     /* Compose common summary: */
     QString strSummary;
@@ -73,7 +79,7 @@ void UIWizardNewVMPageBasic5::retranslateUi()
         strSummary += QString("<tr><td><nobr>%8: </nobr></td><td><nobr>%9</nobr></td></tr>")
                              .arg(UIWizardNewVM::tr("Start-up Disk", "summary"), field("virtualDiskName").toString());
     }
-    m_pSummaryText->setText("<table cellspacing=0 cellpadding=0>" + strSummary + "</table>");
+    m_pSummary->setText("<table cellspacing=0 cellpadding=0>" + strSummary + "</table>");
 }
 
 void UIWizardNewVMPageBasic5::initializePage()
@@ -82,15 +88,25 @@ void UIWizardNewVMPageBasic5::initializePage()
     retranslateUi();
 
     /* Summary should have focus initially: */
-    m_pSummaryText->setFocus();
+    m_pSummary->setFocus();
 }
 
 bool UIWizardNewVMPageBasic5::validatePage()
 {
-    /* Try to create VM: */
+    /* Initial result: */
+    bool fResult = true;
+
+    /* Lock finish button: */
     startProcessing();
-    bool fResult = qobject_cast<UIWizardNewVM*>(wizard())->createVM();
+
+    /* Try to create VM: */
+    if (fResult)
+        fResult = qobject_cast<UIWizardNewVM*>(wizard())->createVM();
+
+    /* Unlock finish button: */
     endProcessing();
+
+    /* Return result: */
     return fResult;
 }
 

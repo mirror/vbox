@@ -25,49 +25,23 @@
 #include "UIWizardExportApp.h"
 #include "VBoxGlobal.h"
 #include "UIMessageCenter.h"
+#include "QILabelSeparator.h"
 #include "QIRichTextLabel.h"
 
-UIWizardExportAppPageBasic4::UIWizardExportAppPageBasic4()
+UIWizardExportAppPage4::UIWizardExportAppPage4()
 {
-    /* Create widgets: */
-    QVBoxLayout *pMainLayout = new QVBoxLayout(this);
-        m_pLabel = new QIRichTextLabel(this);
-        m_pApplianceWidget = new UIApplianceExportEditorWidget(this);
-            m_pApplianceWidget->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::MinimumExpanding);
-    pMainLayout->addWidget(m_pLabel);
-    pMainLayout->addWidget(m_pApplianceWidget);
-
-    /* Register ExportAppliancePointer class: */
-    qRegisterMetaType<ExportAppliancePointer>();
-    /* Register 'applianceWidget' field! */
-    registerField("applianceWidget", this, "applianceWidget");
 }
 
-void UIWizardExportAppPageBasic4::retranslateUi()
+void UIWizardExportAppPage4::refreshApplianceSettingsWidget()
 {
-    /* Translate page: */
-    setTitle(UIWizardExportApp::tr("Appliance Export Settings"));
-
-    /* Translate widgets: */
-    m_pLabel->setText(UIWizardExportApp::tr("Here you can change additional configuration "
-                                            "values of the selected virtual machines. "
-                                            "You can modify most of the properties shown "
-                                            "by double-clicking on the items."));
-}
-
-void UIWizardExportAppPageBasic4::initializePage()
-{
-    /* Translate page: */
-    retranslateUi();
-
-    /* Prepare settings widget: */
+    /* Refresh settings widget: */
     CVirtualBox vbox = vboxGlobal().virtualBox();
     CAppliance *pAppliance = m_pApplianceWidget->init();
     bool fResult = pAppliance->isOk();
     if (fResult)
     {
         /* Iterate over all the selected machine ids: */
-        QStringList uuids = field("machineIDs").toStringList();
+        QStringList uuids = fieldImp("machineIDs").toStringList();
         foreach (const QString &uuid, uuids)
         {
             /* Get the machine with the uuid: */
@@ -76,11 +50,11 @@ void UIWizardExportAppPageBasic4::initializePage()
             if (fResult)
             {
                 /* Add the export description to our appliance object: */
-                CVirtualSystemDescription vsd = machine.Export(*pAppliance, qobject_cast<UIWizardExportApp*>(wizard())->uri());
+                CVirtualSystemDescription vsd = machine.Export(*pAppliance, qobject_cast<UIWizardExportApp*>(wizardImp())->uri());
                 fResult = machine.isOk();
                 if (!fResult)
                 {
-                    msgCenter().cannotExportAppliance(machine, pAppliance, this);
+                    msgCenter().cannotExportAppliance(machine, pAppliance, thisImp());
                     return;
                 }
                 /* Now add some new fields the user may change: */
@@ -98,15 +72,73 @@ void UIWizardExportAppPageBasic4::initializePage()
         m_pApplianceWidget->populate();
     }
     if (!fResult)
-        msgCenter().cannotExportAppliance(pAppliance, this);
+        msgCenter().cannotExportAppliance(pAppliance, thisImp());
+}
+
+UIWizardExportAppPageBasic4::UIWizardExportAppPageBasic4()
+{
+    /* Create widgets: */
+    QVBoxLayout *pMainLayout = new QVBoxLayout(this);
+    {
+        m_pLabel = new QIRichTextLabel(this);
+        m_pVMApplianceLabel = new QILabelSeparator(this);
+        {
+            m_pVMApplianceLabel->hide();
+        }
+        m_pApplianceWidget = new UIApplianceExportEditorWidget(this);
+        {
+            m_pApplianceWidget->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::MinimumExpanding);
+            m_pVMApplianceLabel->setBuddy(m_pApplianceWidget);
+        }
+        pMainLayout->addWidget(m_pLabel);
+        pMainLayout->addWidget(m_pVMApplianceLabel);
+        pMainLayout->addWidget(m_pApplianceWidget);
+    }
+
+    /* Register classes: */
+    qRegisterMetaType<ExportAppliancePointer>();
+    /* Register fields: */
+    registerField("applianceWidget", this, "applianceWidget");
+}
+
+void UIWizardExportAppPageBasic4::retranslateUi()
+{
+    /* Translate page: */
+    setTitle(UIWizardExportApp::tr("Appliance Export Settings"));
+
+    /* Translate widgets: */
+    m_pLabel->setText(UIWizardExportApp::tr("Here you can change additional configuration "
+                                            "values of the selected virtual machines. "
+                                            "You can modify most of the properties shown "
+                                            "by double-clicking on the items."));
+    m_pVMApplianceLabel->setText(UIWizardExportApp::tr("&Settings"));
+}
+
+void UIWizardExportAppPageBasic4::initializePage()
+{
+    /* Translate page: */
+    retranslateUi();
+
+    /* Refresh appliance settings widget: */
+    refreshApplianceSettingsWidget();
 }
 
 bool UIWizardExportAppPageBasic4::validatePage()
 {
-    /* Try to export appliance: */
+    /* Initial result: */
+    bool fResult = true;
+
+    /* Lock finish button: */
     startProcessing();
-    bool fResult = qobject_cast<UIWizardExportApp*>(wizard())->exportAppliance();
+
+    /* Try to export appliance: */
+    if (fResult)
+        fResult = qobject_cast<UIWizardExportApp*>(wizard())->exportAppliance();
+
+    /* Unlock finish button: */
     endProcessing();
+
+    /* Return result: */
     return fResult;
 }
 

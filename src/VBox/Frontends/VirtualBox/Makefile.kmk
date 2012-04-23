@@ -364,33 +364,40 @@ VirtualBox_QT_MOCHDRS = \
 	src/wizards/newvm/UIWizardNewVMPageBasic3.h \
 	src/wizards/newvm/UIWizardNewVMPageBasic4.h \
 	src/wizards/newvm/UIWizardNewVMPageBasic5.h \
+	src/wizards/newvm/UIWizardNewVMPageExpert.h \
 	src/wizards/newvd/UIWizardNewVD.h \
 	src/wizards/newvd/UIWizardNewVDPageBasic1.h \
 	src/wizards/newvd/UIWizardNewVDPageBasic2.h \
 	src/wizards/newvd/UIWizardNewVDPageBasic3.h \
 	src/wizards/newvd/UIWizardNewVDPageBasic4.h \
+	src/wizards/newvd/UIWizardNewVDPageExpert.h \
 	src/wizards/clonevm/UIWizardCloneVM.h \
 	src/wizards/clonevm/UIWizardCloneVMPageBasic1.h \
 	src/wizards/clonevm/UIWizardCloneVMPageBasic2.h \
 	src/wizards/clonevm/UIWizardCloneVMPageBasic3.h \
+	src/wizards/clonevm/UIWizardCloneVMPageExpert.h \
 	src/wizards/clonevd/UIWizardCloneVD.h \
 	src/wizards/clonevd/UIWizardCloneVDPageBasic1.h \
 	src/wizards/clonevd/UIWizardCloneVDPageBasic2.h \
 	src/wizards/clonevd/UIWizardCloneVDPageBasic3.h \
 	src/wizards/clonevd/UIWizardCloneVDPageBasic4.h \
 	src/wizards/clonevd/UIWizardCloneVDPageBasic5.h \
+	src/wizards/clonevd/UIWizardCloneVDPageExpert.h \
 	src/wizards/exportappliance/UIWizardExportApp.h \
 	src/wizards/exportappliance/UIWizardExportAppPageBasic1.h \
 	src/wizards/exportappliance/UIWizardExportAppPageBasic2.h \
 	src/wizards/exportappliance/UIWizardExportAppPageBasic3.h \
 	src/wizards/exportappliance/UIWizardExportAppPageBasic4.h \
+	src/wizards/exportappliance/UIWizardExportAppPageExpert.h \
 	src/wizards/importappliance/UIWizardImportApp.h \
 	src/wizards/importappliance/UIWizardImportAppPageBasic1.h \
 	src/wizards/importappliance/UIWizardImportAppPageBasic2.h \
+	src/wizards/importappliance/UIWizardImportAppPageExpert.h \
 	src/wizards/firstrun/UIWizardFirstRun.h \
 	src/wizards/firstrun/UIWizardFirstRunPageBasic1.h \
 	src/wizards/firstrun/UIWizardFirstRunPageBasic2.h \
-	src/wizards/firstrun/UIWizardFirstRunPageBasic3.h
+	src/wizards/firstrun/UIWizardFirstRunPageBasic3.h \
+	src/wizards/firstrun/UIWizardFirstRunPageExpert.h
 
 VirtualBox_QT_MOCHDRS.darwin += \
     src/platform/darwin/UIWindowMenuManager.h
@@ -573,33 +580,40 @@ VirtualBox_SOURCES = \
 	src/wizards/newvm/UIWizardNewVMPageBasic3.cpp \
 	src/wizards/newvm/UIWizardNewVMPageBasic4.cpp \
 	src/wizards/newvm/UIWizardNewVMPageBasic5.cpp \
+	src/wizards/newvm/UIWizardNewVMPageExpert.cpp \
 	src/wizards/newvd/UIWizardNewVD.cpp \
 	src/wizards/newvd/UIWizardNewVDPageBasic1.cpp \
 	src/wizards/newvd/UIWizardNewVDPageBasic2.cpp \
 	src/wizards/newvd/UIWizardNewVDPageBasic3.cpp \
 	src/wizards/newvd/UIWizardNewVDPageBasic4.cpp \
+	src/wizards/newvd/UIWizardNewVDPageExpert.cpp \
 	src/wizards/clonevm/UIWizardCloneVM.cpp \
 	src/wizards/clonevm/UIWizardCloneVMPageBasic1.cpp \
 	src/wizards/clonevm/UIWizardCloneVMPageBasic2.cpp \
 	src/wizards/clonevm/UIWizardCloneVMPageBasic3.cpp \
+	src/wizards/clonevm/UIWizardCloneVMPageExpert.cpp \
 	src/wizards/clonevd/UIWizardCloneVD.cpp \
 	src/wizards/clonevd/UIWizardCloneVDPageBasic1.cpp \
 	src/wizards/clonevd/UIWizardCloneVDPageBasic2.cpp \
 	src/wizards/clonevd/UIWizardCloneVDPageBasic3.cpp \
 	src/wizards/clonevd/UIWizardCloneVDPageBasic4.cpp \
 	src/wizards/clonevd/UIWizardCloneVDPageBasic5.cpp \
+	src/wizards/clonevd/UIWizardCloneVDPageExpert.cpp \
 	src/wizards/exportappliance/UIWizardExportApp.cpp \
 	src/wizards/exportappliance/UIWizardExportAppPageBasic1.cpp \
 	src/wizards/exportappliance/UIWizardExportAppPageBasic2.cpp \
 	src/wizards/exportappliance/UIWizardExportAppPageBasic3.cpp \
 	src/wizards/exportappliance/UIWizardExportAppPageBasic4.cpp \
+	src/wizards/exportappliance/UIWizardExportAppPageExpert.cpp \
 	src/wizards/importappliance/UIWizardImportApp.cpp \
 	src/wizards/importappliance/UIWizardImportAppPageBasic1.cpp \
 	src/wizards/importappliance/UIWizardImportAppPageBasic2.cpp \
+	src/wizards/importappliance/UIWizardImportAppPageExpert.cpp \
 	src/wizards/firstrun/UIWizardFirstRun.cpp \
 	src/wizards/firstrun/UIWizardFirstRunPageBasic1.cpp \
 	src/wizards/firstrun/UIWizardFirstRunPageBasic2.cpp \
-	src/wizards/firstrun/UIWizardFirstRunPageBasic3.cpp
+	src/wizards/firstrun/UIWizardFirstRunPageBasic3.cpp \
+	src/wizards/firstrun/UIWizardFirstRunPageExpert.cpp
 
 VirtualBox_SOURCES.win += \
 	src/runtime/UIFrameBufferDirectDraw.cpp

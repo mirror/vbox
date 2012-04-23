@@ -677,6 +677,16 @@ QString VBoxEmptyFileSelector::defaultSaveExt() const
     return mDefaultSaveExt;
 }
 
+void VBoxEmptyFileSelector::setChooseButtonText(const QString &strText)
+{
+    mSelectButton->setText(strText);
+}
+
+QString VBoxEmptyFileSelector::chooseButtonText() const
+{
+    return mSelectButton->text();
+}
+
 void VBoxEmptyFileSelector::setFileDialogTitle (const QString& aTitle)
 {
     mFileDialogTitle = aTitle;

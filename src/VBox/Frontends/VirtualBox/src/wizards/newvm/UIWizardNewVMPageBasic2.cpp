@@ -28,8 +28,8 @@
 #include "UIWizardNewVMPageBasic2.h"
 #include "UIWizardNewVM.h"
 #include "UIMessageCenter.h"
-#include "QIRichTextLabel.h"
 #include "VBoxOSTypeSelectorWidget.h"
+#include "QIRichTextLabel.h"
 
 /* Defines some patterns to guess the right OS type. Should be in sync with
  * VirtualBox-settings-common.xsd in Main. The list is sorted by priority. The
@@ -137,42 +137,14 @@ static const osTypePattern gs_OSTypePattern[] =
     { QRegExp("Ot", Qt::CaseInsensitive), "Other" },
 };
 
-UIWizardNewVMPageBasic2::UIWizardNewVMPageBasic2()
+UIWizardNewVMPage2::UIWizardNewVMPage2()
 {
-    /* Create widgets: */
-    QVBoxLayout *pMainLayout = new QVBoxLayout(this);
-        m_pLabel = new QIRichTextLabel(this);
-        m_pNameEditorCnt = new QGroupBox(this);
-            m_pNameEditorCnt->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Fixed);
-            QHBoxLayout *pNameEditorLayout = new QHBoxLayout(m_pNameEditorCnt);
-                m_pNameEditor = new QLineEdit(m_pNameEditorCnt);
-            pNameEditorLayout->addWidget(m_pNameEditor);
-        m_pTypeSelectorCnt = new QGroupBox(this);
-            m_pTypeSelectorCnt->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Fixed);
-            QHBoxLayout *pTypeSelectorLayout = new QHBoxLayout(m_pTypeSelectorCnt);
-                m_pTypeSelector = new VBoxOSTypeSelectorWidget(m_pTypeSelectorCnt);
-                    m_pTypeSelector->activateLayout();
-            pTypeSelectorLayout->addWidget(m_pTypeSelector);
-    pMainLayout->addWidget(m_pLabel);
-    pMainLayout->addWidget(m_pNameEditorCnt);
-    pMainLayout->addWidget(m_pTypeSelectorCnt);
-    pMainLayout->addStretch();
-
-    /* Setup connections: */
-    connect(m_pNameEditor, SIGNAL(textChanged(const QString&)), this, SLOT(sltNameChanged(const QString&)));
-    connect(m_pTypeSelector, SIGNAL(osTypeChanged()), this, SLOT(sltOsTypeChanged()));
-
-    /* Register fields: */
-    registerField("name*", m_pNameEditor);
-    registerField("type", m_pTypeSelector, "type", SIGNAL(osTypeChanged()));
-    registerField("machineFolder", this, "machineFolder");
-    registerField("machineBaseName", this, "machineBaseName");
 }
 
-void UIWizardNewVMPageBasic2::sltNameChanged(const QString &strNewName)
+void UIWizardNewVMPage2::onNameChanged(const QString &strNewName)
 {
     /* Search for a matching OS type based on the string the user typed already. */
-    for (size_t i=0; i < RT_ELEMENTS(gs_OSTypePattern); ++i)
+    for (size_t i = 0; i < RT_ELEMENTS(gs_OSTypePattern); ++i)
         if (strNewName.contains(gs_OSTypePattern[i].pattern))
         {
             m_pTypeSelector->blockSignals(true);
@@ -182,60 +154,24 @@ void UIWizardNewVMPageBasic2::sltNameChanged(const QString &strNewName)
         }
 }
 
-void UIWizardNewVMPageBasic2::sltOsTypeChanged()
+void UIWizardNewVMPage2::onOsTypeChanged()
 {
     /* If the user manually edited the OS type, we didn't want our automatic OS type guessing anymore.
      * So simply disconnect the text-edit signal. */
-    disconnect(m_pNameEditor, SIGNAL(textChanged(const QString&)), this, SLOT(sltNameChanged(const QString&)));
+    m_pNameEditor->disconnect(thisImp());
 }
 
-void UIWizardNewVMPageBasic2::retranslateUi()
-{
-    /* Translate page: */
-    setTitle(UIWizardNewVM::tr("VM Name and OS Type"));
-
-    /* Translate widgets: */
-    m_pLabel->setText(UIWizardNewVM::tr("<p>Enter a name for the new virtual machine and select the type of the guest operating system "
-                                        "you plan to install onto the virtual machine.</p><p>The name of the virtual machine usually "
-                                        "indicates its software and hardware configuration. It will be used by all VirtualBox components "
-                                        "to identify your virtual machine.</p>"));
-    m_pNameEditorCnt->setTitle(UIWizardNewVM::tr("N&ame"));
-    m_pTypeSelectorCnt->setTitle(UIWizardNewVM::tr("OS &Type"));
-}
-
-void UIWizardNewVMPageBasic2::initializePage()
-{
-    /* Translate page: */
-    retranslateUi();
-
-    /* 'Name' field should have focus initially: */
-    m_pNameEditor->setFocus();
-}
-
-void UIWizardNewVMPageBasic2::cleanupPage()
-{
-    /* Cleanup: */
-    cleanupMachineFolder();
-    /* Call for base-class: */
-    UIWizardPage::cleanupPage();
-}
-
-bool UIWizardNewVMPageBasic2::validatePage()
-{
-    return createMachineFolder();
-}
-
-bool UIWizardNewVMPageBasic2::machineFolderCreated()
+bool UIWizardNewVMPage2::machineFolderCreated()
 {
     return !m_strMachineFolder.isEmpty();
 }
 
-bool UIWizardNewVMPageBasic2::createMachineFolder()
+bool UIWizardNewVMPage2::createMachineFolder()
 {
     /* Cleanup previosly created folder if any: */
     if (machineFolderCreated() && !cleanupMachineFolder())
     {
-        msgCenter().warnAboutCannotRemoveMachineFolder(this, m_strMachineFolder);
+        msgCenter().warnAboutCannotRemoveMachineFolder(thisImp(), m_strMachineFolder);
         return false;
     }
 
@@ -253,7 +189,7 @@ bool UIWizardNewVMPageBasic2::createMachineFolder()
     /* Make sure that folder doesn't exists: */
     if (QDir(strMachineFolder).exists())
     {
-        msgCenter().warnAboutCannotRewriteMachineFolder(this, strMachineFolder);
+        msgCenter().warnAboutCannotRewriteMachineFolder(thisImp(), strMachineFolder);
         return false;
     }
 
@@ -261,7 +197,7 @@ bool UIWizardNewVMPageBasic2::createMachineFolder()
     bool fMachineFolderCreated = QDir().mkpath(strMachineFolder);
     if (!fMachineFolderCreated)
     {
-        msgCenter().warnAboutCannotCreateMachineFolder(this, strMachineFolder);
+        msgCenter().warnAboutCannotCreateMachineFolder(thisImp(), strMachineFolder);
         return false;
     }
 
@@ -271,7 +207,7 @@ bool UIWizardNewVMPageBasic2::createMachineFolder()
     return true;
 }
 
-bool UIWizardNewVMPageBasic2::cleanupMachineFolder()
+bool UIWizardNewVMPage2::cleanupMachineFolder()
 {
     /* Make sure folder was previosly created: */
     if (m_strMachineFolder.isEmpty())
@@ -285,23 +221,96 @@ bool UIWizardNewVMPageBasic2::cleanupMachineFolder()
     return fMachineFolderRemoved;
 }
 
-QString UIWizardNewVMPageBasic2::machineFolder() const
+UIWizardNewVMPageBasic2::UIWizardNewVMPageBasic2()
 {
-    return m_strMachineFolder;
+    /* Create widgets: */
+    QVBoxLayout *pMainLayout = new QVBoxLayout(this);
+    {
+        m_pLabel = new QIRichTextLabel(this);
+        m_pNameCnt = new QGroupBox(this);
+        {
+            m_pNameCnt->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Fixed);
+            QHBoxLayout *pNameCntLayout = new QHBoxLayout(m_pNameCnt);
+            {
+                m_pNameEditor = new QLineEdit(m_pNameCnt);
+                pNameCntLayout->addWidget(m_pNameEditor);
+            }
+        }
+        m_pTypeCnt = new QGroupBox(this);
+        {
+            m_pTypeCnt->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Fixed);
+            QHBoxLayout *pTypeSelectorLayout = new QHBoxLayout(m_pTypeCnt);
+            {
+                m_pTypeSelector = new VBoxOSTypeSelectorWidget(m_pTypeCnt);
+                {
+                    m_pTypeSelector->activateLayout();
+                }
+                pTypeSelectorLayout->addWidget(m_pTypeSelector);
+            }
+        }
+        pMainLayout->addWidget(m_pLabel);
+        pMainLayout->addWidget(m_pNameCnt);
+        pMainLayout->addWidget(m_pTypeCnt);
+        pMainLayout->addStretch();
+    }
+
+    /* Setup connections: */
+    connect(m_pNameEditor, SIGNAL(textChanged(const QString&)), this, SLOT(sltNameChanged(const QString&)));
+    connect(m_pTypeSelector, SIGNAL(osTypeChanged()), this, SLOT(sltOsTypeChanged()));
+
+    /* Register fields: */
+    registerField("name*", m_pNameEditor);
+    registerField("type", m_pTypeSelector, "type", SIGNAL(osTypeChanged()));
+    registerField("machineFolder", this, "machineFolder");
+    registerField("machineBaseName", this, "machineBaseName");
 }
 
-void UIWizardNewVMPageBasic2::setMachineFolder(const QString &strMachineFolder)
+void UIWizardNewVMPageBasic2::sltNameChanged(const QString &strNewName)
 {
-    m_strMachineFolder = strMachineFolder;
+    /* Call to base-class: */
+    onNameChanged(strNewName);
 }
 
-QString UIWizardNewVMPageBasic2::machineBaseName() const
+void UIWizardNewVMPageBasic2::sltOsTypeChanged()
 {
-    return m_strMachineBaseName;
+    /* Call to base-class: */
+    onOsTypeChanged();
 }
 
-void UIWizardNewVMPageBasic2::setMachineBaseName(const QString &strMachineBaseName)
+void UIWizardNewVMPageBasic2::retranslateUi()
 {
-    m_strMachineBaseName = strMachineBaseName;
+    /* Translate page: */
+    setTitle(UIWizardNewVM::tr("VM Name and OS Type"));
+
+    /* Translate widgets: */
+    m_pLabel->setText(UIWizardNewVM::tr("<p>Enter a name for the new virtual machine and select the type of the guest operating system "
+                                        "you plan to install onto the virtual machine.</p><p>The name of the virtual machine usually "
+                                        "indicates its software and hardware configuration. It will be used by all VirtualBox components "
+                                        "to identify your virtual machine.</p>"));
+    m_pNameCnt->setTitle(UIWizardNewVM::tr("&Name"));
+    m_pTypeCnt->setTitle(UIWizardNewVM::tr("OS &Type"));
+}
+
+void UIWizardNewVMPageBasic2::initializePage()
+{
+    /* Translate page: */
+    retranslateUi();
+
+    /* 'Name' field should have focus initially: */
+    m_pNameEditor->setFocus();
+}
+
+void UIWizardNewVMPageBasic2::cleanupPage()
+{
+    /* Cleanup: */
+    cleanupMachineFolder();
+    /* Call to base-class: */
+    UIWizardPage::cleanupPage();
+}
+
+bool UIWizardNewVMPageBasic2::validatePage()
+{
+    /* Try to create machine folder: */
+    return createMachineFolder();
 }
 

@@ -25,20 +25,27 @@
 #include "UIWizardFirstRun.h"
 #include "QIRichTextLabel.h"
 
-UIWizardFirstRunPageBasic1::UIWizardFirstRunPageBasic1(bool fBootHardDiskWasSet)
+UIWizardFirstRunPage1::UIWizardFirstRunPage1(bool fBootHardDiskWasSet)
     : m_fBootHardDiskWasSet(fBootHardDiskWasSet)
+{
+}
+
+UIWizardFirstRunPageBasic1::UIWizardFirstRunPageBasic1(bool fBootHardDiskWasSet)
+    : UIWizardFirstRunPage1(fBootHardDiskWasSet)
 {
     /* Create widgets: */
     QVBoxLayout *pMainLayout = new QVBoxLayout(this);
+    {
         m_pLabel = new QIRichTextLabel(this);
-    pMainLayout->addWidget(m_pLabel);
-    pMainLayout->addStretch();
+        pMainLayout->addWidget(m_pLabel);
+        pMainLayout->addStretch();
+    }
 }
 
 void UIWizardFirstRunPageBasic1::retranslateUi()
 {
     /* Translate page: */
-    setTitle(UIWizardFirstRun::tr("Welcome to the First Run Wizard!"));
+    setTitle(UIWizardFirstRun::tr("Welcome to the First Run wizard!"));
 
     /* Translate widgets: */
     if (m_fBootHardDiskWasSet)

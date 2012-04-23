@@ -39,102 +39,20 @@
 #include "QIRichTextLabel.h"
 #include "QIToolButton.h"
 #include "QILineEdit.h"
-#include "iprt/path.h"
 
-UIWizardNewVDPageBasic3::UIWizardNewVDPageBasic3(const QString &strDefaultName, const QString &strDefaultPath, qulonglong uDefaultSize)
+UIWizardNewVDPage3::UIWizardNewVDPage3(const QString &strDefaultName, const QString &strDefaultPath)
     : m_strDefaultName(strDefaultName.isEmpty() ? QString("NewVirtualDisk1") : strDefaultName)
     , m_strDefaultPath(strDefaultPath)
     , m_uMediumSizeMin(_4M)
     , m_uMediumSizeMax(vboxGlobal().virtualBox().GetSystemProperties().GetInfoVDSize())
-    , m_iSliderScale(0)
+    , m_iSliderScale(calculateSliderScale(m_uMediumSizeMax))
 {
-    /* Detect how many steps to recognize between adjacent powers of 2
-     * to ensure that the last slider step is exactly that we need: */
-    int iPower = log2i(m_uMediumSizeMax);
-    qulonglong uTickMB = qulonglong (1) << iPower;
-    if (uTickMB < m_uMediumSizeMax)
-    {
-        qulonglong uTickMBNext = qulonglong (1) << (iPower + 1);
-        qulonglong uGap = uTickMBNext - m_uMediumSizeMax;
-        m_iSliderScale = (int)((uTickMBNext - uTickMB) / uGap);
-    }
-    m_iSliderScale = qMax(m_iSliderScale, 8);
-
-    /* Create widgets: */
-    QVBoxLayout *pMainLayout = new QVBoxLayout(this);
-        m_pLocationLabel = new QIRichTextLabel(this);
-        m_pLocationCnt = new QGroupBox(this);
-            m_pLocationCnt->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Fixed);
-            QHBoxLayout *pOptionsLayout = new QHBoxLayout(m_pLocationCnt);
-                m_pLocationEditor = new QLineEdit(m_pLocationCnt);
-                m_pLocationSelector = new QIToolButton(m_pLocationCnt);
-                    m_pLocationSelector->setAutoRaise(true);
-                    m_pLocationSelector->setIcon(UIIconPool::iconSet(":/select_file_16px.png", "select_file_dis_16px.png"));
-            pOptionsLayout->addWidget(m_pLocationEditor);
-            pOptionsLayout->addWidget(m_pLocationSelector);
-        m_pSizeLabel = new QIRichTextLabel(this);
-        m_pSizeCnt = new QGroupBox(this);
-            m_pSizeCnt->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Fixed);
-            QGridLayout *m_pSizeLayout = new QGridLayout(m_pSizeCnt);
-                m_pSizeSlider = new QSlider(m_pSizeCnt);
-                    m_pSizeSlider->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
-                    m_pSizeSlider->setOrientation(Qt::Horizontal);
-                    m_pSizeSlider->setTickPosition(QSlider::TicksBelow);
-                    m_pSizeSlider->setFocusPolicy(Qt::StrongFocus);
-                    m_pSizeSlider->setPageStep(m_iSliderScale);
-                    m_pSizeSlider->setSingleStep(m_iSliderScale / 8);
-                    m_pSizeSlider->setTickInterval(0);
-                    m_pSizeSlider->setMinimum(sizeMBToSlider(m_uMediumSizeMin, m_iSliderScale));
-                    m_pSizeSlider->setMaximum(sizeMBToSlider(m_uMediumSizeMax, m_iSliderScale));
-                m_pSizeEditor = new QILineEdit(m_pSizeCnt);
-                    m_pSizeEditor->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
-                    m_pSizeEditor->setFixedWidthByText("88888.88 MB");
-                    m_pSizeEditor->setAlignment(Qt::AlignRight);
-                    m_pSizeEditor->setValidator(new QRegExpValidator(QRegExp(vboxGlobal().sizeRegexp()), this));
-                QLabel *m_pSizeMin = new QLabel(m_pSizeCnt);
-                    m_pSizeMin->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Fixed);
-                    m_pSizeMin->setText(vboxGlobal().formatSize(m_uMediumSizeMin));
-                QSpacerItem *m_pSizeSpacer = new QSpacerItem(0, 0, QSizePolicy::Expanding, QSizePolicy::Fixed);
-                QLabel *m_pSizeMax = new QLabel(m_pSizeCnt);
-                    m_pSizeMax->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Fixed);
-                    m_pSizeMax->setText(vboxGlobal().formatSize(m_uMediumSizeMax));
-            m_pSizeLayout->addWidget(m_pSizeSlider, 0, 0, 1, 3);
-            m_pSizeLayout->addWidget(m_pSizeEditor, 0, 3);
-            m_pSizeLayout->addWidget(m_pSizeMin, 1, 0);
-            m_pSizeLayout->addItem(m_pSizeSpacer, 1, 1);
-            m_pSizeLayout->addWidget(m_pSizeMax, 1, 2);
-    pMainLayout->addWidget(m_pLocationLabel);
-    pMainLayout->addWidget(m_pLocationCnt);
-    pMainLayout->addWidget(m_pSizeLabel);
-    pMainLayout->addWidget(m_pSizeCnt);
-    pMainLayout->addStretch();
-
-    /* Setup connections: */
-    connect(m_pLocationEditor, SIGNAL(textChanged(const QString &)), this, SLOT(sltLocationEditorTextChanged(const QString &)));
-    connect(m_pLocationSelector, SIGNAL(clicked()), this, SLOT(sltSelectLocationButtonClicked()));
-    connect(m_pSizeSlider, SIGNAL(valueChanged(int)), this, SLOT(sltSizeSliderValueChanged(int)));
-    connect(m_pSizeEditor, SIGNAL(textChanged(const QString &)), this, SLOT(sltSizeEditorTextChanged(const QString &)));
-
-    /* Initialize connections: */
-    setMediumSize(uDefaultSize);
-
-    /* Register 'mediumPath', 'mediumSize' fields: */
-    registerField("mediumPath", this, "mediumPath");
-    registerField("mediumSize", this, "mediumSize");
 }
 
-void UIWizardNewVDPageBasic3::sltLocationEditorTextChanged(const QString &strMediumName)
-{
-    /* Compose new medium path: */
-    m_strMediumPath = absoluteFilePath(toFileName(strMediumName, m_strDefaultExtension), m_strDefaultPath);
-    /* Notify wizard sub-system about complete status changed: */
-    emit completeChanged();
-}
-
-void UIWizardNewVDPageBasic3::sltSelectLocationButtonClicked()
+void UIWizardNewVDPage3::onSelectLocationButtonClicked()
 {
     /* Get current folder and filename: */
-    QFileInfo fullFilePath(m_strMediumPath);
+    QFileInfo fullFilePath(mediumPath());
     QDir folder = fullFilePath.path();
     QString strFileName = fullFilePath.fileName();
 
@@ -156,9 +74,9 @@ void UIWizardNewVDPageBasic3::sltSelectLocationButtonClicked()
     }
 
     /* Prepare backends list: */
-    CMediumFormat mediumFormat = field("mediumFormat").value<CMediumFormat>();
     QVector<QString> fileExtensions;
     QVector<KDeviceType> deviceTypes;
+    CMediumFormat mediumFormat = fieldImp("mediumFormat").value<CMediumFormat>();
     mediumFormat.DescribeFileExtensions(fileExtensions, deviceTypes);
     QStringList validExtensionList;
     for (int i = 0; i < fileExtensions.size(); ++i)
@@ -169,8 +87,8 @@ void UIWizardNewVDPageBasic3::sltSelectLocationButtonClicked()
 
     /* Open corresponding file-dialog: */
     QString strChosenFilePath = QIFileDialog::getSaveFileName(folder.absoluteFilePath(strFileName),
-                                                              strBackendsList, this,
-                                                              UIWizardNewVD::tr("Select a file for the new hard disk image file"));
+                                                              strBackendsList, thisImp(),
+                                                              VBoxGlobal::tr("Choose a virtual hard disk file"));
 
     /* If there was something really chosen: */
     if (!strChosenFilePath.isEmpty())
@@ -184,7 +102,7 @@ void UIWizardNewVDPageBasic3::sltSelectLocationButtonClicked()
     }
 }
 
-void UIWizardNewVDPageBasic3::sltSizeSliderValueChanged(int iValue)
+void UIWizardNewVDPage3::onSizeSliderValueChanged(int iValue)
 {
     /* Get full size: */
     qulonglong uMediumSize = sliderToSizeMB(iValue, m_iSliderScale);
@@ -194,11 +112,9 @@ void UIWizardNewVDPageBasic3::sltSizeSliderValueChanged(int iValue)
     m_pSizeEditor->blockSignals(true);
     m_pSizeEditor->setText(vboxGlobal().formatSize(uMediumSize));
     m_pSizeEditor->blockSignals(false);
-    /* Notify wizard sub-system about complete status changed: */
-    emit completeChanged();
 }
 
-void UIWizardNewVDPageBasic3::sltSizeEditorTextChanged(const QString &strValue)
+void UIWizardNewVDPage3::onSizeEditorTextChanged(const QString &strValue)
 {
     /* Get full size: */
     qulonglong uMediumSize = vboxGlobal().parseSize(strValue);
@@ -208,56 +124,10 @@ void UIWizardNewVDPageBasic3::sltSizeEditorTextChanged(const QString &strValue)
     m_pSizeSlider->blockSignals(true);
     m_pSizeSlider->setValue(sizeMBToSlider(uMediumSize, m_iSliderScale));
     m_pSizeSlider->blockSignals(false);
-    /* Notify wizard sub-system about complete status changed: */
-    emit completeChanged();
-}
-
-void UIWizardNewVDPageBasic3::retranslateUi()
-{
-    /* Translate page: */
-    setTitle(UIWizardNewVD::tr("Virtual disk file location and size"));
-
-    /* Translate widgets: */
-    m_pLocationLabel->setText(UIWizardNewVD::tr("Please type the name of the new virtual disk file into the box below or "
-                                                "click on the folder icon to select a different folder to create the file in."));
-    m_pLocationCnt->setTitle(tr("&Location"));
-    m_pSizeLabel->setText(UIWizardNewVD::tr("Select the size of the virtual disk in megabytes. This size will be reported "
-                                            "to the Guest OS as the maximum size of this virtual disk."));
-    m_pSizeCnt->setTitle(UIWizardNewVD::tr("&Size"));
-}
-
-void UIWizardNewVDPageBasic3::initializePage()
-{
-    /* Translate page: */
-    retranslateUi();
-
-    /* Reset name to default: */
-    m_pLocationEditor->setText(m_strDefaultName);
-    /* Get virtual-disk extension: */
-    m_strDefaultExtension = defaultExtension(field("mediumFormat").value<CMediumFormat>());
-    /* Compose path for new virtual-disk: */
-    m_strMediumPath = absoluteFilePath(toFileName(m_strDefaultName, m_strDefaultExtension), m_strDefaultPath);
-}
-
-bool UIWizardNewVDPageBasic3::isComplete() const
-{
-    /* Check what current name is not empty & current size feats the bounds: */
-    return !m_pLocationEditor->text().trimmed().isEmpty() &&
-           mediumSize() >= m_uMediumSizeMin && mediumSize() <= m_uMediumSizeMax;
-}
-
-bool UIWizardNewVDPageBasic3::validatePage()
-{
-    if (QFileInfo(m_strMediumPath).exists())
-    {
-        msgCenter().sayCannotOverwriteHardDiskStorage(this, m_strMediumPath);
-        return false;
-    }
-    return true;
 }
 
 /* static */
-QString UIWizardNewVDPageBasic3::toFileName(const QString &strName, const QString &strExtension)
+QString UIWizardNewVDPage3::toFileName(const QString &strName, const QString &strExtension)
 {
     /* Convert passed name to native separators (it can be full, actually): */
     QString strFileName = QDir::toNativeSeparators(strName);
@@ -276,7 +146,7 @@ QString UIWizardNewVDPageBasic3::toFileName(const QString &strName, const QStrin
 }
 
 /* static */
-QString UIWizardNewVDPageBasic3::absoluteFilePath(const QString &strFileName, const QString &strDefaultPath)
+QString UIWizardNewVDPage3::absoluteFilePath(const QString &strFileName, const QString &strDefaultPath)
 {
     /* Wrap file-info around received file name: */
     QFileInfo fileInfo(strFileName);
@@ -291,7 +161,7 @@ QString UIWizardNewVDPageBasic3::absoluteFilePath(const QString &strFileName, co
 }
 
 /* static */
-QString UIWizardNewVDPageBasic3::defaultExtension(const CMediumFormat &mediumFormatRef)
+QString UIWizardNewVDPage3::defaultExtension(const CMediumFormat &mediumFormatRef)
 {
     /* Load extension / device list: */
     QVector<QString> fileExtensions;
@@ -306,7 +176,24 @@ QString UIWizardNewVDPageBasic3::defaultExtension(const CMediumFormat &mediumFor
 }
 
 /* static */
-int UIWizardNewVDPageBasic3::log2i(qulonglong uValue)
+int UIWizardNewVDPage3::calculateSliderScale(qulonglong uMaximumMediumSize)
+{
+    /* Detect how many steps to recognize between adjacent powers of 2
+     * to ensure that the last slider step is exactly that we need: */
+    int iSliderScale = 0;
+    int iPower = log2i(uMaximumMediumSize);
+    qulonglong uTickMB = (qulonglong)1 << iPower;
+    if (uTickMB < uMaximumMediumSize)
+    {
+        qulonglong uTickMBNext = (qulonglong)1 << (iPower + 1);
+        qulonglong uGap = uTickMBNext - uMaximumMediumSize;
+        iSliderScale = (int)((uTickMBNext - uTickMB) / uGap);
+    }
+    return qMax(iSliderScale, 8);
+}
+
+/* static */
+int UIWizardNewVDPage3::log2i(qulonglong uValue)
 {
     int iPower = -1;
     while (uValue)
@@ -318,7 +205,7 @@ int UIWizardNewVDPageBasic3::log2i(qulonglong uValue)
 }
 
 /* static */
-int UIWizardNewVDPageBasic3::sizeMBToSlider(qulonglong uValue, int iSliderScale)
+int UIWizardNewVDPage3::sizeMBToSlider(qulonglong uValue, int iSliderScale)
 {
     int iPower = log2i(uValue);
     qulonglong uTickMB = qulonglong (1) << iPower;
@@ -328,7 +215,7 @@ int UIWizardNewVDPageBasic3::sizeMBToSlider(qulonglong uValue, int iSliderScale)
 }
 
 /* static */
-qulonglong UIWizardNewVDPageBasic3::sliderToSizeMB(int uValue, int iSliderScale)
+qulonglong UIWizardNewVDPage3::sliderToSizeMB(int uValue, int iSliderScale)
 {
     int iPower = uValue / iSliderScale;
     int iStep = uValue % iSliderScale;
@@ -337,20 +224,24 @@ qulonglong UIWizardNewVDPageBasic3::sliderToSizeMB(int uValue, int iSliderScale)
     return uTickMB + (uTickMBNext - uTickMB) * iStep / iSliderScale;
 }
 
-void UIWizardNewVDPageBasic3::updateSizeToolTips(qulonglong uSize)
+void UIWizardNewVDPage3::updateSizeToolTips(qulonglong uSize)
 {
     QString strToolTip = UIWizardNewVD::tr("<nobr>%1 (%2 B)</nobr>").arg(vboxGlobal().formatSize(uSize)).arg(uSize);
     m_pSizeSlider->setToolTip(strToolTip);
     m_pSizeEditor->setToolTip(strToolTip);
 }
 
-qulonglong UIWizardNewVDPageBasic3::mediumSize() const
+QString UIWizardNewVDPage3::mediumPath() const
 {
-    /* Return slider value scaled at 'm_iSliderScale': */
+    return absoluteFilePath(toFileName(m_pLocationEditor->text(), m_strDefaultExtension), m_strDefaultPath);
+}
+
+qulonglong UIWizardNewVDPage3::mediumSize() const
+{
     return sliderToSizeMB(m_pSizeSlider->value(), m_iSliderScale);
 }
 
-void UIWizardNewVDPageBasic3::setMediumSize(qulonglong uMediumSize)
+void UIWizardNewVDPage3::setMediumSize(qulonglong uMediumSize)
 {
     /* Block signals: */
     m_pSizeSlider->blockSignals(true);
@@ -362,5 +253,157 @@ void UIWizardNewVDPageBasic3::setMediumSize(qulonglong uMediumSize)
     /* Unblock signals: */
     m_pSizeSlider->blockSignals(false);
     m_pSizeEditor->blockSignals(false);
+}
+
+UIWizardNewVDPageBasic3::UIWizardNewVDPageBasic3(const QString &strDefaultName, const QString &strDefaultPath, qulonglong uDefaultSize)
+    : UIWizardNewVDPage3(strDefaultName, strDefaultPath)
+{
+    /* Create widgets: */
+    QVBoxLayout *pMainLayout = new QVBoxLayout(this);
+    {
+        m_pLocationLabel = new QIRichTextLabel(this);
+        m_pLocationCnt = new QGroupBox(this);
+        {
+            m_pLocationCnt->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Fixed);
+            QHBoxLayout *pLocationCntLayout = new QHBoxLayout(m_pLocationCnt);
+            {
+                m_pLocationEditor = new QLineEdit(m_pLocationCnt);
+                m_pLocationOpenButton = new QIToolButton(m_pLocationCnt);
+                {
+                    m_pLocationOpenButton->setAutoRaise(true);
+                    m_pLocationOpenButton->setIcon(UIIconPool::iconSet(":/select_file_16px.png", "select_file_dis_16px.png"));
+                }
+                pLocationCntLayout->addWidget(m_pLocationEditor);
+                pLocationCntLayout->addWidget(m_pLocationOpenButton);
+            }
+        }
+        m_pSizeLabel = new QIRichTextLabel(this);
+        m_pSizeCnt = new QGroupBox(this);
+        {
+            m_pSizeCnt->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Fixed);
+            QGridLayout *m_pSizeCntLayout = new QGridLayout(m_pSizeCnt);
+            {
+                m_pSizeSlider = new QSlider(m_pSizeCnt);
+                {
+                    m_pSizeSlider->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+                    m_pSizeSlider->setOrientation(Qt::Horizontal);
+                    m_pSizeSlider->setTickPosition(QSlider::TicksBelow);
+                    m_pSizeSlider->setFocusPolicy(Qt::StrongFocus);
+                    m_pSizeSlider->setPageStep(m_iSliderScale);
+                    m_pSizeSlider->setSingleStep(m_iSliderScale / 8);
+                    m_pSizeSlider->setTickInterval(0);
+                    m_pSizeSlider->setMinimum(sizeMBToSlider(m_uMediumSizeMin, m_iSliderScale));
+                    m_pSizeSlider->setMaximum(sizeMBToSlider(m_uMediumSizeMax, m_iSliderScale));
+                }
+                m_pSizeEditor = new QILineEdit(m_pSizeCnt);
+                {
+                    m_pSizeEditor->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
+                    m_pSizeEditor->setFixedWidthByText("88888.88 MB");
+                    m_pSizeEditor->setAlignment(Qt::AlignRight);
+                    m_pSizeEditor->setValidator(new QRegExpValidator(QRegExp(vboxGlobal().sizeRegexp()), this));
+                }
+                QLabel *m_pSizeMin = new QLabel(m_pSizeCnt);
+                {
+                    m_pSizeMin->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Fixed);
+                    m_pSizeMin->setText(vboxGlobal().formatSize(m_uMediumSizeMin));
+                }
+                QSpacerItem *m_pSizeSpacer = new QSpacerItem(0, 0, QSizePolicy::Expanding, QSizePolicy::Fixed);
+                QLabel *m_pSizeMax = new QLabel(m_pSizeCnt);
+                {
+                    m_pSizeMax->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Fixed);
+                    m_pSizeMax->setText(vboxGlobal().formatSize(m_uMediumSizeMax));
+                }
+                m_pSizeCntLayout->addWidget(m_pSizeSlider, 0, 0, 1, 3);
+                m_pSizeCntLayout->addWidget(m_pSizeEditor, 0, 3);
+                m_pSizeCntLayout->addWidget(m_pSizeMin, 1, 0);
+                m_pSizeCntLayout->addItem(m_pSizeSpacer, 1, 1);
+                m_pSizeCntLayout->addWidget(m_pSizeMax, 1, 2);
+            }
+            setMediumSize(uDefaultSize);
+        }
+        pMainLayout->addWidget(m_pLocationLabel);
+        pMainLayout->addWidget(m_pLocationCnt);
+        pMainLayout->addWidget(m_pSizeLabel);
+        pMainLayout->addWidget(m_pSizeCnt);
+        pMainLayout->addStretch();
+    }
+
+    /* Setup connections: */
+    connect(m_pLocationEditor, SIGNAL(textChanged(const QString &)), this, SIGNAL(completeChanged()));
+    connect(m_pLocationOpenButton, SIGNAL(clicked()), this, SLOT(sltSelectLocationButtonClicked()));
+    connect(m_pSizeSlider, SIGNAL(valueChanged(int)), this, SLOT(sltSizeSliderValueChanged(int)));
+    connect(m_pSizeEditor, SIGNAL(textChanged(const QString &)), this, SLOT(sltSizeEditorTextChanged(const QString &)));
+
+    /* Register fields: */
+    registerField("mediumPath", this, "mediumPath");
+    registerField("mediumSize", this, "mediumSize");
+}
+
+void UIWizardNewVDPageBasic3::sltSelectLocationButtonClicked()
+{
+    /* Call to base-class: */
+    onSelectLocationButtonClicked();
+}
+
+void UIWizardNewVDPageBasic3::sltSizeSliderValueChanged(int iValue)
+{
+    /* Call to base-class: */
+    onSizeSliderValueChanged(iValue);
+
+    /* Broadcast complete-change: */
+    emit completeChanged();
+}
+
+void UIWizardNewVDPageBasic3::sltSizeEditorTextChanged(const QString &strValue)
+{
+    /* Call to base-class: */
+    onSizeEditorTextChanged(strValue);
+
+    /* Broadcast complete-change: */
+    emit completeChanged();
+}
+
+void UIWizardNewVDPageBasic3::retranslateUi()
+{
+    /* Translate page: */
+    setTitle(UIWizardNewVD::tr("Virtual disk file location and size"));
+
+    /* Translate widgets: */
+    m_pLocationLabel->setText(UIWizardNewVD::tr("Please type the name of the new virtual disk file into the box below or "
+                                                "click on the folder icon to select a different folder to create the file in."));
+    m_pLocationCnt->setTitle(UIWizardNewVD::tr("&Location"));
+    m_pSizeLabel->setText(UIWizardNewVD::tr("Select the size of the virtual disk in megabytes. This size will be reported "
+                                            "to the Guest OS as the maximum size of this virtual disk."));
+    m_pSizeCnt->setTitle(UIWizardNewVD::tr("&Size"));
+}
+
+void UIWizardNewVDPageBasic3::initializePage()
+{
+    /* Translate page: */
+    retranslateUi();
+
+    /* Get default extension for new virtual-disk: */
+    m_strDefaultExtension = defaultExtension(field("mediumFormat").value<CMediumFormat>());
+    /* Set default name as text for location editor: */
+    m_pLocationEditor->setText(m_strDefaultName);
+}
+
+bool UIWizardNewVDPageBasic3::isComplete() const
+{
+    /* Make sure current name is not empty and current size feats the bounds: */
+    return !m_pLocationEditor->text().trimmed().isEmpty() &&
+           mediumSize() >= m_uMediumSizeMin && mediumSize() <= m_uMediumSizeMax;
+}
+
+bool UIWizardNewVDPageBasic3::validatePage()
+{
+    /* Make sure such virtual-disk doesn't exists already: */
+    QString strMediumPath(mediumPath());
+    if (QFileInfo(strMediumPath).exists())
+    {
+        msgCenter().sayCannotOverwriteHardDiskStorage(this, strMediumPath);
+        return false;
+    }
+    return true;
 }
 

@@ -36,8 +36,14 @@ public:
         Page2
     };
 
+    /* Page IDs: */
+    enum
+    {
+        PageExpert
+    };
+
     /* Constructor: */
-    UIWizardImportApp(const QString &strFileName = QString(), QWidget *pParent = 0);
+    UIWizardImportApp(QWidget *pParent, const QString &strFileName);
 
     /* Is appliance valid? */
     bool isValid() const;
@@ -49,16 +55,25 @@ protected:
 
     /* Who will be able to import appliance: */
     friend class UIWizardImportAppPageBasic2;
+    friend class UIWizardImportAppPageExpert;
 
 private slots:
 
     /* Page change handler: */
     void sltCurrentIdChanged(int iId);
+    /* Custom button 2 click handler: */
+    void sltCustomButtonClicked(int iId);
 
 private:
 
     /* Translation stuff: */
     void retranslateUi();
+
+    /* Pages related stuff: */
+    void prepare();
+
+    /* Variables: */
+    QString m_strFileName;
 };
 
 #endif /* __UIWizardImportApp_h__ */

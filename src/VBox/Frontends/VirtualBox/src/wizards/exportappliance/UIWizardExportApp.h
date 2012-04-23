@@ -41,6 +41,12 @@ public:
         Page4
     };
 
+    /* Page IDs: */
+    enum
+    {
+        PageExpert
+    };
+
     /* Constructor: */
     UIWizardExportApp(QWidget *pParent, const QStringList &selectedVMNames = QStringList());
 
@@ -52,17 +58,27 @@ protected:
     QString uri(bool fWithFile = true) const;
 
     /* Who will be able to export appliance: */
+    friend class UIWizardExportAppPage4;
     friend class UIWizardExportAppPageBasic4;
+    friend class UIWizardExportAppPageExpert;
 
 private slots:
 
     /* Page change handler: */
     void sltCurrentIdChanged(int iId);
+    /* Custom button 2 click handler: */
+    void sltCustomButtonClicked(int iId);
 
 private:
 
     /* Translation stuff: */
     void retranslateUi();
+
+    /* Pages related stuff: */
+    void prepare();
+
+    /* Variables: */
+    QStringList m_selectedVMNames;
 };
 
 #endif /* __UIWizardExportApp_h__ */

@@ -21,16 +21,23 @@
 
 /* Local includes: */
 #include "UIWizardPage.h"
-#include "COMDefs.h"
 
 /* Forward declarations: */
 class QIRichTextLabel;
 
-/* 4th page of the New Virtual Disk wizard: */
-class UIWizardNewVDPageBasic4 : public UIWizardPage
+/* 4th page of the New Virtual Disk wizard (base part): */
+class UIWizardNewVDPage4 : public UIWizardPageBase
+{
+protected:
+
+    /* Constructor: */
+    UIWizardNewVDPage4();
+};
+
+/* 4th page of the New Virtual Disk wizard (basic extension): */
+class UIWizardNewVDPageBasic4 : public UIWizardPage, public UIWizardNewVDPage4
 {
     Q_OBJECT;
-    Q_PROPERTY(CMedium virtualDisk READ virtualDisk WRITE setVirtualDisk);
 
 public:
 
@@ -47,11 +54,6 @@ private:
 
     /* Validation stuff: */
     bool validatePage();
-
-    /* Stuff for 'virtualDisk' field: */
-    CMedium virtualDisk() const { return m_virtualDisk; }
-    void setVirtualDisk(const CMedium &virtualDisk) { m_virtualDisk = virtualDisk; }
-    CMedium m_virtualDisk;
 
     /* Widgets: */
     QIRichTextLabel *m_pLabel1;

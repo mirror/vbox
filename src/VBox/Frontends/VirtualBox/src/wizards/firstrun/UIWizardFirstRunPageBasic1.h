@@ -25,8 +25,20 @@
 /* Forward declarations: */
 class QIRichTextLabel;
 
-/* 1st page of the First Run wizard: */
-class UIWizardFirstRunPageBasic1 : public UIWizardPage
+/* 1st page of the First Run wizard (base part): */
+class UIWizardFirstRunPage1 : public UIWizardPageBase
+{
+protected:
+
+    /* Constructor: */
+    UIWizardFirstRunPage1(bool fBootHardDiskWasSet);
+
+    /* Variables: */
+    bool m_fBootHardDiskWasSet;
+};
+
+/* 1st page of the First Run wizard (basic extension): */
+class UIWizardFirstRunPageBasic1 : public UIWizardPage, public UIWizardFirstRunPage1
 {
     Q_OBJECT;
 
@@ -42,9 +54,6 @@ private:
 
     /* Prepare stuff: */
     void initializePage();
-
-    /* Variables: */
-    bool m_fBootHardDiskWasSet;
 
     /* Widgets: */
     QIRichTextLabel *m_pLabel;
