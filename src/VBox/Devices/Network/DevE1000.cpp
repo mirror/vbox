@@ -3223,7 +3223,13 @@ DECLINLINE(void) e1kLoadDesc(E1KSTATE* pState, E1KTXDESC* pDesc, RTGCPHYS addr)
  */
 DECLINLINE(unsigned) e1kTxDLoadMore(E1KSTATE* pState)
 {
-    unsigned nDescsToFetch = RT_MIN(e1kGetTxLen(pState), E1K_TXD_CACHE_SIZE - pState->nTxDFetched);
+    unsigned nDescsAvailable = e1kGetTxLen(pState);
+    unsigned nDescsToFetch = RT_MIN(nDescsAvailable, E1K_TXD_CACHE_SIZE - pState->nTxDFetched);
+    /*
+     * It is safe to use TDLEN and TDH in the following expression since TDLEN
+     * is set during init and never changes after that, and TDH is advanced in
+     * the loop we are being called from.
+     */
     unsigned nDescsInSingleRead = RT_MIN(nDescsToFetch, TDLEN / sizeof(E1KTXDESC) - TDH);
     if (nDescsToFetch == 0)
         return 0;
