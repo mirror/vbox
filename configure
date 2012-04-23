@@ -1451,11 +1451,11 @@ check_qt4()
 extern "C" int main(void)
 {
   printf("found version %s", QT_VERSION_STR);
-#if QT_VERSION >= 0x040400
+#if QT_VERSION >= 0x040602
   printf(", OK.\n");
   return 0;
 #else
-  printf(", expected version 4.4.0 or higher\n");
+  printf(", expected version 4.6.2 or higher\n");
   return 1;
 #endif
 }
@@ -1484,11 +1484,11 @@ EOF
 extern "C" int main(void)
 {
   printf("found version %s", QT_VERSION_STR);
-#if QT_VERSION >= 0x040400
+#if QT_VERSION >= 0x040602
   printf(", OK.\n");
   return 0;
 #else
-  printf(", expected version 4.4.0 or higher\n");
+  printf(", expected version 4.6.2 or higher\n");
   return 1;
 #endif
 }
