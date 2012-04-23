@@ -87,7 +87,7 @@
  * resource control as it allows to compute exact sizes of packets prior
  * to allocating their buffers (see #5582).
  */
-//#define E1K_WITH_TXD_CACHE 1
+#define E1K_WITH_TXD_CACHE 1
 /* End of Options ************************************************************/
 
 #ifdef E1K_WITH_TXD_CACHE
@@ -97,7 +97,7 @@
  * batch read. For example, Windows XP guest uses about 5 descriptors per
  * TSE packet.
  */
-#define E1K_TXD_CACHE_SIZE 16u
+#define E1K_TXD_CACHE_SIZE 18u
 #endif /* E1K_WITH_TXD_CACHE */
 
 #include <iprt/crc.h>
@@ -131,16 +131,19 @@
 #  define E1kLog(a)               LogRel(a)
 #  define E1kLog2(a)              LogRel(a)
 #  define E1kLog3(a)              LogRel(a)
+#  define E1kLogX(a)              LogRel(a)
 //#  define E1kLog3(a)              do {} while (0)
 # else
 #  define E1kLog(a)               do {} while (0)
 #  define E1kLog2(a)              do {} while (0)
 #  define E1kLog3(a)              do {} while (0)
+#  define E1kLogX(a)              do {} while (0)
 # endif
 #else
 #  define E1kLog(a)               Log(a)
 #  define E1kLog2(a)              Log2(a)
 #  define E1kLog3(a)              Log3(a)
+#  define E1kLogX(x, a)           LogIt(LOG_INSTANCE, x, LOG_GROUP, a)
 //#  define E1kLog(a)               do {} while (0)
 //#  define E1kLog2(a)              do {} while (0)
 //#  define E1kLog3(a)              do {} while (0)
@@ -1065,15 +1068,15 @@ struct E1kState_st
     /** TX: Context used for ordinary packets. */
     E1KTXCTX    contextNormal;
 #ifdef E1K_WITH_TXD_CACHE
-    /** EMT/TX: Fetched TX descriptors. */
+    /** TX: Fetched TX descriptors. */
     E1KTXDESC   aTxDescriptors[E1K_TXD_CACHE_SIZE];
-    /** EMT/TX: Actual number of fetched TX descriptors. */
+    /** TX: Actual number of fetched TX descriptors. */
     uint8_t     nTxDFetched;
-    /** EMT/TX: Index in cache of TX descriptor being processed. */
+    /** TX: Index in cache of TX descriptor being processed. */
     uint8_t     iTxDCurrent;
-    /** EMT/TX: Will this frame be sent as GSO. */
+    /** TX: Will this frame be sent as GSO. */
     bool        fGSO;
-    /** EMT/TX: Number of bytes in next packet. */
+    /** TX: Number of bytes in next packet. */
     uint32_t    cbTxAlloc;
 
 #endif /* E1K_WITH_TXD_CACHE */
@@ -1646,17 +1649,18 @@ static void e1kPrintRDesc(E1KSTATE* pState, E1KRXDESC* pDesc)
  * @param   cszDir      A string denoting direction of descriptor transfer
  * @thread  E1000_TX
  */
-static void e1kPrintTDesc(E1KSTATE* pState, E1KTXDESC* pDesc, const char* cszDir)
+static void e1kPrintTDesc(E1KSTATE* pState, E1KTXDESC* pDesc, const char* cszDir,
+                          unsigned uLevel = RTLOGGRPFLAGS_LEVEL_2)
 {
     switch (e1kGetDescType(pDesc))
     {
         case E1K_DTYP_CONTEXT:
-            E1kLog2(("%s %s Context Transmit Descriptor %s\n",
+            E1kLogX(uLevel, ("%s %s Context Transmit Descriptor %s\n",
                     INSTANCE(pState), cszDir, cszDir));
-            E1kLog2(("        IPCSS=%02X IPCSO=%02X IPCSE=%04X TUCSS=%02X TUCSO=%02X TUCSE=%04X\n",
+            E1kLogX(uLevel, ("        IPCSS=%02X IPCSO=%02X IPCSE=%04X TUCSS=%02X TUCSO=%02X TUCSE=%04X\n",
                     pDesc->context.ip.u8CSS, pDesc->context.ip.u8CSO, pDesc->context.ip.u16CSE,
                     pDesc->context.tu.u8CSS, pDesc->context.tu.u8CSO, pDesc->context.tu.u16CSE));
-            E1kLog2(("        TUCMD:%s%s%s %s %s PAYLEN=%04x HDRLEN=%04x MSS=%04x STA: %s\n",
+            E1kLogX(uLevel, ("        TUCMD:%s%s%s %s %s PAYLEN=%04x HDRLEN=%04x MSS=%04x STA: %s\n",
                     pDesc->context.dw2.fIDE ? " IDE":"",
                     pDesc->context.dw2.fRS  ? " RS" :"",
                     pDesc->context.dw2.fTSE ? " TSE":"",
@@ -1668,12 +1672,12 @@ static void e1kPrintTDesc(E1KSTATE* pState, E1KTXDESC* pDesc, const char* cszDir
                     pDesc->context.dw3.fDD?"DD":""));
             break;
         case E1K_DTYP_DATA:
-            E1kLog2(("%s %s Data Transmit Descriptor (%d bytes) %s\n",
+            E1kLogX(uLevel, ("%s %s Data Transmit Descriptor (%d bytes) %s\n",
                     INSTANCE(pState), cszDir, pDesc->data.cmd.u20DTALEN, cszDir));
-            E1kLog2(("        Address=%16LX DTALEN=%05X\n",
+            E1kLogX(uLevel, ("        Address=%16LX DTALEN=%05X\n",
                     pDesc->data.u64BufAddr,
                     pDesc->data.cmd.u20DTALEN));
-            E1kLog2(("        DCMD:%s%s%s%s%s%s STA:%s%s%s POPTS:%s%s SPECIAL:%s VLAN=%03x PRI=%x\n",
+            E1kLogX(uLevel, ("        DCMD:%s%s%s%s%s%s STA:%s%s%s POPTS:%s%s SPECIAL:%s VLAN=%03x PRI=%x\n",
                     pDesc->data.cmd.fIDE ? " IDE" :"",
                     pDesc->data.cmd.fVLE ? " VLE" :"",
                     pDesc->data.cmd.fRS  ? " RS"  :"",
@@ -1690,12 +1694,12 @@ static void e1kPrintTDesc(E1KSTATE* pState, E1KTXDESC* pDesc, const char* cszDir
                     E1K_SPEC_PRI(pDesc->data.dw3.u16Special)));
             break;
         case E1K_DTYP_LEGACY:
-            E1kLog2(("%s %s Legacy Transmit Descriptor (%d bytes) %s\n",
+            E1kLogX(uLevel, ("%s %s Legacy Transmit Descriptor (%d bytes) %s\n",
                     INSTANCE(pState), cszDir, pDesc->legacy.cmd.u16Length, cszDir));
-            E1kLog2(("        Address=%16LX DTALEN=%05X\n",
+            E1kLogX(uLevel, ("        Address=%16LX DTALEN=%05X\n",
                     pDesc->data.u64BufAddr,
                     pDesc->legacy.cmd.u16Length));
-            E1kLog2(("        CMD:%s%s%s%s%s%s STA:%s%s%s CSO=%02x CSS=%02x SPECIAL:%s VLAN=%03x PRI=%x\n",
+            E1kLogX(uLevel, ("        CMD:%s%s%s%s%s%s STA:%s%s%s CSO=%02x CSS=%02x SPECIAL:%s VLAN=%03x PRI=%x\n",
                     pDesc->legacy.cmd.fIDE ? " IDE" :"",
                     pDesc->legacy.cmd.fVLE ? " VLE" :"",
                     pDesc->legacy.cmd.fRS  ? " RS"  :"",
@@ -4512,36 +4516,41 @@ static int e1kXmitPending(E1KSTATE *pState, bool fOnWorkerThread)
         if (RT_FAILURE(rc))
             return rc;
     }
-    /*
-     * Process all pending descriptors.
-     * Note! Do not process descriptors in locked state
-     */
-    while (TDH != TDT && !pState->fLocked)
+    //rc = e1kCsTxEnter(pState, VERR_SEM_BUSY);
+    if (RT_LIKELY(rc == VINF_SUCCESS))
     {
-        E1KTXDESC desc;
-        E1kLog3(("%s About to process new TX descriptor at %08x%08x, TDLEN=%08x, TDH=%08x, TDT=%08x\n",
-                 INSTANCE(pState), TDBAH, TDBAL + TDH * sizeof(desc), TDLEN, TDH, TDT));
-
-        e1kLoadDesc(pState, &desc, ((uint64_t)TDBAH << 32) + TDBAL + TDH * sizeof(desc));
-        rc = e1kXmitDesc(pState, &desc, ((uint64_t)TDBAH << 32) + TDBAL + TDH * sizeof(desc), fOnWorkerThread);
-        /* If we failed to transmit descriptor we will try it again later */
-        if (RT_FAILURE(rc))
-            break;
-        if (++TDH * sizeof(desc) >= TDLEN)
-            TDH = 0;
-
-        if (e1kGetTxLen(pState) <= GET_BITS(TXDCTL, LWTHRESH)*8)
+        /*
+         * Process all pending descriptors.
+         * Note! Do not process descriptors in locked state
+         */
+        while (TDH != TDT && !pState->fLocked)
         {
-            E1kLog2(("%s Low on transmit descriptors, raise ICR.TXD_LOW, len=%x thresh=%x\n",
-                     INSTANCE(pState), e1kGetTxLen(pState), GET_BITS(TXDCTL, LWTHRESH)*8));
-            e1kRaiseInterrupt(pState, VERR_SEM_BUSY, ICR_TXD_LOW);
+            E1KTXDESC desc;
+            E1kLog3(("%s About to process new TX descriptor at %08x%08x, TDLEN=%08x, TDH=%08x, TDT=%08x\n",
+                     INSTANCE(pState), TDBAH, TDBAL + TDH * sizeof(desc), TDLEN, TDH, TDT));
+            
+            e1kLoadDesc(pState, &desc, ((uint64_t)TDBAH << 32) + TDBAL + TDH * sizeof(desc));
+            rc = e1kXmitDesc(pState, &desc, ((uint64_t)TDBAH << 32) + TDBAL + TDH * sizeof(desc), fOnWorkerThread);
+            /* If we failed to transmit descriptor we will try it again later */
+            if (RT_FAILURE(rc))
+                break;
+            if (++TDH * sizeof(desc) >= TDLEN)
+                TDH = 0;
+
+            if (e1kGetTxLen(pState) <= GET_BITS(TXDCTL, LWTHRESH)*8)
+            {
+                E1kLog2(("%s Low on transmit descriptors, raise ICR.TXD_LOW, len=%x thresh=%x\n",
+                         INSTANCE(pState), e1kGetTxLen(pState), GET_BITS(TXDCTL, LWTHRESH)*8));
+                e1kRaiseInterrupt(pState, VERR_SEM_BUSY, ICR_TXD_LOW);
+            }
+
+            STAM_PROFILE_ADV_STOP(&pState->CTX_SUFF_Z(StatTransmit), a);
         }
 
-        STAM_PROFILE_ADV_STOP(&pState->CTX_SUFF_Z(StatTransmit), a);
+        /// @todo: uncomment: pState->uStatIntTXQE++;
+        /// @todo: uncomment: e1kRaiseInterrupt(pState, ICR_TXQE);
+        //e1kCsTxLeave(pState);
     }
-
-    /// @todo: uncomment: pState->uStatIntTXQE++;
-    /// @todo: uncomment: e1kRaiseInterrupt(pState, ICR_TXQE);
 
     /*
      * Release the lock.
@@ -4551,6 +4560,12 @@ static int e1kXmitPending(E1KSTATE *pState, bool fOnWorkerThread)
     return rc;
 }
 #else /* E1K_WITH_TXD_CACHE */
+static void e1kDumpTxDCache(E1KSTATE *pState)
+{
+    for (int i = 0; i < pState->nTxDFetched; ++i)
+        e1kPrintTDesc(pState, &pState->aTxDescriptors[i], "***", RTLOGGRPFLAGS_LEVEL_4);
+}
+
 /**
  * Transmit pending descriptors.
  *
@@ -4595,6 +4610,21 @@ static int e1kXmitPending(E1KSTATE *pState, bool fOnWorkerThread)
                 goto out;
         }
         uint8_t u8Remain = pState->nTxDFetched - pState->iTxDCurrent;
+        if (RT_UNLIKELY(u8Remain == E1K_TXD_CACHE_SIZE))
+        {
+            /*
+             * The descriptor cache is full, but we were unable to find
+             * a complete packet in it. Drop the cache and hope that
+             * the guest driver can recover from network card error.
+             */
+            Log4(("%s No complete packets in full TxD cache! "
+                  "Fetched=%d, TX len=%d. Dump follows:\n",
+                  INSTANCE(pState), pState->nTxDFetched, e1kGetTxLen(pState)));
+            e1kDumpTxDCache(pState);
+            pState->nTxDFetched = 0;
+            rc = VERR_NET_IO_ERROR;
+            goto out;
+        }
         if (u8Remain > 0)
         {
             /*
@@ -4704,7 +4734,7 @@ static int e1kRegWriteTDT(E1KSTATE* pState, uint32_t offset, uint32_t index, uin
     if (TDH != TDT && (STATUS & STATUS_LU))
     {
         E1kLogRel(("E1000: TDT write: %d descriptors to process\n", e1kGetTxLen(pState)));
-        E1kLog(("%s e1kRegWriteTDT: %d descriptors to process, waking up E1000_TX thread\n",
+        E1kLog(("%s e1kRegWriteTDT: %d descriptors to process\n",
                  INSTANCE(pState), e1kGetTxLen(pState)));
         e1kCsTxLeave(pState);
 
