@@ -68,8 +68,8 @@ static void doMemWipeThoroughly(RTTEST hTest)
                           cbAlloc);
             continue;
         }
-        RTMemWipeThoroughly(pvWipe, RT_MIN(cbAlloc, RTRandU32Ex(1, cbAlloc)),
-                            p /* Passes */);
+        size_t cbWipeRand = RTRandU32Ex(1, cbAlloc);
+        RTMemWipeThoroughly(pvWipe, RT_MIN(cbAlloc, cbWipeRand), p /* Passes */);
         if (!memcmp(pvWipe, pvBuf, cbAlloc))
             RTTestIFailed("Memory blocks must differ (%z bytes, 0x%p vs. 0x%p)!\n",
                           cbAlloc, pvWipe, pvBuf);
